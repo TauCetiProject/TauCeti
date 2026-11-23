@@ -769,22 +769,22 @@ Jacobian is surjective at every common zero, a smooth affine complex complete in
 dimension `|σ| - |ι|`. Then `affineZeroLocus p` is homotopy equivalent to a finite-dimensional
 Hausdorff CW complex with no cells in dimensions strictly above `|σ| - |ι|`. -/
 theorem exists_cwComplex_homotopyEquiv_affineZeroLocus {σ : Type u} {ι : Type*}
-    [Fintype σ] [Fintype ι] {p : ι → MvPolynomial σ ℂ}
+    [Fintype σ] [Finite ι] {p : ι → MvPolynomial σ ℂ}
     (hp : ∀ x ∈ affineZeroLocus p, Surjective (jacobiMatrixAt p x).mulVec) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (affineZeroLocus p ≃ₕ X) ∧
-      ∀ m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set X) m) := by
+      ∀ m, Nat.card σ - Nat.card ι < m → IsEmpty (cell (univ : Set X) m) := by
+  let _ := Fintype.ofFinite ι
   obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, hfd, -, -, -, -, hempty,
       -⟩ :=
     exists_cwComplex_subcomplex_homotopyEquiv_affineZeroLocus hp
-  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
+  simpa only [Nat.card_eq_fintype_card] using ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
 
 /-- Every smooth affine complete intersection over `ℂ` has CW type. -/
 theorem cwType_affineZeroLocus {σ : Type u} {ι : Type*} [Fintype σ] [Finite ι]
     {p : ι → MvPolynomial σ ℂ}
     (hp : ∀ x ∈ affineZeroLocus p, Surjective (jacobiMatrixAt p x).mulVec) :
     CWType (affineZeroLocus p) := by
-  let := Fintype.ofFinite ι
   obtain ⟨X, _, _, _, _, ⟨h⟩, -⟩ := exists_cwComplex_homotopyEquiv_affineZeroLocus hp
   exact h.cwType
 
@@ -929,7 +929,7 @@ example : Nonempty (affineZeroLocus hyperbolaPoly) ∧
   obtain ⟨X, _, _, _, _, ⟨h⟩, hdim⟩ :=
     exists_cwComplex_homotopyEquiv_affineZeroLocus surjective_jacobiMatrixAt_hyperbolaPoly
   have hdim' : ∀ k, 1 < k → IsEmpty (cell (univ : Set X) k) :=
-    fun k hk ↦ hdim k (by simpa only [Fintype.card_fin, Fintype.card_unit] using hk)
+    fun k hk ↦ hdim k (by simpa only [Nat.card_fin, Nat.card_unique] using hk)
   let e : affineZeroLocus hyperbolaPoly ≃ₕ (univ : Set X) :=
     h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv
   have : IsEmpty (cell (univ : Set X) (1 + 1)) := hdim' 2 (by omega)
@@ -950,7 +950,7 @@ example :
     mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero.2 ⟨0, by simp [p]⟩
   obtain ⟨X, _, _, _, _, hX, hdim⟩ := exists_cwComplex_homotopyEquiv_affineZeroLocus hp
   exact ⟨⟨⟨![0], mem_affineZeroLocus.2 fun _ ↦ by simp [p]⟩⟩, X, _, ‹_›, ‹_›, hX,
-    fun k hk ↦ hdim k (by simpa only [Fintype.card_fin, Fintype.card_unit] using hk)⟩
+    fun k hk ↦ hdim k (by simpa only [Nat.card_fin, Nat.card_unique] using hk)⟩
 
 /-- **Check: empty smooth affine zero locus (`1 = 0` in `ℂ¹`).** -/
 example :
@@ -965,7 +965,7 @@ example :
     fun z hz ↦ hEmpty.elim ⟨z, hz⟩
   obtain ⟨X, _, _, _, _, hX, hdim⟩ := exists_cwComplex_homotopyEquiv_affineZeroLocus hp
   exact ⟨hEmpty, X, _, ‹_›, ‹_›, hX,
-    fun k hk ↦ hdim k (by simpa only [Fintype.card_fin, Fintype.card_unit] using hk)⟩
+    fun k hk ↦ hdim k (by simpa only [Nat.card_fin, Nat.card_unique] using hk)⟩
 
 /-- **Check: exhaustion-independence of CW homotopy models.** Any two smooth proper bounded-below
 strongly pseudoconvex exhaustions `f₁` (with parameter `q₁`) and `f₂` (with parameter `q₂`) on `M`

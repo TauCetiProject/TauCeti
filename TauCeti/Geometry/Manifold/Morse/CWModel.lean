@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Adjunction
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+import TauCeti.Geometry.Manifold.Morse.Cell.Band
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.Homotopy.Extension.Pushout
@@ -335,6 +336,24 @@ theorem IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel (hf : IsMorse 
   subst hD'
   exact ⟨W', _, ‹_›, RelCWComplex.toCWComplex _, ι, h', hι, hA, hh, e, he⟩
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- Finiteness of an extended CW model whose cells are those of a finite CW model `W` together
+with the critical points of `f` in a compact band `(a, b]`. -/
+private theorem IsMorse.finite_cwComplex_extension (hf : IsMorse I f) {a b : ℝ}
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (W W' : Type u) [TopologicalSpace W]
+    [CWComplex (univ : Set W)] [RelCWComplex.Finite (univ : Set W)] [TopologicalSpace W']
+    [CWComplex (univ : Set W')]
+    (e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
+      ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) :
+    RelCWComplex.Finite (univ : Set W') := by
+  have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
+    (hf.finite_criticalPoints_inter hcompact).subset
+      (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
+  have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
+  have := finite_sigma_criticalPoints_inter hS
+  exact RelCWComplex.finite_of_finite_cells
+    (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm))
+
 omit [FiniteDimensional ℝ E] in
 /-- **Extending finite CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular
 values of `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a
@@ -356,15 +375,7 @@ theorem IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel (hf : I
         ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
   obtain ⟨W', _, _, _, ι, h', hι, hA, hh, e, he⟩ :=
     hf.exists_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb W h
-  -- Only finitely many critical points lie in the compact band.
-  have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
-    (hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
-  have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
-  have := finite_sigma_criticalPoints_inter hS
-  exact ⟨W', _, ‹_›, ‹_›, ι, h', RelCWComplex.finite_of_finite_cells
-    (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm)),
-    hι, hA, hh, e, he⟩
+  exact ⟨W', _, ‹_›, ‹_›, ι, h', hf.finite_cwComplex_extension hcompact W W' e, hι, hA, hh, e, he⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **Extending dimension-bounded CW models of sublevels.** Let `f` be a Morse function and
@@ -389,18 +400,12 @@ theorem IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel_of_manifoldMor
         ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
   obtain ⟨W', _, _, _, ι, h', hι, hA, hh, e, he⟩ :=
     hf.exists_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb W h
-  refine ⟨W', _, ‹_›, ‹_›, ι, h', fun _ ↦ ?_, hι, hA, hh, fun k hk ↦ ?_, e, he⟩
-  · have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
-      (hf.finite_criticalPoints_inter hcompact).subset
-        (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
-    have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
-    have := finite_sigma_criticalPoints_inter hS
-    exact RelCWComplex.finite_of_finite_cells
-      (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm))
-  · have : IsEmpty (cell (univ : Set W) k) := hW k hk
-    have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = k} :=
-      ⟨fun ⟨x, hx, hxk⟩ ↦ ((hd x hx).trans_lt (hxk ▸ hk)).false⟩
-    exact (e k).isEmpty
+  refine ⟨W', _, ‹_›, ‹_›, ι, h', fun _ ↦ hf.finite_cwComplex_extension hcompact W W' e, hι, hA,
+    hh, fun k hk ↦ ?_, e, he⟩
+  have : IsEmpty (cell (univ : Set W) k) := hW k hk
+  have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = k} :=
+    ⟨fun ⟨x, hx, hxk⟩ ↦ ((hd x hx).trans_lt (hxk ▸ hk)).false⟩
+  exact (e k).isEmpty
 
 omit [FiniteDimensional ℝ E] in
 /-- **Extending dimension-bounded finite CW models of sublevels.** Let `f` be a Morse function and
@@ -485,20 +490,9 @@ theorem IsMorse.exists_finite_cwComplex_homotopyEquiv_sublevel_of_isCompact (hf 
       RelCWComplex.Finite (univ : Set W) ∧ Nonempty (W ≃ₕ {x | f x ≤ b}) ∧
       ∀ m, Nonempty (cell (univ : Set W) m ≃
         ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ b} | manifoldMorseIndex I f x = m}) := by
-  rcases isEmpty_or_nonempty {x | f x ≤ b} with hEmpty | _
-  · refine ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance, inferInstance,
-      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun m ↦ ⟨?_⟩⟩
-    have : IsEmpty ↥{x ∈ criticalPoints I f ∩ {x | f x ≤ b} | manifoldMorseIndex I f x = m} :=
-      ⟨fun ⟨x, hx, _⟩ ↦ hEmpty.false ⟨x, hx.2⟩⟩
-    exact Equiv.equivOfIsEmpty _ _
-  have := finiteDimensional_of_isCompact_sublevel hf.contMDiff.continuous hcompact hb
-  obtain ⟨a, hab, ha⟩ := exists_le_forall_lt_of_isCompact_sublevel hcompact
-    hf.contMDiff.continuous.continuousOn
-  have : IsEmpty {x | f x ≤ a} := ⟨fun x ↦ (ha x.val).not_ge x.property⟩
-  have hband : IsCompact (f ⁻¹' Icc a b) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous) fun _ hx ↦ hx.2
-  have hareg : IsRegularValue I 𝓘(ℝ) f a :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp
+  obtain ⟨a, hab, hEmpty, hband, hareg⟩ :=
+    exists_isEmpty_sublevelPair_of_isCompact_sublevel (I := I) hf.contMDiff.continuous hcompact
+  have : IsEmpty {x | f x ≤ a} := hEmpty
   obtain ⟨W, _, _, _, -, h', hfin, -, -, -, e, -⟩ :=
     hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hband hareg hb PEmpty.{u + 1}
       Homeomorph.empty.toHomotopyEquiv
@@ -507,7 +501,7 @@ theorem IsMorse.exists_finite_cwComplex_homotopyEquiv_sublevel_of_isCompact (hf 
   ext x
   simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_Ioc]
   exact ⟨fun ⟨⟨hx, _, hxb⟩, hm⟩ ↦ ⟨⟨hx, hxb⟩, hm⟩,
-    fun ⟨⟨hx, hxb⟩, hm⟩ ↦ ⟨⟨hx, ha x, hxb⟩, hm⟩⟩
+    fun ⟨⟨hx, hxb⟩, hm⟩ ↦ ⟨⟨hx, not_le.1 fun hxa ↦ hEmpty.false ⟨x, hxa⟩, hxb⟩, hm⟩⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **Dimension-bounded finite CW model of a compact regular sublevel.** If `b` is a regular value

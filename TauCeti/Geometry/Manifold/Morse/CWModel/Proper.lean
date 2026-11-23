@@ -326,7 +326,7 @@ private theorem IsMorse.exists_cwComplex_subcomplex_witness (hf : IsMorse I f)
       (∀ k, MapsTo h.symm {x | f x ≤ a k} (W k)) ∧
       (∀ k m j, j ∈ (W k).I m ↔ f (e m j) ≤ a k) ∧
       ∀ K : Set X, IsCompact K → ∃ k, K ⊆ W k := by
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  rcases isEmpty_or_nonempty M with hM | _
   · let W : ℕ → Subcomplex (univ : Set PEmpty.{u + 1}) :=
       fun _ ↦ ⟨∅, fun _ ↦ ∅, isClosed_empty, by simp⟩
     have hcellEmpty (m : ℕ) : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) :=
@@ -350,12 +350,8 @@ private theorem IsMorse.exists_cwComplex_subcomplex_witness (hf : IsMorse I f)
         inferInstance),
       fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x,
       fun _ m j ↦ (hcellEmpty m).elim j, fun _ _ ↦ ⟨0, fun x _ ↦ PEmpty.elim x⟩⟩
-  · obtain ⟨a, K, -, htop, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
-    obtain ⟨n, hn⟩ := (htop.eventually_ge_atTop (f x₀)).exists
-    have : Nonempty {x | f x ≤ a n} := ⟨⟨x₀, hn⟩⟩
-    have hcomp : IsCompact (f ⁻¹' Iic (a n)) := hK n ▸ K.isCompact n
-    have : FiniteDimensional ℝ E := finiteDimensional_of_isCompact_sublevel (I := I)
-      hf.contMDiff.continuous hcomp (hreg n)
+  · have := hp.weaklyLocallyCompactSpace
+    have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
     exact hf.exists_cwComplex_subcomplex_witness_of_finiteDimensional hp hbdd
 
 omit [FiniteDimensional ℝ E] in
