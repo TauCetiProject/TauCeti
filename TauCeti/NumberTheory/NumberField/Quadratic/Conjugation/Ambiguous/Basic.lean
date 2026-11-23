@@ -196,7 +196,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one [IsTotallyCo
   rw [ClassGroup.mulEquiv_mk0] at hfix
   obtain ⟨x, y, hx, hy, hxy⟩ := ClassGroup.mk0_eq_mk0_iff.mp hfix
   set σ := ringOfIntegersQuadraticConj hmin hgen
-  have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.2
+  have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.property
   have hspanx : Ideal.span ({x} : Set (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]; exact hx
   have hnorm : x * σ x = y * σ y :=

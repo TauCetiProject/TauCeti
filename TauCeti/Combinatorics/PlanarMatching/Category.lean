@@ -130,6 +130,14 @@ theorem homEquiv_apply (f : X ⟶ Y) : homEquiv X Y f = f.diagram := (rfl)
 @[simp]
 theorem homEquiv_symm_apply (D : TLDiagram X.as Y.as) : (homEquiv X Y).symm D = Hom.mk D := (rfl)
 
+/-- The diagram of a transport along an equality of objects is the identity diagram, transported
+along the equality of the numbers of points. -/
+@[simp]
+theorem diagram_eqToHom (h : X = Y) :
+    (eqToHom h).diagram = TLDiagram.cast rfl (congrArg TLDiagCat.as h) (TLDiagram.id X.as) := by
+  subst h
+  simp
+
 /-- There is a morphism `X ⟶ Y` exactly when the total number `X.as + Y.as` of boundary points is
 even: an odd number of points has no planar matching, and an even number `j + j` has the nested
 one. -/

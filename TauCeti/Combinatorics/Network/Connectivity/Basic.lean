@@ -243,7 +243,7 @@ theorem IsVertexStrong.le_card {C : Set V} (h : IsVertexStrong Q k) (hs : s ∈ 
         exact mem_union_left _ (mem_image.2 ⟨⟨v, t, e⟩, hF e hv ht, rfl⟩)
       · obtain ⟨e⟩ := hpair s hs v hv
         exact mem_union_right _ (mem_image.2 ⟨⟨s, v, e⟩, hF e hs hv, rfl⟩)
-    let _ : Finite V := Finite.of_surjective (fun v : {v // v ∈ D} ↦ v.1) fun v ↦
+    let _ : Finite V := Finite.of_surjective (fun v : {v // v ∈ D} ↦ v.val) fun v ↦
       ⟨⟨v, hD v⟩, rfl⟩
     exact (Nat.le_sub_one_of_lt h.lt_natCard).trans
       (natCard_sub_one_le_card_of_completeCut hs ht hpair hF)

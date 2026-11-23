@@ -11,9 +11,9 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
-import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 
 /-!
 # Multiplication by functions with bounded derivatives on `H^s(ℝⁿ)`
@@ -39,7 +39,12 @@ coordinates. Scalar multiplication `u ↦ g u` by `g : E → ℂ` is the case
 `SchwartzMap.smulLeftCLM`. The multiplier need not decay, unlike the Schwartz multipliers of
 `BesselPotentialSpace.smulLeftCLM`, and the order `s` is any real number, unlike the
 integer-order statements `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`
-and `TemperedDistribution.mul_mem_realSobolevFunctions_of_bounded_derivatives`.
+and `TemperedDistribution.mul_mem_realSobolevFunctions_of_bounded_derivatives`. The existence of
+the bounded extensions for scalar multipliers and for `A : E → (F →L[ℂ] G')` with `F` and `G'`
+finite-dimensional Hilbert spaces is `SchwartzMap.hasSobolevExtension_smulLeftCLM` and
+`SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`, proved by duality and interpolation. This
+file adds a named operator for every bilinear `B` and Banach space `F`, with an operator norm
+bound `C ‖B‖ M` that is uniform in `g`.
 
 The scalar case comes from the Besov spaces. At `p = q = 2` the Besov space `B^s_{2,2}` and the
 Bessel-potential space `H^{s,2}` contain the same tempered distributions with equivalent norms
