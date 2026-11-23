@@ -262,10 +262,9 @@ theorem convolutionL_toL1_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E}
     ⟨subset_tsupport _ (left_ne_zero_of_smul hxy), subset_tsupport _ (right_ne_zero_of_smul hxy)⟩
   have hFs : HasCompactSupport (uncurry F) :=
     hasCompactSupport_uncurry_of_inv_mul_mem hhs hfs hFsupp
-  have hint : Integrable (fun x => ∫ y, F x y ∂μ) μ :=
-    (continuous_integral_of_compact_support μ hhs hFc fun x y hxy =>
-      (hFsupp x y hxy).1).integrable_of_hasCompactSupport
-      (hasCompactSupport_integral_of_inv_mul_mem μ hhs hfs hFsupp)
+  have hint : Integrable (fun x => ∫ y, F x y ∂μ) μ := by
+    simpa only [F, ContinuousLinearMap.lsmul_apply] using
+      integrable_integral_bilinear_inv_mul μ μ (ContinuousLinearMap.lsmul 𝕜 𝕜) hhc hhs hfc hfs
   refine (L1.integrable_coeFn _).ae_eq_of_forall_setIntegral_eq _ _ hint fun s _ _ => ?_
   -- Integration over `s` is a continuous linear functional on `L¹`.
   let T : Lp E 1 μ →L[𝕜] E :=
