@@ -132,9 +132,9 @@ diffeomorphisms. -/
 private theorem contDiff_invLift : ContDiff ℝ n (invLift L) := by
   have h := (hL.contDiffOn (s := univ ×ˢ univ)).parametric_invFun_of_injective_fderiv
     isOpen_univ (ENat.one_le_iff_ne_zero_withTop.2 hn) (fun s _ ↦ bijective_slice hL hn hper hpos s)
-    fun s _ x u v huv ↦ by
+    (fun s _ x u v huv ↦ by
       rw [(hasDerivAt_slice hL hn s x).hasFDerivAt.fderiv] at huv
-      simpa [(hpos s x).ne'] using huv
+      simpa [(hpos s x).ne'] using huv) rfl
   rwa [univ_prod_univ, contDiffOn_univ] at h
 
 end Plane
