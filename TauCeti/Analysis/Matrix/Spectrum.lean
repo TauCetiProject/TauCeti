@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
@@ -47,6 +48,9 @@ first variation of a simple eigenvalue. The adjugate of `λ k₀ - B` multiplies
 `λ k₀` by the product of the gaps `λ k₀ - λ k` to the other eigenvalues, which is nonzero exactly
 when `λ k₀` is simple; this gives differentiable curves of eigenvectors.
 
+Over `ℝ`, where the conjugate transpose is the transpose, the spectral theorem diagonalizes a
+symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻¹ = Oᵀ`.
+
 ## Main results
 
 * `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
@@ -79,7 +83,9 @@ when `λ k₀` is simple; this gives differentiable curves of eigenvectors.
 * `Matrix.IsHermitian.adjugate_scalar_sub_mulVec_eq_prod_smul` — the adjugate of `λ k₀ - B`
   multiplies an eigenvector for `λ k₀` by the product of the gaps `λ k₀ - λ k`, `k ≠ k₀`;
 * `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
-  eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`.
+  eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
+* `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
+  for an invertible `O` with `O⁻¹ = Oᵀ`.
 
 ## References
 
@@ -434,3 +440,27 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
     simp +contextual [Multiset.mem_replicate]
 
 end Matrix
+
+namespace Matrix.IsSymm
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Orthogonal diagonalization.** A real symmetric matrix is `O * diagonal d * O⁻¹` for an
+invertible `O` with `O⁻¹ = Oᵀ`; one can take for `O` the eigenvector unitary and for `d` the
+eigenvalues. -/
+theorem exists_orthogonal_diagonal {X : Matrix ι ι ℝ} (hX : X.IsSymm) :
+    ∃ (O : GL ι ℝ) (d : ι → ℝ), ((O⁻¹ : GL ι ℝ) : Matrix ι ι ℝ) = (O : Matrix ι ι ℝ)ᵀ ∧
+      X = O * diagonal d * ((O⁻¹ : GL ι ℝ) : Matrix ι ι ℝ) := by
+  have hH : X.IsHermitian := by
+    rw [IsHermitian, conjTranspose_eq_transpose_of_trivial]
+    exact hX
+  have hstar : star (hH.eigenvectorUnitary : Matrix ι ι ℝ) =
+      (hH.eigenvectorUnitary : Matrix ι ι ℝ)ᵀ :=
+    conjTranspose_eq_transpose_of_trivial _
+  refine ⟨⟨hH.eigenvectorUnitary, (hH.eigenvectorUnitary : Matrix ι ι ℝ)ᵀ,
+    hstar ▸ Unitary.coe_mul_star_self _, hstar ▸ Unitary.coe_star_mul_self _⟩,
+    hH.eigenvalues, rfl, ?_⟩
+  conv_lhs => rw [hH.spectral_theorem]
+  simp [Unitary.conjStarAlgAut_apply, hstar]
+
+end Matrix.IsSymm

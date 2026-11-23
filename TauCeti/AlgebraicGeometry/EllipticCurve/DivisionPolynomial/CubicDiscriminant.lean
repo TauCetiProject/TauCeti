@@ -29,7 +29,7 @@ The proof is two ring identities, and neither mentions a curve. Writing
 so anything dividing `f(x)` and `Q(x)` divides `f'(x)²`; the second expresses
 `Cubic.discr ⟨1, a₂, a₄, a₆⟩` as a combination of `f(x)` and `f'(x)²`. Both are stated for an
 arbitrary divisor `d`. Both are pure cubic algebra and live in `TauCeti.Algebra.CubicDiscriminant`
-(`TauCeti.Cubic.dvd_derivative_sq` and `TauCeti.Cubic.dvd_discr`), which this file imports. `Ψ₃`
+(`TauCeti.Cubic.dvd_derivative_sq_iff` and `TauCeti.Cubic.dvd_discr`), which this file imports. `Ψ₃`
 enters only here: for `a₁ = a₃ = 0` it evaluates to exactly that `Q(x)`, and the curve equation
 makes `y²` a divisor of `f(x)`.
 
@@ -100,8 +100,8 @@ theorem sq_dvd_cubic_discr (ha₁ : W.a₁ = 0) (ha₃ : W.a₃ = 0)
     y ^ 2 ∣ (_root_.Cubic.mk 1 W.a₂ W.a₄ W.a₆).discr :=
   have hf : y ^ 2 ∣ x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆ := hcurve ▸ dvd_rfl
   Cubic.dvd_discr hf
-    (Cubic.dvd_derivative_sq hf (WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero W ha₁ ha₃ ▸
-        hΨ₃))
+    ((Cubic.dvd_derivative_sq_iff hf).2
+      (WeierstrassCurve.eval_Ψ₃_of_a₁_eq_zero_of_a₃_eq_zero W ha₁ ha₃ ▸ hΨ₃))
 
 end
 

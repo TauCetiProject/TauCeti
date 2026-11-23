@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Path
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Separation by a path
@@ -17,7 +17,7 @@ relation used to compare successive crosscuts in a prime-end chain.
 
 The definition includes membership in the cut set, so it is false for a point on the path or
 outside the ambient set. It depends only on the path's range: reversing the path changes nothing,
-and an ambient homeomorphism preserves the relation.
+and a topological embedding preserves the relation.
 
 ## Main declarations
 
@@ -25,12 +25,12 @@ and an ambient homeomorphism preserves the relation.
 * `Path.separatesIn_symm` -- reversing the path does not change separation.
 * `Path.exists_separatesIn_iff_not_isPreconnected` -- a path separates some pair of points exactly
   when the cut set is not preconnected.
-* `Path.separatesIn_map_homeomorph` -- separation is invariant under ambient homeomorphisms.
+* `Path.separatesIn_map_iff` -- separation is invariant under topological embeddings.
 -/
 
 public section
 
-open Set
+open Set Topology
 
 namespace Path
 
@@ -70,47 +70,34 @@ theorem exists_separatesIn_iff_not_isPreconnected :
   · rintro ⟨z, w, hz, hw, hne⟩ hpre
     exact hne ((hpre.connectedComponentIn hz).trans (hpre.connectedComponentIn hw).symm)
   · intro hpre
-    by_contra h
+    by_contra! h
     refine hpre (isPreconnected_of_forall_pair fun z hz w hw =>
       ⟨connectedComponentIn (U \ range γ) z, connectedComponentIn_subset _ _,
         mem_connectedComponentIn hz, ?_, isPreconnected_connectedComponentIn⟩)
-    have hzw : connectedComponentIn (U \ range γ) z = connectedComponentIn (U \ range γ) w := by
-      by_contra hne
-      exact h ⟨z, w, hz, hw, hne⟩
-    exact hzw ▸ mem_connectedComponentIn hw
+    -- `γ` does not separate `z` from `w`, so they have the same component in the cut set
+    rw [not_not.mp fun hne => h z w ⟨hz, hw, hne⟩]
+    exact mem_connectedComponentIn hw
 
 /-- Reversing a path does not change which points it separates. -/
 @[simp]
 theorem separatesIn_symm : γ.symm.SeparatesIn U z w ↔ γ.SeparatesIn U z w := by
   simp only [SeparatesIn, Path.symm_range]
 
-/-- An ambient homeomorphism preserves separation by a path. -/
-theorem separatesIn_map_homeomorph {Y : Type v} [TopologicalSpace Y] (e : X ≃ₜ Y) :
-    (γ.map e.continuous).SeparatesIn (e '' U) (e z) (e w) ↔ γ.SeparatesIn U z w := by
-  have hrange : range (γ.map e.continuous) = e '' range γ := by
-    ext q
-    simp [Path.map_coe]
-  have hcut : e '' U \ range (γ.map e.continuous) = e '' (U \ range γ) := by
-    rw [hrange, ← image_sdiff e.injective]
-  rw [SeparatesIn, hcut, SeparatesIn]
-  constructor
-  · rintro ⟨hz, hw, hne⟩
-    rcases hz with ⟨z', hz', hz'eq⟩
-    rcases hw with ⟨w', hw', hw'eq⟩
-    have hzz' : z' = z := e.injective hz'eq
-    have hww' : w' = w := e.injective hw'eq
-    subst z'
-    subst w'
-    refine ⟨hz', hw', fun heq => hne ?_⟩
-    have himage := congrArg (e '' ·) heq
-    simpa only [e.image_connectedComponentIn hz', e.image_connectedComponentIn hw'] using himage
-  · rintro ⟨hz, hw, hne⟩
-    refine ⟨mem_image_of_mem e hz, mem_image_of_mem e hw, ?_⟩
-    intro heq
-    have himage : e '' connectedComponentIn (U \ range γ) z =
-        e '' connectedComponentIn (U \ range γ) w := by
-      simpa only [e.image_connectedComponentIn hz, e.image_connectedComponentIn hw] using heq
-    exact hne ((image_eq_image e.injective).mp himage)
+/-- A topological embedding preserves separation by a path. For an ambient homeomorphism `e`, use
+`e.isEmbedding`. -/
+@[simp]
+theorem separatesIn_map_iff {Y : Type v} [TopologicalSpace Y] {f : X → Y} (hf : IsEmbedding f) :
+    (γ.map hf.continuous).SeparatesIn (f '' U) (f z) (f w) ↔ γ.SeparatesIn U z w := by
+  have hcut : f '' U \ range (γ.map hf.continuous) = f '' (U \ range γ) := by
+    rw [map_coe, range_comp, image_sdiff hf.injective]
+  -- `f` carries each connected component of the cut set onto a component of its image
+  have hcomp (q : X) : connectedComponentIn (f '' (U \ range γ)) (f q) =
+      f '' connectedComponentIn (U \ range γ) q := by
+    rw [← hf.isInducing.image_connectedComponentIn_preimage
+      ((connectedComponentIn_subset _ _).trans (image_subset_range _ _)),
+      hf.injective.preimage_image]
+  simp only [SeparatesIn, hcut, hcomp, hf.injective.mem_set_image,
+    hf.injective.image_injective.ne_iff]
 
 end Path
 
