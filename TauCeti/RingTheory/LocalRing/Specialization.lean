@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.LinearAlgebra.TensorProduct.Range
+import TauCeti.LinearAlgebra.Submodule.Compl
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.RingTheory.OrzechProperty
 
@@ -21,11 +22,11 @@ multiplication by `t - τ` on `R` has rank one generically and rank zero at `τ`
 only bounds the rank of `f` above by its generic rank.
 
 The two ranks agree when the range of `f` is a direct summand of the target. Then the range is a
-finitely generated projective module, hence free over the local ring `R`
-(`Submodule.free_of_isComplemented`), and its extension of scalars to any nontrivial coefficient
+direct summand of a finite flat module, hence finite free over the local ring `R`
+(`Submodule.finite_free_of_isCompl`), and its extension of scalars to any nontrivial coefficient
 ring `A` is the range of `f.baseChange A`, of the same rank
 (`LinearMap.finrank_range_baseChange_of_isComplemented`). In particular, an idempotent
-endomorphism `E` of a finite projective `R`-module `L` has the same rank after every extension of
+endomorphism `E` of a finite flat `R`-module `L` has the same rank after every extension of
 scalars (`LinearMap.IsIdempotentElem.finrank_range_baseChange`). This is the constancy of
 dimension behind specialization arguments, such as Goodman–Wenzl's classification of the tensor
 ideals of the Temperley–Lieb category, where `E(x) = e x f` for idempotents `e` and `f` of a
@@ -39,8 +40,6 @@ that is injective generically stays injective at `τ`.
 
 ## Main results
 
-* `Submodule.free_of_isComplemented`: a direct summand of a finite projective module over a local
-  ring is free.
 * `LinearMap.finrank_range_baseChange_of_isComplemented`: the rank of a linear map with
   complemented range does not change under extension of scalars.
 * `LinearMap.IsIdempotentElem.finrank_range_baseChange`: neither does the rank of an idempotent
@@ -59,38 +58,24 @@ public section
 
 open Module
 
-namespace Submodule
-
-variable {R N : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup N] [Module R N]
-  [Module.Finite R N] [Module.Projective R N]
-
-/-- A direct summand of a finite projective module over a local ring is free: it is again finite
-and projective, as the image and a retract of the module under the projection along a complement. -/
-theorem free_of_isComplemented {p : Submodule R N} (hp : IsComplemented p) : Module.Free R p := by
-  obtain ⟨q, hpq⟩ := hp
-  have := Module.Finite.of_surjective _ (projectionOnto_surjective hpq)
-  have := Module.Projective.of_split _ _ (projectionOnto_comp_subtype hpq)
-  exact Module.free_of_flat_of_isLocalRing
-
-end Submodule
-
 namespace LinearMap
 
 variable {R M N : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [Module.Finite R N] [Module.Projective R N]
+  [AddCommGroup N] [Module R N] [Module.Finite R N] [Module.Flat R N]
 
 /-- **The rank of a map with split range is constant under specialization.** If the range of a
-linear map `f` into a finite projective module over a local ring `R` is a direct summand, then
+linear map `f` into a finite flat module over a local ring `R` is a direct summand, then
 `f.baseChange A` has the same rank over every nontrivial commutative `R`-algebra `A`, for instance
 over the fraction field and over the residue field of `R`. -/
 theorem finrank_range_baseChange_of_isComplemented (f : M →ₗ[R] N)
     (hf : IsComplemented (range f)) (A : Type*) [CommSemiring A] [Nontrivial A] [Algebra R A] :
     finrank A (range (f.baseChange A)) = finrank R (range f) := by
-  have := Submodule.free_of_isComplemented hf
-  rw [← baseChange_range, Submodule.finrank_baseChange_of_isComplemented hf]
+  obtain ⟨q, hq⟩ := hf
+  have := (Submodule.finite_free_of_isCompl _ hq).2
+  rw [← baseChange_range, Submodule.finrank_baseChange_of_isComplemented ⟨q, hq⟩]
 
-/-- **Constancy of dimension.** An idempotent endomorphism `E` of a finite projective module over
-a local ring `R` has the same rank after extension of scalars to every nontrivial commutative
+/-- **Constancy of dimension.** An idempotent endomorphism `E` of a finite flat module over a
+local ring `R` has the same rank after extension of scalars to every nontrivial commutative
 `R`-algebra `A`. In particular, its ranks over the fraction field and over the residue field of
 `R` agree. -/
 theorem IsIdempotentElem.finrank_range_baseChange {E : Module.End R N} (hE : IsIdempotentElem E)
@@ -105,7 +90,7 @@ example [IsDomain R] {E : Module.End R N} (hE : IsIdempotentElem E) :
   rw [IsIdempotentElem.finrank_range_baseChange hE, IsIdempotentElem.finrank_range_baseChange hE]
 
 /-- **Injectivity of a map with split range is insensitive to specialization.** A linear map
-`f` from a finite free module into a finite projective module over a local ring `R`, whose range is
+`f` from a finite free module into a finite flat module over a local ring `R`, whose range is
 a direct summand, is injective after extension of scalars to a nontrivial commutative `R`-algebra
 `A` if and only if it is injective. So `f` is injective over the fraction field of `R` exactly when
 it is injective over the residue field. -/
@@ -114,9 +99,10 @@ theorem baseChange_injective_iff_of_isComplemented [Module.Finite R M] [Module.F
     [Algebra R A] :
     Function.Injective (f.baseChange A) ↔ Function.Injective f := by
   refine ⟨fun h => ?_, fun h => baseChange_injective_of_isComplemented h hf⟩
-  have := Submodule.free_of_isComplemented hf
+  obtain ⟨q, hq⟩ := hf
+  have := (Submodule.finite_free_of_isCompl _ hq).2
   have hrank : finrank R (range f) = finrank R M := by
-    rw [← finrank_range_baseChange_of_isComplemented f hf A, finrank_range_of_inj h,
+    rw [← finrank_range_baseChange_of_isComplemented f ⟨q, hq⟩ A, finrank_range_of_inj h,
       finrank_baseChange]
   -- Identifying the range of `f` with its source, which is free of the same finite rank, turns the
   -- surjection of `f` onto its range into a surjective endomorphism, which is injective.
