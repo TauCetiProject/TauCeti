@@ -47,6 +47,8 @@ agrees with such a homogeneous map outside a ball has bounded derivatives of eve
 * `TauCeti.iteratedFDeriv_smul_snd_of_smul_snd_eq`: homogeneity of the derivatives.
 * `TauCeti.norm_iteratedFDeriv_smul_of_homogeneous`: operator-norm scaling for a homogeneous
   map on an arbitrary normed source, without a parameter or properness assumption.
+* `TauCeti.iteratedFDeriv_at_zero_eq_zero_of_homogeneous`: the derivatives of a homogeneous map at
+  the origin vanish in every order other than its degree.
 * `TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq`: for `x` in a compact set and `ξ ≠ 0`,
   the derivative of order `k` in directions `v` is bounded by
   `C ‖ξ‖ ^ m ∏ ‖((v i).1, ‖ξ‖⁻¹ • (v i).2)‖`, that is by `C ‖ξ‖ ^ m` once the `ξ`-components of
@@ -132,6 +134,23 @@ theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ
   rw [Real.rpow_sub ht, Real.rpow_natCast]
   field_simp
   nlinarith [hn]
+
+/-- A positively homogeneous map of degree `p` has vanishing `j`-th derivative at the origin
+whenever `j ≠ p`, since by `norm_iteratedFDeriv_smul_of_homogeneous` that derivative is homogeneous
+of the nonzero degree `p - j`. No smoothness is needed. -/
+theorem iteratedFDeriv_at_zero_eq_zero_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ}
+    (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x) (hj : (j : ℝ) ≠ p) :
+    iteratedFDeriv ℝ j f 0 = 0 := by
+  have h := norm_iteratedFDeriv_smul_of_homogeneous (j := j) hhom two_pos (x := (0 : E))
+  rw [smul_zero] at h
+  have h1 : (2 : ℝ) ^ (p - j) ≠ 1 := by
+    rcases lt_or_gt_of_ne (sub_ne_zero.mpr hj.symm) with hlt | hgt
+    · exact (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two hlt).ne
+    · exact (Real.one_lt_rpow one_lt_two hgt).ne'
+  have h0 : ((2 : ℝ) ^ (p - j) - 1) * ‖iteratedFDeriv ℝ j f 0‖ = 0 := by
+    rw [sub_mul, one_mul]
+    linarith
+  exact norm_eq_zero.mp ((mul_eq_zero.mp h0).resolve_left (sub_ne_zero.mpr h1))
 
 /-- The derivatives of a map `f (x, ξ)` that is positively homogeneous of degree `m` in `ξ` are
 homogeneous: rescaling `ξ` by `t > 0`, together with the `ξ`-components of the directions,

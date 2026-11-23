@@ -26,6 +26,8 @@ local frame.
 
 ## Main results
 
+* `CovariantDerivative.contMDiff_covariantDerivative`: the covariant derivative `∇σ` of a
+  `C^(n + 1)` section is a `C^n` section of `Hom(TM, V)`.
 * `CovariantDerivative.contMDiffAt_apply`: the pointwise version of the next result.
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
@@ -62,6 +64,15 @@ variable
   [FiberBundle F V] [IsManifold I 1 M] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
+/-- The covariant derivative `∇σ` of a `C^(n + 1)` section for a `C^n` covariant derivative is a
+`C^n` section of the bundle `Hom(TM, V)` of `V`-valued one-forms. -/
+theorem contMDiff_covariantDerivative
+    (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n]
+    {σ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) :
+    ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (cov σ x)) :=
+  contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)
+
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a vector field which is
 `C^n` at `x` produces a section which is `C^n` at `x`. -/
 theorem contMDiffAt_apply
@@ -69,8 +80,7 @@ theorem contMDiffAt_apply
     {X : Π x : M, TangentSpace I x} {σ : Π x : M, V x} {x : M}
     (hX : CMDiffAt n (T% X) x) (hσ : CMDiff (n + 1) (T% σ)) :
     CMDiffAt n (T% (fun x ↦ cov σ x (X x))) x :=
-  ((contMDiffOn_univ.mp
-    (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)) x).clm_bundle_apply hX
+  (cov.contMDiff_covariantDerivative hσ x).clm_bundle_apply hX
 
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a `C^n` vector field
 produces a `C^n` section. -/

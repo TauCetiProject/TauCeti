@@ -499,7 +499,8 @@ private lemma twistedChainSkeletonBasePairToSucc_comp_twistedChainSkeletonBasePa
   -- `(Xᵐ, X⁻¹) ⟶ (Xᵐ⁺¹, X⁻¹) ⟶ (C, X⁻¹)`; the triple's inner and total pairs are the base pairs
   -- only after unfolding the pair constructors, so `e₁` and `e₂` are applied by `erw`.
   rw [twistedChainSkeletonBasePairToSucc, twistedChainSkeletonBasePairToComplex,
-    twistedChainSkeletonBasePairToComplex, TopPair.twistedChainComplexMap_congr L h.symm]
+    twistedChainSkeletonBasePairToComplex, TopPair.twistedChainComplexMap_congr L
+    (congrArg TopPair.Hom.fst h.symm)]
   erw [e₁, Category.assoc, e₂]
   erw [← TopPair.twistedChainComplexCoefficientMap_comp_assoc,
     ← TopPair.twistedChainComplexCoefficientMap_comp_assoc,

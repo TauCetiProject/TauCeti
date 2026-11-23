@@ -48,6 +48,8 @@ finite-measure sets.
   on a measurable subset.
 * `MeasureTheory.Lp.toReal_eLpNorm_restrict_mono`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` on
   subsets of `Ω` is monotone in the subset.
+* `MeasureTheory.Lp.toReal_eLpNorm_restrict_le_norm`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)`
+  on a subset of `Ω` is at most its norm.
 * `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
   form a closed set.
 * `MeasureTheory.LpToLpRestrictCLM_eq_zero_iff`: the restriction of an `Lᵖ` class to a set vanishes
@@ -217,6 +219,12 @@ theorem Lp.toReal_eLpNorm_restrict_mono {α F : Type*} [MeasurableSpace α] [Nor
     (eLpNorm g p (μ.restrict s)).toReal ≤ (eLpNorm g p (μ.restrict t)).toReal :=
   ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono htΩ le_rfl)).trans_lt
     (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
+
+/-- On a subset `s ⊆ Ω`, the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` is at most its norm. -/
+theorem Lp.toReal_eLpNorm_restrict_le_norm {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] {μ : Measure α} {p : ENNReal} {Ω : Set α} (g : Lp F p (μ.restrict Ω))
+    {s : Set α} (hs : s ⊆ Ω) : (eLpNorm g p (μ.restrict s)).toReal ≤ ‖g‖ :=
+  (Lp.toReal_eLpNorm_restrict_mono g hs subset_rfl).trans_eq (Lp.norm_def g).symm
 
 /-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set: convergence in
 `Lᵖ` implies almost everywhere convergence of a subsequence. -/

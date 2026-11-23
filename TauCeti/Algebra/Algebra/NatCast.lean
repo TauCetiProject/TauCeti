@@ -27,6 +27,7 @@ differentiation.
 
 ## Main results
 
+* `IsUnit.ofNat_of_algebra`: if a numeral is a unit in `K` then it is a unit in `L`.
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
 * `IsUnit.natCast_of_dvd`: a divisor of a natural number casting to a unit also casts to a unit.
@@ -45,6 +46,12 @@ differentiation.
 -/
 
 public section
+
+/-- A numeral invertible in `K` is invertible in every `K`-algebra `L`; for instance `2` is
+invertible in every real algebra. -/
+theorem IsUnit.ofNat_of_algebra {K L : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    {m : ℕ} [m.AtLeastTwo] (hm : IsUnit (ofNat(m) : K)) : IsUnit (ofNat(m) : L) := by
+  simpa only [map_ofNat] using hm.map (algebraMap K L)
 
 /-- A natural number invertible in `K` is nonzero in every nontrivial `K`-algebra `L`. -/
 theorem IsUnit.natCast_ne_zero_of_algebra {K L : Type*} [CommSemiring K] [Semiring L]
