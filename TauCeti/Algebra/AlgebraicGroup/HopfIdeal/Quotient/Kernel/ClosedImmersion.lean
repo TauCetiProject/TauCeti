@@ -7,12 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.Ring.EqualizerPushout
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.FaithfullyFlat
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Finite
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.Containment
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Epi
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
 
 /-!
 # Homomorphisms with trivial kernel are closed immersions
@@ -28,10 +25,9 @@ rings. Its kernel is the kernel of `f`, which is trivial, so it is injective on 
 algebra and hence an epimorphism of commutative rings. A regular monomorphism which is an
 epimorphism is an isomorphism, so `f` is the surjection onto its image followed by an isomorphism.
 
-A closed immersion of a smooth connected affine group into a smooth connected affine group of no
-larger Lie dimension is an isomorphism: the closed subgroup is then everything. Combined with
-the closed-immersion theorem this gives an isomorphism criterion for homomorphisms with trivial
-kernel.
+A closed immersion of smooth connected affine groups which does not drop the Lie dimension is an
+isomorphism (`isIso_of_surjective_of_finrank_le`). Combined with the closed-immersion theorem
+this gives an isomorphism criterion for homomorphisms with trivial kernel.
 
 ## Main declarations
 
@@ -40,8 +36,6 @@ kernel.
 * `TauCeti.CommHopfAlgCat.surjective_iff_kernelHopfIdeal_eq_augmentation_of_isGeometricallyReduced`:
   for geometrically reduced source, the homomorphism is a closed immersion exactly when its kernel
   is trivial.
-* `TauCeti.CommHopfAlgCat.injective_of_surjective_of_finrank_le`: a closed immersion of smooth
-  connected affine groups which does not drop the Lie dimension is an isomorphism.
 * `TauCeti.CommHopfAlgCat.isIso_of_kernelHopfIdeal_eq_augmentation_of_finrank_le`: a homomorphism
   of smooth connected affine groups with trivial kernel and no drop in Lie dimension is an
   isomorphism.
@@ -60,48 +54,11 @@ namespace TauCeti.CommHopfAlgCat
 
 universe u
 
-variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
-
-/-- **A closed immersion of smooth connected affine groups which does not drop the Lie dimension
-is an isomorphism.** If the coordinate map `f : H ⟶ K` is surjective, so that `Spec K` is a
-closed subgroup of `Spec H`, both are smooth and connected, and the Lie algebra of `Spec H` has
-dimension at most that of `Spec K`, then `f` is injective. -/
-theorem injective_of_surjective_of_finrank_le (f : H ⟶ K) (hf : Function.Surjective f.hom)
-    (hH_smooth : smoothCommHopfAlgProperty k H) (hH_connected : ConnectedSpace (PrimeSpectrum H))
-    (hK_smooth : smoothCommHopfAlgProperty k K) (hK_connected : ConnectedSpace (PrimeSpectrum K))
-    (hfinrank :
-      Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) ≤
-        Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k))) :
-    Function.Injective f.hom := by
-  let q : H →ₐc[k] K := f.hom
-  have hq : Function.Surjective q := hf
-  -- A surjection embeds the tangent space of `K` into that of `H`, so the dimensions agree.
-  have hinj := derivationCompLieHom_injective_of_surjective (B := k) q hq
-  have hfinrank_eq :
-      Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k)) =
-        Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
-    le_antisymm
-      (LinearMap.finrank_le_finrank_of_injective
-        (f := (derivationCompLieHom (B := k) q : _ →ₗ[k] _)) hinj)
-      hfinrank
-  have hbij := derivationCompLieHom_bijective_of_surjective_of_finrank_eq q hq hfinrank_eq
-  have hker : HopfIdeal.ker q = ⊥ :=
-    HopfIdeal.ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot q hq
-      hH_smooth hH_connected hK_smooth hK_connected
-      (HopfIdeal.conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective q hbij.2)
-  rw [injective_iff_map_eq_zero]
-  intro x hx
-  have hmem : x ∈ (HopfIdeal.ker q).toIdeal := by
-    rw [HopfIdeal.ker_toIdeal]
-    exact hx
-  rw [hker] at hmem
-  exact hmem
-
-variable [Algebra.FiniteType k K]
+variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
 
 section GeometricallyReduced
 
-variable [Algebra.IsGeometricallyReduced k K]
+variable [Algebra.FiniteType k H] [Algebra.FiniteType k K] [Algebra.IsGeometricallyReduced k K]
 
 /-- For a homomorphism from a geometrically reduced affine group with trivial kernel, the
 coordinate map from the image to the source is bijective: the homomorphism maps its source
@@ -150,11 +107,11 @@ theorem isIso_of_kernelHopfIdeal_eq_augmentation_of_finrank_le (f : H ⟶ K)
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) ≤
         Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k))) :
     IsIso f := by
+  let _ : Algebra.Smooth k H := (smoothCommHopfAlgProperty_iff _).mp hH_smooth
+  let _ : Algebra.Smooth k K := (smoothCommHopfAlgProperty_iff _).mp hK_smooth
   have : Algebra.IsGeometricallyReduced k K :=
     (geometricallyReducedCommHopfAlgProperty_of_smooth k K hK_smooth).isGeometricallyReduced
-  have hsurj := surjective_of_kernelHopfIdeal_eq_augmentation f hker
-  exact (ConcreteCategory.isIso_iff_bijective f).mpr
-    ⟨injective_of_surjective_of_finrank_le f hsurj hH_smooth hH_connected hK_smooth hK_connected
-      hfinrank, hsurj⟩
+  exact isIso_of_surjective_of_finrank_le f (surjective_of_kernelHopfIdeal_eq_augmentation f hker)
+    hH_smooth hH_connected hK_smooth hK_connected hfinrank
 
 end TauCeti.CommHopfAlgCat
