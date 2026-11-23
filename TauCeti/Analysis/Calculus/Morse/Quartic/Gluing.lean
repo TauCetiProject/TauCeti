@@ -157,6 +157,13 @@ theorem quarticSliceGluing_erase (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Fins
   funext ρ i
   by_cases hij : i = j <;> simp [quarticSliceGluing_apply, hij]
 
+/-- Coordinate `i` of the slice evaluation reads only the gluing parameter `ρ i`: it agrees with
+the slice evaluation at the constant parameter family `ρ i`. -/
+theorem quarticSliceGluing_apply_eq_apply_const (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Finset ι)
+    (ρ : ι → ℝ) (i : ι) :
+    quarticSliceGluing p q j c A ρ i = quarticSliceGluing p q j c A (fun _ ↦ ρ i) i := by
+  simp only [quarticSliceGluing_apply]
+
 /-- A coordinate of the slice evaluation is a smooth function of the gluing parameter of that
 coordinate alone. -/
 theorem contDiff_quarticSliceGluing_const_apply (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Finset ι)
@@ -172,16 +179,18 @@ theorem contDiff_quarticSliceGluing_const_apply (p q : ι → ℝ) (j : ι) (c :
 /-- The slice evaluation is continuous in the gluing parameters, for any set of coordinates. -/
 theorem continuous_quarticSliceGluing (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Finset ι) :
     Continuous (quarticSliceGluing p q j c A) :=
-  continuous_pi fun i ↦
-    (contDiff_quarticSliceGluing_const_apply p q j c A i (n := 0)).continuous.comp
+  continuous_pi fun i ↦ by
+    rw [funext (quarticSliceGluing_apply_eq_apply_const p q j c A · i)]
+    exact (contDiff_quarticSliceGluing_const_apply p q j c A i (n := 0)).continuous.comp
       (continuous_apply i)
 
 /-- **The slice evaluation is smooth in the gluing parameters**, including at the broken
 trajectories `ρᵢ = 0`. -/
 theorem contDiff_quarticSliceGluing [Fintype ι] (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Finset ι)
     {n : WithTop ℕ∞} : ContDiff ℝ n (quarticSliceGluing p q j c A) :=
-  contDiff_pi.2 fun i ↦
-    (contDiff_quarticSliceGluing_const_apply p q j c A i).comp (contDiff_apply _ _ i)
+  contDiff_pi.2 fun i ↦ by
+    rw [funext (quarticSliceGluing_apply_eq_apply_const p q j c A · i)]
+    exact (contDiff_quarticSliceGluing_const_apply p q j c A i).comp (contDiff_apply _ _ i)
 
 /-- **Positive gluing parameters give trajectory points.** At gluing parameters which are positive
 on the moving coordinates other than `j`, the slice evaluation is the point with time shift `U(c)`
