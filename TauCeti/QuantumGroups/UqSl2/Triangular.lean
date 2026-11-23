@@ -154,6 +154,27 @@ theorem triangularEquiv_symm_f_pow_mul_kUnit_zpow_mul_e_pow (a : ℕ) (b : ℤ) 
       (X ^ a) ⊗ₜ (T b ⊗ₜ (X ^ c)) := by
   rw [← pbwBasis_apply, triangularEquiv_symm_pbwBasis]
 
+/-- The inverse of the triangular decomposition sends `F` to `X ⊗ 1 ⊗ 1`. -/
+@[simp]
+theorem triangularEquiv_symm_f :
+    (triangularEquiv q).symm (f q) = X ⊗ₜ ((1 : ℂ[T;T⁻¹]) ⊗ₜ (1 : ℂ[X])) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of the triangular decomposition sends `K` to `1 ⊗ T 1 ⊗ 1`. -/
+@[simp]
+theorem triangularEquiv_symm_k :
+    (triangularEquiv q).symm (k q) = (1 : ℂ[X]) ⊗ₜ (T 1 ⊗ₜ (1 : ℂ[X])) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of the triangular decomposition sends `K⁻¹` to `1 ⊗ T (-1) ⊗ 1`. -/
+@[simp]
+theorem triangularEquiv_symm_kInv :
+    (triangularEquiv q).symm (kInv q) = (1 : ℂ[X]) ⊗ₜ (T (-1) ⊗ₜ (1 : ℂ[X])) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
 /-- The inverse of the triangular decomposition sends `E` to `1 ⊗ 1 ⊗ X`. -/
 @[simp]
 theorem triangularEquiv_symm_e :
