@@ -39,6 +39,12 @@ open Set Real
 
 namespace TauCeti
 
+/-- The first coordinate of `fderiv ℝ F p v` is the derivative of the first coordinate of `F`. -/
+private theorem fderiv_apply_fst {F : ℝ × ℝ → ℝ × ℝ} {p : ℝ × ℝ} {L : ℝ × ℝ →L[ℝ] ℝ}
+    (hF : DifferentiableAt ℝ F p) (hL : HasFDerivAt (fun q => (F q).1) L p) (v : ℝ × ℝ) :
+    (fderiv ℝ F p v).1 = L v := by
+  simp [← hL.fderiv, fderiv.fst hF]
+
 /-- The **standard map** `(x, y) ↦ (x + y + ε sin 2πx, y + ε sin 2πx)` of the plane, a
 homeomorphism with inverse `(x, y) ↦ (x - y, y - ε sin 2π(x - y))`. -/
 def standardMap (ε : ℝ) : ℝ × ℝ ≃ₜ ℝ × ℝ where
@@ -49,10 +55,12 @@ def standardMap (ε : ℝ) : ℝ × ℝ ≃ₜ ℝ × ℝ where
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
+@[simp]
 theorem standardMap_apply (ε : ℝ) (p : ℝ × ℝ) :
     standardMap ε p = (p.1 + p.2 + ε * sin (2 * π * p.1), p.2 + ε * sin (2 * π * p.1)) :=
   (rfl)
 
+@[simp]
 theorem standardMap_symm_apply (ε : ℝ) (p : ℝ × ℝ) :
     (standardMap ε).symm p = (p.1 - p.2, p.2 - ε * sin (2 * π * (p.1 - p.2))) :=
   (rfl)
@@ -109,9 +117,7 @@ theorem isMonotoneTwistMap_standardMap (ε : ℝ) :
       convert hL using 2 with q
       simp only [standardMap_apply]
       ring
-    have h := congr($(hF.hasFDerivAt.fst.unique hL') (0, 1))
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h
-    rw [Homeomorph.toOpenPartialHomeomorph_apply, h]
+    rw [Homeomorph.toOpenPartialHomeomorph_apply, fderiv_apply_fst hF hL']
     simp
 
 /-- The map `(x, y) ↦ (x + log y, y)` as a homeomorphism of the strip `ℝ × (0, ∞)`, with inverse
@@ -134,10 +140,20 @@ def logShear : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ) where
     refine ContinuousOn.prodMk ?_ continuousOn_snd
     exact continuousOn_fst.sub (continuousOn_snd.log fun p hp => (ne_of_gt hp.2))
 
+@[simp]
 theorem logShear_apply (p : ℝ × ℝ) : logShear p = (p.1 + log p.2, p.2) :=
   (rfl)
 
+@[simp]
 theorem logShear_symm_apply (p : ℝ × ℝ) : logShear.symm p = (p.1 - log p.2, p.2) :=
+  (rfl)
+
+@[simp]
+theorem logShear_source : logShear.source = univ ×ˢ Ioi 0 :=
+  (rfl)
+
+@[simp]
+theorem logShear_target : logShear.target = univ ×ˢ Ioi 0 :=
   (rfl)
 
 /-- The map `(x, y) ↦ (x + log y, y)` is a monotone twist map of the strip `ℝ × (0, ∞)`, for every
@@ -147,6 +163,8 @@ theorem isMonotoneTwistMap_logShear {ℓ : ℝ} (hℓ : 0 < ℓ) :
   have hU : IsOpen (univ ×ˢ Ioi (0 : ℝ)) := (isOpen_univ (X := ℝ)).prod isOpen_Ioi
   have hlog : ContDiffOn ℝ 1 (fun p : ℝ × ℝ => log p.2) (univ ×ˢ Ioi 0) :=
     ContDiffOn.log (contDiffOn_snd (𝕜 := ℝ)) fun p hp => ne_of_gt hp.2
+  have hC : ContDiffOn ℝ 1 logShear (univ ×ˢ Ioi 0) :=
+    (contDiffOn_fst.add hlog).prodMk contDiffOn_snd
   refine
     { period_pos := hℓ
       nonempty := nonempty_Ioi
@@ -158,7 +176,7 @@ theorem isMonotoneTwistMap_logShear {ℓ : ℝ} (hℓ : 0 < ℓ) :
       strictMonoOn_fst := fun x y₁ hy₁ y₂ _ h => ?_
       lower_end := fun c hc => ⟨c, hc, fun _ _ _ hy => hy⟩
       upper_end := fun c hc => ⟨c, hc, fun _ _ _ hy => hy⟩
-      contDiffOn := (contDiffOn_fst.add hlog).prodMk contDiffOn_snd
+      contDiffOn := hC
       contDiffOn_symm := (contDiffOn_fst.sub hlog).prodMk contDiffOn_snd
       fderiv_fst_pos := fun p hp => ?_ }
   · ext
@@ -171,11 +189,8 @@ theorem isMonotoneTwistMap_logShear {ℓ : ℝ} (hℓ : 0 < ℓ) :
         (ContinuousLinearMap.fst ℝ ℝ ℝ + p.2⁻¹ • ContinuousLinearMap.snd ℝ ℝ ℝ) p :=
       hasFDerivAt_fst.add ((hasDerivAt_log hp2).comp_hasFDerivAt p hasFDerivAt_snd)
     have hF : DifferentiableAt ℝ logShear p :=
-      ((contDiffOn_fst.add hlog).prodMk contDiffOn_snd).differentiableOn one_ne_zero
-        |>.differentiableAt (hU.mem_nhds hp)
-    have h := congr($(hF.hasFDerivAt.fst.unique hL) (0, 1))
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h
-    rw [h]
+      (hC.differentiableOn one_ne_zero).differentiableAt (hU.mem_nhds hp)
+    rw [fderiv_apply_fst hF hL]
     simpa using hp.2
 
 /-- The height inversion `(x, y) ↦ (x, y⁻¹)`, an involution of the strip `ℝ × (0, ∞)` decreasing
@@ -183,9 +198,13 @@ in `y`, used to conjugate `logShear`. -/
 def invHeight (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1, p.2⁻¹)
 
+@[simp]
+theorem invHeight_apply (p : ℝ × ℝ) : invHeight p = (p.1, p.2⁻¹) :=
+  (rfl)
+
 /-- Conjugating `(x, y) ↦ (x + log y, y)` by `y ↦ 1/y` gives `(x, y) ↦ (x - log y, y)`. -/
 theorem logShear_conj_inv (p : ℝ × ℝ) : invHeight (logShear (invHeight p)) = logShear.symm p := by
-  simp [invHeight, logShear_apply, logShear_symm_apply, log_inv, sub_eq_add_neg]
+  simp [log_inv, sub_eq_add_neg]
 
 /-- The conjugate `(x, y) ↦ (x - log y, y)` twists negatively on `ℝ × (0, ∞)`: its first
 coordinate is strictly decreasing on every vertical. -/
