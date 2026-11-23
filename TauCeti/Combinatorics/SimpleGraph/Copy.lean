@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.SimpleGraph.Copy
 
 /-!
-# Extending edge data by zero along a copy
+# Neighbours along a copy, and extending edge data by zero
 
 Let `f` be a copy of a graph `H` in a graph `G`, that is an injective graph homomorphism, not
 necessarily induced. A family `β x y` of values on the ordered pairs of vertices of `H` extends by
@@ -22,6 +23,9 @@ and away from the copy it is zero. These are the local relations of the signless
 algebra, so a representation of the signless preprojective algebra of `H` by such a family extends
 by zero to one of `G`.
 
+Along a copy, the neighbours of a vertex map to neighbours of its image, so a nonnegative weight
+on `G` sums to at least as much over the neighbours of `f x` as over the images of those of `x`.
+
 ## Main definitions
 
 * `SimpleGraph.Copy.extendByZero`: the extension by zero of a family on the vertex pairs of `H`
@@ -29,6 +33,9 @@ by zero to one of `G`.
 
 ## Main results
 
+* `SimpleGraph.Copy.map_neighborFinset_subset` and `SimpleGraph.Copy.sum_neighborFinset_comp_le`:
+  neighbours map to neighbours along a copy, and the resulting bound on neighbour sums of a
+  nonnegative weight.
 * `SimpleGraph.Copy.extendByZero_apply_apply`: along the copy, the extension is the original
   family on edges of `H` and zero elsewhere.
 * `SimpleGraph.Copy.sum_extendByZero_mul_extendByZero`: the local sums
@@ -40,6 +47,29 @@ public section
 namespace SimpleGraph.Copy
 
 variable {V W M : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+
+section neighborFinset
+
+variable [H.LocallyFinite] [G.LocallyFinite]
+
+/-- Along a copy `f`, not necessarily induced, the neighbours of `x` map to neighbours of `f x`. -/
+theorem map_neighborFinset_subset (f : H.Copy G) (x : W) :
+    (H.neighborFinset x).map f.toEmbedding ⊆ G.neighborFinset (f x) := by
+  intro w hw
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_map.1 hw
+  rw [mem_neighborFinset] at hy ⊢
+  exact f.toHom.map_adj hy
+
+/-- Along a copy `f`, not necessarily induced, a nonnegative weight on `G` sums to at least as much
+over the neighbours of `f x` as over the images of the neighbours of `x`. -/
+theorem sum_neighborFinset_comp_le [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
+    (f : H.Copy G) {a : V → M} (ha0 : 0 ≤ a) (x : W) :
+    ∑ y ∈ H.neighborFinset x, a (f y) ≤ ∑ w ∈ G.neighborFinset (f x), a w := by
+  have h := Finset.sum_le_sum_of_subset_of_nonneg (f.map_neighborFinset_subset x)
+    fun w _ _ => ha0 w
+  rwa [Finset.sum_map] at h
+
+end neighborFinset
 
 section AddCommMonoid
 
@@ -107,12 +137,7 @@ theorem sum_extendByZero_mul_extendByZero [Fintype V] [DecidableRel G.Adj]
   obtain ⟨x, rfl⟩ := hv
   -- Only the images of the neighbours of `x` in `H` contribute, and they contribute the sum of
   -- `H` at `x`.
-  have hsub : (H.neighborFinset x).map f.toEmbedding ⊆ G.neighborFinset (f x) := by
-    intro w hw
-    obtain ⟨y, hy, rfl⟩ := Finset.mem_map.1 hw
-    rw [mem_neighborFinset] at hy ⊢
-    exact f.toHom.map_adj hy
-  rw [← Finset.sum_subset hsub, Finset.sum_map]
+  rw [← Finset.sum_subset (f.map_neighborFinset_subset x), Finset.sum_map]
   · refine (Finset.sum_congr rfl fun y hy => ?_).trans (hβ x)
     rw [mem_neighborFinset] at hy
     exact congrArg₂ (· * ·) (extendByZero_apply_apply_of_adj f β hy.symm)

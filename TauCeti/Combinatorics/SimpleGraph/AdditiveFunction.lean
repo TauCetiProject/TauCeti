@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Copy
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+public import TauCeti.Combinatorics.SimpleGraph.Copy
 
 /-!
 # The Cartan matrix of a graph carrying a positive additive function
@@ -464,24 +464,6 @@ section Copy
 
 variable {G} {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
   [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
-
-omit [DecidableEq V] [Fintype V] [DecidableRel G.Adj] in
-/-- Along a copy `f`, not necessarily induced, the neighbours of `v` map to neighbours of `f v`. -/
-theorem Copy.map_neighborFinset_subset [G.LocallyFinite] (f : Copy G H) (v : V) :
-    (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
-  intro x hx
-  obtain ⟨u, hu, rfl⟩ := mem_map.1 hx
-  rw [mem_neighborFinset] at hu ⊢
-  exact f.toHom.map_adj hu
-
-omit [DecidableEq V] [Fintype V] [DecidableRel G.Adj] in
-/-- Along a copy `f`, not necessarily induced, a nonnegative weight on `H` sums to at least as much
-over the neighbours of `f v` as over the images of the neighbours of `v`. -/
-theorem Copy.sum_neighborFinset_comp_le [G.LocallyFinite] {M : Type*} [AddCommMonoid M]
-    [PartialOrder M] [IsOrderedAddMonoid M] (f : Copy G H) {a : W → M} (ha0 : 0 ≤ a) (v : V) :
-    ∑ u ∈ G.neighborFinset v, a (f u) ≤ ∑ y ∈ H.neighborFinset (f v), a y := by
-  have h := sum_le_sum_of_subset_of_nonneg (f.map_neighborFinset_subset v) fun y _ _ ↦ ha0 y
-  rwa [sum_map] at h
 
 omit [DecidableEq V] in
 /-- **The proper-extension obstruction.** Let `f` be a copy, not necessarily induced, of a nonempty
