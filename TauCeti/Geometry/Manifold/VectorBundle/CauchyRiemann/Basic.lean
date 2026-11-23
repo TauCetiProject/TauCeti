@@ -213,7 +213,7 @@ theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M)
     simp [dbarSMulRight_apply, complexAntilinearPart_apply,
       -mvfderiv_apply_eq_mfderiv_apply]
   rw [isZeroOneForm_iff_isComplexAntilinear, h]
-  exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
+  exact isComplexAntilinear_complexAntilinearPart (toEndomorphism_comp_toEndomorphism x)
     Complex.toLinearMap_I_comp_toLinearMap_I _
 
 variable [∀ x, ContinuousSMul ℂ (V x)]
@@ -250,7 +250,7 @@ theorem toLinearMap_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
 theorem isZeroOneForm_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
     j.IsZeroOneForm (j.zeroOnePart η) := by
   rw [isZeroOneForm_iff_isComplexAntilinear, toLinearMap_zeroOnePart]
-  exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
+  exact isComplexAntilinear_complexAntilinearPart (toEndomorphism_comp_toEndomorphism x)
     Complex.toLinearMap_I_comp_toLinearMap_I _
 
 /-- A one-form is a `(0,1)`-form exactly when it is fixed by the `(0,1)`-projection. -/
@@ -766,11 +766,7 @@ theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartA
   set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z
   -- `dφ⁻¹` is complex linear, so `dφ⁻¹ i = j (dφ⁻¹ 1)`, on which `η` is `-i • η (dφ⁻¹ 1)`.
   have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
-    have h : L (Complex.I • (1 : ℂ)) = (Complex.I • ContinuousLinearMap.id ℝ ℂ) (L (1 : ℂ)) :=
-      mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I (1 : ℂ)
-    rw [smul_eq_mul, mul_one] at h
-    rw [h]
-    exact (ofComplexManifold_apply (E := ℂ) _ _).symm
+    exact (ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz).symm
   have hηI : η (L Complex.I) = -(Complex.I • η (L (1 : ℂ))) := by
     rw [hLI]
     exact isZeroOneForm_iff.1 hη _
@@ -781,6 +777,39 @@ theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartA
   simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
     RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V _)]
   module
+
+namespace SmoothAlmostComplexStructure.IsZeroOneForm
+
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] in
+/-- On a complex curve, a `(0,1)`-form vanishes exactly when it vanishes on the nonzero
+coordinate vector `dφ⁻¹ 1`. -/
+theorem eq_zero_iff_apply_mfderivWithin_extChartAt_symm_one
+    {x₀ : M} {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target)
+    {η : TangentSpace 𝓘(ℝ, ℂ) ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z) →L[ℝ]
+      V ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)}
+    (hη : (ofComplexManifold ℂ M).IsZeroOneForm η) :
+    η = 0 ↔ η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+      (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) = 0 := by
+  constructor
+  · rintro rfl
+    exact zero_apply _
+  · intro h
+    set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+      (range 𝓘(ℝ, ℂ)) z
+    have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
+      exact (ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz).symm
+    have hI : η (L Complex.I) = 0 := by rw [hLI, hη, h, smul_zero, neg_zero]
+    have hLinv : L.IsInvertible := isInvertible_mfderivWithin_extChartAt_symm hz
+    obtain ⟨Linv, hL⟩ := hLinv
+    ext v
+    obtain ⟨w, rfl⟩ : ∃ w, L w = v := ⟨Linv.symm v, by
+      rw [← hL, ContinuousLinearEquiv.coe_coe]
+      exact Linv.apply_symm_apply v⟩
+    have hval : η (L w) = w.re • η (L (1 : ℂ)) + w.im • η (L Complex.I) := by
+      exact LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
+    simpa only [h, hI, smul_zero, add_zero, zero_apply] using hval
+
+end SmoothAlmostComplexStructure.IsZeroOneForm
 
 end Curve
 

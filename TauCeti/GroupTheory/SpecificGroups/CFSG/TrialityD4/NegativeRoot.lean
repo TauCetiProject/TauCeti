@@ -30,17 +30,17 @@ public section
 
 namespace TauCeti.TypeTrialityD4LieIndex
 
-variable (d : TypeTrialityD4LieIndex) (j : Fin 4) (u : Multiplicative d.1.Closure)
+variable (d : TypeTrialityD4LieIndex) (j : Fin 4) (u : Multiplicative d.val.Closure)
 
 /-- Triality permutes the negative simple roots by the selected forward node cycle, with no
 sign or change of additive parameter. -/
 @[simp]
 theorem graphAut_rootSubgroupPoints_inr :
-    d.graphAut (D4Tripled.rootSubgroupPoints (.inr j) d.1.Closure u) =
+    d.graphAut (D4Tripled.rootSubgroupPoints (.inr j) d.val.Closure u) =
       D4Tripled.rootSubgroupPoints
         (.inr (finCongr d.rank_eq_four
           (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm
-            (finCongr d.rank_eq_four.symm j)))) d.1.Closure u := by
+            (finCongr d.rank_eq_four.symm j)))) d.val.Closure u := by
   rw [graphAut_def, D4Tripled.trialityPoints_rootSubgroupPoints,
     MinusculeWeightTable.Symmetry.rootPerm_inr, D4Tripled.trialitySymmetry_nodePerm,
     diagramPerm_toGraphTwistedIndex]
@@ -50,14 +50,14 @@ theorem graphAut_rootSubgroupPoints_inr :
 roots and raises their additive parameters to the small-field order `q`. -/
 @[simp]
 theorem steinberg_rootSubgroupPoints_inr :
-    d.steinberg (D4Tripled.rootSubgroupPoints (.inr j) d.1.Closure u) =
+    d.steinberg (D4Tripled.rootSubgroupPoints (.inr j) d.val.Closure u) =
       D4Tripled.rootSubgroupPoints
         (.inr (finCongr d.rank_eq_four
           (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm
-            (finCongr d.rank_eq_four.symm j)))) d.1.Closure
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+            (finCongr d.rank_eq_four.symm j)))) d.val.Closure
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     frobenius_def, D4Tripled.frobenius_rootSubgroupPoints,
-    ← d.1.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
+    ← d.val.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
 
 end TauCeti.TypeTrialityD4LieIndex

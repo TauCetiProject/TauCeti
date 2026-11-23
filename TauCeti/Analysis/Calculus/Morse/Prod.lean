@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.ODE.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
@@ -38,9 +40,14 @@ pair of gradients. The results above transfer to it through
   a separated sum are the pairs of nondegenerate critical points of the summands.
 * `TauCeti.morseIndex_comp_fst_add_comp_snd`: the Morse index of a separated sum is the sum of
   the Morse indices of the summands.
+* `TauCeti.hessianQuadraticForm_comp_snd` and `TauCeti.morseIndex_comp_snd`: a function of the
+  second variable alone has the Hessian and the Morse index of the function, with no regularity
+  assumption.
 * `TauCeti.separatedSum`: the separated sum on the `L²` product.
 * `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
   the pair of gradients, and is Lipschitz when both gradients are.
+* `TauCeti.hessianOperator_separatedSum_apply`: its Hessian operator acts on each factor by the
+  Hessian operator of the corresponding summand.
 * `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: the negative
   gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
   the summands.
@@ -120,12 +127,46 @@ theorem morseIndex_comp_fst_add_comp_snd [FiniteDimensional ℝ E] [FiniteDimens
   simp only [morseIndex_def, hessianQuadraticForm_comp_fst_add_comp_snd hφ hψ,
     QuadraticForm.sigNeg_prod]
 
+/-- The Hessian quadratic form of a function `ψ` of the second variable alone is the Hessian of
+`ψ`, read on the second component. No regularity is needed: both sides use the totalized
+derivative. -/
+theorem hessianQuadraticForm_comp_snd (ψ : F → ℝ) (z : E × F) :
+    hessianQuadraticForm (ψ ∘ Prod.snd) z =
+      (hessianQuadraticForm ψ z.2).comp (LinearMap.snd ℝ E F) := by
+  -- Precomposition with the second projection, and its left inverse, restriction to `F`.
+  let P : (F →L[ℝ] ℝ) →L[ℝ] E × F →L[ℝ] ℝ := (compL ℝ (E × F) F ℝ).flip (snd ℝ E F)
+  let R : (E × F →L[ℝ] ℝ) →L[ℝ] F →L[ℝ] ℝ := (compL ℝ F (E × F) ℝ).flip (inr ℝ E F)
+  have hP : fderiv ℝ (P ∘ fderiv ℝ ψ) z.2 = P.comp (fderiv ℝ (fderiv ℝ ψ) z.2) :=
+    P.fderiv_comp_left_of_leftInverse R (fun L ↦ by ext; simp [R, P]) (fderiv ℝ ψ) z.2
+  have h1 : fderiv ℝ (ψ ∘ Prod.snd) = (P ∘ fderiv ℝ ψ) ∘ Prod.snd :=
+    funext fun w ↦ fderiv_comp_snd ψ w
+  ext v
+  rw [hessianQuadraticForm_apply, h1, fderiv_comp_snd, hP, QuadraticMap.comp_apply,
+    hessianQuadraticForm_apply]
+  simp [P]
+
+/-- **The Morse index of a function of the second variable alone** at `z` is the Morse index of
+the function at `z.2`: the first factor contributes nothing to the Hessian. -/
+@[simp]
+theorem morseIndex_comp_snd [FiniteDimensional ℝ E] (ψ : F → ℝ) (z : E × F) :
+    morseIndex (ψ ∘ Prod.snd) z = morseIndex ψ z.2 := by
+  by_cases hF : FiniteDimensional ℝ F
+  · have hH : hessianQuadraticForm (ψ ∘ Prod.snd) z =
+        (0 : QuadraticForm ℝ E).prod (hessianQuadraticForm ψ z.2) := by
+      ext v
+      simp [hessianQuadraticForm_comp_snd]
+    rw [morseIndex_def, morseIndex_def, hH, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
+      zero_add]
+  · rw [morseIndex_eq_zero_of_not_finiteDimensional hF,
+      morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+        hF (Module.Finite.of_surjective (LinearMap.snd ℝ E F) LinearMap.snd_surjective)]
+
 end CompFstAddCompSnd
 
 section SeparatedSum
 
 open Set
-open scoped Gradient NNReal
+open scoped Gradient NNReal Topology
 
 section Defs
 
@@ -232,6 +273,27 @@ theorem isIntegralCurve_separatedSum_iff {z : ℝ → WithLp 2 (E × F)}
       (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
   · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
       (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+
+/-- **The Hessian operator of a separated sum** acts on each factor by the Hessian operator of the
+corresponding summand. -/
+theorem hessianOperator_separatedSum_apply {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst)
+    (hg : ContDiffAt ℝ 2 g z.snd) (w : WithLp 2 (E × F)) :
+    hessianOperator (separatedSum f g) z w =
+      WithLp.toLp 2 (hessianOperator f z.fst w.fst, hessianOperator g z.snd w.snd) := by
+  -- Near `z` the gradient of the sum is the pair of gradients.
+  have hgrad : ∇ (separatedSum f g) =ᶠ[𝓝 z] fun y ↦ WithLp.toLp 2 (∇ f y.fst, ∇ g y.snd) := by
+    filter_upwards [(WithLp.fstL 2 ℝ E F).continuous.continuousAt.eventually
+        (hf.eventually (by simp)),
+      (WithLp.sndL 2 ℝ E F).continuous.continuousAt.eventually (hg.eventually (by simp))]
+      with y hy₁ hy₂
+    exact gradient_separatedSum (hy₁.differentiableAt two_ne_zero)
+      (hy₂.differentiableAt two_ne_zero)
+  have hd := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp z
+    ((hf.hasFDerivAt_gradient.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt).prodMk
+      (hg.hasFDerivAt_gradient.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt))
+  simp only [Function.comp_def, WithLp.prodContinuousLinearEquiv_symm_apply] at hd
+  rw [← fderiv_gradient, hgrad.fderiv_eq, hd.fderiv]
+  simp
 
 end Gradient
 

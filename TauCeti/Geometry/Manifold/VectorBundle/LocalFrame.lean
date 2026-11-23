@@ -32,6 +32,8 @@ out of a finite-dimensional space is recovered from its values on a basis by
 `ContMDiffCovariantDerivativeOn` asks for smoothness of the hom-bundle section `∇σ`, while the
 constructions of connections produce smoothness of the vector fields `∇_X σ` one direction `X` at
 a time.
+Applied twice, the same criterion tests a section of the bundle of bilinear forms on pairs of
+frame vectors, as for a fibre metric or a fibrewise symplectic form.
 
 Finally, in a bundle with model fibre `𝕜`, over the base set of a trivialization any two vectors
 `v ≠ 0` and `w` of a fibre satisfy `w = c • v` for the ratio `c` of their coordinates in the
@@ -52,17 +54,20 @@ trivialization.
   the local-frame vectors weighted by the coordinates of its reading in `e`.
 * `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
   applied to `b`.
-* `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
-  trivialization is smooth on its base set.
+* `TauCeti.Manifold.contMDiffOn_symm_baseSet`,
+  `TauCeti.Manifold.mdifferentiableAt_symm_of_mem_baseSet`: the section with constant coordinates
+  in a trivialization is smooth on its base set.
 * `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
   change-of-basis matrix between the corresponding local frames.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
   maps, possibly along a base map, is `C^n` once its evaluations on a local frame of the source
   bundle are.
+* `TauCeti.Manifold.contMDiffOn_bilinear_of_localFrame`: a section of the bundle of bilinear forms
+  is `C^n` once its evaluations on pairs of local-frame vectors are.
 * `Bundle.Trivialization.span_range_localFrame_map`: the image of a local frame under a linear
   map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
-  the local frame of a trivialization agrees with a family of globally smooth sections.
+  the local frame of a `C^n` trivialization agrees with a family of globally `C^n` sections.
 * `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
   section, multiplied by a `C^n` function supported in the base set, are globally `C^n`.
 * `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
@@ -186,6 +191,40 @@ theorem contMDiffOn_symm_baseSet {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] 
   e.contMDiffOn_section_baseSet_iff.2 <| (contMDiffOn_const (c := v)).congr fun y hy ↦ by
     simp only [e.apply_mk_symm hy]
 
+section OtherField
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' F]
+  [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- A local frame formed using another scalar field is smooth for the given smooth bundle
+structure: its vectors still have constant coordinates in the same trivialization. -/
+theorem _root_.Bundle.Trivialization.contMDiffOn_localFrame_baseSet_of_basis
+    {n : ℕ∞ω} [ContMDiffVectorBundle n F V I]
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (b' : Basis ι 𝕜' F) (i : ι) :
+    ContMDiffOn I (I.prod 𝓘(𝕜, F)) n (T% (e.localFrame b' i)) e.baseSet := by
+  refine (contMDiffOn_symm_baseSet (I := I) (e := e) (b' i)).congr fun x hx ↦ ?_
+  exact congrArg (TotalSpace.mk' F x)
+    ((symmL_basis_eq_localFrame b' hx i).symm.trans (e.symmL_apply hx _))
+
+end OtherField
+
+/-- In a rank-one model coordinate, the singleton local frame has constant coordinate
+`c.symm 1` in the original trivialization. -/
+theorem _root_.Bundle.Trivialization.continuousLinearMapAt_localFrame_singleton
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (c : F ≃L[𝕜] 𝕜)
+    (hx : x ∈ e.baseSet) :
+    e.continuousLinearMapAt 𝕜 x
+      (e.localFrame ((Basis.singleton Unit 𝕜).map c.symm.toLinearEquiv) () x) = c.symm 1 := by
+  rw [continuousLinearMapAt_localFrame _ hx, Basis.map_apply, Basis.singleton_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv]
+
+/-- The section with constant coordinates `v` in a trivialization `e` is differentiable at each
+point of the base set of `e`. -/
+theorem mdifferentiableAt_symm_of_mem_baseSet [ContMDiffVectorBundle 1 F V I] (v : F)
+    (hx : x ∈ e.baseSet) : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
+  ((contMDiffOn_symm_baseSet (n := 1) v).contMDiffAt (e.open_baseSet.mem_nhds hx)).mdifferentiableAt
+    one_ne_zero
+
 /-- The matrix of a coordinate change between two vector-bundle trivializations is the
 change-of-basis matrix between the corresponding local frames. -/
 theorem coordChangeL_toMatrix [Fintype ι] [DecidableEq ι]
@@ -248,12 +287,37 @@ theorem contMDiffOn_hom_of_localFrame {f : N → M} {u : Set N} (hf : ContMDiffO
         ((eh ⟨f y, A y⟩).2 (b j))) u := by
     refine contMDiffOn_finsetSum fun j _ ↦ ?_
     exact ContMDiffOn.clm_apply
-      (g := fun _ ↦ ContinuousLinearMap.smulRightL 𝕜 F F'
+      (g := fun _ ↦ ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F'
         (LinearMap.toContinuousLinearMap (b.coord j))) contMDiffOn_const (hcoord j)
   apply hsum.congr
   intro y _
   refine ContinuousLinearMap.coe_injective (b.ext fun j ↦ ?_)
   simp [Basis.coord_apply, Finsupp.single_apply]
+
+/-- **A bilinear-form section is tested on pairs of local-frame vectors.** A family of continuous
+bilinear forms `A y` on the fibres of `V` is a `C^n` section of the bundle of bilinear forms on a
+subset `u` of `e.baseSet` as soon as each evaluation `A y (e.localFrame b i y) (e.localFrame b j y)`
+on two local-frame vectors is `C^n` on `u`. -/
+theorem contMDiffOn_bilinear_of_localFrame {u : Set M} (hu : u ⊆ e.baseSet)
+    {A : Π y : M, V y →L[𝕜] V y →L[𝕜] 𝕜}
+    (hA : ∀ i j : ι, ContMDiffOn I 𝓘(𝕜) n
+      (fun y ↦ A y (e.localFrame b i y) (e.localFrame b j y)) u) :
+    ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] 𝕜)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] 𝕜)
+        (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] 𝕜) y (A y)) u := by
+  let e𝕜 := Trivial.trivialization M 𝕜
+  have : MemTrivializationAtlas e𝕜 := ⟨rfl⟩
+  -- Test the outer and then the inner linear maps on the local frame.
+  apply contMDiffOn_hom_of_localFrame (V' := fun y ↦ V y →L[𝕜] 𝕜)
+    (e' := e.continuousLinearMap (RingHom.id 𝕜) e𝕜) b (f := id) contMDiffOn_id
+    (fun y hy ↦ ⟨hu hy, hu hy, mem_univ _⟩)
+  intro i
+  apply contMDiffOn_hom_of_localFrame (V' := Trivial M 𝕜) (e' := e𝕜) b (f := id) contMDiffOn_id
+    (fun y hy ↦ ⟨hu hy, mem_univ _⟩)
+  intro j y hy
+  rw [Bundle.contMDiffWithinAt_totalSpace_iff]
+  refine ⟨contMDiffWithinAt_id, ?_⟩
+  simpa [Trivial.fiberBundle_trivializationAt'] using hA i j y hy
 
 end Hom
 
@@ -261,9 +325,9 @@ end TauCeti.Manifold
 
 namespace Bundle.Trivialization
 
-/-- Near a point `x` of the base set of a trivialization `e` of a smooth real vector bundle over a
-finite-dimensional Hausdorff manifold, the local frame `e.localFrame b` agrees with a family of
-globally smooth sections. -/
+/-- Near a point `x` of the base set of a trivialization `e` of a `C^n` real vector bundle over a
+finite-dimensional Hausdorff smooth manifold, the local frame `e.localFrame b` agrees with a family
+of globally `C^n` sections, for `n ≤ ∞`. -/
 theorem exists_contMDiff_eventuallyEq_localFrame
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -271,16 +335,17 @@ theorem exists_contMDiff_eventuallyEq_localFrame
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    [FiberBundle G W] [VectorBundle ℝ G W] {n : ℕ∞ω} [ContMDiffVectorBundle n G W I]
     {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
-    {x : M} (hx : x ∈ e.baseSet) :
-    ∃ F : ι → Π y : M, W y, (∀ i, CMDiff ∞ (T% (F i))) ∧
+    {x : M} (hn : n ≤ ∞) (hx : x ∈ e.baseSet) :
+    ∃ F : ι → Π y : M, W y, (∀ i, CMDiff n (T% (F i))) ∧
       ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
   -- Cut the frame off by a smooth bump function equal to one near `x`, supported in `e.baseSet`.
   have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
   refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
-  · exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
+  · exact (ρ.contMDiff.of_le hn).contMDiffOn
+      |>.smul_section_of_tsupport e.open_baseSet hρ
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]

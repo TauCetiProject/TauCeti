@@ -5,62 +5,74 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ImplicitContDiff
-public import TauCeti.Dynamics.Billiard.NextCollision
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Dynamics.Billiard.GeneratingFunction
+public import TauCeti.Dynamics.Billiard.Inverse
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Inverse
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Topology.Order.MonotoneContinuity
+import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
-# Smoothness of the billiard next-collision map
+# Smoothness of the billiard map
 
 Let `χ` be an arclength parametrization of the boundary of a strictly convex billiard table
-(`TauCeti.StrictConvexBilliardTable`) and let `(s, v) ↦ (t, w)` be its next-collision map on the
-strip `ℝ × (-1, 1)` (`TauCeti.StrictConvexBilliardTable.nextCollision`). This file proves that the
-next-collision map is as smooth as the unit tangent `χ'`: if `χ` is `C^(n + 1)` with `n ≠ 0`, the
-map is `C^n` on the strip (`TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`).
+(`TauCeti.StrictConvexBilliardTable`), with period `L`, and let `B(s, v) = (t, w)` be its
+next-collision map on the strip `ℝ × (-1, 1)` (`TauCeti.StrictConvexBilliardTable.nextCollision`).
+If `χ` is `C^(n+1)` for some `n ≠ 0`, then `B` is `C^n` on the strip
+(`TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`), and so is its inverse: `B` is a
+`C^n` diffeomorphism of the strip onto itself
+(`TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`). One derivative is lost
+because the tangential components are inner products with the derivative `χ'`. The billiard map
+`β` induced by `B` on the space of collision states `AddCircle L × (-1, 1)` is therefore a
+homeomorphism as soon as `χ` is `C²` (`TauCeti.StrictConvexBilliardTable.billiardHomeomorph`).
 
-The parameter `t` of the next collision is the solution in `(s, s + L)` of the chord equation
+The proof is the implicit function theorem for the generating function
+`S(s, t) = -‖χ(t) - χ(s)‖` (`TauCeti.StrictConvexBilliardTable.generatingFunction`). On the domain
+`s < t < s + L` of chords between distinct boundary points, the map
 
-`F((s, v), t) = ω(u(s, v), χ(t) - χ(s)) = 0`,
+`Φ(s, t) = (s, ∂_s S(s, t)) = (s, ⟪χ'(s), u⟫)`,
 
-where `u(s, v) = v χ'(s) + √(1 - v ^ 2) J χ'(s)` is the outgoing velocity and `ω` the area form.
-The equation `F` is `C^n` on the strip, and its derivative in `t` at the next collision is
-`ω(u, χ'(t)) = √(1 - w ^ 2) > 0`, positive because the chord is not tangent to the boundary at its
-far end. The implicit function theorem therefore solves `F = 0` for `t` by a `C^n` function near
-each state, and the uniqueness of the next collision identifies that solution with `t`. The new
-tangential component `w = ⟪u, χ'(t)⟫` is then `C^n` as well. These statements are pointwise: at a
-state `(s, v)` they only need `χ` to be `C^(n + 1)` at `s` and at `t`.
+where `u` is the unit vector along the chord, is `C^n`
+(`TauCeti.StrictConvexBilliardTable.contDiffAt_inner_deriv_chordDir`), and it is inverted by
+`(s, v) ↦ (s, t(s, v))`, where `t(s, v)` is the next collision parameter: the generating function
+generates the next-collision map. The derivative of `Φ` is triangular, with diagonal entries `1`
+and the mixed partial derivative `∂_t ∂_s S`, which is negative by the twist condition
+(`TauCeti.StrictConvexBilliardTable.deriv_deriv_generatingFunction_left_neg`). So the inverse
+function theorem applies at every point, and the local `C^n` inverses agree with
+`(s, v) ↦ (s, t(s, v))` because chords of the window are determined by their tangential
+components. The next tangential component `w = ⟪u, χ'(t)⟫` is then `C^n` too. These statements
+are pointwise: at a state `(s, v)` they only need `χ` to be `C^(n+1)` at `s` and at `t`
+(`TauCeti.StrictConvexBilliardTable.contDiffAt_nextCollision`).
 
-For a fixed starting point `χ(s)`, the cotangent `⟪χ'(s), χ(t) - χ(s)⟫ / ω(χ'(s), χ(t) - χ(s))` of
-the chord angle is strictly decreasing in `t ∈ (s, s + L)` and equals `v / √(1 - v ^ 2)` at the
-next collision. Inverting it computes the rate at which the next collision moves as the ball is
-aimed further forward:
+The inverse of `B` is `τ⁻¹ ∘ ι ∘ B ∘ ι`, where `ι(s, v) = (s, -v)` and `τ(s, v) = (s + L, v)`
+(`TauCeti.StrictConvexBilliardTable.nextCollisionEquiv_symm_apply`), so it is `C^n` as well.
+Since `B` and its inverse commute with `τ`, their continuity passes to the quotient by the open
+quotient map `ℝ × (-1, 1) → AddCircle L × (-1, 1)`.
 
-`∂t/∂v = -ℓ / (√(1 - v ^ 2) √(1 - w ^ 2))`, where `ℓ = ‖χ(t) - χ(s)‖` is the chord length
-
-(`TauCeti.StrictConvexBilliardTable.hasDerivAt_nextParam`). In particular `∂t/∂v < 0`
-(`TauCeti.StrictConvexBilliardTable.deriv_nextParam_neg`), so for a fixed starting point the next
-collision parameter is strictly decreasing in `v`
-(`TauCeti.StrictConvexBilliardTable.strictAntiOn_nextParam`). These statements need no smoothness
-of the table beyond the differentiability of its arclength parametrization.
+Whether `β` is still a homeomorphism when `χ` is only `C¹` is not treated here.
 
 ## Main results
 
-* `TauCeti.StrictConvexBilliardTable.contDiffAt_uncurry_nextParam`,
-  `TauCeti.StrictConvexBilliardTable.contDiffAt_uncurry_nextTangential`: the two components of the
-  next-collision map are `C^n` at a state of the strip where the table is `C^(n + 1)`.
-* `TauCeti.StrictConvexBilliardTable.contDiffAt_nextCollision`,
-  `TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`: the next-collision map is `C^n`
-  on the strip.
-* `TauCeti.StrictConvexBilliardTable.hasDerivAt_nextParam`,
-  `TauCeti.StrictConvexBilliardTable.deriv_nextParam_neg`: the derivative `∂t/∂v`, which is
-  negative.
-* `TauCeti.StrictConvexBilliardTable.strictAntiOn_nextParam`: `t` is strictly decreasing in `v`.
+* `TauCeti.StrictConvexBilliardTable.contDiffAt_chordDir`,
+  `TauCeti.StrictConvexBilliardTable.contDiffAt_inner_deriv_chordDir`: smoothness of the chord
+  direction and of `∂_s S`, jointly in both endpoints.
+* `TauCeti.StrictConvexBilliardTable.contDiffAt_nextParam`,
+  `TauCeti.StrictConvexBilliardTable.contDiffAt_nextTangential`,
+  `TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`,
+  `TauCeti.StrictConvexBilliardTable.contDiffAt_nextCollision`: the next-collision map is `C^n`
+  at a state `(s, v)` of the strip when `χ` is `C^(n+1)` at `s` and at `t`, hence on the whole
+  strip when `χ` is `C^(n+1)`.
+* `TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`: the next-collision map as a
+  `C^n` diffeomorphism of the strip, with inverse `τ⁻¹ ∘ ι ∘ B ∘ ι`.
+* `TauCeti.StrictConvexBilliardTable.continuous_nextCollisionEquiv`,
+  `TauCeti.StrictConvexBilliardTable.continuous_nextCollisionEquiv_symm`: continuity of the
+  next-collision bijection of `ℝ × (-1, 1)` and of its inverse.
+* `TauCeti.StrictConvexBilliardTable.billiardHomeomorph`: the billiard map as a homeomorphism of
+  `AddCircle L × (-1, 1)`.
 
 ## References
 
@@ -75,11 +87,9 @@ public section
 noncomputable section
 
 open Function Set Filter Topology Module
-open scoped RealInnerProductSpace ContDiff
+open scoped RealInnerProductSpace ContDiff Manifold
 
 namespace TauCeti
-
-attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 2)]
 
@@ -87,248 +97,284 @@ namespace StrictConvexBilliardTable
 
 variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o) {n : WithTop ℕ∞}
 
-/-- The outgoing velocity `u(s, v)` is `C^n` at a state `(s, v)` of the strip when the unit tangent
-`χ'` is `C^n` at `s`. -/
-theorem contDiffAt_uncurry_outgoingDir {x : ℝ × ℝ} (hχ : ContDiffAt ℝ n (deriv χ) x.1)
-    (hx : x.2 ∈ Ioo (-1) 1) : ContDiffAt ℝ n (uncurry χ.outgoingDir) x := by
-  have he : uncurry χ.outgoingDir = fun y : ℝ × ℝ ↦
-      y.2 • deriv χ y.1 + √(1 - y.2 ^ 2) • o.rightAngleRotation (deriv χ y.1) :=
-    funext fun y ↦ χ.outgoingDir_def y.1 y.2
-  have hd : ContDiffAt ℝ n (fun y : ℝ × ℝ ↦ deriv χ y.1) x := hχ.comp x contDiffAt_fst
-  have hsq : ContDiffAt ℝ n (fun y : ℝ × ℝ ↦ √(1 - y.2 ^ 2)) x :=
-    (contDiffAt_const.sub (contDiffAt_snd.pow 2)).sqrt (Real.one_sub_sq_pos hx).ne'
-  rw [he]
-  exact (contDiffAt_snd.smul hd).add
-    (hsq.smul (o.rightAngleRotation.contDiff.contDiffAt.comp x hd))
+/-! ### Smoothness of the chord data -/
 
-/-! ### The chord equation -/
+/-- The chord direction `u = (χ(t) - χ(s)) / ‖χ(t) - χ(s)‖` is as smooth as `χ` is at both
+endpoints, jointly in the endpoints, at every chord between distinct boundary points. -/
+theorem contDiffAt_chordDir {s t : ℝ} (hs : ContDiffAt ℝ n χ s) (ht : ContDiffAt ℝ n χ t)
+    (h : χ t ≠ χ s) : ContDiffAt ℝ n (fun p : ℝ × ℝ ↦ χ.chordDir p.1 p.2) (s, t) := by
+  have hd : ContDiffAt ℝ n (fun p : ℝ × ℝ ↦ χ p.2 - χ p.1) (s, t) :=
+    (ht.comp (s, t) contDiffAt_snd).sub (hs.comp (s, t) contDiffAt_fst)
+  have h0 : χ t - χ s ≠ 0 := sub_ne_zero.2 h
+  simp only [chordDir_def, NormedSpace.normalize]
+  exact (((contDiffAt_norm ℝ h0).comp (s, t) hd).inv (norm_ne_zero_iff.2 h0)).smul hd
 
-/-- The chord equation `F((s, v), t) = ω(u(s, v), χ(t) - χ(s))`, which vanishes exactly when
-`χ(t)` lies on the line through `χ(s)` in the outgoing direction of the state `(s, v)`. -/
-private def chordEquation (p : (ℝ × ℝ) × ℝ) : ℝ :=
-  o.areaForm (χ.outgoingDir p.1.1 p.1.2) (χ p.2 - χ p.1.1)
-
-private theorem contDiffAt_chordEquation {p : (ℝ × ℝ) × ℝ} (hχ₁ : ContDiffAt ℝ (n + 1) χ p.1.1)
-    (hχ₂ : ContDiffAt ℝ n χ p.2) (hp : p.1.2 ∈ Ioo (-1) 1) :
-    ContDiffAt ℝ n χ.chordEquation p := by
-  have he : χ.chordEquation = fun p : (ℝ × ℝ) × ℝ ↦
-      ⟪o.rightAngleRotation (uncurry χ.outgoingDir p.1), χ p.2 - χ p.1.1⟫ :=
-    funext fun p ↦ (o.inner_rightAngleRotation_left _ _).symm
-  rw [he]
-  refine ContDiffAt.inner ℝ (o.rightAngleRotation.contDiff.contDiffAt.comp p
-    ((χ.contDiffAt_uncurry_outgoingDir (hχ₁.derivWithin le_rfl) hp).comp p
-      contDiffAt_fst)) ?_
-  exact (hχ₂.comp p contDiffAt_snd).sub
-    ((hχ₁.of_le le_self_add).comp p (contDiffAt_fst.comp p contDiffAt_fst))
-
-/-- The derivative of the chord equation in the collision parameter `t`. -/
-private theorem hasDerivAt_chordEquation_snd (x : ℝ × ℝ) (t : ℝ) :
-    HasDerivAt (fun t' ↦ χ.chordEquation (x, t'))
-      (o.areaForm (χ.outgoingDir x.1 x.2) (deriv χ t)) t :=
-  (o.areaForm (χ.outgoingDir x.1 x.2)).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t
-    ((χ.differentiableAt t).hasDerivAt.sub_const (χ x.1))
-
-private theorem areaForm_outgoingDir_deriv_nextParam_ne_zero {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
-    o.areaForm (χ.outgoingDir s v) (deriv χ (χ.nextParam s v)) ≠ 0 := by
-  rw [o.areaForm_swap, neg_ne_zero]
-  exact (χ.areaForm_deriv_nextParam_outgoingDir_neg hv).ne
-
-private theorem fderiv_chordEquation_comp_inr {x : ℝ × ℝ} {t : ℝ}
-    (hχ₁ : ContDiffAt ℝ (n + 1) χ x.1) (hχ₂ : ContDiffAt ℝ n χ t) (hn : n ≠ 0)
-    (hx : x.2 ∈ Ioo (-1) 1) :
-    fderiv ℝ χ.chordEquation (x, t) ∘L .inr ℝ (ℝ × ℝ) ℝ =
-      (1 : ℝ →L[ℝ] ℝ).smulRight (o.areaForm (χ.outgoingDir x.1 x.2) (deriv χ t)) := by
-  have hdiff : DifferentiableAt ℝ χ.chordEquation (x, t) :=
-    (χ.contDiffAt_chordEquation (p := (x, t)) hχ₁ hχ₂ hx).differentiableAt hn
-  have h₁ := hdiff.hasFDerivAt.comp t (hasFDerivAt_prodMk_right x t)
-  exact h₁.unique (hasDerivAt_iff_hasFDerivAt.mp (χ.hasDerivAt_chordEquation_snd x t))
-
-/-- At the next collision, the chord equation has invertible derivative in `t`. -/
-private theorem isInvertible_fderiv_chordEquation {x : ℝ × ℝ}
-    (hχ₁ : ContDiffAt ℝ (n + 1) χ x.1) (hχ₂ : ContDiffAt ℝ n χ (χ.nextParam x.1 x.2))
-    (hn : n ≠ 0) (hx : x.2 ∈ Ioo (-1) 1) :
-    (fderiv ℝ χ.chordEquation (x, uncurry χ.nextParam x) ∘L
-      .inr ℝ (ℝ × ℝ) ℝ).IsInvertible := by
-  rw [χ.fderiv_chordEquation_comp_inr (t := uncurry χ.nextParam x) hχ₁ hχ₂ hn hx]
-  refine ⟨ContinuousLinearEquiv.unitsEquivAut ℝ
-    (Units.mk0 _ (χ.areaForm_outgoingDir_deriv_nextParam_ne_zero (s := x.1) hx)), ?_⟩
-  ext
-  simp [uncurry]
-
-/-- Near every state of the strip, the next collision parameter agrees with a `C^n` solution of the
-chord equation, the implicit function of `F` at the next collision. -/
-private theorem exists_contDiffAt_eventuallyEq_uncurry_nextParam {x : ℝ × ℝ}
-    (hχ₁ : ContDiffAt ℝ (n + 1) χ x.1) (hχ₂ : ContDiffAt ℝ n χ (χ.nextParam x.1 x.2))
-    (hn : n ≠ 0) (hx : x.2 ∈ Ioo (-1) 1) :
-    ∃ ψ : ℝ × ℝ → ℝ, ContDiffAt ℝ n ψ x ∧ uncurry χ.nextParam =ᶠ[𝓝 x] ψ := by
-  have hF : ContDiffAt ℝ n χ.chordEquation (x, uncurry χ.nextParam x) :=
-    χ.contDiffAt_chordEquation hχ₁ hχ₂ hx
-  have hinv := χ.isInvertible_fderiv_chordEquation hχ₁ hχ₂ hn hx
-  set ψ := hF.implicitFunction hn hinv
-  have hψ : ContDiffAt ℝ n ψ x := hF.contDiffAt_implicitFunction hn hinv
-  have hψx : ψ x = χ.nextParam x.1 x.2 := hF.implicitFunction_apply_self hn hinv
-  have hmem := χ.nextParam_mem_Ioo (s := x.1) hx
-  have h₁ : ∀ᶠ y in 𝓝 x, ψ y - y.1 ∈ Ioo 0 χ.period :=
-    (hψ.continuousAt.sub continuousAt_fst).eventually_mem (isOpen_Ioo.mem_nhds
-      (by rw [Pi.sub_apply, hψx]; exact ⟨by linarith [hmem.1], by linarith [hmem.2]⟩))
-  have h₂ : ∀ᶠ y in 𝓝 x, y.2 ∈ Ioo (-1) 1 :=
-    continuousAt_snd.eventually_mem (isOpen_Ioo.mem_nhds hx)
-  have hzero : χ.chordEquation (x, uncurry χ.nextParam x) = 0 :=
-    χ.areaForm_outgoingDir_sub_nextParam hx
-  refine ⟨ψ, hψ, ?_⟩
-  filter_upwards [h₁, h₂, hF.eventually_apply_implicitFunction hn hinv] with y hy₁ hy₂ hy₃
-  rw [hzero] at hy₃
-  exact (χ.eq_nextParam_of_areaForm_eq_zero hy₂
-    ⟨by linarith [hy₁.1], by linarith [hy₁.2]⟩ hy₃).symm
+/-- The derivative `∂_s S(s, t) = ⟪χ'(s), u⟫` of the generating function in its first argument is
+`C^n`, jointly in both endpoints, at every chord between distinct boundary points, when `χ` is
+`C^(n+1)` at `s` and `C^n` at `t`. -/
+theorem contDiffAt_inner_deriv_chordDir {s t : ℝ} (hs : ContDiffAt ℝ (n + 1) χ s)
+    (ht : ContDiffAt ℝ n χ t) (h : χ t ≠ χ s) :
+    ContDiffAt ℝ n (fun p : ℝ × ℝ ↦ ⟪deriv χ p.1, χ.chordDir p.1 p.2⟫) (s, t) :=
+  (ContDiffAt.comp (g := deriv χ) (s, t) (hs.derivWithin le_rfl) contDiffAt_fst).inner ℝ
+    (χ.contDiffAt_chordDir (hs.of_le le_self_add) ht h)
 
 /-! ### Smoothness of the next-collision map -/
 
-/-- The parameter `t` of the next collision is `C^n` at a state `(s, v)` of the strip
-`ℝ × (-1, 1)`, for `n ≠ 0`, when the table is `C^(n + 1)` at `s` and `C^n` at `t`. -/
-theorem contDiffAt_uncurry_nextParam {x : ℝ × ℝ} (hχ₁ : ContDiffAt ℝ (n + 1) χ x.1)
-    (hχ₂ : ContDiffAt ℝ n χ (χ.nextParam x.1 x.2)) (hn : n ≠ 0) (hx : x.2 ∈ Ioo (-1) 1) :
-    ContDiffAt ℝ n (uncurry χ.nextParam) x := by
-  obtain ⟨ψ, hψ, he⟩ := χ.exists_contDiffAt_eventuallyEq_uncurry_nextParam hχ₁ hχ₂ hn hx
-  exact hψ.congr_of_eventuallyEq he
+/-- The derivative of `Φ(s, t) = (s, ∂_s S(s, t))` at a chord between distinct boundary points is
+invertible, when `χ` is `C^(n+1)` at `s` and `C^n` at `t` with `n ≠ 0`: it is triangular, with
+diagonal entries `1` and the mixed partial derivative `∂_t ∂_s S`, which is negative by the twist
+condition. -/
+private theorem exists_hasFDerivAt_inner_deriv_chordDir (hn : n ≠ 0) {s t : ℝ}
+    (hs : ContDiffAt ℝ (n + 1) χ s) (ht : ContDiffAt ℝ n χ t) (hst : χ t ≠ χ s) :
+    ∃ f' : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ,
+      HasFDerivAt (fun p : ℝ × ℝ ↦ (p.1, ⟪deriv χ p.1, χ.chordDir p.1 p.2⟫))
+        (f' : ℝ × ℝ →L[ℝ] ℝ × ℝ) (s, t) := by
+  set G : ℝ × ℝ → ℝ := fun p ↦ ⟪deriv χ p.1, χ.chordDir p.1 p.2⟫
+  have hG1 : HasFDerivAt G (fderiv ℝ G (s, t)) (s, t) :=
+    ((χ.contDiffAt_inner_deriv_chordDir hs ht hst).differentiableAt hn).hasFDerivAt
+  set G' := fderiv ℝ G (s, t)
+  set α := G' (1, 0)
+  set c := G' (0, 1)
+  -- The derivative of `G` along `t` is the mixed partial derivative `∂_t ∂_s S < 0`.
+  have hc : c ≠ 0 := by
+    have h1 : HasDerivAt (fun t' ↦ G (s, t')) c t :=
+      (hG1.comp t (hasFDerivAt_prodMk_right s t)).hasDerivAt
+    have heq : (fun t' ↦ deriv (fun s' ↦ χ.generatingFunction s' t') s) =ᶠ[𝓝 t]
+        fun t' ↦ G (s, t') := by
+      filter_upwards [χ.continuous.continuousAt.eventually_ne hst] with t' ht'
+      exact (χ.hasDerivAt_generatingFunction_left ht').deriv
+    have h2 := χ.deriv_deriv_generatingFunction_left_neg hst
+    rw [heq.deriv_eq, h1.deriv] at h2
+    exact h2.ne
+  have hG' : ∀ p : ℝ × ℝ, G' p = α * p.1 + c * p.2 := by
+    intro p
+    have hp : p = p.1 • ((1 : ℝ), (0 : ℝ)) + p.2 • ((0 : ℝ), (1 : ℝ)) := by ext <;> simp
+    conv_lhs => rw [hp]
+    simp only [map_add, map_smul, smul_eq_mul]
+    ring
+  -- The derivative is the map `(a, b) ↦ (a, α a + c b)`, inverted by `(a, z) ↦ (a, (z - α a) / c)`.
+  refine ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod G')
+    ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
+      (c⁻¹ • (ContinuousLinearMap.snd ℝ ℝ ℝ - α • ContinuousLinearMap.fst ℝ ℝ ℝ)))
+    (ContinuousLinearMap.ext fun p ↦ ?_) (ContinuousLinearMap.ext fun p ↦ ?_),
+    hasFDerivAt_fst.prodMk hG1⟩
+  · ext
+    · simp
+    · simp [hG']
+      field_simp
+      ring
+  · ext
+    · simp
+    · simp [hG']
+      field_simp
 
-/-- The new tangential component `w` of the next collision is `C^n` at a state `(s, v)` of the
-strip `ℝ × (-1, 1)`, for `n ≠ 0`, when the table is `C^(n + 1)` at both `s` and `t`. -/
-theorem contDiffAt_uncurry_nextTangential {x : ℝ × ℝ} (hχ₁ : ContDiffAt ℝ (n + 1) χ x.1)
-    (hχ₂ : ContDiffAt ℝ (n + 1) χ (χ.nextParam x.1 x.2)) (hn : n ≠ 0)
-    (hx : x.2 ∈ Ioo (-1) 1) : ContDiffAt ℝ n (uncurry χ.nextTangential) x := by
-  have he : uncurry χ.nextTangential = fun y : ℝ × ℝ ↦
-      ⟪uncurry χ.outgoingDir y, deriv χ (uncurry χ.nextParam y)⟫ :=
-    funext fun y ↦ χ.nextTangential_def y.1 y.2
-  rw [he]
-  exact (χ.contDiffAt_uncurry_outgoingDir (hχ₁.derivWithin le_rfl) hx).inner ℝ
-    (ContDiffAt.comp (g := deriv χ) x (hχ₂.derivWithin le_rfl)
-      (χ.contDiffAt_uncurry_nextParam hχ₁ (hχ₂.of_le le_self_add) hn hx))
-
-/-- The next-collision map is `C^n` at a state `(s, v)` of the strip `ℝ × (-1, 1)`, for `n ≠ 0`,
-when the table is `C^(n + 1)` at both `s` and the next collision parameter `t`. -/
-theorem contDiffAt_nextCollision {x : ℝ × ℝ} (hχ₁ : ContDiffAt ℝ (n + 1) χ x.1)
-    (hχ₂ : ContDiffAt ℝ (n + 1) χ (χ.nextParam x.1 x.2)) (hn : n ≠ 0)
-    (hx : x.2 ∈ Ioo (-1) 1) : ContDiffAt ℝ n χ.nextCollision x := by
-  have he : χ.nextCollision = fun y ↦ (uncurry χ.nextParam y, uncurry χ.nextTangential y) :=
-    funext χ.nextCollision_apply
-  rw [he]
-  exact (χ.contDiffAt_uncurry_nextParam hχ₁ (hχ₂.of_le le_self_add) hn hx).prodMk
-    (χ.contDiffAt_uncurry_nextTangential hχ₁ hχ₂ hn hx)
-
-/-- **Smoothness of the billiard map.** The next-collision map of a `C^(n + 1)` strictly convex
-table is `C^n` on the strip `ℝ × (-1, 1)`, for `n ≠ 0`. -/
-theorem contDiffOn_nextCollision (hχ : ContDiff ℝ (n + 1) χ) (hn : n ≠ 0) :
-    ContDiffOn ℝ n χ.nextCollision (univ ×ˢ Ioo (-1) 1) :=
-  fun _ hx ↦ (χ.contDiffAt_nextCollision hχ.contDiffAt hχ.contDiffAt hn hx.2).contDiffWithinAt
-
-/-! ### The twist of the billiard map -/
-
-/-- The cotangent `⟪χ'(s), χ(t) - χ(s)⟫ / ω(χ'(s), χ(t) - χ(s))` of the angle between the tangent
-at `χ(s)` and the chord from `χ(s)` to `χ(t)`. -/
-private def chordCot (s t : ℝ) : ℝ :=
-  ⟪deriv χ s, χ t - χ s⟫ / o.areaForm (deriv χ s) (χ t - χ s)
-
-private theorem hasDerivAt_chordCot {s t : ℝ} (ht : t ∈ Ioo s (s + χ.period)) :
-    HasDerivAt (χ.chordCot s)
-      (o.areaForm (deriv χ t) (χ t - χ s) / o.areaForm (deriv χ s) (χ t - χ s) ^ 2) t := by
-  have hd : HasDerivAt (fun t' ↦ χ t' - χ s) (deriv χ t) t :=
-    (χ.differentiableAt t).hasDerivAt.sub_const (χ s)
-  have hN : HasDerivAt (fun t' ↦ ⟪deriv χ s, χ t' - χ s⟫) ⟪deriv χ s, deriv χ t⟫ t :=
-    (innerSL ℝ (deriv χ s)).hasFDerivAt.comp_hasDerivAt t hd
-  have hD : HasDerivAt (fun t' ↦ o.areaForm (deriv χ s) (χ t' - χ s))
-      (o.areaForm (deriv χ s) (deriv χ t)) t :=
-    (o.areaForm (deriv χ s)).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t hd
-  have hD₀ : o.areaForm (deriv χ s) (χ t - χ s) ≠ 0 :=
-    (χ.areaForm_pos _ _ (χ.apply_ne_of_mem_Ioo ht)).ne'
-  refine (hN.div hD hD₀).congr_deriv ?_
-  have h := o.inner_mul_areaForm_sub (deriv χ s) (deriv χ t) (χ t - χ s)
-  rw [χ.norm_deriv, one_pow, one_mul] at h
-  congr 1
-  linear_combination h
-
-/-- For a fixed starting point `χ(s)`, the cotangent of the chord angle is strictly decreasing in
-the far endpoint `t ∈ (s, s + L)`. -/
-private theorem strictAntiOn_chordCot (s : ℝ) :
-    StrictAntiOn (χ.chordCot s) (Ioo s (s + χ.period)) := by
-  refine strictAntiOn_of_deriv_neg (convex_Ioo _ _)
-    (fun t ht ↦ (χ.hasDerivAt_chordCot ht).continuousAt.continuousWithinAt) fun t ht ↦ ?_
-  rw [interior_Ioo] at ht
-  have hne := χ.apply_ne_of_mem_Ioo ht
-  have hneg : o.areaForm (deriv χ t) (χ t - χ s) < 0 := by
-    rw [← neg_sub, map_neg, neg_lt_zero]
-    exact χ.areaForm_pos _ _ hne.symm
-  rw [(χ.hasDerivAt_chordCot ht).deriv]
-  exact div_neg_of_neg_of_pos hneg (pow_pos (χ.areaForm_pos _ _ hne) 2)
-
-private theorem chordCot_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
-    χ.chordCot s (χ.nextParam s v) = v / √(1 - v ^ 2) := by
-  have hℓ : ‖χ (χ.nextParam s v) - χ s‖ ≠ 0 :=
-    norm_ne_zero_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
-  rw [chordCot, χ.sub_eq_norm_smul_outgoingDir hv, inner_smul_right, map_smul, smul_eq_mul,
-    inner_deriv_outgoingDir, areaForm_deriv_outgoingDir, mul_div_mul_left _ _ hℓ]
-
-/-- For a fixed starting point `χ(s)`, the parameter of the next collision is continuous in the
-tangential component `v ∈ (-1, 1)`. -/
-private theorem continuousAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
-    ContinuousAt (χ.nextParam s) v := by
-  have hk : ContinuousAt (fun v' : ℝ ↦ v' / √(1 - v' ^ 2)) v :=
-    continuousAt_id.div (continuousAt_const.sub (continuousAt_id.pow 2)).sqrt
-      (Real.sqrt_one_sub_sq_pos hv).ne'
-  have hv' : ∀ᶠ v' in 𝓝 v, v' ∈ Ioo (-1) 1 := isOpen_Ioo.mem_nhds hv
-  refine continuousAt_of_strictMonoOn_comp (χ.strictAntiOn_chordCot s).dual_right
-    (isOpen_Ioo.mem_nhds (χ.nextParam_mem_Ioo hv))
-    (hv'.mono fun _ ↦ χ.nextParam_mem_Ioo) (continuous_toDual.continuousAt.comp ?_)
-  exact hk.congr (hv'.mono fun _ hv'' ↦ (χ.chordCot_nextParam hv'').symm)
-
-/-- **The twist of the billiard map.** The parameter `t` of the next collision of `(s, v)` has
-derivative `∂t/∂v = -ℓ / (√(1 - v ^ 2) √(1 - w ^ 2))` in `v`, where `ℓ = ‖χ(t) - χ(s)‖` is the
-length of the chord and `w` the new tangential component. -/
-theorem hasDerivAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
-    HasDerivAt (χ.nextParam s)
-      (-(‖χ (χ.nextParam s v) - χ s‖ /
-        (√(1 - v ^ 2) * √(1 - χ.nextTangential s v ^ 2)))) v := by
-  have hv₂ := Real.one_sub_sq_pos hv
-  -- The chord cotangent `ψ(t(v')) = v' / √(1 - v' ^ 2)` is inverted by `t` near `v`.
-  have hψ := χ.hasDerivAt_chordCot (χ.nextParam_mem_Ioo (s := s) hv)
-  rw [χ.sub_eq_norm_smul_outgoingDir hv, map_smul, map_smul, smul_eq_mul, smul_eq_mul,
-    areaForm_deriv_outgoingDir, χ.areaForm_deriv_nextParam_outgoingDir hv] at hψ
-  have hpoly : HasDerivAt (fun y : ℝ ↦ 1 - y ^ 2) (-(2 * v)) v := by
-    simpa using (hasDerivAt_pow 2 v).const_sub 1
-  have hk := (hasDerivAt_id' v).div (hpoly.sqrt hv₂.ne') (Real.sqrt_pos.2 hv₂).ne'
-  have hcomp : χ.chordCot s ∘ χ.nextParam s =ᶠ[𝓝 v] fun v' ↦ v' / √(1 - v' ^ 2) := by
-    filter_upwards [isOpen_Ioo.mem_nhds hv] with v' hv'
-    exact χ.chordCot_nextParam hv'
+/-- **Smoothness of the next collision parameter.** If `n ≠ 0` and `χ` is `C^(n+1)` at `s` and
+`C^n` at the next collision parameter `t(s, v)`, then `t` is `C^n`, jointly in `s` and `v`, at the
+state `(s, v)` of the strip `ℝ × (-1, 1)`. It is the second component of the local inverse of
+`(s, t) ↦ (s, ∂_s S(s, t))`, given by the inverse function theorem and the twist condition. -/
+theorem contDiffAt_nextParam (hn : n ≠ 0) {s v : ℝ} (hs : ContDiffAt ℝ (n + 1) χ s)
+    (ht : ContDiffAt ℝ n χ (χ.nextParam s v)) (hv : v ∈ Ioo (-1) 1) :
+    ContDiffAt ℝ n (fun x : ℝ × ℝ ↦ χ.nextParam x.1 x.2) (s, v) := by
   set t := χ.nextParam s v
-  set ℓ := ‖χ t - χ s‖
-  set w := χ.nextTangential s v
-  set r := √(1 - v ^ 2)
-  have hr₂ : r ^ 2 = 1 - v ^ 2 := Real.sq_sqrt hv₂.le
-  have hr : r ≠ 0 := (Real.sqrt_pos.2 hv₂).ne'
-  have hℓ : ℓ ≠ 0 := norm_ne_zero_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
-  have hw : √(1 - w ^ 2) ≠ 0 := (Real.sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)).ne'
-  have hψ₀ : ℓ * -√(1 - w ^ 2) / (ℓ * r) ^ 2 ≠ 0 :=
-    div_ne_zero (mul_ne_zero hℓ (neg_ne_zero.2 hw)) (pow_ne_zero 2 (mul_ne_zero hℓ hr))
-  convert hψ.of_comp_left (χ.continuousAt_nextParam hv) hk hψ₀ hcomp using 1
-  field_simp
-  linear_combination hr₂
+  have hst : χ t ≠ χ s := χ.apply_nextParam_ne hv
+  set G : ℝ × ℝ → ℝ := fun p ↦ ⟪deriv χ p.1, χ.chordDir p.1 p.2⟫
+  set Φ : ℝ × ℝ → ℝ × ℝ := fun p ↦ (p.1, G p)
+  obtain ⟨f', hΦ'⟩ := χ.exists_hasFDerivAt_inner_deriv_chordDir hn hs ht hst
+  have hΦ : ContDiffAt ℝ n Φ (s, t) :=
+    contDiffAt_fst.prodMk (χ.contDiffAt_inner_deriv_chordDir hs ht hst)
+  have hΦst : Φ (s, t) = (s, v) := by
+    simp only [Φ, G, t, χ.inner_deriv_chordDir_nextParam hv]
+  have hS := hΦ.hasStrictFDerivAt hΦ' hn
+  -- The `C^n` local inverse `g` of `Φ` at `(s, t)`; by definition, it is the local inverse
+  -- `hS.localInverse` given by the strict derivative, whose API supplies the facts below.
+  set g := hΦ.localInverse hΦ' hn
+  have hinv : ContDiffAt ℝ n g (Φ (s, t)) := hΦ.to_localInverse hΦ' hn
+  have hR : ∀ᶠ y in 𝓝 (Φ (s, t)), Φ (g y) = y := hS.eventually_right_inverse
+  -- The local inverse stays in the window of chords between distinct boundary points.
+  have hD : ∀ᶠ y in 𝓝 (Φ (s, t)), g y ∈ {p : ℝ × ℝ | p.2 ∈ Ioo p.1 (p.1 + χ.period)} := by
+    refine hS.localInverse_continuousAt.preimage_mem_nhds ?_
+    rw [hS.localInverse_apply_image]
+    exact ((isOpen_lt continuous_fst continuous_snd).inter
+      (isOpen_lt continuous_snd (continuous_fst.add continuous_const))).mem_nhds
+      (χ.nextParam_mem_Ioo hv)
+  rw [hΦst] at hinv hR hD
+  -- There it agrees with `(s, v) ↦ (s, t(s, v))`, since the generating function generates `B`.
+  refine (contDiffAt_snd.comp _ hinv).congr_of_eventuallyEq ?_
+  filter_upwards [hR, hD] with ⟨y₁, y₂⟩ hy hyD
+  rw [comp_apply]
+  generalize g (y₁, y₂) = q at hy hyD ⊢
+  obtain ⟨a, b⟩ := q
+  simp only [Φ, G, Prod.mk.injEq] at hy
+  obtain ⟨rfl, rfl⟩ := hy
+  exact χ.nextParam_inner_deriv_chordDir hyD
 
-/-- **The twist condition** `∂t/∂v < 0`: the derivative of the next collision parameter in the
-tangential component `v ∈ (-1, 1)` is negative. -/
-theorem deriv_nextParam_neg {s v : ℝ} (hv : v ∈ Ioo (-1) 1) : deriv (χ.nextParam s) v < 0 := by
-  rw [(χ.hasDerivAt_nextParam hv).deriv, neg_neg_iff_pos]
-  have hℓ : 0 < ‖χ (χ.nextParam s v) - χ s‖ :=
-    norm_pos_iff.2 (sub_ne_zero.2 (χ.apply_nextParam_ne hv))
-  exact div_pos hℓ (mul_pos (Real.sqrt_one_sub_sq_pos hv)
-    (Real.sqrt_one_sub_sq_pos (χ.nextTangential_mem_Ioo hv)))
+/-- **Smoothness of the next tangential component.** If `n ≠ 0` and `χ` is `C^(n+1)` at `s` and at
+the next collision parameter `t(s, v)`, then the next tangential component `w(s, v)` is `C^n`,
+jointly in `s` and `v`, at the state `(s, v)` of the strip `ℝ × (-1, 1)`. -/
+theorem contDiffAt_nextTangential (hn : n ≠ 0) {s v : ℝ} (hs : ContDiffAt ℝ (n + 1) χ s)
+    (ht : ContDiffAt ℝ (n + 1) χ (χ.nextParam s v)) (hv : v ∈ Ioo (-1) 1) :
+    ContDiffAt ℝ n (fun x : ℝ × ℝ ↦ χ.nextTangential x.1 x.2) (s, v) := by
+  have hds : ContDiffAt ℝ n (fun x : ℝ × ℝ ↦ deriv χ x.1) (s, v) :=
+    ContDiffAt.comp (g := deriv χ) (s, v) (hs.derivWithin le_rfl) contDiffAt_fst
+  have hsq : ContDiffAt ℝ n (fun x : ℝ × ℝ ↦ √(1 - x.2 ^ 2)) (s, v) :=
+    (contDiffAt_const.sub (contDiffAt_snd.pow 2)).sqrt (by nlinarith [hv.1, hv.2])
+  have hout : ContDiffAt ℝ n (fun x : ℝ × ℝ ↦ χ.outgoingDir x.1 x.2) (s, v) := by
+    simp only [outgoingDir_def]
+    exact (contDiffAt_snd.smul hds).add
+      (hsq.smul (o.rightAngleRotation.contDiff.contDiffAt.comp (s, v) hds))
+  simp only [nextTangential_def]
+  exact hout.inner ℝ (ContDiffAt.comp (g := deriv χ) (s, v) (ht.derivWithin le_rfl)
+    (χ.contDiffAt_nextParam hn hs (ht.of_le le_self_add) hv))
 
-/-- For a fixed starting point `χ(s)`, the parameter of the next collision is strictly decreasing
-in the tangential component `v ∈ (-1, 1)`: aiming further forward moves the next collision point
-backward along the boundary, towards `χ(s)`. -/
-theorem strictAntiOn_nextParam (s : ℝ) : StrictAntiOn (χ.nextParam s) (Ioo (-1) 1) := by
-  refine strictAntiOn_of_deriv_neg (convex_Ioo _ _)
-    (fun v hv ↦ (χ.hasDerivAt_nextParam hv).continuousAt.continuousWithinAt) fun v hv ↦ ?_
-  rw [interior_Ioo] at hv
-  exact χ.deriv_nextParam_neg hv
+/-- **Smoothness of the billiard map at a state.** If `n ≠ 0` and `χ` is `C^(n+1)` at `s` and at
+the next collision parameter `t(s, v)`, then the next-collision map `(s, v) ↦ (t, w)` is `C^n` at
+the state `x = (s, v)` of the open strip `ℝ × (-1, 1)`. -/
+theorem contDiffAt_nextCollision (hn : n ≠ 0) {x : ℝ × ℝ} (hs : ContDiffAt ℝ (n + 1) χ x.1)
+    (ht : ContDiffAt ℝ (n + 1) χ (χ.nextParam x.1 x.2)) (hx : x.2 ∈ Ioo (-1) 1) :
+    ContDiffAt ℝ n χ.nextCollision x := by
+  rw [show χ.nextCollision = fun x ↦ (χ.nextParam x.1 x.2, χ.nextTangential x.1 x.2) from
+    funext χ.nextCollision_apply]
+  exact (χ.contDiffAt_nextParam hn hs (ht.of_le le_self_add) hx).prodMk
+    (χ.contDiffAt_nextTangential hn hs ht hx)
+
+/-- **Smoothness of the billiard map.** If `χ` is `C^(n+1)` with `n ≠ 0`, the next-collision map
+`(s, v) ↦ (t, w)` is `C^n` on the strip `ℝ × (-1, 1)`. -/
+theorem contDiffOn_nextCollision (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
+    ContDiffOn ℝ n χ.nextCollision (univ ×ˢ Ioo (-1) 1) :=
+  fun _ hx ↦ (χ.contDiffAt_nextCollision hn hχ.contDiffAt hχ.contDiffAt hx.2).contDiffWithinAt
+
+/-- The inverse `(t, w) ↦ (s - L, -v)` of the next-collision map, where `(s, v)` is the next
+collision of `(t, -w)`, is `C^n` on the strip when `χ` is `C^(n+1)` with `n ≠ 0`. -/
+private theorem contDiffOn_nextCollision_inv (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
+    ContDiffOn ℝ n (fun x : ℝ × ℝ ↦ (χ.nextParam x.1 (-x.2) - χ.period,
+      -χ.nextTangential x.1 (-x.2))) (univ ×ˢ Ioo (-1) 1) := by
+  have hι : ContDiff ℝ n (fun x : ℝ × ℝ ↦ (x.1, -x.2)) := contDiff_fst.prodMk contDiff_snd.neg
+  have h := (χ.contDiffOn_nextCollision hn hχ).comp hι.contDiffOn
+    fun (x : ℝ × ℝ) (hx : x ∈ univ ×ˢ Ioo (-1 : ℝ) 1) ↦
+      ⟨mem_univ _, show -x.2 ∈ Ioo (-1 : ℝ) 1 from ⟨by linarith [hx.2.2], by linarith [hx.2.1]⟩⟩
+  simpa [comp_def] using
+    ((contDiff_fst.sub contDiff_const).prodMk contDiff_snd.neg).comp_contDiffOn h
+
+/-! ### The next-collision map as a diffeomorphism of the strip -/
+
+/-- **The billiard map is a diffeomorphism of the strip.** If `χ` is `C^(n+1)` with `n ≠ 0`, the
+next-collision map `B` is a `C^n` diffeomorphism of the strip `ℝ × (-1, 1)` onto itself. Its
+inverse `τ⁻¹ ∘ ι ∘ B ∘ ι` sends `(t, w)` to `(s - L, -v)`, where `(s, v)` is the next collision of
+`(t, -w)`. -/
+def nextCollisionPartialDiffeomorph (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
+    PartialDiffeomorph 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) (ℝ × ℝ) n where
+  toFun := χ.nextCollision
+  invFun x := (χ.nextParam x.1 (-x.2) - χ.period, -χ.nextTangential x.1 (-x.2))
+  source := univ ×ˢ Ioo (-1) 1
+  target := univ ×ˢ Ioo (-1) 1
+  map_source' x hx := ⟨mem_univ _, by rw [nextCollision_apply]; exact χ.nextTangential_mem_Ioo hx.2⟩
+  map_target' x hx := ⟨mem_univ _, χ.neg_nextTangential_neg_mem_Ioo x.1 ⟨x.2, hx.2⟩⟩
+  left_inv' x hx := by
+    simpa [Prod.ext_iff, Subtype.ext_iff] using
+      χ.nextCollisionEquiv.symm_apply_apply (x.1, ⟨x.2, hx.2⟩)
+  right_inv' x hx := by
+    simpa [Prod.ext_iff, Subtype.ext_iff] using
+      χ.nextCollisionEquiv.apply_symm_apply (x.1, ⟨x.2, hx.2⟩)
+  open_source := isOpen_univ.prod isOpen_Ioo
+  open_target := isOpen_univ.prod isOpen_Ioo
+  contMDiffOn_toFun := contMDiffOn_iff_contDiffOn.2 (χ.contDiffOn_nextCollision hn hχ)
+  contMDiffOn_invFun := contMDiffOn_iff_contDiffOn.2 (χ.contDiffOn_nextCollision_inv hn hχ)
+
+/-- The partial diffeomorphism `nextCollisionPartialDiffeomorph` acts as the next-collision map. -/
+@[simp]
+theorem coe_nextCollisionPartialDiffeomorph (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
+    ⇑(χ.nextCollisionPartialDiffeomorph hn hχ) = χ.nextCollision :=
+  (rfl)
+
+/-- The inverse of the next-collision map on the strip is `τ⁻¹ ∘ ι ∘ B ∘ ι`. -/
+@[simp]
+theorem nextCollisionPartialDiffeomorph_symm_apply (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ)
+    (x : ℝ × ℝ) :
+    (χ.nextCollisionPartialDiffeomorph hn hχ).toPartialEquiv.symm x =
+      (χ.nextParam x.1 (-x.2) - χ.period, -χ.nextTangential x.1 (-x.2)) :=
+  (rfl)
+
+/-- The source of the next-collision diffeomorphism is the strip `ℝ × (-1, 1)`. -/
+@[simp]
+theorem nextCollisionPartialDiffeomorph_source (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
+    (χ.nextCollisionPartialDiffeomorph hn hχ).source = univ ×ˢ Ioo (-1) 1 :=
+  (rfl)
+
+/-- The target of the next-collision diffeomorphism is the strip `ℝ × (-1, 1)`. -/
+@[simp]
+theorem nextCollisionPartialDiffeomorph_target (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) :
+    (χ.nextCollisionPartialDiffeomorph hn hχ).target = univ ×ˢ Ioo (-1) 1 :=
+  (rfl)
+
+/-! ### The billiard map as a homeomorphism -/
+
+/-- A map of `ℝ × ℝ` that is continuous on the strip `ℝ × (-1, 1)` and maps it into itself
+restricts to a continuous map of `ℝ × (-1, 1)`. -/
+private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
+    (hf : ContinuousOn f (univ ×ˢ Ioo (-1) 1))
+    (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1 : ℝ) 1) :
+    Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
+      ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun x ↦ ⟨mem_univ _, x.2.property⟩
+  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
+
+/-- The next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is `C²`. -/
+theorem continuous_nextCollisionEquiv (hχ : ContDiff ℝ 2 χ) : Continuous χ.nextCollisionEquiv :=
+  (continuous_restrict_strip (χ.contDiffOn_nextCollision one_ne_zero hχ).continuousOn
+    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.property).congr fun x ↦ by simp
+
+/-- The inverse of the next-collision bijection of `ℝ × (-1, 1)` is continuous when `χ` is
+`C²`. -/
+theorem continuous_nextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
+    Continuous χ.nextCollisionEquiv.symm :=
+  (continuous_restrict_strip (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn
+    fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2).congr fun x ↦ by simp
+
+/-- The projection `ℝ × (-1, 1) → AddCircle L × (-1, 1)` onto the space of collision states is an
+open quotient map. -/
+private theorem isOpenQuotientMap_prodMap_coe :
+    IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
+  QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
+
+/-- A map of `AddCircle L × (-1, 1)` is continuous when it lifts along the projection from
+`ℝ × (-1, 1)` to a continuous map. -/
+private theorem continuous_of_lift
+    {g : AddCircle χ.period × Ioo (-1 : ℝ) 1 → AddCircle χ.period × Ioo (-1 : ℝ) 1}
+    {F : ℝ × Ioo (-1 : ℝ) 1 → ℝ × Ioo (-1 : ℝ) 1} (hF : Continuous F)
+    (h : ∀ (s : ℝ) v, g (s, v) = (((F (s, v)).1 : AddCircle χ.period), (F (s, v)).2)) :
+    Continuous g := by
+  rw [← χ.isOpenQuotientMap_prodMap_coe.continuous_comp_iff]
+  convert χ.isOpenQuotientMap_prodMap_coe.continuous.comp hF using 1
+  funext ⟨s, v⟩
+  exact h s v
+
+/-- **The billiard map is a homeomorphism.** If `χ` is `C²`, the billiard map `β` of the table is
+a homeomorphism of the space of collision states `AddCircle L × (-1, 1)`. -/
+def billiardHomeomorph (hχ : ContDiff ℝ 2 χ) :
+    AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
+  toEquiv := χ.billiardMap
+  continuous_toFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv hχ) fun s v ↦ by simp
+  continuous_invFun := χ.continuous_of_lift (χ.continuous_nextCollisionEquiv_symm hχ)
+    fun s v ↦ by simp [AddCircle.coe_period]
+
+/-- The underlying bijection of the billiard homeomorphism is the billiard map. -/
+@[simp]
+theorem billiardHomeomorph_toEquiv (hχ : ContDiff ℝ 2 χ) :
+    (χ.billiardHomeomorph hχ).toEquiv = χ.billiardMap :=
+  (rfl)
+
+/-- The billiard homeomorphism acts as the billiard map. -/
+@[simp]
+theorem coe_billiardHomeomorph (hχ : ContDiff ℝ 2 χ) :
+    ⇑(χ.billiardHomeomorph hχ) = χ.billiardMap :=
+  (rfl)
+
+/-- The inverse of the billiard homeomorphism acts as the inverse of the billiard map. -/
+@[simp]
+theorem coe_billiardHomeomorph_symm (hχ : ContDiff ℝ 2 χ) :
+    ⇑(χ.billiardHomeomorph hχ).symm = χ.billiardMap.symm :=
+  (rfl)
 
 end StrictConvexBilliardTable
 

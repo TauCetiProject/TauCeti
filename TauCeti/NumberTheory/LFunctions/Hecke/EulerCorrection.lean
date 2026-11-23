@@ -41,7 +41,7 @@ theorem re_eq_zero_of_eulerCorrection_eq_zero (χ : RayClassCharacter 𝔪)
   have hane : χ.toMultiplicativeIdealWeight P.asIdeal ≠ 0 := by
     intro ha
     simp [ha] at hP
-  have hgood : χ.toUnitaryIdealWeight.1.IsGood P.asIdeal := by
+  have hgood : χ.toUnitaryIdealWeight.val.IsGood P.asIdeal := by
     apply (MultiplicativeIdealWeight.apply_ne_zero_iff_isGood _ _).mp
     simpa using hane
   have hnorm : ‖χ.toMultiplicativeIdealWeight P.asIdeal‖ = 1 := by
@@ -70,7 +70,7 @@ theorem logDeriv_eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K
       (1 - χ.toMultiplicativeIdealWeight P.asIdeal *
         (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) := funext (eulerCorrection_eq_prod_support χ 𝔫)
   rw [heq, logDeriv_fun_prod]
-  · exact Finset.sum_congr rfl fun P _ ↦ logDeriv_one_sub_mul_cpow_neg P.natCast_absNorm_ne_zero _ _
+  · exact Finset.sum_congr rfl fun P _ ↦ logDeriv_one_sub_mul_cpow_neg _ _
   · rw [eulerCorrection_eq_prod_support] at hs
     exact Finset.prod_ne_zero_iff.mp hs
   · intro P _
@@ -94,7 +94,7 @@ theorem norm_logDeriv_eulerCorrection_le (χ : RayClassCharacter 𝔪) (𝔫 : M
     _ ≤ ∑ P ∈ 𝔫.support, Real.log (Ideal.absNorm P.asIdeal) := by
       apply Finset.sum_le_sum
       intro P _
-      rw [← logDeriv_one_sub_mul_cpow_neg P.natCast_absNorm_ne_zero]
+      rw [← logDeriv_one_sub_mul_cpow_neg]
       have h := norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le
         (TauCeti.two_le_absNorm_asIdeal_real P)
         (by simpa using χ.toUnitaryIdealWeight.norm_le_one P.asIdeal) hs

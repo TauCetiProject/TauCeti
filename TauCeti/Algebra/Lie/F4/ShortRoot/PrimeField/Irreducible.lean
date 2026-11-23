@@ -157,14 +157,14 @@ private theorem all_nonzeroWeight_single_mem
     apply Subtype.ext
     exact basisReflection_involutive_of_weight_ne_zero i b b.property
   have hreflect (b : {b : Fin 26 // f4ShortRootWeight b ≠ 0}) (i : Fin 4)
-      (hb : Pi.single b.1 (1 : k) ∈ N) : Pi.single (reflect i b).1 (1 : k) ∈ N :=
+      (hb : Pi.single b.val (1 : k) ∈ N) : Pi.single (reflect i b).val (1 : k) ∈ N :=
     single_basisReflection_mem k N b b.property i hb
   have coe_foldl_reflect (l : List (Fin 4))
       (b : {b : Fin 26 // f4ShortRootWeight b ≠ 0}) :
-      (l.foldl (fun c i ↦ reflect i c) b).1 =
-        l.foldl (fun c i ↦ basisReflection i c) b.1 := by
+      (l.foldl (fun c i ↦ reflect i c) b).val =
+        l.foldl (fun c i ↦ basisReflection i c) b.val := by
     symm
-    exact List.foldl_hom₂ l (fun c (_ : Unit) ↦ c.1) (fun c i ↦ reflect i c)
+    exact List.foldl_hom₂ l (fun c (_ : Unit) ↦ c.val) (fun c i ↦ reflect i c)
       (fun u _ ↦ u) (fun c i ↦ basisReflection i c) b () (by intros; rfl)
   have hseed : Pi.single 0 (1 : k) ∈ N := by
     have hpath : (reflectionPath a).foldl (fun b i ↦ reflect i b) ⟨0, by decide⟩ =
@@ -173,12 +173,12 @@ private theorem all_nonzeroWeight_single_mem
       rw [coe_foldl_reflect]
       exact foldl_reflectionPath a ha
     apply (predicate_foldl_iff_of_involutive
-      (fun b : {b : Fin 26 // f4ShortRootWeight b ≠ 0} ↦ Pi.single b.1 (1 : k) ∈ N)
+      (fun b : {b : Fin 26 // f4ShortRootWeight b ≠ 0} ↦ Pi.single b.val (1 : k) ∈ N)
       reflect hinvolutive hreflect (reflectionPath a) ⟨0, by decide⟩).mp
     rwa [hpath]
   intro b hb
   have hforward := (predicate_foldl_iff_of_involutive
-    (fun c : {c : Fin 26 // f4ShortRootWeight c ≠ 0} ↦ Pi.single c.1 (1 : k) ∈ N)
+    (fun c : {c : Fin 26 // f4ShortRootWeight c ≠ 0} ↦ Pi.single c.val (1 : k) ∈ N)
     reflect hinvolutive hreflect (reflectionPath b) ⟨0, by decide⟩).mpr hseed
   have hpath : (reflectionPath b).foldl (fun c i ↦ reflect i c) ⟨0, by decide⟩ =
       ⟨b, hb⟩ := by
