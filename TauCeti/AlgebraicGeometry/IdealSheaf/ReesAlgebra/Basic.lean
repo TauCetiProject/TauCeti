@@ -104,15 +104,20 @@ abbrev reesComponent (n : ℕ) : X.Modules :=
 
 /-- The inclusion `I ⟶ 𝒪_X`, read as a morphism to the monoidal unit of `X.Modules`, so that
 composites with morphisms out of tensor products are formed in a single category. -/
-private def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
+def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
   J.sheafι
 
-private instance (J : X.IdealSheafData) : Mono J.sheafιUnit :=
+/-- The inclusion `J ⟶ 𝒪_X`, read as a morphism to the monoidal unit, is `sheafι`. -/
+theorem sheafιUnit_def (J : X.IdealSheafData) : J.sheafιUnit = J.sheafι :=
+  (rfl)
+
+/-- The inclusion `J ⟶ 𝒪_X`, read as a morphism to the monoidal unit, is a monomorphism. -/
+instance mono_sheafιUnit (J : X.IdealSheafData) : Mono J.sheafιUnit :=
   inferInstanceAs (Mono J.sheafι)
 
 /-- Transport along an equality of ideal sheaves commutes with the inclusions into `𝒪_X`. -/
 @[reassoc]
-private lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :
+lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :
     eqToHom (congrArg sheaf h) ≫ K.sheafιUnit = J.sheafιUnit := by
   subst h
   exact Category.id_comp _
@@ -143,7 +148,7 @@ theorem reesMul_sheafι (i j : ℕ) :
 
 /-- `reesMul_sheafι`, stated with the inclusions read as morphisms to the monoidal unit. -/
 @[reassoc]
-private lemma reesMul_sheafιUnit (i j : ℕ) :
+lemma reesMul_sheafιUnit (i j : ℕ) :
     I.reesMul i j ≫ (I ^ (i + j)).sheafιUnit =
       ((I ^ i).sheafιUnit ⊗ₘ (I ^ j).sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom :=
   I.reesMul_sheafι i j
@@ -162,7 +167,7 @@ theorem reesOne_sheafι : I.reesOne ≫ (I ^ 0).sheafι = 𝟙 _ :=
 
 /-- `reesOne_sheafι`, stated with the inclusion read as a morphism to the monoidal unit. -/
 @[reassoc]
-private lemma reesOne_sheafιUnit : I.reesOne ≫ (I ^ 0).sheafιUnit = 𝟙 _ :=
+lemma reesOne_sheafιUnit : I.reesOne ≫ (I ^ 0).sheafιUnit = 𝟙 _ :=
   I.reesOne_sheafι
 
 /-- The unit of the Rees algebra is a left identity for its multiplication. -/
