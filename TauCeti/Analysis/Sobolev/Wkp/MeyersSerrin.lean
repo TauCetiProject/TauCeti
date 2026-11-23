@@ -129,13 +129,11 @@ private theorem ae_eq_mul_of_tendsto_ofTestFunctionₗ {U : Opens E} (hUO : U �
     (hv : Tendsto (fun n => ofTestFunctionₗ (mu := mu) (p := p) k (Phi n)) atTop (𝓝 v)) :
     (value k v : E → ℝ) =ᵐ[mu.restrict Omega] (fun x => zeta x * value k u x) := by
   have hres : Tendsto (fun n => value k (restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k
-      (psi n)))) atTop (𝓝 (value k (restrictL hUO k u))) := by
-    simpa only [Function.comp_def, valueL_apply] using
-      ((valueL (mu := mu) (Omega := U) (p := p) k).continuous.tendsto _).comp hpsi
+      (psi n)))) atTop (𝓝 (value k (restrictL hUO k u))) :=
+    tendsto_value hpsi
   have hval : Tendsto (fun n => value k (ofTestFunctionₗ (mu := mu) (p := p) k (Phi n))) atTop
-      (𝓝 (value k v)) := by
-    simpa only [Function.comp_def, valueL_apply] using
-      ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto v).comp hv
+      (𝓝 (value k v)) :=
+    tendsto_value hv
   obtain ⟨ns, hns, h1⟩ := (tendstoInMeasure_of_tendsto_Lp hres).exists_seq_tendsto_ae
   obtain ⟨ms, hms, h2⟩ :=
     (tendstoInMeasure_of_tendsto_Lp (hval.comp hns.tendsto_atTop)).exists_seq_tendsto_ae
@@ -223,10 +221,8 @@ private theorem ae_value_tsum_sub_eq {k : ℕ} (u : Wkp mu Omega p k) (zeta : �
   set w := ∑' j, (a j - b j)
   -- identify the `Lᵖ` limit of the partial sums with their pointwise limit `f - u`
   let S : ℕ → Wkp mu Omega p k := fun N => ∑ j ∈ Finset.range N, (a j - b j)
-  have hSv : Tendsto (fun N => value k (S N)) atTop (𝓝 (value k w)) := by
-    simpa only [Function.comp_def, valueL_apply] using
-      ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto w).comp
-        hsummable.hasSum.tendsto_sum_nat
+  have hSv : Tendsto (fun N => value k (S N)) atTop (𝓝 (value k w)) :=
+    tendsto_value hsummable.hasSum.tendsto_sum_nat
   obtain ⟨ns, hns, hSlim⟩ := (tendstoInMeasure_of_tendsto_Lp hSv).exists_seq_tendsto_ae
   have hpartial : ∀ᵐ x ∂mu.restrict Omega, ∀ N,
       value k (S N) x = ∑ j ∈ Finset.range N, (Psi j x - zeta j x * value k u x) := by

@@ -268,7 +268,7 @@ private theorem exists_homeomorph_closedBall {h : Circle × Circle ≃ₜ Circle
       (hgb : ∀ v, ‖v‖ < 1 → ‖g v‖ < 1) (x : closedBall (0 : ℝ × ℝ) 1) :
       g x ∈ closedBall (0 : ℝ × ℝ) 1 := by
     rw [mem_closedBall_zero_iff]
-    rcases (mem_closedBall_zero_iff.1 x.2).lt_or_eq with hx | hx
+    rcases (mem_closedBall_zero_iff.1 x.property).lt_or_eq with hx | hx
     · exact (hgb x hx).le
     · rw [hgs x hx, hx]
   have hGs' (v : ℝ × ℝ) (hv : ‖v‖ = 1) : G' v = v := by
@@ -358,7 +358,7 @@ private theorem cover_apply_eq_cover_apply_iff
     (hA : ∀ t (x : closedBall (0 : ℝ × ℝ) 1), ‖(x : ℝ × ℝ)‖ = 1 → A.toContinuousMap (t, x) = x)
     {t : I} {x y : closedBall (0 : ℝ × ℝ) 1} :
     cover (A.toContinuousMap (t, x)) = cover (A.toContinuousMap (t, y)) ↔ cover x = cover y := by
-  have hB (z : closedBall (0 : ℝ × ℝ) 1) : ‖(z : ℝ × ℝ)‖ ≤ 1 := mem_closedBall_zero_iff.1 z.2
+  have hB (z : closedBall (0 : ℝ × ℝ) 1) : ‖(z : ℝ × ℝ)‖ ≤ 1 := mem_closedBall_zero_iff.1 z.property
   have hAs {z : closedBall (0 : ℝ × ℝ) 1} (hz : ‖(A.toContinuousMap (t, z) : ℝ × ℝ)‖ = 1) :
       ‖(z : ℝ × ℝ)‖ = 1 := by
     rwa [← (A.isHomeomorph_apply t).injective (hA t _ hz)]
@@ -432,7 +432,7 @@ theorem exists_ambientIsotopy_final_eq_of_apply_mk_one_eq (h : Circle × Circle 
       Φ.toContinuousMap (t, w) = w := by
     obtain ⟨x, rfl⟩ := exists_mem_closedBall_cover_eq w
     rw [hΦ, f.alexanderIsotopyClosedBall_apply_of_norm_eq_one hf t x
-      (norm_eq_one_of_cover (mem_closedBall_zero_iff.1 x.2) hw)]
+      (norm_eq_one_of_cover (mem_closedBall_zero_iff.1 x.property) hw)]
   refine ⟨Φ, ContinuousMap.ext fun w ↦ ?_, fun t a ↦ ⟨hfix (.inr rfl) t, hfix (.inl rfl) t⟩⟩
   obtain ⟨x, rfl⟩ := exists_mem_closedBall_cover_eq w
   rw [AmbientIsotopy.final_apply, hΦ, ← AmbientIsotopy.final_apply,

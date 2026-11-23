@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Int.Cast.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
@@ -18,6 +19,9 @@ import Mathlib.Tactic.FinCases
 /-!
 # Elementary facts about permutations
 
+`TauCeti.sum_sign_smul_eq_zero_of_mul_swap` cancels a signed sum invariant under a fixed
+transposition, for arbitrary additive commutative groups.
+
 This file records general-purpose facts about permutations: a map intertwining two permutations
 intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
 preserves the complement of a set containing neither of its swapped points, an identity between
@@ -28,20 +32,17 @@ a characterization of permutations with a unique fixed point, functions constant
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
-transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, the extension to `Option α`
-of a permutation forming one cycle on each fibre of a labelling by `Fin n`
-(`TauCeti.isCycleOn_optionCongr_fiber`), a permutation transported along an injection, the
-combination of two permutations transported along injections with disjoint ranges, a
-fiber-preserving permutation carrying one finite family to another with the same equality pattern
+transposition of the only two points of a type forming one cycle on each fibre over a
+subsingleton, a permutation transported along an injection, the combination of two
+permutations transported along injections with disjoint ranges, a fiber-preserving permutation
+carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
-is a single cycle on each of its own orbits, the transport of its cycles along a semiconjugating
-map (`Equiv.Perm.IsCycleOn.map`), in particular along an equivalence of types and to `Option α`
-by fixing `none`, transport of cycle quotients along conjugating
-equivalences, and the factorization of an invariant function through a map on whose fibres the
-permutation is a single cycle, also stated for the difference `x ↦ c (σ⁻¹ x) - c x`
-(`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a correction by a power of a cycle for a
-permutation commuting with it. The set of points on the cycle through `x` has
-`Function.minimalPeriod σ x` elements, counted by `Set.ncard`
+is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
+types, transport of cycle quotients along conjugating equivalences, and the factorization of an
+invariant function through a map on whose fibres the permutation is a single cycle, also stated
+for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a
+correction by a power of a cycle for a permutation commuting with it. The set of points on the
+cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
 (`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
 for a single cycle through every point). Points over distinct classes of the cycle quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
@@ -62,8 +63,10 @@ with `σ` off the pair (`Function.Involutive.swap_mul`,
 (`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
 infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
 finite type sends as many points into a set as out of it
-(`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a natural-number valued
-function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
+(`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and a
+permutation fixing every point except possibly one is the identity
+(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`).
 -/
 
 public section
@@ -180,12 +183,14 @@ end Equiv.Perm.SameCycle
 
 namespace TauCeti
 
-/-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
-theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
-    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) using 1
+/-- The transposition of the only two points of a type is one cycle on every fibre of a map to a
+subsingleton. -/
+theorem isCycleOn_swap_fiber {α β : Type*} [DecidableEq α] [Subsingleton β] {a b : α}
+    (hα : ∀ p, p = a ∨ p = b) (f : α → β) (i : β) :
+    (Equiv.swap a b).IsCycleOn {p | f p = i} := by
+  convert Equiv.Perm.isCycleOn_swap (a := a) (b := b) using 1
   ext p
-  fin_cases p <;> simp [Subsingleton.elim (f _) i]
+  rcases hα p with rfl | rfl <;> simp [Subsingleton.elim (f _) i]
 
 end TauCeti
 
@@ -205,7 +210,7 @@ theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
   · rintro ⟨i, hi⟩
     exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
   · rintro ⟨g, hg⟩
-    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.property
     exact ⟨i, by rw [hi]; exact hg⟩
 
 /-- The number `Set.ncard {y | σ.SameCycle x y}` of points on the cycle of `σ` through `x` is
@@ -323,31 +328,18 @@ theorem sameCycle_permCongr_iff {β : Type*} (e : α ≃ β) {x y : β} :
     (e.permCongr σ).SameCycle x y ↔ σ.SameCycle (e.symm x) (e.symm y) := by
   rw [← sameCycle_permCongr σ e, e.apply_symm_apply, e.apply_symm_apply]
 
-/-- A map semiconjugating one permutation to another carries cycles to cycles: if
-`g (σ x) = τ (g x)` for all `x` and `σ` is a single cycle on `s`, then `τ` is a single cycle on
-`g '' s`. -/
-theorem IsCycleOn.map {σ : Perm α} {β : Type*} {τ : Perm β} {g : α → β} {s : Set α}
-    (h : σ.IsCycleOn s) (hg : ∀ x, g (σ x) = τ (g x)) : τ.IsCycleOn (g '' s) := by
-  refine ⟨⟨?_, τ.injective.injOn, ?_⟩, ?_⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    exact ⟨σ x, h.1.mapsTo hx, hg x⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
-    exact ⟨g y, ⟨y, hy, rfl⟩, (hg y).symm⟩
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-    exact (h.2 hx hy).map hg
-
 /-- Transporting a permutation along an equivalence transports its cycles on a set: the analogue of
 `Equiv.Perm.IsCycleOn.conj` for an equivalence between two types. -/
 theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set α}
-    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) :=
-  h.map fun z ↦ by simp
-
-/-- Extending a permutation to `Option α` by fixing `none` keeps its cycles: a single cycle on `s`
-becomes a single cycle on the image of `s` under `some`. -/
-theorem IsCycleOn.optionCongr {σ : Perm α} {s : Set α} (h : σ.IsCycleOn s) :
-    IsCycleOn (Equiv.optionCongr σ) (some '' s) :=
-  h.map fun z ↦ by simp
+    (h : σ.IsCycleOn s) : (e.permCongr σ).IsCycleOn (e '' s) := by
+  refine ⟨⟨?_, (e.permCongr σ).injective.injOn, ?_⟩, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨σ x, h.1.mapsTo hx, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨y, hy, rfl⟩ := h.1.surjOn hx
+    exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
 open _root_.Finset in
 /-- A permutation of a finite type sends as many points from outside `p` into `p` as from
@@ -367,41 +359,25 @@ theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePr
 `x ↦ σ x` equals its total increase. -/
 theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
-  have key (a b : ℕ) : ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = a - b := by omega
   have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
     push_cast [← Finset.sum_sub_distrib]
-    simp_rw [key]
+    simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
 
+variable {σ} in
+/-- A permutation that fixes every point other than `x` also fixes `x`, and is therefore the
+identity. -/
+theorem eq_one_of_forall_ne_apply_eq_self (x : α) (h : ∀ y ≠ x, σ y = y) : σ = 1 := by
+  ext y
+  rw [one_apply]
+  by_cases hy : y = x
+  · subst hy
+    by_contra hne
+    exact hne (σ.injective (h (σ y) hne))
+  · exact h y hy
+
 end Equiv.Perm
-
-namespace TauCeti
-
-/-- Extending a labelling `f : α → Fin n` by a new point `none` with the new label `Fin.last n`:
-a permutation forming one cycle on each fibre of `f`, extended to fix `none`, forms one cycle on
-each fibre of the extended labelling. -/
-theorem isCycleOn_optionCongr_fiber {α : Type*} {n : ℕ} {f : α → Fin n} {σ : Equiv.Perm α}
-    (hσ : ∀ j, σ.IsCycleOn {q | f q = j}) (i : Fin (n + 1)) :
-    Equiv.Perm.IsCycleOn (Equiv.optionCongr σ)
-      {p : Option α | p.elim (Fin.last n) (fun q => (f q).castSucc) = i} := by
-  induction i using Fin.lastCases with
-  | last =>
-    have hs : {p : Option α | p.elim (Fin.last n) (fun q => (f q).castSucc) = Fin.last n} =
-        {none} := by
-      ext p
-      cases p <;> simp [Fin.castSucc_ne_last]
-    rw [hs, Equiv.Perm.isCycleOn_singleton]
-    simp
-  | cast j =>
-    have hs : {p : Option α | p.elim (Fin.last n) (fun q => (f q).castSucc) = j.castSucc} =
-        some '' {q | f q = j} := by
-      ext p
-      cases p <;> simp [(Fin.castSucc_ne_last j).symm]
-    rw [hs]
-    exact (hσ j).optionCongr
-
-end TauCeti
 
 namespace Equiv
 
@@ -481,8 +457,8 @@ def invariantColouringEquiv (π : Perm α) :
     (Quotient (SameCycle.setoid π) → σ) ≃ {f : α → σ // f ∘ π = f} where
   toFun g := ⟨fun a => g (Quotient.mk _ a), funext fun a =>
     congrArg g (Quotient.sound (sameCycle_apply_left.mpr (SameCycle.refl π a)))⟩
-  invFun f := Quotient.lift f.1 fun _ _ h =>
-    SameCycle.apply_eq_of_apply_eq h (congrFun f.2)
+  invFun f := Quotient.lift f.val fun _ _ h =>
+    SameCycle.apply_eq_of_apply_eq h (congrFun f.property)
   left_inv _ := funext fun c => Quotient.inductionOn c fun _ => rfl
   right_inv _ := rfl
 
@@ -498,7 +474,7 @@ the colouring at any point in that cycle. -/
 @[simp]
 theorem invariantColouringEquiv_symm_apply (π : Perm α)
     (f : {f : α → σ // f ∘ π = f}) (a : α) :
-    (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
+    (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.val a :=
   congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
 
 /-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
@@ -665,9 +641,9 @@ theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β �
     ∃ σ : Equiv.Perm β, (∀ x, c (σ x) = c x) ∧ ∀ i, σ (a i) = b i := by
   classical
   -- The entries of `b`, read as a function of the entries of `a`.
-  let g : Set.range a → β := fun x => b x.2.choose
+  let g : Set.range a → β := fun x => b x.property.choose
   have hg (i : ι) : g ⟨a i, i, rfl⟩ = b i :=
-    (hab _ _).mp (⟨a i, i, rfl⟩ : Set.range a).2.choose_spec
+    (hab _ _).mp (⟨a i, i, rfl⟩ : Set.range a).property.choose_spec
   have hg_inj : Function.Injective g := by
     rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩ hij
     rw [hg, hg] at hij
@@ -677,16 +653,28 @@ theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β �
     rw [hg, hc]
   -- Extend `g` separately on each fiber of `c`.
   have hfiber (k : γ) : ∃ τ : Equiv.Perm {y // c y = k},
-      ∀ x : {x : Set.range a // c x = k}, (τ ⟨x.1, x.2⟩ : β) = g x.1 := by
+      ∀ x : {x : Set.range a // c x = k}, (τ ⟨x.val, x.property⟩ : β) = g x.val := by
     obtain ⟨τ, hτ⟩ := Equiv.Perm.exists_extending_pair
-      (fun x : {x : Set.range a // c x = k} => (⟨x.1, x.2⟩ : {y // c y = k}))
-      (fun x => ⟨g x.1, (hcg x.1).trans x.2⟩)
+      (fun x : {x : Set.range a // c x = k} => (⟨x.val, x.property⟩ : {y // c y = k}))
+      (fun x => ⟨g x.val, (hcg x.val).trans x.property⟩)
       (fun _ _ hxy => Subtype.ext (Subtype.ext (Subtype.mk.inj hxy)))
       (fun _ _ hxy => Subtype.ext (hg_inj (Subtype.mk.inj hxy)))
     exact ⟨τ, fun x => congrArg Subtype.val (hτ x)⟩
   choose τ hτ using hfiber
   refine ⟨Equiv.ofFiberEquiv τ, Equiv.ofFiberEquiv_map τ, fun i => ?_⟩
   exact (hτ (c (a i)) ⟨⟨a i, i, rfl⟩, rfl⟩).trans (hg i)
+
+/-- A signed permutation sum vanishes if its summand is invariant under a fixed transposition.
+This pairs each ordering with its translate by that odd involution. -/
+theorem sum_sign_smul_eq_zero_of_mul_swap {M : Type*} [AddCommGroup M]
+    (F : Perm α → M) (i j : α) (hij : i ≠ j)
+    (hF : ∀ σ, F (σ * swap i j) = F σ) : ∑ σ : Perm α, σ.sign • F σ = 0 := by
+  refine Finset.sum_involution (fun σ _ ↦ σ * swap i j) (fun σ _ ↦ ?_)
+    (fun σ _ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _) (fun σ _ ↦ by simp [mul_assoc])
+  · rw [hF, Perm.sign_mul, Perm.sign_swap hij]
+    simp [Units.smul_def]
+  · rw [Ne, mul_eq_left, swap_eq_one_iff]
+    exact hij
 
 /-- Alternating a signed sum over the permutations of `α` a second time, along any
 sign-preserving map `ext` from the permutations of `β`, only multiplies it by the number of

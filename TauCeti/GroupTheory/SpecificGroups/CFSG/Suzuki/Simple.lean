@@ -90,7 +90,7 @@ theorem mem_borelSubgroupOf_or_mem_doubleCoset (hm : m ≠ 0) (g : suzukiGroup m
   have hg : (g : GL (Fin 4) (GaloisField 2 (2 * m + 1))) ∈
       SuzukiLieIndex.finiteFixedSubgroup m hvalid := by
     rw [SuzukiLieIndex.finiteFixedSubgroup_eq_suzukiGroup]
-    exact g.2
+    exact g.property
   by_cases h : ((g : GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
       Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 0 3 = 0
   · obtain ⟨κ, a, b, hκ⟩ := SuzukiLieIndex.exists_eq_torus_mul_unipotent hg h

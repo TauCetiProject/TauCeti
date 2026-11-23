@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.RepresentationTheory.Compact.Orthonormal
 public import TauCeti.RepresentationTheory.Compact.RepresentativeDensity
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
@@ -618,7 +618,7 @@ theorem hasSum_norm_sq_peterWeylCoeff [IsAlgClosed 𝕜]
     (f : Lp 𝕜 2 (haarProb G)) :
     HasSum (fun x ↦ ‖peterWeylCoeff models f x‖ ^ 2) (‖f‖ ^ 2) := by
   simpa only [← (peterWeylBasis h).repr_apply_apply, peterWeylBasis_repr_apply] using
-    (peterWeylBasis h).hasSum_norm_sq_inner f
+    (peterWeylBasis h).hasSum_norm_inner_sq f
 
 /-- **Norm-square Parseval for the Peter-Weyl basis** (`tsum` form). -/
 theorem tsum_norm_sq_peterWeylCoeff [IsAlgClosed 𝕜]

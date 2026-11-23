@@ -50,29 +50,26 @@ theorem IsPlotOn.isPlot_comp {n m : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X}
   hp f hfu hf
 
 /-- Globally defined plots are plots on every subset. -/
-theorem isPlotOn_of_isPlot {n : ℕ} {p : 𝔼ⁿ → X}
-    (hp : _root_.Diffeology.IsPlot p) (u : Set (𝔼ⁿ)) : IsPlotOn u p := by
-  intro m f _ hf
-  exact _root_.Diffeology.isPlot_reparam hp hf
+protected theorem _root_.Diffeology.IsPlot.isPlotOn {n : ℕ} {p : 𝔼ⁿ → X}
+    (hp : _root_.Diffeology.IsPlot p) (u : Set (𝔼ⁿ)) : IsPlotOn u p :=
+  fun _ _ hf ↦ _root_.Diffeology.isPlot_reparam hp hf
 
 /-- Being a plot on a subset depends only on the restriction to that subset. -/
 theorem IsPlotOn.congr {n : ℕ} {u : Set (𝔼ⁿ)} {p p' : 𝔼ⁿ → X}
     (hp : IsPlotOn u p) (hpp' : EqOn p p' u) : IsPlotOn u p' := by
   intro m f hf hfdiff
-  have hplot := hp f hf hfdiff
-  convert hplot using 1
-  ext z
-  exact (hpp' (hf (mem_univ z))).symm
+  rw [← (eqOn_univ _ _).mp (hpp'.comp_right hf)]
+  exact hp f hf hfdiff
 
 /-- A plot on a set remains a plot on a smaller set. -/
 theorem IsPlotOn.mono {n : ℕ} {u v : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X}
     (hp : IsPlotOn u p) (hvu : v ⊆ u) : IsPlotOn v p :=
-  fun f hf ↦ hp f (fun _ hz ↦ hvu (hf hz))
+  fun f hf ↦ hp f (hf.mono_right hvu)
 
 /-- Constant maps are plots on every subset. -/
 theorem isPlotOn_const {n : ℕ} (u : Set (𝔼ⁿ)) (x : X) :
     IsPlotOn u (fun _ ↦ x) :=
-  isPlotOn_of_isPlot (_root_.Diffeology.isPlot_const (n := n) (x := x)) u
+  (_root_.Diffeology.isPlot_const (n := n) (x := x)).isPlotOn u
 
 /-- A plot on all of Cartesian space is a plot. -/
 theorem IsPlotOn.isPlot {n : ℕ} {p : 𝔼ⁿ → X} (hp : IsPlotOn univ p) :
@@ -83,7 +80,7 @@ theorem IsPlotOn.isPlot {n : ℕ} {p : 𝔼ⁿ → X} (hp : IsPlotOn univ p) :
 @[simp]
 theorem isPlotOn_univ_iff {n : ℕ} {p : 𝔼ⁿ → X} :
     IsPlotOn univ p ↔ _root_.Diffeology.IsPlot p :=
-  ⟨IsPlotOn.isPlot, fun hp ↦ isPlotOn_of_isPlot hp univ⟩
+  ⟨IsPlotOn.isPlot, fun hp ↦ hp.isPlotOn univ⟩
 
 /-- Plots on subsets are stable under smooth reparametrization on subsets. -/
 theorem IsPlotOn.comp_contDiffOn {n m : ℕ} {u : Set (𝔼ⁿ)} {v : Set (𝔼ᵐ)}
@@ -99,16 +96,16 @@ theorem IsPlotOn.dSmooth_comp [DiffeologicalSpace Y] {n : ℕ} {u : Set (𝔼ⁿ
     IsPlotOn u (f ∘ p) :=
   fun g hg hgdiff ↦ (hp g hg hgdiff).dSmooth_comp hf
 
-/-- A map that is a plot on an open neighborhood of each point of a subset is a plot on that
-subset. -/
+/-- A map is a plot on a subset `u` if each point of `u` has an open neighborhood `v` such that
+the map is a plot on `u ∩ v`. -/
 theorem isPlotOn_of_locally {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X}
-    (hp : ∀ z ∈ u, ∃ v : Set (𝔼ⁿ), IsOpen v ∧ z ∈ v ∧ IsPlotOn v p) : IsPlotOn u p := by
+    (hp : ∀ z ∈ u, ∃ v : Set (𝔼ⁿ), IsOpen v ∧ z ∈ v ∧ IsPlotOn (u ∩ v) p) : IsPlotOn u p := by
   intro m f hfu hf
   apply DiffeologicalSpace.locality
   intro y
   obtain ⟨v, hv, hfv, hpv⟩ := hp (f y) (hfu (mem_univ y))
   exact ⟨f ⁻¹' v, hv.preimage hf.continuous, hfv, fun {k} g hgv hg ↦
-    hpv (f ∘ g) (fun x _ ↦ hgv x) (hf.comp hg)⟩
+    hpv (f ∘ g) (fun x _ ↦ ⟨hfu (mem_univ (g x)), hgv x⟩) (hf.comp hg)⟩
 
 /-- A plot on an open subset is continuous on that subset for the D-topology. -/
 theorem IsPlotOn.continuousOn {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} (hp : IsPlotOn u p)
@@ -121,11 +118,7 @@ theorem IsPlotOn.continuousOn {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} 
   have htarget : φ.target = Metric.ball z ε := OpenPartialHomeomorph.univBall_target z hε
   have hφu : MapsTo φ univ u := fun y _ ↦
     hball (htarget ▸ φ.map_source (by simp [φ, OpenPartialHomeomorph.univBall_source]))
-  have hzt : z ∈ φ.target := htarget ▸ Metric.mem_ball_self hε
-  have hcont : Continuous (p ∘ φ) :=
-    (hp.isPlot_comp hφu OpenPartialHomeomorph.contDiff_univBall).continuous
-  refine (hcont.continuousAt.comp (φ.continuousAt_symm hzt)).congr ?_
-  filter_upwards [φ.open_target.mem_nhds hzt] with y hy
-  simp [φ.right_inv hy]
+  rw [φ.continuousAt_iff_continuousAt_comp_right (htarget ▸ Metric.mem_ball_self hε)]
+  exact (hp.isPlot_comp hφu OpenPartialHomeomorph.contDiff_univBall).continuous.continuousAt
 
 end TauCeti.Diffeology

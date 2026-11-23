@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.ArithmeticFunction.CompletelyMultiplicative
 public import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
@@ -13,8 +14,8 @@ public import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 The product of characters of different levels is taken at their least common multiple. On
 natural numbers it is the pointwise product, including at primes dividing either level.
-Twisting arithmetic functions by a character preserves Dirichlet convolution. These comparisons
-allow products of Dirichlet L-functions to be handled on their actual coefficient functions.
+These comparisons allow products of Dirichlet L-functions to be handled on their actual
+coefficient functions. A character's arithmetic function is completely multiplicative.
 -/
 
 public section
@@ -46,28 +47,15 @@ theorem toArithmeticFunction_mul (χ : DirichletCharacter R M) (ψ : DirichletCh
       ← χ.apply_eq_toArithmeticFunction_apply hn,
       ← ψ.apply_eq_toArithmeticFunction_apply hn, mul_natCast]
 
+/-- The arithmetic function of a Dirichlet character is completely multiplicative. -/
+theorem isCompletelyMultiplicative_toArithmeticFunction (χ : DirichletCharacter R N) :
+    (toArithmeticFunction (χ ·)).IsCompletelyMultiplicative := by
+  refine .of_ne_zero (isMultiplicative_toArithmeticFunction χ).map_one fun hm hn ↦ ?_
+  simp only [← χ.apply_eq_toArithmeticFunction_apply (mul_ne_zero hm hn),
+    ← χ.apply_eq_toArithmeticFunction_apply hm, ← χ.apply_eq_toArithmeticFunction_apply hn,
+    Nat.cast_mul, map_mul]
+
 end CommMonoidWithZero
-
-variable {R : Type*} [CommSemiring R] {M : ℕ}
-
-/-- Twisting by a Dirichlet character preserves Dirichlet convolution. -/
-theorem toArithmeticFunction_pmul_mul (χ : DirichletCharacter R M)
-    (f g : ArithmeticFunction R) :
-    (toArithmeticFunction (χ ·)).pmul (f * g) =
-      ((toArithmeticFunction (χ ·)).pmul f) * ((toArithmeticFunction (χ ·)).pmul g) := by
-  ext n
-  by_cases hn : n = 0
-  · simp [hn]
-  rw [pmul_apply, ArithmeticFunction.mul_apply, Finset.mul_sum, ArithmeticFunction.mul_apply]
-  apply Finset.sum_congr rfl
-  intro d hd
-  have hdn := (Nat.mem_divisorsAntidiagonal.mp hd).1
-  have hd0 := Nat.ne_zero_of_mem_divisorsAntidiagonal hd
-  simp only [pmul_apply, ← χ.apply_eq_toArithmeticFunction_apply hn,
-    ← χ.apply_eq_toArithmeticFunction_apply hd0.1,
-    ← χ.apply_eq_toArithmeticFunction_apply hd0.2]
-  rw [← hdn, Nat.cast_mul, map_mul]
-  ring
 
 /-- On `Re s > 1`, a character's arithmetic function has an absolutely convergent
 Dirichlet series with sum equal to its continued L-function. -/

@@ -349,10 +349,10 @@ private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
     exact ⟨min_le_right _ _, le_max_right _ _⟩
   let T : Set K := {r | (r : ℝ) ∈ S}
   have hTopen : IsOpen T :=
-    hSopen.preimage continuous_subtype_val
+    hSopen.preimage continuous_subtypeVal
   have hTclosed : IsClosed T := by
     have h : IsClosed ((fun r : K ↦ (r : ℝ)) ⁻¹' (S ∩ K)) :=
-      hSKclosed.preimage continuous_subtype_val
+      hSKclosed.preimage continuous_subtypeVal
     have heq : (fun r : K ↦ (r : ℝ)) ⁻¹' (S ∩ K) = T := by
       ext r
       constructor
