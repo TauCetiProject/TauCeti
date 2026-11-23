@@ -61,6 +61,11 @@ and vanishing homology above it make cohomology vanish above that degree.
   characterized by `TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀`.
 * `TauCeti.ChainComplex.extToHomology_injective` and
   `TauCeti.ChainComplex.exact_extToHomology_kronecker`: exactness at the first two places.
+* `TauCeti.ChainComplex.universalCoefficientEquiv`: the resulting splitting
+  `Hⁱ(Hom(X, Y)) ≃ₗ[k] Ext¹(Hⱼ(X), Y) × (Hᵢ(X) ⟶ Y)`, built from
+  `TauCeti.ChainComplex.kroneckerSection`.
+* `TauCeti.ChainComplex.smul_eq_zero_of_kronecker_eq_zero`: if `r • 𝟙` on `Hⱼ(X)` factors through
+  a projective object, `r` annihilates the kernel of the Kronecker map in degree `j + 1`.
 * `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_of_add_one_eq`,
   `TauCeti.ChainComplex.kroneckerEquivOfProjectiveHomologyOfAddOneEq` and
   `TauCeti.ChainComplex.isZero_homology_linearYonedaObj_of_projective_homology_of_add_one_eq`: the
@@ -223,6 +228,51 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
     (exact_boundariesHom_kronecker (k := k) (X := X) (Y := Y) hij).linearMap_ker_eq,
     extToHomology, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
     Submodule.range_liftQ]
+
+/-- **Torsion in the kernel of the Kronecker map**: in degree `i = j + 1`, if `r • 𝟙` on `Hⱼ(X)`
+factors through a projective object, then `r` annihilates every class of `Hⁱ(Hom(X, Y))` that
+evaluates to zero on homology, since such a class comes from `Ext¹(Hⱼ(X), Y)`. For abelian groups
+this applies when the torsion of `Hⱼ(X)` has exponent `r` and its torsion-free quotient is free. -/
+theorem smul_eq_zero_of_kronecker_eq_zero {i j : α} (hij : j + 1 = i) [Projective (X.cycles j)]
+    [IsSplitMono (X.iCycles j)] {P : C} [Projective P] {r : k} (f : X.homology j ⟶ P)
+    (g : P ⟶ X.homology j) (hfg : f ≫ g = r • 𝟙 _) {x : (X.linearYonedaObj k Y).homology i}
+    (hx : kronecker k X Y i x = 0) :
+    r • x = 0 := by
+  obtain ⟨e, rfl⟩ := (exact_extToHomology_kronecker.{w} (k := k) (Y := Y) hij x).1 hx
+  rw [← map_smul, ext_smul_eq_zero_of_projective k f g hfg e, map_zero]
+
+variable (k X Y) in
+/-- **The splitting of the universal coefficient sequence**: in degree `i = j + 1`, when the
+inclusions of the cycles `Zⱼ ⟶ Xⱼ` and `Zᵢ ⟶ Xᵢ` split and `Zⱼ` is projective, a `k`-linear
+equivalence `Hⁱ(Hom(X, Y)) ≃ₗ[k] Ext¹(Hⱼ(X), Y) × (Hᵢ(X) ⟶ Y)` whose second component is the
+Kronecker map (`TauCeti.ChainComplex.universalCoefficientEquiv_apply_snd`) and whose inverse
+restricts to `TauCeti.ChainComplex.extToHomology` on the first factor
+(`TauCeti.ChainComplex.universalCoefficientEquiv_symm_inl`). It is built from the section
+`TauCeti.ChainComplex.kroneckerSection` and depends on the chosen retraction of `Zᵢ ⟶ Xᵢ`. -/
+def universalCoefficientEquiv {i j : α} (hij : j + 1 = i) [Projective (X.cycles j)]
+    [IsSplitMono (X.iCycles j)] [IsSplitMono (X.iCycles i)] :
+    (X.linearYonedaObj k Y).homology i ≃ₗ[k] Ext.{w} (X.homology j) Y 1 × (X.homology i ⟶ Y) :=
+  ((exact_extToHomology_kronecker hij).splitSurjectiveEquiv (extToHomology_injective hij)
+    ⟨kroneckerSection k X Y i, LinearMap.ext (kronecker_kroneckerSection i)⟩).val
+
+/-- The inverse of the splitting `TauCeti.ChainComplex.universalCoefficientEquiv` restricts to the
+inclusion `TauCeti.ChainComplex.extToHomology` of the `Ext` term on the first factor. -/
+@[simp]
+lemma universalCoefficientEquiv_symm_inl {i j : α} (hij : j + 1 = i) [Projective (X.cycles j)]
+    [IsSplitMono (X.iCycles j)] [IsSplitMono (X.iCycles i)] (e : Ext.{w} (X.homology j) Y 1) :
+    (universalCoefficientEquiv k X Y hij).symm (e, 0) = extToHomology k X Y i j e :=
+  (LinearMap.congr_fun ((exact_extToHomology_kronecker hij).splitSurjectiveEquiv
+    (extToHomology_injective hij) _).property.left e).symm
+
+/-- The second component of the splitting `TauCeti.ChainComplex.universalCoefficientEquiv` is the
+Kronecker map. -/
+@[simp]
+lemma universalCoefficientEquiv_apply_snd {i j : α} (hij : j + 1 = i) [Projective (X.cycles j)]
+    [IsSplitMono (X.iCycles j)] [IsSplitMono (X.iCycles i)]
+    (x : (X.linearYonedaObj k Y).homology i) :
+    (universalCoefficientEquiv.{w} k X Y hij x).2 = kronecker k X Y i x :=
+  (LinearMap.congr_fun ((exact_extToHomology_kronecker hij).splitSurjectiveEquiv
+    (extToHomology_injective hij) _).property.right x).symm
 
 end Ext
 

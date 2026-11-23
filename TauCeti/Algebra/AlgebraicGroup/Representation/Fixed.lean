@@ -60,7 +60,7 @@ theorem map_coact_iff_map_differential (f : M →ₗ[k] N) :
     let q : M × N →ₗ[k] N := LinearMap.snd k M N - f.comp (LinearMap.fst k M N)
     have hq : q.comp f.graph.subtype = 0 := by
       ext z
-      exact sub_eq_zero.mpr ((mem_graph_iff f z).mp z.2)
+      exact sub_eq_zero.mpr ((mem_graph_iff f z).mp z.property)
     ext m
     obtain ⟨t, ht⟩ := f.graph.coact_mem_range_of_forall_differential_mem
       (fun d _ hz ↦ f.differential_mem_graph d (hf d) hz)

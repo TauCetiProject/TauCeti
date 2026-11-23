@@ -240,7 +240,9 @@ theorem exists_hazewinkelLogCoeff_eq (hp : p ≠ 0) {ℓ : ℕ → K} (h₀ : �
   have hv (n : ℕ) : v n.succPNat = p * ℓ (n + 1) -
       ∑ i ∈ range n, ℓ (i + 1) * v (n - (i + 1)).succPNat ^ p ^ (i + 1) := by
     simp only [v, Nat.natPred_succPNat]
-    rw [coeffsOfHazewinkelLogCoeff, Fin.sum_univ_eq_sum_range
+    rw [coeffsOfHazewinkelLogCoeff]
+    dsimp only
+    rw [Fin.sum_univ_eq_sum_range
       (fun i ↦ ℓ (i + 1) * coeffsOfHazewinkelLogCoeff p ℓ (n - (i + 1)) ^ p ^ (i + 1))]
   refine ⟨v, funext fun n ↦ ?_⟩
   induction n using Nat.strong_induction_on with

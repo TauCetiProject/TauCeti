@@ -21,8 +21,13 @@ to `some (i + 1)`. The face `f` is the triangle `s_f b_f s_{f+1}⁻¹`.
 The checks are those of a triangulated disc. Each spoke lies on two triangles and each rim edge on
 one, so the boundary darts are the rim darts. The centre has no boundary germ, so its link is a
 circle, and each rim vertex has exactly the two boundary germs `bᵢ` and `b_{i-1}⁻¹`, the ends of
-its interval link. The boundary forms a single component, and the Euler characteristic is
-`4 - 6 + 3 = 1`.
+its interval link. The boundary forms a single component, through the three rim vertices, and the
+Euler characteristic is `4 - 6 + 3 = 1`.
+
+The boundary is traversed by a single contour in the sense of Gallier and Xu, a cyclic sequence of
+boundary edges taken up to its starting point and its direction: every boundary circuit, or its
+reverse, traverses the rim `b₀ b₁ b₂` from one of its three vertices. In particular every boundary
+circuit has length three.
 
 ## Main definitions
 
@@ -41,13 +46,20 @@ its interval link. The boundary forms a single component, and the Euler characte
   rim vertices have interval links.
 * `TauCeti.SurfaceModel.card_boundaryComponent_triangulatedDisc`: the triangulated disc has one
   boundary component; its boundary components form a `Unique` type.
+* `TauCeti.SurfaceModel.card_boundary_V_triangulatedDisc`: the triangulated disc has three
+  boundary vertices.
+* `TauCeti.SurfaceModel.isRotated_darts_boundaryCircuit_triangulatedDisc`: the triangulated disc
+  has a single boundary traversal: every boundary circuit, or its reverse, is the rim `b₀ b₁ b₂`
+  up to the choice of base point.
+* `TauCeti.SurfaceModel.length_path_boundaryCircuit_triangulatedDisc`: every boundary circuit of
+  the triangulated disc has length three.
 * `TauCeti.SurfaceModel.eulerChar_triangulatedDisc`: the triangulated disc has Euler
   characteristic `1`.
 
 ## References
 
 * J. Gallier, D. Xu, *A Guide to the Classification Theorem for Compact Surfaces*, Springer, 2013,
-  Chapter 6, Definitions 6.1 and 6.2 and Figure 6.6.
+  Chapter 6, Definitions 6.1 and 6.2 and Figure 6.6, and Definition 6.4 (contours).
 -/
 
 public section
@@ -171,8 +183,8 @@ private theorem sideCount_triangulatedDisc (e : triangulatedDiscGraph.E) :
 side. -/
 private theorem nonempty_path_of_corner {x : triangulatedDiscGraph.V}
     {a y : (triangulatedDisc.vertexLink x).V} (b : (triangulatedDisc.vertexLink x).V)
-    (c : triangulatedDisc.Corner) (ha : a.1 = triangulatedDisc.side c.1 c.2)
-    (hb : b.1 = triangulatedDiscGraph.rev (triangulatedDisc.side c.1 ((finRotate 3).symm c.2)))
+    (c : triangulatedDisc.Corner) (ha : a.val = triangulatedDisc.side c.1 c.2)
+    (hb : b.val = triangulatedDiscGraph.rev (triangulatedDisc.side c.1 ((finRotate 3).symm c.2)))
     (h : Nonempty ((triangulatedDisc.vertexLink x).Path b y)) :
     Nonempty ((triangulatedDisc.vertexLink x).Path a y) :=
   Quiver.Reachable.trans (triangulatedDisc.nonempty_vertexLink_path_of_corner c
@@ -328,6 +340,79 @@ instance : Unique triangulatedDisc.BoundaryComponent :=
   have := (Nat.card_eq_one_iff_unique.1 card_boundaryComponent_triangulatedDisc).1
   uniqueOfSubsingleton (triangulatedDisc.boundaryClass
     ⟨(.inr 0, true), inr_mem_boundaryDarts_triangulatedDisc 0 true⟩)
+
+/-! ### The boundary traversal -/
+
+/-- The triangulated disc has three boundary vertices. They are the rim vertices `some i`: the
+centre has no boundary germ (`boundaryGerms_triangulatedDisc_none`) and each rim vertex has two
+(`boundaryGerms_triangulatedDisc_some`). -/
+@[simp] theorem card_boundary_V_triangulatedDisc : Nat.card triangulatedDisc.boundary.V = 3 := by
+  have h (x : Option (Fin 3)) : (triangulatedDisc.boundaryGerms x).Nonempty ↔ x.isSome := by
+    cases x with
+    | none => simp
+    | some i =>
+      refine iff_of_true ?_ rfl
+      rw [boundaryGerms_triangulatedDisc_some]
+      exact Set.insert_nonempty _ _
+  exact (Nat.card_congr ((Equiv.subtypeEquivRight h).trans (Equiv.optionIsSomeEquiv _))).trans
+    (Nat.card_fin 3)
+
+/-- Every boundary circuit of the triangulated disc traverses three darts, one for each rim
+edge. -/
+@[simp] theorem length_path_boundaryCircuit_triangulatedDisc
+    {b : triangulatedDisc.BoundaryComponent} (c : triangulatedDisc.BoundaryCircuit b) :
+    c.path.length = 3 := by
+  rw [c.length_eq_card, Nat.card_congr (Equiv.subtypeUnivEquiv fun x => Subsingleton.elim _ b),
+    card_boundary_V_triangulatedDisc]
+
+/-- Three consecutive rim darts of the triangulated disc, none followed by its reverse, go once
+around the rim, in one of its two directions. -/
+private theorem isRotated_rim_of_consecutive : ∀ (i j k : Fin 3) (a₁ a₂ a₃ : Bool),
+    triangulatedDisc.graph.tgt (.inr i, a₁) = triangulatedDisc.graph.src (.inr j, a₂) →
+    triangulatedDisc.graph.tgt (.inr j, a₂) = triangulatedDisc.graph.src (.inr k, a₃) →
+    ((.inr j, a₂) : triangulatedDisc.graph.E) ≠ (.inr i, !a₁) →
+    ((.inr k, a₃) : triangulatedDisc.graph.E) ≠ (.inr j, !a₂) →
+    [((.inr i, a₁) : triangulatedDisc.graph.E), (.inr j, a₂), (.inr k, a₃)] ~r
+        [(.inr 0, true), (.inr 1, true), (.inr 2, true)] ∨
+      [((.inr k, !a₃) : triangulatedDisc.graph.E), (.inr j, !a₂), (.inr i, !a₁)] ~r
+        [(.inr 0, true), (.inr 1, true), (.inr 2, true)] := by
+  decide
+
+/-- The triangulated disc has a single boundary traversal, the rim `b₀ b₁ b₂`, up to the choice of
+base point and direction: every boundary circuit, or its reverse, traverses the rim edges in this
+cyclic order. A boundary circuit exists by `boundaryCircuit_exists`. -/
+theorem isRotated_darts_boundaryCircuit_triangulatedDisc {b : triangulatedDisc.BoundaryComponent}
+    (c : triangulatedDisc.BoundaryCircuit b) :
+    (SerreGraph.Path.darts _ c.path).map triangulatedDisc.boundaryInclusion.mapE ~r
+        [(.inr 0, true), (.inr 1, true), (.inr 2, true)] ∨
+      (SerreGraph.Path.darts _ c.reverse.path).map triangulatedDisc.boundaryInclusion.mapE ~r
+        [(.inr 0, true), (.inr 1, true), (.inr 2, true)] := by
+  obtain ⟨x, y, z, hxyz⟩ := List.length_eq_three.1 ((SerreGraph.Path.length_darts _ c.path).trans
+    (length_path_boundaryCircuit_triangulatedDisc c))
+  -- The three darts are consecutive, and none is followed by its reverse.
+  have hcons := SerreGraph.Path.cons_map_tgt_darts _ c.path
+  have hred := (SerreGraph.Path.isReduced_iff_isChain _ c.path).1 c.isReduced
+  simp only [hxyz, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+    List.cons.injEq, List.isChain_cons_cons, List.isChain_singleton, and_true] at hcons hred
+  obtain ⟨-, hxy, hyz, -⟩ := hcons
+  obtain ⟨hyx, hzy⟩ := hred
+  replace hxy := congrArg Subtype.val hxy
+  replace hyz := congrArg Subtype.val hyz
+  replace hyx : y.val ≠ triangulatedDisc.graph.rev x.val := fun h => hyx (Subtype.ext (by simpa))
+  replace hzy : z.val ≠ triangulatedDisc.graph.rev y.val := fun h => hzy (Subtype.ext (by simpa))
+  simp only [boundary_src_val, boundary_tgt_val] at hxy hyz
+  rw [BoundaryCircuit.darts_path_reverse, hxyz]
+  simp only [List.map_cons, List.map_nil, List.reverse_cons, List.reverse_nil, List.nil_append,
+    List.cons_append, boundaryInclusion_mapE, boundary_rev_val]
+  -- The darts of the circuit are rim darts.
+  obtain ⟨⟨i | i, a₁⟩, hx⟩ := x
+  · exact absurd hx (inl_notMem_boundaryDarts_triangulatedDisc i a₁)
+  obtain ⟨⟨j | j, a₂⟩, hy⟩ := y
+  · exact absurd hy (inl_notMem_boundaryDarts_triangulatedDisc j a₂)
+  obtain ⟨⟨k | k, a₃⟩, hz⟩ := z
+  · exact absurd hz (inl_notMem_boundaryDarts_triangulatedDisc k a₃)
+  simp only [PolygonalComplex.triangulatedDiscGraph_rev] at hyx hzy ⊢
+  exact isRotated_rim_of_consecutive i j k a₁ a₂ a₃ hxy hyz hyx hzy
 
 /-- The triangulated disc has Euler characteristic `1`: four vertices, six edges and three
 faces. -/

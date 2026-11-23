@@ -99,14 +99,16 @@ theorem exists_lift_closedBall_of_mem_serreFibrations (hp : serreFibrations p) {
   have hφ (x : cylinderExtensionDomain (Cube.boundary N)) :
       φ x ∈ cylinderExtensionDomain
         (Subtype.val ⁻¹' sphere (0 : N → ℝ) 1 : Set (closedBall (0 : N → ℝ) 1)) :=
-    mem_cylinderExtensionDomain_iff.2 ((mem_cylinderExtensionDomain_iff.1 x.2).imp id (he _).2)
+    mem_cylinderExtensionDomain_iff.2 ((mem_cylinderExtensionDomain_iff.1 x.property).imp id
+        (he _).2)
   obtain ⟨G, hG, hGf⟩ := exists_lift_openBox_of_mem_serreFibrations hp N
     (f.comp ⟨fun x ↦ ⟨φ x, hφ x⟩, by fun_prop⟩) (H.comp φ) fun x ↦ hf _
   refine ⟨G.comp ψ, funext fun x ↦ ?_, fun x ↦ ?_⟩
   · simpa [hφψ] using congrFun hG (ψ x)
   · have hψ : ψ x ∈ cylinderExtensionDomain (Cube.boundary N) :=
-      mem_cylinderExtensionDomain_iff.2 ((mem_cylinderExtensionDomain_iff.1 x.2).imp id fun h ↦
-        (he (e.symm x.1.2)).1 (by simpa using h))
+      mem_cylinderExtensionDomain_iff.2 ((mem_cylinderExtensionDomain_iff.1 x.property).imp id fun h
+          ↦
+        (he (e.symm x.val.2)).1 (by simpa using h))
     simpa [hφψ] using hGf ⟨ψ x, hψ⟩
 
 section CWComplex
@@ -120,7 +122,7 @@ variable {n : ℕ}
 /-- The characteristic map of an `n`-cell, as a map into the skeleton `skeletonLT C (n + 1)`. -/
 private def cellSkeletonMap (j : cell C n) :
     C(closedBall (0 : Fin n → ℝ) 1, (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
-  ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
+  ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property)⟩,
     (continuous_map_closedBall j).subtype_mk _⟩
 
 /-- The characteristic map of an `n`-cell sends the boundary sphere into the `n`-skeleton. -/
@@ -155,7 +157,7 @@ private lemma exists_lift_cellSkeletonMap (hp : serreFibrations p) (j : cell C n
       exact hk₀ _
     · exact hk t _ (cellSkeletonMap_mem_skeletonLT j hy)
   obtain ⟨K, hK, hKk⟩ := exists_lift_closedBall_of_mem_serreFibrations hp
-    ((k.comp ψ).restrict _) (H.comp ψ) fun z ↦ hkψ z.1 z.2
+    ((k.comp ψ).restrict _) (H.comp ψ) fun z ↦ hkψ z.val z.property
   exact ⟨K, fun z ↦ congrFun hK z, fun z hz ↦ hKk ⟨z, hz⟩⟩
 
 end Cell
@@ -183,7 +185,8 @@ theorem exists_lift_skeletonLT_succ_of_mem_serreFibrations (hp : serreFibrations
     fun t x hx ↦ (congrArg p (hkg t ⟨x, hx⟩)).trans (hg t ⟨x, hx⟩)
   -- Glue the lifts over the closed `n`-cells to the prescribed lift over the `n`-skeleton.
   let g' : C(I × (skeletonLT C n : Set X), E) :=
-    g.comp ⟨fun z ↦ (z.1, ⟨⟨z.2, skeletonLT_mono (by exact_mod_cast n.le_succ) z.2.2⟩, z.2.2⟩),
+    g.comp ⟨fun z ↦ (z.1, ⟨⟨z.2, skeletonLT_mono (by exact_mod_cast n.le_succ) z.2.property⟩,
+        z.2.property⟩),
       by fun_prop⟩
   obtain ⟨F, hFg, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ g' K fun j t y hy ↦
     (hKk j (t, y) (mem_cylinderExtensionDomain_of_mem hy)).trans
@@ -193,12 +196,12 @@ theorem exists_lift_skeletonLT_succ_of_mem_serreFibrations (hp : serreFibrations
       (∃ hx : (x : X) ∈ (skeletonLT C n : Set X), ∀ t, F (t, x) = g (t, ⟨x, hx⟩)) ∨
         ∃ (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1), cellSkeletonMap j y = x ∧
           ∀ t, F (t, x) = K j (t, y) := by
-    rcases mem_skeletonLT_or_exists_map x.2 with hx | ⟨j, y, hy, hxy⟩
+    rcases mem_skeletonLT_or_exists_map x.property with hx | ⟨j, y, hy, hxy⟩
     · exact Or.inl ⟨hx, fun t ↦ hFg t x hx⟩
     · obtain rfl : x = cellSkeletonMap j ⟨y, mem_closedBall_zero_iff.2 hy.le⟩ :=
         Subtype.ext hxy.symm
       exact Or.inr ⟨j, _, rfl, fun t ↦ hFK j t _⟩
-  refine ⟨F, funext fun z ↦ ?_, fun x ↦ ?_, fun t a ↦ hFg t a.1 a.2⟩
+  refine ⟨F, funext fun z ↦ ?_, fun x ↦ ?_, fun t a ↦ hFg t a.val a.property⟩
   · obtain ⟨t, x⟩ := z
     rcases hcases x with ⟨hx, hF⟩ | ⟨j, y, rfl, hF⟩
     · exact (congrArg p (hF t)).trans (hg _ _)
@@ -219,29 +222,31 @@ variable (k f H g) in
 private def liftSeq (hp : serreFibrations p) (hH : ∀ x, H (0, x) = p (f x))
     (hg : ∀ t a, p (g (t, a)) = H (t, a)) (hgf : ∀ a, g (0, a) = f a) : (j : ℕ) →
     {G : C(I × (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X), E) //
-      (∀ z, p (G z) = H (z.1, ⟨z.2, (skeletonLT C _).subset_complex z.2.2⟩)) ∧
-        ∀ x, G (0, x) = f ⟨x, (skeletonLT C _).subset_complex x.2⟩}
-  | 0 => ⟨g.comp ⟨fun z ↦ (z.1, ⟨⟨z.2, (skeletonLT C _).subset_complex z.2.2⟩, z.2.2⟩),
+      (∀ z, p (G z) = H (z.1, ⟨z.2, (skeletonLT C _).subset_complex z.2.property⟩)) ∧
+        ∀ x, G (0, x) = f ⟨x, (skeletonLT C _).subset_complex x.property⟩}
+  | 0 => ⟨g.comp ⟨fun z ↦ (z.1, ⟨⟨z.2, (skeletonLT C _).subset_complex z.2.property⟩,
+      z.2.property⟩),
       by fun_prop⟩, fun z ↦ hg _ _, fun x ↦ hgf _⟩
   | j + 1 =>
     have h := exists_lift_skeletonLT_succ_of_mem_serreFibrations (C := C) hp (k + j)
-      (f.comp ⟨fun x ↦ ⟨x, (skeletonLT C _).subset_complex x.2⟩, by fun_prop⟩)
-      (H.comp ⟨fun z ↦ (z.1, ⟨z.2, (skeletonLT C _).subset_complex z.2.2⟩), by fun_prop⟩)
+      (f.comp ⟨fun x ↦ ⟨x, (skeletonLT C _).subset_complex x.property⟩, by fun_prop⟩)
+      (H.comp ⟨fun z ↦ (z.1, ⟨z.2, (skeletonLT C _).subset_complex z.2.property⟩), by fun_prop⟩)
       (fun x ↦ (hH _))
-      ((liftSeq hp hH hg hgf j).1.comp ⟨fun z ↦ (z.1, ⟨z.2, z.2.2⟩), by fun_prop⟩)
-      (fun t a ↦ (liftSeq hp hH hg hgf j).2.1 _) fun a ↦ (liftSeq hp hH hg hgf j).2.2 _
+      ((liftSeq hp hH hg hgf j).val.comp ⟨fun z ↦ (z.1, ⟨z.2, z.2.property⟩), by fun_prop⟩)
+      (fun t a ↦ (liftSeq hp hH hg hgf j).property.1 _) fun a ↦ (liftSeq hp hH hg hgf j).property.2
+          _
     ⟨h.choose, fun z ↦ congrFun h.choose_spec.1 z, h.choose_spec.2.1⟩
 
 private lemma liftSeq_succ_apply {hp : serreFibrations p} {hH : ∀ x, H (0, x) = p (f x)}
     {hg : ∀ t a, p (g (t, a)) = H (t, a)} {hgf : ∀ a, g (0, a) = f a} (j : ℕ) (t : I)
     (x : X) (hx : x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X)) :
-    (liftSeq k f H g hp hH hg hgf (j + 1)).1
+    (liftSeq k f H g hp hH hg hgf (j + 1)).val
         (t, ⟨x, skeletonLT_mono (by exact_mod_cast (k + j).le_succ) hx⟩) =
-      (liftSeq k f H g hp hH hg hgf j).1 (t, ⟨x, hx⟩) := by
+      (liftSeq k f H g hp hH hg hgf j).val (t, ⟨x, hx⟩) := by
   rw [liftSeq]
   exact (exists_lift_skeletonLT_succ_of_mem_serreFibrations (C := C) hp (k + j) _ _
-    (fun x ↦ (hH _)) _ (fun t a ↦ (liftSeq k f H g hp hH hg hgf j).2.1 _)
-    fun a ↦ (liftSeq k f H g hp hH hg hgf j).2.2 _).choose_spec.2.2 t
+    (fun x ↦ (hH _)) _ (fun t a ↦ (liftSeq k f H g hp hH hg hgf j).property.1 _)
+    fun a ↦ (liftSeq k f H g hp hH hg hgf j).property.2 _).choose_spec.2.2 t
       ⟨⟨x, skeletonLT_mono (by exact_mod_cast (k + j).le_succ) hx⟩, hx⟩
 
 end Glue
@@ -257,13 +262,13 @@ theorem exists_lift_skeletonLT_of_mem_serreFibrations (hp : serreFibrations p) (
       ∀ t (a : (Subtype.val ⁻¹' (skeletonLT C k : Set X) : Set C)), G (t, a) = g (t, a) := by
   -- Solve the problem on the successive skeleta and glue the solutions.
   obtain ⟨G, hG⟩ := exists_continuousMap_prod_complex_of_skeletonLT
-    (fun j ↦ (liftSeq k f H g hp hH hg hgf j).1) (liftSeq_succ_apply (hp := hp))
-  refine ⟨G, funext fun z ↦ ?_, fun x ↦ ?_, fun t a ↦ hG 0 t a.1 a.2⟩
+    (fun j ↦ (liftSeq k f H g hp hH hg hgf j).val) (liftSeq_succ_apply (hp := hp))
+  refine ⟨G, funext fun z ↦ ?_, fun x ↦ ?_, fun t a ↦ hG 0 t a.val a.property⟩
   · obtain ⟨t, x⟩ := z
-    obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.2
-    exact (congrArg p (hG j t x hj)).trans ((liftSeq k f H g hp hH hg hgf j).2.1 _)
-  · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.2
-    exact (hG j 0 x hj).trans ((liftSeq k f H g hp hH hg hgf j).2.2 _)
+    obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.property
+    exact (congrArg p (hG j t x hj)).trans ((liftSeq k f H g hp hH hg hgf j).property.1 _)
+  · obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.property
+    exact (hG j 0 x hj).trans ((liftSeq k f H g hp hH hg hgf j).property.2 _)
 
 /-- **A Serre fibration has the relative homotopy lifting property with respect to every relative
 CW complex.** If `C` is a relative CW complex with base `D`, a homotopy `H : I × C → B` lifts along
@@ -278,16 +283,16 @@ theorem exists_lift_relCWComplex_of_mem_serreFibrations (hp : serreFibrations p)
   have hD (x : X) : x ∈ (skeletonLT C ((0 : ℕ) : ℕ∞) : Set X) ↔ x ∈ D := by
     rw [Nat.cast_zero, skeletonLT_zero_eq_base]
   obtain ⟨G, hGH, hGf, hGg⟩ := exists_lift_skeletonLT_of_mem_serreFibrations hp 0 f H hH
-    (g.comp ⟨fun z ↦ (z.1, ⟨z.2, (hD _).1 z.2.2⟩), by fun_prop⟩) (fun t a ↦ hg _ _)
+    (g.comp ⟨fun z ↦ (z.1, ⟨z.2, (hD _).1 z.2.property⟩), by fun_prop⟩) (fun t a ↦ hg _ _)
     fun a ↦ hgf _
-  exact ⟨G, hGH, hGf, fun t a ↦ hGg t ⟨a, (hD _).2 a.2⟩⟩
+  exact ⟨G, hGH, hGf, fun t a ↦ hGg t ⟨a, (hD _).2 a.property⟩⟩
 
 /-- **A Serre fibration has the homotopy lifting property with respect to every CW complex.** -/
 theorem hasHomotopyLiftingProperty_of_mem_serreFibrations (hp : serreFibrations p)
     [CWComplex C] : HasHomotopyLiftingProperty p C := by
   intro f H hH
   -- The base of a CW complex is empty, so there is no lift to prescribe over it.
-  have h₀ (z : I × (Subtype.val ⁻¹' (∅ : Set X) : Set C)) : False := z.2.2
+  have h₀ (z : I × (Subtype.val ⁻¹' (∅ : Set X) : Set C)) : False := z.2.property
   obtain ⟨G, hGH, hGf, -⟩ := exists_lift_relCWComplex_of_mem_serreFibrations hp f H hH
     ⟨fun z ↦ (h₀ z).elim, continuous_of_const fun z ↦ (h₀ z).elim⟩ (fun t a ↦ (h₀ (t, a)).elim)
     fun a ↦ (h₀ (0, a)).elim

@@ -161,7 +161,7 @@ noncomputable def nthRootHom (n : ℕ) : nDivisible R K n →* (FractionalIdeal 
     rw [count_nthRootFun, Units.val_mul, count_mul K v (Units.ne_zero _) (Units.ne_zero _),
       count_nthRootFun, count_nthRootFun, Subgroup.coe_mul, Units.val_mul,
       count_mul K v (Units.ne_zero _) (Units.ne_zero _),
-      Int.add_ediv_of_dvd_left (mem_nDivisible.mp I.2 v)]
+      Int.add_ediv_of_dvd_left (mem_nDivisible.mp I.property v)]
 
 variable {R K} in
 /-- The multiplicities of the `n`-th root are those of `I`, divided by `n`. Together with
@@ -179,7 +179,7 @@ lemma nthRootHom_pow (n : ℕ) (I : nDivisible R K n) :
     nthRootHom R K n I ^ n = (I : (FractionalIdeal R⁰ K)ˣ) :=
   FractionalIdeal.units_ext_count fun v ↦ by
     rw [Units.val_pow_eq_pow_val, count_pow, count_nthRootHom,
-      Int.mul_ediv_cancel' (mem_nDivisible.mp I.2 v)]
+      Int.mul_ediv_cancel' (mem_nDivisible.mp I.property v)]
 
 /-- **`n`-th roots of invertible fractional ideals.** An invertible fractional ideal all of whose
 multiplicities are divisible by `n` is an `n`-th power. -/
@@ -222,7 +222,7 @@ lemma pow_mem_unitsNDivisible (n : ℕ) (w : Kˣ) : w ^ n ∈ unitsNDivisible R 
 subgroup `nDivisible R K n` that it lands in by definition. -/
 noncomputable def unitsNDivisibleToNDivisible (n : ℕ) :
     unitsNDivisible R K n →* nDivisible R K n :=
-  ((toPrincipalIdeal R K).comp (unitsNDivisible R K n).subtype).codRestrict _ fun x ↦ x.2
+  ((toPrincipalIdeal R K).comp (unitsNDivisible R K n).subtype).codRestrict _ fun x ↦ x.property
 
 /-- Underneath the codomain restriction, `unitsNDivisibleToNDivisible` is `toPrincipalIdeal`. -/
 @[simp]
@@ -272,7 +272,7 @@ lemma nthRootClass_eq_one_iff {n : ℕ} (u : unitsNDivisible R K n) :
     have hu1 : toPrincipalIdeal R K (u : Kˣ) = 1 :=
       FractionalIdeal.units_ext_count fun v ↦ by
         rw [coe_toPrincipalIdeal, Units.val_one, count_one]
-        exact zero_dvd_iff.mp (by simpa using mem_unitsNDivisible.mp u.2 v)
+        exact zero_dvd_iff.mp (by simpa using mem_unitsNDivisible.mp u.property v)
     obtain ⟨a, ha⟩ := (toPrincipalIdeal_eq_one_iff _).mp hu1
     have hroot : nthRootHom R K 0 (unitsNDivisibleToNDivisible R K 0 u) = 1 :=
       FractionalIdeal.units_ext_count fun v ↦ by

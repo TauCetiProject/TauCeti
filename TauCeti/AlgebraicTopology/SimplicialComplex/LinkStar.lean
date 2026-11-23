@@ -43,8 +43,14 @@ the link of a simplex need not contain every vertex even when `K` does.
   closed star or link, phrased as membership in `K` plus the local condition.
 * `PreAbstractSimplicialComplex.mem_closedStar_nonempty` / `mem_link_nonempty`: the
   introduction-friendly membership forms using only nonemptiness and the defining local data.
+* `PreAbstractSimplicialComplex.erase_mem_link_singleton` / `link_link_singleton_erase`:
+  peeling off a vertex `v ∈ σ` reduces `link K σ` to the link of `σ.erase v` inside `link K {v}`.
 * `PreAbstractSimplicialComplex.closedStar_sup_deletion`: the closed star and the deletion
-  cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`.
+  cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`; at a vertex `w` they meet in the link,
+  `closedStar K {w} ⊓ deletion K {w} = link K {w}` (`closedStar_inf_deletion_singleton`).
+* `PreAbstractSimplicialComplex.map_link`: an injective relabeling carries links to links.
+* `PreAbstractSimplicialComplex.link_eq_bot_of_notMem`: a nonempty set that is not a face has
+  void link.
 * `PreAbstractSimplicialComplex.link_le_deletion_of_nonempty`: for a nonempty `σ`, the
   link sits inside the deletion.
 * `PreAbstractSimplicialComplex.closedStar_empty` / `link_empty` / `deletion_empty`: the
@@ -61,6 +67,10 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
+* `PreAbstractSimplicialComplex.closedStar_inf_deletion_singleton`,
+  `PreAbstractSimplicialComplex.map_closedStar`, `PreAbstractSimplicialComplex.map_link`, and
+  `PreAbstractSimplicialComplex.map_deletion`: the boundary of a vertex star is the vertex link, and
+  injective relabelings commute with closed stars, links, and deletions.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -179,6 +189,51 @@ theorem link_link {σ τ : Finset ι} (hστ : Disjoint σ τ) :
       refine mem_link.mpr ⟨hρτσK, disjoint_union_left.mpr ⟨hρσdis, hστ.symm⟩, ?_⟩
       simpa [union_assoc, union_left_comm, union_comm] using hρστK
     exact mem_link.mpr ⟨hρσ, hρτdis, hρτσ⟩
+
+/-- An injective relabeling carries the link of `σ` to the link of the image of `σ`. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun τ => ?_
+  rw [mem_map_iff, mem_link_nonempty]
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hne, hdis, hface⟩ := mem_link_nonempty.mp hρ
+    exact ⟨hne.image f, (disjoint_image hf).mpr hdis,
+      mem_map_iff.mpr ⟨ρ ∪ σ, hface, image_union ρ σ⟩⟩
+  · rintro ⟨hne, hdis, hface⟩
+    obtain ⟨η, hη, hητ⟩ := mem_map_iff.mp hface
+    obtain ⟨ρ, -, rfl⟩ := subset_image_iff.mp (hητ ▸ subset_union_left : τ ⊆ η.image f)
+    have hρη : ρ ∪ σ = η := image_injective hf (by rw [image_union, hητ])
+    exact ⟨ρ, mem_link_nonempty.mpr ⟨image_nonempty.mp hne, (disjoint_image hf).mp hdis,
+      hρη ▸ hη⟩, rfl⟩
+
+/-- The link of a nonempty set that is not a face is void. -/
+theorem link_eq_bot_of_notMem (hσ : σ.Nonempty) (hσK : σ ∉ K) : link K σ = ⊥ :=
+  eq_bot_iff.mpr fun _ hρ =>
+    absurd ((K.isRelLowerSet_faces (mem_link.mp hρ).2.2).2 subset_union_right hσ) hσK
+
+/-- At a vertex, the part of the closed star not containing that vertex is its link. -/
+@[simp]
+theorem closedStar_inf_deletion_singleton {w : ι} :
+    closedStar K {w} ⊓ deletion K {w} = link K {w} := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_inf, mem_closedStar, mem_deletion, mem_link, singleton_subset_iff,
+    disjoint_singleton_right]
+  tauto
+
+/-- Erasing a vertex `v ∈ σ` from a face `σ ∈ K` gives a face of `link K {v}` whenever the
+remaining finset is nonempty. -/
+theorem erase_mem_link_singleton {v : ι} (hσ : σ ∈ K) (hv : v ∈ σ)
+    (hne : (σ.erase v).Nonempty) : σ.erase v ∈ link K {v} :=
+  mem_link_nonempty.mpr ⟨hne, disjoint_singleton_right.mpr (notMem_erase v σ), by
+    rwa [union_singleton, insert_erase hv]⟩
+
+/-- Peeling off a vertex `v ∈ σ` identifies `link K σ` with the link of `σ.erase v` inside the
+vertex link `link K {v}`. -/
+theorem link_link_singleton_erase {v : ι} (hv : v ∈ σ) :
+    link (link K {v}) (σ.erase v) = link K σ := by
+  rw [link_link (disjoint_singleton_left.mpr (notMem_erase v σ)), singleton_union, insert_erase hv]
 
 /-- The closed star of `σ` is a subcomplex of `K`. -/
 theorem closedStar_le : closedStar K σ ≤ K := by
@@ -316,7 +371,7 @@ private theorem sdiff_eq_empty_or_mem_link_of_mem_closedStar (hρ : ρ ∈ close
     ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
   by_cases h : ρ \ σ = ∅
   · exact Or.inl h
-  · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
+  · exact Or.inr (mem_link_nonempty.mpr ⟨ne_empty_iff_nonempty.mp h,
       sdiff_disjoint, by simpa only [sdiff_union_self_eq_union] using
         (mem_closedStar_nonempty.mp hρ).2⟩)
 
@@ -349,6 +404,45 @@ theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
   · rintro ⟨hne, hnot, hlink⟩
     have hstar := (mem_closedStar_iff_sdiff hσ).mpr ⟨hne, hlink⟩
     exact ⟨⟨hne, hlink⟩, closedStar_le hstar, hnot⟩
+
+/-- An injective relabeling commutes with taking the closed star. -/
+@[simp]
+theorem map_closedStar {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (closedStar K σ).map f = closedStar (K.map f) (σ.image f) := by
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hρK, hρσK⟩ := mem_closedStar.mp hρ
+    rw [mem_closedStar, ← image_union, image_mem_map_iff hf,
+      image_mem_map_iff hf]
+    exact ⟨hρK, hρσK⟩
+  · intro hτ
+    obtain ⟨hτK, hτσK⟩ := mem_closedStar.mp hτ
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hτK
+    rw [← image_union, image_mem_map_iff hf] at hτσK
+    exact mem_map_iff.mpr ⟨ρ, mem_closedStar.mpr ⟨hρK, hτσK⟩, rfl⟩
+
+omit [DecidableEq ι] in
+/-- An injective relabeling commutes with taking the deletion: a face contains the image of `σ`
+exactly when its unique preimage face contains `σ`. -/
+@[simp]
+theorem map_deletion {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (deletion K σ).map f = deletion (K.map f) (σ.image f) := by
+  refine SetLike.ext fun ω => ?_
+  constructor
+  · intro hω
+    obtain ⟨ρ, hρ, rfl⟩ := mem_map_iff.mp hω
+    obtain ⟨hρK, hσρ⟩ := mem_deletion.mp hρ
+    refine mem_deletion.mpr ⟨mem_map_iff.mpr ⟨ρ, hρK, rfl⟩, fun h => hσρ ?_⟩
+    exact (image_subset_image_iff hf).mp h
+  · intro hω
+    obtain ⟨hωK, hσρ⟩ := mem_deletion.mp hω
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hωK
+    exact mem_map_iff.mpr ⟨ρ, mem_deletion.mpr ⟨hρK, fun h => hσρ (image_subset_image h)⟩, rfl⟩
+
+/-- Any nonempty finset whose link is nonvoid is a face of `K`. -/
+theorem mem_of_link_ne_bot (hσne : σ.Nonempty) (hne : link K σ ≠ ⊥) : σ ∈ K :=
+  by_contra fun hσ => hne (link_eq_bot_of_notMem hσne hσ)
 
 /-- A closed star has finitely many faces exactly when its link does, for any finset `σ`. -/
 theorem finite_faces_closedStar_iff :

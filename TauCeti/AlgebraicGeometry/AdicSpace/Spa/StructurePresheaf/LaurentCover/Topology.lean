@@ -126,14 +126,14 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
       let g := toCompletionLoc P T s S hden f
       IsClosedEmbedding fun x : presentationLimit (P := Q) Bplus ⊤ ↦
         ((presentationLimitMap (P := Q)
-            (le_top : laurentCoverOpen Bplus g true ≤ ⊤)).hom.1 x,
+            (le_top : laurentCoverOpen Bplus g true ≤ ⊤)).hom.val x,
           (presentationLimitMap (P := Q)
-            (le_top : laurentCoverOpen Bplus g false ≤ ⊤)).hom.1 x)) :
+            (le_top : laurentCoverOpen Bplus g false ≤ ⊤)).hom.val x)) :
     IsClosedEmbedding fun x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ↦
       ((presentationLimitMap (P := P) (inf_le_left : spaBasicOpen Aplus T s ⊓
-          laurentCoverOpen Aplus f true ≤ _)).hom.1 x,
+          laurentCoverOpen Aplus f true ≤ _)).hom.val x,
         (presentationLimitMap (P := P) (inf_le_left : spaBasicOpen Aplus T s ⊓
-          laurentCoverOpen Aplus f false ≤ _)).hom.1 x) := by
+          laurentCoverOpen Aplus f false ≤ _)).hom.val x) := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -167,14 +167,14 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
   suffices heq : (e true |>.prodCongr (e false)) ∘
       (fun x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ↦
         ((presentationLimitMap (P := P) (inf_le_left : spaBasicOpen Aplus T s ⊓
-          laurentCoverOpen Aplus f true ≤ _)).hom.1 x,
+          laurentCoverOpen Aplus f true ≤ _)).hom.val x,
           (presentationLimitMap (P := P) (inf_le_left : spaBasicOpen Aplus T s ⊓
-            laurentCoverOpen Aplus f false ≤ _)).hom.1 x)) =
+            laurentCoverOpen Aplus f false ≤ _)).hom.val x)) =
       (fun x : presentationLimit (P := Q) Bplus ⊤ ↦
         ((presentationLimitMap (P := Q)
-            (le_top : laurentCoverOpen Bplus g true ≤ ⊤)).hom.1 x,
+            (le_top : laurentCoverOpen Bplus g true ≤ ⊤)).hom.val x,
           (presentationLimitMap (P := Q)
-            (le_top : laurentCoverOpen Bplus g false ≤ ⊤)).hom.1 x)) ∘ d by
+            (le_top : laurentCoverOpen Bplus g false ≤ ⊤)).hom.val x)) ∘ d by
     rw [heq]
     exact hclosed
   funext x
@@ -197,8 +197,9 @@ a complete Hausdorff strongly noetherian Tate ring. -/
 private theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A) :
     IsClosedEmbedding fun x : presentationLimit (P := P) Aplus ⊤ ↦
-      ((presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.1 x,
-        (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.1 x) := by
+      ((presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.val x,
+        (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.val x)
+            := by
   exact isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbedding_toCompletionLoc
     P hAplus f fun hden₂ ↦
       isClosedEmbedding_laurentCover P f (Localization.Away (1 : A))
@@ -219,9 +220,9 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen
     (hW : W ∈ spaRationalOpens Aplus) (f : A) :
     IsClosedEmbedding fun x : presentationLimit (P := P) Aplus W ↦
       ((presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.val x,
         (presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x) := by
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.val x) := by
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden
