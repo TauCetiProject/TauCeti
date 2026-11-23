@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.BirkhoffSum.Average
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Dynamics.BirkhoffSum.Average
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -89,10 +90,7 @@ theorem eLpNorm_birkhoffAverage_le (hT : MeasurePreserving T μ μ)
     exact le_top
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  have havg : birkhoffAverage ℝ T f n = (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f ∘ T^[k] := by
-    ext x
-    simp [birkhoffAverage, birkhoffSum]
-  rw [havg, eLpNorm_const_smul]
+  rw [TauCeti.birkhoffAverage_eq_smul_sum_comp_iterate, eLpNorm_const_smul]
   calc
     ‖(n : ℝ)⁻¹‖ₑ * eLpNorm (∑ k ∈ Finset.range n, f ∘ T^[k]) p μ
       ≤ ‖(n : ℝ)⁻¹‖ₑ * ∑ k ∈ Finset.range n, eLpNorm (f ∘ T^[k]) p μ :=

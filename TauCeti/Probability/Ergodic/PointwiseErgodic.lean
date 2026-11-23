@@ -22,6 +22,7 @@ import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Dynamics.BirkhoffSum.Average
 import TauCeti.Dynamics.BirkhoffSum.Limsup
 import TauCeti.Dynamics.BirkhoffSum.Maximal
+import TauCeti.Dynamics.BirkhoffSum.NormedSpace
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Probability.Ergodic.CondExpProjection
@@ -50,17 +51,18 @@ convergence holds on simple functions by linearity and transfers to all `Integra
 averages (`ProbabilityTheory.MemLp.uniformIntegrable_of_identDistrib`, `uniformIntegrable_average`,
 `MemLp.condExp`, and `tendsto_Lp_finite_of_tendsto_ae`) combined with the pointwise theorem.
 
-Supporting general-purpose lemmas live in their canonical homes: pointwise norm bounds in
-`TauCeti.Dynamics.BirkhoffSum.Average`, integral invariance in
+Supporting general-purpose lemmas live in their canonical homes: function-level identities in
+`TauCeti.Dynamics.BirkhoffSum.Average`, pointwise norm bounds in
+`TauCeti.Dynamics.BirkhoffSum.NormedSpace`, integral invariance in
 `TauCeti.Dynamics.BirkhoffSum.Integrable`, orbit invariance of `limsup`/`liminf` in
-`TauCeti.Dynamics.BirkhoffSum.Limsup`, maximal ergodic operator bounds and a.e. finiteness in
+`TauCeti.Dynamics.BirkhoffSum.Limsup`, a.e. finiteness of the maximal ergodic function in
 `TauCeti.Dynamics.BirkhoffSum.Maximal`, `Lᵖ`/`L¹` contractivity of Birkhoff averages in
 `TauCeti.Probability.Ergodic.BirkhoffLp`, and the pre-ergodic conditional expectation collapse in
 `TauCeti.Probability.Ergodic.InvariantSigma`.
 
 For ergodic transformations, the invariant σ-algebra is `μ`-trivial, so the conditional expectation
-collapses to the space average `⨍ y, f y ∂μ`, yielding the ergodic pointwise, `Lᵖ`, `L¹`, and
-visiting-frequency theorems.
+collapses to the space average `⨍ y, f y ∂μ` (or `∫ y, f y ∂μ` on a probability space), yielding
+the ergodic pointwise, `Lᵖ`, `L¹`, and visiting-frequency theorems.
 
 ## Main results
 
@@ -70,12 +72,17 @@ visiting-frequency theorems.
   theorem** (`1 ≤ p < ∞`) for Banach-valued observables on a finite measure space.
 * `MeasureTheory.MeasurePreserving.tendsto_integral_norm_birkhoffAverage_sub_condExp` — **`L¹`
   ergodic theorem** in integral-norm form.
-* `Ergodic.ae_tendsto_birkhoffAverage_average` — pointwise ergodic theorem for ergodic maps.
-* `Ergodic.tendsto_eLpNorm_birkhoffAverage_sub_average` and
-  `Ergodic.tendsto_integral_norm_birkhoffAverage_sub_average` — `Lᵖ` and `L¹` ergodic convergence
-  for ergodic maps.
-* `Ergodic.ae_tendsto_card_filter_iterate_mem_div` — almost-everywhere convergence of orbit
-  visiting frequencies to normalized measure.
+* `Ergodic.ae_tendsto_birkhoffAverage_average` and
+  `Ergodic.ae_tendsto_birkhoffAverage_integral` — pointwise ergodic theorems for ergodic maps
+  (finite measure and probability space).
+* `Ergodic.tendsto_eLpNorm_birkhoffAverage_sub_average`,
+  `Ergodic.tendsto_eLpNorm_birkhoffAverage_sub_integral`,
+  `Ergodic.tendsto_integral_norm_birkhoffAverage_sub_average`, and
+  `Ergodic.tendsto_integral_norm_birkhoffAverage_sub_integral` — `Lᵖ` and `L¹` ergodic
+  convergence for ergodic maps.
+* `Ergodic.ae_tendsto_card_filter_iterate_mem_div` and
+  `Ergodic.ae_tendsto_card_filter_iterate_mem_div_of_isProbabilityMeasure` — almost-everywhere
+  convergence of orbit visiting frequencies.
 -/
 
 public section
@@ -141,17 +148,16 @@ private lemma measure_liminf_lt_and_lt_limsup_birkhoffAverage_eq_zero {Ω : Type
     refine ⟨(hfInf_meas measurableSet_Iio).inter (hfSup_meas measurableSet_Ioi), ?_⟩
     ext x
     simp only [E, Set.mem_preimage, Set.mem_ofPred_eq, fInf, fSup,
-      TauCeti.liminf_birkhoffAverage_comp, TauCeti.limsup_birkhoffAverage_comp]
+      TauCeti.liminf_birkhoffAverage_apply_eq_liminf_birkhoffAverage,
+      TauCeti.limsup_birkhoffAverage_apply_eq_limsup_birkhoffAverage]
   have hlow : b * μ.real E ≤ ∫ x in E, g x ∂μ :=
     mul_measureReal_le_setIntegral_of_lt_limsup hT hg hE fun _ hx ↦ hx.2
   have hhigh_neg : (-a) * μ.real E ≤ ∫ x in E, (-g x) ∂μ := by
     refine mul_measureReal_le_setIntegral_of_lt_limsup hT hg.neg hE fun x hx ↦ ?_
     have h2 := hx.1
     dsimp only [fInf] at h2
-    have hfun : (fun n ↦ ((birkhoffAverage ℝ T g n x : ℝ) : EReal)) =
-        -(fun n ↦ ((birkhoffAverage ℝ T (-g) n x : ℝ) : EReal)) := by
-      ext n; simp [birkhoffAverage_neg_apply]
-    rw [hfun, EReal.liminf_neg, ← EReal.neg_lt_neg_iff, neg_neg] at h2
+    rw [TauCeti.coe_birkhoffAverage_eq_neg_neg T g x, EReal.liminf_neg,
+      ← EReal.neg_lt_neg_iff, neg_neg] at h2
     simpa [EReal.coe_neg] using h2
   rw [integral_neg] at hhigh_neg
   have hzero : μ.real E = 0 := by nlinarith [measureReal_nonneg (μ := μ) (s := E)]
@@ -436,9 +442,8 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (hT : MeasurePreserving T μ
     exact ProbabilityTheory.MemLp.uniformIntegrable_of_identDistrib hp1 hp hmem0
       fun k ↦ (law.comp (hT.iterate k).hasLaw).identDistrib law
   have havg_eq : (fun n : ℕ ↦ (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f ∘ T^[k]) =
-      birkhoffAverage ℝ T f := by
-    ext n x
-    simp [birkhoffAverage, birkhoffSum]
+      birkhoffAverage ℝ T f :=
+    funext fun n ↦ (TauCeti.birkhoffAverage_eq_smul_sum_comp_iterate T f n).symm
   have hui_avg : UniformIntegrable (birkhoffAverage ℝ T f) p μ :=
     havg_eq ▸ uniformIntegrable_average hp1 hui_iter
   exact tendsto_Lp_finite_of_tendsto_ae hp1 hp hui_avg.aestronglyMeasurable
@@ -478,6 +483,14 @@ theorem ae_tendsto_birkhoffAverage_average [IsFiniteMeasure μ] (hT : Ergodic T 
     hT.toPreErgodic.condExp_invariants_ae_eq_average f] with x hx hce
   rwa [hce] at hx
 
+/-- **Birkhoff's pointwise ergodic theorem (ergodic case, probability space).** For an ergodic map
+`T` on a probability space `(Ω, μ)` and an integrable Banach-valued observable `f`, the Birkhoff
+time averages converge almost everywhere to `∫ y, f y ∂μ`. -/
+theorem ae_tendsto_birkhoffAverage_integral [IsProbabilityMeasure μ] (hT : Ergodic T μ)
+    {f : Ω → E} (hf : Integrable f μ) :
+    ∀ᵐ x ∂μ, Tendsto (fun n ↦ birkhoffAverage ℝ T f n x) atTop (𝓝 (∫ y, f y ∂μ)) := by
+  simpa only [average_eq_integral] using hT.ae_tendsto_birkhoffAverage_average hf
+
 /-- **`Lᵖ` ergodic theorem (ergodic case, finite measure, `1 ≤ p < ∞`).** For an ergodic map `T`
 on a finite measure space `(Ω, μ)`, the Birkhoff time averages of an `Lᵖ` Banach-valued observable
 converge in `Lᵖ` to the constant space average `⨍ y, f y ∂μ`. -/
@@ -490,6 +503,15 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_average [IsFiniteMeasure μ] (hT : E
   filter_upwards [hT.toPreErgodic.condExp_invariants_ae_eq_average f] with x hx
   simp only [Pi.sub_apply, hx]
 
+/-- **`Lᵖ` ergodic theorem (ergodic case, probability space, `1 ≤ p < ∞`).** For an ergodic map
+`T` on a probability space `(Ω, μ)`, the Birkhoff time averages of an `Lᵖ` Banach-valued observable
+converge in `Lᵖ` to the constant integral `∫ y, f y ∂μ`. -/
+theorem tendsto_eLpNorm_birkhoffAverage_sub_integral [IsProbabilityMeasure μ] (hT : Ergodic T μ)
+    {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) {f : Ω → E} (hf : MemLp f p μ) :
+    Tendsto (fun n ↦ eLpNorm (birkhoffAverage ℝ T f n - fun _ ↦ ∫ y, f y ∂μ) p μ)
+      atTop (𝓝 0) := by
+  simpa only [average_eq_integral] using hT.tendsto_eLpNorm_birkhoffAverage_sub_average hp1 hp hf
+
 /-- **`L¹` ergodic theorem (ergodic case, finite measure).** For an ergodic map `T` on a finite
 measure space `(Ω, μ)` and an integrable Banach-valued observable `f`, the mean norm deviation of
 `birkhoffAverage ℝ T f n` from the space average `⨍ y, f y ∂μ` converges to `0`. -/
@@ -499,6 +521,14 @@ theorem tendsto_integral_norm_birkhoffAverage_sub_average [IsFiniteMeasure μ] (
   TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm le_rfl
     (hT.tendsto_eLpNorm_birkhoffAverage_sub_average le_rfl ENNReal.one_ne_top
       (memLp_one_iff_integrable.mpr hf))
+
+/-- **`L¹` ergodic theorem (ergodic case, probability space).** For an ergodic map `T` on a
+probability space `(Ω, μ)` and an integrable Banach-valued observable `f`, the mean norm deviation
+of `birkhoffAverage ℝ T f n` from `∫ y, f y ∂μ` converges to `0`. -/
+theorem tendsto_integral_norm_birkhoffAverage_sub_integral [IsProbabilityMeasure μ]
+    (hT : Ergodic T μ) {f : Ω → E} (hf : Integrable f μ) :
+    Tendsto (fun n ↦ ∫ x, ‖birkhoffAverage ℝ T f n x - ∫ y, f y ∂μ‖ ∂μ) atTop (𝓝 0) := by
+  simpa only [average_eq_integral] using hT.tendsto_integral_norm_birkhoffAverage_sub_average hf
 
 /-- **Ergodic visiting frequencies (finite measure).** For an ergodic map `T` on a finite measure
 space `(Ω, μ)` and a null-measurable set `s`, the fraction of the first `n` orbit points landing in
@@ -518,6 +548,16 @@ theorem ae_tendsto_card_filter_iterate_mem_div [IsFiniteMeasure μ] (hT : Ergodi
   refine hx.congr fun n ↦ ?_
   simp only [birkhoffAverage, birkhoffSum, smul_eq_mul, Set.indicator,
     Finset.sum_boole, div_eq_inv_mul]
+
+/-- **Ergodic visiting frequencies (probability space).** For an ergodic map `T` on a probability
+space `(Ω, μ)` and a null-measurable set `s`, the fraction of the first `n` orbit points landing in
+`s` converges almost everywhere to `μ.real s`. -/
+theorem ae_tendsto_card_filter_iterate_mem_div_of_isProbabilityMeasure [IsProbabilityMeasure μ]
+    (hT : Ergodic T μ) {s : Set Ω} [DecidablePred (· ∈ s)] (hs : NullMeasurableSet s μ) :
+    ∀ᵐ x ∂μ, Tendsto
+      (fun n : ℕ ↦ (((Finset.range n).filter (fun k ↦ T^[k] x ∈ s)).card : ℝ) / (n : ℝ))
+      atTop (𝓝 (μ.real s)) := by
+  simpa only [probReal_univ, div_one] using hT.ae_tendsto_card_filter_iterate_mem_div hs
 
 end Ergodic
 

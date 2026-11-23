@@ -8,11 +8,16 @@ module
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
-# Limits of weighted extended-real sums
+# Extended-real limits and `limsup` lemmas
 
-Weighted sums `s a + t b - r` with nonnegative real weights and a real correction preserve
-limits when both endpoint limits are different from `⊤`. This allows convexity inequalities
-for extended-real energies to pass to pointwise limits, including endpoint energies `⊥`.
+Complements `Mathlib.Topology.Instances.EReal.Lemmas` with limit and `limsup` lemmas for
+`EReal`-valued families:
+
+* `EReal.tendsto_coe_mul_add_coe_mul_sub`: weighted sums `s a + t b - r` with nonnegative real
+  weights and a real correction preserve limits when both endpoint limits are different from `⊤`
+  (allowing endpoint limits equal to `⊥`).
+* `EReal.limsup_mul_eq_of_tendsto_one`: multiplying an `EReal`-valued family by eventual `[0, 1]`
+  factors converging to `1` preserves its `limsup`.
 -/
 
 public section
@@ -43,5 +48,42 @@ theorem tendsto_coe_mul_add_coe_mul_sub {ι : Type*} {l : Filter ι}
     (tendsto_const_nhds (x := ((-r : ℝ) : EReal)))
     (EReal.add_ne_top hsa htb) (EReal.coe_ne_top _)
   simpa only [EReal.coe_neg, ← sub_eq_add_neg] using hR
+
+/-- Multiplying an `EReal`-valued family by factors eventually in `[0, 1]` converging to `1`
+preserves its `limsup`. -/
+theorem limsup_mul_eq_of_tendsto_one {ι : Type*} {l : Filter ι} {u b : ι → EReal}
+    (hb0 : 0 ≤ᶠ[l] b) (hb1 : b ≤ᶠ[l] 1) (hb : Tendsto b l (𝓝 1)) :
+    limsup (u * b) l = limsup u l := by
+  rcases l.eq_or_neBot with rfl | _
+  · simp
+  by_cases hu : ∃ᶠ n in l, 0 ≤ u n
+  · exact le_antisymm
+      ((EReal.limsup_mul_le hu hb0 (.inr (by rw [hb.limsup_eq]; exact EReal.coe_ne_top 1))
+        (.inr (by simp [hb.limsup_eq]))).trans_eq (by rw [hb.limsup_eq, mul_one]))
+      (by simpa [hb.liminf_eq] using EReal.le_limsup_mul hu hb0)
+  · push Not at hu
+    refine le_antisymm ?_ (limsup_le_limsup ?_)
+    · have h1 := EReal.le_liminf_mul (u := -u) (hu.mono fun _ hn ↦ by simpa using hn.le) hb0
+      have hneg : (-u) * b = -(u * b) := by ext n; simp [neg_mul]
+      rwa [hb.liminf_eq, mul_one, hneg, EReal.liminf_neg, EReal.liminf_neg,
+        EReal.neg_le_neg_iff] at h1
+    · filter_upwards [hu, hb0, hb1] with n hnu hn0 hn1
+      simp only [Pi.zero_apply] at hn0
+      simp only [Pi.one_apply] at hn1
+      simp only [Pi.mul_apply]
+      cases hx : u n with
+      | bot => exact bot_le
+      | top => simp [hx] at hnu
+      | coe r =>
+        have hr : r < 0 := EReal.coe_lt_coe_iff.mp (hx ▸ hnu)
+        cases hy : b n with
+        | bot => simp [hy] at hn0
+        | top => exact absurd (hy ▸ hn1) (not_le_of_gt (EReal.coe_lt_top 1))
+        | coe s =>
+          have hs1 : s ≤ 1 := by
+            rw [hy, ← EReal.coe_one, EReal.coe_le_coe_iff] at hn1
+            exact hn1
+          rw [← EReal.coe_mul, EReal.coe_le_coe_iff]
+          nlinarith
 
 end EReal
