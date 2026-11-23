@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
 public import TauCeti.Analysis.Polynomial.HasseDerivBound
+public import TauCeti.RingTheory.MvPolynomial.Abv.Taylor
 
 /-!
 # Examples of bounds on evaluated Hasse derivatives
@@ -16,7 +17,12 @@ public import TauCeti.Analysis.Polynomial.HasseDerivBound
 For `f = X²` the binomial bound on `‖D^[1] f (2)‖ = 4` is `choose 1 1 + choose 2 1 · 2 = 5`; at the
 point `10` it is `21` against the true value `20`, while the coarse bound is `3 · 4 · 100 = 1200`.
 For `k = 3 > 2` the binomial sum is empty. For `f = 1 + X + X²` at `1` the binomial bound `3` is an
-equality and the coarse bound is `12`.
+equality and the coarse bound is `12`; so is the bound of
+`AbsoluteValue.apply_eval_hasseDeriv_le` on `1 + Z + Z²` in `MvPolynomial (Fin 1) ℂ` with partial
+degree bound `L = 2` and coefficient bound `B = 1`, which is `1 · 3 · (2 · 1)² = 12`.
+
+For ordinary derivatives the bound carries the extra factor `k!`: for `f = X²` and `k = 2` it is
+`2! · choose 2 2 = 2`, which is the value `f'' = 2`, while the Hasse bound `1` is below it.
 
 The confluent Vandermonde matrix for the nodes `(0, 1)` with multiplicities `(2, 1)` has rows
 `[1, 0, 0]`, `[0, 1, 0]`, `[1, 1, 1]`: its row of the jet `(i, k)` is `j ↦ D^[k] (X ^ j) (a i)` for
@@ -67,6 +73,14 @@ example : ‖(1 + X + X ^ 2 : ℂ[X]).eval 1‖ ≤ 12 := by
     (a := 1) (by simp) 0
   norm_num at this ⊢
 
+example : (derivative^[2] (X ^ 2 : ℂ[X])).eval 2 = 2 := by
+  simp [iterate_derivative_X_pow_eq_smul]
+
+example : ‖(derivative^[2] (X ^ 2 : ℂ[X])).eval 2‖ ≤ 2 := by
+  refine (norm_eval_iterate_derivative_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
+    (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 2).trans_eq ?_
+  simp
+
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ = 20 := by
   rw [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]; norm_num
 
@@ -95,5 +109,33 @@ example {j : ℕ} (hj : j ∈ range 3) : ‖(hasseDeriv 1 (X ^ j : ℂ[X])).eval
 
 example : ∑ j ∈ range 3, ‖(hasseDeriv 0 (X ^ j : ℂ[X])).eval 1‖ ^ 2 ≤ 3 :=
   (sum_sq_norm_eval_hasseDeriv_X_pow_le (A := 1) (by simp) 0 (range 3)).trans_eq <| by simp
+
+end TauCeti.HasseDerivBoundExample
+
+namespace TauCeti.HasseDerivBoundExample
+
+open MvPolynomial
+
+theorem norm_coeff_one_add_X_add_X_sq_fin_one_le (s : Fin 1 →₀ ℕ) :
+    ‖(1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ).coeff s‖ ≤ 1 := by
+  obtain ⟨n, rfl⟩ : ∃ n, s = Finsupp.single 0 n := ⟨s 0, Finsupp.ext fun i ↦ by fin_cases i; simp⟩
+  rcases n with _ | _ | _ | n <;>
+    simp [coeff_one, coeff_X, coeff_X_pow, eq_comm (a := (0 : Fin 1 →₀ ℕ))]
+  split_ifs <;> simp
+
+theorem degreeOf_one_add_X_add_X_sq_fin_one_le :
+    (1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ).degreeOf 0 ≤ 2 := by
+  refine (degreeOf_add_le _ _ _).trans (max_le ((degreeOf_add_le _ _ _).trans (max_le ?_ ?_)) ?_)
+  · simp
+  · simp
+  · exact (degreeOf_pow_le _ _ _).trans (by simp)
+
+/-- The one-variable case of `AbsoluteValue.apply_eval_hasseDeriv_le` for `1 + Z + Z²` at `1`
+with `L = 2` and `B = 1` gives the same `12` as the coarse bound. -/
+example : IsAbsoluteValue.toAbsoluteValue (norm : ℂ → ℝ)
+    (eval ![1] (hasseDeriv 0 (1 + X 0 + X 0 ^ 2 : MvPolynomial (Fin 1) ℂ))) ≤ 12 :=
+  ((IsAbsoluteValue.toAbsoluteValue (norm : ℂ → ℝ)).apply_eval_hasseDeriv_le (L := fun _ ↦ 2)
+    (fun i ↦ by fin_cases i; exact degreeOf_one_add_X_add_X_sq_fin_one_le) (B := 1)
+    norm_coeff_one_add_X_add_X_sq_fin_one_le ![1] 0).trans_eq (by norm_num)
 
 end TauCeti.HasseDerivBoundExample
