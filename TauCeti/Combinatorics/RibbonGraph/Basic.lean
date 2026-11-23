@@ -764,9 +764,8 @@ theorem isRegular_iff_natCard_aut {Γ : BipartiteRibbonGraph.{u}} :
       (fun x y _ _ hx hy e ↦ by simp [hx, hy]) (fun x _ hx e ↦ x.injective (by simp [← hx])) hg
     rintro g (rfl | rfl) e; exacts [f.map_rotB e, f.map_rotW e]
   have hinj : Function.Injective (fun f : Γ.Aut ↦ f • e₀) := fun f g h ↦ Iso.ext <| Equiv.ext
-    fun e ↦ by
-      obtain ⟨⟨r, hr⟩, rfl⟩ := hΓ.2.exists_smul_eq e₀ e
-      exact (hcomm r hr f e₀).trans <| (congrArg r h).trans (hcomm r hr g e₀).symm
+    fun e ↦ by obtain ⟨⟨r, hr⟩, rfl⟩ := hΓ.2.exists_smul_eq e₀ e
+               exact (hcomm r hr f e₀).trans <| (congrArg r h).trans (hcomm r hr g e₀).symm
   refine ⟨fun hreg ↦ (Nat.card_congr (Equiv.ofBijective _ ⟨hinj, fun e ↦
       hreg.exists_smul_eq e₀ e⟩)).trans Nat.card_eq_fintype_card, fun hcard ↦ ⟨fun e₁ e₂ ↦ ?_⟩⟩
   let _ := Fintype.ofFinite Γ.Aut

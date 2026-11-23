@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.Regular
-public import TauCeti.Combinatorics.RibbonGraph.CycleData
 public import TauCeti.Combinatorics.RibbonGraph.OfPermutationTriple
 public import TauCeti.Combinatorics.RibbonGraph.ToPermutationTriple
 
@@ -29,11 +27,9 @@ permutation triples, automorphisms included.
   `TauCeti.PermutationTriple.nonempty_iso_ribbonGraph_iff` is the same statement read on triples.
 * `TauCeti.BipartiteRibbonGraph.isoClassEquiv`: the resulting bijection between isomorphism
   classes of ribbon graphs with `n` edges and `TauCeti.PermutationTriple.IsoClass n`.
-* `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup`,
-  `TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut`,
-  `TauCeti.BipartiteRibbonGraph.cycleData_toPermutationTriple`, and
-  `TauCeti.BipartiteRibbonGraph.IsRegular`: the automorphism group, cycle data, and regularity
-  of a numbered graph match those of its triple.
+* `TauCeti.BipartiteRibbonGraph.autEquivAutomorphismGroup` and
+  `TauCeti.PermutationTriple.automorphismGroupMulEquivRibbonGraphAut`: the automorphism group of a
+  numbered graph is the automorphism group of its triple.
 
 Connectedness matches on the two sides
 (`TauCeti.BipartiteRibbonGraph.isConnected_toPermutationTriple` and
@@ -264,38 +260,6 @@ theorem _root_.TauCeti.PermutationTriple.coe_automorphismGroupMulEquivRibbonGrap
 @[simp] theorem _root_.TauCeti.PermutationTriple.natCard_aut_ribbonGraph (t : PermutationTriple n) :
     Nat.card t.ribbonGraph.Aut = Nat.card t.automorphismGroup :=
   (Nat.card_congr t.automorphismGroupMulEquivRibbonGraphAut.toEquiv).symm
-
-/-! ### Cycle data -/
-
-/-- Numbering the edges of `Γ` gives a permutation triple with cycle data `Γ.cycleData`. -/
-@[simp] theorem cycleData_toPermutationTriple (ν : Γ.E ≃ Fin n) :
-    (Γ.toPermutationTriple ν).cycleData = Γ.cycleData := by
-  rw [cycleData_eq_fullCycleType]; refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
-    simp [toPermutationTriple_σ0, toPermutationTriple_σ1, toPermutationTriple_σinf,
-      Equiv.Perm.fullCycleType_def]
-
-/-- Passing from a permutation triple to its bipartite ribbon graph preserves the cycle data. -/
-@[simp] theorem _root_.TauCeti.PermutationTriple.cycleData_ribbonGraph (t : PermutationTriple n) :
-    t.ribbonGraph.cycleData = t.cycleData := by
-  rw [← t.ribbonGraph.cycleData_toPermutationTriple (Equiv.refl (Fin n)),
-    t.toPermutationTriple_ribbonGraph]
-
-/-! ### Regularity -/
-
-/-- Numbering the edges of a bipartite ribbon graph preserves regularity. -/
-@[simp] theorem isRegular_toPermutationTriple (ν : Γ.E ≃ Fin n) :
-    (Γ.toPermutationTriple ν).IsRegular ↔ Γ.IsRegular := by
-  let φ : Γ.E →ₑ[Γ.autEquivAutomorphismGroup ν] Fin n :=
-    ⟨ν, fun f e ↦ by simp [Aut.smul_def, Subgroup.smul_def, Perm.smul_def]⟩
-  exact (PermutationTriple.isRegular_iff.trans <| and_congr (Γ.isConnected_toPermutationTriple ν)
-    (MulAction.isPretransitive_congr (f := φ) (Γ.autEquivAutomorphismGroup ν).surjective
-      ν.bijective).symm).trans isRegular_iff.symm
-
-/-- Passing from a permutation triple to its ribbon graph preserves regularity. -/
-@[simp] theorem _root_.TauCeti.PermutationTriple.isRegular_ribbonGraph (t : PermutationTriple n) :
-    t.ribbonGraph.IsRegular ↔ t.IsRegular := by
-  rw [← t.ribbonGraph.isRegular_toPermutationTriple (Equiv.refl (Fin n)),
-    t.toPermutationTriple_ribbonGraph]
 
 end BipartiteRibbonGraph
 

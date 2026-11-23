@@ -407,32 +407,28 @@ theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass (n : 
   ext P; simp [isoClassEquivConnectedIsoClass_apply,
     TopBranchedCover.IsoClass.equivConnectedIsoClass_apply]
 
-section
-
-variable {n : ℕ} (P : Quotient (isoSetoid.{0} n))
-
 /-- Pointwise form of `isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass`. -/
-@[simp] theorem equivConnectedIsoClass_toTopBranchedCoverIsoClass :
+@[simp] theorem equivConnectedIsoClass_toTopBranchedCoverIsoClass {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
     TopBranchedCover.IsoClass.equivConnectedIsoClass n (toTopBranchedCoverIsoClass n P) =
       isoClassEquivConnectedIsoClass n P :=
   Equiv.congr_fun (isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass n) P
 
 /-- `isoClassEquivConnectedIsoClass` matches `isoClassRamificationPartitions` with `cycleData`. -/
-@[simp] theorem cycleData_isoClassEquivConnectedIsoClass :
+@[simp] theorem cycleData_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (isoClassEquivConnectedIsoClass n P).cycleData = isoClassRamificationPartitions n P := by
   simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 /-- `isoClassEquivConnectedIsoClass` preserves the order of the automorphism group. -/
-@[simp] theorem natCardAutomorphismGroup_isoClassEquivConnectedIsoClass :
+@[simp] theorem natCardAutomorphismGroup_isoClassEquivConnectedIsoClass {n : ℕ}
+    (P : Quotient (isoSetoid.{0} n)) :
     (isoClassEquivConnectedIsoClass n P).natCardAutomorphismGroup = isoClassNatCardAut n P := by
   simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 /-- `isoClassEquivConnectedIsoClass` preserves regularity. -/
-@[simp] theorem isRegular_isoClassEquivConnectedIsoClass :
+@[simp] theorem isRegular_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
     (isoClassEquivConnectedIsoClass n P).IsRegular ↔ IsoClassIsRegular n P := by
   simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
-
-end
 
 /-! ### Ramification over `0`, `1` and `∞` -/
 
@@ -490,10 +486,9 @@ theorem map_localMultiplicity_fiber_inf (P : AnalyticBelyiPair.{0}) {n : ℕ}
 theorem ramificationPartitions_eq_cycleData_monodromyTriple (P : AnalyticBelyiPair.{0}) {n : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
     P.ramificationPartitions = (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
-  simp only [ramificationPartitions_def, P.map_localMultiplicity_fiber_zero ν,
-    P.map_localMultiplicity_fiber_one ν, P.map_localMultiplicity_fiber_inf ν, fullCycleType_def]
-  exact Prod.ext (PermutationTriple.cycleData_σ0 _).symm
-    (Prod.ext (PermutationTriple.cycleData_σ1 _).symm (PermutationTriple.cycleData_σinf _).symm)
+  simp [ramificationPartitions_def, P.map_localMultiplicity_fiber_zero ν,
+    P.map_localMultiplicity_fiber_one ν, P.map_localMultiplicity_fiber_inf ν,
+    PermutationTriple.cycleData, fullCycleType_def]
 
 /-- **A Belyi map is unramified over `0` exactly when `σ0` is the identity**, in the monodromy
 triple of the pair for any numbering of its fibre over `1/2`. -/
@@ -537,9 +532,9 @@ theorem ncard_preimage_marked_eq_orbitCount (P : AnalyticBelyiPair.{0}) {n : ℕ
 theorem natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar (P : AnalyticBelyiPair.{0})
     {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : (ramificationDegree P.β : ℤ) =
     2 * (degree P.β : ℤ) - (P.isCoveringMap_restrict.monodromyTriple ν).eulerChar := by
-  have := P.ncard_preimage_marked_add_ramificationDegree_β
-  have := P.ncard_preimage_marked_eq_orbitCount ν
-  have := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  have h := P.ncard_preimage_marked_add_ramificationDegree_β
+  have hd := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  rw [P.ncard_preimage_marked_eq_orbitCount ν] at h
   rw [PermutationTriple.eulerChar_def]; omega
 
 end AnalyticBelyiPair

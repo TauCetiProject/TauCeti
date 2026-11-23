@@ -5,16 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.RibbonGraph.Basic
+public import TauCeti.Combinatorics.PermutationTriple.CycleData
+public import TauCeti.Combinatorics.RibbonGraph.Classification
 public import TauCeti.GroupTheory.Perm.Partition
 
 /-!
 # Cycle data of a bipartite ribbon graph
 
-Using `blackDegree`, `whiteDegree`, and `faceDegree` from `TauCeti.Combinatorics.RibbonGraph.Basic`,
-this file packages the black-vertex, white-vertex, and face degree multisets into
-`BipartiteRibbonGraph.cycleData`, identifies them with `fullCycleType` of `rotB`, `rotW`, and
-`facePerm`, and proves isomorphism invariance.
+Packages vertex and face degrees into `cycleData` and matches `PermutationTriple.cycleData`.
 
 ## References
 
@@ -26,11 +24,9 @@ open Equiv Equiv.Perm
 
 public section
 
-namespace TauCeti
-
 universe u v
 
-namespace BipartiteRibbonGraph
+namespace TauCeti.BipartiteRibbonGraph
 
 variable (Γ : BipartiteRibbonGraph.{u})
 
@@ -90,6 +86,17 @@ theorem Iso.cycleData_eq {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGr
     Multiset.map_map, Function.comp_apply, Equiv.coe_toEmbedding, φ.blackDegree_eq,
     φ.whiteDegree_eq, φ.faceDegree_eq]
 
-end BipartiteRibbonGraph
+/-- Numbering the edges of `Γ` gives a permutation triple with cycle data `Γ.cycleData`. -/
+@[simp] theorem cycleData_toPermutationTriple {n : ℕ} (ν : Γ.E ≃ Fin n) :
+    (Γ.toPermutationTriple ν).cycleData = Γ.cycleData := by
+  rw [cycleData_eq_fullCycleType]; refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
+    simp [toPermutationTriple_σ0, toPermutationTriple_σ1, toPermutationTriple_σinf,
+      fullCycleType_def]
 
-end TauCeti
+end TauCeti.BipartiteRibbonGraph
+
+/-- Passing from a permutation triple to its bipartite ribbon graph preserves the cycle data. -/
+@[simp] theorem TauCeti.PermutationTriple.cycleData_ribbonGraph {n : ℕ} (t : PermutationTriple n) :
+    t.ribbonGraph.cycleData = t.cycleData := by
+  rw [← t.ribbonGraph.cycleData_toPermutationTriple (Equiv.refl (Fin n)),
+    t.toPermutationTriple_ribbonGraph]

@@ -38,13 +38,8 @@ degree `n` to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0,
 (`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`). Since a branched cover is determined by
 its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
 branched cover is isomorphic to the filled cover of its unbranched part
-(`TauCeti.TopBranchedCover.isoFilledCover`), restriction is a bijection packaged as
-`TauCeti.TopBranchedCover.IsoClass.equivConnectedCoverClass`, and composing with the classification
-of covers yields `TauCeti.TopBranchedCover.IsoClass.equivConnectedIsoClass`.
-
-Through this isomorphism the ramification of a topological branched cover is read off its
-monodromy: over `0`, `1` and `∞` the ramification partition is the full cycle type of `σ0`, `σ1`,
-`σinf` (`TauCeti.TopBranchedCover.ramificationPartitions_eq_cycleData_monodromyTriple`).
+(`TauCeti.TopBranchedCover.isoFilledCover`), giving `equivConnectedCoverClass` and
+`equivConnectedIsoClass`. Over `0`, `1` and `∞`, ramification partitions match `σ0`, `σ1`, `σinf`.
 
 ## Main results
 
@@ -67,9 +62,7 @@ monodromy: over `0`, `1` and `∞` the ramification partition is the full cycle 
 * `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
   the filled cover of its unbranched part.
 * `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`, `equivConnectedCoverClass`,
-  `equivConnectedIsoClass`: classification of topological branched covers of degree `n`.
-* `TauCeti.TopBranchedCover.parts_ramificationPartition_zero`, `_one`, `_inf`,
-  `ramificationPartitions_eq_cycleData_monodromyTriple`: ramification matches `σ0`, `σ1`, `σinf`.
+  `equivConnectedIsoClass`: classification and ramification matching `σ0`, `σ1`, `σinf`.
 
 ## References
 
@@ -460,10 +453,9 @@ theorem parts_ramificationPartition_inf (ν : X.restrict ⁻¹' {basePt} ≃ Fin
 theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     X.ramificationPartitions = (X.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
-  simp only [TopBranchedCover.ramificationPartitions_def, parts_ramificationPartition_zero X ν,
-    parts_ramificationPartition_one X ν, parts_ramificationPartition_inf X ν, fullCycleType_def]
-  exact Prod.ext (PermutationTriple.cycleData_σ0 _).symm
-    (Prod.ext (PermutationTriple.cycleData_σ1 _).symm (PermutationTriple.cycleData_σinf _).symm)
+  simp [TopBranchedCover.ramificationPartitions_def, parts_ramificationPartition_zero X ν,
+    parts_ramificationPartition_one X ν, parts_ramificationPartition_inf X ν,
+    PermutationTriple.cycleData, fullCycleType_def]
 
 end TopBranchedCover
 

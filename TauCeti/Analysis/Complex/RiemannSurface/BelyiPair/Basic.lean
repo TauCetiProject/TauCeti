@@ -355,8 +355,8 @@ theorem ncard_preimage_marked (P : AnalyticBelyiPair.{u}) :
   have hf := P.β.finite_fiber
   rw [show P.β ⁻¹' marked = (P.β ⁻¹' {((0 : ℂ) : OnePoint ℂ)} ∪ P.β ⁻¹' {((1 : ℂ) : OnePoint ℂ)})
       ∪ P.β ⁻¹' {(∞ : OnePoint ℂ)} from ext fun _ ↦ by simp [mem_marked, or_assoc],
-    ncard_union_eq (disjoint_union_left.2 ⟨hd (by simp), hd (by simp)⟩) ((hf _).union (hf _))
-      (hf _), ncard_union_eq (hd (by simp)) (hf _) (hf _)]
+    ncard_union_eq (disjoint_union_left.2 ⟨hd (by simp), hd (by simp)⟩)
+      ((hf _).union (hf _)) (hf _), ncard_union_eq (hd (by simp)) (hf _) (hf _)]
 
 /-! ### Maps over the sphere are holomorphic -/
 
@@ -900,8 +900,7 @@ theorem natCard_dvd_degree : Nat.card (P.Iso P) ∣ degree P.β := by
 /-- Conjugation by `e : P.Iso Q` identifies the automorphism groups `P.Iso P` and `Q.Iso Q`. -/
 def autMulEquiv (e : P.Iso Q) : P.Iso P ≃* Q.Iso Q :=
   ⟨⟨fun f ↦ e.symm.trans (f.trans e), fun g ↦ e.trans (g.trans e.symm),
-    fun _ ↦ ext fun _ ↦ by simp, fun _ ↦ ext fun _ ↦ by simp⟩,
-    fun _ _ ↦ ext fun _ ↦ by simp⟩
+    fun _ ↦ ext fun _ ↦ by simp, fun _ ↦ ext fun _ ↦ by simp⟩, fun _ _ ↦ ext fun _ ↦ by simp⟩
 
 /-- Conjugating an automorphism by `e : P ≅ Q` evaluates as `e ∘ f ∘ e.symm`. -/
 @[simp] theorem autMulEquiv_apply (e : P.Iso Q) (f : P.Iso P) (y : Q.X) :
@@ -963,8 +962,8 @@ def isoMulEquivDeckToTopBranchedCover {n : ℕ} (h : degree P.β = n) :
 @[simp] theorem coe_isoMulEquivDeckToTopBranchedCover_symm_apply {n : ℕ} (h : degree P.β = n)
     (φ : deck (P.toTopBranchedCover h).π) : ⇑((P.isoMulEquivDeckToTopBranchedCover h).symm φ) =
       (φ : (P.toTopBranchedCover h).Z ≃ₜ (P.toTopBranchedCover h).Z) :=
-  funext fun x ↦ (congrFun (P.coe_isoMulEquivDeck_symm_apply _) x).trans
-    (Deck.conjMulEquiv_symm_apply_coe _ _ φ x)
+  funext fun x ↦ (congrFun (P.coe_isoMulEquivDeck_symm_apply _) x).trans <|
+    Deck.conjMulEquiv_symm_apply_coe _ _ φ x
 
 /-- **The automorphisms of an analytic Belyi pair are the deck transformations of its cover of
 `ℂ ∖ {0, 1}`.** An automorphism goes to its restriction to the points over `ℂ ∖ {0, 1}`
@@ -1052,8 +1051,8 @@ end AutomorphismGroup
 def IsRegular (P : AnalyticBelyiPair.{u}) : Prop := Nat.card (P.Iso P) = degree P.β
 
 /-- Unfold `AnalyticBelyiPair.IsRegular` to `Nat.card (P.Iso P) = degree P.β`. -/
-theorem isRegular_iff {P : AnalyticBelyiPair.{u}} :
-    P.IsRegular ↔ Nat.card (P.Iso P) = degree P.β := Iff.rfl
+theorem isRegular_iff {P : AnalyticBelyiPair.{u}} : P.IsRegular ↔ Nat.card (P.Iso P) = degree P.β :=
+  Iff.rfl
 
 /-- `P` is regular if and only if its monodromy triple is regular. -/
 theorem isRegular_iff_monodromyTriple {P : AnalyticBelyiPair.{u}} {n : ℕ}
@@ -1102,17 +1101,13 @@ def toIsoClass (n : ℕ) : Quotient (isoSetoid.{u} n) → PermutationTriple.IsoC
 /-- **The topological branched cover of an isomorphism class of analytic Belyi pairs.** This is
 the analytic-to-topological map in the classification of Belyi pairs: it forgets the complex
 structure and retains the same map to the sphere. -/
-def toTopBranchedCoverIsoClass (n : ℕ) :
-    Quotient (isoSetoid.{u} n) → TopBranchedCover.IsoClass n :=
-  Quotient.lift
-    (fun P ↦ TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property))
-    fun _ _ ⟨e⟩ ↦ TopBranchedCover.IsoClass.mk_eq_mk_iff.2
-      ⟨e.toTopBranchedCover _ _⟩
+def toTopBranchedCoverIsoClass (n : ℕ) : Quotient (isoSetoid.{u} n) → TopBranchedCover.IsoClass n :=
+  Quotient.lift (fun P ↦ TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property))
+    fun _ _ ⟨e⟩ ↦ TopBranchedCover.IsoClass.mk_eq_mk_iff.2 ⟨e.toTopBranchedCover _ _⟩
 
 /-- The topological branched-cover class of a pair is represented by its underlying topological
 branched cover. -/
-@[simp]
-theorem toTopBranchedCoverIsoClass_mk {n : ℕ}
+@[simp] theorem toTopBranchedCoverIsoClass_mk {n : ℕ}
     (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     toTopBranchedCoverIsoClass n ⟦P⟧ =
       TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property) := (rfl)
@@ -1170,8 +1165,8 @@ def IsoClassIsRegular (n : ℕ) : Quotient (isoSetoid.{u} n) → Prop :=
 /-- Forgetting the complex structure matches `isoClassNatCardAut` with `natCardDeck`. -/
 @[simp] theorem natCardDeck_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :
     (toTopBranchedCoverIsoClass n P).natCardDeck = isoClassNatCardAut n P :=
-  Quotient.inductionOn P fun P ↦ by
-    simpa using (Nat.card_congr (P.val.isoMulEquivDeckToTopBranchedCover P.property).toEquiv).symm
+  Quotient.inductionOn P fun P ↦ by simpa using
+    (Nat.card_congr (P.val.isoMulEquivDeckToTopBranchedCover P.property).toEquiv).symm
 
 /-- Forgetting the complex structure preserves regularity. -/
 @[simp] theorem isRegular_toTopBranchedCoverIsoClass {n : ℕ} (P : Quotient (isoSetoid.{u} n)) :

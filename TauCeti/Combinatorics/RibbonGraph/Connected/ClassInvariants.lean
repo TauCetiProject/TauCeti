@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.ClassInvariants
-public import TauCeti.Combinatorics.RibbonGraph.ConnectedClassification
+public import TauCeti.Combinatorics.RibbonGraph.Connected.Classification
+public import TauCeti.Combinatorics.RibbonGraph.CycleData
 public import TauCeti.Combinatorics.RibbonGraph.Genus
+public import TauCeti.Combinatorics.RibbonGraph.Regular
 
 /-!
 # Invariants of connected ribbon-graph classes
 
-Descends `cycleData`, `eulerChar`, `genus`, `Nat.card Aut`, and `IsRegular` to
-`Quotient (BipartiteRibbonGraph.connectedIsoSetoid n)` and matches them with `ConnectedIsoClass`.
+Descends invariants to `Quotient (connectedIsoSetoid n)` and compares them with `ConnectedIsoClass`.
 -/
 
 public section
@@ -24,7 +25,8 @@ universe u
 
 private def clift {α : Sort*} (n : ℕ)
     (f : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.val.IsConnected} → α)
-    (hf : ∀ {Γ Δ}, Γ.val.val.Iso Δ.val.val → f Γ = f Δ) : Quotient (connectedIsoSetoid.{u} n) → α :=
+    (hf : ∀ {Γ Δ}, Γ.val.val.Iso Δ.val.val → f Γ = f Δ) :
+    Quotient (connectedIsoSetoid.{u} n) → α :=
   Quotient.lift f fun _ _ h => (connectedIsoSetoid_mk_eq_mk_iff.1 (Quotient.sound h)).elim hf
 
 variable {n : ℕ}

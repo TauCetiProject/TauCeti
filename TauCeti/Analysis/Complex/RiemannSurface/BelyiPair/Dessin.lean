@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
 public import TauCeti.Combinatorics.RibbonGraph.Classification
+public import TauCeti.Combinatorics.RibbonGraph.Regular
 
 /-!
 # Automorphism, deck, and regularity comparisons for analytic Belyi pairs and dessins
 
-Identifies the automorphism and deck groups of `P` with the automorphism group of the ribbon
-graph of its monodromy triple, and characterizes regularity in terms of its dessin.
+Relates automorphism/deck groups and regularity of `P` to its monodromy ribbon graph.
 -/
 
 public noncomputable section
@@ -21,12 +21,10 @@ namespace TauCeti.AnalyticBelyiPair
 
 open ThricePuncturedSphere RiemannSurface BipartiteRibbonGraph
 
-universe u
-
 /-- `P` is regular if and only if the ribbon graph of its monodromy triple is regular. -/
 theorem isRegular_iff_ribbonGraph {P : AnalyticBelyiPair.{u}} {n : ℕ}
-    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) : P.IsRegular ↔
-      (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.IsRegular := by
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    P.IsRegular ↔ (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.IsRegular := by
   rw [isRegular_iff_monodromyTriple ν, PermutationTriple.isRegular_ribbonGraph]
 
 variable (P : AnalyticBelyiPair.{u}) {n : ℕ} (ν : P.restrict ⁻¹' {basePt} ≃ Fin n)

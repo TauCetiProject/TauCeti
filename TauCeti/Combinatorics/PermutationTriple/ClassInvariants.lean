@@ -13,17 +13,12 @@ public import TauCeti.Combinatorics.PermutationTriple.Regular
 /-!
 # Invariants of isomorphism classes of permutation triples
 
-Descends cycle partitions, cycle counts, Euler characteristic, genus, automorphism-group order, and
-regularity to `TauCeti.PermutationTriple.IsoClass` and `TauCeti.ConnectedIsoClass`.
+Descends invariants to `TauCeti.PermutationTriple.IsoClass` and `TauCeti.ConnectedIsoClass`.
 -/
-
-open Equiv
 
 public section
 
-namespace TauCeti
-
-namespace PermutationTriple.IsoClass
+namespace TauCeti.PermutationTriple.IsoClass
 
 variable {n : ℕ} (c : IsoClass n) (t : PermutationTriple n)
 
@@ -93,8 +88,7 @@ theorem genus_def : c.genus = ((2 - c.eulerChar) / 2).toNat := by
 
 /-- The cardinality of the automorphism group of any representative of an isomorphism class. -/
 noncomputable def natCardAutomorphismGroup : IsoClass n → ℕ :=
-  lift (fun t => Nat.card t.automorphismGroup) fun _ _ =>
-    natCard_automorphismGroup_eq_of_equivalent
+  lift (fun t => Nat.card t.automorphismGroup) fun _ _ => natCard_automorphismGroup_eq_of_equivalent
 
 /-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.automorphismGroup`. -/
 @[simp] theorem natCardAutomorphismGroup_mk :
@@ -111,9 +105,9 @@ def IsRegular : IsoClass n → Prop :=
 theorem IsRegular.isConnected {c : IsoClass n} (hc : c.IsRegular) : c.IsConnected := by
   obtain ⟨t, rfl⟩ := mk_surjective c; exact (isConnected_mk t).2 ((isRegular_mk t).1 hc).isConnected
 
-end PermutationTriple.IsoClass
+end TauCeti.PermutationTriple.IsoClass
 
-namespace ConnectedIsoClass
+namespace TauCeti.ConnectedIsoClass
 
 variable {n : ℕ} (c : ConnectedIsoClass n) (t : ConnectedTriple n)
 
@@ -130,8 +124,8 @@ def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ := c.forget.cycleDa
 def unorderedCycleData : Multiset (Multiset ℕ) := c.forget.unorderedCycleData
 
 /-- Evaluating `unorderedCycleData` on `mk t` recovers `t.val.unorderedCycleData`. -/
-@[simp] theorem unorderedCycleData_mk : (mk t).unorderedCycleData = t.val.unorderedCycleData := by
-  simp [unorderedCycleData]
+@[simp] theorem unorderedCycleData_mk :
+    (mk t).unorderedCycleData = t.val.unorderedCycleData := by simp [unorderedCycleData]
 
 /-- Forgetting connectedness preserves `unorderedCycleData`. -/
 @[simp] theorem unorderedCycleData_forget :
@@ -152,8 +146,9 @@ theorem cycleCounts_eq_card_cycleData :
   c.forget.cycleCounts_eq_card_cycleData
 
 /-- Each of the three full cycle partitions of a connected isomorphism class sums to `n`. -/
-theorem sum_cycleData : (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) =
-    (n, n, n) := c.forget.sum_cycleData
+theorem sum_cycleData :
+    (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) = (n, n, n) :=
+  c.forget.sum_cycleData
 
 /-- The combinatorial Euler characteristic `c₀ + c₁ + c∞ - n` of a connected isomorphism class. -/
 noncomputable def eulerChar : ℤ := c.forget.eulerChar
@@ -231,6 +226,4 @@ theorem isRegular_iff_natCardAutomorphismGroup : c.IsRegular ↔ c.natCardAutomo
   obtain ⟨t, rfl⟩ := mk_surjective c
   simp [PermutationTriple.isRegular_iff_card_automorphismGroup, t.property]
 
-end ConnectedIsoClass
-
-end TauCeti
+end TauCeti.ConnectedIsoClass

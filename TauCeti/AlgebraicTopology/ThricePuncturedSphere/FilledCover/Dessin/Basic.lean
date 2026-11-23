@@ -6,28 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.AnalyticBelyiPair
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Dessin
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Dessin.Basic
 
 /-!
 # Dessin classification and invariant comparisons for analytic Belyi pairs
 
-Classifies isomorphism classes of `AnalyticBelyiPair.{0}` by connected bipartite ribbon graphs
-`Quotient (BipartiteRibbonGraph.connectedIsoSetoid.{u} n)`, proves diagram commutativity and
-realization, and matches cycle data, automorphism-group order, and regularity.
+Classifies `AnalyticBelyiPair.{0}` by connected bipartite ribbon graphs, proves realization, and
+matches cycle data, automorphism-group order, and regularity.
 -/
 
 public noncomputable section
 
 open Equiv Equiv.Perm Function
 
-namespace TauCeti
+namespace TauCeti.AnalyticBelyiPair
 
 open ThricePuncturedSphere RiemannSurface BipartiteRibbonGraph
-open PermutationTriple (nonempty_iso_ribbonGraph_iff)
 
 universe u
-
-namespace AnalyticBelyiPair
 
 /-- **Analytic Belyi pairs are classified by dessins d'enfants (connected ribbon graphs).** -/
 def isoClassEquivConnectedRibbonGraph (n : ℕ) :
@@ -50,8 +46,7 @@ theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph (n
   simpa using Equiv.congr_fun
     (isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedRibbonGraph.{u} n) P
 
-/-- `connectedIsoClassEquiv` after `isoClassEquivConnectedRibbonGraph` is
-`isoClassEquivConnectedIsoClass`. -/
+/-- `connectedIsoClassEquiv` cancels `isoClassEquivConnectedRibbonGraph`. -/
 theorem isoClassEquivConnectedRibbonGraph_trans_connectedIsoClassEquiv (n : ℕ) :
     (isoClassEquivConnectedRibbonGraph.{u} n).trans (connectedIsoClassEquiv.{u} n) =
       isoClassEquivConnectedIsoClass n := by ext _; simp [isoClassEquivConnectedRibbonGraph]
@@ -89,31 +84,33 @@ theorem exists_iso_of_connectedRibbonGraph {n : ℕ} (Γ : BipartiteRibbonGraph.
   obtain ⟨⟨P, hdeg⟩, hP⟩ := Quotient.exists_rep
     ((isoClassEquivConnectedRibbonGraph.{u} n).symm ⟦⟨⟨Γ, hcard⟩, hconn⟩⟧)
   have hg : isoClassEquivConnectedRibbonGraph.{u} n ⟦⟨P, hdeg⟩⟧ = ⟦⟨⟨Γ, hcard⟩, hconn⟩⟧ :=
-    (congrArg (isoClassEquivConnectedRibbonGraph.{u} n) hP).trans (Equiv.apply_symm_apply _ _)
+    (congrArg _ hP).trans (Equiv.apply_symm_apply _ _)
   refine ⟨P, hdeg, fun ν ↦ ?_, fun Q νQ ⟨φ⟩ ↦ ?_⟩
   · rw [isoClassEquivConnectedRibbonGraph_mk ⟨P, hdeg⟩ ν, connectedIsoSetoid_mk_eq_mk_iff] at hg
     exact hg.map fun ψ ↦
       (P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.uliftIso.symm.trans ψ
-  · have hQdeg := Q.degree_β_eq_of_restrict_preimage_singleton_equiv νQ
-    refine isoSetoid_r.1 (Quotient.exact (a := ⟨Q, hQdeg⟩) (b := ⟨P, hdeg⟩)
-      ((isoClassEquivConnectedRibbonGraph.{u} n).injective ?_))
-    rw [hg, isoClassEquivConnectedRibbonGraph_mk ⟨Q, hQdeg⟩ νQ, connectedIsoSetoid_mk_eq_mk_iff]
-    exact ⟨(Q.isCoveringMap_restrict.monodromyTriple νQ).ribbonGraph.uliftIso.trans φ⟩
+  · have hQ := Q.degree_β_eq_of_restrict_preimage_singleton_equiv νQ
+    refine isoSetoid_r.1 <| Quotient.exact (a := ⟨Q, hQ⟩) (b := ⟨P, hdeg⟩) <|
+      (isoClassEquivConnectedRibbonGraph.{u} n).injective <| hg ▸ by
+        rw [isoClassEquivConnectedRibbonGraph_mk ⟨Q, hQ⟩ νQ, connectedIsoSetoid_mk_eq_mk_iff]
+        exact ⟨(Q.isCoveringMap_restrict.monodromyTriple νQ).ribbonGraph.uliftIso.trans φ⟩
 
 /-- **Two analytic Belyi pairs are isomorphic if and only if their dessins are isomorphic.** -/
 theorem nonempty_iso_iff_nonempty_ribbonGraph_iso {P Q : AnalyticBelyiPair.{0}} {n m : ℕ}
     (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) (ν' : Q.restrict ⁻¹' {basePt} ≃ Fin m) :
     Nonempty (P.Iso Q) ↔
       Nonempty ((P.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Iso
-        (Q.isCoveringMap_restrict.monodromyTriple ν').ribbonGraph) := by
-  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨φ⟩ ↦ ?_⟩
-  · obtain rfl : n = m := (P.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
+        (Q.isCoveringMap_restrict.monodromyTriple ν').ribbonGraph) :=
+  ⟨fun ⟨e⟩ ↦ by
+    obtain rfl : n = m := (P.degree_β_eq_of_restrict_preimage_singleton_equiv ν).symm.trans
       (e.degree_eq.trans (Q.degree_β_eq_of_restrict_preimage_singleton_equiv ν'))
-    exact nonempty_iso_ribbonGraph_iff.2 (PermutationTriple.IsoClass.mk_eq_mk_iff.1
-      ((nonempty_iso_iff_isoClass_monodromyTriple_eq ν ν').1 ⟨e⟩))
-  · obtain rfl : n = m := by simpa using Fintype.card_congr φ.edge
+    exact PermutationTriple.nonempty_iso_ribbonGraph_iff.2
+      (PermutationTriple.IsoClass.mk_eq_mk_iff.1
+        ((nonempty_iso_iff_isoClass_monodromyTriple_eq ν ν').1 ⟨e⟩)), fun ⟨φ⟩ ↦ by
+    obtain rfl : n = m := by simpa using Fintype.card_congr φ.edge
     exact (nonempty_iso_iff_isoClass_monodromyTriple_eq ν ν').2
-      (PermutationTriple.IsoClass.mk_eq_mk_iff.2 (nonempty_iso_ribbonGraph_iff.1 ⟨φ⟩))
+      (PermutationTriple.IsoClass.mk_eq_mk_iff.2
+        (PermutationTriple.nonempty_iso_ribbonGraph_iff.1 ⟨φ⟩))⟩
 
 variable {n : ℕ} (P : Quotient (isoSetoid.{0} n))
 
@@ -124,14 +121,12 @@ variable {n : ℕ} (P : Quotient (isoSetoid.{0} n))
 
 /-- `isoClassEquivConnectedRibbonGraph` matches `isoClassNatCardAut` with `connectedNatCardAut`. -/
 @[simp] theorem connectedNatCardAut_isoClassEquivConnectedRibbonGraph :
-    connectedNatCardAut n (isoClassEquivConnectedRibbonGraph.{u} n P) =
-      isoClassNatCardAut n P := by simp [← natCardAutomorphismGroup_connectedIsoClassEquiv]
+    connectedNatCardAut n (isoClassEquivConnectedRibbonGraph.{u} n P) = isoClassNatCardAut n P := by
+  simp [← natCardAutomorphismGroup_connectedIsoClassEquiv]
 
 /-- `isoClassEquivConnectedRibbonGraph` matches `IsoClassIsRegular` with `ConnectedIsRegular`. -/
 @[simp] theorem connectedIsRegular_isoClassEquivConnectedRibbonGraph :
-    ConnectedIsRegular n (isoClassEquivConnectedRibbonGraph.{u} n P) ↔
-      IsoClassIsRegular n P := by simp [← isRegular_connectedIsoClassEquiv]
+    ConnectedIsRegular n (isoClassEquivConnectedRibbonGraph.{u} n P) ↔ IsoClassIsRegular n P := by
+  simp [← isRegular_connectedIsoClassEquiv]
 
-end AnalyticBelyiPair
-
-end TauCeti
+end TauCeti.AnalyticBelyiPair

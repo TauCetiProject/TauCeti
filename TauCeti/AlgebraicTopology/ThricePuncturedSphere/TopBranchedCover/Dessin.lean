@@ -11,8 +11,7 @@ public import TauCeti.Combinatorics.RibbonGraph.Classification
 /-!
 # Deck groups of topological branched covers as ribbon-graph automorphisms
 
-Identifies the deck group of a topological branched cover `X : TopBranchedCover.{u} n` with the
-automorphism group of the bipartite ribbon graph of its monodromy triple.
+Identifies `deck X.π` with the automorphism group of the monodromy triple's ribbon graph.
 -/
 
 public noncomputable section
@@ -23,8 +22,6 @@ namespace TauCeti.TopBranchedCover
 
 open ThricePuncturedSphere
 
-universe u
-
 variable {n : ℕ} (X : TopBranchedCover.{u} n) (ν : X.restrict ⁻¹' {basePt} ≃ Fin n)
 
 /-- **The deck group of `X` is the automorphism group of the ribbon graph of its monodromy.** -/
@@ -33,15 +30,13 @@ def deckMulEquivRibbonGraphAut :
   (X.deckMulEquivAutomorphismGroup ν).trans
     (X.isCoveringMap_restrict.monodromyTriple ν).automorphismGroupMulEquivRibbonGraphAut
 
-/-- On edges (`Fin n`), `deckMulEquivRibbonGraphAut` acts by the induced permutation on the fibre
-over `1/2`. -/
+/-- On edges (`Fin n`), `deckMulEquivRibbonGraphAut` acts by the induced permutation on `1/2`. -/
 @[simp] theorem deckMulEquivRibbonGraphAut_apply_edge (φ : deck X.π) (i : Fin n) :
     (X.deckMulEquivRibbonGraphAut ν φ).edge i = ν (φ • ν.symm i) :=
   (Equiv.congr_fun (PermutationTriple.automorphismGroupMulEquivRibbonGraphAut_edge _ _) i).trans
     (X.coe_deckMulEquivAutomorphismGroup_apply ν φ i)
 
-/-- The deck transformation attached to a ribbon-graph automorphism `f` sends `ν.symm i` to
-`ν.symm (f.edge i)`. -/
+/-- The deck transformation attached to `f` sends `ν.symm i` to `ν.symm (f.edge i)`. -/
 @[simp] theorem deckMulEquivRibbonGraphAut_symm_smul
     (f : (X.isCoveringMap_restrict.monodromyTriple ν).ribbonGraph.Aut) (i : Fin n) :
     (X.deckMulEquivRibbonGraphAut ν).symm f • ν.symm i = ν.symm (f.edge i) := by

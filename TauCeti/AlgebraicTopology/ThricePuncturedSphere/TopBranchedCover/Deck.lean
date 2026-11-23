@@ -20,52 +20,44 @@ public noncomputable section
 open Equiv Equiv.Perm Set
 open scoped OnePoint
 
-namespace TauCeti
+namespace TauCeti.TopBranchedCover
 
 open ThricePuncturedSphere
 
 universe u
 
-namespace TopBranchedCover
-
 variable {n : ℕ} (X : TopBranchedCover.{u} n)
 
-/-- **The deck group of a branched cover is the deck group of its unbranched part.** A deck
-transformation of `π` restricts to one of `TauCeti.TopBranchedCover.restrict`, and every deck
-transformation of the unbranched cover extends uniquely across the marked fibres
-(`TauCeti.TopBranchedCover.Iso.ofRestrict`). -/
+/-- **The deck group of a branched cover is that of its unbranched part**: deck transformations of
+`π` restrict to `X.restrict` and extend uniquely via `Iso.ofRestrict`. -/
 def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
   toFun φ := ⟨(⟨φ.val, congrFun φ.property⟩ : Iso X X).restrict,
     deck.mem_iff.2 (funext (Iso.restrict_restrict _))⟩
   invFun ψ := ⟨(Iso.ofRestrict ψ.val fun z ↦ by
       simpa using congrArg toOnePoint (deck.proj_smul ψ z)).toHomeomorph,
     deck.mem_iff.2 (funext (Iso.π_apply _))⟩
-  left_inv _ := Subtype.ext <| congrArg Iso.toHomeomorph <|
-    Iso.restrict_injective (Iso.restrict_ofRestrict _ _)
+  left_inv _ :=
+    Subtype.ext <| congrArg Iso.toHomeomorph <| Iso.restrict_injective (Iso.restrict_ofRestrict _ _)
   right_inv _ := Subtype.ext (Iso.restrict_ofRestrict _ _)
   map_mul' _ _ := Subtype.ext (Homeomorph.ext fun _ ↦ Subtype.ext (by simp))
 
-/-- On the unbranched part, the restriction of a deck transformation is the deck
-transformation. -/
+/-- On the unbranched part, the restriction of a deck transformation is itself. -/
 @[simp] theorem coe_deckMulEquivDeckRestrict_apply (φ : deck X.π) (z : X.π ⁻¹' range toOnePoint) :
     ((X.deckMulEquivDeckRestrict φ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z :
       X.Z) = (φ : X.Z ≃ₜ X.Z) z := Iso.coe_restrict_apply _ z
 
-/-- On the unbranched part, the extension of a deck transformation of the unbranched cover is that
-deck transformation. -/
+/-- On the unbranched part, the extension of a deck transformation of `X.restrict` is itself. -/
 @[simp] theorem coe_deckMulEquivDeckRestrict_symm_apply (ψ : deck X.restrict)
     (z : X.π ⁻¹' range toOnePoint) : (X.deckMulEquivDeckRestrict.symm ψ : X.Z ≃ₜ X.Z) z =
       ((ψ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z : X.Z) :=
   Iso.ofRestrict_toHomeomorph_apply_val _ _ z
 
-/-- Deck transformations of `X.π` act on every fibre of `X.restrict` via
-`deckMulEquivDeckRestrict`. -/
+/-- Deck transformations of `X.π` act on `X.restrict ⁻¹' {b}` via `deckMulEquivDeckRestrict`. -/
 instance instMulActionDeckRestrictFiber (b : ThricePuncturedSphere) :
     MulAction (deck X.π) (X.restrict ⁻¹' {b}) :=
   MulAction.compHom _ X.deckMulEquivDeckRestrict.toMonoidHom
 
-/-- On underlying points of `X.Z`, the action of `deck X.π` on a fibre of `X.restrict` is
-evaluation of the deck transformation. -/
+/-- On points of `X.Z`, `deck X.π` acts on a fibre of `X.restrict` by evaluation. -/
 @[simp] theorem coe_deck_smul_restrictFiber (b : ThricePuncturedSphere) (φ : deck X.π)
     (z : X.restrict ⁻¹' {b}) : ((φ • z : X.restrict ⁻¹' {b}) : X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
   (congrArg Subtype.val (deck.fiber_smul_coe (X.deckMulEquivDeckRestrict φ) z)).trans
@@ -95,8 +87,7 @@ theorem Iso.natCard_deck_eq {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
 def IsRegular : Prop := Nat.card (deck X.π) = n
 
 /-- Unfold `TopBranchedCover.IsRegular` to `Nat.card (deck X.π) = n`. -/
-theorem isRegular_iff {X : TopBranchedCover.{u} n} : X.IsRegular ↔ Nat.card (deck X.π) = n :=
-  Iff.rfl
+theorem isRegular_iff : X.IsRegular ↔ Nat.card (deck X.π) = n := Iff.rfl
 
 /-- Regularity of topological branched covers is invariant under isomorphism. -/
 theorem Iso.isRegular_iff {X Y : TopBranchedCover.{u} n} (ι : X.Iso Y) :
@@ -137,13 +128,10 @@ def deckMulEquivAutomorphismGroup (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     ← coe_deckMulEquivAutomorphismGroup_apply, MulEquiv.apply_symm_apply]
 
 /-- `X` is regular if and only if its monodromy triple is regular. -/
-theorem isRegular_iff_monodromyTriple {X : TopBranchedCover.{u} n}
-    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
+theorem isRegular_iff_monodromyTriple (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     X.IsRegular ↔ (X.isCoveringMap_restrict.monodromyTriple ν).IsRegular := by
   rw [isRegular_iff, PermutationTriple.isRegular_iff_card_automorphismGroup,
     and_iff_right (X.isCoveringMap_restrict.isConnected_monodromyTriple ν),
     Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv]
 
-end TopBranchedCover
-
-end TauCeti
+end TauCeti.TopBranchedCover

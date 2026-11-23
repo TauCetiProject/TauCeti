@@ -77,4 +77,21 @@ def isoClassGenus (n : ℕ) : Quotient (isoSetoid.{u} n) → ℕ :=
 @[simp] theorem isoClassGenus_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     isoClassGenus n ⟦P⟧ = genus P.val.X := (rfl)
 
+/-- The total space of `P.toTopBranchedCover h` has finite CW type. -/
+instance instFiniteCWTypeToTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (h : degree P.β = n) : FiniteCWType (P.toTopBranchedCover h).Z :=
+  inferInstanceAs (FiniteCWType P.X)
+
+/-- Forgetting the complex structure preserves the Euler characteristic. -/
+@[simp] theorem eulerChar_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (h : degree P.β = n) [FiniteCWType (P.toTopBranchedCover h).Z] :
+    eulerChar (P.toTopBranchedCover h).Z = eulerChar P.X :=
+  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).eulerChar_eq
+
+/-- Forgetting the complex structure preserves the topological genus. -/
+@[simp] theorem genus_toTopBranchedCover (P : AnalyticBelyiPair.{u}) {n : ℕ}
+    (h : degree P.β = n) [FiniteCWType (P.toTopBranchedCover h).Z] :
+    genus (P.toTopBranchedCover h).Z = genus P.X :=
+  (Homeomorph.refl P.X : (P.toTopBranchedCover h).Z ≃ₜ P.X).toHomotopyEquiv.genus_eq
+
 end TauCeti.AnalyticBelyiPair
