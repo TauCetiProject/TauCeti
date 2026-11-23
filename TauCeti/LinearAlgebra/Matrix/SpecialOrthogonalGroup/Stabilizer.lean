@@ -65,7 +65,7 @@ private theorem blockDiag_mem (A : specialOrthogonalGroup (Fin 2) R) :
     !![(A : Matrix (Fin 2) (Fin 2) R) 0 0, (A : Matrix (Fin 2) (Fin 2) R) 0 1, 0;
       (A : Matrix (Fin 2) (Fin 2) R) 1 0, (A : Matrix (Fin 2) (Fin 2) R) 1 1, 0; 0, 0, 1] ∈
       specialOrthogonalGroup (Fin 3) R := by
-  have := mem_specialOrthogonalGroup_fin_two_iff.mp A.2
+  have := mem_specialOrthogonalGroup_fin_two_iff.mp A.property
   simp [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff, ← Matrix.ext_iff,
     Fin.forall_fin_succ, vecHead, vecTail, det_fin_three]
   grind
@@ -82,7 +82,7 @@ theorem mem_stabilizer_single_two_iff {g : specialOrthogonalGroup (Fin 3) R} :
     have hrow : (g : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ Pi.single 2 1 = Pi.single 2 1 := by
       conv_lhs => rw [← hcol]
       rw [mulVec_mulVec, (mem_orthogonalGroup_iff' _ _).mp
-        (mem_specialOrthogonalGroup_iff.mp g.2).1, one_mulVec]
+        (mem_specialOrthogonalGroup_iff.mp g.property).1, one_mulVec]
     rw [mulVec_single_one] at hcol hrow
     exact ⟨by simpa using congrFun hcol 0, by simpa using congrFun hcol 1,
       by simpa using congrFun hcol 2, by simpa using congrFun hrow 0,
@@ -98,7 +98,7 @@ private theorem block_mem {g : specialOrthogonalGroup (Fin 3) R}
       (g : Matrix (Fin 3) (Fin 3) R) 1 0, (g : Matrix (Fin 3) (Fin 3) R) 1 1] ∈
       specialOrthogonalGroup (Fin 2) R := by
   obtain ⟨h02, h12, h22, -, -⟩ := mem_stabilizer_single_two_iff.mp hg
-  obtain ⟨hO, hdet⟩ := mem_specialOrthogonalGroup_iff.mp g.2
+  obtain ⟨hO, hdet⟩ := mem_specialOrthogonalGroup_iff.mp g.property
   have hO' := (mem_orthogonalGroup_iff _ _).mp hO
   -- The first two rows are orthonormal, and the block has determinant one.
   have e00 := Matrix.ext_iff.mpr hO' 0 0
@@ -120,12 +120,12 @@ def equivLastStabilizer :
     specialOrthogonalGroup (Fin 2) R ≃* stabilizer (specialOrthogonalGroup (Fin 3) R)
       (Pi.single 2 1 : Fin 3 → R) where
   toFun A := ⟨⟨_, blockDiag_mem A⟩, mem_stabilizer_single_two_iff.mpr <| by simp⟩
-  invFun g := ⟨_, block_mem g.2⟩
+  invFun g := ⟨_, block_mem g.property⟩
   left_inv A := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp
   right_inv g := by
-    obtain ⟨h02, h12, h22, h20, h21⟩ := mem_stabilizer_single_two_iff.mp g.2
+    obtain ⟨h02, h12, h22, h20, h21⟩ := mem_stabilizer_single_two_iff.mp g.property
     ext i j
     fin_cases i <;> fin_cases j <;> simp [h02, h12, h22, h20, h21]
   map_mul' A B := by
@@ -225,7 +225,7 @@ theorem isCyclic_stabilizer [IsDomain R] [NeZero (2 : R)]
   have hfix (g : stabilizer H p) : Matrix.SpecialOrthogonalGroup.map φ (g : H) ∈
       stabilizer (specialOrthogonalGroup (Fin 3) L) (c • p') := by
     have hg : ((g : H) : Matrix (Fin 3) (Fin 3) R) *ᵥ p = p := by
-      have := MulAction.mem_stabilizer_iff.mp g.2
+      have := MulAction.mem_stabilizer_iff.mp g.property
       rwa [Subgroup.smul_def, Submonoid.smul_def, smul_eq_mulVec] at this
     rw [Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self, mulVec_smul,
       Matrix.SpecialOrthogonalGroup.coe_map]
