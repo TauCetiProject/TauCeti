@@ -101,10 +101,8 @@ theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ)
 /-- The L¹ integrated form is a contraction: `‖(π ⋊ U)(x)‖ ≤ ‖x‖₁` on the twisted L¹ algebra. -/
 theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ)) :
     ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
-  ((P.integratedOperatorCLM μ).norm_fromCompletionNonUnitalAlgHomOfMul_le _
-    (fun f => ((P.integratedOperatorCLM μ).le_opNorm f).trans
-      (mul_le_mul_of_nonneg_right (P.norm_integratedOperatorCLM_le μ) (norm_nonneg f))) x).trans_eq
-    (one_mul _)
+  (P.integratedOperatorCLM μ).norm_fromCompletionNonUnitalAlgHomOfMul_le_of_opNorm_le_one _
+    (P.norm_integratedOperatorCLM_le μ) x
 
 end Multiplication
 

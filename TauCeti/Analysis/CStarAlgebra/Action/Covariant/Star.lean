@@ -80,8 +80,8 @@ theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
 theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
     ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
   rw [integratedStarAlgHom, ContinuousLinearMap.toNonUnitalStarAlgHomOfMulStar_apply]
-  exact ((P.integratedOperatorCLM μ).le_opNorm f).trans <|
-    mul_le_of_le_one_left (norm_nonneg f) (P.norm_integratedOperatorCLM_le μ)
+  exact ((P.integratedOperatorCLM μ).le_of_opNorm_le (P.norm_integratedOperatorCLM_le μ) f).trans_eq
+    (one_mul _)
 
 /-- The integrated ⋆-homomorphism is continuous in the L¹ topology. -/
 @[fun_prop]

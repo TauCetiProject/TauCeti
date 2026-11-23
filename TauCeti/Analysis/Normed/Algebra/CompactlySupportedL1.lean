@@ -36,7 +36,7 @@ We develop once for all tagged spaces:
 * the generic extension pipeline (`CompactlySupportedL1.liftCLM`, together with
   `ContinuousLinearMap.toNonUnitalAlgHomOfMul`, `fromCompletionNonUnitalAlgHomOfMul`,
   `toNonUnitalStarAlgHomOfMulStar`, `fromCompletionNonUnitalStarAlgHomOfMulStar`) turning a
-  bounded linear map on `C_c(X, E)` (or any `A →L[𝕜] B`) into contractive nonunital algebra and
+  bounded linear map on `C_c(X, E)` (or any `A →L[R] B`) into contractive nonunital algebra and
   `⋆`-algebra homomorphisms on the completion.
 -/
 
@@ -515,14 +515,14 @@ open UniformSpace
 
 section AlgHomExtension
 
-variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜]
-  [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
-  [NonUnitalSeminormedRing B] [NormedSpace 𝕜 B]
+variable {R A B : Type*} [Semiring R]
+  [TopologicalSpace A] [NonUnitalNonAssocSemiring A] [Module R A]
+  [TopologicalSpace B] [NonUnitalNonAssocSemiring B] [Module R B]
 
-/-- Bundle a multiplicative continuous linear map `f : A →L[𝕜] B` as a nonunital `𝕜`-algebra
+/-- Bundle a multiplicative continuous linear map `f : A →L[R] B` as a nonunital `R`-algebra
 homomorphism. -/
-def toNonUnitalAlgHomOfMul (f : A →L[𝕜] B) (hf_mul : ∀ x y : A, f (x * y) = f x * f y) :
-    A →ₙₐ[𝕜] B where
+def toNonUnitalAlgHomOfMul (f : A →L[R] B) (hf_mul : ∀ x y : A, f (x * y) = f x * f y) :
+    A →ₙₐ[R] B where
   toFun := f
   map_zero' := map_zero _
   map_add' := map_add _
@@ -530,100 +530,145 @@ def toNonUnitalAlgHomOfMul (f : A →L[𝕜] B) (hf_mul : ∀ x y : A, f (x * y)
   map_mul' := hf_mul
 
 @[simp]
-theorem toNonUnitalAlgHomOfMul_apply (f : A →L[𝕜] B)
+theorem toNonUnitalAlgHomOfMul_apply (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (x : A) :
     f.toNonUnitalAlgHomOfMul hf_mul x = f x :=
   (rfl)
 
 @[fun_prop]
-theorem continuous_toNonUnitalAlgHomOfMul (f : A →L[𝕜] B)
+theorem continuous_toNonUnitalAlgHomOfMul (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) :
     Continuous (f.toNonUnitalAlgHomOfMul hf_mul) :=
   f.continuous
 
-section Completion
+end AlgHomExtension
 
-variable [T0Space B] [CompleteSpace B]
+section AlgHomCompletion
 
-/-- Extend a multiplicative continuous linear map `f : A →L[𝕜] B` into a complete separated
-target to `UniformSpace.Completion A →ₙₐ[𝕜] B`. -/
-def fromCompletionNonUnitalAlgHomOfMul (f : A →L[𝕜] B)
+variable {R A B : Type*} [Semiring R]
+  [NonUnitalNonAssocRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [Module R A] [UniformContinuousConstSMul R A]
+  [NonUnitalNonAssocRing B] [UniformSpace B] [IsUniformAddGroup B] [ContinuousMul B]
+  [Module R B] [ContinuousConstSMul R B] [T0Space B] [CompleteSpace B]
+
+/-- Extend a multiplicative continuous linear map `f : A →L[R] B` into a complete separated
+target to `UniformSpace.Completion A →ₙₐ[R] B`. -/
+def fromCompletionNonUnitalAlgHomOfMul (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) :
-    Completion A →ₙₐ[𝕜] B :=
+    Completion A →ₙₐ[R] B :=
   (f.toNonUnitalAlgHomOfMul hf_mul).fromCompletion (f.continuous_toNonUnitalAlgHomOfMul hf_mul)
 
 @[simp]
-theorem fromCompletionNonUnitalAlgHomOfMul_coe (f : A →L[𝕜] B)
+theorem fromCompletionNonUnitalAlgHomOfMul_coe (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (x : A) :
     f.fromCompletionNonUnitalAlgHomOfMul hf_mul x = f x :=
   (f.toNonUnitalAlgHomOfMul hf_mul).fromCompletion_apply_coe
     (f.continuous_toNonUnitalAlgHomOfMul hf_mul) x
 
 @[fun_prop]
-theorem continuous_fromCompletionNonUnitalAlgHomOfMul (f : A →L[𝕜] B)
+theorem continuous_fromCompletionNonUnitalAlgHomOfMul (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) :
     Continuous (f.fromCompletionNonUnitalAlgHomOfMul hf_mul) :=
   (f.toNonUnitalAlgHomOfMul hf_mul).continuous_fromCompletion _
 
-theorem norm_fromCompletionNonUnitalAlgHomOfMul_le (f : A →L[𝕜] B)
+theorem fromCompletionNonUnitalAlgHomOfMul_unique (f : A →L[R] B)
+    (hf_mul : ∀ x y : A, f (x * y) = f x * f y)
+    (g : Completion A →ₙₐ[R] B) (hg_cont : Continuous g) (hg : ∀ x : A, g x = f x) :
+    f.fromCompletionNonUnitalAlgHomOfMul hf_mul = g :=
+  (f.toNonUnitalAlgHomOfMul hf_mul).fromCompletion_unique
+    (f.continuous_toNonUnitalAlgHomOfMul hf_mul) g hg_cont fun x => (hg x).symm
+
+end AlgHomCompletion
+
+section AlgHomNorm
+
+variable {R A B : Type*} [Semiring R]
+  [NonUnitalSeminormedRing A] [Module R A] [UniformContinuousConstSMul R A]
+  [NonUnitalSeminormedRing B] [Module R B] [ContinuousConstSMul R B]
+  [T0Space B] [CompleteSpace B]
+
+/-- Extending a bounded multiplicative continuous linear map `f : A →L[R] B` into a complete
+separated target to `Completion A` preserves linear norm bounds. -/
+theorem norm_fromCompletionNonUnitalAlgHomOfMul_le (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) {C : ℝ} (hC : ∀ x : A, ‖f x‖ ≤ C * ‖x‖)
     (x : Completion A) :
     ‖f.fromCompletionNonUnitalAlgHomOfMul hf_mul x‖ ≤ C * ‖x‖ :=
   (f.toNonUnitalAlgHomOfMul hf_mul).norm_fromCompletion_le
     (f.continuous_toNonUnitalAlgHomOfMul hf_mul) hC x
 
-theorem fromCompletionNonUnitalAlgHomOfMul_unique (f : A →L[𝕜] B)
-    (hf_mul : ∀ x y : A, f (x * y) = f x * f y)
-    (g : Completion A →ₙₐ[𝕜] B) (hg_cont : Continuous g) (hg : ∀ x : A, g x = f x) :
-    f.fromCompletionNonUnitalAlgHomOfMul hf_mul = g :=
-  (f.toNonUnitalAlgHomOfMul hf_mul).fromCompletion_unique
-    (f.continuous_toNonUnitalAlgHomOfMul hf_mul) g hg_cont fun x => (hg x).symm
+end AlgHomNorm
 
-end Completion
+section AlgHomOpNorm
 
-end AlgHomExtension
+variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜]
+  [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
+  [NonUnitalSeminormedRing B] [NormedSpace 𝕜 B]
+  [T0Space B] [CompleteSpace B]
+
+/-- Extending a multiplicative continuous linear map `f : A →L[𝕜] B` of operator norm at most `C`
+to `Completion A` yields a map bounded by `C * ‖x‖`. -/
+theorem norm_fromCompletionNonUnitalAlgHomOfMul_le_of_opNorm_le (f : A →L[𝕜] B)
+    (hf_mul : ∀ x y : A, f (x * y) = f x * f y) {C : ℝ} (hf : ‖f‖ ≤ C) (x : Completion A) :
+    ‖f.fromCompletionNonUnitalAlgHomOfMul hf_mul x‖ ≤ C * ‖x‖ :=
+  f.norm_fromCompletionNonUnitalAlgHomOfMul_le hf_mul (f.le_of_opNorm_le hf) x
+
+/-- Extending a multiplicative contraction `f : A →L[𝕜] B` (`‖f‖ ≤ 1`) to `Completion A` yields
+a contraction. -/
+theorem norm_fromCompletionNonUnitalAlgHomOfMul_le_of_opNorm_le_one (f : A →L[𝕜] B)
+    (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf : ‖f‖ ≤ 1) (x : Completion A) :
+    ‖f.fromCompletionNonUnitalAlgHomOfMul hf_mul x‖ ≤ ‖x‖ :=
+  (f.norm_fromCompletionNonUnitalAlgHomOfMul_le_of_opNorm_le hf_mul hf x).trans_eq (one_mul _)
+
+end AlgHomOpNorm
 
 section StarAlgHomExtension
 
-variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜]
-  [NonUnitalSeminormedRing A] [StarRing A] [NormedSpace 𝕜 A]
-  [NonUnitalSeminormedRing B] [StarRing B] [NormedSpace 𝕜 B]
+variable {R A B : Type*} [Semiring R]
+  [TopologicalSpace A] [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
+  [TopologicalSpace B] [NonUnitalNonAssocSemiring B] [Module R B] [Star B]
 
-/-- Bundle a multiplicative star-preserving continuous linear map `f : A →L[𝕜] B` as a nonunital
+/-- Bundle a multiplicative star-preserving continuous linear map `f : A →L[R] B` as a nonunital
 `⋆`-algebra homomorphism. -/
-def toNonUnitalStarAlgHomOfMulStar (f : A →L[𝕜] B)
+def toNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x)) :
-    A →⋆ₙₐ[𝕜] B where
+    A →⋆ₙₐ[R] B where
   __ := f.toNonUnitalAlgHomOfMul hf_mul
   map_star' := hf_star
 
 @[simp]
-theorem toNonUnitalStarAlgHomOfMulStar_apply (f : A →L[𝕜] B)
+theorem toNonUnitalStarAlgHomOfMulStar_apply (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
     (x : A) :
     f.toNonUnitalStarAlgHomOfMulStar hf_mul hf_star x = f x :=
   (rfl)
 
 @[fun_prop]
-theorem continuous_toNonUnitalStarAlgHomOfMulStar (f : A →L[𝕜] B)
+theorem continuous_toNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x)) :
     Continuous (f.toNonUnitalStarAlgHomOfMulStar hf_mul hf_star) :=
   f.continuous
 
-section Completion
+end StarAlgHomExtension
 
-variable [ContinuousStar A] [ContinuousStar B] [T0Space B] [CompleteSpace B]
+section StarAlgHomCompletion
 
-/-- Extend a multiplicative star-preserving continuous linear map `f : A →L[𝕜] B` into a
-complete separated target to `UniformSpace.Completion A →⋆ₙₐ[𝕜] B`. -/
-def fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[𝕜] B)
+variable {R A B : Type*} [Semiring R]
+  [NonUnitalNonAssocRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [StarAddMonoid A] [ContinuousStar A] [Module R A] [UniformContinuousConstSMul R A]
+  [NonUnitalNonAssocRing B] [UniformSpace B] [IsUniformAddGroup B] [ContinuousMul B]
+  [Star B] [ContinuousStar B] [Module R B] [ContinuousConstSMul R B]
+  [T0Space B] [CompleteSpace B]
+
+/-- Extend a multiplicative star-preserving continuous linear map `f : A →L[R] B` into a
+complete separated target to `UniformSpace.Completion A →⋆ₙₐ[R] B`. -/
+def fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x)) :
-    Completion A →⋆ₙₐ[𝕜] B :=
+    Completion A →⋆ₙₐ[R] B :=
   (f.toNonUnitalStarAlgHomOfMulStar hf_mul hf_star).fromCompletion
     (f.continuous_toNonUnitalStarAlgHomOfMulStar hf_mul hf_star)
 
 @[simp]
-theorem toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[𝕜] B)
+theorem toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x)) :
     (f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star).toNonUnitalAlgHom =
       f.fromCompletionNonUnitalAlgHomOfMul hf_mul := by
@@ -632,7 +677,7 @@ theorem toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L
   rfl
 
 @[simp]
-theorem fromCompletionNonUnitalStarAlgHomOfMulStar_apply (f : A →L[𝕜] B)
+theorem fromCompletionNonUnitalStarAlgHomOfMulStar_apply (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
     (x : Completion A) :
     f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star x =
@@ -640,7 +685,7 @@ theorem fromCompletionNonUnitalStarAlgHomOfMulStar_apply (f : A →L[𝕜] B)
   DFunLike.congr_fun
     (f.toNonUnitalAlgHom_fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star) x
 
-theorem fromCompletionNonUnitalStarAlgHomOfMulStar_coe (f : A →L[𝕜] B)
+theorem fromCompletionNonUnitalStarAlgHomOfMulStar_coe (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
     (x : A) :
     f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star x = f x := by
@@ -648,7 +693,7 @@ theorem fromCompletionNonUnitalStarAlgHomOfMulStar_coe (f : A →L[𝕜] B)
     fromCompletionNonUnitalAlgHomOfMul_coe]
 
 @[simp]
-theorem fromCompletionNonUnitalAlgHomOfMul_star (f : A →L[𝕜] B)
+theorem fromCompletionNonUnitalAlgHomOfMul_star (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
     (x : Completion A) :
     f.fromCompletionNonUnitalAlgHomOfMul hf_mul (star x) =
@@ -657,20 +702,31 @@ theorem fromCompletionNonUnitalAlgHomOfMul_star (f : A →L[𝕜] B)
     map_star (f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star) x
 
 @[fun_prop]
-theorem continuous_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[𝕜] B)
+theorem continuous_fromCompletionNonUnitalStarAlgHomOfMulStar (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x)) :
     Continuous (f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star) :=
   (f.toNonUnitalStarAlgHomOfMulStar hf_mul hf_star).continuous_fromCompletion _
 
-theorem norm_fromCompletionNonUnitalStarAlgHomOfMulStar_le (f : A →L[𝕜] B)
+end StarAlgHomCompletion
+
+section StarAlgHomNorm
+
+variable {R A B : Type*} [Semiring R]
+  [NonUnitalSeminormedRing A] [StarAddMonoid A] [ContinuousStar A]
+  [Module R A] [UniformContinuousConstSMul R A]
+  [NonUnitalSeminormedRing B] [Star B] [ContinuousStar B]
+  [Module R B] [ContinuousConstSMul R B]
+  [T0Space B] [CompleteSpace B]
+
+/-- Extending a bounded multiplicative star-preserving continuous linear map `f : A →L[R] B` into
+a complete separated target to `Completion A` preserves linear norm bounds. -/
+theorem norm_fromCompletionNonUnitalStarAlgHomOfMulStar_le (f : A →L[R] B)
     (hf_mul : ∀ x y : A, f (x * y) = f x * f y) (hf_star : ∀ x : A, f (star x) = star (f x))
     {C : ℝ} (hC : ∀ x : A, ‖f x‖ ≤ C * ‖x‖) (x : Completion A) :
     ‖f.fromCompletionNonUnitalStarAlgHomOfMulStar hf_mul hf_star x‖ ≤ C * ‖x‖ := by
   simpa only [fromCompletionNonUnitalStarAlgHomOfMulStar_apply] using
     f.norm_fromCompletionNonUnitalAlgHomOfMul_le hf_mul hC x
 
-end Completion
-
-end StarAlgHomExtension
+end StarAlgHomNorm
 
 end ContinuousLinearMap
