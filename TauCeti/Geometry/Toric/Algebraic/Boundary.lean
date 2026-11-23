@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.Algebra.MonoidAlgebra.Face
+public import TauCeti.RingTheory.TensorProduct.MonoidAlgebra
 
 /-!
 # The integral boundary of a regular toric chart
@@ -298,14 +299,6 @@ theorem boundaryQuotientBasis_repr_quotientMap {S : Type*} [CommRing S] (φ : R 
       Finsupp.mapRange φ φ.map_zero (boundaryQuotientBasis.repr x) := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
   ext p
-  simp
-
-/-- The coefficient change along the structure map of an `R`-algebra `S`, as an algebra map, is
-the ring-hom coefficient change `mapRingHom _ (algebraMap R S)`. -/
-private theorem mapAlgHom_ofId_apply {M : Type*} [AddMonoid M] (S : Type*) [CommRing S]
-    [Algebra R S] (f : AddMonoidAlgebra R M) :
-    mapAlgHom M (Algebra.ofId R S) f = mapRingHom M (algebraMap R S) f := by
-  ext
   simp
 
 open TensorProduct in
