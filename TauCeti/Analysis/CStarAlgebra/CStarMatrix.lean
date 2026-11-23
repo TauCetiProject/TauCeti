@@ -444,18 +444,26 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
       ((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) := by
   rw [nonneg_iff_forall_sum_nonneg]
   intro y
-  let z : A := ∑ i, a i * y i
-  have hsum :
-      ∑ i, ∑ j, star (y i) *
-        (((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) * y j =
-        (‖c‖ ^ 2 : ℝ) • (star z * z) - star z * (star c * c) * z := by
-    simp only [mul_sub, sub_mul, Finset.sum_sub_distrib, z, ← Complex.coe_smul, mul_smul_comm,
-      smul_mul_assoc, ← Finset.smul_sum, star_sum, star_mul, Finset.sum_mul, Finset.mul_sum,
-      mul_assoc]
-    congr 1 <;> rw [Finset.sum_comm]
-  simp only [ofMatrix_apply, of_apply]
-  rw [hsum, sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
-  exact CStarAlgebra.star_left_conjugate_le_norm_smul z (star c * c)
+  have hvec (b : n → A) : star y ⬝ᵥ (Matrix.vecMulVec (star b) b *ᵥ y) =
+      star (b ⬝ᵥ y) * (b ⬝ᵥ y) := by
+    rw [Matrix.vecMulVec_mulVec]
+    simp only [dotProduct, Pi.smul_apply, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op,
+      ← mul_assoc, ← Finset.sum_mul]
+    exact congrArg (· * (b ⬝ᵥ y)) (Matrix.star_dotProduct_star y b)
+  let M : Matrix n n A :=
+    ((‖c‖ ^ 2 : ℝ) : ℂ) • Matrix.vecMulVec (star a) a - Matrix.vecMulVec (star (c • a)) (c • a)
+  have hM : ofMatrix (Matrix.of fun i j =>
+      ((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) = ofMatrix M := by
+    ext i j
+    simp [M, Matrix.vecMulVec_apply]
+  have hform : ∑ i, ∑ j, star (y i) * ofMatrix M i j * y j = star y ⬝ᵥ (M *ᵥ y) := by
+    rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
+    rfl
+  rw [hM, hform]
+  simp only [M, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, hvec, smul_dotProduct,
+    smul_eq_mul, Complex.coe_smul, star_mul, mul_assoc]
+  rw [sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
+  simpa only [← mul_assoc] using CStarAlgebra.star_left_conjugate_le_norm_smul (a ⬝ᵥ y) (star c * c)
 
 /-- The diagonal matrix `diag(a, …, a)` has norm at most `‖a‖`. -/
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :

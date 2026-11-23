@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
@@ -21,8 +22,9 @@ that normalization sum is one. Isometric changes of Kraus family preserve the ma
 The normalization criterion connects the Heisenberg and Schrödinger pictures of
 a finite-dimensional quantum channel.
 
-The construction uses Mathlib's `CompletelyPositiveMap` and `Matrix.PosSemidef`,
-with the spectral order transported by `CStarMatrix.nonneg_iff_posSemidef`.
+The construction uses Mathlib's `CompletelyPositiveMap` and derives complete positivity of
+matrix conjugation from `CompletelyPositiveMap.conj` via `CStarMatrix.extend_nonneg` and
+`CStarMatrix.submatrix_nonneg`.
 
 ## References
 
@@ -55,41 +57,35 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     rfl
   map_cstarMatrix_nonneg' k M hM := by
     classical
-    let : NonUnitalContinuousFunctionalCalculus ℝ
-        (CStarMatrix (Fin k) (Fin k) (CStarMatrix n n ℂ)) IsSelfAdjoint :=
-      IsSelfAdjoint.instNonUnitalContinuousFunctionalCalculus
-    let : NonnegSpectrumClass ℝ
-        (CStarMatrix (Fin k) (Fin k) (CStarMatrix n n ℂ)) :=
-      CStarAlgebra.instNonnegSpectrumClass'
-    obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
-    apply nonneg_iff_forall_sum_nonneg.mpr
-    intro x
-    apply CStarMatrix.nonneg_iff_posSemidef.mpr
-    let B (l : Fin k) : Matrix n m ℂ :=
-      ∑ i, ofMatrix.symm (R l i) * V * ofMatrix.symm (x i)
-    have hB : (∑ l, (B l)ᴴ * B l).PosSemidef :=
-      Matrix.posSemidef_sum _ fun l _ => Matrix.posSemidef_conjTranspose_mul_self (B l)
-    convert hB using 1
-    simp only [B, Matrix.conjTranspose_sum, Matrix.conjTranspose_mul,
-      Matrix.sum_mul, Matrix.mul_sum]
-    -- Representation boundary: `ofMatrix` is `Equiv.refl _`, and the multiplication, `star`
-    -- and `CStarMatrix.map` of `CStarMatrix` are the entrywise `Matrix` operations, so this sum
-    -- of block entries is definitionally the matrix expression stated below (the matching
-    -- rewriting lemmas are `CStarMatrix.mul_apply`, `ofMatrix_symm_mul` and
-    -- `ofMatrix_symm_star`). `change` states that target directly; it depends only on those
-    -- definitions.
-    change (∑ i, ∑ j, (ofMatrix.symm (x i))ᴴ *
-      (Vᴴ * (∑ l, (ofMatrix.symm (R l i))ᴴ * ofMatrix.symm (R l j)) * V) *
-      ofMatrix.symm (x j)) = _
-    simp only [Matrix.sum_mul, Matrix.mul_sum, Matrix.mul_assoc]
-    conv_lhs =>
-      arg 2
-      ext i
-      rw [Finset.sum_comm]
-    rw [Finset.sum_comm]
-    congr 1
-    funext l
-    rw [Finset.sum_comm]
+    let e₁ := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n ℂ
+    let e₂ := CStarMatrix.compStarAlgEquiv ℂ (Fin k) (n ⊕ m) ℂ
+    let e₃ := CStarMatrix.compStarAlgEquiv ℂ (Fin k) m ℂ
+    have hM₁ : 0 ≤ e₁ M := by simpa using (map_le_map_iff e₁).mpr hM
+    let f : Fin k × n → Fin k × (n ⊕ m) := Prod.map id Sum.inl
+    have hf : Function.Injective f := fun _ _ h => by simpa [f, Prod.ext_iff] using h
+    have hM₂ : 0 ≤ e₂.symm (ofMatrix (Matrix.of fun p q =>
+        Function.extend f (fun i => Function.extend f (ofMatrix.symm (e₁ M) i) 0 q) 0 p)) := by
+      simpa using (map_le_map_iff e₂.symm).mpr (CStarMatrix.extend_nonneg hf hM₁)
+    let B : CStarMatrix (n ⊕ m) (n ⊕ m) ℂ := ofMatrix (Matrix.fromBlocks 0 V 0 0)
+    have hconj := (CompletelyPositiveMap.conj B).map_cstarMatrix_nonneg _ hM₂
+    have hsub := CStarMatrix.submatrix_nonneg (Prod.map id Sum.inr)
+      (by simpa using (map_le_map_iff e₂).mpr hconj)
+    rw [← map_le_map_iff e₃, map_zero]
+    convert hsub using 1
+    ext ⟨i, p⟩ ⟨j, q⟩
+    simp only [e₃, e₂, e₁, compStarAlgEquiv_apply, CStarMatrix.map_apply, LinearMap.coe_mk,
+      AddHom.coe_mk, ofMatrix_apply, of_apply, Matrix.submatrix_apply, Prod.map_apply, id_eq,
+      ofMatrix_symm_apply, compStarAlgEquiv_symm_apply, CompletelyPositiveMap.conj_apply,
+      CStarMatrix.mul_apply, CStarMatrix.star_apply, B]
+    simp only [Matrix.mul_apply, Matrix.conjTranspose_apply, Fintype.sum_sum_type,
+      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, zero_mul, mul_zero,
+      star_zero, Finset.sum_const_zero, add_zero]
+    refine Finset.sum_congr rfl fun y _ =>
+      congrArg (· * V y q) (Finset.sum_congr rfl fun x _ => ?_)
+    change star (V x p) * ofMatrix.symm (M i j) x y =
+      star (V x p) *
+        Function.extend f (fun a => Function.extend f (e₁ M a) 0 (f (j, y))) 0 (f (i, x))
+    simp [hf.extend_apply, e₁, compStarAlgEquiv_apply]
 
 /-- The conjugation map evaluates to the usual matrix formula. -/
 @[simp] theorem conjugateCP_apply (V : Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
