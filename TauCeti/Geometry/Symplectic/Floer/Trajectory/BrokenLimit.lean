@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.LowEnergyNeck
+public import TauCeti.Geometry.Symplectic.Floer.LowEnergyNeck.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory.Breaking
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
