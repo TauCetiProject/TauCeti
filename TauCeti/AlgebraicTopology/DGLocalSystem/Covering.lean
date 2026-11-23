@@ -118,11 +118,12 @@ theorem op_lof_point_smul_liftingLocalSystemEquiv (ω : MooreLoopSpace B b)
     letI := (hp.isTransitive Φ).continuousSMul b
     op (cubicalChainLof (MooreLoopSpace B b) R 0 (ofCube _ R (SingularCube.point ω))) •
         hp.liftingLocalSystemEquiv Φ b R x =
-      hp.liftingLocalSystemEquiv Φ b R (Finsupp.mapDomain (Φ.fiberAct b · ω) x) :=
+      hp.liftingLocalSystemEquiv Φ b R (Finsupp.mapDomain (Φ.fiberAct b · ω) x) := by
   have : DiscreteTopology {e // p e = b} := (hp b).discreteTopology_fiber
-  letI := (hp.isTransitive Φ).mulAction b
-  letI := (hp.isTransitive Φ).continuousSMul b
-  op_lof_point_smul_cubicalChainModuleZeroEquiv ω x
+  let := (hp.isTransitive Φ).mulAction b
+  let := (hp.isTransitive Φ).continuousSMul b
+  simp only [liftingLocalSystemEquiv, op_lof_point_smul_cubicalChainModuleZeroEquiv,
+    MooreLiftingFunction.IsTransitive.op_smul_eq_fiberAct]
 
 end Module
 

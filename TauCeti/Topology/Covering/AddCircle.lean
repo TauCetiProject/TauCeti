@@ -101,7 +101,9 @@ theorem coe_monodromyPerm_addCircleDoubleCover
     (Γ := ⟨fun t ↦ (x : AddCircle (1 : ℝ)) + ((t / 2 : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩)
     ?_ ?_
   · funext t
-    have hx : 2 • (x : AddCircle (1 : ℝ)) = 0 := x.property
+    have hx : 2 • (x : AddCircle (1 : ℝ)) = 0 := by
+      simpa only [Set.mem_preimage, Set.mem_singleton_iff, addCircleDoubleCover_apply,
+        AddCircle.coe_zero] using x.property
     rw [AddCircle.zsmulLoop_apply]
     simp [smul_add, hx, ← AddCircle.coe_nsmul, mul_div_cancel₀]
   · simp
