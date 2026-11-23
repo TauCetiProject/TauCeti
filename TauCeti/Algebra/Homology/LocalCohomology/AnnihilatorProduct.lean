@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.LocalCohomology.DegreeZero
 public import TauCeti.RingTheory.CohenMacaulay.Basic
+import TauCeti.Algebra.Homology.LocalCohomology.Basic
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.RingTheory.Depth.LocalCohomology
 
 /-!
@@ -39,6 +41,8 @@ torsion created by dividing by part of a system of parameters.
 * `localCohomology.annihilatorProduct_eq_top_iff`: `a_J(M, d) = R` if and only if `H^j_J(M) = 0`
   for every `j < d`.
 * `localCohomology.annihilatorProduct_eq_top_of_subsingleton`: `a_J(0, d) = R`.
+* `localCohomology.annihilatorProduct_eq_top_of_le_depth`: `a_J(M, d) = R` when `d` is at most the
+  `J`-depth of a finite module `M` over a Noetherian ring.
 * `LinearEquiv.annihilatorProduct_eq`: `a_J(M, d)` is invariant under linear equivalence.
 * `localCohomology.annihilator_obj_zero` and `localCohomology.annihilatorProduct_one`:
   `a_J(M, 1) = Ann_R H^0_J(M)` is the annihilator of the `J`-power torsion of `M`; by
@@ -122,6 +126,13 @@ theorem annihilatorProduct_eq_top_of_subsingleton [Subsingleton M] (d : ℕ) :
     annihilatorProduct J M d = ⊤ :=
   (annihilatorProduct_eq_top_iff J M).2 fun j _ ↦ isZero_obj_of_subsingleton J j _
 
+/-- If `d` is at most the `J`-depth of a finite module `M` over a Noetherian ring, then the local
+cohomology modules `H^j_J(M)`, `j < d`, vanish, so `a_J(M, d)` is the unit ideal. -/
+theorem annihilatorProduct_eq_top_of_le_depth [IsNoetherianRing R] [Module.Finite R M] {d : ℕ}
+    (h : (d : ℕ∞) ≤ J.depth (ModuleCat.of R M)) : annihilatorProduct J M d = ⊤ :=
+  (annihilatorProduct_eq_top_iff J M).2 fun _ hj ↦
+    isZero_obj_of_lt_depth J _ ((Nat.cast_lt.2 hj).trans_le h)
+
 /-- The annihilator of `H^0_J(M)` is the annihilator of the `J`-power torsion
 `Ideal.primaryComponent M J` of `M`, the union of the annihilators in `M` of the powers of `J`. -/
 theorem annihilator_obj_zero :
@@ -136,10 +147,8 @@ that of `M`. For example `Ann_R H^0_J(R ⧸ I) = I` whenever `Jⁿ ⊆ I`. -/
 theorem annihilator_obj_zero_of_pow_le {n : ℕ} (h : J ^ n ≤ Module.annihilator R M) :
     Module.annihilator R ((localCohomology J 0).obj (ModuleCat.of R M)) =
       Module.annihilator R M := by
-  have htop : J.primaryComponent M = ⊤ := eq_top_iff.2 fun x _ ↦
-    (Ideal.primaryComponent_mem M J x).2 ⟨n, (Submodule.mem_torsionBySet_iff _ x).2 fun a ↦
-      Module.mem_annihilator.1 (h a.prop) x⟩
-  rw [annihilator_obj_zero, htop, Submodule.annihilator_top]
+  rw [annihilator_obj_zero, J.primaryComponent_eq_top_of_le_annihilator h,
+    Submodule.annihilator_top]
 
 end localCohomology
 
@@ -173,13 +182,11 @@ theorem annihilatorProduct_eq_top (hM : IsCohenMacaulay R M) {d : ℕ}
     (hd : supportDim R M = d) : annihilatorProduct (maximalIdeal R) M d = ⊤ := by
   cases subsingleton_or_nontrivial M
   · exact annihilatorProduct_eq_top_of_subsingleton _ M d
-  -- A nonzero Cohen–Macaulay module has depth `d`, and local cohomology vanishes below the depth.
-  have hdepth : depth (ModuleCat.of R M) = d := by
-    have := hM.depth_eq
-    rw [hd] at this
-    exact_mod_cast this
-  refine (annihilatorProduct_eq_top_iff _ M).2 fun j hj ↦ isZero_obj_of_lt_depth _ _ ?_
-  rw [← depth, hdepth]
-  exact_mod_cast hj
+  -- A nonzero Cohen–Macaulay module has depth `d`.
+  refine annihilatorProduct_eq_top_of_le_depth _ M (le_of_eq ?_)
+  have := hM.depth_eq
+  rw [hd] at this
+  rw [← depth]
+  exact_mod_cast this.symm
 
 end Module.IsCohenMacaulay
