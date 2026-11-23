@@ -24,9 +24,6 @@ a coordinate membership criterion and graded endomorphisms and range objects in
 * `TauCeti.GradedModuleCat.freeEndOfPiEnd`, `TauCeti.GradedModuleCat.rangeObjOfPiEnd`,
   `TauCeti.GradedModuleCat.rangeEquivRangeObj`: graded endomorphism and graded range object in
   `GradedModuleCat 𝒜` associated to a degree-zero endomorphism of `I → A`.
-* `TauCeti.GradedModuleCat.homogeneous_of_apply_eq_smul`: a rank-one endomorphism
-  `v ↦ v i₀ • w` with `∀ j, w j ∈ 𝒜 (s i₀ - s j)` is homogeneous of degree zero on the shifted
-  free module `I → A`.
 -/
 
 public section
@@ -53,7 +50,6 @@ theorem linearEquivFunOnFintype_symm_mem_free_piece_iff (𝒜 : ℤ → Submodul
 
 omit [GradedAlgebra 𝒜] in
 /-- Transporting a degree-zero endomorphism of `I → A` to `GradedModuleCat.free 𝒜 s`. -/
-@[expose]
 noncomputable def freeEndOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A))
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
@@ -64,6 +60,29 @@ noncomputable def freeEndOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
       rw [add_zero]
       exact (linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q _).mpr
         (hhom q (eF x) ((mem_free_piece_iff 𝒜 s q x).mp hx))
+
+/-- The underlying `A`-linear endomorphism of `freeEndOfPiEnd` is the conjugation of `p` by
+`DirectSum.linearEquivFunOnFintype`. -/
+theorem hom_freeEndOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
+    (freeEndOfPiEnd s p hhom).hom =
+      ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm.conjRingEquiv p :
+        Module.End A (free 𝒜 s)) := by
+  rfl
+
+/-- Applying `freeEndOfPiEnd` to a tuple transported by `(DirectSum.linearEquivFunOnFintype).symm`
+applies `p` to the tuple. -/
+@[simp]
+theorem hom_freeEndOfPiEnd_apply {I : Type uI} [Fintype I] (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j))
+    (v : I → A) :
+    (freeEndOfPiEnd s p hhom).hom
+      ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v) =
+      (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (p v) := by
+  rw [hom_freeEndOfPiEnd]
+  simp [LinearEquiv.conjRingEquiv, LinearEquiv.arrowCongrAddEquiv]
 
 /-- The graded range object in `GradedModuleCat 𝒜` of a degree-zero endomorphism of `I → A`. -/
 @[expose]
@@ -82,10 +101,10 @@ noncomputable def rangeEquivRangeObj {I : Type uI} [Fintype I] (s : I → ℤ)
   let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
   let p' := freeEndOfPiEnd s p hhom
   eF.symm.ofSubmodules (LinearMap.range p) (LinearMap.range p'.hom) <| by
-    dsimp [p', freeEndOfPiEnd]
-    change Submodule.map eF.symm.toLinearMap (LinearMap.range p) =
-      LinearMap.range (eF.symm.toLinearMap ∘ₗ p ∘ₗ eF.toLinearMap)
-    rw [← LinearMap.range_comp, ← LinearMap.comp_assoc, LinearEquiv.range_comp]
+    -- Align the coerced `RingEquiv` `eF.symm.conjRingEquiv p` with the linear composite.
+    have hp' : p'.hom = eF.symm.toLinearMap ∘ₗ p ∘ₗ eF.toLinearMap :=
+      LinearMap.ext fun _ ↦ rfl
+    rw [hp', ← LinearMap.range_comp, ← LinearMap.comp_assoc, LinearEquiv.range_comp]
 
 /-- Applying `rangeEquivRangeObj` transforms the underlying tuple by
 `(DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm`. -/
@@ -97,14 +116,5 @@ theorem coe_rangeEquivRangeObj_apply {I : Type uI} [Fintype I] (s : I → ℤ)
     (rangeEquivRangeObj s p hhom x).val =
       (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm x.val :=
   LinearEquiv.ofSubmodules_apply _ _ x
-
-/-- If `p v = v i₀ • w` and `∀ j, w j ∈ 𝒜 (s i₀ - s j)`, then `p` is homogeneous of degree zero on
-the shifted module `I → A` with shifts `s`. -/
-theorem homogeneous_of_apply_eq_smul {I : Type uI} (s : I → ℤ) {p : (I → A) →ₗ[A] (I → A)}
-    (i₀ : I) {w : I → A} (hp : ∀ v, p v = v i₀ • w) (hw : ∀ j, w j ∈ 𝒜 (s i₀ - s j))
-    (d : ℤ) (v : I → A) (hv : ∀ j, v j ∈ 𝒜 (d - s j)) (j : I) :
-    p v j ∈ 𝒜 (d - s j) := by
-  rw [hp, Pi.smul_apply, smul_eq_mul]
-  simpa [sub_add_sub_cancel] using SetLike.mul_mem_graded (hv i₀) (hw j)
 
 end TauCeti.GradedModuleCat

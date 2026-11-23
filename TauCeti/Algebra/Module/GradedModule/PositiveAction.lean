@@ -44,7 +44,7 @@ variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
 theorem map_mem_positive_smul_top (f : M →ₗ[A] N) {x : M}
     (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
     f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) := by
-  change x ∈ ((⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N)).comap (f.restrictScalars k)
+  rw [← LinearMap.restrictScalars_apply k f, ← Submodule.mem_comap]
   refine Submodule.smul_le.mpr (fun a ha y _ ↦ ?_) hx
   simpa only [Submodule.mem_comap, LinearMap.restrictScalars_apply, map_smul] using
     Submodule.smul_mem_smul ha Submodule.mem_top
@@ -108,7 +108,7 @@ theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 
       hb (fun hi b hb => ?_) (by simp) (fun b c hb hc => by simpa [mul_add] using add_mem hb hc)
     exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi
       (by simpa using SetLike.GradedMul.mul_mem ha hb))
-  change x ∈ ((⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)).comap (Algebra.lsmul k k M a)
+  rw [← Algebra.lsmul_apply k k M a, ← Submodule.mem_comap]
   refine Submodule.smul_le.mpr (fun b hb y _ ↦ ?_) hx
   simpa only [Submodule.mem_comap, Algebra.lsmul_apply, ← mul_smul] using
     Submodule.smul_mem_smul (hmul b hb) Submodule.mem_top

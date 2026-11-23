@@ -32,8 +32,8 @@ By translating a degree-zero idempotent `p : (I → A) →ₗ[A] (I → A)` into
 
 ## References
 
-* L.-H. Robert and E. Wagner, *Symmetric Khovanov–Rozansky link homologies*, J. Éc. polytech.
-  Math. 7 (2020), 573–651, Lemma 3.30.
+* C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
+* T. Y. Lam, *Serre's Problem on Projective Modules*, Chapter II, §4.
 -/
 
 public section
@@ -96,12 +96,16 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
         _ = rR.r ≫ (Φ.inv ≫ Φ.hom) ≫ rR.i := by simp only [Category.assoc]
         _ = rR.r ≫ rR.i := by rw [Φ.inv_hom_id, Category.id_comp]
         _ = GradedModuleCat.freeEndOfPiEnd s p hhom :=
-          GradedModuleCat.hom_ext (LinearMap.subtype_comp_rangeRestrict _)
+          GradedModuleCat.retractRangeOfPiIdempotent_r_comp_i s p hp hhom
     refine LinearMap.ext fun v ↦ ?_
     have hv : rD.i.hom (rD.r.hom (eF.symm v)) =
         (GradedModuleCat.freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
       LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom hri) (eF.symm v)
-    simp [ι, π, hv, eF, GradedModuleCat.freeEndOfPiEnd]
+    simp only [ι, π, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+      LinearEquiv.symm_apply_apply]
+    rw [hv]
+    dsimp only [eF]
+    rw [GradedModuleCat.hom_freeEndOfPiEnd_apply, LinearEquiv.apply_symm_apply]
   · exact fun q u hu ↦ (GradedModuleCat.mem_free_piece_iff 𝒜 s q _).mp
       (GradedModuleCat.map_mem rD.i ((heD_symm q u).mpr hu))
   · exact fun q v hv ↦ (heD_symm q (π v)).mp <| by
@@ -131,9 +135,8 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
   refine ⟨n, b.map equivRange.symm, d, fun i ↦ ?_⟩
   have hval : (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
       (b.map equivRange.symm i).val = (b i).val := by
-    change (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm
-      (equivRange.symm (b i)).val = (b i).val
-    rw [← GradedModuleCat.coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
+    rw [Module.Basis.map_apply,
+      ← GradedModuleCat.coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
       equivRange.apply_symm_apply]
   exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s (d i) _).mp
     (hval ▸ (InternalGrading.mem_submodule_piece _ _ _).mp (hb i))

@@ -31,15 +31,15 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 
 /-- A degree-zero idempotent `p` on `I → A` exhibits `rangeObjOfPiEnd s p hhom` as a graded
 retract of `free 𝒜 s`. -/
-@[expose]
 noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A)) (hp : p.comp p = p)
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
     Retract (rangeObjOfPiEnd s p hhom) (free 𝒜 s) :=
   let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
   let p' := freeEndOfPiEnd s p hhom
-  have hp' : IsIdempotentElem p'.hom :=
-    IsIdempotentElem.map (show IsIdempotentElem (p : Module.End A (I → A)) from hp)
+  have hp' : IsIdempotentElem p'.hom := by
+    rw [hom_freeEndOfPiEnd]
+    exact IsIdempotentElem.map (show IsIdempotentElem (p : Module.End A (I → A)) from hp)
       eF.symm.conjRingEquiv
   { i := ofHom (LinearMap.range p'.hom).subtype
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
@@ -51,5 +51,15 @@ noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I �
         exact (InternalGrading.mem_submodule_piece _ _ _).mpr (map_mem p' hx))
     retract := hom_ext <| LinearMap.ext fun z ↦
       Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.property) }
+
+/-- Composing the retraction and inclusion of `retractRangeOfPiIdempotent` recovers the transported
+endomorphism `freeEndOfPiEnd`. -/
+@[reassoc (attr := simp)]
+theorem retractRangeOfPiIdempotent_r_comp_i {I : Type uI} [Fintype I] (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A)) (hp : p.comp p = p)
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
+    (retractRangeOfPiIdempotent s p hp hhom).r ≫ (retractRangeOfPiIdempotent s p hp hhom).i =
+      freeEndOfPiEnd s p hhom :=
+  hom_ext (LinearMap.subtype_comp_rangeRestrict _)
 
 end TauCeti.GradedModuleCat

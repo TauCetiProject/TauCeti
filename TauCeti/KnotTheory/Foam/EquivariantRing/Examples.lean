@@ -7,8 +7,8 @@ module
 
 public import TauCeti.KnotTheory.Foam.EquivariantRing.Idempotent
 import Mathlib.Tactic.FinCases
-import TauCeti.Algebra.Category.GradedModuleCat.Free.Coordinates
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Range
+import TauCeti.Algebra.Module.GradedModule.Product
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -40,8 +40,8 @@ theorem exists_homogeneous_basis_zero_rank (N m : ℕ) (s : Fin m → ℤ) :
   obtain rfl : n = 0 := by simpa only [Fintype.card_fin] using Fintype.card_eq_zero (α := Fin n)
   exact ⟨b, d, hb⟩
 
-/-- Identity on a single summand of shift `3`: every homogeneous basis has degree multiset
-`{3}`. -/
+/-- Identity on a single summand of shift `3`: there exists a homogeneous basis of the range with
+degree multiset `{3}`. -/
 theorem id_shift_three_degree (N : ℕ) :
     ∃ (n : ℕ)
       (b : Module.Basis (Fin n) (EquivariantRing N)
@@ -62,8 +62,8 @@ theorem id_shift_three_degree (N : ℕ) :
   rw [Fin.eq_zero j]
   simp
 
-/-- Diagonal projection `diag(1, 0)` on shifts `![a, b]`: degree multiset is `{a}`, independent of
-`b`. -/
+/-- Diagonal projection `diag(1, 0)` on shifts `![a, b]`: there exists a homogeneous basis of the
+range with degree multiset `{a}`, independent of `b`. -/
 theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
     let proj₀ : (Fin 2 → EquivariantRing N) →ₗ[EquivariantRing N] EquivariantRing N :=
       LinearMap.proj 0
@@ -85,14 +85,15 @@ theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
     · simp
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent N 2 ![a, b] p
     (idempotent_of_apply_eq_smul 0 (fun _ ↦ rfl) rfl)
-    (GradedModuleCat.homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
+    (InternalGrading.homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
   exact ⟨n, basis, d, hb, GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
     (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
     (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha)
     ![a, b] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
-/-- Off-diagonal projection `p(x, y) = (x, e₁ x)` on shifts `![2, 0]` for `N + 1 ≥ 1`: idempotent
-of degree `0` whose image has degree multiset `{2}`, exercising the shift sign `2 - 0 = 2`. -/
+/-- Off-diagonal projection `p(x, y) = (x, e₁ x)` on shifts `![2, 0]` for `N + 1 ≥ 1`: `p` is
+idempotent and its range admits a homogeneous basis of degree `2` (degree multiset `{2}`),
+exercising the shift sign `2 - 0 = 2`. -/
 theorem e1_offDiag_degree (N : ℕ) :
     let proj₀ : (Fin 2 → EquivariantRing (N + 1)) →ₗ[EquivariantRing (N + 1)]
       EquivariantRing (N + 1) := LinearMap.proj 0
@@ -116,7 +117,7 @@ theorem e1_offDiag_degree (N : ℕ) :
     · simpa [w] using EquivariantRing.X_mem_grading (N + 1) 0
   have hp : p.comp p = p := idempotent_of_apply_eq_smul (0 : Fin 2) (w := w) (fun _ ↦ rfl) rfl
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent (N + 1) 2 ![2, 0] p hp
-    (GradedModuleCat.homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
+    (InternalGrading.homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
   exact ⟨hp, n, basis, d, hb,
     GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
       (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero (N + 1) hm)

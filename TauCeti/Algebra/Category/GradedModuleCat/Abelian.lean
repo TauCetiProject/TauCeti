@@ -9,10 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
-public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Submodule
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
-public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
 # The category of graded modules is abelian

@@ -28,8 +28,13 @@ homogeneous `EquivariantRing N`-basis (`TauCeti.exists_homogeneous_basis_range_i
 
 ## References
 
-* L.-H. Robert and E. Wagner, *Symmetric Khovanov–Rozansky link homologies*, J. Éc. polytech.
-  Math. 7 (2020), 573–651, Lemma 3.30.
+* C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, and T. Y. Lam,
+  *Serre's Problem on Projective Modules*, Chapter II, §4, for homogeneous bases of graded
+  retracts and idempotent splittings.
+* Application context (`gl(N)` foams): L.-H. Robert and E. Wagner, *Symmetric Khovanov–Rozansky
+  link homologies*, J. Éc. polytech. Math. 7 (2020), 573–651 (`arXiv:1801.02244`), and
+  M. Khovanov and L.-H. Robert, *Foam evaluation and Kronheimer–Mrowka theories*, Adv. Math. 376
+  (2021), 107433 (`arXiv:1808.09662`).
 -/
 
 public section

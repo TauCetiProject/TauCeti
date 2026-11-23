@@ -57,6 +57,7 @@ def pieceSubmodule (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
     simpa using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hx
 
 /-- Membership in `pieceSubmodule M p` is membership in `M.grading.piece p`. -/
+@[simp]
 theorem mem_pieceSubmodule {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
     x ∈ pieceSubmodule M p ↔ x ∈ M.grading.piece p :=
   Iff.rfl
@@ -71,6 +72,7 @@ def positiveSubmodule (M : GradedModuleCat.{v} 𝒜) :
     exact InternalGrading.smul_mem_positive_smul_top c.property hx
 
 /-- Membership in `positiveSubmodule M` is membership in `A₊ M`. -/
+@[simp]
 theorem mem_positiveSubmodule {M : GradedModuleCat.{v} 𝒜} {x : M} :
     x ∈ positiveSubmodule M ↔ x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
   Iff.rfl

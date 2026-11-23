@@ -365,6 +365,10 @@ theorem homogeneousBasis_apply {I : Type uI} {d : I → ℤ}
     {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) (i : I) :
     Φ.homogeneousBasis i = Φ.hom.hom (freeGenerator i) := by
   classical
+  rw [homogeneousBasis, Module.Basis.map_apply, Finsupp.coe_basisSingleOne]
+  dsimp only
+  -- `(toModuleCat.mapIso Φ).toLinearEquiv` is typed over `↑(toModuleCat.obj (free 𝒜 d))` rather
+  -- than `Π₀ _ : I, A`, so `change` aligns those representations to unfold `LinearEquiv.trans`.
   change (toModuleCat.mapIso Φ).toLinearEquiv
     (finsuppLequivDFinsupp A (Finsupp.single i 1)) = Φ.hom.hom (freeGenerator i)
   rw [finsuppLequivDFinsupp_apply_apply, Finsupp.toDFinsupp_single, DirectSum.single_eq_lof A,

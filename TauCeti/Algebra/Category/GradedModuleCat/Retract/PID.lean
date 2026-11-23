@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Category.GradedModuleCat.Free.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.Retract.Basic
 import TauCeti.Algebra.Module.GradedModule.Nakayama
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Graded retracts and projective modules over connected algebras over a PID
@@ -75,6 +76,39 @@ private theorem injective_retractPieceQuotientHom (hneg : ∀ i < 0, 𝒜 i = �
     LinearMap.congr_fun (ModuleCat.hom_ext_iff.mp rPQ.retract) x
   exact (freePieceQuotientEquiv hneg hzero s q).injective.comp hleft.injective
 
+omit [FaithfulSMul k A] in
+/-- Subtracting the `bq`-coordinate combination of chosen lifts from `m ∈ M.grading.piece q`
+leaves an element of `A₊ M`. -/
+private theorem sub_sum_repr_smul_mem_positive_smul_top
+    {M : GradedModuleCat.{v} 𝒜} {q : ℤ} {n : ℕ}
+    (bq : Module.Basis (Fin n) k (PieceQuotient M q))
+    (lift : Fin n → M.grading.piece q)
+    (hlift : ∀ t : Fin n,
+      (Submodule.Quotient.mk ⟨(lift t).val, mem_pieceSubmodule.mpr (lift t).property⟩ :
+        PieceQuotient M q) = bq t)
+    {m : M} (hm : m ∈ M.grading.piece q) :
+    m - ∑ t : Fin n,
+      bq.repr (Submodule.Quotient.mk ⟨m, mem_pieceSubmodule.mpr hm⟩) t • (lift t : M) ∈
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  let P : Submodule (SetLike.GradeZero.subalgebra 𝒜) (pieceSubmodule M q) :=
+    (positiveSubmodule M).comap (pieceSubmodule M q).subtype
+  let xm : pieceSubmodule M q := ⟨m, mem_pieceSubmodule.mpr hm⟩
+  let c : Fin n → k := bq.repr (Submodule.Quotient.mk xm)
+  let ym : pieceSubmodule M q :=
+    ∑ t : Fin n, c t • ⟨(lift t).val, mem_pieceSubmodule.mpr (lift t).property⟩
+  have hmk : (Submodule.Quotient.mk (xm - ym) : PieceQuotient M q) = 0 := by
+    rw [← Submodule.mkQ_apply P (xm - ym), ← LinearMap.restrictScalars_apply k P.mkQ, map_sub,
+      sub_eq_zero, map_sum]
+    simp_rw [map_smul, LinearMap.restrictScalars_apply, Submodule.mkQ_apply, hlift]
+    exact (bq.sum_repr (Submodule.Quotient.mk xm)).symm
+  have hmem : (xm - ym : pieceSubmodule M q).val ∈
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
+    (mem_positiveSubmodule.mp <| Submodule.mem_comap.mp <|
+      (Submodule.Quotient.mk_eq_zero P).mp hmk)
+  have hcoe : (xm - ym : pieceSubmodule M q).val = m - ∑ t : Fin n, c t • (lift t : M) := by
+    simp [xm, ym, AddSubmonoidClass.coe_finsetSum]
+  exact hcoe ▸ hmem
+
 /-- If `liftGen q` lifts a `k`-basis `bq q` of `PieceQuotient M q.val` for every shift `q` in the
 image of `s`, then the induced morphism `freeLift` onto `M` is surjective. -/
 private theorem surjective_freeLift_of_retractHeadBasis (hneg : ∀ i < 0, 𝒜 i = ⊥)
@@ -85,7 +119,7 @@ private theorem surjective_freeLift_of_retractHeadBasis (hneg : ∀ i < 0, 𝒜 
     (bq : ∀ q : Finset.univ.image s, Module.Basis (Fin (nq q)) k (PieceQuotient M q.val))
     (liftGen : ∀ q : Finset.univ.image s, Fin (nq q) → M.grading.piece q.val)
     (hliftGen : ∀ (q : Finset.univ.image s) (t : Fin (nq q)),
-      (Submodule.Quotient.mk ⟨(liftGen q t).val, (liftGen q t).property⟩ :
+      (Submodule.Quotient.mk ⟨(liftGen q t).val, mem_pieceSubmodule.mpr (liftGen q t).property⟩ :
         PieceQuotient M q.val) = bq q t)
     {n : ℕ} (ev : Fin n ≃ Σ q : Finset.univ.image s, Fin (nq q)) :
     Function.Surjective
@@ -102,39 +136,20 @@ private theorem surjective_freeLift_of_retractHeadBasis (hneg : ∀ i < 0, 𝒜 
       (LinearMap.range Φ.hom) Φ.isHomogeneous.isHomogeneous_range bM hbelowM fun q m hm ↦ ?_)
   by_cases hqS : q ∈ Finset.univ.image s
   · let q' : Finset.univ.image s := ⟨q, hqS⟩
-    let xm : pieceSubmodule M q' := ⟨m, mem_pieceSubmodule.mpr hm⟩
-    let c := (bq q').repr (Submodule.Quotient.mk xm)
-    let y : M.grading.piece q := ∑ t : Fin (nq q'), c t • liftGen q' t
-    have hy_range : (y : M) ∈ LinearMap.range Φ.hom := by
-      rw [AddSubmonoidClass.coe_finsetSum]
+    let c := (bq q').repr (Submodule.Quotient.mk ⟨m, mem_pieceSubmodule.mpr hm⟩)
+    let y : M := ∑ t : Fin (nq q'), c t • (liftGen q' t : M)
+    have hy_range : y ∈ LinearMap.range Φ.hom := by
       refine Submodule.sum_mem (LinearMap.range Φ.hom) fun t _ ↦ ?_
-      rw [Submodule.coe_smul_of_tower, ← algebraMap_smul A]
+      rw [← algebraMap_smul A]
       refine Submodule.smul_mem (LinearMap.range Φ.hom) (algebraMap k A (c t))
         ⟨freeGenerator (ULift.up (ev.symm ⟨q', t⟩)),
           (freeLift_generator g' (ULift.up (ev.symm ⟨q', t⟩))).trans <|
             congrArg (fun idx : Σ q : Finset.univ.image s, Fin (nq q) ↦
                 (liftGen idx.fst idx.snd : M))
               (ev.apply_symm_apply ⟨q', t⟩)⟩
-    have hdiff_pos : m - (y : M) ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
-      let ym : pieceSubmodule M q' := ⟨y.val, mem_pieceSubmodule.mpr y.property⟩
-      have hmk : (Submodule.Quotient.mk (xm - ym) : PieceQuotient M q') = 0 := by
-        rw [Submodule.Quotient.mk_sub, sub_eq_zero]
-        have hsum : (Submodule.Quotient.mk ym : PieceQuotient M q') = ∑ t, c t • bq q' t := by
-          have hym : ym = ∑ t : Fin (nq q'),
-              c t • (⟨(liftGen q' t).val, (liftGen q' t).property⟩ : pieceSubmodule M q') := by
-            ext
-            simp [ym, y, AddSubmonoidClass.coe_finsetSum]
-          rw [hym]
-          change ((positiveSubmodule M).comap (pieceSubmodule M q'.val).subtype).mkQ _ = _
-          rw [map_sum]
-          refine Finset.sum_congr rfl fun t _ ↦ ?_
-          change Submodule.Quotient.mk (c t • _) = c t • bq q' t
-          rw [← hliftGen]
-          rfl
-        rw [hsum]
-        exact ((bq q').sum_repr (Submodule.Quotient.mk xm)).symm
-      exact Submodule.mem_comap.mp ((Submodule.Quotient.mk_eq_zero _).mp hmk)
-    rw [← add_sub_cancel (y : M) m]
+    have hdiff_pos : m - y ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
+      sub_sum_repr_smul_mem_positive_smul_top (bq q') (liftGen q') (hliftGen q') hm
+    rw [← add_sub_cancel y m]
     exact Submodule.add_mem_sup hy_range hdiff_pos
   · have : IsEmpty {j : I // s j = q} :=
       ⟨fun j ↦ hqS (j.property ▸ Finset.mem_image_of_mem s (Finset.mem_univ j.val))⟩
@@ -147,6 +162,74 @@ private theorem surjective_freeLift_of_retractHeadBasis (hneg : ∀ i < 0, 𝒜 
       (Submodule.Quotient.mk_eq_zero
         ((positiveSubmodule M).comap (pieceSubmodule M q).subtype)).mp hmk0
 
+/-- Equivalence between the shift-`q'` fiber of `ULift (Fin n)` along `ev` and `Fin (nq q')`. -/
+private def retractHeadFiberEquiv {S : Finset ℤ} {nq : S → ℕ} {n : ℕ}
+    (ev : Fin n ≃ Σ q : S, Fin (nq q)) (q' : S) :
+    {u : ULift.{uI} (Fin n) // ((fun u ↦ (ev u).fst.val) ∘ ULift.down) u = q'.val} ≃ Fin (nq q') :=
+  (Equiv.subtypeEquiv (p := fun u : ULift.{uI} (Fin n) ↦
+      ((fun u ↦ (ev u).fst.val) ∘ ULift.down) u = q'.val)
+    (Equiv.ulift.trans ev) fun _ ↦
+    ⟨fun h ↦ Subtype.ext h, fun h ↦ congrArg Subtype.val h⟩).trans
+    (Equiv.sigmaSubtype q')
+
+/-- On head coordinates in degree `q'`, the map induced by `freeLift` from a basis lift equals
+coordinate reindexing along the fiber equivalence `retractHeadFiberEquiv ev q'`. -/
+private theorem freeLift_pieceQuotient_comp_equivFun
+    (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
+    {S : Finset ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+    (nq : S → ℕ)
+    (bq : ∀ q : S, Module.Basis (Fin (nq q)) k (PieceQuotient M q.val))
+    (liftGen : ∀ q : S, Fin (nq q) → M.grading.piece q.val)
+    (hliftGen : ∀ (q : S) (t : Fin (nq q)),
+      (Submodule.Quotient.mk ⟨(liftGen q t).val, mem_pieceSubmodule.mpr (liftGen q t).property⟩ :
+        PieceQuotient M q.val) = bq q t)
+    {n : ℕ} (ev : Fin n ≃ Σ q : S, Fin (nq q)) (q' : S) :
+    (bq q').equivFun.toLinearMap.comp
+      (((pieceQuotientHom
+          (freeLift (d := (fun u ↦ (ev u).fst.val) ∘ ULift.down)
+            (fun u : ULift.{uI} (Fin n) ↦ liftGen (ev u.down).fst (ev u.down).snd))
+          q'.val).restrictScalars k).comp
+        (freePieceQuotientEquiv hneg hzero
+          ((fun u ↦ (ev u).fst.val) ∘ ULift.down) q'.val).symm.toLinearMap) =
+      (LinearEquiv.piCongrLeft k (fun _ ↦ k) (retractHeadFiberEquiv ev q')).toLinearMap := by
+  classical
+  let d' : ULift.{uI} (Fin n) → ℤ := (fun u ↦ (ev u).fst.val) ∘ ULift.down
+  let g' : ∀ u : ULift.{uI} (Fin n), M.grading.piece (d' u) :=
+    fun u ↦ liftGen (ev u.down).fst (ev u.down).snd
+  let Φ : free 𝒜 d' ⟶ M := freeLift g'
+  let e_q := retractHeadFiberEquiv ev q'
+  refine LinearMap.pi_ext fun u c ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    freePieceQuotientEquiv_symm_single, map_smul, LinearMap.restrictScalars_apply,
+    pieceQuotientHom_apply]
+  have hev : ev u.val.down = ⟨q', e_q u⟩ :=
+    (Equiv.ulift.trans ev).eq_symm_apply.mp (congrArg Subtype.val (e_q.symm_apply_apply u).symm)
+  have hgen : Φ.hom (freeGenerator u.val) = (liftGen q' (e_q u)).val := by
+    have h1 : Φ.hom (freeGenerator u.val) = (g' u.val).val := freeLift_generator g' u.val
+    -- `hev` aligns the dependent sigma pair `(ev u.val.down).fst, (ev u.val.down).snd` with
+    -- `⟨q', e_q u⟩` so `liftGen` evaluates in the same degree piece.
+    have h2 : (g' u.val).val = (liftGen q' (e_q u)).val :=
+      congrArg (fun idx : Σ p : S, Fin (nq p) ↦ (liftGen idx.fst idx.snd).val) hev
+    exact h1.trans h2
+  -- Transporting `freeGenerator u.val ∈ piece (d' u.val)` along `u.property : d' u.val = q'.val`
+  -- leaves the underlying element unchanged, so `Subtype.ext hgen` identifies the wrapped pieces.
+  have hsub : (⟨Φ.hom (freeGenerator u.val),
+      map_mem Φ (Eq.mp
+        (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 d').grading.piece p) u.property)
+        (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := d') u.val))⟩ :
+      pieceSubmodule M q'.val) =
+      ⟨(liftGen q' (e_q u)).val, mem_pieceSubmodule.mpr (liftGen q' (e_q u)).property⟩ :=
+    Subtype.ext hgen
+  rw [hsub, hliftGen, LinearEquiv.coe_coe, LinearEquiv.piCongrLeft_single, map_smul]
+  ext t
+  simp only [Pi.smul_apply, Module.Basis.equivFun_self, smul_eq_mul, Pi.single_apply]
+  split_ifs with h1 h2 h2
+  · simp
+  · exact absurd h1.symm h2
+  · exact absurd h2.symm h1
+  · simp
+
 /-- Evaluating in `PieceQuotient M q` on `Φ.hom z = 0` isolates the fiber of basis lifts of
 degree `q` and shows that every shift-`q` head coordinate of `z` vanishes. -/
 private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
@@ -156,7 +239,7 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
     (bq : ∀ q : Finset.univ.image s, Module.Basis (Fin (nq q)) k (PieceQuotient M q.val))
     (liftGen : ∀ q : Finset.univ.image s, Fin (nq q) → M.grading.piece q.val)
     (hliftGen : ∀ (q : Finset.univ.image s) (t : Fin (nq q)),
-      (Submodule.Quotient.mk ⟨(liftGen q t).val, (liftGen q t).property⟩ :
+      (Submodule.Quotient.mk ⟨(liftGen q t).val, mem_pieceSubmodule.mpr (liftGen q t).property⟩ :
         PieceQuotient M q.val) = bq q t)
     {n : ℕ} (ev : Fin n ≃ Σ q : Finset.univ.image s, Fin (nq q)) (q : ℤ)
     {z : free 𝒜 ((fun u ↦ (ev u).fst.val) ∘ ULift.down)}
@@ -166,74 +249,33 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
     freeHeadCoord hneg hzero ((fun u ↦ (ev u).fst.val) ∘ ULift.down) q ⟨z, hz_piece⟩ = 0 := by
   classical
   let S : Finset ℤ := Finset.univ.image s
-  let J := ULift.{uI} (Fin n)
-  let d' : J → ℤ := (fun u ↦ (ev u).fst.val) ∘ ULift.down
-  let g' : ∀ u : J, M.grading.piece (d' u) := fun u ↦ liftGen (ev u.down).fst (ev u.down).snd
+  let d' : ULift.{uI} (Fin n) → ℤ := (fun u ↦ (ev u).fst.val) ∘ ULift.down
+  let g' : ∀ u : ULift.{uI} (Fin n), M.grading.piece (d' u) :=
+    fun u ↦ liftGen (ev u.down).fst (ev u.down).snd
   let Φ : free 𝒜 d' ⟶ M := freeLift g'
   by_cases hq : q ∈ S
   swap
   · ext ⟨u, hu⟩
     exact absurd (hu ▸ (ev u.down).fst.property) hq
   let q' : S := ⟨q, hq⟩
-  let eqv : J ≃ Σ p : S, Fin (nq p) := Equiv.ulift.trans ev
-  let e_q : {u : J // d' u = q} ≃ Fin (nq q') :=
-    (Equiv.subtypeEquiv eqv fun _ ↦
-      ⟨fun h ↦ Subtype.ext h, fun h ↦ congrArg Subtype.val h⟩).trans
-      (Equiv.sigmaSubtype q')
-  let L : ({u : J // d' u = q} → k) →ₗ[k] (Fin (nq q') → k) :=
-    (bq q').equivFun.toLinearMap.comp
-      (((pieceQuotientHom Φ q).restrictScalars k).comp
-        (freePieceQuotientEquiv hneg hzero d' q).symm.toLinearMap)
-  have hL : L = (LinearEquiv.piCongrLeft k (fun _ ↦ k) e_q).toLinearMap := by
-    refine LinearMap.pi_ext fun u c ↦ ?_
-    have hu_val : u.val = eqv.symm ⟨q', e_q u⟩ :=
-      congrArg Subtype.val (e_q.symm_apply_apply u).symm
-    have hLHS : L (Pi.single u c) = Pi.single (e_q u) c := by
-      dsimp only [L, LinearMap.comp_apply, LinearEquiv.coe_coe]
-      rw [freePieceQuotientEquiv_symm_single, map_smul, LinearMap.restrictScalars_apply,
-        pieceQuotientHom_apply]
-      have hev : ev u.val.down = ⟨q', e_q u⟩ := eqv.eq_symm_apply.mp hu_val
-      have hsub : (⟨Φ.hom (freeGenerator u.val),
-          map_mem Φ (Eq.mp
-            (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 d').grading.piece p) u.property)
-            (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := d') u.val))⟩ :
-          pieceSubmodule M q) =
-          ⟨(liftGen q' (e_q u)).val, (liftGen q' (e_q u)).property⟩ := Subtype.ext <| by
-        change (freeLift g').hom (freeGenerator u.val) = (liftGen q' (e_q u)).val
-        rw [freeLift_generator]
-        change (liftGen (ev u.val.down).fst (ev u.val.down).snd).val = (liftGen q' (e_q u)).val
-        rw [hev]
-      rw [hsub, hliftGen, map_smul]
-      ext t
-      rw [Pi.smul_apply, Module.Basis.equivFun_self, smul_eq_mul, mul_ite, mul_one, mul_zero,
-        Pi.single_apply]
-      simp [eq_comm]
-    have hRHS : (LinearEquiv.piCongrLeft k (fun _ ↦ k) e_q).toLinearMap (Pi.single u c) =
-        Pi.single (e_q u) c := by
-      ext t
-      obtain ⟨i, rfl⟩ := e_q.surjective t
-      change Equiv.piCongrLeft (fun _ ↦ k) e_q (Pi.single u c) (e_q i) =
-        (Pi.single (e_q u) c : Fin (nq q') → k) (e_q i)
-      rw [Equiv.piCongrLeft_apply_apply]
-      by_cases hi : i = u
-      · subst hi
-        simp
-      · simp [Pi.single_eq_of_ne hi, Pi.single_eq_of_ne (e_q.injective.ne hi)]
-    exact hLHS.trans hRHS.symm
   have hzero_img : (pieceQuotientHom Φ q)
       (Submodule.Quotient.mk (⟨z, mem_pieceSubmodule.mpr hz_piece⟩ :
         pieceSubmodule (free 𝒜 d') q)) = 0 := by
     rw [pieceQuotientHom_apply]
     have h0 : (⟨Φ.hom z, map_mem Φ hz_piece⟩ : pieceSubmodule M q) = 0 := Subtype.ext hz_ker
     rw [h0, Submodule.Quotient.mk_zero]
-  have hL_zero : L (freePieceQuotientEquiv hneg hzero d' q
-      (Submodule.Quotient.mk ⟨z, mem_pieceSubmodule.mpr hz_piece⟩)) = 0 := by
-    dsimp only [L, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.restrictScalars_apply]
-    rw [LinearEquiv.symm_apply_apply, hzero_img, map_zero]
-  rw [hL] at hL_zero
+  have hL_zero : ((bq q').equivFun.toLinearMap.comp
+      (((pieceQuotientHom Φ q).restrictScalars k).comp
+        (freePieceQuotientEquiv hneg hzero d' q).symm.toLinearMap))
+      (freePieceQuotientEquiv hneg hzero d' q
+        (Submodule.Quotient.mk ⟨z, mem_pieceSubmodule.mpr hz_piece⟩)) = 0 := by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply, LinearMap.restrictScalars_apply, hzero_img, map_zero]
+  rw [freeLift_pieceQuotient_comp_equivFun hneg hzero nq bq liftGen hliftGen ev q'] at hL_zero
   have hzero_quot : freePieceQuotientEquiv hneg hzero d' q
       (Submodule.Quotient.mk ⟨z, mem_pieceSubmodule.mpr hz_piece⟩) = 0 :=
-    (LinearEquiv.piCongrLeft k (fun _ ↦ k) e_q).injective (hL_zero.trans (map_zero _).symm)
+    (LinearEquiv.piCongrLeft k (fun _ ↦ k) (retractHeadFiberEquiv ev q')).injective
+      (hL_zero.trans (map_zero _).symm)
   rwa [freePieceQuotientEquiv_mk] at hzero_quot
 
 end RetractHead

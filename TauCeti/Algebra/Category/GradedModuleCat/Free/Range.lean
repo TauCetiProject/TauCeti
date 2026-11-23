@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 import Mathlib.Algebra.Module.LinearMap.DivisionRing
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Coordinates
 import TauCeti.Algebra.Category.GradedModuleCat.Free.Head
+import TauCeti.Algebra.Module.GradedModule.Product
 
 /-!
 # Degree-multiset uniqueness for homogeneous bases of graded endomorphism ranges
@@ -32,8 +33,8 @@ degree-zero endomorphisms on `I → A`:
 
 ## References
 
-* L.-H. Robert and E. Wagner, *Symmetric Khovanov–Rozansky link homologies*, J. Éc. polytech.
-  Math. 7 (2020), 573–651, Lemma 3.30.
+* C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
+* T. Y. Lam, *Serre's Problem on Projective Modules*, Chapter II, §4.
 -/
 
 public section
@@ -112,13 +113,12 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
   let b₀ : Module.Basis (Fin 1) A (LinearMap.range p) := (Module.Basis.singleton (Fin 1) A).map e₁
   have hb₀ : ∀ (i : Fin 1) (j : I), (b₀ i).val j ∈ 𝒜 (s i₀ - s j) := fun i j ↦ by
     have hval : (b₀ i).val = w := by
-      dsimp [b₀]
-      rw [Module.Basis.singleton_apply]
-      exact one_smul A w
+      rw [Module.Basis.map_apply, Module.Basis.singleton_apply]
+      simp [e₁, LinearEquiv.ofLeftInverse]
     rw [hval]
     exact hw j
   have h := multiset_map_eq_of_homogeneous_basis_range hneg hzero s p
-    (homogeneous_of_apply_eq_smul s i₀ hp hw) b d hb b₀ (fun _ ↦ s i₀) hb₀
+    (InternalGrading.homogeneous_of_apply_eq_smul s i₀ hp hw) b d hb b₀ (fun _ ↦ s i₀) hb₀
   simpa using h
 
 end TauCeti.GradedModuleCat

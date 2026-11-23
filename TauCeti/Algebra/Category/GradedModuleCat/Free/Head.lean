@@ -87,10 +87,10 @@ private theorem coord_mem_positive_of_mem_positive_smul_top (hneg : ∀ i < 0, �
     {I : Type uI} (s : I → ℤ) {x : free 𝒜 s}
     (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (free 𝒜 s))) (j : I) :
     x j ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
-  change x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i).comap (DirectSum.component k I (fun _ ↦ A) j)
+  rw [DirectSum.apply_eq_component (R := k), ← Submodule.mem_comap]
   refine Submodule.smul_le.mpr (fun a ha y _ ↦ ?_) hx
-  exact show (a • y) j ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i by
-    simpa only [DirectSum.smul_apply, smul_eq_mul] using mul_mem_positive_of_left hneg ha (y j)
+  rw [Submodule.mem_comap, ← DirectSum.apply_eq_component, DirectSum.smul_apply, smul_eq_mul]
+  exact mul_mem_positive_of_left hneg ha (y j)
 
 /-- A degree-`q` element of `free 𝒜 s` has vanishing head coordinates in degree `q` if and only if
 it lies in `A₊ (free 𝒜 s)`. -/
@@ -199,7 +199,9 @@ theorem freePieceQuotientEquiv_symm_single (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}]
     [DecidableEq {j : I // s j = q}] (u : {j : I // s j = q}) (c : k) :
-    (freePieceQuotientEquiv hneg hzero s q).symm (Pi.single u c) =
+  -- `freeGenerator_mem_free_piece` proves membership in degree `s u.val`; `Eq.mp` transports
+  -- this proof along `u.property : s u.val = q` to match `pieceSubmodule (free 𝒜 s) q`.
+  (freePieceQuotientEquiv hneg hzero s q).symm (Pi.single u c) =
       c • Submodule.Quotient.mk
         (⟨freeGenerator u.val, mem_pieceSubmodule.mpr <|
           Eq.mp (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 s).grading.piece p) u.property)

@@ -134,7 +134,10 @@ theorem map_esymmAlgEquiv_symm {σ R S : Type*} [Fintype σ] [CommRing R] [CommR
         exact congrFun (congrArg₂ eval₂ (RingHom.ext fun _ ↦ by simp) rfl) _
     _ = map f p := congrArg (map f) hR
 
-private theorem aeval_esymm_esymmAlgEquiv_symm {σ R : Type*} [Fintype σ] [CommRing R] {n : ℕ}
+/-- Evaluating `(esymmAlgEquiv σ R hn).symm p` at the elementary symmetric polynomials
+`e₁, …, eₙ` recovers `(p : MvPolynomial σ R)`. -/
+@[simp]
+theorem aeval_esymm_esymmAlgEquiv_symm {σ R : Type*} [Fintype σ] [CommRing R] {n : ℕ}
     (hn : Fintype.card σ = n) (p : symmetricSubalgebra σ R) :
     aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1)) ((esymmAlgEquiv σ R hn).symm p) =
       (p : MvPolynomial σ R) := by
