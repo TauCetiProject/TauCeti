@@ -66,38 +66,40 @@ end IsBlockIdempotent
 
 variable {ι : Type*} [Fintype ι] {b : ι → Subalgebra.center R (MonoidAlgebra R G)}
 
+/-- A complete orthogonal family of idempotents of the centre of `R[G]` is a complete orthogonal
+family of idempotents of `R[G]`. -/
+theorem _root_.CompleteOrthogonalIdempotents.val_center (hb : CompleteOrthogonalIdempotents b) :
+    CompleteOrthogonalIdempotents fun i ↦ (b i : MonoidAlgebra R G) :=
+  hb.map (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom
+
+-- The corner `(hb.val_center.idem i).Corner` is `(hbp i).BlockAlgebra`: both are the corner of
+-- `(b i : R[G])`, with two proofs of idempotence, which are equal by proof irrelevance.
 /-- **The block decomposition of a group algebra.** A complete orthogonal family of block
 idempotents `e_B` of `R[G]` splits it as the product of its block algebras,
 `R[G] ≃ₐ[R] ∏_B e_B R[G]`, by `x ↦ (e_B x)_B` with inverse `(y_B)_B ↦ ∑_B y_B`. -/
 noncomputable def algEquivPiBlockAlgebra (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) :
     MonoidAlgebra R G ≃ₐ[R] ∀ i, (hbp i).BlockAlgebra :=
-  (hb.map (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom).algEquivOfIsMulCentral
-    fun i ↦ Set.mem_center_iff.mp (b i).property
+  hb.val_center.algEquivOfIsMulCentral fun i ↦ Set.mem_center_iff.mp (b i).property
 
 /-- The component of `x` in the block algebra `e_B R[G]` is the compression `e_B x e_B`. -/
 theorem algEquivPiBlockAlgebra_apply (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (x : MonoidAlgebra R G) (i : ι) :
-    algEquivPiBlockAlgebra hb hbp x i = (hbp i).isIdempotentElem_val.compress x := by
-  rw [algEquivPiBlockAlgebra]
-  exact (hb.map _).algEquivOfIsMulCentral_apply _ x i
+    algEquivPiBlockAlgebra hb hbp x i = (hbp i).isIdempotentElem_val.compress x :=
+  hb.val_center.algEquivOfIsMulCentral_apply _ x i
 
 /-- The component of `x` in the block algebra `e_B R[G]` is `e_B x`. -/
 @[simp]
 theorem algEquivPiBlockAlgebra_apply_val (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (x : MonoidAlgebra R G) (i : ι) :
-    (algEquivPiBlockAlgebra hb hbp x i).val = b i * x := by
-  rw [algEquivPiBlockAlgebra]
-  exact (hb.map _).algEquivOfIsMulCentral_apply_val _ x i
+    (algEquivPiBlockAlgebra hb hbp x i).val = b i * x :=
+  hb.val_center.algEquivOfIsMulCentral_apply_val _ x i
 
 /-- An element of `∏_B e_B R[G]` corresponds to the sum of its components in `R[G]`. -/
 @[simp]
 theorem algEquivPiBlockAlgebra_symm_apply (hb : CompleteOrthogonalIdempotents b)
     (hbp : ∀ i, IsBlockIdempotent (b i)) (y : ∀ i, (hbp i).BlockAlgebra) :
-    (algEquivPiBlockAlgebra hb hbp).symm y = ∑ i, (y i).val := by
-  rw [algEquivPiBlockAlgebra]
-  exact CompleteOrthogonalIdempotents.algEquivOfIsMulCentral_symm_apply
-    (hb.map (Subalgebra.center R (MonoidAlgebra R G)).val.toRingHom)
-    (fun i ↦ Set.mem_center_iff.mp (b i).property) y
+    (algEquivPiBlockAlgebra hb hbp).symm y = ∑ i, (y i).val :=
+  hb.val_center.algEquivOfIsMulCentral_symm_apply _ y
 
 end TauCeti

@@ -470,10 +470,19 @@ theorem ringEquivOfIsMulCentral_apply (he : CompleteOrthogonalIdempotents e)
 /-- The inverse of Mathlib's `CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` sends a
 family of corner elements to their sum. This holds by unfolding the definition, whose inverse is
 `(yᵢ)ᵢ ↦ ∑ᵢ yᵢ`. -/
+@[simp]
 theorem ringEquivOfIsMulCentral_symm_apply (he : CompleteOrthogonalIdempotents e)
     (hc : ∀ i, IsMulCentral (e i)) (y : ∀ i, (he.idem i).Corner) :
     (he.ringEquivOfIsMulCentral hc).symm y = ∑ i, (y i).val :=
   (rfl)
+
+/-- The component of `x` in the corner `eᵢ A eᵢ` under Mathlib's
+`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is `eᵢ x`, since `eᵢ` is central. -/
+@[simp]
+theorem ringEquivOfIsMulCentral_apply_val (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
+    (he.ringEquivOfIsMulCentral hc x i).val = e i * x := by
+  rw [ringEquivOfIsMulCentral_apply, (he.idem i).val_compress_of_commute ((hc i).comm x)]
 
 /-- **The product decomposition along central idempotents, as algebras.** A complete family of
 orthogonal central idempotents `eᵢ` of an `R`-algebra `A` splits it as the product
