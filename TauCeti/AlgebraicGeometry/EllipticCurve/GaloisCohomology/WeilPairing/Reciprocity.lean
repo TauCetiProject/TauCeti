@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Archimedean
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.BaseChange.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Local
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 
@@ -36,7 +36,7 @@ degree of the base change of `φ` to `K_v` equals `n` only propositionally, so t
 reciprocity is stated in `ℚ/ℤ`. At a place where both classes satisfy the Selmer local
 conditions, their local pairing vanishes
 (`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in
-`WeilPairing/BaseChange`). So if `a` and `b` satisfy them at every infinite place and at
+`WeilPairing/BaseChange/Brauer`). So if `a` and `b` satisfy them at every infinite place and at
 every finite place outside a finite set `S`, the pairings at the places of `S` sum to zero in `ℚ/ℤ`
 (`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`) and also in `ℤ/(deg φ)ℤ`
 (`TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`).

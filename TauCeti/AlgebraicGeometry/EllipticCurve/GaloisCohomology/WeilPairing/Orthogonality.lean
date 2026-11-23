@@ -23,7 +23,7 @@ Over a nonarchimedean local field `K`, for an isogeny `φ : E₁ → E₂` of de
 Field-level Kummer and Selmer-kernel orthogonality are in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Kummer/Orthogonality.lean`,
 localization-based vanishing (`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`)
-is in `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/BaseChange.lean`,
+is in `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/BaseChange/Brauer.lean`,
 and local Tate Kummer and Selmer-kernel orthogonality (including
 `TauCeti.Isogeny.localTateKerWeilQuotientPairing`) are in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Local.lean`.

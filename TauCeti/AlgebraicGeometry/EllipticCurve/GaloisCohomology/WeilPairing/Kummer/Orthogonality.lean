@@ -19,7 +19,8 @@ of the maps to point-coefficient cohomology satisfy the same vanishing.
 
 No local-field or unramified-cohomology hypotheses are needed here; localization along field
 extensions is in
-`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/BaseChange.lean`,
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/BaseChange/Basic.lean` and
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/BaseChange/Brauer.lean`,
 nonarchimedean local Tate duality is in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/WeilPairing/Local.lean`,
 and unramified orthogonality is in
