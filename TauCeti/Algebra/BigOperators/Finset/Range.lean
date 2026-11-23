@@ -91,6 +91,9 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   with common difference `2` is `J (D + J)`.
 * `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
   `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
+* `Finset.sum_range_sum_range_split_gap`: split a double sum over `range n × range n` by the gap
+  `N` between the indices into the pairs with `k < l - N`, those with `l < k - N` and those with
+  `|k - l| ≤ N`, as in Bony's decomposition of a product of two Littlewood–Paley partial sums.
 -/
 
 public section
@@ -692,6 +695,37 @@ theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : �
   refine sum_congr rfl fun i hi ↦ ?_
   simp only [mem_range] at hp hi
   rw [ite_eq_left (by omega), Nat.add_sub_cancel' (by omega)]
+
+/-- **Splitting a double sum by the gap between the indices.** For every gap `N`, the double sum
+`∑_{k, l < n} c k l` is the sum of the terms with `k + N < l`, those with `l + N < k`, and those
+with `|k - l| ≤ N`. -/
+theorem sum_range_sum_range_split_gap {M : Type*} [AddCommMonoid M] (N n : ℕ)
+    (c : ℕ → ℕ → M) :
+    ∑ k ∈ range n, ∑ l ∈ range n, c k l =
+      ∑ l ∈ range n, ∑ k ∈ range (l - N), c k l + ∑ k ∈ range n, ∑ l ∈ range (k - N), c k l +
+        ∑ k ∈ range n, ∑ l ∈ (range n).filter (fun l ↦ l ≤ k + N ∧ k ≤ l + N), c k l := by
+  have hsplit : ∀ k ∈ range n, ∑ l ∈ range n, c k l =
+      ∑ l ∈ (range n).filter (fun l ↦ k + N < l), c k l + ∑ l ∈ range (k - N), c k l +
+        ∑ l ∈ (range n).filter (fun l ↦ l ≤ k + N ∧ k ≤ l + N), c k l := fun k hk ↦ by
+    rw [mem_range] at hk
+    rw [← sum_filter_add_sum_filter_not (range n) (fun l ↦ k + N < l),
+      ← sum_filter_add_sum_filter_not ((range n).filter fun l ↦ ¬k + N < l) (fun l ↦ l + N < k),
+      ← add_assoc]
+    congr 1
+    · congr 1
+      refine sum_congr ?_ fun _ _ ↦ rfl
+      ext l
+      simp only [mem_filter, mem_range]
+      omega
+    · refine sum_congr ?_ fun _ _ ↦ rfl
+      ext l
+      simp only [mem_filter, mem_range]
+      omega
+  rw [sum_congr rfl hsplit, sum_add_distrib, sum_add_distrib]
+  congr 2
+  refine sum_comm' fun k l ↦ ?_
+  simp only [mem_range, mem_filter]
+  omega
 
 /-- **Exchanging the order of a triangular double sum.** Summing over `s ≤ n` and `k ≤ s` gives
 the same as summing over `k ≤ n` and `j ≤ n - k`, with `s = k + j`. -/
