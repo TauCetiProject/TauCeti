@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.AlgebraicGeometry.Stack.Basic
-public import TauCeti.CategoryTheory.FiberedCategory.FiberedInGroupoids
+public import TauCeti.CategoryTheory.FiberedCategory.Grothendieck
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Discrete
 
@@ -88,8 +88,10 @@ instance isGroupoid_obj (X : StackInGroupoids.{u}) (a : LocallyDiscrete Scheme.{
   X.isGroupoid a.as.unop
 
 /-- The Grothendieck construction `∫ᶜ X` of a stack in groupoids `X`, with its projection to
-schemes, is a category fibred in groupoids (Stacks, Lemma 4.35.2 (003V)). -/
-instance isFiberedInGroupoids (X : StackInGroupoids.{u}) :
+schemes, is a category fibred in groupoids (Stacks, Lemma 4.35.2 (003V)). This is not an instance:
+`inferInstance` already finds it through
+`CategoryTheory.Pseudofunctor.CoGrothendieck.isFiberedInGroupoids_forget` and `isGroupoid_obj`. -/
+theorem isFiberedInGroupoids (X : StackInGroupoids.{u}) :
     (Pseudofunctor.CoGrothendieck.forget X.toSchPseudofunctor).IsFiberedInGroupoids :=
   inferInstance
 

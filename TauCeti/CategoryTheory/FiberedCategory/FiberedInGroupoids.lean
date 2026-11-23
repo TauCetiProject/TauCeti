@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.FiberedCategory.Grothendieck
+public import Mathlib.CategoryTheory.FiberedCategory.Fibered
+public import Mathlib.CategoryTheory.Groupoid
 public import TauCeti.CategoryTheory.FiberedCategory.Fiber
 
 /-!
@@ -16,8 +17,8 @@ has a lift with any prescribed target lying over its codomain, and every morphis
 strongly Cartesian over its image (Stacks, Definition 4.35.1 (003T)).
 Equivalently, `p` is a fibered category whose fibers are groupoids (Stacks, Lemma 4.35.2 (003V)).
 
-The Grothendieck construction `∫ᶜ F` of a pseudofunctor `F : LocallyDiscrete 𝒮ᵒᵖ ⥤ᵖ Cat` whose
-fiber categories are groupoids is fibred in groupoids over `𝒮`.
+The Grothendieck construction of a pseudofunctor with groupoid fibers is fibred in groupoids
+(`TauCeti.CategoryTheory.FiberedCategory.Grothendieck`).
 
 ## Main declarations
 
@@ -30,8 +31,8 @@ fiber categories are groupoids is fibred in groupoids over `𝒮`.
 * `CategoryTheory.Functor.IsFiberedInGroupoids.of_isGroupoid_fiber`: a fibered category whose
   fibers are groupoids is fibred in groupoids.
 * `CategoryTheory.Functor.isFiberedInGroupoids_iff`: the two descriptions agree.
-* `CategoryTheory.Pseudofunctor.CoGrothendieck.isFiberedInGroupoids_forget`: the Grothendieck
-  construction of a pseudofunctor with groupoid fibers is fibred in groupoids.
+* `CategoryTheory.Functor.IsFiberedInGroupoids.reflectsIsomorphisms`: the projection of a category
+  fibred in groupoids reflects isomorphisms.
 
 ## References
 
@@ -44,15 +45,16 @@ fiber categories are groupoids is fibred in groupoids over `𝒮`.
 
 universe v₁ v₂ u₁ u₂
 
-open CategoryTheory CategoryTheory.Functor Bicategory Opposite
+open CategoryTheory CategoryTheory.Functor Opposite
 
 namespace CategoryTheory
 
 variable {𝒮 : Type u₁} {𝒳 : Type u₂} [Category.{v₁} 𝒮] [Category.{v₂} 𝒳]
 
 /-- The functor `p : 𝒳 ⥤ 𝒮` makes `𝒳` a category fibred in groupoids over `𝒮`: every morphism of
-`𝒮` has a Cartesian lift with any prescribed target, and every morphism of `𝒳` is strongly
-Cartesian over every morphism of `𝒮` it lies over (Stacks, Definition 4.35.1 (003T)). -/
+`𝒮` has a Cartesian lift with any prescribed target lying over its codomain, and every
+morphism of `𝒳` is strongly Cartesian over every morphism of `𝒮` it lies over (Stacks,
+Definition 4.35.1 (003T)). -/
 @[stacks 003T]
 class Functor.IsFiberedInGroupoids (p : 𝒳 ⥤ 𝒮) : Prop extends p.IsPreFibered where
   isStronglyCartesian {R S : 𝒮} {a b : 𝒳} (f : R ⟶ S) (φ : a ⟶ b) [p.IsHomLift f φ] :
@@ -86,15 +88,17 @@ variable (p : 𝒳 ⥤ 𝒮) [p.IsFiberedInGroupoids]
 instance isFibered : p.IsFibered where
   comp := by intros; infer_instance
 
-/-- In a category fibred in groupoids, a morphism lying over an isomorphism is an isomorphism. -/
-lemma isIso_of_isHomLift {R S : 𝒮} {a b : 𝒳} (f : R ⟶ S) [IsIso f] (φ : a ⟶ b)
-    [p.IsHomLift f φ] : IsIso φ :=
-  IsStronglyCartesian.isIso_of_base_isIso p f φ
+/-- In a category fibred in groupoids, `p` reflects isomorphisms: a morphism lying over an
+isomorphism is strongly Cartesian, hence an isomorphism
+(Mathlib's `Functor.IsStronglyCartesian.isIso_of_base_isIso`). -/
+instance reflectsIsomorphisms : p.ReflectsIsomorphisms where
+  reflects φ _ := IsStronglyCartesian.isIso_of_base_isIso p (p.map φ) φ
 
 /-- The fibers of a category fibred in groupoids are groupoids. -/
 instance isGroupoid_fiber (S : 𝒮) : IsGroupoid (Fiber p S) where
   all_isIso φ := by
-    have : IsIso (Fiber.fiberInclusion.map φ) := isIso_of_isHomLift p (𝟙 S) _
+    have : IsIso (Fiber.fiberInclusion.map φ) :=
+      IsStronglyCartesian.isIso_of_base_isIso p (𝟙 S) _
     exact isIso_of_reflects_iso φ Fiber.fiberInclusion
 
 end Functor.IsFiberedInGroupoids
@@ -104,17 +108,5 @@ category whose fibers are groupoids (Stacks, Lemma 4.35.2 (003V)). -/
 lemma Functor.isFiberedInGroupoids_iff (p : 𝒳 ⥤ 𝒮) :
     p.IsFiberedInGroupoids ↔ p.IsFibered ∧ ∀ S, IsGroupoid (Fiber p S) :=
   ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨_, _⟩ ↦ .of_isGroupoid_fiber p⟩
-
-namespace Pseudofunctor.CoGrothendieck
-
-/-- The Grothendieck construction of a pseudofunctor whose fiber categories are groupoids is
-fibred in groupoids. -/
-instance isFiberedInGroupoids_forget {F : LocallyDiscrete 𝒮ᵒᵖ ⥤ᵖ Cat.{v₂, u₂}}
-    [∀ S : 𝒮, IsGroupoid (F.obj ⟨op S⟩)] : (forget F).IsFiberedInGroupoids :=
-  have (S : 𝒮) : IsGroupoid (Fiber (forget F) S) :=
-    isGroupoid_of_reflects_iso (Fiber.inducedFunctor (comp_const F S)).asEquivalence.inverse
-  .of_isGroupoid_fiber (forget F)
-
-end Pseudofunctor.CoGrothendieck
 
 end CategoryTheory
