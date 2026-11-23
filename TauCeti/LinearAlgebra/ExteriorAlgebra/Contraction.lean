@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
-public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse

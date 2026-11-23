@@ -12,7 +12,7 @@ import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation
 import TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution
 
 /-!
-# Exterior derivative associated to a universal derivation
+# Exterior derivative associated to a generating derivation with a twisted lift
 
 Let `D : Derivation R A M` be an `R`-derivation whose image spans `M` over `A`. Whenever the
 twisted `A`-module `TwistedExt D = M × ⋀[A]^2 M` with `a • (m, ω) = (a • m, D a ∧ m + a • ω)`

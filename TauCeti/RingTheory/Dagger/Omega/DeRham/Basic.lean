@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import TauCeti.RingTheory.Dagger.Omega.Map
 public import TauCeti.RingTheory.Derivation.ExteriorDerivative
 public import TauCeti.RingTheory.Kaehler.DeRham.ExteriorPower
+import TauCeti.RingTheory.Dagger.Omega.Forms
 
 /-!
 # The overconvergent de Rham complex and its functoriality
@@ -152,8 +153,9 @@ theorem map_ofKaehler_exteriorDeriv (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
     exact (Derivation.exteriorAlgebraDeriv_mul _ _ _ _ _ _).symm
   | add x y hx hy => simp only [map_add, hx, hy]
 
-/-- When algebraic Kähler differentials are finite, `(ofKaehlerEquiv R A).exteriorPower`
-identifies the algebraic and universally finite exterior derivatives. -/
+/-- When `Omega R A` is Noetherian over `A` and algebraic Kähler differentials `Ω[A⁄R]` are
+finite over `A`, `(ofKaehlerEquiv R A).exteriorPower` identifies the algebraic and universally
+finite exterior derivatives. -/
 theorem ofKaehlerEquiv_exteriorDeriv [Module.Finite A Ω[A⁄R]] (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
     (ofKaehlerEquiv R A).exteriorPower (q + 1) (TauCeti.KaehlerDeRham.exteriorDeriv R A q ω) =
       exteriorDeriv R A q ((ofKaehlerEquiv R A).exteriorPower q ω) := by
@@ -417,13 +419,8 @@ theorem subsingleton_deRhamCohomology_succ_of_subsingleton {R A : Type*} [CommRi
 section Washnitzer
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- On `washnitzerAlgebra σ K`, every exterior power of `Omega` above `Nat.card σ` vanishes. -/
-theorem subsingleton_forms_washnitzer_of_card_lt [Finite σ] {q : ℕ} (hq : Nat.card σ < q) :
-    Subsingleton (⋀[washnitzerAlgebra σ K]^q (Omega K (washnitzerAlgebra σ K))) :=
-  exteriorPower.subsingleton_of_span_eq_top_of_card_lt (washnitzerBasis σ K)
-    (washnitzerBasis σ K).span_eq q hq
-
-/-- Overconvergent de Rham cohomology of `washnitzerAlgebra σ K` vanishes for `q > Nat.card σ`. -/
+/-- Over a complete ultrametric normed field `K`, overconvergent de Rham cohomology of
+`washnitzerAlgebra σ K` vanishes for `q > Nat.card σ`. -/
 theorem subsingleton_deRhamCohomology_washnitzer_of_card_lt [Finite σ] {q : ℕ}
     (hq : Nat.card σ < q) : Subsingleton (deRhamCohomology K (washnitzerAlgebra σ K) q) :=
   have := subsingleton_forms_washnitzer_of_card_lt (K := K) hq

@@ -112,20 +112,6 @@ theorem exteriorDeriv_wedge (p q : ℕ) (ω : ⋀[A]^p Ω[A⁄R]) (η : ⋀[A]^q
           exteriorPower.wedge A Ω[A⁄R] p (q + 1) ω (exteriorDeriv R A q η) :=
   Subtype.ext <| by simpa using extDeriv_mul_of_mem_exteriorPower ω.property η.val
 
-/-- On underlying rings, `TauCeti.KaehlerDeRham.map f` agrees with
-`ExteriorAlgebra.mapSemilinear (KaehlerDifferential.mapSemilinear f)`. -/
-theorem map_toRingHom_eq_mapSemilinear {B : Type*} [CommRing B] [Algebra R B] (f : A →ₐ[R] B) :
-    ((map f : TauCeti.DGAlgHom (isDGAlgebra R A) (isDGAlgebra R B)).toAlgHom :
-        ExteriorAlgebra A Ω[A⁄R] →+* ExteriorAlgebra B Ω[B⁄R]) =
-      ExteriorAlgebra.mapSemilinear (KaehlerDifferential.mapSemilinear f) :=
-  ExteriorAlgebra.ringHom_ext
-    (fun a ↦ by
-      change (map f : TauCeti.DGAlgHom _ _) (algebraMap A (ExteriorAlgebra A Ω[A⁄R]) a) = _
-      rw [map_algebraMap, ExteriorAlgebra.mapSemilinear_algebraMap]; rfl)
-    (fun ω ↦ by
-      change (map f : TauCeti.DGAlgHom _ _) (ExteriorAlgebra.ι A ω) = _
-      rw [map_ι, ExteriorAlgebra.mapSemilinear_ι])
-
 /-- An `R`-algebra homomorphism `f : A →ₐ[R] B` induces maps on Kähler `q`-forms via
 `KaehlerDifferential.mapSemilinear f` that commute with `TauCeti.KaehlerDeRham.exteriorDeriv`. -/
 theorem mapSemilinear_exteriorDeriv {B : Type*} [CommRing B] [Algebra R B]

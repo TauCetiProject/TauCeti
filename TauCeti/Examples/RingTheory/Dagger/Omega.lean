@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.Omega.DeRham
+public import TauCeti.RingTheory.Dagger.Omega.DeRham.Basic
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.Unramified.Field
 

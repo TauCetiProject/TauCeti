@@ -41,9 +41,9 @@ section FiniteResidue
 variable {R A B : Type*} [CommRing R] [IsNoetherianRing R] [CommRing A] [CommRing B]
   [Algebra R A] [Algebra R B] [IsNoetherianRing B]
 
-/-- If `B` is noetherian with maximal residue fields `B ⧸ m` module-finite over `R`, then every
-`f`-semilinear map `Ω[A⁄R] →ₛₗ[f.toRingHom] M` into a finite `B`-module vanishes on elements
-killed by `Omega.ofKaehler R A`. -/
+/-- If `R` and `B` are noetherian with maximal residue fields `B ⧸ m` module-finite over `R`, then
+every `f`-semilinear map `Ω[A⁄R] →ₛₗ[f.toRingHom] M` into a finite `B`-module vanishes on
+elements killed by `Omega.ofKaehler R A`. -/
 theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
     [Module R M] [Module B M] [IsScalarTower R B M] [Module.Finite B M]
     (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
