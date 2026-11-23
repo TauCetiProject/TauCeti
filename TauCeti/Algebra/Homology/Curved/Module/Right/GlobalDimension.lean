@@ -60,15 +60,11 @@ The argument proceeds in two steps:
   coproducts and products indexed by `Type u`.
 * `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT`,
   `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT`,
-  `TauCeti.CurvedDGRightModuleCat.coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT`,
-  `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT`,
-  `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_contraacyclic_of_hasInjectiveDimensionLT`,
-  and `TauCeti.CurvedDGRightModuleCat.coacyclic_eq_contraacyclic_of_hasInjectiveDimensionLT`:
+  `TauCeti.CurvedDGRightModuleCat.coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT`, and
+  `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT`:
   coincidence of the three acyclic classes of the second kind.
-* `AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT`,
-  `AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT`,
-  `AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasInjectiveDimensionLT`, and
-  `AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasInjectiveDimensionLT`:
+* `AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT` and
+  `AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT`:
   the comparison triangle functors `D_abs → D_co` and `D_abs → D_ctr` are equivalences.
 
 ## References
@@ -301,44 +297,5 @@ theorem AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDi
     (absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn)
 
 end FiniteGlobalDimension
-
-section FiniteInjectiveGlobalDimension
-
-variable (n : ℕ)
-  (hn : ∀ V : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
-    HasInjectiveDimensionLT V n)
-include hn
-
-/-- Under a uniform graded injective-dimension bound `< n`, the absolutely acyclic and
-contraacyclic classes of curved right modules coincide. -/
-theorem absolutelyAcyclic_eq_contraacyclic_of_hasInjectiveDimensionLT :
-    absolutelyAcyclic R h = contraacyclic R h :=
-  absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n
-    (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
-
-/-- Under a uniform graded injective-dimension bound `< n`, the coacyclic and contraacyclic classes
-of curved right modules coincide. -/
-theorem coacyclic_eq_contraacyclic_of_hasInjectiveDimensionLT :
-    coacyclic R h = contraacyclic R h :=
-  coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n
-    (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
-
-/-- Under a uniform graded injective-dimension bound `< n`, the canonical comparison triangle
-functor from the absolute derived category to the coderived category is an equivalence of
-categories. -/
-theorem AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasInjectiveDimensionLT :
-    (AbsoluteDerivedCategory.toCoderived R h).IsEquivalence :=
-  AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT (R := R) (h := h) n
-    (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
-
-/-- Under a uniform graded injective-dimension bound `< n`, the canonical comparison triangle
-functor from the absolute derived category to the contraderived category is an equivalence of
-categories. -/
-theorem AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasInjectiveDimensionLT :
-    (AbsoluteDerivedCategory.toContraderived R h).IsEquivalence :=
-  AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT
-    (R := R) (h := h) n (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
-
-end FiniteInjectiveGlobalDimension
 
 end TauCeti.CurvedDGRightModuleCat

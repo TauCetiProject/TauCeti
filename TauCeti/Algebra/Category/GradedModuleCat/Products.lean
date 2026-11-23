@@ -33,7 +33,7 @@ namespace TauCeti.GradedModuleCat
 universe uk uA v
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {J : Type v}
+  {𝒜 : ℤ → Submodule k A} [DirectSum.Decomposition 𝒜] {J : Type v}
   (M : J → GradedModuleCat.{v} 𝒜)
 
 /-- The degreewise product of graded modules, with finite total degree support. -/

@@ -38,14 +38,16 @@ therefore returns the existing ordinary DG-module structure before any cohomolog
 
 * `TauCeti.IsCurvedDGRightModule.map_decompose`: the differential commutes with homogeneous
   projections up to its degree-one shift.
+* `TauCeti.IsCurvedDGRightModule.leibniz_koszulTwist`: the global right Leibniz rule on arbitrary
+  elements using `koszulTwist 1`.
 * `TauCeti.IsCurvedDGRightModule.leibniz_of_map_eq_zero`: cycles of the algebra act compatibly
   with the module differential, without a homogeneity assumption on the module element.
 * `TauCeti.IsCurvedDGRightModule.toIsDGRightModule_of_curvature_eq_zero`: zero curvature turns a
   curved right module into an ordinary differential graded right module.
 * `TauCeti.isCurvedDGRightModule_zero_iff`: the curved and ordinary notions agree at curvature
   zero.
-* `TauCeti.CurvedDGRightModuleCat.differential_smul`: the global right Leibniz rule on arbitrary
-  elements using `koszulTwist 1`.
+* `TauCeti.CurvedDGRightModuleCat.differential_smul`: bundled convenience form of the global right
+  Leibniz rule.
 
 ## References
 
@@ -97,15 +99,30 @@ theorem map_decompose (hM : IsCurvedDGRightModule h ℳ dM) (q : ℤ) (x : M) :
   DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) q x
 
+/-- The global right Leibniz rule on a curved differential graded right module, expressed on
+arbitrary elements using `koszulTwist 1`. -/
+theorem leibniz_koszulTwist (hM : IsCurvedDGRightModule h ℳ dM) (a : Aᵐᵒᵖ) (m : M) :
+    dM (a • m) =
+      a • dM m + op (d a.unop) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 m := by
+  induction m using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous q m =>
+    rcases m with ⟨m, hm⟩
+    have hm' : m ∈ (InternalGrading.ofDecomposition ℳ).piece q := by
+      rwa [InternalGrading.ofDecomposition_piece]
+    conv_lhs => rw [← op_unop a]
+    rw [(InternalGrading.ofDecomposition ℳ).koszulTwist_one_apply_of_mem hm',
+      hM.leibniz hm a.unop, op_unop]
+    simp only [Int.cast_smul_eq_zsmul, Units.smul_def, smul_comm (op _)]
+  | add m₁ m₂ hm₁ hm₂ =>
+    simp only [smul_add, map_add, hm₁, hm₂]
+    exact add_add_add_comm _ _ _ _
+
 /-- The right Leibniz rule against a cycle of the algebra.  The signed term vanishes, so the
 module element need not be homogeneous. -/
 theorem leibniz_of_map_eq_zero (hM : IsCurvedDGRightModule h ℳ dM) (x : M) {a : A}
     (ha : d a = 0) : dM (op a • x) = op a • dM x := by
-  classical
-  conv_lhs => rw [← DirectSum.sum_support_decompose ℳ x, Finset.smul_sum, map_sum]
-  conv_rhs => rw [← DirectSum.sum_support_decompose ℳ x, map_sum, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  rw [hM.leibniz (SetLike.coe_mem _) a, ha, op_zero, zero_smul, smul_zero, add_zero]
+  simpa [ha] using hM.leibniz_koszulTwist (op a) x
 
 /-- The curvature action commutes with the module differential. -/
 theorem map_op_curvature_smul (hM : IsCurvedDGRightModule h ℳ dM) (x : M) :
@@ -179,20 +196,8 @@ arbitrary elements using `koszulTwist 1`. -/
 theorem differential_smul (M : CurvedDGRightModuleCat.{uR, uA, uM} h) (a : Aᵐᵒᵖ) (m : M) :
     M.differential (a • m) =
       a • M.differential m +
-        op (d a.unop) • (InternalGrading.ofDecomposition M.grading).koszulTwist 1 m := by
-  induction m using DirectSum.Decomposition.inductionOn M.grading with
-  | zero => simp
-  | @homogeneous q m =>
-    rcases m with ⟨m, hm⟩
-    have hm' : m ∈ (InternalGrading.ofDecomposition M.grading).piece q := by
-      rwa [InternalGrading.ofDecomposition_piece]
-    conv_lhs => rw [← op_unop a]
-    rw [(InternalGrading.ofDecomposition M.grading).koszulTwist_one_apply_of_mem hm',
-      M.isCurvedDGRightModule.leibniz hm a.unop, op_unop]
-    simp only [Int.cast_smul_eq_zsmul, Units.smul_def, smul_comm (op _)]
-  | add m₁ m₂ hm₁ hm₂ =>
-    simp only [smul_add, map_add, hm₁, hm₂]
-    exact add_add_add_comm _ _ _ _
+        op (d a.unop) • (InternalGrading.ofDecomposition M.grading).koszulTwist 1 m :=
+  M.isCurvedDGRightModule.leibniz_koszulTwist a m
 
 end CurvedDGRightModuleCat
 

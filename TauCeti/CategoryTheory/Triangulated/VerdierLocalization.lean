@@ -64,11 +64,12 @@ consequences for Verdier quotients:
   out of an object approximated by morphisms `δᵢ` as above, and their kernel.
 * `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE` and
   `TauCeti.isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff`: when
-  `P ≤ Q` and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence, and for thick
-  triangulated `P ≤ Q` it is a localized equivalence if and only if `P = Q`.
-* `TauCeti.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`:
-  for thick triangulated `P ≤ Q`, the comparison functor between Verdier localizations is an
-  equivalence if and only if `P = Q`.
+  `P ≤ Q` and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence; when the ambient
+  category is triangulated, `P` is thick triangulated, and `Q` satisfies `P ≤ Q`, it is a
+  localized equivalence if and only if `P = Q`.
+* `TauCeti.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`: when the ambient
+  category is triangulated, `P` is thick triangulated, and `Q` satisfies `P ≤ Q`, the comparison
+  functor between Verdier localizations is an equivalence if and only if `P = Q`.
 
 ## References
 

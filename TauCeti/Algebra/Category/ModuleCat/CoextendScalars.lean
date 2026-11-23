@@ -99,14 +99,14 @@ private theorem coextendScalars_equiv_algebraMap_smul_apply (M : ModuleCat.{v} R
     (s : (ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S)) :
     ModuleCat.CoextendScalars.equiv f.toRingHom M (algebraMap k S c • x) s =
       c • ModuleCat.CoextendScalars.equiv f.toRingHom M x s := by
-  have hs : algebraMap k R c • s =
-      haveI this : (ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S) := s
-      (show S from this) * algebraMap k S c := by
+  -- `(ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S)` has underlying type `S`.
+  let s' : S := s
+  have hs : algebraMap k R c • s = s' * algebraMap k S c := by
     rw [ModuleCat.restrictScalars.smul_def]
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
-    exact Algebra.commutes c (show S from s)
+    exact Algebra.commutes c s'
   have hmul :=
-    ModuleCat.CoextendScalars.smul_apply f.toRingHom M x (algebraMap k S c) (show S from s)
+    ModuleCat.CoextendScalars.smul_apply f.toRingHom M x (algebraMap k S c) s'
   rw [hmul, ← algebraMap_smul R c]
   exact (congrArg (ModuleCat.CoextendScalars.equiv f.toRingHom M x) hs.symm).trans
     (map_smul _ _ _)
@@ -250,8 +250,9 @@ noncomputable def coextendScalarsBaseEquiv (k : Type u₁) (A : Type u₂) (V : 
       invFun := fun b ↦ b
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun c b ↦ by
+        let b' : A := b
         rw [ModuleCat.restrictScalars.smul_def, RingHom.id_apply]
-        exact (smul_eq_mul _ _).trans (Algebra.smul_def c (show A from b)).symm }
+        exact (smul_eq_mul _ _).trans (Algebra.smul_def c b').symm }
   ((Algebra.ofId k A).coextendScalarsLinearEquiv (ModuleCat.of k V)).trans
     (LinearEquiv.congrLeft (ModuleCat.of k V) k eA)
 
@@ -263,6 +264,15 @@ theorem coextendScalarsBaseEquiv_apply (k : Type u₁) (A : Type u₂) (V : Type
     (ψ : (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)) (b : A) :
     coextendScalarsBaseEquiv k A V ψ b = ψ b := by
   rw [coextendScalarsBaseEquiv]; rfl
+
+/-- Evaluating `TauCeti.coextendScalarsBaseEquiv` on `a • ψ` right-translates the argument by `a`.
+-/
+theorem coextendScalarsBaseEquiv_smul_apply (k : Type u₁) (A : Type u₂) (V : Type v)
+    [CommRing k] [Ring A] [Algebra k A] [AddCommGroup V] [Module k V] (a : A)
+    (ψ : (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)) (b : A) :
+    coextendScalarsBaseEquiv k A V (a • ψ) b = coextendScalarsBaseEquiv k A V ψ (b * a) := by
+  rw [coextendScalarsBaseEquiv_apply, ModuleCat.CoextendScalars.smul_apply,
+    coextendScalarsBaseEquiv_apply]
 
 /-- Applying `TauCeti.coextendScalarsBaseEquiv` to `algebraMap k A c • ψ` scales by `c`. -/
 theorem coextendScalarsBaseEquiv_algebraMap_smul (k : Type u₁) (A : Type u₂) (V : Type v)

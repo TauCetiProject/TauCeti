@@ -329,6 +329,14 @@ theorem freeEquiv_differential (x : freeObj h V) :
       (op w • (freeEquiv h V x).2, (freeEquiv h V x).1) :=
   (rfl)
 
+/-- Evaluating `freeEquiv` on the twisted right action `a • x` in `freeObj h V`. -/
+@[simp]
+theorem freeEquiv_smul (a : Aᵐᵒᵖ) (x : freeObj h V) :
+    freeEquiv h V (a • x) =
+      (a • (freeEquiv h V x).1 - op (d a.unop) • V.grading.koszulTwist 1 (freeEquiv h V x).2,
+        a • (freeEquiv h V x).2) :=
+  (rfl)
+
 /-- The canonical graded right-linear unit inclusion `V ⟶ toGradedModuleCat (freeObj h V)`. -/
 def freeUnit : V ⟶ toGradedModuleCat (freeObj h V) :=
   GradedModuleCat.ofHom (freeι h V)
@@ -624,6 +632,29 @@ theorem freeUnit_comp_forgetDifferential_map_freeFunctor_map (f : V ⟶ W) :
     freeUnit h V ≫ (forgetDifferential (h := h)).map ((freeFunctor (h := h)).map f) =
       f ≫ freeUnit h W :=
   freeUnit_comp_forgetDifferential_map_freeDesc (f ≫ freeUnit h W)
+
+/-- On underlying pairs in `V × V`, `(freeFunctor.map f)` applies `f` componentwise. -/
+@[simp]
+theorem freeEquiv_closedHom_freeFunctor_map_apply (f : V ⟶ W) (x : freeObj h V) :
+    freeEquiv h W (closedHom ((freeFunctor (h := h)).map f) x) =
+      (f.hom (freeEquiv h V x).1, f.hom (freeEquiv h V x).2) := by
+  obtain ⟨u, v, rfl⟩ := exists_eq_freeι_add_differential_freeι h V x
+  have hu : closedHom ((freeFunctor (h := h)).map f) (freeι h V u) = freeι h W (f.hom u) := by
+    rw [freeFunctor_map, closedHom_freeDesc_freeι_apply]
+    rfl
+  have hd :
+      closedHom ((freeFunctor (h := h)).map f) ((freeObj h V).differential (freeι h V v)) =
+        (freeObj h W).differential (freeι h W (f.hom v)) := by
+    rw [freeFunctor_map, closedHom_freeDesc_differential_freeι_apply]
+    rfl
+  rw [map_add, hu, hd, map_add, map_add]
+  simp
+
+/-- Projecting `(freeFunctor.map f)` to `W{1}` commutes with `f{1}`. -/
+theorem freeProj_closedHom_freeFunctor_map_apply (f : V ⟶ W) (x : freeObj h V) :
+    (freeProj h W).hom (closedHom ((freeFunctor (h := h)).map f) x) =
+      f.hom ((freeProj h V).hom x) := by
+  rw [freeProj_apply, freeProj_apply, freeEquiv_closedHom_freeFunctor_map_apply]
 
 instance : (freeFunctor (h := h)).Additive where
   map_add {X Y f g} := by
