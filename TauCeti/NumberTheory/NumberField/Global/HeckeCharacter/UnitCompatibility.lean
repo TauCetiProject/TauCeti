@@ -17,11 +17,6 @@ positive. Consequently its restriction to all global units has finite order: eve
 root of unity, with a single positive exponent valid for all units. Real sign parities of the
 Hecke character remain unrestricted.
 
-On a global element the product of the infinite components equals that monomial as soon as the
-element is positive at every real place where the sign parity of the character differs from the
-parity of the exponent (`coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity`), in
-particular on totally positive elements.
-
 The finite-idele input is `HeckeCharacter.exists_modulus_finitePart_eq_one`, the product
 formula on principal ideles is
 `HeckeCharacter.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding`, the archimedean comparison

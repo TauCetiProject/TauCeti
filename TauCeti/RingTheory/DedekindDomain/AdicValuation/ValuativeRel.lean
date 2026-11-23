@@ -353,6 +353,30 @@ theorem unitsMap_algebraMap_mem_unitFiltration_iff
     ← map_one (algebraMap K (v.adicCompletion K)), ← map_sub,
     valued_algebraMap_adicCompletion, valued_algebraMap_adicCompletion]
 
+/-- **Unit filtration membership from `Valued.v` approximation.** If a unit `u` of `K_v`
+approximates a local unit `z` of valuation `1` strictly within `exp (-n)` for `Valued.v`, then
+`u * z⁻¹` lies in the `n`-th step `U(K_v, n)` of the unit filtration. -/
+theorem mul_inv_mem_unitFiltration_of_valued_sub_lt
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {n : ℕ} {u z : (v.adicCompletion K)ˣ}
+    (hz : Valued.v (z : v.adicCompletion K) = 1)
+    (huz : Valued.v ((u : v.adicCompletion K) - (z : v.adicCompletion K)) <
+      WithZero.exp (-(n : ℤ))) :
+    u * z⁻¹ ∈ TauCeti.unitFiltration (v.adicCompletion K) n := by
+  have hsub : ((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1 =
+      ((u : v.adicCompletion K) - (z : v.adicCompletion K)) * (z : v.adicCompletion K)⁻¹ := by
+    simp [sub_mul]
+  have hlt : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
+      WithZero.exp (-(n : ℤ)) := by
+    rw [hsub, map_mul, map_inv₀, hz, inv_one, mul_one]
+    exact huz
+  have hle1 : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
+      Valued.v (1 : v.adicCompletion K) := by
+    rw [map_one]
+    exact hlt.trans_le (WithZero.exp_le_exp.mpr (by omega))
+  exact (v.mem_unitFiltration_adicCompletion_iff).mpr
+    ⟨(Valuation.map_eq_of_sub_lt (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) hle1).trans
+      (map_one _), hlt.le⟩
+
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/
 theorem coe_normalizedValuation_unitsMap_algebraMap [Finite (R ⧸ v.asIdeal)] (a : Kˣ) :
