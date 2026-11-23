@@ -481,6 +481,18 @@ theorem _root_.LinearMap.IsHomogeneous.map_decompose
   DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom (· + r)
     (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
 
+/-- An injective homogeneous linear map of degree `r` reflects degrees: an element whose image has
+degree `p + r` has degree `p`. -/
+theorem _root_.LinearMap.IsHomogeneous.mem_of_injective
+    {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+    {𝓝 : ι → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
+    (hinj : Function.Injective f) {p : ι} {x : M} (hx : f x ∈ 𝓝 (p + r)) : x ∈ ℳ p := by
+  -- `x` and its degree-`p` component have the same image, the degree-`(p + r)` component of
+  -- `f x`, which is `f x` itself.
+  have hxp : (DirectSum.decompose ℳ x p : M) = x :=
+    hinj (by rw [hf.map_decompose, DirectSum.decompose_of_mem_same 𝓝 hx])
+  exact hxp ▸ SetLike.coe_mem _
+
 variable {G : InternalGrading R M ι} {H : InternalGrading R N ι}
 
 /-- The kernel of a homogeneous linear map is a homogeneous submodule. -/

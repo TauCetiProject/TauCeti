@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Orbit
 public import TauCeti.Geometry.Symplectic.Coadjoint.LieGroup
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
+public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 
 import TauCeti.Geometry.Symplectic.Coadjoint
 import TauCeti.Geometry.Lie.RightInvariantVectorField
@@ -59,6 +60,7 @@ injective immersion into `𝔤*`. The orbit has dimension `dim 𝔤 - dim 𝔤_�
   `ω_ν` is the unique two-form pulling back to `σ_ν`.
 * `Module.Dual.isSymplectic_coadjointOrbitForm`: `ω_ν` is symplectic.
 * `Module.Dual.mpullback_smul_coadjointOrbitForm`: `G` acts by symplectomorphisms.
+* `Module.Dual.isSymplecticMap_smul_coadjointOrbitForm`: the same, as symplectic maps.
 * `Module.Dual.isEquivariantMomentMap_coadjointOrbitForm`: the orbit map is an equivariant moment
   map.
 * `Module.Dual.eval₂_coadjointOrbitForm_mfderiv_mulInvariantVectorField`:
@@ -221,6 +223,13 @@ theorem mpullback_smul_coadjointOrbitForm (g : G)
   rw [eq_coadjointOrbitForm_iff ν hπ, SmoothForm.mpullback_mpullback_of_comp_eq hπ hg
     contMDiff_mul_left hπ (funext fun h ↦ MulAction.Quotient.smul_coe _ g h),
     mpullback_quotientMk_coadjointOrbitForm, mpullback_mul_left_leftInvariantKirillovForm]
+
+/-- **`G` acts on its coadjoint orbit by symplectomorphisms**, as symplectic maps: the KKS form
+pairs `d(g •) u` and `d(g •) v` at `g • x` as it pairs `u` and `v` at `x`. -/
+theorem isSymplecticMap_smul_coadjointOrbitForm (g : G) :
+    ν.coadjointOrbitForm.IsSymplecticMap ν.coadjointOrbitForm (g • ·) :=
+  (SmoothTwoForm.isSymplecticMap_iff_mpullback_eq _).2
+    (ν.mpullback_smul_coadjointOrbitForm g (ContMDiffSMul.contMDiff_const_smul (I := I) g))
 
 /-! ### The orbit map as a moment map -/
 

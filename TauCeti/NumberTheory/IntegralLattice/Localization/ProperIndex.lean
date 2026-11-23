@@ -84,7 +84,7 @@ variable [L.IsNondegenerate]
 theorem relIndex_localStabilizer_dvd_two :
     (specialOrthogonalWithin (L.norm.baseChange ℚ_[p])).relIndex (L.localStabilizer p) ∣ 2 := by
   have := L.finiteDimensional
-  have hQ := QuadraticForm.Nondegenerate.baseChange (L := ℚ_[p]) L.nondegenerate_norm
+  have hQ := QuadraticForm.Nondegenerate.baseChange (A := ℚ_[p]) L.nondegenerate_norm
   exact (L.localStabilizer p).relIndex_specialOrthogonalWithin_dvd_two
     (nondegenerate_polar_iff.mpr hQ).1
 
@@ -94,7 +94,7 @@ theorem relIndex_localStabilizer_eq_two_iff :
     (specialOrthogonalWithin (L.norm.baseChange ℚ_[p])).relIndex (L.localStabilizer p) = 2 ↔
       ∃ g ∈ L.localStabilizer p, orthogonalDet (L.norm.baseChange ℚ_[p]) g = -1 := by
   have := L.finiteDimensional
-  have hQ := QuadraticForm.Nondegenerate.baseChange (L := ℚ_[p]) L.nondegenerate_norm
+  have hQ := QuadraticForm.Nondegenerate.baseChange (A := ℚ_[p]) L.nondegenerate_norm
   exact (L.localStabilizer p).relIndex_specialOrthogonalWithin_eq_two_iff
     (nondegenerate_polar_iff.mpr hQ).1
 

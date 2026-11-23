@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.PSeries
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Topology.Algebra.InfiniteSum.Group
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -21,6 +23,10 @@ For `1 < s.re` and any complex shift `c : ℂ`, the shifted principal-power seri
 (`n : ℕ`), the base `(n : ℂ) + c` vanishes and the principal-power summand `0 ^ (-s)` is `0` for
 `1 < s.re` by Lean's totalized `Complex.cpow`; genuine non-totalized shifts require `c ∉ -ℕ`.
 
+For `e < -1`, every constant multiple of the shifted `p`-series `(n + 1) ^ e` over `ℕ` has a
+finite sum of nonnegative parts in `ℝ≥0∞`. This is the form of a summable majorant for tail
+probabilities decaying polynomially in a sequence index.
+
 ## Main results
 
 * `TauCeti.tendsto_cofinite_zero_of_summable_rpow` — a nonnegative family with a summable positive
@@ -29,6 +35,8 @@ For `1 < s.re` and any complex shift `c : ℂ`, the shifted principal-power seri
   sufficiently large `n`.
 * `TauCeti.summable_norm_natCast_add_cpow_neg` and `TauCeti.summable_natCast_add_cpow_neg` —
   absolute convergence of `∑' n : ℕ, ((n : ℂ) + c) ^ (-s)` for `1 < s.re` and any `c : ℂ`.
+* `TauCeti.tsum_ofReal_mul_natCast_add_one_rpow_lt_top` —
+  `∑' n : ℕ, ENNReal.ofReal (C * (n + 1) ^ e) < ∞` for `e < -1`.
 -/
 
 public section
@@ -76,5 +84,13 @@ at index `n` when `c = -n`). -/
 theorem summable_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => ((n : ℂ) + c) ^ (-s)) :=
   (summable_norm_natCast_add_cpow_neg hs c).of_norm
+
+open scoped ENNReal in
+/-- For `e < -1`, a constant multiple of the shifted real `p`-series `(n + 1) ^ e` has a finite
+sum of nonnegative parts in `ℝ≥0∞`. The constant may be negative. -/
+theorem tsum_ofReal_mul_natCast_add_one_rpow_lt_top (C : ℝ) {e : ℝ} (he : e < -1) :
+    ∑' n : ℕ, ENNReal.ofReal (C * ((n : ℝ) + 1) ^ e) < ∞ := by
+  have hsum := ((summable_nat_add_iff 1).2 (Real.summable_nat_rpow.2 he)).mul_left C
+  simpa only [Nat.cast_add, Nat.cast_one] using hsum.tsum_ofReal_lt_top
 
 end TauCeti
