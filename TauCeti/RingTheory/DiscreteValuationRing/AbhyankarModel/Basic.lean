@@ -16,7 +16,7 @@ import Mathlib.RingTheory.Finiteness.Quotient
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Unramified.Field
-import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Data.Nat.Cast.IsUnit
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
 import TauCeti.RingTheory.RegularLocalRing.Basic
