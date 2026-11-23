@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.AlexanderWhitney.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 
 /-!
 # The relative Alexander–Whitney diagonal with local coefficients
@@ -23,6 +23,7 @@ relative cochains.
   `TopPair.twistedChainComplexπ_twistedAlexanderWhitneyDiagonal`.
 * `TopPair.twistedAlexanderWhitneyDiagonal_naturality`: it is natural in both local coefficient
   systems.
+* `TopPair.twistedAlexanderWhitneyDiagonal_space_naturality`: it is natural in maps of pairs.
 
 ## References
 
@@ -89,5 +90,33 @@ lemma twistedAlexanderWhitneyDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K')
   simp [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
     LocalCoefficientSystem.twistedAlexanderWhitneyDiagonal_naturality_assoc,
     tensorHom_comp_tensorHom, -tensorHom_id]
+
+section Space
+
+variable {Q : TopPair.{v}} (f : P ⟶ Q)
+  (L K : LocalCoefficientSystem.{max v w, v, max v w} R Q.fst)
+
+/-- **The relative diagonal is natural in maps of pairs**: for `f : (X, A) ⟶ (Y, B)`, pushing
+relative chains forward along `f` and applying the diagonal of `(Y, B)` is applying the diagonal of
+`(X, A)`, with the pulled-back coefficient systems, and pushing both factors forward. -/
+@[reassoc]
+lemma twistedAlexanderWhitneyDiagonal_space_naturality :
+    twistedChainComplexMap f (L ⊗ K) ≫ Q.twistedAlexanderWhitneyDiagonal L K =
+      P.twistedChainComplexCoefficientMap (pullbackTensorIso (Hom.fst f).hom L K).hom ≫
+        P.twistedAlexanderWhitneyDiagonal
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L)
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj K) ≫
+          (twistedChainComplexMap f L ⊗ₘ
+            LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) K) := by
+  ext : 1
+  rw [twistedChainComplexπ_comp_twistedChainComplexMap_assoc,
+    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal,
+    LocalCoefficientSystem.twistedAlexanderWhitneyDiagonal_space_naturality_assoc,
+    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal_assoc, tensorHom_comp_tensorHom,
+    tensorHom_comp_tensorHom, twistedChainComplexπ_comp_twistedChainComplexMap, Category.id_comp,
+    Category.comp_id]
+
+end Space
 
 end TopPair

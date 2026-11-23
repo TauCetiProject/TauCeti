@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Geometry.Manifold.Submersion
+public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.Distribution
-public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
+import TauCeti.Geometry.Manifold.Distribution.Complement
+import TauCeti.Geometry.Manifold.Distribution.Submersion
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
@@ -29,13 +30,11 @@ of the base horizontally, which is how a connection transports fibres along path
 Every submersion carries Ehresmann connections. For a Riemannian metric on `P`, the orthogonal
 complements `(ker df_x)ᗮ` of the vertical spaces of a `C^n` submersion form a `C^m` Ehresmann
 connection when `m + 1 ≤ n` and the metric is `C^m`
-(`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker_mfderiv`). Its local frames are
-gradients: in normal-form charts the submersion reads as a linear projection `u ↦ (L u).1` onto the
-model space of `B`, and the gradients of the coordinates of this projection span the orthogonal
-complement of its kernel (`TauCeti.isDistributionFrameOn_mgradient_coord`). No metric on `B` is
-used. As a σ-compact Hausdorff smooth manifold carries a smooth Riemannian metric, every submersion
-from such a manifold has an Ehresmann connection
-(`Manifold.IsSubmersion.exists_isEhresmannConnection`).
+(`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker_mfderiv`): they are the orthogonal
+complements of the kernel distribution of the submersion
+(`TauCeti.IsContMDiffDistribution.orthogonal`). No metric on `B` is used. As a σ-compact
+Hausdorff smooth manifold carries a smooth Riemannian metric, every submersion from such a
+manifold has an Ehresmann connection (`Manifold.IsSubmersion.exists_isEhresmannConnection`).
 
 ## Main definitions
 
@@ -45,9 +44,6 @@ from such a manifold has an Ehresmann connection
 
 ## Main results
 
-* `TauCeti.isDistributionFrameOn_mgradient_coord`: the gradients of the coordinates of a map to a
-  vector space whose derivative is surjective form a local frame of the orthogonal complements of
-  the kernels of its derivative.
 * `Manifold.IsSubmersion.isContMDiffDistribution_orthogonal_ker_mfderiv`: the orthogonal
   complements of the vertical spaces of a submersion form a `C^m` distribution of rank `dim B`.
 * `Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker_mfderiv`: they form an Ehresmann
@@ -174,77 +170,6 @@ end IsEhresmannConnection
 
 end Definition
 
-section Gradient
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {P : Type*} [TopologicalSpace P] [ChartedSpace H P] [IsManifold I 1 P]
-  [RiemannianBundle (fun x : P ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {n : ℕ∞ω}
-
-open _root_.TauCeti.Manifold in
-/-- **Gradient frames of orthogonal complements of kernels.** Let `g : P → F` be a `C^(n+1)` map
-into a vector space whose derivative is surjective at every point of an open set `U`, and let `b`
-be a basis of `F`. For a `C^n` Riemannian metric on `P`, the gradients of the coordinates
-`y ↦ b.coord i (g y)` form a `C^n` local frame on `U` of the orthogonal complements of the
-kernels of the derivatives of `g`. -/
-theorem isDistributionFrameOn_mgradient_coord [IsManifold I (n + 1) P]
-    [IsContMDiffRiemannianBundle I n E (fun x : P ↦ TangentSpace I x)] {ι : Type*} [Finite ι]
-    {g : P → F} {U : Set P} (hU : IsOpen U) (hg : ContMDiffOn I 𝓘(ℝ, F) (n + 1) g U)
-    (hsurj : ∀ y ∈ U, Surjective (mvfderiv I g y)) (b : Basis ι ℝ F) :
-    IsDistributionFrameOn I n (fun y ↦ (mvfderiv I g y).kerᗮ)
-      (fun i ↦ mgradient I (fun y ↦ b.coord i (g y))) U := by
-  classical
-  have := Fintype.ofFinite ι
-  have := b.finiteDimensional_of_finite
-  have hgd {y : P} (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, F) g y :=
-    ((hg.contMDiffAt (hU.mem_nhds hy)).mdifferentiableAt (by simp))
-  have hinner {y : P} (hy : y ∈ U) (i : ι) (v : TangentSpace I y) :
-      inner ℝ (mgradient I (fun y ↦ b.coord i (g y)) y) v = b.coord i (mvfderiv I g y v) :=
-    (b.coord i).toContinuousLinearMap.inner_mgradient_comp (hgd hy) v
-  -- The inner products of the frame against vectors mapped to the basis are the Kronecker delta.
-  have hdelta {y : P} (hy : y ∈ U) (i j : ι) {w : TangentSpace I y}
-      (hw : mvfderiv I g y w = b j) :
-      inner ℝ (mgradient I (fun y ↦ b.coord i (g y)) y) w = if j = i then 1 else 0 := by
-    rw [hinner hy i, hw, Basis.coord_apply, Basis.repr_self,
-      Finsupp.single_apply]
-  have hli {y : P} (hy : y ∈ U) :
-      LinearIndependent ℝ (fun i ↦ mgradient I (fun y ↦ b.coord i (g y)) y) := by
-    refine Fintype.linearIndependent_iff.2 fun a ha i ↦ ?_
-    obtain ⟨w, hw⟩ := hsurj y hy (b i)
-    have hj (j : ι) : inner ℝ (mgradient I (fun y ↦ b.coord j (g y)) y) w =
-        if i = j then 1 else 0 := hdelta hy j i hw
-    have := congrArg (fun u ↦ inner ℝ u w) ha
-    simpa only [sum_inner, real_inner_smul_left, hj, mul_ite, mul_one, mul_zero,
-      Finset.sum_ite_eq, Finset.mem_univ, ite_true, inner_zero_left] using this
-  refine ⟨fun i y hy ↦ ?_, hli, fun {y} hy ↦ ?_⟩
-  · have hci : ContMDiffAt I 𝓘(ℝ) (n + 1) (fun y ↦ b.coord i (g y)) y :=
-      (b.coord i).toContinuousLinearMap.contMDiff.contMDiffAt.comp y
-        (hg.contMDiffAt (hU.mem_nhds hy))
-    exact (contMDiffAt_mgradient hci).contMDiffWithinAt
-  · have : FiniteDimensional ℝ (TangentSpace I y) := inferInstanceAs (FiniteDimensional ℝ E)
-    -- The gradients are orthogonal to the kernel.
-    have hle : Submodule.span ℝ (range fun i ↦ mgradient I (fun y ↦ b.coord i (g y)) y) ≤
-        (mvfderiv I g y).kerᗮ := by
-      refine Submodule.span_le.2 ?_
-      rintro _ ⟨i, rfl⟩
-      refine (Submodule.mem_orthogonal' _ _).2 fun u hu ↦ ?_
-      have hu' : mvfderiv I g y u = 0 := LinearMap.mem_ker.1 hu
-      rw [hinner hy i, hu', map_zero]
-    -- Both spaces have dimension `dim F`, by rank–nullity for the surjective derivative.
-    refine Submodule.eq_of_le_of_finrank_eq hle ?_
-    have hrange : LinearMap.range (mvfderiv I g y : TangentSpace I y →ₗ[ℝ] F) = ⊤ :=
-      LinearMap.range_eq_top.2 (hsurj y hy)
-    have hnull := LinearMap.finrank_range_add_finrank_ker
-      (mvfderiv I g y : TangentSpace I y →ₗ[ℝ] F)
-    have horth := Submodule.finrank_add_finrank_orthogonal (mvfderiv I g y).ker
-    rw [hrange, finrank_top] at hnull
-    rw [finrank_span_eq_card (hli hy), ← finrank_eq_card_basis b]
-    omega
-
-end Gradient
-
 end TauCeti
 
 namespace Manifold.IsSubmersion
@@ -266,8 +191,7 @@ variable [RiemannianBundle (fun x : P ↦ TangentSpace I x)]
 /-- **The horizontal distribution of a submersion.** For a `C^n` submersion `f : P → B` from a
 manifold modelled on a finite-dimensional real space and a `C^m` Riemannian metric on `P`, with
 `m + 1 ≤ n`, the orthogonal complements `(ker df_x)ᗮ` of the vertical spaces form a `C^m`
-distribution of rank `dim B`. Near each point it is spanned by the gradients of the coordinates
-of `f` read in normal-form charts. -/
+distribution of rank `dim B`. -/
 theorem isContMDiffDistribution_orthogonal_ker_mfderiv [IsManifold I (m + 1) P]
     [IsContMDiffRiemannianBundle I m E (fun x : P ↦ TangentSpace I x)]
     (hf : IsSubmersion I J n f) (hmn : m + 1 ≤ n) :
@@ -276,38 +200,15 @@ theorem isContMDiffDistribution_orthogonal_ker_mfderiv [IsManifold I (m + 1) P]
   refine isContMDiffDistribution_iff.2 fun x ↦ ?_
   -- The model space of `B` is finite-dimensional, as `df_x` maps `T_x P` onto it.
   have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
+  have hsurj := hf.surjective_mfderiv hn x
   have : FiniteDimensional ℝ F := Module.Finite.of_surjective
-    (mfderiv I J f x : TangentSpace I x →ₗ[ℝ] TangentSpace J (f x)) (hf.surjective_mfderiv hn x)
-  let h := (hf.isSubmersionAt x).isSubmersionAtOfComplement_complement
-  -- In the normal-form charts `φ`, `ψ` of `f` at `x`, `f` reads as `g = (L ∘ φ).1`.
-  let g : P → F := h.projection ∘ h.domChart.extend I
-  have hφ : h.domChart ∈ IsManifold.maximalAtlas I (m + 1) P :=
-    IsManifold.maximalAtlas_subset_of_le hmn h.domChart_mem_maximalAtlas
-  have hg : ContMDiffOn I 𝓘(ℝ, F) (m + 1) g h.domChart.source := fun y hy ↦
-    (h.projection.contMDiff.contMDiffAt.comp y
-      (h.domChart.contMDiffAt_extend hφ hy)).contMDiffWithinAt
-  have hgφ {y : P} (hy : y ∈ h.domChart.source) (v : TangentSpace I y) :
-      mvfderiv I g y v = h.projection (mvfderiv I (h.domChart.extend I) y v) :=
-    h.projection.mvfderiv_comp_apply
-      ((h.domChart.contMDiffAt_extend hφ hy).mdifferentiableAt (by simp)) v
-  have hsurj : ∀ y ∈ h.domChart.source, Surjective (mvfderiv I g y) := fun y hy w ↦ by
-    obtain ⟨e, he⟩ := isInvertible_mfderiv_extend
-      (IsManifold.maximalAtlas_subset_of_le (by simp) hφ) hy
-    obtain ⟨u, hu⟩ := h.equiv.surjective (w, 0)
-    have heu : mvfderiv I (h.domChart.extend I) y (e.symm u) = u := by
-      rw [mvfderiv_apply_eq_mfderiv_apply, ← he]
-      exact e.apply_symm_apply u
-    exact ⟨e.symm u, by rw [hgφ hy, heu, h.projection_apply, hu]⟩
-  have hker {y : P} (hy : y ∈ h.domChart.source) :
-      (mvfderiv I g y).ker = (mfderiv I J f y).ker := by
-    ext v
-    rw [LinearMap.mem_ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hgφ hy,
-      h.projection_apply]
-    exact (h.mfderiv_eq_zero_iff hn hy v).symm
-  have hX := isDistributionFrameOn_mgradient_coord h.domChart.open_source hg hsurj
-    (Module.finBasis ℝ F)
-  exact ⟨h.domChart.source, h.domChart.open_source, h.mem_domChart_source, _,
-    ⟨hX.contMDiffOn, hX.linearIndependent, fun hy ↦ (hX.span_eq hy).trans (by rw [hker hy])⟩⟩
+    (mfderiv I J f x : TangentSpace I x →ₗ[ℝ] TangentSpace J (f x)) hsurj
+  have hle : finrank ℝ F ≤ finrank ℝ E := LinearMap.finrank_le_finrank_of_surjective
+    (f := (mfderiv I J f x : TangentSpace I x →ₗ[ℝ] TangentSpace J (f x))) hsurj
+  -- The orthogonal complements of the kernel distribution, of rank `dim E - dim F`.
+  have hD := (hf.isContMDiffDistribution_ker_mfderiv hmn).orthogonal
+  rw [Nat.sub_sub_self hle] at hD
+  exact isContMDiffDistribution_iff.1 hD x
 
 /-- **Ehresmann connections from metrics.** For a `C^n` submersion `f` and a `C^m` Riemannian
 metric on `P`, with `m + 1 ≤ n`, the orthogonal complements `(ker df_x)ᗮ` of the vertical spaces

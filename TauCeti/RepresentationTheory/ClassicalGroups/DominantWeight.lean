@@ -391,14 +391,11 @@ theorem colLen_zero_detShiftShape_le_pred (l : DominantWeight n) :
   cases n with
   | zero => exact colLen_zero_shape_le _
   | succ n =>
-    by_contra h
-    have hmem : ((n, 0) : ℕ × ℕ) ∈ l.detShiftShape :=
-      YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le h)
-    have hpos : 0 < l.detShiftShape.rowLen n := YoungDiagram.mem_iff_lt_rowLen.mp hmem
     have hzero : l.detShiftShape.rowLen n = (l.val (Fin.last n) - l.detShift).toNat :=
       rowLen_detShiftShape l (Fin.last n)
     rw [detShift_succ, sub_self, Int.toNat_zero] at hzero
-    omega
+    rw [Nat.add_sub_cancel]
+    exact YoungDiagram.rowLen_eq_zero_iff.mp hzero
 
 /-- The polynomial part of a dominant weight for `GL n` has at most `n` rows, the bound in the
 form consumed by the dictionary between weights and Young diagrams. -/
@@ -434,7 +431,7 @@ theorem detShiftShape_weightOfShape {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n
     | n + 1, hμ =>
       have hμ' : μ.colLen 0 ≤ n := by simpa using hμ
       rw [detShift_succ, weightOfShape_apply, Fin.val_last,
-        YoungDiagram.rowLen_eq_zero_of_colLen_le hμ', Nat.cast_zero]
+        YoungDiagram.rowLen_eq_zero_iff.mpr hμ', Nat.cast_zero]
   rw [detShiftShape, hdet, neg_zero, shift_zero,
     shape_weightOfShape (hμ.trans (Nat.sub_le n 1))]
 
@@ -469,7 +466,7 @@ theorem eq_detShift_and_eq_detShiftShape (l : DominantWeight (n + 1)) {μ : Youn
   have hm' : m = l.detShift := by
     have h := hm (Fin.last n)
     have hlast : μ.rowLen ((Fin.last n : Fin (n + 1)) : ℕ) = 0 :=
-      YoungDiagram.rowLen_eq_zero_of_colLen_le hμ
+      YoungDiagram.rowLen_eq_zero_iff.mpr hμ
     rw [hlast, Nat.cast_zero, zero_add] at h
     rw [detShift_succ, ← h]
   refine ⟨hm', YoungDiagram.rowLen_injective (funext fun i => ?_)⟩
@@ -481,7 +478,7 @@ theorem eq_detShift_and_eq_detShiftShape (l : DominantWeight (n + 1)) {μ : Youn
     omega
   · have hni : n ≤ i := Nat.le_of_succ_le (Nat.le_of_not_lt hi)
     rw [rowLen_detShiftShape_eq_zero_of_le _ (Nat.le_of_not_lt hi),
-      YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans hni)]
+      YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans hni)]
 
 end DominantWeight
 

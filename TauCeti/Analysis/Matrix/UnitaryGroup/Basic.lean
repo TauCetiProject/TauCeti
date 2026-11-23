@@ -26,6 +26,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
+* `Matrix.circle_smul_one_mem_specialUnitaryGroup_iff`: the scalar matrix `ζ I`, for `ζ` on the
+  circle, is special unitary exactly when `ζ` is a `card n`-th root of unity.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
   `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
   matrix only up to a scalar factor, such as those coming from its action on a projective space,
@@ -142,6 +144,14 @@ theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
     mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), Circle.exp_neg,
     Circle.coe_inv, hθ]
   exact inv_mul_cancel₀ (Circle.coe_ne_zero _)
+
+/-- The scalar matrix `ζ I`, for `ζ` on the circle, is special unitary exactly when `ζ` is a
+`card n`-th root of unity: it is always unitary, and its determinant is `ζ ^ card n`. -/
+theorem circle_smul_one_mem_specialUnitaryGroup_iff {ζ : Circle} :
+    (ζ : ℂ) • (1 : Matrix n n ℂ) ∈ specialUnitaryGroup n ℂ ↔ ζ ^ Fintype.card n = 1 := by
+  rw [mem_specialUnitaryGroup_iff, det_smul, det_one, mul_one, ← Circle.coe_pow,
+    Circle.coe_eq_one, and_iff_right_iff_imp]
+  exact fun _ ↦ Unitary.smul_mem_of_mem ζ.coe_mem_unitary (one_mem _)
 
 end Matrix
 
