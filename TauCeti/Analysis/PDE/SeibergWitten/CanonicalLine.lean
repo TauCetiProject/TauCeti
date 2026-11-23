@@ -278,7 +278,7 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
 
 section PairedSpinor
 
-open Complex exteriorPower
+open Complex _root_.exteriorPower
 
 omit [FiniteDimensional ℂ W] in
 variable (e) in

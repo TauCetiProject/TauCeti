@@ -8,9 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Data.Fin.StrictMono
 public import TauCeti.Order.Hom.PowersetCard
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Action and trace formulas in exterior-power bases
@@ -54,9 +52,6 @@ power.
 * `exteriorPower.ιMulti_sum_smul` and `AlternatingMap.map_sum_smul`: replacing a family of `n`
   vectors by its combinations with the rows of a square matrix `A` multiplies its exterior
   product, and the value of every alternating map on it, by `det A`.
-* `Module.Basis.noncommProd_smul_ιMulti_two_eq_exteriorPower`: a noncommutative product of
-  weighted consecutive pairs `μ k • (b_{2k} ∧ b_{2k+1})` over an `r`-subset of `Fin n` equals the
-  weighted exterior-power basis element of `b` indexed by `doubleOrderEmb`.
 
 ## References
 
@@ -284,33 +279,6 @@ theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_symm_apply_eq_smul
   simp
 
 end Top
-
-section PairedBasis
-
-open scoped Function
-
-variable [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- The noncommutative product over an `r`-element subset `s` of `Fin n` of weighted consecutive
-pairs `μ k • (b_{2k} ∧ b_{2k+1})` of a basis `b` equals `(∏ k ∈ s, μ k)` times the
-exterior-power basis element of `b` indexed by
-`TauCeti.doubleOrderEmb (Set.powersetCard.ofFinEmbEquiv.symm s)`. -/
-theorem _root_.Module.Basis.noncommProd_smul_ιMulti_two_eq_exteriorPower {n r : ℕ}
-    (b : Module.Basis (Fin (2 * n)) R M) (μ : Fin n → R) (s : Set.powersetCard (Fin n) r)
-    (hcomm : (s.val : Set (Fin n)).Pairwise (Commute on fun k : Fin n ↦
-      μ k • _root_.ExteriorAlgebra.ιMulti R 2
-        ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩])) :
-    s.val.noncommProd (fun k : Fin n ↦ μ k • _root_.ExteriorAlgebra.ιMulti R 2
-        ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩]) hcomm =
-      (∏ k ∈ (s : Finset (Fin n)), μ k) •
-        (b.exteriorPower (2 * r)
-          (Set.powersetCard.ofFinEmbEquiv
-            (TauCeti.doubleOrderEmb (Set.powersetCard.ofFinEmbEquiv.symm s))) :
-          _root_.ExteriorAlgebra R M) := by
-  rw [TauCeti.ExteriorAlgebra.noncommProd_powersetCard_smul_ιMulti_two μ b s hcomm,
-    basis_apply, ιMulti_family, ιMulti_apply_coe, Equiv.symm_apply_apply]
-
-end PairedBasis
 
 end exteriorPower
 

@@ -18,9 +18,12 @@ On a complex inner product space `E` carrying a compatible real scalar action
 `TauCeti.kahlerTwoForm E v = Im ⟪v₀, v₁⟫_ℂ`.
 
 For `E = ℂ` with the standard Hermitian inner product conjugate-linear in the first slot,
-`ω(1, i) = 1`. When `E` also carries a compatible real inner product,
-`ω(v, w) = ⟪i • v, w⟫_ℝ` (`TauCeti.kahlerTwoForm_apply_eq_inner`). Complex linear isometries pull
-`kahlerTwoForm` back to itself (`TauCeti.kahlerTwoForm_comp_linearIsometry`).
+`ω(1, i) = 1`. On any (possibly seminormed) complex inner product space, `kahlerTwoForm E` has
+comass at most `1` (`TauCeti.norm_kahlerTwoForm_le`), and on any nontrivial normed complex inner
+product space (without finite-dimensionality), its comass equals `1` (`TauCeti.norm_kahlerTwoForm`).
+When `E` also carries a compatible real inner product, `ω(v, w) = ⟪i • v, w⟫_ℝ`
+(`TauCeti.kahlerTwoForm_apply_eq_inner`). Complex linear isometries pull `kahlerTwoForm` back to
+itself (`TauCeti.kahlerTwoForm_comp_linearIsometry`).
 
 ## Main definitions
 
@@ -30,6 +33,10 @@ For `E = ℂ` with the standard Hermitian inner product conjugate-linear in the 
 ## Main results
 
 * `TauCeti.kahlerTwoForm_apply`: evaluation formula `kahlerTwoForm E v = Im ⟪v 0, v 1⟫_ℂ`.
+* `TauCeti.norm_kahlerTwoForm_le`: degree-two Wirtinger comass upper bound on any (possibly
+  seminormed) complex inner product space.
+* `TauCeti.norm_kahlerTwoForm`: degree-two Wirtinger comass equality on any nontrivial normed
+  complex inner product space.
 * `TauCeti.kahlerTwoForm_comp_linearIsometry`: naturality under complex linear isometries.
 * `TauCeti.kahlerTwoForm_apply_eq_inner`: identification `kahlerTwoForm E ![v, w] = ⟪i • v, w⟫_ℝ`.
 
@@ -78,6 +85,13 @@ theorem kahlerTwoForm_apply (v : Fin 2 → E) :
     kahlerTwoForm E v = (inner ℂ (v 0) (v 1)).im :=
   (rfl)
 
+/-- The Kähler two-form has comass at most one on every (possibly seminormed) complex inner product
+space. -/
+theorem norm_kahlerTwoForm_le : ‖kahlerTwoForm E‖ ≤ 1 := by
+  refine (kahlerTwoForm E).opNorm_le_bound zero_le_one fun v ↦ ?_
+  rw [kahlerTwoForm_apply, Real.norm_eq_abs, one_mul, Fin.prod_univ_two]
+  exact (Complex.abs_im_le_norm _).trans (norm_inner_le_norm (v 0) (v 1))
+
 /-- Naturality of `TauCeti.kahlerTwoForm` under any complex linear isometry `f : E →ₗᵢ[ℂ] F`. -/
 theorem kahlerTwoForm_comp_linearIsometry {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
     [InnerProductSpace ℂ F] [IsScalarTower ℝ ℂ F] (f : E →ₗᵢ[ℂ] F) :
@@ -87,6 +101,20 @@ theorem kahlerTwoForm_comp_linearIsometry {F : Type*} [SeminormedAddCommGroup F]
   simp [kahlerTwoForm_apply, f.inner_map_map]
 
 end
+
+/-- **Wirtinger inequality in degree two**: on every nontrivial normed complex inner product space
+(no finite-dimensionality required), the Kähler two-form has comass one. -/
+theorem norm_kahlerTwoForm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [InnerProductSpace ℂ E] [IsScalarTower ℝ ℂ E] [Nontrivial E] :
+    ‖kahlerTwoForm E‖ = 1 := by
+  refine le_antisymm norm_kahlerTwoForm_le ?_
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  set u : E := ‖x‖⁻¹ • x
+  have hu : ‖u‖ = 1 := by simp [u, norm_smul, hx]
+  have hval : kahlerTwoForm E ![u, Complex.I • u] = 1 := by
+    simp [kahlerTwoForm_apply, inner_smul_right, hu]
+  simpa [hval, Fin.prod_univ_two, norm_smul, hu] using
+    (kahlerTwoForm E).le_opNorm ![u, Complex.I • u]
 
 /-- In terms of a compatible real inner product, `ω(v, w) = ⟪i • v, w⟫_ℝ`. -/
 theorem kahlerTwoForm_apply_eq_inner {E : Type*} [SeminormedAddCommGroup E]

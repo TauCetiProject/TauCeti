@@ -29,9 +29,10 @@ The identification carries the exterior product to the wedge product of forms,
 `ContinuousAlternatingMap.wedge`, normalized by `1 / (k! l!)` as in Lee's *Introduction to Smooth
 Manifolds*, and therefore carries exterior powers `exteriorPower.pow` to
 `ContinuousAlternatingMap.wedgePow` (`TauCeti.alternatingFormEquiv_pow`). On two-vectors, pulling
-back along `L` conjugates `TauCeti.twoVectorContraction` to `L† ∘ (· ⌟ B) ∘ L`, which for a
-subspace inclusion becomes orthogonal projection onto the subspace
-(`TauCeti.twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap`,
+back along `L` replaces the contraction operator `T := TauCeti.twoVectorContraction B` with the
+composition `L† ∘ T ∘ L`, so for a subspace inclusion `P ≤ V`, the contraction at a subspace
+vector `x ∈ P` applies `twoVectorContraction B` to `x` and orthogonally projects its output onto
+`P` (`TauCeti.twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap`,
 `TauCeti.coe_twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap_subtypeL`).
 It carries the contraction by `⟪u, ·⟫` to the interior product `ContinuousAlternatingMap.curryLeft`
 by `u`. Transporting the inner product of `⋀ᵏ V`, given on wedges by Gram determinants, defines the

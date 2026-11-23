@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TwoForm
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
 import TauCeti.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -386,6 +389,57 @@ theorem kahlerForm_eq_sum_of_adapted {J : AlmostComplexStructure V} {n : ℕ}
     twoVector_eq_sum_of_skew_normalForm J.kahlerForm b₀ (fun _ ↦ 1)
       (fun j ↦ by simp [hJ, (hb₀ j).1, (hb₀ j).2, (hb j).symm])
       (fun j ↦ by simp [hJ, (hb₀ j).1, (hb₀ j).2, hb j, J.apply_apply])
+
+section Hermitian
+
+open scoped InnerProductSpace
+
+/-- In any complex orthonormal basis `b` of `E`, the Kähler bivector is
+`∑ j, b j ∧ (i • b j)`. -/
+theorem _root_.TauCeti.ofComplexModule_kahlerForm_eq_sum {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [InnerProductSpace ℂ E] [IsScalarTower ℝ ℂ E] [FiniteDimensional ℝ E]
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℂ E) :
+    (AlmostComplexStructure.ofComplexModule E).kahlerForm =
+      ∑ j : ι, ιMulti ℝ 2 ![b j, Complex.I • b j] := by
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  let bC : Basis (Fin (Fintype.card ι)) ℂ E := b.toBasis.reindex (Fintype.equivFin ι)
+  let b₀Basis : Basis (Fin (2 * Fintype.card ι)) ℝ E :=
+    bC.complexToReal.reindex (complexRealIndexEquiv (Fintype.card ι))
+  have hb₀_eq : ⇑b₀Basis = complexToRealFamily ⇑bC :=
+    bC.coe_complexToReal_reindex_complexRealIndexEquiv
+  have hbC_on : Orthonormal ℂ bC := by
+    simpa [bC, Basis.coe_reindex, e] using b.orthonormal.comp e e.injective
+  have hb₀_on : Orthonormal ℝ b₀Basis := by
+    rw [hb₀_eq]
+    exact orthonormal_complexToRealFamily hbC_on
+  let b₀ : OrthonormalBasis (Fin (2 * Fintype.card ι)) ℝ E := b₀Basis.toOrthonormalBasis hb₀_on
+  have hb₀ (i : Fin (2 * Fintype.card ι)) : b₀ i = complexToRealFamily ⇑bC i := by
+    simp [b₀, hb₀_eq]
+  have hadapt (k : Fin (Fintype.card ι)) :
+      b₀ ⟨2 * (k : ℕ) + 1, by omega⟩ =
+        AlmostComplexStructure.ofComplexModule E (b₀ ⟨2 * (k : ℕ), by omega⟩) := by
+    simp only [hb₀]
+    simp
+  rw [AlmostComplexStructure.kahlerForm_eq_sum_of_adapted b₀ hadapt]
+  simp_rw [hb₀, complexToRealFamily_even, complexToRealFamily_odd, bC, Basis.coe_reindex,
+    OrthonormalBasis.coe_toBasis, Function.comp_apply]
+  exact Fintype.sum_equiv e _ (fun j ↦ ιMulti ℝ 2 ![b j, Complex.I • b j]) (fun _ ↦ rfl)
+
+/-- The Riesz dual of `(AlmostComplexStructure.ofComplexModule E).kahlerForm` is
+`kahlerTwoForm E`. -/
+@[simp]
+theorem _root_.TauCeti.alternatingFormEquiv_ofComplexModule_kahlerForm {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℂ E]
+    [IsScalarTower ℝ ℂ E] [FiniteDimensional ℝ E] :
+    alternatingFormEquiv E 2 (AlmostComplexStructure.ofComplexModule E).kahlerForm =
+      kahlerTwoForm E := by
+  ext v
+  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, alternatingFormEquiv_apply,
+    AlmostComplexStructure.inner_kahlerForm_ιMulti
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
+    AlmostComplexStructure.ofComplexModule_apply, kahlerTwoForm_apply_eq_inner]
+
+end Hermitian
 
 /-! ### Dimension four -/
 

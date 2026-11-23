@@ -85,7 +85,9 @@ two-vectors.
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
   and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
   degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
-* `TauCeti.ExteriorAlgebra.prod_map_finRange_smul_ιMulti_two`,
+* `TauCeti.ExteriorAlgebra.ι_mul_ι_mul_self`,
+  `TauCeti.ExteriorAlgebra.smul_ιMulti_two_mul_self`,
+  `TauCeti.ExteriorAlgebra.prod_map_finRange_smul_ιMulti_two`,
   `TauCeti.ExteriorAlgebra.noncommProd_univ_smul_ιMulti_two`,
   `TauCeti.ExteriorAlgebra.noncommProd_powersetCard_smul_ιMulti_two`, and
   `TauCeti.ExteriorAlgebra.pow_sum_smul_ιMulti_two`: products and `r`-th powers of weighted
@@ -589,6 +591,16 @@ theorem commute_smul_ιMulti_two (a b : R) (u₁ w₁ u₂ w₂ : M) :
   have hmem : a • _root_.ExteriorAlgebra.ιMulti R 2 ![u₁, w₁] ∈ ⋀[R]^2 M :=
     Submodule.smul_mem _ _ (exteriorPower.ιMulti R 2 ![u₁, w₁]).property
   exact Subalgebra.mem_center_iff.mp (mem_center_of_mem_of_even hmem even_two) _ |>.symm
+
+/-- A product of two vectors in the exterior algebra squares to zero. -/
+@[simp]
+theorem ι_mul_ι_mul_self (u w : M) :
+    (_root_.ExteriorAlgebra.ι R u * _root_.ExteriorAlgebra.ι R w) *
+      (_root_.ExteriorAlgebra.ι R u * _root_.ExteriorAlgebra.ι R w) = 0 := by
+  have h0 : _root_.ExteriorAlgebra.ιMulti R (2 + 2) (Fin.append ![u, w] ![u, w]) = 0 :=
+    (_root_.ExteriorAlgebra.ιMulti R 4).map_eq_zero_of_eq _ (i := 0) (j := 2) rfl (by decide)
+  rw [← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti] at h0
+  simpa [_root_.ExteriorAlgebra.ιMulti_succ_apply] using h0
 
 /-- Every weighted decomposable two-vector squares to zero in the exterior algebra. -/
 theorem smul_ιMulti_two_mul_self (a : R) (u w : M) :

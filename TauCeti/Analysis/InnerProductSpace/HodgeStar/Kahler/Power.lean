@@ -68,8 +68,8 @@ the unitary group of `J`.
 * `TauCeti.AlmostComplexStructure.norm_kahlerPowerForm`: `‖ω ^ r / r!‖ = 1` when `2r ≤ dim V`.
 * `TauCeti.AlmostComplexStructure.isCalibratedFrame_kahlerPowerForm_complexRealFrame`: the frames
   of Hermitian-orthonormal families are calibrated by `ω ^ r / r!`.
-* `TauCeti.AlmostComplexStructure.kahlerPowerForm_compContinuousLinearMap`,
-  `kahlerPowerForm_compContinuousLinearMap_eq`, and `kahlerPowerForm_comp_linearIsometry`:
+* `TauCeti.AlmostComplexStructure.kahlerPowerForm_compContinuousLinearMap_eq` and
+  `TauCeti.AlmostComplexStructure.kahlerPowerForm_comp_linearIsometry`:
   pullback and naturality under complex-linear isometries.
 * `TauCeti.AlmostComplexStructure.sqrt_alternatingFormInner_kahlerPowerForm` and
   `TauCeti.sqrt_alternatingFormInner_kahlerPowerForm`: Hilbert norm `√(n choose r)`.
@@ -318,19 +318,9 @@ include hJ
 /-- `ω ^ r / r!` takes the value `1` on the frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that
 is orthonormal for the Hermitian metric of `J`. -/
 theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu : Orthonormal ℝ u)
-    (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) : J.kahlerPowerForm r (J.complexRealFrame u) = 1 := by
-  have hω (a b : V) : alternatingFormEquiv V 2 J.kahlerForm ![a, b] = ⟪J a, b⟫ := by
-    rw [alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
-  have h := wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm)
-    (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) (fun i j ↦ by simpa [hω] using hJu i j)
-    (fun i j ↦ by simpa [hω, hJ] using (orthonormal_iff_ite.1 hu) i j)
-  -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
-  have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
-      r.factorial := by
-    unfold complexRealFrame
-    exact h
-  rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul, h',
-    inv_mul_cancel₀ (by positivity)]
+    (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) : J.kahlerPowerForm r (J.complexRealFrame u) = 1 :=
+  kahlerPowerForm_apply_of_adapted ((orthonormal_complexRealFrame_iff hJ).2 ⟨hu, hJu⟩)
+    (fun _ ↦ by simp)
 
 /-- The frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that is orthonormal for the Hermitian
 metric of `J` is calibrated by `ω ^ r / r!`. -/
@@ -355,22 +345,6 @@ theorem norm_kahlerPowerForm {r : ℕ} (hr : 2 * r ≤ finrank ℝ V) : ‖J.kah
   obtain ⟨u, hu, hJu⟩ := exists_orthonormal_forall_inner_apply_eq_zero hJ hr
   exact (norm_kahlerPowerForm_le hJ r).antisymm
     (isCalibratedFrame_kahlerPowerForm_complexRealFrame hJ hu hJu).one_le_norm
-
-/-- **Naturality of the normalized Kähler powers**: a complex-linear isometric equivalence pulls
-the normalized Kähler powers back to the normalized Kähler powers. In particular they are
-invariant under the unitary group of `J`. -/
-theorem kahlerPowerForm_compContinuousLinearMap {V' : Type*} [NormedAddCommGroup V']
-    [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V'] {J' : AlmostComplexStructure V'}
-    {f : V ≃ₗᵢ[ℝ] V'} (hfJ : IsComplexLinearMap J J' f.toLinearMap) (r : ℕ) :
-    (J'.kahlerPowerForm r).compContinuousLinearMap f.toLinearIsometry.toContinuousLinearMap =
-      J.kahlerPowerForm r := by
-  have hω : (alternatingFormEquiv V' 2 J'.kahlerForm).compContinuousLinearMap
-      f.toLinearIsometry.toContinuousLinearMap = alternatingFormEquiv V 2 J.kahlerForm := by
-    rw [← map_kahlerForm_of_isComplexLinearMap hJ hfJ]
-    exact LinearIsometry.alternatingFormEquiv_map f.toLinearIsometry J.kahlerForm
-  ext v
-  simp only [kahlerPowerForm_def, compContinuousLinearMap_apply,
-    ContinuousAlternatingMap.smul_apply, ← hω, ← wedgePow_compContinuousLinearMap]
 
 end Orthogonal
 
@@ -405,9 +379,11 @@ private theorem kahlerPowerForm_symm_eq_sum_adapted {J : AlmostComplexStructure 
   have hs : s.val = ((Set.equivOfEq (Set.powersetCard.coe_finset (Fin n) r).symm s :
       Set.powersetCard (Fin n) r) : Finset (Fin n)) := rfl
   rw [Finset.noncommProd_congr hs (fun _ _ ↦ rfl)]
-  simpa only [x, Finset.prod_const_one, one_smul, OrthonormalBasis.coe_toBasis,
-    ← OrthonormalBasis.toBasis_exteriorPower] using
-    b.toBasis.noncommProd_smul_ιMulti_two_eq_exteriorPower (fun _ ↦ (1 : ℝ))
+  rw [← OrthonormalBasis.coe_toBasis (b.exteriorPower (2 * r)),
+    OrthonormalBasis.toBasis_exteriorPower, exteriorPower.basis_apply,
+    exteriorPower.ιMulti_family, exteriorPower.ιMulti_apply_coe, Equiv.symm_apply_apply]
+  simpa only [x, Finset.prod_const_one, one_smul, OrthonormalBasis.coe_toBasis] using
+    TauCeti.ExteriorAlgebra.noncommProd_powersetCard_smul_ιMulti_two (fun _ ↦ (1 : ℝ)) b.toBasis
       (Set.equivOfEq (Set.powersetCard.coe_finset (Fin n) r).symm s)
       (fun _ _ _ _ _ ↦ TauCeti.ExteriorAlgebra.commute_smul_ιMulti_two _ _ _ _ _ _)
 

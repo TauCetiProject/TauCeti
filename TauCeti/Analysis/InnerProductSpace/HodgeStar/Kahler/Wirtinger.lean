@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
-public import TauCeti.Geometry.Symplectic.Wirtinger
 import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm
-import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Symplectic.Finrank
@@ -41,10 +40,12 @@ all-degree Wirtinger inequality (`TauCeti.norm_kahlerPowerForm_le`, `TauCeti.nor
 and calibrated-frame classification (`TauCeti.isCalibratedFrame_kahlerPowerForm_iff`) on any
 finite-dimensional Hermitian vector space `E` in terms of `TauCeti.complexToRealFamily`.
 
-In degree two (`r = 1`), the Lagrange-type identity also characterizes non-orthonormal equality
-`ω(v, w) = ‖v ∧ w‖` for `v ≠ 0` (`alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`, and
-`TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero` on Hermitian vector spaces, including
-`ℂⁿ = EuclideanSpace ℂ (Fin n)`).
+This module also publicly re-exports
+`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo`, where the Lagrange-type identity
+in degree two (`r = 1`) characterizes non-orthonormal equality `ω(v, w) = ‖v ∧ w‖` for `v ≠ 0`
+(`alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`, and
+`TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero` on finite-dimensional Hermitian vector
+spaces, including `ℂⁿ = EuclideanSpace ℂ (Fin n)`).
 
 ## Main results
 
@@ -52,11 +53,11 @@ In the namespace `TauCeti.AlmostComplexStructure`, for an orthogonal `J`:
 
 * `isCalibratedFrame_kahlerPowerForm_iff`: the calibrated-frame classification for every power
   index `r` (form degree `2 * r`).
-* `norm_alternatingFormEquiv_kahlerForm` and
-  `isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff`: degree-two comass one and calibrated
-  pairs `(v, J v)` with `‖v‖ = 1` for `alternatingFormEquiv V 2 J.kahlerForm`.
-* `alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`: for `v ≠ 0`, the equality
-  `ω(v, w) = ‖v ∧ w‖` holds exactly when `w = a v + b J v` with `b ≥ 0`.
+* `norm_alternatingFormEquiv_kahlerForm` (re-exported from `Kahler.DegreeTwo`, when `V` is
+  nontrivial) and `isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff`: degree-two comass one
+  and calibrated pairs `(v, J v)` with `‖v‖ = 1` for `alternatingFormEquiv V 2 J.kahlerForm`.
+* `alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff` (re-exported from `Kahler.DegreeTwo`):
+  for `v ≠ 0`, the equality `ω(v, w) = ‖v ∧ w‖` holds exactly when `w = a v + b J v` with `b ≥ 0`.
 
 On finite-dimensional Hermitian vector spaces:
 
@@ -64,8 +65,8 @@ On finite-dimensional Hermitian vector spaces:
   `TauCeti.isCalibratedFrame_kahlerPowerForm_iff`: the Wirtinger inequality and calibrated-frame
   classification on any finite-dimensional Hermitian vector space in every power index `r` (form
   degree `2 * r`).
-* `TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero`: for `v ≠ 0`, `ω(v, w) = ‖v ∧ w‖`
-  exactly when `w = c v` for a complex number `c` with `0 ≤ Im c`.
+* `TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero` (re-exported from `Kahler.DegreeTwo`):
+  for `v ≠ 0`, `ω(v, w) = ‖v ∧ w‖` exactly when `w = c v` for a complex number `c` with `0 ≤ Im c`.
 
 ## References
 
@@ -190,60 +191,6 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {J : AlmostComplexStructure V}
 
 end Wirtinger
 
-section DegreeTwo
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {J : AlmostComplexStructure V} (hJ : ∀ u v, ⟪J u, J v⟫ = ⟪u, v⟫)
-include hJ
-
-/-- The pair `(v, J v)` is calibrated by the Kähler form whenever `v` is a unit vector. -/
-private theorem isCalibratedFrame_alternatingFormEquiv_kahlerForm_of_norm_eq_one {v : V}
-    (hv : ‖v‖ = 1) :
-    (alternatingFormEquiv V 2 J.kahlerForm).IsCalibratedFrame ![v, J v] := by
-  refine ⟨?_, ?_⟩
-  · rw [orthonormal_iff_ite]
-    intro i j
-    fin_cases i <;> fin_cases j <;>
-      simp [hv, norm_apply hJ, inner_apply_self hJ, inner_self_apply hJ]
-  · simp [alternatingFormEquiv_kahlerForm_apply hJ, hJ, hv]
-
-/-- **Wirtinger's inequality, frame form**: an ordered pair of vectors is calibrated by the Kähler
-form of an orthogonal complex structure exactly when it is `(v, J v)` for a unit vector `v`. -/
-theorem isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff {v : Fin 2 → V} :
-    (alternatingFormEquiv V 2 J.kahlerForm).IsCalibratedFrame v ↔
-      ‖v 0‖ = 1 ∧ v 1 = J (v 0) := by
-  refine ⟨fun h ↦ ⟨h.orthonormal.1 0, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ?_⟩
-  · have h₁ := h.apply_eq_one
-    rw [alternatingFormEquiv_kahlerForm_apply hJ,
-      inner_eq_one_iff_of_norm_eq_one (by rw [norm_apply hJ, h.orthonormal.1 0])
-        (h.orthonormal.1 1)] at h₁
-    exact h₁.symm
-  · have hv : v = ![v 0, J (v 0)] := by ext i; fin_cases i <;> simp [h₁]
-    rw [hv]
-    exact isCalibratedFrame_alternatingFormEquiv_kahlerForm_of_norm_eq_one hJ h₀
-
-/-- **Wirtinger's inequality**: the Kähler form of an orthogonal complex structure on a nonzero
-space has comass one. The bound `‖ω‖ ≤ 1` is `norm_alternatingFormEquiv_kahlerForm_le`; it is
-attained on every pair `(v, J v)` with `‖v‖ = 1`. -/
-theorem norm_alternatingFormEquiv_kahlerForm [Nontrivial V] :
-    ‖alternatingFormEquiv V 2 J.kahlerForm‖ = 1 := by
-  obtain ⟨v, hv⟩ := exists_norm_eq V zero_le_one
-  exact (norm_alternatingFormEquiv_kahlerForm_le hJ).antisymm
-    (isCalibratedFrame_alternatingFormEquiv_kahlerForm_of_norm_eq_one hJ hv).one_le_norm
-
-/-- **The equality case of Wirtinger's inequality**: for `v ≠ 0`, the Kähler form attains the area
-`‖v ∧ w‖` of the parallelogram on `(v, w)` exactly when `w = a v + b J v` with `b ≥ 0`. For
-linearly independent `v, w` this says that their plane is `J`-invariant and that `(v, w)` is
-oriented like `(v, J v)`. -/
-theorem alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff {v w : V} (hv : v ≠ 0) :
-    alternatingFormEquiv V 2 J.kahlerForm ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔
-      ∃ a b : ℝ, 0 ≤ b ∧ w = a • v + b • J v := by
-  rw [alternatingFormEquiv_kahlerForm_apply hJ, norm_ιMulti_two_eq_wedgeNorm_symplecticForm hJ,
-    Matrix.cons_val_zero, Matrix.cons_val_one, ← symplecticForm_apply hJ]
-  exact (symplecticForm_compatible hJ).apply_eq_wedgeNorm_iff hv w
-
-end DegreeTwo
-
 end AlmostComplexStructure
 
 section HermitianWirtinger
@@ -305,18 +252,6 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} (v : Fin (2 * r) → E) 
   · rintro ⟨u, hu, hι⟩
     exact ⟨complexToRealFamily u, orthonormal_complexToRealFamily hu,
       fun _ ↦ by simp, hι⟩
-
-/-- **Non-orthonormal degree-two Wirtinger equality**: for `v ≠ 0` in a finite-dimensional
-Hermitian vector space, `kahlerTwoForm E` attains the area `‖v ∧ w‖` exactly when `w` is a complex
-multiple `c • v` with `0 ≤ Im c`. -/
-theorem kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero {v w : E} (hv : v ≠ 0) :
-    kahlerTwoForm E ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔ ∃ c : ℂ, 0 ≤ c.im ∧ w = c • v := by
-  rw [← alternatingFormEquiv_ofComplexModule_kahlerForm,
-    AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff
-      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule hv]
-  simp only [AlmostComplexStructure.ofComplexModule_apply]
-  exact ⟨fun ⟨a, b, hb, hw⟩ ↦ ⟨⟨a, b⟩, hb, hw.trans (Complex.re_smul_add_im_smul ⟨a, b⟩ v)⟩,
-    fun ⟨c, hc, hw⟩ ↦ ⟨c.re, c.im, hc, hw.trans (Complex.re_smul_add_im_smul c v).symm⟩⟩
 
 end HermitianWirtinger
 

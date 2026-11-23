@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Comass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TwoForm
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
@@ -22,10 +21,7 @@ The associated alternating form has comass at most one: it evaluates on `(u, v)`
 `⟪J u, v⟫`. It certifies the lower mass bound, and the orthonormal-basis expansion of the
 Kähler bivector gives the matching upper bound. In an orthonormal four-frame this proves that
 `e₀ ∧ e₁ + e₂ ∧ e₃` has mass `2` and Hilbert norm `√2`. Thus the dual-comass mass used for
-vector-valued representations of currents cannot be replaced by the Hilbert norm. On a
-finite-dimensional Hermitian vector space `E`,
-`TauCeti.alternatingFormEquiv_ofComplexModule_kahlerForm` identifies `TauCeti.kahlerTwoForm E` as
-the Riesz dual of `(AlmostComplexStructure.ofComplexModule E).kahlerForm`.
+vector-valued representations of currents cannot be replaced by the Hilbert norm.
 
 ## References
 
@@ -118,27 +114,3 @@ theorem norm_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
   norm_num [Module.finrank_eq_card_basis e.toBasis]
 
 end OrthonormalBasis
-
-section Hermitian
-
-open scoped InnerProductSpace
-
-namespace TauCeti
-
-/-- The Riesz dual of `(AlmostComplexStructure.ofComplexModule E).kahlerForm` is
-`kahlerTwoForm E`. -/
-@[simp]
-theorem alternatingFormEquiv_ofComplexModule_kahlerForm {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [InnerProductSpace ℂ E] [IsScalarTower ℝ ℂ E]
-    [FiniteDimensional ℝ E] :
-    alternatingFormEquiv E 2 (AlmostComplexStructure.ofComplexModule E).kahlerForm =
-      kahlerTwoForm E := by
-  ext v
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, alternatingFormEquiv_apply,
-    AlmostComplexStructure.inner_kahlerForm_ιMulti
-      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
-    AlmostComplexStructure.ofComplexModule_apply, kahlerTwoForm_apply_eq_inner]
-
-end TauCeti
-
-end Hermitian

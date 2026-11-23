@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.NormalForm
+import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
 # Normal form and Pfaffian divided power of a two-vector
@@ -60,19 +61,12 @@ theorem exists_orthonormalBasis_twoVector_normalForm {r : ℕ}
         (∏ j : Fin r, μ j) • exteriorPower.ιMulti ℝ (2 * r) b := by
   obtain ⟨b₀, μ, hμ, h0, h1⟩ := (twoVectorContraction F).exists_orthonormalBasis_skew_normalForm
     hdim (inner_twoVectorContraction_apply_left F)
-  let e : Fin r × Fin 2 ≃ Fin (2 * r) := finProdFinEquiv.trans (finCongr (Nat.mul_comm r 2))
-  let b : OrthonormalBasis (Fin (2 * r)) ℝ E := b₀.reindex e
-  have he0 (j : Fin r) : e (j, 0) = ⟨2 * (j : ℕ), by omega⟩ := by
-    ext
-    simp [e, mul_comm]
-  have he1 (j : Fin r) : e (j, 1) = ⟨2 * (j : ℕ) + 1, by omega⟩ := by
-    ext
-    simp [e, mul_comm, add_comm]
+  let b : OrthonormalBasis (Fin (2 * r)) ℝ E := b₀.reindex (complexRealIndexEquiv r)
   have hb0 (j : Fin r) : b ⟨2 * (j : ℕ), by omega⟩ = b₀ (j, 0) := by
-    rw [← he0 j]
+    rw [← complexRealIndexEquiv_zero r j]
     simp only [b, OrthonormalBasis.coe_reindex, Function.comp_apply, Equiv.symm_apply_apply]
   have hb1 (j : Fin r) : b ⟨2 * (j : ℕ) + 1, by omega⟩ = b₀ (j, 1) := by
-    rw [← he1 j]
+    rw [← complexRealIndexEquiv_one r j]
     simp only [b, OrthonormalBasis.coe_reindex, Function.comp_apply, Equiv.symm_apply_apply]
   have hF : F = ∑ j : Fin r, μ j • exteriorPower.ιMulti ℝ 2
       ![b ⟨2 * (j : ℕ), by omega⟩, b ⟨2 * (j : ℕ) + 1, by omega⟩] := by
