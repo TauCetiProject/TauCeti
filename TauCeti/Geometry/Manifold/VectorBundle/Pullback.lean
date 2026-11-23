@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
@@ -41,7 +41,7 @@ own carrier. The canonical map `Pullback.lift f` to the total space of `E` is `C
 (`Bundle.Pullback.contMDiff_lift`), and a family of fibrewise maps inducing a `C^n` map of total
 spaces pulls back along a `C^n` map to one that does too (`Bundle.Pullback.contMDiff_fiberwise`).
 When the model fibre is finite-dimensional over a complete field `𝕜`, `TauCeti.bundleDiffeomorph`
-and the fibre instances of `TauCeti.Topology.VectorBundle.Pullback` therefore make the pullback
+and the fibre instances of `TauCeti.Topology.VectorBundle.Pullback.Basic` make the pullback
 `x ↦ e (f x)` of a `C^n` family `e` of fibrewise linear equivalences again a `C^n` bundle
 equivalence. The pullback along the identity is `C^n` diffeomorphic to `E`
 (`Bundle.Pullback.idDiffeomorph`), and the pullback along a composite `g ∘ f` to the iterated
@@ -288,7 +288,7 @@ theorem Bundle.Pullback.contMDiffAt_hom_section_iff (f : K) {x : X}
       hf.continuousAt.preimage_mem_nhds
       ((trivializationAt G W (f x)).open_baseSet.mem_nhds
         (FiberBundle.mem_baseSet_trivializationAt G W (f x)))] with y hyV hyW
-    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y (A y) hyV hyW
+    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y x y (A y) hyV hyW
   rw [contMDiffAt_hom_bundle, contMDiffAt_hom_bundle]
   exact ⟨fun h ↦ ⟨hf, h.2.congr_of_eventuallyEq heq.symm⟩,
     fun h ↦ ⟨contMDiffAt_id, h.2.congr_of_eventuallyEq heq⟩⟩

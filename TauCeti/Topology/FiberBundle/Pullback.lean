@@ -30,9 +30,11 @@ Five facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is t
   (`Bundle.Pullback.totalSpace_ext`).
 * A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
   the total space of `E` are (`Bundle.Pullback.continuous_iff`); base-preserving continuous maps on
-  total spaces pull back along any map (`Bundle.Pullback.continuous_totalSpaceMap`), and
+  total spaces pull back along any map (`Bundle.Pullback.continuous_totalSpaceMap`),
   `Bundle.Pullback.compHomeomorph` identifies an iterated pullback `g *ᵖ (f *ᵖ E)` with the
-  composite pullback `(f ∘ g) *ᵖ E`.
+  composite pullback `(f ∘ g) *ᵖ E`, and `Bundle.Pullback.continuous_totalSpaceMap_comp_left` and
+  `Bundle.Pullback.continuous_totalSpaceMap_comp_right` restrict maps out of or into iterated
+  pullbacks along a continuous map.
 * The canonical lift is the base change of `f` along the projection of `E`, so it inherits
   openness from `f` (`Bundle.Pullback.isOpenMap_lift`). If `f` is the quotient map of a covering
   action of a group `G` and `G` acts on the total space of `f *ᵖ E` over its action on the base,
@@ -154,6 +156,46 @@ theorem Bundle.Pullback.compHomeomorph_symm_apply {B'' : Type*} [TopologicalSpac
     {f : B' → B} {g : B'' → B'} (hg : Continuous g) (p : TotalSpace F ((f ∘ g) *ᵖ E)) :
     (Bundle.Pullback.compHomeomorph (F := F) (E := E) (f := f) hg).symm p = ⟨p.proj, p.snd⟩ :=
   (rfl)
+
+omit [TopologicalSpace B] in
+/-- Pulling back a base-preserving continuous map from `p *ᵖ (f *ᵖ E₁)` to `f' *ᵖ E₂` along a
+continuous map `s` such that `p ∘ s` is continuous yields a continuous map from
+`(f ∘ p ∘ s) *ᵖ E₁` to `(f' ∘ s) *ᵖ E₂`. -/
+theorem Bundle.Pullback.continuous_totalSpaceMap_comp_left
+    {B₀ B₁ B₂ B'' F₁ F₂ : Type*}
+    [TopologicalSpace B₀] [TopologicalSpace B'']
+    {E₁ : B₁ → Type*} {E₂ : B₂ → Type*}
+    [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+    {f : B₀ → B₁} {f' : B' → B₂} {p : B' → B₀} {s : B'' → B'}
+    (hs : Continuous s) (hps : Continuous (p ∘ s))
+    {ϕ : ∀ b', (p *ᵖ (f *ᵖ E₁)) b' → (f' *ᵖ E₂) b'}
+    (hϕ : Continuous fun v : TotalSpace F₁ (p *ᵖ (f *ᵖ E₁)) ↦
+      TotalSpace.mk' F₂ (E := f' *ᵖ E₂) v.proj (ϕ v.proj v.snd)) :
+    Continuous fun v : TotalSpace F₁ ((f ∘ p ∘ s) *ᵖ E₁) ↦
+      TotalSpace.mk' F₂ (E := (f' ∘ s) *ᵖ E₂) v.proj (ϕ (s v.proj) v.snd) :=
+  ((compHomeomorph hs).continuous.comp
+    ((continuous_totalSpaceMap hϕ s).comp (compHomeomorph hs).symm.continuous)).comp
+    (compHomeomorph hps).symm.continuous
+
+omit [TopologicalSpace B] in
+/-- Pulling back a base-preserving continuous map from `f' *ᵖ E₁` to `p *ᵖ (f *ᵖ E₂)` along a
+continuous map `s` such that `p ∘ s` is continuous yields a continuous map from
+`(f' ∘ s) *ᵖ E₁` to `(f ∘ p ∘ s) *ᵖ E₂`. -/
+theorem Bundle.Pullback.continuous_totalSpaceMap_comp_right
+    {B₀ B₁ B₂ B'' F₁ F₂ : Type*}
+    [TopologicalSpace B₀] [TopologicalSpace B'']
+    {E₁ : B₁ → Type*} {E₂ : B₂ → Type*}
+    [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+    {f' : B' → B₁} {f : B₀ → B₂} {p : B' → B₀} {s : B'' → B'}
+    (hs : Continuous s) (hps : Continuous (p ∘ s))
+    {ϕ : ∀ b', (f' *ᵖ E₁) b' → (p *ᵖ (f *ᵖ E₂)) b'}
+    (hϕ : Continuous fun v : TotalSpace F₁ (f' *ᵖ E₁) ↦
+      TotalSpace.mk' F₂ (E := p *ᵖ (f *ᵖ E₂)) v.proj (ϕ v.proj v.snd)) :
+    Continuous fun v : TotalSpace F₁ ((f' ∘ s) *ᵖ E₁) ↦
+      TotalSpace.mk' F₂ (E := (f ∘ p ∘ s) *ᵖ E₂) v.proj (ϕ (s v.proj) v.snd) :=
+  (compHomeomorph hps).continuous.comp
+    ((compHomeomorph hs).continuous.comp
+      ((continuous_totalSpaceMap hϕ s).comp (compHomeomorph hs).symm.continuous))
 
 omit [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)] in
 /-- The canonical lift sends the points of the total space of `f *ᵖ E` over `U` whose lift lies in

@@ -225,7 +225,7 @@ def ofContDiff (A : D × V → D →L[ℝ] V) (hA : ContDiff ℝ n A) :
       (W := (TangentSpace 𝓘(ℝ, V) : V → Type _))
       (ContMDiffMap.fst : C^∞⟮𝓘(ℝ, D).prod 𝓘(ℝ, V), D × V; 𝓘(ℝ, D), D⟯)
       (ContMDiffMap.snd : C^∞⟮𝓘(ℝ, D).prod 𝓘(ℝ, V), D × V; 𝓘(ℝ, V), V⟯)
-      q y (A y) (by simp [TangentBundle.trivializationAt_baseSet])
+      q y q y (A y) (by simp [TangentBundle.trivializationAt_baseSet])
         (by simp [TangentBundle.trivializationAt_baseSet])]
     exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
   have hA' : ContMDiffAt (𝓘(ℝ, D).prod 𝓘(ℝ, V)) 𝓘(ℝ, D →L[ℝ] V) n A q := by

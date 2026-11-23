@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Topology.VectorBundle.Hom
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!

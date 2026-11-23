@@ -600,34 +600,16 @@ theorem isoFiberEquiv_trans {E : FiniteRankBundleCore 𝕜 B} (e₁ : A ≅ D) (
   ext v
   simp
 
-/-- Re-express a continuous linear equivalence between core fibres directly on coordinate models so
-its type reduces under `implicit` transparency. -/
-def ofCoreEquiv {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z) (y : Y) (z : Z)
-    (e : A.core.Fiber y ≃L[𝕜] D.core.Fiber z) :
-    (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜) where
-  toFun v := e v
-  invFun v := e.symm v
-  left_inv v := e.symm_apply_apply v
-  right_inv v := e.apply_symm_apply v
-  map_add' u v := e.map_add u v
-  map_smul' c v := e.map_smul c v
-  continuous_toFun := e.continuous
-  continuous_invFun := e.symm.continuous
-
 @[simp]
-theorem ofCoreEquiv_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z) (y : Y) (z : Z)
-    (e : A.core.Fiber y ≃L[𝕜] D.core.Fiber z) (v : Fin A.rank → 𝕜) :
-    ofCoreEquiv A D y z e v = e v :=
-  (rfl)
-
-@[simp]
-theorem ofCoreEquiv_symm_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z) (y : Y) (z : Z)
-    (e : A.core.Fiber y ≃L[𝕜] D.core.Fiber z) (v : Fin D.rank → 𝕜) :
-    (ofCoreEquiv A D y z e).symm v = e.symm v :=
-  (rfl)
+theorem isoFiberEquiv_isoOfTotalSpaceContinuous
+    (Φ : B → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (hΦ₁ : Continuous fun p : A.core.TotalSpace ↦
+      (⟨p.proj, Φ p.proj p.snd⟩ : D.core.TotalSpace))
+    (hΦ₂ : Continuous fun p : D.core.TotalSpace ↦
+      (⟨p.proj, (Φ p.proj).symm p.snd⟩ : A.core.TotalSpace)) (x : B) :
+    isoFiberEquiv (isoOfTotalSpaceContinuous Φ hΦ₁ hΦ₂) x = Φ x := by
+  ext v
+  simp
 
 end TotalSpace
 
@@ -737,6 +719,10 @@ def isoOfContinuousEquiv : A ≅ D where
 @[simp] theorem fiberMap_isoOfContinuousEquiv_inv (x : B) :
     (isoOfContinuousEquiv ψ hψ).inv.fiberMap x = (ψ x).symm :=
   congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+@[simp] theorem isoFiberEquiv_isoOfContinuousEquiv (x : B) :
+    isoFiberEquiv (isoOfContinuousEquiv ψ hψ) x = ψ x := by
+  ext v
+  simp
 end IsoEquiv
 
 section OfBundle

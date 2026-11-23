@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Homotopy.Basic
-public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Topology.Homotopy.Cylinder.Basic
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Hom
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.Homotopy.Cylinder.Subdivision
 import TauCeti.Topology.VectorBundle.Hom
@@ -344,49 +343,6 @@ end Cylinder
 
 section Homotopy
 
-/-- Evaluating a continuous cylinder equivalence on `G *ᵖ E` at time `1` gives forward and inverse
-continuous total-space maps between the endpoint pullbacks `(G (·, 0)) *ᵖ E` and
-`(G (·, 1)) *ᵖ E`. -/
-private theorem continuous_pullback_slice_one {𝕜 : Type*} [Semiring 𝕜]
-    {X Y F : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {E : Y → Type*} [∀ y, AddCommMonoid (E y)] [∀ y, Module 𝕜 (E y)]
-    [∀ y, TopologicalSpace (E y)] [TopologicalSpace (TotalSpace F E)]
-    (G : C(X × I, Y))
-    {Φ : ∀ q : X × I, ((G : X × I → Y) *ᵖ E) (q.1, 0) ≃L[𝕜] ((G : X × I → Y) *ᵖ E) q}
-    (hΦ₁ : Continuous fun v : TotalSpace F
-        ((cylinderZero X : X × I → X × I) *ᵖ ((G : X × I → Y) *ᵖ E)) ↦
-      TotalSpace.mk' F v.proj (Φ v.proj v.snd))
-    (hΦ₂ : Continuous fun v : TotalSpace F ((G : X × I → Y) *ᵖ E) ↦ TotalSpace.mk' F
-        (E := (cylinderZero X : X × I → X × I) *ᵖ ((G : X × I → Y) *ᵖ E)) v.proj
-        ((Φ v.proj).symm v.snd)) :
-    Continuous (fun v : TotalSpace F ((fun x ↦ G (x, 0)) *ᵖ E) ↦
-      TotalSpace.mk' F (E := (fun x ↦ G (x, 1)) *ᵖ E) v.proj (Φ (v.proj, 1) v.snd)) ∧
-    Continuous (fun v : TotalSpace F ((fun x ↦ G (x, 1)) *ᵖ E) ↦
-      TotalSpace.mk' F (E := (fun x ↦ G (x, 0)) *ᵖ E) v.proj ((Φ (v.proj, 1)).symm v.snd)) := by
-  have hs₁ : Continuous fun x : X ↦ (x, (1 : I)) := continuous_id.prodMk continuous_const
-  have hs₀ : Continuous fun x : X ↦ (x, (0 : I)) := continuous_id.prodMk continuous_const
-  have hlift₀ : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 0)) *ᵖ E) ↦
-      TotalSpace.mk' F (E := (cylinderZero X : X × I → X × I) *ᵖ ((G : X × I → Y) *ᵖ E))
-        (v.proj, (1 : I)) v.snd :=
-    Bundle.Pullback.continuous_iff.2
-      ⟨hs₁.comp (_root_.Pullback.continuous_proj F E _),
-       Bundle.Pullback.continuous_iff.2
-        ⟨hs₀.comp (_root_.Pullback.continuous_proj F E _),
-         _root_.Pullback.continuous_lift F E _⟩⟩
-  have hlift₁ : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 1)) *ᵖ E) ↦
-      TotalSpace.mk' F (E := (G : X × I → Y) *ᵖ E) (v.proj, (1 : I)) v.snd :=
-    Bundle.Pullback.continuous_iff.2
-      ⟨hs₁.comp (_root_.Pullback.continuous_proj F E _),
-       _root_.Pullback.continuous_lift F E _⟩
-  exact ⟨Bundle.Pullback.continuous_iff.2
-      ⟨_root_.Pullback.continuous_proj F E _,
-       (_root_.Pullback.continuous_lift F E (G : X × I → Y)).comp (hΦ₁.comp hlift₀)⟩,
-    Bundle.Pullback.continuous_iff.2
-      ⟨_root_.Pullback.continuous_proj F E _,
-       (_root_.Pullback.continuous_lift F E (G : X × I → Y)).comp
-        ((_root_.Pullback.continuous_lift F ((G : X × I → Y) *ᵖ E)
-          (cylinderZero X : X × I → X × I)).comp (hΦ₂.comp hlift₁))⟩⟩
-
 section Free
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
@@ -412,7 +368,16 @@ private theorem exists_continuousLinearEquiv_pullback_of_eq (G : C(X × I, Y)) {
   obtain rfl : g₁ = fun x ↦ G (x, 1) := (funext h₁).symm
   obtain ⟨Φ, hΦ₁, hΦ₂, -⟩ :=
     exists_continuousLinearEquiv_cylinder (𝕜 := 𝕜) (F := F) (E := (G : X × I → Y) *ᵖ E)
-  exact ⟨fun x ↦ Φ (x, 1), continuous_pullback_slice_one G hΦ₁ hΦ₂⟩
+  have hs : Continuous fun x : X ↦ (x, (1 : I)) := continuous_id.prodMk continuous_const
+  have hps : Continuous ((cylinderZero X : X × I → X × I) ∘ fun x : X ↦ (x, (1 : I))) :=
+    (cylinderZero X).continuous.comp hs
+  exact ⟨fun x ↦ Φ (x, 1),
+    Bundle.Pullback.continuous_totalSpaceMap_comp_left
+      (E₁ := E) (E₂ := E) (f := (G : X × I → Y)) (f' := (G : X × I → Y))
+      hs hps (ϕ := fun q v ↦ Φ q v) hΦ₁,
+    Bundle.Pullback.continuous_totalSpaceMap_comp_right
+      (E₁ := E) (E₂ := E) (f' := (G : X × I → Y)) (f := (G : X × I → Y))
+      hs hps (ϕ := fun q v ↦ (Φ q).symm v) hΦ₂⟩
 
 /-- **Homotopy invariance of vector bundles.** Over a paracompact R₁ space `X`, for instance a
 paracompact Hausdorff space, the pullbacks of a vector bundle `E` along homotopic maps

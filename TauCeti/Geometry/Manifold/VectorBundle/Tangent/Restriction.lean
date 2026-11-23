@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
@@ -215,10 +215,10 @@ theorem contMDiff_restrictOpenTangentSpaceHom {n : ℕ∞ω}
   -- `erw` identifies each pulled-back tangent fibre with the original model instance.
   erw [ContinuousLinearMap.inCoordinates_pullback_of_mem
     (ContMDiffMap.fst : C^∞⟮I.prod I', M × N; I, M⟯)
-    (ContMDiffMap.snd : C^∞⟮I.prod I', M × N; I', N⟯) _ _ _ hyM hyN,
+    (ContMDiffMap.snd : C^∞⟮I.prod I', M × N; I', N⟯) _ _ _ _ _ hyM hyN,
     ContinuousLinearMap.inCoordinates_pullback_of_mem
       (ContMDiffMap.fst : C^∞⟮I.prod I', U × V; I, U⟯)
-      (ContMDiffMap.snd : C^∞⟮I.prod I', U × V; I', V⟯) _ _ _ hyU hyV]
+      (ContMDiffMap.snd : C^∞⟮I.prod I', U × V; I', V⟯) _ _ _ _ _ hyU hyV]
   exact he (A (y.1, y.2))
 
 section Endomorphism

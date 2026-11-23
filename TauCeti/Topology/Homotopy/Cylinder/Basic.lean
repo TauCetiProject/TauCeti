@@ -91,6 +91,16 @@ theorem cylinderSlice_zero_comp_fst (X : Type*) [TopologicalSpace X] :
   ContinuousMap.ext fun q ↦ by simp
 
 @[simp]
+theorem cylinderZero_comp_cylinderSlice (X : Type*) [TopologicalSpace X] (t : I) :
+    (cylinderZero X).comp (cylinderSlice X t) = cylinderSlice X 0 :=
+  ContinuousMap.ext fun x ↦ by simp
+
+@[simp]
+theorem cylinderZero_comp_cylinderZero (X : Type*) [TopologicalSpace X] :
+    (cylinderZero X).comp (cylinderZero X) = cylinderZero X :=
+  ContinuousMap.ext fun q ↦ by simp
+
+@[simp]
 theorem cylinderZero_comp_cylinderSetIncl {X : Type*} [TopologicalSpace X] (s : Set X) :
     (cylinderZero X).comp (cylinderSetIncl s) = (cylinderSetIncl s).comp (cylinderZero s) :=
   ContinuousMap.ext fun q ↦ by simp

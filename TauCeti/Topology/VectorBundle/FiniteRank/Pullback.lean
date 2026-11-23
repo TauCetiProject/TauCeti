@@ -200,6 +200,12 @@ def pullbackFunctor (f : C(X, Y)) : FiniteRankBundleCore 𝕜 Y ⥤ FiniteRankBu
     (f : C(X, Y)) :
     (pullbackFunctor f).map a = pullbackMap a f := (rfl)
 
+@[simp] theorem isoFiberEquiv_pullbackFunctor_mapIso {A D : FiniteRankBundleCore 𝕜 Y}
+    (f : C(X, Y)) (e : A ≅ D) (x : X) :
+    isoFiberEquiv ((pullbackFunctor f).mapIso e) x = isoFiberEquiv e (f x) := by
+  ext v
+  simp
+
 /-- Pullback is additive, with no compactness or separation assumption on either base. -/
 instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
   map_add := fun {_ _ a b} => pullbackMap_add a b f
@@ -606,6 +612,20 @@ theorem fiberMap_pullbackIsoOfTotalSpaceContinuous_inv
     (pullbackIsoOfTotalSpaceContinuous A D f g Φ hΦ₁ hΦ₂).inv.fiberMap x =
       ((Φ x).symm : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) :=
   fiberMap_isoOfTotalSpaceContinuous_inv _ _ _ x
+
+@[simp]
+theorem isoFiberEquiv_pullbackIsoOfTotalSpaceContinuous
+    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z)
+    (f : C(X, Y)) (g : C(X, Z))
+    (Φ : X → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (hΦ₁ : Continuous fun v : TotalSpace (Fin A.rank → 𝕜) ((f : X → Y) *ᵖ A.core.Fiber) ↦
+      TotalSpace.mk' (Fin D.rank → 𝕜) (E := (g : X → Z) *ᵖ D.core.Fiber) v.proj (Φ v.proj v.snd))
+    (hΦ₂ : Continuous fun v : TotalSpace (Fin D.rank → 𝕜) ((g : X → Z) *ᵖ D.core.Fiber) ↦
+      TotalSpace.mk' (Fin A.rank → 𝕜) (E := (f : X → Y) *ᵖ A.core.Fiber) v.proj
+        ((Φ v.proj).symm v.snd)) (x : X) :
+    isoFiberEquiv (pullbackIsoOfTotalSpaceContinuous A D f g Φ hΦ₁ hΦ₂) x = Φ x := by
+  ext v
+  simp
 
 section OfBundle
 variable {n : ℕ} (E : Y → Type*) [∀ y, AddCommMonoid (E y)] [∀ y, Module 𝕜 (E y)]

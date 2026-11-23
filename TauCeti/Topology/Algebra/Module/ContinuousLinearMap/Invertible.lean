@@ -39,7 +39,9 @@ An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_neg_iff`).
 
 A map agreeing pointwise with an equality cast is invertible
-(`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
+(`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules, and equality transport
+between fibres of dependent families preserves invertibility
+(`ContinuousLinearMap.IsInvertible.transport`).
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -81,6 +83,20 @@ theorem isInvertible_of_eq_cast {R M : Type*} [Semiring R] {V : M → Type*}
   subst x₁
   obtain rfl : A = ContinuousLinearMap.id R (V x₀) := ContinuousLinearMap.ext hA
   exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl R (V x₀))
+
+/-- Transporting a continuous linear map between fibres of dependent families along base-point
+equalities preserves invertibility. -/
+theorem IsInvertible.transport {R B₁ B₂ : Type*} [Semiring R]
+    {V : B₁ → Type*} [∀ x, AddCommMonoid (V x)] [∀ x, Module R (V x)]
+    [∀ x, TopologicalSpace (V x)]
+    {W : B₂ → Type*} [∀ y, AddCommMonoid (W y)] [∀ y, Module R (W y)]
+    [∀ y, TopologicalSpace (W y)]
+    {x' x : B₁} {y' y : B₂} (hx : x' = x) (hy : y' = y) {f : V x' →L[R] W y'}
+    (hf : f.IsInvertible) :
+    (show V x →L[R] W y from hx ▸ hy ▸ f).IsInvertible := by
+  cases hx
+  cases hy
+  exact hf
 
 section IsUnit
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Contractible
-public import TauCeti.Topology.Homotopy.Cylinder.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import TauCeti.Topology.VectorBundle.HomotopyInvariance.Basic
 
@@ -38,10 +37,10 @@ Grothendieck group `SplitK0 (FiniteRankBundleCore 𝕜 ·)` live in
 
 ## Implementation notes
 
-Total-space continuity criteria and constructors (`isoOfTotalSpaceContinuous` and `ofCoreEquiv` in
-`TauCeti.Topology.VectorBundle.FiniteRank.Basic`, together with `pullbackIsoOfTotalSpaceContinuous`
-and `pullbackHomeomorphOfEq` in `TauCeti.Topology.VectorBundle.FiniteRank.Pullback`) convert
-total-space bundle equivalences obtained from
+Total-space continuity criteria and constructors (`isoOfTotalSpaceContinuous` in
+`TauCeti.Topology.VectorBundle.FiniteRank.Basic`, together with
+`pullbackIsoOfTotalSpaceContinuous` in `TauCeti.Topology.VectorBundle.FiniteRank.Pullback`)
+convert total-space bundle equivalences obtained from
 `TauCeti.Topology.VectorBundle.HomotopyInvariance.Basic` directly into categorical isomorphisms in
 `FiniteRankBundleCore 𝕜 B`.
 
@@ -80,22 +79,29 @@ theorem exists_iso_cylinder (A : FiniteRankBundleCore 𝕜 (X × I)) :
       ∀ x : X, e.hom.fiberMap (x, 0) = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
   obtain ⟨Φ, hΦ₁, hΦ₂, hΦ0⟩ := exists_continuousLinearEquiv_cylinder
     (𝕜 := 𝕜) (F := Fin A.rank → 𝕜) (E := A.core.Fiber)
-  let eZ : ((A.pullback (cylinderSlice X 0)).pullback ContinuousMap.fst).core.TotalSpace ≃ₜ
-      TotalSpace (Fin A.rank → 𝕜) ((cylinderZero X : X × I → X × I) *ᵖ A.core.Fiber) :=
-    pullbackHomeomorphOfEq A ((cylinderSlice X 0).comp ContinuousMap.fst)
-      (cylinderZero X) (congrArg DFunLike.coe (cylinderSlice_zero_comp_fst X))
-  refine ⟨isoOfTotalSpaceContinuous (fun q ↦ ofCoreEquiv A A (q.1, 0) q (Φ q))
-      ((hΦ₁.comp eZ.continuous).congr fun p ↦ by
-        dsimp only [Function.comp_apply, eZ]
-        rw [pullbackHomeomorphOfEq_apply]
-        exact congrArg (TotalSpace.mk' _ _) (ofCoreEquiv_apply _ _ _ _ _ _).symm)
-      ((eZ.symm.continuous.comp hΦ₂).congr fun p ↦ by
-        dsimp only [Function.comp_apply, eZ]
-        rw [pullbackHomeomorphOfEq_symm_apply]
-        exact congrArg (TotalSpace.mk _) (ofCoreEquiv_symm_apply _ _ _ _ _ _).symm),
+  let Ψ : X × I → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin A.rank → 𝕜) := Φ
+  let eZ : (A.pullback (cylinderSlice X 0)).pullback ContinuousMap.fst ≅
+      A.pullback (cylinderZero X) :=
+    eqToIso (by rw [pullback_comp, cylinderSlice_zero_comp_fst])
+  have hΨ₁ : Continuous fun p : (A.pullback (cylinderZero X)).core.TotalSpace ↦
+      (⟨p.proj, Ψ p.proj p.snd⟩ : A.core.TotalSpace) :=
+    (hΦ₁.comp (A.pullbackHomeomorph (cylinderZero X)).continuous).congr fun p ↦ by
+      rw [Function.comp_apply, A.pullbackHomeomorph_apply]; rfl
+  have hΨ₂ : Continuous fun p : A.core.TotalSpace ↦
+      (⟨p.proj, (Ψ p.proj).symm p.snd⟩ : (A.pullback (cylinderZero X)).core.TotalSpace) :=
+    ((A.pullbackHomeomorph (cylinderZero X)).symm.continuous.comp hΦ₂).congr fun p ↦ by
+      rw [Function.comp_apply]; exact A.pullbackHomeomorph_symm_apply _ _
+  have hΨ0 (x : X) : Ψ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (Fin A.rank → 𝕜) :=
+    ContinuousLinearEquiv.ext (funext fun v ↦
+      congrArg (fun e : A.core.Fiber (x, 0) ≃L[𝕜] A.core.Fiber (x, 0) ↦ e v) (hΦ0 x))
+  refine ⟨eZ.trans (isoOfTotalSpaceContinuous Ψ hΨ₁ hΨ₂),
     fun x ↦ ContinuousLinearMap.ext fun (v : Fin A.rank → 𝕜) ↦ ?_⟩
-  rw [fiberMap_isoOfTotalSpaceContinuous_hom]
-  simp [hΦ0 x]
+  simp only [Iso.trans_hom, fiberMap_comp, ContinuousLinearMap.comp_apply,
+    fiberMap_isoOfTotalSpaceContinuous_hom, hΨ0 x, ContinuousLinearEquiv.coe_coe]
+  ext i
+  change eZ.hom.fiberMap (x, 0) v i = v i
+  dsimp only [eZ]
+  rw [eqToIso.hom, fiberMap_eqToHom_apply]
   rfl
 
 /-- Over a paracompact R₁ base `X`, the slice pullbacks of a finite-rank core over `X × I` at any
@@ -129,10 +135,16 @@ theorem _root_.ContinuousMap.Homotopic.nonempty_iso_pullback {f₀ f₁ : C(X, Y
     Nonempty (A.pullback f₀ ≅ A.pullback f₁) := by
   obtain ⟨Φ, hΦ₁, hΦ₂⟩ :=
     h.exists_continuousLinearEquiv_pullback (𝕜 := 𝕜) (F := Fin A.rank → 𝕜) (E := A.core.Fiber)
-  exact ⟨pullbackIsoOfTotalSpaceContinuous A A f₀ f₁
-    (fun x ↦ ofCoreEquiv A A (f₀ x) (f₁ x) (Φ x))
-    (hΦ₁.congr fun _ ↦ congrArg (TotalSpace.mk' _ _) (ofCoreEquiv_apply _ _ _ _ _ _).symm)
-    (hΦ₂.congr fun _ ↦ congrArg (TotalSpace.mk' _ _) (ofCoreEquiv_symm_apply _ _ _ _ _ _).symm)⟩
+  let Ψ : X → (Fin A.rank → 𝕜) ≃L[𝕜] (Fin A.rank → 𝕜) := Φ
+  have hΨ₁ : Continuous fun v : TotalSpace (Fin A.rank → 𝕜) ((f₀ : X → Y) *ᵖ A.core.Fiber) ↦
+      TotalSpace.mk' (Fin A.rank → 𝕜) (E := (f₁ : X → Y) *ᵖ A.core.Fiber)
+        v.proj (Ψ v.proj v.snd) :=
+    hΦ₁.congr fun _ ↦ rfl
+  have hΨ₂ : Continuous fun v : TotalSpace (Fin A.rank → 𝕜) ((f₁ : X → Y) *ᵖ A.core.Fiber) ↦
+      TotalSpace.mk' (Fin A.rank → 𝕜) (E := (f₀ : X → Y) *ᵖ A.core.Fiber)
+        v.proj ((Ψ v.proj).symm v.snd) :=
+    hΦ₂.congr fun _ ↦ rfl
+  exact ⟨pullbackIsoOfTotalSpaceContinuous A A f₀ f₁ Ψ hΨ₁ hΨ₂⟩
 
 /-- **Finite-rank bundle cores over contractible paracompact R₁ bases are trivial.** -/
 theorem nonempty_iso_trivial_of_contractibleSpace [ContractibleSpace X]

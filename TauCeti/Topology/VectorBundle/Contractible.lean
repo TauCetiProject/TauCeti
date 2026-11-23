@@ -11,7 +11,7 @@ public import TauCeti.Topology.VectorBundle.OrthonormalTrivialization
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.OrthonormalFrame.Pullback
-import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.Topology.VectorBundle.Pullback.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!

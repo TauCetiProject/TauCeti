@@ -358,13 +358,13 @@ private theorem contMDiff_graphEndomorphismAt (ν : InhomogeneousTerm j J) :
     filter_upwards [hM] with q hq
     exact (inCoordinates_pullback_of_mem
       (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯)
-      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q (J.toEndomorphism q) hq hq).symm
+      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q q₀ q (J.toEndomorphism q) hq hq).symm
   have hc : ContMDiffAt (IP.prod I) 𝓘(ℝ, EP →L[ℝ] E) n c q₀ := by
     refine ((contMDiffAt_hom_bundle _).1 (ν.val.contMDiff q₀)).2.congr_of_eventuallyEq ?_
     filter_upwards [hP, hM] with q hqP hqM
     exact (inCoordinates_pullback_of_mem
       (ContMDiffMap.fst : C^∞⟮IP.prod I, P × M; IP, P⟯)
-      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q (ν.val q) hqP hqM).symm
+      (ContMDiffMap.snd : C^∞⟮IP.prod I, P × M; I, M⟯) q₀ q q₀ q (ν.val q) hqP hqM).symm
   -- The block matrix `(ζ, v) ↦ (a ζ, b v - 2 b (c ζ))` is `Cⁿ` in the blocks.
   have hL : ContMDiffAt (IP.prod I) 𝓘(ℝ, EP × E →L[ℝ] EP × E) n (fun q ↦
       (inl ℝ EP E).comp ((a q).comp (fst ℝ EP E)) + (inr ℝ EP E).comp ((b q).comp (snd ℝ EP E)) -

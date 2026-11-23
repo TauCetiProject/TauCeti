@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.Basic
 
 /-!
 # Pullback and restriction of first-jet bundles
