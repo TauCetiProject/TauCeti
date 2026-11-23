@@ -89,6 +89,12 @@ theorem strictTransformOpen_eq_preimage_snd :
     strictTransformOpen f φ U = pullback.snd f φ ⁻¹ᵁ φ ⁻¹ᵁ U := by
   rw [strictTransformOpen_def, pullback.condition, Scheme.Hom.comp_preimage]
 
+/-- A point of `X ×_S S'` lies over `U` exactly when its image in `X` maps into `U` under `f`. -/
+@[simp]
+theorem mem_strictTransformOpen {x : ↥(pullback f φ)} :
+    x ∈ strictTransformOpen f φ U ↔ f (pullback.fst f φ x) ∈ U := by
+  rw [strictTransformOpen_def, Scheme.Hom.mem_preimage, Scheme.Hom.comp_apply]
+
 /-- Shrinking `U` shrinks the open lying over it. -/
 theorem strictTransformOpen_mono {U U' : S.Opens} (h : U ≤ U') :
     strictTransformOpen f φ U ≤ strictTransformOpen f φ U' :=
