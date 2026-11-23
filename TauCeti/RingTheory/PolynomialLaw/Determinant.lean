@@ -131,6 +131,7 @@ theorem isUnit_apply {x : R} (hx : IsUnit x) : IsUnit (D x) :=
   hx.map D.toMonoidHom
 
 /-- A determinant of dimension zero is constantly `1`, after every scalar extension. -/
+@[simp]
 theorem toFun_eq_one_of_dim_zero (D : Determinant A R 0) (S : Type*) [CommSemiring S]
     [Algebra A S] (x : S ⊗[A] R) : D.toLaw.toFun S x = 1 := by
   have h := D.isHomogeneousOfDegree.toFun_smul (0 : S) x
@@ -149,8 +150,9 @@ instance : Unique (Determinant A R 0) where
   default :=
     { toLaw :=
         { toFun' _ _ _ _ := 1
-          isCompat' φ := funext fun _ ↦
-            _root_.map_one (Algebra.TensorProduct.map φ (AlgHom.id A A)) }
+          isCompat' φ := funext fun _ ↦ by
+            rw [Function.comp_apply, Function.comp_apply, AlgHom.rTensor_toLinearMap_apply,
+              _root_.map_one] }
       isHomogeneousOfDegree :=
         PolynomialLaw.isHomogeneousOfDegree_iff.mpr fun _ _ _ _ _ ↦ by rw [pow_zero, one_smul]
       isMultiplicative :=
@@ -207,11 +209,28 @@ theorem toFun_tmul_add_tmul_one {S : Type*} [CommSemiring S] [Algebra A S] (s t 
   simp [K, Fintype.prod_option, charCoeff]
 
 /-- After scalar extension to any commutative `A`-algebra `S`, `D(s ⊗ 1) = sᵈ ⊗ 1`. -/
+@[simp]
 theorem toFun_tmul_one {S : Type*} [CommSemiring S] [Algebra A S] (s : S) :
     D.toLaw.toFun S (s ⊗ₜ[A] (1 : R)) = (s ^ d) ⊗ₜ 1 := by
   have h := D.isHomogeneousOfDegree.toFun_smul s 1
   rw [D.isMultiplicative.toFun_one] at h
   simpa [Algebra.TensorProduct.one_def, smul_tmul'] using h
+
+/-- After scalar extension to `A[X]`, `D(1 ⊗ x + X ⊗ 1) = ∑ᵢ Λᵢ(x) X^(d - i)`. -/
+theorem rid_toFun_one_tmul_add_X_tmul_one (x : R) :
+    Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] (1 ⊗ₜ x + X ⊗ₜ 1)) =
+      ∑ i ∈ Finset.range (d + 1), C (D.charCoeff i x) * X ^ (d - i) := by
+  simp [toFun_tmul_add_tmul_one, smul_eq_C_mul]
+
+/-- For `i ≤ d`, the coefficient of `X^(d - i)` in `D(1 ⊗ x + X ⊗ 1)`, computed after scalar
+extension to `A[X]`, is `Λᵢ(x)`. -/
+theorem coeff_rid_toFun_one_tmul_add_X_tmul_one {i : ℕ} (hi : i ≤ d) (x : R) :
+    (Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] (1 ⊗ₜ x + X ⊗ₜ 1))).coeff (d - i) =
+      D.charCoeff i x := by
+  rw [rid_toFun_one_tmul_add_X_tmul_one, finsetSum_coeff,
+    Finset.sum_eq_single_of_mem i (Finset.mem_range.mpr (by omega)) fun j hj hji ↦ by
+      rw [coeff_C_mul_X_pow, ite_eq_right (by simp at hj; omega)],
+    coeff_C_mul_X_pow, ite_eq_left rfl]
 
 /-- `D(s x + t) = ∑ᵢ sⁱ t^(d - i) Λᵢ(x)` for scalars `s, t ∈ A`. -/
 theorem map_smul_add_algebraMap (s t : A) (x : R) :
@@ -243,14 +262,8 @@ theorem charCoeff_dim (x : R) : D.charCoeff d x = D x := by
 theorem charCoeff_one_eq_choose (i : ℕ) : D.charCoeff i 1 = d.choose i := by
   rcases lt_or_ge d i with hi | hi
   · rw [D.charCoeff_eq_zero hi, Nat.choose_eq_zero_of_lt hi, Nat.cast_zero]
-  have h := D.toFun_tmul_add_tmul_one (X : A[X]) 1 1
-  rw [← add_tmul, toFun_tmul_one] at h
-  have h' := congrArg (fun p ↦ (Algebra.TensorProduct.rid A A A[X] p).coeff i) h
-  simp only [map_sum, Algebra.TensorProduct.rid_tmul, one_pow, mul_one, finsetSum_coeff,
-    smul_eq_C_mul, coeff_C_mul, coeff_X_pow, mul_ite, mul_zero, Finset.sum_ite_eq,
-    Finset.mem_range, one_smul, coeff_X_add_one_pow] at h'
-  rw [ite_eq_left (by omega)] at h'
-  exact h'.symm
+  rw [← D.coeff_rid_toFun_one_tmul_add_X_tmul_one hi, ← add_tmul, toFun_tmul_one,
+    Algebra.TensorProduct.rid_tmul, one_smul, coeff_one_add_X_pow, Nat.choose_symm hi]
 
 /-- The trace of a determinant, its first characteristic coefficient `Λ₁`, as an `A`-linear map.
 It is `0` for a determinant of dimension zero. -/
@@ -367,12 +380,25 @@ def algHomPow (φ : R →ₐ[A] A) (d : ℕ) : Determinant A R d where
 
 /-- After scalar extension to `S`, the law of `algHomPow φ d` is the `d`-th power of
 `φ` extended to `S`. -/
+@[simp]
 theorem algHomPow_toFun' (φ : R →ₐ[A] A) (d : ℕ) (S : Type u) [CommSemiring S] [Algebra A S]
     (x : S ⊗[A] R) :
     (algHomPow φ d).toLaw.toFun' S x = Algebra.TensorProduct.map (AlgHom.id A S) φ x ^ d := by
   rw [algHomPow, PolynomialLaw.comp_toFun', Function.comp_apply, PolynomialLaw.power_toFun',
     LinearMap.toPolynomialLaw_toFun', LinearMap.baseChange_eq_lTensor,
     AlgHom.lTensor_toLinearMap_apply]
+
+/-- After scalar extension to `S` in any universe, the law of `algHomPow φ d` is the `d`-th power
+of `φ` extended to `S`. -/
+@[simp]
+theorem algHomPow_toFun (φ : R →ₐ[A] A) (d : ℕ) (S : Type*) [CommSemiring S] [Algebra A S]
+    (x : S ⊗[A] R) :
+    (algHomPow φ d).toLaw.toFun S x = Algebra.TensorProduct.map (AlgHom.id A S) φ x ^ d := by
+  obtain ⟨n, ψ, y, rfl⟩ := PolynomialLaw.exists_lift x
+  rw [← PolynomialLaw.isCompat_apply, ← PolynomialLaw.toFun'_eq_toFun, algHomPow_toFun',
+    AlgHom.rTensor_toLinearMap_apply, AlgHom.rTensor_toLinearMap_apply, map_pow,
+    ← AlgHom.comp_apply, ← AlgHom.comp_apply]
+  simp only [← Algebra.TensorProduct.map_comp, AlgHom.comp_id, AlgHom.id_comp]
 
 /-- The value of `algHomPow φ d` at `x` is `φ x ^ d`. -/
 @[simp]
@@ -385,16 +411,9 @@ theorem charCoeff_algHomPow (φ : R →ₐ[A] A) (d i : ℕ) (x : R) :
     (algHomPow φ d).charCoeff i x = d.choose i * φ x ^ i := by
   rcases lt_or_ge d i with hi | hi
   · rw [charCoeff_eq_zero _ hi, Nat.choose_eq_zero_of_lt hi, Nat.cast_zero, zero_mul]
-  have h := (algHomPow φ d).toFun_tmul_add_tmul_one (1 : A[X]) X x
-  rw [← PolynomialLaw.toFun'_eq_toFun, algHomPow_toFun'] at h
-  have h' := congrArg (fun p ↦ (Algebra.TensorProduct.rid A A A[X] p).coeff (d - i)) h
-  simp only [map_pow, map_add, map_sum, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq,
-    _root_.map_one, Algebra.TensorProduct.rid_tmul, Algebra.smul_def, algebraMap_eq, mul_one,
-    one_mul, one_pow, add_comm _ X, coeff_X_add_C_pow, Nat.sub_sub_self hi, Nat.choose_symm hi,
-    finsetSum_coeff, coeff_C_mul, coeff_X_pow, mul_ite, mul_zero] at h'
-  rw [Finset.sum_eq_single_of_mem i (Finset.mem_range.mpr (by omega)) fun j hj hji ↦
-    ite_eq_right (by simp at hj; omega), ite_eq_left rfl] at h'
-  rw [← h', mul_comm]
+  rw [← coeff_rid_toFun_one_tmul_add_X_tmul_one _ hi, algHomPow_toFun]
+  simp [Algebra.smul_def, add_comm _ X, coeff_X_add_C_pow, Nat.sub_sub_self hi,
+    Nat.choose_symm hi, mul_comm]
 
 /-- The trace of `algHomPow φ d` at `x` is `d * φ x`. -/
 @[simp]
