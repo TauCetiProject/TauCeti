@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Graded.Supported
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.PositiveDegrees.Grading
 public import Mathlib.Algebra.Lie.Nilpotent
+import TauCeti.Algebra.PositiveDegrees.Subquotient
 
 /-!
 # Degree ideals and nilpotent truncations
@@ -189,9 +190,9 @@ noncomputable instance instGradedLieAlgebraTruncatedGrading (k : ℕ) :
 
 /-- Truncating a positive grading preserves positivity. -/
 instance truncatedGrading_isPositiveGrading (k : ℕ) :
-    IsPositiveGrading d (d.truncatedGrading ℒ k) where
-  eq_bot n hn := by
-    rw [truncatedGrading_eq, IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n hn, Submodule.map_bot]
+    IsPositiveGrading d (d.truncatedGrading ℒ k) := by
+  rw [funext (d.truncatedGrading_eq ℒ k)]
+  exact IsPositiveGrading.map (d.degreeIdeal ℒ k).toSubmodule.mkQ
 
 /-- Homogeneous projection in the truncation commutes with the quotient map. -/
 @[simp]
