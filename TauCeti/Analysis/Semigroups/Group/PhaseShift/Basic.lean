@@ -120,9 +120,8 @@ theorem isComplexLinear_phaseShift (U : StronglyContinuousGroup X)
 /-- The zero phase shift is the original C₀-group. -/
 @[simp]
 theorem phaseShift_zero (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear) :
-    U.phaseShift hU 0 = U := by
-  ext t x
-  simp
+    U.phaseShift hU 0 = U :=
+  toSemigroup_injective (by simp)
 
 /-- Successive phase shifts add their parameters. -/
 @[simp]
@@ -130,11 +129,14 @@ theorem phaseShift_phaseShift (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (b c : ℝ) :
     (U.phaseShift hU b).phaseShift (U.isComplexLinear_phaseShift hU b) c =
       U.phaseShift hU (b + c) := by
-  ext t x
-  simp only [phaseShift_apply_apply, smul_smul, ← Complex.exp_add]
-  congr 2
-  push_cast
-  ring
+  apply toSemigroup_injective
+  have hcongr : ∀ {S : StronglyContinuousSemigroup X} (hS : S.IsComplexLinear),
+      S = U.toSemigroup.phaseShift hU b →
+        S.phaseShift hS c = (U.toSemigroup.phaseShift hU b).phaseShift (hU.phaseShift b) c := by
+    rintro S hS rfl
+    rfl
+  rw [phaseShift_toSemigroup, hcongr _ (U.phaseShift_toSemigroup hU b),
+    StronglyContinuousSemigroup.phaseShift_phaseShift, phaseShift_toSemigroup]
 
 namespace HasGrowthBound
 
@@ -143,17 +145,11 @@ bound. -/
 theorem phaseShift {U : StronglyContinuousGroup X} {ω M : ℝ}
     (hb : U.HasGrowthBound ω M) (hU : U.toSemigroup.IsComplexLinear) (b : ℝ) :
     (U.phaseShift hU b).HasGrowthBound ω M := by
-  refine hasGrowthBound_of_bound hb.one_le fun t ↦ ?_
-  rcases le_or_gt 0 t with ht | ht
-  · have hfwd := hb.toSemigroup.phaseShift hU b
-    rw [← phaseShift_toSemigroup] at hfwd
-    simpa only [(U.phaseShift hU b).toSemigroup_realOperator_of_nonneg ht, abs_of_nonneg ht] using
-      hfwd.bound t ht
-  · have hneg : 0 ≤ -t := neg_nonneg.mpr ht.le
-    have hrev := hb.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b)
-    rw [← phaseShift_toSemigroup, ← phaseShift_reflect U hU b] at hrev
-    simpa only [(U.phaseShift hU b).reflect_toSemigroup_realOperator_of_nonneg hneg, neg_neg,
-      abs_of_neg ht] using hrev.bound (-t) hneg
+  have hfwd := hb.toSemigroup.phaseShift hU b
+  have hrev := hb.reflect.toSemigroup.phaseShift (U.reflect_isComplexLinear hU) (-b)
+  rw [← phaseShift_toSemigroup] at hfwd hrev
+  rw [← phaseShift_reflect U hU b] at hrev
+  exact hasGrowthBound_of_toSemigroup hfwd hrev
 
 end HasGrowthBound
 

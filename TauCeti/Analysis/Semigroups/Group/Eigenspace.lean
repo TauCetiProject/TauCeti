@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Semigroups.Group.PhaseShift
+public import TauCeti.Analysis.Semigroups.Group.PhaseShift.Basic
 import Mathlib.LinearAlgebra.FixedSubmodule
 
 /-!
@@ -59,12 +59,6 @@ theorem mem_fixedSubmodule_iff (U : StronglyContinuousGroup X)
     x ∈ U.fixedSubmodule hU ↔ ∀ t : ℝ, U t x = x := by
   simp [fixedSubmodule, LinearMap.mem_fixedSubmodule_iff]
 
-/-- The underlying set of `fixedSubmodule` is `{x | ∀ t : ℝ, U t x = x}`. -/
-theorem coe_fixedSubmodule (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear) :
-    (U.fixedSubmodule hU : Set X) = {x : X | ∀ t : ℝ, U t x = x} := by
-  ext x
-  simp
-
 /-- The common fixed subspace of a complex-linear C₀-group is closed. -/
 theorem isClosed_fixedSubmodule (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) :
@@ -98,14 +92,6 @@ theorem mem_eigenspace_iff (U : StronglyContinuousGroup X)
   rw [eigenspace_eq_fixedSubmodule_phaseShift, mem_fixedSubmodule_iff]
   refine forall_congr' fun t ↦ ?_
   rw [phaseShift_apply_apply, neg_mul, Complex.exp_neg, inv_smul_eq_iff₀ (Complex.exp_ne_zero _)]
-
-/-- The underlying set of `eigenspace` at `ω` is `{x | ∀ t : ℝ, U t x = exp (ω * t * I) • x}`. -/
-theorem coe_eigenspace (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
-    (ω : ℝ) :
-    (U.eigenspace hU ω : Set X) =
-      {x : X | ∀ t : ℝ, U t x = Complex.exp (ω * t * Complex.I) • x} := by
-  ext x
-  simp
 
 /-- The common eigenspace at frequency `0` is the common fixed subspace. -/
 @[simp]

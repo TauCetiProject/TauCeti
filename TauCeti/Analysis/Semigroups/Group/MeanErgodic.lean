@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.Group.Eigenspace
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.Analysis.InnerProductSpace.MeanErgodic
+import TauCeti.Analysis.Semigroups.Group.PhaseShift.Unitary
 
 /-!
 # Continuous-time mean ergodic projection for unitary C₀-groups

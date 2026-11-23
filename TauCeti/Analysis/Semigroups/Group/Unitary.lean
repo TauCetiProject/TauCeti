@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
-public import TauCeti.Analysis.Semigroups.Group.PhaseShift
+public import TauCeti.Analysis.Semigroups.Group.ComplexLinear
+public import TauCeti.Analysis.Semigroups.Group.InverseSemigroups
 -- Non-public: differentiation of the inner product turns preservation by the group into
 -- skew-symmetry of the generator.
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -53,8 +54,7 @@ completes the generator direction of Stone's theorem; the converse construction 
 * `TauCeti.Semigroups.StronglyContinuousGroup.isUnitary_of_isComplexLinear_of_opNorm_le_one`:
   a contractive C₀-group whose forward semigroup is complex linear is unitary;
   `isUnitary_toGroupOfInverse`: a complex-linear contraction semigroup and an inverse
-  contraction semigroup glue into a unitary group; `IsUnitary.phaseShift`: a phase shift of a
-  unitary group is unitary.
+  contraction semigroup glue into a unitary group.
 * `TauCeti.Semigroups.StronglyContinuousGroup.complexGenerator_restrictScalars`,
   `complexGenerator_eq_of_generator_eq_restrictScalars` and `eq_of_complexGenerator_eq`: the
   real generator is the real restriction of the complex one, which is therefore determined by
@@ -201,14 +201,6 @@ theorem isUnitary_toGroupOfInverse (S T : ContractionSemigroup H)
       exact S.contracting_real t
     · rw [StronglyContinuousSemigroup.toGroupOfInverse_apply_of_nonpos _ _ _ _ ht.le]
       exact T.contracting_real (-t)
-
-/-- A phase shift of a unitary C₀-group is again unitary. -/
-theorem IsUnitary.phaseShift {U : StronglyContinuousGroup H} (hU : U.IsUnitary) (b : ℝ) :
-    (U.phaseShift hU.isComplexLinear b).IsUnitary :=
-  isUnitary_of_isComplexLinear_of_opNorm_le_one _
-    (U.isComplexLinear_phaseShift hU.isComplexLinear b)
-    ((U.phaseShift hU.isComplexLinear b).hasGrowthBound_zero_one_iff.mp
-      (hU.hasGrowthBound_zero_one.phaseShift hU.isComplexLinear b))
 
 /-- The generator domain of a unitary strongly continuous group, regarded as a complex submodule:
 the complex generator domain of its forward semigroup. Its carrier is the real generator domain. -/
