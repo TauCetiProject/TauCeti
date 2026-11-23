@@ -63,7 +63,7 @@ theorem mapRingHom_surjective (hφ : Function.Surjective φ) :
 variable {I}
 
 /-- The coefficient map along `φ` with kernel `I` kills exactly `I • R[G]`. -/
-theorem mapRingHom_eq_zero_iff_of_ker_eq (hφI : RingHom.ker φ = I) (x : MonoidAlgebra R G) :
+theorem mapRingHom_eq_zero_iff_of_ker_eq (hφI : RingHom.ker φ = I) {x : MonoidAlgebra R G} :
     MonoidAlgebra.mapRingHom G φ x = 0 ↔ x ∈ I • (⊤ : Submodule R (MonoidAlgebra R G)) := by
   rw [mapRingHom_eq_zero_iff, hφI]
 
@@ -75,7 +75,7 @@ the reduction of an idempotent of `R[G]`. -/
 theorem exists_isIdempotentElem_mapRingHom_eq (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {ε : MonoidAlgebra k G} (hε : IsIdempotentElem ε) :
     ∃ e : MonoidAlgebra R G, IsIdempotentElem e ∧ MonoidAlgebra.mapRingHom G φ e = ε :=
-  IsAdicComplete.exists_isIdempotentElem_eq I _ (mapRingHom_eq_zero_iff_of_ker_eq hφI)
+  IsAdicComplete.exists_isIdempotentElem_eq I _ (fun _ ↦ mapRingHom_eq_zero_iff_of_ker_eq hφI)
     (mapRingHom_surjective hφ ε) hε
 
 /-- **An idempotent of `R[G]` is primitive exactly when its reduction in `k[G]` is.** Here `R` is
@@ -85,7 +85,7 @@ reduction `O[G] → k[G]`. -/
 theorem isPrimitiveIdempotent_mapRingHom_iff (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {e : MonoidAlgebra R G} (he : IsIdempotentElem e) :
     IsPrimitiveIdempotent (MonoidAlgebra.mapRingHom G φ e) ↔ IsPrimitiveIdempotent e :=
-  isPrimitiveIdempotent_map_iff _ (mapRingHom_eq_zero_iff_of_ker_eq hφI)
+  isPrimitiveIdempotent_map_iff _ (fun _ ↦ mapRingHom_eq_zero_iff_of_ker_eq hφI)
     (mapRingHom_surjective hφ) he
 
 /-- **Primitive idempotents of `k[G]` lift to primitive idempotents of `R[G]`.** Here `R` is
@@ -94,7 +94,7 @@ finite monoid. -/
 theorem exists_isPrimitiveIdempotent_mapRingHom_eq (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {ε : MonoidAlgebra k G} (hε : IsPrimitiveIdempotent ε) :
     ∃ e : MonoidAlgebra R G, IsPrimitiveIdempotent e ∧ MonoidAlgebra.mapRingHom G φ e = ε :=
-  exists_isPrimitiveIdempotent_eq _ (mapRingHom_eq_zero_iff_of_ker_eq hφI)
+  exists_isPrimitiveIdempotent_eq _ (fun _ ↦ mapRingHom_eq_zero_iff_of_ker_eq hφI)
     (mapRingHom_surjective hφ) hε
 
 end TauCeti.MonoidAlgebra
