@@ -484,15 +484,10 @@ private theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph
     simp only [g, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, Diffeomorph.coe_toHomeomorph,
       Ψ.symm_apply_apply]
   have hΦc : o₁.mapFundamentalClass (Φ.symm.toHomeomorph : C(M₁, M)) = o.fundamentalClass :=
-    mapFundamentalClass_homeomorph o₁ o Φ.symm.toHomeomorph fun z ↦ by
-      rw [Diffeomorph.coe_toHomeomorph]
-      exact hΦs z
-  have hΨs : ∀ w, IsOrientationPreservingAt o₁' o' Ψ.symm w :=
-    fun w ↦ (hΨ (Ψ.symm w)).diffeomorph_symm one_ne_zero
+    mapFundamentalClass_diffeomorph o₁ o Φ.symm hΦs
   have hΨc : o₁'.mapFundamentalClass (Ψ.symm.toHomeomorph : C(N₁, N)) = o'.fundamentalClass :=
-    mapFundamentalClass_homeomorph o₁' o' Ψ.symm.toHomeomorph fun w ↦ by
-      rw [Diffeomorph.coe_toHomeomorph]
-      exact hΨs w
+    mapFundamentalClass_diffeomorph o₁' o' Ψ.symm fun w ↦
+      (hΨ (Ψ.symm w)).diffeomorph_symm one_ne_zero
   rw [o.mapFundamentalClass_def, ← hΦc, ← o₁.mapFundamentalClass_comp, hfg,
     o₁.mapFundamentalClass_comp, hbase hyg, hdeg, map_zsmul, ← o₁'.mapFundamentalClass_def, hΨc]
 

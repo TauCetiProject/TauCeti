@@ -29,8 +29,10 @@ equivalence with `EuclideanSpace ℝ (Fin (n + 1))`. It agrees with
 product model `𝓘(ℝ, E)`
 (`TauCeti.Manifold.Orientation.fundamentalClass_eq_toHomologicalOrientation`, specialized to
 `𝓡 (n + 1)` in `TauCeti.Manifold.Orientation.fundamentalClass_euclideanSpace`), and is natural
-under pointwise orientation-preserving homeomorphisms between compact boundaryless `C¹` manifolds
-(with arbitrary models) (`TauCeti.Manifold.Orientation.mapFundamentalClass_homeomorph`).
+under pointwise orientation-preserving homeomorphisms and diffeomorphisms between compact
+boundaryless `C¹` manifolds (with arbitrary models)
+(`TauCeti.Manifold.Orientation.mapFundamentalClass_homeomorph`,
+`TauCeti.Manifold.Orientation.mapFundamentalClass_diffeomorph`).
 
 ## Main definitions
 
@@ -49,9 +51,10 @@ under pointwise orientation-preserving homeomorphisms between compact boundaryle
   `TauCeti.Manifold.Orientation.mapFundamentalClass_neg`,
   `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_of_homotopic`: basic functoriality, sign,
   and homotopy invariance of `fundamentalClass` and `mapFundamentalClass`.
-* `TauCeti.Manifold.Orientation.mapFundamentalClass_homeomorph`: an orientation-preserving
-  homeomorphism between compact boundaryless `C¹` manifolds carries the fundamental class of the
-  source to that of the target.
+* `TauCeti.Manifold.Orientation.mapFundamentalClass_homeomorph`,
+  `TauCeti.Manifold.Orientation.mapFundamentalClass_diffeomorph`: an orientation-preserving
+  homeomorphism or diffeomorphism between compact boundaryless `C¹` manifolds carries the
+  fundamental class of the source to that of the target.
 * `TauCeti.Manifold.Orientation.fundamentalClass_eq_toHomologicalOrientation`,
   `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_toHomologicalOrientation`: agreement with
   `toHomologicalOrientation` on any `(n + 1)`-dimensional real inner product model `𝓘(ℝ, E)`.
@@ -109,23 +112,41 @@ private theorem isOrientationPreservingAt_conj_diffeomorph
     [Fintype ι]
     {o₁ : Manifold.Orientation I₁ M₁ ι} {o₂ : Manifold.Orientation I₂ M₂ ι}
     {o₁' : Manifold.Orientation J₁ N₁ ι} {o₂' : Manifold.Orientation J₂ N₂ ι}
-    (Φ : Diffeomorph I₁ I₂ M₁ M₂ 1) (Ψ : Diffeomorph J₁ J₂ N₁ N₂ 1) (h : M₁ ≃ₜ N₁)
+    {k₁ k₂ : ℕ∞ω}
+    (Φ : Diffeomorph I₁ I₂ M₁ M₂ k₁) (Ψ : Diffeomorph J₁ J₂ N₁ N₂ k₂) (h : M₁ ≃ₜ N₁)
     (hΦs : ∀ z, IsOrientationPreservingAt o₂ o₁ Φ.symm z)
     (hh : ∀ x, IsOrientationPreservingAt o₁ o₁' h x)
     (hΨ : ∀ y, IsOrientationPreservingAt o₁' o₂' Ψ y) :
-    (∀ z, IsOrientationPreservingAt o₂ o₂'
-      ((Φ.symm.toHomeomorph.trans h).trans Ψ.toHomeomorph) z) ∧
-      (h : C(M₁, N₁)).comp (Φ.symm.toHomeomorph : C(M₂, M₁)) =
-        (Ψ.symm.toHomeomorph : C(N₂, N₁)).comp
-          (((Φ.symm.toHomeomorph.trans h).trans Ψ.toHomeomorph : M₂ ≃ₜ N₂) : C(M₂, N₂)) := by
-  refine ⟨fun z ↦ ?_, ?_⟩
-  · have hcoe : ⇑((Φ.symm.toHomeomorph.trans h).trans Ψ.toHomeomorph) = ⇑Ψ ∘ (⇑h ∘ ⇑Φ.symm) := by
-      ext y
-      simp only [Homeomorph.trans_apply, Diffeomorph.coe_toHomeomorph, Function.comp_apply]
-    rw [hcoe]
-    exact (hΨ _).comp ((hh _).comp (hΦs z))
-  · ext z
-    simp [Diffeomorph.coe_toHomeomorph]
+    ∀ z, IsOrientationPreservingAt o₂ o₂'
+      ((Φ.symm.toHomeomorph.trans h).trans Ψ.toHomeomorph) z := by
+  intro z
+  have hcoe : ⇑((Φ.symm.toHomeomorph.trans h).trans Ψ.toHomeomorph) = ⇑Ψ ∘ (⇑h ∘ ⇑Φ.symm) := by
+    ext y
+    simp only [Homeomorph.trans_apply, Diffeomorph.coe_toHomeomorph, Function.comp_apply]
+  rw [hcoe]
+  exact (hΨ _).comp ((hh _).comp (hΦs z))
+
+private theorem continuousMap_comp_conj_diffeomorph
+    {E₁ H₁ M₁ E₂ H₂ M₂ F₁ K₁ N₁ F₂ K₂ N₂ : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁}
+    [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂}
+    [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [TopologicalSpace K₁] {J₁ : ModelWithCorners ℝ F₁ K₁}
+    [TopologicalSpace N₁] [ChartedSpace K₁ N₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    [TopologicalSpace K₂] {J₂ : ModelWithCorners ℝ F₂ K₂}
+    [TopologicalSpace N₂] [ChartedSpace K₂ N₂]
+    {k₁ k₂ : ℕ∞ω}
+    (Φ : Diffeomorph I₁ I₂ M₁ M₂ k₁) (Ψ : Diffeomorph J₁ J₂ N₁ N₂ k₂) (h : M₁ ≃ₜ N₁) :
+    (h : C(M₁, N₁)).comp (Φ.symm.toHomeomorph : C(M₂, M₁)) =
+      (Ψ.symm.toHomeomorph : C(N₂, N₁)).comp
+        (((Φ.symm.toHomeomorph.trans h).trans Ψ.toHomeomorph : M₂ ≃ₜ N₂) : C(M₂, N₂)) := by
+  ext z
+  simp [Diffeomorph.coe_toHomeomorph]
 
 end ConjDiffeomorph
 
@@ -174,11 +195,12 @@ private theorem map_fundamentalClassSelf_of_homeomorph
   set Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M) eM 1
   set Φ' := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, F) (M := N) eN 1
   let Θ := (Φ.symm.toHomeomorph.trans h).trans Φ'.toHomeomorph
-  obtain ⟨hΘ, hcomp⟩ := isOrientationPreservingAt_conj_diffeomorph Φ Φ' h
+  have hΘ := isOrientationPreservingAt_conj_diffeomorph Φ Φ' h
     (o.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm eM 1)
     hh
     (o'.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv eN 1)
-  rw [hcomp, ← comap_toHomologicalOrientation finrank_euclideanSpace_fin _ _ Θ.isOpenEmbedding hΘ,
+  rw [continuousMap_comp_conj_diffeomorph Φ Φ' h,
+    ← comap_toHomologicalOrientation finrank_euclideanSpace_fin _ _ Θ.isOpenEmbedding hΘ,
     HomologicalOrientation.mapFundamentalClass_comap_comp]
 
 /-- Any continuous linear equivalence `e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1))` computes
@@ -220,6 +242,21 @@ private theorem map_fundamentalClassSelf_homeomorph
   rw [fundamentalClassSelf, ← HomologicalOrientation.mapFundamentalClass_comp,
     map_fundamentalClassSelf_of_homeomorph o o' o.modelEquivEuclidean o'.modelEquivEuclidean e he,
     ← fundamentalClassSelf]
+
+private theorem map_fundamentalClassSelf_diffeomorph
+    {F : Type*} {N : Type}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [TopologicalSpace N] [T2Space N] [ChartedSpace F N] [IsManifold 𝓘(ℝ, F) 1 N] [CompactSpace N]
+    {k : ℕ∞ω}
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
+    (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1)))
+    (Φ : M ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ N) (hΦ : ∀ x, IsOrientationPreservingAt o o' Φ x) :
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom (Φ.toHomeomorph : C(M, N)))).hom
+        o.fundamentalClassSelf = o'.fundamentalClassSelf :=
+  map_fundamentalClassSelf_homeomorph o o' Φ.toHomeomorph fun x ↦ by
+    rw [Diffeomorph.coe_toHomeomorph]
+    exact hΦ x
 
 end SelfModel
 
@@ -380,14 +417,26 @@ theorem mapFundamentalClass_homeomorph
   let Ψ := BoundarylessModel.interiorDiffeomorph J (M := N) 1
   let e₀ : BoundarylessModel I M ≃ₜ BoundarylessModel J N :=
     (Φ.symm.toHomeomorph.trans e).trans Ψ.toHomeomorph
-  obtain ⟨he₀, hcomp⟩ := isOrientationPreservingAt_conj_diffeomorph Φ Ψ e
+  have he₀ := isOrientationPreservingAt_conj_diffeomorph Φ Ψ e
     (o.isOrientationPreservingAt_interiorDiffeomorph_symm 1)
     he
     (o'.isOrientationPreservingAt_interiorDiffeomorph 1)
   rw [mapFundamentalClass_def, fundamentalClass, fundamentalClass, ← ModuleCat.comp_apply,
-    ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp, hcomp, TopCat.ofHom_comp,
+    ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp,
+    continuousMap_comp_conj_diffeomorph Φ Ψ e, TopCat.ofHom_comp,
     CategoryTheory.Functor.map_comp, ModuleCat.comp_apply,
     map_fundamentalClassSelf_homeomorph o.interiorOrientation o'.interiorOrientation e₀ he₀]
+
+/-- An orientation-preserving diffeomorphism between compact boundaryless `C¹` manifolds carries
+the fundamental class of the source to that of the target. -/
+theorem mapFundamentalClass_diffeomorph {k : ℕ∞ω}
+    (o : Manifold.Orientation I M (Fin (n + 1)))
+    (o' : Manifold.Orientation J N (Fin (n + 1)))
+    (Φ : M ≃ₘ^k⟮I, J⟯ N) (hΦ : ∀ x, IsOrientationPreservingAt o o' Φ x) :
+    o.mapFundamentalClass (Φ.toHomeomorph : C(M, N)) = o'.fundamentalClass :=
+  o.mapFundamentalClass_homeomorph o' Φ.toHomeomorph fun x ↦ by
+    rw [Diffeomorph.coe_toHomeomorph]
+    exact hΦ x
 
 end TwoModels
 
@@ -404,12 +453,9 @@ theorem fundamentalClass_eq_toHomologicalOrientation (hE : finrank ℝ E = n + 1
     (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
     o.fundamentalClass = (o.toHomologicalOrientation hE).fundamentalClass hE := by
   let Φ := BoundarylessModel.interiorDiffeomorph 𝓘(ℝ, E) (M := M) 1
-  have hΦs : ∀ z, IsOrientationPreservingAt o.interiorOrientation o Φ.symm.toHomeomorph z := by
-    intro z
-    rw [Diffeomorph.coe_toHomeomorph]
-    exact o.isOrientationPreservingAt_interiorDiffeomorph_symm 1 z
-  rw [fundamentalClass, map_fundamentalClassSelf_homeomorph o.interiorOrientation o
-      Φ.symm.toHomeomorph hΦs, o.fundamentalClassSelf_eq_toHomologicalOrientation hE]
+  rw [fundamentalClass, map_fundamentalClassSelf_diffeomorph o.interiorOrientation o Φ.symm
+      (o.isOrientationPreservingAt_interiorDiffeomorph_symm 1),
+    o.fundamentalClassSelf_eq_toHomologicalOrientation hE]
 
 /-- On a compact manifold modelled on an `(n + 1)`-dimensional real inner product space `𝓘(ℝ, E)`,
 `Manifold.Orientation.mapFundamentalClass` agrees with
