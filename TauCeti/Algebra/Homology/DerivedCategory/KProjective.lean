@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.Algebra.Homology.LinearYoneda
 
+import TauCeti.Algebra.Homology.Homotopy
+
 /-!
 # Chain maps from K-projective complexes
 
@@ -17,7 +19,8 @@ chain map. This is the chain-level form of Mathlib's
 morphisms using specified projective models.
 
 A quasi-isomorphism between `ℕ`-graded chain complexes of projective objects is a chain homotopy
-equivalence (Mathlib's `ChainComplex.quasiIso_iff_of_projective`). So the contravariant functor
+equivalence (Mathlib's `ChainComplex.quasiIso_iff_of_projective`), with forward map the given
+quasi-isomorphism (`HomotopyEquiv.ofQuasiIsoOfProjective`). So the contravariant functor
 `Hom(-, Y)` takes it to a cochain homotopy equivalence, and in particular to a quasi-isomorphism
 (`ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective`,
 `ChainComplex.quasiIso_linearYonedaFunctor_map_of_projective`). This is how a map of spaces
@@ -53,6 +56,27 @@ open HomologicalComplex
 
 variable {C : Type*} [Category* C] [Abelian C] {K L : ChainComplex C ℕ}
   [∀ n, Projective (K.X n)] [∀ n, Projective (L.X n)]
+
+/-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects, as a chain
+homotopy equivalence with forward map `φ` (Mathlib's `ChainComplex.quasiIso_iff_of_projective`). -/
+noncomputable def _root_.HomotopyEquiv.ofQuasiIsoOfProjective (φ : K ⟶ L) [QuasiIso φ] :
+    HomotopyEquiv K L :=
+  let h := (quasiIso_iff_of_projective φ).1 ‹_›
+  h.choose.copy (Homotopy.ofEq h.choose_spec)
+
+/-- The forward map of `HomotopyEquiv.ofQuasiIsoOfProjective φ` is `φ`. -/
+@[simp]
+theorem _root_.HomotopyEquiv.ofQuasiIsoOfProjective_hom (φ : K ⟶ L) [QuasiIso φ] :
+    (HomotopyEquiv.ofQuasiIsoOfProjective φ).hom = φ := by
+  rw [HomotopyEquiv.ofQuasiIsoOfProjective, HomotopyEquiv.copy_hom]
+
+/-- The map induced on homology by the inverse of `HomotopyEquiv.ofQuasiIsoOfProjective φ` is the
+inverse of the map induced by `φ`. -/
+@[simp]
+theorem _root_.HomotopyEquiv.homologyMap_ofQuasiIsoOfProjective_inv (φ : K ⟶ L) [QuasiIso φ]
+    (n : ℕ) :
+    homologyMap (HomotopyEquiv.ofQuasiIsoOfProjective φ).inv n = (asIso (homologyMap φ n)).inv := by
+  simp only [HomotopyEquiv.homologyMap_inv, HomotopyEquiv.ofQuasiIsoOfProjective_hom, asIso_inv]
 
 /-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects induces a
 cochain homotopy equivalence `Hom(L, Y) ⟶ Hom(K, Y)` by precomposition, for every object `Y`. -/
