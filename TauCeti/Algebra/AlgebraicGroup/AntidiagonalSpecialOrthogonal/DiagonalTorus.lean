@@ -90,6 +90,7 @@ theorem diagonalTorusWeight_rev (i : Fin l) :
   simp only [diagonalTorusWeight_apply, Fin.rev_rev, Pi.neg_apply, neg_sub]
 
 /-- The weight of the `k`-th diagonal entry, for `k < l / 2`, is the coordinate weight `ε_k`. -/
+@[simp]
 theorem diagonalTorusWeight_castLE (k : Fin (l / 2)) :
     diagonalTorusWeight.{u} l (Fin.castLE (Nat.div_le_self l 2) k) =
       Pi.single (ULift.up k) 1 := by
@@ -241,6 +242,7 @@ theorem torusCharacter_diagonalTorusWeight_castLE {A : Type w} [CommRing A]
 
 /-- The mirror image of the `k`-th diagonal entry of a diagonal-torus point, for `k < l / 2`, is
 `t_k⁻¹`. -/
+@[simp]
 theorem torusCharacter_diagonalTorusWeight_rev_castLE {A : Type w} [CommRing A]
     (s : ULift.{u} (Fin (l / 2)) → Aˣ) (k : Fin (l / 2)) :
     torusCharacter s

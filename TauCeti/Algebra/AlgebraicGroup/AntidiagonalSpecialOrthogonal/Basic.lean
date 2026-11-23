@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
+public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.PointsSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
@@ -30,8 +31,8 @@ and on points it cuts out the intersection of the two point subgroups.
 Since `J_l` is symmetric with `J_l² = 1`, the row convention `g J_l gᵀ = J_l` used by
 `TauCeti.ConstantForm` and the column convention `gᵀ J_l g = J_l` cut out the same subgroup. Over
 a field of characteristic not two, `SO_l^J` is the split special orthogonal group of the quadratic
-form `x ↦ ½ xᵀ J_l x`; over `ℤ` and for odd `l` it is not smooth, and its comparison with the
-smooth special orthogonal group of the split quadratic form over `ℤ[1/2]` is a separate step.
+form `x ↦ ½ xᵀ J_l x`. No smoothness is claimed here; the comparison with the special
+orthogonal group of the split quadratic form over `ℤ[1/2]` is a separate step.
 The diagonal torus `diag(t₁, …, tₙ, (1), tₙ⁻¹, …, t₁⁻¹)` is in
 `TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.DiagonalTorus`.
 
@@ -95,9 +96,7 @@ theorem formMatrix_apply (i j : Fin l) :
 /-- `J_l` is symmetric. -/
 @[simp]
 theorem transpose_formMatrix : (formMatrix α l)ᵀ = formMatrix α l := by
-  ext i j
-  simp only [transpose_apply, formMatrix_apply]
-  exact if_congr ⟨fun h => by rw [h, Fin.rev_rev], fun h => by rw [h, Fin.rev_rev]⟩ rfl rfl
+  rw [formMatrix, transpose_permMatrix, Equiv.Perm.inv_def, Fin.revPerm_symm]
 
 /-- Mapping `J_l` entrywise along a map preserving `0` and `1` gives `J_l`. -/
 theorem map_formMatrix {β : Type*} [Zero β] [One β] (f : α → β) (h0 : f 0 = 0) (h1 : f 1 = 1) :
@@ -110,17 +109,14 @@ end FormMatrix
 
 section FormMatrixRing
 
-variable {T : Type*} [CommRing T] {l : ℕ}
+variable {T : Type*} [NonAssocSemiring T] {l : ℕ}
 
 /-- `J_l² = 1`. -/
 @[simp]
 theorem formMatrix_mul_self : formMatrix T l * formMatrix T l = 1 := by
-  ext i j
-  rw [Matrix.mul_apply, Finset.sum_eq_single (Fin.rev i)]
-  · simp [Matrix.one_apply, eq_comm]
-  · intro k _ hk
-    simp [hk]
-  · simp
+  rw [formMatrix, ← permMatrix_mul,
+    show (Fin.revPerm : Equiv.Perm (Fin l)) * Fin.revPerm = 1 from Equiv.ext Fin.rev_rev,
+    permMatrix_one]
 
 /-- Framing `J_l` by a diagonal matrix: `diag(d) J_l diag(d)ᵀ` has the entry `d i d (l - 1 - i)` at
 `(i, l - 1 - i)` and `0` elsewhere. -/
@@ -156,37 +152,9 @@ variable (l : ℕ) (A : Type w) [CommRing A]
 
 /-- **The points of `SO_l^J` over `A`**: the invertible matrices of determinant one that preserve
 `J_l` in the row convention, `g J_l gᵀ = J_l`. -/
-def pointsSubgroup : Subgroup (GL (Fin l) A) where
-  carrier := {g | (g : Matrix (Fin l) (Fin l) A).det = 1 ∧
-    (g : Matrix (Fin l) (Fin l) A) * formMatrix A l * (g : Matrix (Fin l) (Fin l) A)ᵀ =
-      formMatrix A l}
-  mul_mem' {g h} hg hh := by
-    obtain ⟨hg₁, hg₂⟩ := hg
-    obtain ⟨hh₁, hh₂⟩ := hh
-    refine ⟨?_, ?_⟩
-    · rw [Units.val_mul, det_mul, hg₁, hh₁, mul_one]
-    · rw [Units.val_mul, transpose_mul]
-      calc _ = (g : Matrix (Fin l) (Fin l) A) *
-              ((h : Matrix (Fin l) (Fin l) A) * formMatrix A l * (h : Matrix (Fin l) (Fin l) A)ᵀ) *
-              (g : Matrix (Fin l) (Fin l) A)ᵀ := by
-            simp only [Matrix.mul_assoc]
-        _ = formMatrix A l := by rw [hh₂, hg₂]
-  one_mem' := by simp
-  inv_mem' {g} hg := by
-    obtain ⟨hg₁, hg₂⟩ := hg
-    have hinv : ((g⁻¹ : GL (Fin l) A) : Matrix (Fin l) (Fin l) A) *
-        (g : Matrix (Fin l) (Fin l) A) = 1 := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-    refine ⟨?_, ?_⟩
-    · have h := congrArg det hinv
-      rwa [det_mul, hg₁, mul_one, det_one] at h
-    · conv_lhs => rw [← hg₂]
-      calc _ = (((g⁻¹ : GL (Fin l) A) : Matrix (Fin l) (Fin l) A) *
-              (g : Matrix (Fin l) (Fin l) A)) * formMatrix A l *
-              (((g⁻¹ : GL (Fin l) A) : Matrix (Fin l) (Fin l) A) *
-                (g : Matrix (Fin l) (Fin l) A))ᵀ := by
-            simp only [transpose_mul, Matrix.mul_assoc]
-        _ = formMatrix A l := by rw [hinv, transpose_one, Matrix.one_mul, Matrix.mul_one]
+def pointsSubgroup : Subgroup (GL (Fin l) A) :=
+  (Matrix.GeneralLinearGroup.det : GL (Fin l) A →* Aˣ).ker ⊓
+    ConstantForm.pointsSubgroup (formMatrix A l)
 
 variable {l A} in
 /-- Membership in the points of `SO_l^J`: determinant one and `g J_l gᵀ = J_l`. -/
@@ -194,22 +162,21 @@ variable {l A} in
 theorem mem_pointsSubgroup_iff (g : GL (Fin l) A) :
     g ∈ pointsSubgroup l A ↔ (g : Matrix (Fin l) (Fin l) A).det = 1 ∧
       (g : Matrix (Fin l) (Fin l) A) * formMatrix A l * (g : Matrix (Fin l) (Fin l) A)ᵀ =
-        formMatrix A l :=
-  Iff.rfl
+        formMatrix A l := by
+  rw [pointsSubgroup, Subgroup.mem_inf, MonoidHom.mem_ker, ConstantForm.mem_pointsSubgroup_iff,
+    Units.ext_iff, Matrix.GeneralLinearGroup.val_det_apply, Units.val_one]
 
 variable {l A} {B : Type v} [CommRing B]
 
 /-- Entrywise mapping along a ring homomorphism preserves the points of `SO_l^J`. -/
 theorem map_mem_pointsSubgroup (f : A →+* B) {g : GL (Fin l) A} (hg : g ∈ pointsSubgroup l A) :
     Matrix.GeneralLinearGroup.map f g ∈ pointsSubgroup l B := by
+  rw [pointsSubgroup, Subgroup.mem_inf, MonoidHom.mem_ker] at hg ⊢
   obtain ⟨hg₁, hg₂⟩ := hg
-  have hcoe : ((Matrix.GeneralLinearGroup.map f g : GL (Fin l) B) : Matrix (Fin l) (Fin l) B) =
-      (g : Matrix (Fin l) (Fin l) A).map f :=
-    (rfl)
   refine ⟨?_, ?_⟩
-  · rw [hcoe, ← RingHom.mapMatrix_apply, ← RingHom.map_det, hg₁, map_one]
-  · rw [hcoe, ← map_formMatrix A l f f.map_zero f.map_one, ← transpose_map, ← Matrix.map_mul,
-      ← Matrix.map_mul, hg₂]
+  · rw [Matrix.GeneralLinearGroup.map_det, hg₁, map_one]
+  · rw [← map_formMatrix A l f f.map_zero f.map_one]
+    exact ConstantForm.map_mem_pointsSubgroup f hg₂
 
 /-- The homomorphism of point groups of `SO_l^J` induced by a ring homomorphism. -/
 def pointsSubgroupMap (f : A →+* B) : pointsSubgroup l A →* pointsSubgroup l B :=
@@ -428,50 +395,6 @@ section BaseChange
 
 variable (K : Type max u v) [CommRing K] [Algebra R K]
 
-/-- The `R`-algebra structure obtained by restricting the coordinate algebra over `K`. -/
-noncomputable local instance algebraCoordinateHopfAlgebraBaseChange :
-    Algebra R (GeneralLinear.coordinateHopfAlgebra K l) :=
-  Algebra.compHom _ (algebraMap R K)
-
-/-- The coordinate algebra over `K` is a scalar tower over `R → K`. -/
-local instance isScalarTowerCoordinateHopfAlgebraBaseChange :
-    IsScalarTower R K (GeneralLinear.coordinateHopfAlgebra K l) :=
-  IsScalarTower.of_algebraMap_eq' rfl
-
-/-- The restriction of the general-linear base-change isomorphism to the original coordinate
-Hopf algebra. -/
-private noncomputable def baseChangeAlgHom :
-    GeneralLinear.coordinateHopfAlgebra R l →ₐ[R] GeneralLinear.coordinateHopfAlgebra K l :=
-  ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).hom.hom.toAlgHom.restrictScalars
-      R).comp
-    (Algebra.TensorProduct.includeRight :
-      GeneralLinear.coordinateHopfAlgebra R l →ₐ[R] K ⊗[R] GeneralLinear.coordinateHopfAlgebra R l)
-
-private theorem baseChangeAlgHom_apply (x : GeneralLinear.coordinateHopfAlgebra R l) :
-    baseChangeAlgHom R l K x =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).hom.hom (1 ⊗ₜ[R] x) := by
-  simp only [baseChangeAlgHom, AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
-    AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom]
-
-/-- The general-linear base-change isomorphism carries each scalar-extended entry of
-`X J_l Xᵀ - J_l` to the corresponding entry over the new base. -/
-private theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix (i j : Fin l) :
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).hom.hom
-        (1 ⊗ₜ[R] ConstantForm.relationMatrix R l (formMatrix R l) i j) =
-      ConstantForm.relationMatrix K l (formMatrix K l) i j := by
-  rw [← baseChangeAlgHom_apply R l K]
-  have hgeneric : (GeneralLinear.genericMatrix R l).map (baseChangeAlgHom R l K) =
-      GeneralLinear.genericMatrix K l := by
-    simpa only [baseChangeAlgHom] using
-      GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix R K l
-  have hmatrix := ConstantForm.relationMatrix_map R l (formMatrix R l) (baseChangeAlgHom R l K)
-  rw [hgeneric, map_formMatrix R l _ (map_zero _) (map_one _)] at hmatrix
-  have hentry := congrFun (congrFun hmatrix i) j
-  rw [Matrix.map_apply] at hentry
-  have hdef := congrFun (congrFun (ConstantForm.relationMatrix_def K l (formMatrix K l)) i) j
-  rw [map_formMatrix K l _ (map_zero _) (map_one _)] at hdef
-  exact hentry.trans hdef.symm
-
 /-- The defining ideal is the span of the form relations and the determinant-one relation. -/
 private theorem definingHopfIdeal_toIdeal_eq_span_union (S : Type*) [CommRing S] :
     (definingHopfIdeal S l).toIdeal =
@@ -491,20 +414,9 @@ private theorem map_baseChangeHopfIdeal_definingHopfIdeal :
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l)
     (definingHopfIdeal_toIdeal_eq_span_union l R)
     (definingHopfIdeal_toIdeal_eq_span_union l K) ?_
-  rw [Set.image_union]
+  rw [Set.image_union, ConstantForm.image_relationSet_baseChange
+    (map_formMatrix R l _ (map_zero _) (map_one _))]
   congr 1
-  · ext x
-    constructor
-    · rintro ⟨_, hy, rfl⟩
-      obtain ⟨i, j, rfl⟩ := (ConstantForm.mem_relationSet_iff R l _).mp hy
-      dsimp only
-      rw [coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix R l K i j]
-      exact ConstantForm.relationMatrix_mem_relationSet K l _ i j
-    · intro hx
-      obtain ⟨i, j, rfl⟩ := (ConstantForm.mem_relationSet_iff K l _).mp hx
-      exact ⟨ConstantForm.relationMatrix R l (formMatrix R l) i j,
-        ConstantForm.relationMatrix_mem_relationSet R l _ i j,
-        coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix R l K i j⟩
   · have hdet :=
       GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_determinantGroupLike R K l
     simp only [Set.image_singleton, TensorProduct.tmul_sub,
