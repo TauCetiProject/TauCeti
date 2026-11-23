@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
@@ -341,8 +342,8 @@ private theorem exists_sumSpaceEmbed_toSum_eq_and_norm_le (hθ : θ ∈ Icc (0 :
           mul_le_mul_of_nonneg_left hone (by positivity)
       _ = N := by
           have hexp : (1 + (0 - θ) * s) * (1 - θ) + (1 + (1 - θ) * s) * θ = 1 := by ring
-          rw [mul_one, ← Real.rpow_mul hN, ← Real.rpow_mul hN,
-            ← Real.rpow_add' hN (by rw [hexp]; exact one_ne_zero), hexp, Real.rpow_one]
+          rw [mul_one, Real.rpow_rpow_mul_rpow_rpow_of_add_eq hN one_ne_zero hexp,
+            Real.rpow_one]
       _ = ‖g‖ := by rw [Lp.norm_def, eLpNorm_congr_ae hfg]
 
 attribute [local instance] Lp.simpleFunc.module
