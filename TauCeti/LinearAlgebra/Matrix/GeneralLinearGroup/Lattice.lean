@@ -279,7 +279,7 @@ noncomputable def stabilizerContinuousMulEquivGL (b : Basis ι R L)
             ((IsModuleTopology.continuous_of_linearMap
               (LinearMap.applyₗ (c j) : Module.End K V →ₗ[K] V)).comp hf)
     have hc := TauCeti.continuous_linearEquiv_iff.mp
-      (continuous_subtype_val (p := (· ∈ MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V))))
+      (continuous_subtypeVal (p := (· ∈ MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V))))
     refine Units.continuous_iff.mpr ⟨hmat (f := id) hc.1, ?_⟩
     exact (hmat (f := fun g => g⁻¹) hc.2).congr fun g => by
       rw [map_inv, MulEquiv.toFun_eq_coe]
