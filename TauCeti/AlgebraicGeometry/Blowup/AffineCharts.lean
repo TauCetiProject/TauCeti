@@ -40,8 +40,7 @@ with blowups, such as the blowup of the node `xy = πⁿ` at its singular point,
 * `TauCeti.AlgebraicGeometry.isIso_affineBlowupι_of_sq_mem`: if `I = (a, s)` with `s² ∈ a I`, the
   chart of `a` is the whole blowup. This applies at a node, where `I = 𝔪 = (x, y)` and the local
   equation gives `y² ∈ x 𝔪` once the coefficient of `y²` is a unit.
-* `TauCeti.AlgebraicGeometry.affineBlowupι_toSpecZero`,
-  `TauCeti.AlgebraicGeometry.affineBlowupι_toSpecCoeff`: the chart is a morphism over `Spec R`.
+* `TauCeti.AlgebraicGeometry.affineBlowupι_toSpecZero`: the chart is a morphism over `Spec R`.
 * `TauCeti.AlgebraicGeometry.comap_affineBlowupι_toSpecCoeff`: pullback of an ideal along an
   affine blowup chart.
 
@@ -153,15 +152,6 @@ theorem affineBlowupι_toSpecZero (ha : a ∈ I) :
   simpa [gradeZeroEquiv_apply, HomogeneousLocalization.algebraMap_eq_comp] using
     congr_arg Subtype.val ((awayEquivAffineBlowup S ha).commutes r)
 
-/-- The chart `Spec R[I/a] ⟶ Proj R[It]` is a morphism over `Spec R`: followed by the coefficient
-structure map `Proj.toSpecCoeff`, it is the spectrum of the structure map `R → R[I/a]`. -/
-@[reassoc]
-theorem affineBlowupι_toSpecCoeff (ha : a ∈ I) :
-    affineBlowupι S ha ≫ Proj.toSpecCoeff (grade I) =
-      Spec.map (CommRingCat.ofHom (algebraMap R (I.affineBlowup a S))) := by
-  rw [toSpecCoeff_reesAlgebra]
-  exact affineBlowupι_toSpecZero S ha
-
 /-- **Pullback of an ideal along an affine blowup chart.** For an ideal `J` of `R` and `a ∈ I`,
 the inverse image of `V(J)` along `Spec R[I/a] ⟶ Proj R[It] ⟶ Spec R` is the zero scheme of the
 extended ideal `J · R[I/a]`. -/
@@ -171,7 +161,7 @@ theorem comap_affineBlowupι_toSpecCoeff {a : R} (S : Type u) [CommRing S] [Alge
         (Proj.toSpecCoeff (grade I))).comap (affineBlowupι S ha) =
       ofIdealTop ((J.map (algebraMap R (I.affineBlowup a S))).map
         (Scheme.ΓSpecIso (.of (I.affineBlowup a S))).inv.hom) := by
-  rw [← comap_comp, affineBlowupι_toSpecCoeff, comap_ofIdealTop_map_ΓSpecIso_inv,
-    CommRingCat.hom_ofHom]
+  rw [← comap_comp, toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero,
+    comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom]
 
 end TauCeti.AlgebraicGeometry

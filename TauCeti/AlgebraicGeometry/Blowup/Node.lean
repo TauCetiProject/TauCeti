@@ -230,8 +230,7 @@ private theorem span_range_originGenerator (π a : R) :
 theorem opensRange_blowupBaseChartι_sup_iSup_opensRange_blowupCoordChartι
     (hπ : π ∈ nonZeroDivisors R) :
     (blowupBaseChartι a hπ).opensRange ⊔ ⨆ i, (blowupCoordChartι a i hπ).opensRange = ⊤ := by
-  have h := Proj.iSup_basicOpen_eq_top _ _
-    (irrelevant_eq_span_monomialDegreeOne (span_range_originGenerator π (π ^ 2 * a))).le
+  have h := iSup_basicOpen_monomialDegreeOne (span_range_originGenerator π (π ^ 2 * a))
   rw [iSup_option] at h
   rw [opensRange_blowupBaseChartι]
   simp_rw [opensRange_blowupCoordChartι]

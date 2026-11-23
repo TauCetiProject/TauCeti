@@ -168,7 +168,7 @@ theorem comap_affineBlowupι_blowupChart {I L : X.IdealSheafData} {U : X.Opens}
           ((I.ideal ⟨U, hU⟩).affineBlowup a S))).map
         (Scheme.ΓSpecIso (.of ((I.ideal ⟨U, hU⟩).affineBlowup a S))).inv.hom) := by
   rw [← comap_comp, Category.assoc, I.blowupChart_blowupToBase hU, ← Category.assoc,
-    affineBlowupι_toSpecCoeff]
+    toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero]
   exact L.comap_SpecMap_fromSpec_eq_ofIdealTop hU _
 
 /-- The image of the affine chart of the blowup over `U` is the preimage of `U`. -/
