@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Subrepresentation
 public import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Linearization
+
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # The linearized action of the isotropy algebra
@@ -38,15 +42,23 @@ Two properties of `A` are inherited from the group `t ↦ d(exp (t ξ))_p`:
   (`TauCeti.Lie.conj_mulInvariantExp`). Differentiating the conjugated one-parameter group gives
   `dg_p ∘ A_ξ = A_η ∘ dg_p` for every `η` in `𝔥` with `η = Ad_g ξ`
   (`TauCeti.tangentRepresentation_comp_isotropyLinearization`). The element `η` is supplied by
-  the caller; this file does not prove that `Ad_g` preserves `𝔥`.
+  the caller.
 
 These are the infinitesimal data of the slice representation in the local normal form of a
 Hamiltonian action, where `𝔥` acts on the symplectic slice through `A`.
+
+The stabilizer `G_p` maps `𝔥` into itself under the adjoint action
+(`TauCeti.adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer`). The file also records `𝔥`
+as a subrepresentation of the adjoint representation of any subgroup `K` of `G_p`
+(`TauCeti.isotropySubrepresentation`), which is the form in which `Ad(K)`-invariant complements of
+`𝔥` are chosen.
 
 ## Main definitions
 
 * `TauCeti.isotropyLinearization I' p`: the linear map `ξ ↦ A_ξ` from the isotropy algebra of `p`
   to the operators on `T_p M`.
+* `TauCeti.isotropySubrepresentation`: the isotropy algebra `𝔤_p`, as a subrepresentation of the
+  adjoint representation of a subgroup of the stabilizer `G_p`.
 
 ## Main results
 
@@ -57,6 +69,9 @@ Hamiltonian action, where `𝔥` acts on the symplectic slice through `A`.
   preserved by every `d(exp (t ξ))_p`.
 * `TauCeti.tangentRepresentation_comp_isotropyLinearization`: `dg_p ∘ A_ξ = A_η ∘ dg_p` for `g` in
   the stabilizer of `p` and `η` in the isotropy algebra with `η = Ad_g ξ`.
+* `TauCeti.toSubmodule_isotropySubrepresentation` and
+  `TauCeti.mem_isotropySubrepresentation_iff`: the carrier of `TauCeti.isotropySubrepresentation`
+  is `𝔤_p`.
 
 ## References
 
@@ -220,5 +235,51 @@ theorem tangentRepresentation_comp_isotropyLinearization
   have hξ' := Tg.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
     (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ u)
   exact (hη'.unique (hξ'.congr_of_eventuallyEq (Eventually.of_forall (hcurve u)))).symm
+
+end TauCeti
+
+/-! ### The isotropy algebra as a representation of the stabilizer -/
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+attribute [local instance] lieGroupOne
+
+variable (I I') in
+/-- The isotropy algebra `𝔤_x` of the fundamental infinitesimal action, as a subrepresentation of
+the adjoint representation of a subgroup `K` of the stabilizer `G_x`. -/
+def isotropySubrepresentation (x : M) {K : Subgroup G} (hK : K ≤ MulAction.stabilizer G x) :
+    Subrepresentation ((Lie.adjointRepresentation ℝ I G).comp K.subtype) where
+  toSubmodule := ((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule
+  apply_mem_toSubmodule g _ hξ := by
+    simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
+      Lie.adjointRepresentation_apply, LieSubalgebra.mem_toSubmodule] using
+      adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer (hK g.property) hξ
+
+/-- The underlying submodule of `TauCeti.isotropySubrepresentation` is the isotropy algebra. -/
+@[simp]
+theorem toSubmodule_isotropySubrepresentation (x : M) {K : Subgroup G}
+    (hK : K ≤ MulAction.stabilizer G x) :
+    (isotropySubrepresentation I I' x hK).toSubmodule =
+      ((InfinitesimalAction.fundamental I G I' M).isotropy x).toSubmodule :=
+  -- `(rfl)`, not `rfl`: the body of `isotropySubrepresentation` is not `@[expose]`d, so this must
+  -- not be inferred `@[defeq]`.
+  (rfl)
+
+/-- Membership in `TauCeti.isotropySubrepresentation` is membership in the isotropy algebra. -/
+@[simp]
+theorem mem_isotropySubrepresentation_iff {x : M} {K : Subgroup G}
+    {hK : K ≤ MulAction.stabilizer G x} {ξ : GroupLieAlgebra I G} :
+    ξ ∈ isotropySubrepresentation I I' x hK ↔
+      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x := by
+  rw [← Subrepresentation.mem_toSubmodule, toSubmodule_isotropySubrepresentation,
+    LieSubalgebra.mem_toSubmodule]
 
 end TauCeti

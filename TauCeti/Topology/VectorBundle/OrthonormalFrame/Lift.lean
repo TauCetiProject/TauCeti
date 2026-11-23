@@ -41,12 +41,15 @@ equivalences (`TauCeti.OrthonormalFrameLift.Equiv.pullback`).
 
 * `TauCeti.OrthonormalFrameLift`: a lift of the orthonormal frame bundle of a real vector bundle
   with fibre inner products along a homomorphism `ρ : G →* GL(ℝⁿ)`.
+* `TauCeti.OrthonormalFrameLift.frameAt`: the orthonormal frame of `E x` at a point of `P`.
 * `TauCeti.OrthonormalFrameLift.Equiv`: equivalences of lifts, with `refl`, `symm`, `trans`.
 * `TauCeti.OrthonormalFrameLift.pullback`: the pullback of a lift along a continuous map.
 * `TauCeti.OrthonormalFrameLift.Equiv.pullback`: the pullback of an equivalence.
 
 ## Main results
 
+* `TauCeti.OrthonormalFrameLift.frameAt_smul`: the frame of `p • g` is the frame of `p`
+  precomposed with `ρ g`.
 * `TauCeti.OrthonormalFrameLift.finrank_fiber`, `TauCeti.OrthonormalFrameLift.finrank_model`:
   a bundle whose orthonormal frame bundle of rank `n` has a lift has fibres of dimension `n`.
 
@@ -122,6 +125,26 @@ theorem exists_toFrame_eq_mk (s : OrthonormalFrameLift F E n G ρ) (p : TotalSpa
     ∃ φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E p.proj, s.toFrame p = ⟨p.proj, φ⟩ :=
   ⟨s.proj_toFrame p ▸ (s.toFrame p).frame,
     OrthonormalFrameBundle.eq_mk_of_proj_eq (s.toFrame p) (s.proj_toFrame p)⟩
+
+/-- The orthonormal frame `ℝⁿ ≃ E x` attached to a point `p` of the fibre of `P` over `x`: the frame
+of `s.toFrame ⟨x, p⟩`, read as a frame of `E x` (`TauCeti.OrthonormalFrameLift.toFrame_mk`). -/
+noncomputable def frameAt (s : OrthonormalFrameLift F E n G ρ) {x : X} (p : s.P x) :
+    EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E x :=
+  (s.exists_toFrame_eq_mk ⟨x, p⟩).choose
+
+/-- The frame map at `⟨x, p⟩` is the frame `s.frameAt p` over `x`. -/
+theorem toFrame_mk (s : OrthonormalFrameLift F E n G ρ) {x : X} (p : s.P x) :
+    s.toFrame ⟨x, p⟩ = ⟨x, s.frameAt p⟩ :=
+  (s.exists_toFrame_eq_mk ⟨x, p⟩).choose_spec
+
+/-- **Equivariance of the frames**: the frame of `p • g` sends `v` to the frame of `p` applied to
+`ρ g v`. -/
+theorem frameAt_smul (s : OrthonormalFrameLift F E n G ρ) {x : X} (p : s.P x) (g : G)
+    (v : Fin n → ℝ) :
+    s.frameAt (op g • p) (WithLp.toLp 2 v) = s.frameAt p (WithLp.toLp 2 (ρ g v)) := by
+  have h := s.toFrame_smul x p g v
+  rw [toFrame_mk, toFrame_mk] at h
+  exact TotalSpace.mk_inj.1 h
 
 /-- Every fibre `E x` of a bundle whose orthonormal frame bundle of rank `n` has a lift is
 finite-dimensional. -/
