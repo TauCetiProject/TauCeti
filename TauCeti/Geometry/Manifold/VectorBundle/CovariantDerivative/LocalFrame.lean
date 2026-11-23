@@ -52,7 +52,8 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
   there.
 * `TauCeti.Manifold.frameCovariantDerivative_eq_symmL_comp`: the flat derivative of a section whose
   frame coefficients are the coordinates of a model-valued map, and
-  `TauCeti.Manifold.frameCovariantDerivative_symmL_const`, its vanishing on constant coordinates.
+  `TauCeti.Manifold.frameCovariantDerivative_symmL_const` and
+  `TauCeti.Manifold.frameCovariantDerivative_symm_const`, its vanishing on constant coordinates.
 * `TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum`: the local frame
   formula for an arbitrary covariant derivative.
 * `TauCeti.Manifold.covariantDerivative_eq_of_localFrame_eq`: two covariant derivatives which
@@ -75,6 +76,8 @@ they give the classical coordinate formula for `∇ σ` along a frame direction.
 * `TauCeti.Manifold.covariantDerivative_symm_comp_apply_symm_bundle` and
   `TauCeti.Manifold.covariantDerivative_symm_comp_apply_symm`: the covariant derivative of a
   section with coordinates `g` in the trivialization has coordinates `dg + Γ(g, ·)`.
+* `TauCeti.Manifold.symmL_christoffelMap_sub_christoffelMap`: the Christoffel maps of two
+  connections on the tangent bundle differ by their difference tensor.
 * `TauCeti.Manifold.christoffelSymbol`: the scalar Christoffel symbols of a covariant derivative
   on the tangent bundle in a local frame, with
   `TauCeti.Manifold.covariantDerivative_localFrame_eq_sum_christoffelSymbol` expanding
@@ -296,6 +299,29 @@ theorem frameCovariantDerivative_symmL_const (hx : x ∈ e.baseSet) (v : F) :
   rw [frameCovariantDerivative_apply]
   simp only [hconst, zero_apply, zero_smul, Finset.sum_const_zero]
 
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] in
+/-- The flat frame derivative of the section `z ↦ e.symm z v` with constant coordinates `v`
+vanishes at every point. -/
+@[simp]
+theorem frameCovariantDerivative_symm_const (v : F) :
+    frameCovariantDerivative I b e (fun z ↦ e.symm z v) x = 0 := by
+  by_cases hx : x ∈ e.baseSet
+  · -- The `i`-th coefficient of the section is the constant `b.coord i v` on `e.baseSet`.
+    have hconst (i : ι) : mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i)
+        (fun z ↦ e.symm z v)) x = 0 := by
+      ext w
+      refine mvfderiv_localFrameCoeff_apply b (g := fun _ ↦ b.coord i v)
+        (hasMFDerivAt_const _ _) i ?_ w
+      filter_upwards [e.open_baseSet.mem_nhds hx] with z hz
+      rw [e.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e.symm z v) hz]
+      simp [e.apply_mk_symm hz]
+    ext w
+    rw [frameCovariantDerivative_apply]
+    simp only [hconst, zero_apply, zero_smul, Finset.sum_const_zero]
+  · ext w
+    rw [frameCovariantDerivative_apply, zero_apply]
+    exact Finset.sum_eq_zero fun i _ ↦ by rw [e.localFrame_apply_of_notMem b hx, smul_zero]
+
 omit [FiniteDimensional 𝕜 F] in
 /-- The flat frame derivative satisfies the covariant-derivative axioms on the base set of the
 trivialization defining the frame. -/
@@ -406,16 +432,8 @@ theorem covariantDerivative_symm_eq_christoffelForm
   have hσ : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
     ((contMDiffOn_symm_baseSet v).mdifferentiableOn one_ne_zero).mdifferentiableAt
       (e.open_baseSet.mem_nhds hx)
-  rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_eq_right]
-  -- The `i`-th coefficient of the section is the constant `b.coord i v` on `e.baseSet`.
-  have hcoeff (i : ι) : (fun y ↦ e.localFrameCoeff I b i y (e.symm y v)) =ᶠ[𝓝 x]
-      fun _ ↦ b.coord i v :=
-    Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦
-      (e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y v) hy).trans
-        (by simp [e.apply_mk_symm hy])
-  have hconst : HasMFDerivAt (M' := F) I 𝓘(𝕜, F) (fun _ : M ↦ v) x
-      (0 : TangentSpace I x →L[𝕜] F) := hasMFDerivAt_const _ _
-  rw [frameCovariantDerivative_eq_symmL_comp b hconst hcoeff hx, ContinuousLinearMap.comp_zero]
+  rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_eq_right,
+    frameCovariantDerivative_symm_const b v]
 
 /-! ### Regularity of the flat covariant derivative of a local frame -/
 
@@ -594,7 +612,7 @@ theorem _root_.CovariantDerivative.contMDiffOn_bundleChristoffelMap
     CMDiff[e.baseSet ∩ eT.baseSet] ∞
       (bundleChristoffelMap b eT (cov.isCovariantDerivativeOn (s := e.baseSet))) := by
   have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun e.baseSet :=
-    cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) e.open_baseSet
+    cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) e.open_baseSet
   have : ContMDiffVectorBundle 1 F V I := .of_le (n := ∞) (by simp)
   have : ContMDiffVectorBundle (∞ + 1) F V I :=
     by simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
@@ -693,6 +711,24 @@ theorem covariantDerivative_symm_apply_symm [Fintype ι]
     (hcov : IsCovariantDerivativeOn E cov e.baseSet) (hx : x ∈ e.baseSet) (v u : E) :
     cov (fun y ↦ e.symm y v) x (e.symm x u) = e.symm x (christoffelMap b hcov x v u) :=
   covariantDerivative_symm_apply_symm_bundle b e hcov hx hx v u
+
+/-- **Christoffel maps of two connections differ by their difference tensor.** Read in the
+trivialization `e`, the Christoffel maps of two covariant derivatives on the tangent bundle differ
+by the coordinates of their difference tensor `CovariantDerivative.difference`. -/
+theorem symmL_christoffelMap_sub_christoffelMap [Fintype ι]
+    (cov cov' : CovariantDerivative I E (TangentSpace I : M → Type _)) (hx : x ∈ e.baseSet)
+    (v w : E) :
+    e.symmL 𝕜 x (christoffelMap b (cov.isCovariantDerivativeOn (s := e.baseSet)) x v w -
+        christoffelMap b (cov'.isCovariantDerivativeOn (s := e.baseSet)) x v w) =
+      cov.difference cov' x (e.symmL 𝕜 x v) (e.symmL 𝕜 x w) := by
+  have hσ : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
+    ((contMDiffOn_symm_baseSet v).mdifferentiableOn one_ne_zero).mdifferentiableAt
+      (e.open_baseSet.mem_nhds hx)
+  have hΔ := cov.difference_apply cov' hσ
+  rw [map_sub]
+  simp only [e.symmL_apply hx]
+  rw [← covariantDerivative_symm_apply_symm b _ hx, ← covariantDerivative_symm_apply_symm b _ hx,
+    hΔ, sub_apply]
 
 /-- **The coordinate formula for a covariant derivative on the tangent bundle.**  The covariant
 derivative of the vector field with coordinates `g` in the trivialization `e`, in the direction

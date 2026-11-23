@@ -102,7 +102,7 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
   -- The energy density is dominated, almost everywhere, by an integrable function.
   have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) := by
     refine ((he.add (hI2.const_mul (2 * Lam ^ 2 / lam))).const_mul (2 / lam)).mono'
-      (hψ2.mul (W1p.integrable_norm_gradient_sq w).aestronglyMeasurable) ?_
+      (hψ2.mul (Lp.memLp (W1p.gradient w)).norm.integrable_sq.aestronglyMeasurable) ?_
     filter_upwards [hpointwise] with x hx
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
     simp only [Pi.add_apply]
@@ -270,10 +270,14 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
   -- On `B(x₀, r)` the cutoff is one.
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
-      (ae_of_all _ fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable
-      (ae_of_all _ fun x => hrange (mem_range_self x)) measurableSet_ball
-      (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
+    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one
+      (Lp.memLp (W1p.gradient w)).norm.integrable_sq
+      (ae_of_all _ fun x => sq_nonneg _) (hψ.continuous.pow 2).aestronglyMeasurable
+      (ae_of_all _ fun x => abs_le.2 ⟨by linarith [(hrange (mem_range_self x)).1],
+        (hrange (mem_range_self x)).2⟩)
+      (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
+        simp [hone (ball_subset_closedBall hx)])
+      ((ball_subset_ball hrR.le).trans hball)
   -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
@@ -340,17 +344,19 @@ variable [DecidableEq ι]
 
 /-- **The testing step of the Caccioppoli inequality**, for any right-hand side. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `u ∈ H¹(Ω)`, and let `ψ` be
-smooth and compactly supported in `Ω`. The test function `v = ψ² u` lies in `H¹₀(Ω)`, has
-`∇v = ψ (ψ ∇u + u ∇ψ) + ψ u ∇ψ` almost everywhere, and
+smooth and compactly supported, either with support in `Ω` or with `u ∈ H¹₀(Ω)`. The test function
+`v = ψ² u` lies in `H¹₀(Ω)`, has `∇v = ψ (ψ ∇u + u ∇ψ) + ψ u ∇ψ` almost everywhere, and
 
 `∫_Ω ψ² ‖∇u‖² ≤ (2Λ/λ)² ∫_Ω ‖∇ψ‖² u² + (2/λ) a(u, v)`.
 
-The caller evaluates `a(u, v)` through the weak form of its equation. -/
+The second alternative allows cutoffs whose support meets `∂Ω`, as in estimates up to the boundary
+for solutions of the Dirichlet problem. The caller evaluates `a(u, v)` through the weak form of
+its equation. -/
 theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u : W1p mu Omega 2)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
     ∃ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, W1p.value (v : W1p mu Omega 2) x = ψ x ^ 2 * W1p.value u x) ∧
       (∀ᵐ x ∂mu.restrict Omega, W1p.gradient (v : W1p mu Omega 2) x =
@@ -365,9 +371,12 @@ theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energy
   -- The test function `ψ² u = ψ (ψ u)`, which lies in `H¹₀(Ω)`.
   set w := W1p.contDiffSMul ψ hψ hM hψM' hgradM' u
   set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  have hv : v ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
-      hts w
+  have hv : v ∈ w1p0Submodule mu Omega 2 := by
+    rcases hts with hts | hu0
+    · exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM'
+        hcpt hts w
+    · exact W1p.contDiffSMul_mem_w1p0Submodule hψ hM hψM' hgradM'
+        (W1p.contDiffSMul_mem_w1p0Submodule hψ hM hψM' hgradM' hu0)
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u v
@@ -422,7 +431,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
       (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
         + 2 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by
   obtain ⟨v, hvalue, -, hstep⟩ :=
-    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt hts
+    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt (.inl hts)
   -- The energy is `∫_Ω ψ² f u`, by the weak equation.
   have hF : energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.Prod.Basic
@@ -36,6 +37,9 @@ A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant su
   splitting of `ω` it induces.
 * `TauCeti.SymplecticForm.isSymplectomorphism_prodEquivOfIsCompl`: the equivalence associated to
   `V = L ⊕ L^ω` is a symplectomorphism from the product of the restricted forms to `ω`.
+* `TauCeti.SymplecticForm.restrict_mem_skewAdjointLieSubalgebra`: an element of `sp(V, ω)`
+  preserving such a subspace restricts to an element of the symplectic Lie algebra of the
+  restricted form.
 * `TauCeti.SymplecticForm.Compatible.restrict`: compatibility passes to these restrictions.
 -/
 
@@ -67,6 +71,17 @@ lemma restrict_apply (ω : SymplecticForm V) (L : Submodule ℝ V)
     ω.restrict L h v w = ω (v : V) (w : V) :=
   rfl
 
+/-- The restriction of `A ∈ sp(V, ω)` to a subspace `L` that it preserves, and on which `ω` stays
+nondegenerate, lies in the symplectic Lie algebra of the restricted form. -/
+theorem restrict_mem_skewAdjointLieSubalgebra {ω : SymplecticForm V} {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {L : Submodule ℝ V}
+    (hL : (ω.toBilinForm.restrict L).Nondegenerate) (hAL : Set.MapsTo A L L) :
+    A.restrict hAL ∈ skewAdjointLieSubalgebra (ω.restrict L hL).toBilinForm :=
+  -- Both the restricted form and the restricted endomorphism evaluate on `L` as on `V`
+  -- (`SymplecticForm.restrict_apply`, `LinearMap.restrict_apply`), definitionally.
+  (LinearMap.mem_skewAdjointSubmodule _).2 fun u w ↦
+    (LinearMap.mem_skewAdjointSubmodule A).1 hA u w
+
 /-- The symplectic complement of a subspace complementary to it also carries a nondegenerate
 restriction of `ω`: a vector of `L^ω` orthogonal to `L^ω` is orthogonal to `L` as well, hence to
 `L ⊔ L^ω = V`, and nondegeneracy of `ω` makes it zero. Unlike
@@ -95,8 +110,8 @@ lemma isSymplectomorphism_prodEquivOfIsCompl (ω : SymplecticForm V) {L : Submod
       (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hcompl) := by
   rw [isSymplectomorphism_iff]
   intro p q
-  have h₁ : ω (p.1 : V) (q.2 : V) = 0 := mem_orthogonal_iff.1 q.2.2 _ p.1.2
-  have h₂ : ω (p.2 : V) (q.1 : V) = 0 := mem_orthogonal_iff'.1 p.2.2 _ q.1.2
+  have h₁ : ω (p.1 : V) (q.2 : V) = 0 := mem_orthogonal_iff.1 q.2.property _ p.1.property
+  have h₂ : ω (p.2 : V) (q.1 : V) = 0 := mem_orthogonal_iff'.1 p.2.property _ q.1.property
   simp only [Submodule.coe_prodEquivOfIsCompl', prod_apply, restrict_apply, map_add,
     LinearMap.add_apply, h₁, h₂]
   ring

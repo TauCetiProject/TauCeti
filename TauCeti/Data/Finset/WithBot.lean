@@ -84,7 +84,8 @@ variable [Fintype α] [DecidableEq α]
 /-- The elements outside the image of `S` in `WithBot α` are `⊥` and the elements outside `S`. -/
 noncomputable def optionComplEquivComplMapCoeWithBot (S : Finset α) :
     Option ↥Sᶜ ≃ ↥(S.map Function.Embedding.coeWithBot)ᶜ :=
-  .ofBijective (fun o ↦ o.elim ⟨⊥, by simp⟩ fun a ↦ ⟨a.1, by simpa using mem_compl.1 a.2⟩) <| by
+  .ofBijective (fun o ↦ o.elim ⟨⊥, by simp⟩ fun a ↦ ⟨a.val, by simpa using mem_compl.1 a.property⟩)
+      <| by
     refine ⟨fun o o' e ↦ ?_, fun a ↦ ?_⟩
     · replace e := congrArg Subtype.val e
       rcases o with _ | ⟨a, ha⟩ <;> rcases o' with _ | ⟨a', ha'⟩
@@ -110,7 +111,7 @@ theorem coe_optionComplEquivComplMapCoeWithBot_some (S : Finset α) (a : ↥Sᶜ
 /-- The elements outside `WithBot.insertBot S` are the elements outside `S`. -/
 noncomputable def complEquivComplInsertBot (S : Finset α) :
     ↥Sᶜ ≃ ↥(WithBot.insertBot S)ᶜ :=
-  .ofBijective (fun a ↦ ⟨a.1, by simpa using mem_compl.1 a.2⟩) <| by
+  .ofBijective (fun a ↦ ⟨a.val, by simpa using mem_compl.1 a.property⟩) <| by
     refine ⟨fun a a' e ↦ Subtype.ext (by simpa using e), fun a ↦ ?_⟩
     obtain ⟨a, ha⟩ := a
     induction a using WithBot.recBotCoe with

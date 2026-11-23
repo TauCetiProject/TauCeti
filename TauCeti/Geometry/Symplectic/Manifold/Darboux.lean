@@ -52,8 +52,19 @@ diffeomorphism with the extended chart restricted to an open set
 (`TauCeti.exists_partialDiffeomorph_comp_extChartAt`), and transports the constant model form along
 continuous linear symplectomorphisms.
 
+Only closedness of `form` and its nondegeneracy at `x₀` enter the proof, so the same chart exists
+for a closed two-form that is nondegenerate at `x₀` alone
+(`TauCeti.SmoothTwoForm.exists_darbouxChart_of_nondegenerate_of_isInteriorPoint`); it is then
+nondegenerate on the whole source of the chart. Such forms arise as restrictions of a closed
+two-form to a slice, for example the restriction of `dα` to a hypersurface transverse to the Reeb
+field of a contact form `α`.
+
 ## Main declarations
 
+* `TauCeti.SmoothTwoForm.exists_darbouxChart_of_nondegenerate_of_isInteriorPoint`: Darboux
+  charts into the model space for a closed two-form nondegenerate at `x₀`.
+* `SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInteriorPoint`:
+  standard Euclidean Darboux charts for a closed two-form nondegenerate at `x₀`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_of_isInteriorPoint` and
   `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart`: Darboux charts into the model space `E`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_of_symplecticForm_of_isInteriorPoint` and
@@ -71,6 +82,9 @@ continuous linear symplectomorphisms.
   `TauCeti.SmoothTwoForm.IsSymplectic.exists_standardDarbouxChart_eq_add_snd`, and their
   `_of_isInteriorPoint` counterparts: the Carathéodory–Jacobi–Lie normal form, a Darboux chart in
   which a function with nonzero differential is affine, respectively is `f x₀ + p₁`.
+* `TauCeti.SmoothTwoForm.eval₂_mfderiv_eq_of_darbouxChart`: a diffeomorphism of `M` which reads,
+  in a Darboux chart, as a form-preserving diffeomorphism of the model space, and is the identity
+  near every point outside the chart, preserves the symplectic form.
 
 ## References
 
@@ -175,6 +189,57 @@ private theorem trans_ofOpenPartialHomeomorph {chart : PartialDiffeomorph I 𝓘
 
 end Helpers
 
+section Transport
+
+variable {E H M : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- **Transporting a form-preserving diffeomorphism through a Darboux chart.** Let `κ` be a Darboux
+chart pulling the constant form `ω₀` on `E` back to `σ`, and `ψ` a diffeomorphism of `E` preserving
+`ω₀` and mapping the target of `κ` into itself. A diffeomorphism `Φ` of `M` which is
+`κ⁻¹ ∘ ψ ∘ κ` on the source of `κ`, and the identity near every point outside the source, preserves
+`σ`. -/
+theorem eval₂_mfderiv_eq_of_darbouxChart {σ : SmoothTwoForm I M}
+    {κ : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞} {ω₀ : SymplecticForm E}
+    (hκσ : ∀ x ∈ κ.source, ∀ v w : TangentSpace I x,
+      σ.eval₂ x v w = ω₀ (mvfderiv I κ x v) (mvfderiv I κ x w))
+    {ψ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E}
+    (hψσ : ∀ y u v, ω₀ (fderiv ℝ ψ y u) (fderiv ℝ ψ y v) = ω₀ u v)
+    (hψt : ∀ y ∈ κ.target, ψ y ∈ κ.target) {Φ : M ≃ₘ⟮I, I⟯ M}
+    (hΦs : ∀ x ∈ κ.source, Φ x = κ.symm (ψ (κ x)))
+    (hΦid : ∀ x ∉ κ.source, ⇑Φ =ᶠ[𝓝 x] id) (x : M) (v w : TangentSpace I x) :
+    σ.eval₂ (Φ x) (mfderiv I I Φ x v) (mfderiv I I Φ x w) = σ.eval₂ x v w := by
+  by_cases hx : x ∈ κ.source
+  · have hκx : κ x ∈ κ.target := κ.toPartialEquiv.map_source hx
+    have hΦx : Φ x ∈ κ.source := by
+      rw [hΦs x hx]
+      exact κ.toPartialEquiv.map_target (hψt _ hκx)
+    -- Read in the chart, `Φ` is `ψ`: `κ ∘ Φ = ψ ∘ κ` near `x`.
+    have hcomp : κ ∘ Φ =ᶠ[𝓝 x] ψ ∘ κ := eventually_of_mem (κ.open_source.mem_nhds hx)
+      fun z hz ↦ by
+        rw [Function.comp_apply, hΦs z hz]
+        exact κ.toPartialEquiv.right_inv (hψt _ (κ.toPartialEquiv.map_source hz))
+    have h₁ : HasMFDerivAt I 𝓘(ℝ, E) (κ ∘ Φ) x
+        ((mfderiv I 𝓘(ℝ, E) κ (Φ x)).comp (mfderiv I I Φ x)) :=
+      (κ.mdifferentiableAt (by simp) hΦx).hasMFDerivAt.comp x
+        ((Φ.contMDiff.mdifferentiable (by simp)) x).hasMFDerivAt
+    have h₂ : HasMFDerivAt I 𝓘(ℝ, E) (ψ ∘ κ) x
+        ((fderiv ℝ ψ (κ x)).comp (mfderiv I 𝓘(ℝ, E) κ x)) :=
+      (hasMFDerivAt_iff_hasFDerivAt.2 (((contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable
+        (by simp)) (κ x)).hasFDerivAt).comp x (κ.mdifferentiableAt (by simp) hx).hasMFDerivAt
+    have h₃ (u : TangentSpace I x) :
+        mvfderiv I κ (Φ x) (mfderiv I I Φ x u) = fderiv ℝ ψ (κ x) (mvfderiv I κ x u) :=
+      congrArg (· u) ((h₁.congr_of_eventuallyEq hcomp.symm).mfderiv.symm.trans h₂.mfderiv)
+    rw [hκσ _ hΦx, hκσ _ hx, h₃, h₃, hψσ]
+  · have hD : mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
+      ((hasMFDerivAt_id x).congr_of_eventuallyEq (hΦid x hx)).mfderiv
+    simp only [hD]
+    rw [(hΦid x hx).eq_of_nhds, id_eq, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
+end Transport
+
 section Darboux
 
 variable {E H M : Type*}
@@ -182,13 +247,15 @@ variable {E H M : Type*}
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-/-- **Darboux's theorem at an interior point.** Around any interior point `x₀` of a smooth manifold
-carrying a symplectic two-form `form`, there are a smooth partial diffeomorphism `chart` into the
-model space `E` with `x₀ ∈ chart.source` and `chart x₀ = 0` and a constant symplectic form `form₀`
-on `E` whose pullback by `mvfderiv I chart` equals `form` on `chart.source`. -/
-theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
-    {form : SmoothTwoForm I M} (hform : form.IsSymplectic) {x₀ : M}
-    (hx₀ : I.IsInteriorPoint x₀) :
+/-- **Darboux's theorem at an interior point, for a closed two-form nondegenerate there.** Let
+`form` be a closed smooth two-form on `M` which is nondegenerate at an interior point `x₀`. Then
+there are a smooth partial diffeomorphism `chart` into the model space `E` with `x₀ ∈ chart.source`
+and `chart x₀ = 0` and a constant symplectic form `form₀` on `E` whose pullback by
+`mvfderiv I chart` equals `form` on `chart.source`. In particular `form` is nondegenerate on
+`chart.source`. -/
+theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
+    {form : SmoothTwoForm I M} (hcl : form.IsClosed) {x₀ : M}
+    (hnd₀ : (form.bilinFormAt x₀).Nondegenerate) (hx₀ : I.IsInteriorPoint x₀) :
     ∃ (chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞) (form₀ : SymplecticForm E),
       x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
@@ -196,27 +263,29 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.1 x₀
+  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.val x₀
   let W : Set E := interior (extChartAt I x₀).target
   let y₀ : E := extChartAt I x₀ x₀
   have hy₀W : y₀ ∈ W := (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx₀
-  have hηy₀ : η y₀ = form.1 x₀ := RoughForm.inChartAt_extChartAt_self form.1 x₀
+  have hηy₀ : η y₀ = form.val x₀ := RoughForm.inChartAt_extChartAt_self form.val x₀
   -- `TangentSpace I x₀` carries the model vector-space structure of `E`.
-  let form₀ : SymplecticForm E := hform.isNondegenerate.symplecticFormAt x₀
+  let form₀ : SymplecticForm E :=
+    { toBilinForm := form.bilinFormAt x₀
+      isAlt := SmoothForm.isAlt_bilinFormAt form x₀
+      nondegenerate := hnd₀ }
   have hform₀_apply (u w : E) : form₀ u w = η y₀ ![u, w] := by
     let u' : TangentSpace I x₀ := u
     let w' : TangentSpace I x₀ := w
-    exact (hform.isNondegenerate.symplecticFormAt_apply x₀ u' w').trans
+    exact (SmoothForm.bilinFormAt_apply form x₀ u' w').trans
       ((SmoothBundleForm.eval₂_apply form x₀ u' w').trans
         (congrArg (fun A : E [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![u, w]) hηy₀.symm))
   have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 :=
-    form.inChartAt_extChartAt_self_nondegenerate
-      (hform.isNondegenerate.nondegenerate_bilinFormAt x₀)
+    form.inChartAt_extChartAt_self_nondegenerate hnd₀
   -- Apply the flat Moser–Darboux theorem to `η` on `W` around `y₀`.
   obtain ⟨Φ_flat, V₀, hΦy₀, hV₀_open, hy₀V₀, hV₀_sub, hη_inv⟩ :=
     exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv (r := (⊤ : ℕ∞))
       le_top isOpen_interior hy₀W (form.isSmoothForm.contDiffOn_inChartAt_interior_target x₀)
-      (fun z hz ↦ hform.isClosed.extDeriv_inChartAt_eq_zero x₀ hz) hnd
+      (fun z hz ↦ hcl.extDeriv_inChartAt_eq_zero x₀ hz) hnd
   obtain ⟨chart, hchart_src, hchart_coe, hmvf⟩ :=
     exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀_open hV₀_sub
       (by exact_mod_cast le_top) Φ_flat
@@ -233,13 +302,27 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
       ![mvfderiv I (extChartAt I x₀) x v, mvfderiv I (extChartAt I x₀) x w] := by
     ext i
     fin_cases i <;> rfl
-  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.1 hxS.1, hvec,
+  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.val hxS.1, hvec,
     hmvf x hx v, hmvf x hx w]
   rw [hform₀_apply, hη_inv (extChartAt I x₀ x) hxS.2]
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
   congr 1
   ext i
   fin_cases i <;> rfl
+
+/-- **Darboux's theorem at an interior point.** Around any interior point `x₀` of a smooth manifold
+carrying a symplectic two-form `form`, there are a smooth partial diffeomorphism `chart` into the
+model space `E` with `x₀ ∈ chart.source` and `chart x₀ = 0` and a constant symplectic form `form₀`
+on `E` whose pullback by `mvfderiv I chart` equals `form` on `chart.source`. -/
+theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
+    {form : SmoothTwoForm I M} (hform : form.IsSymplectic) {x₀ : M}
+    (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ (chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞) (form₀ : SymplecticForm E),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w) :=
+  exists_darbouxChart_of_nondegenerate_of_isInteriorPoint hform.isClosed
+    (hform.isNondegenerate.nondegenerate_bilinFormAt x₀) hx₀
 
 /-- **Darboux's theorem for a prescribed model symplectic form at an interior point.** Around any
 interior point `x₀` of `(M, form)` and for any chosen symplectic form `form₀` on `E`, there is a
@@ -276,6 +359,25 @@ theorem IsSymplectic.exists_standardDarbouxChart_of_isInteriorPoint
   obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
   exact ⟨n, _, hx₀', h0', hpull⟩
 
+/-- **Standard Euclidean Darboux coordinates at fixed dimension `2 * n`, for a closed two-form
+nondegenerate at an interior point.** -/
+theorem exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInteriorPoint
+    {form : SmoothTwoForm I M} (hcl : form.IsClosed) {n : ℕ}
+    (hn : Module.finrank ℝ E = 2 * n) {x₀ : M} (hnd₀ : (form.bilinFormAt x₀).Nondegenerate)
+    (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ chart : PartialDiffeomorph I
+      𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) M
+      (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) ∞,
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w =
+          stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) := by
+  obtain ⟨chart₁, ω₁, hx₀₁, h0₁, hchart₁⟩ :=
+    exists_darbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd₀ hx₀
+  obtain ⟨L, hL⟩ := ω₁.exists_continuousLinearEquiv_stdSymplecticForm_of_finrank_eq hn
+  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
+  exact ⟨_, hx₀', h0', hpull⟩
+
 /-- **Standard Euclidean Darboux coordinates at fixed dimension `2 * n` (interior point).** -/
 theorem IsSymplectic.exists_standardDarbouxChart_of_finrank_eq_of_isInteriorPoint
     {form : SmoothTwoForm I M} (hform : form.IsSymplectic) {n : ℕ}
@@ -286,11 +388,9 @@ theorem IsSymplectic.exists_standardDarbouxChart_of_finrank_eq_of_isInteriorPoin
       x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w =
-          stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) := by
-  obtain ⟨chart₁, ω₁, hx₀₁, h0₁, hchart₁⟩ := hform.exists_darbouxChart_of_isInteriorPoint hx₀
-  obtain ⟨L, hL⟩ := ω₁.exists_continuousLinearEquiv_stdSymplecticForm_of_finrank_eq hn
-  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
-  exact ⟨_, hx₀', h0', hpull⟩
+          stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) :=
+  exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInteriorPoint hform.isClosed hn
+    (hform.isNondegenerate.nondegenerate_bilinFormAt x₀) hx₀
 
 /-- **Standard Euclidean Darboux coordinates straightening a nonzero tangent vector to
 `(0, single 0 1)` at an interior point.** -/

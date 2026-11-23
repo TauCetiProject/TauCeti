@@ -400,6 +400,7 @@ theorem finrank_ker_add_finrank_of_isCoisotropic {W : Type*} [AddCommGroup W] [M
     ← LinearMap.finrank_range_of_inj hι, add_comm]
   exact ω.finrank_add_finrank_orthogonal _
 
+omit [FiniteDimensional ℝ V] in
 /-- A coisotropic subspace has at least half the dimension of the ambient space. -/
 lemma IsCoisotropic.finrank_le_two_mul_finrank (h : ω.IsCoisotropic L) :
     finrank ℝ V ≤ 2 * finrank ℝ L :=
