@@ -1023,6 +1023,15 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     mixedDeriv α β a x ξ = 0 :=
   (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
 
+/-- Away from the support of a position cutoff `ψ`, every mixed derivative of `ψ(x) a(x, ξ)`
+vanishes. -/
+theorem mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport {ψ : CoordinateSpace n → ℝ}
+    {x : CoordinateSpace n} (hx : x ∉ tsupport ψ) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => ψ p.1 • a p) x ξ = 0 := by
+  refine mixedDeriv_eq_zero_of_eventually ?_ α β ξ
+  filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy η
+  simp [hy]
+
 /-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
 at positions of `U`. -/
 theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU : IsOpen U)
