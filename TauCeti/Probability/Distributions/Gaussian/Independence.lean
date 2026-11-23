@@ -5,18 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Def
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
 /-!
-# Independence of linear images of a multivariate Gaussian
+# Independence of linear images of a Gaussian vector
 
 This file characterizes independence of two rectangular linear images of a multivariate Gaussian
 vector.  The images are independent exactly when their cross-covariance matrix vanishes.  The
 result applies to singular covariance matrices and to maps with arbitrary finite-dimensional
 codomains.
+
+It also proves the Gaussian regression decomposition along a continuous linear functional `L`:
+for a Gaussian random vector `X` in a separable Banach space and the covariance vector `c` of `L`,
+with `L c ≠ 0`, the residual `X - L X • (L c)⁻¹ • c` is independent of `L X`.
 
 ## Main results
 
@@ -24,6 +29,9 @@ codomains.
   the Gaussian measure itself.
 * `TauCeti.Probability.indepFun_matrix_of_hasLaw_multivariateGaussian_iff` gives the corresponding
   statement for a random vector with that law.
+* `ProbabilityTheory.HasGaussianLaw.indepFun_sub_smul_of_covariance`: the residual of a Gaussian
+  random vector after regression on a continuous linear functional is independent of that
+  functional.
 
 ## References
 
@@ -115,3 +123,37 @@ theorem indepFun_matrix_of_hasLaw_multivariateGaussian_iff
       ((indepFun_matrix_multivariateGaussian_iff m hS A B).2 hcross) hpair.symm
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasGaussianLaw
+
+variable {Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [CompleteSpace E] [SecondCountableTopology E] {X : Ω → E}
+
+/-- Gaussian regression along a continuous linear functional: if `c` is the covariance vector of
+`L`, that is `L' c = cov[L' X, L X]` for every continuous linear functional `L'`, and `L c ≠ 0`,
+then the residual `X - L X • (L c)⁻¹ • c` is independent of `L X`. -/
+theorem indepFun_sub_smul_of_covariance (hX : HasGaussianLaw X P) (L : StrongDual ℝ E)
+    {c : E} (hc : ∀ L' : StrongDual ℝ E, L' c = cov[fun ω ↦ L' (X ω), fun ω ↦ L (X ω); P])
+    (hLc : L c ≠ 0) :
+    IndepFun (fun ω ↦ X ω - L (X ω) • (L c)⁻¹ • c) (fun ω ↦ L (X ω)) P := by
+  have := hX.isProbabilityMeasure
+  have hXY : HasGaussianLaw
+      (fun ω ↦ (X ω - L (X ω) • (L c)⁻¹ • c, L (X ω))) P := by
+    simpa using hX.map_fun ((ContinuousLinearMap.id ℝ E - L.smulRight ((L c)⁻¹ • c)).prod L)
+  refine hXY.indepFun_of_covariance_strongDual fun L₂ L₁ ↦ ?_
+  have h₁ (t : ℝ) : L₁ t = t * L₁ 1 := by
+    rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+  have h₂ : (L₂ ∘ fun ω ↦ X ω - L (X ω) • (L c)⁻¹ • c) =
+      (fun ω ↦ L₂ (X ω)) - fun ω ↦ ((L c)⁻¹ * L₂ c) * L (X ω) := by
+    ext ω
+    simp only [Function.comp_apply, Pi.sub_apply, map_sub, map_smul, smul_eq_mul]
+    ring
+  have hmem (L' : StrongDual ℝ E) : MemLp (fun ω ↦ L' (X ω)) 2 P := (hX.map_fun L').memLp_two
+  have h₃ : (L₁ ∘ fun ω ↦ L (X ω)) = fun ω ↦ L (X ω) * L₁ 1 := funext fun ω ↦ h₁ _
+  rw [h₂, h₃, covariance_mul_const_right, covariance_sub_left (hmem L₂)
+    ((hmem L).const_mul _) (hmem L), covariance_const_mul_left, ← hc, ← hc]
+  field_simp
+  ring
+
+end ProbabilityTheory.HasGaussianLaw

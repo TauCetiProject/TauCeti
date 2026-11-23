@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import TauCeti.Analysis.SpecialFunctions.Log.Summable
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.RestrictedProduct
 public import TauCeti.MeasureTheory.Measure.Haar.InfinitePi
@@ -15,6 +16,7 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 public import TauCeti.Topology.Bases
 import TauCeti.MeasureTheory.Group.Arithmetic
+import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.Group
 
@@ -48,8 +50,13 @@ measures on `Πʳ i, [G i, B i]` in two regimes:
    and expressed as a rescaled `restrictedHaar` in
    `TauCeti.convergentHaarProduct_eq_smul_restrictedHaar`).
 
-Every definition and theorem has an additive counterpart (`TauCeti.restrictedAddHaar`,
-`TauCeti.convergentAddHaarProduct`, …) via `@[to_additive]`.
+Every definition and theorem about these measures has an additive counterpart
+(`TauCeti.restrictedAddHaar`, `TauCeti.convergentAddHaarProduct`, …) via `@[to_additive]`.
+
+Right-translating boxes under `TauCeti.restrictedHaar` computes the modular character of a locally
+compact restricted product as the finitary product of the modular characters of its coordinates
+(`RestrictedProduct.modularCharacter_eq_finprod`); in particular a restricted product of unimodular
+groups is unimodular (`RestrictedProduct.modularCharacter_eq_one`).
 
 ## Main definitions and results
 
@@ -72,6 +79,9 @@ Every definition and theorem has an additive counterpart (`TauCeti.restrictedAdd
   `TauCeti.comap_levelMonoidHom_convergentHaarProduct`,
   `TauCeti.isMulRightInvariant_convergentHaarProduct`,
   `TauCeti.map_restrictedProductCongr_convergentHaarProduct`.
+* `RestrictedProduct.modularCharacter_eq_finprod`, `RestrictedProduct.modularCharacter_eq_one`:
+  the modular character of a restricted product, and unimodularity of restricted products of
+  unimodular groups.
 
 ## References
 
@@ -82,7 +92,7 @@ Every definition and theorem has an additive counterpart (`TauCeti.restrictedAdd
 * V. Platonov, A. Rapinchuk, and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. 1,
   2nd ed., Cambridge University Press (2023), §3.5, pp. 188–195.
 * A. Borel, *Some finiteness properties of adele groups over number fields*, Publ. Math. IHÉS 16
-  (1963), 5–30, §1.
+  (1963), 5–30, §1, and §5.5 for the modular function of a restricted product.
 -/
 
 public section
@@ -989,5 +999,61 @@ theorem map_restrictedProductCongr_convergentHaarProduct (U U' : ∀ i, Subgroup
       (tprod_congr fun i ↦ by rw [hUU' i.val i.property]))
 
 end ConvergentHaarProduct
+
+/-! ### The modular character of a restricted product -/
+
+section ModularCharacter
+
+variable {B : ∀ i, K i} [hBopen : Fact (∀ i, IsOpen (B i : Set (G i)))]
+  [LocallyCompactSpace (Πʳ i, [G i, B i])]
+
+omit [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)] in
+/-- **The modular character of a restricted product** is the finitary product of the modular
+characters of the coordinates: `Δ x = ∏ᶠ i, Δ (x i)`. Only finitely many factors differ from `1`,
+since `x i ∈ B i` and `B i` is compact for all but finitely many `i`. -/
+theorem _root_.RestrictedProduct.modularCharacter_eq_finprod (x : Πʳ i, [G i, B i]) :
+    modularCharacter x = ∏ᶠ i, modularCharacter (x i) := by
+  classical
+  borelize (Πʳ i, [G i, B i])
+  let (i : ι) : MeasurableSpace (G i) := borel (G i)
+  have (i : ι) : BorelSpace (G i) := ⟨rfl⟩
+  have hBcompact : ∀ᶠ i in cofinite, IsCompact (B i : Set (G i)) :=
+    eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct
+      (fun i ↦ hBopen.out i) (fun i ↦ (Subgroup.ofClass (B i)).isClosed_of_isOpen (hBopen.out i))
+      fun i ↦ ⟨1, one_mem (B i)⟩
+  -- Local Haar measures giving mass `1` to a compact set `K₀ i`, equal to `B i` when compact.
+  let K₀ (i : ι) : TopologicalSpace.PositiveCompacts (G i) :=
+    if h : IsCompact (B i : Set (G i)) then
+      ⟨⟨B i, h⟩, by simp [(hBopen.out i).interior_eq]⟩
+    else Classical.arbitrary _
+  have hK₀ : ∀ᶠ i in cofinite, (K₀ i : Set (G i)) = B i :=
+    hBcompact.mono fun i hi ↦ by simp [K₀, hi]
+  let μ (i : ι) : Measure (G i) := haarMeasure (K₀ i)
+  have hμB : ∀ᶠ i in cofinite, μ i (B i) = 1 := hK₀.mono fun i hi ↦ hi ▸ haarMeasure_self
+  have hbox : ∀ᶠ i in cofinite, (· * x i) ⁻¹' (K₀ i : Set (G i)) = B i := by
+    filter_upwards [hK₀, x.eventually] with i hi hx
+    ext y
+    simpa [hi] using mul_mem_cancel_right hx
+  -- Right translation by `x` scales the box `box K₀` of mass `1` by `Δ x` and its coordinates by
+  -- `Δ (x i)`.
+  have h := measure_preimage_mul_right_eq_modularCharacter_mul_of_regular
+    (restrictedHaar B μ hμB) x (box fun i ↦ (K₀ i : Set (G i)))
+  rw [preimage_mul_right_box, restrictedHaar_box_eq_finprod B μ hμB hbox,
+    restrictedHaar_box_eq_finprod B μ hμB hK₀] at h
+  simp_rw [measure_preimage_mul_right_eq_modularCharacter_mul_of_regular, μ, haarMeasure_self,
+    finprod_one, mul_one] at h
+  apply ENNReal.coe_injective
+  rw [← h]
+  exact (ENNReal.ofNNRealHom.toMonoidHom.map_finprod_of_injective ENNReal.coe_injective _).symm
+
+omit [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)] in
+/-- **A restricted product of unimodular groups is unimodular.** -/
+theorem _root_.RestrictedProduct.modularCharacter_eq_one
+    (h : ∀ i, (modularCharacter : G i →* ℝ≥0) = 1) :
+    (modularCharacter : Πʳ i, [G i, B i] →* ℝ≥0) = 1 := by
+  ext x
+  simp [RestrictedProduct.modularCharacter_eq_finprod, h]
+
+end ModularCharacter
 
 end TauCeti
