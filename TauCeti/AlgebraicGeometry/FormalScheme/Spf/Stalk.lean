@@ -9,11 +9,11 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood.Noetherian
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood.Noetherian
 import TauCeti.RingTheory.CohenMacaulay.Flat
 import TauCeti.RingTheory.Flat.Colimit
 import TauCeti.RingTheory.KrullDimension.Fiber
@@ -25,12 +25,9 @@ import TauCeti.RingTheory.RegularLocalRing.Flat
 Let `A` be a noetherian adic ring and `p` a point of `Spf A`, an open prime `𝔭` of `A`. The stalk
 `O_{Spf A, p}` is the colimit of the completed localisations `A_{f}` over the basic open
 neighbourhoods `D(f)` of `p`, and the elements of `A ∖ 𝔭` become units in it, so it receives a
-canonical map from the local ring `A_𝔭` (EGA I, Ch. 0, 7.6.17; Ch. I, 10.1.6). More generally, for
-any complete separated adic ring `A` of finite ideal type and open prime `p`, we have the canonical
-pair of ring homomorphisms `A_𝔭 → O_{Spf A, p} → Â_𝔭`, where `Â_𝔭 = LocalCompletion p` is the
-`I`-adic completion of `A_𝔭`. When `A` is noetherian, this file shows that `A_𝔭 → O_{Spf A, p}` is
-a faithfully flat local homomorphism of noetherian local rings under which `𝔭 A_𝔭` generates the
-maximal ideal of the stalk:
+canonical map from the local ring `A_𝔭` (EGA I, Ch. 0, 7.6.17; Ch. I, 10.1.6). This file shows
+that `A_𝔭 → O_{Spf A, p}` is a faithfully flat local homomorphism of noetherian local rings under
+which `𝔭 A_𝔭` generates the maximal ideal of the stalk:
 
 * flatness holds because every `A_{f}` is flat over `A`, and a filtered colimit of flat
   `A`-algebras is flat (`RingHom.Flat.of_isColimit_codomain`); flatness over `A` and over its
@@ -47,12 +44,9 @@ Cohen–Macaulay condition at a point of a formal spectrum are computed from its
 
 * `TauCeti.FormalScheme.Spf.toStalk p`: the canonical map `A → O_{Spf A, p}`.
 * `TauCeti.FormalScheme.Spf.localizationToStalk p`: the canonical map `A_𝔭 → O_{Spf A, p}`.
-* `TauCeti.FormalScheme.Spf.stalkToLocalCompletion p`: the canonical map `O_{Spf A, p} → Â_𝔭`.
 
 ## Main results
 
-* `TauCeti.FormalScheme.Spf.stalkToLocalCompletion_comp_localizationToStalk`: the composite
-  `A_𝔭 → O_{Spf A, p} → Â_𝔭` is the canonical completion map `A_𝔭 → Â_𝔭`.
 * `TauCeti.FormalScheme.Spf.flat_localizationToStalk`,
   `TauCeti.FormalScheme.Spf.faithfullyFlat_localizationToStalk`: the map `A_𝔭 → O_{Spf A, p}` is
   flat and faithfully flat.
@@ -324,78 +318,6 @@ theorem localizationToStalk_comp_algebraMap :
         (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) =
       toStalk p :=
   RingHom.ext (localizationToStalk_algebraMap_eq_toStalk p)
-
-/-- The canonical ring homomorphism `𝒪_{Spf A, p} →+* Â_𝔭` from the stalk of `Spf A` at `p` to
-the `I`-adic completion of `A_𝔭`. -/
-noncomputable def stalkToLocalCompletion :
-    (Spf A).presheaf.stalk p →+* LocalCompletion p :=
-  (colimitToLocalCompletion p).comp
-    (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
-      (IsAdicRing.ideal_spec A).1).inv.hom
-
-/-- `stalkToLocalCompletion p` factors as `completedNeighbourhoodColimitIso.inv` followed by
-`colimitToLocalCompletion p`. -/
-theorem stalkToLocalCompletion_eq_comp :
-    stalkToLocalCompletion p =
-      (colimitToLocalCompletion p).comp
-        (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
-          (IsAdicRing.ideal_spec A).1).inv.hom := by
-  rfl
-
-/-- Through `completedNeighbourhoodColimitIso`, `stalkToLocalCompletion p` is
-`colimitToLocalCompletion p`. -/
-@[simp]
-theorem stalkToLocalCompletion_completedNeighbourhoodColimitIso_hom
-    (x : (colimit (completedNeighbourhoodDiagram p) : CommRingCat)) :
-    stalkToLocalCompletion p
-        ((completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
-          (IsAdicRing.ideal_spec A).1).hom x) =
-      colimitToLocalCompletion p x :=
-  congrArg (colimitToLocalCompletion p)
-    (ConcreteCategory.congr_hom (completedNeighbourhoodColimitIso p _ _).hom_inv_id x)
-
-/-- On germs coming from `A_{f}`, `stalkToLocalCompletion p` is `toLocalCompletion p f`. -/
-@[simp]
-theorem stalkToLocalCompletion_germ (f : BasicNeighbourhood p) (x : CompletedAway A f.elem) :
-    stalkToLocalCompletion p ((Spf A).presheaf.germ (basicOpen f.elem) p
-      (mem_basicOpen.mpr f.notMem)
-      ((basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1
-        (IsAdicRing.ideal_spec A).1 f.elem).inv x)) =
-      toLocalCompletion p f x :=
-  (congrArg (stalkToLocalCompletion p)
-    (ConcreteCategory.congr_hom (completedNeighbourhoodColimitIso_germ p _ _ f) x).symm).trans
-    ((stalkToLocalCompletion_completedNeighbourhoodColimitIso_hom p _).trans
-      (colimitToLocalCompletion_ι p f x))
-
-/-- On images of elements of `A`, `stalkToLocalCompletion p` is `algebraMap A Â_𝔭`. -/
-@[simp]
-theorem stalkToLocalCompletion_toStalk (a : A) :
-    stalkToLocalCompletion p (toStalk p a) = algebraMap A (LocalCompletion p) a := by
-  let f : BasicNeighbourhood p := ⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩
-  rw [toStalk_eq_germ p f a, stalkToLocalCompletion_germ]
-  exact (toLocalCompletion p f).commutes a
-
-/-- The composite `A → 𝒪_{Spf A, p} → Â_𝔭` is `algebraMap A Â_𝔭`. -/
-@[simp]
-theorem stalkToLocalCompletion_comp_toStalk :
-    (stalkToLocalCompletion p).comp (toStalk p) = algebraMap A (LocalCompletion p) :=
-  RingHom.ext (stalkToLocalCompletion_toStalk p)
-
-/-- The composite `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭` is the canonical completion map `A_𝔭 → Â_𝔭`. -/
-@[simp]
-theorem stalkToLocalCompletion_comp_localizationToStalk :
-    (stalkToLocalCompletion p).comp (localizationToStalk p) =
-      algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (LocalCompletion p) :=
-  IsLocalization.ringHom_ext (p : PrimeSpectrum A).asIdeal.primeCompl
-    (RingHom.ext fun _ ↦ by simp [← IsScalarTower.algebraMap_apply])
-
-/-- Applied pointwise, `A_𝔭 → 𝒪_{Spf A, p} → Â_𝔭` is the canonical completion map `A_𝔭 → Â_𝔭`. -/
-@[simp]
-theorem stalkToLocalCompletion_localizationToStalk
-    (x : Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :
-    stalkToLocalCompletion p (localizationToStalk p x) =
-      algebraMap (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) (LocalCompletion p) x :=
-  RingHom.congr_fun (stalkToLocalCompletion_comp_localizationToStalk p) x
 
 /-- The stalks of the formal spectrum of a noetherian adic ring are noetherian (EGA I, Ch. 0,
 7.6.17; Ch. I, 10.1.6). -/

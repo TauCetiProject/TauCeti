@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 -- `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow` is imported publicly: the finite-exponent
 -- estimates below are proved as bounds between `∫⁻ ‖·‖ₑ ^ p` integrals and converted by
@@ -16,6 +17,8 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # The Poincaré inequality on a slab
@@ -58,6 +61,11 @@ the bound `‖Du x (eᵢ)‖ ≤ ‖Du x‖`; the endpoint uses the same bound p
   `EuclideanSpace ℝ (Fin (n + 1))` for a `C¹` function supported in a slab of width `b - a`.
 * `TauCeti.eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball`: the form for a support inside a
   ball, with twice the radius as the constant.
+* `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`: the `L²` form on the
+  plane `ℝ × ℝ`, `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`, for a compactly supported `C¹` map vanishing where
+  `r ≤ |t|`.
+* `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im`: the same inequality read
+  on `ℂ`, `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`, for a map vanishing where `r ≤ |Im z|`.
 
 The passage from a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals to one between the `Lᵖ` seminorms is
 generic measure theory and lives in `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow`.
@@ -381,5 +389,83 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball
     eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab hu hslab hp
 
 end Slab
+
+section Strip
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **The Poincaré inequality on a strip, for maps vanishing outside it.** A compactly supported
+`C¹` map on the plane which vanishes wherever `r ≤ |t|` satisfies `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`.
+Only the derivative across the strip enters, and the constant depends only on its width. -/
+theorem integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd {u : ℝ × ℝ → V} {r : ℝ}
+    (hu : ContDiff ℝ 1 u) (hc : HasCompactSupport u)
+    (hr : ∀ z : ℝ × ℝ, r ≤ |z.2| → u z = 0) :
+    ∫ z, ‖u z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ u z (0, 1)‖ ^ 2 := by
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  -- Off the closed strip `|t| ≤ r` the map and its derivative vanish.
+  have hdu0 (z : ℝ × ℝ) (hz : r < |z.2|) : fderiv ℝ u z (0, 1) = 0 := by
+    have hopen : IsOpen {w : ℝ × ℝ | r < |w.2|} :=
+      isOpen_lt continuous_const (continuous_abs.comp continuous_snd)
+    have hev : u =ᶠ[nhds z] fun _ ↦ 0 :=
+      Filter.mem_of_superset (hopen.mem_nhds hz) fun w hw ↦ hr w (le_of_lt hw)
+    simp [hev.fderiv_eq]
+  -- On each vertical slice, the one-dimensional Poincaré inequality on `Icc (-r) r`.
+  have hline (s : ℝ) : (∫ t, ‖u (s, t)‖ ^ 2) ≤
+      (2 * r) ^ 2 * ∫ t, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 := by
+    have hd (t : ℝ) : HasDerivAt (fun r ↦ u (s, r)) (fderiv ℝ u (s, t) (0, 1)) t := by
+      have hp : HasDerivAt (fun r : ℝ ↦ ((s, r) : ℝ × ℝ)) (0, 1) t :=
+        (hasDerivAt_const t s).prodMk (hasDerivAt_id t)
+      exact (hu.differentiable one_ne_zero (s, t)).hasFDerivAt.comp_hasDerivAt t hp
+    have hd' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
+      (hdu.clm_apply continuous_const).comp (continuous_const.prodMk continuous_id)
+    have hsupp : Function.support (fun t ↦ u (s, t)) ⊆ Icc (-r) r := fun t ht ↦
+      abs_le.1 (not_le.1 fun h ↦ ht (hr (s, t) h)).le
+    have hsupp' : Function.support (fun t ↦ fderiv ℝ u (s, t) (0, 1)) ⊆ Icc (-r) r :=
+      fun t ht ↦ abs_le.1 (not_lt.1 fun h ↦ ht (hdu0 (s, t) h))
+    have h := lintegral_enorm_rpow_le_of_support_subset_Icc hd hd' hsupp one_le_two
+    rw [show (r - -r) ^ (2 : ℝ) = (2 * r) ^ 2 by rw [Real.rpow_two]; ring] at h
+    have hint {f : ℝ → V} (hf : Continuous f) (hfs : Function.support f ⊆ Icc (-r) r) :
+        ENNReal.ofReal (∫ t, ‖f t‖ ^ 2) = ∫⁻ t, ‖f t‖ₑ ^ (2 : ℝ) := by
+      rw [ofReal_integral_eq_lintegral_ofReal (hf.integrable_norm_sq_of_hasCompactSupport
+        (HasCompactSupport.intro isCompact_Icc fun t ht ↦
+          Function.notMem_support.1 fun h ↦ ht (hfs h))) (ae_of_all _ fun _ ↦ sq_nonneg _)]
+      simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm, ENNReal.rpow_two]
+    rw [← ENNReal.ofReal_le_ofReal_iff (mul_nonneg (sq_nonneg _)
+      (integral_nonneg fun _ ↦ sq_nonneg _)), ENNReal.ofReal_mul (sq_nonneg _),
+      hint (f := fun t ↦ u (s, t)) (hu.continuous.comp (continuous_const.prodMk continuous_id))
+        hsupp, hint hd' hsupp']
+    exact h
+  have hi : Integrable (fun z ↦ ‖u z‖ ^ 2) (volume.prod volume) :=
+    hu.continuous.integrable_norm_sq_of_hasCompactSupport hc
+  have hdi : Integrable (fun z ↦ ‖fderiv ℝ u z (0, 1)‖ ^ 2) (volume.prod volume) :=
+    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply (𝕜 := ℝ) (0, 1))
+  rw [Measure.volume_eq_prod, integral_prod _ hi, integral_prod _ hdi, ← integral_const_mul]
+  exact integral_mono hi.integral_prod_left (hdi.integral_prod_left.const_mul _) hline
+
+/-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
+`ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
+`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd` read on `ℂ`. -/
+theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq_of_abs_im {η : ℂ → V} {r : ℝ}
+    (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) (hr : ∀ z : ℂ, r ≤ |z.im| → η z = 0) :
+    ∫ z, ‖η z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ η z Complex.I‖ ^ 2 := by
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd
+    (hη.comp Complex.equivRealProdCLM.symm.contDiff)
+    (hc.comp_homeomorph Complex.equivRealProdCLM.symm.toHomeomorph) (r := r) fun p hp ↦
+      hr _ (by rwa [Complex.equivRealProdCLM_symm_apply_im])
+  have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ Complex.equivRealProdCLM.symm) p (0, 1) =
+      fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I := by
+    rw [Complex.equivRealProdCLM.symm.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, Complex.equivRealProdCLM_symm_apply (0, 1)]
+    simp
+  simp only [hdη, Function.comp_apply] at hpoinc
+  rw [← Complex.volume_preserving_equiv_real_prod.integral_comp'
+      fun p ↦ ‖η (Complex.equivRealProdCLM.symm p)‖ ^ 2,
+    ← Complex.volume_preserving_equiv_real_prod.integral_comp'
+      fun p ↦ ‖fderiv ℝ η (Complex.equivRealProdCLM.symm p) Complex.I‖ ^ 2] at hpoinc
+  simpa only [Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM,
+    ContinuousLinearEquiv.symm_apply_apply] using hpoinc
+
+end Strip
 
 end TauCeti

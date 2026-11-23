@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Existence
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Extension
 
 /-!
 # Maps out of the presentation model of `K(A, n + 2)`, and its uniqueness
@@ -17,21 +17,23 @@ the kernel of `ψ`. Killing its homotopy groups above dimension `n + 2` gives th
 space `K = TauCeti.killHomotopyGroups (n + 3) Y y` of `TauCeti.exists_isEilenbergMacLaneSpace`.
 
 This file maps this model into other spaces, following Hatcher's Lemma 4.31 and
-Proposition 4.30.
+Proposition 4.30, by constructing maps on the wedge and extending them with the results of
+`TauCeti.AlgebraicTopology.EilenbergMacLane.Extension`.
 
 * **Skeletal extension.** For an `(n + 1)`-connected space `Z` and a homomorphism
   `θ : A → Hₙ₊₂(Z; ℤ)`, there is a based map `f : Y ⟶ Z` whose restriction to the wedge induces
   `θ ∘ ψ` on `Hₙ₊₂`
   (`TauCeti.EilenbergMacLane.exists_singularHomologyMap_cellAttachmentIncl_comp_eq`).
   The generator spheres are sent to representatives of the prescribed classes
-  (`TauCeti.exists_sphereWedge_singularHomologyMap_eq`). Each relation sphere then becomes
-  null-homologous in `Z`, hence null-homotopic by the Hurewicz theorem
-  (`TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero`), so the map extends over the
-  relation cells. When `ψ` is surjective and `θ` is bijective, `f` induces a bijection on `πₙ₊₂`
-  (`TauCeti.EilenbergMacLane.bijective_homotopyGroupMap_of_singularHomologyMap_comp_eq`).
-* **Uniqueness.** If moreover `Z` is a `K(G, n + 2)` space, `f` extends over the higher cells of
-  `K`, and the extension is a weak homotopy equivalence `K ⟶ Z`
-  (`TauCeti.EilenbergMacLane.exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation`).
+  (`TauCeti.exists_sphereWedge_singularHomologyMap_eq`). The induced map on `Hₙ₊₂` kills the
+  kernel of `ψ`, so the map extends over the relation cells
+  (`TauCeti.EilenbergMacLane.exists_cellAttachmentIncl_comp_eq_iff`).
+* **Uniqueness.** If moreover `ψ` is surjective, `θ` is bijective and `Z` is a `K(G, n + 2)`
+  space, the map on the wedge induces on `Hₙ₊₂` a surjection with kernel the kernel of `ψ`, so it
+  extends to a weak homotopy equivalence `K ⟶ Z`
+  (`TauCeti.EilenbergMacLane.exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation`,
+  through `exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence` in the namespace
+  `TauCeti.EilenbergMacLane`).
   Every `K(A, n + 2)` space therefore receives a weak homotopy equivalence from the presentation
   model realizing any prescribed isomorphism `πₙ₊₂(Z) ≃ A`
   (`TauCeti.IsEilenbergMacLaneSpace.exists_isWeakHomotopyEquivalence_killHomotopyGroups`), so
@@ -107,63 +109,12 @@ theorem exists_singularHomologyMap_cellAttachmentIncl_comp_eq
         (cellAttachmentIncl (relationAttach A n ψ) ≫ f)).hom = θ ∘ₗ ψ := by
   -- Send the generator spheres to representatives of the prescribed classes.
   obtain ⟨g, hg, hgθ⟩ := exists_sphereWedge_singularHomologyMap_eq hZ (θ ∘ₗ ψ)
-  -- Every relation sphere becomes null-homologous in `Z`, hence null-homotopic, so `g` extends
-  -- over the relation cells.
-  choose F hF using fun r : Relation A n ψ ↦
-    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq (r.val ≫ g)).1 <|
-      (TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero hZ (r.val ≫ g)).2 <| by
-        rw [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, hgθ,
-          LinearMap.comp_apply, r.property, map_zero]
-  refine ⟨cellAttachmentLift _ g F fun r ↦ (hF r).symm, ?_, ?_⟩
-  · rw [presentationBase, ← ConcreteCategory.comp_apply, cellAttachmentIncl_lift, hg]
-  · rw [cellAttachmentIncl_lift, hgθ]
-
-/-- **A map out of the presentation complex realizing an isomorphism is bijective on `πₙ₊₂`.** Let
-`ψ` be surjective, let `Z` be a space whose homotopy groups `πₖ(Z, z)` vanish for `k < n + 2`, and
-let `θ : A → Hₙ₊₂(Z; ℤ)` be bijective. A based map `f` from the presentation complex to `Z` whose
-restriction to the wedge of spheres induces `θ ∘ ψ` on `Hₙ₊₂` is bijective on `πₙ₊₂`. -/
-theorem bijective_homotopyGroupMap_of_singularHomologyMap_comp_eq
-    (hψ : Function.Surjective ψ) (hZ : ∀ k < n + 2, Subsingleton (π_ k Z z))
-    {θ : A →ₗ[ℤ] ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
-      (ModuleCat.of ℤ ℤ)).obj Z} (hθ : Function.Bijective θ)
-    {f : presentation A n ψ ⟶ Z} (hf : f (presentationBase A n ψ) = z)
-    (hfθ : (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
-      (cellAttachmentIncl (relationAttach A n ψ) ≫ f)).hom = θ ∘ₗ ψ) :
-    Function.Bijective (HomotopyGroup.map (N := Fin (n + 2)) f.hom hf) := by
-  let H := (singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)
-  let i := (H.map (cellAttachmentIncl (relationAttach A n ψ))).hom
-  have hfθ' : (H.map f).hom ∘ₗ i = θ ∘ₗ ψ := by
-    rw [← hfθ, Functor.map_comp, ModuleCat.hom_comp]
-  -- On `Hₙ₊₂`, the map `f` is bijective: the inclusion of the wedge is onto with kernel `ker ψ`.
-  have hHf : Function.Bijective (H.map f).hom := by
-    refine ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ ?_, ?_⟩
-    · obtain ⟨w, rfl⟩ := surjective_singularHomologyMap_cellAttachmentIncl
-        (relationAttach A n ψ) ℤ y
-      have hw : θ (ψ w) = 0 := by
-        rw [← LinearMap.comp_apply, ← hfθ', LinearMap.comp_apply]
-        exact hy
-      have hw' : w ∈ LinearMap.ker ψ := (map_eq_zero_iff θ hθ.injective).1 hw
-      rw [← ker_singularHomologyMap_presentation A n ψ] at hw'
-      exact hw'
-    · refine Function.Surjective.of_comp (g := i) ?_
-      rw [← LinearMap.coe_comp, hfθ', LinearMap.coe_comp]
-      exact hθ.surjective.comp hψ
-  -- The Hurewicz isomorphisms of the presentation complex and of `Z` carry `f_*` on `πₙ₊₂` to
-  -- `f_*` on `Hₙ₊₂`.
-  let hY := HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_presentation A n ψ)
-  let hZ' := HomotopyGroup.hurewiczAddEquiv hZ
-  have hcomm : ∀ a, hZ' (Additive.ofMul (HomotopyGroup.map f.hom hf a)) =
-      (H.map f).hom (hY (Additive.ofMul a)) := fun a ↦ by
-    rw [HomotopyGroup.hurewiczAddEquiv_apply_eq_hurewiczIntHom,
-      HomotopyGroup.hurewiczAddEquiv_apply_eq_hurewiczIntHom, HomotopyGroup.hurewiczIntHom_map,
-      TopCat.ofHom_hom]
-  have hfun : HomotopyGroup.map (N := Fin (n + 2)) f.hom hf =
-      Additive.toMul ∘ hZ'.symm ∘ (H.map f).hom ∘ hY ∘ Additive.ofMul := by
-    funext a
-    simp only [Function.comp_apply, ← hcomm, AddEquiv.symm_apply_apply, toMul_ofMul]
-  rw [hfun]
-  exact Additive.toMul.bijective.comp (hZ'.symm.bijective.comp
-    (hHf.comp (hY.bijective.comp Additive.ofMul.bijective)))
+  -- The map induced by `g` kills the kernel of `ψ`, so `g` extends over the relation cells.
+  obtain ⟨f, hf⟩ := (exists_cellAttachmentIncl_comp_eq_iff hZ g).2 fun h hh ↦ by
+    rw [hgθ, LinearMap.comp_apply, LinearMap.mem_ker.1 hh, map_zero]
+  refine ⟨f, ?_, ?_⟩
+  · rw [presentationBase, ← ConcreteCategory.comp_apply, hf, hg]
+  · rw [hf, hgθ]
 
 /-- **Uniqueness of `K(A, n + 2)`** (Hatcher, Proposition 4.30). Let `ψ` be surjective, let `Z` be
 a `K(G, n + 2)` space and let `θ : A → Hₙ₊₂(Z; ℤ)` be bijective. There is a weak homotopy
@@ -183,19 +134,19 @@ theorem exists_isWeakHomotopyEquivalence_killHomotopyGroups_presentation
           killHomotopyGroupsIncl (n + 3) (presentation A n ψ) (presentationBase A n ψ) ≫ F)).hom =
         θ ∘ₗ ψ ∧
       F.hom.IsWeakHomotopyEquivalence := by
-  have hZ' : ∀ k < n + 2, Subsingleton (π_ k Z z) := fun k hk ↦
-    hZ.subsingleton_homotopyGroup hk.ne
-  obtain ⟨f, rfl, hfθ⟩ := exists_singularHomologyMap_cellAttachmentIncl_comp_eq (ψ := ψ) hZ' θ
-  have hpc : PathConnectedSpace (presentation A n ψ) :=
-    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
-      (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
-  obtain ⟨F, hF, hFw⟩ := f.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence
-    (fun k _ hk ↦ subsingleton_homotopyGroup_presentation A n ψ k hk) hZ
-    (bijective_homotopyGroupMap_of_singularHomologyMap_comp_eq hψ hZ' hθ rfl
-      hfθ)
+  -- Send the generator spheres to representatives of the prescribed classes.
+  obtain ⟨g, hg, hgθ⟩ := exists_sphereWedge_singularHomologyMap_eq
+    (fun k hk ↦ hZ.subsingleton_homotopyGroup hk.ne) (θ ∘ₗ ψ)
+  -- Since `θ` is bijective, the map induced by `g` is onto with kernel the kernel of `ψ`.
+  obtain ⟨F, hF, hFw⟩ := exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence g
+    (hg ▸ hZ) (by rw [hgθ, LinearMap.ker_comp, LinearMap.ker_eq_bot.2 hθ.injective,
+      Submodule.comap_bot]) (by rw [hgθ, LinearMap.coe_comp]; exact hθ.surjective.comp hψ)
   refine ⟨F, ?_, ?_, hFw⟩
-  · rw [← ConcreteCategory.comp_apply, hF]
-  · rw [hF, hfθ]
+  · -- The base point of the presentation complex is the image of that of the wedge.
+    have h := ConcreteCategory.congr_hom hF (sphereWedgeBase A (n + 2))
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hg] at h
+    exact h
+  · rw [hF, hgθ]
 
 /-! ### Realizing homomorphisms on `πₙ₊₂` -/
 
@@ -221,10 +172,7 @@ theorem exists_presentation_mapHom_eq
     i.nullhomotopic_comp_of_ker_le gW rfl hgW hker _ <| by
       rw [TopCat.hom_comp]
       exact cellAttachment_attachingMap_nullhomotopic _ r
-  choose F hF using fun r ↦
-    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1 (hnull r)
-  let g := cellAttachmentLift (relationAttach A n ψ) gW F fun r ↦ (hF r).symm
-  have hig : i ≫ g = gW := cellAttachmentIncl_lift _ _ _ _
+  obtain ⟨g, hig⟩ := (exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic _ gW).2 hnull
   have hg : g (presentationBase A n ψ) = z := by
     rw [presentationBase, ← ConcreteCategory.comp_apply, hig]
     exact hgW
@@ -289,9 +237,6 @@ theorem exists_killHomotopyGroups_presentation_mapHom_eq_and_isWeakHomotopyEquiv
   obtain ⟨F, hF, hFφ⟩ := exists_killHomotopyGroups_presentation_mapHom_eq
     (fun _ hk ↦ hZ.subsingleton_homotopyGroup (by omega)) φ.toMonoidHom
   -- The space `K` is a `K(πₙ₊₂(Y), n + 2)`, whether or not `ψ` is surjective.
-  have : PathConnectedSpace (presentation A n ψ) :=
-    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
-      (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
   have hK := isEilenbergMacLaneSpace_killHomotopyGroups (n + 2) (presentation A n ψ)
     (presentationBase A n ψ) fun k _ hk ↦ subsingleton_homotopyGroup_presentation A n ψ k hk
   refine ⟨F, hF, hFφ, (hK.isWeakHomotopyEquivalence_iff hZ hF).2 ?_⟩
