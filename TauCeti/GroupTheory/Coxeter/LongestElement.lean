@@ -39,8 +39,9 @@ the order-theoretic part of Littelmann's duality `π ↦ π^*` on Lakshmibai–S
 reverses a path and sends paths of shape `λ` to paths of shape `-w₀ λ`.
 
 Left multiplication by `w₀` also acts on `W / W_J`, now with no condition on `J`. If `w₀J` has
-maximal length in `W_J`, the minimal coset representative of `w₀ u W_J` is `w₀ * u * w₀J`, of length
-`ℓ w₀ - ℓ u - ℓ w₀J` (`CoxeterSystem.IsLongest.minimalCosetRep_mul`). Read on the right cosets
+maximal length in `W_J` and `u` is a minimal coset representative of `W / W_J`, the minimal coset
+representative of `w₀ u W_J` is `w₀ * u * w₀J`, of length `ℓ w₀ - ℓ u - ℓ w₀J`
+(`CoxeterSystem.IsLongest.minimalCosetRep_mul`). Read on the right cosets
 `W_J w` by inversion, this is the **Kostant involution** `w ↦ w₀J * w * w₀` of the minimal
 representatives of the cosets in `W_J \ W` (`CoxeterSystem.IsLongest.kostantInvolution`). For the
 Weyl group `W` of a split reductive group `G` and the Weyl group `W_J` of the Levi subgroup of a
@@ -77,8 +78,8 @@ standard parabolic subgroup `P`, these minimal representatives are Kostant's rep
   `CoxeterSystem.MinimalCosetRepChain.last_reverseMul` and
   `CoxeterSystem.MinimalCosetRepChain.reverseMul_reverseMul`: the reversed chain runs between the
   images of the ends of the chain, and reversing twice returns the chain.
-* `CoxeterSystem.IsLongest.minimalCosetRep_mul`: the minimal coset representative of `w₀ * u` is
-  `w₀ * u * w₀J`.
+* `CoxeterSystem.IsLongest.minimalCosetRep_mul`: for a minimal coset representative `u` of
+  `W / W_J`, the minimal coset representative of `w₀ * u` is `w₀ * u * w₀J`.
 * `CoxeterSystem.IsLongest.kostantInvolution_involutive` and
   `CoxeterSystem.IsLongest.length_kostantInvolution`: **the Kostant involution is an involution and
   complements lengths**, `ℓ (w₀J * w * w₀) + ℓ w + ℓ w₀J = ℓ w₀`.
@@ -113,6 +114,115 @@ def IsLongest (w₀ : W) : Prop := ∀ u, ℓ (u * w₀) + ℓ u = ℓ w₀
 theorem isLongest_iff : cs.IsLongest w₀ ↔ ∀ u, ℓ (u * w₀) + ℓ u = ℓ w₀ :=
   Iff.rfl
 
+/-! ### Elements of maximal length -/
+
+section MaximalLength
+
+variable {J : Set B}
+
+/-- Let `w₀` have maximal length in `cs.parabolic J`, and let `u ∈ cs.parabolic J` be a prefix of
+`w₀`, in the sense that `ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀`. If `j ∈ J` is not a right descent of `u`, then
+it is a left descent of `u⁻¹ * w₀`. -/
+private theorem isLeftDescent_inv_mul_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J)
+    (hadd : ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀) {j : B} (hj : j ∈ J) (hnd : ¬ cs.IsRightDescent u j) :
+    cs.IsLeftDescent (u⁻¹ * w₀) j := by
+  -- The reflection `t = u * s j * u⁻¹` lies in `cs.parabolic J`, so it shortens `w₀`.
+  have ht : cs.IsReflection (u * s j * u⁻¹) := (cs.isReflection_simple j).conj u
+  have htw : u * s j * u⁻¹ * w₀ ∈ cs.parabolic J :=
+    mul_mem (mul_mem (mul_mem hu (cs.simple_mem_parabolic hj)) (inv_mem hu)) hw₀
+  obtain ⟨α, hα, rfl⟩ := cs.exists_isReduced u
+  obtain ⟨ξ, hξ, hξx⟩ := cs.exists_isReduced ((π α)⁻¹ * w₀)
+  have hw : w₀ = π (α ++ ξ) := by rw [cs.wordProd_append, ← hξx, mul_inv_cancel_left]
+  have hinv : cs.IsLeftInversion (π (α ++ ξ)) (π α * s j * (π α)⁻¹) := by
+    rw [← hw]
+    exact ⟨ht, lt_of_le_of_ne (h _ htw) (ht.length_mul_right_ne w₀)⟩
+  -- By the strong exchange condition, `t * w₀` deletes one letter of `α ++ ξ`.
+  obtain ⟨k, hk, hke⟩ := cs.strongExchange hinv
+  rw [List.length_append] at hk
+  rcases Nat.lt_or_ge k α.length with hkα | hkα
+  · -- A letter of `α`: then `π α * s j = t * π α` is shorter than `π α`, against `hnd`.
+    rw [List.eraseIdx_append_of_lt_length hkα, cs.wordProd_append, cs.wordProd_append,
+      ← mul_assoc] at hke
+    have hαj : π α * s j = π (α.eraseIdx k) := by
+      simpa only [inv_mul_cancel_right] using mul_right_cancel hke
+    refine absurd ?_ hnd
+    rw [IsRightDescent, hαj, hα.eq]
+    have := cs.length_wordProd_le (α.eraseIdx k)
+    have := List.length_eraseIdx_add_one hkα
+    omega
+  · -- A letter of `ξ`: then `s j * π ξ` is shorter than `π ξ = u⁻¹ * w₀`.
+    rw [List.eraseIdx_append_of_length_le hkα, cs.wordProd_append, cs.wordProd_append] at hke
+    have hjξ : s j * π ξ = π (ξ.eraseIdx (k - α.length)) := by
+      refine mul_left_cancel (a := π α) ?_
+      rw [← hke]
+      simp only [mul_assoc, inv_mul_cancel_left]
+    rw [hξx, IsLeftDescent, hjξ, hξ.eq]
+    have := cs.length_wordProd_le (ξ.eraseIdx (k - α.length))
+    have := List.length_eraseIdx_add_one (show k - α.length < ξ.length by omega)
+    omega
+
+/-- Every element of `cs.parabolic J` is a prefix of an element `w₀` of maximal length in
+`cs.parabolic J`. The proof is by induction on length, through the strong exchange condition: a
+reflection of `W_J` cannot lengthen `w₀`. -/
+private theorem length_inv_mul_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (n : ℕ) :
+    ∀ u ∈ cs.parabolic J, ℓ u = n → ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀ := by
+  induction n with
+  | zero =>
+    intro u _ hn
+    simp [cs.length_eq_zero_iff.mp hn]
+  | succ n ih =>
+    intro u hu hn
+    -- Peel off a right descent `j ∈ J` of `u`; then `j` is a left descent of `(u * s j)⁻¹ * w₀`.
+    obtain ⟨j, hj, hdesc⟩ := cs.exists_rightDescent_mem_of_mem_parabolic_of_ne_one hu fun h₁ ↦ by
+      simp [h₁] at hn
+    have hlen := cs.isRightDescent_iff.mp hdesc
+    have hu' : u * s j ∈ cs.parabolic J := mul_mem hu (cs.simple_mem_parabolic hj)
+    have hIH := ih _ hu' (by omega)
+    have hd := cs.isLeftDescent_iff.mp <| cs.isLeftDescent_inv_mul_of_forall_length_le hw₀ h hu'
+      hIH hj (cs.isRightDescent_iff_not_isRightDescent_mul.mp hdesc)
+    have hss : s j * ((u * s j)⁻¹ * w₀) = u⁻¹ * w₀ := by
+      rw [mul_inv_rev, cs.inv_simple, mul_assoc, cs.simple_mul_simple_cancel_left]
+    rw [hss] at hd
+    omega
+
+/-- **Lengths complement in an element of maximal length of a standard parabolic subgroup.** If
+`w₀` has maximal length in `cs.parabolic J`, then `ℓ (u * w₀) + ℓ u = ℓ w₀` for every `u` in
+`cs.parabolic J`. -/
+theorem length_mul_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J) :
+    ℓ (u * w₀) + ℓ u = ℓ w₀ := by
+  simpa only [inv_inv, cs.length_inv] using
+    cs.length_inv_mul_add_length_of_forall_length_le hw₀ h _ u⁻¹ (inv_mem hu) rfl
+
+/-- An element of maximal length of a standard parabolic subgroup is an involution. -/
+theorem mul_self_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) : w₀ * w₀ = 1 :=
+  cs.length_eq_zero_iff.mp <| by
+    have := cs.length_mul_add_length_of_forall_length_le hw₀ h hw₀
+    omega
+
+/-- An element of maximal length of a standard parabolic subgroup is its own inverse. -/
+theorem inv_eq_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) : w₀⁻¹ = w₀ :=
+  (eq_inv_of_mul_eq_one_left (cs.mul_self_of_forall_length_le hw₀ h)).symm
+
+theorem mul_mul_cancel_left_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (u : W) : w₀ * (w₀ * u) = u := by
+  rw [← mul_assoc, cs.mul_self_of_forall_length_le hw₀ h, one_mul]
+
+/-- **Lengths complement in an element of maximal length of a standard parabolic subgroup**, for
+multiplication on the left: `ℓ (w₀ * u) + ℓ u = ℓ w₀` for every `u` in `cs.parabolic J`. -/
+theorem length_mul_left_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
+    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J) :
+    ℓ (w₀ * u) + ℓ u = ℓ w₀ := by
+  rw [← cs.length_inv (w₀ * u), mul_inv_rev, cs.inv_eq_of_forall_length_le hw₀ h,
+    ← cs.length_inv u]
+  exact cs.length_mul_add_length_of_forall_length_le hw₀ h (inv_mem hu)
+
+end MaximalLength
+
 namespace IsLongest
 
 variable {cs}
@@ -121,29 +231,32 @@ variable {cs}
 theorem length_mul_add_length (h : cs.IsLongest w₀) (u : W) : ℓ (u * w₀) + ℓ u = ℓ w₀ :=
   h u
 
+/-- **A longest element has maximal length.** -/
+theorem length_le (h : cs.IsLongest w₀) (u : W) : ℓ u ≤ ℓ w₀ := by
+  have := h u
+  omega
+
 /-- A longest element is an involution. -/
 theorem mul_self (h : cs.IsLongest w₀) : w₀ * w₀ = 1 :=
-  cs.length_eq_zero_iff.mp (by have := h w₀; omega)
+  cs.mul_self_of_forall_length_le (J := Set.univ) (by simp [parabolic_univ])
+    fun v _ ↦ h.length_le v
 
 /-- A longest element is its own inverse. -/
 theorem inv_eq (h : cs.IsLongest w₀) : w₀⁻¹ = w₀ :=
-  (eq_inv_of_mul_eq_one_left h.mul_self).symm
+  cs.inv_eq_of_forall_length_le (J := Set.univ) (by simp [parabolic_univ])
+    fun v _ ↦ h.length_le v
 
-theorem mul_mul_cancel_left (h : cs.IsLongest w₀) (u : W) : w₀ * (w₀ * u) = u := by
-  rw [← mul_assoc, h.mul_self, one_mul]
+theorem mul_mul_cancel_left (h : cs.IsLongest w₀) (u : W) : w₀ * (w₀ * u) = u :=
+  cs.mul_mul_cancel_left_of_forall_length_le (J := Set.univ) (by simp [parabolic_univ])
+    (fun v _ ↦ h.length_le v) u
 
 theorem mul_mul_cancel_right (h : cs.IsLongest w₀) (u : W) : u * w₀ * w₀ = u := by
   rw [mul_assoc, h.mul_self, mul_one]
 
 /-- Left multiplication by a longest element also complements lengths. -/
-theorem length_mul_left_add_length (h : cs.IsLongest w₀) (u : W) : ℓ (w₀ * u) + ℓ u = ℓ w₀ := by
-  rw [← cs.length_inv (w₀ * u), mul_inv_rev, h.inv_eq, ← cs.length_inv u]
-  exact h u⁻¹
-
-/-- **A longest element has maximal length.** -/
-theorem length_le (h : cs.IsLongest w₀) (u : W) : ℓ u ≤ ℓ w₀ := by
-  have := h u
-  omega
+theorem length_mul_left_add_length (h : cs.IsLongest w₀) (u : W) : ℓ (w₀ * u) + ℓ u = ℓ w₀ :=
+  cs.length_mul_left_add_length_of_forall_length_le (J := Set.univ) (by simp [parabolic_univ])
+    (fun v _ ↦ h.length_le v) (by simp [parabolic_univ])
 
 /-- **There is at most one longest element.** -/
 theorem unique {w₀' : W} (h : cs.IsLongest w₀) (h' : cs.IsLongest w₀') : w₀ = w₀' := by
@@ -275,111 +388,6 @@ theorem minimalCosetRepCovBy_minimalCosetRep_mul_iff (h : cs.IsLongest w₀)
 
 end IsLongest
 
-/-! ### Elements of maximal length -/
-
-variable {J : Set B}
-
-/-- Let `w₀` have maximal length in `cs.parabolic J`, and let `u ∈ cs.parabolic J` be a prefix of
-`w₀`, in the sense that `ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀`. If `j ∈ J` is not a right descent of `u`, then
-it is a left descent of `u⁻¹ * w₀`. -/
-private theorem isLeftDescent_inv_mul_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J)
-    (hadd : ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀) {j : B} (hj : j ∈ J) (hnd : ¬ cs.IsRightDescent u j) :
-    cs.IsLeftDescent (u⁻¹ * w₀) j := by
-  -- The reflection `t = u * s j * u⁻¹` lies in `cs.parabolic J`, so it shortens `w₀`.
-  have ht : cs.IsReflection (u * s j * u⁻¹) := (cs.isReflection_simple j).conj u
-  have htw : u * s j * u⁻¹ * w₀ ∈ cs.parabolic J :=
-    mul_mem (mul_mem (mul_mem hu (cs.simple_mem_parabolic hj)) (inv_mem hu)) hw₀
-  obtain ⟨α, hα, rfl⟩ := cs.exists_isReduced u
-  obtain ⟨ξ, hξ, hξx⟩ := cs.exists_isReduced ((π α)⁻¹ * w₀)
-  have hw : w₀ = π (α ++ ξ) := by rw [cs.wordProd_append, ← hξx, mul_inv_cancel_left]
-  have hinv : cs.IsLeftInversion (π (α ++ ξ)) (π α * s j * (π α)⁻¹) := by
-    rw [← hw]
-    exact ⟨ht, lt_of_le_of_ne (h _ htw) (ht.length_mul_right_ne w₀)⟩
-  -- By the strong exchange condition, `t * w₀` deletes one letter of `α ++ ξ`.
-  obtain ⟨k, hk, hke⟩ := cs.strongExchange hinv
-  rw [List.length_append] at hk
-  rcases Nat.lt_or_ge k α.length with hkα | hkα
-  · -- A letter of `α`: then `π α * s j = t * π α` is shorter than `π α`, against `hnd`.
-    rw [List.eraseIdx_append_of_lt_length hkα, cs.wordProd_append, cs.wordProd_append,
-      ← mul_assoc] at hke
-    have hαj : π α * s j = π (α.eraseIdx k) := by
-      simpa only [inv_mul_cancel_right] using mul_right_cancel hke
-    refine absurd ?_ hnd
-    rw [IsRightDescent, hαj, hα.eq]
-    have := cs.length_wordProd_le (α.eraseIdx k)
-    have := List.length_eraseIdx_add_one hkα
-    omega
-  · -- A letter of `ξ`: then `s j * π ξ` is shorter than `π ξ = u⁻¹ * w₀`.
-    rw [List.eraseIdx_append_of_length_le hkα, cs.wordProd_append, cs.wordProd_append] at hke
-    have hjξ : s j * π ξ = π (ξ.eraseIdx (k - α.length)) := by
-      refine mul_left_cancel (a := π α) ?_
-      rw [← hke]
-      simp only [mul_assoc, inv_mul_cancel_left]
-    rw [hξx, IsLeftDescent, hjξ, hξ.eq]
-    have := cs.length_wordProd_le (ξ.eraseIdx (k - α.length))
-    have := List.length_eraseIdx_add_one (show k - α.length < ξ.length by omega)
-    omega
-
-/-- Every element of `cs.parabolic J` is a prefix of an element `w₀` of maximal length in
-`cs.parabolic J`. The proof is by induction on length, through the strong exchange condition: a
-reflection of `W_J` cannot lengthen `w₀`. -/
-private theorem length_inv_mul_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (n : ℕ) :
-    ∀ u ∈ cs.parabolic J, ℓ u = n → ℓ (u⁻¹ * w₀) + ℓ u = ℓ w₀ := by
-  induction n with
-  | zero =>
-    intro u _ hn
-    simp [cs.length_eq_zero_iff.mp hn]
-  | succ n ih =>
-    intro u hu hn
-    -- Peel off a right descent `j ∈ J` of `u`; then `j` is a left descent of `(u * s j)⁻¹ * w₀`.
-    obtain ⟨j, hj, hdesc⟩ := cs.exists_rightDescent_mem_of_mem_parabolic_of_ne_one hu fun h₁ ↦ by
-      simp [h₁] at hn
-    have hlen := cs.isRightDescent_iff.mp hdesc
-    have hu' : u * s j ∈ cs.parabolic J := mul_mem hu (cs.simple_mem_parabolic hj)
-    have hIH := ih _ hu' (by omega)
-    have hd := cs.isLeftDescent_iff.mp <| cs.isLeftDescent_inv_mul_of_forall_length_le hw₀ h hu'
-      hIH hj (cs.isRightDescent_iff_not_isRightDescent_mul.mp hdesc)
-    have hss : s j * ((u * s j)⁻¹ * w₀) = u⁻¹ * w₀ := by
-      rw [mul_inv_rev, cs.inv_simple, mul_assoc, cs.simple_mul_simple_cancel_left]
-    rw [hss] at hd
-    omega
-
-/-- **Lengths complement in an element of maximal length of a standard parabolic subgroup.** If
-`w₀` has maximal length in `cs.parabolic J`, then `ℓ (u * w₀) + ℓ u = ℓ w₀` for every `u` in
-`cs.parabolic J`. -/
-theorem length_mul_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J) :
-    ℓ (u * w₀) + ℓ u = ℓ w₀ := by
-  simpa only [inv_inv, cs.length_inv] using
-    cs.length_inv_mul_add_length_of_forall_length_le hw₀ h _ u⁻¹ (inv_mem hu) rfl
-
-/-- An element of maximal length of a standard parabolic subgroup is an involution. -/
-theorem mul_self_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) : w₀ * w₀ = 1 :=
-  cs.length_eq_zero_iff.mp <| by
-    have := cs.length_mul_add_length_of_forall_length_le hw₀ h hw₀
-    omega
-
-/-- An element of maximal length of a standard parabolic subgroup is its own inverse. -/
-theorem inv_eq_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) : w₀⁻¹ = w₀ :=
-  (eq_inv_of_mul_eq_one_left (cs.mul_self_of_forall_length_le hw₀ h)).symm
-
-theorem mul_mul_cancel_left_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (u : W) : w₀ * (w₀ * u) = u := by
-  rw [← mul_assoc, cs.mul_self_of_forall_length_le hw₀ h, one_mul]
-
-/-- **Lengths complement in an element of maximal length of a standard parabolic subgroup**, for
-multiplication on the left: `ℓ (w₀ * u) + ℓ u = ℓ w₀` for every `u` in `cs.parabolic J`. -/
-theorem length_mul_left_add_length_of_forall_length_le (hw₀ : w₀ ∈ cs.parabolic J)
-    (h : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀) (hu : u ∈ cs.parabolic J) :
-    ℓ (w₀ * u) + ℓ u = ℓ w₀ := by
-  rw [← cs.length_inv (w₀ * u), mul_inv_rev, cs.inv_eq_of_forall_length_le hw₀ h,
-    ← cs.length_inv u]
-  exact cs.length_mul_add_length_of_forall_length_le hw₀ h (inv_mem hu)
-
 /-- **An element of maximal length is a longest element**: if no element of `W` is longer than
 `w₀`, then `ℓ (u * w₀) + ℓ u = ℓ w₀` for every `u : W`. -/
 theorem isLongest_of_forall_length_le (h : ∀ v, ℓ v ≤ ℓ w₀) : cs.IsLongest w₀ := fun _ ↦
@@ -394,7 +402,7 @@ theorem isLongest_iff_forall_length_le : cs.IsLongest w₀ ↔ ∀ v, ℓ v ≤ 
 
 namespace IsLongest
 
-variable {cs} {w₀J : W}
+variable {cs} {J : Set B} {w₀J : W}
 
 /-- Let `w₀` be the longest element. For a minimal coset representative `u` of `W / W_J` and any
 `x ∈ cs.parabolic J`, the length of `w₀ * u * x` is the complement `ℓ w₀ - ℓ u - ℓ x`. -/
