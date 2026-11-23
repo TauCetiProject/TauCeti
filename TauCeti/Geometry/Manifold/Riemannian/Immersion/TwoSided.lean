@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 public import TauCeti.Topology.VectorBundle.SphereBundle.Orientation
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.Normed.Module.Orientation
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -87,13 +86,6 @@ variable {E V H G M N K : Type*}
   [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-
-/-- The normal spaces of an immersion of codimension one are lines. -/
-theorem finrank_orthogonalNormalSpace_eq_one [FiniteDimensional ℝ V] {f : M → N} {x : M}
-    (hinj : Function.Injective (mfderiv I J f x)) (hr : finrank ℝ V = finrank ℝ E + 1) :
-    finrank ℝ (orthogonalNormalSpace I J f x) = 1 := by
-  have := finrank_orthogonalNormalSpace_add_finrank hinj
-  omega
 
 section Definition
 
@@ -179,8 +171,8 @@ theorem exists_contMDiffOn_unit_orthogonalNormalSpace {f : K} (hf : ContMDiff I 
     split_ifs with hx
     · exact Submodule.smul_mem _ _ (hsmem hx)
     · exact Submodule.zero_mem _
-  · simp only [hx, ↓reduceIte, norm_smul, norm_inv, norm_norm]
-    exact inv_mul_cancel₀ (norm_ne_zero_iff.2 (hs0 hx))
+  · simpa only [hx, ↓reduceIte, RCLike.ofReal_real_eq_id, id_eq] using
+      norm_smul_inv_norm (𝕜 := ℝ) (hs0 hx)
 
 /-- A continuous nowhere-zero normal field of an immersion of codimension one orients its normal
 bundle `ν_f`: the orientation given at `x` by the basis `(ν x)` of the line `ν_f x`. -/

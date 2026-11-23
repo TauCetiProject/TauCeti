@@ -203,6 +203,7 @@ theorem Orientation.signBasis_mul_units_mul_det_pos
   simpa only [mul_comm] using hp
 
 /-- In a line, the basis `(-v)` gives the orientation opposite to that of the basis `(v)`. -/
+@[simp]
 theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
     (hV : Module.finrank R V = 1) {v : V} (hv : v ≠ 0) :

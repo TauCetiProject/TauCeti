@@ -180,6 +180,13 @@ theorem finrank_orthogonalNormalSpace_add_finrank [FiniteDimensional ℝ V] {f :
   rw [orthogonalNormalSpace_def, add_comm]
   exact h
 
+/-- The normal spaces of an immersion of codimension one are lines. -/
+theorem finrank_orthogonalNormalSpace_eq_one [FiniteDimensional ℝ V] {f : M → N} {x : M}
+    (hinj : Function.Injective (mfderiv I J f x)) (hr : finrank ℝ V = finrank ℝ E + 1) :
+    finrank ℝ (orthogonalNormalSpace I J f x) = 1 := by
+  have := finrank_orthogonalNormalSpace_add_finrank hinj
+  omega
+
 section OrthogonalProjection
 
 variable {f : M → N} {x : M}

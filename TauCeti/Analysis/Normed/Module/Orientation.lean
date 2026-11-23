@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.Orientation.Basic
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Orientation.Basis
 
