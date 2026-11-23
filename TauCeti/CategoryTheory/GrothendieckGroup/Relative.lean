@@ -8,6 +8,8 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.EssentiallySmall
 
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+
 /-!
 # The relative Grothendieck group of a functor
 
@@ -25,8 +27,8 @@ of `C` and an isomorphism `α : T P ≅ T Q` in `D`, subject to
 The triples and the isomorphisms between them are exactly the objects and isomorphisms of Mathlib's
 categorical pullback `T ⊡ T`, so `K₀(T)` is the Grothendieck group of `T ⊡ T` presented by the
 direct-sum and composition relations, built with Tau Ceti's presentation engine
-`TauCeti.PresentedK0`; isomorphism invariance is then automatic, and `K₀(T)` lives in the
-universe in which `C` is essentially small.
+`TauCeti.PresentedK0`; isomorphism invariance is then automatic, and `K₀(T)` lives in any
+universe `w` in which `C` is essentially small and `D` is locally small.
 
 `K₀(T)` is the relative term of the exact sequence `K₁(D) → K₀(T) → K₀(C) → K₀(D)` of a cofinal
 functor, and applied to base change `Proj(R) ⥤ Proj(R/I)` it gives the relative group `K₀(R, I)`
@@ -57,10 +59,13 @@ functors.
   (`(P, T γ, Q) = 0` for every isomorphism `γ : P ≅ Q`).
 * `TauCeti.RelativeK0.exists_eq_of`: every element of `K₀(T)` is the class of a single triple.
 * `TauCeti.RelativeK0.liftEquiv`: the universal property.
-* `TauCeti.RelativeK0.splitK0Map_comp_toSplitK0`: the composite `K₀(T) → K₀(C) → K₀(D)` vanishes.
+* `TauCeti.RelativeK0.splitK0Map_comp_toSplitK0_eq_zero`: the composite `K₀(T) → K₀(C) → K₀(D)`
+  vanishes.
 * `TauCeti.RelativeK0.subsingleton_of_fullyFaithful`: `K₀(T) = 0` for a fully faithful `T`; in
   particular `K₀(𝟭 C) = 0`.
 * `TauCeti.RelativeK0.toSplitK0_comp_map`: the difference maps are natural in commuting squares.
+* `TauCeti.RelativeK0.map_id` and `TauCeti.RelativeK0.map_comp`: the maps induced by commuting
+  squares are functorial, for the identity square and for vertically pasted squares.
 
 ## References
 
@@ -75,7 +80,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Limits.CategoricalPullback ZeroObject
 
-universe w w' v v' v'' v''' u u' u'' u'''
+universe w w' w'' v v' v'' v''' v₅ v₆ u u' u'' u''' u₅ u₆
 
 section Triples
 
@@ -113,11 +118,9 @@ lemma tripleBiprod_iso_hom_map_fst (x y : T ⊡ T) :
     (tripleBiprod T x y).iso.hom ≫ T.map (biprod.fst : x.snd ⊞ y.snd ⟶ x.snd) =
       T.map biprod.fst ≫ x.iso.hom := by
   have := preservesBinaryBiproducts_of_preservesBiproducts T
-  have h : (T.mapBiprod x.snd y.snd).inv ≫ T.map biprod.fst = biprod.fst := by
-    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_fst]
   dsimp only [tripleBiprod]
-  simp only [Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Category.assoc, h, biprod.map_fst,
-    Functor.mapBiprod_hom, biprod.lift_fst_assoc]
+  simp only [Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Category.assoc,
+    Functor.mapBiprod_inv_map_fst, biprod.map_fst, Functor.mapBiprod_hom, biprod.lift_fst_assoc]
 
 /-- The second component of the isomorphism of a direct sum of triples. -/
 @[reassoc (attr := simp)]
@@ -125,11 +128,9 @@ lemma tripleBiprod_iso_hom_map_snd (x y : T ⊡ T) :
     (tripleBiprod T x y).iso.hom ≫ T.map (biprod.snd : x.snd ⊞ y.snd ⟶ y.snd) =
       T.map biprod.snd ≫ y.iso.hom := by
   have := preservesBinaryBiproducts_of_preservesBiproducts T
-  have h : (T.mapBiprod x.snd y.snd).inv ≫ T.map biprod.snd = biprod.snd := by
-    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_snd]
   dsimp only [tripleBiprod]
-  simp only [Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Category.assoc, h, biprod.map_snd,
-    Functor.mapBiprod_hom, biprod.lift_snd_assoc]
+  simp only [Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Category.assoc,
+    Functor.mapBiprod_inv_map_snd, biprod.map_snd, Functor.mapBiprod_hom, biprod.lift_snd_assoc]
 
 end RelativeK0
 
@@ -138,22 +139,22 @@ variable [EssentiallySmall.{w} C] [LocallySmall.{w} D]
 namespace RelativeK0
 
 /-- The direct-sum relation `[(P ⊞ P', α ⊞ α', Q ⊞ Q')] - [(P, α, Q)] - [(P', α', Q')]`. -/
-noncomputable def biprodRelation (x y : T ⊡ T) : FreeAbelianGroup (ObjectCode (T ⊡ T)) :=
+noncomputable def biprodRelation (x y : T ⊡ T) : FreeAddCommGroup (ObjectCode (T ⊡ T)) :=
   freeOf (tripleBiprod T x y) - freeOf x - freeOf y
 
 /-- The composition relation `[(P, α, Q)] + [(Q, β, S)] - [(P, β ∘ α, S)]`. -/
 noncomputable def transRelation {P Q S : C} (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S) :
-    FreeAbelianGroup (ObjectCode (T ⊡ T)) :=
+    FreeAddCommGroup (ObjectCode (T ⊡ T)) :=
   freeOf (⟨P, Q, α⟩ : T ⊡ T) + freeOf (⟨Q, S, β⟩ : T ⊡ T) - freeOf (⟨P, S, α ≪≫ β⟩ : T ⊡ T)
 
 /-- The family of direct-sum and composition relations presenting the relative group. -/
-def relations : Set (FreeAbelianGroup (ObjectCode (T ⊡ T))) :=
+def relations : Set (FreeAddCommGroup (ObjectCode (T ⊡ T))) :=
   {r | (∃ x y : T ⊡ T, r = biprodRelation T x y) ∨
     ∃ (P Q S : C) (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S), r = transRelation T α β}
 
 /-- Membership in the family of relations presenting the relative group. -/
 @[simp]
-lemma mem_relations_iff {r : FreeAbelianGroup (ObjectCode (T ⊡ T))} :
+lemma mem_relations_iff {r : FreeAddCommGroup (ObjectCode (T ⊡ T))} :
     r ∈ relations T ↔ (∃ x y : T ⊡ T, r = biprodRelation T x y) ∨
       ∃ (P Q S : C) (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S),
         r = transRelation T α β := (Iff.rfl)
@@ -343,7 +344,7 @@ lemma toSplitK0_of (x : T ⊡ T) :
 
 /-- The composite `K₀(T) → K₀(C) → K₀(D)` of the difference map with the map induced by `T`
 vanishes: the two ends of a triple become isomorphic in `D`. -/
-theorem splitK0Map_comp_toSplitK0 [HasBinaryBiproducts D] [EssentiallySmall.{w'} D] :
+theorem splitK0Map_comp_toSplitK0_eq_zero [HasBinaryBiproducts D] [EssentiallySmall.{w'} D] :
     (SplitK0.map T).comp (toSplitK0 T) = 0 :=
   hom_ext fun x ↦ by simp [SplitK0.of_congr x.iso]
 
@@ -427,15 +428,11 @@ end RelativeK0
 
 end Triples
 
-section Functoriality
+section TripleMap
 
-variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
-  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D]
-  {C' : Type u''} [Category.{v''} C'] [HasZeroMorphisms C'] [HasBinaryBiproducts C']
-  {D' : Type u'''} [Category.{v'''} D'] [HasZeroMorphisms D']
-  {T : C ⥤ D} [T.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T]
-  {T' : C' ⥤ D'} [T'.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T']
-  (F : C ⥤ C') (G : D ⥤ D') (e : T ⋙ G ≅ F ⋙ T')
+variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
+  {C' : Type u''} [Category.{v''} C'] {D' : Type u'''} [Category.{v'''} D']
+  {T : C ⥤ D} {T' : C' ⥤ D'} (F : C ⥤ C') (G : D ⥤ D') (e : T ⋙ G ≅ F ⋙ T')
 
 namespace RelativeK0
 
@@ -457,6 +454,22 @@ def tripleMap : T ⊡ T ⥤ T' ⊡ T' where
         rw [reassoc_of% h₁, ← G.map_comp_assoc, f.w, G.map_comp_assoc, h₂]
         simp only [Category.assoc] }
 
+end RelativeK0
+
+end TripleMap
+
+section Functoriality
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D]
+  {C' : Type u''} [Category.{v''} C'] [HasZeroMorphisms C'] [HasBinaryBiproducts C']
+  {D' : Type u'''} [Category.{v'''} D'] [HasZeroMorphisms D']
+  {T : C ⥤ D} [T.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T]
+  {T' : C' ⥤ D'} [T'.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T']
+  (F : C ⥤ C') (G : D ⥤ D') (e : T ⋙ G ≅ F ⋙ T')
+
+namespace RelativeK0
+
 variable [F.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair F]
 
 /-- The functor of triples carries direct sums of triples to direct sums, through the
@@ -465,47 +478,21 @@ noncomputable def tripleMapTripleBiprodIso (x y : T ⊡ T) :
     (tripleMap F G e).obj (tripleBiprod T x y) ≅
       tripleBiprod T' ((tripleMap F G e).obj x) ((tripleMap F G e).obj y) :=
   letI := preservesBinaryBiproducts_of_preservesBiproducts F
+  letI := preservesBinaryBiproducts_of_preservesBiproducts T'
   mkIso (F.mapBiprod _ _) (F.mapBiprod _ _) (by
-    have := preservesBinaryBiproducts_of_preservesBiproducts T
-    have := preservesBinaryBiproducts_of_preservesBiproducts T'
-    -- Morphisms into `T' (F Q ⊞ F Q')` are determined by their images of the two projections.
-    have hext {Z : D'} {f g : Z ⟶ T'.obj (F.obj x.snd ⊞ F.obj y.snd)}
-        (h₁ : f ≫ T'.map biprod.fst = g ≫ T'.map biprod.fst)
-        (h₂ : f ≫ T'.map biprod.snd = g ≫ T'.map biprod.snd) : f = g := by
-      rw [← cancel_mono (T'.mapBiprod _ _).hom]
-      ext
-      · simpa only [Category.assoc, Functor.mapBiprod_hom, biprod.lift_fst] using h₁
-      · simpa only [Category.assoc, Functor.mapBiprod_hom, biprod.lift_snd] using h₂
+    -- Compare both sides after the images under `T'` of the two projections, moving `e` past the
+    -- projections by naturality.
     dsimp only [tripleBiprod, tripleMap]
-    refine hext ?_ ?_
-    · have h₁ := e.inv.naturality (biprod.fst : x.fst ⊞ y.fst ⟶ _)
-      have h₂ := e.hom.naturality (biprod.fst : x.snd ⊞ y.snd ⟶ _)
-      have hT : (T.mapBiprod x.snd y.snd).inv ≫ T.map biprod.fst = biprod.fst := by
-        rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_fst]
-      have hT' : (T'.mapBiprod (F.obj x.snd) (F.obj y.snd)).inv ≫ T'.map biprod.fst =
-          biprod.fst := by
-        rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_fst]
-      dsimp at h₁ h₂
+    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
       simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
-        Functor.mapIso_hom, Iso.app_hom, Iso.app_inv, hT', biprod.map_fst, ← T'.map_comp_assoc,
-        ← T'.map_comp, Functor.mapBiprod_hom, biprod.lift_fst, biprod.lift_fst_assoc]
-      rw [← h₂, ← G.map_comp_assoc]
-      simp only [Category.assoc, hT, biprod.map_fst, biprod.lift_fst_assoc, G.map_comp]
-      rw [reassoc_of% h₁]
-    · have h₁ := e.inv.naturality (biprod.snd : x.fst ⊞ y.fst ⟶ _)
-      have h₂ := e.hom.naturality (biprod.snd : x.snd ⊞ y.snd ⟶ _)
-      have hT : (T.mapBiprod x.snd y.snd).inv ≫ T.map biprod.snd = biprod.snd := by
-        rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_snd]
-      have hT' : (T'.mapBiprod (F.obj x.snd) (F.obj y.snd)).inv ≫ T'.map biprod.snd =
-          biprod.snd := by
-        rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_snd]
-      dsimp at h₁ h₂
-      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
-        Functor.mapIso_hom, Iso.app_hom, Iso.app_inv, hT', biprod.map_snd, ← T'.map_comp_assoc,
-        ← T'.map_comp, Functor.mapBiprod_hom, biprod.lift_snd, biprod.lift_snd_assoc]
-      rw [← h₂, ← G.map_comp_assoc]
-      simp only [Category.assoc, hT, biprod.map_snd, biprod.lift_snd_assoc, G.map_comp]
-      rw [reassoc_of% h₁])
+        Functor.mapIso_hom, Iso.app_hom, Iso.app_inv, Functor.mapBiprod_inv_map_fst,
+        Functor.mapBiprod_inv_map_snd, biprod.map_fst, biprod.map_snd, ← T'.map_comp_assoc,
+        ← T'.map_comp, Functor.mapBiprod_hom, biprod.lift_fst, biprod.lift_snd,
+        biprod.lift_fst_assoc, biprod.lift_snd_assoc]
+      <;> simp only [← Functor.comp_map, e.inv.naturality_assoc, ← e.hom.naturality]
+      <;> simp only [Functor.comp_map, ← G.map_comp_assoc, Category.assoc,
+        Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd, biprod.map_fst,
+        biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc])
 
 variable [EssentiallySmall.{w} C] [LocallySmall.{w} D] [EssentiallySmall.{w'} C']
   [LocallySmall.{w'} D']
@@ -541,8 +528,52 @@ theorem toSplitK0_comp_map :
     (toSplitK0 T').comp (map F G e) = (SplitK0.map F).comp (toSplitK0 T) :=
   hom_ext fun x ↦ by simp
 
+/-- The identity square, with the unitors `T ⋙ 𝟭 D ≅ T ≅ 𝟭 C ⋙ T`, induces the identity of
+`K₀(T)`. -/
+@[simp]
+theorem map_id : map (𝟭 C) (𝟭 D) (T.rightUnitor ≪≫ T.leftUnitor.symm) =
+    AddMonoidHom.id (RelativeK0 T) :=
+  hom_ext fun x ↦ by
+    rw [map_of, AddMonoidHom.id_apply]
+    exact of_congr (mkIso (Iso.refl _) (Iso.refl _) (by dsimp only [tripleMap]; simp))
+
 end RelativeK0
 
 end Functoriality
+
+section FunctorialityComp
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D]
+  {C' : Type u''} [Category.{v''} C'] [HasZeroMorphisms C'] [HasBinaryBiproducts C']
+  {D' : Type u'''} [Category.{v'''} D'] [HasZeroMorphisms D']
+  {C'' : Type u₅} [Category.{v₅} C''] [HasZeroMorphisms C''] [HasBinaryBiproducts C'']
+  {D'' : Type u₆} [Category.{v₆} D''] [HasZeroMorphisms D'']
+  {T : C ⥤ D} [T.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T]
+  {T' : C' ⥤ D'} [T'.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T']
+  {T'' : C'' ⥤ D''} [T''.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T'']
+  (F : C ⥤ C') (G : D ⥤ D') (e : T ⋙ G ≅ F ⋙ T')
+  [F.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair F]
+  (F' : C' ⥤ C'') (G' : D' ⥤ D'') (e' : T' ⋙ G' ≅ F' ⋙ T'')
+  [F'.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair F']
+  [EssentiallySmall.{w} C] [LocallySmall.{w} D] [EssentiallySmall.{w'} C'] [LocallySmall.{w'} D']
+  [EssentiallySmall.{w''} C''] [LocallySmall.{w''} D'']
+
+namespace RelativeK0
+
+/-- The maps induced by commuting squares compose: the vertically pasted square of `(F, G, e)` and
+`(F', G', e')`, whose isomorphism is that of Mathlib's `CategoryTheory.CatCommSq.vComp`, induces
+the composite of the two maps. -/
+theorem map_comp :
+    map (F ⋙ F') (G ⋙ G') ((Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight e G' ≪≫
+      Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft F e' ≪≫ (Functor.associator _ _ _).symm) =
+      (map F' G' e').comp (map F G e) :=
+  hom_ext fun x ↦ by
+    rw [AddMonoidHom.comp_apply, map_of, map_of, map_of]
+    exact of_congr (mkIso (Iso.refl _) (Iso.refl _) (by dsimp only [tripleMap]; simp))
+
+end RelativeK0
+
+end FunctorialityComp
 
 end TauCeti
