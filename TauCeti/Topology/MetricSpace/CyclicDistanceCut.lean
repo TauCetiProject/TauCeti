@@ -378,7 +378,9 @@ def basedCyclicDistanceCutRepeatFirstIterate (k : ℕ) {δ : Fin (n + 1) → ℝ
     C(basedCyclicDistanceCut (X := X) δ x, basedCyclicDistanceCut (X := X) δ' x) where
   toFun q := ⟨cyclicDistanceCutRepeatFirstIterate k h ⟨q.val, q.property.1⟩,
     (cyclicDistanceCutRepeatFirstIterate k h _).property,
-    (congrArg q.val (Fin.ext (Nat.zero_sub k))).trans q.property.2⟩
+    by
+      rw [coe_cyclicDistanceCutRepeatFirstIterate_apply]
+      exact (congrArg q.val (Fin.ext (Nat.zero_sub k))).trans q.property.2⟩
   continuous_toFun := (continuous_subtypeVal.comp
     ((map_continuous _).comp (continuous_subtypeVal.subtype_mk _))).subtype_mk _
 
