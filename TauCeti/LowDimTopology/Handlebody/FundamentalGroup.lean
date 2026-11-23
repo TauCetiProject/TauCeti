@@ -276,7 +276,7 @@ private theorem continuous_retract :
       retract g (p.1, p.2) := by
   have hc : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
       radialRetraction ((g : ℝ) + 1) (p.2 : ℂ) :=
-    continuous_const.radialRetraction (fun _ ↦ by positivity) (by fun_prop)
+    (lipschitzWith_radialRetraction (by positivity)).continuous.comp (by fun_prop)
   unfold retract holePush
   fun_prop (disch :=
     exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.property _)))

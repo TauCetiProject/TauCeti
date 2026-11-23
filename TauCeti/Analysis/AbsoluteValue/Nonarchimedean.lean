@@ -11,10 +11,9 @@ public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 
-import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Normed.Field.Ultra
 import Mathlib.Analysis.Normed.Field.WithAbs
-import Mathlib.Algebra.Polynomial.Monic
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 
 /-!
 # Nonarchimedean absolute values
@@ -151,21 +150,11 @@ theorem apply_le_one_of_isIntegral (hv : IsNonarchimedean v)
   by_contra! hx1
   have : Nontrivial F := ⟨x, 0, by rintro rfl; rw [map_zero] at hx1; linarith⟩
   obtain ⟨p, hpm, hp⟩ := hx
-  have hn : p.natDegree ≠ 0 := by
-    intro hn
-    rw [hpm.natDegree_eq_zero] at hn
-    simp [hn] at hp
-  -- The equation of integrality, `x ^ n = -∑_{i < n} aᵢ xⁱ`, is violated in size.
-  rw [eval₂_eq_sum_range, Finset.sum_range_succ, hpm.coeff_natDegree, map_one, one_mul,
-    add_eq_zero_iff_neg_eq] at hp
-  obtain ⟨i, hi, hle⟩ := hv.finset_image_add_of_nonempty
-    (fun i ↦ algebraMap R F (p.coeff i) * x ^ i) (Finset.nonempty_range_iff.mpr hn)
-  rw [Finset.mem_range] at hi
-  have hlt : v x ^ i < v x ^ p.natDegree := pow_lt_pow_right₀ hx1 hi
-  have hvx := congrArg v hp
-  rw [v.map_neg, v.map_pow] at hvx
-  rw [hvx, v.map_mul, v.map_pow] at hle
-  exact (hle.trans (mul_le_of_le_one_left (by positivity) (h _))).not_gt hlt
+  -- Some coefficient `aᵢ` of the equation of integrality has `v x ^ (n - i) ≤ v aᵢ ≤ 1`.
+  obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap R F)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
+    v.nonneg (fun a b ↦ (v.map_mul a b).le) (MulHomClass.isPowMul v) hv (by rwa [eval_map])
+  rw [coeff_map] at hle
+  exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge (hle.trans (h _))
 
 /-- A nonarchimedean absolute value is bounded by `1` on every element integral over `ℤ`. -/
 theorem apply_le_one_of_isIntegral_int (hv : IsNonarchimedean v) {x : F} (hx : IsIntegral ℤ x) :
