@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.QuotSMulTop
@@ -361,9 +362,7 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    have hI : Set.Iio (n + 1) = insert n (Set.Iio n) := by
-      ext; simp
-    rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
+    rw [F.heightIdeal_succ hp, ih, Ideal.span_image_Iio_succ, sup_comm]
 
 /-- **Landweber's generators for the infinite height ideal.** For a commutative formal group law
 `F` and a prime `p`, `⨆ n, I_n(F) = (v₀, v₁, v₂, …)`, where `v_i` is the coefficient of `X^(pⁱ)` in

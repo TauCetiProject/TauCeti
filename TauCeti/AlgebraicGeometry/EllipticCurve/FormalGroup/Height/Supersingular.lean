@@ -43,9 +43,6 @@ Landweber height ideals over arbitrary commutative rings is proved in
 
 ## Main results
 
-* `TauCeti.Isogeny.order_nsmulSeries_formalGroup_eq`,
-  `TauCeti.Isogeny.order_zsmulSeries_formalGroup_eq`, and `TauCeti.Isogeny.height_formalGroup_eq`:
-  isogenous elliptic curves have multiplication series of equal order and equal formal-group height.
 * `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one` and
   `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: an elliptic curve in prime
   characteristic `p` is ordinary iff `height p Ê = 1`, and in arbitrary characteristic `p`
@@ -53,8 +50,14 @@ Landweber height ideals over arbitrary commutative rings is proved in
 * `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two` and
   `WeierstrassCurve.height_formalGroup_le_two`: the formal group of an elliptic curve in prime
   characteristic `p` has height `1` or `2`.
-* `TauCeti.Isogeny.isSupersingular_iff` and `TauCeti.Isogeny.isOrdinary_iff`: supersingularity and
-  ordinarity of elliptic curves are invariant under arbitrary isogenies.
+* `WeierstrassCurve.isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero`,
+  `WeierstrassCurve.isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero`, and
+  `WeierstrassCurve.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero`:
+  characterizations of ordinarity, supersingularity, and height `2` via the coefficient of
+  `T ^ (p - 1)` in the invariant differential (the Hasse invariant in prime characteristic).
+* `TauCeti.Isogeny.height_formalGroup_eq`, `TauCeti.Isogeny.isSupersingular_iff`, and
+  `TauCeti.Isogeny.isOrdinary_iff`: formal-group height, supersingularity, and ordinarity of
+  elliptic curves are invariant under arbitrary isogenies.
 
 ## References
 
@@ -175,6 +178,17 @@ theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero :
     W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
   rw [← not_isOrdinary, isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]
 
+/-- **Height-two coefficient criterion for an elliptic curve in characteristic `p` (prime or
+zero).** In prime characteristic `p`, an elliptic curve has formal group of height `2` iff its
+Hasse invariant `coeff (p - 1) ω` vanishes. At `p = 0` (characteristic zero), `p - 1` is `0` in
+`ℕ`, so the coefficient is the normalized constant coefficient `1` while the library's `0`-height
+is `⊤`, so both sides are false. -/
+theorem height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero :
+    (formalGroup W).height p = 2 ↔
+      PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
+  rw [← W.isSupersingular_iff_height_formalGroup_eq_two,
+    W.isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero]
+
 end AnyCharP
 
 end FieldHeight
@@ -188,18 +202,6 @@ namespace TauCeti.Isogeny
 open WeierstrassCurve
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
-
-/-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℕ`). -/
-theorem order_nsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℕ) :
-    ((formalGroup W₁).nsmulSeries n).order = ((formalGroup W₂).nsmulSeries n).order := by
-  have : W₁.IsElliptic := φ.isElliptic
-  exact φ.formalGroupHom.order_nsmulSeries_eq (by simp [φ.formalSeries_ne_zero]) n
-
-/-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℤ`). -/
-theorem order_zsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℤ) :
-    ((formalGroup W₁).zsmulSeries n).order = ((formalGroup W₂).zsmulSeries n).order := by
-  have : W₁.IsElliptic := φ.isElliptic
-  exact φ.formalGroupHom.order_zsmulSeries_eq (by simp [φ.formalSeries_ne_zero]) n
 
 /-- **Isogenous elliptic curves have the same formal-group height.** -/
 theorem height_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (p : ℕ) :

@@ -9,7 +9,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDiffe
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Order
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.Ideal.Radical
 import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
@@ -29,15 +31,16 @@ the zero ring):
   elliptic Weierstrass curve (`IsUnit Δ`) — every height ideal `I_n(Ê)` with `n ≥ 3` is the unit
   ideal for all `p > 1`, and the `T ^ (p ^ 2)` coefficient of `[p]_Ê` is a unit modulo `I₂(Ê)`
   for all `p ≠ 0` (so Landweber's `v₂` is a unit modulo `(p, v₁)` at every prime `p`).
-* For any Weierstrass family with nilpotent discriminant (`IsNilpotent Δ`, including singular
-  families `Δ = 0` and their nilpotent thickenings), every `p > 1`, and every `n ≥ 2`,
-  `I_n(Ê) = R` if and only if `(p, c₄) = R`
-  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff_of_isNilpotent_Δ`). Equivalently, at every
+* For any Weierstrass family whose discriminant is nilpotent modulo `p`
+  (`W.Δ ∈ (Ideal.span {(p : R)}).radical`, including singular families `Δ = 0`, nilpotent
+  thickenings `IsNilpotent Δ`, and families singular over all primes dividing `p`), every `p > 1`,
+  and every `n ≥ 2`, `I_n(Ê) = R` if and only if `(p, c₄) = R`
+  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical`). Equivalently, at every
   prime `p`, the Hasse invariant `coeff (p - 1) ω` is a unit modulo `p` if and only if `c₄` is a
   unit modulo `p`
-  (`WeierstrassCurve.isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_isNilpotent_Δ`). In
-  particular, on any nodal family (`IsNilpotent Δ` and `IsUnit c₄`), split or non-split, the
-  Hasse invariant is a unit modulo `p`.
+  (`WeierstrassCurve.isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_Δ_mem_radical`). In
+  particular, on any family singular modulo `p` with `c₄` a unit modulo `p`, the Hasse invariant
+  is a unit modulo `p`.
 
 The proofs test properness on maximal-ideal quotients `R ⧸ m`, combining the order bound
 `WeierstrassCurve.order_nsmulSeries_formalGroup_le_sq` (and the sharper nodal bound
@@ -60,11 +63,11 @@ arbitrary family.
 * `WeierstrassCurve.heightIdeal_formalGroup_eq_top` and
   `WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup`: the height-two bound (`1 < p`,
   `n ≥ 3`) and unit condition (`p ≠ 0`) for elliptic Weierstrass curves.
-* `WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff_of_isNilpotent_Δ`: for `IsNilpotent Δ`,
-  `1 < p`, and `n ≥ 2`, `I_n(Ê) = ⊤` iff `(p, c₄) = ⊤`.
-* `WeierstrassCurve.isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_isNilpotent_Δ`: for
-  `IsNilpotent Δ` and prime `p`, the Hasse invariant is a unit modulo `p` iff `c₄` is a unit
-  modulo `p`.
+* `WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical`: for
+  `W.Δ ∈ (Ideal.span {(p : R)}).radical`, `1 < p`, and `n ≥ 2`, `I_n(Ê) = ⊤` iff `(p, c₄) = ⊤`.
+* `WeierstrassCurve.isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_Δ_mem_radical`: for
+  `W.Δ ∈ (Ideal.span {(p : R)}).radical` and prime `p`, the Hasse invariant is a unit modulo `p`
+  iff `c₄` is a unit modulo `p`.
 
 ## References
 
@@ -110,38 +113,41 @@ private theorem nat_le_order_nsmulSeries_formalGroup_iff {K : Type*} [Field K]
     exact le_top
 
 /-- The coefficients of `[p]_Ê` in degrees below `N` (with `p ≠ 0`, and either `p² < N` or
-`IsNilpotent W.Δ ∧ p < N`) generate the unit ideal exactly when `p`, `c₄`, and `Δ` do. -/
+`W.Δ ∈ (Ideal.span {(p : R)}).radical ∧ p < N`) generate the unit ideal exactly when `p`, `c₄`,
+and `Δ` do. -/
 private theorem span_coeff_nsmulSeries_eq_top_iff {N : ℕ} (hp : p ≠ 0)
-    (hN : p ^ 2 < N ∨ IsNilpotent W.Δ ∧ p < N) :
+    (hN : p ^ 2 < N ∨ W.Δ ∈ (Ideal.span {(p : R)}).radical ∧ p < N) :
     Ideal.span ((fun k ↦ PowerSeries.coeff k ((formalGroup W).nsmulSeries p)) '' Set.Iio N) = ⊤ ↔
       Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
+  have h1 : 1 < N := hN.elim
+    (lt_of_le_of_lt (Nat.one_le_pow 2 p (Nat.pos_of_ne_zero hp)))
+    (fun h ↦ lt_of_le_of_lt (Nat.pos_of_ne_zero hp) h.2)
   have hmax (m : Ideal R) [hm : m.IsMaximal] :
       Ideal.span ((fun k ↦ PowerSeries.coeff k ((formalGroup W).nsmulSeries p)) '' Set.Iio N) ≤ m ↔
         Ideal.span {(p : R), W.c₄, W.Δ} ≤ m := by
     let _ := Ideal.Quotient.field m
-    have hNm : p ^ 2 < N ∨ (W.map (Ideal.Quotient.mk m)).Δ = 0 ∧ p < N :=
-      hN.imp_right fun ⟨hΔ, hlt⟩ ↦ ⟨by
-        rw [map_Δ]
-        exact (hΔ.map (Ideal.Quotient.mk m)).eq_zero, hlt⟩
     rw [← Ideal.mk_ker (I := m), PowerSeries.span_coeff_le_ker_iff, FormalGroup.map_nsmulSeries,
-      ← map_formalGroup, nat_le_order_nsmulSeries_formalGroup_iff _ hp hNm, map_c₄, map_Δ,
-      ← map_natCast (Ideal.Quotient.mk m) p]
-    simp only [Ideal.Quotient.eq_zero_iff_mem, Ideal.mk_ker, Ideal.span_le, Set.insert_subset_iff,
-      Set.singleton_subset_iff, SetLike.mem_coe]
-  constructor <;> intro htop <;> by_contra hne <;>
-    obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
-  · exact hm.ne_top (top_unique (htop ▸ (hmax m).mpr hle))
-  · exact hm.ne_top (top_unique (htop ▸ (hmax m).mp hle))
-
-private theorem span_sup_singleton_eq_top_of_isNilpotent {I : Ideal R} {x : R}
-    (hx : IsNilpotent x) : I ⊔ Ideal.span {x} = ⊤ ↔ I = ⊤ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, top_sup_eq]⟩
-  rw [Ideal.eq_top_iff_one, Submodule.mem_sup] at h
-  obtain ⟨a, ha, b, hb, hab⟩ := h
-  obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton.mp hb
-  rw [← eq_sub_iff_add_eq] at hab
-  exact Ideal.eq_top_of_isUnit_mem _ ha
-    (hab ▸ ((Commute.all x r).isNilpotent_mul_right hx).isUnit_one_sub)
+      ← map_formalGroup, Ideal.span_le, Set.insert_subset_iff, Set.insert_subset_iff,
+      Set.singleton_subset_iff, SetLike.mem_coe, SetLike.mem_coe, SetLike.mem_coe]
+    simp only [Ideal.mk_ker, ← Ideal.Quotient.eq_zero_iff_mem, map_natCast,
+      ← map_c₄ W (Ideal.Quotient.mk m), ← map_Δ W (Ideal.Quotient.mk m)]
+    refine ⟨fun hord ↦ ?_, fun ⟨hp0, hc₄0, hΔ0⟩ ↦ ?_⟩
+    · have hp0 : ((p : R) : R ⧸ m) = 0 := by
+        simpa [FormalGroup.coeff_one_nsmulSeries] using
+          PowerSeries.coeff_of_lt_order 1 (lt_of_lt_of_le (by exact_mod_cast h1) hord)
+      have hNm : p ^ 2 < N ∨ (W.map (Ideal.Quotient.mk m)).Δ = 0 ∧ p < N :=
+        hN.imp_right fun ⟨hΔ, hlt⟩ ↦ ⟨by
+          rw [map_Δ, Ideal.Quotient.eq_zero_iff_mem]
+          exact hm.isPrime.radical_le_iff.mpr ((Ideal.span_singleton_le_iff_mem m).mpr
+            (Ideal.Quotient.eq_zero_iff_mem.mp hp0)) hΔ, hlt⟩
+      have h := (nat_le_order_nsmulSeries_formalGroup_iff _ hp hNm).mp hord
+      exact ⟨h.1, h.2.1, h.2.2⟩
+    · rw [(W.map (Ideal.Quotient.mk m)).nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero
+        hΔ0 hc₄0 hp0, PowerSeries.order_zero]
+      exact le_top
+  rw [← not_iff_not]
+  simp_rw [← ne_eq, Ideal.ne_top_iff_exists_maximal]
+  exact exists_congr fun m ↦ and_congr_right fun hm ↦ hmax m
 
 /-- **Exact characterization of `I_n(Ê) = ⊤` for `n ≥ 3`.** Over an arbitrary commutative ring `R`
 and for any `p > 1`, every height ideal `I_n` (`n ≥ 3`) of the formal group of a Weierstrass curve
@@ -161,9 +167,7 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup_iff (hp : p ≠ 0) :
       (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) ↔
       Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
   have h := W.span_coeff_nsmulSeries_eq_top_iff hp (Or.inl (Nat.lt_add_one (p ^ 2)))
-  rw [show Set.Iio (p ^ 2 + 1) = insert (p ^ 2) (Set.Iio (p ^ 2)) from
-      Order.Iio_succ_eq_insert (p ^ 2),
-    Set.image_insert_eq, Ideal.span_insert] at h
+  rw [Ideal.span_image_Iio_succ] at h
   simpa [Ideal.Quotient.isUnit_mk_iff, FormalGroup.heightIdeal_def] using h
 
 /-- **Height-two bound for smooth-or-nodal Weierstrass families.** If `(c₄, Δ) = R`, then for
@@ -204,31 +208,32 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup [W.IsElliptic] (hp : p ≠ 0) :
   W.isUnit_mk_coeff_nsmulSeries_formalGroup_of_span_c₄_Δ_eq_top
     (Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) W.isUnit_Δ) hp
 
-/-- **Exact characterization of `I_n(Ê) = ⊤` (`n ≥ 2`) for families with nilpotent discriminant.**
-When `IsNilpotent W.Δ` (in particular, when `Δ = 0`), for every `p > 1`, every height ideal from
-`I₂` onward is the unit ideal if and only if `(p, c₄) = R`. -/
-theorem heightIdeal_formalGroup_eq_top_iff_of_isNilpotent_Δ (hΔ : IsNilpotent W.Δ) (hp : 1 < p)
-    (hn : 2 ≤ n) :
+/-- **Exact characterization of `I_n(Ê) = ⊤` (`n ≥ 2`) for families singular over primes dividing
+`p`.** When `W.Δ ∈ (Ideal.span {(p : R)}).radical` (in particular, when `IsNilpotent W.Δ` or
+`W.Δ = 0`), for every `p > 1` and every `n ≥ 2`, `I_n(Ê) = ⊤` if and only if `(p, c₄) = R`. -/
+theorem heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical
+    (hΔ : W.Δ ∈ (Ideal.span {(p : R)}).radical) (hp : 1 < p) (hn : 2 ≤ n) :
     (formalGroup W).heightIdeal p n = ⊤ ↔ Ideal.span {(p : R), W.c₄} = ⊤ := by
   have hpn : p < p ^ n := lt_of_lt_of_le (lt_self_pow₀ hp (by omega : 1 < 2))
     (Nat.pow_le_pow_right (zero_lt_one.trans hp) hn)
+  have hΔ' : W.Δ ∈ (Ideal.span {(p : R), W.c₄}).radical :=
+    Ideal.radical_mono (Ideal.span_mono (Set.singleton_subset_iff.mpr (Set.mem_insert _ _))) hΔ
   rw [FormalGroup.heightIdeal_def,
     W.span_coeff_nsmulSeries_eq_top_iff (by omega) (Or.inr ⟨hΔ, hpn⟩),
-    Ideal.span_insert, Ideal.span_insert, ← sup_assoc,
-    span_sup_singleton_eq_top_of_isNilpotent hΔ, ← Ideal.span_insert]
+    Ideal.span_insert, Ideal.span_insert, ← sup_assoc, ← Ideal.span_insert,
+    Ideal.sup_span_singleton_eq_top_of_mem_radical hΔ']
 
-/-- **The Hasse invariant on families with nilpotent discriminant.** When `IsNilpotent W.Δ` (in
-particular, when `Δ = 0`), for every prime `p` the Hasse invariant `coeff (p - 1) ω` of the
-formal group of `W` is a unit modulo `p` if and only if `c₄` is a unit modulo `p`. In particular,
-on every nodal family (`IsNilpotent Δ` and `IsUnit c₄`), the Hasse invariant is a unit modulo `p`.
--/
-theorem isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_isNilpotent_Δ
-    (hΔ : IsNilpotent W.Δ) (hp : p.Prime) :
+/-- **The Hasse invariant on families singular over primes dividing `p`.** When
+`W.Δ ∈ (Ideal.span {(p : R)}).radical` (in particular, when `IsNilpotent W.Δ` or `W.Δ = 0`), for
+every prime `p` the Hasse invariant `coeff (p - 1) ω` of the formal group of `W` is a unit modulo
+`p` if and only if `c₄` is a unit modulo `p`. -/
+theorem isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_Δ_mem_radical
+    (hΔ : W.Δ ∈ (Ideal.span {(p : R)}).radical) (hp : p.Prime) :
     IsUnit (Ideal.Quotient.mk (Ideal.span {(p : R)})
       (PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential)) ↔
       IsUnit (Ideal.Quotient.mk (Ideal.span {(p : R)}) W.c₄) := by
   rw [← W.heightIdeal_formalGroup_two_eq_top_iff hp,
-    W.heightIdeal_formalGroup_eq_top_iff_of_isNilpotent_Δ hΔ hp.one_lt le_rfl,
+    W.heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical hΔ hp.one_lt le_rfl,
     Ideal.Quotient.isUnit_mk_iff, Ideal.span_insert, sup_comm]
 
 end WeierstrassCurve

@@ -95,7 +95,7 @@ theorem isLandweberRegular_formalGroup_iff (M : Type*) [AddCommGroup M] [Module 
   rw [FormalGroup.isLandweberRegular_def]
   refine forall₂_congr fun p hp ↦ ?_
   rw [(formalGroup W).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M
-      (W.heightIdeal_formalGroup_eq_top hp le_rfl),
+      (W.heightIdeal_formalGroup_eq_top hp.one_lt le_rfl),
     ← W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M, ← FormalGroup.landweberSequence_two,
     (formalGroup W).isWeaklyRegular_landweberSequence_iff hp M,
     (formalGroup W).isWeaklyRegular_landweberSequence_iff hp M]
@@ -104,7 +104,7 @@ theorem isLandweberRegular_formalGroup_iff (M : Type*) [AddCommGroup M] [Module 
   · exact h i hi
   -- `v₂` is a unit modulo `I₂`, so it acts invertibly on `M ⧸ I₂ M`
   exact Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk _
-    (W.isUnit_mk_coeff_nsmulSeries_formalGroup hp)
+    (W.isUnit_mk_coeff_nsmulSeries_formalGroup hp.ne_zero)
 
 /-- **Landweber exactness for a flat classifying map.** If the classifying map
 `ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` of an elliptic Weierstrass curve `W` is flat, then the formal group of

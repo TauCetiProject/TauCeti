@@ -16,6 +16,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Multiplicative
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.RingTheory.PowerSeries.Order
 
@@ -166,25 +167,21 @@ private theorem nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero_fi
     FormalGroup.nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hm', map_zero, zero_mul,
     PowerSeries.order_zero]
 
-/-- **Nodal order bound for `[m]_Ê` under non-nilpotency**: over any commutative ring `R`, if
-`IsNilpotent W.Δ`, `¬ IsNilpotent W.c₄` (so at least one residue-field fiber is nodal), and
-`m ≠ 0`, then the multiplication-by-`m` series has order at most `m`. -/
-theorem order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c₄ {R : Type*}
-    [CommRing R] (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (hΔ : IsNilpotent W.Δ)
-    (hc₄ : ¬ IsNilpotent W.c₄) :
+/-- **Nodal order bound for `[m]_Ê` over arbitrary rings**: over any commutative ring `R`, if
+`W.c₄ ∉ (Ideal.span {W.Δ}).radical` (so at least one residue-field fiber is nodal) and `m ≠ 0`,
+then the multiplication-by-`m` series has order at most `m`. -/
+theorem order_nsmulSeries_formalGroup_le_of_c₄_notMem_radical {R : Type*} [CommRing R]
+    (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (hc₄ : W.c₄ ∉ (Ideal.span {W.Δ}).radical) :
     ((formalGroup W).nsmulSeries m).order ≤ m := by
-  have ⟨P, hP, hc₄P⟩ : ∃ P : Ideal R, P.IsPrime ∧ W.c₄ ∉ P := by
-    by_contra hall
-    push Not at hall
-    exact hc₄ (nilpotent_iff_mem_prime.mpr hall)
+  obtain ⟨P, hΔP, hP, hc₄P⟩ :
+      ∃ P : Ideal R, W.Δ ∈ P ∧ P.IsPrime ∧ W.c₄ ∉ P := by
+    simpa [Ideal.radical_eq_sInf, Ideal.span_singleton_le_iff_mem] using hc₄
   let _ : P.IsPrime := hP
   let f := algebraMap R P.ResidueField
   have hΔf : (W.map f).Δ = 0 := by
-    rw [map_Δ, Ideal.algebraMap_residueField_eq_zero]
-    exact nilpotent_iff_mem_prime.mp hΔ P hP
+    rwa [map_Δ, Ideal.algebraMap_residueField_eq_zero]
   have hc₄f : (W.map f).c₄ ≠ 0 := by
-    rw [map_c₄, ne_eq, Ideal.algebraMap_residueField_eq_zero]
-    exact hc₄P
+    rwa [map_c₄, ne_eq, Ideal.algebraMap_residueField_eq_zero]
   calc
     ((formalGroup W).nsmulSeries m).order
       ≤ (PowerSeries.map f ((formalGroup W).nsmulSeries m)).order := PowerSeries.le_order_map f
@@ -193,9 +190,21 @@ theorem order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c�
     _ ≤ m := order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_field (W.map f) hm
         hΔf hc₄f
 
-/-- **Nodal order bound for `[m]_Ê` over reduced rings**: over a reduced commutative ring, for a
-nodal Weierstrass curve (`Δ = 0` and `c₄ ≠ 0`) and `m ≠ 0`, the series `[m]_Ê` has order at most
-`m`. -/
+/-- **Nodal order bound for `[m]_Ê` under non-nilpotency**: over any commutative ring `R`, if
+`IsNilpotent W.Δ`, `¬ IsNilpotent W.c₄` (so all residue-field fibers are singular and at least one
+is nodal), and `m ≠ 0`, then the multiplication-by-`m` series has order at most `m`. -/
+theorem order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c₄ {R : Type*}
+    [CommRing R] (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (hΔ : IsNilpotent W.Δ)
+    (hc₄ : ¬ IsNilpotent W.c₄) :
+    ((formalGroup W).nsmulSeries m).order ≤ m := by
+  refine W.order_nsmulSeries_formalGroup_le_of_c₄_notMem_radical hm fun ⟨k, hk⟩ ↦ hc₄ ?_
+  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton.mp hk
+  obtain ⟨n, hn⟩ := hΔ
+  exact ⟨k * n, by rw [pow_mul, hr, mul_pow, hn, zero_mul]⟩
+
+/-- **Nodal order bound for `[m]_Ê` over reduced rings**: over a reduced commutative ring, if
+`Δ = 0` and `c₄ ≠ 0` (so all residue-field fibers are singular and at least one is nodal) and
+`m ≠ 0`, then the series `[m]_Ê` has order at most `m`. -/
 theorem order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero {R : Type*} [CommRing R]
     [IsReduced R] (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (hΔ : W.Δ = 0)
     (hc₄ : W.c₄ ≠ 0) :
@@ -285,5 +294,25 @@ theorem zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
 end NontrivialRing
 
 end WeierstrassCurve
+
+namespace TauCeti.Isogeny
+
+open WeierstrassCurve
+
+variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
+
+/-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℕ`). -/
+theorem order_nsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℕ) :
+    ((formalGroup W₁).nsmulSeries n).order = ((formalGroup W₂).nsmulSeries n).order := by
+  have : W₁.IsElliptic := φ.isElliptic
+  exact φ.formalGroupHom.order_nsmulSeries_eq (by simp [φ.formalSeries_ne_zero]) n
+
+/-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℤ`). -/
+theorem order_zsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℤ) :
+    ((formalGroup W₁).zsmulSeries n).order = ((formalGroup W₂).zsmulSeries n).order := by
+  have : W₁.IsElliptic := φ.isElliptic
+  exact φ.formalGroupHom.order_zsmulSeries_eq (by simp [φ.formalSeries_ne_zero]) n
+
+end TauCeti.Isogeny
 
 end
