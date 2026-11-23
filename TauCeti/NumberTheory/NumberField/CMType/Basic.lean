@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
+import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 
 /-!
 # CM types and their reflex fields
@@ -47,10 +48,11 @@ reflex field are Milne's.
 * `TauCeti.CMType.induced_comp`: inducing in two steps equals inducing directly.
 * `TauCeti.CMType.conjugate_smul`: on a CM field, every `σ ∈ Aut(ℂ)` commutes with complex
   conjugation on embeddings (`RingHom.star_comp`), so `ι(σΦ) = σ(ιΦ)`.
-* `TauCeti.CMType.typeTrace_conjugate`: `typeTrace_{ιΦ} = conj ∘ typeTrace_Φ`.
+* `TauCeti.CMType.typeTrace_conjugate`: `typeTrace_{ιΦ} = conj ∘ typeTrace_Φ`, and
+  `TauCeti.CMType.typeTrace_smul_ringAut`: `typeTrace_{σΦ} = σ ∘ typeTrace_Φ`.
 * `TauCeti.CMType.reflexField_le_iff`: `E* ≤ F` iff every type trace lies in `F`.
-* `TauCeti.CMType.reflexField_conjugate`: on a number field, `ιΦ` has the same reflex field
-  as `Φ`.
+* `TauCeti.CMType.reflexField_conjugate`: `ιΦ` has the same reflex field as `Φ`, because the
+  sum of `φ a` over all embeddings `φ` is fixed by `Aut(ℂ)`, hence rational.
 
 ## References
 
@@ -96,6 +98,12 @@ theorem mem_toSet {Φ : CMType E} {φ : E →+* ℂ} : φ ∈ Φ.toSet ↔ φ �
 theorem coe_mk (s : Set (E →+* ℂ)) (h : ∀ φ : E →+* ℂ, star φ ∈ s ↔ φ ∉ s) :
     ((⟨s, h⟩ : CMType E) : Set (E →+* ℂ)) = s :=
   rfl
+
+/-- Membership in a type built from a set `s` is membership in `s`. -/
+@[simp]
+theorem mem_mk (s : Set (E →+* ℂ)) (h : ∀ φ : E →+* ℂ, star φ ∈ s ↔ φ ∉ s) {φ : E →+* ℂ} :
+    φ ∈ (⟨s, h⟩ : CMType E) ↔ φ ∈ s :=
+  Iff.rfl
 
 /-- Two CM types with the same embeddings are equal. -/
 @[ext]
@@ -194,17 +202,19 @@ theorem mem_induced {f : E₀ →+* E} {Φ₀ : CMType E₀} {φ : E →+* ℂ} 
 /-- Inducing along the identity does nothing. -/
 @[simp]
 theorem induced_id (Φ : CMType E) : induced (RingHom.id E) Φ = Φ :=
-  ext fun _ => Iff.rfl
+  ext fun φ => by rw [mem_induced, RingHom.comp_id]
 
 /-- Inducing along `E₀ → E₁ → E` in two steps equals inducing directly. -/
 theorem induced_comp (g : E₁ →+* E) (f : E₀ →+* E₁) (Φ₀ : CMType E₀) :
     induced (g.comp f) Φ₀ = induced g (induced f Φ₀) :=
-  ext fun _ => Iff.rfl
+  ext fun φ => by rw [mem_induced, mem_induced, mem_induced, RingHom.comp_assoc]
 
 /-- Inducing commutes with conjugation of types. -/
 theorem induced_conjugate (f : E₀ →+* E) (Φ₀ : CMType E₀) :
     induced f Φ₀.conjugate = (induced f Φ₀).conjugate :=
-  ext fun _ => Iff.rfl
+  ext fun φ => by
+    rw [mem_induced, mem_conjugate, mem_conjugate, mem_induced, RingHom.star_def,
+      RingHom.star_def, RingHom.comp_assoc]
 
 /-! ### The type trace -/
 
@@ -231,6 +241,25 @@ theorem typeTrace_add [Finite (E →+* ℂ)] (Φ : CMType E) (a b : E) :
   simp only [typeTrace, map_add]
   exact finsum_mem_add_distrib (Set.toFinite _)
 
+/-- The type trace commutes with negation. -/
+@[simp]
+theorem typeTrace_neg (Φ : CMType E) (a : E) : Φ.typeTrace (-a) = -Φ.typeTrace a := by
+  simp only [typeTrace, map_neg]
+  rw [← AddEquiv.neg_apply, AddEquiv.map_finsum]
+  exact finsum_congr fun φ => (AddEquiv.map_finsum (AddEquiv.neg ℂ) fun _ : φ ∈ Φ => φ a).symm
+
+/-- The type trace commutes with subtraction when `E` has finitely many embeddings. -/
+@[simp]
+theorem typeTrace_sub [Finite (E →+* ℂ)] (Φ : CMType E) (a b : E) :
+    Φ.typeTrace (a - b) = Φ.typeTrace a - Φ.typeTrace b := by
+  rw [sub_eq_add_neg, typeTrace_add, typeTrace_neg, sub_eq_add_neg]
+
+/-- The type trace of a finite sum is the sum of the type traces when `E` has finitely many
+embeddings. -/
+theorem typeTrace_sum [Finite (E →+* ℂ)] (Φ : CMType E) {ι : Type*} (s : Finset ι) (f : ι → E) :
+    Φ.typeTrace (∑ i ∈ s, f i) = ∑ i ∈ s, Φ.typeTrace (f i) :=
+  map_sum (AddMonoidHom.mk' Φ.typeTrace Φ.typeTrace_add) f s
+
 /-- The type trace is `ℚ`-homogeneous. -/
 @[simp]
 theorem typeTrace_smul [Module ℚ E] (Φ : CMType E) (q : ℚ) (a : E) :
@@ -246,7 +275,7 @@ theorem typeTrace_conjugate (Φ : CMType E) (a : E) :
     rw [typeTrace, ← starAddEquiv_apply, AddEquiv.map_finsum]
     exact finsum_congr fun φ => AddEquiv.map_finsum _ _
   rw [h, typeTrace]
-  refine finsum_mem_eq_of_bijOn star ⟨fun φ hφ => hφ, star_injective.injOn,
+  refine finsum_mem_eq_of_bijOn star ⟨fun _ hφ => mem_conjugate.mp hφ, star_injective.injOn,
     fun φ hφ => ⟨star φ, ?_, star_star φ⟩⟩ fun φ _ => (star_star (φ a)).symm
   simpa using hφ
 
@@ -255,7 +284,7 @@ private theorem finite_inter_support_conjugate {Φ : CMType E} {a : E}
     ((Φ.conjugate : Set (E →+* ℂ)) ∩ Function.support fun φ : E →+* ℂ => φ a).Finite := by
   refine (h.image star).subset ?_
   rintro φ ⟨h1, h2⟩
-  refine ⟨star φ, ⟨h1, ?_⟩, star_star φ⟩
+  refine ⟨star φ, ⟨mem_conjugate.mp h1, ?_⟩, star_star φ⟩
   simpa [Function.mem_support, RingHom.star_apply] using h2
 
 /-- The type traces of `Φ` and `ιΦ` add up to the sum over all embeddings. -/
@@ -272,6 +301,21 @@ theorem typeTrace_add_typeTrace_conjugate (Φ : CMType E) (a : E) :
     rw [typeTrace, typeTrace, finsum_mem_eq_zero_of_infinite hfin,
       finsum_mem_eq_zero_of_infinite hinf, finsum_of_infinite_support
         ((Set.not_finite.mp hfin).mono Set.inter_subset_right), add_zero]
+
+/-- The sum of `φ a` over all embeddings `φ : E → ℂ` is rational: every `τ ∈ Aut(ℂ)` permutes
+the embeddings, so fixes the sum. -/
+private theorem finsum_apply_mem_range_algebraMap (a : E) :
+    ∑ᶠ φ : E →+* ℂ, φ a ∈ Set.range (algebraMap ℚ ℂ) := by
+  refine (IsAlgClosed.mem_range_algebraMap_iff_fixed _).mpr fun τ => ?_
+  let e : (E →+* ℂ) ≃ (E →+* ℂ) :=
+    { toFun := fun φ => (τ : ℂ →+* ℂ).comp φ
+      invFun := fun φ => (τ.symm : ℂ →+* ℂ).comp φ
+      left_inv := fun φ => RingHom.ext fun x => by simp
+      right_inv := fun φ => RingHom.ext fun x => by simp }
+  calc τ (∑ᶠ φ : E →+* ℂ, φ a) = ∑ᶠ φ : E →+* ℂ, τ (φ a) :=
+        AddEquiv.map_finsum τ.toRingEquiv.toAddEquiv _
+    _ = ∑ᶠ φ : E →+* ℂ, e φ a := finsum_congr fun φ => by simp [e]
+    _ = ∑ᶠ φ : E →+* ℂ, φ a := finsum_comp_equiv e (f := fun φ : E →+* ℂ => φ a)
 
 /-! ### The reflex field -/
 
@@ -296,6 +340,21 @@ theorem reflexField_le_iff {Φ : CMType E} {F : IntermediateField ℚ ℂ} :
   rw [reflexField, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
   rfl
 
+/-- The reflex field of `ιΦ` lies in that of `Φ`. -/
+theorem conjugate_reflexField_le (Φ : CMType E) : Φ.conjugate.reflexField ≤ Φ.reflexField :=
+  reflexField_le_iff.mpr fun a => by
+    rw [← add_sub_cancel_left (Φ.typeTrace a) (Φ.conjugate.typeTrace a),
+      typeTrace_add_typeTrace_conjugate]
+    obtain ⟨q, hq⟩ := finsum_apply_mem_range_algebraMap a
+    rw [← hq]
+    exact sub_mem (IntermediateField.algebraMap_mem _ _) (typeTrace_mem_reflexField Φ a)
+
+/-- `ιΦ` has the same reflex field as `Φ`. -/
+@[simp]
+theorem reflexField_conjugate (Φ : CMType E) : Φ.conjugate.reflexField = Φ.reflexField :=
+  le_antisymm Φ.conjugate_reflexField_le (by
+    simpa using Φ.conjugate.conjugate_reflexField_le)
+
 end CommRing
 
 /-! ### CM types on a number field -/
@@ -314,20 +373,8 @@ theorem typeTrace_add_typeTrace_conjugate_eq_trace (Φ : CMType K) (a : K) :
     Φ.typeTrace a + Φ.conjugate.typeTrace a = algebraMap ℚ ℂ (Algebra.trace ℚ K a) := by
   rw [typeTrace_add_typeTrace_conjugate, finsum_eq_sum_of_fintype,
     trace_eq_sum_embeddings (E := ℂ)]
-  exact (Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) _ _ fun _ => rfl)
-
-/-- On a number field, the reflex field of `ιΦ` lies in that of `Φ`. -/
-theorem conjugate_reflexField_le (Φ : CMType K) : Φ.conjugate.reflexField ≤ Φ.reflexField :=
-  reflexField_le_iff.mpr fun a => by
-    rw [← add_sub_cancel_left (Φ.typeTrace a) (Φ.conjugate.typeTrace a),
-      typeTrace_add_typeTrace_conjugate_eq_trace]
-    exact sub_mem (IntermediateField.algebraMap_mem _ _) (typeTrace_mem_reflexField Φ a)
-
-/-- On a number field, `ιΦ` has the same reflex field as `Φ`. -/
-@[simp]
-theorem reflexField_conjugate (Φ : CMType K) : Φ.conjugate.reflexField = Φ.reflexField :=
-  le_antisymm Φ.conjugate_reflexField_le (by
-    simpa using Φ.conjugate.conjugate_reflexField_le)
+  exact Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) _ _ fun _ => by
+    simp [RingHom.equivRatAlgHom_apply]
 
 end NumberField
 
@@ -343,8 +390,16 @@ instance instMulActionRingAut : MulAction (RingAut ℂ) (CMType K) where
     { toSet := {ψ | (σ.symm : ℂ →+* ℂ).comp ψ ∈ Φ}
       star_mem_iff' ψ := by
         simp only [Set.mem_ofPred_eq, ← RingHom.star_comp, star_mem_iff] }
-  one_smul Φ := ext fun _ => Iff.rfl
-  mul_smul σ τ Φ := ext fun _ => Iff.rfl
+  one_smul Φ := ext fun ψ => show ((1 : RingAut ℂ).symm : ℂ →+* ℂ).comp ψ ∈ Φ ↔ ψ ∈ Φ by
+    rw [show ((1 : RingAut ℂ).symm : ℂ →+* ℂ).comp ψ = ψ from RingHom.ext fun x => by
+      rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingAut.inv_apply, inv_one,
+        RingAut.one_apply]]
+  mul_smul σ τ Φ := ext fun ψ => show ((σ * τ).symm : ℂ →+* ℂ).comp ψ ∈ Φ ↔
+      (τ.symm : ℂ →+* ℂ).comp ((σ.symm : ℂ →+* ℂ).comp ψ) ∈ Φ by
+    rw [show ((σ * τ).symm : ℂ →+* ℂ).comp ψ = (τ.symm : ℂ →+* ℂ).comp ((σ.symm : ℂ →+* ℂ).comp ψ)
+      from RingHom.ext fun x => by
+        simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingAut.inv_apply, mul_inv_rev,
+          RingAut.mul_apply]]
 
 /-- `ψ ∈ σΦ` exactly when `σ⁻¹ ∘ ψ ∈ Φ`. -/
 theorem mem_smul {σ : RingAut ℂ} {Φ : CMType K} {ψ : K →+* ℂ} :
@@ -357,6 +412,26 @@ theorem comp_mem_smul_iff {σ : RingAut ℂ} {Φ : CMType K} {φ : K →+* ℂ} 
     (σ : ℂ →+* ℂ).comp φ ∈ σ • Φ ↔ φ ∈ Φ := by
   rw [mem_smul, ← RingHom.comp_assoc]
   simp
+
+/-- As a set, `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`. -/
+theorem coe_smul (σ : RingAut ℂ) (Φ : CMType K) :
+    ((σ • Φ : CMType K) : Set (K →+* ℂ)) = RingHom.comp (σ : ℂ →+* ℂ) '' (Φ : Set (K →+* ℂ)) := by
+  ext ψ
+  refine ⟨fun h => ⟨(σ.symm : ℂ →+* ℂ).comp ψ, mem_smul.mp h, RingHom.ext fun x => by simp⟩, ?_⟩
+  rintro ⟨φ, hφ, rfl⟩
+  exact comp_mem_smul_iff.mpr hφ
+
+/-- The type trace of `σΦ` is `σ` applied to the type trace of `Φ`. -/
+@[simp]
+theorem typeTrace_smul_ringAut (σ : RingAut ℂ) (Φ : CMType K) (a : K) :
+    (σ • Φ).typeTrace a = σ (Φ.typeTrace a) := by
+  have hinj : Set.InjOn (RingHom.comp (σ : ℂ →+* ℂ)) (Φ : Set (K →+* ℂ)) := fun φ _ ψ _ h =>
+    RingHom.ext fun x => σ.injective (RingHom.congr_fun h x)
+  rw [typeTrace, typeTrace, coe_smul, finsum_mem_image hinj, ← RingEquiv.coe_toAddEquiv,
+    AddEquiv.map_finsum]
+  refine finsum_congr fun φ => ?_
+  rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingEquiv.coe_toAddEquiv]
+  exact (AddEquiv.map_finsum _ fun _ : φ ∈ Φ => φ a).symm
 
 /-- Conjugating a type commutes with the action of `Aut(ℂ)`: `ι(σΦ) = σ(ιΦ)`. -/
 theorem conjugate_smul (σ : RingAut ℂ) (Φ : CMType K) :
