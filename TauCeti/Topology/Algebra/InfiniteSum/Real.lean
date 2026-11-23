@@ -285,11 +285,8 @@ such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`. Given a
 theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
     (hr : Tendsto r cofinite atTop) (m : ι → ℕ) :
     ∃ p : ι → ℕ, ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / r i) ^ (p i + 1) := by
-  have hker : (atTop : Filter ℝ).ker = ∅ := by
-    rw [atTop_basis_Ioi.ker]
-    ext x
-    simp only [Set.mem_iInter, Set.mem_Ioi, Set.mem_empty_iff_false, iff_false, not_forall, not_lt]
-    exact ⟨x, trivial, le_rfl⟩
+  have hker : (atTop : Filter ℝ).ker = ∅ :=
+    le_cofinite_iff_ker.mp (Filter.atTop_le_cofinite : (atTop : Filter ℝ) ≤ cofinite)
   have : Countable ι := Set.countable_univ_iff.mp <| by
     simpa [hker] using hr.countable_compl_preimage_ker
   obtain ⟨idx, hidx⟩ := Countable.exists_injective_nat ι

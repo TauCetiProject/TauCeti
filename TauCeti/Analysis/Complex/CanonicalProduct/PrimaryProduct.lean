@@ -113,6 +113,12 @@ section Unweighted
 
 variable {ι : Type*} {a : ι → ℂ} {p : ι → ℕ}
 
+private theorem eventually_div_norm_lt_one_of_summable {R : ℝ} (hR : 0 ≤ R)
+    (hsum : Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) :
+    ∀ᶠ i in cofinite, R / ‖a i‖ < 1 := by
+  filter_upwards [hsum.tendsto_cofinite_zero.eventually (gt_mem_nhds zero_lt_one)] with i hi
+  exact (pow_lt_one_iff_of_nonneg (by positivity) (Nat.succ_ne_zero _)).mp hi
+
 /-- Summability of `(R / ‖a i‖) ^ (p i + 1)` for all `R > 0` (with `a i ≠ 0`) forces `‖a i‖ → ∞`
 along the cofinite filter; finite and empty index types satisfy this vacuously. -/
 theorem tendsto_norm_cofinite_atTop_of_summable_div_pow (ha : ∀ i, a i ≠ 0)
@@ -122,13 +128,10 @@ theorem tendsto_norm_cofinite_atTop_of_summable_div_pow (ha : ∀ i, a i ≠ 0)
   intro B
   let R : ℝ := max B 1
   have hR : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right B 1)
-  filter_upwards [(hsum R hR).tendsto_cofinite_zero.eventually (gt_mem_nhds zero_lt_one)]
-    with i hi
-  by_contra! hlt
+  filter_upwards [eventually_div_norm_lt_one_of_summable hR.le (hsum R hR)] with i hi
   have ha_pos : 0 < ‖a i‖ := norm_pos_iff.mpr (ha i)
-  have h1 : 1 ≤ R / ‖a i‖ :=
-    (one_le_div ha_pos).mpr (hlt.le.trans (le_max_left B 1))
-  exact lt_irrefl (1 : ℝ) ((one_le_pow₀ h1).trans_lt hi)
+  have hR_lt : R < ‖a i‖ := by simpa using (div_lt_iff₀ ha_pos).mp hi
+  exact (le_max_left B 1).trans hR_lt.le
 
 private theorem summableUniformlyOn_norm_weierstrassFactor_div_sub_one
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1))
@@ -138,20 +141,15 @@ private theorem summableUniformlyOn_norm_weierstrassFactor_div_sub_one
   let R : ℝ := max M 1
   have hR : 0 < R := lt_of_lt_of_le zero_lt_one (le_max_right M 1)
   refine (HasSumUniformlyOn.of_norm_le_summable_eventually (hsum R hR) ?_).summableUniformlyOn
-  filter_upwards [(hsum R hR).tendsto_cofinite_zero.eventually (gt_mem_nhds zero_lt_one)]
-    with i hi z hz
+  filter_upwards [eventually_div_norm_lt_one_of_summable hR.le (hsum R hR)] with i hi z hz
   rw [norm_norm]
   by_cases hai : a i = 0
   · simp [hai]
   · have hzR : ‖z‖ ≤ R := (hM z hz).trans (le_max_left M 1)
-    have ha_pos : 0 < ‖a i‖ := norm_pos_iff.mpr hai
-    have hRle : R / ‖a i‖ ≤ 1 := by
-      by_contra! hgt
-      exact lt_irrefl (1 : ℝ) ((one_le_pow₀ hgt.le).trans_lt hi)
     have hquot_le : ‖z / a i‖ ≤ R / ‖a i‖ := by
       rw [norm_div]
-      exact div_le_div_of_nonneg_right hzR ha_pos.le
-    exact (norm_weierstrassFactor_sub_one_le (p i) (hquot_le.trans hRle)).trans
+      exact div_le_div_of_nonneg_right hzR (norm_nonneg _)
+    exact (norm_weierstrassFactor_sub_one_le (p i) (hquot_le.trans hi.le)).trans
       (pow_le_pow_left₀ (norm_nonneg _) hquot_le _)
 
 /-- On every compact set `K ⊆ ℂ`, the variable-genus primary product
@@ -462,6 +460,22 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable {f
   · simpa only [F, mul_left_comm (Complex.exp (g z)), mul_assoc] using hfg z
   · simpa only [F, mul_left_comm (Complex.exp (g' z)), mul_assoc] using hfg' z
 
+private theorem tendsto_norm_cofinite_atTop_nonzero_zeros {f : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) :
+    Tendsto (fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦ ‖(a : ℂ)‖) cofinite atTop := by
+  obtain ⟨z₀, hz₀⟩ := hf0
+  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
+  rw [Filter.tendsto_atTop]
+  intro R
+  have hfin : {a : {a : ℂ // a ≠ 0 ∧ f a = 0} | ‖(a : ℂ)‖ ≤ R}.Finite := by
+    refine (Set.finite_image_iff Subtype.val_injective.injOn).mp ?_
+    exact (hfa.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ z₀) hz₀
+      (isCompact_closedBall 0 R) (subset_univ _)).subset fun w ⟨a, haR, hwa⟩ ↦
+        ⟨mem_closedBall_zero_iff.mpr (hwa ▸ haR), hwa ▸ a.property.2⟩
+  have hlt : ∀ᶠ a : {a : ℂ // a ≠ 0 ∧ f a = 0} in cofinite, R < ‖(a : ℂ)‖ := by
+    simpa only [eventually_cofinite, not_lt] using hfin
+  exact hlt.mono fun _ h ↦ h.le
+
 /-- **Weierstrass's entire factorization theorem** (Rudin, Theorem 15.10). Every entire function
 `f : ℂ → ℂ` that is not identically zero admits admissible genera
 `p : {a : ℂ // a ≠ 0 ∧ f a = 0} → ℕ` and an entire function `g : ℂ → ℂ` (unique up to `2πiℤ`)
@@ -488,23 +502,11 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow {f : ℂ → �
           ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
             weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
         ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
-  obtain ⟨z₀, hz₀⟩ := hf0
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
-  have hnorm_atTop :
-      Tendsto (fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦ ‖(a : ℂ)‖) cofinite atTop := by
-    rw [Filter.tendsto_atTop]
-    intro R
-    have hfin : {a : {a : ℂ // a ≠ 0 ∧ f a = 0} | ‖(a : ℂ)‖ ≤ R}.Finite := by
-      refine (Set.finite_image_iff Subtype.val_injective.injOn).mp ?_
-      exact (hfa.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ z₀) hz₀
-        (isCompact_closedBall 0 R) (subset_univ _)).subset fun w ⟨a, haR, hwa⟩ ↦
-          ⟨mem_closedBall_zero_iff.mpr (hwa ▸ haR), hwa ▸ a.property.2⟩
-    have hlt : ∀ᶠ a : {a : ℂ // a ≠ 0 ∧ f a = 0} in cofinite, R < ‖(a : ℂ)‖ := by
-      simpa only [eventually_cofinite, not_lt] using hfin
-    exact hlt.mono fun _ h ↦ h.le
-  obtain ⟨p, hm_sum⟩ := hnorm_atTop.exists_summable_mul_div_pow fun a ↦ analyticOrderNatAt f a
+  obtain ⟨p, hm_sum⟩ :=
+    (tendsto_norm_cofinite_atTop_nonzero_zeros hf hf0).exists_summable_mul_div_pow
+      fun a ↦ analyticOrderNatAt f a
   obtain ⟨g, hg, hfg, huniq⟩ :=
-    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable ⟨z₀, hz₀⟩ hm_sum
+    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable hf0 hm_sum
   exact ⟨p, g, hm_sum, hasProdLocallyUniformlyOn_weierstrassFactor_div_pow hm_sum, hg, hfg, huniq⟩
 
 end Differentiable
