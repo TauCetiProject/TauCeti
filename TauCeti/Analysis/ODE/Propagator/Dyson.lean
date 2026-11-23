@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Propagator
 public import TauCeti.Analysis.ODE.DysonSeries
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # The Dyson expansion of the propagator
@@ -15,7 +16,7 @@ For a coefficient `P : ℝ → E →L[𝕜] E` integrable on `[a, b]` and `s ∈
 `D₀(t) = 1`, `Dₙ₊₁(t) = ∫ r in s..t, P r ∘L Dₙ(r)` (`TauCeti.propagatorDysonTerm`) are the
 iterated integrals `∫_{s<r₁<⋯<rₙ<t} P(rₙ) ⋯ P(r₁)` for `s ≤ t`. Their norms are at most
 `|∫ r in s..t, ‖P r‖| ^ n / n!` (`TauCeti.norm_propagatorDysonTerm_le`), and their sum converges
-in norm to the propagator `N_P(t, s)` (`TauCeti.hasSum_propagatorDysonTerm`).
+to the propagator `N_P(t, s)` (`TauCeti.hasSum_propagatorDysonTerm`).
 
 For a continuous coefficient on `ℝ`, the propagator from `0` is Tau Ceti's left Dyson series
 `TauCeti.dysonSeriesLeft` (`TauCeti.propagator_zero_eq_dysonSeriesLeft`).
@@ -24,7 +25,7 @@ For a continuous coefficient on `ℝ`, the propagator from `0` is Tau Ceti's lef
 
 * `TauCeti.propagatorDysonTerm P s n t`: the `n`-th Dyson term `Dₙ(t)` based at `s`.
 * `TauCeti.norm_propagatorDysonTerm_le`: `‖Dₙ(t)‖ ≤ |∫ r in s..t, ‖P r‖| ^ n / n!`.
-* `TauCeti.hasSum_propagatorDysonTerm`: `∑ₙ Dₙ(t) = N_P(t, s)`, norm-convergent.
+* `TauCeti.hasSum_propagatorDysonTerm`: `∑ₙ Dₙ(t) = N_P(t, s)`.
 * `TauCeti.propagator_zero_eq_dysonSeriesLeft`: `N_P(t, 0) = dysonSeriesLeft P t` for continuous
   `P`.
 
@@ -61,16 +62,11 @@ theorem propagatorDysonTerm_succ (P : ℝ → E →L[𝕜] E) (s : ℝ) (n : ℕ
     propagatorDysonTerm P s (n + 1) t = ∫ r in s..t, P r ∘L propagatorDysonTerm P s n r := by
   simp [propagatorDysonTerm]
 
-omit [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] in
-/-- The integrand `r ↦ P r ∘L X r` is interval integrable along a curve `X` continuous on
-`[a, b]`. -/
-private theorem intervalIntegrable_comp' (hP : IntegrableOn P (Icc a b))
-    {X : ℝ → E →L[𝕜] E} (hX : ContinuousOn X (Icc a b)) {c d : ℝ} (hc : c ∈ Icc a b)
-    (hd : d ∈ Icc a b) : IntervalIntegrable (fun r ↦ P r ∘L X r) volume c d := by
-  have hsub := uIcc_subset_Icc hc hd
-  refine (IntegrableOn.intervalIntegrable ?_)
-  simpa [ContinuousLinearMap.mul_def] using
-    (hP.mono_set hsub).mul_continuousOn (hX.mono hsub) isCompact_uIcc
+/-- Every Dyson term after the first vanishes at the base point. -/
+@[simp]
+theorem propagatorDysonTerm_succ_self (P : ℝ → E →L[𝕜] E) (s : ℝ) (n : ℕ) :
+    propagatorDysonTerm P s (n + 1) s = 0 := by
+  rw [propagatorDysonTerm_succ, integral_same]
 
 /-- The Dyson terms are continuous on `[a, b]`. -/
 theorem continuousOn_propagatorDysonTerm (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
@@ -80,7 +76,7 @@ theorem continuousOn_propagatorDysonTerm (hP : IntegrableOn P (Icc a b)) (hs : s
   | succ n ih =>
     have hab := hs.1.trans hs.2
     have hI : IntervalIntegrable (fun r ↦ P r ∘L propagatorDysonTerm P s n r) volume a b :=
-      intervalIntegrable_comp' hP ih ⟨le_rfl, hab⟩ ⟨hab, le_rfl⟩
+      hP.intervalIntegrable_clm_comp ih ⟨le_rfl, hab⟩ ⟨hab, le_rfl⟩
     have h := continuousOn_primitive_interval' hI (by rwa [uIcc_of_le hab])
     rwa [uIcc_of_le hab] at h
 
@@ -97,22 +93,15 @@ theorem norm_propagatorDysonTerm_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ 
     have hsub := uIcc_subset_Icc hs ht
     have hPi : IntervalIntegrable (fun r ↦ ‖P r‖) volume s t :=
       IntegrableOn.intervalIntegrable (hP.mono_set hsub).norm
-    have hg : IntervalIntegrable (fun r ↦ ‖P r‖ * (|∫ u in s..r, ‖P u‖| ^ n / n !)) volume s t :=
-      hPi.mul_continuousOn
-        (((continuousOn_primitive_interval (hP.mono_set hsub).norm).abs.pow n).div_const _)
-    rw [propagatorDysonTerm_succ]
-    refine (norm_integral_le_abs_of_norm_le ((ae_restrict_mem measurableSet_uIoc).mono
-      fun r hr ↦ ?_) hg).trans_eq ?_
-    · exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left
-        (ih (hsub (uIoc_subset_uIcc hr))) (norm_nonneg _))
-    · simp_rw [mul_div_assoc', intervalIntegral.integral_div, abs_div,
-        abs_integral_norm_mul_abs_pow hPi n, Nat.factorial_succ]
-      rw [abs_of_pos (by positivity : (0 : ℝ) < n !)]
-      push_cast
-      field_simp
+    rw [propagatorDysonTerm_succ, ← mul_one (_ / _)]
+    refine norm_integral_le_abs_integral_norm_pow_div_factorial_mul zero_le_one hPi
+      ((ae_restrict_mem measurableSet_uIoc).mono fun r hr ↦ ?_)
+    rw [mul_one]
+    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left
+      (ih (hsub (uIoc_subset_uIcc hr))) (norm_nonneg _))
 
-/-- **The Dyson expansion of the propagator.** For `s, t ∈ [a, b]`, the Dyson terms sum in norm
-to `N_P(t, s)`. -/
+/-- **The Dyson expansion of the propagator.** For `s, t ∈ [a, b]`, the Dyson terms sum to
+`N_P(t, s)`. -/
 theorem hasSum_propagatorDysonTerm [CompleteSpace E] (hP : IntegrableOn P (Icc a b))
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
     HasSum (fun n ↦ propagatorDysonTerm P s n t) (propagator P t s) := by
@@ -137,7 +126,7 @@ theorem hasSum_propagatorDysonTerm [CompleteSpace E] (hP : IntegrableOn P (Icc a
       refine intervalIntegral.hasSum_integral_of_dominated_convergence
         (fun n u ↦ ‖P u‖ * (C ^ n / n !)) (fun n ↦ ?_) (fun n ↦ ?_)
         (ae_of_all _ fun u _ ↦ hsum.mul_left _) ?_ (ae_of_all _ fun u hu ↦ ?_)
-      · exact (intervalIntegrable_comp' hP (continuousOn_propagatorDysonTerm hP hs n) hs
+      · exact (hP.intervalIntegrable_clm_comp (continuousOn_propagatorDysonTerm hP hs n) hs
           hr).def'.aestronglyMeasurable
       · exact ae_of_all _ fun u hu ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans
           (mul_le_mul_of_nonneg_left (hD n (hsub (uIoc_subset_uIcc hu))) (norm_nonneg _))
@@ -146,7 +135,8 @@ theorem hasSum_propagatorDysonTerm [CompleteSpace E] (hP : IntegrableOn P (Icc a
       · exact (hS (hsub (uIoc_subset_uIcc hu))).mapL (ContinuousLinearMap.compL 𝕜 E E E (P u))
     have h1 := (hasSum_nat_add_iff' 1).2 (hS hr)
     simp only [Finset.range_one, Finset.sum_singleton] at h1
-    rw [← (h1.unique hI : S r - D 0 r = _)]
+    rw [funext fun n ↦ propagatorDysonTerm_succ P s n r] at h1
+    rw [← h1.unique hI]
     simp [D]
   rw [propagator_eq_of_forall_mem_Icc hP hs ht hSc hSeq]
   exact hS ht
