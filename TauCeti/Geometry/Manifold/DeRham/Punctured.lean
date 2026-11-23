@@ -69,13 +69,13 @@ private def puncturedHomotopy
     (p : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) × Icc (0 : ℝ) 1) :
     (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) :=
   ⟨(1 - (p.2 : ℝ)) • NormedSpace.normalize (p.1 : E) + (p.2 : ℝ) • (p.1 : E), by
-    have h₁ : 0 < ‖(p.1 : E)‖⁻¹ := inv_pos.2 (norm_pos_iff.2 p.1.2)
+    have h₁ : 0 < ‖(p.1 : E)‖⁻¹ := inv_pos.2 (norm_pos_iff.2 p.1.property)
     have : 0 < (1 - (p.2 : ℝ)) * ‖(p.1 : E)‖⁻¹ + p.2 := by
-      rcases eq_or_lt_of_le p.2.2.1 with h | h
+      rcases eq_or_lt_of_le p.2.property.1 with h | h
       · simpa [← h] using h₁
-      · exact add_pos_of_nonneg_of_pos (mul_nonneg (sub_nonneg.2 p.2.2.2) h₁.le) h
+      · exact add_pos_of_nonneg_of_pos (mul_nonneg (sub_nonneg.2 p.2.property.2) h₁.le) h
     rw [NormedSpace.normalize, smul_smul, ← add_smul]
-    exact smul_ne_zero this.ne' p.1.2⟩
+    exact smul_ne_zero this.ne' p.1.property⟩
 
 private theorem contMDiff_puncturedHomotopy :
     ContMDiff (𝓘(ℝ, E).prod (𝓡∂ 1)) 𝓘(ℝ, E) ∞ (puncturedHomotopy (E := E)) := by
@@ -84,7 +84,7 @@ private theorem contMDiff_puncturedHomotopy :
       (fun p : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) × Icc (0 : ℝ) 1 ↦ (p.2 : ℝ)) :=
     contMDiff_subtypeVal_Icc.comp contMDiff_snd
   exact ((contMDiff_const.sub ht).smul (contMDiff_normalize_compl_zero.comp contMDiff_fst)).add
-    (ht.smul (contMDiff_subtype_val.comp contMDiff_fst))
+    (ht.smul (contMDiff_subtypeVal.comp contMDiff_fst))
 
 variable (E n) in
 /-- **The de Rham cohomology of a punctured space is that of the sphere.** For a real inner
@@ -120,7 +120,7 @@ theorem puncturedSpaceEquivSphere_symm_apply (k : ℕ)
     (puncturedSpaceEquivSphere E n k).symm c =
       map (fun x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) ↦
           (⟨NormedSpace.normalize (x : E),
-            mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize_eq_one_iff.2 x.2)⟩ :
+            mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize_eq_one_iff.2 x.property)⟩ :
               sphere (0 : E) 1))
         contMDiff_normalize_sphere k c :=
   equivOfHomotopy_symm_apply ..
@@ -160,8 +160,8 @@ private def closedBallComplHomotopy (hr : 0 ≤ r)
       Icc (0 : ℝ) 1) :
     (⟨(closedBall (0 : E) r)ᶜ, isClosed_closedBall.isOpen_compl⟩ : Opens E) :=
   ⟨((1 - (p.2 : ℝ)) * (r + 1)) • NormedSpace.normalize (p.1 : E) + (p.2 : ℝ) • (p.1 : E),
-    homotopy_mem_compl_closedBall (not_le.1 fun h ↦ p.1.2 (mem_closedBall_zero_iff.2 h)) hr
-      p.2.2.1 p.2.2.2⟩
+    homotopy_mem_compl_closedBall (not_le.1 fun h ↦ p.1.property (mem_closedBall_zero_iff.2 h)) hr
+      p.2.property.1 p.2.property.2⟩
 
 private theorem contMDiff_closedBallComplHomotopy (hr : 0 ≤ r) :
     ContMDiff (𝓘(ℝ, E).prod (𝓡∂ 1)) 𝓘(ℝ, E) ∞ (closedBallComplHomotopy (E := E) hr) := by
@@ -176,7 +176,7 @@ private theorem contMDiff_closedBallComplHomotopy (hr : 0 ≤ r) :
     contMDiff_normalize_compl_zero.comp
       (contMDiff_inclusion (compl_subset_compl.2 (singleton_subset_iff.2 (mem_closedBall_self hr))))
   exact (((contMDiff_const.sub ht).mul contMDiff_const).smul (hn.comp contMDiff_fst)).add
-    (ht.smul (contMDiff_subtype_val.comp contMDiff_fst))
+    (ht.smul (contMDiff_subtypeVal.comp contMDiff_fst))
 
 variable (E n) in
 /-- **The de Rham cohomology of the complement of a closed ball is that of the sphere.** For a
@@ -231,7 +231,7 @@ theorem closedBallComplEquivSphere_symm_apply (hr : 0 ≤ r) (k : ℕ)
     (closedBallComplEquivSphere E n hr k).symm c =
       map (fun x : (⟨(closedBall (0 : E) r)ᶜ, isClosed_closedBall.isOpen_compl⟩ : Opens E) ↦
           (⟨NormedSpace.normalize (x : E), mem_sphere_zero_iff_norm.2
-            (NormedSpace.norm_normalize_eq_one_iff.2 fun h0 ↦ x.2 (by simp [h0, hr]))⟩ :
+            (NormedSpace.norm_normalize_eq_one_iff.2 fun h0 ↦ x.property (by simp [h0, hr]))⟩ :
             sphere (0 : E) 1))
         (contMDiff_normalize_sphere.comp <| contMDiff_inclusion <|
           compl_subset_compl.2 <| singleton_subset_iff.2 <| mem_closedBall_self hr) k c :=

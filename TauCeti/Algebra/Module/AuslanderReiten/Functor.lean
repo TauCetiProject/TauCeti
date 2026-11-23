@@ -201,6 +201,38 @@ theorem stableTransposeFunctorIso_app (M : FinitelyPresentedStableModule.{u, max
         (eqToIso (stableTransposeFunctor_obj Q M)).symm := by
   exact ((Iso.refl_trans _).trans (Iso.trans_refl _)).symm
 
+/-- Comparing a choice of presentations with itself gives the identity. -/
+@[simp]
+theorem stableTransposeFunctorIso_refl : stableTransposeFunctorIso P P = Iso.refl _ := by
+  ext M
+  -- The components of `stableTransposeFunctorIso` are the presentation comparisons.
+  change ((P M).stableTransposeIso (P M)).hom.hom = 𝟙 _
+  rw [FiniteProjectivePresentation.stableTransposeIso_refl]
+  rfl
+
+/-- Comparisons of transpose functors compose. -/
+@[simp]
+theorem stableTransposeFunctorIso_trans
+    (Q' : ∀ M : FinitelyPresentedStableModule.{u, max u v} A,
+      FiniteProjectivePresentation M.obj.as) :
+    stableTransposeFunctorIso P Q ≪≫ stableTransposeFunctorIso Q Q' =
+      stableTransposeFunctorIso P Q' := by
+  ext M
+  -- The components of `stableTransposeFunctorIso` are the presentation comparisons.
+  change (((Q' M).stableTransposeIso (Q M)).hom ≫ ((Q M).stableTransposeIso (P M)).hom).hom =
+    ((Q' M).stableTransposeIso (P M)).hom.hom
+  rw [← Iso.trans_hom, FiniteProjectivePresentation.stableTransposeIso_trans]
+
+/-- The comparison in the other direction is the inverse comparison. -/
+@[simp]
+theorem stableTransposeFunctorIso_symm :
+    (stableTransposeFunctorIso P Q).symm = stableTransposeFunctorIso Q P := by
+  ext1
+  have h := congrArg Iso.hom (stableTransposeFunctorIso_trans P Q P)
+  rw [stableTransposeFunctorIso_refl, Iso.trans_hom, Iso.refl_hom] at h
+  rw [Iso.symm_hom]
+  exact ((Iso.hom_comp_eq_id _).1 h).symm
+
 variable (A)
 
 /-- The Auslander–Bridger transpose on finitely presented stable modules, using chosen finite

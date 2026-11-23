@@ -327,24 +327,24 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
       (two_mul t ▸ le_self_add) hp hq hpQ)]
     exact mul_volume_le_setLIntegral_enorm_sub ht' hp ha
   have hdisj : Pairwise (Function.onFun Disjoint fun p :
-      calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t) => dyadicCube p.1.1 p.1.2 ∩ Q) :=
-    fun p p' hne => (pairwiseDisjoint_calderonZygmundCubes p.2 p'.2
+      calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t) => dyadicCube p.val.1 p.val.2 ∩ Q) :=
+    fun p p' hne => (pairwiseDisjoint_calderonZygmundCubes p.property p'.property
       (Subtype.coe_ne_coe.2 hne)).mono inter_subset_left inter_subset_left
   have hmeas : ∀ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-      MeasurableSet (dyadicCube p.1.1 p.1.2 ∩ Q) :=
+      MeasurableSet (dyadicCube p.val.1 p.val.2 ∩ Q) :=
     fun p => (measurableSet_dyadicCube _ _).inter (measurableSet_dyadicCube _ _)
   have hunion : czUnion f (2 * t) ∩ Q =
-      ⋃ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t), dyadicCube p.1.1 p.1.2 ∩ Q := by
+      ⋃ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t), dyadicCube p.val.1 p.val.2 ∩ Q := by
     rw [czUnion, biUnion_eq_iUnion, iUnion_inter]
   calc t * volume (czUnion f (2 * t) ∩ Q)
       = ∑' p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-          t * volume (dyadicCube p.1.1 p.1.2 ∩ Q) := by
+          t * volume (dyadicCube p.val.1 p.val.2 ∩ Q) := by
         rw [hunion, measure_iUnion hdisj hmeas, ENNReal.tsum_mul_left]
     _ ≤ ∑' p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-          ∫⁻ y in dyadicCube p.1.1 p.1.2 ∩ Q, ‖f y - a‖ₑ :=
-        tsum_le_tsum fun p => key p.1 p.2
+          ∫⁻ y in dyadicCube p.val.1 p.val.2 ∩ Q, ‖f y - a‖ₑ :=
+        tsum_le_tsum fun p => key p.val p.property
     _ = ∫⁻ y in ⋃ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-          dyadicCube p.1.1 p.1.2 ∩ Q, ‖f y - a‖ₑ :=
+          dyadicCube p.val.1 p.val.2 ∩ Q, ‖f y - a‖ₑ :=
         (lintegral_iUnion hmeas hdisj _).symm
     _ ≤ ∫⁻ y in Q', ‖f y - a‖ₑ :=
         lintegral_mono_set (iUnion_subset fun _ => inter_subset_right.trans hQQ')
@@ -390,29 +390,31 @@ private theorem volume_czUnion_two_mul_le {f : (ι → ℝ) → F}
       t * (K * γ * volume (dyadicCube q.1 q.2)) by ring] at hle
     exact (ENNReal.mul_le_mul_iff_right ht ht').1 hle
   have hmeas : ∀ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-      MeasurableSet (dyadicCube q.1.1 q.1.2) := fun q => measurableSet_dyadicCube _ _
+      MeasurableSet (dyadicCube q.val.1 q.val.2) := fun q => measurableSet_dyadicCube _ _
   have hU : czUnion f t = ⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-      dyadicCube q.1.1 q.1.2 := by
+      dyadicCube q.val.1 q.val.2 := by
     rw [czUnion, biUnion_eq_iUnion]
   have hdisj : Pairwise (Function.onFun Disjoint fun q :
-      calderonZygmundCubes (fun x => ‖f x‖ₑ) t => dyadicCube q.1.1 q.1.2) :=
-    fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.2 q'.2 (Subtype.coe_ne_coe.2 hne)
+      calderonZygmundCubes (fun x => ‖f x‖ₑ) t => dyadicCube q.val.1 q.val.2) :=
+    fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.property q'.property
+        (Subtype.coe_ne_coe.2 hne)
   have hsub : czUnion f (2 * t) ⊆ czUnion f t :=
     biUnion_calderonZygmundCubes_subset hp₀ hfp₀ ht (two_mul t ▸ le_self_add)
   calc volume (czUnion f (2 * t))
       = volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-          czUnion f (2 * t) ∩ dyadicCube q.1.1 q.1.2) := by
+          czUnion f (2 * t) ∩ dyadicCube q.val.1 q.val.2) := by
         rw [← inter_iUnion, ← hU, inter_eq_left.2 hsub]
     _ = ∑' q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-          volume (czUnion f (2 * t) ∩ dyadicCube q.1.1 q.1.2) :=
+          volume (czUnion f (2 * t) ∩ dyadicCube q.val.1 q.val.2) :=
         measure_iUnion (fun q q' hne => (hdisj hne).mono
             inter_subset_right inter_subset_right)
           fun q => (measurableSet_biUnion_calderonZygmundCubes (fun x => ‖f x‖ₑ) _).inter (hmeas q)
     _ ≤ ∑' q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-          (K * γ * volume (dyadicCube q.1.1 q.1.2) + volume (dyadicCube q.1.1 q.1.2 ∩ S)) :=
-        tsum_le_tsum fun q => hcube q.1 q.2
+          (K * γ * volume (dyadicCube q.val.1 q.val.2) + volume (dyadicCube q.val.1 q.val.2 ∩ S)) :=
+        tsum_le_tsum fun q => hcube q.val q.property
     _ = K * γ * volume (czUnion f t) +
-          volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t, dyadicCube q.1.1 q.1.2 ∩ S) := by
+          volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t, dyadicCube q.val.1 q.val.2 ∩ S)
+              := by
         rw [tsum_add, ENNReal.tsum_mul_left, hU,
           measure_iUnion hdisj hmeas,
           measure_iUnion (fun q q' hne => (hdisj hne).mono

@@ -76,7 +76,7 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot
     M * Matrix.J l R * M.transpose - Matrix.J l R with hE
   have hE_map : qMat E = 0 := by
     rw [hE, map_sub, map_mul, map_mul, hM_transpose_map, hM_map, hJ_map,
-      (GLSymplectic.mem_iff).mp g.2]
+      (GLSymplectic.mem_iff).mp g.property]
     exact sub_self _
   have hE_mem : ∀ i j, E i j ∈ I := by
     intro i j

@@ -255,18 +255,18 @@ theorem im_pos_of_mem_arcSingularSet {S : Finset ℍ} {s : ℂ}
   simp only [arcSingularSet, Finset.mem_union, Finset.mem_image, Finset.mem_filter,
     Finset.mem_insert, Finset.mem_singleton] at hs
   rcases hs with (⟨p, ⟨-, _⟩, rfl⟩ | ⟨p, ⟨-, _⟩, rfl⟩) | rfl | rfl
-  · exact p.2
+  · exact p.coe_im_pos
   · simpa [neg_div] using p.im_inv_neg_coe_pos
-  · simpa using (ρ : ℍ).2
+  · simpa using (ρ : ℍ).coe_im_pos
   · rw [add_im, one_im, add_zero]
-    simpa using (ρ : ℍ).2
+    simpa using (ρ : ℍ).coe_im_pos
 
 /-- Every point of the vertical singular set lies in the open upper half-plane. -/
 theorem im_pos_of_mem_verticalSingularSet {S : Finset ℍ} {s : ℂ}
     (hs : s ∈ verticalSingularSet S) : 0 < s.im := by
   simp only [verticalSingularSet, Finset.mem_union, Finset.mem_image, Finset.mem_filter] at hs
   rcases hs with ((⟨p, -, rfl⟩ | ⟨p, -, rfl⟩) | ⟨p, -, rfl⟩) | ⟨p, -, rfl⟩ <;>
-    simpa using p.2
+    simpa using p.coe_im_pos
 
 /-- Every arc excision centre sits below the ceiling: it has unit norm, and the imaginary
 part is bounded by the norm. -/

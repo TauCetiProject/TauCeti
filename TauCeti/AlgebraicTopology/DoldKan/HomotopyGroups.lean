@@ -51,6 +51,34 @@ def doldKanPiAddEquivHomology (n : ℕ) :
     ((homologyFunctor _ _ (n + 1)).mapIso
       (Abelian.DoldKan.equivalence.counitIso.app K)).toLinearEquiv.toAddEquiv
 
+/-- The Dold–Kan homotopy comparison sends a class through the Moore-complex
+comparison and the homology map of the native Dold–Kan counit. -/
+lemma doldKanPiAddEquivHomology_apply (n : ℕ)
+    (a : Additive (SSet.KanComplex.π (n + 1)
+      (Idempotents.DoldKan.Γ.obj K ⋙ forget (ModuleCat R))
+      (0 : (Idempotents.DoldKan.Γ.obj K) _⦋0⦌))) :
+    K.doldKanPiAddEquivHomology n a =
+      homologyMap (Abelian.DoldKan.equivalence.counitIso.app K).hom (n + 1)
+        (piAddEquivNormalizedMooreComplexHomology (Idempotents.DoldKan.Γ.obj K) n a) :=
+  (rfl)
+
+/-- On a pointed simplex represented by a normalized cycle, the Dold–Kan homotopy comparison
+is the homology class of the image of that cycle under the native Dold–Kan counit. -/
+lemma doldKanPiAddEquivHomology_mk (n : ℕ)
+    (p : SSet.PtSimplex (Idempotents.DoldKan.Γ.obj K ⋙ forget (ModuleCat R)) (n + 1)
+      (0 : (Idempotents.DoldKan.Γ.obj K) _⦋0⦌))
+    (c : ((AlgebraicTopology.normalizedMooreComplex (ModuleCat R)).obj
+      (Idempotents.DoldKan.Γ.obj K)).cycles (n + 1))
+    (hc : (AlgebraicTopology.inclusionOfMooreComplexMap (Idempotents.DoldKan.Γ.obj K)).f (n + 1)
+        (((AlgebraicTopology.normalizedMooreComplex (ModuleCat R)).obj
+          (Idempotents.DoldKan.Γ.obj K)).iCycles (n + 1) c) =
+      SSet.yonedaEquiv p.map) :
+    K.doldKanPiAddEquivHomology n (.ofMul (SSet.KanComplex.π.mk p)) =
+      K.homologyπ (n + 1)
+        (cyclesMap (Abelian.DoldKan.equivalence.counitIso.app K).hom (n + 1) c) := by
+  rw [doldKanPiAddEquivHomology_apply, piAddEquivNormalizedMooreComplexHomology_mk p c hc]
+  exact moduleCat_homologyMap_homologyπ _ _ _
+
 /-- Path components of the Dold–Kan simplicial module are degree-zero homology. -/
 def doldKanPiZeroEquivHomology :
     SSet.KanComplex.π 0 (Idempotents.DoldKan.Γ.obj K ⋙ forget (ModuleCat R))
@@ -58,6 +86,16 @@ def doldKanPiZeroEquivHomology :
   (piZeroEquivNormalizedMooreComplexHomology (Idempotents.DoldKan.Γ.obj K)).trans
     ((homologyFunctor _ _ 0).mapIso
       (Abelian.DoldKan.equivalence.counitIso.app K)).toLinearEquiv.toEquiv
+
+/-- The degree-zero Dold–Kan comparison sends a component through the Moore-complex
+comparison and the homology map of the native Dold–Kan counit. -/
+lemma doldKanPiZeroEquivHomology_apply
+    (a : SSet.KanComplex.π 0 (Idempotents.DoldKan.Γ.obj K ⋙ forget (ModuleCat R))
+      (0 : (Idempotents.DoldKan.Γ.obj K) _⦋0⦌)) :
+    K.doldKanPiZeroEquivHomology a =
+      homologyMap (Abelian.DoldKan.equivalence.counitIso.app K).hom 0
+        (piZeroEquivNormalizedMooreComplexHomology (Idempotents.DoldKan.Γ.obj K) a) :=
+  (rfl)
 
 variable {K} {L : ChainComplex (ModuleCat.{u} R) ℕ}
 
@@ -126,6 +164,18 @@ def doldKanPiAddEquivHomology (n : ℕ) :
   (ChainComplex.doldKanPiAddEquivHomology (K.truncLE' ComplexShape.embeddingDownNat) n).trans
     (K.truncLE'HomologyIso ComplexShape.embeddingDownNat (n + 1)).toLinearEquiv.toAddEquiv
 
+/-- The positive-degree cochain comparison is the chain comparison for the good truncation,
+followed by the identification of the truncation's homology. -/
+lemma doldKanPiAddEquivHomology_apply (n : ℕ)
+    (a : Additive (SSet.KanComplex.π (n + 1)
+      (Idempotents.DoldKan.Γ.obj (K.truncLE' ComplexShape.embeddingDownNat) ⋙
+        forget (ModuleCat R))
+      (0 : (Idempotents.DoldKan.Γ.obj (K.truncLE' ComplexShape.embeddingDownNat)) _⦋0⦌))) :
+    K.doldKanPiAddEquivHomology n a =
+      (K.truncLE'HomologyIso ComplexShape.embeddingDownNat (n + 1)).hom
+        (ChainComplex.doldKanPiAddEquivHomology (K.truncLE' ComplexShape.embeddingDownNat) n a) :=
+  (rfl)
+
 /-- Path components of the Dold–Kan good truncation of a cochain complex are its
 zeroth cohomology group. -/
 def doldKanPiZeroEquivHomology :
@@ -136,6 +186,18 @@ def doldKanPiZeroEquivHomology :
       K.homology 0 :=
   (ChainComplex.doldKanPiZeroEquivHomology (K.truncLE' ComplexShape.embeddingDownNat)).trans
     (K.truncLE'HomologyIso ComplexShape.embeddingDownNat 0).toLinearEquiv.toEquiv
+
+/-- The degree-zero cochain comparison is the chain comparison for the good truncation,
+followed by the identification of the truncation's homology. -/
+lemma doldKanPiZeroEquivHomology_apply
+    (a : SSet.KanComplex.π 0
+      (Idempotents.DoldKan.Γ.obj (K.truncLE' ComplexShape.embeddingDownNat) ⋙
+        forget (ModuleCat R))
+      (0 : (Idempotents.DoldKan.Γ.obj (K.truncLE' ComplexShape.embeddingDownNat)) _⦋0⦌)) :
+    K.doldKanPiZeroEquivHomology a =
+      (K.truncLE'HomologyIso ComplexShape.embeddingDownNat 0).hom
+        (ChainComplex.doldKanPiZeroEquivHomology (K.truncLE' ComplexShape.embeddingDownNat) a) :=
+  (rfl)
 
 variable {K} {L : CochainComplex (ModuleCat.{u} R) ℤ}
 

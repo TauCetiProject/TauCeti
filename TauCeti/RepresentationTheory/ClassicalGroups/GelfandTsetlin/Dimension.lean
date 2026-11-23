@@ -189,7 +189,7 @@ theorem card_topRow_eq_weylDimension {n : ℕ} (l : DominantWeight n) :
     have hmul := weylDimension_mul_superFactorial l
     rw [h0, mul_zero] at hmul
     exact (weylDimensionNumerator_pos l).ne hmul
-  have h := (card_topRow_mul_superFactorial n l.1 l.2).trans
+  have h := (card_topRow_mul_superFactorial n l.val l.property).trans
     (weylDimensionNumerator_eq_prod_prod l).symm
   have h' := h.trans (weylDimension_mul_superFactorial l).symm
   exact_mod_cast mul_right_cancel₀ hsf h'

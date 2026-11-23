@@ -53,16 +53,16 @@ theorem SeparatelyExchangeable.exists_visibleCells_coding
         (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map
             (fun q => (H.domRestrict q.1,
               fun p : F => f p (H.domRestrict q.1) (q.2 p))) =
-          ρ.map fun x => (H.domRestrict x, fun p : F => x p.1.1) := by
+          ρ.map fun x => (H.domRestrict x, fun p : F => x p.val.val) := by
   dsimp
   let H : Set (ℕ × ℕ) := (Set.univ ×ˢ T) ∪ (S ×ˢ Set.univ)
   have hAll := hρ.iCondIndepFun_visibleCells hS hT
   have hF : iCondIndepFun (MeasurableSpace.comap H.domRestrict inferInstance)
       (Set.measurable_restrict H).comap_le
-      (fun p : F => fun x : ℕ × ℕ → α => x p.1.1) ρ := by
+      (fun p : F => fun x : ℕ × ℕ → α => x p.val.val) ρ := by
     exact Kernel.iIndepFun.precomp Subtype.val_injective hAll
   exact hF.exists_independent_coding (Set.measurable_restrict H)
-    (fun p => measurable_pi_apply p.1.1)
+    (fun p => measurable_pi_apply p.val.val)
 
 end TauCeti.Probability
 
