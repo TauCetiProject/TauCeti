@@ -61,12 +61,12 @@ variable {M N : Type*} [Zero M] [Zero N]
 /-- A binary kernel `K : X → Y → M` has **proper output support** if the first projection
 `(x, y) ↦ x` restricted to `tsupport (Function.uncurry K)` is a proper map. -/
 def HasProperOutputSupport (K : X → Y → M) : Prop :=
-  IsProperMap fun p : tsupport (uncurry K) ↦ p.1.1
+  IsProperMap fun p : tsupport (uncurry K) ↦ p.val.1
 
 /-- A binary kernel `K : X → Y → M` has **proper input support** if the second projection
 `(x, y) ↦ y` restricted to `tsupport (Function.uncurry K)` is a proper map. -/
 def HasProperInputSupport (K : X → Y → M) : Prop :=
-  IsProperMap fun p : tsupport (uncurry K) ↦ p.1.2
+  IsProperMap fun p : tsupport (uncurry K) ↦ p.val.2
 
 /-- A binary kernel `K : X → Y → M` is **properly supported** if both projections from
 `tsupport (Function.uncurry K)` to `X` and `Y` are proper maps. -/
@@ -74,11 +74,11 @@ def HasProperSupport (K : X → Y → M) : Prop :=
   HasProperOutputSupport K ∧ HasProperInputSupport K
 
 theorem hasProperOutputSupport_iff_isProperMap {K : X → Y → M} :
-    HasProperOutputSupport K ↔ IsProperMap fun p : tsupport (uncurry K) ↦ p.1.1 :=
+    HasProperOutputSupport K ↔ IsProperMap fun p : tsupport (uncurry K) ↦ p.val.1 :=
   Iff.rfl
 
 theorem hasProperInputSupport_iff_isProperMap {K : X → Y → M} :
-    HasProperInputSupport K ↔ IsProperMap fun p : tsupport (uncurry K) ↦ p.1.2 :=
+    HasProperInputSupport K ↔ IsProperMap fun p : tsupport (uncurry K) ↦ p.val.2 :=
   Iff.rfl
 
 theorem HasProperSupport.out {K : X → Y → M} (hK : HasProperSupport K) :
@@ -99,7 +99,7 @@ theorem HasProperOutputSupport.of_tsupport_subset {K : X → Y → M} {K' : X �
     (hK : HasProperOutputSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
     HasProperOutputSupport K' :=
   hK.comp (Topology.IsClosedEmbedding.inclusion hsub
-    ((isClosed_tsupport _).preimage continuous_subtype_val)).isProperMap
+    ((isClosed_tsupport _).preimage continuous_subtypeVal)).isProperMap
 
 private theorem tsupport_uncurry_flip (K : X → Y → M) :
     tsupport (uncurry (_root_.flip K)) = Prod.swap ⁻¹' tsupport (uncurry K) :=
@@ -146,10 +146,10 @@ theorem HasProperSupport.of_tsupport_subset {K : X → Y → M} {K' : X → Y �
 @[simp]
 theorem hasProperOutputSupport_zero : HasProperOutputSupport (0 : X → Y → M) := by
   rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 _ _ ↦ ?_⟩
+  refine ⟨continuous_fst.comp continuous_subtypeVal, fun 𝒰 _ _ ↦ ?_⟩
   obtain ⟨p, -⟩ := 𝒰.toFilter.nonempty_of_mem univ_mem
   have h0 : tsupport (uncurry (0 : X → Y → M)) = ∅ := tsupport_zero
-  exact False.elim (notMem_empty p.1 (h0 ▸ p.prop))
+  exact False.elim (notMem_empty p.val (h0 ▸ p.prop))
 
 @[simp]
 theorem hasProperInputSupport_zero : HasProperInputSupport (0 : X → Y → M) :=
@@ -165,15 +165,15 @@ theorem HasProperOutputSupport.exists_isCompact_isClosed_forall_eq_zero {K : X �
     (hK : HasProperOutputSupport K) {C : Set X} (hC : IsCompact C) :
     ∃ L : Set Y, IsCompact L ∧ IsClosed L ∧ ∀ x ∈ C, ∀ y ∉ L, K x y = 0 := by
   let S := tsupport (uncurry K)
-  let L : Set Y := (fun p : S ↦ p.1.2) '' ((fun p : S ↦ p.1.1) ⁻¹' C)
+  let L : Set Y := (fun p : S ↦ p.val.2) '' ((fun p : S ↦ p.val.1) ⁻¹' C)
   have hL : IsCompact L :=
-    (hK.isCompact_preimage hC).image (continuous_snd.comp continuous_subtype_val)
+    (hK.isCompact_preimage hC).image (continuous_snd.comp continuous_subtypeVal)
   have : CompactSpace C := isCompact_iff_compactSpace.mp hC
-  have hA : IsClosed {q : C × Y | (q.1.1, q.2) ∈ S} :=
+  have hA : IsClosed {q : C × Y | (q.1.val, q.2) ∈ S} :=
     (isClosed_tsupport _).preimage
-      ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
+      ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd)
   have hLc : IsClosed L := by
-    have himage : L = Prod.snd '' {q : C × Y | (q.1.1, q.2) ∈ S} := by
+    have himage : L = Prod.snd '' {q : C × Y | (q.1.val, q.2) ∈ S} := by
       ext y
       simp [L, S]
     rw [himage]
@@ -222,13 +222,13 @@ theorem hasProperOutputSupport_iff [WeaklyLocallyCompactSpace X] [T2Space Y] {K 
       ∀ C : Set X, IsCompact C → ∃ L : Set Y, IsCompact L ∧ ∀ x ∈ C, ∀ y ∉ L, K x y = 0 := by
   refine ⟨fun hK _ hC ↦ hK.exists_isCompact_forall_eq_zero hC, fun h ↦ ?_⟩
   rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
-  refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 x hx ↦ ?_⟩
+  refine ⟨continuous_fst.comp continuous_subtypeVal, fun 𝒰 x hx ↦ ?_⟩
   obtain ⟨C, hC, hxC⟩ := exists_compact_mem_nhds x
   obtain ⟨L, hL, hKL⟩ := h C hC
   have hdisj : tsupport (uncurry K) ⊆ (interior C ×ˢ Lᶜ)ᶜ :=
     closure_minimal (fun ⟨x', y'⟩ hxy ⟨hx', hy'⟩ ↦ hxy (hKL x' (interior_subset hx') y' hy'))
       (isOpen_interior.prod hL.isClosed.isOpen_compl).isClosed_compl
-  have hL_mem : L ∈ 𝒰.map (fun p : tsupport (uncurry K) ↦ p.1.2) :=
+  have hL_mem : L ∈ 𝒰.map (fun p : tsupport (uncurry K) ↦ p.val.2) :=
     mem_map.2 (Filter.mem_of_superset (hx (interior_mem_nhds.2 hxC)) fun p hp ↦
       by_contra fun hyL ↦ hdisj p.prop ⟨hp, hyL⟩)
   obtain ⟨y, -, hy⟩ := hL.ultrafilter_le_nhds _ (le_principal_iff.2 hL_mem)
@@ -253,9 +253,10 @@ theorem not_hasProperOutputSupport_of_tsupport_eq_univ [Nonempty X] [NoncompactS
     {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperOutputSupport K := by
   intro hK
   obtain ⟨x₀⟩ := ‹Nonempty X›
-  have hcomp : IsCompact ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) :=
-    (hK.isCompact_preimage isCompact_singleton).image (continuous_snd.comp continuous_subtype_val)
-  have heq : ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) = univ :=
+  have hcomp : IsCompact
+      ((fun p : tsupport (uncurry K) ↦ p.val.2) '' ((fun p ↦ p.val.1) ⁻¹' {x₀})) :=
+    (hK.isCompact_preimage isCompact_singleton).image (continuous_snd.comp continuous_subtypeVal)
+  have heq : ((fun p : tsupport (uncurry K) ↦ p.val.2) '' ((fun p ↦ p.val.1) ⁻¹' {x₀})) = univ :=
     eq_univ_iff_forall.2 fun y ↦ ⟨⟨(x₀, y), h.symm ▸ mem_univ _⟩, rfl, rfl⟩
   exact NoncompactSpace.noncompact_univ (heq ▸ hcomp)
 
@@ -314,12 +315,12 @@ theorem HasProperSupport.neg {G : Type*} [NegZeroClass G] {K : X → Y → G}
 theorem HasProperOutputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
     (h₁ : HasProperOutputSupport K₁) (h₂ : HasProperOutputSupport K₂) :
     HasProperOutputSupport (K₁ + K₂) := by
-  have hunion : IsProperMap fun p : ↥(tsupport (uncurry K₁) ∪ tsupport (uncurry K₂)) ↦ p.1.1 :=
+  have hunion : IsProperMap fun p : ↥(tsupport (uncurry K₁) ∪ tsupport (uncurry K₂)) ↦ p.val.1 :=
     continuous_fst.isProperMap_restrict_union h₁ h₂
   have hsub : tsupport (uncurry (K₁ + K₂)) ⊆ tsupport (uncurry K₁) ∪ tsupport (uncurry K₂) :=
     tsupport_add (uncurry K₁) (uncurry K₂)
   exact hunion.comp (Topology.IsClosedEmbedding.inclusion hsub
-    ((isClosed_tsupport _).preimage continuous_subtype_val)).isProperMap
+    ((isClosed_tsupport _).preimage continuous_subtypeVal)).isProperMap
 
 theorem HasProperInputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
     (h₁ : HasProperInputSupport K₁) (h₂ : HasProperInputSupport K₂) :
@@ -399,7 +400,8 @@ theorem hasProperOutputSupport_comp_sub {G M : Type*} [TopologicalSpace G] [AddG
       ((isClosed_tsupport φ).preimage (continuous_fst.sub continuous_snd))
   let e : G × G ≃ₜ G × G :=
     ((Homeomorph.refl G).prodCongr (Homeomorph.neg G)).trans (Homeomorph.shearAddRight G)
-  let f : tsupport (uncurry K) → G × tsupport φ := fun p ↦ (p.1.1, ⟨p.1.1 - p.1.2, hsub p.prop⟩)
+  let f : tsupport (uncurry K) → G × tsupport φ :=
+    fun p ↦ (p.val.1, ⟨p.val.1 - p.val.2, hsub p.prop⟩)
   let g : G × tsupport φ → G × G := Prod.map id Subtype.val
   have hgf : g ∘ f = e ∘ Subtype.val := by
     ext p <;> simp [g, f, e, sub_eq_add_neg]

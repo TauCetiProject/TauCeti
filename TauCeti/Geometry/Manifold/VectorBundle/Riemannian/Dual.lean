@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # Regularity of metric dual covectors
 
 Lowering a vector-bundle section with a regular metric preserves its regularity, including
 for sections along a varying base map. This is the covector-valued version of Mathlib's
-`ContMDiffWithinAt.inner_bundle`.
+`ContMDiffWithinAt.inner_bundle`. The metric itself is a regular section of the Hom bundle
+to the continuous dual. In finite rank its inverse is a regular Hom-bundle section as well.
 -/
 
 public noncomputable section
@@ -34,6 +37,35 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
   {b : P → M} {σ : ∀ p, V (b p)} {s : Set P} {p : P}
+
+/-- The metric, viewed as a bundle map to the continuous dual, is as regular as the metric. -/
+theorem IsContMDiffRiemannianBundle.contMDiff_innerSL {n : ℕ∞ω}
+    [h : IsContMDiffRiemannianBundle I n F V] :
+    ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) x (innerSL ℝ)) := by
+  obtain ⟨g, hg, heq⟩ := h.exists_contMDiff
+  apply hg.congr
+  intro x
+  congr 1
+  ext u v
+  -- `erw` unfolds the metric-induced module projections on the fibre, allowing the generic
+  -- Riesz evaluation lemma to match the ambient bundle structures.
+  erw [innerSL_apply_apply]
+  exact heq x u v
+
+/-- On a finite-rank real Riemannian bundle, the inverse metric is a regular bundle map from
+the continuous dual to the original bundle. The zero-rank case is included. -/
+theorem IsContMDiffRiemannianBundle.contMDiff_innerSL_inverse {n : ℕ∞ω}
+    [FiniteDimensional ℝ F]
+    [h : IsContMDiffRiemannianBundle I n F V] :
+    ContMDiff I (I.prod 𝓘(ℝ, (F →L[ℝ] ℝ) →L[ℝ] F)) n
+      (fun x ↦ TotalSpace.mk' ((F →L[ℝ] ℝ) →L[ℝ] F)
+        (E := fun x ↦ (V x →L[ℝ] ℝ) →L[ℝ] V x) x (innerSL ℝ).inverse) := by
+  apply IsContMDiffRiemannianBundle.contMDiff_innerSL.clm_bundle_inverse
+  intro x
+  let := VectorBundle.finiteDimensional ℝ F V x
+  exact InnerProductSpace.isInvertible_innerSL
 
 /-- Metric duality preserves regularity along an arbitrary base map. -/
 theorem ContMDiffWithinAt.innerSL_bundle {n : ℕ∞ω}

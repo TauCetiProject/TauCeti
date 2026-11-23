@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Expansion
+public import TauCeti.Analysis.Pseudodifferential.Amplitude.ProperSupport
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 import TauCeti.Analysis.Calculus.BumpFunction.DiagonalCutoff
 
@@ -29,8 +30,8 @@ smoothing symbol (`TauCeti.Symbol.isSmoothing_leftSymbol_localizeAmplitude_sub`,
 plus an integral operator with a globally smooth kernel
 (`TauCeti.Symbol.exists_hasProperSupport_amplitude_and_contDiff_kernel`).
 
-Compare `TauCeti.Analysis.Pseudodifferential.ProperSupport`, which cuts off kernels directly at
-the symbol level for translation-invariant Schwartz factors `χ(x - y)`: here `χ(x, y)` is an
+Compare `TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic`, which cuts off kernels directly
+at the symbol level for translation-invariant Schwartz factors `χ(x - y)`: here `χ(x, y)` is an
 arbitrary smooth cutoff, giving both the localized amplitude and the explicit `C^∞` kernel.
 
 ## Main declarations
@@ -70,32 +71,36 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddComm
 a smooth spatial cutoff `χ(x, y)`, giving the amplitude `(x, y, ξ) ↦ χ(x, y) • a(x, ξ)`. -/
 def localizeAmplitude (a : Symbol n V W m) (χ : CoordinateSpace n → CoordinateSpace n → ℝ)
     (hχ : ContDiff ℝ ∞ (uncurry χ)) : Amplitude n V W m :=
-  (Amplitude.ofLeft a).smulSpatial χ hχ
+  (Amplitude.ofLeft a).smulPositions (fun p ↦ (χ p.1 p.2 : ℂ)) (Complex.ofRealCLM.contDiff.comp hχ)
 
 @[simp]
 theorem coefficient_localizeAmplitude (a : Symbol n V W m)
     (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (hχ : ContDiff ℝ ∞ (uncurry χ))
     (p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
     (a.localizeAmplitude χ hχ).coefficient p = χ p.1 p.2.1 • a.coefficient (p.1, p.2.2) := by
-  simp [localizeAmplitude]
-
-theorem hasProperOutputSupport_localizeAmplitude (a : Symbol n V W m)
-    {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_out : HasProperOutputSupport χ) :
-    (a.localizeAmplitude χ hχ).HasProperOutputSupport :=
-  Amplitude.hasProperOutputSupport_smulSpatial_of_cutoff _ hχ hχ_out
+  simp [localizeAmplitude, ← Complex.coe_algebraMap]
 
 theorem hasProperInputSupport_localizeAmplitude (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
-    (hχ_in : HasProperInputSupport χ) :
+    (hχ_out : HasProperOutputSupport χ) :
     (a.localizeAmplitude χ hχ).HasProperInputSupport :=
-  Amplitude.hasProperInputSupport_smulSpatial_of_cutoff _ hχ hχ_in
+  Amplitude.hasProperInputSupport_smulPositions_of_cutoff _ _
+    (hχ_out.of_tsupport_subset (tsupport_comp_subset Complex.ofReal_zero (uncurry χ)))
+
+theorem hasProperOutputSupport_localizeAmplitude (a : Symbol n V W m)
+    {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
+    (hχ_in : HasProperInputSupport χ) :
+    (a.localizeAmplitude χ hχ).HasProperOutputSupport :=
+  Amplitude.hasProperOutputSupport_smulPositions_of_cutoff _ _
+    (hχ_in.of_tsupport_subset (tsupport_comp_subset Complex.ofReal_zero (uncurry χ)))
 
 theorem hasProperSupport_localizeAmplitude (a : Symbol n V W m)
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
     (hχ_prop : HasProperSupport χ) :
     (a.localizeAmplitude χ hχ).HasProperSupport :=
-  Amplitude.hasProperSupport_smulSpatial_of_cutoff _ hχ hχ_prop
+  Amplitude.hasProperSupport_iff.mpr
+    ⟨a.hasProperInputSupport_localizeAmplitude hχ hχ_prop.out,
+      a.hasProperOutputSupport_localizeAmplitude hχ hχ_prop.inp⟩
 
 /-- When `χ(x, x) = 1` for every `x`, the diagonal restriction of `a.localizeAmplitude χ hχ`
 recovers `a`. -/
@@ -137,8 +142,8 @@ theorem isSmoothing_leftSymbol_localizeAmplitude_sub [CompleteSpace W] (a : Symb
     {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (uncurry χ))
     (hχ_out : HasProperOutputSupport χ) (hχ_diag : ∀ x, (fun y ↦ χ x y) =ᶠ[𝓝 x] 1) :
     (((a.localizeAmplitude χ hχ).leftSymbol
-      (a.hasProperOutputSupport_localizeAmplitude hχ hχ_out)) - a).IsSmoothing := by
-  have hA := a.hasProperOutputSupport_localizeAmplitude hχ hχ_out
+      (a.hasProperInputSupport_localizeAmplitude hχ hχ_out)) - a).IsSmoothing := by
+  have hA := a.hasProperInputSupport_localizeAmplitude hχ hχ_out
   have hdiag : (a.localizeAmplitude χ hχ).diagonal = a :=
     a.diagonal_localizeAmplitude hχ fun x ↦ (hχ_diag x).eq_of_nhds
   refine isSmoothing_iff_forall_nat.2 fun N ↦ ?_
@@ -219,8 +224,10 @@ theorem quantizeSchwartzValue_eq_quantizeSchwartzValue_leftSymbol_add_integral
     quantizeSchwartzValue a.coefficient u x =
       quantizeSchwartzValue
           ((a.localizeAmplitude χ hχ).leftSymbol
-            (a.hasProperOutputSupport_localizeAmplitude hχ hχ_out)).coefficient u x +
+            (a.hasProperInputSupport_localizeAmplitude hχ hχ_out)).coefficient u x +
         ∫ y, a.localizedOffDiagonalKernel χ x y (u y) := by
+  by_cases hW : CompleteSpace W; swap
+  · simp [quantizeSchwartzValue_def, integral_of_not_completeSpace hW]
   rw [Amplitude.quantizeSchwartzValue_leftSymbol]
   exact a.quantizeSchwartzValue_eq_quantizeAmplitudeValue_add_integral_localizedOffDiagonalKernel
     hχ hu x hχ_diag
@@ -239,7 +246,7 @@ theorem exists_hasProperSupport_amplitude_and_contDiff_kernel
     (hR : 0 < R) (hrR : r < R) :
     ∃ (A : Amplitude n V W m) (hA : A.HasProperSupport)
       (K : CoordinateSpace n → CoordinateSpace n → V →L[ℂ] W),
-      ContDiff ℝ ∞ (uncurry K) ∧ ((A.leftSymbol hA.out) - a).IsSmoothing ∧
+      ContDiff ℝ ∞ (uncurry K) ∧ ((A.leftSymbol hA.inp) - a).IsSmoothing ∧
       tsupport (uncurry fun x y ξ ↦ A.coefficient (x, y, ξ)) ⊆
         {p : CoordinateSpace n × CoordinateSpace n | ‖p.1 - p.2‖ < R} ∧
       (∀ x y, ‖x - y‖ ≤ r → K x y = 0) ∧

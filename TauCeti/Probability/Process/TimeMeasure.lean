@@ -14,8 +14,9 @@ public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 
 `TauCeti.Probability.timeMeasure T` is Lebesgue measure on `(0,T]` in nonnegative real
 time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
-The origin has zero mass. Interval masses and restriction to shorter horizons are
-recorded explicitly for time-product measures used in stochastic integration.
+The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
+shorter horizons are recorded explicitly for time-product measures used in stochastic
+integration.
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
 clipped to the horizon; the extension lemmas describe their images.
@@ -90,6 +91,16 @@ theorem timeMeasure_restrict (T S : ℝ≥0) :
   rw [timeMeasure_def, Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc]
   simp [timeMeasure_def]
 
+/-- Restricting time measure to a shorter horizon gives that horizon's time measure. -/
+theorem timeMeasure_restrict_of_le {S T : ℝ≥0} (hST : S ≤ T) :
+    (timeMeasure T).restrict (Ioc 0 S) = timeMeasure S := by
+  rw [timeMeasure_restrict, min_eq_left hST]
+
+/-- Time measure on a shorter horizon is dominated by time measure on a longer one. -/
+theorem timeMeasure_mono {S T : ℝ≥0} (hST : S ≤ T) : timeMeasure S ≤ timeMeasure T := by
+  rw [← timeMeasure_restrict_of_le hST]
+  exact Measure.restrict_le_self
+
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
 theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
     (p : ℝ≥0∞) (T t : ℝ≥0) (c : E) :
@@ -115,19 +126,20 @@ variable (𝕜) in
 noncomputable def timeMeasureExtendLp (hST : S ≤ T) :
     Lp E p (timeMeasure S) →ₗᵢ[𝕜] Lp E p (timeMeasure T) :=
   extendByZeroLpₗᵢ 𝕜 (Measure.comap ((↑) : ℝ≥0 → ℝ) volume)
-    measurableSet_Ioc (Ioc_subset_Ioc_right hST)
+    measurableSet_Ioc.nullMeasurableSet (Ioc_subset_Ioc_right hST)
 
 /-- The horizon extension agrees `timeMeasure T`-almost everywhere with `f` on
 `(0,S]`, extended by zero outside that interval. -/
 theorem coeFn_timeMeasureExtendLp (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure T] (Ioc 0 S).indicator ⇑f := by
-  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc.nullMeasurableSet
+    (Ioc_subset_Ioc_right hST) f
 
 /-- Extending to the same horizon is the identity. -/
 @[simp]
 theorem timeMeasureExtendLp_self (f : Lp E p (timeMeasure S)) :
     timeMeasureExtendLp 𝕜 le_rfl f = f :=
-  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc f
+  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc.nullMeasurableSet f
 
 /-- Two successive horizon extensions equal the direct extension. -/
 @[simp]
@@ -135,13 +147,14 @@ theorem timeMeasureExtendLp_timeMeasureExtendLp (hST : S ≤ T) (hTU : T ≤ U)
     (f : Lp E p (timeMeasure S)) :
     timeMeasureExtendLp 𝕜 hTU (timeMeasureExtendLp 𝕜 hST f) =
       timeMeasureExtendLp 𝕜 (hST.trans hTU) f :=
-  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc measurableSet_Ioc
+  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc.nullMeasurableSet
+    measurableSet_Ioc.nullMeasurableSet
     (Ioc_subset_Ioc_right hST) (Ioc_subset_Ioc_right hTU) f
 
 /-- The horizon extension restricts back to the original function almost everywhere. -/
 theorem coeFn_timeMeasureExtendLp_restrict (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure S] ⇑f :=
-  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc.nullMeasurableSet (Ioc_subset_Ioc_right hST) f
 
 /-- Any almost-everywhere representative can be used in the zero-extension formula. -/
 theorem coeFn_timeMeasureExtendLp_of_ae_eq (hST : S ≤ T)

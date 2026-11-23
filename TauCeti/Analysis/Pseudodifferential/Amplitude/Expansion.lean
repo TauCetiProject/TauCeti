@@ -12,9 +12,10 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 /-!
 # The asymptotic expansion of the left symbol of an amplitude
 
-Let `a(x, y, ξ)` be an amplitude of order `m` with proper output support
-(`TauCeti.Amplitude.HasProperOutputSupport`). Its left symbol `c = a.leftSymbol ha`, the symbol
-of order `m` with the same quantization when `V` is complete
+Let `a(x, y, ξ)` be an amplitude of order `m` with proper input support: it vanishes for input
+positions `y` outside a compact set as long as the output position `x` stays in a compact set. Its
+left symbol `c = a.leftSymbol ha`, the symbol of order `m` with the same quantization when `V` is
+complete
 (`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`), has the asymptotic expansion obtained by
 Taylor expanding `a` in `y` at the diagonal `y = x`:
 
@@ -39,8 +40,10 @@ restriction `leftTerm a 0 = a.diagonal` of `a` to the diagonal (`TauCeti.Amplitu
   `TauCeti.Amplitude.coefficient_leftTerm`, Leibniz rules
   `TauCeti.Amplitude.spatialDeriv_leftTerm` and
   `TauCeti.Amplitude.coefficient_frequencyDeriv_leftTerm`, vanishing for left symbols
-  `TauCeti.Amplitude.leftTerm_ofLeft_succ`, and local congruence
-  `TauCeti.Amplitude.coefficient_leftTerm_congr_of_eventuallyEq_snd`.
+  `TauCeti.Amplitude.leftTerm_ofLeft_succ`, local congruence
+  `TauCeti.Amplitude.coefficient_leftTerm_congr_of_eventuallyEq_snd`, diagonal dependence
+  `TauCeti.Amplitude.leftTerm_smulPositions`, and right-quantization formula
+  `TauCeti.Amplitude.coefficient_leftTerm_ofRight`.
 * `TauCeti.Amplitude.leftRemainder a ha N`: the remainder `c - ∑_{k < N} leftTerm a k`, a symbol of
   order `m - N` (requiring `[CompleteSpace W]`).
 * `TauCeti.Amplitude.leftSymbol_eq_sum_leftTerm_add_leftRemainder`: **the expansion**
@@ -52,19 +55,29 @@ restriction `leftTerm a 0 = a.diagonal` of `a` to the diagonal (`TauCeti.Amplitu
 
 ## Proof outline
 
-For compact input support, interpolate between the restriction to the diagonal and the left symbol
-by the family
+Interpolate between the restriction to the diagonal and the left symbol by the family
 
 `c_t(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2π t θ) dθ`, `t ∈ [0, 1]`,
 
 whose integrand is `TauCeti.Amplitude.leftIntegrand a (2πt)`, so that `c_1 = c`, and
-`c_0(x, ξ) = a(x, x, ξ)` by Fourier inversion in `y` (using `[CompleteSpace W]`). Differentiating
-under the integral sign gives `d/dt c_t(a) = -i ∑ⱼ c_t(∂_{y_j} ∂_{ξ_j} a)`, matching the recursion
-for `leftTerm`, and the mean value inequality on `[0, 1]` yields the remainder bound `C ⟨ξ⟩^(m - N)`
-together with the symbol estimates from `TauCeti.Amplitude.exists_norm_mixedDeriv_le_of_leibniz`.
-For general amplitudes with proper output support, localizing near any compact set `K` of output
-positions (`TauCeti.Amplitude.HasProperOutputSupport.exists_local_leftSymbol`) reduces the mixed
-derivative estimates of `c - ∑_{k < N} leftTerm a k` on `K` to the compact-input case.
+`c_0(x, ξ) = a(x, x, ξ)` by Fourier inversion in `y` (requiring `[CompleteSpace W]`).
+Differentiating under the integral sign, and using `2π θⱼ ∂_{ξ_j} â = -i (∂_{y_j} ∂_{ξ_j} a)^`,
+`d/dt c_t(a) = -i ∑ⱼ c_t(∂_{y_j} ∂_{ξ_j} a)`. The recursion defining `leftTerm` is the matching
+identity for the polynomial `∑_{k < N} t^k leftTerm a k`. So the derivative of the remainder
+`c_t(a) - ∑_{k < N + 1} t^k leftTerm a k` is `-i` times the sum over `j` of the remainders with `N`
+terms of `∂_{y_j} ∂_{ξ_j} a`, and this remainder vanishes at `t = 0`. By induction on `N` and the
+mean value inequality on `[0, 1]`, the remainder is bounded by `C ⟨ξ⟩ ^ (m - N)`, locally
+uniformly in the position: each step lowers the order of the amplitude by one. The base case is
+the bound `‖c_t(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m`, from
+`TauCeti.Amplitude.HasProperInputSupport.exists_norm_leftIntegrand_le`.
+
+The derivative estimates follow from the Leibniz rules, which hold for the left symbol and for
+each `leftTerm`: a position derivative `∂_{x_j}` of the remainder of `a` is the sum of the
+remainders of `∂_{x_j} a` and `∂_{y_j} a`, and a frequency derivative `∂_{ξ_j}` is the remainder
+of `∂_{ξ_j} a`, an amplitude of order `m - 1`. An induction on the number of derivatives then
+gives every symbol estimate of order `m - N`
+(`TauCeti.Amplitude.exists_norm_mixedDeriv_le_of_leibniz`). The argument parallels the composition
+expansion of `TauCeti.Analysis.Pseudodifferential.Composition.Expansion`.
 
 ## References
 
@@ -204,6 +217,32 @@ theorem coefficient_leftTerm_congr_of_eventuallyEq_snd {a b : Amplitude n V W m}
   rw [← hmap, ← ha_eq, ← hb_eq]
   exact (h.iteratedFDerivAlong (𝕜 := ℝ) _).eq_of_nhds
 
+/-- The terms of the expansion only depend on the amplitude near the diagonal: multiplying by a
+smooth function `φ(x, y)` equal to `1` near every point `(x, x)` of the diagonal does not change
+them. -/
+theorem leftTerm_smulPositions {φ : CoordinateSpace n × CoordinateSpace n → ℂ}
+    (hφ : ContDiff ℝ ∞ φ) (hφ₁ : ∀ x, φ =ᶠ[𝓝 (x, x)] 1) (a : Amplitude n V W m) (k : ℕ) :
+    (a.smulPositions φ hφ).leftTerm k = a.leftTerm k := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_leftTerm, coefficient_leftTerm]
+  refine congrArg _ (Finset.sum_congr rfl fun w _ ↦ ?_)
+  have h : (a.smulPositions φ hφ).coefficient =ᶠ[𝓝 (x, x, ξ)] a.coefficient := by
+    have hp : Filter.Tendsto (fun p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
+        (p.1, p.2.1)) (𝓝 (x, x, ξ)) (𝓝 (x, x)) :=
+      (continuous_fst.prodMk (continuous_fst.comp continuous_snd)).tendsto (x, x, ξ)
+    filter_upwards [hp.eventually (hφ₁ x)] with p hp
+    rw [coefficient_smulPositions, hp, Pi.one_apply, one_smul]
+  exact (h.iteratedFDerivAlong _).eq_of_nhds
+
+/-- **The terms of the expansion of a right quantization.** For the amplitude `b(y, ξ)` of the
+right quantization of a symbol `b`, the term of order `m - k` is
+`((-i)^k / k!) ∑_{|w| = k} ∂_x^w ∂_ξ^w b(x, ξ)`, that is `∑_{|γ| = k} (1 / γ!) ∂_ξ^γ D_x^γ b`. -/
+theorem coefficient_leftTerm_ofRight (b : Symbol n V W m) (k : ℕ) (x ξ : CoordinateSpace n) :
+    ((ofRight b).leftTerm k).coefficient (x, ξ) = ((-Complex.I) ^ k / k.factorial) •
+      ∑ w : Fin k → Fin n, mixedDeriv (List.ofFn w) (List.ofFn w) b.coefficient x ξ := by
+  simp only [coefficient_leftTerm, iteratedFDerivAlong_amplitudeDirections_nil_ofRight]
+
 /-- **Leibniz rule in the position** for the terms of the expansion. -/
 theorem spatialDeriv_leftTerm (l : Fin n) (a : Amplitude n V W m) (k : ℕ) :
     Symbol.spatialDeriv l (a.leftTerm k) =
@@ -255,7 +294,7 @@ private theorem abs_mul_two_pi_le {t : ℝ} (ht : |t| ≤ 2) : |t * (2 * π)| �
   nlinarith [Real.pi_pos]
 
 /-- `‖c_t(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m`, uniformly for `|t| ≤ 2` and positions in a compact set. -/
-private theorem exists_norm_scaledLeft_le (ha : a.HasCompactInputSupport)
+private theorem exists_norm_scaledLeft_le (ha : a.HasProperInputSupport)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, |t| ≤ 2 → ∀ x ∈ K, ∀ ξ,
       ‖scaledLeft a t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -271,13 +310,13 @@ private theorem exists_norm_scaledLeft_le (ha : a.HasCompactInputSupport)
   ring
 
 /-- At `t = 1` the family is the left symbol. -/
-private theorem scaledLeft_one (ha : a.HasCompactInputSupport) (x ξ : CoordinateSpace n) :
-    scaledLeft a 1 x ξ = (a.leftSymbol ha.hasProperOutputSupport).coefficient (x, ξ) := by
+private theorem scaledLeft_one (ha : a.HasProperInputSupport) (x ξ : CoordinateSpace n) :
+    scaledLeft a 1 x ξ = (a.leftSymbol ha).coefficient (x, ξ) := by
   simp only [scaledLeft, leftIntegrand_apply, one_mul, coefficient_leftSymbol]
 
 /-- At `t = 0` the family is the restriction of `a` to the diagonal, by Fourier inversion in the
 input position. -/
-private theorem scaledLeft_zero [CompleteSpace W] (ha : a.HasCompactInputSupport)
+private theorem scaledLeft_zero [CompleteSpace W] (ha : a.HasProperInputSupport)
     (x ξ : CoordinateSpace n) :
     scaledLeft a 0 x ξ = a.coefficient (x, x, ξ) := by
   set f : CoordinateSpace n → V →L[ℂ] W := fun y ↦ a.coefficient (x, y, ξ)
@@ -292,7 +331,7 @@ private theorem scaledLeft_zero [CompleteSpace W] (ha : a.HasCompactInputSupport
 /-- **Differentiation in the parameter** of the integrand: since
 `2π θⱼ ∂_{ξ_j} â = -i (∂_{y_j} ∂_{ξ_j} a)^`, `d/dt` of the integrand of `c_t(a)` is `-i ∑ⱼ` the
 integrand of `c_t(∂_{y_j} ∂_{ξ_j} a)`. -/
-private theorem hasDerivAt_leftIntegrand (ha : a.HasCompactInputSupport) (t : ℝ)
+private theorem hasDerivAt_leftIntegrand (ha : a.HasProperInputSupport) (t : ℝ)
     (x ξ θ : CoordinateSpace n) :
     HasDerivAt (fun t ↦ leftIntegrand a (t * (2 * π)) (x, ξ) θ)
       (∑ j, (-Complex.I) •
@@ -322,11 +361,11 @@ private theorem hasDerivAt_leftIntegrand (ha : a.HasCompactInputSupport) (t : �
 
 /-- **Differentiation in the parameter** under the integral sign:
 `d/dt c_t(a) = -i ∑ⱼ c_t(∂_{y_j} ∂_{ξ_j} a)`. -/
-private theorem hasDerivAt_scaledLeft (ha : a.HasCompactInputSupport) {t₀ : ℝ} (ht₀ : |t₀| ≤ 1)
+private theorem hasDerivAt_scaledLeft (ha : a.HasProperInputSupport) {t₀ : ℝ} (ht₀ : |t₀| ≤ 1)
     (x ξ : CoordinateSpace n) :
     HasDerivAt (fun t ↦ scaledLeft a t x ξ)
       (∑ j, (-Complex.I) • scaledLeft (spatialDerivSnd j (frequencyDeriv j a)) t₀ x ξ) t₀ := by
-  have hb (j : Fin n) : (spatialDerivSnd j (frequencyDeriv j a)).HasCompactInputSupport :=
+  have hb (j : Fin n) : (spatialDerivSnd j (frequencyDeriv j a)).HasProperInputSupport :=
     (ha.frequencyDeriv j).spatialDerivSnd j
   choose C _ hC using fun j ↦ (hb j).exists_norm_leftIntegrand_le
     (isCompact_singleton (x := x)) (R := 4 * π) (by linarith [Real.two_le_pi])
@@ -401,7 +440,7 @@ private theorem hasDerivAt_sum_pow_smul_leftTerm (N : ℕ) (a : Amplitude n V W 
 
 /-- The derivative in `t` of the remainder with `N + 1` terms is `-i ∑ⱼ` the remainders with `N`
 terms of `∂_{y_j} ∂_{ξ_j} a`. -/
-private theorem hasDerivAt_remainderAt (ha : a.HasCompactInputSupport) (N : ℕ) {t : ℝ}
+private theorem hasDerivAt_remainderAt (ha : a.HasProperInputSupport) (N : ℕ) {t : ℝ}
     (ht : |t| ≤ 1) (x ξ : CoordinateSpace n) :
     HasDerivAt (fun t ↦ remainderAt a (N + 1) t x ξ)
       ((-Complex.I) • ∑ j, remainderAt (spatialDerivSnd j (frequencyDeriv j a)) N t x ξ) t := by
@@ -411,7 +450,7 @@ private theorem hasDerivAt_remainderAt (ha : a.HasCompactInputSupport) (N : ℕ)
   rw [Finset.sum_comm]
 
 /-- The remainder vanishes at `t = 0`. -/
-private theorem remainderAt_zero [CompleteSpace W] (ha : a.HasCompactInputSupport) (N : ℕ)
+private theorem remainderAt_zero [CompleteSpace W] (ha : a.HasProperInputSupport) (N : ℕ)
     (x ξ : CoordinateSpace n) :
     remainderAt a (N + 1) 0 x ξ = 0 := by
   rw [remainderAt, scaledLeft_zero ha, Finset.sum_range_succ']
@@ -420,7 +459,7 @@ private theorem remainderAt_zero [CompleteSpace W] (ha : a.HasCompactInputSuppor
 /-- **The remainder estimate.** `‖c_t(a) - ∑_{k < N} t^k leftTerm a k‖ ≤ C ⟨ξ⟩ ^ (m - N)`,
 uniformly for `t ∈ [0, 1]` and positions in a compact set. -/
 private theorem exists_norm_remainderAt_le [CompleteSpace W] (N : ℕ) :
-    ∀ {m : ℝ} {a : Amplitude n V W m}, a.HasCompactInputSupport →
+    ∀ {m : ℝ} {a : Amplitude n V W m}, a.HasProperInputSupport →
       ∀ {K : Set (CoordinateSpace n)}, IsCompact K → ∃ C, 0 ≤ C ∧ ∀ t ∈ Set.Icc (0 : ℝ) 1,
         ∀ x ∈ K, ∀ ξ, ‖remainderAt a N t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
   induction N with
@@ -463,18 +502,17 @@ section Symbol
 
 variable {a : Amplitude n V W m}
 
-/-- The remainder `c - ∑_{k < N} leftTerm a k`, as a symbol of order `m` for compact input
-support. -/
-private def remainderSymbol (ha : a.HasCompactInputSupport) (N : ℕ) : Symbol n V W m :=
-  a.leftSymbol ha.hasProperOutputSupport -
+/-- The remainder `c - ∑_{k < N} leftTerm a k`, as a symbol of order `m`. -/
+private def remainderSymbol (ha : a.HasProperInputSupport) (N : ℕ) : Symbol n V W m :=
+  a.leftSymbol ha -
     ∑ k ∈ range N, Symbol.inclusion (sub_le_self _ (Nat.cast_nonneg k)) (a.leftTerm k)
 
-private theorem coefficient_remainderSymbol (ha : a.HasCompactInputSupport) (N : ℕ)
+private theorem coefficient_remainderSymbol (ha : a.HasProperInputSupport) (N : ℕ)
     (x ξ : CoordinateSpace n) :
     (remainderSymbol ha N).coefficient (x, ξ) = remainderAt a N 1 x ξ := by
   simp [remainderSymbol, remainderAt, scaledLeft_one ha]
 
-private theorem spatialDeriv_remainderSymbol (ha : a.HasCompactInputSupport) (N : ℕ)
+private theorem spatialDeriv_remainderSymbol (ha : a.HasProperInputSupport) (N : ℕ)
     (j : Fin n) :
     Symbol.spatialDeriv j (remainderSymbol ha N) =
       remainderSymbol (ha.spatialDerivFst j) N + remainderSymbol (ha.spatialDerivSnd j) N := by
@@ -482,7 +520,7 @@ private theorem spatialDeriv_remainderSymbol (ha : a.HasCompactInputSupport) (N 
     Symbol.spatialDeriv_inclusion, spatialDeriv_leftTerm, map_add, Finset.sum_add_distrib]
   abel
 
-private theorem coefficient_frequencyDeriv_remainderSymbol (ha : a.HasCompactInputSupport)
+private theorem coefficient_frequencyDeriv_remainderSymbol (ha : a.HasProperInputSupport)
     (N : ℕ) (j : Fin n) :
     (Symbol.frequencyDeriv j (remainderSymbol ha N)).coefficient =
       (remainderSymbol (ha.frequencyDeriv j) N).coefficient := by
@@ -491,14 +529,12 @@ private theorem coefficient_frequencyDeriv_remainderSymbol (ha : a.HasCompactInp
     Symbol.frequencyDeriv_inclusion, Symbol.coefficient_inclusion, Pi.sub_apply, Finset.sum_apply,
     frequencyDeriv_leftSymbol, coefficient_frequencyDeriv_leftTerm]
 
-/-- The symbol estimates of order `m - N` for the compact-input remainder, from the Leibniz
-rules. -/
-private theorem exists_bound_compactRemainderSymbol [CompleteSpace W]
-    (ha : a.HasCompactInputSupport) (N : ℕ) (α β : List (Fin n)) {K : Set (CoordinateSpace n)}
-    (hK : IsCompact K) :
+/-- The symbol estimates of order `m - N` for the remainder, from the Leibniz rules. -/
+private theorem exists_bound_remainderSymbol [CompleteSpace W] (ha : a.HasProperInputSupport)
+    (N : ℕ) (α β : List (Fin n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (remainderSymbol ha N).coefficient x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m - N - β.length) / 2) :=
-  exists_norm_mixedDeriv_le_of_leibniz N HasCompactInputSupport
+  exists_norm_mixedDeriv_le_of_leibniz N HasProperInputSupport
     (fun ha j ↦ ha.spatialDerivFst j) (fun ha j ↦ ha.spatialDerivSnd j)
     (fun ha j ↦ ha.frequencyDeriv j) (fun _ ha ↦ (remainderSymbol ha N).coefficient)
     (fun _ ha ↦ (remainderSymbol ha N).contDiff_coefficient)
@@ -513,70 +549,45 @@ private theorem exists_bound_compactRemainderSymbol [CompleteSpace W]
         simpa [coefficient_remainderSymbol] using hC 1 ⟨zero_le_one, le_rfl⟩ x hx ξ⟩)
     a ha α β hK
 
-private theorem exists_bound_leftRemainder [CompleteSpace W] {a : Amplitude n V W m}
-    (ha : a.HasProperOutputSupport) (N : ℕ) (K : Set (CoordinateSpace n)) (hK : IsCompact K)
-    (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : CoordinateSpace n,
-      ‖mixedDeriv α β
-          ((a.leftSymbol ha).coefficient - ∑ k ∈ range N, (a.leftTerm k).coefficient) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - N - β.length) / 2) := by
-  obtain ⟨U, b, hb, hU, hKU, hcoeff, heq⟩ := ha.exists_local_leftSymbol hK
-  obtain ⟨C, hC0, hC⟩ := exists_bound_compactRemainderSymbol hb N α β hK
-  refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
-  have hcongr : mixedDeriv α β
-      ((a.leftSymbol ha).coefficient - ∑ k ∈ range N, (a.leftTerm k).coefficient) x ξ =
-      mixedDeriv α β (remainderSymbol hb N).coefficient x ξ := by
-    refine mixedDeriv_congr_of_eventually ?_ α β ξ
-    filter_upwards [hU.mem_nhds (hKU hx)] with x' hx' η
-    have hterm : ∀ k, (b.leftTerm k).coefficient (x', η) = (a.leftTerm k).coefficient (x', η) :=
-      fun k ↦ coefficient_leftTerm_congr_of_eventuallyEq_snd
-        (.of_forall fun q ↦ hcoeff x' hx' q.1 q.2) k
-    simp only [remainderSymbol, Symbol.coefficient_sub, Symbol.coefficient_sum,
-      Symbol.coefficient_inclusion, Pi.sub_apply, Finset.sum_apply, heq x' hx' η]
-    exact congrArg _ (Finset.sum_congr rfl fun k _ ↦ (hterm k).symm)
-  exact hcongr ▸ hC x hx ξ
-
 variable [CompleteSpace W]
 
 variable (a) in
-/-- **Remainder symbol of the left symbol.** Requires `W` to be complete; the remainder
-`c - ∑_{k < N} leftTerm a k` of the expansion of the left symbol `c` of an output-proper amplitude
-`a` after `N` terms, a symbol of order `m - N` (`leftSymbol_eq_sum_leftTerm_add_leftRemainder`). -/
-def leftRemainder (ha : a.HasProperOutputSupport) (N : ℕ) : Symbol n V W (m - N) where
-  coefficient := (a.leftSymbol ha).coefficient - ∑ k ∈ range N, (a.leftTerm k).coefficient
-  contDiff_coefficient := (a.leftSymbol ha).contDiff_coefficient.sub
-    (Symbol.contDiff_sum_coefficient (range N) a.leftTerm)
-  exists_bound := exists_bound_leftRemainder ha N
+/-- The remainder `c - ∑_{k < N} leftTerm a k` of the expansion of the left symbol `c` of `a`
+after `N` terms, a symbol of order `m - N` (`leftSymbol_eq_sum_leftTerm_add_leftRemainder`). -/
+def leftRemainder (ha : a.HasProperInputSupport) (N : ℕ) : Symbol n V W (m - N) where
+  coefficient := (remainderSymbol ha N).coefficient
+  contDiff_coefficient := (remainderSymbol ha N).contDiff_coefficient
+  exists_bound _ hK α β := exists_bound_remainderSymbol ha N α β hK
 
 @[simp]
-theorem coefficient_leftRemainder (ha : a.HasProperOutputSupport) (N : ℕ) :
+theorem coefficient_leftRemainder (ha : a.HasProperInputSupport) (N : ℕ) :
     (a.leftRemainder ha N).coefficient =
-      (a.leftSymbol ha).coefficient - ∑ k ∈ range N, (a.leftTerm k).coefficient :=
-  (rfl)
+      (a.leftSymbol ha).coefficient - ∑ k ∈ range N, (a.leftTerm k).coefficient := by
+  simp [leftRemainder, remainderSymbol]
 
-/-- **The asymptotic expansion of the left symbol of an amplitude.** Requires `W` to be complete;
-for an amplitude `a` of order `m` with proper output support and every `N`,
+/-- **The asymptotic expansion of the left symbol of an amplitude.** For an amplitude `a` of order
+`m` with proper input support and every `N`,
 `a.leftSymbol ha = ∑_{k < N} leftTerm a k + leftRemainder a ha N`, where `leftTerm a k` is the
 term `((-i)^k / k!) ∑_{|w| = k} (∂_y^w ∂_ξ^w a)(x, x, ξ)` of order `m - k` and the remainder is a
 symbol of order `m - N`. -/
-theorem leftSymbol_eq_sum_leftTerm_add_leftRemainder (ha : a.HasProperOutputSupport) (N : ℕ) :
+theorem leftSymbol_eq_sum_leftTerm_add_leftRemainder (ha : a.HasProperInputSupport) (N : ℕ) :
     a.leftSymbol ha =
       ∑ k ∈ range N, Symbol.inclusion (sub_le_self _ (Nat.cast_nonneg k)) (a.leftTerm k) +
         Symbol.inclusion (sub_le_self _ (Nat.cast_nonneg N)) (a.leftRemainder ha N) := by
   ext1
   simp
 
-/-- Requires `W` to be complete; the left symbol of an output-proper amplitude `a` agrees with its
-restriction `a(x, x, ξ)` to the diagonal up to a symbol of order `m - 1`. -/
-theorem leftSymbol_eq_diagonal_add_leftRemainder_one (ha : a.HasProperOutputSupport) :
+/-- The left symbol of an amplitude `a` agrees with its restriction `a(x, x, ξ)` to the diagonal
+up to a symbol of order `m - 1`. -/
+theorem leftSymbol_eq_diagonal_add_leftRemainder_one (ha : a.HasProperInputSupport) :
     a.leftSymbol ha = a.diagonal + Symbol.inclusion (by simp) (a.leftRemainder ha 1) := by
   ext1
   funext p
   simp [leftTerm_zero]
 
-/-- Requires `W` to be complete; the left symbol of an output-proper amplitude `a` is an asymptotic
-sum of the terms `leftTerm a k` of order `m - k`. -/
-theorem isAsymptoticSum_leftSymbol (ha : a.HasProperOutputSupport) :
+/-- The left symbol of an amplitude `a` is an asymptotic sum of the terms `leftTerm a k` of order
+`m - k`. -/
+theorem isAsymptoticSum_leftSymbol (ha : a.HasProperInputSupport) :
     (Symbol.inclusion (by simp) (a.leftSymbol ha) :
       Symbol n V W (m - ((0 : ℕ) : ℝ))).IsAsymptoticSum a.leftTerm :=
   Symbol.isAsymptoticSum_iff.2 fun N ↦ ⟨a.leftRemainder ha N, by simp⟩

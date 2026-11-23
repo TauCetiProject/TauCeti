@@ -89,11 +89,11 @@ private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*} [Topologica
   have hKp := hasProperOutputSupport_iff_isProperMap.mp hK
   obtain ⟨L, hL, hFL⟩ := exists_compact_superset
     ((hKp.isCompact_preimage (isCompact_singleton (x := x₀))).image
-      (continuous_snd.comp continuous_subtype_val))
-  let Z : Set S := (fun p : S ↦ p.1.2) ⁻¹' (interior L)ᶜ
+      (continuous_snd.comp continuous_subtypeVal))
+  let Z : Set S := (fun p : S ↦ p.val.2) ⁻¹' (interior L)ᶜ
   have hZc : IsClosed Z :=
-    isOpen_interior.isClosed_compl.preimage (continuous_snd.comp continuous_subtype_val)
-  refine ⟨((fun p : S ↦ p.1.1) '' Z)ᶜ, L, (hKp.isClosedMap Z hZc).isOpen_compl,
+    isOpen_interior.isClosed_compl.preimage (continuous_snd.comp continuous_subtypeVal)
+  refine ⟨((fun p : S ↦ p.val.1) '' Z)ᶜ, L, (hKp.isClosedMap Z hZc).isOpen_compl,
     fun ⟨p, hpZ, hp1⟩ ↦ hpZ (hFL ⟨p, hp1, rfl⟩), hL, fun x hxU y hyL ↦ ?_⟩
   exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦
     hxU ⟨⟨(x, y), hmem⟩, fun hy_int ↦ hyL (interior_subset hy_int), rfl⟩
@@ -120,15 +120,15 @@ theorem HasProperOutputSupport.contDiff_integral {X Y 𝕜 V W : Type*}
     have hmeasL : MeasurableSet L := hL.isClosed.measurableSet
     let μL : Measure L := μ.comap Subtype.val
     have : IsFiniteMeasure μL := ⟨by
-      rw [(MeasurableEmbedding.subtype_coe hmeasL).comap_apply, image_univ, Subtype.range_coe]
+      rw [(MeasurableEmbedding.subtypeVal hmeasL).comap_apply, image_univ, Subtype.range_coe]
       exact hL.measure_lt_top⟩
     have hF : ContDiff ℝ n fun q : X × (Y × V) ↦ (K q.1 q.2.1) q.2.2 :=
       ((ContinuousLinearMap.restrictScalarsL 𝕜 V W ℝ ℝ).contDiff.comp
         (hK_diff.comp (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)))).clm_apply
           (contDiff_snd.comp contDiff_snd)
     have hon := contDiffOn_integral_smul_of_contDiffOn (μ := μL) (g := fun _ : L ↦ (1 : ℝ))
-      (ι := fun y : L ↦ (y.1, u y.1)) (W := univ) (U := U)
-      (integrable_const 1) (continuous_subtype_val.prodMk (hu.comp continuous_subtype_val))
+      (ι := fun y : L ↦ (y.val, u y.val)) (W := univ) (U := U)
+      (integrable_const 1) (continuous_subtypeVal.prodMk (hu.comp continuous_subtypeVal))
       isOpen_univ hF.contDiffOn (fun _ _ _ ↦ mem_univ _)
     refine (hon.contDiffAt (hUo.mem_nhds hx₀U)).congr_of_eventuallyEq ?_
     filter_upwards [hUo.mem_nhds hx₀U] with x hx

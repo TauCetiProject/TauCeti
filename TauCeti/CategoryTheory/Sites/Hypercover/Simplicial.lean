@@ -71,9 +71,9 @@ def preOneHypercover (S : C) : PreOneHypercover.{max u v w} S where
     (U.δ 1).hom.app (op W) p.2.2 = (U _⦋0⦌).obj.map p.1.op i₁.2 ∧
     (U.δ 0).hom.app (op W) p.2.2 = (U _⦋0⦌).obj.map p.2.1.op i₂.2 }
   Y _ _ j := j.1
-  p₁ _ _ j := j.2.1.1
-  p₂ _ _ j := j.2.1.2.1
-  w _ _ j := j.2.2.1
+  p₁ _ _ j := j.2.val.1
+  p₂ _ _ j := j.2.val.2.1
+  w _ _ j := j.2.property.1
 
 variable [HasSheafify J (Type w)] [U.IsHypercover]
 
