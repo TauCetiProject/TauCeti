@@ -104,7 +104,7 @@ private theorem isLocallySobolevAt_chartComponent_of_basis {ι : Type*} [Finite 
     (h : ∀ i, (t.chartComponent c hc hct T (b i)).IsLocallySobolevAt s y) (v : F) :
     (t.chartComponent c hc hct T v).IsLocallySobolevAt s y := by
   have := Fintype.ofFinite ι
-  rw [chartComponent_eq_sum_basis _ _ _ _ b]
+  rw [chartComponent_eq_sum _ _ _ _ b]
   exact Distribution.IsLocallySobolevAt.sum hy fun i _ ↦ (h i).smul _
 
 /-- If every component of the local representative in `(t, c)` is `H^s` near `κ y`, for the

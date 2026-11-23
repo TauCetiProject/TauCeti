@@ -147,7 +147,7 @@ theorem chartComponent_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ : V x 
 
 /-- The components along a basis of the model fibre determine all components: the component along
 `v` is the combination of those along `b i` with the coordinates of `v`. -/
-theorem chartComponent_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
+theorem chartComponent_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
     (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
     t.chartComponent c hc hct T v = ∑ i, (b.repr v i : ℂ) • t.chartComponent c hc hct T (b i) := by
   ext φ
