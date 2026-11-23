@@ -64,8 +64,8 @@ square-root rate `√(α - α₀)`.
 
 ## Main results
 
-* `TauCeti.exists_deriv_eq_add_sq_mul`: local inflection curve `τ(α)` with `∂²p/∂t² (α, τ(α)) = 0`
-  and quadratic remainder `∂p/∂t (α, τ(α) + s) = c(α) + s ^ 2 * U(α, s)`.
+* `AnalyticAt.exists_deriv_eq_add_sq_mul`: local inflection curve `τ(α)` with
+  `∂²p/∂t² (α, τ(α)) = 0` and quadratic remainder `∂p/∂t (α, τ(α) + s) = c(α) + s ^ 2 * U(α, s)`.
 * `AnalyticAt.exists_cubic_normal_form`, `TauCeti.exists_cubic_normal_form`: the holomorphic
   Chester-Friedman-Ursell cubic normal form `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)`
   for an arbitrary finite-dimensional complex parameter space `E`.
@@ -106,18 +106,19 @@ public section
 
 open Complex Filter Metric Set Topology
 
-namespace TauCeti
+namespace AnalyticAt
+
+open TauCeti
 
 /-! ### Local inflection decomposition -/
 
-/-- **Local inflection curve and quadratic remainder of `∂p/∂t`.** Let `p(α, t)` be holomorphic on
-a neighbourhood `V` of `(α₀, t₀)` with `∂²p/∂t² (α₀, t₀) = 0` and `∂³p/∂t³ (α₀, t₀) ≠ 0`. Then
-there exist analytic functions `τ` and `c` at `α₀` and `U` at `(α₀, 0)` such that `τ(α₀) = t₀`,
+/-- **Local inflection curve and quadratic remainder of `∂p/∂t`.** Let `p(α, t)` be analytic at
+`(α₀, t₀)` with `∂²p/∂t² (α₀, t₀) = 0` and `∂³p/∂t³ (α₀, t₀) ≠ 0`. Then there exist analytic
+functions `τ` and `c` at `α₀` and `U` at `(α₀, 0)` such that `τ(α₀) = t₀`,
 `∂²p/∂t² (α, τ(α)) = 0` near `α₀`, and `∂p/∂t (α, τ(α) + s) = c(α) + s ^ 2 * U(α, s)` near
 `(α₀, 0)`, with `c(α₀) = ∂p/∂t (α₀, t₀)`, `c'(α₀) = ∂²p/∂α∂t (α₀, t₀)`, and
 `U(α₀, 0) = ½ ∂³p/∂t³ (α₀, t₀)`. -/
-theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {V : Set (ℂ × ℂ)} {α₀ t₀ : ℂ}
-    (hV : V ∈ 𝓝 (α₀, t₀)) (hp : DifferentiableOn ℂ p V)
+theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {α₀ t₀ : ℂ} (hp : AnalyticAt ℂ p (α₀, t₀))
     (h₂ : deriv (deriv fun t => p (α₀, t)) t₀ = 0)
     (h₃ : deriv (deriv (deriv fun t => p (α₀, t))) t₀ ≠ 0) :
     ∃ τ c : ℂ → ℂ, ∃ U : ℂ × ℂ → ℂ,
@@ -128,10 +129,9 @@ theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {V : Set (ℂ × ℂ
       (∀ᶠ α in 𝓝 α₀, deriv (deriv fun t => p (α, t)) (τ α) = 0) ∧
       ∀ᶠ q in 𝓝 (α₀, 0),
         deriv (fun t => p (q.1, t)) (τ q.1 + q.2) = c q.1 + q.2 ^ 2 * U q := by
-  have hpa : AnalyticAt ℂ p (α₀, t₀) := hp.analyticAt_of_finiteDimensional hV
   set p₁ : ℂ × ℂ → ℂ := fun q => deriv (fun t => p (q.1, t)) q.2
   set p₂ : ℂ × ℂ → ℂ := fun q => deriv (deriv fun t => p (q.1, t)) q.2
-  have hp₁ : AnalyticAt ℂ p₁ (α₀, t₀) := hpa.deriv_snd
+  have hp₁ : AnalyticAt ℂ p₁ (α₀, t₀) := hp.deriv_snd
   have hp₂ : AnalyticAt ℂ p₂ (α₀, t₀) := hp₁.deriv_snd
   obtain ⟨τ, hτ, hτ0, hτeq, -⟩ := hp₂.exists_analyticAt_eventually_eq_zero_iff h₂ h₃
   dsimp only at hτ hτ0 hτeq
@@ -175,6 +175,10 @@ theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {V : Set (ℂ × ℂ
         congrFun (iteratedDeriv_comp_const_add 2 (fun t => p₁ (α₀, t)) t₀) 0
     rw [← htrans, hdd, mul_div_cancel_left₀ _ two_ne_zero]
   exact ⟨τ, c, U, hτ, hc, hU, hτ0, by simp [c, p₁, hτ0], hc_deriv, hU0', hτeq, hgeq⟩
+
+end AnalyticAt
+
+namespace TauCeti
 
 /-! ### Disc-algebra inverse function construction -/
 
