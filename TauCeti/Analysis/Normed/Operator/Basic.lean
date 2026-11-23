@@ -82,6 +82,9 @@ sequence `v` of vectors, the weighted norm of the finite Cauchy product
 weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
 (`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
 
+The sum `a • L v + b • M w` is bounded using separate bounds on both coefficients,
+both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_apply_le`).
+
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
@@ -262,6 +265,20 @@ end SemilinearFamily
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- Bound a sum of two scaled operator evaluations using separate bounds for both coefficients,
+both operators and their arguments. -/
+theorem norm_smul_apply_add_smul_apply_le {Z : Type*} [SeminormedAddCommGroup Z]
+    [NormedSpace 𝕜 Z] (L : X →L[𝕜] Z) (M : Y →L[𝕜] Z) {a b : 𝕜} {v : X} {w : Y}
+    {A B C D R S : ℝ} (ha : ‖a‖ ≤ A) (hb : ‖b‖ ≤ B) (hL : ‖L‖ ≤ C) (hM : ‖M‖ ≤ D)
+    (hv : ‖v‖ ≤ R) (hw : ‖w‖ ≤ S) : ‖a • L v + b • M w‖ ≤ A * C * R + B * D * S := by
+  refine norm_add_le_of_le ?_ ?_
+  · rw [norm_smul, mul_assoc]
+    exact mul_le_mul ha (L.le_of_opNorm_le_of_le hL hv) (norm_nonneg _)
+      ((norm_nonneg _).trans ha)
+  · rw [norm_smul, mul_assoc]
+    exact mul_le_mul hb (M.le_of_opNorm_le_of_le hM hw) (norm_nonneg _)
+      ((norm_nonneg _).trans hb)
 
 /-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
 Mathlib's `norm_one` does not apply. -/
