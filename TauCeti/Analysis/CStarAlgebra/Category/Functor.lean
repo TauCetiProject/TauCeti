@@ -114,11 +114,8 @@ theorem lipschitzWith_map (X Y : C) :
 functor between C*-categories is norm-closed. -/
 theorem isClosed_kerIdeal (X Y : C) :
     IsClosed (F.kerIdeal.hom X Y : Set (X ⟶ Y)) := by
-  have hset : (F.kerIdeal.hom X Y : Set (X ⟶ Y)) = ((F.mapCLM X Y).ker : Set (X ⟶ Y)) := by
-    ext f
-    simp
-  rw [hset]
-  exact (F.mapCLM X Y).isClosed_ker
+  simpa only [← SetLike.setOfPred_mem_eq, Functor.mem_kerIdeal_hom, mapCLM_apply] using
+    isClosed_eq (F.mapCLM X Y).continuous continuous_const
 
 /-! ### Faithful and fully faithful linear dagger functors -/
 

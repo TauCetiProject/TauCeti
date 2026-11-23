@@ -372,13 +372,12 @@ instance : CStarCategory (HilbertCat.{0, v} ℂ) where
 subsingleton. -/
 theorem isZero_iff_subsingleton (X : HilbertCat.{u, v} 𝕜) :
     Limits.IsZero X ↔ Subsingleton X := by
-  rw [Limits.IsZero.iff_id_eq_zero]
+  rw [Limits.IsZero.iff_id_eq_zero, id_eq_id]
   constructor
   · intro h
     refine ⟨fun x y => ?_⟩
-    have hid : ContinuousLinearMap.id 𝕜 X = 0 := h
-    have hx : (ContinuousLinearMap.id 𝕜 X) x = 0 := by simp [hid]
-    have hy : (ContinuousLinearMap.id 𝕜 X) y = 0 := by simp [hid]
+    have hx : (ContinuousLinearMap.id 𝕜 X) x = 0 := by simp [h]
+    have hy : (ContinuousLinearMap.id 𝕜 X) y = 0 := by simp [h]
     simpa using hx.trans hy.symm
   · intro
     exact ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
@@ -502,13 +501,11 @@ def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X �
 example : CStarCategory (FDHilbertCat.{0, v} ℂ) := inferInstance
 
 -- Explicit zero-object (`PUnit`) vs nontrivial-object (`ℂ`) norm checks in `FDHilbertCat ℂ`.
-example : ‖(𝟙 (FDHilbertCat.of ℂ PUnit.{v + 1}))‖ = 0 := by
-  rw [ObjectProperty.norm_def]
-  exact ContinuousLinearMap.opNorm_subsingleton _
+example : ‖(𝟙 (FDHilbertCat.of ℂ PUnit.{v + 1}))‖ = 0 :=
+  (isZero_of_subsingleton (FDHilbertCat.of ℂ PUnit.{v + 1})).norm_id
 
-example : ‖(𝟙 (FDHilbertCat.of ℂ ℂ))‖ = 1 := by
-  rw [ObjectProperty.norm_def]
-  exact ContinuousLinearMap.norm_id
+example : ‖(𝟙 (FDHilbertCat.of ℂ ℂ))‖ = 1 :=
+  CStarCategory.norm_id (not_isZero_of_nontrivial (FDHilbertCat.of ℂ ℂ))
 
 end FDHilbertCat
 

@@ -73,11 +73,10 @@ instance instCStarCategory (F : D → C) : CStarCategory (InducedCategory C F) w
     let := NormedAddCommGroup.ofCore (normedSpaceCore F X Y)
     let := CStarCategory.normedAddCommGroup (F X) (F Y)
     have : CompleteSpace (F X ⟶ F Y) := CStarCategory.completeSpace (F X) (F Y)
-    let e : (X ⟶ Y) ≃ᵢ (F X ⟶ F Y) :=
-      { toEquiv := homEquiv
-        isometry_toFun := Isometry.of_dist_eq fun f g => by
-          rw [dist_eq_norm, dist_eq_norm]; rfl }
-    exact e.completeSpace
+    let e : (X ⟶ Y) ≃ₗᵢ[ℂ] (F X ⟶ F Y) :=
+      { toLinearEquiv := homLinearEquiv
+        norm_map' f := by rw [homLinearEquiv_apply, norm_def] }
+    exact e.toIsometryEquiv.completeSpace
   norm_comp_le f g := CStarCategory.norm_comp_le f.hom g.hom
   norm_mul_self_le f := CStarCategory.norm_mul_self_le f.hom
   exists_self_comp_dagger_eq f := by

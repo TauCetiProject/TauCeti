@@ -178,33 +178,22 @@ theorem norm_rightCompCLM_le (X : C) (g : Y ⟶ Z) : ‖rightCompCLM X g‖ ≤ 
 /-- The right-annihilator `{g : Y ⟶ Z | f ≫ g = 0}` of `f : X ⟶ Y` is closed in `Y ⟶ Z`. -/
 theorem isClosed_rightAnnihilator (Z : C) (f : X ⟶ Y) :
     IsClosed {g : Y ⟶ Z | f ≫ g = 0} := by
-  have hset : {g : Y ⟶ Z | f ≫ g = 0} = ((leftCompCLM Z f).ker : Set (Y ⟶ Z)) := by
-    ext g
-    simp only [Set.mem_ofPred_eq, SetLike.mem_coe, LinearMap.mem_ker,
-      ContinuousLinearMap.coe_coe, leftCompCLM_apply]
-  rw [hset]
-  exact (leftCompCLM Z f).isClosed_ker
+  simpa only [leftCompCLM_apply] using
+    isClosed_eq (leftCompCLM Z f).continuous continuous_const
 
 /-- The left-annihilator `{f : X ⟶ Y | f ≫ g = 0}` of `g : Y ⟶ Z` is closed in `X ⟶ Y`. -/
 theorem isClosed_leftAnnihilator (X : C) (g : Y ⟶ Z) :
     IsClosed {f : X ⟶ Y | f ≫ g = 0} := by
-  have hset : {f : X ⟶ Y | f ≫ g = 0} = ((rightCompCLM X g).ker : Set (X ⟶ Y)) := by
-    ext f
-    simp only [Set.mem_ofPred_eq, SetLike.mem_coe, LinearMap.mem_ker,
-      ContinuousLinearMap.coe_coe, rightCompCLM_apply]
-  rw [hset]
-  exact (rightCompCLM X g).isClosed_ker
+  simpa only [rightCompCLM_apply] using
+    isClosed_eq (rightCompCLM X g).continuous continuous_const
 
 /-- The space of intertwiners `{h : X ⟶ Y | a ≫ h = h ≫ b}` between endomorphisms `a` and `b`
 is closed in `X ⟶ Y`. -/
 theorem isClosed_intertwiner (a : X ⟶ X) (b : Y ⟶ Y) :
     IsClosed {h : X ⟶ Y | a ≫ h = h ≫ b} := by
-  have hset : {h : X ⟶ Y | a ≫ h = h ≫ b} =
-      ((leftCompCLM Y a - rightCompCLM X b).ker : Set (X ⟶ Y)) := by
-    ext h
-    simp [sub_eq_zero]
-  rw [hset]
-  exact (leftCompCLM Y a - rightCompCLM X b).isClosed_ker
+  simpa only [← SetLike.setOfPred_mem_eq, LinearMap.mem_eqLocus,
+    ContinuousLinearMap.coe_coe, leftCompCLM_apply, rightCompCLM_apply] using
+    ContinuousLinearMap.isClosed_eqLocus (leftCompCLM Y a) (rightCompCLM X b)
 
 end TauCeti.CStarCategory
 

@@ -224,14 +224,18 @@ theorem four_smul_comp_dagger (f g : X ⟶ Y) :
     smul_sub, smul_add, smul_neg, smul_smul, Complex.I_mul_I, one_smul]
   module
 
+private theorem eq_inv_four_smul {A : Type*} [AddCommGroup A] [Module ℂ A] {a b : A}
+    (h : (4 : ℂ) • a = b) : a = (4 : ℂ)⁻¹ • b :=
+  (eq_inv_smul_iff₀ (by norm_num : (4 : ℂ) ≠ 0)).mpr h
+
 /-- Complex polarization expresses `f ≫ dagger g` as a linear combination of four positive-form
 endomorphisms `(f + c • g) ≫ dagger (f + c • g)`. -/
 theorem comp_dagger_eq_polarization (f g : X ⟶ Y) :
     f ≫ dagger g =
       (4 : ℂ)⁻¹ • ((f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g) +
         Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
-          (f - Complex.I • g) ≫ dagger (f - Complex.I • g))) := by
-  rw [← four_smul_comp_dagger, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
+          (f - Complex.I • g) ≫ dagger (f - Complex.I • g))) :=
+  eq_inv_four_smul (four_smul_comp_dagger f g)
 
 /-- Scaled complex polarization identity for `dagger f ≫ g` in a complex-linear dagger category. -/
 theorem four_smul_dagger_comp (f g : X ⟶ Y) :
@@ -241,12 +245,12 @@ theorem four_smul_dagger_comp (f g : X ⟶ Y) :
           dagger (f - Complex.I • g) ≫ (f - Complex.I • g)) := by
   have h := four_smul_comp_dagger (dagger f) (dagger g)
   have hplus : dagger f + Complex.I • dagger g = dagger (f - Complex.I • g) := by
-    simp [dagger_sub, dagger_smul, Complex.star_def]
+    simp [Complex.star_def]
   have hminus : dagger f - Complex.I • dagger g = dagger (f + Complex.I • g) := by
-    simp [dagger_add, dagger_smul, Complex.star_def, sub_eq_add_neg]
-  rw [← dagger_add, ← dagger_sub, hplus, hminus] at h
-  simp only [dagger_dagger] at h
-  rw [h, sub_eq_add_neg (dagger (f + g) ≫ (f + g) - dagger (f - g) ≫ (f - g)), ← smul_neg, neg_sub]
+    simp [Complex.star_def, sub_eq_add_neg]
+  simp only [← dagger_add, ← dagger_sub, hplus, hminus, dagger_dagger] at h
+  rw [h]
+  module
 
 /-- Complex polarization expresses `dagger f ≫ g` as a linear combination of four endomorphisms
 `dagger (f + c • g) ≫ (f + c • g)`. -/
@@ -254,8 +258,8 @@ theorem dagger_comp_eq_polarization (f g : X ⟶ Y) :
     dagger f ≫ g =
       (4 : ℂ)⁻¹ • (dagger (f + g) ≫ (f + g) - dagger (f - g) ≫ (f - g) -
         Complex.I • (dagger (f + Complex.I • g) ≫ (f + Complex.I • g) -
-          dagger (f - Complex.I • g) ≫ (f - Complex.I • g))) := by
-  rw [← four_smul_dagger_comp, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
+          dagger (f - Complex.I • g) ≫ (f - Complex.I • g))) :=
+  eq_inv_four_smul (four_smul_dagger_comp f g)
 
 end Polarization
 
