@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
-public import TauCeti.Algebra.Order.Field.Basic
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
@@ -387,11 +386,14 @@ theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥
 
 /-- The bounded harmonic multiplier sequence `n ↦ ((n + 1 : 𝕜)⁻¹)` in `ℓ^∞(ℕ, 𝕜)`. -/
 noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :=
-  ofAntitone 𝕜 TauCeti.antitone_inv_natCast_add_one
+  ofAntitone 𝕜 (show Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ from fun _ _ h ↦ by
+    simpa only [one_div] using Nat.one_div_le_one_div (α := ℝ≥0) h)
 
 /-- `lp.invNatSucc 𝕜` is `lp.ofAntitone` applied to `n ↦ ((n : ℝ≥0) + 1)⁻¹`. -/
 theorem invNatSucc_eq_ofAntitone (𝕜 : Type*) [RCLike 𝕜] :
-    invNatSucc 𝕜 = ofAntitone 𝕜 TauCeti.antitone_inv_natCast_add_one := (rfl)
+    invNatSucc 𝕜 =
+      ofAntitone 𝕜 (show Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ from fun _ _ h ↦ by
+        simpa only [one_div] using Nat.one_div_le_one_div (α := ℝ≥0) h) := (rfl)
 
 /-- The `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : 𝕜) + 1)⁻¹`. -/
 @[simp]
@@ -405,7 +407,7 @@ open scoped ComplexOrder in
 /-- Every entry of `lp.invNatSucc 𝕜` is nonnegative in the `RCLike` order. -/
 theorem invNatSucc_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     0 ≤ invNatSucc 𝕜 n :=
-  ofAntitone_apply_nonneg 𝕜 TauCeti.antitone_inv_natCast_add_one n
+  ofAntitone_apply_nonneg 𝕜 _ n
 
 /-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
 theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :

@@ -114,9 +114,8 @@ theorem isClosed_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall
     (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
     IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
   obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall (0 : V)).1 hb
-  have heq : {u ∈ S | E u ≤ b} = {u ∈ S ∩ closedBall 0 R | E u ≤ b} := by
-    ext u
-    exact ⟨fun hu ↦ ⟨⟨hu.1, hR hu⟩, hu.2⟩, fun hu ↦ ⟨hu.1.1, hu.2⟩⟩
+  have heq : {u ∈ S | E u ≤ b} = {u ∈ S ∩ closedBall 0 R | E u ≤ b} :=
+    ((inter_right_comm S (closedBall 0 R) {u | E u ≤ b}).trans (inter_eq_left.2 hR)).symm
   rw [heq]
   exact isClosed_toWeakSpace_sublevel (hS R) (hE.mono (image_mono inter_subset_left)) b
 
@@ -288,14 +287,14 @@ theorem lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn {�
       (toWeakSpace 𝕜 V '' B) ∩ v₀ := by
     rw [← inter_assoc, ← image_inter (toWeakSpace 𝕜 V).injective]
   rw [hinter, ← hBv₀]
-  ext w
-  constructor
-  · rintro ⟨⟨u, huS, rfl⟩, hfb⟩
-    have hu_le : E u ≤ b := by simpa only [f, mem_preimage, mem_Iic,
-      LinearEquiv.symm_apply_apply] using hfb
-    exact ⟨mem_image_of_mem _ ⟨huS, hR ⟨huS, hu_le⟩⟩, hfb⟩
-  · rintro ⟨⟨u, huB, rfl⟩, hfb⟩
-    exact ⟨mem_image_of_mem _ huB.1, hfb⟩
+  have hsub : {u ∈ S ∩ closedBall 0 R | E u ≤ b} = {u ∈ S | E u ≤ b} :=
+    (inter_right_comm S (closedBall 0 R) {u | E u ≤ b}).trans (inter_eq_left.2 hR)
+  calc (toWeakSpace 𝕜 V '' S) ∩ (f ⁻¹' Iic b)
+      = toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} :=
+        (image_inter_preimage (toWeakSpace 𝕜 V) S (f ⁻¹' Iic b)).symm
+    _ = toWeakSpace 𝕜 V '' {u ∈ S ∩ closedBall 0 R | E u ≤ b} := by rw [hsub]
+    _ = (toWeakSpace 𝕜 V '' B) ∩ (f ⁻¹' Iic b) :=
+        image_inter_preimage (toWeakSpace 𝕜 V) B (f ⁻¹' Iic b)
 
 end RCLike
 

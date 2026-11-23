@@ -314,13 +314,6 @@ theorem tendsto_kyFanLogMean_diagonalCLM_invNatSucc :
   tendsto_kyFanLogMean_of_singularValue_eq fun j ↦ by
     simp [lp.invNatSucc_eq_ofAntitone]
 
-/-- Every generalized limit assigns real Dixmier trace `1` to
-`lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)`. -/
-@[simp]
-theorem dixmierTrace_diagonalCLM_invNatSucc (ω : GeneralizedLimit) :
-    dixmierTrace ω (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) = 1 :=
-  dixmierTrace_eq_of_tendsto ω tendsto_kyFanLogMean_diagonalCLM_invNatSucc
-
 /-- The harmonic diagonal operator `lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)` is Dixmier
 measurable. -/
 theorem isDixmierMeasurable_diagonalCLM_invNatSucc :
@@ -341,7 +334,7 @@ theorem diagonalCLM_invNatSucc_mem_logarithmic :
 theorem complexDixmierTrace_diagonalCLM_invNatSucc (ω : GeneralizedLimit) :
     complexDixmierTrace ω (lp.diagonalCLM (p := 2) (lp.invNatSucc ℂ)) = 1 := by
   rw [complexDixmierTrace_of_isPositive ω isPositive_diagonalCLM_invNatSucc,
-    dixmierTrace_diagonalCLM_invNatSucc, Complex.ofReal_one]
+    dixmierTrace_diagonalCLM_eq_one ω _ (lp.norm_invNatSucc_apply ℂ), Complex.ofReal_one]
 
 /-- **Singularity and non-normality of the Dixmier trace.** On `ℓ²(ℕ, ℂ)` there exist a monotone
 sequence `S` of positive operators and a positive Dixmier-measurable operator `T` in `L^(1,∞)` such
