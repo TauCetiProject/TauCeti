@@ -50,8 +50,9 @@ noncomputable def alternatingProductMap :
 /-- On a simple tensor the alternating intertwiner is the commutator. -/
 @[simp]
 theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    alternatingProductMap K n (X ⊗ₜ[K] Y) = ⁅X, Y⁆ :=
-  TensorProduct.lift.tmul X Y
+    alternatingProductMap K n (X ⊗ₜ[K] Y) = ⁅X, Y⁆ := by
+  simp only [alternatingProductMap, Representation.IntertwiningMap.coe_mk,
+    TensorProduct.lift.tmul, LieHom.coe_toLinearMap, LieAlgebra.ad_apply]
 
 /-- Swapping the tensor factors negates the alternating intertwiner. -/
 theorem alternatingProductMap_comm
@@ -92,8 +93,8 @@ noncomputable def symmetricProductMap :
 /-- On a simple tensor the symmetric intertwiner is the traceless anticommutator. -/
 @[simp]
 theorem symmetricProductMap_tmul (X Y : V) :
-    symmetricProductMap K n (X ⊗ₜ[K] Y) = symmetricProduct X Y :=
-  TensorProduct.lift.tmul X Y
+    symmetricProductMap K n (X ⊗ₜ[K] Y) = symmetricProduct X Y := by
+  simp only [symmetricProductMap, Representation.IntertwiningMap.coe_mk, TensorProduct.lift.tmul]
 
 /-- Swapping the tensor factors fixes the symmetric intertwiner. -/
 theorem symmetricProductMap_comm (T : V ⊗[K] V) :

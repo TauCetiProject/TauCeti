@@ -98,10 +98,7 @@ theorem symmetricProductMap_surjective (K : Type*) [Field K] [NeZero (3 : K)] :
     obtain ⟨k, hik, hkj⟩ := exists_third i j
     refine ⟨pair i k k i hik hik.symm c - pair j k k j hkj.symm hkj c, ?_⟩
     rw [Representation.IntertwiningMap.toLinearMap_apply, map_sub]
-    -- The Lie subalgebra inclusion preserves differences of trace-zero matrices.
-    change ((symmetricProductMap K 3 (pair i k k i hik hik.symm c)).val -
-      (symmetricProductMap K 3 (pair j k k j hkj.symm hkj c)).val) = _
-    rw [symmetric_cycle, symmetric_cycle]
+    rw [Submodule.coe_sub, symmetric_cycle, symmetric_cycle]
     abel
 
 end TauCeti.AdjointSquare
