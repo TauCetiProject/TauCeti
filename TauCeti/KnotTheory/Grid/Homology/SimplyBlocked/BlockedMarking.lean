@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SquareZero.Cone
-public import TauCeti.KnotTheory.Grid.Homology.PartiallyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.PartiallyBlocked.Basic
 
 /-!
 # Changing the blocked marking of a knot grid
