@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
-public import TauCeti.NumberTheory.Padics.BilinearForm.JordanGaussSum
+public import TauCeti.NumberTheory.Padics.BilinearForm.Classification.PartialOddity
 import TauCeti.NumberTheory.Padics.BilinearForm.Classification.Basic
 
 /-!

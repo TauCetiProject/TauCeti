@@ -7,8 +7,10 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
+import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
@@ -31,7 +33,7 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
 
 * its **sign** `χ₈(det C i) ∈ {1, -1}`
   (`LinearMap.BilinForm.IsJordanSplitting.constituentSign`), independent of the chosen finite
-  basis (`constituentSign_eq`);
+  basis (`constituentSign_eq`), together with its `Bool` encoding `constituentSignBool`;
 * its **oddity** `C i w w mod 8` (`LinearMap.BilinForm.IsJordanSplitting.constituentOddity`), where
   `w` is any characteristic vector of `C i` (`constituentOddity_eq`).
 
@@ -42,7 +44,8 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
   `constituentCharVec`, `isCharacteristic_constituentCharVec`: canonical unimodular rescaling and
   characteristic vector for each Jordan constituent.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign`, `constituentOddity`,
-  `constituentSign_eq`, `constituentOddity_eq`: definition and independence of choices.
+  `constituentSignBool`, `constituentSign_eq`, `constituentOddity_eq`: definition and independence
+  of choices.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_one_or_neg_one`,
   `sum_if_constituentSign_eq_neg_one`, `prod_constituentSign_eq_ite`: sign values and products.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_of_eq`, `constituentOddity_eq_of_eq`,
@@ -52,6 +55,8 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
   `constituentOddity_eq_add_of_eight_dvd`, `constituentSign_eq_neg_of_isSquare_five`,
   `constituentSign_eq_neg_and_oddity_eq_add_four_of_isSquare_five`: transformation under elementary
   Jordan-splitting moves.
+* `LinearMap.BilinForm.compartmentOddity`, `compartmentOddity_constituentSignBool`,
+  `compartmentOddity_eq_of_flip_right`: weighted oddity-sign sum on an interval `Finset.Icc c d`.
 
 ## References
 
@@ -348,6 +353,71 @@ theorem IsJordanSplitting.constituentSign_eq_neg_and_oddity_eq_add_four_of_isSqu
   ⟨h.constituentSign_eq_neg_of_isSquare_five h' hdk,
     by simpa [map_ofNat] using h.constituentOddity_eq_add_of_eight_dvd h' hB (δ := 4) hok⟩
 
+/-- Boolean encoding `decide (h.constituentSign i = -1)` of `constituentSign`, used in
+`Bool`-valued compartment invariants and finite-state checks. -/
+noncomputable def IsJordanSplitting.constituentSignBool (h : B.IsJordanSplitting 2 N) (i : ℕ) :
+    Bool :=
+  decide (h.constituentSign i = -1)
+
+/-- `h.constituentSignBool i = true` if and only if `h.constituentSign i = -1`. -/
+@[simp]
+theorem IsJordanSplitting.constituentSignBool_eq_true_iff (h : B.IsJordanSplitting 2 N) (i : ℕ) :
+    h.constituentSignBool i = true ↔ h.constituentSign i = -1 :=
+  decide_eq_true_iff
+
+/-- Two constituent signs are equal if and only if their boolean encodings agree. -/
+theorem IsJordanSplitting.constituentSign_eq_iff_constituentSignBool_eq
+    {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
+    [Module.Finite ℤ_[2] M'] {B' : BilinForm ℤ_[2] M'} {N' : ℕ → Submodule ℤ_[2] M'}
+    (h : B.IsJordanSplitting 2 N) (h' : B'.IsJordanSplitting 2 N') (i : ℕ) :
+    h.constituentSign i = h'.constituentSign i ↔
+      h.constituentSignBool i = h'.constituentSignBool i := by
+  unfold IsJordanSplitting.constituentSignBool
+  rcases h.constituentSign_eq_one_or_neg_one i with h1 | h1 <;>
+    rcases h'.constituentSign_eq_one_or_neg_one i with h2 | h2 <;> simp [h1, h2]
+
+/-- Negating a constituent sign complements `IsJordanSplitting.constituentSignBool`. -/
+theorem IsJordanSplitting.constituentSignBool_eq_not_of_constituentSign_eq_neg
+    {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
+    {k : ℕ} (hneg : h'.constituentSign k = -h.constituentSign k) :
+    h'.constituentSignBool k = !h.constituentSignBool k := by
+  unfold IsJordanSplitting.constituentSignBool
+  rcases h.constituentSign_eq_one_or_neg_one k with hk | hk <;> simp [hneg, hk]
+
 end FreeFinite
+
+/-- The weighted oddity-sign sum modulo `8` on a closed interval `Finset.Icc c d`, given boolean
+signs `s` (`true` for `-1`) and oddities `t : ℕ → ZMod 8`. -/
+@[expose] def compartmentOddity (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) : ZMod (2 ^ 3) :=
+  ∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0)
+
+/-- Expansion of `LinearMap.BilinForm.compartmentOddity` as a sum over `Finset.Icc c d`. -/
+theorem compartmentOddity_def (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) :
+    compartmentOddity s t c d =
+      ∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0) :=
+  rfl
+
+/-- Evaluating `compartmentOddity` at `(h.constituentSignBool, h.constituentOddity hB)` recovers
+the weighted oddity-sign sum over `Finset.Icc c d` in terms of `h.constituentSign`. -/
+theorem compartmentOddity_constituentSignBool [Module.Free ℤ_[2] M] [Module.Finite ℤ_[2] M]
+    (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm) (c d : ℕ) :
+    compartmentOddity h.constituentSignBool (h.constituentOddity hB) c d =
+      ∑ i ∈ Finset.Icc c d, (h.constituentOddity hB i +
+        if Odd (d + 1 - i) ∧ h.constituentSign i = -1 then 4 else 0) := by
+  simp only [compartmentOddity_def, IsJordanSplitting.constituentSignBool_eq_true_iff]
+
+/-- Flipping the boolean sign and shifting the oddity by `4` modulo `8` at the right endpoint `d`
+of `Finset.Icc c d` leaves `compartmentOddity` unchanged. -/
+theorem compartmentOddity_eq_of_flip_right {s s1 : ℕ → Bool} {t t1 : ℕ → ZMod (2 ^ 3)} {c d : ℕ}
+    (hlt : ∀ i < d, s1 i = s i ∧ t1 i = t i)
+    (hsd : s1 d = !s d) (htd : t1 d = t d + 4) :
+    compartmentOddity s1 t1 c d = compartmentOddity s t c d := by
+  refine Finset.sum_eq_of_eq_outside_one (a := d) (fun i hi hne ↦ ?_) ?_
+  · rw [Finset.mem_Icc] at hi
+    obtain ⟨hs, ht⟩ := hlt i (lt_of_le_of_ne hi.2 hne)
+    rw [hs, ht]
+  · have h4 : ∀ b : Bool, (4 : ZMod (2 ^ 3)) + (if !b then 4 else 0) = if b then 4 else 0 := by
+      decide
+    simp only [Nat.add_sub_cancel_left, odd_one, true_and, hsd, htd, add_assoc, h4]
 
 end LinearMap.BilinForm

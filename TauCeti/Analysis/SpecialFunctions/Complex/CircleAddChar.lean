@@ -59,6 +59,7 @@ theorem coe_toCircle_natCast_self (n : ℕ) [NeZero n] :
   rw [this, Complex.exp_pi_mul_I]
 
 /-- The standard additive character of `ZMod (2 * n)` sends `n` to `-1`. -/
+@[simp]
 theorem stdAddChar_natCast_self (n : ℕ) [NeZero n] :
     stdAddChar ((n : ℕ) : ZMod (2 * n)) = -1 := by
   rw [stdAddChar_apply, coe_toCircle_natCast_self]
@@ -77,7 +78,7 @@ theorem prod_pow_mul_stdAddChar_eq_stdAddChar_add_ite {ι : Type*} {n : ℕ} [Ne
   have hcast : (∏ i ∈ u, (s i : ℂ) ^ e i) = ((∏ i ∈ u, s i ^ e i : ℤ) : ℂ) := by
     simp only [Int.cast_prod, Int.cast_pow]
   rw [hcast]
-  rcases hprod with h | h <;> simp [h, AddChar.map_add_eq_mul, stdAddChar_natCast_self]
+  rcases hprod with h | h <;> simp [h, AddChar.map_add_eq_mul]
 
 /-- Evaluating `stdAddChar` on a sum of `ZMod (2 * n)` terms shifted by `n` when `Odd (e i)` and
 `s i = -1` factors out the product of `(s i : ℂ) ^ e i`. -/

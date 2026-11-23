@@ -93,9 +93,7 @@ theorem not_equivalent_toBilin'_diagonal_two_neg_two_two_smul_hyperbolic :
   have h4 : (4 : ℤ_[2]) ∣
       Matrix.toBilin' ((2 : ℤ_[2]) • !![0, 1; 1, 0]) (e ![1, 0]) (e ![1, 0]) :=
     ⟨e ![1, 0] 0 * e ![1, 0] 1, by
-      simp only [Matrix.toBilin'_apply', Matrix.mulVec, dotProduct, Fin.sum_univ_two,
-        Matrix.smul_apply, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-        Matrix.cons_val_fin_one, smul_eq_mul]; ring⟩
+      simp [Matrix.toBilin'_apply', Matrix.mulVec, dotProduct, Fin.sum_univ_two]; ring⟩
   have hdiag : Matrix.toBilin' (Matrix.diagonal ![2, -2] : Matrix (Fin 2) (Fin 2) ℤ_[2])
       ![1, 0] ![1, 0] = 2 := by
     simp [Matrix.toBilin'_apply', Matrix.mulVec_diagonal, dotProduct, Fin.sum_univ_two]

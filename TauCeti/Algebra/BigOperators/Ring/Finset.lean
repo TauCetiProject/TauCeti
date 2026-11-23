@@ -84,6 +84,16 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
   ring
 
+/-- If `a` and `c` are distinct elements of `{1, -1}` and `b = -a`, then `b = c`. -/
+theorem eq_of_eq_neg_of_ne_of_eq_one_or_neg_one {α : Type*} [One α] [InvolutiveNeg α]
+    {a b c : α} (ha : a = 1 ∨ a = -1) (hc : c = 1 ∨ c = -1) (hba : b = -a) (hac : a ≠ c) :
+    b = c := by
+  rcases ha with rfl | rfl <;> rcases hc with rfl | rfl
+  · exact absurd rfl hac
+  · exact hba
+  · exact hba.trans (neg_neg 1)
+  · exact absurd rfl hac
+
 end TauCeti
 
 namespace Finset

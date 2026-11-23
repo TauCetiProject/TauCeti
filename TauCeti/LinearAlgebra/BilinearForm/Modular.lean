@@ -121,12 +121,6 @@ theorem IsModular.dvd (h : B.IsModular a) (x y : M) : a ∣ B x y := by
   obtain ⟨C, rfl, -⟩ := h
   exact ⟨C x y, by simp⟩
 
-/-- Rescaling by a left-regular element determines a bilinear form uniquely. -/
-theorem eq_of_smul_eq (ha : IsLeftRegular a) {B C₁ C₂ : BilinForm R M}
-    (h₁ : a • C₁ = B) (h₂ : a • C₂ = B) : C₁ = C₂ :=
-  LinearMap.ext₂ fun x y ↦ ha (by
-    simpa using (LinearMap.congr_fun₂ h₁ x y).trans (LinearMap.congr_fun₂ h₂ x y).symm)
-
 /-- Multiplying an `a`-modular form by `r` multiplies its modularity factor by `r`. -/
 theorem IsModular.smul (h : B.IsModular a) (r : R) : (r • B).IsModular (r * a) := by
   obtain ⟨C, rfl, hC⟩ := h

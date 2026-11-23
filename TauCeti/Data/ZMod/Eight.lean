@@ -26,6 +26,8 @@ rank at least four.
   with the same product and the same sum have at least four members.
 * `ZMod.add_add_eq_neg_or_eq_neg_five_mul`: the sum of three residues from `{y, 5y}` lies in
   `{-y, -5y}` modulo `8`.
+* `ZMod.four_mul_natCast`: `(4 : ZMod (2 ^ 3)) * k` equals `4` when `k` is odd and `0` when `k`
+  is even.
 -/
 
 public section
@@ -96,5 +98,16 @@ theorem add_add_eq_neg_or_eq_neg_five_mul {y a b c : ZMod (2 ^ 3)}
   have key₃ : ∀ y s c : ZMod (2 ^ 3), (s = 2 * y ∨ s = 6 * y) →
       (c = y ∨ c = 5 * y) → (s + c = -y ∨ s + c = -(5 * y)) := by decide
   exact key₃ y _ _ (key₂ y _ _ ha hb) hc
+
+/-- Multiplying `4 : ZMod 8` by a natural number `k` gives `4` if `k` is odd and `0` if `k` is
+even. -/
+theorem four_mul_natCast (k : ℕ) :
+    (4 : ZMod (2 ^ 3)) * k = if k % 2 = 1 then 4 else 0 := by
+  induction k with
+  | zero => decide
+  | succ k ih =>
+    rw [Nat.cast_succ, mul_add, mul_one, ih]
+    rcases Nat.mod_two_eq_zero_or_one k with hk | hk <;>
+      (rw [Nat.add_mod, hk]; decide)
 
 end ZMod
