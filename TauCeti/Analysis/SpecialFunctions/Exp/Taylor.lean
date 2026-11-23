@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 import Mathlib.Analysis.Calculus.Taylor
+import Mathlib.Analysis.SpecialFunctions.Exponential
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
@@ -22,6 +23,7 @@ degree-`n` Taylor partial sum `∑ k ∈ range (n + 1), z ^ k / k!` equals the s
 
 * `Complex.exp_sub_sum_range_succ_eq_integral`: exact integral remainder for `Complex.exp`.
 * `Real.exp_sub_sum_range_succ_eq_integral`: exact integral remainder for `Real.exp`.
+* `Real.hasSum_pow_div_factorial`: `HasSum (fun k : ℕ ↦ y ^ k / k!) (Real.exp y)`.
 -/
 
 public section
@@ -90,6 +92,12 @@ theorem exp_sub_sum_range_succ_eq_integral (n : ℕ) (x : ℝ) :
   refine intervalIntegral.integral_congr fun s _ => ?_
   push_cast [Complex.ofReal_exp]
   rfl
+
+/-- The Taylor series `∑' k, y ^ k / k!` converges to `Real.exp y`. -/
+theorem hasSum_pow_div_factorial (y : ℝ) :
+    HasSum (fun k : ℕ ↦ y ^ k / k !) (Real.exp y) := by
+  rw [Real.exp_eq_exp_ℝ]
+  exact NormedSpace.expSeries_div_hasSum_exp y
 
 end Real
 

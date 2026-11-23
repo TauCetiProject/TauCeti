@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Algebra.Exponential
-import TauCeti.Analysis.SpecialFunctions.Exp.Summable
+import TauCeti.Analysis.SpecialFunctions.Exp.Taylor
 
 /-!
 # Derivatives of improper tail integrals
