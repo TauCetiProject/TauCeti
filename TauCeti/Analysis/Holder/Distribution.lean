@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
 public import TauCeti.Analysis.Holder.Zygmund
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.ComplexPairing
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -239,7 +238,8 @@ theorem IsLocallyCkHolderAt.smulLeftCLM (h : T.IsLocallyCkHolderAt k α x) (hα 
   dsimp only
   rw [show fg y = (χ y * g y) • f y from CkHolderSpace.cutoff_apply ..]
   by_cases hy : y ∈ tsupport ψ
-  · simp [χ.one_of_mem_closedBall (Metric.ball_subset_closedBall (hψ hy).2)]
+  · simp only [TestFunction.smulLeftCLM_apply, smul_eq_mul, real_smul, ofReal_mul,
+      χ.one_of_mem_closedBall (Metric.ball_subset_closedBall (hψ hy).2), one_mul]
     ring
   · simp [image_eq_zero_of_notMem_tsupport hy]
 
