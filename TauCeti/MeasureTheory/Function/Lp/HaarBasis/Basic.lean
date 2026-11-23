@@ -587,7 +587,7 @@ theorem haarBasis_coord (hp : p ≠ ∞) (n : ℕ) (f : Lp 𝕜 p (volume : Meas
     rw [hcongr]
     by_cases hnm : n = m
     · subst hnm
-      simp only [Pi.single_eq_same, ← sq, integral_haarFun_sq, RCLike.ofReal_inv,
+      simp only [Pi.single_eq_same, integral_haarFun_mul_self, RCLike.ofReal_inv,
         RCLike.ofReal_natCast]
       exact (mul_inv_cancel₀ (Nat.cast_ne_zero.2 (Nat.two_pow_pos _).ne')).symm
     · simp [hnm, integral_haarFun_mul_of_ne hnm]

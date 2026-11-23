@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
-import TauCeti.Analysis.Normed.Module.Bases.Basic
+import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 
 /-!
 # `L²` orthogonality of the Haar basis
@@ -52,8 +52,8 @@ theorem inner_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (j k : ℕ) :
   · simp [hjk]
 
 -- Not `@[simp]`: `haarBasis_apply` and `inner_self_eq_norm_sq_to_K` simplify the LHS;
--- see `eLpNorm_ofReal_haarFun_two_sq` and `toReal_eLpNorm_ofReal_haarFun_two_sq` for the
--- normalized `simp` rules.
+-- see `ofReal_toReal_eLpNorm_ofReal_haarFun_two_sq` and `toReal_eLpNorm_ofReal_haarFun_two_sq` for
+-- the normalized `simp` rules.
 /-- Diagonal inner product of a Haar basis vector in `L²([0, 1]; 𝕜)`. -/
 theorem inner_haarBasis_two_self (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
     ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top j⟫_𝕜 =
@@ -61,12 +61,14 @@ theorem inner_haarBasis_two_self (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
   rw [inner_haarBasis_two, ite_eq_left rfl]
 
 /-- Normalized `simp` form of `inner_haarBasis_two_self`: the squared `L²` norm of the `𝕜`-valued
-Haar function `haarFun j` equals `2 ^ (-⌊log₂ j⌋)`. -/
+Haar function `haarFun j` (cast to `𝕜`) equals `2 ^ (-⌊log₂ j⌋)`. -/
 @[simp]
-theorem eLpNorm_ofReal_haarFun_two_sq (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
+theorem ofReal_toReal_eLpNorm_ofReal_haarFun_two_sq (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
     ((eLpNorm (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)).toReal : 𝕜) ^ 2 =
       ((2 ^ Nat.log 2 j : ℕ) : 𝕜)⁻¹ := by
-  simpa using inner_haarBasis_two_self 𝕜 j
+  rw [← Lp.norm_toLp (fun x => (haarFun j x : 𝕜)) (memLp_ofReal_haarFun 𝕜 2 j),
+    ← inner_self_eq_norm_sq_to_K, ← haarBasis_apply (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j]
+  exact inner_haarBasis_two_self 𝕜 j
 
 /-- Real-valued normalized `simp` form of `inner_haarBasis_two_self`: the squared `L²` norm of
 the `𝕜`-valued Haar function `haarFun j` equals `2 ^ (-⌊log₂ j⌋)`. -/
@@ -74,7 +76,7 @@ the `𝕜`-valued Haar function `haarFun j` equals `2 ^ (-⌊log₂ j⌋)`. -/
 theorem toReal_eLpNorm_ofReal_haarFun_two_sq (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
     (eLpNorm (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)).toReal ^ 2 =
       ((2 ^ Nat.log 2 j : ℕ) : ℝ)⁻¹ := by
-  have h := congrArg RCLike.re (eLpNorm_ofReal_haarFun_two_sq 𝕜 j)
+  have h := congrArg RCLike.re (ofReal_toReal_eLpNorm_ofReal_haarFun_two_sq 𝕜 j)
   rw [RCLike.re_ofReal_pow, ← RCLike.ofReal_natCast, ← RCLike.ofReal_inv, RCLike.ofReal_re] at h
   exact h
 
@@ -92,7 +94,9 @@ theorem inner_toLp_ofReal_haarFun_of_ne (𝕜 : Type*) [RCLike 𝕜] {j k : ℕ}
     {hj : MemLp (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)}
     {hk : MemLp (fun x => (haarFun k x : 𝕜)) 2 (volume : Measure I)} :
     ⟪hj.toLp (fun x => (haarFun j x : 𝕜)), hk.toLp (fun x => (haarFun k x : 𝕜))⟫_𝕜 = 0 := by
-  simpa using inner_haarBasis_two_of_ne 𝕜 hjk
+  rw [← haarBasis_apply (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j,
+    ← haarBasis_apply (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k]
+  exact inner_haarBasis_two_of_ne 𝕜 hjk
 
 /-- **Parseval's identity for finite Haar sums in `L²([0, 1]; 𝕜)`.** -/
 theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (A : Finset ℕ) :
@@ -124,29 +128,14 @@ theorem norm_sum_unimodular_haarBasis_two (𝕜 : Type*) [RCLike 𝕜]
 /-- Every finite coordinate projection of the Haar basis of `L²([0, 1]; 𝕜)` has operator norm at
 most `1`. -/
 theorem norm_proj_haarBasis_two_le (𝕜 : Type*) [RCLike 𝕜] (A : Finset ℕ) :
-    ‖GeneralSchauderBasis.proj (haarBasis 𝕜 2 ENNReal.ofNat_ne_top) A‖ ≤ 1 := by
-  classical
-  let b := haarBasis 𝕜 2 ENNReal.ofNat_ne_top
-  have hspan : (Submodule.span 𝕜 (Set.range b) : Set (Lp 𝕜 2 (volume : Measure I))) ⊆
-      {f | ‖GeneralSchauderBasis.proj b A f‖ ≤ ‖f‖} := by
-    rintro f hf
-    obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hf
-    rw [Finsupp.sum, Set.mem_ofPred_eq]
-    have hproj : GeneralSchauderBasis.proj b A (∑ k ∈ c.support, c k • b k) =
-        ∑ k ∈ c.support, (if k ∈ A then c k else 0) • b k := by
-      rw [map_sum]
-      refine Finset.sum_congr rfl fun k _ => ?_
-      rw [map_smul, GeneralSchauderBasis.proj_apply_basis_mem]
-      split_ifs <;> simp
-    rw [hproj, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_sum_haarBasis_two,
-      norm_sq_sum_haarBasis_two]
-    refine Finset.sum_le_sum fun k _ => ?_
-    refine mul_le_mul_of_nonneg_right ?_ (integral_nonneg fun _ => sq_nonneg _)
-    split_ifs <;> simp
-  have hclosed : IsClosed {f : Lp 𝕜 2 (volume : Measure I) |
-      ‖GeneralSchauderBasis.proj b A f‖ ≤ ‖f‖} :=
-    isClosed_le (GeneralSchauderBasis.proj b A).continuous.norm continuous_norm
-  exact (GeneralSchauderBasis.proj b A).opNorm_le_bound zero_le_one fun f => by
-    simpa using hclosed.closure_subset_iff.2 hspan (b.dense_span f)
+    ‖GeneralSchauderBasis.proj (haarBasis 𝕜 2 ENNReal.ofNat_ne_top) A‖ ≤ 1 :=
+  (haarBasis 𝕜 2 ENNReal.ofNat_ne_top).norm_proj_finset_le_of_range_signed
+    (fun N δ hδ g => by
+      simp only [smul_smul]
+      rw [norm_sum_unimodular_haarBasis_two 𝕜 _ (Finset.range N)
+        (fun k _ => by rw [RCLike.norm_ofReal, hδ k]), ← SchauderBasis.proj_apply,
+        haarBasis_proj]
+      exact (dyadicProj 𝕜 2 N).le_of_opNorm_le (norm_dyadicProj_le 𝕜 2 N) g)
+    A
 
 end TauCeti.unitInterval

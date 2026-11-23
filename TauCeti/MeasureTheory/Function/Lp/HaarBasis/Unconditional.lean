@@ -27,8 +27,10 @@ coordinate multipliers, and `max p.toReal (p.toReal / (p.toReal - 1)) / 2` for f
 projections and the unconditional basis constant `nnNormProjBound`. Over `[RCLike 𝕜]`, finite
 signed Haar sums and signed coordinate multipliers carry an additional factor of `2`, while finite
 coordinate projections and `nnNormProjBound` are bounded by
-`max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2`. At `p = 2`, finite Haar sums satisfy Parseval's
-identity, unimodular Haar multipliers are `L²` isometries, and `nnNormProjBound` equals `1`.
+`max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2`. At `p = 2`, `nnNormProjBound` equals `1`, using
+`TauCeti.unitInterval.norm_proj_haarBasis_two_le` from
+`TauCeti.MeasureTheory.Function.Lp.HaarBasis.L2` (where Parseval's identity and the `L²` isometry
+of unimodular multipliers live).
 
 ## Main definitions
 
@@ -366,9 +368,9 @@ private theorem toDual_sum_signed_haarBasis {p q : ℝ≥0∞} [Fact (1 ≤ p)] 
           exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
     _ = ∑ k ∈ Finset.range N, (ε k * c k) * ∫ x, haarFun k x * gN x := by
           refine Finset.sum_congr rfl fun k hk => ?_
-          rw [show (∫ x, haarFun k x * g x) = ∫ x, haarFun k x * dyadicProj ℝ q N g x by
-            simpa only [RCLike.ofReal_real_eq_id, id_eq] using
-              integral_haarFun_mul_dyadicProj (Finset.mem_range.1 hk) g, hgN_eq]
+          have hproj := integral_haarFun_mul_dyadicProj (Finset.mem_range.1 hk) g
+          simp only [RCLike.ofReal_real_eq_id, id_eq] at hproj
+          rw [hproj, hgN_eq]
     _ = ∫ x, haarSum (fun k => ε k * c k) N x * gN x := by
           simp_rw [haarSum, Finset.sum_mul, hmul]
           rw [integral_finsetSum _ fun k _ => (hint_mul hgN_int k).const_mul _]

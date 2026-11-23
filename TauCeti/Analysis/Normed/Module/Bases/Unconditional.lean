@@ -240,18 +240,15 @@ theorem norm_proj_le_of_sign_bound {K M : ℝ}
       ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ K * ‖b.proj (Finset.range N) x‖)
     (hM : ∀ N, ‖b.proj (Finset.range N)‖ ≤ M) (A : Finset ℕ) :
     ‖b.proj A‖ ≤ (1 + K) / 2 * M := by
-  have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 ↦ by
-    have h := b.ortho 0 0
-    simp [h0] at h
+  have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 (b.linearIndependent.ne_zero 0)
   have hK1 : 1 ≤ K := by
     have h1 := hK 1 (fun _ ↦ 1) (fun _ ↦ Or.inl rfl) (b 0)
     simp only [Finset.range_one, Finset.sum_singleton, RCLike.ofReal_one, one_smul,
       b.ortho, Pi.single_eq_same, proj_apply] at h1
     nlinarith
   have hM0 : 0 ≤ M := (norm_nonneg (b.proj (Finset.range 0))).trans (hM 0)
-  let N := A.sup id + 1
-  have hAN : A ⊆ Finset.range N := fun i hi ↦
-    Finset.mem_range.2 (Nat.lt_succ_of_le (Finset.le_sup (f := id) hi))
+  let N := (A.sup id).succ
+  have hAN := A.subset_range_sup_succ
   refine (b.proj A).opNorm_le_bound (by positivity) fun x ↦ ?_
   calc ‖b.proj A x‖
       ≤ (1 + K) / 2 * ‖b.proj (Finset.range N) x‖ :=
