@@ -135,13 +135,23 @@ private theorem evalOD_eq_zero_iff
   simp [funext_iff, evalOD, Subtype.ext_iff]
 
 /-- The Jacobian matrix of `F` at `t`, as a matrix over `A₀`. -/
-private noncomputable def jacobianOD
+noncomputable def jacobianOD
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (t : Fin N → P.ringOfDefinition) : Matrix (Fin N) (Fin N) P.ringOfDefinition :=
   Matrix.of fun i j ↦ ⟨weightedEval (RingHom.id C) (fun l ↦ (t l : C))
     (MvPowerSeries.pderiv j (F i)),
     weightedEval_mem P.isClosed_ringOfDefinition (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j)
       fun l ↦ (t l).2⟩
+
+omit [IsUniformAddGroup C] [CompleteSpace C] in
+/-- Each entry of `jacobianOD` coerces to the evaluated partial derivative `∂ⱼFᵢ(t)` in `C`. -/
+@[simp]
+theorem jacobianOD_apply
+    (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
+    (t : Fin N → P.ringOfDefinition) (i j : Fin N) :
+    (jacobianOD P hF₀ t i j : C) =
+      weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (MvPowerSeries.pderiv j (F i)) :=
+  (rfl)
 
 /-- Taylor's estimate on `A₀^N`, in the form of the linearisation hypothesis of the quantitative
 Newton method. -/
@@ -163,7 +173,7 @@ private theorem pow_dvd_evalOD_sub
 
 omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- The scaled inverse of the Jacobian matrix over `C` is one over `A₀`. -/
-private theorem mul_jacobianOD_eq
+theorem mul_jacobianOD_eq
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     {t : Fin N → P.ringOfDefinition} {k : ℕ} {M : Matrix (Fin N) (Fin N) P.ringOfDefinition}
     (hM : M.map ((↑) : P.ringOfDefinition → C) * Matrix.of (fun i j ↦
@@ -177,7 +187,7 @@ private theorem mul_jacobianOD_eq
   simp only [Matrix.mul_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
   push_cast
   convert h using 2
-  · simp [jacobianOD]
+  · simp
   · split_ifs <;> simp
 
 /-- **Error bound in Newton's method for restricted series.** Let `ϖ ∈ A₀` be a unit of `C`, and

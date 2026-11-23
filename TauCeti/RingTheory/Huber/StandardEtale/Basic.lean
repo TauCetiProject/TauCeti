@@ -130,15 +130,10 @@ theorem jacobian_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.jacobian ∈ tateSeriesPlus P.N A Aplus.plus :=
   tateSeries.jacobian_mem_tateSeriesPlus P.F_mem_plus
 
-/-- `P.π P.jacobian` is a unit `u ∈ Cˣ` with `algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ ∈ Cplus.plus`. -/
-theorem exists_unit_π_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    ∃ u : Cˣ, (u : C) = P.π P.jacobian ∧ algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ ∈ Cplus.plus :=
-  P.exists_unit_jacobian
-
 /-- The image `P.π P.jacobian` of the formal Jacobian determinant is a unit of `C`. -/
 theorem isUnit_π_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
     IsUnit (P.π P.jacobian) := by
-  obtain ⟨u, hu, -⟩ := P.exists_unit_π_jacobian
+  obtain ⟨u, hu, -⟩ := P.exists_unit_jacobian
   exact hu ▸ u.isUnit
 
 /-- Each defining series `P.F i` vanishes in `C` under `P.π`. -/

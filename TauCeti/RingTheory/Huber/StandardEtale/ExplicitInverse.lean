@@ -250,15 +250,15 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 standard étale presentation `P`. -/
 private noncomputable def scaledJacobianInv
     (P : StandardEtalePresentation Aplus ϖ Cplus) : C :=
-  algebraMap A C (ϖ ^ P.k) * ↑P.exists_unit_π_jacobian.choose⁻¹
+  algebraMap A C (ϖ ^ P.k) * ↑P.exists_unit_jacobian.choose⁻¹
 
 private theorem scaledJacobianInv_mem_plus
     (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.scaledJacobianInv ∈ Cplus.plus :=
-  P.exists_unit_π_jacobian.choose_spec.2
+  P.exists_unit_jacobian.choose_spec.2
 
 private theorem mul_scaledJacobianInv (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    (P.exists_unit_π_jacobian.choose : C) * P.scaledJacobianInv = algebraMap A C (ϖ ^ P.k) := by
+    (P.exists_unit_jacobian.choose : C) * P.scaledJacobianInv = algebraMap A C (ϖ ^ P.k) := by
   rw [scaledJacobianInv, mul_left_comm, Units.mul_inv, mul_one]
 
 private noncomputable def withInverseTuple
@@ -350,8 +350,8 @@ relation `P.withInverseHom T_{P.N} * P.π P.jacobian = algebraMap A C (ϖ ^ P.k)
 theorem withInverseHom_last_mul_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N)) * P.π P.jacobian =
       algebraMap A C (ϖ ^ P.k) := by
-  rw [withInverseHom_X_apply, withInverseTuple, Fin.snoc_last,
-    ← P.exists_unit_π_jacobian.choose_spec.1, mul_comm, mul_scaledJacobianInv]
+  rw [withInverseHom_X_apply, withInverseTuple, Fin.snoc_last, P.jacobian_def,
+    ← P.exists_unit_jacobian.choose_spec.1, mul_comm, mul_scaledJacobianInv]
 
 /-- On the newly adjoined variable `T_{P.N}`, `P.withInverseHom` evaluates to the `ϖ ^ P.k`-scaled
 inverse of any unit `u : Cˣ` representing `P.π P.jacobian`. -/
@@ -402,8 +402,9 @@ private theorem ker_withInverseHom_le (P : StandardEtalePresentation Aplus ϖ Cp
   have : T2Space C := P.t2Space
   let F := explicitInverse A ϖ P.F P.k
   let K' := (Ideal.span (Set.range F)).closure
-  let u : Cˣ := P.exists_unit_π_jacobian.choose
-  have hu_eq : (u : C) = P.π P.jacobian := P.exists_unit_π_jacobian.choose_spec.1
+  let u : Cˣ := P.exists_unit_jacobian.choose
+  have hu_eq : (u : C) = P.π P.jacobian := by
+    rw [P.jacobian_def]; exact P.exists_unit_jacobian.choose_spec.1
   have : IsClosed (K' : Set (tateSeries (P.N + 1) A)) := by
     rw [Ideal.coe_closure]; exact isClosed_closure
   -- Descend `castSuccAlgHom` through `P.ideal` to a continuous map `ψ : C →+* _ ⧸ K'`.
@@ -529,8 +530,9 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
       exact fun hc ↦ Subring.integralClosure_subring_le_iff.mpr hmap_le
         ((mem_integralClosure_iff _ _).mpr hc)
   exists_unit_jacobian := by
-    let u : Cˣ := P.exists_unit_π_jacobian.choose
-    have hu_eq : (u : C) = P.π P.jacobian := P.exists_unit_π_jacobian.choose_spec.1
+    let u : Cˣ := P.exists_unit_jacobian.choose
+    have hu_eq : (u : C) = P.π P.jacobian := by
+      rw [P.jacobian_def]; exact P.exists_unit_jacobian.choose_spec.1
     refine ⟨u ^ 2, ?_, ?_⟩
     · rw [Units.val_pow_eq_pow_val, hu_eq, jacobian_explicitInverse, map_pow,
         withInverseHom_castSuccAlgHom, P.jacobian_def]
