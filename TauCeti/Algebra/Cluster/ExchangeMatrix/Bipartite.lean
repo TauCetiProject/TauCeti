@@ -16,11 +16,11 @@ other. Its signed Cartan entries form a bipartite exchange matrix, with the orig
 matrix as companion and the original positive integer symmetrizer. No connectedness or finite
 rank is required. In particular, isolated vertices and the empty diagram are admitted.
 
-The row-product definition of bipartite is the one used in the finite-type classification:
-all entries of each row have the same weak sign. Mutation at a source or sink only reverses
-its incident entries, and therefore leaves the Cartan companion unchanged. These constructions
-provide bipartite matrix representatives for finite-type classification without assuming the
-classification of finite cluster-variable sets.
+The row-product condition says that all entries of each row have the same weak sign. For
+skew-symmetrizable matrices it is equivalent to Fomin–Zelevinsky’s sign-function definition:
+positive entries go from a positive row sign to a negative column sign. Mutation at a source
+or sink reverses its incident entries and preserves the Cartan companion. These constructions
+supply bipartite matrix representatives for finite-type classification.
 
 ## References
 
@@ -32,7 +32,9 @@ public section
 
 namespace Matrix
 
-/-- An integer matrix is bipartite when each row has a single weak sign. -/
+/-- The row-product condition for an integer matrix: each row has a single weak sign.
+For skew-symmetrizable matrices this is equivalent to Fomin–Zelevinsky’s sign-function
+definition of bipartite. -/
 def IsBipartite {I : Type*} (B : Matrix I I ℤ) : Prop :=
   ∀ i j k, 0 ≤ B i j * B i k
 
