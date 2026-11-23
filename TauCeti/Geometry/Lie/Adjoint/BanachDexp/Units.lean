@@ -18,11 +18,6 @@ the canonical identification of the abstract Lie algebra with the ambient algebr
 ## Main result
 
 * `TauCeti.Lie.fderiv_lieExp_units_coe_eq_exp_mul_banachDexpFactor`: the bundled derivative formula.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section

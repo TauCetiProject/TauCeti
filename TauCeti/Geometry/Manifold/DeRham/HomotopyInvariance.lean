@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.Map
+public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import Mathlib.Geometry.Manifold.Instances.Real
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
@@ -26,6 +26,12 @@ form `φ` on `M × [0, 1]`, `ι₁^* φ - ι₀^* φ = d (h φ)` (`TauCeti.mextD
 and `h φ` is again smooth. In degree zero a closed form is a locally constant function, which is
 constant along each segment `{x} × [0, 1]`.
 
+On a compact manifold compactly supported and ordinary de Rham cohomology agree
+(`TauCeti.compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective`), so smoothly homotopic
+maps out of a compact manifold also induce the same map on compactly supported cohomology
+(`TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`). This is what makes the mapping
+degree a homotopy invariant.
+
 ## Main declarations
 
 * `TauCeti.deRhamCohomology.map_prodMk_left_zero_eq_map_prodMk_left_one`: the slice inclusions
@@ -34,6 +40,8 @@ constant along each segment `{x} × [0, 1]`.
   de Rham cohomology.
 * `TauCeti.deRhamCohomology.equivOfHomotopy`: a smooth homotopy equivalence induces a linear
   equivalence on de Rham cohomology.
+* `TauCeti.compactlySupportedDeRhamCohomology.map_eq_of_homotopy`: smoothly homotopic maps out of
+  a compact manifold induce the same map on compactly supported de Rham cohomology.
 
 ## References
 
@@ -51,8 +59,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-namespace deRhamCohomology
-
 variable {E H E' H' : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -60,6 +66,8 @@ variable {E H E' H' : Type*}
   {M M' : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [TopologicalSpace M'] [ChartedSpace H' M']
+
+namespace deRhamCohomology
 
 section Homotopy
 
@@ -80,23 +88,23 @@ theorem map_prodMk_left_zero_eq_map_prodMk_left_one (k : ℕ) :
     -- A closed `0`-form is locally constant, hence constant along `{x} × [0, 1]`.
     congr 1
     refine Subtype.ext (Subtype.ext (funext fun x ↦ ?_))
-    have hφ := ((mem_closedForms_zero_iff _ φ.1).mp φ.2).comp_continuous
+    have hφ := ((mem_closedForms_zero_iff _ φ.val).mp φ.property).comp_continuous
       (Continuous.prodMk_right x : Continuous fun t : Icc (0 : ℝ) 1 ↦ (x, t))
     ext v
     simp only [closedForms.coe_mpullback, SmoothForm.mpullback_apply]
-    calc _ = φ.1.1 (x, 0) 0 := congrArg _ (Subsingleton.elim _ _)
-      _ = φ.1.1 (x, 1) 0 := hφ.apply_eq_of_preconnectedSpace 0 1
+    calc _ = φ.val.val (x, 0) 0 := congrArg _ (Subsingleton.elim _ _)
+      _ = φ.val.val (x, 1) 0 := hφ.apply_eq_of_preconnectedSpace 0 1
       _ = _ := congrArg _ (Subsingleton.elim _ _)
   | succ k =>
     -- `ι₁^* φ - ι₀^* φ` is the exterior derivative of the smooth form `h φ`. Smoothness of
     -- `h φ` is `IsSmoothForm.homotopyOperator` at `r = ⊤`, stated for a `C^(⊤ + 1)` manifold.
     have : IsManifold I ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
     rw [eq_comm, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, exactForms_succ]
-    refine ⟨⟨homotopyOperator φ.1.1,
-      (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothBundleForms⟩, ?_⟩
+    refine ⟨⟨homotopyOperator φ.val.val,
+      (IsSmoothForm.homotopyOperator φ.val.isSmoothForm).mem_smoothBundleForms⟩, ?_⟩
     refine Subtype.ext (funext fun x ↦ ?_)
-    rw [mextDerivₗ_apply, mextDeriv_homotopyOperator (φ.1.isSmoothForm.of_le (by simp))
-      ((mem_closedForms _ φ.1).mp φ.2)]
+    rw [mextDerivₗ_apply, mextDeriv_homotopyOperator (φ.val.isSmoothForm.of_le (by simp))
+      ((mem_closedForms _ φ.val).mp φ.property)]
     simp
 
 /-- **Homotopy invariance of de Rham cohomology.** If `F : M × [0, 1] → M'` is a smooth
@@ -146,5 +154,24 @@ theorem equivOfHomotopy_symm_apply (k : ℕ) (c : deRhamCohomology I M k) :
 end HomotopyEquivalence
 
 end deRhamCohomology
+
+namespace compactlySupportedDeRhamCohomology
+
+variable [IsManifold I' 2 M'] [CompactSpace M]
+
+/-- **Homotopy invariance of compactly supported de Rham cohomology** for a compact source. If
+`F : M × [0, 1] → M'` is a smooth homotopy from `f` to `g`, and `M` is compact, then the proper maps
+`f` and `g` induce the same map on compactly supported de Rham cohomology. The source `M` may have
+boundary or corners. -/
+theorem map_eq_of_homotopy {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+    (hfp : IsProperMap f) (hgp : IsProperMap g) {F : M × Icc (0 : ℝ) 1 → M'}
+    (hF : ContMDiff (I.prod (𝓡∂ 1)) I' ∞ F) (h₀ : ∀ x, F (x, 0) = f x)
+    (h₁ : ∀ x, F (x, 1) = g x) (k : ℕ) :
+    map f hf hfp k = map g hg hgp k :=
+  LinearMap.ext fun c ↦ (toDeRhamCohomology_bijective I k).injective <| by
+    rw [toDeRhamCohomology_map, toDeRhamCohomology_map,
+      deRhamCohomology.map_eq_of_homotopy hf hg hF h₀ h₁]
+
+end compactlySupportedDeRhamCohomology
 
 end TauCeti

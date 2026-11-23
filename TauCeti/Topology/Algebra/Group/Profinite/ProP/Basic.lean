@@ -15,9 +15,10 @@ import TauCeti.Topology.Algebra.Group.Profinite.Basic
 /-!
 # Pro-p groups
 
-A topological group is pro-`p` when each of its continuous finite quotients is a `p`-group.
+A profinite group is pro-`p` when each of its continuous finite quotients is a `p`-group.
 For the unbundled profinite groups used in Tau Ceti, these quotients are represented by the
-quotients by open normal subgroups. This file introduces that quotient-form predicate and its
+quotients by open normal subgroups. This file introduces that quotient-form predicate, which is
+defined for every topological group and a natural number `p` (meant to be prime), and its
 basic covariant API: abstract `p`-groups are pro-`p`, continuous surjective images of pro-`p`
 groups are pro-`p`, and hence so are topological quotients. It also records invariance under
 topological group isomorphism and agreement with `IsPGroup` for a discrete topology.
@@ -41,7 +42,11 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
   and pro-`q` for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
+* `IsProP.topologicalAbelianization_self`: the topological abelianization of a pro-`p` group is
+  pro-`p`.
 * `IsProP.top`: the top subgroup of a pro-`p` group is pro-`p`.
+* `IsProP.of_equiv`: the target of a topological group isomorphism from a pro-`p` group is
+  pro-`p`.
 * `IsProP.isPGroup_range`: a homomorphism from a pro-`p` group with open kernel has a
   `p`-group as its range.
 * `IsProP.isPGroup_map_mk'`: the image of a pro-`p` subgroup in the quotient by an open normal
@@ -64,7 +69,11 @@ namespace TauCeti
 universe u v
 
 /-- A topological group is **pro-`p`** when every quotient by an open normal subgroup is a
-`p`-group. For a profinite group these are exactly its continuous finite quotients. -/
+`p`-group. For a profinite group these are exactly its continuous finite quotients, so this is
+the pro-`p` notion of Ribes-Zalesskii only for profinite groups: the predicate is defined for
+every topological group and holds, for instance, for every connected group, whose only open
+subgroup is the whole group. The number `p` is meant to be prime; `p = 0` gives the trivial
+condition, since every group is a `0`-group. -/
 def IsProP (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Prop :=
   ∀ U : OpenNormalSubgroup G, IsPGroup p (G ⧸ U.toSubgroup)
 
@@ -108,7 +117,9 @@ theorem isProP_iff_isPGroup : IsProP p G ↔ IsPGroup p G := by
       QuotientGroup.quotientBot)
 
 /-- The cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
-pro-`p`. This holds for every natural number `p`, including composite numbers. -/
+pro-`p`. This holds for every natural number `p`, including composite numbers. For
+`p = 0` the group `ℤ/pⁿ` is infinite when `n ≠ 0`, and the statement is only the trivial
+condition. -/
 theorem isProP_multiplicative_zmod_pow (p n : ℕ) :
     IsProP p (Multiplicative (ZMod (p ^ n))) :=
   (ZModModule.isPGroup_multiplicative (n := p ^ n) (G := ZMod (p ^ n))).of_pow.isProP
@@ -191,7 +202,7 @@ theorem isPGroup_map_mk' {P : Subgroup G} (hP : IsProP p P)
   rw [← MonoidHom.domRestrict_range]
   apply hP.isPGroup_range
   simpa [MonoidHom.ker_domRestrict, Subgroup.coe_subgroupOf] using
-    U.isOpen.preimage continuous_subtype_val
+    U.isOpen.preimage continuous_subtypeVal
 
 /-- **Open normal subgroups of large `p`-power relative index.** In an infinite pro-`p` group every
 open normal subgroup `U` contains, for every `n`, an open normal subgroup `V` with
@@ -243,7 +254,7 @@ theorem _root_.Subgroup.isProP_subgroupOf_iff {G : Type u} [Group G] [Topologica
     {H K : Subgroup G} (hHK : H ≤ K) : IsProP p (H.subgroupOf K) ↔ IsProP p H :=
   isProP_congr
     { toMulEquiv := Subgroup.subgroupOfEquivOfLe hHK
-      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
 
 end TauCeti

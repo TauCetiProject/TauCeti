@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Module.Projective.FreeComplement
 public import TauCeti.Algebra.Module.StableEquivalent
-public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 
 /-!
 # Equality in the split `K₀` of finitely generated projective modules
@@ -98,6 +97,24 @@ theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullS
   rw [← of_biprod]
   exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (e.trans (FiniteProjectiveModules.biprodLinearEquiv P Q).symm).toModuleIso)
+
+/-- **Additivity on finite products.** The class of a finitely generated projective module
+isomorphic to a finite product is the sum of the classes of the factors. -/
+theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
+    {X : (finiteProjectiveModules R).FullSubcategory}
+    (P : ι → (finiteProjectiveModules R).FullSubcategory)
+    (e : X.obj ≃ₗ[R] (i : ι) → (P i).obj) : of.{u} X = ∑ i, of.{u} (P i) := by
+  have := hasFiniteProducts_of_has_binary_and_terminal
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  have := HasFiniteBiproducts.of_hasFiniteProducts
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  have := PreservesFiniteProducts.of_preserves_binary_and_terminal (finiteProjectiveModules R).ι
+  have : PreservesBiproduct P (finiteProjectiveModules R).ι :=
+    preservesBiproduct_of_preservesProduct _
+  rw [← of_biproduct.{u} P]
+  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
+    (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
+      ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
 
 /-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
 of `R`. -/
@@ -210,6 +227,19 @@ theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
   rw [classOf, sub_eq_zero]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ)) (R' := obj Λ Λ)
     (.refl _ _) (.refl _ _)
+
+/-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every
+finitely generated projective `Λ`-module `M`. -/
+@[simp]
+theorem map_extendScalars_classOf {Λ' : Type u} [Ring Λ'] (f : Λ →+* Λ') (n : ℕ) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (classOf Λ M n) =
+      classOf Λ' (BalancedExtension f M) n := by
+  rw [classOf_def, classOf_def, map_sub, map_nsmul,
+    SplitK0.map_of, SplitK0.map_of,
+    SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' (BalancedExtension f M),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _),
+    SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' Λ',
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (BalancedExtension.rid f)]
 
 end ClassOf
 

@@ -105,7 +105,7 @@ theorem integral_rpow_cos_sq_add_sin_sq_eq_integral_Ioi {a b : ℝ}
     field_simp
   have hinj : InjOn (fun x : ℝ => Real.arctan (x / b)) (Ioi 0) := by
     intro x _ y _ h
-    exact (div_left_inj' hb).mp (Real.arctan_injective h)
+    exact (div_left_inj₀ hb).mp (Real.arctan_injective h)
   rw [intervalIntegral.integral_of_le (by positivity), integral_Ioc_eq_integral_Ioo,
     ← himage, integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi hderiv hinj]
   apply setIntegral_congr_fun measurableSet_Ioi

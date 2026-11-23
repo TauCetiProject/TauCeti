@@ -77,10 +77,10 @@ private lemma exists_extension_skeletonLT_succ {n : ℕ}
         K (z, y) = f (z, ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩) := by
     -- The attaching map of `j` followed by `f` is null-homotopic, so it extends over the ball.
     let g : C(sphere (0 : Fin n → ℝ) 1, Y) :=
-      ⟨fun y ↦ f ((), ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, y.2, rfl⟩⟩),
+      ⟨fun y ↦ f ((), ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, y.property, rfl⟩⟩),
         f.continuous.comp (continuous_const.prodMk
-          (((continuousOn n j).comp_continuous continuous_subtype_val
-            fun y ↦ sphere_subset_closedBall y.2).subtype_mk _))⟩
+          (((continuousOn n j).comp_continuous continuous_subtypeVal
+            fun y ↦ sphere_subset_closedBall y.property).subtype_mk _))⟩
     obtain ⟨G, hG⟩ := (g.nullhomotopic_iff_exists_extension_closedBall).1 (h ⟨j⟩ g)
     exact ⟨G.comp ⟨Prod.snd, continuous_snd⟩, fun () y hy ↦ hG ⟨y, hy⟩⟩
   choose K hK using hext
@@ -120,10 +120,10 @@ theorem exists_extension_skeletonLT_of_nullhomotopic (k : ℕ)
       g.Nullhomotopic)
     (f : C((skeletonLT C k : Set X), Y)) :
     ∃ F : C(C, Y), ∀ x : (skeletonLT C k : Set X),
-      F ⟨x, (skeletonLT C k).subset_complex x.2⟩ = f x := by
+      F ⟨x, (skeletonLT C k).subset_complex x.property⟩ = f x := by
   obtain ⟨G, hG⟩ := exists_continuousMap_prod_complex_of_skeletonLT
     (extensionSeq k h (f.comp ⟨Prod.snd, continuous_snd⟩)) extensionSeq_succ_apply
-  exact ⟨G.comp ⟨fun x ↦ ((), x), by fun_prop⟩, fun x ↦ hG 0 () x x.2⟩
+  exact ⟨G.comp ⟨fun x ↦ ((), x), by fun_prop⟩, fun x ↦ hG 0 () x x.property⟩
 
 /-- **The extension lemma.**  Every map out of the base of a relative CW complex extends over the
 complex when, for every `n` such that `C` has `n`-cells, every map from the unit sphere of
@@ -131,16 +131,16 @@ complex when, for every `n` such that `C` has `n`-cells, every map from the unit
 theorem exists_extension_of_nullhomotopic
     (h : ∀ n, Nonempty (cell C n) → ∀ g : C(sphere (0 : Fin n → ℝ) 1, Y), g.Nullhomotopic)
     (f : C(D, Y)) :
-    ∃ F : C(C, Y), ∀ x : D, F ⟨x, base_subset_complex x.2⟩ = f x := by
+    ∃ F : C(C, Y), ∀ x : D, F ⟨x, base_subset_complex x.property⟩ = f x := by
   have h0 : (skeletonLT C (0 : ℕ) : Set X) = D := skeletonLT_zero_eq_base
   obtain ⟨F, hF⟩ := exists_extension_skeletonLT_of_nullhomotopic 0 (fun n _ ↦ h n)
     (f.comp ⟨Set.inclusion h0.le, continuous_inclusion h0.le⟩)
-  exact ⟨F, fun x ↦ hF ⟨x, h0.ge x.2⟩⟩
+  exact ⟨F, fun x ↦ hF ⟨x, h0.ge x.property⟩⟩
 
 /-- Every map out of the base of a relative CW complex into a contractible space extends over the
 complex. -/
 theorem exists_extension_of_contractibleSpace [ContractibleSpace Y] (f : C(D, Y)) :
-    ∃ F : C(C, Y), ∀ x : D, F ⟨x, base_subset_complex x.2⟩ = f x :=
+    ∃ F : C(C, Y), ∀ x : D, F ⟨x, base_subset_complex x.property⟩ = f x :=
   exists_extension_of_nullhomotopic (fun _ _ g ↦ (id_nullhomotopic Y).comp_left g) f
 
 end TauCeti

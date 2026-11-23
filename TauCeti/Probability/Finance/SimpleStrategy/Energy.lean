@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.Predictable.Measure
-import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
 /-!
 # Square energy of elementary holdings
@@ -85,17 +84,9 @@ theorem memLp_simpleHolding_predictableMeasure {τ : ℕ → ℝ≥0} {mΩ : Mea
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
     (haLp : ∀ i < n, MemLp (a i) p P) (T : ℝ≥0) :
     MemLp (Function.uncurry (simpleHolding τ n a)) p (ℱ.predictableMeasure P T) := by
-  rw [ℱ.memLp_predictableMeasure_iff P (isStronglyPredictable_simpleHolding ha) T p]
-  have hterm (i : ℕ) (hi : i ∈ range n) : MemLp
-      ((Ioc (τ i) (τ (i + 1)) ×ˢ (univ : Set Ω)).indicator (fun q ↦ a i q.2)) p
-      ((TauCeti.Probability.timeMeasure T).prod P) :=
-    ((haLp i (mem_range.mp hi)).comp_snd _).indicator
-      (measurableSet_Ioc.prod MeasurableSet.univ).nullMeasurableSet
-  convert memLp_finsetSum (range n) hterm using 1
-  ext ⟨t, ω⟩
-  simp only [Function.uncurry_apply_pair, simpleHolding_def]
-  apply sum_congr rfl
-  intro i _
-  by_cases ht : t ∈ Ioc (τ i) (τ (i + 1)) <;> simp [ht]
+  simpa only [Function.uncurry_def, simpleHolding_def] using
+    memLp_finsetSum (range n) fun i hi ↦
+      ℱ.memLp_indicator_Ioc_predictableMeasure T (τ i) (τ (i + 1))
+        (ha i (mem_range.mp hi)) (haLp i (mem_range.mp hi))
 
 end TauCeti.Finance

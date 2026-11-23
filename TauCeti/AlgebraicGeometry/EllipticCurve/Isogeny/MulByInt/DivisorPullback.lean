@@ -91,8 +91,8 @@ theorem coeff_divisorPullback_mulByIntIsogeny {n : ℤ} (hchar : (n : F) ≠ 0)
     letI := (mulByIntIsogeny W
       (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
     ((mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).divisorPullback (fun _ ↦ rfl) D).coeff
-        (pointEquivDegreeOnePlace W.toAffine R).1 =
-      D.coeff (pointEquivDegreeOnePlace W.toAffine (n • R)).1 := by
+        (pointEquivDegreeOnePlace W.toAffine R).val =
+      D.coeff (pointEquivDegreeOnePlace W.toAffine (n • R)).val := by
   let _ := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
   have := isScalarTower_of_algebraMap_eq_fieldPullback
     (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)) (fun _ ↦ rfl)
@@ -110,7 +110,7 @@ noncomputable def weilPairingDivisor {n : ℤ} (hn : psiFunctionField W n ≠ 0)
     Divisor F W.toAffine.FunctionField :=
   letI := (mulByIntIsogeny W (hn)).fieldPullback.toAlgebra
   (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
-      (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1) -
+      (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).val) -
     (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
       (WeilDivisor.ofPoint (Place.infinity W.toAffine))
 
@@ -121,7 +121,7 @@ theorem weilPairingDivisor_def {n : ℤ} (hn : psiFunctionField W n ≠ 0) (T : 
     letI := (mulByIntIsogeny W (hn)).fieldPullback.toAlgebra
     weilPairingDivisor W hn T =
       (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
-          (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1) -
+          (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).val) -
         (mulByIntIsogeny W (hn)).divisorPullback (fun _ ↦ rfl)
           (WeilDivisor.ofPoint (Place.infinity W.toAffine)) :=
   (rfl)
@@ -145,9 +145,9 @@ theorem divisorPullback_mulByIntIsogeny_ofPoint {n : ℤ} (hchar : (n : F) ≠ 0
     letI := (mulByIntIsogeny W
       (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
     (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).divisorPullback (fun _ ↦ rfl)
-        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).1) =
+        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine T).val) =
       ∑ R ∈ (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) T).toFinset,
-        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine R).1 := by
+        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine R).val := by
   classical
   let _ := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
   have := isScalarTower_of_algebraMap_eq_fieldPullback
@@ -157,9 +157,9 @@ theorem divisorPullback_mulByIntIsogeny_ofPoint {n : ℤ} (hchar : (n : F) ≠ 0
   have := (isSeparable_mulByIntIsogeny_iff W (psiFunctionField_ne_zero W hchar)).2 hchar
   -- the fibre sum is the finite-set divisor of the places of the fibre
   have hsum : ∑ R ∈ (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) T).toFinset,
-        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine R).1 =
+        WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine R).val =
       WeilDivisor.ofFinset ((finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar)
-        T).toFinset.map ⟨fun R ↦ (pointEquivDegreeOnePlace W.toAffine R).1,
+        T).toFinset.map ⟨fun R ↦ (pointEquivDegreeOnePlace W.toAffine R).val,
           Subtype.val_injective.comp (pointEquivDegreeOnePlace W.toAffine).injective⟩) := by
     rw [WeilDivisor.ofFinset_eq_sum, Finset.sum_map, Function.Embedding.coeFn_mk]
   rw [hsum]
@@ -186,8 +186,8 @@ theorem weilPairingDivisor_eq_sum {n : ℤ} (hchar : (n : F) ≠ 0) {T R₀ : W.
     (hR₀ : n • R₀ = T) :
     weilPairingDivisor W (psiFunctionField_ne_zero W hchar) T =
       ∑ S ∈ (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset,
-        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).1 -
-          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine S).1) := by
+        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).val -
+          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine S).val) := by
   rw [weilPairingDivisor_def]
   let _ := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
   rw [← coe_pointEquivDegreeOnePlace_zero, divisorPullback_mulByIntIsogeny_ofPoint W hchar T,
@@ -231,8 +231,8 @@ theorem exists_principal_eq_weilPairingDivisor_sub {n : ℤ} (hchar : (n : F) �
     (T : W.toAffine.Point) :
     ∃ z : W.toAffine.FunctionFieldˣ, Divisor.principal W.toAffine.isFunctionField z =
       weilPairingDivisor W (psiFunctionField_ne_zero W hchar) T -
-        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (n • T)).1 -
-          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine 0).1) := by
+        (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (n • T)).val -
+          WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine 0).val) := by
   -- with `n • R₀ = T` the divisor is `∑_{n • S = O} ((R₀ + S) - (S))` minus `(n • T) - (O)`
   obtain ⟨R₀, hR₀⟩ := W.toAffine.zsmul_surjective hchar T
   replace hR₀ : n • R₀ = T := hR₀

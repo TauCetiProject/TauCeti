@@ -427,6 +427,20 @@ theorem lieSpan_generators_eq_top :
   obtain ⟨x, rfl⟩ := presentationMk_surjective R y
   exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
 
+/-- A Cartan vector annihilated by every simple root is central in the presented algebra. -/
+theorem cartanElement_mem_center {z : H} (hz : z ∈ R.cartanCenter) :
+    cartanElement R z ∈ center K (PresentedLieAlgebra R) := by
+  have hr := (R.mem_cartanCenter_iff z).mp hz
+  rw [LieModule.mem_maxTrivSubmodule]
+  have h := lieSpan_le_lieAnnihilator (R := K) (L := PresentedLieAlgebra R)
+    (M := PresentedLieAlgebra R)
+    (s := Set.range (cartanElement R) ∪ Set.range (positiveGenerator R) ∪
+      Set.range (negativeGenerator R)) (v := cartanElement R z) ?_
+  · rw [lieSpan_generators_eq_top] at h
+    exact fun x => (mem_lieAnnihilator K _).mp (h (LieSubalgebra.mem_top x))
+  rintro _ ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩) <;>
+    rw [← lie_skew] <;> simp [hr]
+
 /-! ## The derived algebra and Serre's presentation
 
 Mathlib's `Matrix.ToLieAlgebra K A` presents a Lie algebra on generators `hᵢ`, `eᵢ`, `fᵢ` alone. The

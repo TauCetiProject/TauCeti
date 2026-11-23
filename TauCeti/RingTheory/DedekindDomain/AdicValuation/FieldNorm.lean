@@ -65,7 +65,7 @@ weighted product of the valuations of `r` at the primes above `v`. -/
 private lemma valuation_norm_algebraMap {r : B} (hr : r ≠ 0) :
     v.valuation K (Algebra.norm K (algebraMap B L r)) =
       ∏ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        w.1.valuation L (algebraMap B L r) ^ w.1.asIdeal.inertiaDeg R := by
+        w.val.valuation L (algebraMap B L r) ^ w.val.asIdeal.inertiaDeg R := by
   have hPerf : PerfectField (FractionRing R) :=
     PerfectField.of_ringEquiv (FractionRing.algEquiv R K).symm.toRingEquiv
   have hN : Algebra.intNorm R B r ≠ 0 := by
@@ -74,10 +74,9 @@ private lemma valuation_norm_algebraMap {r : B} (hr : r ≠ 0) :
     rw [h, map_zero, eq_comm, Algebra.norm_eq_zero_iff, map_eq_zero_iff _
       (IsFractionRing.injective B L)] at h'
     exact hr h'
-  have hspan : Ideal.span {r} ≠ ⊥ := by simpa using hr
   rw [← Algebra.algebraMap_intNorm (A := R) (K := K), valuation_of_algebraMap,
     intValuation_eq_exp_neg_multiplicity v hN, ← Ideal.relNorm_singleton,
-    TauCeti.multiplicity_relNorm B v.asIdeal v.ne_bot hspan]
+    TauCeti.multiplicity_relNorm B v.asIdeal]
   have hexp (s : Finset {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal})
       (g : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} → ℤ) :
       ∏ i ∈ s, exp (g i) = exp (∑ i ∈ s, g i) := by
@@ -90,9 +89,9 @@ private lemma valuation_norm_algebraMap {r : B} (hr : r ≠ 0) :
   -- the height-one primes of `B` above `v` are the prime ideals of `B` lying over `v`
   refine Fintype.sum_equiv
     { toFun := fun P ↦
-        have := P.2.2
-        ⟨⟨P.1, P.2.1, ne_bot_of_liesOver_of_ne_bot v.ne_bot P.1⟩, P.2.2⟩
-      invFun := fun w ↦ ⟨w.1.asIdeal, w.1.isPrime, w.2⟩
+        have := P.property.2
+        ⟨⟨P.val, P.property.1, ne_bot_of_liesOver_of_ne_bot v.ne_bot P.val⟩, P.property.2⟩
+      invFun := fun w ↦ ⟨w.val.asIdeal, w.val.isPrime, w.property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl } _ _ fun P ↦ ?_
   simp
@@ -103,7 +102,7 @@ of `w(z) ^ f(w ∣ v)`. -/
 theorem valuation_norm (z : L) :
     v.valuation K (Algebra.norm K z) =
       ∏ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-        w.1.valuation L z ^ w.1.asIdeal.inertiaDeg R := by
+        w.val.valuation L z ^ w.val.asIdeal.inertiaDeg R := by
   rcases eq_or_ne z 0 with rfl | hz
   · -- Some prime lies above `v`, and its inertia degree is positive.
     obtain ⟨P, hP, hPv⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver B))

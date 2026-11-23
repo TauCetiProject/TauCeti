@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The action of capped loops
@@ -44,6 +45,14 @@ symplectic vector space, which caps the loop by the cone over it.
   term (`TauCeti.cappedLoopAction_rectangleTrans_sub_cappedLoopAction`). This is how the energy
   of a Floer cylinder becomes a difference of capped actions, in
   `TauCeti.Geometry.Symplectic.Floer.CylinderAction`.
+* **Rotating time.** For a Hamiltonian `1`-periodic in time, rotating the time origin by `θ` in
+  the Hamiltonian, the loop and the disc, `H (t + θ)`, `γ (t + θ)` and `D (s, t + θ)`, does not
+  change the action (`TauCeti.cappedLoopAction_comp_add_right`). The rotated disc is a disc of the
+  rotated loop (`TauCeti.IsLoopCylinder.comp_add_snd`). This is the change of the asymptotic marker
+  of an end of a Floer solution.
+* **Normalization.** Adding a function `c` of time to the Hamiltonian adds `∫₀¹ c` to the
+  action (`TauCeti.cappedLoopAction_add_const`), as for the action of a loop in a vector space
+  (`TauCeti.SymplecticForm.hamiltonianAction_add_const`).
 * **Special cases.** The constant loop capped by the constant disc has action the time average
   of `H` (`TauCeti.cappedLoopAction_const`). For an exact form `ω = dθ` the action is
   `∫_γ θ + ∫₀¹ H(t, γ(t)) dt` for every disc (`TauCeti.cappedLoopAction_mextDeriv`). For a weakly
@@ -66,6 +75,7 @@ symplectic vector space, which caps the loop by the cone over it.
 * `TauCeti.cappedLoopAction_sub_cappedLoopAction`: two discs of a loop give actions differing by
   the area of the sphere they bound.
 * `TauCeti.cappedLoopAction_eq_of_homotopy`: homotopy invariance for closed forms.
+* `TauCeti.cappedLoopAction_comp_add_right`: invariance under a rotation of the time origin.
 * `TauCeti.cappedLoopAction_rectangleTrans_sub_cappedLoopAction`: transport of the disc along a
   cylinder.
 
@@ -102,12 +112,51 @@ theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
     cappedLoopAction ω H γ D = rectangleIntegral ω D (0, 0) (1, 1) + ∫ t in 0..1, H t (γ t) :=
   (rfl)
 
+/-- The capped action only depends on the loop through its values on the unit interval. -/
+theorem cappedLoopAction_congr_loop (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) {γ γ' : ℝ → M}
+    (h : EqOn γ γ' (Icc 0 1)) (D : ℝ × ℝ → M) :
+    cappedLoopAction ω H γ D = cappedLoopAction ω H γ' D := by
+  rw [cappedLoopAction_def, cappedLoopAction_def,
+    intervalIntegral.integral_congr fun t ht ↦ congrArg (H t) (h (by simpa using ht))]
+
 /-- The constant loop at `x`, capped by the constant disc, has action the time average
 `∫₀¹ H(t, x) dt` of the Hamiltonian at `x`. -/
 @[simp]
 theorem cappedLoopAction_const (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (x : M) :
     cappedLoopAction ω H (fun _ ↦ x) (fun _ ↦ x) = ∫ t in 0..1, H t x := by
   rw [cappedLoopAction_def, rectangleIntegral_const, zero_add]
+
+/-- **Normalizing a Hamiltonian shifts the capped action.** Adding a function `c` of time to the
+Hamiltonian adds its time average `∫₀¹ c` to the action of every capped loop. -/
+theorem cappedLoopAction_add_const (ω : RoughForm I M ℝ 2) {H : ℝ → M → ℝ} {c : ℝ → ℝ}
+    {γ : ℝ → M} (D : ℝ × ℝ → M)
+    (hH : IntervalIntegrable (fun t ↦ H t (γ t)) MeasureTheory.volume 0 1)
+    (hc : IntervalIntegrable c MeasureTheory.volume 0 1) :
+    cappedLoopAction ω (fun t x ↦ H t x + c t) γ D =
+      cappedLoopAction ω H γ D + ∫ t in 0..1, c t := by
+  rw [cappedLoopAction_def, cappedLoopAction_def, intervalIntegral.integral_add hH hc, add_assoc]
+
+/-- **Rotating the time of a capped loop.** Let `H` be `1`-periodic in time, `γ` a loop and `D` a
+disc of `γ`. Rotating the time by `θ` in all three, `H_θ (t) = H (t + θ)`, `γ_θ (t) = γ (t + θ)`
+and `D_θ (z) = D (z + (0, θ))`, does not change the capped action: `A_{H_θ}(γ_θ, D_θ) =
+A_H(γ, D)`. By `TauCeti.IsLoopCylinder.comp_add_snd`, `D_θ` is a disc of `γ_θ`, and when `γ` is a
+`1`-periodic orbit of `H`, `γ_θ` is a `1`-periodic orbit of `H_θ`
+(`TauCeti.comp_add_right_mem_periodicSolutions`). -/
+theorem cappedLoopAction_comp_add_right (ω : RoughForm I M ℝ 2) {H : ℝ → M → ℝ}
+    (hH : Function.Periodic H 1) {γ : ℝ → M} (hγ : Function.Periodic γ 1) {D : ℝ × ℝ → M}
+    (hD : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I D) (hDper : ∀ z : ℝ × ℝ, D (z.1, z.2 + 1) = D z)
+    (θ : ℝ) :
+    cappedLoopAction ω (fun t ↦ H (t + θ)) (fun t ↦ γ (t + θ)) (fun z ↦ D (z + (0, θ))) =
+      cappedLoopAction ω H γ D := by
+  have hdisc := rectangleIntegral_comp_add_snd_of_periodic ω hD hDper θ 0 1 0
+  rw [zero_add] at hdisc
+  -- The Hamiltonian term is the integral of a `1`-periodic function over a shifted period.
+  have hper : Function.Periodic (fun t ↦ H t (γ t)) 1 := fun t ↦ by
+    simp only [hH t, hγ t]
+  have hham : ∫ t in 0..1, H (t + θ) (γ (t + θ)) = ∫ t in 0..1, H t (γ t) := by
+    rw [intervalIntegral.integral_comp_add_right (fun t ↦ H t (γ t)) θ, zero_add, add_comm 1 θ]
+    simpa only [zero_add] using hper.intervalIntegral_add_eq θ 0
+  rw [cappedLoopAction_def, cappedLoopAction_def, hdisc, hham]
 
 section Continuous
 
@@ -180,7 +229,7 @@ backwards, `u ∘ Prod.map (fun s ↦ 1 - s) id`, which is a disc of `γ` when `
 theorem cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction [IsManifold I ∞ M]
     (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
     (hu : IsSmoothCylinder I γ γ₀ u) :
-    cappedLoopAction σ.1 H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.1 H u := by
+    cappedLoopAction σ.val H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.val H u := by
   rw [cappedLoopAction_def, SmoothTwoForm.cylinderAction_eq_of_isSmoothCylinder hu,
     rectangleIntegral_comp_prodMap_one_sub (σ.isSmoothForm.of_le (by simp))
       (hu.contMDiff.of_le (by simp))]

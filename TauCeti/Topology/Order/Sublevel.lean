@@ -6,18 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Coherent
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Equiv
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Tactic.Linarith
+import TauCeti.Dynamics.Flow.Basic
 import Mathlib.Tactic.Positivity
+import Mathlib.Topology.Coherent
 
 /-!
 # Sublevels of real functions
 
 If a real function has a unique global minimum and one compact sublevel strictly above it,
-then sufficiently small sublevels lie in any prescribed open neighbourhood of the minimum
+then sufficiently small sublevels lie in any prescribed neighbourhood of the minimum
 (`TauCeti.exists_pos_sublevel_subset_of_unique_min`). More generally, if `f` is strictly positive
 outside a set `A` and one positive sublevel `{f ≤ a}` is compact with `f` continuous on it, every
 neighbourhood of `A` contains a positive sublevel `{f ≤ δ}`
@@ -41,6 +46,13 @@ compact (`TauCeti.not_isCompact_inter_preimage_Iic`). A compact sublevel `{f ≤
 is continuous, lies strictly above some value `a ≤ b`, whose sublevel is then empty
 (`TauCeti.exists_le_forall_lt_of_isCompact_sublevel`).
 
+Along levels `a i` unbounded above, the sublevels `{f ≤ a i}` cover the space
+(`TauCeti.iUnion_sublevel_eq_univ`), and when `f` is continuous each point lies in the open
+sublevel `{f < a i}` for some `i`, so the space carries the topology coherent with the sublevels
+(`TauCeti.isCoherentWith_range_sublevel`). This is what lets maps and homotopies defined on an
+exhausting sequence of sublevels, such as the regular sublevels of a proper function, be glued
+into maps and homotopies of the whole space.
+
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
@@ -51,7 +63,9 @@ sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeom
 (`TauCeti.coe_sublevelHomeomorphUniv_comp_sublevelInclusion`,
 `TauCeti.sublevelInclusion_comp_sublevelHomeomorphUniv`). This is the topological half
 of the deformation of sublevels across a band without critical points, where the motion is the
-flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
+flow of a vector field `X` with `df(X) = -1` on the band. With its codomain restricted to the
+points of `{f ≤ b}` at which `f ≤ a`, `TauCeti.sublevelInclusion` is
+`TauCeti.sublevelInclusionHomeomorph`, a homeomorphism. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
 topology across the band. The band itself, relative to its lower level, is the pair
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
@@ -60,7 +74,9 @@ cobordism relative to its incoming boundary. Relative to its upper level, the ba
 `TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
 negating `f` exchanges the two (`TauCeti.bandPair_neg`). All sublevels together form the functor
 `TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
-of their inclusions into `X`.
+of their inclusions into `X`. Along levels tending to infinity the sublevels cover `X`
+(`TauCeti.iUnion_sublevel_eq_univ_of_tendsto`), and for continuous `f` the topology of `X` is
+coherent with them (`TauCeti.isCoherentWith_range_sublevel_of_tendsto`).
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -70,7 +86,13 @@ homeomorphism between the sublevels on either side of a band without critical po
 
 Under the same hypotheses the band `f⁻¹[a, b]` is homeomorphic to `f⁻¹(a) × [a, b]` by a
 homeomorphism preserving the value of `f` (`Flow.bandHomeomorph`): a point of the band is sent to
-the point where its flow line meets the level `a`, together with its value.
+the point where its flow line meets the level `a`, together with its value. Inside the band the
+flow moves `f` at unit speed backwards in time as well (`Flow.apply_eq_sub_of_mem_Icc`). On the
+open superlevel `V = {a < f}`, pushing the level `f⁻¹(a)` up into a collar `f⁻¹[a, s]` along the
+flow is a homotopy equivalence to the sublevel `f⁻¹(a, s]` of `V`
+(`Flow.exists_homotopyEquiv_level_sublevel`), and pushing the bottom of the collar back down is a
+homotopy equivalence from the sublevel `f⁻¹(a, b]` of `V` to the band `f⁻¹[a, b]`
+(`Flow.exists_homotopyEquiv_sublevel_band`).
 
 Along an inducing map `j : M → X` whose range contains a band `F⁻¹[a, b]`, compactness of the
 band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_preimage_Icc`).
@@ -84,35 +106,6 @@ universe u
 
 namespace TauCeti
 
-/-- Small sublevels of a function with a unique global minimum lie in any open neighbourhood
-of that minimum, provided one sublevel strictly above the minimum is compact and `f` is
-continuous on it. -/
-theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X]
-    {f : X → ℝ} {x : X} {a : ℝ}
-    (hcompact : IsCompact {y | f y ≤ a}) (hf : ContinuousOn f {y | f y ≤ a})
-    (ha : f x < a) (hmin : ∀ y, f y ≤ f x → y = x)
-    {U : Set X} (hU : IsOpen U) (hx : x ∈ U) :
-    ∃ ε > 0, {y | f y ≤ f x + ε} ⊆ U := by
-  by_cases hne : ({y | f y ≤ a} \ U).Nonempty
-  · obtain ⟨z, hz, hzm⟩ := (hcompact.diff hU).exists_isMinOn hne
-      (hf.mono sdiff_subset)
-    have hxz : f x < f z := by
-      by_contra! hle
-      exact hz.2 (hmin z hle ▸ hx)
-    let ε := min (a - f x) (f z - f x) / 2
-    have hε : 0 < ε := by dsimp [ε]; positivity
-    refine ⟨ε, hε, fun y hy ↦ ?_⟩
-    have hεa : ε ≤ (a - f x) / 2 := div_le_div_of_nonneg_right (min_le_left _ _) (by norm_num)
-    have hεz : ε ≤ (f z - f x) / 2 := div_le_div_of_nonneg_right (min_le_right _ _) (by norm_num)
-    by_contra hyU
-    have hyK : y ∈ {y | f y ≤ a} \ U := ⟨by dsimp at hy ⊢; linarith, hyU⟩
-    have hzy : f z ≤ f y := hzm hyK
-    dsimp at hy
-    linarith
-  · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
-    by_contra hyU
-    exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
-
 /-- If `f` is strictly positive outside a set `A` and one positive sublevel `{f ≤ a}` (`a > 0`) is
 compact with `f` continuous on it, then every neighbourhood `W` of `A` contains a positive sublevel
 `{f ≤ δ}` (`δ > 0`). -/
@@ -121,18 +114,33 @@ theorem exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet {X : Type*} [Topo
     (hf : ContinuousOn f {x | f x ≤ a}) {A W : Set X} (hpos : ∀ x ∉ A, 0 < f x)
     (hW : W ∈ 𝓝ˢ A) : ∃ δ > 0, {x | f x ≤ δ} ⊆ W := by
   have hAint : A ⊆ interior W := subset_interior_iff_mem_nhdsSet.2 hW
-  by_cases hne : ({x | f x ≤ a} \ interior W).Nonempty
-  · obtain ⟨z, hz, hzm⟩ := (hcompact.diff isOpen_interior).exists_isMinOn hne
-      (hf.mono sdiff_subset)
-    have hfz : 0 < f z := hpos z fun hzA ↦ hz.2 (hAint hzA)
-    refine ⟨min a (f z) / 2, half_pos (lt_min ha hfz), fun y hy ↦ interior_subset ?_⟩
-    by_contra hyW
-    have hy' : f y ≤ min a (f z) / 2 := hy
-    have hyK : y ∈ {x | f x ≤ a} \ interior W :=
-      ⟨hy'.trans (by linarith [min_le_left a (f z)]), hyW⟩
-    have hzy : f z ≤ f y := hzm hyK
-    linarith [min_le_right a (f z)]
-  · exact ⟨a, ha, fun y hy ↦ interior_subset (by_contra fun hyW ↦ hne ⟨y, hy, hyW⟩)⟩
+  -- On the compact part of `{f ≤ a}` outside `interior W`, `f` is bounded below by some `c > 0`.
+  obtain ⟨c, hc, hcf⟩ := (hcompact.diff isOpen_interior).exists_forall_le' (hf.mono sdiff_subset)
+    fun z hz ↦ hpos z fun hzA ↦ hz.2 (hAint hzA)
+  refine ⟨min a (c / 2), lt_min ha (half_pos hc), fun y hy ↦ interior_subset ?_⟩
+  have hy' : f y ≤ min a (c / 2) := hy
+  by_contra hyW
+  linarith [hcf y ⟨hy'.trans (min_le_left a _), hyW⟩, min_le_right a (c / 2)]
+
+/-- Small sublevels of a function with a unique global minimum lie in any neighbourhood of that
+minimum, provided one sublevel strictly above the minimum is compact and `f` is continuous on
+it. -/
+theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X]
+    {f : X → ℝ} {x : X} {a : ℝ}
+    (hcompact : IsCompact {y | f y ≤ a}) (hf : ContinuousOn f {y | f y ≤ a})
+    (ha : f x < a) (hmin : ∀ y, f y ≤ f x → y = x) {U : Set X} (hU : U ∈ 𝓝 x) :
+    ∃ ε > 0, {y | f y ≤ f x + ε} ⊆ U := by
+  -- Apply `exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet` to `f - f x` and `A = {x}`.
+  have hset (c : ℝ) : {y | f y - f x ≤ c} = {y | f y ≤ f x + c} := by
+    ext y
+    exact sub_le_iff_le_add'
+  have hsub := hset (a - f x)
+  rw [add_sub_cancel] at hsub
+  obtain ⟨ε, hε, hεU⟩ := exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet
+    (f := fun y ↦ f y - f x) (sub_pos.2 ha) (hsub ▸ hcompact) (hsub ▸ hf.sub continuousOn_const)
+    (fun y hy ↦ sub_pos.2 (lt_of_not_ge fun hle ↦ hy (mem_singleton_iff.2 (hmin y hle))))
+    (by rwa [nhdsSet_singleton])
+  exact ⟨ε, hε, hset ε ▸ hεU⟩
 
 /-- On a compact space `X`, if `f : X → ℝ` is continuous and strictly positive outside `A`, then
 every neighbourhood `W` of `A` contains a positive sublevel `{f ≤ δ}` (`δ > 0`). -/
@@ -181,13 +189,11 @@ theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → 
     (hw : Continuous w) {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) {C : Set X}
     (hC : IsClosed C) (hCw : ∀ x ∈ C, w x ≠ 0) :
     ∃ η, 0 < η ∧ η ≤ δ ∧ ∀ x, |w x| ≤ η → x ∉ C := by
-  rcases ({x | -δ ≤ w x} ∩ C).eq_empty_or_nonempty with hA | hA
-  · exact ⟨δ, hδ, le_rfl, fun x hx hxC => hA.subset ⟨neg_le_of_abs_le hx, hxC⟩⟩
-  obtain ⟨x₀, hx₀, hmin⟩ := (hK.inter_right hC).exists_isMinOn hA hw.abs.continuousOn
-  have hm : 0 < |w x₀| := abs_pos.2 (hCw x₀ hx₀.2)
-  refine ⟨min δ (|w x₀| / 2), lt_min hδ (half_pos hm), min_le_left _ _, fun x hx hxC => ?_⟩
-  have := isMinOn_iff.1 hmin x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩
-  linarith [min_le_right δ (|w x₀| / 2)]
+  -- On the compact set `{-δ ≤ w} ∩ C`, `|w|` is bounded below by some `c > 0`.
+  obtain ⟨c, hc, hcw⟩ := (hK.inter_right hC).exists_forall_le' hw.abs.continuousOn
+    fun x hx ↦ abs_pos.2 (hCw x hx.2)
+  refine ⟨min δ (c / 2), lt_min hδ (half_pos hc), min_le_left _ _, fun x hx hxC ↦ ?_⟩
+  linarith [hcw x ⟨neg_le_of_abs_le (hx.trans (min_le_left _ _)), hxC⟩, min_le_right δ (c / 2)]
 
 /-- A sublevel of a function restricted to a set `S` of a Hausdorff space is not compact if `S`
 accumulates at a point `p ∉ S` where the function is continuous and strictly below the level.
@@ -222,6 +228,50 @@ theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
     Monotone fun a : β ↦ {x | f x ≤ a} :=
   fun _ _ hab ↦ ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab
 
+/-- Along a family of levels `a` that is unbounded above, the sublevels `{f ≤ a i}` cover `X`. -/
+theorem iUnion_sublevel_eq_univ {X β ι : Type*} [LinearOrder β] (f : X → β) {a : ι → β}
+    (ha : ¬BddAbove (range a)) : ⋃ i, {x | f x ≤ a i} = univ :=
+  preimage_iUnion.symm.trans <|
+    (congrArg (f ⁻¹' ·) (iUnion_Iic_of_not_bddAbove_range ha)).trans preimage_univ
+
+/-- Along a family of levels `a` that is unbounded above, every point has a neighbourhood which is
+one of the sublevels `{f ≤ a i}` of a continuous function `f`, namely one with `f x < a i`. So `X`
+carries the topology coherent with these sublevels: a set is open as soon as it meets each of them
+in a relatively open set. -/
+theorem isCoherentWith_range_sublevel {X β ι : Type*} [TopologicalSpace X] [LinearOrder β]
+    [TopologicalSpace β] [ClosedIciTopology β] {f : X → β} (hf : Continuous f) {a : ι → β}
+    (ha : ¬BddAbove (range a)) : Topology.IsCoherentWith (range fun i ↦ {x | f x ≤ a i}) := by
+  refine .of_nhds fun x ↦ ?_
+  obtain ⟨_, ⟨i, rfl⟩, hi⟩ := not_bddAbove_iff.1 ha (f x)
+  exact ⟨_, mem_range_self i, Filter.mem_of_superset ((isOpen_Iio.preimage hf).mem_nhds hi)
+    fun _ hy ↦ le_of_lt hy⟩
+
+open Filter in
+/-- The sublevels `{f ≤ a k}` along levels `a k` tending to infinity cover `X`. -/
+theorem iUnion_sublevel_eq_univ_of_tendsto {X ι β : Type*} [Preorder β] (f : X → β)
+    {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
+    ⋃ k, {x | f x ≤ a k} = univ :=
+  eq_univ_of_forall fun x ↦ mem_iUnion.2 (ha.eventually_ge_atTop (f x)).exists
+
+open Filter Topology in
+/-- For continuous `f`, the space carries the topology coherent with the sublevels `{f ≤ a k}`
+along levels `a k` tending to infinity: every point has one of them as a neighbourhood. -/
+theorem isCoherentWith_range_sublevel_of_tendsto {X ι β : Type*} [TopologicalSpace X]
+    [LinearOrder β] [TopologicalSpace β] [ClosedIciTopology β] {f : X → β}
+    (hf : Continuous f) {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
+    IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) := .of_nhds fun x ↦ by
+  by_cases hx : ∃ k, f x < a k
+  · -- Then the open set `{f < a k}` is a neighbourhood of `x` inside `{f ≤ a k}`.
+    obtain ⟨k, hk⟩ := hx
+    exact ⟨_, ⟨k, rfl⟩, mem_of_superset ((isOpen_Iio.preimage hf).mem_nhds hk)
+      fun _ hy ↦ le_of_lt hy⟩
+  -- Otherwise no level exceeds `f x`, so `f x` is the largest value of `f`, and the sublevel at a
+  -- level `a k ≥ f x` is the whole space.
+  obtain ⟨k, hk⟩ := (ha.eventually_ge_atTop (f x)).exists
+  refine ⟨_, ⟨k, rfl⟩, mem_of_superset univ_mem fun y _ ↦ ?_⟩
+  obtain ⟨j, hj⟩ := (ha.eventually_ge_atTop (f y)).exists
+  exact hj.trans ((not_lt.1 fun h ↦ hx ⟨j, h⟩).trans hk)
+
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
 def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
     (hab : a ≤ b) : C({x | f x ≤ a}, {x | f x ≤ b}) :=
@@ -246,6 +296,42 @@ theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preo
     (f : X → β) {a b : β} (hab : a ≤ b) :
     sublevelInclusion f a b hab =
       ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
+  (rfl)
+
+/-- The range of the inclusion `{f ≤ a} → {f ≤ b}` consists of the points of `{f ≤ b}` at which
+`f ≤ a`. -/
+theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) :
+    range (sublevelInclusion f a b hab) = ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ b}) :=
+  range_inclusion (sublevel_mono f hab)
+
+/-- The inclusion of the sublevel `{f ≤ a}` onto the points of the sublevel `{f ≤ b}` at which
+`f ≤ a`, for `a ≤ b`, as a homeomorphism: `TauCeti.sublevelInclusion f a b hab` with its codomain
+restricted to its range. -/
+def sublevelInclusionHomeomorph {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    (a b : β) (hab : a ≤ b) : {x | f x ≤ a} ≃ₜ {y : {x | f x ≤ b} | f y ≤ a} where
+  toFun x := ⟨sublevelInclusion f a b hab x, x.property⟩
+  invFun y := ⟨y.val.val, y.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (map_continuous _).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+
+@[simp]
+theorem coe_sublevelInclusionHomeomorph_apply {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    (sublevelInclusionHomeomorph f a b hab x : {x | f x ≤ b}) = sublevelInclusion f a b hab x :=
+  (rfl)
+
+theorem coe_coe_sublevelInclusionHomeomorph_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    ((sublevelInclusionHomeomorph f a b hab x : {x | f x ≤ b}) : X) = x := by
+  simp
+
+@[simp]
+theorem coe_sublevelInclusionHomeomorph_symm_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (y : {y : {x | f x ≤ b} | f y ≤ a}) :
+    ((sublevelInclusionHomeomorph f a b hab).symm y : X) = y :=
   (rfl)
 
 /-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
@@ -291,7 +377,7 @@ theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] 
     [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
     (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
   .inclusion (sublevel_mono f hab)
-    ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
+    ((isClosed_Iic.preimage hf).preimage continuous_subtypeVal)
 
 /-- The sublevel pair `({f ≤ b}, {f ≤ a})` of a function `f` for `a ≤ b`, as a pair of subspaces
 of `X`. -/
@@ -340,22 +426,14 @@ omit [TopologicalSpace X] in
 @[simp]
 theorem preimage_neg_Icc_neg (a b : β) : (-f) ⁻¹' Icc (-b) (-a) = f ⁻¹' Icc a b := by
   ext x
-  simp only [mem_preimage, Pi.neg_apply, mem_Icc, neg_le_neg_iff]
-  exact and_comm
+  simp [and_comm]
 
 /-- Negating a function exchanges the two levels of a band: the band pair
 `((-f)⁻¹[-b, -a], (-f)⁻¹(-b))` of `-f` is the upper band pair `(f⁻¹[a, b], f⁻¹(b))` of `f`. -/
 theorem bandPair_neg {a b : β} (hab : a ≤ b) :
     bandPair (-f) (neg_le_neg hab) = upperBandPair f hab := by
-  have hlevel : (-f) ⁻¹' {-b} = f ⁻¹' {b} := by
-    ext x
-    simp
-  -- Pairs of nested subsets agree when the subsets do; the inclusion proofs are irrelevant.
-  have key {s t s' t' : Set X} (h : s ⊆ t) (h' : s' ⊆ t') (hs : s = s') (ht : t = t') :
-      TopPair.ofInclusion (X := TopCat.of X) h = TopPair.ofInclusion (X := TopCat.of X) h' := by
-    subst hs ht
-    rfl
-  exact key _ _ hlevel (preimage_neg_Icc_neg f a b)
+  have hlevel : (-f) ⁻¹' {-b} = f ⁻¹' {b} := by ext; simp
+  exact TopPair.ofInclusion_congr (X := TopCat.of X) _ _ hlevel (preimage_neg_Icc_neg f a b)
 
 end Neg
 
@@ -377,7 +455,7 @@ the sublevels into `X`. -/
 @[expose, simps]
 def sublevelCocone : Cocone (sublevelFunctor f) where
   pt := TopCat.of X
-  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 end Functor
 
@@ -409,33 +487,35 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
       refine hφf x _ (by rw [hτx]; nlinarith) ?_ hx
       rw [hτx]
       nlinarith
-  have hra : ∀ x : {x | f x ≤ b}, φ (τ x.1) x.1 ∈ {x | f x ≤ a} := fun x ↦ by
-    have h := hfφ x.1 x.2 1 zero_le_one le_rfl
+  have hra : ∀ x : {x | f x ≤ b}, φ (τ x.val) x.val ∈ {x | f x ≤ a} := fun x ↦ by
+    have h := hfφ x.val x.property 1 zero_le_one le_rfl
     rw [one_mul] at h
     rw [mem_ofPred_eq, h]
-    linarith [le_max_left (f x.1 - a) 0]
-  obtain ⟨r, hr⟩ : ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}), ∀ x, (r x : X) = φ (τ x.1) x.1 :=
-    ⟨⟨fun x ↦ ⟨φ (τ x.1) x.1, hra x⟩,
-      (hφ.comp ((hτ.comp continuous_subtype_val).prodMk continuous_subtype_val)).subtype_mk _⟩,
+    linarith [le_max_left (f x.val - a) 0]
+  obtain ⟨r, hr⟩ : ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}), ∀ x, (r x : X) = φ (τ x.val) x.val :=
+    ⟨⟨fun x ↦ ⟨φ (τ x.val) x.val, hra x⟩,
+      (hφ.comp ((hτ.comp continuous_subtypeVal).prodMk continuous_subtypeVal)).subtype_mk _⟩,
       fun _ ↦ rfl⟩
   refine ⟨r, hr, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
-  · simp [hr, hτ0 x.1 x.2, hφ0]
+  · simp [hr, hτ0 x.val x.property, hφ0]
   have hHb : ∀ p : unitInterval × {x | f x ≤ b},
-      φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1 ∈ {x | f x ≤ b} := fun p ↦ by
-    have h := hfφ p.2.1 p.2.2 (1 - p.1) (by linarith [p.1.2.2]) (by linarith [p.1.2.1])
-    have hb : f p.2.1 ≤ b := p.2.2
-    have : 0 ≤ (1 - (p.1 : ℝ)) * τ p.2.1 := mul_nonneg (by linarith [p.1.2.2]) (le_max_right _ _)
+      φ ((1 - (p.1 : ℝ)) * τ p.2.val) p.2.val ∈ {x | f x ≤ b} := fun p ↦ by
+    have h := hfφ p.2.val p.2.property (1 - p.1)
+        (by linarith [p.1.property.2]) (by linarith [p.1.property.1])
+    have hb : f p.2.val ≤ b := p.2.property
+    have : 0 ≤ (1 - (p.1 : ℝ)) * τ p.2.val := mul_nonneg
+        (by linarith [p.1.property.2]) (le_max_right _ _)
     rw [mem_ofPred_eq, h]
     linarith
   have hx : Continuous fun p : unitInterval × {x | f x ≤ b} ↦ (p.2 : X) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   exact
-    { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1, hHb p⟩
+    { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * τ p.2.val) p.2.val, hHb p⟩
       continuous_toFun := (hφ.comp (((continuous_const.sub
-        (continuous_subtype_val.comp continuous_fst)).mul (hτ.comp hx)).prodMk hx)).subtype_mk _
+        (continuous_subtypeVal.comp continuous_fst)).mul (hτ.comp hx)).prodMk hx)).subtype_mk _
       map_zero_left := fun x ↦ Subtype.ext <| by simp [hr]
       map_one_left := fun x ↦ Subtype.ext <| by simp [hφ0]
-      prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.1 hx, hφ0] }
+      prop' := fun t x hx ↦ Subtype.ext <| by simp [hr, hτ0 x.val hx, hφ0] }
 
 end TauCeti
 
@@ -555,6 +635,176 @@ theorem apply_neg_eq_add_of_apply_eq_sub (hf : Continuous f)
     rw [← Flow.map_add, ← sub_eq_add_neg, hfu, add_sub_cancel_right] at h1
     exact lt_irrefl a (h1 ▸ h2)
 
+/-- **Unit speed through the band in both directions of time.** Under the hypotheses of
+`Flow.apply_eq_iff_of_apply_eq_sub`, the flow moves `f` at unit speed between any two values in
+`[a, b]`, forwards or backwards in time: if `f y` and `f y - t` lie in `[a, b]`, then
+`f (φ t y) = f y - t`. -/
+theorem apply_eq_sub_of_mem_Icc (hf : Continuous f)
+    (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
+    (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)
+    (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) {y : X} {t : ℝ} (hy : f y ∈ Icc a b)
+    (ht : f y - t ∈ Icc a b) : f (φ t y) = f y - t := by
+  rcases le_or_gt 0 t with ht₀ | ht₀
+  · exact hφf y t ht₀ ht.1 hy.2
+  -- Flow `y` down to the level `a`, and then back up for a longer time.
+  have hy₀ : f (φ (f y - a) y) = a := by
+    rw [hφf y _ (sub_nonneg.2 hy.1) (by linarith) hy.2]
+    ring
+  have h := φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa hy₀ (t := f y - a - t)
+    (by linarith [hy.1]) (by linarith [ht.2])
+  have htime : -(f y - a - t) + (f y - a) = t := by ring
+  have hval : a + (f y - a - t) = f y - t := by ring
+  rwa [← Flow.map_add, htime, hval] at h
+
+open Topology in
+open scoped ContinuousMap in
+/-- **A collar of a level as a sublevel of the open superlevel.** Let `φ` be a flow
+moving `f` at unit speed through a collar `f⁻¹[a, s]`, `a < s`, and let `V` be the open set
+`{a < f}`. Pushing the level `f⁻¹(a)` up to the middle level `(a + s) / 2` of the collar is a
+homotopy equivalence to the sublevel `f⁻¹(a, s]` of `V`. -/
+theorem exists_homotopyEquiv_level_sublevel (hf : Continuous f) {s : ℝ} (has : a < s)
+    (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
+    (V : TopologicalSpace.Opens X) (hV : ∀ x, x ∈ V ↔ a < f x) :
+    ∃ h₀ : f ⁻¹' {a} ≃ₕ {y : V | (f ∘ Subtype.val) y ≤ s},
+      ∀ x, ((h₀ x : V) : X) = φ (a - (a + s) / 2) x ∧ f ((h₀ x : V) : X) = (a + s) / 2 := by
+  set m := (a + s) / 2 with hm
+  have hup (x : f ⁻¹' {a}) : f (φ (a - m) x) = m := by
+    have hx : f x = a := x.property
+    rw [hφ _ _ ⟨hx.ge, by linarith⟩ ⟨by linarith, by linarith⟩, hx]
+    ring
+  let p₀ : C({y : V | (f ∘ Subtype.val) y ≤ s}, X) := ⟨fun y ↦ ((y : V) : X), by fun_prop⟩
+  have hp₀ (y : {y : V | (f ∘ Subtype.val) y ≤ s}) : a < f (p₀ y) ∧ f (p₀ y) ≤ s :=
+    ⟨(hV _).1 (y : V).property, y.property⟩
+  have hdown (y : {y : V | (f ∘ Subtype.val) y ≤ s}) : f (φ (f (p₀ y) - a) (p₀ y)) = a := by
+    rw [hφ _ _ ⟨(hp₀ y).1.le, (hp₀ y).2⟩ ⟨by linarith, by linarith [has, (hp₀ y).2]⟩]
+    ring
+  let up : C(f ⁻¹' {a}, {y : V | (f ∘ Subtype.val) y ≤ s}) :=
+    ⟨fun x ↦ ⟨⟨φ (a - m) x, (hV _).2 (by rw [hup]; linarith)⟩,
+      by simp only [mem_ofPred_eq, Function.comp_apply, hup]; linarith⟩, by fun_prop⟩
+  let down : C({y : V | (f ∘ Subtype.val) y ≤ s}, f ⁻¹' {a}) :=
+    ⟨fun y ↦ ⟨φ (f (p₀ y) - a) (p₀ y), hdown y⟩, by fun_prop⟩
+  refine ⟨⟨up, down, ?_, ?_⟩, fun x ↦ ⟨rfl, hup x⟩⟩
+  · -- Flowing up and back down is the identity of `f⁻¹(a)`.
+    refine φ.homotopic_of_eq_apply IsEmbedding.subtypeVal continuous_subtypeVal continuous_const
+      continuous_const (τ₀ := fun _ ↦ 0) (τ₁ := fun _ ↦ 0) (fun x ↦ ?_) (fun x ↦ by simp)
+      fun x t _ ↦ ⟨x, by simp⟩
+    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down, p₀, Flow.map_zero_apply]
+    rw [hup, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+  · -- Flowing down and back up moves `f⁻¹(a, s]` to the level `m` along its flow lines.
+    refine φ.homotopic_of_eq_apply (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal)
+      p₀.continuous (by fun_prop) continuous_const (τ₀ := fun y ↦ f (p₀ y) - m)
+      (τ₁ := fun _ ↦ 0) (fun y ↦ ?_) (fun y ↦ by simp [p₀]) fun y t ht ↦ ?_
+    · simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk, up, down]
+      rw [← Flow.map_add]
+      congr 1
+      ring
+    obtain ⟨hya, hys⟩ := hp₀ y
+    simp only [mul_zero, add_zero]
+    have hf' : f (φ ((1 - t) * (f (p₀ y) - m)) (p₀ y)) =
+        f (p₀ y) - (1 - t) * (f (p₀ y) - m) :=
+      hφ _ _ ⟨hya.le, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
+    refine ⟨⟨⟨_, (hV _).2 ?_⟩, ?_⟩, rfl⟩ <;>
+      simp only [mem_ofPred_eq, Function.comp_apply, hf'] <;> nlinarith [ht.1, ht.2]
+
+open Topology in
+open scoped ContinuousMap in
+/-- **Removing the bottom level of a band.** Let `φ` be a flow moving `f` at unit speed through a
+collar `f⁻¹[a, s]`, `a < s ≤ b`, and let `V` be the open set `{a < f}`. Then the sublevel
+`f⁻¹(a, b]` of `V` is homotopy equivalent to the band `f⁻¹[a, b]` by a map which pushes the bottom
+of the collar down along `φ`, carrying the middle level `(a + s) / 2` to `f⁻¹(a)`. -/
+theorem exists_homotopyEquiv_sublevel_band (hf : Continuous f) {s : ℝ} (has : a < s)
+    (hsb : s ≤ b)
+    (hφ : ∀ y t, f y ∈ Icc a s → f y - t ∈ Icc a s → f (φ t y) = f y - t)
+    (V : TopologicalSpace.Opens X) (hV : ∀ x, x ∈ V ↔ a < f x) :
+    ∃ k : {y : V | (f ∘ Subtype.val) y ≤ b} ≃ₕ f ⁻¹' Icc a b,
+      ∀ y : {y : V | (f ∘ Subtype.val) y ≤ b}, f (y : V) = (a + s) / 2 →
+        (k y : X) = φ ((a + s) / 2 - a) (y : V) := by
+  let p₁ : C({y : V | (f ∘ Subtype.val) y ≤ b}, X) := ⟨fun y ↦ ((y : V) : X), by fun_prop⟩
+  have hp₁ (y : {y : V | (f ∘ Subtype.val) y ≤ b}) : a < f (p₁ y) ∧ f (p₁ y) ≤ b :=
+    ⟨(hV _).1 (y : V).property, y.property⟩
+  -- The point `y` is pushed down for the time `σ y`, which carries the middle level of the collar
+  -- to `a`, and back up for the time `θ y`.
+  let σ : X → ℝ := fun y ↦ max 0 (min (f y - a) (s - f y))
+  have hσc : Continuous σ := by fun_prop
+  let θ : X → ℝ := fun y ↦ max 0 (s - f y) / 2
+  have hθc : Continuous θ := by fun_prop
+  -- Flowing for any time between `0` and `σ y` keeps a point `y` of the band in the band.
+  have hσ (y : X) (hya : a ≤ f y) (hyb : f y ≤ b) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      f (φ (t * σ y) y) = f y - t * σ y ∧ a ≤ f y - t * σ y ∧ f y - t * σ y ≤ b := by
+    rcases le_or_gt (f y) s with hys | hys
+    · have h0 : 0 ≤ min (f y - a) (s - f y) := le_min (by linarith) (by linarith)
+      have hσy : σ y = min (f y - a) (s - f y) := max_eq_right h0
+      have h1 : σ y ≤ f y - a := hσy ▸ min_le_left _ _
+      exact ⟨hφ _ _ ⟨hya, hys⟩ ⟨by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩,
+        by nlinarith [ht.1, ht.2], by nlinarith [ht.1, ht.2]⟩
+    · have hσy : σ y = 0 := max_eq_left ((min_le_right _ _).trans (by linarith))
+      rw [hσy, mul_zero, Flow.map_zero_apply, sub_zero]
+      exact ⟨rfl, hya, hyb⟩
+  -- Flowing back for any time between `0` and `θ y` keeps a point `y` of the band in the band,
+  -- and for the time `θ y` it lifts `y` strictly above `a`.
+  have hθ (y : X) (hya : a ≤ f y) (hyb : f y ≤ b) (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      f (φ (-(t * θ y)) y) = f y + t * θ y ∧ f y ≤ f y + t * θ y ∧ f y + t * θ y ≤ b ∧
+        a < f y + θ y := by
+    rcases le_or_gt (f y) s with hys | hys
+    · have hθy : θ y = (s - f y) / 2 := by
+        simp only [θ, max_eq_right (by linarith : 0 ≤ s - f y)]
+      have h := hφ y (-(t * θ y)) ⟨hya, hys⟩
+        ⟨by rw [hθy]; nlinarith [ht.1, ht.2], by rw [hθy]; nlinarith [ht.1, ht.2]⟩
+      refine ⟨by rw [h]; ring, ?_, ?_, ?_⟩ <;> rw [hθy] <;> nlinarith [ht.1, ht.2]
+    · have hθy : θ y = 0 := by simp only [θ, max_eq_left (by linarith : s - f y ≤ 0), zero_div]
+      rw [hθy, mul_zero, neg_zero, Flow.map_zero_apply, add_zero]
+      exact ⟨rfl, le_rfl, hyb, has.trans hys⟩
+  let k : C({y : V | (f ∘ Subtype.val) y ≤ b}, f ⁻¹' Icc a b) :=
+    ⟨fun y ↦ ⟨φ (σ (p₁ y)) (p₁ y), by
+      obtain ⟨h₁, h₂, h₃⟩ := hσ _ (hp₁ y).1.le (hp₁ y).2 1 ⟨zero_le_one, le_rfl⟩
+      rw [one_mul] at h₁ h₂ h₃
+      exact ⟨h₁ ▸ h₂, h₁ ▸ h₃⟩⟩, by fun_prop⟩
+  let incl : C({y : V | (f ∘ Subtype.val) y ≤ b}, f ⁻¹' Icc a b) :=
+    ⟨fun y ↦ ⟨p₁ y, (hp₁ y).1.le, (hp₁ y).2⟩, by fun_prop⟩
+  let ρ : C(f ⁻¹' Icc a b, {y : V | (f ∘ Subtype.val) y ≤ b}) :=
+    ⟨fun y ↦ ⟨⟨φ (-(1 * θ y)) y, (hV _).2 <| by
+        obtain ⟨h₁, -, -, h₄⟩ := hθ _ y.property.1 y.property.2 1 ⟨zero_le_one, le_rfl⟩
+        rw [h₁, one_mul]
+        exact h₄⟩, by
+        obtain ⟨h₁, -, h₃, -⟩ := hθ _ y.property.1 y.property.2 1 ⟨zero_le_one, le_rfl⟩
+        simp only [mem_ofPred_eq, Function.comp_apply, h₁]
+        exact h₃⟩, by fun_prop⟩
+  -- `k` is homotopic to the inclusion, which has the homotopy inverse `ρ`.
+  have hk : k.Homotopic incl := φ.homotopic_of_eq_apply IsEmbedding.subtypeVal p₁.continuous
+    (hσc.comp p₁.continuous) continuous_const (τ₀ := fun y ↦ σ (p₁ y)) (τ₁ := fun _ ↦ 0)
+    (fun y ↦ rfl) (fun y ↦ by simp [incl])
+    fun y t ht ↦ by
+      obtain ⟨h₁, h₂, h₃⟩ := hσ _ (hp₁ y).1.le (hp₁ y).2 (1 - t)
+        ⟨by linarith [ht.2], by linarith [ht.1]⟩
+      simp only [mul_zero, add_zero]
+      exact ⟨⟨_, h₁ ▸ h₂, h₁ ▸ h₃⟩, rfl⟩
+  have hρ₁ : (incl.comp ρ).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
+    IsEmbedding.subtypeVal continuous_subtypeVal (by fun_prop) continuous_const
+    (τ₀ := fun y ↦ -(1 * θ y)) (τ₁ := fun _ ↦ 0) (fun y ↦ rfl) (fun y ↦ by simp)
+    fun y t ht ↦ by
+      obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ y.property.1 y.property.2 (1 - t)
+          ⟨by linarith [ht.2], by linarith [ht.1]⟩
+      rw [mul_zero, add_zero, one_mul, mul_neg]
+      exact ⟨⟨_, by rw [h₁]; linarith [y.property.1], by rw [h₁]; exact h₃⟩, rfl⟩
+  have hρ₂ : (ρ.comp incl).Homotopic (ContinuousMap.id _) := φ.homotopic_of_eq_apply
+    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) p₁.continuous
+    (by fun_prop) continuous_const (τ₀ := fun y ↦ -(1 * θ (p₁ y))) (τ₁ := fun _ ↦ 0)
+    (fun y ↦ rfl) (fun y ↦ by simp [p₁])
+    fun y t ht ↦ by
+      obtain ⟨h₁, h₂, h₃, -⟩ := hθ _ (hp₁ y).1.le (hp₁ y).2 (1 - t)
+        ⟨by linarith [ht.2], by linarith [ht.1]⟩
+      rw [mul_zero, add_zero, one_mul, mul_neg]
+      exact ⟨⟨⟨_, (hV _).2 (by rw [h₁]; linarith [(hp₁ y).1])⟩,
+        by simp only [mem_ofPred_eq, Function.comp_apply, h₁]; exact h₃⟩, rfl⟩
+  refine ⟨⟨k, ρ, ((ContinuousMap.Homotopic.refl ρ).comp hk).trans hρ₂,
+    (hk.comp (ContinuousMap.Homotopic.refl ρ)).trans hρ₁⟩, fun y hy ↦ ?_⟩
+  -- At the middle level of the collar `σ` is the distance to `a`.
+  have hσy : σ (y : V) = (a + s) / 2 - a := by
+    have hmid : s - (a + s) / 2 = (a + s) / 2 - a := by ring
+    simp only [σ, hy]
+    rw [hmid, min_self, max_eq_right (by linarith)]
+  simp only [k, p₁, ContinuousMap.coe_mk, hσy]
+
 /-- **A band traversed at unit speed is a product.** Under the hypotheses of
 `Flow.apply_eq_iff_of_apply_eq_sub`, following the flow line of a point `x` of the band
 `f⁻¹[a, b]` down to the level `a` is a homeomorphism `x ↦ (φ (f x - a) x, f x)` from the band onto
@@ -565,15 +815,16 @@ def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (
     (hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a) :
     f ⁻¹' Icc a b ≃ₜ (f ⁻¹' {a}) × Icc a b :=
   have hdown (x : f ⁻¹' Icc a b) : φ (f x - a) x ∈ f ⁻¹' {a} := by
-    rw [mem_preimage, mem_singleton_iff, hφf x _ (by linarith [x.2.1]) (by linarith) x.2.2]
+    rw [mem_preimage, mem_singleton_iff, hφf x _
+        (by linarith [x.property.1]) (by linarith) x.property.2]
     ring
   have hup (p : (f ⁻¹' {a}) × Icc a b) : f (φ (a - p.2) p.1) = p.2 := by
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa p.1.2
-      (sub_nonneg.2 p.2.2.1) (by linarith [p.2.2.2]), add_sub_cancel]
+    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf hanti hφf hφa p.1.property
+      (sub_nonneg.2 p.2.property.1) (by linarith [p.2.property.2]), add_sub_cancel]
   have hband (p : (f ⁻¹' {a}) × Icc a b) : φ (a - p.2) p.1 ∈ f ⁻¹' Icc a b := by
     rw [mem_preimage, hup p]
-    exact p.2.2
-  { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, x.2⟩)
+    exact p.2.property
+  { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, x.property⟩)
     invFun p := ⟨φ (a - p.2) p.1, hband p⟩
     left_inv x := Subtype.ext <| by
       dsimp only
@@ -583,12 +834,12 @@ def bandHomeomorph (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (
         rw [hup p, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply])
       (Subtype.ext (hup p))
     continuous_toFun := by
-      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtype_val
+      have hx : Continuous fun x : f ⁻¹' Icc a b ↦ (x : X) := continuous_subtypeVal
       exact ((φ.continuous ((hf.comp hx).sub continuous_const) hx).subtype_mk _).prodMk
         ((hf.comp hx).subtype_mk _)
     continuous_invFun :=
-      (φ.continuous (continuous_const.sub (continuous_subtype_val.comp continuous_snd))
-        (continuous_subtype_val.comp continuous_fst)).subtype_mk hband }
+      (φ.continuous (continuous_const.sub (continuous_subtypeVal.comp continuous_snd))
+        (continuous_subtypeVal.comp continuous_fst)).subtype_mk hband }
 
 variable (hf : Continuous f) (hanti : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0))
   (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t)

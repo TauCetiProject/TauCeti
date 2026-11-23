@@ -12,11 +12,15 @@ public import Mathlib.Algebra.Module.Submodule.Equiv
 /-!
 # Descending a coaction through a coalgebra inclusion
 
-A linear factorization of a coaction through an injective coalgebra map inherits
-coassociativity and the counit law, provided the relevant tensor maps remain injective.
-Over a field, a comodule therefore descends uniquely exactly when its coaction lands in
-the image of the smaller coefficient coalgebra. This gives the extension criterion for
-rational representations whose coefficients lie in a coordinate subbialgebra.
+A linear factorization of a coaction through a coalgebra map satisfies the counit law, and its
+coassociativity equation holds after tensoring the coalgebra factors with that map. It is
+therefore a coaction when the map is injective and the relevant tensor maps remain injective;
+without injectivity, coassociativity can still be recovered at a later stage of a directed
+colimit (see `TauCeti.Algebra.Coalgebra.Comodule.DirectLimit`).
+
+Over a field, a comodule descends uniquely through a coalgebra inclusion exactly when its
+coaction lands in the image of the smaller coefficient coalgebra. This gives the extension
+criterion for rational representations whose coefficients lie in a coordinate subbialgebra.
 
 The construction uses `LinearMap.codRestrictOfInjective` and the existing comodule
 corestriction. See Sweedler, *Hopf Algebras*, Chapter 2, for coalgebra corestriction.
@@ -35,6 +39,30 @@ variable {R C D M : Type*} [CommSemiring R]
 
 namespace CoalgHom
 
+/-- For a linear factorization `ρ` of a coaction through a coalgebra map `f`, the two sides of
+the coassociativity equation for `ρ` agree after tensoring the coalgebra factors with `f`. -/
+theorem lTensor_map_comp_coassoc_of_factor (f : C →ₗc[R] D) (ρ : M →ₗ[R] M ⊗[R] C)
+    (hρ : f.toLinearMap.lTensor M ∘ₗ ρ = coact (R := R) (C := D)) :
+    (TensorProduct.map f.toLinearMap f.toLinearMap).lTensor M ∘ₗ
+        (TensorProduct.assoc R M C C).toLinearMap ∘ₗ ρ.rTensor C ∘ₗ ρ =
+      (TensorProduct.map f.toLinearMap f.toLinearMap).lTensor M ∘ₗ
+        Coalgebra.comul.lTensor M ∘ₗ ρ := by
+  ext m
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+  have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m := by
+    simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hρ m
+  rw [LinearMap.lTensor_def, ← LinearMap.assoc_rTensor_lTensor_comp f.toLinearMap f.toLinearMap ρ,
+    hρ, ← LinearMap.lTensor_def, ← LinearMap.lTensor_comp_apply,
+    f.map_comp_comul, LinearMap.lTensor_comp_apply, hm, coassoc_apply]
+
+/-- A linear factorization of a coaction through a coalgebra map satisfies the counit law. -/
+theorem lTensor_counit_comp_of_factor (f : C →ₗc[R] D) (ρ : M →ₗ[R] M ⊗[R] C)
+    (hρ : f.toLinearMap.lTensor M ∘ₗ ρ = coact (R := R) (C := D)) :
+    Coalgebra.counit.lTensor M ∘ₗ ρ = (TensorProduct.mk R M R).flip 1 := by
+  have h := Comodule.lTensor_counit_comp_coact (R := R) (C := D) (M := M)
+  rw [← hρ, ← LinearMap.comp_assoc, ← LinearMap.lTensor_comp, f.counit_comp] at h
+  exact h
+
 /-- A linear factorization of a coaction through a coalgebra map is a coaction if
 tensoring twice with that map is injective. -/
 @[implicit_reducible]
@@ -47,17 +75,8 @@ def comoduleOfFactor (f : C →ₗc[R] D) (ρ : M →ₗ[R] M ⊗[R] C)
   coact := ρ
   coassoc := by
     ext m
-    apply hi
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-    have hm : f.toLinearMap.lTensor M (ρ m) = coact (R := R) (C := D) m := by
-      simpa only [LinearMap.comp_apply] using LinearMap.congr_fun hρ m
-    rw [← LinearMap.assoc_rTensor_lTensor_comp f.toLinearMap f.toLinearMap ρ,
-      hρ, ← LinearMap.lTensor_def, ← LinearMap.lTensor_comp_apply,
-      f.map_comp_comul, LinearMap.lTensor_comp_apply, hm, coassoc_apply]
-  lTensor_counit_comp_coact := by
-    have h := Comodule.lTensor_counit_comp_coact (R := R) (C := D) (M := M)
-    rw [← hρ, ← LinearMap.comp_assoc, ← LinearMap.lTensor_comp, f.counit_comp] at h
-    exact h
+    exact hi (LinearMap.congr_fun (lTensor_map_comp_coassoc_of_factor f ρ hρ) m)
+  lTensor_counit_comp_coact := lTensor_counit_comp_of_factor f ρ hρ
 
 /-- The descended coaction is the specified linear factorization. -/
 @[simp]

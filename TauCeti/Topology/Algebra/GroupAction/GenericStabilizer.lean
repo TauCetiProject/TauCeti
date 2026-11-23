@@ -107,7 +107,7 @@ theorem dense_setOf_stabilizer_eq_ker_of_interior_fixedBy [Finite G]
   · exact isClosed_iUnion_of_finite fun g ↦ isClosed_iUnion_of_finite fun _ ↦ isClosed_fixedBy g
   · simpa only [iUnion_subtype] using
       IsNowhereDense.iUnion fun g : {g : G // g ∉ (toPermHom G X).ker} ↦
-        (isClosed_fixedBy (g : G)).isNowhereDense_iff.mpr (h g g.2)
+        (isClosed_fixedBy (g : G)).isNowhereDense_iff.mpr (h g g.property)
 
 end Topology
 
@@ -127,7 +127,7 @@ theorem interior_fixedBy_eq_empty_of_notMem_ker {g : G} (hg : g ∉ (toPermHom G
   by_contra hne
   -- The fixed set of `g` is the submodule on which `g` agrees with the identity.
   have htop := (LinearMap.eqLocus (DistribSMul.toLinearMap R V g) LinearMap.id
-    ).eq_top_of_nonempty_interior' (nonempty_iff_ne_empty.mpr hne)
+    ).eq_top_of_nonempty_interior' (Set.ne_empty_iff_nonempty.mp hne)
   refine hg (MonoidHom.mem_ker.mpr (Equiv.ext fun v ↦ ?_))
   simpa using LinearMap.congr_fun (LinearMap.eqLocus_eq_top.mp htop) v
 

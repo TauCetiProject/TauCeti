@@ -133,4 +133,42 @@ theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq
     · filter_upwards [hu'] with x hx
       simp [hx]
 
+/-- **Classical derivatives are distributional derivatives.** If a `C¹` function `f` agrees
+`μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the direction `v` agrees
+`μ`-almost everywhere with `u' ∈ L^q`, then `∂_v u = u'` as tempered distributions, for any
+additive Haar measure `μ`. -/
+theorem lineDerivOp_toTemperedDistribution_eq_of_contDiff [μ.IsAddHaarMeasure]
+    {f : E → F} (hf : ContDiff ℝ 1 f) {u : Lp F p μ} {u' : Lp F q μ} {v : E}
+    (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] fun x ↦ fderiv ℝ f x v) :
+    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
+  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
+    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hline : HasWeakLineDerivOn μ ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
+    hasWeakLineDerivOn_of_hasLineDerivAt (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
+      (hcont.locallyIntegrable.locallyIntegrableOn _)
+      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
+  have hline' : HasWeakLineDerivOn μ ⊤ u u' v :=
+    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
+      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
+  exact (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq u u' v).1 hline'
+
+/-- **Classical derivatives are distributional derivatives**, for real functions. If a real `C¹`
+function `f` agrees `μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the
+direction `v` agrees `μ`-almost everywhere with `u' ∈ L^q`, then `∂_v u = u'` as complexified
+tempered distributions, for any additive Haar measure `μ`. -/
+theorem lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff [μ.IsAddHaarMeasure]
+    {f : E → ℝ} (hf : ContDiff ℝ 1 f) {u : Lp ℝ p μ} {u' : Lp ℝ q μ} {v : E}
+    (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] fun x ↦ fderiv ℝ f x v) :
+    ∂_{v} (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) =
+      Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u') := by
+  -- The complexification `x ↦ (f x : ℂ)` is `C¹`, with derivative `x ↦ (Df(x) v : ℂ)`.
+  refine lineDerivOp_toTemperedDistribution_eq_of_contDiff
+    (Complex.ofRealCLM.contDiff.comp hf) ?_ ?_
+  · filter_upwards [Complex.ofRealCLM.coeFn_compLp u, huf] with x hx hux
+    rw [hx, hux, Function.comp_apply]
+  · filter_upwards [Complex.ofRealCLM.coeFn_compLp u', hu'f] with x hx hux
+    rw [hx, hux, fderiv_comp x Complex.ofRealCLM.differentiableAt
+      (hf.differentiable one_ne_zero x), ContinuousLinearMap.fderiv,
+      ContinuousLinearMap.comp_apply]
+
 end TauCeti

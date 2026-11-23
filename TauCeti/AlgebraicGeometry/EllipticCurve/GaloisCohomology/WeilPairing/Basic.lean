@@ -210,7 +210,7 @@ private theorem smul_kummerCoeff_eq_self_of_forall_smul_eq_self
     W.algEquiv_apply_eq_self_of_torsionGaloisAction_eq_one
       hm.natCast_ne_zero_of_algebra hσ
       (ζ := ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K))
-      (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.2, Units.val_one])
+      (by rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.property, Units.val_one])
 
 /-! ### Change of field -/
 
@@ -269,6 +269,23 @@ theorem torsionCoeffWeilPairing_torsionCoeffBaseChange (P Q : W.TorsionCoeff m) 
     weilPairing_torsionByCongr_cast _ _ hmτ, weilPairing_torsionMapAlong _ _ _ hm']
   exact Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
     simp [restrictRootsOfUnity_coe_apply]
+
+/-- The torsion Weil pairing commutes with field extension at propositionally equal levels.
+The hypotheses specify the underlying images of the points, and values are compared in the
+ambient separable closure to avoid casts between the roots-of-unity subgroups. -/
+theorem coe_torsionCoeffWeilPairing_baseChange (n : ℕ) (hn : IsUnit (n : L)) (hmn : n = m)
+    (P Q : W.TorsionCoeff m) (P' Q' : (W⁄L).TorsionCoeff n)
+    (hP : (P' : (W⁄L).PointCoeff) = W.pointCoeffBaseChange τ P)
+    (hQ : (Q' : (W⁄L).PointCoeff) = W.pointCoeffBaseChange τ Q) :
+    ((W⁄L).torsionCoeffWeilPairing n hn P' Q').toMul.val.val =
+      τ ((W.torsionCoeffWeilPairing m hm P Q).toMul.val.val) := by
+  subst n
+  have hP' : P' = W.torsionCoeffBaseChange τ m P :=
+    Subtype.ext (by simpa only [coe_torsionCoeffBaseChange] using hP)
+  have hQ' : Q' = W.torsionCoeffBaseChange τ m Q :=
+    Subtype.ext (by simpa only [coe_torsionCoeffBaseChange] using hQ)
+  rw [hP', hQ', W.torsionCoeffWeilPairing_torsionCoeffBaseChange hm τ P Q]
+  simp only [toMul_kummerCoeffBaseChange, Units.coe_map, MonoidHom.coe_ofClass]
 
 end BaseChange
 

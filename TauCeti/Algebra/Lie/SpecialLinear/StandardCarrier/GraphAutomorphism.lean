@@ -611,8 +611,6 @@ theorem graphAutomorphismPoints_weightTorusPoints {A : Type} [CommRing A]
       weightTorusPoints r A (fun i => s i.rev) := by
   apply Subtype.ext
   rw [coe_graphAutomorphismPoints, coe_weightTorusPoints, coe_weightTorusPoints,
-    TauCeti.UniversalEnvelopingAlgebra.kostantTorusMatrix_apply,
-    TauCeti.UniversalEnvelopingAlgebra.kostantTorusMatrix_apply,
     TauCeti.typeAGraphAutomorphism_diagGL]
   congr 1
   funext i

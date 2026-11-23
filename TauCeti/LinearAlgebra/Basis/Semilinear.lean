@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Module
+public import Mathlib.Algebra.Star.Pi
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
-import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Transporting coordinates along a ring homomorphism
@@ -22,15 +24,18 @@ This is the comparison map between a based module and its scalar extension along
 a basis of the extension rather than by a tensor product. It applies `σ` to the matrices of linear
 maps and to determinants: a linear map `g` whose matrix in the bases `b'` is the image under `σ` of
 the matrix of a linear map `f` in the bases `b` is intertwined with `f`, and the determinant in `b'`
-of the image of a family is `σ` of its determinant in `b`. This is how invariants computed from
-matrices, such as the torsion of a based chain complex, are compared along a homomorphism of fields.
-Along an injective homomorphism into a domain, for instance any homomorphism from a field to a
-domain, it also preserves and reflects linear independence of families.
+of the image of a family is `σ` of its determinant in `b`. When `σ` is injective and `S` is a
+domain, a family is linearly independent exactly when its image is. This is how invariants
+computed from matrices, such as the torsion of a based chain complex, are compared along a
+homomorphism of fields.
 
 When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` carries a basis `b` of `M`
 to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
 (`LinearEquiv.finrank_eqₛₗ`). For instance, a conjugate-linear equivalence of complex vector spaces
-carries complex bases to complex bases.
+carries complex bases to complex bases. Over any commutative star semiring, a finite basis `b`
+induces the conjugate-linear coordinate equivalence `Module.Basis.conjEquivFun`, and any basis
+induces the conjugation of the coordinates `Module.Basis.coordConj`, the involutive equivalence
+form of `Module.Basis.semilinearMap (starRingEnd R) b b`, which conjugates determinants.
 
 ## Main declarations
 
@@ -41,12 +46,14 @@ carries complex bases to complex bases.
   matrices correspond under `σ`.
 * `Module.Basis.det_comp_semilinearMap`: the determinant of the image of a family is the image of
   its determinant.
-* `Module.Basis.linearIndependent_semilinearMap_comp_iff_of_injective`: along an injective
-  homomorphism into a domain, the image of a family is linearly independent exactly when the
-  family is.
-* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: the same along a homomorphism from a
-  field to a domain.
+* `Module.Basis.linearIndependent_semilinearMap_comp_iff`: along an injective homomorphism into a
+  domain, a family is linearly independent exactly when its image is.
 * `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
+* `Module.Basis.conjEquivFun`: the conjugate-linear coordinate equivalence `M ≃ₛₗ[starRingEnd R]
+  (ι → R)` of a finite basis.
+* `Module.Basis.coordConj`: the conjugation of the coordinates in a basis.
+* `Module.Basis.det_coordConj_comp_comp_coordConj`: conjugating an endomorphism by it conjugates
+  the determinant.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
 
@@ -125,48 +132,27 @@ end CommRing
 
 section Domain
 
-variable {ι κ R S M M' : Type*} [CommRing R] [CommRing S] [IsDomain S] {σ : R →+* S}
-  [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module S M']
+variable {ι K L M M' : Type*} [CommRing K] [CommRing L] [IsDomain L] (σ : K →+* L)
+  [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module L M'] [Finite ι]
 
-/-- Along an injective ring homomorphism `σ` into a domain, the image of a family `v` under
-`semilinearMap σ b b'` is linearly independent exactly when `v` is. -/
-theorem linearIndependent_semilinearMap_comp_iff_of_injective (hσ : Function.Injective σ)
-    (b : Basis ι R M) (b' : Basis ι S M') {v : κ → M} :
-    LinearIndependent S (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent R v := by
-  classical
+/-- Along an injective ring homomorphism `σ` into a domain, a family `v` of vectors is linearly
+independent exactly when its image under `semilinearMap σ b b'` is. -/
+theorem linearIndependent_semilinearMap_comp_iff (hσ : Function.Injective σ) (b : Basis ι K M)
+    (b' : Basis ι L M') {κ : Type*} {v : κ → M} :
+    LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v := by
+  have := Fintype.ofFinite ι
   let := σ.toAlgebra
-  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hσ
-  rw [linearIndependent_iff_finset_linearIndependent,
-    linearIndependent_iff_finset_linearIndependent]
-  refine forall_congr' fun s ↦ ?_
-  -- The finitely many vectors `v k`, `k ∈ s`, have coordinates supported in a finite set `t`.
-  let t : Finset ι := s.biUnion fun k ↦ (b.repr (v k)).support
-  have hv (k : s) : ↑(b.repr (v k)).support ⊆ (t : Set ι) :=
-    Finset.coe_subset.2 (Finset.subset_biUnion_of_mem (fun k ↦ (b.repr (v k)).support) k.2)
-  have hv' (k : s) : ↑(b'.repr (b.semilinearMap σ b' (v k))).support ⊆ (t : Set ι) :=
-    fun i hi ↦ hv k <| Finsupp.mem_support_iff.2 fun h ↦ Finsupp.mem_support_iff.1 hi (by simp [h])
-  refine (linearIndependent_coord_restrict_iff b' _ hv').symm.trans <|
-    Iff.trans ?_ (linearIndependent_coord_restrict_iff b _ hv)
-  rw [← linearIndependent_algebraMap_comp_iff (R := R) (S := S)]
-  congr! 1
-  ext k i
-  simp [RingHom.algebraMap_toAlgebra]
+  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 hσ
+  -- In the coordinates of `b'`, the image of `v` is the coordinates of `v` in `b`, mapped by `σ`.
+  have hw : b'.equivFun.toLinearMap ∘ (b.semilinearMap σ b' ∘ v) =
+      fun k ↦ algebraMap K L ∘ (b.equivFun.toLinearMap ∘ v) k := by
+    ext k i
+    simp [RingHom.algebraMap_toAlgebra]
+  rw [← LinearMap.linearIndependent_iff b'.equivFun.toLinearMap (LinearEquiv.ker _), hw,
+    linearIndependent_algebraMap_comp_iff,
+    LinearMap.linearIndependent_iff b.equivFun.toLinearMap (LinearEquiv.ker _)]
 
 end Domain
-
-section Field
-
-variable {ι κ K L M M' : Type*} [Field K] [CommRing L] [IsDomain L] (σ : K →+* L)
-  [AddCommGroup M] [Module K M] [AddCommGroup M'] [Module L M']
-
-/-- Along a homomorphism `σ` from a field to a domain, the image of a family `v` under
-`semilinearMap σ b b'` is linearly independent exactly when `v` is. -/
-@[simp]
-theorem linearIndependent_semilinearMap_comp_iff (b : Basis ι K M) (b' : Basis ι L M')
-    {v : κ → M} : LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v :=
-  linearIndependent_semilinearMap_comp_iff_of_injective σ.injective b b'
-
-end Field
 
 section Map
 
@@ -190,6 +176,100 @@ theorem mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (i : ι) : b
   mk_apply _ _ _
 
 end Map
+
+section ConjEquivFun
+
+variable {ι R M : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid M] [Module R M]
+
+/-- The conjugate-linear equivalence `M ≃ₛₗ[starRingEnd R] (ι → R)` sending a vector to the
+entrywise conjugate of its coordinate tuple in the basis `b`, dual to `Module.Basis.equivFun`. -/
+def conjEquivFun [Finite ι] (b : Basis ι R M) : M ≃ₛₗ[starRingEnd R] (ι → R) :=
+  b.equivFun.trans (starLinearEquiv R)
+
+/-- Evaluating `b.conjEquivFun` at a vector returns its conjugated coordinate tuple. -/
+@[simp]
+theorem conjEquivFun_apply [Finite ι] (b : Basis ι R M) (m : M) (i : ι) :
+    b.conjEquivFun m i = star (b.repr m i) := by
+  simp [conjEquivFun]
+
+/-- Evaluating `b.conjEquivFun.symm` reconstructs a vector from conjugated coordinates. -/
+theorem conjEquivFun_symm_apply [Fintype ι] (b : Basis ι R M) (x : ι → R) :
+    b.conjEquivFun.symm x = ∑ i, star (x i) • b i := by
+  simp [conjEquivFun, equivFun_symm_apply]
+
+/-- `b.conjEquivFun` sends the `j`-th basis vector to the `j`-th standard basis vector. -/
+@[simp]
+theorem conjEquivFun_self [Finite ι] (b : Basis ι R M) (j : ι) :
+    b.conjEquivFun (b j) = Pi.basisFun R ι j := by
+  classical
+  ext i
+  simp [conjEquivFun, Pi.basisFun_apply, Pi.single_apply, Finsupp.single_apply,
+    apply_ite star, eq_comm]
+
+end ConjEquivFun
+
+section CoordConj
+
+variable {ι R M : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid M] [Module R M]
+  (b : Basis ι R M)
+
+/-- The **conjugation of the coordinates** in a basis `b`, the conjugate-linear involution
+`∑ₖ aₖ bₖ ↦ ∑ₖ star(aₖ) bₖ`. It is `Module.Basis.semilinearMap (starRingEnd R) b b` as an
+equivalence. -/
+def coordConj : M ≃ₛₗ[starRingEnd R] M :=
+  .ofInvolutive (b.semilinearMap (starRingEnd R) b) fun m ↦ b.ext_elem fun i ↦ by simp
+
+/-- As a function, the conjugation of the coordinates is `semilinearMap (starRingEnd R) b b`. -/
+theorem coe_coordConj : ⇑b.coordConj = b.semilinearMap (starRingEnd R) b :=
+  LinearEquiv.coe_ofInvolutive _ _
+
+/-- The coordinates of the conjugate of a vector are the conjugates of its coordinates. -/
+@[simp]
+theorem repr_coordConj (m : M) (i : ι) : b.repr (b.coordConj m) i = star (b.repr m i) := by
+  simp [coe_coordConj, starRingEnd_apply]
+
+/-- The conjugation of the coordinates conjugates the coefficients of the expansion in `b`. -/
+theorem coordConj_apply [Fintype ι] (m : M) : b.coordConj m = ∑ i, star (b.repr m i) • b i := by
+  conv_lhs => rw [← b.sum_repr (b.coordConj m)]
+  simp
+
+/-- The conjugation of the coordinates fixes the basis vectors. -/
+@[simp]
+theorem coordConj_self (i : ι) : b.coordConj (b i) = b i := by
+  simp [coe_coordConj]
+
+/-- The conjugation of the coordinates is an involution. -/
+@[simp]
+theorem coordConj_coordConj (m : M) : b.coordConj (b.coordConj m) = m :=
+  b.ext_elem fun i ↦ by simp
+
+/-- The conjugation of the coordinates is its own inverse. -/
+@[simp]
+theorem coordConj_symm : b.coordConj.symm = b.coordConj :=
+  LinearEquiv.ext fun m ↦ b.coordConj.injective (by simp)
+
+end CoordConj
+
+section CoordConjDet
+
+variable {ι R M : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M] [Finite ι]
+
+/-- **Conjugating an endomorphism by the conjugation of the coordinates conjugates its
+determinant**: the matrix of `κ ∘ f ∘ κ` in the basis is the conjugate of the matrix of `f`. -/
+@[simp]
+theorem det_coordConj_comp_comp_coordConj (b : Basis ι R M) (f : M →ₗ[R] M) :
+    LinearMap.det (b.coordConj.toLinearMap ∘ₛₗ f ∘ₛₗ b.coordConj.toLinearMap) =
+      star (LinearMap.det f) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hM : LinearMap.toMatrix b b (b.coordConj.toLinearMap ∘ₛₗ f ∘ₛₗ b.coordConj.toLinearMap) =
+      (starRingEnd R).mapMatrix (LinearMap.toMatrix b b f) := by
+    ext i j
+    simp [LinearMap.toMatrix_apply, starRingEnd_apply]
+  rw [← LinearMap.det_toMatrix b, hM, ← RingHom.map_det, LinearMap.det_toMatrix,
+    starRingEnd_apply]
+
+end CoordConjDet
 
 end Module.Basis
 

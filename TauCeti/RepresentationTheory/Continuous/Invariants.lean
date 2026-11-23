@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
+import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
 # The invariants of a normal subgroup as a representation of the quotient
@@ -42,6 +43,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main results
 
+* `ContRepresentation.isClosed_invariants`: the invariants of a representation on a Hausdorff
+  space are closed, hence complete in a complete ambient space.
 * `TopRep.invariantsFunctor_map`, `TopRep.invariantsFunctor_map_hom`: taking invariants restricts a
   morphism to invariant vectors, as a bundled morphism and as a continuous linear map.
 * `ContRepresentation.apply_mem_invariants_restrict`: the invariants of `π|_S` are a
@@ -78,19 +81,42 @@ def continuousLinearEquivInvariants (S : AddSubgroup M) (pi : ContRepresentation
 @[simp]
 theorem continuousLinearEquivInvariants_val (S : AddSubgroup M)
     (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) (m : S) :
-    (S.continuousLinearEquivInvariants pi h m).1 = m.1 :=
+    (S.continuousLinearEquivInvariants pi h m).val = m.val :=
   (rfl)
 
 @[simp]
 theorem continuousLinearEquivInvariants_symm_val (S : AddSubgroup M)
     (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S)
     (m : pi.invariants) :
-    ((S.continuousLinearEquivInvariants pi h).symm m).1 = m.1 :=
+    ((S.continuousLinearEquivInvariants pi h).symm m).val = m.val :=
   (rfl)
 
 end AddSubgroup
 
 namespace ContRepresentation
+
+section Closed
+
+variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
+
+/-- The invariants of a continuous representation on a Hausdorff space form a closed subspace: they
+are the intersection of the closed fixed-point sets of the operators `π g`. -/
+theorem isClosed_invariants [TopologicalSpace V] [IsTopologicalAddGroup V] [T2Space V]
+    (π : ContRepresentation R G V) :
+    IsClosed (π.invariants : Set V) := by
+  have h : (π.invariants : Set V) = ⋂ g, Function.fixedPoints (π g) := by
+    ext
+    simp [Function.IsFixedPt]
+  rw [h]
+  exact isClosed_iInter fun g ↦ isClosed_fixedPoints (π g).continuous
+
+/-- The invariants of a continuous representation on a complete Hausdorff space are complete. -/
+instance [UniformSpace V] [IsTopologicalAddGroup V] [CompleteSpace V] [T2Space V]
+    (π : ContRepresentation R G V) :
+    CompleteSpace π.invariants :=
+  π.isClosed_invariants.completeSpace_coe
+
+end Closed
 
 variable {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [TopologicalSpace V]
   [IsTopologicalAddGroup V] [Module R V]
@@ -104,7 +130,7 @@ variable {π S} in
 /-- Membership in the invariants of `π|_S`, in terms of elements of `G` lying in `S`. -/
 theorem mem_invariants_restrict {v : V} :
     v ∈ (π.restrict S.subtype).invariants ↔ ∀ s ∈ S, π s v = v :=
-  ⟨fun hv s hs ↦ hv ⟨s, hs⟩, fun hv s ↦ hv (s : G) s.2⟩
+  ⟨fun hv s hs ↦ hv ⟨s, hs⟩, fun hv s ↦ hv (s : G) s.property⟩
 
 omit [S.Normal] in
 /-- The trivial subgroup fixes everything. -/
@@ -146,7 +172,7 @@ theorem coe_toInvariants_apply (g : G) (v : (π.restrict S.subtype).invariants) 
 `G ⧸ S`. -/
 theorem toInvariants_apply_of_mem {s : G} (hs : s ∈ S) : toInvariants π S s = 1 := by
   ext v
-  simpa using v.2 ⟨s, hs⟩
+  simpa using v.property ⟨s, hs⟩
 
 /-- The representation of `G ⧸ S` on the invariants of `π|_S`, for a normal subgroup `S ≤ G`; the
 continuous counterpart of `Representation.quotientToInvariants`. -/
@@ -270,13 +296,13 @@ private noncomputable def invariantsToQuotientToInvariants :
     invariants X ⟶ invariants (quotientToInvariants X S) :=
   TopModuleCat.ofHom
     ((X.ρ.invariants.subtypeL.codRestrict (X.ρ.restrict S.subtype).invariants
-        fun v ↦ invariants_le_invariants_restrict X.ρ S.subtype v.2).codRestrict
+        fun v ↦ invariants_le_invariants_restrict X.ρ S.subtype v.property).codRestrict
       (ContRepresentation.quotientToInvariants X.ρ S).invariants fun v g ↦ by
         induction g using QuotientGroup.induction_on with
         | H g =>
           refine Subtype.ext ?_
           rw [coe_quotientToInvariants_mk_apply]
-          exact v.2 g)
+          exact v.property g)
 
 -- The two nested `codRestrict`s above change only the proofs of membership in the nested invariant
 -- submodules, not the underlying vector.
