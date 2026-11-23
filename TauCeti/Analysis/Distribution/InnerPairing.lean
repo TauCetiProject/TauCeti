@@ -330,14 +330,14 @@ theorem innerPairing_ofFun [MeasurableSpace E] [OpensMeasurableSpace E] {f : E �
   have hcomp (i : Fin _) (φ : 𝓓^{n}(Ω, ℝ)) :
       innerComponent (b i) (ofFun Ω f μ n) φ = ∫ x, φ x • ⟪b i, f x⟫_ℂ ∂μ := by
     rw [innerComponent_apply, ofFun_apply hf, ← integral_inner
-      (LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport hf φ.continuous
-        φ.hasCompactSupport φ.tsupport_subset)]
+      (LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport hf
+        φ.continuous.continuousOn φ.hasCompactSupport φ.tsupport_subset)]
     simp only [← Complex.coe_smul, inner_smul_right, smul_eq_mul]
   -- The integrand of each term is integrable.
   have hint (i : Fin _) : Integrable (fun x ↦ postcompCLM (𝕜 := ℝ) (conjInner (b i)) g x *
       ⟪b i, f x⟫_ℂ) μ := by
     simpa [smul_eq_mul] using LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport (hfi i)
-      (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).continuous
+      (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).continuous.continuousOn
       (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).hasCompactSupport
       (postcompCLM (𝕜 := ℝ) (conjInner (b i)) g).tsupport_subset
   rw [innerPairing, hb, Finset.sum_congr rfl fun i _ ↦ complexPairing_eq_integral (hfi i)
