@@ -16,7 +16,6 @@ import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.PDE.Vortex.Potential
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Sobolev.Poincare.Planar
@@ -210,19 +209,6 @@ theorem norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (w : ℂ →
     0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
   mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
 
-/-- Where `w ≤ M` with `0 ≤ M`, the potential `h (exp (2w) - 1 - 2w)`, where
-`h = ‖P‖² / (1 + ‖P‖²)`, is at most `2 exp (2M) w²`. -/
-theorem norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_le_mul_sq {M : ℝ} (hM : 0 ≤ M)
-    (w : ℂ → ℝ) {z : ℂ} (hz : w z ≤ M) :
-    ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) ≤
-      2 * Real.exp (2 * M) * w z ^ 2 := by
-  have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
-    (div_le_one (by positivity)).2 (by linarith)
-  calc _ ≤ 1 * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-        mul_le_mul_of_nonneg_right h1 (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-    _ ≤ 2 * Real.exp (2 * M) * w z ^ 2 := by
-      rw [one_mul]; exact Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM hz
-
 /-- **The potential of Taubes's functional is integrable on `H¹(ℂ)`.** For every `u ∈ H¹(ℂ)` the
 potential `h (exp (2u) - 1 - 2u)`, where `h = ‖P‖² / (1 + ‖P‖²)`, is integrable, by
 `TauCeti.W1p.integrable_exp_two_mul_value_sub_one_sub` and `0 ≤ h ≤ 1`. -/
@@ -266,6 +252,7 @@ theorem sobolevReducedFunctional_eq_coe (P : Polynomial ℂ) (u : W1p (volume : 
   ring
 
 /-- **Taubes's functional is finite on `H¹(ℂ)`.** -/
+@[simp]
 theorem sobolevReducedFunctional_ne_top (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional P u ≠ ⊤ := by
   rw [sobolevReducedFunctional_eq_coe]

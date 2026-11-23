@@ -311,7 +311,7 @@ theorem exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le (B G
   rw [hz, abs_le]
   exact ⟨by linarith [hlow z], by linarith [hup z, hK₂]⟩
 
-/-! ### Taubes's functional on functions bounded above -/
+/-! ### Taubes's functional as a real number -/
 
 /-- The potential `h (exp (2u) - 1 - 2u)` of Taubes's functional, `h = ‖P‖² / (1 + ‖P‖²)`. -/
 private def potential (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) (z : ℂ) : ℝ :=
@@ -336,7 +336,7 @@ private theorem memLp_linearCoeff {P : Polynomial ℂ} (hP : 0 < P.natDegree) :
   rw [linearCoeff_def]
   exact memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hP
 
-/-- Taubes's functional as a real number, meaningful when the potential is integrable. -/
+/-- Taubes's functional as a real number. -/
 private def realFunctional (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) : ℝ :=
   ‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, potential P u z) / 16 + ∫ z, linearCoeff P z * W1p.value u z
 

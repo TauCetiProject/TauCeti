@@ -124,20 +124,19 @@ private theorem integrable_mul_exp_sub_one_mul {x a b : ℂ → ℝ} {K : Set �
 
 /-- **Second-order upper bound for the potential.** Let `x` be a weight with values in `[0, 1]`,
 let `x (exp (2a) - 1 - 2a)` be integrable and `x exp (2a)` be integrable on a measurable set `K` of
-finite measure, and let `|b| ≤ M 1_K`. If `|t| M ≤ 1 / 2`, then
-`x (exp (2(a + t b)) - 1 - 2(a + t b))` is integrable, and its integral exceeds that of
-`x (exp (2a) - 1 - 2a)` by at most `t ∫ 2 x (exp (2a) - 1) b + 4 t² M² ∫_K x exp (2a)`. -/
+finite measure, and let `|b| ≤ M 1_K`. If `|t| M ≤ 1 / 2`, then the integral of
+`x (exp (2(a + t b)) - 1 - 2(a + t b))` exceeds that of `x (exp (2a) - 1 - 2a)` by at most
+`t ∫ 2 x (exp (2a) - 1) b + 4 t² M² ∫_K x exp (2a)`. -/
 private theorem integral_mul_exp_sub_one_sub_add_le {x a b : ℂ → ℝ} {K : Set ℂ} {M t : ℝ}
     (hx : Continuous x) (hx01 : ∀ z, x z ∈ Icc (0 : ℝ) 1) (ha : AEStronglyMeasurable a)
     (hb : AEStronglyMeasurable b) (hK : MeasurableSet K) (hKfin : volume K ≠ ∞)
     (hpot : Integrable fun z ↦ x z * (Real.exp (2 * a z) - 1 - 2 * a z))
     (he : IntegrableOn (fun z ↦ x z * Real.exp (2 * a z)) K)
     (hbI : ∀ᵐ z, |b z| ≤ M * K.indicator (fun _ ↦ (1 : ℝ)) z) (ht : |t| * M ≤ 1 / 2) :
-    Integrable (fun z ↦ x z * (Real.exp (2 * (a z + t * b z)) - 1 - 2 * (a z + t * b z))) ∧
-      ∫ z, x z * (Real.exp (2 * (a z + t * b z)) - 1 - 2 * (a z + t * b z)) ≤
-        (∫ z, x z * (Real.exp (2 * a z) - 1 - 2 * a z)) +
-          t * (∫ z, 2 * (x z * (Real.exp (2 * a z) - 1)) * b z) +
-          t ^ 2 * (4 * M ^ 2 * ∫ z in K, x z * Real.exp (2 * a z)) := by
+    ∫ z, x z * (Real.exp (2 * (a z + t * b z)) - 1 - 2 * (a z + t * b z)) ≤
+      (∫ z, x z * (Real.exp (2 * a z) - 1 - 2 * a z)) +
+        t * (∫ z, 2 * (x z * (Real.exp (2 * a z) - 1)) * b z) +
+        t ^ 2 * (4 * M ^ 2 * ∫ z in K, x z * Real.exp (2 * a z)) := by
   have hxe : AEStronglyMeasurable fun z ↦ x z * Real.exp (2 * a z) :=
     hx.aestronglyMeasurable.mul (Real.continuous_exp.comp_aestronglyMeasurable
       (ha.const_mul 2))
@@ -189,7 +188,6 @@ private theorem integral_mul_exp_sub_one_sub_add_le {x a b : ℂ → ℝ} {K : S
   have hsum : Integrable fun z ↦ x z * (Real.exp (2 * a z) - 1 - 2 * a z) +
       t * (2 * (x z * (Real.exp (2 * a z) - 1)) * b z) :=
     hpot.add (hvar.const_mul t)
-  refine ⟨hexp ▸ hsum.add hri, ?_⟩
   rw [hexp, integral_add hsum hri, integral_add hpot (hvar.const_mul t), integral_const_mul]
   have hrint : ∫ z, r z ≤ t ^ 2 * (4 * M ^ 2 * ∫ z in K, x z * Real.exp (2 * a z)) := by
     calc ∫ z, r z ≤ ∫ z, 4 * t ^ 2 * M ^ 2 *
@@ -238,7 +236,7 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
   have hgrad : W1p.gradient (u + t • v) = W1p.gradient u + t • W1p.gradient v := by
     rw [← W1p.gradientL_apply, map_add, map_smul, W1p.gradientL_apply, W1p.gradientL_apply]
   -- The potential, the linear term and the Dirichlet energy along the line.
-  obtain ⟨-, hle⟩ := integral_mul_exp_sub_one_sub_add_le
+  have hle := integral_mul_exp_sub_one_sub_add_le
     ((continuous_backgroundWeight P.continuous).congr (backgroundWeight_def _))
     (fun z ↦ backgroundWeight_def (P.eval ·) z ▸
       ⟨backgroundWeight_nonneg _ z, (backgroundWeight_lt_one _ z).le⟩) hua.aestronglyMeasurable

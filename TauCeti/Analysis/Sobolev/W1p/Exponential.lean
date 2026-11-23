@@ -382,7 +382,7 @@ theorem W1p.memLp_exp_two_mul_value_sub_one (hE : finrank ℝ E = 2) (u : W1p μ
 /-- **The exponential potential of a `W^{1,2}` function is integrable in the plane.** In dimension
 two, for every `u ∈ W^{1,2}(E)` the potential `exp (2u) - 1 - 2u` is integrable, because
 `exp (2u) - 1` is square integrable (`TauCeti.W1p.memLp_exp_two_mul_value_sub_one`) and
-`exp (2t) - 1 - 2t ≤ t² + (exp (2t) - 1)²` (`Real.exp_two_mul_sub_one_sub_two_mul_le`). -/
+`exp (2t) - 1 - 2t ≤ t² + (exp (2t) - 1)²` (`Real.exp_two_mul_sub_one_sub_two_mul_le_sq_add_sq`). -/
 theorem W1p.integrable_exp_two_mul_value_sub_one_sub (hE : finrank ℝ E = 2) (u : W1p μ ⊤ 2) :
     Integrable (fun x ↦ Real.exp (2 * W1p.value u x) - 1 - 2 * W1p.value u x) μ := by
   have hexp := W1p.memLp_exp_two_mul_value_sub_one μ hE u
@@ -394,7 +394,7 @@ theorem W1p.integrable_exp_two_mul_value_sub_one_sub (hE : finrank ℝ E = 2) (u
   · exact ((by fun_prop : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t)
       |>.comp_aestronglyMeasurable (W1p.memLp_value u).aestronglyMeasurable)
   · rw [Real.norm_of_nonneg (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)]
-    exact Real.exp_two_mul_sub_one_sub_two_mul_le _
+    exact Real.exp_two_mul_sub_one_sub_two_mul_le_sq_add_sq _
 
 end Sobolev
 
