@@ -70,8 +70,8 @@ theorem ae_forall_eventually_lt_of_summable_integral_div_pow (hL : 0 ≤ L)
       exact (pow_le_pow_left₀ hc₀.le (hcY.trans (le_abs_self _)) _).trans hω
     refine (measure_mono_ae hsub).trans ?_
     simpa only [pow_one] using meas_ge_le_integral_pow_div_pow (Y := Z n) 1
-      (by simpa only [pow_one] using hZ n) ((hZ₀ n).mono fun _ h ↦ by simpa only [pow_one] using h)
-      (pow_pos hc₀ _)
+      (by simpa only [pow_one] using hZ n)
+      ((hZ₀ n).mono fun _ h ↦ by simpa only [pow_one, Pi.zero_apply] using h) (pow_pos hc₀ _)
   have hnonneg (n : ℕ) : 0 ≤ (∫ ω, Z n ω ∂μ) / c ^ k n :=
     div_nonneg (integral_nonneg_of_ae (hZ₀ n)) (pow_nonneg hc₀.le _)
   refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hmarkov)
