@@ -25,12 +25,10 @@ Checks for `ContRepresentation.IsKFinite`.
 
 ## Main declarations
 
-* `TauCeti.KFiniteChecks.funLeftRegular`: the left regular representation of a group `G` on all
-  functions `G → k`, with the product topology.
-* `TauCeti.KFiniteChecks.funLeftRegular_single_one`: it translates the point mass at the
-  identity to the point mass at `g`.
-* `TauCeti.KFiniteChecks.not_isKFinite_single_one`: the point mass at the identity of the
-  infinite cyclic group is not `K`-finite for `K = ⊤`.
+* `TauCeti.KFiniteChecks.exists_not_isKFinite_top`: some continuous representation of the infinite
+  cyclic group has a vector that is not `K`-finite for `K = ⊤`. The witness, the left regular
+  representation `funLeftRegular` on `ℤ → ℂ`, and its two lemmas are private to this file: they
+  are test fixtures, not API.
 
 ## References
 
@@ -74,7 +72,7 @@ variable (G k : Type*) [Group G] [Field k] [TopologicalSpace k] [IsTopologicalRi
 
 /-- The left regular representation `(g • f)(x) = f(g⁻¹ x)` of a group `G` on all functions
 `G → k`, with the product topology. -/
-def funLeftRegular : ContRepresentation k G (G → k) :=
+private def funLeftRegular : ContRepresentation k G (G → k) :=
   .ofMonoidHom
     { toFun g := ContinuousLinearMap.pi fun x => ContinuousLinearMap.proj (g⁻¹ * x)
       map_one' := by ext; simp
@@ -83,13 +81,13 @@ def funLeftRegular : ContRepresentation k G (G → k) :=
 variable {G k}
 
 /-- The left regular representation evaluates functions at translated points. -/
-theorem funLeftRegular_apply (g : G) (f : G → k) (x : G) :
+private theorem funLeftRegular_apply (g : G) (f : G → k) (x : G) :
     funLeftRegular G k g f x = f (g⁻¹ * x) :=
   (rfl)
 
 /-- The left regular representation carries the point mass at the identity to the point mass at
 `g`. -/
-theorem funLeftRegular_single_one [DecidableEq G] (g : G) :
+private theorem funLeftRegular_single_one [DecidableEq G] (g : G) :
     funLeftRegular G k g (Pi.single 1 1) = Pi.single g 1 := by
   ext x
   rw [funLeftRegular_apply]
@@ -101,9 +99,10 @@ theorem funLeftRegular_single_one [DecidableEq G] (g : G) :
 /-- **Without compactness, `K`-finiteness can fail.** In the left regular representation of the
 infinite cyclic group on `ℤ → ℂ`, the translates of the point mass at the identity are linearly
 independent, so the point mass is not `K`-finite for `K = ⊤`. -/
-theorem not_isKFinite_single_one :
-    ¬ (funLeftRegular (Multiplicative ℤ) ℂ).IsKFinite ⊤ (Pi.single 1 1) := by
-  intro h
+theorem exists_not_isKFinite_top :
+    ∃ π : ContRepresentation ℂ (Multiplicative ℤ) (Multiplicative ℤ → ℂ),
+      ¬ π.IsKFinite ⊤ (Pi.single 1 1) := by
+  refine ⟨funLeftRegular (Multiplicative ℤ) ℂ, fun h => ?_⟩
   rw [isKFinite_iff] at h
   have hli : LinearIndependent ℂ fun x : (⊤ : Subgroup (Multiplicative ℤ)) =>
       funLeftRegular (Multiplicative ℤ) ℂ x (Pi.single 1 1) := by
