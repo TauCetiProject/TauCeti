@@ -15,6 +15,8 @@ public import Mathlib.GroupTheory.Index
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 -- `TauCeti.natCard_GL_fin_two`: the order of `GL₂` over a finite field.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+-- `TauCeti.index_eq_of_natCard_eq_mul`: an index from the orders of a subgroup and its group.
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # The split Cartan subgroup of `GL₂` and its normalizer
@@ -45,7 +47,6 @@ Over a finite field with `q` elements, `|C_s| = (q - 1)²` (`TauCeti.natCard_dia
 
 ## Main results
 
-* `TauCeti.GL2.inv_coe`: the inverse of `!![a, b; c, d]` is `(ad - bc)⁻¹ • !![d, -b; -c, a]`.
 * `TauCeti.mem_diagonalTorus_two_iff`, `TauCeti.GL2SplitCartanNormalizer.mem_iff`: membership in
   terms of matrix entries.
 * `TauCeti.neg_one_mem_diagonalTorus`, `TauCeti.map_det_diagonalTorus`: the diagonal torus
@@ -101,18 +102,6 @@ section CommRing
 
 variable {R : Type u} [CommRing R]
 
-namespace GL2
-
-/-- **The inverse of an element of `GL₂`**: `!![a, b; c, d]⁻¹ = (ad - bc)⁻¹ • !![d, -b; -c, a]`. -/
-theorem inv_coe (g : GL (Fin 2) R) :
-    (g : Matrix (Fin 2) (Fin 2) R)⁻¹ =
-      Ring.inverse (g : Matrix (Fin 2) (Fin 2) R).det •
-        !![(g : Matrix (Fin 2) (Fin 2) R) 1 1, -(g : Matrix (Fin 2) (Fin 2) R) 0 1;
-          -(g : Matrix (Fin 2) (Fin 2) R) 1 0, (g : Matrix (Fin 2) (Fin 2) R) 0 0] := by
-  rw [Matrix.inv_def, adjugate_fin_two]
-
-end GL2
-
 /-- An invertible `2 × 2` matrix lies in the diagonal torus exactly when both off-diagonal entries
 vanish. -/
 theorem mem_diagonalTorus_two_iff {g : GL (Fin 2) R} :
@@ -136,7 +125,7 @@ def GL2SplitCartanNormalizer : Subgroup (GL (Fin 2) R) where
       simp [Matrix.mul_apply, Fin.sum_univ_two, *]
   one_mem' := Or.inl (by simp)
   inv_mem' := by
-    rintro g (⟨hg₁, hg₂⟩ | ⟨hg₁, hg₂⟩) <;> simp [GL2.inv_coe, *]
+    rintro g (⟨hg₁, hg₂⟩ | ⟨hg₁, hg₂⟩) <;> simp [Matrix.inv_def, Matrix.adjugate_fin_two, *]
 
 variable {R}
 
@@ -185,7 +174,8 @@ theorem mul_mul_inv_mem {g h : GL (Fin 2) R} (hg : g ∈ GL2SplitCartanNormalize
     (hh : h ∈ diagonalTorus R 2) : g * h * g⁻¹ ∈ diagonalTorus R 2 := by
   rw [mem_diagonalTorus_two_iff] at hh ⊢
   rcases hg with ⟨hg₁, hg₂⟩ | ⟨hg₁, hg₂⟩ <;>
-    simp [GL2.inv_coe, Matrix.mul_apply, Fin.sum_univ_two, hg₁, hg₂, hh.1, hh.2]
+    simp [Matrix.inv_def, Matrix.adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two, hg₁, hg₂,
+      hh.1, hh.2]
 
 /-- The monomial subgroup normalizes the split Cartan subgroup, over every commutative ring. -/
 theorem le_normalizer :
@@ -219,12 +209,9 @@ variable {F : Type u} [Field F]
 `(q - 1)²` is `TauCeti.natCard_diagonalTorus`. -/
 theorem index_diagonalTorus_two [Finite F] :
     (diagonalTorus F 2).index = Nat.card F * (Nat.card F + 1) := by
-  have h := (diagonalTorus F 2).card_mul_index
-  rw [natCard_diagonalTorus, natCard_GL_fin_two] at h
-  have : 0 < (Nat.card F - 1) ^ 2 := by
-    have := Finite.one_lt_card (α := F)
-    exact pow_pos (by omega) 2
-  exact Nat.eq_of_mul_eq_mul_left this h
+  have := Finite.one_lt_card (α := F)
+  exact index_eq_of_natCard_eq_mul (pow_pos (by omega) 2) (natCard_diagonalTorus F 2)
+    (natCard_GL_fin_two F)
 
 namespace GL2SplitCartanNormalizer
 

@@ -9,8 +9,8 @@ module
 -- and this module re-exports the `GL` notation.
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
--- `TauCeti.GL2.inv_coe`: the inverse of a `2 × 2` invertible matrix.
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SplitCartan
+-- `TauCeti.index_eq_of_natCard_eq_mul`: an index from the orders of a subgroup and its group.
+import TauCeti.GroupTheory.Index.Basic
 -- `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: the order of `GL₂` over a finite field.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- `FiniteField.isSquare_of_char_two`: over a finite field of characteristic `2` every element is a
@@ -94,7 +94,8 @@ def GL2NonsplitCartan (t n : R) : Subgroup (GL (Fin 2) R) where
   one_mem' := by simp
   inv_mem' := by
     rintro g ⟨hg₁, hg₂⟩
-    simp only [Set.mem_ofPred_eq, Matrix.coe_units_inv, GL2.inv_coe, Matrix.smul_apply,
+    simp only [Set.mem_ofPred_eq, Matrix.coe_units_inv, Matrix.inv_def,
+      Matrix.adjugate_fin_two, Matrix.smul_apply,
       Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.empty_val', Matrix.cons_val_fin_one, smul_eq_mul]
     constructor
@@ -218,13 +219,11 @@ theorem natCard (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
 /-- **`[GL₂(𝔽_q) : C_ns] = q (q - 1)`**, the degree of `X_ns(ℓ)` over the `j`-line for `q = ℓ`. -/
 theorem index_eq [Finite F] (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
     (GL2NonsplitCartan t n).index = Nat.card F * (Nat.card F - 1) := by
-  have h := (GL2NonsplitCartan t n).card_mul_index
-  rw [natCard hirr, natCard_GL_fin_two_eq_sq_sub_one_mul] at h
-  have : 0 < Nat.card F ^ 2 - 1 := by
+  have hpos : 0 < Nat.card F ^ 2 - 1 := by
     have := Finite.one_lt_card (α := F)
     have : 1 < Nat.card F ^ 2 := by nlinarith
     omega
-  exact Nat.eq_of_mul_eq_mul_left this h
+  exact index_eq_of_natCard_eq_mul hpos (natCard hirr) (natCard_GL_fin_two_eq_sq_sub_one_mul F)
 
 /-- The companion matrix `!![0, n; 1, t]`, the matrix of multiplication by `α`. -/
 private noncomputable def alpha (t : F) (hn : n ≠ 0) : GL (Fin 2) F :=
