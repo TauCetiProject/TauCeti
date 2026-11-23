@@ -156,6 +156,7 @@ sup norm in finite-basis coordinates, giving a Banach realization of its action.
 theorem toBanachRep_ρ (X : ContFDRep 𝕜 G) : X.toBanachRep.obj.ρ.toRepresentation = X.obj.ρ :=
   (rfl)
 
+/-- Forgetting the norm of the Banach realization recovers the original bundled representation. -/
 @[simp]
 theorem toContFDRep_obj_toBanachRep (X : ContFDRep 𝕜 G) :
     (toContFDRep 𝕜 G).obj X.toBanachRep = X := by
@@ -174,6 +175,25 @@ instance : (toContFDRep 𝕜 G).IsEquivalence where
   faithful := fullyFaithfulToContFDRep.faithful
   essSurj := Functor.essSurj_of_surj fun X => ⟨X.toBanachRep, X.toContFDRep_obj_toBanachRep⟩
 
+/-- A complex of finite-dimensional Banach representations is a conflation under inclusion
+exactly when its image under the comparison is short exact on underlying modules. -/
+theorem _root_.CategoryTheory.ShortComplex.conflation_map_ι_iff_shortExact_map_toContFDRep
+    (S : ShortComplex (isFiniteDimensional.{u} 𝕜 G).FullSubcategory) :
+    exactStructure.Conflation (S.map (isFiniteDimensional 𝕜 G).ι) ↔
+      ((S.map (toContFDRep 𝕜 G)).map (forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜))).ShortExact := by
+  let M := (S.map (toContFDRep 𝕜 G)).map (forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜))
+  have hf : ⇑M.f = ⇑S.f.hom.hom := by
+    simp only [M, ShortComplex.map_f, ContFDRep.forget₂_map, toContFDRep_map_hom_hom_hom_hom,
+      ContinuousLinearMap.coe_coe]
+  have hg : ⇑M.g = ⇑S.g.hom.hom := by
+    simp only [M, ShortComplex.map_g, ContFDRep.forget₂_map, toContFDRep_map_hom_hom_hom_hom,
+      ContinuousLinearMap.coe_coe]
+  simp only [exactStructure_conflation_iff, ShortComplex.map_f, ShortComplex.map_g,
+    ObjectProperty.ι_map, ← hf, ← hg]
+  exact ⟨fun ⟨hi, hs, he⟩ => ModuleCat.shortComplex_shortExact M he hi hs, fun h =>
+    ⟨h.moduleCat_injective_f, h.moduleCat_surjective_g,
+      (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact M).1 h.exact⟩⟩
+
 /-- An algebraically short exact sequence of continuous finite-dimensional representations
 gives a conflation under the inverse comparison and inclusion into Banach representations. -/
 theorem _root_.CategoryTheory.ShortComplex.conflation_map_inv_toContFDRep
@@ -181,21 +201,15 @@ theorem _root_.CategoryTheory.ShortComplex.conflation_map_inv_toContFDRep
     (hf : Function.Injective S.f.hom.hom.hom.hom) (hg : Function.Surjective S.g.hom.hom.hom.hom)
     (hex : Function.Exact S.f.hom.hom.hom.hom S.g.hom.hom.hom.hom) :
     exactStructure.Conflation (S.map ((toContFDRep 𝕜 G).inv ⋙ (isFiniteDimensional 𝕜 G).ι)) := by
-  let U := (FDRep.isContinuous 𝕜 G).ι ⋙ Action.forget (FGModuleCat 𝕜) G ⋙
-    forget₂ (FGModuleCat 𝕜) (ModuleCat 𝕜)
-  have hS : (S.map U).ShortExact := ModuleCat.shortComplex_shortExact _ hex hf hg
-  let T := S.map (toContFDRep 𝕜 G).inv
-  let M := (T.map (toContFDRep 𝕜 G)).map U
+  let U := forget₂ (ContFDRep 𝕜 G) (ModuleCat 𝕜)
+  have hS : (S.map U).ShortExact := by
+    apply ModuleCat.shortComplex_shortExact
+    all_goals simp only [ShortComplex.map_f, ShortComplex.map_g, U, ContFDRep.forget₂_map]
+    all_goals assumption
+  rw [ShortComplex.map_comp, ShortComplex.conflation_map_ι_iff_shortExact_map_toContFDRep]
   -- The counit identifies the underlying complex of the Banach realization with the original.
-  have hBanach : M.ShortExact := ShortComplex.shortExact_of_iso
+  exact ShortComplex.shortExact_of_iso
     (U.mapShortComplex.mapIso (S.mapNatIso (toContFDRep 𝕜 G).asEquivalence.counitIso).symm) hS
-  let B := T.map (isFiniteDimensional 𝕜 G).ι
-  have hMf : ⇑M.f = ⇑B.f.hom := congrArg DFunLike.coe (toContFDRep_map_hom_hom_hom_hom T.f)
-  have hMg : ⇑M.g = ⇑B.g.hom := congrArg DFunLike.coe (toContFDRep_map_hom_hom_hom_hom T.g)
-  apply (exactStructure_conflation_iff B).2
-  rw [← hMf, ← hMg]
-  exact ⟨hBanach.moduleCat_injective_f, hBanach.moduleCat_surjective_g,
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact M).1 hBanach.exact⟩
 
 end BanachRep
 

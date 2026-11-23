@@ -224,6 +224,20 @@ continuous matrix coefficients. It inherits the additive and the (braided) monoi
 abbrev ContFDRep : Type (max (u + 1) v) :=
   (FDRep.isContinuous k G).FullSubcategory
 
+/-- Forget the action of a continuous finite-dimensional representation to its underlying module. -/
+instance : HasForget₂ (ContFDRep k G) (ModuleCat k) where
+  forget₂ := (FDRep.isContinuous k G).ι ⋙ Action.forget (FGModuleCat k) G ⋙
+    forget₂ (FGModuleCat k) (ModuleCat k)
+  forget_comp := rfl
+
+instance : (forget₂ (ContFDRep k G) (ModuleCat k)).Additive where
+
+variable {k G} in
+/-- Forgetting an intertwiner gives its underlying module morphism. -/
+@[simp]
+theorem ContFDRep.forget₂_map {X Y : ContFDRep k G} (f : X ⟶ Y) :
+    (forget₂ (ContFDRep k G) (ModuleCat k)).map f = f.hom.hom.hom := (rfl)
+
 instance [ContinuousAdd k] : HasBinaryBiproducts (ContFDRep k G) :=
   HasBinaryBiproducts.of_hasBinaryProducts
 
