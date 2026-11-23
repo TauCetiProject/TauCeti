@@ -50,17 +50,12 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv
     LieEquiv.ofEq (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
       (LieAlgebra.SpecialLinear.sl n K)
       (by rw [derivedSeries_one_toLieSubalgebra_eq_sl])
+  have hof (y : derivedSeries K (Matrix n n K) 1) : (e y : Matrix n n K) = y :=
+    LieEquiv.ofEq_apply (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
+      (LieAlgebra.SpecialLinear.sl n K) _ y
   refine (LieEquiv.isCartanInvolution_iff_of_intertwine e
-    (θ' := LieAlgebra.SpecialLinear.cartanInvolution n K) fun x ↦ ?_).mp ?_
-  · apply Subtype.ext
-    rw [LieAlgebra.SpecialLinear.coe_cartanInvolution]
-    refine (congrArg (fun M : Matrix n n K ↦ -M.transpose) (LieEquiv.ofEq_apply
-      (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
-      (LieAlgebra.SpecialLinear.sl n K) _ x)).trans ?_
-    refine Eq.trans ?_ (LieEquiv.ofEq_apply
-      (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
-      (LieAlgebra.SpecialLinear.sl n K) _ _).symm
-    rw [LieEquiv.coe_derivedSeriesCongr, negTransposeLieEquiv_apply]
-  · exact LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution
+    (θ' := LieAlgebra.SpecialLinear.cartanInvolution n K) fun x ↦
+      Subtype.ext (by simp [hof])).mp
+    LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution
 
 end TauCeti

@@ -10,16 +10,16 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
-import TauCeti.Algebra.Lie.Subalgebra.Automorphism
+import TauCeti.Algebra.Regular.SMul
 import TauCeti.LinearAlgebra.Matrix.Alternating
 
 /-!
 # Negative transpose on the special linear Lie algebra
 
 The special linear Lie algebra `sl n R` is stable under negative transpose. Restricting the matrix
-Lie automorphism `TauCeti.negTransposeLieEquiv` gives the involutive automorphism `X ↦ -Xᵀ`
-(`LieAlgebra.SpecialLinear.cartanInvolution`) over every commutative ring. Its fixed vectors are the
-skew-symmetric trace-zero matrices
+Lie automorphism `TauCeti.negTransposeLieEquiv` via `LieSubalgebra.negTransposeEquiv` gives the
+involutive automorphism `X ↦ -Xᵀ` (`LieAlgebra.SpecialLinear.cartanInvolution`) over every
+commutative ring. Its fixed vectors are the skew-symmetric trace-zero matrices
 (`LieAlgebra.SpecialLinear.mem_fixedSubalgebra_cartanInvolution_iff`, matching
 `LieAlgebra.Orthogonal.so n R` via
 `LieAlgebra.SpecialLinear.map_incl_fixedSubalgebra_cartanInvolution` whenever scaling by `2` is
@@ -60,46 +60,39 @@ variable (n R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the special linear Lie algebra `sl n R`. -/
 def cartanInvolution : sl n R ≃ₗ⁅R⁆ sl n R :=
-  (TauCeti.negTransposeLieEquiv n R).ofSubalgebras (sl n R) (sl n R) <|
-    (sl n R).map_eq_self_of_involutive (TauCeti.negTransposeLieEquiv n R) (fun _ ↦ by simp)
-      fun X hX ↦ by
-        rw [TauCeti.negTransposeLieEquiv_apply, mem_sl_iff, trace_neg, trace_transpose,
-          mem_sl_iff.mp hX, neg_zero]
+  (sl n R).negTransposeEquiv fun X hX ↦ by
+    rw [mem_sl_iff, trace_neg, trace_transpose, mem_sl_iff.mp hX, neg_zero]
 
 variable {n R}
 
 /-- The matrix value of `SpecialLinear.cartanInvolution` is negative transpose. -/
 @[simp]
 theorem coe_cartanInvolution (X : sl n R) :
-    (cartanInvolution n R X : Matrix n n R) = -(X : Matrix n n R)ᵀ := by
-  rw [cartanInvolution, LieEquiv.ofSubalgebras_apply, TauCeti.negTransposeLieEquiv_apply]
+    (cartanInvolution n R X : Matrix n n R) = -(X : Matrix n n R)ᵀ :=
+  (sl n R).coe_negTransposeEquiv _ X
 
 /-- Applying `SpecialLinear.cartanInvolution` twice returns the original matrix. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sl n R) :
-    cartanInvolution n R (cartanInvolution n R X) = X := by
-  apply Subtype.ext
-  simp
+    cartanInvolution n R (cartanInvolution n R X) = X :=
+  (sl n R).negTransposeEquiv_negTransposeEquiv _ X
 
 /-- `SpecialLinear.cartanInvolution` is its own inverse. -/
 @[simp]
-theorem cartanInvolution_symm : (cartanInvolution n R).symm = cartanInvolution n R := by
-  apply LieEquiv.ext
-  intro X
-  rw [LieEquiv.symm_apply_eq, cartanInvolution_cartanInvolution]
+theorem cartanInvolution_symm : (cartanInvolution n R).symm = cartanInvolution n R :=
+  (sl n R).negTransposeEquiv_symm _
 
 /-- Fixed vectors of `SpecialLinear.cartanInvolution` are the skew-symmetric trace-zero matrices. -/
 @[simp]
 theorem cartanInvolution_eq_self_iff (X : sl n R) :
-    cartanInvolution n R X = X ↔ (X : Matrix n n R)ᵀ = -(X : Matrix n n R) := by
-  rw [← Subtype.coe_inj, coe_cartanInvolution, neg_eq_iff_eq_neg]
+    cartanInvolution n R X = X ↔ (X : Matrix n n R)ᵀ = -(X : Matrix n n R) :=
+  (sl n R).negTransposeEquiv_eq_self_iff _ X
 
 /-- Negated vectors of `SpecialLinear.cartanInvolution` are the symmetric trace-zero matrices. -/
 @[simp]
 theorem cartanInvolution_eq_neg_iff (X : sl n R) :
-    cartanInvolution n R X = -X ↔ (X : Matrix n n R)ᵀ = (X : Matrix n n R) := by
-  rw [← Subtype.coe_inj, coe_cartanInvolution, NegMemClass.coe_neg]
-  exact neg_inj
+    cartanInvolution n R X = -X ↔ (X : Matrix n n R)ᵀ = (X : Matrix n n R) :=
+  (sl n R).negTransposeEquiv_eq_neg_iff _ X
 
 /-- Fixed vectors of `SpecialLinear.cartanInvolution` are the skew-symmetric matrices in
 `sl n R`. -/
@@ -126,8 +119,7 @@ theorem map_incl_fixedSubalgebra_cartanInvolution (h2 : IsSMulRegular R (2 : R))
     exact (mem_fixedSubalgebra_cartanInvolution_iff X).mp hX
   · intro hA
     have htr : A.trace = 0 :=
-      Matrix.trace_eq_zero_of_transpose_eq_neg_of_add_self A hA fun x hx ↦
-        h2 (by dsimp only; rw [two_smul, hx, smul_zero])
+      Matrix.trace_eq_zero_of_transpose_eq_neg_of_add_self A hA fun _ ↦ h2.eq_zero_of_add_self
     exact ⟨⟨A, mem_sl_iff.mpr htr⟩,
       (mem_fixedSubalgebra_cartanInvolution_iff _).mpr hA, rfl⟩
 

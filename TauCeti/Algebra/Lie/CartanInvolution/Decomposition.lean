@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 import TauCeti.Algebra.Lie.InvariantForm.Basic
+import TauCeti.Algebra.Regular.SMul
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 import TauCeti.LinearAlgebra.FixedSubmodule
@@ -92,10 +93,7 @@ theorem cartanP_refl (h2 : IsSMulRegular L (2 : R)) :
     (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
   ext x
   simp only [mem_cartanP, refl_apply, Submodule.mem_bot]
-  refine ⟨fun hx ↦ h2 ?_, fun hx ↦ by simp [hx]⟩
-  dsimp only
-  rw [two_smul, smul_zero]
-  exact eq_neg_iff_add_eq_zero.mp hx
+  exact ⟨fun hx ↦ h2.eq_zero_of_eq_neg hx, fun hx ↦ by simp [hx]⟩
 
 /-- An intertwining Lie equivalence maps `θ.cartanP` onto `θ'.cartanP`. -/
 theorem map_cartanP (e : L ≃ₗ⁅R⁆ L') {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'}
@@ -137,12 +135,8 @@ theorem killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP (h2 : IsSMulRe
     killingForm R L x y = 0 := by
   rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
   rw [mem_cartanP] at hy
-  have h : killingForm R L x y = -killingForm R L x y := by
+  exact h2.eq_zero_of_eq_neg <| by
     conv_lhs => rw [← killingForm_of_equiv_apply θ, hx, hy, map_neg]
-  refine h2 ?_
-  dsimp only
-  rw [two_smul, smul_zero]
-  exact eq_neg_iff_add_eq_zero.mp h
 
 /-! ### The twisted Killing form -/
 

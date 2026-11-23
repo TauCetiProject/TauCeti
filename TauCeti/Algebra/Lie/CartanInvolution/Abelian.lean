@@ -66,19 +66,17 @@ section Real
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
+local instance : IsLieAbelian ℝ := isMulCommutative_iff_isLieAbelian.mp inferInstance
+
 /-- On `ℝ` with the commutator bracket, the identity is a reductive Cartan involution. -/
 theorem isReductiveCartanInvolution_refl_real :
-    (LieEquiv.refl : ℝ ≃ₗ⁅ℝ⁆ ℝ).IsReductiveCartanInvolution := by
-  have : IsLieAbelian ℝ :=
-    ⟨fun x y ↦ by rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]⟩
-  exact (isReductiveCartanInvolution_iff_of_isLieAbelian LieEquiv.refl).mpr fun _ ↦ rfl
+    (LieEquiv.refl : ℝ ≃ₗ⁅ℝ⁆ ℝ).IsReductiveCartanInvolution :=
+  (isReductiveCartanInvolution_iff_of_isLieAbelian LieEquiv.refl).mpr fun _ ↦ rfl
 
 /-- On `ℝ` with the commutator bracket, the identity is not a (semisimple) Cartan involution. -/
 theorem not_isCartanInvolution_refl_real :
-    ¬ (LieEquiv.refl : ℝ ≃ₗ⁅ℝ⁆ ℝ).IsCartanInvolution := by
-  have : IsLieAbelian ℝ :=
-    ⟨fun x y ↦ by rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]⟩
-  exact not_isCartanInvolution_of_isLieAbelian LieEquiv.refl
+    ¬ (LieEquiv.refl : ℝ ≃ₗ⁅ℝ⁆ ℝ).IsCartanInvolution :=
+  not_isCartanInvolution_of_isLieAbelian LieEquiv.refl
 
 end Real
 

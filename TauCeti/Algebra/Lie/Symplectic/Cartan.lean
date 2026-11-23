@@ -8,13 +8,12 @@ module
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 
-import TauCeti.Algebra.Lie.Subalgebra.Automorphism
-
 /-!
 # Negative transpose on the symplectic Lie algebra
 
 The symplectic Lie algebra is stable under transpose. Restricting the matrix Lie
-automorphism `TauCeti.negTransposeLieEquiv` gives its involution `X ↦ -Xᵀ`.
+automorphism `TauCeti.negTransposeLieEquiv` via `LieSubalgebra.negTransposeEquiv` gives its
+involution `X ↦ -Xᵀ`.
 On symplectic Lie matrices it is conjugation by `J`, just as inverse transpose is
 conjugation by `J` on the symplectic group. The fixed and negated vectors are
 respectively the skew-symmetric and symmetric symplectic Lie matrices.
@@ -38,46 +37,38 @@ variable (l R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the symplectic Lie algebra. -/
 def cartanInvolution : sp l R ≃ₗ⁅R⁆ sp l R :=
-  (TauCeti.negTransposeLieEquiv (l ⊕ l) R).ofSubalgebras (sp l R) (sp l R) <|
-    (sp l R).map_eq_self_of_involutive (TauCeti.negTransposeLieEquiv (l ⊕ l) R) (fun _ ↦ by simp)
-      fun X hX ↦ by
-        rw [TauCeti.negTransposeLieEquiv_apply]
-        exact (sp l R).neg_mem (transpose_mem_sp hX)
+  (sp l R).negTransposeEquiv fun _ hX ↦ (sp l R).neg_mem (transpose_mem_sp hX)
 
 variable {l R}
 
 /-- The matrix value of the symplectic Lie involution is negative transpose. -/
 @[simp]
 theorem coe_cartanInvolution (X : sp l R) :
-    (cartanInvolution l R X : Matrix (l ⊕ l) (l ⊕ l) R) = -(X : Matrix _ _ R)ᵀ := by
-  rw [cartanInvolution, LieEquiv.ofSubalgebras_apply, TauCeti.negTransposeLieEquiv_apply]
+    (cartanInvolution l R X : Matrix (l ⊕ l) (l ⊕ l) R) = -(X : Matrix _ _ R)ᵀ :=
+  (sp l R).coe_negTransposeEquiv _ X
 
 /-- Applying the symplectic Lie involution twice gives the original vector. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sp l R) :
-    cartanInvolution l R (cartanInvolution l R X) = X := by
-  apply Subtype.ext
-  simp
+    cartanInvolution l R (cartanInvolution l R X) = X :=
+  (sp l R).negTransposeEquiv_negTransposeEquiv _ X
 
 /-- The symplectic Lie involution is its own inverse. -/
 @[simp]
-theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R := by
-  apply LieEquiv.ext
-  intro X
-  rw [LieEquiv.symm_apply_eq, cartanInvolution_cartanInvolution]
+theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R :=
+  (sp l R).negTransposeEquiv_symm _
 
 /-- Fixed vectors of the Lie involution are the skew-symmetric symplectic Lie matrices. -/
 @[simp]
 theorem cartanInvolution_eq_self_iff (X : sp l R) :
     cartanInvolution l R X = X ↔
-      (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = -(X : Matrix (l ⊕ l) (l ⊕ l) R) := by
-  rw [← Subtype.coe_inj, coe_cartanInvolution, neg_eq_iff_eq_neg]
+      (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = -(X : Matrix (l ⊕ l) (l ⊕ l) R) :=
+  (sp l R).negTransposeEquiv_eq_self_iff _ X
 
 /-- Negated vectors of the Lie involution are the symmetric symplectic Lie matrices. -/
 @[simp]
 theorem cartanInvolution_eq_neg_iff (X : sp l R) :
-    cartanInvolution l R X = -X ↔ (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = X := by
-  rw [← Subtype.coe_inj, coe_cartanInvolution]
-  exact neg_inj
+    cartanInvolution l R X = -X ↔ (X : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ = X :=
+  (sp l R).negTransposeEquiv_eq_neg_iff _ X
 
 end LieAlgebra.Symplectic

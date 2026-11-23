@@ -707,11 +707,7 @@ theorem coe_centerCongr (e : L ≃ₗ⁅R⁆ L') (x : center R L) :
 @[simp]
 theorem centerCongr_symm (e : L ≃ₗ⁅R⁆ L') :
     e.centerCongr.symm = e.symm.centerCongr :=
-  LieEquiv.ext fun x ↦ Subtype.ext <|
-    (e.ofSubalgebras_symm_apply
-      (center R L).toLieSubalgebra (center R L').toLieSubalgebra _ x).trans
-      (e.symm.ofSubalgebras_apply
-        (center R L').toLieSubalgebra (center R L).toLieSubalgebra _ x).symm
+  e.ofSubalgebras_symm _
 
 /-- `centerCongr` preserves involutivity. -/
 theorem involutive_centerCongr {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) :

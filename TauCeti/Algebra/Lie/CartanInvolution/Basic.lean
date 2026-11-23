@@ -118,10 +118,10 @@ theorem isCartanInvolution_iff_of_intertwine {L' : Type*} [LieRing L'] [LieAlgeb
       ← twistedKillingForm_map_map_of_intertwine e h x x]
     exact hθ'.posDef_twistedKillingForm (e x) (by simpa using hx)
   · obtain ⟨x, hx⟩ := e.surjective y
-    rw [← hx, LinearMap.BilinMap.toQuadraticMap_apply]
-    change 0 < θ'.twistedKillingForm (e x) (e x)
-    rw [twistedKillingForm_map_map_of_intertwine e h x x]
-    exact hθ.posDef_twistedKillingForm x (fun hx0 ↦ hy (by rw [← hx, hx0, map_zero]))
+    rw [← show e x = y from hx, LinearMap.BilinMap.toQuadraticMap_apply,
+      twistedKillingForm_map_map_of_intertwine e h x x]
+    exact hθ.posDef_twistedKillingForm x
+      (fun hx0 ↦ hy (by rw [← show e x = y from hx, hx0, map_zero]))
 
 omit [IsStrictOrderedRing K] in
 /-- Conjugating a Lie automorphism by a Lie equivalence preserves the Cartan-involution
@@ -152,11 +152,6 @@ omit [IsStrictOrderedRing K] in
 theorem isSymm_twistedKillingForm (hθ : θ.IsCartanInvolution) :
     θ.twistedKillingForm.IsSymm :=
   θ.isSymm_twistedKillingForm hθ.involutive
-
-omit [IsStrictOrderedRing K] in
-/-- A Cartan involution is its own inverse. -/
-theorem symm_eq (hθ : θ.IsCartanInvolution) : θ.symm = θ :=
-  symm_eq_self_of_involutive hθ.involutive
 
 omit [IsStrictOrderedRing K] in
 /-- The twisted Killing form of a Cartan involution is nondegenerate. -/

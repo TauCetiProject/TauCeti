@@ -101,12 +101,6 @@ theorem coe_eigenspaceCenterDerivedEquiv_apply (θ : L ≃ₗ⁅R⁆ L)
       Module.End.eigenspace
         ((θ.derivedSeriesCongr 1).toLinearEquiv : Module.End R (derivedSeries R L 1)) μ) :
     (θ.eigenspaceCenterDerivedEquiv h μ p : L) = (p.1.val : L) + (p.2.val : L) := by
-  unfold eigenspaceCenterDerivedEquiv
-  dsimp only
-  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.ofSubmodules,
-    LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply,
-    LinearEquiv.coe_ofEq_apply]
-  exact LieIdeal.prodEquivOfIsCompl_apply (center R L) (derivedSeries R L 1) h
-    (p.1.val, p.2.val)
+  simp [eigenspaceCenterDerivedEquiv]
 
 end LieEquiv

@@ -359,11 +359,7 @@ theorem coe_derivedSeriesCongr (e : L ≃ₗ⁅R⁆ L') (k : ℕ) (x : derivedSe
 @[simp]
 theorem derivedSeriesCongr_symm (e : L ≃ₗ⁅R⁆ L') (k : ℕ) :
     (e.derivedSeriesCongr k).symm = e.symm.derivedSeriesCongr k :=
-  LieEquiv.ext fun x ↦ Subtype.ext <|
-    (e.ofSubalgebras_symm_apply (derivedSeries R L k).toLieSubalgebra
-      (derivedSeries R L' k).toLieSubalgebra _ x).trans
-      (e.symm.ofSubalgebras_apply (derivedSeries R L' k).toLieSubalgebra
-        (derivedSeries R L k).toLieSubalgebra _ x).symm
+  e.ofSubalgebras_symm _
 
 /-- `derivedSeriesCongr` preserves involutivity. -/
 theorem involutive_derivedSeriesCongr {θ : L ≃ₗ⁅R⁆ L} (hθ : Function.Involutive θ) (k : ℕ) :

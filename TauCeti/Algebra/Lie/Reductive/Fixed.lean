@@ -104,6 +104,12 @@ private noncomputable def fixedCenterLinearEquiv (e : L ≃ₗ⁅R⁆ L) :
   map_add' _ _ := Subtype.ext (Subtype.ext rfl)
   map_smul' _ _ := Subtype.ext (Subtype.ext rfl)
 
+@[simp]
+private theorem coe_fixedCenterLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L)
+    (x : ↥(e.toLieHom.fixedSubalgebra ⊓ (center R L).toLieSubalgebra)) :
+    ((e.fixedCenterLinearEquiv x).val : L) = (x : L) :=
+  rfl
+
 private noncomputable def fixedDerivedLinearEquiv (e : L ≃ₗ⁅R⁆ L) :
     ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra) ≃ₗ[R]
       Module.End.eigenspace
@@ -122,19 +128,24 @@ private noncomputable def fixedDerivedLinearEquiv (e : L ≃ₗ⁅R⁆ L) :
   map_add' _ _ := Subtype.ext (Subtype.ext rfl)
   map_smul' _ _ := Subtype.ext (Subtype.ext rfl)
 
+@[simp]
+private theorem coe_fixedDerivedLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L)
+    (x : ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra)) :
+    ((e.fixedDerivedLinearEquiv x).val : L) = (x : L) :=
+  rfl
+
 private noncomputable def fixedCenterDerivedLinearEquiv (e : L ≃ₗ⁅R⁆ L)
     (h : IsCompl (center R L) (derivedSeries R L 1)) :
     (↥(e.toLieHom.fixedSubalgebra ⊓ (center R L).toLieSubalgebra) ×
       ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra)) ≃ₗ[R]
         e.toLieHom.fixedSubalgebra :=
-  (((e.fixedCenterLinearEquiv.prodCongr e.fixedDerivedLinearEquiv).trans
+  ((e.fixedCenterLinearEquiv.prodCongr e.fixedDerivedLinearEquiv).trans
     (e.eigenspaceCenterDerivedEquiv h 1)).trans
-    (LinearEquiv.ofEq _ _
+    (LinearEquiv.ofEq _ e.toLieHom.fixedSubalgebra.toSubmodule
       (by
         rw [Module.End.eigenspace_one_eq_fixedSubmodule]
         ext v
-        exact LinearMap.mem_fixedSubmodule_iff.trans LieHom.mem_fixedSubalgebra.symm))).trans
-    (LinearEquiv.refl R e.toLieHom.fixedSubalgebra)
+        exact LinearMap.mem_fixedSubmodule_iff.trans LieHom.mem_fixedSubalgebra.symm))
 
 private theorem coe_fixedCenterDerivedLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L)
     (h : IsCompl (center R L) (derivedSeries R L 1))
@@ -142,12 +153,8 @@ private theorem coe_fixedCenterDerivedLinearEquiv_apply (e : L ≃ₗ⁅R⁆ L)
       ↥(e.toLieHom.fixedSubalgebra ⊓ (derivedSeries R L 1).toLieSubalgebra)) :
     ((e.fixedCenterDerivedLinearEquiv h p : e.toLieHom.fixedSubalgebra) : L) =
       (p.1 : L) + p.2 := by
-  unfold fixedCenterDerivedLinearEquiv
-  rw [LinearEquiv.trans_apply]
-  refine (congrArg Subtype.val (LinearEquiv.refl_apply _)).trans ?_
-  rw [LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply, LinearEquiv.trans_apply,
-    coe_eigenspaceCenterDerivedEquiv_apply, LinearEquiv.prodCongr_apply]
-  rfl
+  rw [fixedCenterDerivedLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  simp
 
 /-- When `L = Z(L) ⊕ [L, L]`, addition identifies the fixed algebra with the product of its fixed
 central part and the fixed part of the ambient derived ideal. -/
