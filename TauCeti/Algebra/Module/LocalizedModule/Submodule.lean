@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Localization.Basic
 public import Mathlib.RingTheory.Localization.Finiteness
 public import Mathlib.RingTheory.Ideal.Colon
@@ -20,6 +21,10 @@ This file proves the following facts about submodules and localized modules:
   exactly when `f x` does.
 * `Submodule.localized'_one`: the localization of the image of `A` in an algebra `B` is the image
   of the localized base ring `A'` in the localized algebra `B'`.
+* `Submodule.isTorsion'_quotient_iff_localized'_eq_top`: a submodule spans after localization
+  exactly when its quotient is torsion for the denominators.
+* `Submodule.isTorsion'_quotient_sup_iff`: the corresponding criterion for the sum of two
+  submodules, as used for the integral old/new index in level change.
 * `LinearMap.localizedMap_injective_iff_subsingleton_localized_ker`: a localized linear map is
   injective exactly when the localization of its kernel vanishes, the companion of Mathlib's
   `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`.
@@ -27,6 +32,8 @@ This file proves the following facts about submodules and localized modules:
   localization of `R` at `S`, every finitely generated `R`-submodule of the `F`-span of an
   `R`-submodule `M` is carried into `M` by a single element of `S`. This is the uniform version of
   Mathlib's `multiple_mem_span_of_mem_localization_span`.
+* `Submodule.isLocalizedModule_subtype_of_span_eq_top`: when `F` is the localization of `R` at
+  `S`, the inclusion of an `R`-submodule spanning an `F`-module is a localization at `S`.
 -/
 
 public section
@@ -91,9 +98,47 @@ theorem FG.exists_smul_mem_of_le_span {N : Submodule R E} (hN : N.FG)
     rw [smul_add, mul_smul, mul_comm, mul_smul]
     exact add_mem (smul_mem _ r₂ (h₁ v₁ hv₁)) (smul_mem _ r₁ (h₂ v₂ hv₂))
 
+variable (M) in
+/-- If `F` is the localization of `R` at `S`, the inclusion of an `R`-submodule spanning the
+ambient `F`-module, such as a full lattice, is a localization of `R`-modules at `S`. -/
+theorem isLocalizedModule_subtype_of_span_eq_top (hM : span F (M : Set E) = ⊤) :
+    IsLocalizedModule S M.subtype := by
+  have := isLocalizedModule_id S E F
+  let e := (LinearEquiv.ofTop (M.localized' F S LinearMap.id)
+    (by simpa [localized'_eq_span] using hM)).restrictScalars R
+  have h : e.toLinearMap ∘ₗ M.toLocalized' F S LinearMap.id = M.subtype := by ext; simp [e]
+  exact h ▸ IsLocalizedModule.of_linearEquiv S _ e
+
 end ClearDenominators
 
 end Submodule
+
+section QuotientTorsion
+
+variable {R A M N : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module A N]
+  [IsScalarTower R A N]
+
+/-- The quotient by a submodule is killed elementwise by denominators if and only if the
+submodule spans the localized module. -/
+theorem Submodule.isTorsion'_quotient_iff_localized'_eq_top (P : Submodule R M) (S : Submonoid R)
+    [IsLocalization S A] (f : M →ₗ[R] N) [IsLocalizedModule S f] :
+    Module.IsTorsion' (M ⧸ P) S ↔ P.localized' A S f = ⊤ := by
+  rw [← Submodule.Quotient.subsingleton_iff,
+    IsLocalizedModule.subsingleton_iff S (P.toLocalizedQuotient' A S f)]
+  simp [Module.IsTorsion']
+
+/-- The quotient by the sum of two submodules is torsion for the denominators exactly when
+the localized submodules span. For a finite module over a domain, taking the nonzero elements as
+denominators gives a finitely generated torsion quotient whenever the localizations are
+complementary. -/
+theorem Submodule.isTorsion'_quotient_sup_iff (P Q : Submodule R M) (S : Submonoid R)
+    [IsLocalization S A] (f : M →ₗ[R] N) [IsLocalizedModule S f] :
+    Module.IsTorsion' (M ⧸ (P ⊔ Q)) S ↔ P.localized' A S f ⊔ Q.localized' A S f = ⊤ := by
+  rw [(P ⊔ Q).isTorsion'_quotient_iff_localized'_eq_top (A := A) S f,
+    (Submodule.localized'gi A S f).gc.l_sup]
+
+end QuotientTorsion
 
 /-- A localized linear map is injective iff the localization of its kernel vanishes. This is the
 kernel counterpart of `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`. -/
