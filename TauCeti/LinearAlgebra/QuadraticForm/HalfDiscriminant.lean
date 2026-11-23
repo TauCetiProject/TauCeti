@@ -9,8 +9,9 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
-public import Mathlib.RingTheory.TensorProduct.Free
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Matrix.Determinant.Half
+import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
@@ -156,27 +157,24 @@ theorem halfDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : ι ≃
 discriminant the image of `disc(q)`. -/
 theorem polarDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A] {q : QuadraticForm R M}
     (b : Basis ι R M) {B : BilinForm R M} (hB : B.toQuadraticMap = q) :
-    polarDiscr (B.baseChange A).toQuadraticMap (Algebra.TensorProduct.basis A b) =
+    polarDiscr (B.baseChange A).toQuadraticMap (b.baseChange A) =
       algebraMap R A (polarDiscr q b) := by
   rw [polarDiscr, polarDiscr, ← hB, LinearMap.BilinMap.polarBilin_toQuadraticMap,
-    LinearMap.BilinMap.polarBilin_toQuadraticMap, RingHom.map_det]
-  congr 1
-  ext i j
-  simp [LinearMap.BilinForm.toMatrix_apply, Algebra.TensorProduct.basis_apply,
-    Algebra.algebraMap_eq_smul_one, add_smul]
+    LinearMap.BilinMap.polarBilin_toQuadraticMap, map_add, map_add,
+    show LinearMap.flip (B.baseChange A) = BilinForm.baseChange A (LinearMap.flip B) from
+      (LinearMap.BilinForm.baseChange_flip B).symm,
+    LinearMap.BilinForm.toMatrix_baseChange, LinearMap.BilinForm.toMatrix_baseChange,
+    ← RingHom.mapMatrix_apply, ← RingHom.mapMatrix_apply, ← map_add, RingHom.map_det]
 
 /-- The half-discriminant is compatible with base change: for a bilinear form `B` with
 `B(x, x) = q(x)`, the form `x ↦ B_A(x, x)` on `A ⊗ M`, which has the same coefficients as `q`, has
 half-discriminant the image of `disc'(q)`. -/
 theorem halfDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A] {q : QuadraticForm R M}
     (b : Basis ι R M) {B : BilinForm R M} (hB : B.toQuadraticMap = q) :
-    halfDiscr (B.baseChange A).toQuadraticMap (Algebra.TensorProduct.basis A b) =
+    halfDiscr (B.baseChange A).toQuadraticMap (b.baseChange A) =
       algebraMap R A (halfDiscr q b) := by
-  rw [halfDiscr_eq_halfDet _ rfl, halfDiscr_eq_halfDet _ hB, map_halfDet]
-  congr 1
-  ext i j
-  simp [LinearMap.BilinForm.toMatrix_apply, Algebra.TensorProduct.basis_apply,
-    Algebra.algebraMap_eq_smul_one]
+  rw [halfDiscr_eq_halfDet _ rfl, halfDiscr_eq_halfDet _ hB, map_halfDet,
+    LinearMap.BilinForm.toMatrix_baseChange]
 
 /-- The discriminant that decides nondegeneracy: `disc(q)` in even rank and `disc'(q)` in odd
 rank. -/
@@ -211,7 +209,7 @@ theorem normalizedDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : 
 `QuadraticForm.polarDiscr_baseChange` and `QuadraticForm.halfDiscr_baseChange`. -/
 theorem normalizedDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A]
     {q : QuadraticForm R M} (b : Basis ι R M) {B : BilinForm R M} (hB : B.toQuadraticMap = q) :
-    normalizedDiscr (B.baseChange A).toQuadraticMap (Algebra.TensorProduct.basis A b) =
+    normalizedDiscr (B.baseChange A).toQuadraticMap (b.baseChange A) =
       algebraMap R A (normalizedDiscr q b) := by
   rcases Nat.even_or_odd (Fintype.card ι) with hι | hι
   · rw [normalizedDiscr_of_even hι, normalizedDiscr_of_even hι, polarDiscr_baseChange A b hB]
@@ -251,7 +249,7 @@ theorem IsDiscrNondegenerate.baseChange (A : Type*) [CommRing A] [Algebra R A]
     {q : QuadraticForm R M} (h : IsDiscrNondegenerate q) {B : BilinForm R M}
     (hB : B.toQuadraticMap = q) : IsDiscrNondegenerate (B.baseChange A).toQuadraticMap := by
   obtain ⟨n, b, hb⟩ := h
-  exact ⟨n, Algebra.TensorProduct.basis A b, by
+  exact ⟨n, b.baseChange A, by
     rw [normalizedDiscr_baseChange A b hB]
     exact hb.map _⟩
 

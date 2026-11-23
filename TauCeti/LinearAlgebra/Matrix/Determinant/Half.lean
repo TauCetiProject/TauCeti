@@ -115,6 +115,11 @@ integer polynomial `det (X + Xᵀ) / 2`, so that `2 * halfDet A = det (A + Aᵀ)
 noncomputable def halfDet {R : Type*} [CommRing R] (A : Matrix ι ι R) : R :=
   eval₂ (Int.castRingHom R) (fun p => A p.1 p.2) (halfDetPoly ι)
 
+/-- `halfDet A` is the value of `Matrix.halfDetPoly` at the entries of `A`. -/
+theorem halfDet_def {R : Type*} [CommRing R] (A : Matrix ι ι R) :
+    A.halfDet = eval₂ (Int.castRingHom R) (fun p => A p.1 p.2) (halfDetPoly ι) :=
+  (rfl)
+
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- `halfDet` commutes with ring homomorphisms. -/
