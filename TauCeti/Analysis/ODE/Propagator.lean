@@ -303,7 +303,7 @@ theorem norm_propagator_le_of_norm_le {m : ℝ → ℝ} (hP : IntervalIntegrable
     (hm : IntervalIntegrable m volume s t) (hPm : ∀ᵐ r, r ∈ Ι s t → ‖P r‖ ≤ m r) :
     ‖propagator P t s‖ ≤ exp |∫ r in s..t, m r| := by
   have hP' : IntegrableOn P (Icc (min s t) (max s t)) :=
-    Iff.mpr integrableOn_Icc_iff_integrableOn_Ioc hP.def'
+    Iff.mpr integrableOn_Icc_iff_integrableOn_Ioc (by simpa only [uIoc] using hP.def')
   refine (norm_propagator_le hP'
     ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩).trans
     (exp_le_exp.2 ?_)
