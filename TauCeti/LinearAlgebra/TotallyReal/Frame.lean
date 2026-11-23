@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
+import TauCeti.Data.Fin.Sum
 
 /-!
 # Doubled frames for totally real subspaces
@@ -16,6 +18,12 @@ reality of the image of `A`, provided both `A` and `J ∘ A` are injective. This
 invertibility criterion for coordinates adapted to a totally real submanifold.
 
 No square identity for `J` is needed: injectivity on the parametrized subspace suffices.
+
+A basis `a` of a maximal totally real submodule `L` on which `J` is injective therefore doubles to a
+basis `(a i, J (a i))` of the ambient module (`TauCeti.IsMaximalTotallyReal.doubledBasis`), indexed
+by `ι × Fin 2`. When `J` is multiplication by `i` on a complex vector space, `a` is also a complex
+basis of the ambient space (`TauCeti.IsMaximalTotallyReal.complexBasis`), and the doubled basis is
+its underlying real basis `(a i, i • a i)` (`Module.Basis.complexToReal`).
 -/
 
 public section
@@ -63,5 +71,38 @@ theorem bijective_coprod_iff_isMaximalTotallyReal_range
     Function.Bijective (A.coprod (J.comp A)) ↔
       IsMaximalTotallyReal J (LinearMap.range A) :=
   ⟨isMaximalTotallyReal_range_of_bijective_coprod, fun h => h.bijective_coprod hA hJA⟩
+
+namespace IsMaximalTotallyReal
+
+variable {L : Submodule R E}
+
+/-- The **doubled basis** of a basis `a` of a maximal totally real submodule `L`: the basis of the
+ambient module whose pair of vectors indexed by `(i, 0)` and `(i, 1)` is `(a i, J (a i))`
+(`TauCeti.IsMaximalTotallyReal.doubledBasis_apply_zero`,
+`TauCeti.IsMaximalTotallyReal.doubledBasis_apply_one`). It is the image of the product basis
+of `L × L` under the bijective doubled frame `(x, y) ↦ x + J y`. -/
+noncomputable def doubledBasis (hL : IsMaximalTotallyReal J L)
+    (hJ : Function.Injective (J.domRestrict L)) {ι : Type*} (a : Module.Basis ι R L) :
+    Module.Basis (ι × Fin 2) R E :=
+  ((a.prod a).reindex (sumEquivProdFinTwo ι)).map
+    (LinearEquiv.ofBijective _ ((by rwa [Submodule.range_subtype] :
+      IsMaximalTotallyReal J (LinearMap.range L.subtype)).bijective_coprod
+        L.injective_subtype hJ))
+
+variable (hL : IsMaximalTotallyReal J L) (hJ : Function.Injective (J.domRestrict L))
+  {ι : Type*} (a : Module.Basis ι R L)
+
+/-- The vector of the doubled basis indexed by `(i, 0)` is the basis vector `a i`. -/
+@[simp]
+theorem doubledBasis_apply_zero (i : ι) : hL.doubledBasis hJ a (i, 0) = a i := by
+  simp [doubledBasis, ← sumEquivProdFinTwo_inl, Module.Basis.prod_apply]
+
+/-- The vector of the doubled basis indexed by `(i, 1)` is the image `J (a i)` of the basis vector
+`a i`. -/
+@[simp]
+theorem doubledBasis_apply_one (i : ι) : hL.doubledBasis hJ a (i, 1) = J (a i) := by
+  simp [doubledBasis, ← sumEquivProdFinTwo_inr, Module.Basis.prod_apply]
+
+end IsMaximalTotallyReal
 
 end TauCeti
