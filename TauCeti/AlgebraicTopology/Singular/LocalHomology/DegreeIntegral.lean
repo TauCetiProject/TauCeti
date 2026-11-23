@@ -190,12 +190,11 @@ variable {n : ℕ} (o : HomologicalOrientation E E n) (hE : Module.finrank ℝ E
 
 include hE in
 /-- **The integral of a pullback is the degree times the integral.** Let `f : E → E` be a proper
-`C¹` map and `g : E → ℝ` an almost everywhere strongly measurable function whose pullback
-`g(f x) det Df(x)` is integrable. Then
+`C¹` map and `g : E → ℝ` a function whose pullback `g(f x) det Df(x)` is integrable. Then
 
 `∫ g(f x) det Df(x) dμ(x) = deg f ∫ g dμ`. -/
 theorem integral_comp_mul_det_fderiv_eq_degree_mul {f : C(E, E)} (hf : IsProperMap f)
-    (hf₁ : ContDiff ℝ 1 f) {g : E → ℝ} (hg : AEStronglyMeasurable g μ)
+    (hf₁ : ContDiff ℝ 1 f) {g : E → ℝ}
     (hint : Integrable (fun x ↦ g (f x) * (fderiv ℝ f x).det) μ) :
     ∫ x, g (f x) * (fderiv ℝ f x).det ∂μ = o.degree o hE f * ∫ y, g y ∂μ := by
   have hderiv (x : E) : HasFDerivAt f (fderiv ℝ f x) x :=
@@ -203,6 +202,13 @@ theorem integral_comp_mul_det_fderiv_eq_degree_mul {f : C(E, E)} (hf : IsProperM
   obtain ⟨t, ε, htm, htd, htU, htp⟩ := exists_pieces hf₁
   have him (k : ℕ) : MeasurableSet (f '' t k) :=
     measurable_image_of_fderivWithin (htm k) (fun x _ ↦ (hderiv x).hasFDerivWithinAt) (htp k).1
+  -- `g` is integrable on each image, by the change of variables on the piece.
+  have hg (k : ℕ) : Integrable ((f '' t k).indicator g) μ := by
+    refine (integrable_indicator_iff (him k)).2 <|
+      (integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ (htm k)
+        (fun x _ ↦ (hderiv x).hasFDerivWithinAt) (htp k).1 g).2 <|
+      IntegrableOn.congr_fun (hint.integrableOn.const_mul (ε k : ℝ)) (fun x hx ↦ ?_) (htm k)
+    rw [smul_eq_mul, ← (htp k).2 x hx, mul_left_comm, sign_mul_self, mul_comm]
   -- The pullback vanishes where `det Df = 0`, so its integral is the sum over the pieces.
   have hU : ∫ x in ⋃ k, t k, g (f x) * (fderiv ℝ f x).det ∂μ =
       ∫ x, g (f x) * (fderiv ℝ f x).det ∂μ :=
@@ -214,7 +220,7 @@ theorem integral_comp_mul_det_fderiv_eq_degree_mul {f : C(E, E)} (hf : IsProperM
     hint
   rw [← hU, integral_iUnion htm htd hint.integrableOn,
     tsum_congr fun k ↦ setIntegral_comp_mul_det_eq μ hderiv (htm k) (htp k).1 (htp k).2 g,
-    ← integral_tsum (fun k ↦ (hg.indicator (him k)).const_mul _) hfin, ← integral_const_mul]
+    ← integral_tsum (fun k ↦ (hg k).aestronglyMeasurable.const_mul _) hfin, ← integral_const_mul]
   refine integral_congr_ae ?_
   -- Almost every `y` is a regular value, by Sard's theorem, and there the sum of the signs over
   -- the fibre is the degree.
@@ -244,7 +250,7 @@ theorem integral_comp_mul_det_fderiv_eq_degree_mul_of_hasCompactSupport {f : C(E
   have hc : HasCompactSupport fun x ↦ g (f x) :=
     (hf.isCompact_preimage hgc).of_isClosed_subset (isClosed_tsupport _)
       (tsupport_comp_subset_preimage g f.continuous)
-  refine o.integral_comp_mul_det_fderiv_eq_degree_mul hE μ hf hf₁ hg.aestronglyMeasurable ?_
+  refine o.integral_comp_mul_det_fderiv_eq_degree_mul hE μ hf hf₁ ?_
   exact ((hg.comp f.continuous).mul (ContinuousLinearMap.continuous_det.comp
     (hf₁.continuous_fderiv one_ne_zero))).integrable_of_hasCompactSupport (hc.mul_right)
 
