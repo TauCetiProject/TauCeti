@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Stabilizer
 
 /-!
 # The flux of a diffeotopy
@@ -424,14 +425,8 @@ theorem final_transDiffeomorph_mem_diffeomorphStabilizer_iff (f : M ≃ₘ⟮J, 
     (σ : SmoothForm J P ℝ 2) :
     (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ ↔
       Φ.final ∈ SmoothForm.diffeomorphStabilizer (SmoothForm.mpullback f f.contMDiff σ) := by
-  rw [SmoothForm.mem_diffeomorphStabilizer, SmoothForm.mem_diffeomorphStabilizer,
-    final_transDiffeomorph, SmoothForm.mpullback_trans, SmoothForm.mpullback_trans]
-  constructor
-  · intro h
-    have h' := congrArg (SmoothForm.mpullback f f.contMDiff) h
-    rwa [SmoothForm.mpullback_mpullback_symm] at h'
-  · intro h
-    rw [h, SmoothForm.mpullback_symm_mpullback]
+  rw [final_transDiffeomorph, ← Diffeomorph.diffCongr_apply]
+  exact Diffeomorph.diffCongr_mem_diffeomorphStabilizer_iff f rfl
 
 /-- **Naturality of the flux form.** Conjugating a diffeotopy by a diffeomorphism `f` transports
 its flux form: the flux form of `f ∘ φ_t ∘ f⁻¹` for `σ` is the pullback along `f⁻¹` of the flux
