@@ -312,12 +312,7 @@ theorem boundary_ofCube {n : ℕ} (c : SingularCube X (n + 1)) :
 theorem boundary_ofCube_comp_squareSwap (c : SingularCube X 2) :
     boundary X R 1 (ofCube X R (c.comp SingularCube.squareSwap)) =
       -boundary X R 1 (ofCube X R c) := by
-  rw [boundary_ofCube, boundary_ofCube, Fin.sum_univ_two, Fin.sum_univ_two,
-    SingularCube.face_comp_squareSwap, SingularCube.face_comp_squareSwap,
-    SingularCube.face_comp_squareSwap, SingularCube.face_comp_squareSwap, Equiv.swap_apply_left,
-    Equiv.swap_apply_right]
-  simp only [Fin.isValue, Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul]
-  abel
+  simp [Fin.sum_univ_two]
 
 /-- Normalized cubical chains pushed forward along a continuous map. -/
 def map (f : C(X, Y)) (n : ℕ) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain Y R n :=

@@ -159,8 +159,7 @@ theorem face_comp_squareSwap (c : SingularCube X 2) (i : Fin 2) (t : I) :
   congr 1
   funext j
   revert i j
-  simp only [Fin.forall_fin_two]
-  exact ⟨⟨rfl, rfl⟩, rfl, rfl⟩
+  simp [Fin.forall_fin_two, Fin.insertNth_zero', Fin.insertNth_apply_below]
 
 /-- A cube composed with the face inclusion `face i t id` of the standard cube is its face. -/
 theorem comp_face_id {n : ℕ} (c : SingularCube X (n + 1)) (i : Fin (n + 1)) (t : I) :
