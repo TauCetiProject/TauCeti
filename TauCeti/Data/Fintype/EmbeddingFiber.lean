@@ -20,11 +20,7 @@ as needed when bounding the number of copies affected by a hyperedge edit.
 
 When the whole source is mapped onto a prescribed subset, the count is exact: an `n`-element
 type maps onto a prescribed `n`-element finset in exactly `n!` ways
-(`TauCeti.natCard_embedding_map_univ_eq_factorial`). Since every `n`-element subset of `β` is the
-image of exactly `n!` embeddings of `Fin n` (`Set.powersetCard.natCard_ofFinEmb_eq`), a count of
-labelled embeddings `Fin n ↪ β` through a condition on their images is `n!` times the count of the
-`n`-element subsets satisfying it (`Set.powersetCard.card_filter_ofFinEmb`), which converts
-labelled copy counts into counts of unordered subsets.
+(`TauCeti.natCard_embedding_map_univ_eq_factorial`).
 
 When the source is `Fin r` itself, `Set.powersetCard.card_filter_ofFinEmb_eq` counts the `r!`
 injective `r`-tuples in a finite type with a prescribed unordered image `t`, and
@@ -96,22 +92,6 @@ theorem card_filter_ofFinEmb_eq {β : Type*} [Fintype β] [DecidableEq β] {r : 
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, ← natCard_ofFinEmb_eq t]
   exact Nat.card_congr ((Equiv.subtypeInjectiveEquivEmbedding (Fin r) β).subtypeEquiv fun _ ↦
     Iff.rfl)
-
-/-- There are `n!` times as many embeddings of `Fin n` whose image satisfies a condition as there
-are `n`-element subsets satisfying it. -/
-theorem card_filter_ofFinEmb {β : Type*} [Fintype β] {n : ℕ}
-    (p : powersetCard β n → Prop) [DecidablePred p] :
-    #{f : Fin n ↪ β | p (ofFinEmb n β f)} = n.factorial * #{s | p s} := by
-  classical
-  rw [Finset.card_eq_sum_card_fiberwise (f := ofFinEmb n β) (t := {s | p s})
-    fun f hf ↦ by simpa using hf, mul_comm]
-  refine Finset.sum_const_nat fun s hs ↦ ?_
-  rw [← natCard_ofFinEmb_eq s, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  congr 1
-  ext f
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, and_iff_right_iff_imp]
-  rintro rfl
-  simpa using hs
 
 end Set.powersetCard
 

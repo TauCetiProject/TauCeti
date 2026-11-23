@@ -42,6 +42,8 @@ groups.
   underlying submodule detects the extreme subcomodules.
 * `TauCeti.Subcomodule.ne_bot_iff`: a subcomodule is nonzero exactly when it contains a nonzero
   vector.
+* `TauCeti.Subcomodule.nontrivial_iff`: the subcomodule lattice is nontrivial if and only if the
+  comodule is nontrivial.
 * `TauCeti.Subcomodule.isSimpleOrder_of_transitive`: a family of maps that preserves every
   subcomodule and acts transitively on nonzero vectors makes the subcomodule lattice simple.
 * `TauCeti.Comodule.nontrivial_of_isSimpleOrder` and
@@ -273,6 +275,15 @@ theorem toSubmodule_eq_bot {N : Subcomodule R C M} : N.toSubmodule = ⊥ ↔ N =
 /-- A subcomodule is nonzero exactly when it contains a nonzero vector. -/
 theorem ne_bot_iff {N : Subcomodule R C M} : N ≠ ⊥ ↔ ∃ m ∈ N, m ≠ 0 :=
   (not_congr toSubmodule_eq_bot).symm.trans (Submodule.ne_bot_iff N.toSubmodule)
+
+/-- The subcomodule lattice is nontrivial if and only if the comodule is nontrivial. -/
+@[simp]
+theorem nontrivial_iff : Nontrivial (Subcomodule R C M) ↔ Nontrivial M := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · obtain ⟨m, -, hm⟩ := ne_bot_iff.mp (top_ne_bot (α := Subcomodule R C M))
+    exact ⟨m, 0, hm⟩
+  · obtain ⟨m, hm⟩ := exists_ne (0 : M)
+    exact ⟨⊥, ⊤, fun h ↦ hm (mem_bot.mp (h.symm ▸ mem_top m))⟩
 
 /-- If a family of maps preserves every subcomodule and acts transitively on nonzero vectors,
 then the subcomodule lattice is simple. -/

@@ -14,6 +14,11 @@ The restriction of a bounded operator `T` to a submodule `M` is `T ∘L M.subtyp
 decreases as the submodule shrinks, and passing to the topological closure of `M` does not
 change it, since the bound `‖T x‖ ≤ C ‖x‖` cuts out a closed set. Over a densely normed field,
 the norm of the restriction is the supremum of `‖T x‖` over the vectors `x ∈ M` with `‖x‖ ≤ 1`.
+An operator within distance `1` of one fixing `M` restricts to an injective map on `M`
+(`ContinuousLinearMap.injective_comp_subtypeL_of_norm_sub_lt_one`).
+
+A bounded bilinear map whose values lie in a submodule is bounded into that submodule
+(`ContinuousLinearMap.codRestrictBilin`).
 
 A bounded bilinear action preserving a submodule restricts to a bounded action on that
 submodule, with operator norm at most that of the original action.
@@ -26,6 +31,25 @@ namespace ContinuousLinearMap
 variable {𝕜 B E : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup B] [NormedSpace 𝕜 B]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A continuous bilinear map whose values lie in a submodule is continuous into that submodule. -/
+noncomputable def codRestrictBilin {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] (T : B →L[𝕜] F →L[𝕜] G)
+    (p : Submodule 𝕜 G) (hT : ∀ x y, T x y ∈ p) : B →L[𝕜] F →L[𝕜] p :=
+  (T.toLinearMap₁₂.codRestrict₂ p.subtype p.injective_subtype
+    (fun x y ↦ by simpa using hT x y)).mkContinuous₂ ‖T‖ fun x y ↦ by
+      exact (congrArg norm (LinearMap.codRestrict₂_apply T.toLinearMap₁₂ p.subtype
+        p.injective_subtype (fun x y ↦ by simpa using hT x y) x y)).trans_le (T.le_opNorm₂ x y)
+
+@[simp]
+theorem coe_codRestrictBilin_apply {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] (T : B →L[𝕜] F →L[𝕜] G)
+    (p : Submodule 𝕜 G) (hT : ∀ x y, T x y ∈ p) (x : B) (y : F) :
+    (T.codRestrictBilin p hT x y : G) = T x y := by
+  unfold codRestrictBilin
+  exact (congrArg Subtype.val (LinearMap.mkContinuous₂_apply _ _ x y)).trans
+    (LinearMap.codRestrict₂_apply T.toLinearMap₁₂ p.subtype p.injective_subtype
+      (fun x y ↦ by simpa using hT x y) x y)
 
 section Subspace
 
@@ -48,6 +72,24 @@ theorem nnnorm_comp_subtypeL_topologicalClosure (T : E →L[𝕜] F) (M : Submod
   exact closure_minimal (fun y hy ↦ (T ∘L M.subtypeL).le_opNNNorm ⟨y, hy⟩) hclosed hx
 
 end Subspace
+
+section Injective
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- An operator within distance `1` of an operator fixing a submodule `M` is injective on `M`. -/
+theorem injective_comp_subtypeL_of_norm_sub_lt_one {P P₀ : E →L[𝕜] E} {M : Submodule 𝕜 E}
+    (hP₀ : ∀ v : M, P₀ v = v) (h : ‖P₀ - P‖ < 1) : Function.Injective (P ∘L M.subtypeL) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  rw [comp_apply, Submodule.subtypeL_apply] at hv
+  by_contra hv0
+  have hv0' : 0 < ‖(v : E)‖ := norm_pos_iff.2 fun h ↦ hv0 (Subtype.ext h)
+  have hle : ‖(v : E)‖ ≤ ‖P₀ - P‖ * ‖(v : E)‖ :=
+    calc ‖(v : E)‖ = ‖(P₀ - P) v‖ := by rw [sub_apply, hP₀ v, hv, sub_zero]
+      _ ≤ ‖P₀ - P‖ * ‖(v : E)‖ := (P₀ - P).le_opNorm _
+  exact lt_irrefl _ (hle.trans_lt (mul_lt_of_lt_one_left hv0' h))
+
+end Injective
 
 section DenselyNormed
 

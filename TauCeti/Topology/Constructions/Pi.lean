@@ -29,6 +29,8 @@ proof of Mycielski's theorem.
 In a Hausdorff space the injective tuples indexed by a finite type form an open subset of the
 product, such as the ordered triples of distinct points of the Riemann sphere.
 
+Repeating the first entry of a finite tuple, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding.
+
 ## Main results
 
 * `TauCeti.isOpen_setOf_forall_abs_lt_one`: the finite-dimensional open unit cube is open.
@@ -37,11 +39,14 @@ product, such as the ordered triples of distinct points of the Riemann sphere.
   injective tuples for finitely many dense open sets at once.
 * `TauCeti.isOpen_setOf_injective`: in a Hausdorff space, the injective finite tuples form an open
   set.
+* `TauCeti.continuous_extend_subtypeVal`: extending functions on a subset along `Subtype.val`,
+  with a fixed fallback, is continuous.
+* `TauCeti.isEmbedding_cons_apply_zero`: repeating the first entry of a tuple is an embedding.
 -/
 
 public section
 
-open Set Function
+open Set Function Topology
 
 namespace TauCeti
 
@@ -55,6 +60,15 @@ theorem isOpen_setOf_forall_abs_lt_one {ι : Type*} [Finite ι] :
 
 variable {X : Type*} [TopologicalSpace X]
 
+/-- Extending functions on a subset `s` along `Subtype.val`, with a fixed fallback `e` outside `s`,
+is continuous for the product topologies. -/
+theorem continuous_extend_subtypeVal {ι : Type*} {s : Set ι} (e : ι → X) :
+    Continuous fun g : s → X ↦ extend Subtype.val g e := by
+  refine continuous_pi fun j ↦ ?_
+  by_cases hj : j ∈ s
+  · exact (continuous_apply _).congr fun g ↦ (extend_val_apply (g := g) (j := e) hj).symm
+  · exact continuous_const.congr fun g ↦ (extend_val_apply' (g := g) (j := e) hj).symm
+
 /-- In a Hausdorff space, the injective tuples indexed by a finite type form an open subset of the
 product: injectivity asks finitely many pairs of coordinates to differ. -/
 theorem isOpen_setOf_injective [T2Space X] {κ : Type*} [Finite κ] :
@@ -66,6 +80,16 @@ theorem isOpen_setOf_injective [T2Space X] {κ : Type*} [Finite κ] :
   rw [this]
   exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
     isOpen_iInter_of_finite fun _ ↦ isOpen_ne_fun (continuous_apply i) (continuous_apply j)
+
+/-- Repeating the first entry, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding of tuples:
+forgetting the first entry is a continuous left inverse. -/
+theorem isEmbedding_cons_apply_zero {n : ℕ} :
+    IsEmbedding fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X) :=
+  IsEmbedding.of_comp ((continuous_apply 0).finCons (A := fun _ ↦ X) continuous_id)
+    continuous_id.finTail <| by
+      -- forgetting the repeated first entry gives back the tuple
+      simp only [Function.comp_def, id_eq, Fin.tail_cons]
+      exact IsEmbedding.id
 
 /-- Shrinking along one injective tuple: nonempty open sets `V i` can be shrunk to nonempty open
 sets `W i ⊆ V i` so that the box `∏ j, W (t j)` along an injective finite tuple `t` of indices

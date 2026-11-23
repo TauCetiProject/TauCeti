@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.TwoElementary
-public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
+public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Rescaled
 
 /-!
 # Even two-elementary lattices
@@ -151,61 +151,6 @@ section Necessity
 
 variable (L : IntegralLattice V) [L.IsNondegenerate] (hL : L.IsEven)
 
-/-- The rescaled dual `Lᵛ(2)`: the dual carrier with the doubled form, an integral lattice when
-`2A_L = 0`. -/
-private noncomputable def dualTwo (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0) :
-    IntegralLattice V :=
-  ofSubmodule L.dualCarrier (((2 : ℤ) : ℚ) • L.form) (L.isSymm.smul _) fun x hx ↦ by
-    rw [LinearMap.BilinForm.mem_dualSubmodule]
-    intro y hy
-    -- `2B(x, y) = B(y, 2x)` with `y ∈ Lᵛ` and `2x ∈ L`.
-    have h := (LinearMap.BilinForm.mem_dualSubmodule _).mp hy _
-      (L.nsmul_mem_carrier 2 h2 ⟨x, hx⟩)
-    rw [map_nsmul, nsmul_eq_mul, L.isSymm.eq] at h
-    rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul]
-    exact_mod_cast h
-
-/-- If `L = 2Lᵛ` and `q_L` takes values in `½ℤ/ℤ`, then `Lᵛ(2)` is an even unimodular lattice with
-the signature of `L`, so `t₊ − t₋ ≡ 0 (mod 8)`. -/
-private theorem eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul
-    (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0)
-    (hS : ∀ x ∈ L.carrier, ∃ y ∈ L.dualCarrier, x = 2 • y)
-    (hq : ∀ x : L.DiscriminantGroup,
-      L.discriminantQuadraticMap hL x + L.discriminantQuadraticMap hL x = 0) :
-    (8 : ℤ) ∣ L.sigPos - L.sigNeg := by
-  set T := L.dualTwo h2
-  have hT : T.form = ((2 : ℤ) : ℚ) • L.form := ofSubmodule_form ..
-  have hcarrier : T.carrier = L.dualCarrier := ofSubmodule_carrier ..
-  -- The self-pairing of a dual vector is an integer.
-  have hnorm (y : L.dualCarrier) : L.form y y ∈ (1 : Submodule ℤ ℚ) := by
-    have h := hq (Submodule.Quotient.mk y)
-    rwa [discriminantQuadraticMap_mk, ← AddCircle.coe_add, add_halves,
-      AddCircle.coe_eq_zero_iff_mem_one] at h
-  have hTe : T.IsEven := by
-    rw [isEven_iff_forall_norm]
-    intro y
-    obtain ⟨z, hz⟩ := Submodule.mem_one.mp (hnorm ⟨y, hcarrier ▸ y.property⟩)
-    exact ⟨z, by rw [norm_apply, hT, LinearMap.smul_apply, LinearMap.smul_apply, ← hz]; simp⟩
-  have hTu : T.IsUnimodular := by
-    rw [isUnimodular_iff_dualCarrier_le]
-    intro v hv
-    rw [LinearMap.BilinForm.mem_dualSubmodule] at hv
-    rw [hcarrier, LinearMap.BilinForm.mem_dualSubmodule]
-    intro x hx
-    obtain ⟨y, hy, rfl⟩ := hS x hx
-    have h := hv y (hcarrier ▸ hy)
-    rw [hT, LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul] at h
-    rw [map_nsmul, nsmul_eq_mul]
-    exact_mod_cast h
-  have hpos : T.sigPos = L.sigPos := by
-    rw [← sigPos_smul_of_pos (by norm_num : (0 : ℤ) < 2) L]
-    simp only [IntegralLattice.sigPos, hT, smul_form]
-  have hneg : T.sigNeg = L.sigNeg := by
-    rw [← sigNeg_smul_of_pos (by norm_num : (0 : ℤ) < 2) L]
-    simp only [IntegralLattice.sigNeg, hT, smul_form]
-  rw [← hpos, ← hneg]
-  exact T.eight_dvd_sigPos_sub_sigNeg_of_isUnimodular hTe hTu
-
 /-- Nikulin's condition 4: a trivial discriminant group has zero form and zero invariant. -/
 private theorem delta_eq_zero_and_eight_dvd_of_natCard_eq_one {δ : ZMod 2}
     (hδ : δ = 0 ↔ ∀ x : L.DiscriminantGroup,
@@ -245,18 +190,6 @@ private theorem delta_eq_zero_of_natCard_eq_four {δ : ZMod 2}
     (L.isNondegenerate_discriminantQuadraticModule hL) h2 (hcard.trans (by norm_num))
     (hmil.trans hs))
 
-/-- Nikulin's condition 7: if `#A_L = 2^n` with `n` the rank, and `q_L` takes values in `½ℤ/ℤ`,
-then `L = 2Lᵛ` and `Lᵛ(2)` is even unimodular, so `t₊ - t₋ ≡ 0 (mod 8)`. -/
-private theorem eight_dvd_of_natCard_eq_two_pow_finrank {δ : ZMod 2}
-    (hδ : δ = 0 ↔ ∀ x : L.DiscriminantGroup,
-      L.discriminantQuadraticMap hL x + L.discriminantQuadraticMap hL x = 0)
-    (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0)
-    (hcard : Nat.card L.DiscriminantGroup = 2 ^ finrank ℚ V) (hδ0 : δ = 0) :
-    (((L.sigPos : ℤ) - (L.sigNeg : ℤ) : ℤ) : ZMod 8) = 0 := by
-  have hS := fun x hx ↦ L.exists_mem_dualCarrier_eq_nsmul 2 h2 hcard (x := x) hx
-  have h8 := L.eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul hL h2 hS (hδ.mp hδ0)
-  exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mpr (by exact_mod_cast h8)
-
 /-- **The invariants of an even `2`-elementary lattice satisfy Nikulin's conditions.** If the
 discriminant group of an even nondegenerate lattice `L` is `(ℤ/2)^a`, and `δ = 0` exactly when
 `q_L` takes values in `½ℤ/ℤ`, then `(δ; t₊, t₋, a)` satisfies `TwoElementaryAdmissible`. -/
@@ -286,6 +219,11 @@ theorem twoElementaryAdmissible_sigPos_sigNeg {a : ℕ}
     have := L.natCard_discriminantGroup_dvd_pow_finrank 2 h2
     rw [hcard, ← hrank] at this
     exact (Nat.pow_dvd_pow_iff_le_right (by norm_num)).mp this
+  -- `δ = 0` says that `q_L` takes values in `½ℤ/ℤ`, that is, that the level divides `2`.
+  have hlev (hδ0 : δ = 0) : L.level ∣ 2 :=
+    Int.natCast_dvd_natCast.mp <| (hL.level_dvd_iff 2).mpr fun x ↦ by
+      rw [two_zsmul]
+      exact hδ.mp hδ0 x
   refine ⟨hle, ?_, fun hδ0 ↦ ?_, fun ha ↦ ?_, fun ha ↦ ?_, fun ha hs ↦ ?_, fun hδ0 ha ↦ ?_⟩
   · -- (2) `t₊ - t₋ ≡ sign q_L ≡ a (mod 2)`.
     obtain ⟨k, hk⟩ :=
@@ -297,11 +235,8 @@ theorem twoElementaryAdmissible_sigPos_sigNeg {a : ℕ}
     push_cast
     linear_combination h + (L.sigNeg + a + ZMod.castHom (by norm_num : 2 ∣ 8) (ZMod 2) k) * h2'
   · -- (3) If `q_L` takes values in `½ℤ/ℤ`, then the level divides `2`.
-    have h2 : L.level ∣ 2 := Int.natCast_dvd_natCast.mp <| (hL.level_dvd_iff 2).mpr fun x ↦ by
-      rw [two_zsmul]
-      exact hδ.mp hδ0 x
     exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 4).mpr
-      (by exact_mod_cast L.four_dvd_sigPos_sub_sigNeg_of_level_dvd_two hL h2)
+      (by exact_mod_cast L.four_dvd_sigPos_sub_sigNeg_of_level_dvd_two hL (hlev hδ0))
   · -- (4) A trivial discriminant group has zero form and zero invariant.
     subst ha
     exact delta_eq_zero_and_eight_dvd_of_natCard_eq_one L hL hδ hcard
@@ -311,9 +246,10 @@ theorem twoElementaryAdmissible_sigPos_sigNeg {a : ℕ}
   · -- (6) A module of order four with invariant `4` takes values in `½ℤ/ℤ`.
     subst ha
     exact delta_eq_zero_of_natCard_eq_four L hL hδ h2 hcard hs
-  · -- (7) If `#A_L = 2^n`, then `L = 2Lᵛ` and `Lᵛ(2)` is even unimodular.
-    exact eight_dvd_of_natCard_eq_two_pow_finrank L hL hδ h2
-      (hcard.trans (by rw [ha, hrank])) hδ0
+  · -- (7) If `#A_L = 2^n` and the level divides `2`, then `Lᵛ(2)` is even unimodular.
+    exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mpr (by
+      exact_mod_cast L.eight_dvd_sigPos_sub_sigNeg_of_natCard_eq_pow_finrank 2 (hlev hδ0)
+        (hcard.trans (by rw [ha, hrank])))
 
 end Necessity
 

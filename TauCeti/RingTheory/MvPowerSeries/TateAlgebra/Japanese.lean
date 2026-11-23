@@ -64,7 +64,9 @@ inseparable extension `M / F` (`F = GaussFractionField σ K c`) of exponent `e`,
 ## Main results
 
 * `TauCeti.MvPowerSeries.isJapanese_isRestricted_subring_of_isEmpty`: in zero variables `K{X / c}`
-  is Japanese without completeness or positivity hypotheses.
+  is Japanese without completeness or positivity hypotheses;
+  `TauCeti.MvPowerSeries.isJapanese_isRestricted_subring_iff_of_isEmpty` compares `R{X / c}` with
+  `R` over any normed domain `R`.
 * `TauCeti.MvPowerSeries.isJapanese_isRestricted_subring`: `K{X / c}` is Japanese over any complete
   ultrametric normed field `K` for finite `σ` and positive `c`.
 
@@ -89,6 +91,15 @@ instance isJapanese_isRestricted_subring_of_isEmpty {σ : Type*} {K : Type*} [No
     [IsUltrametricDist K] [IsEmpty σ] {c : σ → ℝ} :
     Ring.IsJapanese (IsRestricted.subring (R := K) c) :=
   (IsRestricted.isEmptyEquiv (R := K) c).symm.toRingEquiv.isJapanese
+
+/-- With no variables, `IsRestricted.subring (R := R) c` is a Japanese domain if and only if `R`
+is a Japanese domain. -/
+@[simp]
+theorem isJapanese_isRestricted_subring_iff_of_isEmpty {σ R : Type*}
+    [NormedCommRing R] [IsUltrametricDist R] [IsDomain R] [IsEmpty σ] (c : σ → ℝ) :
+    Ring.IsJapanese (IsRestricted.subring (R := R) c) ↔ Ring.IsJapanese R :=
+  ⟨fun _ ↦ (IsRestricted.isEmptyEquiv (R := R) c).toRingEquiv.isJapanese,
+    fun _ ↦ (IsRestricted.isEmptyEquiv (R := R) c).symm.toRingEquiv.isJapanese⟩
 
 end Empty
 

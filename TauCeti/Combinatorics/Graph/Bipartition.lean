@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
 /-!

@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.IsBigO
 import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.MeanValue
 
 /-!
 # The Hölder spaces `C^{k,α}(Ω)` on an open set
@@ -51,14 +53,32 @@ completeness.
 * `TauCeti.CkHolderSpaceOn.extend`: the extension by zero of an element, a canonical function on
   `E` agreeing with it on `Ω`; `TauCeti.CkHolderSpaceOn.toBoundedContinuousFunctionCLM`: forgetting
   the derivatives, a continuous linear map of norm at most one to `Ω →ᵇ F`.
+* `TauCeti.CkHolderSpaceOn.holderOnWith_extend`: an element of `C^{0,α}(Ω)` is `α`-Hölder on `Ω`.
+* `TauCeti.CkHolderSpaceOn.iteratedFDeriv_last_apply_eq_apply_of_one_lt` and
+  `TauCeti.CkHolderSpaceOn.apply_eq_apply_of_one_lt`: for `α > 1` on a preconnected `Ω`, the
+  derivative field of order `k` is constant, and `C^{0,α}(Ω)` consists of constants. The space is
+  not wrong for `α > 1` but degenerate, which is why the exponents of interest lie in `(0, 1]`.
 * `TauCeti.CkHolderSpaceOn.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_contDiffOn_of_isCompact`: for `α ≤ 1`, a function
+  that is `C^{k+1}` on a neighbourhood of a compact set containing `Ω` defines an element of
+  `C^{k,α}(Ω)`.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
   whole space to an open set, also of operator norm at most one.
+* `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_le`: on a convex open set and for
+  `α ≤ 1`, every derivative field through order `k` is `α`-Hölder on `Ω`, with constant `3 ‖f‖`.
+  Below order `k`, `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_lt` gives the sharper
+  constant from the supremum norms of the field and the next one. Products and multiplication by
+  coefficients are built on these in `TauCeti.Analysis.Holder.Product`.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccL`: on a convex open set and for `α ≤ 1`, the inclusion
   `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, of operator norm at most `3`. On non-convex open sets the
   inclusion can fail: across a slit, the global Hölder seminorm of the `k`-th derivative is not
   controlled by the bound on the next derivative.
+  `TauCeti.CkHolderSpaceOn.inclusionSuccLOfHolderOnWith` builds the inclusion on any open set from
+  a uniform Hölder bound on the `k`-th derivative field of the elements of `C^{k+1,α}(Ω)`.
+
+* `ContDiffOn.exists_ckHolderSpaceOn_ball`: local `C^{n,α}` data define an element on a positive
+  ball with the original pointwise values, without an extra derivative or compactness assumption.
 
 ## References
 
@@ -391,12 +411,18 @@ theorem norm_eq (f : CkHolderSpaceOn k α Ω F) :
   simp only [iteratedFDeriv, fieldL_castSucc, iteratedFDerivHolder, WithLp.ofLp_fst,
     WithLp.ofLp_snd]
 
+/-- The sum of the supremum norms of the derivative fields is controlled by the `C^{k,α}(Ω)`
+norm. -/
+theorem sum_norm_iteratedFDeriv_le (f : CkHolderSpaceOn k α Ω F) :
+    ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
+
 /-- The supremum norm of each derivative field is controlled by the `C^{k,α}(Ω)` norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
-    ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
-  rw [norm_eq]
-  exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (f.iteratedFDeriv j))
-    (Finset.mem_univ i)).trans (le_add_of_nonneg_right (NNReal.coe_nonneg _))
+    ‖f.iteratedFDeriv i‖ ≤ ‖f‖ :=
+  (Finset.single_le_sum (fun j _ ↦ norm_nonneg (f.iteratedFDeriv j))
+    (Finset.mem_univ i)).trans f.sum_norm_iteratedFDeriv_le
 
 /-- The values of an element of `C^{k,α}(Ω)` are controlled by its norm. -/
 theorem norm_apply_le (f : CkHolderSpaceOn k α Ω F) (x : Ω) : ‖f x‖ ≤ ‖f‖ := by
@@ -412,6 +438,44 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpaceOn k α Ω F) :
     (nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) : ℝ) ≤ ‖f‖ := by
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
+
+/-- At points of `Ω`, each iterated derivative through order `k` of a function agreeing with an
+element of `C^{k,α}(Ω)` on `Ω` is bounded by the supremum norm of the corresponding field. -/
+theorem norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv (f : CkHolderSpaceOn k α Ω F)
+    {g : E → F} (hg : ∀ x : Ω, g x = f x) (i : Fin (k + 1)) (x : Ω) :
+    ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ ‖f.iteratedFDeriv i‖ :=
+  (congrArg norm (f.iteratedFDeriv_eq hg i x)).trans_le ((f.iteratedFDeriv i).norm_coe_le_norm x)
+
+/-- On a convex open set and for `α ≤ 1`, every iterated derivative below order `k` of a function
+agreeing with an element of `C^{k,α}(Ω)` on `Ω` is `α`-Hölder on `Ω`, with constant controlled by
+the supremum norms of the fields of that order and the next. -/
+theorem holderOnWith_iteratedFDeriv_of_lt (f : CkHolderSpaceOn k α Ω F) {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) {j : ℕ}
+    (hj : j < k) :
+    HolderOnWith (‖f.iteratedFDeriv ⟨j + 1, by omega⟩‖₊ + 2 * ‖f.iteratedFDeriv ⟨j, by omega⟩‖₊)
+      α (_root_.iteratedFDeriv ℝ j g) Ω :=
+  (f.contDiffOn hg).holderOnWith_iteratedFDeriv_of_lt Ω.isOpen hconv hj hα
+    (fun x hx ↦ f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j, by omega⟩ ⟨x, hx⟩)
+    (fun x hx ↦ f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv hg ⟨j + 1, by omega⟩ ⟨x, hx⟩)
+
+/-- On a convex open set and for `α ≤ 1`, every iterated derivative through order `k` of a
+function agreeing with an element of `C^{k,α}(Ω)` on `Ω` is `α`-Hölder on `Ω`, with constant
+`3 ‖f‖`. Below the top order some geometric condition on `Ω` is needed: on the slit annulus
+described at `TauCeti.CkHolderSpaceOn.inclusionSuccL` the angle function lies in `C^{1,α}(Ω)` but
+is not `α`-Hölder on `Ω`. -/
+theorem holderOnWith_iteratedFDeriv_of_le (f : CkHolderSpaceOn k α Ω F) {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) {j : ℕ}
+    (hj : j ≤ k) :
+    HolderOnWith (3 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j g) Ω := by
+  rcases hj.eq_or_lt with rfl | hj
+  · refine (f.holderOnWith_iteratedFDeriv hg).mono_const ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    nlinarith [f.nnHolderNorm_iteratedFDeriv_le, norm_nonneg f]
+  · refine (f.holderOnWith_iteratedFDeriv_of_lt hg hconv hα hj).mono_const ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    linarith [norm_iteratedFDeriv_le f ⟨j + 1, by omega⟩, norm_iteratedFDeriv_le f ⟨j, by omega⟩]
 
 /-- The `C^{k,α}(Ω)` norm is at most `∑ᵢ Mᵢ + K` when the `i`-th derivative field is bounded by
 `Mᵢ ≥ 0` on `Ω` and the `k`-th field is `α`-Hölder with constant `K`. -/
@@ -575,6 +639,27 @@ theorem holderOnWith_iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) :
       (_root_.iteratedFDeriv ℝ k f.extend) Ω :=
   f.holderOnWith_iteratedFDeriv f.extend_apply
 
+/-- An element of `C^{0,α}(Ω)` is `α`-Hölder on `Ω`: its extension by zero is `α`-Hölder on `Ω`,
+with constant the Hölder seminorm of the derivative field of order zero. -/
+theorem holderOnWith_extend (f : CkHolderSpaceOn 0 α Ω F) :
+    HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last 0) : Ω → E [×0]→L[ℝ] F)) α
+      f.extend Ω :=
+  holderOnWith_iteratedFDeriv_zero_iff.1 f.holderOnWith_iteratedFDeriv_extend
+
+/-- **Hölder exponents above one.** For `α > 1` and a preconnected `Ω`, the derivative field of
+order `k` of an element of `C^{k,α}(Ω)` is constant on `Ω`. -/
+theorem iteratedFDeriv_last_apply_eq_apply_of_one_lt (hα : 1 < α)
+    (hΩ : IsPreconnected (Ω : Set E)) (f : CkHolderSpaceOn k α Ω F) (x y : Ω) :
+    f.iteratedFDeriv (Fin.last k) x = f.iteratedFDeriv (Fin.last k) y := by
+  rw [← f.iteratedFDeriv_extend, ← f.iteratedFDeriv_extend]
+  exact f.holderOnWith_iteratedFDeriv_extend.eq_of_one_lt hα Ω.isOpen hΩ x.property y.property
+
+/-- For `α > 1` and a preconnected `Ω`, the space `C^{0,α}(Ω)` consists of constant functions. -/
+theorem apply_eq_apply_of_one_lt (hα : 1 < α) (hΩ : IsPreconnected (Ω : Set E))
+    (f : CkHolderSpaceOn 0 α Ω F) (x y : Ω) : f x = f y := by
+  rw [← f.extend_apply, ← f.extend_apply]
+  exact f.holderOnWith_extend.eq_of_one_lt hα Ω.isOpen hΩ x.property y.property
+
 /-- The iterated derivatives through order `k` of the extension by zero are controlled on `Ω` by
 the `C^{k,α}(Ω)` norm. -/
 theorem norm_iteratedFDeriv_extend_le (f : CkHolderSpaceOn k α Ω F) {i : ℕ} (hi : i ≤ k)
@@ -645,6 +730,15 @@ def toBoundedContinuousFunctionCLM : CkHolderSpaceOn k α Ω F →L[ℝ] (Ω →
 @[simp]
 theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpaceOn k α Ω F) :
     toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
+
+/-- Evaluating the extension by zero at a point of `Ω` is continuous on `C^{k,α}(Ω)`. -/
+theorem continuous_extend_apply {x : E} (hx : x ∈ Ω) :
+    Continuous fun f : CkHolderSpaceOn k α Ω F ↦ f.extend x := by
+  have h := (BoundedContinuousFunction.evalCLM ℝ (⟨x, hx⟩ : Ω)).continuous.comp
+    (toBoundedContinuousFunctionCLM (k := k) (α := α) (F := F)).continuous
+  convert h using 2 with f
+  rw [Function.comp_apply, toBoundedContinuousFunctionCLM_apply,
+    BoundedContinuousFunction.evalCLM_apply, coe_toBoundedContinuousFunction, ← extend_apply]
 
 /-- Forgetting the derivatives has operator norm at most one. -/
 theorem norm_toBoundedContinuousFunctionCLM_le_one :
@@ -839,25 +933,76 @@ end restrict
 
 section inclusionSucc
 
-/-- At points of `Ω`, the iterated derivatives of the extension by zero are bounded by the supremum
-norms of the derivative fields. -/
-private theorem norm_iteratedFDeriv_extendZero_le (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1))
-    (x : Ω) : ‖_root_.iteratedFDeriv ℝ i (extendZero f) x‖ ≤ ‖f.iteratedFDeriv i‖ :=
-  (congrArg norm (f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y) i x)).trans_le
-    ((f.iteratedFDeriv i).norm_coe_le_norm x)
+/-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, as a continuous linear map of operator norm at most
+`1 + C`, given a constant `C` such that the `k`-th iterated derivative of the extension by zero of
+every `f ∈ C^{k+1,α}(Ω)` is `α`-Hölder on `Ω` with constant `C ‖f‖`. Such a bound depends on the
+geometry of `Ω`: `TauCeti.CkHolderSpaceOn.inclusionSuccL` supplies it on convex open sets. -/
+def inclusionSuccLOfHolderOnWith (C : ℝ≥0)
+    (hC : ∀ f : CkHolderSpaceOn (k + 1) α Ω F,
+      HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω) :
+    CkHolderSpaceOn (k + 1) α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
+  LinearMap.mkContinuous
+    { toFun f := ofContDiffOn f.extend (f.contDiffOn_extend.of_le (by norm_cast; omega))
+        (fun i hi ↦ ⟨‖f.iteratedFDeriv ⟨i, by omega⟩‖, fun x ↦
+          f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv f.extend_apply ⟨i, by omega⟩ x⟩)
+        (HolderWith.memHolder fun x y ↦ hC f x x.property y y.property)
+      map_add' f g := by ext x; simp
+      map_smul' c f := by ext x; simp }
+    (1 + C) fun f ↦ by
+      rw [LinearMap.coe_mk, AddHom.coe_mk]
+      refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
+        (M := fun i ↦ ‖f.iteratedFDeriv i.castSucc‖) (fun i ↦ norm_nonneg _) (fun i x ↦ ?_)
+        (K := C * ‖f‖₊) (fun x y ↦ ?_)).trans ?_
+      · rw [iteratedFDeriv_ofContDiffOn]
+        exact f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv f.extend_apply i.castSucc x
+      · rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_ofContDiffOn]
+        exact hC f x x.property y y.property
+      · have hsum := f.sum_norm_iteratedFDeriv_le
+        rw [Fin.sum_univ_castSucc] at hsum
+        push_cast
+        nlinarith [norm_nonneg (f.iteratedFDeriv (Fin.last (k + 1)))]
 
-/-- On a convex open set and for `α ≤ 1`, the `k`-th derivative of an element of `C^{k+1,α}(Ω)`
-is `α`-Hölder, with constant controlled by the supremum norms of the fields of orders `k` and
-`k + 1`. -/
-private theorem holderOnWith_iteratedFDeriv_extendZero_succ (f : CkHolderSpaceOn (k + 1) α Ω F)
-    (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
-    HolderOnWith (‖f.iteratedFDeriv (Fin.last (k + 1))‖₊ +
-        2 * ‖f.iteratedFDeriv (Fin.last k).castSucc‖₊) α
-      (_root_.iteratedFDeriv ℝ k (extendZero f)) Ω :=
-  (f.contDiffOn fun x ↦ extendZero_coe f x).holderOnWith_iteratedFDeriv_of_lt Ω.isOpen hconv
-    k.lt_succ_self hα
-    (fun x hx ↦ norm_iteratedFDeriv_extendZero_le f (Fin.last k).castSucc ⟨x, hx⟩)
-    (fun x hx ↦ norm_iteratedFDeriv_extendZero_le f (Fin.last (k + 1)) ⟨x, hx⟩)
+/-- The inclusion built from a Hölder bound does not change values. -/
+@[simp]
+theorem inclusionSuccLOfHolderOnWith_apply (C : ℝ≥0)
+    (hC : ∀ f : CkHolderSpaceOn (k + 1) α Ω F,
+      HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω)
+    (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) : inclusionSuccLOfHolderOnWith C hC f x = f x := by
+  simp [inclusionSuccLOfHolderOnWith]
+
+/-- The inclusion built from a Hölder bound keeps the derivative fields through order `k`. -/
+@[simp]
+theorem iteratedFDeriv_inclusionSuccLOfHolderOnWith (C : ℝ≥0)
+    (hC : ∀ f : CkHolderSpaceOn (k + 1) α Ω F,
+      HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω)
+    (f : CkHolderSpaceOn (k + 1) α Ω F) (i : Fin (k + 1)) (x : Ω) :
+    (inclusionSuccLOfHolderOnWith C hC f).iteratedFDeriv i x = f.iteratedFDeriv i.castSucc x := by
+  rw [inclusionSuccLOfHolderOnWith, LinearMap.mkContinuous_apply, LinearMap.coe_mk,
+    AddHom.coe_mk, iteratedFDeriv_ofContDiffOn]
+  exact f.iteratedFDeriv_extend i.castSucc x
+
+/-- The inclusion built from a Hölder bound with constant `C ‖f‖` has operator norm at most
+`1 + C`. -/
+theorem norm_inclusionSuccLOfHolderOnWith_le (C : ℝ≥0)
+    (hC : ∀ f : CkHolderSpaceOn (k + 1) α Ω F,
+      HolderOnWith (C * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω) :
+    ‖inclusionSuccLOfHolderOnWith C hC‖ ≤ 1 + C :=
+  LinearMap.mkContinuous_norm_le _ (by positivity) _
+
+/-- On a convex open set and for `α ≤ 1`, the `k`-th derivative field of `f ∈ C^{k+1,α}(Ω)` is
+`α`-Hölder on `Ω` with constant `2 ‖f‖`, the bound behind `TauCeti.CkHolderSpaceOn.inclusionSuccL`.
+-/
+private theorem holderOnWith_iteratedFDeriv_extend_succ (hconv : Convex ℝ (Ω : Set E))
+    (hα : α ≤ 1) (f : CkHolderSpaceOn (k + 1) α Ω F) :
+    HolderOnWith (2 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω := by
+  refine (f.holderOnWith_iteratedFDeriv_of_lt f.extend_apply hconv hα k.lt_succ_self).mono_const ?_
+  have h2 : ‖f.iteratedFDeriv ⟨k + 1, by omega⟩‖ + ‖f.iteratedFDeriv ⟨k, by omega⟩‖ ≤ ‖f‖ :=
+    (Finset.add_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _) (Finset.mem_univ _)
+      (by simp)).trans f.sum_norm_iteratedFDeriv_le
+  have hk := norm_iteratedFDeriv_le f ⟨k, by omega⟩
+  rw [← NNReal.coe_le_coe]
+  push_cast
+  linarith
 
 /-- On a convex open set `Ω` and for `α ≤ 1`, the inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, as a
 continuous linear map. Some geometric condition on `Ω` is needed, and this map assumes convexity:
@@ -866,54 +1011,52 @@ gradient is the restriction of a smooth field on the full annulus, but it is not
 since it jumps across the slit, so the inclusion fails there. -/
 def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     CkHolderSpaceOn (k + 1) α Ω F →L[ℝ] CkHolderSpaceOn k α Ω F :=
-  LinearMap.mkContinuous
-    { toFun f := ofContDiffOn (extendZero f)
-        ((f.contDiffOn fun x ↦ extendZero_coe f x).of_le (by norm_cast; omega))
-        (fun i hi ↦ ⟨‖f.iteratedFDeriv ⟨i, by omega⟩‖, fun x ↦
-          norm_iteratedFDeriv_extendZero_le f ⟨i, by omega⟩ x⟩)
-        (HolderWith.memHolder fun x y ↦
-          holderOnWith_iteratedFDeriv_extendZero_succ f hconv hα x x.property y y.property)
-      map_add' f g := by ext x; simp [extendZero_coe]
-      map_smul' c f := by ext x; simp [extendZero_coe] }
-    3 fun f ↦ by
-      rw [LinearMap.coe_mk, AddHom.coe_mk]
-      refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
-        (M := fun i ↦ ‖f.iteratedFDeriv i.castSucc‖) (fun i ↦ norm_nonneg _) (fun i x ↦ ?_)
-        (K := ‖f.iteratedFDeriv (Fin.last (k + 1))‖₊ +
-          2 * ‖f.iteratedFDeriv (Fin.last k).castSucc‖₊) (fun x y ↦ ?_)).trans ?_
-      · rw [iteratedFDeriv_ofContDiffOn]
-        exact norm_iteratedFDeriv_extendZero_le f i.castSucc x
-      · rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_ofContDiffOn]
-        exact holderOnWith_iteratedFDeriv_extendZero_succ f hconv hα x x.property y y.property
-      · have hsum : ∑ i : Fin (k + 2), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
-          rw [norm_eq]
-          exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
-        rw [Fin.sum_univ_castSucc] at hsum
-        have hk := norm_iteratedFDeriv_le f (Fin.last k).castSucc
-        push_cast
-        linarith
+  inclusionSuccLOfHolderOnWith 2 (holderOnWith_iteratedFDeriv_extend_succ hconv hα)
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` does not change values. -/
 @[simp]
 theorem inclusionSuccL_apply (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
-    (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) : inclusionSuccL hconv hα f x = f x := by
-  simp [inclusionSuccL, extendZero_coe]
+    (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) : inclusionSuccL hconv hα f x = f x :=
+  inclusionSuccLOfHolderOnWith_apply _ _ f x
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` keeps the derivative fields through order `k`. -/
 @[simp]
 theorem iteratedFDeriv_inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderSpaceOn (k + 1) α Ω F) (i : Fin (k + 1)) (x : Ω) :
-    (inclusionSuccL hconv hα f).iteratedFDeriv i x = f.iteratedFDeriv i.castSucc x := by
-  rw [inclusionSuccL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    iteratedFDeriv_ofContDiffOn]
-  exact f.iteratedFDeriv_eq (fun y ↦ extendZero_coe f y) i.castSucc x
+    (inclusionSuccL hconv hα f).iteratedFDeriv i x = f.iteratedFDeriv i.castSucc x :=
+  iteratedFDeriv_inclusionSuccLOfHolderOnWith _ _ f i x
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` has operator norm at most `3`. -/
 theorem norm_inclusionSuccL_le (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
     ‖inclusionSuccL (k := k) (F := F) hconv hα‖ ≤ 3 :=
-  LinearMap.mkContinuous_norm_le _ zero_le_three _
+  (norm_inclusionSuccLOfHolderOnWith_le _ _).trans_eq (by norm_num)
 
 end inclusionSucc
+
+section isCompact
+
+/-- **`C^{k+1}` functions near a compact set are `C^{k,α}`.** For `α ≤ 1`, a function that is
+`C^{k+1}` on an open set `U` containing a compact set `K` defines an element of `C^{k,α}(Ω)` for
+every open `Ω ⊆ K`: its derivatives through order `k` are bounded on `K`, and its `k`-th
+derivative is `α`-Hölder on `K`. -/
+theorem exists_apply_eq_of_contDiffOn_of_isCompact {g : E → F} {U K : Set E} (hU : IsOpen U)
+    (hg : ContDiffOn ℝ (k + 1) g U) (hK : IsCompact K) (hKU : K ⊆ U) (hΩK : (Ω : Set E) ⊆ K)
+    (hα : α ≤ 1) : ∃ f : CkHolderSpaceOn k α Ω F, ∀ x : Ω, f x = g x := by
+  have hbdd : ∀ i ≤ k, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C := fun i hi ↦ by
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
+      ((ContinuousOn.continuousOn_iteratedFDeriv hg hU (by exact_mod_cast hi.trans k.le_succ)).mono
+        hKU)
+    exact ⟨C, fun x ↦ hC x (hΩK x.property)⟩
+  -- Near each point of `K` the `k`-th derivative is `C¹`, hence `α`-Hölder on a ball.
+  obtain ⟨δ, hδ, L, -, hL, -⟩ := hK.exists_holderOnWith_thickening_and_norm_le fun x hx ↦
+    (((hg.contDiffAt (hU.mem_nhds (hKU hx))).iteratedFDeriv_right (m := 1) (i := k)
+      (by rw [add_comm])).isBigO_sub_dist_rpow one_ne_zero hα).exists_holderOnWith_ball
+  have hholder : MemHolder α fun x : Ω ↦ _root_.iteratedFDeriv ℝ k g x :=
+    ⟨L, (hL.mono (hΩK.trans (Metric.self_subset_thickening hδ K))).holderWith⟩
+  exact ⟨ofContDiffOn g ((hg.mono (hΩK.trans hKU)).of_le (by exact_mod_cast k.le_succ)) hbdd
+    hholder, ofContDiffOn_apply g _ hbdd hholder⟩
+
+end isCompact
 
 end CkHolderSpaceOn
 
@@ -956,5 +1099,26 @@ theorem norm_restrictOnL_le_one : ‖restrictOnL (k := k) (α := α) (F := F) Ω
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end CkHolderSpace
+
+open scoped Topology in
+open Metric Filter in
+/-- A function of class `C^{n,α}` on a neighbourhood has a bounded-open Hölder reading on a
+positive ball, agreeing pointwise with the original function. -/
+theorem _root_.ContDiffOn.exists_ckHolderSpaceOn_ball
+    {P : Type uP} {V : Type uV} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {φ : P → V} {s : Set P} {a : P}
+    {n : ℕ} {α C : ℝ≥0} (hf : ContDiffOn ℝ n φ s) (hs : s ∈ 𝓝 a)
+    (hα : α ≤ 1) (hH : HolderOnWith C α (_root_.iteratedFDeriv ℝ n φ) s) :
+    ∃ r > 0, ball a r ⊆ s ∧
+      ∃ g : CkHolderSpaceOn n α ⟨ball a r, isOpen_ball⟩ V, ∀ x, g x = φ x := by
+  obtain ⟨ρ, hρ, hρs, M, _, hb, _⟩ :=
+    hf.exists_ball_bounds_and_holderOnWith_iteratedFDeriv hs hα hH
+  let Ω : Opens P := ⟨ball a ρ, isOpen_ball⟩
+  have hbound : ∀ j ≤ n, ∃ A, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ j φ x‖ ≤ A :=
+    fun j hj ↦ ⟨(M : ℝ), fun x ↦ hb j hj x x.property⟩
+  have hholder : MemHolder α (fun x : Ω ↦ _root_.iteratedFDeriv ℝ n φ x) :=
+    ⟨C, fun x y ↦ hH x (hρs x.property) y (hρs y.property)⟩
+  exact ⟨ρ, hρ, hρs, CkHolderSpaceOn.ofContDiffOn φ (hf.mono hρs) hbound hholder,
+    fun x ↦ CkHolderSpaceOn.ofContDiffOn_apply φ (hf.mono hρs) hbound hholder x⟩
 
 end TauCeti

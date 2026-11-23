@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
-public import TauCeti.Topology.VectorBundle.Thom.Homology
+public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Topology.FiberBundle.Trivialization
 
@@ -27,8 +27,6 @@ with it is bijective. The Thom map `a ↦ π^*a ⌣ u` is this cup product compo
 along the homeomorphism `π` and the identification `Hᵖ(E, ∅) ≅ Hᵖ(E)`, so it is bijective in
 every degree and for every module of coefficients
 (`TauCeti.IsThomClass.bijective_thomMap_of_finrank_eq_zero`).
-Over a field the homology Thom map `x ↦ π_*(x ⌢ u)` is then bijective as well
-(`TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`).
 
 Such a class exists for every commutative ring of coefficients, with no orientation
 (`TauCeti.exists_isThomClass_of_finrank_eq_zero`): the class of the constant cocycle `1`.
@@ -41,8 +39,6 @@ minima, whose negative disc bundle is its zero section.
 
 * `TauCeti.IsThomClass.bijective_thomMap_of_finrank_eq_zero`: the Thom isomorphism in cohomology
   for a bundle of rank zero, with coefficients in any module.
-* `TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`: the Thom isomorphism in
-  homology for a bundle of rank zero, with coefficients in a field.
 * `TauCeti.exists_isThomClass_of_finrank_eq_zero`: a bundle of rank zero has a Thom class with
   coefficients in any commutative ring.
 
@@ -153,38 +149,11 @@ theorem IsThomClass.bijective_thomMap_of_finrank_eq_zero (hF : finrank ℝ F = 0
   -- The degree is `finrank ℝ F`, which is `0` only propositionally.
   generalize hr : finrank ℝ F = r at u hgen h
   obtain rfl : r = 0 := hr ▸ hF
-  obtain rfl : p = m := by omega
-  -- After `Hᵖ(E, ∅) ≅ Hᵖ(E)`, the Thom map is the pull-back along the homeomorphism `π` followed
-  -- by the cup product with the image `ū` of `u`, whose values are units.
-  have hcup := bijective_singularCup_left_of_forall_isUnit M
-    ((thomPair F E).singularCohomologyπ _ K _ 0 u)
-    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) p
-  have hπ := ConcreteCategory.bijective_of_isIso
-    ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p)
-  have hpull := ConcreteCategory.bijective_of_isIso
-    ((singularCohomologyFunctor (ModuleCat.of K K) K M p).map (thomPairProj F E).op)
-  have e : ⇑((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p) ∘
-      ⇑(thomMap F E M 0 p p h u) = (fun a ↦ (thomPair F E).fst.singularCup K
-        (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
-          ((thomPair F E).singularCohomologyπ _ K _ 0 u)) ∘
-      ⇑(TopCat.singularCohomologyMap (thomPairProj F E) p) := by
-    funext a
-    rw [Function.comp_apply, thomMap_apply, TopPair.singularCohomologyπ_singularCup]
-    -- The two sides differ only in the proof of `p + 0 = p`.
-    rfl
-  rw [← Function.Bijective.of_comp_iff' hπ, e]
-  exact hcup.comp hpull
-
-/-- **The homology Thom isomorphism in rank zero.** For a bundle of rank zero and a Thom class `u`
-with coefficients in a field `K`, the homology Thom map `x ↦ π_*(x ⌢ u)` is a bijection
-`Hₘ(E, E₀; K) ≅ Hₘ(B; K)` in every degree. -/
-theorem IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero {K : Type w} [Field K]
-    (hF : finrank ℝ F = 0)
-    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hu : IsThomClass F E u) {p m : ℕ} (h : finrank ℝ F + p = m) :
-    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
-  (bijective_homologyThomMap_iff F E h u).2
-    (hu.bijective_thomMap_of_finrank_eq_zero hF (ModuleCat.of K K) _)
+  -- The pair `(E, ∅)` has empty subspace, `π` is a homeomorphism and the values of the image of `u`
+  -- in `H⁰(E; K)` are units.
+  rw [thomMap_def]
+  exact TopPair.bijective_pullbackCup_of_isEmpty _ _ u
+    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) M h
 
 variable (F E) in
 /-- **A bundle of rank zero has a Thom class** with coefficients in any commutative ring `K`, with

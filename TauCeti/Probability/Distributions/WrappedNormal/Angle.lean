@@ -10,6 +10,7 @@ public import TauCeti.Probability.Quantile
 import TauCeti.Probability.Distributions.Gaussian.Periodization
 import TauCeti.MeasureTheory.Measure.AddCircle
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The wrapped normal law in the fixed angle chart
@@ -142,9 +143,9 @@ theorem cdf_wrappedNormalAngleMeasure_eq_integral (hv : v ≠ 0) (hx : x ∈ Icc
     ((continuous_wrappedNormalPDFReal m v).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, wrappedNormalAngleMeasure_eq_withDensity hv,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
-    measureReal_withDensity_ofReal
+    MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedNormalPDFReal_pos _ hv _) two_pi_pos).le)
-      measurableSet_Iic hf.aemeasurable,
+      nullMeasurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 

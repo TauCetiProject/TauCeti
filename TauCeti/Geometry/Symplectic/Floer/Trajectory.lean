@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 
 /-!
@@ -46,7 +47,9 @@ pants, this lower bound on the energy of each nonstationary cylinder bounds the 
 cylinders that can break off at an end by the total energy divided by `δ`. For a nonstationary
 trajectory with a Lipschitz bound, the energy is finite without being assumed, since the actions of
 its loops are bounded, and its ends have actions `a₀ < a₁`
-(`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`).
+(`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`). Every value strictly
+between the limiting actions at the two ends is the action of one of the loops
+(`TauCeti.SymplecticForm.exists_hamiltonianAction_slice_eq_of_tendsto`).
 
 ## Main results
 
@@ -59,6 +62,8 @@ its loops are bounded, and its ends have actions `a₀ < a₁`
 * `TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`: the ends of a
   nonstationary Lipschitz Floer trajectory in such a set have actions `a₀ < a₁`, without an
   energy bound.
+* `TauCeti.SymplecticForm.exists_hamiltonianAction_slice_eq_of_tendsto`: every value between the
+  limiting actions at the two ends is the action of a loop.
 
 ## References
 
@@ -127,8 +132,8 @@ theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq
       hu.contDiffOn (fun s _ ↦ hper s) hK (fun s _ ↦ huK s) hc (fun z hz ↦ hJc z (hsub hz))
       (fun z hz ↦ hJM z (hsub hz)) (fun z hz ↦ hfloer z (hsub hz)) hEsub
   refine ⟨x₀, x₁, ⟨hx₀per, hx₀, hlimK hux₀⟩, ⟨hx₁per, hx₁, hlimK hux₁⟩, hbot, htop, ?_⟩
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   exact ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction hJ hH isOpen_univ
     hu.contDiffOn (subset_univ _) (fun s ↦ by simpa using hper s 0)
     (fun z hz ↦ by
@@ -180,8 +185,8 @@ theorem exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity
   have hlt : A x₀ < A x₁ := by
     by_contra! hle
     obtain ⟨s, t, hst⟩ := hns
-    have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-      (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+    have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+      tames_of_mul_norm_sq_le hc (hJc z hz)
     have hstat := (ω.lintegral_floerEnergyDensity_eq_zero_iff hH isOpen_univ
       (hu.of_le one_le_two).contDiffOn (subset_univ _) hJ hfloer).1
       (hEeq.trans (ENNReal.ofReal_eq_zero.2 (sub_nonpos.2 hle)))
@@ -224,12 +229,10 @@ theorem exists_lt_tendsto_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncur
       a₀ < a₁ ∧ Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 a₀) ∧
         Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 a₁) := by
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
-  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   -- The action is monotone and bounded, so the energy is finite.
-  have hmono : Monotone A := monotoneOn_univ.1
-    (ω.monotoneOn_hamiltonianAction_of_floer isOpen_univ hH hu.contDiffOn (fun s _ ↦ hper s)
-      (fun z hz ↦ hJ z (by simpa using hz)) fun z hz ↦ hfloer z (by simpa using hz))
+  have hmono : Monotone A := ω.monotone_hamiltonianAction_of_floer hH hu hper hJ hfloer
   obtain ⟨B, hB⟩ := ω.exists_forall_abs_hamiltonianAction_le hH.continuous hK L
   have hbdd (s : ℝ) := abs_le.1 (hB (hu.of_le one_le_two) hper huK hL s)
   have hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
@@ -250,5 +253,18 @@ theorem exists_lt_tendsto_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncur
   rw [ENNReal.ofReal_le_ofReal_iff'] at hle
   refine ⟨_, mem_image_of_mem _ hx₀, _, mem_image_of_mem _ hx₁, ?_, hbot, htop⟩
   rcases hle with hle | hle <;> linarith
+
+/-- **Every action between the two ends is attained.** For a continuous Hamiltonian `H` and a `C¹`
+map `u` whose loop actions `A_H(u(s, ·))` tend to `a₀` as `s → -∞` and to `a₁` as `s → ∞`, every
+value `b ∈ (a₀, a₁)` is the action `A_H(u(σ, ·))` of some loop. -/
+theorem exists_hamiltonianAction_slice_eq_of_tendsto (hH : Continuous (uncurry H))
+    (hu : ContDiff ℝ 1 u) {a₀ a₁ b : ℝ}
+    (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 a₀))
+    (htop : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop (𝓝 a₁))
+    (hb : b ∈ Ioo a₀ a₁) :
+    ∃ σ, ω.hamiltonianAction H (fun t ↦ u (σ, t)) = b :=
+  mem_range_of_exists_le_of_exists_ge (ω.continuous_hamiltonianAction_slice hH hu)
+    ((hbot.eventually (gt_mem_nhds hb.1)).exists.imp fun _ h ↦ h.le)
+    ((htop.eventually (lt_mem_nhds hb.2)).exists.imp fun _ h ↦ h.le)
 
 end TauCeti.SymplecticForm

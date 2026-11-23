@@ -261,13 +261,18 @@ variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {n : ℕ} [Fact (Module.finrank ℝ V = n)] {Q : QuadraticForm ℝ V}
 
 /-- Exterior parity corresponds to conjugation by spinor chirality. This is different from
-Clifford multiplication by the volume element, which acts only on the left. -/
+Clifford multiplication by the volume element (`AlgEquiv.cliffordFormsEquivEnd_action`), which acts
+only on the left. No parity hypothesis on `n` is needed: the full spinor representation `ρ` forces
+`n` to be even (`CliffordAlgebra.even_finrank_of_algEquiv_end`). -/
 theorem cliffordFormsEquivEnd_involute
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : Even n)
+    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
     ρ.cliffordFormsEquivEnd (involute.toLinearMap.baseChange ℂ x) =
       ρ (complexVolume Q o) * ρ.cliffordFormsEquivEnd x * ρ (complexVolume Q o) := by
+  have hn : Even n := by
+    simpa only [Module.finrank_baseChange, Fact.out (p := Module.finrank ℝ V = n), one_mul] using
+      even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy, mul_add, add_mul]
   | tmul z x =>
@@ -281,12 +286,12 @@ theorem cliffordFormsEquivEnd_involute
 of spinor chirality, not the chirality of the reverse-dual Clifford representation. -/
 theorem cliffordFormsEquivTensor_involute [FiniteDimensional ℂ S]
     (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : Even n)
+    (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
     ρ.cliffordFormsEquivTensor (involute.toLinearMap.baseChange ℂ x) =
       TensorProduct.map (ρ (complexVolume Q o)) (ρ (complexVolume Q o)).dualMap
         (ρ.cliffordFormsEquivTensor x) := by
   rw [ρ.cliffordFormsEquivTensor_eq_map_iff]
-  exact ρ.cliffordFormsEquivEnd_involute o hQ hn x
+  exact ρ.cliffordFormsEquivEnd_involute o hQ x
 
 end AlgEquiv
