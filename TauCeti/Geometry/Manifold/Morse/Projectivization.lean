@@ -106,18 +106,12 @@ makes the moment function Morse–Bott.
   two of them have the same index.
 * `TauCeti.le_projectiveMomentFunction` and `TauCeti.projectiveMomentFunction_le`: its values lie
   between the smallest and the largest weight.
-* `TauCeti.le_projectiveMomentFunction_of_notMem_affineOpen` and
-  `TauCeti.lt_projectiveMomentFunction_of_notMem_affineOpen`: outside the affine open `v k ≠ 0`,
-  its values are bounded below by the other weights.
+* `TauCeti.lt_projectiveMomentFunction_of_notMem_affineOpen`: outside the affine open `v k ≠ 0`,
+  its values are greater than any strict lower bound of the other weights.
 * `TauCeti.contractibleSpace_sublevel_projectiveMomentFunction`: if `w k ≤ c` and every other weight
   is greater than `c`, the sublevel `{f ≤ c}` is contractible.
-* `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex` and
-  `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_real`: with the standard weights,
-  `[eₖ]` has index `2 * k` on `ℂℙⁿ` and `k` on `ℝℙⁿ`.
-* `TauCeti.isCriticalBandCut_projectiveMomentFunction_natCast`: with the standard weights, the
-  half-integers `q - 1/2` form a critical-band cut.
-* `TauCeti.contractibleSpace_sublevel_projectiveMomentFunction_natCast`: with the standard weights,
-  the sublevels `{f ≤ c}`, `0 ≤ c < 1`, are contractible.
+* `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
+  standard weights, `[eₖ]` has index `2 * k`.
 
 ## References
 
@@ -515,19 +509,6 @@ theorem projectiveMomentFunction_le {w : Fin (n + 1) → ℝ} {c : ℝ} (hw : �
   induction x using ind with | h v hv =>
   rw [projectiveMomentFunction_mk, div_le_iff₀ (sum_norm_sq_pos hv), Finset.mul_sum]
   exact Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hw i) (by positivity)
-
-/-- Outside the affine open `v k ≠ 0`, the moment function is at least any lower bound `c` of the
-weights other than `w k`. -/
-theorem le_projectiveMomentFunction_of_notMem_affineOpen {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)}
-    {c : ℝ} (hw : ∀ i, i ≠ k → c ≤ w i) {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hx : x ∉ affineOpen k) :
-    c ≤ projectiveMomentFunction 𝕜 w x := by
-  induction x using ind with | h v hv =>
-  rw [mk_mem_affineOpen_iff, not_not] at hx
-  rw [projectiveMomentFunction_mk, le_div_iff₀ (sum_norm_sq_pos hv), Finset.mul_sum]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  rcases eq_or_ne i k with rfl | hi
-  · simp [hx]
-  · exact mul_le_mul_of_nonneg_right (hw i hi) (by positivity)
 
 /-- Outside the affine open `v k ≠ 0`, the moment function is greater than any strict lower bound
 `c` of the weights other than `w k`. -/
@@ -1087,71 +1068,5 @@ theorem manifoldMorseIndex_projectiveMomentFunction_natCast_complex (k : Fin (n 
     manifoldMorseIndex 𝓘(ℝ, Fin n → ℂ) (projectiveMomentFunction ℂ fun i ↦ ((i : ℕ) : ℝ))
       (mk ℂ (Pi.single k 1) (by simp)) = 2 * k := by
   rw [manifoldMorseIndex_projectiveMomentFunction_natCast, Complex.finrank_real_complex]
-
-/-- **The Morse index on real projective space.** For the moment function
-`[v] ↦ (∑ j, j * v j ^ 2) / ∑ j, v j ^ 2` on `ℝℙⁿ`, the coordinate point `[eₖ]` has Morse index
-`k`. These points are all its critical points
-(`TauCeti.criticalPoints_projectiveMomentFunction`), and they are nondegenerate. -/
-theorem manifoldMorseIndex_projectiveMomentFunction_natCast_real (k : Fin (n + 1)) :
-    manifoldMorseIndex 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ fun i ↦ ((i : ℕ) : ℝ))
-      (mk ℝ (Pi.single k 1) (by simp)) = k := by
-  rw [manifoldMorseIndex_projectiveMomentFunction_natCast, Module.finrank_self, one_mul]
-
-/-- With the standard weights `w i = i`, a critical point of the moment function with value in
-the band `[q - 1/2, q + 1/2]` is the coordinate point `[e_q]`. -/
-theorem exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast
-    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} {q : ℤ}
-    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ)))
-    (hfx : projectiveMomentFunction 𝕜 (fun i ↦ ((i : ℕ) : ℝ)) x ∈
-      Icc ((q : ℝ) - 1 / 2) (((q + 1 : ℤ) : ℝ) - 1 / 2)) :
-    ∃ k : Fin (n + 1), ((k : ℕ) : ℤ) = q ∧ x = mk 𝕜 (Pi.single k 1) (by simp) := by
-  rw [criticalPoints_projectiveMomentFunction (w := fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))
-    (Nat.cast_injective.comp Fin.val_injective)] at hx
-  obtain ⟨k, rfl⟩ := hx
-  rw [projectiveMomentFunction_mk_single] at hfx
-  refine ⟨k, ?_, rfl⟩
-  -- The only integer in `[q - 1/2, q + 1/2]` is `q`.
-  obtain ⟨h₁, h₂⟩ := hfx
-  push_cast at h₂
-  have h₁' : q - 1 < ((k : ℕ) : ℤ) := by exact_mod_cast (by linarith : (q : ℝ) - 1 < (k : ℕ))
-  have h₂' : ((k : ℕ) : ℤ) < q + 1 := by exact_mod_cast (by linarith : ((k : ℕ) : ℝ) < q + 1)
-  omega
-
-/-- **The half-integer cut.** For the moment function `[v] ↦ (∑ i, i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2`
-on `ℙ 𝕜 (Fin (n + 1) → 𝕜)`, whose critical points are the coordinate points `[eₖ]` with values
-`k`, the half-integers `q - 1/2` form a critical-band cut: the band between `q - 1/2` and
-`q + 1/2` is compact and its only possible critical value is `q`. -/
-theorem isCriticalBandCut_projectiveMomentFunction_natCast :
-    IsCriticalBandCut 𝓘(ℝ, Fin n → 𝕜)
-      (projectiveMomentFunction 𝕜 fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ))
-      fun q : ℤ ↦ (q : ℝ) - 1 / 2 := by
-  refine ⟨fun q ↦ ⟨(isClosed_Icc.preimage
-    (contMDiff_projectiveMomentFunction (r := 0) _).continuous).isCompact, q, ?_, ?_⟩⟩
-  · push_cast
-    constructor <;> linarith
-  intro x hx hfx
-  obtain ⟨k, hk, rfl⟩ :=
-    exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast hx hfx
-  rw [projectiveMomentFunction_mk_single]
-  exact_mod_cast hk
-
-/-- With the standard weights `w i = i`, a point outside the affine open `v₀ ≠ 0` has value at
-least `1`. -/
-theorem one_le_projectiveMomentFunction_natCast_of_notMem_affineOpen {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
-    (hx : x ∉ affineOpen 0) :
-    1 ≤ projectiveMomentFunction 𝕜 (fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x :=
-  le_projectiveMomentFunction_of_notMem_affineOpen
-    (fun i hi ↦ by exact_mod_cast Nat.one_le_iff_ne_zero.2 (Fin.val_ne_zero_iff.2 hi)) hx
-
-/-- **The sublevels below the second critical value are contractible.** With the standard weights
-`w i = i`, for `0 ≤ c < 1` the sublevel `{f ≤ c}` of the moment function on
-`ℙ 𝕜 (Fin (n + 1) → 𝕜)` is contractible. -/
-theorem contractibleSpace_sublevel_projectiveMomentFunction_natCast {c : ℝ} (hc₀ : 0 ≤ c)
-    (hc : c < 1) :
-    ContractibleSpace
-      {x : ℙ 𝕜 (Fin (n + 1) → 𝕜) |
-        projectiveMomentFunction 𝕜 (fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) x ≤ c} :=
-  contractibleSpace_sublevel_projectiveMomentFunction (k := 0) (by simpa using hc₀)
-    fun i hi ↦ hc.trans_le (by exact_mod_cast Nat.one_le_iff_ne_zero.2 (Fin.val_ne_zero_iff.2 hi))
 
 end TauCeti
