@@ -38,9 +38,11 @@ homomorphisms of topological groups.
 * `TauCeti.AdelicPoints.map_diagonal`: compatibility with the rational diagonal.
 * `TauCeti.AdelicPoints.localProjection_map`, `TauCeti.AdelicPoints.infinitePlaceProjection_map`:
   compatibility with the local components.
-* `TauCeti.AdelicPoints.pointsMulEquiv_map_determinantCoordinateMap`: the determinant
-  `GL₁ → 𝔾ₘ` induces on adelic points the identification of `GL₁(𝔸_K)` with the ideles
-  `𝔸_K^×` by the entry of a one-by-one matrix.
+* `TauCeti.AdelicPoints.map_determinantCoordinateMap`,
+  `TauCeti.AdelicPoints.pointsMulEquiv_map_determinantCoordinateMap`: the determinant
+  `GLₙ → 𝔾ₘ` induces on adelic points the determinant of invertible adelic matrices.
+* `TauCeti.AdelicPoints.pointsMulEquiv_map_determinantCoordinateMap_one`: for `n = 1`, the
+  identification of `GL₁(𝔸_K)` with the ideles `𝔸_K^×` by the entry of a one-by-one matrix.
 
 ## References
 
@@ -139,18 +141,34 @@ theorem map_finiteEmbed (φ : H' →ₐc[K] H) (x : FiniteAdelicPoints R K H) :
 section GeneralLinear
 
 open GeneralLinear in
+/-- The determinant `det : GLₙ → 𝔾ₘ` induces on adelic points the determinant map of points
+`determinantPoints`. -/
+theorem map_determinantCoordinateMap (n : ℕ) :
+    map R (determinantCoordinateMap K n).hom = determinantPoints K n :=
+  MonoidHom.ext fun x ↦ ofConv_injective (AlgHom.ext fun h ↦ by
+    rw [map_apply_apply, determinantPoints_apply_apply])
+
+open GeneralLinear in
+/-- The determinant `det : GLₙ → 𝔾ₘ` induces on adelic points the determinant of invertible adelic
+matrices, under the canonical identifications of `GLₙ(𝔸_K)` with `GLₙ(𝔸_K)` and of `𝔾ₘ(𝔸_K)`
+with `𝔸_K^×`. -/
+theorem pointsMulEquiv_map_determinantCoordinateMap (n : ℕ)
+    (x : AdelicPoints R K (coordinateHopfAlgebra K n)) :
+    DiagonalizableGroup.pointsMulEquiv (map R (determinantCoordinateMap K n).hom x)
+        (Multiplicative.ofAdd 1) =
+      Matrix.GeneralLinearGroup.det (pointsMulEquiv n x) := by
+  rw [map_determinantCoordinateMap, pointsMulEquiv_determinantPoints]
+
+open GeneralLinear in
 /-- For `GL₁` the determinant `det : GL₁ → 𝔾ₘ` induces on adelic points the identity of the
 ideles under the canonical identification of `GL₁(𝔸_K)` with `𝔸_K^×`: the idele given by the
 image of `x` in `𝔾ₘ(𝔸_K)` is the single entry of the one-by-one matrix `x`. -/
-theorem pointsMulEquiv_map_determinantCoordinateMap
+theorem pointsMulEquiv_map_determinantCoordinateMap_one
     (x : AdelicPoints R K (coordinateHopfAlgebra K 1)) :
     ((DiagonalizableGroup.pointsMulEquiv (map R (determinantCoordinateMap K 1).hom x)
         (Multiplicative.ofAdd 1) : (AdeleRing R K)ˣ) : AdeleRing R K) =
       (pointsMulEquiv 1 x : Matrix (Fin 1) (Fin 1) (AdeleRing R K)) 0 0 := by
-  have hx : map R (determinantCoordinateMap K 1).hom x = determinantPoints K 1 x :=
-    ofConv_injective (AlgHom.ext fun h ↦ by
-      rw [map_apply_apply, determinantPoints_apply_apply])
-  rw [hx, pointsMulEquiv_determinantPoints, Matrix.GeneralLinearGroup.val_det_apply,
+  rw [pointsMulEquiv_map_determinantCoordinateMap, Matrix.GeneralLinearGroup.val_det_apply,
     Matrix.det_unique, Fin.default_eq_zero]
 
 end GeneralLinear
