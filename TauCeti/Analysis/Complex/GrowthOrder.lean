@@ -282,8 +282,12 @@ theorem orderLE_cexp_mul_pow (a : ℂ) (n : ℕ) : OrderLE (fun s ↦ cexp (a * 
 theorem orderLE_cexp_mul (a : ℂ) : OrderLE (fun s ↦ cexp (a * s)) 1 := by
   simpa using orderLE_cexp_mul_pow a 1
 
-/-- `b ^ (c * s)` has order at most `1`, for every base `b ≠ 0` and every `c : ℂ`. -/
-theorem orderLE_cpow_mul {b : ℂ} (hb : b ≠ 0) (c : ℂ) : OrderLE (fun s ↦ b ^ (c * s)) 1 := by
+/-- `b ^ (c * s)` has order at most `1`, for every base `b` and every `c : ℂ`. For `b = 0` the
+function only takes the values `0` and `1`. -/
+theorem orderLE_cpow_mul (b c : ℂ) : OrderLE (fun s ↦ b ^ (c * s)) 1 := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · refine (isBigO_of_le _ fun s ↦ ?_).orderLE (orderLE_const 1 1)
+    rcases eq_or_ne (c * s) 0 with h | h <;> simp [h]
   convert orderLE_cexp_mul (Complex.log b * c) using 2 with s
   rw [cpow_def_of_ne_zero hb, mul_assoc]
 

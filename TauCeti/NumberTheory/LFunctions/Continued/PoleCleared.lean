@@ -182,7 +182,7 @@ theorem orderLE_poleClearedContinuedL {A : ℝ} (hA : OrderLE d.entireCompletion
   have hG : OrderLE (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2) * d.entireCompletion z *
       d.invGammaFactor z) A := by
     have hN : OrderLE (fun z : ℂ ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) 1 := by
-      convert orderLE_cpow_mul (Nat.cast_ne_zero.mpr d.conductor.ne_zero) (-1 / 2) using 3 with z
+      convert orderLE_cpow_mul _ (-1 / 2) using 3 with z
       ring
     exact ((hN.mono h1).mul hA).mul (d.orderLE_invGammaFactor.mono h1)
   -- Off a bounded set, the polar polynomial times the cleared function is `P` times a function
