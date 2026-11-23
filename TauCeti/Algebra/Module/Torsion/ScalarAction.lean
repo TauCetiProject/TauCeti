@@ -105,6 +105,8 @@ noncomputable def semilinearMapOfSurjective {π : A →+* k}
     { toFun := id
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun r x ↦ by
+        -- `hM.moduleOfSurjective hπ` is `Module.compHom M e.symm.toRingHom`, so `(e r) • x`
+        -- acts by `e.symm (e r) • x` in `hM.module`.
         change r • x = e.symm (e r) • x
         rw [e.symm_apply_apply] }
   id_e.comp hM.semilinearMap

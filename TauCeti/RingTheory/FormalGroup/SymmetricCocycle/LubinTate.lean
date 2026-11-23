@@ -10,8 +10,9 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Coboundary
 import Mathlib.Algebra.DualNumber
+import Mathlib.Algebra.TrivSqZeroExt.Ideal
+import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 import Mathlib.RingTheory.PowerSeries.CoeffMulMem
-import TauCeti.Algebra.TrivSqZeroExt.Ideal
 import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
@@ -513,7 +514,7 @@ theorem exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ
     ⟨PowerSeries.X + δ, by simp [δ, hg₀], by simpa using hnil.isUnit_one_add⟩
   have hφX : φ.toPowerSeries - PowerSeries.X = δ := by simp [φ]
   have hinv_mul : F.invariantDifferential * δ = g := by
-    rw [hδ, ← mul_assoc, F.derivZeroX_def, F.invariantDifferential_mul_subst_pderiv, one_mul]
+    rw [hδ, ← mul_assoc, F.invariantDifferential_mul_derivZeroX, one_mul]
   refine ⟨φ, fun n ↦ hφX ▸ hδI n, ?_⟩
   rw [F.smul_eq_iff_deformationCocycle_eq_homDefect_𝔾ₐ G hI (fun n ↦ hφX ▸ hδI n), hφX, hinv_mul]
   exact hcoc
@@ -568,26 +569,25 @@ private theorem snd_shiftGeneratorHom (n : ℕ+) (x : LazardRing) :
       mvPolynomialEquiv (MvPolynomial.pderiv n (mvPolynomialEquiv.symm x)) :=
   snd_evalShift n (mvPolynomialEquiv.symm x)
 
-private theorem weight_of_coeff_pderiv_ne_zero {n : ℕ+} {m : ℕ} {x : LazardRing}
-    (hx : x ∈ grading m) {d : ℕ+ →₀ ℕ}
-    (hd : (MvPolynomial.pderiv n (mvPolynomialEquiv.symm x)).coeff d ≠ 0) :
-    (Finsupp.weight (fun k : ℕ+ ↦ 2 * (k : ℕ))) d + 2 * (n : ℕ) = m := by
-  have hp := mvPolynomialEquiv_mem_grading_iff.mp (by rw [AlgEquiv.apply_symm_apply]; exact hx)
-  rw [MvPolynomial.coeff_pderiv] at hd
-  have hw := hp (d := d + Finsupp.single n 1) fun h ↦ hd (by simp [h])
-  simpa [map_add, Finsupp.weight_single] using hw
-
 private theorem snd_shiftGeneratorHom_eq_zero_of_mem_grading_lt {n : ℕ+} {m : ℕ}
     (hm : m < 2 * (n : ℕ)) {x : LazardRing} (hx : x ∈ grading m) :
     (shiftGeneratorHom n x).snd = 0 := by
   rw [snd_shiftGeneratorHom]
-  suffices MvPolynomial.pderiv n (mvPolynomialEquiv.symm x) = 0 by simp [this]
-  ext d; by_contra hd; have := weight_of_coeff_pderiv_ne_zero hx hd; omega
+  have hp := mvPolynomialEquiv_mem_grading_iff.mp (by rw [AlgEquiv.apply_symm_apply]; exact hx)
+  have hnot : n ∉ (mvPolynomialEquiv.symm x).vars := fun hn ↦ by
+    obtain ⟨d, hd, hdn⟩ := (MvPolynomial.mem_vars_iff_mem_support n).1 hn
+    have hle : 2 * (n : ℕ) ≤ Finsupp.weight (fun k : ℕ+ ↦ 2 * (k : ℕ)) d :=
+      Finsupp.le_weight_of_ne_zero (w := fun k : ℕ+ ↦ 2 * (k : ℕ)) (fun _ ↦ Nat.zero_le _)
+        (Finsupp.mem_support_iff.1 hdn)
+    rw [hp (MvPolynomial.mem_support_iff.1 hd)] at hle
+    omega
+  simp [MvPolynomial.pderiv_eq_zero_of_notMem_vars hnot]
 
 private theorem snd_shiftGeneratorHom_mem_grading_zero (n : ℕ+) {x : LazardRing}
     (hx : x ∈ grading (2 * (n : ℕ))) : (shiftGeneratorHom n x).snd ∈ grading 0 := by
   rw [snd_shiftGeneratorHom, mvPolynomialEquiv_mem_grading_iff]
-  intro d hd; have := weight_of_coeff_pderiv_ne_zero hx hd; omega
+  have hp := mvPolynomialEquiv_mem_grading_iff.mp (by rw [AlgEquiv.apply_symm_apply]; exact hx)
+  exact hp.pderiv (n' := 0) (by simp)
 
 private theorem snd_shiftGeneratorHom_mem_augmentationIdeal_of_mem_sq (n : ℕ+) {x : LazardRing}
     (hx : x ∈ augmentationIdeal ^ 2) : (shiftGeneratorHom n x).snd ∈ augmentationIdeal := by
@@ -625,6 +625,12 @@ private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2
   · rw [hd_eq, h1, Finsupp.single_zero, _root_.add_zero, formalGroup.coeff_single_zero,
       ite_eq_right (by omega)]
 
+private theorem snd_shiftGeneratorHom_nsmul_generator (n : ℕ+) (c : ℕ) :
+    (shiftGeneratorHom n (c • generator n)).snd = c := by
+  rw [snd_shiftGeneratorHom, ← Nat.cast_smul_eq_nsmul ℤ, map_zsmul,
+    mvPolynomialEquiv_symm_generator]
+  simp
+
 private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (universalShiftSeries n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
@@ -653,13 +659,9 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
           (snd_shiftGeneratorHom_mem_grading_zero n hz_gr),
           mem_augmentationIdeal.mp (snd_shiftGeneratorHom_mem_augmentationIdeal_of_mem_sq n
             (coeff_formalGroup_sub_nsmul_generator_mem_sq n hi0 (by omega))), Int.cast_zero]
-      have hgen : (shiftGeneratorHom n (generator n)).snd = 1 := by
-        rw [snd_shiftGeneratorHom, mvPolynomialEquiv_symm_generator, MvPolynomial.pderiv_X_self,
-          map_one]
       dsimp only [z] at hz0
-      rw [← Nat.cast_smul_eq_nsmul ℤ, map_sub, map_zsmul, TrivSqZeroExt.snd_sub,
-        TrivSqZeroExt.snd_smul, hgen, zsmul_eq_mul, mul_one, Int.cast_natCast, sub_eq_zero,
-        ← hd_eq] at hz0
+      simp only [map_sub, TrivSqZeroExt.snd_sub, snd_shiftGeneratorHom_nsmul_generator,
+        sub_eq_zero, ← hd_eq] at hz0
       rw [coeff_universalShiftSeries, hz0, hd_eq,
         TauCeti.coeff_single_add_single_lazardCocycle hi0 (by omega)]; simp
   · rw [ite_eq_right hd, TauCeti.coeff_lazardCocycle, ite_eq_right (by omega)]
@@ -692,13 +694,22 @@ private theorem isSymmetricCocycle_universalLubinTateCocycle (n : ℕ+) :
   let inlR := algebraMap LazardRing (DualNumber LazardRing)
   have hcoc := (formalGroup.map inlR).isSymmetricCocycle_deformationCocycle
     (formalGroup.map (shiftGeneratorHom n))
-    (TrivSqZeroExt.kerIdeal_mul_self LazardRing LazardRing) fun d ↦ by
+    ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq LazardRing LazardRing)) fun d ↦ by
       simp only [TrivSqZeroExt.kerIdeal, RingHom.mem_ker, TrivSqZeroExt.fstHom_apply]
       simp [inlR, FormalGroup.map_toPowerSeries, fst_shiftGeneratorHom,
         TrivSqZeroExt.algebraMap_eq_inl]
   rw [deformationCocycle_universal_shiftGeneratorHom] at hcoc
   exact hcoc.of_smul_map_injective fun r₁ r₂ heq ↦ by
     simpa [inlR, TrivSqZeroExt.algebraMap_eq_inl] using congrArg TrivSqZeroExt.snd heq
+
+private theorem homogeneousComponent_universalLubinTateCocycle (n : ℕ+) :
+    homogeneousComponent ((n : ℕ) + 1) (universalLubinTateCocycle n) =
+      ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
+  rw [universalLubinTateCocycle, ← _root_.zero_add ((n : ℕ) + 1),
+    homogeneousComponent_mul_of_le_order zero_le (le_order_universalShiftSeries n)]
+  simp [homogeneousComponent_zero,
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero formalGroup.zero_constantCoeff,
+    homogeneousComponent_universalShiftSeries]
 
 /-- **Lubin–Tate, Lemma 1.3 (canonical symmetric 2-cocycle in degree `n + 1`).** For every
 commutative formal group law `F` over a commutative ring `R` and every `n : ℕ+`,
@@ -707,6 +718,13 @@ degree `n + 1`, with degree-`(n + 1)` homogeneous part equal to the Lazard cocyc
 noncomputable def lubinTateCocycle {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
     (n : ℕ+) : MvPowerSeries (Fin 2) R :=
   MvPowerSeries.map (LazardRing.lift ⟨F, inferInstance⟩) (universalLubinTateCocycle n)
+
+/-- `FormalGroup.lubinTateCocycle` depends only on the formal group law, not on the proof of
+commutativity. -/
+theorem lubinTateCocycle_congr {R : Type*} [CommRing R] {F G : FormalGroup R}
+    [F.IsComm] [G.IsComm] (h : F = G) (n : ℕ+) :
+    F.lubinTateCocycle n = G.lubinTateCocycle n := by
+  subst h; rfl
 
 /-- `F.lubinTateCocycle n` is a symmetric 2-cocycle of `F`. -/
 theorem isSymmetricCocycle_lubinTateCocycle {R : Type*} [CommRing R] (F : FormalGroup R)
@@ -735,17 +753,8 @@ theorem homogeneousComponent_lubinTateCocycle {R : Type*} [CommRing R] (F : Form
     [F.IsComm] (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (F.lubinTateCocycle n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) R) := by
-  have huniv : homogeneousComponent ((n : ℕ) + 1) (universalLubinTateCocycle n) =
-      ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
-    conv_lhs =>
-      rw [universalLubinTateCocycle, ← _root_.zero_add ((n : ℕ) + 1),
-        homogeneousComponent_mul_of_le_order zero_le (le_order_universalShiftSeries n),
-        homogeneousComponent_zero,
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero formalGroup.zero_constantCoeff,
-        formalGroup.constantCoeff_invariantDifferential, Algebra.algebraMap_self_apply, map_one,
-        one_mul, homogeneousComponent_universalShiftSeries]
   ext d; rw [coeff_homogeneousComponent, lubinTateCocycle, coeff_map, MvPolynomial.coeff_coe]
-  have hd := congrArg (coeff d) huniv
+  have hd := congrArg (coeff d) (homogeneousComponent_universalLubinTateCocycle n)
   rw [coeff_homogeneousComponent, MvPolynomial.coeff_coe] at hd
   by_cases hdeg : d.degree = (n : ℕ) + 1
   · rw [ite_eq_left hdeg] at hd ⊢

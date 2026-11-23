@@ -147,4 +147,10 @@ theorem ker_le_ker_comp {R S T : Type*} [Semiring R] [Semiring S] [Semiring T]
     (f : R →+* S) (g : S →+* T) : ker f ≤ ker (g.comp f) :=
   (Ideal.ker_le_comap (K := ker g) f).trans_eq (comap_ker g f)
 
+/-- If `g.comp f = h`, then the kernel of `f` is contained in the kernel of `h`. -/
+theorem ker_le_ker_of_comp_eq {R S T : Type*} [Semiring R] [Semiring S] [Semiring T]
+    {f : R →+* S} {g : S →+* T} {h : R →+* T} (hcomp : g.comp f = h) :
+    ker f ≤ ker h :=
+  (ker_le_ker_comp f g).trans_eq (congrArg ker hcomp)
+
 end RingHom

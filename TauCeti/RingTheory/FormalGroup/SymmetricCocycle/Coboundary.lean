@@ -167,10 +167,9 @@ theorem subst_zero_X (hΦ : F.IsSymmetricCocycle Φ) :
   have ha : HasSubst ![(0 : PowerSeries R), 0, PowerSeries.X] :=
     hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [PowerSeries.X]
   have h := congrArg (subst ![(0 : PowerSeries R), 0, PowerSeries.X]) hΦ.subst_add_subst_eq
-  rw [subst_add ha, subst_add ha, subst_comp_subst_apply .X_X ha,
+  simp only [subst_add ha, subst_comp_subst_apply .X_X ha,
     subst_comp_subst_apply (.cons_subst_zero_left 0 1 2 F.zero_constantCoeff) ha,
-    subst_comp_subst_apply (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff) ha,
-    subst_comp_subst_apply .X_X ha] at h
+    subst_comp_subst_apply (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff) ha] at h
   have h00 : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
       (![(X 0 : MvPowerSeries (Fin 3) R), X 1] i)) = 0 := by
     funext i; fin_cases i <;> simp [subst_X ha]
@@ -189,7 +188,7 @@ theorem subst_zero_X (hΦ : F.IsSymmetricCocycle Φ) :
     funext <| Fin.forall_fin_two.mpr ⟨by simp [subst_X ha], by simp only [Matrix.cons_val_one,
       Matrix.cons_val_fin_one, subst_comp_subst_apply .X_X ha, h0X,
       F.zero_add PowerSeries.HasSubst.X']⟩
-  rw [h00, hF00, h0FX, h0X, subst_zero_eq_C_constantCoeff, Algebra.algebraMap_self,
+  simp only [h00, hF00, h0FX, h0X, subst_zero_eq_C_constantCoeff, Algebra.algebraMap_self,
     MvPowerSeries.map_id] at h
   exact (add_right_cancel h).symm
 
@@ -225,10 +224,8 @@ theorem two_le_order (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ 
   have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by
     simpa only [Fin.sum_univ_two] using (Finsupp.univ_sum_single d).symm
   rw [hd']
-  rcases h0 : d 0 with _ | _ | _ <;> rcases h1 : d 1 with _ | _ | _ <;> try omega
-  · simpa using hΦ₀
-  · simpa using hΦ.coeff_single_one_eq_zero one_ne_zero
-  · simpa using hΦ.coeff_single_zero_eq_zero one_ne_zero
+  rcases h0 : d 0 with _ | _ | _ <;> rcases h1 : d 1 with _ | _ | _ <;>
+    first | omega | simp [hΦ₀, hΦ.coeff_single_one_eq_zero, hΦ.coeff_single_zero_eq_zero]
 
 /-- A finite sum of symmetric 2-cocycles is a symmetric 2-cocycle. -/
 theorem sum {ι : Type*} {s : Finset ι} {Φ : ι → MvPowerSeries (Fin 2) R}

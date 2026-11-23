@@ -120,7 +120,9 @@ noncomputable def derivZeroX : PowerSeries R :=
 theorem derivZeroX_def : F.derivZeroX = subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries) :=
   (rfl)
 
-private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZeroX = 1 := by
+/-- The constant coefficient of `F_X(0, T)` is `1`. -/
+@[simp]
+theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZeroX = 1 := by
   have hD : constantCoeff (pderiv 0 F.toPowerSeries) = 1 := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, _root_.zero_add, F.lin_coeff_X]
     simp
@@ -132,7 +134,7 @@ private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZero
     coe_substAlgHom] at this
 
 /-- Substituting `g` into `F_X(0, T)` is substituting `(0, g)` into `F_X`. -/
-private theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
+theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
     (hg : PowerSeries.HasSubst g) :
     PowerSeries.subst g F.derivZeroX = subst ![0, g] (pderiv 0 F.toPowerSeries) := by
   have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
@@ -198,7 +200,12 @@ theorem constantCoeff_invariantDifferential :
 /-- `P(T) · F_X(0, T) = 1`: the defining property of the invariant differential. -/
 theorem invariantDifferential_mul_subst_pderiv :
     F.invariantDifferential * subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries) = 1 :=
-  PowerSeries.invOfUnit_mul _ _ (by simp [constantCoeff_derivZeroX])
+  PowerSeries.invOfUnit_mul _ _ (by simp)
+
+/-- `P(T) · F_X(0, T) = 1`: multiplying the invariant differential by `F_X(0, T)` gives `1`. -/
+theorem invariantDifferential_mul_derivZeroX :
+    F.invariantDifferential * F.derivZeroX = 1 :=
+  F.invariantDifferential_mul_subst_pderiv
 
 /-- Substituting any substitutable series `g` into `P(T) · F_X(0, T) = 1` gives
 `P(g) · F_X(0, g) = 1`. -/

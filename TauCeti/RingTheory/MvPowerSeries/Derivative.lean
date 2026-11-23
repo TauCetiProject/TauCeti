@@ -210,18 +210,17 @@ theorem subst_add_of_mul_eq_zero {S : Type*} [CommRing R] [CommRing S] [Algebra 
       continuous_const.mul ((continuous_subst ha).comp (continuous_pderiv i)))) ?_
   rintro _ ⟨p, rfl⟩
   let T := MvPowerSeries τ S
-  let L : (σ → T) →ₗ[T] T :=
-    { toFun := fun v ↦ ∑ i, v i * h i
-      map_add' := fun u v ↦ by simp [add_mul, Finset.sum_add_distrib]
-      map_smul' := fun c v ↦ by simp [smul_eq_mul, mul_assoc, Finset.mul_sum] }
+  let L : (σ → T) →ₗ[T] T := LinearMap.lsum T (fun _ ↦ T) T (fun i ↦ LinearMap.mulRight T (h i))
   have hL : ∀ u v, L u * L v = 0 := fun u v ↦ by
-    simp only [L, LinearMap.coe_mk, AddHom.coe_mk, Finset.sum_mul, Finset.mul_sum]
+    simp only [L, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+      LinearMap.proj_apply, LinearMap.mulRight_apply, Finset.sum_mul, Finset.mul_sum]
     exact Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ by
       rw [mul_mul_mul_comm, hh, mul_zero]
   let φ : TrivSqZeroExt T (σ → T) →ₐ[T] T := TrivSqZeroExt.liftEquivOfComm ⟨L, hL⟩
   have hcomp : φ.comp (TauCeti.jetAlgebra a) = MvPolynomial.aeval (a + h) :=
     MvPolynomial.algHom_ext fun i ↦ by
-      simp [φ, L, TrivSqZeroExt.liftEquivOfComm_apply, Pi.single_apply]
+      simp [φ, L, TrivSqZeroExt.liftEquivOfComm_apply, LinearMap.lsum_piSingle,
+        -LinearMap.lsum_apply]
   let pT : MvPolynomial σ T := MvPolynomial.map (algebraMap R T) p
   have hlhs : subst (a + h) (p : MvPowerSeries σ R) = MvPolynomial.aeval (a + h) pT := by
     simp [subst_coe, MvPolynomial.aeval_def, pT, MvPolynomial.eval₂_map, T]
@@ -230,7 +229,8 @@ theorem subst_add_of_mul_eq_zero {S : Type*} [CommRing R] [CommRing S] [Algebra 
   refine hrhs.trans ?_
   simp only [φ, map_add, TrivSqZeroExt.liftEquivOfComm_apply, TrivSqZeroExt.lift_apply_inl,
     TrivSqZeroExt.lift_apply_inr, Algebra.ofId_apply, Algebra.algebraMap_self, RingHom.id_apply,
-    L, LinearMap.coe_mk, AddHom.coe_mk, pT, MvPolynomial.eval_map, MvPolynomial.pderiv_map]
+    L, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply,
+    LinearMap.mulRight_apply, pT, MvPolynomial.eval_map, MvPolynomial.pderiv_map]
   congr 1
   · rw [← MvPolynomial.aeval_def, ← subst_coe]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
