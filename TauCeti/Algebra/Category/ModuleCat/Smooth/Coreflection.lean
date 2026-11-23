@@ -93,7 +93,7 @@ theorem exists_forall_smul_eq_zero_of_mem_smoothPart (hJ : Directed (· ≥ ·) 
     (hm : m ∈ smoothPart J M) : ∃ i, ∀ a ∈ J i, a • m = 0 := by
   rw [smoothPart, sSup_eq_iSup'] at hm
   refine Submodule.iSup_induction _ (motive := fun m => ∃ i, ∀ a ∈ J i, a • m = 0) hm
-    (fun p m hm => p.2 m hm) ⟨Classical.arbitrary ι, fun a _ => smul_zero a⟩ ?_
+    (fun p m hm => p.property m hm) ⟨Classical.arbitrary ι, fun a _ => smul_zero a⟩ ?_
   rintro x y ⟨i, hi⟩ ⟨j, hj⟩
   obtain ⟨k, hik, hjk⟩ := hJ i j
   exact ⟨k, fun a ha => by rw [smul_add, hi a (hik ha), hj a (hjk ha), add_zero]⟩
@@ -136,7 +136,7 @@ theorem smoothPart_eq_top_iff (hJ : Directed (· ≥ ·) J) :
 /-- For a directed family `J`, the smooth part of a module is a smooth module. -/
 theorem smoothModules_smoothPart (hJ : Directed (· ≥ ·) J) :
     smoothModules.{v} J (ModuleCat.of A (smoothPart J M)) := smoothModules_iff.2 fun m => by
-  obtain ⟨i, hi⟩ := exists_forall_smul_eq_zero_of_mem_smoothPart hJ m.2
+  obtain ⟨i, hi⟩ := exists_forall_smul_eq_zero_of_mem_smoothPart hJ m.property
   exact ⟨i, fun a ha => Subtype.ext (hi a ha)⟩
 
 end SmoothPart

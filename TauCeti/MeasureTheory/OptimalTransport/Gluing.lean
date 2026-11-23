@@ -434,7 +434,7 @@ namespace Measure
 section Comp
 
 variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z]
-  {π : Measure (X × Y)} {σ : Measure (Y × Z)} {γ : Measure (X × Y × Z)}
+  {γ : Measure (X × Y × Z)} {π : Measure (X × Y)} {σ : Measure (Y × Z)}
 
 /-- The composition of two plans is the `(X, Z)`-marginal of a glued measure. Its first marginal is
 the first marginal of the first plan. -/

@@ -229,7 +229,7 @@ theorem finrank_continuousCohomology_one_fdGalRepOfQuotient [Fact ℓ.Prime]
   have : Module.Finite (ZMod ℓ) X.V := Module.Finite.of_finite
   let ρ : Representation (ZMod ℓ) (Field.absoluteGaloisGroup F ⧸ W.toSubgroup) X.V := A.ρ
   have h1 := finrank_H1_eq_finrank_representationInvariants (A := X.V) (p := ℓ)
-    (fun n a ↦ galRepOfQuotient_ρ_eq_self ℓ F W _ n.2 a) W.isOpen hW ρ hρ
+    (fun n a ↦ galRepOfQuotient_ρ_eq_self ℓ F W _ n.property a) W.isOpen hW ρ hρ
   calc finrank (ZMod ℓ) (continuousCohomology 1 X)
       _ = finrank (ZMod ℓ) (H1 (Field.absoluteGaloisGroup F) X.V) :=
         ((TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete X).toLinearEquiv

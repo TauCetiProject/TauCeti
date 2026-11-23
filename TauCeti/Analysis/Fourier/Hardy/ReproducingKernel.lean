@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.DiskFunction
-import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Reproducing kernels of the boundary Hardy space
@@ -14,11 +13,26 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 Point evaluation of the holomorphic disk function is a bounded linear functional on
 `TauCeti.HardySpace`. Its Riesz representative is the Szegő kernel, whose nonnegative
 Fourier coefficients are the powers of the conjugate evaluation point. Its disk function is
-`z ↦ (1 - conj w * z)⁻¹`. The exact norm of this vector gives the sharp norm of evaluation.
+`z ↦ (1 - conj w * z)⁻¹` on the open unit disk. The exact norm of this vector gives the sharp
+norm of evaluation.
 
 The normalized kernels, Mathlib's `NormedSpace.normalize` of the Szegő kernels, have norm one
 and reproduce evaluation multiplied by `√(1 - ‖w‖ ^ 2)`. Points are carried by the open unit
 disk, so the constructions require no choices of values at boundary or exterior points.
+
+## Main definitions
+
+* `TauCeti.HardySpace.diskEvaluation`: evaluation of the disk function at a point of the open unit
+  disk, as a bounded linear functional.
+* `TauCeti.HardySpace.reproducingKernel`: its Riesz representative, the Szegő kernel.
+
+## Main results
+
+* `TauCeti.HardySpace.inner_reproducingKernel`: pairing with the kernel is evaluation.
+* `TauCeti.HardySpace.norm_reproducingKernel`: the norm of the kernel, `(√(1 - ‖w‖ ^ 2))⁻¹`.
+* `TauCeti.HardySpace.norm_diskEvaluation`: the sharp norm of evaluation.
+* `TauCeti.HardySpace.normalize_reproducingKernel`: the normalized kernel is the kernel scaled
+  by `√(1 - ‖w‖ ^ 2)`.
 
 ## References
 
@@ -26,7 +40,7 @@ disk, so the constructions require no choices of values at boundary or exterior 
 * P. L. Duren, *Theory of Hᵖ Spaces*, chapter 1.
 
 The construction uses Mathlib's Riesz equivalence `InnerProductSpace.toDual` and the bounded
-evaluation theorem for `HardySpace.diskFunction`.
+evaluation theorem `TauCeti.HardySpace.norm_diskFunction_le`.
 -/
 
 public section
@@ -51,7 +65,6 @@ def diskEvaluation : HardySpace →L[ℂ] ℂ :=
         x.norm_diskFunction_le (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
 
 /-- The bounded evaluation map agrees with the disk function. -/
-@[simp]
 theorem diskEvaluation_apply (x : HardySpace) : diskEvaluation w x = x.diskFunction w :=
   (rfl)
 
@@ -61,10 +74,9 @@ def reproducingKernel : HardySpace :=
 
 /-- Pairing with the Szegő kernel reproduces the disk function, with the inner product
 conjugate linear in its first argument. -/
-@[simp↓]
 theorem inner_reproducingKernel (x : HardySpace) :
     ⟪reproducingKernel w, x⟫_ℂ = x.diskFunction w := by
-  simp [reproducingKernel]
+  simp [reproducingKernel, diskEvaluation_apply]
 
 /-- The nonnegative Fourier coordinates of the kernel are the powers of the conjugate point. -/
 @[simp]
@@ -137,7 +149,6 @@ theorem normalize_reproducingKernel :
   exact (Complex.coe_smul ..).symm
 
 /-- Pairing with a normalized kernel is the corresponding scaled evaluation. -/
-@[simp↓]
 theorem inner_normalize_reproducingKernel (x : HardySpace) :
     ⟪NormedSpace.normalize (reproducingKernel w), x⟫_ℂ =
       (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) * x.diskFunction w := by

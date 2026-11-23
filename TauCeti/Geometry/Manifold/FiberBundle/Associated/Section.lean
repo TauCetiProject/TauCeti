@@ -77,7 +77,7 @@ theorem contMDiff_sectionFunction_iff (s : ∀ b, AssociatedBundle G P F b) :
   have hp : ContMDiff (IB.prod IG) (IB.prod IG) n fun p : ManifoldTotalSpace G P ↦
       ManifoldTotalSpace.homeomorph G P
         ⟨((ManifoldTotalSpace.homeomorph G P).symm p).proj,
-          ((ManifoldTotalSpace.homeomorph G P).symm p).2⟩ :=
+          ((ManifoldTotalSpace.homeomorph G P).symm p).snd⟩ :=
     contMDiff_id.congr fun p ↦ by simp only [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq]
   exact (hp.totalSpaceMk_associatedBundleMk hu).congr fun p ↦ by
     rw [mk_sectionFunction]
@@ -92,14 +92,15 @@ noncomputable def contMDiffSectionEquiv :
       ContMDiff (IB.prod IG) IF n u ∧ ∀ (b : B) (p : P b) (g : G),
         u (ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) =
           g⁻¹ • u (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)} where
-  toFun s := ⟨fun p ↦ sectionFunction s.1 ((ManifoldTotalSpace.homeomorph G P).symm p),
-    contMDiff_sectionFunction s.1 s.2, by
+  toFun s := ⟨fun p ↦ sectionFunction s.val ((ManifoldTotalSpace.homeomorph G P).symm p),
+    contMDiff_sectionFunction s.val s.property, by
       intro b p g
       simp only [Homeomorph.symm_apply_apply, sectionFunction_smul]⟩
-  invFun u := ⟨sectionEquiv.symm ⟨fun p ↦ u.1 (ManifoldTotalSpace.homeomorph G P p), u.2.2⟩, by
+  invFun u := ⟨sectionEquiv.symm ⟨fun p ↦ u.val (ManifoldTotalSpace.homeomorph G P p),
+      u.property.2⟩, by
     apply (contMDiff_sectionFunction_iff (IB := IB) (IG := IG) (IF := IF) (n := n) _).1
     simpa only [sectionFunction_sectionEquiv_symm, Homeomorph.apply_symm_apply]
-      using u.2.1⟩
+      using u.property.1⟩
   left_inv s := by
     apply Subtype.ext
     apply sectionFunction_injective
@@ -117,8 +118,8 @@ theorem contMDiffSectionEquiv_apply
       ContMDiff IB (IB.prod IF) n fun b ↦
         ManifoldTotalSpace.homeomorph F (AssociatedBundle G P F) ⟨b, s b⟩})
     (p : ManifoldTotalSpace G P) :
-    (contMDiffSectionEquiv (IG := IG) s).1 p =
-      sectionFunction s.1 ((ManifoldTotalSpace.homeomorph G P).symm p) :=
+    (contMDiffSectionEquiv (IG := IG) s).val p =
+      sectionFunction s.val ((ManifoldTotalSpace.homeomorph G P).symm p) :=
   (rfl)
 
 /-- The smooth inverse correspondence has the same underlying section as the raw one. -/
@@ -128,8 +129,8 @@ theorem contMDiffSectionEquiv_symm_val
       ∀ (b : B) (p : P b) (g : G),
         u (ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) =
           g⁻¹ • u (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)}) :
-    (contMDiffSectionEquiv.symm u).1 =
-      sectionEquiv.symm ⟨fun p ↦ u.1 (ManifoldTotalSpace.homeomorph G P p), u.2.2⟩ :=
+    (contMDiffSectionEquiv.symm u).val =
+      sectionEquiv.symm ⟨fun p ↦ u.val (ManifoldTotalSpace.homeomorph G P p), u.property.2⟩ :=
   (rfl)
 
 /-- Evaluate the smooth inverse correspondence using any principal frame. -/
@@ -139,8 +140,8 @@ theorem contMDiffSectionEquiv_symm_apply
         u (ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) =
           g⁻¹ • u (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)})
     {b : B} (p : P b) :
-    (contMDiffSectionEquiv.symm u).1 b =
-      mk G p (u.1 (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)) :=
-  sectionEquiv_symm_apply ⟨_, u.2.2⟩ p
+    (contMDiffSectionEquiv.symm u).val b =
+      mk G p (u.val (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)) :=
+  sectionEquiv_symm_apply ⟨_, u.property.2⟩ p
 
 end TauCeti.AssociatedBundle

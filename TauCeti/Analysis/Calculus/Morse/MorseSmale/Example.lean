@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # A Morse–Smale function on the plane
@@ -280,24 +281,13 @@ theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
 /-- The negative-gradient flow of `cos x + y² / 2`. -/
 local notation "Φ" => negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq
 
-private theorem hasDerivAt_orbit (z : EuclideanSpace ℝ (Fin 2)) (t : ℝ) :
-    HasDerivAt (fun t ↦ Φ t z) (-gradField (Φ t z)) t := by
-  have := (isNegativeGradient_negativeGradientFlow cosAddHalfSq
-    lipschitzWith_gradient_cosAddHalfSq).isIntegralCurve z t
-  beta_reduce at this
-  rwa [gradient_cosAddHalfSq] at this
-
-private theorem hasDerivAt_orbit_coord (z : EuclideanSpace ℝ (Fin 2)) (i : Fin 2) (t : ℝ) :
-    HasDerivAt (fun t ↦ Φ t z i) (-gradField (Φ t z) i) t := by
-  exact (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt
-    t (hasDerivAt_orbit z t)
-
 /-- Along an orbit, the second coordinate is `y₀ e^{-t}`. -/
 private theorem orbit_apply_one (z : EuclideanSpace ℝ (Fin 2)) (t : ℝ) :
     Φ t z 1 = z 1 * Real.exp (-t) := by
   have hd : ∀ s, HasDerivAt (fun s ↦ Real.exp s * Φ s z 1) 0 s := fun s ↦ by
-    refine ((Real.hasDerivAt_exp s).mul (hasDerivAt_orbit_coord z 1 s)).congr_deriv ?_
-    simp only [gradField_apply_one]
+    refine ((Real.hasDerivAt_exp s).mul
+      (hasDerivAt_negativeGradientFlow_apply _ _ z 1 s)).congr_deriv ?_
+    simp only [gradient_cosAddHalfSq_apply_one]
     ring
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt) (fun s ↦ (hd s).deriv)
     t 0
@@ -351,8 +341,8 @@ private theorem apply_zero_eq_of_mem_stableSet {q z : EuclideanSpace ℝ (Fin 2)
   rw [Flow.mem_stableSet] at hz
   set D : ℝ → ℝ := fun t ↦ Φ t z 0 - q 0 with hDdef
   have hD' : ∀ t, HasDerivAt D (Real.sin (D t)) t := fun t ↦ by
-    refine ((hasDerivAt_orbit_coord z 0 t).sub_const (q 0)).congr_deriv ?_
-    simp only [gradField_apply_zero, neg_neg, hDdef, Real.sin_sub, hs, hc]
+    refine ((hasDerivAt_negativeGradientFlow_apply _ _ z 0 t).sub_const (q 0)).congr_deriv ?_
+    simp only [gradient_cosAddHalfSq_apply_zero, neg_neg, hDdef, Real.sin_sub, hs, hc]
     ring
   have hD : Tendsto D atTop (𝓝 0) := by
     have h1 := ((EuclideanSpace.proj (0 : Fin 2) :

@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # Hamiltonian vector fields on symplectic vector spaces
@@ -21,7 +23,9 @@ vector field of `H` is obtained by inverting contraction with the symplectic for
 Our sign convention is `ω (X_H x) v = dH(x) v`. For `ω = dq ∧ dp`, this gives the
 Hamilton equations `q' = ∂H/∂p`, `p' = -∂H/∂q`.
 
-The characteristic contraction equation determines the field uniquely. Since `dH(X_H) = 0`, a
+The characteristic contraction equation determines the field uniquely, and the field vanishes
+off the topological support of `H`
+(`TauCeti.SymplecticForm.hamiltonianVectorField_eq_zero_of_notMem_tsupport`). Since `dH(X_H) = 0`, a
 differentiable Hamiltonian is constant along every integral curve of `X_H`
 (`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
 `X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
@@ -37,7 +41,9 @@ for all times.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
-(`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`).
+(`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`). When `g` is the
+inner product of `V`, this says `J X_H = ∇H`
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`).
 
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
 family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
@@ -101,6 +107,11 @@ theorem hamiltonianVectorField_eq_zero_iff (ω : SymplecticForm V) (H : V → �
   rw [eq_comm, eq_hamiltonianVectorField_iff]
   simp [ContinuousLinearMap.ext_iff, eq_comm]
 
+/-- The Hamiltonian vector field vanishes off the topological support of the Hamiltonian. -/
+theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport (ω : SymplecticForm V) {H : V → ℝ}
+    {x : V} (hx : x ∉ tsupport H) : ω.hamiltonianVectorField H x = 0 :=
+  (ω.hamiltonianVectorField_eq_zero_iff H x).2 (fderiv_of_notMem_tsupport ℝ hx)
+
 /-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
 @[simp]
 theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) (x : V) :
@@ -110,6 +121,12 @@ theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : 
     simp
   rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
     map_smul]
+
+/-- The Hamiltonian vector field is homogeneous, as an identity of vector fields:
+`X_{c H} = c X_H`. -/
+theorem hamiltonianVectorField_const_mul' (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ c * H y) = c • ω.hamiltonianVectorField H :=
+  funext fun x ↦ ω.hamiltonianVectorField_const_mul c H x
 
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
@@ -263,6 +280,17 @@ theorem hamiltonianVectorField_neg (ω : SymplecticForm V) (H : V → ℝ) (x : 
   rw [eq_comm, eq_hamiltonianVectorField_iff]
   intro v
   simp [fderiv_neg]
+
+/-- The Hamiltonian vector field of a sum of Hamiltonians differentiable at the point:
+`X_{F + G} = X_F + X_G`. -/
+theorem hamiltonianVectorField_add (ω : SymplecticForm V) {F G : V → ℝ} {x : V}
+    (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) :
+    ω.hamiltonianVectorField (F + G) x =
+      ω.hamiltonianVectorField F x + ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_add hF hG]
+  simp [map_add]
 
 /-- The Hamiltonian vector field of a difference of Hamiltonians differentiable at the point:
 `X_{F - G} = X_F - X_G`. -/
@@ -504,5 +532,22 @@ theorem poissonBracket_comb (ω : SymplecticForm V) (F G : V → ℝ) (a b c d :
       · simp [hzero _ hA]
 
 end PoissonBracket
+
+section Gradient
+
+open scoped Gradient RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **`J X_H` is the gradient of `H`.** If the inner product of `E` is the metric `ω(·, J ·)`, then
+`J X_H(x) = ∇H(x)`. -/
+theorem apply_hamiltonianVectorField_eq_gradient {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (H : E → ℝ) (x : E) :
+    J (ω.hamiltonianVectorField H x) = ∇ H x :=
+  ext_inner_right ℝ fun w ↦ by
+    rw [inner_gradient_left, ← hg, ← associatedBilinForm_apply]
+    exact (ω.invariant_of_apply_apply_eq_inner hg).associatedBilinForm_hamiltonianVectorField H x w
+
+end Gradient
 
 end TauCeti.SymplecticForm

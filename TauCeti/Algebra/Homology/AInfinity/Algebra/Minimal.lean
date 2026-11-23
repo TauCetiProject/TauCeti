@@ -102,7 +102,7 @@ private theorem taylor_prepend_prepend (hm : ∀ k, 3 ≤ k → 𝒜.m k = 0) (u
   have h : 𝒜.taylor ∘ₗ prepend R A u ∘ₗ prepend R A v = 0 := by
     refine linearMap_ext R A fun n y ↦ ?_
     rw [LinearMap.comp_apply, LinearMap.comp_apply, prepend_of_tprod, prepend_of_tprod,
-      𝒜.taylor_of_tprod, hm _ (by have := n.2; simp only; omega), LinearMap.zero_apply,
+      𝒜.taylor_of_tprod, hm _ (by have := n.property; simp only; omega), LinearMap.zero_apply,
       _root_.zero_apply]
   exact LinearMap.congr_fun h W
 

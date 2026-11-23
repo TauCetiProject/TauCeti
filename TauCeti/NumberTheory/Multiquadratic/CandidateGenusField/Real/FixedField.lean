@@ -191,7 +191,7 @@ theorem mem_map_candidateGenusFieldReal_iff (hd : Squarefree d) (x : ℂ) :
   rw [IntermediateField.mem_map]
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.2, (coe_candidateGenusFieldConj_apply hd y).symm.trans
+    exact ⟨y.property, (coe_candidateGenusFieldConj_apply hd y).symm.trans
       (congrArg Subtype.val ((candidateGenusFieldConj_apply_eq_self_iff hd y).2 hy))⟩
   · rintro ⟨hx, hstar⟩
     exact ⟨⟨x, hx⟩, (candidateGenusFieldConj_apply_eq_self_iff hd _).1

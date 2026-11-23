@@ -89,8 +89,8 @@ theorem diagonalLaw_toFun_sum_tmul (d : ℕ) (S : Type*) [CommSemiring S] [Algeb
         (∏ t, s (w t)) ⊗ₜ[R] TensorAlgebra.tprod R M d fun t ↦ m (w t) := by
     rw [← MultilinearMap.mkPiAlgebraFin_apply_const (R := S), MultilinearMap.map_sum_finset]
     refine Finset.sum_congr rfl fun w _ ↦ ?_
-    rw [MultilinearMap.mkPiAlgebraFin_apply, Algebra.TensorProduct.list_prod_ofFn_tmul,
-      TensorAlgebra.tprod_apply]
+    rw [MultilinearMap.mkPiAlgebraFin_apply, TauCeti.list_prod_ofFn_tmul,
+      List.prod_ofFn, TensorAlgebra.tprod_apply]
   simp only [diagonalLaw_toFun, map_sum, LinearMap.baseChange_tmul, hpow,
     TensorAlgebra.tensorPowerProjection_tprod_self]
 
