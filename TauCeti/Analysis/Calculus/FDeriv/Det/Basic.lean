@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Analysis.Matrix.Normed
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -42,8 +43,6 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 ## Main results
 
 * `Matrix.contDiff_det`: the matrix determinant is smooth without scalar completeness.
-* `ContinuousLinearMap.toMatrixCLM`: the matrix of a continuous endomorphism in a basis, as a
-  continuous linear map, with `ContinuousLinearMap.det_toMatrixCLM`.
 * `ContinuousLinearMap.contDiff_det`: the determinant of a continuous linear endomorphism
   of a normed space is smooth over a complete field (it is the constant `1` in infinite
   dimension).
@@ -237,24 +236,6 @@ namespace ContinuousLinearMap
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace 𝕜]
 
-/-- The matrix in a basis `b` of a continuous endomorphism of a finite-dimensional space, as a
-continuous linear map. -/
-noncomputable def toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜 :=
-  LinearMap.toContinuousLinearMap
-    ((LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜))
-
-/-- `toMatrixCLM b` evaluates to `LinearMap.toMatrix b b`. -/
-@[simp]
-theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
-    (f : E →L[𝕜] E) : toMatrixCLM b f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) :=
-  (rfl)
-
-/-- The determinant of the matrix of `f` in any basis is the determinant of `f`. -/
-theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
-    (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
-  LinearMap.det_toMatrix b _
-
 omit [FiniteDimensional 𝕜 E] in
 /-- The determinant of an endomorphism of a normed space is smooth. Over an infinite-dimensional
 space it is the constant `1` by convention. -/
@@ -292,13 +273,7 @@ theorem hasFDerivAt_det_of_comp_eq_one {A B : E →L[𝕜] E} (hAB : A ∘L B = 
     HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E))
       (LinearMap.det (A : E →ₗ[𝕜] E) • (TauCeti.traceCLM 𝕜 E).comp (compL 𝕜 E E E B)) A := by
   -- In finite dimension a right inverse is a left inverse.
-  have hBA : B ∘L A = 1 := by
-    have h : (B : E →ₗ[𝕜] E) ∘ₗ (A : E →ₗ[𝕜] E) = LinearMap.id :=
-      (LinearMap.comp_eq_id_comm 𝕜 E).1 (by
-        ext x
-        simpa using congrArg (fun F : E →L[𝕜] E ↦ F x) hAB)
-    ext x
-    simpa using congrArg (fun F : E →ₗ[𝕜] E ↦ F x) h
+  have hBA : B ∘L A = 1 := comp_eq_one_comm.1 hAB
   have hdet : HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E))
       (TauCeti.traceCLM 𝕜 E) (compL 𝕜 E E E B A) := by
     rw [compL_apply, hBA]
@@ -310,7 +285,7 @@ theorem hasFDerivAt_det_of_comp_eq_one {A B : E →L[𝕜] E} (hAB : A ∘L B = 
     rw [← LinearMap.det_comp]
     congr 1
     ext x
-    simpa using congrArg (fun F : E →L[𝕜] E ↦ F (f x)) hAB.symm
+    exact (DFunLike.congr_fun hAB (f x)).symm
   · ext H
     simp
 

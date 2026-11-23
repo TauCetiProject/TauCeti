@@ -39,7 +39,7 @@ Carathéodory theorem.
 
 ## Main results
 
-* `TauCeti.ae_hasDerivAt_det_propagator`: `t ↦ det N_P(t, s)` has derivative
+* `TauCeti.ae_hasDerivAt_det_propagator_left`: `t ↦ det N_P(t, s)` has derivative
   `trace P(t) * det N_P(t, s)` at almost every `t`.
 * `TauCeti.det_propagator`, `TauCeti.det_toMatrix'_propagator`: Liouville's formula, basis-free
   and for matrices.
@@ -60,7 +60,7 @@ variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [Normed
 
 /-- **The derivative of the determinant of the propagator.** `t ↦ det N_P(t, s)` has derivative
 `trace P(t) * det N_P(t, s)` at almost every `t ∈ (a, b)`. -/
-theorem ae_hasDerivAt_det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
+theorem ae_hasDerivAt_det_propagator_left (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
     ∀ᵐ t, t ∈ Ioo a b → HasDerivAt (fun r ↦ LinearMap.det (propagator P r s : E →ₗ[𝕜] E))
       (LinearMap.trace 𝕜 E (P t) * LinearMap.det (propagator P t s : E →ₗ[𝕜] E)) t := by
   by_cases hE : FiniteDimensional 𝕜 E
@@ -107,8 +107,7 @@ theorem det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) (ht 
   set y : ℝ → 𝕜 := fun r ↦ LinearMap.det (propagator P r s : E →ₗ[𝕜] E)
   set w : ℝ → 𝕜 := fun r ↦ NormedSpace.exp (∫ u in s..r, g u)
   have hexp : ∀ x : 𝕜, ContDiffAt ℝ 1 NormedSpace.exp x := fun x ↦
-    (NormedSpace.analyticAt_exp_of_mem_ball (𝕂 := ℝ) x
-      (by simp [NormedSpace.expSeries_radius_eq_top])).contDiffAt
+    (NormedSpace.exp_analytic (𝕂 := ℝ) x).contDiffAt
   have hyac : AbsolutelyContinuousOnInterval y a b :=
     (absolutelyContinuousOnInterval_propagator_left hP hs).comp_of_contDiffAt fun _ _ ↦
       (ContinuousLinearMap.contDiff_det (𝕜 := 𝕜) (E := E)).contDiffAt.restrict_scalars ℝ
@@ -117,7 +116,7 @@ theorem det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) (ht 
       fun x _ ↦ hexp x
   have hy := forall_mem_Icc_eq_picard_of_absolutelyContinuousOnInterval (x₀ := 1) hs hM
     integrableOn_zero hyac (by simp [y, propagator_self]) (by
-      filter_upwards [ae_hasDerivAt_det_propagator hP hs] with r hr hr'
+      filter_upwards [ae_hasDerivAt_det_propagator_left hP hs] with r hr hr'
       simpa [M, g] using hr hr')
   have hw := forall_mem_Icc_eq_picard_of_absolutelyContinuousOnInterval (x₀ := 1) hs hM
     integrableOn_zero hwac (by simp [w]) (by
