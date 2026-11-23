@@ -26,6 +26,8 @@ the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
 ## Main definitions
 
 * `Diffeomorph.fixingSubgroup s`: self-diffeomorphisms fixing every point of `s`.
+* `Diffeomorph.nhdsFixingSubgroup s`: self-diffeomorphisms equal to the identity on a neighbourhood
+  of `s`.
 * `TauCeti.RelativeDiff I M n s`: the corresponding relative diffeomorphism group,
   as a type abbreviation for that subgroup.
 
@@ -40,11 +42,13 @@ the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
   setwise.
 * `Diffeomorph.toHomeomorph_mem_fixingSubgroup`: forgetting smoothness sends a relative
   diffeomorphism to the corresponding relative homeomorphism.
+* `Diffeomorph.nhdsFixingSubgroup_le_fixingSubgroup`: being the identity near `s` implies fixing
+  `s` pointwise.
 -/
 
 public section
 
-open scoped Manifold ContDiff Pointwise
+open scoped Manifold ContDiff Pointwise Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -139,6 +143,32 @@ theorem toRelativeHomeomorphHom_apply (s : Set M) (f : fixingSubgroup (I := I) (
       (f : M ≃ₘ^n⟮I, I⟯ M).toHomeomorph := by
   ext x
   simp [toRelativeHomeomorphHom, toHomeomorphHom_apply]
+
+/-- The subgroup of self-diffeomorphisms equal to the identity on a neighbourhood of `s`. For the
+boundary of a manifold these are the diffeomorphisms that are the identity near the boundary, the
+group of Smale's theorem on the diffeomorphisms of the square. -/
+def nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) where
+  carrier := {f | ∀ᶠ x in 𝓝ˢ s, f x = x}
+  one_mem' := by
+    rw [Set.mem_ofPred_eq]
+    exact .of_forall fun _ ↦ rfl
+  mul_mem' {f g} (hf : ∀ᶠ x in 𝓝ˢ s, f x = x) (hg : ∀ᶠ x in 𝓝ˢ s, g x = x) :=
+    (hf.and hg).mono fun x hx ↦ by rw [mul_apply, hx.2, hx.1]
+  inv_mem' {f} (hf : ∀ᶠ x in 𝓝ˢ s, f x = x) := hf.mono fun x hx ↦ by
+    rw [inv_apply, ← hx, Diffeomorph.symm_apply_apply, hx]
+
+/-- Membership in `nhdsFixingSubgroup s` is being the identity on a neighbourhood of `s`. -/
+@[simp]
+theorem mem_nhdsFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
+    f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x := by
+  rw [nhdsFixingSubgroup, Subgroup.mem_mk, Submonoid.mem_mk, Subsemigroup.mem_mk,
+    Set.mem_ofPred_eq]
+
+/-- A diffeomorphism equal to the identity near `s` fixes `s` pointwise. -/
+theorem nhdsFixingSubgroup_le_fixingSubgroup (s : Set M) :
+    nhdsFixingSubgroup (I := I) (n := n) s ≤ fixingSubgroup (I := I) (n := n) s :=
+  fun _ hf ↦ mem_fixingSubgroup_of_forall fun _ hx ↦
+    (mem_nhdsFixingSubgroup_iff.mp hf).self_of_nhdsSet _ hx
 
 end Diffeomorph
 
