@@ -124,16 +124,11 @@ theorem relativePicardDegreeZeroToFppfSheaf_comp_baseChangeIso_hom :
       (relativePicardDegreeZeroAddPresheafBaseChangeIso f g).hom ≫
         Functor.whiskerLeft (Over.map g).op (relativePicardDegreeZeroToFppfSheaf f) := by
   rw [relativePicardDegreeZeroToFppfSheaf_eq, Category.assoc,
-    relativePicardDegreeZeroFppfSheafBaseChangeIso_hom_eq]
-  erw [← Category.assoc, ← toSheafify_naturality]
-  erw [Category.assoc]
-  erw [reassoc_of% (Over.map g).toSheafify_pullbackSheafificationCompatibility
-    AddCommGrpCat.{u + 1} (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S)
-      (relativePicardDegreeZeroAddPresheaf f)]
-  erw [relativePicardDegreeZeroToFppfSheaf_eq, Functor.whiskerLeft_comp]
-  -- The underlying presheaf of the pushforward is restriction along `Over.map g`;
-  -- its target identification is the same whiskered equality on both sides.
-  rfl
+    relativePicardDegreeZeroFppfSheafBaseChangeIso_hom_eq, relativePicardDegreeZeroToFppfSheaf_eq,
+    Functor.whiskerLeft_comp]
+  -- The underlying presheaf of the pushforward sheaf is `(Over.map g).op ⋙ _` only after
+  -- unfolding `sheafPushforwardContinuous`, so the compatibility applies by `exact`, not `rw`.
+  exact Functor.toSheafify_comp_sheafifyMap_comp_sheafificationCompatibility_hom_assoc _ _ _ _ _ _
 
 /-- On actual degree-zero Picard classes, the sheaf comparison is induced by the presheaf
 comparison. -/
