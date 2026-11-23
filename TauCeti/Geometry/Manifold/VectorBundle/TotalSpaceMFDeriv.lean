@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
 # Differentiating a map into the total space of a fibre bundle
@@ -93,7 +94,7 @@ theorem hasMFDerivWithinAt_totalSpace_iff :
           ((ContinuousLinearMap.fst 𝕜 (TangentSpace IB (f x).proj) F).comp L) ∧
         HasMFDerivWithinAt IM 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V (f x).proj (f y)).2) u x
           ((ContinuousLinearMap.snd 𝕜 (TangentSpace IB (f x).proj) F).comp L) := by
-  set e := trivializationAt F V (f x).proj with he
+  set e := trivializationAt F V (f x).proj
   unfold HasMFDerivWithinAt
   rw [and_and_and_comm, ← FiberBundle.continuousWithinAt_totalSpace, and_congr_right_iff]
   intro hf
@@ -104,13 +105,9 @@ theorem hasMFDerivWithinAt_totalSpace_iff :
         (writtenInExtChartAt IM IB x (fun y ↦ (f y).proj) v,
           writtenInExtChartAt IM 𝓘(𝕜, F) x (fun y ↦ (e (f y)).2) v) := by
     intro v hv
-    refine Prod.ext ?_ ?_
-    · simp only [writtenInExtChartAt, FiberBundle.extChartAt, Function.comp_apply,
-        PartialEquiv.trans_apply, PartialEquiv.prod_coe, OpenPartialHomeomorph.coe_toPartialEquiv,
-        Trivialization.coe_coe, ← he, Trivialization.coe_fst _ (e.mem_source.2 hv)]
-    · simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_model_space_eq_id,
-        PartialEquiv.refl_coe, id_eq]
-      exact extChartAt_totalSpace_apply_snd _ _
+    simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_model_space_eq_id,
+      PartialEquiv.refl_coe, id_eq]
+    exact Bundle.extChartAt_apply_of_mem_baseSet (f x) hv
   have hmem : (fun y ↦ (f y).proj) ⁻¹' e.baseSet ∈ 𝓝[u] x :=
     ((FiberBundle.continuous_proj F V).continuousWithinAt.comp hf (mapsTo_image f u))
       (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt F V _))
