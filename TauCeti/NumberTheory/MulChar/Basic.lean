@@ -206,10 +206,7 @@ integer power of its value at a unit: `(χ ^ n) a = χ a ^ n`. Mathlib's `MulCha
 instead moves the power onto the unit, `(χ ^ n) a = χ (a ^ n)`. -/
 theorem zpow_apply_coe_eq_zpow {R R' : Type*} [CommMonoid R] [CommGroupWithZero R']
     (χ : MulChar R R') (n : ℤ) (a : Rˣ) : (χ ^ n) a = χ a ^ n := by
-  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · simp [pow_apply_coe]
-  · rw [zpow_neg, zpow_natCast, inv_apply_eq_inv, pow_apply_coe, zpow_neg, zpow_natCast,
-      Ring.inverse_eq_inv']
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n <;> simp [inv_apply_eq_inv, pow_apply_coe]
 
 /-- The values of a multiplicative character of a monoid with finitely many units are algebraic
 integers: `0` at nonunits and roots of unity at units. -/

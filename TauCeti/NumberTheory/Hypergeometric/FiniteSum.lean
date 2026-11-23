@@ -287,7 +287,8 @@ theorem katzExpSum_eq {ω : MulChar F ℂ} (hω : orderOf ω = Fintype.card F - 
     have hsum : ∑ j, (-(m : ℤ) - b j) = -(((Fintype.card κ * m : ℕ) : ℤ) + ∑ j, b j) := by
       simp only [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, Nat.cast_mul]
       ring
-    rw [hsum, zpow_neg, hinv, zpow_add₀ hs0, zpow_natCast, pow_mul, mul_comm]
+    rw [hsum, zpow_neg, hinv, zpow_add₀ hs0, zpow_natCast]
+    ring
   rw [sum_prod_eq_prod_gaussSum ψ fun i ↦ ω ^ ((m : ℤ) + a i),
     sum_prod_neg_eq_prod_gaussSum ψ fun j ↦ ω ^ (-(m : ℤ) - b j)]
   simp only [hneg, prod_mul_distrib]
