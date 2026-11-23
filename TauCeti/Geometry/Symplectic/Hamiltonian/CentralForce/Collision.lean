@@ -253,10 +253,9 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
     (fun t ↦ (hU.differentiableOn (by norm_num) _ (hr t)).differentiableAt (Ioi_mem_nhds (hr t)))
     (ℓ := 0) (t₀ := 0) (by simp only [hγ₀]; simp; ring)
     (fun t ↦ by simpa using hU' _ (hr t)) 0).1
-  -- But the particle thrown at the centre has radial momentum `-‖u‖`.
-  rw [hγ₀, radialMomentum_apply, inner_neg_right, real_inner_self_eq_norm_sq, neg_div, sq,
-    mul_div_cancel_right₀ _ (norm_ne_zero_iff.2 hu), neg_eq_zero, norm_eq_zero] at h
-  exact hu h
+  -- But the particle thrown at the centre has radial momentum `-‖u‖ ≠ 0`.
+  rw [radialMomentum_eq_zero_iff, hγ₀] at h
+  simp [hu] at h
 
 end CentralForce
 
