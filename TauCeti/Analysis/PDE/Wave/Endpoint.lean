@@ -39,11 +39,12 @@ integrable at infinity, and the argument below needs a decay rate above `1`.
 
 ## The argument
 
-This is the endpoint theorem of Keel and Tao,
-`TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`, applied with the decay rate
-`σ = (n - 1) / 2 > 1` to the time-rescaled family `V(t) = W₊(μ t) Pⱼ` with `μ = 2^{2jγ}`. Its
-constant depends only on the constants of three bounds, and the rescaling makes all three
-independent of `j`:
+This is the endpoint theorem of Keel and Tao, applied with the decay rate `σ = (n - 1) / 2 > 1`
+to the time-rescaled family `V(t) = W₊(μ t) Pⱼ` with `μ = 2^{2jγ}`: the region estimate
+`TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds` on the whole plane
+bounds the pairings, and `TauCeti.enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le` turns
+that into the dual estimate. The constant depends only on the constants of three bounds, and the
+rescaling makes all three independent of `j`:
 
 * `‖V(t)‖ ≤ sup |ψ|`;
 * the time pairings `V(s) V(t)* = W₊(μ (s - t)) Pⱼ Pⱼ*` are bounded from `L¹` to `L^∞` by
@@ -272,11 +273,11 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le_four hψ hψc hψ0 (by omega)
   obtain ⟨B, hB⟩ := hψ.continuous.bounded_above_of_compact_support hψc
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds (𝕜 := ℂ)
-    (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E)) (σ := (n - 1) / 2)
-    (b := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹) (r' := r') (by linarith)
-    (by rw [hbinv]; ring) hr'inv A B.toNNReal K
-  refine ⟨C, fun j m hm F hF ↦ ?_⟩
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds
+    (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E))
+    (σ := (n - 1) / 2) (b := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹) (r' := r')
+    (by linarith) (by rw [hbinv]; ring) hr'inv A B.toNNReal K
+  refine ⟨NNReal.sqrt C, fun j m hm F hF ↦ ?_⟩
   have hV (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)) :
       ((halfWavePropagator ℂ (((2 : ℝ) ^ j) ^ ((n + 1) / (n - 1)) * t) ∘L
         Lp.fourierMultiplierCLM ℂ m)†) g = Lp.fourierMultiplierCLM ℂ (star m)
@@ -298,8 +299,14 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
       exact (Lp.fourierMultiplierCLM ℂ (star m)).continuous.comp_aestronglyMeasurable
         (aestronglyMeasurable_phasePropagator_apply _
           (continuous_const.mul continuous_id).neg.aestronglyMeasurable hG))
-    F hF
-  simpa only [hV] using h
+    Set.univ MeasurableSet.univ F F hF hF
+  simp only [hV, Measure.restrict_univ] at h
+  -- `TT*` turns the bound on the pairings over the whole plane into the dual estimate.
+  refine enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := ℂ)
+    ((Lp.fourierMultiplierCLM ℂ (star m)).integrable_comp ?_) h
+  simp_rw [halfWavePropagator_def]
+  exact integrable_phasePropagator_apply _
+    (continuous_const.mul continuous_id).neg.aestronglyMeasurable hF
 
 /-! ### The endpoint estimates -/
 
