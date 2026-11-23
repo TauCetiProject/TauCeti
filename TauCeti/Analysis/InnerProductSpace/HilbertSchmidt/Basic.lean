@@ -328,18 +328,28 @@ theorem norm_le_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι �
     T.sq_hilbertSchmidtNorm b, ← toReal_eNorm, ← ENNReal.toReal_pow]
   exact ENNReal.toReal_mono h (T.enorm_sq_le_hilbertSchmidtEnergy b)
 
+/-- An energy bound `E_b(S) ≤ r² E_c(T)`, with `T` of finite energy, gives the Hilbert–Schmidt
+norm bound `‖S‖_HS ≤ r ‖T‖_HS`. -/
+private theorem hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le [CompleteSpace F]
+    (S : E →L[𝕜] H) (T : F →L[𝕜] G) (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis ι' 𝕜 F)
+    (r : NNReal) (h : T.hilbertSchmidtEnergy c ≠ ∞)
+    (hle : S.hilbertSchmidtEnergy b ≤ (r : ℝ≥0∞) ^ 2 * T.hilbertSchmidtEnergy c) :
+    S.hilbertSchmidtNorm ≤ r * T.hilbertSchmidtNorm := by
+  have hfin : (r : ℝ≥0∞) ^ 2 * T.hilbertSchmidtEnergy c ≠ ∞ := by
+    simp [ENNReal.mul_eq_top, h]
+  rw [← pow_le_pow_iff_left₀ S.hilbertSchmidtNorm_nonneg
+    (by have := T.hilbertSchmidtNorm_nonneg; positivity) two_ne_zero,
+    S.sq_hilbertSchmidtNorm b, mul_pow, T.sq_hilbertSchmidtNorm c]
+  convert ENNReal.toReal_mono hfin hle using 1
+  simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+
 /-- **Left ideal inequality for the Hilbert–Schmidt norm.** If `T` has finite energy, then
 `‖A T‖_HS ≤ ‖A‖ ‖T‖_HS`. -/
 theorem hilbertSchmidtNorm_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F)
     (b : HilbertBasis ι 𝕜 E) (h : T.hilbertSchmidtEnergy b ≠ ∞) :
-    (A ∘L T).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm := by
-  have hfin : ‖A‖ₑ ^ 2 * T.hilbertSchmidtEnergy b ≠ ∞ := by
-    simp [ENNReal.mul_eq_top, h]
-  rw [← pow_le_pow_iff_left₀ (hilbertSchmidtNorm_nonneg _)
-    (by have := T.hilbertSchmidtNorm_nonneg; positivity) two_ne_zero,
-    sq_hilbertSchmidtNorm _ b, mul_pow, T.sq_hilbertSchmidtNorm b]
-  convert ENNReal.toReal_mono hfin (hilbertSchmidtEnergy_comp_le_left A T b) using 1
-  simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+    (A ∘L T).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm :=
+  hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le _ T b b ‖A‖₊ h
+    (by simpa [eNorm_eq_nnNorm] using hilbertSchmidtEnergy_comp_le_left A T b)
 
 /-- **Left ideal inequality for the Hilbert–Schmidt norm** on a finite-dimensional source, where
 every operator has finite energy: `‖A T‖_HS ≤ ‖A‖ ‖T‖_HS`. -/
@@ -368,14 +378,10 @@ theorem hilbertSchmidtNorm_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G
     (B : E →L[𝕜] F) (c : HilbertBasis ι' 𝕜 F) (h : T.hilbertSchmidtEnergy c ≠ ∞) :
     (A ∘L T ∘L B).hilbertSchmidtNorm ≤ ‖A‖ * T.hilbertSchmidtNorm * ‖B‖ := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  have hle := hilbertSchmidtEnergy_comp_comp_le A T B b c
-  have hfin : ‖A‖ₑ ^ 2 * T.hilbertSchmidtEnergy c * ‖B‖ₑ ^ 2 ≠ ∞ := by
-    simp [ENNReal.mul_eq_top, h]
-  rw [← pow_le_pow_iff_left₀ (hilbertSchmidtNorm_nonneg _)
-    (by have := T.hilbertSchmidtNorm_nonneg; positivity) two_ne_zero,
-    sq_hilbertSchmidtNorm _ b, mul_pow, mul_pow, T.sq_hilbertSchmidtNorm c]
-  convert ENNReal.toReal_mono hfin hle using 1
-  simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+  rw [mul_right_comm]
+  refine hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le _ T b c (‖A‖₊ * ‖B‖₊) h ?_
+  rw [ENNReal.coe_mul, mul_pow, mul_right_comm]
+  simpa [eNorm_eq_nnNorm] using hilbertSchmidtEnergy_comp_comp_le A T B b c
 
 /-- **Right ideal inequality for the Hilbert–Schmidt norm.** If `T` has finite energy, then
 `‖T B‖_HS ≤ ‖T‖_HS ‖B‖`. -/
@@ -383,13 +389,10 @@ theorem hilbertSchmidtNorm_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] 
     (c : HilbertBasis ι' 𝕜 F) (h : T.hilbertSchmidtEnergy c ≠ ∞) :
     (T ∘L B).hilbertSchmidtNorm ≤ T.hilbertSchmidtNorm * ‖B‖ := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  have hfin : T.hilbertSchmidtEnergy c * ‖B‖ₑ ^ 2 ≠ ∞ := by
-    simp [ENNReal.mul_eq_top, h]
-  rw [← pow_le_pow_iff_left₀ (hilbertSchmidtNorm_nonneg _)
-    (by have := T.hilbertSchmidtNorm_nonneg; positivity) two_ne_zero,
-    sq_hilbertSchmidtNorm _ b, mul_pow, T.sq_hilbertSchmidtNorm c]
-  convert ENNReal.toReal_mono hfin (hilbertSchmidtEnergy_comp_le_right T B b c) using 1
-  simp [ENNReal.toReal_mul, ENNReal.toReal_pow]
+  rw [mul_comm]
+  refine hilbertSchmidtNorm_le_of_hilbertSchmidtEnergy_le _ T b c ‖B‖₊ h ?_
+  rw [mul_comm]
+  simpa [eNorm_eq_nnNorm] using hilbertSchmidtEnergy_comp_le_right T B b c
 
 /-- **Right ideal inequality for the Hilbert–Schmidt norm** when the source of `T` is
 finite-dimensional, so that `T` has finite energy: `‖T B‖_HS ≤ ‖T‖_HS ‖B‖`. -/

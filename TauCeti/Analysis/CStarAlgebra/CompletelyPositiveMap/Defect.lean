@@ -181,11 +181,15 @@ private theorem defectProj_nonneg : 0 ≤ defectProj φ := by
   rw [defectProj, sub_nonneg]
   exact (CStarAlgebra.norm_le_one_iff_of_nonneg _ hpos).mp hnorm
 
+/-- `SS = 1 - VV⋆`. -/
+private theorem defectSqrt_comp_self : defectSqrt φ ∘L defectSqrt φ = defectProj φ := by
+  rw [← ContinuousLinearMap.mul_def, defectSqrt]
+  exact CFC.sqrt_mul_sqrt_self _ (defectProj_nonneg hφ)
+
 /-- `S⋆S = 1 - VV⋆`. -/
 private theorem adjoint_defectSqrt_comp_self :
     (defectSqrt φ).adjoint ∘L defectSqrt φ = defectProj φ := by
-  rw [adjoint_defectSqrt, ← ContinuousLinearMap.mul_def, defectSqrt]
-  exact CFC.sqrt_mul_sqrt_self _ (defectProj_nonneg hφ)
+  rw [adjoint_defectSqrt, defectSqrt_comp_self hφ]
 
 /-- `‖S‖ ≤ 1`. -/
 private theorem norm_defectSqrt_le : ‖defectSqrt φ‖ ≤ 1 := by
@@ -252,14 +256,11 @@ private theorem map_star_mul_sub_eq (a b : A) :
 private theorem defectOp_mul (a b : A) :
     defectOp φ (a * b) = defectOp φ a ∘L toEuclideanCLM (φ b) +
       (defectSqrt φ ∘L (toOp φ).stinespringHom a ∘L defectSqrt φ) ∘L defectOp φ b := by
-  have hS : defectSqrt φ ∘L defectSqrt φ =
-      1 - (toOp φ).stinespringOp ∘L (toOp φ).stinespringOp.adjoint := by
-    have h := adjoint_defectSqrt_comp_self hφ
-    rwa [adjoint_defectSqrt] at h
   rw [stinespring_eq']
   simp only [defectOp_apply, map_mul (toOp φ).stinespringHom, ContinuousLinearMap.mul_def,
     ContinuousLinearMap.comp_assoc]
-  rw [← ContinuousLinearMap.comp_assoc (defectSqrt φ) (defectSqrt φ), hS]
+  rw [← ContinuousLinearMap.comp_assoc (defectSqrt φ) (defectSqrt φ), defectSqrt_comp_self hφ,
+    defectProj]
   simp only [ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_sub,
     ContinuousLinearMap.one_def, ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_assoc]
   abel
