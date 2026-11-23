@@ -12,9 +12,9 @@ import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Divisor
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Polynomial
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Positivity
+import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.Hadamard.OrderOne
-import TauCeti.Analysis.Complex.Hadamard.OriginZero
 import TauCeti.Analysis.Normed.Module.Parity
 
 /-!
@@ -102,8 +102,10 @@ theorem pairedHadamard_factorization
     obtain ⟨R, hR⟩ := hpositive
     exact fun h0 ↦ lt_irrefl 0 (by simpa [h0] using (hR R le_rfl).2)
   set m : ℕ := (analyticOrderAt f 0).toNat
-  obtain ⟨g, hg_diff, hg0, hg_ord, hfg⟩ :=
-    hf.orderLE_one.exists_eq_pow_mul hf.differentiable hf_ne_zero
+  obtain ⟨g, hg_diff, hg0, hg_ord, hfg0⟩ :=
+    hf.orderLE_one.exists_eq_sub_pow_mul hf.differentiable (Function.ne_iff.mp hf_ne_zero) 0
+  have hfg (z : ℂ) : f z = z ^ m * g z := by
+    simpa only [sub_zero, analyticOrderNatAt] using hfg0 z
   obtain ⟨hδ_eq, hg_even⟩ := eq_neg_one_pow_and_even_of_eq_pow_smul
     (fun z ↦ by simpa only [smul_eq_mul] using hfg z)
     (fun z ↦ by simpa only [smul_eq_mul] using hparity z)

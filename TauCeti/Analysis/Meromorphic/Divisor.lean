@@ -32,9 +32,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
   such a point is off the divisor support, so any support point where `f` is analytic is a zero.
-* `AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne` and
-  `AnalyticOnNhd.divisor_eq_update_of_eq_sub_pow_smul` — factoring out `(z - z₀) ^ m` leaves the
-  divisor unchanged away from `z₀` and clears it at `z₀` when the quotient is nonzero there.
+* `AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne` — factoring out `(z - z₀) ^ m` leaves the
+  divisor unchanged away from `z₀`.
 * `AnalyticOnNhd.divisor_neg_eq_of_even` — the whole-space divisor of an even analytic function is
   even.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
@@ -210,21 +209,6 @@ theorem AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne
       meromorphicOrderAt_smul_of_ne_zero (g := fun z : 𝕜 ↦ (z - z₀) ^ m) (by fun_prop)
         (pow_ne_zero m (sub_ne_zero.mpr hw))]
   · simp [hwU]
-
-/-- If `f z = (z - z₀) ^ m • g z` with `g` analytic on a neighbourhood of `U` and `g z₀ ≠ 0`, then
-the divisor of `g` on `U` vanishes at `z₀` and agrees with that of `f` elsewhere. -/
-theorem AnalyticOnNhd.divisor_eq_update_of_eq_sub_pow_smul
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {f g : 𝕜 → E} {U : Set 𝕜} (hg : AnalyticOnNhd 𝕜 g U) {z₀ : 𝕜} (hg0 : g z₀ ≠ 0) {m : ℕ}
-    (hfg : ∀ z, f z = (z - z₀) ^ m • g z) (w : 𝕜) :
-    MeromorphicOn.divisor g U w = if w = z₀ then 0 else MeromorphicOn.divisor f U w := by
-  split_ifs with hw
-  · subst hw
-    by_cases hwU : w ∈ U
-    · exact (hg w hwU).divisor_apply_eq_zero hg0
-    · simp [hwU]
-  · exact hg.divisor_eq_of_eq_sub_pow_smul_of_ne hfg hw
 
 /-- The whole-space divisor of an even analytic function is invariant under negation. -/
 theorem AnalyticOnNhd.divisor_neg_eq_of_even
