@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
-public import TauCeti.AlgebraicGeometry.Modules.AffineSheaf
+public import TauCeti.AlgebraicGeometry.Modules.Affine.Sheaf
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 
@@ -19,7 +19,7 @@ import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 
 The functor `M ↦ M~` from `R`-modules to `𝒪_{Spec R}`-modules is additive and exact, and
 composing with `modulesSpecToSheaf`
-(`TauCeti.AlgebraicGeometry.Modules.AffineSheaf`) gives the exact functor
+(`TauCeti.AlgebraicGeometry.Modules.Affine.Sheaf`) gives the exact functor
 `tildeSheafFunctor R` into sheaves of `R`-modules on `Spec R`. `tilde.functor R` preserves finite
 colimits as a left adjoint of the global-section functor, and it preserves monomorphisms because a
 section of `M~` over an open subset `U` is a family of elements of the localizations `M_p`,

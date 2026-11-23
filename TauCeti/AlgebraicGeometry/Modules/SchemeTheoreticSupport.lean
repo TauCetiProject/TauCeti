@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Annihilator
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+import TauCeti.AlgebraicGeometry.Modules.Affine.Restriction
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated

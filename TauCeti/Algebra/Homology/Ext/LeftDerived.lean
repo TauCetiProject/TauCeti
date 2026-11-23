@@ -5,34 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Ext
-public import Mathlib.CategoryTheory.Abelian.Projective.Ext
-import TauCeti.Algebra.Homology.LinearYoneda
+public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
-# Vanishing of the two `Ext` functors
+# Comparing the left derived and derived-category `Ext` functors
 
 Mathlib has two constructions of `Ext` in an abelian category `C` with enough projectives. The
 functor `Ext k C n : Cᵒᵖ ⥤ C ⥤ ModuleCat k` of `Mathlib.CategoryTheory.Abelian.Ext` is the left
 derived functor of `Hom(-, Y)`, computed from a projective resolution `P` of `X` as the
 cohomology of the complex `Hom(P, Y)` (`CategoryTheory.ProjectiveResolution.isoExt`). The groups
-`CategoryTheory.Abelian.Ext X Y n` are morphisms in the derived category. Mathlib's module
-`localCohomology` is built from the first construction, while depth (`Ideal.depth`) and most of
-the homological algebra of modules use the second.
+`CategoryTheory.Abelian.Ext X Y n` are morphisms in the derived category, assembled into the
+bifunctor `CategoryTheory.Abelian.linearExtFunctor k C n`. Mathlib's module `localCohomology` is
+built from the first construction, while depth (`Ideal.depth`) and most of the homological algebra
+of modules use the second.
 
-This file shows that the two constructions vanish together: both are zero exactly when the
-complex `Hom(P, Y)` is exact in degree `n`. In degree `n + 1` this says that every cocycle
-`f : Pₙ₊₁ ⟶ Y` is a coboundary. In degree `0` it says that every morphism `P₀ ⟶ Y` killed by
-`P₁ ⟶ P₀` is zero; as `X` is the cokernel of `P₁ ⟶ P₀`, these morphisms are the morphisms
-`X ⟶ Y`. The matching descriptions of the exactness of `Hom(P, Y)` are
-`ChainComplex.exactAt_linearYonedaObj_zero_iff` and
-`ChainComplex.exactAt_linearYonedaObj_succ_iff` in `TauCeti.Algebra.Homology.LinearYoneda`.
-This lets vanishing results proved for the derived-category `Ext`, such as the vanishing of
-`Ext (R ⧸ I) M` below the depth, be used for the left derived functor, and hence for local
-cohomology.
+This file provides two levels of comparison between the two constructions:
+
+1. **Bifunctor isomorphism.** Combining `CategoryTheory.ProjectiveResolution.isoExt` with
+   `CategoryTheory.ProjectiveResolution.homologyLinearYonedaIso` gives natural isomorphisms
+   `CategoryTheory.extObjIsoLinearExtFunctor` and `CategoryTheory.extIsoLinearExtFunctor`
+   identifying `_root_.Ext k C n` with `CategoryTheory.Abelian.linearExtFunctor k C n`.
+2. **Vanishing equivalence.** Both constructions vanish together, because both vanish exactly when
+   `Hom(P, Y)` is exact in degree `n`. In degree `n + 1` this says that every cocycle `f : Pₙ₊₁ ⟶ Y`
+   is a coboundary; in degree `0` it says that every morphism `P₀ ⟶ Y` killed by `P₁ ⟶ P₀` is
+   zero (`ChainComplex.exactAt_linearYonedaObj_zero_iff` and
+   `ChainComplex.exactAt_linearYonedaObj_succ_iff`).
+
+## Main definitions
+
+* `CategoryTheory.extObjIsoLinearExtFunctor` and `CategoryTheory.extIsoLinearExtFunctor`: the
+  natural isomorphism `_root_.Ext k C n ≅ CategoryTheory.Abelian.linearExtFunctor k C n`.
 
 ## Main results
 
+* `CategoryTheory.extObjIsoLinearExtFunctor_hom_naturality_left`: naturality of the objectwise
+  comparison in the contravariant first argument.
 * `CategoryTheory.ProjectiveResolution.subsingleton_ext_iff_exactAt`: `Ext X Y n` vanishes if and
   only if `Hom(P, Y)` is exact in degree `n`.
 * `CategoryTheory.ProjectiveResolution.isZero_Ext_iff_exactAt`: the same for the left derived
@@ -124,3 +131,80 @@ theorem subsingleton_iff_isZero_Ext (X Y : C) (n : ℕ) :
     (projectiveResolution X).isZero_Ext_iff_exactAt k]
 
 end CategoryTheory.Abelian.Ext
+
+namespace CategoryTheory
+
+open Opposite
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{v} C]
+  (k : Type*) [CommRing k] [Linear k C] [EnoughProjectives C]
+
+/-- Left deriving the contravariant `Hom` functor computes `Abelian.linearExtFunctor`, naturally
+in the second argument. -/
+noncomputable def extObjIsoLinearExtFunctor (X : C) (n : ℕ) :
+    (_root_.Ext k C n).obj (op X) ≅ (Abelian.linearExtFunctor k C n).obj (op X) :=
+  NatIso.ofComponents
+    (fun Y ↦ (projectiveResolution X).isoExt n Y ≪≫
+      (projectiveResolution X).homologyLinearYonedaIso k (Y := Y) n)
+    fun {Y Y'} g ↦ by
+      simp only [Iso.trans_hom]
+      rw [(projectiveResolution X).isoExt_hom_naturality_right_assoc g n, Category.assoc]
+      congr 1
+      ext x
+      simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+        ProjectiveResolution.homologyLinearYonedaIso_hom_apply]
+      exact (projectiveResolution X).homologyLinearYonedaEquiv_naturality_right g n x
+
+/-- On each target object `Y`, `extObjIsoLinearExtFunctor` is computed from the chosen projective
+resolution of `X` and `homologyLinearYonedaIso`. -/
+@[simp]
+lemma extObjIsoLinearExtFunctor_hom_app (X : C) (n : ℕ) (Y : C) :
+    (extObjIsoLinearExtFunctor k X n).hom.app Y =
+      ((projectiveResolution X).isoExt n Y).hom ≫
+        ((projectiveResolution X).homologyLinearYonedaIso k (Y := Y) n).hom :=
+  (rfl)
+
+/-- `extObjIsoLinearExtFunctor` is natural in the contravariant first argument. -/
+@[reassoc]
+lemma extObjIsoLinearExtFunctor_hom_naturality_left {X X' : C} (f : X' ⟶ X) (n : ℕ) :
+    (_root_.Ext k C n).map f.op ≫ (extObjIsoLinearExtFunctor k X' n).hom =
+      (extObjIsoLinearExtFunctor k X n).hom ≫ (Abelian.linearExtFunctor k C n).map f.op := by
+  let φ := ProjectiveResolution.lift f (projectiveResolution X') (projectiveResolution X)
+  have hcomm : φ.f 0 ≫ (projectiveResolution X).π.f 0 =
+      (projectiveResolution X').π.f 0 ≫ f :=
+    ProjectiveResolution.lift_commutes_zero f
+      (projectiveResolution X') (projectiveResolution X)
+  apply NatTrans.ext
+  funext Y
+  simp only [NatTrans.comp_app, extObjIsoLinearExtFunctor_hom_app]
+  rw [(projectiveResolution X).isoExt_hom_naturality_left_assoc
+    (projectiveResolution X') f φ hcomm n Y, Category.assoc]
+  congr 1
+  ext x
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ProjectiveResolution.homologyLinearYonedaIso_hom_apply]
+  exact (projectiveResolution X).homologyLinearYonedaEquiv_naturality (projectiveResolution X')
+    ⟨φ, congr($(ProjectiveResolution.lift_commutes f
+      (projectiveResolution X') (projectiveResolution X)).f 0)⟩ n x
+
+/-- Mathlib's left-derived `_root_.Ext k C n` is naturally isomorphic as a bifunctor to the
+derived-category functor `Abelian.linearExtFunctor k C n`. -/
+noncomputable def extIsoLinearExtFunctor (n : ℕ) :
+    _root_.Ext k C n ≅ Abelian.linearExtFunctor k C n :=
+  NatIso.ofComponents (fun X ↦ extObjIsoLinearExtFunctor k X.unop n)
+    fun f ↦ extObjIsoLinearExtFunctor_hom_naturality_left k f.unop n
+
+/-- The forward component of `extIsoLinearExtFunctor` at `X` is `extObjIsoLinearExtFunctor`. -/
+@[simp]
+lemma extIsoLinearExtFunctor_hom_app (n : ℕ) (X : Cᵒᵖ) :
+    (extIsoLinearExtFunctor k n).hom.app X = (extObjIsoLinearExtFunctor k X.unop n).hom :=
+  (rfl)
+
+/-- The inverse component of `extIsoLinearExtFunctor` at `X` is the inverse of
+`extObjIsoLinearExtFunctor`. -/
+@[simp]
+lemma extIsoLinearExtFunctor_inv_app (n : ℕ) (X : Cᵒᵖ) :
+    (extIsoLinearExtFunctor k n).inv.app X = (extObjIsoLinearExtFunctor k X.unop n).inv :=
+  (rfl)
+
+end CategoryTheory

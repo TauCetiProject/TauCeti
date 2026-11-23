@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.Injective.Ext
 public import Mathlib.CategoryTheory.Linear.Yoneda
 public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-import Mathlib.LinearAlgebra.Isomorphisms
+import TauCeti.LinearAlgebra.Isomorphisms
 
 /-!
 # Computing Ext from injective resolutions
@@ -107,21 +107,18 @@ private lemma linearCoyonedaCycleExt_eq_zero_iff (n : ℕ)
 /-- The cohomology of `Hom(X, I)` for an injective resolution `I` of `Y` is `Extⁿ(X,Y)`,
 linearly over any ring making the category linear. -/
 noncomputable def homologyLinearCoyonedaEquiv (n : ℕ) :
-    (R.linearCoyonedaComplex k X).homology n ≃ₗ[k] Ext.{w} X Y n := by
-  let a := (R.linearCoyonedaComplex k X).moduleCatKerHomologyClass
-    (n := n) (m := n + 1) (by simp)
-  let b := R.linearCoyonedaCycleExt (k := k) (X := X) n
-  have ha : Function.Surjective a := by
-    dsimp only [a]
-    rw [HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass]
-    exact (R.linearCoyonedaComplex k X).moduleCatHomologyClass_surjective
-      (by simp) (Submodule.subtype _) (fun z ↦ z.property) (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
-  have hab : LinearMap.ker a = LinearMap.ker b := by
-    ext z
-    exact (R.linearCoyonedaCycleExt_eq_zero_iff n z).symm
-  exact (a.quotKerEquivOfSurjective ha).symm ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ hab ≪≫ₗ
-      b.quotKerEquivOfSurjective (R.linearCoyonedaCycleExt_surjective n)
+    (R.linearCoyonedaComplex k X).homology n ≃ₗ[k] Ext.{w} X Y n :=
+  LinearMap.equivOfSurjectiveOfKerEq
+    ((R.linearCoyonedaComplex k X).moduleCatKerHomologyClass (n := n) (m := n + 1) (by simp))
+    (R.linearCoyonedaCycleExt (k := k) (X := X) n)
+    (by
+      rw [HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass]
+      exact (R.linearCoyonedaComplex k X).moduleCatHomologyClass_surjective
+        (by simp) (Submodule.subtype _) (fun z ↦ z.property) (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩))
+    (R.linearCoyonedaCycleExt_surjective n)
+    (by
+      ext z
+      exact (R.linearCoyonedaCycleExt_eq_zero_iff n z).symm)
 
 /-- The equivalence is characterized by sending a cocycle's homology class to `extMk`. -/
 -- Rewrite before mapping a complex simplifies the type of the cocycle.
@@ -131,11 +128,9 @@ lemma homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass (n : ℕ)
     R.homologyLinearCoyonedaEquiv n
         ((R.linearCoyonedaComplex k X).moduleCatKerHomologyClass
           (n := n) (m := n + 1) (by simp) z) =
-      R.extMk z.val (n + 1) rfl z.property := by
-  dsimp only [homologyLinearCoyonedaEquiv, LinearEquiv.trans_apply]
-  rw [LinearMap.quotKerEquivOfSurjective_symm_apply]
-  simp only [Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
-  exact linearCoyonedaCycleExt_apply R n z
+      R.extMk z.val (n + 1) rfl z.property :=
+  (LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ z).trans
+    (linearCoyonedaCycleExt_apply R n z)
 
 /-- Computing Ext by injective resolutions commutes with a morphism of resolutions. -/
 lemma homologyLinearCoyonedaEquiv_naturality {Y' : C} (R' : InjectiveResolution Y')

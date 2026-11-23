@@ -112,15 +112,20 @@ noncomputable instance preservesFiniteLimits_primaryComponentFunctor :
   refine J.primaryComponentFunctor.preservesFiniteLimits_iff_forall_exact_map_and_mono.mpr
     fun S hS ↦ ?_
   have hf : Function.Injective S.f := hS.moduleCat_injective_f
-  have hex := S.moduleCat_exact_iff.mp hS.exact
   have hmono : Mono (J.primaryComponentFunctor.map S.f) :=
     (ModuleCat.mono_iff_injective _).mpr fun x y hxy ↦
       Subtype.ext (hf (congrArg Subtype.val hxy))
   refine ⟨(S.map J.primaryComponentFunctor).moduleCat_exact_iff.mpr fun y hy ↦ ?_, hmono⟩
-  obtain ⟨x, hx⟩ := hex y.val (congrArg Subtype.val hy)
-  obtain ⟨n, hn⟩ := (J.primaryComponent_mem S.X₂ y.val).mp y.property
-  refine ⟨⟨x, (J.primaryComponent_mem S.X₁ x).mpr ⟨n, ?_⟩⟩, Subtype.ext hx⟩
-  rw [Submodule.mem_torsionBySet_iff] at hn ⊢
-  exact fun r ↦ hf (by rw [map_smul, hx, hn r, map_zero])
+  have hyker : y.val ∈ (Ideal.primaryComponent.map J S.g.hom).ker.map
+      (J.primaryComponent S.X₂).subtype :=
+    ⟨y, hy, rfl⟩
+  rw [Ideal.primaryComponent.map_ker_eq] at hyker
+  obtain ⟨⟨z, hz⟩, hzt, hzx⟩ := hyker
+  let e : S.X₁ ≃ₗ[R] LinearMap.ker S.g.hom :=
+    (LinearEquiv.ofInjective S.f.hom hf).trans
+      (LinearEquiv.ofEq _ _ hS.exact.moduleCat_range_eq_ker)
+  refine ⟨⟨e.symm ⟨z, hz⟩,
+    Ideal.primaryComponent_map_mem J e.symm.toLinearMap ⟨⟨z, hz⟩, hzt⟩⟩, Subtype.ext ?_⟩
+  exact (congrArg Subtype.val (e.apply_symm_apply ⟨z, hz⟩)).trans hzx
 
 end Ideal

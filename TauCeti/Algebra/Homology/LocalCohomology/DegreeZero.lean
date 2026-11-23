@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.LocalCohomology
-public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.Algebra.Category.ModuleCat.PrimaryComponent
 public import TauCeti.CategoryTheory.Abelian.Ext
 import TauCeti.Algebra.Module.Torsion.QuotientLinearMap

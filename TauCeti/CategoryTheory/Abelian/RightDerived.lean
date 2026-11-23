@@ -43,6 +43,10 @@ right derived functors by one degree:
 
 These are the dimension-shifting steps of inductive arguments on vanishing derived functors,
 such as Leray's acyclicity theorem.
+
+A diagram `G : T ⥤ C ⥤ D` of additive functors induces a diagram
+`CategoryTheory.Limits.rightDerivedDiagram G q : T ⥤ C ⥤ D` of their degree-`q` right derived
+functors.
 -/
 
 public section
@@ -133,6 +137,22 @@ noncomputable def Functor.rightDerivedCompIso {C' : Type*} [Category* C'] [Abeli
     isoWhiskerRight H.injectiveResolutionsCompIso _ ≪≫
     Functor.associator _ _ _ ≪≫
     isoWhiskerLeft H (Functor.associator _ _ _).symm
+
+namespace Limits
+
+/-- Applying `Functor.rightDerived q` objectwise and morphismwise to a diagram `G : T ⥤ C ⥤ D` of
+additive functors produces the diagram `t ↦ (G.obj t).rightDerived q`. -/
+@[simps]
+noncomputable abbrev rightDerivedDiagram {T : Type*} [Category* T]
+    {C : Type u} [Category.{v} C] [Abelian C] [HasInjectiveResolutions C]
+    {D : Type*} [Category* D] [Abelian D]
+    (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ) : T ⥤ C ⥤ D where
+  obj t := (G.obj t).rightDerived q
+  map w := (G.map w).rightDerived q
+  map_id t := by simp
+  map_comp f g := by simp
+
+end Limits
 
 /-! ### Dimension shifting
 

@@ -31,8 +31,6 @@ and `HomologicalComplex.homologyFunctor D (ComplexShape.up ℕ) q` preserves col
 
 ## Main definitions
 
-* `CategoryTheory.Limits.rightDerivedDiagram G q`: the diagram `t ↦ (G.obj t).rightDerived q` with
-  transition maps `(G.map w).rightDerived q`.
 * `CategoryTheory.Limits.colimitRightDerivedComparison G q`: the canonical comparison
   `colimit (rightDerivedDiagram G q) ⟶ (colimit G).rightDerived q`.
 * `CategoryTheory.Limits.colimitRightDerivedIso G q`: the natural isomorphism
@@ -65,18 +63,7 @@ section RightDerived
 
 variable {T : Type w} [Category.{w'} T]
   {C : Type u₁} [Category.{v₁} C] [Abelian C] [HasInjectiveResolutions C]
-  {D : Type u₂} [Category.{v₂} D] [Abelian D]
-
-/-- Applying `Functor.rightDerived q` objectwise and morphismwise to a diagram `G : T ⥤ C ⥤ D` of
-additive functors produces the diagram `t ↦ (G.obj t).rightDerived q`. -/
-@[simps]
-abbrev rightDerivedDiagram (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ) : T ⥤ C ⥤ D where
-  obj t := (G.obj t).rightDerived q
-  map w := (G.map w).rightDerived q
-  map_id t := by simp
-  map_comp f g := by simp
-
-variable [HasColimitsOfShape T D]
+  {D : Type u₂} [Category.{v₂} D] [Abelian D] [HasColimitsOfShape T D]
 
 /-- The canonical comparison `colimit (rightDerivedDiagram G q) ⟶ (colimit G).rightDerived q`
 assembled from the right derived transformations of `colimit.ι G t : G.obj t ⟶ colimit G`. -/

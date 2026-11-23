@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.FinitePresentation
 
 import TauCeti.Algebra.Module.PseudoCoherent.Descent

@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Node.LocalNormalForm
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Smooth
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 
 /-!
 # The étale local normal form of a nodal relative curve

@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Derived.Restrict
 import Mathlib.Algebra.CharP.Two
 import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 import Mathlib.Data.ZMod.Basic
-import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!

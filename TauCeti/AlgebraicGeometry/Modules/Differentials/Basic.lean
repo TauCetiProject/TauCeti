@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 public import TauCeti.Algebra.Category.ModuleCat.Differentials.Presheaf
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Affine.GlobalSections
 
 /-!
 # The sheaf of relative differentials of a scheme over a ring

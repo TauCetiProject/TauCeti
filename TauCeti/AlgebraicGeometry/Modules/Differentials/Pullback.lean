@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 import Mathlib.RingTheory.Kaehler.TensorProduct
-import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+import TauCeti.AlgebraicGeometry.Modules.Affine.Restriction
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.Kaehler.BaseChange

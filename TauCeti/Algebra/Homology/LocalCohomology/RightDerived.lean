@@ -9,10 +9,9 @@ public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Tactic.CrossRefAttribute
-public import TauCeti.Algebra.Category.ModuleCat.PrimaryComponent
+public import TauCeti.Algebra.Homology.Ext.Balance
 public import TauCeti.Algebra.Homology.LocalCohomology.DegreeZero
 public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.RightDerived
-public import TauCeti.CategoryTheory.Abelian.Projective.Ext
 
 /-!
 # Local cohomology as the right derived functor of ideal-power torsion

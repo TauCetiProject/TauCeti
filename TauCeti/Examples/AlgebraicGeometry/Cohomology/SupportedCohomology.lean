@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
-public import TauCeti.AlgebraicGeometry.Cohomology.SupportedCohomology.Basic
+public import TauCeti.Algebra.Homology.LocalCohomology.DegreeZero
+public import TauCeti.AlgebraicGeometry.Cohomology.SupportedCohomology.DegreeZero
 import Mathlib.RingTheory.MvPolynomial.Ideal
 
 /-!
@@ -138,15 +139,15 @@ theorem nontrivial_supportedModuleH_zero_nonNoetherianExampleRing :
   let F := modulesSpecToSheaf.obj (tilde (.of A A))
   let Z : Closeds (Spec A) := Spec.zeroLocusClosed (nonNoetherianVarIdeal k : Set A)
   have h1 : tilde.toOpen (.of A A) ⊤ (1 : A) ∈ F.supportedSubmodule Z ⊤ := by
-    have hZ : Z = Spec.zeroLocusClosed (R := A)
-        ((Ideal.Quotient.mk (nonNoetherianRelIdeal k)) '' Set.range MvPolynomial.X) := by
-      dsimp only [Z]
-      rw [nonNoetherianVarIdeal, Ideal.map_span, Spec.zeroLocusClosed_span]
-    rw [hZ, tilde_toOpen_top_mem_supportedSubmodule_iff]
-    rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
-    refine ⟨j + 2, ?_⟩
-    rw [smul_eq_mul, mul_one]
-    exact mk_X_pow_eq_zero k j
+    rw [F.mem_supportedSubmodule_iff]
+    have hZ : Z = ⊤ := zeroLocusClosed_nonNoetherianVarIdeal k
+    have hU : (⊤ ⊓ Z.compl : Opens (Spec A)) = ⊥ := by
+      rw [hZ]
+      ext x
+      simp
+    rw [(TopCat.Sheaf.isTerminalOfEqEmpty F hU).isZero.eq_of_tgt
+      (F.obj.map (Z.complInclusion ⊤).op) 0]
+    rfl
   have hne : (⟨tilde.toOpen (.of A A) ⊤ (1 : A), h1⟩ : F.supportedSubmodule Z ⊤) ≠
       0 := fun h0 ↦ one_ne_zero (α := A) <| by
     have hval : tilde.toOpen (.of A A) ⊤ (1 : A) = 0 := congr(Subtype.val $h0)
@@ -170,7 +171,8 @@ theorem primaryComponent_nonNoetherianVarIdeal_eq_bot :
   obtain ⟨d₀, hd₀, hp₀⟩ := hnot
   obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem (nonNoetherianExampleRingCat k)
     (nonNoetherianVarIdeal k) _).mp ha
-  let N : ℕ := max n (d₀.support.sup id + 1)
+  obtain ⟨N, hnN, hN⟩ := (Set.Ici_infinite n).exists_notMem_finset d₀.support
+  have hdN : d₀ N = 0 := Finsupp.notMem_support_iff.mp hN
   have hxN : Ideal.Quotient.mk (nonNoetherianRelIdeal k) (MvPolynomial.X N) ^ n ∈
       nonNoetherianVarIdeal k ^ n :=
     Ideal.pow_mem_pow (Ideal.mem_map_of_mem _ (Ideal.subset_span (Set.mem_range_self N))) n
@@ -180,10 +182,7 @@ theorem primaryComponent_nonNoetherianVarIdeal_eq_bot :
   have hd' : ∀ j, (Finsupp.single N n + d₀) j < j + 2 := fun j ↦ by
     by_cases hj : j = N
     · subst hj
-      have hdN : d₀ N = 0 := Finsupp.notMem_support_iff.mp fun hmem ↦
-        not_le_of_gt (Nat.lt_succ_self (d₀.support.sup id))
-          ((le_max_right n _).trans (Finset.le_sup (f := id) hmem) |>.trans_eq rfl)
-      simpa [hdN] using lt_of_le_of_lt (le_max_left n _) (Nat.lt_add_of_pos_right two_pos)
+      simpa [hdN] using lt_of_le_of_lt hnN (Nat.lt_add_of_pos_right two_pos)
     · simpa [hj] using hd₀ j
   have hzero := (mem_nonNoetherianRelIdeal_iff k _).mp hprod (Finsupp.single N n + d₀) hd'
   rw [MvPolynomial.X_pow_eq_monomial, MvPolynomial.coeff_monomial_mul, one_mul] at hzero
