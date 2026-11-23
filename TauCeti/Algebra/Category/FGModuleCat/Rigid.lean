@@ -17,9 +17,10 @@ double-dual evaluation isomorphism. In particular this choice
 does not use a braiding to construct the left dual. Its evaluation is the usual contraction,
 and its adjoint mates are ordinary transposes.
 
-For Mathlib's right pairing, `FGModuleCat.evaluation_hom_hom` and
-`FGModuleCat.coevaluation_hom_hom` record that its evaluation and coevaluation are the
-contraction `contractLeft` and the coevaluation `coevaluation` of linear algebra.
+For Mathlib's right pairing, `FGModuleCat.evaluation_hom_hom`, `FGModuleCat.coevaluation_hom_hom`,
+and `FGModuleCat.rightAdjointMate_hom` record that its evaluation, coevaluation, and adjoint mates
+are the contraction `contractLeft`, coevaluation `coevaluation`, and transpose `LinearMap.dualMap`
+of linear algebra.
 
 The resulting `LeftRigidCategory` and `RigidCategory` instances also give rigidity of
 categories of group actions through Mathlib's existing instances.
@@ -99,6 +100,25 @@ theorem leftCoevaluation_hom (V : FGModuleCat.{u} K) :
     FGModuleCat.exactPairing, FGModuleCatCoevaluation]
   simp only [ModuleCat.hom_whiskerLeft, obj_carrier, dualEvalIso_hom]
   rfl
+
+/-- A right adjoint mate evaluates a functional by precomposition with the original map. -/
+@[simp]
+theorem rightAdjointMate_hom {V W : FGModuleCat.{u} K} (f : V ⟶ W) :
+    (fᘁ).hom.hom = f.hom.hom.dualMap := by
+  apply LinearMap.ext
+  intro (φ : Dual K W)
+  apply LinearMap.ext
+  intro (x : V)
+  have h := congrArg
+    (fun g : Wᘁ ⊗ V ⟶ 𝟙_ (FGModuleCat K) => g.hom.hom (φ ⊗ₜ[K] x))
+    (rightAdjointMate_comp_evaluation f)
+  simp only [hom_hom_comp, LinearMap.comp_apply] at h
+  simp only [evaluation_hom_hom, ObjectProperty.whiskerRight_def,
+    ObjectProperty.whiskerLeft_def, ObjectProperty.homMk_hom, ModuleCat.hom_whiskerRight,
+    ModuleCat.hom_whiskerLeft] at h
+  -- On pure tensors, `rTensor_tmul`, `lTensor_tmul`, and `contractLeft_apply` all hold by
+  -- definition, while the carrier of `Wᘁ` is `Dual K W` by `FGModuleCatDual_coe`.
+  exact h.trans (LinearMap.dualMap_apply f.hom.hom φ x).symm
 
 /-- A left adjoint mate evaluates a functional by precomposition with the original map. -/
 @[simp]

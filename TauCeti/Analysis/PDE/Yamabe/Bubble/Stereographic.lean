@@ -44,10 +44,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Yamabe
-
 open Bundle Metric Module
 open scoped Manifold
+
+namespace TauCeti.Yamabe
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]

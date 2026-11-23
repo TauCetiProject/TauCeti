@@ -276,7 +276,7 @@ theorem weylClass_inv : weylClass⁻¹ = weylClass :=
 /-- Every element of the Weyl group of `SU(2)` is trivial or the class of the quarter turn. -/
 theorem eq_one_or_eq_weylClass (q : weylGroup) : q = 1 ∨ q = weylClass := by
   obtain ⟨n, rfl⟩ := Subgroup.normalizerQuotientMk_surjective torus q
-  rcases mem_normalizer_torus_iff.mp n.2 with h | h
+  rcases mem_normalizer_torus_iff.mp n.property with h | h
   · exact Or.inl ((Subgroup.normalizerQuotientMk_eq_one_iff torus n).mpr h)
   · refine Or.inr ?_
     have hq : Subgroup.normalizerQuotientMk torus (weylNormalizerElement⁻¹ * n) = 1 :=

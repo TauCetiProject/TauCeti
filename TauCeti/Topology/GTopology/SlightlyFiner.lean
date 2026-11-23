@@ -195,7 +195,7 @@ theorem slightlyFiner_finestSlightlyFiner (G : GTopology ι) :
           Set.iUnion₂_subset_iff]
         exact fun U hU ↦ hU
       · intro x hx
-        obtain ⟨U, hxU, hUV⟩ := (G.isOpen_generateFrom_range_iff).mp V.2 x hx
+        obtain ⟨U, hxU, hUV⟩ := (G.isOpen_generateFrom_range_iff).mp V.is_open' x hx
         exact Set.mem_sUnion.mpr ⟨ι U, ⟨_, ⟨U, hUV, rfl⟩, coe_toGeneratedOpens U⟩, hxU⟩
     · refine ⟨{U}, G.identity U, ?_⟩
       simp only [Set.mem_singleton_iff, forall_eq]

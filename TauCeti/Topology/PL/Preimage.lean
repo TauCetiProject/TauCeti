@@ -46,26 +46,26 @@ theorem IsPLOn.exists_polyhedral_inter_preimage (hf : IsPLOn f u) (hu : IsOpen u
       (⋃ P ∈ C, P) = s ∩ u ∩ f ⁻¹' t := by
   classical
   let K := s ∩ u ∩ f ⁻¹' t
-  have hlocal (x : K) : ∃ V ∈ 𝓝 x.1,
+  have hlocal (x : K) : ∃ V ∈ 𝓝 x.val,
       IsConvexPolyhedron V ∧ V ⊆ u ∧ IsPiecewiseAffineOn f V := by
-    obtain ⟨W, hW, hpiece⟩ := isPLOn_iff.mp hf x.1 x.2.1.2
-    rw [nhdsWithin_eq_nhds.mpr (hu.mem_nhds x.2.1.2)] at hW
+    obtain ⟨W, hW, hpiece⟩ := isPLOn_iff.mp hf x.val x.property.1.2
+    rw [nhdsWithin_eq_nhds.mpr (hu.mem_nhds x.property.1.2)] at hW
     obtain ⟨V, hV, hpoly, hVW⟩ := exists_isConvexPolyhedron_mem_nhds_pi
-      (inter_mem hW (hu.mem_nhds x.2.1.2))
+      (inter_mem hW (hu.mem_nhds x.property.1.2))
     exact ⟨V, hV, hpoly, fun y hy => (hVW hy).2,
       hpiece.mono (fun y hy => (hVW hy).1)⟩
   choose V hV hpoly hVu hpiece using hlocal
   obtain ⟨a, ha⟩ := hK.elim_nhdsWithin_subcover'
     (fun x hx => V ⟨x, hx⟩) (fun x hx => nhdsWithin_le_nhds (hV ⟨x, hx⟩))
   choose n D A hD hcover heq using
-    fun x : a => isPiecewiseAffineOn_iff.mp (hpiece x.1)
+    fun x : a => isPiecewiseAffineOn_iff.mp (hpiece x.val)
   let cell (p : Σ x : a, Fin (n x)) :=
-    s ∩ V p.1.1 ∩ D p.1 p.2 ∩ (A p.1 p.2) ⁻¹' t
+    s ∩ V p.1.val ∩ D p.1 p.2 ∩ (A p.1 p.2) ⁻¹' t
   have hcell_poly (p) : IsConvexPolyhedron (cell p) :=
-    ((hs.inter (hpoly p.1.1)).inter (hD p.1 p.2)).inter (ht.preimage (A p.1 p.2))
+    ((hs.inter (hpoly p.1.val)).inter (hD p.1 p.2)).inter (ht.preimage (A p.1 p.2))
   have hcell_sub (p) : cell p ⊆ K := by
     rintro y ⟨⟨⟨hys, hyV⟩, hyD⟩, hyA⟩
-    refine ⟨⟨hys, hVu p.1.1 hyV⟩, ?_⟩
+    refine ⟨⟨hys, hVu p.1.val hyV⟩, ?_⟩
     simpa only [mem_preimage, heq p.1 p.2 ⟨hyV, hyD⟩] using hyA
   refine ⟨Finset.univ.image cell, ?_, ?_⟩
   · intro P hP

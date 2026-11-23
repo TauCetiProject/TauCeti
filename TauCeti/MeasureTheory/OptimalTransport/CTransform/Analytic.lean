@@ -13,13 +13,14 @@ public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Extended
 /-!
 # Analytic measurability of the infimal `c`-transform
 
-For Polish source and target spaces, a Borel integrand
+For a standard Borel source and a standard Borel target with a second-countable topology whose
+open sets are measurable (or the reverse for the symmetric transform), a Borel integrand
 `(x, y) ↦ (c (x, y) : EReal) - φ x` need not have a Borel infimum over `x`. Its strict sublevel
-sets are nevertheless analytic: each is the projection of the corresponding Borel strict
-sublevel set of the integrand. Lusin's universal-measurability theorem then makes every such
-sublevel measurable in the completion of each s-finite Borel measure. This is the precise
-measurability regime used to integrate general Kantorovich potentials without incorrectly claiming
-Borel measurability.
+sets are nevertheless analytic: each is the projection of the corresponding Borel strict sublevel
+set of the integrand. Lusin's universal-measurability theorem then makes every such sublevel
+measurable in the completion of each s-finite Borel measure, the output space being Hausdorff.
+This is the precise measurability regime used to integrate general Kantorovich potentials without
+incorrectly claiming Borel measurability.
 
 The symmetric transform is included with the same hypotheses on the transposed integrand.
 For extended costs, additive residuation supplies safe integrands even at infinite values.
@@ -113,9 +114,11 @@ theorem nullMeasurable_cTransformSymmExtended (μ : Measure X) [SFinite μ]
 
 end ExtendedSymmetric
 
-variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
-  [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-  {c : X × Y → ℝ} {φ : X → EReal} {ψ : Y → EReal}
+section Forward
+
+variable {X Y : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+  [TopologicalSpace Y] [SecondCountableTopology Y] [MeasurableSpace Y] [StandardBorelSpace Y]
+  [OpensMeasurableSpace Y] {c : X × Y → ℝ} {φ : X → EReal}
 
 /-- If a strict sublevel of the defining integrand of a `c`-transform is Borel measurable, the
 corresponding strict sublevel of the transform is analytic. It is the second-coordinate projection
@@ -127,15 +130,7 @@ theorem analyticSet_setOf_cTransform_lt (a : EReal)
     MeasureTheory.analyticSet_setOf_iInf_lt
       (fun z : X × Y => (c z : EReal) - φ z.1) a h
 
-/-- If a strict sublevel of the defining integrand of a symmetric `c`-transform is Borel
-measurable, the corresponding strict sublevel of the transform is analytic. -/
-theorem analyticSet_setOf_cTransformSymm_lt (a : EReal)
-    (h : MeasurableSet {z : X × Y | (c z : EReal) - ψ z.2 < a}) :
-    AnalyticSet {x | cTransformSymm c ψ x < a} := by
-  simpa only [cTransformSymm_apply] using
-    MeasureTheory.analyticSet_setOf_iInf_lt
-      (fun z : Y × X => (c (z.2, z.1) : EReal) - ψ z.1) a
-        (h.preimage measurable_swap)
+variable [T2Space Y]
 
 /-- A strict sublevel of a `c`-transform is measurable after completing any s-finite Borel measure
 on the target when the corresponding integrand sublevel is Borel measurable. -/
@@ -143,13 +138,6 @@ theorem nullMeasurableSet_setOf_cTransform_lt (μ : Measure Y) [SFinite μ] (a :
     (h : MeasurableSet {z : X × Y | (c z : EReal) - φ z.1 < a}) :
     NullMeasurableSet {y | cTransform c φ y < a} μ :=
   (analyticSet_setOf_cTransform_lt a h).nullMeasurableSet μ
-
-/-- A strict sublevel of a symmetric `c`-transform is measurable after completing any s-finite Borel
-measure on the source when the corresponding integrand sublevel is Borel measurable. -/
-theorem nullMeasurableSet_setOf_cTransformSymm_lt (μ : Measure X) [SFinite μ]
-    (a : EReal) (h : MeasurableSet {z : X × Y | (c z : EReal) - ψ z.2 < a}) :
-    NullMeasurableSet {x | cTransformSymm c ψ x < a} μ :=
-  (analyticSet_setOf_cTransformSymm_lt a h).nullMeasurableSet μ
 
 /-- A `c`-transform with Borel defining integrand is measurable for the completion of every
 s-finite Borel measure on the target. This is deliberately `NullMeasurable`, not Borel
@@ -174,6 +162,33 @@ theorem nullMeasurable_cTransform_ite (μ : Measure Y) [SFinite μ] (hc : Measur
   exact Measurable.ite (hA.preimage measurable_fst)
     (measurable_coe_real_ereal.comp (hc.sub (hφ.comp measurable_fst))) measurable_const
 
+end Forward
+
+section Symmetric
+
+variable {X Y : Type*} [TopologicalSpace X] [SecondCountableTopology X] [MeasurableSpace X]
+  [StandardBorelSpace X] [OpensMeasurableSpace X] [MeasurableSpace Y] [StandardBorelSpace Y]
+  {c : X × Y → ℝ} {ψ : Y → EReal}
+
+/-- If a strict sublevel of the defining integrand of a symmetric `c`-transform is Borel
+measurable, the corresponding strict sublevel of the transform is analytic. -/
+theorem analyticSet_setOf_cTransformSymm_lt (a : EReal)
+    (h : MeasurableSet {z : X × Y | (c z : EReal) - ψ z.2 < a}) :
+    AnalyticSet {x | cTransformSymm c ψ x < a} := by
+  simpa only [cTransformSymm_apply] using
+    MeasureTheory.analyticSet_setOf_iInf_lt
+      (fun z : Y × X => (c (z.2, z.1) : EReal) - ψ z.1) a
+        (h.preimage measurable_swap)
+
+variable [T2Space X]
+
+/-- A strict sublevel of a symmetric `c`-transform is measurable after completing any s-finite Borel
+measure on the source when the corresponding integrand sublevel is Borel measurable. -/
+theorem nullMeasurableSet_setOf_cTransformSymm_lt (μ : Measure X) [SFinite μ]
+    (a : EReal) (h : MeasurableSet {z : X × Y | (c z : EReal) - ψ z.2 < a}) :
+    NullMeasurableSet {x | cTransformSymm c ψ x < a} μ :=
+  (analyticSet_setOf_cTransformSymm_lt a h).nullMeasurableSet μ
+
 /-- A symmetric `c`-transform with Borel defining integrand is measurable for the completion of
 every s-finite Borel measure on the source. -/
 theorem nullMeasurable_cTransformSymm (μ : Measure X) [SFinite μ]
@@ -181,6 +196,14 @@ theorem nullMeasurable_cTransformSymm (μ : Measure X) [SFinite μ]
     NullMeasurable (cTransformSymm c ψ) μ :=
   measurable_of_Iio fun a =>
     nullMeasurableSet_setOf_cTransformSymm_lt μ a (h measurableSet_Iio)
+
+end Symmetric
+
+section Rockafellar
+
+variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+  [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {c : X × Y → ℝ}
 
 /-- For a Borel cost and a Borel set `S`, every strict sublevel set of Rüschendorf's potential
 `TauCeti.rockafellarPotential c S p` is analytic. -/
@@ -219,5 +242,7 @@ theorem nullMeasurable_rockafellarPotential (μ : Measure X) [SFinite μ] {S : S
     NullMeasurable (rockafellarPotential c S p) μ :=
   measurable_of_Iio fun a =>
     (analyticSet_setOf_rockafellarPotential_lt hc hS p a).nullMeasurableSet μ
+
+end Rockafellar
 
 end TauCeti
