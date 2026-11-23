@@ -254,29 +254,28 @@ theorem isNConnected_ι_of_forall_succ (m d : ℕ)
       Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) y
     dsimp
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le (le_max_left m n₀)
-    have hstep : ∀ (d' : ℕ) (z : F.obj (m + d')),
-        ∃ x : F.obj m, Joined (F.map (homOfLE (Nat.le_add_right m d')) x) z := by
+    have hstep : ∀ d' : ℕ,
+        (F.map (homOfLE (Nat.le_add_right m d'))).hom.IsNConnected d := by
       intro d'
       induction d' with
       | zero =>
-        intro z
-        refine ⟨z, ?_⟩
-        change Joined (F.map (𝟙 m) z) z
-        simp [Joined.refl]
+        have h : (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id _ := by
+          ext a
+          change F.map (𝟙 m) a = a
+          simp
+        rw [h]
+        exact ContinuousMap.IsWeakHomotopyEquivalence.id.isNConnected d
       | succ d' ih =>
-        intro z
-        obtain ⟨z', hz'⟩ := (hconn (m + d') (Nat.le_add_right m d')).exists_joined z
-        obtain ⟨x, hx⟩ := ih z'
-        refine ⟨x, ?_⟩
-        have hcomp : F.map (homOfLE (Nat.le_add_right m (d' + 1))) x =
-            F.map (homOfLE (m + d').le_succ)
-              (F.map (homOfLE (Nat.le_add_right m d')) x) := by
-          rw [← ConcreteCategory.comp_apply, ← F.map_comp]
+        have hcomp : (F.map (homOfLE (Nat.le_add_right m (d' + 1)))).hom =
+            (F.map (homOfLE (m + d').le_succ)).hom.comp
+              (F.map (homOfLE (Nat.le_add_right m d'))).hom := by
+          ext a
+          rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp]
           rfl
         rw [hcomp]
-        exact (hx.map (F.map (homOfLE (m + d').le_succ)).hom.continuous).trans hz'
+        exact (hconn (m + d') (Nat.le_add_right m d')).comp ih
     let z : F.obj (m + k) := F.map (homOfLE (hk ▸ le_max_right m n₀)) x₀
-    obtain ⟨x, hx⟩ := hstep k z
+    obtain ⟨x, hx⟩ := (hstep k).exists_joined z
     refine ⟨x, ?_⟩
     have h1 : c.ι.app (m + k) (F.map (homOfLE (Nat.le_add_right m k)) x) = c.ι.app m x := by
       rw [← ConcreteCategory.comp_apply, c.w]

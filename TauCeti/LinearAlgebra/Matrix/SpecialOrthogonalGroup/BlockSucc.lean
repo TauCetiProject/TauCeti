@@ -75,28 +75,23 @@ attribute [local instance] starRingOfComm
 /-- **The special orthogonal block inclusion** `SO(n, k) →* SO(n + 1, k)`: a special orthogonal
 matrix is placed in the upper-left block and the last basis vector is fixed. -/
 def specialOrthogonalBlockSucc :
-    Matrix.specialOrthogonalGroup (Fin n) k →* Matrix.specialOrthogonalGroup (Fin (n + 1)) k where
-  toFun g := ⟨blockSucc (g : Matrix (Fin n) (Fin n) k),
-    blockSucc_mem_specialOrthogonalGroup_iff.mpr g.property⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' g h := Subtype.ext (by simp [blockSucc_mul])
+    Matrix.specialOrthogonalGroup (Fin n) k →* Matrix.specialOrthogonalGroup (Fin (n + 1)) k :=
+  (Matrix.blockSuccMonoidHom k n).restrict fun _ h ↦ by
+    rw [Matrix.blockSuccMonoidHom_apply]
+    exact blockSucc_mem_specialOrthogonalGroup_iff.mpr h
 
 /-- The special orthogonal block inclusion has the extended matrix as its underlying matrix. -/
 @[simp]
 theorem coe_specialOrthogonalBlockSucc (g : Matrix.specialOrthogonalGroup (Fin n) k) :
     (specialOrthogonalBlockSucc k n g : Matrix (Fin (n + 1)) (Fin (n + 1)) k) =
       blockSucc (g : Matrix (Fin n) (Fin n) k) :=
-  (rfl)
+  Matrix.blockSuccMonoidHom_apply _
 
 /-- The special orthogonal block inclusion is injective. -/
 theorem specialOrthogonalBlockSucc_injective :
-    Function.Injective (specialOrthogonalBlockSucc k n) := by
-  intro g h hgh
-  refine Subtype.ext (blockSucc_injective ?_)
-  rw [← coe_specialOrthogonalBlockSucc k n, ← coe_specialOrthogonalBlockSucc k n]
-  exact congrArg
-    (fun x : Matrix.specialOrthogonalGroup (Fin (n + 1)) k ↦
-      (x : Matrix (Fin (n + 1)) (Fin (n + 1)) k)) hgh
+    Function.Injective (specialOrthogonalBlockSucc k n) :=
+  MonoidHom.restrict_injective _ fun _ _ h ↦
+    blockSucc_injective (by simpa [Matrix.blockSuccMonoidHom_apply] using h)
 
 /-- The special orthogonal block inclusion commutes with the inclusion `SO →* O`. -/
 @[simp]

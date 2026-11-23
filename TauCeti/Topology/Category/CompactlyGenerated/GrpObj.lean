@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Monoidal.Grp
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.CategoryTheory.Monoidal.SiftedColimits
@@ -38,9 +39,6 @@ structure on `X`.
 * `CompactlyGenerated.groupOfGrpObj`, `CompactlyGenerated.isTopologicalGroup_of_grpObj`,
   `CompactlyGenerated.monoidHomOfIsMonHom`: extracting a `Group` and `IsTopologicalGroup` from a
   `GrpObj` whose Cartesian square is compactly generated.
-* `CompactlyGenerated.instPreservesColimitsOfShapeTensorRight`: `tensorRight X` preserves all
-  colimits in `CompactlyGenerated.{u, w}`, unlocking `Grp.forgetCreatesColimitsOfShape` and
-  `HasColimitsOfShape` for sifted shapes.
 -/
 
 public section
@@ -261,11 +259,6 @@ theorem monoidHomOfIsMonHom_apply {X Y : CompactlyGenerated.{u, w}} [GrpObj X] [
 end FromGrpObj
 
 section SiftedColimits
-
-instance instPreservesColimitsOfShapeTensorRight (J : Type v) [Category.{v'} J]
-    (X : CompactlyGenerated.{u, w}) :
-    PreservesColimitsOfShape J (MonoidalCategory.tensorRight X) :=
-  preservesColimitsOfShape_of_natIso (BraidedCategory.tensorLeftIsoTensorRight X)
 
 /-- A cocone in `Grp CompactlyGenerated.{u, w}` over a sifted diagram whose underlying cocone in
 `TopCat.{w}` is colimiting is itself a colimit cocone. -/

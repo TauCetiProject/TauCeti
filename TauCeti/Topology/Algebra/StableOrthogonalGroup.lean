@@ -154,15 +154,6 @@ private theorem isClosedEmbedding_toOrthogonalGroup (n : ℕ) :
       (X : Matrix (Fin n) (Fin n) ℝ)) h
     simpa [Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup] using hval
 
-private instance instCompactSpaceOrthogonalGroup (n : ℕ) :
-    CompactSpace (Matrix.orthogonalGroup (Fin n) ℝ) :=
-  isCompact_iff_compactSpace.1 (TauCeti.Matrix.isCompact_unitaryGroup (n := Fin n) (𝕜 := ℝ))
-
-private instance instCompactSpaceSpecialOrthogonalGroup (n : ℕ) :
-    CompactSpace (Matrix.specialOrthogonalGroup (Fin n) ℝ) :=
-  isCompact_iff_compactSpace.1
-    (TauCeti.Matrix.isCompact_specialUnitaryGroup (n := Fin n) (𝕜 := ℝ))
-
 private instance : IsSifted ℕ := IsFiltered.isSifted
 
 /-- One step `O(n) ⟶ O(n + 1)` of the sequential diagram defining `StableOrthogonalGroup`
@@ -247,49 +238,6 @@ lemma specialOrthogonalTopDiagram_map_succ (n : ℕ)
       ((Functor.ofSequence specialOrthogonalGrpStep).map (homOfLE (Nat.le_add_right n 1))) x = _
   rw [Functor.ofSequence_map_homOfLE_succ]
   rfl
-
-private lemma orthogonalTopDiagram_naturality {Y : Type*}
-    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ → Y)
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A)
-    {i j : ℕ} (hij : i ≤ j) (A : orthogonalTopDiagram.obj i) :
-    f j (orthogonalTopDiagram.map (homOfLE hij) A) = f i A := by
-  refine @Nat.le_induction i
-    (fun j h ↦ f j (orthogonalTopDiagram.map (homOfLE h) A) = f i A)
-    ?_ (fun k hk ih ↦ ?_) j hij
-  · have hid : homOfLE (le_refl i) = 𝟙 i := rfl
-    rw [hid, orthogonalTopDiagram.map_id]
-    rfl
-  · have hsucc : (homOfLE hk.step : i ⟶ k + 1) = homOfLE hk ≫ homOfLE k.le_succ := rfl
-    calc f (k + 1) (orthogonalTopDiagram.map (homOfLE hk.step) A)
-        = f (k + 1) (orthogonalTopDiagram.map (homOfLE k.le_succ)
-            (orthogonalTopDiagram.map (homOfLE hk) A)) := by
-          rw [hsucc, orthogonalTopDiagram.map_comp, ConcreteCategory.comp_apply]
-      _ = f (k + 1) (orthogonalBlockSucc ℝ k (orthogonalTopDiagram.map (homOfLE hk) A)) :=
-          congrArg (f (k + 1)) (orthogonalTopDiagram_map_succ k _)
-      _ = f k (orthogonalTopDiagram.map (homOfLE hk) A) := hf _ _
-      _ = f i A := ih
-
-private lemma specialOrthogonalTopDiagram_naturality {Y : Type*}
-    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ → Y)
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A)
-    {i j : ℕ} (hij : i ≤ j) (A : specialOrthogonalTopDiagram.obj i) :
-    f j (specialOrthogonalTopDiagram.map (homOfLE hij) A) = f i A := by
-  refine @Nat.le_induction i
-    (fun j h ↦ f j (specialOrthogonalTopDiagram.map (homOfLE h) A) = f i A)
-    ?_ (fun k hk ih ↦ ?_) j hij
-  · have hid : homOfLE (le_refl i) = 𝟙 i := rfl
-    rw [hid, specialOrthogonalTopDiagram.map_id]
-    rfl
-  · have hsucc : (homOfLE hk.step : i ⟶ k + 1) = homOfLE hk ≫ homOfLE k.le_succ := rfl
-    calc f (k + 1) (specialOrthogonalTopDiagram.map (homOfLE hk.step) A)
-        = f (k + 1) (specialOrthogonalTopDiagram.map (homOfLE k.le_succ)
-            (specialOrthogonalTopDiagram.map (homOfLE hk) A)) := by
-          rw [hsucc, specialOrthogonalTopDiagram.map_comp, ConcreteCategory.comp_apply]
-      _ = f (k + 1)
-            (specialOrthogonalBlockSucc ℝ k (specialOrthogonalTopDiagram.map (homOfLE hk) A)) :=
-          congrArg (f (k + 1)) (specialOrthogonalTopDiagram_map_succ k _)
-      _ = f k (specialOrthogonalTopDiagram.map (homOfLE hk) A) := hf _ _
-      _ = f i A := ih
 
 end FiniteStages
 
@@ -401,13 +349,9 @@ theorem exists_of (x : StableOrthogonalGroup) :
 
 /-- Any two elements of `O` lie in the image of a common finite stage `O(n)`. -/
 theorem exists_of₂ (x y : StableOrthogonalGroup) :
-    ∃ (n : ℕ) (A B : Matrix.orthogonalGroup (Fin n) ℝ), of n A = x ∧ of n B = y := by
-  obtain ⟨m, A, rfl⟩ := exists_of x
-  obtain ⟨k, B, rfl⟩ := exists_of y
-  refine ⟨max m k, orthogonalTopDiagram.map (homOfLE (le_max_left m k)) A,
-    orthogonalTopDiagram.map (homOfLE (le_max_right m k)) B, ?_, ?_⟩
-  · exact of_le (le_max_left m k) A
-  · exact of_le (le_max_right m k) B
+    ∃ (n : ℕ) (A B : Matrix.orthogonalGroup (Fin n) ℝ), of n A = x ∧ of n B = y :=
+  Types.FilteredColimit.jointly_surjective_of_isColimit₂
+    (isColimitOfPreserves (forget TopCat) isColimitTopCocone) x y
 
 /-- Two continuous homomorphisms out of `O` agree when they agree on every finite stage `O(n)`. -/
 @[ext]
@@ -427,74 +371,17 @@ theorem continuousMap_ext {Y : Type*} [TopologicalSpace Y] {f g : C(StableOrthog
   obtain ⟨n, A, rfl⟩ := exists_of x
   exact ContinuousMap.congr_fun (h n) A
 
-private def liftCocone {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
-    letI : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-      CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-    Cocone orthogonalGrpDiagram :=
-  letI : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-    CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-  let target : Grp CompactlyGenerated.{0, 0} :=
-    ⟨TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)⟩
-  Cocone.mk target
-    { app n :=
-        Grp.homMk''
-          (CompactlyGenerated.adj.{0, 0}.homEquiv
-            (CompactlyGenerated.of.{0, 0} (Matrix.orthogonalGroup (Fin n) ℝ)) (TopCat.of G)
-            (TopCat.ofHom (f n : C(_, _))))
-          (ConcreteCategory.hom_ext _ _ fun _ ↦ map_one (f n))
-          (ConcreteCategory.hom_ext _ _ fun p ↦ map_mul (f n) p.1 p.2)
-      naturality i j u := Grp.hom_ext _ _ <| ConcreteCategory.hom_ext _ _ fun A ↦ by
-        change f j (orthogonalTopDiagram.map u A) = f i A
-        exact orthogonalTopDiagram_naturality (fun k X ↦ f k X) hf (leOfHom u) A }
-
-/-- **Universal property of `O` as a topological group**: a family of continuous homomorphisms out
-of `O(n)` into any topological group `G : Type` that is compatible with `orthogonalBlockSucc`
-descends to a unique continuous homomorphism `O →ₜ* G`. -/
-def lift {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
-    StableOrthogonalGroup →ₜ* G :=
-  letI : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-    CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-  let coc := liftCocone f hf
-  let φ : colimit orthogonalGrpDiagram ⟶ coc.pt :=
-    (colimit.isColimit orthogonalGrpDiagram).desc coc
-  let fTop : (colimit orthogonalGrpDiagram).X.toTop ⟶ TopCat.of G :=
-    (CompactlyGenerated.adj.{0, 0}.homEquiv (colimit orthogonalGrpDiagram).X (TopCat.of G)).symm
-      φ.hom.hom
-  let fMon : StableOrthogonalGroup →* G := CompactlyGenerated.monoidHomOfIsMonHom φ.hom.hom
-  { toFun := fMon
-    map_one' := fMon.map_one
-    map_mul' := fMon.map_mul
-    continuous_toFun := fTop.hom.continuous }
-
-@[simp]
-theorem lift_of {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A)
-    (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    lift f hf (of n A) = f n A := by
-  let _ : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-    CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-  let coc := liftCocone f hf
-  have hfac : ((colimit.cocone orthogonalGrpDiagram).ι.app n ≫
-      (colimit.isColimit orthogonalGrpDiagram).desc coc) = coc.ι.app n :=
-    (colimit.isColimit orthogonalGrpDiagram).fac coc n
-  have hmap := congrArg (fun g ↦ g.hom.hom) hfac
-  have h := ConcreteCategory.congr_hom hmap A
-  exact h
-
 private def liftContinuousCocone {Y : Type} [TopologicalSpace Y]
     (f : ∀ n, C(Matrix.orthogonalGroup (Fin n) ℝ, Y))
     (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
     Cocone orthogonalTopDiagram :=
   Cocone.mk (TopCat.of Y)
-    { app n := TopCat.ofHom (f n)
-      naturality i j u := ConcreteCategory.hom_ext _ _ fun A ↦ by
-        change f j (orthogonalTopDiagram.map u A) = f i A
-        exact orthogonalTopDiagram_naturality (fun k X ↦ f k X) hf (leOfHom u) A }
+    (NatTrans.ofSequence (G := (Functor.const ℕ).obj (TopCat.of Y))
+      (fun n ↦ TopCat.ofHom (f n)) fun n ↦ ConcreteCategory.hom_ext _ _ fun A ↦ by
+        change f (n + 1) (orthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A) = f n A
+        rw [show orthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A =
+          orthogonalBlockSucc ℝ n A from orthogonalTopDiagram_map_succ n A]
+        exact hf n A)
 
 /-- **Universal property of `O` as a topological space**: a family of continuous maps out of `O(n)`
 into a space `Y : Type` compatible with `orthogonalBlockSucc` descends to a unique continuous map
@@ -512,8 +399,34 @@ theorem liftContinuous_of {Y : Type} [TopologicalSpace Y]
     (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
     liftContinuous f hf (of n A) = f n A := by
   have hfac := isColimitTopCocone.fac (liftContinuousCocone f hf) n
-  have h := ConcreteCategory.congr_hom hfac A
-  exact h
+  exact ConcreteCategory.congr_hom hfac A
+
+/-- **Universal property of `O` as a topological group**: a family of continuous homomorphisms out
+of `O(n)` into any group `G : Type` with a topology that is compatible with `orthogonalBlockSucc`
+descends to a unique continuous homomorphism `O →ₜ* G`. -/
+def lift {G : Type} [Group G] [TopologicalSpace G]
+    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
+    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
+    StableOrthogonalGroup →ₜ* G :=
+  let g : C(StableOrthogonalGroup, G) := liftContinuous (fun n ↦ (f n).toContinuousMap) hf
+  { toFun := g
+    map_one' := by
+      change g 1 = 1
+      rw [show (1 : StableOrthogonalGroup) = of 0 1 from (map_one (of 0)).symm]
+      exact (liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf 0 1).trans (map_one (f 0))
+    map_mul' x y := by
+      obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
+      rw [← map_mul (of n), liftContinuous_of, liftContinuous_of, liftContinuous_of]
+      exact map_mul (f n) A B
+    continuous_toFun := g.continuous }
+
+@[simp]
+theorem lift_of {G : Type} [Group G] [TopologicalSpace G]
+    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
+    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A)
+    (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
+    lift f hf (of n A) = f n A :=
+  liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf n A
 
 private def orthogonalDetSign (n : ℕ) : Matrix.orthogonalGroup (Fin n) ℝ →* ℤˣ where
   toFun A := if (A : Matrix (Fin n) (Fin n) ℝ).det = 1 then 1 else -1
@@ -681,13 +594,9 @@ theorem exists_of (x : StableSpecialOrthogonalGroup) :
 
 /-- Any two elements of `SO` lie in the image of a common finite stage `SO(n)`. -/
 theorem exists_of₂ (x y : StableSpecialOrthogonalGroup) :
-    ∃ (n : ℕ) (A B : Matrix.specialOrthogonalGroup (Fin n) ℝ), of n A = x ∧ of n B = y := by
-  obtain ⟨m, A, rfl⟩ := exists_of x
-  obtain ⟨k, B, rfl⟩ := exists_of y
-  refine ⟨max m k, specialOrthogonalTopDiagram.map (homOfLE (le_max_left m k)) A,
-    specialOrthogonalTopDiagram.map (homOfLE (le_max_right m k)) B, ?_, ?_⟩
-  · exact of_le (le_max_left m k) A
-  · exact of_le (le_max_right m k) B
+    ∃ (n : ℕ) (A B : Matrix.specialOrthogonalGroup (Fin n) ℝ), of n A = x ∧ of n B = y :=
+  Types.FilteredColimit.jointly_surjective_of_isColimit₂
+    (isColimitOfPreserves (forget TopCat) isColimitTopCocone) x y
 
 /-- Two continuous homomorphisms out of `SO` agree when they agree on every finite stage `SO(n)`. -/
 @[ext]
@@ -711,75 +620,18 @@ theorem continuousMap_ext {Y : Type*} [TopologicalSpace Y]
   obtain ⟨n, A, rfl⟩ := exists_of x
   exact ContinuousMap.congr_fun (h n) A
 
-private def liftCocone {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
-    letI : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-      CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-    Cocone specialOrthogonalGrpDiagram :=
-  letI : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-    CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-  let target : Grp CompactlyGenerated.{0, 0} :=
-    ⟨TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)⟩
-  Cocone.mk target
-    { app n :=
-        Grp.homMk''
-          (CompactlyGenerated.adj.{0, 0}.homEquiv
-            (CompactlyGenerated.of.{0, 0} (Matrix.specialOrthogonalGroup (Fin n) ℝ)) (TopCat.of G)
-            (TopCat.ofHom (f n : C(_, _))))
-          (ConcreteCategory.hom_ext _ _ fun _ ↦ map_one (f n))
-          (ConcreteCategory.hom_ext _ _ fun p ↦ map_mul (f n) p.1 p.2)
-      naturality i j u := Grp.hom_ext _ _ <| ConcreteCategory.hom_ext _ _ fun A ↦ by
-        change f j (specialOrthogonalTopDiagram.map u A) = f i A
-        exact specialOrthogonalTopDiagram_naturality (fun k X ↦ f k X) hf (leOfHom u) A }
-
-/-- **Universal property of `SO` as a topological group**: a family of continuous homomorphisms out
-of `SO(n)` into any topological group `G : Type` compatible with `specialOrthogonalBlockSucc`
-descends to a unique continuous homomorphism `SO →ₜ* G`. -/
-def lift {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
-    StableSpecialOrthogonalGroup →ₜ* G :=
-  letI : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-    CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-  let coc := liftCocone f hf
-  let φ : colimit specialOrthogonalGrpDiagram ⟶ coc.pt :=
-    (colimit.isColimit specialOrthogonalGrpDiagram).desc coc
-  let fTop : (colimit specialOrthogonalGrpDiagram).X.toTop ⟶ TopCat.of G :=
-    (CompactlyGenerated.adj.{0, 0}.homEquiv
-      (colimit specialOrthogonalGrpDiagram).X (TopCat.of G)).symm φ.hom.hom
-  let fMon : StableSpecialOrthogonalGroup →* G :=
-    CompactlyGenerated.monoidHomOfIsMonHom φ.hom.hom
-  { toFun := fMon
-    map_one' := fMon.map_one
-    map_mul' := fMon.map_mul
-    continuous_toFun := fTop.hom.continuous }
-
-@[simp]
-theorem lift_of {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A)
-    (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    lift f hf (of n A) = f n A := by
-  let _ : GrpObj (TopCat.toCompactlyGenerated.{0, 0}.obj (TopCat.of G)) :=
-    CompactlyGenerated.instGrpObjToCompactlyGeneratedOf G
-  let coc := liftCocone f hf
-  have hfac : ((colimit.cocone specialOrthogonalGrpDiagram).ι.app n ≫
-      (colimit.isColimit specialOrthogonalGrpDiagram).desc coc) = coc.ι.app n :=
-    (colimit.isColimit specialOrthogonalGrpDiagram).fac coc n
-  have hmap := congrArg (fun g ↦ g.hom.hom) hfac
-  have h := ConcreteCategory.congr_hom hmap A
-  exact h
-
 private def liftContinuousCocone {Y : Type} [TopologicalSpace Y]
     (f : ∀ n, C(Matrix.specialOrthogonalGroup (Fin n) ℝ, Y))
     (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
     Cocone specialOrthogonalTopDiagram :=
   Cocone.mk (TopCat.of Y)
-    { app n := TopCat.ofHom (f n)
-      naturality i j u := ConcreteCategory.hom_ext _ _ fun A ↦ by
-        change f j (specialOrthogonalTopDiagram.map u A) = f i A
-        exact specialOrthogonalTopDiagram_naturality (fun k X ↦ f k X) hf (leOfHom u) A }
+    (NatTrans.ofSequence (G := (Functor.const ℕ).obj (TopCat.of Y))
+      (fun n ↦ TopCat.ofHom (f n)) fun n ↦ ConcreteCategory.hom_ext _ _ fun A ↦ by
+        change f (n + 1)
+          (specialOrthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A) = f n A
+        rw [show specialOrthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A =
+          specialOrthogonalBlockSucc ℝ n A from specialOrthogonalTopDiagram_map_succ n A]
+        exact hf n A)
 
 /-- **Universal property of `SO` as a topological space**: a family of continuous maps out of
 `SO(n)` into a space `Y : Type` compatible with `specialOrthogonalBlockSucc` descends to a unique
@@ -797,8 +649,34 @@ theorem liftContinuous_of {Y : Type} [TopologicalSpace Y]
     (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
     liftContinuous f hf (of n A) = f n A := by
   have hfac := isColimitTopCocone.fac (liftContinuousCocone f hf) n
-  have h := ConcreteCategory.congr_hom hfac A
-  exact h
+  exact ConcreteCategory.congr_hom hfac A
+
+/-- **Universal property of `SO` as a topological group**: a family of continuous homomorphisms out
+of `SO(n)` into any group `G : Type` with a topology compatible with `specialOrthogonalBlockSucc`
+descends to a unique continuous homomorphism `SO →ₜ* G`. -/
+def lift {G : Type} [Group G] [TopologicalSpace G]
+    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
+    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
+    StableSpecialOrthogonalGroup →ₜ* G :=
+  let g : C(StableSpecialOrthogonalGroup, G) := liftContinuous (fun n ↦ (f n).toContinuousMap) hf
+  { toFun := g
+    map_one' := by
+      change g 1 = 1
+      rw [show (1 : StableSpecialOrthogonalGroup) = of 0 1 from (map_one (of 0)).symm]
+      exact (liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf 0 1).trans (map_one (f 0))
+    map_mul' x y := by
+      obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
+      rw [← map_mul (of n), liftContinuous_of, liftContinuous_of, liftContinuous_of]
+      exact map_mul (f n) A B
+    continuous_toFun := g.continuous }
+
+@[simp]
+theorem lift_of {G : Type} [Group G] [TopologicalSpace G]
+    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
+    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A)
+    (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
+    lift f hf (of n A) = f n A :=
+  liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf n A
 
 /-- **The stable special orthogonal group is path-connected.** -/
 instance : PathConnectedSpace StableSpecialOrthogonalGroup := by

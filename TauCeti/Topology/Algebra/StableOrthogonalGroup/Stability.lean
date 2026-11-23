@@ -400,19 +400,7 @@ def StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGroup
         (StableSpecialOrthogonalGroup.toStableOrthogonalGroup x) :=
   let S := Set.range StableSpecialOrthogonalGroup.toStableOrthogonalGroup
   let e : StableSpecialOrthogonalGroup ≃ₜ S :=
-    { toFun a := ⟨StableSpecialOrthogonalGroup.toStableOrthogonalGroup a, a, rfl⟩
-      invFun b := Classical.choose b.property
-      left_inv a := StableSpecialOrthogonalGroup.toStableOrthogonalGroup_injective
-        (Classical.choose_spec (⟨a, rfl⟩ :
-          StableSpecialOrthogonalGroup.toStableOrthogonalGroup a ∈ S))
-      right_inv b := Subtype.ext (Classical.choose_spec b.property)
-      continuous_toFun :=
-        StableSpecialOrthogonalGroup.toStableOrthogonalGroup.continuous.subtype_mk _
-      continuous_invFun := by
-        rw [StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup
-          |>.isEmbedding.continuous_iff]
-        refine continuous_subtypeVal.congr fun b ↦ ?_
-        exact (Classical.choose_spec b.property).symm }
+    StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding.toHomeomorph
   let hS : pathComponent (StableSpecialOrthogonalGroup.toStableOrthogonalGroup x) ⊆ S :=
     fun y hy ↦ by
       rw [mem_pathComponent_iff, StableOrthogonalGroup.joined_iff_det_eq,
@@ -425,17 +413,20 @@ def StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGroup
     have hcomp : (⟨Subtype.val, continuous_subtypeVal⟩ : C(S, StableOrthogonalGroup)).comp
         ⟨e, e.continuous⟩ =
         StableSpecialOrthogonalGroup.toStableOrthogonalGroup.toContinuousMap :=
-      ContinuousMap.ext fun _ ↦ rfl
+      ContinuousMap.ext fun a ↦
+        StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding
+          |>.toHomeomorph_apply_coe a
     have he : Function.Bijective (HomotopyGroup.map (N := N) (x := x)
         (⟨e, e.continuous⟩ : C(StableSpecialOrthogonalGroup, S)) rfl) :=
       (HomotopyGroup.homeomorphMulEquiv (N := N) e x).bijective
+    have hx_eq : ((e x : S) : StableOrthogonalGroup) =
+        StableSpecialOrthogonalGroup.toStableOrthogonalGroup x :=
+      StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding
+        |>.toHomeomorph_apply_coe x
     have hsub := HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
-      (N := N) (x := e x) hS rfl
+      (N := N) (x := e x) (hx_eq ▸ hS) hx_eq
     have h := hsub.comp he
-    rw [HomotopyGroup.map_comp_map_of_comp_eq hcomp
-      (rfl : ((e x : S) : StableOrthogonalGroup) =
-        StableSpecialOrthogonalGroup.toStableOrthogonalGroup x)
-      (rfl : e x = e x) rfl] at h
+    rw [HomotopyGroup.map_comp_map_of_comp_eq hcomp hx_eq rfl rfl] at h
     exact h
   MulEquiv.ofBijective
     (HomotopyGroup.mapHom (N := N)

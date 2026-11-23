@@ -211,19 +211,13 @@ theorem uCompactlyGeneratedSpace_prod_of_isColimit
     refine ⟨(Subtype.val '' V₀, Subtype.val '' closure V₀,
       Subtype.val '' W₀, Subtype.val '' closure W₀), ?_⟩
     have hK : IsCompact (Subtype.val '' closure V₀) :=
-      (IsCompact.of_isClosed_subset isCompact_univ isClosed_closure (subset_univ _)).image
-        continuous_subtypeVal
+      isClosed_closure.isCompact.image continuous_subtypeVal
     have hL : IsCompact (Subtype.val '' closure W₀) :=
-      (IsCompact.of_isClosed_subset isCompact_univ isClosed_closure (subset_univ _)).image
-        continuous_subtypeVal
-    have hV_eq : ((↑) : A (n₀ + 0) → c₁.pt) ⁻¹' (Subtype.val '' V₀) = V₀ := by
-      ext ⟨x, hx⟩
-      exact ⟨fun ⟨⟨a, _⟩, ha, h⟩ ↦ (Subtype.ext h) ▸ ha,
-        fun hxV ↦ ⟨⟨x, hx⟩, hxV, rfl⟩⟩
-    have hW_eq : ((↑) : B (n₀ + 0) → c₂.pt) ⁻¹' (Subtype.val '' W₀) = W₀ := by
-      ext ⟨y, hy⟩
-      exact ⟨fun ⟨⟨b, _⟩, hb, h⟩ ↦ (Subtype.ext h) ▸ hb,
-        fun hyW ↦ ⟨⟨y, hy⟩, hyW, rfl⟩⟩
+      isClosed_closure.isCompact.image continuous_subtypeVal
+    have hV_eq : ((↑) : A (n₀ + 0) → c₁.pt) ⁻¹' (Subtype.val '' V₀) = V₀ :=
+      Set.preimage_image_eq _ Subtype.val_injective
+    have hW_eq : ((↑) : B (n₀ + 0) → c₂.pt) ⁻¹' (Subtype.val '' W₀) = W₀ :=
+      Set.preimage_image_eq _ Subtype.val_injective
     refine ⟨⟨⟨x₀, hx₀⟩, hx₀V₀ rfl, rfl⟩,
       ⟨⟨y₀, hy₀⟩, hy₀W₀ rfl, rfl⟩,
       image_mono subset_closure, Subtype.coe_image_subset _ _,
@@ -258,23 +252,17 @@ theorem uCompactlyGeneratedSpace_prod_of_isColimit
     obtain ⟨W'', hW'', hLW'', hclW''⟩ :=
       normal_exists_closure_subset hL'c.isClosed hW' hLW'
     have hK' : IsCompact (Subtype.val '' closure V'') :=
-      (IsCompact.of_isClosed_subset isCompact_univ isClosed_closure (subset_univ _)).image
-        continuous_subtypeVal
+      isClosed_closure.isCompact.image continuous_subtypeVal
     have hL' : IsCompact (Subtype.val '' closure W'') :=
-      (IsCompact.of_isClosed_subset isCompact_univ isClosed_closure (subset_univ _)).image
-        continuous_subtypeVal
+      isClosed_closure.isCompact.image continuous_subtypeVal
     have hKV_sub : K ⊆ Subtype.val '' V'' := fun x hx ↦
       ⟨⟨x, hAmono (hKA hx)⟩, hKV'' hx, rfl⟩
     have hLW_sub : L ⊆ Subtype.val '' W'' := fun y hy ↦
       ⟨⟨y, hBmono (hLB hy)⟩, hLW'' hy, rfl⟩
-    have hV'_eq : ((↑) : A (n₀ + (k + 1)) → c₁.pt) ⁻¹' (Subtype.val '' V'') = V'' := by
-      ext ⟨x, hx⟩
-      exact ⟨fun ⟨⟨a, _⟩, ha, h⟩ ↦ (Subtype.ext h) ▸ ha,
-        fun hxV ↦ ⟨⟨x, hx⟩, hxV, rfl⟩⟩
-    have hW'_eq : ((↑) : B (n₀ + (k + 1)) → c₂.pt) ⁻¹' (Subtype.val '' W'') = W'' := by
-      ext ⟨y, hy⟩
-      exact ⟨fun ⟨⟨b, _⟩, hb, h⟩ ↦ (Subtype.ext h) ▸ hb,
-        fun hyW ↦ ⟨⟨y, hy⟩, hyW, rfl⟩⟩
+    have hV'_eq : ((↑) : A (n₀ + (k + 1)) → c₁.pt) ⁻¹' (Subtype.val '' V'') = V'' :=
+      Set.preimage_image_eq _ Subtype.val_injective
+    have hW'_eq : ((↑) : B (n₀ + (k + 1)) → c₂.pt) ⁻¹' (Subtype.val '' W'') = W'' :=
+      Set.preimage_image_eq _ Subtype.val_injective
     refine ⟨(Subtype.val '' V'', Subtype.val '' closure V'',
       Subtype.val '' W'', Subtype.val '' closure W''), ⟨?_, ?_⟩⟩
     · refine ⟨hKV_sub (hVK hxV), hLW_sub (hWL hyW), image_mono subset_closure,
