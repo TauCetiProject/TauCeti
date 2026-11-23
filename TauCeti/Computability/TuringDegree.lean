@@ -67,8 +67,9 @@ functions; on sets, it is the degree of the computable sets.
 * `ManyOneEquiv.turingEquivalent_oracle`: many-one equivalent sets are Turing equivalent.
 * `Set.oracle_preimage_turingReducible`, `Set.oracle_preimage_turingEquivalent`,
   `Set.oracle_image_turingEquivalent`: computable changes of presentation.
-* `Set.oracle_inter_pairColumn_turingEquivalent`: the part of a set in a column is Turing
-  equivalent to the corresponding section.
+* `Set.oracle_inter_pairColumn_turingEquivalent`,
+  `Set.toAntisymmetrization_oracle_inter_pairColumn`: the part of a set in a column is Turing
+  equivalent to the corresponding section, and has the same degree.
 * `TuringDegree.toAntisymmetrization_eq_bot_iff`: the least degree consists of the partial
   computable functions.
 * `Function.turingEquivalent_oracle_preimage_unpair_graph`: graph coding, a total function is
@@ -154,7 +155,8 @@ theorem empty_turingReducible (g : ℕ →. ℕ) : TuringReducible (∅ : Set �
   exact (Computable.const 0).partrec.turingReducible
 
 /-- A partial function is Turing reducible to the empty oracle exactly when it is partial
-computable. -/
+computable. This is a `simp↓` lemma so that it fires before `Set.oracle_empty`. -/
+@[simp↓]
 theorem turingReducible_oracle_empty_iff {f : ℕ →. ℕ} :
     TuringReducible f (∅ : Set ℕ).oracle ↔ Partrec f := by
   rw [TuringReducible, oracle_empty]
@@ -304,6 +306,13 @@ theorem oracle_inter_pairColumn_turingEquivalent (A : Set ℕ) (e : ℕ) :
   simpa [Nat.pairColumn_eq_range_pair, preimage_inter_range] using
     (A ∩ e.pairColumn).oracle_preimage_turingReducible
       (Primrec₂.natPair.comp Primrec.id (Primrec.const e)).to_comp
+
+/-- The part of a set lying in the column `e.pairColumn` has the degree of its `e`-th section
+`{x | ⟨x, e⟩ ∈ A}`. -/
+theorem toAntisymmetrization_oracle_inter_pairColumn (A : Set ℕ) (e : ℕ) :
+    toAntisymmetrization TuringReducible (A ∩ e.pairColumn).oracle =
+      toAntisymmetrization TuringReducible ((Nat.pair · e) ⁻¹' A).oracle :=
+  (toAntisymmetrization_eq TuringReducible _ _).2 (A.oracle_inter_pairColumn_turingEquivalent e)
 
 end Set
 

@@ -79,3 +79,8 @@ example (Z : Set ℕ) (e : ℕ) :
 -- Shifting a set down by one, a computable change of presentation, does not raise its degree.
 example (A : Set ℕ) : TuringReducible ((· + 1) ⁻¹' A).oracle A.oracle :=
   A.oracle_preimage_turingReducible Computable.succ
+
+-- `simp` characterizes reducibility to the empty oracle before unfolding the empty oracle.
+example (A : Set ℕ) :
+    TuringReducible A.oracle (∅ : Set ℕ).oracle ↔ ComputablePred (· ∈ A) := by
+  simp
