@@ -38,9 +38,10 @@ class of `f` in `O(V ∖ K) / O(V)` with the germ along `K` of the Cauchy kernel
 * `IsCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact`: uniqueness. If `g` is holomorphic on `V`,
   `h` is holomorphic on `ℂ ∖ K` and tends to `0` at infinity, and `g = h` on `V ∖ K`, then `g = 0`
   on `V` and `h = 0` on `ℂ ∖ K`.
-* `IsCompact.integral_div_sub_eq_of_windingNumber_eq_one` and
-  `IsCompact.integral_div_sub_eq_of_windingNumber_eq_zero`: the Cauchy integral formulas for the
-  two parts of every such decomposition.
+* `IsClosed.integral_div_sub_eq`: the Cauchy integral formula for every such decomposition,
+  `∮_Γ f(z)/(z - w) dz = 2πi (n g(w) + (n - 1) h(w))` where `Γ` winds `n` times around `w`, with
+  the special cases `IsClosed.integral_div_sub_eq_of_windingNumber_eq_one` and
+  `IsClosed.integral_div_sub_eq_of_windingNumber_eq_zero` for the two parts.
 
 ## Implementation notes
 
@@ -204,56 +205,61 @@ private theorem tendsto_cauchyPart_zero (hK : IsCompact K) (hV : IsOpen V) (hKV 
   filter_upwards [Cycle.windingNumber_eventually_zero_cocompact Γ] with w hw
   rw [← hw.2, cauchyPart_eq hV hK.isClosed hf hΓ hΓV hΓK hw.1]
 
+/-- For a cycle `Γ` as in `cauchyPart` and a point `w ∈ V ∖ K` off its trace, the Cauchy integral
+over `Γ` is `n f(w)` plus the part of `f` holomorphic off `K`, where `n` is the winding number of
+`Γ` about `w`. -/
+private theorem integral_div_sub_eq_mul_add_cauchyPart_zero (hK : IsCompact K) (hV : IsOpen V)
+    (hKV : K ⊆ V) (hf : DifferentiableOn ℂ f (V \ K)) {Γ : Cycle} (hΓ : Γ.IsIn (V \ K))
+    (hΓV : Γ.IsNullHomologous V) (hΓK : ∀ z ∈ K, Cycle.windingNumber z Γ = 1) {w : ℂ}
+    (hw : w ∈ V \ K) (hwΓ : w ∉ Cycle.trace Γ) :
+    (2 * π * I)⁻¹ * Cycle.integral (fun z ↦ f z / (z - w)) Γ =
+      Cycle.windingNumber w Γ * f w + cauchyPart V K f 0 w := by
+  -- A cycle winding once around `K` and zero times around `w`.
+  have hKV' : K ⊆ V \ {w} := fun z hz ↦ ⟨hKV hz, fun h ↦ hw.2 (h ▸ hz)⟩
+  obtain ⟨Γ₀, hΓ₀, hΓ₀V, hΓ₀K⟩ :=
+    hK.exists_cycle_windingNumber_eq_one (hV.sdiff isClosed_singleton) hKV'
+  have hw₀ : w ∉ Cycle.trace Γ₀ := fun h ↦ (Cycle.isIn_iff.mp hΓ₀ h).1.2 rfl
+  have hn₀ : Cycle.windingNumber w Γ₀ = 0 :=
+    Cycle.isNullHomologous_iff.mp hΓ₀V w fun h ↦ h.2 rfl
+  -- The difference `Γ - Γ₀` is null-homologous in `V ∖ K` and winds `n` times around `w`.
+  have hin : (Γ - Γ₀).IsIn (V \ K) := hΓ.sub (hΓ₀.mono (sdiff_subset_sdiff_left sdiff_subset))
+  have hnull : (Γ - Γ₀).IsNullHomologous (V \ K) :=
+    Cycle.isNullHomologous_sub_of_windingNumber_eq hΓV (hΓ₀V.mono sdiff_subset) fun z hz ↦
+      (hΓK z hz).trans (hΓ₀K z hz).symm
+  have hwtr : w ∉ Cycle.trace (Γ - Γ₀) := by
+    rw [sub_eq_add_neg]
+    intro h
+    rcases Cycle.trace_add_subset _ _ h with h | h
+    exacts [hwΓ h, hw₀ (Cycle.trace_neg Γ₀ ▸ h)]
+  have hdiff := Cycle.cauchyIntegralFormula_nullHomologous (hV.sdiff hK.isClosed) hf hin hnull hwtr
+  simp only [map_sub, hn₀, sub_zero] at hdiff
+  rw [cauchyPart_zero_eq hV hK.isClosed hf sdiff_subset hΓ₀ hΓ₀V hΓ₀K fun h ↦ h.2 rfl,
+    sub_eq_iff_eq_add.mp hdiff, mul_add]
+  field_simp [Real.pi_ne_zero, I_ne_zero]
+
 /-- On `V ∖ K`, the function `f` is the sum of its two Cauchy parts. -/
 private theorem eqOn_cauchyPart_one_sub_cauchyPart_zero (hK : IsCompact K) (hV : IsOpen V)
     (hKV : K ⊆ V) (hf : DifferentiableOn ℂ f (V \ K)) :
     EqOn f (fun w ↦ cauchyPart V K f 1 w - cauchyPart V K f 0 w) (V \ K) := by
   intro w hw
-  dsimp only
-  -- A cycle winding once around `w` and one winding zero times around `w`.
+  -- A cycle winding once around `K ∪ {w}`.
   obtain ⟨Γ₁, hΓ₁, hΓ₁V, hΓ₁L⟩ :=
     (hK.union isCompact_singleton).exists_cycle_windingNumber_eq_one hV
       (union_subset hKV (singleton_subset_iff.mpr hw.1))
-  have hKV' : K ⊆ V \ {w} := fun z hz ↦ ⟨hKV hz, fun h ↦ hw.2 (h ▸ hz)⟩
-  obtain ⟨Γ₀, hΓ₀, hΓ₀V, hΓ₀K⟩ :=
-    hK.exists_cycle_windingNumber_eq_one (hV.sdiff isClosed_singleton) hKV'
-  have hw₁ : w ∉ Cycle.trace Γ₁ := fun h ↦ (Cycle.isIn_iff.mp hΓ₁ h).2 (Or.inr rfl)
-  have hw₀ : w ∉ Cycle.trace Γ₀ := fun h ↦ (Cycle.isIn_iff.mp hΓ₀ h).1.2 rfl
-  have hn₁ : Cycle.windingNumber w Γ₁ = 1 := hΓ₁L w (Or.inr rfl)
-  have hn₀ : Cycle.windingNumber w Γ₀ = 0 :=
-    Cycle.isNullHomologous_iff.mp hΓ₀V w fun h ↦ h.2 rfl
-  rw [cauchyPart_one_eq hV hK.isClosed hf subset_union_left hΓ₁ hΓ₁V hΓ₁L (Or.inr rfl),
-    cauchyPart_zero_eq hV hK.isClosed hf sdiff_subset hΓ₀ hΓ₀V hΓ₀K fun h ↦ h.2 rfl,
-    ← mul_sub, ← map_sub]
-  -- The difference `Γ₁ - Γ₀` is null-homologous in `V ∖ K` and winds once around `w`.
-  have hin : (Γ₁ - Γ₀).IsIn (V \ K) := by
-    rw [sub_eq_add_neg]
-    exact (hΓ₁.mono (sdiff_subset_sdiff_right subset_union_left)).add
-      (Cycle.isIn_neg_iff.mpr (hΓ₀.mono (sdiff_subset_sdiff_left sdiff_subset)))
-  have hnull : (Γ₁ - Γ₀).IsNullHomologous (V \ K) := by
-    refine Cycle.isNullHomologous_iff.mpr fun z hz ↦ ?_
-    rw [map_sub, sub_eq_zero]
-    by_cases hzV : z ∈ V
-    · have hzK : z ∈ K := not_not.mp fun h ↦ hz ⟨hzV, h⟩
-      rw [hΓ₁L z (Or.inl hzK), hΓ₀K z hzK]
-    · rw [Cycle.isNullHomologous_iff.mp hΓ₁V z hzV,
-        Cycle.isNullHomologous_iff.mp hΓ₀V z fun h ↦ hzV h.1]
-  have hwtr : w ∉ Cycle.trace (Γ₁ - Γ₀) := by
-    rw [sub_eq_add_neg]
-    intro h
-    rcases Cycle.trace_add_subset _ _ h with h | h
-    exacts [hw₁ h, hw₀ (Cycle.trace_neg Γ₀ ▸ h)]
-  rw [Cycle.cauchyIntegralFormula_nullHomologous (hV.sdiff hK.isClosed) hf hin hnull hwtr,
-    map_sub, hn₁, hn₀]
-  field_simp [Real.pi_ne_zero, I_ne_zero]
-  ring
+  have h := integral_div_sub_eq_mul_add_cauchyPart_zero hK hV hKV hf
+    (hΓ₁.mono (sdiff_subset_sdiff_right subset_union_left)) hΓ₁V (fun z hz ↦ hΓ₁L z (Or.inl hz))
+    hw fun h ↦ (Cycle.isIn_iff.mp hΓ₁ h).2 (Or.inr rfl)
+  rw [hΓ₁L w (Or.inr rfl), one_mul, ← cauchyPart_one_eq hV hK.isClosed hf subset_union_left hΓ₁
+    hΓ₁V hΓ₁L (Or.inr rfl)] at h
+  dsimp only
+  rw [h, add_sub_cancel_right]
 
 /-- **Uniqueness of the separation of singularities.** Let `K` be a compact subset of an open set
 `V ⊆ ℂ`. If `g` is holomorphic on `V`, `h` is holomorphic on `ℂ ∖ K` and tends to `0` at
 infinity, and `g = h` on `V ∖ K`, then `g = 0` on `V` and `h = 0` on `ℂ ∖ K`. -/
 theorem _root_.IsCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact (hK : IsCompact K) (hV : IsOpen V)
     (hKV : K ⊆ V) {g h : ℂ → ℂ} (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
-    (hlim : Tendsto h (cocompact ℂ) (𝓝 0)) (hgh : EqOn g h (V \ K)) :
+    (hgh : EqOn g h (V \ K)) (hlim : Tendsto h (cocompact ℂ) (𝓝 0)) :
     EqOn g 0 V ∧ EqOn h 0 Kᶜ := by
   classical
   -- The function equal to `g` on `V` and to `h` off `K` is entire and vanishes at infinity.
@@ -263,13 +269,10 @@ theorem _root_.IsCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact (hK : IsCompact 
     by_cases hzV : z ∈ V
     · rw [hFg hzV, hgh ⟨hzV, hz⟩]
     · exact piecewise_eq_of_notMem _ _ _ hzV
-  have hF : Differentiable ℂ F := fun z ↦ by
-    by_cases hzV : z ∈ V
-    · exact (hg.differentiableAt (hV.mem_nhds hzV)).congr_of_eventuallyEq
-        (eventuallyEq_of_mem (hV.mem_nhds hzV) hFg)
-    · have hzK : z ∈ Kᶜ := fun h ↦ hzV (hKV h)
-      have hnhds := hK.isClosed.isOpen_compl.mem_nhds hzK
-      exact (hh.differentiableAt hnhds).congr_of_eventuallyEq (eventuallyEq_of_mem hnhds hFh)
+  have hF : Differentiable ℂ F :=
+    differentiable_of_differentiableOn_union_of_isOpen (hg.congr hFg) (hh.congr hFh)
+      (eq_univ_of_forall fun z ↦ (em (z ∈ K)).imp (fun hz ↦ hKV hz) id) hV
+      hK.isClosed.isOpen_compl
   have hF0 : ∀ z, F z = 0 := fun z ↦ hF.apply_eq_of_tendsto_cocompact z
     (hlim.congr' (eventuallyEq_of_mem hK.compl_mem_cocompact hFh).symm)
   exact ⟨fun z hz ↦ (hFg hz).symm.trans (hF0 z), fun z hz ↦ (hFh hz).symm.trans (hF0 z)⟩
@@ -278,8 +281,7 @@ theorem _root_.IsCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact (hK : IsCompact 
 set `V ⊆ ℂ` and let `f` be holomorphic on `V ∖ K`. Then `f = g + h` on `V ∖ K` for a function `g`
 holomorphic on `V` and a function `h` holomorphic on `ℂ ∖ K` that tends to `0` at infinity. The
 two parts are unique by `IsCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact`, and are given by
-Cauchy integrals (`IsCompact.integral_div_sub_eq_of_windingNumber_eq_one`,
-`IsCompact.integral_div_sub_eq_of_windingNumber_eq_zero`). -/
+Cauchy integrals (`IsClosed.integral_div_sub_eq`). -/
 theorem _root_.IsCompact.exists_eqOn_add_tendsto_cocompact (hK : IsCompact K) (hV : IsOpen V)
     (hKV : K ⊆ V) (hf : DifferentiableOn ℂ f (V \ K)) :
     ∃ g h : ℂ → ℂ, DifferentiableOn ℂ g V ∧ DifferentiableOn ℂ h Kᶜ ∧
@@ -291,71 +293,92 @@ theorem _root_.IsCompact.exists_eqOn_add_tendsto_cocompact (hK : IsCompact K) (h
     fun w hw ↦ by
       simpa [sub_eq_add_neg] using eqOn_cauchyPart_one_sub_cauchyPart_zero hK hV hKV hf hw⟩
 
-/-- A function that is the sum on `V ∖ K` of a function holomorphic on `V` and a function
-holomorphic off `K` is holomorphic on `V ∖ K`. -/
-private theorem differentiableOn_of_eqOn_add {g h : ℂ → ℂ} (hg : DifferentiableOn ℂ g V)
-    (hh : DifferentiableOn ℂ h Kᶜ) (hfgh : EqOn f (g + h) (V \ K)) :
-    DifferentiableOn ℂ f (V \ K) :=
-  ((hg.mono sdiff_subset).add (hh.mono fun _ hz ↦ hz.2)).congr hfgh
-
 /-- In a decomposition `f = g + h` of a function holomorphic on `V ∖ K` as in
 `IsCompact.exists_eqOn_add_tendsto_cocompact`, the parts agree with the Cauchy parts. -/
 private theorem eqOn_cauchyPart (hK : IsCompact K) (hV : IsOpen V) (hKV : K ⊆ V)
     {g h : ℂ → ℂ} (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
     (hlim : Tendsto h (cocompact ℂ) (𝓝 0)) (hfgh : EqOn f (g + h) (V \ K)) :
     EqOn g (cauchyPart V K f 1) V ∧ EqOn h (fun w ↦ -cauchyPart V K f 0 w) Kᶜ := by
-  have hf := differentiableOn_of_eqOn_add hg hh hfgh
+  have hf : DifferentiableOn ℂ f (V \ K) :=
+    ((hg.mono sdiff_subset).add (hh.mono fun _ hz ↦ hz.2)).congr hfgh
   have key := hK.eqOn_zero_of_eqOn_of_tendsto_cocompact hV hKV
     (g := fun w ↦ g w - cauchyPart V K f 1 w) (h := fun w ↦ -cauchyPart V K f 0 w - h w)
     (hg.sub (differentiableOn_cauchyPart_one hK hV hKV hf))
-    ((differentiableOn_cauchyPart_zero hK hV hKV hf).neg.sub hh)
-    (by simpa using (tendsto_cauchyPart_zero hK hV hKV hf).neg.sub hlim) fun w hw ↦ by
+    ((differentiableOn_cauchyPart_zero hK hV hKV hf).neg.sub hh) (fun w hw ↦ by
       have h₁ := hfgh hw
       have h₂ := eqOn_cauchyPart_one_sub_cauchyPart_zero hK hV hKV hf hw
       simp only [Pi.add_apply] at h₁ h₂ ⊢
-      linear_combination h₂ - h₁
+      linear_combination h₂ - h₁)
+    (by simpa using (tendsto_cauchyPart_zero hK hV hKV hf).neg.sub hlim)
   exact ⟨fun w hw ↦ sub_eq_zero.mp (key.1 hw), fun w hw ↦ (sub_eq_zero.mp (key.2 hw)).symm⟩
 
+/-- **The Cauchy integral formula for a separation of singularities.** Let `f = g + h` on `V ∖ K`,
+for a closed set `K`, a function `g` holomorphic on the open set `V` and a function `h`
+holomorphic on `ℂ ∖ K` and vanishing at infinity. For a cycle `Γ` in `V ∖ K`, null-homologous in
+`V` and winding once around every point of `K`, and a point `w` off `Γ` around which `Γ` winds
+`n` times, `∮_Γ f(z)/(z - w) dz = 2πi (n g(w) + (n - 1) h(w))`. Such a cycle forces `K ⊆ V` and
+`K` compact. -/
+theorem _root_.IsClosed.integral_div_sub_eq (hK : IsClosed K) (hV : IsOpen V) {g h : ℂ → ℂ}
+    (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
+    (hlim : Tendsto h (cocompact ℂ) (𝓝 0)) (hfgh : EqOn f (g + h) (V \ K)) {Γ : Cycle}
+    (hΓ : Γ.IsIn (V \ K)) (hΓV : Γ.IsNullHomologous V)
+    (hΓK : ∀ z ∈ K, Cycle.windingNumber z Γ = 1) {w : ℂ} (hw : w ∉ Cycle.trace Γ) :
+    Cycle.integral (fun z ↦ f z / (z - w)) Γ =
+      2 * π * I * (Cycle.windingNumber w Γ * g w + (Cycle.windingNumber w Γ - 1) * h w) := by
+  -- `Γ` winds once around `K` and zero times outside `V` and far away, so `K` is a compact
+  -- subset of `V`.
+  have hKV : K ⊆ V := fun z hz ↦ not_not.mp fun hzV ↦ by
+    simpa [Cycle.isNullHomologous_iff.mp hΓV z hzV] using hΓK z hz
+  have hKc : IsCompact K := by
+    obtain ⟨L, hL, hLK⟩ := mem_cocompact.mp (Cycle.windingNumber_eventually_zero_cocompact Γ)
+    exact hL.of_isClosed_subset hK fun z hz ↦ not_not.mp fun hzL ↦ by
+      simpa [(hLK hzL).2] using hΓK z hz
+  have hf : DifferentiableOn ℂ f (V \ K) :=
+    ((hg.mono sdiff_subset).add (hh.mono fun _ hz ↦ hz.2)).congr hfgh
+  obtain ⟨hgc, hhc⟩ := eqOn_cauchyPart hKc hV hKV hg hh hlim hfgh
+  suffices H : (2 * π * I)⁻¹ * Cycle.integral (fun z ↦ f z / (z - w)) Γ =
+      Cycle.windingNumber w Γ * g w + (Cycle.windingNumber w Γ - 1) * h w by
+    rw [← H]
+    field_simp [Real.pi_ne_zero, I_ne_zero]
+  by_cases hwK : w ∈ K
+  · rw [← cauchyPart_eq hV hK hf hΓ hΓV hΓK hw, hΓK w hwK, ← hgc (hKV hwK)]
+    ring
+  have h₀ : cauchyPart V K f 0 w = -h w := by rw [hhc hwK, neg_neg]
+  by_cases hwV : w ∈ V
+  · rw [integral_div_sub_eq_mul_add_cauchyPart_zero hKc hV hKV hf hΓ hΓV hΓK ⟨hwV, hwK⟩ hw,
+      hfgh ⟨hwV, hwK⟩, Pi.add_apply, h₀]
+    ring
+  · rw [← cauchyPart_eq hV hK hf hΓ hΓV hΓK hw, Cycle.isNullHomologous_iff.mp hΓV w hwV, h₀]
+    ring
+
 /-- **The Cauchy integral formula for the regular part.** Let `f = g + h` on `V ∖ K` be the
-separation of singularities of `f` along the compact set `K ⊆ V`, with `g` holomorphic on `V` and
-`h` holomorphic on `ℂ ∖ K` and vanishing at infinity. For a cycle `Γ` in `V ∖ K`, null-homologous
+separation of singularities of `f` along the closed set `K`, with `g` holomorphic on `V` and `h`
+holomorphic on `ℂ ∖ K` and vanishing at infinity. For a cycle `Γ` in `V ∖ K`, null-homologous
 in `V` and winding once around every point of `K`, and a point `w` off `Γ` around which `Γ` winds
 once, `∮_Γ f(z)/(z - w) dz = 2πi g(w)`. -/
-theorem _root_.IsCompact.integral_div_sub_eq_of_windingNumber_eq_one (hK : IsCompact K)
-    (hV : IsOpen V) (hKV : K ⊆ V) {g h : ℂ → ℂ}
-    (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
+theorem _root_.IsClosed.integral_div_sub_eq_of_windingNumber_eq_one (hK : IsClosed K)
+    (hV : IsOpen V) {g h : ℂ → ℂ} (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
     (hlim : Tendsto h (cocompact ℂ) (𝓝 0)) (hfgh : EqOn f (g + h) (V \ K)) {Γ : Cycle}
     (hΓ : Γ.IsIn (V \ K)) (hΓV : Γ.IsNullHomologous V)
     (hΓK : ∀ z ∈ K, Cycle.windingNumber z Γ = 1) {w : ℂ} (hw : w ∉ Cycle.trace Γ)
     (hw₁ : Cycle.windingNumber w Γ = 1) :
     Cycle.integral (fun z ↦ f z / (z - w)) Γ = 2 * π * I * g w := by
-  have hf := differentiableOn_of_eqOn_add hg hh hfgh
-  have hwV : w ∈ V := not_not.mp fun h ↦ by
-    simp [Cycle.isNullHomologous_iff.mp hΓV w h] at hw₁
-  have := cauchyPart_eq hV hK.isClosed hf hΓ hΓV hΓK hw
-  rw [hw₁, ← (eqOn_cauchyPart hK hV hKV hg hh hlim hfgh).1 hwV] at this
-  rw [this]
-  field_simp [Real.pi_ne_zero, I_ne_zero]
+  rw [hK.integral_div_sub_eq hV hg hh hlim hfgh hΓ hΓV hΓK hw, hw₁]
+  ring
 
 /-- **The Cauchy integral formula for the singular part.** Let `f = g + h` on `V ∖ K` be the
-separation of singularities of `f` along the compact set `K ⊆ V`, with `g` holomorphic on `V` and
-`h` holomorphic on `ℂ ∖ K` and vanishing at infinity. For a cycle `Γ` in `V ∖ K`, null-homologous
+separation of singularities of `f` along the closed set `K`, with `g` holomorphic on `V` and `h`
+holomorphic on `ℂ ∖ K` and vanishing at infinity. For a cycle `Γ` in `V ∖ K`, null-homologous
 in `V` and winding once around every point of `K`, and a point `w` off `Γ` around which `Γ` winds
 zero times, `∮_Γ f(z)/(z - w) dz = -2πi h(w)`. -/
-theorem _root_.IsCompact.integral_div_sub_eq_of_windingNumber_eq_zero (hK : IsCompact K)
-    (hV : IsOpen V) (hKV : K ⊆ V) {g h : ℂ → ℂ}
-    (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
+theorem _root_.IsClosed.integral_div_sub_eq_of_windingNumber_eq_zero (hK : IsClosed K)
+    (hV : IsOpen V) {g h : ℂ → ℂ} (hg : DifferentiableOn ℂ g V) (hh : DifferentiableOn ℂ h Kᶜ)
     (hlim : Tendsto h (cocompact ℂ) (𝓝 0)) (hfgh : EqOn f (g + h) (V \ K)) {Γ : Cycle}
     (hΓ : Γ.IsIn (V \ K)) (hΓV : Γ.IsNullHomologous V)
     (hΓK : ∀ z ∈ K, Cycle.windingNumber z Γ = 1) {w : ℂ} (hw : w ∉ Cycle.trace Γ)
     (hw₀ : Cycle.windingNumber w Γ = 0) :
     Cycle.integral (fun z ↦ f z / (z - w)) Γ = -(2 * π * I * h w) := by
-  have hf := differentiableOn_of_eqOn_add hg hh hfgh
-  have hwK : w ∉ K := fun h ↦ by simp [hΓK w h] at hw₀
-  have := cauchyPart_eq hV hK.isClosed hf hΓ hΓV hΓK hw
-  rw [hw₀, show cauchyPart V K f 0 w = -h w from
-    neg_eq_iff_eq_neg.mp ((eqOn_cauchyPart hK hV hKV hg hh hlim hfgh).2 hwK).symm] at this
-  rw [← neg_eq_iff_eq_neg.mpr this.symm]
-  field_simp [Real.pi_ne_zero, I_ne_zero]
+  rw [hK.integral_div_sub_eq hV hg hh hlim hfgh hΓ hΓV hΓK hw, hw₀]
+  ring
 
 end TauCeti

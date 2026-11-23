@@ -146,10 +146,8 @@ theorem dixonH2_tendsto_zero_of_continuousOn (hγ : ContinuousOn γ (uIcc a b)) 
   have hoff : ∀ t ∈ uIcc a b, γ t - w ≠ 0 := fun t ht h ↦
     hw (mem_closedBall_zero_iff.mpr (sub_eq_zero.mp h ▸ hR t ht))
   -- Multiplying the Cauchy integrand by the continuous factor `γ t - w` recovers the weight.
-  refine ((dixonH2_def f γ a b w).trans (intervalIntegral.integral_undef fun hint ↦ hg ?_)).symm
-  refine (intervalIntegrable_congr fun t ht ↦ ?_).mp
-    (hint.continuousOn_mul (hγ.sub (continuousOn_const (c := w))))
-  simp only [Pi.sub_apply]
+  refine ((dixonH2_def f γ a b w).trans (intervalIntegral.integral_undef fun hint ↦ hg
+    (intervalIntegrable_mul_deriv_of_pow_sub_mul_eq (n := 1) (w := w) hγ hint fun t ht ↦ ?_))).symm
   field_simp [hoff t (uIoc_subset_uIcc ht)]
 
 end TauCeti.Contour
