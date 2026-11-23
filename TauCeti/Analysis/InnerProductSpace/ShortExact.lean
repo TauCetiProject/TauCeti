@@ -320,7 +320,9 @@ An algebraically short exact sequence `0 → E --f--> H --g--> F → 0` of bound
 `E × F ≃L[𝕜] H` sending `(x, z)` to `f x + g.orthogonalRightInverse hg z`, with inverse
 `(f.orthogonalLeftInverse _ _).prod g`. -/
 noncomputable def orthogonalShortExactEquiv : (E × F) ≃L[𝕜] H :=
-  let ρ := f.orthogonalLeftInverse hf hfg.isClosed_range
+  let hclo : IsClosed (f.range : Set H) := by
+    simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using hfg.isClosed_range
+  let ρ := f.orthogonalLeftInverse hf hclo
   let σ := g.orthogonalRightInverse hg
   ContinuousLinearEquiv.ofContinuousLinearMap (f.coprod σ) (ρ.prod g)
     (ContinuousLinearMap.ext fun y ↦ by

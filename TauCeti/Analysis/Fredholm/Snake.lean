@@ -309,12 +309,13 @@ with `index_compSnakeMiddle` and `index_upperTriangularBlock`, applying the snak
 `(S ∘L T).index = (compSnakeMiddle T S).index = T.index + S.index = S.index + T.index`. -/
 @[simp] theorem isFredholm_compSnakeMiddle_iff (T : E →L[𝕜] F) (S : F →L[𝕜] G) :
     (compSnakeMiddle T S).IsFredholm ↔ (S ∘L T).IsFredholm := by
-  obtain ⟨eCod, eDom, h⟩ := T.exists_compSnakeMiddle_eq_comp_prodMap_comp S
-  have hconj : (eCod.symm : F × G →L[𝕜] F × G) ∘L compSnakeMiddle T S =
-      ((ContinuousLinearMap.id 𝕜 F).prodMap (S ∘L T)) ∘L (eDom : E × F →L[𝕜] F × E) := by
-    rw [h]
+  have hconj : (S.compSnakeMiddleCodEquiv.symm : F × G →L[𝕜] F × G) ∘L compSnakeMiddle T S =
+      ((ContinuousLinearMap.id 𝕜 F).prodMap (S ∘L T)) ∘L
+        (T.compSnakeMiddleDomEquiv : E × F →L[𝕜] F × E) := by
+    rw [T.compSnakeMiddle_eq_comp_prodMap_comp S]
     ext x <;> simp
-  rw [isFredholm_iff_of_comp_eq eDom eCod.symm hconj, isFredholm_prodMap_iff]
+  rw [isFredholm_iff_of_comp_eq T.compSnakeMiddleDomEquiv S.compSnakeMiddleCodEquiv.symm hconj,
+    isFredholm_prodMap_iff]
   exact ⟨And.right, fun hST ↦ ⟨.id, hST⟩⟩
 
 end FredholmCompSnake

@@ -33,7 +33,9 @@ continuous linear map in two settings:
 Specializing to `ContinuousLinearMap.upperTriangularBlock A B D` yields
 `ContinuousLinearMap.snakeδL_upperTriangularBlock_eq`, and specializing further to
 `ContinuousLinearMap.compSnakeMiddle T S = upperTriangularBlock T (-id) S` gives the coordinate
-factorization `ContinuousLinearMap.exists_compSnakeMiddle_eq_comp_prodMap_comp` and
+factorization `ContinuousLinearMap.compSnakeMiddle_eq_comp_prodMap_comp` via
+`ContinuousLinearMap.compSnakeMiddleDomEquiv` and
+`ContinuousLinearMap.compSnakeMiddleCodEquiv`, along with
 `(compSnakeMiddle T S).index = (S ∘L T).index` (`ContinuousLinearMap.index_compSnakeMiddle`).
 
 ## References
@@ -456,6 +458,46 @@ theorem snakeδL_upperTriangularBlock_eq
 
 end BlockSnake
 
+section CompSnakeEquiv
+
+variable {R E F G : Type*} [Semiring R]
+  [TopologicalSpace E] [AddCommGroup E] [Module R E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F]
+  [TopologicalSpace G] [AddCommGroup G] [Module R G]
+
+/-- Domain shear-and-swap equivalence `(x, y) ↦ (T x - y, x)` used to diagonalize
+`compSnakeMiddle`, with inverse `(v, x) ↦ (x, T x - v)`. -/
+def compSnakeMiddleDomEquiv [IsTopologicalAddGroup F] (T : E →L[R] F) : (E × F) ≃L[R] F × E :=
+  ((ContinuousLinearEquiv.refl R E).skewProd (ContinuousLinearEquiv.neg R) T).trans
+    (ContinuousLinearEquiv.prodComm R E F)
+
+@[simp] theorem compSnakeMiddleDomEquiv_apply [IsTopologicalAddGroup F] (T : E →L[R] F)
+    (xy : E × F) :
+    T.compSnakeMiddleDomEquiv xy = (T xy.1 - xy.2, xy.1) := by
+  simp [compSnakeMiddleDomEquiv, sub_eq_add_neg, add_comm]
+
+@[simp] theorem compSnakeMiddleDomEquiv_symm_apply [IsTopologicalAddGroup F] (T : E →L[R] F)
+    (vx : F × E) :
+    T.compSnakeMiddleDomEquiv.symm vx = (vx.2, T vx.2 - vx.1) := by
+  simp [compSnakeMiddleDomEquiv, sub_eq_add_neg, add_comm]
+
+/-- Codomain shear equivalence `(v, w) ↦ (v, w - S v)` used to diagonalize `compSnakeMiddle`,
+with inverse `(v, w) ↦ (v, w + S v)`. -/
+def compSnakeMiddleCodEquiv [IsTopologicalAddGroup G] (S : F →L[R] G) : (F × G) ≃L[R] F × G :=
+  ((ContinuousLinearEquiv.refl R F).skewProd (ContinuousLinearEquiv.refl R G) S).symm
+
+@[simp] theorem compSnakeMiddleCodEquiv_apply [IsTopologicalAddGroup G] (S : F →L[R] G)
+    (vw : F × G) :
+    S.compSnakeMiddleCodEquiv vw = (vw.1, vw.2 - S vw.1) := by
+  simp [compSnakeMiddleCodEquiv]
+
+@[simp] theorem compSnakeMiddleCodEquiv_symm_apply [IsTopologicalAddGroup G] (S : F →L[R] G)
+    (vw : F × G) :
+    S.compSnakeMiddleCodEquiv.symm vw = (vw.1, vw.2 + S vw.1) := by
+  simp [compSnakeMiddleCodEquiv]
+
+end CompSnakeEquiv
+
 section CompSnake
 
 variable {R E F G : Type*} [Ring R]
@@ -503,23 +545,17 @@ theorem snakeδL_compSnakeMiddle_eq
         -(T.range.mkQL ∘L S.ker.subtypeL) :=
   (snakeδL_upperTriangularBlock_eq T (-ContinuousLinearMap.id R F) S hσ hρ).trans (by ext; simp)
 
-/-- Up to continuous linear equivalences of its domain and codomain, `compSnakeMiddle T S` is
-`(ContinuousLinearMap.id R F).prodMap (S ∘L T)`, allowing consumers to transport kernels,
-cokernels, invertibility, and Fredholmness. -/
-theorem exists_compSnakeMiddle_eq_comp_prodMap_comp [IsTopologicalAddGroup G] :
-    ∃ (eCod : (F × G) ≃L[R] F × G) (eDom : (E × F) ≃L[R] F × E),
-      compSnakeMiddle T S =
-        (eCod : F × G →L[R] F × G) ∘L
-          ((ContinuousLinearMap.id R F).prodMap (S ∘L T)) ∘L
-            (eDom : E × F →L[R] F × E) := by
-  let eCod : (F × G) ≃L[R] F × G :=
-    (ContinuousLinearEquiv.refl R F).skewProd (ContinuousLinearEquiv.refl R G) (-S)
-  let eDom : (E × F) ≃L[R] F × E :=
-    ((ContinuousLinearEquiv.refl R E).skewProd (ContinuousLinearEquiv.neg R) T).trans
-      (ContinuousLinearEquiv.prodComm R E F)
-  refine ⟨eCod, eDom, ?_⟩
+/-- Explicit domain and codomain equivalence factorization of `compSnakeMiddle T S`:
+`compSnakeMiddle T S = S.compSnakeMiddleCodEquiv ∘L ((id R F).prodMap (S ∘L T)) ∘L`
+`T.compSnakeMiddleDomEquiv`, allowing consumers to transport kernels, cokernels, invertibility,
+and Fredholmness while tracking exact representatives. -/
+theorem compSnakeMiddle_eq_comp_prodMap_comp [IsTopologicalAddGroup G] :
+    compSnakeMiddle T S =
+      (S.compSnakeMiddleCodEquiv : F × G →L[R] F × G) ∘L
+        ((ContinuousLinearMap.id R F).prodMap (S ∘L T)) ∘L
+          (T.compSnakeMiddleDomEquiv : E × F →L[R] F × E) := by
   apply ContinuousLinearMap.ext; rintro ⟨x, y⟩
-  ext <;> simp [eCod, eDom, sub_eq_add_neg, add_comm]
+  ext <;> simp [sub_eq_add_neg]
 
 /-- `compSnakeMiddle T S` has the same index as the composite `S ∘L T`, with no finiteness or
 topological-group assumptions on `E` or `G`. -/

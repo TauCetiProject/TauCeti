@@ -62,8 +62,7 @@ theorem continuous_snakeδ :
     Continuous (hf.snakeδ hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)) :=
   continuous_snakeδ_of_isOpenQuotientMap_of_isEmbedding hf
     (f₂.isOpenQuotientMap_iff_surjective.2 hf₂) hg
-    (g₁.isEmbedding_iff_injective_and_isClosed_range.2 ⟨hg₁,
-      by simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using hg.isClosed_range⟩)
+    (g₁.isEmbedding_iff_injective_and_isClosed_range.2 ⟨hg₁, hg.isClosed_range⟩)
     h₁₂ h₂₃
 
 end TauCeti
