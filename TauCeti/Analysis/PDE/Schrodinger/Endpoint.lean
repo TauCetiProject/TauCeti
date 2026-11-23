@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The endpoint Strichartz estimate for the Schrödinger equation
@@ -24,12 +26,25 @@ proves the **endpoint Strichartz estimate** of Keel and Tao,
 `‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L²_t L^{r'}_x}`
 (`TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint`) and its weak form
 tested against `L²`-valued functions
-(`TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le_of_endpoint`).
+(`TauCeti.exists_enorm_integral_inner_schrodingerPropagator_le_of_endpoint`), and the **retarded
+endpoint estimate** for the Duhamel integral, with the endpoint pair on both sides,
 
-The abstract endpoint theorem `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint` applies with
-the decay rate `σ = n / 2 > 1`: the propagator is unitary, it satisfies the dispersive estimate
-`‖S(s) S(t)* g‖_∞ ≤ (4π|s - t|)^{-n/2} ‖g‖₁` (`TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`),
-and it satisfies the non-endpoint dual estimate at the admissible pair `(4, 2n / (n - 1))`
+`‖∫_{s < t} S(t - s) F(s) ds‖_{L²_t L^r_x} ≤ C ‖F‖_{L²_t L^{r'}_x}`
+
+(`TauCeti.exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le_of_endpoint`), with
+its weak form
+(`TauCeti.exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_endpoint`).
+Both come from the bound
+`|∫∫_R ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}` on every
+measurable region `R` of pairs of times
+(`TauCeti.exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint`) for the half
+plane `R = {s < t}`; the dual estimate comes from the same bound for `R = Set.univ` and `G = F`.
+
+The abstract endpoint theorem `TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint`
+applies with the decay rate `σ = n / 2 > 1`: the propagator is unitary, it satisfies the
+dispersive estimate `‖S(s) S(t)* g‖_∞ ≤ (4π|s - t|)^{-n/2} ‖g‖₁`
+(`TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`), and it satisfies the non-endpoint dual
+estimate at the admissible pair `(4, 2n / (n - 1))`
 (`TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`). In dimension `n = 2` the endpoint
 `(2, ∞)` is excluded, and in dimension `1` the admissible pair with `q = 2` does not exist.
 
@@ -75,17 +90,35 @@ private theorem eLpNorm_schrodingerPropagator_adjoint_le_top {s t : ℝ} (hst : 
   · rw [top_unique (not_lt.1 (memLp_iff.not.1 hg)), ENNReal.mul_top (by positivity)]
     exact le_top
 
-/-- **The endpoint dual Strichartz estimate for the Schrödinger equation.** In dimension
-`n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate `r'`. There is
-`C` such that for every integrable `F : ℝ → L²(E)`,
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The endpoint exponent `r`, `1 + n / r = n / 2`, of dimension `n ≥ 3` is at least `2`. -/
+private theorem two_le_of_endpoint (hn : 2 < Module.finrank ℝ E)
+    (hr : 1 + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) : 2 ≤ r := by
+  have hn' : (2 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hn
+  have hrinv : (r⁻¹).toReal = 2⁻¹ - (Module.finrank ℝ E : ℝ)⁻¹ := by
+    field_simp
+    linarith
+  have hr0 : r ≠ 0 := by
+    intro h
+    rw [h, ENNReal.inv_zero, ENNReal.toReal_top, mul_zero, add_zero] at hr
+    linarith
+  exact ENNReal.two_le_of_toReal_inv_le hr0 (by
+    rw [hrinv]; linarith [inv_pos.2 (two_pos.trans hn')])
 
-`‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L²_t L^{r'}_x}`. -/
-theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ≥0∞}
+/-- **The endpoint Strichartz estimate for the Schrödinger equation on a region of times.** In
+dimension `n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate
+`r'`. There is `C` such that for every measurable set `R` of pairs of times and all integrable
+`F, G : ℝ → L²(E)`,
+
+`|∫∫_R ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}`. -/
+theorem exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint {r' : ℝ≥0∞}
     [r'.HolderConjugate r] (hn : 2 < Module.finrank ℝ E)
     (hr : 1 + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
-    ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
-      ‖∫ s, schrodingerPropagator ℂ (-s) (F s)‖ₑ ≤
-        C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 := by
+    ∃ C : ℝ≥0, ∀ R : Set (ℝ × ℝ), MeasurableSet R →
+      ∀ F G : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F → Integrable G →
+        ‖∫ z in R, ⟪schrodingerPropagator ℂ (z.2 - z.1) (F z.1), G z.2⟫_ℂ ∂(volume.prod volume)‖ₑ ≤
+          C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 *
+            eLpNorm (fun t ↦ eLpNorm (G t) r' volume) 2 := by
   set n : ℝ := (Module.finrank ℝ E : ℝ)
   have hn' : 2 < n := by simp only [n]; exact_mod_cast hn
   have hxp : 0 ≤ 2⁻¹ + (2 * n)⁻¹ := by positivity
@@ -113,12 +146,13 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
     have hn0 : n ≠ 0 := by positivity
     field_simp
     nlinarith
-  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint (𝕜 := ℂ) (σ := n / 2)
-    (p := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (b := b) (r' := r') (by linarith)
-    (by rw [hbinv]; linarith [inv_pos.2 (by positivity : (0 : ℝ) < 2 * n)])
-    (by rw [hbinv]; field_simp; linarith) (by rw [hbinv]; norm_num; field_simp; ring) hr'inv
-    (U := schrodingerPropagator ℂ)
-    (A := ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal) (M := 1) (K := K)
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds
+    (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E)) (μ := (volume : Measure E)) (E := ℂ)
+    (σ := n / 2) (b := b) (r' := r') (by linarith) (by rw [hbinv]; ring) hr'inv
+    ((4 * Real.pi) ^ (-((Module.finrank ℝ E : ℝ) / 2))).toNNReal 1 K
+  refine ⟨C, fun R hR F G hF hG ↦ ?_⟩
+  simp_rw [inner_schrodingerPropagator_sub_apply, ← adjoint_schrodingerPropagator]
+  refine hC (schrodingerPropagator ℂ)
     (fun t ↦ by
       rw [ENNReal.coe_one, ← ofReal_norm]
       exact ENNReal.ofReal_le_one.2 (norm_phasePropagator_le _ _))
@@ -129,9 +163,27 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ
     (fun G hG ↦ by
       simp_rw [adjoint_schrodingerPropagator]
       exact aestronglyMeasurable_phasePropagator_apply laplacianSymbol
-        continuous_neg.aestronglyMeasurable hG)
-  refine ⟨C, fun F hF ↦ ?_⟩
-  simpa only [adjoint_schrodingerPropagator] using hC F hF
+        continuous_neg.aestronglyMeasurable hG) R hR F G hF hG
+
+/-- **The endpoint dual Strichartz estimate for the Schrödinger equation.** In dimension
+`n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate `r'`. There is
+`C` such that for every integrable `F : ℝ → L²(E)`,
+
+`‖∫ S(-s) F(s) ds‖₂ ≤ C ‖F‖_{L²_t L^{r'}_x}`. -/
+theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_endpoint {r' : ℝ≥0∞}
+    [r'.HolderConjugate r] (hn : 2 < Module.finrank ℝ E)
+    (hr : 1 + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+      ‖∫ s, schrodingerPropagator ℂ (-s) (F s)‖ₑ ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 := by
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint
+    (r' := r') hn hr
+  refine ⟨NNReal.sqrt C, fun F hF ↦ enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := ℂ)
+    (u := fun s ↦ schrodingerPropagator ℂ (-s) (F s))
+    (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hF) ?_⟩
+  have h := hC Set.univ MeasurableSet.univ F F hF hF
+  simp_rw [inner_schrodingerPropagator_sub_apply, Measure.restrict_univ] at h
+  exact h
 
 /-- **The endpoint Strichartz estimate for the Schrödinger equation, in weak form.** In dimension
 `n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate `r'`. There is
@@ -164,16 +216,7 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_endpoint
     (hr : 1 + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ f : Lp ℂ 2 (volume : Measure E),
       eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ t f) r volume) 2 volume ≤ C * ‖f‖ₑ := by
-  have hn' : (2 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hn
-  have hrinv : (r⁻¹).toReal = 2⁻¹ - (Module.finrank ℝ E : ℝ)⁻¹ := by
-    field_simp
-    linarith
-  have hr0 : r ≠ 0 := by
-    intro h
-    rw [h, ENNReal.inv_zero, ENNReal.toReal_top, mul_zero, add_zero] at hr
-    linarith
-  have hr2 : 2 ≤ r := ENNReal.two_le_of_toReal_inv_le hr0 (by
-    rw [hrinv]; linarith [inv_pos.2 (two_pos.trans hn')])
+  have hr2 : 2 ≤ r := two_le_of_endpoint hn hr
   -- Test against `L^{r'}` with `r'` the Hölder conjugate of `r`.
   have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
   obtain ⟨C, hC⟩ := exists_enorm_integral_inner_schrodingerPropagator_le_of_endpoint
@@ -181,5 +224,60 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_endpoint
   exact ⟨C, fun f ↦ (continuous_phasePropagator_apply laplacianSymbol f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := 2) (r' := (1 - r⁻¹)⁻¹)
       ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ hC f G hG⟩
+
+/-- **The retarded endpoint Strichartz estimate for the Schrödinger equation, in weak form.** In
+dimension `n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate
+`r'`. There is `C` such that for all integrable `F, G : ℝ → L²(E)`,
+
+`|∫ ∫_{s < t} ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}`.
+
+This is the Duhamel estimate `‖∫_{s < t} S(t - s) F(s) ds‖_{L²_t L^r_x} ≤ C ‖F‖_{L²_t L^{r'}_x}`
+tested against `G`. -/
+theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_endpoint
+    {r' : ℝ≥0∞} [r'.HolderConjugate r] (hn : 2 < Module.finrank ℝ E)
+    (hr : 1 + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F G : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F → Integrable G →
+      ‖∫ t, ∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 *
+          eLpNorm (fun t ↦ eLpNorm (G t) r' volume) 2 := by
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint
+    (r' := r') hn hr
+  refine ⟨C, fun F G hF hG ↦ ?_⟩
+  -- The pairing is integrable on the plane, since `S(t - s) F(s)` pairs with `G(t)` as
+  -- `S(-s) F(s)` with `S(-t) G(t)`.
+  have hφ : Integrable (fun z : ℝ × ℝ ↦
+      ⟪schrodingerPropagator ℂ (z.2 - z.1) (F z.1), G z.2⟫_ℂ) (volume.prod volume) := by
+    simp_rw [inner_schrodingerPropagator_sub_apply]
+    exact (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hF).inner_fst_snd
+      (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hG)
+  rw [integral_setIntegral_Iio_eq_setIntegral hφ.integrableOn]
+  exact hC _ (measurableSet_lt measurable_fst measurable_snd) F G hF hG
+
+/-- **The retarded endpoint Strichartz estimate for the Schrödinger equation** of Keel and Tao.
+In dimension `n ≥ 3`, let `r = 2n / (n - 2)` be the endpoint exponent, `1 + n / r = n / 2`, with
+Hölder conjugate `r'`. There is `C` such that for every integrable forcing term
+`F : ℝ → L²(E)`,
+
+`‖∫_{s < t} S(t - s) F(s) ds‖_{L²_t L^r_x} ≤ C ‖F‖_{L²_t L^{r'}_x}`.
+
+Both sides carry the endpoint pair `(2, r)`. -/
+theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le_of_endpoint
+    {r' : ℝ≥0∞} [r'.HolderConjugate r] (hn : 2 < Module.finrank ℝ E)
+    (hr : 1 + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+      eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, schrodingerPropagator ℂ (t - s) (F s) :
+          Lp ℂ 2 (volume : Measure E))) r volume) 2 volume ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 volume := by
+  have hr2 : 2 ≤ r := two_le_of_endpoint hn hr
+  have : r.HolderConjugate r' := (inferInstance : r'.HolderConjugate r).symm
+  obtain ⟨C, hC⟩ :=
+    exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_endpoint
+      (r' := r') hn hr
+  refine ⟨C, fun F hF ↦ (aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub laplacianSymbol
+    hF.aestronglyMeasurable
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := 2) (r' := r')
+      ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ ?_)⟩
+  simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hF]
+  exact hC F G hF hG
 
 end TauCeti

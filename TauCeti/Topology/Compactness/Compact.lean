@@ -10,6 +10,7 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Maps.IsInducing
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -20,12 +21,17 @@ ultrafilters of families eventually in a compact set, families whose values tend
 cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
 valid near each point of a compact set to one constant valid on all of it. Maps converging
 continuously on a compact set eventually map it into any open set containing the image under the
-limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`).
+limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over `w` of a closed set
+`C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
+neighbourhood of the fibre over `w₀` (`IsClosed.eventually_preimage_prodMk_subset`).
 
-A continuous injection on a compact set `K` restricts to a closed embedding of `K`
-(`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
-(`IsCompact.exists_mem_nhds_inter_preimage_subset`) and convergence to a point of `K` of a family
-eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it.
+A continuous injection on a compact set `K` with values in a Hausdorff space restricts to a closed
+embedding of `K` (`IsCompact.isClosedEmbedding_domRestrict`). So neighbourhoods of a point of `K`
+(`IsCompact.exists_mem_nhds_inter_preimage_subset`), convergence to a point of `K` of a family
+eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) and limits of maps whose values
+eventually lie in `K` (`IsCompact.exists_tendsto_of_tendsto_comp`) can be read through it. These
+are the versions, for compact sets, of the results for an inducing restriction in
+`TauCeti.Topology.Maps.IsInducing`.
 -/
 
 public section
@@ -111,18 +117,13 @@ theorem _root_.IsCompact.isClosedEmbedding_domRestrict {Y : Type*} [TopologicalS
 
 /-- **Neighbourhoods in a compact set are read through a continuous injection.** Let `f` be
 continuous and injective on a compact set `K` with values in a Hausdorff space. For `x ∈ K` and a
-neighbourhood `s` of `x`, there is a neighbourhood `t` of `f x` such that every point of `K` that
-`f` maps into `t` lies in `s`. -/
+neighbourhood `s` of `x` within `K`, there is a neighbourhood `t` of `f x` such that every point of
+`K` that `f` maps into `t` lies in `s`. -/
 theorem _root_.IsCompact.exists_mem_nhds_inter_preimage_subset {Y : Type*} [TopologicalSpace Y]
     [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝 x) :
-    ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s := by
-  -- Inside `K`, the neighbourhoods of `x` are read through `f`.
-  have hs' := continuous_subtypeVal.continuousAt (x := (⟨x, hx⟩ : K)).preimage_mem_nhds hs
-  rw [(hK.isClosedEmbedding_domRestrict hf hinj).isInducing.nhds_eq_comap, mem_comap] at hs'
-  obtain ⟨t, ht, hts⟩ := hs'
-  refine ⟨t, ht, fun p ⟨hpK, hpt⟩ ↦ hts (a := ⟨p, hpK⟩) ?_⟩
-  rwa [mem_preimage, domRestrict_apply]
+    (hinj : InjOn f K) {x : X} (hx : x ∈ K) {s : Set X} (hs : s ∈ 𝓝[K] x) :
+    ∃ t ∈ 𝓝 (f x), K ∩ f ⁻¹' t ⊆ s :=
+  (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_mem_nhds_inter_preimage_subset hx hs
 
 /-- **Convergence in a compact set is read through a continuous injection.** Let `f` be continuous
 and injective on a compact set `K` with values in a Hausdorff space, and let `g` eventually take
@@ -130,12 +131,26 @@ values in `K`. If `f ∘ g` tends to `f x` for some `x ∈ K`, then `g` tends to
 theorem _root_.IsCompact.tendsto_nhds_of_tendsto_comp {Y ι : Type*} [TopologicalSpace Y]
     [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
     (hinj : InjOn f K) {l : Filter ι} {g : ι → X} (hg : ∀ᶠ i in l, g i ∈ K) {x : X} (hx : x ∈ K)
-    (h : Tendsto (f ∘ g) l (𝓝 (f x))) : Tendsto g l (𝓝 x) := by
-  intro s hs
-  obtain ⟨t, ht, hts⟩ := hK.exists_mem_nhds_inter_preimage_subset hf hinj hx hs
-  have hgt : ∀ᶠ i in l, f (g i) ∈ t := by
-    simpa only [Function.comp_apply] using h.eventually_mem ht
-  exact (hg.and hgt).mono fun i hi ↦ hts ⟨hi.1, hi.2⟩
+    (h : Tendsto (f ∘ g) l (𝓝 (f x))) : Tendsto g l (𝓝 x) :=
+  (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.tendsto_nhds_of_tendsto_comp hg hx h
+
+/-- **Limits read back through a continuous injection.** Let `f` be continuous and injective on a
+compact set `K`, with values in a Hausdorff space, and let `x i` be maps from a space `T` whose
+values at each point of a set `Ω ⊆ T` eventually lie in `K` along a nontrivial filter `l`. If the
+maps `f ∘ x i` converge along `l` pointwise on `Ω` to a map `g` continuous on `Ω`, then `g = f ∘ y`
+on `Ω` for a map `y` that is continuous on `Ω` and maps `Ω` into `K`, and the `x i` converge along
+`l` pointwise on `Ω` to `y`. -/
+theorem _root_.IsCompact.exists_tendsto_of_tendsto_comp {Y : Type*} [TopologicalSpace Y]
+    [T2Space Y] {K : Set X} (hK : IsCompact K) {f : X → Y} (hf : ContinuousOn f K)
+    (hinj : InjOn f K) {T : Type*} [TopologicalSpace T] {Ω : Set T} {ι : Type*} {l : Filter ι}
+    [l.NeBot] {x : ι → T → X} (hxK : ∀ t ∈ Ω, ∀ᶠ i in l, x i t ∈ K) {g : T → Y}
+    (hg : ContinuousOn g Ω) (hlim : ∀ t ∈ Ω, Tendsto (fun i ↦ f (x i t)) l (𝓝 (g t))) :
+    ∃ y : T → X, ContinuousOn y Ω ∧ MapsTo y Ω K ∧ EqOn (f ∘ y) g Ω ∧
+      ∀ t ∈ Ω, Tendsto (fun i ↦ x i t) l (𝓝 (y t)) :=
+  -- The limit takes values in the closed set `f(K)`.
+  (hK.isClosedEmbedding_domRestrict hf hinj).isInducing.exists_tendsto_of_tendsto_comp hxK hg
+    (fun t ht ↦ (hK.image_of_continuousOn hf).isClosed.mem_of_tendsto (hlim t ht)
+      ((hxK t ht).mono fun _ ↦ mem_image_of_mem f)) hlim
 
 /-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
 a point of `s`. -/
@@ -301,6 +316,21 @@ theorem _root_.IsCompact.eventually_forall_mem_of_tendsto_prod_nhds {Y ι : Type
   have h := hA.mem_prod_nhdsSet_of_forall (s := {p : ι × X | f p.1 p.2 ∈ t})
     fun a ha ↦ (hconv a ha).eventually (ht.mem_nhds (hmem a ha))
   exact (Filter.Eventually.curry h).mono fun _ hi ↦ hi.self_of_nhdsSet
+
+/-- **Fibres of a closed set vary upper semicontinuously.** Let `C ⊆ P × X` be closed, and suppose
+that for `w` near `w₀` the fibre `{x | (w, x) ∈ C}` lies in a fixed compact set `K`. Then every
+open set `U` containing the fibre over `w₀` contains the fibres over all `w` near `w₀`. -/
+theorem _root_.IsClosed.eventually_preimage_prodMk_subset {P : Type*} [TopologicalSpace P]
+    {C : Set (P × X)} (hC : IsClosed C) {K : Set X} (hK : IsCompact K) {w₀ : P}
+    (hKC : ∀ᶠ w in 𝓝 w₀, Prod.mk w ⁻¹' C ⊆ K) {U : Set X} (hU : IsOpen U)
+    (hCU : Prod.mk w₀ ⁻¹' C ⊆ U) : ∀ᶠ w in 𝓝 w₀, Prod.mk w ⁻¹' C ⊆ U := by
+  -- On the compact set `K \ U` the fibre over `w₀` is empty, hence so are nearby fibres.
+  have hev : ∀ᶠ w in 𝓝 w₀, ∀ x ∈ K \ U, (w, x) ∉ C :=
+    (hK.diff hU).eventually_forall_of_forall_eventually fun x hx ↦
+      hC.isOpen_compl.mem_nhds fun h ↦ hx.2 (hCU h)
+  filter_upwards [hKC, hev] with w hwK hwU x hx
+  by_contra hxU
+  exact hwU x ⟨hwK hx, hxU⟩ hx
 
 section TubeLemma
 
