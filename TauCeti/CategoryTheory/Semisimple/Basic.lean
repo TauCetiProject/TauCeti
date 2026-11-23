@@ -234,7 +234,7 @@ instance (Y : C) : Fintype (chosenSimpleIndex Y) :=
   (exists_biproduct_simples Y).choose_spec.choose
 
 /-- Family of simple objects in the chosen biproduct decomposition of `Y`. -/
-@[expose] def chosenSimpleFamily (Y : C) : chosenSimpleIndex Y → C :=
+def chosenSimpleFamily (Y : C) : chosenSimpleIndex Y → C :=
   (exists_biproduct_simples Y).choose_spec.choose_spec.choose
 
 instance (Y : C) (i : chosenSimpleIndex Y) : Simple (chosenSimpleFamily Y i) :=

@@ -146,29 +146,27 @@ section Multiplicity
 left dimensions of the simple representatives weighted by their multiplicities in the object. -/
 theorem leftDim_eq_sum_simpleMultiplicities [PivotalCategory C] [MonoidalPreadditive C] (X : C) :
     leftDim X = (simpleMultiplicities X).sum fun S n ↦ n • leftDim S.repr := by
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  let := hι
-  let := hf
-  let := hbf
-  rw [leftDim_congr e, leftDim_biproduct, simpleMultiplicities_eq_of_iso_biproduct f e,
-    ← Finsupp.sum_finsetSum_index (by simp) (by simp [add_smul])]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Finsupp.sum_single_index (by simp), one_smul,
-    leftDim_congr (SimpleClasses.classOfReprIso (f i))]
+  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
+  let inv : SplitK0.AdditiveInvariant C (𝟙_ C ⟶ 𝟙_ C) :=
+    { obj := leftDim
+      map_iso := fun _ _ e ↦ leftDim_congr e
+      map_biprod := fun A B ↦ leftDim_biprod }
+  have h := congrArg (SplitK0.lift inv) (SplitK0.of_eq_sum X)
+  rw [SplitK0.lift_of, map_finsuppSum] at h
+  simpa only [map_nsmul, SplitK0.lift_of] using h
 
 /-- In a finite semisimple pivotal category, the right dimension of an object is the sum of the
 right dimensions of the simple representatives weighted by their multiplicities in the object. -/
 theorem rightDim_eq_sum_simpleMultiplicities [PivotalCategory C] [MonoidalPreadditive C] (X : C) :
     rightDim X = (simpleMultiplicities X).sum fun S n ↦ n • rightDim S.repr := by
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  let := hι
-  let := hf
-  let := hbf
-  rw [rightDim_congr e, rightDim_biproduct, simpleMultiplicities_eq_of_iso_biproduct f e,
-    ← Finsupp.sum_finsetSum_index (by simp) (by simp [add_smul])]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Finsupp.sum_single_index (by simp), one_smul,
-    rightDim_congr (SimpleClasses.classOfReprIso (f i))]
+  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
+  let inv : SplitK0.AdditiveInvariant C (𝟙_ C ⟶ 𝟙_ C) :=
+    { obj := rightDim
+      map_iso := fun _ _ e ↦ rightDim_congr e
+      map_biprod := fun A B ↦ rightDim_biprod }
+  have h := congrArg (SplitK0.lift inv) (SplitK0.of_eq_sum X)
+  rw [SplitK0.lift_of, map_finsuppSum] at h
+  simpa only [map_nsmul, SplitK0.lift_of] using h
 
 end Multiplicity
 

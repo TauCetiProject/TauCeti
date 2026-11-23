@@ -241,4 +241,28 @@ theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
     have := isIso_of_hom_simple hi
     exact ⟨i, ⟨asIso (f ≫ e.hom ≫ biproduct.π A i)⟩⟩
 
+namespace IsFiniteSemisimpleCategory
+
+/-- For a simple object `S`, the chosen simple decomposition of `S` has a single summand, of the
+same simple class as `S`, whose decomposition projection and inclusion form an isomorphism. -/
+theorem exists_chosenSimple_decompIso (S : C) [Simple S] :
+    ∃ (i : chosenSimpleIndex S) (_ : ∀ j, j = i),
+      SimpleClasses.classOf (chosenSimpleFamily S i) = SimpleClasses.classOf S ∧
+      ∃ u : S ≅ (SimpleClasses.classOf (chosenSimpleFamily S i)).repr,
+        u.hom = SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) i ∧
+        u.inv = SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) i := by
+  obtain ⟨e', he'⟩ := exists_equiv_of_iso_biproduct_simples (chosenSimpleFamily S)
+    (fun _ : Unit ↦ S) ((chosenSimpleIso S).symm ≪≫ (biproductUniqueIso (fun _ : Unit ↦ S)).symm)
+  let : Unique (chosenSimpleIndex S) := e'.unique
+  refine ⟨default, fun j ↦ Subsingleton.elim j default,
+    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 (he' default), ?_⟩
+  refine ⟨⟨SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) default,
+    SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) default, ?_, ?_⟩, rfl, rfl⟩
+  · simpa using SimpleClasses.sum_comp_classOfReprIso_eq_id
+      (chosenSimpleFamily S) (chosenSimpleIso S)
+  · exact SimpleClasses.decompIncl_comp_decompProj_self
+      (chosenSimpleFamily S) (chosenSimpleIso S) default
+
+end IsFiniteSemisimpleCategory
+
 end TauCeti

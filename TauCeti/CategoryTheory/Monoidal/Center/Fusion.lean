@@ -316,8 +316,10 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_f (
     ((forgetInductionAdjunction k C).unit.app Z).f ≫
         ((inductionForgetAdjunction k C).counit.app Z).f =
       endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) • 𝟙 Z.1 := by
-  rw [forgetInductionAdjunction_unit_comp_counit_f_eq_averagingScalar_smul,
-    averagingScalar_eq_endAlgEquivOfSimple_globalDim]
+  have h := congrArg (fun x ↦ x.f)
+    (forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit k C Z)
+  rw [comp_f, smul_f, id_f] at h
+  exact h
 
 private theorem averagingScalar_ne_zero_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
     averagingScalar k C ≠ 0 := by

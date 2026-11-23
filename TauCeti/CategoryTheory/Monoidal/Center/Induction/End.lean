@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic
+import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
 /-!
 # The universal end property of `Center.inductionObj`
@@ -39,9 +40,10 @@ adjunction `Center.forget C ⊣ Center.induction k C`.
   `CategoryTheory.Center.inductionMap_comp_inductionEndπ` in `X`;
 * `CategoryTheory.Center.inductionMapLift`,
   `CategoryTheory.Center.inductionMapLift_comp_map_π`,
-  `CategoryTheory.Center.inductionMapLift_comp_map_endπ`, and
-  `CategoryTheory.Center.inductionObj_map_hom_ext`: the universal end lift and uniqueness principle
-  under an additive functor `F : C ⥤ D`;
+  `CategoryTheory.Center.inductionMapLift_comp_map_endπ`,
+  `CategoryTheory.Center.inductionObj_map_hom_ext`, and
+  `CategoryTheory.Center.inductionObj_map_hom_ext_endπ`: the universal end lift and uniqueness
+  principles under an additive functor `F : C ⥤ D`;
 * `CategoryTheory.Center.inductionLift`, `CategoryTheory.Center.inductionLift_comp_endπ`, and
   `CategoryTheory.Center.inductionObj_hom_ext_endπ`: the universal end lift and uniqueness
   principle in `C`.
@@ -177,24 +179,16 @@ biproduct projection onto the `S`-summand. -/
 @[reassoc] -- Not `@[simp]` because `k` cannot be inferred from the LHS.
 theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
     inductionEndπ X S.repr = biproduct.π (inductionSummand X) S := by
-  let a := IsFiniteSemisimpleCategory.chosenSimpleFamily S.repr
-  let e := IsFiniteSemisimpleCategory.chosenSimpleIso S.repr
-  let p := SimpleClasses.decompProj a e
-  let q := SimpleClasses.decompIncl a e
-  -- Unfold `inductionEndπ X S.repr` to `endπAux` for the chosen decomposition of `S.repr`.
-  change endπAux a e X = biproduct.π (inductionSummand X) S
-  symm
-  calc biproduct.π (inductionSummand X) S
-      = biproduct.π (inductionSummand X) S ≫ (∑ i, p i ≫ q i) ▷ (X ⊗ S.reprᘁ) := by
-          rw [SimpleClasses.sum_comp_classOfReprIso_eq_id a e, id_whiskerRight, Category.comp_id]
-    _ = ∑ i, (biproduct.π (inductionSummand X) S ≫ p i ▷ (X ⊗ S.reprᘁ)) ≫
-          q i ▷ (X ⊗ S.reprᘁ) := by
-          simp only [sum_whiskerRight, Preadditive.comp_sum, Category.assoc, comp_whiskerRight]
-    _ = ∑ i, biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
-          q i ▷ (X ⊗ _) ≫ S.repr ◁ X ◁ (p i)ᘁ := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [repr_dinatural k X (p i), Category.assoc, whisker_exchange]
-    _ = endπAux a e X := rfl
+  obtain ⟨i, hi, _, u, hu_hom, hu_inv⟩ :=
+    IsFiniteSemisimpleCategory.exists_chosenSimple_decompIso S.repr
+  change endπAux (IsFiniteSemisimpleCategory.chosenSimpleFamily S.repr)
+    (IsFiniteSemisimpleCategory.chosenSimpleIso S.repr) X = biproduct.π (inductionSummand X) S
+  dsimp only [endπAux]
+  rw [Finset.sum_eq_single i (fun j _ hj ↦ absurd (hi j) hj)
+      (fun hi' ↦ absurd (Finset.mem_univ i) hi'),
+    ← hu_hom, ← hu_inv, ← Category.assoc, repr_dinatural k X u.inv, Category.assoc,
+    ← whiskerLeft_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate, u.hom_inv_id,
+    rightAdjointMate_id, whiskerLeft_id, whiskerLeft_id, Category.comp_id]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionEndπ` in `X` with respect to `inductionMap f`. -/
@@ -355,14 +349,24 @@ variable (k : Type w) [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C
   [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
 
 include k in
+/-- Morphisms into `F.obj (inductionObj X)` for an additive functor `F : C ⥤ D` agree once they
+agree after every end projection `F.map (inductionEndπ X Y)`. -/
+theorem inductionObj_map_hom_ext_endπ {D : Type*} [Category* D] [Preadditive D]
+    {F : C ⥤ D} [F.Additive] {W : D} {X : C}
+    {f₁ f₂ : W ⟶ F.obj (inductionObj X)}
+    (h : ∀ Y : C, f₁ ≫ F.map (inductionEndπ X Y) = f₂ ≫ F.map (inductionEndπ X Y)) :
+    f₁ = f₂ :=
+  inductionObj_map_hom_ext fun S ↦ by
+    simpa [inductionEndπ_repr k X S] using h S.repr
+
+include k in
 /-- Two morphisms into `inductionObj X` agree once they agree after every end projection
 `inductionEndπ X Y`. -/
 theorem inductionObj_hom_ext_endπ {W X : C}
     {f₁ f₂ : W ⟶ inductionObj X}
     (h : ∀ Y : C, f₁ ≫ inductionEndπ X Y = f₂ ≫ inductionEndπ X Y) :
     f₁ = f₂ :=
-  inductionObj_map_hom_ext (F := 𝟭 C) fun S ↦ by
-    simpa [inductionEndπ_repr k X S] using h S.repr
+  inductionObj_map_hom_ext_endπ k (F := 𝟭 C) h
 
 end UniversalEnd
 
