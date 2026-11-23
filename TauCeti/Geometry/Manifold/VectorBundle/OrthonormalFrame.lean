@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.FiberBundle.Principal.Equivariant
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth orthonormal frame principal bundles and associated-bundle reconstruction
