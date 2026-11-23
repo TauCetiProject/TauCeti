@@ -216,9 +216,8 @@ theorem inner_taperedFourierVec (N L : ℕ) (x y : ℝ) :
             ‖∑ k ∈ Finset.range N, (Real.fourierChar ((k : ℝ) * (x - y)) : ℂ)‖ ^ 2) /
             (L : ℝ) : ℝ) : ℂ) := by
           rw [Finset.sum_sub_distrib, sum_Icc_max_sub_abs_mul_fourierChar le_rfl (x - y),
-            sum_Icc_max_sub_abs_mul_fourierChar (Nat.le_add_right N L) (x - y)]
-          push_cast
-          rfl
+            sum_Icc_max_sub_abs_mul_fourierChar (Nat.le_add_right N L) (x - y),
+            Complex.ofReal_div, Complex.ofReal_sub, Complex.ofReal_natCast]
 
 /-- For positive taper width `0 < L`, `‖taperedFourierVec N L x‖ ^ 2 = 2 * N + L`. -/
 theorem norm_taperedFourierVec_sq {N L : ℕ} (hL : 0 < L) (x : ℝ) :

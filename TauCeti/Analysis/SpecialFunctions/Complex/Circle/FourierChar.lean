@@ -44,7 +44,7 @@ theorem fourierChar_mul_fourierChar (x y : ℝ) :
 theorem norm_fourierChar_sub_one (t : ℝ) :
     ‖(Real.fourierChar t : ℂ) - 1‖ = 2 * |Real.sin (Real.pi * t)| := by
   have ht : (Real.fourierChar t : ℂ) = Complex.exp (Complex.I * ((2 * Real.pi * t : ℝ) : ℂ)) := by
-    simp only [Real.fourierChar_apply, mul_comm]
+    rw [Real.fourierChar_apply, mul_comm]
   rw [ht, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
   congr 3; ring
 

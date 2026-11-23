@@ -142,8 +142,7 @@ theorem norm_sub_sum_smul_sq_le (s : Finset ι) (y : ι → E) (x : E) :
         simp only [c, inner_smul_right, div_mul_eq_mul_div]
       _ = RCLike.re (((‖⟪y i, x⟫_𝕜‖ ^ 2 / r i : ℝ) : 𝕜)) := by
         rw [← inner_conj_symm x (y i), RCLike.mul_conj]
-        push_cast
-        rfl
+        simp only [map_div₀, map_pow]
       _ = ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i := by rw [RCLike.ofReal_re, norm_inner_symm]
   have hquad :
       ∑ i ∈ s, ‖c i‖ ^ 2 * r i = ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i := by
