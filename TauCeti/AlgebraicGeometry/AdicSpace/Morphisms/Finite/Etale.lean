@@ -366,40 +366,37 @@ private theorem IsFiniteEtale.OfPairChart.targetHomeomorph_restrictPreimage
     (x : (Opens.map f.hom.base).obj c.V) :
     c.targetHomeomorph ((c.V : Set Y.obj).restrictPreimage f.hom.base x) =
       c.data.pairHom.spaComap (c.sourceHomeomorph x) := by
-  let x' : X.obj.restrict ((Opens.map f.hom.base).obj c.V).isOpenEmbedding := x
-  have hpt := congrArg (fun m ↦ m.base x') c.fac
-  simp only [PreAdicSpace.comp_base, TopCat.coe_comp] at hpt
-  rw [Function.comp_apply, Function.comp_apply, Function.comp_apply, Function.comp_apply] at hpt
-  have hL :
-      (X.obj.ofRestrict ((Opens.map f.hom.base).obj c.V).isOpenEmbedding).base x' = x.val :=
-    (congrArg (fun g ↦ g x') (PreAdicSpace.ofRestrict_base _ _)).trans
-      (congrFun Opens.coe_inclusion' x')
-  have hR (z : Y.obj.restrict c.V.isOpenEmbedding) :
-      (Y.obj.ofRestrict c.V.isOpenEmbedding).base z = z.val :=
-    (congrArg (fun g ↦ g z) (PreAdicSpace.ofRestrict_base _ _)).trans
-      (congrFun Opens.coe_inclusion' z)
-  rw [hL, hR] at hpt
-  have hs := TopCat.homeoOfIso_apply (forgetToTop.mapIso c.sourceIso) x
-  simp only [Functor.mapIso_hom, PreAdicSpace.forgetToTop_map] at hs
-  have ht := TopCat.homeoOfIso_symm_apply (forgetToTop.mapIso c.targetIso)
-    ((comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom.base
-      (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x))
-  simp only [Functor.mapIso_inv, PreAdicSpace.forgetToTop_map] at ht
-  have hres : (c.V : Set Y.obj).restrictPreimage f.hom.base x =
-      (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).symm
-        ((comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom.base
-          (TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x)) := by
-    apply Subtype.ext
-    refine (Set.restrictPreimage_coe (c.V : Set Y.obj) f.hom.base
-      ⟨x.val, Opens.mem_map.mp x.property⟩).trans (hpt.trans ?_)
-    exact (congrArg (fun z ↦ (c.targetIso.inv.base
-        ((comapOfPair c.data.isSheafyTarget c.data.isSheafySource
-          c.data.pairHom).hom.base z)).val) hs.symm).trans
-      (congrArg Subtype.val ht.symm)
-  have h1 := (congrArg (TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)) hres).trans
-    ((TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)).apply_symm_apply _)
-  dsimp only [targetHomeomorph, sourceHomeomorph, Homeomorph.trans_apply]
-  exact (congrArg (ofPairHomeomorph c.data.targetPair c.data.isSheafyTarget) h1).trans
+  have hres :
+      f.hom.restrictPreimage c.V =
+        c.sourceIso.hom ≫
+          (comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom ≫
+          c.targetIso.inv :=
+    (PreAdicSpace.Hom.restrictPreimage_uniq f.hom c.V _ (by
+      rw [Category.assoc, Category.assoc, ← c.fac])).symm
+  have hres_hom :
+      f.hom.restrictPreimage c.V ≫ c.targetIso.hom =
+        c.sourceIso.hom ≫
+          (comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom := by
+    rw [hres, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  have hpt :
+      c.targetIso.hom.base ((f.hom.restrictPreimage c.V).base x) =
+        (comapOfPair c.data.isSheafyTarget c.data.isSheafySource c.data.pairHom).hom.base
+          (c.sourceIso.hom.base x) := by
+    have h := congrArg (fun m ↦ m.base x) hres_hom
+    rw [PreAdicSpace.comp_base, PreAdicSpace.comp_base, TopCat.coe_comp, TopCat.coe_comp] at h
+    exact h
+  have hs : TopCat.homeoOfIso (forgetToTop.mapIso c.sourceIso) x = c.sourceIso.hom.base x :=
+    TopCat.homeoOfIso_apply (forgetToTop.mapIso c.sourceIso) x
+  have ht :
+      TopCat.homeoOfIso (forgetToTop.mapIso c.targetIso)
+          ((c.V : Set Y.obj).restrictPreimage f.hom.base x) =
+        c.targetIso.hom.base ((f.hom.restrictPreimage c.V).base x) :=
+    (TopCat.homeoOfIso_apply (forgetToTop.mapIso c.targetIso)
+        ((c.V : Set Y.obj).restrictPreimage f.hom.base x)).trans
+      (congrArg c.targetIso.hom.base
+        (PreAdicSpace.Hom.restrictPreimage_base_apply f.hom c.V x).symm)
+  exact (congrArg (ofPairHomeomorph c.data.targetPair c.data.isSheafyTarget)
+      (ht.trans (hpt.trans (congrArg _ hs.symm)))).trans
     (ofPairHomeomorph_comapOfPair_apply _ _ _ _)
 
 /-- **`Spa(φ)` is finite étale for a finite étale morphism of sheafy Huber pairs** over a complete

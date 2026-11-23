@@ -535,15 +535,6 @@ private instance isOpenImmersion_liftToRestrict {W Z : PreAdicSpace.{u}} (m : W 
     PreAdicSpace.IsOpenImmersion (liftToRestrict m hm) :=
   PreAdicSpace.IsOpenImmersion.isOpenImmersion_lift _ _ _
 
-private theorem liftToRestrict_comp_liftToRestrict {W Z : PreAdicSpace.{u}} (m : W ⟶ Z)
-    {O₁ O₂ : Opens Z} (hm₁ : Set.range m.base ⊆ (O₁ : Set Z))
-    (h₁₂ : Set.range (Z.ofRestrict O₁.isOpenEmbedding).base ⊆ (O₂ : Set Z))
-    (hm₂ : Set.range m.base ⊆ (O₂ : Set Z)) :
-    liftToRestrict m hm₁ ≫ liftToRestrict (Z.ofRestrict O₁.isOpenEmbedding) h₁₂ =
-      liftToRestrict m hm₂ :=
-  liftToRestrict_uniq m hm₂ _
-    (by rw [Category.assoc, liftToRestrict_ofRestrict, liftToRestrict_ofRestrict])
-
 private theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
     {k : W₀ ⟶ W} {v : W ⟶ Z} {u : W₀ ⟶ Z₀} {ι : Z₀ ⟶ Z} (hsq : k ≫ v = u ≫ ι)
     (O : Opens Z.obj) {vO : W.obj ⟶ Z.obj.restrict O.isOpenEmbedding}
@@ -654,21 +645,9 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
       ((ofPair R hR).obj.ofRestrict O₂.isOpenEmbedding) ≫ g₁ = pullback.snd _ _ ≫ g₂ := by
   let Z := ofPair R hR; let Z₀ := ofPair (R.quotient I) hRI; let ι := sqZeroQuotHom R hR I hRI
   let O₁₂ := O₁ ⊓ O₂
-  let pZ := pullback.fst (Z.obj.ofRestrict O₁.isOpenEmbedding)
-    (Z.obj.ofRestrict O₂.isOpenEmbedding) ≫ Z.obj.ofRestrict O₁.isOpenEmbedding
-  have hrP : Set.range pZ.base = (O₁₂ : Set Z.obj) :=
-    (IsOpenImmersion.range_pullback_to_base_of_left _ _).trans
-      (congrArg₂ (· ∩ ·) (Opens.set_range_inclusion' O₁) (Opens.set_range_inclusion' O₂))
-  let e := isoRestrictOfRangeEq pZ hrP
-  let j₁ := liftToRestrict (Z.obj.ofRestrict O₁₂.isOpenEmbedding)
-    ((Opens.set_range_inclusion' O₁₂).le.trans (inf_le_left : O₁₂ ≤ O₁))
-  let j₂ := liftToRestrict (Z.obj.ofRestrict O₁₂.isOpenEmbedding)
-    ((Opens.set_range_inclusion' O₁₂).le.trans (inf_le_right : O₁₂ ≤ O₂))
-  have he₁ : e.inv ≫ pullback.fst _ _ = j₁ := liftToRestrict_uniq _ _ _
-    (by rw [Category.assoc, isoRestrictOfRangeEq_inv_comp])
-  have he₂ : e.inv ≫ pullback.snd _ _ = j₂ := liftToRestrict_uniq _ _ _
-    (by rw [Category.assoc, ← pullback.condition, isoRestrictOfRangeEq_inv_comp])
-  rw [← cancel_epi e.inv, reassoc_of% he₁, reassoc_of% he₂]
+  rw [← cancel_epi (Z.obj.pullbackOfRestrictIso O₁ O₂).inv,
+    PreAdicSpace.pullbackOfRestrictIso_inv_fst_assoc,
+    PreAdicSpace.pullbackOfRestrictIso_inv_snd_assoc]
   -- Apply chartwise uniqueness `eq_of_sqZero_quotient` on the overlap `Z|_{O₁ ⊓ O₂}`
   refine PreAdicSpace.hom_ext_of_forall_exists_isOpenImmersion
     (isAdic_of_isOpenImmersion Z.property (Z.obj.ofRestrict O₁₂.isOpenEmbedding)).isSheafy
@@ -715,12 +694,24 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
           (hπK_lift (sq.le.trans inf_le_right) ht₂ hg₂_ι).symm))
   refine ⟨(ofPair sq.square.pair sq.square.isSheafy).obj,
     liftToRestrict sq.square.targetMap.hom ht, inferInstance, hp_mem, ?_⟩
-  have hj₁ : liftToRestrict sq.square.targetMap.hom ht ≫ j₁ =
+  have hj₁ : liftToRestrict sq.square.targetMap.hom ht ≫
+        Hom.liftRestrict (𝟙 Z.obj) (inf_le_left : O₁₂ ≤ O₁) =
       liftToRestrict sq.square.targetMap.hom ht₁ :=
-    liftToRestrict_comp_liftToRestrict _ ht _ ht₁
-  have hj₂ : liftToRestrict sq.square.targetMap.hom ht ≫ j₂ =
+    liftToRestrict_uniq _ ht₁ _
+      ((Category.assoc _ _ _).trans
+        ((congrArg (liftToRestrict sq.square.targetMap.hom ht ≫ ·)
+          ((Hom.liftRestrict_ofRestrict (𝟙 Z.obj) (inf_le_left : O₁₂ ≤ O₁)).trans
+            (Category.comp_id _))).trans
+          (liftToRestrict_ofRestrict sq.square.targetMap.hom ht)))
+  have hj₂ : liftToRestrict sq.square.targetMap.hom ht ≫
+        Hom.liftRestrict (𝟙 Z.obj) (inf_le_right : O₁₂ ≤ O₂) =
       liftToRestrict sq.square.targetMap.hom ht₂ :=
-    liftToRestrict_comp_liftToRestrict _ ht _ ht₂
+    liftToRestrict_uniq _ ht₂ _
+      ((Category.assoc _ _ _).trans
+        ((congrArg (liftToRestrict sq.square.targetMap.hom ht ≫ ·)
+          ((Hom.liftRestrict_ofRestrict (𝟙 Z.obj) (inf_le_right : O₁₂ ≤ O₂)).trans
+            (Category.comp_id _))).trans
+          (liftToRestrict_ofRestrict sq.square.targetMap.hom ht)))
   rw [← Category.assoc, ← Category.assoc, hj₁, hj₂]
   simpa only [ObjectProperty.homMk_hom] using congrArg InducedCategory.Hom.hom hm_eq
 
