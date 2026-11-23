@@ -159,8 +159,7 @@ variable {H' : Type*} [Ring H'] [HopfAlgebra ℚ H']
 theorem IsPrimeUnit.mapDomain {γ : WithConv (H →ₐ[ℚ] ℚ)} (hγ : IsPrimeUnit l γ)
     (φ : H' →ₐc[ℚ] H) : IsPrimeUnit l (BialgHom.mapDomain φ γ) := by
   intro v _ hv
-  rw [← MonoidHom.comp_apply, ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply,
-    ← MonoidHom.map_zpowers, Subgroup.coe_map]
+  rw [BialgHom.coe_zpowers_mapValue_mapDomain]
   exact (hγ v hv).closure_image (BialgHom.continuous_mapDomain φ).continuousOn
 
 /-- A closed immersion of affine groups, given by a surjective bialgebra map `φ` of coordinate
@@ -172,8 +171,7 @@ theorem isPrimeUnit_mapDomain_iff {φ : H' →ₐc[ℚ] H} (hφ : Function.Surje
   -- Over `ℚ_v`, precomposition with `φ` is a closed embedding of groups of points.
   have he := BialgHom.isClosedEmbedding_mapDomain_of_surjective (R := ℚ_[v]) hφ
   have hc := hγ v hv
-  rw [← MonoidHom.comp_apply, ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply,
-    ← MonoidHom.map_zpowers, Subgroup.coe_map, he.closure_image_eq] at hc
+  rw [BialgHom.coe_zpowers_mapValue_mapDomain, he.closure_image_eq] at hc
   exact he.isCompact_iff.mpr hc
 
 end MapDomain
