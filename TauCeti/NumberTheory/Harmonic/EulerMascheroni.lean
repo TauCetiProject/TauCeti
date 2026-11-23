@@ -30,37 +30,6 @@ open scoped Topology
 
 namespace Real
 
-/-- Integration by parts on `[1, b]` relating `∫ t in 1..b, exp (-t) / t` and
-`∫ t in 1..b, log t * exp (-t)`. -/
-private theorem integral_exp_neg_div_eq_add_integral {b : ℝ} (hb : 1 ≤ b) :
-    ∫ t in (1 : ℝ)..b, exp (-t) / t =
-      exp (-b) * log b + ∫ t in (1 : ℝ)..b, log t * exp (-t) := by
-  let f (t : ℝ) : ℝ := -exp (-t) * log t
-  let f' (t : ℝ) : ℝ := exp (-t) * log t - exp (-t) / t
-  have hderiv : ∀ t ∈ uIcc (1 : ℝ) b, HasDerivAt f (f' t) t := by
-    intro t ht
-    rw [uIcc_of_le hb] at ht
-    have h1 : HasDerivAt (fun s : ℝ ↦ -exp (-s)) (exp (-t)) t := by
-      simpa using ((hasDerivAt_neg t).exp).fun_neg
-    refine (h1.mul (hasDerivAt_log (zero_lt_one.trans_le ht.1).ne')).congr_deriv ?_
-    simp only [f', div_eq_mul_inv]
-    ring
-  have hint_log : IntervalIntegrable (fun t : ℝ ↦ log t * exp (-t)) volume 1 b := by
-    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le hb]
-    exact integrableOn_Ioi_log_mul_exp_neg.mono_set
-      (Ioc_subset_Ioi_self.trans (Ioi_subset_Ioi zero_le_one))
-  have hint_exp : IntervalIntegrable (fun t : ℝ ↦ exp (-t) / t) volume 1 b :=
-    intervalIntegrable_exp_neg_div zero_lt_one (zero_lt_one.trans_le hb)
-  have hint_mul : IntervalIntegrable (fun t : ℝ ↦ exp (-t) * log t) volume 1 b := by
-    simpa only [mul_comm] using hint_log
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv (hint_mul.sub hint_exp)
-  rw [intervalIntegral.integral_sub hint_mul hint_exp] at hFTC
-  have hf1 : f 1 = 0 := by simp [f]
-  have hcomm : (∫ t in (1 : ℝ)..b, exp (-t) * log t) = ∫ t in (1 : ℝ)..b, log t * exp (-t) :=
-    intervalIntegral.integral_congr fun t _ ↦ mul_comm _ _
-  dsimp only [f] at hFTC
-  linarith
-
 /-- **Integral formula for Euler's constant**:
 `γ = ∫ t in 0..1, (1 - exp (-t)) / t - ∫ t in Ioi 1, exp (-t) / t`. -/
 theorem eulerMascheroniConstant_eq_integral_sub_integral :
@@ -84,7 +53,7 @@ theorem eulerMascheroniConstant_eq_integral_sub_integral :
     rw [zero_add] at hsum
     refine hsum.congr' ?_
     filter_upwards [eventually_ge_atTop (1 : ℝ)] with b hb
-    exact (integral_exp_neg_div_eq_add_integral hb).symm
+    exact (integral_exp_neg_div_eq_add_integral (zero_lt_one.trans_le hb)).symm
   have hunion : (∫ t in Ioc (0 : ℝ) 1, log t * exp (-t)) +
       ∫ t in Ioi (1 : ℝ), log t * exp (-t) =
         ∫ t in Ioi (0 : ℝ), log t * exp (-t) := by

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Calculus.DSlope
 
 /-!
 # Limits of the real exponential
@@ -27,9 +28,10 @@ decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`.
   `e^f - 1 = O(g)`.
 * `Real.tendsto_const_mul_exp_neg_mul_atTop`: `c e^{-κ s} → 0` as `s → ∞`, for `κ > 0`.
 * `Real.tendsto_exp_neg_mul_log_atTop`: `e^{-z} log z → 0` as `z → ∞`.
-* `Real.continuous_exp_sub_one_div`: the filled-in quotient `(e^u - 1) / u` is continuous on `ℝ`.
-* `Real.continuous_one_sub_exp_neg_div`: the filled-in quotient `(1 - e^{-t}) / t` is continuous
-  on `ℝ`.
+* `Real.continuous_update_exp_sub_one_div_zero`: the filled-in quotient
+  `Function.update (fun u ↦ (e^u - 1) / u) 0 1` is continuous on `ℝ`.
+* `Real.continuous_update_one_sub_exp_neg_div_zero`: the filled-in quotient
+  `Function.update (fun t ↦ (1 - e^{-t}) / t) 0 1` is continuous on `ℝ`.
 * `Real.tendsto_exp_sub_one_sub_div_sq`: `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`.
 -/
 
@@ -85,36 +87,31 @@ theorem tendsto_exp_neg_mul_log_atTop :
     rw [mul_comm]
     exact mul_le_mul_of_nonneg_right (log_le_self (by positivity)) (exp_pos _).le
 
-/-- The filled-in quotient `(e^u - 1) / u` (with value `1` at `0`) is continuous on `ℝ`. -/
-theorem continuous_exp_sub_one_div :
-    Continuous fun u : ℝ ↦ if u = 0 then (1 : ℝ) else (exp u - 1) / u := by
-  rw [continuous_iff_continuousAt]
-  intro u
-  rcases eq_or_ne u 0 with rfl | hu
-  · rw [← continuousWithinAt_compl_self, ContinuousWithinAt]
-    simp only [↓reduceIte]
-    have hlim : Tendsto (fun t : ℝ ↦ (exp t - 1) / t) (𝓝[≠] 0) (𝓝 1) := by
-      simpa using tendsto_exp_mul_sub_one_div 1
-    refine hlim.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    simp [Set.mem_compl_singleton_iff.mp ht]
-  · have hcont : ContinuousAt (fun t : ℝ ↦ (exp t - 1) / t) u := by fun_prop (disch := exact hu)
-    refine hcont.congr ?_
-    filter_upwards [eventually_ne_nhds hu] with t ht
-    simp [ht]
+/-- The filled-in quotient `Function.update (fun u : ℝ ↦ (exp u - 1) / u) 0 1` is continuous on `ℝ`.
+-/
+theorem continuous_update_exp_sub_one_div_zero :
+    Continuous (Function.update (fun u : ℝ ↦ (exp u - 1) / u) 0 1) := by
+  have heq : Function.update (fun u : ℝ ↦ (exp u - 1) / u) 0 1 = dslope exp 0 := by
+    ext u
+    rcases eq_or_ne u 0 with rfl | hu
+    · simp [dslope_same]
+    · simp [Function.update_of_ne hu, dslope_of_ne _ hu, slope_def_field]
+  rw [heq, ← continuousOn_univ]
+  exact (continuousOn_dslope univ_mem).mpr ⟨continuous_exp.continuousOn, differentiableAt_exp⟩
 
-/-- The filled-in quotient `(1 - e^{-t}) / t` (with value `1` at `0`) is continuous on `ℝ`. -/
-theorem continuous_one_sub_exp_neg_div :
-    Continuous fun t : ℝ ↦ if t = 0 then (1 : ℝ) else (1 - exp (-t)) / t := by
-  have heq : (fun t : ℝ ↦ if t = 0 then (1 : ℝ) else (1 - exp (-t)) / t) =
-      fun t : ℝ ↦ if -t = 0 then (1 : ℝ) else (exp (-t) - 1) / (-t) := by
+/-- The filled-in quotient `Function.update (fun t : ℝ ↦ (1 - exp (-t)) / t) 0 1` is continuous on
+`ℝ`. -/
+theorem continuous_update_one_sub_exp_neg_div_zero :
+    Continuous (Function.update (fun t : ℝ ↦ (1 - exp (-t)) / t) 0 1) := by
+  have heq : Function.update (fun t : ℝ ↦ (1 - exp (-t)) / t) 0 1 =
+      fun t : ℝ ↦ Function.update (fun u : ℝ ↦ (exp u - 1) / u) 0 1 (-t) := by
     ext t
-    by_cases ht : t = 0
+    rcases eq_or_ne t 0 with rfl | ht
+    · simp
     · simp [ht]
-    · simp only [ht, ↓reduceIte, neg_ne_zero.mpr ht]
       ring
   rw [heq]
-  exact continuous_exp_sub_one_div.comp continuous_neg
+  exact continuous_update_exp_sub_one_div_zero.comp continuous_neg
 
 /-- Second-order difference quotient `(e^h - 1 - h) / h² → 1 / 2` as `h → 0`, `h ≠ 0`. -/
 theorem tendsto_exp_sub_one_sub_div_sq :

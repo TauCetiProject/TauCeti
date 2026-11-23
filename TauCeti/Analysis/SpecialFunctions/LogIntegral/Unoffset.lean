@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
-import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Integrals
@@ -26,6 +25,8 @@ which equals the exponential integral `Ei (log x)` for `x > 0`, `x ≠ 1` (at `x
 
 ## Main declarations
 
+* `TauCeti.Real.unoffsetLogIntegralSeries`: the entire series
+  `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)`.
 * `TauCeti.Real.unoffsetLogIntegral`: the unoffset logarithmic integral `li`.
 * `TauCeti.Real.hasDerivAt_unoffsetLogIntegral`: `li' x = (log x)⁻¹` for `x > 0`, `x ≠ 1`.
 * `TauCeti.Real.tendsto_unoffsetLogIntegral_nhdsGT_zero`: `li x → 0` as `x → 0⁺`.
@@ -39,7 +40,7 @@ which equals the exponential integral `Ei (log x)` for `x > 0`, `x ≠ 1` (at `x
   negative) and increases on `(1, ∞)` from `-∞` to `+∞`.
 * `TauCeti.Real.existsUnique_unoffsetLogIntegral_eq_zero`: Soldner's constant, the unique zero
   of `li` on `(1, ∞)`.
-* `TauCeti.Real.unoffsetLogIntegral_sub_sum_isBigO`,
+* `TauCeti.Real.isBigO_unoffsetLogIntegral_sub_sum`,
   `TauCeti.Real.unoffsetLogIntegral_isEquivalent_div_log`: asymptotic expansion to arbitrary order
   and `li x ~ Li x ~ x / log x` as `x → ∞`.
 -/
@@ -51,117 +52,28 @@ namespace TauCeti.Real
 open Asymptotics Filter MeasureTheory Set
 open scoped Topology Nat
 
-/-! ### The entire series `∑_{n ≥ 1} yⁿ / (n · n!)` -/
-
-/-- The series `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)` is summable for every real `y`. -/
-theorem summable_pow_div_mul_factorial (y : ℝ) :
-    Summable fun n : ℕ ↦ y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ)) := by
-  refine .of_norm_bounded ((Real.summable_pow_div_factorial |y|).mul_left |y|) fun n ↦ ?_
-  have hpos : (0 : ℝ) < ((n : ℝ) + 1) * ((n + 1).factorial : ℝ) := by positivity
-  rw [Real.norm_eq_abs, abs_div, abs_of_pos hpos, ← pow_abs]
-  rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
-  calc |y| ^ (n + 1) / (((n : ℝ) + 1) * (((n : ℝ) + 1) * (n ! : ℝ)))
-      ≤ |y| ^ (n + 1) / (1 * (1 * (n ! : ℝ))) := by
-        gcongr <;> linarith
-    _ = |y| * (|y| ^ n / (n ! : ℝ)) := by
-        rw [pow_succ']
-        ring
-
-/-- Evaluation of the termwise derivative series `∑' n, y ^ n / (n + 1)! = (e^y - 1) / y`
-for `y ≠ 0`. -/
-private theorem tsum_pow_div_factorial_succ_eq {y : ℝ} (hy : y ≠ 0) :
-    ∑' n : ℕ, y ^ n / ((n + 1).factorial : ℝ) = (Real.exp y - 1) / y := by
-  have hsumm : Summable fun n : ℕ ↦ y ^ n / ((n + 1).factorial : ℝ) := by
-    refine .of_norm_bounded (Real.summable_pow_div_factorial |y|) fun n ↦ ?_
-    rw [Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : (0 : ℝ) < ((n + 1).factorial : ℝ)),
-      ← pow_abs]
-    gcongr
-    exact Nat.le_succ n
-  have hexp : ∑' n : ℕ, y ^ n / (n ! : ℝ) = Real.exp y := by
-    rw [Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div]
-  have hsplit := (Real.summable_pow_div_factorial y).tsum_eq_zero_add
-  rw [hexp, pow_zero, Nat.factorial_zero, Nat.cast_one, div_one] at hsplit
-  have hmul : y * ∑' n : ℕ, y ^ n / ((n + 1).factorial : ℝ) = Real.exp y - 1 := by
-    rw [← hsumm.tsum_mul_left]
-    have hcongr : (fun n : ℕ ↦ y * (y ^ n / ((n + 1).factorial : ℝ))) =
-        fun n : ℕ ↦ y ^ (n + 1) / ((n + 1).factorial : ℝ) := by
-      ext n; rw [pow_succ']; ring
-    rw [hcongr]
-    linarith
-  exact (eq_div_iff hy).mpr (by linarith)
-
-/-- The derivative of `z ↦ ∑' n, z ^ (n + 1) / ((n + 1) * (n + 1)!)` is `(e^y - 1) / y`
-(with value `1` at `y = 0`). -/
-theorem hasDerivAt_tsum_pow_div_mul_factorial (y : ℝ) :
-    HasDerivAt
-      (fun z : ℝ ↦ ∑' n : ℕ, z ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ)))
-      (if y = 0 then 1 else (Real.exp y - 1) / y) y := by
-  let R : ℝ := |y| + 1
-  let g (n : ℕ) (z : ℝ) : ℝ := z ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ))
-  let g' (n : ℕ) (z : ℝ) : ℝ := z ^ n / ((n + 1).factorial : ℝ)
-  have hg : ∀ n : ℕ, ∀ z ∈ Metric.ball (0 : ℝ) R, HasDerivAt (g n) (g' n z) z := by
-    intro n z _
-    have hpow := hasDerivAt_pow (n + 1) z
-    refine (hpow.div_const (((n : ℝ) + 1) * ((n + 1).factorial : ℝ))).congr_deriv ?_
-    dsimp only [g']
-    have hn1 : (n : ℝ) + 1 ≠ 0 := by positivity
-    push_cast
-    field_simp [hn1]
-  have hg' : ∀ n : ℕ, ∀ z ∈ Metric.ball (0 : ℝ) R, ‖g' n z‖ ≤ R ^ n / (n ! : ℝ) := by
-    intro n z hz
-    rw [Metric.mem_ball, Real.dist_eq, sub_zero] at hz
-    have hfac : (n ! : ℝ) ≤ ((n + 1).factorial : ℝ) :=
-      Nat.cast_le.mpr (Nat.factorial_le (Nat.le_succ n))
-    rw [Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : (0 : ℝ) < ((n + 1).factorial : ℝ)),
-      ← pow_abs]
-    calc |z| ^ n / ((n + 1).factorial : ℝ) ≤ R ^ n / ((n + 1).factorial : ℝ) := by gcongr
-      _ ≤ R ^ n / (n ! : ℝ) := by gcongr
-  have hsum := hasDerivAt_tsum_of_isPreconnected (Real.summable_pow_div_factorial R)
-    Metric.isOpen_ball (convex_ball (0 : ℝ) R).isPreconnected hg hg'
-    (Metric.mem_ball_self (by positivity : 0 < R))
-    (by simp [g]) (Metric.mem_ball.mpr (by rw [Real.dist_eq, sub_zero]; linarith))
-  refine hsum.congr_deriv ?_
-  by_cases hy : y = 0
-  · subst hy
-    simp only [↓reduceIte, g']
-    rw [tsum_eq_single 0]
-    · simp
-    · intro n hn; simp [zero_pow hn]
-  · simp only [hy, ↓reduceIte, g']
-    exact tsum_pow_div_factorial_succ_eq hy
-
-/-- Integrating `(e^u - 1) / u` from `0` to `y` gives the entire series
-`∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)`. -/
-theorem integral_exp_sub_one_div_eq_tsum (y : ℝ) :
-    ∫ u in (0 : ℝ)..y, (Real.exp u - 1) / u =
-      ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ)) := by
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun u _ ↦ hasDerivAt_tsum_pow_div_mul_factorial u)
-    (Real.continuous_exp_sub_one_div.intervalIntegrable 0 y)
-  have h0 : ∑' n : ℕ, (0 : ℝ) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ)) = 0 := by
-    simp
-  rw [h0, sub_zero] at hFTC
-  rw [← hFTC]
-  refine intervalIntegral.integral_congr_ae ?_
-  have hne : ∀ᵐ u : ℝ ∂volume, u ≠ 0 := ae_iff.mpr (by simp)
-  filter_upwards [hne] with u hu _
-  simp [hu]
-
-/-- Integrating `(1 - e^{-t}) / t` from `0` to `z` gives
-`-∑' n, (-z) ^ (n + 1) / ((n + 1) * (n + 1)!)`. -/
-theorem integral_one_sub_exp_neg_div_eq (z : ℝ) :
-    ∫ t in (0 : ℝ)..z, (1 - Real.exp (-t)) / t =
-      -∑' n : ℕ, (-z) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ)) := by
-  have hcomp := intervalIntegral.integral_comp_neg
-    (f := fun u : ℝ ↦ (Real.exp u - 1) / u) (a := (0 : ℝ)) (b := z)
-  simp only [neg_zero] at hcomp
-  have heq : (fun t : ℝ ↦ (Real.exp (-t) - 1) / (-t)) = fun t : ℝ ↦ (1 - Real.exp (-t)) / t := by
-    ext t
-    ring
-  rw [heq, intervalIntegral.integral_symm 0 (-z)] at hcomp
-  rw [hcomp, integral_exp_sub_one_div_eq_tsum (-z)]
-
 /-! ### The unoffset logarithmic integral and its derivative -/
+
+/-- The entire power-series part `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)` of the unoffset
+logarithmic integral `Ei(y) - γ - log |y|`. -/
+noncomputable def unoffsetLogIntegralSeries (y : ℝ) : ℝ :=
+  ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))
+
+/-- Defining equation of `TauCeti.Real.unoffsetLogIntegralSeries`. -/
+theorem unoffsetLogIntegralSeries_def (y : ℝ) :
+    unoffsetLogIntegralSeries y =
+      ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := (rfl)
+
+/-- The power series `TauCeti.Real.unoffsetLogIntegralSeries` is differentiable everywhere on `ℝ`,
+with derivative `Function.update (fun u : ℝ ↦ (exp u - 1) / u) 0 1 y`. -/
+theorem hasDerivAt_unoffsetLogIntegralSeries (y : ℝ) :
+    HasDerivAt unoffsetLogIntegralSeries
+      (Function.update (fun u : ℝ ↦ (Real.exp u - 1) / u) 0 1 y) y :=
+  Real.hasDerivAt_tsum_pow_div_mul_factorial y
+
+/-- `TauCeti.Real.unoffsetLogIntegralSeries` is continuous on `ℝ`. -/
+theorem continuous_unoffsetLogIntegralSeries : Continuous unoffsetLogIntegralSeries :=
+  continuous_iff_continuousAt.mpr fun y ↦ (hasDerivAt_unoffsetLogIntegralSeries y).continuousAt
 
 /-- The **unoffset logarithmic integral**
 `li x = γ + log |log x| + ∑' n, (log x) ^ (n + 1) / ((n + 1) * (n + 1)!)`.
@@ -172,15 +84,13 @@ a junk value. For `0 < x < 1` it equals `∫ t in 0..x, (log t)⁻¹`, and for `
 Cauchy principal value `lim_{ε → 0⁺} (∫ t in 0..(1 - ε), (log t)⁻¹ + ∫ t in (1 + ε)..x, (log t)⁻¹)`
 and satisfies `Li x = li x - li 2`. -/
 noncomputable def unoffsetLogIntegral (x : ℝ) : ℝ :=
-  Real.eulerMascheroniConstant + Real.log (Real.log x) +
-    ∑' n : ℕ, Real.log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ))
+  Real.eulerMascheroniConstant + Real.log (Real.log x) + unoffsetLogIntegralSeries (Real.log x)
 
 /-- Defining equation of `TauCeti.Real.unoffsetLogIntegral`. -/
 theorem unoffsetLogIntegral_def (x : ℝ) :
     unoffsetLogIntegral x =
       Real.eulerMascheroniConstant + Real.log (Real.log x) +
-        ∑' n : ℕ, Real.log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ)) :=
-  (rfl)
+        unoffsetLogIntegralSeries (Real.log x) := (rfl)
 
 /-- The unoffset logarithmic integral has derivative `(log x)⁻¹` for `x > 0`, `x ≠ 1`. -/
 theorem hasDerivAt_unoffsetLogIntegral {x : ℝ} (hx₀ : 0 < x) (hx₁ : x ≠ 1) :
@@ -191,8 +101,8 @@ theorem hasDerivAt_unoffsetLogIntegral {x : ℝ} (hx₀ : 0 < x) (hx₁ : x ≠ 
       (x⁻¹ / Real.log x) x := by
     simpa [div_eq_mul_inv, mul_comm] using
       ((Real.hasDerivAt_log hlog_ne).comp x hlog).const_add Real.eulerMascheroniConstant
-  have h2 := (hasDerivAt_tsum_pow_div_mul_factorial (Real.log x)).comp x hlog
-  simp only [hlog_ne, ↓reduceIte, Real.exp_log hx₀] at h2
+  have h2 := (hasDerivAt_unoffsetLogIntegralSeries (Real.log x)).comp x hlog
+  simp only [Function.update_of_ne hlog_ne, Real.exp_log hx₀] at h2
   refine (h1.add h2).congr_deriv ?_
   field_simp [hx₀.ne', hlog_ne]
   ring
@@ -226,10 +136,10 @@ theorem unoffsetLogIntegral_eq_add_mul_log_add_integral_log_mul_exp_neg
       ∫ t in (0 : ℝ)..(-Real.log x), Real.log t * Real.exp (-t) := by
   set z : ℝ := -Real.log x
   have hz : 0 < z := neg_pos.mpr (Real.log_neg hx₀ hx₁)
-  have htsum := integral_one_sub_exp_neg_div_eq z
+  have htsum := Real.integral_one_sub_exp_neg_div_eq z
   have hibp := Real.integral_one_sub_exp_neg_div_eq_sub_integral hz.le
   have hexp : Real.exp (-z) = x := by simp [z, Real.exp_log hx₀]
-  rw [unoffsetLogIntegral_def]
+  rw [unoffsetLogIntegral_def, unoffsetLogIntegralSeries_def]
   have hlogabs : Real.log (Real.log x) = Real.log z := by
     rw [← Real.log_neg_eq_log]
   rw [hlogabs, show Real.log x = -z by simp [z], ← neg_neg (∑' n : ℕ, _), ← htsum, hibp, hexp]
@@ -260,73 +170,38 @@ theorem tendsto_unoffsetLogIntegral_nhdsGT_zero :
 
 /-! ### Principal value and comparison with the offset logarithmic integral -/
 
-/-- `(log t)⁻¹` is interval integrable on `[0, x]` whenever `0 ≤ x < 1`. -/
-theorem intervalIntegrable_inv_log_of_Ico {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
-    IntervalIntegrable (fun t : ℝ ↦ (Real.log t)⁻¹) volume 0 x := by
-  refine ContinuousOn.intervalIntegrable_of_Icc hx₀ fun t ht ↦ ?_
-  rcases ht.1.eq_or_lt with rfl | ht0
-  · exact Real.continuousAt_inv_log_zero.continuousWithinAt
-  · have hlog : Real.log t ≠ 0 := (Real.log_neg ht0 (ht.2.trans_lt hx₁)).ne
-    have hcont : ContinuousAt (fun s : ℝ ↦ (Real.log s)⁻¹) t :=
-      (Real.continuousAt_log ht0.ne').inv₀ hlog
-    exact hcont.continuousWithinAt
-
 /-- For `0 < x < 1`, `li x = ∫ t in 0..x, (log t)⁻¹`. -/
 theorem unoffsetLogIntegral_eq_integral {x : ℝ} (hx₀ : 0 < x) (hx₁ : x < 1) :
     unoffsetLogIntegral x = ∫ t in (0 : ℝ)..x, (Real.log t)⁻¹ := by
   have hderiv : ∀ t ∈ Ioo 0 x, HasDerivAt unoffsetLogIntegral (Real.log t)⁻¹ t :=
     fun t ht ↦ hasDerivAt_unoffsetLogIntegral ht.1 (ht.2.trans hx₁).ne
-  have hint := intervalIntegrable_inv_log_of_Ico hx₀.le hx₁
+  have hint := Real.intervalIntegrable_inv_log_of_Ico hx₀.le hx₁
   have hlimx : Tendsto unoffsetLogIntegral (𝓝[<] x) (𝓝 (unoffsetLogIntegral x)) :=
     (hasDerivAt_unoffsetLogIntegral hx₀ hx₁.ne).continuousAt.continuousWithinAt
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_tendsto hx₀ hderiv hint
     tendsto_unoffsetLogIntegral_nhdsGT_zero hlimx
   linarith
 
-/-- Ratio `log (1 + ε) / (-log (1 - ε)) → 1` as `ε → 0⁺`. -/
-private theorem tendsto_log_one_add_div_neg_log_one_sub :
-    Tendsto (fun ε : ℝ ↦ Real.log (1 + ε) / (-Real.log (1 - ε))) (𝓝[>] 0) (𝓝 1) := by
-  have hslope_add : Tendsto (fun ε : ℝ ↦ Real.log (1 + ε) / ε) (𝓝[>] 0) (𝓝 1) := by
-    have hd : HasDerivAt (fun ε : ℝ ↦ Real.log (1 + ε)) 1 0 :=
-      ((Real.hasDerivAt_log (by norm_num)).comp 0
-        ((hasDerivAt_id (0 : ℝ)).const_add 1)).congr_deriv (by norm_num)
-    simpa [div_eq_inv_mul] using
-      hd.tendsto_slope_zero.mono_left (nhdsWithin_mono _ fun _ h ↦ ne_of_gt h)
-  have hslope_sub : Tendsto (fun ε : ℝ ↦ -Real.log (1 - ε) / ε) (𝓝[>] 0) (𝓝 1) := by
-    have hd : HasDerivAt (fun ε : ℝ ↦ -Real.log (1 - ε)) 1 0 :=
-      (((Real.hasDerivAt_log (by norm_num)).comp 0
-        ((hasDerivAt_id (0 : ℝ)).const_sub 1)).neg).congr_deriv (by norm_num)
-    simpa [div_eq_inv_mul] using
-      hd.tendsto_slope_zero.mono_left (nhdsWithin_mono _ fun _ h ↦ ne_of_gt h)
-  have hq := hslope_add.div hslope_sub one_ne_zero
-  rw [div_one] at hq
-  refine hq.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
-  have hneg : -Real.log (1 - ε) ≠ 0 :=
-    (neg_pos.mpr (Real.log_neg (by linarith [hε.2]) (by linarith [hε.1]))).ne'
-  dsimp only [Pi.div_apply]
-  field_simp [hε.1.ne', hneg]
-
 /-- Symmetric cancellation of the logarithmic singularity at `1`:
 `li (1 + ε) - li (1 - ε) → 0` as `ε → 0⁺`. -/
 theorem tendsto_unoffsetLogIntegral_add_sub_sub :
     Tendsto (fun ε : ℝ ↦ unoffsetLogIntegral (1 + ε) - unoffsetLogIntegral (1 - ε))
       (𝓝[>] 0) (𝓝 0) := by
-  let S (y : ℝ) : ℝ := ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ))
-  have hS_cont : ContinuousAt S 0 := (hasDerivAt_tsum_pow_div_mul_factorial 0).continuousAt
+  have hS_cont : ContinuousAt unoffsetLogIntegralSeries 0 :=
+    continuous_unoffsetLogIntegralSeries.continuousAt
   have hlog_add : Tendsto (fun ε : ℝ ↦ Real.log (1 + ε)) (𝓝[>] 0) (𝓝 0) := by
     have h1 : ContinuousAt (fun ε : ℝ ↦ Real.log (1 + ε)) 0 := by fun_prop (disch := norm_num)
     simpa using h1.tendsto.mono_left nhdsWithin_le_nhds
   have hlog_sub : Tendsto (fun ε : ℝ ↦ Real.log (1 - ε)) (𝓝[>] 0) (𝓝 0) := by
     have h1 : ContinuousAt (fun ε : ℝ ↦ Real.log (1 - ε)) 0 := by fun_prop (disch := norm_num)
     simpa using h1.tendsto.mono_left nhdsWithin_le_nhds
-  have hS_diff : Tendsto (fun ε : ℝ ↦ S (Real.log (1 + ε)) - S (Real.log (1 - ε)))
-      (𝓝[>] 0) (𝓝 0) := by
+  have hS_diff : Tendsto (fun ε : ℝ ↦ unoffsetLogIntegralSeries (Real.log (1 + ε)) -
+      unoffsetLogIntegralSeries (Real.log (1 - ε))) (𝓝[>] 0) (𝓝 0) := by
     simpa using (hS_cont.tendsto.comp hlog_add).sub (hS_cont.tendsto.comp hlog_sub)
   have hlogratio : Tendsto (fun ε : ℝ ↦ Real.log (Real.log (1 + ε) / (-Real.log (1 - ε))))
       (𝓝[>] 0) (𝓝 0) := by
     simpa [Function.comp_def] using
-      (Real.continuousAt_log one_ne_zero).tendsto.comp tendsto_log_one_add_div_neg_log_one_sub
+      (Real.continuousAt_log one_ne_zero).tendsto.comp Real.tendsto_log_one_add_div_neg_log_one_sub
   have hsum := hlogratio.add hS_diff
   rw [add_zero] at hsum
   refine hsum.congr' ?_
@@ -338,7 +213,6 @@ theorem tendsto_unoffsetLogIntegral_add_sub_sub :
   have hld : Real.log (Real.log (1 + ε)) - Real.log (Real.log (1 - ε)) =
       Real.log (Real.log (1 + ε) / (-Real.log (1 - ε))) := by
     rw [Real.log_div hp.ne' hn.ne', Real.log_neg_eq_log]
-  dsimp only [S]
   linarith
 
 /-- **Cauchy principal value for `li x`** (`x > 1`):
@@ -416,19 +290,18 @@ theorem strictMonoOn_unoffsetLogIntegral_Ioi : StrictMonoOn unoffsetLogIntegral 
 /-- `li x → -∞` as `x → 1` (`x ≠ 1`). -/
 theorem tendsto_unoffsetLogIntegral_nhdsNE_one :
     Tendsto unoffsetLogIntegral (𝓝[≠] 1) atBot := by
-  let S (y : ℝ) : ℝ := ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1).factorial : ℝ))
   have hloglog : Tendsto (fun x : ℝ ↦ Real.log (Real.log x)) (𝓝[≠] 1) atBot :=
     Real.tendsto_log_nhdsNE_one_nhdsNE_zero |> Real.tendsto_log_nhdsNE_zero.comp
-  have hS : Tendsto (fun x : ℝ ↦ S (Real.log x)) (𝓝[≠] 1) (𝓝 0) := by
-    have hS0 : ContinuousAt S 0 := (hasDerivAt_tsum_pow_div_mul_factorial 0).continuousAt
-    simpa [S, Function.comp_def] using
+  have hS : Tendsto (fun x : ℝ ↦ unoffsetLogIntegralSeries (Real.log x)) (𝓝[≠] 1) (𝓝 0) := by
+    have hS0 : ContinuousAt unoffsetLogIntegralSeries 0 :=
+      continuous_unoffsetLogIntegralSeries.continuousAt
+    simpa [unoffsetLogIntegralSeries_def, Function.comp_def] using
       hS0.tendsto.comp (Real.tendsto_log_nhdsNE_one_nhdsNE_zero.mono_right nhdsWithin_le_nhds)
-  have hsum : Tendsto (fun x : ℝ ↦ (Real.eulerMascheroniConstant + S (Real.log x)) +
-      Real.log (Real.log x)) (𝓝[≠] 1) atBot :=
+  have hsum : Tendsto (fun x : ℝ ↦ (Real.eulerMascheroniConstant +
+      unoffsetLogIntegralSeries (Real.log x)) + Real.log (Real.log x)) (𝓝[≠] 1) atBot :=
     Tendsto.add_atBot ((tendsto_const_nhds (x := Real.eulerMascheroniConstant)).add hS) hloglog
   refine hsum.congr fun x ↦ ?_
   rw [unoffsetLogIntegral_def]
-  dsimp only [S]
   ring
 
 /-- `li x → -∞` as `x → 1⁻`. -/
@@ -489,23 +362,14 @@ theorem existsUnique_unoffsetLogIntegral_eq_zero :
 
 /-- **Asymptotic expansion of `li x`**: for every `n : ℕ`,
 `li x = (x / log x) * ∑ k < n, k! / (log x) ^ k + O(x / (log x) ^ (n + 1))` as `x → ∞`. -/
-theorem unoffsetLogIntegral_sub_sum_isBigO (n : ℕ) :
+theorem isBigO_unoffsetLogIntegral_sub_sum (n : ℕ) :
     (fun x : ℝ ↦ unoffsetLogIntegral x -
         (x / Real.log x) * ∑ k ∈ Finset.range n, (k ! : ℝ) / Real.log x ^ k) =O[atTop]
       fun x : ℝ ↦ x / Real.log x ^ (n + 1) := by
   let C : ℝ := unoffsetLogIntegral 2 -
     (2 / Real.log 2) * ∑ k ∈ Finset.range n, (k ! : ℝ) / Real.log 2 ^ k
   have hconst_tendsto : Tendsto (fun x : ℝ ↦ Real.log x ^ (n + 1) / x) atTop (𝓝 0) := by
-    have hnpos : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
-    have hlog : (fun x : ℝ ↦ Real.log x) =o[atTop] fun x : ℝ ↦ x ^ (1 / ((n : ℝ) + 1)) :=
-      isLittleO_log_rpow_atTop hnpos
-    refine (hlog.pow (Nat.succ_pos n)).tendsto_div_nhds_zero.congr' ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
-    rw [← Real.rpow_natCast (x ^ _) n.succ, ← Real.rpow_mul hx.le]
-    have h1 : (1 / ((n : ℝ) + 1)) * (n.succ : ℝ) = 1 := by
-      push_cast
-      field_simp
-    rw [h1, Real.rpow_one]
+    simpa using Real.tendsto_pow_log_div_mul_add_atTop 1 0 (n + 1) one_ne_zero
   have hconst : (fun _ : ℝ ↦ C) =O[atTop] fun x : ℝ ↦ x / Real.log x ^ (n + 1) := by
     refine (isLittleO_iff_tendsto' ?_).mpr ?_ |>.isBigO
     · filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx h0

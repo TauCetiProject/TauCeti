@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
 
@@ -38,6 +39,13 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
+* `TauCeti.intervalIntegral.tendsto_integral_left_nhdsGT`: if `f` is continuous on `[a, b]`
+  (`a < b`) and agrees almost everywhere on `(a, b]` with `g`, then
+  `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ` as `x → a⁺`.
+* `TauCeti.intervalIntegral.tendsto_principalValue_of_continuousOn`: for `g` continuous on
+  `[a, b]` and `a < c < b`, the symmetric excision integral
+  `∫ t in a..(c - ε), g t ∂μ + ∫ t in (c + ε)..b, g t ∂μ` tends to `∫ t in a..b, g t ∂μ` as
+  `ε → 0⁺`.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
@@ -366,6 +374,84 @@ theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGr
       (hF.mono fun i hi ↦ ?_) (by simpa using hB.mul_const (μ.real (Ι a b))))
   rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
   exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
+
+open Filter Topology Interval in
+/-- If `f` is continuous on `[a, b]` (`a < b`) and agrees almost everywhere on `(a, b]` with `g`,
+then `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ` as `x → a⁺`. -/
+theorem tendsto_integral_left_nhdsGT {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] [NullSingletonClass μ] {f g : ℝ → E}
+    {a b : ℝ} (hab : a < b) (hf : ContinuousOn f (Icc a b))
+    (hfg : ∀ᵐ t ∂μ, t ∈ Ioc a b → f t = g t) :
+    Tendsto (fun x : ℝ ↦ ∫ t in x..b, g t ∂μ) (𝓝[>] a) (𝓝 (∫ t in a..b, g t ∂μ)) := by
+  have hf_int : IntegrableOn f (uIcc a b) μ := by
+    rw [uIcc_of_le hab.le]
+    exact hf.integrableOn_Icc
+  have hprim : ContinuousOn (fun x : ℝ ↦ ∫ t in x..b, f t ∂μ) (Icc a b) := by
+    simpa only [uIcc_of_le hab.le] using
+      _root_.intervalIntegral.continuousOn_primitive_interval_left hf_int
+  have htend : Tendsto (fun x : ℝ ↦ ∫ t in x..b, f t ∂μ) (𝓝[>] a)
+      (𝓝 (∫ t in a..b, f t ∂μ)) := by
+    refine (hprim a ⟨le_rfl, hab.le⟩).tendsto.comp ?_
+    refine tendsto_nhdsWithin_iff.mpr ⟨nhdsWithin_le_nhds, ?_⟩
+    filter_upwards [Ioo_mem_nhdsGT hab] with x hx
+    exact ⟨hx.1.le, hx.2.le⟩
+  have heq0 : ∫ t in a..b, f t ∂μ = ∫ t in a..b, g t ∂μ := by
+    refine _root_.intervalIntegral.integral_congr_ae ?_
+    filter_upwards [hfg] with t ht hmem
+    rw [uIoc_of_le hab.le] at hmem
+    exact ht hmem
+  rw [heq0] at htend
+  refine htend.congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT hab] with x hx
+  refine _root_.intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hfg] with t ht hmem
+  rw [uIoc_of_le hx.2.le] at hmem
+  exact ht ⟨hx.1.trans hmem.1, hmem.2⟩
+
+open Filter Topology Interval in
+/-- For `g` continuous on `[a, b]` and an interior point `c` (`a < c < b`), the symmetric
+excision integral `∫ t in a..(c - ε), g t ∂μ + ∫ t in (c + ε)..b, g t ∂μ` tends to
+`∫ t in a..b, g t ∂μ` as `ε → 0⁺`. -/
+theorem tendsto_principalValue_of_continuousOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] [NullSingletonClass μ]
+    {g : ℝ → E} {a b c : ℝ} (hac : a < c) (hcb : c < b) (hg : ContinuousOn g (Icc a b)) :
+    Tendsto (fun ε : ℝ ↦ (∫ t in a..(c - ε), g t ∂μ) + ∫ t in (c + ε)..b, g t ∂μ)
+      (𝓝[>] 0) (𝓝 (∫ t in a..b, g t ∂μ)) := by
+  have hab : a ≤ b := (hac.trans hcb).le
+  have hg_int_on : IntegrableOn g (uIcc a b) μ := by
+    rw [uIcc_of_le hab]
+    exact hg.integrableOn_Icc
+  have hg_int : IntervalIntegrable g μ a b := hg.intervalIntegrable_of_Icc hab
+  have hprim_cont : ContinuousOn (fun x : ℝ ↦ ∫ t in a..x, g t ∂μ) (Icc a b) := by
+    simpa only [uIcc_of_le hab] using
+      _root_.intervalIntegral.continuousOn_primitive_interval hg_int_on
+  have hF1 : Tendsto (fun ε : ℝ ↦ ∫ t in a..(c - ε), g t ∂μ) (𝓝[>] 0)
+      (𝓝 (∫ t in a..c, g t ∂μ)) := by
+    refine (hprim_cont c ⟨hac.le, hcb.le⟩).tendsto.comp ?_
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · have h1 : ContinuousAt (fun ε : ℝ ↦ c - ε) 0 := by fun_prop
+      simpa using h1.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsGT (sub_pos.mpr hac)] with ε hε
+      exact ⟨by linarith [hε.2], by linarith [hε.1, hcb]⟩
+  have hF2 : Tendsto (fun ε : ℝ ↦ (∫ t in a..b, g t ∂μ) - ∫ t in a..(c + ε), g t ∂μ)
+      (𝓝[>] 0) (𝓝 ((∫ t in a..b, g t ∂μ) - ∫ t in a..c, g t ∂μ)) := by
+    refine tendsto_const_nhds.sub ((hprim_cont c ⟨hac.le, hcb.le⟩).tendsto.comp ?_)
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · have h1 : ContinuousAt (fun ε : ℝ ↦ c + ε) 0 := by fun_prop
+      simpa using h1.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsGT (sub_pos.mpr hcb)] with ε hε
+      exact ⟨by linarith [hε.1, hac], by linarith [hε.2]⟩
+  have hadd := hF1.add hF2
+  rw [add_sub_cancel] at hadd
+  refine hadd.congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT (lt_min (sub_pos.mpr hac) (sub_pos.mpr hcb))] with ε hε
+  have hcp : c + ε ∈ uIcc a b := by
+    rw [uIcc_of_le hab]
+    exact ⟨by linarith [hε.1, hac], by linarith [hε.2.trans_le (min_le_right _ _)]⟩
+  have hadj := _root_.intervalIntegral.integral_add_adjacent_intervals
+    (hg_int.mono_set (uIcc_subset_uIcc left_mem_uIcc hcp))
+    (hg_int.mono_set (uIcc_subset_uIcc hcp right_mem_uIcc))
+  rw [← hadj, add_sub_cancel_left]
 
 end intervalIntegral
 

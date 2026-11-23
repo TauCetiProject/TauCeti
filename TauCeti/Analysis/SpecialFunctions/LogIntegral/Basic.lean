@@ -38,9 +38,10 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 * `TauCeti.Real.integral_inv_log_rpow_eq_sub_add`,
   `TauCeti.Real.integral_inv_log_pow_eq_sub_add` — integration by parts for every real or
   natural reciprocal logarithm power, with either orientation of the interval.
-* `TauCeti.Real.integral_inv_log_rpow_le`, `TauCeti.Real.le_integral_inv_log_rpow`,
-  `TauCeti.Real.integral_inv_log_pow_le`, `TauCeti.Real.le_integral_inv_log_pow` — monotonicity
-  and `√x`-split bounds on `∫ (log t ^ k)⁻¹`.
+* `TauCeti.Real.integral_inv_log_rpow_le`, `TauCeti.Real.integral_inv_log_rpow_le_sqrt_div_add`,
+  `TauCeti.Real.le_integral_inv_log_rpow`, `TauCeti.Real.integral_inv_log_pow_le`,
+  `TauCeti.Real.le_integral_inv_log_pow` — monotonicity and `√x`-split bounds on
+  `∫ (log t ^ k)⁻¹`.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add`,
   `TauCeti.Real.logIntegral_eq_sub_add_integral` — the antiderivative identity and its `n`-step
   integration-by-parts generalization.
@@ -133,7 +134,7 @@ theorem intervalIntegrable_inv_log_pow (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb : 
 
 /-- Monotonicity of the logarithm bounds `∫ t in a..b, (log t ^ k)⁻¹` above by the value of the
 integrand at the left endpoint for `0 ≤ k` and `1 < a ≤ b`. -/
-theorem integral_inv_log_rpow_le_sub_div {k a b : ℝ} (hk : 0 ≤ k) (ha : 1 < a) (hab : a ≤ b) :
+theorem integral_inv_log_rpow_le {k a b : ℝ} (hk : 0 ≤ k) (ha : 1 < a) (hab : a ≤ b) :
     ∫ t in a..b, (Real.log t ^ k)⁻¹ ≤ (b - a) / Real.log a ^ k := by
   have hla : 0 < Real.log a := Real.log_pos ha
   have hb : 1 < b := lt_of_lt_of_le ha hab
@@ -147,7 +148,7 @@ theorem integral_inv_log_rpow_le_sub_div {k a b : ℝ} (hk : 0 ≤ k) (ha : 1 < 
 integrand at the left endpoint. -/
 theorem integral_inv_log_pow_le (n : ℕ) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
     ∫ t in a..b, (Real.log t ^ n)⁻¹ ≤ (b - a) / Real.log a ^ n := by
-  simpa only [Real.rpow_natCast] using integral_inv_log_rpow_le_sub_div (Nat.cast_nonneg n) ha hab
+  simpa only [Real.rpow_natCast] using integral_inv_log_rpow_le (Nat.cast_nonneg n) ha hab
 
 /-- Lower bound `(b - a) / log b ^ k ≤ ∫ t in a..b, (log t ^ k)⁻¹` for `0 ≤ k` and
 `1 < a ≤ b`. -/
@@ -182,7 +183,7 @@ theorem integral_inv_log_pow_nonneg (n : ℕ) {a b : ℝ} (ha : 1 < a) (hab : a 
 
 /-- Explicit upper bound `∫ t in 2..x, (log t ^ k)⁻¹ ≤ √x / log 2 ^ k + 2 ^ k * x / log x ^ k`
 for every `k ≥ 0` and `x ≥ 2`. -/
-theorem integral_inv_log_rpow_le {k x : ℝ} (hk : 0 ≤ k) (hx : 2 ≤ x) :
+theorem integral_inv_log_rpow_le_sqrt_div_add {k x : ℝ} (hk : 0 ≤ k) (hx : 2 ≤ x) :
     (∫ t in (2 : ℝ)..x, (Real.log t ^ k)⁻¹) ≤
       √x / Real.log 2 ^ k + (2 : ℝ) ^ k * x / Real.log x ^ k := by
   have hlogx : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
@@ -198,10 +199,10 @@ theorem integral_inv_log_rpow_le {k x : ℝ} (hk : 0 ≤ k) (hx : 2 ≤ x) :
         (intervalIntegrable_inv_log_rpow k one_lt_two (by linarith))
         (intervalIntegrable_inv_log_rpow k (by linarith) (by linarith))).symm
     have hb1 : (∫ t in (2 : ℝ)..√x, (Real.log t ^ k)⁻¹) ≤ √x / Real.log 2 ^ k := by
-      refine (integral_inv_log_rpow_le_sub_div hk one_lt_two hsq2).trans ?_
+      refine (integral_inv_log_rpow_le hk one_lt_two hsq2).trans ?_
       gcongr; linarith
     have hb2 : (∫ t in √x..x, (Real.log t ^ k)⁻¹) ≤ (2 : ℝ) ^ k * x / Real.log x ^ k := by
-      refine (integral_inv_log_rpow_le_sub_div hk (by linarith) hsqx).trans ?_
+      refine (integral_inv_log_rpow_le hk (by linarith) hsqx).trans ?_
       have hlogsq : Real.log √x = Real.log x / 2 := Real.log_sqrt (by linarith)
       rw [hlogsq, Real.div_rpow hlogx.le zero_le_two, div_div_eq_mul_div, mul_comm (x - √x)]
       gcongr; linarith [Real.sqrt_nonneg x]
@@ -213,7 +214,7 @@ theorem integral_inv_log_rpow_le {k x : ℝ} (hk : 0 ≤ k) (hx : 2 ≤ x) :
         rw [show (4 : ℝ) = (2 : ℝ) ^ 2 by norm_num, Real.log_pow]; ring
       linarith
     have hb : (∫ t in (2 : ℝ)..x, (Real.log t ^ k)⁻¹) ≤ (2 : ℝ) ^ k * x / Real.log x ^ k := by
-      refine (integral_inv_log_rpow_le_sub_div hk one_lt_two hx).trans ?_
+      refine (integral_inv_log_rpow_le hk one_lt_two hx).trans ?_
       have hrpow : (Real.log x / 2) ^ k ≤ Real.log 2 ^ k :=
         Real.rpow_le_rpow (div_nonneg hlogx.le zero_le_two) hhalf.le hk
       calc (x - 2) / Real.log 2 ^ k ≤ (x - 2) / (Real.log x / 2) ^ k := by gcongr
@@ -331,13 +332,11 @@ theorem isBigO_integral_inv_log_pow_succ (m : ℕ) :
     (fun x : ℝ ↦ ∫ t in (2 : ℝ)..x, (Real.log t ^ (m + 1))⁻¹) =O[atTop]
       fun x : ℝ ↦ x / Real.log x ^ (m + 1) := by
   have hsqrt_little : (fun x : ℝ ↦ √x) =o[atTop] fun x : ℝ ↦ x / Real.log x ^ (m + 1) := by
-    have hmpos : (0 : ℝ) < 1 / (2 * ((m : ℝ) + 1)) := by positivity
-    have hpow := (isLittleO_log_rpow_atTop hmpos).pow (Nat.succ_pos m)
     have hlim : Tendsto (fun x : ℝ ↦ Real.log x ^ (m + 1) / √x) atTop (𝓝 0) := by
-      refine hpow.tendsto_div_nhds_zero.congr' ?_
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
-      rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast (x ^ _) m.succ, ← Real.rpow_mul hx.le]
-      congr 2; push_cast; field_simp
+      refine ((isLittleO_log_rpow_rpow_atTop ((m + 1 : ℕ) : ℝ)
+        (by norm_num : (0 : ℝ) < 1 / 2)).tendsto_div_nhds_zero).congr' ?_
+      filter_upwards [eventually_ge_atTop (0 : ℝ)] with x _
+      rw [Real.rpow_natCast, Real.sqrt_eq_rpow]
     refine (isLittleO_iff_tendsto' ?_).mpr ?_
     · filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx h0
       exact absurd h0 (div_pos (zero_lt_one.trans hx) (pow_pos (Real.log_pos hx) _)).ne'
@@ -366,7 +365,7 @@ theorem isBigO_integral_inv_log_pow_succ (m : ℕ) :
       positivity
     rw [one_mul, Real.norm_of_nonneg hnn, Real.norm_of_nonneg hmaj_nn]
     simpa only [Real.rpow_natCast] using
-      integral_inv_log_rpow_le (k := ((m + 1 : ℕ) : ℝ)) (Nat.cast_nonneg _) hx
+      integral_inv_log_rpow_le_sqrt_div_add (k := ((m + 1 : ℕ) : ℝ)) (Nat.cast_nonneg _) hx
   exact hle_majorant.trans (hsqrt_big.add hmain_big)
 
 /-- The remainder integral of the antiderivative identity is `o (x / log x)`. -/
@@ -390,7 +389,7 @@ theorem tendsto_integral_inv_log_sq_mul_log_div_atTop :
     have hsqx : √x * √x = x := Real.mul_self_sqrt hx0.le
     have hbound : (∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹) ≤
         √x / Real.log 2 ^ 2 + 4 * x / Real.log x ^ 2 := by
-      have h := integral_inv_log_rpow_le (k := 2) (x := x) zero_le_two (by linarith)
+      have h := integral_inv_log_rpow_le_sqrt_div_add (k := 2) (x := x) zero_le_two (by linarith)
       norm_num at h
       exact h
     rw [div_le_iff₀ hx0]

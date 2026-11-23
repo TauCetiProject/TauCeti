@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -18,6 +19,8 @@ iterated logarithm `log log (1 / x)` near the origin:
 
 * `Real.continuousAt_inv_log_zero`: `(log x)⁻¹ → 0` as `x → 0`, so with Mathlib's conventions
   `log 0 = 0` and `0⁻¹ = 0` the function `x ↦ (log x)⁻¹` is continuous at the origin;
+* `Real.intervalIntegrable_inv_log_of_Ico`: `(log t)⁻¹` is interval integrable on `[0, x]` for
+  `0 ≤ x < 1`;
 * `Real.abs_log_log_inv_le`: for `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`.
 
 It also records the calculus of the radial profile `r ↦ log log (c / r)`, which for `c ≠ 0` has
@@ -71,5 +74,17 @@ theorem tendsto_log_log_const_div_nhdsNE_zero {c : ℝ} (hc : c ≠ 0) :
   refine tendsto_log_atTop.comp (h.congr' ?_)
   filter_upwards [self_mem_nhdsWithin] with r hr
   rw [log_div hc hr, sub_eq_add_neg]
+
+open MeasureTheory in
+/-- `(log t)⁻¹` is interval integrable on `[0, x]` whenever `0 ≤ x < 1`. -/
+theorem intervalIntegrable_inv_log_of_Ico {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
+    IntervalIntegrable (fun t : ℝ ↦ (log t)⁻¹) volume 0 x := by
+  refine ContinuousOn.intervalIntegrable_of_Icc hx₀ fun t ht ↦ ?_
+  rcases ht.1.eq_or_lt with rfl | ht0
+  · exact continuousAt_inv_log_zero.continuousWithinAt
+  · have hlog : log t ≠ 0 := (log_neg ht0 (ht.2.trans_lt hx₁)).ne
+    have hcont : ContinuousAt (fun s : ℝ ↦ (log s)⁻¹) t :=
+      (continuousAt_log ht0.ne').inv₀ hlog
+    exact hcont.continuousWithinAt
 
 end Real

@@ -63,6 +63,7 @@ Interval integrals of elementary functions in closed form or as series, continui
   over an interval is a difference of arctangents.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
+* `Real.integral_sub_inv`: `∫ t in a..b, (t - c)⁻¹ = log ((b - c) / (a - c))` for `c ∉ [[a, b]]`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
 * `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
@@ -536,6 +537,15 @@ theorem integral_one_div_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b) :
       (fun t ht ↦ pow_ne_zero _ (by linarith [ht.1] : a + t ≠ 0))
   simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
     (hc.intervalIntegrable_of_Icc hb)
+
+open scoped Interval in
+/-- For `c ∉ [[a, b]]`, `∫ t in a..b, (t - c)⁻¹ = log ((b - c) / (a - c))`. -/
+theorem integral_sub_inv {a b c : ℝ} (h : c ∉ [[a, b]]) :
+    ∫ t in a..b, (t - c)⁻¹ = Real.log ((b - c) / (a - c)) := by
+  rw [intervalIntegral.integral_comp_sub_right (fun t : ℝ ↦ t⁻¹) c]
+  refine integral_inv fun h0 ↦ h ?_
+  rw [Set.mem_uIcc] at h0 ⊢
+  rcases h0 with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> [left; right] <;> constructor <;> linarith
 
 end Real
 
