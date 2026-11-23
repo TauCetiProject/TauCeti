@@ -20,9 +20,8 @@ import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 # Iterated derivatives of holomorphic functions of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
-`g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`,
-`DifferentiableOn.iteratedDeriv`), the iterated forms of Mathlib's `Differentiable.deriv` and
-`DifferentiableOn.deriv`. If the `(e + 1)`-th derivative of an entire function `h`
+`g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
+Mathlib's `Differentiable.deriv`. If the `(e + 1)`-th derivative of an entire function `h`
 vanishes, so does the `e`-th derivative of `dslope h ζ`
 (`Differentiable.iteratedDeriv_dslope_eq_zero`): dividing a polynomial by a linear factor lowers its
 degree. It also computes the norms of the real iterated derivatives
@@ -82,16 +81,6 @@ theorem DifferentiableOn.iteratedFDeriv_eq_restrictScalars (𝕜 : Type*)
   rw [← ((hf.contDiffOn (n := k) hU).contDiffAt (hU.mem_nhds hz)).restrictScalars_iteratedFDeriv,
     iteratedFDeriv_eq_equiv_comp]
   rfl
-
-/-- An iterated derivative of a function complex differentiable on an open set `U ⊆ ℂ` is complex
-differentiable on `U`. -/
-theorem DifferentiableOn.iteratedDeriv {g : ℂ → E} {U : Set ℂ} (hg : DifferentiableOn ℂ g U)
-    (hU : IsOpen U) (k : ℕ) : DifferentiableOn ℂ (iteratedDeriv k g) U := by
-  induction k with
-  | zero => simpa only [iteratedDeriv_zero] using hg
-  | succ k ih =>
-    rw [iteratedDeriv_succ]
-    exact ih.deriv hU
 
 /-- **Weierstrass's theorem for iterated derivatives.** If holomorphic maps `F n` converge to `f`
 locally uniformly on an open set `U ⊆ ℂ`, then so do their iterated derivatives. This is the

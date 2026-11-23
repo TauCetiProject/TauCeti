@@ -35,9 +35,6 @@ logarithmic-derivative ingredients of Hadamard
 factorization without assuming an enumeration of the zeros or choosing a representative for the
 divisor.
 
-Factoring out `z ^ m` from an entire function leaves `divisorProductOne` unchanged
-(`TauCeti.divisorProductOne_eq_of_eq_pow_mul`).
-
 A function with zero divisor, such as `exp (c s)`, has product `1`, and the product of `1 - s` is
 the single factor `E₁(s)`.
 
@@ -111,19 +108,6 @@ theorem divisorProductOne_eq_tprod (f : ℂ → ℂ) (z : ℂ) :
       weierstrassFactor 1 (ρ⁻¹ * z) ^ (MeromorphicOn.divisor f Set.univ ρ).toNat := by
   exact tprod_subtype_eq_of_mulSupport_subset (mulSupport_divisor_factor_subset f z)
 
-/-- Factoring out `z ^ m` from an entire function leaves `divisorProductOne` unchanged. -/
-theorem divisorProductOne_eq_of_eq_pow_mul {f g : ℂ → ℂ} (hg : Differentiable ℂ g)
-    {m : ℕ} (hfg : ∀ z : ℂ, f z = z ^ m * g z) :
-    divisorProductOne f = divisorProductOne g := by
-  have hga : AnalyticOnNhd ℂ g Set.univ := Complex.analyticOnNhd_univ_iff_differentiable.mpr hg
-  funext z
-  rw [divisorProductOne_eq_tprod, divisorProductOne_eq_tprod]
-  refine tprod_congr fun ρ ↦ ?_
-  by_cases hρ : ρ = 0
-  · simp [hρ]
-  · rw [hga.divisor_eq_of_eq_sub_pow_smul_of_ne
-      (fun w ↦ by simpa only [sub_zero, smul_eq_mul] using hfg w) hρ]
-
 /-- The native divisor product is normalized to one at the origin. -/
 @[simp]
 theorem divisorProductOne_zero (f : ℂ → ℂ) : divisorProductOne f 0 = 1 := by
@@ -178,22 +162,15 @@ theorem deriv_divisorProductOne_zero : deriv (divisorProductOne f) 0 = 0 := by
   simpa [logDerivWeierstrassFactorOneMul_def] using h
 
 include hsum in
-/-- The support-indexed product converges to the native divisor product at each point. -/
-theorem hasProd_divisorProductOne_support (z : ℂ) :
-    HasProd (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
-      weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^
-        (MeromorphicOn.divisor f Set.univ ρ).toNat) (divisorProductOne f z) :=
-  (hasProdLocallyUniformlyOn_weierstrassFactor_one_pow
-    (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
-    (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat) hsum).hasProd (Set.mem_univ z)
-
-include hsum in
 /-- The full complex-indexed product converges to the native divisor product at each point. -/
 theorem hasProd_divisorProductOne (z : ℂ) :
     HasProd (fun ρ : ℂ ↦ weierstrassFactor 1 (ρ⁻¹ * z) ^
-      (MeromorphicOn.divisor f Set.univ ρ).toNat) (divisorProductOne f z) :=
-  (hasProd_subtype_iff_of_mulSupport_subset
-    (mulSupport_divisor_factor_subset f z)).mp (hasProd_divisorProductOne_support hsum z)
+      (MeromorphicOn.divisor f Set.univ ρ).toNat) (divisorProductOne f z) := by
+  have h := (hasProdLocallyUniformlyOn_weierstrassFactor_one_pow
+    (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
+    (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat) hsum).hasProd (Set.mem_univ z)
+  exact (hasProd_subtype_iff_of_mulSupport_subset
+    (mulSupport_divisor_factor_subset f z)).mp h
 
 include hsum in
 /-- The genus-one product is nonzero at the origin and wherever the divisor is nonpositive. -/

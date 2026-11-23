@@ -10,13 +10,13 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.Complex.Positivity
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Polynomial
 import TauCeti.Analysis.Complex.IteratedDeriv
+import TauCeti.Analysis.Complex.Positivity
 
 /-!
 # Derivative positivity for paired quadratic canonical products
@@ -47,11 +47,16 @@ this yields:
 * `TauCeti.iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq`: reality and
   nonnegativity of all iterated derivatives on `[0, ∞)`.
 * `TauCeti.re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq`: strict positivity of
-  same-parity Taylor derivatives from order `m` upward given a finite nonzero index witness.
+  the Taylor derivative of order `m + 2 * t.card` at `0` given a finite nonzero index witness.
 * `TauCeti.re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq_of_le`: strict positivity of
   iterated derivatives up to order `m + 2 * t.card` on `(0, ∞)` given a finite nonzero witness `t`.
 * `TauCeti.re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq`: strict positivity of all
   iterated derivatives on `(0, ∞)` when infinitely many `γ n` are nonzero.
+
+## References
+
+* Z. Yun and W. Zhang, *Shtukas and the Taylor expansion of L-functions*, Ann. of Math. (2) **186**
+  (2017), no. 3, 767–911, Appendix B.1, Proposition B.1, pp. 902–903.
 -/
 
 public section
@@ -146,33 +151,6 @@ theorem re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq
   open scoped ComplexOrder in
   exact (mul_pos (Nat.cast_pos.mpr N.factorial_pos) ht_pos).trans_le (Complex.le_def.mp hle).1
 
-/-- An entire function `h` whose Taylor derivatives at `0` are real and nonnegative satisfies
-`a₀ * x ^ n₀ ≤ (h x).re` for all `x ≥ 0` whenever `a₀ * n₀! ≤ (iteratedDeriv n₀ h 0).re`. -/
-private theorem mul_pow_le_re_of_iteratedDeriv_nonneg {h : ℂ → ℂ} (hh : Differentiable ℂ h)
-    (hnonneg : ∀ n : ℕ, (iteratedDeriv n h 0).im = 0 ∧ 0 ≤ (iteratedDeriv n h 0).re)
-    {n₀ : ℕ} {a₀ : ℝ} (ha₀ : a₀ * (n₀.factorial : ℝ) ≤ (iteratedDeriv n₀ h 0).re)
-    {x : ℝ} (hx : 0 ≤ x) :
-    a₀ * x ^ n₀ ≤ (h (x : ℂ)).re := by
-  have hrem_diff : Differentiable ℂ (fun z : ℂ ↦ h z - (a₀ : ℂ) • z ^ n₀) :=
-    hh.sub ((differentiable_id.pow n₀).const_smul (a₀ : ℂ))
-  open scoped ComplexOrder in
-  have hrem_deriv (n : ℕ) :
-      0 ≤ iteratedDeriv n (fun z : ℂ ↦ h z - (a₀ : ℂ) • z ^ n₀) 0 := by
-    rw [iteratedDeriv_fun_sub hh.contDiff.contDiffAt (by fun_prop),
-      iteratedDeriv_fun_const_smul_field, iteratedDeriv_fun_pow_zero]
-    split_ifs with hn
-    · subst n
-      have hc_eq : iteratedDeriv n₀ h 0 = (((iteratedDeriv n₀ h 0).re : ℝ) : ℂ) :=
-        Complex.ext rfl (hnonneg n₀).1
-      rw [hc_eq, smul_eq_mul, Complex.nonneg_iff]
-      exact ⟨by simpa using sub_nonneg.mpr ha₀, by simp⟩
-    · simpa [Complex.nonneg_iff, eq_comm, and_comm] using hnonneg n
-  open scoped ComplexOrder in
-  have hrem_nonneg : (0 : ℂ) ≤ h (x : ℂ) - (a₀ : ℂ) • (x : ℂ) ^ n₀ :=
-    hrem_diff.nonneg_of_iteratedDeriv_nonneg hrem_deriv (Complex.real_le_real.mpr hx)
-  open scoped ComplexOrder in
-  simpa [sub_nonneg, ← Complex.ofReal_pow] using (Complex.nonneg_iff.mp hrem_nonneg).1
-
 /-- If `c > 0` and `t : Finset ℕ` is a finite set of indices with `γ n ≠ 0` such that
 `k ≤ m + 2 * t.card`, then the `k`-th iterated derivative of the paired quadratic canonical
 product has strictly positive real part on `(0, ∞)`. -/
@@ -199,7 +177,7 @@ theorem re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq_of_le
     (Nat.cast_pos.mpr n₀.factorial_pos)
   -- Compare `iteratedDeriv k f` against `a₀ * x ^ n₀` on `[0, ∞)`.
   have hle : a₀ * x ^ n₀ ≤ (iteratedDeriv k f (x : ℂ)).re := by
-    refine mul_pow_le_re_of_iteratedDeriv_nonneg (hf_diff.iteratedDeriv k) (fun n ↦ ?_) ?_ hx.le
+    refine (hf_diff.iteratedDeriv k).mul_pow_le_re_of_iteratedDeriv_nonneg (fun n ↦ ?_) ?_ hx.le
     · rw [iteratedDeriv_iteratedDeriv]
       exact iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
         hc.le hsum hf_eq (n + k) le_rfl

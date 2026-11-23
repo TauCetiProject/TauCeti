@@ -5,7 +5,7 @@ Authors: OpenAI Codex
 -/
 module
 
-public import TauCeti.Analysis.Complex.GrowthOrder.Centered
+public import TauCeti.Analysis.Complex.GrowthOrder
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -27,9 +27,8 @@ constant `2 |c| log n`.
 
 * `TauCeti.orderLE_of_eventually_log_one_add_norm_le_mul_rpow`: a logarithmic power bound
   at infinity gives the corresponding order.
-* `TauCeti.orderLE_one_of_norm_le_exp_mul_log` and
-  `TauCeti.IsCenteredOrderOne.of_norm_le_exp_mul_log`: the logarithmic-exponential norm bound
-  gives order at most one (and centered order at most one for entire functions).
+* `TauCeti.orderLE_one_of_norm_le_exp_mul_log`: the logarithmic-exponential norm bound gives
+  order at most one.
 * `TauCeti.norm_le_exp_mul_log_of_norm_le_one_add`: transfer to a comparable argument.
 * `TauCeti.norm_comp_mul_add_le_exp_mul_log` and
   `TauCeti.exists_norm_comp_mul_add_le_exp_mul_log`: transfer across any affine substitution
@@ -95,13 +94,6 @@ theorem orderLE_one_of_norm_le_exp_mul_log {f : ℂ → ℂ} {C : ℝ}
     C * (1 + ‖s‖) * log (2 + ‖s‖) ≤ |C * ((1 + ‖s‖) * log (2 + ‖s‖))| := by
       simpa only [mul_assoc] using le_abs_self (C * ((1 + ‖s‖) * log (2 + ‖s‖)))
     _ ≤ ‖s‖ ^ p := hs
-
-/-- An entire function bounded by `exp (C * (1 + ‖s‖) * log (2 + ‖s‖))` satisfies
-`IsCenteredOrderOne`. -/
-theorem IsCenteredOrderOne.of_norm_le_exp_mul_log {f : ℂ → ℂ} {C : ℝ} (hf : Differentiable ℂ f)
-    (hb : ∀ s, ‖f s‖ ≤ exp (C * (1 + ‖s‖) * log (2 + ‖s‖))) :
-    IsCenteredOrderOne f :=
-  (orderLE_one_of_norm_le_exp_mul_log hb).isCenteredOrderOne hf
 
 /-- A logarithmic-exponential bound transfers to arguments `t` with `‖t‖ ≤ 1 + ‖s‖`, at the
 cost of the factor `21` in the constant. -/

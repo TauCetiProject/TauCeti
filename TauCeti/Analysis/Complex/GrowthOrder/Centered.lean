@@ -27,9 +27,13 @@ polynomials, and linear exponentials, while excluding higher-order functions suc
 ## Main results
 
 * `TauCeti.IsCenteredOrderOne`: global centered order-at-most-one predicate for entire functions.
+* `TauCeti.isCenteredOrderOne_def`, `TauCeti.IsCenteredOrderOne.exists_norm_le`, and
+  `TauCeti.IsCenteredOrderOne.of_bound`: defining bound interface.
 * `TauCeti.isCenteredOrderOne_iff`: equivalence with `Differentiable ℂ f ∧ OrderLE f 1`.
-* `TauCeti.IsCenteredOrderOne.add`, `TauCeti.IsCenteredOrderOne.const_mul`,
-  `TauCeti.IsCenteredOrderOne.pow`, `TauCeti.IsCenteredOrderOne.comp_mul_add`,
+* `TauCeti.IsCenteredOrderOne.add`, `TauCeti.IsCenteredOrderOne.neg`,
+  `TauCeti.IsCenteredOrderOne.sub`, `TauCeti.IsCenteredOrderOne.const_mul`,
+  `TauCeti.IsCenteredOrderOne.mul`, `TauCeti.IsCenteredOrderOne.pow`,
+  `TauCeti.IsCenteredOrderOne.comp_mul_add`, `TauCeti.IsCenteredOrderOne.comp_neg`,
   `Polynomial.isCenteredOrderOne_eval`, `TauCeti.isCenteredOrderOne_cexp_mul`: algebraic and
   analytic closure properties.
 * `TauCeti.not_isCenteredOrderOne_cexp_sq`: `exp (z ^ 2)` does not satisfy `IsCenteredOrderOne`.
@@ -57,11 +61,36 @@ def IsCenteredOrderOne (f : ℂ → ℂ) : Prop :=
 
 variable {f g : ℂ → ℂ}
 
+/-- The defining property of `IsCenteredOrderOne`. -/
+theorem isCenteredOrderOne_def :
+    IsCenteredOrderOne f ↔
+      Differentiable ℂ f ∧ ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧
+        ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) :=
+  Iff.rfl
+
 namespace IsCenteredOrderOne
 
 /-- A function satisfying `IsCenteredOrderOne` is entire. -/
 theorem differentiable (hf : IsCenteredOrderOne f) : Differentiable ℂ f :=
   hf.1
+
+/-- A function satisfying `IsCenteredOrderOne` satisfies the centered exponential bound
+`‖f z‖ ≤ exp (C * (1 + ‖z‖ ^ (1 + ε)))` for every `ε > 0`. -/
+theorem exists_norm_le (hf : IsCenteredOrderOne f) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C : ℝ, 0 < C ∧ ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε))) :=
+  hf.2 ε hε
+
+/-- An entire function satisfying the global centered growth bound for every `ε > 0` satisfies
+`IsCenteredOrderOne`. -/
+theorem of_bound (hf : Differentiable ℂ f)
+    (hb : ∀ ε : ℝ, 0 < ε → ∃ C : ℝ,
+      ∀ z : ℂ, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖ ^ (1 + ε)))) :
+    IsCenteredOrderOne f := by
+  refine ⟨hf, fun ε hε ↦ ?_⟩
+  obtain ⟨C, hC⟩ := hb ε hε
+  refine ⟨max C 1, lt_of_lt_of_le zero_lt_one (le_max_right C 1), fun z ↦ (hC z).trans ?_⟩
+  refine Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right (le_max_left C 1) ?_)
+  exact add_nonneg zero_le_one (Real.rpow_nonneg (norm_nonneg z) _)
 
 /-- A global centered order-one bound implies `OrderLE f 1`. -/
 theorem orderLE_one (hf : IsCenteredOrderOne f) : OrderLE f 1 := by
@@ -116,10 +145,25 @@ theorem add (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
     IsCenteredOrderOne (fun z ↦ f z + g z) :=
   (hf.orderLE_one.add hg.orderLE_one).isCenteredOrderOne (hf.differentiable.add hg.differentiable)
 
+/-- The negative of a function satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem neg (hf : IsCenteredOrderOne f) :
+    IsCenteredOrderOne (fun z ↦ -f z) :=
+  hf.orderLE_one.neg.isCenteredOrderOne hf.differentiable.neg
+
+/-- A difference of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem sub (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
+    IsCenteredOrderOne (fun z ↦ f z - g z) :=
+  (hf.orderLE_one.sub hg.orderLE_one).isCenteredOrderOne (hf.differentiable.sub hg.differentiable)
+
 /-- Scaling by a complex constant preserves `IsCenteredOrderOne`. -/
 theorem const_mul (hf : IsCenteredOrderOne f) (c : ℂ) :
     IsCenteredOrderOne (fun z ↦ c * f z) :=
   (hf.orderLE_one.const_mul c).isCenteredOrderOne (hf.differentiable.const_mul c)
+
+/-- A product of two functions satisfying `IsCenteredOrderOne` satisfies `IsCenteredOrderOne`. -/
+theorem mul (hf : IsCenteredOrderOne f) (hg : IsCenteredOrderOne g) :
+    IsCenteredOrderOne (fun z ↦ f z * g z) :=
+  (hf.orderLE_one.mul hg.orderLE_one).isCenteredOrderOne (hf.differentiable.mul hg.differentiable)
 
 /-- Natural powers preserve `IsCenteredOrderOne`. -/
 theorem pow (hf : IsCenteredOrderOne f) (n : ℕ) :

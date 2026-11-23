@@ -32,8 +32,6 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
   such a point is off the divisor support, so any support point where `f` is analytic is a zero.
-* `AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne` — factoring out `(z - z₀) ^ m` leaves the
-  divisor unchanged away from `z₀`.
 * `AnalyticOnNhd.divisor_neg_eq_of_even` — the whole-space divisor of an even analytic function is
   even.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
@@ -190,25 +188,6 @@ theorem AnalyticOnNhd.support_divisor_univ_eq {𝕜 E : Type*} [NontriviallyNorm
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f Set.univ) :
     (MeromorphicOn.divisor f Set.univ).support = Function.support (analyticOrderNatAt f) := by
   rw [hf.support_divisor_eq, Set.univ_inter]
-
-/-- If `f z = (z - z₀) ^ m • g z` with `g` analytic on a neighbourhood of `U`, then the divisors of
-`g` and `f` on `U` agree at every point `w ≠ z₀`. -/
-theorem AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {f g : 𝕜 → E} {U : Set 𝕜} (hg : AnalyticOnNhd 𝕜 g U) {z₀ w : 𝕜} {m : ℕ}
-    (hfg : ∀ z, f z = (z - z₀) ^ m • g z) (hw : w ≠ z₀) :
-    MeromorphicOn.divisor g U w = MeromorphicOn.divisor f U w := by
-  by_cases hwU : w ∈ U
-  · have hsmul : f = (fun z : 𝕜 ↦ (z - z₀) ^ m) • g := by
-      ext z; simp only [hfg, Pi.smul_apply']
-    have hf : AnalyticOnNhd 𝕜 f U := fun z hz ↦ by
-      rw [hsmul]
-      exact ((analyticAt_id.sub analyticAt_const).pow m).smul (hg z hz)
-    rw [MeromorphicOn.divisor_apply hg.meromorphicOn hwU,
-      MeromorphicOn.divisor_apply hf.meromorphicOn hwU, hsmul,
-      meromorphicOrderAt_smul_of_ne_zero (g := fun z : 𝕜 ↦ (z - z₀) ^ m) (by fun_prop)
-        (pow_ne_zero m (sub_ne_zero.mpr hw))]
-  · simp [hwU]
 
 /-- The whole-space divisor of an even analytic function is invariant under negation. -/
 theorem AnalyticOnNhd.divisor_neg_eq_of_even
