@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
 
@@ -18,8 +18,8 @@ Olver's regularized Kummer function `𝐌(a, b, z) = M(a, b, z) / Γ(b)` is Math
 `Complex.regularizedHGFun {a} {b} z`, the sum of the series `∑ (a)ₙ zⁿ / (n! Γ(b + n))`. Since
 `1 / Γ` is entire, every term of this series is an entire function of `a`, `b` and `z`, and the
 series converges locally uniformly in all three variables (DLMF §13.2(i)). Hence `𝐌` is jointly
-continuous in `(a, b, z)`, and it is entire in `a` and in `b` separately; no parameter is
-excluded at the poles of `Γ(b)`.
+continuous and jointly holomorphic in `(a, b, z)`, and in particular entire in `a` and in `b`
+separately; no parameter is excluded at the poles of `Γ(b)`.
 
 The local majorant comes from the shifted Gamma bound `‖1 / Γ(s + n)‖ ≤ ‖1 / Γ(s)‖ / n!` for
 `1 ≤ Re s`: for `‖a‖ ≤ A`, `‖z‖ ≤ R` and `1 ≤ Re (b + N)`, the `(n + N)`-th term of the series of
@@ -36,8 +36,12 @@ The local majorant comes from the shifted Gamma bound `‖1 / Γ(s + n)‖ ≤ �
 * `Complex.continuous_regularizedHGFun_singleton` — joint continuity of `𝐌` in `(a, b, z)`.
 * `Continuous.regularizedHGFun_singleton` — `x ↦ 𝐌(f x, g x, h x)` is continuous for continuous
   `f`, `g` and `h`.
-* `Differentiable.regularizedHGFun_singleton` — `w ↦ 𝐌(f w, g w, h w)` is entire for entire
-  `f`, `g` and `h`.
+* `Complex.differentiable_regularizedHGFun_singleton` — joint holomorphy of `𝐌` in `(a, b, z)`.
+* `DifferentiableAt.regularizedHGFun_singleton`,
+  `DifferentiableWithinAt.regularizedHGFun_singleton`,
+  `DifferentiableOn.regularizedHGFun_singleton`, `Differentiable.regularizedHGFun_singleton` —
+  `w ↦ 𝐌(f w, g w, h w)` is complex differentiable wherever `f`, `g` and `h` are, on any complex
+  normed space.
 * `Complex.differentiable_regularizedHGFun_singleton_left` and
   `Complex.differentiable_regularizedHGFun_singleton_right` — `𝐌` is entire in `a` and in `b`.
 
@@ -166,18 +170,54 @@ theorem _root_.Continuous.regularizedHGFun_singleton {X : Type*} [TopologicalSpa
     Continuous fun x => regularizedHGFun {f x} {g x} (h x) :=
   continuous_regularizedHGFun_singleton.comp (hf.prodMk (hg.prodMk hh))
 
-/-- For entire `f`, `g` and `h`, the function `w ↦ 𝐌(f w, g w, h w)` is entire. -/
-@[fun_prop]
-theorem _root_.Differentiable.regularizedHGFun_singleton {f g h : ℂ → ℂ}
-    (hf : Differentiable ℂ f) (hg : Differentiable ℂ g) (hh : Differentiable ℂ h) :
-    Differentiable ℂ fun w => regularizedHGFun {f w} {g w} (h w) := by
-  have hfgh : Differentiable ℂ fun w => (f w, g w, h w) := hf.prodMk (hg.prodMk hh)
+/-- The regularized Kummer function `𝐌(a, b, z)` is jointly holomorphic in the parameters and the
+argument. -/
+theorem differentiable_regularizedHGFun_singleton :
+    Differentiable ℂ fun p : ℂ × ℂ × ℂ => regularizedHGFun {p.1} {p.2.1} p.2.2 := by
   rw [← differentiableOn_univ]
-  exact (tendstoLocallyUniformlyOn_univ.mpr
-    (tendstoLocallyUniformly_regularizedHGFun_singleton.comp _ hfgh.continuous)).differentiableOn
+  exact (tendstoLocallyUniformlyOn_univ.mpr tendstoLocallyUniformly_regularizedHGFun_singleton
+    ).differentiableOn_of_locallyCompactSpace
       (Eventually.of_forall fun M =>
-        ((differentiable_sum_regularizedHGFunCoeff_singleton_mul_pow M).comp hfgh).differentiableOn)
+        (differentiable_sum_regularizedHGFunCoeff_singleton_mul_pow M).differentiableOn)
       isOpen_univ
+
+section Comp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g h : E → ℂ} {s : Set E}
+  {x : E}
+
+/-- For `f`, `g` and `h` differentiable at `x` within `s`, so is `w ↦ 𝐌(f w, g w, h w)`. -/
+@[fun_prop]
+theorem _root_.DifferentiableWithinAt.regularizedHGFun_singleton
+    (hf : DifferentiableWithinAt ℂ f s x) (hg : DifferentiableWithinAt ℂ g s x)
+    (hh : DifferentiableWithinAt ℂ h s x) :
+    DifferentiableWithinAt ℂ (fun w => regularizedHGFun {f w} {g w} (h w)) s x :=
+  (differentiable_regularizedHGFun_singleton _).comp_differentiableWithinAt x
+    (hf.prodMk (hg.prodMk hh))
+
+/-- For `f`, `g` and `h` differentiable at `x`, so is `w ↦ 𝐌(f w, g w, h w)`. -/
+@[fun_prop]
+theorem _root_.DifferentiableAt.regularizedHGFun_singleton (hf : DifferentiableAt ℂ f x)
+    (hg : DifferentiableAt ℂ g x) (hh : DifferentiableAt ℂ h x) :
+    DifferentiableAt ℂ (fun w => regularizedHGFun {f w} {g w} (h w)) x :=
+  (differentiable_regularizedHGFun_singleton _).comp x (hf.prodMk (hg.prodMk hh))
+
+/-- For `f`, `g` and `h` differentiable on `s`, so is `w ↦ 𝐌(f w, g w, h w)`. -/
+@[fun_prop]
+theorem _root_.DifferentiableOn.regularizedHGFun_singleton (hf : DifferentiableOn ℂ f s)
+    (hg : DifferentiableOn ℂ g s) (hh : DifferentiableOn ℂ h s) :
+    DifferentiableOn ℂ (fun w => regularizedHGFun {f w} {g w} (h w)) s := fun x hx =>
+  (hf x hx).regularizedHGFun_singleton (hg x hx) (hh x hx)
+
+/-- For differentiable `f`, `g` and `h`, the function `w ↦ 𝐌(f w, g w, h w)` is
+differentiable. -/
+@[fun_prop]
+theorem _root_.Differentiable.regularizedHGFun_singleton (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) (hh : Differentiable ℂ h) :
+    Differentiable ℂ fun w => regularizedHGFun {f w} {g w} (h w) := fun x =>
+  (hf x).regularizedHGFun_singleton (hg x) (hh x)
+
+end Comp
 
 /-- For fixed `b` and `z`, the regularized Kummer function `a ↦ 𝐌(a, b, z)` is entire. -/
 theorem differentiable_regularizedHGFun_singleton_left (b z : ℂ) :
