@@ -160,12 +160,6 @@ theorem rep_cons_cons {a b c d : O} (p : Edge (pathCategory O H) a b)
       R.mul (R.rep (@Quiver.Path.cons O H a b c p g)) f :=
   rfl
 
-/-- The generator representing the path `[f, g]` of length two is the chosen composite. -/
-@[simp]
-theorem rep_pair {a b c : O} (f : @Quiver.Hom O H a b) (g : @Quiver.Hom O H b c) :
-    R.rep (@Quiver.Path.cons O H a b c (@Quiver.Hom.toPath O H a b f) g) = R.mul f g :=
-  (R.rep_cons_cons Quiver.Path.nil f g).trans (congrArg (R.mul · g) (R.rep_cons_nil f))
-
 /-- The recursive comparison of the empty path is the chosen nullary comparison. -/
 @[simp]
 theorem repIso_nil (a : O) : R.repIso (@Quiver.Path.nil O H a) = R.unitIso a :=
@@ -187,16 +181,6 @@ theorem repIso_cons_cons {a b c d : O} (p : Edge (pathCategory O H) a b)
           (R.repIso (@Quiver.Path.cons O H a b c p g)) ≪≫
         R.mulIso (R.rep (@Quiver.Path.cons O H a b c p g)) f :=
   (rfl)
-
-/-- The recursive comparison of a path `[f, g]` of length two is the chosen binary
-comparison. -/
-@[simp]
-theorem repIso_pair {a b c : O} (f : @Quiver.Hom O H a b) (g : @Quiver.Hom O H b c) :
-    R.repIso (@Quiver.Path.cons O H a b c (@Quiver.Hom.toPath O H a b f) g) = R.mulIso f g :=
-  (R.repIso_cons_cons Quiver.Path.nil f g).trans <|
-    (congrArg (· ≪≫ R.mulIso f g)
-      ((congrArg (D.hWhiskerRight (@Quiver.Hom.toPath O H b c g)).mapIso
-        (R.repIso_cons_nil f)).trans (Functor.mapIso_refl _ _))).trans (Iso.refl_trans _)
 
 /-- Fold a horizontal path `q = [f₁, …, fₙ]` into a generator, starting from the generator `x`:
 the left-associated chosen composite `(⋯((x ⋆ f₁) ⋆ f₂) ⋯) ⋆ fₙ`. Its body is exposed because
@@ -255,11 +239,12 @@ theorem rep_cons_comp {a b c d : O} (p : Edge (pathCategory O H) a b) (g : @Quiv
     R.rep ((@Quiver.Path.cons O H a b c p g).comp q) =
       R.foldRep (R.rep (@Quiver.Path.cons O H a b c p g)) q := by
   induction q with
-  | nil => rfl
+  | nil => rw [Quiver.Path.comp_nil, foldRep_nil]
   | cons q f ih =>
+    rw [Quiver.Path.comp_cons, foldRep_cons, ← ih]
     cases q with
-    | nil => rfl
-    | cons q f' => exact congrArg (R.mul · f) ih
+    | nil => rw [Quiver.Path.comp_nil, rep_cons_cons]
+    | cons q f' => rw [Quiver.Path.comp_cons, rep_cons_cons]
 
 /-- Whiskering a transported comparison by `[f]` and applying the binary comparison transports
 the binary comparison of the original generator. -/
@@ -285,14 +270,17 @@ theorem repIso_cons_comp {a b c d : O} (p : Edge (pathCategory O H) a b)
         eqToIso (congrArg (fun x ↦ (⟨@Quiver.Hom.toPath O H a d x⟩ : D.HorizontalGlobular a d))
           (R.rep_cons_comp p g q).symm) := by
   induction q with
-  | nil => exact (Iso.trans_refl _).symm
+  | nil =>
+    rw [foldIso_nil]
+    exact (Iso.trans_refl _).symm
   | cons q f ih =>
+    rw [foldIso_cons]
+    have step := mapIso_trans_eqToIso_trans_mulIso R (R.rep_cons_comp p g q).symm
+      (R.foldIso (R.repIso (@Quiver.Path.cons O H a b c p g)) q) f
+    rw [← ih] at step
     cases q with
-    | nil => exact (Iso.trans_refl _).symm
-    | cons q f' =>
-      exact (congrArg (fun i ↦ (D.hWhiskerRight (@Quiver.Hom.toPath O H _ _ f)).mapIso i ≪≫
-        R.mulIso _ f) ih).trans
-        (mapIso_trans_eqToIso_trans_mulIso R (R.rep_cons_comp p g (q.cons f')).symm _ f)
+    | nil => exact (R.repIso_cons_cons p g f).trans step
+    | cons q f' => exact (R.repIso_cons_cons ((p.cons g).comp q) f' f).trans step
 
 end HorizontalRepresentation
 

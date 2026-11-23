@@ -394,6 +394,39 @@ theorem changeRight_changeRight_symm (e : D.VerticalIso r r') (α : D.Cell p q l
     D.changeRight e (D.changeRight e.symm α) = α :=
   D.transpose.changeBottom_changeBottom_symm e α
 
+/-- Changing the top boundary along the globular isomorphism induced by an equality of edges
+transports the cell along that equality. -/
+@[simp]
+theorem changeTop_eqToIso (h : (⟨p⟩ : D.HorizontalGlobular a b) = ⟨p'⟩) (α : D.Cell p q l r) :
+    D.changeTop (eqToIso h) α = α.cast (congrArg HorizontalGlobular.edge h) rfl rfl rfl := by
+  cases h
+  simp
+
+/-- Changing the bottom boundary along the globular isomorphism induced by an equality of edges
+transports the cell along that equality. -/
+@[simp]
+theorem changeBottom_eqToIso (h : (⟨q⟩ : D.HorizontalGlobular c d) = ⟨q'⟩)
+    (α : D.Cell p q l r) :
+    D.changeBottom (eqToIso h) α = α.cast rfl (congrArg HorizontalGlobular.edge h) rfl rfl := by
+  cases h
+  simp
+
+/-- Changing the left boundary along the globular isomorphism induced by an equality of edges
+transports the cell along that equality. -/
+@[simp]
+theorem changeLeft_eqToIso (h : (⟨l⟩ : D.VerticalGlobular a c) = ⟨l'⟩) (α : D.Cell p q l r) :
+    D.changeLeft (eqToIso h) α = α.cast rfl rfl (congrArg HorizontalGlobular.edge h) rfl :=
+  (D.transpose.changeTop_eqToIso h α).trans
+    (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
+
+/-- Changing the right boundary along the globular isomorphism induced by an equality of edges
+transports the cell along that equality. -/
+@[simp]
+theorem changeRight_eqToIso (h : (⟨r⟩ : D.VerticalGlobular b d) = ⟨r'⟩) (α : D.Cell p q l r) :
+    D.changeRight (eqToIso h) α = α.cast rfl rfl rfl (congrArg HorizontalGlobular.edge h) :=
+  (D.transpose.changeBottom_eqToIso h α).trans
+    (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
+
 end BoundaryChange
 
 end StrictDoubleCategory
