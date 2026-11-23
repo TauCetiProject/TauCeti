@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.Basic
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.MetricChange
 
 /-!
