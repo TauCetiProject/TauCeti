@@ -59,9 +59,7 @@ coefficient gives a nonzero class (`TauCeti.singularHomology₀Section_apply_ne_
 With coefficients in a ring the class of a point spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
-(`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`), every map between
-path-connected spaces is an isomorphism on it
-(`TauCeti.isIso_singularHomologyMap_zero_of_pathConnectedSpace`), and with coefficients in a
+(`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`), and with coefficients in a
 ring with the strong rank condition that homology has rank one
 (`TauCeti.finrank_singularHomology₀_eq_one`).
 With coefficients in a ring with the strong rank condition, such as a field, the rank of reduced
@@ -177,13 +175,6 @@ source factors through it and is an isomorphism. -/
 theorem mono_singularHomologyMap_zero_of_pathConnectedSpace {X Y : TopCat.{w}}
     [PathConnectedSpace X] (f : X ⟶ Y) : Mono (((singularHomologyFunctor C 0).obj R).map f) :=
   mono_of_mono_fac (singularHomologyMap_singularHomology₀ε R f)
-
-/-- A map between path-connected spaces is an isomorphism on zeroth homology: it commutes with the
-augmentations, which are isomorphisms. -/
-theorem isIso_singularHomologyMap_zero_of_pathConnectedSpace {X Y : TopCat.{w}}
-    [PathConnectedSpace X] [PathConnectedSpace Y] (f : X ⟶ Y) :
-    IsIso (((singularHomologyFunctor C 0).obj R).map f) :=
-  IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε R f)
 
 /-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
