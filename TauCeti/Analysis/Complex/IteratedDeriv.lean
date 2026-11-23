@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic

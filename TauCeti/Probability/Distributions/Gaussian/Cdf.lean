@@ -30,6 +30,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   difference of
   error-function values.
 * `TauCeti.Probability.integral_Iic_gaussianPDFReal` — the same over a left half-line.
+* `TauCeti.Probability.measureReal_gaussianReal_eq_setIntegral` — for a nonzero variance the
+  real mass of a set is the integral of the density over it.
 * `TauCeti.Probability.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
 * `TauCeti.Probability.cdf_gaussianReal_eq_cdf_zero_one` — standardization `Φ ((x - m) / √v)`.
@@ -138,11 +140,17 @@ theorem integral_Iic_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x :
     ring
   exact tendsto_nhds_unique hlim hlim'
 
+/-- For a nonzero variance, the real mass of a set `s` under `gaussianReal m v` is the integral
+of the Gaussian density over `s`. -/
+theorem measureReal_gaussianReal_eq_setIntegral (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (s : Set ℝ) :
+    (gaussianReal m v).real s = ∫ t in s, gaussianPDFReal m v t := by
+  rw [measureReal_def, gaussianReal_apply_eq_integral m hv,
+    ENNReal.toReal_ofReal (integral_nonneg fun t => gaussianPDFReal_nonneg m v t)]
+
 /-- The cumulative distribution function of a Gaussian law with nonzero variance. -/
 theorem cdf_gaussianReal_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     cdf (gaussianReal m v) x = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-  rw [cdf_eq_real, measureReal_def, gaussianReal_apply_eq_integral m hv,
-    ENNReal.toReal_ofReal (integral_nonneg fun t => gaussianPDFReal_nonneg m v t)]
+  rw [cdf_eq_real, measureReal_gaussianReal_eq_setIntegral m hv]
   exact integral_Iic_gaussianPDFReal m hv x
 
 /-- The cumulative distribution function of the standard Gaussian law. -/
@@ -334,9 +342,7 @@ standard Gaussian cumulative distribution function:
 `∫ t in Ioi x, N(m, v)(t) = Φ ((m - x) / √v)`. -/
 theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     ∫ t in Ioi x, gaussianPDFReal m v t = cdf (gaussianReal 0 1) ((m - x) / √(v : ℝ)) := by
-  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_def,
-    gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
-      (setIntegral_nonneg measurableSet_Ioi fun t _ => gaussianPDFReal_nonneg m v t)]
+  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_gaussianReal_eq_setIntegral m hv]
 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
@@ -358,8 +364,7 @@ theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v
           (fun x hx => antitoneOn_gaussianPDFReal m v (hs.trans hx.1.le) (hs.trans hst) hx.2)
           (integrable_gaussianPDFReal m v).integrableOn
     _ = (gaussianReal m v).real (Ioc s (s + t)) := by
-        rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
-          (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
+        rw [measureReal_gaussianReal_eq_setIntegral m hv]
     _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
 
 /-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the
