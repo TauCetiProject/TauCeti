@@ -11,8 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Valued.WithVal
 public import TauCeti.Topology.Algebra.ValuativeRel.Completion
 import Mathlib.RingTheory.DiscreteValuationRing.Basic
-import Mathlib.RingTheory.Valuation.Discrete.RankOne
-import Mathlib.Topology.Algebra.Valued.LocallyCompact
+import TauCeti.Topology.Algebra.Valued.DiscreteValuationRing
 
 /-!
 # The completion at a place with finite residue field is a local field
@@ -32,8 +31,8 @@ order of the completed place. In particular a function of order one at `P` is a 
 
 The valuative relation is the one Mathlib puts on every completion of a field at a valuation; the
 completed valuation `Valued.v` is compatible with it by `Valuation.Completion.compatible_valued`.
-Local compactness comes from Mathlib's characterization of proper complete discretely valued fields
-by the finiteness of their residue fields, as for the adic completions of Dedekind domains in
+Local compactness comes from `Valued.integer.locallyCompactSpace_of_finite_residueField`, which
+also gives it for the adic completions of Dedekind domains in
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel`.
 
 ## Main results
@@ -43,7 +42,8 @@ by the finiteness of their residue fields, as for the adic completions of Dedeki
 * `TauCeti.Place.integer_completion_eq`: the ring of integers of the valuative relation on `F_P`
   is the valuation ring of the completed place.
 * `TauCeti.Place.valuativeResidueFieldEquiv`: the residue field of the valuative relation on `F_P`
-  is the residue field of `P`; `natCard_valuativeResidueField` computes its cardinality.
+  is the residue field of `P`, with its value on residues (`valuativeResidueFieldEquiv_residue`);
+  `natCard_valuativeResidueField` computes its cardinality.
 * `TauCeti.Place.normalizedValuation_completion`: the normalized valuation of `F_P` is the order of
   the completed place; `normalizedValuation_unitsMap_completionEmbedding` reads it on `Fˣ` as
   `ord_P`, and `isUniformizer_unitsMap_completionEmbedding_iff` characterizes uniformizers.
@@ -64,10 +64,6 @@ open scoped WithZero
 namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F)
-
-/-- The valuation of the completed place is the completed valuation `Valued.v`. -/
-private theorem completionPlace_valuation_eq : P.completionPlace.valuation = Valued.v :=
-  Valuation.ext P.completionPlace_valuation
 
 /-- The valuative relation of `F` with the valuation of a place is nontrivial. Through
 `UniformSpace.Completion.isNontrivial` this makes the valuative relation of the completion
@@ -106,26 +102,30 @@ def valuativeResidueFieldEquiv : 𝓀[P.Completion] ≃+* P.ResidueField :=
   (IsLocalRing.ResidueField.mapEquiv P.integerCompletionEquiv).trans
     P.residueFieldEquivCompletion.symm.toRingEquiv
 
+/-- The residue-field isomorphism on the residue of an integer `x` of `P.Completion`: it is the
+residue of `x` in the valuation ring of the completed place, read in the residue field of `P`. -/
+@[simp]
+theorem valuativeResidueFieldEquiv_residue (x : 𝒪[P.Completion]) :
+    P.valuativeResidueFieldEquiv (IsLocalRing.residue 𝒪[P.Completion] x) =
+      P.residueFieldEquivCompletion.symm
+        (IsLocalRing.residue P.completionPlace.integers (P.integerCompletionEquiv x)) := by
+  simp [valuativeResidueFieldEquiv]
+
 /-- The residue-field isomorphism sends the residue of the image of a function regular at `P` to
 its value at `P`. -/
-@[simp]
-theorem valuativeResidueFieldEquiv_residue (x : P.integers) :
+theorem valuativeResidueFieldEquiv_residue_completionIntegersEmbedding (x : P.integers) :
     P.valuativeResidueFieldEquiv (IsLocalRing.residue 𝒪[P.Completion]
         (P.integerCompletionEquiv.symm (P.completionIntegersEmbedding x))) =
       IsLocalRing.residue P.integers x := by
-  simp [valuativeResidueFieldEquiv]
+  rw [valuativeResidueFieldEquiv_residue, RingEquiv.apply_symm_apply,
+    residueFieldEquivCompletion_symm_residue_completionIntegersEmbedding]
 
-open Valued.integer in
 /-- **The completion at a place with finite residue field is a nonarchimedean local field.** -/
 instance instIsNonarchimedeanLocalFieldCompletion [Finite P.ResidueField] :
     IsNonarchimedeanLocalField P.Completion := by
-  -- The completed valuation is discrete of rank one; a rank-one normalization supplies a norm
-  -- whose uniform structure is the existing one.
+  -- The completed valuation is discrete of rank one.
   have : (Valued.v : Valuation P.Completion ℤᵐ⁰).IsRankOneDiscrete :=
     P.completionPlace_valuation_eq ▸ inferInstance
-  let _ : (Valued.v : Valuation P.Completion ℤᵐ⁰).RankOne :=
-    Valuation.IsRankOneDiscrete.rankOne _ (by norm_num : (1 : NNReal) < 2)
-  let _ : NormedField P.Completion := Valued.toNormedField P.Completion ℤᵐ⁰
   -- The ring of integers of `Valued.v` is the valuation ring of the completed place, a discrete
   -- valuation ring with residue field that of `P`.
   let e : Valued.integer P.Completion ≃+* P.completionPlace.integers :=
@@ -137,9 +137,8 @@ instance instIsNonarchimedeanLocalFieldCompletion [Finite P.ResidueField] :
   have : Finite (IsLocalRing.ResidueField (Valued.integer P.Completion)) :=
     Finite.of_equiv _ (P.residueFieldEquivCompletion.toRingEquiv.trans
       (IsLocalRing.ResidueField.mapEquiv e.symm)).toEquiv
-  have : ProperSpace P.Completion := by
-    rw [properSpace_iff_completeSpace_and_isDiscreteValuationRing_integer_and_finite_residueField]
-    exact ⟨inferInstance, inferInstance, inferInstance⟩
+  have : LocallyCompactSpace P.Completion :=
+    Valued.integer.locallyCompactSpace_of_finite_residueField
   exact ⟨⟩
 
 /-- **The residue cardinality of the completion.** If the residue field of `P` is finite-dimensional
