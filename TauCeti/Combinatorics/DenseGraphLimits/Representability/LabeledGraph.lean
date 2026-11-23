@@ -207,9 +207,10 @@ private theorem glueLeft_eq_glueRight_iff (G₁ G₂ : LabeledGraph k) (a : Fin 
   obtain ⟨s | a, rfl⟩ := G₁.labelSumUnlabeledEquiv.surjective a <;>
     obtain ⟨t | b, rfl⟩ := G₂.labelSumUnlabeledEquiv.surjective b
   · simp [glueLeft, glueRight, G₁.label_injective.eq_iff, G₂.label_injective.eq_iff, eq_comm]
-  · simpa [glueLeft, glueRight, G₁.label_injective.eq_iff] using (b.2 s).symm
-  · simpa [glueLeft, glueRight, G₂.label_injective.eq_iff] using (a.2 t).symm
-  · simpa [glueLeft, glueRight] using fun i (ha : (a : Fin G₁.n) = G₁.label i) _ => a.2 i ha.symm
+  · simpa [glueLeft, glueRight, G₁.label_injective.eq_iff] using (b.property s).symm
+  · simpa [glueLeft, glueRight, G₂.label_injective.eq_iff] using (a.property t).symm
+  · simpa [glueLeft, glueRight] using fun i (ha : (a : Fin G₁.n) = G₁.label i) _ => a.property i
+      ha.symm
 
 /-- Every vertex of the gluing carrier comes from one of the two sides. -/
 private theorem glueLeft_surjective_or (G₁ G₂ : LabeledGraph k) (v : G₁.glueCarrier G₂) :

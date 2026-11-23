@@ -154,7 +154,7 @@ noncomputable def realifyUnitaryHomeomorph
     (hG : G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) = (unitarySubgroup (GL n ℂ)).map (realify n ℂ)) :
     unitaryGroup n ℂ ≃ₜ {u : unitaryGroup (n ⊕ n) ℝ // Unitary.toUnits u ∈ G} :=
   have hmem (U : unitaryGroup n ℂ) : (U : Matrix n n ℂ).realify ∈ unitaryGroup (n ⊕ n) ℝ :=
-    realify_mem_orthogonalGroup_iff.2 U.2
+    realify_mem_orthogonalGroup_iff.2 U.property
   have hG' (U : unitaryGroup n ℂ) : Unitary.toUnits ⟨_, hmem U⟩ ∈ G := by
     have hU : realify n ℂ (Unitary.toUnits U) ∈ G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
       hG ▸ Subgroup.mem_map_of_mem _ (by simp [mem_unitarySubgroup_iff, Units.unitary_eq])
@@ -169,7 +169,7 @@ noncomputable def realifyUnitaryHomeomorph
         ((u : unitaryGroup (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) h
     have hu : Unitary.toUnits (u : unitaryGroup (n ⊕ n) ℝ) ∈
         G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
-      Subgroup.mem_inf.2 ⟨u.2, by simp [mem_unitarySubgroup_iff, Units.unitary_eq]⟩
+      Subgroup.mem_inf.2 ⟨u.property, by simp [mem_unitarySubgroup_iff, Units.unitary_eq]⟩
     rw [hG] at hu
     obtain ⟨A, hA, hAu⟩ := hu
     refine ⟨⟨A, by simpa [mem_unitarySubgroup_iff, Units.unitary_eq] using hA⟩, ?_⟩
@@ -178,7 +178,7 @@ noncomputable def realifyUnitaryHomeomorph
   -- `U(n)` is compact, so a continuous bijection onto a Hausdorff space is a homeomorphism.
   Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf)
     (((Matrix.isClosedEmbedding_realify (m := n) (n := n) (𝕜 := ℂ)).continuous.comp
-      continuous_subtype_val).subtype_mk _ |>.subtype_mk _)
+      continuous_subtypeVal).subtype_mk _ |>.subtype_mk _)
 
 /-- Realification identifies `U(n)` with the orthogonal matrices of `G`, as matrices. -/
 @[simp]
@@ -226,16 +226,9 @@ theorem coe_ofUnitary (U : unitaryGroup n ℂ) :
   rw [ofUnitary_apply, Subgroup.coe_inclusion, unitaryGroupEquivSymplecticInfOrthogonal_apply]
   simp
 
-/-- The realification of a unitary matrix is orthogonal, as a matrix. -/
-theorem coe_ofUnitary_mem_unitary (U : unitaryGroup n ℂ) :
-    ((ofUnitary U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
-      unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
-  rw [coe_ofUnitary]
-  exact realify_mem_orthogonalGroup_iff.2 U.2
-
 /-- Realification of unitary matrices is continuous. -/
 theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GLSymplectic n ℝ) := by
-  refine continuous_induced_rng.2 ((continuous_subtype_val.comp
+  refine continuous_induced_rng.2 ((continuous_subtypeVal.comp
     (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)))).congr fun U ↦ ?_)
   rw [Function.comp_apply, Function.comp_apply, ofUnitary_apply, Subgroup.coe_inclusion]
 

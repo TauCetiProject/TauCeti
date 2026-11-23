@@ -86,7 +86,7 @@ theorem coe_map_pow_subset {M : Submodule R B} (h1 : (1 : B) ∈ M) (I : Ideal R
     rw [smul_eq_mul, Subring.coe_mul]
     refine Submodule.smul_induction_on' hy (fun t ht m hm ↦ ?_) fun _ _ _ _ h₁ h₂ ↦ ?_
     · rw [mul_smul_comm]
-      exact Submodule.smul_mem_smul ht (AddSubgroup.mem_multiplierRing.mp r.2 m hm)
+      exact Submodule.smul_mem_smul ht (AddSubgroup.mem_multiplierRing.mp r.property m hm)
     · rw [mul_add]
       exact Submodule.add_mem _ h₁ h₂
 

@@ -121,7 +121,7 @@ theorem span_rootCorootSpan_eq_top :
           obtain ⟨α, rfl⟩ := hy
           rw [rootSystem_coroot_apply]
           exact Submodule.subset_span
-            (mem_rootCorootGenerators_iff.2 (Or.inr ⟨α.1, rfl⟩))
+            (mem_rootCorootGenerators_iff.2 (Or.inr ⟨α.val, rfl⟩))
       | zero => exact Submodule.zero_mem _
       | add y z _ _ hy hz =>
           -- The induction runs in the Cartan subtype; the target is its image in `L`.

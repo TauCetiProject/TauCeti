@@ -20,6 +20,8 @@ coordinate changes used to trivialize the orthonormal frame bundle.
 
 The construction uses Mathlib's `OrthonormalBasis.repr` and the continuous local
 Gram–Schmidt bases in `TauCeti.Topology.VectorBundle.GramSchmidt`.
+`TauCeti.orthonormalBasisOfOrthonormalSections` additionally turns a pointwise orthonormal family
+of sections matching the fibre rank into a pointwise `OrthonormalBasis` over any `RCLike` field.
 
 ## References
 
@@ -32,6 +34,8 @@ noncomputable section
 
 open Bundle Set
 open scoped Topology InnerProductSpace
+
+section
 
 variable {B : Type*} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -49,15 +53,15 @@ variable (c : OrthonormalBasis ι ℝ F) {U : Set B} (hU : IsOpen U)
 include hd in
 private theorem continuous_local_repr :
     Continuous fun p : {p : TotalSpace F E // p.proj ∈ U} ↦
-      (d ⟨p.val.proj, p.property⟩).repr p.val.2 := by
+      (d ⟨p.val.proj, p.property⟩).repr p.val.snd := by
   apply continuous_induced_rng.2
   apply continuous_pi
   intro i
   simp only [Function.comp_def, OrthonormalBasis.repr_apply_apply]
   have hbase : Continuous (fun p : {p : TotalSpace F E // p.proj ∈ U} ↦
       (⟨p.val.proj, p.property⟩ : U)) :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
-  exact ((hd i).comp hbase).inner_bundle continuous_subtype_val
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _
+  exact ((hd i).comp hbase).inner_bundle continuous_subtypeVal
 
 include hd in
 omit [IsContinuousRiemannianBundle F E] in
@@ -67,10 +71,10 @@ private theorem continuous_local_repr_symm :
   classical
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨(continuous_subtype_val.comp continuous_fst).continuousAt, ?_⟩
+  refine ⟨(continuous_subtypeVal.comp continuous_fst).continuousAt, ?_⟩
   let e := trivializationAt F E (p.1 : B)
   have hmem : ∀ᶠ q : U × F in 𝓝 p, (q.1 : B) ∈ e.baseSet :=
-    (continuous_subtype_val.comp continuous_fst).continuousAt
+    (continuous_subtypeVal.comp continuous_fst).continuousAt
       (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (p.1 : B)))
   have hc (i : ι) : ContinuousAt
       (fun q : U × F ↦ TotalSpace.mk' F (q.1 : B) (d q.1 i)) p :=
@@ -92,7 +96,7 @@ open scoped Classical in
 /-- A continuous local orthonormal basis defines a bundle chart whose fibre map sends that
 basis to the fixed orthonormal model basis `c`. -/
 def bundleTrivialization : Trivialization F (π F E) where
-  toFun p := (p.proj, if h : p.proj ∈ U then c.repr.symm ((d ⟨p.proj, h⟩).repr p.2) else 0)
+  toFun p := (p.proj, if h : p.proj ∈ U then c.repr.symm ((d ⟨p.proj, h⟩).repr p.snd) else 0)
   invFun p := ⟨p.1, if h : p.1 ∈ U then (d ⟨p.1, h⟩).repr.symm (c.repr p.2) else 0⟩
   source := (π F E) ⁻¹' U
   target := U ×ˢ univ
@@ -106,15 +110,15 @@ def bundleTrivialization : Trivialization F (π F E) where
   open_target := hU.prod isOpen_univ
   continuousOn_toFun := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).prodMk
+    exact ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).prodMk
       ((c.repr.symm.continuous.comp (continuous_local_repr d hd)).congr
         fun p ↦ by simp [p.property])
   continuousOn_invFun := by
     rw [continuousOn_iff_continuous_domRestrict]
     have h : Continuous (fun p : U ×ˢ (univ : Set F) ↦
         ((⟨p.val.1, p.property.1⟩ : U), p.val.2)) :=
-      ((continuous_fst.comp continuous_subtype_val).subtype_mk _).prodMk
-        (continuous_snd.comp continuous_subtype_val)
+      ((continuous_fst.comp continuous_subtypeVal).subtype_mk _).prodMk
+        (continuous_snd.comp continuous_subtypeVal)
     exact ((continuous_local_repr_symm c d hd).comp h).congr fun p ↦ by
       simp [p.property.1]
   baseSet := U
@@ -178,6 +182,16 @@ def orthonormal : Trivialization F (π F E) :=
   OrthonormalBasis.bundleTrivialization c e.open_baseSet
     (e.orthonormalBasis c.toBasis) (e.continuous_orthonormalBasis c.toBasis)
 
+/-- `Bundle.Trivialization.orthonormal` is `OrthonormalBasis.bundleTrivialization` applied to the
+Gram–Schmidt basis `e.orthonormalBasis c.toBasis`, independent of the continuity proof by proof
+irrelevance. -/
+theorem orthonormal_eq_bundleTrivialization
+    (hd : ∀ i, Continuous fun b : e.baseSet ↦
+      TotalSpace.mk' F (b : B) (e.orthonormalBasis c.toBasis b i)) :
+    e.orthonormal c =
+      OrthonormalBasis.bundleTrivialization c e.open_baseSet (e.orthonormalBasis c.toBasis) hd :=
+  (rfl)
+
 @[simp]
 theorem orthonormal_baseSet : (e.orthonormal c).baseSet = e.baseSet := by
   simp [orthonormal]
@@ -221,3 +235,41 @@ theorem exists_orthonormal_trivialization (c : OrthonormalBasis ι ℝ F) (x : B
     simp [hb']
 
 end OrthonormalBasis
+
+end
+
+namespace TauCeti
+
+section OrthonormalSections
+
+variable {𝕜 B₀ F₀ : Type*} [RCLike 𝕜] [TopologicalSpace B₀]
+  [NormedAddCommGroup F₀] [NormedSpace 𝕜 F₀] [FiniteDimensional 𝕜 F₀]
+  {E₀ : B₀ → Type*} [TopologicalSpace (TotalSpace F₀ E₀)]
+  [∀ b, NormedAddCommGroup (E₀ b)] [∀ b, InnerProductSpace 𝕜 (E₀ b)]
+  [FiberBundle F₀ E₀] [VectorBundle 𝕜 F₀ E₀]
+  {ι₀ : Type*} [Fintype ι₀]
+
+/-- A pointwise orthonormal family of sections indexed by `ι₀` with
+`Fintype.card ι₀ = finrank 𝕜 F₀` defines a pointwise `OrthonormalBasis` of every fibre (including
+rank zero). -/
+def orthonormalBasisOfOrthonormalSections {v : ι₀ → ∀ b : B₀, E₀ b}
+    (hv : ∀ b, Orthonormal 𝕜 (fun i ↦ v i b))
+    (hrank : Fintype.card ι₀ = Module.finrank 𝕜 F₀) (b : B₀) :
+    OrthonormalBasis ι₀ 𝕜 (E₀ b) := by
+  have hlin := (trivializationAt F₀ E₀ b).linearEquivAt 𝕜 b (mem_baseSet_trivializationAt F₀ E₀ b)
+  haveI : FiniteDimensional 𝕜 (E₀ b) := hlin.symm.finiteDimensional
+  have hfin : Fintype.card ι₀ = Module.finrank 𝕜 (E₀ b) := hrank.trans hlin.finrank_eq.symm
+  exact (basisOfLinearIndependentOfCardEqFinrank' (fun i ↦ v i b)
+    (hv b).linearIndependent hfin).toOrthonormalBasis
+    (by simpa only [coe_basisOfLinearIndependentOfCardEqFinrank'] using hv b)
+
+@[simp]
+theorem orthonormalBasisOfOrthonormalSections_apply {v : ι₀ → ∀ b : B₀, E₀ b}
+    (hv : ∀ b, Orthonormal 𝕜 (fun i ↦ v i b))
+    (hrank : Fintype.card ι₀ = Module.finrank 𝕜 F₀) (b : B₀) (i : ι₀) :
+    orthonormalBasisOfOrthonormalSections hv hrank b i = v i b := by
+  simp [orthonormalBasisOfOrthonormalSections]
+
+end OrthonormalSections
+
+end TauCeti

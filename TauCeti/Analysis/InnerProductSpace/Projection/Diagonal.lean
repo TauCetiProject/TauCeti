@@ -23,6 +23,9 @@ the trace of `P_U`, which is the dimension of `U`. A coordinate subspace spanned
 `i ∈ s` has the indicator of `s` as its diagonal, and conjugating `P_U` by a diagonal unitary, that
 is moving `U` by the action of the diagonal torus, does not change the diagonal.
 
+The coordinate subspaces are exactly the subspaces fixed by the diagonal unitary group, and a
+diagonal unitary fixes every subspace exactly when it is a scalar.
+
 On a Grassmannian of `r`-dimensional subspaces, identified with the coadjoint orbit of rank-`r`
 projectors, the projector diagonal is the moment map of the diagonal torus action. The facts above
 place its image in the hypersimplex `{x ∈ [0, 1]^ι | ∑ xᵢ = r}`, with the coordinate subspaces, the
@@ -41,10 +44,22 @@ fixed points of the torus, mapped to its vertices.
 * `Submodule.sum_projectorDiagonal`: the entries sum to the dimension of `U`.
 * `Submodule.projectorDiagonal_span_single`: the diagonal of a coordinate subspace is the
   indicator of its coordinates.
+* `Submodule.projectorDiagonal_orthogonal`: the diagonal for `Uᗮ` is one minus the diagonal for
+  `U`.
+* `Submodule.projectorDiagonal_span_singleton`: the diagonal of the line spanned by `v` is
+  `(‖vᵢ‖² / ‖v‖²)ᵢ`.
 * `Submodule.finrank_span_image_single`: as a consequence, a coordinate subspace has dimension
   the number of its coordinates.
 * `Submodule.projectorDiagonal_map_piLpCongrRight`: the diagonal is invariant under the diagonal
   unitary group.
+* `Submodule.span_image_single_le_span_image_single_iff`,
+  `Submodule.span_image_single_injective`: coordinate subspaces are ordered by inclusion of their
+  coordinate sets, and determine them.
+* `Submodule.forall_map_piLpCongrRight_eq_iff`: the subspaces fixed by the diagonal unitary group
+  are the coordinate subspaces.
+* `Submodule.map_piLpCongrRight_of_forall_eq`,
+  `Submodule.eq_of_map_piLpCongrRight_span_singleton_le`: scalars fix every subspace, and a diagonal
+  unitary fixing the line spanned by `eᵢ + eⱼ` has equal `i`-th and `j`-th entries.
 
 ## References
 
@@ -150,6 +165,21 @@ theorem projectorDiagonal_top : (⊤ : Submodule 𝕜 (EuclideanSpace 𝕜 ι)).
   ext i
   exact (projectorDiagonal_eq_one_iff _).2 mem_top
 
+/-- The diagonal of the projector onto the orthogonal complement `Uᗮ` is `1 - diag(P_U)`, since
+`P_{Uᗮ} = 1 - P_U`. -/
+@[simp]
+theorem projectorDiagonal_orthogonal : Uᗮ.projectorDiagonal = 1 - U.projectorDiagonal := by
+  ext i
+  simp [projectorDiagonal_def]
+
+/-- The diagonal of the projector onto the line spanned by a vector `v` is
+`(‖vᵢ‖² / ‖v‖²)ᵢ`. For `v = 0` both sides vanish. -/
+theorem projectorDiagonal_span_singleton (v : EuclideanSpace 𝕜 ι) (i : ι) :
+    (𝕜 ∙ v).projectorDiagonal i = ‖v i‖ ^ 2 / ‖v‖ ^ 2 := by
+  simp [projectorDiagonal_def, starProjection_singleton, EuclideanSpace.inner_single_right,
+    div_mul_eq_mul_div, RCLike.conj_mul]
+  norm_cast
+
 /-- The diagonal of the projector onto the coordinate subspace spanned by the basis vectors `eᵢ`
 with `i ∈ s` is the indicator function of `s`. -/
 @[simp]
@@ -197,5 +227,139 @@ theorem finrank_span_image_single [Finite ι] (s : Finset ι) :
   apply Nat.cast_injective (R := ℝ)
   rw [← sum_projectorDiagonal, projectorDiagonal_span_single]
   simp [Set.indicator_apply]
+
+omit [Fintype ι] in
+/-- Coordinate subspaces are ordered by inclusion of their sets of coordinates. -/
+@[simp]
+theorem span_image_single_le_span_image_single_iff [Finite ι] {s t : Set ι} :
+    span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s) ≤
+        span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' t) ↔ s ⊆ t := by
+  have := Fintype.ofFinite ι
+  have hb : (fun i ↦ EuclideanSpace.single i (1 : 𝕜)) = (EuclideanSpace.basisFun ι 𝕜).toBasis := by
+    ext1 i
+    simp
+  rw [hb]
+  exact ⟨fun h i hi ↦ (Module.Basis.self_mem_span_image _).1 (h (subset_span ⟨i, hi, rfl⟩)),
+    fun h ↦ span_mono (Set.image_mono h)⟩
+
+omit [Fintype ι] in
+/-- A coordinate subspace determines its set of coordinates. -/
+theorem span_image_single_injective [Finite ι] :
+    Function.Injective fun s : Set ι ↦ span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s) :=
+  fun _ _ h ↦ subset_antisymm (span_image_single_le_span_image_single_iff.1 h.le)
+    (span_image_single_le_span_image_single_iff.1 h.ge)
+
+/-! ### Subspaces fixed by the diagonal unitary group
+
+The diagonal unitary group of `EuclideanSpace 𝕜 ι` consists of the linear isometries
+`LinearIsometryEquiv.piLpCongrRight 2 e` acting on each coordinate separately, for
+`e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜`; for `𝕜 = ℂ` it is the torus `U(1)^ι` of diagonal matrices with entries of
+norm one. Its fixed subspaces are exactly the coordinate subspaces. Already the elements that
+negate a single coordinate detect this: if `u ∈ U` has `uᵢ ≠ 0` and `U` is stable under negating
+the `i`-th coordinate, then `U` contains the difference `2 uᵢ eᵢ`, hence `eᵢ`. An element acts
+trivially on all subspaces when it is a scalar, and only then: the line spanned by `eᵢ + eⱼ`
+is fixed exactly when the `i`-th and `j`-th entries agree. -/
+
+/-- If `U` is stable under the diagonal unitary group and `u ∈ U` has a nonzero `i`-th coordinate,
+then `eᵢ ∈ U`. -/
+theorem single_mem_of_forall_map_piLpCongrRight_le
+    (h : ∀ e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜, U.map ((LinearIsometryEquiv.piLpCongrRight 2 e :
+      EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι).toLinearEquiv :
+        EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) ≤ U)
+    {u : EuclideanSpace 𝕜 ι} (hu : u ∈ U) {i : ι} (hi : u i ≠ 0) :
+    EuclideanSpace.single i (1 : 𝕜) ∈ U := by
+  -- negate the `i`-th coordinate and subtract
+  let e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜 :=
+    Function.update (fun _ ↦ LinearIsometryEquiv.refl 𝕜 𝕜) i (LinearIsometryEquiv.neg 𝕜)
+  have hsub : u - LinearIsometryEquiv.piLpCongrRight 2 e u =
+      (2 * u i) • EuclideanSpace.single i (1 : 𝕜) := by
+    ext j
+    by_cases hj : j = i
+    · subst hj
+      simp [e]
+      ring
+    · simp [e, hj]
+  have hmem := U.smul_mem (2 * u i)⁻¹ (hsub ▸ U.sub_mem hu (h e (mem_map_of_mem hu)))
+  rwa [smul_smul, inv_mul_cancel₀ (mul_ne_zero two_ne_zero hi), one_smul] at hmem
+
+/-- A subspace stable under the diagonal unitary group is the coordinate subspace spanned by the
+basis vectors it contains. -/
+theorem eq_span_image_single_of_forall_map_piLpCongrRight_le
+    (h : ∀ e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜, U.map ((LinearIsometryEquiv.piLpCongrRight 2 e :
+      EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι).toLinearEquiv :
+        EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) ≤ U) :
+    U = span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) ''
+      {i | EuclideanSpace.single i (1 : 𝕜) ∈ U}) := by
+  refine le_antisymm (fun u hu ↦ ?_) (span_le.2 (Set.image_subset_iff.2 fun i hi ↦ hi))
+  rw [← (EuclideanSpace.basisFun ι 𝕜).sum_repr u]
+  refine sum_mem fun i _ ↦ ?_
+  rw [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply]
+  by_cases hi : u i = 0
+  · simp [hi]
+  · exact smul_mem _ _
+      (subset_span ⟨i, single_mem_of_forall_map_piLpCongrRight_le U h hu hi, rfl⟩)
+
+/-- The diagonal unitary group fixes every coordinate subspace. -/
+@[simp]
+theorem map_piLpCongrRight_span_image_single (e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜) (s : Set ι) :
+    (span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s)).map
+        ((LinearIsometryEquiv.piLpCongrRight 2 e :
+          EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι).toLinearEquiv :
+            EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) =
+      span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s) := by
+  refine eq_of_le_of_finrank_eq ?_ (LinearEquiv.finrank_map_eq _ _)
+  rw [map_span, span_le, ← Set.image_comp, Set.image_subset_iff]
+  intro i hi
+  have hsingle : LinearIsometryEquiv.piLpCongrRight 2 e (EuclideanSpace.single i (1 : 𝕜)) =
+      e i 1 • EuclideanSpace.single i (1 : 𝕜) := by
+    rw [LinearIsometryEquiv.piLpCongrRight_single]
+    ext j
+    by_cases hj : j = i <;> simp [hj]
+  simp only [Set.mem_preimage, Function.comp_apply, LinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toLinearEquiv, hsingle]
+  exact smul_mem _ _ (subset_span ⟨i, hi, rfl⟩)
+
+/-- **Fixed subspaces of the diagonal unitary group.** A subspace of `EuclideanSpace 𝕜 ι` is fixed
+by every diagonal unitary exactly when it is a coordinate subspace. -/
+theorem forall_map_piLpCongrRight_eq_iff :
+    (∀ e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜, U.map ((LinearIsometryEquiv.piLpCongrRight 2 e :
+      EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι).toLinearEquiv :
+        EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) = U) ↔
+      ∃ s : Set ι, U = span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s) := by
+  refine ⟨fun h ↦ ⟨_, eq_span_image_single_of_forall_map_piLpCongrRight_le U fun e ↦ (h e).le⟩, ?_⟩
+  rintro ⟨s, rfl⟩ e
+  exact map_piLpCongrRight_span_image_single e s
+
+omit [DecidableEq ι] in
+/-- A diagonal unitary whose entries all agree is a scalar, so it fixes every subspace. -/
+theorem map_piLpCongrRight_of_forall_eq {e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜} (he : ∀ i j, e i = e j) :
+    U.map ((LinearIsometryEquiv.piLpCongrRight 2 e :
+      EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι).toLinearEquiv :
+        EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) = U := by
+  refine eq_of_le_of_finrank_eq ?_ (LinearEquiv.finrank_map_eq _ _)
+  rintro _ ⟨u, hu, rfl⟩
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨k⟩⟩
+  · rw [show u = 0 from PiLp.ext fun i ↦ isEmptyElim i, map_zero]
+    exact zero_mem U
+  · have hu' : LinearIsometryEquiv.piLpCongrRight 2 e u = e k 1 • u := by
+      ext j
+      have hk (x : 𝕜) : e k x = x * e k 1 := by simpa using map_smul (e k) x 1
+      simp [he j k, hk (u j), mul_comm]
+    simpa [hu'] using U.smul_mem (e k 1) hu
+
+/-- If a diagonal unitary fixes the line spanned by `eᵢ + eⱼ`, with `i ≠ j`, then its `i`-th and
+`j`-th entries agree. -/
+theorem eq_of_map_piLpCongrRight_span_singleton_le {e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜} {i j : ι} (hij : i ≠ j)
+    (h : (span 𝕜 {EuclideanSpace.single i (1 : 𝕜) + EuclideanSpace.single j 1}).map
+        ((LinearIsometryEquiv.piLpCongrRight 2 e :
+          EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι).toLinearEquiv :
+            EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι) ≤
+      span 𝕜 {EuclideanSpace.single i (1 : 𝕜) + EuclideanSpace.single j 1}) :
+    e i = e j := by
+  obtain ⟨c, hc⟩ := mem_span_singleton.1 (h (mem_map_of_mem (mem_span_singleton_self _)))
+  have hi : c = e i 1 := by simpa [hij] using congr($hc i)
+  have hj : c = e j 1 := by simpa [hij.symm] using congr($hc j)
+  exact LinearIsometryEquiv.toLinearEquiv_injective
+    (LinearEquiv.toLinearMap_injective (LinearMap.ext_ring (by simpa using hi.symm.trans hj)))
 
 end Submodule
