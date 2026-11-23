@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Elementary bounds on real powers
@@ -359,8 +360,8 @@ theorem rpow_le_two_rpow_abs_mul {x y p : ℝ} (hxy : x / 2 ≤ y) (hyx : y ≤ 
     rw [hy]
     exact le_mul_of_one_le_left (Real.rpow_nonneg le_rfl p)
       (Real.one_le_rpow (by norm_num) (abs_nonneg p))
-  refine (Real.rpow_le_max_mul_rpow (a := 1 / 2) (b := 2) (by norm_num) hx (by linarith) hyx
-    p).trans (mul_le_mul_of_nonneg_right (max_le ?_ ?_) (Real.rpow_nonneg hx.le p))
+  refine (Real.rpow_le_max_mul_rpow (a := 1 / 2) (b := 2) (by norm_num) hx.le (by linarith)
+    hyx p).trans (mul_le_mul_of_nonneg_right (max_le ?_ ?_) (Real.rpow_nonneg hx.le p))
   · rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num)]
     exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (neg_le_abs p)
   · exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (le_abs_self p)
