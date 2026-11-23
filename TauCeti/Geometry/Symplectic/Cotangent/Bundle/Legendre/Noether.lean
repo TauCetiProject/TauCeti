@@ -41,9 +41,8 @@ conservation law of moment maps under invariant Hamiltonians
 integral curve of a Lagrangian vector field `X`, that is `ι_X ω_L = dE_L`, the derivative of
 `⟨J, ξ⟩` is `ω_L(ξ_{TM}, X) = -dE_L(ξ_{TM})`, and this vanishes because `E_L` is invariant. So
 `J` is constant along every motion of the system. Neither regularity of `L` nor nondegeneracy
-of `ω_L` is used: when `L` is regular, `X` is the Lagrangian vector field
-(`TauCeti.IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve`) and its integral
-curves are the velocity curves of the motions
+of `ω_L` is used: when `L` is regular, `X` is the Lagrangian vector field and its integral curves
+are the velocity curves of the motions
 (`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`).
 
 For a hyperregular Lagrangian the Hamiltonian `H = E_L ∘ FL⁻¹` is invariant under the
@@ -72,8 +71,6 @@ cotangent moment map of the Legendre image (`TauCeti.noetherCharge_eq_cotangentM
 * `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`,
   `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurve`: **Noether's theorem**, the Noether
   charges are conserved along the integral curves of a Lagrangian vector field.
-* `TauCeti.IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve`: Noether's theorem
-  for the Lagrangian vector field `X_E` of a regular Lagrangian.
 * `TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`,
   `TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`: the moment map is conserved along
   the Hamiltonian motions of an invariant hyperregular Lagrangian, and its components are first
@@ -244,28 +241,12 @@ theorem IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn
     (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ
     (fun t _ ↦ (hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp)) ht₀ ht
 
-/-- **Noether's theorem for a regular Lagrangian.** For a smooth regular Lagrangian `L` invariant
-under the tangent lift of a smooth action of `G`, the Noether charges are constant along every
-integral curve of the Lagrangian vector field `X_E`, the Hamiltonian vector field of the energy
-for the symplectic Cartan two-form. -/
-theorem IsRegularLagrangian.momentMap_legendreMap_eq_of_isMIntegralCurve
-    (hreg : IsRegularLagrangian L) (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (hLG : ∀ (g : G) v, L (g • v) = L v) {γ : ℝ → TangentBundle I M}
-    (hγ : IsMIntegralCurve γ ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)))
-    (t₀ t : ℝ) :
-    CotangentBundle.momentMap IG G (legendreMap L (γ t)) =
-      CotangentBundle.momentMap IG G (legendreMap L (γ t₀)) :=
-  TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurve hL hLG
-    ((hreg.isSymplectic_cartanTwoForm hL).isNondegenerate
-      |>.isHamiltonianVectorField_hamiltonianVectorField _) hγ t₀ t
-
-/-- **The moment map is a first integral of the Hamiltonian.** For a smooth hyperregular
-Lagrangian `L` invariant under the tangent lift of a smooth action of `G`, every component `μ_ξ`
-of the cotangent-lift moment map Poisson-commutes with the Hamiltonian `H = E_L ∘ FL⁻¹` for the
+/-- **The moment map is a first integral of the Hamiltonian.** For a hyperregular Lagrangian `L`
+invariant under the tangent lift of a smooth action of `G`, every component `μ_ξ` of the
+cotangent-lift moment map Poisson-commutes with the Hamiltonian `H = E_L ∘ FL⁻¹` for the
 canonical symplectic form of `T*M`. -/
 theorem IsHyperregularLagrangian.isFirstIntegral_momentMap (hLh : IsHyperregularLagrangian L)
-    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hLG : ∀ (g : G) v, L (g • v) = L v)
-    (ξ : GroupLieAlgebra IG G) :
+    (hLG : ∀ (g : G) v, L (g • v) = L v) (ξ : GroupLieAlgebra IG G) :
     (CotangentBundle.symplecticForm I M).IsFirstIntegral hLh.hamiltonian
       fun p ↦ CotangentBundle.momentMap IG G p ξ := by
   refine SmoothTwoForm.isFirstIntegral_iff.2 fun p ↦ congrFun
@@ -273,9 +254,12 @@ theorem IsHyperregularLagrangian.isFirstIntegral_momentMap (hLh : IsHyperregular
       CotangentBundle.isSymplectic_symplecticForm.isNondegenerate hLh.hamiltonian ξ).2
       fun q ↦ ?_) p
   rw [InfinitesimalAction.fundamental_apply]
-  exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant
-    ((hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp))
-    (ContMDiffSMul.mdifferentiableAt_smul_const q 1) (fun g ↦ hLh.hamiltonian_smul (hLG g) q) ξ
+  by_cases hH : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ, ℝ) hLh.hamiltonian q
+  · exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant hH
+      (ContMDiffSMul.mdifferentiableAt_smul_const q 1) (fun g ↦ hLh.hamiltonian_smul (hLG g) q) ξ
+  · -- Where `H` is not differentiable its derivative is zero by convention.
+    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hH]
+    rfl
 
 end Noether
 
