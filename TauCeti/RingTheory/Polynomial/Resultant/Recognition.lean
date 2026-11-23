@@ -36,8 +36,8 @@ large values of `n` recovers the multiplicity `e` of every monic irreducible fac
 
 * `AdjoinRoot.norm_mk_one_add_sub_one_mem`: if `g : R[X]` is monic and every coefficient of `h`
   lies in an ideal `I`, then `Algebra.norm R (AdjoinRoot.mk g (1 + h)) - 1 ∈ I`.
-* `Polynomial.exists_resultant_eq_pow_mul_of_coeff_mem_span_mul`: for monic `g`, if `ψ` has the
-  same degree as `g` and `ψ - (g + C a)` has all coefficients in `Ideal.span {a * b}`, then
+* `Polynomial.exists_resultant_eq_pow_mul_of_coeff_mem_span_mul`: for monic `g`, if
+  `ψ - (g + C a)` has all coefficients in `Ideal.span {a * b}`, then
   `g.resultant ψ = a ^ g.natDegree * u` with `u - 1 ∈ Ideal.span {b}`.
 * `Polynomial.resultant_sub_mem_of_coeff_sub_mem`: congruence of resultants modulo an arbitrary
   ideal.
@@ -152,13 +152,19 @@ end ArbitraryRing
 section Lifting
 
 /-- **Lifting a monic polynomial modulo an ideal.** If `φ : D →+* O` is surjective modulo an
-ideal `I ≠ ⊤`, then any monic `T : O[X]` lifts to a monic `ψ : D[X]` of the same `natDegree`
+ideal `I`, then any monic `T : O[X]` lifts to a monic `ψ : D[X]` of the same `natDegree`
 such that `ψ.map φ - T` has all coefficients in `I`. -/
 theorem exists_monic_map_sub_coeff_mem {D O : Type*} [CommRing D] [CommRing O] (φ : D →+* O)
-    {I : Ideal O} (hI : I ≠ ⊤) (hφ : ∀ o : O, ∃ d : D, o - φ d ∈ I)
+    {I : Ideal O} (hφ : ∀ o : O, ∃ d : D, o - φ d ∈ I)
     {T : O[X]} (hT : T.Monic) :
     ∃ ψ : D[X], ψ.Monic ∧ ψ.natDegree = T.natDegree ∧
       ∀ i, (ψ.map φ - T).coeff i ∈ I := by
+  by_cases hI : I = ⊤
+  · subst hI
+    rcases subsingleton_or_nontrivial D with _ | _
+    · have : Subsingleton O := RingHom.codomain_trivial φ
+      exact ⟨1, monic_one, by simp [Subsingleton.elim T 0], fun _ ↦ Submodule.mem_top⟩
+    · exact ⟨X ^ T.natDegree, monic_X_pow _, natDegree_X_pow _, fun _ ↦ Submodule.mem_top⟩
   let q := Ideal.Quotient.mk I
   have : Nontrivial (O ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
   have hlifts : T.map q ∈ lifts (q.comp φ) := by
@@ -237,7 +243,7 @@ theorem addVal_resultant_of_sub_add_C_pow_mem {O : Type*} [CommRing O] [IsDomain
 
 /-- **Multiplicity detected by shifted factors.** Let `O` be a discrete valuation ring with
 uniformizer `π`, and let `R, S : O[X]` be monic with `S.resultant R ≠ 0`. For `P = R ^ e * S`,
-any `n ≥ 1` strictly larger than `addVal O (S.resultant R)`, and any monic `ψ : O[X]` of degree
+any `n ≥ 1` strictly larger than `addVal O (S.resultant R)`, and any `ψ : O[X]` of `natDegree`
 `R.natDegree` congruent to `R + C (π ^ n)` modulo `π ^ (2 * n)`, we have `P.resultant ψ ≠ 0`
 and `addVal O (P.resultant ψ) = (n * R.natDegree * e : ℕ) + addVal O (S.resultant R)`. -/
 theorem addVal_resultant_pow_mul_of_sub_add_C_pow_mem {O : Type*} [CommRing O] [IsDomain O]
@@ -439,12 +445,8 @@ theorem resultantRecognition {D O : Type*} [CommRing D] [CommRing O] [IsDomain O
       (degree_C_le).trans_lt (natDegree_pos_iff_degree_pos.mp hd_pos)
     have hT_monic : T.Monic := hR₀_m.add_of_left hCdeg
     have hT_deg : T.natDegree = R₀.natDegree := natDegree_add_eq_left_of_degree_lt hCdeg
-    have hI_ne : Ideal.span {π ^ (2 * n)} ≠ ⊤ := by
-      rw [Ne, Ideal.span_singleton_eq_top]
-      exact fun hunit ↦ hπ.not_isUnit (isUnit_of_dvd_one
-        ((pow_one π ▸ pow_dvd_pow π (by lia : 1 ≤ 2 * n)).trans hunit.dvd))
     obtain ⟨ψ, hψ_m, hψ_deg, hψ_coeff⟩ :=
-      exists_monic_map_sub_coeff_mem φ hI_ne (hφ (2 * n)) hT_monic
+      exists_monic_map_sub_coeff_mem φ (hφ (2 * n)) hT_monic
     have hψφ_deg : (ψ.map φ).natDegree = R₀.natDegree := by
       rw [hψ_m.natDegree_map, hψ_deg, hT_deg]
     obtain ⟨hPψ_ne, hPψ_val⟩ :=
