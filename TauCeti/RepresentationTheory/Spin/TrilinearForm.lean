@@ -27,15 +27,18 @@ on `V × S × S`. When `φ` kills every contraction (and is invariant under the 
 the polarization has a line summand), every vector acts self-adjointly, so
 `T (v, s, t) = ⟨s, c(v) t⟩`. Combined with the Spin-equivariance of Clifford multiplication,
 `ρ(g) c(v) ρ(g)⁻¹ = c(g • v)`, and the Spin-invariance of the pairing, this makes `T` invariant
-under the diagonal action of the Spin group on `V × S × S`. A Clifford element `x` with
-`reverse x = -x`, such as a bivector, acts on `V` by the commutator `v ↦ x v - v x` and on `S` by
-`c(x)`, and `T` is infinitesimally invariant under that diagonal action.
+under the diagonal action of the Spin group on `V × S × S`. For a Clifford element `x` with
+`reverse x = -x` whose commutator with a vector `v` is again a vector, `x v - v x = w`, the form
+satisfies `T (w, s, t) + T (v, c(x) s, t) + T (v, s, c(x) t) = 0`. A bivector satisfies this for
+every `v`, so `T` is infinitesimally invariant under bivectors acting on `V` by the commutator and
+on `S` by Clifford multiplication.
 
 Without a line summand, Clifford multiplication by a vector exchanges the two half-spin summands
 `S⁺` and `S⁻`, and `T` restricts to a trilinear form on `V × S⁺ × S⁻`, invariant under the Spin
 group acting on all three factors. For the top-degree coefficient of a basis `w₁, …, wₙ` of `W`
 the form is normalized by `T (w₁, 1, w₂ ∧ ⋯ ∧ wₙ) = 1`, and it vanishes on `(wᵢ, 1, x)` whenever
-`x` already contains `wᵢ`. When `n` is even it is a nonzero form on `V × S⁺ × S⁻`. In dimension
+`x` already contains `wᵢ`. Over a nontrivial ring, when `n` is positive and even it is a nonzero
+form on `V × S⁺ × S⁻`. In dimension
 eight (`n = 4`) this is the invariant triality form of `Spin₈`, pairing the vector representation
 with its two half-spin representations.
 
@@ -48,15 +51,17 @@ with its two half-spin representations.
 ## Main results
 
 * `TauCeti.SpinPolarizationData.spinTrilinearForm_spinRep`: Spin-invariance of `T`.
-* `TauCeti.SpinPolarizationData.spinTrilinearForm_add_add_eq_zero`: infinitesimal invariance
-  under a Clifford element with `reverse x = -x`, and
-  `TauCeti.SpinPolarizationData.spinTrilinearForm_bivector_add_add_eq_zero` for bivectors.
+* `TauCeti.SpinPolarizationData.spinTrilinearForm_add_add_eq_zero`: the infinitesimal-invariance
+  identity for a Clifford element `x` with `reverse x = -x` at a vector `v` with
+  `x v - v x = w` a vector, and
+  `TauCeti.SpinPolarizationData.spinTrilinearForm_bivector_add_add_eq_zero`: infinitesimal
+  invariance under bivectors.
 * `TauCeti.SpinPolarizationData.halfSpinTrilinearForm_spinAction`: Spin-invariance of the
   restricted form, through the actions on the two half-spin summands.
 * `TauCeti.SpinPolarizationData.spinTrilinearForm_coord_univ_basis_erase`: the normalization
   `T (wᵢ, 1, w_{univ ∖ {i}}) = ±1`, and
-  `TauCeti.SpinPolarizationData.halfSpinTrilinearForm_coord_univ_ne_zero`: the restricted form is
-  nonzero in even rank.
+  `TauCeti.SpinPolarizationData.halfSpinTrilinearForm_coord_univ_ne_zero`: over a nontrivial ring
+  the restricted form is nonzero in positive even rank.
 
 ## References
 
@@ -132,9 +137,10 @@ theorem spinTrilinearForm_spinRep [Invertible (2 : K)]
   rw [spinTrilinearForm_apply, ← mul_apply_eq_comp, ← spinRep_mul_spinAction_ι,
     mul_apply_eq_comp, reversalPairing_spinRep P φ hφ hline, spinTrilinearForm_apply]
 
-/-- **The trilinear form is infinitesimally invariant** under a Clifford element `x` with
-`reverse x = -x`, acting on vectors by the commutator `v ↦ x v - v x` and on spinors by `c(x)`:
-if `x v - v x = w`, then `T (w, s, t) + T (v, c(x) s, t) + T (v, s, c(x) t) = 0`. -/
+/-- **The infinitesimal-invariance identity** for a Clifford element `x` with `reverse x = -x`:
+at a vector `v` whose commutator `x v - v x = w` is again a vector,
+`T (w, s, t) + T (v, c(x) s, t) + T (v, s, c(x) t) = 0`. This is infinitesimal invariance of `T`
+whenever the commutator with `x` preserves `V`, as it does for a bivector. -/
 theorem spinTrilinearForm_add_add_eq_zero
     (hφ : ∀ (d : Module.Dual K P.W) (x : ExteriorAlgebra K P.W), φ (contractLeft d x) = 0)
     (hline : P.line = ⊥ ∨ ∀ x : ExteriorAlgebra K P.W, φ (involute x) = φ x)
@@ -221,8 +227,8 @@ theorem spinTrilinearForm_basis_one_basis_of_mem (φ : Module.Dual K (ExteriorAl
   rw [spinTrilinearForm_apply, spinAction_ι_wedge, mul_one, ExteriorAlgebra.reversalPairing_apply,
     reverse_ι, ExteriorAlgebra.ι_mul_basis, ite_eq_left hi, map_zero]
 
-/-- **The trilinear form of the top-degree coefficient is nonzero** for a nonzero isotropic
-summand `W`. -/
+/-- **The trilinear form of the top-degree coefficient is nonzero** over a nontrivial ring, for
+a nonzero isotropic summand `W`. -/
 theorem spinTrilinearForm_coord_univ_ne_zero [Fintype I] [Nontrivial K] [Nonempty I] :
     P.spinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) ≠ 0 := by
   obtain ⟨i⟩ := ‹Nonempty I›
@@ -231,9 +237,9 @@ theorem spinTrilinearForm_coord_univ_ne_zero [Fintype I] [Nontrivial K] [Nonempt
   rw [eq_intCast, ← P.spinTrilinearForm_coord_univ_basis_erase b i, h]
   simp
 
-/-- **The half-spin trilinear form of the top-degree coefficient is nonzero** in positive even
-rank: it pairs the vacuum `1 ∈ S⁺`, the odd spinor `w_{univ ∖ {i}} ∈ S⁻` and the vector `wᵢ`
-to `±1`. -/
+/-- **The half-spin trilinear form of the top-degree coefficient is nonzero** over a nontrivial
+ring in positive even rank: it pairs the vacuum `1 ∈ S⁺`, the odd spinor
+`w_{univ ∖ {i}} ∈ S⁻` and the vector `wᵢ` to `±1`. -/
 theorem halfSpinTrilinearForm_coord_univ_ne_zero [Fintype I] [Nontrivial K] [Nonempty I]
     (hI : Even (Fintype.card I)) :
     P.halfSpinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) ≠ 0 := by
