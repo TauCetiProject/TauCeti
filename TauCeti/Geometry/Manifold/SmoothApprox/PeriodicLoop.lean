@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.Path
-public import TauCeti.Geometry.Manifold.SmoothApprox
+public import TauCeti.Geometry.Manifold.SmoothApprox.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Fract
 import TauCeti.Geometry.Manifold.Instances.Icc.CollaredSmoothTransition
-import TauCeti.Topology.Algebra.Order.Floor
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -41,7 +40,7 @@ relative Whitney approximation theorem
 (`ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`) then makes it smooth
 without changing it off the rectangle. The result is periodized in `t`;
 since the map is periodic near the seam, the periodization is still smooth
-(`TauCeti.apply_fract_snd_eventuallyEq`), and on the unit square it is the smoothed map.
+(`ContMDiff.comp_fract_snd`), and on the unit square it is the smoothed map.
 
 ## Main results
 
@@ -123,10 +122,6 @@ private theorem loopModel_of_gt {z : ℝ × ℝ} (hz : 2 / 3 < z.1) :
     loopModel g₀ g₁ P z = g₁ (collaredSmoothTransitionLineMap (loopRamp (1 - z.1)) z.2) := by
   simp only [loopModel, (by linarith : ¬z.1 ≤ 1 / 3), hz.not_ge, ↓reduceIte]
 
-private theorem continuous_uncurry_path (P : Path γ₀ γ₁) :
-    Continuous fun q : unitInterval × unitInterval ↦ P q.1 q.2 :=
-  Path.continuous_uncurry_iff.2 P.continuous
-
 private theorem loopModel_zero (t : ℝ) : loopModel g₀ g₁ P (0, t) = g₀ t := by
   rw [loopModel_of_le (by norm_num), loopRamp_of_le (by norm_num),
     collaredSmoothTransitionLineMap_zero_left]
@@ -195,7 +190,7 @@ private theorem continuous_loopModel (hg₀ : Continuous g₀) (hg₁ : Continuo
     continuous_projIcc.comp ((continuous_const.mul continuous_fst).sub continuous_const)
   have hP : Continuous fun z : ℝ × ℝ ↦
       P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2) :=
-    (continuous_uncurry_path P).comp
+    (Path.continuous_uncurry_iff.2 P.continuous).comp
       (hs.prodMk (continuous_collaredSmoothTransitionUnit.comp continuous_snd))
   refine Continuous.if_le (hg₀.comp hr₀)
     (Continuous.if_le hP (hg₁.comp hr₁) continuous_fst continuous_const fun z hz ↦ ?_)
@@ -318,7 +313,7 @@ private theorem homotopic_loopModelPath (hg₀ : Continuous g₀) (hg₁ : Conti
   let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦
       P (σ q) (collaredSmoothTransitionLineMapUnit (ρ q) t))
-    ((continuous_uncurry_path P).comp ((hσ.comp continuous_fst).prodMk
+    ((Path.continuous_uncurry_iff.2 P.continuous).comp ((hσ.comp continuous_fst).prodMk
       (continuous_collaredSmoothTransitionLineMapUnit.comp
         ((hρ.comp continuous_fst).prodMk continuous_snd))))
     (fun q ↦ by simp only [collaredSmoothTransitionLineMapUnit_zero_right, Path.source])
@@ -392,13 +387,11 @@ inside the unit square is `C^n`: near the seam the model, hence `G`, is periodic
 private theorem contMDiff_periodize (hgp₀ : Periodic g₀ 1) (hgp₁ : Periodic g₁ 1)
     {P : Path γ₀ γ₁} {G : ℝ × ℝ → M} (hG : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n G)
     (hGf : ∀ z ∈ loopFixedSet, G z = loopModel g₀ g₁ P z) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ G (z.1, Int.fract z.2) := fun z ↦
-  ((hG.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)).contMDiff)
-    z).congr_of_eventuallyEq
-    (apply_fract_snd_eventuallyEq (ε := 1 / 5) (by norm_num) (fun s t ht₀ ht₁ ↦ by
-      rw [hGf _ (mem_loopFixedSet_of_snd (Or.inr (by linarith))),
-        hGf _ (mem_loopFixedSet_of_snd (Or.inl (by linarith))),
-        loopModel_add_one hgp₀ hgp₁ s (by linarith) (by linarith)]) z)
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ G (z.1, Int.fract z.2) :=
+  hG.comp_fract_snd (ε := 1 / 5) (by norm_num) fun s t ht₀ ht₁ ↦ by
+    rw [hGf _ (mem_loopFixedSet_of_snd (Or.inr (by linarith))),
+      hGf _ (mem_loopFixedSet_of_snd (Or.inl (by linarith))),
+      loopModel_add_one hgp₀ hgp₁ s (by linarith) (by linarith)]
 
 /-- A homotopy, relative to the complement of a rectangle inside the unit square, from the model
 to a map `G` gives a homotopy of paths in the loop space from the model path to every path of
@@ -445,7 +438,7 @@ private theorem homotopic_loopModelPath_of_homotopyRel (hγ₀ : ∀ t : unitInt
     exact (R.eq_fst _ (mem_loopFixedSet_of_fst (Or.inr (by norm_num)))).trans
       ((loopModel_one t).trans (hγ₁ t).symm)
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+variable [FiniteDimensional ℝ E] [BoundarylessManifold I M] [IsManifold I ∞ M] [T2Space M]
 
 /-- **Smooth representatives of paths of loops.** Let `γ₀` and `γ₁` be loops at `x` in a
 Hausdorff boundaryless manifold, the restrictions of `C^n` `1`-periodic maps `g₀ g₁ : ℝ → M`. Every
@@ -467,7 +460,7 @@ theorem exists_contMDiff_periodic_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I 
   have hK : IsCompact (closure (range f)) := by
     refine (((hgp₀.compact_of_continuous one_ne_zero hc₀).union
       (hgp₁.compact_of_continuous one_ne_zero hc₁)).union
-      (isCompact_range (continuous_uncurry_path P))).closure_of_subset ?_
+      (isCompact_range (Path.continuous_uncurry_iff.2 P.continuous))).closure_of_subset ?_
     rintro _ ⟨z, rfl⟩
     rcases le_or_gt z.1 (1 / 3) with h | h
     · exact Or.inl (Or.inl ⟨_, (loopModel_of_le h).symm⟩)

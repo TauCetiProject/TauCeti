@@ -43,7 +43,7 @@ namespace TauCeti
 variable {M : Type*} [TopologicalSpace M] {x : M} {γ₀ γ₁ : Path x x} {g₀ g₁ : ℝ → M}
   {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [ChartedSpace H M] {n : ℕ∞}
-  [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  [FiniteDimensional ℝ E] [BoundarylessManifold I M] [IsManifold I ∞ M] [T2Space M]
 
 /-- **Smooth cylinders representing paths of loops.** For `n ≥ 2`, every path of loops `P` between
 loops at `x` that are the restrictions of `C^n` `1`-periodic maps `g₀`, `g₁` is homotopic, relative

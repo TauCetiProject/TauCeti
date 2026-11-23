@@ -58,7 +58,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {x : M} {γ : Ω M x}
   {g : ℝ → M}
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+variable [FiniteDimensional ℝ E] [BoundarylessManifold I M] [IsManifold I ∞ M] [T2Space M]
 
 /-- **Smooth representatives of raw caps.** If the `1`-periodic extension `g` of a loop `γ` is
 smooth, every raw cap of `γ` is the homotopy class of a smooth based cap. -/
@@ -92,10 +92,11 @@ theorem exists_isSmoothBasedCap_iff :
     obtain ⟨u, hu, -⟩ := RawCap.exists_isSmoothBasedCap_homotopyClass_eq hg hgp hgγ D
     exact ⟨u, hu⟩
 
+omit [BoundarylessManifold I M] in
 /-- **The area of a raw cap is the integral over a smooth representative.** For a loop with a
 smooth based cap and a closed `C¹` two-form, every raw cap is the raw cap of a smooth based cap
 `u`, and its area is the integral of the form over `u` on the unit square. -/
-theorem RawCap.exists_area_eq_rectangleIntegral [CompactSpace M] {F : Type*}
+theorem RawCap.exists_area_eq_rectangleIntegral [I.Boundaryless] [CompactSpace M] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) (h : ∃ u, IsSmoothBasedCap I γ u) (D : RawCap γ) :
     ∃ u, ∃ hu : IsSmoothBasedCap I γ u,
