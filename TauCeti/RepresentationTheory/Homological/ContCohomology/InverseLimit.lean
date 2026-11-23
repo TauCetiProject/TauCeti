@@ -37,24 +37,28 @@ namespace TauCeti.ContinuousCohomology
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
+/-- Degree `n` homogeneous continuous cochains are the invariants of degree `n + 1` of the
+coinduced resolution. The component objects are definitionally equal. -/
+def resolutionFunctorCompInvariantsIso (n : ℕ) :
+    resolutionFunctor R G (n + 1) ⋙ invariantsFunctor R G ≅
+      continuousCochainsFunctor R G ⋙ HomologicalComplex.eval _ _ n :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+    rw [Functor.comp_map, Functor.comp_map, resolutionFunctor_map,
+      HomologicalComplex.eval_map, continuousCochainsFunctor_map,
+      ← mapHomologicalComplex_map_shiftedResolutionMap,
+      Functor.mapHomologicalComplex_map_f, shiftedResolutionMap_f]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm)
+
+/-- The degree comparison acts as the identity on the common invariant-vector module. -/
+theorem resolutionFunctorCompInvariantsIso_hom_app (n : ℕ) (X : TopRep R G) :
+    (resolutionFunctorCompInvariantsIso R G n).hom.app X = 𝟙 _ := (rfl)
+
 /-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
 instance continuousCochainsFunctor_preservesLimitsOfSize [LocallyCompactSpace G]
     [UnivLE.{w₂, v}] :
     PreservesLimitsOfSize.{w₁, w₂} (continuousCochainsFunctor R G) where
-  preservesLimitsOfShape {J} _ := HomologicalComplex.preservesLimitsOfShape_of_eval _ fun n ↦ by
-    have e : resolutionFunctor R G (n + 1) ⋙ invariantsFunctor R G ≅
-        continuousCochainsFunctor R G ⋙ HomologicalComplex.eval _ _ n :=
-      -- Homogeneous cochains are the invariants of the shifted resolution.
-      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        simp only [Iso.refl_hom]
-        rw [Functor.comp_map, Functor.comp_map, resolutionFunctor_map,
-          HomologicalComplex.eval_map, continuousCochainsFunctor_map,
-          ← mapHomologicalComplex_map_shiftedResolutionMap,
-          Functor.mapHomologicalComplex_map_f, shiftedResolutionMap_f]
-        -- The resolutionFunctor objects unfold to resolutionX, so the remaining identity
-        -- composites reduce definitionally.
-        rfl)
-    exact preservesLimitsOfShape_of_natIso e
+  preservesLimitsOfShape {_J} _ := HomologicalComplex.preservesLimitsOfShape_of_eval _ fun n ↦
+    preservesLimitsOfShape_of_natIso (resolutionFunctorCompInvariantsIso R G n)
 
 /-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
 instance continuousCochainsFunctor_preservesLimits [LocallyCompactSpace G] :
