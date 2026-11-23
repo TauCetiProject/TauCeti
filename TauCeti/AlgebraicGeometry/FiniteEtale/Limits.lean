@@ -170,7 +170,7 @@ instance isClosedImmersion_hom_left (i : X ⟶ Y) [Mono i] : IsClosedImmersion i
 étale over `S`: its inclusion is an open and closed immersion. -/
 noncomputable def clopenSubscheme (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
     FiniteEtaleScheme S :=
-  have : IsClosedImmersion U.ι := U.isClosedImmersion_ι_of_isClosed hU
+  have : IsClosedImmersion U.ι := U.isClosedImmersion_ι_iff.mpr hU
   ⟨Over.mk (U.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
     ⟨inferInstanceAs (IsFinite (U.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (U.ι ≫ Y.obj.hom))⟩⟩
 
