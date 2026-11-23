@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 
 /-!
 # Congruent constant forms give conjugate subgroup schemes
@@ -36,6 +38,8 @@ induced one (`CommHopfAlgCat.quotientIsoOfComapEq`).
 * `TauCeti.ConstantForm.groupSchemeCongr`: the corresponding isomorphism of group schemes.
 * `TauCeti.ConstantForm.coordinateMap_comp_coordinateHopfAlgebraCongr_hom`: the isomorphism is
   induced by conjugation by `P` on `GLₙ`.
+* `TauCeti.ConstantForm.smooth_of_congr`: smoothness of the coordinate algebra transfers along
+  the isomorphism.
 
 ## References
 
@@ -51,47 +55,6 @@ namespace TauCeti.ConstantForm
 universe u
 
 variable {R : Type u} [CommRing R] {n : ℕ}
-
-section Matrix
-
-variable {A : Type*} [CommRing A] (q : GL (Fin n) A)
-
-/-- `qᵀ ((q⁻¹)ᵀ Z) = Z` for an invertible matrix `q`. -/
-private theorem transpose_mul_transpose_inv_mul_cancel (Z : Matrix (Fin n) (Fin n) A) :
-    (q : Matrix (Fin n) (Fin n) A)ᵀ *
-      (((q⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A)ᵀ * Z) = Z := by
-  rw [← Matrix.mul_assoc, ← transpose_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-    transpose_one, Matrix.one_mul]
-
-/-- Conjugating `N` by `q` and congruence-transforming `C` by `q` transforms `N C Nᵀ` by `q`. -/
-private theorem conj_mul_congr_mul_transpose (N : GL (Fin n) A) (C : Matrix (Fin n) (Fin n) A) :
-    ((q * N * q⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) *
-        ((q : Matrix (Fin n) (Fin n) A) * C * (q : Matrix (Fin n) (Fin n) A)ᵀ) *
-        ((q * N * q⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A)ᵀ =
-      (q : Matrix (Fin n) (Fin n) A) *
-        ((N : Matrix (Fin n) (Fin n) A) * C * (N : Matrix (Fin n) (Fin n) A)ᵀ) *
-        (q : Matrix (Fin n) (Fin n) A)ᵀ := by
-  simp only [Units.val_mul, transpose_mul, Matrix.mul_assoc, Units.inv_mul_cancel_left,
-    transpose_mul_transpose_inv_mul_cancel]
-
-/-- Congruence by `q⁻¹` undoes congruence by `q`. -/
-private theorem inv_congr_congr (X : Matrix (Fin n) (Fin n) A) :
-    ((q⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) *
-        ((q : Matrix (Fin n) (Fin n) A) * X * (q : Matrix (Fin n) (Fin n) A)ᵀ) *
-        ((q⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A)ᵀ = X := by
-  have h : (q : Matrix (Fin n) (Fin n) A)ᵀ * ((q⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A)ᵀ =
-      1 := by
-    simpa using transpose_mul_transpose_inv_mul_cancel q 1
-  simp only [Matrix.mul_assoc, Units.inv_mul_cancel_left, h, Matrix.mul_one]
-
-variable {q} in
-/-- Congruence by an invertible matrix is injective. -/
-private theorem congr_cancel {X Y : Matrix (Fin n) (Fin n) A}
-    (h : (q : Matrix (Fin n) (Fin n) A) * X * (q : Matrix (Fin n) (Fin n) A)ᵀ =
-      (q : Matrix (Fin n) (Fin n) A) * Y * (q : Matrix (Fin n) (Fin n) A)ᵀ) : X = Y := by
-  rw [← inv_congr_congr q X, h, inv_congr_congr]
-
-end Matrix
 
 /-- **Conjugation pulls a constant-form Hopf ideal back to the congruent one.** The coordinate
 automorphism of conjugation by `Q` on `GLₙ` pulls the defining Hopf ideal of `C` back to the
@@ -109,8 +72,7 @@ theorem definingHopfIdeal_comapOfSurjective_conjCoordinateIso
       (definingHopfIdeal R n C).conjugate g := by
     ext x
     rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_comapOfSurjective,
-      ← GeneralLinear.conjCoordinateIso_hom_toAlgHom]
-    rfl
+      ← GeneralLinear.conjCoordinateIso_hom_toAlgHom, BialgHom.coe_toAlgHom]
   rw [hg]
   refine (HopfIdeal.eq_conjugate_of_forall_mem_iff g fun A x => ?_).symm
   obtain ⟨A⟩ := A
@@ -121,8 +83,20 @@ theorem definingHopfIdeal_comapOfSurjective_conjCoordinateIso
   set q := GeneralLinearGroup.map (algebraMap R A) Q
   have hq : (q : Matrix _ _ A) = (Q : Matrix (Fin n) (Fin n) R).map (algebraMap R A) :=
     rfl
-  rw [Matrix.map_mul, Matrix.map_mul, transpose_map, ← hq, conj_mul_congr_mul_transpose]
-  exact ⟨congr_cancel, fun h ↦ by rw [h]⟩
+  rw [Matrix.map_mul, Matrix.map_mul, transpose_map, ← hq,
+    GeneralLinearGroup.conj_congruence_congruence]
+  exact (GeneralLinearGroup.congruence_injective q).eq_iff
+
+/-- Conjugation by `P⁻¹` pulls the defining Hopf ideal of `C' = P C Pᵀ` back to the defining Hopf
+ideal of `C`. -/
+theorem definingHopfIdeal_comapOfSurjective_conjCoordinateIso_inv (P : GL (Fin n) R)
+    {C C' : Matrix (Fin n) (Fin n) R}
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
+    (definingHopfIdeal R n C').comapOfSurjective (GeneralLinear.conjCoordinateIso P⁻¹).hom.hom
+        (ConcreteCategory.bijective_of_isIso (GeneralLinear.conjCoordinateIso P⁻¹).hom).2 =
+      definingHopfIdeal R n C := by
+  rw [definingHopfIdeal_comapOfSurjective_conjCoordinateIso, ← hP,
+    GeneralLinearGroup.inv_congruence_congruence]
 
 /-- **Congruent constant forms have isomorphic coordinate Hopf algebras.** If `P C Pᵀ = C'`, the
 coordinate Hopf algebra of the subgroup scheme preserving `C` is isomorphic to that of the
@@ -131,8 +105,8 @@ noncomputable def coordinateHopfAlgebraCongr (P : GL (Fin n) R) {C C' : Matrix (
     (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
     coordinateHopfAlgebra R n C ≅ coordinateHopfAlgebra R n C' :=
   CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso P⁻¹)
-    (definingHopfIdeal R n C') (by
-      rw [definingHopfIdeal_comapOfSurjective_conjCoordinateIso, ← hP, inv_congr_congr])
+    (definingHopfIdeal R n C')
+    (definingHopfIdeal_comapOfSurjective_conjCoordinateIso_inv P hP)
 
 /-- The coordinate isomorphism of congruent forms is the quotient isomorphism induced by
 conjugation by `P⁻¹` on `GLₙ`. -/
@@ -140,8 +114,8 @@ theorem coordinateHopfAlgebraCongr_def (P : GL (Fin n) R) {C C' : Matrix (Fin n)
     (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
     coordinateHopfAlgebraCongr P hP =
       CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso P⁻¹)
-        (definingHopfIdeal R n C') (by
-          rw [definingHopfIdeal_comapOfSurjective_conjCoordinateIso, ← hP, inv_congr_congr]) :=
+        (definingHopfIdeal R n C')
+        (definingHopfIdeal_comapOfSurjective_conjCoordinateIso_inv P hP) :=
   (rfl)
 
 /-- The coordinate isomorphism of congruent forms is induced by conjugation by `P⁻¹` on the
@@ -153,6 +127,14 @@ theorem coordinateMap_comp_coordinateHopfAlgebraCongr_hom (P : GL (Fin n) R)
       (GeneralLinear.conjCoordinateIso P⁻¹).hom ≫ coordinateMap R n C' := by
   rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraCongr,
     CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom]
+
+/-- **Smoothness transfers along congruence.** If `P C Pᵀ = C'` and the coordinate algebra of the
+subgroup scheme preserving `C'` is smooth, so is that of the subgroup scheme preserving `C`. -/
+theorem smooth_of_congr (P : GL (Fin n) R) {C C' : Matrix (Fin n) (Fin n) R}
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C')
+    [Algebra.Smooth R (coordinateHopfAlgebra R n C')] :
+    Algebra.Smooth R (coordinateHopfAlgebra R n C) :=
+  Algebra.Smooth.of_equiv (CommHopfAlgCat.ofIso (coordinateHopfAlgebraCongr P hP).symm).toAlgEquiv
 
 /-- **Congruent constant forms have isomorphic subgroup schemes.** If `P C Pᵀ = C'`, conjugation
 by `P` is an isomorphism from the subgroup scheme of `GLₙ` preserving `C` onto the subgroup scheme

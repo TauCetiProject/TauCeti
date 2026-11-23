@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Congruence
 public import TauCeti.Algebra.AlgebraicGroup.Pinning.Isomorphism
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Pinning.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
 
 /-!
 # The symplectic group of another Gram matrix
@@ -19,14 +18,13 @@ matrix `P`, gives the same group: conjugation by `P` is an isomorphism from
 `ConstantForm.groupScheme R (m + m) C` onto `Sp₂ₘ` (`TauCeti.ConstantForm.groupSchemeCongr`).
 Since `Sp₂ₘ` and its coordinate Hopf algebra are abbreviations for the constant-form ones, that
 isomorphism and its coordinate version `TauCeti.ConstantForm.coordinateHopfAlgebraCongr` apply
-directly with `C' = JFin m R`. This file records the smoothness of the coordinate algebra of
-`ConstantForm.groupScheme R (m + m) C` that they imply, and the pinning transported along them
-from the standard pinning of `Sp₂ₘ` by `TauCeti.Pinning.comapOfIso`.
+directly with `C' = JFin m R`; so does the smoothness transfer
+`TauCeti.ConstantForm.smooth_of_congr`, with the smoothness of `Sp₂ₘ`. This file records the
+pinning transported along them from the standard pinning of `Sp₂ₘ` by
+`TauCeti.Pinning.comapOfIso`.
 
 ## Main declarations
 
-* `TauCeti.Symplectic.smooth_constantForm_of_congr`: the coordinate algebra of the subgroup
-  scheme preserving `C` is smooth.
 * `TauCeti.Symplectic.constantFormPinning`: the standard pinning of `Sp₂ₘ` transported to the
   subgroup scheme preserving `C`.
 
@@ -46,20 +44,11 @@ universe u
 
 variable {R : Type u} [CommRing R] {m : ℕ} {C : Matrix (Fin (m + m)) (Fin (m + m)) R}
 
-/-- The coordinate algebra of the subgroup scheme preserving a Gram matrix congruent to
-`JFin m R` is smooth, as that of `Sp₂ₘ` is. -/
-theorem smooth_constantForm_of_congr (P : GL (Fin (m + m)) R)
-    (hP : (P : Matrix (Fin (m + m)) (Fin (m + m)) R) * C *
-      (P : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ = JFin m R) :
-    Algebra.Smooth R (ConstantForm.coordinateHopfAlgebra R (m + m) C) :=
-  Algebra.Smooth.of_equiv
-    (CommHopfAlgCat.ofIso (ConstantForm.coordinateHopfAlgebraCongr P hP).symm).toAlgEquiv
-
 /-- **The transported pinning.** For a Gram matrix `C` with `P C Pᵀ = JFin m R`, the standard
 pinning of `Sp₂ₘ` pulled back along `TauCeti.ConstantForm.coordinateHopfAlgebraCongr`: its torus
 and Borel subgroup are the conjugates by `P⁻¹` of the diagonal torus and the isotropic-flag
 Borel subgroup of `Sp₂ₘ`. The smoothness instance it needs holds by
-`TauCeti.Symplectic.smooth_constantForm_of_congr`. -/
+`TauCeti.ConstantForm.smooth_of_congr`. -/
 noncomputable def constantFormPinning [Nontrivial R] [ConnectedSpace (PrimeSpectrum R)]
     [Algebra.Smooth R (ConstantForm.coordinateHopfAlgebra R (m + m) C)] (P : GL (Fin (m + m)) R)
     (hP : (P : Matrix (Fin (m + m)) (Fin (m + m)) R) * C *
