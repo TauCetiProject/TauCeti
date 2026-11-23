@@ -202,12 +202,14 @@ private theorem norm_iteratedFDeriv_comp_smul_le (f : EuclideanSpace ℝ (Fin n)
 Euclidean end `φ` of `M` of order `t` on `(closedBall 0 R)ᶜ` into an asymptotically Euclidean end
 of `WithMetric (rescaledMetric I M m hc)` of order `t` on `(closedBall 0 (√c * R))ᶜ` with
 parametrization `y ↦ toWithMetric _ (φ ((√c)⁻¹ • y))`. -/
-theorem rescale (m : ℕ∞ω) [FiniteDimensional ℝ E] [IsManifold I 1 M]
+theorem rescale (m : ℕ∞ω) [IsManifold I 1 M]
     [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
     {t R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M} {c : ℝ} (hc : 0 < c)
     (h : IsAsymptoticallyEuclideanEnd I t R φ) :
+    let _ := h.finiteDimensional
     IsAsymptoticallyEuclideanEnd I t (Real.sqrt c * R)
       (fun y ↦ WithMetric.toWithMetric (rescaledMetric I M m hc) (φ ((Real.sqrt c)⁻¹ • y))) := by
+  have : FiniteDimensional ℝ E := h.finiteDimensional
   set g_c := rescaledMetric I M m hc
   set s : ℝ := Real.sqrt c
   have hs : 0 < s := Real.sqrt_pos.2 hc

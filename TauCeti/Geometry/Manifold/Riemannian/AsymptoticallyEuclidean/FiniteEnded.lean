@@ -27,6 +27,9 @@ compact-collar, properness, or Riemannian completeness hypothesis.
 
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.nonempty_manifold`: a manifold carrying a
   finite-ended asymptotically Euclidean structure is nonempty.
+* `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.finiteDimensional` and
+  `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.lindelofSpace`: its model space is
+  finite-dimensional and the manifold is Lindelöf.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.isOpen_iUnion_image`: the union of the end
   images is open on any `C¹` manifold.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.isCompact_compl_iUnion_of_compact_collar`,
@@ -74,6 +77,27 @@ theorem nonempty_manifold (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) : 
   obtain ⟨e⟩ := h.nonempty
   obtain ⟨y, _, -⟩ := (h.isAsymptoticallyEuclideanEnd e).nonempty_image
   exact ⟨y⟩
+
+/-- The model space `E` of a finite-ended asymptotically Euclidean manifold is finite-dimensional,
+derived from one of its ends. -/
+theorem finiteDimensional (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) :
+    FiniteDimensional ℝ E :=
+  let ⟨e⟩ := h.nonempty
+  (h.isAsymptoticallyEuclideanEnd e).finiteDimensional
+
+/-- Every finite-ended asymptotically Euclidean manifold is Lindelöf, as a finite union of
+continuous images of subspaces of `ℝⁿ` together with a compact remainder. -/
+theorem lindelofSpace (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) : LindelofSpace M := by
+  have := h.finite
+  have hend (a : ι) :
+      IsLindelof (φ a '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ) := by
+    rw [← Subtype.coe_image_univ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ, ← image_comp]
+    exact isLindelof_univ.image
+      ((h.isAsymptoticallyEuclideanEnd a).contMDiffOn.continuousOn.comp_continuous
+        continuous_subtypeVal fun x ↦ x.property)
+  rw [← isLindelof_univ_iff,
+    ← union_compl_self (⋃ a, φ a '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ)]
+  exact (isLindelof_iUnion hend).union h.isCompact_compl_iUnion.isLindelof
 
 /-- The union of the images of the ends of a finite-ended asymptotically Euclidean structure is
 open in any `C¹` manifold `M`. -/
@@ -385,12 +409,14 @@ theorem mono_radius_of_completeSpace {M : Type*} [PseudoEMetricSpace M] [Charted
 /-- Constant metric rescaling `g ↦ c • g` preserves finite-ended asymptotically Euclidean
 structures, rescaling each excised radius by `√c` and each parametrization by
 `y ↦ toWithMetric _ (φ a ((√c)⁻¹ • y))`. -/
-theorem rescale (m : ℕ∞ω) [FiniteDimensional ℝ E] [IsManifold I 1 M]
+theorem rescale (m : ℕ∞ω) [IsManifold I 1 M]
     [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)] {c : ℝ} (hc : 0 < c)
     (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) :
+    let _ := h.finiteDimensional
     IsFiniteEndedAsymptoticallyEuclidean I t (fun a ↦ Real.sqrt c * R a)
       (fun a y ↦ WithMetric.toWithMetric (rescaledMetric I M m hc)
         (φ a ((Real.sqrt c)⁻¹ • y))) := by
+  have : FiniteDimensional ℝ E := h.finiteDimensional
   set g_c := rescaledMetric I M m hc
   set s := Real.sqrt c
   have hs : 0 < s := Real.sqrt_pos.2 hc
@@ -432,11 +458,15 @@ theorem rescale (m : ℕ∞ω) [FiniteDimensional ℝ E] [IsManifold I 1 M]
 
 /-- Every finite-ended asymptotically Euclidean manifold of positive order `t > 0` has infinite
 Riemannian volume. -/
-theorem riemannianVolume_univ_eq_top [FiniteDimensional ℝ E] [IsManifold I 1 M]
-    [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+theorem riemannianVolume_univ_eq_top [IsManifold I 1 M]
+    [MeasurableSpace M] [BorelSpace M]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
     (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) :
+    let _ := h.finiteDimensional
+    let _ := h.lindelofSpace
     riemannianVolume I M univ = ⊤ := by
+  have : FiniteDimensional ℝ E := h.finiteDimensional
+  have : LindelofSpace M := h.lindelofSpace
   obtain ⟨a⟩ := h.nonempty
   exact top_unique
     (((h.isAsymptoticallyEuclideanEnd a).riemannianVolume_image_eq_top ht).symm.trans_le

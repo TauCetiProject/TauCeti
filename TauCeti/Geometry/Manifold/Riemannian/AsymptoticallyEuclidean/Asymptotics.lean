@@ -23,7 +23,8 @@ converges to the identity matrix. Outside a sufficiently large ball `‖x‖ > R
 determinant is uniformly bounded below by `1 / 4`, the metric entries `g_ij(x)` and inverse metric
 entries `g⁻¹_ij(x)` satisfy `|g_ij(x) - δ_ij| ≤ C₁ ‖x‖ ^ (-t)` and
 `|g⁻¹_ij(x) - δ_ij| ≤ C₁ ‖x‖ ^ (-t)`, and all derivatives of order `k ≤ 2` of `g_ij - δ_ij` obey the
-`O(‖x‖ ^ (-t - k))` bounds with a single constant `C₁`.
+`O(‖x‖ ^ (-t - k))` bounds with a single constant `C₁` (higher-order asymptotics of the inverse
+metric, volume density, sphere area density, and unit normals are left to follow-up modules).
 
 As a geometric consequence, every asymptotically Euclidean end of positive order has infinite
 Riemannian volume (`riemannianVolume_image_eq_top`), and hence no compact `C¹` manifold with a
@@ -238,21 +239,14 @@ theorem riemannianJacobian_toPartialDiffeomorph (k : ℕ∞ω) [IsManifold I k M
   rw [h.coe_toPartialDiffeomorph k hk1 hk]
   exact riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff φ x
 
-/-- An asymptotically Euclidean end identifies `ℝⁿ` linearly with the target model space `E` via
-the invertible differential at a point of `(closedBall 0 R)ᶜ`. -/
-private theorem exists_continuousLinearEquiv_model (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    Nonempty (EuclideanSpace ℝ (Fin n) ≃L[ℝ] E) := by
-  have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
-  obtain ⟨x, hx⟩ := NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
-  obtain ⟨e, -⟩ := h.isInvertible_mfderiv x (by simpa using hx)
-  exact ⟨e⟩
-
 /-- Every asymptotically Euclidean end of positive order `t > 0` has infinite Riemannian volume. -/
-theorem riemannianVolume_image_eq_top [FiniteDimensional ℝ E] [IsManifold I 1 M]
+theorem riemannianVolume_image_eq_top [IsManifold I 1 M]
     [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
     (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t) :
+    let _ := h.finiteDimensional
     riemannianVolume I M (φ '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) = ⊤ := by
+  have : FiniteDimensional ℝ E := h.finiteDimensional
   have hloc : IsLocalDiffeomorphOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I 1 φ
       (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
     h.isLocalDiffeomorphOn 1 le_rfl (by simp)
@@ -288,8 +282,7 @@ theorem not_compactSpace [IsManifold I 1 M]
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
     (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t) : ¬ CompactSpace M := by
   intro _
-  obtain ⟨e⟩ := h.exists_continuousLinearEquiv_model
-  have : FiniteDimensional ℝ E := e.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ E := h.finiteDimensional
   let _ : MeasurableSpace M := borel M
   have : BorelSpace M := ⟨rfl⟩
   have htop : riemannianVolume I M univ = ⊤ :=

@@ -49,6 +49,8 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 
 ## Main results
 
+* `TauCeti.IsAsymptoticallyEuclideanEnd.finiteDimensional`: the model space of an end is
+  finite-dimensional.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
   `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
   image of an end is open and path-connected.
@@ -230,6 +232,15 @@ theorem nonempty_image (h : IsAsymptoticallyEuclideanEnd I t R φ) :
   have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
   obtain ⟨x, hx⟩ := NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
   exact ⟨φ x, x, by simpa using hx, rfl⟩
+
+/-- The model space `E` of a manifold admitting an asymptotically Euclidean end is
+finite-dimensional, since `mfderiv` at any exterior point gives a continuous linear equivalence from
+`EuclideanSpace ℝ (Fin n)` to `E`. -/
+theorem finiteDimensional (h : IsAsymptoticallyEuclideanEnd I t R φ) : FiniteDimensional ℝ E := by
+  have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
+  obtain ⟨x, hx⟩ := NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
+  obtain ⟨e, -⟩ := h.isInvertible_mfderiv x (by simpa using hx)
+  exact e.toLinearEquiv.finiteDimensional
 
 /-- An end is a `C^k` local diffeomorphism on the exterior of its ball for every `1 ≤ k ≤ ∞`, by
 the inverse function theorem. -/
