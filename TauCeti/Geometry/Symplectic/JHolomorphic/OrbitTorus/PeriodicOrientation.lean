@@ -50,7 +50,7 @@ determinant line is identified with that of the endomorphism `1 - P` of the fibr
   generator (`TauCeti.detLineOrientationTransport_rayOfNeZero_periodicTorusOperator`).
 * **The sign.** At a bijective endpoint the transported generator is `det (1 - P)` times the
   generator of the trivialization given by bijectivity
-  (`TauCeti.detLinePeriodicTorusOperatorEquiv_symm_detLineEndGenerator_eq_det_smul`), so the
+  (`LinearMap.detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul`), so the
   determinant sign is `sgn det (1 - P)`
   (`TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det`). The character
   nontrivial on `γ` only is realized in the periodic gauge by the loop `Sₐ` of

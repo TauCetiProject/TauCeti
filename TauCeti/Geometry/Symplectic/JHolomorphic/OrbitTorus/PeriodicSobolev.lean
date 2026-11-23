@@ -409,20 +409,6 @@ theorem sign_detLineEndEquiv_detLinePeriodicTorusOperatorEquiv (hℓ : ℓ ≠ 0
   exact (congrArg SignType.sign
     (detLineEndEquiv_detLinePeriodicTorusOperatorEquiv T hℓ S hS hD x)).trans (h _ _)
 
-/-- At a bijective periodic orbit-torus operator, the element of its determinant line corresponding
-to the normalized generator of the determinant line of `1 - Ψ(T)` under
-`TauCeti.detLinePeriodicTorusOperatorEquiv` is `det (1 - Ψ(T))` times the generator of the
-trivialization given by bijectivity (`LinearMap.detLineEquivOfBijective`). -/
-theorem detLinePeriodicTorusOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (hℓ : ℓ ≠ 0)
-    (S : C(AddCircle T, F →L[ℝ] F))
-    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (hD : Function.Bijective (periodicTorusOperator T ℓ S).toLinearMap) :
-    (detLinePeriodicTorusOperatorEquiv T hℓ S hS).symm
-        (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)).detLineEndGenerator =
-      LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)) •
-        ((periodicTorusOperator T ℓ S).toLinearMap.detLineEquivOfBijective hD).symm 1 :=
-  LinearMap.detLineCongrKerCoker_symm_detLineEndGenerator_eq_det_smul _ hD _ _
-
 end Inner
 
 end TauCeti
