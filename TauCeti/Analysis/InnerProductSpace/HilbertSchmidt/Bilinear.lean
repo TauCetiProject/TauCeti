@@ -179,6 +179,30 @@ theorem bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquiv_of_linearIsometry
   intro x y
   rw [h, U.norm_map]
 
+/-- Precomposing both inputs with linear isometric equivalences preserves energy. -/
+@[simp]
+theorem bilinearHilbertSchmidtEnergy_bilinearComp_linearIsometryEquiv {E' E₂' : Type*}
+    [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
+    [NormedAddCommGroup E₂'] [InnerProductSpace 𝕜 E₂'] [FiniteDimensional 𝕜 E₂']
+    (T : E →L[𝕜] E₂ →L[𝕜] F) (e₁ : E' ≃ₗᵢ[𝕜] E) (e₂ : E₂' ≃ₗᵢ[𝕜] E₂) :
+    bilinearHilbertSchmidtEnergy (T.bilinearComp (e₁ : E' →L[𝕜] E) (e₂ : E₂' →L[𝕜] E₂)) =
+      bilinearHilbertSchmidtEnergy T := by
+  apply bilinearHilbertSchmidtEnergy_eq_of_linearIsometryEquiv_of_norm_eq T _ e₁ e₂
+  intro x y
+  simp only [bilinearComp_apply, LinearIsometryEquiv.coe_coe'']
+
+/-- Postcomposing the output with a linear isometry preserves energy. -/
+@[simp]
+theorem bilinearHilbertSchmidtEnergy_compL_linearIsometry {G : Type*}
+    [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    (T : E →L[𝕜] E₂ →L[𝕜] F) (U : F →ₗᵢ[𝕜] G) :
+    bilinearHilbertSchmidtEnergy ((compL 𝕜 E₂ F G U.toContinuousLinearMap).comp T) =
+      bilinearHilbertSchmidtEnergy T := by
+  apply bilinearHilbertSchmidtEnergy_eq_of_norm_eq
+  intro x y
+  simp only [comp_apply, compL_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.norm_map]
+
 end InnerProduct
 
 end ContinuousLinearMap
