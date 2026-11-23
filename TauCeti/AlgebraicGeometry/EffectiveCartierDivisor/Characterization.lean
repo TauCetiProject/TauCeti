@@ -71,9 +71,9 @@ theorem isSMulRegular_trivializationGenerator {W : X.Opens} (i : W ⟶ V) :
 
 /-- On an affine open inside a rank-one trivialization of an ideal sheaf, its ideal is generated
 by the regular function given by the restricted basis section. -/
-theorem ideal_eq_span_trivializationGenerator (U : X.affineOpens) (hUV : U.1 ≤ V) :
+theorem ideal_eq_span_trivializationGenerator (U : X.affineOpens) (hUV : U.val ≤ V) :
     I.ideal U = Ideal.span (α := Γ(X, U))
-      {(Scheme.Modules.Hom.app I.sheafι U.1
+      {(Scheme.Modules.Hom.app I.sheafι U.val
         (I.sheaf.presheaf.map (homOfLE hUV).op
           (Scheme.Modules.trivializationGenerator I.sheaf t)) : Γ(X, U))} := by
   ext a
@@ -83,10 +83,10 @@ theorem ideal_eq_span_trivializationGenerator (U : X.affineOpens) (hUV : U.1 ≤
   constructor
   · intro ha
     let s := I.sectionMk a ha
-    let b : Γ(X, U) := Scheme.Modules.Hom.app I.sheafι U.1
+    let b : Γ(X, U) := Scheme.Modules.Hom.app I.sheafι U.val
       (I.sheaf.presheaf.map (homOfLE hUV).op
         (Scheme.Modules.trivializationGenerator I.sheaf t))
-    have hs := congrArg (Scheme.Modules.Hom.app I.sheafι U.1)
+    have hs := congrArg (Scheme.Modules.Hom.app I.sheafι U.val)
       (Scheme.Modules.eq_trivializationCoordinate_smul_map_trivializationGenerator
         I.sheaf t (homOfLE hUV) s)
     refine ⟨Scheme.Modules.trivializationCoordinate I.sheaf t (homOfLE hUV) s, ?_⟩
@@ -97,7 +97,7 @@ theorem ideal_eq_span_trivializationGenerator (U : X.affineOpens) (hUV : U.1 ≤
     have hs' : a = Scheme.Modules.trivializationCoordinate I.sheaf t (homOfLE hUV) s * b := hs
     exact hs'.trans (mul_comm _ _)
   · rintro ⟨r, rfl⟩
-    exact (I.sections U.1).mul_mem_right r (I.sheafι_app_mem U.1 _)
+    exact (I.sections U.val).mul_mem_right r (I.sheafι_app_mem U.val _)
 
 /-- A closed subscheme whose ideal sheaf is invertible is an effective Cartier divisor.
 The local equation is the image of a basis section under the inclusion into the structure sheaf.

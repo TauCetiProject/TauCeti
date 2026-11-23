@@ -40,8 +40,8 @@ theorem exists_disjoint_measurableSet_cover_of_mem_nhds {S : Set α} (hS : S.Non
   obtain ⟨f, hf⟩ := (HereditarilyLindelofSpace.isLindelof S).indexed_countable_subcover
     (fun x : S ↦ interior (N x)) (fun _ ↦ isOpen_interior)
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hN x hx)⟩
-  refine ⟨disjointed fun n ↦ N (f n), MeasurableSet.disjointed fun n ↦ hNm _ (f n).2,
-    disjoint_disjointed _, ?_, fun n ↦ ⟨f n, (f n).2, disjointed_subset _ n⟩⟩
+  refine ⟨disjointed fun n ↦ N (f n), MeasurableSet.disjointed fun n ↦ hNm _ (f n).property,
+    disjoint_disjointed _, ?_, fun n ↦ ⟨f n, (f n).property, disjointed_subset _ n⟩⟩
   rw [iUnion_disjointed]
   exact hf.trans (iUnion_mono fun n ↦ interior_subset)
 

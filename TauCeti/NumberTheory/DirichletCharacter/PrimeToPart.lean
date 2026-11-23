@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.Data.ZMod.ExactDivisor
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 
 /-!
 # The prime-to-p part of a Dirichlet character
@@ -64,10 +64,10 @@ theorem primeToPart_apply_unit (p : ℕ) (χ : DirichletCharacter R N)
 @[simp]
 theorem conductor_primeToPart (p : ℕ) (χ : DirichletCharacter R N) :
     (primeToPart p χ).conductor = ordCompl[p] χ.conductor := by
-  by_cases hc : χ.conductor = 0
-  · have hlevel : ordCompl[p] χ.conductor = 0 := by simp [hc]
+  obtain rfl | _ := eq_zero_or_neZero N
+  · have hc : χ.conductor = 0 := DirichletCharacter.conductor_eq_zero_iff_level_eq_zero.mpr rfl
+    have hlevel : ordCompl[p] χ.conductor = 0 := by simp [hc]
     exact (DirichletCharacter.conductor_eq_zero_iff_level_eq_zero.mpr hlevel).trans hlevel.symm
-  have : NeZero χ.conductor := ⟨hc⟩
   let h := Nat.isExactDivisor_primePow (N := χ.conductor) (p := p)
   let ψ : DirichletCharacter R (p ^ χ.conductor.factorization p) := MulChar.ofUnitHom
     ((χ.primitiveCharacter.toUnitHom.comp h.unitsEquivProd.symm.toMonoidHom).comp

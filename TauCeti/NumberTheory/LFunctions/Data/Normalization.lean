@@ -149,9 +149,6 @@ variable (T : NormalizationTranslation)
 private theorem conj_weight_div_two (w : ℤ) : conj ((w : ℂ) / 2) = (w : ℂ) / 2 := by
   rw [map_div₀, map_intCast, map_ofNat]
 
-private theorem conductor_cpow_ne_zero (N : ℕ+) (z : ℂ) : ((N : ℕ) : ℂ) ^ z ≠ 0 :=
-  cpow_ne_zero_iff.mpr (Or.inl (by exact_mod_cast N.ne_zero))
-
 /-- The coefficient translation holds at every index, `0` included, since both zeroth
 coefficients vanish. -/
 @[simp]
@@ -312,7 +309,7 @@ theorem hasDirichletAgreement_iff :
             T.arithmetic.gammaFactor s * LSeries T.arithmetic.coeff s := by
   set d : ℂ := (T.weight : ℂ) / 2
   set N : ℂ := ((T.arithmetic.conductor : ℕ) : ℂ)
-  have hc : N ^ (-(T.weight : ℂ) / 4) ≠ 0 := conductor_cpow_ne_zero _ _
+  have hc : N ^ (-(T.weight : ℂ) / 4) ≠ 0 := T.arithmetic.conductor_cpow_ne_zero _
   have hN : N ≠ 0 := by simp [N]
   have hre (s : ℂ) : (s + d).re = s.re + (T.weight : ℝ) / 2 := by simp [d]
   -- the completed equations at `s` and at `s + w/2` differ by the factor `N^(-w/4)`
@@ -357,7 +354,7 @@ theorem hasMeromorphicContinuation_iff :
       T.arithmetic.HasMeromorphicContinuation := by
   set d : ℂ := (T.weight : ℂ) / 2
   set c : ℂ := ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(T.weight : ℂ) / 4)
-  have hc : c ≠ 0 := conductor_cpow_ne_zero _ _
+  have hc : c ≠ 0 := T.arithmetic.conductor_cpow_ne_zero _
   have hmer : Meromorphic T.analytic.completed ↔ Meromorphic T.arithmetic.completed := by
     rw [T.analytic_completed, meromorphic_const_smul_iff_meromorphic hc,
       Meromorphic.meromorphic_comp_add_const_iff_meromorphic]
@@ -403,7 +400,7 @@ theorem hasFunctionalEquation_iff :
               T.arithmetic.rootNumber * T.arithmetic.dual.completed ((T.weight : ℂ) + 1 - s) := by
   set d : ℂ := (T.weight : ℂ) / 2
   set c : ℂ := ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(T.weight : ℂ) / 4)
-  have hc : c ≠ 0 := conductor_cpow_ne_zero _ _
+  have hc : c ≠ 0 := T.arithmetic.conductor_cpow_ne_zero _
   -- the analytic reflection `s ↦ 1 - conj s` is the arithmetic one read at `s + w/2`
   have hrefl (s : ℂ) : 1 - conj s + d = (T.weight : ℂ) + 1 - conj (s + d) := by
     rw [map_add, conj_weight_div_two]

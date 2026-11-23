@@ -115,7 +115,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder {σ : K ≃ₐ[F] 
     W.tateModuleGaloisRepresentation ℓ σ = 1 :=
   TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq hσ hk fun t ↦ Subtype.ext <| by
     rw [coe_proj_tateModuleGaloisRepresentation,
-      hfix _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k t).2)]
+      hfix _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k t).property)]
 
 /-- **A subgroup acting on `T_ℓ E` through a finite quotient and trivially on `E[ℓ ^ k]`, with
 `ℓ ^ k ≥ 3`, acts trivially on `T_ℓ E`.** For an inertia group at a place of potential good
@@ -153,7 +153,7 @@ theorem tateModuleGaloisRepresentation_eq_one_iff [IsSepClosed K] [W.IsElliptic]
     rw [hσ, one_apply_eq_self, hx] at h
     exact h.symm
   · rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self,
-      h k _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k x).2)]
+      h k _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k x).property)]
 
 end Representation
 
@@ -191,7 +191,7 @@ theorem continuous_tateModuleGaloisRepresentation_apply (ℓ : ℕ) [Fact ℓ.Pr
   (TateModule.continuous_map_apply fun n x ↦
     W.isLocallyConstant_map_of_zsmul_eq_zero (n := ((ℓ ^ n : ℕ) : ℤ))
       (Int.natCast_ne_zero.mpr (pow_ne_zero n (Fact.out : ℓ.Prime).ne_zero))
-      ((Submodule.mem_torsionBy_iff _ _).mp x.2)).congr
+      ((Submodule.mem_torsionBy_iff _ _).mp x.property)).congr
     fun q ↦ (tateModuleGaloisRepresentation_apply q.1 q.2).symm
 
 end WeierstrassCurve

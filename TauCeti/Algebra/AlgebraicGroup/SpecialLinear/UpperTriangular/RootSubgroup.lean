@@ -232,7 +232,7 @@ inside the standard Borel exactly when it is positive. -/
 theorem definingHopfIdeal_le_ker_rootSubgroupCoordinateMap_iff_isPos [Nontrivial R]
     (r : ℕ) (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (definingHopfIdeal R (r + 1)).toIdeal ≤
-        RingHom.ker ((SpecialLinear.rootSubgroupCoordinateMap (R := R) p.2).hom.toAlgHom :
+        RingHom.ker ((SpecialLinear.rootSubgroupCoordinateMap (R := R) p.property).hom.toAlgHom :
           SpecialLinear.coordinateHopfAlgebra R (r + 1) →+*
             AdditiveGroup.coordinateHopfAlgebra R) ↔
       (SpecialLinear.diagonalRootBase r).IsPos p := by

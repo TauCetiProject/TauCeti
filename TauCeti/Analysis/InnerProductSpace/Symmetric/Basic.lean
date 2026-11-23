@@ -8,21 +8,27 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 
 /-!
-# Symmetric operators: negation, scalar shifts and limits
+# Symmetric operators: negation and limits
 
 Facts about symmetric operators complementing Mathlib's
 `Mathlib.Analysis.InnerProductSpace.Symmetric`:
 
 * the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`);
-* shifting a symmetric linear map by a self-conjugate multiple of the identity keeps it symmetric
-  (`LinearMap.IsSymmetric.sub_smul_id`);
 * the symmetric bounded operators form a closed subset of `E →L[𝕜] E`
   (`ContinuousLinearMap.isClosed_setOf_isSymmetric`), so a limit of symmetric bounded operators
   is symmetric. No completeness of `E` is needed: the condition `⟪T x, y⟫ = ⟪x, T y⟫` is closed
   in `T` for each pair `x, y`.
+
+The same argument applies to operators `A : D →L[𝕜] H` from a normed space into an inner product
+space that are symmetric relative to a fixed `ι : D →L[𝕜] H`, in the sense that
+`⟪A x, ι y⟫ = ⟪ι x, A y⟫`: a limit of such operators is again symmetric relative to `ι`
+(`ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto`).
 -/
 
 public section
+
+open Filter
+open scoped InnerProductSpace Topology
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -31,12 +37,6 @@ namespace LinearMap
 /-- The negative of a symmetric linear map is symmetric. -/
 theorem IsSymmetric.neg {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) : (-T).IsSymmetric := by
   simpa using IsSymmetric.zero.sub hT
-
-/-- Shifting a symmetric linear map by a self-conjugate multiple of the identity, such as a real
-scalar, keeps it symmetric. -/
-theorem IsSymmetric.sub_smul_id {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) {c : 𝕜}
-    (hc : starRingEnd 𝕜 c = c) : (T - c • LinearMap.id).IsSymmetric :=
-  hT.sub (IsSymmetric.id.smul hc)
 
 end LinearMap
 
@@ -48,5 +48,16 @@ theorem isClosed_setOf_isSymmetric :
   simp only [LinearMap.IsSymmetric, coe_coe, Set.ofPred_forall]
   exact isClosed_iInter fun x ↦ isClosed_iInter fun y ↦
     isClosed_eq (by fun_prop) (by fun_prop)
+
+/-- **Limits preserve symmetry relative to an embedding.** If operators `A s : D →L[𝕜] H`
+satisfy `⟪A s x, ι y⟫ = ⟪ι x, A s y⟫` and converge to `B` along a nontrivial filter, then `B`
+satisfies `⟪B x, ι y⟫ = ⟪ι x, B y⟫`. -/
+theorem inner_apply_eq_inner_apply_of_tendsto {α D H : Type*} [NormedAddCommGroup D]
+    [NormedSpace 𝕜 D] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι : D →L[𝕜] H}
+    {A : α → D →L[𝕜] H} {B : D →L[𝕜] H} {l : Filter α} [l.NeBot] (hA : Tendsto A l (𝓝 B))
+    (hSymm : ∀ s x y, ⟪A s x, ι y⟫_𝕜 = ⟪ι x, A s y⟫_𝕜) (x y : D) :
+    ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜 :=
+  (isClosed_eq (f := fun T : D →L[𝕜] H ↦ ⟪T x, ι y⟫_𝕜) (g := fun T ↦ ⟪ι x, T y⟫_𝕜)
+    (by fun_prop) (by fun_prop)).mem_of_tendsto hA (.of_forall fun s ↦ hSymm s x y)
 
 end ContinuousLinearMap

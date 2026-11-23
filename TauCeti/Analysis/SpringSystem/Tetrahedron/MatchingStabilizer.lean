@@ -407,27 +407,36 @@ theorem invariants_tetrahedronDisplacementRep_comp_centralizer (m : Fin 3) :
     obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by fin_cases m <;> simp
     on_goal 1 =>
       obtain ⟨h1, h2⟩ := hswap (a := 0) (b := 1) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_zero]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_zero]; decide)
       obtain ⟨h3, h4⟩ := hswap (a := 2) (b := 3) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_zero]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_zero]; decide)
       obtain ⟨h5, h6⟩ := hswap₂ (a := 0) (b := 3) (c := 1) (d := 2) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_zero]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_zero]; decide)
       refine ⟨![(2 * A 0 0 + A 2 2) / 3, (A 2 2 - A 0 0) / 3], ?_⟩
     on_goal 2 =>
       obtain ⟨h1, h2⟩ := hswap (a := 0) (b := 3) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_one]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_one]; decide)
       obtain ⟨h3, h4⟩ := hswap (a := 1) (b := 2) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_one]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_one]; decide)
       obtain ⟨h5, h6⟩ := hswap₂ (a := 0) (b := 1) (c := 2) (d := 3) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_one]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_one]; decide)
       refine ⟨![(2 * A 1 1 + A 0 0) / 3, (A 0 0 - A 1 1) / 3], ?_⟩
     on_goal 3 =>
       obtain ⟨h1, h2⟩ := hswap (a := 0) (b := 2) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_two]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_two]; decide)
       obtain ⟨h3, h4⟩ := hswap (a := 1) (b := 3) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_two]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_two]; decide)
       obtain ⟨h5, h6⟩ := hswap₂ (a := 0) (b := 1) (c := 2) (d := 3) (by
-        rw [Subgroup.mem_centralizer_singleton_iff, symmetricGroupFourMatching_two]; decide)
+        rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq,
+          symmetricGroupFourMatching_two]; decide)
       refine ⟨![(2 * A 0 0 + A 1 1) / 3, (A 1 1 - A 0 0) / 3], ?_⟩
     all_goals
       clear hswap hswap₂ hfix hu

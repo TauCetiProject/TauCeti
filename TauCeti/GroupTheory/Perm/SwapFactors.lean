@@ -554,7 +554,8 @@ theorem card_add_orbitCount_add_two_le_length_add_two_mul_card_orbits [Finite α
   have hcomp : πM.SameCycle a b := by
     obtain ⟨g, rfl⟩ := hab
     exact mem_cyclePreservingSubgroup.mp
-      ((Subgroup.closure_le (cyclePreservingSubgroup πM)).mpr (fun g hg => hpresM g hg) g.2) a
+      ((Subgroup.closure_le (cyclePreservingSubgroup πM)).mpr (fun g hg => hpresM g hg) g.property)
+          a
   have hσ : Equiv.swap a b * M.prod ∈ cyclePreservingSubgroup πM :=
     mul_mem (swap_mem_cyclePreservingSubgroup hcomp)
       ((cyclePreservingSubgroup πM).list_prod_mem hpresM)
@@ -599,7 +600,7 @@ theorem card_add_orbitCount_le_length_add_two [Finite α]
 /-- Mathlib's `Equiv.Perm.swapFactorsAux` construction has exactly the reflection length. -/
 private theorem swapFactorsAux_orbitCount_add_length_eq_card [Fintype α]
     (l : List α) (σ : Perm α) (h : ∀ {x}, σ x ≠ x → x ∈ l) :
-    orbitCount σ + (Equiv.Perm.swapFactorsAux l σ h).1.length = Fintype.card α := by
+    orbitCount σ + (Equiv.Perm.swapFactorsAux l σ h).val.length = Fintype.card α := by
   induction l generalizing σ with
   | nil =>
     have h1 : σ = 1 := by
@@ -639,7 +640,7 @@ theorem _root_.Equiv.Perm.exists_isSwap_list_prod_eq_and_orbitCount_add_length_e
   cases nonempty_fintype α
   let _ : LinearOrder α := LinearOrder.lift' (Fintype.equivFin α) (Fintype.equivFin α).injective
   let L := Equiv.Perm.swapFactors σ
-  refine ⟨L.1, L.2.2, L.2.1, ?_⟩
+  refine ⟨L.val, L.property.2, L.property.1, ?_⟩
   simpa only [L, Equiv.Perm.swapFactors, Nat.card_eq_fintype_card] using
     swapFactorsAux_orbitCount_add_length_eq_card
       ((Finset.univ : Finset α).sort (· ≤ ·)) σ (fun {_ _} => by simp)
@@ -749,7 +750,7 @@ theorem card_orbitRelQuotient_closure_insert_swap_of_mem_orbit
     fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
   let φ := MulAction.orbitRelQuotientLift (G := Subgroup.closure
     (insert (Equiv.swap a b) (K : Set (Perm α)))) mk fun g z ↦
-      apply_eq_of_mem_closure hf g.2 z
+      apply_eq_of_mem_closure hf g.property z
   have hφψ : Function.LeftInverse φ
       (Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le hle)) := fun q ↦ by
     induction q using Quotient.inductionOn with

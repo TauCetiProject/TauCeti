@@ -168,19 +168,19 @@ at least `k` of the `X`-markings, then the matrix map counting that family with 
 `V^{O(r)}` sends `F_a` into `F_{a-k}`. -/
 private theorem le_of_mem_support_sum_mul_sum_OMonomial {a : ℤ} (k : ℕ)
     (s : ∀ x y : GridState n, Finset (GridRectangleBetween x y))
-    (hs : ∀ x y, ∀ r ∈ s x y, k ≤ (G.1.XSet ∩ r.toGridRectangle.coveredSquares).card)
+    (hs : ∀ x y, ∀ r ∈ s x y, k ≤ (G.val.XSet ∩ r.toGridRectangle.coveredSquares).card)
     {c : GridChainMinus R n} (hc : c ∈ G.alexanderFiltration R a) {y : GridState n}
     {e : Fin n →₀ ℕ}
-    (he : e ∈ (c.sum fun x p => p * ∑ r ∈ s x y, G.1.OMonomial R r.toGridRectangle).support) :
+    (he : e ∈ (c.sum fun x p => p * ∑ r ∈ s x y, G.val.OMonomial R r.toGridRectangle).support) :
     G.alexanderℤ y - (e.degree : ℤ) ≤ a - k := by
   classical
   rw [Finsupp.sum] at he
   obtain ⟨x, -, hx⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum he)
   obtain ⟨d, hd, w, hw, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hx)
-  obtain ⟨r, hr, rfl⟩ := G.1.exists_mem_of_mem_support_sum_OMonomial R hw
+  obtain ⟨r, hr, rfl⟩ := G.val.exists_mem_of_mem_support_sum_OMonomial R hw
   have hA := G.alexanderℤ_sub_card_OColumns_eq_sub_card r
-  have hdeg : ((d + ∑ c ∈ G.1.OColumns r.toGridRectangle, Finsupp.single c 1).degree : ℤ) =
-      (d.degree : ℤ) + ((G.1.OColumns r.toGridRectangle).card : ℤ) := by
+  have hdeg : ((d + ∑ c ∈ G.val.OColumns r.toGridRectangle, Finsupp.single c 1).degree : ℤ) =
+      (d.degree : ℤ) + ((G.val.OColumns r.toGridRectangle).card : ℤ) := by
     rw [map_add, map_sum]
     simp
   have hx := hc x d hd
@@ -192,7 +192,7 @@ private theorem le_of_mem_support_sum_mul_sum_OMonomial {a : ℤ} (k : ℕ)
 itself, since no rectangle raises the Alexander grading. -/
 theorem filteredDifferential_mem_alexanderFiltration {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderFiltration R a) :
-    G.1.filteredDifferential R c ∈ G.alexanderFiltration R a := by
+    G.val.filteredDifferential R c ∈ G.alexanderFiltration R a := by
   intro y e he
   simp only [GridDiagram.filteredDifferential_apply_apply,
     GridDiagram.filteredCoefficient_def] at he
@@ -209,15 +209,15 @@ The extra terms come from the rectangles covering an `X`-marking, each of which 
 Alexander grading. -/
 theorem filteredDifferential_sub_unblockedDifferential_mem_alexanderFiltration {a : ℤ}
     {c : GridChainMinus R n} (hc : c ∈ G.alexanderFiltration R a) :
-    G.1.filteredDifferential R c - G.1.unblockedDifferential R c ∈
+    G.val.filteredDifferential R c - G.val.unblockedDifferential R c ∈
       G.alexanderFiltration R (a - 1) := by
   classical
   rw [mem_alexanderFiltration]
   intro y e he
-  have hy : (G.1.filteredDifferential R c - G.1.unblockedDifferential R c) y =
+  have hy : (G.val.filteredDifferential R c - G.val.unblockedDifferential R c) y =
       c.sum fun x p => p * ∑ r ∈ (emptyRectangles x y).filter
-        (fun r => ¬Disjoint r.toGridRectangle.coveredSquares G.1.XSet),
-        G.1.OMonomial R r.toGridRectangle := by
+        (fun r => ¬Disjoint r.toGridRectangle.coveredSquares G.val.XSet),
+        G.val.OMonomial R r.toGridRectangle := by
     rw [Finsupp.sub_apply, GridDiagram.filteredDifferential_apply_apply,
       GridDiagram.unblockedDifferential_apply_apply, ← Finsupp.sum_sub]
     simp only [GridDiagram.filteredCoefficient_eq_unblockedCoefficient_add, mul_add,
@@ -225,7 +225,7 @@ theorem filteredDifferential_sub_unblockedDifferential_mem_alexanderFiltration {
   rw [hy] at he
   refine G.le_of_mem_support_sum_mul_sum_OMonomial R 1
     (fun x y ↦ (emptyRectangles x y).filter
-      fun r ↦ ¬Disjoint r.toGridRectangle.coveredSquares G.1.XSet) (fun x y r hr ↦ ?_) hc he
+      fun r ↦ ¬Disjoint r.toGridRectangle.coveredSquares G.val.XSet) (fun x y r hr ↦ ?_) hc he
   rw [Nat.one_le_iff_ne_zero, Ne, Finset.card_eq_zero, Finset.inter_comm,
     ← Finset.disjoint_iff_inter_eq_empty]
   exact (Finset.mem_filter.mp hr).2

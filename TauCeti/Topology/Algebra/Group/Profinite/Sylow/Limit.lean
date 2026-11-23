@@ -120,10 +120,10 @@ correspond to its Sylow pro-`p` subgroups: a family goes to the subgroup it cuts
 Sylow pro-`p` subgroup to the family of its images in the finite quotients. -/
 def equivIsProPSylow : SylowFamily p G ≃ {P : Subgroup G // IsProPSylow p P} where
   toFun S := ⟨S.subgroup, S.isProPSylow_subgroup⟩
-  invFun P := ⟨fun U ↦ P.2.toSylow U, fun _ _ hUV ↦ P.2.map_mapOfLE_toSylow hUV⟩
+  invFun P := ⟨fun U ↦ P.property.toSylow U, fun _ _ hUV ↦ P.property.map_mapOfLE_toSylow hUV⟩
   left_inv S := SylowFamily.ext <| funext fun U ↦
     Sylow.ext <| by rw [IsProPSylow.toSylow_coe, map_mk'_subgroup]
-  right_inv P := Subtype.ext P.2.limitSubgroup_toSylow
+  right_inv P := Subtype.ext P.property.limitSubgroup_toSylow
 
 /-- The correspondence sends a Sylow family to the subgroup it cuts out. -/
 @[simp]
@@ -136,7 +136,7 @@ finite quotients. -/
 @[simp]
 theorem equivIsProPSylow_symm_apply_sylow (P : {P : Subgroup G // IsProPSylow p P})
     (U : OpenNormalSubgroup G) :
-    (equivIsProPSylow.symm P).sylow U = P.2.toSylow U :=
+    (equivIsProPSylow.symm P).sylow U = P.property.toSylow U :=
   (rfl)
 
 end SylowFamily

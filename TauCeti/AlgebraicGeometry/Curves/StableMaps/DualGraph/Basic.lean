@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
+import Mathlib.Tactic.Linarith
 
 /-!
 # Degree-decorated dual graphs of stable maps
@@ -27,6 +28,11 @@ stable degree-decorated graph lies in the corresponding stable range. The stabil
 depends only on which components have degree zero; this is the combinatorial reason it is
 independent of the chosen ample polarization.
 
+Counting instead the number `a` of components of positive degree bounds the size of a stable
+decorated graph: every degree-zero component has log-canonical degree at least `1` and every other
+component at least `-2`. These bounds do not involve the degrees themselves, so they also apply to
+stable maps into a symplectic manifold, decorated by `1` on the nonconstant components.
+
 ## Main definitions
 
 * `TauCeti.DualGraph.DegreeDecoration`: component degrees on a dual graph.
@@ -45,6 +51,10 @@ independent of the chosen ample polarization.
   `TauCeti.DualGraph.DegreeDecoration`): the numerical stable range `2g - 2 + n + 3d > 0`.
 * `TauCeti.DualGraph.DegreeDecoration.isStable_congr`: stability depends only on the degree-zero
   components.
+* `IsStable.card_filter_componentDegree_eq_zero_le`, `IsStable.card_vertex_le` and
+  `IsStable.card_edge_le` (in `TauCeti.DualGraph.DegreeDecoration`): with `a` components of
+  positive degree, a stable decorated graph has at most `2g - 2 + n + 2a` components of degree
+  zero, `2g - 2 + n + 3a` vertices and `3g - 3 + n + 3a` edges.
 
 ## References
 
@@ -90,6 +100,10 @@ lemma totalDegree_def : D.totalDegree = ∑ v, D.componentDegree v :=
 @[simp]
 theorem totalDegree_eq_zero_iff : D.totalDegree = 0 ↔ ∀ v, D.componentDegree v = 0 := by
   simp [totalDegree]
+
+/-- Every component degree is at most the total degree. -/
+theorem componentDegree_le_totalDegree (v : G.Vertex) : D.componentDegree v ≤ D.totalDegree :=
+  single_le_sum (fun w _ ↦ Nat.zero_le (D.componentDegree w)) (mem_univ v)
 
 /-- The weighted log-canonical degree at a vertex:
 `2g(v) - 2 + val(v) + n(v) + 3d(v)`. -/
@@ -264,6 +278,72 @@ theorem IsStable.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDeg
   rw [← D.sum_weightedLogCanonicalDegree]
   exact Finset.sum_pos (fun v _ ↦ D.isStable_iff_weightedLogCanonicalDegree_pos.mp hD v)
     Finset.univ_nonempty
+
+/-! ### Bounds in terms of the number of nonconstant components -/
+
+/-- The number of components of positive degree is at most the total degree. -/
+theorem card_filter_componentDegree_ne_zero_le_totalDegree :
+    #{v | D.componentDegree v ≠ 0} ≤ D.totalDegree := by
+  calc #{v | D.componentDegree v ≠ 0}
+      = ∑ v ∈ {v | D.componentDegree v ≠ 0}, 1 := card_eq_sum_ones _
+    _ ≤ ∑ v ∈ {v | D.componentDegree v ≠ 0}, D.componentDegree v :=
+      sum_le_sum fun v hv ↦ Nat.one_le_iff_ne_zero.mpr (mem_filter.mp hv).2
+    _ ≤ D.totalDegree := sum_le_sum_of_subset (filter_subset _ _)
+
+/-- **The ghost bound.** A stable decorated graph of arithmetic genus `g` with `n` markings and
+`a` components of positive degree has at most `2g - 2 + n + 2a` components of degree zero.
+
+Every degree-zero component has log-canonical degree at least `1` and every other component at
+least `-2`, and the log-canonical degrees add up to `2g - 2 + n`. -/
+theorem IsStable.card_filter_componentDegree_eq_zero_le [Fintype ι] (hD : D.IsStable) :
+    (#{v | D.componentDegree v = 0} : ℤ) ≤
+      2 * G.arithmeticGenus - 2 + Fintype.card ι + 2 * #{v | D.componentDegree v ≠ 0} := by
+  have hsum := G.sum_logCanonicalDegree
+  rw [← sum_filter_add_sum_filter_not univ fun v ↦ D.componentDegree v = 0] at hsum
+  simp only [← ne_eq] at hsum
+  have h₀ := card_nsmul_le_sum {v | D.componentDegree v = 0} G.logCanonicalDegree 1
+    fun v hv ↦ by have := hD v (mem_filter.mp hv).2; omega
+  have h₁ := card_nsmul_le_sum {v | D.componentDegree v ≠ 0} G.logCanonicalDegree (-2)
+    fun v _ ↦ by rw [G.logCanonicalDegree_def]; omega
+  simp only [nsmul_eq_mul, mul_one] at h₀ h₁
+  linarith
+
+/-- A stable decorated graph of arithmetic genus `g` with `n` markings and `a` components of
+positive degree has at most `2g - 2 + n + 3a` vertices. For the zero decoration this is
+`TauCeti.DualGraph.IsStable.card_vertex_le`. -/
+theorem IsStable.card_vertex_le [Fintype ι] (hD : D.IsStable) :
+    (Fintype.card G.Vertex : ℤ) ≤
+      2 * G.arithmeticGenus - 2 + Fintype.card ι + 3 * #{v | D.componentDegree v ≠ 0} := by
+  have hcard := card_filter_add_card_filter_not (s := univ) fun v ↦ D.componentDegree v = 0
+  simp only [← ne_eq, card_univ] at hcard
+  have := hD.card_filter_componentDegree_eq_zero_le
+  omega
+
+/-- A stable decorated graph of arithmetic genus `g` with `n` markings and `a` components of
+positive degree has at most `3g - 3 + n + 3a` edges. For the zero decoration this is
+`TauCeti.DualGraph.IsStable.card_edge_le`. -/
+theorem IsStable.card_edge_le [Fintype ι] (hD : D.IsStable) :
+    (Fintype.card G.Edge : ℤ) ≤
+      3 * G.arithmeticGenus - 3 + Fintype.card ι + 3 * #{v | D.componentDegree v ≠ 0} := by
+  have := hD.card_vertex_le
+  have := G.card_edge_add_one_le_arithmeticGenus_add_card_vertex
+  omega
+
+namespace IsStable
+
+/-- A stable decorated graph satisfies `2g - 2 + n + 3a > 0`, where `a` is the number of
+components of positive degree. Since `a` is at most the total degree, this sharpens
+`IsStable.two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_totalDegree_pos`. -/
+theorem
+    two_mul_arithmeticGenus_sub_two_add_card_add_three_mul_card_filter_componentDegree_ne_zero_pos
+    [Fintype ι] (hD : D.IsStable) :
+    0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι +
+      3 * #{v | D.componentDegree v ≠ 0} := by
+  have := hD.card_vertex_le
+  have : 0 < Fintype.card G.Vertex := Fintype.card_pos
+  omega
+
+end IsStable
 
 end DegreeDecoration
 
