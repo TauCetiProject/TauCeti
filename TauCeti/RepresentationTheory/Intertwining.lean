@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Stabilizer
 public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
@@ -55,12 +56,16 @@ taking invariants under it.
 
 * `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
   by the original intertwining map on the underlying types.
+* `Representation.IntertwiningMap.stabilizer_apply_eq_of_injective`: an injective intertwining
+  map preserves stabilizers exactly, not only up to the inclusion `IntertwiningMap.stabilizer_le`.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
+* `AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`: equivariance under a monoid
+  acting through a spanning image in an algebra is equivariance under the whole algebra.
 
 -/
 
@@ -230,6 +235,21 @@ theorem res_comp (ψ : IntertwiningMap σ τ) (φ : IntertwiningMap ρ σ) (f : 
   (rfl)
 
 end Restriction
+
+section Stabilizer
+
+variable {A G V W : Type*} [Semiring A] [Group G] [AddCommMonoid V] [AddCommMonoid W]
+  [Module A V] [Module A W] {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **An injective intertwining map preserves stabilizers.** Mathlib's
+`Representation.IntertwiningMap.stabilizer_le` gives one inclusion for any intertwining map;
+injectivity gives the other, since `σ g (f v) = f v` reads `f (ρ g v) = f v`. -/
+theorem stabilizer_apply_eq_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    (v : V) : stabilizer σ (f v) = stabilizer ρ v := by
+  ext g
+  rw [mem_stabilizer, mem_stabilizer, ← isIntertwining _ _ f g v, hf.eq_iff]
+
+end Stabilizer
 
 end Representation.IntertwiningMap
 
@@ -462,6 +482,27 @@ theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [
     intro v
     calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
       _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
+
+/-- **Equivariance under a spanning monoid is equivariance under the whole algebra.** If the image
+of `φ : H →* B` spans the `A`-algebra `B`, a linear map intertwines the restrictions along `φ` of
+two algebra actions `F` and `G` exactly when it intertwines `F b` and `G b` for every `b : B`. -/
+theorem _root_.AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top {A B H V W : Type*}
+    [CommSemiring A] [Semiring B] [Algebra A B] [Monoid H]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+    (F : B →ₐ[A] Module.End A V) (G : B →ₐ[A] Module.End A W) (φ : H →* B)
+    (hφ : Submodule.span A (Set.range φ) = ⊤) (f : V →ₗ[A] W) :
+    IsIntertwiningMap ((F : B →* Module.End A V).comp φ) ((G : B →* Module.End A W).comp φ) f ↔
+      ∀ b v, f (F b v) = G b (f v) := by
+  -- The restricted actions act by `F (φ g)` and `G (φ g)`.
+  simp only [isIntertwiningMap_iff, MonoidHom.comp_apply, AlgHom.coe_toMonoidHom]
+  refine ⟨fun hf b v ↦ ?_, fun h g v ↦ h (φ g) v⟩
+  -- Both sides are linear in `b`: `F b` postcomposed with `f`, and `G b` precomposed with `f`.
+  have hext : LinearMap.llcomp A V V W f ∘ₗ F.toLinearMap =
+      LinearMap.lcomp A W f ∘ₗ G.toLinearMap :=
+    LinearMap.ext_on_range hφ fun g ↦ LinearMap.ext fun v ↦ by
+      simpa only [LinearMap.coe_comp, AlgHom.coe_toLinearMap, Function.comp_apply,
+        LinearMap.llcomp_apply, LinearMap.lcomp_apply] using hf g v
+  exact LinearMap.congr_fun (LinearMap.congr_fun hext b) v
 
 namespace Equiv
 

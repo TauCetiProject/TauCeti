@@ -240,14 +240,16 @@ theorem flatGaugeAdjoint_normalPerturbation (x : ℂ → EuclideanSpace ℝ (Fin
       (differentiableAt_normalPerturbationForm hy hη), fderiv_normalPerturbationForm_apply hy hη,
       Fin.sum_univ_four, normalCoord_apply_zero, normalCoord_apply_one, normalCoord_apply_two,
       normalCoord_apply_three, map_zero, orthonormal_iff_ite.1 e.orthonormal]; norm_num
-  have horth := inner_antiCanonicalSpinor_eq_zero hQ hkl he h₀ h₂₃ hρ hu₀
+  have horth :=
+    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
   have hu₀_in : ⟪u₀, u₀⟫_ℂ = 1 := by rw [inner_self_eq_norm_sq_to_K (𝕜 := ℂ), hu₀₁]; norm_num
   have hspin : (⟪normalSpinor o ρ e u₀ x p, normalPerturbationSpinor o ρ e u₀ y η p⟫_ℂ).im / 4 =
       x (normalCoord e p) 2 * y (normalCoord e p) 3 -
         x (normalCoord e p) 3 * y (normalCoord e p) 2 := by
-    rw [normalSpinor_apply, normalPerturbationSpinor_apply, normalFrameSpinor_def, inner_add_right,
-      inner_smul_left, inner_smul_right, inner_smul_left, inner_smul_right, hu₀_in, horth,
-      mul_one, mul_zero, mul_zero, add_zero, conj_sectionValue_mul_two]; simp
+    rw [normalSpinor_apply, normalPerturbationSpinor_apply, normalFrameSpinor_def, sub_eq_add_neg,
+      ← neg_smul, inner_add_right, inner_smul_left, inner_smul_right, inner_smul_left,
+      inner_smul_right, hu₀_in, horth, mul_one, mul_zero, mul_zero, add_zero,
+      conj_sectionValue_mul_two]; simp
   rw [flatGaugeAdjoint_def, hdiv, hspin, Vortex.gaugeAdjoint_def]; ring
 
 /-- Intertwining of `linearizedFlatCurvature` on normal perturbations along `(ω_u, ρ₁, ρ₂)`. -/
@@ -291,12 +293,13 @@ theorem linearizedFlatCurvature_normalPerturbation (x : ℂ → EuclideanSpace �
           AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
         (-x z 2 * η z 2 - x z 3 * η z 3) •
           AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he := by
-    rw [normalSpinor_apply, normalPerturbationSpinor_apply, normalFrameSpinor_def, map_add,
-      smul_add, smul_quadraticTwoFormPolar_smul_smul_of_cliffordProjection_apply_eq_self
+    rw [normalSpinor_apply, normalPerturbationSpinor_apply, normalFrameSpinor_def, sub_eq_add_neg,
+      ← neg_smul, map_add, smul_add,
+      smul_quadraticTwoFormPolar_smul_smul_of_cliffordProjection_apply_eq_self
         hQ hω h₂ hρ hu₀ hu₀₁,
-      smul_quadraticTwoFormPolar_smul_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁]
-    simp only [z, conj_sectionValue_mul_two, mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im,
-      I_re, I_im, re_ofNat, im_ofNat]; module
+      smul_quadraticTwoFormPolar_smul_pairedSpinor hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁]
+    simp only [z, mul_neg, neg_re, neg_im, conj_sectionValue_mul_two, mul_re, mul_im,
+      add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]; module
   rw [linearizedFlatCurvature_apply, hdiff, hzeroth]
   simp only [Vortex.linearizedEquation_apply_zero, Vortex.gaugeFixedAdjoint_apply_zero,
     Vortex.gaugeFixedAdjoint_apply_one]; module
@@ -314,7 +317,7 @@ private theorem coe_flatChiralDirac_normalPerturbationSpinor (x : ℂ → Euclid
         ((fderiv ℝ (Vortex.sectionValue η) z 1 + I * (x z 0 : ℂ) * Vortex.sectionValue η z) -
           (fderiv ℝ (Vortex.sectionValue η) z I + I * (x z 1 : ℂ) * Vortex.sectionValue η z) * I) •
           ρ (ι Q (e 0)) u₀ := by
-  intro z; set v₀ := antiCanonicalSpinor o ρ e u₀
+  intro z; set v₀ := -pairedSpinor e u₀
   have hsec {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : DifferentiableAt ℝ g z) :
       DifferentiableAt ℝ (Vortex.sectionValue g ∘ normalCoord e) p :=
     (Vortex.differentiableAt_sectionValue_of_differentiableAt hg).comp p
@@ -327,15 +330,22 @@ private theorem coe_flatChiralDirac_normalPerturbationSpinor (x : ℂ → Euclid
       (fun q ↦ (Vortex.sectionValue y ∘ normalCoord e) q • u₀) +
         (fun q ↦ (Vortex.sectionValue η ∘ normalCoord e) q • v₀) :=
     funext fun q ↦ by
-      simp [normalPerturbationSpinor, normalFrameSpinor_def, Vortex.sectionValue_apply, v₀]
+      simp [normalPerturbationSpinor, normalFrameSpinor_def, Vortex.sectionValue_apply, v₀,
+        sub_eq_add_neg]
+  have h2v₀ : ρ (ι Q (e 2)) (v₀ : W) = ρ (ι Q (e 0)) u₀ := by
+    dsimp only [v₀]
+    rw [Submodule.coe_neg, map_neg, ι_two_apply_pairedSpinor hQ u₀, neg_neg]
+  have h3v₀ : ρ (ι Q (e 3)) (v₀ : W) = -(I • ρ (ι Q (e 0)) u₀) := by
+    dsimp only [v₀]
+    rw [Submodule.coe_neg, map_neg,
+      ι_three_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀]
   rw [hsplit, flatChiralDirac_add (normalConnection e x) (hsmul_d hy u₀) (hsmul_d hη v₀),
     Submodule.coe_add, coe_flatChiralDirac_smul_const _ (hsec hy) _ e,
     coe_flatChiralDirac_smul_const _ (hsec hη) _ e,
     sum_covariantDeriv_normalConnection_smul_ι x hy u₀,
-    sum_covariantDeriv_normalConnection_smul_ι x hη v₀, ι_apply_two_antiCanonicalSpinor hQ u₀,
-    ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀,
-    ι_apply_three_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hu₀]
-  simp only [z, smul_smul, mul_neg]; module
+    sum_covariantDeriv_normalConnection_smul_ι x hη v₀, h2v₀,
+    ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, h3v₀]
+  simp only [z, smul_smul, smul_neg]; module
 
 omit h₂ hρ hu₀₁ in
 private theorem coe_sum_normalPerturbationForm_smul_normalSpinor

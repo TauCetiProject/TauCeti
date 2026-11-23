@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.FlatWeitzenbock
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor

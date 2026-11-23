@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Complex.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Real points avoid non-real complex numbers
@@ -14,6 +15,9 @@ A complex number with nonzero imaginary part differs from every real number, and
 image in `ℂ` of any subset of `ℝ`. In the forms `(t : ℂ) - z ≠ 0` and `z ∉ ((↑) : ℝ → ℂ) '' s`
 these give the nonvanishing of kernels such as `(t - z)⁻¹` and the off-support condition for Cauchy
 and resolvent (Stieltjes) transforms on the real line.
+
+The squared distance from a real point `x` to `z` is `(x - Re z) ^ 2 + (Im z) ^ 2`
+(`Complex.normSq_ofReal_sub`), the denominator of the Poisson kernel of the upper half-plane.
 -/
 
 public section
@@ -30,5 +34,11 @@ theorem notMem_image_ofReal_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) {s : Set �
     z ∉ ((↑) : ℝ → ℂ) '' s := by
   rintro ⟨t, -, rfl⟩
   exact hz (ofReal_im t)
+
+/-- The squared distance from a real point `x` to `z` is `(x - Re z) ^ 2 + (Im z) ^ 2`. -/
+theorem normSq_ofReal_sub (z : ℂ) (x : ℝ) :
+    normSq ((x : ℂ) - z) = (x - z.re) ^ 2 + z.im ^ 2 := by
+  simp only [normSq_apply, sub_re, ofReal_re, sub_im, ofReal_im, zero_sub]
+  ring
 
 end Complex

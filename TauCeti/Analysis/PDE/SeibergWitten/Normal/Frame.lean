@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 
@@ -21,8 +21,9 @@ operator between `Ω¹(V) × W⁺` and `ℝ × Λ⁺ V × W⁻` with the planar 
 on pairs `(y, η) ∈ ℝ⁴ × ℝ⁴`.
 
 Using the self-dual orthonormal basis `(ω_u, ρ₁, ρ₂)` of `Λ⁺ V` from
-`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic` and the half-spinor frames `(u₀, v₀)`
-of `W⁺` and `(c(e₂) u₀, c(e₀) u₀)` of `W⁻` from `TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine`,
+`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic` and the half-spinor frames `(u₀, -β₀)`
+of `W⁺` (where `β₀ = pairedSpinor e u₀`) and `(c(e₂) u₀, c(e₀) u₀)` of `W⁻` from
+`TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line`,
 this file constructs the eight-real-component domain and target linear equivalences
 `normalDomainEquiv` and `normalTargetEquiv` together with `normalFrameForm`, `normalFrameSpinor`,
 and their weighted component norm identities.
@@ -30,7 +31,7 @@ and their weighted component norm identities.
 ## Main definitions
 
 * `SeibergWitten.normalFrameForm`: the one-form `-η₀ e₀* + η₁ e₁* + y₀ e₂* + y₁ e₃*`.
-* `SeibergWitten.normalFrameSpinor`: the spinor `2(y₂ + i y₃) u₀ + 2(η₂ + i η₃) v₀`.
+* `SeibergWitten.normalFrameSpinor`: the spinor `2(y₂ + i y₃) u₀ - 2(η₂ + i η₃) β₀`.
 * `SeibergWitten.normalDomainEquiv`: the eight-component domain intertwiner
   `(ℝ⁴ × ℝ⁴) ≃L[ℝ] Ω¹(V) × W⁺`.
 * `SeibergWitten.normalTargetEquiv`: the eight-component target intertwiner
@@ -139,19 +140,19 @@ theorem normalFrameForm_eq_of_apply {e : OrthonormalBasis (Fin 4) ℝ V}
   ring
 
 omit [FiniteDimensional ℂ W] in variable (o ρ) in
-/-- The positive half-spinor `2(y₂ + i y₃) u₀ + 2(η₂ + i η₃) v₀` in `(u₀, v₀)`. -/
+/-- The positive half-spinor `2(y₂ + i y₃) u₀ - 2(η₂ + i η₃) β₀` in `(u₀, β₀)`. -/
 def normalFrameSpinor (e : OrthonormalBasis (Fin 4) ℝ V) (u₀ : positiveHalfSpinors o ρ)
     (y η : EuclideanSpace ℝ (Fin 4)) : positiveHalfSpinors o ρ :=
-  ((2 : ℂ) * ((y 2 : ℂ) + (y 3 : ℂ) * I)) • u₀ +
-    ((2 : ℂ) * ((η 2 : ℂ) + (η 3 : ℂ) * I)) • antiCanonicalSpinor o ρ e u₀
+  ((2 : ℂ) * ((y 2 : ℂ) + (y 3 : ℂ) * I)) • u₀ -
+    ((2 : ℂ) * ((η 2 : ℂ) + (η 3 : ℂ) * I)) • pairedSpinor e u₀
 
 omit [FiniteDimensional ℂ W] in
 /-- Definitional unfolding of `normalFrameSpinor`. -/
 theorem normalFrameSpinor_def (e : OrthonormalBasis (Fin 4) ℝ V) (u₀ : positiveHalfSpinors o ρ)
     (y η : EuclideanSpace ℝ (Fin 4)) :
     normalFrameSpinor o ρ e u₀ y η =
-      ((2 : ℂ) * ((y 2 : ℂ) + (y 3 : ℂ) * I)) • u₀ +
-        ((2 : ℂ) * ((η 2 : ℂ) + (η 3 : ℂ) * I)) • antiCanonicalSpinor o ρ e u₀ :=
+      ((2 : ℂ) * ((y 2 : ℂ) + (y 3 : ℂ) * I)) • u₀ -
+        ((2 : ℂ) * ((η 2 : ℂ) + (η 3 : ℂ) * I)) • pairedSpinor e u₀ :=
   (rfl)
 
 omit [FiniteDimensional ℂ W] in variable (o ρ) in
@@ -194,14 +195,16 @@ private theorem normalDomainEquiv_left_inv
     (!₂[q.fst (fun _ ↦ e 2), q.fst (fun _ ↦ e 3),
         (⟪u₀, q.snd⟫_ℂ).re / 2, (⟪u₀, q.snd⟫_ℂ).im / 2],
      !₂[-q.fst (fun _ ↦ e 0), q.fst (fun _ ↦ e 1),
-        (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).re / 2,
-        (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).im / 2]) = p := by
-  have horth := inner_antiCanonicalSpinor_eq_zero hQ hkl he h₀ h₂₃ hρ hu₀
-  have hv₀₁ : ‖antiCanonicalSpinor o ρ e u₀‖ = 1 := (norm_antiCanonicalSpinor hQ hρ u₀).trans hu₀₁
+        -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).re / 2,
+        -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2]) = p := by
+  have horth :=
+    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := (norm_pairedSpinor hQ hρ u₀).trans hu₀₁
   have huu := inner_smul_add_smul_of_inner_eq_zero_left hu₀₁ horth
-    ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) ((2 : ℂ) * (p.snd 2 + p.snd 3 * I))
-  have hvv := inner_smul_add_smul_of_inner_eq_zero_right hv₀₁ horth
-    ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) ((2 : ℂ) * (p.snd 2 + p.snd 3 * I))
+    ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I)))
+  have hvv := inner_smul_add_smul_of_inner_eq_zero_right hβ₀₁ horth
+    ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I)))
+  rw [neg_smul, ← sub_eq_add_neg] at huu hvv
   have he_ite := orthonormal_iff_ite.1 e.orthonormal
   exact Prod.ext
     (by ext i; fin_cases i <;> simp [normalFrameForm_apply, normalFrameSpinor, he_ite, huu])
@@ -214,17 +217,17 @@ private theorem normalDomainEquiv_right_inv
         (⟪u₀, q.snd⟫_ℂ).re / 2, (⟪u₀, q.snd⟫_ℂ).im / 2]
     let η : EuclideanSpace ℝ (Fin 4) :=
       !₂[-q.fst (fun _ ↦ e 0), q.fst (fun _ ↦ e 1),
-         (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).re / 2,
-         (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).im / 2]
+         -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).re / 2,
+         -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2]
     (normalFrameForm e y η, normalFrameSpinor o ρ e u₀ y η) = q :=
   Prod.ext
     (normalFrameForm_eq_of_apply (by simp) (by simp) (by simp) (by simp))
     (by
       conv_rhs =>
-        rw [eq_inner_smul_add_inner_antiCanonicalSpinor_smul hQ hkl he h₀ h₂₃ h₂ hρ
+        rw [eq_inner_smul_add_inner_pairedSpinor_smul hQ hkl he h₀ h₂₃ h₂ hρ
           hu₀ hu₀₁ q.snd]
       simp only [normalFrameSpinor, Matrix.cons_val_two, Matrix.cons_val_three,
-        Matrix.head_cons, Matrix.tail_cons]
+        Matrix.head_cons, Matrix.tail_cons, sub_eq_add_neg, ← neg_smul]
       congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring))
 
 /-- **The eight-component domain frame intertwiner** `(y, η) ≃ (b, ζ) ∈ Ω¹(V) × W⁺`. -/
@@ -241,8 +244,8 @@ def normalDomainEquiv :
         (!₂[q.fst (fun _ ↦ e 2), q.fst (fun _ ↦ e 3),
             (⟪u₀, q.snd⟫_ℂ).re / 2, (⟪u₀, q.snd⟫_ℂ).im / 2],
          !₂[-q.fst (fun _ ↦ e 0), q.fst (fun _ ↦ e 1),
-            (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).re / 2,
-            (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).im / 2])
+            -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).re / 2,
+            -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2])
       left_inv := normalDomainEquiv_left_inv o ρ hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁
       right_inv := normalDomainEquiv_right_inv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ }
 
@@ -260,8 +263,8 @@ theorem normalDomainEquiv_symm_apply (q : (V [⋀^Fin 1]→L[ℝ] ℝ) × positi
       (!₂[q.fst (fun _ ↦ e 2), q.fst (fun _ ↦ e 3),
           (⟪u₀, q.snd⟫_ℂ).re / 2, (⟪u₀, q.snd⟫_ℂ).im / 2],
        !₂[-q.fst (fun _ ↦ e 0), q.fst (fun _ ↦ e 1),
-          (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).re / 2,
-          (⟪antiCanonicalSpinor o ρ e u₀, q.snd⟫_ℂ).im / 2]) :=
+          -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).re / 2,
+          -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2]) :=
   (rfl)
 
 omit h₂ in
@@ -271,8 +274,9 @@ theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_f
     (y η : EuclideanSpace ℝ (Fin 4)) :
     alternatingFormInner V 1 (normalFrameForm e y η) (normalFrameForm e y η) +
         ‖normalFrameSpinor o ρ e u₀ y η‖ ^ 2 / 4 = ‖y‖ ^ 2 + ‖η‖ ^ 2 := by
-  have horth := inner_antiCanonicalSpinor_eq_zero hQ hkl he h₀ h₂₃ hρ hu₀
-  have hv₀₁ : ‖antiCanonicalSpinor o ρ e u₀‖ = 1 := (norm_antiCanonicalSpinor hQ hρ u₀).trans hu₀₁
+  have horth :=
+    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := (norm_pairedSpinor hQ hρ u₀).trans hu₀₁
   have hform : alternatingFormInner V 1 (normalFrameForm e y η) (normalFrameForm e y η) =
       η 0 ^ 2 + η 1 ^ 2 + y 0 ^ 2 + y 1 ^ 2 := by
     set u : V := (-η 0) • e 0 + η 1 • e 1 + y 0 • e 2 + y 1 • e 3
@@ -286,7 +290,8 @@ theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_f
     simp only [Matrix.of_apply, Matrix.cons_val_zero, u, inner_add_left, inner_add_right,
       real_inner_smul_left, real_inner_smul_right, orthonormal_iff_ite.1 e.orthonormal]
     norm_num; ring
-  rw [hform, normalFrameSpinor, norm_smul_add_smul_sq_of_inner_eq_zero hu₀₁ hv₀₁ horth,
+  rw [hform, normalFrameSpinor, sub_eq_add_neg, ← neg_smul,
+    norm_smul_add_smul_sq_of_inner_eq_zero hu₀₁ hβ₀₁ horth,
     ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, EuclideanSpace.real_norm_sq_eq y,
     EuclideanSpace.real_norm_sq_eq η, Fin.sum_univ_four, Fin.sum_univ_four]
   simp [normSq_apply]; ring

@@ -469,8 +469,12 @@ theorem exists_normalComplementaryInverse (hx : ContDiff ℝ 1 x)
         (∫ z, ⟪q.fst z, (normalModelAdjoint x ξ z).fst⟫) +
             (∫ z, ⟪q.snd z, (normalModelAdjoint x ξ z).snd⟫) =
           (∫ z, ⟪r.fst z, (ξ z).fst⟫) + (∫ z, ⟪r.snd z, (ξ z).snd⟫) := by
-  obtain ⟨Q, hQsol, hQorth⟩ :=
+  obtain ⟨Q, hQ⟩ :=
     Vortex.exists_continuousLinearMap_mem_orthogonal_weakGaugeFixedKernel hx hsol hlim
+  have hQsol : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪Q f z, Vortex.gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫ :=
+    fun f _ hη hηc ↦ (hQ f).1.integral_inner_eq hη hηc
+  have hQorth : ∀ f, Q f ∈ (Vortex.weakGaugeFixedKernel x)ᗮ := fun f ↦ (hQ f).2
   exact ⟨normalComplementaryInverse Q,
     normalDomainSlowProj_comp_normalComplementaryInverse hQorth,
     normalComplementaryInverse_comp_normalTargetSlowProj hQorth,
