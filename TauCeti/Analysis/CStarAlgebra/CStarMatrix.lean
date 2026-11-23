@@ -45,8 +45,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
-  `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
-  algebraic operations.
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`, and
+  `CStarMatrix.ofMatrixL_symm_apply` do the same for the other algebraic operations and
+  `CStarMatrix.ofMatrixL.symm`.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
@@ -212,6 +213,13 @@ lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
 @[simp]
 lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
+
+/-- Reading a finite sum of C⋆-matrices as an ordinary matrix distributes over the sum. -/
+lemma ofMatrix_symm_sum {m α : Type*} [AddCommMonoid A] (s : Finset α)
+    (f : α → CStarMatrix m n A) :
+    ofMatrix.symm (∑ x ∈ s, f x) = ∑ x ∈ s, ofMatrix.symm (f x) :=
+  map_sum ({ ofMatrix.symm with map_add' := fun _ _ => rfl } : CStarMatrix m n A ≃+ Matrix m n A)
+    f s
 
 /-- Rectangular matrix multiplication is associative. -/
 lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
@@ -489,5 +497,11 @@ theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → �
   nlinarith
 
 end Compression
+
+/-- The inverse of `CStarMatrix.ofMatrixL` agrees with `CStarMatrix.ofMatrix.symm`. -/
+@[simp]
+lemma ofMatrixL_symm_apply {m n A : Type*} [NonUnitalCStarAlgebra A] (M : CStarMatrix m n A) :
+    ofMatrixL.symm M = ofMatrix.symm M :=
+  ofMatrixL.symm_apply_eq.mpr <| by rw [← ofMatrix_eq_ofMatrixL, Equiv.apply_symm_apply]
 
 end CStarMatrix
