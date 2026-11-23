@@ -443,14 +443,14 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- **The coadjoint action through an invariant form.** For an `Ad`-invariant form `B`, the
 coadjoint action on covectors `B a` is the adjoint action: `Ad*_g (B a) = B (Ad_g a)`. This is
-`TauCeti.Representation.isInvariantForm_iff_isIntertwiningMap` for the adjoint representation,
-whose dual is the coadjoint representation. -/
+`TauCeti.Representation.IsInvariantForm.dual_apply` for the adjoint representation, whose dual is
+the coadjoint representation. -/
 theorem coadjointRepresentation_apply_bilinForm
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) (g : G)
     (a : GroupLieAlgebra I G) :
     coadjointRepresentation ℝ I G g (B a) = B (adjointContinuousLinearMap (I := I) g a) := by
   rw [coadjointRepresentation_def, ← adjointRepresentation_apply]
-  exact (((Representation.isInvariantForm_iff_isIntertwiningMap _ B).mp hB).isIntertwining g a).symm
+  exact hB.dual_apply g a
 
 /-- **The coadjoint orbit map through an invariant form.** For an invariant form `B` and a
 left-invariant derivation `μ`, the orbit map of the coadjoint orbit of `B (e μ)` sends `[g]` to
