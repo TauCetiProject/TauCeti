@@ -42,7 +42,10 @@ partial sums `∑ n ≤ x` taken over real and over natural cutoffs. More genera
 takes every large value, so `map g atTop = atTop` (`TauCeti.map_atTop_eq_of_le_add_one`) and
 `u ∘ g` converges exactly when `u` does (`TauCeti.tendsto_comp_iff_of_le_add_one`). For instance,
 a partial product over the primes `p ≤ n` is a function of the prime count `π n`, which moves in
-steps of at most one.
+steps of at most one. For monotone cutoffs `B k` tending to infinity, the index of the block
+`B k ≤ x < B (k + 1)` containing `x` can be chosen to tend to infinity with `x`
+(`TauCeti.exists_tendsto_atTop_le_lt_succ`), which compares a sequence with its values at the
+cutoffs.
 
 In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
@@ -197,6 +200,22 @@ theorem tendsto_comp_iff_of_le_add_one {X : Type*} {g : ℕ → ℕ} (hg : Tends
     (hle : ∀ᶠ n in atTop, g (n + 1) ≤ g n + 1) {u : ℕ → X} {l : Filter X} :
     Tendsto (u ∘ g) atTop l ↔ Tendsto u atTop l := by
   rw [← tendsto_map'_iff, map_atTop_eq_of_le_add_one hg hle]
+
+/-- Let `B : ℕ → α` be monotone and tend to infinity. Every `x ≥ B 0` lies in a block
+`B k ≤ x < B (k + 1)`, and the index `κ x` of such a block tends to infinity with `x`. -/
+theorem exists_tendsto_atTop_le_lt_succ {α : Type*} [LinearOrder α] [NoMaxOrder α] {B : ℕ → α}
+    (hBm : Monotone B) (hB : Tendsto B atTop atTop) :
+    ∃ κ : α → ℕ, Tendsto κ atTop atTop ∧ ∀ x, B 0 ≤ x → B (κ x) ≤ x ∧ x < B (κ x + 1) := by
+  have h (x : α) : ∃ k, B 0 ≤ x → B k ≤ x ∧ x < B (k + 1) := by
+    by_cases hx : B 0 ≤ x
+    · obtain ⟨k, -, hk⟩ := hB.exists_le_lt_succ hx
+      exact ⟨k, fun _ ↦ hk⟩
+    · exact ⟨0, fun h ↦ absurd h hx⟩
+  choose κ hκ using h
+  refine ⟨κ, tendsto_atTop.2 fun a ↦ ?_, hκ⟩
+  filter_upwards [eventually_ge_atTop (B a)] with x hx
+  by_contra! hlt
+  exact (hκ x ((hBm (Nat.zero_le a)).trans hx)).2.not_ge ((hBm (Nat.succ_le_of_lt hlt)).trans hx)
 
 /-- In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large
 natural numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`. -/
