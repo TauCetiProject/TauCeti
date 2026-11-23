@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
@@ -228,10 +229,8 @@ private theorem exists_eLpNorm_fourierMultiplierCLM_mihlinTrunc_le {N : ℕ}
   set T := (Lp.fourierMultiplierCLM F (σ.toLp ∞ (volume : Measure V))).restrictScalars ℝ
   have hT : adjoint T =
       (Lp.fourierMultiplierCLM F (σ'.toLp ∞ (volume : Measure V))).restrictScalars ℝ := by
-    refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-    rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
-      coe_restrictScalars', ← star_toLp_mihlinTrunc hm hm',
-      ← Lp.adjoint_fourierMultiplierCLM, adjoint_inner_left]
+    rw [L2.adjoint_restrictScalars, Lp.adjoint_fourierMultiplierCLM,
+      star_toLp_mihlinTrunc hm hm']
   have hTn : ‖T‖ₑ ≤ 1 := by
     rw [← ofReal_norm, norm_restrictScalars, ← ENNReal.ofReal_one]
     exact ENNReal.ofReal_le_ofReal
@@ -431,7 +430,7 @@ theorem exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le {G H : Type
   -- The scalar coefficients `mₖ = cₖ ∘ b` satisfy Mihlin's condition with constant `‖cₖ‖ A`.
   set m : Fin (finrank ℂ (G →L[ℂ] H)) → V → ℂ := fun k ξ ↦ c k (b ξ)
   have hm (k) : (m k).HasTemperateGrowth :=
-    ((c k).restrictScalars ℝ).hasTemperateGrowth.comp hb
+    hb.continuousLinearMap_comp (c k)
   have hmA (k) : ∀ j ≤ N, ∀ ξ ≠ 0,
       ‖iteratedFDeriv ℝ j (m k) ξ‖ ≤ ((‖c k‖₊ * A : ℝ≥0) : ℝ) / ‖ξ‖ ^ j := by
     intro j hj ξ hξ

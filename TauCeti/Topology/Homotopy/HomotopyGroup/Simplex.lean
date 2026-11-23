@@ -69,10 +69,10 @@ private lemma isQuotientMap_ofCubeMap (n : ℕ) : IsQuotientMap (ofCubeMap n) :=
 /-- A generalized loop is constant on the fibres of `ofCube n`, which are points or lie in
 `∂Iⁿ`. -/
 private lemma factorsThrough_ofCubeMap {n : ℕ} (g : Ω^ (Fin n) X x) :
-    Function.FactorsThrough g.1 (ofCubeMap n) := fun t t' h => by
+    Function.FactorsThrough g.val (ofCubeMap n) := fun t t' h => by
   rcases StdSimplex.eq_or_mem_boundary_of_ofCube_eq h with rfl | ⟨ht, ht'⟩
   · rfl
-  · exact (g.2 t ht).trans (g.2 t' ht').symm
+  · exact (g.property t ht).trans (g.property t' ht').symm
 
 /-- The generalized loop `φ ∘ ofCube n` of a map `φ : Δⁿ → X` sending every facet to `x`. -/
 private def toGenLoop {n : ℕ} {φ : C(StdSimplex ℝ (Fin (n + 1)), X)}
@@ -87,13 +87,13 @@ private def toGenLoop {n : ℕ} {φ : C(StdSimplex ℝ (Fin (n + 1)), X)}
 private def ofGenLoop {n : ℕ} (g : Ω^ (Fin n) X x) :
     {φ : C(StdSimplex ℝ (Fin (n + 1)), X) //
       ∀ (i : Fin (n + 1)) (z : StdSimplex ℝ (Fin n)), φ (z.map i.succAbove) = x} :=
-  ⟨(isQuotientMap_ofCubeMap n).lift g.1 (factorsThrough_ofCubeMap g), fun i z => by
+  ⟨(isQuotientMap_ofCubeMap n).lift g.val (factorsThrough_ofCubeMap g), fun i z => by
     obtain ⟨t, ht⟩ := StdSimplex.surjective_ofCube n (z.map i.succAbove)
     have hb := StdSimplex.weights_map_succAbove_self (R := ℝ) i z
     rw [← ht] at hb ⊢
-    exact (DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp g.1
+    exact (DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp g.val
       (factorsThrough_ofCubeMap g)) t).trans
-      (g.2 t (StdSimplex.mem_boundary_of_weights_ofCube_eq_zero hb))⟩
+      (g.property t (StdSimplex.mem_boundary_of_weights_ofCube_eq_zero hb))⟩
 
 variable (X x) in
 /-- The generalized loops `Iⁿ → X` at `x` are the maps `Δⁿ → X` sending every facet to `x`,
@@ -102,28 +102,28 @@ def simplexEquiv (n : ℕ) :
     {φ : C(StdSimplex ℝ (Fin (n + 1)), X) //
       ∀ (i : Fin (n + 1)) (z : StdSimplex ℝ (Fin n)), φ (z.map i.succAbove) = x} ≃
       Ω^ (Fin n) X x where
-  toFun φ := toGenLoop φ.2
+  toFun φ := toGenLoop φ.property
   invFun := ofGenLoop
   left_inv φ := by
     refine Subtype.ext (ContinuousMap.ext fun b => ?_)
     obtain ⟨t, rfl⟩ := StdSimplex.surjective_ofCube n b
     exact DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp _
-      (factorsThrough_ofCubeMap (toGenLoop φ.2))) t
+      (factorsThrough_ofCubeMap (toGenLoop φ.property))) t
   right_inv g := GenLoop.ext _ _ fun t =>
-    DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp g.1 (factorsThrough_ofCubeMap g)) t
+    DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp g.val (factorsThrough_ofCubeMap g)) t
 
 @[simp]
 lemma simplexEquiv_apply {n : ℕ}
     (φ : {φ : C(StdSimplex ℝ (Fin (n + 1)), X) //
       ∀ (i : Fin (n + 1)) (z : StdSimplex ℝ (Fin n)), φ (z.map i.succAbove) = x})
     (t : I^(Fin n)) :
-    simplexEquiv X x n φ t = φ.1 (StdSimplex.ofCube n t) :=
+    simplexEquiv X x n φ t = φ.val (StdSimplex.ofCube n t) :=
   (rfl)
 
 @[simp]
 lemma simplexEquiv_symm_apply_ofCube {n : ℕ} (g : Ω^ (Fin n) X x) (t : I^(Fin n)) :
-    ((simplexEquiv X x n).symm g).1 (StdSimplex.ofCube n t) = g t :=
-  DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp g.1 (factorsThrough_ofCubeMap g)) t
+    ((simplexEquiv X x n).symm g).val (StdSimplex.ofCube n t) = g t :=
+  DFunLike.congr_fun ((isQuotientMap_ofCubeMap n).lift_comp g.val (factorsThrough_ofCubeMap g)) t
 
 /-- The map `I × Iⁿ → Δⁿ⁺¹`, `(s, t) ↦ prism s (ofCube n t)`. -/
 private def prismOfCubeMap (n : ℕ) : C(I × I^(Fin n), StdSimplex ℝ (Fin (n + 2))) :=
@@ -147,12 +147,12 @@ private lemma exists_isFacetHomotopy {n : ℕ}
     (F : (simplexEquiv X x n φ : C(I^(Fin n), X)).HomotopyRel (simplexEquiv X x n ψ)
       (Cube.boundary (Fin n))) :
     ∃ τ : C(StdSimplex ℝ (Fin (n + 2)), X),
-      (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (0 : Fin (n + 2)).succAbove) = φ.1 z) ∧
-      (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (1 : Fin (n + 2)).succAbove) = ψ.1 z) ∧
+      (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (0 : Fin (n + 2)).succAbove) = φ.val z) ∧
+      (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (1 : Fin (n + 2)).succAbove) = ψ.val z) ∧
       ∀ j : Fin (n + 2), 1 < j → ∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map j.succAbove) = x := by
   have hq := isQuotientMap_prismOfCubeMap n
   have hF (s : I) {t : I^(Fin n)} (ht : t ∈ Cube.boundary (Fin n)) : F (s, t) = x :=
-    (F.eq_fst s ht).trans ((simplexEquiv X x n φ).2 t ht)
+    (F.eq_fst s ht).trans ((simplexEquiv X x n φ).property t ht)
   -- `F` is constant on the fibres of the quotient map, which lie in `I × ∂Iⁿ` unless they are
   -- points.
   have hfac : Function.FactorsThrough F.toContinuousMap (prismOfCubeMap n) := by
@@ -216,8 +216,8 @@ theorem homotopic_simplexEquiv_iff {n : ℕ}
       ∀ (i : Fin (n + 1)) (z : StdSimplex ℝ (Fin n)), φ (z.map i.succAbove) = x}} :
     GenLoop.Homotopic (simplexEquiv X x n φ) (simplexEquiv X x n ψ) ↔
       ∃ τ : C(StdSimplex ℝ (Fin (n + 2)), X),
-        (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (0 : Fin (n + 2)).succAbove) = φ.1 z) ∧
-        (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (1 : Fin (n + 2)).succAbove) = ψ.1 z) ∧
+        (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (0 : Fin (n + 2)).succAbove) = φ.val z) ∧
+        (∀ z : StdSimplex ℝ (Fin (n + 1)), τ (z.map (1 : Fin (n + 2)).succAbove) = ψ.val z) ∧
         ∀ j : Fin (n + 2), 1 < j → ∀ z : StdSimplex ℝ (Fin (n + 1)),
           τ (z.map j.succAbove) = x := by
   refine ⟨fun ⟨F⟩ => exists_isFacetHomotopy F, fun ⟨τ, h0, h1, hj⟩ => ?_⟩
@@ -227,9 +227,9 @@ theorem homotopic_simplexEquiv_iff {n : ℕ}
             map_zero_left := fun t => (congrArg τ (StdSimplex.prism_zero _)).trans (h0 _)
             map_one_left := fun t => (congrArg τ (StdSimplex.prism_one _)).trans (h1 _)
             prop' := fun s t ht => ?_ }⟩
-  have hx : (simplexEquiv X x n φ : C(I^(Fin n), X)) t = x := (simplexEquiv X x n φ).2 t ht
+  have hx : (simplexEquiv X x n φ : C(I^(Fin n), X)) t = x := (simplexEquiv X x n φ).property t ht
   simp only [ContinuousMap.coe_mk, hx]
-  exact apply_prism_ofCube_of_mem_boundary φ.2 h0 hj s ht
+  exact apply_prism_ofCube_of_mem_boundary φ.property h0 hj s ht
 
 /-! ### Concatenation along the last direction -/
 
@@ -241,11 +241,13 @@ private def triangleHomotopy (u s : I) : StdSimplex ℝ (Fin 3) where
     ![(1 - u) * (1 - s) + u * max (1 - 2 * (s : ℝ)) 0, u * min (2 * (s : ℝ)) (2 - 2 * s),
       (1 - u) * s + u * max (2 * (s : ℝ) - 1) 0]
   nonneg k := by
-    have hu := sub_nonneg.2 u.2.2
+    have hu := sub_nonneg.2 u.property.2
     fin_cases k
-    · exact add_nonneg (mul_nonneg hu (sub_nonneg.2 s.2.2)) (mul_nonneg u.2.1 (le_max_right _ _))
-    · exact mul_nonneg u.2.1 (le_min (by linarith [s.2.1]) (by linarith [s.2.2]))
-    · exact add_nonneg (mul_nonneg hu s.2.1) (mul_nonneg u.2.1 (le_max_right _ _))
+    · exact add_nonneg (mul_nonneg hu (sub_nonneg.2 s.property.2)) (mul_nonneg u.property.1
+        (le_max_right _ _))
+    · exact mul_nonneg u.property.1 (le_min (by linarith [s.property.1]) (by linarith
+        [s.property.2]))
+    · exact add_nonneg (mul_nonneg hu s.property.1) (mul_nonneg u.property.1 (le_max_right _ _))
   total := by
     rw [Finsupp.sum_fintype _ _ (by simp)]
     simp only [Finsupp.equivFunOnFinite_symm_apply_apply, Fin.sum_univ_three]
@@ -318,8 +320,8 @@ weight `n` or the weight `n + 2`: such a point lies on the boundary of the facet
 private lemma apply_eq_of_weights_natAdd_eq_zero {n : ℕ} {τ : C(StdSimplex ℝ (Fin (n + 3)), X)}
     {φ ψ : {φ : C(StdSimplex ℝ (Fin (n + 2)), X) //
       ∀ (i : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))), φ (z.map i.succAbove) = x}}
-    (hψ : ∀ z, τ (z.map (Fin.natAdd n (0 : Fin 3)).succAbove) = ψ.1 z)
-    (hφ : ∀ z, τ (z.map (Fin.natAdd n (2 : Fin 3)).succAbove) = φ.1 z)
+    (hψ : ∀ z, τ (z.map (Fin.natAdd n (0 : Fin 3)).succAbove) = ψ.val z)
+    (hφ : ∀ z, τ (z.map (Fin.natAdd n (2 : Fin 3)).succAbove) = φ.val z)
     {z : StdSimplex ℝ (Fin (n + 3))} (h1 : z.weights (Fin.natAdd n (1 : Fin 3)) = 0)
     (h : z.weights (Fin.natAdd n (0 : Fin 3)) = 0 ∨ z.weights (Fin.natAdd n (2 : Fin 3)) = 0) :
     τ z = x := by
@@ -330,14 +332,14 @@ private lemma apply_eq_of_weights_natAdd_eq_zero {n : ℕ} {τ : C(StdSimplex �
         Fin.natAdd n (1 : Fin 3) := by
       rw [Fin.natAdd_succAbove_natAdd]; rfl
     rw [← hi, StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective] at h1
-    rw [hψ, StdSimplex.apply_eq_of_weights_eq_zero ψ.2 h1]
+    rw [hψ, StdSimplex.apply_eq_of_weights_eq_zero ψ.property h1]
   · obtain ⟨w, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff _ z).2 h
     -- The vertex `n + 1` of `Δⁿ⁺²` is the vertex `n + 1` of its facet `n + 2`.
     have hi : (Fin.natAdd n (2 : Fin 3)).succAbove (Fin.natAdd n (1 : Fin 2)) =
         Fin.natAdd n (1 : Fin 3) := by
       rw [Fin.natAdd_succAbove_natAdd]; rfl
     rw [← hi, StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective] at h1
-    rw [hφ, StdSimplex.apply_eq_of_weights_eq_zero φ.2 h1]
+    rw [hφ, StdSimplex.apply_eq_of_weights_eq_zero φ.property h1]
 
 /-- The map `I × Iⁿ⁺¹ → Δⁿ⁺²` which runs `triangleHomotopy` in the triangle spanned by the last
 three vertices, at the parameter given by the last coordinate of the cube: the last vertex of
@@ -387,8 +389,8 @@ private lemma apply_triangleCubeMap_of_mem_boundary {n : ℕ} {τ : C(StdSimplex
       ∀ (i : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))), φ (z.map i.succAbove) = x}}
     (hlt : ∀ j : Fin (n + 3), j < Fin.natAdd n (0 : Fin 3) →
       ∀ z : StdSimplex ℝ (Fin (n + 2)), τ (z.map j.succAbove) = x)
-    (hψ : ∀ z, τ (z.map (Fin.natAdd n (0 : Fin 3)).succAbove) = ψ.1 z)
-    (hφ : ∀ z, τ (z.map (Fin.natAdd n (2 : Fin 3)).succAbove) = φ.1 z)
+    (hψ : ∀ z, τ (z.map (Fin.natAdd n (0 : Fin 3)).succAbove) = ψ.val z)
+    (hφ : ∀ z, τ (z.map (Fin.natAdd n (2 : Fin 3)).succAbove) = φ.val z)
     (u : I) {t : I^(Fin (n + 1))} (ht : t ∈ Cube.boundary (Fin (n + 1))) :
     τ (triangleCubeMap n (u, t)) = x := by
   obtain ⟨i, hi⟩ := ht
@@ -429,9 +431,10 @@ theorem homotopic_simplexEquiv_transAt_last {n : ℕ}
     (hlt : ∀ j : Fin (n + 3), j < (Fin.last n).castSucc.castSucc →
       ∀ z : StdSimplex ℝ (Fin (n + 2)), τ (z.map j.succAbove) = x)
     (hψ : ∀ z : StdSimplex ℝ (Fin (n + 2)),
-      τ (z.map (Fin.last n).castSucc.castSucc.succAbove) = ψ.1 z)
-    (hχ : ∀ z : StdSimplex ℝ (Fin (n + 2)), τ (z.map (Fin.last n).castSucc.succ.succAbove) = χ.1 z)
-    (hφ : ∀ z : StdSimplex ℝ (Fin (n + 2)), τ (z.map (Fin.last n).succ.succ.succAbove) = φ.1 z) :
+      τ (z.map (Fin.last n).castSucc.castSucc.succAbove) = ψ.val z)
+    (hχ : ∀ z : StdSimplex ℝ (Fin (n + 2)), τ (z.map (Fin.last n).castSucc.succ.succAbove) = χ.val
+        z)
+    (hφ : ∀ z : StdSimplex ℝ (Fin (n + 2)), τ (z.map (Fin.last n).succ.succ.succAbove) = φ.val z) :
     GenLoop.Homotopic (simplexEquiv X x (n + 1) χ)
       (transAt (Fin.last n) (simplexEquiv X x (n + 1) φ) (simplexEquiv X x (n + 1) ψ)) := by
   -- The facets `n`, `n + 1` and `n + 2` of `Δⁿ⁺²` are those opposite the vertices of its last
@@ -447,7 +450,7 @@ theorem homotopic_simplexEquiv_transAt_last {n : ℕ}
             map_zero_left := fun t => (congrArg τ (triangleCubeMap_zero t)).trans (hχ _)
             map_one_left := fun t => ?_
             prop' := fun u t ht => ?_ }⟩
-  · have ht := (t (Fin.last n)).2
+  · have ht := (t (Fin.last n)).property
     by_cases h : (t (Fin.last n) : ℝ) ≤ 1 / 2
     · let a : I := ⟨2 * t (Fin.last n), by linarith [ht.1], by linarith⟩
       refine Eq.trans ?_ (transAt_apply_of_le (Fin.last n) _ _ h (a := a) rfl).symm
@@ -457,6 +460,6 @@ theorem homotopic_simplexEquiv_transAt_last {n : ℕ}
       refine Eq.trans ?_ (transAt_apply_of_lt (Fin.last n) _ _ h (a := a) rfl).symm
       rw [triangleCubeMap_one_of_lt h (a := a) rfl, hψ, simplexEquiv_apply]
   · rw [ContinuousMap.coe_mk, apply_triangleCubeMap_of_mem_boundary hlt hψ hφ u ht]
-    exact ((simplexEquiv X x (n + 1) χ).2 t ht).symm
+    exact ((simplexEquiv X x (n + 1) χ).property t ht).symm
 
 end GenLoop

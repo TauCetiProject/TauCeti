@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
@@ -229,8 +231,7 @@ theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (
       cubicalCrossProduct R X Y ≫ (normalizedCubicalChainComplex R).map (f ⊗ₘ g) := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
   refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    HomologicalComplex.tensorHom_eq_mapBifunctorMap, HomologicalComplex.ι_tensorHom_assoc,
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, HomologicalComplex.ι_tensorHom_f_assoc,
     ι_cubicalCrossProduct_f, ι_cubicalCrossProduct_f_assoc]
   refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
   have h₁ := cubicalCrossProductSummand_apply R X' Y' p q n h

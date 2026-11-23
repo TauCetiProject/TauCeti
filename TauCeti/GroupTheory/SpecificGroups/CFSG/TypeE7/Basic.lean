@@ -79,13 +79,13 @@ variable (d : TypeE7LieIndex)
 full-weight type-`E₇` minuscule Chevalley carrier over the algebraic closure of its prime field.
 No finiteness, reductivity, pinning or maximality statement is attached to it, and it is not
 claimed to be the points of the pinned simply connected `E₇` group scheme. -/
-abbrev AmbientGroup : Type := E7Minuscule.points d.1.Closure
+abbrev AmbientGroup : Type := E7Minuscule.points d.val.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `E₇` diagram. It is
 the carrier's numbered raising subgroup at the same node, the index type `Fin d.1.rank` being the
 upstream Bourbaki index type of the index's own Dynkin type. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  E7Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_seven i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  E7Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_seven i)) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
 This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`. It
@@ -93,9 +93,9 @@ is not a `simp` lemma: `coe_simpleRootSubgroup` and
 `weightTorusPoints_conj_simpleRootSubgroup` are the normal forms the equations of this file are
 stated against, and unfolding to `TauCeti.E7Minuscule.rootSubgroupPoints` would keep them from
 firing. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      E7Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_seven i)) d.1.Closure :=
+      E7Minuscule.rootSubgroupPoints (.inl (finCongr d.rank_eq_seven i)) d.val.Closure :=
   (rfl)
 
 /-- **A simple-root point is an explicit unipotent matrix.** At the Bourbaki-numbered node `i` and
@@ -103,12 +103,12 @@ parameter `u` it is `1 + u Eᵢ`, where `Eᵢ` is the integral raising matrix of
 read in the algebraic closure. This is the sense in which the carrier of the family is explicit
 data rather than a group produced by an existence theorem. -/
 @[simp]
-theorem coe_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
-    ((d.simpleRootSubgroup i u : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) =
+theorem coe_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
+    ((d.simpleRootSubgroup i u : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) =
       1 + Multiplicative.toAdd u •
         (E7Minuscule.raisingMatrix (finCongr d.rank_eq_seven i)).map
-          (Int.cast : ℤ → d.1.Closure) := by
+          (Int.cast : ℤ → d.val.Closure) := by
   rw [simpleRootSubgroup_def]
   exact E7Minuscule.coe_rootSubgroupPoints_inl _ _ _
 
@@ -121,16 +121,16 @@ that the carrier is the pinned group of that diagram, no pinning being construct
 
 The torus is indexed by the carrier's own `Fin 7`, which `finCongr d.rank_eq_seven` identifies
 with the index's copy `Fin d.1.rank` of the Bourbaki index type. -/
-theorem weightTorusPoints_conj_simpleRootSubgroup (i : Fin d.1.rank)
-    (s : Fin 7 → d.1.Closureˣ) (u : Multiplicative d.1.Closure) :
-    E7Minuscule.weightTorusPoints d.1.Closure s * d.simpleRootSubgroup i u *
-        (E7Minuscule.weightTorusPoints d.1.Closure s)⁻¹ =
+theorem weightTorusPoints_conj_simpleRootSubgroup (i : Fin d.val.rank)
+    (s : Fin 7 → d.val.Closureˣ) (u : Multiplicative d.val.Closure) :
+    E7Minuscule.weightTorusPoints d.val.Closure s * d.simpleRootSubgroup i u *
+        (E7Minuscule.weightTorusPoints d.val.Closure s)⁻¹ =
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd
           ((torusCharacter s
               ((E7.simplyConnectedRootDatum DynkinType.valid_E7).root
                 (E7.simpleIndex DynkinType.valid_E7 (finCongr d.rank_eq_seven i))) :
-                  d.1.Closure) *
+                  d.val.Closure) *
             Multiplicative.toAdd u)) := by
   rw [simpleRootSubgroup_def]
   exact E7Minuscule.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex

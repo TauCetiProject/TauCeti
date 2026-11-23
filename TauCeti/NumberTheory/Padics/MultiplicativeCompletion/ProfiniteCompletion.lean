@@ -73,10 +73,10 @@ private theorem mem_proPKernel_of_profiniteCompletionToPadicCompletionUnits_eq_o
   -- The projection to the quotient by `U` factors through the `m`-th coordinate of `A(L)`: both
   -- sides are continuous into a discrete space and agree on the dense image of `Lˣ`.
   have hfac : ∀ d, QuotientGroup.mk' U.toSubgroup d =
-      e ((profiniteCompletionToPadicCompletionUnits p L d).1 m) := by
+      e ((profiniteCompletionToPadicCompletionUnits p L d).val m) := by
     refine congrFun <| (ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of Lˣ)).equalizer
       QuotientGroup.continuous_mk (continuous_of_discreteTopology.comp <|
-        (continuous_apply m).comp <| continuous_subtype_val.comp
+        (continuous_apply m).comp <| continuous_subtypeVal.comp
           (profiniteCompletionToPadicCompletionUnits p L).continuous) (funext fun a ↦ ?_)
     simp only [Function.comp_apply, profiniteCompletionToPadicCompletionUnits_etaFn,
       padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply, e, QuotientGroup.map_mk]

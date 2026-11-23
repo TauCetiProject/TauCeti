@@ -111,7 +111,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_surjOn_primaryComponent (hp
     have : ContinuousSMul G K := K.restrictDistribMulAction_continuousSMul hK
     let ι : K →+[G] M :=
       { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
-    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.2)
+    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.property)
     obtain ⟨z, rfl⟩ := exists_coeffMap_ker_nsmul_eq M hK hk
     obtain ⟨y, rfl⟩ := h.exists_corestriction_eq hU K
       ⟨k, nsmul_continuousCohomology_eq_zero (X := ofDiscreteModule ℤ G K) hKk 0 z⟩
@@ -335,7 +335,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_ker_primaryComponent (hp : 
     have : ContinuousSMul G K := K.restrictDistribMulAction_continuousSMul hK
     let ι : K →+[G] M :=
       { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
-    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.2)
+    have hKk (v : K) : p ^ k • v = 0 := Subtype.ext (AddMonoidHom.mem_ker.1 v.property)
     have hpk : 0 < p ^ k := pow_pos hp.pos k
     let ιV := coeffMap (ofDiscreteModuleMap (G := U) ι.toAddMonoidHom.toIntLinearMap
       fun v m ↦ _root_.map_smul ι (v : G) m) 0
@@ -349,7 +349,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_ker_primaryComponent (hp : 
     have hB : IsAddTorsion (continuousCohomology 0
         (ofDiscreteModule ℤ G (DiscreteCoind.traceKer G U K))) := fun x ↦
       isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, hpk, nsmul_continuousCohomology_eq_zero
-        (fun b : DiscreteCoind.traceKer G U K ↦ Subtype.ext (DiscreteCoind.nsmul_eq_zero hKk b.1))
+        (fun b : DiscreteCoind.traceKer G U K ↦ Subtype.ext (DiscreteCoind.nsmul_eq_zero hKk b.val))
         0 x⟩
     have hP : IsAddTorsion (continuousCohomology 0
         (ofDiscreteModule ℤ G (G ⧸ U → DiscreteCoind G U K))) := fun x ↦

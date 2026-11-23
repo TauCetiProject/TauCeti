@@ -245,7 +245,7 @@ theorem inner_curveVelocity_maximalGeodesic_self [T2Space M]
     (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := v))
   rw [curveVelocityWithin_of_mem_nhds ht_nhds,
     curveVelocityWithin_of_mem_nhds hzero_nhds] at hsquared
-  have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
+  have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.snd z.snd) hgeo.initial_eq
   rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
   exact hsquared.trans hinitial
 

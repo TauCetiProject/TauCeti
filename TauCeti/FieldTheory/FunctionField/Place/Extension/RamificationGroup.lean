@@ -139,7 +139,7 @@ theorem mem_ramificationGroup_iff {i : ℕ} {g : P.integers.decompositionSubgrou
   · intro h x
     rw [P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
       ValuationSubring.coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
-    exact h x x.2
+    exact h x x.property
 
 /-- **The `0`-th ramification group is the inertia group** (Stichtenoth, Definition 3.8.4): acting
 trivially on the residue field is acting trivially to order `1` on the valuation ring. -/
@@ -179,7 +179,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     omega
   rw [Subgroup.mem_bot]
   exact ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
-    hfix x x.2
+    hfix x x.property
 
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
 on** (Stichtenoth, Proposition 3.8.5). -/
@@ -239,11 +239,11 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
     P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
   let g' : IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
       ((i : ℤ) + 1) :=
-    ⟨(g : P.integers.decompositionSubgroup F), (Nat.cast_succ (R := ℤ) i).symm ▸ g.2⟩
+    ⟨(g : P.integers.decompositionSubgroup F), (Nat.cast_succ (R := ℤ) i).symm ▸ g.property⟩
   have heval : Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
       (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
         (Submodule.Quotient.mk ⟨(g' : P.integers.decompositionSubgroup F) • x - x,
-          IsLocalRing.mem_ramificationGroup_add_one_iff.mp g'.2 x⟩) := by
+          IsLocalRing.mem_ramificationGroup_add_one_iff.mp g'.property x⟩) := by
     have hg' : (MulEquiv.subgroupCongr (by rw [ramificationGroup_def, Nat.cast_succ])) g = g' :=
       Subtype.ext (MulEquiv.subgroupCongr_apply _ _)
     rw [ramificationResidueHom, MonoidHom.comp_apply, MonoidHom.comp_apply,

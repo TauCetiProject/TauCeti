@@ -421,6 +421,12 @@ theorem le_lowerIndex_iff {n : ℕ∞} {σ : G} :
     n ≤ lowerIndex S σ ↔ ∀ x : S, n ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
   le_iInf_iff
 
+/-- An element of a subgroup `H`, acting on `S` by restriction, has the same lower index in `H` as
+in `G`. -/
+@[simp]
+theorem lowerIndex_coe {H : Subgroup G} (τ : H) : lowerIndex S (τ : G) = lowerIndex S τ :=
+  (rfl)
+
 /-- The lower index is at most the valuation `v (σ x - x)` at any `x`. -/
 theorem lowerIndex_le_addVal (σ : G) (x : S) :
     lowerIndex S σ ≤ IsDiscreteValuationRing.addVal S (σ • x - x) :=
@@ -481,6 +487,16 @@ theorem min_le_lowerIndex_mul (σ τ : G) :
       (le_trans hn (min_le_left ..)))
     (natCast_le_lowerIndex_iff_mem_ramificationGroup (n := n) (σ := τ) |>.mp
       (le_trans hn (min_le_right ..)))
+
+/-- If the product `σ τ` has lower index at most that of `σ`, then
+`i_G(σ τ) = min (i_G(τ), i_G(σ))`. This applies to every `τ ∈ H` when `σ` has the largest lower
+index in its coset `σ H`. -/
+theorem lowerIndex_mul_eq_min_of_le {σ τ : G} (h : lowerIndex S (σ * τ) ≤ lowerIndex S σ) :
+    lowerIndex S (σ * τ) = min (lowerIndex S τ) (lowerIndex S σ) := by
+  -- `i(τ) = i(σ⁻¹ (σ τ)) ≥ min (i(σ), i(σ τ)) = i(σ τ)`.
+  have h₂ := min_le_lowerIndex_mul (S := S) σ⁻¹ (σ * τ)
+  rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right h] at h₂
+  exact le_antisymm (le_min h₂ h) (min_comm (lowerIndex S τ) _ ▸ min_le_lowerIndex_mul σ τ)
 
 variable (S) in
 /-- The identity has lower index `⊤`. -/
@@ -629,7 +645,7 @@ def ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ) :
   toFun σ := ⟨((σ : H) : G), by
     have hσ : (σ : H) ∈ (ramificationGroup G S i).subgroupOf H := by
       rw [subgroupOf_ramificationGroup]
-      exact σ.2
+      exact σ.property
     exact hσ⟩
   map_one' := rfl
   map_mul' _ _ := rfl
@@ -765,7 +781,7 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
           (maximalIdeal S • ⊤ : Submodule S ↥(maximalIdeal S ^ (n + 2)))) :=
   MonoidHom.mk'
     (fun σ ↦ .ofAdd fun x ↦ Submodule.Quotient.mk ⟨(σ : G) • x - x,
-      mem_ramificationGroup_add_one_iff.mp σ.2 x⟩)
+      mem_ramificationGroup_add_one_iff.mp σ.property x⟩)
     fun σ τ ↦ by
       rw [← ofAdd_add]
       refine congrArg Multiplicative.ofAdd (funext fun x ↦ ?_)
@@ -781,8 +797,9 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
       exact TauCeti.Ideal.smul_sub_mem_mul_of_mem_sq
         (fun w hw ↦ by simpa only [pow_one] using
           (smul_mem_maximalIdeal_pow_iff (n := 1) (σ : G)).mpr (by simpa only [pow_one] using hw))
-        (fun w _ ↦ mem_ramificationGroup_add_one_iff.mp σ.2 w)
-        (Ideal.pow_le_pow_right (by omega : 2 ≤ n + 2) (mem_ramificationGroup_add_one_iff.mp τ.2 x))
+        (fun w _ ↦ mem_ramificationGroup_add_one_iff.mp σ.property w)
+        (Ideal.pow_le_pow_right (by omega : 2 ≤ n + 2)
+          (mem_ramificationGroup_add_one_iff.mp τ.property x))
 
 /-- Evaluating `ramificationGroupToMaximalIdealGraded` at `σ` and `x` yields the class of
 `σ • x - x` in `𝔪 ^ (n + 2) ⧸ 𝔪 • ⊤`. -/
@@ -790,7 +807,8 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
 theorem toAdd_ramificationGroupToMaximalIdealGraded_apply (n : ℕ)
     (σ : ramificationGroup G S ((n : ℤ) + 1)) (x : S) :
     Multiplicative.toAdd (ramificationGroupToMaximalIdealGraded G S n σ) x =
-      Submodule.Quotient.mk ⟨(σ : G) • x - x, mem_ramificationGroup_add_one_iff.mp σ.2 x⟩ :=
+      Submodule.Quotient.mk ⟨(σ : G) • x - x,
+        mem_ramificationGroup_add_one_iff.mp σ.property x⟩ :=
   (rfl)
 
 /-- **The kernel of `ramificationGroupToMaximalIdealGraded` is `G_{n+2}`.** -/
@@ -1126,3 +1144,19 @@ end RealDiscreteValuationRing
 end IsLocalRing
 
 end TauCeti
+
+namespace Subgroup
+
+open TauCeti.IsLocalRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+  [MulSemiringAction G S]
+
+/-- Every coset `σ H` of a finite subgroup contains an element `σ τ₀` of largest lower index. -/
+theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G) :
+    ∃ τ₀ ∈ H, ∀ τ ∈ H, lowerIndex S (σ * τ₀ * τ) ≤ lowerIndex S (σ * τ₀) := by
+  obtain ⟨τ₀, hτ₀⟩ := Finite.exists_max fun τ : H ↦ lowerIndex S (σ * τ)
+  refine ⟨τ₀, τ₀.property, fun τ hτ ↦ ?_⟩
+  simpa only [coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
+
+end Subgroup

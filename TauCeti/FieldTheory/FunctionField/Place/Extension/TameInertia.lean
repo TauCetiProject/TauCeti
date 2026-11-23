@@ -189,6 +189,7 @@ section Separable
 
 variable (F) [Algebra.IsIntegral F F'] (P : Place k F') {t : F'}
 
+
 /-- **Membership in the first ramification group is decided at a uniformizer**, when the residue
 extension is separable (Stichtenoth, Proposition 3.8.5): an element of `G_0(P)` lies in `G_1(P)`
 exactly when it fixes `t` modulo `𝔪_P²`. -/
