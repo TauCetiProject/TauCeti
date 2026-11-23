@@ -45,6 +45,7 @@ variable {K : Type u} [Field K]
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 variable {W : Type w} [AddCommGroup W] [Module K W] [Nontrivial W]
 
+omit [FiniteDimensional K V] in
 /-- If `U ⊥ R` is not anisotropic at a finite place where `R` is anisotropic, with `U` regular
 and `R` on a nonzero space, then some nonzero local value of `U` is the negative of a local value
 of `R`. -/
@@ -58,6 +59,7 @@ theorem exists_atFinitePlace_ne_zero_eq_neg
   rw [← QuadraticMap.Equivalent.anisotropic_iff ⟨atFinitePlaceProd U R v⟩]
   exact h
 
+omit [FiniteDimensional K V] in
 /-- If `U ⊥ R` is not anisotropic at a real place where `R` is anisotropic, with `U` regular
 and `R` on a nonzero space, then some nonzero local value of `U` is the negative of a local value
 of `R`. -/

@@ -101,7 +101,7 @@ noncomputable def bigradedPartiallyBlockedHomologyGrading (S : Finset (Fin n)) :
     InternalGrading F (G.val.partiallyBlockedHomology S) (ℤ × ℤ) :=
   (G.bigradedChainMinusGrading F).quotientHomology
     G.isHomogeneous_restrictScalars_unblockedDifferential
-    G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     (G.val.blockedChains_le_comap_unblockedDifferential S)
     (G.isHomogeneous_restrictScalars_blockedChains S)
 
@@ -135,7 +135,7 @@ theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (F
   have e := (G.bigradedChainMinusGrading F).quotientHomologyProdPieceEquiv
     (h := H.restrictScalars F) (v := DistribSMul.toLinearMap F (GridChainMinus F n) (X t))
     (s := -(1, 1)) G.isHomogeneous_restrictScalars_unblockedDifferential
-    G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     (G.val.blockedChains_le_comap_unblockedDifferential S)
     (G.isHomogeneous_restrictScalars_blockedChains S)
     (G.val.blockedChains_le_comap_unblockedDifferential (insert t S))
