@@ -152,8 +152,8 @@ theorem exists_isNondegenerateFixedPt_perturbation (h : IsNondegenerateFixedPt �
         dist y x ≤ K * ‖g x - f x‖ ∧ ∀ z ∈ closedBall x r, IsFixedPt g z → z = y := by
   have hinv := h.isInvertible_id_sub_fderiv
   have hdet : LinearMap.det (LinearMap.id - (fderiv ℝ f x : E →ₗ[ℝ] E)) ≠ 0 := by
-    have := (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, h.isFixedPt⟩ h.mdifferentiableAt).1 h
-    rwa [det_id_sub_fixedPointDerivative_modelSpace] at this
+    rw [← fixedPointDet_modelSpace]
+    exact h.fixedPointDet_ne_zero
   obtain ⟨K, hK⟩ := h.isFixedPt.exists_isFixedPt_perturbation hf hinv
   -- `ε` is a distance from `Df(x)` within which the sign of `det (1 - T)` is unchanged.
   have hcont : Continuous fun T : E →L[ℝ] E ↦ LinearMap.det (LinearMap.id - (T : E →ₗ[ℝ] E)) := by

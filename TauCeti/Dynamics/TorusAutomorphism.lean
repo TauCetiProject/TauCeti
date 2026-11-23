@@ -306,8 +306,9 @@ theorem isNondegenerateFixedPt_generalLinearGroup_smul_iff (A : GL ι ℤ) {x : 
     (hx : A • x = x) :
     IsNondegenerateFixedPt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y) x ↔
       (1 - (A : Matrix ι ι ℤ)).det ≠ 0 := by
-  rw [isNondegenerateFixedPt_iff_det_id_sub_ne_zero (f := fun y ↦ A • y) ⟨x, hx⟩
+  rw [← fixedPointDet_ne_zero_iff (f := fun y ↦ A • y) hx
     ((hasMFDerivAt_generalLinearGroup_smul p A x).mdifferentiableAt),
+    fixedPointDet_eq_det_id_sub_fixedPointDerivative (f := fun y ↦ A • y) ⟨x, hx⟩,
     det_id_sub_fixedPointDerivative_generalLinearGroup_smul p A ⟨x, hx⟩, Int.cast_ne_zero]
 
 /-- **The signed count of the fixed points of a toral automorphism.** The fixed points of
