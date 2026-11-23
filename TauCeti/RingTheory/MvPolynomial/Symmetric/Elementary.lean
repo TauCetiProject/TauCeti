@@ -43,6 +43,11 @@ product in elementary symmetric polynomials.
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.eval_add_smul_one_esymm`: the shift expansion
   `e_k(μ + t·(1, …, 1)) = ∑_{j ≤ k} binom(n - j, k - j) e_j(μ) t^(k - j)` in `n` variables.
+* `TauCeti.aeval_update_zero_esymm`: `σ_{k;i}(μ)`, the value of `e_k` with the `i`-th entry of
+  `μ` set to zero, is `e_k` of the entries other than the `i`-th.
+* `TauCeti.aeval_esymm_succ_eq_mul_add`: `σ_{k+1} = μ_i σ_{k;i} + σ_{k+1;i}`, for values in any
+  algebra; at `μ = X` it is the decomposition of `e_{k+1}` along `X_i`.
+* `TauCeti.sum_eval_update_zero_esymm`: `∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` in `n` variables.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
 
 ## References
@@ -300,6 +305,59 @@ theorem eval_add_smul_one_esymm {σ R : Type*} [Fintype σ] [CommSemiring R] (μ
         rw [filter_filter, hset]
         refine sum_congr rfl fun u hu ↦ ?_
         rw [(mem_powersetCard.mp hu).2]
+
+section DeletedEntry
+
+open Function MvPolynomial
+
+variable {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring R]
+
+/-- **`σ_{k;i}` is the elementary symmetric function of the other entries.** Setting the `i`-th
+entry of a family `f` to zero and evaluating `e_k` gives `e_k` of the entries `f j`, `j ≠ i`. -/
+theorem aeval_update_zero_esymm {S : Type*} [CommSemiring S] [Algebra R S] (f : σ → S) (i : σ)
+    (k : ℕ) :
+    aeval (update f i 0) (esymm σ R k) = ((univ.erase i).val.map f).esymm k := by
+  have h : univ.val.map (update f i 0) = 0 ::ₘ (univ.erase i).val.map f := by
+    rw [← Multiset.cons_erase (mem_univ i), Multiset.map_cons, update_self, erase_val]
+    refine congrArg _ (Multiset.map_congr rfl fun j hj ↦ update_of_ne ?_ _ _)
+    exact ((Multiset.Nodup.mem_erase_iff univ.nodup).mp hj).1
+  rw [aeval_esymm_eq_multiset_esymm, h]
+  cases k <;> simp
+
+/-- **The recurrence of the elementary symmetric functions along one entry**:
+`σ_{k+1}(f) = f_i σ_{k;i}(f) + σ_{k+1;i}(f)`, where `σ_{k;i}(f)` is the value of `e_k` with the
+`i`-th entry of `f` set to zero. At `f = X` this decomposes `e_{k+1}` along the variable `X_i`. -/
+theorem aeval_esymm_succ_eq_mul_add {S : Type*} [CommSemiring S] [Algebra R S] (f : σ → S)
+    (i : σ) (k : ℕ) :
+    aeval f (esymm σ R (k + 1)) =
+      f i * aeval (update f i 0) (esymm σ R k) + aeval (update f i 0) (esymm σ R (k + 1)) := by
+  rw [aeval_update_zero_esymm, aeval_update_zero_esymm, aeval_esymm_eq_multiset_esymm,
+    ← Multiset.cons_erase (mem_univ i), Multiset.map_cons, erase_val, Multiset.esymm_cons,
+    add_comm]
+
+/-- **The sum of the elementary symmetric functions with one entry deleted**:
+`∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` for `n` variables, where `σ_{k;i}(μ)` is the value of `e_k`
+with the `i`-th entry of `μ` set to zero. Since `σ_{k;i} = ∂σ_{k+1}/∂μ_i`, this is the sum
+`∑_i ∂σ_{k+1}/∂μ_i = (n - k) σ_k` of the partial derivatives. For `k > n` both sides vanish. -/
+theorem sum_eval_update_zero_esymm (μ : σ → R) (k : ℕ) :
+    ∑ i, eval (update μ i 0) (esymm σ R k) =
+      ((Fintype.card σ - k : ℕ) : R) * eval μ (esymm σ R k) := by
+  have h : ∀ i, eval (update μ i 0) (esymm σ R k) =
+      ∑ s ∈ powersetCard k univ, if i ∉ s then ∏ j ∈ s, μ j else 0 := by
+    intro i
+    simp only [esymm, map_sum, map_prod, eval_X]
+    refine sum_congr rfl fun s _ ↦ ?_
+    split_ifs with hi
+    · exact prod_eq_zero hi (update_self ..)
+    · exact prod_congr rfl fun j hj ↦ update_of_ne (ne_of_mem_of_not_mem hj hi) _ _
+  simp_rw [h]
+  simp only [esymm, map_sum, map_prod, eval_X, mul_sum]
+  rw [sum_comm]
+  refine sum_congr rfl fun s hs ↦ ?_
+  rw [← sum_filter, sum_const, filter_notMem_eq_sdiff, card_sdiff_of_subset (subset_univ s),
+    card_univ, (mem_powersetCard.mp hs).2, nsmul_eq_mul]
+
+end DeletedEntry
 
 /-- The elementary symmetric polynomials in four variables, written out explicitly. -/
 theorem esymm_fin_four {R : Type*} [CommSemiring R] :
