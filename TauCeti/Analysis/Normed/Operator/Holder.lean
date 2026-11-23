@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Linear and bilinear operations on bounded Hölder functions
@@ -29,6 +30,11 @@ A continuous linear map applied after a Hölder function is Hölder, the constan
 the operator norm (`ContinuousLinearMap.holderWith_comp`). Evaluating a Hölder family of
 continuous linear maps at a vector of norm at most one keeps the Hölder constant
 (`HolderOnWith.clm_apply_of_norm_le_one`).
+
+Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
+(h x)`, preserves Hölder continuity when the three families are bounded
+(`ContinuousLinearMap.holderOnWith_bilinearComp`); this is how a second derivative transforms
+under a change of variables.
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
 most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
@@ -149,6 +155,65 @@ theorem holderWith_comp₂_of_eq_zero (B : E →SL[σ₁₃] F →SL[σ₂₃] G
   · rw [edist_comm, edist_comm x]
     exact hcross y hy x hx
   · simp [hg0 x hx, hg0 y hy]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 X E E' F F' G : Type*} [NontriviallyNormedField 𝕜] [PseudoMetricSpace X]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The operator norm of a bilinear map composed with two linear maps is at most the product of
+the three operator norms. -/
+theorem norm_bilinearComp_le (f : E →L[𝕜] F →L[𝕜] G) (g : E' →L[𝕜] E) (h : F' →L[𝕜] F) :
+    ‖f.bilinearComp g h‖ ≤ ‖f‖ * ‖g‖ * ‖h‖ :=
+  (f.bilinearComp g h).opNorm_le_bound₂ (by positivity) fun x y => by
+    rw [bilinearComp_apply]
+    calc ‖f (g x) (h y)‖ ≤ ‖f‖ * ‖g x‖ * ‖h y‖ := f.le_opNorm₂ _ _
+      _ ≤ ‖f‖ * (‖g‖ * ‖x‖) * (‖h‖ * ‖y‖) := by
+        gcongr
+        exacts [g.le_opNorm x, h.le_opNorm y]
+      _ = ‖f‖ * ‖g‖ * ‖h‖ * ‖x‖ * ‖y‖ := by ring
+
+/-- Composing a family of bilinear maps with two families of linear maps preserves Hölder
+continuity on a set when all three families are bounded there. The constant is
+`Kf Mg Mh + Mf Kg Mh + Mf Mg Kh`. -/
+theorem holderOnWith_bilinearComp {α Kf Kg Kh Mf Mg Mh : ℝ≥0} {f : X → E →L[𝕜] F →L[𝕜] G}
+    {g : X → E' →L[𝕜] E} {h : X → F' →L[𝕜] F} {s : Set X}
+    (hf : HolderOnWith Kf α f s) (hg : HolderOnWith Kg α g s) (hh : HolderOnWith Kh α h s)
+    (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hgnorm : ∀ x ∈ s, ‖g x‖ ≤ Mg)
+    (hhnorm : ∀ x ∈ s, ‖h x‖ ≤ Mh) :
+    HolderOnWith (Kf * Mg * Mh + Mf * Kg * Mh + Mf * Mg * Kh) α
+      (fun x ↦ (f x).bilinearComp (g x) (h x)) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hsplit : (f x).bilinearComp (g x) (h x) - (f y).bilinearComp (g y) (h y) =
+      (f x - f y).bilinearComp (g x) (h x) + (f y).bilinearComp (g x - g y) (h x) +
+        (f y).bilinearComp (g y) (h x - h y) := by
+    ext a b
+    simp only [bilinearComp_apply, add_apply, sub_apply, map_sub]
+    abel
+  have hfd := hf.dist_le hx hy
+  have hgd := hg.dist_le hx hy
+  have hhd := hh.dist_le hx hy
+  rw [dist_eq_norm (f x) (f y)] at hfd
+  rw [dist_eq_norm (g x) (g y)] at hgd
+  rw [dist_eq_norm (h x) (h y)] at hhd
+  rw [dist_eq_norm ((f x).bilinearComp (g x) (h x)) ((f y).bilinearComp (g y) (h y)), hsplit]
+  refine (norm_add₃_le (E := E' →L[𝕜] F' →L[𝕜] G)).trans ?_
+  refine (add_le_add_three (norm_bilinearComp_le _ _ _) (norm_bilinearComp_le _ _ _)
+    (norm_bilinearComp_le _ _ _)).trans ?_
+  calc _ ≤ Kf * dist x y ^ (α : ℝ) * Mg * Mh + Mf * (Kg * dist x y ^ (α : ℝ)) * Mh +
+          Mf * Mg * (Kh * dist x y ^ (α : ℝ)) := by
+        have := hgnorm x hx
+        have := hhnorm x hx
+        have := hfnorm y hy
+        have := hgnorm y hy
+        gcongr
+    _ = _ := by
+      push_cast
+      ring
 
 end ContinuousLinearMap
 
