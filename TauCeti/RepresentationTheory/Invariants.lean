@@ -118,6 +118,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Rep.invariantsFunctor_map_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
+* `Rep.applyAsHom_trivial_sub_id_apply`, `Rep.norm_trivial_hom_apply`: for the trivial
+  representation, `ρ(g) - 𝟙` vanishes and the norm is multiplication by the group order.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -476,6 +478,20 @@ open scoped MonoidAlgebra
 theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.val = x.val := by
   simpa [sub_hom, sub_eq_zero] using x.property
+
+/-- For the trivial representation, `ρ(g) - 𝟙` vanishes. -/
+@[simp]
+theorem applyAsHom_trivial_sub_id_apply {k G : Type*} [Semiring k] [CommMonoid G] (g : G)
+    (M : Type*) [AddCommGroup M] [Module k M] (x : M) :
+    (applyAsHom (Rep.trivial k G M) g - 𝟙 (Rep.trivial k G M)).hom x = 0 := by
+  simp [Rep.applyAsHom, sub_hom]
+
+/-- For the trivial representation, the norm is multiplication by the group order. -/
+@[simp]
+theorem norm_trivial_hom_apply (k : Type*) {G : Type*} [Semiring k] [Group G] [Fintype G]
+    {M : Type*} [AddCommGroup M] [Module k M] (x : M) :
+    (Rep.trivial k G M).norm.asHom.hom x = (Nat.card G : k) • x :=
+  (Rep.norm_apply _).trans (Representation.norm_trivial_apply k G x)
 
 variable {k G : Type*} [CommRing k] [Group G]
 
