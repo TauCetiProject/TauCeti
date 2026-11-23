@@ -276,9 +276,8 @@ theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebr
 
 /-- The push-forward along an injective map is injective. -/
 theorem cubicalChainSumMap_injective {f : C(X, Y)} (hf : Function.Injective f) :
-    Function.Injective (cubicalChainSumMap R f) := fun a b h ↦
-  DirectSum.ext fun n ↦ NormalizedCubicalChain.map_injective R f hf n <| by
-    rw [← cubicalChainSumMap_apply, ← cubicalChainSumMap_apply, h]
+    Function.Injective (cubicalChainSumMap R f) :=
+  (DirectSum.lmap_injective _).2 fun n ↦ NormalizedCubicalChain.map_injective R f hf n
 
 /-- The push-forward along the identity is the identity. -/
 @[simp]
