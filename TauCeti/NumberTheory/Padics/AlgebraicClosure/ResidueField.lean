@@ -32,13 +32,13 @@ file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-ca
 
 * `PadicAlgCl.instAlgebraZModResidueField`: the `𝔽_p`-algebra structure on `𝓀[PadicAlgCl p]`,
   which has characteristic `p`.
-* `PadicAlgCl.residueFieldAlgEquiv`: a (non-canonical) `𝔽_p`-isomorphism of `𝓀[PadicAlgCl p]`
-  with `AlgebraicClosure (ZMod p)`.
+* `TauCeti.PadicAlgCl.residueFieldAlgEquiv`: a (non-canonical) `𝔽_p`-isomorphism of
+  `𝓀[PadicAlgCl p]` with `AlgebraicClosure (ZMod p)`.
 
 ## Main results
 
-* `PadicAlgCl.norm_coeff_minpoly_le_one`: an element of norm at most `1` has minimal polynomial
-  over `ℚ_p` with coefficients of norm at most `1`.
+* `TauCeti.PadicAlgCl.norm_coeff_minpoly_le_one`: an element of norm at most `1` has minimal
+  polynomial over `ℚ_p` with coefficients of norm at most `1`.
 * `PadicAlgCl.instIsAlgebraicZModResidueField`: `𝓀[PadicAlgCl p]` is algebraic over `ZMod p`.
 * `PadicAlgCl.instIsAlgClosureZModResidueField`: `𝓀[PadicAlgCl p]` is an algebraic closure of
   `ZMod p`.
@@ -52,7 +52,7 @@ public section
 
 open Polynomial Valued IsLocalRing
 
-namespace PadicAlgCl
+namespace TauCeti.PadicAlgCl
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -68,7 +68,7 @@ noncomputable def padicIntToInteger (p : ℕ) [Fact p.Prime] : ℤ_[p] →+* �
   (TauCeti.padicIntAlgebraMap p (PadicAlgCl p)).codRestrict _
     fun x ↦ Valued.integer.mem_iff.2 (TauCeti.norm_padicIntAlgebraMap_le_one norm_one.le x)
 
-/-- `PadicAlgCl.padicIntToInteger` is the inclusion `ℤ_p ⊆ ℚ_p ⊆ PadicAlgCl p`. -/
+/-- `TauCeti.PadicAlgCl.padicIntToInteger` is the inclusion `ℤ_p ⊆ ℚ_p ⊆ PadicAlgCl p`. -/
 @[simp]
 theorem coe_padicIntToInteger (x : ℤ_[p]) :
     (padicIntToInteger p x : PadicAlgCl p) = algebraMap ℚ_[p] (PadicAlgCl p) x :=
@@ -77,16 +77,18 @@ theorem coe_padicIntToInteger (x : ℤ_[p]) :
 /-- The prime `p` lies in the maximal ideal of `𝒪[PadicAlgCl p]`. -/
 theorem residue_natCast_p : residue 𝒪[PadicAlgCl p] (p : 𝒪[PadicAlgCl p]) = 0 :=
   Valued.integer.residue_eq_zero_iff_norm_lt_one.2 (by
-    rw [Subring.coe_natCast, ← map_natCast (algebraMap ℚ_[p] (PadicAlgCl p)), norm_extends]
+    rw [Subring.coe_natCast, ← map_natCast (algebraMap ℚ_[p] (PadicAlgCl p)),
+      PadicAlgCl.norm_extends]
     exact Padic.norm_p_lt_one)
 
 /-- The residue field of `PadicAlgCl p` has characteristic `p`. -/
-instance instCharPResidueField : CharP 𝓀[PadicAlgCl p] p :=
+instance _root_.PadicAlgCl.instCharPResidueField : CharP 𝓀[PadicAlgCl p] p :=
   (CharP.charP_iff_prime_eq_zero Fact.out).2 (by
     simpa using residue_natCast_p (p := p))
 
 /-- The residue field of `PadicAlgCl p` is an algebra over `𝔽_p = ZMod p`. -/
-noncomputable instance instAlgebraZModResidueField : Algebra (ZMod p) 𝓀[PadicAlgCl p] :=
+noncomputable instance _root_.PadicAlgCl.instAlgebraZModResidueField :
+    Algebra (ZMod p) 𝓀[PadicAlgCl p] :=
   ZMod.algebra _ p
 
 /-- Reduction from `ℤ_p` to the residue field of `PadicAlgCl p` factors through `ZMod p`. -/
@@ -103,7 +105,8 @@ theorem residue_padicIntToInteger (x : ℤ_[p]) :
   simp only [hy, map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, zero_add]
 
 /-- **The residue field of `PadicAlgCl p` is algebraic over `𝔽_p`.** -/
-instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[PadicAlgCl p] := by
+instance _root_.PadicAlgCl.instIsAlgebraicZModResidueField :
+    Algebra.IsAlgebraic (ZMod p) 𝓀[PadicAlgCl p] := by
   refine ⟨fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := residue_surjective y
   have hx := Valued.integer.norm_le_one x
@@ -114,7 +117,7 @@ instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[Pad
   have hQx : Q.eval₂ (padicIntToInteger p) x = 0 := by
     have hι : (𝒪[PadicAlgCl p]).subtype.comp (padicIntToInteger p) =
         TauCeti.padicIntAlgebraMap p (PadicAlgCl p) :=
-      (rfl)
+      RingHom.ext fun y ↦ (coe_padicIntToInteger y).trans (padicIntAlgebraMap_apply y).symm
     apply Subring.subtype_injective
     have := minpoly.aeval ℚ_[p] (x : PadicAlgCl p)
     rw [← hQ, aeval_def, eval₂_map] at this
@@ -126,7 +129,8 @@ instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[Pad
   rw [aeval_def, eval₂_map, hcomp, ← hom_eval₂, hQx, map_zero]
 
 /-- **The residue field of `PadicAlgCl p` is an algebraic closure of `𝔽_p`.** -/
-instance instIsAlgClosureZModResidueField : IsAlgClosure (ZMod p) 𝓀[PadicAlgCl p] :=
+instance _root_.PadicAlgCl.instIsAlgClosureZModResidueField :
+    IsAlgClosure (ZMod p) 𝓀[PadicAlgCl p] :=
   ⟨inferInstance, inferInstance⟩
 
 variable (p) in
@@ -136,4 +140,4 @@ noncomputable def residueFieldAlgEquiv :
     𝓀[PadicAlgCl p] ≃ₐ[ZMod p] AlgebraicClosure (ZMod p) :=
   IsAlgClosure.equiv (ZMod p) _ _
 
-end PadicAlgCl
+end TauCeti.PadicAlgCl
