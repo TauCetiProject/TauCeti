@@ -21,7 +21,8 @@ sense, `TopCat.CWComplex X`, which is a relative CW complex over the map out of 
 
 A filtered colimit in `TopCat` along injective transition maps has injective colimit maps
 (`TauCeti.TopCat.injective_ι_of_isColimit`), since the forgetful functor to types preserves it.
-Hence such a colimit of `T1` spaces is `T1` (`TauCeti.TopCat.t1Space_of_isColimit`).
+Any colimit of `T1` spaces in `TopCat` with injective colimit maps is `T1`
+(`TauCeti.TopCat.t1Space_of_isColimit`), so in particular such a filtered colimit is.
 
 The ranges of the maps to the vertex of a cocone over a preorder increase
 (`TauCeti.TopCat.monotone_range_ι`). The colimit maps of any colimit in `TopCat` jointly cover it
@@ -70,12 +71,12 @@ theorem injective_ι_of_isColimit {J : Type w} [Category J] [IsFilteredOrEmpty J
     (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
   exact hF f hk
 
-/-- A filtered colimit of `T1` spaces in `TopCat` along injective transition maps is `T1`. -/
-theorem t1Space_of_isColimit {J : Type w} [Category J] [IsFilteredOrEmpty J] {F : J ⥤ TopCat.{u}}
-    (hF : ∀ ⦃i j : J⦄ (f : i ⟶ j), Function.Injective (F.map f))
-    {c : Cocone F} (hc : IsColimit c) [∀ j, T1Space (F.obj j)] : T1Space c.pt := by
+/-- A colimit of `T1` spaces in `TopCat` whose colimit maps are injective is `T1`. -/
+theorem t1Space_of_isColimit {J : Type w} [Category J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
+    (hc : IsColimit c) (hι : ∀ j, Function.Injective (c.ι.app j)) [∀ j, T1Space (F.obj j)] :
+    T1Space c.pt := by
   refine ⟨fun p ↦ (TopCat.isClosed_iff_of_isColimit _ hc _).2 fun j ↦ ?_⟩
-  exact (Set.subsingleton_singleton.preimage (injective_ι_of_isColimit hF hc j)).isClosed
+  exact (Set.subsingleton_singleton.preimage (hι j)).isClosed
 
 /-- The ranges of the maps of a diagram in `TopCat` indexed by a preorder to the vertex of a cocone
 increase along the order. -/

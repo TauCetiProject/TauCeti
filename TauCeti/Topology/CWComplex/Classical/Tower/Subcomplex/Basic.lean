@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.Logic.Equiv.Sigma
 public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
-public import TauCeti.Topology.Category.TopCat.Normal
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 
 /-!
@@ -268,8 +267,7 @@ theorem isClosedEmbedding_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ)
 
 /-- Any colimit `c.pt` of `T.diagram` is a `T₁` space. -/
 theorem t1Space_of_isColimit {c : Cocone T.diagram} (hc : IsColimit c) : T1Space c.pt :=
-  TauCeti.TopCat.t1Space_of_isColimit
-    (fun _ _ f ↦ (T.isClosedEmbedding_diagram_map (leOfHom f)).injective) hc
+  TauCeti.TopCat.t1Space_of_isColimit hc fun k ↦ (T.isClosedEmbedding_ι hc k).injective
 
 end StageMachinery
 

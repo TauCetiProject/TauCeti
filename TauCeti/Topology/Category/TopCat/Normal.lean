@@ -193,8 +193,8 @@ embeddings is `T4`. -/
 theorem t4Space_of_isColimit
     (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE (Nat.le_succ n)))) (hc : IsColimit c)
     [∀ n, T4Space (F.obj n)] : T4Space c.pt :=
-  have := t1Space_of_isColimit (fun _ _ f ↦
-    (isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) (leOfHom f)).injective) hc
+  have := t1Space_of_isColimit hc (injective_ι_of_isColimit (fun _ _ f ↦
+    (isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) (leOfHom f)).injective) hc)
   have := normalSpace_of_isColimit hF hc
   {}
 

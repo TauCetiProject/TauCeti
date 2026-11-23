@@ -35,7 +35,8 @@ theorem paracompactSpace_of_isColimit {F : ℕ ⥤ TopCat.{u}} {c : Cocone F}
     ParacompactSpace c.pt := by
   have hmap {i j : ℕ} (hij : i ≤ j) : IsClosedEmbedding (F.map (homOfLE hij)) :=
     isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij
-  let := t1Space_of_isColimit (fun _ _ f ↦ (hmap (leOfHom f)).injective) hc
+  let := t1Space_of_isColimit hc
+    (injective_ι_of_isColimit (fun _ _ f ↦ (hmap (leOfHom f)).injective) hc)
   let := normalSpace_of_isColimit hF hc
   let := lindelofSpace_of_isColimit hc
   infer_instance
