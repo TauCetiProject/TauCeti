@@ -17,6 +17,9 @@ checking specializations.
 
 ## Main results
 
+* `TauCeti.prod_quinticF20OrbitRepresentatives_eq_mul_prod`: a product over the representatives
+  splits off the identity from the five nontrivial representatives, listed in the order in which
+  the rotation cycles their conjugates.
 * `TauCeti.renameOrbit_quinticF20Invariant`: the six representatives give the entire orbit.
 * `TauCeti.universalResolvent_quinticF20Invariant`: the resulting six-factor product.
 
@@ -31,11 +34,23 @@ open Equiv Equiv.Perm Polynomial
 
 namespace TauCeti
 
-/-- Representatives of the six cosets of the stabilizer of Dummit's quintic invariant.
-They permute the last three indices and fix the first two. -/
+/-- The five nontrivial permutations of the last three indices, representing the five conjugates
+of Dummit's quintic invariant other than itself. They are listed in the order in which the rotation
+`a ↦ a + 1` cycles these conjugates. -/
+@[expose] def quinticF20NontrivialRepresentatives : Fin 5 → Perm (Fin 5) :=
+  ![swap 2 3, swap 3 4, swap 2 3 * swap 3 4, swap 2 4, swap 3 4 * swap 2 3]
+
+/-- Representatives of the six cosets of the stabilizer of Dummit's quintic invariant: the
+identity and the five entries of `TauCeti.quinticF20NontrivialRepresentatives`. They permute the
+last three indices and fix the first two. -/
 def quinticF20OrbitRepresentatives : Finset (Perm (Fin 5)) :=
-  {1, swap 2 3, swap 3 4, swap 2 4, swap 2 3 * swap 3 4,
-    swap 3 4 * swap 2 3}
+  insert 1 (Finset.univ.image quinticF20NontrivialRepresentatives)
+
+/-- The orbit representatives, listed explicitly. -/
+private theorem quinticF20OrbitRepresentatives_eq :
+    quinticF20OrbitRepresentatives =
+      {1, swap 2 3, swap 3 4, swap 2 4, swap 2 3 * swap 3 4, swap 3 4 * swap 2 3} := by
+  decide
 
 /-- The orbit representatives are the identity and the five nontrivial permutations of the
 last three indices. -/
@@ -44,10 +59,11 @@ theorem mem_quinticF20OrbitRepresentatives {σ : Perm (Fin 5)} :
     σ ∈ quinticF20OrbitRepresentatives ↔
       σ = 1 ∨ σ = swap 2 3 ∨ σ = swap 3 4 ∨ σ = swap 2 4 ∨ σ = swap 2 3 * swap 3 4 ∨
         σ = swap 3 4 * swap 2 3 := by
-  simp only [quinticF20OrbitRepresentatives, Finset.mem_insert, Finset.mem_singleton]
+  simp only [quinticF20OrbitRepresentatives_eq, Finset.mem_insert, Finset.mem_singleton]
 
 /-- There are six orbit representatives, one for each conjugate of the invariant. -/
 theorem card_quinticF20OrbitRepresentatives : quinticF20OrbitRepresentatives.card = 6 := by
+  rw [quinticF20OrbitRepresentatives_eq]
   decide
 
 /-- A product over the orbit representatives, expanded into its six factors. -/
@@ -55,10 +71,19 @@ theorem prod_quinticF20OrbitRepresentatives {M : Type*} [CommMonoid M] (f : Perm
     ∏ σ ∈ quinticF20OrbitRepresentatives, f σ =
       f 1 * f (swap 2 3) * f (swap 3 4) * f (swap 2 4) * f (swap 2 3 * swap 3 4) *
         f (swap 3 4 * swap 2 3) := by
-  rw [quinticF20OrbitRepresentatives]
+  rw [quinticF20OrbitRepresentatives_eq]
   repeat rw [Finset.prod_insert (by decide)]
   rw [Finset.prod_singleton]
   simp only [mul_assoc]
+
+/-- A product over the orbit representatives is the factor of the identity times the factors of
+the five entries of `TauCeti.quinticF20NontrivialRepresentatives`. -/
+theorem prod_quinticF20OrbitRepresentatives_eq_mul_prod {M : Type*} [CommMonoid M]
+    (f : Perm (Fin 5) → M) :
+    ∏ σ ∈ quinticF20OrbitRepresentatives, f σ =
+      f 1 * ∏ k, f (quinticF20NontrivialRepresentatives k) := by
+  rw [quinticF20OrbitRepresentatives, Finset.prod_insert (by decide),
+    Finset.prod_image (by decide : Function.Injective quinticF20NontrivialRepresentatives).injOn]
 
 noncomputable section
 
@@ -71,7 +96,7 @@ private theorem orbitTestValues :
       ({9424, 9088, 11488, 10312, 11944, 8752} : Finset ℤ) := by
   simp only [orbitTestPoint, rename_quinticF20Invariant, Fin.isValue, Fin.sum_univ_five,
     zero_add, zero_sub, Fin.reduceAdd, sub_self, Fin.reduceSub, map_add, map_mul, map_pow,
-    MvPolynomial.eval_X, quinticF20OrbitRepresentatives, Finset.image_insert, coe_one, id_eq,
+    MvPolynomial.eval_X, quinticF20OrbitRepresentatives_eq, Finset.image_insert, coe_one, id_eq,
     Matrix.cons_val_zero, one_pow, Matrix.cons_val_one, Matrix.cons_val, Int.reduceMul,
     Int.reduceAdd, one_mul, Int.reducePow, mul_one, Equiv.swap_apply_def, Fin.reduceEq,
     ↓reduceIte, coe_mul, Function.comp_apply,

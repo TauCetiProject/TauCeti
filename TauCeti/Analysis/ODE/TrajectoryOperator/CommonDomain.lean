@@ -37,8 +37,9 @@ the autonomous operator is derived from that of the family. Taking `D = H¹(AddC
 
 After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, and mode intertwining
 over Banach spaces, the second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for
-Hilbert `H` and `ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality and the Pythagorean
-identity `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, unconditional injectivity for injective `ι`,
+Hilbert `H` and `ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality, the integration by
+parts `⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫`, the Pythagorean identity
+`‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, unconditional injectivity for injective `ι`,
 invertibility with inverse norm `≤ √(1 + ‖A⁻¹‖²)` for invertible `A`, failure of closed range when
 `A.ker ≠ ⊥`, and equivalence of closed range / Fredholmness / invertibility with `A.IsInvertible`
 for index-`0` Fredholm `A`. Adapts `TauCeti/Analysis/ODE/TrajectoryOperator.lean`,
@@ -435,6 +436,26 @@ theorem inner_weakFDeriv_apply_one_compLpL_eq_zero (hSymm : ∀ x y : D, ⟪A x,
       A.coeFn_compLpL (prev base u)] with s hs1 hs2
     rw [hs1, hs2]; simp [L, d]
   rw [hint_eq]; linarith
+
+/-- **Integration by parts in `W^{1,2}(ℝ, H)`.** For paths `u` and `w` of the graph space,
+`⟪(ι ∘ u)', ι ∘ w⟫ = -⟪ι ∘ u, (ι ∘ w)'⟫` in `L²(ℝ, H)`. -/
+theorem inner_weakFDeriv_apply_one_compLpL_eq_neg_inner
+    (u w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+    ⟪(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv (ι.compLpL 2 μ₀) u),
+        ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) w)⟫_ℝ =
+      -⟪ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u),
+        (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀
+          (weakFDeriv (ι.compLpL 2 μ₀) w)⟫_ℝ := by
+  -- Polarize `⟪(ι ∘ z)', ι ∘ z⟫ = 0`, the case `A = ι` of the orthogonality of `(ι ∘ z)'` and
+  -- `A ∘ z`, at `z = u + w`.
+  have h (z : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :=
+    inner_weakFDeriv_apply_one_compLpL_eq_zero (A := ι) (fun _ _ ↦ rfl) z
+  have huw := h (u + w)
+  simp only [← weakFDerivL_apply, ← prevL_apply, map_add, inner_add_left, inner_add_right] at huw
+  simp only [weakFDerivL_apply, prevL_apply, h u, h w, zero_add, add_zero] at huw
+  linarith [real_inner_comm
+    ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL 2 μ₀ (weakFDeriv (ι.compLpL 2 μ₀) w))
+    (ι.compLpL 2 μ₀ (prev (ι.compLpL 2 μ₀) u))]
 
 /-- Pythagorean identity on `L²(ℝ)` for `ι`-symmetric `A`:
 `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`. -/
