@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Probability.Process.Stopping
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
-import Mathlib.MeasureTheory.Integral.Indicator
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Probability.BrownianMotion.Integral.Stopping

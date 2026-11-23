@@ -7,9 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Integral.Indicator
-import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -54,9 +53,9 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   implies convergence in measure for any measure and filter.
 * `MeasureTheory.tendsto_measure_ge_of_ne_top`, `tendsto_measure_ge_of_ae_eventually_le`,
   `tendsto_measure_lintegral_mono`, `tendsto_measure_lintegral_enorm_sq_bdd_mul`,
-  `tendsto_measure_lintegral_enorm_add_sq`, `tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm`:
-  `ℝ≥0∞` threshold reduction, finite-measure transfer, inner-measure monotonicity transfer, and
-  convergence in measure of slice square lower integrals `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
+  `tendsto_measure_lintegral_enorm_add_sq`: `ℝ≥0∞` threshold reduction, finite-measure transfer,
+  inner-measure monotonicity transfer, and convergence in measure of slice square lower integrals
+  `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -653,31 +652,6 @@ theorem tendsto_measure_lintegral_enorm_add_sq {α β ι E : Type*}
     exact (hy.trans hbd).not_gt <|
       (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num)
         (ENNReal.add_lt_add hnot.1 hnot.2)).trans_eq h4) hε
-
-/-- Convergence of `f i` to `0` in `L²(μ.prod ν)` implies convergence of the slice square lower
-integrals `y ↦ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ` to `0` in `ν`-measure, along any filter and for any
-`SFinite` factors `μ` and `ν`. -/
-theorem tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm {α β ι E : Type*}
-    {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
-    [SFinite μ] [SFinite ν] [TopologicalSpace E] [ContinuousENorm E] {l : Filter ι}
-    {f : ι → α × β → E} (hf : ∀ᶠ i in l, AEStronglyMeasurable (f i) (μ.prod ν))
-    (hlim : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν)) l (𝓝 0))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ}) l (𝓝 0) :=
-  tendsto_measure_ge_of_ne_top (fun ε hε htop ↦ by
-    have hp : Tendsto (fun i ↦ eLpNorm (f i) 2 (μ.prod ν) ^ 2) l (𝓝 0) := by
-      simpa [Function.comp_def] using ((ENNReal.continuous_pow 2).tendsto 0).comp hlim
-    have hsq : Tendsto (fun i ↦ ε⁻¹ * eLpNorm (f i) 2 (μ.prod ν) ^ 2) l (𝓝 0) := by
-      simpa using ENNReal.Tendsto.const_mul hp (Or.inr (ENNReal.inv_ne_top.mpr hε.ne'))
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsq
-      (.of_forall fun _ ↦ zero_le) (hf.mono fun i hi ↦ ?_)
-    have hm : AEMeasurable (fun p : α × β ↦ ‖f i p‖ₑ ^ 2) (μ.prod ν) := hi.eNorm.pow_const 2
-    have hmean : ∫⁻ y, ∫⁻ x, ‖f i (x, y)‖ₑ ^ 2 ∂μ ∂ν = eLpNorm (f i) 2 (μ.prod ν) ^ 2 := by
-      rw [← lintegral_prod_symm _ hm]
-      simpa only [NNReal.coe_ofNat, ENNReal.rpow_two, ENNReal.coe_ofNat] using
-        (eLpNorm_nnreal_pow_eq_lintegral (p := (2 : NNReal)) (by norm_num) hi).symm
-    exact (MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left' hε.ne' htop).trans_eq
-      (by rw [hmean, div_eq_mul_inv, mul_comm])) hε
 
 end MeasureTheory
 

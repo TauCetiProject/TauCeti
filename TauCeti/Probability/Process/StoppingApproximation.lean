@@ -162,21 +162,22 @@ theorem tendsto_dyadicCeilTime (u : WithTop ℝ≥0) :
 theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0) (n : ℕ) :
     (range fun ω => dyadicCeilTime n (τ ω)).Countable := by
   refine ((Set.countable_range (fun k : ℕ =>
-    (dyadicGrid n k : WithTop ℝ≥0))).insert ⊤).mono ?_
+    ((dyadicNNRat n k : ℝ≥0) : WithTop ℝ≥0))).insert ⊤).mono ?_
   rintro _ ⟨ω, rfl⟩
   dsimp only
   cases h : τ ω with
   | top => simp
   | coe t =>
     rw [dyadicCeilTime_coe]
-    exact mem_insert_of_mem _ ⟨⌈t * 2 ^ n⌉₊, by simp only [dyadicGrid_def]⟩
+    exact mem_insert_of_mem _ ⟨⌈t * 2 ^ n⌉₊, by simp only [coe_dyadicNNRat]⟩
 
 /-- Clipping the upward dyadic approximation of any random time at a deterministic horizon `T`
 leaves only finitely many values in `ℝ≥0`. -/
 theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
     (τ : Ω → WithTop ℝ≥0) (n : ℕ) (T : ℝ≥0) :
     (range fun ω => (min (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω))).untopA).Finite := by
-  refine ((Set.finite_Iio ⌈T * 2 ^ n⌉₊).image (dyadicGrid n) |>.insert T).subset ?_
+  refine ((Set.finite_Iio ⌈T * 2 ^ n⌉₊).image (fun k => (dyadicNNRat n k : ℝ≥0)) |>.insert T).subset
+    ?_
   rintro _ ⟨ω, rfl⟩
   dsimp only
   rcases le_or_gt (T : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)) with hle | hgt
@@ -190,7 +191,7 @@ theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
       rw [dyadicCeilTime_coe] at hgt ⊢
       rw [min_eq_right hgt.le, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
       exact ⟨⌈u * 2 ^ n⌉₊, Nat.lt_ceil.mpr ((div_lt_iff₀ (by positivity)).mp
-        (WithTop.coe_lt_coe.mp hgt)), dyadicGrid_def n _⟩
+        (WithTop.coe_lt_coe.mp hgt)), coe_dyadicNNRat n _⟩
 
 /-- Rounding cannot turn a finite time into infinity. -/
 @[simp]

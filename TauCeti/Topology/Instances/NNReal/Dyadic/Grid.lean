@@ -19,8 +19,8 @@ approximants converge to `t` as `n → ∞`.
 ## Main definitions and results
 
 * `TauCeti.dyadicNNRat`: the `k`-th level-`n` dyadic nonnegative rational `k / 2 ^ n : ℚ≥0`.
-* `TauCeti.dyadicGrid`, `TauCeti.dyadicGrid_def`, `TauCeti.dyadicGrid_zero`,
-  `TauCeti.strictMono_dyadicGrid`: the level-`n` dyadic grid `k / 2 ^ n : ℝ≥0` and its order facts.
+* `TauCeti.strictMono_coe_dyadicNNRat`: the coerced level-`n` dyadic grid
+  `k ↦ (dyadicNNRat n k : ℝ≥0)` is strictly increasing.
 * `TauCeti.dyadicNNRat_double` and `TauCeti.dyadicNNRat_scale`: nesting identities across dyadic
   levels.
 * `TauCeti.dist_dyadicNNRat_succ` and `TauCeti.edist_dyadicNNRat_succ`: adjacent dyadic grid points
@@ -38,20 +38,6 @@ open Filter Set
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
-
-/-- The nonnegative dyadic grid of mesh `2⁻ⁿ`. -/
-noncomputable def dyadicGrid (n k : ℕ) : ℝ≥0 := (k : ℝ≥0) / 2 ^ n
-
-/-- Explicit formula for the dyadic grid of mesh `2⁻ⁿ`. -/
-theorem dyadicGrid_def (n k : ℕ) : dyadicGrid n k = (k : ℝ≥0) / 2 ^ n := by rw [dyadicGrid]
-
-/-- The dyadic grid of mesh `2⁻ⁿ` starts at zero. -/
-@[simp]
-theorem dyadicGrid_zero (n : ℕ) : dyadicGrid n 0 = 0 := by simp [dyadicGrid]
-
-/-- The dyadic grid of mesh `2⁻ⁿ` is strictly increasing. -/
-theorem strictMono_dyadicGrid (n : ℕ) : StrictMono (dyadicGrid n) :=
-  fun _ _ hij => div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) (by positivity)
 
 /-- The `k`-th dyadic nonnegative rational `k / 2 ^ n` at scale `2⁻ⁿ`. -/
 def dyadicNNRat (n k : ℕ) : ℚ≥0 := (k : ℚ≥0) / 2 ^ n
@@ -73,6 +59,13 @@ theorem dyadicNNRat_zero_left (k : ℕ) : dyadicNNRat 0 k = k := by
 @[simp]
 theorem coe_dyadicNNRat (n k : ℕ) : (dyadicNNRat n k : ℝ≥0) = (k : ℝ≥0) / 2 ^ n := by
   simp [dyadicNNRat_def]
+
+/-- The coerced level-`n` dyadic grid `k ↦ (dyadicNNRat n k : ℝ≥0)` is strictly increasing. -/
+theorem strictMono_coe_dyadicNNRat (n : ℕ) :
+    StrictMono (fun k ↦ (dyadicNNRat n k : ℝ≥0)) :=
+  fun _ _ hij ↦ by
+    simpa only [coe_dyadicNNRat] using
+      div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) (by positivity)
 
 /-- A level-`n` dyadic rational lies in `[0, N]` if and only if its numerator is at most
 `N * 2 ^ n`. -/

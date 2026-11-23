@@ -46,25 +46,35 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+private theorem stronglyMeasurable_indicator_predictable_of_prod
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s : ι) (T : Set ι)
+    (hT : ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A → MeasurableSet[ℱ.predictable] (T ×ˢ A))
+    {a : Ω → E} (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ T.indicator (fun _ ↦ a p.2) p.1) := by
+  classical
+  let : MeasurableSpace Ω := ℱ s
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let S : Set (ι × Ω) := T ×ˢ univ
+  have hS : MeasurableSet S := hT MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨T ×ˢ A, hT hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  simpa [S, indicator_apply] using
+    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+
 /-- A height known at the left endpoint, extended by zero outside `(s,t]`, is predictable. -/
 theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
     {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
     [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s t : ι) {a : Ω → E}
     (ha : StronglyMeasurable[ℱ s] a) :
     StronglyMeasurable[ℱ.predictable]
-      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) := by
-  classical
-  let : MeasurableSpace Ω := ℱ s
-  let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  let S : Set (ι × Ω) := Ioc s t ×ˢ univ
-  have hS : MeasurableSet S := measurableSet_predictable_Ioc_prod s t MeasurableSet.univ
-  have hproj : Measurable (fun p : S ↦ p.val.2) := by
-    intro A hA
-    refine ⟨Ioc s t ×ˢ A, measurableSet_predictable_Ioc_prod s t hA, ?_⟩
-    ext p
-    simp [S, p.property.1]
-  simpa [S, indicator_apply] using
-    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) :=
+  stronglyMeasurable_indicator_predictable_of_prod ℱ s (Ioc s t)
+    (fun _ hA ↦ measurableSet_predictable_Ioc_prod s t hA) ha
 
 /-- A height known at `s`, extended by zero outside `(s, ∞)`, is predictable. -/
 theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioi_predictable
@@ -72,19 +82,9 @@ theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioi_predictable
     [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s : ι) {a : Ω → E}
     (ha : StronglyMeasurable[ℱ s] a) :
     StronglyMeasurable[ℱ.predictable]
-      (fun p : ι × Ω ↦ (Ioi s).indicator (fun _ ↦ a p.2) p.1) := by
-  classical
-  let : MeasurableSpace Ω := ℱ s
-  let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  let S : Set (ι × Ω) := Ioi s ×ˢ univ
-  have hS : MeasurableSet S := measurableSet_predictable_Ioi_prod MeasurableSet.univ
-  have hproj : Measurable (fun p : S ↦ p.val.2) := by
-    intro A hA
-    refine ⟨Ioi s ×ˢ A, measurableSet_predictable_Ioi_prod hA, ?_⟩
-    ext p
-    simp [S, p.property.1]
-  simpa [S, indicator_apply] using
-    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+      (fun p : ι × Ω ↦ (Ioi s).indicator (fun _ ↦ a p.2) p.1) :=
+  stronglyMeasurable_indicator_predictable_of_prod ℱ s (Ioi s)
+    (fun _ hA ↦ measurableSet_predictable_Ioi_prod hA) ha
 
 section Arithmetic
 

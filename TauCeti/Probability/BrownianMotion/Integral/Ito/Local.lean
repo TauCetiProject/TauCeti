@@ -10,6 +10,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Patching
@@ -152,8 +153,8 @@ private theorem isItoIntegral_of_stopped_stages
       tendsto_measure_lintegral_of_ae_eventually_eqOn
         (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
         (fun k ↦ (hHs k).isStronglyPredictable) hH (fun _ hε ↦
-          MeasureTheory.tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm
-            (.of_forall fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+          TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+            (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
               (hHs k).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
             hl2_hold hε)
         (heq.mono fun _ hω ↦ hω T),
