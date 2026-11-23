@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Ideal
+public import TauCeti.RingTheory.TwoSidedIdeal.Unitization
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Essential
 
 /-!
@@ -18,7 +19,8 @@ I.annihilator = ⊥`).
 ## Main declarations
 
 * `TwoSidedIdeal.annihilator_eq_rightAnnihilator`, `TwoSidedIdeal.inf_annihilator_eq_bot`,
-  `TwoSidedIdeal.isClosedEssential_iff_annihilator_eq_bot`.
+  `TwoSidedIdeal.isClosedEssential_iff_annihilator_eq_bot`,
+  `TwoSidedIdeal.isScalarTower_unitizationModule`.
 -/
 
 public section
@@ -157,6 +159,13 @@ theorem isClosedEssential_comap_iff {B E : Type*} [NonUnitalCStarAlgebra B]
     [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E) {I : TwoSidedIdeal B} :
     (I.comap e).IsClosedEssential ↔ I.IsClosedEssential := by
   rw [isClosedEssential_iff_isEssential, isClosedEssential_iff_isEssential, isEssential_comap_iff]
+
+/-- The left `Unitization ℂ A`-module structure on a closed two-sided ideal `I` is compatible with
+its `ℂ`-module structure. -/
+theorem isScalarTower_unitizationModule (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    letI := I.unitizationModuleOfSMulMem I.smul_mem_of_isClosed
+    IsScalarTower ℂ (Unitization ℂ A) I :=
+  I.isScalarTower_unitizationModuleOfSMulMem I.smul_mem_of_isClosed I.coe_smul_complex
 
 end NonUnitalCStarAlgebra
 
