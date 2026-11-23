@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 public import TauCeti.Algebra.Homology.EssentiallySmall
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 import Mathlib.CategoryTheory.Localization.OfQuotient
 
 /-!

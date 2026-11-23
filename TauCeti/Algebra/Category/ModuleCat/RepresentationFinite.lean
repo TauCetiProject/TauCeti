@@ -16,7 +16,7 @@ import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.ModuleCat.Equivalence
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
-import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 import TauCeti.CategoryTheory.Skeletal
 import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
 
