@@ -33,21 +33,20 @@ for normed commutative rings `R` and `O` also transfers the weak-topology homeom
 
 When `Γ` is a profinite group and `R = ℤ_p`, combining this transfer with the integral-measure
 isomorphism `AbstractMeasure.completedGroupAlgebraEquiv : D(Γ, ℤ_[p]) ≃ₐ[ℤ_[p]] ℤ_[p][[Γ]]` proves
-that `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is an isomorphism of `O`-algebras for any
+that `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is surjective
+(`AbstractMeasure.toCompletedGroupAlgebra_surjective_of_projective_of_finite`) — and hence an
+isomorphism of `O`-algebras via `AbstractMeasure.completedGroupAlgebraEquivOfBijective` — for any
 finite projective (in particular, finite free) Hausdorff topological `ℤ_p`-algebra `O` with
-continuous `ℤ_p`-action (`AbstractMeasure.completedGroupAlgebraEquivOfFreeOfFinite`,
-Rodrigues Jacinto–Williams, Proposition 3.16). When `O` is moreover a normed commutative ring, this
-isomorphism is a homeomorphism from the weak topology on `D(Γ, O)` to the inverse-limit topology
-on `O[[Γ]]`, making `(D(Γ, O), WeakTopology)` a compact topological ring.
+continuous `ℤ_p`-action (Rodrigues Jacinto–Williams, Proposition 3.16). When `O` is moreover a
+normed commutative ring, this isomorphism is a homeomorphism from the weak topology on `D(Γ, O)` to
+the inverse-limit topology on `O[[Γ]]`, making `(D(Γ, O), WeakTopology)` a compact topological
+ring.
 
 ## Main definitions
 
 * `AbstractMeasure.completedGroupAlgebraEquivOfBijective O hb`: the `O`-algebra isomorphism
   `D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ` transferred from bijectivity of
   `toCompletedGroupAlgebra` over `R`.
-* `AbstractMeasure.completedGroupAlgebraEquivOfFreeOfFinite p O`: the `O`-algebra isomorphism
-  `D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ` for a profinite group `Γ` and a finite free Hausdorff
-  topological `ℤ_p`-algebra `O` with continuous `ℤ_p`-action (`ContinuousSMul ℤ_[p] O`).
 
 ## Main results
 
@@ -58,16 +57,17 @@ on `O[[Γ]]`, making `(D(Γ, O), WeakTopology)` a compact topological ring.
   change.
 * `AbstractMeasure.toCompletedGroupAlgebra_injective_of_injective`,
   `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_surjective`,
+  `AbstractMeasure.completedGroupAlgebraEquivOfBijective_symm_mapRingHom`,
+  `AbstractMeasure.completedGroupAlgebraEquivOfBijective_symm_apply_of_dual`,
+  `AbstractMeasure.completedGroupAlgebraEquivOfBijective_symm_apply`,
   `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph`: general transfer of
-  injectivity, surjectivity, and the weak-topology homeomorphism along finite projective
-  `IsModuleTopology` extensions.
-* `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_free_of_finite`,
-  `AbstractMeasure.completedGroupAlgebraEquivOfFreeOfFinite_symm_of`,
-  `AbstractMeasure.completedGroupAlgebraEquivOfFreeOfFinite_symm_mapRingHom`,
-  `AbstractMeasure.completedGroupAlgebraEquivOfFreeOfFinite_symm_apply`.
-* `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite`,
-  `AbstractMeasure.isTopologicalRing_weak_of_free_of_finite`,
-  `AbstractMeasure.compactSpace_weak_of_free_of_finite`.
+  injectivity, surjectivity, inverse coordinate/coefficient formulas, and the weak-topology
+  homeomorphism along finite projective `IsModuleTopology` extensions.
+* `AbstractMeasure.toCompletedGroupAlgebra_surjective_of_projective_of_finite`,
+  `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak_of_projective_of_finite`,
+  `AbstractMeasure.isTopologicalRing_weak_of_projective_of_finite`,
+  `AbstractMeasure.compactSpace_weak_of_projective_of_finite`: specializations to finite projective
+  `ℤ_p`-algebras.
 
 ## References
 
@@ -217,6 +217,67 @@ theorem completedGroupAlgebraEquivOfBijective_symm_of
   rw [← toCompletedGroupAlgebra_dirac,
     completedGroupAlgebraEquivOfBijective_symm_toCompletedGroupAlgebra]
 
+/-- `(completedGroupAlgebraEquivOfBijective O hb).symm` intertwines coefficient extension along
+`algebraMap R O` on `R[[Γ]]` with `extendScalars O`. -/
+@[simp]
+theorem completedGroupAlgebraEquivOfBijective_symm_mapRingHom
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
+    (x : completedGroupAlgebra R Γ) :
+    (completedGroupAlgebraEquivOfBijective O hb).symm
+        (completedGroupAlgebra.mapRingHom Γ (algebraMap R O) x) =
+      extendScalars O ((AlgEquiv.ofBijective toCompletedGroupAlgebra hb).symm x) := by
+  apply (completedGroupAlgebraEquivOfBijective O hb).injective
+  rw [AlgEquiv.apply_symm_apply, coe_completedGroupAlgebraEquivOfBijective,
+    toCompletedGroupAlgebra_extendScalars]
+  congr 1
+  exact ((AlgEquiv.ofBijective toCompletedGroupAlgebra hb).apply_symm_apply x).symm
+
+/-- Given a finite dual family `(b, φ)` for `O` over `R` satisfying
+`∀ a, ∑ i, φ i a • b i = a`, `(completedGroupAlgebraEquivOfBijective O hb).symm` extracts each
+scalar coordinate in `R[[Γ]]`, converts it to an `R`-valued measure, and recombines in `D(Γ, O)`. -/
+theorem completedGroupAlgebraEquivOfBijective_symm_apply_of_dual
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
+    {ι : Type*} [Fintype ι] {b : ι → O} {φ : ι → Module.Dual R O}
+    (hsum : ∀ a : O, ∑ i, φ i a • b i = a) (y : completedGroupAlgebra O Γ) :
+    (completedGroupAlgebraEquivOfBijective O hb).symm y =
+      ∑ i : ι, b i • extendScalars O
+        ((AlgEquiv.ofBijective toCompletedGroupAlgebra hb).symm
+          (completedGroupAlgebra.mapAddMonoidHom Γ (φ i).toAddMonoidHom y)) := by
+  apply (completedGroupAlgebraEquivOfBijective O hb).injective
+  rw [AlgEquiv.apply_symm_apply, coe_completedGroupAlgebraEquivOfBijective]
+  have hsum' : ∑ i : ι, b i • extendScalars O
+      ((AlgEquiv.ofBijective toCompletedGroupAlgebra hb).symm
+        (completedGroupAlgebra.mapAddMonoidHom Γ (φ i).toAddMonoidHom y)) =
+      baseChangeAlgEquiv O (∑ i : ι, b i ⊗ₜ[R]
+        (AlgEquiv.ofBijective toCompletedGroupAlgebra hb).symm
+          (completedGroupAlgebra.mapAddMonoidHom Γ (φ i).toAddMonoidHom y)) := by
+    simp [map_sum]
+  rw [hsum', toCompletedGroupAlgebra_baseChangeAlgEquiv]
+  simp only [map_sum, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq]
+  have happly (i : ι) :
+      toCompletedGroupAlgebra ((AlgEquiv.ofBijective toCompletedGroupAlgebra hb).symm
+        (completedGroupAlgebra.mapAddMonoidHom Γ (φ i).toAddMonoidHom y)) =
+        completedGroupAlgebra.mapAddMonoidHom Γ (φ i).toAddMonoidHom y :=
+    (AlgEquiv.ofBijective toCompletedGroupAlgebra hb).apply_symm_apply _
+  simp_rw [happly]
+  rw [← map_sum, ← completedGroupAlgebra.baseChangeEquiv_symm_apply_of_dual hsum y,
+    AlgEquiv.apply_symm_apply]
+
+/-- In any finite `R`-basis `b` of `O`, `(completedGroupAlgebraEquivOfBijective O hb).symm`
+extracts each scalar coordinate in `R[[Γ]]`, converts it to an `R`-valued measure, and recombines
+in `D(Γ, O)`. -/
+theorem completedGroupAlgebraEquivOfBijective_symm_apply
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι R O) (y : completedGroupAlgebra O Γ) :
+    (completedGroupAlgebraEquivOfBijective O hb).symm y =
+      ∑ i : ι, b i • extendScalars O
+        ((AlgEquiv.ofBijective toCompletedGroupAlgebra hb).symm
+          (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) :=
+  completedGroupAlgebraEquivOfBijective_symm_apply_of_dual hb (fun a ↦ b.sum_repr a) y
+
 omit [Module.Projective R O] [Module.Finite R O] in
 private theorem apply_eq_sum_of_dual_of_leftInverse
     {n : ℕ} {b : Fin n → O} {φ : Fin n → Module.Dual R O}
@@ -300,160 +361,53 @@ section ProfinitePadicInt
 
 variable [IsTopologicalGroup Γ] [TotallyDisconnectedSpace Γ]
 
-/-- **Surjectivity of `toCompletedGroupAlgebra` for finite free Hausdorff `ℤ_p`-algebras.** For a
-profinite group `Γ` and a Hausdorff topological commutative `ℤ_p`-algebra `O` that is finite and
-free over `ℤ_p` with continuous `ℤ_p`-action (`ContinuousSMul ℤ_[p] O`), every element of `O[[Γ]]`
-arises from an `O`-valued measure on `Γ`. -/
-theorem toCompletedGroupAlgebra_surjective_of_free_of_finite (p : ℕ) [Fact p.Prime]
+/-- **Surjectivity of `toCompletedGroupAlgebra` for finite projective Hausdorff `ℤ_p`-algebras.**
+For a profinite group `Γ` and a Hausdorff topological commutative `ℤ_p`-algebra `O` that is finite
+and projective over `ℤ_p` with continuous `ℤ_p`-action (`ContinuousSMul ℤ_[p] O`), every element
+of `O[[Γ]]` arises from an `O`-valued measure on `Γ`. -/
+theorem toCompletedGroupAlgebra_surjective_of_projective_of_finite (p : ℕ) [Fact p.Prime]
     (O : Type*) [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O] :
     Function.Surjective
       (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
   have := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   exact toCompletedGroupAlgebra_surjective_of_surjective
     (toCompletedGroupAlgebra_surjective (p := p))
 
-/-- **`O`-valued measures are the completed group algebra (Rodrigues Jacinto–Williams,
-Proposition 3.16).** For a profinite group `Γ` and a Hausdorff topological commutative
-`ℤ_p`-algebra `O` that is finite and free over `ℤ_p` with continuous `ℤ_p`-action, `D(Γ, O)` is
-canonically isomorphic as an `O`-algebra to `O[[Γ]]`. -/
-def completedGroupAlgebraEquivOfFreeOfFinite (p : ℕ) [Fact p.Prime]
-    (O : Type*) [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    D(Γ, O) ≃ₐ[O] completedGroupAlgebra O Γ :=
-  AlgEquiv.ofBijective toCompletedGroupAlgebra
-    ⟨toCompletedGroupAlgebra_injective, toCompletedGroupAlgebra_surjective_of_free_of_finite p O⟩
-
-/-- The forward map of `completedGroupAlgebraEquivOfFreeOfFinite p O` is
-`toCompletedGroupAlgebra`. -/
-@[simp]
-theorem coe_completedGroupAlgebraEquivOfFreeOfFinite {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O) = toCompletedGroupAlgebra :=
-  funext <| AlgEquiv.ofBijective_apply _ _
-
-/-- Forgetting invertibility of `completedGroupAlgebraEquivOfFreeOfFinite p O` gives
-`toCompletedGroupAlgebra`. -/
-@[simp]
-theorem toAlgHom_completedGroupAlgebraEquivOfFreeOfFinite {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
-    (completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toAlgHom = toCompletedGroupAlgebra :=
-  AlgEquiv.toAlgHom_ofBijective _ _
-
-/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` is a left inverse to
-`toCompletedGroupAlgebra`. -/
-@[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_toCompletedGroupAlgebra
-    {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (ν : D(Γ, O)) :
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm (toCompletedGroupAlgebra ν) = ν :=
-  (completedGroupAlgebraEquivOfFreeOfFinite p O).symm_apply_apply ν
-
-/-- `toCompletedGroupAlgebra` is a right inverse to
-`(completedGroupAlgebraEquivOfFreeOfFinite p O).symm`. -/
-@[simp]
-theorem toCompletedGroupAlgebra_completedGroupAlgebraEquivOfFreeOfFinite_symm
-    {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (y : completedGroupAlgebra O Γ) :
-    toCompletedGroupAlgebra ((completedGroupAlgebraEquivOfFreeOfFinite p O).symm y) = y :=
-  (completedGroupAlgebraEquivOfFreeOfFinite p O).apply_symm_apply y
-
-/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` sends the group element `γ` in `O[[Γ]]`
-to `dirac O γ`. -/
-@[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_of {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (γ : Γ) :
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm (completedGroupAlgebra.of O Γ γ) =
-      dirac O γ := by
-  rw [← toCompletedGroupAlgebra_dirac,
-    completedGroupAlgebraEquivOfFreeOfFinite_symm_toCompletedGroupAlgebra]
-
-/-- `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm` intertwines coefficient extension along
-`algebraMap ℤ_[p] O` on `ℤ_p[[Γ]]` with `extendScalars O ∘ completedGroupAlgebraEquiv.symm`. -/
-@[simp]
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_mapRingHom {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    (x : completedGroupAlgebra ℤ_[p] Γ) :
-    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm
-        (completedGroupAlgebra.mapRingHom Γ (algebraMap ℤ_[p] O) x) =
-      extendScalars O (completedGroupAlgebraEquiv.symm x) := by
-  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
-  apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
-  simp
-
-/-- In any finite `ℤ_p`-basis `b` of `O`, `(completedGroupAlgebraEquivOfFreeOfFinite p O).symm`
-extracts each scalar coordinate in `ℤ_p[[Γ]]`, converts it to an integral measure, and recombines
-in `D(Γ, O)`. -/
-theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_apply {p : ℕ} [Fact p.Prime]
-    {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ_[p] O) (y : completedGroupAlgebra O Γ) :
-    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
-    (completedGroupAlgebraEquivOfFreeOfFinite p O).symm y =
-      ∑ i : ι, b i • extendScalars O
-        (completedGroupAlgebraEquiv.symm
-          (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) := by
-  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
-  apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
-  rw [AlgEquiv.apply_symm_apply, coe_completedGroupAlgebraEquivOfFreeOfFinite]
-  have hsum : ∑ i : ι, b i • extendScalars O
-      (completedGroupAlgebraEquiv.symm
-        (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) =
-      baseChangeAlgEquiv O (∑ i : ι, b i ⊗ₜ[ℤ_[p]]
-        completedGroupAlgebraEquiv.symm
-          (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) := by
-    simp [map_sum]
-  rw [hsum, toCompletedGroupAlgebra_baseChangeAlgEquiv]
-  simp only [map_sum, Algebra.TensorProduct.map_tmul, AlgHom.coe_id, id_eq,
-    toCompletedGroupAlgebra_completedGroupAlgebraEquiv_symm]
-  rw [← map_sum, ← completedGroupAlgebra.baseChangeEquiv_symm_apply b y,
-    AlgEquiv.apply_symm_apply]
-
-/-- **Weak-topology homeomorphism for finite free normed `ℤ_p`-algebras.** For a profinite group
-`Γ` and a normed commutative `ℤ_p`-algebra `O` that is finite and free over `ℤ_p` with continuous
-`ℤ_p`-action (`ContinuousSMul ℤ_[p] O`), `toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is a
-homeomorphism from the weak topology on measures to the inverse-limit topology on the completed
-group algebra. -/
-theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (p : ℕ) [Fact p.Prime]
+/-- **Weak-topology homeomorphism for finite projective normed `ℤ_p`-algebras.** For a profinite
+group `Γ` and a normed commutative `ℤ_p`-algebra `O` that is finite and projective over `ℤ_p` with
+continuous `ℤ_p`-action (`ContinuousSMul ℤ_[p] O`),
+`toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] O[[Γ]]` is a homeomorphism from the weak topology on
+measures to the inverse-limit topology on the completed group algebra. -/
+theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_projective_of_finite (p : ℕ) [Fact p.Prime]
     (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
+    [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O] :
     @IsHomeomorph _ _ (WeakTopology (X := Γ) (R := O) (E := O)) _
       (toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
   have := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   exact isHomeomorph_toCompletedGroupAlgebra_weak_of_isHomeomorph
     (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p))
 
-/-- For a profinite group `Γ` and a finite free normed `ℤ_p`-algebra `O` with continuous
+/-- For a profinite group `Γ` and a finite projective normed `ℤ_p`-algebra `O` with continuous
 `ℤ_p`-action, `D(Γ, O)` is a topological ring for convolution and the weak topology. -/
-theorem isTopologicalRing_weak_of_free_of_finite (p : ℕ) [Fact p.Prime]
+theorem isTopologicalRing_weak_of_projective_of_finite (p : ℕ) [Fact p.Prime]
     (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
+    [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O] :
     @IsTopologicalRing D(Γ, O) WeakTopology _ := by
   let _ : TopologicalSpace D(Γ, O) := WeakTopology
-  exact (isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (Γ := Γ) p O)
+  exact (isHomeomorph_toCompletedGroupAlgebra_weak_of_projective_of_finite (Γ := Γ) p O)
     |>.isInducing.isTopologicalRing (toCompletedGroupAlgebra (Γ := Γ) (R := O))
 
-/-- **Weak compactness of `O`-valued measures.** For a profinite group `Γ` and a finite free normed
-`ℤ_p`-algebra `O` with continuous `ℤ_p`-action, `D(Γ, O)` is compact for the weak topology. -/
-theorem compactSpace_weak_of_free_of_finite (p : ℕ) [Fact p.Prime]
+/-- **Weak compactness of `O`-valued measures.** For a profinite group `Γ` and a finite projective
+normed `ℤ_p`-algebra `O` with continuous `ℤ_p`-action, `D(Γ, O)` is compact for the weak
+topology. -/
+theorem compactSpace_weak_of_projective_of_finite (p : ℕ) [Fact p.Prime]
     (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-    [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O] :
+    [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O] :
     @CompactSpace D(Γ, O) (WeakTopology (X := Γ) (R := O) (E := O)) := by
   let _ : TopologicalSpace D(Γ, O) := WeakTopology
   have : CompactSpace O := Module.Finite.compactSpace ℤ_[p] O
-  exact ((isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (Γ := Γ) p O).homeomorph
+  exact ((isHomeomorph_toCompletedGroupAlgebra_weak_of_projective_of_finite (Γ := Γ) p O).homeomorph
     _).symm.compactSpace
 
 end ProfinitePadicInt
@@ -462,14 +416,20 @@ section Examples
 
 variable {p : ℕ} [Fact p.Prime] [IsTopologicalGroup Γ] [TotallyDisconnectedSpace Γ]
   (O : Type*) [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
-  [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
+  [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O]
 
-/-! Sanity check: `completedGroupAlgebraEquivOfFreeOfFinite p O` identifies `a • dirac O γ` with
+/-! Sanity check: `completedGroupAlgebraEquivOfBijective` identifies `a • dirac O γ` with
 `a • completedGroupAlgebra.of O Γ γ`. -/
 
 example (a : O) (γ : Γ) :
-    completedGroupAlgebraEquivOfFreeOfFinite p O (a • dirac O γ) =
+    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
+    have hb : Function.Bijective
+        (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) :=
+      ⟨toCompletedGroupAlgebra_injective, toCompletedGroupAlgebra_surjective (p := p)⟩
+    completedGroupAlgebraEquivOfBijective (R := ℤ_[p]) O hb (a • dirac O γ) =
       a • completedGroupAlgebra.of O Γ γ := by
+  intro _ hb
+  rw [coe_completedGroupAlgebraEquivOfBijective (R := ℤ_[p]) (O := O) hb]
   simp
 
 end Examples

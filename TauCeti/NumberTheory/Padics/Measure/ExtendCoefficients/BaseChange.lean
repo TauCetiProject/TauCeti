@@ -63,6 +63,72 @@ open scoped PowerSeries TensorProduct
 
 namespace AbstractMeasure
 
+section CompHomInstances
+
+/-- The `O`-module structure on `D(X, K)` pulled back along `j : O →+* K`. -/
+abbrev compHomMeasureModule {X O K : Type*} [TopologicalSpace X] [CommRing O] [NormedField K]
+    (j : O →+* K) : Module O D(X, K) :=
+  Module.compHom D(X, K) j
+
+/-- Scalar multiplication by `a : O` under `compHomMeasureModule j` is `j a • ν`. -/
+theorem compHomMeasureModule_smul {X O K : Type*} [TopologicalSpace X] [CommRing O] [NormedField K]
+    (j : O →+* K) (a : O) (ν : D(X, K)) :
+    let := compHomMeasureModule (X := X) j
+    a • ν = j a • ν :=
+  rfl
+
+/-- The `R`-module structure on `D(X, K)` restricted from `compHomMeasureModule j`. -/
+abbrev restrictScalarsMeasureModule {X R O K : Type*} [TopologicalSpace X] [CommRing R]
+    [CommRing O] [Algebra R O] [NormedField K] (j : O →+* K) : Module R D(X, K) :=
+  letI := compHomMeasureModule (X := X) j
+  Module.restrictScalars R O D(X, K)
+
+/-- Scalar tower for `R → O → D(X, K)` via `j : O →+* K`. -/
+abbrev restrictScalarsMeasureTower {X R O K : Type*} [TopologicalSpace X] [CommRing R]
+    [CommRing O] [Algebra R O] [NormedField K] (j : O →+* K) :
+    letI := compHomMeasureModule (X := X) j
+    letI := restrictScalarsMeasureModule (X := X) (R := R) j
+    IsScalarTower R O D(X, K) :=
+  letI := compHomMeasureModule (X := X) j
+  letI := restrictScalarsMeasureModule (X := X) (R := R) j
+  IsScalarTower.restrictScalars R O D(X, K)
+
+/-- Scalar multiplication by `r : R` under `restrictScalarsMeasureModule j` is
+`j (algebraMap R O r) • ν`. -/
+theorem restrictScalarsMeasureModule_smul {X R O K : Type*} [TopologicalSpace X] [CommRing R]
+    [CommRing O] [Algebra R O] [NormedField K] (j : O →+* K) (r : R) (ν : D(X, K)) :
+    let := compHomMeasureModule (X := X) j
+    let := restrictScalarsMeasureModule (X := X) (R := R) j
+    r • ν = j (algebraMap R O r) • ν := by
+  intro _ _
+  let := restrictScalarsMeasureTower (X := X) (R := R) j
+  rw [← compHomMeasureModule_smul (X := X) j (algebraMap R O r) ν]
+  exact algebraMap_smul O r ν
+
+/-- The `O`-module structure on `K⟦X⟧` pulled back along `j : O →ₐ[R] K`. -/
+abbrev compHomPowerSeriesModule {R O K : Type*} [CommRing R] [CommRing O] [Algebra R O]
+    [CommRing K] [Algebra R K] (j : O →ₐ[R] K) : Module O K⟦X⟧ :=
+  Module.compHom K⟦X⟧ (j : O →+* K)
+
+/-- Scalar multiplication by `a : O` under `compHomPowerSeriesModule j` is `j a • F`. -/
+theorem compHomPowerSeriesModule_smul {R O K : Type*} [CommRing R] [CommRing O] [Algebra R O]
+    [CommRing K] [Algebra R K] (j : O →ₐ[R] K) (a : O) (F : K⟦X⟧) :
+    let := compHomPowerSeriesModule j
+    a • F = j a • F :=
+  rfl
+
+/-- Scalar tower for `R → O → K⟦X⟧` via `j : O →ₐ[R] K`. -/
+abbrev compHomPowerSeriesTower {R O K : Type*} [CommRing R] [CommRing O] [Algebra R O]
+    [CommRing K] [Algebra R K] (j : O →ₐ[R] K) :
+    letI := compHomPowerSeriesModule j
+    IsScalarTower R O K⟦X⟧ :=
+  letI := compHomPowerSeriesModule j
+  ⟨fun r a F ↦ by
+    rw [compHomPowerSeriesModule_smul, compHomPowerSeriesModule_smul,
+      Algebra.smul_def r a, map_mul, j.commutes, mul_smul, algebraMap_smul]⟩
+
+end CompHomInstances
+
 section ProfiniteSpace
 
 variable {X R O K : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
@@ -96,19 +162,17 @@ equals the `O`-linear tensor lift of coefficient extension along `j.comp (algebr
 `O` acting on `D(X, K)` through `j`. -/
 theorem extendCoefficients_baseChange (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
     (z : O ⊗[R] D(X, R)) :
-    letI : Module O D(X, K) := Module.compHom D(X, K) j
-    letI : Module R D(X, K) := Module.restrictScalars R O D(X, K)
-    letI : IsScalarTower R O D(X, K) := IsScalarTower.restrictScalars R O D(X, K)
+    let := compHomMeasureModule (X := X) j
+    let := restrictScalarsMeasureModule (X := X) (R := R) j
+    let := restrictScalarsMeasureTower (X := X) (R := R) j
     extendCoefficients j hj (baseChangeLinearEquiv O z) =
       LinearMap.liftBaseChange O
         { toFun := extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r))
           map_add' := map_add _
           map_smul' := fun r μ ↦ by
-            rw [RingHom.id_apply, extendCoefficients_smul]
-            rfl } z := by
-  let : Module O D(X, K) := Module.compHom D(X, K) j
-  let : Module R D(X, K) := Module.restrictScalars R O D(X, K)
-  let : IsScalarTower R O D(X, K) := IsScalarTower.restrictScalars R O D(X, K)
+            rw [RingHom.id_apply, extendCoefficients_smul, RingHom.comp_apply,
+              restrictScalarsMeasureModule_smul (X := X) (R := R) j] } z := by
+  intro _ _ _
   induction z using TensorProduct.inductionOn with
   | tmul a μ =>
     rw [LinearMap.liftBaseChange_tmul]
@@ -161,47 +225,38 @@ the closed unit ball agrees with the `O`-linear tensor lift of `PowerSeries.map 
 ∘ amiceTransform`, with `O` acting on `K⟦X⟧` through `j`. -/
 theorem amiceTransform_extendCoefficients_baseChange (j : O →ₐ[ℤ_[p]] K)
     (hj : ∀ a, ‖j a‖ ≤ 1) (z : O ⊗[ℤ_[p]] D(ℤ_[p], ℤ_[p])) :
-    letI : Module O K⟦X⟧ := Module.compHom K⟦X⟧ (j : O →+* K)
-    letI : IsScalarTower ℤ_[p] O K⟦X⟧ := ⟨fun r a F ↦ by
-      have h : j (r • a) • F = r • (j a • F) := by
-        rw [Algebra.smul_def r a, map_mul, j.commutes, mul_smul, algebraMap_smul]
-      exact h⟩
+    let := compHomPowerSeriesModule j
+    let := compHomPowerSeriesTower j
     (extendCoefficients (j : O →+* K) hj (baseChangeLinearEquiv O z)).amiceTransform =
       LinearMap.liftBaseChange O
         ((PowerSeries.mapAlgHom (Algebra.ofId ℤ_[p] K)).toLinearMap ∘ₗ
           (amiceTransform : D(ℤ_[p], ℤ_[p]) →ₗ[ℤ_[p]] ℤ_[p]⟦X⟧)) z := by
-  let : Module O D(ℤ_[p], K) := Module.compHom D(ℤ_[p], K) (j : O →+* K)
-  let : Module ℤ_[p] D(ℤ_[p], K) := Module.restrictScalars ℤ_[p] O D(ℤ_[p], K)
-  let : IsScalarTower ℤ_[p] O D(ℤ_[p], K) := IsScalarTower.restrictScalars ℤ_[p] O D(ℤ_[p], K)
-  let : Module O K⟦X⟧ := Module.compHom K⟦X⟧ (j : O →+* K)
-  let : IsScalarTower ℤ_[p] O K⟦X⟧ := ⟨fun r a F ↦ by
-    have h : j (r • a) • F = r • (j a • F) := by
-      rw [Algebra.smul_def r a, map_mul, j.commutes, mul_smul, algebraMap_smul]
-    exact h⟩
+  intro _ _
+  let := compHomMeasureModule (X := ℤ_[p]) (j : O →+* K)
+  let := restrictScalarsMeasureModule (X := ℤ_[p]) (R := ℤ_[p]) (j : O →+* K)
+  let := restrictScalarsMeasureTower (X := ℤ_[p]) (R := ℤ_[p]) (j : O →+* K)
   rw [extendCoefficients_baseChange (j : O →+* K) hj]
   let amiceO : D(ℤ_[p], K) →ₗ[O] K⟦X⟧ :=
-    { (amiceTransform : D(ℤ_[p], K) →ₗ[K] K⟦X⟧).toAddHom with
+    { toFun := amiceTransform
+      map_add' := map_add _
       map_smul' := fun a ν ↦ by
+        rw [RingHom.id_apply, compHomMeasureModule_smul, compHomPowerSeriesModule_smul]
         exact (amiceTransform : D(ℤ_[p], K) →ₗ[K] K⟦X⟧).map_smul (j a) ν }
-  have hamiceO (ν : D(ℤ_[p], K)) : ν.amiceTransform = amiceO ν := (rfl)
+  have hamiceO (ν : D(ℤ_[p], K)) : ν.amiceTransform = amiceO ν := by
+    simp only [amiceO, LinearMap.coe_mk, AddHom.coe_mk]
   rw [hamiceO, ← LinearMap.comp_apply, LinearMap.comp_liftBaseChange]
   refine congrArg (fun l ↦ LinearMap.liftBaseChange O l z) ?_
   ext μ n
   simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
     LinearMap.coe_mk, AddHom.coe_mk, AlgHom.toLinearMap_apply, amiceO]
-  have h1 := amiceTransform_extendCoefficients (Algebra.ofId ℤ_[p] K)
-    (continuous_algebraMap ℤ_[p] K) (fun r ↦ by simpa using hj (algebraMap ℤ_[p] O r)) μ
+  have h1 := amiceTransform_extendCoefficients_algebraMap (O := ℤ_[p]) (K := K)
+    (fun r ↦ by simpa using hj (algebraMap ℤ_[p] O r)) μ
   have h2 : extendCoefficients ((j : O →+* K).comp (algebraMap ℤ_[p] O))
       (fun r ↦ hj (algebraMap ℤ_[p] O r)) μ =
-      extendCoefficients (Algebra.ofId ℤ_[p] K : ℤ_[p] →+* K)
+      extendCoefficients (algebraMap ℤ_[p] K)
         (fun r ↦ by simpa using hj (algebraMap ℤ_[p] O r)) μ := by
-    simp only [j.comp_algebraMap, Algebra.toRingHom_ofId]
-  have h3 : (((extendCoefficients ((j : O →+* K).comp (algebraMap ℤ_[p] O))
-      (fun r ↦ hj (algebraMap ℤ_[p] O r)) μ).amiceTransform)).coeff n =
-      ((PowerSeries.mapAlgHom (Algebra.ofId ℤ_[p] K)) μ.amiceTransform).coeff n := by
-    rw [h2, h1]
-    rfl
-  exact h3
+    simp only [j.comp_algebraMap]
+  rw [h2, h1, PowerSeries.mapAlgHom_apply, Algebra.toRingHom_ofId]
 
 end Amice
 
@@ -245,7 +300,7 @@ open AbstractMeasure _root_.ContinuousMonoidHom
 section Examples
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [NormedCommRing O] [Algebra ℤ_[p] O]
-  [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
+  [ContinuousSMul ℤ_[p] O] [Module.Projective ℤ_[p] O] [Module.Finite ℤ_[p] O]
   {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-! Sanity checks on Dirac tensors, character evaluations, and Amice transforms. -/
