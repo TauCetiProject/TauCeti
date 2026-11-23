@@ -37,12 +37,22 @@ variable {K : Type w} [LE K]
 variable {V : Type u} {W : Type u'}
 variable {N : Network K V} {N' : Network K W}
 
+private theorem assignmentEquiv_unique (e : N ≃ₙ N') (R : Type w')
+    (F : N.Assignment R ≃ N'.Assignment R)
+    (hF : ∀ (f : N.Assignment R) {x y} (a : N.Hom x y),
+      F f (e.homEquiv x y a) = f a) : F = e.assignmentEquiv R := by
+  apply Equiv.ext
+  intro f
+  funext x y a
+  obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
+  obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
+  obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
+  exact (hF f a).trans (e.assignmentEquiv_apply R f a).symm
+
 /-- Transport a simultaneous replacement of both network bounds along an isomorphism.
 
-The replacement on the target uses the transported bound assignments.  No vertex or arrow
-finiteness is needed.  The definition is exposed so that the unchanged arrow family reduces in
-dependent assignment expressions. -/
-@[expose]
+The replacement on the target uses the transported bound assignments and retains the original
+vertex and arrow equivalences.  No vertex or arrow finiteness is needed. -/
 def replaceBounds (e : N ≃ₙ N') (lower upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ upper a) :
     N.replaceBounds lower upper h ≃ₙ
@@ -63,26 +73,30 @@ theorem replaceBounds_vertexEquiv (e : N ≃ₙ N') (lower upper : N.Assignment 
     (e.replaceBounds lower upper h).vertexEquiv = e.vertexEquiv :=
   (rfl)
 
+/-- Replacing both bounds retains the arrow equivalences of the original isomorphism, after
+identifying their endpoints using `replaceBounds_vertexEquiv`. -/
+@[simp]
+theorem replaceBounds_homEquiv_apply (e : N ≃ₙ N') (lower upper : N.Assignment K)
+    (h : ∀ {x y} (a : N.Hom x y), lower a ≤ upper a) (x y : V) (a : N.Hom x y) :
+    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceBounds lower upper h).homEquiv x y a)
+      (congrArg (fun f : V ≃ W => f x) (e.replaceBounds_vertexEquiv lower upper h))
+      (congrArg (fun f : V ≃ W => f y) (e.replaceBounds_vertexEquiv lower upper h)) =
+        e.homEquiv x y a :=
+  (rfl)
+
 /-- Assignment transport is unchanged after replacing both bounds. -/
 @[simp]
 theorem replaceBounds_assignmentEquiv (e : N ≃ₙ N') (lower upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ upper a) (R : Type w') :
     (e.replaceBounds lower upper h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    apply Equiv.ext
-    intro f
-    funext x y a
-    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-    obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-    obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
-    exact (e.replaceBounds lower upper h).assignmentEquiv_apply R f a |>.trans
-      (e.assignmentEquiv_apply R f a).symm
+    apply assignmentEquiv_unique e R
+    exact (e.replaceBounds lower upper h).assignmentEquiv_apply R
 
 /-- Transport a replacement of only the lower bounds along a network isomorphism.
 
-The definition is exposed so that the unchanged arrow family reduces in dependent assignment
-expressions. -/
-@[expose]
+The induced isomorphism is the simultaneous bound-replacement isomorphism with the original upper
+bound retained, and it has the original vertex and arrow equivalences. -/
 def replaceLower (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
     N.replaceLower lower h ≃ₙ
@@ -90,11 +104,12 @@ def replaceLower (e : N ≃ₙ N') (lower : N.Assignment K)
         intro x y a
         rw [← e.assignmentEquiv_upper]
         exact ((e.assignmentEquiv_le_assignmentEquiv_iff lower N.upper).2
-          (fun _ _ a ↦ h a)) x y a) where
-  vertexEquiv := e.vertexEquiv
-  homEquiv := e.homEquiv
-  map_lower := e.assignmentEquiv_apply K lower
-  map_upper := e.map_upper
+          (fun _ _ a ↦ h a)) x y a) :=
+  let e' := e.replaceBounds lower N.upper h
+  { vertexEquiv := e'.vertexEquiv
+    homEquiv := e'.homEquiv
+    map_lower := e'.map_lower
+    map_upper := e.map_upper }
 
 /-- Replacing lower bounds retains the vertex equivalence of the original isomorphism. -/
 @[simp]
@@ -103,26 +118,30 @@ theorem replaceLower_vertexEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (e.replaceLower lower h).vertexEquiv = e.vertexEquiv :=
   (rfl)
 
+/-- Replacing lower bounds retains the arrow equivalences of the original isomorphism, after
+identifying their endpoints using `replaceLower_vertexEquiv`. -/
+@[simp]
+theorem replaceLower_homEquiv_apply (e : N ≃ₙ N') (lower : N.Assignment K)
+    (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) (x y : V) (a : N.Hom x y) :
+    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceLower lower h).homEquiv x y a)
+      (congrArg (fun f : V ≃ W => f x) (e.replaceLower_vertexEquiv lower h))
+      (congrArg (fun f : V ≃ W => f y) (e.replaceLower_vertexEquiv lower h)) =
+        e.homEquiv x y a :=
+  (rfl)
+
 /-- Assignment transport is unchanged after replacing lower bounds. -/
 @[simp]
 theorem replaceLower_assignmentEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) (R : Type w') :
     (e.replaceLower lower h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    apply Equiv.ext
-    intro f
-    funext x y a
-    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-    obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-    obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
-    exact (e.replaceLower lower h).assignmentEquiv_apply R f a |>.trans
-      (e.assignmentEquiv_apply R f a).symm
+    apply assignmentEquiv_unique e R
+    exact (e.replaceLower lower h).assignmentEquiv_apply R
 
 /-- Transport a replacement of only the upper bounds along a network isomorphism.
 
-The definition is exposed so that the unchanged arrow family reduces in dependent assignment
-expressions. -/
-@[expose]
+The induced isomorphism is the simultaneous bound-replacement isomorphism with the original lower
+bound retained, and it has the original vertex and arrow equivalences. -/
 def replaceUpper (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
     N.replaceUpper upper h ≃ₙ
@@ -130,11 +149,12 @@ def replaceUpper (e : N ≃ₙ N') (upper : N.Assignment K)
         intro x y a
         rw [← e.assignmentEquiv_lower]
         exact ((e.assignmentEquiv_le_assignmentEquiv_iff N.lower upper).2
-          (fun _ _ a ↦ h a)) x y a) where
-  vertexEquiv := e.vertexEquiv
-  homEquiv := e.homEquiv
-  map_lower := e.map_lower
-  map_upper := e.assignmentEquiv_apply K upper
+          (fun _ _ a ↦ h a)) x y a) :=
+  let e' := e.replaceBounds N.lower upper h
+  { vertexEquiv := e'.vertexEquiv
+    homEquiv := e'.homEquiv
+    map_lower := e.map_lower
+    map_upper := e'.map_upper }
 
 /-- Replacing upper bounds retains the vertex equivalence of the original isomorphism. -/
 @[simp]
@@ -143,19 +163,24 @@ theorem replaceUpper_vertexEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (e.replaceUpper upper h).vertexEquiv = e.vertexEquiv :=
   (rfl)
 
+/-- Replacing upper bounds retains the arrow equivalences of the original isomorphism, after
+identifying their endpoints using `replaceUpper_vertexEquiv`. -/
+@[simp]
+theorem replaceUpper_homEquiv_apply (e : N ≃ₙ N') (upper : N.Assignment K)
+    (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) (x y : V) (a : N.Hom x y) :
+    @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceUpper upper h).homEquiv x y a)
+      (congrArg (fun f : V ≃ W => f x) (e.replaceUpper_vertexEquiv upper h))
+      (congrArg (fun f : V ≃ W => f y) (e.replaceUpper_vertexEquiv upper h)) =
+        e.homEquiv x y a :=
+  (rfl)
+
 /-- Assignment transport is unchanged after replacing upper bounds. -/
 @[simp]
 theorem replaceUpper_assignmentEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) (R : Type w') :
     (e.replaceUpper upper h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    apply Equiv.ext
-    intro f
-    funext x y a
-    obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-    obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-    obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
-    exact (e.replaceUpper upper h).assignmentEquiv_apply R f a |>.trans
-      (e.assignmentEquiv_apply R f a).symm
+    apply assignmentEquiv_unique e R
+    exact (e.replaceUpper upper h).assignmentEquiv_apply R
 
 end TauCeti.Network.Iso
