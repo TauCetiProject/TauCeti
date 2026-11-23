@@ -317,7 +317,7 @@ open TauCeti
 
 /-- Pushing square classes forward along a ring isomorphism of fields leaves the square-class
 Hilbert symbol unchanged. -/
-@[simp]
+@[simp↓]
 theorem hilbertSymbolOnSquareClasses_squareClassMap {K L : Type*} [Field K] [Field L]
     (e : K ≃+* L) (x y : SquareClassGroup K) :
     hilbertSymbolOnSquareClasses ((e : K →+* L).squareClassMap x) ((e : K →+* L).squareClassMap y) =

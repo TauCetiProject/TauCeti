@@ -199,7 +199,7 @@ theorem presentedForm_equivOfRingEquiv_eq_transport (p : RegularFormPresentation
 
 /-- Presentation transport along a ring isomorphism preserves and reflects isometry of the
 presented forms, without assuming `2` is invertible. -/
-@[simp]
+@[simp↓]
 theorem equivalent_presentedForm_equivOfRingEquiv_iff (p q : RegularFormPresentation K)
     (e : K ≃+* L) :
     (presentedForm (RegularFormPresentation.equivOfRingEquiv e p)).Equivalent
