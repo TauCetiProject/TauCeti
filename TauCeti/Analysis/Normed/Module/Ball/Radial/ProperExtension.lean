@@ -15,10 +15,10 @@ import TauCeti.Analysis.Normed.Module.Ball.Retraction
 /-!
 # Proper radial extension of a map from a closed ball
 
-Let `f : E → F` be continuous on the closed ball of radius `r ≥ 0` about `x₀` in a proper real
-seminormed space `E`, and suppose that on the sphere of radius `r` it stays at distance at least
-`δ > 0` from a point `y₀ : F`. Extending `f` radially about `y₀`, linearly in the distance from
-`x₀` along each ray,
+Let `E` be a proper real seminormed space, `F` a real normed space, and `f : E → F` a map
+continuous on the closed ball of radius `r ≥ 0` about `x₀`. Suppose that on the sphere of radius
+`r` about `x₀` it stays at distance at least `δ > 0` from a point `y₀ : F`. Extending `f` radially
+about `y₀`, linearly in the distance from `x₀` along each ray,
 
 `g x = y₀ + (dist x x₀ - r + 1) • (f y - y₀)` for `dist x x₀ ≥ r`,
 
@@ -34,8 +34,8 @@ For `r = 0` the closed ball and the sphere both consist of the points at distanc
 For `r > 0` the closed ball is a neighbourhood of `x₀`, so `g` agrees with `f` near `x₀`. This is
 how a map defined near a point is replaced by a proper map with the same local behaviour there:
 when `E` and `F` are normed, oriented and of the same finite dimension, the proper map `g` has a
-degree, a sum of local indices over a fibre. For `r = 0` the theorem only says that `g` agrees with
-`f` at the points at distance zero from `x₀`.
+degree, which can be computed by summing local indices over any finite fibre. For `r = 0` the
+theorem only says that `g` agrees with `f` at the points at distance zero from `x₀`.
 
 ## Main results
 
