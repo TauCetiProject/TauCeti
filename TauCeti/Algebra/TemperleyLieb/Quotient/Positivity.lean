@@ -239,43 +239,17 @@ def genericQuotientEquiv (hδ : 2 ≤ δ) (n : ℕ) : htr.Quotient n ≃⋆ₐ[�
     (isSelfAdjoint_genericPathWeight δ) (sum_neighborFinset_genericPathWeight_sq hδ)
     Function.injective_id rfl (fun h ↦ hasse_nat_adj.1 h) n
 variable (hδ : δ ∈ jonesLoopParameters)
-/-- For `δ ∈ jonesLoopParameters`, `tr n` bundled as a `StarPositiveFunctional`. -/
-def positiveFunctional (n : ℕ) : StarPositiveFunctional (TemperleyLieb ℂ (δ : ℂ) n) :=
-  ⟨tr n, (htr.forall_map_star_mul_self_nonneg_iff (pos_of_mem_jonesLoopParameters hδ)).2 hδ n⟩
-@[simp] theorem positiveFunctional_apply {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
-    htr.positiveFunctional hδ n x = tr n x := (rfl)
-/-- The faithful positive tracial functional induced on `htr.Quotient n`. -/
-def positiveQuotientTrace (n : ℕ) : StarPositiveFunctional (htr.Quotient n) :=
-  (htr.positiveFunctional hδ n).quotientTrace (htr.map_mul_comm n)
-@[simp] theorem positiveQuotientTrace_mk {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
-    htr.positiveQuotientTrace hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) = tr n x :=
-  (htr.positiveFunctional hδ n).quotientTrace_mk (htr.map_mul_comm n) x
-/-- Unnormalized value of `positiveQuotientTrace` on `1` is `δ ^ n`. -/
-@[simp] theorem positiveQuotientTrace_one (n : ℕ) :
-    htr.positiveQuotientTrace hδ n 1 = (δ : ℂ) ^ n := by
-  rw [← _root_.map_one (Ideal.Quotient.mk _), htr.positiveQuotientTrace_mk, htr.map_one]
-/-- `positiveQuotientTrace` is tracial on `htr.Quotient n`. -/
-theorem positiveQuotientTrace_mul_comm {n : ℕ} (x y : htr.Quotient n) :
-    htr.positiveQuotientTrace hδ n (x * y) = htr.positiveQuotientTrace hδ n (y * x) :=
-  (htr.positiveFunctional hδ n).quotientTrace_mul_comm (htr.map_mul_comm n) x y
-/-- `positiveQuotientTrace` is faithful on `htr.Quotient n`. -/
-@[simp] theorem nullSubmodule_positiveQuotientTrace (n : ℕ) :
-    (htr.positiveQuotientTrace hδ n).nullSubmodule = ⊥ :=
-  (htr.positiveFunctional hδ n).nullSubmodule_quotientTrace (htr.map_mul_comm n)
-/-- `positiveQuotientTrace` agrees with the algebraic `quotientTrace` of `tr n`. -/
-theorem positiveQuotientTrace_eq_quotientTrace (n : ℕ) (x : htr.Quotient n) :
-    htr.positiveQuotientTrace hδ n x = (tr n).quotientTrace (htr.map_mul_comm n) x := by
-  obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x
-  exact (htr.positiveQuotientTrace_mk hδ _).trans (LinearMap.quotientTrace_mk _ _ _).symm
-/-- Separation principle for `positiveQuotientTrace`: elements with equal pairings against all
-elements are equal. -/
-theorem eq_of_forall_positiveQuotientTrace_mul_eq {n : ℕ} {a b : htr.Quotient n}
-    (h : ∀ x, htr.positiveQuotientTrace hδ n (x * a) = htr.positiveQuotientTrace hδ n (x * b)) :
+/-- Separation principle for `quotientStarPositiveFunctional`: elements with equal pairings against
+all elements are equal. -/
+theorem eq_of_forall_quotientStarPositiveFunctional_mul_eq {n : ℕ} {a b : htr.Quotient n}
+    (h : ∀ x, htr.quotientStarPositiveFunctional hδ n (x * a) =
+      htr.quotientStarPositiveFunctional hδ n (x * b)) :
     a = b := by
-  have hmem : a - b ∈ (htr.positiveQuotientTrace hδ n).nullSubmodule :=
-    ((htr.positiveQuotientTrace hδ n).mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _).2 <| by
-      rw [mul_sub, map_sub, h, sub_self]
-  rwa [htr.nullSubmodule_positiveQuotientTrace hδ n, Submodule.mem_bot, sub_eq_zero] at hmem
+  have hmem : a - b ∈ (htr.quotientStarPositiveFunctional hδ n).nullSubmodule :=
+    ((htr.quotientStarPositiveFunctional hδ n).mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _)
+      |>.2 <| by rw [mul_sub, map_sub, h, sub_self]
+  rwa [htr.nullSubmodule_quotientStarPositiveFunctional hδ n, Submodule.mem_bot,
+    sub_eq_zero] at hmem
 include hδ in
 /-- For `δ ∈ jonesLoopParameters`, `htr.Quotient n` is finite-dimensional over `ℂ`. -/
 theorem finiteDimensional_quotient (n : ℕ) : FiniteDimensional ℂ (htr.Quotient n) := by

@@ -81,10 +81,10 @@ theorem isIdempotentElem_jonesProjection (hδ : δ ≠ 0) (n : ℕ) :
     ← map_mul, e_mul_self, map_smul, smul_smul, mul_assoc,
     inv_mul_cancel₀ (Complex.ofReal_ne_zero.2 hδ), mul_one]
 variable (hδ : δ ∈ jonesLoopParameters)
-/-- `quotientStrandIncl` scales the unnormalized `positiveQuotientTrace` by `δ`. -/
-@[simp] theorem positiveQuotientTrace_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
-    htr.positiveQuotientTrace hδ (n + 1) (htr.quotientStrandIncl n x) =
-      (δ : ℂ) * htr.positiveQuotientTrace hδ n x := by
+/-- `quotientStrandIncl` scales the unnormalized `quotientStarPositiveFunctional` by `δ`. -/
+@[simp] theorem quotientStarPositiveFunctional_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientStarPositiveFunctional hδ (n + 1) (htr.quotientStrandIncl n x) =
+      (δ : ℂ) * htr.quotientStarPositiveFunctional hδ n x := by
   obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x; simp [htr.map_strandInclAll]
 private abbrev jonesEquiv (n : ℕ) :=
   let M := jonesModel hδ
@@ -116,12 +116,13 @@ def quotientExpect (n : ℕ) : htr.Quotient (n + 1) →ₗ[ℂ] htr.Quotient n :
 @[simp] theorem quotientExpect_quotientStrandIncl {n : ℕ} (x : htr.Quotient n) :
     htr.quotientExpect hδ n (htr.quotientStrandIncl n x) = x := by
   simpa using htr.quotientExpect_mul_left hδ x 1
-/-- Trace compatibility of `quotientExpect` with the unnormalized `positiveQuotientTrace`. -/
-@[simp] theorem positiveQuotientTrace_quotientExpect {n : ℕ} (y : htr.Quotient (n + 1)) :
-    htr.positiveQuotientTrace hδ n (htr.quotientExpect hδ n y) =
-      (δ : ℂ)⁻¹ * htr.positiveQuotientTrace hδ (n + 1) y := by
+/-- Trace compatibility of `quotientExpect` with the unnormalized
+`quotientStarPositiveFunctional`. -/
+@[simp] theorem quotientStarPositiveFunctional_quotientExpect {n : ℕ} (y : htr.Quotient (n + 1)) :
+    htr.quotientStarPositiveFunctional hδ n (htr.quotientExpect hδ n y) =
+      (δ : ℂ)⁻¹ * htr.quotientStarPositiveFunctional hδ (n + 1) y := by
   let M := jonesModel hδ
-  have hw {k} (z : htr.Quotient k) := (htr.positiveQuotientTrace_eq_quotientTrace hδ k z).trans
+  have hw {k} (z : htr.Quotient k) := (htr.quotientStarPositiveFunctional_apply hδ k z).trans
     (htr.walkTrace_quotientPathAlgebraEquiv M.G M.v₀ M.hr M.hrs M.hδ M.hf M.hf₀ M.hadj z).symm
   rw [hw, hw]; simp [-walkTrace_quotientPathAlgebraEquiv, quotientExpect, jonesEquiv, M,
     walkTrace_walkExpect M.hr]
@@ -137,14 +138,16 @@ theorem exists_sum_star_mul_self_quotientExpect_star_mul_self {n : ℕ} (y : htr
 trace agree with `quotientExpect`. -/
 theorem quotientExpect_unique {n : ℕ} (F : htr.Quotient (n + 1) →ₗ[ℂ] htr.Quotient n)
     (hmul : ∀ x y, F (htr.quotientStrandIncl n x * y) = x * F y)
-    (htrace : ∀ y, htr.positiveQuotientTrace hδ n (F y) =
-      (δ : ℂ)⁻¹ * htr.positiveQuotientTrace hδ (n + 1) y) : F = htr.quotientExpect hδ n :=
-  LinearMap.ext fun _ ↦ htr.eq_of_forall_positiveQuotientTrace_mul_eq hδ fun _ ↦ by
-    rw [← hmul, ← htr.quotientExpect_mul_left, htrace, htr.positiveQuotientTrace_quotientExpect]
+    (htrace : ∀ y, htr.quotientStarPositiveFunctional hδ n (F y) =
+      (δ : ℂ)⁻¹ * htr.quotientStarPositiveFunctional hδ (n + 1) y) :
+    F = htr.quotientExpect hδ n :=
+  LinearMap.ext fun _ ↦ htr.eq_of_forall_quotientStarPositiveFunctional_mul_eq hδ fun _ ↦ by
+    rw [← hmul, ← htr.quotientExpect_mul_left, htrace,
+      htr.quotientStarPositiveFunctional_quotientExpect]
 /-- The conditional expectation sends the last Temperley–Lieb generator to `δ⁻¹ • 1`. -/
 @[simp] theorem quotientExpect_mk_e_last (n : ℕ) : htr.quotientExpect hδ (n + 1)
       (Ideal.Quotient.mk (htr.traceRadical (n + 2)) (e (δ : ℂ) (Fin.last n))) = (δ : ℂ)⁻¹ • 1 :=
-  htr.eq_of_forall_positiveQuotientTrace_mul_eq hδ fun x ↦ by
+  htr.eq_of_forall_quotientStarPositiveFunctional_mul_eq hδ fun x ↦ by
     obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x
     rw [← htr.quotientExpect_mul_left]; simp [← map_mul, htr.map_strandIncl_mul_e_last]
 /-- Conditional expectation of the last generator sandwiched between included elements. -/
@@ -158,48 +161,52 @@ theorem quotientExpect_mul_mk_e_last_mul {n : ℕ} (a b : htr.Quotient (n + 1)) 
     htr.quotientExpect hδ (n + 1) (htr.jonesProjection n) = ((δ : ℂ)⁻¹ ^ 2) • 1 := by
   rw [jonesProjection, map_smul, htr.quotientExpect_mk_e_last, smul_smul, sq]
 /-- Unnormalized Markov property: multiplying by `jonesProjection n` scales the trace by `δ⁻¹`. -/
-@[simp] theorem positiveQuotientTrace_quotientStrandIncl_mul_jonesProjection {n : ℕ}
-    (x : htr.Quotient (n + 1)) : htr.positiveQuotientTrace hδ (n + 2)
+@[simp] theorem quotientStarPositiveFunctional_quotientStrandIncl_mul_jonesProjection {n : ℕ}
+    (x : htr.Quotient (n + 1)) : htr.quotientStarPositiveFunctional hδ (n + 2)
       (htr.quotientStrandIncl (n + 1) x * htr.jonesProjection n) =
-      (δ : ℂ)⁻¹ * htr.positiveQuotientTrace hδ (n + 1) x := by
+      (δ : ℂ)⁻¹ * htr.quotientStarPositiveFunctional hδ (n + 1) x := by
   obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x
   simp [jonesProjection, ← map_mul, htr.map_strandIncl_mul_e_last]
-/-- The **normalized faithful positive trace** `δ⁻ⁿ • positiveQuotientTrace` on `htr.Quotient n`. -/
+/-- The **normalized faithful positive trace** `δ⁻ⁿ • quotientStarPositiveFunctional` on
+`htr.Quotient n`. -/
 def normalizedQuotientTrace (n : ℕ) : StarPositiveFunctional (htr.Quotient n) where
-  toLinearMap := ((δ : ℂ)⁻¹ ^ n) • (htr.positiveQuotientTrace hδ n).toLinearMap
+  toLinearMap := ((δ : ℂ)⁻¹ ^ n) • (htr.quotientStarPositiveFunctional hδ n).toLinearMap
   square_nonneg x := by
     rw [LinearMap.smul_apply, smul_eq_mul, ← Complex.ofReal_inv, ← Complex.ofReal_pow]
     exact mul_nonneg (Complex.zero_le_real.2 (pow_nonneg (inv_nonneg.2
-      (pos_of_mem_jonesLoopParameters hδ).le) n)) ((htr.positiveQuotientTrace hδ n).square_nonneg x)
+      (pos_of_mem_jonesLoopParameters hδ).le) n))
+      ((htr.quotientStarPositiveFunctional hδ n).square_nonneg x)
 theorem normalizedQuotientTrace_apply {n : ℕ} (x : htr.Quotient n) :
-    htr.normalizedQuotientTrace hδ n x = (δ : ℂ)⁻¹ ^ n * htr.positiveQuotientTrace hδ n x := (rfl)
+    htr.normalizedQuotientTrace hδ n x =
+      (δ : ℂ)⁻¹ ^ n * htr.quotientStarPositiveFunctional hδ n x := (rfl)
 /-- `normalizedQuotientTrace` is a state: it sends `1` to `1`. -/
 @[simp] theorem normalizedQuotientTrace_one (n : ℕ) : htr.normalizedQuotientTrace hδ n 1 = 1 := by
-  rw [normalizedQuotientTrace_apply, htr.positiveQuotientTrace_one, inv_pow,
+  rw [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_one, inv_pow,
     inv_mul_cancel₀ (pow_ne_zero n (isUnit_of_mem_jonesLoopParameters hδ).ne_zero)]
 /-- `normalizedQuotientTrace` is tracial on `htr.Quotient n`. -/
 theorem normalizedQuotientTrace_mul_comm {n : ℕ} (x y : htr.Quotient n) :
     htr.normalizedQuotientTrace hδ n (x * y) = htr.normalizedQuotientTrace hδ n (y * x) := by
-  simp only [normalizedQuotientTrace_apply, htr.positiveQuotientTrace_mul_comm]
+  simp only [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_mul_comm]
 /-- `normalizedQuotientTrace` is faithful on `htr.Quotient n`. -/
 @[simp] theorem nullSubmodule_normalizedQuotientTrace (n : ℕ) :
     (htr.normalizedQuotientTrace hδ n).nullSubmodule = ⊥ := by
   ext; simp [StarPositiveFunctional.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
     normalizedQuotientTrace_apply, (isUnit_of_mem_jonesLoopParameters hδ).ne_zero,
     ← StarPositiveFunctional.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero
-      (htr.positiveQuotientTrace hδ n), htr.nullSubmodule_positiveQuotientTrace hδ n]
+      (htr.quotientStarPositiveFunctional hδ n),
+    htr.nullSubmodule_quotientStarPositiveFunctional hδ n]
 /-- `normalizedQuotientTrace` is invariant along the tower inclusions `quotientStrandIncl`. -/
 @[simp] theorem normalizedQuotientTrace_quotientStrandIncl {n : ℕ} (x : htr.Quotient n) :
     htr.normalizedQuotientTrace hδ (n + 1) (htr.quotientStrandIncl n x) =
       htr.normalizedQuotientTrace hδ n x := by
   have := (isUnit_of_mem_jonesLoopParameters hδ).ne_zero
-  rw [normalizedQuotientTrace_apply, htr.positiveQuotientTrace_quotientStrandIncl,
+  rw [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_quotientStrandIncl,
     normalizedQuotientTrace_apply, pow_succ]; field_simp
 /-- `quotientExpect` preserves `normalizedQuotientTrace`. -/
 @[simp] theorem normalizedQuotientTrace_quotientExpect {n : ℕ} (y : htr.Quotient (n + 1)) :
     htr.normalizedQuotientTrace hδ n (htr.quotientExpect hδ n y) =
       htr.normalizedQuotientTrace hδ (n + 1) y := by
-  rw [normalizedQuotientTrace_apply, htr.positiveQuotientTrace_quotientExpect,
+  rw [normalizedQuotientTrace_apply, htr.quotientStarPositiveFunctional_quotientExpect,
     normalizedQuotientTrace_apply, pow_succ]; ring
 /-- Normalized Markov property: multiplying by `p_n` scales the tracial state by `δ⁻¹ ^ 2`. -/
 @[simp] theorem normalizedQuotientTrace_quotientStrandIncl_mul_jonesProjection {n : ℕ}
@@ -207,7 +214,7 @@ theorem normalizedQuotientTrace_mul_comm {n : ℕ} (x y : htr.Quotient n) :
       (htr.quotientStrandIncl (n + 1) x * htr.jonesProjection n) =
       (δ : ℂ)⁻¹ ^ 2 * htr.normalizedQuotientTrace hδ (n + 1) x := by
   rw [normalizedQuotientTrace_apply,
-    htr.positiveQuotientTrace_quotientStrandIncl_mul_jonesProjection,
+    htr.quotientStarPositiveFunctional_quotientStrandIncl_mul_jonesProjection,
     normalizedQuotientTrace_apply, pow_succ]; ring
 end JonesTower
 section CStarTower
@@ -217,7 +224,8 @@ variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
 @[expose, implicit_reducible]
 def cstarAlgebraQuotient (hδ : δ ∈ jonesLoopParameters) (n : ℕ) : CStarAlgebra (htr.Quotient n) :=
   letI := htr.finiteDimensional_quotient hδ n
-  (htr.positiveQuotientTrace hδ n).cstarAlgebra (htr.nullSubmodule_positiveQuotientTrace hδ n)
+  (htr.quotientStarPositiveFunctional hδ n).cstarAlgebra
+    (htr.nullSubmodule_quotientStarPositiveFunctional hδ n)
 variable [hδ : Fact (δ ∈ jonesLoopParameters)]
 instance instFiniteDimensionalQuotient (n : ℕ) : FiniteDimensional ℂ (htr.Quotient n) :=
   htr.finiteDimensional_quotient hδ.out n
