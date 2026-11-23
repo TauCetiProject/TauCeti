@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Pullback
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Isometry
 
 /-!
 # Lifts of orthonormal frame bundles along a structure group homomorphism
@@ -37,6 +37,20 @@ frame map read through the identification of the frames of `f *ᵖ E` at `y` wit
 at `f y` (`TauCeti.OrthonormalFrameBundle.pullbackHomeomorph`). Equivalences pull back to
 equivalences (`TauCeti.OrthonormalFrameLift.Equiv.pullback`).
 
+Lifts are natural under bundle isometries. The *transport* of a lift along a family of fibrewise
+linear isometric equivalences `Φ x : E x ≃ₗᵢ[ℝ] E' x`, continuous as a map of total spaces
+(`TauCeti.OrthonormalFrameLift.map`), keeps the principal bundle and composes the frame map with
+the induced map of orthonormal frame bundles (`TauCeti.OrthonormalFrameBundle.map`). Transport is
+functorial in `Φ`, for lifts and for their equivalences (`TauCeti.OrthonormalFrameLift.map_refl`,
+`TauCeti.OrthonormalFrameLift.map_map`, `TauCeti.OrthonormalFrameLift.Equiv.map_refl_heq`,
+`TauCeti.OrthonormalFrameLift.Equiv.map_map_heq`), commutes with pullback
+(`TauCeti.OrthonormalFrameLift.pullback_map`), and is injective on lifts
+(`TauCeti.OrthonormalFrameLift.map_injective`); when the inverse isometries are continuous too it
+is a bijection from the lifts for `E` to the lifts for `E'`
+(`TauCeti.OrthonormalFrameLift.map_surjective`). It identifies the equivalences of two lifts with
+those of their transports (`TauCeti.OrthonormalFrameLift.equivMapEquiv`). A change of metric is the
+main instance.
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameLift`: a lift of the orthonormal frame bundle of a real vector bundle
@@ -45,6 +59,8 @@ equivalences (`TauCeti.OrthonormalFrameLift.Equiv.pullback`).
 * `TauCeti.OrthonormalFrameLift.Equiv`: equivalences of lifts, with `refl`, `symm`, `trans`.
 * `TauCeti.OrthonormalFrameLift.pullback`: the pullback of a lift along a continuous map.
 * `TauCeti.OrthonormalFrameLift.Equiv.pullback`: the pullback of an equivalence.
+* `TauCeti.OrthonormalFrameLift.map`, `TauCeti.OrthonormalFrameLift.Equiv.map`: the transport of a
+  lift and of an equivalence along fibrewise isometries.
 
 ## Main results
 
@@ -52,6 +68,11 @@ equivalences (`TauCeti.OrthonormalFrameLift.Equiv.pullback`).
   precomposed with `ρ g`.
 * `TauCeti.OrthonormalFrameLift.finrank_fiber`, `TauCeti.OrthonormalFrameLift.finrank_model`:
   a bundle whose orthonormal frame bundle of rank `n` has a lift has fibres of dimension `n`.
+* `TauCeti.OrthonormalFrameLift.pullback_map`,
+  `TauCeti.OrthonormalFrameLift.Equiv.pullback_map_heq`: transport of lifts and of equivalences
+  commutes with pullback.
+* `TauCeti.OrthonormalFrameLift.nonempty_equiv_map_iff`: transport preserves and reflects
+  equivalence of lifts.
 
 ## References
 
@@ -235,6 +256,14 @@ theorem ext {φ ψ : s.Equiv t} (h : ∀ x p, φ.toEquiv x p = ψ.toEquiv x p) :
   congr
   funext x
   exact _root_.Equiv.ext (h x)
+
+/-- Equivalences between equal lifts are heterogeneously equal when their bijections are,
+fibre by fibre. This compares equivalences whose source and target lifts agree only
+propositionally. -/
+theorem heq_of_toEquiv_heq {s' t' : OrthonormalFrameLift F E n G ρ} (hs : s = s') (ht : t = t')
+    {φ : s.Equiv t} {ψ : s'.Equiv t'} (h : ∀ x, HEq (φ.toEquiv x) (ψ.toEquiv x)) : HEq φ ψ := by
+  subst hs ht
+  exact heq_of_eq (ext fun x p ↦ congrFun (congrArg DFunLike.coe (eq_of_heq (h x))) p)
 
 /-- The homeomorphism of total spaces induced by an equivalence of lifts. -/
 def toHomeomorph (φ : s.Equiv t) :
@@ -534,6 +563,262 @@ theorem Equiv.lift_pullback_toHomeomorph {s t : OrthonormalFrameLift F E n G ρ}
   (rfl)
 
 end Pullback
+
+/-! ### Transport along fibrewise isometries -/
+
+section Map
+
+variable {F' : Type*} {E' : X → Type w} [TopologicalSpace (TotalSpace F' E')]
+  [∀ x, NormedAddCommGroup (E' x)] [∀ x, InnerProductSpace ℝ (E' x)]
+  {F'' : Type*} {E'' : X → Type w} [TopologicalSpace (TotalSpace F'' E'')]
+  [∀ x, NormedAddCommGroup (E'' x)] [∀ x, InnerProductSpace ℝ (E'' x)]
+
+/-- The **transport of a lift along fibrewise isometries** `Φ x : E x ≃ₗᵢ[ℝ] E' x` forming a
+continuous map of total spaces: the same principal bundle `P`, with the frame of a point composed
+with `Φ` (`TauCeti.OrthonormalFrameBundle.map`). Its body is exposed so that the fibre
+`(s.map Φ hΦ).P x` unfolds to `s.P x` downstream. -/
+@[expose]
+noncomputable def map (s : OrthonormalFrameLift F E n G ρ) (Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E')) :
+    OrthonormalFrameLift F' E' n G ρ where
+  P := s.P
+  toFrame p := OrthonormalFrameBundle.map Φ (s.toFrame p)
+  continuous_toFrame := (OrthonormalFrameBundle.continuous_map hΦ).comp s.continuous_toFrame
+  proj_toFrame p := (OrthonormalFrameBundle.proj_map Φ _).trans (s.proj_toFrame p)
+  toFrame_smul x p g v := by
+    have h := congrArg (fun q : TotalSpace F E ↦ (⟨q.proj, Φ q.proj q.snd⟩ : TotalSpace F' E'))
+      (s.toFrame_smul x p g v)
+    simpa only [TotalSpace.mk', OrthonormalFrameBundle.totalSpaceMk_map_frame] using h
+
+variable {Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x}
+  {hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E')}
+
+@[simp]
+theorem map_P (s : OrthonormalFrameLift F E n G ρ) : (s.map Φ hΦ).P = s.P :=
+  rfl
+
+/-- The frame of a point of the transported lift is its frame in `s`, composed with `Φ`. -/
+@[simp]
+theorem toFrame_map (s : OrthonormalFrameLift F E n G ρ) (p : TotalSpace G s.P) :
+    (s.map Φ hΦ).toFrame p = OrthonormalFrameBundle.map Φ (s.toFrame p) :=
+  rfl
+
+/-- Transport along the identity isometries is the identity. -/
+@[simp]
+theorem map_refl (s : OrthonormalFrameLift F E n G ρ) :
+    s.map (fun x ↦ LinearIsometryEquiv.refl ℝ (E x)) continuous_id = s := by
+  cases s
+  simp only [map, OrthonormalFrameBundle.map_refl]
+
+/-- Successive transports compose as the families of isometries do. -/
+@[simp]
+theorem map_map (s : OrthonormalFrameLift F E n G ρ) {Ψ : ∀ x, E' x ≃ₗᵢ[ℝ] E'' x}
+    (hΨ : Continuous fun v : TotalSpace F' E' ↦ (⟨v.proj, Ψ v.proj v.snd⟩ : TotalSpace F'' E'')) :
+    (s.map Φ hΦ).map Ψ hΨ = s.map (fun x ↦ (Φ x).trans (Ψ x)) (hΨ.comp hΦ) := by
+  cases s
+  simp only [map, OrthonormalFrameBundle.map_map]
+
+/-- Transport along `Φ` followed by transport along the inverse isometries is the identity. -/
+theorem map_symm_map (s : OrthonormalFrameLift F E n G ρ)
+    (h : Continuous fun v : TotalSpace F' E' ↦
+      (⟨v.proj, (Φ v.proj).symm v.snd⟩ : TotalSpace F E)) :
+    (s.map Φ hΦ).map (fun x ↦ (Φ x).symm) h = s := by
+  rw [map_map]
+  simp only [LinearIsometryEquiv.self_trans_symm]
+  exact map_refl s
+
+/-- Transport along the inverse isometries followed by transport along `Φ` is the identity. -/
+theorem map_map_symm (s : OrthonormalFrameLift F' E' n G ρ)
+    (h : Continuous fun v : TotalSpace F' E' ↦
+      (⟨v.proj, (Φ v.proj).symm v.snd⟩ : TotalSpace F E)) :
+    (s.map (fun x ↦ (Φ x).symm) h).map Φ hΦ = s := by
+  rw [map_map]
+  simp only [LinearIsometryEquiv.symm_trans_self]
+  exact map_refl s
+
+/-- Transport along fibrewise isometries is injective on lifts. -/
+theorem map_injective :
+    Function.Injective fun s : OrthonormalFrameLift F E n G ρ ↦ s.map Φ hΦ := by
+  rintro ⟨P, toFrame, _, _, _⟩ ⟨P', toFrame', _, _, _⟩ hst
+  simp only [map, mk.injEq] at hst
+  obtain ⟨rfl, h₁, h₂, h₃, h₄, h₅⟩ := hst
+  cases h₁; cases h₂; cases h₃; cases h₄
+  have : toFrame = toFrame' := funext fun p ↦
+    OrthonormalFrameBundle.map_right_injective Φ (congrFun (eq_of_heq h₅) p)
+  subst this
+  rfl
+
+/-- Every lift for `E'` is the transport of a lift for `E` along fibrewise isometries. -/
+theorem map_surjective
+    (h : Continuous fun v : TotalSpace F' E' ↦
+      (⟨v.proj, (Φ v.proj).symm v.snd⟩ : TotalSpace F E)) :
+    Function.Surjective fun s : OrthonormalFrameLift F E n G ρ ↦ s.map Φ hΦ := fun s ↦
+  ⟨s.map (fun x ↦ (Φ x).symm) h, s.map_map_symm h⟩
+
+/-- The **transport of an equivalence of lifts** along fibrewise isometries: the same bijections
+between fibres. -/
+def Equiv.map {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E')) :
+    (s.map Φ hΦ).Equiv (t.map Φ hΦ) where
+  toEquiv := φ.toEquiv
+  continuous_toFun := φ.continuous_toFun
+  continuous_invFun := φ.continuous_invFun
+  map_smul := φ.map_smul
+  toFrame_map x p := congrArg (OrthonormalFrameBundle.map Φ) (φ.toFrame_map x p)
+
+@[simp]
+theorem Equiv.map_toEquiv {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (x : X) :
+    (φ.map Φ hΦ).toEquiv x = φ.toEquiv x :=
+  (rfl)
+
+@[simp]
+theorem Equiv.map_refl (s : OrthonormalFrameLift F E n G ρ) :
+    (refl s).map Φ hΦ = refl (s.map Φ hΦ) :=
+  (rfl)
+
+@[simp]
+theorem Equiv.map_symm {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+    φ.symm.map Φ hΦ = (φ.map Φ hΦ).symm :=
+  (rfl)
+
+@[simp]
+theorem Equiv.map_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (ψ : t.Equiv u) : (φ.trans ψ).map Φ hΦ = (φ.map Φ hΦ).trans (ψ.map Φ hΦ) :=
+  (rfl)
+
+/-- **Successive transports of an equivalence compose**: once the source and target lifts are
+identified by `TauCeti.OrthonormalFrameLift.map_map`, transporting `φ` along `Φ` and then along `Ψ`
+is transporting it along the composite isometries. All act on the fibre over `x` by
+`φ.toEquiv x`. -/
+theorem Equiv.map_map_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    {Ψ : ∀ x, E' x ≃ₗᵢ[ℝ] E'' x}
+    (hΨ : Continuous fun v : TotalSpace F' E' ↦ (⟨v.proj, Ψ v.proj v.snd⟩ : TotalSpace F'' E'')) :
+    HEq ((φ.map Φ hΦ).map Ψ hΨ) (φ.map (fun x ↦ (Φ x).trans (Ψ x)) (hΨ.comp hΦ)) :=
+  heq_of_toEquiv_heq (s.map_map hΨ) (t.map_map hΨ) fun _ ↦ HEq.rfl
+
+/-- **Transport of an equivalence along the identity isometries** is the equivalence itself, once
+the source and target lifts are identified by `TauCeti.OrthonormalFrameLift.map_refl`. -/
+theorem Equiv.map_refl_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+    HEq (φ.map (fun x ↦ LinearIsometryEquiv.refl ℝ (E x)) continuous_id) φ :=
+  heq_of_toEquiv_heq (s.map_refl) (t.map_refl) fun _ ↦ HEq.rfl
+
+/-- An equivalence between transported lifts is an equivalence between the original lifts: the
+frame maps of `s` and `t` agree once composed with the injective map of frame bundles induced by
+`Φ`. -/
+def Equiv.ofMap {s t : OrthonormalFrameLift F E n G ρ} (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) :
+    s.Equiv t where
+  toEquiv := φ.toEquiv
+  continuous_toFun := φ.continuous_toFun
+  continuous_invFun := φ.continuous_invFun
+  map_smul := φ.map_smul
+  toFrame_map x p := OrthonormalFrameBundle.map_right_injective Φ (φ.toFrame_map x p)
+
+@[simp]
+theorem Equiv.ofMap_toEquiv {s t : OrthonormalFrameLift F E n G ρ}
+    (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) (x : X) : φ.ofMap.toEquiv x = φ.toEquiv x :=
+  (rfl)
+
+@[simp]
+theorem Equiv.ofMap_map {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+    (φ.map Φ hΦ).ofMap = φ :=
+  (rfl)
+
+@[simp]
+theorem Equiv.map_ofMap {s t : OrthonormalFrameLift F E n G ρ}
+    (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) : φ.ofMap.map Φ hΦ = φ :=
+  (rfl)
+
+@[simp]
+theorem Equiv.ofMap_refl (s : OrthonormalFrameLift F E n G ρ) :
+    (refl (s.map Φ hΦ)).ofMap = refl s :=
+  (rfl)
+
+@[simp]
+theorem Equiv.ofMap_symm {s t : OrthonormalFrameLift F E n G ρ}
+    (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) : φ.symm.ofMap = φ.ofMap.symm :=
+  (rfl)
+
+@[simp]
+theorem Equiv.ofMap_trans {s t u : OrthonormalFrameLift F E n G ρ}
+    (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) (ψ : (t.map Φ hΦ).Equiv (u.map Φ hΦ)) :
+    (φ.trans ψ).ofMap = φ.ofMap.trans ψ.ofMap :=
+  (rfl)
+
+/-- Transport does not change the homeomorphism of total spaces induced by an equivalence. -/
+@[simp]
+theorem Equiv.map_toHomeomorph {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+    (φ.map Φ hΦ).toHomeomorph = φ.toHomeomorph :=
+  (rfl)
+
+@[simp]
+theorem Equiv.ofMap_toHomeomorph {s t : OrthonormalFrameLift F E n G ρ}
+    (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) : φ.ofMap.toHomeomorph = φ.toHomeomorph :=
+  (rfl)
+
+/-- Transport along fibrewise isometries identifies the equivalences of two lifts with the
+equivalences of their transports. -/
+def equivMapEquiv (Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E'))
+    (s t : OrthonormalFrameLift F E n G ρ) :
+    s.Equiv t ≃ (s.map Φ hΦ).Equiv (t.map Φ hΦ) where
+  toFun φ := φ.map Φ hΦ
+  invFun φ := φ.ofMap
+  left_inv := Equiv.ofMap_map
+  right_inv := Equiv.map_ofMap
+
+@[simp]
+theorem equivMapEquiv_apply (s t : OrthonormalFrameLift F E n G ρ) (φ : s.Equiv t) :
+    equivMapEquiv Φ hΦ s t φ = φ.map Φ hΦ :=
+  (rfl)
+
+@[simp]
+theorem equivMapEquiv_symm_apply (s t : OrthonormalFrameLift F E n G ρ)
+    (φ : (s.map Φ hΦ).Equiv (t.map Φ hΦ)) : (equivMapEquiv Φ hΦ s t).symm φ = φ.ofMap :=
+  (rfl)
+
+/-- Two lifts are equivalent exactly when their transports along fibrewise isometries are:
+transport is injective on equivalence classes of lifts. When the inverse isometries are continuous
+too, transport is surjective on lifts (`TauCeti.OrthonormalFrameLift.map_surjective`), hence a
+bijection on equivalence classes. -/
+theorem nonempty_equiv_map_iff (s t : OrthonormalFrameLift F E n G ρ) :
+    Nonempty ((s.map Φ hΦ).Equiv (t.map Φ hΦ)) ↔ Nonempty (s.Equiv t) :=
+  (equivMapEquiv Φ hΦ s t).nonempty_congr.symm
+
+variable {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
+
+/-- **Transport commutes with pullback**: pulling back the transport of `s` along `Φ` is
+transporting the pullback of `s` along the pulled-back isometries `Φ (f y)`. -/
+theorem pullback_map (s : OrthonormalFrameLift F E n G ρ) (f : K) :
+    (s.map Φ hΦ).pullback f =
+      (s.pullback f).map (E' := (f : Y → X) *ᵖ E') (fun y ↦ Φ (f y))
+        (Pullback.continuous_fiberwise (Φ := fun x ↦ Φ x) hΦ f) := by
+  have h (p : TotalSpace G ((f : Y → X) *ᵖ s.P)) :
+      (s.map Φ hΦ).pullbackToFrame f p =
+        OrthonormalFrameBundle.map (E' := (f : Y → X) *ᵖ E') (fun y ↦ Φ (f y))
+          (s.pullbackToFrame f p) := by
+    apply (OrthonormalFrameBundle.pullbackHomeomorph (f : Y → X)).injective
+    apply Subtype.ext
+    simp only [OrthonormalFrameBundle.pullbackHomeomorph_apply,
+      OrthonormalFrameBundle.pullbackLift_map, pullbackLift_pullbackToFrame]
+    exact Prod.ext (((s.map Φ hΦ).proj_pullbackToFrame f p).trans
+        ((OrthonormalFrameBundle.proj_map _ _).trans (s.proj_pullbackToFrame f p)).symm)
+      ((s.map Φ hΦ).pullbackLift_pullbackToFrame f p)
+  simp only [pullback, map]
+  congr 1
+  exact funext h
+
+/-- **Transport of equivalences commutes with pullback**: once the source and target lifts are
+identified by `TauCeti.OrthonormalFrameLift.pullback_map`, pulling back the transport of `φ` along
+`Φ` is transporting the pullback of `φ` along the pulled-back isometries `Φ (f y)`. Both act on the
+fibre over `y` by `φ.toEquiv (f y)`. -/
+theorem Equiv.pullback_map_heq {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (f : K) :
+    HEq ((φ.map Φ hΦ).pullback f)
+      ((φ.pullback f).map (E' := (f : Y → X) *ᵖ E') (fun y ↦ Φ (f y))
+        (Pullback.continuous_fiberwise (Φ := fun x ↦ Φ x) hΦ f)) :=
+  -- Both equivalences have the same bijections, between fibres identified by `pullback_map`.
+  Equiv.heq_of_toEquiv_heq (s.pullback_map f) (t.pullback_map f) fun _ ↦ HEq.rfl
+
+end Map
 
 end OrthonormalFrameLift
 
