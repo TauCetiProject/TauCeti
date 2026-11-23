@@ -247,7 +247,7 @@ lemma rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom_naturality
         Functor.map_comp, Category.assoc]
     _ = (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution ι m).hom ≫
         HomologicalComplex.homologyMap ((F.mapHomologicalComplex _).map φ.hom) m := by
-      rw [CochainComplex.Plus.homologyFunctorFactors_hom_naturality
+      rw [TauCeti.DerivedCategory.Plus.homologyFunctorFactors_hom_naturality
         (F.mapCochainComplexPlus.map φ) m,
         ← Category.assoc, ← rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom,
         Functor.mapCochainComplexPlus_map_hom]

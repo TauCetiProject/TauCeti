@@ -80,12 +80,17 @@ lemma mappingConeTriangle_obj₃ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).obj₃ = mappingCone f :=
   (rfl)
 
+-- Because `mappingConeTriangle` and `mappingCone` are intentionally not `@[expose]`, public lemma
+-- statements cannot identify `(mappingConeTriangle f).objᵢ` or `(mappingCone f).obj`
+-- definitionally and therefore conjugate morphisms by `eqToHom (mappingConeTriangle_objᵢ f)`.
+
 /-- First morphism of `mappingConeTriangle f`. -/
 @[simp]
 lemma mappingConeTriangle_mor₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangle f).mor₁ =
       eqToHom (mappingConeTriangle_obj₁ f) ≫ f ≫
         eqToHom (mappingConeTriangle_obj₂ f).symm :=
+  -- Definitional through `Triangle.mk` in `mappingConeTriangle`, transported across `eqToHom`.
   (conj_eqToHom_iff_heq _ _ _ (mappingConeTriangle_obj₂ f)).2 HEq.rfl
 
 /-- Second morphism of `mappingConeTriangle f` on underlying cochain complexes. -/
@@ -100,6 +105,7 @@ lemma mappingConeTriangle_mor₂_hom {K L : CochainComplex.Plus C} (f : K ⟶ L)
     (congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₂ f))
     ((congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₃ f)).trans
       (mappingCone_obj f))).2 ?_
+  -- Definitional through `Triangle.mk` and `ObjectProperty.homMk` up to `eqToHom`.
   have h : (mappingConeTriangle f).mor₂.hom ≍
       _root_.CochainComplex.mappingCone.inr f.hom ≫ eqToHom (mappingCone_obj f).symm := HEq.rfl
   have h' : _root_.CochainComplex.mappingCone.inr f.hom ≫ eqToHom (mappingCone_obj f).symm ≍
@@ -116,6 +122,7 @@ lemma mappingConeTriangle_mor₃ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
             (_root_.CochainComplex.mappingCone.triangle f.hom).mor₃ ≫
             ((CochainComplex.Plus.ι C).commShiftIso (1 : ℤ)).inv.app K) ≫
         eqToHom (congrArg (·⟦(1 : ℤ)⟧) (mappingConeTriangle_obj₁ f)).symm :=
+  -- Definitional through `Triangle.mk` in `mappingConeTriangle`, transported across `eqToHom`.
   (conj_eqToHom_iff_heq _ _ _
     (congrArg (·⟦(1 : ℤ)⟧) (mappingConeTriangle_obj₁ f))).2 HEq.rfl
 
@@ -184,12 +191,14 @@ def mappingConeTriangleιIso {K L : CochainComplex.Plus C} (f : K ⟶ L) :
 lemma mappingConeTriangleιIso_hom_hom₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).hom.hom₁ =
       eqToHom (congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₁ f)) :=
+  -- Definitional from `Triangle.isoMk` and `mappingConeTriangleιIso`.
   (rfl)
 
 @[simp]
 lemma mappingConeTriangleιIso_hom_hom₂ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).hom.hom₂ =
       eqToHom (congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₂ f)) :=
+  -- Definitional from `Triangle.isoMk` and `mappingConeTriangleιIso`.
   (rfl)
 
 @[simp]
@@ -197,18 +206,21 @@ lemma mappingConeTriangleιIso_hom_hom₃ {K L : CochainComplex.Plus C} (f : K �
     (mappingConeTriangleιIso f).hom.hom₃ =
       eqToHom ((congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₃ f)).trans
         (mappingCone_obj f)) :=
+  -- Definitional from `Triangle.isoMk` and `mappingConeTriangleιIso`.
   (rfl)
 
 @[simp]
 lemma mappingConeTriangleιIso_inv_hom₁ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).inv.hom₁ =
       eqToHom (congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₁ f)).symm :=
+  -- Definitional from `Triangle.isoMk` and `mappingConeTriangleιIso`.
   (rfl)
 
 @[simp]
 lemma mappingConeTriangleιIso_inv_hom₂ {K L : CochainComplex.Plus C} (f : K ⟶ L) :
     (mappingConeTriangleιIso f).inv.hom₂ =
       eqToHom (congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₂ f)).symm :=
+  -- Definitional from `Triangle.isoMk` and `mappingConeTriangleιIso`.
   (rfl)
 
 @[simp]
@@ -216,6 +228,7 @@ lemma mappingConeTriangleιIso_inv_hom₃ {K L : CochainComplex.Plus C} (f : K �
     (mappingConeTriangleιIso f).inv.hom₃ =
       eqToHom ((congrArg ObjectProperty.FullSubcategory.obj (mappingConeTriangle_obj₃ f)).trans
         (mappingCone_obj f)).symm :=
+  -- Definitional from `Triangle.isoMk` and `mappingConeTriangleιIso`.
   (rfl)
 
 end MappingCone

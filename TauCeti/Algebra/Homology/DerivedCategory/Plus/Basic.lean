@@ -17,17 +17,18 @@ This file records basic properties of Mathlib's localization functor
 `DerivedCategory.Plus.homologyFunctor C n` for an abelian category `C`:
 
 * `TauCeti.DerivedCategory.Plus.homologyFunctorFactors`: `Q ⋙ homologyFunctor C n` identifies
-  with cochain-complex cohomology `HomologicalComplex.homologyFunctor`, with naturality
-  `CochainComplex.Plus.homologyFunctorFactors_hom_naturality`.
-* `Homotopy.plus_Q_map_eq`: homotopic morphisms of bounded-below cochain complexes induce the
-  same morphism in `DerivedCategory.Plus C`.
-* `CochainComplex.Plus.isIso_Q_map_of_quasiIso` and `CochainComplex.Plus.isIso_Q_map_iff_quasiIso`:
-  a morphism in `CochainComplex.Plus C` becomes an isomorphism under `Q` if and only if its
-  underlying chain map is a quasi-isomorphism.
+  with cochain-complex cohomology `HomologicalComplex.homologyFunctor`, with component formulas
+  `homologyFunctorFactors_hom_app`, `homologyFunctorFactors_inv_app`, and naturality
+  `TauCeti.DerivedCategory.Plus.homologyFunctorFactors_hom_naturality`.
+* `TauCeti.DerivedCategory.Plus.Q_map_eq_of_homotopy`: homotopic morphisms of bounded-below
+  cochain complexes induce the same morphism in `DerivedCategory.Plus C`.
+* `TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso` and
+  `TauCeti.DerivedCategory.Plus.isIso_Q_map_iff_quasiIso`: a morphism in `CochainComplex.Plus C`
+  becomes an isomorphism under `Q` if and only if its underlying chain map is a quasi-isomorphism.
 * `TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ`: the single functor
   `DerivedCategory.Plus.singleFunctor C n` factors through
   `TauCeti.CochainComplex.Plus.singleFunctor C n` and `Q`.
-* `CochainComplex.Plus.mappingConeTriangle_distinguished`: the image under `Q` of a
+* `TauCeti.DerivedCategory.Plus.mappingCone_triangle_distinguished`: the image under `Q` of a
   bounded-below mapping cone triangle is distinguished.
 
 ## References
@@ -59,6 +60,31 @@ def homologyFunctorFactors (n : ℤ) :
   NatIso.ofComponents
     (fun K ↦ (_root_.DerivedCategory.homologyFunctorFactors C n).app K.obj)
     (fun f ↦ (_root_.DerivedCategory.homologyFunctorFactors C n).hom.naturality f.hom)
+
+/-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.hom`. -/
+@[simp]
+lemma homologyFunctorFactors_hom_app (K : _root_.CochainComplex.Plus C) (n : ℤ) :
+    (homologyFunctorFactors C n).hom.app K =
+      (_root_.DerivedCategory.homologyFunctorFactors C n).hom.app K.obj :=
+  (rfl)
+
+/-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.inv`. -/
+@[simp]
+lemma homologyFunctorFactors_inv_app (K : _root_.CochainComplex.Plus C) (n : ℤ) :
+    (homologyFunctorFactors C n).inv.app K =
+      (_root_.DerivedCategory.homologyFunctorFactors C n).inv.app K.obj :=
+  (rfl)
+
+/-- Naturality of `TauCeti.DerivedCategory.Plus.homologyFunctorFactors` on a morphism in
+`CochainComplex.Plus C`. -/
+@[reassoc]
+lemma homologyFunctorFactors_hom_naturality {K L : _root_.CochainComplex.Plus C}
+    (f : K ⟶ L) (n : ℤ) :
+    (_root_.DerivedCategory.Plus.homologyFunctor C n).map (_root_.DerivedCategory.Plus.Q.map f) ≫
+        (homologyFunctorFactors C n).hom.app L =
+      (homologyFunctorFactors C n).hom.app K ≫
+        HomologicalComplex.homologyMap f.hom n :=
+  (homologyFunctorFactors C n).hom.naturality f
 
 variable (C) in
 /-- The single functor `DerivedCategory.Plus.singleFunctor C n` factors through
@@ -108,84 +134,50 @@ lemma ι_map_singleFunctorIsoCompQ_hom_app (n : ℤ) (X : C) :
     Functor.associator_inv_app, Functor.whiskerLeft_app, Category.comp_id, Category.id_comp,
     Category.assoc] using h
 
-end TauCeti.DerivedCategory.Plus
-
-namespace CochainComplex.Plus
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
-
-/-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.hom`. -/
-@[simp]
-lemma homologyFunctorFactors_hom_app (K : CochainComplex.Plus C) (n : ℤ) :
-    (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).hom.app K =
-      (DerivedCategory.homologyFunctorFactors C n).hom.app K.obj :=
-  (rfl)
-
-/-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.inv`. -/
-@[simp]
-lemma homologyFunctorFactors_inv_app (K : CochainComplex.Plus C) (n : ℤ) :
-    (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).inv.app K =
-      (DerivedCategory.homologyFunctorFactors C n).inv.app K.obj :=
-  (rfl)
-
-/-- Naturality of `TauCeti.DerivedCategory.Plus.homologyFunctorFactors` on a morphism in
-`CochainComplex.Plus C`. -/
-@[reassoc]
-lemma homologyFunctorFactors_hom_naturality {K L : CochainComplex.Plus C} (f : K ⟶ L) (n : ℤ) :
-    (DerivedCategory.Plus.homologyFunctor C n).map (DerivedCategory.Plus.Q.map f) ≫
-        (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).hom.app L =
-      (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).hom.app K ≫
-        HomologicalComplex.homologyMap f.hom n :=
-  (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C n).hom.naturality f
-
 /-- A quasi-isomorphism in `CochainComplex.Plus C` becomes an isomorphism in
 `DerivedCategory.Plus C`. -/
-instance isIso_Q_map_of_quasiIso {K L : CochainComplex.Plus C} (f : K ⟶ L) [QuasiIso f.hom] :
-    IsIso (DerivedCategory.Plus.Q.map f) :=
-  Localization.inverts DerivedCategory.Plus.Q (CochainComplex.Plus.quasiIso C) f
-    ((CochainComplex.Plus.quasiIso_iff C f).2 inferInstance)
+instance isIso_Q_map_of_quasiIso {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L)
+    [QuasiIso f.hom] :
+    IsIso (_root_.DerivedCategory.Plus.Q.map f) :=
+  Localization.inverts _root_.DerivedCategory.Plus.Q (_root_.CochainComplex.Plus.quasiIso C) f
+    ((_root_.CochainComplex.Plus.quasiIso_iff C f).2 inferInstance)
 
 /-- A morphism in `CochainComplex.Plus C` becomes an isomorphism in `DerivedCategory.Plus C`
 if and only if its underlying chain map is a quasi-isomorphism. -/
-lemma isIso_Q_map_iff_quasiIso {K L : CochainComplex.Plus C} (f : K ⟶ L) :
-    IsIso (DerivedCategory.Plus.Q.map f) ↔ QuasiIso f.hom := by
-  rw [← isIso_iff_of_reflects_iso _ DerivedCategory.Plus.ι,
+lemma isIso_Q_map_iff_quasiIso {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+    IsIso (_root_.DerivedCategory.Plus.Q.map f) ↔ QuasiIso f.hom := by
+  rw [← isIso_iff_of_reflects_iso _ _root_.DerivedCategory.Plus.ι,
     ← Functor.comp_map,
-    NatIso.isIso_map_iff (DerivedCategory.Plus.QCompιIso C) f]
-  exact DerivedCategory.isIso_Q_map_iff_quasiIso C f.hom
+    NatIso.isIso_map_iff (_root_.DerivedCategory.Plus.QCompιIso C) f]
+  exact _root_.DerivedCategory.isIso_Q_map_iff_quasiIso C f.hom
 
 /-- The image of a mapping cone triangle in `CochainComplex.Plus C` under `DerivedCategory.Plus.Q`
 is distinguished. -/
-lemma mappingConeTriangle_distinguished {K L : CochainComplex.Plus C} (f : K ⟶ L) :
-    DerivedCategory.Plus.Q.mapTriangle.obj (CochainComplex.Plus.mappingConeTriangle f) ∈
-      distTriang (DerivedCategory.Plus C) := by
-  rw [← DerivedCategory.Plus.ι.map_distinguished_iff]
+lemma mappingCone_triangle_distinguished {K L : _root_.CochainComplex.Plus C} (f : K ⟶ L) :
+    _root_.DerivedCategory.Plus.Q.mapTriangle.obj
+        (_root_.CochainComplex.Plus.mappingConeTriangle f) ∈
+      distTriang (_root_.DerivedCategory.Plus C) := by
+  rw [← _root_.DerivedCategory.Plus.ι.map_distinguished_iff]
   refine isomorphic_distinguished _
-    (DerivedCategory.mappingCone_triangle_distinguished f.hom) _ ?_
-  exact (Functor.mapTriangleCompIso DerivedCategory.Plus.Q
-      DerivedCategory.Plus.ι).symm.app _ ≪≫
-    (Functor.mapTriangleIso (DerivedCategory.Plus.QCompιIso C)).app _ ≪≫
-    (Functor.mapTriangleCompIso (CochainComplex.Plus.ι C)
-      DerivedCategory.Q).app _ ≪≫
-    DerivedCategory.Q.mapTriangle.mapIso
-      (CochainComplex.Plus.mappingConeTriangleιIso f)
-
-end CochainComplex.Plus
-
-namespace Homotopy
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+    (_root_.DerivedCategory.mappingCone_triangle_distinguished f.hom) _ ?_
+  exact (Functor.mapTriangleCompIso _root_.DerivedCategory.Plus.Q
+      _root_.DerivedCategory.Plus.ι).symm.app _ ≪≫
+    (Functor.mapTriangleIso (_root_.DerivedCategory.Plus.QCompιIso C)).app _ ≪≫
+    (Functor.mapTriangleCompIso (_root_.CochainComplex.Plus.ι C)
+      _root_.DerivedCategory.Q).app _ ≪≫
+    _root_.DerivedCategory.Q.mapTriangle.mapIso
+      (_root_.CochainComplex.Plus.mappingConeTriangleιIso f)
 
 /-- Homotopic morphisms of bounded-below cochain complexes induce the same morphism in
 `DerivedCategory.Plus C`. -/
-lemma plus_Q_map_eq {K L : CochainComplex.Plus C} {f g : K ⟶ L}
-    (h : Homotopy f.hom g.hom) :
-    DerivedCategory.Plus.Q.map f = DerivedCategory.Plus.Q.map g := by
-  apply DerivedCategory.Plus.ι.map_injective
-  rw [← cancel_mono ((DerivedCategory.Plus.QCompιIso C).hom.app L)]
-  have hf := (DerivedCategory.Plus.QCompιIso C).hom.naturality f
-  have hg := (DerivedCategory.Plus.QCompιIso C).hom.naturality g
+lemma Q_map_eq_of_homotopy {K L : _root_.CochainComplex.Plus C} {f g : K ⟶ L}
+    (h : _root_.Homotopy f.hom g.hom) :
+    _root_.DerivedCategory.Plus.Q.map f = _root_.DerivedCategory.Plus.Q.map g := by
+  apply _root_.DerivedCategory.Plus.ι.map_injective
+  rw [← cancel_mono ((_root_.DerivedCategory.Plus.QCompιIso C).hom.app L)]
+  have hf := (_root_.DerivedCategory.Plus.QCompιIso C).hom.naturality f
+  have hg := (_root_.DerivedCategory.Plus.QCompιIso C).hom.naturality g
   dsimp at hf hg ⊢
-  rw [hf, hg, DerivedCategory.Q_map_eq_of_homotopy C h]
+  rw [hf, hg, _root_.DerivedCategory.Q_map_eq_of_homotopy C h]
 
-end Homotopy
+end TauCeti.DerivedCategory.Plus

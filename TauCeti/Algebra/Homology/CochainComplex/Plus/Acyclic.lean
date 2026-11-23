@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.CochainComplexPlus
-public import Mathlib.CategoryTheory.Preadditive.Injective.InjectiveObject
+public import TauCeti.Algebra.Homology.CochainComplex.Plus.InjectiveResolution
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
 
 import Mathlib.Algebra.Homology.Factorizations.CM5a
-import Mathlib.Algebra.Homology.FullSubcategory
 import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
@@ -42,33 +40,6 @@ noncomputable section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Functor HomologicalComplex
 
 universe v₁ v₂ u₁ u₂
-
-namespace CochainComplex.Plus
-
-section Injective
-
-variable {C : Type u₁} [Category.{v₁} C] [Preadditive C]
-
-/-- Lift a bounded-below cochain complex of injective objects in `C` to
-`CochainComplex.Plus (InjectiveObject C)`. -/
-def liftInjective (K : CochainComplex.Plus C) (hK : ∀ n, Injective (K.obj.X n)) :
-    CochainComplex.Plus (InjectiveObject C) :=
-  ⟨HomologicalComplex.liftObjectProperty _ K.obj hK, by
-    obtain ⟨b, _⟩ := K.property
-    refine ⟨b, ?_⟩
-    rwa [← CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C)]⟩
-
-/-- Inclusion of `InjectiveObject C` identifies `liftInjective K hK` with `K` in
-`CochainComplex.Plus C`. -/
-def liftInjectiveIso (K : CochainComplex.Plus C) (hK : ∀ n, Injective (K.obj.X n)) :
-    (InjectiveObject.ι C).mapCochainComplexPlus.obj (liftInjective K hK) ≅ K :=
-  ObjectProperty.isoMk _
-    (HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by
-      simp [liftInjective]))
-
-end Injective
-
-end CochainComplex.Plus
 
 namespace CategoryTheory.Functor
 

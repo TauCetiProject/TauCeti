@@ -5,16 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Preadditive.Injective.InjectiveObject
 public import Mathlib.CategoryTheory.Preadditive.Injective.Resolution
 public import TauCeti.Algebra.Homology.CochainComplex.Plus.Basic
 public import TauCeti.Algebra.Homology.Embedding.Extend.Basic
+
+import Mathlib.Algebra.Homology.FullSubcategory
 
 /-!
 # Bounded-below injective resolutions in `CochainComplex.Plus`
 
 This file embeds `ℕ`-indexed injective resolutions `I : InjectiveResolution X` into Mathlib's
-category `CochainComplex.Plus C` of bounded-below `ℤ`-indexed cochain complexes:
+category `CochainComplex.Plus C` of bounded-below `ℤ`-indexed cochain complexes, and provides
+lifting of bounded-below complexes of injective objects into
+`CochainComplex.Plus (InjectiveObject C)`:
 
+* `CochainComplex.Plus.liftInjective` and `CochainComplex.Plus.liftInjectiveIso`: lift a
+  bounded-below cochain complex of injective objects in `C` to
+  `CochainComplex.Plus (InjectiveObject C)`.
 * `CategoryTheory.InjectiveResolution.cocomplexPlus`: the bounded-below `ℤ`-indexed extension of
   `I.cocomplex`.
 * `CategoryTheory.InjectiveResolution.cocomplexPlusMap`: functoriality in morphisms of injective
@@ -31,6 +39,33 @@ noncomputable section
 open CategoryTheory CategoryTheory.Limits
 
 universe v₁ u₁
+
+namespace CochainComplex.Plus
+
+section Injective
+
+variable {C : Type u₁} [Category.{v₁} C] [Preadditive C]
+
+/-- Lift a bounded-below cochain complex of injective objects in `C` to
+`CochainComplex.Plus (InjectiveObject C)`. -/
+def liftInjective (K : CochainComplex.Plus C) (hK : ∀ n, Injective (K.obj.X n)) :
+    CochainComplex.Plus (InjectiveObject C) :=
+  ⟨HomologicalComplex.liftObjectProperty _ K.obj hK, by
+    obtain ⟨b, _⟩ := K.property
+    refine ⟨b, ?_⟩
+    rwa [← CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C)]⟩
+
+/-- Inclusion of `InjectiveObject C` identifies `liftInjective K hK` with `K` in
+`CochainComplex.Plus C`. -/
+def liftInjectiveIso (K : CochainComplex.Plus C) (hK : ∀ n, Injective (K.obj.X n)) :
+    (InjectiveObject.ι C).mapCochainComplexPlus.obj (liftInjective K hK) ≅ K :=
+  ObjectProperty.isoMk _
+    (HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by
+      simp [liftInjective]))
+
+end Injective
+
+end CochainComplex.Plus
 
 namespace CategoryTheory.InjectiveResolution
 

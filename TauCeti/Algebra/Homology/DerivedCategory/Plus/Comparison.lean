@@ -346,11 +346,11 @@ private lemma cocomplexPlusHomologyIso_hom_naturality (n : ℕ) {X Y : C}
               ((ComplexShape.embeddingUpNat.extendFunctor C).map φ)) ≫
           (extendUpNatMapHomologyIso F n).hom.app IY.cocomplex) := by
       rw [hιH, Category.assoc]
-      rfl
+      simp only [HomologicalComplex.homologyFunctor_map]
     _ = (cocomplexPlusHomologyIso F n IX).hom ≫
         HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ) n := by
       rw [hnat, ← Category.assoc]
-      rfl
+      simp [cocomplexPlusHomologyIso]
 
 /-- Component isomorphism identifying `Hⁿ(RF⁺(X[0]))` with `(F.rightDerived n).obj X` via any
 injective resolution `I` of `X`. -/
