@@ -130,7 +130,7 @@ noncomputable def zigzagAlgebraSelfCornerEquiv (i : V) :
   left_inv x := Subtype.ext <|
     (zigzagAlgebraBasis_inl_mul_mul_self k G i x).symm.trans
       ((mem_cornerSubmodule_iff k (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)).mp x.2)
+        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)).mp x.property)
   right_inv a := by simp
 
 @[simp]

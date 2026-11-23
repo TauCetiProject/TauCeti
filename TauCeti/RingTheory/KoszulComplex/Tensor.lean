@@ -144,7 +144,7 @@ private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : �
   · exact key _ (by simp; omega) _
   · rintro i - hi
     have : proj R M i a = 0 := Subtype.ext <| by
-      rw [coe_proj_of_mem a.2, ite_eq_right fun h ↦ hi (Fin.ext h.symm)]
+      rw [coe_proj_of_mem a.property, ite_eq_right fun h ↦ hi (Fin.ext h.symm)]
       rfl
     rw [this, TensorProduct.zero_tmul]
     exact map_zero _
@@ -258,7 +258,7 @@ private theorem koszulDifferential_wedgeTensor_zero_succ (n : ℕ) (a : ⋀[R]^0
   refine Subtype.ext ?_
   rw [pow_zero, one_smul, coe_koszulDifferential_wedgeTensor_tmul, coe_wedgeTensor_tmul,
     coe_koszulDifferential_apply,
-    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero φ a.2]
+    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero φ a.property]
   simp
 
 private theorem koszulDifferential_wedgeTensor_succ_zero (n : ℕ) (a : ⋀[R]^(n + 1) M)
@@ -269,7 +269,7 @@ private theorem koszulDifferential_wedgeTensor_succ_zero (n : ℕ) (a : ⋀[R]^(
   refine Subtype.ext ?_
   rw [coe_koszulDifferential_wedgeTensor_tmul, coe_wedgeTensor_tmul,
     coe_koszulDifferential_apply,
-    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero ψ b.2]
+    TauCeti.ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero ψ b.property]
   simp
 
 private theorem toKoszul_comm (n : ℕ) :

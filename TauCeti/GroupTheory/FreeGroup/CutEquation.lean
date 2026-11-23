@@ -44,6 +44,8 @@ of the source is imposed by `Finite` instances where it is needed.
 * `TauCeti.CutEquation.IsSolution`: solutions by nonempty reduced words, reduced as written.
 * `TauCeti.CutEquation.oneInterval`: the cut equation with one interval, labelled by a parameter
   `x` and by the product `m₀ ⋯ m_{n-1}` of `n` pieces.
+* `TauCeti.CutEquation.mapParam`: the cut equation whose parameter labels are substituted by
+  words in other parameters.
 
 ## Main results
 
@@ -61,11 +63,18 @@ of the source is imposed by `Finite` instances where it is needed.
 * `TauCeti.CutEquation.isGroupSolution_oneInterval_cancel`,
   `TauCeti.CutEquation.not_isSolution_oneInterval_two_of_letter`: the pieces `(a, a⁻¹b)` are a
   group solution of `m₀m₁ = x` at `x = b`, which has no solution with respect to that value.
+* `TauCeti.CutEquation.eval_mapParam_paramLabel`: the substituted parameter label of an interval
+  takes at a tuple `v` the value of the original label at the values of the substituted words at
+  `v`.
+* `TauCeti.CutEquation.isGroupSolution_mapParam_iff`,
+  `TauCeti.CutEquation.isSolution_mapParam_iff`: a solution of the substituted cut equation with
+  respect to parameter values `β'` is a solution of the original one with respect to the values of
+  the substituted words at `β'`, and conversely.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §5.7, Definitions 21 and 22.
+  (2005), §5.7, Definitions 21 and 22, Theorem 8, and §7.4 (the cut equation `Π_φ`).
 * O. Kharlampovich, A. Myasnikov, *Algebraic geometry over free groups: lifting solutions into
   generic points*, Contemp. Math. 378 (2005), §3, Definitions 3.1 and 3.2.
 -/
@@ -173,7 +182,8 @@ reduced as written. -/
 theorem isSolution_iff : P.IsSolution β α ↔ (∀ m, α m ≠ []) ∧ (∀ m, IsReduced (α m)) ∧
     (∀ σ, IsReduced (substituteVars α (P.pieceLabel σ))) ∧
       P.IsGroupSolution β fun m => FreeGroup.mk (α m) :=
-  ⟨fun h => ⟨h.1, h.2, h.3, h.4⟩, fun h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩⟩
+  ⟨fun h => ⟨h.ne_nil, h.isReduced, h.isReduced_substituteVars, h.isGroupSolution⟩, fun h => ⟨h.1,
+      h.2.1, h.2.2.1, h.2.2.2⟩⟩
 
 namespace IsSolution
 
@@ -192,7 +202,7 @@ theorem substituteVars_eq_toWord [DecidableEq A] (h : P.IsSolution β α) (σ : 
 
 /-- The piece labels of a cut equation with a solution are reduced words. -/
 theorem isReduced_pieceLabel (h : P.IsSolution β α) (σ : E) : IsReduced (P.pieceLabel σ) :=
-  (h.isReduced_substituteVars σ).of_substituteVars h.ne_nil
+  (h.isReduced_substituteVars σ).of_substituteVars fun m _ _ => h.ne_nil m
 
 end IsSolution
 
@@ -287,6 +297,73 @@ since a one-letter word is not a product of two nonempty words. In particular th
 theorem not_isSolution_oneInterval_two_of_letter (a : A) {α : Fin 2 → List (A × Bool)} :
     ¬ (oneInterval A 2).IsSolution (fun _ => FreeGroup.of a) α := by
   classical exact not_isSolution_oneInterval_of_length_lt (by simp)
+
+/-! ### Substituting the parameters -/
+
+section MapParam
+
+variable (P) {X' : Type*}
+
+/-- The cut equation obtained from `P` by substituting the word `l x ∈ F(A)[X']` for each
+parameter `x` in the parameter labels; the intervals and their partitions are unchanged. For a
+labelling of parameters by letters this is the relabelling in the proof of Kharlampovich–Myasnikov,
+Theorem 8; for an `F(A)`-automorphism `φ` of `F(A)[X]`, with `l x = φ x`, it is the cut equation
+`Π_φ` of their §7.4. -/
+def mapParam (l : X → GX (FreeGroup A) X') : CutEquation A E X' M where
+  paramLabel σ := eval (inl : FreeGroup A →* GX (FreeGroup A) X') l (P.paramLabel σ)
+  pieceLabel := P.pieceLabel
+
+@[simp]
+theorem mapParam_paramLabel (l : X → GX (FreeGroup A) X') (σ : E) :
+    (P.mapParam l).paramLabel σ =
+      eval (inl : FreeGroup A →* GX (FreeGroup A) X') l (P.paramLabel σ) := (rfl)
+
+@[simp]
+theorem mapParam_pieceLabel (l : X → GX (FreeGroup A) X') (σ : E) :
+    (P.mapParam l).pieceLabel σ = P.pieceLabel σ := (rfl)
+
+/-- Substituting each parameter by itself leaves a cut equation unchanged. -/
+@[simp]
+theorem mapParam_inr_of : P.mapParam (fun x => inr (FreeGroup.of x)) = P :=
+  CutEquation.ext (funext fun σ => by simp) rfl
+
+/-- Substituting the words `l` and then the words `l'` is substituting the words `l` with `l'`
+substituted into them. -/
+@[simp]
+theorem mapParam_mapParam {X'' : Type*} (l : X → GX (FreeGroup A) X')
+    (l' : X' → GX (FreeGroup A) X'') :
+    (P.mapParam l).mapParam l' =
+      P.mapParam fun x => eval (inl : FreeGroup A →* GX (FreeGroup A) X'') l' (l x) := by
+  refine CutEquation.ext (funext fun σ => ?_) rfl
+  rw [mapParam_paramLabel, ← funext (wordMap_apply (ι := inl) l l')]
+  exact DFunLike.congr_fun (eval_comp_eval l l') (P.paramLabel σ)
+
+/-- The substituted parameter label of an interval takes at `v` the value of the original label
+at the values of the substituted words at `v`. -/
+theorem eval_mapParam_paramLabel {H : Type*} [Group H] (ι : FreeGroup A →* H)
+    (l : X → GX (FreeGroup A) X') (v : X' → H) (σ : E) :
+    eval ι v ((P.mapParam l).paramLabel σ) = eval ι (wordMap ι l v) (P.paramLabel σ) :=
+  DFunLike.congr_fun (eval_comp_eval l v) (P.paramLabel σ)
+
+variable {P} {l : X → GX (FreeGroup A) X'} {β' : X' → FreeGroup A}
+
+/-- Values of the pieces are a group solution of the substituted cut equation with respect to `β'`
+exactly when they are a group solution of the original one with respect to the values of the
+substituted words at `β'`. -/
+@[simp]
+theorem isGroupSolution_mapParam_iff {α : M → FreeGroup A} : (P.mapParam l).IsGroupSolution β' α ↔
+    P.IsGroupSolution (wordMap (MonoidHom.id (FreeGroup A)) l β') α := by
+  simp only [isGroupSolution_iff, eval_mapParam_paramLabel, pieceElement_def, mapParam_pieceLabel]
+
+/-- A tuple of words is a solution of the substituted cut equation with respect to `β'` exactly
+when it is a solution of the original one with respect to the values of the substituted words at
+`β'`. -/
+@[simp]
+theorem isSolution_mapParam_iff {α : M → List (A × Bool)} : (P.mapParam l).IsSolution β' α ↔
+    P.IsSolution (wordMap (MonoidHom.id (FreeGroup A)) l β') α := by
+  simp [isSolution_iff]
+
+end MapParam
 
 end CutEquation
 

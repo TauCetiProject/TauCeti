@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StandardKernel
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
 import Mathlib.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Calderón–Zygmund operators on a finite-dimensional inner product space
@@ -349,10 +350,8 @@ private theorem setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander
     calc dist v (e y) = dist (e (e.symm v)) (e y) := by rw [e.apply_symm_apply]
       _ ≤ L * dist (e.symm v) y := dist_coord_le b _ _
       _ ≤ L * r := by gcongr
-  have : IsFiniteMeasure (volume.restrict (closedBall (e y) (L * r))) :=
-    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
-  have hg : Integrable g := IntegrableOn.integrable_of_ae_notMem_eq_zero
-    (((Lp.memLp g).restrict _).integrable one_le_two) hgs
+  have hg : Integrable g :=
+    (Lp.memLp g).integrable_of_ae_notMem_eq_zero one_le_two measure_closedBall_lt_top.ne hgs
   have hgmean : ∫ v, g v = 0 := by
     rw [← he.integral_comp' (fun v => g v), ← hmean]
     exact integral_congr_ae hge

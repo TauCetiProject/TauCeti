@@ -95,15 +95,15 @@ theorem finrank_adjoin_range {ι : Type*} [Finite ι] {d : ι → K} {root : ι 
     ext z
     constructor
     · rintro ⟨i, rfl⟩
-      exact ⟨e.symm i, by simp [rootN, toι, i.2]⟩
+      exact ⟨e.symm i, by simp [rootN, toι, i.isLt]⟩
     · rintro ⟨i, rfl⟩
-      exact ⟨e i, by simp [rootN, toι, (e i).2]⟩
+      exact ⟨e i, by simp [rootN, toι, (e i).isLt]⟩
   rw [← hfield]
   rw [Nat.card_eq_fintype_card]
   refine finrank_sqrtTower hrootN (Fintype.card ι) (fun S hSne hSsub => ?_)
   -- Reindex the subset product over `ℕ` to one over `ι`, then apply `hindep`.
   have hmem : ∀ j ∈ S, j < Fintype.card ι := fun j hj => Set.mem_Iio.mp (hSsub hj)
-  set S' : Finset ι := S.attach.image (fun j => toι (hmem j.1 j.2)) with hS'
+  set S' : Finset ι := S.attach.image (fun j => toι (hmem j.val j.property)) with hS'
   have hS'ne : S'.Nonempty := by
     obtain ⟨j, hj⟩ := hSne
     exact ⟨toι (hmem j hj), Finset.mem_image.mpr ⟨⟨j, hj⟩, Finset.mem_attach _ _, rfl⟩⟩
@@ -111,7 +111,7 @@ theorem finrank_adjoin_range {ι : Type*} [Finite ι] {d : ι → K} {root : ι 
     rw [hS', Finset.prod_image]
     · rw [← Finset.prod_attach S (fun j => dN j)]
       refine Finset.prod_congr rfl fun j _ => ?_
-      simp [dN, hmem j.1 j.2]
+      simp [dN, hmem j.val j.property]
     · rintro ⟨a, ha⟩ _ ⟨b, hb⟩ _ hab
       simpa [toι, e.symm.injective.eq_iff, Fin.mk.injEq] using hab
   rw [hprod]

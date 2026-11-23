@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.PrincipalParts
 public import TauCeti.Analysis.Meromorphic.ResiduePairing
 import TauCeti.Analysis.Meromorphic.PointTwist
+import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Theorem
 
 /-!
 # The residue pairing of principal parts with differentials
@@ -27,10 +28,12 @@ For the principal parts of a meromorphic function `f` on a compact connected sur
 pairing is the finite sum of the residues of the meromorphic `1`-form `f ω` over any finite
 set containing the poles of `f` and the support of `D`
 (`TauCeti.RiemannSurface.PrincipalParts.residuePairing_principalParts`). By the residue theorem
-this sum vanishes, which is how the pairing descends to `H¹(X, 𝒪_D) × H⁰(X, Ω_{-D}) → ℂ` in
-Serre duality (Forster, §17). The pairing is compatible with the projection
-`PrincipalParts D → PrincipalParts E` and the inclusion `Ω_{-E} ⟶ Ω_{-D}` for `D ≤ E`
-(`TauCeti.RiemannSurface.PrincipalParts.residuePairing_mapOfLE`).
+(`TauCeti.RiemannSurface.OneForm.sum_residue_eq_zero_of_support_subset`) this sum vanishes on a
+compact Hausdorff surface
+(`TauCeti.RiemannSurface.PrincipalParts.residuePairing_comp_principalParts`), which is how
+the pairing descends to `H¹(X, 𝒪_D) × H⁰(X, Ω_{-D}) → ℂ` in Serre duality (Forster, §17). The
+pairing is compatible with the projection `PrincipalParts D → PrincipalParts E` and the inclusion
+`Ω_{-E} ⟶ Ω_{-D}` for `D ≤ E` (`TauCeti.RiemannSurface.PrincipalParts.residuePairing_mapOfLE`).
 
 The local core of the injectivity of the Serre duality map (Forster, Theorem 17.6) is that a
 nonzero `ω` pairs nontrivially with a principal part supported at any prescribed point `a` on a
@@ -153,6 +156,46 @@ theorem residuePairing_principalParts [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [MeromorphicFunction.principalParts_apply, LocalPrincipalPart.residuePairing_mk,
     differentialSections.residue_toChartGerm_mul]
+
+/-- Away from the poles of a meromorphic function `f` and the support of `D`, the `1`-form `f ω`
+has residue `0` for every `ω ∈ H⁰(X, Ω_{-D})`: its residue there is the local residue pairing with
+the principal part of `f` at that point, which vanishes. -/
+theorem residue_finitePart_smul_toOneForm_eq_zero [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
+    [CompactSpace X] (f : MeromorphicFunction X) (ω : differentialSections (-D) ⊤) {x : X}
+    (hf : f x ≠ ∞) (hD : D x = 0) :
+    (f.finitePart • differentialSections.toOneForm (-D) ω).residue x = 0 := by
+  have h := congrArg (fun μ ↦ LocalPrincipalPart.residuePairing D x μ ω)
+    (MeromorphicFunction.principalParts_apply_eq_zero (D := D) hf hD)
+  rwa [MeromorphicFunction.principalParts_apply, LocalPrincipalPart.residuePairing_mk,
+    differentialSections.residue_toChartGerm_mul, map_zero, LinearMap.zero_apply] at h
+
+/-- **The residue pairing vanishes on the principal parts of a meromorphic function.** On a compact
+connected Riemann surface, the residue pairing of the principal parts of a meromorphic function `f`
+relative to `D` with any `ω ∈ H⁰(X, Ω_{-D})` is `0`: by `residuePairing_principalParts` it is the
+sum of the residues of the meromorphic `1`-form `f ω`, which vanishes by the residue theorem. -/
+@[simp]
+theorem residuePairing_principalParts_eq_zero [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
+    [CompactSpace X] [T2Space X] (f : MeromorphicFunction X) (ω : differentialSections (-D) ⊤) :
+    residuePairing D (f.principalParts D) ω = 0 := by
+  classical
+  set S := f.finite_setOf_eq_infty.toFinset ∪ D.support
+  have hf : {x | f x = ∞} ⊆ S := fun x hx ↦ Finset.mem_union_left _ (by simpa using hx)
+  have hD : D.support ⊆ S := Finset.subset_union_right
+  rw [residuePairing_principalParts f ω S hf hD]
+  refine OneForm.sum_residue_eq_zero_of_support_subset (fun x ↦
+    OneForm.MeromorphicAt.smul (f.meromorphicAt_finitePart x)
+      (differentialSections.isDifferentialSectionAt_toOneForm ω x).meromorphicAt) fun x hx ↦ ?_
+  by_contra hxS
+  exact hx (residue_finitePart_smul_toOneForm_eq_zero f ω (fun h ↦ hxS (hf h))
+    (Finsupp.notMem_support_iff.1 fun h ↦ hxS (hD h)))
+
+/-- The residue pairing kills the principal parts of meromorphic functions, so it descends to the
+cokernel of `MeromorphicFunction.principalParts D`. -/
+@[simp]
+theorem residuePairing_comp_principalParts [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
+    [CompactSpace X] [T2Space X] (D : WeilDivisor X) :
+    residuePairing D ∘ₗ MeromorphicFunction.principalParts D = 0 :=
+  LinearMap.ext fun f ↦ LinearMap.ext fun ω ↦ residuePairing_principalParts_eq_zero f ω
 
 /-- **Compatibility with increasing the divisor.** For `D ≤ E`, pairing the projection of `μ` to
 principal parts relative to `E` with `ω ∈ H⁰(X, Ω_{-E})` is pairing `μ` with the image of `ω`
