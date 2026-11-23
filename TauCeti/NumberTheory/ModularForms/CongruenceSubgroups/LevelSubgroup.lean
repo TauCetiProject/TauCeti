@@ -9,14 +9,20 @@ module
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 -- `ZMod.unitsMap` occurs in the statements below.
 public import Mathlib.Data.ZMod.Units
--- `TauCeti.GL2Borel` and `TauCeti.GL2Gamma1` occur in the statements below.
+-- `TauCeti.GL2Borel`, `TauCeti.GL2Gamma1` and `TauCeti.GL2Gamma1Mu` occur in the statements
+-- below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
+-- The split and nonsplit Cartan subgroups and their normalizers occur in the statements below.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SplitCartan
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonsplitCartan
 -- `Subgroup.projectiveIndex` occurs in the statements below.
 public import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 -- The indices of `Γ₀(N)` and `Γ₁(N)` in `SL(2, ℤ)`, and strong approximation for `SL₂`.
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 -- `Matrix.GeneralLinearGroup.map_neg`: reduction commutes with negation.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+-- The field structure of `ZMod 13`, used to evaluate the Cartan degrees at `ℓ = 13`.
+import Mathlib.Algebra.Field.ZMod
 
 /-!
 # Level subgroups of `GL₂(ℤ / N)`
@@ -28,19 +34,29 @@ following subgroups, whose preimages in `SL(2, ℤ)` are the congruence subgroup
 
 * the trivial subgroup, for `Γ(N)` (full level);
 * `TauCeti.GL2Gamma1 (ZMod N) = {a = 1, c = 0}`, the stabiliser of `P`, for `Γ₁(N)`;
-* `TauCeti.GL2Borel (ZMod N) = {c = 0}`, the stabiliser of the line through `P`, for `Γ₀(N)`.
+* `TauCeti.GL2Borel (ZMod N) = {c = 0}`, the stabiliser of the line through `P`, for `Γ₀(N)`;
+* `TauCeti.GL2Gamma1Mu (ZMod N) = {c = 0, d = 1}`, whose structures are the embeddings
+  `μ_N ↪ E[N]`, for `Γ₁(N)` again.
 
 This file checks these against Mathlib's congruence subgroups: the preimage of each under the
-reduction `SL(2, ℤ) → GL₂(ℤ / N)` is `Γ(N)`, `Γ₁(N)` and `Γ₀(N)` respectively. The reduction has
-image `SL₂(ℤ / N)` (strong approximation), so for a level `H` whose determinant is surjective onto
-`(ℤ / N)ˣ` the index of `H` in `GL₂(ℤ / N)` is the index of its preimage in `SL(2, ℤ)`. Hence
-`[GL₂(ℤ / N) : B] = [SL(2, ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)` and
-`[GL₂(ℤ / N) : Γ₁] = [SL(2, ℤ) : Γ₁(N)]`.
+reduction `SL(2, ℤ) → GL₂(ℤ / N)` is `Γ(N)`, `Γ₁(N)`, `Γ₀(N)` and `Γ₁(N)` respectively. The
+reduction has image `SL₂(ℤ / N)` (strong approximation), so for a level `H` whose determinant is
+surjective onto `(ℤ / N)ˣ` the index of `H` in `GL₂(ℤ / N)` is the index of its preimage in
+`SL(2, ℤ)`. Hence `[GL₂(ℤ / N) : B] = [SL(2, ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)` and
+`[GL₂(ℤ / N) : Γ₁] = [GL₂(ℤ / N) : Γ₁^μ] = [SL(2, ℤ) : Γ₁(N)]`.
 
 The degree of the modular curve `X_H` over the `j`-line is the projective index
 `[GL₂(ℤ / N) : ±H]` (`Subgroup.projectiveIndex`), not the index: the two agree for `Γ₀`, which
 contains `-1`, while for `Γ₁` and `N ≥ 3` the index is twice the projective index. For a prime
-`p` this gives the degrees `p + 1` of `X₀(p)` and `(p² - 1) / 2` of `X₁(p)` for `p ≥ 3`.
+`p` this gives the degrees `p + 1` of `X₀(p)` and `(p² - 1) / 2` of `X₁(p)` for `p ≥ 3`. For a
+prime `ℓ`, the Cartan levels `TauCeti.diagonalTorus`, `TauCeti.GL2SplitCartanNormalizer`,
+`TauCeti.GL2NonsplitCartan` and `TauCeti.GL2NonsplitCartanNormalizer` all contain `-1`, and give
+the degrees `ℓ (ℓ + 1)`, `ℓ (ℓ + 1) / 2`, `ℓ (ℓ - 1)` and `ℓ (ℓ - 1) / 2`: `91` and `78` for the
+two normalizers at `ℓ = 13`.
+
+The index, the projective index and the determinant image of a level are unchanged by
+conjugation in `GL₂(ℤ / N)`: by `Subgroup.index_smul`, `Subgroup.projectiveIndex_pointwise_smul`
+and `TauCeti.map_det_pointwise_smul` respectively.
 
 A level at modulus `n` is also a level at every multiple `m` of `n`, through its preimage under
 the reduction `GL₂(ℤ / m) → GL₂(ℤ / n)`. This reduction is surjective for `m ≠ 0`
@@ -57,9 +73,19 @@ equal in general.
   its preimage in `SL(2, ℤ)`.
 * `TauCeti.comap_mapGL_GL2Borel`, `TauCeti.comap_mapGL_GL2Gamma1`, `TauCeti.ker_mapGL_zmod`: the
   preimages of the standard levels are `Γ₀(N)`, `Γ₁(N)` and `Γ(N)`.
-* `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`: their indices.
-* `TauCeti.projectiveIndex_GL2Borel_zmod_prime`, `TauCeti.two_mul_projectiveIndex_GL2Gamma1_zmod`:
-  their projective indices.
+* `TauCeti.comap_mapGL_GL2Gamma1Mu`: the preimage of `Γ₁^μ` is also `Γ₁(N)`.
+* `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`, `TauCeti.index_GL2Gamma1Mu_zmod`:
+  their indices.
+* `TauCeti.projectiveIndex_GL2Borel_zmod_prime`, `TauCeti.two_mul_projectiveIndex_GL2Gamma1_zmod`,
+  `TauCeti.two_mul_projectiveIndex_GL2Gamma1Mu_zmod`: their projective indices.
+* `TauCeti.projectiveIndex_diagonalTorus_two`,
+  `TauCeti.two_mul_projectiveIndex_GL2SplitCartanNormalizer`,
+  `TauCeti.projectiveIndex_GL2NonsplitCartan`,
+  `TauCeti.two_mul_projectiveIndex_GL2NonsplitCartanNormalizer`: the projective indices of the
+  Cartan levels over a finite field, and
+  `TauCeti.projectiveIndex_GL2SplitCartanNormalizer_zmod_thirteen`,
+  `TauCeti.projectiveIndex_GL2NonsplitCartanNormalizer_zmod_thirteen`: the values `91` and `78`.
+* `TauCeti.map_det_pointwise_smul`: conjugation preserves the determinant image.
 * `TauCeti.GL2.map_castHom_surjective`: the reduction `GL₂(ℤ / m) → GL₂(ℤ / n)` is surjective for
   `n ∣ m` and `m ≠ 0`.
 * `TauCeti.GL2.projectiveIndex_comap_map_castHom`, `TauCeti.GL2.map_det_comap_map_castHom`: the
@@ -76,6 +102,8 @@ equal in general.
 public section
 
 open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup
+
+open scoped Pointwise
 
 open scoped MatrixGroups
 
@@ -176,7 +204,101 @@ theorem two_mul_projectiveIndex_GL2Gamma1_zmod_prime {p : ℕ} (hp : p.Prime) (h
     Gamma0_prime_index p hp, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
     Nat.totient_prime hp]
 
+/-- The preimage in `SL(2, ℤ)` of `TauCeti.GL2Gamma1Mu (ZMod N)` is `Γ₁(N)`. In `SL(2, ℤ)` the two
+conditions `c ≡ 0` and `d ≡ 1` force the third condition `a ≡ 1` of `Γ₁(N)` through the
+determinant. -/
+@[simp]
+theorem comap_mapGL_GL2Gamma1Mu : (GL2Gamma1Mu (ZMod N)).comap (mapGL (ZMod N)) = Gamma1 N := by
+  ext γ
+  simp only [Subgroup.mem_comap, GL2Gamma1Mu.mem_iff, mapGL_coe_matrix, algebraMap_int_eq,
+    map_apply_coe, Matrix.map_apply, Int.coe_castRingHom, Gamma1_mem]
+  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨?_, h₁, h₀⟩, fun ⟨_, h₁, h₀⟩ ↦ ⟨h₁, h₀⟩⟩
+  have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
+    rw [← det_fin_two, γ.det_coe, Int.cast_one]
+  push_cast at hdet
+  simpa [h₀, h₁] using hdet
+
+/-- **`[GL₂(ℤ / N) : Γ₁^μ] = [SL(2, ℤ) : Γ₁(N)]`**. -/
+theorem index_GL2Gamma1Mu_zmod : (GL2Gamma1Mu (ZMod N)).index = (Gamma1 N).index := by
+  rw [← comap_mapGL_GL2Gamma1Mu, index_comap_mapGL_zmod GL2Gamma1Mu.map_det]
+
+/-- **The degree of the `Γ₁^μ(N)` curve over the `j`-line, for `N ≥ 3`**: as for `Γ₁`, there
+`-1 ∉ Γ₁^μ`, so the index `[SL(2, ℤ) : Γ₁(N)]` is twice the projective index. -/
+theorem two_mul_projectiveIndex_GL2Gamma1Mu_zmod (hN : 3 ≤ N) :
+    2 * (GL2Gamma1Mu (ZMod N)).projectiveIndex = (Gamma1 N).index := by
+  have : Fact (2 < N) := ⟨hN⟩
+  rw [Subgroup.two_mul_projectiveIndex (GL2Gamma1Mu.neg_one_mem_iff.not.mpr ZMod.neg_one_ne_one),
+    index_GL2Gamma1Mu_zmod]
+
 end Reduction
+
+section Cartan
+
+variable {F : Type*} [Field F] [Finite F]
+
+/-- **The degree of `X_s(ℓ)` over the `j`-line**: the split Cartan level, the diagonal torus, over
+a field with `q` elements has projective index `q (q + 1)`. -/
+theorem projectiveIndex_diagonalTorus_two :
+    (diagonalTorus F 2).projectiveIndex = Nat.card F * (Nat.card F + 1) := by
+  rw [Subgroup.projectiveIndex_eq_index neg_one_mem_diagonalTorus, index_diagonalTorus_two]
+
+/-- **The degree of `X_s⁺(ℓ)` over the `j`-line is `ℓ (ℓ + 1) / 2`**: twice the projective index
+of the monomial level over a field with `q` elements is `q (q + 1)`. -/
+theorem two_mul_projectiveIndex_GL2SplitCartanNormalizer :
+    2 * (GL2SplitCartanNormalizer F).projectiveIndex = Nat.card F * (Nat.card F + 1) := by
+  rw [Subgroup.projectiveIndex_eq_index GL2SplitCartanNormalizer.neg_one_mem,
+    GL2SplitCartanNormalizer.two_mul_index]
+
+variable {t n : F}
+
+/-- **The degree of `X_ns(ℓ)` over the `j`-line**: the nonsplit Cartan level over a field with `q`
+elements has projective index `q (q - 1)`. -/
+theorem projectiveIndex_GL2NonsplitCartan (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
+    (GL2NonsplitCartan t n).projectiveIndex = Nat.card F * (Nat.card F - 1) := by
+  rw [Subgroup.projectiveIndex_eq_index GL2NonsplitCartan.neg_one_mem,
+    GL2NonsplitCartan.index_eq hirr]
+
+/-- **The degree of `X_ns⁺(ℓ)` over the `j`-line is `ℓ (ℓ - 1) / 2`**: twice the projective
+index of the nonsplit Cartan normalizer over a field with `q` elements is `q (q - 1)`. -/
+theorem two_mul_projectiveIndex_GL2NonsplitCartanNormalizer (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
+    2 * (GL2NonsplitCartanNormalizer t n).projectiveIndex = Nat.card F * (Nat.card F - 1) := by
+  rw [Subgroup.projectiveIndex_eq_index
+      (GL2NonsplitCartan.le_normalizer (t := t) (n := n) GL2NonsplitCartan.neg_one_mem),
+    GL2NonsplitCartanNormalizer.two_mul_index hirr]
+
+/-- **The degree of `X_s⁺(13)` over the `j`-line is `91`.** -/
+theorem projectiveIndex_GL2SplitCartanNormalizer_zmod_thirteen :
+    (GL2SplitCartanNormalizer (ZMod 13)).projectiveIndex = 91 := by
+  have : Fact (Nat.Prime 13) := ⟨by decide⟩
+  have h := two_mul_projectiveIndex_GL2SplitCartanNormalizer (F := ZMod 13)
+  rw [Nat.card_zmod] at h
+  omega
+
+/-- **The degree of `X_ns⁺(13)` over the `j`-line is `78`**, for the nonsplit Cartan subgroup
+`{!![a, 2 b; b, a]}`: `2` is not a square modulo `13`. -/
+theorem projectiveIndex_GL2NonsplitCartanNormalizer_zmod_thirteen :
+    (GL2NonsplitCartanNormalizer (0 : ZMod 13) 2).projectiveIndex = 78 := by
+  have hirr : ∀ x : ZMod 13, x ^ 2 ≠ 0 * x + 2 := by decide
+  have : Fact (Nat.Prime 13) := ⟨by decide⟩
+  have h := two_mul_projectiveIndex_GL2NonsplitCartanNormalizer (F := ZMod 13) hirr
+  rw [Nat.card_zmod] at h
+  omega
+
+end Cartan
+
+/-- **Conjugation preserves the determinant image** of a subgroup of `GL_n(R)`, since
+`det (g h g⁻¹) = det h`. With `Subgroup.index_smul` and `Subgroup.projectiveIndex_pointwise_smul`
+this says that conjugate levels have the same index, projective index and determinant image. -/
+theorem map_det_pointwise_smul {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (H : Subgroup (GL ι R)) (g : ConjAct (GL ι R)) :
+    (g • H).map GeneralLinearGroup.det = H.map GeneralLinearGroup.det := by
+  ext u
+  simp only [Subgroup.mem_map, Subgroup.mem_smul_pointwise_iff_exists]
+  constructor
+  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+    exact ⟨y, hy, by simp [ConjAct.smul_def, mul_comm]⟩
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨g • y, ⟨y, hy, rfl⟩, by simp [ConjAct.smul_def, mul_comm]⟩
 
 namespace GL2
 
