@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.FourierWeight
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -22,7 +21,7 @@ for `u ∈ H^{r+1}(E, F)` and every orthonormal basis `(eᵢ)` of `E`,
 
 `‖u‖²_{H^{r+1}} = ‖u‖²_{H^r} + (2π)⁻² ∑ᵢ ‖∂_{eᵢ} u‖²_{H^r}`
 
-(`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`).
+(`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_mul_sum_norm_lineDerivCLM_sq`).
 
 At `r = 0`, where `H^0 = L²`, this reads `‖u‖²_{H^1} = ‖u‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢ u‖²_{L²}`, the
 form `BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq` of `Schwartz.lean` for elements
@@ -38,24 +37,29 @@ On the Fourier side, with `𝓕 u` the function `BesselPotentialSpace.fourierFun
 `⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}`, Plancherel's formula
 `BesselPotentialSpace.norm_sq_eq_integral_one_add_norm_sq_rpow_mul_norm_fourierFun_sq` gives
 `‖u‖²_{H^{r+1}} = ∫ ⟨ξ⟩^{2r+2} ‖𝓕 u‖²`. The Fourier transforms of `u` and `∂_m u` regarded in `H^r`
-are `𝓕 u` and `2πi ⟪ξ, m⟫ 𝓕 u` (`BesselPotentialSpace.fourierFun_inclusion`,
-`BesselPotentialSpace.fourierFun_lineDerivCLM`), so their squared `H^r` norms are
-`∫ ⟨ξ⟩^{2r} ‖𝓕 u‖²` and `∫ 4π² ⟪ξ, m⟫² ⟨ξ⟩^{2r} ‖𝓕 u‖²`. Parseval's identity
-`∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up to `⟨ξ⟩^{2r} (1 + ‖ξ‖²) = ⟨ξ⟩^{2r+2}`.
+are, volume-almost everywhere, `𝓕 u` and `2πi ⟪ξ, m⟫ 𝓕 u`
+(`BesselPotentialSpace.fourierFun_inclusion`, `BesselPotentialSpace.fourierFun_lineDerivCLM`),
+so their squared `H^r` norms are `∫ ⟨ξ⟩^{2r} ‖𝓕 u‖²` and `∫ 4π² ⟪ξ, m⟫² ⟨ξ⟩^{2r} ‖𝓕 u‖²`.
+Parseval's identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up to
+`⟨ξ⟩^{2r} (1 + ‖ξ‖²) = ⟨ξ⟩^{2r+2}`.
 
 ## Main declarations
 
-* `TauCeti.besselLineDerivSymbol`: the Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of
-  `∂_m : H^{r+1} → H^r`, bounded by `2π ‖m‖` (`TauCeti.norm_besselLineDerivSymbol_le`).
-* `BesselPotentialSpace.coeFn_fourier_toLp_lineDerivCLM`: at `p = 2`, on the Fourier side
-  `∂_m : H^{r+1} → H^r` is multiplication by `besselLineDerivSymbol m`; on tempered distributions
-  this is `TemperedDistribution.smulLeftCLM_fourier_lineDerivOp_eq`, and on the Fourier transforms
-  `BesselPotentialSpace.fourierFun` it is multiplication by `2πi ⟪ξ, m⟫`
-  (`BesselPotentialSpace.fourierFun_lineDerivCLM`).
+* `TauCeti.besselLineDerivSymbol`: the normalized symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of
+  `∂_m : H^{r+1} → H^r`, bounded by `2π ‖m‖` (`TauCeti.norm_besselLineDerivSymbol_le`). It acts
+  between weighted Fourier transforms: it takes the order-`r + 1` weighted Fourier transform
+  `⟨ξ⟩^{r+1} 𝓕 u` to the order-`r` weighted Fourier transform `⟨ξ⟩^r 𝓕 (∂_m u)`.
+* `BesselPotentialSpace.coeFn_fourier_toLp_lineDerivCLM`: at `p = 2`, volume-almost everywhere,
+  the Fourier transform of `(∂_m u).toLp` (the order-`r` weighted Fourier transform of `∂_m u`) is
+  `besselLineDerivSymbol m` times the Fourier transform of `u.toLp` (the order-`r + 1` weighted
+  Fourier transform of `u`); on tempered distributions this is
+  `TemperedDistribution.smulLeftCLM_fourier_lineDerivOp_eq`. On the unweighted Fourier transforms
+  `BesselPotentialSpace.fourierFun`, `∂_m` is volume-almost everywhere multiplication by
+  `2πi ⟪ξ, m⟫` (`BesselPotentialSpace.fourierFun_lineDerivCLM`).
 * `BesselPotentialSpace.norm_lineDerivCLM_le`, `BesselPotentialSpace.norm_lineDerivCLM_apply_le`:
   `‖∂_m u‖_{H^r} ≤ 2π ‖m‖ ‖u‖_{H^{r+1}}`.
-* `BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`: the Plancherel
-  identity for the norms of consecutive orders.
+* `BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_mul_sum_norm_lineDerivCLM_sq`: the
+  Plancherel identity for the norms of consecutive orders.
 
 ## References
 
@@ -77,9 +81,11 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace TauCeti
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of `∂_m : H^{r+1} → H^r`, where
+/-- The normalized Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of `∂_m : H^{r+1} → H^r`, where
 `⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}`: the symbol `2πi ⟪ξ, m⟫` of `∂_m` times the Bessel weight of order
-`-1`. -/
+`-1`. It acts between weighted Fourier transforms, taking the order-`r + 1` weighted Fourier
+transform `⟨ξ⟩^{r+1} 𝓕 u` to the order-`r` weighted Fourier transform `⟨ξ⟩^r 𝓕 (∂_m u)`; on the
+unweighted Fourier transform `𝓕 u` the symbol of `∂_m` is `2πi ⟪ξ, m⟫`. -/
 def besselLineDerivSymbol (m : E) : E → ℂ := fun x ↦
   (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) * (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)
 
@@ -159,8 +165,10 @@ namespace BesselPotentialSpace
 
 variable {r : ℝ}
 
-/-- On the Fourier side, `∂_m : H^{r+1} → H^r` is multiplication by the symbol
-`2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹`. -/
+/-- On the weighted Fourier side, `∂_m : H^{r+1} → H^r` is multiplication by the normalized
+symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹`: volume-almost everywhere, the Fourier transform of `(∂_m u).toLp`, the
+order-`r` weighted Fourier transform of `∂_m u`, is `besselLineDerivSymbol m` times the Fourier
+transform of `u.toLp`, the order-`r + 1` weighted Fourier transform of `u`. -/
 theorem coeFn_fourier_toLp_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
     ⇑(𝓕 (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).toLp :
         Lp F 2 (volume : Measure E)) =ᵐ[volume] fun x ↦
@@ -185,7 +193,8 @@ theorem norm_lineDerivCLM_le (m : E) :
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_lineDerivCLM_apply_le m)
 
 /-- On the Fourier side, `∂_m` is multiplication by its symbol `2πi ⟪ξ, m⟫`: for
-`u ∈ H^{r+1}(E, F)`, the Fourier transform of `∂_m u ∈ H^r` is `2πi ⟪ξ, m⟫` times that of `u`. -/
+`u ∈ H^{r+1}(E, F)`, the Fourier transform of `∂_m u ∈ H^r` is, volume-almost everywhere,
+`2πi ⟪ξ, m⟫` times that of `u`. -/
 theorem fourierFun_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
     (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).fourierFun =ᵐ[volume] fun x ↦
       ((2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ)) • u.fourierFun x := by
@@ -203,7 +212,7 @@ orthonormal basis `(eᵢ)` of `E`,
 The factor `(2π)⁻²` comes from Mathlib's normalization of the Fourier transform, under which
 `∂_m` has the symbol `2πi ⟪ξ, m⟫` while the Bessel potential has the symbol
 `(1 + ‖ξ‖²)^{s/2}`. -/
-theorem norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq {ι : Type*} [Fintype ι]
+theorem norm_sq_eq_norm_inclusion_sq_add_mul_sum_norm_lineDerivCLM_sq {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) (u : H^{r + 1}(E, F)) :
     ‖u‖ ^ 2 = ‖inclusion (r := r) (by linarith) u‖ ^ 2 +
       (2 * π)⁻¹ ^ 2 * ∑ i, ‖lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top (b i) u‖ ^ 2 := by

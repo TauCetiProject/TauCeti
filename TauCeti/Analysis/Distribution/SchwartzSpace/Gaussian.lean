@@ -11,7 +11,6 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -277,8 +276,11 @@ theorem norm_toLp_gaussian_sq {V : Type*} [NormedAddCommGroup V] [InnerProductSp
     [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ} (hb : 0 < b.re) :
     ‖(SchwartzMap.gaussian (V := V) hb).toLp 2‖ ^ 2 =
       (π / (2 * b.re)) ^ (Module.finrank ℝ V / 2 : ℝ) := by
-  simp only [SchwartzMap.norm_toLp_sq, SchwartzMap.norm_gaussian_apply_sq,
-    GaussianFourier.integral_rexp_neg_mul_sq_norm (mul_pos two_pos hb)]
+  rw [SchwartzMap.norm_toLp, SchwartzMap.eLpNorm_gaussian hb two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat, ← Real.rpow_natCast,
+    ← Real.rpow_mul (by positivity), mul_comm b.re]
+  congr 1
+  ring
 
 end TauCeti
 

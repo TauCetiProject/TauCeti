@@ -162,8 +162,10 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
   gcongr
   exact f.norm_le_seminorm ℝ x
 
+omit [BorelSpace E] [SecondCountableTopology E] in
 /-- The squared `L²` norm of a Schwartz function is the integral of its squared pointwise norm. -/
-theorem norm_toLp_sq (f : 𝓢(E, F)) : ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
+theorem norm_toLp_sq [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] (f : 𝓢(E, F)) :
+    ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
   (f.memLp 2 μ).norm_toLp_sq
 
 omit [SecondCountableTopology E] in

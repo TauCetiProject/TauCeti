@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Gaussian
+import TauCeti.Analysis.SpecialFunctions.Gaussian.DerivNorm
 
 /-!
 # The `2π` witness for `H^{1,2}(ℝ)`
@@ -21,7 +22,7 @@ term:
 
 Both are the case `b = π` of the computations for `exp(-b x²)`, `0 < Re b`:
 `TauCeti.norm_toBesselPotentialSpaceCLM_one_gaussian_sq` and
-`TauCeti.Examples.BesselPotential.norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq`.
+`TauCeti.norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq`.
 -/
 
 public section
@@ -29,19 +30,6 @@ public section
 open scoped SchwartzMap BesselPotentialSpace LineDeriv Real
 
 namespace TauCeti.Examples.BesselPotential
-
-/-- **The `W^{1,2}` norm of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`, `0 < Re b`,
-`‖g‖²_{L²} + ‖g'‖²_{L²} = √(π / (2 Re b)) (1 + |b|² / Re b)`. Compared with
-`TauCeti.norm_toBesselPotentialSpaceCLM_one_gaussian_sq`, the derivative term carries the factor
-`(2π)²`. -/
-theorem norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ}
-    (hb : 0 < b.re) :
-    ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 +
-        ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
-      √(π / (2 * b.re)) * (1 + ‖b‖ ^ 2 / b.re) := by
-  rw [norm_toLp_gaussian_sq, Module.finrank_self, Nat.cast_one, ← Real.sqrt_eq_rpow,
-    norm_toLp_lineDerivOp_one_gaussian_sq]
-  ring
 
 /-- The Gaussian `exp(-π x²)` on `ℝ` has `‖g‖²_{H^{1,2}} = (1 + 1 / (4π)) / √2`. -/
 theorem norm_toBesselPotentialSpaceCLM_one_gaussian_pi_sq :
