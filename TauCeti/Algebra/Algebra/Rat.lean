@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 
 /-!
-# Rational algebras from ring homomorphisms
+# Rational algebras
 
 The image of a ring homomorphism `ℚ →+* B` into a semiring is central, because every nonnegative
 rational number is a quotient of natural numbers, whose casts commute with everything, and the
@@ -16,11 +16,15 @@ additive inverse of a central element is central. Hence such a homomorphism make
 `ℚ`-algebra, even when `B` is not commutative. This is used, for instance, to view the target of
 a ring homomorphism out of a `ℚ`-algebra as a `ℚ`-algebra.
 
+The file also records that `2` is invertible in every `ℚ`-algebra, as a reducible non-instance
+for arguments that need to halve.
+
 ## Main declarations
 
 * `RingHom.commute_apply_rat`: the image of a rational number commutes with every element.
 * `RingHom.toRatAlgebra`: the `ℚ`-algebra structure induced by a ring homomorphism `ℚ →+* B`.
 * `RingHom.algebraMap_toRatAlgebra`: its algebra map is the given homomorphism.
+* `TauCeti.invertibleTwoOfAlgebraRat`: `2` is invertible in every `ℚ`-algebra.
 -/
 
 public section
@@ -62,3 +66,14 @@ theorem algebraMap_toRatAlgebra (g : ℚ →+* B) :
   rfl
 
 end RingHom
+
+namespace TauCeti
+
+/-- `2` is invertible in a `ℚ`-algebra, being the image of the invertible rational `2`.
+See note [reducible non-instances]. -/
+noncomputable abbrev invertibleTwoOfAlgebraRat (k : Type*) [Ring k] [Algebra ℚ k] :
+    Invertible (2 : k) :=
+  letI : Invertible (2 : ℚ) := invertibleOfNonzero (OfNat.ofNat_ne_zero 2)
+  (Invertible.map (algebraMap ℚ k) 2).copy 2 (map_ofNat _ 2).symm
+
+end TauCeti

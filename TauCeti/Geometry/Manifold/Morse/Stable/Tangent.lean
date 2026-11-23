@@ -80,7 +80,7 @@ theorem exists_isSmoothEmbedding_stableSet
   have hQ := φ.hessianQuadraticForm_extChartAt
     (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u)
   rw [hd] at hQ
-  exact (φ.sum_weight_mul_coord_sq_pos u.2 (by simpa using hu)).trans_eq hQ.symm
+  exact (φ.sum_weight_mul_coord_sq_pos u.property (by simpa using hu)).trans_eq hQ.symm
 
 /-- **The unstable manifold is a smoothly embedded vector space, with negative definite Hessian on
 its tangent space.** For a critical point `x` of index `k` of a Morse function, the unstable

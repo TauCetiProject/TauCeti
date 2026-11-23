@@ -128,6 +128,14 @@ theorem detLineEndEquiv_tmul (u : Fin (finrank K (ker T)) → ker T)
     (ker T).injective_subtype T.exact_subtype_ker_map T.exact_map_mkQ_range
     (range T).mkQ_surjective u v z hβ hγ φ hξ, detLineEndEquiv_detLineFourTermEquiv]
 
+/-- The canonical trivializations of the determinant lines of equal endomorphisms agree through
+the identification `LinearMap.detLineCongrOfEq` of these lines. -/
+@[simp]
+theorem detLineEndEquiv_detLineCongrOfEq {T' : V →ₗ[K] V} (h : T = T') (x : T.detLine) :
+    T'.detLineEndEquiv (detLineCongrOfEq h x) = T.detLineEndEquiv x := by
+  subst h
+  rw [detLineCongrOfEq_rfl, LinearEquiv.refl_apply]
+
 /-- **The canonical and the bijective trivializations differ by the determinant.** For a bijective
 endomorphism `T`, the canonical trivialization of its determinant line is `(det T)⁻¹` times the
 trivialization `LinearMap.detLineEquivOfBijective`, which sends the product of the empty exterior

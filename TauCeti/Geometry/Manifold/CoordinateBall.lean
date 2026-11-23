@@ -9,9 +9,15 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
+import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Coordinate balls in charted spaces
+
+Around any point `x` of an open set `U` in a space `X` charted on a real seminormed space `E`,
+reparametrizing a coordinate ball inside `U` by `OpenPartialHomeomorph.univBall` gives an open
+embedding `E → U` sending `0` to `x`.
 
 Let `X` be a Hausdorff space charted on a real normed space `E`. Finitely many points of `X` have
 pairwise disjoint coordinate balls about them: for a finite `S ⊆ X` and `r > 0`, there is an open
@@ -31,6 +37,8 @@ such nested covers carry compact restriction maps between Čech cochain spaces.
 
 ## Main results
 
+* `IsOpen.exists_isOpenEmbedding_apply_zero_eq`: an open embedding `E → U` sending `0` to a given
+  point of an open set `U`.
 * `Set.Finite.exists_isOpenEmbedding_prod_ball`: the open embedding of `S × ball 0 r`.
 * `TauCeti.exists_finite_preimageBall_cover`: the finite cover by coordinate balls.
 -/
@@ -38,6 +46,34 @@ such nested covers carry compact restriction maps between Čech cochain spaces.
 public section
 
 open Metric Set Topology
+
+namespace IsOpen
+
+/-- **Coordinate-ball open embedding into an open set.** Around any point `x` of an open set `U` in
+a space `X` charted on a real seminormed space `E`, there is an open embedding `κ : E → U` sending
+`0` to `x`. -/
+theorem exists_isOpenEmbedding_apply_zero_eq {E X : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace X] [ChartedSpace E X] {U : Set X} (hU : IsOpen U)
+    {x : X} (hx : x ∈ U) :
+    ∃ κ : E → U, IsOpenEmbedding κ ∧ (κ 0 : X) = x := by
+  let e := chartAt E x
+  have hxe : x ∈ e.source := mem_chart_source E x
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (e.imageOpens ⟨U, hU⟩).isOpen (e x)
+    (e.map_mem_imageOpens hxe hx)
+  let b := OpenPartialHomeomorph.univBall (e x) r
+  have hb (v : E) : b v ∈ e.target ∧ e.symm (b v) ∈ U :=
+    e.mem_imageOpens.1 <| hball <| OpenPartialHomeomorph.univBall_target (e x) hr ▸
+      b.map_source (OpenPartialHomeomorph.univBall_source (e x) r ▸ mem_univ v)
+  have hκX : IsOpenEmbedding (e.symm ∘ b) :=
+    e.symm.isOpenEmbedding_comp
+      (b.isOpenEmbedding (OpenPartialHomeomorph.univBall_source _ _)) <| by
+        rintro _ ⟨v, rfl⟩
+        exact e.symm_source ▸ (hb v).1
+  let κ : E → U := fun v ↦ ⟨e.symm (b v), (hb v).2⟩
+  exact ⟨κ, (hU.isOpenEmbedding_subtypeVal.of_comp_iff κ).1 hκX, by
+    simp [κ, b, OpenPartialHomeomorph.univBall_apply_zero, e.left_inv hxe]⟩
+
+end IsOpen
 
 namespace Set.Finite
 
@@ -69,8 +105,8 @@ theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) 
   let g (s : S) (z : E) : X := (chartAt E (s : X)).symm (chartAt E (s : X) s + (ε s / r) • z)
   refine ⟨fun p ↦ g p.1 p.2, .of_continuous_injective_isOpenMap
     (continuous_prod_of_discrete_left.2 fun s ↦ ((chartAt E (s : X)).continuousOn_symm.comp
-      (by fun_prop) fun z hz ↦ (hεW s (hball s hz)).1).comp_continuous continuous_subtype_val
-        fun z ↦ z.2) (fun p q h ↦ ?_) (isOpenMap_prod_of_discrete_left.2 fun s U hU ↦ ?_),
+      (by fun_prop) fun z hz ↦ (hεW s (hball s hz)).1).comp_continuous continuous_subtypeVal
+        fun z ↦ z.property) (fun p q h ↦ ?_) (isOpenMap_prod_of_discrete_left.2 fun s U hU ↦ ?_),
     fun s ↦ by simp [g, (chartAt E (s : X)).left_inv (mem_chart_source E _)]⟩
   · -- The common value lies in `W p.1 ∩ W q.1`, so `p.1 = q.1`; charts are injective.
     obtain ⟨⟨s, hsS⟩, z, hz⟩ := p
@@ -86,8 +122,8 @@ theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) 
     rw [← image_image (g s), ← image_image (chartAt E (s : X)).symm]
     exact (chartAt E (s : X)).isOpen_image_symm_of_subset_target
       (((isOpenMap_add_left _).comp (isOpenMap_smul₀ (hc s))) _
-        (isOpen_ball.isOpenMap_subtype_val U hU))
-      (by rintro _ ⟨_, ⟨z, -, rfl⟩, rfl⟩; exact (hεW s (hball s z.2)).1)
+        (isOpen_ball.isOpenMap_subtypeVal U hU))
+      (by rintro _ ⟨_, ⟨z, -, rfl⟩, rfl⟩; exact (hεW s (hball s z.property)).1)
 
 end Set.Finite
 
@@ -130,9 +166,9 @@ theorem exists_finite_preimageBall_cover [CompactSpace X] (K : ℝ) {κ : Type*}
     Opens.mem_iSup.2 ⟨x, OpenPartialHomeomorph.mem_preimageBall.2
       ⟨mem_chart_source H x, mem_ball_self (hr x)⟩⟩
   obtain ⟨s, hs⟩ := hD.exists_finite_of_compactSpace
-  exact ⟨s, inferInstance, fun i ↦ chartAt H i.1, fun i ↦ chartAt H i.1 i.1, fun i ↦ r i.1,
-    fun i ↦ chart_mem_atlas H i.1, fun i ↦ hr i.1,
-    fun i ↦ (hKr i.1).trans fun z hz ↦ (hεV i.1 hz).1,
-    fun i ↦ ⟨k i.1, by rintro _ ⟨z, hz, rfl⟩; exact (hεV i.1 (hKr i.1 hz)).2⟩, hs.iSup_eq_top⟩
+  exact ⟨s, inferInstance, fun i ↦ chartAt H i.val, fun i ↦ chartAt H i.val i.val, fun i ↦ r i.val,
+    fun i ↦ chart_mem_atlas H i.val, fun i ↦ hr i.val,
+    fun i ↦ (hKr i.val).trans fun z hz ↦ (hεV i.val hz).1,
+    fun i ↦ ⟨k i.val, by rintro _ ⟨z, hz, rfl⟩; exact (hεV i.val (hKr i.val hz)).2⟩, hs.iSup_eq_top⟩
 
 end TauCeti

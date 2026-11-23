@@ -67,9 +67,26 @@ lemma relativeCoordinates_apply (p q : ℤ) (hpq : p + -1 = q) (x : (mappingCoco
 
 lemma relativeCoordinates_symm_apply (p q : ℤ) (hpq : p + -1 = q) (x : K.X p × L.X q) :
     (relativeCoordinates f p q hpq).symm x = (inl f).v p p (add_zero p) x.1 -
-      (inr f).1.v q p (by omega) x.2 := by
+      (inr f).val.v q p (by omega) x.2 := by
   apply (relativeCoordinates f p q hpq).injective
   rw [LinearEquiv.apply_symm_apply, relativeCoordinates_apply]
+  ext <;> simp [← ModuleCat.comp_apply]
+
+/-- In relative coordinates the inclusion `inl f` of `K` is `a ↦ (a, 0)`. -/
+@[simp]
+lemma relativeCoordinates_inl_v (p q : ℤ) (hpq : p + -1 = q) (a : K.X p) :
+    relativeCoordinates f p q hpq ((inl f).v p p (add_zero p) a) = (a, 0) := by
+  rw [relativeCoordinates_apply]
+  ext <;> simp [← ModuleCat.comp_apply]
+
+/-- In relative coordinates the inclusion `inr f` of `L` is `b ↦ (0, -b)`. So the class of the
+cocycle `inr b` is `-[(0, b)]`, the connecting map of the relative complex; see
+`CochainComplex.mappingCocone.δ_comp_homologyMap_lift` for its comparison with the connecting
+map of a short exact sequence. -/
+@[simp]
+lemma relativeCoordinates_inr_v (p q : ℤ) (hpq : p + -1 = q) (b : L.X q) :
+    relativeCoordinates f p q hpq ((inr f).val.v q p (by omega) b) = (0, -b) := by
+  rw [relativeCoordinates_apply]
   ext <;> simp [← ModuleCat.comp_apply]
 
 /-- In relative coordinates the shifted cone differential is `(a, b) ↦ (d a, f a - d b)`. -/

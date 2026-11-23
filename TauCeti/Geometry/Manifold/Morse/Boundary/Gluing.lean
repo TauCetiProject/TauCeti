@@ -147,7 +147,7 @@ theorem exists_homeomorph_Ico_of_mem_morseBrokenTrajectoryPairs {p r : M}
     · exact Or.inl (not_not.1 fun hne ↦ hxB ⟨hx, hne⟩)
   -- The half-open arc, viewed in the compactified space.
   let g : Ico (0 : ℝ) δ → closure S := codRestrict (Subtype.val ∘ e) (closure S) fun s ↦
-    insert_subset hw subset_closure (hN (e s).2)
+    insert_subset hw subset_closure (hN (e s).property)
   have hg : IsEmbedding g := (IsEmbedding.subtypeVal.comp e.isEmbedding).codRestrict _ _
   have hrange : (↑) '' range g = N := by
     rw [← range_comp]

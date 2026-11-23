@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.FirstJet
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Existence
 
 /-!
@@ -18,8 +18,10 @@ property. Every closed `C^r` form `η` of positive degree on `N`, with `r ≥ 1`
 zero along `f` becomes exact on restriction to `W`, with a `C^r` primitive vanishing along the
 image of `f` as a full ambient tensor
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). The ambient form `η` itself
-need not vanish along the image of `f`, only its pullback `f^* η` does. The neighbourhood `W`
-is chosen before the form, so it serves every such form of every degree at once.
+need not vanish along the image of `f`, only its pullback `f^* η` does; at the points of the
+image where `η` does vanish as a full ambient tensor, the primitive moreover has zero first jet.
+The neighbourhood `W` is chosen before the form, so it serves every such form of every degree at
+once.
 
 The neighbourhood `W` is a tubular neighbourhood: by the tubular neighbourhood theorem
 (`TauCeti.SmoothEmbedding.exists_diffeomorph_normalBundle_subset`) it is the image of a
@@ -59,7 +61,9 @@ variable {E V H G M N : Type*}
 the image of a smooth embedding `f : M → N` contains an open neighbourhood `W` of that image with
 the following property. Every closed `C^r` form `η` of positive degree on `N`, with `1 ≤ r` and
 `f^* η = 0`, restricts on `W` to the exterior derivative of a `C^r` form `β` that vanishes at
-every point of the image of `f` as a full ambient tensor. -/
+every point of the image of `f` as a full ambient tensor. At every point `f x` where `η` itself
+vanishes as a full ambient tensor, `β` moreover has zero first jet: its coordinate expression in
+the chart at `f x` has zero derivative at the chart point of `f x`. -/
 theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N) {O : Set N}
     (hO : IsOpen O) (hfO : range f ⊆ O) :
     ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧ ∃ hfW : range f ⊆ W,
@@ -67,7 +71,11 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
         mextDeriv η = 0 → mpullback I J f η = 0 →
         ∃ β : RoughForm J W F k, IsSmoothForm J r β ∧
           mextDeriv β = mpullback J J (Subtype.val : W → N) η ∧
-          ∀ x, β ⟨f x, hfW (mem_range_self x)⟩ = 0 := by
+          (∀ x, β ⟨f x, hfW (mem_range_self x)⟩ = 0) ∧
+          ∀ x, η (f x) = 0 →
+            HasFDerivAt (β.inChartAt ⟨f x, hfW (mem_range_self x)⟩)
+              (0 : V →L[ℝ] V [⋀^Fin k]→L[ℝ] F)
+              (extChartAt J (⟨f x, hfW (mem_range_self x)⟩ : W) ⟨f x, hfW (mem_range_self x)⟩) := by
   let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
   have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E := by simp [P]
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
@@ -80,9 +88,9 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
   have hfW : range f ⊆ W := by
     rintro _ ⟨x, rfl⟩
     rw [← hΦ x]
-    exact (Φ _).2
+    exact (Φ _).property
   refine ⟨W, hWO, hfW, fun {k r} hr {η} hη hclosed hi ↦ ?_⟩
-  have hval : ContMDiff J J ∞ (Subtype.val : W → N) := contMDiff_subtype_val
+  have hval : ContMDiff J J ∞ (Subtype.val : W → N) := contMDiff_subtypeVal
   have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
   have hηW : IsSmoothForm J r (mpullback J J (Subtype.val : W → N) η) :=
     hη.mpullback (hval.of_le (by exact_mod_cast (le_top : r + 1 ≤ ⊤)))
@@ -94,13 +102,16 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
       (mpullback J J (Subtype.val : W → N) η) = 0 := by
     rw [← mpullback_comp ((Φ.contMDiff.comp (contMDiff_zeroSection ℝ _)).mdifferentiable
       (by simp)) (hval.mdifferentiable (by simp)), hcomp, hi]
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_relative_primitive hr
+  obtain ⟨β, hβ, hdβ, hβ₀, hβ₁⟩ := Φ.exists_isSmoothForm_relative_primitive hr
     (by exact_mod_cast (le_top : r + 1 ≤ ⊤)) hηW hclosedW hiW
-  refine ⟨β, hβ, hdβ, fun x ↦ ?_⟩
   -- The point `f x` of `W` is the image under `Φ` of the zero vector over `x`.
-  have hx : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
+  have hx (x : M) : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection P _ x) :=
     Subtype.ext (hΦ x).symm
-  rw [hx]
-  exact hβ₀ x
+  refine ⟨β, hβ, hdβ, fun x ↦ ?_, fun x hηx ↦ ?_⟩
+  · rw [hx]
+    exact hβ₀ x
+  · have h := hβ₁ x (by rw [← hx]; exact mpullback_apply_eq_zero hηx)
+    rw [ModelWithCorners.range_eq_univ, hasFDerivWithinAt_univ, ← hx] at h
+    exact h
 
 end TauCeti.SmoothEmbedding

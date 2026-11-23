@@ -28,6 +28,13 @@ pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function
 piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
 For a function in `Lᵖ` on each piece, the same subadditivity holds for the real-valued norm
 `lpNorm` (`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
+On a countable union of sets the `L^∞` seminorm is the supremum of the `L^∞` seminorms on the
+pieces (`MeasureTheory.eLpNorm_exponent_top_restrict_iUnion`).
+
+Comparisons between two functions on each summand also pass to a countable sum of measures
+(`MeasureTheory.eLpNorm_sum_measure_le_mul_of_forall_le`). Unlike subadditivity, this keeps the
+constant unchanged and works at every exponent, including `∞`; it therefore glues estimates
+on disjoint measurable pieces without a loss depending on the number of pieces.
 
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
 `lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`). In particular, if `ψ = 1` on `t`,
@@ -36,6 +43,8 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
 
 ## Main declarations
 
+* `MeasureTheory.eLpNorm_sum_measure_le_mul_of_forall_le`: scaled comparisons pass to a countable
+  sum of measures, with no loss in the constant.
 * `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
 * `MeasureTheory.lpNorm_restrict_le_lpNorm_smul`: comparing `lpNorm` across a cutoff.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
@@ -44,6 +53,7 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
   norm suffices).
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
+* `MeasureTheory.eLpNorm_exponent_top_restrict_iUnion`: the `L^∞` seminorm over a countable union.
 * `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
   `Lᵖ` on the covered set.
 * `MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`: subadditivity of `lpNorm` over a
@@ -55,6 +65,49 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- Scaled comparisons of `Lᵖ` seminorms on each summand pass to a countable sum of measures,
+for every exponent, including `0` and `∞`. The functions may have different codomains with
+extended norms, and no measurability assumptions are needed. -/
+theorem eLpNorm_sum_measure_le_mul_of_forall_le {α ι E F : Type*} [MeasurableSpace α]
+    [Countable ι] [TopologicalSpace E] [ENorm E]
+    [TopologicalSpace.PseudoMetrizableSpace E] [TopologicalSpace F] [ENorm F]
+    {f : α → E} {g : α → F} {p c : ℝ≥0∞} (μ : ι → Measure α)
+    (h : ∀ i, eLpNorm f p (μ i) ≤ c * eLpNorm g p (μ i)) :
+    eLpNorm f p (Measure.sum μ) ≤ c * eLpNorm g p (Measure.sum μ) := by
+  by_cases hg : c * eLpNorm g p (Measure.sum μ) = ∞
+  · simp [hg]
+  have hfm : ∀ i, AEStronglyMeasurable f (μ i) := fun i ↦
+    aestronglyMeasurable_of_eLpNorm_ne_top <| ne_top_of_le_ne_top hg <|
+      (h i).trans (mul_le_mul_right (eLpNorm_mono_measure g (Measure.le_sum μ i)) c)
+  have hf := aestronglyMeasurable_sum_measure_iff.2 hfm
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp [eLpNorm_exponent_zero hf]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [eLpNorm_exponent_top hf]
+    apply eLpNormEssSup_le_of_ae_eNorm_bound
+    exact Measure.ae_sum_iff.2 fun i ↦
+      (eNorm_ae_le_eLpNormEssSup f (μ i)).mono fun x hx ↦
+        hx.trans <| eLpNormEssSup_le_eLpNorm_top.trans <|
+          (h i).trans (mul_le_mul_right (eLpNorm_mono_measure g (Measure.le_sum μ i)) c)
+  have hr := ENNReal.toReal_pos hp0 hp
+  have hpow {v : α → E} {ν : Measure α} (hv : AEStronglyMeasurable v ν) :
+      eLpNorm v p ν ^ p.toReal = ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂ν := by
+    rw [eLpNorm_eq_eLpNorm' hp0 hp hv, lintegral_rpow_eNorm_eq_rpow_eLpNorm' hr]
+  rw [← ENNReal.rpow_le_rpow_iff hr, hpow hf, lintegral_sum_measure]
+  by_cases hc : c = 0
+  · simp only [hc, zero_mul, ENNReal.zero_rpow_of_pos hr] at h ⊢
+    exact le_of_eq <| tsum_eq_zero_iff.2 fun i ↦ by
+      rw [← hpow (hfm i), nonpos_iff_eq_zero.1 (h i), ENNReal.zero_rpow_of_pos hr]
+  have hgm : AEStronglyMeasurable g (Measure.sum μ) :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (p := p) fun htop ↦ hg (by simp [htop, hc])
+  rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le, eLpNorm_eq_eLpNorm' hp0 hp hgm,
+    ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' hr, lintegral_sum_measure, ← ENNReal.tsum_mul_left]
+  exact tsum_le_tsum fun i ↦ by
+    rw [← hpow (hfm i), lintegral_rpow_eNorm_eq_rpow_eLpNorm' hr,
+      ← eLpNorm_eq_eLpNorm' hp0 hp (hgm.mono_measure (Measure.le_sum μ i)),
+      ← ENNReal.mul_rpow_of_nonneg _ _ hr.le]
+    exact ENNReal.rpow_le_rpow (h i) hr.le
 
 /-- The `p`-th power of the `Lᵖ` seminorm is subadditive under adding measures. For `p = 0` or
 `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No measurability is assumed: if the
@@ -150,6 +203,23 @@ theorem eLpNorm_restrict_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] (f : 
   refine (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hs)).trans ?_
   simpa only [Finset.mem_univ, Set.iUnion_true] using
     eLpNorm_restrict_biUnion_finset_le (μ := μ) f hp Finset.univ t
+
+/-- **The `L^∞` seminorm over a countable union.** The `L^∞` seminorm of `f` on a countable union
+of sets is the supremum of its `L^∞` seminorms on the pieces. The sets need not be measurable. -/
+theorem eLpNorm_exponent_top_restrict_iUnion {ι : Type*} [Countable ι] (f : α → ε)
+    (s : ι → Set α) :
+    eLpNorm f ∞ (μ.restrict (⋃ i, s i)) = ⨆ i, eLpNorm f ∞ (μ.restrict (s i)) := by
+  refine le_antisymm ?_ (iSup_le fun i ↦ eLpNorm_mono_measure f
+    (Measure.restrict_mono_set μ (Set.subset_iUnion s i)))
+  by_cases hf : AEStronglyMeasurable f (μ.restrict (⋃ i, s i))
+  · rw [eLpNorm_exponent_top hf]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ((ae_restrict_iUnion_iff s _).2 fun i ↦ ?_)
+    filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ.restrict (s i))] with x hx
+    rw [← eLpNorm_exponent_top (aestronglyMeasurable_iUnion_iff.1 hf i)] at hx
+    exact hx.trans (le_iSup (fun i ↦ eLpNorm f ∞ (μ.restrict (s i))) i)
+  · obtain ⟨i, hi⟩ := not_forall.1 (mt aestronglyMeasurable_iUnion_iff.2 hf)
+    rw [eLpNorm_of_not_aestronglyMeasurable hf]
+    exact le_iSup_of_le i (eLpNorm_of_not_aestronglyMeasurable hi).ge
 
 /-- **Subadditivity of `lpNorm` over a finite cover.** For `1 ≤ p`, the `Lᵖ` norm of `f` on a set
 covered by the sets `s i`, `i ∈ t`, is at most the sum of its `Lᵖ` norms on the pieces, provided
