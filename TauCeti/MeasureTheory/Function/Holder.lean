@@ -38,6 +38,8 @@ integration-by-parts arguments:
   continuous on `K` is integrable.
 * `ContinuousLinearMap.norm_lpPairing_apply_apply_le`: Hölder's inequality
   `‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖` for the integral pairing of a bilinear map `B`.
+* `ContinuousLinearMap.norm_lpPairing_le`: the Hölder pairing induced by a continuous bilinear map
+  `B` has norm at most `‖B‖`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
@@ -187,6 +189,11 @@ theorem norm_lpPairing_apply_apply_le (B : E →L[𝕜] F →L[𝕜] G) (g : Lp 
     simp [lpPairing, L1.integral_eq' 𝕜]
   rw [h]
   exact (L1.norm_integral_le _).trans (B.norm_holder_apply_apply_le _ _)
+
+/-- **Hölder's inequality for the pairing** `∫ B (f x) (g x) dx` of `Lᵖ` and `L^q`: the Hölder
+pairing induced by a continuous bilinear map `B` has norm at most `‖B‖`. -/
+theorem norm_lpPairing_le (B : E →L[𝕜] F →L[𝕜] G) : ‖B.lpPairing μ p q‖ ≤ ‖B‖ :=
+  opNorm_le_bound₂ _ (norm_nonneg B) B.norm_lpPairing_apply_apply_le
 
 end ContinuousLinearMap
 
