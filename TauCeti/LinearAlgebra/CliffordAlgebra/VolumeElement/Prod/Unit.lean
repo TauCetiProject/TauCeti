@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.ProdEquiv
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Unit
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Orientation-sign and rank-zero unit laws of `CliffordAlgebra.complexProdTensor`
@@ -60,10 +61,13 @@ theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr (w : W) :
     complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂
         (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, w))) =
       -TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w))) := by
-  rw [complexProdTensor_ι_one_tmul_toLp, TensorProduct.tmul_zero, map_zero, map_zero,
-    LinearMap.rTensor_zero, zero_add, complexVolume_neg_orientation, map_neg,
-    ← neg_one_smul ℂ (ρ₁ _), TensorProduct.map_smul_left]
-  ext z; simp
+  have hγ : ρ₁ (complexVolume Q₁ (-o₁)) = -ρ₁ (complexVolume Q₁ o₁) := by
+    rw [complexVolume_neg_orientation, map_neg]
+  simp only [complexProdTensor_eq_comp, hγ]
+  rw [AlgHom.cliffordProdTensor_neg_grading ρ₁ (ρ₁ (complexVolume Q₁ o₁))
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂,
+    ← complexProdTensor_eq_comp hQ o₁ hQ₁ hn, complexProdTensor_ι_one_tmul_toLp_inr]
+  ext z; simp [TensorProduct.tmul_neg]
 
 variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)]
 
@@ -159,9 +163,9 @@ theorem conj_lid_complexProdTensor_positiveOrientation_complexVolume
           (fun v ↦ by simp [Subsingleton.elim v 0]) Even.zero ρ₁ ρ₂ (complexVolume Q o)) =
       ρ₂ (complexVolume Q₂ o₂) := by
   subst o
-  exact conj_complexVolume_of_conjAlgEquiv_comp
-    (conjAlgEquiv_lid_complexProdTensor_positiveOrientation hQ ρ₁ ρ₂)
-    (equivOfIsometry_withLpUniqueProd_complexVolume hQ o₂)
+  rw [LinearEquiv.conj_apply_of_conjAlgEquiv_comp
+      (conjAlgEquiv_lid_complexProdTensor_positiveOrientation hQ ρ₁ ρ₂),
+    AlgEquiv.coe_toAlgHom, equivOfIsometry_withLpUniqueProd_complexVolume hQ o₂]
 
 /-- For `-positiveOrientation` on trivial `V` and the product orientation of
 `(-positiveOrientation, o₂)`, `TensorProduct.lid ℂ F` conjugates the action of `complexVolume Q o`
@@ -176,9 +180,12 @@ theorem conj_lid_complexProdTensor_neg_positiveOrientation_complexVolume
           (fun v ↦ by simp [Subsingleton.elim v 0]) Even.zero ρ₁ ρ₂ (complexVolume Q o)) =
       -((-1 : ℂ) ^ m • ρ₂ (complexVolume Q₂ o₂)) := by
   subst o
-  have h := conj_complexVolume_of_conjAlgEquiv_comp
+  have h := LinearEquiv.conj_apply_of_conjAlgEquiv_comp
     (conjAlgEquiv_lid_complexProdTensor_neg_positiveOrientation hQ ρ₁ ρ₂)
-    (equivOfIsometry_withLpUniqueProd_complexVolume hQ o₂)
+    (complexVolume Q ((Orientation.prod (positiveOrientation : Orientation ℝ V (Fin 0)) o₂
+      Module.finrank_zero_of_subsingleton Fact.out).map (Fin (0 + m))
+      (WithLp.linearEquiv 2 ℝ (V × W)).symm))
+  rw [AlgEquiv.coe_toAlgHom, equivOfIsometry_withLpUniqueProd_complexVolume hQ o₂] at h
   rw [Orientation.prod_neg_left, Orientation.map_neg, complexVolume_neg_orientation, map_neg,
     map_neg, h]
   simp [involute_complexVolume]
@@ -227,9 +234,9 @@ theorem conj_rid_complexProdTensor_complexVolume_of_positiveOrientation
     (TensorProduct.rid ℂ E).conj (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)) =
       ρ₁ (complexVolume Q₁ o₁) := by
   subst o
-  exact conj_complexVolume_of_conjAlgEquiv_comp
-    (conjAlgEquiv_rid_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂)
-    (equivOfIsometry_withLpProdUnique_complexVolume hQ o₁)
+  rw [LinearEquiv.conj_apply_of_conjAlgEquiv_comp
+      (conjAlgEquiv_rid_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂),
+    AlgEquiv.coe_toAlgHom, equivOfIsometry_withLpProdUnique_complexVolume hQ o₁]
 
 /-- For `-positiveOrientation` on trivial `W`, `TensorProduct.rid ℂ E` conjugates the action of
 `complexVolume Q o` to `-ρ₁ (complexVolume Q₁ o₁)`. -/

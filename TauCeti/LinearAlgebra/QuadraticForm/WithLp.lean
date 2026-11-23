@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
@@ -230,23 +229,13 @@ variable {p : ℝ≥0∞} {R A M₁ M₂ M₃ : Type*} [CommRing R] [Invertible 
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
   {Q : QuadraticForm R (WithLp p (M₁ × M₂))}
 
-private theorem isometryEquiv_baseChange_ext {R A M N : Type*} [CommRing R] [Invertible (2 : R)]
-    [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M] [AddCommGroup N]
-    [Module R N] [Module A N] [IsScalarTower R A N]
-    {Q : QuadraticForm R M} {Q' : QuadraticForm A N}
-    {f g : (Q.baseChange A).IsometryEquiv Q'}
-    (h : ∀ (a : A) (m : M), f (a ⊗ₜ m) = g (a ⊗ₜ m)) : f = g :=
-  DFunLike.ext _ _ fun x ↦ LinearMap.congr_fun
-    (show f.toLinearEquiv.toLinearMap = g.toLinearEquiv.toLinearMap from
-      TensorProduct.AlgebraTensorModule.ext h) x
-
 /-- Deleting a trivial left factor commutes with base change of `WithLp` products. -/
 theorem baseChangeProd_trans_uniqueProd [Unique M₁]
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2) :
     ((withLpProd hQ).baseChangeProd A).trans
         (uniqueProd (Q₁.baseChange A) (Q₂.baseChange A)) =
       (withLpUniqueProd hQ).baseChange A :=
-  isometryEquiv_baseChange_ext fun a m ↦ by simp
+  baseChange_ext fun a m ↦ by simp
 
 /-- Deleting a trivial right factor commutes with base change of `WithLp` products. -/
 theorem baseChangeProd_trans_prodUnique [Unique M₂]
@@ -254,7 +243,7 @@ theorem baseChangeProd_trans_prodUnique [Unique M₂]
     ((withLpProd hQ).baseChangeProd A).trans
         (prodUnique (Q₁.baseChange A) (Q₂.baseChange A)) =
       (withLpProdUnique hQ).baseChange A :=
-  isometryEquiv_baseChange_ext fun a m ↦ by simp
+  baseChange_ext fun a m ↦ by simp
 
 /-- Swapping factors commutes with base change of `WithLp` products. -/
 theorem baseChange_withLpProdComm_trans_baseChangeProd
@@ -263,7 +252,7 @@ theorem baseChange_withLpProdComm_trans_baseChangeProd
     (hQ' : ∀ y, Q' y = Q₂ (WithLp.ofLp y).1 + Q₁ (WithLp.ofLp y).2) :
     ((withLpProdComm hQ hQ').baseChange A).trans ((withLpProd hQ').baseChangeProd A) =
       ((withLpProd hQ).baseChangeProd A).trans (prodComm (Q₁.baseChange A) (Q₂.baseChange A)) :=
-  isometryEquiv_baseChange_ext fun a m ↦ by simp
+  baseChange_ext fun a m ↦ by simp
 
 /-- Reassociating iterated `WithLp` products commutes with base change. -/
 theorem baseChangeProd_trans_prodAssoc
@@ -280,7 +269,7 @@ theorem baseChangeProd_trans_prodAssoc
       ((withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃).baseChange A).trans
         (((withLpProd hQ₁_₂₃).baseChangeProd A).trans
           ((refl (Q₁.baseChange A)).prod ((withLpProd hQ₂₃).baseChangeProd A))) :=
-  isometryEquiv_baseChange_ext fun a m ↦ by simp
+  baseChange_ext fun a m ↦ by simp
 
 end BaseChange
 
@@ -384,8 +373,8 @@ namespace QuadraticMap
 /-- The orthogonal sum of negative norm-squared quadratic forms on `U` and `V` is again negative
 norm-squared on `WithLp 2 (U × V)`. -/
 theorem apply_eq_neg_norm_sq_of_withLp_prod {U V : Type*}
-    [NormedAddCommGroup U] [InnerProductSpace ℝ U]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [SeminormedAddCommGroup U] [NormedSpace ℝ U]
+    [SeminormedAddCommGroup V] [NormedSpace ℝ V]
     {Q₁ : QuadraticForm ℝ U} {Q₂ : QuadraticForm ℝ V}
     (Q : QuadraticForm ℝ (WithLp 2 (U × V)))
     (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)

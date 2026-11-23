@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.ProdEquiv
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Koszul symmetry of `CliffordAlgebra.complexProdTensor`
@@ -116,7 +117,8 @@ theorem conj_koszulComm_complexProdTensor_complexVolume
   subst o o'
   have hvol := equivOfIsometry_withLpProdComm_complexVolume hQ hQ' o₁ o₂
   rw [(hn.mul_right m).neg_one_pow, one_smul] at hvol
-  exact conj_complexVolume_of_conjAlgEquiv_comp
-    (conjAlgEquiv_koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂) hvol
+  rw [LinearEquiv.conj_apply_of_conjAlgEquiv_comp
+      (conjAlgEquiv_koszulComm_complexProdTensor hQ hQ' o₁ hQ₁ hn o₂ hQ₂ hm ρ₁ ρ₂),
+    AlgEquiv.coe_toAlgHom, hvol]
 
 end CliffordAlgebra

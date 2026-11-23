@@ -20,9 +20,9 @@ an instance `Fact (Module.finrank R M = Module.finrank R N)` (such as the orthon
 The dimension of a product of free finite modules of dimensions `2 n` and `2 m` is `2 (n + m)`, as
 an instance of `Fact` (`TauCeti.fact_finrank_prod_eq_two_mul_add`). This is the even-dimensional
 form taken by the dimension hypothesis of the volume form of a two-form, such as the product of
-two symplectic forms. Similarly, `TauCeti.instFactFinrankOfUnique`,
+two symplectic forms. Similarly, `TauCeti.instFactFinrankOfSubsingleton`,
 `TauCeti.instFactFinrankWithLpProd`, and `TauCeti.instFactFinrankWithLpProdUnique` supply `Fact`
-dimension witnesses for `Unique` modules and `WithLp` products.
+dimension witnesses for `Subsingleton` modules and `WithLp` products.
 -/
 
 public section
@@ -36,9 +36,9 @@ instance instFactFinrankEqSelf {R M : Type*} [Semiring R] [AddCommMonoid M] [Mod
     Fact (Module.finrank R M = Module.finrank R M) :=
   ⟨rfl⟩
 
-/-- A `Unique` module has dimension `0`, as an instance of `Fact`. -/
-instance instFactFinrankOfUnique {R V : Type*} [Semiring R] [Nontrivial R] [AddCommMonoid V]
-    [Module R V] [Unique V] : Fact (Module.finrank R V = 0) :=
+/-- A `Subsingleton` module has dimension `0`, as an instance of `Fact`. -/
+instance instFactFinrankOfSubsingleton {R V : Type*} [Semiring R] [Nontrivial R] [AddCommMonoid V]
+    [Module R V] [Subsingleton V] : Fact (Module.finrank R V = 0) :=
   ⟨Module.finrank_zero_of_subsingleton⟩
 
 /-- The product of free finite modules of dimensions `2 n` and `2 m` has dimension `2 (n + m)`, as
@@ -60,13 +60,12 @@ instance instFactFinrankWithLpProd {p : ℝ≥0∞} {R V W : Type*} [Semiring R]
   ⟨by rw [(WithLp.linearEquiv p R (V × W)).finrank_eq, Module.finrank_prod,
     Fact.out (p := Module.finrank R V = n), Fact.out (p := Module.finrank R W = m)]⟩
 
-/-- The `WithLp` product of a finite free module of dimension `n` with a `Unique` module has
-dimension `n`, as an instance of `Fact`. -/
+/-- The `WithLp` product of a module of dimension `n` with a `Unique` module has dimension `n`,
+as an instance of `Fact`. -/
 instance instFactFinrankWithLpProdUnique {p : ℝ≥0∞} {R V W : Type*} [Semiring R]
-    [StrongRankCondition R] [AddCommGroup V] [Module R V] [Module.Free R V] [Module.Finite R V]
-    [AddCommGroup W] [Module R W] [Unique W] {n : ℕ} [Fact (Module.finrank R V = n)] :
+    [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W] [Unique W] {n : ℕ}
+    [Fact (Module.finrank R V = n)] :
     Fact (Module.finrank R (WithLp p (V × W)) = n) :=
-  ⟨by rw [(WithLp.linearEquiv p R (V × W)).finrank_eq, Module.finrank_prod,
-    Fact.out (p := Module.finrank R V = n), Module.finrank_zero_of_subsingleton, add_zero]⟩
+  ⟨((WithLp.linearEquiv p R (V × W)).trans LinearEquiv.prodUnique).finrank_eq.trans Fact.out⟩
 
 end TauCeti

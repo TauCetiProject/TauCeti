@@ -41,7 +41,9 @@ through it: an element `b` of `CliffordAlgebra Q₂` of parity `j` acts by `γ ^
 pure tensor `a ᵍ⊗ b` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
 
 Over a field, for finite-dimensional quadratic spaces, the graded tensor product of two
-bijective Clifford representations is again bijective (`AlgHom.bijective_cliffordProdTensor`).
+bijective Clifford representations is again bijective (`AlgHom.bijective_cliffordProdTensor`), and
+over a commutative ring surjectivity passes to the graded tensor product on finite projective
+modules (`AlgHom.surjective_cliffordProdTensor`).
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
@@ -68,6 +70,8 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
   `(-1) ^ (j * i) • (ρ₁ a e ⊗ ρ₂ b f)`.
 * `AlgHom.map_mul_cliffordProdTensor_ι`: the tensor grading `γ ⊗ γ₂` anticommutes with every
   vector.
+* `AlgHom.surjective_cliffordProdTensor`: over a commutative ring, the graded tensor product of two
+  surjective Clifford representations on finite projective modules is surjective.
 * `AlgHom.bijective_cliffordProdTensor`: over a field, the graded tensor product of two bijective
   Clifford representations on finite-dimensional quadratic spaces is bijective.
 
@@ -285,6 +289,44 @@ theorem cliffordProdTensor_toProd_tmul_apply_of_apply_eq_neg_one_pow_smul
 
 section Bijective
 
+/-- **Surjectivity of the graded tensor product**: if `ρ₁` and `ρ₂` are surjective onto the
+endomorphism algebras of finite-dimensional projective (in particular, finite-dimensional over a
+field) modules `E` and `F`, then `AlgHom.cliffordProdTensor` is surjective onto
+`End R (E ⊗[R] F)`. -/
+theorem surjective_cliffordProdTensor
+    {R M₁ M₂ E F : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    [AddCommGroup E] [Module R E] [Module.Projective R E] [Module.Finite R E]
+    [AddCommGroup F] [Module R F] [Module.Projective R F] [Module.Finite R F]
+    (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E) (γ : Module.End R E)
+    (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ))
+    (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
+    (hρ₁ : Function.Surjective ρ₁) (hρ₂ : Function.Surjective ρ₂) :
+    Function.Surjective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) := by
+  obtain ⟨g, hg⟩ := hρ₁ γ
+  suffices hmem : ∀ T : Module.End R (E ⊗[R] F),
+      T ∈ LinearMap.range (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap from
+    fun T ↦ LinearMap.mem_range.mp (hmem T)
+  intro T
+  obtain ⟨U, rfl⟩ := (homTensorHomEquiv R E F E F).surjective T
+  induction U using TensorProduct.inductionOn with
+  | tmul u v =>
+    obtain ⟨a, rfl⟩ := hρ₁ u
+    obtain ⟨b, rfl⟩ := hρ₂ v
+    obtain ⟨b₀, hb₀, b₁, hb₁, hadd⟩ := Submodule.mem_sup.mp
+      ((evenOdd_isCompl Q₂).sup_eq_top ▸ Submodule.mem_top (x := b))
+    rw [← hadd, map_add, TensorProduct.tmul_add, map_add]
+    refine Submodule.add_mem _ ?_ ?_
+    · refine ⟨toProd Q₁ Q₂ (a ᵍ⊗ₜ b₀), ?_⟩
+      rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb₀]
+      simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
+    · refine ⟨toProd Q₁ Q₂ ((a * g) ᵍ⊗ₜ b₁), ?_⟩
+      rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ (a * g) hb₁,
+        map_mul, hg, ZMod.val_one, pow_one, mul_assoc, hγ, mul_one]
+      simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
+  | add x y hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
+
 /-- **Bijectivity of the graded tensor product**: over a field, for finite-dimensional quadratic
 spaces `M₁` and `M₂`, if `ρ₁ : CliffordAlgebra Q₁ →ₐ[K] End K E` and
 `ρ₂ : CliffordAlgebra Q₂ →ₐ[K] End K F` are bijective and `γ` is an involution on `E`
@@ -311,29 +353,8 @@ theorem bijective_cliffordProdTensor
     CliffordAlgebra.finrank_eq_two_pow_of_bijective Q₁ hρ₁
   have hdimF : Module.finrank K F = 2 ^ (Module.finrank K M₂ / 2) :=
     CliffordAlgebra.finrank_eq_two_pow_of_bijective Q₂ hρ₂
-  obtain ⟨g, hg⟩ := hρ₁.2 γ
-  have hsurj : Function.Surjective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) := by
-    suffices hmem : ∀ T : Module.End K (E ⊗[K] F),
-        T ∈ LinearMap.range (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap from
-      fun T ↦ LinearMap.mem_range.mp (hmem T)
-    intro T
-    obtain ⟨U, rfl⟩ := (homTensorHomEquiv K E F E F).surjective T
-    induction U using TensorProduct.inductionOn with
-    | tmul u v =>
-      obtain ⟨a, rfl⟩ := hρ₁.2 u
-      obtain ⟨b, rfl⟩ := hρ₂.2 v
-      obtain ⟨b₀, hb₀, b₁, hb₁, hadd⟩ := Submodule.mem_sup.mp
-        ((evenOdd_isCompl Q₂).sup_eq_top ▸ Submodule.mem_top (x := b))
-      rw [← hadd, map_add, TensorProduct.tmul_add, map_add]
-      refine Submodule.add_mem _ ?_ ?_
-      · refine ⟨toProd Q₁ Q₂ (a ᵍ⊗ₜ b₀), ?_⟩
-        rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb₀]
-        simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
-      · refine ⟨toProd Q₁ Q₂ ((a * g) ᵍ⊗ₜ b₁), ?_⟩
-        rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ (a * g) hb₁,
-          map_mul, hg, ZMod.val_one, pow_one, mul_assoc, hγ, mul_one]
-        simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
-    | add x y hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
+  have hsurj : Function.Surjective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) :=
+    surjective_cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ hρ₁.2 hρ₂.2
   have hfinrank :
       Module.finrank K (CliffordAlgebra (Q₁.prod Q₂)) =
         Module.finrank K (Module.End K (E ⊗[K] F)) := by

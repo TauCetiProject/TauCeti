@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
-import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # The normalized complex volume element of an oriented Euclidean space
@@ -215,23 +214,6 @@ theorem equivOfIsometry_baseChange_complexVolume_of_map_orientation
   rw [equivOfIsometry_apply, QuadraticMap.IsometryEquiv.baseChange_toIsometry,
     map_complexVolume_eq_complexVolume_reindex o e he rfl, horient]
   simp [finCongr_refl, Orientation.reindex_refl]
-
-/-- Evaluating a conjugated algebra-homomorphism intertwining equation
-`(T.conjAlgEquiv ℂ).toAlgHom.comp ρ = ρ'.comp (equivOfIsometry f).toAlgHom` at
-`complexVolume Q o` when `equivOfIsometry f (complexVolume Q o) = complexVolume Q' o'`. -/
-theorem conj_complexVolume_of_conjAlgEquiv_comp
-    {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
-    {n' : ℕ} [Fact (finrank ℝ V' = n')] {Q' : QuadraticForm ℝ V'}
-    {E E' : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup E'] [Module ℂ E']
-    {ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E}
-    {ρ' : CliffordAlgebra (Q'.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E'}
-    {T : E ≃ₗ[ℂ] E'} {f : (Q.baseChange ℂ).IsometryEquiv (Q'.baseChange ℂ)}
-    (hconj : (T.conjAlgEquiv ℂ).toAlgHom.comp ρ =
-      ρ'.comp (equivOfIsometry f).toAlgHom)
-    {o : Orientation ℝ V (Fin n)} {o' : Orientation ℝ V' (Fin n')}
-    (hvol : equivOfIsometry f (complexVolume Q o) = complexVolume Q' o') :
-    T.conj (ρ (complexVolume Q o)) = ρ' (complexVolume Q' o') := by
-  rw [conj_apply_of_conjAlgEquiv_comp hconj, hvol]
 
 /-- The grade involution multiplies `Γ` by `(-1) ^ n`. -/
 @[simp]

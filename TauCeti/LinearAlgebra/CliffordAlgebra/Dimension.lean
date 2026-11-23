@@ -100,8 +100,7 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
   the grading of the Clifford algebra of a nonzero finite-dimensional space has dimension
   `2 ^ (finrank K V - 1)`, and the even subalgebra has dimension `2 ^ (finrank K V - 1)` for every
   finite-dimensional space (including `V = 0`, where `2 ^ (0 - 1) = 1`).
-* `CliffordAlgebra.finrank_eq_two_pow_of_bijective` and
-  `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a module on which the Clifford algebra
+* `CliffordAlgebra.finrank_eq_two_pow_of_bijective`: a module on which the Clifford algebra
   of a `2l`-dimensional space acts as its whole endomorphism algebra has dimension `2 ^ l`.
 * `CliffordAlgebra.even_finrank_of_algEquiv_end`:
   if a module's endomorphism algebra is isomorphic to the Clifford algebra, the underlying space
@@ -344,17 +343,6 @@ theorem finrank_eq_two_pow_of_bijective [Module.Finite K V] {S : Type*}
   rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
     sq] at hdim
   exact Nat.mul_self_inj.1 hdim.symm
-
-/-- **The dimension of a spinor module.** If the Clifford algebra acts on a module `S` as the whole
-endomorphism algebra `End_K S`, then `S` is finite-dimensional, `n = finrank K V` is even
-(`CliffordAlgebra.even_finrank_of_algEquiv_end`) and `dim S = 2 ^ (n / 2)`: the algebra has
-dimension `2 ^ n` and `End_K S` has dimension `(dim S) ^ 2`. -/
-theorem finrank_eq_two_pow_of_bijective_lsmul [Module.Finite K V]
-    {S : Type*} [AddCommGroup S] [Module K S] [Module (CliffordAlgebra Q) S]
-    [IsScalarTower K (CliffordAlgebra Q) S]
-    (h : Function.Bijective (Algebra.lsmul K K S : CliffordAlgebra Q →ₐ[K] Module.End K S)) :
-    finrank K S = 2 ^ (finrank K V / 2) :=
-  finrank_eq_two_pow_of_bijective Q h
 
 end Field
 

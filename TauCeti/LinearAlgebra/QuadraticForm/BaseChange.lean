@@ -201,6 +201,22 @@ theorem QuadraticMap.IsometryEquiv.baseChange_symm (f : Q₁.IsometryEquiv Q₂)
     LinearEquiv.baseChange_symm R A M N f.toLinearEquiv
   exact DFunLike.congr_fun h x
 
+/-- Two isometric equivalences out of a base-changed quadratic form agree if they agree on pure
+tensors `a ⊗ₜ m`. -/
+theorem QuadraticMap.IsometryEquiv.baseChange_ext {N : Type*} [AddCommGroup N]
+    [Module R N] [Module A N] [IsScalarTower R A N]
+    {Q : QuadraticForm R M} {Q' : QuadraticForm A N}
+    {f g : (Q.baseChange A).IsometryEquiv Q'}
+    (h : ∀ (a : A) (m : M), f (a ⊗ₜ m) = g (a ⊗ₜ m)) : f = g := by
+  have hlin : f.toLinearEquiv.toLinearMap = g.toLinearEquiv.toLinearMap := by
+    refine TensorProduct.AlgebraTensorModule.ext fun a m ↦ ?_
+    simp only [LinearEquiv.coe_toLinearMap, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+    exact h a m
+  exact DFunLike.ext f g fun x ↦ by
+    rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+    exact LinearMap.congr_fun hlin x
+
 /-- Isometric quadratic forms remain isometric after base change. -/
 theorem QuadraticMap.Equivalent.baseChange (h : Q₁.Equivalent Q₂) (A : Type uA)
     [CommRing A] [Algebra R A] : (Q₁.baseChange A).Equivalent (Q₂.baseChange A) :=

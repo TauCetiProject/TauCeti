@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 
 /-!
@@ -12,10 +13,11 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 
 The graded tensor product `AlgHom.cliffordProdTensor` of `E` and `F` depends on the grading `γ`
 of `E`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`. Replacing `γ` by `-γ` changes the sign
-of the second summand. If `δ` is an operator on `F` anticommuting with every `c₂(w)`, for instance
-a grading of `F`, then `1 ⊗ δ` commutes with `c₁(v) ⊗ 1` and carries `γ ⊗ c₂(w)` to
-`-γ ⊗ c₂(w)`, so it intertwines the two graded tensor products
-(`AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg`). When `δ` is an involution this is a
+of the second summand: this is the same as twisting the second factor `ρ₂` by
+`CliffordAlgebra.involute` (`AlgHom.cliffordProdTensor_neg_grading`). If `δ` is an operator on `F`
+anticommuting with every `c₂(w)`, for instance a grading of `F`, then `1 ⊗ δ` commutes with
+`c₁(v) ⊗ 1` and carries `γ ⊗ c₂(w)` to `-γ ⊗ c₂(w)`, so it intertwines the two graded tensor
+products (`AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg`). When `δ` is an involution this is a
 conjugation (`AlgHom.cliffordProdTensor_of_eq_neg`).
 
 For spinor modules graded by their chirality, reversing the orientation of the first space negates
@@ -25,6 +27,8 @@ invertibility of two is needed.
 
 ## Main results
 
+* `AlgHom.cliffordProdTensor_neg_grading`: negating `γ` is equivalent to twisting `ρ₂` by
+  `CliffordAlgebra.involute`.
 * `AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg`: `1 ⊗ δ` intertwines the graded tensor
   products for `γ` and `-γ`.
 * `AlgHom.cliffordProdTensor_of_eq_neg`, `AlgHom.conjAlgEquiv_lTensor_cliffordProdTensor`: for an
@@ -51,6 +55,15 @@ variable {R M₁ M₂ E F : Type*} [CommRing R]
   (γ' : Module.End R E) (hγ' : γ' * γ' = 1) (hγ'ρ : ∀ v, γ' * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ'))
   (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F) {δ : Module.End R F}
   (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ))
+
+/-- Negating the grading `γ` of `E` in `AlgHom.cliffordProdTensor` is equivalent to twisting `ρ₂`
+by `CliffordAlgebra.involute`. -/
+theorem cliffordProdTensor_neg_grading :
+    cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
+        (fun v ↦ by rw [neg_mul, mul_neg, hγρ, neg_neg]) ρ₂ =
+      cliffordProdTensor ρ₁ γ hγ hγρ (ρ₂.comp CliffordAlgebra.involute) := by
+  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun ⟨v, w⟩ ↦ TensorProduct.ext' fun e f ↦ ?_
+  simp [cliffordProdTensor_ι_tmul, TensorProduct.neg_tmul, TensorProduct.tmul_neg]
 
 include hδρ in
 /-- **Negating the grading of the first factor.** If `γ' = -γ` and `δ` anticommutes with every

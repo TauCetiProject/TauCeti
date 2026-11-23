@@ -136,6 +136,7 @@ theorem cliffordReverseDual_smul_prod_map_ι
 
 /-- Reverse duality commutes with precomposition along a Clifford map induced by a quadratic
 isometry. -/
+@[simp]
 theorem cliffordReverseDual_comp_map {V' : Type*} [AddCommGroup V'] [Module R V']
     {Q' : QuadraticForm R V'} (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S) (f : Q' →qᵢ Q) :
     (ρ.comp (map f)).cliffordReverseDual = ρ.cliffordReverseDual.comp (map f) :=

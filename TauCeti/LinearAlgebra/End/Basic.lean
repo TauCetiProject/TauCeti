@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Equiv
+public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Invariant
@@ -12,7 +14,6 @@ public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.SetTheory.Cardinal.NatCard
-import Mathlib.Algebra.Algebra.Equiv
 
 /-!
 # Basic facts about module endomorphisms
@@ -45,6 +46,8 @@ as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
 A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
 (`Submodule.le_comap_of_fixed`), and a submodule invariant under two endomorphisms is invariant
 under their difference (`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
+Conjugation of endomorphisms along a linear equivalence is characterized by intertwining
+(`LinearEquiv.eq_conj_of_comp_eq`, `LinearEquiv.conj_apply_of_conjAlgEquiv_comp`).
 -/
 
 public section
@@ -195,3 +198,29 @@ theorem invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub :
   fun p ⟨hfp, hgp⟩ _ hx ↦ p.sub_mem (hfp hx) (hgp hx)
 
 end Module.End
+
+namespace LinearEquiv
+
+/-- Evaluating a conjugated algebra-homomorphism intertwining equation
+`(T.conjAlgEquiv R).toAlgHom.comp ρ = ρ'.comp f` at an element `x : A`. -/
+theorem conj_apply_of_conjAlgEquiv_comp {R A B E E' : Type*}
+    [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+    [AddCommMonoid E] [Module R E] [AddCommMonoid E'] [Module R E']
+    {ρ : A →ₐ[R] Module.End R E} {ρ' : B →ₐ[R] Module.End R E'}
+    {T : E ≃ₗ[R] E'} {f : A →ₐ[R] B}
+    (hconj : (T.conjAlgEquiv R).toAlgHom.comp ρ = ρ'.comp f) (x : A) :
+    T.conj (ρ x) = ρ' (f x) := by
+  have hx := AlgHom.congr_fun hconj x
+  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
+    AlgHom.comp_apply] at hx
+  exact hx
+
+/-- If a linear equivalence `e` intertwines `A` and `B`, then `B = e.conj A`. -/
+theorem eq_conj_of_comp_eq {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {e : M ≃ₗ[R] N} {A : Module.End R M} {B : Module.End R N}
+    (h : (e : M →ₗ[R] N) ∘ₗ A = B ∘ₗ (e : M →ₗ[R] N)) : B = e.conj A := by
+  ext y
+  simpa [LinearEquiv.conj_apply_apply] using (LinearMap.congr_fun h (e.symm y)).symm
+
+end LinearEquiv

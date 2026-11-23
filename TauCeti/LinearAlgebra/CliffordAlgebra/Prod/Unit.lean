@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
+import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 
 /-!
 # Unit laws of the graded tensor product of Clifford modules
@@ -117,8 +118,8 @@ theorem conjAlgEquiv_lid_cliffordProdTensor_neg_one
           (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂) =
       (ρ₂.comp (CliffordAlgebra.involute : CliffordAlgebra Q₂ →ₐ[R] CliffordAlgebra Q₂)).comp
         (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry) := by
-  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun x ↦ LinearMap.ext fun f ↦ ?_
-  simp [LinearEquiv.conjAlgEquiv_apply, cliffordProdTensor_ι_tmul, Subsingleton.elim x.1 0]
+  rw [cliffordProdTensor_neg_grading ρ₁ 1 (one_mul 1) (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂,
+    conjAlgEquiv_lid_cliffordProdTensor_one]
 
 /-- Applied form of `AlgHom.conjAlgEquiv_lid_cliffordProdTensor_neg_one`. -/
 theorem lid_cliffordProdTensor_neg_one (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
