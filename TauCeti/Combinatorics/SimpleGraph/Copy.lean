@@ -24,9 +24,9 @@ copy with finitely many neighbours in `G` and `x` with finitely many neighbours 
 extended sum is the sum of `H` at `x`. So when `H`
 is locally finite and the local sums of `β` vanish at every vertex, so do those of the extension
 at every vertex of `G` with finitely many neighbours, also away from the copy. These are the
-local relations of the signless preprojective algebra, so for finite graphs a block-matrix
-representation of the signless preprojective algebra of `H` given by such a family extends by zero
-to one of `G` (`TauCeti.signlessMatrixRepresentation`).
+local relations of the signless preprojective algebra: for finite graphs, extending by zero the
+edge-block family of a block-matrix representation of the signless preprojective algebra of `H`
+gives a block-matrix representation of that of `G` (`TauCeti.signlessMatrixRepresentation`).
 
 ## Main definitions
 
@@ -39,6 +39,11 @@ to one of `G` (`TauCeti.signlessMatrixRepresentation`).
   family on edges of `H` and zero elsewhere.
 * `SimpleGraph.Copy.extendByZero_ne_zero_iff`: the extension is nonzero at an ordered pair of
   vertices of `G` exactly when it is `(f x, f y)` for an edge `x ∼ y` of `H` with `β x y ≠ 0`.
+* `SimpleGraph.Copy.extendByZero_eq_iff`: a family on the vertex pairs of `G` is the extension
+  exactly when it agrees with `β` on the images of the edges of `H` and vanishes on every other
+  pair.
+* `SimpleGraph.Copy.extendByZero_mul_extendByZero`: the product of the extension in the two orders
+  of a pair is the extension of the product of `β` in the two orders, when `0 * 0 = 0`.
 * `SimpleGraph.Copy.sum_extendByZero_mul_extendByZero_apply`: at a vertex `f x` of the copy with
   finitely many neighbours in `G`, where `x` has finitely many neighbours in `H`, the local sum
   `∑_{w ∼ f x} β w (f x) * β (f x) w` of the extension is the local sum of `β` at `x`.
@@ -116,12 +121,54 @@ theorem extendByZero_ne_zero_iff {v w : V} :
   have hf : Function.Injective (Prod.map f f) := f.injective.prodMap f.injective
   rw [extendByZero, ← Function.mem_support, Function.support_extend_zero hf,
     Set.support_indicator]
+  simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_ofPred_eq, Function.mem_support,
+    Prod.exists, Prod.map_apply, Prod.mk.injEq]
   constructor
-  · rintro ⟨⟨x, y⟩, ⟨hxy, hβ⟩, h⟩
-    simp only [Prod.map_apply, Prod.mk.injEq] at h
-    exact ⟨x, y, h.1, h.2, hxy, hβ⟩
-  · rintro ⟨x, y, rfl, rfl, hxy, hβ⟩
-    exact ⟨(x, y), ⟨hxy, hβ⟩, rfl⟩
+  · rintro ⟨x, y, ⟨hxy, hβ⟩, hx, hy⟩
+    exact ⟨x, y, hx, hy, hxy, hβ⟩
+  · rintro ⟨x, y, hx, hy, hxy, hβ⟩
+    exact ⟨x, y, ⟨hxy, hβ⟩, hx, hy⟩
+
+/-- The extension vanishes at every ordered pair `(v, w)` of vertices of `G` which is not the image
+`(f x, f y)` of an edge `x ∼ y` of `H`. -/
+theorem extendByZero_eq_zero_of_forall_not_adj {v w : V}
+    (h : ∀ x y, f x = v → f y = w → ¬H.Adj x y) : f.extendByZero β v w = 0 := by
+  by_contra hne
+  obtain ⟨x, y, hx, hy, hxy, -⟩ := (extendByZero_ne_zero_iff f β).1 hne
+  exact h x y hx hy hxy
+
+/-- **Uniqueness of the extension by zero**: a family `γ` on the vertex pairs of `G` is the
+extension of `β` exactly when it agrees with `β` on the images `(f x, f y)` of the edges `x ∼ y` of
+`H` and vanishes on every other ordered pair. -/
+theorem extendByZero_eq_iff {γ : V → V → M} :
+    f.extendByZero β = γ ↔ (∀ x y, H.Adj x y → γ (f x) (f y) = β x y) ∧
+      ∀ v w, (∀ x y, f x = v → f y = w → ¬H.Adj x y) → γ v w = 0 := by
+  constructor
+  · rintro rfl
+    exact ⟨fun x y => extendByZero_apply_apply_of_adj f β,
+      fun v w => extendByZero_eq_zero_of_forall_not_adj f β⟩
+  · rintro ⟨hadj, hzero⟩
+    funext v w
+    by_cases h : ∀ x y, f x = v → f y = w → ¬H.Adj x y
+    · rw [extendByZero_eq_zero_of_forall_not_adj f β h, hzero v w h]
+    · push Not at h
+      obtain ⟨x, y, rfl, rfl, hxy⟩ := h
+      rw [extendByZero_apply_apply_of_adj f β hxy, hadj x y hxy]
+
+/-- The product of the extension in the two orders of an ordered pair `(v, w)` is the extension of
+the product `β y x * β x y` of `β` in the two orders of an edge `x ∼ y`. Of the multiplication only
+`0 * 0 = 0` is used: off the images of the edges of `H` both factors vanish. -/
+theorem extendByZero_mul_extendByZero [Mul M] (hmul : (0 : M) * 0 = 0) (v w : V) :
+    f.extendByZero β w v * f.extendByZero β v w =
+      f.extendByZero (fun x y => β y x * β x y) v w := by
+  by_cases h : ∀ x y, f x = v → f y = w → ¬H.Adj x y
+  · rw [extendByZero_eq_zero_of_forall_not_adj f β fun y x hy hx hyx => h x y hx hy hyx.symm,
+      extendByZero_eq_zero_of_forall_not_adj f β h, extendByZero_eq_zero_of_forall_not_adj f _ h,
+      hmul]
+  · push Not at h
+    obtain ⟨x, y, rfl, rfl, hxy⟩ := h
+    rw [extendByZero_apply_apply_of_adj f β hxy.symm, extendByZero_apply_apply_of_adj f β hxy,
+      extendByZero_apply_apply_of_adj f _ hxy]
 
 end Zero
 
@@ -139,34 +186,29 @@ theorem sum_extendByZero_mul_extendByZero_apply (hmul : (0 : M) * 0 = 0) (x : W)
     [Fintype (G.neighborSet (f x))] [Fintype (H.neighborSet x)] :
     ∑ w ∈ G.neighborFinset (f x), f.extendByZero β w (f x) * f.extendByZero β (f x) w =
       ∑ y ∈ H.neighborFinset x, β y x * β x y := by
+  have hemb : ⇑f.toEmbedding = f := rfl
   -- Only the images of the neighbours of `x` in `H` contribute, and they contribute the sum of
   -- `H` at `x`.
   have hsub : (H.neighborFinset x).map f.toEmbedding ⊆ G.neighborFinset (f x) := by
-    rw [← Finset.coe_subset, Finset.coe_map, coe_neighborFinset, coe_neighborFinset]
-    exact f.toHom.image_neighborSet_subset x
-  rw [← Finset.sum_subset hsub, Finset.sum_map]
+    rw [← Finset.coe_subset, Finset.coe_map, coe_neighborFinset, coe_neighborFinset, hemb]
+    simpa only [coe_toHom] using f.toHom.image_neighborSet_subset x
+  rw [Finset.sum_congr rfl fun w _ => extendByZero_mul_extendByZero f β hmul (f x) w,
+    ← Finset.sum_subset hsub, Finset.sum_map]
   · refine Finset.sum_congr rfl fun y hy => ?_
-    rw [mem_neighborFinset] at hy
-    exact congrArg₂ (· * ·) (extendByZero_apply_apply_of_adj f β hy.symm)
-      (extendByZero_apply_apply_of_adj f β hy)
-  · -- Off the image of the neighbours of `x`, both factors vanish.
+    rw [hemb]
+    exact extendByZero_apply_apply_of_adj f _ ((mem_neighborFinset _ _ _).1 hy)
+  · -- Off the image of the neighbours of `x`, the extended product vanishes.
     intro w _ hw
-    have hl : f.extendByZero β w (f x) = 0 := by
-      by_contra h
-      obtain ⟨a, b, rfl, hb, hab, -⟩ := (extendByZero_ne_zero_iff f β).1 h
-      rw [f.injective hb] at hab
-      exact hw (Finset.mem_map_of_mem _ ((mem_neighborFinset _ _ _).2 hab.symm))
-    have hr : f.extendByZero β (f x) w = 0 := by
-      by_contra h
-      obtain ⟨a, b, ha, rfl, hab, -⟩ := (extendByZero_ne_zero_iff f β).1 h
-      rw [f.injective ha] at hab
-      exact hw (Finset.mem_map_of_mem _ ((mem_neighborFinset _ _ _).2 hab))
-    rw [hl, hr, hmul]
+    refine extendByZero_eq_zero_of_forall_not_adj f _ fun a b ha hb hab => hw ?_
+    rw [f.injective ha] at hab
+    rw [← hb, ← hemb]
+    exact Finset.mem_map_of_mem _ ((mem_neighborFinset _ _ _).2 hab)
 
-/-- **Local relations extend by zero along a copy**: if the sums `∑_{y ∼ x} β y x * β x y` over
-the neighbours in `H` vanish at every vertex of `H`, then so do the corresponding sums of the
-extension by zero at every vertex of `G` with finitely many neighbours. As for
-`sum_extendByZero_mul_extendByZero_apply`, of the multiplication only `0 * 0 = 0` is used. -/
+/-- **Local relations extend by zero along a copy**: for locally finite `H`, if the sums
+`∑_{y ∼ x} β y x * β x y` over the neighbours in `H` vanish at every vertex of `H`, then so do the
+corresponding sums of the extension by zero at every vertex of `G` with finitely many
+neighbours. As for `sum_extendByZero_mul_extendByZero_apply`, of the multiplication only
+`0 * 0 = 0` is used. -/
 theorem sum_extendByZero_mul_extendByZero [H.LocallyFinite] (hmul : (0 : M) * 0 = 0)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) (v : V)
     [Fintype (G.neighborSet v)] :

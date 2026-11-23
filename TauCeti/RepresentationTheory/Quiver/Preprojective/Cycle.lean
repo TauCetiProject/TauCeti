@@ -91,12 +91,11 @@ private theorem cycleMatrix_mul_cycleMatrix {m : ℕ} [NeZero m] (hm : 3 ≤ m) 
 private theorem extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V}
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) (v w : V) :
     c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := by
-  by_cases h : c.extendByZero (cycleMatrix k m) w v = 0
-  · rw [h, zero_mul]
-  -- A nonzero first factor lies on the image of an edge `j ∼ i` of the cycle.
-  obtain ⟨j, i, rfl, rfl, hji, -⟩ := (c.extendByZero_ne_zero_iff _).1 h
-  rw [c.extendByZero_apply_apply_of_adj _ hji, c.extendByZero_apply_apply_of_adj _ hji.symm]
-  exact cycleMatrix_mul_cycleMatrix k hm i j
+  rw [c.extendByZero_mul_extendByZero _ (mul_zero 0)]
+  -- The product family vanishes on every edge of the cycle, so its extension vanishes.
+  by_contra h
+  obtain ⟨i, j, -, -, -, h⟩ := (c.extendByZero_ne_zero_iff _).1 h
+  exact h (cycleMatrix_mul_cycleMatrix k hm i j)
 
 private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V} [G.LocallyFinite]
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :
