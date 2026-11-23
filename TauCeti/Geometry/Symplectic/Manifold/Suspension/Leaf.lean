@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorField.MappingTorus.Orbit
 public import TauCeti.Geometry.Symplectic.Manifold.Harmonic
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.VerticalArea
-public import TauCeti.Geometry.Symplectic.Manifold.TorusCover
+public import TauCeti.Geometry.Symplectic.Manifold.Torus.Cover
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -67,8 +67,11 @@ almost complex structure of `(ℝ / ℤ) × (ℝ / dℤ)`, so `v` is pseudoholom
 (`TauCeti.IsPseudoholomorphicAt.of_comp`), and it is not constant. A nonconstant pseudoholomorphic
 map from a compact surface to the torus has positive area and is therefore onto
 (`TauCeti.surjective_of_isPseudoholomorphicAt_addCircleProd`). So the image of every nonconstant
-horizontal curve, critical points allowed, is the whole torus `(ℝ / ℤ) × γ`. The degree with which
-`v` covers the torus is not computed here.
+horizontal curve, critical points allowed, is the whole torus `(ℝ / ℤ) × γ`. When `C` is
+modelled on the plane `ℝ × ℝ`, the degree with which `v` covers the torus is positive
+(`TauCeti.SmoothMappingTorus.exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt`, in
+`TauCeti.Geometry.Symplectic.Manifold.Suspension.Orientation`), and it is the number of preimages
+of every regular value (`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`).
 
 ## Main results
 
@@ -322,7 +325,7 @@ private theorem mfderiv_apply_eq_of_forall_snd_eq_mk
     (hτ : ContMDiff I' 𝓘(ℝ) ∞ τ) {x : M} (hτx : ∀ c, (u c).2 = mk φ (τ c) x)
     (c : C) (e : TangentSpace I' c) :
     mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e =
-      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).1 c
+      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).val c
           ![e] • (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) (u c)).symm
           ((1 : ℝ), 0) +
         mvfderiv I' τ c e • (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I)
@@ -362,12 +365,12 @@ private theorem mfderiv_apply_eq_of_forall_snd_eq_mk
   -- restates them in `ℝ`.
   refine Prod.ext ?_ ?_
   · change (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e).1 =
-      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).1 c
+      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).val c
         ![e] * 1 + mvfderiv I' τ c e * 0
     rw [mul_one, mul_zero, add_zero, SmoothForm.mpullback_apply, AddCircle.timeForm_apply]
     exact hfst.symm
   · change (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e).2 =
-      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).1 c
+      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).val c
         ![e] • (0 : TangentSpace (𝓘(ℝ).prod I) (u c).2) +
         mvfderiv I' τ c e • timeVectorField φ (u c).2
     rw [smul_zero, zero_add, ← h2, hsnd]
@@ -384,7 +387,7 @@ private theorem mvfderiv_apply_almostComplex_eq_of_forall_snd_eq_mk
       (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
     (e : TangentSpace I' c) :
     mvfderiv I' τ c (j c e) =
-      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).1 c
+      (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) (AddCircle.timeForm 1)).val c
         ![e] := by
   -- `J T = -∂_s`, since `J ∂_s = T` and `J² = -1`.
   have hJT : J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm
@@ -569,7 +572,7 @@ theorem range_subset_univ_prod_orbit_flow_of_integralTopForm_eq_zero [CompactSpa
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (c : C) : range u ⊆ univ ×ˢ (flow φ).orbit (u c).2 :=
   range_subset_univ_prod_orbit_flow_of_mfderiv_mem_suspensionHorizontalSubspace
     (hu.mdifferentiable (by simp))
@@ -595,7 +598,7 @@ theorem minimalPeriod_pos_of_integralTopForm_eq_zero [I'.Boundaryless] [CompactS
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) : 0 < minimalPeriod φ x :=
   minimalPeriod_pos_of_mfderiv_mem_suspensionHorizontalSubspace
@@ -623,7 +626,7 @@ theorem minimalPeriod_pos_of_integralTopForm_eq_zero_of_mfderiv_ne_zero [I'.Boun
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) : 0 < minimalPeriod φ x :=
   minimalPeriod_pos_of_mfderiv_ne_zero_of_isPseudoholomorphicAt hu ho hhol hS
@@ -651,7 +654,7 @@ theorem range_eq_range_orbitTorus_of_integralTopForm_eq_zero [I.Boundaryless]
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
     range u = range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) :=
@@ -681,7 +684,7 @@ theorem range_eq_range_orbitTorus_of_integralTopForm_eq_zero_of_mfderiv_ne_zero 
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
     range u = range (orbitTorus φ (isPeriodicPt_minimalPeriod φ x)) :=

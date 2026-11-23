@@ -105,7 +105,7 @@ theorem splittingTwist_mul (g₁ g₂ : G) (x : augmentationIdeal k G) :
   have hcocycle (a b c : G) :=
     eq_sub_iff_add_eq.mpr
       ((groupCohomology.mem_cocycles₂_iff (h2Representative A u)).mp
-        (h2Representative A u).2 a b c)
+        (h2Representative A u).property a b c)
   simp only [hcocycle, smul_sub, smul_add, Finsupp.sum_sub, Finsupp.sum_add,
     map_finsuppSum, map_smul]
   have hconst :
@@ -290,7 +290,7 @@ theorem splittingModuleCochain_coboundary (g h : G) :
         A.ρ g (h2Representative A u (1, 1)) := by
       simpa [add_comm] using
         (groupCohomology.mem_cocycles₂_iff (h2Representative A u)).mp
-          (h2Representative A u).2 g 1 1
+          (h2Representative A u).property g 1 1
     simp [hone]
 
 /-- The composite of the chosen representative of `u` with the splitting-module inclusion is a

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.HodgeLaplacian
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.RingTheory.KoszulComplex.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
@@ -19,8 +20,7 @@ product of the exterior powers: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫`. Here `ε_u
 `TauCeti.ExteriorAlgebra.wedgeLeft u` and `ι_u` is the Koszul differential
 `TauCeti.koszulDifferential (innerₗ V u)`, the contraction `⋀ᵏ⁺¹ V → ⋀ᵏ V`. Together with the
 Koszul homotopy identity `TauCeti.wedgeLeft_comp_koszulDifferential_add`, read with
-`φ = ⟪u, ·⟫`, this says that `ε_u ε_u* + ε_u* ε_u = ‖u‖²`
-(`TauCeti.wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft`).
+`φ = ⟪u, ·⟫`, this says that `ε_u ε_u* + ε_u* ε_u = ‖u‖²`.
 
 On an oriented space the Hodge star intertwines the two operations up to sign: for `x ∈ ⋀ᵏ V`,
 `ι_u (⋆x) = (-1) ^ k ⋆(u ∧ x)`, and for `x ∈ ⋀ᵏ⁺¹ V`, `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x`. Consequently
@@ -35,8 +35,10 @@ the identity above as its symbol.
 
 * `TauCeti.inner_wedgeLeft_eq_inner_koszulDifferential`: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫` in every
   degree, and `TauCeti.adjoint_wedgeLeft`: the adjoint of `ε_u` is `ι_u`.
-* `TauCeti.wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft`: `ε_u ε_u* + ε_u* ε_u = ‖u‖²` on
-  `⋀ᵏ⁺¹ V`, and `TauCeti.adjoint_wedgeLeft_comp_wedgeLeft_zero`: `ε_u* ε_u = ‖u‖²` on `⋀⁰ V`.
+* `TauCeti.toContinuousLinearMap_wedgeLeft_comp_wedgeLeft`: `ε_u ε_u = 0` as bounded operators.
+* `TauCeti.hodgeLaplacian_wedgeLeft`: `ε_u ε_u* + ε_u* ε_u = ‖u‖²` in positive degrees, and
+  `TauCeti.adjoint_wedgeLeft_comp_wedgeLeft_zero`: `ε_u* ε_u = ‖u‖²` on scalars, as identities of
+  bounded operators.
 * `Orientation.koszulDifferential_hodgeStar`: `ι_u (⋆x) = (-1) ^ k ⋆(u ∧ x)` for `x ∈ ⋀ᵏ V`.
 * `Orientation.hodgeStar_koszulDifferential`: `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x` for `x ∈ ⋀ᵏ⁺¹ V`.
 * `Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar`: on `⋀ᵏ⁺¹ V` with
@@ -80,24 +82,37 @@ theorem adjoint_wedgeLeft (u : V) (n : ℕ) :
   ((LinearMap.eq_adjoint_iff _ _).2 fun y x ↦ by
     rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm]).symm
 
-/-- On `⋀⁰ V`, contracting after wedging with `u` is multiplication by `‖u‖²`:
-`ε_u* ε_u = ‖u‖²`. -/
-theorem adjoint_wedgeLeft_comp_wedgeLeft_zero (u : V) :
-    LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u 0) ∘ₗ ExteriorAlgebra.wedgeLeft (R := ℝ) u 0 =
-      (‖u‖ ^ 2) • LinearMap.id := by
-  rw [adjoint_wedgeLeft, koszulDifferential_comp_wedgeLeft_zero, innerₗ_apply_apply,
-    real_inner_self_eq_norm_sq]
+/-- Exterior multiplication by `u` squares to zero as a bounded operator, `u ∧ u ∧ x = 0`. -/
+@[simp]
+theorem toContinuousLinearMap_wedgeLeft_comp_wedgeLeft (u : V) (n : ℕ) :
+    (ExteriorAlgebra.wedgeLeft (R := ℝ) u (n + 1)).toContinuousLinearMap ∘L
+        (ExteriorAlgebra.wedgeLeft (R := ℝ) u n).toContinuousLinearMap = 0 :=
+  ContinuousLinearMap.ext fun v ↦
+    LinearMap.congr_fun (ExteriorAlgebra.wedgeLeft_comp_wedgeLeft u n) v
 
-/-- **Wedging and contracting with `u` anticommute to `‖u‖²`**: on `⋀ⁿ⁺¹ V`,
-`ε_u ε_u* + ε_u* ε_u = ‖u‖²`. This is the Koszul homotopy identity for the functional
+/-- **Exterior multiplication and its adjoint anticommute to `‖u‖²`**: on `⋀ⁿ⁺¹ V`, the Laplacian
+`ε_u ε_u* + ε_u* ε_u` of `⋀ⁿ V → ⋀ⁿ⁺¹ V → ⋀ⁿ⁺² V` is `‖u‖²`, where `ε_u = u ∧ ·` and `ε_u*` is the
+contraction by `⟪u, ·⟫`. -/
+theorem hodgeLaplacian_wedgeLeft (u : V) (n : ℕ) :
+    (ExteriorAlgebra.wedgeLeft (R := ℝ) u n).toContinuousLinearMap.hodgeLaplacian
+        (ExteriorAlgebra.wedgeLeft (R := ℝ) u (n + 1)).toContinuousLinearMap =
+      (‖u‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext fun v ↦ by
+    rw [ContinuousLinearMap.hodgeLaplacian_apply, ← LinearMap.adjoint_toContinuousLinearMap,
+      ← LinearMap.adjoint_toContinuousLinearMap]
+    simpa [adjoint_wedgeLeft, real_inner_self_eq_norm_sq] using
+      LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add (innerₗ V u) u n) v
+
+/-- On scalars `⋀⁰ V`, `ε_u* ε_u = ‖u‖²`, where `ε_u = u ∧ ·` and `ε_u*` is the contraction by
 `⟪u, ·⟫`. -/
-theorem wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft (u : V) (n : ℕ) :
-    ExteriorAlgebra.wedgeLeft u n ∘ₗ LinearMap.adjoint (ExteriorAlgebra.wedgeLeft (R := ℝ) u n) +
-        LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u (n + 1)) ∘ₗ
-          ExteriorAlgebra.wedgeLeft (R := ℝ) u (n + 1) =
-      (‖u‖ ^ 2) • LinearMap.id := by
-  rw [adjoint_wedgeLeft, adjoint_wedgeLeft, wedgeLeft_comp_koszulDifferential_add,
-    innerₗ_apply_apply, real_inner_self_eq_norm_sq]
+theorem adjoint_wedgeLeft_comp_wedgeLeft_zero (u : V) :
+    ContinuousLinearMap.adjoint (ExteriorAlgebra.wedgeLeft (R := ℝ) u 0).toContinuousLinearMap ∘L
+        (ExteriorAlgebra.wedgeLeft (R := ℝ) u 0).toContinuousLinearMap =
+      (‖u‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext fun v ↦ by
+    rw [ContinuousLinearMap.comp_apply, ← LinearMap.adjoint_toContinuousLinearMap]
+    simpa [adjoint_wedgeLeft, real_inner_self_eq_norm_sq] using
+      LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero (innerₗ V u) u) v
 
 end TauCeti
 
@@ -116,11 +131,11 @@ theorem koszulDifferential_hodgeStar (u : V) {k l : ℕ} (hkl : k + (l + 1) = fi
   -- `(u ∧ x) ∧ y` on the right, and moving `u` past `x` costs `(-1) ^ k`.
   refine ext_inner_right ℝ fun y ↦ ?_
   set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
-    rw [← hkl']; exact (wedge ℝ V (k + 1) l (ExteriorAlgebra.wedgeLeft u k x) y).2⟩
+    rw [← hkl']; exact (wedge ℝ V (k + 1) l (ExteriorAlgebra.wedgeLeft u k x) y).property⟩
   have hx : (x : _root_.ExteriorAlgebra ℝ V) * (_root_.ExteriorAlgebra.ι ℝ u * y) =
       (-1 : ℝ) ^ k • (_root_.ExteriorAlgebra.ι ℝ u * x * y) := by
     rw [_root_.ExteriorAlgebra.ι_mul_eq_involute_mul u (x : _root_.ExteriorAlgebra ℝ V),
-      ExteriorAlgebra.involute_of_mem_exteriorPower x.2]
+      ExteriorAlgebra.involute_of_mem_exteriorPower x.property]
     simp [smul_smul, ← mul_pow, mul_assoc]
   -- Both inner products are now volumes of the same top form `z`, up to the sign.
   rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm,

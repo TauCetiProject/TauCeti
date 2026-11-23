@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The index of the image of an endomorphism of a free module over a PID
@@ -53,9 +54,8 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
     Nat.card (M ⧸ range f) = Nat.card (R ⧸ Ideal.span {f.det}) := by
   classical
   let b := Module.Free.chooseBasis R M
-  have hinj : Function.Injective f :=
-    ker_eq_bot.mp (not_ne_iff.mp (mt det_eq_zero_iff_ker_ne_bot.mpr hf))
-  let e : M ≃ₗ[R] range f := LinearEquiv.ofInjective f hinj
+  let e : M ≃ₗ[R] range f := LinearEquiv.ofInjective f
+    (injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hf))
   have h : finrank R (range f) = finrank R M := e.finrank_eq.symm
   let a := smithNormalFormCoeffs b h
   let b' := smithNormalFormTopBasis b h

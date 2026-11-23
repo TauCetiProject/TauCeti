@@ -10,6 +10,7 @@ public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
+import TauCeti.Probability.PointProcess.Poisson.Law
 
 /-!
 # Sampling with a sigma-finite Poisson intensity
@@ -143,3 +144,27 @@ theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
     (fun _ hf ↦ laplaceFunctional_poissonLaw Λ hf)
 
 end MeasureTheory.Measure
+
+open MeasureTheory
+
+namespace TauCeti.Probability
+
+variable {Ω X : Type*} [MeasurableSpace Ω] [MeasurableSpace X]
+  {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X}
+
+/-- Every Poisson random measure with σ-finite intensity has law `Λ.poissonLaw`. -/
+theorem IsPoissonRandomMeasure.hasLaw_poissonLaw [SigmaFinite Λ]
+    (h : IsPoissonRandomMeasure P N Λ) : HasLaw N Λ.poissonLaw P := by
+  have hid := h.identDistrib (Measure.isPoissonRandomMeasure_poissonLaw Λ)
+  exact ⟨hid.aemeasurable_fst, by simpa only [Measure.map_id] using hid.map_eq⟩
+
+/-- For σ-finite intensity, a measurable random measure is Poisson if and only if its law is
+`Λ.poissonLaw`. -/
+theorem isPoissonRandomMeasure_iff_hasLaw_poissonLaw [SigmaFinite Λ] (hN : Measurable N) :
+    IsPoissonRandomMeasure P N Λ ↔ HasLaw N Λ.poissonLaw P := by
+  refine ⟨IsPoissonRandomMeasure.hasLaw_poissonLaw, fun hlaw ↦ ?_⟩
+  have hid : IdentDistrib id N Λ.poissonLaw P :=
+    ⟨measurable_id.aemeasurable, hN.aemeasurable, by rw [Measure.map_id, hlaw.map_eq]⟩
+  exact (Measure.isPoissonRandomMeasure_poissonLaw Λ).of_identDistrib hN hid
+
+end TauCeti.Probability

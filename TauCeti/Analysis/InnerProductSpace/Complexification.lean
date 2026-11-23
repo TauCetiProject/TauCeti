@@ -1,13 +1,15 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, OpenAI gpt-6.1-sol
 -/
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Module.Complexification
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The Hilbert-space complexification of a real inner product space
@@ -40,14 +42,16 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `WithLp.complexification_im_inner` computing the inner product from real and imaginary parts.
 * `WithLp.complexification_norm_sq_eq`: `‖x + i y‖² = ‖x‖² + ‖y‖²`.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
-  `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
-  `WithLp.instComplexificationCompleteSpace` and `WithLp.instComplexificationFiniteDimensional`
-  as consequences.
+  `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`,
+  `WithLp.complexificationOfRealₗᵢ`: the real-linear isometric inclusion
+  `X →ₗᵢ[ℝ] WithLp 2 (Complexification X)`, and
+  `WithLp.instComplexificationCompleteSpace` as a consequence.
+* `WithLp.finrank_complexification`: the complexification of a finite-dimensional space has
+  complex dimension the real dimension of `X`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
-  `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp`,
-  `ContinuousLinearMap.adjoint_complexifyL2` and `ContinuousLinearMap.exact_complexifyL2_iff`
-  (complexification preserves and reflects exactness).
+  `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
+  `ContinuousLinearMap.adjoint_complexifyL2`.
 * `ContinuousLinearMap.complexifyL2ₗᵢ`: complexification as a real-linear isometry of operator
   spaces.
 * `ContinuousLinearMap.complexifyL2StarAlgHom`: complexification of the bounded operators on a
@@ -57,6 +61,9 @@ self-adjoint operator, to operators on real Hilbert spaces.
 * `ContinuousLinearMap.isSelfAdjoint_complexifyL2_iff`: complexification preserves and reflects
   self-adjointness.
 
+Orthogonal complementation, orthogonal projections and the projection gap also
+commute with Hilbert complexification, without ambient completeness.
+
 ## References
 
 * G. A. Muñoz, Y. Sarantopoulos, A. Tonge, *Complexifications of real Banach spaces,
@@ -65,11 +72,17 @@ self-adjoint operator, to operators on real Hilbert spaces.
 
 ## Acknowledgements
 
+Copyright (c) 2026 Kitware, Inc. All rights reserved. The adapted projection
+transport below retains its original Apache-2.0 licence.
+
 The Hilbert-space complexification, the complexification of bounded operators and its
 compatibility with adjoints also appear in `ForTauCeti/Analysis/InnerProductSpace/Complexification/`
 of the [AIQ DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
 (Kitware, Inc.; Apache-2.0), on the carrier `WithLp 2 (E × E)`. This file builds the same
-structure on top of Tau Ceti's algebraic `Complexification`.
+structure on top of Tau Ceti's algebraic `Complexification`. The orthogonal
+projection transport is adapted from DKPS
+`DavisKahan/SpectralTheory/Complexification/Subspace.lean`
+(Jon Crall and Claude Opus 5; Kitware 2026, Apache-2.0).
 -/
 
 public section
@@ -139,13 +152,32 @@ instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
 
-/-- The `L²` complexification of a finite-dimensional real space is finite-dimensional over
-`ℂ`. -/
-instance instComplexificationFiniteDimensional [FiniteDimensional ℝ X] :
-    FiniteDimensional ℂ (WithLp 2 (Complexification X)) :=
-  have : FiniteDimensional ℝ (WithLp 2 (Complexification X)) :=
-    (complexificationEquivProd X).toLinearEquiv.symm.finiteDimensional
-  .of_restrictScalars_finite ℝ ℂ _
+variable (X) in
+/-- The real-linear isometric inclusion `x ↦ x + i 0` of a real normed space `X` into its `L²`
+complexification `WithLp 2 (Complexification X)`. -/
+def complexificationOfRealₗᵢ : X →ₗᵢ[ℝ] WithLp 2 (Complexification X) where
+  toFun x := toLp 2 (Complexification.ofReal x)
+  map_add' x y := by
+    apply ofLp_injective 2
+    ext <;> simp
+  map_smul' r x := by
+    apply ofLp_injective 2
+    ext <;> simp
+  norm_map' := complexification_norm_toLp_ofReal
+
+@[simp]
+theorem complexificationOfRealₗᵢ_apply (x : X) :
+    complexificationOfRealₗᵢ X x = toLp 2 (Complexification.ofReal x) := (rfl)
+
+/-- The complex dimension of the complexification of `X` is the real dimension of `X`. -/
+@[simp]
+theorem finrank_complexification [FiniteDimensional ℝ X] :
+    Module.finrank ℂ (WithLp 2 (Complexification X)) = Module.finrank ℝ X := by
+  have h := Module.finrank_mul_finrank ℝ ℂ (WithLp 2 (Complexification X))
+  rw [(complexificationEquivProd X).toLinearEquiv.finrank_eq,
+    (WithLp.linearEquiv 2 ℝ (X × X)).finrank_eq, Module.finrank_prod,
+    Complex.finrank_real_complex] at h
+  omega
 
 end Norm
 
@@ -192,6 +224,20 @@ theorem complexification_re_inner (z w : WithLp 2 (Complexification X)) :
 @[simp]
 theorem complexification_im_inner (z w : WithLp 2 (Complexification X)) :
     (⟪z, w⟫_ℂ).im = ⟪z.ofLp.re, w.ofLp.im⟫_ℝ - ⟪z.ofLp.im, w.ofLp.re⟫_ℝ := (rfl)
+
+/-- The complex inner product of two real vectors in the `L²` complexification is their real inner
+product. -/
+@[simp]
+theorem complexification_inner_toLp_ofReal (x y : X) :
+    ⟪toLp 2 (Complexification.ofReal x), toLp 2 (Complexification.ofReal y)⟫_ℂ =
+      (⟪x, y⟫_ℝ : ℂ) := by
+  apply Complex.ext <;> simp
+
+/-- `complexificationOfRealₗᵢ` preserves inner products, sending the real inner product to the
+complex inner product. -/
+theorem inner_complexificationOfRealₗᵢ (x y : X) :
+    ⟪complexificationOfRealₗᵢ X x, complexificationOfRealₗᵢ X y⟫_ℂ = (⟪x, y⟫_ℝ : ℂ) :=
+  complexification_inner_toLp_ofReal x y
 
 end InnerProductSpace
 
@@ -315,33 +361,6 @@ theorem complexifyL2_comp (T : Y →L[ℝ] Z) (S : X →L[ℝ] Y) :
   apply ofLp_injective 2
   simp
 
-/-- Complexification preserves and reflects exactness: `X → Y → Z` is exact exactly when its
-complexification is, since kernels and ranges are computed on real and imaginary parts
-separately. -/
-@[simp]
-theorem exact_complexifyL2_iff {T : X →L[ℝ] Y} {S : Y →L[ℝ] Z} :
-    Function.Exact T.complexifyL2 S.complexifyL2 ↔ Function.Exact T S := by
-  refine ⟨fun h y ↦ ?_, fun h z ↦ ?_⟩
-  · refine ⟨fun hy ↦ ?_, ?_⟩
-    · obtain ⟨w, hw⟩ := (h (toLp 2 (ofReal y))).1 (by simp [hy])
-      exact ⟨w.ofLp.re, by simpa using congrArg (fun z ↦ z.ofLp.re) hw⟩
-    · rintro ⟨x, rfl⟩
-      simpa using congrArg (fun z ↦ z.ofLp.re)
-        ((h _).2 ⟨toLp 2 (ofReal x), complexifyL2_toLp_ofReal T x⟩)
-  · constructor
-    · intro hz
-      have hre := congrArg (fun z ↦ z.ofLp.re) hz
-      have him := congrArg (fun z ↦ z.ofLp.im) hz
-      simp only [ofLp_complexifyL2_apply, complexify_apply_re, complexify_apply_im, ofLp_zero,
-        Complexification.zero_re, Complexification.zero_im] at hre him
-      obtain ⟨a, ha⟩ := (h _).1 hre
-      obtain ⟨b, hb⟩ := (h _).1 him
-      exact ⟨toLp 2 ⟨a, b⟩, ofLp_injective 2 <| Complexification.ext (by simpa using ha)
-        (by simpa using hb)⟩
-    · rintro ⟨w, rfl⟩
-      apply ofLp_injective 2
-      ext <;> simp [h.apply_apply_eq_zero]
-
 end NormedSpace
 
 section InnerProductSpace
@@ -400,6 +419,11 @@ variable {X Y}
 @[simp]
 theorem complexifyL2ₗᵢ_apply (T : X →L[ℝ] Y) : complexifyL2ₗᵢ X Y T = T.complexifyL2 := (rfl)
 
+/-- Complexification commutes with negation. -/
+@[simp]
+theorem complexifyL2_neg (T : X →L[ℝ] Y) : (-T).complexifyL2 = -T.complexifyL2 :=
+  map_neg (complexifyL2ₗᵢ X Y).toLinearMap T
+
 @[simp]
 theorem complexifyL2StarAlgHom_apply [CompleteSpace X] (T : X →L[ℝ] X) :
     complexifyL2StarAlgHom X T = T.complexifyL2 := (rfl)
@@ -423,3 +447,93 @@ theorem isSelfAdjoint_complexifyL2_iff [CompleteSpace X] {T : X →L[ℝ] X} :
 end InnerProductSpace
 
 end ContinuousLinearMap
+
+section RealComplexification
+
+open TauCeti WithLp
+open scoped InnerProductSpace
+
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Hilbert complexification commutes with orthogonal complementation. -/
+@[simp]
+theorem complexifyL2_orthogonal (U : Submodule ℝ E) :
+    Uᗮ.complexifyL2 = U.complexifyL2ᗮ := by
+  ext z
+  constructor
+  · intro hz
+    rw [mem_complexifyL2] at hz
+    rw [mem_orthogonal]
+    intro w hw
+    rw [mem_complexifyL2] at hw
+    -- Expose the two coordinate formulas for the native complex inner product.
+    apply Complex.ext
+    · change ⟪w.ofLp.re, z.ofLp.re⟫_ℝ + ⟪w.ofLp.im, z.ofLp.im⟫_ℝ = 0
+      simp [inner_right_of_mem_orthogonal hw.1 hz.1,
+        inner_right_of_mem_orthogonal hw.2 hz.2]
+    · change ⟪w.ofLp.re, z.ofLp.im⟫_ℝ - ⟪w.ofLp.im, z.ofLp.re⟫_ℝ = 0
+      simp [inner_right_of_mem_orthogonal hw.1 hz.2,
+        inner_right_of_mem_orthogonal hw.2 hz.1]
+  · intro hz
+    have h (u : E) (hu : u ∈ U) :
+        ⟪toLp 2 (Complexification.ofReal u), z⟫_ℂ = 0 :=
+      hz _ (by simpa only [mem_complexifyL2, ofLp_toLp,
+        Complexification.ofReal_re, Complexification.ofReal_im] using And.intro hu U.zero_mem)
+    rw [mem_complexifyL2]
+    constructor
+    · rw [mem_orthogonal]
+      intro u hu
+      simpa using congrArg Complex.re (h u hu)
+    · rw [mem_orthogonal]
+      intro u hu
+      simpa using congrArg Complex.im (h u hu)
+
+variable (U : Submodule ℝ E) [U.HasOrthogonalProjection]
+
+/-- The complexified projection takes values in the complexified subspace. -/
+theorem complexifyL2_starProjection_mem (z : WithLp 2 (Complexification E)) :
+    U.starProjection.complexifyL2 z ∈ U.complexifyL2 := by
+  rw [mem_complexifyL2]
+  simpa only [ContinuousLinearMap.ofLp_complexifyL2_apply,
+    ContinuousLinearMap.complexify_apply_re, ContinuousLinearMap.complexify_apply_im] using
+    And.intro (U.starProjection_apply_mem z.ofLp.re) (U.starProjection_apply_mem z.ofLp.im)
+
+/-- The residual from the complexified projection is orthogonal to its range. -/
+theorem sub_complexifyL2_starProjection_mem_orthogonal
+    (z : WithLp 2 (Complexification E)) :
+    z - U.starProjection.complexifyL2 z ∈ U.complexifyL2ᗮ := by
+  rw [← complexifyL2_orthogonal, mem_complexifyL2]
+  simp
+
+/-- An orthogonally complemented real subspace remains complemented after complexification. -/
+instance instHasOrthogonalProjectionComplexifyL2 : U.complexifyL2.HasOrthogonalProjection where
+  exists_orthogonal z := ⟨_, U.complexifyL2_starProjection_mem z,
+    U.sub_complexifyL2_starProjection_mem_orthogonal z⟩
+
+/-- Orthogonal projection commutes with Hilbert complexification. -/
+@[simp]
+theorem starProjection_complexifyL2 :
+    U.complexifyL2.starProjection = U.starProjection.complexifyL2 := by
+  ext z
+  exact U.complexifyL2.eq_starProjection_of_mem_orthogonal
+    (U.complexifyL2_starProjection_mem z)
+    (U.sub_complexifyL2_starProjection_mem_orthogonal z)
+
+/-- Hilbert complexification preserves the gap between two orthogonally complemented subspaces. -/
+@[simp]
+theorem projectionGap_complexifyL2 (V : Submodule ℝ E) [V.HasOrthogonalProjection] :
+    U.complexifyL2.projectionGap V.complexifyL2 = U.projectionGap V := by
+  have hsub : (U.starProjection - V.starProjection).complexifyL2 =
+      U.starProjection.complexifyL2 - V.starProjection.complexifyL2 :=
+    by simpa only [LinearIsometry.coe_toLinearMap,
+      ContinuousLinearMap.complexifyL2ₗᵢ_apply] using
+      map_sub (ContinuousLinearMap.complexifyL2ₗᵢ E E).toLinearMap
+        U.starProjection V.starProjection
+  rw [projectionGap_def, projectionGap_def, starProjection_complexifyL2,
+    starProjection_complexifyL2, ← hsub, ContinuousLinearMap.norm_complexifyL2]
+
+end Submodule
+
+end RealComplexification

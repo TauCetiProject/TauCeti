@@ -387,7 +387,6 @@ theorem riskNeutralPrice_put (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 <
     probReal_univ, one_smul]
   linear_combination hcall - hid + callPrice_sub_putPrice s r σ K τ
 
-
 /-! ### No-arbitrage bounds -/
 
 /-- The Black–Scholes call price is nonnegative. -/

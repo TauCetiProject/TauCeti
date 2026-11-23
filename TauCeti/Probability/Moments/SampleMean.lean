@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
+import TauCeti.Probability.Moments.Variance
 
 /-!
 # Second moments of sample means
@@ -18,7 +19,7 @@ with a common mean `m`. Their sample mean `S = r⁻¹ ∑ₖ Xₖ` has mean-squa
 `∫ ‖S - m‖² dP = r⁻² ∑ₖ ∫ ‖Xₖ - m‖² dP`,
 
 so that averaging `r` samples with a common per-sample error `γ` divides it by `r`. Together with
-Chebyshev's inequality for the second moment, `TauCeti.meas_ge_le_integral_norm_sq_div_sq` in
+Chebyshev's inequality for the second moment, `TauCeti.meas_ge_le_integral_sq_div_sq` in
 `TauCeti.Probability.Moments.Chebyshev`, this is the scale `1 / r` behind the elementary
 concentration of empirical moments.
 
@@ -77,6 +78,29 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
   exact integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
     (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
     (fun i hi j hj hij ↦ hcross i hi j hj hij.symm)
+
+/-- For centered, pairwise independent square-integrable variables on a probability space,
+a common second-moment bound controls the mean norm of their sum. -/
+theorem integral_norm_sum_le_of_pairwise_indepFun [IsProbabilityMeasure μ]
+    {X : ι → Ω → E} {s : Finset ι} (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
+    (hmean : ∀ i ∈ s, μ[X i] = 0) (hindep : Set.Pairwise ↑s fun i j ↦ X i ⟂ᵢ[μ] X j)
+    {v : ℝ} (hv : ∀ i ∈ s, ∫ ω, ‖X i ω‖ ^ 2 ∂μ ≤ v) :
+    (∫ ω, ‖∑ i ∈ s, X i ω‖ ∂μ) ≤ Real.sqrt (s.card * v) := by
+  refine (integral_le_sqrt_integral_sq (memLp_finsetSum s hX).norm).trans ?_
+  rw [integral_norm_sum_sq_of_pairwise_indepFun hX hmean hindep]
+  exact Real.sqrt_le_sqrt ((sum_le_sum hv).trans_eq (by simp [nsmul_eq_mul]))
+
+/-- The second moment of a linear form in pairwise independent centered coordinates is the
+sum of the coordinate second moments weighted by the squared coefficients. -/
+theorem integral_sq_sum_mul_of_pairwise_indepFun [Fintype ι] [IsFiniteMeasure μ]
+    {X : ι → Ω → ℝ} (hX : ∀ i, MemLp (X i) 2 μ) (hmean : ∀ i, ∫ ω, X i ω ∂μ = 0)
+    (hind : Pairwise fun i j ↦ X i ⟂ᵢ[μ] X j) (a : ι → ℝ) :
+    ∫ ω, (∑ i, a i * X i ω) ^ 2 ∂μ = ∑ i, a i ^ 2 * ∫ ω, X i ω ^ 2 ∂μ := by
+  have h := integral_norm_sum_sq_of_pairwise_indepFun
+    (s := (univ : Finset ι)) (X := fun i ω ↦ a i * X i ω)
+    (fun i _ ↦ (hX i).const_mul _) (fun i _ ↦ by simp [integral_const_mul, hmean i])
+    (fun i _ j _ hij ↦ (hind hij).comp (measurable_const_mul _) (measurable_const_mul _))
+  simpa only [Real.norm_eq_abs, sq_abs, mul_pow, integral_const_mul] using h
 
 variable [Fintype ι] [Nonempty ι]
 
