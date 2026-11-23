@@ -56,8 +56,8 @@ theorem span_p_single_one_T_eq_span_single_one_T :
 
 /-- `(single 1 T)` in `(AnnularRing p)[M]` is the extension of `(T)` along `singleOneRingHom`. -/
 theorem span_single_one_T_eq_map : Ideal.span {MonoidAlgebra.single (1 : M) (T : AnnularRing p)} =
-    Ideal.map (MonoidAlgebra.singleOneRingHom :
-      AnnularRing p →+* MonoidAlgebra (AnnularRing p) M) (Ideal.span {(T : AnnularRing p)}) := by
+    Ideal.map (MonoidAlgebra.singleOneRingHom : AnnularRing p →+* MonoidAlgebra (AnnularRing p) M)
+      (Ideal.span {(T : AnnularRing p)}) := by
   simp [Ideal.map_span, MonoidAlgebra.singleOneRingHom]
 end Monoid
 
@@ -69,8 +69,7 @@ private theorem map_span_rel_mvPowerSeriesAlgEquiv_symm :
         MvPowerSeries (Fin 2) ℤ_[p] →+* MonoidAlgebra (MvPowerSeries (Fin 2) ℤ_[p]) M)
       (Ideal.span {MvPowerSeries.X 0 * MvPowerSeries.X 1 - MvPowerSeries.C (p : ℤ_[p])}) =
     Ideal.map ((MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] (Fin 2) ℤ_[p] M).symm :
-        MvPowerSeries (Fin 2) (MonoidAlgebra ℤ_[p] M) →+*
-          MonoidAlgebra (MvPowerSeries (Fin 2) ℤ_[p]) M)
+        MvPowerSeries (Fin 2) (MonoidAlgebra ℤ_[p] M) →+* _)
       (Ideal.span {MvPowerSeries.X 0 * MvPowerSeries.X 1 -
         MvPowerSeries.C (p : MonoidAlgebra ℤ_[p] M)}) := by
   rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton]; congr 2
@@ -102,12 +101,10 @@ def quotientMvPowerSeriesMonoidAlgebraEquiv : (MvPowerSeries (Fin 2) (MonoidAlge
 
 /-- Evaluating `quotientMvPowerSeriesMonoidAlgebraEquiv` computes `ofMvPowerSeries` on each
 coordinate. -/
-@[simp]
-theorem coeff_quotientMvPowerSeriesMonoidAlgebraEquiv_mk
+@[simp] theorem coeff_quotientMvPowerSeriesMonoidAlgebraEquiv_mk
     (F : MvPowerSeries (Fin 2) (MonoidAlgebra ℤ_[p] M)) (m : M) :
-    (quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ F)).coeff m =
-      ofMvPowerSeries
-        (((MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] (Fin 2) ℤ_[p] M).symm F).coeff m) := by
+    (quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ F)).coeff m = ofMvPowerSeries
+      (((MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] (Fin 2) ℤ_[p] M).symm F).coeff m) := by
   simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv_apply,
     MonoidAlgebra.coeff_mapAlgHom, Ideal.quotientEquivAlg_mk]
 
@@ -120,9 +117,8 @@ def quotientSpanSingleOneTEquiv : (MonoidAlgebra (AnnularRing p) M ⧸
       (quotientSpanTEquiv (p := p))).trans
       (MonoidAlgebra.mvPowerSeriesAlgEquiv (ZMod p) Unit (ZMod p) M).toRingEquiv
 
-@[simp] theorem quotientSpanSingleOneTEquiv_mk_single_one_U :
-    quotientSpanSingleOneTEquiv M (Ideal.Quotient.mk _
-      (MonoidAlgebra.single 1 (U : AnnularRing p))) = PowerSeries.X := by
+@[simp] theorem quotientSpanSingleOneTEquiv_mk_single_one_U : quotientSpanSingleOneTEquiv M
+    (Ideal.Quotient.mk _ (MonoidAlgebra.single 1 (U : AnnularRing p))) = PowerSeries.X := by
   simp [quotientSpanSingleOneTEquiv, MonoidAlgebra.mapRingEquiv_single, PowerSeries.X_apply]
 @[simp] theorem quotientSpanSingleOneTEquiv_mk_single_algebraMap (m : M) (c : ℤ_[p]) :
     quotientSpanSingleOneTEquiv M (Ideal.Quotient.mk _ (MonoidAlgebra.single m
@@ -135,11 +131,9 @@ def quotientSpanSingleOneTEquiv : (MonoidAlgebra (AnnularRing p) M ⧸
   simp [quotientSpanSingleOneTEquiv, hq, MonoidAlgebra.mapRingEquiv_single, PowerSeries.C_apply]
 
 /-- Evaluating `quotientSpanSingleOneTEquiv` applies `modT` to each monoid coordinate. -/
-@[simp]
-theorem coeff_coeff_quotientSpanSingleOneTEquiv_mk (x : MonoidAlgebra (AnnularRing p) M)
-    (n : ℕ) (m : M) :
-    (PowerSeries.coeff n (quotientSpanSingleOneTEquiv M (Ideal.Quotient.mk _ x))).coeff m =
-      PowerSeries.coeff n (modT (x.coeff m)) := by
+@[simp] theorem coeff_coeff_quotientSpanSingleOneTEquiv_mk (x : MonoidAlgebra (AnnularRing p) M)
+    (n : ℕ) (m : M) : (PowerSeries.coeff n (quotientSpanSingleOneTEquiv M
+      (Ideal.Quotient.mk _ x))).coeff m = PowerSeries.coeff n (modT (x.coeff m)) := by
   simp [quotientSpanSingleOneTEquiv, ← PowerSeries.coeff_coeToMvPowerSeries,
     MonoidAlgebra.coeff_mapRingEquiv]
 end Finite
@@ -172,12 +166,12 @@ theorem maximalIdeal_dyadicGroupRing_eq_span :
         MonoidAlgebra.single (-1 : (ZMod 4)ˣ) (1 : AnnularRing 2) - 1} := by
   rw [← ker_dyadicGroupRingResidue]; refine le_antisymm (fun x hx ↦ ?_)
     (Ideal.span_le.2 fun y hy ↦ by rcases hy with rfl | rfl | rfl <;> simp [RingHom.mem_ker])
-  rw [RingHom.mem_ker] at hx
   have hx_split : x = MonoidAlgebra.single 1 (x.coeff 1 + x.coeff (-1)) + MonoidAlgebra.single 1
       (x.coeff (-1)) * (MonoidAlgebra.single (-1 : (ZMod 4)ˣ) 1 - 1) := by
     (conv_lhs => rw [x.eq_single_one_add_single_neg_one]); simp [mul_sub, MonoidAlgebra.single_add]
   have hval : residueTU (x.coeff 1 + x.coeff (-1)) = 0 := by
-    simpa [hx] using (congr_arg dyadicGroupRingResidue x.eq_single_one_add_single_neg_one).symm
+    simpa [RingHom.mem_ker.1 hx] using
+      (congr_arg dyadicGroupRingResidue x.eq_single_one_add_single_neg_one).symm
   obtain ⟨a, b, hab⟩ := Ideal.mem_span_pair.1 (by
     rwa [← maximalIdeal_eq_span_T_U, ← ker_residueTU, RingHom.mem_ker] :
       x.coeff 1 + x.coeff (-1) ∈ Ideal.span {(T : AnnularRing 2), U})
@@ -213,8 +207,7 @@ theorem dyadicToProd_apply (x : MonoidAlgebra (AnnularRing 2) (ZMod 4)ˣ) :
 
 /-- Joint character evaluation `dyadicToProd` is injective, as `2` is a non-zero-divisor. -/
 theorem dyadicToProd_injective : Function.Injective dyadicToProd :=
-  (MonoidAlgebra.cyclicTwoToProd_injective (AnnularRing 2)
-    (mul_right_injective₀ two_ne_zero)).comp
+  (MonoidAlgebra.cyclicTwoToProd_injective (AnnularRing 2) (mul_right_injective₀ two_ne_zero)).comp
     (MonoidAlgebra.domCongr (AnnularRing 2) (AnnularRing 2) ZMod.unitsFourMulEquiv).injective
 
 /-- `(1, 0) ∉ range dyadicToProd`, because `2` is not a unit in `AnnularRing 2`. -/

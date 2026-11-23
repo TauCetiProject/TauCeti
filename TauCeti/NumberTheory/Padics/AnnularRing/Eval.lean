@@ -86,9 +86,8 @@ theorem norm_padicIntAlgebraMap_coeff_mul_zpow_le_one (ht : ‖t‖ ∈ Set.Ioo 
 /-- On `p⁻¹ < ‖t‖ < 1`, `∑ ‖x.coeff m * t ^ m‖` is summable via geometric bounds. -/
 theorem summable_norm_padicIntAlgebraMap_coeff_mul_zpow (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
     (x : AnnularRing p) : Summable fun m : ℤ ↦ ‖padicIntAlgebraMap p K (x.coeff m) * t ^ m‖ :=
-  Summable.of_nat_of_neg (Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _)
-      (fun n ↦ by simpa [min_eq_left (Nat.cast_nonneg n)] using
-        norm_padicIntAlgebraMap_coeff_mul_zpow_le x t n)
+  Summable.of_nat_of_neg (Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ by
+      simpa [min_eq_left (Nat.cast_nonneg n)] using norm_padicIntAlgebraMap_coeff_mul_zpow_le x t n)
       (summable_geometric_of_lt_one (norm_nonneg t) ht.2))
     (Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _)
       (fun n ↦ (norm_padicIntAlgebraMap_coeff_mul_zpow_le x t (-n)).trans_eq
@@ -179,23 +178,6 @@ theorem hasSum_eval_ofPowerSeriesU (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (
     simp [coeff_ofPowerSeriesU_of_pos g hpos]
   · simp [coeff_ofPowerSeriesU_neg_natCast, div_eq_mul_inv, mul_pow]; ring
 
-omit [CompleteSpace K] in
-private theorem padicIntAlgebraMap_coeff_diag_mul_zpow (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
-    (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : ℤ) (k : ℕ) :
-    padicIntAlgebraMap p K (MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F) *
-        t ^ (Finsupp.finTwoSubMinEquiv.symm (m, k)) 0 *
-        ((p : K) / t) ^ (Finsupp.finTwoSubMinEquiv.symm (m, k)) 1 =
-      padicIntAlgebraMap p K ((p : ℤ_[p]) ^ ((-m).toNat + k) *
-        MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F) * t ^ m := by
-  have ht0 : t ≠ 0 := ne_zero_of_norm_mem_Ioo ht
-  have hexp : ((m.toNat + k : ℕ) : ℤ) - (((-m).toNat + k : ℕ) : ℤ) = m := by omega
-  have hpow : t ^ (m.toNat + k) / t ^ ((-m).toNat + k) = t ^ m := by
-    rw [← zpow_natCast t, ← zpow_natCast t, ← zpow_sub₀ ht0, hexp]
-  rw [Finsupp.finTwoSubMinEquiv_symm_apply_zero, Finsupp.finTwoSubMinEquiv_symm_apply_one,
-    div_pow, ← map_natCast (padicIntAlgebraMap p K), map_mul, map_pow, mul_assoc _ (t ^ _),
-    div_eq_mul_inv, mul_left_comm (t ^ _), ← div_eq_mul_inv, hpow]
-  ring
-
 /-- Evaluating `F ∈ ℤ_p⟦X_0, X_1⟧` termwise at `(t, p / t)` converges to
 `eval ht (ofMvPowerSeries F)`. -/
 theorem hasSum_eval_ofMvPowerSeries (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
@@ -205,20 +187,29 @@ theorem hasSum_eval_ofMvPowerSeries (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
       (eval ht (ofMvPowerSeries F)) := by
   have hs := summable_evalTUTerm_eval ht F
   have hcomp := hs.comp_injective Finsupp.finTwoSubMinEquiv.symm.injective
-  dsimp only [Function.comp_def] at hcomp
-  convert hs.hasSum using 1
+  dsimp only [Function.comp_def] at hcomp; convert hs.hasSum using 1
   rw [← Equiv.tsum_eq Finsupp.finTwoSubMinEquiv.symm, hcomp.tsum_prod' hcomp.prod_factor,
     eval_apply]
   refine tsum_congr fun m ↦ ?_
-  simp_rw [padicIntAlgebraMap_coeff_diag_mul_zpow ht F m]
-  rw [coeff_ofMvPowerSeries F m]
+  have hdiag (k : ℕ) :
+      padicIntAlgebraMap p K (MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F) *
+          t ^ (Finsupp.finTwoSubMinEquiv.symm (m, k)) 0 *
+          ((p : K) / t) ^ (Finsupp.finTwoSubMinEquiv.symm (m, k)) 1 =
+        padicIntAlgebraMap p K ((p : ℤ_[p]) ^ ((-m).toNat + k) *
+          MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F) * t ^ m := by
+    have hpow : t ^ (m.toNat + k) / t ^ ((-m).toNat + k) = t ^ m := by
+      rw [← zpow_natCast t, ← zpow_natCast t, ← zpow_sub₀ (ne_zero_of_norm_mem_Ioo ht)]
+      congr 1; omega
+    rw [Finsupp.finTwoSubMinEquiv_symm_apply_zero, Finsupp.finTwoSubMinEquiv_symm_apply_one,
+      div_pow, ← map_natCast (padicIntAlgebraMap p K), map_mul, map_pow, mul_assoc _ (t ^ _),
+      div_eq_mul_inv, mul_left_comm (t ^ _), ← div_eq_mul_inv, hpow]; ring
+  simp_rw [hdiag]; rw [coeff_ofMvPowerSeries F m]
   have hsum : Summable fun k : ℕ ↦ (p : ℤ_[p]) ^ ((-m).toNat + k) *
       MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F := by
     simpa [pow_add, mul_assoc] using (PadicInt.summable_pow_mul
-      (fun k ↦ MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F)).mul_left
-      ((p : ℤ_[p]) ^ (-m).toNat)
-  exact ((hsum.hasSum.map (padicIntAlgebraMap p K)
-    (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))).mul_right (t ^ m)).tsum_eq.symm
+      (fun k ↦ MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F)).mul_left _
+  exact ((hsum.hasSum.map (padicIntAlgebraMap p K) (continuous_padicIntAlgebraMap
+    (continuous_algebraMap ℚ_[p] K))).mul_right (t ^ m)).tsum_eq.symm
 end NormedAlgebra
 end Eval
 
@@ -238,8 +229,7 @@ private def evalExponent (x : AnnularRing p) (B : ℕ) (m : ℤ) : ℤ :=
 
 private theorem two_mul_evalExponent (x : AnnularRing p) (B : ℕ) (m : ℤ) :
     2 * evalExponent x B m = (2 * (B : ℤ) + 1) * valScore x m + m := by
-  simp only [evalExponent, valScore]
-  ring
+  simp only [evalExponent, valScore]; ring
 
 private theorem evalExponent_le_sub_one {x : AnnularRing p} {B : ℕ} {m m₀ : ℤ}
     (hdom : (2 * (B : ℤ) + 1) * valScore x m + m <
@@ -255,8 +245,7 @@ private theorem valScore_le_neg_abs {x : AnnularRing p} {m : ℤ} (hm : x.coeff 
     valScore x m ≤ -|m| := by
   have h := x.norm_coeff_le m
   rw [PadicInt.norm_eq_zpow_neg_valuation hm, zpow_le_zpow_iff_right₀ (one_lt_p (p := p))] at h
-  rw [valScore]
-  cases abs_cases m <;> omega
+  rw [valScore]; cases abs_cases m <;> omega
 
 /-- Strategy for finding a dominant term: pick any nonzero coefficient `d_{m₁}` and set the
 window radius `R = |m₁| + 2 * v(d_{m₁})`, so `valScore x m₁ ≥ -R`. Among nonzero coefficients in
@@ -277,8 +266,7 @@ private theorem exists_dominant_index {x : AnnularRing p} (hx : x ≠ 0) :
   have hm₁S : m₁ ∈ S :=
     Finset.mem_filter.2 ⟨Finset.mem_Icc.2 (by have := Int.abs_eq_natAbs m₁; omega), hm₁⟩
   let Smax : Finset ℤ := S.filter fun m ↦ valScore x m = S.sup' ⟨m₁, hm₁S⟩ (valScore x)
-  have hSmax : Smax.Nonempty :=
-    let ⟨m, hm⟩ := Finset.exists_mem_eq_sup' ⟨m₁, hm₁S⟩ (valScore x)
+  have hSmax : Smax.Nonempty := let ⟨m, hm⟩ := Finset.exists_mem_eq_sup' ⟨m₁, hm₁S⟩ (valScore x)
     ⟨m, Finset.mem_filter.2 ⟨hm.1, hm.2.symm⟩⟩
   let m₀ : ℤ := Smax.max' hSmax
   obtain ⟨hm₀S, hm₀_score⟩ := Finset.mem_filter.1 (Finset.max'_mem Smax hSmax)
@@ -289,15 +277,13 @@ private theorem exists_dominant_index {x : AnnularRing p} (hx : x ≠ 0) :
   by_cases hmIcc : -(R : ℤ) ≤ m ∧ m ≤ R
   · have hmS : m ∈ S := Finset.mem_filter.2 ⟨Finset.mem_Icc.2 hmIcc, hm0⟩
     rcases ((Finset.le_sup' (valScore x) hmS).trans_eq hm₀_score.symm).eq_or_lt with heq | hlt
-    · rw [heq]
-      have hlt_m₀ := lt_of_le_of_ne
+    · have hlt_m₀ := lt_of_le_of_ne
         (Finset.le_max' Smax m (Finset.mem_filter.2 ⟨hmS, heq.trans hm₀_score⟩)) hm_ne
-      linarith
+      rw [heq]; linarith
     · nlinarith [Int.le_sub_one_of_lt hlt, hRB, hmIcc.2, hm₀_Icc.1]
   · have habs : (R : ℤ) + 1 ≤ |m| := by cases abs_cases m <;> omega
-    have hm₀_ge : -(R : ℤ) ≤ valScore x m₀ :=
-      (by dsimp [valScore, R]; omega : -(R : ℤ) ≤ valScore x m₁).trans
-        (hm₀_score ▸ Finset.le_sup' (valScore x) hm₁S)
+    have hm₀_ge : -(R : ℤ) ≤ valScore x m₀ := (by dsimp [valScore, R]; omega :
+      -(R : ℤ) ≤ valScore x m₁).trans (hm₀_score ▸ Finset.le_sup' (valScore x) hm₁S)
     nlinarith [valScore_le_neg_abs hm0, le_abs_self m, hRB, hm₀_Icc.1, hm₀_ge]
 
 /-- If `x ≠ 0`, then at any sufficiently large radius `‖t‖ = p ^ (-B / (2B + 1))` the dominant
@@ -314,18 +300,10 @@ private theorem exists_forall_eval_ne_zero_of_ne_zero {x : AnnularRing p} (hx : 
   -- Every nonzero term has norm `p ^ (evalExponent x B m / (2B + 1))`.
   have hnorm_eq {m : ℤ} (hm : x.coeff m ≠ 0) :
       ‖f m‖ = (p : ℝ) ^ ((evalExponent x B m : ℝ) / (2 * B + 1)) := by
-    dsimp only [f]
-    rw [norm_padicIntAlgebraMap_mul_zpow, PadicInt.norm_eq_zpow_neg_valuation hm,
-      hnorm_t, ← Real.rpow_intCast, ← Real.rpow_intCast (n := m), ← Real.rpow_mul p_pos.le,
+    rw [norm_padicIntAlgebraMap_mul_zpow, PadicInt.norm_eq_zpow_neg_valuation hm, hnorm_t,
+      ← Real.rpow_intCast, ← Real.rpow_intCast (n := m), ← Real.rpow_mul p_pos.le,
       ← Real.rpow_add p_pos]
-    congr 1
-    simp only [evalExponent]
-    push_cast
-    field_simp [h2B1_pos.ne']
-    ring
-  have hE_le {m : ℤ} (hm_ne : m ≠ m₀) (hm0 : x.coeff m ≠ 0) :
-      evalExponent x B m ≤ evalExponent x B m₀ - 1 :=
-    evalExponent_le_sub_one (hdom hB hm_ne hm0)
+    congr 1; simp only [evalExponent]; push_cast; field_simp [h2B1_pos.ne']; ring
   -- Bound the tail excluding `m₀` by `r = p ^ ((evalExponent x B m₀ - 1) / (2B + 1)) < ‖f m₀‖`.
   set r : ℝ := (p : ℝ) ^ (((evalExponent x B m₀ - 1 : ℤ) : ℝ) / (2 * B + 1))
   have hr0 : 0 ≤ r := Real.rpow_nonneg (p_pos (p := p)).le _
@@ -335,15 +313,12 @@ private theorem exists_forall_eval_ne_zero_of_ne_zero {x : AnnularRing p} (hx : 
       (div_lt_div_of_pos_right (by exact_mod_cast sub_one_lt (evalExponent x B m₀)) h2B1_pos)
   have htail_norm : ‖∑' m : ℤ, if m = m₀ then (0 : ℂ_[p]) else f m‖ ≤ r :=
     IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hr0 fun m ↦ by
-      by_cases hm_eq : m = m₀
-      · simp [hm_eq, hr0]
-      by_cases hm0 : x.coeff m = 0
-      · simp [hm_eq, f, hm0, hr0]
+      by_cases hm_eq : m = m₀; · simp [hm_eq, hr0]
+      by_cases hm0 : x.coeff m = 0; · simp [hm_eq, f, hm0, hr0]
       rw [ite_eq_right hm_eq, hnorm_eq hm0]
-      exact Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le
-        (div_le_div_of_nonneg_right (by exact_mod_cast hE_le hm_eq hm0) h2B1_pos.le)
-  -- Splitting `eval ht x = f m₀ + tail = 0` gives `‖f m₀‖ = ‖tail‖ ≤ r`,
-  -- contradicting `r < ‖f m₀‖`.
+      exact Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le (div_le_div_of_nonneg_right
+        (by exact_mod_cast evalExponent_le_sub_one (hdom hB hm_eq hm0)) h2B1_pos.le)
+  -- Since `f m₀ + tail = 0`, `‖f m₀‖ = ‖tail‖ ≤ r`, contradicting `r < ‖f m₀‖`.
   have hsplit := (summable_padicIntAlgebraMap_coeff_mul_zpow ht x).tsum_eq_add_tsum_ite m₀
   rw [← eval_apply ht x, heval0] at hsplit
   linarith [(congr_arg norm (eq_neg_of_add_eq_zero_left hsplit.symm)).trans (norm_neg _)]
@@ -354,23 +329,16 @@ private theorem exists_padicComplex_norm_eq_rpow_neg {q : ℚ} (hq0 : 0 < q) (hq
     ∃ t : ℂ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by
   obtain ⟨t, ht⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-q)
   have hnorm : ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by simpa using ht
-  have hlt1 : ‖t‖ < 1 := by
-    rw [hnorm, ← Real.rpow_zero (p : ℝ)]
-    exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
-      (neg_lt_zero.2 (by exact_mod_cast hq0))
-  have hgt : (p : ℝ)⁻¹ < ‖t‖ := by
-    rw [hnorm, ← Real.rpow_neg_one (p : ℝ)]
-    exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
-      (neg_lt_neg (by exact_mod_cast hq1))
-  exact ⟨t, ⟨hgt, hlt1⟩, hnorm⟩
+  have hp := one_lt_p (p := p); refine ⟨t, ⟨?_, ?_⟩, hnorm⟩
+  · rw [hnorm, ← Real.rpow_neg_one (p : ℝ)]
+    exact Real.rpow_lt_rpow_of_exponent_lt hp (neg_lt_neg (by exact_mod_cast hq1))
+  · rw [hnorm, ← Real.rpow_zero (p : ℝ)]
+    exact Real.rpow_lt_rpow_of_exponent_lt hp (neg_lt_zero.2 (by exact_mod_cast hq0))
 
 private theorem exists_padicComplex_ratio (B : ℕ) (hB : 1 ≤ B) : ∃ t : ℂ_[p],
     ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) := by
-  have hq0 : (0 : ℚ) < (B : ℚ) / (2 * B + 1) := by positivity
-  have hq1 : (B : ℚ) / (2 * B + 1) < 1 :=
-    (div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : B < 2 * B + 1))
-  obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_norm_eq_rpow_neg (p := p) hq0 hq1
-  exact ⟨t, ht, by simpa using hnorm⟩
+  simpa using exists_padicComplex_norm_eq_rpow_neg (p := p) (q := (B : ℚ) / (2 * B + 1))
+    (by positivity) ((div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : B < 2 * B + 1)))
 
 /-- Elements of `AnnularRing p` agreeing on `p⁻¹ < ‖t‖ < 1` in `ℂ_p` are equal. -/
 theorem eq_of_forall_eval_eq {x y : AnnularRing p}
@@ -454,9 +422,10 @@ theorem hasSum_eval (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ ∈ Set.Ioo (p : �
   obtain ⟨k, x, hx⟩ := IsLocalization.Away.surj (T : AnnularRing p) z
   have hclear : (unitT p hα ^ (k : ℤ)).val * z = algebraMap (AnnularRing p) _ x := by
     rw [zpow_natCast, Units.val_pow_eq_pow_val, val_unitT, mul_comm, hx]
-  have hval : eval hα ht z * t ^ (k : ℤ) = AnnularRing.eval ht x := by
-    simpa [map_mul, map_pow, eval_algebraMap, eval_T, zpow_natCast] using congr_arg (eval hα ht) hx
   have heval : eval hα ht z = AnnularRing.eval ht x * t ^ (-(k : ℤ)) := by
+    have hval : eval hα ht z * t ^ (k : ℤ) = AnnularRing.eval ht x := by
+      simpa [map_mul, map_pow, eval_algebraMap, eval_T, zpow_natCast] using
+        congr_arg (eval hα ht) hx
     rw [← hval, mul_assoc, ← zpow_add₀ ht0, add_neg_cancel, zpow_zero, mul_one]
   rw [heval]
   refine ((Equiv.addRight (k : ℤ)).hasSum_iff.2
@@ -471,10 +440,9 @@ theorem not_lipschitzWith_eval_of_lt (hα : α ∈ Set.Ioo 0 1)
     (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (hαt : α < ‖t‖) (c : ℝ≥0) :
     ¬ LipschitzWith c (eval hα ht) := fun hL ↦ by
   obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (c : ℝ) ((one_lt_div hα.1).2 hαt)
-  have hpow_norm : ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ n‖ = α ^ n := by
-    simpa using (pseudoUniformizer p hα).norm_pow n
   have hdist := hL.dist_le_mul (algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ n) 0
-  simp [hpow_norm] at hdist
+  simp [show ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ n‖ = α ^ n by
+    simpa using (pseudoUniformizer p hα).norm_pow n] at hdist
   linarith [(div_pow ‖t‖ α n).trans_le ((div_le_iff₀ (pow_pos hα.1 n)).2 hdist)]
 
 /-- The Tate gauge bound `‖z‖ ≤ α ^ r` implies `‖eval hα ht z‖ ≤ ‖t‖ ^ r`. -/
@@ -482,9 +450,9 @@ theorem norm_eval_le_zpow_of_norm_le_zpow (hα : α ∈ Set.Ioo 0 1)
     (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) {z : AnnularLaurent p hα} {r : ℤ}
     (hz : ‖z‖ ≤ α ^ r) : ‖eval hα ht z‖ ≤ ‖t‖ ^ r := by
   obtain ⟨x, hx⟩ := (mem_ringOfDefinition_iff _).1 ((norm_le_zpow_iff hα z r).1 hz)
-  have hz_eq : z = (unitT p hα ^ r).val * algebraMap (AnnularRing p) _ x := by
-    simp [hx, ← mul_assoc, ← Units.val_mul]
-  rw [hz_eq, map_mul, eval_zpow_unitT, eval_algebraMap, norm_mul, norm_zpow]
+  rw [show z = (unitT p hα ^ r).val * algebraMap (AnnularRing p) _ x by
+      simp [hx, ← mul_assoc, ← Units.val_mul],
+    map_mul, eval_zpow_unitT, eval_algebraMap, norm_mul, norm_zpow]
   exact mul_le_of_le_one_right (zpow_nonneg (norm_nonneg t) r) (norm_eval_le_one ht x)
 
 /-- Every annulus evaluation into a complete normed field extension of `ℚ_p` is continuous. -/
@@ -497,76 +465,52 @@ theorem continuous_eval (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ ∈ Set.Ioo (p 
   rw [dist_zero_right] at hz ⊢
   exact (norm_eval_le_zpow_of_norm_le_zpow hα ht hz.le).trans_lt (by simpa [zpow_natCast] using hr)
 
-/-- Splitting an `AlgHom` from `ℤ_p⟦X⟧` into `AnnularRing p` at degree `N`. -/
-private theorem algHom_powerSeries_eq_sum_add_pow_mul
-    (φ : PowerSeries ℤ_[p] →ₐ[ℤ_[p]] AnnularRing p) (s : PowerSeries ℤ_[p]) (N : ℕ) :
-    φ s = (∑ i ∈ Finset.range N,
-        algebraMap ℤ_[p] (AnnularRing p) (PowerSeries.coeff i s) * (φ PowerSeries.X) ^ i) +
-      (φ PowerSeries.X) ^ N * φ (PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) s) := by
-  conv_lhs => rw [PowerSeries.eq_X_pow_mul_shift_add_trunc N s, ← Polynomial.eval₂_C_X_eq_coe]
-  rw [map_add, map_mul, map_pow, ← AlgHom.coe_toRingHom, Polynomial.hom_eval₂,
-    PowerSeries.eval₂_trunc_eq_sum_range, add_comm]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [RingHom.comp_apply, AlgHom.coe_toRingHom, PowerSeries.C_eq_algebraMap, AlgHom.commutes]
-
 /-- Any bounded ring homomorphism `AnnularRing p →+* K` agreeing with `AnnularRing.eval ht`
 on `ℤ_p`, `T`, and `U` equals `AnnularRing.eval ht`, by truncating normal forms. -/
 private theorem ringHom_eq_eval_of_bounded (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
     (g : AnnularRing p →+* K) {C : ℝ} (hC : ∀ y : AnnularRing p, ‖g y‖ ≤ C)
     (hg_alg : ∀ c : ℤ_[p], g (algebraMap ℤ_[p] (AnnularRing p) c) = padicIntAlgebraMap p K c)
     (hgT : g T = t) (hgU : g U = (p : K) / t) : g = AnnularRing.eval ht := by
-  ext x
-  let f₀ := (normalForm.symm x).1
-  let g₀ := (normalForm.symm x).2
-  have hx : x = ofPowerSeriesT f₀ + U * ofPowerSeriesU g₀ := by
-    have h := (normalForm.apply_symm_apply x).symm
-    rwa [← Prod.eta (normalForm.symm x), normalForm_apply] at h
-  let sT : ℕ → K := fun N ↦
+  ext x; obtain ⟨⟨f₀, g₀⟩, hx⟩ := normalForm.surjective x; rw [normalForm_apply] at hx
+  have hsplit (φ : PowerSeries ℤ_[p] →ₐ[ℤ_[p]] AnnularRing p) (s : PowerSeries ℤ_[p]) (N : ℕ) :
+      φ s = (∑ i ∈ Finset.range N, algebraMap ℤ_[p] _ (PowerSeries.coeff i s) * φ .X ^ i) +
+        φ .X ^ N * φ (PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) s) := by
+    conv_lhs => rw [PowerSeries.eq_X_pow_mul_shift_add_trunc N s, ← Polynomial.eval₂_C_X_eq_coe]
+    rw [map_add, map_mul, map_pow, ← AlgHom.coe_toRingHom, Polynomial.hom_eval₂,
+      PowerSeries.eval₂_trunc_eq_sum_range, add_comm]
+    exact congrArg (· + _) <| Finset.sum_congr rfl fun i _ ↦ by
+      rw [RingHom.comp_apply, AlgHom.coe_toRingHom, PowerSeries.C_eq_algebraMap, AlgHom.commutes]
+  let sT (N : ℕ) : K :=
     ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i f₀) * t ^ i
-  let sU : ℕ → K := fun N ↦
+  let sU (N : ℕ) : K :=
     ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i g₀) * ((p : K) / t) ^ i
   have hnorm_p_div_t : ‖(p : K) / t‖ = ((p : ℝ) * ‖t‖)⁻¹ := by
     have hpK : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
       simpa [map_natCast] using norm_padicIntAlgebraMap (K := K) (p : ℤ_[p])
     rw [norm_div, hpK, div_eq_mul_inv, mul_inv_rev, mul_comm]
-  have hdiff (N : ℕ) : ‖g x - (sT N + ((p : K) / t) * sU N)‖ ≤
-      ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C := by
-    let fTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) f₀
-    let gTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) g₀
-    have hsplit_T := algHom_powerSeries_eq_sum_add_pow_mul ofPowerSeriesT f₀ N
-    have hsplit_U := algHom_powerSeries_eq_sum_add_pow_mul ofPowerSeriesU g₀ N
-    simp only [ofPowerSeriesT_X] at hsplit_T
-    simp only [ofPowerSeriesU_X] at hsplit_U
+  have hdiff (N : ℕ) :
+      ‖g x - (sT N + ((p : K) / t) * sU N)‖ ≤ ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C := by
     have hgx : g x - (sT N + ((p : K) / t) * sU N) =
-        t ^ N * g (ofPowerSeriesT fTail) + ((p : K) / t) ^ (N + 1) * g (ofPowerSeriesU gTail) := by
-      conv_lhs => rw [hx, hsplit_T, hsplit_U]
-      simp only [map_add, map_sum, map_mul, map_pow, hg_alg, hgT, hgU, sT, sU, fTail, gTail]
-      ring
-    rw [hgx]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · rw [norm_mul, norm_pow]
-      exact mul_le_mul_of_nonneg_left (hC _) (pow_nonneg (norm_nonneg t) N)
-    · rw [norm_mul, norm_pow]
-      exact mul_le_mul_of_nonneg_left (hC _) (pow_nonneg (norm_nonneg _) (N + 1))
-  have htend_bound : Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C) atTop
-      (𝓝 0) := by
-    have h1 : Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * C) atTop (𝓝 (0 * C)) :=
-      (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg t) ht.2).mul_const C
-    have h2 : Tendsto (fun N : ℕ ↦ ‖(p : K) / t‖ ^ (N + 1) * C) atTop (𝓝 (0 * C)) :=
-      ((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
-        (hnorm_p_div_t ▸ inv_p_mul_norm_lt_one ht)).comp (tendsto_add_atTop_nat 1)).mul_const C
-    simpa only [zero_mul, add_zero] using h1.add h2
+        t ^ N * g (ofPowerSeriesT (PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) f₀)) +
+        ((p : K) / t) ^ (N + 1) *
+          g (ofPowerSeriesU (PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) g₀)) := by
+      conv_lhs => rw [← hx, hsplit ofPowerSeriesT f₀ N, hsplit ofPowerSeriesU g₀ N]
+      simp only [ofPowerSeriesT_X, ofPowerSeriesU_X, map_add, map_sum, map_mul, map_pow,
+        hg_alg, hgT, hgU, sT, sU]; ring
+    rw [hgx]; refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+      · rw [norm_mul, norm_pow]; exact mul_le_mul_of_nonneg_left (hC _) (by positivity)
+  have htend_bound :
+      Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C) atTop (𝓝 0) := by
+    simpa only [Function.comp_def, zero_mul, add_zero] using
+      ((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg t) ht.2).mul_const C).add
+      (((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
+        (hnorm_p_div_t ▸ inv_p_mul_norm_lt_one ht)).comp (tendsto_add_atTop_nat 1)).mul_const C)
   have htend_g : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop (𝓝 (g x)) :=
-    tendsto_iff_norm_sub_tendsto_zero.2 <|
-      squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ (norm_sub_rev _ _).trans_le (hdiff N))
-        htend_bound
-  have htend_eval : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop
-      (𝓝 (AnnularRing.eval ht x)) := by
-    have hlim : AnnularRing.eval ht x = AnnularRing.eval ht (ofPowerSeriesT f₀) +
-        ((p : K) / t) * AnnularRing.eval ht (ofPowerSeriesU g₀) := by
-      rw [hx, map_add, map_mul, eval_U]
-    rw [hlim]
+    tendsto_iff_norm_sub_tendsto_zero.2 <| squeeze_zero (fun _ ↦ norm_nonneg _)
+      (fun N ↦ (norm_sub_rev _ _).trans_le (hdiff N)) htend_bound
+  have htend_eval :
+      Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop (𝓝 (AnnularRing.eval ht x)) := by
+    rw [← hx, map_add, map_mul, eval_U]
     exact (hasSum_eval_ofPowerSeriesT ht f₀).tendsto_sum_nat.add
       (tendsto_const_nhds.mul (hasSum_eval_ofPowerSeriesU ht g₀).tendsto_sum_nat)
   exact tendsto_nhds_unique htend_g htend_eval
@@ -580,11 +524,8 @@ theorem eq_eval_of_continuous {hα : α ∈ Set.Ioo 0 1} (ht : ‖t‖ ∈ Set.I
   have ht0 : t ≠ 0 := ne_zero_of_norm_mem_Ioo ht
   let g : AnnularRing p →+* K := f.comp (algebraMap (AnnularRing p) (AnnularLaurent p hα))
   have hg_alg (c : ℤ_[p]) : g (algebraMap ℤ_[p] (AnnularRing p) c) = padicIntAlgebraMap p K c := by
-    rw [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]
-    exact hc c
-  have hgT : g T = t := by
-    rw [RingHom.comp_apply, ← val_unitT hα]
-    exact hT
+    rw [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]; exact hc c
+  have hgT : g T = t := by rw [RingHom.comp_apply, ← val_unitT hα]; exact hT
   have hgU : g U = (p : K) / t := by
     rw [eq_div_iff ht0, mul_comm, ← hgT, ← map_mul, T_mul_U, map_natCast]
   -- Continuity at `0` bounds `g` on `AnnularRing p`, since `T ^ r * y` shrinks into the ball.
@@ -592,29 +533,17 @@ theorem eq_eval_of_continuous {hα : α ∈ Set.Ioo 0 1} (ht : ‖t‖ ∈ Set.I
   obtain ⟨r, hr⟩ := exists_pow_lt_of_lt_one hδ hα.2
   have hg_bound (y : AnnularRing p) : ‖g y‖ ≤ (‖t‖ ^ r)⁻¹ := by
     have hnorm_Ty : ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) (T ^ r * y)‖ < δ := by
-      rw [map_mul, map_pow]
-      calc ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ r *
-              algebraMap (AnnularRing p) (AnnularLaurent p hα) y‖
-          ≤ ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T‖ ^ r *
-              ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) y‖ :=
-            (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_pow_le _ r) (norm_nonneg _))
-        _ ≤ α ^ r * 1 := by
-            rw [norm_algebraMap_T]
-            exact mul_le_mul_of_nonneg_left (norm_algebraMap_le_one hα y) (pow_nonneg hα.1.le r)
-        _ < δ := by simpa using hr
-    have hfg : ‖f (algebraMap (AnnularRing p) (AnnularLaurent p hα) (T ^ r * y))‖ < 1 := by
-      rw [← dist_zero_right, ← f.map_zero]
-      exact hball (by rwa [dist_zero_right])
-    have hprod : ‖t‖ ^ r * ‖g y‖ < 1 := by
-      rw [map_mul, map_pow, f.map_mul, f.map_pow, norm_mul, norm_pow] at hfg
-      change ‖g T‖ ^ r * ‖g y‖ < 1 at hfg
-      rwa [hgT] at hfg
-    rw [← one_div, le_div_iff₀' (pow_pos (norm_pos_iff.2 ht0) r)]
-    exact hprod.le
-  have hring := ringHom_eq_eval_of_bounded ht g hg_bound hg_alg hgT hgU
-  exact IsLocalization.ringHom_ext (Submonoid.powers (T : AnnularRing p)) <| by
-    ext x
-    exact (RingHom.congr_fun hring x).trans (eval_algebraMap hα ht x).symm
+      rw [map_mul, map_pow]; refine (norm_mul_le _ _).trans_lt <| (mul_le_mul (norm_pow_le _ r)
+        (norm_algebraMap_le_one hα y) (norm_nonneg _) (by positivity)).trans_lt ?_
+      simpa [norm_algebraMap_T] using hr
+    have h1 : ‖f (algebraMap (AnnularRing p) (AnnularLaurent p hα) (T ^ r * y))‖ < 1 := by
+      rw [← dist_zero_right, ← f.map_zero]; exact hball (by rwa [dist_zero_right])
+    rw [map_mul, map_pow, f.map_mul, f.map_pow, norm_mul, norm_pow] at h1
+    change ‖g T‖ ^ r * ‖g y‖ < 1 at h1; rw [hgT] at h1
+    rw [← one_div, le_div_iff₀' (pow_pos (norm_pos_iff.2 ht0) r)]; exact h1.le
+  exact IsLocalization.ringHom_ext (Submonoid.powers (T : AnnularRing p)) <| RingHom.ext fun x ↦
+    (RingHom.congr_fun (ringHom_eq_eval_of_bounded ht g hg_bound hg_alg hgT hgU) x).trans
+      (eval_algebraMap hα ht x).symm
 end Eval
 
 /-- For every `α ∈ (0, 1)`, some `t ∈ ℂ_p` in `p⁻¹ < ‖t‖ < 1` gives a continuous non-Lipschitz
@@ -627,27 +556,21 @@ theorem exists_continuous_not_lipschitzWith_eval (hα : α ∈ Set.Ioo 0 1) :
   have hβ_inv : 1 < β⁻¹ :=
     (one_lt_inv₀ hβ_pos).2 (max_lt (inv_lt_one_of_one_lt₀ (one_lt_p (p := p))) hα.2)
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (p : ℝ) hβ_inv
-  let N : ℕ := m + 2
-  have hN_pos : (0 : ℝ) < N := by positivity
-  have hq0 : (0 : ℚ) < (1 : ℚ) / N := by positivity
-  have hq1 : (1 : ℚ) / N < 1 :=
-    (div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : 1 < N))
-  obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_norm_eq_rpow_neg (p := p) hq0 hq1
-  have hnorm' : ‖t‖ = (p : ℝ) ^ (-((1 : ℝ) / N)) := by simpa using hnorm
+  let N : ℕ := m + 2; have hN_pos : (0 : ℝ) < N := by positivity
+  obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_norm_eq_rpow_neg (p := p) (q := (1 : ℚ) / N)
+    (by positivity) ((div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : 1 < N)))
   have hβ_lt_t : β < ‖t‖ := by
-    have hlt_pow : (p : ℝ) < (β⁻¹) ^ N :=
-      hm.trans_le (pow_le_pow_right₀ hβ_inv.le (Nat.le_add_right m 2))
     have hrpow : (p : ℝ) ^ ((1 : ℝ) / N) < β⁻¹ := by
       calc (p : ℝ) ^ ((1 : ℝ) / N)
-          < ((β⁻¹) ^ N : ℝ) ^ ((1 : ℝ) / N) :=
-            Real.rpow_lt_rpow (p_pos (p := p)).le hlt_pow (div_pos zero_lt_one hN_pos)
+          < ((β⁻¹) ^ N : ℝ) ^ ((1 : ℝ) / N) := Real.rpow_lt_rpow (p_pos (p := p)).le
+            (hm.trans_le (pow_le_pow_right₀ hβ_inv.le (Nat.le_add_right m 2))) (by positivity)
         _ = β⁻¹ := by
             rw [← Real.rpow_natCast, ← Real.rpow_mul (inv_nonneg.2 hβ_pos.le),
               mul_one_div_cancel hN_pos.ne', Real.rpow_one]
     calc β = (β⁻¹)⁻¹ := (inv_inv β).symm
       _ < ((p : ℝ) ^ ((1 : ℝ) / N))⁻¹ :=
           inv_strictAnti₀ (Real.rpow_pos_of_pos (p_pos (p := p)) _) hrpow
-      _ = ‖t‖ := by rw [hnorm', Real.rpow_neg (p_pos (p := p)).le]
+      _ = ‖t‖ := by rw [hnorm, Real.rpow_neg (p_pos (p := p)).le]; simp
   exact ⟨t, ht, continuous_eval hα ht,
     not_lipschitzWith_eval_of_lt hα ht ((le_max_right _ _).trans_lt hβ_lt_t)⟩
 

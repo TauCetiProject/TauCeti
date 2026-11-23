@@ -57,8 +57,8 @@ theorem uCoeff_eq_of_mul_eq {x : AnnularRing p} {n : ℕ} {c : ℤ_[p]}
   mul_left_cancel₀ (pow_ne_zero n (p_ne_zero (p := p))) ((pow_mul_uCoeff x n).trans h.symm)
 @[simp] theorem uCoeff_zero_right (x : AnnularRing p) : uCoeff x 0 = x.coeff 0 := by
   simpa using pow_mul_uCoeff x 0
-@[simp] theorem uCoeff_zero (n : ℕ) :
-    uCoeff (0 : AnnularRing p) n = 0 := uCoeff_eq_of_mul_eq (by simp)
+@[simp] theorem uCoeff_zero (n : ℕ) : uCoeff (0 : AnnularRing p) n = 0 :=
+  uCoeff_eq_of_mul_eq (by simp)
 @[simp] theorem uCoeff_one (n : ℕ) : uCoeff (1 : AnnularRing p) n = if n = 0 then 1 else 0 :=
   uCoeff_eq_of_mul_eq (by rw [coeff_one]; by_cases hn : n = 0 <;> simp [hn])
 @[simp] theorem uCoeff_add (x y : AnnularRing p) (n : ℕ) :
@@ -75,18 +75,16 @@ theorem uCoeff_eq_of_mul_eq {x : AnnularRing p} {n : ℕ} {c : ℤ_[p]}
 /-- Multiplication by `T` shifts `uCoeff` up by one index and multiplies by `p`. -/
 @[simp] theorem uCoeff_T_mul (y : AnnularRing p) (n : ℕ) :
     uCoeff (T * y) n = (p : ℤ_[p]) * uCoeff y (n + 1) := uCoeff_eq_of_mul_eq <| by
-  have hidx : -(n : ℤ) - 1 = -((n + 1 : ℕ) : ℤ) := by omega
-  rw [coeff_T_mul, hidx, ← pow_mul_uCoeff, pow_succ, mul_assoc]
+  rw [coeff_T_mul, (by omega : -(n : ℤ) - 1 = -((n + 1 : ℕ) : ℤ)), ← pow_mul_uCoeff, pow_succ,
+    mul_assoc]
 @[simp] theorem uCoeff_U (n : ℕ) : uCoeff (U : AnnularRing p) n = if n = 1 then 1 else 0 :=
   uCoeff_eq_of_mul_eq (by rw [coeff_U]; by_cases hn : n = 1 <;> simp [hn])
 
 /-- `uCoeff (ofPowerSeriesU (PowerSeries.mk 1))` is constantly `1`, so it does not tend to `0`. -/
 theorem not_tendsto_uCoeff_ofPowerSeriesU_mk_one :
     ¬ Tendsto (uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧))) atTop (𝓝 0) := by
-  have hconst : uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧)) = fun _ ↦ 1 :=
-    funext fun _ ↦ by simp
-  rw [hconst, tendsto_const_nhds_iff]
-  exact one_ne_zero
+  rw [show uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧)) = fun _ ↦ 1 from
+    funext fun _ ↦ by simp, tendsto_const_nhds_iff]; exact one_ne_zero
 
 private theorem uCoeff_ofPowerSeriesT_mul_U_pow_of_lt (f : ℤ_[p]⟦X⟧) {k n : ℕ} (hk : k < n) :
     uCoeff (ofPowerSeriesT f * U ^ k) n = 0 := uCoeff_eq_of_mul_eq <| by
@@ -108,10 +106,10 @@ theorem tendsto_uCoeff_of_forall_pow_dvd_eval₂ {x : AnnularRing p}
   refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := TauCeti.exists_zpow_neg_lt (one_lt_p (p := p)) hε
   obtain ⟨P, y, hy⟩ := hx N; refine ⟨P.natDegree + 1, fun n hn ↦ ?_⟩
-  have hx_eq : x = P.eval₂ ofPowerSeriesT.toRingHom U + ((p : ℤ_[p]) ^ N : ℤ_[p]) • y := by
-    rw [Algebra.smul_def, map_pow, map_natCast, ← hy, add_sub_cancel]
   have hcoeff : uCoeff x n = (p : ℤ_[p]) ^ N * uCoeff y n := by
-    rw [hx_eq, uCoeff_add, uCoeff_eval₂_of_natDegree_lt P (by omega), zero_add, uCoeff_smul]
+    rw [show x = P.eval₂ ofPowerSeriesT.toRingHom U + ((p : ℤ_[p]) ^ N : ℤ_[p]) • y by
+      rw [Algebra.smul_def, map_pow, map_natCast, ← hy, add_sub_cancel],
+      uCoeff_add, uCoeff_eval₂_of_natDegree_lt P (by omega), zero_add, uCoeff_smul]
   rw [dist_zero_right, hcoeff]
   exact ((PadicInt.norm_le_pow_iff_mem_span_pow _ N).2
     (Ideal.mem_span_singleton.2 ⟨uCoeff y n, rfl⟩)).trans_lt hN
@@ -125,12 +123,11 @@ theorem not_forall_pow_dvd_ofPowerSeriesU_mk_one : ¬ ∀ N : ℕ, ∃ P : Polyn
 private theorem norm_coeff_add_one_le {x : AnnularRing p}
     (h : ∀ n : ℕ, (p : ℤ_[p]) ∣ uCoeff x n) (m : ℤ) : ‖x.coeff (m + 1)‖ ≤ (p : ℝ) ^ min 0 m := by
   refine norm_le_zpow_min_iff_pow_dvd.2 ?_; rcases le_or_gt 0 m with hm | hm
-  · have hm' : -m ≤ 0 := by omega
-    simp [Int.toNat_of_nonpos hm']
+  · simp [Int.toNat_of_nonpos (by omega : -m ≤ 0)]
   · obtain ⟨n, hn⟩ : ∃ n : ℕ, m + 1 = -n := ⟨(-(m + 1)).toNat, by omega⟩
     obtain ⟨c, hc⟩ := h n
-    have hneg : (-m).toNat = n + 1 := by omega
-    exact ⟨c, by rw [hneg, pow_succ, mul_assoc, ← hc, pow_mul_uCoeff, ← hn]⟩
+    exact ⟨c, by
+      rw [(by omega : (-m).toNat = n + 1), pow_succ, mul_assoc, ← hc, pow_mul_uCoeff, ← hn]⟩
 
 /-- `T ∣ x` iff `p ∣ uCoeff x n` for all `n : ℕ` (i.e. `‖x.coeff (-n)‖ ≤ p ^ -(n + 1)`). -/
 theorem T_dvd_iff {x : AnnularRing p} :
@@ -143,10 +140,8 @@ private theorem toZMod_uCoeff_T_mul (z : AnnularRing p) (n : ℕ) :
   (PadicInt.toZMod_eq_zero_iff_dvd _).2 (T_dvd_iff.1 (dvd_mul_right T z) n)
 
 private theorem ofPowerSeriesU_add_T_mul_mul (gx gy : ℤ_[p]⟦X⟧) (zx zy : AnnularRing p) :
-    (ofPowerSeriesU gx + T * zx) * (ofPowerSeriesU gy + T * zy) =
-      ofPowerSeriesU (gx * gy) +
-        T * (zx * ofPowerSeriesU gy + ofPowerSeriesU gx * zy + T * zx * zy) := by
-  rw [map_mul]; ring
+    (ofPowerSeriesU gx + T * zx) * (ofPowerSeriesU gy + T * zy) = ofPowerSeriesU (gx * gy) +
+      T * (zx * ofPowerSeriesU gy + ofPowerSeriesU gx * zy + T * zx * zy) := by rw [map_mul]; ring
 
 /-- Boundary reduction `AnnularRing p →+* (ZMod p)⟦X⟧` (`T ↦ 0`, `U ↦ X`). -/
 def modT : AnnularRing p →+* (ZMod p)⟦X⟧ where
@@ -157,8 +152,8 @@ def modT : AnnularRing p →+* (ZMod p)⟦X⟧ where
   map_mul' x y := by
     obtain ⟨gx, zx, rfl⟩ := exists_eq_ofPowerSeriesU_add_T_mul x
     obtain ⟨gy, zy, rfl⟩ := exists_eq_ofPowerSeriesU_add_T_mul y
-    have hmap (g : ℤ_[p]⟦X⟧) (z : AnnularRing p) : (PowerSeries.mk fun n ↦
-        PadicInt.toZMod (uCoeff (ofPowerSeriesU g + T * z) n)) = map PadicInt.toZMod g := by
+    have hmap (g : ℤ_[p]⟦X⟧) (z : AnnularRing p) : (PowerSeries.mk fun n ↦ PadicInt.toZMod
+        (uCoeff (ofPowerSeriesU g + T * z) n)) = map PadicInt.toZMod g := by
       ext n; simp [-uCoeff_T_mul, toZMod_uCoeff_T_mul]
     rw [ofPowerSeriesU_add_T_mul_mul, hmap, hmap, hmap, map_mul]
 @[simp] theorem coeff_modT (x : AnnularRing p) (n : ℕ) :

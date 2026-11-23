@@ -59,8 +59,7 @@ theorem toMvPowerSeries_single (m : M) (φ : MvPowerSeries σ A) :
   induction x using MonoidAlgebra.induction_linear with
   | zero => simp
   | add x y hx hy => simp [hx, hy]
-  | single m' φ =>
-    by_cases h : m' = m <;>
+  | single m' φ => by_cases h : m' = m <;>
       simp [h, toMvPowerSeries_single, MvPowerSeries.coeff_mul_C, single_mul_single, coeff_single]
 @[simp] theorem toMvPowerSeries_single_C (m : M) (a : A) :
     toMvPowerSeries R σ A M (single m (MvPowerSeries.C a)) = MvPowerSeries.C (single m a) := by
