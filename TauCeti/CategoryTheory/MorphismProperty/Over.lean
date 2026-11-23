@@ -81,12 +81,6 @@ end FullSubcategory
 
 namespace Over
 
-/-- Forgetting a restricted over object twice gives its underlying object. -/
-@[simp]
-lemma forget_obj_left {C : Type*} [Category* C] (P Q : MorphismProperty C)
-    [Q.IsMultiplicative] (X : C) (Y : P.Over Q X) :
-    ((Over.forget P Q X).obj Y).left = Y.left := rfl
-
 section Backward
 
 variable {C : Type*} [Category* C] {P : MorphismProperty C} [P.IsStableUnderComposition]
