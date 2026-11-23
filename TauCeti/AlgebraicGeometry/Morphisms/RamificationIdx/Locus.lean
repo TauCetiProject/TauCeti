@@ -55,9 +55,12 @@ theorem notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable
     apply Algebra.algebra_ext
     intro r
     obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
-    change ((f.residueFieldMap x).hom (IsLocalRing.residue R a) : ResidueField S) =
+    rw [RingHom.algebraMap_toAlgebra, residueFieldMap_residue]
+    -- `Algebra.algebra_ext` leaves `Y.residueField (f x)` / `X.residueField x` on the RHS,
+    -- which only match `ResidueField R` / `ResidueField S` at default transparency so `rw` fails.
+    change IsLocalRing.residue S ((f.stalkMap x).hom a) =
       algebraMap (ResidueField R) (ResidueField S) (IsLocalRing.residue R a)
-    rw [residueFieldMap_residue, ResidueField.algebraMap_residue, RingHom.algebraMap_toAlgebra]
+    rw [ResidueField.algebraMap_residue, RingHom.algebraMap_toAlgebra]
   have hsep : Algebra.IsSeparable (ResidueField R) (ResidueField S) ↔
       letI := (f.residueFieldMap x).hom.toAlgebra
       Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) :=

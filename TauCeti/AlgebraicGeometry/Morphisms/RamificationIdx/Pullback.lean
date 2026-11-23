@@ -72,6 +72,8 @@ theorem ramificationIdxAt_eq_one_of_isPullback_of_isSeparable_residueField {x' :
   have hsepP : Algebra.IsSeparable k p.asIdeal.ResidueField :=
     Algebra.IsSeparable.of_algHom _ _ (hV.fromSpec.residueFieldAlgEquivOfIsOpenImmersion
       (CommRingCat.ofHom (algebraMap k Γ(X, V))) hVover.symm p).symm.toAlgHom
+  -- `p.asIdeal` carries `p.isPrime` while `q.asIdeal.under Γ(X, V)` carries `Ideal.IsPrime.under`,
+  -- so `hp ▸ hsepP` fails on the `IsPrime` instance mismatch and `convert` bridges it.
   have hsepI : ∀ (I : Ideal Γ(X, V)) [I.IsPrime], p.asIdeal = I →
       Algebra.IsSeparable k I.ResidueField := by rintro I _ rfl; convert hsepP
   rw [ramificationIdxAt_eq_of_isOpenImmersion_square ι gX _ hV.fromSpec h₂ q,

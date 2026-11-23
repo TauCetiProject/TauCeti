@@ -187,43 +187,6 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top {K : Type u} [Field K]
   exact isIntegrallyClosedIn_functionField_of_geometricallyIntegral.of_ringEquiv
     (RingEquiv.refl K) e.toRingEquiv e.commutes
 
-/-- Embed `R` into `Y.functionField` across an affine open chart `ι : Spec R ⟶ Y` of an integral
-scheme `Y`, transporting the fraction-field structure and relating `Spec.map (ofHom α) ≫ ι` to the
-generic-point stalk map `Y.fromSpecStalk (genericPoint Y)`. -/
-private lemma isFractionRing_of_isOpenImmersion_spec {R : Type u} [CommRing R] [IsDomain R]
-    {Y : Scheme.{u}} [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι] :
-    ∃ α : R →+* Y.functionField,
-      (letI := α.toAlgebra; IsFractionRing R Y.functionField) ∧
-      Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
-  have : IsDominant ι := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion ι)
-  let R' := CommRingCat.of R
-  let φ₀ : R' ⟶ (Spec R').functionField := StructureSheaf.toStalk R' (genericPoint (Spec R'))
-  let e : (Spec R').functionField ≃+* Y.functionField :=
-    (asIso ι.functionFieldMap).symm.commRingCatIsoToRingEquiv
-  let α : R →+* Y.functionField := e.toRingHom.comp φ₀.hom
-  -- Express `CommRingCat.ofHom α` categorically as `φ₀ ≫ inv ι.functionFieldMap`.
-  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := by
-    apply CommRingCat.hom_ext
-    rw [CommRingCat.hom_ofHom, CommRingCat.hom_comp]
-    exact congrArg (·.comp φ₀.hom)
-      ((Iso.commRingCatIsoToRingEquiv_toRingHom (asIso ι.functionFieldMap).symm).trans
-        (by rw [Iso.symm_hom, asIso_inv]))
-  -- Identify `Spec.map (ofHom α) ≫ ι` with the generic-point stalk map of `Y`.
-  have hSpecα : Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
-    have hφ₀ : Spec.map φ₀ = (Spec R').fromSpecStalk (genericPoint (Spec R')) :=
-      (_root_.AlgebraicGeometry.Spec.fromSpecStalk_eq' R' (genericPoint (Spec R'))).symm
-    rw [hα_eq, Spec.map_comp_assoc, reassoc_of% hφ₀, ← ι.SpecMap_functionFieldMap_fromSpecStalk,
-      Spec.map_inv, IsIso.inv_hom_id_assoc]
-  -- Transport `IsFractionRing R' (Spec R').functionField` across `e`.
-  let : Algebra R' (Spec R').functionField := φ₀.hom.toAlgebra
-  let : Algebra R' Y.functionField := α.toAlgebra
-  have : IsFractionRing R' (Spec R').functionField := functionField_isFractionRing_of_affine R'
-  exact ⟨α, IsFractionRing.of_algEquiv (R := R') (K := (Spec R').functionField)
-    (L := Y.functionField) (AlgEquiv.ofRingEquiv (f := e) fun _ ↦ by
-      -- `algebraMap R' (Spec R').functionField` is `φ₀.hom` via our local `Algebra` instance,
-      -- and `algebraMap R' Y.functionField` is `α = e ∘ φ₀.hom`.
-      simp only [RingHom.algebraMap_toAlgebra]; rfl), hSpecα⟩
-
 section ArbitraryExtension
 
 variable {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec (.of K))] {g : Y ⟶ X}
@@ -293,7 +256,7 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
   have : IsIntegral (Spec (.of (A ⊗[k] K))) := isIntegral_of_isOpenImmersion ι
   have hDomR : IsDomain (A ⊗[k] K) := (affine_isIntegral_iff (.of (A ⊗[k] K))).mp this
   -- Transport `IsFractionRing` from `Spec (A ⊗[k] K)` to `Y.functionField`.
-  obtain ⟨α, hFrac, hSpecα⟩ := isFractionRing_of_isOpenImmersion_spec ι
+  obtain ⟨α, hFrac, hSpecα⟩ := ι.exists_isFractionRing_functionField_of_isOpenImmersion
   refine ⟨hDomR, α, hFrac, fun a ↦ ?_, fun c ↦ ?_⟩
   · -- Compatibility with `g.functionFieldMap` on the left factor `A`.
     have hxU : genericPoint X ∈ U :=

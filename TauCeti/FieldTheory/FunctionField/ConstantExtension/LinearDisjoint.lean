@@ -390,6 +390,29 @@ private lemma algebraMap_tower_comm (e : E) :
     algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e) := by
   rw [← IsScalarTower.algebraMap_apply E E' F', ← IsScalarTower.algebraMap_apply E F F']
 
+private lemma algebraMap_equivFieldRange_symm
+    (c : (IsScalarTower.toAlgHom k E F).fieldRange) :
+    algebraMap E F ((IsScalarTower.toAlgHom k E F).equivFieldRange.symm c) = c :=
+  congrArg Subtype.val ((IsScalarTower.toAlgHom k E F).equivFieldRange.apply_symm_apply c)
+
+omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
+/-- Ring isomorphism identifying `E'` with `K(image of E)` inside `F'`. -/
+private noncomputable def towerAdjoinRingEquiv
+    (hE : constantCompositum E K E' = ⊤) :
+    E' ≃+* IntermediateField.adjoin K
+      (Set.range (algebraMap (IsScalarTower.toAlgHom k E F).fieldRange F')) :=
+  (towerCompositumRingEquiv (k := k) (F := F) hE algebraMap_tower_comm).trans
+    (RingEquiv.subfieldCongr (_root_.IntermediateField.constantCompositum_toSubfield (K := K) _))
+
+omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
+/-- Coercing `towerAdjoinRingEquiv` to `F'` recovers `algebraMap E' F'`. -/
+@[simp]
+private theorem coe_towerAdjoinRingEquiv_apply
+    (hE : constantCompositum E K E' = ⊤) (y : E') :
+    (towerAdjoinRingEquiv (k := k) (F := F) (F' := F') hE y : F') = algebraMap E' F' y := by
+  rw [towerAdjoinRingEquiv, RingEquiv.trans_apply, RingEquiv.coe_subfieldCongr_apply,
+    coe_towerCompositumRingEquiv_apply]
+
 /-- **Linearly disjoint constant extension preserves minimal polynomials over subextensions.**
 Let `F' = F · K` with `K` linearly disjoint from `F` over `k`, and let `E' = E · K` for a field
 `E` between `k` and `F`. Every element `x ∈ F` integral over `E` has minimal polynomial over `E'`
@@ -399,25 +422,18 @@ theorem minpoly_map_of_constantCompositum_eq_top_of_linearDisjoint
     (hE : constantCompositum E K E' = ⊤) {x : F} (hx : IsIntegral E x) :
     minpoly E' (algebraMap F F' x) = (minpoly E x).map (algebraMap E E') := by
   let f := IsScalarTower.toAlgHom k E F
-  let eE := f.equivFieldRange
-  let eE' : E' ≃+* IntermediateField.adjoin K (Set.range (algebraMap f.fieldRange F')) :=
-    (towerCompositumRingEquiv (k := k) (F := F) hE algebraMap_tower_comm).trans
-      (RingEquiv.subfieldCongr (_root_.IntermediateField.constantCompositum_toSubfield (K := K) _))
-  have heE (c : f.fieldRange) : algebraMap E F (eE.symm c) = c :=
-    congrArg Subtype.val (eE.apply_symm_apply c)
   let pb := IntermediateField.adjoin.powerBasis hx
   have hliE : LinearIndependent E (fun i : Fin pb.dim ↦ x ^ (i : ℕ)) := by
     convert pb.basis.linearIndependent.map' (E⟮x⟯).val.toLinearMap
       (LinearMap.ker_eq_bot.mpr Subtype.val_injective) with i; simp [pb]
   have hliC' := H.linearIndependent_adjoin_algebraMap_comp f.fieldRange
-    (hliE.map_of_injective_injective eE.symm (AddMonoidHom.id F) (by simp) (by simp)
-      fun c y ↦ by simp [Algebra.smul_def, heE])
+    (hliE.map_of_injective_injective f.equivFieldRange.symm (AddMonoidHom.id F)
+      (by simp) (by simp) fun c y ↦ by
+        simp [Algebra.smul_def, f, algebraMap_equivFieldRange_symm])
   have hliE' : LinearIndependent E' (fun i : Fin pb.dim ↦ algebraMap F F' x ^ (i : ℕ)) := by
-    convert hliC'.map_of_injective_injective eE' (AddMonoidHom.id F') (by simp) (by simp)
-      (fun c y ↦ by
-        simp only [Algebra.smul_def, AddMonoidHom.id_apply, eE', RingEquiv.trans_apply,
-          IntermediateField.algebraMap_apply]
-        rw [RingEquiv.coe_subfieldCongr_apply, coe_towerCompositumRingEquiv_apply]) with i; simp
+    convert hliC'.map_of_injective_injective (towerAdjoinRingEquiv (k := k) (F := F) hE)
+      (AddMonoidHom.id F') (by simp) (by simp)
+      (fun c y ↦ by simp [Algebra.smul_def]) with i; simp
   let x' := algebraMap F F' x
   have hx' : IsIntegral E' x' := (hx.map (IsScalarTower.toAlgHom E F F')).tower_top
   have hliSub : LinearIndependent E'
@@ -444,24 +460,15 @@ theorem finrank_eq_of_constantCompositum_eq_top_of_linearDisjoint
     let f := IsScalarTower.toAlgHom k E F
     let C := f.fieldRange
     let C' := IntermediateField.adjoin K (Set.range (algebraMap C F'))
-    let eE := f.equivFieldRange
-    let eE' : E' ≃+* C' :=
-      (towerCompositumRingEquiv (k := k) (F := F) hE algebraMap_tower_comm).trans
-        (RingEquiv.subfieldCongr
-          (_root_.IntermediateField.constantCompositum_toSubfield (K := K) _))
-    have heE (c : C) : algebraMap E F (eE.symm c) = c :=
-      congrArg Subtype.val (eE.apply_symm_apply c)
     have hfinC' : Module.Finite C' F' :=
-      Module.Finite.of_equiv_equiv eE' (RingEquiv.refl F') <| RingHom.ext fun c ↦ by
-        simp only [RingHom.coe_comp, RingHom.coe_coe, RingEquiv.coe_refl, Function.comp_apply,
-          id_eq, eE', RingEquiv.trans_apply, IntermediateField.algebraMap_apply]
-        rw [RingEquiv.coe_subfieldCongr_apply, coe_towerCompositumRingEquiv_apply]
+      Module.Finite.of_equiv_equiv (towerAdjoinRingEquiv (k := k) (F := F) hE)
+        (RingEquiv.refl F') <| RingHom.ext fun c ↦ by simp [C', C, f]
     have hlt : Cardinal.lift (Module.rank C F) < Cardinal.aleph0 :=
       (H.lift_rank_le_lift_rank_adjoin_algebraMap C).trans_lt
         (by simpa using Module.rank_lt_aleph0 C' F')
     have hfinC : Module.Finite C F := Module.rank_lt_aleph0_iff.mp (by simpa using hlt)
-    exact Module.Finite.of_equiv_equiv eE.symm.toRingEquiv (RingEquiv.refl F) <|
-      RingHom.ext fun c ↦ by simp [heE]
+    exact Module.Finite.of_equiv_equiv f.equivFieldRange.symm.toRingEquiv (RingEquiv.refl F) <|
+      RingHom.ext fun c ↦ by simp [f, algebraMap_equivFieldRange_symm]
 
 /-- **Linearly disjoint constant extension preserves separability of algebraic relative
 extensions.** Let `F' = F · K` with `K` linearly disjoint from `F` over `k`, and `E' = E · K`
