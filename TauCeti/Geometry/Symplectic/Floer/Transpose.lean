@@ -284,9 +284,10 @@ covector field `η`, its composite `η ∘ J(·, u ·)` and the section `ξ` are
 
 `η (D_u ξ) = (D_uᵗ η) ξ + ∂s (η ξ) + ∂t ((η ∘ J) ξ)`.
 
-The two derivative terms integrate to zero against compactly supported or periodic sections, which
-gives the integral identities `integral_apply_floerLinearization_eq` and
-`setIntegral_apply_floerLinearization_eq`. -/
+The two derivative terms integrate to zero over the plane when the common support of `η` and `ξ`
+is compact (`integral_apply_floerLinearization_eq`), and over a closed rectangle when `η ξ` takes
+equal values on its two vertical sides and `(η ∘ J) ξ` on its two horizontal sides
+(`setIntegral_apply_floerLinearization_eq`). -/
 theorem apply_floerLinearization_eq (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
     {η : ℝ × ℝ → V →L[ℝ] ℝ} {ξ : ℝ × ℝ → V} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η z)
