@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.DoldKan.Equivalence
-public import Mathlib.AlgebraicTopology.DoldKan.HomotopyEquivalence
-public import TauCeti.AlgebraicTopology.DoldKan.Monoidal
+public import TauCeti.AlgebraicTopology.DoldKan.Retract
 public import TauCeti.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import TauCeti.AlgebraicTopology.SimplicialObject.Cylinder
 import TauCeti.Algebra.Homology.Homotopy
@@ -28,8 +26,6 @@ along the full faithfulness of `N` to a simplicial morphism `(cylinder C).obj X 
 
 ## Main definitions and results
 
-* `Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: chain homotopy equivalence
-  `N.obj X ≃ K[X]` in any pseudoabelian category with finite coproducts.
 * `SimplicialObject.Homotopy.ofAlternatingFaceMapComplexHomotopy`, `ofNHomotopy`,
   `ofNormalizedMooreComplexHomotopy`: lifting chain homotopies to simplicial homotopies.
 * `SimplicialObject.nonempty_homotopy_iff_alternatingFaceMapComplex`, `nonempty_homotopy_iff_N`,
@@ -57,47 +53,6 @@ universe v u
 
 open CategoryTheory Limits Opposite SimplexCategory AlgebraicTopology AlgebraicTopology.DoldKan
 open scoped Simplicial DoldKan
-
-namespace CategoryTheory.Idempotents.DoldKan
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
-  [IsIdempotentComplete C]
-
-/-- In an idempotent-complete preadditive category with finite coproducts, the inclusion
-`inclusionN.app X` and projection `PInftyToN.app X` form a chain homotopy equivalence between the
-normalized chains `N.obj X` and the alternating face map complex `K[X]`. -/
-def homotopyEquivNAlternatingFaceMapComplex (X : SimplicialObject C) :
-    HomotopyEquiv (N.obj X) ((alternatingFaceMapComplex C).obj X) where
-  hom := inclusionN.app X
-  inv := PInftyToN.app X
-  homotopyHomInvId := Homotopy.ofEq (inclusionN_app_comp_PInftyToN_app X)
-  homotopyInvHomId :=
-    (Homotopy.ofEq (PInftyToN_app_comp_inclusionN_app X)).trans (homotopyPInftyToId X)
-
-@[simp]
-lemma homotopyEquivNAlternatingFaceMapComplex_hom (X : SimplicialObject C) :
-    (homotopyEquivNAlternatingFaceMapComplex X).hom = inclusionN.app X := (rfl)
-
-@[simp]
-lemma homotopyEquivNAlternatingFaceMapComplex_inv (X : SimplicialObject C) :
-    (homotopyEquivNAlternatingFaceMapComplex X).inv = PInftyToN.app X := (rfl)
-
-/-- The pseudoabelian normalized chain complex functor `Idempotents.DoldKan.N` is fully
-faithful. -/
-def N.fullyFaithful : (N (C := C)).FullyFaithful :=
-  (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
-
-end CategoryTheory.Idempotents.DoldKan
-
-namespace CategoryTheory.Abelian.DoldKan
-
-/-- The abelian Dold–Kan functor `Abelian.DoldKan.N` is
-`AlgebraicTopology.normalizedMooreComplex A`. -/
-lemma N_eq_normalizedMooreComplex {A : Type u} [Category.{v} A] [Abelian A] :
-    (N : SimplicialObject A ⥤ ChainComplex A ℕ) = AlgebraicTopology.normalizedMooreComplex A :=
-  rfl
-
-end CategoryTheory.Abelian.DoldKan
 
 namespace CategoryTheory.SimplicialObject
 
@@ -186,7 +141,8 @@ def ofAlternatingFaceMapComplexHomotopy {X Y : SimplicialObject C} {f g : X ⟶ 
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
     Homotopy f g := by
-  let hN := N.fullyFaithful (C := C)
+  -- `Idempotents.DoldKan.equivalence_functor` gives `equivalence.functor = N` definitionally.
+  let hN : (N (C := C)).FullyFaithful := (equivalence (C := C)).fullyFaithfulFunctor
   let Ψ : N.obj ((cylinder C).obj X) ⟶ N.obj Y :=
     inclusionN.app ((cylinder C).obj X) ≫ cylinderChainMap H ≫ PInftyToN.app Y
   let Φ : (cylinder C).obj X ⟶ Y := hN.preimage Ψ
@@ -199,7 +155,7 @@ def ofAlternatingFaceMapComplexHomotopy {X Y : SimplicialObject C} {f g : X ⟶ 
       first
         | rw [alternatingFaceMapComplex_map_cylinderι₀_comp_cylinderChainMap_assoc]
         | rw [alternatingFaceMapComplex_map_cylinderι₁_comp_cylinderChainMap_assoc]
-      rw [PInftyToN.naturality, inclusionN_app_comp_PInftyToN_app_assoc]
+      exact (N_map_eq_inclusionN_comp_PInftyToN _).symm
 
 /-- A simplicial homotopy `Homotopy f g` induces a chain homotopy between `N.map f` and `N.map g`
 for the pseudoabelian normalized chain functor `Idempotents.DoldKan.N`. -/
@@ -280,7 +236,8 @@ def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X �
       ((alternatingFaceMapComplex C).obj Y))
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
     HomotopyEquiv X Y := by
-  let hN := N.fullyFaithful (C := C)
+  -- `Idempotents.DoldKan.equivalence_functor` gives `equivalence.functor = N` definitionally.
+  let hN : (N (C := C)).FullyFaithful := (equivalence (C := C)).fullyFaithfulFunctor
   let gN : N.obj Y ⟶ N.obj X := inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X
   let g : Y ⟶ X := hN.preimage gN
   have hg : N.map g = gN := hN.map_preimage gN
@@ -323,8 +280,12 @@ with finite coproducts and homology induces a quasi-isomorphism on normalized ch
 complexes. -/
 theorem quasiIso_N_map_iff [CategoryWithHomology C] {X Y : SimplicialObject C} (f : X ⟶ Y) :
     QuasiIso (N.map f) ↔ QuasiIso ((alternatingFaceMapComplex C).map f) := by
-  have : QuasiIso (inclusionN.app X) := (homotopyEquivNAlternatingFaceMapComplex X).quasiIso_hom
-  have : QuasiIso (inclusionN.app Y) := (homotopyEquivNAlternatingFaceMapComplex Y).quasiIso_hom
+  have : QuasiIso (inclusionN.app X) := by
+    rw [← homotopyEquivNAlternatingFaceMapComplex_hom]
+    exact (homotopyEquivNAlternatingFaceMapComplex X).quasiIso_hom
+  have : QuasiIso (inclusionN.app Y) := by
+    rw [← homotopyEquivNAlternatingFaceMapComplex_hom]
+    exact (homotopyEquivNAlternatingFaceMapComplex Y).quasiIso_hom
   rw [← quasiIso_iff_comp_right (N.map f) (inclusionN.app Y), inclusionN.naturality f,
     quasiIso_iff_comp_left (inclusionN.app X) ((alternatingFaceMapComplex C).map f)]
 

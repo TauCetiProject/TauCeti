@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DoldKan.Monoidal
+public import TauCeti.AlgebraicTopology.DoldKan.Retract
 
 /-!
 # Constant simplicial objects and degree-zero complexes under Dold–Kan
