@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
-public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Complexification
 import Mathlib.Analysis.Normed.Module.Normalize
 
