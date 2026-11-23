@@ -90,7 +90,7 @@ theorem map_restrict_eq_of_forall_finset {μ ν : Measure (RelationalConfigurati
   refine measure_ext_of_forall_finset fun J => ?_
   -- Reading the atoms of `J` after restricting along `f` reads the atoms of `J.image (map f)`.
   have hread : (fun c : RelationalConfiguration L W => J.restrict (c.restrict f).eval) =
-      (fun x j => x ⟨j.1.map f, Finset.mem_image_of_mem _ j.2⟩) ∘
+      (fun x j => x ⟨j.val.map f, Finset.mem_image_of_mem _ j.property⟩) ∘
         fun c => (J.image (Atom.map f)).restrict c.eval := by
     funext c
     ext j
@@ -98,7 +98,7 @@ theorem map_restrict_eq_of_forall_finset {μ ν : Measure (RelationalConfigurati
   have hlaw : ∀ ρ : Measure (RelationalConfiguration L W),
       (ρ.map (restrict f)).map (fun d => J.restrict d.eval) =
         (ρ.map fun c => (J.image (Atom.map f)).restrict c.eval).map
-          fun x j => x ⟨j.1.map f, Finset.mem_image_of_mem _ j.2⟩ := fun ρ => by
+          fun x j => x ⟨j.val.map f, Finset.mem_image_of_mem _ j.property⟩ := fun ρ => by
     rw [Measure.map_map (measurable_restrict_eval J) (measurable_restrict f),
       Measure.map_map (measurable_of_countable _) (measurable_restrict_eval _)]
     exact congrArg ρ.map hread
@@ -119,7 +119,7 @@ theorem measure_ext_of_map_restrict_val {μ ν : Measure (RelationalConfiguratio
       (fun d => J.restrict (d.extend Fin.val).eval) ∘ restrict (Fin.val : Fin n → ℕ) := by
     funext c
     ext a
-    obtain ⟨b, hb⟩ := hn a a.2
+    obtain ⟨b, hb⟩ := hn a a.property
     simp [← hb, Fin.val_injective]
   have hm : Measurable fun d : RelationalConfiguration L (Fin n) =>
       J.restrict (d.extend Fin.val).eval :=
@@ -173,7 +173,7 @@ private theorem windowAtomLaw_eq_of_le
         restrict (Fin.castLE hmn) := by
     funext d
     ext a
-    obtain ⟨b, hb⟩ := hJ a a.2
+    obtain ⟨b, hb⟩ := hJ a a.property
     have hval : (b.map (Fin.castLE hmn)).map Fin.val = b.map (Fin.val : Fin m → ℕ) := by
       -- `Fin.val ∘ Fin.castLE hmn` is `Fin.val` by definition.
       rw [← Atom.map_comp]

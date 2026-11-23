@@ -44,11 +44,11 @@ variable {ι κ ν : Type*} [DecidableEq ι] [DecidableEq κ] [DecidableEq ν]
 /-- Radially extend a link map, preserving the apex coordinate and sending apex to apex. -/
 def closedStarMap (f : geometricLink K v → geometricLink L w)
     (x : closedStarRealization K {v}) : closedStarRealization L {w} :=
-  if h : x.1.1 v < 1 then
+  if h : x.val.val v < 1 then
     let y := starRay L w (f (starLinkProjection K v
-      ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, h⟩⟩))
-      ⟨x.1.1 v, Realization.nonneg K x.1 v, h⟩
-    ⟨y.1, ((mem_puncturedClosedStar L w _).mp y.2).1⟩
+      ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, h⟩⟩))
+      ⟨x.val.val v, Realization.nonneg K x.val v, h⟩
+    ⟨y.val, ((mem_puncturedClosedStar L w _).mp y.property).1⟩
   else starApex L w
 
 /-- A radial extension takes the apex to the apex. -/
@@ -59,25 +59,25 @@ theorem closedStarMap_starApex (f : geometricLink K v → geometricLink L w) :
 
 /-- On a punctured star, the extension applies the link map and preserves the ray parameter. -/
 theorem closedStarMap_of_lt (f : geometricLink K v → geometricLink L w)
-    (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
+    (x : closedStarRealization K {v}) (hx : x.val.val v < 1) :
     closedStarMap f x =
       ⟨(starRay L w (f (starLinkProjection K v
-        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩))
-        ⟨x.1.1 v, Realization.nonneg K x.1 v, hx⟩).1,
+        ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩))
+        ⟨x.val.val v, Realization.nonneg K x.val v, hx⟩).val,
        ((mem_puncturedClosedStar L w _).mp
-        (starRay L w (f (starLinkProjection K v ⟨x.1,
-          (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩))
-          ⟨x.1.1 v, Realization.nonneg K x.1 v, hx⟩).2).1⟩ := by
+        (starRay L w (f (starLinkProjection K v ⟨x.val,
+          (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩))
+          ⟨x.val.val v, Realization.nonneg K x.val v, hx⟩).property).1⟩ := by
   simp [closedStarMap, hx]
 
 /-- Away from the apex, radial extension preserves its coordinate and scales the link image
 coordinates by the mass outside the apex. -/
 @[simp]
 theorem closedStarMap_apply_of_lt (f : geometricLink K v → geometricLink L w)
-    (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) (j : κ) :
-    (closedStarMap f x).1.1 j = if j = w then x.1.1 v else
-      (1 - x.1.1 v) * (f (starLinkProjection K v
-        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩)).1.1 j := by
+    (x : closedStarRealization K {v}) (hx : x.val.val v < 1) (j : κ) :
+    (closedStarMap f x).val.val j = if j = w then x.val.val v else
+      (1 - x.val.val v) * (f (starLinkProjection K v
+        ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩)).val.val j := by
   rw [closedStarMap_of_lt f x hx]
   by_cases hj : j = w
   · simp [hj]
@@ -87,12 +87,12 @@ theorem closedStarMap_apply_of_lt (f : geometricLink K v → geometricLink L w)
 @[simp]
 theorem closedStarMap_link (f : geometricLink K v → geometricLink L w)
     (y : geometricLink K v) :
-    (closedStarMap f ⟨y.1, ((mem_geometricLink K v _).mp y.2).2⟩).1 = (f y).1 := by
-  have hy : y.1.1 v < 1 := by simp
+    (closedStarMap f ⟨y.val, ((mem_geometricLink K v _).mp y.property).2⟩).val = (f y).val := by
+  have hy : y.val.val v < 1 := by simp
   rw [closedStarMap_of_lt f _ hy]
   have hp : starLinkProjection K v
-      ⟨y.1, (mem_puncturedClosedStar K v _).mpr
-        ⟨((mem_geometricLink K v _).mp y.2).2, hy⟩⟩ = y := by
+      ⟨y.val, (mem_puncturedClosedStar K v _).mpr
+        ⟨((mem_geometricLink K v _).mp y.property).2, hy⟩⟩ = y := by
     apply Subtype.ext
     apply Subtype.ext
     ext j
@@ -105,35 +105,35 @@ theorem closedStarMap_link (f : geometricLink K v → geometricLink L w)
 /-- The apex coordinate is unchanged by radial extension. -/
 @[simp]
 theorem closedStarMap_apex_coordinate (f : geometricLink K v → geometricLink L w)
-    (x : closedStarRealization K {v}) : (closedStarMap f x).1.1 w = x.1.1 v := by
-  by_cases hx : x.1.1 v < 1
+    (x : closedStarRealization K {v}) : (closedStarMap f x).val.val w = x.val.val v := by
+  by_cases hx : x.val.val v < 1
   · rw [closedStarMap_of_lt f x hx]
     simp
-  · have heq : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
+  · have heq : x.val.val v = 1 := le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx)
     simp [closedStarMap, heq]
 
 /-- Every other coordinate of the extension is bounded by the mass outside the apex. -/
 theorem closedStarMap_coordinate_le (f : geometricLink K v → geometricLink L w)
     (x : closedStarRealization K {v}) {j : κ} (hj : j ≠ w) :
-    (closedStarMap f x).1.1 j ≤ 1 - x.1.1 v := by
-  by_cases hx : x.1.1 v < 1
+    (closedStarMap f x).val.val j ≤ 1 - x.val.val v := by
+  by_cases hx : x.val.val v < 1
   · rw [closedStarMap_of_lt f x hx]
     simp only [starRay_apply, Ne.symm hj, ↓reduceIte, add_zero]
     exact mul_le_of_le_one_right (sub_pos.mpr hx).le (Realization.le_one L _ j)
-  · have heq : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
+  · have heq : x.val.val v = 1 := le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx)
     simp [closedStarMap, heq, Ne.symm hj]
 
 /-- Radial extension of the identity fixes every point of the closed star. -/
 @[simp]
 theorem closedStarMap_id (x : closedStarRealization K {v}) : closedStarMap id x = x := by
-  by_cases hx : x.1.1 v < 1
+  by_cases hx : x.val.val v < 1
   · rw [closedStarMap_of_lt id x hx]
-    have h := congrArg (fun z : puncturedClosedStar K v => z.1)
+    have h := congrArg (fun z : puncturedClosedStar K v => z.val)
       (starRay_starLinkProjection K v
-        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩)
+        ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩)
     exact Subtype.ext h
-  · have heq : x.1 = vertex K v := (Realization.eq_vertex_iff K x.1 v).mpr
-      (le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx))
+  · have heq : x.val = vertex K v := (Realization.eq_vertex_iff K x.val v).mpr
+      (le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx))
     apply Subtype.ext
     simpa [closedStarMap, hx] using heq.symm
 
@@ -142,7 +142,7 @@ theorem closedStarMap_id (x : closedStarRealization K {v}) : closedStarMap id x 
 theorem closedStarMap_comp (g : geometricLink L w → geometricLink N u)
     (f : geometricLink K v → geometricLink L w) (x : closedStarRealization K {v}) :
     closedStarMap g (closedStarMap f x) = closedStarMap (g ∘ f) x := by
-  by_cases hx : x.1.1 v < 1
+  by_cases hx : x.val.val v < 1
   · rw [closedStarMap_of_lt f x hx,
       closedStarMap_of_lt g _ (by simpa using hx), closedStarMap_of_lt (g ∘ f) x hx]
     simp
@@ -151,34 +151,34 @@ theorem closedStarMap_comp (g : geometricLink L w → geometricLink N u)
 /-- Continuous link maps extend continuously across the apex, when both realizations have
 their coordinate topologies. -/
 theorem continuous_closedStarMap
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
-    (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
+    (hL : Topology.IsInducing (fun x : Realization L => (x.val : κ → ℝ)))
     {f : geometricLink K v → geometricLink L w} (hf : Continuous f) :
     Continuous (closedStarMap f) := by
-  have hc : Continuous (fun x : closedStarRealization K {v} => x.1.1 v) :=
-    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtype_val)
-  let S : Set (closedStarRealization K {v}) := {x | x.1.1 v < 1}
+  have hc : Continuous (fun x : closedStarRealization K {v} => x.val.val v) :=
+    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
+  let S : Set (closedStarRealization K {v}) := {x | x.val.val v < 1}
   have hS : IsOpen S := isOpen_lt hc continuous_const
   -- Off the apex, use the existing product coordinates on the punctured star.
   have haway : ContinuousOn (closedStarMap f) S := by
     rw [continuousOn_iff_continuous_domRestrict]
     let p : S → puncturedClosedStar K v := fun x =>
-      ⟨x.1.1, (mem_puncturedClosedStar K v _).mpr ⟨x.1.2, x.2⟩⟩
+      ⟨x.val.val, (mem_puncturedClosedStar K v _).mpr ⟨x.val.property, x.property⟩⟩
     have hp : Continuous p :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
     have ht : Continuous (fun x : S =>
-        (⟨x.1.1.1 v, Realization.nonneg K x.1.1 v, x.2⟩ : Ico (0 : ℝ) 1)) :=
-      (hc.comp continuous_subtype_val).subtype_mk _
+        (⟨x.val.val.val v, Realization.nonneg K x.val.val v, x.property⟩ : Ico (0 : ℝ) 1)) :=
+      (hc.comp continuous_subtypeVal).subtype_mk _
     have hr := (continuous_starRay L w hL).comp
       ((hf.comp ((continuous_starLinkProjection K v hK).comp hp)).prodMk ht)
-    exact (continuous_subtype_val.comp hr).subtype_mk _ |>.congr fun x => by
-      exact (closedStarMap_of_lt f x.1 x.2).symm
+    exact (continuous_subtypeVal.comp hr).subtype_mk _ |>.congr fun x => by
+      exact (closedStarMap_of_lt f x.val x.property).symm
   rw [continuous_iff_continuousAt]
   intro x
-  by_cases hx : x.1.1 v < 1
+  by_cases hx : x.val.val v < 1
   · exact haway.continuousAt (hS.mem_nhds hx)
   · -- At the apex, squeeze every other coordinate between zero and the remaining mass.
-    have heq : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
+    have heq : x.val.val v = 1 := le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx)
     apply Topology.IsInducing.subtypeVal.continuousAt_iff.mpr
     apply hL.continuousAt_iff.mpr
     apply continuousAt_pi.mpr
@@ -186,23 +186,23 @@ theorem continuous_closedStarMap
     by_cases hj : j = w
     · subst j
       simpa only [Function.comp_apply, closedStarMap_apex_coordinate] using hc.continuousAt
-    · have hzero : (closedStarMap f x).1.1 j = 0 := by
+    · have hzero : (closedStarMap f x).val.val j = 0 := by
         simp [closedStarMap, hx, Ne.symm hj]
-      have hupper : Tendsto (fun y : closedStarRealization K {v} => 1 - y.1.1 v)
+      have hupper : Tendsto (fun y : closedStarRealization K {v} => 1 - y.val.val v)
           (𝓝 x) (𝓝 0) := by
-        have hd : Continuous (fun y : closedStarRealization K {v} => 1 - y.1.1 v) :=
+        have hd : Continuous (fun y : closedStarRealization K {v} => 1 - y.val.val v) :=
           continuous_const.sub hc
         simpa only [ContinuousAt, heq, sub_self] using hd.continuousAt (x := x)
       have hbound := tendsto_const_nhds.squeeze hupper
-        (fun y => Realization.nonneg L (closedStarMap f y).1 j)
+        (fun y => Realization.nonneg L (closedStarMap f y).val j)
         (fun y => closedStarMap_coordinate_le f y hj)
       simpa only [ContinuousAt, Function.comp_apply, hzero] using hbound
 
 /-- A homeomorphism between vertex links extends radially to a homeomorphism of their
 closed stars. This includes empty links and isolated vertices. -/
 def closedStarHomeomorph
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
-    (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
+    (hL : Topology.IsInducing (fun x : Realization L => (x.val : κ → ℝ)))
     (e : geometricLink K v ≃ₜ geometricLink L w) :
     closedStarRealization K {v} ≃ₜ closedStarRealization L {w} where
   toFun := closedStarMap e
@@ -225,16 +225,16 @@ def closedStarHomeomorph
 /-- The radial homeomorphism acts by the closed-star extension of its link homeomorphism. -/
 @[simp]
 theorem closedStarHomeomorph_apply
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
-    (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
+    (hL : Topology.IsInducing (fun x : Realization L => (x.val : κ → ℝ)))
     (e : geometricLink K v ≃ₜ geometricLink L w) (x : closedStarRealization K {v}) :
     closedStarHomeomorph hK hL e x = closedStarMap e x := (rfl)
 
 /-- The inverse radial homeomorphism extends the inverse link homeomorphism. -/
 @[simp]
 theorem closedStarHomeomorph_symm_apply
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
-    (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
+    (hL : Topology.IsInducing (fun x : Realization L => (x.val : κ → ℝ)))
     (e : geometricLink K v ≃ₜ geometricLink L w) (x : closedStarRealization L {w}) :
     (closedStarHomeomorph hK hL e).symm x = closedStarMap e.symm x := (rfl)
 

@@ -183,13 +183,15 @@ theorem mem_map_basisModificationDelta_iff_forall_gradedFunctional_crossedHom_eq
     obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.1 hy
     -- Applying `Δ_{m+1}(D_a)` reads off the coefficient `c_a`, which therefore vanishes.
     have hc : ∀ a : {a : Fin n // a ≠ ⟨1, hn1⟩}, c a = 0 := fun a ↦ by
-      have hΔa := hΔ a a.2
+      have hΔa := hΔ a a.property
       rw [map_add, map_sum, gradedFunctional_basisModificationDelta_demushkinWordNeTwo_eq_zero hn1
         hq hm h₁ h _ _ (fun j ↦ Submodule.mem_pi.1 hv j (Set.mem_univ j)), zero_add,
         Finset.sum_eq_single a (fun b _ hb ↦ ?_) fun hb ↦ (hb (Finset.mem_univ _)).elim] at hΔa
-      · rwa [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _ (h a a.2),
+      · rwa [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _
+          (h a a.property),
           crossedHom_of, Pi.single_eq_same, map_one, smul_eq_mul, mul_one] at hΔa
-      · rw [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _ (h b b.2),
+      · rw [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _
+          (h b b.property),
           crossedHom_of, Pi.single_eq_of_ne (fun e ↦ hb (Subtype.ext e)), map_zero, smul_zero]
     simp only [hc, zero_smul, Finset.sum_const_zero, add_zero]
     exact Submodule.mem_map_of_mem hv

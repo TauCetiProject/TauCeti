@@ -15,6 +15,10 @@ public import TauCeti.Geometry.Neuromanifold.MLP.Basic
 `MLPSpec` for the lengths and hidden activations, adding filter lengths, strides, and the
 valid-convolution length equations. The output head has no activation. Parameters contain
 one filter and one shared scalar bias per layer; bias-free parameters contain only filters.
+`ConvolutionSpec.parameterEquiv` and `ConvolutionSpec.weightEquiv` reassemble them from
+scalar coordinates indexed by the finite types `ParameterIndex` and `WeightIndex`, which have
+`∑ i, (kᵢ + 1)` and `∑ i, kᵢ` elements for filter lengths `kᵢ`, so `Fintype.equivFin` numbers
+them as `Fin p` for that count `p`.
 
 Evaluation reuses the MLP prefix evaluator through the structured convolution matrices.
 The prefix recursion is expressed as a filter sum, and the comparison with dense evaluation
@@ -64,6 +68,16 @@ abbrev ParameterIndex (A : ConvolutionSpec K L) :=
 
 /-- One coordinate per filter entry, with no bias coordinates. -/
 abbrev WeightIndex (A : ConvolutionSpec K L) := (i : Fin L) × Fin (A.filterLength i)
+
+/-- The number of affine parameters of `A`: every filter entry and one shared bias per layer. -/
+theorem card_parameterIndex (A : ConvolutionSpec K L) :
+    Fintype.card A.ParameterIndex = ∑ i : Fin L, (A.filterLength i + 1) := by
+  simp
+
+/-- The number of bias-free parameters of `A`: every filter entry. -/
+theorem card_weightIndex (A : ConvolutionSpec K L) :
+    Fintype.card A.WeightIndex = ∑ i : Fin L, A.filterLength i := by
+  simp
 
 /-- Reconstruct the full affine parameter product from its scalar coordinates. -/
 def parameterEquiv (A : ConvolutionSpec K L) : (A.ParameterIndex → K) ≃ A.Parameters :=

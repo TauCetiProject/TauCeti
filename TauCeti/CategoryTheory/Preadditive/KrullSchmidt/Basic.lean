@@ -179,7 +179,7 @@ private theorem splits_of_biproduct (n : ℕ) : ∀ {ι : Type} [Fintype ι]
         · simp [biproduct.ι_π_ne_assoc _ hb, biproduct.ι_π_ne_assoc _ hab, biproduct.ι_π_ne _ hab,
             p]
     · exact ih (Subtype.restrict p P) (by simp [Fintype.card_subtype_compl, hn, p])
-        (fun i ↦ hP i.1) d hd
+        (fun i ↦ hP i.val) d hd
 
 end Split
 

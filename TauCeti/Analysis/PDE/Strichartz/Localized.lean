@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.Lebesgue.SlidingWindow
 
 /-!
@@ -182,7 +183,7 @@ private theorem holderConjugate_inv_eq_and_le_two {p q : ℝ≥0} (hq : 2 < q)
 `‖∫ U(s)* F(s) ds‖ ≤ C A^{1/2} ‖F‖_{L^p L^{r'}}` holds with `1 / p = 1 - 1 / q`, `q > 2`, then
 restricting `F` to a measurable set `S` of times and applying Hölder's inequality in time on `S`
 gives `‖∫_S U(s)* F(s) ds‖ ≤ C A^{1/2} |S|^{1/2 - 1/q} ‖F‖_{L²(S; L^{r'})}`. -/
-private theorem enorm_setIntegral_adjoint_le {p q : ℝ≥0} (hq : 2 < q)
+private theorem enorm_setIntegral_adjoint_le_of_two_lt {p q : ℝ≥0} (hq : 2 < q)
     (hpq : p.HolderConjugate q) {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {C : ℝ≥0}
     (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
       ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p)
@@ -193,24 +194,11 @@ private theorem enorm_setIntegral_adjoint_le {p q : ℝ≥0} (hq : 2 < q)
   obtain ⟨hpinv, hp2⟩ := holderConjugate_inv_eq_and_le_two hq hpq
   set a := fun s ↦ eLpNorm (F s) r' μ
   have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
-  have hind : (fun s ↦ ((U s)†) (S.indicator F s)) = S.indicator fun s ↦ ((U s)†) (F s) := by
-    ext s
-    by_cases hs : s ∈ S <;> simp [hs]
-  have hUFS : Integrable fun s ↦ ((U s)†) (S.indicator F s) := by
-    rw [hind]
-    exact hUF.indicator hS
-  have hnorm : (fun s ↦ eLpNorm (S.indicator F s : Lp E 2 μ) r' μ) = S.indicator a := by
-    ext s
-    by_cases hs : s ∈ S
-    · simp [hs, a]
-    · simp only [hs, not_false_eq_true, indicator_of_notMem]
-      exact (eLpNorm_congr_ae (Lp.coeFn_zero E 2 μ)).trans eLpNorm_zero
   calc ‖∫ s in S, ((U s)†) (F s)‖ₑ
-      = ‖∫ s, ((U s)†) (S.indicator F s)‖ₑ := by rw [hind, integral_indicator hS]
-    _ ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (S.indicator F s : Lp E 2 μ) r' μ) p :=
-        hC _ (hF.indicator hS) hUFS
+      ≤ C * A ^ (2⁻¹ : ℝ) * eLpNorm (S.indicator a) p :=
+        TauCeti.enorm_setIntegral_adjoint_le hC hS hF.restrict hUF.integrableOn
     _ = C * A ^ (2⁻¹ : ℝ) * eLpNorm a p (volume.restrict S) := by
-        rw [hnorm, eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet]
+        rw [eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet]
     _ ≤ C * A ^ (2⁻¹ : ℝ) * (eLpNorm a 2 (volume.restrict S) *
           volume S ^ (1 / (p : ℝ≥0∞).toReal - 1 / (2 : ℝ≥0∞).toReal)) := by
         gcongr
@@ -226,7 +214,7 @@ private theorem enorm_setIntegral_adjoint_le {p q : ℝ≥0} (hq : 2 < q)
 
 omit [NormedSpace ℝ H] in
 /-- `‖U(t)* g‖ ≤ B ‖g‖` when `‖U(t)‖ ≤ B`. -/
-private theorem enorm_adjoint_apply_le {T : H →L[𝕜] Lp E 2 μ} {B : ℝ≥0∞} (hT : ‖T‖ₑ ≤ B)
+private theorem enorm_adjoint_apply_le_of_enorm_le {T : H →L[𝕜] Lp E 2 μ} {B : ℝ≥0∞} (hT : ‖T‖ₑ ≤ B)
     (g : Lp E 2 μ) : ‖(T†) g‖ₑ ≤ B * ‖g‖ₑ :=
   calc ‖(T†) g‖ₑ ≤ ‖T†‖ₑ * ‖g‖ₑ := (T†).le_opENorm _
     _ ≤ B * ‖g‖ₑ := by
@@ -307,7 +295,8 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
   set c := C * A ^ (2⁻¹ : ℝ) * volume W ^ (2⁻¹ - (q : ℝ)⁻¹)
   -- On each window, the non-endpoint dual estimate and Hölder's inequality in time.
   have hwin (t : ℝ) : ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ ≤ c * φ t := by
-    have h := enorm_setIntegral_adjoint_le hq hpq (hC U A hU) hF hUF (measurable_sub_const t hW)
+    have h := enorm_setIntegral_adjoint_le_of_two_lt hq hpq (hC U A hU) hF hUF
+      (measurable_sub_const t hW)
     rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
   have hq2 : (q : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ two_pos (by exact_mod_cast hq.le)
   refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
@@ -318,7 +307,7 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
           _ ≤ c * φ t * (B * ‖G t‖ₑ) := by
               gcongr
               · exact hwin t
-              · exact enorm_adjoint_apply_le (hB t) _
+              · exact enorm_adjoint_apply_le_of_enorm_le (hB t) _
           _ = c * B * (φ t * ‖G t‖ₑ) := by ring
     _ = c * B * ∫⁻ t, φ t * ‖G t‖ₑ := lintegral_const_mul'' _ (hφ.aemeasurable.mul hGm)
     _ ≤ c * B * (volume W ^ (2⁻¹ : ℝ) * eLpNorm a 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2) := by
