@@ -296,7 +296,7 @@ and whose exit point is the model exit point of a point `w'` near the exit face.
 to the point with the coordinates of the entrance point at its entry time, that point flows to the
 point with the coordinates of the exit point at its exit time, and `w'` reaches the latter at its
 own exit time. -/
-private theorem flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGradient f X) {q : M}
+theorem flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGradient f X) {q : M}
     (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))

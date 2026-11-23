@@ -315,22 +315,20 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     rw [e.symm_apply_apply] at this
     rw [this, div_mul_cancel₀ _ hε.ne']
   -- Points of the gluing pairs read on `M`: the entrance points lie in `W^u(p)`, and the exit
-  -- points are reached from points of `C ∩ Z'` in times in `[-1, 1]`.
-  have hentry : ∀ z ∈ splitGluingPairs ε r₀ g k, Ψ z.1 ∈ hX.flow.unstableSet p := by
+  -- points are reached from points of `C ∩ Z'` in times in `[-1, 1]`; each entrance point flows
+  -- to its exit point.
+  have hglue : ∀ z ∈ splitGluingPairs ε r₀ g k, Ψ z.1 ∈ hX.flow.unstableSet p ∧ Ψ z.2 ∈ R ∧
+      hX.flow (splitExitTime ε z.1) (Ψ z.1) = Ψ z.2 := by
     intro z hz
-    obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hwu, -⟩, hwz⟩, -⟩ := hpairs z hz
-    have h₁ := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw hwf hws
-    rw [hwz] at h₁
+    obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hwu, -⟩, hwz⟩, ⟨z₂, ⟨hz₂C, hz₂Z⟩, hz₂⟩⟩ := hpairs z hz
+    obtain ⟨⟨hw', hw'f, hw's⟩, -, hτ⟩ := hCm _ hz₂C
+    obtain ⟨h₁, h₃, h₂⟩ :=
+      hX.flow_eq_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws hwz hw' hw'f hw's hz₂
+    refine ⟨?_, ⟨(_, ι₂ z₂), ⟨Ioo_subset_Icc_self hτ, hz₂C, hz₂Z⟩, h₂⟩, h₃⟩
     simp only [hΨdef]
     rw [← h₁]
     exact (Flow.apply_mem_unstableSet_iff _ _).2 hwu
-  have hexitR : ∀ z ∈ splitGluingPairs ε r₀ g k, Ψ z.2 ∈ R := by
-    intro z hz
-    obtain ⟨-, ⟨z₂, ⟨hz₂C, hz₂Z⟩, hz₂⟩⟩ := hpairs z hz
-    obtain ⟨⟨hw, hwf, hws⟩, -, hτ⟩ := hCm _ hz₂C
-    have h₂ := hX.flow_splitExitTime_of_norm_lt φ hφ hε hε₂ hw hwf hws
-    rw [hz₂] at h₂
-    exact ⟨(_, ι₂ z₂), ⟨Ioo_subset_Icc_self hτ, hz₂C, hz₂Z⟩, h₂⟩
+  have hexitR : ∀ z ∈ splitGluingPairs ε r₀ g k, Ψ z.2 ∈ R := fun z hz ↦ (hglue z hz).2.1
   have hmemR : ∀ s : Icc (0 : ℝ) r₁,
       Ψ (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val.2 ∈ R := by
     intro s
@@ -368,11 +366,9 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     intro s hs
     obtain ⟨hz, -⟩ := hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s) hs
     set z := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val with hzdef
-    obtain ⟨hsrc, -, -, hpass, -⟩ := mem_splitGluingPairs.1 hz
-    have hflow : hX.flow (splitExitTime ε z.1) (Ψ z.1) = Ψ z.2 := by
-      rw [hpass]; exact hX.flow_splitExitTime φ hφ (fun z hz ↦ hε₂ z (by linarith)) hsrc
+    obtain ⟨hentry, -, hflow⟩ := hglue z hz
     obtain ⟨hK, τ, hτ⟩ := hπR _ (hmemR s)
-    refine ⟨hentry z hz, hK.2, -τ + splitExitTime ε z.1, ?_⟩
+    refine ⟨hentry, hK.2, -τ + splitExitTime ε z.1, ?_⟩
     simp only [hBdef, hcdef, ← hzdef]
     rw [Flow.map_add, hflow]
     have := congrArg (hX.flow (-τ)) hτ
