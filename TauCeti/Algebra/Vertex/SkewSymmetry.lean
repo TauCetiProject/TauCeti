@@ -274,12 +274,9 @@ theorem ncoeff_field_apply_skewSymmetry_vacuum [HasUniqueDiv V] (a b : V) (n : �
     ((A.field a)[[n]]) b =
       ∑ᶠ i : ℕ, (-((n + i).negOnePow : ℤ)) •
         ((A.field (((A.field b)[[n + i]]) a))[[-(i : ℤ) - 1]]) A.vacuum := by
-  obtain ⟨K, hK⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero a
-  let M := ((K : ℤ) - n).toNat
-  have hM : ∀ k : ℤ, n + M ≤ k → ((A.field b)[[k]]) a = 0 := fun k hk ↦ hK k (by omega)
-  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := M) fun i hi ↦ by
-      simp [hM (n + i) (by omega)],
-    A.ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum a b n M hM]
+  obtain ⟨M, hM⟩ := (A.field b).exists_forall_ncoeff_add_apply_eq_zero a n
+  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := M) fun i hi ↦ by simp [hM i hi],
+    A.ncoeff_field_apply_eq_sum_vacuum a b n hM]
   refine sum_congr rfl fun i _ ↦ ?_
   rw [Int.negOnePow_succ, Units.smul_def, Units.val_neg, neg_smul]
 

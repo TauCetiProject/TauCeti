@@ -87,6 +87,13 @@ theorem exists_forall_ncoeff_apply_eq_zero (A : VertexOperator R V) (v : V) :
   apply ncoeff_eq_zero_of_lt_order
   omega
 
+/-- Every vector is killed by all sufficiently high shifted normalized coefficients `A[[s + i]]`
+(`i : ℕ`) of a field. -/
+theorem exists_forall_ncoeff_add_apply_eq_zero (A : VertexOperator R V) (v : V) (s : ℤ) :
+    ∃ K : ℕ, ∀ i : ℕ, K ≤ i → (A[[s + i]]) v = 0 :=
+  let ⟨P, hP⟩ := A.exists_forall_ncoeff_apply_eq_zero v
+  ⟨(P - s).toNat, fun i hi ↦ hP (s + i) (by omega)⟩
+
 /-- `A` and `B` are **mutually local of order at most `N`**: `(z - w)ᴺ [A(z), B(w)] = 0`. In
 normalized coefficients, for all integers `m` and `n`,
 `∑_{i + j = N} (-1)ʲ (N choose i) [A₍ₘ₊ᵢ₎, B₍ₙ₊ⱼ₎] = 0`. -/

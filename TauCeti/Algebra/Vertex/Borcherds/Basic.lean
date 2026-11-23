@@ -170,15 +170,15 @@ theorem exists_borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) :
             Int.negOnePow n • ((A.field b)[[n + q - j]]) (((A.field a)[[m + j]]) c)) =
         ∑ j ∈ range K, Ring.choose m j •
           ((A.field (((A.field a)[[n + j]]) b))[[m + q - j]]) c := by
-  obtain ⟨Pₐ, hPₐ⟩ := (A.field a).exists_forall_ncoeff_apply_eq_zero c
-  obtain ⟨P_b, hPb⟩ := (A.field b).exists_forall_ncoeff_apply_eq_zero c
-  obtain ⟨P_ab, hPab⟩ := (A.field a).exists_forall_ncoeff_apply_eq_zero b
-  have ha : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
-      ((A.field a)[[m + j]]) c = 0 := fun j hj ↦ hPₐ _ (by omega)
-  have hb : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
-      ((A.field b)[[q + j]]) c = 0 := fun j hj ↦ hPb _ (by omega)
-  have hab : ∀ j : ℕ, max Pₐ (max P_b P_ab) + m.natAbs + q.natAbs + n.natAbs ≤ j →
-      ((A.field a)[[n + j]]) b = 0 := fun j hj ↦ hPab _ (by omega)
+  obtain ⟨K₁, hK₁⟩ := (A.field a).exists_forall_ncoeff_add_apply_eq_zero c m
+  obtain ⟨K₂, hK₂⟩ := (A.field b).exists_forall_ncoeff_add_apply_eq_zero c q
+  obtain ⟨K₃, hK₃⟩ := (A.field a).exists_forall_ncoeff_add_apply_eq_zero b n
+  have ha : ∀ j : ℕ, max K₁ (max K₂ K₃) ≤ j → ((A.field a)[[m + j]]) c = 0 :=
+    fun j hj ↦ hK₁ j (le_trans (le_max_left _ _) hj)
+  have hb : ∀ j : ℕ, max K₁ (max K₂ K₃) ≤ j → ((A.field b)[[q + j]]) c = 0 :=
+    fun j hj ↦ hK₂ j (le_trans ((le_max_left _ _).trans (le_max_right _ _)) hj)
+  have hab : ∀ j : ℕ, max K₁ (max K₂ K₃) ≤ j → ((A.field a)[[n + j]]) b = 0 :=
+    fun j hj ↦ hK₃ j (le_trans ((le_max_right _ _).trans (le_max_right _ _)) hj)
   exact ⟨_, ha, hb, hab, A.borcherds a b c m n q ha hb hab⟩
 
 end FormalVertexAxioms

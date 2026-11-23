@@ -444,13 +444,13 @@ theorem ncoeff_nthProduct_apply (A B : VertexOperator R V) (n r : ℤ) (v : V) :
       ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
         ((A[[n - i]]) ((B[[r + i]]) v) -
           (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[(i : ℤ)]]) v)) := by
-  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_add_apply_eq_zero v r
   obtain ⟨Q, hQ⟩ := A.exists_forall_ncoeff_apply_eq_zero v
-  let K := max (P + r.natAbs) Q
+  let K := max P Q
   rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by
-      simp [hP (r + i) (by omega), hQ i (by omega)],
+      simp [hP i (le_trans (le_max_left _ _) hi), hQ i (by omega)],
     ncoeff_nthProduct_apply_eq_sum n A B r v (K := K) (fun i hi ↦ hQ i (by omega))
-      (fun i hi ↦ hP (r + i) (by omega))]
+      (fun i hi ↦ hP i (le_trans (le_max_left _ _) hi))]
   refine sum_congr rfl fun i _ ↦ ?_
   rw [mul_smul, Units.smul_def]
 

@@ -51,20 +51,10 @@ section BorcherdsField
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
-private theorem exists_cutoff_add {M : Type*} [Zero M] {f : ℤ → M} {P : ℤ}
-    (hf : ∀ k : ℤ, P ≤ k → f k = 0) (s : ℤ) :
-    ∃ K : ℕ, ∀ i : ℕ, K ≤ i → f (s + i) = 0 :=
-  ⟨(P - s).toNat, fun i hi ↦ hf (s + i) (by omega)⟩
-
-private theorem exists_ncoeff_add_cutoff (A : VertexOperator R V) (v : V) (s : ℤ) :
-    ∃ K : ℕ, ∀ i : ℕ, K ≤ i → (A[[s + i]]) v = 0 :=
-  let ⟨_, hP⟩ := A.exists_forall_ncoeff_apply_eq_zero v
-  exists_cutoff_add hP s
-
 private theorem IsLocalOfOrder.exists_nthProduct_add_cutoff {A B : VertexOperator R V} {N : ℕ}
     (h : A.IsLocalOfOrder B N) (s : ℤ) :
     ∃ K : ℕ, ∀ i : ℕ, K ≤ i → nthProduct (s + i) A B = 0 :=
-  exists_cutoff_add (fun _ hk ↦ h.nthProduct_eq_zero hk) s
+  ⟨(N - s).toNat, fun i hi ↦ h.nthProduct_eq_zero (by omega)⟩
 
 private def borcherdsLHSTerm (A B : VertexOperator R V) (v : V) (m n r : ℤ) (i : ℕ) : V :=
   ((nthProduct (n + i) A B)[[m + r - i]]) v
@@ -109,8 +99,8 @@ private theorem borcherdsRHS_eq_sub (A B : VertexOperator R V) (v : V) (m n r : 
     borcherdsRHS A B v m n r =
       (∑ᶠ i : ℕ, borcherdsRHSWeighted₁ A B v m n r i) -
         ∑ᶠ i : ℕ, borcherdsRHSWeighted₂ A B v m n r i := by
-  obtain ⟨K₁, hK₁⟩ := exists_ncoeff_add_cutoff B v r
-  obtain ⟨K₂, hK₂⟩ := exists_ncoeff_add_cutoff A v m
+  obtain ⟨K₁, hK₁⟩ := B.exists_forall_ncoeff_add_apply_eq_zero v r
+  obtain ⟨K₂, hK₂⟩ := A.exists_forall_ncoeff_add_apply_eq_zero v m
   have h₁ : Function.HasFiniteSupport (borcherdsRHSWeighted₁ A B v m n r) :=
     TauCeti.hasFiniteSupport_of_forall_eq_zero K₁ fun i hi ↦ by
       simp [borcherdsRHSWeighted₁, borcherdsRHSTerm₁, hK₁ i hi]
@@ -149,8 +139,8 @@ private theorem borcherdsLHS_add_one {A B : VertexOperator R V} {N : ℕ}
 private theorem borcherdsRHS_add_one (A B : VertexOperator R V) (v : V) (m n r : ℤ) :
     borcherdsRHS A B v (m + 1) n r =
       borcherdsRHS A B v m n (r + 1) + borcherdsRHS A B v m (n + 1) r := by
-  obtain ⟨K₁, hK₁⟩ := exists_ncoeff_add_cutoff B v r
-  obtain ⟨K₂, hK₂⟩ := exists_ncoeff_add_cutoff A v m
+  obtain ⟨K₁, hK₁⟩ := B.exists_forall_ncoeff_add_apply_eq_zero v r
+  obtain ⟨K₂, hK₂⟩ := A.exists_forall_ncoeff_add_apply_eq_zero v m
   have hu₁ : Function.HasFiniteSupport (borcherdsRHSTerm₁ A B v (m + 1) n r) :=
     TauCeti.hasFiniteSupport_of_forall_eq_zero K₁ fun i hi ↦ by
       simp [borcherdsRHSTerm₁, hK₁ i hi]
@@ -242,8 +232,8 @@ theorem IsLocalOfOrder.borcherds {A B : VertexOperator R V} {N : ℕ}
           ((A[[m + n - i]]) ((B[[r + i]]) v) -
             (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[m + i]]) v)) := by
   obtain ⟨K₁, hK₁⟩ := h.exists_nthProduct_add_cutoff n
-  obtain ⟨K₂, hK₂⟩ := exists_ncoeff_add_cutoff B v r
-  obtain ⟨K₃, hK₃⟩ := exists_ncoeff_add_cutoff A v m
+  obtain ⟨K₂, hK₂⟩ := B.exists_forall_ncoeff_add_apply_eq_zero v r
+  obtain ⟨K₃, hK₃⟩ := A.exists_forall_ncoeff_add_apply_eq_zero v m
   let M := max K₁ (max K₂ K₃)
   have hcut (i : ℕ) (hi : M ≤ i) : nthProduct (n + i) A B = 0 :=
     hK₁ i (le_trans (le_max_left _ _) hi)
