@@ -197,7 +197,8 @@ theorem sphereVolumeForm_mfderiv_stereoSphere_apply (z a b : ℝ²) :
     (stereoSphere z)).toAlternatingMap.compLinearMap L
   have h := congrArg (fun g ↦ g ![a, b]) (f.eq_smul_basis_det e)
   have hf : f e = 4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := sphereVolumeForm_mfderiv_stereoSphere z
-  have hfab : f ![a, b] = (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
+  have hfab : f ![a, b] =
+      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
       (stereoSphere z) ![mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z a,
         mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z b] := by
     exact congrArg ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
