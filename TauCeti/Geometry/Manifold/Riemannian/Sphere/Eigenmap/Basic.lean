@@ -20,8 +20,9 @@ The spherical harmonics of degree `d` on the unit sphere `Sᵐ ⊂ ℝᵐ⁺¹` 
 space of continuous functions, which we view as a subspace `eigenspace m d` of `L²(Sᵐ)` for the
 round Riemannian volume. Each of its elements has a continuous representative `rep m d w`.
 
-Linear isometries `e` of `ℝᵐ⁺¹` act on it by `w ↦ w ∘ (e • ·)`, by isometries, since they preserve
-the round volume. For an orthonormal basis `f₁, …, f_N` of the eigenspace, the reproducing kernel
+Pullback by linear isometries `e` of `ℝᵐ⁺¹` defines a right action `w ↦ w ∘ (e • ·)` on it,
+by isometries, since they preserve the round volume. For an orthonormal basis `f₁, …, f_N` of
+the eigenspace, the reproducing kernel
 `K(x, y) = Σᵢ fᵢ(x) fᵢ(y)` does not depend on the basis: it is the inner product of the Riesz
 representatives of the evaluations at `x` and at `y`. Hence it is invariant under the linear
 isometries, and since they act transitively on the sphere, `Σᵢ fᵢ(x)²` is constant. Integrating,
@@ -31,13 +32,13 @@ the constant is `N / Vol(Sᵐ)`.
 
 * `TauCeti.Manifold.Eigenmap.eigenspace`: the degree-`d` spherical harmonics in `L²(Sᵐ)`.
 * `TauCeti.Manifold.Eigenmap.rep`: the continuous representative of an element.
-* `TauCeti.Manifold.Eigenmap.act`: the action of a linear isometry.
+* `TauCeti.Manifold.Eigenmap.act`: the right pullback action of linear isometries.
 
 ## Main results
 
 * `TauCeti.Manifold.Eigenmap.finrank_eigenspace_pos`: the eigenspaces are nonzero.
 * `TauCeti.Manifold.Eigenmap.inner_eq_integral`: the inner product is `∫ f g`.
-* `TauCeti.Manifold.Eigenmap.inner_act`: the linear isometries act by isometries.
+* `TauCeti.Manifold.Eigenmap.inner_act`: the right pullback action preserves inner products.
 * `TauCeti.Manifold.Eigenmap.sum_rep_mul_rep_smul`: the reproducing kernel is invariant.
 * `TauCeti.Manifold.Eigenmap.sum_rep_sq`: `Σᵢ fᵢ(x)² = N / Vol(Sᵐ)`.
 
@@ -186,7 +187,9 @@ theorem comp_sphereAct_mem {e : Eₘ ≃ₗᵢ[ℝ] Eₘ} {f : C(Sₘ, ℝ)} (hf
   rw [harmonicSphereRestriction_harmonicRep_apply, hg]
   rfl
 
-/-- The action of a linear isometry on the eigenspace, `w ↦ w ∘ (e • ·)`. -/
+/-- The right pullback action of linear isometries on the eigenspace, `w ↦ w ∘ (e • ·)`.
+Pullback reverses composition:
+`act m d (e₁ * e₂) w = act m d e₂ (act m d e₁ w)`. -/
 def act (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) : eigenspace m d →ₗ[ℝ] eigenspace m d :=
   (equiv m d).toLinearMap ∘ₗ
     (((ContinuousMap.compCLM ℝ (M := ℝ) (sphereAct m e)).toLinearMap.restrict
@@ -198,8 +201,8 @@ theorem rep_act (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (w : eigenspace m d) (x : Sₘ) :
     LinearEquiv.symm_apply_apply, Submodule.coe_subtype]
   rfl
 
-/-- **Linear isometries act on the eigenspace by isometries**, since they preserve the round
-volume. -/
+/-- **The right pullback action preserves inner products**, since linear isometries preserve
+the round volume. -/
 theorem inner_act (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (w w' : eigenspace m d) :
     ⟪act m d e w, act m d e w'⟫_ℝ = ⟪w, w'⟫_ℝ := by
   have hemb : MeasurableEmbedding (fun x : Sₘ ↦ e • x) := by
