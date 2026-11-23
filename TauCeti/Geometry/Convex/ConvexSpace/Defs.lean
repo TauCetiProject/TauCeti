@@ -307,19 +307,23 @@ theorem weights_mapRange_apply (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 �
     (w : StdSimplex R X) (x : X) : (w.mapRange f hf₁ hf).weights x = f (w.weights x) := by
   rw [weights_mapRange, Finsupp.mapRange_apply]
 
-/-- Scalar pushforward along an injective homomorphism is injective. -/
+/-- Scalar pushforward along a homomorphism which is injective on nonnegative elements is
+injective. -/
 theorem mapRange_injective {f : R →+ S} (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
-    (hfinj : Function.Injective f) :
-    Function.Injective (mapRange (X := X) f hf₁ hf) := fun _ _ h ↦
-  toFun_comp_weights_injective <| congrArg DFunLike.coe <|
-    Finsupp.mapRange_injective _ (map_zero f) hfinj congr(($h).weights)
+    (hfinj : Set.InjOn f {r | 0 ≤ r}) :
+    Function.Injective (mapRange (X := X) f hf₁ hf) := fun w₁ w₂ h ↦
+  toFun_comp_weights_injective <| funext fun x ↦
+    hfinj (w₁.nonneg x) (w₂.nonneg x) <| by simpa using congr(($h).weights x)
 
-/-- Scalar pushforward along an injective homomorphism preserves the support of weights. -/
+/-- Scalar pushforward along a homomorphism which sends no nonzero nonnegative element to `0`
+preserves the support of weights. -/
 @[simp]
 theorem support_weights_mapRange {f : R →+ S} (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
-    (hfinj : Function.Injective f) (w : StdSimplex R X) :
-    (w.mapRange f hf₁ hf).weights.support = w.weights.support :=
-  Finsupp.support_mapRange_of_injective (map_zero f) _ hfinj
+    (hf₀ : ∀ r, 0 ≤ r → f r = 0 → r = 0) (w : StdSimplex R X) :
+    (w.mapRange f hf₁ hf).weights.support = w.weights.support := by
+  ext x
+  simp only [Finsupp.mem_support_iff, weights_mapRange_apply]
+  exact ⟨fun h h₀ ↦ h (h₀ ▸ map_zero f), fun h h₀ ↦ h (hf₀ _ (w.nonneg x) h₀)⟩
 
 /-- Scalar pushforward along the identity homomorphism is the identity. -/
 @[simp]

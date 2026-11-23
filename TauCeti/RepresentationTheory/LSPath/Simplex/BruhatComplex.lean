@@ -669,8 +669,7 @@ theorem support_toBruhatRealization (π : LSPath P b lam) :
   let w := π.durationSimplex.mapRange (Rat.castHom ℝ : ℚ →+ ℝ) Rat.cast_one
     (fun _ ↦ Rat.cast_nonneg.2)
   rw [toBruhatRealization_val, Finsupp.support_mapDomain_of_nonneg w.nonneg]
-  simp [w, Convexity.StdSimplex.support_weights_mapRange (f := (Rat.castHom ℝ : ℚ →+ ℝ))
-    Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2) (Rat.castHom ℝ).injective]
+  simp [w]
 
 /-- The support of `π.toBruhatRealization` as a `Set` is the exact set of directions visited by
 `π`. -/
