@@ -29,16 +29,11 @@ the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹
 
 Subtracting Gauss' series at two regular arguments cancels Euler's constant and expresses
 `digamma s - digamma w` as the absolutely convergent series
-`∑' n, (s - w) / ((w + n) * (s + n))`. This yields strict monotonicity of `Real.digamma`,
-strict antitonicity and antitonicity of shifted differences in both the shift parameter
-`t ↦ ψ(t + b) - ψ(t + a)` and the subtracted argument `a ↦ d - ψ(t + a)`, and uniform two-sided
-bounds on shifted differences.
+`∑' n, (s - w) / ((w + n) * (s + n))`, for both complex and real arguments.
 
 ## References
 
 * [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6).
-* F. Calegari, V. Dimitrov and Y. Tang (CDT), *The unbounded denominators conjecture*,
-  J. Amer. Math. Soc. 38 (2025), Lemma 5.2.9, p. 676.
 * T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
   for the Gauss series theorem statements.
 -/
@@ -418,85 +413,5 @@ theorem digamma_sub_digamma_eq_tsum {x y : ℝ}
     ← Complex.reCLM_apply,
     Complex.reCLM.map_tsum (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))] at h
   exact h.trans <| tsum_congr fun n ↦ by rw [Complex.reCLM_apply]; norm_cast
-
-/-- Real digamma is strictly monotone on the positive real axis. -/
-theorem strictMonoOn_digamma : StrictMonoOn digamma (Ioi 0) := by
-  intro x hx y hy hxy
-  rw [← sub_pos, digamma_sub_digamma_eq_tsum
-    (fun m ↦ by linarith [mem_Ioi.mp hy, m.cast_nonneg (α := ℝ)])
-    (fun m ↦ by linarith [mem_Ioi.mp hx, m.cast_nonneg (α := ℝ)])]
-  refine (summable_sub_div_add_mul_add y x).tsum_pos (fun n ↦ div_nonneg (sub_nonneg.mpr hxy.le)
-    (mul_pos (by linarith [mem_Ioi.mp hx, n.cast_nonneg (α := ℝ)])
-      (by linarith [mem_Ioi.mp hy, n.cast_nonneg (α := ℝ)])).le) 0 ?_
-  simpa using div_pos (sub_pos.mpr hxy) (mul_pos (mem_Ioi.mp hx) (mem_Ioi.mp hy))
-
-/-- When `a < b`, the shifted digamma difference `t ↦ ψ(t + b) - ψ(t + a)` is strictly antitone
-on `(-a, ∞)`. -/
-theorem strictAntiOn_digamma_add_sub_digamma_add {a b : ℝ} (hab : a < b) :
-    StrictAntiOn (fun t : ℝ ↦ digamma (t + b) - digamma (t + a)) (Ioi (-a)) := by
-  intro t₁ ht₁ t₂ _ ht
-  have hreg {u : ℝ} (hu : 0 < u) (m : ℕ) : u ≠ -(m : ℝ) := by linarith [m.cast_nonneg (α := ℝ)]
-  have h0 := mem_Ioi.mp ht₁
-  dsimp only
-  rw [digamma_sub_digamma_eq_tsum (hreg (by linarith)) (hreg (by linarith)),
-    digamma_sub_digamma_eq_tsum (hreg (by linarith)) (hreg (by linarith))]
-  refine (summable_sub_div_add_mul_add (t₂ + b) (t₂ + a)).tsum_lt_tsum (i := 0) (fun n ↦ ?_) ?_
-    (summable_sub_div_add_mul_add (t₁ + b) (t₁ + a))
-  · simp only [add_sub_add_left_eq_sub]
-    have _ := n.cast_nonneg (α := ℝ)
-    exact div_le_div_of_nonneg_left (sub_nonneg.mpr hab.le) (mul_pos (by linarith) (by linarith))
-      (mul_le_mul (by linarith) (by linarith) (by linarith) (by linarith))
-  · simp only [add_sub_add_left_eq_sub, Nat.cast_zero, add_zero]
-    exact div_lt_div_of_pos_left (sub_pos.mpr hab) (mul_pos (by linarith) (by linarith))
-      (mul_lt_mul'' (by linarith) (by linarith) (by linarith) (by linarith))
-
-/-- When `a ≤ b`, the shifted digamma difference `t ↦ ψ(t + b) - ψ(t + a)` is antitone on
-`(-a, ∞)`. -/
-theorem antitoneOn_digamma_add_sub_digamma_add {a b : ℝ} (hab : a ≤ b) :
-    AntitoneOn (fun t : ℝ ↦ digamma (t + b) - digamma (t + a)) (Ioi (-a)) := by
-  rcases hab.eq_or_lt with rfl | hlt
-  · intro _ _ _ _ _; simp
-  · exact (strictAntiOn_digamma_add_sub_digamma_add hlt).antitoneOn
-
-/-- Uniform upper bound on shifted digamma differences: for `t₀ ≤ t`, `-t₀ < c`, `c ≤ a`, and
-`c ≤ b`, `ψ(t + b) - ψ(t + a) ≤ ψ(t₀ + b) - ψ(t₀ + c)` (generalizing CDT Lemma 5.2.9). -/
-theorem digamma_add_sub_digamma_add_le {t₀ t c a b : ℝ}
-    (ht : t₀ ≤ t) (hc : -t₀ < c) (hca : c ≤ a) (hcb : c ≤ b) :
-    digamma (t + b) - digamma (t + a) ≤ digamma (t₀ + b) - digamma (t₀ + c) :=
-  (sub_le_sub_left (monotoneOn_digamma
-    (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) (by linarith)) _).trans <|
-    antitoneOn_digamma_add_sub_digamma_add hcb
-      (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) ht
-
-/-- For fixed `d` and `t`, `a ↦ d - ψ(t + a)` is strictly antitone on `(-t, ∞)`. -/
-theorem strictAntiOn_const_sub_digamma_add (d t : ℝ) :
-    StrictAntiOn (fun a : ℝ ↦ d - digamma (t + a)) (Ioi (-t)) := fun _ ha₁ _ ha₂ ha ↦
-  sub_lt_sub_left (strictMonoOn_digamma (mem_Ioi.mpr (by linarith [mem_Ioi.mp ha₁]))
-    (mem_Ioi.mpr (by linarith [mem_Ioi.mp ha₂])) (by linarith)) d
-
-/-- For fixed `d` and `t`, `a ↦ d - ψ(t + a)` is antitone on `(-t, ∞)`. -/
-theorem antitoneOn_const_sub_digamma_add (d t : ℝ) :
-    AntitoneOn (fun a : ℝ ↦ d - digamma (t + a)) (Ioi (-t)) :=
-  (strictAntiOn_const_sub_digamma_add d t).antitoneOn
-
-/-- Two-sided uniform estimate on shifted digamma differences: for `t₀ ≤ t` and `-t₀ < c ≤ a ≤ b`,
-`0 ≤ ψ(t + b) - ψ(t + a) ≤ ψ(t₀ + b) - ψ(t₀ + c)`. -/
-theorem digamma_add_sub_digamma_add_bounds {t₀ t c a b : ℝ}
-    (ht : t₀ ≤ t) (hc : -t₀ < c) (hca : c ≤ a) (hab : a ≤ b) :
-    0 ≤ digamma (t + b) - digamma (t + a) ∧
-      digamma (t + b) - digamma (t + a) ≤ digamma (t₀ + b) - digamma (t₀ + c) :=
-  ⟨sub_nonneg.mpr (monotoneOn_digamma (mem_Ioi.mpr (by linarith))
-    (mem_Ioi.mpr (by linarith)) (by linarith)),
-    digamma_add_sub_digamma_add_le ht hc hca (hca.trans hab)⟩
-
-/-- Two-sided estimate on `ψ(k + 1) - ψ(k + a)` for `k ≥ 1` and `-1 < c ≤ a ≤ 1`:
-`0 ≤ ψ(k + 1) - ψ(k + a) ≤ ψ(2) - ψ(1 + c)`. -/
-theorem digamma_nat_add_one_sub_digamma_add_bounds {k : ℕ} (hk : 1 ≤ k) {c a : ℝ}
-    (hc : -1 < c) (hca : c ≤ a) (ha : a ≤ 1) :
-    0 ≤ digamma ((k : ℝ) + 1) - digamma ((k : ℝ) + a) ∧
-      digamma ((k : ℝ) + 1) - digamma ((k : ℝ) + a) ≤ digamma 2 - digamma (1 + c) := by
-  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  simpa only [show (1 : ℝ) + 1 = 2 by norm_num] using
-    digamma_add_sub_digamma_add_bounds hk' hc hca ha
 
 end Real

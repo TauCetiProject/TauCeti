@@ -27,8 +27,9 @@ gives `TauCeti.zeroBalancedSeries a x`,
 Mathlib's principal logarithm `Complex.log`, together with its `k ≥ 1` inner tail
 `TauCeti.zeroBalancedTail`:
 
-* `zeroBalancedSeries` is analytic on `Metric.ball 0 1 ∩ Complex.slitPlane`, analytic in `a`
-  away from `2a ∈ -ℕ` for `‖x‖ < 1`, and on `0 < ‖x‖ < 1` equals its limit from `{z | 0 < z.im}`.
+* `zeroBalancedSeries` and `zeroBalancedTail` are analytic on `Metric.ball 0 1 ∩ Complex.slitPlane`,
+  analytic in `a` away from `2a ∈ -ℕ` (resp. `a ∈ -ℕ_{≥1}`) for `‖x‖ < 1`, and on
+  `0 < ‖x‖ < 1` `zeroBalancedSeries` equals its limit from `{z | 0 < z.im}`.
 * Splitting off `k = 0` writes `zeroBalancedSeries a x` on `‖x‖ < 1` as
   `Γ(2a) / Γ(a)² * (-log x - 2γ - 2ψ(a) + zeroBalancedTail a x)` with explicit
   `O(‖x‖(1 + ‖log x‖) / (1 - ‖x‖))` bounds on `zeroBalancedTail` and its `a`-derivatives.
@@ -199,6 +200,23 @@ theorem zeroBalancedSeries_eq_log_mul_add (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1)
         ∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
           (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k) := by
   rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a hx]
+
+/-- On the open unit disc, `zeroBalancedTail a x` separates into
+`-log x * (₂F₁(a, a; 1; x) - 1)` plus the digamma-weighted power series minus its constant term
+`2 * (ψ(1) - ψ(a))`. -/
+theorem zeroBalancedTail_eq_log_mul_add (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+    zeroBalancedTail a x =
+      -Complex.log x * (ordinaryHypergeometric a a 1 x - 1) +
+        ((∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
+          (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k) -
+          2 * (Complex.digamma 1 - Complex.digamma a)) := by
+  have h0 : zeroBalancedTerm a x 0 =
+      -Complex.log x + 2 * (Complex.digamma 1 - Complex.digamma a) := by
+    simp [zeroBalancedTerm, ordinaryHypergeometricCoefficient]
+  have hsum : ∑' k : ℕ, zeroBalancedTerm a x k = zeroBalancedTerm a x 0 + zeroBalancedTail a x :=
+    (summable_zeroBalancedSeries a hx).tsum_eq_zero_add
+  rw [tsum_zeroBalancedTerm_eq_split a hx, h0] at hsum
+  linear_combination -hsum
 
 /-- On the open unit disc, `zeroBalancedSeries a x` splits into its `k = 0` logarithmic term
 `-log x - 2γ - 2ψ(a)` and `zeroBalancedTail a x`. -/
@@ -456,6 +474,20 @@ theorem analyticOnNhd_zeroBalancedSeries_left {x : ℂ} (hx : ‖x‖ < 1) :
       ((analyticAt_const (v := (2 : ℂ))).mul (Complex.analyticAt_digamma ha'))).add
       (analyticOnNhd_zeroBalancedTail_left hx a fun m ↦ ha' (m + 1)))).congr ?_
   exact Eventually.of_forall fun b ↦ (zeroBalancedSeries_eq_add_zeroBalancedTail b hx).symm
+
+/-- For every `a : ℂ`, `zeroBalancedTail a` is complex analytic on the slit unit disc
+`Metric.ball 0 1 ∩ Complex.slitPlane`. -/
+theorem analyticOnNhd_zeroBalancedTail (a : ℂ) :
+    AnalyticOnNhd ℂ (zeroBalancedTail a) (Metric.ball 0 1 ∩ Complex.slitPlane) := by
+  intro x hx
+  refine (((analyticAt_clog hx.2).neg.mul
+    ((analyticOnNhd_ordinaryHypergeometric ℂ a a 1 x hx.1).sub
+      (analyticAt_const (v := (1 : ℂ))))).add
+    ((analyticOnNhd_zeroBalancedDigammaSeries a x hx.1).sub
+      (analyticAt_const (v := 2 * (Complex.digamma 1 - Complex.digamma a))))).congr ?_
+  filter_upwards [(Metric.isOpen_ball.inter Complex.isOpen_slitPlane).mem_nhds hx] with z hz
+  rw [zeroBalancedTail_eq_log_mul_add a (mem_ball_zero_iff.mp hz.1)]
+  rfl
 
 /-- For every `a : ℂ`, `zeroBalancedSeries a` is complex analytic on the slit unit disc
 `Metric.ball 0 1 ∩ Complex.slitPlane`. -/

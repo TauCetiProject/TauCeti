@@ -10,6 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.EulerKernel
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -29,6 +30,8 @@ proved by dominated convergence from Gauss' series for `digamma`.
   `(∫ w in 0..(1-x), (w^(a-1) - 1) / (1 - w)) - log x`.
 * `Real.integral_rpow_sub_one_div_one_sub`: Euler's integral representation
   `∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = digamma 1 - digamma a`.
+* `Real.abs_one_sub_rpow_sub_one_mul_rpow_mul_add_mul_rpow_le`: uniform domination bound for
+  the regularized Euler kernel on `(0, 1)` when `0 < a ≤ 1`.
 * `Real.tendsto_integral_one_sub_rpow_sub_one_mul_rpow_mul_add_mul_rpow`: the regularized
   Euler-kernel limit as `x → 0⁺` for `0 < a ≤ 1`.
 
@@ -151,6 +154,31 @@ theorem integral_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
   rw [(by rw [digamma_one]; linarith :
     -(∑' n : ℕ, (1 / ((n : ℝ) + 1) - 1 / (a + n))) = digamma 1 - digamma a)] at hgauss
   exact tendsto_nhds_unique hdct (hgauss.congr_fun fun k ↦ by ring).tendsto_sum_nat
+
+/-- Uniform domination bound for the regularized Euler kernel on `(0, 1)`: for `0 < a ≤ 1`,
+`0 ≤ x`, and `0 < s < 1`,
+`|((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)| ≤ (1 - s) ^ (a - 1)`.
+-/
+theorem abs_one_sub_rpow_sub_one_mul_rpow_mul_add_mul_rpow_le {a x s : ℝ}
+    (ha₀ : 0 < a) (ha₁ : a ≤ 1) (hx₀ : 0 ≤ x) (hs₀ : 0 < s) (hs₁ : s < 1) :
+    |((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)| ≤
+      (1 - s) ^ (a - 1) := by
+  have h1s_pos : 0 < 1 - s := sub_pos.mpr hs₁
+  have h1s_nn : 0 ≤ (1 - s) ^ (a - 1) - 1 := sub_nonneg.mpr <| by
+    simpa using rpow_le_rpow_of_exponent_ge h1s_pos (by linarith) (by linarith : a - 1 ≤ 0)
+  have hdiv_le : ((1 - s) ^ (a - 1) - 1) / s ≤ (1 - s) ^ (a - 1) := by
+    simpa only [sub_sub_cancel] using
+      rpow_sub_one_div_one_sub_le ha₀ ha₁ h1s_pos (by linarith)
+  have hD_ge : s ≤ x + (1 - x) * s := by nlinarith
+  have hD_rpow : (x + (1 - x) * s) ^ (-a) ≤ s ^ (-a) :=
+    rpow_le_rpow_of_nonpos hs₀ hD_ge (by linarith)
+  rw [abs_of_nonneg (mul_nonneg (mul_nonneg h1s_nn (rpow_nonneg hs₀.le _))
+    (rpow_nonneg (hs₀.le.trans hD_ge) _))]
+  have hs_comb : s ^ (a - 1) * s ^ (-a) = s⁻¹ := by
+    rw [← rpow_add hs₀, (by ring : a - 1 + -a = -1), rpow_neg_one]
+  exact ((mul_le_mul_of_nonneg_left hD_rpow (mul_nonneg h1s_nn (rpow_nonneg hs₀.le _))).trans_eq
+    (by rw [div_eq_mul_inv, ← hs_comb]; ring :
+      _ = ((1 - s) ^ (a - 1) - 1) / s)).trans hdiv_le
 
 /-- Regularized Euler-kernel limit: for `0 < a ≤ 1`, as `x → 0⁺`,
 `∫ s in (0 : ℝ)..1, ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)`

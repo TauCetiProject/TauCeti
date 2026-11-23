@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Real
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.ZeroBalanced.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.EulerIntegral
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Analytic
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.EulerKernel
 import TauCeti.Analysis.SpecialFunctions.Log.Limits
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # The zero-balanced hypergeometric connection formula
@@ -27,8 +27,9 @@ When `2a ∉ -ℕ`, `₂F₁(a, a; 2a; 1 - x)` agrees on the lens `‖x‖ < 1`,
 `-log x · u₁(a, x) + v(a, x)` both solve `(x (1 - x)^(2a) y')' = a² (1 - x)^(2a - 1) y` with `0⁺`
 asymptotic `-log x + 2(ψ(1) - ψ(a)) + o(1)`; Wronskian constancy against `u₁` equates them on
 `(0, 1)`, and analytic continuation yields
-`TauCeti.ordinaryHypergeometric_one_sub_eq_zeroBalancedSeries` and
-`TauCeti.zero_balanced_connection`.
+`TauCeti.ordinaryHypergeometric_one_sub_eq_zeroBalancedSeries`,
+`TauCeti.zero_balanced_connection`, and the real logarithmic cusp limit
+`TauCeti.tendsto_ordinaryHypergeometric_one_sub_div_add_log`.
 
 ## References
 
@@ -544,5 +545,83 @@ theorem zero_balanced_connection (a : ℂ) (ha : ∀ n : ℕ, 2 * a ≠ -(n : �
       ordinaryHypergeometric a a (2 * a) (1 - x) = zeroBalancedSeries a x :=
   ⟨analyticOnNhd_zeroBalancedSeries a,
     fun _ hx0 hx1 ↦ ordinaryHypergeometric_one_sub_eq_zeroBalancedSeries ha hx0 hx1⟩
+
+private theorem tendsto_re_zeroBalancedTail_ofReal_nhdsGT_zero (a : ℝ) :
+    Tendsto (fun x : ℝ ↦ (zeroBalancedTail (a : ℂ) (x : ℂ)).re) (𝓝[>] 0) (𝓝 0) := by
+  let f : ℂ → ℝ := fun z ↦
+    ((∑' k : ℕ, ordinaryHypergeometricCoefficient (a : ℂ) (a : ℂ) 1 k *
+      (2 * (Complex.digamma (k + 1) - Complex.digamma (k + (a : ℂ)))) * z ^ k) -
+      2 * (Complex.digamma 1 - Complex.digamma (a : ℂ))).re
+  have hdig_lim : Tendsto (fun x : ℝ ↦ f (x : ℂ)) (𝓝[>] 0) (𝓝 0) := by
+    have hc := (analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) 0
+      (mem_ball_self zero_lt_one)).continuousAt.sub
+      (continuousAt_const (y := 2 * (Complex.digamma 1 - Complex.digamma (a : ℂ))))
+    have h0 : f 0 = 0 := by
+      simp only [f]
+      rw [tsum_eq_single 0 fun k hk ↦ by simp [zero_pow hk]]
+      simp [ordinaryHypergeometricCoefficient]
+    have hlim : Tendsto (fun x : ℝ ↦ f (x : ℂ)) (𝓝[>] 0) (𝓝 (f 0)) :=
+      (Complex.continuous_re.continuousAt.comp hc).tendsto.comp
+        (Complex.continuous_ofReal.continuousWithinAt (s := Ioi (0 : ℝ))).tendsto
+    rwa [h0] at hlim
+  have hlog_lim : Tendsto (fun x : ℝ ↦ (₂F₁ a a 1 x - 1) * Real.log x) (𝓝[>] 0) (𝓝 0) := by
+    have hu1 : DifferentiableAt ℝ (₂F₁ a a 1 : ℝ → ℝ) 0 :=
+      ((hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a a 1).analyticAt_of_mem
+        (Metric.mem_eball_self zero_lt_one)).differentiableAt
+    simpa [ordinaryHypergeometric_zero] using Real.tendsto_sub_mul_log_nhdsGT_zero hu1
+  have hsub : Tendsto (fun x : ℝ ↦ -((₂F₁ a a 1 x - 1) * Real.log x) + f (x : ℂ))
+      (𝓝[>] 0) (𝓝 0) := by
+    simpa using hlog_lim.neg.add hdig_lim
+  refine hsub.congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
+  have hxn : ‖(x : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_of_nonneg hx.1.le]; exact hx.2
+  have hof : ordinaryHypergeometric (a : ℂ) (a : ℂ) 1 (x : ℂ) - 1 =
+      ((₂F₁ a a 1 x - 1 : ℝ) : ℂ) := by
+    simp [ofReal_ordinaryHypergeometric]
+  rw [zeroBalancedTail_eq_log_mul_add (a : ℂ) hxn, add_re, ← Complex.ofReal_log hx.1.le,
+    hof, neg_mul, neg_re, ← Complex.ofReal_mul, Complex.ofReal_re, mul_comm]
+
+/-- Real logarithmic cusp limit at `x → 0⁺`: whenever `2a` is not a nonpositive integer,
+`₂F₁(a, a; 2a; 1 - x) / (Γ(2a) / Γ(a)²) + log x` tends to `2 * (ψ(1) - ψ(a))` as `x → 0⁺`
+(CDT Lemma 5.1.20). -/
+theorem tendsto_ordinaryHypergeometric_one_sub_div_add_log {a : ℝ}
+    (ha : ∀ n : ℕ, 2 * a ≠ -(n : ℝ)) :
+    Tendsto (fun x : ℝ ↦
+        ₂F₁ a a (2 * a) (1 - x) / (Real.Gamma (2 * a) / Real.Gamma a ^ 2) + Real.log x)
+      (𝓝[>] 0) (𝓝 (2 * (Real.digamma 1 - Real.digamma a))) := by
+  have haC : ∀ n : ℕ, 2 * (a : ℂ) ≠ -(n : ℂ) := fun n hn ↦ ha n (by exact_mod_cast hn)
+  have ha1 : ∀ m : ℕ, a ≠ -(m : ℝ) := fun m hm ↦
+    ha (2 * m) (by push_cast; linear_combination 2 * hm)
+  have hgamma : Real.Gamma (2 * a) / Real.Gamma a ^ 2 ≠ 0 :=
+    div_ne_zero (Real.Gamma_ne_zero ha) (pow_ne_zero 2 (Real.Gamma_ne_zero ha1))
+  rw [← add_zero (2 * (Real.digamma 1 - Real.digamma a))]
+  refine (tendsto_const_nhds.add (tendsto_re_zeroBalancedTail_ofReal_nhdsGT_zero a)).congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
+  have hxn : ‖(x : ℂ)‖ < 1 := by
+    rw [Complex.norm_real, Real.norm_of_nonneg hx.1.le]; exact hx.2
+  have h1xn : ‖1 - (x : ℂ)‖ < 1 := by
+    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_of_nonneg (sub_pos.mpr hx.2).le]
+    linarith [hx.1]
+  have heq := ordinaryHypergeometric_one_sub_eq_zeroBalancedSeries haC hxn h1xn
+  rw [zeroBalancedSeries_eq_add_zeroBalancedTail (a : ℂ) hxn] at heq
+  have hlhs : ordinaryHypergeometric (a : ℂ) (a : ℂ) (2 * (a : ℂ)) (1 - (x : ℂ)) =
+      ((₂F₁ a a (2 * a) (1 - x) : ℝ) : ℂ) := by
+    simp [ofReal_ordinaryHypergeometric]
+  have hgam : Complex.Gamma (2 * (a : ℂ)) / Complex.Gamma (a : ℂ) ^ 2 =
+      ((Real.Gamma (2 * a) / Real.Gamma a ^ 2 : ℝ) : ℂ) := by
+    rw [← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.Gamma_ofReal, Complex.Gamma_ofReal]
+    simp
+  rw [hlhs, hgam, ← Complex.ofReal_log hx.1.le, Complex.digamma_ofReal] at heq
+  have hdiv := congrArg (fun z : ℂ ↦ (z / ((Real.Gamma (2 * a) / Real.Gamma a ^ 2 : ℝ) : ℂ)).re)
+    heq
+  have hgamC : ((Real.Gamma (2 * a) / Real.Gamma a ^ 2 : ℝ) : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.mpr hgamma
+  rw [← Complex.ofReal_div, Complex.ofReal_re, mul_div_cancel_left₀ _ hgamC] at hdiv
+  rw [hdiv]
+  simp only [add_re, sub_re, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero,
+    re_ofNat, im_ofNat]
+  linarith [Real.digamma_one]
 
 end TauCeti
