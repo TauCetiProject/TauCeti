@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Functoriality
 public import TauCeti.CategoryTheory.Galois.Homomorphism
+public import TauCeti.CategoryTheory.Galois.Transport
 
 /-!
 # Surjectivity and injectivity of homomorphisms of étale fundamental groups

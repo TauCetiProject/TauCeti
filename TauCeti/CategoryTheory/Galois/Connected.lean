@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.CategoryTheory.Galois.Basic
 
 /-!
@@ -18,9 +19,9 @@ when `A` is.
 
 The equivalence statements need no Galois axioms. Mathlib states connectedness for an object of
 an arbitrary category and only later restricts to `PreGaloisCategory`, and that arbitrary
-generality is what is used there; in particular the statements apply to a category that is merely *equivalent* to a
-Galois category, which is how a connectedness criterion is transported to a concrete category
-whose objects are not finite sets.
+generality is what is used there; in particular the statements apply to a category that is merely
+*equivalent* to a Galois category, which is how a connectedness criterion is transported to a
+concrete category whose objects are not finite sets.
 
 The last statement does use the Galois axioms: for a fibre functor `F` on a pre-Galois category,
 an object whose fibre is nonempty and acted on transitively by `Aut F` is connected. This is the
