@@ -86,6 +86,15 @@ theorem ext_of_isDPMorphism_map (hI : DividedPowers I) (f : A →+* B)
   exact ((mem_dpEqualizer_iff hB hB').mp
     (le_equalizer_of_isDPMorphism hI f le_rfl hB hB' h1 h2 hb)).right n
 
+/-- Variant of `DividedPowers.ext_of_isDPMorphism_map` equating the `.dpow` functions when the
+target ideal `J` is propositionally equal to `I.map f`. -/
+theorem dpow_eq_of_isDPMorphism_map (hI : DividedPowers I) (f : A →+* B)
+    {J : Ideal B} (hJ : J = I.map f) {hB : DividedPowers J} {hB' : DividedPowers (I.map f)}
+    (h1 : IsDPMorphism hI hB f) (h2 : IsDPMorphism hI hB' f) :
+    hB.dpow = hB'.dpow := by
+  subst hJ
+  exact congrArg DividedPowers.dpow (ext_of_isDPMorphism_map hI f h1 h2)
+
 /-- Universal property of an extension of divided powers to `I.map f`: a ring homomorphism
 `g : B →+* C` is a divided power morphism out of `(I.map f, hB)` if and only if `g.comp f` is a
 divided power morphism out of `(I, hI)`. -/
@@ -100,6 +109,14 @@ end Uniqueness
 section Principal
 
 variable {A B : Type*} [CommSemiring A] [CommSemiring B] {I : Ideal A}
+
+private theorem mem_of_eq_span_singleton {x : A} (hIx : I = Ideal.span {x}) : x ∈ I :=
+  hIx ▸ Ideal.mem_span_singleton_self x
+
+private theorem exists_dpow_eq_mul (hI : DividedPowers I) {x : A}
+    (hIx : I = Ideal.span {x}) {n : ℕ} (hn : n ≠ 0) :
+    ∃ a : A, hI.dpow n x = x * a :=
+  Ideal.mem_span_singleton.mp (hIx ▸ hI.dpow_mem hn (mem_of_eq_span_singleton hIx))
 
 /-- Shared binomial expansion step for `(b₁ + b₂) ^ n * f (hI.dpow n x)`. -/
 private theorem add_pow_mul_map_dpow (hI : DividedPowers I) (f : A →+* B)
@@ -126,9 +143,7 @@ theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) (f : A →+* B)
     b ^ n * f (hI.dpow n x) = c ^ n * f (hI.dpow n x) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  · have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
-    have hmem : hI.dpow n x ∈ Ideal.span {x} := hIx ▸ hI.dpow_mem hn hx
-    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.mp hmem
+  · obtain ⟨a, ha⟩ := exists_dpow_eq_mul hI hIx hn
     have hstep : ∀ k : ℕ, b ^ k * (f x * f a) = c ^ k * (f x * f a) := fun k ↦ by
       induction k with
       | zero => simp
@@ -159,8 +174,8 @@ private theorem principalDpow_mul (hI : DividedPowers I) (f : A →+* B)
     {x : A} (hIx : I = Ideal.span {x}) (b : B) (n : ℕ) :
     principalDpow hI f hIx n (b * f x) = b ^ n * f (hI.dpow n x) := by
   classical
-  have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
-  have hz : b * f x ∈ I.map f := (I.map f).mul_mem_left b (Ideal.mem_map_of_mem f hx)
+  have hz : b * f x ∈ I.map f :=
+    (I.map f).mul_mem_left b (Ideal.mem_map_of_mem f (mem_of_eq_span_singleton hIx))
   simp only [principalDpow, dite_eq_left hz]
   have hspec := (exists_mul_map_of_mem_span_singleton f hIx hz).choose_spec
   exact pow_mul_map_dpow_eq_of_mul_eq hI f hIx hspec.symm n
@@ -175,39 +190,35 @@ noncomputable def mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
     classical
     simp [principalDpow, hz]
   dpow_zero {z} hz := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
-    rw [principalDpow_mul, pow_zero, one_mul, hI.dpow_zero hx, map_one]
+    rw [principalDpow_mul, pow_zero, one_mul, hI.dpow_zero (mem_of_eq_span_singleton hIx), map_one]
   dpow_one {z} hz := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
-    rw [principalDpow_mul, pow_one, hI.dpow_one hx]
+    rw [principalDpow_mul, pow_one, hI.dpow_one (mem_of_eq_span_singleton hIx)]
   dpow_mem {n z} hn hz := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
     rw [principalDpow_mul]
-    exact (I.map f).mul_mem_left _ (Ideal.mem_map_of_mem f (hI.dpow_mem hn hx))
+    exact (I.map f).mul_mem_left _
+      (Ideal.mem_map_of_mem f (hI.dpow_mem hn (mem_of_eq_span_singleton hIx)))
   dpow_add {n z₁ z₂} hz₁ hz₂ := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨b₁, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz₁
     obtain ⟨b₂, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz₂
-    rw [← add_mul, principalDpow_mul, add_pow_mul_map_dpow hI f b₁ b₂ hx n]
+    rw [← add_mul, principalDpow_mul,
+      add_pow_mul_map_dpow hI f b₁ b₂ (mem_of_eq_span_singleton hIx) n]
     refine sum_congr rfl fun k _ ↦ ?_
     rw [principalDpow_mul, principalDpow_mul]
   dpow_mul {n a z} hz := by
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
     rw [← mul_assoc, principalDpow_mul, principalDpow_mul, mul_pow, mul_assoc]
   mul_dpow {m n z} hz := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
     rw [principalDpow_mul, principalDpow_mul, principalDpow_mul,
-      mul_mul_mul_comm, ← pow_add, ← map_mul, hI.mul_dpow hx, map_mul, map_natCast]
+      mul_mul_mul_comm, ← pow_add, ← map_mul, hI.mul_dpow (mem_of_eq_span_singleton hIx),
+      map_mul, map_natCast]
     ring
   dpow_comp {m n z} hn hz := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
-    have hmem : hI.dpow n x ∈ Ideal.span {x} := hIx ▸ hI.dpow_mem hn hx
-    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.mp hmem
+    obtain ⟨a, ha⟩ := exists_dpow_eq_mul hI hIx hn
     have hinner : principalDpow hI f hIx n (b * f x) = (b ^ n * f a) * f x := by
       rw [principalDpow_mul, ha, map_mul]
       ring
@@ -220,9 +231,9 @@ noncomputable def mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
           simp only [map_mul, map_pow]
           ring
       _ = b ^ (m * n) * f (hI.dpow m (hI.dpow n x)) := by
-          rw [← hI.dpow_mul hx, mul_comm a x, ← ha]
+          rw [← hI.dpow_mul (mem_of_eq_span_singleton hIx), mul_comm a x, ← ha]
       _ = (Nat.uniformBell m n : B) * (b ^ (m * n) * f (hI.dpow (m * n) x)) := by
-          rw [hI.dpow_comp hn hx]
+          rw [hI.dpow_comp hn (mem_of_eq_span_singleton hIx)]
           simp only [map_mul, map_natCast]
           ring
       _ = (Nat.uniformBell m n : B) * principalDpow hI f hIx (m * n) (b * f x) := by
@@ -242,9 +253,9 @@ theorem isDPMorphism_mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
     IsDPMorphism hI (hI.mapOfSpanSingleton f hIx) f where
   ideal_comp := le_rfl
   dpow_comp {n} a ha := by
-    have hx : x ∈ I := hIx ▸ Ideal.subset_span rfl
     obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton.mp (hIx ▸ ha)
-    rw [mul_comm x r, map_mul, mapOfSpanSingleton_dpow_mul, hI.dpow_mul hx, map_mul, map_pow]
+    rw [mul_comm x r, map_mul, mapOfSpanSingleton_dpow_mul,
+      hI.dpow_mul (mem_of_eq_span_singleton hIx), map_mul, map_pow]
 
 /-- On `f a` with `a ∈ I`, `mapOfSpanSingleton` agrees with `hI`. -/
 theorem mapOfSpanSingleton_dpow_map (hI : DividedPowers I) (f : A →+* B)
@@ -701,27 +712,16 @@ theorem isDPMorphism_mapOfFlat_iff [Module.Flat A B] {C : Type*} [CommSemiring C
 
 /-- Transitivity of flat extension for a tower of flat algebras `A → B → C`. -/
 theorem mapOfFlat_comp_dpow {C : Type*} [CommRing C] [Algebra B C] [Algebra A C]
-    [IsScalarTower A B C] [Module.Flat A B] [Module.Flat B C]
+    [IsScalarTower A B C] [Module.Flat A B] [Module.Flat B C] [Module.Flat A C]
     (hI : DividedPowers I) (n : ℕ) (c : C) :
-    have : Module.Flat A C := Module.Flat.trans A B C
     ((hI.mapOfFlat B).mapOfFlat C).dpow n c = (hI.mapOfFlat C).dpow n c := by
-  have : Module.Flat A C := Module.Flat.trans A B C
   have hId : (I.map (algebraMap A B)).map (algebraMap B C) = I.map (algebraMap A C) := by
     rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq A B C]
   have hcomp : IsDPMorphism hI ((hI.mapOfFlat B).mapOfFlat C) (algebraMap A C) := by
     rw [IsScalarTower.algebraMap_eq A B C]
     exact (isDPMorphism_mapOfFlat (hI.mapOfFlat B)).comp _ (isDPMorphism_mapOfFlat hI)
-  have hcomp' : IsDPMorphism hI (hId ▸ (hI.mapOfFlat B).mapOfFlat C) (algebraMap A C) := by
-    have aux : ∀ {J K : Ideal C} (h : J = K) (hJ : DividedPowers J),
-        IsDPMorphism hI hJ (algebraMap A C) → IsDPMorphism hI (h ▸ hJ) (algebraMap A C) := by
-      rintro J _ rfl hJ hD; exact hD
-    exact aux hId ((hI.mapOfFlat B).mapOfFlat C) hcomp
-  have heq : hId ▸ (hI.mapOfFlat B).mapOfFlat C = hI.mapOfFlat C :=
-    ext_of_isDPMorphism_map hI (algebraMap A C) hcomp' (isDPMorphism_mapOfFlat hI)
-  have hdpow : ∀ {J K : Ideal C} (h : J = K) (hJ : DividedPowers J),
-      (h ▸ hJ).dpow n c = hJ.dpow n c := by
-    rintro J _ rfl hJ; rfl
-  rw [← hdpow hId ((hI.mapOfFlat B).mapOfFlat C), heq]
+  exact congrFun (congrFun (dpow_eq_of_isDPMorphism_map hI (algebraMap A C) hId
+    hcomp (isDPMorphism_mapOfFlat hI)) n) c
 
 /-- When `algebraMap A B` comes from a ring equivalence `e : A ≃+* B`, `mapOfFlat` coincides with
 Mathlib's `DividedPowers.ofRingEquiv`. -/
