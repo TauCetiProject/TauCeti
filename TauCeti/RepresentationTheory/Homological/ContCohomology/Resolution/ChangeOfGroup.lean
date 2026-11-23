@@ -203,14 +203,14 @@ map of the compatible pair `(φ, f)` carries the class of a homogeneous cocycle 
 `G` to the class of `F z`. -/
 theorem map_gradedCohomologyClass {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
     {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
-    {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+    {hd : LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
     {M' : TopRep.{max v w} k H} {ℳ' : ℤ → Submodule k M'.V}
     {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
-    {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+    {hd' : LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
     (c : ResolutionContraction X (M.gradedCochainComplex ℳ hρ d hd hdd))
     (c' : ResolutionContraction Y (M'.gradedCochainComplex ℳ' hρ' d' hd' hdd'))
     (f : TopRep.res (φ : H →* G) X ⟶ Y) (F : TopRep.res (φ : H →* G) M ⟶ M')
-    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0)
+    (hF : LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0)
     (hFd : (resFunctor (φ : H →* G)).map d ≫ F = F ≫ d')
     (hι : ∀ x, F.hom (c.ι.hom x).val = (c'.ι.hom (f.hom x)).val)
     {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :

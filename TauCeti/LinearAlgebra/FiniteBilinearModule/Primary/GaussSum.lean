@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 
 /-!
 # Primary decomposition of the Gauss-sum invariant

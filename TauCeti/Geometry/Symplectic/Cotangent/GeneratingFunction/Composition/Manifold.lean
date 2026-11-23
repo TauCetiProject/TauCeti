@@ -115,7 +115,7 @@ omit [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless] [IsManifold I�
 /-- The matching equation of `TauCeti.CotangentBundle.generatingTarget_eq_generatingSource_iff`
 read in extended charts at arbitrary base points: where the coordinate expressions of `S` and `T`
 are differentiable, it holds on the manifolds exactly when it holds for these expressions. -/
-private theorem generatingTarget_eq_generatingSource_iff_extChartAt
+theorem generatingTarget_eq_generatingSource_iff_extChartAt
     (x₁ : M₁) (x₂ : M₂) (x₃ : M₃) {q : M₁} {a : M₂} {Q : M₃}
     (hq : q ∈ (extChartAt I₁ x₁).source) (ha : a ∈ (extChartAt I₂ x₂).source)
     (hQ : Q ∈ (extChartAt I₃ x₃).source)
@@ -230,7 +230,7 @@ omit [TopologicalSpace M₂] [TopologicalSpace M₃] [I₁.Boundaryless] [I₂.B
 /-- Conversely to `generatingSource_eq_of_extChartAt`, equal source covectors of `f` at `(q, c)`
 and of `g` at `(q, d)` give equal source covectors of coordinate expressions `f'` and `g'` whose
 slices through the image of `q` in the extended chart at `x₁` read the slices of `f` and `g`. -/
-private theorem cotangentGeneratingSource_eq_of_extChartAt (x₁ : M₁) {f : M₁ × M₃ → ℝ}
+theorem cotangentGeneratingSource_eq_of_extChartAt (x₁ : M₁) {f : M₁ × M₃ → ℝ}
     {g : M₁ × M₂ → ℝ} {f' : E₁ × E₃ → ℝ} {g' : E₁ × E₂ → ℝ} {q : M₁} {c : M₃} {d : M₂}
     {c' : E₃} {d' : E₂} (hq : q ∈ (extChartAt I₁ x₁).source)
     (hf : (fun q' ↦ f (q', c)) ∘ (extChartAt I₁ x₁).symm =ᶠ[𝓝 (extChartAt I₁ x₁ q)]
@@ -640,23 +640,12 @@ theorem generatedMap_eventuallyEq_comp {R : M₁ × M₃ → ℝ} {b : M₁ × M
   have hto₂ : Tendsto (fun y : M₁ × M₃ ↦ (b y, y.2)) (𝓝 (q, Q)) (𝓝 (a, Q)) := by
     simpa only [hb₀] using (hb.prodMk continuousAt_snd).tendsto
   -- On the source projection of `R`, both maps send `src R y` to `tgt R y`.
-  have hsrc : ∀ᶠ y in 𝓝 (q, Q),
-      generatedMap hR hMR (generatingSource I₁ R y) =
-        (generatedMap hT hMT ∘ generatedMap hS hMS) (generatingSource I₁ R y) := by
-    filter_upwards [hrel, eventually_generatedMap_generatingSource hR hMR,
-      hto₁.eventually (eventually_generatedMap_generatingSource hS hMS),
-      hto₂.eventually (eventually_generatedMap_generatingSource hT hMT)]
-      with y ⟨hmatch, hsrcR, htgtR⟩ hRy hSy hTy
-    rw [hRy, Function.comp_apply, hsrcR, hSy, hmatch, hTy, htgtR]
-  -- Every point near the source point is the source projection of a point near `(q, Q)`, its
-  -- image under the branch of `R`.
-  have hβ : Tendsto (generatingBranch hR hMR) (𝓝 (generatingSource I₁ R (q, Q))) (𝓝 (q, Q)) := by
-    have hc := ((generatingBranch hR hMR).mdifferentiableAt (by simp)
-      (mem_generatingBranch_source hR hMR)).continuousAt
-    simpa only [generatingBranch_generatingSource] using hc.tendsto
-  filter_upwards [hβ.eventually hsrc, eventually_generatingSource_generatingBranch hR hMR
-    (mem_generatingBranch_source hR hMR)] with z hz hz'
-  rwa [hz'] at hz
+  refine eventuallyEq_of_eventually_generatingSource hR hMR ?_
+  filter_upwards [hrel, eventually_generatedMap_generatingSource hR hMR,
+    hto₁.eventually (eventually_generatedMap_generatingSource hS hMS),
+    hto₂.eventually (eventually_generatedMap_generatingSource hT hMT)]
+    with y ⟨hmatch, hsrcR, htgtR⟩ hRy hSy hTy
+  rw [hRy, Function.comp_apply, hsrcR, hSy, hmatch, hTy, htgtR]
 
 end GeneratedMap
 

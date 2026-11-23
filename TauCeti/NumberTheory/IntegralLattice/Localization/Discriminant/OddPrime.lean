@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
-import Mathlib.RingTheory.Polynomial.RationalRoot
+import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import TauCeti.Algebra.Group.Even
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal

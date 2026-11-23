@@ -131,7 +131,7 @@ theorem rank_pi_zmod_pow {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] (k :
   classical
   have hp : p.Prime := Fact.out
   have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ hp.ne_zero⟩
-  rw [AddGroup.rank_eq_spanFinrank_top]
+  rw [AddGroup.rank_eq_spanFinrank]
   apply le_antisymm
   · -- Single-coordinate generators on `{i // k i ≠ 0}` span the product, as `ZMod 1` is trivial.
     let g : {i // k i ≠ 0} → ∀ i, ZMod (p ^ k i) := fun j ↦ Pi.single j.val 1

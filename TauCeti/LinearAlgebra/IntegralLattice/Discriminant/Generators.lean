@@ -48,7 +48,7 @@ theorem rank_primaryComponent_discriminantGroup_le_finrank (L : IntegralLattice 
     [L.IsNondegenerate] (n : ℕ) :
     AddGroup.rank (AddCommGroup.primaryComponent L.DiscriminantGroup n) ≤ Module.finrank ℤ L := by
   refine (AddCommGroup.rank_primaryComponent_le L.DiscriminantGroup n).trans ?_
-  rw [AddGroup.rank_eq_spanFinrank_top]
+  rw [AddGroup.rank_eq_spanFinrank]
   exact L.spanFinrank_discriminantGroup_le_finrank
 
 end TauCeti.IntegralLattice

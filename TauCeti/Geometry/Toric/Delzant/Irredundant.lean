@@ -36,6 +36,8 @@ all `1`.
 
 * `TauCeti.Toric.IsDelzant.facetPolyhedron_eq_iff`: two finite Delzant presentations in an
   integral lattice describe the same polytope exactly when they agree up to relabelling.
+* `TauCeti.Toric.eq_of_isDelzant_of_facetPolyhedron_eq`: two finite sets of pairs (inward
+  normal, support constant) whose Delzant presentations cut out the same polytope are equal.
 
 ## References
 
@@ -87,5 +89,27 @@ theorem facetPolyhedron_eq_iff [Finite ι] [Finite ι'] (hi : IsIntegralLattice 
     simp [(h j).1]
 
 end IsDelzant
+
+/-- **A Delzant polytope determines its facet set.** Two finite sets of pairs (inward normal,
+support constant) whose Delzant presentations cut out the same polytope are equal. -/
+theorem eq_of_isDelzant_of_facetPolyhedron_eq (hi : IsIntegralLattice i) {F F' : Set (N × ℝ)}
+    (hF : F.Finite) (hF' : F'.Finite)
+    (hΔ : IsDelzant i (fun j : F ↦ (j : N × ℝ).1) fun j : F ↦ (j : N × ℝ).2)
+    (hΔ' : IsDelzant i (fun j : F' ↦ (j : N × ℝ).1) fun j : F' ↦ (j : N × ℝ).2)
+    (h : facetPolyhedron i (fun j : F ↦ (j : N × ℝ).1) (fun j : F ↦ (j : N × ℝ).2) =
+      facetPolyhedron i (fun j : F' ↦ (j : N × ℝ).1) fun j : F' ↦ (j : N × ℝ).2) :
+    F = F' := by
+  have := hF.to_subtype
+  have := hF'.to_subtype
+  obtain ⟨e, he⟩ := (hΔ.facetPolyhedron_eq_iff hi hΔ').1 h
+  have hval (j : F) : (e j : N × ℝ) = j := Prod.ext (he j).1 (he j).2
+  ext p
+  refine ⟨fun hp ↦ ?_, fun hp ↦ ?_⟩
+  · have := (e ⟨p, hp⟩).property
+    rwa [hval] at this
+  · have h₁ := hval (e.symm ⟨p, hp⟩)
+    have h₂ := (e.symm ⟨p, hp⟩).property
+    rw [Equiv.apply_symm_apply] at h₁
+    rwa [← h₁] at h₂
 
 end TauCeti.Toric

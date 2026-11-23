@@ -8,13 +8,17 @@ module
 public import TauCeti.Algebra.Group.Generators
 public import TauCeti.Algebra.Group.Primary.Decomposition
 public import TauCeti.GroupTheory.Rank
+import TauCeti.Algebra.Group.Primary.Card
 
 /-!
 # The generator number of a finite abelian group
 
-The least number of generators of a finite abelian group is the maximum of the least
-numbers for its prime-primary components
-(`TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents`).
+The least number of generators of a finite abelian group, Nikulin's length `l(A)`, is the maximum
+of the least numbers for its prime-primary components. We use the canonical primary decomposition
+and state the result both for Mathlib's `Submodule.spanFinrank` over `ℤ`
+(`TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents`) and `AddGroup.rank`
+(`TauCeti.AddCommGroup.rank_eq_sup_primaryComponents`), which agree by
+`AddGroup.rank_eq_spanFinrank`.
 The maximum is taken over the prime divisors of the group order; for the trivial group
 this set is empty and the maximum is zero.
 
@@ -25,6 +29,7 @@ because its order is coprime to its index, so its `AddGroup.rank` is at most tha
 
 * `TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents`: the generator number of `A` is the
   supremum over its prime-primary components.
+* `TauCeti.AddCommGroup.rank_eq_sup_primaryComponents`: the same statement for `AddGroup.rank`.
 * `TauCeti.AddCommGroup.rank_primaryComponent_le`: the `n`-primary component has `AddGroup.rank`
   at most `AddGroup.rank A`.
 
@@ -59,11 +64,19 @@ theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finit
   rw [Submodule.map_top, LinearEquiv.range] at he
   exact he.trans (spanFinrank_pi_eq_sup_of_coprime_card M hcop)
 
+/-- **Nikulin's length is local.** The least number of generators `AddGroup.rank A` of a finite
+abelian group, Nikulin's `l(A)`, is the maximum of the least numbers of generators of its
+prime-primary components. -/
+theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
+    AddGroup.rank A = Finset.univ.sup (fun p : (Nat.card A).primeFactors ↦
+      AddGroup.rank (_root_.AddCommGroup.primaryComponent A p.val)) := by
+  simpa only [AddGroup.rank_eq_spanFinrank] using spanFinrank_eq_sup_primaryComponents A
+
 /-- For any natural number `n`, the `n`-primary component of a finite abelian group `A` has
 `AddGroup.rank` at most `AddGroup.rank A`. -/
 theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] (n : ℕ) :
     AddGroup.rank (_root_.AddCommGroup.primaryComponent A n) ≤ AddGroup.rank A := by
-  rw [AddGroup.rank_eq_spanFinrank_top, AddGroup.rank_eq_spanFinrank_top]
+  rw [AddGroup.rank_eq_spanFinrank, AddGroup.rank_eq_spanFinrank]
   set P := _root_.AddCommGroup.primaryComponent A n
   have hcop : (Nat.card P).Coprime P.index :=
     Nat.coprime_of_dvd fun p hp hpP hpI ↦ hp.not_dvd_one <|

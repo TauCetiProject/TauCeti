@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import Mathlib.Tactic.FunProp
 import Mathlib.Tactic.NormNum
 
