@@ -18,7 +18,8 @@ The decay profile `exp (-c (t - R))`, normalised to equal `1` at `t = R`, is the
 estimates past a radius `R` are converted into bounds of the form `K exp (-c t)`. Conversely, a
 bound `K exp (-c ‖x‖)` outside a compact set extends to the whole space for a continuous
 function, after enlarging the constant. The analogous statement on a closed forward ray absorbs
-an initial compact time interval into the constant.
+an initial compact time interval into the constant. Squaring the profile doubles its rate, which
+turns decay bounds on two factors into a decay bound on a quadratic expression in them.
 
 For a positive rate `c` the profile `exp (-c ‖x‖)` tends to zero at infinity, and a faster profile
 is `O` of a slower one, so a decay estimate at one rate gives one at every slower rate.
@@ -26,6 +27,7 @@ is `O` of a slower one, so a decay estimate at one rate gives one at every slowe
 ## Main declarations
 
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
+* `TauCeti.exp_neg_half_mul_sq`: `exp (-(c / 2) t) ^ 2 = exp (-c t)`.
 * `TauCeti.tendsto_exp_neg_mul_norm_cocompact`: for `c > 0`, `exp (-c ‖x‖) → 0` at infinity.
 * `TauCeti.nonpos_of_forall_le_mul_exp`: a value at most `M exp (-b ρ)` for every `ρ`, with
   `b > 0`, is nonpositive.
@@ -47,6 +49,12 @@ namespace TauCeti
 theorem exp_neg_mul_sub (c t R : ℝ) :
     Real.exp (-(c * (t - R))) = Real.exp (c * R) * Real.exp (-(c * t)) := by
   rw [← Real.exp_add]
+  ring_nf
+
+/-- Squaring an exponential profile doubles its rate: `exp (-(c / 2) t) ^ 2 = exp (-c t)`. -/
+theorem exp_neg_half_mul_sq (c t : ℝ) :
+    Real.exp (-(c / 2 * t)) ^ 2 = Real.exp (-(c * t)) := by
+  rw [← Real.exp_natCast_mul]
   ring_nf
 
 open Filter Topology in

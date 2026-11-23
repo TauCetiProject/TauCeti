@@ -13,7 +13,8 @@ public import Mathlib.Topology.Algebra.ContinuousAffineMap
 
 A nonempty cut of a closed convex set by continuous strict affine inequalities
 has closure equal to the corresponding weak cut. The inequalities may form an
-infinite family. This computes closures of locally closed polyhedra.
+infinite family. This computes closures of locally closed polyhedra. The coordinate half-space
+`Σ_i s_i < c` of `β^ι` is convex (`convex_setOf_sum_lt`).
 
 Adapted from `Mei/Analysis/Convex/Halfspace.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -48,3 +49,10 @@ theorem Convex.closure_inter_setOf_forall_neg {V ι : Type*} [AddCommGroup V] [M
       exact add_neg_of_nonpos_of_neg (mul_nonpos_of_nonneg_of_nonpos ha.le (hxg k))
         (mul_neg_of_pos_of_neg hb (hpg k))
     exact closure_mono hs (segment_subset_closure_openSegment (left_mem_segment ℝ x p))
+
+/-- The coordinate half-space `Σ_i s_i < c` of `β^ι` is convex. -/
+theorem convex_setOf_sum_lt {𝕜 β ι : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [AddCommMonoid β]
+    [PartialOrder β] [IsOrderedCancelAddMonoid β] [Module 𝕜 β] [PosSMulStrictMono 𝕜 β]
+    [Fintype ι] (c : β) : Convex 𝕜 {s : ι → β | ∑ i, s i < c} :=
+  convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
+    fun a s ↦ by simp [Finset.smul_sum]⟩ c

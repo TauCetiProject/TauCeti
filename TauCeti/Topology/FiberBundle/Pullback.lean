@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Defs
+public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.FiberBundle.Constructions
 
 /-!
 # Pullbacks of fibre bundles
 
-Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
+Five facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
 `f x`, needed to pull back bundles with extra structure on their fibres or on their atlas.
 
 * The fibres of `f *ᵖ E` carry the scalar operations and monoid actions on the fibres of `E`
@@ -29,6 +30,12 @@ Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is t
   (`Bundle.Pullback.totalSpace_ext`).
 * A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
   the total space of `E` are (`Bundle.Pullback.continuous_iff`).
+* The canonical lift is the base change of `f` along the projection of `E`, so it inherits
+  openness from `f` (`Bundle.Pullback.isOpenMap_lift`). If `f` is the quotient map of a covering
+  action of a group `G` and `G` acts on the total space of `f *ᵖ E` over its action on the base,
+  fixing the lifts of points, then the lift is the quotient map of this action
+  (`Bundle.Pullback.isQuotientCoveringMap_lift`). For the orientation double cover this makes the
+  total space of the bundle pulled back to the cover a double cover of the original total space.
 -/
 
 public section
@@ -98,6 +105,74 @@ theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' 
     {g : Z → TotalSpace F (f *ᵖ E)} :
     Continuous g ↔ Continuous (fun z ↦ (g z).proj) ∧ Continuous (fun z ↦ Pullback.lift f (g z)) :=
   (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.trans continuous_prodMk
+
+omit [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)] in
+/-- The canonical lift sends the points of the total space of `f *ᵖ E` over `U` whose lift lies in
+`V` onto the points of `V` over `f '' U`. -/
+theorem Bundle.Pullback.image_lift_inter (f : B' → B) (U : Set B') (V : Set (TotalSpace F E)) :
+    Pullback.lift f '' (π F (f *ᵖ E) ⁻¹' U ∩ Pullback.lift f ⁻¹' V) =
+      V ∩ π F E ⁻¹' (f '' U) := by
+  ext w
+  refine ⟨?_, ?_⟩
+  · rintro ⟨z, ⟨hzU, hzV⟩, rfl⟩
+    exact ⟨hzV, z.proj, hzU, rfl⟩
+  · obtain ⟨b, v⟩ := w
+    rintro ⟨hwV, x, hxU, rfl⟩
+    exact ⟨⟨x, v⟩, ⟨hxU, hwV⟩, rfl⟩
+
+/-- If `f` is an open map and the projection `π F E` is continuous, the canonical lift
+`Pullback.lift f` is an open map: it is the base change of `f` along the projection. -/
+theorem Bundle.Pullback.isOpenMap_lift {f : B' → B} (hf : IsOpenMap f) (hπ : Continuous (π F E)) :
+    IsOpenMap (Pullback.lift (F := F) (E := E) f) := by
+  refine fun O hO ↦ isOpen_iff_mem_nhds.2 ?_
+  rintro _ ⟨z, hz, rfl⟩
+  -- A basic neighbourhood of `z` inside `O`: the points over `U` whose lift lies in `V`.
+  have hO' := hO.mem_nhds hz
+  rw [(inducing_pullbackTotalSpaceEmbedding F E f).nhds_eq_comap, nhds_prod_eq] at hO'
+  obtain ⟨t, ht, htO⟩ := hO'
+  obtain ⟨U, hU, V, hV, hUV⟩ := Filter.mem_prod_iff.1 ht
+  obtain ⟨U', hU'U, hU', hzU'⟩ := mem_nhds_iff.1 hU
+  obtain ⟨V', hV'V, hV', hzV'⟩ := mem_nhds_iff.1 hV
+  refine Filter.mem_of_superset ((hV'.inter ((hf U' hU').preimage hπ)).mem_nhds
+    ⟨hzV', z.proj, hzU', rfl⟩) ?_
+  rw [← image_lift_inter]
+  exact image_mono fun y hy ↦ htO (hUV ⟨hU'U hy.1, hV'V hy.2⟩)
+
+/-- **The pullback of a quotient covering map.** Let `f : B' → B` present `B` as the quotient of
+`B'` by a group `G`, in the sense of Mathlib's `IsQuotientCoveringMap`, and let `G` act on the
+total space of the pullback `f *ᵖ E` over its action on `B'`, fixing the lift of each point to the
+total space of `E`. Then the canonical lift `Pullback.lift f` presents the total space of `E` as the
+quotient of the total space of `f *ᵖ E` by `G`. -/
+theorem Bundle.Pullback.isQuotientCoveringMap_lift {G : Type*} [Group G] [MulAction G B']
+    {f : B' → B} [MulAction G (TotalSpace F (f *ᵖ E))] (hf : IsQuotientCoveringMap f G)
+    (hπ : Continuous (π F E))
+    (hproj : ∀ (g : G) (z : TotalSpace F (f *ᵖ E)), (g • z).proj = g • z.proj)
+    (hlift : ∀ (g : G) (z : TotalSpace F (f *ᵖ E)), Pullback.lift f (g • z) = Pullback.lift f z) :
+    IsQuotientCoveringMap (Pullback.lift (F := F) (E := E) f) G := by
+  have : ContinuousConstSMul G B' := hf.toContinuousConstSMul
+  refine
+    { toIsQuotientMap := IsOpenQuotientMap.isQuotientMap
+        ⟨fun w ↦ ?_, Pullback.continuous_lift F E f,
+          isOpenMap_lift hf.isOpenQuotientMap.isOpenMap hπ⟩
+      continuous_const_smul := fun g ↦ continuous_iff.2 ⟨?_, ?_⟩
+      apply_eq_iff_mem_orbit := fun {z₁ z₂} ↦ ⟨fun h ↦ ?_, ?_⟩
+      disjoint := fun z ↦ ?_ }
+  · rw [← mem_range, range_lift]
+    exact hf.surjective w.proj
+  · simp_rw [hproj]
+    exact (continuous_const_smul g).comp (Pullback.continuous_proj F E f)
+  · simp_rw [hlift]
+    exact Pullback.continuous_lift F E f
+  · obtain ⟨g, hg⟩ := hf.apply_eq_iff_mem_orbit.1 (congrArg (π F E) h)
+    exact ⟨g, totalSpace_ext ((hproj g z₂).trans hg) ((hlift g z₂).trans h.symm)⟩
+  · rintro ⟨g, rfl⟩
+    exact hlift g z₂
+  · -- The points over a neighbourhood of `z.proj` with pairwise disjoint translates.
+    obtain ⟨U, hU, hUd⟩ := hf.disjoint z.proj
+    refine ⟨π F (f *ᵖ E) ⁻¹' U, (Pullback.continuous_proj F E f).continuousAt.preimage_mem_nhds hU,
+      fun g ⟨_, ⟨y, hy, rfl⟩, hy'⟩ ↦ hUd g ⟨_, ⟨y.proj, hy, rfl⟩, ?_⟩⟩
+    rw [mem_preimage, hproj] at hy'
+    exact hy'
 
 /-- If `f` is a topological inducing map and the projection `π F E` is continuous, then
 `Pullback.lift f` is a topological inducing map. -/

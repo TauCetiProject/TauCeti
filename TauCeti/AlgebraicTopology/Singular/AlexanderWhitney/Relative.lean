@@ -23,6 +23,9 @@ cap products are taken.
 * `TopPair.alexanderWhitneyDiagonal`: the relative Alexander–Whitney diagonal, characterized by
   `TopPair.singularChainComplexπ_alexanderWhitneyDiagonal`.
 * `TopPair.alexanderWhitneyDiagonal_naturality`: it is natural in maps of pairs.
+
+* `TopPair.alexanderWhitneyDiagonal_coefficient_naturality`: the coefficient square descends through
+  the native quotient map to relative chains.
 -/
 
 public section
@@ -99,6 +102,72 @@ lemma alexanderWhitneyDiagonal_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (u
       (singularChainComplexπ_alexanderWhitneyDiagonal_assoc P u _).symm
   exact (congrArg (· ⊗ₘ _) (singularChainComplexπ_pair_naturality f R)).trans
     (whiskerRight_comp_tensorHom _ _ _).symm
+
+section Coefficients
+
+variable {R' S' T' : C}
+
+/-- If `c ≫ u = u' ≫ (a ⊗ b)`, the relative Alexander–Whitney diagonals commute with the
+chain coefficient maps of `a`, `b` and `c`. -/
+theorem alexanderWhitneyDiagonal_coefficient_naturality (P : TopPair.{w})
+    (u : T ⟶ R ⊗ S) (u' : T' ⟶ R' ⊗ S')
+    (a : R' ⟶ R) (b : S' ⟶ S) (c : T' ⟶ T)
+    (hu : c ≫ u = u' ≫ (a ⊗ₘ b)) :
+    ((SSetPair.chainComplexFunctor C).map c).app (toSSetPair.obj P) ≫
+        P.alexanderWhitneyDiagonal u =
+      P.alexanderWhitneyDiagonal u' ≫ HomologicalComplex.tensorHom
+        (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P))
+        (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)) := by
+  have hc := P.singularChainComplexπ_coefficient_naturality c
+  have hr := P.singularChainComplexπ_coefficient_naturality a
+  rw [TauCeti.singularChainComplexFunctor_map_app] at hc hr
+  have ht :
+      ((((SSet.chainComplexFunctor C).map a).app (TopCat.toSSet.obj P.fst)) ⊗ₘ
+          (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst))) ≫
+          (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) =
+        (P.singularChainComplexπ R' ▷ (TopCat.toSSet.obj P.fst).chainComplex S') ≫
+          ((((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P)) ⊗ₘ
+            (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst))) := by
+    have hcoeff := congrArg (· ⊗ₘ (((SSet.chainComplexFunctor C).map b).app
+      (TopCat.toSSet.obj P.fst))) hr
+    have hwhisker := whiskerRight_comp_tensorHom (P.singularChainComplexπ R')
+      (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P))
+      (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst))
+    exact (tensorHom_comp_whiskerRight _ _ _).trans hcoeff |>.trans hwhisker.symm
+  -- Native chain aliases obstruct rw/reassoc matching; compose typed associativity equations.
+  apply (cancel_epi (P.singularChainComplexπ T')).mp
+  calc
+    _ = (((SSet.chainComplexFunctor C).map c).app (TopCat.toSSet.obj P.fst)) ≫
+        P.singularChainComplexπ T ≫ P.alexanderWhitneyDiagonal u := by
+        have hmap := (hc.symm =≫ P.alexanderWhitneyDiagonal u).trans (Category.assoc _ _ _)
+        exact (Category.assoc _ _ _).symm.trans hmap
+    _ = (((SSet.chainComplexFunctor C).map c).app (TopCat.toSSet.obj P.fst)) ≫
+        P.fst.alexanderWhitneyDiagonal u ≫
+          (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) :=
+      congrArg (_ ≫ ·) (singularChainComplexπ_alexanderWhitneyDiagonal P u)
+    _ = P.fst.alexanderWhitneyDiagonal u' ≫
+        ((((SSet.chainComplexFunctor C).map a).app (TopCat.toSSet.obj P.fst)) ⊗ₘ
+          (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst))) ≫
+          (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S) := by
+        have hmap := (TopCat.alexanderWhitneyDiagonal_coefficient_naturality
+          P.fst u u' a b c hu =≫
+            (P.singularChainComplexπ R ▷ (TopCat.toSSet.obj P.fst).chainComplex S)).trans
+              (Category.assoc _ _ _)
+        exact (Category.assoc _ _ _).symm.trans hmap
+    _ = P.fst.alexanderWhitneyDiagonal u' ≫
+        (P.singularChainComplexπ R' ▷ (TopCat.toSSet.obj P.fst).chainComplex S') ≫
+          ((((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P)) ⊗ₘ
+            (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst))) :=
+      congrArg (_ ≫ ·) ht
+    _ = _ := by
+      have hmap := ((singularChainComplexπ_alexanderWhitneyDiagonal P u').symm =≫
+        (HomologicalComplex.tensorHom
+          (((SSetPair.chainComplexFunctor C).map a).app (toSSetPair.obj P))
+          (((SSet.chainComplexFunctor C).map b).app (TopCat.toSSet.obj P.fst)))).trans
+            (Category.assoc _ _ _)
+      exact (Category.assoc _ _ _).symm.trans hmap
+
+end Coefficients
 
 end Chain
 
