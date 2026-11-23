@@ -1,0 +1,400 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RepresentationTheory.Stabilizer
+public import TauCeti.Algebra.Lie.Coadjoint
+public import TauCeti.Geometry.Lie.InvariantVectorField.Distribution
+public import TauCeti.Geometry.Lie.LeftInvariantForm
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LeftTrivialization
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Pullback
+
+import TauCeti.Geometry.Lie.Functor
+
+/-!
+# The Kirillov form of a coadjoint vector on its Lie group
+
+Let `G` be a real Lie group with finite-dimensional model, Lie algebra `𝔤 = GroupLieAlgebra I G`,
+and fix `ν ∈ 𝔤*`. The coadjoint orbit through `ν` is the image of the orbit map
+`g ↦ Ad*_g ν`, and its Kirillov–Kostant–Souriau form `ω_ν(ξ_O, η_O) = ν ⁅ξ, η⁆` pulls back
+along this map to a two-form on `G` itself. This file constructs that two-form directly on `G`,
+together with the properties needed to descend it to `G ⧸ G_ν`, without a manifold structure on
+the orbit.
+
+* `Module.Dual.leftInvariantCovector ν : G → T*G` is the section `g ↦ g • ν` of the cotangent
+  bundle obtained by moving the covector `ν` at the identity with the cotangent lift of left
+  multiplication. Its value at `g` is `ν ∘ d(L_{g⁻¹})_g`.
+* `Module.Dual.leftInvariantForm ν` is the corresponding smooth one-form `α_ν`, the pullback of
+  the Liouville form along this section. It is the left-invariant one-form with value `ν` at the
+  identity: `α_ν(X^L_ξ) = ν ξ` for the left-invariant vector field `X^L_ξ` of `ξ`. It is the
+  smooth left-invariant extension `TauCeti.leftInvariantSmoothForm` of `ν`
+  (`Module.Dual.leftInvariantForm_eq_leftInvariantSmoothForm`).
+* `Module.Dual.leftInvariantKirillovForm ν` is the two-form `σ_ν = -dα_ν`, which is also the
+  pullback of the canonical symplectic form `ω = -dλ` of `T*G` along the section.
+
+By the invariant formula for the exterior derivative and the bracket of left-invariant vector
+fields, `σ_ν(X^L_ξ, X^L_η) = ν ⁅ξ, η⁆` everywhere. So `σ_ν` is the left-invariant extension of the
+Kirillov form `ν ⁅ξ, η⁆` of `ν` (`Module.Dual.kirillovForm`), and the properties of the form on
+the coadjoint orbit appear on `G` as follows.
+
+* **Closedness.** `σ_ν` is exact, hence closed. On the orbit this is the closedness of the KKS
+  form, since pullback along a surjective submersion detects closedness; the Jacobi identity is
+  built into the exterior derivative of `α_ν`.
+* **Kernel.** The kernel of `σ_ν` at `g` is the left translate `d(L_g)(𝔤_ν)` of the coadjoint
+  stabilizer `𝔤_ν` (`Module.Dual.ker_bilinFormAt_leftInvariantKirillovForm`), which is the
+  tangent space at `g` of the coset `g G_ν`, the vertical space of `G → G ⧸ G_ν`.
+* **Invariance.** Left translations preserve `σ_ν`, and right translation by `h` carries
+  `σ_ν` to `σ_{Ad*_h ν}`; in particular right translations by elements of the stabilizer `G_ν`
+  preserve `σ_ν`.
+* **Moment map.** For the action of `G` on itself by left multiplication, the orbit map
+  `g ↦ Ad*_g ν` is a coadjoint-equivariant moment map of `σ_ν`
+  (`Module.Dual.isEquivariantMomentMap_leftInvariantKirillovForm`). It is the composite of the
+  section with the cotangent moment map of the lifted action; on the orbit it is the statement
+  that the inclusion of the orbit into `𝔤*` is a moment map for the KKS form.
+* **Naturality.** The forms depend additively on `ν` (`Module.Dual.leftInvariantForm_add`,
+  `Module.Dual.leftInvariantKirillovForm_add`), and a smooth homomorphism `φ : K → G` pulls `α_ν`
+  and `σ_ν` back to `α_{ν ∘ dφ}` and `σ_{ν ∘ dφ}` (`Module.Dual.mpullback_leftInvariantForm`,
+  `Module.Dual.mpullback_leftInvariantKirillovForm`). Applied to the projections of a product
+  `G × K`, this splits the Kirillov form of a product group into the forms of its factors.
+
+## References
+
+* A. A. Kirillov, *Lectures on the Orbit Method*, Graduate Studies in Mathematics 64, AMS, 2004,
+  Section 1.2.
+* J. E. Marsden, T. S. Ratiu, *Introduction to Mechanics and Symmetry*, 2nd ed., Texts in Applied
+  Mathematics 17, Springer, 1999, Chapter 14 (the KKS form and its pullback to the group).
+* A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
+  Springer, 2001, Section 22.
+-/
+
+public section
+
+open Bundle TauCeti TauCeti.Lie
+open scoped Manifold ContDiff
+
+noncomputable section
+
+namespace Module.Dual
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  (ν : Module.Dual ℝ (GroupLieAlgebra I G))
+
+/-! ### The left-invariant covector field -/
+
+/-- The **left-invariant covector field** of `ν ∈ 𝔤*`: the section of the cotangent bundle of `G`
+whose value at `g` is the image `g • ν` of the covector `ν` at the identity under the cotangent
+lift of left multiplication, the covector `ν ∘ d(L_{g⁻¹})_g` at `g`. It is the slice `G × {ν}` of
+the left trivialization `G × 𝔤* ≃ T*G`. -/
+def leftInvariantCovector (g : G) : CotangentBundle I G :=
+  CotangentBundle.leftTrivialization I G
+    (g, LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν))
+
+/-- The left-invariant covector field is a section of the cotangent bundle. -/
+@[simp]
+theorem proj_leftInvariantCovector (g : G) : (ν.leftInvariantCovector g).proj = g :=
+  CotangentBundle.proj_leftTrivialization _
+
+/-- The value at `g` of the left-invariant covector field of `ν` is `ν ∘ d(L_{g⁻¹})_g`. -/
+theorem leftInvariantCovector_snd_apply (g : G) (v : TangentSpace I g) :
+    (ν.leftInvariantCovector g).snd v = ν (mfderiv I I (g⁻¹ * ·) g v) :=
+  -- `ν` read as a continuous functional on the model space has the values of `ν`, which is
+  -- definitional because `GroupLieAlgebra I G` is an abbreviation for the tangent space at `1`.
+  CotangentBundle.leftTrivialization_snd_apply _ v
+
+/-- The left-invariant covector field is equivariant for left multiplication on `G` and the
+cotangent-lifted action on `T*G`. -/
+theorem leftInvariantCovector_mul (g h : G) :
+    ν.leftInvariantCovector (g * h) = g • ν.leftInvariantCovector h :=
+  CotangentBundle.leftTrivialization_mul g h _
+
+/-- The left-invariant covector field is a smooth section of the cotangent bundle. -/
+theorem contMDiff_leftInvariantCovector :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ν.leftInvariantCovector :=
+  (CotangentBundle.leftTrivialization I G).contMDiff.comp (contMDiff_id.prodMk contMDiff_const)
+
+/-- The cotangent moment map of left multiplication sends the left-invariant covector field of `ν`
+to the coadjoint orbit map: `μ(g • ν) = Ad*_g ν`. -/
+@[simp]
+theorem momentMap_leftInvariantCovector (g : G) :
+    CotangentBundle.momentMap I G (ν.leftInvariantCovector g) =
+      coadjointRepresentation ℝ I G g ν := by
+  rw [leftInvariantCovector, CotangentBundle.momentMap_leftTrivialization,
+    LinearMap.coe_toContinuousLinearMap]
+
+/-! ### The left-invariant one-form -/
+
+/-- The **left-invariant one-form** `α_ν` of `ν ∈ 𝔤*`, with value `ν` at the identity: the pullback
+of the Liouville form of `T*G` along the left-invariant covector field of `ν`. -/
+def leftInvariantForm : SmoothForm I G ℝ 1 :=
+  SmoothForm.mpullback ν.leftInvariantCovector ν.contMDiff_leftInvariantCovector
+    (CotangentBundle.liouvilleForm I G)
+
+/-- The left-invariant one-form of `ν` evaluates a tangent vector `v` at `g` to
+`ν (d(L_{g⁻¹})_g v)`. -/
+theorem leftInvariantForm_apply (g : G) (v : Fin 1 → TangentSpace I g) :
+    ν.leftInvariantForm.val g v = ν (mfderiv I I (g⁻¹ * ·) g (v 0)) := by
+  rw [leftInvariantForm, SmoothForm.coe_mpullback,
+    CotangentBundle.mpullback_liouvilleForm_apply_of_proj_comp_eq (g := id)
+      (fun y ↦ ν.proj_leftInvariantCovector y)
+      (ν.contMDiff_leftInvariantCovector.mdifferentiableAt (by simp)),
+    mfderiv_id, ContinuousLinearMap.id_apply, leftInvariantCovector_snd_apply]
+
+/-- The left-invariant one-form of `ν` is the smooth left-invariant extension
+`TauCeti.leftInvariantSmoothForm` of `ν`, viewed as a one-form on the Lie algebra. -/
+theorem leftInvariantForm_eq_leftInvariantSmoothForm :
+    ν.leftInvariantForm = TauCeti.leftInvariantSmoothForm I G ℝ 1
+      (AlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ 0 ν).toContinuousAlternatingMap := by
+  apply Subtype.ext
+  funext g
+  ext v
+  rw [Module.Dual.leftInvariantForm_apply, TauCeti.leftInvariantSmoothForm_val,
+    TauCeti.leftInvariantForm_apply, AlternatingMap.coe_toContinuousAlternatingMap]
+  -- `ν` is applied to the translate in `TangentSpace I (g⁻¹ * g)`, which is definitionally the Lie
+  -- algebra (both are the model space), so `AlternatingMap.ofSubsingleton_apply_apply` does not
+  -- rewrite syntactically.
+  rfl
+
+/-- The underlying form of the left-invariant one-form of `ν` is the left-invariant extension
+`TauCeti.leftInvariantForm` of `ν`, viewed as a one-form on the Lie algebra. -/
+theorem leftInvariantForm_val :
+    ν.leftInvariantForm.val = TauCeti.leftInvariantForm I G ℝ 1
+      (AlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ 0 ν).toContinuousAlternatingMap := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm, TauCeti.leftInvariantSmoothForm_val]
+
+/-- The left-invariant one-form of `ν` is constant, equal to `ν ξ`, on the left-invariant vector
+field of `ξ`. -/
+@[simp]
+theorem leftInvariantForm_apply_mulInvariantVectorField (ξ : GroupLieAlgebra I G) (g : G) :
+    ν.leftInvariantForm.val g ![mulInvariantVectorField ξ g] = ν ξ := by
+  have h : ![mulInvariantVectorField ξ g] = fun i ↦ mulInvariantVectorField (![ξ] i) g := by
+    ext i
+    fin_cases i
+    rfl
+  rw [leftInvariantForm_val, h, TauCeti.leftInvariantForm_apply_mulInvariantVectorField,
+    AlternatingMap.coe_toContinuousAlternatingMap, AlternatingMap.ofSubsingleton_apply_apply,
+    Matrix.cons_val_zero]
+
+/-- The left-invariant one-form is invariant under left translations. -/
+@[simp]
+theorem mpullback_mul_left_leftInvariantForm (h : G) :
+    SmoothForm.mpullback (h * ·) contMDiff_mul_left ν.leftInvariantForm = ν.leftInvariantForm := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm,
+    TauCeti.mpullback_mul_left_leftInvariantSmoothForm]
+
+/-- Right translation by `h` pulls the left-invariant one-form of `ν` back to that of the
+coadjoint translate `Ad*_h ν`. -/
+@[simp]
+theorem mpullback_mul_right_leftInvariantForm (h : G) :
+    SmoothForm.mpullback (· * h) contMDiff_mul_right ν.leftInvariantForm =
+      (coadjointRepresentation ℝ I G h ν).leftInvariantForm := by
+  apply Subtype.ext
+  funext g
+  ext v
+  obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (v 0)
+  rw [SmoothForm.coe_mpullback, TauCeti.mpullback_apply, leftInvariantForm_apply,
+    leftInvariantForm_apply, ← hξ, mfderiv_mul_right_mulInvariantVectorField,
+    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
+    coadjointRepresentation_apply]
+
+/-- The left-invariant one-form depends additively on the covector: `α_{ν + ν'} = α_ν + α_ν'`. -/
+theorem leftInvariantForm_add (ν' : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    (ν + ν').leftInvariantForm = ν.leftInvariantForm + ν'.leftInvariantForm := by
+  apply Subtype.ext
+  funext g
+  ext v
+  rw [SmoothForm.add_toRoughForm, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    leftInvariantForm_apply, leftInvariantForm_apply, leftInvariantForm_apply]
+  -- `LinearMap.add_apply`, up to reading the translate in `TangentSpace I (g⁻¹ * g)` as an element
+  -- of `GroupLieAlgebra I G`; both are the model space, but `rw` cannot see this.
+  rfl
+
+/-! ### The left-invariant Kirillov form -/
+
+/-- The **left-invariant Kirillov form** `σ_ν = -dα_ν` of `ν ∈ 𝔤*` on `G`, where `α_ν` is the
+left-invariant one-form of `ν`. It is the left-invariant two-form with value the Kirillov form
+`ν ⁅ξ, η⁆` at the identity (`Module.Dual.bilinFormAt_one_leftInvariantKirillovForm`), the pullback
+of the Kirillov–Kostant–Souriau form of the coadjoint orbit of `ν` along `g ↦ Ad*_g ν`. -/
+def leftInvariantKirillovForm : SmoothTwoForm I G :=
+  -mextDerivₗ I 1 ν.leftInvariantForm
+
+theorem leftInvariantKirillovForm_def :
+    ν.leftInvariantKirillovForm = -mextDerivₗ I 1 ν.leftInvariantForm :=
+  (rfl)
+
+/-- The left-invariant Kirillov form of `ν` is the pullback of the canonical symplectic form of
+`T*G` along the left-invariant covector field of `ν`. -/
+theorem leftInvariantKirillovForm_eq_mpullback_symplecticForm :
+    ν.leftInvariantKirillovForm = SmoothForm.mpullback ν.leftInvariantCovector
+      ν.contMDiff_leftInvariantCovector (CotangentBundle.symplecticForm I G) := by
+  rw [leftInvariantKirillovForm, leftInvariantForm, SmoothForm.mextDerivₗ_mpullback,
+    CotangentBundle.symplecticForm_eq_neg_mextDerivₗ, map_neg]
+
+/-- The left-invariant Kirillov form is closed. -/
+theorem isClosed_leftInvariantKirillovForm : ν.leftInvariantKirillovForm.IsClosed :=
+  (SmoothForm.isClosed_mextDerivₗ _).neg
+
+/-- The left-invariant Kirillov form of `ν` pairs tangent vectors `v` and `w` at `g` to
+`ν ⁅d(L_{g⁻¹})_g v, d(L_{g⁻¹})_g w⁆`, the Kirillov form of their translates to the identity. -/
+theorem bilinFormAt_leftInvariantKirillovForm_apply (g : G) (v w : TangentSpace I g) :
+    ν.leftInvariantKirillovForm.bilinFormAt g v w =
+      ν.kirillovForm (mfderiv I I (g⁻¹ * ·) g v) (mfderiv I I (g⁻¹ * ·) g w) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  set a : E →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (show E →ₗ[ℝ] ℝ from ν)
+  have hs : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ fun x : G ↦ (x, a) :=
+    contMDiff_id.prodMk contMDiff_const
+  -- `σ_ν` is the left-trivialized symplectic form of `T*G` restricted to the slice `G × {ν}`.
+  have hσ : ν.leftInvariantKirillovForm = SmoothForm.mpullback (fun x : G ↦ (x, a)) hs
+      (SmoothForm.mpullback (CotangentBundle.leftTrivialization I G)
+        (CotangentBundle.leftTrivialization I G).contMDiff
+        (CotangentBundle.symplecticForm I G)) := by
+    rw [SmoothForm.mpullback_mpullback]
+    exact ν.leftInvariantKirillovForm_eq_mpullback_symplecticForm
+  -- The slice has derivative `ContinuousLinearMap.inl`, i.e. `v ↦ (v, 0)`. The product tangent
+  -- fibre is only definitionally the pair of factor fibres, so `ContinuousLinearMap.inl_apply`
+  -- does not rewrite and the components are read off by `rfl`.
+  have hd₁ (u : TangentSpace I g) :
+      (mfderiv I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) g u).1 = u := by
+    rw [mfderiv_prod_left]
+    rfl
+  have hd₂ (u : TangentSpace I g) :
+      (mfderiv I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) g u).2 = 0 := by
+    rw [mfderiv_prod_left]
+    rfl
+  rw [SmoothForm.bilinFormAt_apply, hσ, SmoothForm.eval₂_mpullback]
+  refine (CotangentBundle.eval₂_mpullback_leftTrivialization_symplecticForm (g, a) _ _).trans ?_
+  rw [hd₁, hd₁, hd₂, hd₂]
+  -- The dual components of `(v, 0)` and `(w, 0)` vanish, and `a` is `ν` as a continuous functional.
+  -- Both are definitional, but the zero functional is applied to translates typed in tangent
+  -- spaces of `G`, which `ContinuousLinearMap.zero_apply` does not match.
+  change (0 : ℝ) - 0 + ν.kirillovForm (mfderiv I I (g⁻¹ * ·) g v) (mfderiv I I (g⁻¹ * ·) g w) = _
+  rw [sub_self, zero_add]
+
+/-- The left-invariant Kirillov form of `ν` pairs the left-invariant vector fields of `ξ` and `η`
+to the constant `ν ⁅ξ, η⁆`. -/
+theorem eval₂_leftInvariantKirillovForm_mulInvariantVectorField (ξ η : GroupLieAlgebra I G)
+    (g : G) :
+    ν.leftInvariantKirillovForm.eval₂ g (mulInvariantVectorField ξ g)
+      (mulInvariantVectorField η g) = ν ⁅ξ, η⁆ := by
+  rw [← SmoothForm.bilinFormAt_apply, bilinFormAt_leftInvariantKirillovForm_apply,
+    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
+    kirillovForm_apply]
+
+/-- At the identity the left-invariant Kirillov form of `ν` is the Kirillov form
+`ν ⁅ξ, η⁆`. -/
+@[simp]
+theorem bilinFormAt_one_leftInvariantKirillovForm :
+    ν.leftInvariantKirillovForm.bilinFormAt 1 = ν.kirillovForm := by
+  ext ξ η
+  rw [SmoothForm.bilinFormAt_apply, kirillovForm_apply,
+    ← ν.eval₂_leftInvariantKirillovForm_mulInvariantVectorField ξ η 1,
+    mulInvariantVectorField_one, mulInvariantVectorField_one]
+
+/-- **The kernel of the left-invariant Kirillov form** of `ν` at `g` is the left translate
+`d(L_g)(𝔤_ν)` of the coadjoint stabilizer `𝔤_ν` of `ν`, the tangent space of the coset `g G_ν`. -/
+theorem ker_bilinFormAt_leftInvariantKirillovForm (g : G) :
+    LinearMap.ker (ν.leftInvariantKirillovForm.bilinFormAt g) =
+      mulInvariantDistribution (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule g := by
+  ext v
+  rw [mem_mulInvariantDistribution_iff, ← ker_kirillovForm]
+  -- Unfold kernel membership on both sides. The translate lies in `TangentSpace I (g⁻¹ * g)`,
+  -- which is definitionally `GroupLieAlgebra I G` (both are the model space), but `rw` and `simp`
+  -- with `LinearMap.mem_ker` cannot see this through the membership instance, so it is retyped
+  -- by the ascription.
+  change ν.leftInvariantKirillovForm.bilinFormAt g v = 0 ↔
+    ν.kirillovForm (mfderiv I I (g⁻¹ * ·) g v : GroupLieAlgebra I G) = 0
+  simp only [LinearMap.ext_iff, bilinFormAt_leftInvariantKirillovForm_apply, LinearMap.zero_apply]
+  refine ⟨fun h η ↦ ?_, fun h w ↦ h _⟩
+  simpa only [mfderiv_inv_mul_mulInvariantVectorField] using h (mulInvariantVectorField η g)
+
+/-- The left-invariant Kirillov form depends additively on the covector:
+`σ_{ν + ν'} = σ_ν + σ_ν'`. -/
+theorem leftInvariantKirillovForm_add (ν' : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    (ν + ν').leftInvariantKirillovForm =
+      ν.leftInvariantKirillovForm + ν'.leftInvariantKirillovForm := by
+  rw [leftInvariantKirillovForm, leftInvariantKirillovForm, leftInvariantKirillovForm,
+    leftInvariantForm_add, map_add, neg_add]
+
+/-- The left-invariant Kirillov form is invariant under left translations. -/
+@[simp]
+theorem mpullback_mul_left_leftInvariantKirillovForm (h : G) :
+    SmoothForm.mpullback (h * ·) contMDiff_mul_left ν.leftInvariantKirillovForm =
+      ν.leftInvariantKirillovForm := by
+  rw [leftInvariantKirillovForm, map_neg, ← SmoothForm.mextDerivₗ_mpullback,
+    mpullback_mul_left_leftInvariantForm]
+
+/-- Right translation by `h` pulls the left-invariant Kirillov form of `ν` back to that of the
+coadjoint translate `Ad*_h ν`. -/
+@[simp]
+theorem mpullback_mul_right_leftInvariantKirillovForm (h : G) :
+    SmoothForm.mpullback (· * h) contMDiff_mul_right ν.leftInvariantKirillovForm =
+      (coadjointRepresentation ℝ I G h ν).leftInvariantKirillovForm := by
+  rw [leftInvariantKirillovForm, leftInvariantKirillovForm, map_neg,
+    ← SmoothForm.mextDerivₗ_mpullback, mpullback_mul_right_leftInvariantForm]
+
+/-- Right translations by elements of the coadjoint stabilizer `G_ν` preserve the left-invariant
+Kirillov form of `ν`. -/
+theorem mpullback_mul_right_leftInvariantKirillovForm_of_mem_stabilizer {h : G}
+    (hh : h ∈ Representation.stabilizer (coadjointRepresentation ℝ I G) ν) :
+    SmoothForm.mpullback (· * h) contMDiff_mul_right ν.leftInvariantKirillovForm =
+      ν.leftInvariantKirillovForm := by
+  rw [mpullback_mul_right_leftInvariantKirillovForm, Representation.mem_stabilizer.mp hh]
+
+/-- **The coadjoint orbit map is a moment map for the left-invariant Kirillov form.** For the action
+of `G` on itself by left multiplication, `g ↦ Ad*_g ν` is a coadjoint-equivariant moment map of
+the left-invariant Kirillov form of `ν`. -/
+theorem isEquivariantMomentMap_leftInvariantKirillovForm [T2Space G] [I.Boundaryless] :
+    ν.leftInvariantKirillovForm.IsEquivariantMomentMap
+      fun g : G ↦ coadjointRepresentation ℝ I G g ν := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  -- Pull the cotangent moment map of the lifted action back along the equivariant section.
+  have h := (CotangentBundle.isEquivariantMomentMap_momentMap (IG := I) (G := G) (I := I)
+    (M := G)).mpullback ν.contMDiff_leftInvariantCovector
+      (fun g y ↦ ν.leftInvariantCovector_mul g y)
+  rw [leftInvariantKirillovForm_eq_mpullback_symplecticForm]
+  convert h using 1
+  funext g
+  rw [Function.comp_apply, momentMap_leftInvariantCovector]
+
+/-! ### Naturality along homomorphisms -/
+
+section Hom
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {K : Type*} [TopologicalSpace K] [ChartedSpace H' K] [Group K] [LieGroup I' ∞ K]
+
+/-- **Naturality of the left-invariant one-form.** A smooth homomorphism `φ : K → G` pulls the
+left-invariant one-form of `ν` back to the left-invariant one-form of `ν ∘ dφ`. -/
+@[simp]
+theorem mpullback_leftInvariantForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantForm =
+      leftInvariantForm (ν ∘ₗ (φ.toMonoidHom.groupLieAlgebraMap I' I).toLinearMap) := by
+  rw [leftInvariantForm_eq_leftInvariantSmoothForm, leftInvariantForm_eq_leftInvariantSmoothForm,
+    TauCeti.mpullback_leftInvariantSmoothForm]
+  congr 1
+  ext v
+  simp
+
+/-- **Naturality of the left-invariant Kirillov form.** A smooth homomorphism `φ : K → G` pulls the
+left-invariant Kirillov form of `ν` back to the left-invariant Kirillov form of `ν ∘ dφ`. -/
+@[simp]
+theorem mpullback_leftInvariantKirillovForm (φ : ContMDiffMonoidMorphism I' I ∞ K G) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantKirillovForm =
+      leftInvariantKirillovForm (ν ∘ₗ (φ.toMonoidHom.groupLieAlgebraMap I' I).toLinearMap) := by
+  rw [leftInvariantKirillovForm, leftInvariantKirillovForm, map_neg,
+    ← SmoothForm.mextDerivₗ_mpullback, mpullback_leftInvariantForm]
+
+end Hom
+
+end Module.Dual

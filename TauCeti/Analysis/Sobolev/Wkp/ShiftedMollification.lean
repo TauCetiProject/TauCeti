@@ -174,16 +174,16 @@ private def shiftAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ (Omega : Set E)))
       ((mu.restrict (univ : Set E)).translateLp p h
         (normedBumpLp hp phi (mu.restrict univ)
-          (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _) f)))
+          (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _) f)))
 
 private theorem shiftAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (h : E)
     (f : Lp F p (mu.restrict Omega)) :
     shiftAverage hp phi h f =ᵐ[mu.restrict Omega] fun x => smoothField phi f (x + h) := by
-  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.measurableSet f
+  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.nullMeasurableSet f
   have hshift := (Measure.coeFn_translateLp (mu := mu.restrict (univ : Set E)) (p := p) h
     (normedBumpLp hp phi (mu.restrict univ)
-      (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _) f))).trans
+      (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _) f))).trans
     ((measurePreserving_add_right (mu.restrict (univ : Set E)) h).quasiMeasurePreserving.ae_eq_comp
       he)
   have hshift' := hshift.filter_mono
@@ -200,13 +200,13 @@ private theorem tendsto_shiftAverage {F : Type*} [NormedAddCommGroup F] [NormedS
     Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
       simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ (Omega : Set E)))
   let e : Lp F p (mu.restrict Omega) →ₗᵢ[ℝ] Lp F p (mu.restrict (univ : Set E)) :=
-    extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _)
+    extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _)
   have hlimit := (r.continuous.tendsto (e f)).comp
     (Measure.tendsto_translateLp_of_tendsto hp hh (tendsto_normedBumpLp hp hphi (e f)))
   have hre : r (e f) = f := by
     apply Lp.ext
     exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans
-      (coeFn_extendByZeroLpₗᵢ_restrict ℝ Omega.isOpen.measurableSet (subset_univ _) f)
+      (coeFn_extendByZeroLpₗᵢ_restrict ℝ Omega.isOpen.nullMeasurableSet (subset_univ _) f)
   rw [hre] at hlimit
   exact hlimit
 

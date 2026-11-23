@@ -315,13 +315,13 @@ theorem isVertexConnected_two_iff : G.IsVertexConnected 2 ↔
     have hsub : s.Subsingleton := Set.encard_le_one_iff_subsingleton.mp hsle
     intro u v
     by_cases hsempty : s = ∅
-    · obtain ⟨p⟩ := hconn.preconnected u.1 v.1
+    · obtain ⟨p⟩ := hconn.preconnected u.val v.val
       exact ⟨p.induce sᶜ fun _ _ ↦ by simp [hsempty]⟩
-    · obtain ⟨x, hxs⟩ := Set.nonempty_iff_ne_empty.mpr hsempty
-      have hu : u.1 ∉ s := u.2
-      have hv : v.1 ∉ s := v.2
+    · obtain ⟨x, hxs⟩ := Set.ne_empty_iff_nonempty.mp hsempty
+      have hu : u.val ∉ s := u.property
+      have hv : v.val ∉ s := v.property
       obtain ⟨p, hp⟩ :=
-        (hconn.preconnected u.1 v.1).exists_walk_notMem_support_of_not_isCutVertex (hcut x)
+        (hconn.preconnected u.val v.val).exists_walk_notMem_support_of_not_isCutVertex (hcut x)
           (fun hux ↦ hu (hux ▸ hxs)) (fun hvx ↦ hv (hvx ▸ hxs))
       exact ⟨p.induce sᶜ fun y hy hys ↦ hp (hsub hys hxs ▸ hy)⟩
 
@@ -347,8 +347,8 @@ theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k �
 `r.toSubgraph ≤ K` whose support stays in `s` are mutually reachable in `K.coe.induce s`. -/
 theorem Walk.reachable_induce_coe_of_mem_support {K : G.Subgraph} {s : Set K.verts}
     {a b : V} {r : G.Walk a b} (hrK : r.toSubgraph ≤ K)
-    (hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∈ s)
-    {p q : s} (hp : p.1.1 ∈ r.support) (hq : q.1.1 ∈ r.support) :
+    (hrs : ∀ z : K.verts, z.val ∈ r.support → z ∈ s)
+    {p q : s} (hp : p.val.val ∈ r.support) (hq : q.val.val ∈ r.support) :
     (K.coe.induce s).Reachable p q := by
   let rK := r.mapToSubgraph.map (Subgraph.inclusion hrK)
   have hsupp : rK.support.map Subtype.val = r.support := calc
@@ -358,7 +358,7 @@ theorem Walk.reachable_induce_coe_of_mem_support {K : G.Subgraph} {s : Set K.ver
     _ = r.mapToSubgraph.support.map r.toSubgraph.hom := by rw [List.map_map]; rfl
     _ = (r.mapToSubgraph.map r.toSubgraph.hom).support := (Walk.support_map _ _).symm
     _ = r.support := congrArg Walk.support r.map_mapToSubgraph_hom
-  have hmem : ∀ {z : K.verts}, z.1 ∈ r.support ↔ z ∈ rK.support := by
+  have hmem : ∀ {z : K.verts}, z.val ∈ r.support ↔ z ∈ rK.support := by
     intro z
     rw [← hsupp]
     exact List.mem_map_of_injective Subtype.val_injective
@@ -373,7 +373,7 @@ theorem Walk.reachable_induce_coe_of_mem_support {K : G.Subgraph} {s : Set K.ver
 `s`, then every vertex of `r` is reachable from `r`'s start in `K.coe.induce s`. -/
 theorem Walk.reachable_start_induce_coe {K : G.Subgraph} {s : Set K.verts}
     {a b : V} (r : G.Walk a b) (hrK : r.toSubgraph ≤ K)
-    (hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∈ s) {x : K.verts} (hx : x.1 ∈ r.support) :
+    (hrs : ∀ z : K.verts, z.val ∈ r.support → z ∈ s) {x : K.verts} (hx : x.val ∈ r.support) :
     (K.coe.induce s).Reachable
       ⟨⟨a, hrK.1 r.start_mem_verts_toSubgraph⟩, hrs _ r.start_mem_support⟩
       ⟨x, hrs x hx⟩ :=
@@ -384,9 +384,9 @@ deleted, every remaining vertex of `p` is still joined in `K` to a remaining ver
 theorem reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one {K L : G.Subgraph}
     {u v : V} {p : G.Walk u v} (hp : p.IsPath) (hpK : p.toSubgraph ≤ K) (hu : u ∈ L.verts)
     (hv : v ∈ L.verts) (hLK : L ≤ K) {s : Set K.verts} (hs1 : s.encard ≤ 1) {w : K.verts}
-    (hws : w ∉ s) (hwp : w.1 ∈ p.toSubgraph.verts) :
-    ∃ z : L.verts, ∃ hz : (⟨z.1, hLK.1 z.2⟩ : K.verts) ∉ s,
-      (K.coe.induce sᶜ).Reachable ⟨w, hws⟩ ⟨⟨z.1, hLK.1 z.2⟩, hz⟩ := by
+    (hws : w ∉ s) (hwp : w.val ∈ p.toSubgraph.verts) :
+    ∃ z : L.verts, ∃ hz : (⟨z.val, hLK.1 z.property⟩ : K.verts) ∉ s,
+      (K.coe.induce sᶜ).Reachable ⟨w, hws⟩ ⟨⟨z.val, hLK.1 z.property⟩, hz⟩ := by
   classical
   rw [Walk.mem_verts_toSubgraph] at hwp
   obtain ⟨q, r, -, -, hqr⟩ := hp.mem_support_iff_exists_append.mp hwp
@@ -394,12 +394,12 @@ theorem reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one {K L : G
     le_trans le_sup_left (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
   have hrK : r.toSubgraph ≤ K :=
     le_trans le_sup_right (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
-  by_cases hqs : ∃ x₀ : K.verts, x₀.1 ∈ q.support ∧ x₀ ∈ s
+  by_cases hqs : ∃ x₀ : K.verts, x₀.val ∈ q.support ∧ x₀ ∈ s
   · obtain ⟨x₀, hx₀q, hx₀s⟩ := hqs
-    have hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s := by
+    have hrs : ∀ z : K.verts, z.val ∈ r.support → z ∉ s := by
       intro z hzr hzs
       have hzx₀ : z = x₀ := Set.encard_le_one_iff.mp hs1 z x₀ hzs hx₀s
-      have hx₀w : x₀.1 ≠ w.1 := fun heq ↦ hws (Subtype.ext heq.symm ▸ hx₀s)
+      have hx₀w : x₀.val ≠ w.val := fun heq ↦ hws (Subtype.ext heq.symm ▸ hx₀s)
       exact (hqr ▸ hp).ne_of_mem_support_of_append hx₀w hx₀q (hzx₀ ▸ hzr) rfl
     have hvs : (⟨v, hLK.1 hv⟩ : K.verts) ∉ s := hrs _ r.end_mem_support
     exact ⟨⟨v, hv⟩, hvs,
@@ -416,8 +416,8 @@ private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.
     (hs1 : s.encard ≤ 1) (p q' : ↑(sᶜ : Set c.toSubgraph.verts)) :
     (c.toSubgraph.coe.induce sᶜ).Reachable p q' := by
   classical
-  have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
-  let c' := c.rotate x₀.1 hx₀_supp
+  have hx₀_supp : x₀.val ∈ c.support := c.mem_verts_toSubgraph.mp x₀.property
+  let c' := c.rotate x₀.val hx₀_supp
   have hc' : c'.IsCycle := hc.rotate hx₀_supp
   have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
   cases hcons : c' with
@@ -427,7 +427,7 @@ private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.
     cases hqr : q.reverse with
     | nil => exact (hxy.ne rfl).elim
     | @cons _ z _ hxz r =>
-      have hxr : x₀.1 ∉ r.support := by
+      have hxr : x₀.val ∉ r.support := by
         have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
         exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
       have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
@@ -436,15 +436,15 @@ private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.
         have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
         rw [← hcons, hc'sub] at h2
         exact h1.trans h2
-      have hrs : ∀ x : c.toSubgraph.verts, x.1 ∈ r.support → x ∉ s := fun x hxr' hxs ↦
+      have hrs : ∀ x : c.toSubgraph.verts, x.val ∈ r.support → x ∉ s := fun x hxr' hxs ↦
         hxr (Set.encard_le_one_iff.mp hs1 x x₀ hxs hx₀ ▸ hxr')
-      have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
+      have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.val.val ∈ r.support := by
         intro p
-        have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
-        have hpc' : p.1.1 ∈ c'.support :=
-          c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
+        have hpx : p.val.val ≠ x₀.val := fun heq ↦ p.property (Subtype.ext heq ▸ hx₀)
+        have hpc' : p.val.val ∈ c'.support :=
+          c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.val.property)
         rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
-        have hpq : p.1.1 ∈ q.reverse.support := by
+        have hpq : p.val.val ∈ q.reverse.support := by
           rw [Walk.support_reverse, List.mem_reverse]
           exact hpc'.resolve_left hpx
         rw [hqr, Walk.support_cons, List.mem_cons] at hpq
@@ -477,7 +477,7 @@ theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {c : G.Walk u u} (hc : c.I
     rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
     · intro p q
       exact c.reachable_induce_coe_of_mem_support le_rfl (fun _ _ h ↦ h)
-        (c.mem_verts_toSubgraph.mp p.1.2) (c.mem_verts_toSubgraph.mp q.1.2)
+        (c.mem_verts_toSubgraph.mp p.val.property) (c.mem_verts_toSubgraph.mp q.val.property)
     · exact hc.reachable_induce_coe_compl_of_encard_le_one hx₀ (Order.le_of_lt_add_one hs)
 
 /-! ### The numerical invariant -/

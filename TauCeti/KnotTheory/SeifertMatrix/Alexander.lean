@@ -61,7 +61,7 @@ matrices of possibly different sizes and uses equality, rather than association 
 Laurent monomial unit. -/
 theorem SEquivalent.alexander_eq {V W : IntegralSquareMatrix} (h : SEquivalent V W) :
     alexander V.2 = alexander W.2 := by
-  apply Relation.EqvGen.eqvGen_le
+  apply Relation.eqvGen_le
     (r' := Setoid.ker fun X : IntegralSquareMatrix ↦ alexander X.2) ?_ V W h
   intro X Y hmove
   exact hmove.alexander_eq

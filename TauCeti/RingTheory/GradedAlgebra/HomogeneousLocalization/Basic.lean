@@ -287,7 +287,7 @@ theorem awayMap_algebraMap {e : ι} {f g x : A} (hg : g ∈ 𝒜 e) (hx : x = f 
 /-- Fractions with a fixed homogeneous denominator depend linearly on the numerator. -/
 noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) :
     𝒜 (n • d) →ₗ[R] Away 𝒜 f where
-  toFun a := Away.mk 𝒜 hf n a a.2
+  toFun a := Away.mk 𝒜 hf n a a.property
   map_add' a b := by
     apply val_injective
     simp only [Away.val_mk, val_add, Submodule.coe_add]
@@ -300,13 +300,13 @@ noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ
 /-- The linear numerator map forms the homogeneous fraction with the chosen denominator. -/
 @[simp]
 theorem Away.mkLinearMap_apply {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ)
-    (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.2 := (rfl)
+    (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.property := (rfl)
 
 /-- Raise the denominator of a homogeneous fraction without changing the fraction. -/
 def Away.promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)
     (n N : ℕ) (hnN : n ≤ N) : 𝒜 (n • d) →ₗ[R] 𝒜 (N • d) where
   toFun a := ⟨(a : A) * f ^ (N - n), by
-    have h := SetLike.mul_mem_graded a.2 (SetLike.pow_mem_graded (N - n) hf)
+    have h := SetLike.mul_mem_graded a.property (SetLike.pow_mem_graded (N - n) hf)
     convert h using 1
     rw [← add_nsmul, Nat.add_sub_of_le hnN]⟩
   map_add' a b := by

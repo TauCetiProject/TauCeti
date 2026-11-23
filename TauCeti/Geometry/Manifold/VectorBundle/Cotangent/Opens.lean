@@ -51,13 +51,13 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
 inverse differential of the inclusion. -/
 def openInclusion (U : Opens M) (z : CotangentBundle I U) : CotangentBundle I M :=
   TotalSpace.mk' (E →L[𝕜] 𝕜) (z.proj : M)
-    (z.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap)
+    (z.snd ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap)
 
 /-- The cotangent inclusion extends a covector over `x ∈ U` to the covector over `x ∈ M`
 obtained by composing with the inverse tangent-space identification. -/
 theorem openInclusion_def (U : Opens M) (z : CotangentBundle I U) :
     openInclusion U z = TotalSpace.mk' (E →L[𝕜] 𝕜) (z.proj : M)
-      (z.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap) :=
+      (z.snd ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap) :=
   (rfl)
 
 /-- The cotangent inclusion covers the inclusion of the open base. -/
@@ -69,16 +69,16 @@ theorem proj_openInclusion (U : Opens M) (z : CotangentBundle I U) :
 @[simp]
 theorem openInclusion_snd_apply (U : Opens M) (z : CotangentBundle I U)
     (v : TangentSpace I (z.proj : M)) :
-    (openInclusion U z).2 v =
-      z.2 ((Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm v) := (rfl)
+    (openInclusion U z).snd v =
+      z.snd ((Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm v) := (rfl)
 
 /-- The cotangent inclusion preserves the covector-vector pairing under the differential
 of the inclusion of the base. -/
 theorem openInclusion_snd_apply_mfderiv (U : Opens M) (z : CotangentBundle I U)
     (v : TangentSpace I z.proj) :
-    (openInclusion U z).2 (mfderiv I I (Subtype.val : U → M) z.proj v) = z.2 v := by
+    (openInclusion U z).snd (mfderiv I I (Subtype.val : U → M) z.proj v) = z.snd v := by
   rw [openInclusion_snd_apply, Manifold.mfderiv_subtype_val]
-  exact congrArg z.2 ((Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm_apply_apply v)
+  exact congrArg z.snd ((Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm_apply_apply v)
 
 variable [IsManifold I 1 M]
 
@@ -117,11 +117,11 @@ theorem contMDiffAt_openInclusion_iff (U : Opens M) (f : X → CotangentBundle I
     refine ⟨hfbase, hcoord.congr_of_eventuallyEq ?_⟩
     filter_upwards [hfbase.continuousAt.eventually
       (inCoordinates_open_eventuallyEq (I := I) U (f x).proj)] with z hz
-    exact hz (f z).2
+    exact hz (f z).snd
   · refine ⟨hb.mpr hbase, hcoord.congr_of_eventuallyEq ?_⟩
     filter_upwards [hbase.continuousAt.eventually
       (inCoordinates_open_eventuallyEq (I := I) U (f x).proj)] with z hz
-    exact (hz (f z).2).symm
+    exact (hz (f z).snd).symm
 
 /-- The canonical inclusion of the cotangent bundle of an open submanifold is smooth. -/
 theorem contMDiff_openInclusion (U : Opens M) :
@@ -144,21 +144,21 @@ the ambient cotangent bundle over that submanifold. -/
 def restrictOpen (U : Opens M) :
     CotangentBundle I U ≃ₘ⟮I.prod 𝓘(𝕜, E →L[𝕜] 𝕜), I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)⟯
       overOpen (I := I) U where
-  toFun z := ⟨openInclusion U z, z.proj.2⟩
+  toFun z := ⟨openInclusion U z, z.proj.property⟩
   invFun z := TotalSpace.mk' (E →L[𝕜] 𝕜) (⟨z.val.proj, z.property⟩ : U)
-    (z.val.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
+    (z.val.snd ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
       ⟨z.val.proj, z.property⟩).toContinuousLinearMap)
   left_inv z := by
     apply CotangentBundle.ext
     · rfl
     intro v
-    exact congrArg z.2 ((Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm_apply_apply v)
+    exact congrArg z.snd ((Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm_apply_apply v)
   right_inv z := by
     apply Subtype.ext
     apply CotangentBundle.ext
     · rfl
     intro v
-    exact congrArg z.val.2
+    exact congrArg z.val.snd
       ((Manifold.tangentSpaceOpenEquiv (I := I)
           (⟨z.val.proj, z.property⟩ : U)).apply_symm_apply v)
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (overOpen U) _).mp
@@ -168,16 +168,16 @@ def restrictOpen (U : Opens M) :
     apply (contMDiffAt_openInclusion_iff U _ z).mp
     have heq : (openInclusion U ∘ fun z : overOpen (I := I) U ↦
         TotalSpace.mk' (E →L[𝕜] 𝕜) (⟨z.val.proj, z.property⟩ : U)
-          (z.val.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
+          (z.val.snd ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
             ⟨z.val.proj, z.property⟩).toContinuousLinearMap)) = Subtype.val := by
       funext z
       apply CotangentBundle.ext
       · rfl
       intro v
-      exact congrArg z.val.2
+      exact congrArg z.val.snd
         ((Manifold.tangentSpaceOpenEquiv (I := I)
           (⟨z.val.proj, z.property⟩ : U)).apply_symm_apply v)
-    exact contMDiff_subtype_val.contMDiffAt.congr_of_eventuallyEq
+    exact contMDiff_subtypeVal.contMDiffAt.congr_of_eventuallyEq
       (Filter.Eventually.of_forall (congrFun heq))
 
 /-- The restriction identification, viewed in the ambient cotangent bundle, is the canonical
@@ -191,7 +191,7 @@ tangent-space identification `T_x U = T_x M`. -/
 theorem restrictOpen_symm_apply (U : Opens M) (z : overOpen (I := I) U) :
     (restrictOpen U).symm z = TotalSpace.mk' (E →L[𝕜] 𝕜)
       (⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ : U)
-      (z.val.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
+      (z.val.snd ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
         ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩).toContinuousLinearMap) :=
   (rfl)
 
@@ -220,8 +220,8 @@ theorem range_openInclusion (U : Opens M) :
 /-- Restricting an ambient covector pairs it with the differential of the base inclusion. -/
 theorem restrictOpen_symm_snd_apply (U : Opens M) (z : overOpen (I := I) U)
     (v : TangentSpace I ((restrictOpen U).symm z).proj) :
-    ((restrictOpen U).symm z).2 v =
-      z.val.2 (mfderiv I I (Subtype.val : U → M) ((restrictOpen U).symm z).proj v) := by
+    ((restrictOpen U).symm z).snd v =
+      z.val.snd (mfderiv I I (Subtype.val : U → M) ((restrictOpen U).symm z).proj v) := by
   rw [Manifold.mfderiv_subtype_val]
   rfl
 
@@ -235,7 +235,7 @@ theorem openInclusion_vectorBundleScalarDiffeomorph (U : Opens M) {a : M → �
     (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : CotangentBundle I U) :
     openInclusion U (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜)
         (V := fun x : U ↦ TangentSpace I x →L[𝕜] 𝕜) (a ∘ Subtype.val)
-        (ha.comp contMDiff_subtype_val) (fun x ↦ ha0 x) z) =
+        (ha.comp contMDiff_subtypeVal) (fun x ↦ ha0 x) z) =
       vectorBundleScalarDiffeomorph a ha ha0 (openInclusion U z) := by
   rw [vectorBundleScalarDiffeomorph_apply, vectorBundleScalarDiffeomorph_apply,
     openInclusion_def, openInclusion_def]
@@ -267,7 +267,7 @@ theorem coe_overOpenScalarDiffeomorph (U : Opens M) (a : U → 𝕜) (ha : ContM
     (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
     (overOpenScalarDiffeomorph U a ha ha0 z : CotangentBundle I M) =
       TotalSpace.mk' (E →L[𝕜] 𝕜) z.val.proj
-        (a ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ • z.val.2) := by
+        (a ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ • z.val.snd) := by
   obtain ⟨w, rfl⟩ : ∃ w, restrictOpen U w = z :=
     ⟨(restrictOpen U).symm z, (restrictOpen U).apply_symm_apply z⟩
   rw [overOpenScalarDiffeomorph, Diffeomorph.diffCongr_apply_apply,
@@ -317,7 +317,7 @@ theorem overOpenScalarDiffeomorph_symm (U : Opens M) (a : U → 𝕜) (ha : Cont
 `π⁻¹(U)` is the restriction of the fibre dilation of `T*M` by `a`. -/
 theorem coe_overOpenScalarDiffeomorph_comp_subtype_val (U : Opens M) {a : M → 𝕜}
     (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
-    (overOpenScalarDiffeomorph U (a ∘ Subtype.val) (ha.comp contMDiff_subtype_val)
+    (overOpenScalarDiffeomorph U (a ∘ Subtype.val) (ha.comp contMDiff_subtypeVal)
         (fun x ↦ ha0 x) z : CotangentBundle I M) =
       vectorBundleScalarDiffeomorph a ha ha0 z := by
   rw [overOpenScalarDiffeomorph, Diffeomorph.diffCongr_apply_apply, coe_restrictOpen,

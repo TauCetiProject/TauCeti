@@ -156,7 +156,7 @@ theorem coe_coe_centralizerPointsMulEquivUnits_apply
         (centralizerHopfIdeal (coordinateHopfAlgebra k n) x) (CommAlgCat.of k A)) :
     ((centralizerPointsMulEquivUnits x A g : Subalgebra.centralizer A
         {(cotangentDualMatrixEquiv x).map (algebraMap k A)}) : Matrix (Fin n) (Fin n) A) =
-      (pointsMulEquiv n g.1 : Matrix (Fin n) (Fin n) A) :=
+      (pointsMulEquiv n g.val : Matrix (Fin n) (Fin n) A) :=
   (rfl)
 
 end Points

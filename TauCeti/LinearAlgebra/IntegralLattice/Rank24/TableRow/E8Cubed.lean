@@ -167,7 +167,7 @@ theorem e8CubedSimpleRootIsometry_symm_apply
   refine Eq.trans ?_ key.symm
   have hcast : ∀ (i' : Fin RootfulNiemeierType.e8Cubed.components.length) (_ : i' = i)
       (j' : Fin (RootfulNiemeierType.e8Cubed.componentType i').rank),
-      j'.1 = j.1 →
+      j'.val = j.val →
       e8CubedSimpleRootIsometry.symm y i j = e8CubedSimpleRootIsometry.symm y i' j' := by
     rintro _ rfl j' hj
     exact congrArg _ (Fin.ext hj.symm)
@@ -258,7 +258,7 @@ theorem span_vectorsOfNorm_two_niemeierE8Cubed_eq_top :
 noncomputable def e8CubedRootVector (k : Fin 3) (r : Fin 240) : niemeierE8Cubed :=
   e8CubedSimpleRootIsometry.carrierEquiv.symm
     ⟨Pi.single k (IntegralLattice.typeE₈RootVector r : Fin 8 → ℚ),
-      IntegralLattice.single_mem_pi_carrier _ k (IntegralLattice.typeE₈RootVector r).2⟩
+      IntegralLattice.single_mem_pi_carrier _ k (IntegralLattice.typeE₈RootVector r).property⟩
 
 /-- In simple-root coordinates, `e8CubedRootVector k r` is `typeE₈RootVector r` supported in
 component `k`. -/
@@ -354,7 +354,7 @@ theorem norm_niemeierE8Cubed_eq_two_iff (x : niemeierE8Cubed) :
     exact ⟨k, r, (coe_e8CubedRootEquiv_apply (k, r)).symm.trans (congrArg Subtype.val hkr)⟩
   · rintro ⟨k, r, rfl⟩
     rw [← coe_e8CubedRootEquiv_apply (k, r)]
-    exact (e8CubedRootEquiv (k, r)).2
+    exact (e8CubedRootEquiv (k, r)).property
 
 /-- **The minimum of `niemeierE8Cubed` is `2`.** -/
 @[simp]

@@ -80,9 +80,9 @@ def newtonCoeff (M : ℕ → K) (k : ℕ) : K :=
   if k = 0 then 1 else
     (k : K)⁻¹ * ((-1) ^ (k + 1) *
       ∑ a ∈ ({a ∈ antidiagonal k | a.1 < k} : Finset (ℕ × ℕ)).attach,
-        (-1) ^ a.1.1 * newtonCoeff M a.1.1 * M a.1.2)
+        (-1) ^ a.val.1 * newtonCoeff M a.val.1 * M a.val.2)
 termination_by k
-decreasing_by exact (mem_filter.1 a.2).2
+decreasing_by exact (mem_filter.1 a.property).2
 
 @[simp]
 theorem newtonCoeff_zero (M : ℕ → K) : newtonCoeff M 0 = 1 := by
@@ -175,7 +175,7 @@ theorem newtonPolynomial_sum_map_pow (s : Multiset K) :
     (natDegree_multiset_prod_X_sub_C_eq_card s)]
   congr 1
   funext i
-  rw [Multiset.prod_X_sub_C_coeff s i.2.le, newtonCoeff_sum_map_pow]
+  rw [Multiset.prod_X_sub_C_coeff s i.isLt.le, newtonCoeff_sum_map_pow]
 
 /-- The roots of the polynomial built from the power sums of a multiset `s`, of degree `card s`,
 are the elements of `s`, with their multiplicities. -/
