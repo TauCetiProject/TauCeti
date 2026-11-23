@@ -155,8 +155,10 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType
       Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm c₀)) k.val)
     ⟨fun k₁ k₂ hk ↦ Subtype.ext <| by
       obtain ⟨m, hm⟩ := exists_fin_pow_eq_of_sameCycle (orderOf_pos c₀) (Quotient.exact hk)
-      simpa [← b.subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType hft hconn col
-        k₁.val (by simp) (hm ▸ k₂.property) (m₁ := ⟨0, orderOf_pos c₀⟩)] using hm,
+      have hm0 : m = ⟨0, orderOf_pos c₀⟩ :=
+        (b.subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType hft hconn col k₁.val
+          (m₁ := ⟨0, orderOf_pos c₀⟩) (m₂ := m) (by simp) (hm ▸ k₂.property)).symm
+      rwa [hm0, Fin.val_mk, pow_zero, map_one, Equiv.Perm.one_apply] at hm,
       hword₀ ▸ b.surjective_quotientMk_inversions_wordProd hnd₀ hall₀⟩,
     Nat.card_coe_set_eq, ncard_inversions_bipartiteCoxeterElement]
 
