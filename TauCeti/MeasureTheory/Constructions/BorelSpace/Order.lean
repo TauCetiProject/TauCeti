@@ -14,8 +14,8 @@ import Mathlib.Order.Cofinal
 
 A lower semicontinuous function into a second-countable linear order is Borel measurable
 (`LowerSemicontinuous.measurable`). The same holds when lower semicontinuity fails at countably
-many points: each superlevel set `{f > y}` is the union of its interior, which contains every
-superlevel point where `f` is lower semicontinuous, and of a countable set.
+many points: the restriction of `f` to the complement of these points is lower semicontinuous,
+hence measurable, and a function measurable off a countable set is measurable.
 
 Such functions arise, for instance, as the perimeter of the superlevel sets `{u > t}` of a
 function `u` as a function of the level `t`, which is lower semicontinuous at every level whose
@@ -43,13 +43,10 @@ variable {α δ : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace 
 /-- A function that is lower semicontinuous at all but countably many points is measurable. -/
 theorem measurable_of_countable_not_lowerSemicontinuousAt {f : δ → α}
     (hf : {x | ¬LowerSemicontinuousAt f x}.Countable) : Measurable f := by
-  refine measurable_of_Ioi fun y => ?_
-  -- A superlevel point where `f` is lower semicontinuous is an interior point, so the
-  -- superlevel points outside the interior are points where `f` is not lower semicontinuous.
-  have hsub : f ⁻¹' Ioi y \ interior (f ⁻¹' Ioi y) ⊆ {x | ¬LowerSemicontinuousAt f x} :=
-    fun x hx hlsc => hx.2 (mem_interior_iff_mem_nhds.2 (hlsc y hx.1))
-  rw [← union_sdiff_cancel (interior_subset (s := f ⁻¹' Ioi y))]
-  exact isOpen_interior.measurableSet.union (hf.mono hsub).measurableSet
+  -- Off the countable exceptional set, `f` is lower semicontinuous, hence measurable.
+  refine measurable_of_measurable_on_compl_countable _ hf
+    (lowerSemicontinuous_restrict_iff.2 fun x hx => ?_).measurable
+  exact (not_not.1 hx).lowerSemicontinuousWithinAt _
 
 end TauCeti
 
