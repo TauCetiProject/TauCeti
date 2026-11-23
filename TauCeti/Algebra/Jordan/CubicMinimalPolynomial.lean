@@ -27,8 +27,11 @@ Let `J` be a commutative, not necessarily associative, unital `R`-algebra, with 
 These are the conditions bundled by `TauCeti.Jordan.IsCubicMinimalPolynomial`. Both Albert
 algebras, the split one of `TauCeti/Algebra/AlbertAlgebra/Determinant.lean` and the compact one of
 `TauCeti/Algebra/AlbertAlgebra/Compact/Determinant.lean`, satisfy them with `S` the spur and `N`
-the determinant, and everything else this file proves about them is derived from these four facts
-alone, when `2` is invertible in `R`.
+the determinant. Everything else this file proves about them is derived from these four facts,
+together with these side conditions: `2` invertible in `R` for the formulas for the spur, the
+linearized cubic equation and the Jordan identity; `T(1) = 3` for Newton's formula, whose solved
+form for `N(A)` also needs `2` and `3` invertible; and the scalars acting compatibly with the
+product (`SMulCommClass R J J` and `IsScalarTower R J J`) for the Jordan identity.
 
 Polarizing the cubic equation, comparing it at `A + B`, `A - B` and `B`, gives the **linearized
 cubic equation** (`TauCeti.Jordan.IsCubicMinimalPolynomial.mul_mul_self_add_two_smul_mul_mul`)
