@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModul
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Etale
+import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
@@ -635,9 +636,9 @@ theorem overPullback_map_injective_of_faithful_completionFunctor
   have hg₁ : g₁.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₁
   have hg₂ : g₂.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₂
   let m₁ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₁.left
-    (Scheme.formalCompletion.comap_over_left I g₁).le
+    (Scheme.IdealSheafData.comap_comap_over_left I g₁).le
   let m₂ := Scheme.formalCompletion.map (I := I.comap p) (J := I.comap q) g₂.left
-    (Scheme.formalCompletion.comap_over_left I g₂).le
+    (Scheme.IdealSheafData.comap_comap_over_left I g₂).le
   have hg₀ : m₁.app 0 = m₂.app 0 := by
     apply (cancel_mono (Scheme.formalCompletion.levelIsoPullback q rfl 0).hom).mp
     rw [Scheme.formalCompletion.levelIsoPullback_hom_map rfl rfl g₁ 0,

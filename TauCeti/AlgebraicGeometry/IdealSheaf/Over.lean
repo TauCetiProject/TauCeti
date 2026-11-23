@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 public import Mathlib.AlgebraicGeometry.Over
 
@@ -24,6 +25,8 @@ scheme over `S` through its inclusion `V(I) ⟶ X ⟶ S`, and the inclusion is t
 
 * `AlgebraicGeometry.Scheme.IdealSheafData.over_eq_subschemeι_comp`: the structure morphism of
   `V(I)` is the inclusion followed by the structure morphism of `X`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.comap_comap_over_left`: a morphism `g : A ⟶ B` in
+  `Over Z` pulls back `K.comap B.hom` to `K.comap A.hom`.
 -/
 
 public section
@@ -35,6 +38,8 @@ open CategoryTheory
 universe u
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+section
 
 variable {X S : Scheme.{u}} [X.Over S] (I : X.IdealSheafData)
 
@@ -52,6 +57,15 @@ theorem over_eq_subschemeι_comp : I.subscheme ↘ S = I.subschemeι ≫ X ↘ S
 /-- The inclusion of a closed subscheme is a morphism over `S`. -/
 instance isOver_subschemeι : I.subschemeι.IsOver S :=
   ⟨rfl⟩
+
+end
+
+/-- A morphism `g : A ⟶ B` in `Over Z` pulls back the target's base-comapped ideal sheaf to the
+source's base-comapped ideal sheaf. -/
+theorem comap_comap_over_left {Z : Scheme.{u}} (K : Z.IdealSheafData) {A B : Over Z}
+    (g : A ⟶ B) :
+    (K.comap B.hom).comap g.left = K.comap A.hom := by
+  rw [← comap_comp, Over.w]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

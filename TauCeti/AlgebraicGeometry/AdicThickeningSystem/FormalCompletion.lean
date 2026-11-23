@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Spf
 public import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 
 /-!
 # The formal completion of a scheme along a closed subscheme
@@ -71,7 +72,6 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
 * `AlgebraicGeometry.Scheme.formalCompletion.isPullback_map_app`: when `J.comap f = I`, the level
   `V(I ^ (n + 1))` is the inverse image of `V(J ^ (n + 1))` under `f`.
 * `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback_inv_ι_hom`,
-  `AlgebraicGeometry.Scheme.formalCompletion.comap_over_left`,
   `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback_hom_map`, and
   `AlgebraicGeometry.Scheme.formalCompletion.overPullback_map_left_eq_levelIsoPullback`:
   transition-map compatibility and naturality of `levelIsoPullback` on `Over` morphisms.
@@ -432,21 +432,13 @@ theorem levelIsoPullback_inv_ι_hom (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ)
       Limits.pullback.lift_snd]
     rw [(map f hf.le).naturality n, levelIsoPullback_inv_snd_assoc]
 
-/-- A morphism `g : Over.mk p ⟶ Over.mk q` over `Z` pulls back the target's base-comapped
-ideal sheaf to the source's base-comapped ideal sheaf. -/
-theorem comap_over_left {p : X ⟶ Z} {q : Y ⟶ Z} (K : Z.IdealSheafData)
-    (g : Over.mk p ⟶ Over.mk q) :
-    (K.comap q).comap g.left = K.comap p := by
-  rw [← comap_comp]
-  exact congrArg K.comap (by simpa only [Over.mk_hom] using Over.w g)
-
 /-- Naturality of `levelIsoPullback` with respect to morphisms `g : Over.mk p ⟶ Over.mk q` over
 `Z`. -/
 @[reassoc]
 theorem levelIsoPullback_hom_map {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I)
     (hq : K.comap q = J) (g : Over.mk p ⟶ Over.mk q) (n : ℕ) :
     (map (I := I) (J := J) g.left
-        (by rw [← hp, ← hq]; exact (comap_over_left K g).le)).app n ≫
+        (by rw [← hp, ← hq]; exact (comap_comap_over_left K g).le)).app n ≫
       (levelIsoPullback q hq n).hom =
       (levelIsoPullback p hp n).hom ≫ ((Over.pullback (toScheme Z K n)).map g).left := by
   have hpb := Over.isPullback_pullback_obj (toScheme Z K n) (Over.mk q)
@@ -470,7 +462,7 @@ theorem overPullback_map_left_eq_levelIsoPullback {p : X ⟶ Z} {q : Y ⟶ Z} (h
     ((Over.pullback (toScheme Z K n)).map g).left =
       (levelIsoPullback p hp n).inv ≫
         (map (I := I) (J := J) g.left
-          (by rw [← hp, ← hq]; exact (comap_over_left K g).le)).app n ≫
+          (by rw [← hp, ← hq]; exact (comap_comap_over_left K g).le)).app n ≫
         (levelIsoPullback q hq n).hom := by
   rw [Iso.eq_inv_comp, levelIsoPullback_hom_map]
 
