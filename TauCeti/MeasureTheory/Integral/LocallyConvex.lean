@@ -25,10 +25,12 @@ of smooth vectors of a Banach representation, where Mathlib's Bochner integral d
 The integral is the limit of the Riemann sums `∑ i, μ (A i) • f (x i)` over finite measurable
 partitions `(A i)` of `K` with tags `x i`, ordered by fineness. A partition is fine for a gauge
 `U`, an assignment of a neighbourhood `U x` to every point `x`, when each piece `A i` lies in
-`U (x i)`. Compactness gives fine partitions for every gauge. If `f` varies by less than a convex
-neighbourhood `C` of `0` on every piece of two partitions, the two Riemann sums differ by an
-element of `μ univ • (C - C)`, since their difference is a combination of differences of values
-of `f` at points of a common piece, with weights the measures of the common refinement. So the
+`U (x i)`. Compactness gives fine partitions for every gauge. If, on every piece of two
+partitions, each value of `f` differs from the value of `f` at the piece's tag by an element of a
+convex neighbourhood `C` of `0`, the two Riemann sums differ by an element of `μ univ • (C - C)`.
+Indeed, their difference is a combination, with weights the measures of the common refinement, of
+differences `f (x i) - f (y j)` of tag values over nonempty common pieces; comparing both tag
+values with the value of `f` at a point of the common piece puts each difference in `C - C`. So the
 Riemann sums of a continuous map form a Cauchy net, whose limit in the complete space `E` is the
 integral.
 
@@ -177,9 +179,10 @@ private theorem measureReal_piece_eq_sum (P Q : TaggedPartition K) (i : Fin P.n)
       fun j ↦ (P.measurableSet_piece i).inter (Q.measurableSet_piece j),
     ← inter_iUnion, Q.iUnion_piece, inter_univ]
 
-/-- Two Riemann sums over partitions on whose pieces `f` varies within `V` differ by an element of
-`(μ univ + 1) • C`, for a convex `C ∋ 0` containing `V - V`. Both sums are rewritten over the
-common refinement; a nonempty common piece carries a point `z`, and
+/-- Two Riemann sums over partitions in which every value `f z` on a piece satisfies
+`f z - f x ∈ V` for the piece's tag `x` differ by an element of `(μ univ + 1) • C`, for a convex
+`C ∋ 0` containing `V - V`. Both sums are rewritten over the common refinement; a nonempty common
+piece carries a point `z`, and the difference of the two tag values `x` and `y` is
 `f x - f y = (f z - f y) - (f z - f x)`. -/
 private theorem riemannSum_sub_riemannSum_mem {f : K → E} {V C : Set E} (hC : Convex ℝ C)
     (h0 : (0 : E) ∈ C) (hVC : ∀ a ∈ V, ∀ b ∈ V, a - b ∈ C) {P Q : TaggedPartition K}
@@ -254,8 +257,8 @@ section Normed
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- The Bochner integral differs from a Riemann sum by at most `ε * μ univ` when `f` varies by
-less than `ε` on each piece. -/
+/-- The Bochner integral differs from a Riemann sum by at most `ε * μ univ` when every value of
+`f` on a piece lies within `ε` of the value of `f` at the piece's tag. -/
 private theorem norm_integral_sub_riemannSum_le (f : C(K, F)) {ε : ℝ} {P : TaggedPartition K}
     (hP : P.IsFine fun x ↦ {z | f z - f x ∈ Metric.ball 0 ε}) :
     ‖∫ x, f x ∂μ - riemannSum μ f P‖ ≤ ε * μ.real univ := by
@@ -427,23 +430,25 @@ theorem _root_.MeasureTheory.MeasurePreserving.compactIntegral_comp {K' : Type*}
 section Group
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [MeasurableSpace G] [BorelSpace G] {ν : Measure G} [IsFiniteMeasure ν]
+  [MeasurableSpace G] [OpensMeasurableSpace G] {ν : Measure G} [IsFiniteMeasure ν]
 
 /-- The integral against a left-invariant measure is unchanged by left translation. -/
 @[simp]
-theorem compactIntegral_comp_mulLeft [ν.IsMulLeftInvariant] (f : C(G, E)) (g : G) :
+theorem compactIntegral_comp_mulLeft [MeasurableMul G] [ν.IsMulLeftInvariant]
+    (f : C(G, E)) (g : G) :
     (f.comp (ContinuousMap.mulLeft g)).compactIntegral ν = f.compactIntegral ν :=
   (measurePreserving_mul_left ν g).compactIntegral_comp f
 
 /-- The integral against a right-invariant measure is unchanged by right translation. -/
 @[simp]
-theorem compactIntegral_comp_mulRight [ν.IsMulRightInvariant] (f : C(G, E)) (g : G) :
+theorem compactIntegral_comp_mulRight [MeasurableMul G] [ν.IsMulRightInvariant]
+    (f : C(G, E)) (g : G) :
     (f.comp (ContinuousMap.mulRight g)).compactIntegral ν = f.compactIntegral ν :=
   (measurePreserving_mul_right ν g).compactIntegral_comp f
 
 /-- The integral against an inversion-invariant measure is unchanged by inversion. -/
 @[simp]
-theorem compactIntegral_comp_inv [ν.IsInvInvariant] (f : C(G, E)) :
+theorem compactIntegral_comp_inv [MeasurableInv G] [ν.IsInvInvariant] (f : C(G, E)) :
     (f.comp (Homeomorph.inv G : C(G, G))).compactIntegral ν = f.compactIntegral ν :=
   (Measure.measurePreserving_inv ν).compactIntegral_comp f
 
