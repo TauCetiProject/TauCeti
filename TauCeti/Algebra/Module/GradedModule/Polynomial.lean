@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
+public import TauCeti.Algebra.MonoidAlgebra.Grading
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
@@ -433,7 +434,7 @@ noncomputable def degreeGrade : ℤ → Submodule k k[X] :=
 
 variable (k) in
 /-- Multiplication adds degrees in the standard grading of `k[X]`. -/
-theorem degreeGrade_gradedMonoid : SetLike.GradedMonoid (degreeGrade k) := by
+theorem gradedMonoid_degreeGrade : SetLike.GradedMonoid (degreeGrade k) := by
   rw [degreeGrade]
   infer_instance
 
@@ -445,11 +446,12 @@ theorem isInternal_degreeGrade : DirectSum.IsInternal (degreeGrade k) := by
 
 /-- The polynomial ring is a graded algebra for its standard grading. -/
 noncomputable instance : GradedAlgebra (degreeGrade k) :=
-  letI := degreeGrade_gradedMonoid k
+  letI := gradedMonoid_degreeGrade k
   DirectSum.IsInternal.gradedAlgebra (isInternal_degreeGrade k)
 
 /-- A polynomial has degree `p` in `degreeGrade` exactly when each of its monomials `X ^ n` has
 `n = p`. -/
+@[simp]
 theorem mem_degreeGrade_iff {p : ℤ} {x : k[X]} :
     x ∈ degreeGrade k p ↔ ∀ n, x.coeff n ≠ 0 → (n : ℤ) = p := by
   rw [degreeGrade]
@@ -457,37 +459,21 @@ theorem mem_degreeGrade_iff {p : ℤ} {x : k[X]} :
 
 /-- The monomial `X ^ n` has degree `n` in `degreeGrade`. -/
 theorem X_pow_mem_degreeGrade (n : ℕ) : (X ^ n : k[X]) ∈ degreeGrade k n := by
-  rw [mem_degreeGrade_iff]
-  intro m hm
-  rw [coeff_X_pow] at hm
-  split_ifs at hm with h
-  · rw [h]
-  · exact absurd rfl hm
+  rw [X_pow_eq_monomial]
+  exact AddMonoidAlgebra.single_mem_gradeBy _ n 1
 
 /-- The standard grading of `k[X]` vanishes in negative degrees. -/
 theorem degreeGrade_eq_bot_of_neg {p : ℤ} (hp : p < 0) : degreeGrade k p = ⊥ := by
-  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_
-  by_contra h
-  have := mem_degreeGrade_iff.1 hx n h
-  omega
+  have : ⇑(Nat.castAddMonoidHom ℤ) ⁻¹' {p} = ∅ :=
+    Set.eq_empty_iff_forall_notMem.2 fun n hn ↦ by simp at hn; omega
+  rw [degreeGrade, AddMonoidAlgebra.gradeBy_eq_supported, this,
+    AddMonoidAlgebra.supported_eq_span_single, Set.image_empty, Submodule.span_empty]
 
 /-- **The degree-zero piece of the standard grading is the line of constants.** -/
 theorem degreeGrade_zero_eq_span_one : degreeGrade k 0 = k ∙ (1 : k[X]) := by
-  ext x
-  rw [mem_degreeGrade_iff, Submodule.mem_span_singleton]
-  constructor
-  · intro hx
-    refine ⟨x.coeff 0, AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_⟩
-    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_one, smul_eq_mul]
-    rcases n with _ | n
-    · simp
-    · by_contra h
-      have := hx (n + 1) (Ne.symm (by simpa using h))
-      omega
-  · rintro ⟨a, rfl⟩ n hn
-    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_one] at hn
-    by_contra h
-    exact hn (by simp [show n ≠ 0 by omega])
+  have : ⇑(Nat.castAddMonoidHom ℤ) ⁻¹' {0} = {0} := by ext; simp
+  rw [degreeGrade, AddMonoidAlgebra.gradeBy_eq_supported, this,
+    AddMonoidAlgebra.supported_eq_span_single, Set.image_singleton, AddMonoidAlgebra.one_def]
 
 end Polynomial
 

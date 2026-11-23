@@ -195,6 +195,13 @@ theorem gradedTruncatedPolynomialResolution_termObj_one :
 instance (n : ℕ) : Subsingleton ((gradedTruncatedPolynomialResolution k m).X (n + 2)) :=
   inferInstanceAs (Subsingleton (resolutionTerm k m (n + 2)))
 
+/-- The first differential of the resolution multiplies by `x^m`; its source and target are
+`k[x]` by definition. It is private because the resolution's body is not exposed: the public form
+is `TauCeti.gradedTruncatedPolynomialResolution_differential_zero`. -/
+private theorem gradedTruncatedPolynomialResolution_d_zero_apply
+    (a : k[X]) : (gradedTruncatedPolynomialResolution k m).d 0 a = ((X ^ m : k[X]) • a : k[X]) :=
+  (polynomialGradedXPowMul_hom_apply k m a).trans (mul_comm _ _)
+
 /-- The first differential of the resolution, read through
 `TauCeti.gradedTruncatedPolynomialResolution_termObj_one` and
 `TauCeti.gradedTruncatedPolynomialResolution_termObj_zero`, is multiplication by `x^m`. -/
@@ -222,9 +229,7 @@ theorem isMinimal_gradedTruncatedPolynomialResolution (hm : 0 < m) :
     (gradedTruncatedPolynomialResolution k m).IsMinimal := by
   refine GradedProjectiveResolution.isMinimal_iff.2 fun n x ↦ ?_
   rcases n with _ | n
-  · have hd : (gradedTruncatedPolynomialResolution k m).d 0 x = (X ^ m : k[X]) • x :=
-      (polynomialGradedXPowMul_hom_apply k m x).trans (mul_comm _ _)
-    rw [hd]
+  · rw [gradedTruncatedPolynomialResolution_d_zero_apply k m x]
     exact Submodule.smul_mem_smul
       (Submodule.mem_iSup_of_mem (m : ℤ) (Submodule.mem_iSup_of_mem (by exact_mod_cast hm)
         (Polynomial.X_pow_mem_degreeGrade m))) Submodule.mem_top
@@ -240,7 +245,8 @@ theorem isLinear_gradedTruncatedPolynomialResolution_iff [Nontrivial k] :
   rw [GradedProjectiveResolution.isLinear_iff]
   constructor
   · intro hr
-    -- the first term is `A{m}`, generated in degree `1` only if `m = 1`
+    -- the first term is `A{m}`, generated in degree `1` only if `m = 1`; its grading is that of
+    -- `A{m}` by definition (`gradedTruncatedPolynomialResolution_termObj_one`)
     have h1 : InternalGrading.IsGeneratedInDegree
         ((GradedModuleCat.regular (𝒜 := Polynomial.degreeGrade k)).shiftObj m).grading k[X]
         ((1 : ℕ) : ℤ) := hr 1
