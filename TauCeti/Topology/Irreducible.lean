@@ -53,14 +53,13 @@ theorem Homeomorph.image_mem_irreducibleComponents (h : X ≃ₜ Y) {c : Set X}
     (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible) h.surjective hc
 
 /-- A homeomorphism `h : X ≃ₜ Y` induces a bijection of irreducible components, sending a
-component to its image under `h` (`Homeomorph.coe_irreducibleComponentsEquiv_apply`). It is the
-inverse of Mathlib's `irreducibleComponentsEquivOfIsPreirreducibleFiber` for `h`, whose fibres are
-singletons. -/
+component to its image under `h` and back under `h.symm`. -/
 def Homeomorph.irreducibleComponentsEquiv (h : X ≃ₜ Y) :
-    irreducibleComponents X ≃ irreducibleComponents Y :=
-  (irreducibleComponentsEquivOfIsPreirreducibleFiber h h.continuous h.isOpenMap
-    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible)
-    h.surjective).symm.toEquiv
+    irreducibleComponents X ≃ irreducibleComponents Y where
+  toFun c := ⟨h '' c, h.image_mem_irreducibleComponents c.property⟩
+  invFun c := ⟨h.symm '' c, h.symm.image_mem_irreducibleComponents c.property⟩
+  left_inv c := Subtype.ext (h.symm_image_image c)
+  right_inv c := Subtype.ext (h.image_symm_image c)
 
 /-- The bijection of irreducible components induced by a homeomorphism sends a component to its
 image. -/
@@ -70,12 +69,12 @@ theorem Homeomorph.coe_irreducibleComponentsEquiv_apply (h : X ≃ₜ Y) (c : ir
   (rfl)
 
 /-- The inverse of the bijection of irreducible components induced by a homeomorphism sends a
-component to its preimage. -/
+component to its image under `h.symm`. -/
 @[simp]
 theorem Homeomorph.coe_irreducibleComponentsEquiv_symm_apply (h : X ≃ₜ Y)
     (c : irreducibleComponents Y) :
     (h.irreducibleComponentsEquiv.symm c : Set X) = h.symm '' c :=
-  (congrFun h.image_symm c).symm
+  (rfl)
 
 namespace TauCeti
 
