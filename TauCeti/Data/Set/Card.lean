@@ -107,8 +107,8 @@ theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x �
 `n + 1 ∈ s`; both sides are `⊤` when `s` is infinite. -/
 theorem encard_preimage_succ_add_one {s : Set ℕ} (hs : 0 ∈ s) :
     (Nat.succ ⁻¹' s).encard + 1 = s.encard := by
-  conv_rhs => rw [← Nat.insert_zero_image_succ_preimage_succ hs]
-  rw [encard_insert_of_notMem (by simp), Nat.succ_injective.encard_image]
+  rw [← Nat.succ_injective.encard_image, image_preimage_eq_inter_range, ← compl_compl (range _),
+    Nat.compl_range_succ, ← sdiff_eq, encard_sdiff_singleton_add_one hs]
 
 /-- The points of the range of an injective map into a sigma type lying over the index `i` are
 counted by the arguments mapped over `i`. -/
