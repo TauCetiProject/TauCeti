@@ -89,9 +89,7 @@ variable (ρbar : G →* GL n k) (χ : G →* Λˣ)
 stable under conjugation by the strict kernel `Γ̂ₙ(A)`. -/
 def fixedDetLifts (A : ArtinLocalAlg Λ k) : SubMulAction (A.strictKernel n) (Lift ρbar A) where
   carrier := {ρ | ∀ g, GeneralLinearGroup.det (ρ g) = Units.map (algebraMap Λ A.obj.left) (χ g)}
-  smul_mem' a ρ hρ g := by
-    rw [Lift.smul_apply, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
-    exact hρ g
+  smul_mem' a ρ hρ g := by simpa [Lift.smul_apply, mul_inv_cancel_comm] using hρ g
 
 variable {ρbar χ} {A B : ArtinLocalAlg Λ k}
 
@@ -107,8 +105,7 @@ theorem mem_fixedDetLifts_iff_comp_eq {ρ : Lift ρbar A} :
     ρ ∈ fixedDetLifts ρbar χ A ↔
       GeneralLinearGroup.det.comp ρ.toMonoidHom =
         (Units.map (algebraMap Λ A.obj.left : Λ →* A.obj.left)).comp χ := by
-  rw [mem_fixedDetLifts_iff, MonoidHom.ext_iff]
-  rfl
+  simp [MonoidHom.ext_iff]
 
 /-- Pushforward along a morphism of `C_Λ` preserves the determinant `χ`. -/
 theorem Lift.map_mem_fixedDetLifts (f : A ⟶ B) {ρ : Lift ρbar A}
@@ -230,17 +227,20 @@ section RankOne
 
 variable {ρbar : G →* GL n k} {χ : G →* Λˣ} {A : ArtinLocalAlg Λ k} [Unique n]
 
+/-- In rank one an invertible matrix is the scalar matrix of its determinant. -/
+private theorem eq_scalar_det {R : Type*} [CommRing R] (M : GL n R) :
+    M = GeneralLinearGroup.scalar n (GeneralLinearGroup.det M) :=
+  GeneralLinearGroup.ext fun i j ↦ by
+    simp [Subsingleton.elim i default, Subsingleton.elim j default, det_unique]
+
 /-- In rank one a lift with determinant `χ` is `χ_A`, viewed as a scalar matrix. -/
 theorem eq_scalar_of_mem_fixedDetLifts {ρ : Lift ρbar A} (hρ : ρ ∈ fixedDetLifts ρbar χ A)
     (g : G) :
-    ρ g = GeneralLinearGroup.scalar n (Units.map (algebraMap Λ A.obj.left) (χ g)) :=
-  GeneralLinearGroup.ext fun i j ↦ by
-    have h := congrArg Units.val (hρ g)
-    rw [GeneralLinearGroup.val_det_apply, det_unique] at h
-    simpa [Subsingleton.elim i default, Subsingleton.elim j default] using h
+    ρ g = GeneralLinearGroup.scalar n (Units.map (algebraMap Λ A.obj.left) (χ g)) := by
+  rw [eq_scalar_det (ρ g), hρ g]
 
 /-- In rank one there is at most one lift with determinant `χ`. -/
-theorem subsingleton_fixedDetLifts : Subsingleton (fixedDetLifts ρbar χ A) :=
+instance subsingleton_fixedDetLifts : Subsingleton (fixedDetLifts ρbar χ A) :=
   ⟨fun ρ ρ' ↦ Subtype.ext <| Lift.ext fun g ↦ by
     rw [eq_scalar_of_mem_fixedDetLifts ρ.property, eq_scalar_of_mem_fixedDetLifts ρ'.property]⟩
 
@@ -253,14 +253,15 @@ theorem nonempty_fixedDetLifts_iff :
   refine ⟨fun ⟨ρ⟩ ↦ ⟨?_, det_residual_eq_of_mem_fixedDetLifts ρ.property⟩, fun ⟨hχ, hdet⟩ ↦ ?_⟩
   · rw [← mem_fixedDetLifts_iff_comp_eq.mp ρ.property, MonoidHom.coe_comp]
     exact (ρ : Lift ρbar A).isLocallyConstant.comp _
-  -- The lift is `χ_A` as a scalar matrix; it reduces to `ρbar` since in rank one a matrix is its
-  -- determinant.
+  -- The lift is `χ_A` as a scalar matrix; it reduces to `ρbar` since in rank one a matrix is the
+  -- scalar of its determinant.
   have hred : ∀ g, GeneralLinearGroup.map (A.augmentation : A.obj.left →+* k)
       (GeneralLinearGroup.scalar n (Units.map (algebraMap Λ A.obj.left) (χ g))) = ρbar g :=
-    fun g ↦ GeneralLinearGroup.ext fun i j ↦ by
-      have h := congrArg Units.val (hdet g)
-      rw [GeneralLinearGroup.val_det_apply, det_unique, Units.coe_map] at h
-      simpa [Subsingleton.elim i default, Subsingleton.elim j default] using h.symm
+    fun g ↦ by
+      rw [GeneralLinearGroup.map_scalar, eq_scalar_det (ρbar g), hdet g]
+      congr 1
+      ext
+      simp
   refine ⟨⟨⟨(GeneralLinearGroup.scalar n).comp
       ((Units.map (algebraMap Λ A.obj.left : Λ →* A.obj.left)).comp χ), ?_,
       MonoidHom.ext hred⟩, fun g ↦ ?_⟩⟩
