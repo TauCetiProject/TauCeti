@@ -276,16 +276,11 @@ private theorem continuous_and_norm_Gamma_mul_Gamma_sub_le {a : ℂ} {σ : ℝ}
   obtain ⟨C₂, hC₂, h₂⟩ := TauCeti.exists_norm_Gamma_sub_I_le (w := a - σ)
     (by simpa [sub_re] using haσ)
   refine ⟨hcont, C₁ * C₂, mul_pos hC₁ hC₂, fun y ↦ ?_⟩
-  have h1 : ‖Gamma (σ + y * I)‖ ≤
-      C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π / 2) * |y|) :=
-    (h₁ y).trans_eq (by congr 2; ring)
   have h2y : ‖Gamma (a - σ - y * I)‖ ≤
       C₂ * (1 + |y|) ^ (a.re - σ - 1 / 2) * Real.exp (-(π / 2) * |y|) := by
-    have h := h₂ y
-    simp only [sub_re, ofReal_re] at h
-    exact h.trans_eq (by congr 2; ring)
+    simpa [sub_re] using h₂ y
   rw [hsub, norm_mul]
-  refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) h1
+  refine (TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) (h₁ y)
     h2y).trans_eq ?_
   congr 1
   · congr 2; ring

@@ -387,16 +387,6 @@ theorem isTheta_cpow_div_ascPochhammer (j : ℕ) {x : ℝ} (hx : 0 < x)
   exact (hn.div (hp.trans (hs.pow (j + 1)))).mono
     (Filter.prod_mono (Filter.principal_mono.mpr subset_closure) le_rfl)
 
-private lemma exists_nonneg_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCommGroup E]
-    {g : ℝ → E} {α : ℝ}
-    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
-    ∃ C R : ℝ, 0 ≤ C ∧ ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
-  obtain ⟨C, R, hg⟩ := hg_bound
-  refine ⟨max C 0, R, le_max_right C 0, ?_⟩
-  filter_upwards [hg] with y hgy
-  exact hgy.trans (mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity)) (Real.exp_nonneg _))
-
 private lemma aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs {E : Type*}
     [NormedAddCommGroup E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
     (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
@@ -465,7 +455,7 @@ theorem integrable_cpow_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCo
     filter_upwards [hne] with y hy
     have hs : (σ : ℂ) + y * I ≠ 0 := fun h ↦ hy (by simpa using congrArg Complex.im h)
     simp [Complex.zero_cpow hs]
-  obtain ⟨C, R, _, hg⟩ := exists_nonneg_norm_le_exp_neg_mul_abs hg_bound
+  obtain ⟨C, R, hg⟩ := hg_bound
   set δ : ℝ := α - |w.arg|
   have hδ : 0 < δ := sub_pos.2 harg
   refine ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs R hδ).const_mul
@@ -506,7 +496,7 @@ theorem hasDerivAt_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
     (σ : ℝ) {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (harg : |w₀.arg| < α) :
     HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, w ^ ((σ : ℂ) + y * I) • g y)
       (∫ y : ℝ, (((σ : ℂ) + y * I) * w₀ ^ ((σ : ℂ) + y * I - 1)) • g y) w₀ := by
-  obtain ⟨C, R, _, hg⟩ := exists_nonneg_norm_le_exp_neg_mul_abs hg_bound
+  obtain ⟨C, R, hg⟩ := hg_bound
   obtain ⟨U, hU, r₀, r₁, α', hr₀, hα', hU_bounds⟩ :=
     Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt hw₀ harg
   set δ : ℝ := α - α'
