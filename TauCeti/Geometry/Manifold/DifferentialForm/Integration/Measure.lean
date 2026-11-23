@@ -395,8 +395,7 @@ private theorem measure_mpullback_apply_of_subset (hf : MeasurableEmbedding f)
   set b' := finBasisOfFinrankEq ℝ E' hk'.out
   set C : E ≃L[ℝ] E' := (b.equiv b' (Equiv.refl _)).toContinuousLinearEquiv
   have hb : b.map C.toLinearEquiv = b' := by
-    ext i
-    simp [C]
+    simp [C, Basis.map_equiv]
   have hμ : b.addHaar.map C = b'.addHaar := by
     rw [b.map_addHaar C, hb]
   rw [RoughForm.measure_apply_of_subset _ hA (hAsub.trans inter_subset_left),

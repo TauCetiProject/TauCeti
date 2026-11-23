@@ -110,8 +110,9 @@ theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
   set e := extChartAt 𝓘(ℝ, ℂ) ((0 : ℂ) : OnePoint ℂ)
   have hsrc : e.source = {∞}ᶜ := by
     simp [e, affineChart_source]
-  have himage : e '' {∞}ᶜ = univ :=
-    eq_univ_of_forall fun y ↦ ⟨(y : OnePoint ℂ), coe_ne_infty y, by simp [e]⟩
+  have himage : e '' {∞}ᶜ = univ := by
+    rw [← hsrc, e.image_source_eq_target]
+    simp [e, chartAt_coe, affineChart_target]
   -- In the affine chart the coefficient on a basis `b` is `ρ` times the area of `b`.
   have hcoef (y : ℂ) (b : Basis (Fin 2) ℝ ℂ) :
       RoughForm.inChartAt fubiniStudyForm.val ((0 : ℂ) : OnePoint ℂ) y b =
@@ -133,8 +134,8 @@ theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
   set b := finBasisOfFinrankEq ℝ ℂ Complex.finrank_real_complex
   calc RoughForm.measure fubiniStudyForm.val univ
       = RoughForm.measure fubiniStudyForm.val {∞}ᶜ := by
-        rw [← compl_union_self {(∞ : OnePoint ℂ)}, measure_union disjoint_compl_left
-          (measurableSet_singleton _), measure_singleton, add_zero]
+        rw [← measure_add_measure_compl (measurableSet_singleton (∞ : OnePoint ℂ)),
+          measure_singleton, zero_add]
     -- In the affine chart, `|ω_FS|` is the density `ρ` against Lebesgue measure.
     _ = ∫⁻ z, ENNReal.ofReal (fubiniStudyDensity z) := by
         rw [RoughForm.measure_apply_of_subset _ (measurableSet_singleton _).compl hsrc.ge,

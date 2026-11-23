@@ -658,9 +658,9 @@ theorem _root_.Orientation.measure_sphereVolumeForm_univ :
   -- Transport along inverse stereographic projection from a point `v` of the sphere.
   have : Nontrivial E :=
     Module.nontrivial_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = 2 + 1)]; norm_num)
-  obtain ⟨w, hw⟩ := exists_ne (0 : E)
+  obtain ⟨w, hw⟩ := NormedSpace.sphere_nonempty (x := (0 : E)).mpr zero_le_one
   have : Fact (finrank ℝ E = 3) := ⟨Fact.out (p := finrank ℝ E = 2 + 1)⟩
-  set v : sphere (0 : E) 1 := ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw]⟩
+  set v : sphere (0 : E) 1 := ⟨w, hw⟩
   set ι := complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v)
   let _ : MeasurableSpace (OnePoint ℂ) := borel _
   have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
