@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.Bornology.BoundedOperation
 
@@ -53,13 +52,14 @@ partial sums of a sequence enters an integral against the partial-sum step funct
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` of a linear order as
 soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic estimate becomes
 an explicit inequality valid at every point, which a summation argument can apply at infinitely
-many points at once. The interval bounds hold when the dominated function is bounded on the
-intervals `[a, b]` and the dominating one is bounded away from zero. They also hold when closed
-intervals are compact and both functions take values in seminormed groups and are continuous on
-the half-line, where the norm of the dominating function does not vanish: this covers
-exponentially decaying majorants such as `exp (-p x)`. For the slowly decaying majorant
-`(log x)⁻¹` on `[a, ∞)` (`a > 1`), local boundedness of `f` on compact intervals alone suffices,
-covering step functions such as summatory functions.
+many points at once. The interval bounds hold when, on each interval `[a, b]`, the dominated
+function is bounded and the norm of the dominating one is bounded below by a positive constant,
+which may shrink as `b` grows. This holds when closed intervals are compact and both functions
+take values in seminormed groups and are continuous on the half-line, where the norm of the
+dominating function does not vanish: this covers exponentially decaying majorants such as
+`exp (-p x)`. For the slowly decaying majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local
+boundedness of `f` on compact intervals alone suffices, covering step functions such as summatory
+functions.
 
 If the weighted terms `aₙ qⁿ` of a real sequence are bounded by `A` at a radius `q > 0`, then at
 a radius `c` they are bounded by `A * (|c| / q)ⁿ`. For `|c| < q` this geometric bound is the
@@ -84,16 +84,15 @@ evaluations of elliptic integrals.
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
-* `Asymptotics.isLittleO_smul_const_self_iff`: if `‖ψ‖` is frequently nonzero and scalar
-  multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if
-  `c = 0`.
+* `Asymptotics.isLittleO_smul_const_self_iff`: if `‖ψ‖` is frequently nonzero, `c` lies in a
+  normed (not merely seminormed) additive group and scalar multiplication satisfies
+  `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
-  when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below on `[a, ∞)` by a positive
-  constant.
+  when, on each `[a, b]`, `f` is bounded and `‖g‖` is bounded below by a positive constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
   intervals are compact, `f` and `g` take values in seminormed groups and are continuous on
   `[a, ∞)`, and `‖g‖` does not vanish there.
@@ -250,45 +249,47 @@ theorem IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc {ι E F : Type*} [Li
     exact csSup_le (Set.insert_nonempty _ _) fun s hs' ↦ (le_div_iff_of_neg hgx).mpr (hs s hs')
   · simpa [hgx] using hs _ (Set.mem_insert _ _)
 
-/-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
-bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on
-`[a, ∞)`, then `f = O(g)` uniformly on `[a, ∞)`. -/
+/-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop` and, on
+every interval `[a, b]`, `‖g‖` is bounded below by a positive constant and `f` is bounded, then
+`f = O(g)` uniformly on `[a, ∞)`. The lower bound on `‖g‖` may depend on `b`, so `‖g‖` may tend
+to zero. -/
 theorem IsBigO.isBigO_principal_Ici {ι E F : Type*} [LinearOrder ι] [Norm E] [Norm F]
-    {f : ι → E} {g : ι → F} {a : ι} {c : ℝ} (h : f =O[atTop] g) (hc : 0 < c)
-    (hg : ∀ x, a ≤ x → c ≤ ‖g x‖) (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
+    {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g)
+    (hg : ∀ b, ∃ c > 0, ∀ x ∈ Set.Icc a b, c ≤ ‖g x‖)
+    (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
     f =O[𝓟 (Set.Ici a)] g := by
-  -- on `[a, b]`, `f` is bounded and `‖g‖ ≥ c`
+  -- on `[a, b]`, `‖f‖ ≤ B` and `‖g‖ ≥ c`
   refine h.isBigO_principal_Ici_of_isBigO_principal_Icc fun b ↦ ?_
+  obtain ⟨c, hc, hgc⟩ := hg b
   obtain ⟨B, hB⟩ := hf b
   refine isBigO_principal.mpr ⟨max B 0 / c, fun x hx ↦ ?_⟩
   calc ‖f x‖ ≤ max B 0 := (hB x hx).trans (le_max_left _ _)
     _ ≤ max B 0 / c * ‖g x‖ := by
       rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-      exact mul_le_mul_of_nonneg_left (hg x hx.1) (le_max_right _ _)
+      exact mul_le_mul_of_nonneg_left (hgc x hx) (le_max_right _ _)
 
 /-- **An eventual big-O bound holds on a whole half-line, continuous version.** In a linear
 order whose closed intervals are compact, if `f = O(g)` at `atTop`, both functions take values in
 seminormed groups and are continuous on `[a, ∞)`, and `‖g‖` does not vanish there, then
-`f = O(g)` uniformly on `[a, ∞)`. Unlike `IsBigO.isBigO_principal_Ici`, `‖g‖` may tend to zero,
-as for an exponentially decaying majorant. -/
+`f = O(g)` uniformly on `[a, ∞)`. The majorant `‖g‖` may tend to zero, as for an exponentially
+decaying majorant. -/
 theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrder ι]
     [TopologicalSpace ι] [CompactIccSpace ι] [SeminormedAddGroup E] [SeminormedAddGroup F]
     {f : ι → E} {g : ι → F} {a : ι} (h : f =O[atTop] g) (hf : ContinuousOn f (Set.Ici a))
     (hg : ContinuousOn g (Set.Ici a)) (hg0 : ∀ x ∈ Set.Ici a, ‖g x‖ ≠ 0) :
     f =O[𝓟 (Set.Ici a)] g := by
-  -- on the compact `[a, b]`, `f = O(1)`, `1 = O(‖g‖)` as `‖g‖` is continuous and nonzero, and
-  -- `‖g‖ = O(g)`
-  refine h.isBigO_principal_Ici_of_isBigO_principal_Icc fun b ↦ ?_
-  exact ((hf.mono Set.Icc_subset_Ici_self).isBigO_principal isCompact_Icc
-    (norm_ne_zero_iff.mpr one_ne_zero) (c := (1 : ℝ))).trans <|
-      ((hg.norm.mono Set.Icc_subset_Ici_self).isBigO_rev_principal isCompact_Icc
-        (fun x hx ↦ hg0 x hx.1) 1).trans
-          (isBigO_of_le _ fun x ↦ (Real.norm_of_nonneg (norm_nonneg _)).le)
+  -- on the compact `[a, b]`, the continuous positive `‖g‖` has a positive lower bound, and the
+  -- continuous `f` is bounded
+  exact h.isBigO_principal_Ici
+    (fun b ↦ isCompact_Icc.exists_forall_le' (hg.norm.mono Set.Icc_subset_Ici_self)
+      fun x hx ↦ (norm_nonneg _).lt_of_ne' (hg0 x hx.1))
+    fun b ↦ isCompact_Icc.exists_bound_of_continuousOn (hf.mono Set.Icc_subset_Ici_self)
 
 /-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `‖ψ‖` is frequently
-nonzero along `l` and scalar multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c` for every
-scalar `r`, then `ψ • c = o(ψ)` along `l` if and only if `c = 0`. The norm identity holds for
-every action with `NormSMulClass`, by `norm_smul`. -/
+nonzero along `l`, the vector `c` lies in a normed additive group, whose norm vanishes only at
+`0` (a seminorm does not suffice), and scalar multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at
+`c` for every scalar `r`, then `ψ • c = o(ψ)` along `l` if and only if `c = 0`. The norm identity
+holds for every action with `NormSMulClass`, by `norm_smul`. -/
 @[simp]
 theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [SeminormedAddGroup 𝕜] [NormedAddGroup E]
     [SMul 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ‖ψ x‖ ≠ 0)
@@ -317,25 +318,20 @@ theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul �
 
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
-a constant `C ≥ 0` with `‖f x‖ ≤ C / log x` for all `x ≥ a`. Unlike `IsBigO.isBigO_principal_Ici`,
-`(log x)⁻¹` tends to zero; unlike `IsBigO.isBigO_principal_Ici_of_continuousOn`, `f` need not be
-continuous. -/
+a constant `C ≥ 0` with `‖f x‖ ≤ C / log x` for all `x ≥ a`. Unlike
+`IsBigO.isBigO_principal_Ici_of_continuousOn`, `f` need not be continuous. -/
 theorem IsBigO.exists_norm_le_div_log {E : Type*} [Norm E] {f : ℝ → E} {a : ℝ}
     (hO : f =O[atTop] fun x ↦ (Real.log x)⁻¹) (ha : 1 < a)
     (hbdd : ∀ b : ℝ, ∃ B : ℝ, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ x : ℝ, a ≤ x → ‖f x‖ ≤ C / Real.log x := by
   have hlog {x : ℝ} (hx : a ≤ x) : 0 < Real.log x := Real.log_pos (ha.trans_le hx)
-  -- on `[a, b]`, `f = O(1)`, and `1 = O((log x)⁻¹)` as `(log x)⁻¹` is continuous and positive
+  -- on `[a, b]`, `(log x)⁻¹ ≥ (log (max a b))⁻¹ > 0`, as `log` is increasing
   have hO' : f =O[𝓟 (Set.Ici a)] fun x ↦ (Real.log x)⁻¹ := by
-    refine hO.isBigO_principal_Ici_of_isBigO_principal_Icc fun b ↦ ?_
-    obtain ⟨B, hB⟩ := hbdd b
-    have hcont : ContinuousOn (fun x ↦ (Real.log x)⁻¹) (Set.Icc a b) :=
-      (Real.continuousOn_log.mono fun x (hx : x ∈ Set.Icc a b) ↦
-        (zero_lt_one.trans (ha.trans_le hx.1)).ne').inv₀
-        fun x hx ↦ (hlog hx.1).ne'
-    exact (isBigO_principal.mpr ⟨B, fun x hx ↦ by simpa using hB x hx⟩ :
-      f =O[𝓟 (Set.Icc a b)] fun _ ↦ (1 : ℝ)).trans <|
-        hcont.isBigO_rev_principal isCompact_Icc (fun x hx ↦ (inv_pos.mpr (hlog hx.1)).ne') 1
+    refine hO.isBigO_principal_Ici (fun b ↦ ⟨(Real.log (max a b))⁻¹,
+      inv_pos.mpr (hlog (le_max_left a b)), fun x hx ↦ ?_⟩) hbdd
+    rw [Real.norm_of_nonneg (inv_nonneg.mpr (hlog hx.1).le)]
+    exact inv_anti₀ (hlog hx.1) (Real.log_le_log (zero_lt_one.trans (ha.trans_le hx.1))
+      (hx.2.trans (le_max_right a b)))
   obtain ⟨C, hC0, hC⟩ := hO'.exists_pos
   refine ⟨C, hC0.le, fun x hx ↦ ?_⟩
   simpa [norm_inv, Real.norm_of_nonneg (hlog hx).le, div_eq_mul_inv] using

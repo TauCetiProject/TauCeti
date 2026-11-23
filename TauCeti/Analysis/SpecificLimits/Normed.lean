@@ -21,8 +21,8 @@ index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with 
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
 diverge in norm. In any seminormed ring, the shifted polynomial-geometric terms
 `(n + c) ^ k * r ^ n` tend to zero whenever `‖r‖ < 1`, which absorbs polynomial growth after
-shifting an index; in any normed ring with summable geometric series, the series
-`∑ (n + c) ^ k * r ^ n` is summable.
+shifting an index; under the same hypothesis `‖r‖ < 1`, in any normed ring with summable
+geometric series, the series `∑ (n + c) ^ k * r ^ n` is summable.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 
