@@ -204,40 +204,23 @@ theorem orientationAt_toBoundarylessModel_transContinuousLinearEquiv
         (BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) e k x) :
         _root_.Orientation ℝ F ι) := by
   set I' := 𝓘(ℝ, E).transContinuousLinearEquiv e
-  set Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M) e k
-  have hcoe : (Φ : M → BoundarylessModel I' M) = BoundarylessModel.homeomorph I' M ∘ id := by
-    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Function.comp_id]
   have hpres := o.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv e k x
-  change IsOrientationPreservingAt o (o.transContinuousLinearEquiv e).toBoundarylessModel
-    (Φ : M → BoundarylessModel I' M) x at hpres
-  rw [hcoe] at hpres
-  set e' : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ]
-      TangentSpace 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x) :=
-    ((tangentSpaceCastModel 𝓘(ℝ, E) x).trans e).trans
-      (tangentSpaceCastModel 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x)).symm
-  have hmf : (e' : TangentSpace 𝓘(ℝ, E) x →L[ℝ]
-        TangentSpace 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x)) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) (BoundarylessModel.homeomorph I' M ∘ id) x := by
-    rw [BoundarylessModel.mfderiv_target I' 𝓘(ℝ, E) id x,
+  rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv] at hpres
+  have hmf : (e.toContinuousLinearMap : TangentSpace 𝓘(ℝ, E) x →L[ℝ]
+        TangentSpace 𝓘(ℝ, F) (BoundarylessModel.homeomorph I' M x)) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) (BoundarylessModel.homeomorph I' M) x := by
+    rw [← Function.comp_id (BoundarylessModel.homeomorph I' M),
+      BoundarylessModel.mfderiv_target I' 𝓘(ℝ, E) id x,
       ModelWithCorners.mfderiv_id_transContinuousLinearEquiv 𝓘(ℝ, E) e x]
     ext v
-    have hcast_Φ (w : TangentSpace I' x) :
-        tangentSpaceCastModel I' (id x) w = tangentSpaceCastModel I' x w := rfl
-    simp only [e', I', Function.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply, hcast_Φ,
-      ContinuousLinearEquiv.apply_symm_apply]
-  have hcast_in (v : TangentSpace 𝓘(ℝ, E) x) : tangentSpaceCastModel 𝓘(ℝ, E) x v = v := rfl
-  have hcast_out (w : F) :
-      (tangentSpaceCastModel 𝓘(ℝ, F) ((BoundarylessModel.homeomorph I' M ∘ id) x)).symm w = w := rfl
-  have he' : (e'.toLinearEquiv : E ≃ₗ[ℝ] F) = e.toLinearEquiv := by
-    ext v
-    simp only [e', ContinuousLinearEquiv.trans_toLinearEquiv, LinearEquiv.trans_apply,
-      ContinuousLinearEquiv.coe_toLinearEquiv, hcast_in, hcast_out]
+    simp only [ContinuousLinearEquiv.coe_coe, id_eq]
+    -- `TangentSpace 𝓘(ℝ, E)`, `TangentSpace I'`, and `TangentSpace 𝓘(ℝ, F)` are definitionally
+    -- `E` and `F`, on which `tangentSpaceCastModel` is the identity.
     rfl
-  have h := (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ e' hmf).1 hpres
-  rw [← hcoe] at h
-  rw [← he']
-  exact h
+  have hpt : BoundarylessModel.homeomorph I' M x =
+      BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M) e k x := by
+    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv]
+  exact hpt ▸ (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ e hmf).1 hpres
 
 end SelfModelTransContinuousLinearEquiv
 

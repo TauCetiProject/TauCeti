@@ -1092,25 +1092,25 @@ theorem comap_toHomologicalOrientation
   set oM : _root_.Orientation ℝ E (Fin (n + 1)) := o.orientationAt x
   set oN : _root_.Orientation ℝ E (Fin (n + 1)) := o'.orientationAt (j x)
   obtain ⟨e, he, heo⟩ := (isOrientationPreservingAt_iff o o' j x).1 (hj' x)
+  -- On `𝓘(ℝ, E)`, `TangentSpace 𝓘(ℝ, E)` is definitionally `E`.
   let e' : E ≃L[ℝ] E := e
   set f' : E →L[ℝ] E := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x
   have he' : (e' : E →L[ℝ] E) = f' := he
   have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ E := by simp [hE]
-  have hcast_out (v : E) :
-      tangentSpaceCastModel 𝓘(ℝ, E) (j x) v = v := rfl
-  have hcast_mf (v : E) :
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x ((tangentSpaceCastModel 𝓘(ℝ, E) x).symm v) = f' v := rfl
-  have hf' : (tangentSpaceCastModel 𝓘(ℝ, E) (j x) : TangentSpace 𝓘(ℝ, E) (j x) →L[ℝ] E) ∘L
-        mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x ∘L
-        ((tangentSpaceCastModel 𝓘(ℝ, E) x).symm : E →L[ℝ] TangentSpace 𝓘(ℝ, E) x) = f' := by
-    ext v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hcast_out, hcast_mf]
-  have hfd : HasFDerivAt (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) f' (chartAt E x x) := by
-    have h :=
-      (mdifferentiableAt_of_isInvertible_mfderiv (hj' x).isInvertible_mfderiv).hasMFDerivAt.right
+  have hmd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) j x :=
+    mdifferentiableAt_of_isInvertible_mfderiv (hj' x).isInvertible_mfderiv
+  have hdiff : DifferentiableAt ℝ (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) (chartAt E x x) := by
+    have h := hmd.hasMFDerivAt.right.differentiableWithinAt
     simpa only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
       modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.id_comp, Function.comp_id,
-      range_id, hasFDerivWithinAt_univ, hf'] using h
+      range_id, differentiableWithinAt_univ] using h
+  have hmf : f' = fderiv ℝ (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) (chartAt E x x) := by
+    have h := hmd.mfderiv_eq_fderiv_extChartAt_conj rfl
+    simp only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, Function.id_comp, Function.comp_id] at h
+    exact h
+  have hfd : HasFDerivAt (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) f' (chartAt E x x) :=
+    hmf ▸ hdiff.hasFDerivAt
   have hdet : f'.det ≠ 0 := by
     rw [← he']
     exact (LinearEquiv.isUnit_det' e'.toLinearEquiv).ne_zero
