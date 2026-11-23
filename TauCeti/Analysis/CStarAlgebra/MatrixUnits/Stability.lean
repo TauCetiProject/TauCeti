@@ -86,6 +86,16 @@ theorem norm_lt_three [NonUnitalCStarAlgebra A] {δ : ℝ} {x : ∀ r : κ, n r 
     nlinarith [(hx.norm_star_sub_lt r i j).le.trans hδ,
       (hx.norm_mul_same_sub_lt r j i j).trans_le hδ, norm_nonneg (x r i j)]
   nlinarith
+private lemma norm_mul_mul_sub_le {R : Type*} [NonUnitalSeminormedRing R] (p₁ a₁ x a₂ p₂ : R) :
+    ‖p₁ * x * p₂ - x‖ ≤
+      (‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖) * ‖p₂‖ + ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ := by
+  have h1 : ‖p₁ * x * p₂ - x‖ ≤ ‖p₁ * x - x‖ * ‖p₂‖ + ‖x * p₂ - x‖ :=
+    norm_mul_sub_le_right p₂ (p₁ * x) x x
+  have h2 : ‖p₁ * x - x‖ ≤ ‖p₁ - a₁‖ * ‖x‖ + ‖a₁ * x - x‖ :=
+    norm_mul_sub_le_right x p₁ a₁ x
+  have h3 : ‖x * p₂ - x‖ ≤ ‖x‖ * ‖p₂ - a₂‖ + ‖x * a₂ - x‖ :=
+    norm_mul_sub_le_left x p₂ a₂ x
+  nlinarith [norm_nonneg p₂]
 private lemma exists_column_partialIsometry {𝕜' S : Type*} [NonUnitalCStarAlgebra A] [Monoid 𝕜']
     [MulAction 𝕜' A] [SetLike S A] [NonUnitalSubringClass S A] [SMul ℝ 𝕜']
     [IsScalarTower ℝ 𝕜' A] [SMulMemClass S 𝕜' A] [StarMemClass S A] {s : S}
@@ -102,42 +112,28 @@ private lemma exists_column_partialIsometry {𝕜' S : Type*} [NonUnitalCStarAlg
   set z : A := p r i * x r i i₀ * p r i₀
   have hz_norm : ‖z‖ ≤ 3 := (norm_mul_le_of_le (norm_mul_le_of_le ((hp_proj r i).norm_le _)
     (hx_le i i₀)) ((hp_proj r i₀).norm_le _)).trans_eq (by norm_num)
-  have hz_sub_x : ‖z - x r i i₀‖ < (16 / 200) * η := by
-    have h1 : ‖z - x r i i * x r i i₀ * p r i₀‖ < (3 / 200) * η := by
-      have heq : z - x r i i * x r i i₀ * p r i₀ = (p r i - x r i i) * (x r i i₀ * p r i₀) := by
-        dsimp [z]; rw [sub_mul, mul_assoc, mul_assoc]
-      have hxp : ‖x r i i₀ * p r i₀‖ ≤ 3 :=
-        (norm_mul_le_of_le (hx_le i i₀) ((hp_proj r i₀).norm_le _)).trans_eq (mul_one 3)
-      rw [heq]
-      exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p r i - x r i i), hp_dist r i])
-    have h2 : ‖x r i i * x r i i₀ * p r i₀ - x r i i * x r i i₀ * x r i₀ i₀‖ < (9 / 200) * η := by
-      have heq : x r i i * x r i i₀ * p r i₀ - x r i i * x r i i₀ * x r i₀ i₀ =
-          (x r i i * x r i i₀) * (p r i₀ - x r i₀ i₀) := by rw [mul_sub]
-      have hxx : ‖x r i i * x r i i₀‖ ≤ 9 :=
-        (norm_mul_le_of_le (hx_le i i) (hx_le i i₀)).trans_eq (by norm_num)
-      rw [heq]
-      exact (norm_mul_le _ _).trans_lt (by
-        nlinarith [norm_nonneg (p r i₀ - x r i₀ i₀), hp_dist r i₀])
-    have h3 : ‖x r i i * x r i i₀ * x r i₀ i₀ - x r i i₀ * x r i₀ i₀‖ < (3 / 200) * η := by
-      have heq : x r i i * x r i i₀ * x r i₀ i₀ - x r i i₀ * x r i₀ i₀ =
-          (x r i i * x r i i₀ - x r i i₀) * x r i₀ i₀ := by rw [sub_mul]
-      rw [heq]
-      exact (norm_mul_le _ _).trans_lt (by
-        nlinarith [norm_nonneg (x r i i * x r i i₀ - x r i i₀),
-          hx.norm_mul_same_sub_lt r i i i₀, hx_le i₀ i₀])
-    have h4 : ‖x r i i₀ * x r i₀ i₀ - x r i i₀‖ < (1 / 200) * η := by
-      linarith [hx.norm_mul_same_sub_lt r i i₀ i₀]
-    have h12 := (norm_sub_le_norm_sub_add_norm_sub z _ _).trans_lt (add_lt_add h1 h2)
-    have h123 := (norm_sub_le_norm_sub_add_norm_sub z _ _).trans_lt (add_lt_add h12 h3)
-    exact ((norm_sub_le_norm_sub_add_norm_sub z _ (x r i i₀)).trans_lt
-      (add_lt_add h123 h4)).trans_eq (by ring)
+  have hz_sub_x : ‖z - x r i i₀‖ < (8 / 200) * η := by
+    have hcomp := norm_mul_mul_sub_le (p r i) (x r i i) (x r i i₀) (x r i₀ i₀) (p r i₀)
+    have h1 : ‖p r i - x r i i‖ * ‖x r i i₀‖ < (3 / 200) * η := by
+      nlinarith [norm_nonneg (p r i - x r i i), hp_dist r i, hx_le i i₀]
+    have h2 : ‖x r i i * x r i i₀ - x r i i₀‖ < (1 / 200) * η :=
+      (hx.norm_mul_same_sub_lt r i i i₀).trans_le (hδ_η.trans_eq (by ring))
+    have h3 : (‖p r i - x r i i‖ * ‖x r i i₀‖ + ‖x r i i * x r i i₀ - x r i i₀‖) * ‖p r i₀‖ ≤
+        (4 / 200) * η := by
+      have hp0 := (hp_proj r i₀).norm_le _
+      nlinarith [norm_nonneg (p r i₀)]
+    have h4 : ‖x r i i₀‖ * ‖p r i₀ - x r i₀ i₀‖ < (3 / 200) * η := by
+      nlinarith [norm_nonneg (p r i₀ - x r i₀ i₀), hp_dist r i₀, hx_le i i₀]
+    have h5 : ‖x r i i₀ * x r i₀ i₀ - x r i i₀‖ < (1 / 200) * η :=
+      (hx.norm_mul_same_sub_lt r i i₀ i₀).trans_le (hδ_η.trans_eq (by ring))
+    linarith
   have hz_init : ‖star z * z - p r i₀‖ < η :=
     (norm_star_mul_self_sub_lt_of_norm_le hz_norm (hx_le i i₀) hz_sub_x.le
       (hx.norm_star_sub_lt r i i₀) (hx.norm_mul_same_sub_lt r i₀ i i₀)
       (hp_dist r i₀)).trans_le (by linarith)
   have hdecomp : star z - x r i₀ i = star (z - x r i i₀) + (star (x r i i₀) - x r i₀ i) := by
     rw [star_sub, sub_add_sub_cancel]
-  have hstar_z_sub : ‖star z - x r i₀ i‖ ≤ (17 / 200) * η := by
+  have hstar_z_sub : ‖star z - x r i₀ i‖ ≤ (9 / 200) * η := by
     rw [hdecomp]
     exact (norm_add_le_of_le ((norm_star _).le.trans hz_sub_x.le)
       ((hx.norm_star_sub_lt r i i₀).le.trans hδ_η)).trans_eq (by ring)
@@ -154,6 +150,50 @@ private lemma exists_column_partialIsometry {𝕜' S : Type*} [NonUnitalCStarAlg
     by linarith [norm_sub_le_norm_sub_add_norm_sub v z (x r i i₀)]⟩
 end IsApproxMatrixUnitSystem
 end
+private lemma exists_isMatrixUnitSystem_mem_of_diag {κ A 𝕜' S : Type*} [NonUnitalCStarAlgebra A]
+    {n : κ → Type*} [Monoid 𝕜'] [MulAction 𝕜' A] [SetLike S A] [NonUnitalSubringClass S A]
+    [SMul ℝ 𝕜'] [IsScalarTower ℝ 𝕜' A] [SMulMemClass S 𝕜' A] [StarMemClass S A]
+    {s : S} [IsClosed (s : Set A)] {ε η δ : ℝ} (hη_le : η ≤ 1 / 32) (hη_eps : η ≤ ε / 60)
+    (hδ_η : δ ≤ η / 200) {x : ∀ r : κ, n r → n r → A} (hx_mem : ∀ r i j, x r i j ∈ s)
+    (hx : IsApproxMatrixUnitSystem δ x) {p : (Σ r : κ, n r) → A} (hp_mem : ∀ u, p u ∈ s)
+    (hp_proj : ∀ u, IsStarProjection (p u)) (hp_ortho : Pairwise (IsStarOrtho on p))
+    (hp_dist : ∀ u, ‖p u - x u.1 u.2 u.2‖ < η / 200) :
+    ∃ e : ∀ r : κ, n r → n r → A,
+      (∀ r i j, e r i j ∈ s) ∧ IsMatrixUnitSystem e ∧ ∀ r i j, ‖e r i j - x r i j‖ < ε := by
+  have hv_blk (r : κ) : ∃ (q : A) (v : n r → A), (∀ i, v i ∈ s) ∧
+      (∀ i, IsPartialIsometry (v i)) ∧ (∀ i, star (v i) * v i = q) ∧
+      (∀ i, v i * star (v i) = p ⟨r, i⟩) ∧ (∀ i j, ‖v i * star (v j) - x r i j‖ < ε) := by
+    by_cases hnr : Nonempty (n r)
+    · obtain ⟨i₀⟩ := hnr
+      have hcol (i : n r) := hx.exists_column_partialIsometry (𝕜' := 𝕜') (s := s)
+        hη_le hδ_η hx_mem (fun r i ↦ hp_mem ⟨r, i⟩) (fun r i ↦ hp_proj ⟨r, i⟩)
+        (fun r i ↦ hp_dist ⟨r, i⟩) r i i₀
+      choose v hv_mem hv_pi hv_init hv_fin hv_dist using hcol
+      refine ⟨p ⟨r, i₀⟩, v, hv_mem, hv_pi, hv_init, hv_fin, fun i j ↦ ?_⟩
+      have hη_pos : 0 < η := by linarith [hp_dist ⟨r, i⟩, norm_nonneg (p ⟨r, i⟩ - x r i i)]
+      have hδ_half : δ ≤ 1 / 2 := hδ_η.trans (by linarith)
+      have hxi : ‖x r i i₀‖ ≤ 3 := (hx.norm_lt_three hδ_half r i i₀).le
+      have h1 : ‖v i * star (v j) - x r i i₀ * star (x r j i₀)‖ < 44 * η := by
+        have hmul := norm_mul_star_sub_mul_star_le (v i) (v j) (x r i i₀) (x r j i₀)
+        have hvj : ‖v j‖ ≤ 1 := (hv_pi j).norm_le_one
+        nlinarith [hv_dist i, hv_dist j, norm_nonneg (v i - x r i i₀),
+          norm_nonneg (v j - x r j i₀)]
+      have h2 : ‖x r i i₀ * star (x r j i₀) - x r i j‖ ≤
+          ‖x r i i₀‖ * ‖star (x r j i₀) - x r i₀ j‖ + ‖x r i i₀ * x r i₀ j - x r i j‖ :=
+        norm_mul_sub_le_left (x r i i₀) (star (x r j i₀)) (x r i₀ j) (x r i j)
+      have htri := norm_sub_le_norm_sub_add_norm_sub (v i * star (v j))
+        (x r i i₀ * star (x r j i₀)) (x r i j)
+      nlinarith [hx.norm_star_sub_lt r j i₀, hx.norm_mul_same_sub_lt r i i₀ j,
+        norm_nonneg (star (x r j i₀) - x r i₀ j)]
+    · exact ⟨0, fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim,
+        fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim⟩
+  choose q v hv_mem hv_pi hv_init hv_fin hv_dist using hv_blk
+  exact ⟨fun r i j ↦ v r i * star (v r j),
+    fun r i j ↦ mul_mem (hv_mem r i) (star_mem (hv_mem r j)),
+    IsMatrixUnitSystem.of_partialIsometry hv_pi (fun r i j ↦ by rw [hv_init r i, hv_init r j])
+      (fun u w huw ↦ by
+        rw [onFun, hv_fin, hv_fin]; exact (hp_ortho huw).mul_eq_zero' (hp_proj w).isSelfAdjoint),
+    hv_dist⟩
 /-- **Uniform norm stability of finite multi-block matrix-unit systems in closed
 `𝕜'`-`⋆`-subalgebras** (scalar monoid `𝕜'` over `ℝ`): for `ε > 0` and finite `n : κ → Type*`, some
 `δ > 0` (independent of `A, s`) puts every `δ`-approx system in `s` within `ε` of an exact one. -/
@@ -173,8 +213,6 @@ theorem exists_pos_forall_exists_isMatrixUnitSystem_mem_norm_sub_lt {κ : Type*}
   refine ⟨δ, by positivity, fun {A 𝕜' S} _ _ _ _ _ _ _ _ _ {s} _ {x} hx_mem hx ↦ ?_⟩
   have hδ_le : δ ≤ δ_diag := (min_le_right _ _).trans (min_le_left _ _)
   have hδ_le_η : δ ≤ η / 200 := (min_le_right _ _).trans (min_le_right _ _)
-  have hη_le : η ≤ 1 / 32 := min_le_left _ _
-  have hη_eps : η ≤ ε / 60 := min_le_right _ _
   obtain ⟨p, hp_mem, hp_proj, hp_ortho, hp_dist⟩ :=
     hδ_diag (𝕜' := 𝕜') (s := s) (d := fun u : Σ r : κ, n r ↦ x u.1 u.2 u.2)
       (fun u ↦ hx_mem u.1 u.2 u.2)
@@ -184,44 +222,8 @@ theorem exists_pos_forall_exists_isMatrixUnitSystem_mem_norm_sub_lt {κ : Type*}
         by_cases hrt : r = t
         · subst hrt; exact (hx.norm_mul_lt_of_ne r i j fun h ↦ huw (congrArg _ h)).trans_le hδ_le
         · exact (hx.norm_mul_lt_of_block_ne hrt i i j j).trans_le hδ_le)
-  have hv_blk (r : κ) : ∃ (q : A) (i₀ : n r → n r) (v : n r → A), (∀ i j, i₀ i = i₀ j) ∧
-      (∀ i, v i ∈ s) ∧ (∀ i, IsPartialIsometry (v i)) ∧ (∀ i, star (v i) * v i = q) ∧
-      (∀ i, v i * star (v i) = p ⟨r, i⟩) ∧ (∀ i, ‖v i - x r i (i₀ i)‖ < 11 * η) := by
-    by_cases hnr : Nonempty (n r)
-    · obtain ⟨i₀⟩ := hnr
-      have hcol (i : n r) := hx.exists_column_partialIsometry (𝕜' := 𝕜') (s := s)
-        hη_le hδ_le_η hx_mem (fun r i ↦ hp_mem ⟨r, i⟩) (fun r i ↦ hp_proj ⟨r, i⟩)
-        (fun r i ↦ hp_dist ⟨r, i⟩) r i i₀
-      choose v hv_mem hv_pi hv_init hv_fin hv_dist using hcol
-      exact ⟨p ⟨r, i₀⟩, fun _ ↦ i₀, v, fun _ _ ↦ rfl, hv_mem, hv_pi, hv_init, hv_fin, hv_dist⟩
-    · exact ⟨0, fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim,
-        fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim,
-        fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim, fun i ↦ (hnr ⟨i⟩).elim⟩
-  choose q i₀ v hi₀_const hv_mem hv_pi hv_init hv_fin hv_dist using hv_blk
-  refine ⟨fun r i j ↦ v r i * star (v r j),
-    fun r i j ↦ mul_mem (hv_mem r i) (star_mem (hv_mem r j)),
-    IsMatrixUnitSystem.of_partialIsometry hv_pi (fun r i j ↦ by rw [hv_init r i, hv_init r j])
-      (fun u w huw ↦ by
-        rw [onFun, hv_fin, hv_fin]; exact (hp_ortho huw).mul_eq_zero' (hp_proj w).isSelfAdjoint),
-    fun r i j ↦ ?_⟩
-  have hη_pos : 0 < η := by positivity
-  have hxi : ‖x r i (i₀ r i)‖ ≤ 3 := (hx.norm_lt_three (min_le_left _ _) r i (i₀ r i)).le
-  have h1 : ‖v r i * star (v r j) - x r i (i₀ r i) * star (x r j (i₀ r j))‖ < 44 * η := by
-    have hmul := norm_mul_sub_mul_le (v r i) (star (v r j)) (x r i (i₀ r i)) (star (x r j (i₀ r j)))
-    rw [norm_star, ← star_sub, norm_star] at hmul
-    have hvj : ‖v r j‖ ≤ 1 := (hv_pi r j).norm_le_one
-    nlinarith [hv_dist r i, hv_dist r j, norm_nonneg (v r i - x r i (i₀ r i)),
-      norm_nonneg (v r j - x r j (i₀ r j))]
-  have h2 : ‖x r i (i₀ r i) * star (x r j (i₀ r j)) - x r i j‖ ≤
-      ‖x r i (i₀ r i)‖ * ‖star (x r j (i₀ r j)) - x r (i₀ r i) j‖ +
-        ‖x r i (i₀ r i) * x r (i₀ r i) j - x r i j‖ :=
-    norm_mul_sub_le_left (x r i (i₀ r i)) (star (x r j (i₀ r j))) (x r (i₀ r i) j) (x r i j)
-  have hstar : ‖star (x r j (i₀ r j)) - x r (i₀ r i) j‖ < δ := by
-    rw [hi₀_const r j i]; exact hx.norm_star_sub_lt r j (i₀ r i)
-  have htri := norm_sub_le_norm_sub_add_norm_sub (v r i * star (v r j))
-    (x r i (i₀ r i) * star (x r j (i₀ r j))) (x r i j)
-  have hmul_sub := hx.norm_mul_same_sub_lt r i (i₀ r i) j
-  nlinarith [norm_nonneg (star (x r j (i₀ r j)) - x r (i₀ r i) j)]
+  exact exists_isMatrixUnitSystem_mem_of_diag (min_le_left _ _) (min_le_right _ _)
+    hδ_le_η hx_mem hx hp_mem hp_proj hp_ortho hp_dist
 /-- **Uniform norm stability of finite multi-block matrix-unit systems**: for `ε > 0` and finite
 `n : κ → Type*`, some `δ > 0` (independent of `A`) puts `δ`-approx systems within `ε` of exact. -/
 theorem exists_pos_forall_exists_isMatrixUnitSystem_norm_sub_lt {κ : Type*} (n : κ → Type*)

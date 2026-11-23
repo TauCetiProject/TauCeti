@@ -21,6 +21,8 @@ defects under perturbation, and star-product defects in seminormed star rings an
 * `TauCeti.norm_selfAdjointPart_sub`, `TauCeti.norm_selfAdjointPart_mul_self_sub_le`:
   distance and idempotency-defect bounds for `selfAdjointPart ℝ e`.
 * `TauCeti.norm_sub_star_le_of_norm_sub`: skew-adjointness defect under perturbation.
+* `TauCeti.norm_mul_star_sub_mul_star_le`, `TauCeti.norm_star_mul_sub_star_mul_le`:
+  starred-product perturbation bounds.
 * `TauCeti.norm_star_mul_self_sub_le`, `TauCeti.norm_star_mul_self_sub_lt_of_norm_le`:
   star-product perturbation bounds separating approximation and defect terms.
 -/
@@ -71,6 +73,21 @@ theorem norm_sub_star_le_of_norm_sub {A : Type*} [SeminormedAddCommGroup A] [Sta
   linarith [norm_add_le (y - x) ((x - star x) - star (y - x)),
     norm_sub_le (x - star x) (star (y - x)), norm_star (y - x)]
 
+/-- Norm bound for the difference of two right-starred products:
+`‖a * star b - c * star d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖`. -/
+theorem norm_mul_star_sub_mul_star_le {A : Type*} [NonUnitalSeminormedRing A] [StarAddMonoid A]
+    [NormedStarGroup A] (a b c d : A) :
+    ‖a * star b - c * star d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖ := by
+  simpa only [← star_sub, norm_star] using norm_mul_sub_mul_le a (star b) c (star d)
+
+/-- Norm bound for the difference of two left-starred products:
+`‖star a * b - star c * d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖`. -/
+theorem norm_star_mul_sub_star_mul_le {A : Type*} [NonUnitalSeminormedRing A] [StarAddMonoid A]
+    [NormedStarGroup A] (a b c d : A) :
+    ‖star a * b - star c * d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖ := by
+  simpa only [star_star, ← star_sub, norm_star] using
+    norm_mul_star_sub_mul_star_le (star a) (star b) (star c) (star d)
+
 /-- Star-product defect bound for `star z * z - p` via an approximation `y` of `z`, an
 approximation `y'` of `star y`, and a target `d` near `y' * y`:
 `‖star z * z - p‖ ≤ (‖z‖ + ‖y‖) * ‖z - y‖ + ‖star y - y'‖ * ‖y‖ + ‖y' * y - d‖ + ‖p - d‖`. -/
@@ -78,9 +95,8 @@ theorem norm_star_mul_self_sub_le {A : Type*} [NonUnitalSeminormedRing A] [StarR
     [NormedStarGroup A] (z y y' d p : A) :
     ‖star z * z - p‖ ≤
       (‖z‖ + ‖y‖) * ‖z - y‖ + ‖star y - y'‖ * ‖y‖ + ‖y' * y - d‖ + ‖p - d‖ := by
-  have h1 : ‖star z * z - star y * y‖ ≤ (‖z‖ + ‖y‖) * ‖z - y‖ := by
-    refine (norm_mul_sub_mul_le (star z) z (star y) y).trans_eq ?_
-    rw [← star_sub, norm_star, norm_star, mul_comm ‖z - y‖ ‖z‖, add_mul]
+  have h1 : ‖star z * z - star y * y‖ ≤ (‖z‖ + ‖y‖) * ‖z - y‖ :=
+    (norm_star_mul_sub_star_mul_le z z y y).trans_eq (by ring)
   have h2 : ‖star y * y - d‖ ≤ ‖star y - y'‖ * ‖y‖ + ‖y' * y - d‖ :=
     norm_mul_sub_le_right y (star y) y' d
   have h3 : ‖star z * z - p‖ ≤ ‖star z * z - star y * y‖ + (‖star y * y - d‖ + ‖d - p‖) :=

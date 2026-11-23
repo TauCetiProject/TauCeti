@@ -72,6 +72,17 @@ theorem norm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b c d : R
   rw [← mul_sub]
   exact norm_mul_le _ _
 
+/-- Displacement bound for orthogonal compression by a contraction `‖p‖ ≤ 1`:
+`‖(x - p * x - x * p + p * x * p) - x‖ ≤ 2 * ‖p * x‖ + ‖x * p‖`. -/
+theorem norm_sub_sub_add_sub_le_of_norm_le_one {R : Type*} [NonUnitalSeminormedRing R] {p : R}
+    (hp : ‖p‖ ≤ 1) (x : R) :
+    ‖(x - p * x - x * p + p * x * p) - x‖ ≤ 2 * ‖p * x‖ + ‖x * p‖ := by
+  have h : (x - p * x - x * p + p * x * p) - x = -(p * x) + -(x * p) + p * x * p := by abel
+  rw [h]
+  refine norm_add₃_le.trans ?_
+  rw [norm_neg, norm_neg]
+  linarith [norm_mul_le_of_le (le_refl ‖p * x‖) hp]
+
 /-- Idempotency defect bound for a perturbation `y` of `x`:
 `‖y * y - y‖ ≤ ‖x * x - x‖ + (‖y‖ + ‖x‖ + 1) * ‖y - x‖`. -/
 theorem norm_mul_self_sub_le_of_norm_sub {R : Type*} [NonUnitalSeminormedRing R] (x y : R) :

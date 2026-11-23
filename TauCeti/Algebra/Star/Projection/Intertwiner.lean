@@ -60,7 +60,7 @@ theorem projectionIntertwiner_mem {T : Type*} [SetLike T R] [SubringClass T R] {
     (hp : p ∈ s) (hq : q ∈ s) : projectionIntertwiner p q ∈ s :=
   add_mem (mul_mem hq hp) (mul_mem (sub_mem (one_mem s) hq) (sub_mem (one_mem s) hp))
 /-- Any unital ring homomorphism preserves `TauCeti.projectionIntertwiner`. -/
-theorem map_projectionIntertwiner {F : Type*} [FunLike F R S] [RingHomClass F R S] (φ : F)
+@[simp] theorem map_projectionIntertwiner {F : Type*} [FunLike F R S] [RingHomClass F R S] (φ : F)
     (p q : R) : φ (projectionIntertwiner p q) = projectionIntertwiner (φ p) (φ q) := by
   simp [projectionIntertwiner_def]
 /-- Taking the star of `TauCeti.projectionIntertwiner p q` swaps and stars the arguments. -/

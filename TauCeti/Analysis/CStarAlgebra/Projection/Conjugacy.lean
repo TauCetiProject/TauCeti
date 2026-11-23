@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import TauCeti.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 
 /-!
 # Unitary conjugacy of nearby projections in a C⋆-algebra
@@ -23,6 +24,7 @@ polar-normalizes to `u = hp.projectionConjugacyUnitary hq h` for `‖p - q‖ < 
 ## Main results
 
 * `IsStarProjection.projectionConjugacyUnitary`,
+  `IsStarProjection.continuous_projectionConjugacyUnitary`,
   `IsStarProjection.star_projectionConjugacyUnitary`,
   `IsStarProjection.exists_unitary_conjugate_mem_of_norm_sub_lt_one`,
   `IsStarProjection.exists_unitary_conjugate_of_norm_sub_lt_one`,
@@ -72,6 +74,16 @@ theorem coe_projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarPro
   let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
   rw [projectionConjugacyUnitary, projectionConjugacyUnitary, ← Units.polarUnitary_star]
   congr 1; ext; simp [hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
+/-- Joint continuity of `IsStarProjection.projectionConjugacyUnitary` on pairs of star projections
+at distance strictly less than `1`. -/
+theorem continuous_projectionConjugacyUnitary :
+    Continuous fun x : {x : A × A // IsStarProjection x.1 ∧ IsStarProjection x.2 ∧
+      ‖x.1 - x.2‖ < 1} ↦ x.property.1.projectionConjugacyUnitary x.property.2.1 x.property.2.2 := by
+  let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
+  refine Units.continuous_polarUnitary.comp <|
+    (Units.isOpenEmbedding_val (R := A)).isEmbedding.continuous_iff.2 ?_
+  simp only [Function.comp_def, IsUnit.unit_spec, projectionIntertwiner_def]
+  fun_prop
 /-- `hp.projectionConjugacyUnitary hq h` belongs to every closed unital `𝕜'`-`⋆`-subalgebra
 (for any scalar monoid `𝕜'` over `ℝ`) containing `p` and `q`. -/
 theorem projectionConjugacyUnitary_mem {𝕜' S : Type*} [Monoid 𝕜'] [MulAction 𝕜' A] [SetLike S A]
@@ -133,15 +145,19 @@ theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
         fun _ hx ↦ (Real.sqrt_pos.mpr (hd.pos_of_mem_spectrum_one_sub_sq h hx)).ne')]
     refine cfc_congr fun x hx ↦ ?_; have hx_pos := hd.pos_of_mem_spectrum_one_sub_sq h hx
     field_simp [(Real.sqrt_pos.mpr hx_pos).ne']; exact (Real.sq_sqrt hx_pos.le).symm
-  have hu_add : (u : A) + star (u : A) = cfc (fun x : ℝ ↦ 2 * √x) a := by
+  have hu_add : (u : A) + star (u : A) = (2 : ℕ) • cfc Real.sqrt a := by
     rw [hp.coe_projectionConjugacyUnitary hq h, star_mul, hw_sa.star_eq, ← hstar_z_comm_w,
-      ← add_mul, hp.projectionIntertwiner_add_star hq, ← Nat.cast_smul_eq_nsmul ℝ 2 a,
-      Nat.cast_ofNat, smul_mul_assoc, haw, ← cfc_smul (2 : ℝ) Real.sqrt a]; simp_rw [smul_eq_mul]
+      ← add_mul, hp.projectionIntertwiner_add_star hq, smul_mul_assoc, haw]
   have hsq_sub : star ((u : A) - 1) * ((u : A) - 1) = (2 : A) - ((u : A) + star (u : A)) := by
     simp only [star_sub, star_one, sub_mul, mul_sub, mul_one, one_mul,
       Unitary.star_mul_self_of_mem u.property, ← one_add_one_eq_two]; abel
   have hstar_sub : star ((u : A) - 1) * ((u : A) - 1) = cfc (fun x : ℝ ↦ 2 * (1 - √x)) a := by
-    rw [hsq_sub, ← map_ofNat (algebraMap ℝ A) 2, ← cfc_const (2 : ℝ) a ha, hu_add, ← cfc_sub _ _ a]
+    have h2_cfc : (2 : A) = cfc (fun _ : ℝ ↦ (2 : ℝ)) a := by
+      rw [← map_ofNat (algebraMap ℝ A) 2, cfc_const (2 : ℝ) a ha]
+    have h2_sqrt : (2 : ℕ) • cfc Real.sqrt a = cfc (fun x : ℝ ↦ (2 : ℝ) * √x) a := by
+      rw [← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat, ← cfc_smul (2 : ℝ) Real.sqrt a]
+      simp_rw [smul_eq_mul]
+    rw [hsq_sub, hu_add, h2_cfc, h2_sqrt, ← cfc_sub _ _ a]
     exact cfc_congr fun _ _ ↦ by ring
   refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp ?_
   rw [sq, ← CStarRing.norm_star_mul_self, hstar_sub, mul_pow, Real.sq_sqrt (by positivity)]

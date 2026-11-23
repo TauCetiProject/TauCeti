@@ -49,7 +49,8 @@ wherever the spectrum of `a` avoids the frontier of `Ω`. For self-adjoint `a` i
 * `TauCeti.cfc_indicator_neg` — the spectral projector of `-a` for `Ω` is that of `a` for `-Ω`;
 * `IsSelfAdjoint.continuousWithinAt_cfc_indicator` — the spectral projector depends continuously
   on the self-adjoint element when the frontier of the set avoids the spectrum;
-* `TauCeti.spectralProjectionIoiHalf`, `IsSelfAdjoint.norm_spectralProjectionIoiHalf_sub_le`,
+* `TauCeti.spectralProjectionIoiHalf`, `TauCeti.continuousOn_spectralProjectionIoiHalf`,
+  `IsSelfAdjoint.norm_spectralProjectionIoiHalf_sub_le`,
   `IsSelfAdjoint.cfcₙ_indicator_Ioi_half_inv_sqrt_mul_self_mul`,
   `IsStarProjection.spectralProjectionIoiHalf_eq` — non-unital `(1 / 2, ∞)` spectral calculus.
 -/
@@ -215,6 +216,19 @@ theorem spectralProjectionIoiHalf_mem {𝕜' S : Type*} [Monoid 𝕜'] [MulActio
     [StarMemClass S A] {s : S} [IsClosed (s : Set A)] {a : A} (ha : a ∈ s) :
     spectralProjectionIoiHalf a ∈ s :=
   spectralProjectionIoiHalf_def a ▸ cfcₙ_mem (𝕜 := ℝ) (𝕜' := 𝕜') _ ha
+/-- `TauCeti.spectralProjectionIoiHalf` is continuous on the self-adjoint elements whose real
+quasispectrum avoids `1 / 2`. -/
+theorem continuousOn_spectralProjectionIoiHalf :
+    ContinuousOn (spectralProjectionIoiHalf (A := A))
+      {a : A | IsSelfAdjoint a ∧ (1 / 2 : ℝ) ∉ quasispectrum ℝ a} := by
+  have hcont : ContinuousOn (fun a : A ↦ a)
+      {a : A | IsSelfAdjoint a ∧ (1 / 2 : ℝ) ∉ quasispectrum ℝ a} := continuousOn_id
+  refine hcont.cfcₙ_of_mem_nhdsSet (𝕜 := ℝ) (p := IsSelfAdjoint) (s := {(1 / 2 : ℝ)}ᶜ)
+    ((Set.Ioi (1 / 2 : ℝ)).indicator (1 : ℝ → ℝ)) ?_ (fun _ ha ↦ ha.1)
+    (continuousOn_const.continuousOn_indicator_of_disjoint_frontier (by simp))
+    (by simp)
+  exact isClosed_singleton.isOpen_compl.mem_nhdsSet.2
+    (Set.iUnion₂_subset fun _ ha t ht hmem ↦ ha.2 (Set.mem_singleton_iff.mp hmem ▸ ht))
 end TauCeti
 
 namespace IsSelfAdjoint

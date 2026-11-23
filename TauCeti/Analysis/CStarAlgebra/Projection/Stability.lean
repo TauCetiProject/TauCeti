@@ -136,9 +136,46 @@ private lemma orthoCorner_compress {s : NonUnitalStarSubalgebra ℝ A} {m : ℕ}
     have hmul := mul_le_mul hx_norm (hp₀_dist j).le (norm_nonneg (p₀ j - d₀ j)) (by norm_num)
     linarith [hxd j]
   refine ⟨NonUnitalStarSubalgebra.sub_sub_add_mem_orthoCorner hP_proj hP_mem hx_mem, ?_⟩
-  have hyx : y - x = -(P * x) + -(x * P) + P * x * P := by dsimp [y]; abel
-  rw [hyx]; refine norm_add₃_le.trans ?_; rw [norm_neg, norm_neg]
-  linarith [norm_mul_le_of_le hPx (hP_proj.norm_le _)]
+  linarith [norm_sub_sub_add_sub_le_of_norm_le_one (hP_proj.norm_le _) x]
+
+private lemma pairwise_isStarOrtho_snoc {m : ℕ} {p₀ : Fin m → A} {q : A}
+    (hp₀ : Pairwise (IsStarOrtho on p₀)) (hq : ∀ j, IsStarOrtho (p₀ j) q) :
+    Pairwise (IsStarOrtho on Fin.snoc p₀ q) := fun i k ↦ by
+  refine Fin.lastCases ?_ (fun i' ↦ ?_) i <;> refine Fin.lastCases ?_ (fun k' ↦ ?_) k <;>
+    intro hik <;> simp only [onFun, Fin.snoc_last, Fin.snoc_castSucc]
+  exacts [(hik rfl).elim, (hq k').symm, hq i', hp₀ fun h ↦ hik (congrArg Fin.castSucc h)]
+
+private lemma orthoCorner_round_extension {s : NonUnitalStarSubalgebra ℝ A} [IsClosed (s : Set A)]
+    {m : ℕ} {p₀ d₀ : Fin m → A} (hp₀_mem : ∀ j, p₀ j ∈ s)
+    (hp₀_proj : ∀ j, IsStarProjection (p₀ j)) (hp₀_ortho : Pairwise (IsStarOrtho on p₀))
+    {x : A} (hx_mem : x ∈ s) {ε μ η δ δ₁ : ℝ} (hμ_pos : 0 < μ)
+    (hμ_ε : μ ≤ ε / 2) (hμ_half : μ ≤ 1 / 2) (hμ_δ₁ : μ ≤ δ₁ / 10)
+    (hδ_half : δ ≤ 1 / 2) (hδ_δ₁ : δ ≤ δ₁ / 5) (h_compress : 3 * (m : ℝ) * (3 * η + δ) < μ)
+    (hp₀_dist : ∀ j, ‖p₀ j - d₀ j‖ < η) (hx_sa : ‖x - star x‖ < δ) (hx_idem : ‖x * x - x‖ < δ)
+    (hdx : ∀ j, ‖d₀ j * x‖ < δ) (hxd : ∀ j, ‖x * d₀ j‖ < δ)
+    (hδ₁ : ∀ {t : NonUnitalStarSubalgebra ℝ A} [IsClosed (t : Set A)] {e : A},
+      e ∈ t → ‖e - star e‖ < δ₁ → ‖e * e - e‖ < δ₁ →
+      ∃ q ∈ t, IsStarProjection q ∧ ‖q - e‖ < ε / 2) :
+    ∃ q ∈ s, IsStarProjection q ∧ (∀ j, IsStarOrtho (p₀ j) q) ∧ ‖q - x‖ < ε := by
+  set P : A := ∑ j : Fin m, p₀ j
+  have hP_proj : IsStarProjection P := .sum (fun j _ ↦ hp₀_proj j) (hp₀_ortho.set_pairwise _)
+  have hx_norm : ‖x‖ < 3 := norm_lt_three_of_approx_projection
+    (hx_sa.trans_le (hδ_half.trans (by norm_num))) (hx_idem.trans_le (hδ_half.trans (by norm_num)))
+  obtain ⟨hy_mem_corner, hy_dist_le⟩ := orthoCorner_compress rfl (sum_mem fun j _ ↦ hp₀_mem j)
+    hP_proj hp₀_dist hx_mem hx_norm.le hdx hxd
+  set y : A := x - P * x - x * P + P * x * P
+  have hy_sub_x : ‖y - x‖ < μ := hy_dist_le.trans_lt h_compress
+  have hy_sa : ‖y - star y‖ < δ₁ :=
+    (norm_sub_star_le_of_norm_sub x y).trans_lt (by linarith)
+  have hy_idem : ‖y * y - y‖ < δ₁ := by
+    have hid := norm_mul_self_sub_le_of_le hx_norm.le hy_sub_x.le
+    nlinarith
+  obtain ⟨q, hq_corner, hq_proj, hq_dist⟩ := hδ₁ hy_mem_corner hy_sa hy_idem
+  obtain ⟨hq_mem, hPq, -⟩ := NonUnitalStarSubalgebra.mem_orthoCorner.mp hq_corner
+  refine ⟨q, hq_mem, hq_proj, fun j ↦ ?_, by linarith [norm_sub_le_norm_sub_add_norm_sub q y x]⟩
+  exact (isStarOrtho_sum_left_iff (fun k _ ↦ hp₀_proj k) (hp₀_ortho.set_pairwise _)).mp
+    ((hP_proj.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq_proj.isSelfAdjoint).mpr hPq)
+    j (Finset.mem_univ j)
 end
 private lemma exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_fin :
     ∀ (m : ℕ) {ε : ℝ}, 0 < ε →
@@ -151,7 +188,7 @@ private lemma exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_fin
   | 0, _, _ => ⟨1, zero_lt_one, fun _ _ _ _ ↦
       ⟨Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩⟩
   | m + 1, ε, hε => by
-    obtain ⟨δ₁, hδ₁_pos, hδ₁⟩ :=
+    obtain ⟨δ₁, _, hδ₁⟩ :=
       exists_pos_forall_exists_isStarProjection_mem_norm_sub_lt (half_pos hε)
     set μ : ℝ := min (1 / 2) (min (ε / 2) (δ₁ / 10)); have hμ_pos : 0 < μ := by positivity
     set η : ℝ := min ε (μ / (12 * (m + 1 : ℝ)))
@@ -164,45 +201,25 @@ private lemma exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_fin
       (fun j ↦ hd_mem j.castSucc) (fun j ↦ (hd_sa _).trans_le hδ_ih)
       (fun j ↦ (hd_idem _).trans_le hδ_ih)
       (fun i j hij ↦ (hd_ortho _ _ (Fin.castSucc_inj.not.mpr hij)).trans_le hδ_ih)
-    set P : A := ∑ j : Fin m, p₀ j; set x : A := d (Fin.last m)
-    have hP_proj : IsStarProjection P := .sum (fun j _ ↦ hp₀_proj j) (hp₀_ortho.set_pairwise _)
-    have hx_norm : ‖x‖ < 3 := norm_lt_three_of_approx_projection
-      ((hd_sa _).trans_le ((min_le_left _ _).trans (by norm_num)))
-      ((hd_idem _).trans_le ((min_le_left _ _).trans (by norm_num)))
-    obtain ⟨hy_mem_corner, hy_dist_le⟩ := orthoCorner_compress rfl (sum_mem fun j _ ↦ hp₀_mem j)
-      hP_proj hp₀_dist (hd_mem _) hx_norm.le (fun j ↦ hd_ortho _ _ (Fin.castSucc_lt_last j).ne)
-      (fun j ↦ hd_ortho _ _ (Fin.castSucc_lt_last j).ne')
-    set y : A := x - P * x - x * P + P * x * P
-    have hy_sub_x : ‖y - x‖ < μ := hy_dist_le.trans_lt <| by
+    have h_compress : 3 * (m : ℝ) * (3 * η + δ) < μ := by
       have hη : 12 * (m + 1 : ℝ) * η ≤ μ := (le_div_iff₀' (by positivity)).mp (min_le_right _ _)
       have hδη : δ ≤ η := (min_le_right _ _).trans ((min_le_right _ _).trans (min_le_right _ _))
       have hη_pos : 0 < η := by positivity
       nlinarith [Nat.cast_nonneg (α := ℝ) m]
-    have hδ_δ₁ : δ ≤ δ₁ / 5 := (min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _))
-    have hμ_δ₁ : μ ≤ δ₁ / 10 := (min_le_right _ _).trans (min_le_right _ _)
-    have hμ_half : μ ≤ 1 / 2 := min_le_left _ _
-    have hy_sa : ‖y - star y‖ < δ₁ :=
-      (norm_sub_star_le_of_norm_sub x y).trans_lt (by linarith [hd_sa (Fin.last m)])
-    have hy_idem : ‖y * y - y‖ < δ₁ := by
-      have hid := norm_mul_self_sub_le_of_le hx_norm.le hy_sub_x.le
-      nlinarith [hd_idem (Fin.last m), hμ_pos, hδ₁_pos]
-    obtain ⟨q, hq_corner, hq_proj, hq_dist⟩ := hδ₁ (𝕜' := ℝ) hy_mem_corner hy_sa hy_idem
-    obtain ⟨hq_mem, hPq, -⟩ := NonUnitalStarSubalgebra.mem_orthoCorner.mp hq_corner
-    have hortho : ∀ j, IsStarOrtho (p₀ j) q := fun j ↦
-      (isStarOrtho_sum_left_iff (fun k _ ↦ hp₀_proj k) (hp₀_ortho.set_pairwise _)).mp
-        ((hP_proj.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq_proj.isSelfAdjoint).mpr hPq)
-        j (Finset.mem_univ j)
-    have hμ_ε : μ ≤ ε / 2 := (min_le_right _ _).trans (min_le_left _ _)
-    have hq_dist' : ‖q - x‖ < ε := by
-      linarith [norm_sub_le_norm_sub_add_norm_sub q y x]
-    refine ⟨Fin.snoc p₀ q, Fin.lastCases (by simpa) (fun j ↦ by simpa using hp₀_mem j),
-      Fin.lastCases (by simpa) (fun j ↦ by simpa using hp₀_proj j), fun i k ↦ ?_,
-      Fin.lastCases (by simpa [x] using hq_dist')
+    obtain ⟨q, hq_mem, hq_proj, hq_ortho, hq_dist⟩ := orthoCorner_round_extension
+      hp₀_mem hp₀_proj hp₀_ortho (hd_mem (Fin.last m)) hμ_pos
+      ((min_le_right _ _).trans (min_le_left _ _)) (min_le_left _ _)
+      ((min_le_right _ _).trans (min_le_right _ _)) (min_le_left _ _)
+      ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _)))
+      h_compress hp₀_dist (hd_sa _) (hd_idem _)
+      (fun j ↦ hd_ortho _ _ (Fin.castSucc_lt_last j).ne)
+      (fun j ↦ hd_ortho _ _ (Fin.castSucc_lt_last j).ne')
+      (fun {_} _ {_} he hsa hid ↦ hδ₁ (𝕜' := ℝ) he hsa hid)
+    exact ⟨Fin.snoc p₀ q, Fin.lastCases (by simpa) (fun j ↦ by simpa using hp₀_mem j),
+      Fin.lastCases (by simpa) (fun j ↦ by simpa using hp₀_proj j),
+      pairwise_isStarOrtho_snoc hp₀_ortho hq_ortho,
+      Fin.lastCases (by simpa using hq_dist)
         (fun j ↦ by simpa using (hp₀_dist j).trans_le (min_le_left _ _))⟩
-    refine Fin.lastCases ?_ (fun i' ↦ ?_) i <;> refine Fin.lastCases ?_ (fun k' ↦ ?_) k <;>
-      intro hik <;> simp only [onFun, Fin.snoc_last, Fin.snoc_castSucc]
-    exacts [(hik rfl).elim, (hortho k').symm, hortho i',
-      hp₀_ortho fun h ↦ hik (congrArg Fin.castSucc h)]
 /-- **Uniform norm stability of finite pairwise-orthogonal projection families in closed
 `𝕜'`-`⋆`-subalgebras** (scalar monoid `𝕜'` over `ℝ`): for finite `ι` and `ε > 0`, some `δ > 0`
 (independent of `A, s`) puts `δ`-approx orthogonal families in `s` within `ε` of exact ones. -/

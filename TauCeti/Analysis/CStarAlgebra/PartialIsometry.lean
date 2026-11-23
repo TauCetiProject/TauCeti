@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Basic
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+import TauCeti.Analysis.Normed.Algebra.Star
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
@@ -35,6 +36,31 @@ open scoped NonUnitalContinuousFunctionalCalculus
 open NonUnitalStarSubalgebra (mem_corner mem_ofClass)
 namespace TauCeti
 variable {A : Type*} [NonUnitalCStarAlgebra A]
+private lemma corner_spectral_round {s' : NonUnitalStarSubalgebra ℝ A} [IsClosed (s' : Set A)]
+    {η : ℝ} (hη : η ≤ 1 / 32) {p z : A} (hp : IsStarProjection p) (hzs : z ∈ s')
+    (hzp : z * p = z) (hinit : ‖star z * z - p‖ < η) :
+    ∃ w ∈ s', IsSelfAdjoint w ∧ w * p = w ∧ w * (star z * z) * w = p ∧
+      ‖w - p‖ ≤ 4 * (‖star z * z - p‖ ^ 2 + ‖star z * z - p‖) := by
+  let corner := s'.corner hp.isSelfAdjoint
+  set h : A := star z * z; have hh_sa : IsSelfAdjoint h := IsSelfAdjoint.star_mul_self z
+  have hph : p * h = h := by rw [← hp.isSelfAdjoint.star_eq, ← mul_assoc, ← star_mul, hzp]
+  have hhp : h * p = h := by rw [mul_assoc, hzp]
+  have hh_corner : h ∈ corner := mem_corner.mpr ⟨mul_mem (star_mem hzs) hzs, hph, hhp⟩
+  have hh_defect : ‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖ :=
+    hp.isIdempotentElem.norm_mul_self_sub_le_of_mul_eq hph hhp
+  have hh_lt_quarter : ‖h * h - h‖ < 1 / 4 := by nlinarith [norm_nonneg (h - p)]
+  obtain ⟨-, -, hsp_mul_p⟩ := mem_corner.mp (spectralProjectionIoiHalf_mem (𝕜' := ℝ) hh_corner)
+  have hsp_eq_p : spectralProjectionIoiHalf h = p :=
+    (isStarProjection_spectralProjectionIoiHalf h).eq_of_mul_eq_left_of_norm_sub_lt_one hp hsp_mul_p
+      (by linarith [hh_sa.norm_spectralProjectionIoiHalf_sub_le hh_lt_quarter,
+        norm_sub_le_norm_sub_add_norm_sub (spectralProjectionIoiHalf h) h p])
+  set g : ℝ → ℝ := (Set.Ioi (1 / 2 : ℝ)).indicator fun t ↦ (√t)⁻¹; set w : A := cfcₙ g h
+  obtain ⟨hw_mem_s', -, hwp⟩ := mem_corner.mp (cfcₙ_mem (𝕜 := ℝ) (𝕜' := ℝ) g hh_corner)
+  refine ⟨w, hw_mem_s', cfcₙ_predicate g h, hwp, ?_, ?_⟩
+  · simpa [w, g, hsp_eq_p] using hh_sa.cfcₙ_indicator_Ioi_half_inv_sqrt_mul_self_mul hh_lt_quarter
+  · have hw_sub_p : ‖w - p‖ ≤ 4 * ‖h * h - h‖ := by simpa [w, g, hsp_eq_p] using
+      hh_sa.norm_cfcₙ_indicator_Ioi_half_inv_sqrt_sub_spectralProjectionIoiHalf_le hh_lt_quarter
+    linarith
 /-- **Quantitative polar perturbation of an approximate partial isometry** in a closed non-unital
 `𝕜'`-`⋆`-subalgebra `s` (scalar monoid `𝕜'` over `ℝ`): for star projections `p, q` and `z ∈ s`
 with `q * z = z`, `z * p = z`, `‖star z * z - p‖ < η`, `‖z * star z - q‖ < η` (`η ≤ 1 / 32`), some
@@ -50,48 +76,27 @@ theorem exists_isPartialIsometry_mem_of_approx {𝕜' S : Type*} [Monoid 𝕜'] 
   let s' : NonUnitalStarSubalgebra ℝ A := NonUnitalStarSubalgebra.ofClass s
   have hs'_coe : (s' : Set A) = (s : Set A) := Set.ext fun _ ↦ mem_ofClass
   have : IsClosed (s' : Set A) := hs'_coe ▸ hs
-  let corner := s'.corner hp.isSelfAdjoint
-  set h : A := star z * z; have hh_sa : IsSelfAdjoint h := IsSelfAdjoint.star_mul_self z
-  have hph : p * h = h := by rw [← hp.isSelfAdjoint.star_eq, ← mul_assoc, ← star_mul, hzp]
-  have hhp : h * p = h := by rw [mul_assoc, hzp]
-  have hh_corner : h ∈ corner := mem_corner.mpr
-    ⟨mem_ofClass.mpr (mul_mem (star_mem hzs) hzs), hph, hhp⟩
-  have hh_defect : ‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖ :=
-    hp.isIdempotentElem.norm_mul_self_sub_le_of_mul_eq hph hhp
-  have hh_lt_quarter : ‖h * h - h‖ < 1 / 4 := by nlinarith [norm_nonneg (h - p)]
-  obtain ⟨-, -, hsp_mul_p⟩ := mem_corner.mp (spectralProjectionIoiHalf_mem (𝕜' := ℝ) hh_corner)
-  have hsp_eq_p : spectralProjectionIoiHalf h = p :=
-    (isStarProjection_spectralProjectionIoiHalf h).eq_of_mul_eq_left_of_norm_sub_lt_one hp hsp_mul_p
-      (by linarith [hh_sa.norm_spectralProjectionIoiHalf_sub_le hh_lt_quarter,
-        norm_sub_le_norm_sub_add_norm_sub (spectralProjectionIoiHalf h) h p])
-  set g : ℝ → ℝ := (Set.Ioi (1 / 2 : ℝ)).indicator fun t ↦ (√t)⁻¹; set w : A := cfcₙ g h
-  obtain ⟨hw_mem_s', -, hwp⟩ := mem_corner.mp (cfcₙ_mem (𝕜 := ℝ) (𝕜' := ℝ) g hh_corner)
+  obtain ⟨w, hw_mem_s', hw_sa, hwp, hwhw, hw_sub_p⟩ :=
+    corner_spectral_round hη hp (mem_ofClass.mpr hzs) hzp hinit
   set v : A := z * w
   have hv_init : star v * v = p := by
-    have hw_sa : IsSelfAdjoint w := cfcₙ_predicate g h
-    have hv_star_v : star v * v = w * h * w := by
-      simp only [v, h, star_mul, hw_sa.star_eq, mul_assoc]
-    rw [hv_star_v]
-    simpa [w, g, hsp_eq_p] using hh_sa.cfcₙ_indicator_Ioi_half_inv_sqrt_mul_self_mul hh_lt_quarter
+    simpa only [v, star_mul, hw_sa.star_eq, mul_assoc] using hwhw
   have hv_pi : IsPartialIsometry v := by
     rw [isPartialIsometry_iff, mul_assoc, hv_init]; dsimp [v]; rw [mul_assoc, hwp]
   have hz_norm : ‖z‖ ≤ 2 := by
-    have hnorm_sq : ‖h‖ = ‖z‖ * ‖z‖ := CStarRing.norm_star_mul_self
-    nlinarith [norm_nonneg z, hp.norm_le p, norm_le_norm_add_norm_sub' h p]
-  have hw_sub_p : ‖w - p‖ ≤ 4 * ‖h * h - h‖ := by simpa [w, g, hsp_eq_p] using
-    hh_sa.norm_cfcₙ_indicator_Ioi_half_inv_sqrt_sub_spectralProjectionIoiHalf_le hh_lt_quarter
+    have hnorm_sq : ‖star z * z‖ = ‖z‖ * ‖z‖ := CStarRing.norm_star_mul_self
+    nlinarith [norm_nonneg z, hp.norm_le p, norm_le_norm_add_norm_sub' (star z * z) p]
   have hv_sub_z : ‖v - z‖ < 10 * η := by
     have hvz : v - z = z * (w - p) := by dsimp [v]; rw [mul_sub, hzp]
     rw [hvz]
-    exact (norm_mul_le_of_le hz_norm le_rfl).trans_lt (by nlinarith [norm_nonneg (h - p)])
+    exact (norm_mul_le_of_le hz_norm le_rfl).trans_lt
+      (by nlinarith [norm_nonneg (star z * z - p)])
   have hv_fin_q : (v * star v) * q = v * star v := by
     have hqv : q * v = v := by dsimp [v]; rw [← mul_assoc, hqz]
     rw [← hq.isSelfAdjoint.star_eq, mul_assoc, ← star_mul, hqv]
   have hv_fin_dist : ‖v * star v - q‖ < 1 := by
-    have hprod_diff : ‖v * star v - z * star z‖ ≤
-        ‖v - z‖ * ‖star v‖ + ‖z‖ * ‖star v - star z‖ :=
-      norm_mul_sub_mul_le v (star v) z (star z)
-    rw [norm_star, ← star_sub, norm_star] at hprod_diff
+    have hprod_diff : ‖v * star v - z * star z‖ ≤ ‖v - z‖ * ‖v‖ + ‖z‖ * ‖v - z‖ :=
+      norm_mul_star_sub_mul_star_le v v z z
     have h1 : ‖v - z‖ * ‖v‖ ≤ (10 * η) * 1 :=
       mul_le_mul hv_sub_z.le hv_pi.norm_le_one (norm_nonneg _) (by linarith [norm_nonneg (v - z)])
     have h2 : ‖z‖ * ‖v - z‖ ≤ 2 * (10 * η) :=

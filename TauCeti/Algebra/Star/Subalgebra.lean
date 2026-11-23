@@ -211,14 +211,18 @@ variable {R A : Type*} [CommRing R] [NonUnitalRing A] [StarRing A] [Module R A]
 projection `p ∈ s` lands in `s.orthoCorner`. -/
 theorem sub_sub_add_mem_orthoCorner {s : NonUnitalStarSubalgebra R A} {p : A}
     (hp : IsStarProjection p) (hp_mem : p ∈ s) {x : A} (hx : x ∈ s) :
-    x - p * x - x * p + p * x * p ∈ s.orthoCorner hp.isSelfAdjoint :=
-  mem_orthoCorner.mpr
+    x - p * x - x * p + p * x * p ∈ s.orthoCorner hp.isSelfAdjoint := by
+  have hleft (y : A) : p * (y - p * y - y * p + p * y * p) = 0 := by
+    rw [mul_add, mul_sub, mul_sub, ← mul_assoc p p y, ← mul_assoc p (p * y) p,
+      ← mul_assoc p p y, hp.isIdempotentElem.eq, mul_assoc, sub_self, zero_sub, neg_add_cancel]
+  have hright : (x - p * x - x * p + p * x * p) * p = 0 := by
+    have h := congrArg star (hleft (star x))
+    simp only [star_mul, star_add, star_sub, star_star, hp.isSelfAdjoint.star_eq, star_zero] at h
+    rwa [sub_right_comm, ← mul_assoc p x p] at h
+  exact mem_orthoCorner.mpr
     ⟨add_mem (sub_mem (sub_mem hx (mul_mem hp_mem hx)) (mul_mem hx hp_mem))
         (mul_mem (mul_mem hp_mem hx) hp_mem),
-      by rw [mul_add, mul_sub, mul_sub, ← mul_assoc p p x, ← mul_assoc p (p * x) p,
-        ← mul_assoc p p x, hp.isIdempotentElem.eq, mul_assoc, sub_self, zero_sub, neg_add_cancel],
-      by rw [add_mul, sub_mul, sub_mul, mul_assoc x p p, mul_assoc (p * x) p p,
-        hp.isIdempotentElem.eq, sub_right_comm, sub_self, zero_sub, neg_add_cancel]⟩
+      hleft x, hright⟩
 /-- Membership in `s.orthoCorner hp.isSelfAdjoint` when `p ∈ s` is a star projection:
 `y - p * y - y * p + p * y * p` form. -/
 theorem mem_orthoCorner_iff_exists {s : NonUnitalStarSubalgebra R A} {p : A}

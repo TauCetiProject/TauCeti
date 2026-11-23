@@ -10,6 +10,7 @@ public import Mathlib.Algebra.CharZero.Defs
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Algebra.Star.Pi
+public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import TauCeti.Algebra.Star.PartialIsometry
@@ -33,6 +34,8 @@ and over a characteristic-zero field `𝕜`, `z = matrixUnitIntertwiner 𝕜 e f
   `TauCeti.IsMatrixUnitSystem.of_partialIsometry`,
   `TauCeti.isUnitalMatrixUnitSystem_piSingle_matrixSingle`,
   `TauCeti.IsMatrixUnitSystem.nonUnitalStarAlgHom`, `TauCeti.IsUnitalMatrixUnitSystem.starAlgHom`,
+  `TauCeti.IsMatrixUnitSystem.toSubmodule_range_nonUnitalStarAlgHom`,
+  `TauCeti.IsUnitalMatrixUnitSystem.toSubmodule_range_starAlgHom`,
   `TauCeti.IsMatrixUnitSystem.injective_nonUnitalStarAlgHom_iff`,
   `TauCeti.IsUnitalMatrixUnitSystem.injective_starAlgHom_iff`,
   `TauCeti.IsMatrixUnitSystem.matrixUnitIntertwiner_self`,
@@ -367,6 +370,24 @@ theorem eq_nonUnitalStarAlgHom_iff [NonUnitalSemiring R] [StarRing R] {e : ∀ r
    fun h ↦ NonUnitalStarAlgHom.ext_piSingle_matrixSingle fun r i j ↦
      (h r i j).trans (he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j).symm⟩
 
+/-- The range of `he.nonUnitalStarAlgHom 𝕜` as a `𝕜`-submodule is the span of `{e r i j}`. -/
+theorem toSubmodule_range_nonUnitalStarAlgHom [NonUnitalSemiring R] [StarRing R]
+    {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e) (𝕜 : Type*) [CommSemiring 𝕜]
+    [StarRing 𝕜] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [StarModule 𝕜 R] :
+    (he.nonUnitalStarAlgHom 𝕜).range.toSubmodule =
+      Submodule.span 𝕜 {e r i j | (r : κ) (i : n r) (j : n r)} := by
+  classical
+  refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
+  · rintro _ ⟨x, rfl⟩
+    change he.nonUnitalStarAlgHom 𝕜 x ∈ _
+    rw [he.nonUnitalStarAlgHom_apply]
+    exact Submodule.sum_mem _ fun r _ ↦ Submodule.sum_mem _ fun i _ ↦
+      Submodule.sum_mem _ fun j _ ↦
+        Submodule.smul_mem _ _ (Submodule.subset_span ⟨r, i, j, rfl⟩)
+  · rintro _ ⟨r, i, j, rfl⟩
+    exact (NonUnitalStarAlgHom.mem_range _).2
+      ⟨Pi.single r (Matrix.single i j 1), he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j⟩
+
 /-- Over a field, `he.nonUnitalStarAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
 theorem injective_nonUnitalStarAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜]
     [NonUnitalRing R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
@@ -446,8 +467,9 @@ theorem starAlgHom_apply {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜] [Sem
     [Semiring R] [StarRing R] [Algebra 𝕜 R] [StarModule 𝕜 R] [DecidableEq κ]
     [∀ r, DecidableEq (n r)] {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e)
     (r : κ) (i j : n r) :
-    he.starAlgHom 𝕜 (Pi.single r (Matrix.single i j 1)) = e r i j :=
-  he.toIsMatrixUnitSystem.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j
+    he.starAlgHom 𝕜 (Pi.single r (Matrix.single i j 1)) = e r i j := by
+  rw [← StarAlgHom.coe_toNonUnitalStarAlgHom, he.toNonUnitalStarAlgHom_starAlgHom]
+  exact he.toIsMatrixUnitSystem.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j
 
 /-- A unital `𝕜`-`⋆`-algebra homomorphism from `∀ r, Matrix (n r) (n r) 𝕜` equals
 `he.starAlgHom 𝕜` iff it sends every standard matrix unit to `e r i j`. -/
@@ -460,12 +482,27 @@ theorem eq_starAlgHom_iff {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜] [Se
    fun h ↦ StarAlgHom.ext_piSingle_matrixSingle fun r i j ↦
      (h r i j).trans (he.starAlgHom_piSingle_matrixSingle r i j).symm⟩
 
+/-- The range of `he.starAlgHom 𝕜` as a `𝕜`-submodule is the span of `{e r i j}`. -/
+theorem toSubmodule_range_starAlgHom {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜] [Semiring R]
+    [StarRing R] [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
+    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) :
+    Subalgebra.toSubmodule (he.starAlgHom 𝕜).range.toSubalgebra =
+      Submodule.span 𝕜 {e r i j | (r : κ) (i : n r) (j : n r)} := by
+  rw [← he.toIsMatrixUnitSystem.toSubmodule_range_nonUnitalStarAlgHom 𝕜]
+  ext x
+  simp only [Subalgebra.mem_toSubmodule, NonUnitalSubalgebra.mem_toSubmodule,
+    NonUnitalStarSubalgebra.mem_toNonUnitalSubalgebra, NonUnitalStarAlgHom.mem_range]
+  change x ∈ (he.starAlgHom 𝕜).toAlgHom.range ↔ _
+  simp only [AlgHom.mem_range, StarAlgHom.coe_toAlgHom, ← StarAlgHom.coe_toNonUnitalStarAlgHom,
+    he.toNonUnitalStarAlgHom_starAlgHom]
+
 /-- Over a field, `he.starAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
 theorem injective_starAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ring R] [StarRing R]
     [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
     {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) :
-    Function.Injective (he.starAlgHom 𝕜) ↔ ∀ r (i : n r), e r i i ≠ 0 :=
-  he.toIsMatrixUnitSystem.injective_nonUnitalStarAlgHom_iff
+    Function.Injective (he.starAlgHom 𝕜) ↔ ∀ r (i : n r), e r i i ≠ 0 := by
+  rw [← StarAlgHom.coe_toNonUnitalStarAlgHom, he.toNonUnitalStarAlgHom_starAlgHom]
+  exact he.toIsMatrixUnitSystem.injective_nonUnitalStarAlgHom_iff
 
 /-- Over a field, `he.starAlgHom 𝕜` is injective when every nonempty block has `e r i i ≠ 0`. -/
 theorem injective_starAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ring R] [StarRing R]
