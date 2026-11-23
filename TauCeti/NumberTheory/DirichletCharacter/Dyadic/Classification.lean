@@ -226,20 +226,14 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
         Int.cast_neg, Int.cast_one] at h3
       exact two_ne_zero (α := R) (by linear_combination -h3)
     -- The other pairs are separated by their conductors.
-    have h14 : (1 : DirichletCharacter R (2 ^ k)) ≠ ψ₄ :=
-      ne_of_apply_ne conductor (by rw [c1, c4]; decide)
-    have h18 : (1 : DirichletCharacter R (2 ^ k)) ≠ ψ₈ :=
-      ne_of_apply_ne conductor (by rw [c1, c8]; decide)
-    have h18' : (1 : DirichletCharacter R (2 ^ k)) ≠ ψ₈' :=
-      ne_of_apply_ne conductor (by rw [c1, c8']; decide)
+    have h14 : 1 ≠ ψ₄ := ne_of_apply_ne conductor (by rw [c1, c4]; decide)
+    have h18 : 1 ≠ ψ₈ := ne_of_apply_ne conductor (by rw [c1, c8]; decide)
+    have h18' : 1 ≠ ψ₈' := ne_of_apply_ne conductor (by rw [c1, c8']; decide)
     have h48 : ψ₄ ≠ ψ₈ := ne_of_apply_ne conductor (by rw [c4, c8]; decide)
     have h48' : ψ₄ ≠ ψ₈' := ne_of_apply_ne conductor (by rw [c4, c8']; decide)
-    have h4n : ψ₄ ∉ ({ψ₈, ψ₈'} : Set (DirichletCharacter R (2 ^ k))) := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      exact ⟨h48, h48'⟩
+    have h4n : ψ₄ ∉ ({ψ₈, ψ₈'} : Set (DirichletCharacter R (2 ^ k))) := by simp [h48, h48']
     have h1n : 1 ∉ ({ψ₄, ψ₈, ψ₈'} : Set (DirichletCharacter R (2 ^ k))) := by
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      exact ⟨h14, h18, h18'⟩
+      simp [h14, h18, h18']
     rw [hset, Set.ncard_insert_of_notMem h1n, Set.ncard_insert_of_notMem h4n, Set.ncard_pair h88]
 
 end Conductor
