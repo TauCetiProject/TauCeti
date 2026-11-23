@@ -444,12 +444,13 @@ private theorem finiteComponent_eq_of_valued_sub_le (χ : Grossencharacter K �
       (χ.toHeckeCharacter.conductorExponent v) := by
     refine TauCeti.unitFiltration_antitone (χ.conductorExponent_le_exponent v) ?_
     have hs0 : (s : v.adicCompletion K) ≠ 0 := s.ne_zero
+    -- The key factorization: `s⁻¹ t - 1 = s⁻¹ (t - s)`.
+    have hfac : (s : v.adicCompletion K)⁻¹ * t - 1 =
+        (s : v.adicCompletion K)⁻¹ * ((t : v.adicCompletion K) - s) := by
+      field_simp
     rw [HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff, Units.val_mul,
-      Units.val_inv_eq_inv_val, map_mul, map_inv₀, hs, ht, inv_one, one_mul,
-      show (s : v.adicCompletion K)⁻¹ * t - 1 =
-          (s : v.adicCompletion K)⁻¹ * ((t : v.adicCompletion K) - s) by field_simp,
-      map_mul, map_inv₀, hs, inv_one, one_mul]
-    exact ⟨rfl, hst⟩
+      Units.val_inv_eq_inv_val, hfac]
+    simpa [hs, ht] using hst
   rw [← mul_inv_cancel_left s t, map_mul,
     χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration hq, mul_one]
 

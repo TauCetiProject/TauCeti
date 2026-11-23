@@ -195,17 +195,6 @@ theorem idealCharacter_apply_prime (χ : HeckeCharacter K)
     rw [hxfin]
     exact w.ideleFiniteCoord_ofAdicCompletion_of_ne (ne_of_mem_of_not_mem hw hv) u
 
-/-- The coordinate at a finite place of the diagonal idele of `x ∈ Kˣ` is the image of `x` in the
-completion. -/
-private theorem ideleFiniteCoord_ofFiniteIdele_unitEmbedding (x : Kˣ)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 K) K (unitEmbedding (𝓞 K) K x)) =
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x := by
-  rw [← HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v x]
-  refine Units.ext ?_
-  simp only [HeightOneSpectrum.coe_ideleFiniteCoord, ← IdeleGroup.coe_toFiniteIdele,
-    IdeleGroup.toFiniteIdele_ofFiniteIdele, IdeleGroup.toFiniteIdele_unitEmbedding]
-
 /-- **The ideal character on a principal ideal prime to the finite conductor.** If `(x)` is prime
 to the finite conductor of `χ`, the ideal character at `(x)` is the inverse of the product of the
 infinite components of `χ` at `x`, times the inverse of the product of its components at `x` at

@@ -48,6 +48,8 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 
 ## Main results
 
+* `TauCeti.norm_gaussSum_of_mul_gaussSum_inv_eq`: `‖g(χ, ψ)‖ = √n` when
+  `g(χ, ψ) g(χ⁻¹, ψ⁻¹) = n`.
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
 * `MulChar.gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero`: the Gauss sum against a shift
   `x ↦ ψ (b * x)` vanishes if `b * (u - 1) = 0` for a unit `u` with `χ u ≠ 1`.
@@ -77,15 +79,22 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [Fintype F]
 
+/-- **The absolute value of a complex Gauss sum from its product with the conjugate sum.** If
+`g(χ, ψ) g(χ⁻¹, ψ⁻¹) = n` for characters of a finite ring `R` with values in `ℂ`, then
+`‖g(χ, ψ)‖ = √n`, as `g(χ⁻¹, ψ⁻¹)` is the complex conjugate of `g(χ, ψ)`. -/
+theorem norm_gaussSum_of_mul_gaussSum_inv_eq {R : Type*} [CommRing R] [Fintype R]
+    {χ : MulChar R ℂ} {ψ : AddChar R ℂ} {n : ℕ} (h : gaussSum χ ψ * gaussSum χ⁻¹ ψ⁻¹ = n) :
+    ‖gaussSum χ ψ‖ = √n := by
+  rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj'] at h
+  rw [← Real.sqrt_sq (norm_nonneg _)]
+  exact congrArg Real.sqrt (by exact_mod_cast h)
+
 /-- **A complex Gauss sum has absolute value `√#F`.** If `χ` is a nontrivial multiplicative
 character and `ψ` a primitive additive character of a finite field `F`, both with values in `ℂ`,
 then `‖g(χ, ψ)‖ = √#F`. -/
 theorem norm_gaussSum {χ : MulChar F ℂ} (hχ : χ ≠ 1) {ψ : AddChar F ℂ} (hψ : ψ.IsPrimitive) :
-    ‖gaussSum χ ψ‖ = √(Fintype.card F) := by
-  have h := gaussSum_mul_gaussSum_eq_card hχ hψ
-  rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj'] at h
-  rw [← Real.sqrt_sq (norm_nonneg _)]
-  exact congrArg Real.sqrt (by exact_mod_cast h)
+    ‖gaussSum χ ψ‖ = √(Fintype.card F) :=
+  norm_gaussSum_of_mul_gaussSum_inv_eq (gaussSum_mul_gaussSum_eq_card hχ hψ)
 
 /-- **The `l`-th power of a Gauss sum modulo `l`.** Let `l` be a prime, `χ` a multiplicative
 character with `χ ^ l = 1` and `ψ` an additive character with `ψ ^ l ≠ 1` of a finite field `F`,
@@ -165,11 +174,8 @@ proportional to `χ⁻¹`: if `ψ` is a primitive additive character of the fini
 `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for every `b ∈ R`, then `‖g(χ, ψ)‖ = √#R`. -/
 theorem norm_gaussSum_of_forall_mulShift {χ : MulChar R ℂ} {ψ : AddChar R ℂ}
     (hχ : ∀ b, gaussSum χ (ψ.mulShift b) = χ⁻¹ b * gaussSum χ ψ) (hψ : ψ.IsPrimitive) :
-    ‖gaussSum χ ψ‖ = √(Fintype.card R) := by
-  have h := gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift hχ hψ
-  rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj'] at h
-  rw [← Real.sqrt_sq (norm_nonneg _)]
-  exact congrArg Real.sqrt (by exact_mod_cast h)
+    ‖gaussSum χ ψ‖ = √(Fintype.card R) :=
+  norm_gaussSum_of_mul_gaussSum_inv_eq (gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift hχ hψ)
 
 end FiniteRing
 

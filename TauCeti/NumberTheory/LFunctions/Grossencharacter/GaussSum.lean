@@ -28,7 +28,7 @@ with finite part `𝔪₀` and residue character `χ_f` on `𝓞 K ⧸ 𝔪₀`
 
 Mathlib's `gaussSum` of the residue character against this additive character. The residue
 character is evaluated on the residue class itself, so only the trace needs representatives and
-any may be used (`TauCeti.LFunctions.Grossencharacter.gaussSum_eq_sum`). At conductor one the
+any may be used (`TauCeti.LFunctions.Grossencharacter.gaussSum_eq_sum`). When `𝔪₀ = 𝓞 K` the
 residue ring has a single element, a unit at which `χ_f` is `1`, and the Gauss sum is `1`; a sum
 that read the coefficient `finiteCharacter` at the representative `0` would give `0` instead.
 
@@ -54,12 +54,9 @@ the element `y = 1/25` does not give an additive character modulo `5` at all.
 
 ## Main results
 
-* `Ideal.traceAddChar_isPrimitive_iff` and `Ideal.isPrimitive_traceAddChar`: the trace character
-  of `y` is primitive exactly when `z y ∈ 𝔡⁻¹` forces `z ∈ I`, in particular when `y I 𝔡` is prime
-  to `I`.
 * `TauCeti.LFunctions.Grossencharacter.gaussSum_eq_sum`: the Gauss sum as a sum over the residue
   units, with arbitrary representatives in the trace.
-* `TauCeti.LFunctions.Grossencharacter.gaussSum_of_finitePart_eq_top`: at conductor one the Gauss
+* `TauCeti.LFunctions.Grossencharacter.gaussSum_of_finitePart_eq_top`: when `𝔪₀ = 𝓞 K` the Gauss
   sum is `1`.
 * `TauCeti.LFunctions.Grossencharacter.gaussSum_smul_of_isUnit` and
   `TauCeti.LFunctions.Grossencharacter.gaussSum_smul`: `τ(χ, a y) = conj(χ_f(a)) τ(χ, y)`, for `a`
@@ -80,68 +77,6 @@ open scoped NumberField nonZeroDivisors FourierTransform ComplexConjugate
 attribute [local instance] Fintype.ofFinite
 
 variable {K : Type*} [Field K] [NumberField K]
-
-namespace Ideal
-
-/-! ### Primitivity of the trace character -/
-
-/-- **Primitivity of the trace character.** The trace character of `y` is primitive exactly when
-every `z ∈ 𝓞 K` with `z y` in the inverse different `𝔡⁻¹ = (𝓞 K)^∨` lies in `I`. -/
-theorem traceAddChar_isPrimitive_iff (I : Ideal (𝓞 K))
-    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    (I.traceAddChar y).IsPrimitive ↔
-      ∀ z : 𝓞 K, (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) →
-        z ∈ I := by
-  -- The shift by the class of `z` is the trace character of `z • y = z y`.
-  have hshift (z : 𝓞 K) : (I.traceAddChar y).mulShift (Ideal.Quotient.mk I z) = 1 ↔
-      (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [← traceAddChar_smul, traceAddChar_eq_one_iff, Submodule.coe_smul, Algebra.smul_def]
-  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ?_⟩
-  · by_contra hzI
-    exact h (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem]) ((hshift z).mpr hz)
-  · obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ne, hshift]
-    exact fun hz ↦ hx (Ideal.Quotient.eq_zero_iff_mem.mpr (h z hz))
-
-/-- **The trace character is primitive when `y I 𝔡` is prime to `I`**, `𝔡` the different of `K`:
-if the integral ideal `y I 𝔡` and `I` generate the unit ideal, the trace character of `y` is a
-primitive additive character of `𝓞 K ⧸ I`. -/
-theorem isPrimitive_traceAddChar {I : Ideal (𝓞 K)}
-    {y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)}
-    (hy : FractionalIdeal.spanSingleton (𝓞 K)⁰ (y : K) * I *
-      (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) + I = 1) :
-    (traceAddChar I y).IsPrimitive := by
-  rw [traceAddChar_isPrimitive_iff]
-  intro z hz
-  have hd : FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) *
-      (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) = 1 := by
-    rw [coeIdeal_differentIdeal ℤ ℚ,
-      mul_inv_cancel₀ (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero)]
-  have hz1 : FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) ≤ 1 :=
-    FractionalIdeal.spanSingleton_le_iff_mem.mpr ((FractionalIdeal.mem_one_iff _).mpr ⟨z, rfl⟩)
-  have hzy : FractionalIdeal.spanSingleton (𝓞 K)⁰ ((z : K) * y) ≤
-      FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) :=
-    FractionalIdeal.spanSingleton_le_iff_mem.mpr hz
-  -- `(z) = (z) (y I 𝔡 + I) = (z y) 𝔡 I + (z) I ≤ 𝔡⁻¹ 𝔡 I + I = I`.
-  have hle : FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) ≤ I := by
-    calc FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K)
-        = FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) *
-          (FractionalIdeal.spanSingleton (𝓞 K)⁰ (y : K) * I *
-            (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) + I) := by rw [hy, mul_one]
-      _ = FractionalIdeal.spanSingleton (𝓞 K)⁰ ((z : K) * y) *
-            (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) * I +
-          FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) * I := by
-          rw [mul_add, map_mul]
-          ring
-      _ ≤ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) *
-            (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) * I + 1 * I := by
-          gcongr
-      _ = I := by rw [hd, one_mul, ← FractionalIdeal.coeIdeal_sup, sup_idem]
-  obtain ⟨z', hz', hzz'⟩ :=
-    (FractionalIdeal.mem_coeIdeal _).mp (hle (FractionalIdeal.mem_spanSingleton_self _ _))
-  rwa [← RingOfIntegers.coe_injective hzz']
-
-end Ideal
 
 /-! ### The Gauss sum of a presentation -/
 
@@ -182,8 +117,8 @@ theorem gaussSum_eq_sum (χ : Grossencharacter K 𝔪)
   · rw [MulChar.map_nonunit _ fun hu ↦ hx ⟨hu.unit, hu.unit_spec⟩, zero_mul]
   · rw [← hr x, Ideal.traceAddChar_mk, numberFieldTraceChar_apply, hr, mul_comm (y : K)]
 
-/-- **At conductor one the Gauss sum is `1`**: the residue ring has a single element, a unit at
-which the residue character is `1`. -/
+/-- **When the modulus has trivial finite part (`𝔪₀ = 𝓞 K`), the Gauss sum is `1`**: the residue
+ring has a single element, a unit at which the residue character is `1`. -/
 theorem gaussSum_of_finitePart_eq_top (χ : Grossencharacter K 𝔪) (h : 𝔪.finitePart = ⊤)
     (y : (FractionalIdeal.dual ℤ ℚ (𝔪.finitePart : FractionalIdeal (𝓞 K)⁰ K) :
       Submodule (𝓞 K) K)) :
