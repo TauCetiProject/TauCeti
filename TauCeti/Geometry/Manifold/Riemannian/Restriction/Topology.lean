@@ -55,7 +55,7 @@ theorem chartMetric_restrictOpenTangentSpace
     rw [U.coe_extChartAt_symm_apply x hz]
     exact (extChartAt I (x : M)).map_target (U.extChartAt_target_subset x hz)
   rw [restrictOpenTangentSpace_eq_pullback,
-    chartMetric_pullback g contMDiff_subtype_val
+    chartMetric_pullback g contMDiff_subtypeVal
       (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)) hz hsource,
     hd, fderivWithin_id (I.uniqueDiffOn _ hzRange)]
   have hτz := hτ hz
@@ -105,7 +105,7 @@ theorem continuous_restrictOpenTangentSpace (k : ℕ∞) (U : Opens M) :
   let _ := chartCkTopology (I := I) (M := M) k
   let _ := chartCkTopology (I := I) (M := U) k
   simpa only [restrictOpenTangentSpace_eq_pullback] using
-    (continuous_pullback_chartCk k (f := (Subtype.val : U → M)) contMDiff_subtype_val
+    (continuous_pullback_chartCk k (f := (Subtype.val : U → M)) contMDiff_subtypeVal
       (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)))
 
 end Bundle.ContMDiffRiemannianMetric

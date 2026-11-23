@@ -10,8 +10,10 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 /-!
 # Gram matrices under a change of family
 
-For a finite family `v` in an inner product space over `𝕜` (`ℝ` or `ℂ`) and a matrix `U`, the
-family `w k = ∑ j, U k j • v j` has Gram matrix `U.map conj * gram 𝕜 v * Uᵀ`, by
+Composing an arbitrary indexed family with a linear isometry leaves its Gram matrix unchanged
+(`LinearIsometry.gram_comp`). For a finite family `v` in an inner product space over `𝕜` (`ℝ` or
+`ℂ`) and a matrix `U`, the family `w k = ∑ j, U k j • v j` has Gram matrix
+`U.map conj * gram 𝕜 v * Uᵀ`, by
 sesquilinearity of the inner product (conjugate-linear in the first argument); `U` may be
 rectangular. For square `U`, taking determinants,
 `det (gram 𝕜 w) = ‖det U‖ ^ 2 * det (gram 𝕜 v)`, and over `ℝ` this reads
@@ -20,11 +22,12 @@ rectangular. For square `U`, taking determinants,
 Neither linear independence of `v` nor any hypothesis on the dimension of the space is needed: for
 dependent `v` both determinants vanish. When the family is the rows of a matrix `A` in Euclidean
 space the real identity is `Matrix.det_mul_transpose_mul_left` in
-`TauCeti.LinearAlgebra.Matrix.Gram`; the statements here concern a family in an arbitrary inner
-product space, where no coordinate matrix is given.
+`TauCeti.LinearAlgebra.Matrix.Gram.Basic`; the statements here concern a family in an arbitrary
+inner product space, where no coordinate matrix is given.
 
 ## Main results
 
+* `LinearIsometry.gram_comp`: a linear isometry preserves the Gram matrix of any indexed family.
 * `Matrix.gram_sum_smul`: the Gram matrix of `fun k ↦ ∑ j, U k j • v j` is
   `U.map conj * gram 𝕜 v * Uᵀ`, for a possibly rectangular `U`.
 * `Matrix.det_gram_sum_smul`: its determinant is `‖det U‖ ^ 2 * det (gram 𝕜 v)`.
@@ -41,6 +44,19 @@ product space, where no coordinate matrix is given.
 -/
 
 public section
+
+namespace LinearIsometry
+
+variable {𝕜 ι E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (l : E →ₗᵢ[𝕜] F)
+
+/-- A linear isometry preserves the Gram matrix of an indexed family. -/
+@[simp]
+theorem gram_comp (v : ι → E) : Matrix.gram 𝕜 (l ∘ v) = Matrix.gram 𝕜 v := by
+  ext i j
+  exact l.inner_map_map (v i) (v j)
+
+end LinearIsometry
 
 namespace Matrix
 

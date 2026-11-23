@@ -19,7 +19,9 @@ diagonalizable group scheme `D(G)` is represented by the group algebra `R[G]`. T
 synchronizes its group-scheme and functor-of-points presentations. A scheme-valued point
 `Spec A ⟶ D(G)` over `Spec R` is identified multiplicatively with a character `G →* Aˣ`.
 Under this identification, the group-scheme morphism induced contravariantly by `G ⟶ H`
-acts by precomposition on characters, and the equivalence is natural in `A`.
+acts by precomposition on characters, and the equivalence is natural in `A`. Through the
+relative `Γ-Spec` adjunction the same description holds on arbitrary test schemes `T` over
+`Spec R`, with values in the global sections `Γ(T, 𝒪_T)`.
 
 The same bridge realizes characters, cocharacters, and integer power maps as actual
 group-scheme morphisms. Their composite is the power map whose exponent is the established
@@ -50,8 +52,14 @@ using ordinary integers.
   in the value algebra.
 * `TauCeti.DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap`: a diagonalizable
   group-scheme morphism acts on points by precomposition on characters.
+* `TauCeti.DiagonalizableGroup.groupSchemePointsAlgΓMulEquiv` and
+  `TauCeti.DiagonalizableGroup.schemePointsAlgΓMulEquiv`: points of `D(G)` on an arbitrary,
+  not necessarily affine, scheme `T` over `Spec R` are algebra points of `R[G]` valued in
+  `Γ(T, 𝒪_T)`, equivalently characters `G →* Γ(T, 𝒪_T)ˣ`; both are natural in `T`.
 * `TauCeti.DiagonalizableGroup.multiplicativeGroupScheme`: the same-universe presentation of
   `𝔾ₘ`.
+* `TauCeti.DiagonalizableGroup.multiplicativeGroupSchemePointsAlgΓMulEquiv`: points of `𝔾ₘ` on
+  an arbitrary scheme `T` over `Spec R` are the units of `Γ(T, 𝒪_T)`, naturally in `T`.
 * `TauCeti.DiagonalizableGroup.characterGroupSchemeMap` and
   `TauCeti.DiagonalizableGroup.cocharacterGroupSchemeMap`: scheme-level characters and
   cocharacters.
@@ -360,6 +368,105 @@ theorem schemePointsMulEquiv_mapValue (G : FGCommGrpCat.{u}) (phi : A →ₐ[R] 
     groupSchemePointsMulEquiv_mapValue, pointsMulEquiv_mapValue,
     schemePointsMulEquiv, MulEquiv.trans_apply]
 
+/-! ### Points on arbitrary test schemes -/
+
+/-- Scheme-valued points of `D(G)` on an arbitrary scheme `T` over `Spec R`, not necessarily
+affine, are the convolution group of `R`-algebra maps from `R[G]` to the global sections of `T`.
+This is the relative `Γ-Spec` comparison `CommHopfAlgCat.schemePointsAlgΓMulEquiv`, read through
+the presentation of `D(G)` as the relative spectrum of `R[G]`. -/
+noncomputable def groupSchemePointsAlgΓMulEquiv (G : FGCommGrpCat.{u})
+    (T : Over (Spec (CommRingCat.of R))) :
+    (T ⟶ (groupScheme R G).X) ≃*
+      WithConv (MonoidAlgebra R G →ₐ[R] ((algΓ (CommRingCat.of R)).obj T).unop) :=
+  (Hom.mulEquivCongrRight (groupSchemeIsoSpec (R := R) G) T).trans
+    (CommHopfAlgCat.schemePointsAlgΓMulEquiv (MonoidAlgebra R G) T)
+
+/-- The comparison of points on arbitrary test schemes is natural in the test scheme: precomposing
+by `φ : T ⟶ T'` postcomposes the algebra point with the induced map on global sections. -/
+theorem groupSchemePointsAlgΓMulEquiv_precomp (G : FGCommGrpCat.{u})
+    {T T' : Over (Spec (CommRingCat.of R))} (φ : T ⟶ T') (p : T' ⟶ (groupScheme R G).X) :
+    groupSchemePointsAlgΓMulEquiv G T (φ ≫ p) =
+      AlgHom.mapValue ((algΓ (CommRingCat.of R)).map φ).unop.hom
+        (groupSchemePointsAlgΓMulEquiv G T' p) := by
+  have h := CommHopfAlgCat.schemePointsAlgΓMulEquiv_precomp (MonoidAlgebra R G) φ
+    (p ≫ (groupSchemeIsoSpec (R := R) G).hom)
+  rw [← Category.assoc] at h
+  -- `Hom.mulEquivCongrRight e` is postcomposition with `e.hom`; its `simps` lemma is stated on
+  -- the `yonedaMon` presentation of the hom-monoid and does not match here.
+  exact h
+
+/-- The underlying map of a point on an arbitrary test scheme, transported to `Spec R[G]`, is
+the relative spectrum point of its algebra point under the relative `Γ-Spec` comparison. -/
+lemma groupSchemePointsAlgΓMulEquiv_apply_left_comp (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))} (p : T ⟶ (groupScheme R G).X) :
+    p.left ≫ eqToHom (groupScheme_X_left R G) =
+      ((CommHopfAlgCat.schemePointsAlgΓMulEquiv (MonoidAlgebra R G) T).symm
+        (groupSchemePointsAlgΓMulEquiv G T p)).left := by
+  have hp := ((CommHopfAlgCat.schemePointsAlgΓMulEquiv (MonoidAlgebra R G) T).symm_apply_apply
+    (p ≫ (groupSchemeIsoSpec (R := R) G).hom)).symm
+  have hleft := congrArg Over.Hom.left hp
+  rw [Over.comp_left, groupSchemeIsoSpec_hom_left] at hleft
+  exact hleft
+
+/-- The inverse comparison of points on arbitrary test schemes is the relative `Γ-Spec` unit
+followed by the spectrum morphism of the algebra point, transported to the named diagonalizable
+group scheme. -/
+lemma groupSchemePointsAlgΓMulEquiv_symm_apply_left (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))}
+    (f : WithConv (MonoidAlgebra R G →ₐ[R] ((algΓ (CommRingCat.of R)).obj T).unop)) :
+    ((groupSchemePointsAlgΓMulEquiv G T).symm f).left =
+      ((algΓAlgSpecAdjunction (CommRingCat.of R)).unit.app T).left ≫
+        Spec.map (CommRingCat.ofHom f.ofConv) ≫ eqToHom (groupScheme_X_left R G).symm := by
+  apply (cancel_mono (eqToHom (groupScheme_X_left R G))).1
+  rw [groupSchemePointsAlgΓMulEquiv_apply_left_comp, MulEquiv.apply_symm_apply,
+    CommHopfAlgCat.schemePointsAlgΓMulEquiv_symm_apply, Category.assoc, Category.assoc,
+    eqToHom_trans, eqToHom_refl, Category.comp_id]
+  -- The unit's target is the composite functor `algΓ ⋙ algSpec`, definitionally the relative
+  -- spectrum of the global sections, so `Over.comp_left` does not rewrite syntactically.
+  exact congrArg (((algΓAlgSpecAdjunction (CommRingCat.of R)).unit.app T).left ≫ ·)
+    (CommHopfAlgCat.mapMulEquiv_left f)
+
+/-- Scheme-valued points of `D(G)` on an arbitrary scheme `T` over `Spec R` are the characters
+`G →* Γ(T, 𝒪_T)ˣ`. -/
+noncomputable def schemePointsAlgΓMulEquiv (G : FGCommGrpCat.{u})
+    (T : Over (Spec (CommRingCat.of R))) :
+    (T ⟶ (groupScheme R G).X) ≃* (G →* Γ(T.left, ⊤)ˣ) :=
+  (groupSchemePointsAlgΓMulEquiv G T).trans pointsMulEquiv
+
+/-- The character attached to a point on an arbitrary test scheme is natural in the test scheme:
+precomposing by `φ : T ⟶ T'` applies the induced map `Γ(T', 𝒪) ⟶ Γ(T, 𝒪)` to its values. -/
+theorem schemePointsAlgΓMulEquiv_precomp (G : FGCommGrpCat.{u})
+    {T T' : Over (Spec (CommRingCat.of R))} (φ : T ⟶ T') (p : T' ⟶ (groupScheme R G).X) :
+    schemePointsAlgΓMulEquiv G T (φ ≫ p) =
+      (Units.map φ.left.appTop.hom.toMonoidHom).comp (schemePointsAlgΓMulEquiv G T' p) := by
+  -- The relative global sections `((algΓ _).obj T).unop` are `Γ(T.left, ⊤)` with its `R`-algebra
+  -- structure, and `(algΓ _).map φ` is `φ.left.appTop`, both by definition of `algΓ`; `rw` cannot
+  -- cross the first identification inside the unit group, so the two steps are composed by `exact`.
+  exact (congrArg pointsMulEquiv (groupSchemePointsAlgΓMulEquiv_precomp G φ p)).trans
+    (pointsMulEquiv_mapValue _ _)
+
+/-- A point on an arbitrary test scheme, viewed as a character, evaluates a group element on the
+corresponding group-algebra basis monomial. -/
+@[simp]
+theorem schemePointsAlgΓMulEquiv_apply_coe (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))} (p : T ⟶ (groupScheme R G).X) (g : G) :
+    (schemePointsAlgΓMulEquiv G T p g : Γ(T.left, ⊤)) =
+      (groupSchemePointsAlgΓMulEquiv G T p).ofConv (MonoidAlgebra.single g 1) := by
+  -- `schemePointsAlgΓMulEquiv` reads `pointsMulEquiv` with values in the relative global
+  -- sections `((algΓ _).obj T).unop`, definitionally `Γ(T.left, ⊤)`; `rw` cannot cross this
+  -- identification, and `charOfPoint_apply_coe` holds by `rfl`.
+  rfl
+
+/-- The inverse character comparison on arbitrary test schemes is the scheme point associated to
+the algebra point extending a character. -/
+theorem schemePointsAlgΓMulEquiv_symm_apply (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))} (chi : G →* Γ(T.left, ⊤)ˣ) :
+    (schemePointsAlgΓMulEquiv G T).symm chi =
+      (groupSchemePointsAlgΓMulEquiv G T).symm (pointsMulEquiv.symm chi) := by
+  -- As above, `MulEquiv.symm_trans_apply` does not rewrite across the global-sections
+  -- identification, but holds by `rfl`.
+  rfl
+
 /-! ### The multiplicative group and scheme-level characters -/
 
 /-- The character group of the multiplicative group scheme, in the universe of the base.
@@ -448,6 +555,38 @@ theorem schemePointsMulEquiv_multiplicativeCharacterGroup_apply
     _ = _ := by
       rw [multiplicativeGroupSchemePointsMulEquiv_apply]
 
+/-- Scheme-valued points of the multiplicative group scheme on an arbitrary scheme `T` over
+`Spec R` are the units of the global sections of `T`, read off on the lifted standard
+generator. -/
+noncomputable def multiplicativeGroupSchemePointsAlgΓMulEquiv
+    (T : Over (Spec (CommRingCat.of R))) :
+    (T ⟶ (multiplicativeGroupScheme R).X) ≃* Γ(T.left, ⊤)ˣ :=
+  (schemePointsAlgΓMulEquiv multiplicativeCharacterGroup T).trans
+    (uliftZPowersMulEquiv Γ(T.left, ⊤)ˣ).symm
+
+/-- The unit attached to a point of `𝔾ₘ` on an arbitrary test scheme is the value of its
+character at the lifted generator `Multiplicative.ofAdd 1`. -/
+@[simp]
+theorem multiplicativeGroupSchemePointsAlgΓMulEquiv_apply
+    {T : Over (Spec (CommRingCat.of R))} (p : T ⟶ (multiplicativeGroupScheme R).X) :
+    multiplicativeGroupSchemePointsAlgΓMulEquiv T p =
+      schemePointsAlgΓMulEquiv multiplicativeCharacterGroup T p
+        (ULift.up (Multiplicative.ofAdd 1)) := by
+  rw [multiplicativeGroupSchemePointsAlgΓMulEquiv, MulEquiv.trans_apply,
+    uliftZPowersMulEquiv_symm_apply]
+
+/-- The points of `𝔾ₘ` on arbitrary test schemes are natural in the test scheme: precomposing by
+`φ : T ⟶ T'` maps the unit along `Γ(T', 𝒪) ⟶ Γ(T, 𝒪)`. -/
+theorem multiplicativeGroupSchemePointsAlgΓMulEquiv_precomp
+    {T T' : Over (Spec (CommRingCat.of R))} (φ : T ⟶ T')
+    (p : T' ⟶ (multiplicativeGroupScheme R).X) :
+    multiplicativeGroupSchemePointsAlgΓMulEquiv T (φ ≫ p) =
+      Units.map φ.left.appTop.hom.toMonoidHom
+        (multiplicativeGroupSchemePointsAlgΓMulEquiv T' p) := by
+  rw [multiplicativeGroupSchemePointsAlgΓMulEquiv_apply,
+    multiplicativeGroupSchemePointsAlgΓMulEquiv_apply, schemePointsAlgΓMulEquiv_precomp,
+    MonoidHom.comp_apply]
+
 /-! ### Scheme-level characters, cocharacters, and power maps -/
 
 /-- A group element `g : G`, viewed as a character of `D(G)`, gives the group-scheme
@@ -463,6 +602,21 @@ theorem characterGroupSchemeMap_def (G : FGCommGrpCat.{u}) (g : G) :
     characterGroupSchemeMap (R := R) G g =
       groupSchemeMap R (FGCommGrpCat.ofHom (uliftZPowersMulEquiv G g)) := by
   rfl
+
+/-- Over a nontrivial base ring, distinct group elements give distinct scheme-level characters. -/
+@[grind inj]
+theorem characterGroupSchemeMap_injective [Nontrivial R] (G : FGCommGrpCat.{u}) :
+    Function.Injective (characterGroupSchemeMap (R := R) G) := by
+  intro g g' h
+  have h' := groupSchemeMap_injective R (by simpa only [characterGroupSchemeMap_def] using h)
+  simpa only [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom,
+    EmbeddingLike.apply_eq_iff_eq] using h'
+
+/-- Over a nontrivial base ring, `characterGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem characterGroupSchemeMap_inj [Nontrivial R] {G : FGCommGrpCat.{u}} {g g' : G} :
+    characterGroupSchemeMap (R := R) G g = characterGroupSchemeMap (R := R) G g' ↔ g = g' :=
+  (characterGroupSchemeMap_injective G).eq_iff
 
 /-- On scheme-valued points, the group-scheme character associated to `g` evaluates the
 corresponding `G`-character at `g`. -/
@@ -498,6 +652,24 @@ theorem cocharacterGroupSchemeMap_def (G : FGCommGrpCat.{u})
           ULift.{u} (Multiplicative ℤ)).toMonoidHom.comp psi)) := by
   rfl
 
+/-- Over a nontrivial base ring, distinct cocharacters give distinct scheme-level cocharacters. -/
+@[grind inj]
+theorem cocharacterGroupSchemeMap_injective [Nontrivial R] (G : FGCommGrpCat.{u}) :
+    Function.Injective (cocharacterGroupSchemeMap (R := R) G) := by
+  intro psi psi' h
+  have h' := groupSchemeMap_injective R (by simpa only [cocharacterGroupSchemeMap_def] using h)
+  rw [FGCommGrpCat.hom_ext_iff, FGCommGrpCat.hom_hom_ofHom, FGCommGrpCat.hom_hom_ofHom] at h'
+  ext g
+  simpa using congrArg (fun f ↦ f g) h'
+
+/-- Over a nontrivial base ring, `cocharacterGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem cocharacterGroupSchemeMap_inj [Nontrivial R] {G : FGCommGrpCat.{u}}
+    {psi psi' : G →* Multiplicative ℤ} :
+    cocharacterGroupSchemeMap (R := R) G psi = cocharacterGroupSchemeMap (R := R) G psi' ↔
+      psi = psi' :=
+  (cocharacterGroupSchemeMap_injective G).eq_iff
+
 /-- On scheme-valued points, a cocharacter raises the multiplicative-group unit to the
 ordinary integer obtained by evaluating the cocharacter. -/
 @[simp high]
@@ -526,6 +698,20 @@ theorem powEndGroupSchemeMap_def (n : ℤ) :
       characterGroupSchemeMap (R := R) multiplicativeCharacterGroup
         (ULift.up (Multiplicative.ofAdd n)) := by
   rfl
+
+/-- Over a nontrivial base ring, distinct exponents give distinct power endomorphisms of the
+multiplicative group scheme. -/
+@[grind inj]
+theorem powEndGroupSchemeMap_injective [Nontrivial R] :
+    Function.Injective (powEndGroupSchemeMap (R := R)) := fun m n h ↦
+  Multiplicative.ofAdd.injective <| ULift.up_injective <|
+    characterGroupSchemeMap_injective _ (by simpa only [powEndGroupSchemeMap_def] using h)
+
+/-- Over a nontrivial base ring, `powEndGroupSchemeMap` is injective, stated as an `iff`. -/
+@[simp]
+theorem powEndGroupSchemeMap_inj [Nontrivial R] {m n : ℤ} :
+    powEndGroupSchemeMap (R := R) m = powEndGroupSchemeMap (R := R) n ↔ m = n :=
+  powEndGroupSchemeMap_injective.eq_iff
 
 /-- The scheme-level `n`-th power endomorphism raises every scheme-valued point to the
 ordinary integer power `n`. -/

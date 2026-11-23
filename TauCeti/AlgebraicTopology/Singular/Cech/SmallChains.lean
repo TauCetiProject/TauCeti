@@ -123,10 +123,10 @@ def openCoverSmallAugmentedSingularNerveEvaluationIso (q : ℕ) :
         intro n m θ
         rfl))
     (Equiv.toIso
-      { toFun g := ⟨Equiv.ulift.symm g.1,
-          (mem_smallSingularSubcomplex_iff_exists_comp_openCoverMap U _).2 g.2⟩
-        invFun σ := ⟨Equiv.ulift σ.1,
-          (mem_smallSingularSubcomplex_iff_exists_comp_openCoverMap U σ.1).1 σ.2⟩
+      { toFun g := ⟨Equiv.ulift.symm g.val,
+          (mem_smallSingularSubcomplex_iff_exists_comp_openCoverMap U _).2 g.property⟩
+        invFun σ := ⟨Equiv.ulift σ.val,
+          (mem_smallSingularSubcomplex_iff_exists_comp_openCoverMap U σ.val).1 σ.property⟩
         left_inv g := rfl
         right_inv σ := rfl })
     (by

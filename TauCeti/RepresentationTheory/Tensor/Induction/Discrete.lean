@@ -70,6 +70,27 @@ theorem continuous_wreathTensor_apply (ρ : Representation R D M)
 
 end Representation
 
+namespace Subgroup
+
+variable {R : Type u} {G : Type v} {M : Type w}
+  [CommSemiring R] [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [AddCommMonoid M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+
+/-- The tensor-induced representation of an open finite-index subgroup has continuous orbit maps
+on its discrete tensor power whenever the base `U`-representation has a continuous action. -/
+theorem continuous_tensorInducedRepresentation_apply (U : Subgroup G) (hU : IsOpen (U : Set G))
+    (s : U.LeftTransversal) [Finite (G ⧸ U)]
+    [TopologicalSpace (⨂[R] _ : G ⧸ U, M)] [DiscreteTopology (⨂[R] _ : G ⧸ U, M)]
+    (ρ : Representation R U M)
+    (hρ : Continuous fun p : U × M ↦ ρ p.1 p.2) (z : ⨂[R] _ : G ⧸ U, M) :
+    Continuous fun g : G ↦ U.tensorInducedRepresentation s ρ g z := by
+  have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
+  exact ((Representation.continuous_wreathTensor_apply ρ hρ z).comp
+    (U.continuous_monomialHom hU s)).congr fun g ↦
+    (U.tensorInducedRepresentation_apply s ρ g z).symm
+
+end Subgroup
+
 namespace TauCeti.DiscreteRep
 
 variable {R : Type u} [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
@@ -90,15 +111,11 @@ formulas on pure tensors. -/
   letI : SMulCommClass G R (⨂[R] _ : G ⧸ U, A.V) :=
     ⟨fun g r z ↦ (ρ g).map_smul r z⟩
   letI : ContinuousSMul R (⨂[R] _ : G ⧸ U, A.V) := ⟨continuous_of_discreteTopology⟩
-  letI : ContinuousSMul G (⨂[R] _ : G ⧸ U, A.V) := by
-    refine ⟨continuous_prod_of_discrete_right.mpr fun z ↦ ?_⟩
-    have : DiscreteTopology (G ⧸ U) := QuotientGroup.discreteTopology hU
-    have : Finite (G ⧸ U) := inferInstance
-    have hc := (Representation.continuous_wreathTensor_apply A.ρ
-      (by simpa only [Representation.ofDistribMulAction_apply_apply] using
-        (continuous_smul : Continuous fun p : U × A.V ↦ p.1 • p.2)) z).comp
-      (U.continuous_monomialHom hU s)
-    exact hc.congr fun g ↦ (U.tensorInducedRepresentation_apply s A.ρ g z).symm
+  letI : ContinuousSMul G (⨂[R] _ : G ⧸ U, A.V) :=
+    ⟨continuous_prod_of_discrete_right.mpr fun z ↦
+      U.continuous_tensorInducedRepresentation_apply hU s A.ρ
+        (by simpa only [Representation.ofDistribMulAction_apply_apply] using
+          (continuous_smul : Continuous fun p : U × A.V ↦ p.1 • p.2)) z⟩
   exact { V := ⨂[R] _ : G ⧸ U, A.V }
 
 /-- The underlying module of discrete tensor induction is the tensor power over the cosets. -/

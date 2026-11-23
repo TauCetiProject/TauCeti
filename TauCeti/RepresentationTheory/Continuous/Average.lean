@@ -39,7 +39,7 @@ theorem integral_apply_inv_smul_smul {G X F : Type*} [Group G] [MeasurableSpace 
     [MeasurableMul G] (μ : Measure G) [μ.IsMulLeftInvariant] [MulAction G X]
     [NormedAddCommGroup F] [NormedSpace ℝ F] (σ : ContRepresentation ℝ G F) (c : X → F) (h : G)
     (y : X) : ∫ g, σ g (c (g⁻¹ • h • y)) ∂μ = σ h (∫ g, σ g (c (g⁻¹ • y)) ∂μ) := by
-  let L : F ≃L[ℝ] F := ContinuousLinearEquiv.equivOfInverse' (σ h) (σ h⁻¹) (comp_inv_self σ h)
+  let L : F ≃L[ℝ] F := ContinuousLinearEquiv.ofContinuousLinearMap (σ h) (σ h⁻¹) (comp_inv_self σ h)
     (by simpa using comp_inv_self σ h⁻¹)
   calc ∫ g, σ g (c (g⁻¹ • h • y)) ∂μ = ∫ g, σ (h * g) (c ((h * g)⁻¹ • h • y)) ∂μ :=
         (integral_mul_left_eq_self (fun g ↦ σ g (c (g⁻¹ • h • y))) h).symm

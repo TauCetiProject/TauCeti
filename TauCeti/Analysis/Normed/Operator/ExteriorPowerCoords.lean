@@ -70,12 +70,13 @@ by its determinant on the coordinate line `Fin (m.choose m) → 𝕜`. -/
 /-- The compound matrix as a sum of rank-one operators: its column at `t` is the vector of the
 `j × j` minors of `g` with columns selected by the subset enumerated by `t`. -/
 private theorem exteriorPowerCoords_eq_sum (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :
-    g.exteriorPowerCoords j = ∑ t, smulRightL 𝕜 _ _ (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)
-      (fun s ↦ (Matrix.of fun i k : Fin j ↦ g
-        (Pi.single (Set.powersetCard.ofFinEmbEquiv.symm
-          ((Set.powersetCard.finChooseEquiv m j).symm t) i) 1)
-        (Set.powersetCard.ofFinEmbEquiv.symm
-          ((Set.powersetCard.finChooseEquiv n j).symm s) k)).det) := by
+    g.exteriorPowerCoords j =
+      ∑ t, StrongDual.smulRightL 𝕜 _ _ (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)
+        (fun s ↦ (Matrix.of fun i k : Fin j ↦ g
+          (Pi.single (Set.powersetCard.ofFinEmbEquiv.symm
+            ((Set.powersetCard.finChooseEquiv m j).symm t) i) 1)
+          (Set.powersetCard.ofFinEmbEquiv.symm
+            ((Set.powersetCard.finChooseEquiv n j).symm s) k)).det) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
   conv_lhs => rw [pi_eq_sum_univ' v]
   simp_rw [map_sum, map_smul, sum_apply, smulRightL_apply_apply, smulRight_apply, proj_apply]
@@ -87,7 +88,7 @@ private theorem exteriorPowerCoords_eq_sum (j : ℕ) (g : (Fin m → 𝕜) →L[
 theorem continuous_exteriorPowerCoords (j m n : ℕ) :
     Continuous (exteriorPowerCoords j : ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) → _) := by
   simp_rw [funext (exteriorPowerCoords_eq_sum j)]
-  refine continuous_finsetSum _ fun t _ ↦ (smulRightL 𝕜 _ _
+  refine continuous_finsetSum _ fun t _ ↦ (StrongDual.smulRightL 𝕜 _ _
     (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)).continuous.comp' (continuous_pi fun s ↦ ?_)
   refine Continuous.matrix_det (continuous_matrix fun i k ↦ ?_)
   simp only [Matrix.of_apply]

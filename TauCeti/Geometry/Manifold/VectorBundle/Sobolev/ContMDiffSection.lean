@@ -36,6 +36,8 @@ the components of `s` (`TauCeti.SectionChartData.ofComponents`).
 
 ## Main results
 
+* `TauCeti.SobolevSection.lowerOrdersL_ofContMDiffSection`: lowering the order preserves
+  the underlying smooth section.
 * `TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae`: the chart data are the chart
   coordinates of the section.
 * `TauCeti.SobolevSection.norm_ofContMDiffSection_le`: the Sobolev norm is bounded by the `Lᵖ`
@@ -139,6 +141,20 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
   rw [ContMDiffSection.coe_zero, Pi.zero_apply,
     ← ((A.triv i).continuousLinearEquivAt ℝ x hb).map_eq_zero_iff]
   exact hzero
+
+/-- Lowering the Sobolev order preserves the underlying smooth section. -/
+theorem lowerOrdersL_ofContMDiffSection (d : ℕ)
+    [IsManifold 𝓘(ℝ, E) (k + d : ℕ) M] [ContMDiffVectorBundle (k + d : ℕ) F V 𝓘(ℝ, E)]
+    (s : Cₛ^(k + d : ℕ)⟮𝓘(ℝ, E); F, V⟯) :
+    A.sectionChartData.lowerOrdersL μ p k d (ofContMDiffSection A μ p (k + d) s) =
+      ofContMDiffSection A μ p k
+        ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ := by
+  apply SobolevSection.eq_of_ae_eq_coord (s := s)
+  · intro i
+    rw [SectionChartData.chartValueL_lowerOrdersL]
+    exact chartValueL_ofContMDiffSection_ae A μ p (k + d) s i
+  · exact fun i ↦ chartValueL_ofContMDiffSection_ae A μ p k
+      ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ i
 
 end SobolevSection
 

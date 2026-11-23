@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Probability.Moments.Variance
 
 /-!
 # First spectral moment of a Wigner matrix
@@ -107,6 +107,30 @@ theorem measure_integral_spectralMeasure_wignerMatrix_ge [IsProbabilityMeasure P
   rw [variance_integral_spectralMeasure_wignerMatrix n hη hindep] at h
   exact h
 
+/-- A uniform diagonal variance bound gives an `O(n⁻²)` first-moment variance bound. -/
+theorem variance_integral_spectralMeasure_wignerMatrix_le (n : ℕ) {V : ℝ}
+    (hη : ∀ i : Fin (n + 1), MemLp (η i.val) 2 P)
+    (hindep : Pairwise fun i j : Fin (n + 1) ↦ IndepFun (η i.val) (η j.val) P)
+    (hvar : ∀ i : Fin (n + 1), Var[η i.val; P] ≤ V) :
+    Var[fun ω ↦ ∫ x, x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
+      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] ≤
+      V / (n + 1 : ℝ) ^ 2 := by
+  rw [variance_integral_spectralMeasure_wignerMatrix n hη hindep]
+  have hn : (n + 1 : ℝ) ≠ 0 := by positivity
+  have hs : Real.sqrt (n + 1 : ℝ) ^ 2 = (n + 1 : ℝ) := Real.sq_sqrt (by positivity)
+  have hscale : (((n + 1 : ℝ)⁻¹ * (Real.sqrt (n + 1 : ℝ))⁻¹) ^ 2) *
+      ((n + 1 : ℝ) * V) = V / (n + 1 : ℝ) ^ 2 := by
+    rw [mul_pow]
+    field_simp
+    rw [hs]
+  calc
+    _ ≤ (((n + 1 : ℝ)⁻¹ * (Real.sqrt (n + 1 : ℝ))⁻¹) ^ 2) *
+        ∑ _i : Fin (n + 1), V :=
+      mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i _ ↦ hvar i) (sq_nonneg _)
+    _ = V / (n + 1 : ℝ) ^ 2 := by
+      simpa only [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul, Nat.cast_add, Nat.cast_one] using hscale
+
 /-- A uniform diagonal variance bound gives an `O(n⁻²)` first-moment tail bound. -/
 theorem measure_integral_spectralMeasure_wignerMatrix_le [IsProbabilityMeasure P] (n : ℕ)
     {V : ℝ}
@@ -118,23 +142,10 @@ theorem measure_integral_spectralMeasure_wignerMatrix_le [IsProbabilityMeasure P
     P {ω | ε ≤ |∫ x, x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)|} ≤
       ENNReal.ofReal ((V / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
-  have hn : (n + 1 : ℝ) ≠ 0 := by positivity
-  have hs : Real.sqrt (n + 1 : ℝ) ^ 2 = (n + 1 : ℝ) := Real.sq_sqrt (by positivity)
-  have hscale : (((n + 1 : ℝ)⁻¹ * (Real.sqrt (n + 1 : ℝ))⁻¹) ^ 2) *
-      ((n + 1 : ℝ) * V) = V / (n + 1 : ℝ) ^ 2 := by
-    rw [mul_pow]
-    field_simp
-    rw [hs]
   refine (measure_integral_spectralMeasure_wignerMatrix_ge n hη hcenter hindep hε).trans ?_
-  apply ENNReal.ofReal_le_ofReal
-  apply div_le_div_of_nonneg_right _ (sq_nonneg ε)
-  calc
-    _ ≤ (((n + 1 : ℝ)⁻¹ * (Real.sqrt (n + 1 : ℝ))⁻¹) ^ 2) *
-        ∑ _i : Fin (n + 1), V :=
-      mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i _ ↦ hvar i) (sq_nonneg _)
-    _ = V / (n + 1 : ℝ) ^ 2 := by
-      simpa only [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-        nsmul_eq_mul, Nat.cast_add, Nat.cast_one] using hscale
+  rw [← variance_integral_spectralMeasure_wignerMatrix (ξ := ξ) n hη hindep]
+  exact ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
+    (variance_integral_spectralMeasure_wignerMatrix_le n hη hindep hvar) (sq_nonneg ε))
 
 /-- The first spectral moment tends to zero for centered, pairwise independent,
 square-integrable diagonals with uniformly bounded variances, even on varying spaces. -/
@@ -153,20 +164,24 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
       |∫ x, x ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)|})
       atTop (𝓝 0) := by
-  have hinv : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ)⁻¹) atTop (𝓝 0) := by
-    simpa only [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  have hreal : Tendsto (fun n : ℕ ↦ (V / (n + 1 : ℝ) ^ 2) / ε ^ 2)
-      atTop (𝓝 0) := by
-    convert ((hinv.pow 2).const_mul V).div_const (ε ^ 2) using 1
-    · ext n
-      simp [div_eq_mul_inv, inv_pow]
-    · simp
-  have hbound : Tendsto (fun n : ℕ ↦ ENNReal.ofReal
-      ((V / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
-    simpa using ENNReal.tendsto_ofReal hreal
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound
-    (fun _ ↦ bot_le) (fun n ↦
-      measure_integral_spectralMeasure_wignerMatrix_le n (hη n) (hcenter n)
-        (hindep n) (hvar n) hε)
+  let X (n : ℕ) (ω : Ω n) : ℝ :=
+    ∫ x, x ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+      (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)
+  have hmem (n : ℕ) : MemLp (X n) 2 (P n) := by
+    simp_rw [X, integral_spectralMeasure_wignerMatrix]
+    exact (memLp_finsetSum Finset.univ fun i _ ↦ hη n i).const_mul _
+  have hmean (n : ℕ) : ∫ ω, X n ω ∂P n = 0 := by
+    simp_rw [X, integral_spectralMeasure_wignerMatrix, integral_const_mul]
+    rw [integral_finsetSum _ fun i _ ↦ (hη n i).integrable one_le_two]
+    simp [hcenter n]
+  have hvar' : Tendsto (fun n ↦ Var[X n; P n]) atTop (𝓝 0) :=
+    squeeze_zero (fun n ↦ variance_nonneg _ _)
+      (fun n ↦ variance_integral_spectralMeasure_wignerMatrix_le n (hη n) (hindep n) (hvar n))
+      (by
+        simpa using tendsto_const_nhds.div_atTop
+          ((tendsto_pow_atTop two_ne_zero).comp
+            (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)))
+  simpa only [X, hmean, sub_zero] using
+    tendsto_measure_abs_sub_integral_ge_of_tendsto_variance hmem hvar' hε
 
 end TauCeti.Probability

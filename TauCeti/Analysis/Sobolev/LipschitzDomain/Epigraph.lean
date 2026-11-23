@@ -44,7 +44,7 @@ theorem _root_.LipschitzWith.isLipschitzDomainWith_normalEpigraph {L : ℝ≥0} 
     (hφ : LipschitzWith L φ) :
     Set.IsLipschitzDomainWith (E := E) (normalEpigraph φ) L := by
   rw [Set.isLipschitzDomainWith_iff]
-  refine ⟨(normalEpigraph φ).2, fun x hx ↦ ?_⟩
+  refine ⟨(normalEpigraph φ).is_open', fun x hx ↦ ?_⟩
   rw [coe_normalEpigraph] at hx
   have hxGraph : φ x.snd = x.fst :=
     frontier_lt_subset_eq
