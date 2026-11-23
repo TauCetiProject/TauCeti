@@ -109,15 +109,6 @@ private theorem lintegral_ofReal_pow_two_mul_le {ρ : Measure ℝ} {k : ℕ} {C 
   rw [← ofReal_integral_eq_lintegral_ofReal h (ae_of_all _ fun x ↦ (even_two_mul k).pow_nonneg x)]
   exact ENNReal.ofReal_le_ofReal hC
 
-/-- On a finite measure, a finite moment of order `2k` makes every moment of order `n ≤ 2k`
-finite: the real-monomial case of Mathlib's `integrable_norm_pow_of_le`. -/
-private theorem integrable_pow_of_integrable_pow_two_mul {ρ : Measure ℝ} [IsFiniteMeasure ρ]
-    {k n : ℕ} (hn : n ≤ 2 * k) (h : Integrable (fun x : ℝ ↦ x ^ (2 * k)) ρ) :
-    Integrable (fun x : ℝ ↦ x ^ n) ρ :=
-  (integrable_norm_iff (by fun_prop)).1 <| by
-    simpa only [norm_pow, id] using integrable_norm_pow_of_le (f := id) aestronglyMeasurable_id hn
-      (by simpa only [id, Real.norm_eq_abs, (even_two_mul k).pow_abs] using h)
-
 end TauCeti
 
 namespace MeasureTheory.FiniteMeasure
