@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
@@ -16,10 +17,11 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
-# Rectangular matrix operations and positivity by quadratic forms
+# Rectangular matrix operations, amplifications, and positivity by quadratic forms
 
 We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
-with their conversion to ordinary matrices.
+with their conversion to ordinary matrices, functorial non-unital (`CStarMatrix.mapₙₐ`) and unital
+(`CStarMatrix.mapₐ`) entrywise amplifications, and rectangular operator norm properties.
 
 For a non-unital C⋆-algebra `A` and a finite type `n`, Mathlib makes `CStarMatrix n n A` a
 C⋆-algebra and orders it by the spectral order. This file proves that a matrix `M` is positive in
@@ -39,14 +41,19 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 
 ## Main declarations
 
-* `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
-  calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal` and
+  `CStarMatrix.instContinuousFunctionalCalculusReal`: the non-unital and unital real continuous
+  functional calculi of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
-  `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
-  algebraic operations.
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_one`, `ofMatrix_mul`,
+  `ofMatrix_conjTranspose`, `conjTranspose_mul_self_eq_zero`, and `self_mul_conjTranspose_eq_zero`
+  handle the remaining operations and proper-star cancellation.
+* `CStarMatrix.mapₙₐ`, `CStarMatrix.mapₙₐ_id`, `CStarMatrix.mapₙₐ_comp`, `CStarMatrix.mapₐ`,
+  `CStarMatrix.mapₐ_id`, `CStarMatrix.mapₐ_comp`: functorial non-unital and unital entrywise
+  matrix amplifications.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
@@ -56,6 +63,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
+* `CStarMatrix.toCLM_mul`, `CStarMatrix.norm_mul_le_rectangular`, `CStarMatrix.norm_mapₙₐ`,
+  `CStarMatrix.norm_reindexₐ`: rectangular operator-norm submultiplicativity and isometry of
+  amplification and reindexing.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
@@ -152,6 +162,58 @@ theorem diagonalNonUnitalStarAlgHom_apply (b : B) (i j : n) :
 
 end Diagonal
 
+section MapNA
+
+variable {R n A B C : Type*} [Fintype n] [Semiring R]
+  [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
+  [NonUnitalNonAssocSemiring B] [Module R B] [Star B]
+  [NonUnitalNonAssocSemiring C] [Module R C] [Star C]
+
+/-- Entrywise amplification of the identity non-unital ⋆-algebra homomorphism is the identity. -/
+@[simp] theorem mapₙₐ_id :
+    mapₙₐ (n := n) (NonUnitalStarAlgHom.id R A) =
+      NonUnitalStarAlgHom.id R (CStarMatrix n n A) := by ext; rfl
+
+/-- Entrywise non-unital matrix amplification preserves composition. -/
+theorem mapₙₐ_comp (g : B →⋆ₙₐ[R] C) (f : A →⋆ₙₐ[R] B) :
+    mapₙₐ (n := n) (g.comp f) = (mapₙₐ (n := n) g).comp (mapₙₐ (n := n) f) := by ext; rfl
+
+end MapNA
+
+section MapA
+
+variable {R n A B C : Type*} [Fintype n] [DecidableEq n] [CommSemiring R]
+  [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B]
+  [Semiring C] [Algebra R C] [Star C]
+
+/-- Entrywise amplification of a unital ⋆-algebra homomorphism to square C⋆-matrices. -/
+def mapₐ (f : A →⋆ₐ[R] B) : CStarMatrix n n A →⋆ₐ[R] CStarMatrix n n B :=
+  let g := mapₙₐ (n := n) f.toNonUnitalStarAlgHom
+  { toFun := g
+    map_one' := by
+      ext i j; by_cases h : i = j <;> simp [g, one_apply, h]
+    map_mul' := _root_.map_mul g
+    map_zero' := _root_.map_zero g
+    map_add' := _root_.map_add g
+    commutes' := fun _ => by
+      ext i j
+      by_cases h : i = j <;> simp [g, algebraMap_apply, h, AlgHomClass.commutes]
+    map_star' := map_star g }
+
+/-- Evaluating entrywise unital matrix amplification at an entry `(i, j)`. -/
+@[simp] theorem mapₐ_apply (f : A →⋆ₐ[R] B) (M : CStarMatrix n n A) (i j : n) :
+    mapₐ f M i j = f (M i j) := (rfl)
+
+/-- Entrywise amplification of the identity unital ⋆-algebra homomorphism is the identity. -/
+@[simp] theorem mapₐ_id :
+    mapₐ (n := n) (StarAlgHom.id R A) = StarAlgHom.id R (CStarMatrix n n A) := by ext; rfl
+
+/-- Entrywise unital matrix amplification preserves composition. -/
+theorem mapₐ_comp (g : B →⋆ₐ[R] C) (f : A →⋆ₐ[R] B) :
+    mapₐ (n := n) (g.comp f) = (mapₐ (n := n) g).comp (mapₐ (n := n) f) := by ext; rfl
+
+end MapA
+
 section Algebraic
 
 variable {n R A : Type*}
@@ -184,34 +246,132 @@ lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
-lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
+lemma ofMatrix_symm_zero {m : Type*} [Zero A] : ofMatrix.symm (0 : CStarMatrix m n A) = 0 := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
 @[simp]
 lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
     ofMatrix.symm (1 : CStarMatrix n n A) = 1 := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects addition. -/
 @[simp]
-lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_add {m : Type*} [Add A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_neg {m : Type*} [Neg A] (M : CStarMatrix m n A) :
     ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects subtraction. -/
 @[simp]
-lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_sub {m : Type*} [Sub A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
+
+section RectangularAlgebra
+
+variable {l m o B : Type*}
+
+@[simp] theorem ofMatrix_one [DecidableEq n] [Zero A] [One A] :
+    ofMatrix (1 : Matrix n n A) = (1 : CStarMatrix n n A) := (rfl)
+
+@[simp] theorem ofMatrix_mul [Fintype m] [Mul A] [AddCommMonoid A]
+    (M : Matrix l m A) (N : Matrix m n A) :
+    ofMatrix (M * N) = ofMatrix M * ofMatrix N := (rfl)
+
+@[simp] theorem ofMatrix_conjTranspose [Star A] (M : Matrix m n A) :
+    ofMatrix Mᴴ = (ofMatrix M).conjTranspose := (rfl)
+
+@[simp] protected theorem one_mul [Fintype m] [DecidableEq m] [NonAssocSemiring A]
+    (M : CStarMatrix m n A) : (1 : CStarMatrix m m A) * M = M :=
+  Matrix.one_mul (ofMatrix.symm M)
+
+@[simp] protected theorem mul_one [Fintype n] [DecidableEq n] [NonAssocSemiring A]
+    (M : CStarMatrix m n A) : M * (1 : CStarMatrix n n A) = M :=
+  Matrix.mul_one (ofMatrix.symm M)
+
+@[simp] protected theorem neg_mul [Fintype m] [NonUnitalNonAssocRing A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) : (-M) * N = -(M * N) :=
+  Matrix.neg_mul (ofMatrix.symm M) (ofMatrix.symm N)
+
+@[simp] protected theorem mul_neg [Fintype m] [NonUnitalNonAssocRing A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) : M * (-N) = -(M * N) :=
+  Matrix.mul_neg (ofMatrix.symm M) (ofMatrix.symm N)
+
+protected theorem sub_mul [Fintype m] [NonUnitalNonAssocRing A]
+    (L M : CStarMatrix l m A) (N : CStarMatrix m n A) : (L - M) * N = L * N - M * N :=
+  Matrix.sub_mul (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N)
+
+protected theorem mul_sub [Fintype m] [NonUnitalNonAssocRing A]
+    (L : CStarMatrix l m A) (M N : CStarMatrix m n A) : L * (M - N) = L * M - L * N :=
+  Matrix.mul_sub (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N)
+
+@[simp] theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
+    (M + N).conjTranspose = M.conjTranspose + N.conjTranspose :=
+  Matrix.conjTranspose_add (ofMatrix.symm M) (ofMatrix.symm N)
+
+@[simp] theorem conjTranspose_neg [AddGroup A] [StarAddMonoid A] (M : CStarMatrix m n A) :
+    (-M).conjTranspose = -M.conjTranspose :=
+  Matrix.conjTranspose_neg (ofMatrix.symm M)
+
+@[simp] theorem conjTranspose_sub [AddGroup A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
+    (M - N).conjTranspose = M.conjTranspose - N.conjTranspose :=
+  Matrix.conjTranspose_sub (ofMatrix.symm M) (ofMatrix.symm N)
+
+@[simp] theorem conjTranspose_smul [Star R] [Star A] [SMul R A] [StarModule R A]
+    (r : R) (M : CStarMatrix m n A) :
+    (r • M).conjTranspose = star r • M.conjTranspose :=
+  Matrix.conjTranspose_smul r (ofMatrix.symm M)
+
+@[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
+    (1 : CStarMatrix n n A).conjTranspose = 1 := Matrix.conjTranspose_one
+
+@[simp] protected theorem map_zero [Zero A] [Zero B] {f : A → B} (hf : f 0 = 0) :
+    (0 : CStarMatrix m n A).map f = 0 := ext fun _ _ => hf
+
+@[simp] protected theorem map_one [DecidableEq n] [Zero A] [One A] [Zero B] [One B] {f : A → B}
+    (hf0 : f 0 = 0) (hf1 : f 1 = 1) : (1 : CStarMatrix n n A).map f = 1 := by
+  ext i j; by_cases h : i = j <;> simp [one_apply, h, hf0, hf1]
+
+protected theorem map_add [Add A] [Add B] (M N : CStarMatrix m n A) {f : A → B}
+    (hf : ∀ a b, f (a + b) = f a + f b) : (M + N).map f = M.map f + N.map f :=
+  ext fun i j => hf (M i j) (N i j)
+
+protected theorem map_sub [Sub A] [Sub B] (M N : CStarMatrix m n A) {f : A → B}
+    (hf : ∀ a b, f (a - b) = f a - f b) : (M - N).map f = M.map f - N.map f :=
+  ext fun i j => hf (M i j) (N i j)
+
+protected theorem map_mul [Fintype m] [AddCommMonoid A] [Mul A] [AddCommMonoid B] [Mul B]
+    {F : Type*} [FunLike F A B] [AddMonoidHomClass F A B] [MulHomClass F A B]
+    (f : F) (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (M * N).map f = M.map f * N.map f := by
+  ext i j; simp [mul_apply, map_sum, _root_.map_mul]
+
+theorem map_conjTranspose [Star A] [Star B] {F : Type*} [FunLike F A B] [StarHomClass F A B]
+    (f : F) (M : CStarMatrix m n A) :
+    M.conjTranspose.map f = (M.map f).conjTranspose := by
+  ext i j; simp [map_star]
+
+/-- In a proper star-ordered ring, `Mᴴ * M = 0` iff `M = 0` for rectangular C⋆-matrices. -/
+@[simp] theorem conjTranspose_mul_self_eq_zero [Fintype m] [PartialOrder A] [NonUnitalRing A]
+    [StarRing A] [StarOrderedRing A] [IsProperStar A] {M : CStarMatrix m n A} :
+    M.conjTranspose * M = 0 ↔ M = 0 :=
+  Matrix.conjTranspose_mul_self_eq_zero (A := ofMatrix.symm M)
+
+/-- In a proper star-ordered ring, `M * Mᴴ = 0` iff `M = 0` for rectangular C⋆-matrices. -/
+@[simp] theorem self_mul_conjTranspose_eq_zero [Fintype n] [PartialOrder A] [NonUnitalRing A]
+    [StarRing A] [StarOrderedRing A] [IsProperStar A] {M : CStarMatrix m n A} :
+    M * M.conjTranspose = 0 ↔ M = 0 :=
+  Matrix.self_mul_conjTranspose_eq_zero (A := ofMatrix.symm M)
+
+end RectangularAlgebra
 
 /-- Rectangular matrix multiplication is associative. -/
 lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
@@ -353,6 +513,22 @@ instance instNonUnitalContinuousFunctionalCalculusReal :
 instance instNonnegSpectrumClassReal : NonnegSpectrumClass ℝ (CStarMatrix n n A) :=
   CStarAlgebra.instNonnegSpectrumClass'
 
+section UnitalCFC
+
+/-! Like the non-unital case above, the unital real continuous functional calculus of
+`CStarMatrix n n B` is not found by instance search because `CStarMatrix.instAlgebra` gives the
+entrywise `ℝ`-algebra rather than `Algebra.complexToReal` used by
+`IsSelfAdjoint.instContinuousFunctionalCalculus`. Once this instance is registered,
+`Nonneg.instContinuousFunctionalCalculus` synthesizes the `ℝ≥0` instance automatically. -/
+
+/-- Unital real continuous functional calculus on `CStarMatrix n n B`. -/
+instance instContinuousFunctionalCalculusReal {B : Type*} [DecidableEq n] [CStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] :
+    ContinuousFunctionalCalculus ℝ (CStarMatrix n n B) IsSelfAdjoint :=
+  IsSelfAdjoint.instContinuousFunctionalCalculus
+
+end UnitalCFC
+
 /-- A matrix over a C⋆-algebra is positive exactly when all its finite quadratic forms are
 positive. -/
 theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
@@ -438,6 +614,38 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
     ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le _ a
+
+section RectangularNorms
+
+/-- `toCLM` reverses rectangular matrix multiplication. -/
+theorem toCLM_mul {l m n A : Type*} [Fintype l] [Fintype m] [NonUnitalCStarAlgebra A]
+    (V : CStarMatrix l m A) (W : CStarMatrix m n A) :
+    toCLM (V * W) = (toCLM W).comp (toCLM V) := by
+  ext x j
+  simp only [ContinuousLinearMap.comp_apply, toCLM_apply, WithCStarModule.equiv_symm_pi_apply]
+  exact congrFun (Matrix.vecMul_vecMul x (ofMatrix.symm V) (ofMatrix.symm W)).symm j
+
+/-- Submultiplicativity of the operator norm for rectangular C⋆-matrices. -/
+theorem norm_mul_le_rectangular {l m n A : Type*} [Fintype l] [Fintype m] [Fintype n]
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    (V : CStarMatrix l m A) (W : CStarMatrix m n A) :
+    ‖V * W‖ ≤ ‖V‖ * ‖W‖ := by
+  rw [norm_def, toCLM_mul, mul_comm ‖V‖ ‖W‖]
+  exact (toCLM W).opNorm_comp_le (toCLM V)
+
+/-- Matrix amplification of an injective non-unital ⋆-algebra homomorphism is isometric. -/
+theorem norm_mapₙₐ {n A B : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    {f : A →⋆ₙₐ[ℂ] B} (hf : Function.Injective f) (M : CStarMatrix n n A) :
+    ‖mapₙₐ f M‖ = ‖M‖ :=
+  NonUnitalStarAlgHom.norm_map (mapₙₐ f) (CStarMatrix.map_injective hf) M
+
+/-- Reindexing a square C⋆-matrix preserves its norm. -/
+@[simp] theorem norm_reindexₐ {m n A : Type*} [Fintype m] [Fintype n] [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] (e : m ≃ n) (M : CStarMatrix m m A) :
+    ‖reindexₐ ℂ A e M‖ = ‖M‖ := StarAlgEquiv.norm_map (reindexₐ ℂ A e) M
+
+end RectangularNorms
 
 section Compression
 

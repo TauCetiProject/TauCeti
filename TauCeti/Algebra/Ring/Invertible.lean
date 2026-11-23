@@ -21,6 +21,7 @@ and distributive negation:
 * `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
   `Ring.inverse`.
 * `Commute.ringInverse_right`: an element commuting with `b` commutes with `Ring.inverse b`.
+* `Commute.ringInverse_left`: an element commuting with `a` makes `Ring.inverse a` commute with it.
 -/
 
 public section
@@ -62,3 +63,8 @@ theorem Commute.ringInverse_right {M₀ : Type*} [MonoidWithZero M₀] {a b : M�
     exact h.units_inv_right
   · rw [Ring.inverse_non_unit _ hb]
     exact Commute.zero_right a
+
+/-- If `a` commutes with `b`, then `Ring.inverse a` commutes with `b`. -/
+theorem Commute.ringInverse_left {M₀ : Type*} [MonoidWithZero M₀] {a b : M₀}
+    (h : Commute a b) : Commute (Ring.inverse a) b :=
+  h.symm.ringInverse_right.symm

@@ -43,17 +43,19 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
 * `IsStarProjection.isMurrayVonNeumannEquivalent_mul_mul_star`: unitary conjugacy implies
   equivalence. More generally, `IsStarProjection.isMurrayVonNeumannEquivalent_mul_mul_conjTranspose`
   compresses by a rectangular matrix that is isometric on the range of the projection.
-* `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`
-  and `Matrix.IsMurrayVonNeumannEquivalent.map`: the relation is preserved by reindexing, by block
-  sums and by entrywise star ring homomorphisms.
+* `Matrix.IsMurrayVonNeumannEquivalent.reindex`, `Matrix.IsMurrayVonNeumannEquivalent.fromBlocks`,
+  `Matrix.IsMurrayVonNeumannEquivalent.add` and `Matrix.IsMurrayVonNeumannEquivalent.map`: the
+  relation is preserved by reindexing, by block sums, by orthogonal sums and by entrywise star ring
+  homomorphisms.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_zero`,
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm` and
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc`: padding by a zero block, and
   commutativity and associativity of block sums, up to equivalence.
 * `Matrix.isMurrayVonNeumannEquivalent_of_mul_conjTranspose_mul_self_eq`: a rectangular partial
   isometry `v` gives `vᴴ * v ∼ v * vᴴ`. Conversely every equivalence is implemented by a partial
-  isometry (`Matrix.IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq`), so for
-  square matrices the implementing elements are Tau Ceti's partial isometries
+  isometry (`Matrix.IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq`, and with
+  both support equations in `.exists_mul_conjTranspose_mul_self_eq_support`), so for square matrices
+  the implementing elements are Tau Ceti's partial isometries
   (`Matrix.isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry`).
 * `Matrix.isMurrayVonNeumannEquivalent_of_isStarProjection`: over a star-ordered proper star
   ring, a matrix `v` with `vᴴ * v` a projection implements `vᴴ * v ∼ v * vᴴ`.
@@ -301,6 +303,50 @@ theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq {p : M
       hp.isIdempotentElem.eq, hp.isIdempotentElem.eq]
   · rw [hq', ← hvq, Matrix.mul_assoc, ← Matrix.mul_assoc vᴴ, hvp, ← Matrix.mul_assoc, hvpp]
 
+/-- Every Murray–von Neumann equivalence is implemented by a partial isometry `v` supported on both
+its initial and final projections (`v * p = v` and `q * v = v`). -/
+theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq_support
+    {p : Matrix m m R} {q : Matrix n n R} (h : IsMurrayVonNeumannEquivalent p q) :
+    ∃ v : Matrix n m R, vᴴ * v = p ∧ v * vᴴ = q ∧ v * p = v ∧ q * v = v := by
+  obtain ⟨v, hvp, hvq, hv⟩ := h.exists_mul_conjTranspose_mul_self_eq
+  refine ⟨v, hvp, hvq, ?_, ?_⟩
+  · rw [← hvp, ← Matrix.mul_assoc, hv]
+  · rw [← hvq, hv]
+
+/-- **Orthogonal sums.** Murray–von Neumann equivalence is compatible with sums of orthogonal star
+projections. -/
+theorem IsMurrayVonNeumannEquivalent.add {p₁ p₂ : Matrix m m R} {q₁ q₂ : Matrix n n R}
+    (h₁ : IsMurrayVonNeumannEquivalent p₁ q₁) (h₂ : IsMurrayVonNeumannEquivalent p₂ q₂)
+    (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
+    IsMurrayVonNeumannEquivalent (p₁ + p₂) (q₁ + q₂) := by
+  have hp₁ := h₁.isStarProjection_left
+  have hq₁ := h₁.isStarProjection_right
+  have hp₂ := h₂.isStarProjection_left
+  have hq₂ := h₂.isStarProjection_right
+  obtain ⟨v₁, hv₁, hw₁, hv₁p, hq₁v₁⟩ := h₁.exists_mul_conjTranspose_mul_self_eq_support
+  obtain ⟨v₂, hv₂, hw₂, hv₂p, hq₂v₂⟩ := h₂.exists_mul_conjTranspose_mul_self_eq_support
+  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := by
+    simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hq₁.isSelfAdjoint.star_eq] using
+      congr_arg conjTranspose hq₁v₁
+  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := by
+    simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp₂.isSelfAdjoint.star_eq] using
+      congr_arg conjTranspose hv₂p
+  have h12 : v₁ᴴ * v₂ = 0 := by
+    rw [← hv₁q₁, ← hq₂v₂, Matrix.mul_assoc, ← Matrix.mul_assoc q₁ q₂, hq,
+      Matrix.zero_mul, Matrix.mul_zero]
+  have h21 : v₂ᴴ * v₁ = 0 := by
+    simpa only [conjTranspose_mul, conjTranspose_conjTranspose, conjTranspose_zero] using
+      congr_arg conjTranspose h12
+  have h12' : v₁ * v₂ᴴ = 0 := by
+    rw [← hv₁p, ← hp₂v₂, Matrix.mul_assoc, ← Matrix.mul_assoc p₁ p₂, hp,
+      Matrix.zero_mul, Matrix.mul_zero]
+  have h21' : v₂ * v₁ᴴ = 0 := by
+    simpa only [conjTranspose_mul, conjTranspose_conjTranspose, conjTranspose_zero] using
+      congr_arg conjTranspose h12'
+  refine ⟨hp₁.add hp₂ hp, hq₁.add hq₂ hq, v₁ + v₂, ?_, ?_⟩ <;>
+    simp [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, hv₁, hv₂, hw₁, hw₂,
+      h12, h21, h12', h21']
+
 /-- Square matrix projections are equivalent exactly when they are the initial and final
 projections of a partial isometry. -/
 theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix m m R} :
@@ -384,8 +430,7 @@ theorem IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBl
       w * Matrix.fromBlocks p 0 0 0 * star w = Matrix.fromBlocks 0 0 0 q := by
   have hp := h.isStarProjection_left
   have hq := h.isStarProjection_right
-  obtain ⟨v, hvp, hvq, hv⟩ := h.exists_mul_conjTranspose_mul_self_eq
-  have hbe : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
+  obtain ⟨v, hvp, hvq, hbe, -⟩ := h.exists_mul_conjTranspose_mul_self_eq_support
   have hea : p * vᴴ = vᴴ := by
     simpa [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
       congr_arg conjTranspose hbe
