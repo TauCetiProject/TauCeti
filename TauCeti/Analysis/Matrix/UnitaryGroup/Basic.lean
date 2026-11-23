@@ -10,7 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 

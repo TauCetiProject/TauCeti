@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Polynomial.Eval.SMul
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
@@ -17,6 +18,9 @@ For `f = X²` the binomial bound on `‖D^[1] f (2)‖ = 4` is `choose 1 1 + cho
 point `10` it is `21` against the true value `20`, while the coarse bound is `3 · 4 · 100 = 1200`.
 For `k = 3 > 2` the binomial sum is empty. For `f = 1 + X + X²` at `1` the binomial bound `3` is an
 equality and the coarse bound is `12`.
+
+For ordinary derivatives the bound carries the extra factor `k!`: for `f = X²` and `k = 2` it is
+`2! · choose 2 2 = 2`, which is the value `f'' = 2`, while the Hasse bound `1` is below it.
 
 The confluent Vandermonde matrix for the nodes `(0, 1)` with multiplicities `(2, 1)` has rows
 `[1, 0, 0]`, `[0, 1, 0]`, `[1, 1, 1]`: its row of the jet `(i, k)` is `j ↦ D^[k] (X ^ j) (a i)` for
@@ -66,6 +70,14 @@ example : ‖(1 + X + X ^ 2 : ℂ[X]).eval 1‖ ≤ 12 := by
     (fun j _ ↦ norm_coeff_one_add_X_add_X_sq_le j)
     (a := 1) (by simp) 0
   norm_num at this ⊢
+
+example : (derivative^[2] (X ^ 2 : ℂ[X])).eval 2 = 2 := by
+  simp [iterate_derivative_X_pow_eq_smul]
+
+example : ‖(derivative^[2] (X ^ 2 : ℂ[X])).eval 2‖ ≤ 2 := by
+  refine (norm_eval_iterate_derivative_le (d := 2) (H := 1) (A := 2) (natDegree_X_pow_le 2)
+    (fun j _ ↦ norm_coeff_X_sq_le j) (by simp) 2).trans_eq ?_
+  simp
 
 example : ‖(hasseDeriv 1 (X ^ 2 : ℂ[X])).eval 10‖ = 20 := by
   rw [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]; norm_num
