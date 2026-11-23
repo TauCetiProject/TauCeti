@@ -211,14 +211,6 @@ namespace IsDelzant
 variable (hΔ : IsDelzant i u c)
 include hΔ
 
-/-- The facets through a point of a Delzant polytope pass through a smooth vertex. -/
-private theorem exists_isSmoothVertex_activeSet_subset [FiniteDimensional ℝ V]
-    (hx : x ∈ facetPolyhedron i u c) :
-    ∃ v, IsSmoothVertex i u c v ∧
-      activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c v := by
-  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
-  exact ⟨v, hΔ.isSmoothVertex v hv, hsub⟩
-
 /-- **Delzant polytopes are simple.** The normals of the facets through a point of a Delzant
 polytope are linearly independent: they are among the normals at a vertex. -/
 theorem linearIndepOn_activeSet [FiniteDimensional ℝ V] (hx : x ∈ facetPolyhedron i u c) :

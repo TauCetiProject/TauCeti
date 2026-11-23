@@ -37,6 +37,13 @@ actions on coordinate rings; over a fixed base `Spec R`,
 `Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen` identify those rings as the
 pushout over the original base rings.
 
+For a scheme `X` over `Spec k`, `Scheme.algebraOfOver` makes the sections of the structure
+sheaf over each open a `k`-algebra through `Scheme.baseRingToStructurePresheaf`, compatibly with
+restriction (`Scheme.presheaf_map_algebraMap`). This `k`-algebra structure is
+a definition rather than a global instance: for an affine scheme over `Spec k`, or for `Spec k`
+over itself, Mathlib already provides other `k`-algebra structures on (global) sections, which
+are only propositionally equal to it.
+
 These constructions are independent of sheaf cohomology. They supply the scalar actions used by
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`.
 -/
@@ -503,6 +510,32 @@ end BaseScalars
 end AlgebraicGeometry.Scheme.Modules
 
 namespace AlgebraicGeometry.Scheme
+
+section SectionsAlgebra
+
+variable (X : Scheme.{u}) (k : Type u) [CommRing k] [X.Over (Spec (.of k))]
+
+/-- The `k`-algebra structure on the sections of a scheme `X` over `Spec k`, through the base
+ring map `X.baseRingToStructurePresheaf k`. -/
+@[expose, instance_reducible]
+def algebraOfOver (U : X.Opens) : Algebra k Γ(X, U) :=
+  ((X.baseRingToStructurePresheaf k).app (op U)).hom.toAlgebra
+
+attribute [local instance] algebraOfOver
+
+variable {X k}
+
+theorem algebraMap_eq_baseRingToStructurePresheaf_app (U : X.Opens) :
+    algebraMap k Γ(X, U) = ((X.baseRingToStructurePresheaf k).app (op U)).hom :=
+  (rfl)
+
+/-- Restriction of sections is `k`-linear. -/
+@[simp]
+theorem presheaf_map_algebraMap {U V : X.Opens} (i : V ⟶ U) (c : k) :
+    X.presheaf.map i.op (algebraMap k Γ(X, U) c) = algebraMap k Γ(X, V) c :=
+  (ConcreteCategory.congr_hom ((X.baseRingToStructurePresheaf k).naturality i.op) c).symm
+
+end SectionsAlgebra
 
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
   {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))]

@@ -27,14 +27,18 @@ termwise differentiated series (`HasFPowerSeriesOnBall.hasSum_descFactorial_mul_
 `HasFPowerSeriesOnBall.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv` and center-`0` `tsum`
 corollary `HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow`); both the unscaled
 and rescaled termwise differentiated series are absolutely summable inside the disk of convergence
-(`FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_sub_of_lt_ofScalars_radius` and
-`FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_of_lt_ofScalars_radius`, with
-`HasFPowerSeriesOnBall.summable_norm_mul_pow_ofScalars` for order zero), and at zero the `n`-th
-iterated derivative equals `n! * c n` (`FormalMultilinearSeries.iteratedDeriv_ofScalarsSum_zero`),
+(`FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_sub_of_lt_ofScalars_radius`,
+`FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_of_lt_ofScalars_radius`,
+`FormalMultilinearSeries.summable_norm_natCast_mul_ofScalars`,
+`FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius`, and
+`HasFPowerSeriesOnBall.summable_norm_mul_pow_ofScalars`), and at zero the `n`-th iterated
+derivative equals `n! * c n` (`FormalMultilinearSeries.iteratedDeriv_ofScalarsSum_zero`),
 recovering `c n` when `(n.factorial : 𝕜) ≠ 0`. Termwise differentiation of a scalar series
 represents the derivative on the same ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and gives
-the Euler operator `y * f' y` as `∑ n * c n * y ^ n`
-(`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`).
+the Euler operators `y * f' y = ∑ n * c n * y ^ n`
+(`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`) and
+`y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`
+(`HasFPowerSeriesOnBall.hasSum_sq_mul_deriv_deriv_ofScalars`).
 
 It also proves coefficient uniqueness for scalar power series vanishing near a point of a
 preconnected ball (`HasFPowerSeriesOnBall.ofScalars_eq_zero_of_eventuallyEq_zero`), proving over
@@ -45,9 +49,10 @@ coefficients divided by `n` for `n ≥ 1` (`FormalMultilinearSeries.le_radius_of
 (`HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast`), and computes the scalar series of
 `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra with
 `‖1‖ = 1`. Over a densely normed field, summability on a punctured disk about the origin bounds the
-convergence radius below and yields a `HasFPowerSeriesOnBall` representation without assuming
-completeness (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_summable`), together
-with translated punctured-disc variants
+convergence radius below (`FormalMultilinearSeries.le_radius_ofScalars_of_summable`) and yields a
+`HasFPowerSeriesOnBall` representation without assuming completeness
+(`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_summable`), together with
+translated punctured-disc variants
 (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt`,
 `FormalMultilinearSeries.analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt`,
@@ -393,6 +398,52 @@ theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [Nontriviall
       ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
       ContinuousLinearMap.apply_apply]
 
+/-- **The second Euler operator on a scalar power series.** If `f` is the sum of the scalar power
+series `∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
+`y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_sq_mul_deriv_deriv_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    HasSum (fun n : ℕ ↦ n * (n - 1) * c n * y ^ n) (y ^ 2 * deriv (deriv f) y) := by
+  have h := (hf.deriv_ofScalars.deriv_ofScalars.hasSum (mem_eball_zero_iff.mpr hy)).mul_left
+    (y ^ 2)
+  -- the terms of index `0` and `1` vanish, and the others are those of `h` shifted by two
+  refine (hasSum_nat_add_iff' 2).mp ?_
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, Nat.cast_zero, Nat.cast_one, zero_mul,
+    sub_self, mul_zero, zero_add, sub_zero]
+  convert h using 1
+  · ext n
+    simp only [ofScalars_apply_eq, smul_eq_mul]
+    push_cast
+    ring
+  · simp
+
+/-- Inside the disc of convergence of a scalar series `∑ c n * z ^ n`, the series converges
+absolutely. -/
+theorem summable_norm_mul_pow_of_lt_radius {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂)
+    {y : 𝕂} (hy : ‖y‖ₑ < (ofScalars 𝕂 c).radius) : Summable fun n : ℕ ↦ ‖c n * y ^ n‖ := by
+  refine ((ofScalars 𝕂 c).summable_norm_mul_pow hy).congr fun n ↦ ?_
+  rw [ofScalars_norm, coe_nnNorm, norm_mul, norm_pow]
+
+/-- Inside the disc of convergence of a scalar series `∑ c n * z ^ n`, the series
+`∑ n * c n * y ^ n` of the Euler operator converges absolutely. -/
+theorem summable_norm_natCast_mul_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂)
+    {y : 𝕂} (hy : ‖y‖ₑ < (ofScalars 𝕂 c).radius) :
+    Summable fun n : ℕ ↦ ‖(n : 𝕂) * c n * y ^ n‖ := by
+  obtain ⟨a, ha, C, -, hC⟩ := (ofScalars 𝕂 c).norm_mul_pow_le_mul_pow_of_lt_radius hy
+  -- compare with `C ∑ n * aⁿ` for the geometric ratio `a < 1` given by the radius
+  refine .of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
+    ((summable_pow_mul_geometric_of_norm_lt_one 1 (r := a)
+      (by rw [Real.norm_of_nonneg ha.1.le]; exact ha.2)).mul_left C)
+  have hn := hC n
+  rw [ofScalars_norm, coe_nnNorm] at hn
+  calc ‖(n : 𝕂) * c n * y ^ n‖ = ‖(n : 𝕂)‖ * (‖c n‖ * ‖y‖ ^ n) := by
+        rw [norm_mul, norm_mul, norm_pow, mul_assoc]
+    _ ≤ n * (C * a ^ n) := by
+        gcongr
+        exact (Nat.norm_cast_le n).trans_eq (by rw [norm_one, mul_one])
+    _ = C * (n ^ 1 * a ^ n) := by ring
+
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
 `∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0` in `A`, then for `0 < m` the function
@@ -434,20 +485,21 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       · exact zero_smul _ _
     · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
 
-/-- Over a densely normed field, if `∑ a n * z ^ n` is summable at every nonzero point of the open
-disk `‖z‖ₑ < r`, then `ofScalars 𝕜 a` has convergence radius at least `r`. -/
-theorem le_radius_ofScalars_of_summable {𝕜 : Type*} [DenselyNormedField 𝕜]
-    (a : ℕ → 𝕜) {r : ℝ≥0∞}
-    (hsum : ∀ z : 𝕜, z ≠ 0 → ‖z‖ₑ < r → Summable fun n : ℕ ↦ a n * z ^ n) :
+/-- **Convergence on a punctured disk bounds the radius.** Over a densely normed field, a scalar
+series that converges at every nonzero point of a disk about the origin has radius of convergence
+at least the radius of that disk. -/
+theorem le_radius_ofScalars_of_summable {𝕜 : Type*} [DenselyNormedField 𝕜] (a : ℕ → 𝕜)
+    {r : ℝ≥0∞} (h : ∀ z : 𝕜, z ≠ 0 → ‖z‖ₑ < r → Summable fun n : ℕ ↦ a n * z ^ n) :
     r ≤ (ofScalars 𝕜 a).radius := by
-  refine ENNReal.le_of_forall_pos_nnreal_lt fun t ht0 ht ↦ ?_
+  refine ENNReal.le_of_forall_nnreal_lt fun t ht ↦ ?_
   obtain ⟨u, htu, hur⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ht
   obtain ⟨z, htz, hzu⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 (ENNReal.coe_lt_coe.mp htu)
-  have hz0 : z ≠ 0 :=
-    norm_pos_iff.mp ((NNReal.coe_pos.mpr ht0).trans (NNReal.coe_lt_coe.mpr htz))
-  have hz : ‖z‖ₑ < r := (eNorm_lt_coe.mpr hzu).trans hur
+  have hz0 : z ≠ 0 := by
+    rintro rfl
+    simp at htz
+  have hsum := h z hz0 ((eNorm_lt_coe.mpr hzu).trans hur)
   refine (ENNReal.coe_le_coe.mpr htz.le).trans (le_radius_of_tendsto _ (l := 0) ?_)
-  simpa [ofScalars_norm] using (hsum z hz0 hz).tendsto_atTop_zero.norm
+  simpa [ofScalars_norm] using hsum.tendsto_atTop_zero.norm
 
 /-- Over a densely normed field, if `∑ a n * z ^ n` is summable at every nonzero point of the open
 disk `‖z‖ₑ < r` (`0 < r`), then `fun z ↦ ∑' n, a n * z ^ n` has formal power series
@@ -533,11 +585,11 @@ densely normed field, if the sum of a scalar series, which is `0` where the seri
 converge, has no zero in a disk about the origin, then that disk lies in the disk of convergence. -/
 theorem le_radius_ofScalars_of_ofScalarsSum_ne_zero {𝕜 : Type*} [DenselyNormedField 𝕜]
     (a : ℕ → 𝕜) {r : ℝ≥0∞} (hne : ∀ z : 𝕜, ‖z‖ₑ < r → ofScalarsSum (E := 𝕜) a z ≠ 0) :
-    r ≤ (ofScalars 𝕜 a).radius :=
-  le_radius_ofScalars_of_summable a fun z _ hz ↦ by
-    by_contra h
-    refine hne z hz ?_
-    simpa only [ofScalarsSum_eq_tsum, smul_eq_mul] using tsum_eq_zero_of_not_summable h
+    r ≤ (ofScalars 𝕜 a).radius := by
+  refine le_radius_ofScalars_of_summable a fun z _ hz ↦ ?_
+  by_contra h
+  refine hne z hz ?_
+  simpa only [ofScalarsSum_eq_tsum, smul_eq_mul] using tsum_eq_zero_of_not_summable h
 
 end FormalMultilinearSeries
 

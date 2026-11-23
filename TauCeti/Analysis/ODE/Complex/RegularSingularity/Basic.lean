@@ -18,6 +18,7 @@ import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.ODE.Complex.RegularSingularPoint
 import TauCeti.Analysis.ODE.Gronwall.Discrete
 import TauCeti.Analysis.ODE.Wronskian
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -33,12 +34,11 @@ punctured disc `TauCeti.regularSingularSlitDisc z₀ r`
 `TauCeti.Analysis.Complex.PowerSeries.BranchCut`):
 * Slit-plane logarithmic-product forcing identities for the second-order operator
   (`TauCeti.deriv_deriv_add_mul_deriv_add_mul_mul_log_sub`, `TauCeti.operator_mul_log`).
-* Any sequence solving the indicial recursion at a root `ρ` of `Q` converges on `‖z - z₀‖ < r` and
-  yields a solution of `w'' + f w' + g w = 0` (`TauCeti.regularSingular_solution`). For a
-  non-resonant root `ρ` (`Q(ρ + s) ≠ 0` for `s ≥ 1`), the canonical series
+* For a non-resonant root `ρ` of `Q` (`Q(ρ + s) ≠ 0` for `s ≥ 1`), the canonical series
   `TauCeti.regularSingularSolution` (`TauCeti.regularSingularSolution_eq`) satisfies
-  `TauCeti.regularSingularCoeff_solution` (returning series convergence and `IsSolution` for
-  `TauCeti.regularSingularEquation`), with normalized uniqueness
+  `TauCeti.regularSingularCoeff_solution` (via `TauCeti.regularSingular_solution` from
+  `TauCeti.Analysis.ODE.Complex.RegularSingularPoint`, returning series convergence and
+  `IsSolution` for `TauCeti.regularSingularEquation`), with normalized uniqueness
   `TauCeti.eq_regularSingularCoeff_of_solution`.
 * The shifted logarithmic forcing coefficients `TauCeti.regularSingularLogForcing` sum to the
   Euler–Frobenius forcing series (`TauCeti.hasSum_regularSingularLogForcing_mul_pow`).
@@ -503,40 +503,7 @@ theorem regularSingularSolution_eq (fs gs : ℕ → ℂ) (z₀ ρ : ℂ) :
       (z - z₀) ^ ρ * ∑' s, regularSingularCoeff fs gs ρ s * (z - z₀) ^ s :=
   funext fun z => regularSingularSolution_apply fs gs z₀ ρ z
 
-/-- **Series solution at a regular singularity** (DLMF 2.7.2–2.7.5). Let `(z - z₀) f(z)` and
-`(z - z₀)² g(z)` have power series `∑ fs s * (z - z₀)^s` and `∑ gs s * (z - z₀)^s` on the
-punctured disc `0 < ‖z - z₀‖ < r`. If `ρ` is a root of `indicialPoly (fs 0) (gs 0)` and `a : ℕ → ℂ`
-satisfies the indicial recursion, then `∑ a_s (z - z₀)^s` converges on the full disc `‖z - z₀‖ < r`,
-and `w(z) = (z - z₀)^ρ ∑' s, a s * (z - z₀)^s` is a holomorphic solution of `w'' + f w' + g w = 0`
-on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
-theorem regularSingular_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs a : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hρ : indicialPoly (fs 0) (gs 0) ρ = 0)
-    (ha : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) * a s =
-      -∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k) :
-    let w : ℂ → ℂ := fun z => (z - z₀) ^ ρ * ∑' s, a s * (z - z₀) ^ s
-    (∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s) ∧
-      DifferentiableOn ℂ w {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
-      ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
-        deriv (deriv w) z + f z * deriv w z + g z * w z = 0 := by
-  have hsum := summable_of_perturbed_indicial_rec (σ := ρ) (d := a) (E := 0) (s₁ := 1)
-    (fun z hz0 hzr => (hf z hz0 hzr).summable) (fun z hz0 hzr => (hg z hz0 hzr).summable)
-    (fun _ _ _ => ⟨0, fun _ => by simp⟩) (fun s hs => by simp [ha s hs])
-  refine ⟨hsum, fun z hz =>
-      (hasDerivAt_cpow_mul_tsum hsum hz.1 hz.2).differentiableAt.differentiableWithinAt,
-    fun z hzs hzb => ?_⟩
-  rw [operator_cpow_mul_tsum_eq hf hg hsum hzs hzb]
-  have hcoeff : ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (ρ + s) * a s +
-      ∑ k ∈ range s, ((ρ + k) * fs (s - k) + gs (s - k)) * a k = 0 := fun s => by
-    rcases eq_or_ne s 0 with rfl | hs
-    · simp [hρ]
-    · rw [ha s (Nat.pos_of_ne_zero hs), neg_add_cancel]
-  simp [hcoeff]
-
-/-- Specialization of `regularSingular_solution` to the canonical normalized series
+/-- Specialization of `TauCeti.regularSingular_solution` to the canonical normalized series
 `regularSingularSolution fs gs z₀ ρ` (`a₀ = 1`) attached to a non-resonant indicial root `ρ`,
 yielding series convergence on `‖z - z₀‖ < r` and `IsSolution` for
 `regularSingularEquation hf hg`. -/
@@ -549,8 +516,12 @@ theorem regularSingularCoeff_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → �
     (hres : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
     (∀ z, ‖z - z₀‖ < r → Summable fun s => regularSingularCoeff fs gs ρ s * (z - z₀) ^ s) ∧
       (regularSingularEquation hf hg).IsSolution (regularSingularSolution fs gs z₀ ρ) := by
-  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg hρ fun _ hs =>
-    indicialPoly_mul_regularSingularCoeff hs (hres _ hs)
+  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg
+    (by simpa [indicialPoly_def] using hρ)
+    (fun s hs => by simpa [indicialPoly_def] using hres s hs)
+    (fun s hs => by
+      simpa [indicialPoly_def] using indicialPoly_mul_regularSingularCoeff hs (hres s hs))
+    (regularSingularSolution_eq fs gs z₀ ρ)
   exact ⟨hsum, (isSolution_regularSingularEquation_iff hf hg _).mpr
     ⟨hdiff, fun z hz => hsol z hz.1 hz.2⟩⟩
 

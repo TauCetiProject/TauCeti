@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf
 public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Topology.Sheaves.LocalPredicate
+public import TauCeti.Geometry.Manifold.Sheaf.ContMDiff
 
 /-!
 # The sheaf of smooth vector-valued functions as a sheaf of modules
@@ -30,8 +31,8 @@ sheaf `𝒪` as the kernel of the Cauchy-Riemann operator.
 
 ## References
 
-* The sheaf is assembled from Mathlib's sheaf of smooth functions,
-  `StructureGroupoid.LocalInvariantProp.sheaf`, as in `smoothSheafCommRing` in
+* The sheaf is the module-valued smooth-function subsheaf defined by
+  `TauCeti.contMDiffLocalPredicate`. Its construction follows `smoothSheafCommRing` in
   `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean`, by Heather Macbeth and Adam Topaz.
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   §9 (the sheaf `ℰ` of smooth functions).
@@ -83,16 +84,6 @@ private def smoothRestrict {U W : Opens M} (i : W ⟶ U) :
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-/-- Smoothness, as a local predicate on functions. -/
-private def smoothLocalPredicate : TopCat.LocalPredicate fun _ : TopCat.of M ↦ V where
-  pred {U} f := f ∈ smoothSections I 𝕜 V U
-  res i _ hf := comp_inclusion_mem_smoothSections i.le hf
-  locality {W} f h x := by
-    obtain ⟨U, hxU, i, hU⟩ := h x
-    -- smoothness of `f` at `x` is smoothness of its restriction to `U` at `x`
-    exact ((contDiffWithinAt_localInvariantProp ∞).liftPropAt_iff_comp_inclusion i.le f
-      ⟨x, hxU⟩).2 (hU ⟨x, hxU⟩)
-
 /-- The presheaf of `𝕜`-modules of smooth `V`-valued functions. -/
 private def smoothPresheafModule : TopCat.Presheaf (ModuleCat.{max u v} 𝕜) (TopCat.of M) where
   obj U := ModuleCat.of 𝕜 (smoothSections I 𝕜 V U.unop)
@@ -118,7 +109,7 @@ def smoothSheafModule : TopCat.Sheaf (ModuleCat.{max u v} 𝕜) (TopCat.of M) wh
     refine Presheaf.isSheaf_of_isSheaf_comp _ _ (forget (ModuleCat.{max u v} 𝕜)) ?_
     -- the underlying presheaf of sets is the subsheaf of smooth functions
     exact TopCat.Presheaf.isSheaf_of_iso (NatIso.ofComponents (fun _ ↦ (Equiv.refl _).toIso)
-      fun _ ↦ rfl) (TopCat.subsheafToTypes (smoothLocalPredicate I 𝕜 V)).property
+      fun _ ↦ rfl) (TopCat.subsheafToTypes (contMDiffLocalPredicate I 𝓘(ℝ, V) ∞ M V)).property
 
 namespace smoothSheafModule
 
