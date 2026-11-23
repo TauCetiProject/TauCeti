@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
-import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
@@ -164,11 +163,11 @@ theorem isDominant_of_isPullback_spec {k K : Type u} [Field k] [Field K] [Algebr
   have : Surjective g := MorphismProperty.of_isPullback (P := @Surjective) H.flip inferInstance
   inferInstance
 
-/-- The base change of a dominant `k`-morphism between integral `k`-schemes along any field
+/-- The base change of a dominant `k`-morphism between irreducible `k`-schemes along any field
 extension `K / k` is dominant. -/
 theorem isDominant_of_baseChange {k K : Type u} [Field k] [Field K] [Algebra k K]
     {X₁ X₂ X₁' X₂' : Scheme.{u}} [X₁.Over (Spec (.of k))] [X₂.Over (Spec (.of k))]
-    [X₁'.Over (Spec (.of K))] [X₂'.Over (Spec (.of K))] [IsIntegral X₁] [IsIntegral X₂]
+    [X₁'.Over (Spec (.of K))] [X₂'.Over (Spec (.of K))] [IrreducibleSpace X₁] [IrreducibleSpace X₂]
     {f : X₁ ⟶ X₂} [f.IsOver (Spec (.of k))] [IsDominant f]
     {g₁ : X₁' ⟶ X₁} {g₂ : X₂' ⟶ X₂} {f' : X₁' ⟶ X₂'} [f'.IsOver (Spec (.of K))]
     (H₁ : IsPullback g₁ (X₁' ↘ Spec (.of K)) (X₁ ↘ Spec (.of k))

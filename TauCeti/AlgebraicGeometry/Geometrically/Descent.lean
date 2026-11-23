@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.CategoryTheory.MorphismProperty.Descent
 
 /-!

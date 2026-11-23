@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.RamificationIdx.Basic
 public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.AlgebraicGeometry.RationalPoint.BaseChange
-public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.RingTheory.RamificationInertia.BaseChange
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic

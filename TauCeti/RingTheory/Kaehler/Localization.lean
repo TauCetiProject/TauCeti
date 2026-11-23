@@ -150,6 +150,24 @@ def atPrimePushoutEquiv (q : Ideal B) [q.IsPrime] :
       (KaehlerDifferential.tensorKaehlerEquiv R S A B) ≪≫ₗ
     KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale S B Bq
 
+/-- Two `Aₘ`-linear maps out of `Ω[Aₘ⁄R]` agree everywhere once they agree on
+`D R Aₘ (algebraMap A Aₘ x)` for all `x : A`. -/
+private theorem linearMap_eq_of_D_algebraMap {R A Aₘ N : Type*}
+    [CommRing R] [CommRing A] [CommRing Aₘ] [Algebra R A] [Algebra A Aₘ] [Algebra R Aₘ]
+    [IsScalarTower R A Aₘ] (M : Submonoid A) [IsLocalization M Aₘ]
+    [AddCommGroup N] [Module Aₘ N] {f g : Ω[Aₘ⁄R] →ₗ[Aₘ] N}
+    (h : ∀ x : A, f (D R Aₘ (algebraMap A Aₘ x)) = g (D R Aₘ (algebraMap A Aₘ x))) :
+    f = g := by
+  let : Module A N := Module.compHom N (algebraMap A Aₘ)
+  have : IsScalarTower A Aₘ N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsLocalizedModule M (LinearMap.id : N →ₗ[A] N) := isLocalizedModule_id M N Aₘ
+  have hfg : f.restrictScalars A = g.restrictScalars A := by
+    apply IsLocalizedModule.linearMap_ext M (map R R A Aₘ) (LinearMap.id : N →ₗ[A] N)
+    apply LinearMap.ext_on (span_range_derivation R A)
+    rintro _ ⟨x, rfl⟩
+    simpa [map_D] using h x
+  exact LinearMap.ext fun ω ↦ LinearMap.congr_fun hfg ω
+
 /-- Evaluating `atPrimePushoutEquiv` on a pure tensor `b ⊗ₜ D R A_p a`. -/
 @[simp]
 theorem atPrimePushoutEquiv_tmul_D (q : Ideal B) [q.IsPrime]
@@ -164,10 +182,13 @@ theorem atPrimePushoutEquiv_tmul_D (q : Ideal B) [q.IsPrime]
   let := Localization.AtPrime.algebraOfLiesOver p q
   have : Algebra.FormallyEtale A Ap := Algebra.FormallyEtale.of_isLocalization p.primeCompl
   have : Algebra.FormallyEtale B Bq := Algebra.FormallyEtale.of_isLocalization q.primeCompl
-  have hAlg (x : A) :
-      atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap (algebraMap A Ap x)) =
-        D S Bq (algebraMap Ap Bq (algebraMap A Ap x)) := by
-    dsimp only [atPrimePushoutEquiv, Ap, Bq, p]
+  let lhs : Ω[Ap⁄R] →ₗ[Ap] Ω[Bq⁄S] :=
+    ((atPrimePushoutEquiv R S A q).toLinearMap.restrictScalars Ap).comp
+      (TensorProduct.mk Ap Bq Ω[Ap⁄R] 1)
+  let rhs : Ω[Ap⁄R] →ₗ[Ap] Ω[Bq⁄S] := KaehlerDifferential.map R S Ap Bq
+  have hAlg (x : A) : lhs (D R Ap (algebraMap A Ap x)) = rhs (D R Ap (algebraMap A Ap x)) := by
+    dsimp only [lhs, rhs, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearEquiv.coe_toLinearMap, TensorProduct.mk_apply, atPrimePushoutEquiv, Ap, Bq, p]
     simp only [LinearEquiv.trans_apply, AlgebraTensorModule.congr_tmul, LinearEquiv.refl_apply,
       KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale_symm_D_algebraMap,
       AlgebraTensorModule.cancelBaseChange_tmul,
@@ -179,40 +200,15 @@ theorem atPrimePushoutEquiv_tmul_D (q : Ideal B) [q.IsPrime]
     rw [← IsScalarTower.algebraMap_apply A B Bq, ← IsScalarTower.algebraMap_apply A Ap Bq]
   have hOne : atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) =
       D S Bq (algebraMap Ap Bq a) := by
-    obtain ⟨⟨a', s⟩, ha⟩ := IsLocalization.surj p.primeCompl a
-    have hD : (algebraMap A Ap (s : A)) • D R Ap a =
-        D R Ap (algebraMap A Ap a') - a • D R Ap (algebraMap A Ap (s : A)) := by
-      have hmul := congrArg (D R Ap) ha
-      rw [Derivation.leibniz, add_comm] at hmul
-      exact eq_sub_of_add_eq hmul
-    have hEq : (algebraMap Ap Bq (algebraMap A Ap (s : A))) •
-        atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) =
-        (algebraMap Ap Bq (algebraMap A Ap (s : A))) • D S Bq (algebraMap Ap Bq a) := by
-      calc (algebraMap Ap Bq (algebraMap A Ap (s : A))) •
-            atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a)
-          = atPrimePushoutEquiv R S A q
-              (((algebraMap A Ap (s : A)) • (1 : Bq)) ⊗ₜ[Ap] D R Ap a) := by
-            rw [← (atPrimePushoutEquiv R S A q).map_smul, TensorProduct.smul_tmul',
-              algebraMap_smul Bq]
-        _ = atPrimePushoutEquiv R S A q
-              (1 ⊗ₜ[Ap] ((algebraMap A Ap (s : A)) • D R Ap a)) := by
-            rw [TensorProduct.smul_tmul]
-        _ = D S Bq (algebraMap Ap Bq (algebraMap A Ap a')) -
-              (algebraMap Ap Bq a) • D S Bq (algebraMap Ap Bq (algebraMap A Ap (s : A))) := by
-            rw [hD, TensorProduct.tmul_sub, map_sub, hAlg,
-              ← TensorProduct.smul_tmul, ← algebraMap_smul Bq a (1 : Bq),
-              ← TensorProduct.smul_tmul', (atPrimePushoutEquiv R S A q).map_smul, hAlg]
-        _ = (algebraMap Ap Bq (algebraMap A Ap (s : A))) • D S Bq (algebraMap Ap Bq a) := by
-            have hmulB : algebraMap Ap Bq (algebraMap A Ap a') =
-                algebraMap Ap Bq a * algebraMap Ap Bq (algebraMap A Ap (s : A)) := by
-              rw [← ha, map_mul]
-            rw [hmulB, Derivation.leibniz, add_sub_cancel_left]
-    have hu : IsUnit (algebraMap Ap Bq (algebraMap A Ap (s : A))) :=
-      (IsLocalization.map_units Ap s).map (algebraMap Ap Bq)
-    exact (IsUnit.smul_left_cancel hu).mp hEq
-  rw [show (b ⊗ₜ[Ap] D R Ap a) = b • (1 ⊗ₜ[Ap] D R Ap a) by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one],
-    (atPrimePushoutEquiv R S A q).map_smul, hOne]
+    simpa [lhs, rhs] using LinearMap.congr_fun
+      (linearMap_eq_of_D_algebraMap p.primeCompl hAlg) (D R Ap a)
+  calc
+    atPrimePushoutEquiv R S A q (b ⊗ₜ D R Ap a)
+      = atPrimePushoutEquiv R S A q (b • (1 ⊗ₜ[Ap] D R Ap a)) := by
+        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    _ = b • atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) :=
+        (atPrimePushoutEquiv R S A q).map_smul b _
+    _ = b • D S Bq (algebraMap Ap Bq a) := by rw [hOne]
 
 end Pushout
 

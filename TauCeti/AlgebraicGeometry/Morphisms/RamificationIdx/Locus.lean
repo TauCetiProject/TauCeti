@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Morphisms.RamificationIdx.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 

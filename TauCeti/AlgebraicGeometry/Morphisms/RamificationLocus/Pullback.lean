@@ -112,10 +112,7 @@ theorem etale_morphismRestrict_iff_of_isPullback (H : IsPullback gX f' f gY) [Fl
     rw [← Scheme.Hom.comp_preimage, ← H.w, Scheme.Hom.comp_preimage]; rfl
   rw [etale_morphismRestrict_iff, etale_morphismRestrict_iff, hpre,
     nonEtaleLocus_eq_preimage_of_isPullback H]
-  exact ⟨fun h ↦ Set.disjoint_left.mpr fun x hx hne ↦
-      let ⟨x', hx'⟩ := gX.surjective x
-      Set.disjoint_left.mp h (by rwa [Set.mem_preimage, hx']) (by rwa [Set.mem_preimage, hx']),
-    fun h ↦ h.preimage gX⟩
+  exact Set.disjoint_preimage_iff gX.surjective
 
 end Pullback
 

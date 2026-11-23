@@ -7,11 +7,11 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
-public import Mathlib.AlgebraicGeometry.Morphisms.SurjectiveOnStalks
 public import TauCeti.RingTheory.RamificationInertia.Bijective
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.RamificationInertia.Localization
 public import TauCeti.RingTheory.RamificationInertia.QuasiFinite
+import TauCeti.RingTheory.RamificationInertia.BaseChange
 
 /-!
 # The ramification index of a morphism at a point

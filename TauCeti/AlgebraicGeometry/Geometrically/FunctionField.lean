@@ -12,9 +12,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
-public import TauCeti.RingTheory.TensorProduct.FractionRing
 public import TauCeti.RingTheory.TensorProduct.IsDomain
 
 /-!
@@ -90,6 +88,24 @@ universe u
 
 section
 
+/-- Base change an affine chart `U` of `X` along `k → L` into an open chart `Spec (Γ(X, U) ⊗[k] L)`
+of `Y`. -/
+private lemma exists_isOpenImmersion_tensorProduct_chart
+    {k L : Type u} [Field k] [Field L] [Algebra k L]
+    {X Y : Scheme.{u}} {pX : X ⟶ Spec (.of k)} {pY : Y ⟶ Spec (.of L)} {g : Y ⟶ X}
+    (H : IsPullback g pY pX (Spec.map (CommRingCat.ofHom (algebraMap k L))))
+    {U : X.Opens} (hU : IsAffineOpen U) [Algebra k Γ(X, U)]
+    (hw : hU.fromSpec ≫ pX = Spec.map (CommRingCat.ofHom (algebraMap k Γ(X, U)))) :
+    ∃ ι : Spec (.of (Γ(X, U) ⊗[k] L)) ⟶ Y, IsOpenImmersion ι ∧
+      ι ≫ g = Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ hU.fromSpec ∧
+      ι ≫ pY = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : L →ₐ[k] Γ(X, U) ⊗[k] L).toRingHom) := by
+  have := hU.isOpenImmersion_fromSpec
+  obtain ⟨ι, hι, h₁, h₂, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback H.flip
+    (iY := 𝟙 (Spec (.of k))) (iY' := hU.fromSpec) (iX := 𝟙 (Spec (.of L)))
+    ((Category.comp_id _).trans hw.symm) ((Category.comp_id _).trans (Category.id_comp _).symm)
+  exact ⟨ι, hι, h₁, h₂.trans (Category.comp_id _)⟩
+
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
   [GeometricallyIntegral (X ↘ Spec (.of k))]
 
@@ -106,14 +122,8 @@ instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type
   have : Nontrivial (Γ(X, U) ⊗[k] L) :=
     Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_isDomain k _ _
       (algebraMap k Γ(X, U)).injective (algebraMap k L).injective
-  have := hU.isOpenImmersion_fromSpec
-  let cIso := (Algebra.TensorProduct.comm k L Γ(X, U)).toRingEquiv.toCommRingCatIso
-  obtain ⟨ι₀, _, -, -, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback
-    (IsPullback.of_hasPullback (X ↘ Spec (.of k)) s)
-    (iY := 𝟙 (Spec (.of k))) (iY' := 𝟙 (Spec (.of L))) (iX := hU.fromSpec)
-    rfl ((Category.comp_id _).trans hw.symm)
-  let ι : Spec (.of (Γ(X, U) ⊗[k] L)) ⟶ pullback (X ↘ Spec (.of k)) s :=
-    Spec.map cIso.hom ≫ ι₀
+  obtain ⟨ι, _, -, -⟩ := exists_isOpenImmersion_tensorProduct_chart
+    (IsPullback.of_hasPullback (X ↘ Spec (.of k)) s) hU hw
   have : IsIntegral (Spec (.of (Γ(X, U) ⊗[k] L))) := isIntegral_of_isOpenImmersion ι
   have : IsDomain (Γ(X, U) ⊗[k] L) := (affine_isIntegral_iff _).mp this
   exact isDomain_tensorProduct_of_isLocalization (nonZeroDivisors Γ(X, U)) le_rfl
@@ -141,17 +151,8 @@ theorem nonempty_functionField_algEquiv_of_isPullback {K : Type u} [Field K] [Al
     Nonempty (Y.functionField ≃ₐ[K] F') := by
   have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
   obtain ⟨U, hU, _, _, _, _, hw⟩ := exists_affineOpen_isFractionRing (k := k) (X := X)
-  have := hU.isOpenImmersion_fromSpec
   -- the base change `Spec (Γ(X, U) ⊗[k] K)` of `U` is an open subscheme of `Y` over `Spec K`
-  let cIso := (Algebra.TensorProduct.comm k K Γ(X, U)).toRingEquiv.toCommRingCatIso
-  obtain ⟨ι₀, _, hι₀, -, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback H
-    (iY := 𝟙 (Spec (.of k))) (iY' := 𝟙 (Spec (.of K))) (iX := hU.fromSpec)
-    rfl ((Category.comp_id _).trans hw.symm)
-  let ι : Spec (.of (Γ(X, U) ⊗[k] K)) ⟶ Y := Spec.map cIso.hom ≫ ι₀
-  have hι : ι ≫ (Y ↘ Spec (.of K)) = Spec.map (CommRingCat.ofHom
-      (Algebra.TensorProduct.includeRight : K →ₐ[k] Γ(X, U) ⊗[k] K).toRingHom) := by
-    rw [Category.assoc, hι₀, Category.comp_id, ← Spec.map_comp]
-    congr 1
+  obtain ⟨ι, _, -, hι⟩ := exists_isOpenImmersion_tensorProduct_chart H hU hw
   let _ : Algebra K (Γ(X, U) ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
   -- and `F' = k(X) · K` is a fraction field of `Γ(X, U) ⊗[k] K`
   let _ : Algebra (Γ(X, U) ⊗[k] K) F' := (((Algebra.TensorProduct.productMap
@@ -249,20 +250,7 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
   have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
   have := isDominant_of_isPullback_spec H
   let A := Γ(X, U); let R := CommRingCat.of (A ⊗[k] K)
-  have := hU.isOpenImmersion_fromSpec
-  obtain ⟨ι₀, _, hι₀K, hι₀g, -⟩ := exists_isOpenImmersion_spec_tensorProduct_of_isPullback H
-    (iY := 𝟙 (Spec (.of k))) (iY' := 𝟙 (Spec (.of K))) (iX := hU.fromSpec)
-    rfl ((Category.comp_id _).trans hw.symm)
-  let cIso := (Algebra.TensorProduct.comm k K A).toRingEquiv.toCommRingCatIso
-  let ι : Spec R ⟶ Y := Spec.map cIso.hom ≫ ι₀
-  have hιK : ι ≫ (Y ↘ Spec (.of K)) = Spec.map (CommRingCat.ofHom
-      (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom) := by
-    rw [Category.assoc, hι₀K, Category.comp_id, ← Spec.map_comp]
-    congr 1
-  have hιg : ι ≫ g = Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫
-      hU.fromSpec := by
-    rw [Category.assoc, hι₀g, ← Spec.map_comp_assoc]
-    congr 2
+  obtain ⟨ι, _, hιg, hιK⟩ := exists_isOpenImmersion_tensorProduct_chart H hU hw
   have : IsIntegral (Spec R) := isIntegral_of_isOpenImmersion ι
   have hDomR : IsDomain R := (affine_isIntegral_iff R).mp this
   have : IsDominant ι := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion ι)

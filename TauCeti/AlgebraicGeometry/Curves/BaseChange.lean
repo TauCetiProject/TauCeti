@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
-public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.RationalPoint.BaseChange
 
 /-!

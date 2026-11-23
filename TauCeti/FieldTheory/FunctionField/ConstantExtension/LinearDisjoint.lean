@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import TauCeti.Algebra.Field.Subfield.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Map
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -263,12 +264,6 @@ variable {k K E E' F F' : Type*} [Field k] [Field K] [Field E] [Field E'] [Field
   [Algebra k F'] [Algebra K F'] [Algebra F F'] [IsScalarTower k K F'] [IsScalarTower k F F']
   [Algebra K E'] [Algebra E E'] [Algebra E' F'] [IsScalarTower K E' F']
 
-/-- Coercing `RingEquiv.subfieldCongr h` to the ambient field preserves the underlying element. -/
-private theorem coe_subfieldCongr_apply {L : Type*} [Field L] {S T : Subfield L} (h : S = T)
-    (y : S) : (RingEquiv.subfieldCongr h y : L) = (y : L) := by
-  subst h
-  rfl
-
 omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
 /-- When `E' = E · K` and `E → E' → F'` agrees with `E → F → F'`, the image of `E'` in `F'` has
 the same underlying subfield as `(image of E) · K`. -/
@@ -309,12 +304,13 @@ noncomputable def towerCompositumRingEquiv
 
 omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
 /-- Coercing `towerCompositumRingEquiv` to `F'` recovers `algebraMap E' F'`. -/
+@[simp]
 theorem coe_towerCompositumRingEquiv_apply
     (hE' : constantCompositum E K E' = ⊤)
     (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e))
     (y : E') :
     (towerCompositumRingEquiv (k := k) hE' hcomm y : F') = algebraMap E' F' y := by
-  rw [towerCompositumRingEquiv, RingEquiv.trans_apply, coe_subfieldCongr_apply]
+  rw [towerCompositumRingEquiv, RingEquiv.trans_apply, RingEquiv.coe_subfieldCongr_apply]
   simp [(IsScalarTower.toAlgHom K E' F').equivFieldRange_apply_coe y]
 
 omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
@@ -336,7 +332,7 @@ private theorem coe_towerAdjoinRingEquiv_apply
     (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e))
     (y : E') :
     (towerAdjoinRingEquiv (k := k) (F := F) hE' hcomm y : F') = algebraMap E' F' y := by
-  rw [towerAdjoinRingEquiv, RingEquiv.trans_apply, coe_subfieldCongr_apply,
+  rw [towerAdjoinRingEquiv, RingEquiv.trans_apply, RingEquiv.coe_subfieldCongr_apply,
     coe_towerCompositumRingEquiv_apply]
 
 /-- Linearly disjoint constant extension preserves the degree over any algebraic base field `E`:

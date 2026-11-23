@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Reduced
 
 /-!

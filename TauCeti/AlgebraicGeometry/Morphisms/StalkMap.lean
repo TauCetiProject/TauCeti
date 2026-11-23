@@ -19,7 +19,6 @@ public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.TorsionFree
-import Mathlib.RingTheory.Unramified.Field
 import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.Unramified.BaseChange
 import TauCeti.RingTheory.Unramified.Normal
@@ -676,13 +675,13 @@ theorem formallyUnramified_stalkMap_genericPoint_of_isSeparable
     (f.stalkMap (genericPoint X)).hom.FormallyUnramified := by
   let _ : Algebra Y.functionField X.functionField := f.functionFieldMap.hom.toAlgebra
   let e : Y.presheaf.stalk (genericPoint Y) ≅ Y.presheaf.stalk (f (genericPoint X)) :=
-    ⟨Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant),
-      Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant.symm),
-      by simp, by simp⟩
+    Y.presheaf.stalkCongr (.of_eq f.genericPoint_eq_of_isDominant.symm)
   have heq : e.hom ≫ f.stalkMap (genericPoint X) = f.functionFieldMap := by
-    rw [f.eq_functionFieldMap_iff, Spec.map_comp_assoc, SpecMap_stalkSpecializes_fromSpecStalk,
-      SpecMap_stalkMap_fromSpecStalk]
-  have : IsIso e.hom := e.isIso_hom
+    have he : e.hom =
+        Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant) :=
+      TopCat.Presheaf.stalkCongr_hom _ _
+    rw [f.eq_functionFieldMap_iff, Spec.map_comp_assoc, he,
+      SpecMap_stalkSpecializes_fromSpecStalk, SpecMap_stalkMap_fromSpecStalk]
   refine (RingHom.FormallyUnramified.respectsIso.cancel_left_isIso
     e.hom (f.stalkMap (genericPoint X))).mp ?_
   rw [← CommRingCat.hom_comp, heq]
