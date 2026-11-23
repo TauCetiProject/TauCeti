@@ -20,8 +20,8 @@ For a `ℤ`-submodule `L` of a real normed space `E`, an arbitrary set `s ⊆ E`
 satisfying `i < Set.finrank ℝ (r • s ∩ L)`, i.e., such that the vectors of `L` in the dilate
 `r • s` span a finite-dimensional real subspace of dimension greater than `i` (infinite-dimensional
 spans have `Set.finrank` equal to `0`). No geometric hypothesis is imposed on `s` or `L`; when
-`span ℝ L` is finite-dimensional, indices at or beyond the rank of `L` take the junk value
-`sInf ∅ = 0`.
+`span ℝ L` is finite-dimensional, indices at or beyond `Set.finrank ℝ (L : Set E)`, the
+dimension of the real span, take the junk value `sInf ∅ = 0`.
 
 On a convex body with `0` in its interior these are the body minima `ZLattice.successiveMin`
 (`MeasureTheory.coe_successiveMin`), which carry the geometric theory: attainment, positivity and
