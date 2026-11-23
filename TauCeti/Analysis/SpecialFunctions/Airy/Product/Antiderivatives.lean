@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.SpecialFunctions.Airy.Equation
 
 /-!
