@@ -35,11 +35,9 @@ theorem continuous_unitsLeftMulMatrix {R S ι : Type*} [Fintype ι] [DecidableEq
     [IsTopologicalAddGroup S] [ContinuousSMul R S] [T2Space S] (b : Module.Basis ι R S) :
     Continuous (unitsLeftMulMatrix b) := by
   have : FiniteDimensional R S := Module.Finite.of_basis b
-  have hL : Continuous (Algebra.leftMulMatrix b : S → Matrix ι ι R) :=
-    (Algebra.leftMulMatrix b).toLinearMap.continuous_of_finiteDimensional
-  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
-    simp only [Function.comp_def, ← map_inv, coe_unitsLeftMulMatrix]
-  · exact hL.comp Units.continuous_val
-  · exact hL.comp Units.continuous_coe_inv
+  refine (Units.continuous_map (f := (Algebra.leftMulMatrix b).toRingHom.toMonoidHom)
+    (Algebra.leftMulMatrix b).toLinearMap.continuous_of_finiteDimensional).congr fun x => ?_
+  ext : 1
+  simp
 
 end TauCeti

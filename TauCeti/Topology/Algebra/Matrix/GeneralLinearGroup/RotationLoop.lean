@@ -172,7 +172,9 @@ private theorem circleRotationLoop_exp_eq_toUnits (t : I) :
       Unitary.toUnits (⟨_, ((QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm
         (n + 2)).symm (realCliffordSpinProjectionZero (n + 2) (spinLift n t))).property.1⟩ :
           unitary (Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ)) :=
-  Units.ext (coe_symm_realCliffordSpinProjectionZero_spinRotationPath n t).symm
+  Units.ext <| by
+    rw [Unitary.val_toUnits_apply]
+    exact (coe_symm_realCliffordSpinProjectionZero_spinRotationPath n t).symm
 
 /-- A based nullhomotopy of the rotation loop in `GL (Fin (n + 2)) ℝ` gives a homotopy relative to
 the endpoints from the projection of the Spin lift to the constant path in `SO(n + 2)`. Run the
