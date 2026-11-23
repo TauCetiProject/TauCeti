@@ -53,7 +53,7 @@ private lemma hasAsymptoticExpansion_pow_unit_sub_one {α : Type*} {l : Filter �
     have hsub := hasAsymptoticExpansion_pow_sub
       (hasAsymptoticExpansion_pow_const_mul (Complex.exp (-ℓ)) hf)
       (hasAsymptoticExpansion_pow_const (l := l) (w := w) (1 : ℂ))
-    exact (hsub.congr_coeff fun n => by simp only [map_one]).congr_fun
+    exact (hsub.congr_coeff fun n => by simp only [map_one]).congr'
       (Eventually.of_forall fun _ => rfl)
   refine ⟨hu_exp, ?_⟩
   have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 :=
@@ -92,7 +92,7 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hlog_at0 hu_exp
   have hadd := hasAsymptoticExpansion_pow_add (hasAsymptoticExpansion_pow_const (l := l) (w := w) ℓ)
     hcomp
-  refine hadd.congr_fun ?_
+  refine hadd.congr' ?_
   filter_upwards [Complex.eventually_log_mul_one_add hP hu0] with x hx
   have hfx : f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := by
     rw [Complex.exp_neg, hexpℓ]
@@ -125,7 +125,7 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
     simp [_root_.binomialSeries, PowerSeries.binomialSeries_coeff]
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hbin_at0 hu_exp
   have hmul := hasAsymptoticExpansion_pow_const_mul (Complex.exp (r * ℓ)) hcomp
-  refine (hmul.congr_coeff fun n => by rw [formalCpow_def]).congr_fun ?_
+  refine (hmul.congr_coeff fun n => by rw [formalCpow_def]).congr' ?_
   have h1u : Tendsto (fun x => 1 + (Complex.exp (-ℓ) * f x - 1)) l (𝓝 (1 : ℂ)) := by
     simpa only [add_zero] using tendsto_const_nhds.add hu0
   filter_upwards [Complex.eventually_log_mul_one_add hP hu0, h1u.eventually_ne one_ne_zero]

@@ -62,7 +62,7 @@ namespace Asymptotics
 
 section LeadingTerm
 
-variable {α 𝕜 : Type*} [SeminormedRing 𝕜] {l : Filter α} {w : α → 𝕜}
+variable {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {w : α → 𝕜}
 
 /-- The remainder after the constant term of an asymptotic power series is `O(w)`. -/
 theorem HasAsymptoticExpansion.isBigO_sub_constantCoeff {P : 𝕜⟦X⟧} {f : α → 𝕜}
@@ -234,10 +234,10 @@ end Truncation
 
 section LinearAlgebra
 
-variable {α 𝕜 : Type*} {l : Filter α} {w : α → 𝕜}
+variable {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {w : α → 𝕜}
 
 /-- A constant function `fun _ => c` has the constant asymptotic power series `C c`. -/
-theorem hasAsymptoticExpansion_pow_const [SeminormedRing 𝕜] [NormOneClass 𝕜] (c : 𝕜) :
+theorem hasAsymptoticExpansion_pow_const (c : 𝕜) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (C c)) (fun _ => c) := by
   rw [hasAsymptoticExpansion_iff]
   intro N
@@ -255,27 +255,27 @@ theorem hasAsymptoticExpansion_pow_const [SeminormedRing 𝕜] [NormOneClass �
     exact isBigO_zero _ _
 
 /-- Sums of asymptotic power series (DLMF §2.1(iii)). -/
-theorem hasAsymptoticExpansion_pow_add [SeminormedRing 𝕜] {P Q : 𝕜⟦X⟧} {f g : α → 𝕜}
+theorem hasAsymptoticExpansion_pow_add {P Q : 𝕜⟦X⟧} {f g : α → 𝕜}
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f)
     (hg : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n Q) g) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (P + Q)) (f + g) :=
   (hf.add hg).congr_coeff fun n => by simp [Pi.add_apply]
 
 /-- Negation of an asymptotic power series (DLMF §2.1(iii)). -/
-theorem hasAsymptoticExpansion_pow_neg [SeminormedRing 𝕜] {P : 𝕜⟦X⟧} {f : α → 𝕜}
+theorem hasAsymptoticExpansion_pow_neg {P : 𝕜⟦X⟧} {f : α → 𝕜}
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (-P)) (-f) :=
   hf.neg.congr_coeff fun n => by simp [Pi.neg_apply]
 
 /-- Differences of asymptotic power series (DLMF §2.1(iii)). -/
-theorem hasAsymptoticExpansion_pow_sub [SeminormedRing 𝕜] {P Q : 𝕜⟦X⟧} {f g : α → 𝕜}
+theorem hasAsymptoticExpansion_pow_sub {P Q : 𝕜⟦X⟧} {f g : α → 𝕜}
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f)
     (hg : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n Q) g) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (P - Q)) (f - g) :=
   (hf.sub hg).congr_coeff fun n => by simp [Pi.sub_apply]
 
 /-- Constant scalar multiples of asymptotic power series (DLMF §2.1(iii)). -/
-theorem hasAsymptoticExpansion_pow_const_mul [SeminormedCommRing 𝕜] {P : 𝕜⟦X⟧} {f : α → 𝕜} (c : 𝕜)
+theorem hasAsymptoticExpansion_pow_const_mul {P : 𝕜⟦X⟧} {f : α → 𝕜} (c : 𝕜)
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (C c * P))
       (fun x => c * f x) :=
@@ -315,7 +315,7 @@ theorem hasAsymptoticExpansion_pow_pow (hw : Tendsto w l (𝓝 0)) {P : 𝕜⟦X
   induction k with
   | zero =>
     exact ((hasAsymptoticExpansion_pow_const (l := l) (w := w) (1 : 𝕜)).congr_coeff
-      fun n => by rw [pow_zero, map_one]).congr_fun (Eventually.of_forall fun _ => by simp)
+      fun n => by rw [pow_zero, map_one]).congr' (Eventually.of_forall fun _ => by simp)
   | succ k ih =>
     simpa only [pow_succ] using hasAsymptoticExpansion_pow_mul hw ih hf
 

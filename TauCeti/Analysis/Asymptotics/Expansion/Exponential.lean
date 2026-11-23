@@ -107,7 +107,7 @@ theorem hasAsymptoticExpansion_zero_cexp_neg_sqrt_sector {δ : ℝ} (hδ : 0 < �
       (fun n z => (z ^ n)⁻¹) 0 (fun z => Complex.exp (-z ^ (1 / 2 : ℂ))) := by
   have h := hasAsymptoticExpansion_zero_cexp_neg_cpow_sector (r := 1 / 2) (δ := δ / 2)
     (by positivity) (half_pos hδ)
-  refine (h.mono (inf_le_inf_left _ (principal_mono.mpr fun z hz => ?_))).congr_fun
+  refine (h.mono (inf_le_inf_left _ (principal_mono.mpr fun z hz => ?_))).congr'
     (Eventually.of_forall fun z => by norm_num)
   simp only [mem_ofPred_eq] at hz ⊢
   rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 1 / 2)]
