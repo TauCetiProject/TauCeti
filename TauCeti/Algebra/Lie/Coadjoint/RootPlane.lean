@@ -345,9 +345,9 @@ theorem iIsOrtho_of_lie_eq_smul [NoZeroDivisors R] [NeZero (2 : R)] (hB : B.lieI
 
 end CommRing
 
-section OrderedField
+section OrderedCommRing
 
-variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [LieAlgebra R L]
+variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [LieAlgebra R L]
   {B : LinearMap.BilinForm R L} {t : Submodule R L} {α : Dual R t} {x y : L}
 
 /-- If every `H ∈ t` rotates the pair `x ≠ 0, y` by a nonzero `α`, and `⁅x, y⁆ ∈ t`, then
@@ -363,8 +363,9 @@ theorem root_apply_lie_pos_of_lie_eq_smul (hB : B.lieInvariant L) (hBp : B.toQua
   have hy0 : y ≠ 0 := by
     rintro rfl
     have h := hy H₀
-    rw [lie_zero, eq_comm, neg_eq_zero, smul_eq_zero] at h
-    exact h.elim hH₀ hx0
+    rw [lie_zero, eq_comm, neg_eq_zero] at h
+    have h₀ : α H₀ * B x x = 0 := by simpa using congr(B $h x)
+    exact (mul_ne_zero hH₀ (hpos x hx0).ne') h₀
   have hBZ := hB.apply_lie_eq_mul_of_lie_eq_smul hx
   have hZ0 : ⁅x, y⁆ ≠ 0 := by
     intro h
@@ -373,6 +374,6 @@ theorem root_apply_lie_pos_of_lie_eq_smul (hB : B.lieInvariant L) (hBp : B.toQua
     exact (mul_ne_zero hH₀ (hpos y hy0).ne') h₀
   exact (pos_iff_pos_of_mul_pos (hBZ _ ▸ hpos _ hZ0)).mpr (hpos y hy0)
 
-end OrderedField
+end OrderedCommRing
 
 end LinearMap.BilinForm.lieInvariant
