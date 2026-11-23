@@ -20,8 +20,8 @@ import TauCeti.RingTheory.Smooth.Regular
 
 The regular locus `X.regularLocus` of a scheme `X` is the set of points of `X` whose local ring
 is a regular local ring. On `Spec R` it is the regular locus `TauCeti.Excellence.regularLocus R`
-of the ring `R`, open immersions identify regular loci, and a locally Noetherian scheme is regular
-exactly when its regular locus is everything.
+of the ring `R`, étale morphisms and open immersions identify regular loci, and a locally
+Noetherian scheme is regular exactly when its regular locus is everything.
 
 For `X` locally of finite type over a perfect field `k`, the regular locus is the smooth locus of
 the structure morphism `X ⟶ Spec k` (The Stacks Project, Section 10.140).
@@ -38,8 +38,9 @@ for general locally Noetherian schemes (Stacks, Section 15.48).
 
 * `AlgebraicGeometry.Scheme.regularLocus`: the points of `X` with regular local ring.
 * `AlgebraicGeometry.Scheme.regularLocus_Spec`: on `Spec R` it is the regular locus of `R`.
-* `AlgebraicGeometry.Scheme.Hom.preimage_regularLocus`: open immersions identify regular loci.
-* `AlgebraicGeometry.Scheme.isRegular_iff_regularLocus_eq_univ`: a locally Noetherian scheme is
+* `AlgebraicGeometry.Scheme.Hom.preimage_regularLocus`: flat, formally unramified morphisms locally
+  of finite type (for instance étale morphisms and open immersions) identify regular loci.
+* `TauCeti.AlgebraicGeometry.isRegular_iff_regularLocus_eq_univ`: a locally Noetherian scheme is
   regular exactly when its regular locus is everything.
 * `AlgebraicGeometry.Scheme.Hom.regularLocus_eq_smoothLocus`: over a perfect field, the regular
   locus of a scheme locally of finite type is the smooth locus of its structure morphism.
@@ -70,12 +71,6 @@ theorem regularLocus_eq_univ_iff :
     X.regularLocus = Set.univ ↔ ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
   Set.eq_univ_iff_forall
 
-/-- A locally Noetherian scheme is regular exactly when its regular locus is everything. -/
-theorem isRegular_iff_regularLocus_eq_univ [IsLocallyNoetherian X] :
-    IsRegular X ↔ X.regularLocus = Set.univ := by
-  rw [regularLocus_eq_univ_iff, isRegular_iff_forall_stalk]
-  exact and_iff_right ‹_›
-
 /-- The regular locus of a regular scheme is everything. -/
 theorem regularLocus_eq_univ [IsRegular X] : X.regularLocus = Set.univ :=
   regularLocus_eq_univ_iff.mpr inferInstance
@@ -88,13 +83,14 @@ theorem regularLocus_Spec (R : CommRingCat.{u}) :
   exact (isRegularLocalRing_stalk_Spec_iff R x).trans
     (Excellence.mem_regularLocus (p := (x : PrimeSpectrum R))).symm
 
-/-- An open immersion `f : X ⟶ Y` identifies the regular locus of `X` with the preimage of the
+/-- A flat, formally unramified morphism `f : X ⟶ Y` locally of finite type (for instance an
+étale morphism or an open immersion) identifies the regular locus of `X` with the preimage of the
 regular locus of `Y`. -/
-theorem Hom.preimage_regularLocus {Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f] :
+theorem Hom.preimage_regularLocus {Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [FormallyUnramified f]
+    [LocallyOfFiniteType f] :
     f ⁻¹' Y.regularLocus = X.regularLocus := by
   ext x
-  rw [Set.mem_preimage, mem_regularLocus, mem_regularLocus]
-  exact isRegularLocalRing_stalk_iff_of_isOpenImmersion f x
+  exact f.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified x
 
 /-- **Regular points over a perfect field are smooth points.** Let `k` be a perfect field and
 `f : X ⟶ Spec k` locally of finite type. The local ring of `X` at `x` is regular exactly when `f`
@@ -132,9 +128,23 @@ theorem Hom.regularLocus_eq_smoothLocus {k : Type u} [Field k] [PerfectField k]
   exact f.mem_regularLocus_iff_mem_smoothLocus
 
 /-- Over a perfect field, the regular locus of a scheme locally of finite type is open. -/
-theorem isOpen_regularLocus_of_perfectField {k : Type u} [Field k] [PerfectField k]
+theorem Hom.isOpen_regularLocus_of_perfectField {k : Type u} [Field k] [PerfectField k]
     (f : X ⟶ Spec (.of k)) [LocallyOfFiniteType f] : IsOpen X.regularLocus := by
   rw [f.regularLocus_eq_smoothLocus]
   exact f.smoothLocus.isOpen
 
 end AlgebraicGeometry.Scheme
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+variable {X : Scheme.{u}}
+
+/-- A locally Noetherian scheme is regular exactly when its regular locus is everything. -/
+theorem isRegular_iff_regularLocus_eq_univ [IsLocallyNoetherian X] :
+    IsRegular X ↔ X.regularLocus = Set.univ := by
+  rw [Scheme.regularLocus_eq_univ_iff, isRegular_iff_forall_stalk]
+  exact and_iff_right ‹_›
+
+end TauCeti.AlgebraicGeometry
