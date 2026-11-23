@@ -24,7 +24,8 @@ integer and fractional parts of `φ` (so that `φ` is a fixed point of the Gauss
 evaluation `TauCeti.goldenEval` of `ℤ[φ] = QuadraticAlgebra ℤ 1 1` at `φ`, the elementary bound
 `log φ < 1 / 2` (`φ² < e`), and the lower bound `1 ≤ |q * φ - p| * |q * ψ - p|` for integers `p`
 and `q` that are not both zero, which holds because the product is the nonzero integer
-`p ^ 2 - p * q - q ^ 2`.
+`p ^ 2 - p * q - q ^ 2`. Since `q * ψ - p = q * φ - p - q * √5`, this gives the bound
+`1 ≤ x * (x + |q| * √5)` on `x = |q * φ - p|`.
 
 ## Main results
 
@@ -37,6 +38,8 @@ and `q` that are not both zero, which holds because the product is the nonzero i
 * `TauCeti.log_goldenRatio_lt_one_half`: `Real.log Real.goldenRatio < 1 / 2`.
 * `TauCeti.one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub`: for integers `p` and `q`
   that are not both zero, `1 ≤ |q * φ - p| * |q * ψ - p|`.
+* `TauCeti.one_le_abs_mul_goldenRatio_sub_mul_add`: for integers `p` and `q` that are not both
+  zero, `1 ≤ |q * φ - p| * (|q * φ - p| + |q| * √5)`.
 -/
 
 public section
@@ -107,13 +110,32 @@ theorem one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub {p q : ℤ} (h
     · simpa using h
     · exact sub_ne_zero.mpr ((hx.intCast_mul hq).ne_int p)
   have hprod : ((q : ℝ) * φ - p) * (q * ψ - p) = ((p ^ 2 - p * q - q ^ 2 : ℤ) : ℝ) := by
-    push_cast
-    linear_combination (q : ℝ) ^ 2 * Real.goldenRatio_mul_goldenConj -
-      (p : ℝ) * q * Real.goldenRatio_add_goldenConj
+    have h := congrArg goldenEval (QuadraticAlgebra.algebraMap_norm_eq_mul_star ⟨-p, q⟩)
+    simp only [map_mul, goldenEval_apply, QuadraticAlgebra.re_star, QuadraticAlgebra.im_star,
+      QuadraticAlgebra.norm_def, eq_intCast, QuadraticAlgebra.re_intCast,
+      QuadraticAlgebra.im_intCast] at h
+    rw [← Real.one_sub_goldenConj]
+    push_cast at h ⊢
+    linear_combination -h
   have h0 : p ^ 2 - p * q - q ^ 2 ≠ 0 := fun h0 ↦
     mul_ne_zero (hne Real.goldenRatio_irrational) (hne Real.goldenConj_irrational)
       (by rw [hprod, h0, Int.cast_zero])
   rw [← abs_mul, hprod, ← Int.cast_abs]
   exact_mod_cast Int.one_le_abs h0
+
+/-- For integers `p` and `q` that are not both zero, `x = |q * φ - p|` satisfies
+`1 ≤ x * (x + |q| * √5)`. This follows from the bound on the norm form, because the conjugate
+`q * ψ - p` is `q * φ - p - q * √5`. -/
+theorem one_le_abs_mul_goldenRatio_sub_mul_add {p q : ℤ} (h : p ≠ 0 ∨ q ≠ 0) :
+    1 ≤ |q * φ - p| * (|q * φ - p| + |(q : ℝ)| * √5) := by
+  have hy : (q : ℝ) * ψ - p = q * φ - p - q * √5 := by
+    rw [← Real.goldenRatio_sub_goldenConj]
+    ring
+  have hle : |(q : ℝ) * ψ - p| ≤ |q * φ - p| + |(q : ℝ)| * √5 :=
+    calc |(q : ℝ) * ψ - p| = |q * φ - p - q * √5| := by rw [hy]
+      _ ≤ |q * φ - p| + |(q : ℝ) * √5| := abs_sub _ _
+      _ = |q * φ - p| + |(q : ℝ)| * √5 := by rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg 5)]
+  exact (one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub h).trans
+    (mul_le_mul_of_nonneg_left hle (abs_nonneg _))
 
 end TauCeti

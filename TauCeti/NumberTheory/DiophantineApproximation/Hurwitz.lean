@@ -20,18 +20,15 @@ golden ratio `φ`: for every `c > √5`, only finitely many rationals `r` satisf
 
 The proof does not use continued fractions. For integers `p` and `q` that are not both zero, the
 product `(q * φ - p) * (q * ψ - p) = p ^ 2 - p * q - q ^ 2` is a nonzero integer, where `ψ` is the
-conjugate of `φ`, so `1 ≤ |q * φ - p| * |q * ψ - p|`
-(`TauCeti.one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub`). Since
-`q * ψ - p = q * φ - p - q * √5`, for `q ≥ 0` the number `x = |q * φ - p|` satisfies
-`1 ≤ x * (x + q * √5)`. If `p / q` with `q > 0` satisfies `|φ - p / q| < 1 / (c * q ^ 2)`, then
-`x * (c * q) < 1`, and the two inequalities give `q ^ 2 * (c * (c - √5)) < 1`. For `c > √5` this
-bounds the denominator `q`, and a bounded set contains finitely many rationals of bounded
-denominator.
+conjugate of `φ`, so `1 ≤ |q * φ - p| * |q * ψ - p|`. Since `q * ψ - p = q * φ - p - q * √5`, the
+number `x = |q * φ - p|` satisfies `1 ≤ x * (x + |q| * √5)`
+(`TauCeti.one_le_abs_mul_goldenRatio_sub_mul_add`). Now let `c > √5`. If `p / q` with `q > 0`
+satisfies `|φ - p / q| < 1 / (c * q ^ 2)`, then `x * (c * q) < 1`, and the two inequalities give
+`q ^ 2 * (c * (c - √5)) < 1`. Because `c * (c - √5) > 0`, this bounds the denominator `q`, and a
+bounded set contains finitely many rationals of bounded denominator.
 
 ## Main results
 
-* `TauCeti.one_le_abs_mul_goldenRatio_sub_mul_add`: for an integer `p` and a natural number `q`
-  that are not both zero, `1 ≤ |q * φ - p| * (|q * φ - p| + q * √5)`.
 * `TauCeti.finite_setOf_abs_goldenRatio_sub_lt_of_sqrt_five_lt`: sharpness of Hurwitz's theorem
   at `φ`: for `c > √5`, only finitely many rationals `r` satisfy
   `|φ - r| < 1 / (c * r.den ^ 2)`.
@@ -48,23 +45,6 @@ open Real
 
 namespace TauCeti
 
-/-- A rational approximation `p / q` of the golden ratio is never much better than `1 / (√5 q ^ 2)`:
-for an integer `p` and a natural number `q` that are not both zero, `x = |q * φ - p|` satisfies
-`1 ≤ x * (x + q * √5)`. -/
-theorem one_le_abs_mul_goldenRatio_sub_mul_add {p : ℤ} {q : ℕ} (h : p ≠ 0 ∨ q ≠ 0) :
-    1 ≤ |q * φ - p| * (|q * φ - p| + q * √5) := by
-  have hnorm := one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub (p := p) (q := q)
-    (h.imp_right Nat.cast_ne_zero.mpr)
-  have hy : ((q : ℤ) : ℝ) * ψ - p = (q : ℝ) * φ - p - q * √5 := by
-    rw [← goldenRatio_sub_goldenConj]
-    push_cast
-    ring
-  rw [hy, Int.cast_natCast] at hnorm
-  have h5 : (0 : ℝ) ≤ q * √5 := by positivity
-  refine hnorm.trans (mul_le_mul_of_nonneg_left (abs_le.mpr ⟨?_, ?_⟩) (abs_nonneg _))
-  · linarith [neg_abs_le ((q : ℝ) * φ - p)]
-  · linarith [le_abs_self ((q : ℝ) * φ - p)]
-
 /-- For `c ≥ 0`, an integer `p` and a natural number `q` with `|q * φ - p| * (c * q) < 1` satisfy
 `q ^ 2 * (c * (c - √5)) < 1`. For `c > √5` this bounds `q`. -/
 private theorem sq_mul_lt_one_of_abs_mul_goldenRatio_sub_mul_lt {c : ℝ} (hc : 0 ≤ c) (p : ℤ)
@@ -75,7 +55,9 @@ private theorem sq_mul_lt_one_of_abs_mul_goldenRatio_sub_mul_lt {c : ℝ} (hc : 
   rcases eq_or_ne q 0 with rfl | hq
   · simp
   have hc0 : 0 < c := (Real.sqrt_nonneg 5).trans_lt hc5
-  have hnorm := one_le_abs_mul_goldenRatio_sub_mul_add (p := p) (Or.inr hq)
+  have hnorm := one_le_abs_mul_goldenRatio_sub_mul_add (p := p) (q := q)
+    (Or.inr (Nat.cast_ne_zero.mpr hq))
+  rw [Int.cast_natCast, Nat.abs_cast] at hnorm
   obtain ⟨x, hx⟩ : ∃ x : ℝ, x = q * φ - p := ⟨_, rfl⟩
   rw [← hx] at h hnorm
   obtain ⟨w, hw⟩ : ∃ w : ℝ, w = |x| * (c * q) := ⟨_, rfl⟩
@@ -85,7 +67,7 @@ private theorem sq_mul_lt_one_of_abs_mul_goldenRatio_sub_mul_lt {c : ℝ} (hc : 
     calc c ^ 2 * (q : ℝ) ^ 2 = c ^ 2 * (q : ℝ) ^ 2 * 1 := (mul_one _).symm
       _ ≤ c ^ 2 * (q : ℝ) ^ 2 * (|x| * (|x| + q * √5)) := by gcongr
       _ = w * w + w * (c * (q : ℝ) ^ 2 * √5) := by rw [hw]; ring
-  have h1 : w * w < 1 := by nlinarith
+  have h1 : w * w < 1 := (mul_le_of_le_one_right hw0 hw1.le).trans_lt hw1
   have h2 : w * (c * (q : ℝ) ^ 2 * √5) ≤ c * (q : ℝ) ^ 2 * √5 :=
     mul_le_of_le_one_left (by positivity) hw1.le
   calc (q : ℝ) ^ 2 * (c * (c - √5)) = c ^ 2 * (q : ℝ) ^ 2 - c * (q : ℝ) ^ 2 * √5 := by ring

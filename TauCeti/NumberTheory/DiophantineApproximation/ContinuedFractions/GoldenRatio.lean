@@ -159,11 +159,12 @@ theorem den_convergent_goldenRatio_mul_abs (n : ℕ) :
       (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by
   have h1 : φ * -ψ = 1 := by linarith [goldenRatio_mul_goldenConj]
   have h2 : ψ * -ψ = -ψ ^ 2 := by ring
-  rw [den_convergent_goldenRatio_mul_sub_num, den_convergent_goldenRatio, coe_fib_eq, abs_neg,
-    abs_pow, abs_of_neg goldenConj_neg]
+  have habs : |(-ψ ^ (n + 1))| = (-ψ) ^ (n + 1) := by simp [abs_pow, abs_of_neg goldenConj_neg]
+  rw [den_convergent_goldenRatio_mul_sub_num, den_convergent_goldenRatio, coe_fib_eq, habs]
   calc (φ ^ (n + 1) - ψ ^ (n + 1)) / √5 * (-ψ) ^ (n + 1)
-      = ((φ * -ψ) ^ (n + 1) - (ψ * -ψ) ^ (n + 1)) / √5 := by rw [mul_pow, mul_pow]; ring
-    _ = (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by rw [h1, h2, one_pow]
+      = ((φ * -ψ) ^ (n + 1) - (ψ * -ψ) ^ (n + 1)) / √5 := by
+        simp only [mul_pow]; ring
+    _ = (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by simp [h1, h2]
 
 /-- Along the convergents `p / q` of the golden ratio, `q * |q * φ - p|` tends to `1 / √5`: the
 constant `√5` in Hurwitz's theorem is attained in the limit by the convergents of `φ`. -/
@@ -172,9 +173,9 @@ theorem tendsto_den_convergent_goldenRatio_mul_abs :
       (convergent φ n).den * |(convergent φ n).den * φ - (convergent φ n).num|)
       atTop (𝓝 (1 / √5)) := by
   simp_rw [den_convergent_goldenRatio_mul_abs]
+  have hψ : |ψ| < 1 := abs_lt.mpr ⟨neg_one_lt_goldenConj, goldenConj_neg.trans one_pos⟩
   have h : |(-ψ ^ 2)| < 1 := by
-    rw [abs_neg, abs_pow, sq_lt_one_iff_abs_lt_one, abs_abs]
-    exact abs_lt.mpr ⟨neg_one_lt_goldenConj, goldenConj_neg.trans one_pos⟩
+    simpa only [abs_neg, abs_pow] using pow_lt_one₀ (abs_nonneg ψ) hψ two_ne_zero
   have h0 := (tendsto_pow_atTop_nhds_zero_of_abs_lt_one h).comp (tendsto_add_atTop_nat 1)
   simpa using (h0.const_sub 1).div_const √5
 
