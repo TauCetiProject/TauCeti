@@ -35,9 +35,12 @@ variable {𝕜 E₁ E₂ E₃ : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E₃] [InnerProductSpace 𝕜 E₃] [FiniteDimensional 𝕜 E₃]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-local instance trilinearCompleteSpace₁ : CompleteSpace E₁ := FiniteDimensional.completeSpace 𝕜 E₁
-local instance trilinearCompleteSpace₂ : CompleteSpace E₂ := FiniteDimensional.completeSpace 𝕜 E₂
-local instance trilinearCompleteSpace₃ : CompleteSpace E₃ := FiniteDimensional.completeSpace 𝕜 E₃
+private local instance trilinearCompleteSpace₁ : CompleteSpace E₁ :=
+  FiniteDimensional.completeSpace 𝕜 E₁
+private local instance trilinearCompleteSpace₂ : CompleteSpace E₂ :=
+  FiniteDimensional.completeSpace 𝕜 E₂
+private local instance trilinearCompleteSpace₃ : CompleteSpace E₃ :=
+  FiniteDimensional.completeSpace 𝕜 E₃
 
 /-- Squared Frobenius energy of the tensor-product linearization of a continuous trilinear map. -/
 def trilinearHilbertSchmidtEnergy (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) : ℝ :=
@@ -71,6 +74,7 @@ theorem trilinearHilbertSchmidtEnergy_eq_sum_sq_hilbertSchmidtNorm
     {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
     (b₁ : OrthonormalBasis ι₁ 𝕜 E₁) (b₂ : OrthonormalBasis ι₂ 𝕜 E₂)
     (T : E₁ →L[𝕜] E₂ →L[𝕜] E₃ →L[𝕜] F) :
+    letI := FiniteDimensional.completeSpace 𝕜 E₃
     trilinearHilbertSchmidtEnergy T =
       ∑ i, ∑ j, (T (b₁ i) (b₂ j)).hilbertSchmidtNorm ^ 2 := by
   rw [trilinearHilbertSchmidtEnergy_eq_sum b₁ b₂ (stdOrthonormalBasis 𝕜 E₃)]
