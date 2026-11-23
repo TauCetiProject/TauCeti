@@ -93,6 +93,10 @@ theorem conjJ_R : SpecialLinearGroup.conjJ R = -U := by
 theorem S_inv_mul_R_inv_mul_S : S⁻¹ * (R⁻¹ * S) = SpecialLinearGroup.conjJ R := by
   rw [conjJ_R]; decide
 
+/-- The square of `R` is the rotation `T⁻¹ S` fixing `ρ`, with no central sign. -/
+theorem R_sq : R ^ 2 = T⁻¹ * S := by
+  decide
+
 /-- Recovering the translation from `R`, with the inverse of `S`. -/
 theorem S_inv_mul_R : S⁻¹ * R = T := by
   simp [R]
@@ -123,6 +127,10 @@ theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
 @[simp]
 theorem coe_U_pow_three : (U : PSL(2, ℤ)) ^ 3 = 1 := by
   rw [← QuotientGroup.mk_pow, U_pow_three, QuotientGroup.mk_one]
+
+/-- Projectively, the square of `R` is its inverse. -/
+theorem coe_R_sq : (R : PSL(2, ℤ)) ^ 2 = (R : PSL(2, ℤ))⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← pow_succ, coe_R_pow_three])
 
 /-- The triangle relation in the convention with positive cusp translation. -/
 theorem coe_T_mul_coe_S_mul_coe_U : (T : PSL(2, ℤ)) * S * U = 1 := by
@@ -172,7 +180,7 @@ theorem coe_S_mul_coe_R : (S : PSL(2, ℤ)) * R = T := by
 
 /-- In `PSL(2, ℤ)`, the inverse of `R` is `R²`. -/
 theorem coe_R_inv : (R : PSL(2, ℤ))⁻¹ = (R : PSL(2, ℤ)) ^ 2 :=
-  inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_R_pow_three])
+  coe_R_sq.symm
 
 /-- In `PSL(2, ℤ)`, the inverse of `R²` is `R`. -/
 @[simp]

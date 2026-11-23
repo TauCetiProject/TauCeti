@@ -12,14 +12,12 @@ public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.NumberTheory.Modular.Generators
-import TauCeti.Algebra.Group.Conj
 import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
 import TauCeti.Data.ZMod.MonoidHomEquiv
-import TauCeti.GroupTheory.Coprod.Conj
-import TauCeti.GroupTheory.Coprod.Torsion
 import TauCeti.GroupTheory.Index.Torsion
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
+import TauCeti.NumberTheory.Modular.Torsion
 
 /-!
 # Free-product decomposition, torsion classes, and abelianization of `PSL(2, ℤ)`
@@ -31,15 +29,15 @@ Combining Poincaré's triangle presentation `PSL(2, ℤ) ≃* Δ(3, 2, ∞)`
 `Fin 2`), sending the involution `S` to the generator of `ℤ/2ℤ` and `R = S * T` to the generator of
 `ℤ/3ℤ`.
 
-Applying the normal-form theory of torsion and conjugacy in free products (`Monoid.Coprod`) yields
-the algebraic structure of finite-order elements and characters of `PSL(2, ℤ)`:
+Together with the torsion classification in `TauCeti.NumberTheory.Modular.Torsion`, this yields
+further structural corollaries for finite-order elements, torsion-free subgroups, and characters of
+`PSL(2, ℤ)`:
 
-* **Torsion conjugacy classes**: every element of finite order in `PSL(2, ℤ)` is equal to `1` or
-  conjugate to one of `S`, `R`, `R²` (equivalently `S`, `U`, `U²`, where `U = S * T⁻¹`), and these
-  three nontrivial classes are pairwise non-conjugate.
+* **Torsion conjugacy classes (`U = S * T⁻¹`)**: every element of finite order in `PSL(2, ℤ)` is
+  equal to `1` or conjugate to one of `S`, `U`, `U²`, and the three nontrivial classes (`S`,
+  `R`/`R²`, or `S`, `U`/`U²`) are pairwise non-conjugate.
 * **Orders of torsion elements**: every element of finite order in `PSL(2, ℤ)` has order `1`, `2`,
-  or `3`; elements of order `2` form the single conjugacy class of `S`, and elements of order `3`
-  form the two conjugacy classes of `R` and `R²` (or `U` and `U²`).
+  or `3`; elements of order `3` form the two conjugacy classes of `U` and `U²`.
 * **Index divisibility**: for any torsion-free subgroup `Γ ≤ PSL(2, ℤ)`, `6 ∣ Γ.index` (including
   infinite index, encoded by `0`).
 * **Abelianization**: `Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6`, normalized so that the
@@ -54,13 +52,18 @@ the algebraic structure of finite-order elements and characters of `PSL(2, ℤ)`
   `TauCeti.ModularGroup.finTwoEquivCoprod_psl2zEquivCoprodI`:
   `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))`, and
   its comparison with `psl2zEquivCoprod`.
-* `TauCeti.ModularGroup.isOfFinOrder_iff`, `TauCeti.ModularGroup.isOfFinOrder_iff_coe_U`:
-  classification of torsion elements up to conjugacy.
-* `TauCeti.ModularGroup.not_isConj_coe_S_coe_R`, `TauCeti.ModularGroup.not_isConj_coe_R_coe_R_sq`,
+* `TauCeti.ModularGroup.isOfFinOrder_iff_coe_U`:
+  classification of torsion elements up to conjugacy in terms of `S`, `U`, `U²`.
+* `TauCeti.ModularGroup.not_isConj_coe_S_coe_R`,
+  `TauCeti.ModularGroup.not_isConj_coe_S_coe_R_sq`,
+  `TauCeti.ModularGroup.not_isConj_coe_S_coe_U`,
+  `TauCeti.ModularGroup.not_isConj_coe_S_coe_U_sq`,
   `TauCeti.ModularGroup.not_isConj_coe_U_coe_U_sq`: pairwise non-conjugacy of the elliptic
   representatives.
-* `TauCeti.ModularGroup.orderOf_eq_two_iff`, `TauCeti.ModularGroup.orderOf_eq_three_iff`:
-  conjugacy characterization of elements of order `2` and `3`.
+* `TauCeti.ModularGroup.orderOf_eq_one_or_two_or_three_of_isOfFinOrder`,
+  `TauCeti.ModularGroup.orderOf_eq_three_iff_coe_U`:
+  orders of finite-order elements and conjugacy characterization of order `3` in terms of
+  `U` and `U²`.
 * `Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z`,
   `Subgroup.six_dvd_index_of_isMulTorsionFree_psl2z`: `6 ∣ Γ.index` for torsion-free `Γ`.
 * `TauCeti.ModularGroup.psl2zAbelianizationAddEquiv`,
@@ -242,15 +245,6 @@ theorem not_isConj_coe_S_coe_R_sq : ¬IsConj (S : PSL(2, ℤ)) ((R : PSL(2, ℤ)
   have hord := h.orderOf_eq
   simp at hord
 
-/-- `R` and `R²` are not conjugate in `PSL(2, ℤ)`, although both have order `3`. -/
-theorem not_isConj_coe_R_coe_R_sq : ¬IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := fun h ↦ by
-  have hmap := psl2zEquivCoprod.toMonoidHom.map_isConj h
-  rw [MulEquiv.coe_toMonoidHom, map_pow, psl2zEquivCoprod_coe_R, ← map_pow,
-    Monoid.Coprod.isConj_inr_iff, isConj_iff_eq] at hmap
-  have hadd : (1 : ZMod 3) = 2 := by
-    simpa [← ofAdd_nsmul] using congrArg Multiplicative.toAdd hmap
-  exact absurd hadd (by decide)
-
 /-- `S` and `U` are not conjugate in `PSL(2, ℤ)`. -/
 theorem not_isConj_coe_S_coe_U : ¬IsConj (S : PSL(2, ℤ)) (U : PSL(2, ℤ)) := fun h ↦ by
   have hord := h.orderOf_eq
@@ -265,43 +259,6 @@ theorem not_isConj_coe_S_coe_U_sq : ¬IsConj (S : PSL(2, ℤ)) ((U : PSL(2, ℤ)
 theorem not_isConj_coe_U_coe_U_sq : ¬IsConj (U : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) := fun h ↦
   not_isConj_coe_R_coe_R_sq <|
     isConj_coe_U_sq_coe_R.symm.trans (h.symm.trans isConj_coe_U_coe_R_sq)
-
-/-- **Classification of torsion elements in `PSL(2, ℤ)`** (with `R = S * T`): an element of
-`PSL(2, ℤ)` has finite order if and only if it is `1` or conjugate to `S`, `R`, or `R²`. -/
-theorem isOfFinOrder_iff {g : PSL(2, ℤ)} :
-    IsOfFinOrder g ↔
-      g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (R : PSL(2, ℤ)) ∨
-        IsConj g ((R : PSL(2, ℤ)) ^ 2) := by
-  constructor
-  · intro hg
-    have hg' : IsOfFinOrder (psl2zEquivCoprod g) :=
-      psl2zEquivCoprod.toMonoidHom.isOfFinOrder hg
-    rcases Monoid.Coprod.exists_isConj_inl_or_inr_of_isOfFinOrder hg' with
-      ⟨u, hconj, -⟩ | ⟨v, hconj, -⟩
-    · obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective u
-      have ha : ∀ x : ZMod 2, x = 0 ∨ x = 1 := by decide
-      rcases ha a with rfl | rfl
-      · rw [ofAdd_zero, map_one, isConj_one_left] at hconj
-        exact Or.inl (psl2zEquivCoprod.injective (hconj.trans (map_one _).symm))
-      · rw [← psl2zEquivCoprod_coe_S, psl2zEquivCoprod.isConj_apply_iff] at hconj
-        exact Or.inr (Or.inl hconj)
-    · obtain ⟨b, rfl⟩ := Multiplicative.ofAdd.surjective v
-      have hb : ∀ x : ZMod 3, x = 0 ∨ x = 1 ∨ x = 2 := by decide
-      rcases hb b with rfl | rfl | rfl
-      · rw [ofAdd_zero, map_one, isConj_one_left] at hconj
-        exact Or.inl (psl2zEquivCoprod.injective (hconj.trans (map_one _).symm))
-      · rw [← psl2zEquivCoprod_coe_R, psl2zEquivCoprod.isConj_apply_iff] at hconj
-        exact Or.inr (Or.inr (Or.inl hconj))
-      · have h2 : Monoid.Coprod.inr (M := Multiplicative (ZMod 2))
-            (Multiplicative.ofAdd (2 : ZMod 3)) = psl2zEquivCoprod ((R : PSL(2, ℤ)) ^ 2) := by
-          rw [map_pow, psl2zEquivCoprod_coe_R, ← map_pow, ← ofAdd_nsmul, nsmul_one, Nat.cast_ofNat]
-        rw [h2, psl2zEquivCoprod.isConj_apply_iff] at hconj
-        exact Or.inr (Or.inr (Or.inr hconj))
-  · rintro (rfl | h | h | h)
-    · exact IsOfFinOrder.one
-    · exact h.symm.isOfFinOrder isOfFinOrder_coe_S
-    · exact h.symm.isOfFinOrder isOfFinOrder_coe_R
-    · exact h.symm.isOfFinOrder isOfFinOrder_coe_R_sq
 
 /-- Conjugacy to `R` or `R²` in `PSL(2, ℤ)` is equivalent to conjugacy to `U` or `U²`. -/
 theorem isConj_coe_R_or_sq_iff_coe_U_or_sq {g : PSL(2, ℤ)} :
@@ -321,50 +278,21 @@ theorem isOfFinOrder_iff_coe_U {g : PSL(2, ℤ)} :
     IsOfFinOrder g ↔
       g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (U : PSL(2, ℤ)) ∨
         IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [isOfFinOrder_iff, isConj_coe_R_or_sq_iff_coe_U_or_sq]
+  rw [isOfFinOrder_iff_eq_one_or_isConj, isConj_coe_R_or_sq_iff_coe_U_or_sq]
 
 /-- Every element of finite order in `PSL(2, ℤ)` has order `1`, `2`, or `3`. -/
 theorem orderOf_eq_one_or_two_or_three_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
     orderOf g = 1 ∨ orderOf g = 2 ∨ orderOf g = 3 := by
-  rcases isOfFinOrder_iff.mp hg with rfl | hS | hR | hR2
+  rcases isOfFinOrder_iff_eq_one_or_isConj.mp hg with rfl | hS | hR | hR2
   · exact Or.inl orderOf_one
   · exact Or.inr (Or.inl (hS.orderOf_eq.trans orderOf_coe_S))
   · exact Or.inr (Or.inr (hR.orderOf_eq.trans orderOf_coe_R))
   · exact Or.inr (Or.inr (hR2.orderOf_eq.trans orderOf_coe_R_sq))
 
-/-- Elements of order `2` in `PSL(2, ℤ)` form a single conjugacy class, that of `S`. -/
-theorem orderOf_eq_two_iff {g : PSL(2, ℤ)} :
-    orderOf g = 2 ↔ IsConj g (S : PSL(2, ℤ)) := by
-  constructor
-  · intro hord
-    have hg : IsOfFinOrder g := orderOf_pos_iff.mp (by omega)
-    rcases isOfFinOrder_iff.mp hg with rfl | hS | hR | hR2
-    · simp at hord
-    · exact hS
-    · have := hR.orderOf_eq; simp [hord] at this
-    · have := hR2.orderOf_eq; simp [hord] at this
-  · intro hS
-    exact hS.orderOf_eq.trans orderOf_coe_S
-
-/-- Elements of order `3` in `PSL(2, ℤ)` form the two conjugacy classes of `R` and `R²`. -/
-theorem orderOf_eq_three_iff {g : PSL(2, ℤ)} :
-    orderOf g = 3 ↔ IsConj g (R : PSL(2, ℤ)) ∨ IsConj g ((R : PSL(2, ℤ)) ^ 2) := by
-  constructor
-  · intro hord
-    have hg : IsOfFinOrder g := orderOf_pos_iff.mp (by omega)
-    rcases isOfFinOrder_iff.mp hg with rfl | hS | hR | hR2
-    · simp at hord
-    · have := hS.orderOf_eq; simp [hord] at this
-    · exact Or.inl hR
-    · exact Or.inr hR2
-  · rintro (hR | hR2)
-    · exact hR.orderOf_eq.trans orderOf_coe_R
-    · exact hR2.orderOf_eq.trans orderOf_coe_R_sq
-
 /-- Elements of order `3` in `PSL(2, ℤ)` form the two conjugacy classes of `U` and `U²`. -/
 theorem orderOf_eq_three_iff_coe_U {g : PSL(2, ℤ)} :
     orderOf g = 3 ↔ IsConj g (U : PSL(2, ℤ)) ∨ IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [orderOf_eq_three_iff, isConj_coe_R_or_sq_iff_coe_U_or_sq]
+  rw [orderOf_eq_three_iff_isConj, isConj_coe_R_or_sq_iff_coe_U_or_sq]
 
 /-! ### Subgroup index divisibility for torsion-free subgroups -/
 

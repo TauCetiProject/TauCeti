@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.FlatCoefficients
+import TauCeti.RingTheory.Flat.FractionRing
 
 /-!
 # Euler characteristic of a closed oriented surface
@@ -18,10 +20,11 @@ particular `χ ≤ 2`.
 
 The surface is a topological manifold charted on a real two-dimensional normed space, with no
 boundary. Its orientation is the genuine native `TauCeti.HomologicalOrientation`, not an assumed
-Betti-number computation. The top Betti number follows from the rational fundamental-class
-isomorphism; the zeroth follows from connectedness and the local path connectedness of charts;
-the higher homology vanishes by the compact-manifold local-homology theorem. Finite CW type is
-an explicit hypothesis, and also ensures the first homology is finite-dimensional.
+Betti-number computation. The top Betti number follows from the fundamental class by flat base
+change (`TauCeti.HomologicalOrientation.finrank_singularChains_homology_eq_one`); the zeroth
+follows from connectedness and the local path connectedness of charts; the higher homology
+vanishes by the compact-manifold local-homology theorem. Finite CW type is an explicit
+hypothesis, and also ensures the first homology is finite-dimensional.
 
 These statements do not assert evenness of `b₁` or construct a genus. Those require the
 nondegenerate alternating cup pairing supplied by Poincaré duality. Conversion of a smooth
@@ -56,9 +59,8 @@ theorem eulerChar_eq_two_sub_finrank_singularHomology_one :
         (TopCat.of M)) : ℤ) := by
   have h₂ : finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 2).obj (ModuleCat.of ℚ ℚ)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(o.rationalFundamentalClassEquiv hn).symm.finrank_eq]
-    exact finrank_self ℚ
+        (TopCat.of M)) = 1 :=
+    o.finrank_singularChains_homology_eq_one hn ℚ
   rw [eulerChar_eq_one_sub_finrank_add_finrank M ℚ hn, h₂]
   ring
 
