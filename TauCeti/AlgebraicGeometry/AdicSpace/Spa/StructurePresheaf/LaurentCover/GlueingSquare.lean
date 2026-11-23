@@ -127,22 +127,20 @@ end Main
 
 section RatLoc
 
-open Classical in
 open scoped TauCeti.Huber.Laurent in
 /-- Canonical `GlueingSquare` on the three explicit `ratLoc` carriers `R⟨{f, 1}/1⟩`, `R⟨{1}/f⟩`,
 and `R⟨{f², 1}/f⟩`, with overlap algebra structures `laurentLeftAlgebra` and
 `laurentRightAlgebra`. -/
 theorem GlueingSquare.of_simpleLaurent_ratLoc {R : Type*} [CommRing R] [UniformSpace R]
     [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
-    (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
-    let hden₁ := P.hasDenominatorPower_of_isOpen_span ({f, 1} : Finset R) 1
-      (Localization.Away (1 : R)) (isOpen_span_of_one_mem (by simp))
-    let hden₂ := P.hasDenominatorPower_of_isOpen_span ({1} : Finset R) f
-      (Localization.Away f) (isOpen_span_of_one_mem (by simp))
-    let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset R) f
-      (Localization.Away f) (isOpen_span_of_one_mem (by simp))
+    [DecidableEq R] (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
     GlueingSquare R
-      (ratLoc P {f, 1} 1 hden₁) (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
+      (ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span ({f, 1} : Finset R) 1
+        (Localization.Away (1 : R)) (isOpen_span_of_one_mem (by simp))))
+      (ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span ({1} : Finset R) f
+        (Localization.Away f) (isOpen_span_of_one_mem (by simp))))
+      (ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset R) f
+        (Localization.Away f) (isOpen_span_of_one_mem (by simp)))) :=
   GlueingSquare.of_simpleLaurent_of_isSheafyRing hs
     (isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp)))
     (isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp)))
