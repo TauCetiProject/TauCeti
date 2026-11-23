@@ -62,6 +62,9 @@ any finite-dimensional module.
   with value `e` at `0`.
 * `IsSl2Triple.contractingAction_apply_mem_slodowySlice`: the contracting action preserves the
   slice.
+* `LieHom.apply_mem_slodowySlice` and `IsSl2Triple.map_contractingAction_apply`: Lie
+  endomorphisms fixing `e` and `f` preserve the slice, and those fixing `h` commute with the
+  contracting action.
 * `IsSl2Triple.codisjoint_range_toEnd_ker_toEnd_f`, `IsSl2Triple.codisjoint_range_ad_ker_ad_f`:
   the slice is transverse to every orbit it meets.
 * `IsSl2Triple.finrank_range_toEnd_inf_ker_toEnd_f_add_finrank_ker_toEnd`,
@@ -115,6 +118,14 @@ theorem direction_slodowySlice : (slodowySlice R e f).direction = LinearMap.ker 
 theorem slodowySlice_zero_right : slodowySlice R e (0 : L) = ⊤ :=
   eq_top_iff.2 fun x _ ↦ by simp
 
+/-- **Lie endomorphisms fixing `e` and `f` preserve the Slodowy slice** `e + ker (ad f)`. For an
+algebraic group this applies to the adjoint action of every point centralizing `e` and `f`, such
+as a point of the centralizer of an `sl₂` triple `(h, e, f)`. -/
+theorem _root_.LieHom.apply_mem_slodowySlice (φ : L →ₗ⁅R⁆ L) (he : φ e = e) (hf : φ f = f)
+    (hx : x ∈ slodowySlice R e f) : φ x ∈ slodowySlice R e f := by
+  rw [mem_slodowySlice] at hx ⊢
+  rw [← he, ← hf, ← map_sub, ← LieHom.map_lie, hx, map_zero]
+
 end Slice
 
 end TauCeti
@@ -166,6 +177,15 @@ theorem contractingAction_apply_of_mem (t : IsSl2Triple h e f) (c : Kˣ) {j : �
   rw [gradingAut_apply_of_mem _ _ hx, smul_smul]
   simp [zpow_sub₀ (Units.ne_zero c), div_eq_mul_inv]
 
+/-- **Lie endomorphisms fixing `h` commute with the contracting action.** They commute with the
+grading automorphisms of `ad h` (`TauCeti.map_gradingAut_apply`). For an algebraic group this
+applies to the adjoint action of every point of the centralizer of `h`. -/
+theorem map_contractingAction_apply (t : IsSl2Triple h e f) (φ : L →ₗ⁅K⁆ L) (hφ : φ h = h)
+    (c : Kˣ) (x : L) : φ (t.contractingAction c x) = t.contractingAction c (φ x) := by
+  have hh := ad_eq_toEnd K L ▸ isInternal_eigenspace_toEnd_intCast (M := L) t
+  rw [t.contractingAction_apply hh, t.contractingAction_apply hh, map_smul,
+    map_gradingAut_apply hh φ hφ]
+
 /-- The contracting action fixes `e`, which has weight `2` for `ad h`. -/
 @[simp]
 theorem contractingAction_apply_e (t : IsSl2Triple h e f) (c : Kˣ) :
@@ -214,8 +234,10 @@ end Contraction
 
 section Transversal
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [FiniteDimensional K M] {h e f x : L}
 
 /-- For `x` in the Slodowy slice, every eigenspace `M_k` of `h` at an integer `k` lies in
@@ -225,12 +247,21 @@ private theorem eigenspace_intCast_le_range_toEnd_sup_ker_toEnd_f (t : IsSl2Trip
     (toEnd K L M h).eigenspace (k : K) ≤
       LinearMap.range (toEnd K L M x) ⊔ LinearMap.ker (toEnd K L M f) := by
   set N := LinearMap.range (toEnd K L M x) ⊔ LinearMap.ker (toEnd K L M f)
-  -- `x - e` is a sum of vectors of `ker (ad f)` of weights `-n` with `n : ℕ`.
-  have hv : x - e ∈ ⨆ n : ℕ, LinearMap.ker (ad K L f) ⊓ (ad K L h).eigenspace (-(n : K)) := by
-    have hdecomp := t.ker_toEnd_f_eq_iSup_inf_eigenspace (K := K) (M := L)
+  by_cases hh : toEnd K L M h = 0
+  · -- If `h` acts by zero then so does `f`, and `N` is everything.
+    have hf : toEnd K L M f = 0 := by
+      simpa [hh] using congrArg (toEnd K L M) (t.lie_lie_smul_f K).symm
+    intro y _
+    exact Submodule.mem_sup_right (by simp [hf])
+  -- `toEnd (x - e)` is a sum of operators commuting with `f` whose commutator with `h` is `-n`.
+  have hv : toEnd K L M (x - e) ∈ ⨆ n : ℕ,
+      LinearMap.ker (ad K (Module.End K M) (toEnd K L M f)) ⊓
+        (ad K (Module.End K M) (toEnd K L M h)).eigenspace (-(n : K)) := by
+    have hdecomp := (t.map (toEnd K L M) hh).ker_toEnd_f_eq_iSup_inf_eigenspace
+      (K := K) (M := Module.End K M)
     rw [← ad_eq_toEnd] at hdecomp
-    rw [← hdecomp, LinearMap.mem_ker, ad_apply]
-    exact mem_slodowySlice.1 hx
+    rw [← hdecomp, LinearMap.mem_ker, ad_apply, ← LieHom.map_lie, mem_slodowySlice.1 hx,
+      map_zero]
   -- The weights of `h` on `M` are bounded below.
   obtain ⟨B, hB⟩ : ∃ B : ℤ, ∀ j : ℤ, j < B → (toEnd K L M h).eigenspace (j : K) = ⊥ := by
     obtain ⟨B, hB⟩ := ((Module.End.finite_hasEigenvalue (toEnd K L M h)).preimage
@@ -249,12 +280,16 @@ private theorem eigenspace_intCast_le_range_toEnd_sup_ker_toEnd_f (t : IsSl2Trip
     rw [show toEnd K L M e w = toEnd K L M x w - ⁅x - e, w⁆ by
       rw [toEnd_apply_apply, toEnd_apply_apply, sub_lie, sub_sub_cancel]]
     refine N.sub_mem (Submodule.mem_sup_left ⟨w, rfl⟩) ?_
-    refine Submodule.iSup_induction _ (motive := fun u ↦ ⁅u, w⁆ ∈ N) hv (fun n u hu ↦ ?_)
-      (by simp) fun u₁ u₂ h₁ h₂ ↦ by rw [add_lie]; exact N.add_mem h₁ h₂
+    rw [← toEnd_apply_apply (R := K) (L := L) (M := M) (x - e) w]
+    refine Submodule.iSup_induction _ (motive := fun u : Module.End K M ↦ u w ∈ N) hv
+      (fun n u hu ↦ ?_) (by simp) fun u₁ u₂ h₁ h₂ ↦ by
+        rw [LinearMap.add_apply]
+        exact N.add_mem h₁ h₂
     refine ih (k - 2 - n) (by omega) ?_
-    convert TauCeti.lie_mem_eigenspace_toEnd_add hu.2 hw using 2
-    push_cast
-    ring
+    rw [show ((k - 2 - n : ℤ) : K) = -(n : K) + ((k - 2 : ℤ) : K) by push_cast; ring]
+    simpa using TauCeti.lie_mem_eigenspace_toEnd_add (M := M) hu.2
+      (show w ∈ (toEnd K (Module.End K M) M (toEnd K L M h)).eigenspace ((k - 2 : ℤ) : K) by
+        simpa using hw)
   have key (m : ℕ) : ∀ j : ℤ, j < B + m → (toEnd K L M h).eigenspace (j : K) ≤ N := by
     induction m with
     | zero => exact fun j hj ↦ by simp [hB j (by simpa using hj)]
@@ -297,6 +332,8 @@ theorem finrank_ker_toEnd_le_finrank_ker_toEnd_e (t : IsSl2Triple h e f)
     finrank K (LinearMap.ker (toEnd K L M x)) ≤ finrank K (LinearMap.ker (toEnd K L M e)) := by
   have := t.finrank_range_toEnd_inf_ker_toEnd_f_add_finrank_ker_toEnd (M := M) hx
   omega
+
+variable [FiniteDimensional K L]
 
 /-- **The Slodowy slice is transverse to every adjoint orbit it meets.** For every point `x` of
 the slice `e + ker (ad f)`, the tangent space `[L, x]` of the adjoint orbit of `x` and the

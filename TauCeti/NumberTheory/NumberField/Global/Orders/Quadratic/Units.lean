@@ -162,7 +162,7 @@ theorem coe_range_unitsMap_intAddMulOrder [IsTotallyComplex K] (hK : finrank ℚ
   · rintro ⟨w, rfl⟩
     exact eq_one_or_eq_neg_one_of_mem_intAddMulOrder hK hf
       (torsion_eq_top_of_isTotallyComplex hK ▸ Subgroup.mem_top _)
-      (w : (intAddMulOrder K f).toRingOfIntegers).2
+      (w : (intAddMulOrder K f).toRingOfIntegers).property
   · rintro (rfl | rfl)
     · exact ⟨1, map_one _⟩
     · exact ⟨-1, Units.ext (by simp)⟩

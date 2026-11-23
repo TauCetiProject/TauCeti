@@ -7,14 +7,15 @@ module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Instances.Rat
-public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.FiniteField
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.Defs
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -29,11 +30,18 @@ Let `A` be the Gram matrix of a nondegenerate `ℤ_p`-lattice of rank `n`. Its l
 α_p(A) = lim_{r → ∞} p^{-r n (n - 1) / 2} · #{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X ≡ A (mod pʳ)},
 ```
 
-and the local densities at all primes are the local factors of the mass of a genus of
-positive definite lattices. This file defines the count inside the limit,
-`Matrix.localDensityCount A r`, shows that it only depends on `A` up to a change of basis, proves
-that it stabilizes at every prime, defines the local density `Matrix.localDensity A` as the limit,
-and evaluates it at a prime `p` not dividing `2 det A`.
+and the local densities at all primes, suitably normalized, are the local factors of the mass of a
+genus of positive definite lattices. The normalization here is Siegel's: the congruence is
+entrywise and there is no extra factor `1 / 2`. Consequently `α_p(A) → 2` as `p → ∞` (see the
+closed values below), so the raw product `∏_p α_p(A)⁻¹` diverges to `0`, and the factor that enters
+a mass formula is `α_p(A) / 2`. The count is of entrywise bilinear isometries, which at `p = 2` is
+not the count of isometries of the half-norm quadratic form `x ↦ xᵀ A x / 2`: for the hyperbolic
+plane the bilinear count gives density `4` and the half-norm count gives `1`
+(`Matrix.localDensity_hyperbolicPlane_two` in `LocalDensity/Dyadic.lean`). This file defines the
+count inside the limit, `Matrix.localDensityCount A r`, shows that it only depends on `A` up to a
+change of basis, proves that its normalized count stabilizes at every prime, defines the local
+density `Matrix.localDensity A` as the limit, and evaluates it at a prime `p` not dividing
+`2 det A`.
 
 **Stabilization.** Let `A` be symmetric with `2 det A ∣ pᵉ`, for instance `e = v_p(2 det A)`.
 For every `r > 2 e` the count at level `r + 1` is `p ^ (n.choose 2)` times the count at level `r`,
@@ -84,8 +92,12 @@ the reduction is split; the hyperbolic plane at `p = 3` has `det = -1`, a nonsqu
   dividing `2 det A`.
 * `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_one`,
   `Matrix.tendsto_localDensityCount_div_of_card_eq_two_mul_add_two`: the closed values of the
-  local density at such a prime, in odd and in even rank.
-* `Matrix.tendsto_localDensityCount_div_hyperbolicPlane_three`: the hyperbolic plane at `p = 3`.
+  local density at such a prime, in odd and in even rank, and
+  `Matrix.localDensity_eq_of_card_eq_two_mul_add_one`,
+  `Matrix.localDensity_eq_of_card_eq_two_mul_add_two`: the same values as equations for
+  `Matrix.localDensity`.
+* `Matrix.tendsto_localDensityCount_div_hyperbolicPlane_three`,
+  `Matrix.localDensity_hyperbolicPlane_three`: the hyperbolic plane at `p = 3`.
 
 ## References
 
@@ -502,9 +514,9 @@ private theorem natCard_ker_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
   rw [h₁, pow_succ', mul_pow, ← h₀]
   ring
 
-/-- **The local density count stabilizes at every prime.** Let `A` be a symmetric matrix over
-`ℤ_p` and let `2 det A` divide `p ^ e`. Then for every `r > 2 e` the count at level `r + 1` is
-`p ^ (n.choose 2)` times the count at level `r`. -/
+/-- **The local density count grows by the factor `p ^ (n.choose 2)` per level.** Let `A` be a
+symmetric matrix over `ℤ_p` and let `2 det A` divide `p ^ e`. Then for every `r > 2 e` the count at
+level `r + 1` is `p ^ (n.choose 2)` times the count at level `r`. -/
 theorem localDensityCount_succ_of_dvd {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) {e : ℕ}
     (he : 2 * A.det ∣ (p : ℤ_[p]) ^ e) {r : ℕ} (hr : 2 * e < r) :
     A.localDensityCount (r + 1) = p ^ (Fintype.card n).choose 2 * A.localDensityCount r := by
@@ -542,7 +554,8 @@ private theorem localDensityCount_div_pow_succ_of_dvd {A : Matrix n n ℤ_[p]} (
 normalized counts `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)`. For symmetric `A` with
 nonzero determinant the normalized counts are constant from `r = 2 v_p(2 det A) + 1` on
 (`Matrix.localDensityCount_div_pow_of_det_ne_zero`), so the limit exists; for other `A` this is
-a junk value. -/
+a junk value. This is Siegel's normalization: entrywise bilinear congruences and no extra factor
+`1 / 2`; the dyadic case is discussed in `LocalDensity/Dyadic.lean`. -/
 noncomputable def localDensity (A : Matrix n n ℤ_[p]) : ℚ :=
   limUnder atTop fun r => (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2)
 
@@ -593,8 +606,8 @@ theorem localDensityCount_div_pow_of_dvd {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A
   rw [localDensity, ht.limUnder_eq]
   exact hconst r hr
 
-/-- **The local density count stabilizes from `r₀ = 2 v_p(2 det A) + 1` on.** If `A` is symmetric
-with nonzero determinant, then for every `r > 2 v_p(2 det A)` the normalized count
+/-- **The normalized local density count stabilizes from `r₀ = 2 v_p(2 det A) + 1` on.** If `A` is
+symmetric with nonzero determinant, then for every `r > 2 v_p(2 det A)` the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` equals `α_p(A)`. -/
 theorem localDensityCount_div_pow_of_det_ne_zero {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A)
     (hdet : A.det ≠ 0) {r : ℕ} (hr : 2 * (2 * A.det).valuation < r) :
@@ -647,9 +660,9 @@ theorem localDensityCount_succ_eq_pow_mul_one (hp : p ≠ 2) {A : Matrix n n ℤ
     rw [localDensityCount_succ_of_isUnit_det hp hA hdet r.succ_ne_zero, ih, ← mul_assoc,
       ← pow_add, add_one_mul, add_comm]
 
-/-- **The local density at a prime not dividing `2 det A`.** The normalized count
-`#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` takes the same value for every `r ≥ 1`,
-namely the count at level `1` divided by `p ^ (n.choose 2)`. -/
+/-- **The normalized count is constant from level `1` on at a prime not dividing `2 det A`.** The
+normalized count `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` takes the same value for
+every `r ≥ 1`, namely the count at level `1` divided by `p ^ (n.choose 2)`. -/
 theorem localDensityCount_div_pow_of_isUnit_det (hp : p ≠ 2) {A : Matrix n n ℤ_[p]}
     (hA : Aᵀ = A) (hdet : IsUnit A.det) {r : ℕ} (hr : r ≠ 0) :
     (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2) =
@@ -693,17 +706,7 @@ theorem localDensityCount_one (A : Matrix n n ℤ_[p]) :
 determinant. -/
 theorem isUnit_det_map_padicInt_iff {A : Matrix n n ℤ} :
     IsUnit (A.map (Int.castRingHom ℤ_[p])).det ↔ ¬ (p : ℤ) ∣ A.det := by
-  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast,
-    ← PadicInt.norm_int_lt_one_iff_dvd, ← PadicInt.mem_nonunits, mem_nonunits_iff, not_not]
-
-/-- The reduction modulo an odd prime `p` of a symmetric matrix with unit determinant over `ℤ_p`
-is a nondegenerate symmetric matrix over a field of characteristic different from two. -/
-private theorem isSymm_map_toZMod (hp : p ≠ 2) {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A)
-    (hdet : IsUnit A.det) :
-    (A.map PadicInt.toZMod).IsSymm ∧ (A.map PadicInt.toZMod).det ≠ 0 ∧ ringChar (ZMod p) ≠ 2 := by
-  refine ⟨IsSymm.map hA _, ?_, by rwa [ZMod.ringChar_zmod_n]⟩
-  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
-  exact (hdet.map _).ne_zero
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, eq_intCast, PadicInt.isUnit_intCast_iff]
 
 /-- **The local density at a prime not dividing `2 det A`, in odd rank.** If `p` is odd and `A` is
 a symmetric `(2m + 1) × (2m + 1)` matrix over `ℤ_p` with unit determinant, the normalized count
@@ -714,7 +717,9 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
     Tendsto (fun r => (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2))
       atTop (𝓝 (2 * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹))) := by
   convert tendsto_localDensityCount_div_of_isUnit_det hp hA hdet using 2
-  obtain ⟨hsymm, hdet', hchar⟩ := isSymm_map_toZMod hp hA hdet
+  have hsymm : (A.map PadicInt.toZMod).IsSymm := IsSymm.map hA _
+  have hdet' := RingHom.det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
+  have hchar : ringChar (ZMod p) ≠ 2 := by rwa [ZMod.ringChar_zmod_n]
   have h := hsymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one hchar hdet' hn
   rw [ZMod.card] at h
   have hchoose : (Fintype.card n).choose 2 = m ^ 2 + m * (m + 1) := by
@@ -727,6 +732,15 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
     Finset.sum_range_two_mul_succ]
   field_simp
   ring
+
+/-- **The local density at a prime not dividing `2 det A`, in odd rank**: the value
+`α_p(A) = 2 ∏_{i=1}^{m} (1 - p^{-2i})` of `Matrix.localDensity`. -/
+theorem localDensity_eq_of_card_eq_two_mul_add_one (hp : p ≠ 2)
+    {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) (hdet : IsUnit A.det) {m : ℕ}
+    (hn : Fintype.card n = 2 * m + 1) :
+    A.localDensity = 2 * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹) :=
+  tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hA hdet.ne_zero)
+    (tendsto_localDensityCount_div_of_card_eq_two_mul_add_one hp hA hdet hn)
 
 /-- **The local density at a prime not dividing `2 det A`, in even rank.** If `p` is odd and `A`
 is a symmetric `(2m + 2) × (2m + 2)` matrix over `ℤ_p` with unit determinant, the normalized count
@@ -741,7 +755,9 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
       atTop (𝓝 (2 * (1 - quadraticChar (ZMod p) ((-1) ^ (m + 1) * (A.map PadicInt.toZMod).det) *
         ((p : ℚ) ^ (m + 1))⁻¹) * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹))) := by
   convert tendsto_localDensityCount_div_of_isUnit_det hp hA hdet using 2
-  obtain ⟨hsymm, hdet', hchar⟩ := isSymm_map_toZMod hp hA hdet
+  have hsymm : (A.map PadicInt.toZMod).IsSymm := IsSymm.map hA _
+  have hdet' := RingHom.det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
+  have hchar : ringChar (ZMod p) ≠ 2 := by rwa [ZMod.ringChar_zmod_n]
   have h := hsymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two hchar hdet' hn
   rw [ZMod.card] at h
   have hchoose : (Fintype.card n).choose 2 = 2 * (m * (m + 1)) + (m + 1) := by
@@ -755,6 +771,18 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
     Finset.sum_range_two_mul_succ]
   field_simp
   ring
+
+/-- **The local density at a prime not dividing `2 det A`, in even rank**: the value
+`α_p(A) = 2 (1 - ε p^{-(m+1)}) ∏_{i=1}^{m} (1 - p^{-2i})` of `Matrix.localDensity`, where
+`ε = ((-1)^{m+1} det A | p)`. -/
+theorem localDensity_eq_of_card_eq_two_mul_add_two (hp : p ≠ 2)
+    {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) (hdet : IsUnit A.det) {m : ℕ}
+    (hn : Fintype.card n = 2 * m + 2) :
+    A.localDensity =
+      2 * (1 - quadraticChar (ZMod p) ((-1) ^ (m + 1) * (A.map PadicInt.toZMod).det) *
+        ((p : ℚ) ^ (m + 1))⁻¹) * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹) :=
+  tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hA hdet.ne_zero)
+    (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two hp hA hdet hn)
 
 /-- **The hyperbolic plane at `p = 3` has local density `4/3`.** Its Gram matrix `!![0, 1; 1, 0]`
 has determinant `-1`, a nonsquare modulo `3`, yet the plane is split: the sign in the even-rank
@@ -770,5 +798,10 @@ theorem tendsto_localDensityCount_div_hyperbolicPlane_three :
     (m := 0) (by simp) using 2
   simp [det_fin_two]
   norm_num
+
+/-- The local density of the hyperbolic plane at `p = 3` is `4/3`. -/
+theorem localDensity_hyperbolicPlane_three :
+    (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[3]).localDensity = 4 / 3 :=
+  tendsto_localDensityCount_div_hyperbolicPlane_three.limUnder_eq
 
 end Matrix

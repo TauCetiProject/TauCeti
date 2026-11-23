@@ -35,10 +35,13 @@ wherever the spectrum of `a` avoids the frontier of `Ω`.
   spectrum of `a` are star projections;
 * `TauCeti.isStarProjection_cfc_indicator` — the spectral projector `cfc (Ω.indicator 1) a` is a
   star projection;
+* `TauCeti.cfc_indicator_mul_cfc_indicator` — the product of the spectral projectors for two
+  sets is the spectral projector for their intersection;
 * `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
   whose frontier is contained in `{0}` is continuous on the spectrum;
 * `TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio` — for invertible self-adjoint `a`, the
   positive and negative spectral projectors add up to `1`;
+* `TauCeti.cfc_indicator_neg` — the spectral projector of `-a` for `Ω` is that of `a` for `-Ω`;
 * `IsSelfAdjoint.continuousWithinAt_cfc_indicator` — the spectral projector depends continuously
   on the self-adjoint element when the frontier of the set avoids the spectrum.
 -/
@@ -72,6 +75,16 @@ theorem isStarProjection_cfc_indicator (a : A) (Ω : Set R) :
   isStarProjection_cfc fun t _ ↦ by
     by_cases ht : t ∈ Ω <;> simp [ht, IsStarProjection.zero, IsStarProjection.one]
 
+/-- The product of the spectral projectors for `Ω` and `Ω'` is the spectral projector for
+`Ω ∩ Ω'`, when both indicators are continuous on the spectrum. -/
+theorem cfc_indicator_mul_cfc_indicator (a : A) {Ω Ω' : Set R}
+    (hf : ContinuousOn (Ω.indicator (1 : R → R)) (spectrum R a))
+    (hf' : ContinuousOn (Ω'.indicator (1 : R → R)) (spectrum R a)) :
+    cfc (Ω.indicator (1 : R → R)) a * cfc (Ω'.indicator (1 : R → R)) a =
+      cfc ((Ω ∩ Ω').indicator (1 : R → R)) a := by
+  rw [← cfc_mul _ _ a hf hf', Set.inter_indicator_one]
+  rfl
+
 end Semiring
 
 variable {A : Type*} [Ring A] [StarRing A] [TopologicalSpace A] [Algebra ℝ A]
@@ -99,6 +112,21 @@ theorem cfc_indicator_Ioi_add_cfc_indicator_Iio {a : A} (ha : IsUnit a)
   refine cfc_congr fun x hx ↦ ?_
   rcases lt_or_gt_of_ne (ne_of_mem_of_not_mem hx (spectrum.zero_notMem ℝ ha)) with hx | hx <;>
     simp [hx, hx.not_gt]
+
+open scoped Pointwise in
+/-- The spectral projector of `-a` for `Ω` is the spectral projector of `a` for `-Ω`. -/
+theorem cfc_indicator_neg [T2Space A] (a : A) {Ω : Set ℝ}
+    (hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ (-a))) :
+    cfc (Ω.indicator (1 : ℝ → ℝ)) (-a) = cfc ((-Ω).indicator (1 : ℝ → ℝ)) a := by
+  have hcomp : (fun x ↦ Ω.indicator (1 : ℝ → ℝ) (-x)) = (-Ω).indicator 1 := by
+    ext x
+    by_cases hx : -x ∈ Ω
+    · rw [indicator_of_mem hx, indicator_of_mem (Set.mem_neg.2 hx), Pi.one_apply, Pi.one_apply]
+    · rw [indicator_of_notMem hx, indicator_of_notMem (mt Set.mem_neg.1 hx)]
+  by_cases ha : IsSelfAdjoint a
+  · rw [← hcomp, cfc_comp_neg _ _ (by rwa [image_neg_eq_neg, spectrum.neg_eq])]
+  · rw [cfc_apply_of_not_predicate _ ha,
+      cfc_apply_of_not_predicate _ fun h ↦ ha (by simpa using h.neg)]
 
 end TauCeti
 

@@ -19,6 +19,11 @@ field of characteristic different from two, including characteristic three. The 
 restrictions on the parameter are `σ ≠ 0` and `σ² ≠ 5`, which keep the denominators nonzero.
 The factorization of `suyamaB` and of `suyamaA² - 4` explains all five exceptional factors.
 
+In characteristic three, `9σ² - 25 = -1` and `σ² - 9 = σ²` introduce no additional obstructions
+beyond those of `suyamaB`: `isElliptic_model_suyama_iff_of_char_three` reduces ellipticity to
+`σ ≠ 0 ∧ σ⁴ ≠ 1`, and `isElliptic_model_suyama_iff_suyamaB_ne_zero_of_char_three` identifies
+elliptic Suyama models in characteristic three with those having `suyamaB σ ≠ 0`.
+
 ## References
 
 * P. Zimmermann, *20 years of ECM*, ANTS VII (2006), author's submitted version, §1, p. 3,
@@ -65,6 +70,16 @@ theorem suyamaV_sub_three_mul_suyamaU (σ : R) :
     suyamaV σ - 3 * suyamaU σ = -(3 * σ + 5) * (σ - 3) := by
   unfold suyamaU suyamaV
   ring
+
+/-- In characteristic three, the auxiliary polynomial `u = σ² - 5` simplifies to `σ² + 1`. -/
+theorem suyamaU_of_char_three [CharP R 3] (σ : R) : suyamaU σ = σ ^ 2 + 1 := by
+  unfold suyamaU
+  linear_combination -2 * CharP.ofNat_eq_zero R 3
+
+/-- In characteristic three, the auxiliary polynomial `v = 4σ` simplifies to `σ`. -/
+theorem suyamaV_of_char_three [CharP R 3] (σ : R) : suyamaV σ = σ := by
+  unfold suyamaV
+  linear_combination σ * CharP.ofNat_eq_zero R 3
 
 end CommRing
 
@@ -177,6 +192,48 @@ theorem isElliptic_model_suyama_iff {σ : K} (h₂ : (2 : K) ≠ 0) (hσ : σ �
     pow_eq_zero_iff (by decide : 3 ≠ 0), pow_eq_zero_iff (by decide : 6 ≠ 0),
     pow_eq_zero_iff (by decide : 9 ≠ 0)]
   tauto
+
+/-- In characteristic three, `suyamaB σ` is nonzero precisely when `σ ≠ 0` and `σ⁴ ≠ 1`. -/
+theorem suyamaB_ne_zero_iff_of_char_three [CharP K 3] {σ : K} :
+    suyamaB σ ≠ 0 ↔ σ ≠ 0 ∧ σ ^ 4 ≠ 1 := by
+  have h₃ : (3 : K) = 0 := CharP.ofNat_eq_zero K 3
+  have h₂ : (2 : K) ≠ 0 := Ring.two_ne_zero (by rw [ringChar.eq K 3]; decide)
+  by_cases hσ : σ = 0
+  · simp [hσ, suyamaB_def, suyamaX_def]
+  by_cases hu : σ ^ 2 = 5
+  · have h₄ : σ ^ 4 = 1 := by linear_combination (σ ^ 2 + 5) * hu + 8 * h₃
+    simp [suyamaB_def, suyamaX_def, sub_eq_zero.mpr hu, h₄]
+  · have h₂₅ : σ ^ 2 - 25 = σ ^ 2 - 1 := by linear_combination -8 * h₃
+    have h₄ : σ ^ 4 - 25 = σ ^ 4 - 1 := by linear_combination -8 * h₃
+    have h₁ : σ ^ 4 - 1 = (σ ^ 2 - 1) * (σ ^ 2 + 1) := by ring
+    rw [suyamaB_eq h₂ hσ hu, suyamaU_of_char_three, suyamaV_of_char_three, div_ne_zero_iff,
+      h₂₅, h₄, ← sub_ne_zero (a := σ ^ 4), h₁]
+    simp only [ne_eq, mul_eq_zero, pow_eq_zero_iff (by decide : 2 ≠ 0),
+      pow_eq_zero_iff (by decide : 9 ≠ 0), hσ, not_false_eq_true, and_true, true_and]
+    tauto
+
+/-- In characteristic three, every Suyama model with nonzero `B` is already elliptic: the
+factors `σ² - 9` and `9σ² - 25` of `suyamaA² - 4` introduce no extra singular parameters. -/
+theorem isElliptic_model_suyama_iff_suyamaB_ne_zero_of_char_three [CharP K 3] {σ : K} :
+    (model (suyamaA σ) (suyamaB σ)).IsElliptic ↔ suyamaB σ ≠ 0 := by
+  refine ⟨fun h ↦ (isElliptic_model_iff_ne_zero.mp h).2.1, fun hB ↦ ?_⟩
+  have h₃ : (3 : K) = 0 := CharP.ofNat_eq_zero K 3
+  have h₂ : (2 : K) ≠ 0 := Ring.two_ne_zero (by rw [ringChar.eq K 3]; decide)
+  obtain ⟨hσ, h₄⟩ := suyamaB_ne_zero_iff_of_char_three.mp hB
+  have hu : σ ^ 2 ≠ 5 := fun h₅ ↦ h₄ (by linear_combination (σ ^ 2 + 5) * h₅ + 8 * h₃)
+  have hsq : σ ^ 2 - 1 ≠ 0 := fun h₁ ↦ h₄ (by linear_combination (σ ^ 2 + 1) * h₁)
+  have h₉ : σ ^ 2 - 9 = σ ^ 2 := by linear_combination -3 * h₃
+  have h₉₂₅ : 9 * σ ^ 2 - 25 = -1 := by linear_combination (3 * σ ^ 2 - 8) * h₃
+  have h₂₅ : σ ^ 2 - 25 = σ ^ 2 - 1 := by linear_combination -8 * h₃
+  have h₅ : σ ^ 2 + 5 = σ ^ 2 - 1 := by linear_combination 2 * h₃
+  rw [isElliptic_model_suyama_iff h₂ hσ hu, h₉, h₉₂₅, h₂₅, h₅]
+  simp [hσ, hsq]
+
+/-- **Suyama's ellipticity criterion in characteristic three.** Because `9σ² - 25 = -1` and
+`σ² - 9 = σ²`, the five factors collapse to `σ ≠ 0` and `σ⁴ ≠ 1`, with no side condition on `σ`. -/
+theorem isElliptic_model_suyama_iff_of_char_three [CharP K 3] {σ : K} :
+    (model (suyamaA σ) (suyamaB σ)).IsElliptic ↔ σ ≠ 0 ∧ σ ^ 4 ≠ 1 :=
+  isElliptic_model_suyama_iff_suyamaB_ne_zero_of_char_three.trans suyamaB_ne_zero_iff_of_char_three
 
 /-- When `B` is nonzero, Suyama's supplied point becomes a nonsingular point of the monic
 model under `x' = Bx`, `y' = B²`. This does not require ellipticity of the model. -/
