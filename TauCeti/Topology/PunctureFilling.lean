@@ -115,7 +115,7 @@ def center (i : ι) : PunctureFilling φ :=
 
 /-- A nonzero point of the unit disc, as a point of the punctured unit disc. -/
 private def puncture {z : 𝔻} (hz : z ≠ 0) : 𝔻* :=
-  ⟨z, z.2, fun h => hz (Subtype.ext h)⟩
+  ⟨z, z.property, fun h => hz (Subtype.ext h)⟩
 
 open Classical in
 /-- The `i`-th filled disc: the unit disc mapped into the puncture filling, sending `0` to the
@@ -181,7 +181,7 @@ theorem disc_zero (i : ι) : disc φ i 0 = center φ i :=
 /-- Off its centre, the `i`-th filled disc is the punctured disc `φ i`. -/
 @[simp]
 theorem disc_inclusion (i : ι) (w : 𝔻*) : disc φ i (inclusion sdiff_subset w) = incl φ (φ i w) :=
-  dite_eq_right fun (h : inclusion sdiff_subset w = 0) => w.2.2 (congrArg Subtype.val h)
+  dite_eq_right fun (h : inclusion sdiff_subset w = 0) => w.property.2 (congrArg Subtype.val h)
 
 /-- A point of the `i`-th filled disc lies in `E` exactly when it is a point `φ i w` of the
 punctured disc. -/
@@ -387,7 +387,7 @@ theorem isClosed_range_center : IsClosed (range (center φ)) := by
 /-- The punctured unit disc is an open subspace of the unit disc. -/
 private theorem isOpenEmbedding_inclusion_puncture :
     IsOpenEmbedding (inclusion (sdiff_subset : ball (0 : ℂ) 1 \ {0} ⊆ ball 0 1)) :=
-  .inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage continuous_subtype_val
+  .inclusion _ <| (isOpen_ball.sdiff isClosed_singleton).preimage continuous_subtypeVal
 
 /-- If the punctured discs `φ i` are continuous, `E` is an open subspace of its puncture
 filling. -/
