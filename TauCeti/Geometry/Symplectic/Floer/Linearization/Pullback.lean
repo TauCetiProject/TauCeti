@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.Mul
 
@@ -308,24 +309,9 @@ theorem norm_floerLinearization_perturbationPullback_sq_le (ω : SymplecticForm 
     ContinuousLinearMap.det, hφJ.det_eq_sq_add_sq, ContinuousLinearMap.coe_coe]
   set a := (fderiv ℝ φ w stdComplexLineReal).1
   set b := (fderiv ℝ φ w stdComplexLineReal).2
-  set D := ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-    Ks Kt u ξ (φ w)
-  have hJD : ‖J (φ w) (u (φ w)) D‖ ≤ M * ‖D‖ :=
-    ((J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap.le_opNorm D).trans
-      (mul_le_mul_of_nonneg_right hM (norm_nonneg D))
-  have h₁ : ‖a • D - b • J (φ w) (u (φ w)) D‖ ≤ (|a| + |b| * M) * ‖D‖ := by
-    calc ‖a • D - b • J (φ w) (u (φ w)) D‖
-        ≤ ‖a • D‖ + ‖b • J (φ w) (u (φ w)) D‖ := norm_sub_le _ _
-      _ = |a| * ‖D‖ + |b| * ‖J (φ w) (u (φ w)) D‖ := by
-        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-      _ ≤ |a| * ‖D‖ + |b| * (M * ‖D‖) := by gcongr
-      _ = (|a| + |b| * M) * ‖D‖ := by ring
-  have h₂ : (|a| + |b| * M) ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) := by
-    nlinarith [sq_nonneg (|a| * M - |b|), sq_abs a, sq_abs b]
-  calc ‖a • D - b • J (φ w) (u (φ w)) D‖ ^ 2 ≤ ((|a| + |b| * M) * ‖D‖) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) h₁ 2
-    _ = (|a| + |b| * M) ^ 2 * ‖D‖ ^ 2 := by ring
-    _ ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D‖ ^ 2 := by gcongr
+  have h := (J (φ w) (u (φ w))).norm_smul_add_smul_apply_sq_le hM a (-b)
+    (ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (φ w))
+  rwa [neg_sq, neg_smul, ← sub_eq_add_neg] at h
 
 /-- **The linearized operator is conformally bounded below under a change of coordinates.** Under
 the hypotheses of `TauCeti.SymplecticForm.floerLinearization_perturbationPullback`, `det dφ_w`
@@ -357,32 +343,19 @@ theorem det_mul_norm_floerLinearization_sq_le (ω : SymplecticForm V) {M : ℝ}
   set D := ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
     Ks Kt u ξ (φ w)
   set D' := a • D - b • J (φ w) (u (φ w)) D
-  have hJD : ‖J (φ w) (u (φ w)) D'‖ ≤ M * ‖D'‖ :=
-    ((J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap.le_opNorm D').trans
-      (mul_le_mul_of_nonneg_right hM (norm_nonneg D'))
   -- `(a + b J)(a - b J) = a² + b²`.
   have hD : (a ^ 2 + b ^ 2) • D = a • D' + b • J (φ w) (u (φ w)) D' := by
     simp only [D', AlmostComplexStructure.apply_sub, AlmostComplexStructure.apply_smul,
       AlmostComplexStructure.apply_apply]
     module
-  have h₁ : (a ^ 2 + b ^ 2) * ‖D‖ ≤ (|a| + |b| * M) * ‖D'‖ := by
-    calc (a ^ 2 + b ^ 2) * ‖D‖ = ‖a • D' + b • J (φ w) (u (φ w)) D'‖ := by
-          rw [← hD, norm_smul, Real.norm_of_nonneg (by positivity)]
-      _ ≤ ‖a • D'‖ + ‖b • J (φ w) (u (φ w)) D'‖ := norm_add_le _ _
-      _ = |a| * ‖D'‖ + |b| * ‖J (φ w) (u (φ w)) D'‖ := by
-        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-      _ ≤ |a| * ‖D'‖ + |b| * (M * ‖D'‖) := by gcongr
-      _ = (|a| + |b| * M) * ‖D'‖ := by ring
-  have h₂ : (|a| + |b| * M) ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) := by
-    nlinarith [sq_nonneg (|a| * M - |b|), sq_abs a, sq_abs b]
+  have h := (J (φ w) (u (φ w))).norm_smul_add_smul_apply_sq_le hM a b D'
+  rw [← hD, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow] at h
   rcases (by positivity : 0 ≤ a ^ 2 + b ^ 2).eq_or_lt with h₀ | hpos
   · rw [← h₀, zero_mul]
     positivity
   refine le_of_mul_le_mul_left ?_ hpos
-  calc (a ^ 2 + b ^ 2) * ((a ^ 2 + b ^ 2) * ‖D‖ ^ 2) = ((a ^ 2 + b ^ 2) * ‖D‖) ^ 2 := by ring
-    _ ≤ ((|a| + |b| * M) * ‖D'‖) ^ 2 := pow_le_pow_left₀ (by positivity) h₁ 2
-    _ = (|a| + |b| * M) ^ 2 * ‖D'‖ ^ 2 := by ring
-    _ ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D'‖ ^ 2 := by gcongr
+  calc (a ^ 2 + b ^ 2) * ((a ^ 2 + b ^ 2) * ‖D‖ ^ 2) = (a ^ 2 + b ^ 2) ^ 2 * ‖D‖ ^ 2 := by ring
+    _ ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D'‖ ^ 2 := h
     _ = (a ^ 2 + b ^ 2) * ((1 + M ^ 2) * ‖D'‖ ^ 2) := by ring
 
 variable {s : Set (ℝ × ℝ)}
@@ -422,11 +395,11 @@ theorem integral_associatedBilinForm_floerLinearization_image (ω : SymplecticFo
       ω.associatedBilinForm_floerLinearization_perturbationPullback (hφ w hw) (hφJ w hw)
         (hu w hw) (hξ w hw) (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw)]
 
-/-- **Conformal invariance of the `L²` norm of the linearized operator, upper bound.** Let `φ` be
-injective on a measurable set `s`, with complex linear derivative, and let `u` solve the Floer
-equation on `φ '' s`, with `J` bounded by `M` there. Then the `L²` norm over `s` of the
-linearization along `u ∘ φ` for the pulled back data, applied to `ξ ∘ φ`, squared, is at most
-`1 + M²` times the `L²` norm of `D_u ξ` over `φ '' s`, squared. -/
+/-- **Comparison of the ambient `L²` norm of the linearized operator under holomorphic changes of
+coordinates, upper bound.** Let `φ` be injective on a measurable set `s`, with complex linear
+derivative, and let `u` solve the Floer equation on `φ '' s`, with `J` bounded by `M` there. Then
+the `L²` norm over `s` of the linearization along `u ∘ φ` for the pulled back data, applied to
+`ξ ∘ φ`, squared, is at most `1 + M²` times the `L²` norm of `D_u ξ` over `φ '' s`, squared. -/
 theorem setIntegral_norm_floerLinearization_perturbationPullback_sq_le (ω : SymplecticForm V)
     {M : ℝ} (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
     (hφJ : ∀ w ∈ s, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -460,11 +433,11 @@ theorem setIntegral_norm_floerLinearization_perturbationPullback_sq_le (ω : Sym
   exact ω.norm_floerLinearization_perturbationPullback_sq_le (hφ w hw) (hφJ w hw) (hu w hw)
     (hξ w hw) (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw) (hM w hw)
 
-/-- **Conformal invariance of the `L²` norm of the linearized operator, lower bound.** Let `φ` be
-injective on a measurable set `s`, with complex linear derivative, and let `u` solve the Floer
-equation on `φ '' s`, with `J` bounded by `M` there. Then the `L²` norm of `D_u ξ` over `φ '' s`,
-squared, is at most `1 + M²` times the `L²` norm over `s` of the linearization along `u ∘ φ` for
-the pulled back data, applied to `ξ ∘ φ`, squared. -/
+/-- **Comparison of the ambient `L²` norm of the linearized operator under holomorphic changes of
+coordinates, lower bound.** Let `φ` be injective on a measurable set `s`, with complex linear
+derivative, and let `u` solve the Floer equation on `φ '' s`, with `J` bounded by `M` there. Then
+the `L²` norm of `D_u ξ` over `φ '' s`, squared, is at most `1 + M²` times the `L²` norm over `s`
+of the linearization along `u ∘ φ` for the pulled back data, applied to `ξ ∘ φ`, squared. -/
 theorem setIntegral_image_norm_floerLinearization_sq_le (ω : SymplecticForm V) {M : ℝ}
     (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
     (hφJ : ∀ w ∈ s, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
