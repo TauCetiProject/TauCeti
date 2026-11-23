@@ -232,8 +232,8 @@ theorem IsSymplectic.exists_weightRotation_darbouxChart (hσ : σ.IsSymplectic)
   · ext z
     simp only [chart, PartialDiffeomorph.restrOpen_target, mem_inter_iff, mem_preimage]
     refine ⟨fun ⟨hz, _, hzB⟩ ↦ ?_, fun hz ↦ ⟨hBt hz, c₁.map_target (hBt hz), ?_⟩⟩
-    · rwa [c₁.right_inv hz] at hzB
-    · rwa [c₁.right_inv (hBt hz)]
+    · rwa [c₁.toPartialEquiv.right_inv hz] at hzB
+    · rwa [c₁.toPartialEquiv.right_inv (hBt hz)]
   · -- `G` acts in the chart by the rotations `zₖ ↦ χₖ(g) zₖ`, which preserve the ball.
     obtain ⟨hx₀, hxB⟩ := hmem.1 hx
     obtain ⟨hgx, hcgx⟩ := hc₀G g x hx₀
