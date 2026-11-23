@@ -110,12 +110,6 @@ variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
   (hφ : ∀ N, IsNondegenerateUpToPeriod I φ N) {ι : Type*} {x : ι → M} (hx : Injective x)
   {d : ι → ℕ} (hxd : ∀ i, IsPeriodicPt φ (d i) (x i)) (hd : ∀ i, 0 < d i)
 
-omit [IsManifold I ∞ M] in
-include hφ in
-/-- Nondegeneracy up to every period leaves finitely many fixed points of each positive iterate. -/
-private theorem finite_ptsOfPeriod_of_nondegenerate : ∀ n, 0 < n → (ptsOfPeriod φ n).Finite :=
-  fun n hn ↦ (hφ n).finite_ptsOfPeriod φ.continuous hn le_rfl
-
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   {P : ι → Matrix (Fin 2) (Fin 2) R} (hdet : ∀ i, (P i).det = 1)
 
@@ -139,7 +133,7 @@ theorem hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass
         (fun i ↦ -(SignType.sign (1 - P i).det * if (1 + P i).det < 0 then -1 else 1))) :=
   TauCeti.hasProd_ofPowerSeries_torusWeightSeries _
     (tendsto_timePeriodHom_closedOrbitHomologyClass
-      (finite_ptsOfPeriod_of_nondegenerate hφ) hx hxd hd) hdet hP
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd) hdet hP
 
 include hφ hx hd hdet in
 /-- **The orbit-torus series of the closed orbits give the orbit zeta function.** Under the
@@ -160,7 +154,7 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod
             (if (1 + P i).det < 0 then 1 else 0))) :=
   TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries _
     (tendsto_timePeriodHom_closedOrbitHomologyClass
-      (finite_ptsOfPeriod_of_nondegenerate hφ) hx hxd hd) hdet hP K
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd) hdet hP K
 
 /-! ### Labels from the linearized return maps
 
@@ -317,7 +311,7 @@ theorem mapRingHom_tprod_fixedPointDerivative_eq_exp_tsum_single_sign_det_div
     injective_of_existsUnique_iterate (fun i ↦ mk_mem_periodicPts (hd i) (hxd i)) hrep
   rw [← orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ hx hxd hd
     hE hσ hφσ K, orbitZeta_eq_exp_tsum_single_sign_det_div
-    (finite_ptsOfPeriod_of_nondegenerate hφ) hxd hd hmin hrep K]
+    (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hxd hd hmin hrep K]
 
 include hd in
 /-- **Below a period cutoff, the orbit-torus series labelled by the return maps give the orbit
@@ -393,7 +387,7 @@ theorem mapRingHom_intTimePeriodHom_orbitZeta_closedOrbitHomologyClass (ε : ι 
   rw [mapRingHom_orbitZeta _ _ _
     (fun i ↦ timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
     (tendsto_timePeriodHom_closedOrbitHomologyClass
-      (finite_ptsOfPeriod_of_nondegenerate hφ) hx hxd hd)]
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd)]
   congr 1
   funext i
   simp
