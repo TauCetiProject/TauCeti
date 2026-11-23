@@ -32,6 +32,9 @@ reflections.
 * `ContinuousLinearEquiv.transportTestFunction`: transport of test functions along a continuous
   linear equivalence, changing their domain, as a continuous linear map.
 * `ContinuousLinearEquiv.transportTestFunction_apply`: evaluation of a transported test function.
+* `ContinuousLinearEquiv.transportAddTestFunction`,
+  `ContinuousLinearEquiv.transportAddTestFunction_apply`: affine transport of test functions
+  along `x ↦ e x + b`, and its evaluation law.
 * `ContinuousLinearEquiv.transportTestFunction_trans`,
   `ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm`: functoriality.
 * `ContinuousLinearEquiv.transportTestFunction_postcompCLM`: transport commutes with
@@ -124,6 +127,67 @@ def transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) :
 @[simp]
 theorem transportTestFunction_apply (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (φ : 𝓓^{n}(V, F))
     (y : E') : transportTestFunction e hVO φ y = φ (e.symm y) :=
+  (rfl)
+
+/-- Affine transport along `x ↦ e x + b` of tests supported in a compact `K`, which are supported
+in `(fun x ↦ e x + b) '' K`, as a continuous linear map. -/
+private def transportAddSupportedIn (e : E ≃L[ℝ] E') (b : E') (K : Compacts E) :
+    𝓓^{n}_{K}(E, F) →L[ℝ]
+      𝓓^{n}_{K.map (fun x ↦ e x + b) (e.continuous.add continuous_const)}(E', F) :=
+  letI P : 𝓓^{n}_{K}(E, F) →ₗ[ℝ]
+      𝓓^{n}_{K.map (fun x ↦ e x + b) (e.continuous.add continuous_const)}(E', F) :=
+    { toFun φ := ⟨fun y ↦ φ (e.symm (y - b)),
+        φ.contDiff.comp (e.symm.contDiff.comp (contDiff_id.sub contDiff_const)), fun y hy ↦
+          Function.notMem_support.1 fun h ↦ hy <| by
+            rw [Compacts.coe_map]
+            exact ⟨e.symm (y - b), φ.support_subset h, by simp⟩⟩
+      map_add' _ _ := ContDiffMapSupportedIn.ext fun _ ↦ rfl
+      map_smul' _ _ := ContDiffMapSupportedIn.ext fun _ ↦ rfl }
+  { toLinearMap := P
+    cont := by
+      refine WithSeminorms.continuous_of_isBounded (ContDiffMapSupportedIn.withSeminorms ..)
+        (ContDiffMapSupportedIn.withSeminorms ..) _ (.of_real fun i ↦ ?_)
+      refine ⟨{i}, ‖(e.symm : E' →L[ℝ] E)‖ ^ i, fun φ ↦ ((P φ).seminorm_le_iff ℝ
+        (by positivity) i).2 fun hi y _ ↦ ?_⟩
+      rw [Finset.sup_singleton]
+      have hfun : (P φ : E' → F) = fun z ↦ ((φ : E → F) ∘ e.symm) (z - b) := rfl
+      rw [hfun, iteratedFDeriv_comp_sub (f := (φ : E → F) ∘ e.symm) i b y]
+      exact (e.symm.norm_iteratedFDeriv_comp_right_le φ (y - b) i).trans <|
+        mul_le_mul_of_nonneg_left
+          (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ hi) (by positivity) }
+
+/-- Transport test functions on `V` along the invertible affine map `x ↦ e x + b`, regarding the
+result `y ↦ φ (e.symm (y - b))` as a test function on an open set `Ω` containing
+`(fun x ↦ e x + b) '' V`. This is a continuous linear map for the LF topologies. -/
+def transportAddTestFunction (e : E ≃L[ℝ] E') (b : E')
+    (hVO : MapsTo (fun x ↦ e x + b) V Ω) :
+    𝓓^{n}(V, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
+  letI Φ : E ≃ₜ E' := e.toHomeomorph.trans (Homeomorph.addRight b)
+  letI hcomp (φ : 𝓓^{n}(V, F)) : (fun y ↦ φ (e.symm (y - b))) = (φ : E → F) ∘ Φ.symm :=
+    funext fun z ↦ congrArg (φ : E → F) (congrArg e.symm (sub_eq_add_neg z b))
+  letI T (φ : 𝓓^{n}(V, F)) : 𝓓^{n}(Ω, F) :=
+    ⟨fun y ↦ φ (e.symm (y - b)),
+      φ.contDiff.comp (e.symm.contDiff.comp (contDiff_id.sub contDiff_const)),
+      (hcomp φ).symm ▸ φ.hasCompactSupport.comp_homeomorph Φ.symm,
+      by
+        intro y hy
+        have hy' : Φ.symm y ∈ tsupport (φ : E → F) := by
+          have hycomp : y ∈ tsupport ((φ : E → F) ∘ Φ.symm) := (hcomp φ) ▸ hy
+          rwa [tsupport_comp_eq_preimage] at hycomp
+        have hmem : Φ (Φ.symm y) ∈ (Ω : Set E') := hVO (φ.tsupport_subset hy')
+        rwa [Φ.apply_symm_apply] at hmem⟩
+  TestFunction.limitCLM ℝ T
+    (fun K hK ↦ ofSupportedInCLM ℝ (by
+        rw [Compacts.coe_map]
+        exact image_subset_iff.2 fun x hx ↦ hVO (hK hx)) ∘L
+      transportAddSupportedIn e b K)
+    (fun _ _ _ ↦ rfl)
+
+/-- A test function transported along `x ↦ e x + b` is evaluated at `e.symm (y - b)`. -/
+@[simp]
+theorem transportAddTestFunction_apply (e : E ≃L[ℝ] E') (b : E')
+    (hVO : MapsTo (fun x ↦ e x + b) V Ω) (φ : 𝓓^{n}(V, F)) (y : E') :
+    transportAddTestFunction e b hVO φ y = φ (e.symm (y - b)) :=
   (rfl)
 
 /-- Transporting along a composite of continuous linear equivalences is transporting along each

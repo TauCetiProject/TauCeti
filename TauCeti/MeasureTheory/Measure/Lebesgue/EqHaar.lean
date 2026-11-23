@@ -33,7 +33,8 @@ Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
 `MeasureTheory.Measure.addHaar_preimage_linearMap`. Between possibly distinct real normed spaces,
 an invertible affine map `x ↦ B x + b` pushes forward a restricted additive Haar measure with
 scalar factor `addHaarScalarFactor (μ.map B) ν`
-(`MeasureTheory.Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict`) and is
+(`MeasureTheory.Measure.map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict`,
+`MeasureTheory.Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict`) and is
 quasi-measure-preserving globally and on `MapsTo` pairs
 (`MeasureTheory.Measure.quasiMeasurePreserving_continuousLinearEquiv_add`,
 `MeasureTheory.Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict`). Correspondingly,
@@ -317,22 +318,29 @@ theorem map_continuousLinearEquiv_add_eq_smul (μ : Measure E) [μ.IsAddHaarMeas
   rw [hcomp, ← map_map (measurable_add_const b) B.continuous.measurable, map_add_right_eq_self]
   exact isAddLeftInvariant_eq_smul (μ.map B) ν
 
-/-- If an invertible affine map `x ↦ B x + b` maps `s` into a measurable set `t`, then pushing
-forward `μ.restrict s` along `x ↦ B x + b` is bounded by
+/-- Pushing forward `μ.restrict ((fun x ↦ B x + b) ⁻¹' t)` along an invertible affine map
+`x ↦ B x + b` yields `addHaarScalarFactor (μ.map B) ν • ν.restrict t` for any set `t`, without
+requiring `t` to be measurable. -/
+theorem map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict (μ : Measure E)
+    [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (t : Set E') :
+    (μ.restrict ((fun x ↦ B x + b) ⁻¹' t)).map (fun x ↦ B x + b) =
+      (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t := by
+  have he : MeasurableEmbedding (fun x ↦ B x + b) :=
+    (B.toHomeomorph.trans (Homeomorph.addRight b)).measurableEmbedding
+  rw [← he.restrict_map, map_continuousLinearEquiv_add_eq_smul μ ν B b, restrict_smul]
+
+/-- If an invertible affine map `x ↦ B x + b` maps `s` into `t` (for arbitrary sets `s` and `t`),
+then pushing forward `μ.restrict s` along `x ↦ B x + b` is bounded by
 `addHaarScalarFactor (μ.map B) ν • ν.restrict t`. -/
 theorem map_restrict_continuousLinearEquiv_add_le_smul_restrict (μ : Measure E) [μ.IsAddHaarMeasure]
     (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E') {s : Set E} {t : Set E'}
-    (ht : MeasurableSet t) (hst : MapsTo (fun x ↦ B x + b) s t) :
+    (hst : MapsTo (fun x ↦ B x + b) s t) :
     (μ.restrict s).map (fun x ↦ B x + b) ≤
       (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t := by
   have hmeas : Measurable (fun x ↦ B x + b) := (B.continuous.add continuous_const).measurable
-  calc
-    (μ.restrict s).map (fun x ↦ B x + b)
-        ≤ (μ.restrict ((fun x ↦ B x + b) ⁻¹' t)).map (fun x ↦ B x + b) :=
-          map_mono (restrict_mono hst.subset_preimage le_rfl) hmeas
-    _ = (μ.map (fun x ↦ B x + b)).restrict t := (restrict_map hmeas ht).symm
-    _ = (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t := by
-          rw [map_continuousLinearEquiv_add_eq_smul μ ν B b, restrict_smul]
+  exact (map_mono (restrict_mono hst.subset_preimage le_rfl) hmeas).trans_eq
+    (map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict μ ν B b t)
 
 /-- An invertible affine map `x ↦ B x + b` is quasi-measure-preserving between any additive Haar
 measures on its domain and codomain. -/

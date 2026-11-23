@@ -313,25 +313,26 @@ variable {E' F G : Type*}
   [NormedAddCommGroup G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **Affine precomposition on restricted `Lᵖ` spaces.** For an invertible continuous linear map
-`B : E' ≃L[ℝ] F`, translation `b : F`, measurable target set `t`, and `s` mapped into `t` by
+`B : E' ≃L[ℝ] F`, translation `b : F`, target set `t`, and `s` mapped into `t` by
 `x ↦ B x + b`, precomposition `f ↦ f (B · + b)` is a bounded `𝕜`-linear operator
-`Lᵖ(ν.restrict t) →L[𝕜] Lᵖ(μ.restrict s)` for any additive Haar measures `μ` and `ν`. -/
+`Lᵖ(ν.restrict t) →L[𝕜] Lᵖ(μ.restrict s)` for any additive Haar measures `μ` and `ν`, with no
+measurability assumption on `s` or `t`. -/
 def compContinuousLinearEquivAddRestrict (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 G]
     (μ : Measure E') [μ.IsAddHaarMeasure] (ν : Measure F) [ν.IsAddHaarMeasure]
-    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F) (ht : MeasurableSet t)
+    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F)
     (hst : Set.MapsTo (fun x ↦ B x + b) s t) :
     Lp G p (ν.restrict t) →L[𝕜] Lp G p (μ.restrict s) :=
   compOfMapLeSmul 𝕜 (B.continuous.add (continuous_const (y := b))).measurable.aemeasurable
     (ENNReal.coe_ne_top (r := Measure.addHaarScalarFactor (μ.map B) ν))
-    (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b ht hst)
+    (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b hst)
 
 /-- Precomposing an `Lᵖ` function on `ν.restrict t` with `x ↦ B x + b` agrees almost everywhere
 on `μ.restrict s` with `x ↦ f (B x + b)`. -/
 theorem coeFn_compContinuousLinearEquivAddRestrict {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 G]
     {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F} [ν.IsAddHaarMeasure]
-    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F) (ht : MeasurableSet t)
+    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F)
     (hst : Set.MapsTo (fun x ↦ B x + b) s t) (f : Lp G p (ν.restrict t)) :
-    compContinuousLinearEquivAddRestrict 𝕜 μ ν B b ht hst f =ᵐ[μ.restrict s]
+    compContinuousLinearEquivAddRestrict 𝕜 μ ν B b hst f =ᵐ[μ.restrict s]
       fun x ↦ f (B x + b) :=
   coeFn_compOfMapLeSmul _ _ _ f
 
