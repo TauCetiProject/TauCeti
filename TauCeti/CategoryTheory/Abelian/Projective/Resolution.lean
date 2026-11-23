@@ -207,6 +207,50 @@ theorem ofIso_augZero {M N : C} (P : ProjectiveResolution M) (e : M ≅ N) :
         P.augZero ≫ e.hom := by
   simp [augZero_def, ofIso_π]
 
+private theorem cons_exact_zero {C : Type*} [Category* C] [Abelian C] {K F M : C}
+    (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M} {hip : i ≫ p = 0}
+    (hS : (ShortComplex.mk i p hip).ShortExact)
+    {hw : Q.complex.d 1 0 ≫ Q.augZero ≫ i = 0}
+    (hp₀ : (_root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw).d 1 0 ≫ p = 0) :
+    (ShortComplex.mk ((_root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw).d 1 0) p
+      hp₀).Exact := by
+  let α : ShortComplex.mk
+      ((_root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw).d 1 0) p hp₀ ⟶
+      ShortComplex.mk i p hip :=
+    { τ₁ := Q.augZero, τ₂ := 𝟙 F, τ₃ := 𝟙 M
+      comm₁₂ := by dsimp; rw [Category.comp_id] }
+  have : Epi α.τ₁ := Q.epi_augZero
+  have : IsIso α.τ₂ := inferInstanceAs (IsIso (𝟙 F))
+  have : Mono α.τ₃ := inferInstanceAs (Mono (𝟙 M))
+  exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono α).2 hS.exact
+
+private theorem cons_exactAt {C : Type*} [Category* C] [Abelian C] {K F M : C}
+    (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M} {hip : i ≫ p = 0}
+    (hS : (ShortComplex.mk i p hip).ShortExact)
+    {hw : Q.complex.d 1 0 ≫ Q.augZero ≫ i = 0} :
+    ∀ n, (_root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw).ExactAt (n + 1)
+  | 0 => by
+    let A := _root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw
+    rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp)]
+    let α : ShortComplex.mk (Q.complex.d 1 0) Q.augZero Q.d_one_zero_comp_augZero ⟶
+        A.sc' 2 1 0 :=
+      { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := i
+        comm₁₂ := by dsimp [A]; simp
+        comm₂₃ := by dsimp [A]; simp }
+    have : Epi α.τ₁ := inferInstanceAs (Epi (𝟙 (Q.complex.X 1)))
+    have : IsIso α.τ₂ := inferInstanceAs (IsIso (𝟙 (Q.complex.X 0)))
+    have : Mono α.τ₃ := hS.mono_f
+    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono α).1 Q.exact_d_one_zero_augZero
+  | k + 1 => by
+    let A := _root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw
+    rw [HomologicalComplex.exactAt_iff' _ (k + 3) (k + 2) (k + 1) (by simp) (by simp)]
+    let e : A.sc' (k + 3) (k + 2) (k + 1) ≅
+        ShortComplex.mk (Q.complex.d (k + 2) (k + 1)) (Q.complex.d (k + 1) k)
+          (Q.complex.d_comp_d _ _ _) :=
+      ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+        (by dsimp [A]; simp) (by dsimp [A]; simp)
+    exact (ShortComplex.exact_iff_of_iso e).2 (Q.exact_succ k)
+
 /-- Prepending a short exact sequence `0 ⟶ K --i--> F --p--> M ⟶ 0` with `F` projective to a
 projective resolution `Q` of `K` gives a projective resolution of `M`. -/
 def cons {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F} {p : F ⟶ M}
@@ -216,43 +260,14 @@ def cons {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F} {
     rw [← Category.assoc, Q.d_one_zero_comp_augZero, zero_comp]
   let A := _root_.ChainComplex.augment Q.complex (Q.augZero ≫ i) hw
   have hp₀ : A.d 1 0 ≫ p = 0 := by
-    dsimp [A]
-    simp [hip]
+    refine (Category.assoc Q.augZero i p).trans ?_
+    rw [hip, comp_zero]
     rfl
   @_root_.ChainComplex.toProjectiveResolution C _ _ M A p hp₀
     (fun
       | 0 => by rw [_root_.ChainComplex.augment_X_zero]; exact ‹Projective F›
       | k + 1 => by rw [_root_.ChainComplex.augment_X_succ]; exact Q.projective k)
-    hS.epi_g
-    (by
-      let α : ShortComplex.mk (A.d 1 0) p hp₀ ⟶ ShortComplex.mk i p hip :=
-        { τ₁ := Q.augZero, τ₂ := 𝟙 F, τ₃ := 𝟙 M
-          comm₁₂ := by dsimp [A]; simp }
-      have : Epi α.τ₁ := Q.epi_augZero
-      have : IsIso α.τ₂ := inferInstanceAs (IsIso (𝟙 F))
-      have : Mono α.τ₃ := inferInstanceAs (Mono (𝟙 M))
-      exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono α).2 hS.exact)
-    (fun
-      | 0 => by
-        rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp)]
-        let α : ShortComplex.mk (Q.complex.d 1 0) Q.augZero Q.d_one_zero_comp_augZero ⟶
-            A.sc' 2 1 0 :=
-          { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := i
-            comm₁₂ := by dsimp [A]; simp
-            comm₂₃ := by dsimp [A]; simp }
-        have : Epi α.τ₁ := inferInstanceAs (Epi (𝟙 (Q.complex.X 1)))
-        have : IsIso α.τ₂ := inferInstanceAs (IsIso (𝟙 (Q.complex.X 0)))
-        have : Mono α.τ₃ := hS.mono_f
-        exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono α).1 Q.exact_d_one_zero_augZero
-      | k + 1 => by
-        rw [HomologicalComplex.exactAt_iff' _ (k + 3) (k + 2) (k + 1) (by simp) (by simp)]
-        let e : A.sc' (k + 3) (k + 2) (k + 1) ≅
-            ShortComplex.mk (Q.complex.d (k + 2) (k + 1)) (Q.complex.d (k + 1) k)
-              (Q.complex.d_comp_d _ _ _) :=
-          ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-            (by dsimp [A]; simp)
-            (by dsimp [A]; simp)
-        exact (ShortComplex.exact_iff_of_iso e).2 (Q.exact_succ k))
+    hS.epi_g (cons_exact_zero Q hS hp₀) (cons_exactAt Q hS)
 
 /-- The complex of `ProjectiveResolution.cons` augments `Q.complex` with `Q.augZero ≫ i`. -/
 @[simp]

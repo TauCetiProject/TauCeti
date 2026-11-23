@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.GorensteinProjective.MaximalCohenMacaulay
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.CategoryTheory.Exact.Stable.Functor.NatTrans
@@ -23,7 +23,7 @@ triangulated equivalence `HMF(S, w) ≌ stable(MCM-R)`
 (`quotientMaximalCohenMacaulayStableCokernelEquivalence_isTriangulated`).
 
 This combines `TauCeti.MatrixFactorization.Cokernel.Equivalence` with Buchweitz's hypersurface
-comparison `TauCeti.Algebra.Homology.GorensteinProjective.MaximalCohenMacaulay`.
+comparison `TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Buchweitz`.
 
 ## References
 
@@ -243,6 +243,180 @@ theorem stableToHomotopyInverseCompMaximalCohenMacaulayStableFunctorIso_commShif
     (splitExact_isFrobenius S w) (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw)
   exact Functor.CommShift.ofIso_compatibility _ ℤ
 
+private theorem eqToIso_stableToHomotopy_comp_mcm_commShift (hw : w ≠ 0) :
+    letI := (splitExact_isFrobenius S w).stableHasShift
+    letI := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw).stableHasShift
+    letI := stableToHomotopyCommShift S w
+    letI : (stableToHomotopy S w).asEquivalence.functor.CommShift ℤ := stableToHomotopyCommShift S w
+    letI := (stableToHomotopy S w).asEquivalence.commShiftInverse ℤ
+    letI := (stableToHomotopy S w).asEquivalence.commShift_of_functor ℤ
+    letI := (stableConflationExact_quotientMaximalCohenMacaulayCokernel hw).stableFunctorCommShift
+      (splitExact_isFrobenius S w) (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw)
+    letI := quotientMaximalCohenMacaulayStableCokernelCommShift hw
+    NatTrans.CommShift
+      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)).hom ℤ := by
+  let := (splitExact_isFrobenius S w).stableHasShift
+  let := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw).stableHasShift
+  let e := (stableToHomotopy S w).asEquivalence
+  let : (stableToHomotopy S w).CommShift ℤ := stableToHomotopyCommShift S w
+  let : e.functor.CommShift ℤ := stableToHomotopyCommShift S w
+  let := e.commShiftInverse ℤ; let := e.commShift_of_functor ℤ
+  let := (stableConflationExact_quotientMaximalCohenMacaulayCokernel hw).stableFunctorCommShift
+    (splitExact_isFrobenius S w) (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw)
+  let := quotientMaximalCohenMacaulayStableCokernelCommShift hw
+  have : NatTrans.CommShift
+      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm).hom
+      ℤ :=
+    TauCeti.natTrans_commShift_of_inverseCompIso e
+      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm)
+      (stableToHomotopyInverseCompMaximalCohenMacaulayStableFunctorIso_commShift hw)
+  exact inferInstanceAs (NatTrans.CommShift
+    (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm).inv ℤ)
+
+omit [IsLocalRing (S ⧸ Ideal.span {w})] in
+private theorem eqToIso_stableToHomotopy_comp_gp_commShift (hw : w ≠ 0) :
+    letI := (splitExact_isFrobenius S w).stableHasShift
+    letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+      (A := S ⧸ Ideal.span {w})).stableHasShift
+    letI := stableToHomotopyCommShift S w
+    letI : (stableToHomotopy S w).asEquivalence.functor.CommShift ℤ := stableToHomotopyCommShift S w
+    letI := (stableToHomotopy S w).asEquivalence.commShiftInverse ℤ
+    letI := (stableToHomotopy S w).asEquivalence.commShift_of_functor ℤ
+    letI := (stableConflationExact_quotientGorensteinProjectiveCokernel
+      (have := TauCeti.IsRegularLocalRing.isDomain (R := S);
+        mem_nonZeroDivisors_of_ne_zero hw)).stableFunctorCommShift
+      (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
+    letI := quotientGorensteinProjectiveStableCokernelCommShift
+      (have := TauCeti.IsRegularLocalRing.isDomain (R := S); mem_nonZeroDivisors_of_ne_zero hw)
+    NatTrans.CommShift
+      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
+        (have := TauCeti.IsRegularLocalRing.isDomain (R := S);
+          mem_nonZeroDivisors_of_ne_zero hw))).hom ℤ := by
+  have := TauCeti.IsRegularLocalRing.isDomain (R := S)
+  let := (splitExact_isFrobenius S w).stableHasShift
+  let := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
+    (A := S ⧸ Ideal.span {w})).stableHasShift
+  let e := (stableToHomotopy S w).asEquivalence
+  let : (stableToHomotopy S w).CommShift ℤ := stableToHomotopyCommShift S w
+  let : e.functor.CommShift ℤ := stableToHomotopyCommShift S w
+  let := e.commShiftInverse ℤ; let := e.commShift_of_functor ℤ
+  let := (stableConflationExact_quotientGorensteinProjectiveCokernel
+    (mem_nonZeroDivisors_of_ne_zero hw)).stableFunctorCommShift
+    (splitExact_isFrobenius S w) GorensteinProjectiveModuleCat.exactStructure_isFrobenius
+  let := quotientGorensteinProjectiveStableCokernelCommShift (mem_nonZeroDivisors_of_ne_zero hw)
+  have : NatTrans.CommShift
+      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
+        (mem_nonZeroDivisors_of_ne_zero hw)).symm).hom ℤ :=
+    TauCeti.natTrans_commShift_of_inverseCompIso e
+      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
+        (mem_nonZeroDivisors_of_ne_zero hw)).symm)
+      (by
+        rw [← congrArg Iso.hom
+          (stableToHomotopyInverseCompStableFunctorIso_def (mem_nonZeroDivisors_of_ne_zero hw))]
+        exact stableToHomotopyInverseCompStableFunctorIso_commShift
+          (mem_nonZeroDivisors_of_ne_zero hw))
+  exact inferInstanceAs (NatTrans.CommShift
+    (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
+      (mem_nonZeroDivisors_of_ne_zero hw)).symm).inv ℤ)
+
+private theorem stableNatTrans_mcmCompGP_app (hw : w ≠ 0) (X : MatrixFactorization S w) :
+    have := TauCeti.IsRegularLocalRing.isDomain (R := S)
+    let hE := splitExact_isFrobenius S w
+    let h₁ := stableConflationExact_quotientMaximalCohenMacaulayCokernel hw
+    let h₂ :=
+      MaximalCohenMacaulayModuleCat.stableConflationExact_gorensteinProjectiveEquivalence_functor hw
+    let h₃ := stableConflationExact_quotientGorensteinProjectiveCokernel
+      (mem_nonZeroDivisors_of_ne_zero hw)
+    (StableConflationExact.stableNatTrans (h₁.comp h₂) h₃ hE
+        (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom).app
+        ((splitExact S w).projectiveStableFunctor.obj X) =
+      eqToHom ((h₁.comp h₂).stableFunctor_obj_projectiveStableFunctor_obj hE X) ≫
+        (GorensteinProjectiveModuleCat.exactStructure
+          (S ⧸ Ideal.span {w})).projectiveStableFunctor.map
+          ((quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom.app X) ≫
+        eqToHom (h₃.stableFunctor_obj_projectiveStableFunctor_obj hE X).symm := by
+  have := TauCeti.IsRegularLocalRing.isDomain (R := S)
+  let hE := splitExact_isFrobenius S w
+  let h₁ := stableConflationExact_quotientMaximalCohenMacaulayCokernel hw
+  let h₂ :=
+    MaximalCohenMacaulayModuleCat.stableConflationExact_gorensteinProjectiveEquivalence_functor hw
+  let h₃ := stableConflationExact_quotientGorensteinProjectiveCokernel
+    (mem_nonZeroDivisors_of_ne_zero hw)
+  have hnatTrans :=
+    StableConflationExact.stableNatTrans_app_projectiveStableFunctor_obj
+      (h₁.comp h₂) h₃ hE
+      (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom X
+  apply (cancel_epi (eqToHom
+    ((h₁.comp h₂).stableFunctor_obj_projectiveStableFunctor_obj hE X).symm)).1
+  apply (cancel_mono (eqToHom
+    (h₃.stableFunctor_obj_projectiveStableFunctor_obj hE X))).1
+  simpa only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+    Category.id_comp, Category.comp_id] using hnatTrans
+
+private theorem whiskerLeft_quotientMaximalCohenMacaulayStableCokernelCompGP_eq (hw : w ≠ 0) :
+    have := TauCeti.IsRegularLocalRing.isDomain (R := S)
+    let hE := splitExact_isFrobenius S w
+    let h₁ := stableConflationExact_quotientMaximalCohenMacaulayCokernel hw
+    let h₂ :=
+      MaximalCohenMacaulayModuleCat.stableConflationExact_gorensteinProjectiveEquivalence_functor hw
+    let h₃ := stableConflationExact_quotientGorensteinProjectiveCokernel
+      (mem_nonZeroDivisors_of_ne_zero hw)
+    let F₂ := (MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence hw).functor
+    Functor.whiskerLeft (stableToHomotopy S w)
+        (quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso hw).hom =
+      (Functor.associator _ _ _).inv ≫
+      Functor.whiskerRight
+        (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)).hom F₂ ≫
+      Functor.whiskerLeft (h₁.stableFunctor hE)
+        (eqToIso (MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence_functor
+          hw).symm).inv ≫
+      (eqToIso (h₁.stableFunctor_comp h₂ hE
+        (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw))).inv ≫
+      StableConflationExact.stableNatTrans (h₁.comp h₂) h₃ hE
+        (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom ≫
+      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
+        (mem_nonZeroDivisors_of_ne_zero hw))).inv := by
+  have := TauCeti.IsRegularLocalRing.isDomain (R := S)
+  let F₁ := quotientMaximalCohenMacaulayStableCokernel hw
+  let F₂ := (MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence hw).functor
+  let F₃ := quotientGorensteinProjectiveStableCokernel (mem_nonZeroDivisors_of_ne_zero hw)
+  let α := (quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso hw).hom
+  apply CategoryTheory.Quotient.natTrans_ext
+  ext X
+  have hcomp := Functor.congr_obj (projectiveStableFunctor_comp_stableToHomotopy S w) X
+  have hnat :
+      F₂.map (F₁.map (eqToHom hcomp)) ≫
+          α.app ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) =
+        α.app ((stableToHomotopy S w).obj ((splitExact S w).projectiveStableFunctor.obj X)) ≫
+          F₃.map (eqToHom hcomp) :=
+    α.naturality (eqToHom hcomp)
+  have hnat' :
+      α.app ((stableToHomotopy S w).obj ((splitExact S w).projectiveStableFunctor.obj X)) =
+        F₂.map (F₁.map (eqToHom hcomp)) ≫
+          α.app ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) ≫
+          F₃.map (eqToHom hcomp.symm) := by
+    rw [← Category.assoc, hnat, Category.assoc, ← CategoryTheory.Functor.map_comp, eqToHom_trans,
+      eqToHom_refl, CategoryTheory.Functor.map_id, Category.comp_id]
+  have h12 :
+      ((stableToHomotopy S w).associator F₁ F₂).inv.app
+          ((splitExact S w).projectiveStableFunctor.obj X) ≫
+        (Functor.whiskerRight
+          (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)).hom
+          F₂).app ((splitExact S w).projectiveStableFunctor.obj X) =
+        eqToHom (congrArg F₂.obj (Functor.congr_obj
+          (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)
+          ((splitExact S w).projectiveStableFunctor.obj X))) := by
+    simp only [Functor.associator_inv_app, Functor.whiskerRight_app, eqToIso.hom, eqToHom_app,
+      eqToHom_map, Category.id_comp]
+  dsimp only [Functor.whiskerLeft_app, NatTrans.comp_app]
+  rw [hnat', reassoc_of% h12, stableNatTrans_mcmCompGP_app hw X]
+  simp only [α, quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso,
+    CategoryTheory.Quotient.natIsoLift_hom, CategoryTheory.Quotient.natTransLift_app,
+    Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom,
+    NatTrans.comp_app, Functor.associator_inv_app, Functor.associator_hom_app,
+    Functor.whiskerRight_app, Functor.whiskerLeft_app, eqToIso.hom, eqToIso.inv, eqToHom_app,
+    eqToHom_map, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, Category.id_comp]
+
 /-- `quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso` commutes with
 integral shifts. -/
 theorem quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso_commShift
@@ -278,114 +452,17 @@ theorem quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStable
   let := quotientMaximalCohenMacaulayStableCokernelCommShift hw
   let := MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalenceFunctorCommShift hw
   let := quotientGorensteinProjectiveStableCokernelCommShift (mem_nonZeroDivisors_of_ne_zero hw)
-  have : NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm).hom
-      ℤ :=
-    TauCeti.natTrans_commShift_of_inverseCompIso e
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm)
-      (stableToHomotopyInverseCompMaximalCohenMacaulayStableFunctorIso_commShift hw)
-  have : NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)).hom ℤ :=
-    inferInstanceAs (NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw).symm).inv ℤ)
-  have : NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (mem_nonZeroDivisors_of_ne_zero hw)).symm).hom ℤ :=
-    TauCeti.natTrans_commShift_of_inverseCompIso e
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (mem_nonZeroDivisors_of_ne_zero hw)).symm)
-      (by
-        rw [← congrArg Iso.hom
-          (stableToHomotopyInverseCompStableFunctorIso_eq (mem_nonZeroDivisors_of_ne_zero hw))]
-        exact stableToHomotopyInverseCompStableFunctorIso_commShift
-          (mem_nonZeroDivisors_of_ne_zero hw))
-  have : NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (mem_nonZeroDivisors_of_ne_zero hw))).hom ℤ :=
-    inferInstanceAs (NatTrans.CommShift
-      (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-        (mem_nonZeroDivisors_of_ne_zero hw)).symm).inv ℤ)
+  have := eqToIso_stableToHomotopy_comp_mcm_commShift hw
+  have := eqToIso_stableToHomotopy_comp_gp_commShift hw
   have := MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence_functor_commShift hw
   have := StableConflationExact.eqToIso_stableFunctor_comp_commShift h₁ h₂ hE hE' hE''
   have := StableConflationExact.stableNatTrans_commShift (h₁.comp h₂) h₃ hE hE''
     (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom
-  let F₁ := quotientMaximalCohenMacaulayStableCokernel hw
-  let F₂ := (MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence hw).functor
-  let F₃ := quotientGorensteinProjectiveStableCokernel (mem_nonZeroDivisors_of_ne_zero hw)
-  let α := (quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso hw).hom
-  let αL : stableToHomotopy S w ⋙ (F₁ ⋙ F₂) ⟶ stableToHomotopy S w ⋙ F₃ :=
-    (Functor.associator _ _ _).inv ≫
-    Functor.whiskerRight
-      (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)).hom F₂ ≫
-    Functor.whiskerLeft (h₁.stableFunctor hE)
-      (eqToIso (MaximalCohenMacaulayModuleCat.gorensteinProjectiveStableEquivalence_functor
-        hw).symm).inv ≫
-    (eqToIso (h₁.stableFunctor_comp h₂ hE hE')).inv ≫
-    StableConflationExact.stableNatTrans (h₁.comp h₂) h₃ hE
-      (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom ≫
-    (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel
-      (mem_nonZeroDivisors_of_ne_zero hw))).inv
-  have hwhisk : Functor.whiskerLeft e.functor α = αL := by
-    apply CategoryTheory.Quotient.natTrans_ext
-    ext X
-    have hcomp :=
-      Functor.congr_obj (projectiveStableFunctor_comp_stableToHomotopy S w) X
-    dsimp only [Functor.comp_obj] at hcomp
-    have hnat := α.naturality (eqToHom hcomp)
-    dsimp only [Functor.comp_map] at hnat
-    have hnat' :
-        α.app (e.functor.obj ((splitExact S w).projectiveStableFunctor.obj X)) =
-          F₂.map (F₁.map (eqToHom hcomp)) ≫
-            α.app ((nullHomotopic (S := S) (w := w)).quotientFunctor.obj X) ≫
-            F₃.map (eqToHom hcomp.symm) := by
-      rw [← Category.assoc]
-      dsimp only [e, F₁, F₂, F₃]
-      rw [hnat, Category.assoc, ← CategoryTheory.Functor.map_comp, eqToHom_trans, eqToHom_refl,
-        CategoryTheory.Functor.map_id, Category.comp_id]
-      rfl
-    have h12 :
-        ((stableToHomotopy S w).associator F₁ F₂).inv.app
-            ((Quotient.functor (splitExact S w).projectiveStableIdeal.rel).obj X) ≫
-          (Functor.whiskerRight
-            (eqToIso (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)).hom
-            F₂).app ((Quotient.functor (splitExact S w).projectiveStableIdeal.rel).obj X) =
-          eqToHom (congrArg F₂.obj (Functor.congr_obj
-            (stableToHomotopy_comp_quotientMaximalCohenMacaulayStableCokernel hw)
-            ((Quotient.functor (splitExact S w).projectiveStableIdeal.rel).obj X))) := by
-      dsimp only [F₁]
-      simp only [Functor.associator_inv_app, Functor.whiskerRight_app, eqToIso.hom, eqToHom_app,
-        eqToHom_map, Category.id_comp]
-    dsimp only [Functor.whiskerLeft_app, αL, NatTrans.comp_app]
-    rw [hnat', reassoc_of% h12]
-    have hnatTrans :=
-      StableConflationExact.stableNatTrans_app_projectiveStableFunctor_obj
-        (h₁.comp h₂) h₃ hE
-        (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom X
-    have hnatTrans' :
-        (StableConflationExact.stableNatTrans (h₁.comp h₂) h₃ hE
-            (quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom).app
-            ((splitExact S w).projectiveStableFunctor.obj X) =
-          eqToHom ((h₁.comp h₂).stableFunctor_obj_projectiveStableFunctor_obj hE X) ≫
-            (GorensteinProjectiveModuleCat.exactStructure
-              (S ⧸ Ideal.span {w})).projectiveStableFunctor.map
-              ((quotientMaximalCohenMacaulayCokernelCompGorensteinProjectiveIso hw).hom.app X) ≫
-            eqToHom (h₃.stableFunctor_obj_projectiveStableFunctor_obj hE X).symm := by
-      apply (cancel_epi (eqToHom
-        ((h₁.comp h₂).stableFunctor_obj_projectiveStableFunctor_obj hE X).symm)).1
-      apply (cancel_mono (eqToHom
-        (h₃.stableFunctor_obj_projectiveStableFunctor_obj hE X))).1
-      simpa only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
-        Category.id_comp, Category.comp_id] using hnatTrans
-    rw [hnatTrans']
-    dsimp only [F₁, F₂, F₃]
-    simp only [α, quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso,
-      CategoryTheory.Quotient.natIsoLift_hom, CategoryTheory.Quotient.natTransLift_app,
-      Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom,
-      NatTrans.comp_app, Functor.associator_inv_app, Functor.associator_hom_app,
-      Functor.whiskerRight_app, Functor.whiskerLeft_app,
-      eqToIso.hom, eqToIso.inv, eqToHom_app, eqToHom_map,
-      Category.assoc, eqToHom_trans_assoc, eqToHom_trans, Category.id_comp]
-  exact TauCeti.natTrans_commShift_of_whiskerLeft e (by rw [hwhisk]; infer_instance)
+  have hcomm : NatTrans.CommShift (Functor.whiskerLeft (stableToHomotopy S w)
+      (quotientMaximalCohenMacaulayStableCokernelCompGorensteinProjectiveStableIso hw).hom) ℤ := by
+    rw [whiskerLeft_quotientMaximalCohenMacaulayStableCokernelCompGP_eq hw]
+    infer_instance
+  exact TauCeti.natTrans_commShift_of_whiskerLeft e hcomm
 
 /-- **The maximal Cohen–Macaulay stable cokernel functor is a triangle functor.** -/
 theorem quotientMaximalCohenMacaulayStableCokernel_isTriangulated (hw : w ≠ 0) :
@@ -439,16 +516,24 @@ theorem quotientMaximalCohenMacaulayStableCokernelEquivalence_functor (hw : w �
     (quotientMaximalCohenMacaulayStableCokernelEquivalence hw).functor =
       quotientMaximalCohenMacaulayStableCokernel hw := (rfl)
 
+/-- Shift compatibility for the forward functor of
+`quotientMaximalCohenMacaulayStableCokernelEquivalence`. -/
+@[instance_reducible]
+def quotientMaximalCohenMacaulayStableCokernelEquivalenceFunctorCommShift (hw : w ≠ 0) :
+    letI := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw).stableHasShift
+    (quotientMaximalCohenMacaulayStableCokernelEquivalence hw).functor.CommShift ℤ :=
+  letI := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw).stableHasShift
+  letI := quotientMaximalCohenMacaulayStableCokernelCommShift hw
+  Functor.CommShift.ofIso
+    (eqToIso (quotientMaximalCohenMacaulayStableCokernelEquivalence_functor hw).symm) ℤ
+
 /-- **Eisenbud's local hypersurface equivalence is triangulated.** -/
 theorem quotientMaximalCohenMacaulayStableCokernelEquivalence_isTriangulated (hw : w ≠ 0) :
     letI := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw).stableHasShift
     letI := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius
       hw).stableShiftFunctor_additive
     letI := (MaximalCohenMacaulayModuleCat.exactStructure_isFrobenius hw).stablePretriangulated
-    letI := quotientMaximalCohenMacaulayStableCokernelCommShift hw
-    letI : (quotientMaximalCohenMacaulayStableCokernelEquivalence hw).functor.CommShift ℤ :=
-      Functor.CommShift.ofIso
-        (eqToIso (quotientMaximalCohenMacaulayStableCokernelEquivalence_functor hw).symm) ℤ
+    letI := quotientMaximalCohenMacaulayStableCokernelEquivalenceFunctorCommShift hw
     letI := (quotientMaximalCohenMacaulayStableCokernelEquivalence hw).commShiftInverse ℤ
     letI := (quotientMaximalCohenMacaulayStableCokernelEquivalence hw).commShift_of_functor ℤ
     (quotientMaximalCohenMacaulayStableCokernelEquivalence hw).IsTriangulated := by
@@ -457,7 +542,8 @@ theorem quotientMaximalCohenMacaulayStableCokernelEquivalence_isTriangulated (hw
   let := hE'.stablePretriangulated; let := quotientMaximalCohenMacaulayStableCokernelCommShift hw
   let eqv := quotientMaximalCohenMacaulayStableCokernelEquivalence hw
   let e := eqToIso (quotientMaximalCohenMacaulayStableCokernelEquivalence_functor hw).symm
-  let : eqv.functor.CommShift ℤ := Functor.CommShift.ofIso e ℤ
+  let : eqv.functor.CommShift ℤ :=
+    quotientMaximalCohenMacaulayStableCokernelEquivalenceFunctorCommShift hw
   let := eqv.commShiftInverse ℤ; let := eqv.commShift_of_functor ℤ
   have := Functor.CommShift.ofIso_compatibility e ℤ
   have := quotientMaximalCohenMacaulayStableCokernel_isTriangulated hw

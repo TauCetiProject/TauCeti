@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Algebra.Regular.SMul
 public import Mathlib.RingTheory.Finiteness.Basic
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Semilinear maps, finite generation and projectivity under restriction of scalars
@@ -68,6 +70,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
 * `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
   of any shape that exist in `AddCommGrpCat`, with independent ring and module universes.
+* `ModuleCat.not_projective_restrictScalars_quotient_span_singleton`: a nonzero `R ⧸ (w)`-module
+  is not `R`-projective when `w` is `R`-regular.
 -/
 
 public section
@@ -348,5 +352,30 @@ noncomputable def restrictScalarsOpOpIso :
   e.toModuleIso
 
 end OpOp
+
+section Quotient
+
+variable {R : Type u₁} [CommRing R] {w : R}
+
+/-- A nonzero `R ⧸ (w)`-module cannot be projective after restricting scalars along
+`R →+* R ⧸ (w)` when `w` is `R`-regular, since `w` annihilates the module while regular elements
+act injectively on flat (in particular projective) `R`-modules. -/
+theorem not_projective_restrictScalars_quotient_span_singleton
+    [Small.{v} R] (hw : IsSMulRegular R w) (M : ModuleCat.{v} (R ⧸ Ideal.span {w})) [Nontrivial M] :
+    ¬ Projective ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) := by
+  intro hP
+  let M' := (restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M
+  have : Module.Projective R M' := (IsProjective.iff_projective M').2 hP
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  let m' : M' := m
+  have hw_smul : w • m' = w • (0 : M') := by
+    have h0 : w • m' = 0 :=
+      (restrictScalars.smul_def (Ideal.Quotient.mk (Ideal.span {w})) w m).trans
+        (by rw [Ideal.Quotient.mk_singleton_self]; exact zero_smul (R ⧸ Ideal.span {w}) m)
+    rw [h0, smul_zero]
+  exact hm (Module.Flat.isSMulRegular_of_nonZeroDivisors (M := M')
+    (mem_nonZeroDivisors_iff_left.2 fun _ hx ↦ hw (by simpa [smul_eq_mul] using hx)) hw_smul)
+
+end Quotient
 
 end ModuleCat

@@ -57,8 +57,10 @@ theorem quotientPeriodicComplex_obj_isMinimal_iff
   have hjac : (Ring.jacobson S).map q = Ring.jacobson (S ⧸ Ideal.span {w}) := by
     rw [Ring.jacobson_quotient_of_le hw_jac]
     ext x
-    exact (Ideal.mem_map_iff_of_surjective q Ideal.Quotient.mk_surjective).trans
-      (by simp only [Submodule.mem_map, RingHom.toSemilinearMap_apply]; rfl)
+    rw [Ideal.mem_map_iff_of_surjective q Ideal.Quotient.mk_surjective, Submodule.mem_map]
+    -- `Ideal` and `Submodule` share the same membership predicate, and `q.toSemilinearMap` acts
+    -- by `q`.
+    rfl
   have hrange {P Q : ModuleCat.{u} S} (g : P ⟶ Q) :
       LinearMap.range ((ModuleCat.extendScalars q).map g).hom ≤
           Ring.jacobson (S ⧸ Ideal.span {w}) • ⊤ ↔
@@ -158,7 +160,7 @@ private theorem nonempty_retract_self_of_not_range_d₁_le
   let X' := (baseChangeFunctor q).obj X
   obtain ⟨_, ⟨y, rfl⟩, hy⟩ := Set.not_subset.1 hnot
   have : Module.Projective S X.obj.X₀ := X.property.1
-  obtain ⟨α, hαy⟩ := TauCeti.IsLocalRing.exists_linearMap_eq_one_of_not_mem_maximalIdeal_smul hy
+  obtain ⟨α, hαy⟩ := TauCeti.IsLocalRing.exists_linearMap_eq_one_of_notMem_maximalIdeal_smul hy
   let R_mod := ModuleCat.of (S ⧸ Ideal.span {w}) (S ⧸ Ideal.span {w})
   let g_lin : X.obj.X₀.obj →ₗ[S] (ModuleCat.restrictScalars q).obj R_mod :=
     { toFun := fun x ↦ q (α x)

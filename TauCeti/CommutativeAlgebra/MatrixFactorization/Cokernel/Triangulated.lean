@@ -156,7 +156,7 @@ def stableToHomotopyInverseCompStableFunctorIso (hw : w ∈ nonZeroDivisors S) :
     (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel hw).symm)
 
 /-- Explicit formula for `stableToHomotopyInverseCompStableFunctorIso`. -/
-theorem stableToHomotopyInverseCompStableFunctorIso_eq (hw : w ∈ nonZeroDivisors S) :
+theorem stableToHomotopyInverseCompStableFunctorIso_def (hw : w ∈ nonZeroDivisors S) :
     stableToHomotopyInverseCompStableFunctorIso hw =
       Iso.inverseCompIso
         (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel hw).symm) := by

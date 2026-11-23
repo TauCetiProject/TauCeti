@@ -116,6 +116,13 @@ end ModuleCat
 
 namespace CategoryTheory.ProjectiveResolution
 
+private theorem range_eqToHom_comp_le {R : Type u} [CommRing R] {I : Ideal R}
+    {X Y Z W : ModuleCat.{v} R} (hX : X = Y) (hW : Z = W) (f : Y ⟶ Z)
+    (hf : LinearMap.range f.hom ≤ I • ⊤) :
+    LinearMap.range (eqToHom hX ≫ f ≫ eqToHom hW).hom ≤ I • ⊤ := by
+  subst hX hW
+  simp [hf]
+
 /-- Prepending a minimal finite-free presentation `0 → K --i--> F --p--> M → 0` to a minimal
 finite-free projective resolution `Q` of `K` yields a minimal finite-free projective resolution `P`
 of `M` whose truncation is isomorphic to `Q`. -/
@@ -149,35 +156,14 @@ theorem exists_minimal_cons {R : Type u} [CommRing R]
     rw [ChainComplex.isMinimal_iff_range_d_succ_le] at hQ_min
     rintro (_ | k)
     · rw [show (Q.cons hS).complex.d 1 0 =
-          ((eqToHom (Q.cons_complex_X_succ hS 0) ≫ Q.augZero) ≫ i) ≫
-            eqToHom (Q.cons_complex_X_zero hS).symm by simp,
-        ModuleCat.hom_comp, LinearMap.range_comp]
-      calc
-        Submodule.map (eqToHom (Q.cons_complex_X_zero hS).symm).hom
-            (LinearMap.range ((eqToHom (Q.cons_complex_X_succ hS 0) ≫ Q.augZero) ≫ i).hom)
-          ≤ Submodule.map (eqToHom (Q.cons_complex_X_zero hS).symm).hom
-              (Ring.jacobson R • (⊤ : Submodule R F)) :=
-            Submodule.map_mono <| by
-              rw [ModuleCat.hom_comp]
-              exact (LinearMap.range_comp_le_range _ i.hom).trans hi_min
-        _ ≤ Ring.jacobson R • ⊤ := by
-            rw [Submodule.map_smul'']
-            exact Submodule.smul_mono le_rfl le_top
+          eqToHom (Q.cons_complex_X_succ hS 0) ≫ (Q.augZero ≫ i) ≫
+            eqToHom (Q.cons_complex_X_zero hS).symm by simp]
+      exact range_eqToHom_comp_le _ _ _ (by
+        rw [ModuleCat.hom_comp]
+        exact (LinearMap.range_comp_le_range _ i.hom).trans hi_min)
     · rw [show (Q.cons hS).complex.d (k + 2) (k + 1) =
-          (eqToHom (Q.cons_complex_X_succ hS (k + 1)) ≫ Q.complex.d (k + 1) k) ≫
-            eqToHom (Q.cons_complex_X_succ hS k).symm by simp,
-        ModuleCat.hom_comp, LinearMap.range_comp]
-      calc
-        Submodule.map (eqToHom (Q.cons_complex_X_succ hS k).symm).hom
-            (LinearMap.range
-              (eqToHom (Q.cons_complex_X_succ hS (k + 1)) ≫ Q.complex.d (k + 1) k).hom)
-          ≤ Submodule.map (eqToHom (Q.cons_complex_X_succ hS k).symm).hom
-              (Ring.jacobson R • (⊤ : Submodule R (Q.complex.X k))) :=
-            Submodule.map_mono <| by
-              rw [ModuleCat.hom_comp]
-              exact (LinearMap.range_comp_le_range _ (Q.complex.d (k + 1) k).hom).trans (hQ_min k)
-        _ ≤ Ring.jacobson R • ⊤ := by
-            rw [Submodule.map_smul'']
-            exact Submodule.smul_mono le_rfl le_top
+          eqToHom (Q.cons_complex_X_succ hS (k + 1)) ≫ Q.complex.d (k + 1) k ≫
+            eqToHom (Q.cons_complex_X_succ hS k).symm by simp]
+      exact range_eqToHom_comp_le _ _ _ (hQ_min k)
 
 end CategoryTheory.ProjectiveResolution

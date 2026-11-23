@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CohenMacaulay.Hypersurface
+public import TauCeti.RingTheory.CohenMacaulay.Maximal.AuslanderBuchsbaum
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
@@ -17,8 +17,8 @@ bound and the Auslander–Buchsbaum formula `pd_S M + depth_R M = dim S = dim R 
 finitely generated `R`-module `M` satisfies `pd_S M ≤ 1 ↔ ringKrullDim R ≤ depth M`
 (`TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth`). The two
 directions hold over any Cohen–Macaulay local ring, given finite projective dimension over `S`
-for the converse (`TauCeti.RingTheory.CohenMacaulay.Hypersurface`); regularity supplies that
-finiteness.
+for the converse (`TauCeti.RingTheory.CohenMacaulay.Maximal.AuslanderBuchsbaum`); regularity
+supplies that finiteness.
 
 ## References
 
