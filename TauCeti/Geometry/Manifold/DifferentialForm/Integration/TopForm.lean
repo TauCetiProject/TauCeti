@@ -33,7 +33,7 @@ the localization, and their common refinement proves independence of the chosen 
 noncomputable section
 
 open MeasureTheory Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -438,6 +438,13 @@ public theorem IntegrableTopForm.isCompact {φ : RoughForm I M ℝ k}
   let : BorelSpace E := ⟨rfl⟩
   exact ((integrableTopForm_iff φ).mp hi).1
 
+/-- An integrable top form of degree `k` forces the model space to have dimension `k`. -/
+public theorem IntegrableTopForm.nonempty_basis {φ : RoughForm I M ℝ k}
+    (hi : IntegrableTopForm φ) : Nonempty (Module.Basis (Fin k) ℝ E) := by
+  let : MeasurableSpace E := borel E
+  let : BorelSpace E := ⟨rfl⟩
+  exact ((integrableTopForm_iff φ).mp hi).2.1
+
 /-- Multiplication by a nonzero scalar preserves top-form integrability. -/
 public theorem integrableTopForm_smul_iff (c : ℝ) (φ : RoughForm I M ℝ k) (hc : c ≠ 0) :
     IntegrableTopForm (c • φ) ↔ IntegrableTopForm φ := by
@@ -491,9 +498,7 @@ public theorem IntegrableTopForm.smul {φ : RoughForm I M ℝ k}
   classical
   by_cases hc : c = 0
   · subst c
-    let : MeasurableSpace E := borel E
-    let : BorelSpace E := ⟨rfl⟩
-    obtain ⟨b⟩ := ((integrableTopForm_iff φ).mp hφ).2.1
+    obtain ⟨b⟩ := hφ.nonempty_basis
     simpa only [zero_smul] using IntegrableTopForm.zero (I := I) (M := M) b
   · exact (integrableTopForm_smul_iff c φ hc).mpr hφ
 
@@ -507,14 +512,15 @@ public theorem IntegrableTopForm.fun_smul {φ : RoughForm I M ℝ k} (hφ : Inte
   -- `C` of `|g|` there.
   obtain ⟨C₀, hC₀⟩ := hφ.isCompact.exists_bound_of_continuousOn hg.continuousOn
   set C := max C₀ 0
-  set g' : M → ℝ := fun x ↦ max (-C) (min C (g x))
-  have hg'C (x : M) : |g' x| ≤ C :=
-    abs_le.2 ⟨le_max_left _ _, max_le (neg_le_self (le_max_right _ _)) (min_le_left _ _)⟩
+  have hC : -C ≤ C := neg_le_self (le_max_right _ _)
+  set g' : M → ℝ := fun x ↦ projIcc (-C) C hC (g x)
+  have hg'C (x : M) : |g' x| ≤ C := abs_le.2 (projIcc (-C) C hC (g x)).property
   have hgg' : (fun x ↦ g x • φ x) = fun x ↦ g' x • φ x := by
     funext x
     by_cases hx : x ∈ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ
-    · have hgx := abs_le.1 ((Real.norm_eq_abs _ ▸ hC₀ x hx).trans (le_max_left C₀ 0))
-      rw [show g' x = g x from (congrArg _ (min_eq_right hgx.2)).trans (max_eq_right hgx.1)]
+    · have hg'x : g' x = g x := congrArg Subtype.val (projIcc_of_mem hC
+        (abs_le.1 ((Real.norm_eq_abs _ ▸ hC₀ x hx).trans (le_max_left C₀ 0))))
+      rw [hg'x]
     · have h0 : φ x = 0 := image_eq_zero_of_notMem_tsupport hx
       rw [h0, smul_zero, smul_zero]
   rw [hgg']
@@ -535,12 +541,40 @@ public theorem IntegrableTopForm.fun_smul {φ : RoughForm I M ℝ k} (hφ : Inte
         mul_zero]
   rw [heq]
   refine (hφ.2.2 b α).bdd_mul (c := C) ((aestronglyMeasurable_indicator_iff
-    (measurableSet_extChartAt_target α)).2 (((continuous_const.max (continuous_const.min
-      hg)).comp_continuousOn (continuousOn_extChartAt_symm α)).aestronglyMeasurable
-        (measurableSet_extChartAt_target α))) (Filter.Eventually.of_forall fun y ↦ ?_)
+    (measurableSet_extChartAt_target α)).2 (((continuous_subtypeVal.comp
+      (continuous_projIcc.comp hg)).comp_continuousOn
+        (continuousOn_extChartAt_symm α)).aestronglyMeasurable (measurableSet_extChartAt_target α)))
+    (Filter.Eventually.of_forall fun y ↦ ?_)
   by_cases hy : y ∈ t
   · simpa [indicator_of_mem hy] using hg'C _
   · simpa [indicator_of_notMem hy] using (abs_nonneg _).trans (hg'C α)
+
+/-- **A partition of unity localizes an integrable top form.** If every point `x` of the support of
+an integrable top form `φ` has a neighbourhood `V x`, then `φ` is a finite sum of integrable top
+forms, each supported in `V x` for some point `x` of the support. -/
+public theorem IntegrableTopForm.exists_eq_sum_tsupport_subset [FiniteDimensional ℝ E]
+    [T2Space M] {φ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
+    (V : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ → Set M)
+    (hV : ∀ x : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ, V x ∈ 𝓝 (x : M)) :
+    ∃ (t : Finset (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ)) (φ' : t → RoughForm I M ℝ k),
+      (∀ i, IntegrableTopForm (φ' i)) ∧
+      (∀ i, _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (φ' i) ⊆ V i) ∧ φ = ∑ i, φ' i := by
+  classical
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  obtain ⟨t, ht⟩ := hφ.isCompact.elim_finite_subcover
+    (fun x : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ↦ interior (V x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.mpr ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.mpr (hV ⟨x, hx⟩)⟩
+  obtain ⟨ρ, hρ, -⟩ := PartitionOfUnity.exists_isSubordinate_of_locallyFinite_t2space
+    hφ.isCompact (fun x : t ↦ interior (V x)) (fun _ ↦ isOpen_interior)
+    (locallyFinite_of_finite _) fun x hx ↦ by
+      obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (ht hx)
+      exact mem_iUnion.mpr ⟨⟨i, hi⟩, hxi⟩
+  refine ⟨t, fun i x ↦ ρ i x • φ x, fun i ↦ hφ.fun_smul (ρ i).continuous,
+    fun i ↦ (tsupport_smul_subset_left _ _).trans ((hρ i).trans interior_subset), ?_⟩
+  exact (φ.eq_sum_fun_smul (fun i : t ↦ ρ i) fun x hx ↦ by
+    rw [← finsum_eq_sum_of_fintype]; exact ρ.sum_eq_one hx).trans (Finset.sum_fn _ _).symm
 
 /-- Negation preserves top-form integrability. -/
 public theorem IntegrableTopForm.neg {φ : RoughForm I M ℝ k}
