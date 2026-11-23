@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.Analysis.Complex.Conformal.LocalIndex
-public import TauCeti.Analysis.Complex.RiemannSurface.FundamentalClass
+public import TauCeti.Analysis.Complex.RiemannSurface.Degree
+public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -16,7 +18,7 @@ A map `f : X → Y` between Riemann surfaces has two kinds of multiplicities. Th
 count preimages with their orders of vanishing: the local multiplicity
 `TauCeti.RiemannSurface.localMultiplicity f x` is the order of vanishing of `f - f x` read in
 holomorphic charts, and the fibre sum `TauCeti.RiemannSurface.fiberMultiplicitySum f y` adds them
-over the fibre of `y`, which for a map from a compact surface onto a connected one is the degree
+over the fibre of `y`, which for a map from a compact surface to a connected one is the degree
 `TauCeti.RiemannSurface.degree f`. The topological ones come from local homology, for the
 canonical homological orientations `TauCeti.complexHomologicalOrientation` of the complex
 structures: the local index `TauCeti.HomologicalOrientation.localIndex` of `f` at an isolated
@@ -30,19 +32,15 @@ computes the image `f_*[X]` of the fundamental class. This file shows that they 
   point (`TauCeti.RiemannSurface.localIndex_complexHomologicalOrientation_pos_iff`).
 * Over a point with finite fibre, near each point of which `f` is holomorphic, the local degree of
   `f` is the fibre sum (`TauCeti.RiemannSurface.localDegree_complexHomologicalOrientation`).
-* A proper map onto a connected Riemann surface has homological degree equal to the fibre sum
+* A proper map to a connected Riemann surface has homological degree equal to the fibre sum
   over any point `y` near whose preimages it is holomorphic and not constant
   (`TauCeti.RiemannSurface.degree_complexHomologicalOrientation`). That fibre is compact, hence
   finite (`TauCeti.RiemannSurface.finite_preimage_singleton_of_isCompact`). The source need not be
   compact, as for a proper projection of an open curve onto a disc.
-* For compact `X` this recovers the comparison of the homological degree with the degree of a
-  finite holomorphic map
-  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.degree_complexHomologicalOrientation`), and hence
-  `f_*[X] = deg f • [Y]`. Since the degree is a natural number,
-  `f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`
-  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`);
-  a finite holomorphic map of degree one is a biholomorphism
-  (`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`).
+* For compact `X`, the comparison of the homological degree with the degree of a finite
+  holomorphic map
+  (`TauCeti.RiemannSurface.FiniteHolomorphicMap.degree_complexHomologicalOrientation`, in
+  `TauCeti.Analysis.Complex.RiemannSurface.FundamentalClass`) is derived from this.
 
 The local statement reduces to the plane. In the charts at `x` and `f x`, restricted to open
 subsets on which `f` maps the first into the second, the canonical orientations are pulled back
@@ -68,8 +66,6 @@ fibre.
   finite fibre is the fibre sum of local multiplicities.
 * `TauCeti.RiemannSurface.degree_complexHomologicalOrientation`: the degree of a proper map is
   the fibre sum over a point near whose preimages it is holomorphic and not constant.
-* `TauCeti.RiemannSurface.FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`:
-  `f_*` is bijective on `H₂(-; ℤ)` exactly when `deg f = 1`.
 
 ## References
 
@@ -81,7 +77,7 @@ fibre.
 
 public section
 
-open Filter Function IsManifold Set Topology TopologicalSpace
+open Filter IsManifold Set Topology TopologicalSpace
 
 open scoped Manifold
 
@@ -152,7 +148,7 @@ theorem localDegree_complexHomologicalOrientation (f : C(X, Y)) {y : Y}
     localIndex_complexHomologicalOrientation f (hf x (hy.mem_toFinset.1 hx))
 
 /-- **The degree of a proper holomorphic map is its fibre sum.** Let `f : X → Y` be a proper map
-onto a connected Riemann surface which, near each point of the fibre over `y`, is holomorphic and
+to a connected Riemann surface which, near each point of the fibre over `y`, is holomorphic and
 not constant. Then the degree of `f`, for the canonical homological orientations, is the number of
 preimages of `y` counted with local multiplicities. -/
 theorem degree_complexHomologicalOrientation [PreconnectedSpace Y] {f : C(X, Y)}
@@ -164,17 +160,5 @@ theorem degree_complexHomologicalOrientation [PreconnectedSpace Y] {f : C(X, Y)}
   rw [← HomologicalOrientation.localDegree_eq_degree _ _ _ Complex.finrank_real_complex hp y]
   exact localDegree_complexHomologicalOrientation f
     (finite_preimage_singleton_of_isCompact (hp.isCompact_preimage isCompact_singleton) hf hne) hf
-
-/-- **A finite holomorphic map is an isomorphism on top homology exactly in degree one.** For a
-finite holomorphic map `f : X → Y` between compact connected Riemann surfaces,
-`f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`. -/
-theorem FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one [CompactSpace X]
-    [CompactSpace Y] [ConnectedSpace X] [ConnectedSpace Y] (f : FiniteHolomorphicMap X Y) :
-    Bijective (ContinuousMap.singularHomologyMap ℤ 2 ⟨f, f.holomorphic.continuous⟩) ↔
-      degree f = 1 := by
-  rw [HomologicalOrientation.bijective_singularHomologyMap_iff _ (complexHomologicalOrientation Y)
-    Complex.finrank_real_complex Complex.finrank_real_complex,
-    FiniteHolomorphicMap.degree_complexHomologicalOrientation]
-  omega
 
 end TauCeti.RiemannSurface
