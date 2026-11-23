@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Different
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 public import TauCeti.Topology.FiberBundle.Countable
+public import TauCeti.Topology.FiberBundle.LocallyCompact
 public import TauCeti.Topology.FiberBundle.Separation
 public import Mathlib.Geometry.Manifold.Metrizable
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence

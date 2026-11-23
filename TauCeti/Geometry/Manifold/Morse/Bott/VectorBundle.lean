@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Topology.FiberBundle.Countable
+import TauCeti.Topology.FiberBundle.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.LocallyFinite.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
