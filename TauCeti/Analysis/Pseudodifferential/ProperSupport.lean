@@ -16,22 +16,25 @@ the diagonal (`TauCeti.Symbol.offDiagonalKernel`), but it is not supported near 
 the support of `Op(a) u` is in general not contained in any bounded neighbourhood of the support
 of `u`. Cutting the kernel off near the diagonal repairs this, at the cost of a smoothing error.
 
-Fix a smooth function `χ` on `ℝⁿ` equal to `1` near `0`, typically with compact support. The
-*removed kernel* `TauCeti.Symbol.smoothingKernel a χ` is
+Fix a smooth function `χ` on `ℝⁿ` equal to `1` near `0`. The *removed kernel*
+`TauCeti.Symbol.smoothingKernel a χ` is
 
 `R(x, y) = (1 - χ(x - y)) K_a(x, y)`.
 
-It vanishes near the diagonal, so it is a smooth function on all of `ℝⁿ × ℝⁿ`, and it decays
-faster than any power of `‖x - y‖`, locally uniformly in `x`. Its operator
-`TauCeti.Symbol.smoothingRemainder a χ u (x) = ∫ R(x, y) u(y) dy` is therefore smoothing: it sends
+It vanishes near the diagonal, so it is a smooth function on all of `ℝⁿ × ℝⁿ`. If moreover `χ`
+has compact support, so that `1 - χ` is bounded, it also decays faster than any power of
+`‖x - y‖`, locally uniformly in `x`; without a bound on `χ` this decay can fail. Its operator
+`TauCeti.Symbol.smoothingRemainder a χ u (x) = ∫ R(x, y) u(y) dy` is smoothing: it sends
 compactly supported Schwartz functions to smooth functions. The *localized quantization*
 
 `TauCeti.Symbol.properQuantizeValue a χ u = Op(a) u - ∫ R(·, y) u(y) dy`
 
-has, off the diagonal, the kernel `χ(x - y) K_a(x, y)`, which vanishes unless `x - y` lies in
-the support of `χ`. Hence it is properly supported: it sends a compactly supported Schwartz
-function `u` to a smooth function supported in `supp u + supp χ`, and it differs from `Op(a)` by
-the smoothing operator above.
+has, for a compactly supported Schwartz function `u` and `x` outside the support of `u`, the
+kernel `χ(x - y) K_a(x, y)`, which vanishes unless `x - y` lies in the support of `χ`. Hence it
+sends a compactly supported Schwartz function `u` to a smooth function supported in
+`supp u + supp χ`, and it differs from `Op(a)` by the smoothing operator above. This support
+bound holds for every `χ` equal to `1` near `0`; it is compact, so that the localized
+quantization is properly supported, when `χ` also has compact support.
 
 ## Main definitions
 
@@ -44,16 +47,19 @@ the smoothing operator above.
 
 * `TauCeti.Symbol.contDiff_smoothingKernel`: the removed kernel is smooth on `ℝⁿ × ℝⁿ`, and as
   regular as `χ` in general.
-* `TauCeti.Symbol.exists_norm_smoothingKernel_le`: it decays like `(1 + ‖x - y‖)^(-2N)` for every
-  `N` with `m - 2N < -n`, uniformly for `x` in a compact set.
+* `TauCeti.Symbol.exists_norm_smoothingKernel_le`: if `χ` is continuous, compactly supported and
+  equal to `1` near `0`, it decays like `(1 + ‖x - y‖)^(-2N)` for every `N` with `m - 2N < -n`,
+  uniformly for `x` in a compact set.
 * `TauCeti.Symbol.contDiff_smoothingRemainder`: the removed operator sends compactly supported
   Schwartz functions to smooth functions.
 * `TauCeti.Symbol.properQuantizeValue_eq_integral_offDiagonalKernel`: **near-diagonal kernel**,
+  for a continuous `χ` equal to `1` near `0` and a compactly supported Schwartz function `u`,
   away from the support of `u` the localized quantization is `∫ χ(x - y) K_a(x, y) u(y) dy`.
-* `TauCeti.Symbol.support_properQuantizeValue_subset`,
-  `TauCeti.Symbol.hasCompactSupport_properQuantizeValue`: **proper support**, the localized
-  quantization of `u` is supported in `tsupport u + tsupport χ`, a compact set when `χ` has
-  compact support.
+* `TauCeti.Symbol.support_properQuantizeValue_subset`: **support bound**, for `χ` equal to `1`
+  near `0` the localized quantization of a compactly supported Schwartz function `u` is
+  supported in `tsupport u + tsupport χ`.
+* `TauCeti.Symbol.hasCompactSupport_properQuantizeValue`: **proper support**, if moreover `χ` has
+  compact support, the localized quantization of `u` has compact support.
 * `TauCeti.Symbol.contDiff_properQuantizeValue`: the localized quantization of a compactly
   supported Schwartz function is smooth.
 
@@ -83,8 +89,9 @@ variable {n : ℕ} {m : ℝ} {χ : CoordinateSpace n → ℝ}
 
 /-- The part `(1 - χ(x - y)) K_a(x, y)` of the kernel of `Op(a)` that a near-diagonal cutoff `χ`
 removes, where `K_a` is the off-diagonal kernel `TauCeti.Symbol.offDiagonalKernel`. When `χ` is
-smooth and equal to `1` near `0` it is a smooth kernel (`TauCeti.Symbol.contDiff_smoothingKernel`)
-decaying rapidly away from the diagonal (`TauCeti.Symbol.exists_norm_smoothingKernel_le`). -/
+smooth and equal to `1` near `0` it is a smooth kernel (`TauCeti.Symbol.contDiff_smoothingKernel`);
+when `χ` is moreover compactly supported it decays rapidly away from the diagonal
+(`TauCeti.Symbol.exists_norm_smoothingKernel_le`). -/
 def smoothingKernel (a : Symbol n V W m) (χ : CoordinateSpace n → ℝ) (x y : CoordinateSpace n) :
     V →L[ℂ] W :=
   (1 - χ (x - y)) • offDiagonalKernel a x y
@@ -167,7 +174,8 @@ theorem exists_norm_smoothingKernel_le (a : Symbol n V W m) (hχ : Continuous χ
         exact mul_le_mul_of_nonneg_left hq (abs_nonneg _)
     _ = (1 + B) * |C₀| * ((1 + r) / r) ^ (2 * N) / (1 + t) ^ (2 * N) := by ring
 
-/-- Against a Schwartz function, the removed kernel is integrable in the input variable. -/
+/-- For a continuous, compactly supported cutoff `χ` equal to `1` near `0`, the removed kernel
+against a Schwartz function is integrable in the input variable. -/
 theorem integrable_smoothingKernel_apply (a : Symbol n V W m) (hχ : Continuous χ)
     (hχc : HasCompactSupport χ) (hχ0 : χ =ᶠ[𝓝 0] 1) (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) : Integrable fun y ↦ smoothingKernel a χ x y (u y) := by
@@ -193,7 +201,8 @@ theorem smoothingRemainder_def (a : Symbol n V W m) (χ : CoordinateSpace n → 
     smoothingRemainder a χ u x = ∫ y, smoothingKernel a χ x y (u y) :=
   (rfl)
 
-/-- The removed operator is additive in the input. -/
+/-- For a continuous, compactly supported cutoff `χ` equal to `1` near `0`, the removed operator
+is additive in the input. -/
 theorem smoothingRemainder_add (a : Symbol n V W m) (hχ : Continuous χ)
     (hχc : HasCompactSupport χ) (hχ0 : χ =ᶠ[𝓝 0] 1) (u v : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
@@ -245,9 +254,12 @@ theorem contDiff_smoothingRemainder (a : Symbol n V W m) {k : ℕ∞} (hχ : Con
 
 /-- The quantization of `a` localized near the diagonal by the cutoff `χ`:
 `Op(a) u (x) - ∫ R(x, y) u(y) dy`, with the removed kernel
-`R(x, y) = (1 - χ(x - y)) K_a(x, y)`. Off the diagonal its kernel is `χ(x - y) K_a(x, y)`
-(`TauCeti.Symbol.properQuantizeValue_eq_integral_offDiagonalKernel`), so when `χ` has compact
-support it is properly supported (`TauCeti.Symbol.hasCompactSupport_properQuantizeValue`). -/
+`R(x, y) = (1 - χ(x - y)) K_a(x, y)`. When `χ` is continuous and equal to `1` near `0`, its value
+at `x` on a compactly supported Schwartz function `u` with `x ∉ tsupport u` is
+`∫ χ(x - y) K_a(x, y) u(y) dy`
+(`TauCeti.Symbol.properQuantizeValue_eq_integral_offDiagonalKernel`). When `χ` equals `1` near
+`0` and also has compact support, it sends compactly supported Schwartz functions to compactly
+supported functions (`TauCeti.Symbol.hasCompactSupport_properQuantizeValue`). -/
 def properQuantizeValue (a : Symbol n V W m) (χ : CoordinateSpace n → ℝ)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) : W :=
   quantizeSchwartzValue a.coefficient u x - smoothingRemainder a χ u x
@@ -266,7 +278,8 @@ theorem properQuantizeValue_add_smoothingRemainder (a : Symbol n V W m)
       quantizeSchwartzValue a.coefficient u x :=
   sub_add_cancel _ _
 
-/-- The localized quantization is additive in the input. -/
+/-- For a continuous, compactly supported cutoff `χ` equal to `1` near `0`, the localized
+quantization is additive in the input. -/
 theorem properQuantizeValue_add (a : Symbol n V W m) (hχ : Continuous χ)
     (hχc : HasCompactSupport χ) (hχ0 : χ =ᶠ[𝓝 0] 1) (u v : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
