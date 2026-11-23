@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.DerivationBundle
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -44,6 +45,8 @@ different section types, and their brackets cannot form instance diamonds.
 ## Main results
 
 * `TauCeti.LieAlgebroid.bracket_smul_right`: the Leibniz rule for sections.
+* `TauCeti.LieAlgebroid.bracket_apply_eq_of_eventuallyEq`: the bracket is local, its value at a
+  point depending only on the germs of the two sections there.
 * `TauCeti.LieAlgebroid.anchorDeriv_bracket`: `ρ([a, b]) f = ρ(a) (ρ(b) f) - ρ(b) (ρ(a) f)`.
 * `TauCeti.LieAlgebroid.anchor_bracket`: the anchor maps brackets of sections to Lie brackets of
   vector fields.
@@ -63,7 +66,7 @@ public section
 noncomputable section
 
 open Bundle Manifold VectorField
-open scoped ContDiff
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -211,6 +214,66 @@ theorem bracket_smul_right (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ�
     A.bracket a (f • b) = f • A.bracket a b + A.anchorDeriv a f • b := by
   ext x
   simp [A.bracket_smul_apply]
+
+/-- All Lie algebroid brackets are skew-symmetric: `bracket a b = -bracket b a`. -/
+theorem bracket_swap (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket a b = -A.bracket b a :=
+  eq_neg_of_add_eq_zero_left <| by simpa [A.bracket_self] using A.bracket_self (a + b)
+
+/-- The Leibniz rule in the first argument: `[f • a, b] = f • [a, b] - (ρ(b) f) • a`. -/
+@[simp] theorem bracket_smul_left (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
+    A.bracket (f • a) b = f • A.bracket a b - A.anchorDeriv b f • a := by
+  rw [A.bracket_swap (f • a) b, A.bracket_smul_right, neg_add, ← smul_neg, ← A.bracket_swap,
+    sub_eq_add_neg]
+
+/-- A Lie algebroid with zero anchor has a `C^∞⟮I, M; ℝ⟯`-linear bracket in the second argument. -/
+theorem bracket_smul_right_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
+    (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) : A.bracket a (f • b) = f • A.bracket a b := by
+  have h0 : A.anchorDeriv a f = 0 := by
+    ext x
+    simp only [anchorDeriv_apply, hA, ContMDiffSection.coe_zero, Pi.zero_apply,
+      _root_.zero_apply, map_zero, ContMDiffMap.coe_zero]
+  simp only [bracket_smul_right, h0, zero_smul, add_zero]
+
+/-- A Lie algebroid with zero anchor has a `C^∞⟮I, M; ℝ⟯`-linear bracket in the first argument. -/
+theorem bracket_smul_left_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
+    (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket (f • a) b = f • A.bracket a b := by
+  rw [A.bracket_swap (f • a) b, bracket_smul_right_of_anchor_eq_zero hA, ← smul_neg,
+    ← A.bracket_swap]
+
+section Locality
+
+variable [FiniteDimensional ℝ E] [T2Space M]
+
+/-- The bracket is local in its second argument. -/
+private theorem bracket_apply_eq_of_eventuallyEq_right (a : Cₛ^∞⟮I; F, V⟯)
+    {b b' : Cₛ^∞⟮I; F, V⟯} {x : M} (h : ∀ᶠ y in 𝓝 x, b y = b' y) :
+    A.bracket a b x = A.bracket a b' x := by
+  -- A bump function `ρ` which is one at `x` and vanishes off the set where `b = b'` annihilates
+  -- `b - b'`; the Leibniz rule for `[a, ρ • (b - b')] = 0` then reads `[a, b - b'] x = 0`.
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) h).mem_iff.1 h
+  let f : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
+  have hzero : f • (b - b') = 0 := by
+    ext y
+    rw [ContMDiffSection.smul_apply]
+    by_cases hy : ρ y = 0
+    · simp [f, hy]
+    · simp [sub_eq_zero.2 (hρ hy)]
+  have hx := congr($(A.bracket_smul_right a (b - b') f) x)
+  simp only [hzero, map_zero, map_sub, ContMDiffSection.coe_zero, Pi.zero_apply,
+    ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.smul_apply,
+    ContMDiffSection.coe_sub, Pi.sub_apply, h.self_of_nhds, sub_self, smul_zero, add_zero] at hx
+  simpa [f, sub_eq_zero] using hx.symm
+
+/-- **Locality of the bracket.** The value of `[a, b]` at `x` depends only on the germs of `a`
+and `b` at `x`. -/
+theorem bracket_apply_eq_of_eventuallyEq {a a' b b' : Cₛ^∞⟮I; F, V⟯} {x : M}
+    (ha : ∀ᶠ y in 𝓝 x, a y = a' y) (hb : ∀ᶠ y in 𝓝 x, b y = b' y) :
+    A.bracket a b x = A.bracket a' b' x := by
+  have hskew : A.bracket.IsAlt := A.bracket_self
+  rw [A.bracket_apply_eq_of_eventuallyEq_right a hb, ← hskew.neg b' a, ← hskew.neg b' a']
+  simpa using congr(-$(A.bracket_apply_eq_of_eventuallyEq_right b' ha))
+
+end Locality
 
 section Separation
 

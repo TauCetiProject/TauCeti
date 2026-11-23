@@ -30,7 +30,11 @@ gives local path connectedness of the subspace.
 * `Homeomorph.joined_iff` and `Homeomorph.zerothHomotopyCongr`: a homeomorphism preserves and
   reflects being joined by a path, so it induces a bijection of path components.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
-  `TauCeti.PathComponentBasepoints.choose` giving one.
+  `TauCeti.PathComponentBasepoints.choose` giving one. Each chosen basepoint is joined to the
+  points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
+* `Path.subtypeHomeomorphOfPathComponentSubset`: paths in a subspace containing the path component
+  of their source are the paths in the ambient space. In particular the loop space of a path
+  component, at any of its points, is the loop space of the ambient space at that point.
 -/
 
 public section
@@ -46,12 +50,12 @@ variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 homotopic in the path component. -/
 theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
     {a b : pathComponent x₀} {γ δ : Path a b}
-    (h : (γ.map continuous_subtype_val).Homotopic
-      (δ.map continuous_subtype_val)) :
+    (h : (γ.map continuous_subtypeVal).Homotopic
+      (δ.map continuous_subtypeVal)) :
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
-  have hγmem : ∀ t, (γ.map continuous_subtype_val) t ∈ pathComponent x₀ := fun t =>
-    (γ t).2
+  have hγmem : ∀ t, (γ.map continuous_subtypeVal) t ∈ pathComponent x₀ := fun t =>
+    (γ t).property
   have hmem : ∀ p : I × I, H p ∈ pathComponent x₀ := fun p =>
     Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)
@@ -141,4 +145,55 @@ noncomputable def PathComponentBasepoints.choose (X : Type*) [TopologicalSpace X
 instance (X : Type*) [TopologicalSpace X] : Nonempty (PathComponentBasepoints X) :=
   ⟨PathComponentBasepoints.choose X⟩
 
+/-- The chosen basepoint of the path component of `x` is joined to `x`. -/
+theorem PathComponentBasepoints.joined_point_mk (β : PathComponentBasepoints X) (x : X) :
+    Joined (β.point (ZerothHomotopy.mk x)) x :=
+  Quotient.exact (β.mk_point (ZerothHomotopy.mk x))
+
+/-- A continuous map `f` sends the chosen basepoint of the path component of `y` into the path
+component of `f y`. -/
+theorem PathComponentBasepoints.mk_apply_point_mk {Y : Type*} [TopologicalSpace Y]
+    (β : PathComponentBasepoints Y) {f : Y → X} (hf : Continuous f) (y : Y) :
+    ZerothHomotopy.mk (f (β.point (ZerothHomotopy.mk y))) = ZerothHomotopy.mk (f y) :=
+  Quotient.sound ((β.joined_point_mk y).map hf)
+
 end TauCeti
+
+namespace Path
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- **Paths in a subspace containing a path component.** If a subspace `S` contains the path
+component of `a ∈ S`, mapping along the inclusion identifies the paths in `S` from `a` to `b` with
+the paths in the ambient space with the same endpoints. The inverse corestricts a path to `S`,
+which it never leaves (`Path.mem_pathComponent`). -/
+def subtypeHomeomorphOfPathComponentSubset {S : Set X} {a b : S}
+    (hS : pathComponent (a : X) ⊆ S) : Path a b ≃ₜ Path (a : X) (b : X) where
+  toFun γ := γ.map continuous_subtypeVal
+  invFun γ := γ.codRestrict fun t ↦ hS (γ.mem_pathComponent t)
+  left_inv γ := by
+    ext t
+    simp
+  right_inv γ := map_codRestrict γ _
+  continuous_toFun := continuous_induced_rng.2 <|
+    (ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtypeVal⟩).comp
+      continuous_induced_dom
+  continuous_invFun := continuous_induced_rng.2 <|
+    (ContinuousMap.isInducing_postcomp ⟨Subtype.val, continuous_subtypeVal⟩
+      IsInducing.subtypeVal).continuous_iff.2 <| continuous_induced_dom.congr fun γ ↦ by
+        ext t
+        simp
+
+@[simp]
+theorem subtypeHomeomorphOfPathComponentSubset_apply {S : Set X} {a b : S}
+    (hS : pathComponent (a : X) ⊆ S) (γ : Path a b) (t : I) :
+    subtypeHomeomorphOfPathComponentSubset hS γ t = γ t :=
+  (rfl)
+
+@[simp]
+theorem coe_subtypeHomeomorphOfPathComponentSubset_symm_apply {S : Set X} {a b : S}
+    (hS : pathComponent (a : X) ⊆ S) (γ : Path (a : X) (b : X)) (t : I) :
+    ((subtypeHomeomorphOfPathComponentSubset hS).symm γ t : X) = γ t :=
+  codRestrict_coe γ _ t
+
+end Path

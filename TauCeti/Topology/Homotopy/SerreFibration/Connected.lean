@@ -29,7 +29,9 @@ of the fibre `p⁻¹(b) → E` is an `n`-connected map
 (`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). In the opposite range, where the
 base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are
 trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
-(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`).
+(`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`). In particular, over a
+simply connected base, a nonempty fibre of a Serre fibration with path-connected total space is
+path-connected (`TauCeti.TopCat.pathConnectedSpace_fiber_of_mem_serreFibrations`).
 
 ## Implementation notes
 
@@ -55,6 +57,8 @@ of `p` to a point `b` lifts to a point of the fibre over `b`
   inclusion of a fibre is `n`-connected.
 * `TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`: where the homotopy
   groups of the base vanish, the inclusion of a fibre is bijective on homotopy groups.
+* `TauCeti.TopCat.pathConnectedSpace_fiber_of_mem_serreFibrations`: over a simply connected base,
+  the nonempty fibres of a Serre fibration with path-connected total space are path-connected.
 
 ## References
 
@@ -83,8 +87,8 @@ private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
   refine ⟨fun b ↦ ?_, fun k hk x ↦ ?_, fun k hk x ↦ ?_⟩
   · -- Every fibre is nonempty, so `p` is surjective.
     obtain ⟨e⟩ := (hF b).1
-    have he : p.hom e.1 = b := Set.mem_singleton_iff.1 e.2
-    exact ⟨e.1, by rw [he]⟩
+    have he : p.hom e.val = b := Set.mem_singleton_iff.1 e.property
+    exact ⟨e.val, by rw [he]⟩
   · cases k with
     | zero =>
       -- In degree zero, homotopy classes are path components, and paths lift into the fibre.
@@ -102,7 +106,7 @@ private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
       -- In degree zero, every point of `B` is the projection of a point of its fibre.
       refine HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined _ rfl fun b ↦ ?_
       obtain ⟨e⟩ := (hF b).1
-      exact ⟨e.1, by rw [Set.mem_singleton_iff.1 e.2]⟩
+      exact ⟨e.val, by rw [Set.mem_singleton_iff.1 e.property]⟩
     | succ k =>
       -- Split off the first direction: by exactness at `π_{k+1}(B)`, a class lifts to `E` since
       -- its boundary lies in the trivial group `π_k(F)`.
@@ -170,7 +174,7 @@ variable {b : B}
 domain is the `TopCat` fibre `p.fiber b`, so it matches `p.fiberι b` and the homotopy groups of
 `p.fiber b` under `rw`, and its value at `e` reduces to `e.1`. -/
 private abbrev fiberVal (p : E ⟶ B) (b : B) : C(p.fiber b, E) :=
-  ⟨Subtype.val, continuous_subtype_val⟩
+  ⟨Subtype.val, continuous_subtypeVal⟩
 
 private theorem fiberι_hom_eq_fiberVal : (p.fiberι b).hom = fiberVal p b :=
   ContinuousMap.ext (TopCat.Hom.fiberι_apply p b)
@@ -186,7 +190,7 @@ private theorem homotopyGroupMap_fiberι_eq {N : Type*} {e : p.fiber b}
 /-- **Injectivity on path components of the fibre inclusion.** If `π_1(B, b)` is trivial, two
 points of the fibre over `b` that are joined in `E` are joined in the fibre. -/
 private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingleton (π_ 1 B b))
-    {e y : p.fiber b} (h : Joined e.1 y.1) : Joined e y := by
+    {e y : p.fiber b} (h : Joined e.val y.val) : Joined e y := by
   -- The point `y` is joined to `e` in `E`, so its class is a boundary.
   obtain ⟨c, hc⟩ := (joined_iff_mem_range_fibrationBoundary hp y).1 h
   -- Since `π_1(B, b)` is trivial, it is the boundary of the constant loop, which is constant.
@@ -196,6 +200,14 @@ private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingl
   have h1 := HomotopyGroup.mk_eq_mk_iff_joined.1 hc
   rw [GenLoop.const_apply, genLoopHomeoOfIsEmpty_symm_apply] at h1
   exact h1
+
+/-- **The fibre over a simply connected base is path-connected.** If `p : E → B` is a Serre
+fibration with path-connected total space and `π_1(B, b)` is trivial, then the fibre `p⁻¹(b)` is
+path-connected as soon as it is nonempty. -/
+theorem pathConnectedSpace_fiber_of_mem_serreFibrations (hp : serreFibrations p)
+    [PathConnectedSpace E] (hB : Subsingleton (π_ 1 B b)) [Nonempty (p.fiber b)] :
+    PathConnectedSpace (p.fiber b) :=
+  ⟨inferInstance, fun e y ↦ joined_of_joined_fiberι hp hB (PathConnectedSpace.joined e.val y.val)⟩
 
 /-- **The fibre of a Serre fibration over an `n`-connected base is `n`-connected in the total
 space.** Let `p : E → B` be a Serre fibration and `b : B` a point such that `π_k(B, b)` is trivial

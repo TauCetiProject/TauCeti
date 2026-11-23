@@ -37,6 +37,9 @@ Riemann--Hurwitz application, rather than for these covering results.
   multiplicity one at every point of the specified source set.
 * `FiniteHolomorphicMap.isCoveringMapOn_iff`: a map with compact source is a covering on
   precisely the subsets disjoint from its branch values.
+* `FiniteHolomorphicMap.branchValues_eq_empty_iff`,
+  `FiniteHolomorphicMap.isCoveringMap_iff_ramificationDegree_eq_zero`: a map with compact source
+  has no branch values, equivalently is a covering map, exactly when it is unramified.
 * `FiniteHolomorphicMap.isCoveringMap_restrictPreimage_compl`: the covering obtained by
   deleting a set containing the branch values, and its preimage.
 * `FiniteHolomorphicMap.card_fiber_eq_degree_iff`: a fibre has as many points as the degree
@@ -106,10 +109,10 @@ theorem isLocalHomeomorphOn_iff (f : FiniteHolomorphicMap X Y) (s : Set X) :
       (localMultiplicity_eq_one_iff (.of_forall fun z ↦ f.holomorphic z)).1 (h x hx)
     refine ⟨interior U, isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hU),
       .of_continuous_injective_isOpenMap
-        (f.holomorphic.continuous.comp continuous_subtype_val)
+        (f.holomorphic.continuous.comp continuous_subtypeVal)
         ((hinj.mono interior_subset).injective) ?_⟩
     exact (isOpenMap_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst).comp
-      isOpen_interior.isOpenMap_subtype_val
+      isOpen_interior.isOpenMap_subtypeVal
 
 variable [CompactSpace X]
 
@@ -127,6 +130,16 @@ theorem isOpen_branchValues_compl (f : FiniteHolomorphicMap X Y) :
     IsOpen f.branchValuesᶜ :=
   f.isClosed_branchValues.isOpen_compl
 
+/-- A finite holomorphic map with compact source has no branch values exactly when it is
+unramified. -/
+theorem branchValues_eq_empty_iff (f : FiniteHolomorphicMap X Y) :
+    f.branchValues = ∅ ↔ ramificationDegree f = 0 := by
+  rw [ramificationDegree_eq_zero_iff, branchValues, image_eq_empty, eq_empty_iff_forall_notMem]
+  refine forall_congr' fun x ↦ ?_
+  have := localMultiplicity_pos f x
+  simp only [mem_ofPred_eq]
+  omega
+
 variable [T2Space X] [T2Space Y]
 
 /-- A finite holomorphic map with compact source is a covering over exactly those subsets of
@@ -143,6 +156,13 @@ theorem isCoveringMapOn_iff (f : FiniteHolomorphicMap X Y) (s : Set Y) :
     rw [f.isLocalHomeomorphOn_iff]
     intro x hx
     exact (f.notMem_branchValues_iff (f x)).1 (h hx) x rfl
+
+/-- A finite holomorphic map with compact source is a covering map exactly when it is
+unramified. -/
+theorem isCoveringMap_iff_ramificationDegree_eq_zero (f : FiniteHolomorphicMap X Y) :
+    IsCoveringMap f ↔ ramificationDegree f = 0 := by
+  rw [isCoveringMap_iff_isCoveringMapOn_univ, f.isCoveringMapOn_iff, univ_subset_iff,
+    compl_univ_iff, f.branchValues_eq_empty_iff]
 
 /-- Deleting a set containing every branch value, and its preimage, gives an ordinary covering
 map. -/

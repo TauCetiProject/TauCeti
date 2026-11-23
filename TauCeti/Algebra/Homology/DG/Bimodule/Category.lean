@@ -140,7 +140,7 @@ right module remains definitionally the bundled right module. -/
 def forgetToRightModuleCat :
     DGBimoduleCat.{uR, uA, uB, uM} hA hB ⥤ DGRightModuleCat.{uR, uB, uM} hB where
   obj M := M.toDGRightModuleCat
-  map f := f.1
+  map f := f.val
   map_id M := DGBimoduleHom.id_val M.isDGBimodule
   map_comp f g := DGBimoduleHom.comp_val g f
 
@@ -150,7 +150,7 @@ theorem forgetToRightModuleCat_obj (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
 
 @[simp]
 theorem forgetToRightModuleCat_map (f : M ⟶ N) :
-    (forgetToRightModuleCat (hA := hA) (hB := hB)).map f = f.1 := (rfl)
+    (forgetToRightModuleCat (hA := hA) (hB := hB)).map f = f.val := (rfl)
 
 instance : (forgetToRightModuleCat.{uR, uA, uB, uM} (hA := hA) (hB := hB)).Faithful where
   map_injective := Subtype.ext

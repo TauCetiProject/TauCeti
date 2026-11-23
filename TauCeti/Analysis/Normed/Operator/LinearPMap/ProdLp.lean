@@ -60,9 +60,9 @@ noncomputable def withLpProdMap (f : E →ₗ.[R] E') (g : F →ₗ.[R] F') :
   toFun :=
     let D := (f.domain.prod g.domain).comap (WithLp.linearEquiv p R (E × F)).toLinearMap
     let fstD : D →ₗ[R] f.domain :=
-      ((fstₗ p R E F).comp D.subtype).codRestrict f.domain fun x => x.2.1
+      ((fstₗ p R E F).comp D.subtype).codRestrict f.domain fun x => x.property.1
     let sndD : D →ₗ[R] g.domain :=
-      ((sndₗ p R E F).comp D.subtype).codRestrict g.domain fun x => x.2.2
+      ((sndₗ p R E F).comp D.subtype).codRestrict g.domain fun x => x.property.2
     (WithLp.linearEquiv p R (E' × F')).symm.toLinearMap.comp
       ((f.toFun.comp fstD).prod (g.toFun.comp sndD))
 
@@ -86,20 +86,20 @@ theorem mem_withLpProdMap_domain {x : WithLp p (E × F)} :
 @[simp]
 theorem withLpProdMap_apply_fst (x : (f.withLpProdMap p g).domain) :
     (f.withLpProdMap p g x).fst =
-      f ⟨(x : WithLp p (E × F)).fst, (mem_withLpProdMap_domain.mp x.2).1⟩ :=
+      f ⟨(x : WithLp p (E × F)).fst, (mem_withLpProdMap_domain.mp x.property).1⟩ :=
   (rfl)
 
 /-- The second coordinate of the direct sum is `g` applied to the second coordinate. -/
 @[simp]
 theorem withLpProdMap_apply_snd (x : (f.withLpProdMap p g).domain) :
     (f.withLpProdMap p g x).snd =
-      g ⟨(x : WithLp p (E × F)).snd, (mem_withLpProdMap_domain.mp x.2).2⟩ :=
+      g ⟨(x : WithLp p (E × F)).snd, (mem_withLpProdMap_domain.mp x.property).2⟩ :=
   (rfl)
 
 /-- A pair of domain vectors gives a vector in the domain of the direct sum. -/
 theorem toLp_mem_withLpProdMap_domain (x : f.domain) (y : g.domain) :
     toLp p ((x : E), (y : F)) ∈ (f.withLpProdMap p g).domain :=
-  ⟨x.2, y.2⟩
+  ⟨x.property, y.property⟩
 
 /-- On the domain, the direct sum acts by `(f ⊕ g) (x, y) = (f x, g y)`. -/
 theorem withLpProdMap_apply_toLp (x : f.domain) (y : g.domain) :
@@ -120,7 +120,7 @@ theorem mem_graph_withLpProdMap_iff {z : WithLp p (E × F) × WithLp p (E' × F'
     exact ⟨⟨_, rfl, (withLpProdMap_apply_fst x).symm⟩,
       ⟨_, rfl, (withLpProdMap_apply_snd x).symm⟩⟩
   · rintro ⟨⟨x, hx, hfx⟩, ⟨y, hy, hgy⟩⟩
-    refine ⟨⟨u, mem_withLpProdMap_domain.mpr ⟨hx ▸ x.2, hy ▸ y.2⟩⟩, rfl, ?_⟩
+    refine ⟨⟨u, mem_withLpProdMap_domain.mpr ⟨hx ▸ x.property, hy ▸ y.property⟩⟩, rfl, ?_⟩
     refine ofLp_injective p (Prod.ext ?_ ?_) <;> simp only [ofLp_fst, ofLp_snd]
     · rw [withLpProdMap_apply_fst, ← hfx]
       exact congrArg f (Subtype.ext hx.symm)
