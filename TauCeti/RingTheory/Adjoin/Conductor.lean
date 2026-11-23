@@ -58,7 +58,7 @@ theorem not_conductor_le_of_le_map [Module.Finite A C] {x : C} {Q : Ideal C} (hQ
     refine mem_conductor_iff.mpr fun b ↦ ?_
     obtain ⟨d, hd⟩ := hr (Submodule.smul_mem_pointwise_smul b r ⊤ trivial)
     have hrb : (r : C) * b = d := by simpa [Algebra.smul_def] using hd.symm
-    exact hrb ▸ d.2
+    exact hrb ▸ d.property
   have hrQ : (r : C) - 1 ∈ Q := by simpa using hr1
   exact fun hcond ↦ hQ (Q.eq_top_iff_one.mpr (by simpa using Q.sub_mem (hcond hrc) hrQ))
 
