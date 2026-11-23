@@ -18,8 +18,8 @@ gives local path connectedness of the subspace.
 
 ## Main declarations
 
-* `TauCeti.homotopic_pathComponent_of_map_subtypeVal_homotopic`: path homotopies reflect along
-  the inclusion of a subspace containing the path component of their source.
+* `TauCeti.homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset`: path homotopies
+  reflect along the inclusion of a subspace containing the path component of their source.
 * Instances making `↥(pathComponent x₀)` path connected and locally path connected.
 * `TauCeti.pathComponentSelf`: a point viewed in its own path component.
 * `Joined.eq_of_totallyDisconnectedSpace` and
@@ -46,7 +46,7 @@ variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 
 /-- Two paths in a subspace `S` containing the path component of their source which are
 homotopic in the ambient space are already homotopic in `S`. -/
-theorem homotopic_pathComponent_of_map_subtypeVal_homotopic {S : Set X} {a b : S}
+theorem homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset {S : Set X} {a b : S}
     (hS : pathComponent (a : X) ⊆ S) {γ δ : Path a b}
     (h : (γ.map continuous_subtypeVal).Homotopic
       (δ.map continuous_subtypeVal)) :

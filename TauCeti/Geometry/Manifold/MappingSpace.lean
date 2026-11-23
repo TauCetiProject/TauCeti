@@ -31,7 +31,9 @@ are local.
 
 For `K` the circle this applies to the free loop space `𝓛M = C(S¹, M)`. Its subspace `𝓛₀M` of
 contractible loops is a union of path components, hence open, and it inherits both properties
-(`TauCeti.locallyPathConnectedSpace_contractibleLoops_of_isManifold`,
+(`TauCeti.locallyPathConnectedSpace_contractibleLoops`,
+`TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`, for any space in place of `M`;
+`TauCeti.locallyPathConnectedSpace_contractibleLoops_of_isManifold`,
 `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops_of_isManifold`). These are the
 hypotheses under which the connected covering spaces of each path component of `𝓛₀M`, such as
 the covering by capped loops of Hamiltonian Floer theory, are classified by subgroups of its
@@ -42,6 +44,8 @@ fundamental group.
 * `ContinuousMap.locallyPathConnectedSpace_of_isManifold`: `C(K, M)` is locally path-connected.
 * `ContinuousMap.semilocallySimplyConnectedSpace_of_isManifold`: `C(K, M)` is semilocally simply
   connected.
+* `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`: `𝓛₀Q` is semilocally simply
+  connected when `C(S¹, Q)` is, for any space `Q`.
 * `TauCeti.locallyPathConnectedSpace_contractibleLoops_of_isManifold`,
   `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops_of_isManifold`: the same for the
   contractible free loops `𝓛₀M`.
@@ -81,13 +85,6 @@ private theorem exists_opens_locallyPathConnectedSpace [Nonempty K] (f : C(K, M)
     locallyPathConnectedSpace_of_leftInverse K (map_continuous e) hO hiO hr.continuousOn hre,
     semilocallySimplyConnectedSpace_of_leftInverse K (map_continuous e) hO hiO hr.continuousOn hre⟩
 
-omit [T2Space M] [CompactSpace K] in
-/-- A map with values in an open subset `W` lies in the image of `C(K, W)`. -/
-private theorem mem_range_postcomp_opens {W : Opens M} {f : C(K, M)} (hf : ∀ k, f k ∈ W) :
-    f ∈ range (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ :
-      C(K, W) → C(K, M)) :=
-  ⟨⟨fun k ↦ ⟨f k, hf k⟩, f.continuous.subtype_mk hf⟩, ext fun _ ↦ rfl⟩
-
 include I in
 variable (K M) in
 /-- **Mapping spaces into a manifold are locally path-connected.** For a compact space `K` and a
@@ -100,7 +97,8 @@ theorem locallyPathConnectedSpace_of_isManifold : LocallyPathConnectedSpace C(K,
   obtain ⟨W, hf, hW, -⟩ := exists_opens_locallyPathConnectedSpace I f
   have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
     W.isOpen.isOpenEmbedding_subtypeVal
-  exact ⟨_, he.isOpen_range.mem_nhds (mem_range_postcomp_opens hf),
+  exact ⟨_, he.isOpen_range.mem_nhds (by
+    rw [range_postcomp _ IsInducing.subtypeVal]; exact fun k ↦ ⟨⟨f k, hf k⟩, rfl⟩),
     he.isEmbedding.toHomeomorph.locallyPathConnectedSpace⟩
 
 include I in
@@ -118,13 +116,22 @@ theorem semilocallySimplyConnectedSpace_of_isManifold :
   have he := isOpenEmbedding_postcomp (X := K) ⟨_, continuous_subtypeVal⟩
     W.isOpen.isOpenEmbedding_subtypeVal
   let h := he.isEmbedding.toHomeomorph
-  exact ⟨_, he.isOpen_range.mem_nhds (mem_range_postcomp_opens hf),
+  exact ⟨_, he.isOpen_range.mem_nhds (by
+    rw [range_postcomp _ IsInducing.subtypeVal]; exact fun k ↦ ⟨⟨f k, hf k⟩, rfl⟩),
     (LeftInverse.semilocallySimplyConnectedSpace h.apply_symm_apply h.continuous
       h.symm.continuous)⟩
 
 end ContinuousMap
 
 namespace TauCeti
+
+/-- The contractible free loops `𝓛₀Q` are semilocally simply connected when the free loop space
+is: a null-homotopy of a loop of contractible free loops stays in `𝓛₀Q`, a union of path
+components. -/
+instance semilocallySimplyConnectedSpace_contractibleLoops {Q : Type*} [TopologicalSpace Q]
+    [SemilocallySimplyConnectedSpace C(Circle, Q)] :
+    SemilocallySimplyConnectedSpace (contractibleLoops Q) :=
+  .subtype_of_pathComponent_subset fun _ ↦ pathComponent_subset_contractibleLoops
 
 include I in
 variable (M) in

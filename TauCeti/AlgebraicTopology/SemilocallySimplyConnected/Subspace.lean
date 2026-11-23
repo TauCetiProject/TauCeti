@@ -28,7 +28,8 @@ passes to unions of path components. The corresponding facts for local path-conn
 * **Unions of path components.** A subspace containing the path component of each of its points
   is semilocally simply connected when the ambient space is
   (`TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset`): a null-homotopy of
-  a loop in it never leaves it (`TauCeti.homotopic_pathComponent_of_map_subtypeVal_homotopic`).
+  a loop in it never leaves it
+  (`TauCeti.homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset`).
   This generalizes the instance for a single path component.
 
 Together these reduce the two hypotheses for a mapping space into a manifold to the case of a
@@ -111,7 +112,7 @@ theorem TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset
       (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
     refine semilocallySimplyConnectedAt_def.2
       ⟨(↑) ⁻¹' U, continuous_subtypeVal.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
-    apply homotopic_pathComponent_of_map_subtypeVal_homotopic (hS a a.property)
+    apply homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset (hS a a.property)
     rw [Path.map_refl]
     exact hloops _ (by
       rintro _ ⟨t, rfl⟩

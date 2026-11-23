@@ -12,7 +12,6 @@ public import TauCeti.Topology.CompactOpen
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import Mathlib.Topology.Homotopy.Basic
-public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Subspace
 import TauCeti.Topology.Homotopy.Homotopic.With
 import TauCeti.Topology.PathComponent
 
@@ -32,10 +31,8 @@ their own basepoint (`mem_contractibleLoops_iff_joined_const`), so `𝓛₀Q` is
 path components of the constant loops (`pathComponent_const_subset_contractibleLoops`), and so is
 open when the free loop space is locally path-connected (`TauCeti.isOpen_contractibleLoops`). It
 contains the path component of each of its points
-(`TauCeti.pathComponent_subset_contractibleLoops`), so it inherits local path-connectedness and
-semilocal simple connectivity from the free loop space
-(`TauCeti.locallyPathConnectedSpace_contractibleLoops`,
-`TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`). For
+(`TauCeti.pathComponent_subset_contractibleLoops`), so it inherits local path-connectedness from
+the free loop space (`TauCeti.locallyPathConnectedSpace_contractibleLoops`). For
 a path-connected `Q` it is a single path component (`TauCeti.contractibleLoops_eq_pathComponent`),
 so `𝓛₀Q` is path connected (`TauCeti.isPathConnected_contractibleLoops`). The
 constant loops embed in `𝓛₀Q` (`TauCeti.isEmbedding_constContractibleLoop`), with retraction
@@ -58,9 +55,8 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 * `TauCeti.constContractibleLoop`: the constant loops as a continuous map `Q → 𝓛₀Q`, an
   embedding by `TauCeti.isEmbedding_constContractibleLoop`.
 * `TauCeti.isPathConnected_contractibleLoops`: `𝓛₀Q` is path connected when `Q` is.
-* `TauCeti.locallyPathConnectedSpace_contractibleLoops`,
-  `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`: `𝓛₀Q` is locally path-connected
-  and semilocally simply connected when `C(S¹, Q)` is.
+* `TauCeti.locallyPathConnectedSpace_contractibleLoops`: `𝓛₀Q` is locally path-connected when
+  `C(S¹, Q)` is.
 * `TauCeti.ConstLoopPath`, `TauCeti.ContractibleConstLoopPath`, `TauCeti.constLoopPathHomeomorph`,
   `TauCeti.BasedConstLoopPath`, `TauCeti.BasedContractibleConstLoopPath`.
 -/
@@ -385,14 +381,6 @@ they form an open subset of it. -/
 instance locallyPathConnectedSpace_contractibleLoops [LocallyPathConnectedSpace C(Circle, Q)] :
     LocallyPathConnectedSpace (contractibleLoops Q) :=
   (isOpen_contractibleLoops Q).locallyPathConnectedSpace
-
-/-- The contractible free loops `𝓛₀Q` are semilocally simply connected when the free loop space
-is: a null-homotopy of a loop of contractible free loops stays in `𝓛₀Q`, a union of path
-components. -/
-instance semilocallySimplyConnectedSpace_contractibleLoops
-    [SemilocallySimplyConnectedSpace C(Circle, Q)] :
-    SemilocallySimplyConnectedSpace (contractibleLoops Q) :=
-  .subtype_of_pathComponent_subset fun _ ↦ pathComponent_subset_contractibleLoops
 
 end TauCeti
 
