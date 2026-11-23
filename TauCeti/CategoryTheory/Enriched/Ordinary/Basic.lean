@@ -14,9 +14,9 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 Let `C` be an ordinary category enriched over a monoidal category `V`.
 
 * For a full subcategory `ObjectProperty.FullSubcategory P` of `C`, enriched hom objects,
-  identities, and composition agree with those of `C`
+  identities, composition, and `eHomEquiv` agree with those of `C`
   (`ObjectProperty.FullSubcategory.eHom_eq`, `ObjectProperty.FullSubcategory.eId_eq`,
-  `ObjectProperty.FullSubcategory.eComp_eq`).
+  `ObjectProperty.FullSubcategory.eComp_eq`, `ObjectProperty.FullSubcategory.eHomEquiv_eq`).
 * When `V` is Cartesian monoidal, a morphism `f : a ⟶ b` of `C` gives, for every object `X` of `V`,
   the map `X ⟶ (a ⟶[V] b)` which is constant at `f`, namely `toUnit X ≫ eHomEquiv V f`. Enriched
   composition of two such constant maps is the constant map at the composite
@@ -26,8 +26,9 @@ Let `C` be an ordinary category enriched over a monoidal category `V`.
 
 * `CategoryTheory.ObjectProperty.FullSubcategory.eHom_eq`,
   `CategoryTheory.ObjectProperty.FullSubcategory.eId_eq`,
-  `CategoryTheory.ObjectProperty.FullSubcategory.eComp_eq`: enriched hom objects, identities, and
-  composition in a full subcategory are those of the underlying objects.
+  `CategoryTheory.ObjectProperty.FullSubcategory.eComp_eq`,
+  `CategoryTheory.ObjectProperty.FullSubcategory.eHomEquiv_eq`: enriched hom objects, identities,
+  composition, and `eHomEquiv` in a full subcategory are those of the underlying objects.
 * `CategoryTheory.toUnit_eHomEquiv_tensorHom_comp_eComp`: enriched composition of the constant
   maps at `f` and `g` is the constant map at `f ≫ g`.
 -/
@@ -69,6 +70,14 @@ lemma eComp_eq (X Y Z : P.FullSubcategory) :
       (eqToHom (eHom_eq V X Y) ⊗ₘ eqToHom (eHom_eq V Y Z)) ≫
         eComp V X.obj Y.obj Z.obj ≫ eqToHom (eHom_eq V X Z).symm := by
   simp only [eqToHom_refl, id_tensorHom_id, Category.id_comp, Category.comp_id]
+  rfl
+
+/-- Enriched `homEquiv` in a full subcategory is `eHomEquiv` of the underlying morphism,
+transported along `eHom_eq`. -/
+@[reassoc]
+lemma eHomEquiv_eq {X Y : P.FullSubcategory} (f : X ⟶ Y) :
+    eHomEquiv V f = eHomEquiv V f.hom ≫ eqToHom (eHom_eq V X Y).symm := by
+  simp
   rfl
 
 end

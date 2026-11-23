@@ -865,6 +865,16 @@ theorem uliftIso_inv_app_coe {m : SimplexCategoryᵒᵖ}
       (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.val :=
   (rfl)
 
+private theorem map_uliftFunctor_map_app_down_coe {Y : SSet.{u}} (f : X ⟶ Y)
+    {m : SimplexCategoryᵒᵖ}
+    (s : ((uliftFunctor.{v, u}.obj X).rightMappingSpace (ULift.up x) (ULift.up y) :
+      SSet.{max u v}).obj m) :
+    (((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val :
+      (joinVertex.op ⋙ uliftFunctor.{v, u}.obj Y).obj m).down =
+      f.app (op (joinVertex.obj m.unop)) s.val.down :=
+  (congrArg ULift.down (map_app_coe (uliftFunctor.{v, u}.map f) s)).trans
+    (uliftFunctor_map_app_down f s.val)
+
 variable (x y) in
 /-- `uliftIso.hom` is natural in the ambient simplicial set. -/
 @[reassoc]
@@ -874,33 +884,11 @@ theorem map_comp_uliftIso_hom {Y : SSet.{u}} (f : X ⟶ Y) :
       (uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f) := by
   refine SSet.hom_ext fun m ↦ ConcreteCategory.hom_ext _ _ fun s ↦ ?_
   refine ULift.ext (Subtype.ext ?_)
-  have hL :
-      ((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
-          (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom).app m s).down.val =
-        f.app (op (joinVertex.obj m.unop)) s.val.down := by
-    have hcomp :
-        (map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
-            (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom).app m s =
-          (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom.app m
-            ((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s) :=
-      (ConcreteCategory.congr_hom
-        (NatTrans.comp_app (map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f))
-          ((uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom :
-            ((uliftFunctor.{v, u}.obj Y).rightMappingSpace
-                ((uliftFunctor.{v, u}.map f).app (op ⦋0⦌) (ULift.up x))
-                ((uliftFunctor.{v, u}.map f).app (op ⦋0⦌) (ULift.up y)) : SSet.{max u v}) ⟶ _)
-          m) s).trans (types_comp_apply _ _ s)
-    exact (congrArg (fun t ↦ t.down.val) hcomp).trans <|
-      (uliftIso_hom_app_down_coe (X := Y) (x := f.app (op ⦋0⦌) x) (y := f.app (op ⦋0⦌) y)
-        ((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s)).trans <|
-      (congrArg ULift.down (map_app_coe (uliftFunctor.{v, u}.map f) s)).trans
-        (uliftFunctor_map_app_down f s.val)
-  have hR :
-      (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val =
-        f.app (op (joinVertex.obj m.unop)) s.val.down := by
-    simp only [NatTrans.comp_app, types_comp_apply, uliftFunctor_map_app_down]
-    rw [map_app_coe, uliftIso_hom_app_down_coe]
-  exact hL.trans hR.symm
+  change (((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val).down =
+    (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val
+  rw [map_uliftFunctor_map_app_down_coe]
+  simp only [NatTrans.comp_app, types_comp_apply, uliftFunctor_map_app_down]
+  rw [map_app_coe, uliftIso_hom_app_down_coe]
 
 variable (x y) in
 /-- `uliftIso.inv` is natural in the ambient simplicial set. -/
