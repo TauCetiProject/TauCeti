@@ -29,7 +29,8 @@ three quadratic statistics of `X`.
   `∑ⱼ λⱼ Zⱼ²`, where `λⱼ` are the eigenvalues of `S` and the `Zⱼ` are independent standard
   normal variables.
 
-The `HasLaw` forms transfer the three statements to random vectors on any probability space.
+The `HasLaw` forms transfer the first two statements to random vectors on any probability
+space.
 
 The central case of the first statement is adapted from the lean-CKSD project
 (<https://github.com/bjbraams/lean-CKSD>, `CKSD/LinearModels/Multivariate/SampleLaws.lean`).
@@ -64,6 +65,12 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+/-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
+Euclidean space. -/
+private theorem dotProduct_mulVec_eq_inner (A : Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
+    WithLp.ofLp x ⬝ᵥ (A *ᵥ WithLp.ofLp x) = ⟪x, A.toEuclideanLin x⟫ := by
+  simp [EuclideanSpace.inner_eq_star_dotProduct, Matrix.toLpLin_apply, dotProduct_comm]
+
 /-- **Gaussian quadratic form in the inverse covariance.** For positive-definite `S`, the
 quadratic form `xᵀ S⁻¹ x` under `N(m, S)` has the noncentral chi-squared law with `card ι`
 degrees of freedom and noncentrality `mᵀ S⁻¹ m`. -/
@@ -75,24 +82,19 @@ theorem map_quadForm_inv_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : M
         (WithLp.ofLp m ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp m)).toNNReal := by
   have hq (x : EuclideanSpace ℝ ι) :
       WithLp.ofLp x ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp x) = ‖(CFC.sqrt S)⁻¹.toEuclideanLin x + 0‖ ^ 2 := by
-    have h := hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt x
-    rw [add_zero]
-    simp only [RCLike.ofReal_real_eq_id, id_eq, EuclideanSpace.inner_eq_star_dotProduct,
-      Matrix.toLpLin_apply, star_trivial] at h ⊢
-    rw [h, dotProduct_comm]
+    rw [add_zero, dotProduct_mulVec_eq_inner]
+    exact (hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt x).symm
   have hnc : ‖(CFC.sqrt S)⁻¹.toEuclideanLin m + 0‖₊ ^ 2 =
       (WithLp.ofLp m ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp m)).toNNReal := by
     rw [hq m, ← coe_nnNorm, ← NNReal.coe_pow, Real.toNNReal_coe]
-  have hA : (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹).transpose = 1 := by
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial,
-      hS.inv_sqrt_mul_mul_conjTranspose_inv_sqrt]
   calc (multivariateGaussian m S).map (fun x ↦ WithLp.ofLp x ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp x))
       _ = ((multivariateGaussian m S).map fun x ↦ (CFC.sqrt S)⁻¹.toEuclideanLin x + 0).map
             fun y ↦ ‖y‖ ^ 2 := by
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
         exact congrArg (Measure.map · _) (funext hq)
       _ = (multivariateGaussian ((CFC.sqrt S)⁻¹.toEuclideanLin m + 0) 1).map fun y ↦ ‖y‖ ^ 2 := by
-        rw [map_affine_multivariateGaussian m hS.posSemidef (CFC.sqrt S)⁻¹ 0, hA]
+        rw [map_affine_multivariateGaussian m hS.posSemidef (CFC.sqrt S)⁻¹ 0,
+          hS.inv_sqrt_mul_mul_transpose_inv_sqrt]
       _ = noncentralChiSquaredMeasure (Fintype.card ι)
             (WithLp.ofLp m ⬝ᵥ (S⁻¹ *ᵥ WithLp.ofLp m)).toNNReal := by
         rw [map_norm_sq_multivariateGaussian_noncentral, hnc]
@@ -111,15 +113,11 @@ theorem map_quadForm_pseudoInverse_multivariateGaussian (S : Matrix ι ι ℝ)
         Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) =
       fun z ↦ ‖(LinearMap.range S.toEuclideanLin).starProjection z‖ ^ 2 := by
     funext z
-    have hdot (x : EuclideanSpace ℝ ι) :
-        WithLp.ofLp x ⬝ᵥ (S.covariancePseudoInverse *ᵥ WithLp.ofLp x) =
-          ⟪x, S.covariancePseudoInverse.toEuclideanLin x⟫ := by
-      simp [EuclideanSpace.inner_eq_star_dotProduct, Matrix.toLpLin_apply, dotProduct_comm]
     calc WithLp.ofLp (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) z) ⬝ᵥ
           (S.covariancePseudoInverse *ᵥ
             WithLp.ofLp (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) z))
         _ = ⟪z, (S.covariancePseudoInverse * S).toEuclideanLin z⟫ := by
-          rw [hdot, Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin,
+          rw [dotProduct_mulVec_eq_inner, Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin,
             Matrix.sqrt_mul_covariancePseudoInverse_mul_sqrt]
         _ = ⟪(LinearMap.range S.toEuclideanLin).starProjection z, z⟫ := by
           rw [Matrix.toEuclideanLin_covariancePseudoInverse_mul hS, ContinuousLinearMap.coe_coe,
@@ -159,12 +157,11 @@ theorem map_norm_sq_multivariateGaussian_eq_map_sum_eigenvalues_mul_sq {S : Matr
         rfl
       _ = (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
             (fun z ↦ ∑ j, hB.eigenvalues j * z j ^ 2) :=
-        congrArg (Measure.map · _) (funext fun z ↦ ?_)
-  have h := Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin S 1
-    (∑ j, z j • hB.eigenvectorBasis j)
-  rw [Matrix.mul_one, CFC.sqrt_mul_sqrt_self S hS.nonneg,
-    hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis] at h
-  simpa [real_inner_self_eq_norm_sq, Real.norm_eq_abs, sq_abs] using h
+        congrArg (Measure.map · _) (funext fun z ↦ by
+          have h := Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin S 1 (∑ j, z j • b j)
+          rw [Matrix.mul_one, CFC.sqrt_mul_sqrt_self S hS.nonneg,
+            hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis] at h
+          simpa [real_inner_self_eq_norm_sq, Real.norm_eq_abs, sq_abs] using h)
 
 end TauCeti.Probability
 

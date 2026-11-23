@@ -58,7 +58,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
 * `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
 * `Matrix.PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt` — the inverse square root whitens `S`:
-  `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`;
+  `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`, with the transpose form
+  `Matrix.PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt` over a field with trivial star such as `ℝ`;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -220,14 +221,22 @@ theorem PosDef.posDef_inv_sub_iff (hS : S.PosDef) (X : Matrix ι ι 𝕜) :
   exact Matrix.IsUnit.posDef_star_left_conjugate_iff hunit
 
 /-- For positive-definite `S`, the inverse square root whitens `S`:
-`(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`. Over the reals the conjugate transpose is the
-transpose (`Matrix.conjTranspose_eq_transpose_of_trivial`). -/
+`(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`. Over the reals simp rewrites the conjugate
+transpose to the transpose first; `Matrix.PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt` is the form
+that applies there. -/
 @[simp]
 theorem PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt (hS : S.PosDef) :
     (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1 := by
   rw [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.inv.eq, hS.posSemidef.inv_sqrt,
     Matrix.nonsing_inv_eq_ringInverse, ← CFC.conjSqrt_apply,
     CFC.conjSqrt_ringInverse_self S hS.isStrictlyPositive]
+
+/-- Over a field with trivial star, such as `ℝ`, the inverse square root whitens a
+positive-definite `S` with the transpose: `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᵀ = 1`. -/
+@[simp]
+theorem PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt [TrivialStar 𝕜] (hS : S.PosDef) :
+    (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᵀ = 1 := by
+  rw [← Matrix.conjTranspose_eq_transpose_of_trivial, hS.inv_sqrt_mul_mul_conjTranspose_inv_sqrt]
 
 /-- The scale form of the pencil, for a scaled perturbation: `S⁻¹ - c • Θ` is the congruence of
 `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`. -/
