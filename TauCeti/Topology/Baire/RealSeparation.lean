@@ -11,7 +11,6 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Topology.GDelta.MetrizableSpace
-import Mathlib.Topology.Separation.GDelta
 
 /-!
 # A Baire category separation criterion on the real line

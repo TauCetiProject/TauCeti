@@ -137,3 +137,25 @@ theorem ae_tendsto_average_closedBall (μ : Measure β) [IsLocallyFiniteMeasure 
     using hx.comp (Besicovitch.tendsto_filterAt μ x)
 
 end Besicovitch
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [SecondCountableTopology X]
+  [BorelSpace X] [HasBesicovitchCovering X]
+
+/-- **A density criterion for null sets.** A set filling at most a fraction `c < 1` of every small
+closed ball around every point is null, by Lebesgue's density theorem. No measurability is
+assumed. -/
+theorem measure_eq_zero_of_forall_measure_inter_closedBall_le (ν : Measure X)
+    [IsLocallyFiniteMeasure ν] (Q : Set X) {c : ℝ≥0∞} (hc : c < 1)
+    (h : ∀ z, ∀ᶠ r in 𝓝[>] 0, ν (Q ∩ closedBall z r) ≤ c * ν (closedBall z r)) : ν Q = 0 := by
+  by_contra hQ
+  have : (ae (ν.restrict Q)).NeBot := ae_neBot.2 (by rwa [Ne, Measure.restrict_eq_zero])
+  obtain ⟨z, hz⟩ := (Besicovitch.ae_tendsto_measure_inter_div ν Q).exists
+  have h1 : ∀ᶠ r in 𝓝[>] (0 : ℝ), ν (Q ∩ closedBall z r) / ν (closedBall z r) ≤ c :=
+    (h z).mono fun r hr => ENNReal.div_le_of_le_mul hr
+  exact absurd (le_of_tendsto hz h1) (not_le.2 hc)
+
+end TauCeti

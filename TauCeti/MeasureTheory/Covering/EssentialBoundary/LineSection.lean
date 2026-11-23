@@ -8,10 +8,9 @@ module
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
-import Mathlib.Topology.MetricSpace.Polish
-import TauCeti.MeasureTheory.Covering.Besicovitch.NullSet
-import TauCeti.MeasureTheory.Measure.InterBall.IsClosed
-import TauCeti.Topology.Instances.Real.BaireSeparation
+import TauCeti.MeasureTheory.Covering.Besicovitch
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Topology.Baire.RealSeparation
 
 /-!
 # Essential boundaries of line sections
