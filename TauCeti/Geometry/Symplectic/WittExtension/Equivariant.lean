@@ -73,43 +73,6 @@ variable {G W E : Type*} [Group G] [AddCommGroup W] [Module ℝ W] [AddCommGroup
   {B : LinearMap.BilinForm ℝ W} {σ : Representation ℝ G W} {ρ : Representation ℝ G E}
   {ω : SymplecticForm E} {ι : W →ₗ[ℝ] E}
 
-/-- For an injective `ι` and a section `s` of `(ι W)^ω → V`, the map `(w, v) ↦ ι w + s v` is
-injective: if `ι w + s v = 0`, then `s v` lies in `(ι W)^ω ∩ ι W`, so `v = 0`, and then `w = 0`. -/
-private theorem injective_coprod [FiniteDimensional ℝ E] (hι : Function.Injective ι)
-    (s : ω.ReducedSpace (ω.orthogonal (LinearMap.range ι)) →ₗ[ℝ] ω.orthogonal (LinearMap.range ι))
-    (hs : ∀ v, Submodule.Quotient.mk (s v) = v) :
-    Function.Injective (ι.coprod ((ω.orthogonal (LinearMap.range ι)).subtype ∘ₗ s)) := by
-  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-  rintro ⟨w, v⟩ h
-  simp only [LinearMap.mem_ker, LinearMap.coprod_apply, LinearMap.comp_apply,
-    Submodule.subtype_apply] at h
-  obtain rfl : v = 0 := by
-    rw [← hs v, ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal,
-      eq_neg_of_add_eq_zero_right h, neg_mem_iff]
-    exact ⟨w, rfl⟩
-  rw [map_zero, Submodule.coe_zero, add_zero] at h
-  exact Prod.ext (hι (h.trans (map_zero ι).symm)) rfl
-
-/-- For a section `s` of `(ι W)^ω → V`, the image `ι W + s V` of `(w, v) ↦ ι w + s v` is
-coisotropic: a vector `ω`-orthogonal to it lies in `(ι W)^ω` with zero class in `V`, so in
-`((ι W)^ω)^ω = ι W`. -/
-private theorem isCoisotropic_range_coprod [FiniteDimensional ℝ E]
-    (s : ω.ReducedSpace (ω.orthogonal (LinearMap.range ι)) →ₗ[ℝ] ω.orthogonal (LinearMap.range ι))
-    (hs : ∀ v, Submodule.Quotient.mk (s v) = v) :
-    ω.IsCoisotropic
-      (LinearMap.range (ι.coprod ((ω.orthogonal (LinearMap.range ι)).subtype ∘ₗ s))) := by
-  have hιF : LinearMap.range ι ≤
-      LinearMap.range (ι.coprod ((ω.orthogonal (LinearMap.range ι)).subtype ∘ₗ s)) :=
-    fun _ ⟨w, hw⟩ ↦ ⟨(w, 0), by simp [hw]⟩
-  refine isCoisotropic_iff.2 fun y hy ↦ hιF ?_
-  have hyU : y ∈ ω.orthogonal (LinearMap.range ι) := ω.orthogonal_le hιF hy
-  have h0 : (Submodule.Quotient.mk ⟨y, hyU⟩ :
-      ω.ReducedSpace (ω.orthogonal (LinearMap.range ι))) = 0 :=
-    (ω.reduction (ω.orthogonal (LinearMap.range ι))).separatingLeft _ fun v ↦ by
-      rw [← hs v]
-      exact (reduction_mk ω _ _ _).trans (ω.isRefl.eq_zero (hy _ ⟨(0, v), by simp⟩))
-  rwa [ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal] at h0
-
 /-- The action of `G` on the model `(W × K*) × V` preserves the sum of the coisotropic model form
 and the reduced form. -/
 private theorem isInvariantForm_model (hB : B.IsAlt) {P : W →ₗ[ℝ] LinearMap.ker B}
@@ -171,20 +134,22 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod_reduction
     (LinearMap.id : ω.ReducedSpace (ω.orthogonal (LinearMap.range ι)) →ₗ[ℝ] _)
   have hF (w : W) (v : ω.ReducedSpace (ω.orthogonal (LinearMap.range ι))) :
       F (w, v) = ι w + s v := rfl
-  -- The model representation is semisimple: `W` and `V` embed into `E`, and `K*` is a quotient
-  -- of `E` by `e ↦ ω(e, ι ·)`.
+  -- The model representation is semisimple: `W`, `V` and `K` embed into `E`, and `K*` is the
+  -- dual of `K`.
   have : σ.IsSemisimpleRepresentation :=
     (ι.intertwiningMap_of_isIntertwiningMap σ ρ hισ).isSemisimpleRepresentation_of_injective hι
   have : πV.IsSemisimpleRepresentation :=
     (((ω.orthogonal (LinearMap.range ι)).subtype ∘ₗ s).intertwiningMap_of_isIntertwiningMap πV ρ
       hsπ).isSemisimpleRepresentation_of_injective
       ((Submodule.injective_subtype _).comp (Function.LeftInverse.injective hs))
-  have := hρ.isSemisimpleRepresentation_dual_of_injective ω.nondegenerate
+  have : hσ.kerRepresentation.IsSemisimpleRepresentation :=
     ((ι ∘ₗ (LinearMap.ker B).subtype).intertwiningMap_of_isIntertwiningMap hσ.kerRepresentation ρ
-      fun g k ↦ by simp [hισ]) fun _ _ h ↦ Subtype.ext (hι h)
+      fun g k ↦ by simp [hισ]).isSemisimpleRepresentation_of_injective
+      fun _ _ h ↦ Subtype.ext (hι h)
   obtain ⟨e, he, heJ, heρ⟩ := exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic
     (isInvariantForm_model hB hP hρ hσ hισ hPσ hπV) hρ (ι₁ := J) (ι₂ := F) (σ := σ.prod πV)
-    (fun _ _ h ↦ Prod.ext_iff.2 (by simpa [J] using h)) (injective_coprod hι s hs)
+    (fun _ _ h ↦ Prod.ext_iff.2 (by simpa [J] using h))
+    (injective_coprod_subtype_comp hι le_rfl hs)
     (fun ⟨w, v⟩ ⟨w', v'⟩ ↦ by
       have h₁ := ω.isRefl.eq_zero ((s v).property _ ⟨w', rfl⟩)
       have h₂ := (s v').property _ ⟨w, rfl⟩
@@ -197,7 +162,8 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel_prod_reduction
     (by
       rw [LinearMap.range_prodMap, LinearMap.range_id]
       exact IsCoisotropic.prod (hB.isCoisotropic_range_inl_coisotropicModel hP) isCoisotropic_top)
-    (isCoisotropic_range_coprod s hs) (fun g ⟨w, v⟩ ↦ by simp [J])
+    (by rw [LinearMap.range_coprod]; exact isCoisotropic_sup_range_subtype_comp hs)
+    (fun g ⟨w, v⟩ ↦ by simp [J])
     (fun g ⟨w, v⟩ ↦ by simp [hF, hισ, hsπ])
   have he₀ (w : W) (v : ω.ReducedSpace (ω.orthogonal (LinearMap.range ι))) :
       e ((w, 0), v) = ι w + s v :=
