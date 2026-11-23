@@ -147,7 +147,7 @@ theorem coefficient_rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
 
 /-- The composition terms of `a` with the truncated parametrix are the sums of those with its
 terms. -/
-private theorem coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N k : ℕ)
+theorem coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N k : ℕ)
     (x ξ : CoordinateSpace n) (z : ℂ) :
     (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z) =
       ∑ j ∈ range N, (a.sharpTerm (a.rightInverseTerms ha j) k).coefficient ((x, ξ), z) := by
