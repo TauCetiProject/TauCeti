@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Submersion.EhresmannConnection.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Morphisms of Ehresmann connections
@@ -19,8 +20,9 @@ horizontal lifts of the two connections, the second condition is equivalent to t
 `dΦ ∘ h = k ∘ dφ` of maps `T_(π x) B → T_(Φ x) Q`
 (`TauCeti.IsEhresmannConnectionHom.mfderiv_horizontalLift` and
 `TauCeti.IsEhresmannConnectionHom.of_mfderiv_horizontalLift`). As `Φ` covers `φ`, its derivative
-also carries vertical vectors to vertical vectors, so it intertwines the horizontal and vertical
-projections of the two connections.
+also carries vertical vectors to vertical vectors, so it intertwines the projections of the
+splittings `T_x P = D x ⊕ ker (dπ_x)` and `T_y Q = D' y ⊕ ker (dρ_y)` onto their horizontal and
+vertical parts.
 
 The identity is a morphism and morphisms compose, so Ehresmann connections and their morphisms
 form a category. If `Φ` has a differentiable two-sided inverse `Φ'` and `φ` a differentiable left
@@ -43,9 +45,9 @@ holomorphic ones, so the same predicate describes morphisms of holomorphic conne
   lifts, `dΦ ∘ h = k ∘ dφ`.
 * `TauCeti.IsEhresmannConnectionHom.of_mfderiv_horizontalLift`: conversely, a covering pair of
   differentiable maps intertwining the horizontal lifts is a morphism.
-* `TauCeti.IsEhresmannConnectionHom.mfderiv_horizontalProjection` and
-  `TauCeti.IsEhresmannConnectionHom.mfderiv_verticalProjection`: a morphism intertwines the
-  horizontal and vertical projections.
+* `TauCeti.IsEhresmannConnectionHom.mfderiv_projection` and
+  `TauCeti.IsEhresmannConnectionHom.mfderiv_projection_ker`: a morphism intertwines the
+  projections onto the horizontal and vertical parts.
 * `TauCeti.IsEhresmannConnectionHom.id` and `TauCeti.IsEhresmannConnectionHom.comp`: identities
   and composites of morphisms are morphisms.
 * `TauCeti.IsEhresmannConnectionHom.inverse` and `TauCeti.IsEhresmannConnectionHom.symm`: the
@@ -107,13 +109,6 @@ structure IsEhresmannConnectionHom (π : P → B) (D : Π x : P, Submodule 𝕜 
   /-- The derivative of the map of total spaces preserves horizontality. -/
   mfderiv_mem (x : P) {v : TangentSpace I x} (hv : v ∈ D x) : mfderiv I I' Φ x v ∈ D' (Φ x)
 
-/-- If `g ∘ f = id` for differentiable maps `f` and `g`, then `dg_(f x) ∘ df_x = id`. -/
-private theorem mfderiv_apply_mfderiv_apply_of_leftInverse {f : P → Q} {g : Q → P} {x : P}
-    (hg : MDifferentiableAt I' I g (f x)) (hf : MDifferentiableAt I I' f x)
-    (hl : LeftInverse g f) (u : TangentSpace I x) :
-    mfderiv I' I g (f x) (mfderiv I I' f x u) = u := by
-  rw [← mfderiv_comp_apply x hg hf, hl.comp_eq_id, mfderiv_id, ContinuousLinearMap.id_apply]
-
 namespace IsEhresmannConnectionHom
 
 section Lifts
@@ -147,20 +142,24 @@ theorem mfderiv_horizontalLift (x : P) (v : TangentSpace J (π x)) :
     |>.2 <| (h.mfderiv_apply_mfderiv_apply (hD.mdifferentiable x) (hD'.mdifferentiable _) _).trans
       <| by rw [hD.mfderiv_horizontalLift]
 
-/-- **Morphisms intertwine horizontal projections.** -/
-theorem mfderiv_horizontalProjection (x : P) (v : TangentSpace I x) :
-    mfderiv I I' Φ x (hD.horizontalProjection x v) =
-      hD'.horizontalProjection (Φ x) (mfderiv I I' Φ x v) := by
-  rw [hD.horizontalProjection_apply, h.mfderiv_horizontalLift hD hD',
-    hD'.horizontalProjection_apply,
+/-- **Morphisms intertwine horizontal projections.** The derivative of a morphism carries the
+horizontal part of a tangent vector `v` to the horizontal part of its image. -/
+theorem mfderiv_projection (x : P) (v : TangentSpace I x) :
+    mfderiv I I' Φ x ((D x).projection (mfderiv I J π x).ker (hD.isCompl_ker x) v) =
+      (D' (Φ x)).projection (mfderiv I' J' ρ (Φ x)).ker (hD'.isCompl_ker (Φ x))
+        (mfderiv I I' Φ x v) := by
+  rw [hD.projection_apply_eq_horizontalLift, h.mfderiv_horizontalLift hD hD',
+    hD'.projection_apply_eq_horizontalLift,
     h.mfderiv_apply_mfderiv_apply (hD.mdifferentiable x) (hD'.mdifferentiable _)]
 
-/-- **Morphisms intertwine vertical projections.** -/
-theorem mfderiv_verticalProjection (x : P) (v : TangentSpace I x) :
-    mfderiv I I' Φ x (hD.verticalProjection x v) =
-      hD'.verticalProjection (Φ x) (mfderiv I I' Φ x v) := by
-  rw [hD.verticalProjection_apply, map_sub, h.mfderiv_horizontalLift hD hD',
-    hD'.verticalProjection_apply,
+/-- **Morphisms intertwine vertical projections.** The derivative of a morphism carries the
+vertical part of a tangent vector `v` to the vertical part of its image. -/
+theorem mfderiv_projection_ker (x : P) (v : TangentSpace I x) :
+    mfderiv I I' Φ x ((mfderiv I J π x).ker.projection (D x) (hD.isCompl_ker x).symm v) =
+      (mfderiv I' J' ρ (Φ x)).ker.projection (D' (Φ x)) (hD'.isCompl_ker (Φ x)).symm
+        (mfderiv I I' Φ x v) := by
+  rw [hD.projection_ker_apply, map_sub, h.mfderiv_horizontalLift hD hD',
+    hD'.projection_ker_apply,
     h.mfderiv_apply_mfderiv_apply (hD.mdifferentiable x) (hD'.mdifferentiable _)]
 
 omit h
@@ -234,10 +233,10 @@ theorem inverse [IsManifold I 1 P] [IsManifold I' 1 Q] {n n' : ℕ∞ω}
     -- horizontal lift of `dπ (dΦ'_y w)` to `w`.
     have hw₀ : w ∈ D' (Φ (Φ' y)) := (hr y).symm ▸ hw
     have hinj : Injective (mfderiv I I' Φ (Φ' y)) :=
-      LeftInverse.injective (g := mfderiv I' I Φ' (Φ (Φ' y))) fun u ↦
-        mfderiv_apply_mfderiv_apply_of_leftInverse (hΦ' _) (h.mdifferentiable (Φ' y)) hl u
-    have hw' : mfderiv I I' Φ (Φ' y) (mfderiv I' I Φ' y w) = w :=
-      mfderiv_apply_mfderiv_apply_of_leftInverse (h.mdifferentiable _) (hΦ' y) hr w
+      mfderiv_injective_of_leftInverse (hΦ' _) (h.mdifferentiable (Φ' y)) hl
+    have hw' : mfderiv I I' Φ (Φ' y) (mfderiv I' I Φ' y w) = w := by
+      rw [← mfderiv_comp_apply y (h.mdifferentiable _) (hΦ' y), hr.comp_eq_id, mfderiv_id,
+        ContinuousLinearMap.id_apply]
     -- `w` is horizontal, so it is the horizontal lift of `dρ w = dφ (dπ (dΦ'_y w))`.
     have hρw : mfderiv I' J' ρ (Φ (Φ' y)) w =
         mfderiv J J' φ (π (Φ' y)) (mfderiv I J π (Φ' y) (mfderiv I' I Φ' y w)) := by
