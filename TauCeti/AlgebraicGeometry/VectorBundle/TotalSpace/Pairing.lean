@@ -32,10 +32,11 @@ with multiplication by functions in each variable (`lift_smul_left_comp_totalSpa
 (`lift_comp_map_comp_totalSpacePairing`) and as an identity of morphisms
 `𝕍(E₁) ×_X 𝕍(E₂^∨) ⟶ 𝕍(𝒪_X)` (`map_whiskerRight_comp_totalSpacePairing`).
 
-The pairing is the kernel of the Fourier–Deligne transform on the vector bundle `𝕍(E)`: the
-transform pulls a complex back along the projections of `𝕍(E) ×_X 𝕍(E^∨)` and twists it by the
-pullback along `⟨ , ⟩` of an Artin–Schreier sheaf on `𝔾_a`. The bilinearity and transpose laws
-are what make that kernel multiplicative and compatible with linear maps.
+The pairing defines the kernel `⟨ , ⟩^*ℒ_ψ` of the Fourier–Deligne transform on the vector
+bundle `𝕍(E)`: the transform pulls a complex back along the projections of `𝕍(E) ×_X 𝕍(E^∨)`
+and twists it by the pullback `⟨ , ⟩^*ℒ_ψ` along the pairing of an Artin–Schreier sheaf `ℒ_ψ`
+on `𝔾_a`. The bilinearity and transpose laws are what make that kernel multiplicative and
+compatible with linear maps.
 
 ## Main declarations
 
@@ -104,30 +105,6 @@ private theorem totalSpaceHomEquiv_dual_comp_functional {T : Over X}
   rw [hnat, key, Equiv.symm_apply_apply]
   simp only [Category.assoc, IsIso.hom_inv_id_assoc]
 
-/-- Pulling back along `g : T' ⟶ P` a function `a ≫ b` on `P`, factored through `q^* M`, is the
-composite of the pulled-back factors, after the identifications `g^* 𝒪_P ≅ 𝒪_{T'}` and
-`g^* q^* M ≅ q'^* M` for `q' = g ≫ q`. -/
-private lemma pullbackObjUnitIso_inv_conj_comp {T' P : Scheme.{u}} (g : T' ⟶ P) (q : P ⟶ X)
-    {q' : T' ⟶ X}
-    (w : g ≫ q = q') (M : X.Modules) (a : 𝟙_ P.Modules ⟶ (Scheme.Modules.pullback q).obj M)
-    (b : (Scheme.Modules.pullback q).obj M ⟶ 𝟙_ P.Modules) :
-    (Scheme.Modules.pullbackObjUnitIso g).inv ≫
-        (Scheme.Modules.pullback g).map (a ≫ b ≫ (Scheme.Modules.pullbackObjUnitIso q).inv) ≫
-          (Scheme.Modules.pullbackComp g q).hom.app _ ≫
-            (Scheme.Modules.pullbackCongr w).hom.app _ =
-      ((Scheme.Modules.pullbackObjUnitIso g).inv ≫ (Scheme.Modules.pullback g).map a ≫
-          (Scheme.Modules.pullbackComp g q).hom.app M ≫
-            (Scheme.Modules.pullbackCongr w).hom.app M) ≫
-        ((Scheme.Modules.pullbackCongr w).inv.app M ≫
-          (Scheme.Modules.pullbackComp g q).inv.app M ≫ (Scheme.Modules.pullback g).map b ≫
-            (Scheme.Modules.pullbackObjUnitIso g).hom) ≫
-          (Scheme.Modules.pullbackObjUnitIso q').inv := by
-  subst w
-  rw [← Scheme.Modules.pullbackObjUnitIso_inv_comp]
-  simp only [Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_hom, Iso.refl_inv,
-    NatTrans.id_app, Category.id_comp, Category.comp_id, Functor.map_comp, Category.assoc,
-    Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_assoc]
-
 /-- **The evaluation pairing of a vector bundle with its dual.** The morphism
 `⟨ , ⟩ : 𝕍(E) ×_X 𝕍(E^∨) ⟶ 𝕍(𝒪_X)` over `X` sending a pair of points, a section `s` of `q^* E` and
 a linear functional `φ` on `q^* E`, to the function `φ ∘ s`
@@ -168,7 +145,7 @@ theorem totalSpaceHomEquiv_lift_comp_totalSpacePairing {T : Over X}
     exact (totalSpaceHomEquiv_dual_comp_functional_assoc E _ _ _).symm
   rw [totalSpaceHomEquiv_comp (𝟙_ _) (lift e e') (totalSpacePairing E), hP,
     ← totalSpaceHomEquiv_dual_comp_functional_assoc, h₁, h₂]
-  exact pullbackObjUnitIso_inv_conj_comp _ _ _ _ _ _
+  exact Scheme.Modules.pullbackObjUnitIso_inv_conj_comp _ _ _ _ _ _
 
 /-- The pairing on points, through the section of `e'` and the linear functional of `e` on
 `q^* E^∨`; this is the form used for the second variable. -/
