@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 public import TauCeti.Topology.Algebra.Star.Unitary
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.StrictPositivityPath
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Continuity
 import TauCeti.Topology.Algebra.Group.Units
 
 /-!

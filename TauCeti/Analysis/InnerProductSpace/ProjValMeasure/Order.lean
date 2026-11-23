@@ -9,18 +9,16 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 
 /-!
-# Self-adjointness and Loewner order bounds for projection-valued measure integrals
+# Loewner order bounds for projection-valued measure integrals
 
 A bounded measurable real-valued function `g : X → ℝ` defines a self-adjoint bounded Borel symbol
 `BoundedBorelFunction.ofRealFunction g hg hbound`. Integrating against any projection-valued
-measure `P : ProjValMeasure X H` sends real-valued symbols to self-adjoint operators and preserves
-positivity (`BoundedBorelFunction.exists_star_mul_self_ofRealFunction`), so pointwise bounds
-`m ≤ g ≤ M` become Loewner order inequalities `m • 1 ≤ ∫ g dP ≤ M • 1`.
+measure `P : ProjValMeasure X H` preserves positivity
+(`BoundedBorelFunction.exists_star_mul_self_ofRealFunction`), so pointwise bounds `m ≤ g ≤ M` become
+Loewner order inequalities `m • 1 ≤ ∫ g dP ≤ M • 1`.
 
 ## Main declarations
 
-* `TauCeti.ProjValMeasure.isSelfAdjoint_integral_ofRealFunction`: real-valued symbols integrate to
-  self-adjoint operators.
 * `TauCeti.ProjValMeasure.integral_ofRealFunction_nonneg`,
   `TauCeti.ProjValMeasure.smul_one_le_integral_ofRealFunction`,
   `TauCeti.ProjValMeasure.integral_ofRealFunction_le_smul_one`: Loewner order bounds for
@@ -44,13 +42,6 @@ namespace ProjValMeasure
 
 variable {X H : Type*} [MeasurableSpace X]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- Integrating a real-valued bounded Borel symbol against a projection-valued measure yields a
-self-adjoint operator. -/
-theorem isSelfAdjoint_integral_ofRealFunction (P : ProjValMeasure X H) (g : X → ℝ)
-    (hg : Measurable g) (hbound) :
-    IsSelfAdjoint (P.integral (BoundedBorelFunction.ofRealFunction g hg hbound)) :=
-  (BoundedBorelFunction.isSelfAdjoint_ofRealFunction g hg hbound).map P.integral
 
 /-- Integrating a nonnegative real-valued bounded Borel symbol against a projection-valued measure
 yields a nonnegative operator in the Loewner order. -/

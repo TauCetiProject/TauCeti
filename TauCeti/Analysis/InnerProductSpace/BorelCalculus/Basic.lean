@@ -57,6 +57,9 @@ commutes with every spectral projection, equivalently with every value of the Bo
   not an eigenvalue.
 * `ContinuousLinearMap.forall_commute_borelCalculus_iff`,
   `ContinuousLinearMap.forall_commute_spectralPVM_proj_iff`: the spectral commutant.
+* `ContinuousLinearMap.isSelfAdjoint_borelCalculus_ofRealFunction`: real-valued symbols produce
+  self-adjoint operators.
+* `ContinuousLinearMap.borelCalculus_exp`: `a.borelCalculus (exp f) = exp (a.borelCalculus f)`.
 
 ## References
 
@@ -303,5 +306,19 @@ theorem range_spectralPVM_proj_preimage_singleton (z : ℂ) :
   refine ⟨?_, fun h => ⟨ξ, h⟩⟩
   rintro ⟨η, rfl⟩
   exact a.spectralPVM.proj_apply_proj _ _ η
+
+/-- The Borel functional calculus sends real-valued symbols to self-adjoint operators. -/
+theorem isSelfAdjoint_borelCalculus_ofRealFunction (g : spectrum ℂ a → ℝ) (hg : Measurable g)
+    (hbound) :
+    IsSelfAdjoint (a.borelCalculus (BoundedBorelFunction.ofRealFunction g hg hbound)) := by
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.isSelfAdjoint_integral_ofRealFunction g hg hbound
+
+/-- **Exponential compatibility of the Borel functional calculus.** For every bounded Borel symbol
+`f` on the spectrum of a normal operator `a`, `(exp f)(a) = exp (f(a))`. -/
+theorem borelCalculus_exp (f : BoundedBorelFunction (spectrum ℂ a)) :
+    a.borelCalculus (NormedSpace.exp f) = NormedSpace.exp (a.borelCalculus f) := by
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.integral_exp f
 
 end ContinuousLinearMap

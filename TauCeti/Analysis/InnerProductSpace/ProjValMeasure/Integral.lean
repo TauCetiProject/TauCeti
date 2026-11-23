@@ -61,6 +61,10 @@ continuous extension `LinearMap.extendOfNorm`.
   `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
+* `ProjValMeasure.isSelfAdjoint_integral_ofRealFunction`: real-valued bounded Borel symbols
+  integrate to self-adjoint operators.
+* `ProjValMeasure.integral_exp`: exponential compatibility
+  `P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f)`.
 
 ## References
 
@@ -432,6 +436,21 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
       refine lintegral_congr fun x => ?_
       rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
     _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
+
+/-- Integrating a real-valued bounded Borel symbol against a projection-valued measure yields a
+self-adjoint operator. -/
+theorem isSelfAdjoint_integral_ofRealFunction (P : ProjValMeasure X H) (g : X → ℝ)
+    (hg : Measurable g) (hbound) :
+    IsSelfAdjoint (P.integral (BoundedBorelFunction.ofRealFunction g hg hbound)) :=
+  (BoundedBorelFunction.isSelfAdjoint_ofRealFunction g hg hbound).map P.integral
+
+/-- **Exponential compatibility of projection-valued measure integrals.** For every bounded Borel
+symbol `f : BoundedBorelFunction X`, `∫ exp f dP = exp (∫ f dP)`. -/
+theorem integral_exp (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :
+    P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f) := by
+  let +nondep : NormedAlgebra ℚ (BoundedBorelFunction X) := .restrictScalars ℚ ℂ _
+  let +nondep : NormedAlgebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
+  exact NormedSpace.map_exp P.integral P.continuous_integral f
 
 end ProjValMeasure
 end TauCeti

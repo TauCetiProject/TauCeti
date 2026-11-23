@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Order
 
 /-!
-# Self-adjointness and Loewner order bounds in the Borel functional calculus
+# Loewner order bounds in the Borel functional calculus
 
 A bounded measurable real-valued function `g : spectrum ℂ a → ℝ` on the spectrum of a normal
 bounded operator `a : H →L[ℂ] H` defines a self-adjoint bounded Borel symbol
@@ -19,8 +19,6 @@ on the spectrum become Loewner order inequalities `m • 1 ≤ g(a) ≤ M • 1`
 
 ## Main declarations
 
-* `ContinuousLinearMap.isSelfAdjoint_borelCalculus_ofRealFunction`: real-valued symbols produce
-  self-adjoint operators.
 * `ContinuousLinearMap.borelCalculus_ofRealFunction_nonneg`,
   `ContinuousLinearMap.smul_one_le_borelCalculus_ofRealFunction`,
   `ContinuousLinearMap.borelCalculus_ofRealFunction_le_smul_one`: Loewner order bounds for real
@@ -43,13 +41,6 @@ namespace ContinuousLinearMap
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   (a : H →L[ℂ] H) [IsStarNormal a]
-
-/-- The Borel functional calculus sends real-valued symbols to self-adjoint operators. -/
-theorem isSelfAdjoint_borelCalculus_ofRealFunction (g : spectrum ℂ a → ℝ) (hg : Measurable g)
-    (hbound) :
-    IsSelfAdjoint (a.borelCalculus (BoundedBorelFunction.ofRealFunction g hg hbound)) := by
-  rw [← a.integral_spectralPVM]
-  exact a.spectralPVM.isSelfAdjoint_integral_ofRealFunction g hg hbound
 
 /-- A nonnegative real-valued Borel symbol produces a nonnegative operator in the Loewner order. -/
 theorem borelCalculus_ofRealFunction_nonneg {g : spectrum ℂ a → ℝ} (hg : Measurable g) (hbound)

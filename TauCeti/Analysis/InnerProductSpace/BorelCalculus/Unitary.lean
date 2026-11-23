@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Order
-import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Exponential
 import TauCeti.MeasureTheory.Function.BoundedBorel.Exponential
 
 /-!
