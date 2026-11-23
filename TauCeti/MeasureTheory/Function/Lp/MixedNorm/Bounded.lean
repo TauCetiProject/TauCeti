@@ -40,11 +40,10 @@ finiteness of `‖F t‖_q` is not assumed: it follows for almost every `t` when
 `t ↦ ‖F t‖_q` is almost everywhere measurable
 (`MeasureTheory.AEStronglyMeasurable.aemeasurable_eLpNorm_Lp`).
 
-`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le` in
-`TauCeti.MeasureTheory.Function.Lp.MixedNorm` proves the same bound by truncated extremal
-functions, but only for `p < ∞` and `q ≥ 2`, and against integrable test functions. The theorem
-here covers `p = ∞` and `1 ≤ q < 2`, and needs the bound only for bounded test functions of
-finite-measure support.
+Bounds obtained from the `TT*` argument are usually stated against integrable test functions
+`G` with integrable pairing. Bounded test functions of finite-measure support are among them, so
+the same conclusion holds under that hypothesis
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`).
 
 ## The argument
 
@@ -71,6 +70,8 @@ hence `‖F t‖_q ≤ C` for almost every `t`.
 
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le`:
   the duality bound for mixed norms at all exponents.
+* `MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`: the
+  same bound, tested against integrable functions with integrable pairing.
 
 ## References
 
@@ -347,5 +348,29 @@ theorem eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le [SigmaFinit
   · obtain rfl : p' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ p').1 rfl
     exact eLpNorm_eLpNorm_top_le hF hC
   · exact eLpNorm_eLpNorm_le_of_ne_top hp hF hC
+
+/-- **Duality for mixed norms, against integrable test functions.** Let `T` be a σ-finite measure
+space, let `(p, p')` and `(q, q')` be Hölder conjugate pairs, and let `F : T → L²(X, E)` be
+almost everywhere strongly measurable. If
+
+`|∫ ⟪F t, G t⟫ dt| ≤ C ‖G‖_{L^{p'}_t L^{q'}_x}`
+
+for every integrable `G : T → L²(X, E)` for which `t ↦ ⟪F t, G t⟫` is integrable, then
+`‖F‖_{L^p_t L^q_x} ≤ C`. A bounded `G` vanishing off a set of finite measure is integrable, and
+the integral of a non-integrable pairing is zero, so this follows from
+`eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le`. -/
+theorem eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le [SigmaFinite ν]
+    {p p' q q' : ℝ≥0∞} [p.HolderConjugate p'] [q.HolderConjugate q']
+    {F : T → Lp E 2 μ} (hF : AEStronglyMeasurable F ν) {C : ℝ≥0∞}
+    (hC : ∀ G : T → Lp E 2 μ, Integrable G ν → Integrable (fun t ↦ ⟪F t, G t⟫_𝕜) ν →
+      ‖∫ t, ⟪F t, G t⟫_𝕜 ∂ν‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) p' ν) :
+    eLpNorm (fun t ↦ eLpNorm (F t) q μ) p ν ≤ C := by
+  refine hF.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le (𝕜 := 𝕜) (p' := p')
+    (q' := q') fun G s hs hGs hG ↦ ?_
+  by_cases hpair : Integrable (fun t ↦ ⟪F t, G t⟫_𝕜) ν
+  · exact hC G (memLp_one_iff_integrable.1
+      (hG.mono_exponent_of_measure_support_ne_top hGs hs le_top)) hpair
+  · rw [integral_undef hpair, eNorm_zero]
+    exact zero_le
 
 end MeasureTheory.AEStronglyMeasurable
