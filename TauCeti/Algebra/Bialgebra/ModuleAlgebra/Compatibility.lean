@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Basic
+public import TauCeti.RingTheory.TensorProduct.Basic
 
 /-!
 # Covariance and compatible actions for left module algebras
@@ -73,16 +74,15 @@ the smash product `A # H`: for every `h : H` and `a : A`,
 def SmashCompatible (μ : LeftModuleAlgebra R H A) {C : Type*} [Semiring C] [Algebra R C]
     (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) : Prop :=
   ∀ h a, fH h * fA a =
-    LinearMap.mul' R C
-      (TensorProduct.map (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap
-        (Coalgebra.comul (R := R) h))
+    LinearMap.mulMap (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap
+      (Coalgebra.comul (R := R) h)
 
 /-- The covariance relation in any finite representation of `comul h`. -/
 theorem SmashCompatible.mul_eq_sum {μ : LeftModuleAlgebra R H A} {C : Type*}
     [Semiring C] [Algebra R C] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
     (hf : μ.SmashCompatible fA fH) {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (a : A) :
     fH h * fA a = ∑ i ∈ r.index, fA (μ.action (r.left i) a) * fH (r.right i) := by
-  rw [hf h a, ← r.eq, map_sum, map_sum]
+  rw [hf h a, ← r.eq, map_sum]
   simp
 
 /-- Characterization of `SmashCompatible` using a family of finite coproduct representations. -/
@@ -92,7 +92,7 @@ theorem smashCompatible_iff_sum (μ : LeftModuleAlgebra R H A) {C : Type*}
     μ.SmashCompatible fA fH ↔ ∀ h a,
       fH h * fA a = ∑ i ∈ (r h).index, fA (μ.action ((r h).left i) a) * fH ((r h).right i) := by
   refine ⟨fun hf h a => hf.mul_eq_sum (r h) a, fun hf h a => ?_⟩
-  rw [hf h a, ← (r h).eq, map_sum, map_sum]
+  rw [hf h a, ← (r h).eq, map_sum]
   simp
 
 /-- Post-composing a `SmashCompatible` pair with an `R`-algebra homomorphism yields a
@@ -119,13 +119,12 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
   let r₂ := fun i => ℛ R (r.right i)
   let Φ : H ⊗[R] (H ⊗[R] H) →ₗ[R] C ⊗[R] D :=
     TensorProduct.map
-      (LinearMap.mul' R C ∘ₗ
-        TensorProduct.map (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap)
+      (LinearMap.mulMap (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap)
       gH.toLinearMap ∘ₗ (TensorProduct.assoc R H H H).symm.toLinearMap
   have hco := congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
   simp only [Φ, map_sum, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.flip_apply,
-    AlgHom.toLinearMap_apply, LinearMap.mul'_apply] at hco
+    TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.mulMap_tmul,
+    LinearMap.flip_apply, AlgHom.toLinearMap_apply] at hco
   calc ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) h *
           (Algebra.TensorProduct.includeLeft.comp fA) a
       = (∑ i ∈ r.index, fH (r.left i) ⊗ₜ[R] gH (r.right i)) * (fA a ⊗ₜ[R] 1) := by

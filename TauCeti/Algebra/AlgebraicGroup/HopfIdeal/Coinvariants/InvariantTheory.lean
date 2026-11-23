@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Corestrict
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.LinearlyReductive

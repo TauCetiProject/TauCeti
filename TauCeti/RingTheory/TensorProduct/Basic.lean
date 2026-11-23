@@ -8,18 +8,44 @@ module
 public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
-# Products of pure tensors
+# Products of pure tensors and bilinear multiplication lifts
 
 In the tensor product `A ⊗[R] B` of commutative `R`-algebras, a finite product of pure tensors
 is the pure tensor of the products: `∏ i ∈ s, a i ⊗ₜ b i = (∏ i ∈ s, a i) ⊗ₜ ∏ i ∈ s, b i`.
 This is the multiplicative counterpart of `TensorProduct.sum_tmul` and `TensorProduct.tmul_sum`,
 and extends `Algebra.TensorProduct.tmul_pow` from powers to products. For ordered list products
 neither factor needs to be commutative.
+
+For `R`-linear maps `f : M →ₗ[R] C` and `g : N →ₗ[R] C` into an `R`-algebra (or non-unital,
+non-associative `R`-bilinear multiplication target) `C`, `LinearMap.mulMap f g` is the induced
+`R`-linear map `M ⊗[R] N →ₗ[R] C` sending `m ⊗ₜ n` to `f m * g n`.
 -/
 
 public section
 
 open TensorProduct
+
+namespace LinearMap
+
+section MulMap
+
+variable {R M N C : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] [NonUnitalNonAssocSemiring C] [Module R C]
+  [SMulCommClass R C C] [IsScalarTower R C C]
+
+/-- The `R`-linear map `M ⊗[R] N →ₗ[R] C` sending `m ⊗ₜ n` to `f m * g n`. -/
+def mulMap (f : M →ₗ[R] C) (g : N →ₗ[R] C) : M ⊗[R] N →ₗ[R] C :=
+  LinearMap.mul' R C ∘ₗ TensorProduct.map f g
+
+/-- Evaluating `LinearMap.mulMap` on a pure tensor multiplies the values of the two linear maps. -/
+@[simp]
+theorem mulMap_tmul (f : M →ₗ[R] C) (g : N →ₗ[R] C) (m : M) (n : N) :
+    mulMap f g (m ⊗ₜ[R] n) = f m * g n := by
+  simp [mulMap]
+
+end MulMap
+
+end LinearMap
 
 /-- The ordered product of pure tensors is the pure tensor of the ordered products.
 Neither algebra is required to be commutative. -/

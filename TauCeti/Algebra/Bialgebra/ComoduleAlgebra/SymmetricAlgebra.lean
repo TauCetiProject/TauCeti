@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading

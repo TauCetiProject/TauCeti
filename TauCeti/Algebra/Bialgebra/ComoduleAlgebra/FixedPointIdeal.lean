@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Smooth.Basic
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.TensorProduct.MapLinear

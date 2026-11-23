@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Galois
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Quotient
 
 /-!
