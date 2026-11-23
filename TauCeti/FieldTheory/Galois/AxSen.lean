@@ -21,6 +21,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.Data.Nat.Choose.Factorization
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Galois.IsometricAction
 import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Topology.Algebra.UniformMulAction
@@ -375,14 +376,8 @@ theorem fixedPoints_completion_eq_closure_fixedField (H : Subgroup Gal(E/F)) :
   have : CharZero F := (RingHom.charZero_iff (algebraMap F E).injective).mpr inferInstance
   have : IsAlgClosure F E := ⟨inferInstance, inferInstance⟩
   -- The automorphisms fixing `L` form the closure of `H`.
-  have hH : H.topologicalClosure ≤ L.fixingSubgroup := H.topologicalClosure_minimal
-    ((IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
-    (InfiniteGalois.fixingSubgroup_isClosed L)
   have hL : L.fixingSubgroup = H.topologicalClosure :=
-    (congrArg IntermediateField.fixingSubgroup (le_antisymm
-      ((IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).2 hH)
-      (IntermediateField.fixedField_antitone H.le_topologicalClosure))).trans
-    (InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩)
+    IntermediateField.fixingSubgroup_fixedField_eq_topologicalClosure H
   -- An `L`-automorphism acts on `E` as the underlying `F`-automorphism.
   have hsmulE (τ : Gal(E/L)) (x : E) : τ.restrictScalars F • x = τ • x := by
     rw [AlgEquiv.smul_def, AlgEquiv.smul_def, AlgEquiv.coe_restrictScalars]
