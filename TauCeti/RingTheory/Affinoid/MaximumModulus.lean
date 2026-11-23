@@ -11,6 +11,7 @@ import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.RingTheory.Affinoid.Integral.Basic
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Algebraic.Basic
@@ -51,11 +52,13 @@ value of the reduction of the minimal polynomial at `x` is the value of `f` at a
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_sub_algebraMap_constantCoeff_le`: a Tate series of
   Gauss norm at most one, mapped by a homomorphism sending the variables to elements with
   `|·|sup ≤ ε ≤ 1`, differs from its constant coefficient by an element with `|·|sup ≤ ε`.
+* `TauCeti.supSeminorm_eq_spectralValue_minpoly`: on a finite torsion-free algebra over a Tate
+  algebra `T`, `supSeminorm K f = spectralValue (minpoly T f)`.
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §5.1.4 and
-  §6.2.1, Proposition 4.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §5.1.4,
+  §6.2.1 (Proposition 4), and §6.2.2 (Proposition 1).
 -/
 
 public section
@@ -241,5 +244,31 @@ theorem supSeminorm_map_sub_algebraMap_constantCoeff_le {B : Type*} [CommRing B]
       exact h.trans hPg
 
 end IsAffinoidAlgebra
+
+section
+
+local notation "Tate " σ:max =>
+  _root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
+
+/-- **Bosch–Güntzer–Remmert, §6.2.2, Proposition 1 / §6.2.1, Proposition 4(iii).**
+Over a complete nontrivially normed ultrametric field `K`, let `A` be a commutative `K`-algebra
+(with no choice of norm or reducedness assumption) that is finite and torsion-free over a
+finite-variable Tate algebra `T = K⟨X₁, …, X_d⟩`. Then for every `f : A`,
+`supSeminorm K f = spectralValue (minpoly T f)`. -/
+theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
+    {A : Type*} [CommRing A] [Algebra K A] [Algebra (Tate σ) A] [IsScalarTower K (Tate σ) A]
+    [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A] (f : A) :
+    supSeminorm K f = spectralValue (minpoly (Tate σ) f) := by
+  have hA : IsAffinoidAlgebra K A := (isAffinoidAlgebra_tate (K := K) (σ := σ)).of_finite
+  have : Algebra.IsIntegral (Tate σ) A := Algebra.IsIntegral.of_finite _ _
+  let _ := Fintype.ofFinite σ
+  let e : Tate σ ≃ₐ[K] Tate (Fin (Fintype.card σ)) :=
+    _root_.MvPowerSeries.IsRestricted.renameAlgEquiv (R := K) (Fintype.equivFin σ) fun _ ↦ 1
+  have hsup (t : Tate σ) : supSeminorm K t = ‖t‖ := by
+    rw [← AlgEquiv.supSeminorm_eq e t, MvPowerSeries.supSeminorm_eq_norm,
+      _root_.MvPowerSeries.IsRestricted.norm_renameAlgEquiv]
+  exact hA.supSeminorm_eq_spectralValue_minpoly hsup f
+
+end
 
 end TauCeti

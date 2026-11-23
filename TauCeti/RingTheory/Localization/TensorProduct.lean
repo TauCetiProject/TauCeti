@@ -36,8 +36,8 @@ of a finite sum of elementary tensors.
 
 * `TauCeti.IsLocalization.linearMap_compatibleSMul_tensorProduct`: `A`-linear maps between such
   modules commute with the action of `K ⊗[R] A`.
-* `IsLocalization.mk_one_injective`: injectivity of `m ↦ 1 ⊗ₜ[R] m` for an injective localization
-  and a torsion-free `R`-module.
+* `Algebra.TensorProduct.mk_one_injective_of_isLocalization`: injectivity of `m ↦ 1 ⊗ₜ[R] m` for an
+  injective localization and a torsion-free `R`-module.
 * `Algebra.TensorProduct.includeRight_injective_of_isLocalization` and
   `Algebra.TensorProduct.includeRight_injective_of_isFractionRing`: injectivity of
   `B →ₐ[R] A ⊗[R] B` for an injective localization or fraction ring and a torsion-free `R`-algebra.
@@ -81,8 +81,8 @@ open scoped TensorProduct in
 /-- Tensoring a torsion-free `R`-module `M` on the left with an injective localization `A` of a
 commutative semiring `R` at `S` gives an injective map `m ↦ 1 ⊗ₜ[R] m : M →ₗ[R] A ⊗[R] M`.
 Unlike flatness-based criteria, `M` need not be flat over `R`. -/
-theorem IsLocalization.mk_one_injective {R : Type*} [CommSemiring R] (S : Submonoid R)
-    {A M : Type*} [CommSemiring A] [Algebra R A] [IsLocalization S A]
+theorem Algebra.TensorProduct.mk_one_injective_of_isLocalization {R : Type*} [CommSemiring R]
+    (S : Submonoid R) {A M : Type*} [CommSemiring A] [Algebra R A] [IsLocalization S A]
     [AddCommMonoid M] [Module R M] [Module.IsTorsionFree R M]
     (ha : Function.Injective (algebraMap R A)) :
     Function.Injective (TensorProduct.mk R A M 1) :=
@@ -99,7 +99,7 @@ theorem Algebra.TensorProduct.includeRight_injective_of_isLocalization {R : Type
     (ha : Function.Injective (algebraMap R A)) :
     Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) := by
   intro b₁ b₂ h
-  apply IsLocalization.mk_one_injective S (A := A) (M := B) ha
+  apply mk_one_injective_of_isLocalization S (A := A) (M := B) ha
   rwa [TensorProduct.mk_apply, TensorProduct.mk_apply,
     ← Algebra.TensorProduct.includeRight_apply, ← Algebra.TensorProduct.includeRight_apply]
 

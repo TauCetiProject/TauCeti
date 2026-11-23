@@ -112,18 +112,11 @@ theorem gelfandRadius_eq_spectralValue_minpoly
     gelfandRadius a = spectralValue (minpoly B a) := by
   have ha_int : IsIntegral B a := Algebra.IsIntegral.isIntegral a
   rcases subsingleton_or_nontrivial A with _ | _
-  · have hdvd1 : minpoly B a ∣ 1 :=
-      TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree ha_int (Subsingleton.elim _ _)
-    have hp1 : minpoly B a = 1 :=
-      (minpoly.monic ha_int).natDegree_eq_zero.mp <| Nat.eq_zero_of_le_zero <|
-        (Polynomial.natDegree_le_of_dvd hdvd1 one_ne_zero).trans_eq natDegree_one
-    rw [hp1, Polynomial.spectralValue_one, Subsingleton.elim a 0, gelfandRadius_zero]
+  · rw [minpoly.subsingleton, Polynomial.spectralValue_one, Subsingleton.elim a 0,
+      gelfandRadius_zero]
   set p := minpoly B a
   have hp_monic : p.Monic := minpoly.monic ha_int
-  have hp_ne_one : p ≠ 1 := fun h1 ↦ by
-    have h0 : aeval a p = 0 := minpoly.aeval B a
-    rw [h1, map_one] at h0
-    exact one_ne_zero h0
+  have hp_ne_one : p ≠ 1 := minpoly.ne_one B a
   refine le_antisymm ?_ ?_
   · -- Upper bound: `algebraMap B A` is continuous `K`-linear, so
     -- `gelfandRadius (algebraMap B A b) ≤ ‖b‖`.
@@ -224,8 +217,9 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
     fun a ↦ ⟨smoothingFun_le_self (normRingSeminorm A) a, ?_⟩⟩
   have hΨ_norm : ‖Ψ a‖ ≤ ‖(d₀ : B)‖ * b.norm (φ a) := by
     refine (pi_norm_le_iff_of_nonneg (mul_nonneg (norm_nonneg _) (b.norm_nonneg _))).mpr fun i ↦ ?_
-    rw [← hBF (Ψ a i), show Ψ a i = Ψ₀ a i from rfl, hΨ₀_spec a i,
-      AlgHom.toLinearMap_apply, norm_mul, hBF]
+    rw [← hBF (Ψ a i)]
+    simp only [Ψ, LinearMap.comp_apply, Finsupp.lcoeFun_apply]
+    rw [hΨ₀_spec a i, AlgHom.toLinearMap_apply, norm_mul, hBF]
     exact mul_le_mul_of_nonneg_left (b.norm_repr_le_norm i) (norm_nonneg _)
   calc
     ‖a‖ ≤ C₁ * ‖Ψ a‖ := hΨ_bound a

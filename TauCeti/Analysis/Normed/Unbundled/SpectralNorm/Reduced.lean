@@ -72,11 +72,35 @@ private theorem iSup_quotient_spectralNorm_nonneg (x : E) :
     0 ≤ ⨆ m : MaximalSpectrum E, spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) :=
   Real.iSup_nonneg fun _ ↦ spectralNorm_nonneg _
 
-private theorem spectralNorm_quotient_le_iSup [Finite (MaximalSpectrum E)] (x : E)
+private theorem iSup_quotient_le (x : E) {r : ℝ} (hr : 0 ≤ r)
+    (h : ∀ m : MaximalSpectrum E,
+      spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤ r) :
+    ⨆ m : MaximalSpectrum E, spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
+      r :=
+  Real.iSup_le h hr
+
+private theorem finite_maximalSpectrum (K E : Type*) [Field K] [CommRing E] [Algebra K E]
+    [Module.Finite K E] : Finite (MaximalSpectrum E) :=
+  let _ : IsArtinianRing E := isArtinian_of_tower K inferInstance
+  inferInstance
+
+private noncomputable def equivPiQuotient (K E : Type*) [Field K] [CommRing E] [IsReduced E]
+    [Algebra K E] [Module.Finite K E] : E ≃ₐ[K] ∀ m : MaximalSpectrum E, E ⧸ m.asIdeal :=
+  let _ : IsArtinianRing E := isArtinian_of_tower K inferInstance
+  (IsArtinianRing.equivPi E).restrictScalars K
+
+private theorem equivPiQuotient_apply (K E : Type*) [Field K] [CommRing E] [IsReduced E]
+    [Algebra K E] [Module.Finite K E] (x : E) (m : MaximalSpectrum E) :
+    equivPiQuotient K E x m = Ideal.Quotient.mk m.asIdeal x := by
+  let _ : IsArtinianRing E := isArtinian_of_tower K inferInstance
+  exact IsArtinianRing.equivPi_apply E x m
+
+private theorem spectralNorm_quotient_le_iSup [Module.Finite K E] (x : E)
     (m : MaximalSpectrum E) :
     spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
       ⨆ n : MaximalSpectrum E,
         spectralNorm K (E ⧸ n.asIdeal) (Ideal.Quotient.mk n.asIdeal x) :=
+  have := finite_maximalSpectrum K E
   le_ciSup (f := fun n : MaximalSpectrum E ↦
     spectralNorm K (E ⧸ n.asIdeal) (Ideal.Quotient.mk n.asIdeal x))
     (Set.finite_range _).bddAbove m
@@ -91,18 +115,18 @@ theorem spectralValue_minpoly_eq_iSup_spectralNorm (x : E) :
       ⨆ m : MaximalSpectrum E,
         letI := Ideal.Quotient.field m.asIdeal
         spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) := by
-  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
+  have := finite_maximalSpectrum K E
   let _ : Fintype (MaximalSpectrum E) := Fintype.ofFinite (MaximalSpectrum E)
   have hx : IsIntegral K x := Algebra.IsIntegral.isIntegral x
   have hxm (m : MaximalSpectrum E) : IsIntegral K (Ideal.Quotient.mk m.asIdeal x) :=
     hx.map (Ideal.Quotient.mkₐ K m.asIdeal)
-  refine le_antisymm ?_ ?_
+  refine le_antisymm ?_ (iSup_quotient_le x (spectralValue_nonneg _) fun m ↦ ?_)
   · let Q : K[X] := ∏ m : MaximalSpectrum E, minpoly K (Ideal.Quotient.mk m.asIdeal x)
     have hQ_monic : Q.Monic := monic_prod_of_monic _ _ fun m _ ↦ minpoly.monic (hxm m)
     have hQ_aeval : aeval x Q = 0 := by
-      apply (IsArtinianRing.equivPi E).injective
+      apply (equivPiQuotient K E).injective
       ext m
-      rw [map_zero, Pi.zero_apply, IsArtinianRing.equivPi_apply,
+      rw [map_zero, Pi.zero_apply, equivPiQuotient_apply,
         ← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, ← aeval_algHom_apply]
       obtain ⟨R, hR⟩ := Finset.dvd_prod_of_mem
         (fun n : MaximalSpectrum E ↦ minpoly K (Ideal.Quotient.mk n.asIdeal x))
@@ -113,14 +137,10 @@ theorem spectralValue_minpoly_eq_iSup_spectralNorm (x : E) :
       (Monic.spectralValue_prod_le (fun m _ ↦ minpoly.monic (hxm m))
         (iSup_quotient_spectralNorm_nonneg x) fun m _ ↦
         spectralNorm_quotient_le_iSup x m)
-  · rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-    · rw [Real.iSup_of_isEmpty]
-      exact spectralValue_nonneg _
-    · refine ciSup_le fun m ↦ ?_
-      have hdvd : minpoly K (Ideal.Quotient.mk m.asIdeal x) ∣ minpoly K x := by
-        refine minpoly.dvd K _ ?_
-        rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, aeval_algHom_apply, minpoly.aeval, map_zero]
-      exact (minpoly.monic (hxm m)).spectralValue_le_of_dvd (minpoly.monic hx) hdvd
+  · have hdvd : minpoly K (Ideal.Quotient.mk m.asIdeal x) ∣ minpoly K x := by
+      refine minpoly.dvd K _ ?_
+      rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, aeval_algHom_apply, minpoly.aeval, map_zero]
+    exact (minpoly.monic (hxm m)).spectralValue_le_of_dvd (minpoly.monic hx) hdvd
 
 variable (K E) in
 /-- **The spectral algebra norm on a finite reduced `K`-algebra.** Sends `x : E` to
@@ -131,50 +151,42 @@ noncomputable def reducedSpectralAlgNorm : AlgebraNorm K E where
   map_zero' := by
     rw [spectralValue_minpoly_eq_iSup_spectralNorm]
     simp_rw [map_zero, spectralNorm_zero]
-    rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-    · exact Real.iSup_of_isEmpty _
-    · exact ciSup_const
+    exact le_antisymm (Real.iSup_le (fun _ ↦ le_rfl) le_rfl) (Real.iSup_nonneg fun _ ↦ le_rfl)
   add_le' x y := by
-    have : IsArtinianRing E := isArtinian_of_tower K inferInstance
     rw [spectralValue_minpoly_eq_iSup_spectralNorm, spectralValue_minpoly_eq_iSup_spectralNorm,
       spectralValue_minpoly_eq_iSup_spectralNorm]
-    rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-    · simp only [Real.iSup_of_isEmpty, add_zero, le_rfl]
-    · refine ciSup_le fun m ↦ ?_
-      rw [map_add]
-      exact (isNonarchimedean_spectralNorm.add_le spectralNorm_nonneg).trans
-        (add_le_add (spectralNorm_quotient_le_iSup x m) (spectralNorm_quotient_le_iSup y m))
+    refine iSup_quotient_le (x + y)
+      (add_nonneg (iSup_quotient_spectralNorm_nonneg x) (iSup_quotient_spectralNorm_nonneg y))
+      fun m ↦ ?_
+    rw [map_add]
+    exact (isNonarchimedean_spectralNorm.add_le spectralNorm_nonneg).trans
+      (add_le_add (spectralNorm_quotient_le_iSup x m) (spectralNorm_quotient_le_iSup y m))
   neg' x := by
     rw [spectralValue_minpoly_eq_iSup_spectralNorm, spectralValue_minpoly_eq_iSup_spectralNorm]
     congr 1 with m
     rw [map_neg, spectralNorm_neg (Algebra.IsAlgebraic.isAlgebraic _)]
   mul_le' x y := by
-    have : IsArtinianRing E := isArtinian_of_tower K inferInstance
     rw [spectralValue_minpoly_eq_iSup_spectralNorm, spectralValue_minpoly_eq_iSup_spectralNorm,
       spectralValue_minpoly_eq_iSup_spectralNorm]
-    rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-    · simp only [Real.iSup_of_isEmpty, mul_zero, le_rfl]
-    · refine ciSup_le fun m ↦ ?_
-      rw [map_mul]
-      exact (spectralNorm_mul (Algebra.IsAlgebraic.isAlgebraic _)
-        (Algebra.IsAlgebraic.isAlgebraic _)).trans
-        (mul_le_mul (spectralNorm_quotient_le_iSup x m) (spectralNorm_quotient_le_iSup y m)
-          (spectralNorm_nonneg _) (iSup_quotient_spectralNorm_nonneg x))
+    refine iSup_quotient_le (x * y)
+      (mul_nonneg (iSup_quotient_spectralNorm_nonneg x) (iSup_quotient_spectralNorm_nonneg y))
+      fun m ↦ ?_
+    rw [map_mul]
+    exact (spectralNorm_mul (Algebra.IsAlgebraic.isAlgebraic _)
+      (Algebra.IsAlgebraic.isAlgebraic _)).trans
+      (mul_le_mul (spectralNorm_quotient_le_iSup x m) (spectralNorm_quotient_le_iSup y m)
+        (spectralNorm_nonneg _) (iSup_quotient_spectralNorm_nonneg x))
   smul' k x := by
-    have : IsArtinianRing E := isArtinian_of_tower K inferInstance
-    rw [spectralValue_minpoly_eq_iSup_spectralNorm, spectralValue_minpoly_eq_iSup_spectralNorm]
-    rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-    · simp only [Real.iSup_of_isEmpty, mul_zero]
-    · rw [Real.mul_iSup_of_nonneg (norm_nonneg k)]
-      congr 1 with m
-      rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, map_smul, Ideal.Quotient.mkₐ_eq_mk,
-        spectralNorm_smul k (Algebra.IsAlgebraic.isAlgebraic _), coe_nnNorm]
+    rw [spectralValue_minpoly_eq_iSup_spectralNorm, spectralValue_minpoly_eq_iSup_spectralNorm,
+      Real.mul_iSup_of_nonneg (norm_nonneg k)]
+    congr 1 with m
+    rw [← Ideal.Quotient.mkₐ_eq_mk K m.asIdeal, map_smul, Ideal.Quotient.mkₐ_eq_mk,
+      spectralNorm_smul k (Algebra.IsAlgebraic.isAlgebraic _), coe_nnNorm]
   eq_zero_of_map_eq_zero' x hx := by
-    have : IsArtinianRing E := isArtinian_of_tower K inferInstance
     rw [spectralValue_minpoly_eq_iSup_spectralNorm] at hx
-    apply (IsArtinianRing.equivPi E).injective
+    apply (equivPiQuotient K E).injective
     ext m
-    rw [map_zero, Pi.zero_apply, IsArtinianRing.equivPi_apply]
+    rw [map_zero, Pi.zero_apply, equivPiQuotient_apply]
     have hm0 : spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) = 0 :=
       le_antisymm ((spectralNorm_quotient_le_iSup x m).trans hx.le) (spectralNorm_nonneg _)
     exact eq_zero_of_map_spectralNorm_eq_zero hm0 (Algebra.IsAlgebraic.isAlgebraic _)
@@ -198,7 +210,6 @@ theorem spectralNorm_quotient_le_reducedSpectralAlgNorm (x : E) (m : MaximalSpec
     letI := Ideal.Quotient.field m.asIdeal
     spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
       reducedSpectralAlgNorm K E x := by
-  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
   rw [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
   exact spectralNorm_quotient_le_iSup x m
 
@@ -206,38 +217,52 @@ theorem spectralNorm_quotient_le_reducedSpectralAlgNorm (x : E) (m : MaximalSpec
 theorem isNonarchimedean_reducedSpectralAlgNorm :
     IsNonarchimedean (reducedSpectralAlgNorm K E) := by
   intro x y
-  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
   simp only [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
-  rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-  · simp only [Real.iSup_of_isEmpty, max_self, le_rfl]
-  · refine ciSup_le fun m ↦ ?_
-    rw [map_add]
-    exact (isNonarchimedean_spectralNorm _ _).trans
-      (max_le_max (spectralNorm_quotient_le_iSup x m) (spectralNorm_quotient_le_iSup y m))
+  refine iSup_quotient_le (x + y)
+    (le_max_of_le_left (iSup_quotient_spectralNorm_nonneg x)) fun m ↦ ?_
+  rw [map_add]
+  exact (isNonarchimedean_spectralNorm _ _).trans
+    (max_le_max (spectralNorm_quotient_le_iSup x m) (spectralNorm_quotient_le_iSup y m))
 
 /-- `reducedSpectralAlgNorm K E` is power-multiplicative. -/
 theorem isPowMul_reducedSpectralAlgNorm :
     IsPowMul (reducedSpectralAlgNorm K E) := by
   intro x n hn
-  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
   simp only [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
-  rcases isEmpty_or_nonempty (MaximalSpectrum E) with _ | _
-  · rw [Real.iSup_of_isEmpty, Real.iSup_of_isEmpty, zero_pow (Nat.one_le_iff_ne_zero.mp hn)]
-  · refine le_antisymm (ciSup_le fun m ↦ ?_) ?_
-    · rw [map_pow, isPowMul_spectralNorm _ hn]
-      exact pow_le_pow_left₀ (spectralNorm_nonneg _) (spectralNorm_quotient_le_iSup x m) n
-    · obtain ⟨m, hm⟩ := exists_eq_ciSup_of_finite
-        (f := fun m : MaximalSpectrum E ↦
-          spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x))
-      rw [← hm, ← isPowMul_spectralNorm _ hn, ← map_pow]
+  refine le_antisymm
+    (iSup_quotient_le (x ^ n) (pow_nonneg (iSup_quotient_spectralNorm_nonneg x) n) fun m ↦ ?_) ?_
+  · rw [map_pow, isPowMul_spectralNorm _ hn]
+    exact pow_le_pow_left₀ (spectralNorm_nonneg _) (spectralNorm_quotient_le_iSup x m) n
+  · have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp hn)
+    have hle : (⨆ m : MaximalSpectrum E,
+        spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x)) ≤
+        (⨆ m : MaximalSpectrum E,
+          spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal (x ^ n))) ^
+          (1 / (n : ℝ)) := by
+      refine iSup_quotient_le x (Real.rpow_nonneg (iSup_quotient_spectralNorm_nonneg (x ^ n)) _)
+        fun m ↦ ?_
+      rw [one_div]
+      refine (Real.le_rpow_inv_iff_of_pos (spectralNorm_nonneg _)
+        (iSup_quotient_spectralNorm_nonneg (x ^ n)) (Nat.cast_pos.mpr hn)).mpr ?_
+      rw [Real.rpow_natCast, ← isPowMul_spectralNorm _ hn, ← map_pow]
       exact spectralNorm_quotient_le_iSup (x ^ n) m
+    calc
+      (⨆ m : MaximalSpectrum E,
+          spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x)) ^ n
+        ≤ ((⨆ m : MaximalSpectrum E,
+            spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal (x ^ n))) ^
+            (1 / (n : ℝ))) ^ n :=
+          pow_le_pow_left₀ (iSup_quotient_spectralNorm_nonneg x) hle n
+      _ = ⨆ m : MaximalSpectrum E,
+          spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal (x ^ n)) := by
+        rw [← Real.rpow_natCast, ← Real.rpow_mul (iSup_quotient_spectralNorm_nonneg (x ^ n)),
+          one_div_mul_cancel hn0, Real.rpow_one]
 
 /-- On a nontrivial finite reduced `K`-algebra, `reducedSpectralAlgNorm K E` extends the norm on
 `K`. -/
 @[simp]
 theorem reducedSpectralAlgNorm_algebraMap [Nontrivial E] (k : K) :
     reducedSpectralAlgNorm K E (algebraMap K E k) = ‖k‖ := by
-  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
   obtain ⟨M, hM⟩ := Ideal.exists_maximal E
   have : Nonempty (MaximalSpectrum E) := ⟨⟨M, hM⟩⟩
   rw [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
@@ -309,11 +334,10 @@ theorem exists_bound_reducedSpectralAlgNorm (hK : IsWeaklyStable K)
     (φ : Module.Dual K E) :
     ∃ C : ℝ, 0 < C ∧ ∀ x : E, ‖φ x‖ ≤ C * reducedSpectralAlgNorm K E x := by
   classical
-  have : IsArtinianRing E := isArtinian_of_tower K inferInstance
+  have := finite_maximalSpectrum K E
   let _ : Fintype (MaximalSpectrum E) := Fintype.ofFinite (MaximalSpectrum E)
   let _ (m : MaximalSpectrum E) : Field (E ⧸ m.asIdeal) := Ideal.Quotient.field m.asIdeal
-  let e : E ≃ₐ[K] ∀ m : MaximalSpectrum E, E ⧸ m.asIdeal :=
-    (IsArtinianRing.equivPi E).restrictScalars K
+  let e : E ≃ₐ[K] ∀ m : MaximalSpectrum E, E ⧸ m.asIdeal := equivPiQuotient K E
   let ψ (m : MaximalSpectrum E) : Module.Dual K (E ⧸ m.asIdeal) :=
     (φ.comp e.symm.toLinearMap).comp (LinearMap.single K (fun m ↦ E ⧸ m.asIdeal) m)
   choose C hC using fun m ↦ hK.exists_bound_spectralNorm (ψ m)
@@ -340,7 +364,7 @@ theorem exists_bound_reducedSpectralAlgNorm (hK : IsWeaklyStable K)
       refine Finset.sum_le_sum fun m _ ↦ mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
       rw [reducedSpectralAlgNorm_eq_iSup_spectralNorm]
       dsimp only [e]
-      rw [AlgEquiv.coe_restrictScalars, IsArtinianRing.equivPi_apply]
+      rw [equivPiQuotient_apply]
       exact spectralNorm_quotient_le_iSup x m
     _ = (∑ m : MaximalSpectrum E, |C m|) * reducedSpectralAlgNorm K E x := by
       rw [← Finset.sum_mul]

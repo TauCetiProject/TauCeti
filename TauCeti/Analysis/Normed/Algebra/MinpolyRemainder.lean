@@ -57,20 +57,11 @@ theorem exists_pos_norm_coeff_modByMonic_le (K : Type*) [NontriviallyNormedField
   set p := minpoly B a
   have hp_monic : p.Monic := minpoly.monic ha_int
   rcases subsingleton_or_nontrivial A with _ | _
-  · have hdvd1 : p ∣ 1 :=
-      TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree ha_int (Subsingleton.elim _ _)
-    have hp1 : p = 1 :=
-      hp_monic.natDegree_eq_zero.mp <| Nat.eq_zero_of_le_zero <|
-        (Polynomial.natDegree_le_of_dvd hdvd1 one_ne_zero).trans_eq natDegree_one
-    refine ⟨1, zero_lt_one, fun q i ↦ ?_⟩
-    simp [hp1, norm_nonneg]
+  · refine ⟨1, zero_lt_one, fun q i ↦ ?_⟩
+    simp [p, minpoly.subsingleton, norm_nonneg]
   set d := p.natDegree
-  have hd : 0 < d := by
-    refine Nat.pos_of_ne_zero fun hd0 ↦ ?_
-    have h0 : aeval a p = 0 := minpoly.aeval B a
-    rw [hp_monic.natDegree_eq_zero.mp hd0, map_one] at h0
-    exact one_ne_zero h0
-  have hp_ne_one : p ≠ 1 := fun h1 ↦ by simp [d, h1] at hd
+  have hd : 0 < d := minpoly.natDegree_pos ha_int
+  have hp_ne_one : p ≠ 1 := minpoly.ne_one B a
   have : Huber.IsTateRing B := Huber.IsTateRing.of_normedAlgebra K B
   have : ContinuousSMul B A := continuousSMul_of_algebraMap B A hBA
   let Φ : (Fin d → B) →ₗ[B] A :=
@@ -100,7 +91,7 @@ theorem exists_pos_norm_coeff_modByMonic_le (K : Type*) [NontriviallyNormedField
     (Φ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective
       Φ.isStrictMap_of_module_finite hΦ_inj
   refine ⟨C, hC, fun q i ↦ ?_⟩
-  let r : B[X] := q %ₘ p
+  set r : B[X] := q %ₘ p with hr
   have hr_deg : r.natDegree < d := natDegree_modByMonic_lt q hp_monic hp_ne_one
   by_cases hi : i < d
   · let c : Fin d → B := fun j ↦ r.coeff j
@@ -108,7 +99,7 @@ theorem exists_pos_norm_coeff_modByMonic_le (K : Type*) [NontriviallyNormedField
       have haeval : aeval a r = aeval a q := by
         have hap : aeval a p = 0 := minpoly.aeval B a
         have h := congrArg (aeval a) (modByMonic_add_div q p)
-        simpa only [r, map_add, map_mul, hap, zero_mul, add_zero] using h
+        simpa only [← hr, map_add, map_mul, hap, zero_mul, add_zero] using h
       rw [← haeval, aeval_eq_sum_range' hr_deg, ← Fin.sum_univ_eq_sum_range]
       simp [Φ, c, Algebra.smul_def]
     exact (norm_le_pi_norm c ⟨i, hi⟩).trans
@@ -117,7 +108,7 @@ theorem exists_pos_norm_coeff_modByMonic_le (K : Type*) [NontriviallyNormedField
       by_cases hr0 : r = 0
       · simp [hr0]
       · exact coeff_eq_zero_of_natDegree_lt (hr_deg.trans_le (not_lt.mp hi))
-    rw [show q %ₘ p = r from rfl, hcoeff0, norm_zero]
+    rw [hcoeff0, norm_zero]
     exact mul_nonneg hC.le (norm_nonneg _)
 
 end TauCeti

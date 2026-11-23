@@ -50,6 +50,8 @@ are retained throughout.
   value of a monic polynomial generating the annihilator of `f`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minpoly_coeff_rpow`: `|f|sup` is the spectral
   value of the minimal polynomial of `f` over an integrally closed domain.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly`:
+  `|f|sup = spectralValue (minpoly B f)` when `supSeminorm K` agrees with the norm on `B`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_smul_of_isTorsionFree`: scaling `f` by an element `a` of
   `A` whose multiplication scales `|·|sup` on `A` multiplies `|f|sup` by `|a|sup`.
 
@@ -66,7 +68,10 @@ namespace TauCeti.IsAffinoidAlgebra
 open Polynomial
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
+
+section
+
+variable {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
   [Algebra A B] [IsScalarTower K A B]
 
 /-- A root `α` of `p` in a field `Ω` over `A`, whose kernel on `A` is maximal, is the value of
@@ -212,6 +217,44 @@ theorem supSeminorm_eq_iSup_minpoly_coeff_rpow (hB : IsAffinoidAlgebra K B) [IsD
   hB.supSeminorm_eq_iSup_coeff_rpow_of_dvd (minpoly.monic hf) (minpoly.aeval A f)
     fun _ ↦ TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
 
+end
+
+/-- **Bosch–Güntzer–Remmert, §6.2.1, Proposition 4(iii).**
+Over a complete nontrivially normed ultrametric field `K`, let `A` be an affinoid `K`-algebra
+integral and torsion-free over an integrally closed seminormed domain `B` whose supremum seminorm
+agrees with its norm. Then for every `f : A`, `supSeminorm K f = spectralValue (minpoly B f)`. -/
+theorem supSeminorm_eq_spectralValue_minpoly
+    {B : Type*} [SeminormedCommRing B] [IsDomain B] [IsIntegrallyClosed B] [Algebra K B]
+    {A : Type*} [CommRing A] [Algebra K A] (hA : IsAffinoidAlgebra K A)
+    [Algebra B A] [IsScalarTower K B A] [Module.IsTorsionFree B A] [Algebra.IsIntegral B A]
+    (hB : ∀ b : B, supSeminorm K b = ‖b‖) (f : A) :
+    supSeminorm K f = spectralValue (minpoly B f) := by
+  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := B) f]
+  simp_rw [hB]
+  set p := minpoly B f
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
+  · have hp1 : p = 1 :=
+      (minpoly.monic (Algebra.IsIntegral.isIntegral (R := B) f)).natDegree_eq_zero.mp h0
+    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
+    rw [Real.iSup_of_isEmpty, hp1, Polynomial.spectralValue_one]
+  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
+    refine le_antisymm ?_ ?_
+    · refine Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p)
+      rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
+      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
+    · refine ciSup_le fun n ↦ ?_
+      by_cases hn : n < p.natDegree
+      · rw [spectralValueTerms_of_lt_natDegree p hn]
+        exact le_ciSup (Finite.bddAbove_range
+          (fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))) ⟨n, hn⟩
+      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
+        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+
+section
+
+variable {A : Type*} [CommRing A] [Algebra K A] {B : Type*} [CommRing B] [Algebra K B]
+  [Algebra A B] [IsScalarTower K A B]
+
 /-- **Multiplicativity of the supremum seminorm under torsion-free integral scalar
 multiplication.** Let `B` be an affinoid algebra which is integral and torsion-free
 over an integrally closed domain `A`. If right multiplication by `a : A` scales the supremum
@@ -249,5 +292,7 @@ theorem supSeminorm_smul_of_isTorsionFree (hB : IsAffinoidAlgebra K B) [IsDomain
   · rw [hB.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := A) f,
       Real.mul_iSup_of_nonneg (supSeminorm_nonneg a)]
     exact congrArg iSup (funext hterm)
+
+end
 
 end TauCeti.IsAffinoidAlgebra

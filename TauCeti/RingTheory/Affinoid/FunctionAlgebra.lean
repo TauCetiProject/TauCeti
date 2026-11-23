@@ -14,10 +14,8 @@ import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import Mathlib.Topology.UniformSpace.Equiv
 import TauCeti.Analysis.Normed.Operator.Embedding
-import TauCeti.FieldTheory.Minpoly.TorsionFree
 import TauCeti.RingTheory.Affinoid.Integral.Basic
 import TauCeti.RingTheory.Affinoid.MaximumModulus
-import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.StrictMorphism
@@ -56,10 +54,8 @@ In particular:
 
 ## Main definitions and results
 
-* `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly`,
-  `TauCeti.supSeminorm_eq_spectralValue_minpoly`, and
-  `TauCeti.supSeminorm_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas for
-  `supSeminorm K`.
+* `TauCeti.supSeminorm_eq_reducedSpectralAlgNorm`: base-change formula for `supSeminorm K` via
+  `reducedSpectralAlgNorm`.
 * `TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`: [BGR, §6.2.4, Theorem 1].
 * `TauCeti.IsAffinoidAlgebra.isUniform`: reduced completely normed affinoid algebras are uniform.
 * `TauCeti.IsAffinoidAlgebra.SupNormModel`, `TauCeti.IsAffinoidAlgebra.SupNormModel.map`, and
@@ -92,57 +88,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 
 local notation "Tate " σ:max =>
   _root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1)
-
-/-- **Bosch–Güntzer–Remmert, §6.2.1, Proposition 4(iii).**
-Over a complete nontrivially normed ultrametric field `K`, let `A` be an affinoid `K`-algebra
-integral and torsion-free over an integrally closed seminormed domain `B` whose supremum seminorm
-agrees with its norm. Then for every `f : A`, `supSeminorm K f = spectralValue (minpoly B f)`. -/
-theorem IsAffinoidAlgebra.supSeminorm_eq_spectralValue_minpoly
-    {B : Type*} [SeminormedCommRing B] [IsDomain B] [IsIntegrallyClosed B] [Algebra K B]
-    {A : Type*} [CommRing A] [Algebra K A] (hA : IsAffinoidAlgebra K A)
-    [Algebra B A] [IsScalarTower K B A] [Module.IsTorsionFree B A] [Algebra.IsIntegral B A]
-    (hB : ∀ b : B, supSeminorm K b = ‖b‖) (f : A) :
-    supSeminorm K f = spectralValue (minpoly B f) := by
-  open Polynomial in
-  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := B) f]
-  simp_rw [hB]
-  set p := minpoly B f
-  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
-  · have hp1 : p = 1 :=
-      (minpoly.monic (Algebra.IsIntegral.isIntegral (R := B) f)).natDegree_eq_zero.mp h0
-    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
-    rw [Real.iSup_of_isEmpty, hp1, Polynomial.spectralValue_one]
-  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
-    refine le_antisymm ?_ ?_
-    · refine Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p)
-      rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
-      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
-    · refine ciSup_le fun n ↦ ?_
-      by_cases hn : n < p.natDegree
-      · rw [spectralValueTerms_of_lt_natDegree p hn]
-        exact le_ciSup (Finite.bddAbove_range
-          (fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))) ⟨n, hn⟩
-      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
-        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
-
-/-- **Bosch–Güntzer–Remmert, §6.2.2, Proposition 1 / §6.2.1, Proposition 4(iii).**
-Over a complete nontrivially normed ultrametric field `K`, let `A` be a commutative `K`-algebra
-(with no choice of norm or reducedness assumption) that is finite and torsion-free over a
-finite-variable Tate algebra `T = K⟨X₁, …, X_d⟩`. Then for every `f : A`,
-`supSeminorm K f = spectralValue (minpoly T f)`. -/
-theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
-    {A : Type*} [CommRing A] [Algebra K A] [Algebra (Tate σ) A] [IsScalarTower K (Tate σ) A]
-    [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A] (f : A) :
-    supSeminorm K f = spectralValue (minpoly (Tate σ) f) := by
-  have hA : IsAffinoidAlgebra K A := (isAffinoidAlgebra_tate (K := K) (σ := σ)).of_finite
-  have : Algebra.IsIntegral (Tate σ) A := Algebra.IsIntegral.of_finite _ _
-  let _ := Fintype.ofFinite σ
-  let e : Tate σ ≃ₐ[K] Tate (Fin (Fintype.card σ)) :=
-    _root_.MvPowerSeries.IsRestricted.renameAlgEquiv (R := K) (Fintype.equivFin σ) fun _ ↦ 1
-  have hsup (t : Tate σ) : supSeminorm K t = ‖t‖ := by
-    rw [← AlgEquiv.supSeminorm_eq e t, MvPowerSeries.supSeminorm_eq_norm,
-      _root_.MvPowerSeries.IsRestricted.norm_renameAlgEquiv]
-  exact hA.supSeminorm_eq_spectralValue_minpoly hsup f
 
 /-- Over a complete nontrivially normed ultrametric field `K`, when `A` is a reduced commutative
 `K`-algebra that is finite and torsion-free over a finite-variable Tate algebra
