@@ -49,16 +49,6 @@ abbrev orientationModule :=
   localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set E)
     (finrank ℝ E)
 
-instance orientationModule.instFree [FiniteDimensional ℝ E] :
-    Module.Free ℤ (orientationModule E) :=
-  Module.Free.of_equiv (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
-    rfl ULift.moduleEquiv (0 : E)).symm
-
-instance orientationModule.instFinite [FiniteDimensional ℝ E] :
-    Module.Finite ℤ (orientationModule E) :=
-  Module.Finite.equiv (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
-    rfl ULift.moduleEquiv (0 : E)).symm
-
 instance orientationModule.instInvertible [FiniteDimensional ℝ E] :
     Module.Invertible ℤ (orientationModule E) :=
   Module.Invertible.congr (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
@@ -67,10 +57,8 @@ instance orientationModule.instInvertible [FiniteDimensional ℝ E] :
 /-- The integral orientation module has rank one, also for a zero-dimensional space. -/
 @[simp]
 theorem finrank_orientationModule [FiniteDimensional ℝ E] :
-    finrank ℤ (orientationModule E) = 1 := by
-  rw [(localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
-    rfl ULift.moduleEquiv (0 : E)).finrank_eq]
-  exact Module.finrank_self ℤ
+    finrank ℤ (orientationModule E) = 1 :=
+  Module.Invertible.finrank_eq_one ℤ (orientationModule E)
 
 end TauCeti
 
@@ -207,10 +195,12 @@ theorem dual_baseChange_orientation_eq_sign_det_smul (ρ : Representation ℝ G 
       SignType.sign (LinearMap.det (ρ g)) := by
     have h := map_inv
       ((signHom : ℝ →*₀ SignType).toMonoidHom.comp (LinearMap.det.comp ρ)) g
+    have hinv : (SignType.sign (LinearMap.det (ρ g)))⁻¹ =
+        SignType.sign (LinearMap.det (ρ g)) := rfl
     calc
       SignType.sign (LinearMap.det (ρ g⁻¹)) =
           (SignType.sign (LinearMap.det (ρ g)))⁻¹ := h
-      _ = _ := by cases SignType.sign (LinearMap.det (ρ g)) <;> rfl
+      _ = _ := hinv
   apply LinearMap.ext
   intro f
   apply LinearMap.ext

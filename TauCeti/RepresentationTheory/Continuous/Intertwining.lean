@@ -241,6 +241,7 @@ theorem toContinuousLinearEquiv_toLinearMap (ρ : Representation 𝕜 G V) (g : 
   (rfl)
 
 /-- The continuous linear equivalence associated to a group element acts as the representation. -/
+@[simp]
 theorem toContinuousLinearEquiv_apply (ρ : Representation 𝕜 G V) (g : G) (v : V) :
     ρ.toContinuousLinearEquiv g v = ρ g v :=
   (rfl)
@@ -250,13 +251,20 @@ theorem toContinuousLinearEquiv_apply (ρ : Representation 𝕜 G V) (g : G) (v 
 theorem toContinuousLinearEquiv_one (ρ : Representation 𝕜 G V) :
     ρ.toContinuousLinearEquiv 1 = ContinuousLinearEquiv.refl 𝕜 V := by
   ext v
-  simp [toContinuousLinearEquiv_apply]
+  simp
+
+/-- The inverse equivalence acts as the inverse group element of the representation. -/
+@[simp]
+theorem toContinuousLinearEquiv_symm_apply (ρ : Representation 𝕜 G V) (g : G) (v : V) :
+    (ρ.toContinuousLinearEquiv g).symm v = ρ g⁻¹ v := by
+  apply (ρ.toContinuousLinearEquiv g).injective
+  simp
 
 /-- Multiplication acts by composition of the associated continuous linear equivalences. -/
 theorem toContinuousLinearEquiv_mul (ρ : Representation 𝕜 G V) (g h : G) :
     ρ.toContinuousLinearEquiv (g * h) =
       (ρ.toContinuousLinearEquiv h).trans (ρ.toContinuousLinearEquiv g) := by
   ext v
-  simp [toContinuousLinearEquiv_apply]
+  simp
 
 end Representation
