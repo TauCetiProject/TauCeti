@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.AbsoluteValue
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Fintype.Order
+import TauCeti.Algebra.MvPolynomial.Support
 
 /-!
 # Coefficient bounds for products and determinants of polynomials
@@ -113,15 +114,11 @@ theorem abv_coeff_sum_monomial_le [Semiring S] [PartialOrder S] {v : AbsoluteVal
     {B : S} (hB0 : 0 ≤ B) (hw : ∀ j ∈ s, v (w j) ≤ B) (m : σ →₀ ℕ) :
     v ((∑ j ∈ s, monomial (a j) (w j)).coeff m) ≤ B := by
   classical
-  rw [coeff_sum]
-  simp_rw [coeff_monomial]
-  by_cases hm : ∃ j ∈ s, a j = m
-  · obtain ⟨j₀, hj₀, rfl⟩ := hm
-    rw [sum_eq_single_of_mem j₀ hj₀
-      fun j hj hne ↦ ite_eq_right fun h ↦ hne (ha (mem_coe.2 hj) (mem_coe.2 hj₀) h)]
-    simpa only [↓reduceIte] using hw j₀ hj₀
-  · push Not at hm
-    rw [sum_eq_zero fun j hj ↦ ite_eq_right (hm j hj), map_zero]
+  by_cases hm : m ∈ s.image a
+  · obtain ⟨j₀, hj₀, rfl⟩ := mem_image.1 hm
+    rw [coeff_sum_monomial_of_injOn ha hj₀]
+    exact hw j₀ hj₀
+  · rw [notMem_support_iff.1 fun h ↦ hm (support_sum_monomial_subset s a w h), map_zero]
     exact hB0
 
 /-- If `g` is injective on `s` and every coefficient satisfies `v (w j) ≤ B` with `0 ≤ B`, then

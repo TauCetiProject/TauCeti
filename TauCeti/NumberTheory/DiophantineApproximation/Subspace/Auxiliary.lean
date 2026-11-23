@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.BlockSubst
+import TauCeti.Algebra.MvPolynomial.Support
 import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.NumberTheory.NumberField.SiegelsLemma
@@ -106,7 +107,7 @@ private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintyp
       Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|}) : ℝ) < #(multiMons ι d) := by
     rw [card_filter_multiMons_eq d (fun g ↦
       ∑ h, (g (h, i₀) : ℝ) / d h ≤ Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|),
-      multiMons_def, card_map]
+      card_multiMons_eq_card_piFinset]
     push_cast
     rw [← mul_assoc]
     rw [card_univ] at htail'
@@ -198,10 +199,8 @@ private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K]
   have hP_hom : IsMultiHomogeneous d P :=
     IsMultiHomogeneous.sum univ _ fun u _ ↦
       isMultiHomogeneous_monomial (mem_multiMons.mp u.property) _
-  have hP_coeff (u : multiMons ι d) : P.coeff u.val = (ξ u : K) := by
-    simp only [P, coeff_sum, coeff_monomial]
-    rw [sum_eq_single u (fun v _ hvu ↦ ite_eq_right fun h ↦ hvu (Subtype.ext h)) (by simp)]
-    simp
+  have hP_coeff (u : multiMons ι d) : P.coeff u.val = (ξ u : K) :=
+    coeff_sum_monomial_of_injOn Subtype.val_injective.injOn (mem_univ u)
   obtain ⟨u₀, hu₀⟩ := Function.ne_iff.mp hξ0
   have hP0 : P ≠ 0 := fun h0 ↦
     RingOfIntegers.coe_ne_zero_iff.mpr hu₀ (by simpa [h0] using (hP_coeff u₀).symm)

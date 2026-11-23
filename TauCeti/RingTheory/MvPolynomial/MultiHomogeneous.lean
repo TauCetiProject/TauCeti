@@ -49,8 +49,9 @@ conditions of the construction be imposed on derivatives.
 * `MvPolynomial.card_multiMons`, `MvPolynomial.card_multiMons_le_pow`, and
   `MvPolynomial.card_support_le_pow_of_isMultiHomogeneous`: `multiMons d` has
   `∏ h, (card ι + d h - 1).choose (d h) ≤ card ι ^ ∑ h, d h` elements, bounding `#P.support`.
-* `MvPolynomial.card_filter_multiMons_eq`: filtering `multiMons d` matches filtering the product
-  `Fintype.piFinset` of block antidiagonals.
+* `MvPolynomial.card_multiMons_eq_card_piFinset`, `MvPolynomial.card_filter_multiMons_eq`:
+  `multiMons d` and its filtered subsets match the cardinality of the product `Fintype.piFinset`
+  of block antidiagonals.
 * `MvPolynomial.IsMultiHomogeneous.mul`, `.pow`, `.prod`, `.add`, `.sum`: multidegrees add
   under products and are preserved by sums.
 * `MvPolynomial.IsHomogeneous.isMultiHomogeneous_rename`: a form of degree `m` written in the
@@ -357,6 +358,12 @@ theorem card_multiMons_le_pow (d : κ → ℕ) :
   rw [card_multiMons, ← prod_pow_eq_pow_sum]
   exact prod_le_prod fun h _ ↦
     Nat.multichoose_eq (Fintype.card ι) (d h) ▸ Nat.multichoose_le_pow (Fintype.card ι) (d h)
+
+/-- `multiMons ι d` has the same cardinality as the product `Fintype.piFinset` of block
+antidiagonals. -/
+theorem card_multiMons_eq_card_piFinset (d : κ → ℕ) :
+    #(multiMons ι d) = #(Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)) := by
+  rw [multiMons_def, card_map]
 
 /-- Filtering `multiMons ι d` by a predicate on exponent functions has the same cardinality as
 filtering the product `Fintype.piFinset` of block antidiagonals. -/
