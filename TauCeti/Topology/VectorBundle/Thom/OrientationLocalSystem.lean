@@ -197,13 +197,12 @@ private theorem fiberIsoAt_eq (e e' : Trivialization F (π F E)) [e.IsLinear ℝ
         (Orientation.map_eq_neg_iff_det_neg ωF c.toLinearEquiv hι).2 hneg]
       exact (neg_neg ωF).symm
     rw [hω, sign_neg hneg, ofHom_signLocalSystemFiberEquiv_neg_trans]
-    simp
-    rfl
+    simp only [M, SignType.coe_neg, SignType.coe_one, neg_smul, one_smul, Preadditive.neg_comp,
+      Category.id_comp, Preadditive.comp_neg, neg_neg]
   · have hω : (e'.mapOrientation ι hb').symm ωF = (e.mapOrientation ι hb).symm ωF := by
       rw [Equiv.symm_apply_eq, ho, (Orientation.map_eq_iff_det_pos ωF c.toLinearEquiv hι).2 hpos]
     rw [hω, sign_pos hpos]
-    simp
-    rfl
+    simp only [M, SignType.coe_one, one_smul, Category.id_comp]
 
 variable (E) in
 /-- **The fibre of the orientation local system is the top local homology of the fibre.** The
@@ -247,8 +246,9 @@ theorem signLocalSystemFiberIsoSingularHomology_inv (e : Trivialization F (π F 
         inv (complZeroPairPointHom (ModuleCat.of K (ULift.{max w uι} K)) F (finrank ℝ F) rfl) ≫
           ModuleCat.ofHom (ULift.moduleEquiv.{u, u, max w uι} ≪≫ₗ
             (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hb).symm ωF)).symm).toLinearMap := by
-  rw [signLocalSystemFiberIsoSingularHomology_eq K hι ωF e hb]
-  rfl
+  rw [signLocalSystemFiberIsoSingularHomology_eq K hι ωF e hb, fiberIsoAt, Iso.trans_inv,
+    Iso.trans_inv, TopPair.singularHomologyMapIso_inv, Iso.symm_inv, asIso_inv,
+    LinearEquiv.toModuleIso_inv, LinearEquiv.trans_symm, LinearEquiv.symm_symm, Category.assoc]
 
 /-- Reversing the orientation `ωF` of the model fibre negates the identification. -/
 @[simp]

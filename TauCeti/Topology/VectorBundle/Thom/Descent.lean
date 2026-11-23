@@ -222,8 +222,8 @@ theorem existsUnique_singularHomology_thomPair_fac
   have hobj (s : Finset B) : (thomPairFiniteTrivializingUnionDiagram (F := F) (E := E) ⋙
       TopPair.singularHomologyFunctor R (finrank ℝ F)).obj s =
         (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).singularHomology R
-          (finrank ℝ F) := by
-    simp
+          (finrank ℝ F) :=
+    singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj R (finrank ℝ F) s
   -- They are compatible, since each is determined on the fibres.
   let c : Cocone (thomPairFiniteTrivializingUnionDiagram (F := F) (E := E) ⋙
       TopPair.singularHomologyFunctor R (finrank ℝ F)) :=
@@ -238,8 +238,8 @@ theorem existsUnique_singularHomology_thomPair_fac
             simp [TopPair.singularHomologyMap_comp, h] } }
   have hpt : ((TopPair.singularHomologyFunctor R (finrank ℝ F)).mapCocone
       (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
-        (thomPair F E).singularHomology R (finrank ℝ F) := by
-    simp
+        (thomPair F E).singularHomology R (finrank ℝ F) :=
+    singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt R (finrank ℝ F)
   -- On each finite union, the glued morphism restricts to the morphism over the union.
   have hres (s : Finset B) : TopPair.singularHomologyMap (thomPairOverMap F E (subset_univ _) ≫
       (thomPairOverUnivIso F E).hom) R (finrank ℝ F) ≫ eqToHom hpt.symm ≫ P.desc c = Φ s := by
