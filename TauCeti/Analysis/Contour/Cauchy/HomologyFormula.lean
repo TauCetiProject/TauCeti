@@ -63,9 +63,10 @@ statements here supply.
 
 ## Provenance
 
-No formal source is vendored: the statements specialize the repository's Cauchy integral formula
-for cycles, built on the residue and contour APIs migrated from the AINTLIB `LeanModularForms`
-development.
+No formal source is vendored: the formulas for general `k` specialize the repository's Cauchy
+integral formula for cycles, and the case `k = 0` restates Dixon's identity from
+`HomologyCauchy.lean`; both are built on the residue and contour APIs migrated from the AINTLIB
+`LeanModularForms` development.
 -/
 
 public section

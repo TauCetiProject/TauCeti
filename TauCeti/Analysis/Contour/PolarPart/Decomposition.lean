@@ -37,8 +37,8 @@ parts.
   simple-pole coefficient alone sums to `Res_s f` times that weight; the last step of every
   term-by-term evaluation of a polar part.
 * `Contour.PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero` — the
-  contour integral of the analytic remainder along a closed null-homologous piecewise-`C¹` curve
-  in `U` vanishes, by the homology Cauchy theorem.
+  contour integral of the analytic remainder along a closed null-homologous absolutely continuous
+  curve in `U` vanishes, by the homology Cauchy theorem.
 * `Contour.PolarPartDecomposition.intervalIntegrable_polarPart_mul_deriv_truncated` — the
   `ε`-truncated polar-part integrand along a measurable curve with interval-integrable
   derivative is interval-integrable, for every `ε > 0` — the integrability clause of
