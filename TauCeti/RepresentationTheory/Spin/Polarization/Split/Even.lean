@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.Hyperbolic
 public import Mathlib.LinearAlgebra.StdBasis
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.HyperbolicPair
 
 /-!
 # The standard split even-dimensional polarization
@@ -28,6 +29,8 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.splitEvenPolarization`: the canonical polarization by the two coordinate axes.
 * `TauCeti.splitEvenBasis`: the coordinate basis of the first isotropic summand.
 * `TauCeti.finrank_splitEvenPolarization_W`: the first isotropic summand has dimension `n`.
+* `TauCeti.isHyperbolicFamily_splitEvenForm`: the coordinate hyperbolic pairs form a family of
+  mutually orthogonal hyperbolic pairs.
 
 ## References
 
@@ -143,5 +146,17 @@ theorem splitEvenPolarization_W_ne_bot {n : ℕ} (hn : n ≠ 0) :
     (splitEvenPolarization K n).W ≠ ⊥ :=
   Submodule.finrank_eq_zero.not.1 <| by
     simpa using hn
+
+/-- The coordinate pairs `e_i = (0, δ_i)`, `f_i = (δ_i^*, 0)` form a family of mutually
+orthogonal hyperbolic pairs for the standard split even form `(φ, x) ↦ φ x`. -/
+theorem isHyperbolicFamily_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
+    QuadraticMap.IsHyperbolicFamily (splitEvenForm K n) (fun i => (0, Pi.single i 1))
+      (fun i => (LinearMap.proj i, 0)) where
+  left_isotropic _ := by simp
+  right_isotropic _ := by simp
+  polar_left_right _ := by simp
+  polar_left_left _ _ _ := by simp
+  polar_left_right_of_ne _ _ hij := by simp [Pi.single_eq_of_ne' hij]
+  polar_right_right _ _ _ := by simp
 
 end TauCeti
