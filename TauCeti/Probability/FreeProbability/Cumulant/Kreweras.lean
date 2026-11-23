@@ -138,16 +138,16 @@ theorem IsFreelyIndependent.apply_prod_mul_eq_sum_partitionCumulant_mul_partitio
     (ha : ∀ x ∈ s, a x ∈ B i) (hb : ∀ x ∈ s, b x ∈ B j) :
     φ (s.sort.map fun x => a x * b x).prod =
       ∑ π : NoncrossingPartition s,
-        partitionCumulant φ a π * partitionMoment φ b (NoncrossingPartition.kreweras π).1 := by
+        partitionCumulant φ a π * partitionMoment φ b (NoncrossingPartition.kreweras π).val := by
   rcases s.eq_empty_or_nonempty with rfl | hs
   · rw [Fintype.sum_subsingleton _ ⊥, NoncrossingPartition.kreweras_bot,
       Subsingleton.elim (⊤ : NoncrossingPartition (∅ : Finset α)) ⊥]
     simp [hφ, partitionMoment_bot]
   -- Expand the right-hand side over the pairs `(π, π')` with `π' ≤ K(π)`.
   have hR : ∑ π : NoncrossingPartition s,
-      partitionCumulant φ a π * partitionMoment φ b (NoncrossingPartition.kreweras π).1 =
+      partitionCumulant φ a π * partitionMoment φ b (NoncrossingPartition.kreweras π).val =
         ∑ x ∈ univ.sigma fun π : NoncrossingPartition s => Iic (NoncrossingPartition.kreweras π),
-          (∏ X ∈ x.1.1.parts, freeCumulant φ a X) * ∏ X ∈ x.2.1.parts, freeCumulant φ b X := by
+          (∏ X ∈ x.1.val.parts, freeCumulant φ a X) * ∏ X ∈ x.2.val.parts, freeCumulant φ b X := by
     rw [sum_sigma]
     refine sum_congr rfl fun π _ => ?_
     rw [← sum_Iic_partitionCumulant, mul_sum, partitionCumulant_eq_prod_freeCumulant]
@@ -159,18 +159,18 @@ theorem IsFreelyIndependent.apply_prod_mul_eq_sum_partitionCumulant_mul_partitio
     apply_prod_eq_sum_prod_freeCumulant φ _
       (let ⟨x, hx⟩ := hs; ⟨toLex (x, false), toLex_mem_interlace.2 hx⟩)]
   have hle : ∀ x ∈ univ.sigma fun π : NoncrossingPartition s => Iic π.kreweras,
-      x.2.1 ≤ x.1.1.kreweras := fun x hx => by
+      x.2.val ≤ x.1.val.kreweras := fun x hx => by
     rw [← NoncrossingPartition.coe_kreweras, Subtype.coe_le_coe]
     exact mem_Iic.1 (mem_sigma.1 hx).2
   symm
-  refine sum_bij_ne_zero (fun x hx _ => ⟨x.1.1.interlace x.2.1,
-      Finpartition.isNoncrossing_interlace_iff.2 ⟨x.1.2, x.2.2, hle x hx⟩⟩)
+  refine sum_bij_ne_zero (fun x hx _ => ⟨x.1.val.interlace x.2.val,
+      Finpartition.isNoncrossing_interlace_iff.2 ⟨x.1.property, x.2.property, hle x hx⟩⟩)
     (fun _ _ _ => mem_univ _) (fun x _ _ y _ _ hxy => ?_) (fun σ _ hσ => ?_) (fun x _ _ => ?_)
   · obtain ⟨hP, hQ⟩ := Finpartition.interlace_inj.1 (congrArg Subtype.val hxy)
     exact Sigma.ext (Subtype.ext hP) (heq_of_eq (Subtype.ext hQ))
   · obtain ⟨P, Q, hPQ⟩ := Finpartition.exists_eq_interlace
       (forall_mem_part_snd_eq_of_prod_ne_zero h hφ hij ha hb hσ)
-    obtain ⟨hP, hQ, hK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.2)
+    obtain ⟨hP, hQ, hK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.property)
     refine ⟨⟨⟨P, hP⟩, ⟨Q, hQ⟩⟩, mem_sigma.2 ⟨mem_univ _, mem_Iic.2 ?_⟩,
       (prod_freeCumulant_interlace a b P Q).symm.trans_ne (hPQ ▸ hσ), Subtype.ext hPQ.symm⟩
     rwa [← Subtype.coe_le_coe, NoncrossingPartition.coe_kreweras]
@@ -201,11 +201,12 @@ theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partit
   simp_rw [partitionCumulant_eq_prod_freeCumulant]
   -- By freeness only the interlaced partitions of `π` and `π' ≤ K(π)` contribute, and their join
   -- with the pairs is the partition into one part exactly when `π' = K(π)`.
-  have hK (π : NoncrossingPartition s) : (NoncrossingPartition.kreweras π).1 ≤ π.1.kreweras :=
+  have hK (π : NoncrossingPartition s) : (NoncrossingPartition.kreweras π).val ≤ π.val.kreweras :=
     (NoncrossingPartition.coe_kreweras π).le
   symm
-  refine sum_bij_ne_zero (fun π _ _ => ⟨π.1.interlace (NoncrossingPartition.kreweras π).1,
-      Finpartition.isNoncrossing_interlace_iff.2 ⟨π.2, (NoncrossingPartition.kreweras π).2, hK π⟩⟩)
+  refine sum_bij_ne_zero (fun π _ _ => ⟨π.val.interlace (NoncrossingPartition.kreweras π).val,
+      Finpartition.isNoncrossing_interlace_iff.2 ⟨π.property, (NoncrossingPartition.kreweras
+          π).property, hK π⟩⟩)
     (fun π _ _ => by
       simp only [mem_filter, mem_univ, true_and]
       exact (NoncrossingPartition.sup_interlacePairs_eq_top_iff (P := π) rfl le_rfl).2 rfl)
@@ -214,7 +215,7 @@ theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partit
     (fun π _ _ => (prod_freeCumulant_interlace a b _ _).symm)
   obtain ⟨P, Q, hPQ⟩ := Finpartition.exists_eq_interlace
     (forall_mem_part_snd_eq_of_prod_ne_zero h hφ hij ha hb hne)
-  obtain ⟨hP, hQ, hQK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.2)
+  obtain ⟨hP, hQ, hQK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.property)
   have hQK : (⟨Q, hQ⟩ : NoncrossingPartition s) = NoncrossingPartition.kreweras ⟨P, hP⟩ :=
     (NoncrossingPartition.sup_interlacePairs_eq_top_iff (P := ⟨P, hP⟩) (Q := ⟨Q, hQ⟩) hPQ
       (by rwa [← Subtype.coe_le_coe, NoncrossingPartition.coe_kreweras])).1
@@ -232,7 +233,7 @@ theorem IsFreelyIndependent.apply_prod_ofFn_mul_eq_sum_partitionCumulant_mul_par
     {a b : Fin n → A} (ha : ∀ k, a k ∈ B i) (hb : ∀ k, b k ∈ B j) :
     φ (List.ofFn fun k => a k * b k).prod =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        partitionCumulant φ a π * partitionMoment φ b (NoncrossingPartition.kreweras π).1 := by
+        partitionCumulant φ a π * partitionMoment φ b (NoncrossingPartition.kreweras π).val := by
   rw [← h.apply_prod_mul_eq_sum_partitionCumulant_mul_partitionMoment hφ hij
     (fun k _ => ha k) (fun k _ => hb k), Fin.sort_univ, List.ofFn_eq_map]
 

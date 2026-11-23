@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
-# The almost-everywhere derivative of the logarithm of a curve of bounded variation
+# Logarithmic derivatives and integrals along complex curves
 
 For a complex curve `σ` of bounded variation that stays in the slit plane, almost everywhere the
 derivative of `Complex.log ∘ σ` is `deriv σ t / σ t`. For the quotient `f / g` of two such curves,
@@ -22,6 +24,11 @@ variation, `AbsolutelyContinuousOnInterval.boundedVariationOn`.
 
 * `BoundedVariationOn.ae_hasDerivAt_clog`: the almost-everywhere derivative of `Complex.log ∘ σ`.
 * `BoundedVariationOn.ae_hasDerivAt_clog_div`: the same for a quotient `f / g`.
+* `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_div`: integrability of the
+  logarithmic derivative of a nonvanishing absolutely continuous curve.
+* `AbsolutelyContinuousOnInterval.integral_deriv_div_sub_integral_deriv_div_eq_log_div_sub_log_div`:
+  the complex logarithmic FTC for two absolutely continuous curves with slit-plane ratio.
+* `AbsolutelyContinuousOnInterval.integral_deriv_div_eq_log_sub_log`: its single-curve form.
 -/
 
 public section
@@ -60,3 +67,43 @@ theorem ae_hasDerivAt_clog_div {f g : ℝ → ℂ} {a b : ℝ}
   exact ((ht₀ ht').div (ht₁ ht') (hg0 t ht')).hasDerivAt.clog_real (h t ht')
 
 end BoundedVariationOn
+
+namespace AbsolutelyContinuousOnInterval
+
+variable {f g : ℝ → ℂ} {a b : ℝ}
+
+/-- The logarithmic derivative of a nonvanishing absolutely continuous complex curve is
+interval integrable. -/
+theorem intervalIntegrable_deriv_div (hf : AbsolutelyContinuousOnInterval f a b)
+    (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) :
+    IntervalIntegrable (fun t ↦ deriv f t / f t) volume a b := by
+  simpa only [div_eq_mul_inv, Pi.inv_apply] using
+    hf.intervalIntegrable_deriv_of_finiteDimensional.mul_continuousOn (hf.continuousOn.inv₀ h0)
+
+/-- For two absolutely continuous curves with slit-plane ratio, the difference of their
+logarithmic-derivative integrals is the increment of the principal logarithm of the ratio. -/
+theorem integral_deriv_div_sub_integral_deriv_div_eq_log_div_sub_log_div
+    (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b)
+    (h : ∀ t ∈ uIcc a b, f t / g t ∈ slitPlane) :
+    (∫ t in a..b, deriv f t / f t) - ∫ t in a..b, deriv g t / g t =
+      Complex.log (f b / g b) - Complex.log (f a / g a) := by
+  have hne : ∀ t ∈ uIcc a b, f t ≠ 0 ∧ g t ≠ 0 := fun t ht ↦
+    div_ne_zero_iff.mp (slitPlane_ne_zero (h t ht))
+  have hlog := (hf.fun_div hg fun t ht ↦ (hne t ht).2).clog h
+  have hint := hlog.integral_eq_sub_of_ae_hasDerivAt
+    (hf.boundedVariationOn.ae_hasDerivAt_clog_div hg.boundedVariationOn h)
+  rwa [intervalIntegral.integral_sub (hf.intervalIntegrable_deriv_div fun t ht ↦ (hne t ht).1)
+    (hg.intervalIntegrable_deriv_div fun t ht ↦ (hne t ht).2)] at hint
+
+/-- The logarithmic-derivative integral of an absolutely continuous curve in the slit plane
+is the difference of the principal logarithms of its endpoints. -/
+theorem integral_deriv_div_eq_log_sub_log (hf : AbsolutelyContinuousOnInterval f a b)
+    (h : ∀ t ∈ uIcc a b, f t ∈ slitPlane) :
+    ∫ t in a..b, deriv f t / f t = Complex.log (f b) - Complex.log (f a) := by
+  have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ (1 : ℂ)) a b :=
+    (LipschitzWith.const 1).lipschitzOnWith.absolutelyContinuousOnInterval
+  simpa only [div_one, deriv_const, zero_div, intervalIntegral.integral_zero, sub_zero] using
+    hf.integral_deriv_div_sub_integral_deriv_div_eq_log_div_sub_log_div hconst
+      (by simpa only [div_one] using h)
+
+end AbsolutelyContinuousOnInterval

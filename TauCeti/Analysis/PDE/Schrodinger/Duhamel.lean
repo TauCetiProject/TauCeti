@@ -44,6 +44,8 @@ hypothesis on `G`. Together with the continuity of `u` on `[0, T]` for `G` integ
 ## Main declarations
 
 * `TauCeti.schrodingerDuhamel`: Duhamel's formula.
+* `TauCeti.schrodingerDuhamel_eq_sub_setIntegral_Iio`: on `[0, T]`, Duhamel's formula through the
+  retarded integral of the forcing term cut off to `(0, T]`.
 * `TauCeti.duhamel_phaseGroup_laplacianSymbol` and
   `TauCeti.schrodingerDuhamel_eq_realOperator_add_duhamel`: Duhamel's formula at nonnegative times
   through the Schrödinger group and its abstract Duhamel integral.
@@ -101,6 +103,26 @@ theorem schrodingerDuhamel_apply_zero (f : Lp F 2 (volume : Measure E))
 theorem schrodingerDuhamel_zero_right (f : Lp F 2 (volume : Measure E)) (t : ℝ) :
     schrodingerDuhamel f 0 t = schrodingerPropagator F t f := by
   simp [schrodingerDuhamel_def]
+
+/-- On `[0, T]`, Duhamel's formula is the free evolution minus `i` times the retarded integral
+`∫_{s < t} S(t - s) G(s) ds` of the forcing term cut off to `(0, T]`. -/
+theorem schrodingerDuhamel_eq_sub_setIntegral_Iio (f : Lp F 2 (volume : Measure E))
+    (G : ℝ → Lp F 2 (volume : Measure E)) {T t : ℝ} (ht : t ∈ Icc 0 T) :
+    schrodingerDuhamel f G t = schrodingerPropagator F t f - Complex.I •
+      ∫ s in Iio t, schrodingerPropagator F (t - s) ((Ioc 0 T).indicator G s) := by
+  have hset : Iio t ∩ Ioc 0 T = Ioo 0 t := by
+    ext s
+    simp only [mem_inter_iff, mem_Iio, mem_Ioc, mem_Ioo]
+    constructor
+    · rintro ⟨h1, h2, -⟩
+      exact ⟨h2, h1⟩
+    · rintro ⟨h1, h2⟩
+      exact ⟨h2, h1, h2.le.trans ht.2⟩
+  have hind (s : ℝ) : schrodingerPropagator F (t - s) ((Ioc 0 T).indicator G s) =
+      (Ioc 0 T).indicator (fun s ↦ schrodingerPropagator F (t - s) (G s)) s := by
+    by_cases hs : s ∈ Ioc 0 T <;> simp [hs]
+  simp_rw [schrodingerDuhamel_def, hind, setIntegral_indicator measurableSet_Ioc, hset,
+    intervalIntegral.integral_of_le ht.1, integral_Ioc_eq_integral_Ioo]
 
 /-- The Duhamel integral of the Schrödinger group is `∫_{(0,t]} S(t - s) G(s) ds`. -/
 theorem duhamel_phaseGroup_laplacianSymbol (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) :
