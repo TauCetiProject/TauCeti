@@ -222,9 +222,10 @@ theorem isUnit_mk_mul_sub_iff_isCoprime {p q : R[X]} :
     IsUnit (mk (p * q) (p - q)) ↔ IsCoprime p q := by
   have h₁ : IsCoprime p (p - q) ↔ IsCoprime p q := by
     simpa using IsCoprime.mul_sub_left_right_iff (x := p) (y := q) (z := 1)
-  have h₂ : IsCoprime q (p - q) ↔ IsCoprime q p := by
-    simpa using IsCoprime.sub_mul_left_right_iff (x := q) (y := p) (z := 1)
-  rw [isUnit_mk_iff_isCoprime, IsCoprime.mul_left_iff, h₁, h₂, isCoprime_comm (x := q), and_self]
+  have h₂ : IsCoprime q (p - q) ↔ IsCoprime p q := by
+    simpa [isCoprime_comm (x := q)] using
+      IsCoprime.sub_mul_left_right_iff (x := q) (y := p) (z := 1)
+  simp [-map_sub, IsCoprime.mul_left_iff, h₁, h₂]
 
 /-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
 `AdjoinRoot g`. -/

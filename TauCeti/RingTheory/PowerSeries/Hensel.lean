@@ -17,6 +17,7 @@ import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.RingTheory.PowerSeries.Basic
+import TauCeti.RingTheory.PowerSeries.Ideal
 
 /-!
 # Hensel lifting of coprime factorizations over power series
@@ -49,9 +50,8 @@ For a linear factor `g = X - a` this specializes to the simple-root form of Hens
 `a` is a root of the reduction `p` at which `p'` is a unit, then `X - a` is coprime to
 `p /ₘ (X - a)`, so the factor lift splits off `X - α` with `α ≡ a (mod t)`. A simple root of the
 reduction lifts to exactly one root of `P` even when `P` is not monic: the pair `(R⟦t⟧, (t))` is
-Henselian by `IsAdicComplete.henselianRing`, so Hensel's lemma without monicity
-(`Polynomial.exists_isRoot_sub_mem`) gives a root `α`, and since the cofactor of `X - α` in `P` is
-a unit at every lift of `a`, no other lift of `a` is a root. Its coefficients obey Newton's
+Henselian by `IsAdicComplete.henselianRing`, so Hensel's lemma with uniqueness
+(`Polynomial.existsUnique_isRoot_sub_mem`) applies directly. Its coefficients obey Newton's
 recursion `αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, which holds for every root of `P`.
 
 ## Main results
@@ -67,9 +67,6 @@ recursion `αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, which holds for every root o
   splits off `X - α` with `α` lifting a simple root `a` of the reduction.
 * `Polynomial.existsUnique_isRoot_constantCoeff_eq`: a simple root of the reduction lifts to
   exactly one root of `P`, for any polynomial `P` over `R⟦t⟧`, monic or not.
-* `Polynomial.existsUnique_isRoot_sub_mem_span_X`: the same statement in the form of the
-  simple-root Hensel lemma `Polynomial.exists_isRoot_sub_mem` for the ideal `(t)`, with uniqueness
-  added.
 * `Polynomial.IsRoot.coeff_mul_eval_derivative_eq_neg_coeff_eval_trunc`: Newton's recursion for
   the coefficients of a root.
 * `Polynomial.Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero`: over a field `K`, a monic
@@ -355,50 +352,17 @@ theorem Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative {P : R⟦X⟧[X]} 
 
 /-- **Simple roots lift uniquely over `R⟦t⟧`.** If `a` is a simple root of the reduction modulo
 `t` of a polynomial `P` over `R⟦t⟧`, then `P` has exactly one root with constant coefficient `a`.
-`P` need not be monic. Existence is Hensel's lemma for the pair `(R⟦t⟧, (t))`,
-`Polynomial.exists_isRoot_sub_mem`. For uniqueness, split off `X - α` at the lifted root `α`: the
-cofactor takes the unit value `P' (α)` at `α`, so it is a unit at every `β` with the same constant
-coefficient, and `(β - α) * (P /ₘ (X - α)) (β) = P (β) = 0` forces `β = α`. -/
+`P` need not be monic. This is `Polynomial.existsUnique_isRoot_sub_mem` for the Henselian pair
+`(R⟦t⟧, (t))`, read through `PowerSeries.constantCoeff`. -/
 theorem existsUnique_isRoot_constantCoeff_eq (P : R⟦X⟧[X]) {a : R}
     (hroot : (P.map PowerSeries.constantCoeff).IsRoot a)
     (hunit : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval a)) :
     ∃! α : R⟦X⟧, P.IsRoot α ∧ PowerSeries.constantCoeff α = a := by
-  have hmem {φ : R⟦X⟧} : φ ∈ Ideal.span {PowerSeries.X} ↔ PowerSeries.constantCoeff φ = 0 :=
-    Ideal.mem_span_singleton.trans PowerSeries.X_dvd_iff
-  obtain ⟨α, hα, hαa⟩ := P.exists_isRoot_sub_mem (J := Ideal.span {PowerSeries.X})
+  have hmem {φ : R⟦X⟧} : φ ∈ Ideal.span {PowerSeries.X} ↔ PowerSeries.constantCoeff φ = 0 := by
+    rw [← PowerSeries.ker_constantCoeff, RingHom.mem_ker]
+  simpa [hmem, sub_eq_zero] using P.existsUnique_isRoot_sub_mem (J := Ideal.span {PowerSeries.X})
     (a₀ := PowerSeries.C a) (by simpa [hmem, ← eval_map_apply] using hroot)
     ((PowerSeries.isUnit_iff_constantCoeff.mpr (by simpa [← eval_map_apply] using hunit)).map _)
-  rw [hmem, map_sub, PowerSeries.constantCoeff_C, sub_eq_zero] at hαa
-  refine ⟨α, ⟨hα, hαa⟩, fun β ⟨hβ, hβa⟩ ↦ ?_⟩
-  -- The cofactor of `X - α` in `P` has the unit value `P' (α)` at `α`, and its value at `β` has
-  -- the same constant coefficient.
-  have hu : IsUnit ((P /ₘ (X - C α)).eval β) := by
-    simpa [PowerSeries.isUnit_iff_constantCoeff, ← eval_map_apply,
-      map_divByMonic _ (monic_X_sub_C α), hβa, hαa] using hunit
-  have h₀ := hβ.eq_zero
-  rw [← mul_divByMonic_eq_iff_isRoot.mpr hα, eval_mul, eval_sub, eval_X, eval_C] at h₀
-  exact sub_eq_zero.mp (hu.mul_left_eq_zero.mp h₀)
-
-/-- **Comparison with the simple-root form of Hensel's lemma.** For the Henselian pair
-`(R⟦t⟧, (t))`, Hensel's lemma (Mathlib's `HenselianRing.is_henselian` for monic `P`, and
-`Polynomial.exists_isRoot_sub_mem` in general) lifts an approximate simple root `α₀` of `P` to a
-root `α ≡ α₀ (mod t)`. That root is unique, so for monic `P` it coincides with the root split off
-by the degree-one coprime-factor lift
-`Polynomial.Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative`. -/
-theorem existsUnique_isRoot_sub_mem_span_X (P : R⟦X⟧[X]) {α₀ : R⟦X⟧}
-    (hroot : P.eval α₀ ∈ Ideal.span {PowerSeries.X})
-    (hunit : IsUnit (Ideal.Quotient.mk (Ideal.span {PowerSeries.X}) (P.derivative.eval α₀))) :
-    ∃! α : R⟦X⟧, P.IsRoot α ∧ α - α₀ ∈ Ideal.span {PowerSeries.X} := by
-  have hmem {φ : R⟦X⟧} : φ ∈ Ideal.span {PowerSeries.X} ↔ PowerSeries.constantCoeff φ = 0 :=
-    Ideal.mem_span_singleton.trans PowerSeries.X_dvd_iff
-  -- The constant coefficient factors through the quotient by `(t)`, so it preserves units.
-  have hunit' : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval
-      (PowerSeries.constantCoeff α₀)) := by
-    rw [derivative_map, eval_map_apply]
-    simpa only [Ideal.Quotient.lift_mk] using
-      hunit.map (Ideal.Quotient.lift _ PowerSeries.constantCoeff fun _ ↦ hmem.mp)
-  simpa only [hmem, map_sub, sub_eq_zero] using
-    P.existsUnique_isRoot_constantCoeff_eq (by rwa [IsRoot, eval_map_apply, ← hmem]) hunit'
 
 /-- **Newton's recursion for the coefficients of a root over `R⟦t⟧`.** Let `α` be a root of a
 polynomial `P` over `R⟦t⟧`, and let `p` be the reduction of `P` modulo `t` and `a` the constant

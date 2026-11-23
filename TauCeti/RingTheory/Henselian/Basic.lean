@@ -57,6 +57,8 @@ zero divisors, commutative or not, already lie in the ring.
   residue field lifts to a root with the same residue.
 * `Polynomial.exists_isRoot_sub_mem`: Hensel's lemma for a polynomial
   that need not be monic, over any Henselian pair.
+* `Polynomial.existsUnique_isRoot_sub_mem`: the lifted root is unique in its residue class modulo
+  `J`.
 * `TauCeti.HenselianLocalRing.exists_conic_eq`: a smooth conic perturbed by a cubic in the
   maximal ideal lifts each solution of its residue equation to a solution over the ring.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
@@ -216,6 +218,27 @@ theorem exists_isRoot_sub_mem {R : Type*} [CommRing R] {J : Ideal R} [HenselianR
       isUnit_of_map_unit (Ideal.Quotient.mk J) _ h₂
   obtain ⟨b, hb, hgb⟩ := exists_mem_eval_eq_zero g hc hu
   refine ⟨b + a₀, by simpa [IsRoot, hg, eval_comp] using hgb, by rwa [add_sub_cancel_right]⟩
+
+/-- **Uniqueness in Hensel's lemma.** Over a Henselian pair `(R, J)`, a simple root of a polynomial
+modulo `J` lifts to a unique root with the same image in `R ⧸ J`, whether or not the polynomial is
+monic. -/
+theorem existsUnique_isRoot_sub_mem {R : Type*} [CommRing R] {J : Ideal R} [HenselianRing R J]
+    (f : R[X]) {a₀ : R} (h₁ : f.eval a₀ ∈ J)
+    (h₂ : IsUnit (Ideal.Quotient.mk J (f.derivative.eval a₀))) :
+    ∃! a : R, f.IsRoot a ∧ a - a₀ ∈ J := by
+  have := _root_.isLocalHom_of_le_jacobson (HenselianRing.jac (R := R) (I := J))
+  obtain ⟨a, ha, ha₀⟩ := f.exists_isRoot_sub_mem h₁ h₂
+  refine ⟨a, ⟨ha, ha₀⟩, fun b ⟨hb, hb₀⟩ ↦ ?_⟩
+  obtain ⟨c, hc⟩ := exists_mul_sq_add_linear_part_eq_eval_add f a (b - a)
+  have hc' : c * (b - a) ^ 2 + f.derivative.eval a * (b - a) = 0 := by
+    simpa [ha.eq_zero, hb.eq_zero] using hc
+  have hmul : (c * (b - a) + f.derivative.eval a) * (b - a) = 0 := by linear_combination hc'
+  have hba : b - a ∈ J := by simpa using J.sub_mem hb₀ ha₀
+  have hu : IsUnit (c * (b - a) + f.derivative.eval a) := by
+    apply isUnit_of_map_unit (Ideal.Quotient.mk J)
+    simpa [Ideal.Quotient.eq_zero_iff_mem.mpr hba, ← eval_map_apply, Ideal.Quotient.eq.mpr ha₀]
+      using h₂
+  exact sub_eq_zero.mp (hu.mul_right_eq_zero.mp hmul)
 
 end Polynomial
 
