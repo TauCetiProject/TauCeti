@@ -60,9 +60,9 @@ theorem mem_fixedSubcomodule_cofree_iff (z : N ⊗[R] H) :
       (((TensorProduct.rid R N).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := H)).lTensor N).rTensor H) hz
     have hid := LinearMap.congr_fun
-      (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact (R := R) (C := H) (M := N)) z
-    simpa only [cofree_coact, ← cofreeCoact_def, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-      LinearMap.id_apply, LinearEquiv.coe_coe] using (hid.symm.trans h).symm
+      (rTensor_cofreeCounit_comp_cofreeCoact (R := R) (C := H) (M := N)) z
+    simpa only [cofreeCounit_def, cofree_coact, ← cofreeCoact_def, LinearMap.comp_apply,
+      LinearMap.rTensor_tmul, LinearMap.id_apply, LinearEquiv.coe_coe] using (hid.symm.trans h).symm
   · intro hz
     rw [← hz, cofree_coact_tmul, Bialgebra.comul_one, Algebra.TensorProduct.one_def,
       TensorProduct.assoc_symm_tmul]

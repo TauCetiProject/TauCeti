@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DG.Algebra.Matrix
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
 public import Mathlib.Data.Matrix.Mul
@@ -48,6 +49,8 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
   induces the identity and the matrix product induces the composite.
 * `TauCeti.continuation_kronecker`, `TauCeti.continuation_matMul`: the Kronecker matrix and the
   matrix product satisfy the continuation equation.
+* `TauCeti.continuation_iff_map`: the continuation equation in matrix form,
+  `d ν = mP ν - τ(ν) mQ`, where `τ` is the sign twist `Matrix.signTwist`.
 
 ## References
 
@@ -403,6 +406,26 @@ theorem continuation_matMul (h : IsDGAlgebra 𝒜 d) (m₁ : P → P → A) (m�
     (ind x - indS x₁ - 1).negOnePow • (ν₁ x x₂ * (ν₂ x₂ x₁ * m₃ x₁ y))), hBC, zero_add]
 
 end MatMul
+
+section MatrixForm
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {d : A →ₗ[R] A}
+
+/-- The continuation equation, in matrix form: `d ν = mP ν - τ(ν) mQ`, where `τ` is the sign
+twist `Matrix.signTwist`. -/
+theorem continuation_iff_map (ν : Matrix P Q A) (mP : Matrix P P A) (mQ : Matrix Q Q A) :
+    (∀ x y, d (ν x y) =
+      ∑ z, mP x z * ν z y + ∑ z, (ind x - indQ z - 1).negOnePow • (ν x z * mQ z y)) ↔
+      ν.map d = mP * ν - ν.signTwist ind indQ * mQ := by
+  rw [← Matrix.ext_iff]
+  refine forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
+  simp only [Matrix.map_apply, Matrix.sub_apply, Matrix.mul_apply, Matrix.signTwist_apply,
+    smul_mul_assoc, Int.negOnePow_sub_sub_one, Units.neg_smul, Finset.sum_neg_distrib,
+    ← sub_eq_add_neg]
+
+end MatrixForm
 
 /-! ### Continuation cocycles -/
 

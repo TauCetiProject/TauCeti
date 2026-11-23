@@ -26,6 +26,8 @@ characterization of unipotent groups.
 * `TauCeti.upperUnitriangularGroup`: the subgroup `Uₙ(R)` of `GLₙ(R)`.
 * `TauCeti.UpperUnitriangularGroup.ext`: upper-unitriangular group elements are determined
   by their entries strictly above the diagonal.
+* `TauCeti.UpperUnitriangularGroup.mul_apply_of_lt`: the entries strictly above the diagonal of
+  a product.
 * `TauCeti.UpperUnitriangularGroup.map`: base change along a ring homomorphism.
 * `OrderIso.reindexUpperUnitriangularGroup`: order-preserving reindexing as a group isomorphism.
 * `TauCeti.UpperUnitriangularGroup.isUnipotent_toLin`: the natural representation of every
@@ -166,6 +168,23 @@ upper-unitriangular subgroup. -/
 theorem toGL_mem_upperUnitriangularGroup {M : Matrix m m R}
     (hM : M.IsUpperUnitriangular) : hM.toGL ∈ upperUnitriangularGroup m R := by
   simpa only [mem_iff, hM.coe_toGL] using hM
+
+/-- The matrix of a product in `Uₙ(R)` is the product of the matrices. -/
+theorem coe_mul (g h : upperUnitriangularGroup m R) :
+    (((g * h : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) =
+      ((g : GL m R) : Matrix m m R) * ((h : GL m R) : Matrix m m R) := by
+  rw [Subgroup.coe_mul, Units.val_mul]
+
+/-- An entry strictly above the diagonal of a product in `Uₙ(R)` is the sum of the two entries and
+of the products through the intermediate indices:
+`(g * h) i j = g i j + h i j + ∑_{i < k < j} g i k * h k j`. -/
+theorem mul_apply_of_lt [LocallyFiniteOrder m] (g h : upperUnitriangularGroup m R) {i j : m}
+    (hij : i < j) :
+    (((g * h : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) i j =
+      ((g : GL m R) : Matrix m m R) i j + ((h : GL m R) : Matrix m m R) i j +
+        ∑ k ∈ Finset.Ioo i j,
+          ((g : GL m R) : Matrix m m R) i k * ((h : GL m R) : Matrix m m R) k j := by
+  rw [coe_mul, (isUpperUnitriangular g).mul_apply_of_lt (isUpperUnitriangular h) hij]
 
 end Ring
 

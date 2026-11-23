@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Geometry.Manifold.SmoothApprox
 public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.Geometry.Manifold.Homotopy.TimeCollar
+public import Mathlib.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.ModelTransport.Interior
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 import TauCeti.Topology.MetricSpace.ContinuousRadius
@@ -82,6 +83,9 @@ theorems in `ContinuousMap` and `Path` only `[BoundarylessManifold J M]`.
 * `ContinuousMap.exists_contMDiff_homotopyRel`, `ContinuousMap.exists_contMDiff_homotopicRel`,
   `ContinuousMap.exists_contMDiff_homotopic`, `ContinuousMap.Homotopic.exists_contMDiff_homotopy`:
   the same for a compact Hausdorff target without boundary points.
+* `ContinuousMap.Homotopic.exists_contMDiff_homotopy_Icc`: homotopic `C^n` maps from a compact
+  manifold into a Hausdorff target without boundary points are joined by a `C^n` homotopy
+  parametrized by `[0, 1]`.
 * `Path.exists_homotopic_contMDiff_extend`: every path in a Hausdorff manifold without boundary
   points is homotopic, relative to its endpoints, to a path whose extension to `ℝ` is `C^n`.
 
@@ -333,6 +337,21 @@ theorem Homotopic.exists_contMDiff_homotopy [CompactSpace M] {f₀ f₁ : C(N, M
       ∀ x, K (x, 1) = f₁ x :=
   let ⟨H⟩ := h
   H.exists_contMDiff_homotopy_of_isCompact_closure_range isClosed_closure.isCompact n hf₀ hf₁
+
+/-- **Homotopic `C^n` maps from a compact manifold are `C^n` homotopic.** Two homotopic `C^n` maps
+from a compact Hausdorff manifold, possibly with corners, into a Hausdorff manifold without boundary
+points are joined by a `C^n` homotopy `F : N × [0, 1] → M` with `F (x, 0) = f₀ x` and
+`F (x, 1) = f₁ x`. -/
+theorem Homotopic.exists_contMDiff_homotopy_Icc [CompactSpace N] {f₀ f₁ : C(N, M)}
+    (h : f₀.Homotopic f₁) (n : ℕ∞) (hf₀ : ContMDiff I J n f₀) (hf₁ : ContMDiff I J n f₁) :
+    ∃ F : N × Icc (0 : ℝ) 1 → M, ContMDiff (I.prod (𝓡∂ 1)) J n F ∧ (∀ x, F (x, 0) = f₀ x) ∧
+      ∀ x, F (x, 1) = f₁ x := by
+  obtain ⟨H⟩ := h
+  -- The image of the compact cylinder `N × [0, 1]` is compact, so `H` can be smoothed.
+  obtain ⟨K, hK, hK₀, hK₁⟩ := H.exists_contMDiff_homotopy_of_isCompact_closure_range
+    ((isCompact_range H.continuous).closure_of_subset Subset.rfl) n hf₀ hf₁
+  exact ⟨fun p ↦ K (p.1, p.2), hK.comp (contMDiff_fst.prodMk
+    (contMDiff_subtypeVal_Icc.comp contMDiff_snd)), fun x ↦ hK₀ x, fun x ↦ hK₁ x⟩
 
 end Approximation
 

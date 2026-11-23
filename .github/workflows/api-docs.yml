@@ -199,6 +199,19 @@ jobs:
             .lake/packages/Cli/.lake/build
           key: docgen-exe-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'docbuild/lake-manifest.json') }}
 
+      # Lake compiles those C sources with the system `cc` (the default compiler of its `buildO`
+      # and `compileO`), not the toolchain's bundled clang, and LEAN_CC does not change that.
+      # GitHub's image and current Fleet images have one; a Fleet VM whose base image predates
+      # the C compiler does not, so install it there.
+      - name: Ensure a system C compiler
+        run: |
+          if ! command -v cc >/dev/null; then
+            echo "::notice::no system cc on this runner; installing gcc"
+            sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq
+            sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gcc libc6-dev
+          fi
+          cc --version | head -1
+
       - name: Verify doc-gen4 is compatible with TauCeti's toolchain
         run: lake build doc-gen4
 

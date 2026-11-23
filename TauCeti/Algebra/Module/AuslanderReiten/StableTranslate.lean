@@ -25,10 +25,9 @@ Let `A` be an algebra over a commutative ring `R` and `E` an injective `R`-modul
   `TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable`).
 
 Defining `τ` as the composite of these functors makes it a functor without choices beyond the
-presentations defining `Tr`; changing them gives an isomorphic functor. Over a field `k` with
-`E = k`, the presentation-level translate `TauCeti.AuslanderReitenTranslate k p₁` is the Matlis
-dual `MatlisDual k k (Tr p₁)` as an `A`-module
-(`TauCeti.AuslanderReitenTranslate.linearEquivMatlisDual`).
+presentations defining `Tr`; changing them gives an isomorphic functor. On objects it is the class
+of the presentation-level translate `TauCeti.AuslanderReitenTranslate R E p₁`, which is by
+definition the Matlis dual `MatlisDual R E (Tr p₁)`.
 
 ## Main definitions
 

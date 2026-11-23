@@ -378,7 +378,7 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
 /-! ### Affine shears -/
 
 /-- The affine shear `(x, y) ↦ (x + a + c y, y)` has derivative `(u, v) ↦ (u + c v, v)`. -/
-private theorem hasFDerivAt_affineShear (a c : ℝ) (q : ℝ × ℝ) :
+theorem hasFDerivAt_affineShear (a c : ℝ) (q : ℝ × ℝ) :
     HasFDerivAt (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2))
       ((ContinuousLinearMap.fst ℝ ℝ ℝ + c • ContinuousLinearMap.snd ℝ ℝ ℝ).prod
         (ContinuousLinearMap.snd ℝ ℝ ℝ)) q :=
