@@ -7,14 +7,19 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Orientation
 
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
+
 /-!
 # The covering multiplicity of a horizontal curve over its orbit torus
 
 Let `φ` be a diffeomorphism of a locally compact Hausdorff smooth manifold `M`, let `Y_φ` be its
-smooth mapping torus and `X_φ = (ℝ / ℤ)_s × Y_φ`, with the closed two-form `Ω = ds ∧ dt + σ_v`. A
-nonconstant compact connected pseudoholomorphic curve `u : C → X_φ` whose tangent planes are
-horizontal lies over a closed orbit of `φ`: if `x` is a point of that orbit and `d` its least
-period, then `u = τ ∘ v` for the orbit torus `τ : (ℝ / ℤ) × (ℝ / dℤ) → X_φ`,
+smooth mapping torus, with suspension vector field `T = ∂_t`, and `X_φ = (ℝ / ℤ)_s × Y_φ`. A
+`φ`-invariant closed two-form `σ` on `M` descends to the fiber form `σ_v` on `Y_φ`, and
+`Ω = ds ∧ dt + σ_v` is the corresponding closed two-form on `X_φ` (`suspensionForm`). Let `J` be an
+almost complex structure on `X_φ`, and let `u : C → X_φ` be a compact connected pseudoholomorphic
+curve with nonzero differential somewhere, whose tangent planes are horizontal and along whose image
+`J ∂_s = T`. Suppose `u` meets the suspension orbit of a point `x` of least period `d`, at a value
+`(s, [t, x])`. Then `u = τ ∘ v` for the orbit torus `τ : (ℝ / ℤ) × (ℝ / dℤ) → X_φ`,
 `(s, θ) ↦ (s, [θ, x])`, and a surjective pseudoholomorphic map `v`
 (`exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt`).
 Several integers attached to such a curve must be kept apart: the least period `d` of the orbit,
@@ -86,10 +91,10 @@ boundaryless surface modelled on `ℝ × ℝ`. Then for every smooth two-form `�
 of `u^* β` over `C` is `deg v` times the integral of `τ^* β` over the torus, for the product of the
 positive orientations of the two circles. -/
 theorem integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq
-    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
-    (hτv : orbitTorus φ h ∘ v = u)
+    (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v) (hτv : orbitTorus φ h ∘ v = u)
     (β : SmoothForm (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) ℝ 2) :
-    integralTopForm o (SmoothForm.mpullback u hu β).val =
+    integralTopForm o
+        (SmoothForm.mpullback u (hτv ▸ (contMDiff_orbitTorus h).comp hv) β).val =
       degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v *
         integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
           (SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) β).val := by
@@ -116,46 +121,25 @@ private theorem contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq
       (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
     (hH : ∀ c (e : TangentSpace I' c),
       mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
-    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
-    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d)
+    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0) (hd : minimalPeriod φ x = d)
     (hτv : orbitTorus φ h ∘ v = u) :
     ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v ∧
       ∀ c', IsPseudoholomorphicAt j (SmoothAlmostComplexStructure.addCircleProd 1 d) v c' := by
+  -- A real representative `t` of the time coordinate of `v c₀` gives the value `(s, [t, x])`.
+  obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (v c₀).2
+  have hc : (u c₀).2 = mk φ t x := by
+    rw [← hτv, comp_apply, orbitTorus_apply, ← closedOrbit_coe h, ← ht]
   obtain ⟨v', hv'd, hv'hol, -, hτv'⟩ :=
     exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt hu ho hhol hS hH hne hc h hd
   have hv' : v' = v := ((injective_orbitTorus_iff h).2 hd).comp_left (hτv'.trans hτv.symm)
   exact hv' ▸ ⟨hv'd, hv'hol⟩
 
-omit [I'.Boundaryless] [IsManifold I' ∞ C] [T2Space C] [CompactSpace C] [I.Boundaryless]
-  [FiniteDimensional ℝ E] [PreconnectedSpace C] in
-/-- The factor through the orbit torus of an immersed curve is immersed: `du = dτ ∘ dv`. -/
-private theorem injective_mfderiv_of_orbitTorus_comp_eq
-    (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v) (hτv : orbitTorus φ h ∘ v = u)
-    (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c)) (c : C) :
-    Injective (mfderiv I' (𝓘(ℝ).prod 𝓘(ℝ)) v c) := by
-  have hc := hinj c
-  rw [← hτv, mfderiv_comp c ((contMDiff_orbitTorus h).mdifferentiableAt (by simp))
-    (hv.mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp] at hc
-  exact hc.of_comp
-
-omit [IsManifold I ∞ M] [I'.Boundaryless] [IsManifold I' ∞ C] [T2Space C] [CompactSpace C]
-  [I.Boundaryless] [FiniteDimensional ℝ E] [PreconnectedSpace C] in
-/-- An immersion of a surface has nonzero differential at every point. -/
-private theorem mfderiv_ne_zero_of_injective
-    (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c)) (c : C) :
-    mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c ≠ 0 := by
-  -- The tangent space `ℝ × ℝ` is nontrivial, so the zero map is not injective.
-  have : Nontrivial (TangentSpace I' c) := inferInstanceAs (Nontrivial (ℝ × ℝ))
-  exact fun h0 ↦ LinearMap.ne_zero_of_injective (hinj c)
-    (by rw [h0, ContinuousLinearMap.toLinearMap_zero])
-
 /-- **An immersed pseudoholomorphic horizontal curve has `deg v` sheets over its orbit torus.**
 Let `u` be a smooth pseudoholomorphic immersion of a compact connected boundaryless surface `C`
 modelled on `ℝ × ℝ`, oriented so that the frames `(e, j e)` are positive, into `X_φ` with an almost
 complex structure of block form `J ∂_s = T` along the image of `u`, with horizontal tangent images.
-Let `(s, [t, x])` be a value of `u`, where `x` has least period `d`, and let `u = τ ∘ v` for the
-orbit torus `τ` of `x` and a map `v`. Then every point of the torus `(ℝ / ℤ) × (ℝ / dℤ)` has
-exactly `deg v` preimages under `v`. -/
+Let `x` have least period `d`, and let `u = τ ∘ v` for the orbit torus `τ` of `x` and a map `v`.
+Then every point of the torus `(ℝ / ℤ) × (ℝ / dℤ)` has exactly `deg v` preimages under `v`. -/
 theorem degree_eq_ncard_of_orbitTorus_comp_eq
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
@@ -166,23 +150,30 @@ theorem degree_eq_ncard_of_orbitTorus_comp_eq
     (hH : ∀ c (e : TangentSpace I' c),
       mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
-    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d)
-    (hτv : orbitTorus φ h ∘ v = u) (y : UnitAddCircle × AddCircle (d : ℝ)) :
+    (hd : minimalPeriod φ x = d) (hτv : orbitTorus φ h ∘ v = u)
+    (y : UnitAddCircle × AddCircle (d : ℝ)) :
     degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v =
-      (v ⁻¹' {y}).ncard :=
-  have hv := contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq h hu ho hhol hS hH
-    (mfderiv_ne_zero_of_injective hinj c) hc hd hτv
-  degree_eq_ncard_of_injective_mfderiv ho hv.1 hv.2
-    (injective_mfderiv_of_orbitTorus_comp_eq h hv.1 hτv hinj) y
+      (v ⁻¹' {y}).ncard := by
+  cases isEmpty_or_nonempty C with
+  | inl _ =>
+    -- On an empty surface all hypotheses of the torus statement hold vacuously.
+    exact degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv ho
+      (fun c ↦ isEmptyElim c) (fun c ↦ isEmptyElim c) (fun c ↦ isEmptyElim c) y
+  | inr _ =>
+    have hv := contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq h hu ho hhol hS hH
+      (mfderiv_ne_zero_of_injective (hinj (Classical.arbitrary C))) hd hτv
+    exact degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv ho hv.1 hv.2
+      (fun c ↦ injective_mfderiv_of_injective_mfderiv_comp
+        ((contMDiff_orbitTorus h).mdifferentiableAt (by simp)) (hv.1.mdifferentiableAt (by simp))
+        (hτv ▸ hinj c)) y
 
 /-- **An immersed pseudoholomorphic horizontal curve is embedded exactly when its covering
 multiplicity is one.** Let `u` be a smooth pseudoholomorphic immersion of a compact connected
 boundaryless surface `C` modelled on `ℝ × ℝ`, oriented so that the frames `(e, j e)` are positive,
 into `X_φ` with an almost complex structure of block form `J ∂_s = T` along the image of `u`, with
-horizontal tangent images. Let `(s, [t, x])` be a value of `u`, where `x` has least period `d`, and
-let `u = τ ∘ v` for the orbit torus `τ` of `x` and a map `v`. Then `u` is injective if and only
-if `deg v = 1`. -/
-theorem injective_iff_degree_eq_one_of_orbitTorus_comp_eq
+horizontal tangent images. Let `C` be nonempty, let `x` have least period `d`, and let `u = τ ∘ v`
+for the orbit torus `τ` of `x` and a map `v`. Then `u` is injective if and only if `deg v = 1`. -/
+theorem injective_iff_degree_eq_one_of_orbitTorus_comp_eq [Nonempty C]
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
@@ -192,15 +183,15 @@ theorem injective_iff_degree_eq_one_of_orbitTorus_comp_eq
     (hH : ∀ c (e : TangentSpace I' c),
       mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
-    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d)
-    (hτv : orbitTorus φ h ∘ v = u) :
+    (hd : minimalPeriod φ x = d) (hτv : orbitTorus φ h ∘ v = u) :
     Injective u ↔
       degree o ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v = 1 := by
-  have : Nonempty C := ⟨c⟩
   obtain ⟨hv, hvhol⟩ := contMDiff_and_isPseudoholomorphicAt_of_orbitTorus_comp_eq h hu ho hhol hS
-    hH (mfderiv_ne_zero_of_injective hinj c) hc hd hτv
-  rw [← injective_iff_degree_eq_one_of_injective_mfderiv ho hv hvhol
-    (injective_mfderiv_of_orbitTorus_comp_eq h hv hτv hinj), ← hτv]
+    hH (mfderiv_ne_zero_of_injective (hinj (Classical.arbitrary C))) hd hτv
+  rw [← injective_iff_degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv ho
+    hv hvhol fun c ↦ injective_mfderiv_of_injective_mfderiv_comp
+      ((contMDiff_orbitTorus h).mdifferentiableAt (by simp)) (hv.mdifferentiableAt (by simp))
+      (hτv ▸ hinj c), ← hτv]
   -- The orbit torus over a primitive orbit is injective.
   exact ((injective_orbitTorus_iff h).2 hd).of_comp_iff v
 

@@ -47,8 +47,10 @@ so `v` preserves orientation at every point where `dv ≠ 0`, and every regular 
 `deg(v)` preimages (`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`). An injective
 `v` has degree one (`TauCeti.degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective`).
 When `dv` is injective everywhere, every value is regular, so `v` has `deg(v)` sheets over every
-point of the torus (`TauCeti.degree_eq_ncard_of_injective_mfderiv`), and it is injective exactly
-when its degree is one (`TauCeti.injective_iff_degree_eq_one_of_injective_mfderiv`).
+point of the torus
+(`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv`),
+and it is injective exactly when its degree is one
+(`TauCeti.injective_iff_degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv`).
 
 This is the covering statement for the lift of a pseudoholomorphic horizontal curve with nonzero
 differential somewhere in a symplectic suspension to the orbit torus over its closed orbit: such a
@@ -69,9 +71,10 @@ lift is onto, so the curve fills the whole orbit torus.
   preimages of each regular value.
 * `TauCeti.degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective`: an injective one
   has degree one.
-* `TauCeti.degree_eq_ncard_of_injective_mfderiv`,
-  `TauCeti.injective_iff_degree_eq_one_of_injective_mfderiv`: a pseudoholomorphic immersion into
-  the torus has `deg(v)` sheets, and is injective exactly when `deg(v) = 1`.
+* `TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv`,
+  `TauCeti.injective_iff_degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv`:
+  a pseudoholomorphic immersion into the torus has `deg(v)` sheets, and is injective exactly when
+  `deg(v) = 1`.
 
 ## References
 
@@ -247,7 +250,7 @@ boundaryless surface with an almost complex structure `j`, oriented so that the 
 are positive, and let `v : C → ℝ / pℤ × ℝ / qℤ` be a smooth pseudoholomorphic map for the standard
 structure of the torus with injective differential at every point. Then every point of the torus
 is a regular value, so it has exactly `deg(v)` preimages. -/
-theorem degree_eq_ncard_of_injective_mfderiv
+theorem degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv
     (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
     (hv : ContMDiff I (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
@@ -264,7 +267,8 @@ so that the frames `(e, j e)` are positive, and let `v : C → ℝ / pℤ × ℝ
 pseudoholomorphic map for the standard structure of the torus with injective differential at every
 point. Then `v` is injective if and only if `deg(v) = 1`: every point of the torus has `deg(v)`
 preimages. -/
-theorem injective_iff_degree_eq_one_of_injective_mfderiv [Nonempty C]
+theorem injective_iff_degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv
+    [Nonempty C]
     (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
     (hv : ContMDiff I (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
@@ -272,7 +276,8 @@ theorem injective_iff_degree_eq_one_of_injective_mfderiv [Nonempty C]
     (hinj : ∀ c, Function.Injective (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c)) :
     Function.Injective v ↔
       degree o ((AddCircle.orientation p).prod (AddCircle.orientation q)) v = 1 := by
-  have hcard := degree_eq_ncard_of_injective_mfderiv ho hv hhol hinj
+  have hcard :=
+    degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv ho hv hhol hinj
   constructor
   · intro hvinj
     obtain ⟨c⟩ := ‹Nonempty C›
