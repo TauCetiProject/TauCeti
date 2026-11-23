@@ -1,0 +1,141 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
+public import Mathlib.Topology.Order.IntermediateValue
+
+/-!
+# Adjacent separation on annular polar sectors
+
+On an angular interval, each positive deck shift factors into adjacent shifts inside the
+sector. Summing the adjacent separations therefore detects collisions of the graph. Conversely,
+for a continuous height the intermediate value theorem gives one strict sign on the overlap.
+-/
+
+public noncomputable section
+
+namespace TauCeti.PolarGraph
+
+open Set
+
+/-- The separation after `n` positive turns is the sum of the adjacent separations. -/
+theorem separation_natCast_eq_sum (u : PolarPoint → ℝ) (n : ℕ) (p : PolarPoint) :
+    separation u n p = ∑ j ∈ Finset.range n, separation u 1 (deckShift j p) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Nat.cast_succ, separation_add, ih, Finset.sum_range_succ]
+
+/-- The portion of the polar cover with radius in `(r,R)` and angle in `I`. -/
+def annularSector (r R : ℝ) (I : Set ℝ) : Set PolarPoint :=
+  {p | radius p ∈ Ioo r R ∧ angle p ∈ I}
+
+@[simp] theorem mem_annularSector_iff {r R : ℝ} {I : Set ℝ} {p : PolarPoint} :
+    p ∈ annularSector r R I ↔ radius p ∈ Ioo r R ∧ angle p ∈ I := Iff.rfl
+
+/-- Deck overlap leaves the radial interval unchanged and intersects the angular set with
+its translate. -/
+theorem overlap_annularSector (r R : ℝ) (I : Set ℝ) (k : ℤ) :
+    overlap (annularSector r R I) k =
+      annularSector r R (I ∩ (fun θ ↦ θ + (k : ℝ) * (2 * Real.pi)) ⁻¹' I) := by
+  ext p
+  simp [and_left_comm, and_assoc]
+
+/-- Every deck overlap of an annular angular interval is preconnected. -/
+theorem isPreconnected_overlap_annularSector (r R : ℝ) {I : Set ℝ} (hI : I.OrdConnected)
+    (k : ℤ) : IsPreconnected (overlap (annularSector r R I) k) := by
+  let J := I ∩ (fun θ ↦ θ + (k : ℝ) * (2 * Real.pi)) ⁻¹' I
+  have hJ : J.OrdConnected := hI.inter (hI.preimage_mono fun _ _ h ↦ add_le_add_left h _)
+  rw [overlap_annularSector]
+  have hval : Topology.IsInducing (Subtype.val : PolarPoint → ℝ × ℝ) := ⟨rfl⟩
+  apply (hval.isPreconnected_image (s := annularSector r R J)).mp
+  have himage : Subtype.val '' annularSector r R J = (Ioi 0 ∩ Ioo r R) ×ˢ J := by
+    ext x
+    constructor
+    · rintro ⟨p, hp, rfl⟩
+      simp only [mem_annularSector_iff, radius_def, angle_def] at hp
+      exact ⟨⟨p.property, hp.1⟩, hp.2⟩
+    · rintro ⟨⟨hρ, hρ'⟩, hθ⟩
+      refine ⟨⟨x, hρ⟩, ?_, rfl⟩
+      simpa only [mem_annularSector_iff, radius_def, angle_def] using And.intro hρ' hθ
+  rw [himage]
+  exact (inferInstance : (Ioi 0 ∩ Ioo r R).OrdConnected).isPreconnected.prod hJ.isPreconnected
+
+/-- Continuity of the height on its domain implies continuity of the separation on each
+deck overlap. -/
+theorem continuousOn_separation {Ω : Set PolarPoint} {u : PolarPoint → ℝ}
+    (hu : ContinuousOn u Ω) (k : ℤ) : ContinuousOn (separation u k) (overlap Ω k) := by
+  have hshift : Continuous (deckShift k) := by
+    apply continuous_induced_rng.mpr
+    change Continuous (fun p : PolarPoint ↦ (deckShift k p).val)
+    have heq (p : PolarPoint) : (deckShift k p).val = (p.val.1, p.val.2 + k * (2 * Real.pi)) := by
+      exact Prod.ext (by rw [← radius_def, radius_deckShift, radius_def])
+        (by rw [← angle_def, angle_deckShift, angle_def])
+    simp only [heq]
+    fun_prop
+  simp only [funext (separation_def u k)]
+  exact (hu.comp hshift.continuousOn fun _ hp ↦ (mem_overlap_iff.mp hp).2).sub
+    (hu.mono (overlap_subset Ω k))
+
+/-- Each intermediate positive turn stays in an annular sector with interval angular set. -/
+theorem deckShift_mem_annularSector_of_le {r R : ℝ} {I : Set ℝ} (hI : I.OrdConnected)
+    {p : PolarPoint} {n j : ℕ} (hp : p ∈ overlap (annularSector r R I) n) (hj : j ≤ n) :
+    deckShift j p ∈ annularSector r R I := by
+  obtain ⟨h₀, hn⟩ := mem_overlap_iff.mp hp
+  refine ⟨by simpa only [radius_deckShift] using h₀.1, hI.out h₀.2 hn.2 ?_⟩
+  simp only [mem_Icc, angle_deckShift, Int.cast_natCast, le_add_iff_nonneg_right,
+    add_le_add_iff_left]
+  exact ⟨by positivity, mul_le_mul_of_nonneg_right (by exact_mod_cast hj) (by positivity)⟩
+
+/-- One strict sign for adjacent separation implies injectivity on an annular angular
+interval, for an arbitrary height function. -/
+theorem injOn_graph_annularSector_of_separation_sign {r R : ℝ} {I : Set ℝ}
+    (hI : I.OrdConnected) {u : PolarPoint → ℝ}
+    (hs : (∀ p ∈ overlap (annularSector r R I) 1, 0 < separation u 1 p) ∨
+      (∀ p ∈ overlap (annularSector r R I) 1, separation u 1 p < 0)) :
+    InjOn (graph u) (annularSector r R I) := by
+  have hpos (n : ℕ) (hn : n ≠ 0) (p : PolarPoint) (hp : p ∈ overlap (annularSector r R I) n) :
+      separation u n p ≠ 0 := by
+    have hstep (j : ℕ) (hj : j ∈ Finset.range n) :
+        deckShift j p ∈ overlap (annularSector r R I) 1 := by
+      have hjn := Finset.mem_range.mp hj
+      refine mem_overlap_iff.mpr ⟨deckShift_mem_annularSector_of_le hI hp hjn.le, ?_⟩
+      rw [← deckShift_add, ← Nat.cast_succ]
+      exact deckShift_mem_annularSector_of_le hI hp hjn
+    rw [separation_natCast_eq_sum]
+    rcases hs with h | h
+    · exact (Finset.sum_pos (fun j hj ↦ h _ (hstep j hj)) (Finset.nonempty_range_iff.mpr hn)).ne'
+    · exact (Finset.sum_neg (fun j hj ↦ h _ (hstep j hj)) (Finset.nonempty_range_iff.mpr hn)).ne
+  apply (graph_injOn_iff _ _).mpr
+  intro k hk p hp
+  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg k
+  · exact hpos n (by omega) p hp
+  · have hrev := hpos n (by omega) (deckShift (-(n : ℤ)) p)
+        (mem_overlap_iff.mpr ⟨(mem_overlap_iff.mp hp).2, by simpa using (mem_overlap_iff.mp hp).1⟩)
+    rw [separation_def, deckShift_deckShift_neg, ne_eq, sub_eq_zero] at hrev
+    rw [separation_def]
+    exact sub_ne_zero.mpr (Ne.symm hrev)
+
+/-- A continuous polar graph on an annular angular interval is injectively parametrized
+exactly when the adjacent separation is strictly positive everywhere or strictly negative
+everywhere on its overlap. This includes the empty-overlap case. -/
+theorem injOn_graph_annularSector_iff_separation_sign {r R : ℝ} {I : Set ℝ}
+    (hI : I.OrdConnected) {u : PolarPoint → ℝ} (hu : ContinuousOn u (annularSector r R I)) :
+    InjOn (graph u) (annularSector r R I) ↔
+      (∀ p ∈ overlap (annularSector r R I) 1, 0 < separation u 1 p) ∨
+      (∀ p ∈ overlap (annularSector r R I) 1, separation u 1 p < 0) := by
+  refine ⟨fun hi ↦ ?_, injOn_graph_annularSector_of_separation_sign hI⟩
+  have hne := (graph_injOn_iff _ _).mp hi 1 one_ne_zero
+  by_cases h : ∀ p ∈ overlap (annularSector r R I) 1, 0 < separation u 1 p
+  · exact Or.inl h
+  · push Not at h
+    obtain ⟨p, hp, hpw⟩ := h
+    refine Or.inr fun q hq ↦ lt_of_not_ge fun hqw ↦ ?_
+    obtain ⟨z, hz, hwz⟩ := (isPreconnected_overlap_annularSector r R hI 1).intermediate_value
+      hp hq (continuousOn_separation hu 1) (show 0 ∈ Icc _ _ from ⟨hpw, hqw⟩)
+    exact hne z hz hwz
+
+end TauCeti.PolarGraph
