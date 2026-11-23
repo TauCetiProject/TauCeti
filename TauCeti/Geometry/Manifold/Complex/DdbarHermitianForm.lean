@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
-public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
 /-!
@@ -54,10 +53,10 @@ that a complex Hessian equation prescribes a symmetric function of.
   a Hermitian metric, `α + i ∂∂bar φ` has a decreasingly sorted eigenvalue vector at `x`, unique
   by `TauCeti.IsRelEigenvalueVector.eq_of_antitone`.
 * `TauCeti.SmoothTwoForm.Compatible.isRelEigenvalueVector_self_iff`: `λ_ω[ω] = e`.
-* `TauCeti.ddbarHermitianForm_zero_norm_sq`: on a complex inner product space,
+* `TauCeti.ddbarHermitianForm_zero_form_norm_sq`: on a complex inner product space,
   `H_{i ∂∂bar |z|²} = 2·h`.
-* `TauCeti.re_ddbarHermitianForm_zero_apply_self_nonpos_of_isLocalMax`: at a local maximum of a
-  `C²` function `φ`, the form `H_{i ∂∂bar φ}` is negative semidefinite.
+* `TauCeti.re_ddbarHermitianForm_zero_form_apply_self_nonpos_of_isLocalMax`: at a local maximum of
+  a `C²` function `φ`, the form `H_{i ∂∂bar φ}` is negative semidefinite.
 
 ## References
 
@@ -160,7 +159,7 @@ theorem ddbarHermitianForm_const (c : ℝ) :
 
 /-- For `φ = 0`, `H_{α + i ∂∂bar φ} = H_α`. -/
 @[simp]
-theorem ddbarHermitianForm_zero_right : ddbarHermitianForm E α 0 x = twoFormHermitianForm E α x :=
+theorem ddbarHermitianForm_zero : ddbarHermitianForm E α 0 x = twoFormHermitianForm E α x :=
   ddbarHermitianForm_const 0
 
 /-- `H_{(α + β) + i ∂∂bar φ} = H_{α + i ∂∂bar φ} + H_β`. -/
@@ -180,7 +179,8 @@ theorem ddbarHermitianForm_add (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x)
   ring
 
 /-- For the zero form, `H_{i ∂∂bar φ} = 2·L_φ`. -/
-theorem ddbarHermitianForm_zero (u v : E) :
+@[simp]
+theorem ddbarHermitianForm_zero_form (u v : E) :
     ddbarHermitianForm E 0 φ x u v = 2 * manifoldLeviForm E φ x u v := by
   rw [ddbarHermitianForm_def, add_eq_right]
   apply Complex.ext <;> simp [twoFormHermitianForm_def]
@@ -236,7 +236,7 @@ theorem isSymm_ddbarSesqForm (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x) :
 
 /-- **The sign at a local maximum.** If `φ` is `C²` at a local maximum `x`, then
 `H_{i ∂∂bar φ}(x)` is negative semidefinite. -/
-theorem re_ddbarHermitianForm_zero_apply_self_nonpos_of_isLocalMax
+theorem re_ddbarHermitianForm_zero_form_apply_self_nonpos_of_isLocalMax
     (hφ : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 φ x) (hmax : IsLocalMax φ x) (v : E) :
     (ddbarHermitianForm E 0 φ x v v).re ≤ 0 := by
   have hx : (chartAt E x).symm (chartAt E x x) = x := (chartAt E x).left_inv (mem_chart_source E x)
@@ -244,7 +244,7 @@ theorem re_ddbarHermitianForm_zero_apply_self_nonpos_of_isLocalMax
     IsLocalMax.comp_continuous (hx.symm ▸ hmax)
       ((chartAt E x).continuousAt_symm (mem_chart_target E x))
   have h := re_leviForm_nonpos_of_isLocalMax hφ.contDiffAt_comp_chartAt_symm hmax' v
-  rw [ddbarHermitianForm_zero, manifoldLeviForm_def]
+  rw [ddbarHermitianForm_zero_form, manifoldLeviForm_def]
   simp only [re_leviForm_apply] at h
   have h2 : ((2 : ℂ) * leviForm (φ ∘ (chartAt E x).symm) (chartAt E x x) v v).re =
       2 * (leviForm (φ ∘ (chartAt E x).symm) (chartAt E x x) v v).re := by simp
@@ -259,10 +259,11 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
 
 /-- **The normalization of `i ∂∂bar`.** On a complex inner product space `V` with Hermitian inner
 product `h = ⟪·, ·⟫`, `H_{i ∂∂bar |z|²} = 2·h`, that is, `i ∂∂bar |z|² = i Σ dz_j ∧ dzbar_j`. -/
-theorem ddbarHermitianForm_zero_norm_sq (x u v : V) :
+theorem ddbarHermitianForm_zero_form_norm_sq (x u v : V) :
     ddbarHermitianForm V (0 : RoughForm 𝓘(ℝ, V) V ℝ 2) (fun z ↦ ‖z‖ ^ 2) x u v =
       2 * inner ℂ u v := by
-  rw [ddbarHermitianForm_zero, manifoldLeviForm_eq_leviForm, leviForm_norm_sq, innerₛₗ_apply_apply]
+  rw [ddbarHermitianForm_zero_form, manifoldLeviForm_eq_leviForm, leviForm_norm_sq,
+    innerₛₗ_apply_apply]
 
 end NormSq
 

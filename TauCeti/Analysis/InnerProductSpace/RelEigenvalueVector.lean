@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.LinearAlgebra.SesquilinearForm.Star
@@ -40,8 +39,9 @@ not of type (1,1) still has a meaning; the results take sesquilinear forms.
   there is a decreasingly sorted eigenvalue vector.
 * `TauCeti.IsRelEigenvalueVector.eq_of_antitone`: it is unique.
 * `TauCeti.IsRelEigenvalueVector.exists_perm_eq` and
-  `TauCeti.IsRelEigenvalueVector.isRelEigenvalueVector_iff`: any two eigenvalue vectors are
-  reorderings of each other, and the eigenvalue vectors are exactly the reorderings of one of them.
+  `TauCeti.IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm`: any two eigenvalue vectors
+  are reorderings of each other, and the eigenvalue vectors are exactly the reorderings of one of
+  them.
 * `TauCeti.isRelEigenvalueVector_smul_self_iff`, `TauCeti.isRelEigenvalueVector_self_iff`: `s·h`
   has the eigenvalue vector `s·e`, `e = (1, …, 1)`, relative to `h`, and `h` has `e`.
 
@@ -73,7 +73,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
 `b_1, …, b_n`, `n = dim E`, with `h(b_i, b_j) = δ_ij` and `a(b_i, b_j) = μ_i·δ_ij`. For a positive
 definite Hermitian `h` and a Hermitian `a`, such a family is an `h`-orthonormal basis diagonalizing
 `a`, and `μ` is determined up to the order of its entries
-(`IsRelEigenvalueVector.isRelEigenvalueVector_iff`). -/
+(`IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm`). -/
 def IsRelEigenvalueVector (h a : E → E → 𝕜) (μ : Fin (finrank 𝕜 E) → ℝ) : Prop :=
   ∃ b : Fin (finrank 𝕜 E) → E, ∀ i j,
     h (b i) (b j) = (if i = j then 1 else 0) ∧ a (b i) (b j) = (if i = j then (μ i : 𝕜) else 0)
@@ -224,7 +224,7 @@ theorem IsRelEigenvalueVector.exists_perm_eq {μ ν : Fin (finrank 𝕜 E) → �
   simpa using (congrFun he ((Tuple.sortDesc ν)⁻¹ i)).symm
 
 /-- **The eigenvalue vectors are the reorderings of one of them.** -/
-theorem IsRelEigenvalueVector.isRelEigenvalueVector_iff {μ ν : Fin (finrank 𝕜 E) → ℝ}
+theorem IsRelEigenvalueVector.isRelEigenvalueVector_iff_exists_perm {μ ν : Fin (finrank 𝕜 E) → ℝ}
     (hμ : IsRelEigenvalueVector (h · ·) (a · ·) μ) :
     IsRelEigenvalueVector (h · ·) (a · ·) ν ↔ ∃ σ : Equiv.Perm (Fin (finrank 𝕜 E)), ν = μ ∘ σ := by
   refine ⟨hμ.exists_perm_eq, ?_⟩

@@ -210,8 +210,8 @@ theorem conj_hermitianForm (u v : E) : conj (α.hermitianForm u v) = α.hermitia
   have h₁ : α ![v, I • u] = α ![u, I • v] := by
     have h₂ := hα v (I • u)
     simp only [smul_smul, I_mul_I, neg_one_smul, α.apply_vecCons_neg_right] at h₂
-    rw [α.apply_vecCons_swap u, α.apply_vecCons_swap (I • u), neg_neg] at *
-    linarith
+    rw [α.apply_vecCons_swap u, neg_neg] at h₂
+    exact h₂.symm
   apply Complex.ext
   · simp [h₁]
   · simp [α.apply_vecCons_swap u v]
