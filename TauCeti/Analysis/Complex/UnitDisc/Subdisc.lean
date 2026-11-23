@@ -13,13 +13,16 @@ public import Mathlib.Topology.ContinuousMap.Basic
 
 A round disc `B(c, r)` with `‖c‖ + r ≤ 1` lies in `𝔻`, and the affine map `z ↦ c + r z` parametrizes
 it by `𝔻` (`TauCeti.Complex.UnitDisc.subdisc`), with inverse `w ↦ (w - c) / r`
-(`TauCeti.Complex.UnitDisc.coe_subdisc_sub_div`). These maps compose like affine maps
-(`TauCeti.Complex.UnitDisc.subdisc_comp_subdisc`). If a compact subset `K` of `𝔻` meets no point of
-the circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends into `K` form a compact
-set (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage`): they are the rescaled points of `K`
-inside the disc, and the points of `K` in `B(c, r)` are its points at distance at most `r` from `c`,
-a compact set. This is what makes the restriction of a disc map to a round subdisc again a map with
-compact preimage of a closed set, as in the theory of positive cohomology assignments.
+(`TauCeti.Complex.UnitDisc.coe_subdisc_sub_div`); read in `ℂ` it is the restriction of the affine
+homeomorphism `affineHomeomorph` of `ℂ` (`TauCeti.Complex.UnitDisc.coe_comp_subdisc`), hence an
+open embedding (`TauCeti.Complex.UnitDisc.isOpenEmbedding_coe_comp_subdisc`). These maps compose
+like affine maps (`TauCeti.Complex.UnitDisc.subdisc_comp_subdisc`). If a compact subset `K` of
+`𝔻` meets no point of the circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends
+into `K` form a compact set (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage`): they are the
+rescaled points of `K` inside the disc, and the points of `K` in `B(c, r)` are its points at
+distance at most `r` from `c`, a compact set. This is what makes the restriction of a disc map to a
+round subdisc again a map with compact preimage of a closed set, as in the theory of positive
+cohomology assignments.
 -/
 
 public section
@@ -69,6 +72,21 @@ variable {c c' : ℂ} {r r' : ℝ} {hc : ‖c‖ + r ≤ 1} {hr : 0 < r}
 theorem coe_subdisc_apply (z : 𝔻) : (subdisc c r hc hr z : ℂ) = c + r * z :=
   (rfl)
 
+/-- The round subdisc map `subdisc c r`, read in `ℂ`, is the restriction to `𝔻` of the affine
+homeomorphism `w ↦ r w + c` of `ℂ` (`affineHomeomorph`). -/
+theorem coe_comp_subdisc :
+    ((↑) : 𝔻 → ℂ) ∘ subdisc c r hc hr =
+      affineHomeomorph (r : ℂ) c (Complex.ofReal_ne_zero.2 hr.ne') ∘ (↑) := by
+  ext z
+  simp [add_comm]
+
+/-- The round subdisc map `subdisc c r`, read in `ℂ`, is an open embedding: it is the restriction
+to `𝔻` of the affine homeomorphism `w ↦ c + r w` of `ℂ`. -/
+theorem isOpenEmbedding_coe_comp_subdisc :
+    IsOpenEmbedding (((↑) : 𝔻 → ℂ) ∘ subdisc c r hc hr) := by
+  rw [coe_comp_subdisc]
+  exact (affineHomeomorph _ _ _).isOpenEmbedding.comp isOpenEmbedding_coe
+
 /-- A point of the unit disc lies in the image of `subdisc c r` exactly when it lies in the disc
 `B(c, r)`. -/
 theorem mem_range_subdisc {w : 𝔻} : w ∈ range (subdisc c r hc hr) ↔ (w : ℂ) ∈ ball c r := by
@@ -86,6 +104,10 @@ theorem mem_range_subdisc {w : 𝔻} : w ∈ range (subdisc c r hc hr) ↔ (w : 
 theorem coe_subdisc_sub_div (z : 𝔻) : ((subdisc c r hc hr z : ℂ) - c) / r = z := by
   have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
   simp [mul_div_cancel_left₀ _ hr0]
+
+/-- The round subdisc map `subdisc c r` is injective. -/
+theorem subdisc_injective : Function.Injective (subdisc c r hc hr) :=
+  isOpenEmbedding_coe_comp_subdisc.injective.of_comp
 
 /-- Round subdisc maps compose like the affine maps they are:
 `subdisc c r ∘ subdisc c' r' = subdisc (c + r c') (r r')`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyConstant.Algebra
-public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.Algebra.Colimit.FinitePresentation
 public import TauCeti.RingTheory.Etale.DirectLimit
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 
@@ -105,7 +105,7 @@ colimit of the empty system is `ℤ`, for which the statement would be Minkowski
 instance isFiniteEtaleSplit [∀ i, TauCeti.IsFiniteEtaleSplit (G i)] :
     TauCeti.IsFiniteEtaleSplit (DirectLimit G (f · · ·)) :=
   .of_forall_finitePresentation fun _ _ _ g ↦
-    have ⟨i, g', hg'⟩ := exists_of_comp_eq_of_finitePresentation g
+    have ⟨i, g', hg'⟩ := g.exists_of_comp_eq_of_finitePresentation
     ⟨G i, _, inferInstance, g', of G (f · · ·) i, hg'⟩
 
 end

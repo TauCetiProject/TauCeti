@@ -35,7 +35,11 @@ two consecutive nonempty words.
 A section on prefixes controls cancellation under left multiplication: if the reduced word of `g`
 does not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still
 begins with `x₁` whenever `x₁ ++ x₂` is reduced. This is the prefix calculus behind ping-pong
-arguments on reduced words, such as the big powers property of free groups.
+arguments on reduced words, such as the big powers property of free groups. In the same calculus,
+a prefix of the reduced word of `x` and a suffix of that of `y` that both survive in the reduced
+word of `x * y` do not overlap there (`FreeGroup.exists_toWord_mul_eq_append_append`), and the
+cancellation in `x * y` is that in `z * y` whenever `x` and `z` end with the same word `M ++ R` and
+the nonempty word `M` survives in `z * y` (`FreeGroup.toWord_mul_eq_of_middle`).
 
 The reduced word of `g⁻¹ * f` arises from those of `g` and `f` by cancelling their
 longest common prefix, so `‖g⁻¹ * f‖ + 2 * commonPrefixLength g f = ‖g‖ + ‖f‖` for the word
@@ -492,6 +496,52 @@ theorem prefix_toWord_mk_append_mul {x₁ x₂ : List (α × Bool)} {g : FreeGro
     rw [cons_append, ← singleton_append (l := x₁ ++ x₂), ← mul_mk, mul_assoc,
       toWord_mk_singleton_mul_of_head?_ne hhead]
     exact (prefix_cons_inj a).2 (ih hx')
+
+/-- If a prefix `p` of the reduced word of `x` is also a prefix of the reduced word of `x * y`, and
+a suffix `s` of the reduced word of `y` is also a suffix of it, then the two do not overlap there:
+the reduced word of `x * y` is `p ++ J ++ s` for some word `J`. -/
+theorem exists_toWord_mul_eq_append_append {x y : FreeGroup α} {p s : List (α × Bool)}
+    (hpx : p <+: x.toWord) (hp : p <+: (x * y).toWord) (hsy : s <:+ y.toWord)
+    (hs : s <:+ (x * y).toWord) : ∃ J, (x * y).toWord = p ++ J ++ s := by
+  obtain ⟨T, hT⟩ := hs
+  rcases prefix_or_prefix_of_prefix hp ⟨s, hT⟩ with ⟨J, rfl⟩ | ⟨D, rfl⟩
+  · exact ⟨J, hT.symm⟩
+  -- Otherwise `p = T ++ D` with `D` a prefix of `s`; then `D` cancels against `y`, so `D = []`.
+  obtain ⟨E, hE⟩ := hpx
+  obtain ⟨K, hK⟩ := hsy
+  obtain ⟨s', rfl⟩ : D <+: s := (prefix_append_right_inj T).1 (hT ▸ hp)
+  have hDE : IsReduced (D ++ E) := isReduced_toWord.infix ⟨T, [], by rw [← hE]; simp⟩
+  have hK' : IsReduced K := isReduced_toWord.infix ⟨[], D ++ s', by rw [← hK]; simp⟩
+  have h1 : mk (D ++ E ++ K) = 1 := by
+    have hxy := congrArg mk hT
+    rw [mk_toWord, ← mk_toWord (x := x), ← mk_toWord (x := y), ← hE, ← hK] at hxy
+    simp only [← mul_mk, mul_assoc, mul_right_inj] at hxy
+    rw [← mul_mk, ← mul_mk, mul_assoc]
+    exact mul_eq_one_comm.1 (mul_eq_right.1 (by simpa only [mul_assoc] using hxy.symm))
+  have hD : IsReduced (invRev D ++ D) := isReduced_toWord.infix
+    ⟨invRev E, s', by rw [← hK, hDE.eq_invRev_of_mk_append_eq_one hK' h1]; simp⟩
+  obtain rfl : D = [] := (append_eq_nil_iff.1 <| hD.eq_nil_of_mk_eq_one <| by
+    rw [← mul_mk, ← inv_mk, inv_mul_cancel]).2
+  exact ⟨[], by simpa using hT.symm⟩
+
+/-- If the reduced words of `x` and `z` end with the same word `M ++ R`, `M` nonempty, and the
+reduced word of `z * y` keeps the part `L ++ M` of the reduced word `L ++ M ++ R` of `z`, then the
+cancellation in `x * y` is the same as in `z * y`: the reduced word of `x * y` is the part `P` of
+the reduced word of `x` before `M`, followed by the part `M ++ Q` of the reduced word of `z * y`
+from `M` on. -/
+theorem toWord_mul_eq_of_middle {x y z : FreeGroup α} {P L M R Q : List (α × Bool)}
+    (hx : x.toWord = P ++ M ++ R) (hz : z.toWord = L ++ M ++ R) (hM : M ≠ [])
+    (hzy : (z * y).toWord = L ++ M ++ Q) : (x * y).toWord = P ++ M ++ Q := by
+  have h₁ : IsReduced (P ++ M) := isReduced_toWord.infix ⟨[], R, by rw [hx]; simp⟩
+  have h₂ : IsReduced (M ++ Q) := isReduced_toWord.infix ⟨L, [], by rw [hzy]; simp⟩
+  -- `x` and `z` differ by the left factor `mk P * (mk L)⁻¹`, which then multiplies `z * y`.
+  have hxy : x * y = mk P * mk M * mk Q := by
+    have hxz : x = mk P * (mk L)⁻¹ * z := by
+      rw [← mk_toWord (x := x), ← mk_toWord (x := z), hx, hz]
+      simp only [← mul_mk, mul_assoc, inv_mul_cancel_left]
+    rw [hxz, mul_assoc, ← mk_toWord (x := z * y), hzy]
+    simp only [← mul_mk, mul_assoc, inv_mul_cancel_left]
+  rw [hxy, mul_mk, mul_mk, toWord_mk, (h₁.append_overlap h₂ hM).reduce_eq]
 
 end Prefix
 

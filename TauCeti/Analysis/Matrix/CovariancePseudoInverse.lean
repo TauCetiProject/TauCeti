@@ -275,6 +275,20 @@ theorem covariancePseudoInverse_sqrt_mul_sqrt (C : Matrix ι ι ℝ) :
   rw [← (commute_covariancePseudoInverse (CFC.sqrt C)).eq,
     sqrt_mul_covariancePseudoInverse_sqrt, (commute_covariancePseudoInverse C).eq]
 
+/-- Sandwiching the covariance pseudoinverse between two copies of the covariance square root
+gives the covariance's pseudoinverse times the covariance, the orthogonal projection onto its
+range. Invalid covariances give zero on both sides. -/
+@[simp]
+theorem sqrt_mul_covariancePseudoInverse_mul_sqrt (C : Matrix ι ι ℝ) :
+    CFC.sqrt C * C.covariancePseudoInverse * CFC.sqrt C = C.covariancePseudoInverse * C := by
+  by_cases hC : C.PosSemidef
+  · have hcomm : Commute (CFC.sqrt C) C.covariancePseudoInverse := by
+      rw [covariancePseudoInverse_of_posSemidef hC, CFC.sqrt_eq_real_sqrt C hC.nonneg, cfcₙ_eq_cfc]
+      exact cfc_commute_cfc _ _ C
+    rw [hcomm.eq, mul_assoc, CFC.sqrt_mul_sqrt_self C hC.nonneg]
+  · have hn : ¬ 0 ≤ C := fun h ↦ hC (nonneg_iff_posSemidef.mp h)
+    simp [hC, CFC.sqrt_of_not_nonneg hn]
+
 /-- The covariance pseudoinverse is the limit of `(C² + ε I)⁻¹ C` as positive `ε` tends to zero.
 The limit includes zero covariance and empty coordinate types. -/
 theorem tendsto_inv_sq_add_smul_mul {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
