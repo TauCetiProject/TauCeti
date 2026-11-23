@@ -406,30 +406,36 @@ theorem localProjection_finiteEmbed (v : HeightOneSpectrum R) (x : FiniteAdelicP
     localProjection R K H v (finiteEmbed R K H x) = finiteLocalProjection R K H v x := by
   rw [localProjection_apply, finiteProjection_finiteEmbed]
 
+/-- The component of `finiteEmbed x` at an infinite place `w` is the identity point. -/
+@[simp]
+theorem infinitePlaceProjection_finiteEmbed (w : InfinitePlace K) (x : FiniteAdelicPoints R K H) :
+    infinitePlaceProjection R K H w (finiteEmbed R K H x) = 1 := by
+  rw [infinitePlaceProjection_apply, infiniteProjection_finiteEmbed, map_one]
+
 theorem finiteEmbed_injective : Function.Injective (finiteEmbed R K H) :=
   Function.LeftInverse.injective finiteProjection_finiteEmbed
+
+/-- The image of `finiteEmbed` consists of the adelic points with trivial infinite component. -/
+theorem mrange_finiteEmbed :
+    MonoidHom.mrange (finiteEmbed R K H) = MonoidHom.mker (infiniteProjection R K H) := by
+  ext y
+  rw [finiteEmbed, ← MonoidHom.map_mrange, Submonoid.mrange_inr, ← MonoidHom.mker_fst,
+    Submonoid.mem_map_equiv, MonoidHom.mem_mker, MonoidHom.mem_mker]
+  -- the inverse of `(prodContinuousMulEquiv R K H).symm` is `prodContinuousMulEquiv R K H`
+  exact congr_arg (· = 1) (congr_arg Prod.fst (prodContinuousMulEquiv_apply y)) |>.to_iff
+
+/-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
+identity point. -/
+theorem mem_mrange_finiteEmbed_iff {y : AdelicPoints R K H} :
+    y ∈ MonoidHom.mrange (finiteEmbed R K H) ↔ infiniteProjection R K H y = 1 := by
+  rw [mrange_finiteEmbed, MonoidHom.mem_mker]
 
 /-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
 identity point. This is the simp normal form of `mem_mrange_finiteEmbed_iff`. -/
 @[simp]
 theorem exists_finiteEmbed_eq_iff {y : AdelicPoints R K H} :
-    (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 := by
-  refine ⟨?_, fun hy ↦ ⟨finiteProjection R K H y, ?_⟩⟩
-  · rintro ⟨x, rfl⟩
-    exact infiniteProjection_finiteEmbed x
-  · exact ext_projection (by rw [infiniteProjection_finiteEmbed, hy])
-      (finiteProjection_finiteEmbed _)
-
-/-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
-identity point. -/
-theorem mem_mrange_finiteEmbed_iff {y : AdelicPoints R K H} :
-    y ∈ MonoidHom.mrange (finiteEmbed R K H) ↔ infiniteProjection R K H y = 1 :=
-  MonoidHom.mem_mrange.trans exists_finiteEmbed_eq_iff
-
-/-- The image of `finiteEmbed` consists of the adelic points with trivial infinite component. -/
-theorem mrange_finiteEmbed :
-    MonoidHom.mrange (finiteEmbed R K H) = MonoidHom.mker (infiniteProjection R K H) :=
-  SetLike.ext fun _ ↦ mem_mrange_finiteEmbed_iff.trans MonoidHom.mem_mker.symm
+    (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 :=
+  MonoidHom.mem_mrange.symm.trans mem_mrange_finiteEmbed_iff
 
 /-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
 `finiteProjection`. -/
