@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
-import TauCeti.FieldTheory.AlgebraicClosure
+public import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -38,10 +38,10 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   function field `F / k` which is algebraic over `k` is finite over `k`.
 * `TauCeti.IsFunctionField.finiteDimensional_algebraicClosure`: the field of constants of a
   function field is finite over the base field.
-* `TauCeti.algebraicClosure_eq_bot_iff_isIntegrallyClosedIn`,
-  `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`,
-  `TauCeti.isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one`: the three faces of the
-  exactness hypothesis on the field of constants.
+* `TauCeti.isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one`: the exactness hypothesis on
+  the field of constants read off its degree (complementing
+  `TauCeti.algebraicClosure_eq_bot_iff_isIntegrallyClosedIn` and
+  `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`).
 * `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed base field is exact in
   every domain algebra.
 * `TauCeti.IsFunctionField.algebraicClosure` and
@@ -118,14 +118,6 @@ theorem finiteDimensional_algebraicClosure (hF : IsFunctionField k F) :
 end IsFunctionField
 
 /-! ### Exactness of the field of constants -/
-
-/-- `k` is integrally closed in `F` exactly when no element of `F` outside `k` is algebraic over
-`k`, that is, when the field of constants of `F / k` is `k` itself. -/
-theorem algebraicClosure_eq_bot_iff_isIntegrallyClosedIn :
-    algebraicClosure k F = ⊥ ↔ IsIntegrallyClosedIn k F := by
-  rw [← IsIntegrallyClosedIn.integralClosure_eq_bot_iff F (algebraMap k F).injective,
-    ← algebraicClosure_toSubalgebra, ← IntermediateField.bot_toSubalgebra,
-    IntermediateField.toSubalgebra_inj]
 
 /-- The exactness hypothesis on the field of constants, read off its degree. -/
 theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :

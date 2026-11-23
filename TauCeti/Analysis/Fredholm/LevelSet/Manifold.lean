@@ -77,11 +77,12 @@ theorem contDiffOn_coe_levelSetChartAt_symm
     ContDiffOn 𝕜 m
       (fun k ↦ (((levelSetChartAt hf hFred hsurj hindex z).symm k : ↥{x | f x = c}) : E))
       (levelSetChartAt hf hFred hsurj hindex z).target := by
-  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
-      (hindex z.1 z.2))
-  set chart := levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
-    (hFred z.1 z.2).closedComplemented_ker z.2
+  set K := (D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+      (hindex z.val z.property))
+  set chart := levelSetChart (hf z.val z.property) (LinearMap.range_eq_top.2
+      (hsurj z.val z.property))
+    (hFred z.val z.property).closedComplemented_ker z.property
   have hpt : ∀ j : Fin n → 𝕜,
       (((levelSetChartAt hf hFred hsurj hindex z).symm j : ↥{x | f x = c}) : E) =
         ((chart.symm (K.symm j) : ↥{x | f x = c}) : E) := fun j ↦ by
@@ -92,12 +93,12 @@ theorem contDiffOn_coe_levelSetChartAt_symm
   set u := (chart.symm (K.symm k) : ↥{x | f x = c})
   have hinner : ContDiffAt 𝕜 m
       (fun j ↦ ((chart.symm j : ↥{x | f x = c}) : E)) (K.symm k) := by
-    refine contDiffAt_coe_levelSetChart_symm_of_mem _ _ _ _ hk.1 ?_ (hsmooth u.1 u.2)
+    refine contDiffAt_coe_levelSetChart_symm_of_mem _ _ _ _ hk.1 ?_ (hsmooth u.val u.property)
     have hmem := hk.2
     rw [Set.mem_preimage, mem_levelSetImplicitCoordSource_iff, hpt k] at hmem
     exact hmem
   exact (hinner.comp k
-    ((K.symm : (Fin n → 𝕜) →L[𝕜] ↥(D z.1).ker).contDiff.contDiffAt)).contDiffWithinAt
+    ((K.symm : (Fin n → 𝕜) →L[𝕜] ↥(D z.val).ker).contDiff.contDiffAt)).contDiffWithinAt
 
 /-- **Two preferred charts of a regular level set are smoothly compatible.** The transition map is
 the inverse of one chart, followed by the linear reading of a vector of `E` in the model space
@@ -117,11 +118,11 @@ theorem contDiffOn_levelSetChartAt_trans
   set e' := levelSetChartAt hf hFred hsurj hindex w with he'
   -- the linear map reading a vector of `E` in the model space of the chart at `w`
   set Ψ : E →L[𝕜] (Fin n → 𝕜) :=
-    ((D w.1).kerModelEquiv (hFred w.1 w.2).finite_ker
-      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D w.1) (hsurj w.1 w.2)).2
-        (hindex w.1 w.2)) :
-        ↥(D w.1).ker →L[𝕜] (Fin n → 𝕜)).comp
-      (Classical.choose (hFred w.1 w.2).closedComplemented_ker) with hΨ
+    ((D w.val).kerModelEquiv (hFred w.val w.property).finite_ker
+      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D w.val) (hsurj w.val w.property)).2
+        (hindex w.val w.property)) :
+        ↥(D w.val).ker →L[𝕜] (Fin n → 𝕜)).comp
+      (Classical.choose (hFred w.val w.property).closedComplemented_ker) with hΨ
   have hsub : (e.symm.trans e').source ⊆ e.target := fun k hk ↦ hk.1
   have hbase : ContDiffOn 𝕜 m (fun k ↦ ((e.symm k : ↥{x | f x = c}) : E))
       (e.symm.trans e').source :=
@@ -174,7 +175,7 @@ theorem contMDiff_coe_levelSet
     letI := levelSetChartedSpace hf hFred hsurj hindex
     ContMDiff 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) m (Subtype.val : ↥{x | f x = c} → E) := by
   let _i := levelSetChartedSpace hf hFred hsurj hindex
-  refine fun z ↦ contMDiffAt_iff.2 ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine fun z ↦ contMDiffAt_iff.2 ⟨continuous_subtypeVal.continuousAt, ?_⟩
   have hz := (levelSetChartAt hf hFred hsurj hindex z).map_source
     (mem_levelSetChartAt_source hf hFred hsurj hindex z)
   have h := (contDiffOn_coe_levelSetChartAt_symm hf hFred hsurj hindex hsmooth z).contDiffAt
@@ -197,30 +198,31 @@ theorem hasMFDerivAt_coe_levelSet
     (z : ↥{x | f x = c}) :
     letI := levelSetChartedSpace hf hFred hsurj hindex
     HasMFDerivAt 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) (Subtype.val : ↥{x | f x = c} → E) z
-      ((D z.1).ker.subtypeL.comp
-        (((D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-          ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
-            (hindex z.1 z.2))).symm :
-            (Fin n → 𝕜) →L[𝕜] ↥(D z.1).ker)) := by
+      ((D z.val).ker.subtypeL.comp
+        (((D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
+          ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+            (hindex z.val z.property))).symm :
+            (Fin n → 𝕜) →L[𝕜] ↥(D z.val).ker)) := by
   let _i := levelSetChartedSpace hf hFred hsurj hindex
-  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
-      (hindex z.1 z.2))
-  set chart := levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
-    (hFred z.1 z.2).closedComplemented_ker z.2
+  set K := (D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+      (hindex z.val z.property))
+  set chart := levelSetChart (hf z.val z.property) (LinearMap.range_eq_top.2
+      (hsurj z.val z.property))
+    (hFred z.val z.property).closedComplemented_ker z.property
   have hderiv : HasFDerivAt (fun j ↦ ((chart.symm j : ↥{x | f x = c}) : E))
-      (D z.1).ker.subtypeL (K.symm 0) := by
+      (D z.val).ker.subtypeL (K.symm 0) := by
     simpa only [map_zero] using
-      (hasStrictFDerivAt_coe_levelSetChart_symm (hf z.1 z.2) _ _ z.2).hasFDerivAt
+      (hasStrictFDerivAt_coe_levelSetChart_symm (hf z.val z.property) _ _ z.property).hasFDerivAt
   have hcoord : HasFDerivAt
       (fun k ↦ (((levelSetChartAt hf hFred hsurj hindex z).symm k : ↥{x | f x = c}) : E))
-      ((D z.1).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] ↥(D z.1).ker)) 0 := by
+      ((D z.val).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] ↥(D z.val).ker)) 0 := by
     simpa only [levelSetChartAt_symm_apply, Function.comp_def] using
       hderiv.comp 0 K.symm.hasFDerivAt
   -- In the model space the extended charts are the preferred chart at `z` and the identity.
   have e : chartAt (Fin n → 𝕜) z = levelSetChartAt hf hFred hsurj hindex z :=
     levelSetChartedSpace_chartAt hf hFred hsurj hindex z
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   simp only [mfld_simps, e, Function.comp_def, levelSetChartAt_apply_self hf hFred hsurj hindex z,
     hasFDerivWithinAt_univ]
   -- The tangent-space casts for these boundaryless models are identity maps.

@@ -142,7 +142,7 @@ private theorem key_identity (n : ℕ) (hn : 1 ≤ n) (K : ℕ) (M : ℤ) :
 /-- The generating polynomial `∑_{π ∈ NC(s)} t ^ |π|` of the number of parts of the noncrossing
 partitions of `s`. -/
 private noncomputable def blockPoly (s : Finset α) : Polynomial ℚ :=
-  ∑ P : NoncrossingPartition s, τ ^ #P.1.parts
+  ∑ P : NoncrossingPartition s, τ ^ #P.val.parts
 
 private theorem blockPoly_empty : blockPoly (∅ : Finset α) = 1 := by
   rw [blockPoly, Fintype.sum_unique, Finpartition.parts_eq_empty_iff.2 rfl]
@@ -151,7 +151,7 @@ private theorem blockPoly_empty : blockPoly (∅ : Finset α) = 1 := by
 /-- The sum over `NC(t)` of `t ^ |π|`, written with the part through `m` separated: it is
 `blockPoly t`, except that for `t = ∅` the missing part through `m` contributes the factor `t`. -/
 private theorem sum_X_mul_prod_filter (t : Finset α) (m : α) (hm : t.Nonempty → m ∈ t) :
-    ∑ P : NoncrossingPartition t, τ * ∏ B ∈ P.1.parts with m ∉ B, τ =
+    ∑ P : NoncrossingPartition t, τ * ∏ B ∈ P.val.parts with m ∉ B, τ =
       if #t = 0 then τ else blockPoly t := by
   by_cases ht : #t = 0
   · obtain rfl := card_eq_zero.1 ht
@@ -159,7 +159,7 @@ private theorem sum_X_mul_prod_filter (t : Finset α) (m : α) (hm : t.Nonempty 
     simp
   · rw [ite_eq_right ht, blockPoly]
     refine sum_congr rfl fun P _ => ?_
-    have h := P.1.prod_parts_eq_mul_prod_filter_notMem
+    have h := P.val.prod_parts_eq_mul_prod_filter_notMem
       (hm (nonempty_of_ne_empty fun h => ht (by simp [h]))) fun _ => τ
     rw [prod_const] at h
     exact h.symm
@@ -190,7 +190,7 @@ private noncomputable def narayanaPoly : ℕ → Polynomial ℚ
       (if (i : ℕ) = 0 then τ else narayanaPoly i) * narayanaPoly (n - i)
 decreasing_by
   all_goals
-    have := i.2
+    have := i.isLt
     omega
 
 private theorem narayanaPoly_succ (n : ℕ) :
@@ -325,12 +325,12 @@ private theorem coeff_coeff_pow {n : ℕ} (hn : 1 ≤ n) (k m : ℕ) :
 
 /-- The coefficient of `t ^ j` in `∑_{π ∈ NC(s)} t ^ |π|` is the number of `π` with `j` parts. -/
 private theorem coeff_blockPoly (s : Finset α) (j : ℕ) :
-    (blockPoly s).coeff j = (#{P : NoncrossingPartition s | #P.1.parts = j} : ℕ) := by
+    (blockPoly s).coeff j = (#{P : NoncrossingPartition s | #P.val.parts = j} : ℕ) := by
   rw [blockPoly, Polynomial.finsetSum_coeff, card_filter]
   push_cast
   refine sum_congr rfl fun P _ => ?_
   rw [Polynomial.coeff_X_pow]
-  by_cases h : #P.1.parts = j
+  by_cases h : #P.val.parts = j
   · simp [h]
   · simp [h, Ne.symm h]
 
@@ -338,7 +338,7 @@ private theorem coeff_blockPoly (s : Finset α) (j : ℕ) :
 linear order with `j + 1` parts, multiplied by `|s|`, is `C(|s|, j + 1) * C(|s|, j)`; that is, the
 number is the Narayana number `(1 / |s|) C(|s|, j + 1) C(|s|, j)`. -/
 theorem card_mul_card_parts_eq (s : Finset α) (j : ℕ) :
-    #s * #{P : NoncrossingPartition s | #P.1.parts = j + 1} =
+    #s * #{P : NoncrossingPartition s | #P.val.parts = j + 1} =
       (#s).choose (j + 1) * (#s).choose j := by
   obtain h0 | hn := Nat.eq_zero_or_pos #s
   · rw [h0]
@@ -349,7 +349,7 @@ theorem card_mul_card_parts_eq (s : Finset α) (j : ℕ) :
     have e : ((j + 1 : ℕ) : ℤ) - ((1 : ℕ) : ℤ) = (j : ℕ) := by push_cast; ring
     rw [e, bin_natCast, bin_natCast] at h
     have hn' : (#s : ℚ) ≠ 0 := by positivity
-    have h' : ((#s * #{P : NoncrossingPartition s | #P.1.parts = j + 1} : ℕ) : ℚ) =
+    have h' : ((#s * #{P : NoncrossingPartition s | #P.val.parts = j + 1} : ℕ) : ℚ) =
         (((#s).choose (j + 1) * (#s).choose j : ℕ) : ℚ) := by
       push_cast
       rw [h]
@@ -360,7 +360,7 @@ theorem card_mul_card_parts_eq (s : Finset α) (j : ℕ) :
 /-- The number of noncrossing partitions of a finite set `s` of positions with `j + 1` parts is the
 Narayana number `C(|s|, j + 1) C(|s|, j) / |s|`, with natural-number division. -/
 theorem card_parts_eq_div (s : Finset α) (j : ℕ) :
-    #{P : NoncrossingPartition s | #P.1.parts = j + 1} =
+    #{P : NoncrossingPartition s | #P.val.parts = j + 1} =
       (#s).choose (j + 1) * (#s).choose j / #s := by
   rcases s.eq_empty_or_nonempty with rfl | hs
   · rw [Finset.card_empty, Nat.div_zero]
@@ -372,13 +372,13 @@ theorem card_parts_eq_div (s : Finset α) (j : ℕ) :
 /-- The number of noncrossing partitions of `Fin n` with `j + 1` parts, multiplied by `n`, is
 `C(n, j + 1) * C(n, j)`. -/
 theorem card_fin_mul_card_parts_eq (n j : ℕ) :
-    n * #{P : NoncrossingPartition (univ : Finset (Fin n)) | #P.1.parts = j + 1} =
+    n * #{P : NoncrossingPartition (univ : Finset (Fin n)) | #P.val.parts = j + 1} =
       n.choose (j + 1) * n.choose j := by
   simpa using card_mul_card_parts_eq (univ : Finset (Fin n)) j
 
 /-- Only the empty set has a noncrossing partition without parts, and it has exactly one. -/
 theorem card_filter_card_parts_eq_zero (s : Finset α) :
-    #{P : NoncrossingPartition s | #P.1.parts = 0} = if #s = 0 then 1 else 0 := by
+    #{P : NoncrossingPartition s | #P.val.parts = 0} = if #s = 0 then 1 else 0 := by
   simp only [card_eq_zero (s := s), card_eq_zero (s := Finpartition.parts _),
     Finpartition.parts_eq_empty_iff, bot_eq_empty]
   split_ifs with hs
@@ -389,8 +389,8 @@ theorem card_filter_card_parts_eq_zero (s : Finset α) :
 only on the number `|s|` of positions. -/
 theorem card_filter_card_parts_eq_of_card_eq {β : Type*} [LinearOrder β] {t : Finset β}
     (h : #s = #t) (j : ℕ) :
-    #{P : NoncrossingPartition s | #P.1.parts = j} =
-      #{P : NoncrossingPartition t | #P.1.parts = j} := by
+    #{P : NoncrossingPartition s | #P.val.parts = j} =
+      #{P : NoncrossingPartition t | #P.val.parts = j} := by
   cases j with
   | zero => rw [card_filter_card_parts_eq_zero, card_filter_card_parts_eq_zero, h]
   | succ j => rw [card_parts_eq_div, card_parts_eq_div, h]
@@ -399,17 +399,17 @@ theorem card_filter_card_parts_eq_of_card_eq {β : Type*} [LinearOrder β] {t : 
 by the number of parts. -/
 theorem sum_comp_card_parts_eq_sum_range {M : Type*} [AddCommMonoid M] (s : Finset α)
     (f : ℕ → M) :
-    ∑ P : NoncrossingPartition s, f #P.1.parts =
-      ∑ j ∈ range (#s + 1), #{P : NoncrossingPartition s | #P.1.parts = j} • f j := by
-  rw [← sum_fiberwise_of_maps_to (g := fun P : NoncrossingPartition s => #P.1.parts)
-    (t := range (#s + 1)) fun P _ => mem_range.2 (Nat.lt_succ_of_le P.1.card_parts_le_card)]
+    ∑ P : NoncrossingPartition s, f #P.val.parts =
+      ∑ j ∈ range (#s + 1), #{P : NoncrossingPartition s | #P.val.parts = j} • f j := by
+  rw [← sum_fiberwise_of_maps_to (g := fun P : NoncrossingPartition s => #P.val.parts)
+    (t := range (#s + 1)) fun P _ => mem_range.2 (Nat.lt_succ_of_le P.val.card_parts_le_card)]
   exact sum_congr rfl fun j _ => by
     rw [sum_congr rfl fun P hP => by rw [(mem_filter.1 hP).2], sum_const]
 
 /-- Over an empty set `s` of positions, a sum over the noncrossing partitions of `s` of a function
 `f` of their number of parts is `f 0`: the only such partition has no parts. -/
 theorem sum_comp_card_parts_of_card_eq_zero {M : Type*} [AddCommMonoid M] (hs : #s = 0)
-    (f : ℕ → M) : ∑ P : NoncrossingPartition s, f #P.1.parts = f 0 := by
+    (f : ℕ → M) : ∑ P : NoncrossingPartition s, f #P.val.parts = f 0 := by
   rw [sum_comp_card_parts_eq_sum_range, hs, zero_add, sum_range_one,
     card_filter_card_parts_eq_zero, ite_eq_left hs, one_smul]
 
@@ -418,15 +418,16 @@ number of parts depends only on the number `|s|` of positions. In particular, su
 `NC(s)` equals the same sum over `NC(Fin |s|)`. -/
 theorem sum_comp_card_parts_eq_of_card_eq {β M : Type*} [LinearOrder β] [AddCommMonoid M]
     {t : Finset β} (h : #s = #t) (f : ℕ → M) :
-    ∑ P : NoncrossingPartition s, f #P.1.parts = ∑ P : NoncrossingPartition t, f #P.1.parts := by
+    ∑ P : NoncrossingPartition s, f #P.val.parts = ∑ P : NoncrossingPartition t, f #P.val.parts
+        := by
   rw [sum_comp_card_parts_eq_sum_range, sum_comp_card_parts_eq_sum_range, h]
   exact sum_congr rfl fun j _ => by rw [card_filter_card_parts_eq_of_card_eq h]
 
 /-- Weighting each part `B` of a noncrossing partition of `s` by `r * c ^ #B`, the total weight is
 `c ^ #s * ∑_{π ∈ NC(#s)} r ^ |π|`. For `c = 1` this is the Narayana polynomial of `#s`. -/
 theorem sum_prod_mul_pow_card {M : Type*} [CommSemiring M] (s : Finset α) (r c : M) :
-    ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, r * c ^ #B =
-      c ^ #s * ∑ π : NoncrossingPartition (univ : Finset (Fin #s)), r ^ #π.1.parts := by
+    ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, r * c ^ #B =
+      c ^ #s * ∑ π : NoncrossingPartition (univ : Finset (Fin #s)), r ^ #π.val.parts := by
   simp_rw [prod_mul_distrib, prod_const, prod_pow_eq_pow_sum, Finpartition.sum_card_parts]
   rw [← sum_mul, mul_comm, sum_comp_card_parts_eq_of_card_eq
     (t := (univ : Finset (Fin #s))) (by rw [card_univ, Fintype.card_fin]) fun k => r ^ k]

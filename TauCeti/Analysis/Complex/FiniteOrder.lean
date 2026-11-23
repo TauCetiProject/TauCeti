@@ -116,22 +116,8 @@ theorem isFiniteOrder_iff_exists_bound (hf : Continuous f) :
   constructor
   · intro h
     obtain ⟨A, hA0, hA⟩ := h.exists_nonneg
-    let B := A + 1
-    have hB : A < B := by dsimp [B]; linarith
-    have hB0 : 0 < B := by dsimp [B]; linarith
-    let g : ℂ → ℝ := fun z ↦ Real.exp (‖z‖ ^ B)
-    have hg : Continuous g :=
-      Real.continuous_exp.comp (continuous_norm.rpow_const fun _ ↦ Or.inr hB0.le)
-    have hq : Continuous (fun z ↦ ‖f z‖ / g z) :=
-      hf.norm.div hg (fun z ↦ Real.exp_ne_zero _)
-    have hO : (fun z ↦ ‖f z‖ / g z) =O[cocompact ℂ] (1 : ℂ → ℝ) := by
-      rw [← Metric.cobounded_eq_cocompact]
-      exact (div_isBoundedUnder_of_isBigO (hA.isBigO hB).norm_left).isBigO_const one_ne_zero
-    obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
-      (hq.isBounded_range_iff_isBigO.mpr hO)
-    refine ⟨B, hB0, max C 1, lt_of_lt_of_le zero_lt_one (le_max_right _ _), fun z ↦ ?_⟩
-    apply (div_le_iff₀ (Real.exp_pos _)).mp
-    exact (le_abs_self _).trans ((hC _ (Set.mem_range_self z)).trans (le_max_left _ _))
+    refine ⟨A + 1, by linarith, ?_⟩
+    exact hA.exists_norm_le_mul_exp_rpow hf (by linarith)
   · rintro ⟨A, _, C, _, hC⟩
     refine ⟨A, orderLE_def.mpr fun B hB ↦ ?_⟩
     have hO : f =O[cobounded ℂ] (fun z ↦ Real.exp (‖z‖ ^ A)) := by

@@ -45,7 +45,8 @@ what lets a perturbed operator be compared with the original on the nose. -/
 /-- The perturbed map acts by `A + V` pointwise on the shared domain. -/
 @[simp] theorem perturb_apply (A : E →ₛₗ.[σ] F) (V : A.domain →ₛₗ[σ] F)
     (x : (perturb A V).domain) :
-    perturb A V x = A ⟨x, perturb_domain A V ▸ x.2⟩ + V ⟨x, perturb_domain A V ▸ x.2⟩ := by
+    perturb A V x = A ⟨x, perturb_domain A V ▸ x.property⟩ + V ⟨x, perturb_domain A V ▸ x.property⟩
+        := by
   rfl
 
 end Algebraic

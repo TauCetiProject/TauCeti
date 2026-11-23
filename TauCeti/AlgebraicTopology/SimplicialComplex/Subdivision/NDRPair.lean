@@ -60,13 +60,13 @@ function, in the barycentric subdivision, of the face-vertices that are faces of
 along the subdivision homeomorphism. -/
 def openSimplicialNeighborhoodControl : C(Realization K, unitInterval) :=
   ((TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-    K.toPreAbstractSimplicialComplex).openStarControl {σ : Face K | σ.1 ∈ P}).comp
+    K.toPreAbstractSimplicialComplex).openStarControl {σ : Face K | σ.val ∈ P}).comp
       ((barycentricSubdivisionRealizationHomeomorph K).symm : C(_, _))
 
 theorem openSimplicialNeighborhoodControl_apply (y : Realization K) :
     K.openSimplicialNeighborhoodControl P y =
       (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-        K.toPreAbstractSimplicialComplex).openStarControl {σ : Face K | σ.1 ∈ P}
+        K.toPreAbstractSimplicialComplex).openStarControl {σ : Face K | σ.val ∈ P}
           ((barycentricSubdivisionRealizationHomeomorph K).symm y) :=
   (rfl)
 
@@ -74,7 +74,7 @@ theorem openSimplicialNeighborhoodControl_apply (y : Realization K) :
 polyhedron of `P`. -/
 @[simp]
 theorem openSimplicialNeighborhoodControl_eq_zero_iff {y : Realization K} :
-    K.openSimplicialNeighborhoodControl P y = 0 ↔ y.1.support ∈ P := by
+    K.openSimplicialNeighborhoodControl P y = 0 ↔ y.val.support ∈ P := by
   have h := Set.ext_iff.1 (preimage_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem
     K P) ((barycentricSubdivisionRealizationHomeomorph K).symm y)
   rw [mem_preimage, Homeomorph.apply_symm_apply] at h
@@ -96,7 +96,7 @@ theorem openSimplicialNeighborhoodControl_lt_one_iff {y : Realization K} :
 /-- **The polyhedron of a subcomplex is an NDR pair.** The NDR data is obtained from the
 deformation of the open simplicial neighbourhood of `P` onto the polyhedron of `P`, cut off by the
 control function `openSimplicialNeighborhoodControl K P`. -/
-def subcomplexNDRPair : TauCeti.NDRPair {y : Realization K | y.1.support ∈ P} :=
+def subcomplexNDRPair : TauCeti.NDRPair {y : Realization K | y.val.support ∈ P} :=
   .ofHomotopyRel (K.setOf_support_mem_subset_openSimplicialNeighborhood P)
     (K.openSimplicialNeighborhoodDeformation P) (K.openSimplicialNeighborhoodControl P)
     (fun _ => K.openSimplicialNeighborhoodControl_eq_zero_iff P)
@@ -113,7 +113,7 @@ theorem subcomplexNDRPair_def :
 /-- **The polyhedron of a subcomplex has the homotopy extension property** in the weak
 realization: the inclusion of a subcomplex is a closed cofibration. -/
 theorem hasHomotopyExtensionProperty_setOf_support_mem :
-    TauCeti.HasHomotopyExtensionProperty {y : Realization K | y.1.support ∈ P} :=
+    TauCeti.HasHomotopyExtensionProperty {y : Realization K | y.val.support ∈ P} :=
   (K.subcomplexNDRPair P).hasHomotopyExtensionProperty
 
 end AbstractSimplicialComplex
