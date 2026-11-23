@@ -22,8 +22,9 @@ holomorphic in `{1 < |z|}` off the negative real axis (DLMF §2.1(iii)). The fun
 
 `f z = a₀ + ∑_{s ≥ 1} aₛ z⁻ˢ (1 - exp(-bₛ z^{1/4}))`, with `bₛ = ((1 + |aₛ|) 2ˢ)⁻¹`,
 
-where `z^{1/4}` is the principal fourth root. Its real part is nonnegative, so each factor
-`exp(-bₛ z^{1/4})` decays faster than every power of `z⁻¹`, while for `|z| ≥ 1` and `s ≥ 1` the
+where `z^{1/4}` is the principal fourth root. It satisfies the uniform cone bound
+`Re(z^{1/4}) ≥ cos(π/4) |z|^{1/4}` on the whole plane, so each factor `exp(-bₛ z^{1/4})` decays
+faster than every power of `z⁻¹` along `cobounded ℂ`, while for `|z| ≥ 1` and `s ≥ 1` the
 damped terms are bounded by `2^{-s}`. The expansion holds along the full filter `cobounded ℂ`.
 For `θ ≤ π`, the function is holomorphic in the open exterior sector `{1 < |z|, |ph z| < θ}` and
 its expansion holds along the closed sector `|ph z| ≤ θ`; together with the positive real axis
@@ -67,24 +68,13 @@ theorem hasAsymptoticExpansion_cexp_neg_mul_cpow {c α : ℝ} (hc : 0 < c) (hα 
     (hα2 : α < 1 / 2) :
     HasAsymptoticExpansion (cobounded ℂ) (fun n z => (z ^ n)⁻¹) (0 : ℕ → ℂ)
       fun z => cexp (-(c * z ^ (α : ℂ))) :=
-  hasAsymptoticExpansion_zero_iff.2 fun N =>
-    (TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded hc hα hα2 (-(N : ℝ))).isBigO.trans
-      (isBigO_of_le _ fun z => le_of_eq (by
-        rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg z) _),
-          Real.rpow_neg (norm_nonneg z), Real.rpow_natCast, norm_inv, norm_pow]))
+  hasAsymptoticExpansion_zero_iff.2 fun N => by
+    have h : (fun z => cexp (-(c * z ^ (α : ℂ)))) =o[cobounded ℂ] fun z : ℂ => ‖(z ^ N)⁻¹‖ :=
+      (TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded hc hα hα2 (-(N : ℝ))).congr_right fun z => by
+        simp only [Real.rpow_neg (norm_nonneg z), Real.rpow_natCast, norm_inv, norm_pow]
+    exact h.of_norm_right.isBigO
 
 /-! ### The Borel–Ritt function -/
-
-/-- The damping exponential `exp(-b z^α)` is holomorphic on the slit plane. -/
-private lemma differentiableAt_cexp_neg_mul_cpow (b α : ℝ) {z : ℂ} (hz : z ∈ slitPlane) :
-    DifferentiableAt ℂ (fun w : ℂ => cexp (-(b * w ^ (α : ℂ)))) z :=
-  ((differentiableAt_id.cpow_const hz).const_mul _).neg.cexp
-
-/-- For `θ ≤ π`, the open exterior sector `{1 < |z|, |ph z| < θ}` lies in the slit exterior
-`{1 < |z|} ∩ slitPlane`. -/
-private lemma setOf_sector_subset {θ : ℝ} (hθπ : θ ≤ π) :
-    {z : ℂ | 1 < ‖z‖ ∧ |arg z| < θ} ⊆ {z | 1 < ‖z‖} ∩ slitPlane := fun z hz =>
-  ⟨hz.1, mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθπ) (norm_pos_iff.1 (by linarith [hz.1]))⟩
 
 /-- The damping weights `bₛ = ((1 + |aₛ|) 2ˢ)⁻¹`. -/
 private def borelRittWeight (a : ℕ → ℂ) (s : ℕ) : ℝ := ((1 + ‖a s‖) * 2 ^ s)⁻¹
@@ -120,9 +110,10 @@ private lemma norm_borelRittTerm_le (a : ℕ → ℂ) (k : ℕ) (z : ℂ) :
     exact mul_nonneg hb.le (le_trans (mul_nonneg hcos (Real.rpow_nonneg (norm_nonneg z) _))
       (TauCeti.cos_mul_norm_rpow_le_re_cpow (y := 1 / 4) (abs_le.2 ⟨by norm_num, by norm_num⟩)))
   have hζ : ‖ζ‖ = b * ‖z‖ ^ (1 / 4 : ℝ) := by
-    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg hb.le, norm_cpow_real]
+    simp only [ζ, norm_mul, Complex.norm_real, norm_cpow_real]
+    rw [Real.norm_of_nonneg hb.le]
   have hw := borelRittWeight_mul_le a (k + 1)
-  rw [borelRittTerm, norm_mul, norm_mul, norm_inv, norm_pow]
+  simp only [borelRittTerm, norm_mul, norm_inv, norm_pow]
   calc (‖z‖ ^ (k + 1))⁻¹ * ‖a (k + 1)‖ * ‖1 - cexp (-ζ)‖
       ≤ (‖z‖ ^ (k + 1))⁻¹ * ‖a (k + 1)‖ * (b * ‖z‖ ^ (1 / 4 : ℝ)) := by
         rw [← hζ]; gcongr; exact Complex.norm_one_sub_exp_neg_le hre
@@ -159,18 +150,17 @@ private lemma differentiableOn_borelRitt (a : ℕ → ℂ) :
   refine DifferentiableAt.differentiableWithinAt ?_
   unfold borelRittTerm
   refine ((differentiableAt_id.pow _).inv (pow_ne_zero _ hz0)).mul_const _ |>.mul ?_
-  exact (differentiableAt_const _).sub (differentiableAt_cexp_neg_mul_cpow _ _ hz.2)
+  exact (differentiableAt_const _).sub (TauCeti.differentiableAt_cexp_neg_mul_cpow _ _ hz.2)
 
-/-- The tail `∑_{k ≥ M + 1}` of the damped terms of index `k + 1` is `O(z^{-M-1})`. -/
-private lemma isBigO_tsum_borelRittTerm (a : ℕ → ℂ) (M : ℕ) :
-    (fun z => ∑' k, borelRittTerm a (k + (M + 1) + 1) z) =O[cobounded ℂ]
-      fun z => (z ^ (M + 1))⁻¹ := by
-  refine (isBigO_inv_pow_cobounded_of_norm_le (c := 0) (R := 1) (A := 2) (M + 1)
+/-- The tail `∑_{k ≥ n}` of the damped terms of index `k + 1` is `O(z⁻ⁿ)`. -/
+private lemma isBigO_tsum_borelRittTerm (a : ℕ → ℂ) (n : ℕ) :
+    (fun z => ∑' k, borelRittTerm a (k + n + 1) z) =O[cobounded ℂ] fun z => (z ^ n)⁻¹ := by
+  refine (isBigO_inv_pow_cobounded_of_norm_le (c := 0) (R := 1) (A := 2) n
     fun z hz => ?_).congr_right fun z => inv_pow z _
   rw [sub_zero] at hz ⊢
   rw [div_eq_mul_inv]
   refine tsum_of_norm_bounded (hasSum_geometric_two.mul_right _) fun k => ?_
-  refine (norm_borelRittTerm_le_pow a (by omega : M + 1 ≤ k + (M + 1)) hz.le).trans ?_
+  refine (norm_borelRittTerm_le_pow a (by omega : n ≤ k + n) hz.le).trans ?_
   exact mul_le_mul_of_nonneg_right (pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega))
     (by positivity)
 
@@ -194,17 +184,15 @@ private lemma hasAsymptoticExpansion_borelRitt (a : ℕ → ℂ) :
   have hev := (tendsto_norm_cobounded_atTop (E := ℂ)).eventually_ge_atTop 1
   refine HasAsymptoticExpansion.of_isBigO fun N => ?_
   rcases N with _ | M
-  · refine IsBigO.of_bound (‖a 0‖ + 2) ?_
-    filter_upwards [hev] with z hz
-    simp only [range_zero, sum_empty, sub_zero, pow_zero, inv_one, norm_one, mul_one, borelRitt]
-    refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
-    exact tsum_of_norm_bounded hasSum_geometric_two fun k => by
-      simpa using norm_borelRittTerm_le_pow a (Nat.zero_le k) hz
+  · have h0 : (fun _ : ℂ => a 0) =O[cobounded ℂ] fun z : ℂ => (z ^ 0)⁻¹ :=
+      (isBigO_const_one ℂ (a 0) _).congr_right fun z => by rw [pow_zero, inv_one]
+    refine (h0.add (isBigO_tsum_borelRittTerm a 0)).congr_left fun z => ?_
+    simp [borelRitt]
   · have hmain : (fun z : ℂ => (z ^ (M + 1))⁻¹ * a (M + 1)) =O[cobounded ℂ]
         fun z => (z ^ (M + 1))⁻¹ :=
       (isBigO_const_mul_self (a (M + 1)) _ _).congr_left fun _ => mul_comm _ _
     have h := ((IsBigO.fun_sum (s := range (M + 1)) fun k _ =>
-      isBigO_borelRittTerm_sub a k (M + 1)).add hmain).add (isBigO_tsum_borelRittTerm a M)
+      isBigO_borelRittTerm_sub a k (M + 1)).add hmain).add (isBigO_tsum_borelRittTerm a (M + 1))
     refine h.congr' ?_ EventuallyEq.rfl
     filter_upwards [hev] with z hz
     have hsplit := (summable_borelRittTerm a hz).sum_add_tsum_nat_add (M + 1)
@@ -234,7 +222,8 @@ theorem exists_hasAsymptoticExpansion_sector (a : ℕ → ℂ) {θ : ℝ} (hθπ
       HasAsymptoticExpansion (cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ})
         (fun n z => (z ^ n)⁻¹) a f := by
   obtain ⟨f, hfd, hf⟩ := exists_hasAsymptoticExpansion_cobounded a
-  exact ⟨f, hfd.mono (setOf_sector_subset hθπ), hf.mono inf_le_left⟩
+  exact ⟨f, hfd.mono (setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane zero_le_one hθπ),
+    hf.mono inf_le_left⟩
 
 /-- Non-uniqueness in Borel–Ritt along `cobounded ℂ` (DLMF §2.1(iii), 2.1.17): every sequence
 `a` is the expansion along `cobounded ℂ` of two functions holomorphic in `{1 < |z|}` off the
@@ -248,7 +237,8 @@ theorem exists_ne_hasAsymptoticExpansion_cobounded (a : ℕ → ℂ) :
   have he := hasAsymptoticExpansion_cexp_neg_mul_cpow (c := 1) (α := 1 / 4) one_pos
     (by norm_num) (by norm_num)
   refine ⟨f, fun z => f z + cexp (-((1 : ℝ) * z ^ ((1 / 4 : ℝ) : ℂ))), hfd,
-    hfd.add fun z hz => (differentiableAt_cexp_neg_mul_cpow _ _ hz.2).differentiableWithinAt,
+    hfd.add fun z hz =>
+      (TauCeti.differentiableAt_cexp_neg_mul_cpow _ _ hz.2).differentiableWithinAt,
     fun z h => ?_, hf, (hf.add he).congr_coeff fun n => add_zero _⟩
   exact Complex.exp_ne_zero _ (by linear_combination -h)
 
@@ -261,8 +251,8 @@ theorem exists_ne_hasAsymptoticExpansion_sector (a : ℕ → ℂ) {θ : ℝ} (h�
       HasAsymptoticExpansion (cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ}) (fun n z => (z ^ n)⁻¹) a f ∧
       HasAsymptoticExpansion (cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ}) (fun n z => (z ^ n)⁻¹) a g := by
   obtain ⟨f, g, hfd, hgd, hne, hf, hg⟩ := exists_ne_hasAsymptoticExpansion_cobounded a
-  exact ⟨f, g, hfd.mono (setOf_sector_subset hθπ), hgd.mono (setOf_sector_subset hθπ), hne,
-    hf.mono inf_le_left, hg.mono inf_le_left⟩
+  have hsub := setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane zero_le_one hθπ
+  exact ⟨f, g, hfd.mono hsub, hgd.mono hsub, hne, hf.mono inf_le_left, hg.mono inf_le_left⟩
 
 /-- **Borel–Ritt** on the positive real axis (DLMF §2.1(iii)): every sequence `a` is the
 expansion `∑ aₛ x⁻ˢ` of a function of `x` as `x → +∞`. -/

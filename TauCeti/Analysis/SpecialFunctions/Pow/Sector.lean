@@ -28,7 +28,8 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
   the power coordinate `I * w ^ (1 / β)`.
 * `TauCeti.cos_mul_norm_rpow_le_re_exp_mul_cpow` is the cone inequality
   `cos δ ‖z‖ ^ y ≤ Re (exp (-φ i) z ^ y)` when the phase `arg z * y` lies within `δ ≤ π` of `φ`;
-  the next three results are its special cases.
+  `TauCeti.cos_mul_norm_le_re_exp_mul_cpow`, `TauCeti.cos_mul_norm_le_re_cpow` and
+  `TauCeti.cos_mul_norm_rpow_le_re_cpow` are its special cases.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
   by a cone inequality, for `0 ≤ β ≤ 2`.
 * `TauCeti.cos_mul_norm_le_re_cpow` is the same cone inequality on the closed right half-plane.
@@ -126,7 +127,7 @@ theorem cos_mul_norm_rpow_le_re_exp_mul_cpow {z : ℂ} {y φ δ : ℝ} (h : |arg
     Real.cos δ * ‖z‖ ^ y ≤ (exp ((-φ : ℝ) * Complex.I) * z ^ (y : ℂ)).re := by
   have hre : (exp ((-φ : ℝ) * Complex.I) * z ^ (y : ℂ)).re =
       ‖z‖ ^ y * Real.cos (arg z * y - φ) := by
-    rw [mul_re, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, cpow_ofReal_re, cpow_ofReal_im,
+    simp only [mul_re, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, cpow_ofReal_re, cpow_ofReal_im,
       Real.cos_neg, Real.sin_neg, Real.cos_sub]
     ring
   rw [hre, mul_comm]

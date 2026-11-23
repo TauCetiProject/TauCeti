@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
@@ -32,8 +34,10 @@ On the complex side, for `c ≥ 0` and `|α| ≤ 1` the principal power satisfie
 `c cos (α π) ‖z‖ ^ α ≤ Re (c z ^ α)` on the whole plane, which gives the pointwise bound
 `TauCeti.norm_cexp_neg_mul_cpow_le`. For `c > 0` and `0 < α < 1/2` the constant `cos (α π)` is
 positive, so `exp (-c z ^ α)` is little-o of every real power of `‖z‖` along `cobounded ℂ`:
-`TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded`. For `α = 1/2` there is no decay, since
-`exp (-c z ^ (1/2))` has norm one on the negative real axis. These estimates generalize the
+`TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded`. At `α = 1/2` this decay fails along
+`cobounded ℂ`, because `exp (-c z ^ (1/2))` has norm one on the negative real axis. The
+function `exp (-c z ^ α)` is holomorphic on the slit plane:
+`TauCeti.differentiableAt_cexp_neg_mul_cpow`. These estimates generalize the
 fourth-root case of the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 -/
@@ -109,9 +113,11 @@ open Complex Bornology
 `‖exp (-c z ^ α)‖ ≤ exp (-(c cos (α π)) ‖z‖ ^ α)` on the whole plane. -/
 theorem norm_cexp_neg_mul_cpow_le {c α : ℝ} (hc : 0 ≤ c) (hα : |α| ≤ 1) (z : ℂ) :
     ‖cexp (-(c * z ^ (α : ℂ)))‖ ≤ Real.exp (-(c * Real.cos (α * π)) * ‖z‖ ^ α) := by
-  rw [Complex.norm_exp, neg_re, re_ofReal_mul, Real.exp_le_exp, neg_mul, neg_le_neg_iff,
-    mul_assoc]
-  exact mul_le_mul_of_nonneg_left (cos_mul_norm_rpow_le_re_cpow hα) hc
+  simp only [Complex.norm_exp, neg_re, re_ofReal_mul]
+  have h := mul_le_mul_of_nonneg_left (cos_mul_norm_rpow_le_re_cpow (z := z) hα) hc
+  refine Real.exp_le_exp.2 ?_
+  rw [neg_mul, mul_assoc]
+  exact neg_le_neg h
 
 /-- For `c > 0` and `0 < α < 1/2`, the function `exp (-c z ^ α)` is little-o of every real power
 of `‖z‖` along `cobounded ℂ`. -/
@@ -122,9 +128,13 @@ theorem isLittleO_cexp_neg_mul_cpow_cobounded {c α : ℝ} (hc : 0 < c) (hα : 0
     Real.cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
   have h := (isLittleO_exp_neg_mul_rpow_rpow_atTop (mul_pos hc hcos) hα r).comp_tendsto
     (tendsto_norm_cobounded_atTop (E := ℂ))
-  refine IsBigO.trans_isLittleO (IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_)) h
-  rw [Function.comp_apply, Real.norm_of_nonneg (Real.exp_pos _).le, one_mul]
-  exact norm_cexp_neg_mul_cpow_le hc.le (abs_le.2 ⟨by linarith, by linarith⟩) z
+  have hα₁ : |α| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
+  exact (IsBigO.of_norm_le fun z => norm_cexp_neg_mul_cpow_le hc.le hα₁ z).trans_isLittleO h
+
+/-- The damping exponential `exp (-b z ^ α)` is holomorphic on the slit plane. -/
+theorem differentiableAt_cexp_neg_mul_cpow (b α : ℝ) {z : ℂ} (hz : z ∈ slitPlane) :
+    DifferentiableAt ℂ (fun w : ℂ => cexp (-(b * w ^ (α : ℂ)))) z :=
+  ((differentiableAt_id.cpow_const hz).const_mul _).neg.cexp
 
 end Cpow
 
