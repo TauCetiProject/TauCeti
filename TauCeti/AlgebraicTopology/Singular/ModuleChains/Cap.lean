@@ -36,12 +36,13 @@ identifications of the underlying complexes with the relative singular chains of
 (`TopPair.singularChainsRepForget₂Iso`) and with the shifted singular chains of `Y`
 (`TauCeti.singularChainsRepTwistExtendForget₂Iso`). Since forgetting the action detects
 quasi-isomorphisms, the equivariant cap product is a quasi-isomorphism exactly when
-`TopPair.pushforwardCapChainMap` is one (`TopPair.quasiIso_singularChainsRepCap_iff`), for instance
-when the relative homology of `(X, A)` vanishes below `n` and `x ↦ p₀_*(x ⌢ [φ])` is an isomorphism
-in every degree (`TopPair.quasiIso_pushforwardCapChainMap`), as for the Thom pair of a vector bundle
-and a cocycle representing a Thom class. If `G` acts freely on `Y`, the twisted chains of `Y` are projective
-representations (`TauCeti.projective_tensorLeft_singularChainsRep_X`), so such a quasi-isomorphism
-computes the twisted homology of the quotient of `(X, A)`
+`TopPair.pushforwardCapChainMap` is one (`TopPair.quasiIso_singularChainsRepCap_iff`), for
+instance when the relative homology of `(X, A)` vanishes below `n` and `x ↦ p₀_*(x ⌢ [φ])` is an
+isomorphism in every degree (`TopPair.quasiIso_pushforwardCapChainMap`), as for the Thom pair of a
+vector bundle and a cocycle representing a Thom class. If `G` acts freely on `Y`, the twisted
+chains of `Y` are projective representations
+(`TauCeti.projective_tensorLeft_singularChainsRep_X`), so such a quasi-isomorphism computes the
+twisted homology of the quotient of `(X, A)`
 (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
 
 For the orientation double cover of a vector bundle, with `G = ℤˣ` acting by the deck involution and
@@ -186,7 +187,9 @@ private theorem singularChainComplexπ_f_pushforwardCapChainMap_f (q : ℕ) :
   rw [capComponent, iCycles_pulledCocycle]
   -- the ambient chains of `P` appear in two forms which agree only after unfolding, so the steps
   -- are assembled in term mode rather than by rewriting
-  exact (congrArg ((P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ ·)
+  exact (congrArg (fun f ↦ (P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ f.f (q + n))
+    (pushforwardCapChainMap_def P p₀ (ModuleCat.of k k) n _ _)).trans <|
+    (congrArg ((P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ ·)
     (ChainComplex.capChainMap_f _ _ (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ) q
       (q + n) (by omega))).trans
     ((Preadditive.comp_zsmul _ _ _).trans ((congrArg (((-1 : ℤ) ^ (n * q)) • ·)
@@ -281,8 +284,13 @@ private theorem signedCapComponent_comp_d (q : ℕ) :
       (ComplexShape.embeddingDownNatAdd_f n q)] at h
   simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     Iso.inv_hom_id_assoc] at h
-  simp only [← Category.assoc, ← Preadditive.zsmul_comp] at h
-  exact (Iso.cancel_iso_inv_right _ _ _).1 h
+  -- the singular chains appear in two forms which agree only after unfolding, so the signs are
+  -- moved by a term rather than by rewriting
+  exact (cancel_mono (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
+    (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv).1
+    ((Category.assoc _ _ _).trans ((Preadditive.zsmul_comp _ _ _).trans (h.trans
+      (((congrArg (_ ≫ ·) (Preadditive.zsmul_comp _ _ _)).trans
+        (Preadditive.comp_zsmul _ _ _)).symm.trans (Category.assoc _ _ _).symm))))
 
 variable {P p₀ n φ} in
 /-- The sign-corrected cap products with a semi-invariant cocycle are semi-invariant:
@@ -402,8 +410,8 @@ private theorem capAmbient_f (q : ℕ) :
       ((((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
         (TauCeti.singularChainsRep k Y G)).extendXIso (ComplexShape.embeddingDownNatAdd n)
           (ComplexShape.embeddingDownNatAdd_f n q)).inv := by
-  rw [capAmbient,
-    ComplexShape.Embedding.liftExtend_f _ _ _ (ComplexShape.embeddingDownNatAdd_f n q)]
+  refine ((ComplexShape.embeddingDownNatAdd n).liftExtend_f _ _
+    (ComplexShape.embeddingDownNatAdd_f n q)).trans ?_
   simp only [capRestrictionHom, Category.assoc, Iso.inv_hom_id_assoc]
 
 variable [MulAction G P.snd] [ContinuousConstSMul G P.snd]

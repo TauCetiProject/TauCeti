@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Cap
 public import TauCeti.Topology.VectorBundle.Thom.Homology
-import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
 /-!
 # The equivariant cap product with a Thom cocycle
@@ -56,7 +55,7 @@ universe u
 namespace TauCeti
 
 variable {B : Type u} [TopologicalSpace B] {F : Type u} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {E : B → Type u} [TopologicalSpace (TotalSpace F E)]
+  {E : B → Type u} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E] {k : Type u} [CommRing k] {G : Type u} [Group G]
   [MulAction G (thomPair F E).fst] [ContinuousConstSMul G (thomPair F E).fst]
