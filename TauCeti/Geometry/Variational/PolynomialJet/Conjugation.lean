@@ -228,9 +228,7 @@ def realPolynomialJetEquiv :
         (mem_realPoints_conjugationₛₗ_id_iff _).2 (Set.mem_range_self q)⟩
       map_add' q q' := Subtype.ext (map_add _ q q')
       map_smul' c q := Subtype.ext <| by
-        simp only [RingHom.id_apply, Submodule.coe_smul]
-        rw [← Complex.coe_smul, smul_eq_C_mul, smul_eq_C_mul, map_mul, map_C,
-          Complex.coe_algebraMap] }
+        simp [Complex.coe_algebraMap, Algebra.smul_def] }
     ⟨fun q q' h ↦ map_injective _ (algebraMap ℝ ℂ).injective (congrArg Subtype.val h),
       fun p ↦ by
         obtain ⟨q, hq⟩ := (mem_realPoints_conjugationₛₗ_id_iff p.val).1 p.property
@@ -337,6 +335,11 @@ theorem realPairEquiv_X_field_inr (a : α) (I : ι →₀ ℕ) :
     realPairEquiv (X (Sum.inr (Sum.inr a, I))) =
       X (Sum.inr (Sum.inl a, I)) - Complex.I • X (Sum.inr (Sum.inr a, I)) := by
   simp [realPairEquiv_apply, realPairField]
+
+@[simp]
+theorem realPairEquiv_symm_C (c : ℂ) :
+    (realPairEquiv (ι := ι) (α := α)).symm (C c) = C c := by
+  simp [realPairEquiv_symm_apply]
 
 @[simp]
 theorem realPairEquiv_symm_X_base (j : ι) :
