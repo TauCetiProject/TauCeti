@@ -38,8 +38,6 @@ the homology of `B'` on which the deck involution acts by `-1`
 
 ## Main definitions
 
-* `TauCeti.VectorBundleOrientationCover.projectionHom`: the projection of the orientation double
-  cover as a morphism of topological spaces.
 * `TauCeti.VectorBundleOrientationCover.associatedLocalSystemSignIso`: the local system associated
   to the sign representation of `ℤˣ` is the orientation local system.
 * `TauCeti.VectorBundleOrientationCover.coinvariantsTensorSingularChainsRepIsoTwisted`: the chains
@@ -59,7 +57,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory Module TauCeti.LocalCoefficientSystem
+open Bundle CategoryTheory Module Simplicial TauCeti.LocalCoefficientSystem
 
 namespace TauCeti.VectorBundleOrientationCover
 
@@ -69,60 +67,58 @@ variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [Norm
   {ι : Type} [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
   (k : Type) [CommRing k]
 
-variable (F E ι) in
-/-- The projection of the orientation double cover, as a morphism of topological spaces. -/
-abbrev projectionHom : TopCat.of (VectorBundleOrientationCover F E ι) ⟶ TopCat.of B :=
-  TopCat.ofHom projection
-
-variable (F E) in
-include hι in
-/-- The orientation double cover is the quotient of the action of `ℤˣ`
-(`isQuotientCoveringMap_proj`), read on `projectionHom`. -/
-theorem isQuotientCoveringMap_projectionHom :
-    IsQuotientCoveringMap (projectionHom F E ι) ℤˣ :=
-  isQuotientCoveringMap_proj hι
-
 /-- **The orientation local system is the local system of the sign representation.** The local
 system on `B` associated to the sign representation of `ℤˣ` on `k`, through the orientation double
 cover, is the orientation local system `o(E)`: the class of `a ⊗ r[o]`, for an orientation `o` of a
 fibre, goes to the element of `o(E)` whose value at `o` is `r * a`
 (`associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk`). -/
 def associatedLocalSystemSignIso :
-    (isQuotientCoveringMap_projectionHom F E hι).associatedLocalSystem k
-        (Rep.ofDistribMulAction k ℤˣ k) ≅
+    IsQuotientCoveringMap.associatedLocalSystem
+        (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+        (isQuotientCoveringMap_proj hι) k (Rep.ofDistribMulAction k ℤˣ k) ≅
       signLocalSystem F E k hι :=
-  (isQuotientCoveringMap_projectionHom F E hι).associatedLocalSystemSignIso k
-    fun p ↦ (neg_one_smul_eq_deck p).symm
+  IsQuotientCoveringMap.associatedLocalSystemSignIso
+    (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+    (isQuotientCoveringMap_proj hι) k fun p ↦ (neg_one_smul_eq_deck p).symm
 
 /-- The identification of the local system of the sign representation with the orientation local
 system sends the class of `a ⊗ r[o]` to the element whose value at the orientation `o` is
 `r * a`. -/
 -- Not a simp lemma: `simp` unfolds `Rep.coinvariantsTensorMk` on the left-hand side first.
 lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk
-    {x : FundamentalGroupoid (TopCat.of B)} (o : projectionHom F E ι ⁻¹' {x.as}) (a r : k) :
+    {x : FundamentalGroupoid (TopCat.of B)}
+    (o : (TopCat.ofHom (projection (F := F) (E := E) (ι := ι))) ⁻¹' {x.as}) (a r : k) :
     (signLocalSystemObjEquiv hι x (((associatedLocalSystemSignIso hι k).hom.app x).hom
         (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
-          (Rep.of ((isQuotientCoveringMap_projectionHom F E hι).fiberRepresentation k x.as)) a
+          (Rep.of (IsQuotientCoveringMap.fiberRepresentation
+            (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+            (isQuotientCoveringMap_proj hι) k x.as)) a
           (Finsupp.single o r))) : _ → k) o =
       r * a := by
   -- `o(E)` is the sign local system of the deck involution by definition.
   rw [← signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app]
   exact IsQuotientCoveringMap.associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk
-    (isQuotientCoveringMap_projectionHom F E hι) k
+    (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+    (isQuotientCoveringMap_proj hι) k
     (σ := (deck (F := F) (E := E) (ι := ι) : C(_, _))) (fun p ↦ (neg_one_smul_eq_deck p).symm) o a r
 
 /-- The inverse identification of the orientation local system with the local system of the sign
 representation sends `f` to the class of `f o ⊗ [o]`, for any orientation `o` of the fibre. -/
 @[simp]
 lemma associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid (TopCat.of B)}
-    (o : projectionHom F E ι ⁻¹' {x.as}) (f : (signLocalSystem F E k hι).obj x) :
+    (o : (TopCat.ofHom (projection (F := F) (E := E) (ι := ι))) ⁻¹' {x.as})
+    (f : (signLocalSystem F E k hι).obj x) :
     ((associatedLocalSystemSignIso hι k).inv.app x).hom f =
       Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
-        (Rep.of ((isQuotientCoveringMap_projectionHom F E hι).fiberRepresentation k x.as))
+        (Rep.of (IsQuotientCoveringMap.fiberRepresentation
+          (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+          (isQuotientCoveringMap_proj hι) k x.as))
         ((signLocalSystemObjEquiv hι x f : _ → k) o) (Finsupp.single o 1) := by
   -- `o(E)` is the sign local system of the deck involution by definition.
   rw [← signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app]
-  exact (isQuotientCoveringMap_projectionHom F E hι).associatedLocalSystemSignIso_inv_app_apply k
+  exact IsQuotientCoveringMap.associatedLocalSystemSignIso_inv_app_apply
+    (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+    (isQuotientCoveringMap_proj hι) k
     (σ := (deck (F := F) (E := E) (ι := ι) : C(_, _))) (fun p ↦ (neg_one_smul_eq_deck p).symm) o
     ((eqToIso (signLocalSystem_def hι)).hom.app x f)
 
@@ -131,13 +127,53 @@ cover.** For a commutative ring `k`, the chains of `B` with coefficients in the 
 system `o(E)` are the coinvariants `(k_sign ⊗ C(B'; k))_{ℤˣ}` of the singular chains of the
 orientation double cover `B'`, tensored with the sign representation. The class of `a ⊗ τ` goes to
 the simplex `p ∘ τ` with the coefficient of `o(E)` whose value at the initial orientation of `τ` is
-`a`. -/
+`a` (`coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk`). -/
 def coinvariantsTensorSingularChainsRepIsoTwisted :
-    haveI := (isQuotientCoveringMap_projectionHom F E hι).toContinuousConstSMul
+    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     (singularChainsRep k (TopCat.of (VectorBundleOrientationCover F E ι)) ℤˣ).coinvariantsTensorObj
         (Rep.ofDistribMulAction k ℤˣ k) ≅
       twistedChainComplex (signLocalSystem F E k hι) :=
-  (isQuotientCoveringMap_projectionHom F E hι).coinvariantsTensorSingularChainsRepIsoTwisted k _ ≪≫
+  IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted
+      (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+      (isQuotientCoveringMap_proj hι) k _ ≪≫
     twistedChainComplexCoefficientIso (associatedLocalSystemSignIso hι k)
+
+/-- The identification of the sign coinvariants of the chains of the orientation cover with the
+orientation-twisted chains of the base sends the class of `a ⊗ τ` to the simplex `p ∘ τ` with the
+coefficient of `o(E)` whose value at the initial orientation of `τ` is `a`. -/
+theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk (n : ℕ) (a : k)
+    (τ : (TopCat.toSSet.obj (TopCat.of (VectorBundleOrientationCover F E ι))) _⦋n⦌) :
+    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
+    ((coinvariantsTensorSingularChainsRepIsoTwisted hι k).hom.f n).hom
+        (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
+          (Rep.of (singularChainsRepresentation k
+            (TopCat.of (VectorBundleOrientationCover F E ι)) ℤˣ n)) a (simplexChain τ 1)) =
+      (ιTwistedChainComplex (signLocalSystem F E k hι) n
+        ((TopCat.toSSet.map (TopCat.ofHom projection)).app _ τ)).hom
+          ((signLocalSystemObjEquiv hι _).symm
+            ((signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+              (initialSheet τ)).symm a)) := by
+  have := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
+  rw [coinvariantsTensorSingularChainsRepIsoTwisted, Iso.trans_hom, HomologicalComplex.comp_f,
+    twistedChainComplexCoefficientIso_hom, ModuleCat.hom_comp]
+  refine (LinearMap.comp_apply _ _ _).trans ?_
+  -- The comparison of the quotient cover, then the change of coefficients on the summand of
+  -- `p ∘ τ`.
+  refine (congrArg
+    ((twistedChainComplexCoefficientMap (associatedLocalSystemSignIso hι k).hom).f n).hom
+    (IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk
+      (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+      (isQuotientCoveringMap_proj hι) k n a τ)).trans ?_
+  refine (twistedChainComplexCoefficientMap_f_ι_apply _ n _ _).trans ?_
+  refine congrArg (ιTwistedChainComplex (signLocalSystem F E k hι) n _).hom
+    ((signLocalSystemObjEquiv hι _).injective ?_)
+  rw [LinearEquiv.apply_symm_apply]
+  refine (signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+    (initialSheet τ)).injective ?_
+  rw [LinearEquiv.apply_symm_apply, signFiberEquiv_apply]
+  -- The summand of `p ∘ τ` carries the permutation representation of the fibre over its initial
+  -- vertex.
+  exact (associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk hι k (initialSheet τ) a 1).trans
+    (one_mul a)
 
 end TauCeti.VectorBundleOrientationCover

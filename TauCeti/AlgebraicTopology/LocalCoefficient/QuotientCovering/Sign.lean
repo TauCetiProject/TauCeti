@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordinates
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Basic
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # The sign representation of a double cover and its sign local system
@@ -57,26 +58,6 @@ variable {E B : TopCat.{0}} {p : E ⟶ B} [MulAction ℤˣ E] (hG : IsQuotientCo
   (k : Type) [CommRing k] {σ : C(E, E)} (hσ : ∀ e, σ e = (-1 : ℤˣ) • e)
 
 include hG hσ
-
-/-- The involution `e ↦ -1 • e` of a quotient cover by `ℤˣ` lies over the base. -/
-theorem comp_eq_of_forall_eq_neg_one_smul : ⇑p ∘ ⇑σ = ⇑p :=
-  funext fun e ↦ (congrArg p (hσ e)).trans (hG.map_smul _)
-
-/-- The involution `e ↦ -1 • e` of a quotient cover by `ℤˣ` fixes no point, the action being
-free. -/
-theorem ne_self_of_forall_eq_neg_one_smul (e : E) : σ e ≠ e := by
-  have := hG.isCancelSMul
-  rw [hσ]
-  intro h
-  exact absurd (IsCancelSMul.right_cancel _ _ e (h.trans (one_smul ℤˣ e).symm)) (by decide)
-
-/-- Two points of a quotient cover by `ℤˣ` with the same image are equal or exchanged by
-`e ↦ -1 • e`. -/
-theorem eq_or_eq_of_forall_eq_neg_one_smul (e e' : E) (h : p e' = p e) : e' = e ∨ e' = σ e := by
-  obtain ⟨u, rfl⟩ := hG.apply_eq_iff_mem_orbit.1 h
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · exact .inl (one_smul ℤˣ e)
-  · exact .inr (hσ e).symm
 
 /-- A function on a fibre changing sign under `e ↦ -1 • e` is equivariant for the sign
 representation: its value at `u • e` is `u` times its value at `e`. -/
@@ -176,7 +157,7 @@ lemma associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid B}
         (Finsupp.single e 1) := by
   -- Read `f` through its coordinate in the sheet `e`, where the inverse is the inverse fibre
   -- identification of the associated local system.
-  have h := hG.associatedLocalSystemIsoOfSheetCoordinates_inv_app k (hG.signCoordinates k hσ)
+  have h := hG.associatedLocalSystemIsoOfSheetCoordinates_comp_inv_app k (hG.signCoordinates k hσ)
     (hG.signCoordinates_smul k hσ) (hG.signCoordinates_map k hσ) e
   calc ((hG.associatedLocalSystemSignIso k hσ).inv.app x).hom f
       = ((hG.signCoordinates k hσ e).inv ≫ (hG.associatedLocalSystemSignIso k hσ).inv.app x).hom

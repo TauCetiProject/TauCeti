@@ -123,7 +123,7 @@ lemma associatedLocalSystemIsoOfSheetCoordinates_hom_app_comp {x : FundamentalGr
 /-- In the coordinates of any sheet `e`, the inverse of the isomorphism given by compatible sheet
 coordinates is the identity of `A`. -/
 @[reassoc (attr := simp)]
-lemma associatedLocalSystemIsoOfSheetCoordinates_inv_app {x : FundamentalGroupoid B}
+lemma associatedLocalSystemIsoOfSheetCoordinates_comp_inv_app {x : FundamentalGroupoid B}
     (e : p ⁻¹' {x.as}) :
     (ψ e).inv ≫ (hG.associatedLocalSystemIsoOfSheetCoordinates k ψ hsmul hmap).inv.app x =
       (hG.associatedLocalSystemFiberIso k A e).inv := by
@@ -167,8 +167,7 @@ private lemma trivialCoordinates_smul {x : FundamentalGroupoid B} (e : p ⁻¹' 
     letI := hG.mulActionFiber x.as
     (trivialCoordinates k M (g • e)).hom =
       (trivialCoordinates k M e).hom ≫ ModuleCat.ofHom ((Rep.trivial k G M).ρ g) := by
-  rw [Rep.trivial_ρ]
-  rfl
+  rw [Rep.trivial_ρ, ModuleCat.ofHom_id, Category.comp_id]
 
 /-- Transport in the constant system is the identity in the coordinates of any two sheets. -/
 private lemma trivialCoordinates_map {x y : FundamentalGroupoid B} (γ : x ⟶ y)
@@ -177,7 +176,7 @@ private lemma trivialCoordinates_map {x y : FundamentalGroupoid B} (γ : x ⟶ y
         (trivialCoordinates (G := G) k M (hG.isCoveringMap.monodromy γ e)).hom =
       (trivialCoordinates (G := G) k M e).hom := by
   rw [LocalCoefficientSystem.constantFunctor_obj_map]
-  rfl
+  exact Category.id_comp _
 
 /-- **The local system associated to a trivial representation is constant.** For the trivial
 representation of `G` on a `k`-module `M`, the fibre `(M ⊗ k[p⁻¹ x])_G` is identified with `M`,
@@ -209,7 +208,7 @@ lemma associatedLocalSystemTrivialIso_inv_app_apply {x : FundamentalGroupoid B}
     ((hG.associatedLocalSystemTrivialIso k M).inv.app x).hom m =
       Rep.coinvariantsTensorMk (Rep.trivial k G M) (Rep.of (hG.fiberRepresentation k x.as)) m
         (Finsupp.single e 1) :=
-  (congrArg (fun f ↦ f.hom m) (hG.associatedLocalSystemIsoOfSheetCoordinates_inv_app k
+  (congrArg (fun f ↦ f.hom m) (hG.associatedLocalSystemIsoOfSheetCoordinates_comp_inv_app k
     (trivialCoordinates k M) (hG.trivialCoordinates_smul k M) (hG.trivialCoordinates_map k M)
       e)).trans (hG.associatedLocalSystemFiberIso_inv_apply k (Rep.trivial k G M) e m)
 
