@@ -60,6 +60,7 @@ conjugation action.
   the group, with `ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
   a class is nonzero in any semiring where the group order is, and
   `ConjClasses.card_carrier_div_card_ne_zero` the nonvanishing of `#C / #G` for a finite group.
+* `ConjClasses.mem_carrier_iff_of_isConj`: conjugate elements lie in the same conjugacy classes.
 * `ConjClasses.pow`: the power operation itself, with `C ^ j` its notation.
 * `ConjClasses.mem_pow_iff`: an element lies in `C ^ j` exactly when it is a
   `j`-th power of a member of `C`, with `ConjClasses.mk_pow` the computation rule.
@@ -367,6 +368,11 @@ theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group
       rw [div_div_eq_mul_div, (Nat.cast_commute (Nat.card C.carrier) (orderOf σ : K)).eq, one_div,
         inv_mul_cancel_left₀ hord]
   | inr h => simp [Nat.card_eq_zero_of_infinite]
+
+/-- Conjugate elements lie in the same conjugacy classes. -/
+theorem mem_carrier_iff_of_isConj {M : Type*} [Monoid M] {a b : M} {C : ConjClasses M}
+    (h : IsConj a b) : a ∈ C.carrier ↔ b ∈ C.carrier := by
+  rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, mk_eq_mk_iff_isConj.mpr h]
 
 /-! ### Powers of a conjugacy class -/
 

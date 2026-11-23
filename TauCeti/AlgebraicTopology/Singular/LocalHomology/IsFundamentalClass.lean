@@ -440,10 +440,7 @@ theorem isFundamentalClass_iff_forall_isLocalOrientation
       ModuleCat.{w} ℤ)) :
     IsFundamentalClass μ ↔ ∀ x : M, IsLocalOrientation x n
       (singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) x n μ) :=
-  forall_congr' fun x ↦ by
-    rw [Submodule.span_singleton_eq_top_iff, isLocalOrientation_iff]
-    exact forall_congr' fun _ ↦ exists_congr fun c ↦
-      iff_of_eq (congrArg (· = _) (int_smul_eq_zsmul _ c _))
+  forall_congr' fun _ ↦ (isLocalOrientation_iff_span_eq_top _ _ _).symm
 
 end Integral
 
