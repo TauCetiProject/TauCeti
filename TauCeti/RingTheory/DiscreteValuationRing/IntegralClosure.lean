@@ -52,7 +52,9 @@ Mathlib's integral-closure instances.
   in a finite extension is a DVR.
 * `TauCeti.IsIntegralClosure.finite_of_isAdicComplete` and
   `TauCeti.IsIntegralClosure.free_of_isAdicComplete`: over a complete DVR it is a finite free
-  module.
+  module. The instances `TauCeti.integralClosure.finite_of_isAdicComplete` and
+  `TauCeti.integralClosure.free_of_isAdicComplete` give this for `integralClosure A L` over
+  `FractionRing A`.
 * `TauCeti.Ring.IsJapanese.of_isAdicComplete` and `TauCeti.Ring.IsNagata.of_isAdicComplete`: a
   complete DVR is Japanese and Nagata.
 
@@ -192,6 +194,27 @@ theorem IsIntegralClosure.free_of_isAdicComplete [IsAdicComplete (maximalIdeal A
   inferInstance
 
 end Complete
+
+namespace integralClosure
+
+open IsLocalRing
+
+variable (A L : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
+  [IsAdicComplete (maximalIdeal A) A]
+  [Field L] [Algebra A L] [Algebra (FractionRing A) L]
+  [IsScalarTower A (FractionRing A) L] [FiniteDimensional (FractionRing A) L]
+
+/-- The integral closure of a complete DVR in a finite field extension is a finite module, without
+a separability assumption. -/
+instance finite_of_isAdicComplete : Module.Finite A (integralClosure A L) :=
+  IsIntegralClosure.finite_of_isAdicComplete A (FractionRing A) L _
+
+/-- The integral closure of a complete DVR in a finite field extension is a free module, without
+a separability assumption. -/
+instance free_of_isAdicComplete : Module.Free A (integralClosure A L) :=
+  IsIntegralClosure.free_of_isAdicComplete A (FractionRing A) L _
+
+end integralClosure
 
 namespace Ring
 
