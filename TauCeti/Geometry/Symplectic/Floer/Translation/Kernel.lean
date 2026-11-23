@@ -5,55 +5,74 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
-public import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
+public import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 
 /-!
-# The translation generator in the kernel of the linearized Floer operator
+# Infinitesimal translations of Floer solutions and the zeros of `∂ₛu`
 
-Let `F(u) = ∂s u - X_Ks(u) + J(z, u)(∂t u - X_Kt(u))` be the coordinate Floer operator
-(`TauCeti.SymplecticForm.floerOperator`) and `D_u` its linearization at `u`
-(`TauCeti.SymplecticForm.floerLinearization`). If the data `J`, `Ks`, `Kt` are invariant under the
-translations `z ↦ z + q v` of the domain, then the translates `u(· + q v)` of a solution are again
-solutions, and differentiating in `q` at `q = 0` gives
+Let `u : ℝ × ℝ → V` solve the coordinate Floer equation
+`∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` (`TauCeti.SymplecticForm.floerOperator`) on an
+open set `Ω`, and suppose that at each point `z` of `Ω` the data `J`, `K_s` and `K_t` are
+invariant under the small translations `z ↦ z + c v` in a direction `v`. Then for small `c` the
+translate `y ↦ u(y + c v)` solves the same equation at `z`, and differentiating this family at
+`c = 0` shows that the infinitesimal translation `∂ᵥu = du(v)` lies in the kernel of the
+linearized operator:
 
-`D_u (du · v) = d(F(u)) · v`
+`D_u (∂ᵥu) = 0`
 
-at every point where `u` is `C²` (`TauCeti.SymplecticForm.hasDerivAt_floerOperator_apply_add_smul`).
-This is the universal variation formula `TauCeti.SymplecticForm.fderiv_floerOperator_apply` for the
-family of translates: the data do not vary along the family, so only the map direction survives.
-Consequently, if `u` solves the Floer equation near `z`, the derivative `du · v` of `u` in the
-symmetry direction lies in the kernel of `D_u` at `z`
-(`TauCeti.SymplecticForm.floerLinearization_fderiv_eq_zero`).
+(`TauCeti.SymplecticForm.floerLinearization_fderiv_apply_eq_zero`). This is read off the universal
+variation formula `TauCeti.SymplecticForm.fderiv_floerOperator_apply`, in which the variations of
+`J` and `K` vanish for this family.
 
-The two cases used in Floer theory are the following.
+The main case is the Floer equation `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` for a time-dependent
+Hamiltonian `H` and almost complex structures `J_t`, that is `K_s = 0` and `K_t(s, t) = H_t`,
+whose data do not depend on `s`, with `v = (1, 0)`: the derivative `∂ₛu` of a Floer trajectory
+solves the linearized equation along `u`
+(`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`). It is the
+infinitesimal generator of the translation action of `ℝ` on Floer cylinders, along which their
+moduli spaces are divided out. Data that do not depend on `t`, such as an autonomous Hamiltonian
+and a domain-independent `J`, are invariant under the rotations of the cylinder, and `∂ₜu`
+solves the linearized equation
+(`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineImag_eq_zero`).
 
-* The data of the Floer differential and of the cylinders inserted at the ends of a pair of
-  pants, `J_t(y)` and `K = H_t dt`, do not depend on `s`. The generator `∂s u` of the translation
-  action of `ℝ` on Floer cylinders is therefore in the kernel of `D_u`
-  (`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`). It is the
-  infinitesimal generator of the translations along which the moduli spaces of Floer cylinders
-  are divided out.
-* Data that do not depend on `t`, such as an autonomous Hamiltonian and a domain-independent
-  `J`, are invariant under the rotations of the cylinder, and `∂t u` is in the kernel of `D_u`
-  (`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineImag_eq_zero`).
+The kernel element `∂ₛu` is not zero away from the stationary cylinders: a map differentiable on
+the strip `ℝ × [0, 1]` has `∂ₛu = 0` there exactly when `u(s, t) = u(0, t)`
+(`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂ₛu` is `du` applied to `(1, 0)`). Its size is the
+energy: for the perturbation `K = K_t dt` and a solution of the Floer equation for an almost
+complex structure `J`, the Floer energy density is `g_J(∂ₛu, ∂ₛu)` for `g_J = ω(·, J ·)`
+(`TauCeti.SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_eq_floerEnergyDensity`),
+so the squared `L²` norm of `∂ₛu` in these metrics is the energy of `u`.
 
-The kernel element `∂s u` is not zero away from the stationary cylinders: a map differentiable on
-the strip `ℝ × [0, 1]` has `∂s u = 0` there exactly when `u(s, t) = u(0, t)`
-(`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂s u` is `du` applied to `(1, 0)`). Its size is the
-energy. For the perturbation `K = Kt dt` and a solution of the Floer equation for an almost
-complex structure `J`, the Floer energy density is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`
-(`TauCeti.SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_eq_floerEnergyDensity`), so
-the squared `L²` norm of `∂s u` in these metrics is the energy of `u`. Thus along a nonstationary
-Floer cylinder of finite energy with compatible `J`, the translation generator is a nonzero
-square-integrable element of the kernel of `D_u`.
+Unique continuation for the linearized operator
+(`TauCeti.SymplecticForm.setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero`)
+then shows that on a connected open set `Ω` the zeros of `∂ᵥu` are isolated unless `∂ᵥu`
+vanishes identically on `Ω`
+(`TauCeti.SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero`),
+so that a compact subset of `Ω` contains only finitely many of them
+(`TauCeti.SymplecticForm.finite_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero`). For
+Floer trajectories `∂ₛu = 0` is one of the conditions excluded from the regular points of
+Floer, Hofer and Salamon, whose density is the basis of the transversality argument for the
+moduli spaces of Floer trajectories.
 
-The target is a symplectic vector space and the statements are about classical solutions; no
-Sobolev completion or Fredholm property is asserted.
+## Main results
+
+* `TauCeti.SymplecticForm.floerLinearization_fderiv_apply_eq_zero`: the infinitesimal translation
+  `du(v)` of a solution solves the linearized equation.
+* `TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero` and
+  `TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineImag_eq_zero`: for data that do
+  not depend on `s`, respectively `t`, the derivative `∂ₛu`, respectively `∂ₜu`, of a solution
+  solves the linearized equation.
+* `TauCeti.SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero`:
+  the zeros of `du(v)` are isolated in a connected domain unless `du(v)` vanishes identically.
+* `TauCeti.SymplecticForm.finite_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero`: a
+  compact subset of the domain meets them in a finite set.
 
 ## References
 
+* A. Floer, H. Hofer and D. Salamon, *Transversality in elliptic Morse theory for the symplectic
+  action*, Duke Math. J. **80** (1995), 251–292 (the regular points of a Floer trajectory, and the
+  zeros of `∂ₛu` through unique continuation for the linearized equation it solves).
 * A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
   575–611, on the translation action on connecting trajectories.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
@@ -68,112 +87,151 @@ open Filter Function Set Topology
 namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+  {u : ℝ × ℝ → V} {v : ℝ × ℝ}
 
-section Direction
-
-variable (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
-  {u : ℝ × ℝ → V} {z v : ℝ × ℝ}
-
-/-- **The Floer operator along a symmetry of the data.** Suppose the data `J`, `Ks`, `Kt` are
-invariant under the translations `z ↦ z + q v` of the domain, `u` is `C²` at `z`, and the data are
-regular at `u z`. Then the derivative at `q = 0` of `q ↦ F(u)(z + q v)` is `D_u(du · v)(z)`. -/
-theorem hasDerivAt_floerOperator_apply_add_smul
-    (hJv : ∀ q : ℝ, J (z + q • v) = J z) (hKsv : ∀ q : ℝ, Ks (z + q • v) = Ks z)
-    (hKtv : ∀ q : ℝ, Kt (z + q • v) = Kt z) (hu : ContDiffAt ℝ 2 u z)
-    (hJ : DifferentiableAt ℝ (J z) (u z)) (hKs : ContDiffAt ℝ 2 (Ks z) (u z))
-    (hKt : ContDiffAt ℝ 2 (Kt z) (u z)) :
-    HasDerivAt (fun q : ℝ ↦ ω.floerOperator J Ks Kt u (z + q • v))
-      (ω.floerLinearization J Ks Kt u (fun w ↦ fderiv ℝ u w v) z) 0 := by
-  -- The translates `U q = u(· + q v)` form a `C²` family of maps with `U 0 = u`.
-  set U : ℝ → ℝ × ℝ → V := fun q w ↦ u (w + q • v) with hUdef
-  have hU0 : U 0 = u := funext fun w ↦ by simp [U]
-  have hUc : ContDiffAt ℝ 2 (uncurry U) (0, z) := by
-    have hg : ContDiff ℝ 2 fun p : ℝ × (ℝ × ℝ) ↦ p.2 + p.1 • v :=
-      contDiff_snd.add (contDiff_fst.smul contDiff_const)
-    exact ContDiffAt.comp (g := u) (f := fun p : ℝ × (ℝ × ℝ) ↦ p.2 + p.1 • v) (0, z)
-      (by simpa using hu) hg.contDiffAt
-  have hJ' : DifferentiableAt ℝ (uncurry fun (_ : ℝ) y ↦ J z y) (0, U 0 z) := by
-    rw [hU0]
-    exact hJ.comp (0, u z) differentiableAt_snd
-  have hKs' : ContDiffAt ℝ 2 (uncurry fun (_ : ℝ) y ↦ Ks z y) (0, U 0 z) := by
-    rw [hU0]
-    exact hKs.comp (0, u z) contDiffAt_snd
-  have hKt' : ContDiffAt ℝ 2 (uncurry fun (_ : ℝ) y ↦ Kt z y) (0, U 0 z) := by
-    rw [hU0]
-    exact hKt.comp (0, u z) contDiffAt_snd
-  -- Since the data are invariant, `F(U q)(z) = F(u)(z + q v)`.
-  have hF : (fun q : ℝ ↦ ω.floerOperator J Ks Kt u (z + q • v)) =
-      fun q ↦ ω.floerOperator ((fun _ : ℝ ↦ J) q) ((fun _ : ℝ ↦ Ks) q) ((fun _ : ℝ ↦ Kt) q)
-        (U q) z := by
-    funext q
-    simp only [floerOperator_def, U, fderiv_comp_add_right, hJv, hKsv, hKtv]
-  -- Near `z` the direction field of the family is `du · v`.
-  have hdir : (fun y ↦ fderiv ℝ (fun q ↦ U q y) 0 1) =ᶠ[𝓝 z] fun w ↦ fderiv ℝ u w v := by
+/-- **Infinitesimal translations solve the linearized Floer equation.** Let `u` be `C²` at `z`
+and solve the Floer equation `∂ₛu - X_{K_s}(u) + J(u)(∂ₜu - X_{K_t}(u)) = 0` near `z`, where `J`
+and the Hamiltonians `K_s`, `K_t` are invariant under the translations of `z` by small multiples
+of `v`, `J z` is differentiable and `K_s z`, `K_t z` are `C²` at `u z`. Then the derivative
+`du(v)` of `u` in the direction `v` solves the linearized equation `D_u (du(v)) = 0` at `z`. -/
+theorem floerLinearization_fderiv_apply_eq_zero {z : ℝ × ℝ}
+    (hJv : ∀ᶠ c : ℝ in 𝓝 0, J (z + c • v) = J z)
+    (hKsv : ∀ᶠ c : ℝ in 𝓝 0, Ks (z + c • v) = Ks z)
+    (hKtv : ∀ᶠ c : ℝ in 𝓝 0, Kt (z + c • v) = Kt z) (hJ : DifferentiableAt ℝ (J z) (u z))
+    (hKs : ContDiffAt ℝ 2 (Ks z) (u z)) (hKt : ContDiffAt ℝ 2 (Kt z) (u z))
+    (hu : ContDiffAt ℝ 2 u z) (hF : ∀ᶠ y in 𝓝 z, ω.floerOperator J Ks Kt u y = 0) :
+    ω.floerLinearization J Ks Kt u (fun y ↦ fderiv ℝ u y v) z = 0 := by
+  -- The translates `u_c(y) = u(y + c v)` form a `C²` family with fixed data `J` and `K`.
+  have hfam :
+      ContDiffAt ℝ 2 (uncurry fun (c : ℝ) (y : ℝ × ℝ) ↦ u (y + c • v)) ((0 : ℝ), z) := by
+    have hlin : ContDiffAt ℝ 2 (fun p : ℝ × (ℝ × ℝ) ↦ p.2 + p.1 • v) ((0 : ℝ), z) :=
+      (contDiff_snd.add (contDiff_fst.smul contDiff_const)).contDiffAt
+    have hu' : ContDiffAt ℝ 2 u (z + (0 : ℝ) • v) := by simpa using hu
+    exact hu'.comp ((0 : ℝ), z) hlin
+  have hu₀ : u (z + (0 : ℝ) • v) = u z := by simp
+  have hJ' : DifferentiableAt ℝ (J z) (u (z + (0 : ℝ) • v)) := hu₀ ▸ hJ
+  have hKs' : ContDiffAt ℝ 2 (Ks z) (u (z + (0 : ℝ) • v)) := hu₀ ▸ hKs
+  have hKt' : ContDiffAt ℝ 2 (Kt z) (u (z + (0 : ℝ) • v)) := hu₀ ▸ hKt
+  have h := fderiv_floerOperator_apply ω (fun _ : ℝ ↦ J) (fun _ ↦ Ks) (fun _ ↦ Kt)
+    (fun c y ↦ u (y + c • v)) 0 z hfam (hJ'.comp ((0 : ℝ), _) differentiableAt_snd)
+    (hKs'.comp ((0 : ℝ), _) contDiffAt_snd) (hKt'.comp ((0 : ℝ), _) contDiffAt_snd) 1
+  -- The Floer operator of `u_c` at `z` vanishes for `c` near `0`, so its derivative vanishes.
+  have hzero : (fun c : ℝ ↦ ω.floerOperator J Ks Kt (fun y ↦ u (y + c • v)) z) =ᶠ[𝓝 0] 0 := by
+    have ht : Tendsto (fun c : ℝ ↦ z + c • v) (𝓝 0) (𝓝 z) := by
+      simpa using ((continuous_id.smul continuous_const).const_add z).tendsto (0 : ℝ)
+    filter_upwards [ht.eventually hF, hJv, hKsv, hKtv] with c hc hJc hKsc hKtc
+    rw [Pi.zero_apply, ← hc, ← ω.floerOperator_comp_add_right]
+    simp only [floerOperator_def, hJc, hKsc, hKtc]
+  -- The direction field of the family is `du(v)` near `z`: at each point it is the derivative
+  -- of `c ↦ u(y + c v)` at `0`, which is by definition the line derivative `lineDeriv ℝ u y v`.
+  have hdir : (fun y ↦ fderiv ℝ (fun c : ℝ ↦ u (y + c • v)) 0 1) =ᶠ[𝓝 z]
+      fun y ↦ fderiv ℝ u y v := by
     filter_upwards [hu.eventually (by simp)] with y hy
-    -- This is the line derivative of `u` at `y` in the direction `v`.
-    rw [fderiv_apply_one_eq_deriv, ← (hy.differentiableAt (by norm_num)).lineDeriv_eq_fderiv,
-      lineDeriv, hUdef]
-  rw [hF]
-  convert (differentiableAt_floerOperator ω (fun _ ↦ J) (fun _ ↦ Ks) (fun _ ↦ Kt) U 0 z hUc
-    hJ' hKs' hKt').hasFDerivAt.hasDerivAt using 1
-  -- The data do not vary along the family, so only the map direction contributes.
-  rw [fderiv_floerOperator_apply ω (fun _ ↦ J) (fun _ ↦ Ks) (fun _ ↦ Kt) U 0 z hUc hJ' hKs' hKt' 1,
-    ← floerLinearization_congr_of_eventuallyEq ω J Ks Kt u hdir, hU0]
-  simp
-
-/-- **The derivative in a symmetry direction is in the kernel.** If the data `J`, `Ks`, `Kt` are
-invariant under the translations `z ↦ z + q v` of the domain, `u` is `C²` at `z` and solves the
-Floer equation `F(u) = 0` near `z`, and the data are regular at `u z`, then `D_u(du · v) = 0`
-at `z`. -/
-theorem floerLinearization_fderiv_eq_zero
-    (hJv : ∀ q : ℝ, J (z + q • v) = J z) (hKsv : ∀ q : ℝ, Ks (z + q • v) = Ks z)
-    (hKtv : ∀ q : ℝ, Kt (z + q • v) = Kt z) (hu : ContDiffAt ℝ 2 u z)
-    (hJ : DifferentiableAt ℝ (J z) (u z)) (hKs : ContDiffAt ℝ 2 (Ks z) (u z))
-    (hKt : ContDiffAt ℝ 2 (Kt z) (u z))
-    (hF : ∀ᶠ w in 𝓝 z, ω.floerOperator J Ks Kt u w = 0) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ fderiv ℝ u w v) z = 0 := by
-  have hline : Tendsto (fun q : ℝ ↦ z + q • v) (𝓝 0) (𝓝 z) :=
-    Continuous.tendsto' (by fun_prop) 0 z (by simp)
-  exact (ω.hasDerivAt_floerOperator_apply_add_smul hJv hKsv hKtv hu hJ hKs hKt).unique
-    ((hasDerivAt_const (0 : ℝ) (0 : V)).congr_of_eventuallyEq (hline.eventually hF))
-
-end Direction
-
-section Cylinder
-
-variable (ω : SymplecticForm V) {J : ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ → V → ℝ}
-  {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    rw [fderiv_apply_one_eq_deriv]
+    exact (hy.differentiableAt (by norm_num)).lineDeriv_eq_fderiv
+  -- In the universal variation formula the variations of `J` and `K` vanish.
+  rw [hzero.fderiv_eq] at h
+  simp only [fderiv_zero, Pi.zero_apply, zero_apply, zero_smul, add_zero, fderiv_fun_const,
+    hamiltonianVectorField_const, sub_zero, map_zero] at h
+  rw [← ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u hdir]
+  exact h.symm
 
 /-- **The translation generator is in the kernel of the linearized operator.** For data
-`J_t(y)` and `K = Ks_t ds + Kt_t dt` that do not depend on `s`, as for Floer cylinders, the
-`s`-derivative `∂s u` of a solution of the Floer equation near `z` that is `C²` at `z` is in the
-kernel of `D_u` at `z`. -/
-theorem floerLinearization_fderiv_stdComplexLineReal_eq_zero (hu : ContDiffAt ℝ 2 u z)
-    (hJ : DifferentiableAt ℝ (J z.2) (u z)) (hKs : ContDiffAt ℝ 2 (Ks z.2) (u z))
-    (hKt : ContDiffAt ℝ 2 (Kt z.2) (u z))
-    (hF : ∀ᶠ w in 𝓝 z,
-      ω.floerOperator (fun w ↦ J w.2) (fun w ↦ Ks w.2) (fun w ↦ Kt w.2) u w = 0) :
-    ω.floerLinearization (fun w ↦ J w.2) (fun w ↦ Ks w.2) (fun w ↦ Kt w.2) u
-      (fun w ↦ fderiv ℝ u w stdComplexLineReal) z = 0 :=
-  ω.floerLinearization_fderiv_eq_zero (fun q ↦ by simp [stdComplexLineReal_eq])
-    (fun q ↦ by simp [stdComplexLineReal_eq]) (fun q ↦ by simp [stdComplexLineReal_eq]) hu hJ hKs
-    hKt hF
+`J_t(y)` and `K = K_{s,t} ds + K_{t,t} dt` that do not depend on `s`, as for Floer cylinders, the
+`s`-derivative `∂ₛu` of a solution of the Floer equation near `z` that is `C²` at `z` solves the
+linearized equation `D_u (∂ₛu) = 0` at `z`. -/
+theorem floerLinearization_fderiv_stdComplexLineReal_eq_zero {J : ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ → V → ℝ} {z : ℝ × ℝ} (hJ : DifferentiableAt ℝ (J z.2) (u z))
+    (hKs : ContDiffAt ℝ 2 (Ks z.2) (u z)) (hKt : ContDiffAt ℝ 2 (Kt z.2) (u z))
+    (hu : ContDiffAt ℝ 2 u z)
+    (hF : ∀ᶠ y in 𝓝 z,
+      ω.floerOperator (fun y ↦ J y.2) (fun y ↦ Ks y.2) (fun y ↦ Kt y.2) u y = 0) :
+    ω.floerLinearization (fun y ↦ J y.2) (fun y ↦ Ks y.2) (fun y ↦ Kt y.2) u
+      (fun y ↦ fderiv ℝ u y stdComplexLineReal) z = 0 :=
+  floerLinearization_fderiv_apply_eq_zero (.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
+    (.of_forall fun c ↦ by simp [stdComplexLineReal_eq])
+    (.of_forall fun c ↦ by simp [stdComplexLineReal_eq]) hJ hKs hKt hu hF
 
 /-- **The rotation generator is in the kernel of the linearized operator.** For data `J_s(y)` and
-`K = Ks_s ds + Kt_s dt` that do not depend on `t`, such as an autonomous Hamiltonian, the
-`t`-derivative `∂t u` of a solution of the Floer equation near `z` that is `C²` at `z` is in the
-kernel of `D_u` at `z`. -/
-theorem floerLinearization_fderiv_stdComplexLineImag_eq_zero (hu : ContDiffAt ℝ 2 u z)
-    (hJ : DifferentiableAt ℝ (J z.1) (u z)) (hKs : ContDiffAt ℝ 2 (Ks z.1) (u z))
-    (hKt : ContDiffAt ℝ 2 (Kt z.1) (u z))
-    (hF : ∀ᶠ w in 𝓝 z,
-      ω.floerOperator (fun w ↦ J w.1) (fun w ↦ Ks w.1) (fun w ↦ Kt w.1) u w = 0) :
-    ω.floerLinearization (fun w ↦ J w.1) (fun w ↦ Ks w.1) (fun w ↦ Kt w.1) u
-      (fun w ↦ fderiv ℝ u w stdComplexLineImag) z = 0 :=
-  ω.floerLinearization_fderiv_eq_zero (fun q ↦ by simp [stdComplexLineImag_eq])
-    (fun q ↦ by simp [stdComplexLineImag_eq]) (fun q ↦ by simp [stdComplexLineImag_eq]) hu hJ hKs
-    hKt hF
+`K = K_{s,s} ds + K_{t,s} dt` that do not depend on `t`, such as an autonomous Hamiltonian, the
+`t`-derivative `∂ₜu` of a solution of the Floer equation near `z` that is `C²` at `z` solves the
+linearized equation `D_u (∂ₜu) = 0` at `z`. -/
+theorem floerLinearization_fderiv_stdComplexLineImag_eq_zero {J : ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ → V → ℝ} {z : ℝ × ℝ} (hJ : DifferentiableAt ℝ (J z.1) (u z))
+    (hKs : ContDiffAt ℝ 2 (Ks z.1) (u z)) (hKt : ContDiffAt ℝ 2 (Kt z.1) (u z))
+    (hu : ContDiffAt ℝ 2 u z)
+    (hF : ∀ᶠ y in 𝓝 z,
+      ω.floerOperator (fun y ↦ J y.1) (fun y ↦ Ks y.1) (fun y ↦ Kt y.1) u y = 0) :
+    ω.floerLinearization (fun y ↦ J y.1) (fun y ↦ Ks y.1) (fun y ↦ Kt y.1) u
+      (fun y ↦ fderiv ℝ u y stdComplexLineImag) z = 0 :=
+  floerLinearization_fderiv_apply_eq_zero (.of_forall fun c ↦ by simp [stdComplexLineImag_eq])
+    (.of_forall fun c ↦ by simp [stdComplexLineImag_eq])
+    (.of_forall fun c ↦ by simp [stdComplexLineImag_eq]) hJ hKs hKt hu hF
 
-end Cylinder
+/-- Under the hypotheses of the unique continuation theorems for the linearized Floer operator,
+with `u` of class `C²` on `Ω`, the infinitesimal translation `du(v)` solves the linearized
+equation on `Ω` and is of class `C¹` there. -/
+private theorem floerLinearization_fderiv_apply_eq_zero_on {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hJv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, J (z + c • v) = J z)
+    (hKsv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, Ks (z + c • v) = Ks z)
+    (hKtv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, Kt (z + c • v) = Kt z)
+    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
+    (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 2 u Ω)
+    (hF : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0) :
+    ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ u z v) Ω ∧
+      ∀ z ∈ Ω, ω.floerLinearization J Ks Kt u (fun y ↦ fderiv ℝ u y v) z = 0 := by
+  refine ⟨(hu.fderiv_of_isOpen hΩ (by norm_num)).clm_apply contDiffOn_const, fun z hz ↦ ?_⟩
+  -- The slices of the data at the domain point `z` inherit the regularity of the data.
+  have hslice : ContDiffAt ℝ 2 (fun x : V ↦ (z, x)) (u z) :=
+    contDiffAt_const.prodMk contDiffAt_id
+  exact floerLinearization_fderiv_apply_eq_zero (hJv z hz) (hKsv z hz) (hKtv z hz)
+    (((hJ z hz).comp (u z) (hslice.of_le (by norm_num))).differentiableAt one_ne_zero)
+    ((hKs z hz).comp (u z) hslice) ((hKt z hz).comp (u z) hslice)
+    (hu.contDiffAt (hΩ.mem_nhds hz))
+    (eventually_of_mem (hΩ.mem_nhds hz) hF)
+
+/-- **Isolated zeros of the infinitesimal translations of a Floer solution.** Let `u` be `C²` on
+a connected open set `Ω ⊆ ℝ × ℝ` and solve the Floer equation
+`∂ₛu - X_{K_s}(u) + J(u)(∂ₜu - X_{K_t}(u)) = 0` there, where `J` is `C¹` and the Hamiltonians
+`K_s`, `K_t` are `C²` near the graph of `u`, `J(z, u z)² = -1` on `Ω`, and the data are invariant
+under the translations of each point of `Ω` by small multiples of `v`. If `du(v)` does not vanish
+identically on `Ω`, its zeros form a discrete subset of `Ω`. -/
+theorem setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero
+    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+    (hJv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, J (z + c • v) = J z)
+    (hKsv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, Ks (z + c • v) = Ks z)
+    (hKtv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, Kt (z + c • v) = Kt z)
+    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
+    (hJJ : ∀ z ∈ Ω, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
+    (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 2 u Ω)
+    (hF : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0) (hne : ∃ z ∈ Ω, fderiv ℝ u z v ≠ 0) :
+    {z | fderiv ℝ u z v ≠ 0} ∈ codiscreteWithin Ω := by
+  obtain ⟨hξ, hD⟩ :=
+    floerLinearization_fderiv_apply_eq_zero_on hΩ hJv hKsv hKtv hJ hKs hKt hu hF
+  exact setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero hΩ hΩc hJ hJJ hKs hKt
+    (hu.of_le (by norm_num)) hξ hD hne
+
+/-- **Finitely many zeros of `du(v)` on a compact set.** Under the hypotheses of
+`TauCeti.SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero`,
+a compact subset of `Ω` contains only finitely many zeros of `du(v)`. -/
+theorem finite_inter_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero
+    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+    (hJv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, J (z + c • v) = J z)
+    (hKsv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, Ks (z + c • v) = Ks z)
+    (hKtv : ∀ z ∈ Ω, ∀ᶠ c : ℝ in 𝓝 0, Kt (z + c • v) = Kt z)
+    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
+    (hJJ : ∀ z ∈ Ω, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
+    (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 2 u Ω)
+    (hF : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0) (hne : ∃ z ∈ Ω, fderiv ℝ u z v ≠ 0)
+    {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    (K ∩ {z | fderiv ℝ u z v = 0}).Finite := by
+  have h := hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKΩ
+    (setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero hΩ hΩc hJv hKsv
+      hKtv hJ hJJ hKs hKt hu hF hne))
+  simpa [sdiff_eq, compl_ofPred] using h
 
 end TauCeti.SymplecticForm

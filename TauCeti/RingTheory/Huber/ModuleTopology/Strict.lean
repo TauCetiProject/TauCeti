@@ -80,11 +80,11 @@ theorem isStrictMap_of_isNoetherianRing (P : PairOfDefinition A)
   obtain ⟨k, hk⟩ := Ideal.exists_pow_add_smul_inf_eq_pow_smul P.idealOfDefinition hN₀ L
   have hnhds :
       {y : LinearMap.range u | (y : N) ∈ P.idealOfDefinition ^ (n + j + k) • N₀} ∈ 𝓝 0 :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds
       ((P.hasBasis_nhds_zero_idealOfDefinition_pow_smul hN₀ hN₀span).mem_of_mem trivial)
   refine mem_of_superset hnhds fun y hy ↦ ?_
   have hyL : (y : N) ∈ P.idealOfDefinition ^ (n + j + k) • N₀ ⊓ L :=
-    ⟨hy, Submodule.smul_le_right hy, y.2⟩
+    ⟨hy, Submodule.smul_le_right hy, y.property⟩
   have hyK : (y : N) ∈ (P.idealOfDefinition ^ n • M₀).map u₀ := by
     rw [Submodule.map_smul'']
     refine Submodule.smul_mono le_rfl hj ?_

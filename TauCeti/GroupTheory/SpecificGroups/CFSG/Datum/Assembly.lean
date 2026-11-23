@@ -116,7 +116,7 @@ are the domains of those constructions, so no map is invented on either branch. 
 def datumSteinberg :
     RootPairingIsogeny (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid)
       (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid) :=
-  if h : d.1.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
+  if h : d.val.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
   else GraphTwistedIndex.datumSteinberg ⟨d, h⟩
 
 /-- **The defining equation of the root-datum Steinberg map**, exhibiting it as the `dite` on
@@ -127,19 +127,19 @@ branches at once; when the predicate is already decided one way,
 instead. -/
 theorem datumSteinberg_def :
     d.datumSteinberg =
-      if h : d.1.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
+      if h : d.val.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
       else GraphTwistedIndex.datumSteinberg ⟨d, h⟩ := by
   rw [datumSteinberg]
 
 /-- **The half-Frobenius branch of the Steinberg map.** On the Suzuki, Ree `G₂`, Ree `F₄` and Tits
 indices it is the odd power `τ ^ (2 * m + 1)` of the selected special isogeny. -/
-theorem datumSteinberg_of_usesHalfFrobenius (h : d.1.UsesHalfFrobenius) :
+theorem datumSteinberg_of_usesHalfFrobenius (h : d.val.UsesHalfFrobenius) :
     d.datumSteinberg = SuzukiReeIndex.datumSteinberg ⟨d, h⟩ := by
   rw [datumSteinberg_def, dite_eq_left h]
 
 /-- **The ordinary branch of the Steinberg map.** On the nine untwisted families and on `²Aₙ(q)`,
 `²Dₙ(q)`, `²E₆(q)` and `³D₄(q)` it is the graph automorphism after the `q`-power Frobenius. -/
-theorem datumSteinberg_of_not_usesHalfFrobenius (h : ¬ d.1.UsesHalfFrobenius) :
+theorem datumSteinberg_of_not_usesHalfFrobenius (h : ¬ d.val.UsesHalfFrobenius) :
     d.datumSteinberg = GraphTwistedIndex.datumSteinberg ⟨d, h⟩ := by
   rw [datumSteinberg_def, dite_eq_right h]
 
@@ -148,7 +148,7 @@ untwisted families**, where the diagram permutation is trivial. This is
 `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff` transported through the
 dispatcher. -/
 theorem datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
-    (h : ¬ d.1.UsesHalfFrobenius) :
+    (h : ¬ d.val.UsesHalfFrobenius) :
     d.datumSteinberg = d.datumFrobenius ↔ GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1 := by
   rw [datumSteinberg_of_not_usesHalfFrobenius d h]
   exact GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff ⟨d, h⟩
@@ -156,7 +156,7 @@ theorem datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
 /-- With no half-Frobenius or diagram twist, the Steinberg character map is multiplication
 by the field order. -/
 theorem datumSteinberg_weightMap_of_diagramPerm_eq_one
-    (h : ¬ d.1.UsesHalfFrobenius) (hσ : GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1) :
+    (h : ¬ d.val.UsesHalfFrobenius) (hσ : GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1) :
     d.datumSteinberg.weightMap = d.fieldOrder • LinearMap.id := by
   rw [(d.datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius h).mpr hσ,
     datumFrobenius_weightMap]
@@ -164,10 +164,10 @@ theorem datumSteinberg_weightMap_of_diagramPerm_eq_one
 /-- **The twist-order power of an ordinary Steinberg map is a Frobenius**: `(γ ∘ Frob_q) ^ e` is
 `Frob_(q ^ e)`, the Frobenius of the degree-`e` extension of the field the index names. -/
 theorem datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius
-    (h : ¬ d.1.UsesHalfFrobenius) :
+    (h : ¬ d.val.UsesHalfFrobenius) :
     d.datumSteinberg ^ GraphTwistedIndex.twistOrder ⟨d, h⟩ =
       RootPairingIsogeny.smulId _
-        (d.1.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩) := by
+        (d.val.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩) := by
   rw [datumSteinberg_of_not_usesHalfFrobenius d h]
   exact GraphTwistedIndex.datumSteinberg_pow_twistOrder_eq_smulId ⟨d, h⟩
 
@@ -175,7 +175,7 @@ theorem datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius
 `(τ ^ (2 * m + 1)) ^ 2` is `Frob_(p ^ (2 * m + 1))`, the Frobenius of the field the index itself
 names. -/
 theorem datumSteinberg_pow_two_eq_datumFrobenius_of_usesHalfFrobenius
-    (h : d.1.UsesHalfFrobenius) :
+    (h : d.val.UsesHalfFrobenius) :
     d.datumSteinberg ^ 2 = d.datumFrobenius := by
   rw [datumSteinberg_of_usesHalfFrobenius d h, pow_two, datumFrobenius_def]
   exact SuzukiReeIndex.datumSteinberg_mul_self ⟨d, h⟩
@@ -193,21 +193,21 @@ theorem exists_pow_datumSteinberg_eq_smulId :
       d.datumSteinberg ^ n =
         RootPairingIsogeny.smulId
           (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid) c := by
-  by_cases h : d.1.UsesHalfFrobenius
+  by_cases h : d.val.UsesHalfFrobenius
   · -- The square is the Frobenius of the field the index names, a `fieldExponent`-th power of `p`.
-    refine ⟨2, d.1.fieldOrderPNat, d.fieldExponent, two_pos, d.fieldExponent_pos, ?_, ?_⟩
+    refine ⟨2, d.val.fieldOrderPNat, d.fieldExponent, two_pos, d.fieldExponent_pos, ?_, ?_⟩
     · rw [LieTypeIndex.coe_fieldOrderPNat]
       exact d.fieldOrder_eq_characteristic_pow
     · rw [d.datumSteinberg_pow_two_eq_datumFrobenius_of_usesHalfFrobenius h, datumFrobenius_def]
   · -- The twist-order power is the Frobenius of the degree-`e` extension, so the exponent of `p`
     -- is multiplied by `e`.
     refine ⟨GraphTwistedIndex.twistOrder ⟨d, h⟩,
-      d.1.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩,
+      d.val.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩,
       d.fieldExponent * GraphTwistedIndex.twistOrder ⟨d, h⟩,
       GraphTwistedIndex.twistOrder_pos ⟨d, h⟩,
       Nat.mul_pos d.fieldExponent_pos (GraphTwistedIndex.twistOrder_pos ⟨d, h⟩), ?_,
       d.datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius h⟩
-    rw [PNat.pow_coe, LieTypeIndex.coe_fieldOrderPNat, d.1.fieldOrder_eq_characteristic_pow,
+    rw [PNat.pow_coe, LieTypeIndex.coe_fieldOrderPNat, d.val.fieldOrder_eq_characteristic_pow,
       pow_mul]
 
 end

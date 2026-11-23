@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
 /-!
 # Filtered products
@@ -29,6 +30,10 @@ level `m ≥ 1`.
   sum over `Subtype p` to a finite superset `s` when the factors on `s` outside `p` are trivial.
 * `Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one`: the level products of a family are
   trivial when all its truncated power products are.
+* `Finset.prod_filter_product`, `Finset.sum_filter_product`: rewriting a filtered product or sum
+  over `s ×ˢ t` as an iterated product or sum over `s` and the filtered fiber in `t`.
+* `Finset.prod_filter_product_product_and`, `Finset.sum_filter_product_product_and`: peeling the
+  last coordinate off a filtered product or sum over `s ×ˢ t ×ˢ u` with a conjunctive predicate.
 -/
 
 public section
@@ -98,5 +103,30 @@ theorem prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one {ι M : Type*}
         refine prod_congr rfl fun i _ ↦ ?_
         split_ifs <;> first | omega | simp
     _ = 1 := hgt _
+
+/-- A product over a filtered Cartesian product `s ×ˢ t` equals the iterated product over `a ∈ s`
+and the filtered fiber `b ∈ t` satisfying `p a b`. -/
+@[to_additive /-- A sum over a filtered Cartesian product `s ×ˢ t` equals the iterated sum over
+`a ∈ s` and the filtered fiber `b ∈ t` satisfying `p a b`. -/]
+theorem prod_filter_product {α β M : Type*} [CommMonoid M] (s : Finset α) (t : Finset β)
+    (p : α → β → Prop) [DecidableRel p] (f : α → β → M) :
+    (∏ e ∈ s ×ˢ t with p e.1 e.2, f e.1 e.2) = ∏ a ∈ s, ∏ b ∈ t with p a b, f a b := by
+  simp_rw [prod_filter, prod_product]
+
+/-- A product over `s ×ˢ t ×ˢ u` filtered by `p x.1 x.2.1 ∧ q x.1 x.2.1 x.2.2` equals the product
+over pairs `e ∈ s ×ˢ t` satisfying `p e.1 e.2` of the inner product over `c ∈ u` satisfying
+`q e.1 e.2 c`. -/
+@[to_additive /-- A sum over `s ×ˢ t ×ˢ u` filtered by `p x.1 x.2.1 ∧ q x.1 x.2.1 x.2.2` equals the
+sum over pairs `e ∈ s ×ˢ t` satisfying `p e.1 e.2` of the inner sum over `c ∈ u` satisfying
+`q e.1 e.2 c`. -/]
+theorem prod_filter_product_product_and {α β γ M : Type*} [CommMonoid M]
+    (s : Finset α) (t : Finset β) (u : Finset γ)
+    (p : α → β → Prop) [DecidableRel p] (q : α → β → γ → Prop) [∀ a b, DecidablePred (q a b)]
+    (f : α → β → γ → M) :
+    (∏ x ∈ s ×ˢ t ×ˢ u with p x.1 x.2.1 ∧ q x.1 x.2.1 x.2.2, f x.1 x.2.1 x.2.2) =
+      ∏ e ∈ s ×ˢ t with p e.1 e.2, ∏ c ∈ u with q e.1 e.2 c, f e.1 e.2 c := by
+  simp_rw [prod_filter, prod_product]
+  refine prod_congr rfl fun a _ ↦ prod_congr rfl fun b _ ↦ ?_
+  by_cases hp : p a b <;> simp [hp]
 
 end Finset

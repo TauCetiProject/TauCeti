@@ -56,7 +56,7 @@ theorem exists_finset_subgroup_forall_eq_mul (P : Finset (HeightOneSpectrum (�
   classical
   -- `π v` generates `v ^ h`, where `h` is the class number.
   have hgen (v : HeightOneSpectrum (𝓞 K)) :=
-    (Ideal.isPrincipal_pow_natCard_classGroup v.asIdeal).1
+    (Ideal.isPrincipal_pow_natCard_classGroup v.asIdeal).principal
   set π : HeightOneSpectrum (𝓞 K) → 𝓞 K := fun v ↦ (hgen v).choose
   have hπ (v : HeightOneSpectrum (𝓞 K)) :
       Ideal.span {π v} = v.asIdeal ^ Nat.card (ClassGroup (𝓞 K)) :=

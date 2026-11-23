@@ -69,7 +69,7 @@ public noncomputable abbrev positiveSubsystemCoordinateHopfAlgebra :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ 56)
     (kostantTorusSubsystemDefiningIdeal rootGen cartanGen rep lattice.toAddSubgroup
       rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-      (fun i => isNilpotent_rep_serreRootGenerator i.1))
+      (fun i => isNilpotent_rep_serreRootGenerator i.val))
 
 /-- The generated-subsystem presentation uses the named positive-subsystem defining ideal. -/
 theorem positiveSubsystemCoordinateHopfAlgebra_eq :
@@ -84,7 +84,7 @@ noncomputable def positiveSubsystemBaseChangeIdeal :
       (CommHopfAlgCat.baseChange (K := A) (GeneralLinear.coordinateHopfAlgebra ℤ 56)) :=
   kostantTorusSubsystemBaseChangeIdeal rootGen cartanGen rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-    (fun i => isNilpotent_rep_serreRootGenerator i.1) A
+    (fun i => isNilpotent_rep_serreRootGenerator i.val) A
 
 /-- Quotienting by the transported positive-subsystem ideal agrees with scalar extension of its
 integral coordinate Hopf algebra. -/
@@ -95,7 +95,7 @@ noncomputable def positiveSubsystemBaseChangeIso :
       CommHopfAlgCat.baseChange (K := A) positiveSubsystemCoordinateHopfAlgebra :=
   kostantTorusSubsystemBaseChangeIso rootGen cartanGen rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-    (fun i => isNilpotent_rep_serreRootGenerator i.1) A
+    (fun i => isNilpotent_rep_serreRootGenerator i.val) A
 
 /-- The positive-subsystem base-change comparison respects the ambient quotient presentation. -/
 @[simp]
@@ -108,10 +108,10 @@ theorem mkQuotient_comp_positiveSubsystemBaseChangeIso_hom :
         (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ 56)
           (kostantTorusSubsystemDefiningIdeal rootGen cartanGen rep lattice.toAddSubgroup
             rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-            (fun i => isNilpotent_rep_serreRootGenerator i.1))) :=
+            (fun i => isNilpotent_rep_serreRootGenerator i.val))) :=
   mkQuotient_comp_kostantTorusSubsystemBaseChangeIso_hom rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1) A
+    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val) A
 
 /-! ## Positive simple-root subgroups -/
 
@@ -121,7 +121,7 @@ noncomputable def positiveRootSubgroupIntegralCoordinateMap (i : Fin 7) :
     positiveSubsystemCoordinateHopfAlgebra ⟶ AdditiveGroup.coordinateHopfAlgebra ℤ :=
   kostantRootSubgroupTorusSubsystemCoordinateMap rootGen cartanGen rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-    (fun k => isNilpotent_rep_serreRootGenerator k.1) (inl_mem_positiveSimpleRoots i)
+    (fun k => isNilpotent_rep_serreRootGenerator k.val) (inl_mem_positiveSimpleRoots i)
 
 /-- The integral factored positive root-subgroup map recovers its represented coordinate map in
 `GL₅₆`. -/
@@ -130,14 +130,14 @@ theorem mkQuotient_comp_positiveRootSubgroupIntegralCoordinateMap (i : Fin 7) :
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ 56)
           (kostantTorusSubsystemDefiningIdeal rootGen cartanGen rep lattice.toAddSubgroup
             rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-            (fun k => isNilpotent_rep_serreRootGenerator k.1)) ≫
+            (fun k => isNilpotent_rep_serreRootGenerator k.val)) ≫
         positiveRootSubgroupIntegralCoordinateMap i =
       kostantRootSubgroupCoordinateMap rootGen cartanGen rep lattice.toAddSubgroup
         rep_kostantForm_mem_lattice (.inl i)
         (isNilpotent_rep_serreRootGenerator (.inl i)) latticeBasis :=
   mkQuotient_comp_kostantRootSubgroupTorusSubsystemCoordinateMap rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1)
+    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.val)
     (inl_mem_positiveSimpleRoots i)
 
 /-- The integral factored coordinate map represents the existing `i`th positive simple-root
@@ -185,7 +185,7 @@ noncomputable def positiveWeightTorusIntegralCoordinateMap :
       (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup (Fin 7))).obj :=
   kostantWeightTorusTorusSubsystemCoordinateMap rootGen cartanGen rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-    (fun k => isNilpotent_rep_serreRootGenerator k.1)
+    (fun k => isNilpotent_rep_serreRootGenerator k.val)
 
 /-- The integral factored positive weight-torus map recovers its represented coordinate map in
 `GL₅₆`. -/
@@ -194,12 +194,12 @@ theorem mkQuotient_comp_positiveWeightTorusIntegralCoordinateMap :
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ 56)
           (kostantTorusSubsystemDefiningIdeal rootGen cartanGen rep lattice.toAddSubgroup
             rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-            (fun k => isNilpotent_rep_serreRootGenerator k.1)) ≫
+            (fun k => isNilpotent_rep_serreRootGenerator k.val)) ≫
         positiveWeightTorusIntegralCoordinateMap =
       GeneralLinear.weightTorusCoordinateMap e7MinusculeWeight :=
   mkQuotient_comp_kostantWeightTorusTorusSubsystemCoordinateMap rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1)
+    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.val)
 
 /-- The integral factored coordinate map represents the existing weight torus of the positive
 subsystem. -/

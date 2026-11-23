@@ -35,6 +35,8 @@ to the form of the image matrix at the image vectors.
   along an injective map is the dot product of the pulled-back vectors.
 * `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
   `v ⬝ᵥ A *ᵥ w`.
+* `Matrix.intCast_dotProduct`: the dot product of the casts of integer vectors is the cast of their
+  integer dot product.
 * `Matrix.intCast_dotProduct_mulVec`: the form of the cast of an integer matrix, at the casts of
   integer vectors, is the cast of the integer value of the form.
 * `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if and only if its pairing
@@ -79,6 +81,11 @@ end RingHom
 namespace Matrix
 
 variable {m n : Type*} [Fintype m] [Fintype n]
+
+/-- The dot product of the casts of integer vectors is the cast of their integer dot product. -/
+theorem intCast_dotProduct {R : Type*} [NonAssocRing R] (v w : m → ℤ) :
+    (fun i ↦ (v i : R)) ⬝ᵥ (fun i ↦ (w i : R)) = ((v ⬝ᵥ w : ℤ) : R) :=
+  ((Int.castRingHom R).map_dotProduct v w).symm
 
 /-- The form of the cast of an integer matrix, at the casts of integer vectors, is the cast of the
 integer value of the form. -/

@@ -112,7 +112,7 @@ theorem ringKrullDim_localization_away_quotient_le (I : Ideal R) (g : R)
   -- A prime of `(R ⧸ I)[1/g']` contains `I` and misses the unit `g'`.
   have hsub (y : PrimeSpectrum (Localization.Away g')) : i (j y) ∈ S :=
     hS ⟨fun a ha ↦ by simp [i, j, Quotient.eq_zero_iff_mem.mpr ha], fun h ↦
-      y.2.ne_top (eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g'))⟩
+      y.isPrime.ne_top (eq_top_of_isUnit_mem _ h (IsLocalization.Away.algebraMap_isUnit g'))⟩
   rw [← topologicalKrullDim_eq_ringKrullDim]
   exact (((isClosedEmbedding_comap_of_surjective _ _ Quotient.mk_surjective).isEmbedding.comp
     (localization_away_isOpenEmbedding _ g').isEmbedding).isInducing.codRestrict
@@ -385,19 +385,19 @@ theorem topologicalKrullDimAt_le_iSup_ringKrullDim_quotient [IsNoetherianRing R]
     ((minimalPrimes.finite_of_isNoetherianRing R).subset (Set.sep_subset _ _)).to_subtype
   refine (topologicalKrullDimAt_le_of_isOpen hU hpU).trans ?_
   rw [topologicalKrullDim_eq_iSup_of_isClosed
-    (fun q : T ↦ (Subtype.val ⁻¹' zeroLocus (q.1 : Set R) : Set U))
-    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtype_val) ?_]
+    (fun q : T ↦ (Subtype.val ⁻¹' zeroLocus (q.val : Set R) : Set U))
+    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtypeVal) ?_]
   · refine iSup_le fun q ↦ ?_
     rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
     refine (IsEmbedding.inclusion Set.inter_subset_left).isInducing.topologicalKrullDim_le.trans
       ?_
     rw [Ideal.topologicalKrullDim_zeroLocus]
-    exact le_iSup₂_of_le q.1 q.2.1 (le_iSup_of_le q.2.2 le_rfl)
+    exact le_iSup₂_of_le q.val q.property.1 (le_iSup_of_le q.property.2 le_rfl)
   · intro x
-    obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ x.1.asIdeal)
+    obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ x.val.asIdeal)
     refine ⟨⟨q, hq, ?_⟩, (mem_zeroLocus _ _).2 hqx⟩
     by_contra h
-    exact x.2 (Set.mem_biUnion (x := q) ⟨hq, h⟩ ((mem_zeroLocus _ _).2 hqx))
+    exact x.property (Set.mem_biUnion (x := q) ⟨hq, h⟩ ((mem_zeroLocus _ _).2 hqx))
 
 end PrimeSpectrum
 

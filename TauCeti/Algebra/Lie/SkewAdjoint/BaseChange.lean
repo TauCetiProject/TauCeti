@@ -106,7 +106,7 @@ private theorem skewAdjointBaseChangeToMatrix_mem (x : S ⊗[R] skewAdjointMatri
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, add_zero]
   | tmul s A =>
-    have hA := (mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect J A).mp A.2
+    have hA := (mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect J A).mp A.property
     rw [skewAdjointBaseChangeToMatrix_tmul, ← Algebra.matrixBaseChangeAlgEquiv_tmul,
       ← matrixBaseChangeAlgEquiv_skewAdjointDefect]
     simp [hA]
@@ -136,7 +136,7 @@ private theorem skewAdjointBaseChangeToSubalgebra_bijective :
   let e := Algebra.matrixBaseChangeAlgEquiv R S n
   have hexact : Function.Exact ι (skewAdjointDefect J) := fun y ↦ by
     rw [← mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect]
-    exact ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, fun ⟨z, hz⟩ ↦ hz ▸ z.2⟩
+    exact ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, fun ⟨z, hz⟩ ↦ hz ▸ z.property⟩
   have hexactS := Module.Flat.lTensor_exact S hexact
   refine ⟨fun x y hxy ↦ ?_, fun z ↦ ?_⟩
   · have h := congrArg Subtype.val hxy

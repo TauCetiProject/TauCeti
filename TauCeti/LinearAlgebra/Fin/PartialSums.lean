@@ -32,6 +32,11 @@ def partialSumsLinearMap (R : Type*) [CommRing R] (n : ℕ) :
     (Fin n → R) →ₗ[R] (Fin n → R) :=
   LinearMap.pi fun i ↦ ∑ j ∈ Finset.Iic i, LinearMap.proj j
 
+/-- The inclusive initial-sum description, without unfolding the linear map. -/
+theorem partialSumsLinearMap_apply_eq_sum_Iic (x : Fin n → R) (i : Fin n) :
+    partialSumsLinearMap R n x i = ∑ j ∈ Iic i, x j := by
+  simp [partialSumsLinearMap]
+
 @[simp]
 theorem partialSumsLinearMap_apply (x : Fin n → R) (i : Fin n) :
     partialSumsLinearMap R n x i = Fin.partialSum x i.succ := by
@@ -82,6 +87,11 @@ theorem det_partialSumsLinearEquiv : LinearEquiv.det (partialSumsLinearEquiv R n
 theorem partialSumsLinearEquiv_apply (x : Fin n → R) (i : Fin n) :
     partialSumsLinearEquiv R n x i = Fin.partialSum x i.succ := by
   rw [coe_partialSumsLinearEquiv, partialSumsLinearMap_apply]
+
+/-- The inclusive initial-sum description of the partial-sum linear equivalence. -/
+theorem partialSumsLinearEquiv_apply_eq_sum_Iic (x : Fin n → R) (i : Fin n) :
+    partialSumsLinearEquiv R n x i = ∑ j ∈ Iic i, x j := by
+  rw [coe_partialSumsLinearEquiv, partialSumsLinearMap_apply_eq_sum_Iic]
 
 /-- The inverse partial-sum map takes differences, with an initial zero adjoined. -/
 @[simp]
