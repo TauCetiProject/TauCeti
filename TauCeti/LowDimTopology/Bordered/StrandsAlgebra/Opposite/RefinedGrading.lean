@@ -36,9 +36,11 @@ reversed order, and likewise for a relabelling of the points along an order isom
   the rotated diagram runs from `T` to `S`, and `R` reverses the order of the product
   `ψ(M(S)) gr'(φ) ψ(M(T))⁻¹`, so the inverses in the reversed data are exactly what is needed.
 
-Consequently the isomorphism `A(Z) ≅ A(-Z)ᵒᵖ` carries the part of refined grading `g` onto the part
-of refined grading `R(g)`
-(`TauCeti.MatchedGradingRefinement.coe_unop_matchedRevAlgEquiv_mem_gradedPart_iff`).
+Consequently the anti-automorphism of the strands algebra on `{1, …, n}` carries the part of
+refined grading `g` onto the part of refined grading `R(g)`
+(`TauCeti.MatchedGradingRefinement.unop_revAlgEquiv_mem_gradedPart_iff`). Since the isomorphism
+`A(Z) ≅ A(-Z)ᵒᵖ` is its restriction (`TauCeti.StrandsAlgebra.coe_unop_matchedRevAlgEquiv`), the
+same holds for the matched subalgebras.
 Reversing twice gives back the original data up to the identification `α ≃o αᵒᵈᵒᵈ`
 (`TauCeti.MatchedGradingRefinement.reverse_reverse`).
 
@@ -63,8 +65,7 @@ Reversing twice gives back the original data up to the identification `α ≃o �
 * `TauCeti.MatchedGradingRefinement.mapAlgEquiv_mem_gradedPart_iff`,
   `TauCeti.MatchedGradingRefinement.unop_reverseAlgEquiv_mem_gradedPart_iff`,
   `TauCeti.MatchedGradingRefinement.unop_revAlgEquiv_mem_gradedPart_iff`: the isomorphisms of
-  strands algebras carry refined graded parts onto refined graded parts, and the corresponding
-  statements for the matched subalgebras.
+  strands algebras carry refined graded parts onto refined graded parts.
 
 ## References
 
@@ -291,6 +292,12 @@ def rev {n : ℕ} {M : Fin n → β} (ψ : MatchedGradingRefinement M s₀) :
   ψ.reverse.map Fin.revOrderIso fun i ↦ by simp
 
 @[simp]
+theorem shiftOf_rev {n : ℕ} {M : Fin n → β} (ψ : MatchedGradingRefinement M s₀)
+    (s : {s : Finset β // #s = #s₀}) :
+    ψ.rev.shiftOf s = (StrandGradingGroup.rev n (ψ.shiftOf s)).unop⁻¹ := by
+  rw [rev, shiftOf_map, shiftOf_reverse, map_inv, unop_rev_apply]
+
+@[simp]
 theorem shift_rev {n : ℕ} {M : Fin n → β} (ψ : MatchedGradingRefinement M s₀) (s : Finset β) :
     ψ.rev.shift s = (StrandGradingGroup.rev n (ψ.shift s)).unop⁻¹ := by
   rw [rev, shift_map, shift_reverse, map_inv, unop_rev_apply]
@@ -349,35 +356,6 @@ theorem unop_revAlgEquiv_mem_gradedPart_iff {n : ℕ} {M : Fin n → β}
       x ∈ ψ.gradedPart R g := by
   rw [unop_revAlgEquiv_apply, rev, unop_rev_apply, mapAlgEquiv_mem_gradedPart_iff,
     unop_reverseAlgEquiv_mem_gradedPart_iff]
-
-/-- The relabelling isomorphism of matched subalgebras carries the part of refined grading `g`
-onto the part of the relabelled refined grading. -/
-theorem coe_matchedMapAlgEquiv_mem_gradedPart_iff (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i)
-    (ψ : MatchedGradingRefinement M s₀) {g : StrandGradingGroup α} {x : matchedSubalgebra R M} :
-    (matchedMapAlgEquiv e hM x : StrandsAlgebra R γ) ∈
-        (ψ.map e hM).gradedPart R (StrandGradingGroup.map e g) ↔
-      (x : StrandsAlgebra R α) ∈ ψ.gradedPart R g := by
-  rw [coe_matchedMapAlgEquiv, mapAlgEquiv_mem_gradedPart_iff]
-
-/-- The isomorphism of the matched subalgebra of `M` with the opposite of the matched subalgebra of
-`M ∘ ofDual` carries the part of refined grading `g` onto the part of refined grading `R(g)`. -/
-theorem coe_unop_matchedReverseAlgEquiv_mem_gradedPart_iff (ψ : MatchedGradingRefinement M s₀)
-    {g : StrandGradingGroup α} {x : matchedSubalgebra R M} :
-    ((unop (matchedReverseAlgEquiv R M x) : matchedSubalgebra R (M ∘ ofDual)) :
-        StrandsAlgebra R αᵒᵈ) ∈ ψ.reverse.gradedPart R (StrandGradingGroup.reverse g).unop ↔
-      (x : StrandsAlgebra R α) ∈ ψ.gradedPart R g := by
-  rw [coe_unop_matchedReverseAlgEquiv, unop_reverseAlgEquiv_mem_gradedPart_iff]
-
-/-- **`A(Z) ≅ A(-Z)ᵒᵖ` respects the refined gradings**: the isomorphism carries the part of
-refined grading `g` onto the part of refined grading `R(g)`, for the refinement data `ψ.rev` of the
-reversed pointed matched circle. -/
-theorem coe_unop_matchedRevAlgEquiv_mem_gradedPart_iff {n : ℕ} {M : Fin n → β}
-    (ψ : MatchedGradingRefinement M s₀) {g : StrandGradingGroup (Fin n)}
-    {x : matchedSubalgebra R M} :
-    ((unop (matchedRevAlgEquiv R M x) : matchedSubalgebra R (M ∘ Fin.rev)) :
-        StrandsAlgebra R (Fin n)) ∈ ψ.rev.gradedPart R (StrandGradingGroup.rev n g).unop ↔
-      (x : StrandsAlgebra R (Fin n)) ∈ ψ.gradedPart R g := by
-  rw [coe_unop_matchedRevAlgEquiv, unop_revAlgEquiv_mem_gradedPart_iff]
 
 end GradedPart
 
