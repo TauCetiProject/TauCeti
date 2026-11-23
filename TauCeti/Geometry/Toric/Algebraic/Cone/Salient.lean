@@ -51,7 +51,7 @@ theorem IsLatticeRational.salient_of_forall_pos (hσ : IsLatticeRational i σ)
       simp [hx.2 hx0, hy.2 hy0]
     | smul c x _ hx =>
       rw [← Nonneg.coe_smul, map_smul, smul_eq_mul]
-      refine ⟨mul_nonneg c.2 hx.1, fun h => ?_⟩
+      refine ⟨mul_nonneg c.property hx.1, fun h => ?_⟩
       rcases mul_eq_zero.mp h with h | h
       · simp [h]
       · simp [hx.2 h]

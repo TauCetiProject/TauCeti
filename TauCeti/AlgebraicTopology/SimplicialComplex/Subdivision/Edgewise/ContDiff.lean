@@ -50,31 +50,31 @@ subdivision. Being `Cⁿ` on a closed simplex means being, in barycentric coordi
 restriction of a map which is `Cⁿ` within the standard simplex. -/
 theorem exists_contDiffOn_edgewiseSubdivisionRealizationMap_faceInclusion {n : WithTop ℕ∞}
     {f : Realization K → E}
-    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ n F (Set.range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hf : ∀ σ : Face K, ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ n F (Set.range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
     (ρ : Face (K.edgewiseSubdivision k)) :
-    ∃ G : (ρ.1 → ℝ) → E,
-      (∀ x : StandardSimplex ρ.1,
-        G (fun a => x.1 a) = f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x))) ∧
-        ContDiffOn ℝ n G (Set.range fun t : Convexity.StdSimplex ℝ ρ.1 => ⇑t.weights) := by
+    ∃ G : (ρ.val → ℝ) → E,
+      (∀ x : StandardSimplex ρ.val,
+        G (fun a => x.val a) = f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x))) ∧
+        ContDiffOn ℝ n G (Set.range fun t : Convexity.StdSimplex ℝ ρ.val => ⇑t.weights) := by
   -- The simplex `ρ` lies in the face `σ` of `K` spanned by the entries of its vertices.
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
-  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
+  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
     mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
   obtain ⟨F, hFf, hF⟩ := hf σ
   -- In barycentric coordinates, the canonical map sends the vertex `u` of `ρ` to
   -- `edgewisePoint u` and is linear.
-  let A : (ρ.1 → ℝ) →L[ℝ] (σ.1 → ℝ) :=
-    (Fintype.linearCombination ℝ fun (a : ρ.1) (b : σ.1) =>
-      edgewisePoint a.1.1 b).toContinuousLinearMap
-  have hA (x : StandardSimplex ρ.1) :
-      A (fun a => x.1 a) = fun b : σ.1 => (edgewiseSubdivisionFaceMap hρσ x).1 b := by
+  let A : (ρ.val → ℝ) →L[ℝ] (σ.val → ℝ) :=
+    (Fintype.linearCombination ℝ fun (a : ρ.val) (b : σ.val) =>
+      edgewisePoint a.val.val b).toContinuousLinearMap
+  have hA (x : StandardSimplex ρ.val) :
+      A (fun a => x.val a) = fun b : σ.val => (edgewiseSubdivisionFaceMap hρσ x).val b := by
     funext b
     simp only [A, LinearMap.coe_toContinuousLinearMap', Fintype.linearCombination_apply,
       Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
     rw [edgewiseSubdivisionFaceMap_apply]
-    exact Finset.sum_coe_sort ρ.1 fun u => x.1 u * edgewisePoint u.1 b
+    exact Finset.sum_coe_sort ρ.val fun u => x.val u * edgewisePoint u.val b
   refine ⟨F ∘ A, fun x => ?_, hF.comp A.contDiff.contDiffOn fun w hw => ?_⟩
   · rw [Function.comp_apply, hA, hFf]
     exact congrArg f

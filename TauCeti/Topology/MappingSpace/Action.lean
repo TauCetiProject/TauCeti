@@ -114,9 +114,9 @@ variable {b₀ : B} {x : X}
 
 /-- The stabilizer of `x` acts pointwise on the maps sending the basepoint to `x`. -/
 instance instSMulStabilizer : SMul (stabilizer G x) (BasedMap B X b₀ x) where
-  smul h f := ⟨(h : G) • f.1, by
-    rw [ContinuousMap.smul_apply, f.2]
-    exact mem_stabilizer_iff.1 h.2⟩
+  smul h f := ⟨(h : G) • f.val, by
+    rw [ContinuousMap.smul_apply, f.property]
+    exact mem_stabilizer_iff.1 h.property⟩
 
 /-- The action of the stabilizer on based maps is the pointwise action. -/
 @[simp]
@@ -127,8 +127,8 @@ theorem coe_stabilizer_smul (h : stabilizer G x) (f : BasedMap B X b₀ x) :
 /-- The stabilizer of `x` acts on the based mapping space `Map_*(B, X)`. For a homogeneous space
 `G ⧸ H` and `x` the coset `eH`, the stabilizer is `H` (`MulAction.stabilizer_quotient`). -/
 instance instMulActionStabilizer : MulAction (stabilizer G x) (BasedMap B X b₀ x) where
-  one_smul f := Subtype.ext (one_smul G f.1)
-  mul_smul h k f := Subtype.ext (mul_smul (h : G) (k : G) f.1)
+  one_smul f := Subtype.ext (one_smul G f.val)
+  mul_smul h k f := Subtype.ext (mul_smul (h : G) (k : G) f.val)
 
 end BasedMap
 
@@ -146,8 +146,8 @@ variable {b₀ : B} {x : X}
 instance instContinuousSMulStabilizer :
     ContinuousSMul (stabilizer G x) (BasedMap B X b₀ x) where
   continuous_smul :=
-    ((continuous_subtype_val.comp continuous_fst).smul
-      (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+    ((continuous_subtypeVal.comp continuous_fst).smul
+      (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 /-! ### The action map over the orbit map -/
 
@@ -156,11 +156,11 @@ variable (b₀ x) in
 `g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`). For `g` in the stabilizer of `x`, `g • γ` is
 the stabilizer action on based maps (`TauCeti.BasedMap.coe_stabilizer_smul`). -/
 def actionMap : C(G × BasedMap B X b₀ x, C(B, X)) :=
-  ⟨fun p ↦ p.1 • p.2.1, continuous_fst.smul (continuous_subtype_val.comp continuous_snd)⟩
+  ⟨fun p ↦ p.1 • p.2.val, continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)⟩
 
 /-- The action map translates a based map by the group element. -/
 @[simp]
-theorem actionMap_apply (p : G × BasedMap B X b₀ x) : actionMap b₀ x p = p.1 • p.2.1 :=
+theorem actionMap_apply (p : G × BasedMap B X b₀ x) : actionMap b₀ x p = p.1 • p.2.val :=
   (rfl)
 
 end BasedMap
@@ -169,14 +169,14 @@ end BasedMap
 theorem mappingSpaceEval_actionMap {b₀ : B} {x : X}
     (p : G × BasedMap B X b₀ x) :
     mappingSpaceEval b₀ (BasedMap.actionMap b₀ x p) = p.1 • x := by
-  rw [BasedMap.actionMap_apply, mappingSpaceEval_apply, ContinuousMap.smul_apply, p.2.2]
+  rw [BasedMap.actionMap_apply, mappingSpaceEval_apply, ContinuousMap.smul_apply, p.2.property]
 
 namespace BasedMap
 
 variable {b₀ : B} {x : X}
 
 /-- The action map at the identity is the inclusion of the based maps. -/
-theorem actionMap_one (γ : BasedMap B X b₀ x) : actionMap b₀ x ((1 : G), γ) = γ.1 := by
+theorem actionMap_one (γ : BasedMap B X b₀ x) : actionMap b₀ x ((1 : G), γ) = γ.val := by
   simp
 
 /-- The action map is equivariant for left multiplication on `G`. -/
@@ -204,7 +204,7 @@ theorem actionMap_eq_actionMap_iff {g g' : G} {γ γ' : BasedMap B X b₀ x} :
   constructor
   · intro hgγ
     have hx : g • x = g' • x := by
-      simpa [γ.2, γ'.2] using congrArg (mappingSpaceEval b₀) hgγ
+      simpa [γ.property, γ'.property] using congrArg (mappingSpaceEval b₀) hgγ
     refine ⟨⟨g⁻¹ * g', mem_stabilizer_iff.2 ?_⟩, by simp, Subtype.ext ?_⟩
     · rw [mul_smul, ← hx, inv_smul_smul]
     · rw [coe_stabilizer_smul, mul_smul, ← actionMap_apply (b₀ := b₀) (x := x) (g', γ'), ← hgγ,
@@ -269,7 +269,7 @@ section. -/
 @[simp]
 theorem mappingSpaceEvalTrivialization_symm_apply (p : X × BasedMap B X b₀ x) :
     (mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).toOpenPartialHomeomorph.symm p =
-      s p.1 • p.2.1 :=
+      s p.1 • p.2.val :=
   equivariantLocalSectionTrivialization_symm_apply p
 
 /-- **In local charts the action map is the action of the stabilizer on the fibre.** If
@@ -284,7 +284,7 @@ theorem mappingSpaceEvalTrivialization_actionMap [ContinuousMul G]
     rw [Bundle.Trivialization.mem_source, orbitMapTrivialization_baseSet]
     exact hg
   have hgγ : BasedMap.actionMap b₀ x (g, γ) b₀ ∈ U := by
-    rwa [BasedMap.actionMap_apply, ContinuousMap.smul_apply, γ.2]
+    rwa [BasedMap.actionMap_apply, ContinuousMap.smul_apply, γ.property]
   have hsrc' : BasedMap.actionMap b₀ x (g, γ) ∈
       (mappingSpaceEvalTrivialization b₀ x U hU s hs hsec).source := by
     rwa [Bundle.Trivialization.mem_source, mappingSpaceEvalTrivialization_baseSet,
@@ -294,7 +294,7 @@ theorem mappingSpaceEvalTrivialization_actionMap [ContinuousMul G]
       (orbitMapTrivialization x hx U hU s hs hsec).coe_fst hsrc, mappingSpaceEval_actionMap]
   · rw [mappingSpaceEvalTrivialization_fiberCoordinate hgγ, BasedMap.coe_stabilizer_smul,
       orbitMapTrivialization_fiberCoordinate hg]
-    simp [γ.2, mul_smul]
+    simp [γ.property, mul_smul]
 
 variable (b₀ x)
 

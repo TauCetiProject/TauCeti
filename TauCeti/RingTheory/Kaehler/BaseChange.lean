@@ -5,21 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
+public import Mathlib.RingTheory.Kaehler.JacobiZariski
 
 /-!
-# Ranges of base-change maps for Kähler differentials
+# Base-change maps for Kähler differentials
 
 This file identifies the base-change map `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` with the `liftBaseChange`
-of `KaehlerDifferential.map R R A B`. It then records two reusable consequences of the
-Jacobi–Zariski sequence. The base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]`
-vanishes, and if `Ω[A⁄R]` is spanned by a set `s` then its range is spanned by the image of `s`.
+of `KaehlerDifferential.map R R A B`, gives an extensionality criterion for `B`-linear maps out of
+`B ⊗[A] Ω[A⁄R]`, and records reusable consequences of the Jacobi–Zariski sequence:
+
+* the base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]` vanishes, and if `Ω[A⁄R]`
+  is spanned by a set `s` then its range is spanned by the image of `s`;
+* when `H¹(L_{B/A}) = 0` (for example, when `B` is formally smooth over `A`), the base-change map
+  `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective, and if in addition `B` is faithfully flat over `A` then
+  `KaehlerDifferential.map R R A B : Ω[A⁄R] → Ω[B⁄R]` is injective.
 
 ## Main results
 
 * `TauCeti.mapBaseChange_eq_liftBaseChange`
+* `TauCeti.kaehlerBaseChange_linearMap_ext`
 * `TauCeti.subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top`
 * `TauCeti.range_mapBaseChange_eq_span_image`
+* `TauCeti.injective_mapBaseChange_of_subsingleton_h1Cotangent`
+* `TauCeti.injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent`
 -/
 
 public section
@@ -28,7 +38,7 @@ noncomputable section
 
 namespace TauCeti
 
-open KaehlerDifferential
+open KaehlerDifferential TensorProduct
 
 variable (R A B : Type*) [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
   [Algebra A B] [IsScalarTower R A B]
@@ -38,6 +48,20 @@ variable (R A B : Type*) [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [A
 theorem mapBaseChange_eq_liftBaseChange :
     mapBaseChange R A B = (map R R A B).liftBaseChange B := by
   ext; simp
+
+/-- Two `B`-linear maps out of `B ⊗[A] Ω[A⁄R]` agree as soon as they agree on `1 ⊗ₜ D R A a` for
+all `a : A`. -/
+theorem kaehlerBaseChange_linearMap_ext
+    {R A B M : Type*} [CommRing R] [CommRing A] [CommRing B] [AddCommGroup M]
+    [Algebra R A] [Algebra A B] [Module B M]
+    {L₁ L₂ : B ⊗[A] Ω[A⁄R] →ₗ[B] M}
+    (h : ∀ a : A, L₁ (1 ⊗ₜ[A] D R A a) = L₂ (1 ⊗ₜ[A] D R A a)) :
+    L₁ = L₂ := by
+  let : Module A M := Module.compHom M (algebraMap A B)
+  have : IsScalarTower A B M := .of_algebraMap_smul fun _ _ ↦ rfl
+  exact AlgebraTensorModule.curry_injective <| LinearMap.ext_ring <|
+    LinearMap.ext_on_range (span_range_derivation R A) fun a ↦ by
+      simpa using h a
 
 /-- In a tower `R → A → B`, the first map in the Jacobi–Zariski sequence is surjective
 exactly when the relative differential module `Ω[B⁄A]` vanishes. -/
@@ -56,5 +80,28 @@ theorem range_mapBaseChange_eq_span_image {s : Set Ω[A⁄R]} (hs : Submodule.sp
     (mapBaseChange R A B).range = Submodule.span B (map R R A B '' s) := by
   rw [mapBaseChange_eq_liftBaseChange, LinearMap.range_liftBaseChange, LinearMap.range_eq_map,
     ← hs, ← Submodule.span_image, Submodule.span_span_of_tower]
+
+/-- In a tower `R → A → B` with `H¹(L_{B/A}) = 0` (in particular when `B` is formally smooth over
+`A`), the base-change map `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective. -/
+theorem injective_mapBaseChange_of_subsingleton_h1Cotangent
+    [Subsingleton (Algebra.H1Cotangent A B)] :
+    Function.Injective (mapBaseChange R A B) := by
+  rw [injective_iff_map_eq_zero]
+  intro x hx
+  obtain ⟨y, rfl⟩ := (Algebra.H1Cotangent.exact_δ_mapBaseChange R A B x).mp hx
+  rw [Subsingleton.elim y 0, map_zero]
+
+/-- In a tower `R → A → B` where `H¹(L_{B/A}) = 0` and `B` is faithfully flat over `A` (for
+instance, a formally smooth extension of fields), `KaehlerDifferential.map R R A B : Ω[A⁄R] →
+Ω[B⁄R]` is injective. -/
+theorem injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent
+    [Subsingleton (Algebra.H1Cotangent A B)] [Module.FaithfullyFlat A B] :
+    Function.Injective (map R R A B) := by
+  rw [injective_iff_map_eq_zero]
+  intro ω hω
+  have h0 : mapBaseChange R A B (1 ⊗ₜ[A] ω) = 0 := by
+    simpa [mapBaseChange_tmul] using hω
+  simpa using
+    (map_eq_zero_iff _ (injective_mapBaseChange_of_subsingleton_h1Cotangent R A B)).mp h0
 
 end TauCeti

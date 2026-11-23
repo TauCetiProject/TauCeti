@@ -41,13 +41,13 @@ variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
 at `Q` the behaviour of `f` at `Q + P`. -/
 @[simp]
 theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
-    translation W (Point.equivBaseChangeSelf W P) • (pointEquivDegreeOnePlace W Q).1 =
-      (pointEquivDegreeOnePlace W (Q - P)).1 := by
+    translation W (Point.equivBaseChangeSelf W P) • (pointEquivDegreeOnePlace W Q).val =
+      (pointEquivDegreeOnePlace W (Q - P)).val := by
   set σ := translation W (Point.equivBaseChangeSelf W P)
   set v := pointEquivDegreeOnePlace W Q
   -- `σ • v` is the place of some point `R`, read off the reduction of the generic point
-  have hdeg : (σ • v.1).degree = 1 := (Place.degree_smul σ v.1).trans v.2
-  set R := (pointEquivDegreeOnePlace W).symm ⟨σ • v.1, hdeg⟩ with hR
+  have hdeg : (σ • v.val).degree = 1 := (Place.degree_smul σ v.val).trans v.property
+  set R := (pointEquivDegreeOnePlace W).symm ⟨σ • v.val, hdeg⟩ with hR
   suffices R = Q - P by rw [← this, hR, Equiv.apply_symm_apply]
   apply (Point.equivBaseChangeSelf W).injective
   -- the generic point is the image under `σ` of its translate by `-P`
@@ -56,7 +56,7 @@ theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
     rw [map_translation_translatedGenericPoint, neg_add_cancel,
       translatedGenericPoint_zero]
   rw [← reductionOfDegreeEqOne_genericPoint W R, hR, Equiv.apply_symm_apply, hgen,
-    reductionOfDegreeEqOne_smul_map W σ v.2, translatedGenericPoint_def, map_add,
+    reductionOfDegreeEqOne_smul_map W σ v.property, translatedGenericPoint_def, map_add,
     reductionOfDegreeEqOne_genericPoint, reductionOfDegreeEqOne_baseChange, map_sub,
     sub_eq_add_neg]
 

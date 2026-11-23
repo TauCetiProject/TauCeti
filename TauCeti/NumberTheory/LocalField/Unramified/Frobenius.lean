@@ -137,7 +137,7 @@ theorem coe_integerFrobenius_pow_apply (n : ℕ) (x : 𝒪[Breve E]) :
 `σ(x) ≡ x^q` modulo the maximal ideal. -/
 theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified E]) :
     valuation (Unramified E) (unramifiedFrobenius E x - x ^ Nat.card 𝓀[E]) < 1 := by
-  obtain ⟨f, _, hxf⟩ := mem_maximalUnramifiedExtension_iff.1 x.2
+  obtain ⟨f, _, hxf⟩ := mem_maximalUnramifiedExtension_iff.1 x.property
   let L := unramifiedExtension E (AlgebraicClosure E) f
   let := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
   let := finiteIntermediateFieldTopology E (AlgebraicClosure E) L
@@ -148,7 +148,7 @@ theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified
     inclusion (unramifiedExtension_le_maximalUnramifiedExtension E (AlgebraicClosure E) f)
   let := j.toAlgebra
   have := j.valuativeExtension
-  let xL : L := ⟨x.1, hxf⟩
+  let xL : L := ⟨x.val, hxf⟩
   have hxL_eq : algebraMap L (Unramified E) xL = x :=
     Subtype.ext (IntermediateField.coe_inclusion _ _)
   have hxL1 : valuation L xL ≤ 1 :=
@@ -159,7 +159,7 @@ theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified
     refine Subtype.ext ?_
     have hcoe := coe_maximalUnramifiedFrobenius_apply_of_mem (K := E)
       (Ω := AlgebraicClosure E) (f := f) hxf
-    have hx_pair : (⟨x.1, unramifiedExtension_le_maximalUnramifiedExtension E
+    have hx_pair : (⟨x.val, unramifiedExtension_le_maximalUnramifiedExtension E
         (AlgebraicClosure E) f hxf⟩ : Unramified E) = x := Subtype.ext rfl
     rw [hx_pair] at hcoe
     have hmap : ((algebraMap L (Unramified E)
@@ -177,9 +177,9 @@ theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified
 `σ(x) − x^q` has valuation strictly less than `1`, i.e., lies in `𝓂[Breve E]`. -/
 theorem frobenius_congr {x : Breve E} (hx : x ∈ 𝒪[Breve E]) :
     valuation (Breve E) (frobenius E x - x ^ Nat.card 𝓀[E]) < 1 := by
-  have hcont : Continuous fun z : 𝒪[Breve E] ↦ frobenius E z.1 - z.1 ^ Nat.card 𝓀[E] :=
-    (continuous_frobenius.comp continuous_subtype_val).sub
-      (continuous_subtype_val.pow (Nat.card 𝓀[E]))
+  have hcont : Continuous fun z : 𝒪[Breve E] ↦ frobenius E z.val - z.val ^ Nat.card 𝓀[E] :=
+    (continuous_frobenius.comp continuous_subtypeVal).sub
+      (continuous_subtypeVal.pow (Nat.card 𝓀[E]))
   refine Completion.valuation_lt_one_of_continuous_integer (K := Unramified E) hcont
     (fun y ↦ ?_) ⟨x, hx⟩
   have hcoe : ((algebraMap 𝒪[Unramified E] 𝒪[Breve E] y : 𝒪[Breve E]) : Breve E) =
@@ -196,7 +196,7 @@ theorem frobenius_congr {x : Breve E} (hx : x ∈ 𝒪[Breve E]) :
   rw [hcast, ← map_one (valuation (Breve E)), ← (valuation (Breve E)).vlt_iff_lt,
     ← Completion.coe_one, Completion.coe_vlt_coe_iff, (valuation (Unramified E)).vlt_iff_lt,
     map_one]
-  exact unramifiedFrobenius_congr y.2
+  exact unramifiedFrobenius_congr y.property
 
 /-- On `𝒪[Breve E]`, `integerFrobenius E x - x ^ q` lies in the maximal ideal `𝓂[Breve E]`. -/
 theorem integerFrobenius_sub_pow_mem_maximalIdeal (x : 𝒪[Breve E]) :
@@ -302,7 +302,7 @@ theorem fixedPoints_frobenius_pow {n : ℕ} (hn : n ≠ 0) :
       have h1 := hord ▸ pow_orderOf_eq_one (frobeniusAlgEquiv (K := E) (L := L))
       exact congr($h1 z)
     have hcoe := coe_maximalUnramifiedFrobenius_zpow_apply_of_mem (K := E)
-      (Ω := AlgebraicClosure E) (f := n) (n : ℤ) z.2
+      (Ω := AlgebraicClosure E) (f := n) (n : ℤ) z.property
     rw [zpow_natCast, zpow_natCast, hpowL] at hcoe
     have hU : (unramifiedFrobenius E ^ n) (algebraMap L (Unramified E) z) =
         algebraMap L (Unramified E) z :=
@@ -375,25 +375,27 @@ theorem transcendenceDegree_infinite [CharZero E] :
       refine (Nat.infinite_setOfPred_prime.sdiff (Set.finite_le_nat p)).mono ?_
       exact fun _ h ↦ ⟨h.1, not_le.1 h.2⟩
     exact hs.to_subtype
-  let u₀ : ι → 𝒪[E] := fun ℓ ↦ (ℓ.1 : 𝒪[E]) ^ (q - 1)
+  let u₀ : ι → 𝒪[E] := fun ℓ ↦ (ℓ.val : 𝒪[E]) ^ (q - 1)
   have hu₀_mem (ℓ : ι) : u₀ ℓ - 1 ∈ 𝓂[E] := by
     let ψ := IsLocalRing.residue 𝒪[E]
     refine (IsLocalRing.residue_eq_zero_iff _).1 ?_
-    have hℓ_ne : (ℓ.1 : 𝓀[E]) ≠ 0 := fun h0 ↦ by
-      rcases (Nat.dvd_prime ℓ.2.1).1 ((CharP.cast_eq_zero_iff 𝓀[E] p ℓ.1).1 h0) with hp1 | hp_eq
+    have hℓ_ne : (ℓ.val : 𝓀[E]) ≠ 0 := fun h0 ↦ by
+      rcases (Nat.dvd_prime ℓ.property.1).1 ((CharP.cast_eq_zero_iff 𝓀[E] p ℓ.val).1 h0) with hp1 |
+          hp_eq
       · exact (CharP.char_is_prime 𝓀[E] p).ne_one hp1
-      · exact ℓ.2.2.ne hp_eq
+      · exact ℓ.property.2.ne hp_eq
     rw [ψ.map_sub, ψ.map_one, ψ.map_pow, map_natCast, sub_eq_zero, hq_card]
-    exact FiniteField.pow_card_sub_one_eq_one (ℓ.1 : 𝓀[E]) hℓ_ne
+    exact FiniteField.pow_card_sub_one_eq_one (ℓ.val : 𝓀[E]) hℓ_ne
   choose y hy0 hy_frob using fun ℓ : ι ↦ exists_frobenius_eq_mul_of_sub_one_mem (hu₀_mem ℓ)
   let u : ι → E := fun ℓ ↦ ((u₀ ℓ : 𝒪[E]) : E)
   have hu_eq : (fun d : ι →₀ ℕ ↦ d.prod fun ℓ k ↦ u ℓ ^ k) =
-      fun d : ι →₀ ℕ ↦ d.prod fun ℓ k ↦ ((ℓ.1 : E) ^ (q - 1)) ^ k := by
+      fun d : ι →₀ ℕ ↦ d.prod fun ℓ k ↦ ((ℓ.val : E) ^ (q - 1)) ^ k := by
     ext d
     exact Finsupp.prod_congr fun ℓ _ ↦ by simp [u, u₀]
   have hu_inj : Function.Injective fun d : ι →₀ ℕ ↦ d.prod fun ℓ k ↦ u ℓ ^ k := by
     rw [hu_eq]
-    exact finsuppProd_natCast_prime_pow_injective (fun ℓ ↦ ℓ.2.1) Subtype.val_injective hq_sub
+    exact finsuppProd_natCast_prime_pow_injective (fun ℓ ↦ ℓ.property.1) Subtype.val_injective
+        hq_sub
   have hind : AlgebraicIndependent E y :=
     (frobenius E).toAlgHom.algebraicIndependent_of_algHom_eigenvectors hy0 hy_frob hu_inj
   have hle : Cardinal.lift.{_, 0} (Cardinal.mk ι) ≤ Algebra.trdeg E (Breve E) := by

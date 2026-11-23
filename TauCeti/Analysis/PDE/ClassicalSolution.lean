@@ -150,7 +150,7 @@ private theorem setLIntegral_enorm_gradient_sq_le
   simp only [Pi.neg_apply, abs_neg] at hright
   -- Back to the Lebesgue integral of `‖∇w‖ₑ²`.
   have hintA : IntegrableOn (fun x => ‖∇ w x‖ ^ 2) A mu := by
-    refine ((W1p.integrable_norm_gradient_sq U).mono_measure
+    refine ((Lp.memLp (W1p.gradient U)).norm.integrable_sq.mono_measure
       (Measure.restrict_mono hAV le_rfl)).congr ?_
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hAV hUg] with x hx
     rw [hx]

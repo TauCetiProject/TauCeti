@@ -19,8 +19,11 @@ Let `α` be a one-form on a manifold `M`. The map
 `ι_α : ℝ × M → T*M`, `(t, x) ↦ eᵗ α_x`
 
 (`TauCeti.SmoothForm.symplectizationToCotangent α`) puts the symplectization `ℝ × M` of `α` into
-the cotangent bundle, over the identity of `M`. It pulls the Liouville form `λ` of `T*M` back to
-the symplectization form `θ = eᵗ α`
+the cotangent bundle, over the identity of `M`. It is the case `ι = (x ↦ α_x)` of the map
+`(t, y) ↦ eᵗ ι(y)` rescaling a smooth family `ι : N → T*M` of covectors
+(`TauCeti.CotangentBundle.expSMul`). Since `λ` is linear on fibres, that map pulls `λ` back to
+the symplectization form of `ι^* λ` (`TauCeti.CotangentBundle.mpullback_expSMul_liouvilleForm`).
+As `λ` is tautological, `ι_α` therefore pulls `λ` back to the symplectization form `θ = eᵗ α`
 (`TauCeti.SmoothForm.mpullback_symplectizationToCotangent_liouvilleForm`), so `θ` is the
 tautological form `θ_(t, x)(v) = eᵗ α_x (dπ v)` of the covectors in its image. Hence it pulls the
 canonical symplectic form `ω = -dλ` back to `-dθ`, and this is nondegenerate exactly when `α` is
@@ -52,10 +55,14 @@ these lifts preserve `θ`, including for coorientation-reversing contactomorphis
 
 ## Main definitions
 
+* `TauCeti.CotangentBundle.expSMul ι`: the map `(t, y) ↦ eᵗ ι(y)` into `T*M`.
 * `TauCeti.SmoothForm.symplectizationToCotangent α`: the map `(t, x) ↦ eᵗ α_x` into `T*M`.
 
 ## Main results
 
+* `TauCeti.CotangentBundle.mpullback_expSMul_liouvilleForm`,
+  `TauCeti.CotangentBundle.mpullback_expSMul_symplecticForm`: `(t, y) ↦ eᵗ ι(y)` pulls `λ` and
+  `ω` back to `eᵗ ι^* λ` and `d(eᵗ ι^* (-λ))`.
 * `TauCeti.SmoothForm.mpullback_symplectizationToCotangent_liouvilleForm`: `ι_α^* λ = eᵗ α`.
 * `TauCeti.SmoothForm.mpullback_symplectizationToCotangent_symplecticForm`: `ι_α^* ω = -d(eᵗ α)`.
 * `TauCeti.SmoothForm.isNondegenerate_mpullback_symplectizationToCotangent_iff`: `ι_α^* ω` is
@@ -84,6 +91,75 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
+/-! ### Radial rescaling of a family of covectors -/
+
+namespace CotangentBundle
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  {ι : N → CotangentBundle I M}
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` from `ℝ × N` to the cotangent bundle, rescaling a family `ι` of
+covectors by `eᵗ` without moving their base points. -/
+def expSMul (ι : N → CotangentBundle I M) (p : ℝ × N) : CotangentBundle I M :=
+  TotalSpace.mk' (E →L[ℝ] ℝ) (ι p.2).proj (Real.exp p.1 • (ι p.2).snd)
+
+omit [IsManifold I ∞ M] [TopologicalSpace N] [IsManifold J ∞ N] in
+/-- The covector `eᵗ ι(y)` is `eᵗ` times `ι(y)`, over the same base point. -/
+@[simp]
+theorem expSMul_apply (ι : N → CotangentBundle I M) (p : ℝ × N) :
+    expSMul ι p = TotalSpace.mk' (E →L[ℝ] ℝ) (ι p.2).proj (Real.exp p.1 • (ι p.2).snd) :=
+  (rfl)
+
+omit [IsManifold J ∞ N] in
+/-- The map `(t, y) ↦ eᵗ ι(y)` is smooth when `ι` is. -/
+theorem contMDiff_expSMul (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    ContMDiff (𝓘(ℝ).prod J) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (expSMul ι) :=
+  (Real.contDiff_exp.contMDiff.comp contMDiff_fst).smul_totalSpace (hι.comp contMDiff_snd)
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls the Liouville form back to the symplectization form of
+`ι^* λ`. -/
+theorem mpullback_expSMul_liouvilleForm (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (liouvilleForm I M) =
+      (SmoothForm.mpullback ι hι (liouvilleForm I M)).symplectization := by
+  apply Subtype.ext
+  funext p
+  -- `expSMul ι p` is `eᵗ` times the covector `ι p.2`, over the same base point.
+  rw [mpullback_liouvilleForm_apply_of_eq_smul (contMDiff_expSMul hι) (hι.comp contMDiff_snd)
+    (fun p : ℝ × N ↦ Real.exp p.1) (fun _ ↦ rfl) p, SmoothForm.coe_symplectization,
+    SmoothForm.mpullback_mpullback]
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `-λ` back to the symplectization form of `ι^* (-λ)`. -/
+theorem mpullback_expSMul_neg_liouvilleForm
+    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (-liouvilleForm I M) =
+      (SmoothForm.mpullback ι hι (-liouvilleForm I M)).symplectization := by
+  rw [map_neg, map_neg, mpullback_expSMul_liouvilleForm, SmoothForm.symplectization_neg]
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `ω = -dλ` back to the exterior derivative of the
+symplectization form of `ι^* (-λ)`. -/
+theorem mpullback_expSMul_symplecticForm (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (symplecticForm I M) =
+      mextDerivₗ (𝓘(ℝ).prod J) 1
+        (SmoothForm.mpullback ι hι (-liouvilleForm I M)).symplectization := by
+  rw [symplecticForm_eq_neg_mextDerivₗ, ← map_neg, ← SmoothForm.mextDerivₗ_mpullback,
+    mpullback_expSMul_neg_liouvilleForm]
+
+/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `-ω = dλ` back to the exterior derivative of the
+symplectization form of `ι^* λ`. -/
+theorem mpullback_expSMul_neg_symplecticForm
+    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
+    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (-symplecticForm I M) =
+      mextDerivₗ (𝓘(ℝ).prod J) 1
+        (SmoothForm.mpullback ι hι (liouvilleForm I M)).symplectization := by
+  rw [symplecticForm_eq_neg_mextDerivₗ, neg_neg, ← SmoothForm.mextDerivₗ_mpullback,
+    mpullback_expSMul_liouvilleForm]
+
+end CotangentBundle
+
 namespace SmoothForm
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -96,6 +172,12 @@ symplectization form `eᵗ α`
 def symplectizationToCotangent (α : SmoothForm I M ℝ 1) (p : ℝ × M) : CotangentBundle I M :=
   TotalSpace.mk' (E →L[ℝ] ℝ) p.2 (Real.exp p.1 • degreeOneEquiv α p.2)
 
+/-- The map `(t, x) ↦ eᵗ α_x` rescales the section `x ↦ α_x` of the cotangent bundle by `eᵗ`. -/
+theorem symplectizationToCotangent_eq_expSMul (α : SmoothForm I M ℝ 1) :
+    α.symplectizationToCotangent =
+      CotangentBundle.expSMul fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (degreeOneEquiv α x) :=
+  (rfl)
+
 /-- The covector `eᵗ α_x` lies over `x`. -/
 @[simp]
 theorem proj_symplectizationToCotangent (α : SmoothForm I M ℝ 1) (p : ℝ × M) :
@@ -106,15 +188,15 @@ theorem proj_symplectizationToCotangent (α : SmoothForm I M ℝ 1) (p : ℝ × 
 @[simp]
 theorem symplectizationToCotangent_snd_apply (α : SmoothForm I M ℝ 1) (p : ℝ × M)
     (v : TangentSpace I p.2) :
-    (α.symplectizationToCotangent p).2 v = Real.exp p.1 * α.1 p.2 ![v] := by
+    (α.symplectizationToCotangent p).snd v = Real.exp p.1 * α.val p.2 ![v] := by
   rw [symplectizationToCotangent, smul_apply, degreeOneEquiv_apply_apply_vec,
     smul_eq_mul]
 
 /-- The map `(t, x) ↦ eᵗ α_x` is smooth. -/
 theorem contMDiff_symplectizationToCotangent (α : SmoothForm I M ℝ 1) :
-    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ α.symplectizationToCotangent :=
-  ContMDiff.smul_totalSpace (Real.contDiff_exp.contMDiff.comp contMDiff_fst)
-    ((degreeOneEquiv α).contMDiff.comp contMDiff_snd)
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ α.symplectizationToCotangent := by
+  rw [symplectizationToCotangent_eq_expSMul]
+  exact CotangentBundle.contMDiff_expSMul (degreeOneEquiv α).contMDiff
 
 /-- **The symplectization form is tautological.** The map `(t, x) ↦ eᵗ α_x` pulls the Liouville
 form of `T*M` back to the symplectization form `eᵗ α` of `α`. -/
@@ -123,20 +205,9 @@ theorem mpullback_symplectizationToCotangent_liouvilleForm (α : SmoothForm I M 
     mpullback α.symplectizationToCotangent α.contMDiff_symplectizationToCotangent
         (CotangentBundle.liouvilleForm I M) =
       α.symplectization := by
-  apply Subtype.ext
-  funext p
-  ext v
-  rw [coe_mpullback, CotangentBundle.mpullback_liouvilleForm_apply_of_proj_comp_eq
-      (g := Prod.snd) (fun _ ↦ rfl)
-      ((α.contMDiff_symplectizationToCotangent p).mdifferentiableAt (by simp)),
-    symplectizationToCotangent_snd_apply, coe_symplectization,
-    ContinuousAlternatingMap.smul_apply, mpullback_snd_apply, smul_eq_mul]
-  congr 2
-  ext i
-  fin_cases i
-  simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_fin_one,
-    Manifold.tangentSpaceProdEquiv_apply]
-  exact mfderiv_snd_apply p (v 0)
+  -- `(t, x) ↦ eᵗ α_x` rescales the section of `α`, along which `λ` pulls back to `α`.
+  simp only [symplectizationToCotangent_eq_expSMul, CotangentBundle.mpullback_expSMul_liouvilleForm
+    (degreeOneEquiv α).contMDiff, CotangentBundle.mpullback_liouvilleForm]
 
 /-- The map `(t, x) ↦ eᵗ α_x` pulls the canonical symplectic form `ω = -dλ` of `T*M` back to
 `-d(eᵗ α)`. -/
@@ -190,12 +261,12 @@ theorem IsContactForm.hasSymplecticTangentImages_symplectizationToCotangent
 /-! ### The two halves of the annihilator line -/
 
 /-- For a nowhere vanishing one-form `α`, the map `(t, x) ↦ eᵗ α_x` is injective. -/
-theorem symplectizationToCotangent_injective {α : SmoothForm I M ℝ 1} (hα : ∀ x, α.1 x ≠ 0) :
+theorem symplectizationToCotangent_injective {α : SmoothForm I M ℝ 1} (hα : ∀ x, α.val x ≠ 0) :
     Function.Injective α.symplectizationToCotangent := by
   rintro ⟨t, x⟩ ⟨s, y⟩ h
   obtain rfl : x = y := congrArg TotalSpace.proj h
   obtain ⟨v, hv⟩ := RoughForm.exists_apply_ne_zero (hα x)
-  have hv' := congrArg (fun z : CotangentBundle I M ↦ z.2 v) h
+  have hv' := congrArg (fun z : CotangentBundle I M ↦ z.snd v) h
   simp only [symplectizationToCotangent_snd_apply] at hv'
   rw [mul_left_inj' hv, Real.exp_eq_exp] at hv'
   rw [hv']
@@ -205,7 +276,7 @@ value of `α` at its base point. -/
 theorem mem_range_symplectizationToCotangent_iff {α : SmoothForm I M ℝ 1}
     {z : CotangentBundle I M} :
     z ∈ Set.range α.symplectizationToCotangent ↔
-      ∃ c : ℝ, 0 < c ∧ ∀ v, z.2 v = c * α.1 z.proj ![v] := by
+      ∃ c : ℝ, 0 < c ∧ ∀ v, z.snd v = c * α.val z.proj ![v] := by
   constructor
   · rintro ⟨p, rfl⟩
     exact ⟨Real.exp p.1, Real.exp_pos _, symplectizationToCotangent_snd_apply α p⟩
@@ -219,7 +290,7 @@ when it is a nonzero multiple of the value of `α` at its base point. -/
 private theorem mem_range_or_neg_iff_exists_ne_zero {α : SmoothForm I M ℝ 1}
     {z : CotangentBundle I M} :
     z ∈ Set.range α.symplectizationToCotangent ∨ z ∈ Set.range (-α).symplectizationToCotangent ↔
-      ∃ c : ℝ, c ≠ 0 ∧ ∀ v, z.2 v = c * α.1 z.proj ![v] := by
+      ∃ c : ℝ, c ≠ 0 ∧ ∀ v, z.snd v = c * α.val z.proj ![v] := by
   simp only [mem_range_symplectizationToCotangent_iff]
   constructor
   · rintro (⟨c, hc, hz⟩ | ⟨c, hc, hz⟩)
@@ -233,14 +304,14 @@ private theorem mem_range_or_neg_iff_exists_ne_zero {α : SmoothForm I M ℝ 1}
 /-- For a nowhere vanishing one-form `α`, the images of `(t, x) ↦ eᵗ α_x` and of
 `(t, x) ↦ eᵗ (-α)_x` are disjoint. -/
 theorem disjoint_range_symplectizationToCotangent_neg {α : SmoothForm I M ℝ 1}
-    (hα : ∀ x, α.1 x ≠ 0) :
+    (hα : ∀ x, α.val x ≠ 0) :
     Disjoint (Set.range α.symplectizationToCotangent)
       (Set.range (-α).symplectizationToCotangent) := by
   refine Set.disjoint_left.2 fun z hz hz' ↦ ?_
   obtain ⟨c, hc, hzc⟩ := mem_range_symplectizationToCotangent_iff.1 hz
   obtain ⟨d, hd, hzd⟩ := mem_range_symplectizationToCotangent_iff.1 hz'
   obtain ⟨v, hv⟩ := RoughForm.exists_apply_ne_zero (hα z.proj)
-  have h : (c + d) * α.1 z.proj ![v] = 0 := by
+  have h : (c + d) * α.val z.proj ![v] = 0 := by
     have h := (hzc v).symm.trans (hzd v)
     simp only [NegMemClass.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.coe_neg] at h
     linear_combination h
@@ -250,9 +321,9 @@ theorem disjoint_range_symplectizationToCotangent_neg {α : SmoothForm I M ℝ 1
 images of `(t, x) ↦ eᵗ α_x` and of `(t, x) ↦ eᵗ (-α)_x` together consist exactly of the nonzero
 covectors vanishing on `ker α`. -/
 theorem mem_range_symplectizationToCotangent_or_neg_iff {α : SmoothForm I M ℝ 1}
-    {z : CotangentBundle I M} (hα : α.1 z.proj ≠ 0) :
+    {z : CotangentBundle I M} (hα : α.val z.proj ≠ 0) :
     z ∈ Set.range α.symplectizationToCotangent ∨ z ∈ Set.range (-α).symplectizationToCotangent ↔
-      z.2 ≠ 0 ∧ ∀ v, α.1 z.proj ![v] = 0 → z.2 v = 0 := by
+      z.snd ≠ 0 ∧ ∀ v, α.val z.proj ![v] = 0 → z.snd v = 0 := by
   rw [mem_range_or_neg_iff_exists_ne_zero]
   constructor
   · rintro ⟨c, hc, hz⟩
@@ -263,12 +334,12 @@ theorem mem_range_symplectizationToCotangent_or_neg_iff {α : SmoothForm I M ℝ
     exact mul_ne_zero hc hv₀ this.symm
   · rintro ⟨hz0, hz⟩
     -- A functional vanishing on `ker α` is a multiple of `α`.
-    have hspan : (z.2 : TangentSpace I z.proj →ₗ[ℝ] ℝ) ∈
-        Submodule.span ℝ (Set.range fun _ : Unit ↦ RoughForm.eval α.1 z.proj) :=
+    have hspan : (z.snd : TangentSpace I z.proj →ₗ[ℝ] ℝ) ∈
+        Submodule.span ℝ (Set.range fun _ : Unit ↦ RoughForm.eval α.val z.proj) :=
       mem_span_of_iInf_ker_le_ker fun v hv ↦ hz v (by simpa using hv)
     rw [Set.range_const, Submodule.mem_span_singleton] at hspan
     obtain ⟨c, hc⟩ := hspan
-    have hzc (v : TangentSpace I z.proj) : z.2 v = c * α.1 z.proj ![v] := by
+    have hzc (v : TangentSpace I z.proj) : z.snd v = c * α.val z.proj ![v] := by
       simpa using (LinearMap.congr_fun hc v).symm
     refine ⟨c, fun h0 ↦ hz0 (ContinuousLinearMap.ext fun v ↦ ?_), hzc⟩
     rw [hzc, h0, zero_mul, zero_apply]
@@ -292,16 +363,16 @@ variable {E H M E' H' M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [To
 /-- If a diffeomorphism `F` pulls `α'` back to `f α`, then `f(x)` times the image of the covector
 `eᵗ α_x` under the cotangent lift of `F` is `eᵗ α'_(F x)`. -/
 private theorem cotangent_symplectizationToCotangent_snd_apply
-    (hα : ∀ x, (SmoothForm.mpullback F F.contMDiff α').1 x = f x • α.1 x) (p : ℝ × M)
+    (hα : ∀ x, (SmoothForm.mpullback F F.contMDiff α').val x = f x • α.val x) (p : ℝ × M)
     (w : TangentSpace I' (F p.2)) :
-    f p.2 * (F.cotangent (α.symplectizationToCotangent p)).2 w =
-      Real.exp p.1 * α'.1 (F p.2) ![w] := by
+    f p.2 * (F.cotangent (α.symplectizationToCotangent p)).snd w =
+      Real.exp p.1 * α'.val (F p.2) ![w] := by
   set u := mfderiv I' I F.symm (F p.2) w
   have hvec : (fun i ↦ mfderiv I I' F p.2 (![u] i)) = ![w] := by
     ext i
     fin_cases i
     exact F.mfderiv_apply_mfderiv_symm_apply (by simp) p.2 w
-  have h : α'.1 (F p.2) ![w] = f p.2 * α.1 p.2 ![u] := by
+  have h : α'.val (F p.2) ![w] = f p.2 * α.val p.2 ![u] := by
     rw [← hvec]
     have h' := congrArg (fun A ↦ A ![u]) (hα p.2)
     simp only [SmoothForm.mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h'
@@ -316,7 +387,7 @@ to `f α` and `f` is positive at the base point `x` of `p = (t, x)`, the cotange
 `eᵗ α_x` to `e^(t - log f(x)) α'_(F x)`: on the image of `(t, x) ↦ eᵗ α_x` it is the lift
 `(t, x) ↦ (t - log f(x), F(x))` of the symplectizations. -/
 theorem cotangent_symplectizationToCotangent
-    (hα : ∀ x, (SmoothForm.mpullback F F.contMDiff α').1 x = f x • α.1 x) {p : ℝ × M}
+    (hα : ∀ x, (SmoothForm.mpullback F F.contMDiff α').val x = f x • α.val x) {p : ℝ × M}
     (hp : 0 < f p.2) :
     F.cotangent (α.symplectizationToCotangent p) =
       α'.symplectizationToCotangent (symplectizationLift F f p) := by
@@ -332,7 +403,7 @@ back to `f α` and `f` is negative at the base point `x` of `p = (t, x)`, the co
 sends `eᵗ α_x` to `e^(t - log(-f(x))) (-α')_(F x)`: it carries the image of `(t, x) ↦ eᵗ α_x` to
 the image of `(t, x) ↦ eᵗ (-α')_x` by the lift `(t, x) ↦ (t - log(-f(x)), F(x))`. -/
 theorem cotangent_symplectizationToCotangent_of_neg
-    (hα : ∀ x, (SmoothForm.mpullback F F.contMDiff α').1 x = f x • α.1 x) {p : ℝ × M}
+    (hα : ∀ x, (SmoothForm.mpullback F F.contMDiff α').val x = f x • α.val x) {p : ℝ × M}
     (hp : f p.2 < 0) :
     F.cotangent (α.symplectizationToCotangent p) =
       (-α').symplectizationToCotangent (symplectizationLift F (-f) p) :=

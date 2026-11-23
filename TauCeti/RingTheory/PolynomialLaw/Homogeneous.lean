@@ -266,11 +266,11 @@ variable (R M N) in
 `LinearMap.toPolynomialLaw` with inverse `IsHomogeneousOfDegree.toLinearMap`. -/
 def homogeneousSubmoduleOneEquiv : (M →ₗ[R] N) ≃ₗ[R] homogeneousSubmodule R M N 1 where
   toFun u := ⟨u.toPolynomialLaw, u.isHomogeneousOfDegree_toPolynomialLaw⟩
-  invFun f := (mem_homogeneousSubmodule.mp f.2).toLinearMap
+  invFun f := (mem_homogeneousSubmodule.mp f.property).toLinearMap
   map_add' u v := Subtype.ext (LinearMap.toPolynomialLaw_add u v)
   map_smul' r u := Subtype.ext (LinearMap.toPolynomialLaw_smul r u)
   left_inv := LinearMap.toLinearMap_isHomogeneousOfDegree_toPolynomialLaw
-  right_inv f := Subtype.ext (mem_homogeneousSubmodule.mp f.2).toPolynomialLaw_toLinearMap
+  right_inv f := Subtype.ext (mem_homogeneousSubmodule.mp f.property).toPolynomialLaw_toLinearMap
 
 @[simp]
 theorem coe_homogeneousSubmoduleOneEquiv_apply (u : M →ₗ[R] N) :
@@ -279,7 +279,8 @@ theorem coe_homogeneousSubmoduleOneEquiv_apply (u : M →ₗ[R] N) :
 
 @[simp]
 theorem homogeneousSubmoduleOneEquiv_symm_apply (f : homogeneousSubmodule R M N 1) :
-    (homogeneousSubmoduleOneEquiv R M N).symm f = (mem_homogeneousSubmodule.mp f.2).toLinearMap :=
+    (homogeneousSubmoduleOneEquiv R M N).symm f =
+        (mem_homogeneousSubmodule.mp f.property).toLinearMap :=
   (rfl)
 
 end PolynomialLaw

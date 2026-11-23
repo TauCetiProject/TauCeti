@@ -160,7 +160,7 @@ theorem exists_isCompl_isIndecomposableModule [IsArtinian A M] [Nontrivial M] :
   obtain ⟨s, hs, hsi, hss⟩ :=
     exists_finset_isIndecomposableModule_supIndep_sup_eq (⊤ : Submodule A M)
   obtain ⟨N, hN⟩ : s.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro rfl
     exact top_ne_bot (α := Submodule A M) (by simpa using hss.symm)
   exact ⟨N, (s.erase N).sup id, hsi.isCompl_sup_erase hss hN, hs N hN⟩
