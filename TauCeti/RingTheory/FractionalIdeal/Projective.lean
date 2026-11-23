@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PicardGroup
+public import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 /-!
 # Invertible fractional ideals are finite projective
@@ -14,8 +15,8 @@ The finite generation, projectivity and invertibility of invertible submodules g
 corresponding instances for invertible fractional ideals. These let fractional ideals represent
 objects in the category of finite projective modules, and hence classes in projective `K₀`, and
 make them invertible modules in the sense of the Picard group.
-Over a Dedekind domain every nonzero fractional ideal is invertible, so every fractional ideal is
-projective.
+Over a Dedekind domain every nonzero fractional ideal is invertible, so every fractional ideal, and
+in particular every integral ideal, is projective.
 -/
 
 public section
@@ -52,3 +53,9 @@ instance projective {K : Type*} [Field K] [Algebra R K] [IsDedekindDomain R] [Is
   · exact Units.val_mk0 hI ▸ projective_units (Units.mk0 I hI)
 
 end FractionalIdeal
+
+/-- Every ideal of a Dedekind domain is projective as a module, being isomorphic to the fractional
+ideal it defines. -/
+instance Ideal.projective_of_isDedekindDomain {R : Type*} [CommRing R] [IsDedekindDomain R]
+    (I : Ideal R) : Module.Projective R I :=
+  .of_equiv (FractionalIdeal.coeIdealEquiv (S := nonZeroDivisors R) (P := FractionRing R) I)
