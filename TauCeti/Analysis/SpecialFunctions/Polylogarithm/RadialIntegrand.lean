@@ -48,7 +48,7 @@ singularity at `t = 1 / z` moves through `(1 / R, 1)`); instead, translating
   domain, `‖1 - t z‖` is bounded below by a positive constant for `t ∈ [0, 1]`.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
   compact subset of the principal domain.
-* `TauCeti.Polylog.exists_lintegral_norm_radialIntegrand_sq_le` and
+* `TauCeti.Polylog.exists_setLIntegral_norm_radialIntegrand_sq_le` and
   `TauCeti.Polylog.uniformIntegrable_radialIntegrand`: uniform `L²` bound and uniform
   integrability on `(0, 1]` over bounded parameter families.
 * `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`: interval integrability of the
@@ -237,7 +237,7 @@ private lemma setLIntegral_norm_radialIntegrand_pow_Ioc_le (p k : ℕ) {a : ℝ}
 
 /-- Over any bounded ball `‖z‖ ≤ R`, the radial integrand of weight `k + 2` has a uniform `L²`
 bound on `(0, 1]`. -/
-theorem exists_lintegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
+theorem exists_setLIntegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ z : ℂ, ‖z‖ ≤ R →
       ∫⁻ t in Ioc (0 : ℝ) 1,
         ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2) ≤
@@ -288,7 +288,7 @@ theorem uniformIntegrable_radialIntegrand {ι : Type*} (k : ℕ) {z : ι → ℂ
       (fun (i : ι) (t : ℝ) ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z i)) / t)
       1 (volume.restrict (Ioc 0 1)) := by
   obtain ⟨R, hR⟩ := hz.exists_norm_le
-  obtain ⟨C, hC, hCz⟩ := exists_lintegral_norm_radialIntegrand_sq_le k R
+  obtain ⟨C, hC, hCz⟩ := exists_setLIntegral_norm_radialIntegrand_sq_le k R
   have hsq : Tendsto (fun x : ℝ ↦ x ^ 2 / x) atTop atTop :=
     tendsto_id.congr' (by
       filter_upwards [eventually_ne_atTop 0] with x hx

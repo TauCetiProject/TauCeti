@@ -9,7 +9,6 @@ public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Complex.UpperLogContinuity
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
@@ -59,7 +58,7 @@ Specifically:
   `TauCeti.Polylog.tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt`, and
   `TauCeti.Polylog.tendsto_polylog_add_mul_I_sub_polylog_sub_mul_I_nhdsGT_zero_of_one_lt`: lower
   and upper boundary limits along `ℝ`, and upper boundary limit and principal jump across `(1, ∞)`.
-* `TauCeti.Polylog.not_continuousAt_of_eqOn_polylog_of_one_lt`,
+* `TauCeti.Polylog.not_continuousAt_of_one_lt_of_eqOn_polylog`,
   `TauCeti.Polylog.not_continuousAt_polylog_of_one_lt`, and
   `TauCeti.Polylog.not_exists_continuousOn_eqOn_polylog`: cut discontinuity on `(1, ∞)` for
   `1 ≤ n` and non-existence of a continuous extension on `ℂ ∖ {0, 1}`.
@@ -218,9 +217,20 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
       Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero, mul_zero, Complex.neg_im,
       Complex.log_im, harg]
     ring
+  have h_log_int : ∫ t in x⁻¹..1, (-Real.log t) ^ k / t = Real.log x ^ (k + 1) / (k + 1 : ℝ) := by
+    have hne (t : ℝ) (ht : t ∈ uIcc x⁻¹ 1) : t ≠ 0 := fun ht0 ↦ h0_notMem (ht0 ▸ ht)
+    have hsub := intervalIntegral.integral_comp_mul_deriv (a := x⁻¹) (b := 1)
+      (f := fun t ↦ -Real.log t) (f' := fun t ↦ -t⁻¹) (g := fun u ↦ u ^ k)
+      (fun t ht ↦ (Real.hasDerivAt_log (hne t ht)).neg)
+      (continuousOn_inv₀.mono fun t ht ↦ hne t ht).neg (continuous_pow k)
+    simp only [Function.comp_def, mul_neg, intervalIntegral.integral_neg, neg_neg, Real.log_inv,
+      Real.log_one, neg_zero] at hsub
+    rw [intervalIntegral.integral_symm 0 (Real.log x), integral_pow, zero_pow (Nat.succ_ne_zero k),
+      sub_zero] at hsub
+    simpa [div_eq_mul_inv] using (by linarith :
+      ∫ t in x⁻¹..1, (-Real.log t) ^ k * t⁻¹ = Real.log x ^ (k + 1) / (k + 1 : ℝ))
   rw [← intervalIntegral.integral_add_adjacent_intervals hint₁ hint₂, Complex.add_im,
-    him_int _ _ hint₁, him_int _ _ hint₂, h1, h2, integral_neg_log_pow_div_self k h0_notMem]
-  simp
+    him_int _ _ hint₁, him_int _ _ hint₂, h1, h2, h_log_int, zero_add]
 
 /-- On the cut `(1, ∞)`, the total value `polylog n x` (`1 ≤ n`) has imaginary part
 `-π (log x) ^ (n - 1) / (n - 1)!`. -/
@@ -289,7 +299,7 @@ theorem tendsto_polylog_add_mul_I_sub_polylog_sub_mul_I_nhdsGT_zero_of_one_lt {n
 
 /-- For integer weight `n ≥ 1` and real `x > 1`, no function agreeing with `polylog n` on the
 doubly slit plane `{z | z ∈ slitPlane ∧ 1 - z ∈ slitPlane}` is continuous at `x`. -/
-theorem not_continuousAt_of_eqOn_polylog_of_one_lt {n : ℤ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x)
+theorem not_continuousAt_of_one_lt_of_eqOn_polylog {n : ℤ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x)
     {g : ℂ → ℂ}
     (hg : EqOn g (polylog n) {z : ℂ | z ∈ Complex.slitPlane ∧ 1 - z ∈ Complex.slitPlane}) :
     ¬ ContinuousAt g x := by
@@ -326,7 +336,7 @@ theorem not_continuousAt_of_eqOn_polylog_of_one_lt {n : ℤ} (hn : 1 ≤ n) {x :
 open cut `(1, ∞)`. -/
 theorem not_continuousAt_polylog_of_one_lt {n : ℤ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x) :
     ¬ ContinuousAt (polylog n) x :=
-  not_continuousAt_of_eqOn_polylog_of_one_lt hn hx (eqOn_refl _ _)
+  not_continuousAt_of_one_lt_of_eqOn_polylog hn hx (eqOn_refl _ _)
 
 /-- For integer weight `n ≥ 2`, `polylog n` is continuous at `z` if and only if `z` does not lie on
 the open cut `(1, ∞)`, i.e. `z.im ≠ 0 ∨ z.re ≤ 1`. -/
@@ -345,7 +355,7 @@ theorem not_exists_continuousOn_eqOn_polylog {n : ℤ} (hn : 1 ≤ n) :
   rintro ⟨g, hg_cont, hg_eq⟩
   have hopen : IsOpen (({0, 1} : Set ℂ)ᶜ) :=
     (isClosed_singleton.union isClosed_singleton).isOpen_compl
-  exact not_continuousAt_of_eqOn_polylog_of_one_lt hn (x := 3) (by norm_num) hg_eq
+  exact not_continuousAt_of_one_lt_of_eqOn_polylog hn (x := 3) (by norm_num) hg_eq
     (hg_cont.continuousAt (hopen.mem_nhds (by norm_num)))
 
 end TauCeti.Polylog

@@ -34,14 +34,12 @@ the closed unit disc, and real values of every `Liₙ` on the real half-line `(-
 
 ## Main declarations
 
-* `TauCeti.Polylog.polylog_neg_nat_conj` and `TauCeti.Polylog.polylog_neg_ofNat_conj`:
-  conjugation symmetry of nonpositive weights on `ℂ`.
+* `TauCeti.Polylog.polylog_neg_nat_conj`: conjugation symmetry of nonpositive weights on `ℂ`.
 * `TauCeti.Polylog.polylog_conj`: conjugation symmetry in every weight off the cut `(1, ∞)`.
 * `TauCeti.Polylog.polylog_conj_of_re_le_one`: conjugation symmetry on `re z ≤ 1`, in particular
   on the closed unit disc `‖z‖ ≤ 1`.
-* `TauCeti.Polylog.polylog_neg_nat_ofReal_im`, `TauCeti.Polylog.polylog_neg_ofNat_ofReal_im`,
-  `TauCeti.Polylog.ofReal_polylog_neg_nat_ofReal_re`,
-  `TauCeti.Polylog.ofReal_polylog_neg_ofNat_ofReal_re`, `TauCeti.Polylog.polylog_ofReal_im`, and
+* `TauCeti.Polylog.polylog_neg_nat_ofReal_im`, `TauCeti.Polylog.ofReal_polylog_neg_nat_ofReal_re`,
+  `TauCeti.Polylog.polylog_ofReal_im`, and
   `TauCeti.Polylog.ofReal_polylog_ofReal_re_of_le_one`: `Liₙ x` is real for `n ≤ 0` on all of
   `ℝ`, and for arbitrary `n : ℤ` on `(-∞, 1]`.
 
@@ -77,13 +75,6 @@ theorem polylog_neg_nat_conj (r : ℕ) (z : ℂ) :
     simp only [Function.comp_apply, polylog_neg_nat_succ]
     rw [hd]
     simp
-
-/-- Negative-numeral-weight polylogarithms commute with complex conjugation everywhere on `ℂ`,
-including the totalised value at `1`. -/
-@[simp]
-theorem polylog_neg_ofNat_conj (r : ℕ) (z : ℂ) :
-    polylog (-ofNat(r)) (conj z) = conj (polylog (-ofNat(r)) z) :=
-  polylog_neg_nat_conj r z
 
 /-- Every integer-weight polylogarithm commutes with complex conjugation off the open cut
 `(1, ∞)`, that is, whenever `z.im ≠ 0 ∨ z.re ≤ 1`. Nonpositive weights need no hypothesis, by
@@ -121,25 +112,11 @@ theorem polylog_neg_nat_ofReal_im (r : ℕ) (x : ℝ) :
     (polylog (-(r : ℤ)) x).im = 0 :=
   Complex.conj_eq_iff_im.mp (by simpa using (polylog_neg_nat_conj r x).symm)
 
-/-- Negative-numeral-weight polylogarithms (such as `polylog (-1)` and `polylog (-2)`) take real
-values at every real argument, including `1`. -/
-@[simp]
-theorem polylog_neg_ofNat_ofReal_im (r : ℕ) (x : ℝ) :
-    (polylog (-ofNat(r)) x).im = 0 :=
-  polylog_neg_nat_ofReal_im r x
-
 /-- On all of `ℝ` (including `1`), `polylog (-r) x` equals the coercion of its real part. -/
 @[simp]
 theorem ofReal_polylog_neg_nat_ofReal_re (r : ℕ) (x : ℝ) :
     ((polylog (-(r : ℤ)) x).re : ℂ) = polylog (-(r : ℤ)) x :=
   Complex.conj_eq_iff_re.mp (by simpa using (polylog_neg_nat_conj r x).symm)
-
-/-- On all of `ℝ` (including `1`), a negative-numeral-weight polylogarithm equals the coercion of
-its real part. -/
-@[simp]
-theorem ofReal_polylog_neg_ofNat_ofReal_re (r : ℕ) (x : ℝ) :
-    ((polylog (-ofNat(r)) x).re : ℂ) = polylog (-ofNat(r)) x :=
-  ofReal_polylog_neg_nat_ofReal_re r x
 
 /-- Every integer-weight polylogarithm is real on the real half-line `(-∞, 1]`. -/
 theorem polylog_ofReal_im (n : ℤ) {x : ℝ} (hx : x ≤ 1) : (polylog n x).im = 0 := by
