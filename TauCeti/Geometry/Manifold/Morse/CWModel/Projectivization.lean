@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Lacunary
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Data.Set.Card
 
 /-!
 # The Morse CW model of projective space
@@ -17,7 +16,8 @@ The moment function `[v] ↦ (∑ j, j * ‖v j‖ ^ 2) / ∑ j, ‖v j‖ ^ 2` 
 `ℙ 𝕜 (Fin (n + 1) → 𝕜)`, over `𝕜 = ℝ` or `ℂ`, is a Morse function whose critical points are the
 `n + 1` coordinate points `[eₖ]`, of Morse index `dim_ℝ 𝕜 * k`
 (`TauCeti.criticalPoints_projectiveMomentFunction`,
-`TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast`). Milnor's CW model of a compact
+`TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast`,
+`TauCeti.projectiveMomentFunctionNatCastCriticalPointsEquiv`). Milnor's CW model of a compact
 manifold with a Morse function (`TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`) therefore
 makes projective space homotopy equivalent to a finite CW complex with one cell of dimension
 `dim_ℝ 𝕜 * k` for each `k ≤ n` and no other cells
@@ -85,13 +85,10 @@ theorem exists_finite_cwComplex_homotopyEquiv_projectivization :
       RelCWComplex.Finite (univ : Set W) ∧ Nonempty (W ≃ₕ ℙ 𝕜 (Fin (n + 1) → 𝕜)) ∧
       ∀ m, Nonempty (cell (univ : Set W) m ≃
         {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = m}) := by
-  have hw : StrictMono fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
-    Nat.strictMono_cast.comp Fin.val_strictMono
-  obtain ⟨W, _, _, _, hfin, he, hcell⟩ :=
-    (isMorse_projectiveMomentFunction (𝕜 := 𝕜) hw.injective).exists_finite_cwComplex_homotopyEquiv
+  obtain ⟨W, _, _, _, hfin, he, hcell⟩ := (isMorse_projectiveMomentFunction_natCast (𝕜 := 𝕜)
+    (n := n)).exists_finite_cwComplex_homotopyEquiv
   exact ⟨W, _, ‹_›, ‹_›, hfin, he, fun m ↦ (hcell m).map fun e ↦
-    e.trans ((projectiveMomentFunctionCriticalPointsEquiv hw.injective m).symm.trans
-      (Equiv.subtypeEquivRight fun k ↦ by rw [ncard_setOf_lt_of_strictMono hw]))⟩
+    e.trans (projectiveMomentFunctionNatCastCriticalPointsEquiv 𝕜 n m).symm⟩
 
 end CWModel
 
@@ -109,18 +106,15 @@ theorem nonempty_singularHomology_projectivization_complex_iso_sigma (m : ℕ) :
     Nonempty (((AlgebraicTopology.singularHomologyFunctor A m).obj R).obj
         (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) ≅
       ∐ fun _ : {k : Fin (n + 1) // 2 * k = m} ↦ R) := by
-  have hw : StrictMono fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
-    Nat.strictMono_cast.comp Fin.val_strictMono
-  obtain ⟨e⟩ := (isMorse_projectiveMomentFunction (𝕜 := ℂ) hw.injective)
-    |>.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one (by
+  obtain ⟨e⟩ := (isMorse_projectiveMomentFunction_natCast (𝕜 := ℂ) (n := n))
+    |>.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one (fun x hx y hy ↦ by
       -- All critical points have even index, so no two indices differ by one.
-      rw [criticalPoints_projectiveMomentFunction hw.injective]
-      rintro _ ⟨k, rfl⟩ _ ⟨l, rfl⟩
-      simp only [manifoldMorseIndex_projectiveMomentFunction_natCast_complex]
+      obtain ⟨k, hk⟩ := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n _).symm ⟨x, hx, rfl⟩
+      obtain ⟨l, hl⟩ := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n _).symm ⟨y, hy, rfl⟩
+      rw [Complex.finrank_real_complex] at hk hl
       omega) R m
-  let c := (projectiveMomentFunctionCriticalPointsEquiv (𝕜 := ℂ) hw.injective m).symm.trans
-    (Equiv.subtypeEquivRight fun k ↦ by
-      rw [ncard_setOf_lt_of_strictMono hw, Complex.finrank_real_complex])
+  let c := (projectiveMomentFunctionNatCastCriticalPointsEquiv ℂ n m).symm.trans
+    (Equiv.subtypeEquivRight fun k ↦ by rw [Complex.finrank_real_complex])
   exact ⟨e ≪≫ Sigma.whiskerEquiv c fun _ ↦ Iso.refl R⟩
 
 end Complex

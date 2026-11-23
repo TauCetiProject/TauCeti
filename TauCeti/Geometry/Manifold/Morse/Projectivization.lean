@@ -106,6 +106,8 @@ makes the moment function Morse–Bott.
   two of them have the same index.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
   standard weights, `[eₖ]` has index `2 * k`.
+* `TauCeti.projectiveMomentFunctionNatCastCriticalPointsEquiv`: with the standard weights, the
+  critical points of index `j` are the `[eₖ]` with `dim_ℝ 𝕜 * k = j`.
 
 ## References
 
@@ -1067,13 +1069,47 @@ theorem subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real
 
 /-! ### The standard weights -/
 
+/-- The standard weights `w i = i` are increasing. -/
+private theorem strictMono_natCast_val : StrictMono fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
+  Nat.strictMono_cast.comp Fin.val_strictMono
+
 /-- With the standard weights `w i = i`, the coordinate point `[eₖ]` has Morse index the real
 dimension of `𝕜` times `k`. -/
 theorem manifoldMorseIndex_projectiveMomentFunction_natCast (k : Fin (n + 1)) :
     manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ))
       (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * k :=
-  manifoldMorseIndex_projectiveMomentFunction_of_strictMono
-    (Nat.strictMono_cast.comp Fin.val_strictMono) k
+  manifoldMorseIndex_projectiveMomentFunction_of_strictMono strictMono_natCast_val k
+
+/-- With the standard weights `w i = i` the moment function is a Morse function. -/
+theorem isMorse_projectiveMomentFunction_natCast :
+    IsMorse 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) :=
+  isMorse_projectiveMomentFunction strictMono_natCast_val.injective
+
+variable (𝕜 n) in
+/-- **The critical points of the moment function with the standard weights, by index.** With the
+standard weights `w i = i`, the critical points of index `j` of the moment function are the
+coordinate points `[eₖ]` with `j` equal to the real dimension of `𝕜` times `k`; this equivalence
+sends `k` to `[eₖ]`. -/
+def projectiveMomentFunctionNatCastCriticalPointsEquiv (j : ℕ) :
+    {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = j} ≃
+      ↥{x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜)
+          (projectiveMomentFunction 𝕜 fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ)) |
+        manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 fun i ↦ ((i : ℕ) : ℝ))
+          x = j} :=
+  (Equiv.subtypeEquivRight fun _ ↦ by
+    rw [ncard_setOf_lt_of_strictMono strictMono_natCast_val]).trans
+      (projectiveMomentFunctionCriticalPointsEquiv strictMono_natCast_val.injective j)
+
+/-- The equivalence `TauCeti.projectiveMomentFunctionNatCastCriticalPointsEquiv` sends `k` to the
+coordinate point `[eₖ]`. -/
+@[simp]
+theorem coe_projectiveMomentFunctionNatCastCriticalPointsEquiv_apply (j : ℕ)
+    (k : {k : Fin (n + 1) // Module.finrank ℝ 𝕜 * k = j}) :
+    (projectiveMomentFunctionNatCastCriticalPointsEquiv 𝕜 n j k : ℙ 𝕜 (Fin (n + 1) → 𝕜)) =
+      mk 𝕜 (Pi.single k.val 1) (by simp) := by
+  rw [projectiveMomentFunctionNatCastCriticalPointsEquiv, Equiv.trans_apply,
+    coe_projectiveMomentFunctionCriticalPointsEquiv_apply]
+  rfl
 
 /-- **The Morse index on complex projective space.** For the moment function
 `[z] ↦ (∑ j, j * ‖z j‖ ^ 2) / ∑ j, ‖z j‖ ^ 2` on `ℂℙⁿ`, the coordinate point `[eₖ]` has Morse
