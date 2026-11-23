@@ -84,6 +84,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -394,5 +395,16 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
   rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
     Padic.valuation_natCast]
+
+/-- The `p`-adic norm of a natural number `m` is at least `p ^ (-k)` exactly when `p ^ (k + 1)`
+does not divide `m`. -/
+theorem zpow_neg_le_norm_natCast_iff {m k : ℕ} :
+    (p : ℝ) ^ (-(k : ℤ)) ≤ ‖(m : ℚ_[p])‖ ↔ ¬p ^ (k + 1) ∣ m := by
+  have hp : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  rcases eq_or_ne m 0 with rfl | hm
+  · simpa using pow_pos (zero_lt_one.trans hp) k
+  rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.2 hm), Padic.valuation_natCast,
+    zpow_le_zpow_iff_right₀ hp, neg_le_neg_iff, multiplicity_dvd_iff_le hm]
+  omega
 
 end Padic

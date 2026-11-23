@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.GroupTheory.BranchTuple.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
@@ -50,8 +51,11 @@ relative to any group of automorphisms.
   conjugate to the entry of `t` at position `(permHom r b)⁻¹ k`; in particular pure braids
   preserve ordered class conditions
   (`TauCeti.BranchTuple.isConj_hurwitzAction_apply_of_mem_pureSubgroup`).
+* `TauCeti.BranchTuple.forall_hurwitzAction_apply_mem_carrier_iff`: the action preserves the
+  condition that every entry lies in a given conjugacy class.
 * `TauCeti.BranchTuple.hurwitzAction_comp`: the action commutes with homomorphisms applied
-  entrywise.
+  entrywise, and in particular with simultaneous conjugation
+  (`TauCeti.BranchTuple.hurwitzAction_conjAct_smul`).
 
 ## References
 
@@ -362,6 +366,15 @@ theorem classMultiset_hurwitzAction (b : BraidGroup r) (t : BranchTuple r G) :
     classMultiset (hurwitzAction b t) = classMultiset t :=
   classMultiset_eq_of_isConj (permHom r b)⁻¹ (isConj_hurwitzAction_apply b t)
 
+/-- All entries of `b • t` lie in a conjugacy class `c` exactly when all entries of `t` do. -/
+theorem forall_hurwitzAction_apply_mem_carrier_iff {c : ConjClasses G} (b : BraidGroup r)
+    (t : BranchTuple r G) :
+    (∀ k, hurwitzAction b t k ∈ c.carrier) ↔ ∀ k, t k ∈ c.carrier := by
+  have h (k : Fin r) : hurwitzAction b t k ∈ c.carrier ↔ t ((permHom r b)⁻¹ k) ∈ c.carrier :=
+    (ConjClasses.mem_carrier_iff_of_isConj (isConj_hurwitzAction_apply b t k)).symm
+  simp only [h]
+  exact ⟨fun H k ↦ by simpa using H (permHom r b k), fun H k ↦ H _⟩
+
 /-! ### Equivariance -/
 
 /-- Hurwitz moves commute with homomorphisms applied entrywise. -/
@@ -381,6 +394,11 @@ theorem hurwitzAction_comp (f : G →* H) (b : BraidGroup r) (t : BranchTuple r 
 theorem hurwitzAction_smul (φ : MulAut G) (b : BraidGroup r) (t : BranchTuple r G) :
     hurwitzAction b (φ • t) = φ • hurwitzAction b t := by
   rw [smul_eq_comp, smul_eq_comp, hurwitzAction_comp]
+
+/-- The Hurwitz action commutes with simultaneous conjugation. -/
+theorem hurwitzAction_conjAct_smul (x : ConjAct G) (b : BraidGroup r) (t : BranchTuple r G) :
+    hurwitzAction b (x • t) = x • hurwitzAction b t := by
+  rw [conjAct_smul_eq, conjAct_smul_eq, hurwitzAction_smul]
 
 end BranchTuple
 
