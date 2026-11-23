@@ -46,19 +46,34 @@ theorem Function.Surjective.bijOn_preimage_irreducibleComponents {f : X → Y}
   have hle : T ⊆ f ⁻¹' Z := image_subset_iff.mp (subset_closure.trans hTZ)
   exact ⟨Z, hZ, subset_antisymm (hT.2 (hmaps hZ).1 hle) hle⟩
 
+/-- A homeomorphism maps irreducible components onto irreducible components. -/
+theorem Homeomorph.image_mem_irreducibleComponents (h : X ≃ₜ Y) {c : Set X}
+    (hc : c ∈ irreducibleComponents X) : h '' c ∈ irreducibleComponents Y :=
+  image_mem_irreducibleComponents_of_isPreirreducible_fiber h h.continuous h.isOpenMap
+    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible) h.surjective hc
+
 /-- A homeomorphism `h : X ≃ₜ Y` induces a bijection of irreducible components, sending a
 component to its image under `h` (`Homeomorph.coe_irreducibleComponentsEquiv_apply`). -/
 def Homeomorph.irreducibleComponentsEquiv (h : X ≃ₜ Y) :
-    irreducibleComponents X ≃ irreducibleComponents Y :=
-  (irreducibleComponentsEquivOfIsPreirreducibleFiber h h.continuous h.isOpenMap
-    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible)
-    h.surjective).symm.toEquiv
+    irreducibleComponents X ≃ irreducibleComponents Y where
+  toFun c := ⟨h '' c, h.image_mem_irreducibleComponents c.property⟩
+  invFun c := ⟨h.symm '' c, h.symm.image_mem_irreducibleComponents c.property⟩
+  left_inv c := Subtype.ext (h.symm_image_image c)
+  right_inv c := Subtype.ext (h.image_symm_image c)
 
 /-- The bijection of irreducible components induced by a homeomorphism sends a component to its
 image. -/
 @[simp]
 theorem Homeomorph.coe_irreducibleComponentsEquiv_apply (h : X ≃ₜ Y) (c : irreducibleComponents X) :
     (h.irreducibleComponentsEquiv c : Set Y) = h '' c :=
+  (rfl)
+
+/-- The inverse of the bijection of irreducible components induced by a homeomorphism sends a
+component to its preimage. -/
+@[simp]
+theorem Homeomorph.coe_irreducibleComponentsEquiv_symm_apply (h : X ≃ₜ Y)
+    (c : irreducibleComponents Y) :
+    (h.irreducibleComponentsEquiv.symm c : Set X) = h.symm '' c :=
   (rfl)
 
 namespace TauCeti
@@ -86,5 +101,14 @@ theorem irreducibleComponentOf_eq_iff_of_existsUnique {x : α}
     (h : ∃! c : irreducibleComponents α, x ∈ (c : Set α)) {c : irreducibleComponents α} :
     irreducibleComponentOf x = c ↔ x ∈ (c : Set α) :=
   ⟨fun hc ↦ hc ▸ mem_irreducibleComponentOf x, h.unique (mem_irreducibleComponentOf x)⟩
+
+/-- A homeomorphism carries the irreducible component through `x` to the irreducible component
+through `h x`, when `h x` lies on exactly one irreducible component. -/
+theorem _root_.Homeomorph.irreducibleComponentsEquiv_irreducibleComponentOf (h : X ≃ₜ Y) {x : X}
+    (hx : ∃! c : irreducibleComponents Y, h x ∈ (c : Set Y)) :
+    h.irreducibleComponentsEquiv (irreducibleComponentOf x) = irreducibleComponentOf (h x) :=
+  ((irreducibleComponentOf_eq_iff_of_existsUnique hx).2 (by
+    rw [Homeomorph.coe_irreducibleComponentsEquiv_apply]
+    exact Set.mem_image_of_mem h (mem_irreducibleComponentOf x))).symm
 
 end TauCeti
