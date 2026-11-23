@@ -689,64 +689,6 @@ section SmulLeft
 
 variable {g : E → ℝ}
 
-/-- A smooth multiple `g T` of a distribution microlocally smooth at `(x, ξ)` is microlocally
-smooth there. -/
-theorem IsMicrolocallySmoothAt.smulLeftCLM {T : 𝓓'(Ω, ℂ)} {x ξ : E}
-    (h : T.IsMicrolocallySmoothAt x ξ) (hg : ContDiff ℝ ∞ g) :
-    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ := by
-  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
-  obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
-  -- The same cutoff `φ` works for `g T` on the smaller cone `Γ'`, since `g T` with cutoff `φ`
-  -- is `T` with cutoff `g φ`.
-  refine isMicrolocallySmoothAt_iff.2 ⟨φ, hφx, Γ', hΓ'o, hξ', hcone', fun N ↦ ?_⟩
-  simp only [localFourier_smulLeftCLM]
-  exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul
-    (ofRealCLM.contDiff.comp hg).contDiffOn (fun y ↦ by simp [mul_comm]) hc hΓ' (hdecay N)
-
-/-- Where `g` does not vanish, a smooth multiple `g T` is microlocally smooth exactly where `T`
-is. -/
-theorem isMicrolocallySmoothAt_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
-    (hx : g x ≠ 0) :
-    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ ↔ T.IsMicrolocallySmoothAt x ξ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.smulLeftCLM hg⟩
-  -- A cutoff `φ` for `g T` gives the cutoff `g φ` for `T`, which does not vanish at `x`.
-  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
-  refine isMicrolocallySmoothAt_iff.2
-    ⟨TestFunction.smulLeftCLM hg φ, by simp [hx, hφx], Γ, hΓ, hξ, hcone, ?_⟩
-  simpa using hdecay
-
-/-- **Smooth multiplication** (Hörmander I, §8.1). The wave front set of a smooth multiple
-`g T` lies in the wave front set of `T`, over the support of `g`. -/
-theorem waveFrontSet_smulLeftCLM_subset (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g) :
-    (smulLeftCLM hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ := by
-  rintro ⟨x, ξ⟩ hp
-  obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
-  have hxg : x ∈ dsupport (smulLeftCLM hg T) := (waveFrontSet_subset_dsupport _ hp).1
-  rw [coe_smulLeftCLM] at hxg
-  exact ⟨mem_waveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hT (h.smulLeftCLM hg)⟩,
-    (dsupport_comp_smulLeftCLM_subset T hg hxg).1, trivial⟩
-
-/-- Over the points where `g` does not vanish, a smooth multiple `g T` has the same wave front set
-as `T`. -/
-theorem mem_waveFrontSet_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
-    (hx : g x ≠ 0) : (x, ξ) ∈ (smulLeftCLM hg T).waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
-  simp [isMicrolocallySmoothAt_smulLeftCLM_iff hg hx]
-
-/-- Multiplying by a smooth function that vanishes nowhere over the wave front set does not change
-the wave front set. -/
-theorem waveFrontSet_smulLeftCLM_of_forall_mem_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
-    (hg0 : ∀ p ∈ T.waveFrontSet, g p.1 ≠ 0) :
-    (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet :=
-  Subset.antisymm (fun _ hp ↦ (waveFrontSet_smulLeftCLM_subset T hg hp).1)
-    fun p hp ↦ (mem_waveFrontSet_smulLeftCLM_iff hg (hg0 p hp)).2 hp
-
-/-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the wave front
-set. -/
-theorem waveFrontSet_smulLeftCLM_of_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
-    (hg0 : ∀ x ∈ Ω, g x ≠ 0) : (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet :=
-  waveFrontSet_smulLeftCLM_of_forall_mem_ne_zero T hg fun p hp ↦
-    hg0 p.1 (mem_waveFrontSet_iff.1 hp).1
-
 /-- A multiple `g T` of a distribution microlocally smooth at `(x, ξ)`, by a function `g` smooth on
 `Ω` only, is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.smulLeftCLMOfContDiffOn {T : 𝓓'(Ω, ℂ)} {x ξ : E}
@@ -771,6 +713,54 @@ theorem waveFrontSet_smulLeftCLMOfContDiffOn_subset (T : 𝓓'(Ω, ℂ)) (hg : C
   exact ⟨mem_waveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hT (h.smulLeftCLMOfContDiffOn hg)⟩,
     (dsupport_smulLeftCLMOfContDiffOn_subset_inter hg T
       (waveFrontSet_subset_dsupport _ hp).1).1, trivial⟩
+
+/-- A smooth multiple `g T` of a distribution microlocally smooth at `(x, ξ)` is microlocally
+smooth there. -/
+theorem IsMicrolocallySmoothAt.smulLeftCLM {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySmoothAt x ξ) (hg : ContDiff ℝ ∞ g) :
+    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ :=
+  smulLeftCLMOfContDiffOn_eq_smulLeftCLM (Ω := Ω) (F := ℂ) hg ▸
+    h.smulLeftCLMOfContDiffOn hg.contDiffOn
+
+/-- Where `g` does not vanish, a smooth multiple `g T` is microlocally smooth exactly where `T`
+is. -/
+theorem isMicrolocallySmoothAt_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
+    (hx : g x ≠ 0) :
+    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ ↔ T.IsMicrolocallySmoothAt x ξ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.smulLeftCLM hg⟩
+  -- A cutoff `φ` for `g T` gives the cutoff `g φ` for `T`, which does not vanish at `x`.
+  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
+  refine isMicrolocallySmoothAt_iff.2
+    ⟨TestFunction.smulLeftCLM hg φ, by simp [hx, hφx], Γ, hΓ, hξ, hcone, ?_⟩
+  simpa using hdecay
+
+/-- **Smooth multiplication** (Hörmander I, §8.1). The wave front set of a smooth multiple
+`g T` lies in the wave front set of `T`, over the support of `g`. -/
+theorem waveFrontSet_smulLeftCLM_subset (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g) :
+    (smulLeftCLM hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ :=
+  smulLeftCLMOfContDiffOn_eq_smulLeftCLM (Ω := Ω) (F := ℂ) hg ▸
+    waveFrontSet_smulLeftCLMOfContDiffOn_subset T hg.contDiffOn
+
+/-- Over the points where `g` does not vanish, a smooth multiple `g T` has the same wave front set
+as `T`. -/
+theorem mem_waveFrontSet_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
+    (hx : g x ≠ 0) : (x, ξ) ∈ (smulLeftCLM hg T).waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
+  simp [isMicrolocallySmoothAt_smulLeftCLM_iff hg hx]
+
+/-- Multiplying by a smooth function that vanishes nowhere over the wave front set does not change
+the wave front set. -/
+theorem waveFrontSet_smulLeftCLM_of_forall_mem_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
+    (hg0 : ∀ p ∈ T.waveFrontSet, g p.1 ≠ 0) :
+    (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet :=
+  Subset.antisymm (fun _ hp ↦ (waveFrontSet_smulLeftCLM_subset T hg hp).1)
+    fun p hp ↦ (mem_waveFrontSet_smulLeftCLM_iff hg (hg0 p hp)).2 hp
+
+/-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the wave front
+set. -/
+theorem waveFrontSet_smulLeftCLM_of_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
+    (hg0 : ∀ x ∈ Ω, g x ≠ 0) : (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet :=
+  waveFrontSet_smulLeftCLM_of_forall_mem_ne_zero T hg fun p hp ↦
+    hg0 p.1 (mem_waveFrontSet_iff.1 hp).1
 
 end SmulLeft
 

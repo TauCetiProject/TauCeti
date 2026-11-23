@@ -45,7 +45,9 @@ compactly supported distribution `g T` from `Ω` to the whole space.
   and of `T`.
 * `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
 * `Distribution.smulLeftCLMOfContDiffOn`: the product `g T` for a function `g` that is `C^n` on `Ω`
-  only, with `Distribution.dsupport_smulLeftCLMOfContDiffOn_subset_inter` and
+  only, with `Distribution.smulLeftCLMOfContDiffOn_eq_smulLeftCLM`,
+  `Distribution.smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn`,
+  `Distribution.dsupport_smulLeftCLMOfContDiffOn_subset_inter` and
   `Distribution.complexPairing_smulLeftCLMOfContDiffOn`.
 * `Distribution.cutoffCLM`: the distribution `φ ↦ T (g φ)` on `Ω'`, with
   `Distribution.cutoffCLM_apply`, `Distribution.dsupport_cutoffCLM_subset_inter` and
@@ -152,6 +154,29 @@ theorem smulLeftCLMOfContDiffOn_apply (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n
 theorem coe_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n}(Ω, F)) :
     ⇑(smulLeftCLMOfContDiffOn hg T) = ⇑T ∘ ⇑(TestFunction.smulLeftCLMOfContDiffOn hg) :=
   (rfl)
+
+/-- For a globally `C^n` multiplier `g`, `Distribution.smulLeftCLMOfContDiffOn` is
+`Distribution.smulLeftCLM`. -/
+theorem smulLeftCLMOfContDiffOn_eq_smulLeftCLM (hg : ContDiff ℝ n g) :
+    (smulLeftCLMOfContDiffOn hg.contDiffOn : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω, F)) =
+      smulLeftCLM hg := by
+  ext T φ
+  rw [smulLeftCLMOfContDiffOn_apply, smulLeftCLM_apply,
+    TestFunction.smulLeftCLMOfContDiffOn_eq_smulLeftCLM]
+
+/-- Multiplying a distribution by `h` and then by `g`, both `C^n` on `Ω`, is multiplying it by
+`g h`. -/
+@[simp]
+theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω)
+    (hh : ContDiffOn ℝ n h Ω) (T : 𝓓'^{n}(Ω, F)) :
+    smulLeftCLMOfContDiffOn hg (smulLeftCLMOfContDiffOn hh T) =
+      smulLeftCLMOfContDiffOn (hg.mul hh) T := by
+  ext φ
+  simp only [smulLeftCLMOfContDiffOn_apply,
+    TestFunction.smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn]
+  congr 1
+  ext x
+  simp [mul_comm]
 
 /-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
 theorem dsupport_smulLeftCLMOfContDiffOn_subset_inter (hg : ContDiffOn ℝ n g Ω)
