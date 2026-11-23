@@ -17,8 +17,6 @@ import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Complex.Weierstrass
-import TauCeti.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.Polynomial.Distinguished
 
 /-!
 # Weierstrass preparation and division in holomorphic stalks
@@ -69,10 +67,9 @@ the base stalk. The uniqueness statements are also restated for functions rather
   and unit germs, and two divisions by the same Weierstrass polynomial have the same quotient and
   remainder germs. They are reduced along complex lines to the `E = ℂ` case of
   `weierstrassDivision_unique_of_isDistinguishedAt`.
-* `TauCeti.holomorphicStructureSheaf.isUnit_evalVertical_iff_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.evalVertical_dvd_iff_of_isDistinguishedAt`: for a distinguished
-  polynomial `P` in `(𝒪_{E, x₀})[X]`, `evalVertical x₀ w₀ P` is a unit iff `P = 1`, and divisibility
-  by `P` agrees with divisibility by `evalVertical x₀ w₀ P` in `𝒪_{E × ℂ, (x₀, w₀)}`.
+* `TauCeti.holomorphicStructureSheaf.evalVertical_dvd_iff_of_isDistinguishedAt`: divisibility by a
+  distinguished polynomial `P` in `(𝒪_{E, x₀})[X]` agrees with divisibility by
+  `evalVertical x₀ w₀ P` in `𝒪_{E × ℂ, (x₀, w₀)}`.
 * `TauCeti.holomorphicStructureSheaf.existsUnique_weierstrassPreparation`,
   `TauCeti.holomorphicStructureSheaf.existsUnique_weierstrassPreparation_of_analyticOrderAt`,
   `TauCeti.holomorphicStructureSheaf.existsUnique_weierstrassDivision_of_isDistinguishedAt`,
@@ -82,9 +79,6 @@ the base stalk. The uniqueness statements are also restated for functions rather
   `TauCeti.holomorphicStructureSheaf.finite_quotientMk_comp_stalkPrecomp_fst`: any hypersurface
   germ whose vertical slice does not vanish identically defines a flat and finite algebra over the
   base stalk `𝒪_{E, x₀}`.
-* `TauCeti.holomorphicStructureSheaf.isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
-  `TauCeti.holomorphicStructureSheaf.prime_evalVertical_iff_of_isDistinguishedAt`: primality of
-  distinguished Weierstrass polynomials matches that of their vertical evaluations.
 
 ## Attribution
 
@@ -500,17 +494,6 @@ theorem weierstrassPreparation_unique {x₀ : E} {w₀ : ℂ}
   obtain ⟨hPP', huu'⟩ := H₁.elim H₂
   exact ⟨hPP', verticalPowerSeries_injective x₀ w₀ huu'⟩
 
-/-- For a polynomial `P` distinguished at the maximal ideal of `𝒪_{E, x₀}`, its vertical evaluation
-at `(x₀, w₀)` is a unit if and only if `P = 1` (without assuming finite-dimensionality of `E`). -/
-theorem isUnit_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    IsUnit (evalVertical x₀ w₀ P) ↔ P = 1 :=
-  ⟨fun hu ↦ (weierstrassPreparation_unique hP isUnit_one (mul_one _).symm
-      Polynomial.isDistinguishedAt_one hu (by rw [map_one, one_mul])).1,
-    fun h ↦ h ▸ by rw [map_one]; exact isUnit_one⟩
-
 /-- **Uniqueness of Weierstrass division in holomorphic stalks** (without assuming
 finite-dimensionality of `E`). -/
 theorem weierstrassDivision_unique {x₀ : E} {w₀ : ℂ}
@@ -799,28 +782,6 @@ theorem quotientEquivOfIsDistinguishedAt_comp_algebraMap {x₀ : E} {w₀ : ℂ}
   rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← Ideal.Quotient.mk_algebraMap,
     Polynomial.algebraMap_eq, quotientEquivOfIsDistinguishedAt_mk, evalVertical_C,
     RingHom.comp_apply]
-
-/-- A distinguished polynomial over `𝒪_{E, x₀}` generates a prime ideal after vertical evaluation
-at `(x₀, w₀)` if and only if it generates a prime ideal in `(𝒪_{E, x₀})[X]`. -/
-theorem isPrime_span_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime :=
-  (Ideal.isPrime_iff_of_quotient_ringEquiv (quotientEquivOfIsDistinguishedAt x₀ w₀ hP)).symm
-
-/-- A distinguished polynomial over `𝒪_{E, x₀}` has prime vertical evaluation at `(x₀, w₀)` if and
-only if it is prime in `(𝒪_{E, x₀})[X]`. -/
-theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    Prime (evalVertical x₀ w₀ P) ↔ Prime P := by
-  have hP0 : P ≠ 0 := hP.monic.ne_zero
-  have hev0 : evalVertical x₀ w₀ P ≠ 0 :=
-    (map_ne_zero_iff _ (evalVertical_injective x₀ w₀)).mpr hP0
-  exact (prime_iff_of_quotient_span_singleton_ringEquiv hP0 hev0
-    (quotientEquivOfIsDistinguishedAt x₀ w₀ hP)).symm
 
 /-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, evaluating polynomials
 vertically induces a canonical ring isomorphism

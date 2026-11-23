@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rueckert
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
@@ -32,9 +31,6 @@ model spaces (`TauCeti.holomorphicStructureSheaf.stalk_induction_modelSpace`) an
 chart-local and manifold holomorphic stalks, as well as to Mathlib's native complex-smooth
 structure sheaf via `TauCeti.holomorphicStructureSheaf.smoothStalkIso`.
 
-Consequently, a distinguished polynomial `P` over `𝒪_{E, x₀}` is irreducible in `(𝒪_{E, x₀})[X]`
-if and only if `evalVertical x₀ w₀ P` is irreducible in `𝒪_{E × ℂ, (x₀, w₀)}`.
-
 ## Main declarations
 
 * `OpenPartialHomeomorph.uniqueFactorizationMonoid_holomorphicStalk`: unique factorisation of the
@@ -43,9 +39,6 @@ if and only if `evalVertical x₀ w₀ P` is irreducible in `𝒪_{E × ℂ, (x�
   unique factorisation domains.
 * `TauCeti.holomorphicStructureSheaf.smoothStalkUniqueFactorizationMonoid`: so are the stalks of
   Mathlib's complex-smooth structure sheaf.
-* `TauCeti.holomorphicStructureSheaf.irreducible_evalVertical_iff_of_isDistinguishedAt`:
-  irreducibility of distinguished Weierstrass polynomials matches that of their vertical
-  evaluations.
 
 ## References
 
@@ -56,7 +49,7 @@ if and only if `evalVertical x₀ w₀ P` is irreducible in `𝒪_{E × ℂ, (x�
 
 public noncomputable section
 
-open IsLocalRing Module Polynomial
+open IsLocalRing Module
 open scoped ContDiff Manifold
 
 namespace OpenPartialHomeomorph
@@ -87,8 +80,6 @@ end OpenPartialHomeomorph
 
 namespace TauCeti.holomorphicStructureSheaf
 
-section Manifold
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
   {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
@@ -107,22 +98,5 @@ instance smoothStalkUniqueFactorizationMonoid (x : X) :
     UniqueFactorizationMonoid ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x) :=
   (smoothStalkIso I X x).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
     inferInstance
-
-end Manifold
-
-section Vertical
-
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-
-/-- A distinguished polynomial over `𝒪_{E, x₀}` has irreducible vertical evaluation at `(x₀, w₀)`
-if and only if it is irreducible in `(𝒪_{E, x₀})[X]`. -/
-theorem irreducible_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
-    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
-    (hP : P.IsDistinguishedAt
-      (maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    Irreducible (evalVertical x₀ w₀ P) ↔ Irreducible P :=
-  (isRueckert_evalVertical x₀ w₀).irreducible_apply_iff hP
-
-end Vertical
 
 end TauCeti.holomorphicStructureSheaf

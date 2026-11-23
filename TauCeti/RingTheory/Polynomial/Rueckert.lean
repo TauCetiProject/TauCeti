@@ -10,8 +10,6 @@ public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.RingTheory.Jacobson.Ring
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 
-import TauCeti.RingTheory.Ideal.Quotient.Operations
-
 /-!
 # Rückert's descent along polynomial-like ring maps
 
@@ -36,12 +34,10 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
 (`RingHom.IsRueckert.exists_finite_quotient`). Consequently:
 
 * `RingHom.IsRueckert.isNoetherianRing`: if `A` is noetherian, so is `B`;
-* `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A[X]` is a decomposition monoid and `B`
-  satisfies `IsCancelMulZero`, then `B` is a unique factorisation monoid. Each `φ w` is a product
-  of primes whenever `A` has no zero divisors and `A[X]` is a decomposition monoid, because a monic
-  factorisation of `w` stays in `W`, and a member `w ∈ W` is a unit, prime or irreducible in `A[X]`
-  if and only if `φ w` is so in `B` (`RingHom.IsRueckert.isUnit_apply_iff`,
-  `RingHom.IsRueckert.prime_apply_iff`, `RingHom.IsRueckert.irreducible_apply_iff`);
+* `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A` is a unique factorisation domain and `B`
+  is a domain, then `B` is a unique factorisation domain. Each `φ w` is a product of primes,
+  because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and an
+  irreducible `w ∈ W` generates a prime ideal whose quotient is identified with `B ⧸ (φ w)`;
 * `RingHom.IsRueckert.isJacobsonRing`: if `A` is a Jacobson ring and the Jacobson radical of `B`
   is zero, then `B` is a Jacobson ring. Indeed every nonzero radical ideal of `B` is the
   intersection of the maximal ideals containing it (`RingHom.IsRueckert.jacobson_eq_self`): it
@@ -161,37 +157,23 @@ theorem isNoetherianRing [IsNoetherianRing A] : IsNoetherianRing B := by
   rw [Ideal.mk_ker, inf_eq_right.mpr ((Ideal.span_singleton_le_iff_mem _).mpr hbI)]
   exact Submodule.fg_span_singleton b
 
-/-- A member of `W` has unit image under `φ` if and only if it equals `1`. -/
-theorem isUnit_apply_iff {w : A[X]} (hw : w ∈ W) : IsUnit (φ w) ↔ w = 1 :=
-  ⟨fun hu ↦ (h.monic hw).eq_one_of_isUnit
-      (isUnit_of_dvd_one ((h.dvd_iff hw 1).1 (by rw [map_one]; exact hu.dvd))),
-    fun h1 ↦ h1 ▸ by rw [map_one]; exact isUnit_one⟩
+/-- The image of a prime member of `W` is prime. -/
+theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) := by
+  have hw0 : φ w ≠ 0 := (map_ne_zero_iff φ h.injective).mpr hp.ne_zero
+  have : IsDomain (A[X] ⧸ Ideal.span {w}) :=
+    (Ideal.Quotient.isDomain_iff_prime _).mpr ((Ideal.span_singleton_prime hp.ne_zero).mpr hp)
+  rw [← Ideal.span_singleton_prime hw0, ← Ideal.Quotient.isDomain_iff_prime]
+  exact (h.quotientEquiv hw).symm.toMulEquiv.isDomain _
 
-/-- A member of `W` generates a prime ideal after applying `φ` if and only if it generates a prime
-ideal in `A[X]`. -/
-theorem isPrime_span_apply_iff {w : A[X]} (hw : w ∈ W) :
-    (Ideal.span {φ w}).IsPrime ↔ (Ideal.span {w}).IsPrime :=
-  (Ideal.isPrime_iff_of_quotient_ringEquiv (h.quotientEquiv hw)).symm
-
-/-- A member of `W` has prime image under `φ` if and only if it is prime in `A[X]`. -/
-theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) : Prime (φ w) ↔ Prime w := by
-  rcases subsingleton_or_nontrivial B with _ | _
-  · have : Subsingleton A[X] := h.injective.subsingleton
-    simp [Subsingleton.elim w 0]
-  have : Nontrivial A := (φ.comp C).domain_nontrivial
-  have hw0 : w ≠ 0 := (h.monic hw).ne_zero
-  have hφw0 : φ w ≠ 0 := (map_ne_zero_iff φ h.injective).mpr hw0
-  exact (prime_iff_of_quotient_span_singleton_ringEquiv hw0 hφw0 (h.quotientEquiv hw)).symm
-
-/-- When `A` has no zero divisors and `A[X]` is a decomposition monoid, the image of every member
-of `W` is associated to a product of primes. -/
-theorem exists_prime_factors_apply [NoZeroDivisors A] [DecompositionMonoid A[X]] {w : A[X]}
+/-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
+product of primes. -/
+theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w : A[X]}
     (hw : w ∈ W) : ∃ f : Multiset B, (∀ b ∈ f, Prime b) ∧ Associated f.prod (φ w) := by
   induction hn : w.natDegree using Nat.strong_induction_on generalizing w with
   | _ n ih =>
   have hm := h.monic hw
   by_cases hirr : Irreducible w
-  · exact ⟨{φ w}, by simpa using (h.prime_apply_iff hw).mpr hirr.prime, by simp⟩
+  · exact ⟨{φ w}, by simpa using h.prime_apply hw hirr.prime, by simp⟩
   rcases eq_or_ne w 1 with rfl | hw1
   · exact ⟨0, by simp, by simp⟩
   -- A reducible monic member of `W` is a product of two monic members of positive degree.
@@ -207,13 +189,10 @@ theorem exists_prime_factors_apply [NoZeroDivisors A] [DecompositionMonoid A[X]]
   rw [Multiset.prod_add, map_mul]
   exact hFf.mul_mul hGg
 
-/-- **Rückert's factorial descent.** If `A[X]` is a decomposition monoid and `B` satisfies
-`IsCancelMulZero`, then `B` is a unique factorisation monoid. -/
-theorem uniqueFactorizationMonoid [DecompositionMonoid A[X]] [IsCancelMulZero B] :
+/-- **Rückert's factorial descent.** If `A` is a unique factorisation domain and `B` is a domain,
+then `B` is a unique factorisation domain. -/
+theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B] :
     UniqueFactorizationMonoid B := by
-  have : NoZeroDivisors A :=
-    Function.Injective.noZeroDivisors (φ.comp C) (h.injective.comp C_injective)
-      (map_zero _) (map_mul _)
   refine UniqueFactorizationMonoid.of_exists_prime_factors fun b hb ↦ ?_
   obtain ⟨α, u, w, hw, hu⟩ := h.exists_mul_eq hb
   obtain ⟨f, hf, hfw⟩ := h.exists_prime_factors_apply hw
@@ -224,16 +203,6 @@ theorem uniqueFactorizationMonoid [DecompositionMonoid A[X]] [IsCancelMulZero B]
     refine (hfw.map α.symm).trans ?_
     rw [← hu, map_mul, RingEquiv.symm_apply_apply]
     exact associated_unit_mul_left b _ (u.isUnit.map α.symm)
-
-/-- When `A[X]` is a decomposition monoid and `B` satisfies `IsCancelMulZero`, a member of `W` has
-irreducible image under `φ` if and only if it is irreducible in `A[X]`. -/
-theorem irreducible_apply_iff [DecompositionMonoid A[X]] [IsCancelMulZero B]
-    {w : A[X]} (hw : w ∈ W) : Irreducible (φ w) ↔ Irreducible w := by
-  have := h.uniqueFactorizationMonoid
-  have : IsCancelMulZero A[X] :=
-    (Function.Injective.noZeroDivisors φ h.injective (map_zero φ) (map_mul φ)).to_isCancelMulZero
-  rw [UniqueFactorizationMonoid.irreducible_iff_prime, _root_.irreducible_iff_prime,
-    h.prime_apply_iff hw]
 
 /-- Over a Jacobson ring `A`, every nonzero radical ideal of `B` is the intersection of the
 maximal ideals containing it. -/
