@@ -760,12 +760,10 @@ example {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
       _ = π ^ 2 * π + π ^ 2 := by rw [← h2]
       _ = π ^ 2 * (1 + π) := by ring
   have hu : IsUnit (1 + π) := by
-    rw [← notMem_maximalIdeal]
-    intro hmem
-    have h1 : (1 : O) ∈ maximalIdeal O := by
-      have hsub := sub_mem hmem (hπ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self π)
-      rwa [add_sub_cancel_right] at hsub
-    exact (maximalIdeal.isMaximal O).ne_top (Ideal.eq_top_of_isUnit_mem _ h1 isUnit_one)
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_add, map_one,
+      (IsLocalRing.residue_eq_zero_iff π).mpr
+        (hπ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self π), add_zero]
+    exact one_ne_zero
   refine ⟨heq, hu, ?_⟩
   rw [heq, Ideal.span_singleton_mul_right_unit hu, ← Ideal.span_singleton_pow, ← hπ.maximalIdeal_eq,
     TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, hq]

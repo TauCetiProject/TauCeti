@@ -161,11 +161,9 @@ theorem finite_submodule_iff_eq_bot [IsDomain A] [Infinite A]
   let φ : A → S := fun c ↦ ⟨C c • x, S.smul_mem (C c) hxS⟩
   have hsmul (c : A) : C c • x = c • x := algebraMap_smul A⟦X⟧ c x
   have hinj : Function.Injective φ := fun c₁ c₂ hc ↦ by
-    have hval : c₁ • x = c₂ • x := by
-      have := congrArg Subtype.val hc
-      simpa [φ, hsmul] using this
-    have hsub : (c₁ - c₂) • x = 0 := by rw [sub_smul, hval, sub_self]
-    exact sub_eq_zero.mp ((smul_eq_zero.mp hsub).resolve_right hx0)
+    have hval := congrArg Subtype.val hc
+    simp only [φ, hsmul] at hval
+    exact smul_left_injective A hx0 hval
   exact not_finite_iff_infinite.mpr (Infinite.of_injective φ hinj) hfin
 
 /-- For a Weierstrass factorization `g = f * h` and any `a : A`, the quotient of `A⟦X⟧ ⧸ (a)` by

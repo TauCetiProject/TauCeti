@@ -176,12 +176,10 @@ submodule `S i` is finite. -/
 public theorem finite_pi_univ_iff {R ι : Type*} {M : ι → Type*} [Semiring R] [Finite ι]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (S : ∀ i, Submodule R (M i)) :
     Finite ↥(Submodule.pi Set.univ S) ↔ ∀ i, Finite (S i) := by
-  have : ∀ j, Nonempty (S j) := fun j ↦ ⟨0⟩
-  rw [← SetLike.coe_sort_coe, Submodule.coe_pi,
-    Equiv.finite_iff (Equiv.Set.univPi fun i ↦ (S i : Set (M i)))]
-  simp only [SetLike.coe_sort_coe]
-  exact ⟨fun _ i ↦ Finite.of_surjective (fun f : ∀ j, S j ↦ f i) (Function.surjective_eval i),
-    fun _ ↦ inferInstance⟩
+  have hne : (Set.univ.pi fun i ↦ (S i : Set (M i))).Nonempty :=
+    ⟨0, fun i _ ↦ (S i).zero_mem⟩
+  simp_rw [← SetLike.coe_sort_coe, Submodule.coe_pi, Set.finite_coe_iff,
+    ← Set.forall_finite_image_eval_iff, Set.eval_image_univ_pi hne]
 
 end Submodule
 
