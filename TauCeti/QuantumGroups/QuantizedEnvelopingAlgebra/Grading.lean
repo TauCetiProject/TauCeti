@@ -160,6 +160,24 @@ theorem quantumDividedPower_f_mem_gradedPiece (i : ι) (n : ℕ) :
       gradedPiece D q (-(n • Finsupp.single i 1)) := by
   rw [← smul_neg]; exact quantumDividedPower_mem_graded _ (f_mem_gradedPiece i) n
 
+/-- For any `K`-scalar-closed additive submonoid family `𝒜 : Γ → S` (`[AddSubmonoidClass S A]`,
+`[SMulMemClass S K A]`) forming a `SetLike.GradedMonoid` over a commutative additive monoid `Γ`
+(without requiring an internal direct-sum decomposition), if `x i ∈ 𝒜 cx` and `x j ∈ 𝒜 cy`, then
+`serreSum D q x i j ∈ 𝒜 (D.serreLength i j • cx + cy)`. -/
+theorem serreSum_mem_graded {A Γ S : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ]
+    [SetLike S A] [AddSubmonoidClass S A] [SMulMemClass S K A] {𝒜 : Γ → S}
+    [SetLike.GradedMonoid 𝒜] (D : CartanDatum ι X Y) (q : K) {x : ι → A} {i j : ι} {cx cy : Γ}
+    (hxi : x i ∈ 𝒜 cx) (hxj : x j ∈ 𝒜 cy) :
+    serreSum D q x i j ∈ 𝒜 (D.serreLength i j • cx + cy) := by
+  rw [serreSum_def]
+  refine sum_mem fun r hr => SMulMemClass.smul_mem _ ?_
+  have hrm : r ≤ D.serreLength i j := Nat.lt_succ_iff.mp (Finset.mem_range.mp hr)
+  have hdeg : r • cx + cy + (D.serreLength i j - r) • cx = D.serreLength i j • cx + cy := by
+    rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hrm]
+  exact hdeg ▸ SetLike.mul_mem_graded
+    (SetLike.mul_mem_graded (quantumDividedPower_mem_graded _ hxi r) hxj)
+    (quantumDividedPower_mem_graded _ hxi (D.serreLength i j - r))
+
 /-- A Cartan-datum morphism `φ : CartanDatum.Hom D D'` carries `gradedPiece D q c` into
 `gradedPiece D' q c`. -/
 theorem map_mem_gradedPiece {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
@@ -280,8 +298,26 @@ end Pieces
 
 section GradedAlgebra
 
-variable {ι X Y K : Type*} [DecidableEq ι] [AddCommGroup X] [AddCommGroup Y] [Field K]
-  {D : CartanDatum ι X Y} {q : K}
+variable {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
+
+/-- For any family of submodules `𝒜 : Γ → Submodule K A` forming a `SetLike.GradedMonoid` over a
+commutative additive monoid `Γ`, the quantum Serre combination of direct-sum injections
+`DirectSum.of (fun c' => 𝒜 c') (c l) (x l)` equals the direct-sum injection of the underlying
+`serreSum` into degree `D.serreLength i j • c i + c j`. -/
+@[simp]
+theorem serreSum_of {A Γ : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ] [DecidableEq Γ]
+    {𝒜 : Γ → Submodule K A} [SetLike.GradedMonoid 𝒜]
+    (D : CartanDatum ι X Y) (q : K) (i j : ι) {c : ι → Γ} (x : ∀ l, 𝒜 (c l)) :
+    serreSum D q (fun l => DirectSum.of (fun c' => 𝒜 c') (c l) (x l)) i j =
+      DirectSum.of (fun c' => 𝒜 c') (D.serreLength i j • c i + c j)
+        ⟨serreSum D q (fun l => (x l : A)) i j,
+          serreSum_mem_graded D q (x i).property (x j).property⟩ :=
+  DirectSum.eq_of_mem_summand_of_coeAlgHom_eq 𝒜
+    (serreSum_mem_graded (𝒜 := DirectSum.summand K fun c' => 𝒜 c') D q
+      (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
+    (by simp only [map_serreSum, DirectSum.coeAlgHom_of])
+
+variable [DecidableEq ι] {D : CartanDatum ι X Y} {q : K}
 
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ c, gradedPiece D q c :=

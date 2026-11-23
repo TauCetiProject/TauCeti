@@ -297,7 +297,8 @@ theorem quantumDividedPower_of {Γ : Type*} [AddMonoid Γ] [DecidableEq Γ]
       DirectSum.of (fun c => 𝒜 c) (n • c)
         ⟨quantumDividedPower u (x : A) n, quantumDividedPower_mem_graded u x.property n⟩ := by
   simp only [quantumDividedPower_def, DirectSum.ofPow, ← DirectSum.of_smul]
-  rfl
+  exact congrArg (DirectSum.of (fun c => ↥(𝒜 c)) (n • c))
+    (Subtype.ext (by simp only [SetLike.val_smul, SetLike.coe_gnpow]))
 
 open scoped TensorProduct in
 /-- The quantum divided power of a pure tensor `u ⊗ₜ[K] v` in `A ⊗[K] B`, placing the divided
