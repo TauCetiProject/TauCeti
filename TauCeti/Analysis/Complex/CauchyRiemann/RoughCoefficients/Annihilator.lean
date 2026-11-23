@@ -83,13 +83,8 @@ theorem IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero {
     exact (crReflectedAdjointCoeff_mul_self_eq_neg_one_iff z).2 (hz hzΩ')
   have hW := hweak.memWkpLoc_one_of_le (hc.crReflectedAdjoint fun _ hz ↦ hz) hp hJ2' hpq
     hr hr_top hrp continuousOn_const.memLpLoc
-  -- Reflecting back: `ρ` is the real-linear equivalence `A`, and `ρ ∘ ρ = id`.
-  set A : ℂ ≃L[ℝ] ℂ := conjCLE.trans (ContinuousLinearEquiv.neg ℝ)
-  have hA (z : ℂ) : A z + 0 = -conj z := by simp [A]
-  have hmem (z : ℂ) : z ∈ (Ω' : Set ℂ) ↔ -conj z ∈ (Ω : Set ℂ) := Iff.rfl
-  have hmaps : MapsTo (fun z ↦ A z + 0) Ω Ω' := fun z hz ↦
-    (hmem _).2 (by simpa only [hA, map_neg, conj_conj, neg_neg] using hz)
-  simpa [hA] using hW.comp_continuousLinearEquiv_add A 0 hmaps
+  -- Reflecting back along `ρ`, using `ρ ∘ ρ = id`.
+  simpa using hW.comp_neg_conj fun z hz ↦ by simpa [Ω'] using hz
 
 /-- **The annihilator of a real Cauchy–Riemann operator is `W^{1,r}_loc`.** Let `Ω ⊆ ℂ` be open,
 `V` a finite-dimensional real inner product space, `J` a `C¹` field of complex structures on `V`
