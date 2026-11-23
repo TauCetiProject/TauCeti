@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
-public import Mathlib.Logic.Equiv.Set
+public import TauCeti.Logic.Equiv.Set
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 /-!
@@ -18,7 +18,7 @@ principal block and mutation. An extended exchange matrix is equivalently its sq
 exchange matrix together with an arbitrary matrix of frozen rows. Both constructions allow
 infinite row sets and degenerate mutable index types.
 
-The index decomposition reuses `Equiv.ofInjective` and `Equiv.Set.sumCompl`; matrix transport
+The index decomposition reuses `Equiv.ofInjectiveSumCompl`; matrix transport
 is the existing `ExchangeMatrix.reindex`. No extra exchange-matrix carrier is introduced.
 
 ## References
@@ -35,29 +35,12 @@ open Matrix
 
 variable {I K : Type*} (row : K ↪ I)
 
-private def rowSumEquiv : K ⊕ ((Set.range row)ᶜ : Set I) ≃ I := by
-  classical
-  exact (Equiv.sumCongr (Equiv.ofInjective row row.injective) (Equiv.refl _)).trans
-    (Equiv.Set.sumCompl (Set.range row))
-
-private theorem rowSumEquiv_inl (k : K) : rowSumEquiv row (Sum.inl k) = row k := by
-  classical
-  simp [rowSumEquiv]
-
-private theorem rowSumEquiv_inr (a : ((Set.range row)ᶜ : Set I)) :
-    rowSumEquiv row (Sum.inr a) = (a : I) := by
-  classical
-  simp [rowSumEquiv]
-
-private theorem rowSumEquiv_symm_row (k : K) :
-    (rowSumEquiv row).symm (row k) = Sum.inl k := by
-  rw [← rowSumEquiv_inl row k, Equiv.symm_apply_apply]
-
 /-- Present an arbitrary mutable embedding as the inclusion of the first summand; the
 second summand is exactly the complement of the original mutable image. -/
 def mutableFrozenEquiv : ExchangeMatrix row ≃
     ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ ((Set.range row)ᶜ : Set I)) :=
-  reindex (rowSumEquiv row).symm (Equiv.refl K) (fun k ↦ rowSumEquiv_symm_row row k)
+  reindex (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
+    (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k)
 
 /-- Standardization displays the full matrix as its principal block above its frozen rows. -/
 @[simp]
@@ -65,27 +48,26 @@ theorem mutableFrozenEquiv_matrix (B : ExchangeMatrix row) :
     (mutableFrozenEquiv row B).matrix =
       Matrix.fromRows B.principal.matrix (B.matrix.submatrix Subtype.val id) := by
   calc
-    _ = B.matrix.submatrix (rowSumEquiv row) id :=
-      B.reindex_matrix (rowSumEquiv row).symm (Equiv.refl K)
-        (fun k ↦ rowSumEquiv_symm_row row k)
+    _ = B.matrix.submatrix (Equiv.ofInjectiveSumCompl row row.injective) id :=
+      B.reindex_matrix (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
+        (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k)
     _ = _ := by
-      ext (i | a) j <;> simp [principal_matrix, rowSumEquiv_inl, rowSumEquiv_inr]
+      ext (i | a) j <;> simp [principal_matrix]
 
 /-- The chosen symmetrizer is unchanged by the standard row presentation. -/
 @[simp]
 theorem mutableFrozenEquiv_symmetrizer (B : ExchangeMatrix row) :
     (mutableFrozenEquiv row B).symmetrizer = B.symmetrizer := by
-  exact B.reindex_symmetrizer (rowSumEquiv row).symm (Equiv.refl K)
-    (fun k ↦ rowSumEquiv_symm_row row k)
+  exact B.reindex_symmetrizer (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
+    (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k)
 
 /-- Standardization leaves the principal exchange matrix unchanged. -/
 @[simp]
 theorem mutableFrozenEquiv_principal (B : ExchangeMatrix row) :
     (mutableFrozenEquiv row B).principal = B.principal := by
-  ext : 1
-  · ext k j
-    simp [principal_matrix]
-  · simp
+  simpa only [mutableFrozenEquiv, reindex_refl, Equiv.refl_apply] using
+    B.principal_reindex (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
+      (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k)
 
 private def standardPartsEquiv (K J : Type*) :
     ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) ≃
@@ -97,16 +79,18 @@ private def standardPartsEquiv (K J : Type*) :
       isSkewSymmetrizer := p.1.isSkewSymmetrizer }
   left_inv B := by
     ext : 1
-    · ext (i | a) j <;> simp [principal_matrix]
+    · dsimp only
+      rw [principal_matrix]
+      exact Matrix.fromRows_toRows B.matrix
     · simp
   right_inv p := by
     apply Prod.ext
     · ext : 1
-      · ext k j
-        simp [principal_matrix]
+      · dsimp only
+        rw [principal_matrix]
+        exact Matrix.toRows₁_fromRows p.1.matrix p.2
       · simp
-    · ext a j
-      simp
+    · exact Matrix.toRows₂_fromRows p.1.matrix p.2
 
 /-- An extended exchange matrix is exactly a principal exchange matrix and an unconstrained
 frozen-row matrix, with the original row embedding retained by the inverse construction. -/
@@ -156,8 +140,8 @@ variable [DecidableEq I] [DecidableEq K]
 @[simp]
 theorem mutableFrozenEquiv_mutation (B : ExchangeMatrix row) (k : K) :
     mutableFrozenEquiv row (B.mutation k) = (mutableFrozenEquiv row B).mutation k := by
-  exact (B.mutation_reindex (rowSumEquiv row).symm (Equiv.refl K)
-    (fun k ↦ rowSumEquiv_symm_row row k) k).symm
+  exact (B.mutation_reindex (Equiv.ofInjectiveSumCompl row row.injective).symm (Equiv.refl K)
+    (fun k ↦ Equiv.ofInjectiveSumCompl_symm_apply row.injective k) k).symm
 
 /-- A frozen row obeys the same exchange formula, with coupling to the principal block;
 its row can never be the mutable row selected for mutation. -/
