@@ -402,6 +402,24 @@ private lemma neg_contour_eq (σ y : ℝ) :
     ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by
   push_cast; ring
 
+/-- Reflecting the integration variable `y ↦ -y` preserves integrability along a vertical
+contour while matching `-(σ + i y)` with `(-σ) + i (-y)`. -/
+theorem integrable_neg_add_mul_I_iff {E : Type*} [NormedAddCommGroup E]
+    (F : ℂ → ℝ → E) (σ : ℝ) :
+    Integrable (fun y : ℝ ↦ F (-((σ : ℂ) + y * I)) y) ↔
+      Integrable (fun y : ℝ ↦ F (((-σ : ℝ) : ℂ) + y * I) (-y)) := by
+  have hneg (y : ℝ) : -((σ : ℂ) + (-y : ℝ) * I) = ((-σ : ℝ) : ℂ) + y * I := by push_cast; ring
+  exact ⟨fun h ↦ h.comp_neg.congr (Eventually.of_forall fun y ↦ by simp only [hneg]),
+    fun h ↦ h.comp_neg.congr (Eventually.of_forall fun y ↦ by simp only [neg_contour_eq, neg_neg])⟩
+
+/-- Reflecting the integration variable `y ↦ -y` in a vertical contour integral maps
+`-(σ + i y)` to `(-σ) + i y`: `∫ y, F (-(σ + i y)) y = ∫ y, F ((-σ) + i y) (-y)`. -/
+theorem integral_neg_add_mul_I {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (F : ℂ → ℝ → E) (σ : ℝ) :
+    ∫ y : ℝ, F (-((σ : ℂ) + y * I)) y = ∫ y : ℝ, F (((-σ : ℝ) : ℂ) + y * I) (-y) := by
+  conv_rhs => rw [← integral_neg_eq_self]
+  exact integral_congr_ae (Eventually.of_forall fun y ↦ by simp only [neg_contour_eq, neg_neg])
+
 /-- Product bound for two nonnegative quantities bounded by polynomial–exponential profiles
 `C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates `α₁` and `α₂`. -/
 theorem mul_le_mul_one_add_abs_rpow_mul_exp {x₁ x₂ C₁ R₁ α₁ C₂ R₂ α₂ y : ℝ}
@@ -478,9 +496,8 @@ theorem integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedA
     Integrable fun y : ℝ ↦ w ^ (-((σ : ℂ) + y * I)) • g y := by
   obtain ⟨hg_neg_meas, hg_neg_bound⟩ :=
     aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs hg_meas hg_bound
-  refine (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_neg_meas hg_neg_bound (-σ)
-    harg).comp_neg.congr (Eventually.of_forall fun y ↦ ?_)
-  simp only [neg_contour_eq, neg_neg]
+  exact (integrable_neg_add_mul_I_iff (fun s y ↦ w ^ s • g y) σ).mpr
+    (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_neg_meas hg_neg_bound (-σ) harg)
 
 /-- **Differentiation under a Mellin–Barnes integral.** If `g : ℝ → E` is strongly measurable and
 satisfies `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then
@@ -534,14 +551,8 @@ theorem hasDerivAt_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
     aestronglyMeasurable_and_norm_neg_le_exp_neg_mul_abs hg_meas hg_bound
   have h := hasDerivAt_integral_cpow_smul hg_neg_meas hg_neg_bound (-σ) hw₀ harg
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).congr_deriv ?_
-  · dsimp only
-    symm
-    rw [← integral_neg_eq_self]
-    refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-    simp only [neg_contour_eq, neg_neg]
-  · rw [← integral_neg_eq_self]
-    refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-    simp only [neg_contour_eq, neg_neg]
+  · exact integral_neg_add_mul_I (fun s y ↦ w ^ s • g y) σ
+  · exact (integral_neg_add_mul_I (fun s y ↦ (s * w₀ ^ (s - 1)) • g y) σ).symm
 
 /-- If `g : ℝ → E` is strongly measurable and satisfies
 `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `w ↦ ∫ y : ℝ, w ^ (σ + i y) • g y`

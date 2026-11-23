@@ -189,7 +189,7 @@ theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow {a b : �
     ring
   refine (TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_meas hg_bound σ
     (abs_arg_lt_pi_of_mem_slitPlane hz)).congr (Eventually.of_forall fun y ↦ ?_)
-  simp only [g, smul_eq_mul, mul_comm]
+  simp only [g, smul_eq_mul]; ring
 
 /-- Pointwise Fréchet derivative in `(c, z)` of the Mellin–Barnes integrand of DLMF 15.6.6. -/
 private theorem hasFDerivAt_mellinBarnesIntegrand (g : ℂ) (σ y : ℝ) {p : ℂ × ℂ}
@@ -608,7 +608,7 @@ theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_mul_one_sub_cpow {a b c :
   have harg : |(1 - z).arg| < 2 * π := (abs_arg_le_pi (1 - z)).trans_lt (by linarith [Real.pi_pos])
   refine (TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_meas hg_bound σ harg).congr
     (Eventually.of_forall fun y ↦ ?_)
-  simp only [smul_eq_mul, mul_comm]
+  simp only [smul_eq_mul]; ring
 
 /-- On every vertical line `Re s = σ` avoiding the poles of all four Gamma factors, the
 Mellin–Barnes integral of DLMF 15.6.7 is holomorphic on `{z | 1 - z ∈ slitPlane}`. -/
@@ -631,7 +631,7 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_mul_one_sub_c
   dsimp only [Function.comp_def]
   congr 1
   ext y
-  simp only [smul_eq_mul, mul_comm]
+  simp only [smul_eq_mul]; ring
 
 /-- Rescaling `(1 - z * t) ^ s = (1 - t) ^ s * (1 + (t / (1 - t)) * (1 - z)) ^ s` for `t < 1`. -/
 private theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1) :

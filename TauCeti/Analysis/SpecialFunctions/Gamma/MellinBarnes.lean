@@ -260,7 +260,7 @@ theorem integrable_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ}
   exact (TauCeti.integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs
     hcont.aestronglyMeasurable ⟨C, a.re - 1, Eventually.of_forall hbound⟩ σ
     (abs_arg_lt_pi_of_mem_slitPlane hz)).congr
-      (Eventually.of_forall fun y ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
+      (Eventually.of_forall fun y ↦ by simp only [smul_eq_mul]; ring)
 
 /-- **Mellin–Barnes integral representation of `(1 + z)^{-a}`** on the slit plane: for
 `0 < σ < Re a` and `z ∈ Complex.slitPlane`,
@@ -279,7 +279,7 @@ theorem integral_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ} (hσ : 
       ((TauCeti.analyticOnNhd_integral_cpow_neg_smul hcont.aestronglyMeasurable
         ⟨C, a.re - 1, Eventually.of_forall hbound⟩ σ).mono
           fun _ hw ↦ ⟨hw, abs_arg_lt_pi_of_mem_slitPlane hw⟩).congr isOpen_slitPlane fun _ _ ↦
-        integral_congr_ae (Eventually.of_forall fun _ ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
+        integral_congr_ae (Eventually.of_forall fun _ ↦ by simp only [smul_eq_mul]; ring)
   have hanR : AnalyticOnNhd ℂ (fun w : ℂ ↦ Gamma a * (1 + w) ^ (-a)) slitPlane :=
     DifferentiableOn.analyticOnNhd (fun w hw ↦
       (((differentiableAt_id.const_add 1).cpow (differentiableAt_const _)
@@ -291,14 +291,7 @@ theorem integral_Gamma_mul_Gamma_sub_mul_cpow_neg {a z : ℂ} {σ : ℝ} (hσ : 
   rw [← hm]
   push_cast
   congr 1
-  exact integral_congr_ae (Eventually.of_forall fun _ ↦ by simp [smul_eq_mul, mul_comm, mul_assoc])
-
-private lemma gamma_mellinBarnes_neg_contour (a z : ℂ) (σ y : ℝ) :
-    Gamma (((-σ : ℝ) : ℂ) + (-y : ℝ) * I) * Gamma (a - (((-σ : ℝ) : ℂ) + (-y : ℝ) * I)) *
-        z ^ (-(((-σ : ℝ) : ℂ) + (-y : ℝ) * I)) =
-      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) := by
-  have hneg : ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by push_cast; ring
-  rw [hneg, sub_neg_eq_add, neg_neg, mul_comm (Gamma _)]
+  exact integral_congr_ae (Eventually.of_forall fun _ ↦ by simp only [smul_eq_mul]; ring)
 
 /-- Positive-exponent companion to `Complex.integrable_Gamma_mul_Gamma_sub_mul_cpow_neg`:
 `y ↦ Γ(a + (σ + i y)) Γ(-(σ + i y)) z^{σ + i y}` is integrable on `ℝ` whenever `-σ` and
@@ -306,10 +299,13 @@ private lemma gamma_mellinBarnes_neg_contour (a z : ℂ) (σ y : ℝ) :
 theorem integrable_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ}
     (hσ : ∀ n : ℕ, -σ ≠ -n) (haσ : ∀ n : ℕ, a.re + σ ≠ -n) (hz : z ∈ slitPlane) :
     Integrable fun y : ℝ ↦
-      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) :=
-  (integrable_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
-    hσ (by simpa [sub_neg_eq_add] using haσ) hz).comp_neg.congr
-    (Eventually.of_forall fun y ↦ gamma_mellinBarnes_neg_contour a z σ y)
+      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * z ^ ((σ : ℂ) + y * I) := by
+  have h := (TauCeti.integrable_neg_add_mul_I_iff
+    (fun s _ ↦ Gamma (a - s) * Gamma s * z ^ (-s)) σ).mpr <|
+    (integrable_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
+      hσ (by simpa [sub_neg_eq_add] using haσ) hz).congr
+      (Eventually.of_forall fun y ↦ by dsimp only; ring)
+  simpa only [sub_neg_eq_add, neg_neg] using h
 
 /-- Positive-exponent form of the Mellin–Barnes integral of `(1 + z)^{-a}`: for `-Re a < σ < 0` and
 `z ∈ Complex.slitPlane`,
@@ -322,9 +318,11 @@ theorem integral_Gamma_add_mul_Gamma_neg_mul_cpow {a z : ℂ} {σ : ℝ} (hσ : 
   rw [← integral_Gamma_mul_Gamma_sub_mul_cpow_neg (a := a) (z := z) (σ := -σ)
     (neg_pos.2 hσ) (by linarith) hz]
   congr 1
-  conv_rhs => rw [← integral_neg_eq_self]
-  exact integral_congr_ae
-    (Eventually.of_forall fun y ↦ (gamma_mellinBarnes_neg_contour a z σ y).symm)
+  have h := TauCeti.integral_neg_add_mul_I
+    (fun s _ ↦ Gamma (a - s) * Gamma s * z ^ (-s)) σ
+  simp only [sub_neg_eq_add, neg_neg] at h
+  rw [h]
+  exact integral_congr_ae (Eventually.of_forall fun y ↦ by ring)
 
 /-- The product `y ↦ Γ(b + i y) Γ(d - i y)` is integrable on `ℝ` whenever neither `Re b` nor
 `Re d` is a nonpositive integer. -/
