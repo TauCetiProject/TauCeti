@@ -170,7 +170,7 @@ private theorem JointlyExchangeable.condExp_restrict_inter_arrayTail
         fun y : ℕ × ℕ → α ↦ (J ×ˢ J).restrict fun p : ℕ × ℕ ↦ y (σ n p.1, σ n p.2) := by
       let : MeasurableSpace (ℕ × ℕ → α) := arrayTailFamily (fun p (y : ℕ × ℕ → α) ↦ y p) n
       refine Measurable.of_eval fun q ↦ ?_
-      have hq := Finset.mem_product.1 q.2
+      have hq := Finset.mem_product.1 q.property
       exact measurable_arrayTailFamily_of_le (X := fun p (y : ℕ × ℕ → α) ↦ y p)
         (hσJ n _ hq.1) (hσJ n _ hq.2)
     exact this ht

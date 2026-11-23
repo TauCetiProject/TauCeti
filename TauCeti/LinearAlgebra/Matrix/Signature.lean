@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # The signature of a square matrix over a linearly ordered field
@@ -35,6 +36,8 @@ as the S-equivalence class of a Seifert matrix — offers.
 
 * `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
 * `Matrix.signature_submatrix_equiv_self`: invariance under an equivalence of the coordinate type.
+* `LinearMap.BilinForm.signature_toMatrix`: the matrix of a bilinear form in any basis has the
+  signature of its quadratic form.
 * `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
 * `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
 * `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
@@ -95,6 +98,15 @@ theorem signature_submatrix_equiv_self (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
     signature (A.submatrix e.symm e.symm) = signature A := by
   classical
   exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
+
+/-- **The signature of a Gram matrix.** The matrix of a bilinear form in a basis has the signature
+of the quadratic form of the bilinear form, by `LinearMap.BilinForm.sigPos_toMatrix` and
+`LinearMap.BilinForm.sigNeg_toMatrix`. -/
+theorem _root_.LinearMap.BilinForm.signature_toMatrix {M : Type*} [AddCommGroup M] [Module 𝕜 M]
+    [DecidableEq ι] (b : Module.Basis ι 𝕜 M) (B : LinearMap.BilinForm 𝕜 M) :
+    signature (LinearMap.BilinForm.toMatrix b B) =
+      (_root_.sigPos B.toQuadraticMap : ℤ) - (_root_.sigNeg B.toQuadraticMap : ℤ) := by
+  rw [signature_def, LinearMap.BilinForm.sigPos_toMatrix, LinearMap.BilinForm.sigNeg_toMatrix]
 
 /-- Transposing a matrix does not change its signature. -/
 @[simp]

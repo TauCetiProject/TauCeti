@@ -75,8 +75,8 @@ noncomputable def homLevel
   obj X := ULift.{u + 1}
     {φ : A →* (𝟙_ (Over X.unop.base) ⟶ Over.mk X.unop.curve.structureMap) // p X.unop φ}
   map f := TypeCat.ofHom fun α ↦
-    ⟨⟨(EllipticCurveGeom.pointsPullback f.unop.isPullback f.unop.zero_total).comp α.down.1,
-      hp f.unop α.down.2⟩⟩
+    ⟨⟨(EllipticCurveGeom.pointsPullback f.unop.isPullback f.unop.zero_total).comp α.down.val,
+      hp f.unop α.down.property⟩⟩
   map_id X := by
     ext α a
     exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
@@ -103,8 +103,8 @@ noncomputable def homLevelEquiv (X : EllObj B) :
 composite with base change of points along `f`. -/
 @[simp]
 theorem homLevelEquiv_map {X Y : EllObj B} (f : X ⟶ Y) (α : (homLevel B A p hp).obj (op Y)) :
-    (homLevelEquiv X ((homLevel B A p hp).map f.op α)).1 =
-      (EllipticCurveGeom.pointsPullback f.isPullback f.zero_total).comp (homLevelEquiv Y α).1 :=
+    (homLevelEquiv X ((homLevel B A p hp).map f.op α)).val =
+      (EllipticCurveGeom.pointsPullback f.isPullback f.zero_total).comp (homLevelEquiv Y α).val :=
   (rfl)
 
 /-- Two morphisms into `homLevel` agree if their underlying homomorphisms agree on every
@@ -112,7 +112,7 @@ level structure. -/
 @[ext]
 theorem homLevel_hom_ext {P : ModuliProblem B} {f g : P ⟶ homLevel B A p hp}
     (h : ∀ (X : EllObj B) (α : P.obj (op X)),
-      (homLevelEquiv X (f.app (op X) α)).1 = (homLevelEquiv X (g.app (op X) α)).1) :
+      (homLevelEquiv X (f.app (op X) α)).val = (homLevelEquiv X (g.app (op X) α)).val) :
     f = g := by
   ext X α
   exact (homLevelEquiv X.unop).injective (Subtype.ext (h X.unop α))
@@ -130,15 +130,15 @@ satisfying `p` to homomorphisms satisfying `p'` restricts level structures of `h
 to level structures of `homLevel B A' p' hp'`, `φ ↦ φ ∘ ψ`. -/
 noncomputable def homLevelMap (ψ : A' →* A) (hψ : ∀ X φ, p X φ → p' X (φ.comp ψ)) :
     homLevel B A p hp ⟶ homLevel B A' p' hp' where
-  app X := TypeCat.ofHom fun α ↦ ULift.up ⟨α.down.1.comp ψ, hψ _ _ α.down.2⟩
+  app X := TypeCat.ofHom fun α ↦ ULift.up ⟨α.down.val.comp ψ, hψ _ _ α.down.property⟩
 
 /-- Restriction along `ψ` composes a level structure with `ψ`. -/
 @[simp]
 theorem homLevelEquiv_homLevelMap_app (ψ : A' →* A) (hψ : ∀ X φ, p X φ → p' X (φ.comp ψ))
     (X : EllObj B) (α : (homLevel B A p hp).obj (op X)) :
     (homLevelEquiv X
-      ((homLevelMap B ψ hψ : homLevel B A p hp ⟶ homLevel B A' p' hp').app (op X) α)).1 =
-      (homLevelEquiv X α).1.comp ψ :=
+      ((homLevelMap B ψ hψ : homLevel B A p hp ⟶ homLevel B A' p' hp').app (op X) α)).val =
+      (homLevelEquiv X α).val.comp ψ :=
   (rfl)
 
 end Map
@@ -175,16 +175,16 @@ variable {B A}
 @[simp]
 theorem homLevelEquiv_homLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
     (α : (homLevel B A p hp).obj (op X)) :
-    (homLevelEquiv X ((homLevelAction B A hσ σ).asIso.hom.app (op X) α)).1 =
-      (homLevelEquiv X α).1.comp σ.unop.toMonoidHom :=
+    (homLevelEquiv X ((homLevelAction B A hσ σ).asIso.hom.app (op X) α)).val =
+      (homLevelEquiv X α).val.comp σ.unop.toMonoidHom :=
   homLevelEquiv_homLevelMap_app _ (fun X φ h ↦ hσ X φ σ.unop h) X α
 
 /-- The inverse action precomposes a level structure with `σ⁻¹`. -/
 @[simp]
 theorem homLevelEquiv_homLevelAction_inv_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
     (α : (homLevel B A p hp).obj (op X)) :
-    (homLevelEquiv X ((homLevelAction B A hσ σ).asIso.inv.app (op X) α)).1 =
-      (homLevelEquiv X α).1.comp σ.unop.symm.toMonoidHom :=
+    (homLevelEquiv X ((homLevelAction B A hσ σ).asIso.inv.app (op X) α)).val =
+      (homLevelEquiv X α).val.comp σ.unop.symm.toMonoidHom :=
   homLevelEquiv_homLevelMap_app _ (fun X φ h ↦ hσ X φ σ.unop.symm h) X α
 
 end Action

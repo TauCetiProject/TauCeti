@@ -19,14 +19,14 @@ real function harmonic on a punctured neighbourhood `s \ {c}` of a point `c`. If
 slowly than the fundamental solution near `c`, that is `u = o(‖x - c‖ ^ (2 - n))` as `x → c`,
 then the singularity is removable: `u` has a limit at `c`, and redefining `u` at `c` as this
 limit gives a function harmonic on all of `s`
-(`TauCeti.harmonicOnNhd_update_limUnder_of_isLittleO`). In particular a function harmonic on a
-punctured neighbourhood of `c` that tends to `a` at `c` extends harmonically by the value `a`
-(`TauCeti.harmonicOnNhd_update_of_tendsto`). The growth condition is sharp: the fundamental
-solution `‖x - c‖ ^ (2 - n)` itself is harmonic off `c` and does not extend.
+(`TauCeti.harmonicOnNhd_update_limUnder_of_isLittleO`). The growth condition is sharp: the
+fundamental solution `‖x - c‖ ^ (2 - n)` itself is harmonic off `c` and does not extend. This
+strengthens the bounded case `TauCeti.harmonicOnNhd_update_limUnder_of_isBoundedUnder`, which
+holds in every dimension `n ≥ 2`.
 
-These are the higher-dimensional analogues of Riemann's removable singularity theorem
+This is the higher-dimensional analogue of Riemann's removable singularity theorem
 `Complex.differentiableOn_update_limUnder_of_isLittleO`. Combined with the Kelvin transform
-(`TauCeti.harmonicOnNhd_update_kelvinTransform`) they show that a harmonic function `f` on an
+(`TauCeti.harmonicOnNhd_update_kelvinTransform`), removable singularities show that a harmonic function `f` on an
 exterior region `‖x‖ > R` for which `‖x‖ ^ (n - 2) f(x)` has a limit at infinity is the Kelvin
 transform of a function harmonic on a full ball about the origin; this is how a harmonically flat
 end is closed off by adding a point at infinity.
@@ -46,8 +46,6 @@ letting `ε → 0` shows `u = v` on the punctured ball.
 
 * `TauCeti.harmonicOnNhd_update_limUnder_of_isLittleO`: a harmonic function on a punctured
   neighbourhood that is `o(‖x - c‖ ^ (2 - n))` at the puncture extends harmonically.
-* `TauCeti.harmonicOnNhd_update_of_tendsto`: a harmonic function on a punctured neighbourhood with
-  a limit at the puncture extends harmonically by that limit.
 
 ## References
 
@@ -94,7 +92,7 @@ private theorem abs_sub_le_mul_of_isLittleO (hn : 3 ≤ finrank ℝ E) {u v : E 
   -- The comparison function `ε Φ`, with `Φ = ‖x - c‖ ^ p - ρ ^ p` harmonic off `c`.
   set Φ : E → ℝ := fun y ↦ ‖y - c‖ ^ p - ρ ^ p
   have hΦ : HarmonicOnNhd (fun y ↦ ε * Φ y) {c}ᶜ := fun y hy ↦ by
-    convert ((harmonicAt_norm_sub_rpow_two_sub_finrank hy).sub
+    convert ((harmonicOnNhd_norm_sub_rpow_two_sub_finrank c y hy).sub
       (harmonicAt_const (ρ ^ p))).const_smul (c := ε) using 1
   -- Near `c`, `|u - v| ≤ ε Φ`; fix such a radius `δ < dist x c`.
   have hg := tendsto_norm_sub_rpow_nhdsNE_atTop (two_sub_finrank_neg hn) c
@@ -200,17 +198,5 @@ theorem harmonicOnNhd_update_limUnder_of_isLittleO [DecidableEq E] (hn : 3 ≤ f
   · refine (harmonicAt_congr_nhds ?_).2 (hu x ⟨hx, hxc⟩)
     filter_upwards [eventually_ne_nhds hxc] with y hy
     exact Function.update_of_ne hy _ _
-
-/-- **Bounded singularities of harmonic functions are removable.** In dimension at least three,
-a function harmonic on `s \ {c}`, for a neighbourhood `s` of `c`, that tends to `a` at `c` is
-harmonic on `s` once its value at `c` is set to `a`. -/
-theorem harmonicOnNhd_update_of_tendsto [DecidableEq E] (hn : 3 ≤ finrank ℝ E) {u : E → ℝ}
-    {s : Set E} {c : E} {a : ℝ} (hs : s ∈ 𝓝 c) (hu : HarmonicOnNhd u (s \ {c}))
-    (ha : Tendsto u (𝓝[≠] c) (𝓝 a)) :
-    HarmonicOnNhd (Function.update u c a) s := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  have ho : u =o[𝓝[≠] c] fun x ↦ ‖x - c‖ ^ (2 - finrank ℝ E : ℝ) :=
-    (ha.isBigO_one ℝ).trans_isLittleO (isLittleO_one_norm_sub_rpow hn c)
-  simpa only [ha.limUnder_eq] using harmonicOnNhd_update_limUnder_of_isLittleO hn hs hu ho
 
 end TauCeti

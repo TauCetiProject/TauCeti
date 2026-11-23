@@ -158,6 +158,13 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     rw [one_mul, add_comm, hb]
   · exact ⟨1, one_ne_zero, by simp⟩
 
+/-- The quadratic finite-field involution admits an element of trace one, in every
+characteristic. -/
+theorem exists_add_iterateFrobenius_eq_one (hK : Nat.card K = (p ^ n) ^ 2) :
+    ∃ t : K, t + iterateFrobenius K p n t = 1 := by
+  obtain ⟨t, ht⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
+  exact ⟨t, by simpa [iterateFrobenius_def, add_comm] using ht⟩
+
 /-- Over a field of order `q²`, the affine trace equation
 `z + z ^ q = x ^ q * x` has exactly `q³` solutions `(z, x)`. -/
 theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
@@ -166,11 +173,11 @@ theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
   by_cases hq : q = 0
   · subst q
     let e : {c : K × K // c.1 + c.1 ^ 0 = c.2 ^ 0 * c.2} ≃ K :=
-      { toFun c := c.1.1
+      { toFun c := c.val.1
         invFun z := ⟨(z, z + 1), by simp⟩
         left_inv c := by
           apply Subtype.ext
-          exact Prod.ext rfl (by simpa using c.2)
+          exact Prod.ext rfl (by simpa using c.property)
         right_inv z := rfl }
     simpa using (Nat.card_congr e).trans hK
   have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)

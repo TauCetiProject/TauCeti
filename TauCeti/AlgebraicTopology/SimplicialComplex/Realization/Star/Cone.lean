@@ -42,12 +42,12 @@ theorem starToCone_apply (v : ι) (x : ι → ℝ) :
     starToCone v x = (x - x v • Pi.single v 1, 1 - x v) := (rfl)
 
 /-- Away from the apex, `starToCone` is the link coordinate scaled by the cone height. -/
-theorem starToCone_of_lt (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
-    starToCone v (x.1.1 : ι → ℝ) =
-      ((1 - x.1.1 v) •
+theorem starToCone_of_lt (x : closedStarRealization K {v}) (hx : x.val.val v < 1) :
+    starToCone v (x.val.val : ι → ℝ) =
+      ((1 - x.val.val v) •
         ((starLinkProjection K v
-          ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩).1.1 : ι → ℝ),
-        1 - x.1.1 v) := by
+          ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩).val.val : ι → ℝ),
+        1 - x.val.val v) := by
   rw [starToCone_apply]
   congr 1
   ext j
@@ -58,15 +58,15 @@ theorem starToCone_of_lt (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
 
 /-- At the apex, `starToCone` is the cone apex. -/
 theorem starToCone_of_not_lt (x : closedStarRealization K {v})
-    (hx : ¬x.1.1 v < 1) : starToCone v (x.1.1 : ι → ℝ) = 0 := by
+    (hx : ¬x.val.val v < 1) : starToCone v (x.val.val : ι → ℝ) = 0 := by
   rw [starToCone_apply, eq_starApex_of_not_lt K v hx, starApex_val]
   ext j <;> simp [vertex_val, Finsupp.single_apply, Pi.single_apply, eq_comm]
 
 /-- The image of a closed star under `starToCone` lies in the cone over its link. -/
 theorem starToCone_mem (x : closedStarRealization K {v}) :
-    starToCone v (x.1.1 : ι → ℝ) ∈
-      (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))).cone ℝ := by
-  by_cases hx : x.1.1 v < 1
+    starToCone v (x.val.val : ι → ℝ) ∈
+      (range (fun y : geometricLink K v => (y.val.val : ι → ℝ))).cone ℝ := by
+  by_cases hx : x.val.val v < 1
   · rw [starToCone_of_lt x hx]
     exact (smul_mem_cone_iff _ (sub_pos.mpr hx)).mpr (mem_range_self _)
   · rw [starToCone_of_not_lt x hx]

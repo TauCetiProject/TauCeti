@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Geometry.Euclidean.Inversion.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Removable
+import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Comp
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Geometry.Euclidean.Inversion
@@ -227,7 +227,7 @@ theorem harmonicOnNhd_update_kelvinTransform [DecidableEq E] (hn : 3 ≤ finrank
   rcases le_or_gt R 0 with hR | hR
   · rw [ball_eq_empty.2 (inv_nonpos.2 hR)]
     exact fun _ h ↦ h.elim
-  refine harmonicOnNhd_update_of_tendsto hn (ball_mem_nhds 0 (inv_pos.2 hR)) (fun y hy ↦ ?_)
+  refine harmonicOnNhd_update_of_tendsto (by omega) (ball_mem_nhds 0 (inv_pos.2 hR)) (fun y hy ↦ ?_)
     (tendsto_kelvinTransform_nhdsNE_zero (by simpa only [smul_eq_mul] using ha))
   have hy0 : y ≠ 0 := hy.2
   refine (hf _ ?_).kelvinTransform hy0
