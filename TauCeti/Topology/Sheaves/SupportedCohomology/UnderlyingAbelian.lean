@@ -136,8 +136,8 @@ lemma supportedModuleHAddEquiv_apply (S : Closeds X) (W : Opens X) {n : ℕ}
 lemma coe_supportedHZeroEquiv_supportedModuleHAddEquiv (S : Closeds X) (W : Opens X)
     (x : F.supportedModuleH S W 0) :
     ((((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedHZeroEquiv S
-        W (F.supportedModuleHAddEquiv S W 0 x)).1 : F.obj.obj (op W)) =
-      (F.supportedModuleHZeroEquiv S W x).1 := by
+        W (F.supportedModuleHAddEquiv S W 0 x)).val : F.obj.obj (op W)) =
+      (F.supportedModuleHZeroEquiv S W x).val := by
   rw [coe_supportedHZeroEquiv_apply, coe_supportedModuleHZeroEquiv_apply]
   exact coe_relativeH'_zeroEquiv_relativeExtToForget _ R (S.complInclusion W) F x
 

@@ -81,17 +81,17 @@ def relativeFreeYonedaSheafToForget {U V : C} (i : U ⟶ V) :
       (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).obj
         (relativeFreeModuleYonedaSheaf J R i) :=
   (relativeFreeYonedaSheafHomEquiv J i _).symm
-    ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).1,
+    ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).val,
       (Sheaf.mem_ker_sheafCompose_forget₂_map_iff i _ _).2
-        (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).2⟩
+        (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).property⟩
 
 /-- Under the identification of morphisms out of `ℤ_{V,U}` with sections,
 `relativeFreeYonedaSheafToForget` is the section of `R_{V,U}` over `V` given by its identity. -/
 lemma coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget {U V : C}
     (i : U ⟶ V) :
-    ((relativeFreeYonedaSheafHomEquiv J i _ (relativeFreeYonedaSheafToForget J R i)).1 :
+    ((relativeFreeYonedaSheafHomEquiv J i _ (relativeFreeYonedaSheafToForget J R i)).val :
         (relativeFreeModuleYonedaSheaf J R i).obj.obj (op V)) =
-      (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).1 := by
+      (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).val := by
   rw [relativeFreeYonedaSheafToForget, AddEquiv.apply_symm_apply]
 
 /-- Under the identifications of morphisms out of relative free sheaves with sections, composing
@@ -100,9 +100,9 @@ lemma coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget {U V :
 lemma coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget_comp {U V : C}
     (i : U ⟶ V) (F : Sheaf J (ModuleCat.{v} R)) (g : relativeFreeModuleYonedaSheaf J R i ⟶ F) :
     ((relativeFreeYonedaSheafHomEquiv J i _ (relativeFreeYonedaSheafToForget J R i ≫
-        (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map g)).1 :
+        (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map g)).val :
         F.obj.obj (op V)) =
-      (relativeFreeModuleYonedaSheafHomEquiv J R i F g).1 := by
+      (relativeFreeModuleYonedaSheafHomEquiv J R i F g).val := by
   rw [relativeFreeYonedaSheafHomEquiv_naturality_right,
     coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget]
   conv_rhs => rw [← Category.id_comp g, relativeFreeModuleYonedaSheafHomEquiv_naturality_right]
@@ -201,8 +201,8 @@ lemma relativeExtToForget_mk₀_relativeFreeModuleYonedaSheafMap_comp {U' V' U V
 zero along `i`. -/
 lemma coe_relativeH'_zeroEquiv_relativeExtToForget {U V : C} (i : U ⟶ V)
     (F : Sheaf J (ModuleCat.{v} R)) (x : Ext.{w} (relativeFreeModuleYonedaSheaf J R i) F 0) :
-    ((Sheaf.relativeH'.zeroEquiv _ i (relativeExtToForget J R i F 0 x)).1 : F.obj.obj (op V)) =
-      (relativeFreeModuleYonedaExtZeroEquiv J R i F x).1 := by
+    ((Sheaf.relativeH'.zeroEquiv _ i (relativeExtToForget J R i F 0 x)).val : F.obj.obj (op V)) =
+      (relativeFreeModuleYonedaExtZeroEquiv J R i F x).val := by
   -- both sides are the sections corresponding to morphisms out of relative free sheaves
   rw [Sheaf.relativeH'.coe_zeroEquiv_apply, coe_relativeFreeModuleYonedaExtZeroEquiv_apply,
     ext_addEquiv₀_relativeExtToForget, ← coe_relativeFreeYonedaSheafHomEquiv_apply,
@@ -218,7 +218,7 @@ theorem relativeExtToForget_zero_bijective {U V : C} (i : U ⟶ V)
       ← coe_relativeH'_zeroEquiv_relativeExtToForget, hxy]
   · let s := Sheaf.relativeH'.zeroEquiv _ i c
     refine ⟨(relativeFreeModuleYonedaExtZeroEquiv J R i F).symm
-        ⟨s.1, (Sheaf.mem_ker_sheafCompose_forget₂_map_iff i F s.1).1 s.2⟩,
+        ⟨s.val, (Sheaf.mem_ker_sheafCompose_forget₂_map_iff i F s.val).1 s.property⟩,
       (Sheaf.relativeH'.zeroEquiv _ i).injective (Subtype.ext ?_)⟩
     rw [coe_relativeH'_zeroEquiv_relativeExtToForget, LinearEquiv.apply_symm_apply]
 
