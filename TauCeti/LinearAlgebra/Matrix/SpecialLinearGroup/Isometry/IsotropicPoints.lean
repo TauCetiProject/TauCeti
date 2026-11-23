@@ -104,7 +104,10 @@ theorem smul_eq_self_of_mem_center_specialIsometryGroup (hσ : Function.Involuti
       _ = Q.unitaryTransvection σ v d := by rw [hconj]; exact hta
   simp only [unitaryTransvection_def, add_right_inj, smul_right_inj hd0] at hmat
   obtain ⟨c, hc0, hsmul⟩ :=
-    exists_eq_smul_of_vecMulVec_eq hv0 (comp_vecMul_ne_zero hdet σ hv0) hmat
+    exists_eq_smul_of_vecMulVec_eq hv0
+      (vecMul_ne_zero_of_isUnit (Q.isUnit_iff_isUnit_det.mpr (Ne.isUnit hdet))
+        fun h0 ↦ hv0 (funext fun i ↦ (map_eq_zero σ).mp (congrFun h0 i)))
+      hmat
   refine Subtype.ext ?_
   rw [SubMulAction.val_smul, Subgroup.smul_def, ← Projectivization.mk_rep (p : ℙ K (n → K)),
     Projectivization.smul_mk, Projectivization.mk_eq_mk_iff]

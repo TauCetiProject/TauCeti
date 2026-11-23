@@ -125,17 +125,21 @@ theorem exists_pow_add_self_eq (hK : Nat.card K = (p ^ n) ^ 2) {c : K}
   obtain ⟨⟨b, hb⟩⟩ := Nat.card_pos_iff.mp hpos |>.1
   exact ⟨b, hb⟩
 
+/-- The quadratic finite-field involution admits an element of trace one, in every
+characteristic. -/
+theorem exists_add_iterateFrobenius_eq_one (hK : Nat.card K = (p ^ n) ^ 2) :
+    ∃ t : K, t + iterateFrobenius K p n t = 1 := by
+  obtain ⟨t, ht⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
+  exact ⟨t, by simpa [iterateFrobenius_def, add_comm] using ht⟩
+
 /-- **The twisted trace is onto.** In a field with `q²` elements, `q = p ^ n` a power of the
 exponential characteristic, and for `ε = (-1) ^ k`, every `c` with `c ^ q = ε c` is of the form
 `b + ε b ^ q`. -/
 theorem exists_add_neg_one_pow_mul_pow_eq (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ)
     {c : K} (hc : c ^ p ^ n = (-1) ^ k * c) : ∃ b : K, b + (-1) ^ k * b ^ p ^ n = c := by
   simpa only [iterateFrobenius_def] using
-    TauCeti.exists_add_neg_one_pow_mul_apply_eq (σ := iterateFrobenius K p n)
-      (fun s hs ↦ by
-        obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (by simpa [iterateFrobenius_def] using hs)
-        exact ⟨b, by simpa [iterateFrobenius_def, add_comm] using hb⟩)
-      k (by simpa [iterateFrobenius_def] using hc)
+    TauCeti.exists_add_neg_one_pow_mul_apply_eq (exists_add_iterateFrobenius_eq_one hK) k
+      (by simpa [iterateFrobenius_def] using hc)
 
 /-- **The twisted trace has a nonzero kernel element.** In a field with `q²` elements, `q = p ^ n`
 a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero `b` satisfies
@@ -156,13 +160,6 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
         obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ n + b = 0})
         exact ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), by
           simpa [iterateFrobenius_def, add_comm] using hb⟩
-
-/-- The quadratic finite-field involution admits an element of trace one, in every
-characteristic. -/
-theorem exists_add_iterateFrobenius_eq_one (hK : Nat.card K = (p ^ n) ^ 2) :
-    ∃ t : K, t + iterateFrobenius K p n t = 1 := by
-  obtain ⟨t, ht⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
-  exact ⟨t, by simpa [iterateFrobenius_def, add_comm] using ht⟩
 
 /-- Over a field of order `q²`, the affine trace equation
 `z + z ^ q = x ^ q * x` has exactly `q³` solutions `(z, x)`. -/

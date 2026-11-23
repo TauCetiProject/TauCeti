@@ -16,7 +16,8 @@ import TauCeti.FieldTheory.Finite.QuadraticNorm
 For a valid graph-twisted type-`A` index `²A_r(q)` (`2 ≤ r`, with `3 ≤ q` when `r = 2`),
 `TauCeti.TypeALieIndex.specialUnitaryEquivFixedPoints` identifies the Steinberg fixed points with
 `SU_{r+1}(q) = fixedSubgroup ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius r)`. Combining
-trace surjectivity and the `|𝔽_q| ≥ 3` witness over `𝔽_{q²}` with
+trace surjectivity and a nonzero signed-trace kernel element — with the `|𝔽_q| ≥ 3` witness over
+`𝔽_{q²}` needed only when `r = 2` — with
 `TauCeti.commutator_specialIsometryGroup_typeAGraphConjugator_eq_top` and
 `TauCeti.isSimpleGroup_quotient_center_typeAGraphConjugator` proves that `SU_{r+1}(q)` is perfect
 and that the candidate group of `²A_r(q)` is isomorphic to `PSU_{r+1}(q)` and simple.
@@ -71,9 +72,7 @@ theorem commutator_galoisFieldTwistedFrobenius_eq_top {r : ℕ} (hr : 2 ≤ r)
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
   exact commutator_specialIsometryGroup_typeAGraphConjugator_eq_top
     d.involutive_iterateFrobenius_galoisField
-    (fun s hs ↦ by
-      simpa using d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := 0) (s := s)
-        (by simpa using hs))
+    (by simpa using d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := 0) (s := 1) (by simp))
     (d.exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero (r := r)) hr
     (d.rank_ne_two_or_exists_iterateFrobenius_fixed hq)
 
@@ -86,9 +85,7 @@ theorem isSimpleGroup_quotient_center_galoisFieldTwistedFrobenius {r : ℕ} (hr 
   rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
   exact isSimpleGroup_quotient_center_typeAGraphConjugator
     d.involutive_iterateFrobenius_galoisField
-    (fun s hs ↦ by
-      simpa using d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := 0) (s := s)
-        (by simpa using hs))
+    (by simpa using d.exists_add_neg_one_pow_mul_iterateFrobenius_eq (r := 0) (s := 1) (by simp))
     (d.exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero (r := r)) hr
     (d.rank_ne_two_or_exists_iterateFrobenius_fixed hq)
 
@@ -124,18 +121,20 @@ def projectiveSpecialUnitaryEquivGroup (r : ℕ) (q : PrimePower)
   DerivedCentralQuotient.quotientCenterEquivOfPerfect (commutator_specialUnitary_eq_top r q hv)
     (specialUnitaryEquivFixedPoints r q hv)
 
-/-- `projectiveSpecialUnitaryEquivGroup` maps a matrix class to its fixed-point class. -/
+/-- `projectiveSpecialUnitaryEquivGroup` maps the central quotient class of an element of the
+finite fixed subgroup to the derived-central-quotient class of its image under
+`specialUnitaryEquivFixedPoints`. -/
 @[simp]
 theorem projectiveSpecialUnitaryEquivGroup_mk (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid)
-    (x : commutator (fixedSubgroup
-      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) :
-    projectiveSpecialUnitaryEquivGroup r q hv (QuotientGroup.mk (s := Subgroup.center _)
-        (x : fixedSubgroup
-          ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) =
-      ((MulEquiv.commutatorCongr (specialUnitaryEquivFixedPoints r q hv) x :
+    (x : fixedSubgroup
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank)) :
+    projectiveSpecialUnitaryEquivGroup r q hv (QuotientGroup.mk (s := Subgroup.center _) x) =
+      ((MulEquiv.commutatorCongr (specialUnitaryEquivFixedPoints r q hv)
+          ⟨x, (commutator_specialUnitary_eq_top r q hv).symm ▸ Subgroup.mem_top x⟩ :
         commutator (ofTwistedA r q hv).FixedPoints) : (ofTwistedA r q hv).Group) :=
-  DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _
+    ⟨x, (commutator_specialUnitary_eq_top r q hv).symm ▸ Subgroup.mem_top x⟩
 
 /-- **The group attached to `²A_r(q)` is simple**, for every valid index. -/
 theorem isSimpleGroup_group_ofTwistedA (r : ℕ) (q : PrimePower)

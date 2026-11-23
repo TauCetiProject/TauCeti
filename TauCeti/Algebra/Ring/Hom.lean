@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Ring.Equiv
 import Mathlib.Algebra.Ring.Parity
 import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Multiplicative maps, ring homomorphisms, and ring equivalences
@@ -38,8 +40,9 @@ along field and completion isomorphisms.
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `TauCeti.exists_add_neg_one_pow_mul_apply_eq` and
-  `TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero`: extending trace surjectivity and
-  existence of a nonzero kernel element from `t ↦ t + σ t` to `t ↦ t + (-1) ^ k * σ t`.
+  `TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero`: extending existence of a trace-one
+  element for `t ↦ t + σ t` to surjectivity of `t ↦ t + (-1) ^ k * σ t`, and existence of a
+  nonzero kernel element.
 * `TauCeti.exists_ne_zero_apply_mul_self_ne_one`: finding a nonzero element `u` with `σ u * u ≠ 1`
   from a fixed element `t ∉ {0, 1}` and a nonzero element `d` with `d + σ d = 0`.
 * `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
@@ -63,21 +66,20 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
 
-/-- Surjectivity of `t ↦ t + σ t` onto `{s | σ s = s}` implies surjectivity of the signed trace
+/-- Existence of a trace-one element `b + σ b = 1` implies surjectivity of the signed trace
 `t ↦ t + (-1) ^ k * σ t` onto `{s | σ s = (-1) ^ k * s}` for every `k : ℕ`.
 
 Adapted from `TauCeti.FiniteField.exists_add_neg_one_pow_mul_pow_eq` in
 `TauCeti.FieldTheory.Finite.PowAddSelf` to an arbitrary ring endomorphism. -/
 theorem exists_add_neg_one_pow_mul_apply_eq {R : Type*} [Ring R] {σ : R →+* R}
-    (htr : ∀ s : R, σ s = s → ∃ t : R, t + σ t = s) (k : ℕ) {s : R}
+    (hb : ∃ b : R, b + σ b = 1) (k : ℕ) {s : R}
     (hs : σ s = (-1 : R) ^ k * s) : ∃ t : R, t + (-1 : R) ^ k * σ t = s := by
-  rcases neg_one_pow_eq_or R k with hk | hk <;> rw [hk] at hs ⊢
-  · obtain ⟨t, ht⟩ := htr s (by simpa using hs)
-    exact ⟨t, by simpa using ht⟩
-  · obtain ⟨b, hb⟩ := htr 1 (map_one σ)
-    refine ⟨s * b, ?_⟩
-    rw [neg_one_mul] at hs
-    rw [map_mul, neg_one_mul, hs, neg_mul, neg_neg, ← mul_add, hb, mul_one]
+  obtain ⟨b, hb⟩ := hb
+  refine ⟨s * b, ?_⟩
+  have hsq : (-1 : R) ^ k * (-1 : R) ^ k = 1 := by
+    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  rw [map_mul, hs, ← mul_assoc ((-1 : R) ^ k), ← mul_assoc ((-1 : R) ^ k), hsq, one_mul,
+    ← mul_add, hb, mul_one]
 
 /-- Existence of a nonzero `d` with `d + σ d = 0` when `k` is even yields a nonzero solution of
 `d + (-1) ^ k * σ d = 0` for every `k : ℕ` (for odd `k`, `d = 1` works unconditionally).
@@ -103,22 +105,12 @@ theorem exists_ne_zero_apply_mul_self_ne_one {R : Type*} [CommRing R] [IsDomain 
       rw [ht_neg, neg_eq_iff_add_eq_zero, one_add_one_eq_two, h0])
     have hσd : σ d = -d := eq_neg_of_add_eq_zero_right hd
     by_cases hd2 : σ d * d = 1
-    · have hd_sq : d * d = -1 := by
-        rw [hσd, neg_mul] at hd2
-        exact neg_eq_iff_eq_neg.mp hd2
+    · have hd_sq : d * d = -1 := by linear_combination -hd2 + d * hσd
       refine ⟨d + 1, fun h0 ↦ h2 ?_, fun h1 ↦ ?_⟩
-      · have hd1 : d = -1 := eq_neg_of_add_eq_zero_left h0
-        rw [hd1, neg_mul_neg, one_mul, eq_neg_iff_add_eq_zero, one_add_one_eq_two] at hd_sq
-        exact hd_sq
+      · linear_combination hd_sq - (d - 1) * h0
       · rw [map_add, hσd, map_one] at h1
-        have h1' : (-d + 1) * (d + 1) = 1 - d * d := by
-          rw [add_mul, mul_add, mul_add, neg_mul, neg_mul, one_mul, mul_one,
-            add_assoc, ← add_assoc (-d), neg_add_cancel, zero_add, add_comm, sub_eq_add_neg,
-            one_mul]
-        rw [hd_sq, sub_neg_eq_add, one_add_one_eq_two] at h1'
-        have h21 : (2 : R) = 1 := (h1.symm.trans h1').symm
-        rw [← one_add_one_eq_two, add_eq_right] at h21
-        exact one_ne_zero h21
+        have h1' : (-d + 1) * (d + 1) = 1 - d * d := by ring
+        exact one_ne_zero (by linear_combination h1 - h1' + hd_sq)
     · exact ⟨d, hd0, hd2⟩
   · exact ⟨t, ht0, by rwa [ht]⟩
 

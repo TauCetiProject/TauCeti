@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
@@ -66,8 +64,8 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
-* `Matrix.comp_vecMul_ne_zero`: for invertible `Q`, endomorphism `σ`, and nonzero `v`,
-  `(σ ∘ v) ᵥ* Q ≠ 0`.
+* `Matrix.vecMul_ne_zero_of_isUnit`: for a unit matrix `Q` over a semiring and `w ≠ 0`,
+  `w ᵥ* Q ≠ 0`.
 * `Matrix.exists_eq_smul_of_vecMulVec_eq`: equality of `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂`
   with `u₂, w₂ ≠ 0` implies `u₁ = c • u₂` for some `c ≠ 0`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
@@ -230,17 +228,26 @@ theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
 
 end Ring
 
+section Semiring
+
+variable [DecidableEq n] {R : Type*} [Semiring R]
+
+/-- If `Q` is a unit matrix over a semiring and `w ≠ 0`, then `w ᵥ* Q ≠ 0`. -/
+theorem vecMul_ne_zero_of_isUnit {Q : Matrix n n R} (hQ : IsUnit Q) {w : n → R} (hw : w ≠ 0) :
+    w ᵥ* Q ≠ 0 := by
+  obtain ⟨U, rfl⟩ := hQ
+  intro h0
+  apply hw
+  calc w = w ᵥ* ((U : Matrix n n R) * ((U⁻¹ : (Matrix n n R)ˣ) : Matrix n n R)) := by simp
+    _ = (w ᵥ* (U : Matrix n n R)) ᵥ* ((U⁻¹ : (Matrix n n R)ˣ) : Matrix n n R) :=
+      (vecMul_vecMul _ _ _).symm
+    _ = 0 := by rw [h0, zero_vecMul]
+
+end Semiring
+
 section Field
 
 variable {K : Type*} [Field K]
-
-/-- If `Q` is invertible over a field `K`, `σ` is a ring endomorphism of `K`, and `v` is nonzero,
-then `(σ ∘ v) ᵥ* Q ≠ 0`. -/
-theorem comp_vecMul_ne_zero [DecidableEq n] {Q : Matrix n n K} (hdet : Q.det ≠ 0) (σ : K →+* K)
-    {v : n → K} (hv0 : v ≠ 0) : (σ ∘ v) ᵥ* Q ≠ 0 := by
-  have hσv : σ ∘ v ≠ 0 := fun h0 ↦ hv0 <| funext fun i ↦
-    (map_eq_zero σ).mp (congrFun h0 i)
-  exact fun h0 ↦ hdet (exists_vecMul_eq_zero_iff.mp ⟨σ ∘ v, hσv, h0⟩)
 
 omit [Fintype n] in
 /-- If two outer products `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂` over a field agree and

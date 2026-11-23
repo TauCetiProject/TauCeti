@@ -32,12 +32,11 @@ a unit whose square is not one supplies such separation.
   product of six transvections.
 * `Matrix.SpecialLinearGroup.diag2n_decompose`: a two-coordinate diagonal matrix over a field is
   a product of six transvections.
-* `Matrix.SpecialLinearGroup.diag2nUnit_eq_mul_six_transvections` and
-  `Matrix.SpecialLinearGroup.diag2n_eq_mul_six_transvections`: scaled six-transvection
-  factorizations with parameters rescaled by an arbitrary unit `d` (on `(i, j)`) and `d⁻¹` (on
+* `Matrix.SpecialLinearGroup.diag2nUnit_eq_mul_six_transvections`: scaled six-transvection
+  factorization with parameters rescaled by an arbitrary unit `d` (on `(i, j)`) and `d⁻¹` (on
   `(j, i)`).
 * `Matrix.SpecialLinearGroup.diag2nUnit_mulVec_eq_self`, `diag2nUnit_mulVec_single_left`,
-  `diag2nUnit_mulVec_single_right` (and their `diag2n` specializations): action on vectors.
+  `diag2nUnit_mulVec_single_right`: action on vectors.
 
 ## References
 
@@ -160,33 +159,6 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_mulVec_single_right {R : Typ
   rw [Matrix.SpecialLinearGroup.diag2nUnit_coe, Matrix.diagonal_mulVec_single, ← Pi.single_smul']
   simp [hij.symm]
 
-/-- `diag2n hij a ha` fixes every vector supported off `{i, j}`. -/
-theorem _root_.Matrix.SpecialLinearGroup.diag2n_mulVec_eq_self {K : Type u} [Field K]
-    {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) {a : K} (ha : a ≠ 0)
-    {w : m → K} (hwi : w i = 0) (hwj : w j = 0) :
-    Matrix.mulVec (Matrix.SpecialLinearGroup.diag2n hij a ha : Matrix m m K) w = w := by
-  simpa only [Matrix.SpecialLinearGroup.diag2nUnit_mk0] using
-    Matrix.SpecialLinearGroup.diag2nUnit_mulVec_eq_self hij (Units.mk0 a ha) hwi hwj
-
-/-- `diag2n hij a ha` scales `Pi.single i c` by `a`. -/
-theorem _root_.Matrix.SpecialLinearGroup.diag2n_mulVec_single_left {K : Type u} [Field K]
-    {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) {a : K} (ha : a ≠ 0)
-    (c : K) :
-    Matrix.mulVec (Matrix.SpecialLinearGroup.diag2n hij a ha : Matrix m m K) (Pi.single i c) =
-      a • Pi.single i c := by
-  simpa only [Matrix.SpecialLinearGroup.diag2nUnit_mk0, Units.val_mk0] using
-    Matrix.SpecialLinearGroup.diag2nUnit_mulVec_single_left hij (Units.mk0 a ha) c
-
-/-- `diag2n hij a ha` scales `Pi.single j c` by `a⁻¹`. -/
-theorem _root_.Matrix.SpecialLinearGroup.diag2n_mulVec_single_right {K : Type u} [Field K]
-    {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) {a : K} (ha : a ≠ 0)
-    (c : K) :
-    Matrix.mulVec (Matrix.SpecialLinearGroup.diag2n hij a ha : Matrix m m K) (Pi.single j c) =
-      a⁻¹ • Pi.single j c := by
-  simpa only [Matrix.SpecialLinearGroup.diag2nUnit_mk0, Units.val_inv_eq_inv_val,
-    Units.val_mk0] using
-    Matrix.SpecialLinearGroup.diag2nUnit_mulVec_single_right hij (Units.mk0 a ha) c
-
 /-- A two-coordinate unit diagonal matrix is a product of six transvections.
 The factorization and proof generalize and are adapted from Mathlib's
 `Matrix.SpecialLinearGroup.diag2_decompose`. -/
@@ -252,23 +224,6 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_eq_mul_six_transvections
   simp only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left]
   simp only [Matrix.SpecialLinearGroup.transvection_inv, neg_neg, Units.val_mul, neg_mul,
     mul_comm ((d⁻¹ : Rˣ) : R)]
-
-/-- A two-coordinate diagonal matrix over a field factors as a product of six transvections whose
-parameters are scaled by an arbitrary nonzero scalar `d` (on `(i, j)`) and `d⁻¹` (on `(j, i)`). -/
-theorem _root_.Matrix.SpecialLinearGroup.diag2n_eq_mul_six_transvections
-    {K : Type u} [Field K] {m : Type v} [Fintype m] [DecidableEq m]
-    {i j : m} (hij : i ≠ j) {a d : K} (ha : a ≠ 0) (hd : d ≠ 0) :
-    Matrix.SpecialLinearGroup.diag2n hij a ha =
-      Matrix.SpecialLinearGroup.transvection hij (a * d) *
-        Matrix.SpecialLinearGroup.transvection hij.symm (-a⁻¹ * d⁻¹) *
-        Matrix.SpecialLinearGroup.transvection hij (a * d) *
-        Matrix.SpecialLinearGroup.transvection hij (-d) *
-        Matrix.SpecialLinearGroup.transvection hij.symm d⁻¹ *
-        Matrix.SpecialLinearGroup.transvection hij (-d) := by
-  simpa only [Matrix.SpecialLinearGroup.diag2nUnit_mk0, Units.val_mk0,
-    Units.val_inv_eq_inv_val] using
-    Matrix.SpecialLinearGroup.diag2nUnit_eq_mul_six_transvections hij
-      (Units.mk0 a ha) (Units.mk0 d hd)
 
 /-- Every invertible matrix over a commutative ring is a determinant-one matrix times a diagonal
 matrix. -/

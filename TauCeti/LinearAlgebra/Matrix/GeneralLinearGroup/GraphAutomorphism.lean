@@ -54,9 +54,12 @@ carrier.
 * `TauCeti.typeAGraphAutomorphism_apply_apply`: the signed entrywise formula on the inverse matrix.
 * `TauCeti.transpose_typeAGraphConjugator` and `TauCeti.transpose_map_typeAGraphConjugator`:
   `Qᵀ = (-1) ^ r • Q` and `(Q.map f)ᵀ = (-1) ^ r • Q`.
-* `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec` and
-  `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec_single`: pairing `σ ∘ eᵢ` against
-  `Q *ᵥ v`, and isotropy of `eᵢ` for `i ≠ i.rev`.
+* `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec`,
+  `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec_single`,
+  `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec_single_zero`, and
+  `TauCeti.comp_single_dotProduct_typeAGraphConjugator_mulVec_single_last`: pairing `σ ∘ eᵢ`
+  against `Q *ᵥ v`, and isotropy of `eᵢ` for `i ≠ i.rev` (including `e₀` and `e_r` when
+  `0 ≠ Fin.last r`).
 * `TauCeti.typeAGraphAutomorphism_mem_upperTriangularGroup_iff`: preservation of
   upper triangularity.
 * `TauCeti.typeAGraphAutomorphism_mul_self`: the automorphism has order dividing two.
@@ -278,6 +281,22 @@ theorem comp_single_dotProduct_typeAGraphConjugator_mulVec_single {B : Type*} [R
       ((typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) *ᵥ Pi.single i 1) =
       0 := by
   rw [comp_single_dotProduct_typeAGraphConjugator_mulVec, Pi.single_eq_of_ne hi.symm, mul_zero]
+
+/-- For `0 ≠ Fin.last r`, the first standard basis vector `e₀` is isotropic for `Q_r`. -/
+theorem comp_single_dotProduct_typeAGraphConjugator_mulVec_single_zero {B : Type*} [Ring B]
+    {σ : A →+* B} {r : ℕ} (h0r : (0 : Fin (r + 1)) ≠ Fin.last r) :
+    (σ ∘ Pi.single 0 (1 : A)) ⬝ᵥ
+      ((typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) *ᵥ Pi.single 0 1) =
+      0 :=
+  comp_single_dotProduct_typeAGraphConjugator_mulVec_single (by rwa [Fin.rev_zero])
+
+/-- For `0 ≠ Fin.last r`, the last standard basis vector `e_r` is isotropic for `Q_r`. -/
+theorem comp_single_dotProduct_typeAGraphConjugator_mulVec_single_last {B : Type*} [Ring B]
+    {σ : A →+* B} {r : ℕ} (h0r : (0 : Fin (r + 1)) ≠ Fin.last r) :
+    (σ ∘ Pi.single (Fin.last r) (1 : A)) ⬝ᵥ
+      ((typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) *ᵥ
+        Pi.single (Fin.last r) 1) = 0 :=
+  comp_single_dotProduct_typeAGraphConjugator_mulVec_single (by rw [Fin.rev_last]; exact h0r.symm)
 
 end Ring
 

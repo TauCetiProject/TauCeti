@@ -195,18 +195,6 @@ theorem involutive_iterateFrobenius_galoisField :
   FiniteField.iterateFrobenius_involutive
     (GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
 
-/-- The `σ`-sesquilinear form of Gram matrix `Q` is `(-1) ^ r`-Hermitian: `σ(Q)ᵀ = (-1) ^ r • Q`,
-with `σ` the `q`-power Frobenius and `Q` the signed reversal matrix. -/
-theorem transpose_map_typeAGraphConjugator_galoisField :
-    ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) _).map
-        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
-          d.fieldExponent))ᵀ =
-      (-1 : GaloisField d.characteristic (d.fieldExponent * 2)) ^ r •
-        (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-          Matrix (Fin (r + 1)) (Fin (r + 1)) _) := by
-  rw [map_coe_typeAGraphConjugator, transpose_typeAGraphConjugator]
-
 variable (d r) in
 /-- **The form of the special unitary group** `SU_{r+1}(q)`: the sesquilinear form
 `B(x, y) = σ(x)ᵀ Q y` on `𝔽_{q²} ^ (r + 1)`, with `σ : x ↦ x ^ q` and `Q` the signed reversal
