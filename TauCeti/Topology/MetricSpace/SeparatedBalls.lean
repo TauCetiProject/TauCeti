@@ -40,6 +40,9 @@ For a family `θ : ι → Y` of points of a pseudometric space with `2 s ≤ dis
 well-defined ball index: `TauCeti.ballIndex θ s i₀ y` is the index of the ball containing `y`, and
 the default `i₀` when `y` lies in no ball.
 
+* `TauCeti.pairwise_disjoint_ball_of_two_mul_le_dist`: the balls are pairwise disjoint.
+* `TauCeti.mem_ball_ballIndex`: with no separation hypothesis, a point lying in some ball lies in
+  the ball of its index.
 * `TauCeti.ballIndex_eq_iff`: `ballIndex θ s i₀ y = i` exactly when `y` lies in the ball around
   `θ i`, or `i = i₀` and `y` lies in no ball.
 * `TauCeti.le_dist_of_ballIndex_ne`: a point whose ball index is not `i` is at distance at least
@@ -117,16 +120,26 @@ theorem mem_and_apply_eq_of_surjOn_of_dist_lt [PseudoMetricSpace X] {A B T : Set
     eq_of_dist_lt_of_dist_lt (hsep z hz z' (hA hz')) hwz (hclose z' hz')
   exact ⟨hz', rfl⟩
 
+open Function in
+/-- For `2 s`-separated points `θ i`, the open balls of radius `s` around them are pairwise
+disjoint. -/
+theorem pairwise_disjoint_ball_of_two_mul_le_dist {ι Y : Type*} [PseudoMetricSpace Y]
+    {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) :
+    Pairwise (Disjoint on fun i ↦ ball (θ i) s) :=
+  fun i j hij ↦ ball_disjoint_ball (by linarith [hθ i j hij])
+
 section BallIndex
 
 variable {ι Y : Type*} [PseudoMetricSpace Y]
 
-open scoped Classical in
 /-- The index of the open ball of radius `s` around a point `θ i` that contains `y`, and `i₀`
-when `y` lies in no such ball. For `2 s`-separated points the balls are pairwise disjoint, so the
-index is unique (`TauCeti.ballIndex_eq_of_mem_ball`). -/
+when `y` lies in no such ball: the extension (`Function.extend`) of the index projection
+`Σ i, ball (θ i) s → ι` along the point projection `Σ i, ball (θ i) s → Y`, with the constant
+default `i₀`. For `2 s`-separated points the balls are pairwise disjoint, so the index is unique
+(`TauCeti.ballIndex_eq_of_mem_ball`); in general it is the index of some ball containing `y`
+(`TauCeti.mem_ball_ballIndex`). -/
 noncomputable def ballIndex (θ : ι → Y) (s : ℝ) (i₀ : ι) (y : Y) : ι :=
-  if h : ∃ i, y ∈ ball (θ i) s then h.choose else i₀
+  Function.extend (fun p : Σ i, ball (θ i) s ↦ (p.2 : Y)) Sigma.fst (fun _ ↦ i₀) y
 
 /-- For `2 s`-separated points, the open balls of radius `s` around them meet only when they are
 equal. -/
@@ -134,21 +147,31 @@ private theorem eq_of_mem_ball_of_mem_ball {θ : ι → Y} {s : ℝ}
     (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) {y : Y} {i j : ι}
     (hi : y ∈ ball (θ i) s) (hj : y ∈ ball (θ j) s) : i = j := by
   by_contra hij
-  exact (ball_disjoint_ball (by linarith [hθ i j hij])).ne_of_mem hi hj rfl
+  exact Disjoint.ne_of_mem (pairwise_disjoint_ball_of_two_mul_le_dist hθ hij) hi hj rfl
+
+/-- A point lying in some ball lies in the ball of its index, with no separation hypothesis. -/
+theorem mem_ball_ballIndex {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y} (h : ∃ i, y ∈ ball (θ i) s) :
+    y ∈ ball (θ (ballIndex θ s i₀ y)) s := by
+  classical
+  obtain ⟨i, hi⟩ := h
+  have h' : ∃ p : Σ i, ball (θ i) s, (p.2 : Y) = y := ⟨⟨i, y, hi⟩, rfl⟩
+  rw [ballIndex, Function.extend_def, dite_eq_left h']
+  have := (Classical.choose h').2.property
+  rwa [Classical.choose_spec h'] at this
 
 /-- A point in the ball around `θ i` has index `i`. -/
 theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
     (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) {y : Y} {i : ι}
     (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i := by
-  have h : ∃ j, y ∈ ball (θ j) s := ⟨i, hy⟩
-  rw [ballIndex, dite_eq_left h]
-  exact eq_of_mem_ball_of_mem_ball hθ h.choose_spec hy
+  have hf : (Sigma.fst : (Σ i, ball (θ i) s) → ι).FactorsThrough fun p ↦ (p.2 : Y) :=
+    fun a b (h : (a.2 : Y) = b.2) ↦ eq_of_mem_ball_of_mem_ball hθ a.2.property (h ▸ b.2.property)
+  exact hf.extend_apply _ ⟨i, y, hy⟩
 
 /-- A point in no ball has the default index. -/
 @[simp]
 theorem ballIndex_eq_of_forall_notMem {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y}
-    (hy : ∀ i, y ∉ ball (θ i) s) : ballIndex θ s i₀ y = i₀ := by
-  rw [ballIndex, dite_eq_right (by simpa using hy)]
+    (hy : ∀ i, y ∉ ball (θ i) s) : ballIndex θ s i₀ y = i₀ :=
+  Function.extend_apply' _ _ _ fun ⟨⟨i, _, hi⟩, h⟩ ↦ hy i (h ▸ hi)
 
 /-- For `2 s`-separated points, `ballIndex θ s i₀ y = i` exactly when `y` lies in the ball of
 radius `s` around `θ i`, or `i` is the default index `i₀` and `y` lies in no ball. -/
@@ -179,17 +202,11 @@ theorem ballIndex_preimage {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j →
     (i₀ : ι) (A : Set ι) :
     ballIndex θ s i₀ ⁻¹' A =
       (⋃ i ∈ A, ball (θ i) s) ∪ ({_y | i₀ ∈ A} ∩ ⋂ i, (ball (θ i) s)ᶜ) := by
+  rw [← biUnion_preimage_singleton]
   ext y
-  by_cases hy : ∃ i, y ∈ ball (θ i) s
-  · obtain ⟨i, hi⟩ := hy
-    simp only [mem_preimage, ballIndex_eq_of_mem_ball hθ i₀ hi, mem_union, mem_iUnion₂,
-      mem_inter_iff, mem_ofPred_eq, mem_iInter, mem_compl_iff]
-    refine ⟨fun hA ↦ .inl ⟨i, hA, hi⟩, ?_⟩
-    rintro (⟨j, hj, hyj⟩ | ⟨-, hy⟩)
-    · rwa [eq_of_mem_ball_of_mem_ball hθ hi hyj]
-    · exact (hy i hi).elim
-  · push Not at hy
-    simp [hy]
+  simp only [mem_iUnion₂, mem_preimage, mem_singleton_iff, ballIndex_eq_iff hθ, exists_prop,
+    and_or_left, exists_or, mem_union, mem_inter_iff, mem_ofPred_eq, mem_iInter, mem_compl_iff]
+  exact or_congr Iff.rfl ⟨fun ⟨_, hA, rfl, h⟩ ↦ ⟨hA, h⟩, fun ⟨hA, h⟩ ↦ ⟨_, hA, rfl, h⟩⟩
 
 end BallIndex
 

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
+public import TauCeti.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Topology.MetricSpace.SeparatedBalls
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
@@ -39,10 +40,9 @@ constant in the first variable.
   first variable on a finite measurable partition, with values the slices at the centres.
 * `TauCeti.measurable_ballIndex` — for `2 s`-separated points `θ i`, the index of the ball of
   radius `s` containing a point is measurable, for an arbitrary index type.
-* `TauCeti.nearestIndex` — for finitely many points `θ i` indexed by a nonempty linear order, the
-  least index of a nearest point; it is measurable (`TauCeti.measurable_nearestIndex`), minimizes
-  the distance (`TauCeti.dist_nearestIndex_le`), and lands within twice the distance to any
-  `θ j` (`TauCeti.dist_nearestIndex_le_two_mul`).
+* `TauCeti.measurable_nearestIndex` — for finitely many points `θ i` indexed by a nonempty linear
+  order, the least index of a nearest point (`TauCeti.nearestIndex`, in
+  `TauCeti.Topology.MetricSpace.HausdorffDistance`) is measurable.
 -/
 
 public section
@@ -206,34 +206,6 @@ theorem measurable_ballIndex {ι Y : Type*} [PseudoMetricSpace Y] [MeasurableSpa
 section NearestIndex
 
 variable {ι Y : Type*} [PseudoMetricSpace Y] [Fintype ι] [Nonempty ι] [LinearOrder ι]
-
-open scoped Classical in
-/-- The index of a nearest point to `y` among the `θ i`: the least `i`, for the linear order of
-`ι`, such that `dist y (θ i) ≤ dist y (θ j)` for every `j`. -/
-def nearestIndex (θ : ι → Y) (y : Y) : ι :=
-  (Finset.univ.filter fun i ↦ ∀ j, dist y (θ i) ≤ dist y (θ j)).min' <| by
-    obtain ⟨i, -, hi⟩ :=
-      Finset.univ.exists_min_image (fun i ↦ dist y (θ i)) Finset.univ_nonempty
-    exact ⟨i, by simpa using hi⟩
-
-/-- `nearestIndex θ y = i` exactly when `θ i` is a nearest point to `y` and every index of a
-nearest point is at least `i`. -/
-theorem nearestIndex_eq_iff {θ : ι → Y} {y : Y} {i : ι} :
-    nearestIndex θ y = i ↔ (∀ j, dist y (θ i) ≤ dist y (θ j)) ∧
-      ∀ j, (∀ k, dist y (θ j) ≤ dist y (θ k)) → i ≤ j := by
-  simp [nearestIndex, Finset.min'_eq_iff]
-
-/-- `θ (nearestIndex θ y)` is a nearest point to `y`. -/
-theorem dist_nearestIndex_le (θ : ι → Y) (y : Y) (j : ι) :
-    dist y (θ (nearestIndex θ y)) ≤ dist y (θ j) :=
-  (nearestIndex_eq_iff.1 rfl).1 j
-
-/-- The nearest point to `y` is within twice the distance from `y` to `θ j` of `θ j`. -/
-theorem dist_nearestIndex_le_two_mul (θ : ι → Y) (y : Y) (j : ι) :
-    dist (θ (nearestIndex θ y)) (θ j) ≤ 2 * dist y (θ j) := by
-  calc dist (θ (nearestIndex θ y)) (θ j) ≤ dist y (θ (nearestIndex θ y)) + dist y (θ j) :=
-        dist_triangle_left _ _ _
-    _ ≤ 2 * dist y (θ j) := by linarith [dist_nearestIndex_le θ y j]
 
 /-- `nearestIndex θ` is measurable, for every σ-algebra on the index set: each fibre is a finite
 Boolean combination of the closed sets `{y | dist y (θ j) ≤ dist y (θ k)}`. -/
