@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 
 /-!
 # Sheafification on a localized small étale site
@@ -35,13 +35,6 @@ open CategoryTheory Limits
 namespace AlgebraicGeometry.Scheme.Etale
 
 variable {S : Scheme.{u}} (U : S.Etale) {A : Type*} [Category.{u} A]
-
-/-- Pushforward along `U.iteratedSliceEquiv.inverse` is an equivalence of sheaf categories: it is
-the forward functor of `U.overSheafEquiv A`. -/
-instance isEquivalence_sheafPushforwardContinuous_iteratedSliceEquiv_inverse :
-    (U.iteratedSliceEquiv.inverse.sheafPushforwardContinuous A (smallEtaleTopology U.left)
-      ((smallEtaleTopology S).over U)).IsEquivalence :=
-  (U.overSheafEquiv A).isEquivalence_functor
 
 variable {FA : A → A → Type*} {CA : A → Type u} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)]
   [ConcreteCategory.{u} A FA] [PreservesLimits (CategoryTheory.forget A)] [HasColimits A]

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Sites.Point.IsMonoidalW
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.OverSheafify
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Sheafify
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Tensor
 
 /-!

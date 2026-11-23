@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Monoidal
-public import TauCeti.CategoryTheory.Sites.LocallyConstant
+public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
+public import TauCeti.CategoryTheory.Sites.Over
 
 /-!
 # Tensor products of locally constant sheaves
@@ -16,10 +17,8 @@ compatible with tensor products (`(J.W (A := A)).IsMonoidal`), so that `Sheaf J 
 monoidal structure `CategoryTheory.Sheaf.monoidalCategory`: the tensor product of two sheaves is
 the sheafification of their sectionwise tensor product.
 
-* `CategoryTheory.Sheaf.constantSheafTensorIso`: the tensor product of the constant sheaves on `M`
+* `CategoryTheory.constantSheafTensorIso`: the tensor product of the constant sheaves on `M`
   and `N` is the constant sheaf on `M ⊗ N`.
-* `CategoryTheory.Sheaf.overPresheafToSheafIso`: the restriction to `Over X` of the
-  sheafification of `P` is the sheafification of the restriction of `P`.
 * `CategoryTheory.Sheaf.overTensorIso`: the restriction of `F ⊗ G` to `Over X` is the
   sheafification of the sectionwise tensor product of the restrictions of `F` and `G`. Hence it
   only depends on the restrictions of `F` and `G` (`CategoryTheory.Sheaf.overTensorIsoOfIso`).
@@ -28,11 +27,11 @@ the sheafification of their sectionwise tensor product.
   locally constant with values in any `R` containing the tensor products `M ⊗ N` with `P M`
   and `Q N`.
 
-No monoidal structure on the sheaves on `Over X` is needed. For a concrete category `A` in which
-the morphisms inverted by sheafification are the locally bijective ones, on `C` and on each
-`Over X` (`CategoryTheory.GrothendieckTopology.WEqualsLocallyBijective`), restriction to `Over X`
-commutes with sheafification (`CategoryTheory.Sheaf.overPresheafToSheafIso`), because restriction
-along the cocontinuous functor `Over.forget X` preserves local bijectivity.
+No monoidal structure on the sheaves on `Over X` is needed. The restriction results assume a
+concrete category `A` in which the morphisms inverted by sheafification are the locally bijective
+ones, on `C` and on each `Over X` (`CategoryTheory.GrothendieckTopology.WEqualsLocallyBijective`),
+so that restriction to `Over X` commutes with sheafification
+(`CategoryTheory.overPresheafToSheafIso`).
 
 ## References
 
@@ -46,7 +45,7 @@ universe v u v' u'
 
 open CategoryTheory Limits MonoidalCategory
 
-namespace CategoryTheory.Sheaf
+namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {A : Type u'}
   [Category.{v'} A] [MonoidalCategory A] [HasWeakSheafify J A] [(J.W (A := A)).IsMonoidal]
@@ -60,6 +59,15 @@ noncomputable def constantSheafTensorIso (M N : A) :
   Functor.Monoidal.μIso (presheafToSheaf J A) _ _ ≪≫
     (presheafToSheaf J A).mapIso (NatIso.ofComponents fun _ ↦ Iso.refl _)
 
+end CategoryTheory
+
+namespace CategoryTheory.Sheaf
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {A : Type u'}
+  [Category.{v'} A] [MonoidalCategory A] [HasWeakSheafify J A] [(J.W (A := A)).IsMonoidal]
+
+attribute [local instance] Sheaf.monoidalCategory
+
 section LocallyBijective
 
 variable {FA : A → A → Type*} {CA : A → Type*} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)]
@@ -68,28 +76,6 @@ variable {FA : A → A → Type*} {CA : A → Type*} [∀ X Y, FunLike (FA X Y) 
 
 include FA CA
 
-omit [MonoidalCategory A] [HasWeakSheafify J A] [(J.W (A := A)).IsMonoidal]
-  [∀ X : C, HasWeakSheafify (J.over X) A] in
-/-- Restriction to `Over X` sends morphisms of presheaves which become isomorphisms after
-sheafification to morphisms with the same property. -/
-theorem _root_.CategoryTheory.GrothendieckTopology.W.whiskerLeft_over_forget {P Q : Cᵒᵖ ⥤ A}
-    {f : P ⟶ Q} (hf : J.W f) (X : C) : (J.over X).W (Functor.whiskerLeft (Over.forget X).op f) :=
-  have := hf.isLocallyInjective
-  have := hf.isLocallySurjective
-  have := Presheaf.isLocallyInjective_whisker (J.over X) J (Over.forget X) f
-  have := Presheaf.isLocallySurjective_whisker (J.over X) J (Over.forget X) f
-  GrothendieckTopology.W_of_isLocallyBijective _ _
-
-/-- **Restriction of a sheafification.** The restriction to `Over X` of the sheafification of a
-presheaf `P` is the sheafification of the restriction of `P`. -/
-noncomputable def overPresheafToSheafIso (P : Cᵒᵖ ⥤ A) (X : C) :
-    ((presheafToSheaf J A).obj P).over X ≅
-      (presheafToSheaf (J.over X) A).obj ((Over.forget X).op ⋙ P) :=
-  have := ((J.over X).W_iff _).1 ((J.W_toSheafify P).whiskerLeft_over_forget X)
-  sheafificationIso _ ≪≫
-    (asIso ((presheafToSheaf (J.over X) A).map
-      (Functor.whiskerLeft (Over.forget X).op (toSheafify J P)))).symm
-
 /-- **Restriction of a tensor product.** The restriction of `F ⊗ G` to `Over X` is the
 sheafification of the sectionwise tensor product of the restrictions of `F` and `G`. -/
 noncomputable def overTensorIso (F G : Sheaf J A) (X : C) :
@@ -97,7 +83,9 @@ noncomputable def overTensorIso (F G : Sheaf J A) (X : C) :
   (J.overPullback A X).mapIso ((sheafificationIso F ⊗ᵢ sheafificationIso G) ≪≫
       Functor.Monoidal.μIso (presheafToSheaf J A) _ _) ≪≫
     overPresheafToSheafIso (F.obj ⊗ G.obj) X ≪≫
-    (presheafToSheaf (J.over X) A).mapIso (Iso.refl _)
+    (presheafToSheaf (J.over X) A).mapIso
+      (Functor.Monoidal.μIso ((Functor.whiskeringLeft _ _ A).obj (Over.forget X).op)
+        F.obj G.obj).symm
 
 /-- The restriction of `F ⊗ G` to `Over X` only depends on the restrictions of `F` and `G`. -/
 noncomputable def overTensorIsoOfIso {F F' G G' : Sheaf J A} {X : C} (e : F.over X ≅ F'.over X)

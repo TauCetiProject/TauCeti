@@ -461,6 +461,13 @@ noncomputable abbrev overSheafEquivObjOverIso (F : Sheaf (smallEtaleTopology S) 
         (smallEtaleTopology U.left) (smallEtaleTopology S)).obj F :=
   (U.overPullbackCompOverSheafEquivIso A).app F
 
+/-- Pushforward along `U.iteratedSliceEquiv.inverse` is an equivalence of sheaf categories: it is
+the forward functor of `U.overSheafEquiv A`. -/
+instance isEquivalence_sheafPushforwardContinuous_iteratedSliceEquiv_inverse :
+    (U.iteratedSliceEquiv.inverse.sheafPushforwardContinuous A (smallEtaleTopology U.left)
+      ((smallEtaleTopology S).over U)).IsEquivalence :=
+  (U.overSheafEquiv A).isEquivalence_functor
+
 end Etale
 
 end AlgebraicGeometry.Scheme
