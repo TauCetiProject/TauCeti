@@ -660,10 +660,11 @@ theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
     have hvnorm : ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ ≤ C * ‖b - a‖ :=
       (ContinuousLinearMap.le_opNorm _ _).trans
         (mul_le_mul_of_nonneg_right (hbound _ hball) (norm_nonneg _))
-    have hcoord_bound := LinearMap.norm_apply_le_card_mul_norm_mul
+    have hcoord_bound := (LinearMap.norm_apply_le_sum_norm_mul
       (fderiv ℝ f (φ (a + t • (b - a)))).toLinearMap (fderiv ℝ φ (a + t • (b - a)) (b - a))
-      ((Pi.sum_norm_apply_le_norm _).trans_eq (nsmul_eq_mul _ _))
-      fun j ↦ (Real.norm_eq_abs _).trans_le (hcoord t ht j)
+      fun j ↦ (Real.norm_eq_abs _).trans_le (hcoord t ht j)).trans <|
+      mul_le_mul_of_nonneg_right ((Pi.sum_norm_apply_le_norm
+        (fderiv ℝ φ (a + t • (b - a)) (b - a))).trans_eq (nsmul_eq_mul _ _)) hD
     have hscalar : |g' t| ≤ n * ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ * D := by
       simpa only [g', Fintype.card_fin, Real.norm_eq_abs, ContinuousLinearMap.coe_coe]
         using hcoord_bound

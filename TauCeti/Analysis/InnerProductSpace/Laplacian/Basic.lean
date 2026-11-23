@@ -187,9 +187,10 @@ theorem laplacian_fun_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x :
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
-  simpa [laplacian_eq_traceL, traceL_apply] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
-    Finset.univ (fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le)
-    fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+  have h := (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le Finset.univ
+    (stdOrthonormalBasis ℝ E) (stdOrthonormalBasis ℝ E)
+  rw [mul_comm] at h
+  simpa [laplacian_eq_traceL, traceL_apply] using h
 
 /-- The Laplacian is bounded by the dimension times the second iterated Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖iteratedFDeriv ℝ 2 f x‖`. -/
@@ -204,9 +205,10 @@ theorem norm_laplacian_sub_laplacian_le (f : E → F) (x y : E) :
     ‖Δ f x - Δ f y‖ ≤
       Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y‖ := by
   rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub, traceL_apply]
-  simpa using (fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y).norm_sum_apply_apply_le
-    Finset.univ (fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le)
-    fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+  have h := (fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y).norm_sum_apply_apply_le
+    Finset.univ (stdOrthonormalBasis ℝ E) (stdOrthonormalBasis ℝ E)
+  rw [mul_comm] at h
+  simpa using h
 
 /-- The Laplacian of a function of class `C²` on an open set is continuous there. -/
 theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf : ContDiffOn ℝ 2 f s)

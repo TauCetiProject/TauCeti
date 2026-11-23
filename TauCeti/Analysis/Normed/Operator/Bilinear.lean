@@ -32,9 +32,9 @@ constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ +
 nonlinear terms of an equation that is quadratic in its unknown.
 
 For a continuous map of two variables, semilinear in each argument with respect to isometric
-scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) (v i)` along vectors
-`u i` and `v i` of norm at most one, such as an orthonormal family taken twice, is bounded by
-`#s * ‖A‖` (`ContinuousLinearMap.norm_sum_apply_apply_le`), and every value satisfies the
+scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) (v i)` is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖` (`ContinuousLinearMap.norm_sum_apply_apply_le`); along a finite
+orthonormal basis taken twice, this is the dimension times `‖A‖`. Every value satisfies the
 Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
@@ -300,16 +300,14 @@ variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [No
   {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
 
 /-- The sum `∑ i ∈ s, A (u i) (v i)` of a continuous map `A`, semilinear in each argument with
-respect to isometric scalar homomorphisms (for instance sesquilinear), along vectors `u i` and
-`v i` of norm at most one is bounded by `#s * ‖A‖`. Taking `u = v` an orthonormal basis bounds the
-diagonal sum by the dimension times `‖A‖`. -/
+respect to isometric scalar homomorphisms (for instance sesquilinear), is bounded by
+`‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖`. When `u = v` is a finite orthonormal basis and `s` indexes the
+whole basis, the bound is the dimension times `‖A‖`. -/
 theorem norm_sum_apply_apply_le {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃] {ι : Type*}
-    (s : Finset ι) (A : E →SL[σ₁₃] F →SL[σ₂₃] G) {u : ι → E} {v : ι → F}
-    (hu : ∀ i ∈ s, ‖u i‖ ≤ 1) (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
-    ‖∑ i ∈ s, A (u i) (v i)‖ ≤ s.card * ‖A‖ := by
-  refine (norm_sum_le _ _).trans <|
-    (Finset.sum_le_card_nsmul _ _ _ fun i hi ↦ ?_).trans_eq (nsmul_eq_mul _ _)
-  simpa only [mul_one] using A.le_of_opNorm₂_le_of_le le_rfl (hu i hi) (hv i hi)
+    (s : Finset ι) (A : E →SL[σ₁₃] F →SL[σ₂₃] G) (u : ι → E) (v : ι → F) :
+    ‖∑ i ∈ s, A (u i) (v i)‖ ≤ ‖A‖ * ∑ i ∈ s, ‖u i‖ * ‖v i‖ := by
+  rw [Finset.mul_sum]
+  exact norm_sum_le_of_le s fun i _ ↦ (A.le_opNorm₂ (u i) (v i)).trans_eq (mul_assoc _ _ _)
 
 /-- A Young-type bound for a continuous map `B` of two variables, semilinear in each argument with
 respect to isometric scalar homomorphisms: for every `c > 0`,

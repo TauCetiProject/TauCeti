@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 import TauCeti.Analysis.Calculus.ContDiff.Pi
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
-import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Pi.Coordinates
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!

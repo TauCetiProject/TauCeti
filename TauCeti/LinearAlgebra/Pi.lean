@@ -28,17 +28,6 @@ determinant of a coordinatewise endomorphism of a finite dependent product, whic
 finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
 product.
 
-A nonzero semilinear map `f : (ι → R) →ₛₗ[σ] M` on a finite product is nonzero at some coordinate
-vector. Setting one coordinate of its argument to `t` adds `σ t` times its value at that coordinate
-vector to its value with the coordinate zeroed. Hence, over a semiring with left-cancellative
-addition, replacing the coordinate `i` of `v` by the value `f v` of a semilinear functional
-`f : (ι → R) →ₛₗ[τ] R` is injective if `t ↦ τ t * f (Pi.single i 1)` is injective, for a linear
-functional if its coefficient `f (Pi.single i 1)` is right-regular. These coordinate arguments are
-adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
-`65810c73f9dd7945fc646ab484cb19d673f5291d`,
-`formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
-`Sard/CoordinateChange.lean`.
-
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
 coordinate where their difference is regular. In two of these separations the critical case is
 one family being the negative of the other, so that their difference is `2` times a vector of
@@ -91,15 +80,6 @@ weights.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
   finite-dimensional space onto a finite dependent product, whose factors are then finite
   (`LinearMap.finite_of_surjective_pi`).
-* `LinearMap.exists_apply_single_ne_zero`: a nonzero semilinear map on a finite product `ι → R`
-  is nonzero at some coordinate vector.
-* `LinearMap.apply_update_eq_add_smul`: for a semilinear map `f : (ι → R) →ₛₗ[σ] M`, setting the
-  coordinate `i` of `x` to `t` adds `σ t` times the value at `Pi.single i 1` to the value at `x`
-  with that coordinate zeroed.
-* `LinearMap.pi_update_injective`: over a semiring with left-cancellative addition, replacing one
-  coordinate `i` of `v` by the value of a semilinear functional `f : (ι → R) →ₛₗ[τ] R` is
-  injective if `t ↦ τ t * f (Pi.single i 1)` is injective; for a linear functional, if the
-  coefficient `f (Pi.single i 1)` is right-regular.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -464,50 +444,6 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
-
-section Coordinates
-
-variable {ι R S M : Type*} [DecidableEq ι] [Semiring R] [Semiring S] [AddCommMonoid M] [Module S M]
-  {σ : R →+* S}
-
-/-- A nonzero semilinear map on a finite product `ι → R` is nonzero on some coordinate vector. -/
-public theorem exists_apply_single_ne_zero [Finite ι] (f : (ι → R) →ₛₗ[σ] M) (hf : f ≠ 0) :
-    ∃ i : ι, f (Pi.single i 1) ≠ 0 := by
-  by_contra! h
-  exact hf <| (Pi.basisFun R ι).ext fun i ↦ by simpa using h i
-
-/-- The value of a semilinear map `f : (ι → R) →ₛₗ[σ] M` after setting the coordinate `i` of `x`
-to `t` is its value with that coordinate set to zero, plus `σ t` times its value at the coordinate
-vector `Pi.single i 1`. -/
-public theorem apply_update_eq_add_smul (f : (ι → R) →ₛₗ[σ] M) (x : ι → R) (i : ι) (t : R) :
-    f (Function.update x i t) = f (Function.update x i 0) + σ t • f (Pi.single i 1) := by
-  -- Split the updated vector coordinatewise, at `i` and away from it.
-  have hsplit : Function.update x i t = Function.update x i 0 + t • Pi.single i 1 := by
-    ext j
-    rcases eq_or_ne j i with rfl | hj <;> simp [*]
-  simp [hsplit]
-
-/-- Over a semiring with left-cancellative addition, replacing the coordinate `i` of `v` by the
-value `f v` of a semilinear functional `f : (ι → R) →ₛₗ[τ] R` is injective when `t ↦ τ t * c` is
-injective, where `c = f (Pi.single i 1)`. For a linear functional this says that `c` is
-right-regular. -/
-public theorem pi_update_injective [IsLeftCancelAdd R] {τ : R →+* R} (f : (ι → R) →ₛₗ[τ] R)
-    (i : ι) (hf : Function.Injective fun t ↦ τ t * f (Pi.single i 1)) :
-    Function.Injective fun v ↦ Function.update v i (f v) := by
-  intro v w h
-  have hoff (m : ι) (hm : m ≠ i) : v m = w m := by
-    simpa [Function.update_of_ne hm] using congrFun h m
-  have hrest : Function.update v i 0 = Function.update w i 0 :=
-    Function.update_eq_iff.2 ⟨by simp, fun m hm ↦ by simp [hm, hoff m hm]⟩
-  -- Split off the coordinate `i` on both sides of `f v = f w` and cancel the common summand.
-  have hsplit (x : ι → R) : f x = f (Function.update x i 0) + τ (x i) * f (Pi.single i 1) := by
-    simpa only [Function.update_eq_self, smul_eq_mul] using apply_update_eq_add_smul f x i (x i)
-  have hfvw : f v = f w := by simpa using congrFun h i
-  rw [hsplit v, hsplit w, hrest] at hfvw
-  exact (Function.update_eq_self i v).symm.trans <|
-    Function.update_eq_iff.2 ⟨hf (add_left_cancel hfvw), hoff⟩
-
-end Coordinates
 
 end LinearMap
 

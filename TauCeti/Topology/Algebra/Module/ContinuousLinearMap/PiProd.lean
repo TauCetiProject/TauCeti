@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.LinearAlgebra.Transvection.Basic
-import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Pi.Coordinates
 
 /-!
 # Continuous linear maps on products and Pi types
@@ -19,6 +19,9 @@ This file collects supplementary results about continuous linear maps on indexed
 * `ContinuousLinearMap.eq_smul_id_of_unique`: every continuous linear endomorphism of a
   one-coordinate space `ι → R` over a topological commutative semiring `R` with continuous scalar
   multiplication is a scalar multiple of the identity.
+* `ContinuousLinearMap.pi_update_proj_apply`: the continuous linear map
+  `pi (Function.update (fun m ↦ proj m) i α)`, which replaces the coordinate `i` by the value of
+  `α`, sends `v` to `Function.update v i (α v)`.
 * `ContinuousLinearMap.exists_pi_update_equiv`: over a ring `R` with a topology, replacing one
   coordinate of `ι → R` by a continuous linear functional whose coefficient `c` at that coordinate
   is a unit is a continuous linear equivalence, provided right multiplication by `-c⁻¹` is
@@ -53,6 +56,16 @@ theorem eq_smul_id_of_unique {ι : Type*} [Unique ι] [ContinuousConstSMul R R]
 
 end CommSemiring
 
+/-- The continuous linear map `pi (Function.update (fun m ↦ proj m) i α)`, which replaces the
+coordinate `i` by the value of the continuous linear map `α`, sends `v` to
+`Function.update v i (α v)`. It is not a `simp` lemma: `simp` first rewrites `pi f v` by
+`ContinuousLinearMap.coe_pi'`, so use it with `rw`. -/
+theorem pi_update_proj_apply {ι R : Type*} [DecidableEq ι] [Semiring R]
+    {φ : ι → Type*} [∀ m, TopologicalSpace (φ m)] [∀ m, AddCommMonoid (φ m)] [∀ m, Module R (φ m)]
+    (i : ι) (α : (∀ m, φ m) →L[R] φ i) (v : ∀ m, φ m) :
+    pi (Function.update (fun m ↦ proj m) i α) v = Function.update v i (α v) :=
+  Function.eq_update_iff.2 ⟨by simp [pi_apply], fun m hm ↦ by simp [pi_apply, hm]⟩
+
 /-- Replacing one coordinate by a continuous linear functional whose coefficient `c` at that
 coordinate is a unit is a continuous linear equivalence, provided right multiplication by `-c⁻¹`
 is continuous on `R`. No other continuity on `R` is needed. -/
@@ -62,8 +75,7 @@ theorem exists_pi_update_equiv {ι R : Type*} [DecidableEq ι] [Ring R] [Topolog
     ∃ e : (ι → R) ≃L[R] (ι → R),
       (e : (ι → R) →L[R] (ι → R)) = pi (Function.update (fun m : ι ↦ proj m) i α) := by
   set f : (ι → R) →L[R] (ι → R) := pi (Function.update (fun m : ι ↦ proj m) i α)
-  have hf (v : ι → R) : f v = Function.update v i (α v) :=
-    Function.eq_update_iff.2 ⟨by simp [f, pi_apply], fun m hm ↦ by simp [f, pi_apply, hm]⟩
+  have hf (v : ι → R) : f v = Function.update v i (α v) := pi_update_proj_apply i α v
   -- The update is the dilatransvection `v ↦ v + (α v - v i) • Pi.single i 1`, whose
   -- dilation factor `1 + (α - proj i) (Pi.single i 1)` is the coefficient of `α`.
   have h : IsUnit (1 + ((α : (ι → R) →ₗ[R] R) - LinearMap.proj i : Module.Dual R (ι → R))

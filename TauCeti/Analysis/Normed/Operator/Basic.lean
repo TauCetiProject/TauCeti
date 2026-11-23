@@ -749,7 +749,7 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
 homomorphism `σ`. Let `B` send `y` to `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `y`, where
 `0 ≤ ε'` and `K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within
 `(2 K² ε' + η) ‖u‖` of `B' u`. Typically `B` inverts an operator `T` on `v` and `y = T v`. -/
-theorem norm_sub_apply_le_of_apply_eq {B B' : F →SL[σ] E} {y u : F} {v : E}
+theorem norm_sub_apply_le_of_apply_eq (B : F →SL[σ] E) {B' : F →SL[σ] E} {y u : F} {v : E}
     {K ε' η : ℝ} (hBy : B y = v) (hB : ‖B‖ ≤ K) (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε')
     (hu : ‖u - y‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :
     ‖v - B' u‖ ≤ (2 * K ^ 2 * ε' + η) * ‖u‖ := by
