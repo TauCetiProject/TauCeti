@@ -23,7 +23,9 @@ whose uniform completion `UniformSpace.Completion (TwistedConvolutionAlgebra ω 
 cocycle-twisted `L¹` Banach ⋆-algebra `L¹(G, A, α, ω)`. When `G` is weakly locally compact and `μ`
 is inner regular on finite-measure sets, `TwistedConvolutionAlgebra.completionEquivL1` identifies
 this completion isometrically with Bochner `Lp A 1 μ`. At `ω = 1`, `untwistStarAlgEquiv` identifies
-it isometrically with `ConvolutionAlgebra α μ`.
+it isometrically with `ConvolutionAlgebra α μ`. Without local compactness, `untwistRingEquiv`
+provides the underlying isometric `ℂ`-linear ring equivalence; under `LocallyCompactSpace`,
+`untwistStarAlgEquiv` upgrades it to a `⋆`-algebra equivalence.
 
 ## Main definitions
 
@@ -34,6 +36,9 @@ it isometrically with `ConvolutionAlgebra α μ`.
 * `TauCeti.CStarAction.TwistedConvolutionAlgebra.completionEquivL1`: identification of the
   twisted `L¹` completion `UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` with Bochner
   `Lp A 1 μ`.
+* `TauCeti.CStarAction.TwistedConvolutionAlgebra.untwistRingEquiv`: isometric `ℂ`-linear ring
+  equivalence `TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃+* ConvolutionAlgebra α μ`
+  without local compactness.
 * `TauCeti.CStarAction.TwistedConvolutionAlgebra.untwistStarAlgEquiv`: isometric ⋆-algebra
   equivalence
   `TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃⋆ₐ[ℂ] ConvolutionAlgebra α μ`.
@@ -351,22 +356,61 @@ end CompletionEquiv
 
 section Untwisted
 
-variable (α μ) [IsTopologicalGroup G] [LocallyCompactSpace G] [OpensMeasurableSpace G]
-  [IsFiniteMeasureOnCompacts μ]
+variable (α μ) [IsTopologicalGroup G] [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
 
 /-- For the trivial cocycle `1 : CentralCocycle α`, `TwistedConvolutionAlgebra 1 μ` is canonically
-and isometrically isomorphic as a complex nonunital ⋆-algebra to `ConvolutionAlgebra α μ`. -/
-def untwistStarAlgEquiv :
-    TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃⋆ₐ[ℂ]
-      ConvolutionAlgebra α μ where
+and isometrically isomorphic as a nonunital ring (and `ℂ`-linearly, via `untwistRingEquiv_smul`)
+to `ConvolutionAlgebra α μ`, without requiring local compactness. -/
+def untwistRingEquiv :
+    TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃+* ConvolutionAlgebra α μ where
   toFun f := ConvolutionAlgebra.toConv f.ofConv
   invFun f := toConv f.ofConv
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := by ext1; simp
   map_mul' _ _ := by ext1; simp
-  map_smul' _ _ := by ext1; simp
+
+@[simp] theorem ofConv_untwistRingEquiv
+    (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
+    (untwistRingEquiv α μ f).ofConv = f.ofConv := (rfl)
+
+@[simp] theorem ofConv_untwistRingEquiv_symm (f : ConvolutionAlgebra α μ) :
+    ((untwistRingEquiv α μ).symm f).ofConv = f.ofConv := (rfl)
+
+@[simp] theorem untwistRingEquiv_smul (c : ℂ)
+    (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
+    untwistRingEquiv α μ (c • f) = c • untwistRingEquiv α μ f := by
+  ext1; simp
+
+@[simp] theorem untwistRingEquiv_symm_smul (c : ℂ) (f : ConvolutionAlgebra α μ) :
+    (untwistRingEquiv α μ).symm (c • f) = c • (untwistRingEquiv α μ).symm f := by
+  ext1; simp
+
+@[simp] theorem norm_untwistRingEquiv
+    (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
+    ‖untwistRingEquiv α μ f‖ = ‖f‖ := by
+  rw [ConvolutionAlgebra.norm_eq_integral_norm, ofConv_untwistRingEquiv, norm_eq_integral_norm]
+
+@[simp] theorem norm_untwistRingEquiv_symm (f : ConvolutionAlgebra α μ) :
+    ‖(untwistRingEquiv α μ).symm f‖ = ‖f‖ := by
+  rw [norm_eq_integral_norm, ofConv_untwistRingEquiv_symm, ConvolutionAlgebra.norm_eq_integral_norm]
+
+section LocallyCompact
+
+variable [LocallyCompactSpace G]
+
+/-- For the trivial cocycle `1 : CentralCocycle α` over a locally compact group,
+`untwistRingEquiv` upgrades to an isometric complex nonunital ⋆-algebra equivalence
+`TwistedConvolutionAlgebra 1 μ ≃⋆ₐ[ℂ] ConvolutionAlgebra α μ`. -/
+def untwistStarAlgEquiv :
+    TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃⋆ₐ[ℂ]
+      ConvolutionAlgebra α μ where
+  __ := untwistRingEquiv α μ
+  map_smul' := untwistRingEquiv_smul α μ
   map_star' _ := by ext1; simp
+
+@[simp] theorem toRingEquiv_untwistStarAlgEquiv :
+    (untwistStarAlgEquiv α μ).toRingEquiv = untwistRingEquiv α μ := (rfl)
 
 @[simp] theorem ofConv_untwistStarAlgEquiv
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
@@ -377,8 +421,10 @@ def untwistStarAlgEquiv :
 
 @[simp] theorem norm_untwistStarAlgEquiv
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
-    ‖untwistStarAlgEquiv α μ f‖ = ‖f‖ := by
-  rw [ConvolutionAlgebra.norm_eq_integral_norm, ofConv_untwistStarAlgEquiv, norm_eq_integral_norm]
+    ‖untwistStarAlgEquiv α μ f‖ = ‖f‖ :=
+  norm_untwistRingEquiv α μ f
+
+end LocallyCompact
 
 end Untwisted
 

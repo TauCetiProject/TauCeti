@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.Topology.Algebra.LinearMapCompletion
+import TauCeti.Analysis.Normed.Group.Completion
 
 /-!
 # Algebraic comparison with a metric completion
@@ -90,11 +91,9 @@ seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its ex
 theorem norm_fromCompletion_le (f : E →ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
     (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
     ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
-  induction y using Completion.induction_on with
-  | hp =>
-    exact isClosed_le (continuous_norm.comp (f.continuous_fromCompletion hf))
-      (continuous_const.mul continuous_norm)
-  | ih x => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using hC x
+  simpa only [coe_fromCompletion] using
+    Completion.norm_extension_le (f := (f : E → F))
+      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) hC y
 
 end NonUnitalAlgHom
 
@@ -113,7 +112,8 @@ separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, t
 theorem norm_fromCompletion_le (f : E →⋆ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
     (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
     ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
-  simpa only [← NonUnitalStarAlgHom.coe_toNonUnitalAlgHom, toNonUnitalAlgHom_fromCompletion] using
-    f.toNonUnitalAlgHom.norm_fromCompletion_le hf hC y
+  simpa only [coe_fromCompletion] using
+    Completion.norm_extension_le (f := (f : E → F))
+      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) hC y
 
 end NonUnitalStarAlgHom

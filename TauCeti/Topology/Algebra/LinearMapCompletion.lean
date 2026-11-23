@@ -225,20 +225,22 @@ theorem continuous_fromCompletion (f : E →ₙₐ[R] F) (hf : Continuous f) :
 equals `f.fromCompletion hf`. -/
 theorem fromCompletion_unique (f : E →ₙₐ[R] F) (hf : Continuous f)
     (g : Completion E →ₙₐ[R] F) (hg : Continuous g) (h : ∀ x : E, f x = g x) :
-    f.fromCompletion hf = g := by
-  ext x : 1
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (continuous_fromCompletion f hf) hg
-  | ih a => rw [fromCompletion_apply_coe, h]
+    f.fromCompletion hf = g :=
+  DFunLike.coe_injective <| (coe_fromCompletion f hf).trans <|
+    Completion.extension_unique
+      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf)
+      (uniformContinuous_addMonoidHom_of_continuous (f := g.toAddMonoidHom) hg) h
 
 /-- On the completion, `f.fromCompletion hf` agrees with `fL.fromCompletion` for any continuous
 linear map `fL` agreeing with `f` on `E`. -/
 theorem fromCompletion_eq_clm (f : E →ₙₐ[R] F) (hf : Continuous f) (fL : E →L[R] F)
     (hfL : ∀ x : E, fL x = f x) (x : Completion E) :
     f.fromCompletion hf x = fL.fromCompletion x := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (continuous_fromCompletion f hf) fL.fromCompletion.continuous
-  | ih a => simp [hfL]
+  have h : ⇑(f.fromCompletion hf) = ⇑fL.fromCompletion :=
+    (coe_fromCompletion f hf).trans <| Completion.extension_unique
+      (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf)
+      fL.fromCompletion.uniformContinuous fun a ↦ by simp [hfL]
+  exact congrArg (fun φ : Completion E → F ↦ φ x) h
 
 end FromCompletion
 
@@ -293,11 +295,10 @@ theorem continuous_fromCompletion (f : E →⋆ₙₐ[R] F) (hf : Continuous f) 
 `E` equals `f.fromCompletion hf`. -/
 theorem fromCompletion_unique (f : E →⋆ₙₐ[R] F) (hf : Continuous f)
     (g : Completion E →⋆ₙₐ[R] F) (hg : Continuous g) (h : ∀ x : E, f x = g x) :
-    f.fromCompletion hf = g := by
-  ext x : 1
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (continuous_fromCompletion f hf) hg
-  | ih a => rw [fromCompletion_apply_coe, h]
+    f.fromCompletion hf = g :=
+  DFunLike.coe_injective <| congr_arg (DFunLike.coe : (Completion E →ₙₐ[R] F) → _) <|
+    (f.toNonUnitalAlgHom_fromCompletion hf).trans <|
+      f.toNonUnitalAlgHom.fromCompletion_unique hf g.toNonUnitalAlgHom hg h
 
 end FromCompletion
 
