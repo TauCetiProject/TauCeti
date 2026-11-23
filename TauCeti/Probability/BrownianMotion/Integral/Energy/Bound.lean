@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -533,5 +534,38 @@ theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_gt_le
       simp only [mem_ofPred_eq] at hω ⊢
       rw [← ofReal_elementaryEnergy_min_ite hτ T ω]
       exact (ENNReal.ofReal_lt_ofReal_iff (hδ.trans_lt hω)).2 hω)
+
+/-- **Finite-horizon two-grid uniform elementary energy estimate.** Large differences between the
+elementary gains of two simple holdings at any observation time up to `T` require large lower square
+energy of their difference on `(0, T]`, or a fluctuation of outer probability at most `δ / ε²`.
+Heights need only be known at the left endpoints of their intervals, and the grids may extend beyond
+`T`. -/
+theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_sub_gt_le
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    {τ₁ τ₂ : ℕ → ℝ≥0} {n₁ n₂ : ℕ} {a₁ a₂ : ℕ → Ω → ℝ}
+    (hτ₁ : MonotoneOn τ₁ (Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Iic n₂))
+    (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
+    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j))
+    (T : ℝ≥0) {ε δ : ℝ} (hε : 0 < ε) :
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ₁ n₁ a₁ W t ω -
+        Finance.simpleGains τ₂ n₂ a₂ W t ω|} ≤
+      ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+        ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
+          Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+  obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgains⟩ :=
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ₁ hτ₂ ha₁ ha₂
+  calc
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ₁ n₁ a₁ W t ω -
+          Finance.simpleGains τ₂ n₂ a₂ W t ω|}
+        = P {ω | ∃ t ≤ T, ε < |Finance.simpleGains ρ N c W t ω|} := by
+      simp only [hgains]
+    _ ≤ ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+          ∫⁻ s, ‖Finance.simpleHolding ρ N c s ω‖ₑ ^ 2 ∂timeMeasure T} :=
+      hW.measure_exists_le_abs_simpleGains_gt_le hcont hρ.monotoneOn hc T hε
+    _ = ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+          ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
+            Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+      simp_rw [hhold]
 
 end TauCeti.Probability

@@ -16,7 +16,6 @@ import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
-import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Martingale.LpLimit
 import TauCeti.Topology.Order.LeftRight
@@ -75,48 +74,6 @@ namespace TauCeti.Probability
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   {W H I : ℝ≥0 → Ω → ℝ}
 
-/-- The elementary isometry for the difference of two simple holdings with square-integrable
-heights: the `L²(P)` distance of their elementary integrals at `t` is the `L²` distance of the
-holdings for Lebesgue time on `(0,t]` times `P`. -/
-private theorem eLpNorm_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
-    {τ σ : ℕ → ℝ≥0} {n m : ℕ} {a b : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Iic n)) (hσ : MonotoneOn σ (Iic m))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j))
-    (ha₂ : ∀ j < n, MemLp (a j) 2 P) (hb₂ : ∀ j < m, MemLp (b j) 2 P) (t : ℝ≥0) :
-    eLpNorm (Finance.simpleGains τ n a W t - Finance.simpleGains σ m b W t) 2 P =
-      eLpNorm (Function.uncurry (Finance.simpleHolding τ n a) -
-        Function.uncurry (Finance.simpleHolding σ m b)) 2 ((timeMeasure t).prod P) := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgain⟩ :=
-    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ hσ ha hb
-  have memLp_eval {ρ' : ℕ → ℝ≥0} {N' : ℕ} {d : ℕ → Ω → ℝ}
-      (hd : ∀ j < N', MemLp (d j) 2 P) (u : ℝ≥0) :
-      MemLp (fun ω ↦ Finance.simpleHolding ρ' N' d u ω) 2 P := by
-    simp only [Finance.simpleHolding_def]
-    refine memLp_finsetSum _ fun j hj ↦ ?_
-    by_cases hu : u ∈ Ioc (ρ' j) (ρ' (j + 1))
-    · simpa only [indicator_of_mem hu] using hd j (Finset.mem_range.mp hj)
-    · simpa only [indicator_of_notMem hu] using (memLp_const (0 : ℝ) : MemLp (fun _ ↦ (0 : ℝ)) 2 P)
-  -- Each height on the common grid is a value of the difference of the two holdings.
-  have hc₂ (j : ℕ) (hj : j < N) : MemLp (c j) 2 P := by
-    have hmem : ρ (j + 1) ∈ Ioc (ρ j) (ρ (j + 1)) :=
-      ⟨hρ (mem_Iic.mpr hj.le) (mem_Iic.mpr hj) (Nat.lt_succ_self j), le_rfl⟩
-    have hceq : c j = fun ω ↦
-        Finance.simpleHolding τ n a (ρ (j + 1)) ω -
-          Finance.simpleHolding σ m b (ρ (j + 1)) ω :=
-      funext fun ω ↦ by
-        rw [← Finance.simpleHolding_of_mem_Ioc (a := c) hρ.monotoneOn hj hmem ω, hhold]
-    rw [hceq]
-    exact (memLp_eval ha₂ _).sub (memLp_eval hb₂ _)
-  have hG : Finance.simpleGains τ n a W t - Finance.simpleGains σ m b W t =
-      Finance.simpleGains ρ N c W t := funext fun ω ↦ (hgain W t ω).symm
-  have hK : Function.uncurry (Finance.simpleHolding τ n a) -
-      Function.uncurry (Finance.simpleHolding σ m b) =
-        Function.uncurry (Finance.simpleHolding ρ N c) := funext fun p ↦ (hhold p.1 p.2).symm
-  rw [hG, hK]
-  exact hW.eLpNorm_simpleGains hρ.monotoneOn hc hc₂ t
-
 /-- Bounded simple holdings approximating a Brownian-integrable integrand on every finite
 horizon have elementary martingales which are Cauchy in `L²(P)` at every time, with `L²(P)`
 norms equal to the `L²` norms of their holdings. -/
@@ -157,7 +114,7 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
     have hdist (k l : ℕ) : dist ((hmem k t).toLp _) ((hmem l t).toLp _) =
         dist ((hK k t).toLp _) ((hK l t).toLp _) := by
       rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
-        Lp.norm_toLp, eLpNorm_simpleGains_sub hW (hτ k).monotoneOn (hτ l).monotoneOn (ha k)
+        Lp.norm_toLp, hW.eLpNorm_simpleGains_sub (hτ k).monotoneOn (hτ l).monotoneOn (ha k)
           (ha l) (ha₂ k) (ha₂ l) t]
     have hcau := hconv.cauchySeq
     rw [Metric.cauchySeq_iff] at hcau ⊢
@@ -300,36 +257,6 @@ theorem IsItoIntegral.integral_sq (hI : IsItoIntegral ℱ P W H I)
     ← integral_norm_sq_eq_toReal_eLpNorm_sq hH.aestronglyMeasurable, Real.norm_eq_abs, sq_abs] at h
   exact h
 
-/-- Comparing two simple holdings on `[0, T]` via a common grid clipped at `T`: large difference
-of their elementary gains on `[0, T]` requires large pathwise square-energy difference on `(0, T]`,
-or an event of outer probability at most `γ / ε²`. -/
-private theorem measure_exists_le_norm_simpleGains_sub_simpleGains_lt
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
-    {T : ℝ≥0} {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ℝ≥0} {a₁ a₂ : ℕ → Ω → ℝ}
-    (hτ₁ : MonotoneOn τ₁ (Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Iic n₂))
-    (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
-    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j))
-    {ε γ : ℝ} (hε : 0 < ε) :
-    P {ω | ∃ t ≤ T, ε < ‖Finance.simpleGains τ₁ n₁ a₁ W t ω -
-        Finance.simpleGains τ₂ n₂ a₂ W t ω‖} ≤
-      ENNReal.ofReal (γ / ε ^ 2) + P {ω | ENNReal.ofReal γ <
-        ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
-          Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
-  obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgains⟩ :=
-    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ₁ hτ₂ ha₁ ha₂
-  calc
-    P {ω | ∃ t ≤ T, ε < ‖Finance.simpleGains τ₁ n₁ a₁ W t ω -
-          Finance.simpleGains τ₂ n₂ a₂ W t ω‖}
-        = P {ω | ∃ t ≤ T, ε < |Finance.simpleGains ρ N c W t ω|} := by
-      simp only [hgains, Real.norm_eq_abs]
-    _ ≤ ENNReal.ofReal (γ / ε ^ 2) + P {ω | ENNReal.ofReal γ <
-          ∫⁻ s, ‖Finance.simpleHolding ρ N c s ω‖ₑ ^ 2 ∂timeMeasure T} :=
-      hW.measure_exists_le_abs_simpleGains_gt_le hWc hρ.monotoneOn hc T hε
-    _ = ENNReal.ofReal (γ / ε ^ 2) + P {ω | ENNReal.ofReal γ <
-          ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
-            Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
-      simp_rw [hhold]
-
 /-- **Finite-horizon uniform convergence of elementary gains in outer probability.** Against an
 almost surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple
 holdings converging to `H` in pathwise square energy in probability on `(0, T]` has elementary
@@ -356,8 +283,10 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
     have hlim : Tendsto (fun p : ℕ × ℕ ↦ P {ω | ∃ t ≤ T, (2⁻¹ ^ m : ℝ) <
         ‖G₂ p.1 t ω - G₂ p.2 t ω‖}) (atTop ×ˢ atTop) (𝓝 0) := by
       refine tendsto_measure_of_le_ofReal_div_sq_add (ε := (2⁻¹ ^ m : ℝ)) (fun δ hδ ↦ ?_)
-        fun δ _ p ↦ measure_exists_le_norm_simpleGains_sub_simpleGains_lt hW hWc
-          (hτ₂ p.1) (hτ₂ p.2) (ha₂ p.1) (ha₂ p.2) (by positivity)
+        fun δ _ p ↦ by
+          simpa only [G₂, K₂, Real.norm_eq_abs] using
+            hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ₂ p.1) (hτ₂ p.2)
+              (ha₂ p.1) (ha₂ p.2) T (by positivity)
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
         (tendsto_measure_lintegral_enorm_sub_sq (l := atTop ×ˢ atTop)
           (f := fun p ↦ K₂ p.1) (g := fun p ↦ K₂ p.2) (h := fun _ ↦ H)
@@ -563,9 +492,16 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
     have hquot : γ / ε₂ ^ 2 = c'.toReal / 4 := by dsimp [γ]; field_simp
     rw [hquot, ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_toReal hc'top]
     norm_num
-  have hG_diff := (measure_exists_le_norm_simpleGains_sub_simpleGains_lt hW hWc (hτ i)
-    (hτ₂ (k m)) (ha i) (ha₂ (k m)) hε₂).trans
-    (add_le_add hofReal_le ((measure_mono henergy_set).trans (measure_union_le _ _)))
+  have hG_diff : P {ω | ∃ t ≤ T, ε₂ < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω -
+      G₂ (k m) t ω‖} ≤ c' / 4 +
+      (P {ω | γ' ≤ ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
+          ∂timeMeasure T} +
+        P {ω | γ' ≤ ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T}) := by
+    refine le_trans ?_
+      (add_le_add hofReal_le ((measure_mono henergy_set).trans (measure_union_le _ _)))
+    simpa only [G₂, K₂, Real.norm_eq_abs] using
+      hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ i) (hτ₂ (k m))
+        (ha i) (ha₂ (k m)) T hε₂ (δ := γ)
   have hc4_sum : c' / 4 + c' / 4 + c' / 4 + c' / 4 = c' := by
     calc
       c' / 4 + c' / 4 + c' / 4 + c' / 4 = (c' + c' + c' + c') / 4 := by
