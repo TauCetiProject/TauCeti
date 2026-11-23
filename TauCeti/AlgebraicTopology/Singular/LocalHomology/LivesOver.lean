@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
-import TauCeti.AlgebraicTopology.Singular.Kunneth.Pair
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
@@ -66,17 +65,9 @@ needed for the statements below.
   `p × q : E × Y → M × N` over `(b, c)` is `p⁻¹(b) × q⁻¹(c)`. If `α × β` lives over the fundamental
   class at `(b, c)`, then `α` lives over it at `b` and `β` at `c`
   (`TauCeti.LivesOverFundamentalClass.left_of_singularHomologyCross_prodMap`,
-  `TauCeti.LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap`). Over a field, and
-  with closed fibres, the converse holds
-  (`TauCeti.LivesOverFundamentalClass.singularHomologyCross_prodMap`,
-  `TauCeti.livesOverFundamentalClass_prodMap_singularHomologyCross_iff_of_field`). Write
-  `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`, so that the complement of the fibre is
-  `A × Y ∪ E × B`. The image of `α × β` in `Hₙ(E × Y, A × Y ∪ E × B)` is the Künneth map of the
-  relative singular chain complexes, applied to `(loc α) ⊗ (loc β)`, followed by the shuffle map of
-  the product of pairs (`TopCat.shufflePair`). Over a field the Künneth map is injective, and for
-  open `A` and `B` the shuffle map is a quasi-isomorphism (`TopCat.quasiIso_shufflePair_of_isOpen`).
-  This is the localization statement behind the source's Proposition 6.13 (products of manifolds
-  abundant with 2-spheres), with coefficients in a field.
+  `TauCeti.LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap`). A map missing a
+  fibre is killed by the localization at it
+  (`TauCeti.homologyMap_comp_fiberLocalization_eq_zero`).
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
   `Hₙ(M, M ∖ {b})`, and the multiple `d • [M]` of the fundamental class lives over the
@@ -116,10 +107,9 @@ needed for the statements below.
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
   Applications to cotangent bundles*, arXiv:2404.07953, §2.4 (Definition 2.3, Example 2.4,
-  Lemma 2.9, Proposition 2.12) and §§5–6 (Proposition 6.13).
+  Lemma 2.9, Proposition 2.12) and §§5–6.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, local homology and fundamental classes, and Section 3.B, the relative Künneth
-  formula.
+  Section 3.3, local homology and fundamental classes.
 -/
 
 public section
@@ -616,10 +606,7 @@ section ProdMap
 /-! ### Products of two maps -/
 
 variable {E Y M N : Type w} [TopologicalSpace E] [TopologicalSpace Y]
-
-section CommRing
-
-variable {k : Type w} [CommRing k] (R S : ModuleCat.{w} k)
+  {k : Type w} [CommRing k] (R S : ModuleCat.{w} k)
 
 /-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `(b, c)`
 for `p × q : E × Y → M × N`, then `α` lives over the fundamental class at `b` for `p`. -/
@@ -671,92 +658,6 @@ theorem LivesOverFundamentalClass.right_of_singularHomologyCross_prodMap {p : E 
   have h₁ := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β')) key
   simp only [ModuleCat.hom_zero, LinearMap.zero_apply] at h₁
   exact h₁
-
-end CommRing
-
-section Field
-
-variable {K : Type w} [Field K] (R S : ModuleCat.{w} K)
-
-/-- **Cross products living over the fundamental class of a product.** With coefficients in a
-field, if `α ∈ Hᵢ(E; R)` lives over the fundamental class at `b` for `p` and `β ∈ Hⱼ(Y; S)` lives
-over the fundamental class at `c` for `q`, and the two fibres are closed, then the cross product
-`α × β` lives over the fundamental class at `(b, c)` for `p × q : E × Y → M × N`. -/
-theorem LivesOverFundamentalClass.singularHomologyCross_prodMap {p : E → M} {q : Y → N} {b : M}
-    {c : N} (hp : IsClosed (p ⁻¹' {b})) (hq : IsClosed (q ⁻¹' {c})) {i j n : ℕ} (h : i + j = n)
-    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} K)}
-    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} K)}
-    (hα : LivesOverFundamentalClass R p b α) (hβ : LivesOverFundamentalClass S q c β) :
-    LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
-      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) := by
-  intro h₀
-  -- Write `A = E ∖ p⁻¹(b)` and `B = Y ∖ q⁻¹(c)`; the complement of the fibre `p⁻¹(b) × q⁻¹(c)`
-  -- lies in `A × Y ∪ E × B`, so `α × β` vanishes in `Hₙ(E × Y, A × Y ∪ E × B)`.
-  let A : Set (TopCat.of E) := (p ⁻¹' {b})ᶜ
-  let B : Set (TopCat.of Y) := (q ⁻¹' {c})ᶜ
-  let Z : Set ↑(TopCat.of E ⊗ TopCat.of Y) :=
-    CartesianMonoidalCategory.fst (TopCat.of E) (TopCat.of Y) ⁻¹' A ∪
-      CartesianMonoidalCategory.snd (TopCat.of E) (TopCat.of Y) ⁻¹' B
-  have hZ : MapsTo (𝟙 (TopCat.of E ⊗ TopCat.of Y)) (Prod.map p q ⁻¹' {(b, c)})ᶜ Z := fun x hx ↦
-    (em (p x.1 = b)).elim (fun hb ↦ Or.inr fun hc ↦ hx (Prod.ext hb hc)) Or.inl
-  have h₁ : ((TopPair.ofSubset Z).singularHomologyπ (R ⊗ S) n).hom
-      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) = 0 :=
-    (ConcreteCategory.congr_hom
-      (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (R ⊗ S) hZ n) _).symm.trans
-      ((congrArg (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hZ) (R ⊗ S) n).hom h₀).trans
-        (map_zero _))
-  -- That image is the Künneth map of `C(E, A; R)` and `C(Y, B; S)` on `(loc α) ⊗ (loc β)`,
-  -- followed by the shuffle map of the product of pairs.
-  have e : TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h ≫
-        (TopPair.ofSubset Z).singularHomologyπ (R ⊗ S) n =
-      (fiberLocalization R p b i ⊗ₘ fiberLocalization S q c j) ≫
-        HomologicalComplex.homologyCross ((TopPair.ofSubset A).singularChainComplex R)
-          ((TopPair.ofSubset B).singularChainComplex S) i j n h ≫
-        HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of E) (TopCat.of Y) A B R S) n :=
-    (congrArg (· ≫ _) (TopCat.singularHomologyCross_def _ _ R S i j n h)).trans <|
-      (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n).symm).trans <|
-      (congrArg (fun φ ↦ _ ≫ HomologicalComplex.homologyMap φ n)
-        (TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair _ _ A B R S).symm
-        ).trans <|
-      (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n)).trans <|
-      (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
-        (HomologicalComplex.homologyCross_naturality _ _ i j n h).symm).trans (Category.assoc _ _ _)
-  -- Over a field the cycles split off, so the Künneth map is injective, and the shuffle map is a
-  -- quasi-isomorphism since `A` and `B` are open.
-  have := HomologicalComplex.isSplitMono_homologyKunneth
-    ((TopPair.ofSubset A).singularChainComplex R) ((TopPair.ofSubset B).singularChainComplex S) n
-  have := TopCat.quasiIso_shufflePair_of_isOpen (TopCat.of E) (TopCat.of Y) R S hp.isOpen_compl
-    hq.isOpen_compl
-  have hinj := (ModuleCat.mono_iff_injective (GradedObject.Monoidal.ιTensorObj
-    (fun m ↦ ((TopPair.ofSubset A).singularChainComplex R).homology m)
-    (fun m ↦ ((TopPair.ofSubset B).singularChainComplex S).homology m) i j n h ≫
-      HomologicalComplex.homologyKunneth ((TopPair.ofSubset A).singularChainComplex R)
-        ((TopPair.ofSubset B).singularChainComplex S) n ≫
-      HomologicalComplex.homologyMap (TopCat.shufflePair (TopCat.of E) (TopCat.of Y) A B R S) n)).1
-    inferInstance
-  rw [HomologicalComplex.ι_homologyKunneth_assoc] at hinj
-  refine tmul_ne_zero hα hβ (hinj ?_)
-  rw [map_zero]
-  exact (ConcreteCategory.congr_hom e (α ⊗ₜ β)).symm.trans h₁
-
-/-- **Classes living over the fundamental class of a product.** With coefficients in a field and
-closed fibres, the cross product `α × β` lives over the fundamental class at `(b, c)` for
-`p × q : E × Y → M × N` if and only if `α` lives over the fundamental class at `b` for `p` and `β`
-lives over the fundamental class at `c` for `q`. -/
-theorem livesOverFundamentalClass_prodMap_singularHomologyCross_iff_of_field {p : E → M}
-    {q : Y → N} {b : M} {c : N} (hp : IsClosed (p ⁻¹' {b})) (hq : IsClosed (q ⁻¹' {c}))
-    {i j n : ℕ} (h : i + j = n)
-    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R i : ModuleCat.{w} K)}
-    {β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} K)} :
-    LivesOverFundamentalClass (R ⊗ S) (Prod.map p q) (b, c)
-      ((TopCat.singularHomologyCross (TopCat.of E) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) ↔
-      LivesOverFundamentalClass R p b α ∧ LivesOverFundamentalClass S q c β :=
-  ⟨fun hαβ ↦ ⟨hαβ.left_of_singularHomologyCross_prodMap R S h,
-    hαβ.right_of_singularHomologyCross_prodMap R S h⟩,
-    fun ⟨hα, hβ⟩ ↦ hα.singularHomologyCross_prodMap R S hp hq h hβ⟩
-
-end Field
 
 end ProdMap
 
