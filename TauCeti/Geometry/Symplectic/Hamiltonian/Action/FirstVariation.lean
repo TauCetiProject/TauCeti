@@ -87,21 +87,21 @@ variation through loops, `1`-periodic in `t`, whose loop `w (s₀, ·)` is joine
 `γ₀` by a smooth cylinder. Then the action of the loops `w (s, ·)` relative to `γ₀` has derivative
 `∫₀¹ σ(∂_t w - X_{H_t}(w), ∂_s w) dt` at `s₀`, with all terms taken at `(s₀, t)`. -/
 theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction (h : σ.IsNondegenerate)
-    (hT : VanishesOnTori σ.1) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hT : VanishesOnTori σ.val) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w) (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z)
     {s₀ : ℝ} (hcyl : ∃ u, IsSmoothCylinder I (fun t ↦ w (s₀, t)) γ₀ u) :
     HasDerivAt (fun s ↦ σ.referenceAction H γ₀ fun t ↦ w (s, t))
-      (∫ t in 0..1, σ.1 (w (s₀, t))
+      (∫ t in 0..1, σ.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ := by
   obtain ⟨u, hu⟩ := hcyl
-  have hσ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
+  have hσ : IsSmoothForm I 0 σ.val := σ.isSmoothForm.of_le (by simp)
   have hw1 : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w := hwc.of_le (by simp)
   -- the area term of the action of `w (s, ·)` is the area swept from `s` to `s₀` plus the area
   -- of `u`
   have heq : (fun s ↦ σ.referenceAction H γ₀ fun t ↦ w (s, t)) = fun s ↦
-      (rectangleIntegral σ.1 (w ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) (0, 0) (1, 1) +
-        rectangleIntegral σ.1 u (0, 0) (1, 1)) - ∫ t in 0..1, H t (w (s, t)) := by
+      (rectangleIntegral σ.val (w ∘ Prod.map (fun r ↦ s + (s₀ - s) * r) id) (0, 0) (1, 1) +
+        rectangleIntegral σ.val u (0, 0) (1, 1)) - ∫ t in 0..1, H t (w (s, t)) := by
     funext s
     -- the loop `w (s, ·)` is joined to `γ₀` through the variation from `s` to `s₀`, then `u`
     have hcyl : IsSmoothCylinder I (fun t ↦ w (s, t)) γ₀
@@ -140,12 +140,12 @@ structure SmoothTwoForm.IsReferenceActionCritical : Prop where
 action of the loops relative to `γ₀` has at `s = 0` the derivative given by the first variation
 formula. -/
 private theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction_zero
-    (h : σ.IsNondegenerate) (hT : VanishesOnTori σ.1)
+    (h : σ.IsNondegenerate) (hT : VanishesOnTori σ.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hcyl : ∃ u, IsSmoothCylinder I γ γ₀ u)
     (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ w) (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z)
     (h0 : ∀ t, w (0, t) = γ t) :
     HasDerivAt (fun s ↦ σ.referenceAction H γ₀ fun t ↦ w (s, t))
-      (∫ t in 0..1, σ.1 (w (0, t))
+      (∫ t in 0..1, σ.val (w (0, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (0, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)]) 0 :=
   h.hasDerivAt_referenceAction hT hH hwc hper (funext h0 ▸ hcyl)
@@ -155,7 +155,7 @@ vanishing on tori and a jointly `C¹` Hamiltonian, a smooth loop joined to `γ�
 cylinder which is a `1`-periodic orbit of `X_H` is a critical point of the action relative to
 `γ₀`. -/
 theorem SmoothTwoForm.IsNondegenerate.isReferenceActionCritical (h : σ.IsNondegenerate)
-    (hT : VanishesOnTori σ.1) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hT : VanishesOnTori σ.val) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) (hcyl : ∃ u, IsSmoothCylinder I γ γ₀ u)
     (horbit : γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1) :
     σ.IsReferenceActionCritical H γ₀ γ where
@@ -172,7 +172,7 @@ vanishing on tori on a manifold without boundary modelled on a finite-dimensiona
 jointly `C¹` Hamiltonian, `1`-periodic in time. Then a critical point of the action relative to a
 reference loop is a `1`-periodic orbit of `X_H`. -/
 theorem SmoothTwoForm.IsReferenceActionCritical.mem_periodicSolutions [I.Boundaryless]
-    (hc : σ.IsReferenceActionCritical H γ₀ γ) (h : σ.IsNondegenerate) (hT : VanishesOnTori σ.1)
+    (hc : σ.IsReferenceActionCritical H γ₀ γ) (h : σ.IsNondegenerate) (hT : VanishesOnTori σ.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hP : ∀ t, H (t + 1) = H t) :
     γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1 :=
   h.mem_periodicSolutions_of_forall_integral_eq_zero hH hP (n := ⊤) le_top hc.contMDiff
@@ -186,7 +186,7 @@ modelled on a finite-dimensional space, and `H` a jointly `C¹` Hamiltonian, `1`
 A smooth loop joined to the reference loop `γ₀` by a smooth cylinder is a critical point of the
 action relative to `γ₀` exactly when it is a `1`-periodic orbit of `X_H`. -/
 theorem SmoothTwoForm.IsNondegenerate.isReferenceActionCritical_iff [I.Boundaryless]
-    (h : σ.IsNondegenerate) (hT : VanishesOnTori σ.1)
+    (h : σ.IsNondegenerate) (hT : VanishesOnTori σ.val)
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hP : ∀ t, H (t + 1) = H t)
     (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) (hcyl : ∃ u, IsSmoothCylinder I γ γ₀ u) :
     σ.IsReferenceActionCritical H γ₀ γ ↔

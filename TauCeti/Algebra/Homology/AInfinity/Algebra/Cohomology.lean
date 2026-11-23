@@ -251,7 +251,7 @@ theorem cohomologyClass_smul (𝒜 : AInfinityAlgebra R A) (r : R) {x : A}
 theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomology) :
     ∃ (x : A) (hx : x ∈ 𝒜.cycles), 𝒜.cohomologyClass hx = c := by
   induction c using Submodule.Quotient.induction_on with
-  | H x => exact ⟨x, x.2, rfl⟩
+  | H x => exact ⟨x, x.property, rfl⟩
 
 /-- Equal cycles represent the same cohomology class, whatever proofs of membership are used. -/
 theorem cohomologyClass_congr (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)
@@ -291,7 +291,7 @@ def cohomologyEquivHomology (𝒜 : AInfinityAlgebra R A) :
     ext z
     simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, mem_boundariesInCycles,
       boundaries_def]
-    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, ?_⟩⟩
+    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.property⟩, hz, ?_⟩⟩
     · rw [← hwz]
       simpa only [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply] using hw
     · exact Subtype.ext (LinearEquiv.coe_ofEq_apply _ _)
@@ -311,12 +311,12 @@ theorem cohomologyEquivHomology_symm_homologyπ (𝒜 : AInfinityAlgebra R A)
     (z : LinearMap.ker 𝒜.differential) :
     𝒜.cohomologyEquivHomology.symm
         (𝒜.differential.homologyπ 𝒜.differential_comp_self_eq_zero z) =
-      𝒜.cohomologyClass (show (z : A) ∈ 𝒜.cycles by rw [cycles_def]; exact z.2) := by
+      𝒜.cohomologyClass (show (z : A) ∈ 𝒜.cycles by rw [cycles_def]; exact z.property) := by
   rw [LinearEquiv.symm_apply_eq, cohomologyEquivHomology_cohomologyClass]
 
 /-- The binary operation, restricted to a bilinear map on cycles. -/
 def cyclesMul (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[R] 𝒜.cycles →ₗ[R] 𝒜.cycles :=
-  LinearMap.mk₂ R (fun x y ↦ ⟨𝒜.m 2 ![x, y], 𝒜.m_two_mem_cycles x.2 y.2⟩)
+  LinearMap.mk₂ R (fun x y ↦ ⟨𝒜.m 2 ![x, y], 𝒜.m_two_mem_cycles x.property y.property⟩)
     (fun x x' y ↦ Subtype.ext <| by
       simpa only [mul_apply, Submodule.coe_add] using 𝒜.mul.map_add₂ x x' y)
     (fun c x y ↦ Subtype.ext <| by
@@ -355,10 +355,10 @@ def cohomologyMul (𝒜 : AInfinityAlgebra R A) :
   (𝒜.cyclesMul.compr₂ 𝒜.boundariesInCycles.mkQ).liftQ₂ _ _
     (fun _ hx ↦ LinearMap.ext fun y ↦ (Submodule.Quotient.mk_eq_zero _).mpr <|
       (𝒜.mem_boundariesInCycles).mpr <|
-        𝒜.m_two_mem_boundaries_of_left ((𝒜.mem_boundariesInCycles).mp hx) y.2)
+        𝒜.m_two_mem_boundaries_of_left ((𝒜.mem_boundariesInCycles).mp hx) y.property)
     (fun _ hy ↦ LinearMap.ext fun x ↦ (Submodule.Quotient.mk_eq_zero _).mpr <|
       (𝒜.mem_boundariesInCycles).mpr <|
-        𝒜.m_two_mem_boundaries_of_right x.2 ((𝒜.mem_boundariesInCycles).mp hy))
+        𝒜.m_two_mem_boundaries_of_right x.property ((𝒜.mem_boundariesInCycles).mp hy))
 
 /-- The product of two classes is represented by the binary operation of their representatives. -/
 @[simp]
@@ -466,7 +466,7 @@ theorem mem_cohomologyGrading_piece_iff (𝒜 : AInfinityAlgebra R A) {p : ℤ}
   rw [cohomologyGrading, InternalGrading.mem_quotient_piece_iff]
   constructor
   · rintro ⟨x, hx, rfl⟩
-    exact ⟨x, x.2, 𝒜.mem_cyclesGrading_piece.1 hx, rfl⟩
+    exact ⟨x, x.property, 𝒜.mem_cyclesGrading_piece.1 hx, rfl⟩
   · rintro ⟨x, hx, hp, rfl⟩
     exact ⟨⟨x, hx⟩, 𝒜.mem_cyclesGrading_piece.2 hp, rfl⟩
 
@@ -522,7 +522,7 @@ theorem koszulTwist_cohomologyClass (𝒜 : AInfinityAlgebra R A) {a : A} (ha : 
     rw [mem_cyclesGrading_piece] at hx
     simp only [LinearMap.comp_apply, cohomologyClassLinearMap_apply]
     rw [𝒜.cohomologyGrading.koszulTwist_one_apply_of_mem
-      (𝒜.cohomologyClass_mem_cohomologyGrading_piece x.2 hx), ← cohomologyClass_smul]
+      (𝒜.cohomologyClass_mem_cohomologyGrading_piece x.property hx), ← cohomologyClass_smul]
     congr 1
     exact (𝒜.grading.koszulTwist_one_apply_of_mem hx).symm
   simpa [τ] using LinearMap.congr_fun h ⟨a, ha⟩

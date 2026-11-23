@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Dual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
+import TauCeti.AlgebraicGeometry.Modules.Localization
+import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
 /-!
 # Finite locally free sheaves on an affine scheme
@@ -24,6 +26,9 @@ direction is `TauCeti.AlgebraicGeometry.isFiniteLocallyFree_tilde`. Conversely, 
 free sheaf is dualizable in the category of quasicoherent sheaves, and the dualizable quasicoherent
 sheaves on `Spec R` are those whose global sections are finitely generated and projective
 (`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_iff_finite_projective`).
+Applied over the affine charts of an arbitrary scheme `X`, a quasi-coherent `𝒪_X`-module is finite
+locally free if and only if its sections over every affine open `U` of `X` form a finitely
+generated projective `Γ(X, U)`-module.
 
 Under this equivalence, the rank of a finite locally free sheaf at a prime `p` is the rank of the
 free `R_p`-module `M_p` (Mathlib's `Module.rankAtStalk`). Indeed, the pullback of `M~` along
@@ -38,6 +43,15 @@ the spectrum of a local ring is free, on as many generators as its rank.
 
 * `TauCeti.AlgebraicGeometry.isFiniteLocallyFree_tilde_iff`: `M~` is finite locally free if and
   only if `M` is finitely generated and projective;
+* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff`: the pullback of a
+  quasi-coherent module `M` along an affine chart `Spec Γ(X, U) ⟶ X` is finite locally free if
+  and only if `Γ(M, U)` is finitely generated and projective over `Γ(X, U)`;
+* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_of_finite_projective_sections`: a
+  quasi-coherent module whose sections over each member of a chosen affine open cover are finitely
+  generated and projective is finite locally free;
+* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_isAffineOpen`: a quasi-coherent
+  module on `X` is finite locally free if and only if its sections on every affine open are
+  finitely generated and projective;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ`: the global
   sections of a finite locally free sheaf on `Spec R` are finitely generated and projective;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.finiteProjectiveEquiv`: the equivalence between
@@ -98,6 +112,58 @@ theorem isFiniteLocallyFree_tilde_iff (M : ModuleCat.{u} R) :
     FiniteLocallyFreeSheaf.finite_projective_moduleSpecΓ ⟨tilde M, h⟩
   let e := (tilde.toTildeΓNatIso.app M).toLinearEquiv
   exact ⟨Module.Finite.equiv e.symm, Module.Projective.of_equiv e.symm⟩
+
+/-- For a quasi-coherent `𝒪_X`-module `M` and an affine open `U` of `X`, the pullback of `M`
+along the affine chart `Spec Γ(X, U) ⟶ X` is finite locally free if and only if `Γ(M, U)` is a
+finitely generated projective `Γ(X, U)`-module. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff
+    {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] {U : X.Opens} (hU : IsAffineOpen U) :
+    Scheme.Modules.isFiniteLocallyFree (Spec Γ(X, U))
+        ((Scheme.Modules.pullback hU.fromSpec).obj M) ↔
+      Module.Finite Γ(X, U) Γ(M, U) ∧ Module.Projective Γ(X, U) Γ(M, U) := by
+  have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
+  let K : (Spec Γ(X, U)).Modules := M.restrict hU.fromSpec
+  let e : tilde (moduleSpecΓFunctor.obj K) ≅ (Scheme.Modules.pullback hU.fromSpec).obj M :=
+    @asIso _ _ _ _ K.fromTildeΓ (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent K) ≪≫
+      (Scheme.Modules.restrictFunctorIsoPullback hU.fromSpec).app M
+  have he : Scheme.Modules.isFiniteLocallyFree (Spec Γ(X, U))
+        ((Scheme.Modules.pullback hU.fromSpec).obj M) ↔
+      Module.Finite Γ(X, U) (moduleSpecΓFunctor.obj K) ∧
+        Module.Projective Γ(X, U) (moduleSpecΓFunctor.obj K) :=
+    ⟨fun h ↦ (isFiniteLocallyFree_tilde_iff (moduleSpecΓFunctor.obj K)).mp
+        ((Scheme.Modules.isFiniteLocallyFree _).prop_of_iso e.symm h),
+     fun h ↦ (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso e
+        ((isFiniteLocallyFree_tilde_iff (moduleSpecΓFunctor.obj K)).mpr h)⟩
+  let eΓ : Γ(M, U) ≃ₗ[Γ(X, U)] moduleSpecΓFunctor.obj K := M.fromSpecSectionsEquiv hU
+  exact he.trans ⟨fun ⟨_, _⟩ ↦ ⟨Module.Finite.equiv eΓ.symm, Module.Projective.of_equiv eΓ.symm⟩,
+    fun ⟨_, _⟩ ↦ ⟨Module.Finite.equiv eΓ, Module.Projective.of_equiv eΓ⟩⟩
+
+/-- A quasi-coherent `𝒪_X`-module is finite locally free if its sections over each member of an
+affine open cover `U` of `X`, indexed by an arbitrary sort, form a finitely generated projective
+module over the corresponding coordinate ring. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_of_finite_projective_sections
+    {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] {ι : Sort*} (U : ι → X.Opens)
+    (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
+    (hM : ∀ i, Module.Finite Γ(X, U i) Γ(M, U i) ∧ Module.Projective Γ(X, U i) Γ(M, U i)) :
+    Scheme.Modules.isFiniteLocallyFree X M :=
+  (Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback
+    (Scheme.AffineOpenCover.ofIsOpenCover (fun i : PLift ι ↦ U i.down)
+      (by simpa only [TopologicalSpace.IsOpenCover, iSup_plift_down] using hcov)
+      fun i ↦ hU i.down).openCover M).mpr fun i ↦
+    (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M (hU i.down)).mpr (hM i.down)
+
+/-- A quasi-coherent `𝒪_X`-module is finite locally free if and only if, on every affine open `U`
+of `X`, its sections `Γ(M, U)` form a finitely generated projective `Γ(X, U)`-module. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_isAffineOpen
+    {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] :
+    Scheme.Modules.isFiniteLocallyFree X M ↔
+      ∀ (U : X.Opens), IsAffineOpen U →
+        Module.Finite Γ(X, U) Γ(M, U) ∧ Module.Projective Γ(X, U) Γ(M, U) := by
+  refine ⟨fun ⟨_, _⟩ U hU ↦ (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M hU).mp
+    ⟨Scheme.Modules.isLocallyFree_pullback hU.fromSpec M,
+      Scheme.Modules.isFinitePresentation_pullback hU.fromSpec M⟩, fun h ↦ ?_⟩
+  exact M.isFiniteLocallyFree_of_finite_projective_sections (fun U : X.affineOpens ↦ U.val)
+    (fun U ↦ U.property) (iSup_affineOpens_eq_top X) fun U ↦ h U.val U.property
 
 namespace FiniteLocallyFreeSheaf
 

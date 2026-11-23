@@ -110,8 +110,9 @@ noncomputable def continuousZModDualEquiv :
   toFun := restrictAddMonoidHom p x₀
   map_add' := map_add _
   map_smul' := ZMod.map_smul _
-  invFun f := Additive.ofMul (characterOfContinuousMap p x₀ f.1
-      ((ContinuousMap.evalCLM_apply (ZMod p) x₀ f.1).symm.trans (LinearMap.mem_ker.mp f.2)))
+  invFun f := Additive.ofMul (characterOfContinuousMap p x₀ f.val
+      ((ContinuousMap.evalCLM_apply (ZMod p) x₀ f.val).symm.trans
+          (LinearMap.mem_ker.mp f.property)))
   left_inv φ := Additive.toMul.injective <| hom_ext fun x ↦ by simp [restrictAddMonoidHom]
   right_inv f := Subtype.ext <| ContinuousMap.ext fun x ↦ by simp [restrictAddMonoidHom]
 
@@ -126,8 +127,9 @@ theorem coe_continuousZModDualEquiv_apply_apply
 theorem continuousZModDualEquiv_symm_apply
     (f : (ContinuousMap.evalCLM (ZMod p) x₀ : C(X, ZMod p) →L[ZMod p] ZMod p).ker) :
     (continuousZModDualEquiv p x₀).symm f =
-      (Additive.ofMul (characterOfContinuousMap p x₀ f.1
-      ((ContinuousMap.evalCLM_apply (ZMod p) x₀ f.1).symm.trans (LinearMap.mem_ker.mp f.2))) :
+      (Additive.ofMul (characterOfContinuousMap p x₀ f.val
+      ((ContinuousMap.evalCLM_apply (ZMod p) x₀ f.val).symm.trans
+          (LinearMap.mem_ker.mp f.property))) :
         continuousZModDual p (freeProCPointed (finiteGroupClassP.{u} p) x₀)) :=
   (rfl)
 

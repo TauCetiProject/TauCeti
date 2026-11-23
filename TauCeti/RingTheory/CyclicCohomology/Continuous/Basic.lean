@@ -548,7 +548,7 @@ def continuousCyclicCochainsMap (f : A →L[R] B) (n : ℕ) :
   toFun φ := ⟨(φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compContinuousLinearMap
       fun _ ↦ f, (mem_continuousCyclicCochains_iff R A M).2 <|
         compLinearMap_mem_cyclicCochains (f : A →ₗ[R] B)
-          ((mem_continuousCyclicCochains_iff R B M).1 φ.2)⟩
+          ((mem_continuousCyclicCochains_iff R B M).1 φ.property)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
