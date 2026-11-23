@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Topology.Sequences
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Topology.Algebra.Module.WeakSpace
 public import TauCeti.Topology.Semicontinuity.Sequences
+public import TauCeti.Topology.Sequences.Basic
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
@@ -37,11 +37,10 @@ This bounded-set weak-to-norm continuity yields:
   `IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage_of_isCompact`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage`);
-* over `ℝ` or `ℂ`, sequential weak-to-original continuity of `J` and `g ∘ J`
+* over `ℝ` or `ℂ`, sequential weak-to-original continuity of `J`
   (`IsCompactOperator.tendsto_of_tendsto_toWeakSpace`,
-  `IsCompactOperator.seqContinuous_toWeakSpace_symm`,
-  `IsCompactOperator.seqContinuous_comp_toWeakSpace_symm`), sequential weak closedness of `J ⁻¹' C`
-  for every closed or sequentially closed `C ⊆ F`
+  `IsCompactOperator.seqContinuous_toWeakSpace_symm`, and `SeqContinuous.comp` for `g ∘ J`),
+  sequential weak closedness of `J ⁻¹' C` for every closed or sequentially closed `C ⊆ F`
   (`IsCompactOperator.isSeqClosed_toWeakSpace_preimage`,
   `IsCompactOperator.isSeqClosed_toWeakSpace_preimage_of_isSeqClosed`), and sequential weak lower
   semicontinuity of compact perturbations
@@ -66,9 +65,8 @@ are weakly sequentially closed yet not weakly closed, see
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage_of_isCompact`, and
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage`: weak closedness and weak compactness of
   `S ∩ J ⁻¹' C` for bounded weakly closed or weakly compact `S` and closed `C`.
-* `IsCompactOperator.seqContinuous_toWeakSpace_symm`,
-  `IsCompactOperator.seqContinuous_comp_toWeakSpace_symm`: sequential weak continuity of `J` and
-  `g ∘ J` over `ℝ` or `ℂ`.
+* `IsCompactOperator.seqContinuous_toWeakSpace_symm`: sequential weak continuity of `J` over `ℝ` or
+  `ℂ` (combining with `SeqContinuous.comp` for `g ∘ J`).
 * `IsCompactOperator.isSeqClosed_toWeakSpace_preimage`: sequential weak closedness of `J ⁻¹' C` for
   a compact operator `J` and a closed set `C`.
 * `IsCompactOperator.seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm`: sequential weak lower
@@ -270,13 +268,6 @@ theorem seqContinuous_toWeakSpace_symm (hJ : IsCompactOperator J) :
     SeqContinuous (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) :=
   fun _ _ hw ↦ hJ.tendsto_of_tendsto_toWeakSpace
     (by simpa only [LinearEquiv.apply_symm_apply] using hw)
-
-/-- Over `ℝ` or `ℂ`, postcomposing a compact operator `J : V →L[𝕜] F` with a sequentially
-continuous map `g : F → β` is sequentially continuous from the weak topology on `V` to `β`. -/
-theorem seqContinuous_comp_toWeakSpace_symm {β : Type*} [TopologicalSpace β]
-    (hJ : IsCompactOperator J) {g : F → β} (hg : SeqContinuous g) :
-    SeqContinuous (fun w : WeakSpace 𝕜 V ↦ g (J ((toWeakSpace 𝕜 V).symm w))) :=
-  fun _ _ hw ↦ hg (hJ.seqContinuous_toWeakSpace_symm hw)
 
 /-- **Sequential weak closedness of compact constraints.** Over `ℝ` or `ℂ`, for a compact operator
 `J : V →L[𝕜] F` and any sequentially closed set `C ⊆ F`, `J ⁻¹' C` is sequentially closed in the

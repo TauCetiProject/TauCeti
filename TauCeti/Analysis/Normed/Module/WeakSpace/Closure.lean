@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
@@ -106,15 +107,12 @@ theorem interior_toWeakSpace_eq_empty_of_isBounded {𝕜 V : Type*} [Nontriviall
     interior (toWeakSpace 𝕜 V '' s) = ∅ := by
   refine eq_empty_iff_forall_notMem.2 fun w hw ↦ ?_
   obtain ⟨x, rfl⟩ := (toWeakSpace 𝕜 V).surjective w
-  obtain ⟨v, hv, hline⟩ :=
-    exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hV (mem_interior_iff_mem_nhds.1 hw)
-  obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall x).1 hs
-  have hzero : LinearMap.toSpanSingleton 𝕜 V v = 0 :=
-    LinearMap.eq_zero_of_forall_norm_apply_le (C := R) fun c ↦ by
-      have hx_mem : x + c • v ∈ s := (toWeakSpace 𝕜 V).injective.mem_set_image.1 (hline c)
-      have h := mem_closedBall.1 (hR hx_mem)
-      rwa [dist_eq_norm, add_sub_cancel_left] at h
-  exact hv (by simpa using congrArg (· (1 : 𝕜)) hzero)
+  have hid : ¬ FiniteDimensional 𝕜 (LinearMap.range (LinearMap.id (R := 𝕜) (M := V))) := by
+    rw [LinearMap.range_id]
+    exact fun h ↦ hV (Module.Finite.equiv Submodule.topEquiv)
+  refine not_isBounded_image_comp_toWeakSpace_symm_of_mem_nhds (j := LinearMap.id (R := 𝕜) (M := V))
+    hid (mem_interior_iff_mem_nhds.1 hw) ?_
+  simpa [image_image] using hs
 
 end InfiniteDimensionalLines
 

@@ -27,6 +27,8 @@ sets.
   sphere of a linear map with infinite-dimensional range.
 * `TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq`: spheres of positive radius are not weakly
   closed.
+* `TauCeti.not_isBounded_image_comp_toWeakSpace_symm_of_mem_nhds`: a linear map with
+  infinite-dimensional range cannot map any weak neighbourhood to a norm-bounded set.
 * `TauCeti.not_continuousAt_comp_toWeakSpace_symm` and
   `TauCeti.not_continuous_comp_toWeakSpace_symm`: a linear map with infinite-dimensional range is
   not weak-to-norm continuous at any point.
@@ -39,7 +41,7 @@ sets.
 
 public section
 
-open Set Topology
+open Bornology Set Topology
 
 namespace TauCeti
 
@@ -79,6 +81,27 @@ end Sphere
 
 section Discontinuity
 
+/-- A linear map `j` with infinite-dimensional range into a normed space cannot map any weak
+neighbourhood to a norm-bounded set. -/
+theorem not_isBounded_image_comp_toWeakSpace_symm_of_mem_nhds
+    {𝕜 V F G : Type*} [NontriviallyNormedField 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [FunLike G V F] [LinearMapClass G 𝕜 V F] {j : G}
+    (hj : ¬ FiniteDimensional 𝕜 (LinearMap.range (j : V →ₗ[𝕜] F))) {x : V}
+    {U : Set (WeakSpace 𝕜 V)} (hU : U ∈ 𝓝 (toWeakSpace 𝕜 V x)) :
+    ¬ IsBounded ((fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w)) '' U) := by
+  intro hbdd
+  obtain ⟨v, hv, hline⟩ :=
+    (j : V →ₗ[𝕜] F).exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hj hU
+  obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_closedBall (j x)).1 hbdd
+  have hzero : LinearMap.toSpanSingleton 𝕜 F (j v) = 0 :=
+    LinearMap.eq_zero_of_forall_norm_apply_le (C := R) fun c ↦ by
+      have hmem : j (x + c • v) ∈ (fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w)) '' U :=
+        ⟨toWeakSpace 𝕜 V (x + c • v), hline c, by simp⟩
+      have h := Metric.mem_closedBall.1 (hR hmem)
+      rwa [dist_eq_norm, map_add, map_smul, add_sub_cancel_left] at h
+  exact hv (by simpa using congrArg (· (1 : 𝕜)) hzero)
+
 /-- A linear map `j` with infinite-dimensional range into a normed space is discontinuous at every
 point when the domain carries its weak topology and the codomain carries its norm topology. -/
 theorem not_continuousAt_comp_toWeakSpace_symm {𝕜 V F G : Type*} [NontriviallyNormedField 𝕜]
@@ -86,19 +109,10 @@ theorem not_continuousAt_comp_toWeakSpace_symm {𝕜 V F G : Type*} [Nontriviall
     [FunLike G V F] [LinearMapClass G 𝕜 V F] {j : G}
     (hj : ¬ FiniteDimensional 𝕜 (LinearMap.range (j : V →ₗ[𝕜] F))) (x : V) :
     ¬ ContinuousAt (fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V x) := fun hc ↦ by
-  have hU : (fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w)) ⁻¹'
-      Metric.ball (j x) 1 ∈ 𝓝 (toWeakSpace 𝕜 V x) :=
-    hc.preimage_mem_nhds (Metric.ball_mem_nhds _ one_pos)
-  obtain ⟨v, hv, hline⟩ :=
-    (j : V →ₗ[𝕜] F).exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hj hU
-  have hzero : LinearMap.toSpanSingleton 𝕜 F (j v) = 0 :=
-    LinearMap.eq_zero_of_forall_norm_apply_le (C := 1) fun c ↦ by
-      have h : j (x + c • v) ∈ Metric.ball (j x) 1 := by
-        simpa only [mem_preimage, LinearEquiv.symm_apply_apply] using hline c
-      rw [Metric.mem_ball, dist_eq_norm, map_add, map_smul, add_sub_cancel_left] at h
-      exact h.le
-  exact hv (by simpa using congrArg (· (1 : 𝕜)) hzero)
+      (toWeakSpace 𝕜 V x) := fun hc ↦
+  not_isBounded_image_comp_toWeakSpace_symm_of_mem_nhds hj
+    (hc.preimage_mem_nhds (Metric.ball_mem_nhds _ one_pos))
+    (Metric.isBounded_ball.subset (image_preimage_subset _ _))
 
 /-- A linear map `j` with infinite-dimensional range into a normed space is not continuous from
 the weak topology to the norm topology. -/

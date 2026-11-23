@@ -312,6 +312,11 @@ theorem tendsto_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
       (𝓝 (diagonalCLM (p := p) d)) :=
   (tendsto_diagonalTruncation d (Nat.cofinite_eq_atTop ▸ hd)).comp tendsto_finset_range
 
+private theorem finiteDimensional_range_diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
+    FiniteDimensional 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
+  Module.rank_lt_aleph0_iff.mp
+    ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
+
 omit [DecidableEq ι] in
 /-- A bounded diagonal operator on `ℓ^p(ι, 𝕜)` has finite-dimensional range if and only if only
 finitely many of its coefficients are nonzero. -/
@@ -335,8 +340,7 @@ theorem finiteDimensional_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
           simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_not] at hi
           simp [hi]
     rw [heq]
-    exact Module.rank_lt_aleph0_iff.mp
-      ((rank_diagonalTruncation_le (p := p) d hfin.toFinset).trans_lt Cardinal.natCast_lt_aleph0)
+    exact finiteDimensional_range_diagonalTruncation d hfin.toFinset
 
 omit [DecidableEq ι] in
 /-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
@@ -347,10 +351,8 @@ theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
   have : ProperSpace 𝕜 := .of_locallyCompactSpace 𝕜
   refine isCompactOperator_of_tendsto (tendsto_diagonalTruncation d hd)
     (Eventually.of_forall fun s ↦ ?_)
-  have : Module.Finite 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
-    Module.rank_lt_aleph0_iff.mp
-      ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
-  exact LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this)
+  exact LinearMap.HasFiniteRange.isCompactOperator
+    (Module.Finite.iff_fg.mp (finiteDimensional_range_diagonalTruncation d s))
 
 end Multiplier
 
@@ -389,17 +391,11 @@ noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :
   ofAntitone 𝕜 (show Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ from fun _ _ h ↦ by
     simpa only [one_div] using Nat.one_div_le_one_div (α := ℝ≥0) h)
 
-/-- `lp.invNatSucc 𝕜` is `lp.ofAntitone` applied to `n ↦ ((n : ℝ≥0) + 1)⁻¹`. -/
-theorem invNatSucc_eq_ofAntitone (𝕜 : Type*) [RCLike 𝕜] :
-    invNatSucc 𝕜 =
-      ofAntitone 𝕜 (show Antitone fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹ from fun _ _ h ↦ by
-        simpa only [one_div] using Nat.one_div_le_one_div (α := ℝ≥0) h) := (rfl)
-
 /-- The `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : 𝕜) + 1)⁻¹`. -/
 @[simp]
 theorem invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     invNatSucc 𝕜 n = ((n : 𝕜) + 1)⁻¹ := by
-  rw [invNatSucc_eq_ofAntitone, ofAntitone_apply]
+  rw [invNatSucc, ofAntitone_apply]
   push_cast
   rfl
 
@@ -412,14 +408,14 @@ theorem invNatSucc_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
 /-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
 theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     ‖invNatSucc 𝕜 n‖ = ((n : ℝ) + 1)⁻¹ := by
-  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone_apply]
+  rw [invNatSucc, norm_ofAntitone_apply]
   push_cast
   rfl
 
 /-- The `ℓ^∞` norm of `lp.invNatSucc 𝕜` is `1`. -/
 @[simp]
 theorem norm_invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ‖invNatSucc 𝕜‖ = 1 := by
-  rw [invNatSucc_eq_ofAntitone, norm_ofAntitone]
+  rw [invNatSucc, norm_ofAntitone]
   simp
 
 /-- The norms of the entries of `lp.invNatSucc 𝕜` tend to `0`. -/

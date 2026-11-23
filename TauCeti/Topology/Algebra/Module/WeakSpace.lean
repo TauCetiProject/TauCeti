@@ -35,8 +35,8 @@ Consequently, for any linear map `L` of infinite-dimensional range it contains a
 `x + c • v` with `L v ≠ 0`
 (`LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds`), and in an
 infinite-dimensional space it contains an affine line in a nonzero direction
-(`TauCeti.exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds`, and
-`TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero` at `0`).
+(`TauCeti.exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds`, specialized at `x := 0` for
+neighbourhoods of `0`).
 -/
 
 public section
@@ -149,20 +149,5 @@ theorem exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds {𝕜 E : Typ
   simpa only [LinearMap.id_apply] using
     LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds
       (LinearMap.id (R := 𝕜) (M := E)) hid hU
-
-section Field
-
-variable {𝕜 E : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
-  [ContinuousConstSMul 𝕜 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-
-/-- In an infinite-dimensional space, every weak neighbourhood of `0` contains the line through
-some nonzero vector. -/
-theorem exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero
-    (hE : ¬ FiniteDimensional 𝕜 E) {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 0) :
-    ∃ x : E, x ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (c • x) ∈ U := by
-  simpa only [zero_add] using
-    exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hE (x := 0) (by simpa using hU)
-
-end Field
 
 end TauCeti

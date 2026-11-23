@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Variational.BoundedSublevels
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Minimizing sequences and the sequential direct method
@@ -308,7 +309,7 @@ theorem isCompact_toWeakSpace_minimizers_of_isSeqClosed_of_isBounded
       (toWeakSpace 𝕜 V '' S))
     (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_toWeakSpace_minimizers_of_isCompact_sublevel fun u hu hmin ↦
+  isCompact_image_minimizers_of_isCompact_sublevel (p := toWeakSpace 𝕜 V) fun u hu hmin ↦
     isCompact_toWeakSpace_sublevel_of_isSeqClosed hV hS hE (E u)
       (hmin.minimizers_eq_sublevel hu ▸ hb)
 

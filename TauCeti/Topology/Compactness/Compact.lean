@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Filter.Extr
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -25,7 +27,9 @@ limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`).
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
 (`IsCompact.exists_mem_nhds_inter_preimage_subset`) and convergence to a point of `K` of a family
-eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it.
+eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it. Also, if
+every minimizer sublevel of a function has compact image under a map `p`, then the image of the
+full minimizer set is compact (`TauCeti.isCompact_image_minimizers_of_isCompact_sublevel`).
 -/
 
 public section
@@ -317,6 +321,18 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
+
+/-- If the image under `p : α → X` of the sublevel at every minimizer of `E` on `S` is compact,
+then the image of the full set of minimizers of `E` on `S` is compact (including when it is
+empty). -/
+theorem isCompact_image_minimizers_of_isCompact_sublevel {α β : Type*} [Preorder β]
+    {p : α → X} {E : α → β} {S : Set α}
+    (h : ∀ u ∈ S, IsMinOn E S u → IsCompact (p '' {x ∈ S | E x ≤ E u})) :
+    IsCompact (p '' {x ∈ S | IsMinOn E S x}) := by
+  obtain hempty | ⟨u, hu, hmin⟩ := {x ∈ S | IsMinOn E S x}.eq_empty_or_nonempty
+  · simp [hempty]
+  · rw [hmin.minimizers_eq_sublevel hu]
+    exact h u hu hmin
 
 end TauCeti
 

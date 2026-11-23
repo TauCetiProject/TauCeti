@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Order.Filter.Extr
 import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
 import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
@@ -86,18 +87,12 @@ theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel {β : Type*} [LinearOrd
     simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using
       hmin.comp_of_mapsTo (mapsTo_image (toWeakSpace 𝕜 V) S) rfl⟩
 
-/-- If the sublevel at every minimizer of `E` on `S` is weakly compact, then the full set of
-minimizers of `E` on `S` is weakly compact (including when it is empty). -/
-theorem isCompact_toWeakSpace_minimizers_of_isCompact_sublevel {β : Type*} [Preorder β]
-    {E : V → β} {S : Set V}
-    (h : ∀ u ∈ S, IsMinOn E S u → IsCompact (toWeakSpace 𝕜 V '' {x ∈ S | E x ≤ E u})) :
-    IsCompact (toWeakSpace 𝕜 V '' {x ∈ S | IsMinOn E S x}) := by
-  obtain hempty | ⟨u, hu, hmin⟩ := {x ∈ S | IsMinOn E S x}.eq_empty_or_nonempty
-  · simp [hempty]
-  · rw [hmin.minimizers_eq_sublevel hu]
-    exact h u hu hmin
-
 end WeakTopology
+
+private theorem sublevel_inter_eq {X β : Type*} [LE β] {E : X → β} {S T : Set X} {b : β}
+    (h : {u ∈ S | E u ≤ b} ⊆ T) :
+    {u ∈ S ∩ T | E u ≤ b} = {u ∈ S | E u ≤ b} :=
+  (inter_right_comm S T {u | E u ≤ b}).trans (inter_eq_left.2 h)
 
 section ClosedBallSublevel
 
@@ -114,9 +109,7 @@ theorem isClosed_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall
     (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
     IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
   obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall (0 : V)).1 hb
-  have heq : {u ∈ S | E u ≤ b} = {u ∈ S ∩ closedBall 0 R | E u ≤ b} :=
-    ((inter_right_comm S (closedBall 0 R) {u | E u ≤ b}).trans (inter_eq_left.2 hR)).symm
-  rw [heq]
+  rw [← sublevel_inter_eq hR]
   exact isClosed_toWeakSpace_sublevel (hS R) (hE.mono (image_mono inter_subset_left)) b
 
 end ClosedBallSublevel
@@ -172,7 +165,7 @@ theorem isCompact_toWeakSpace_minimizers_of_isBounded
       (toWeakSpace 𝕜 V '' S))
     (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_toWeakSpace_minimizers_of_isCompact_sublevel fun u hu hmin ↦
+  isCompact_image_minimizers_of_isCompact_sublevel (p := toWeakSpace 𝕜 V) fun u hu hmin ↦
     isCompact_toWeakSpace_sublevel hV hS hE (E u) (hmin.minimizers_eq_sublevel hu ▸ hb)
 
 /-- For a weakly lower semicontinuous energy with bounded sublevels on a weakly closed set
@@ -238,7 +231,7 @@ theorem isCompact_toWeakSpace_minimizers_of_isClosed_toWeakSpace_inter_closedBal
       (toWeakSpace 𝕜 V '' S))
     (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
-  isCompact_toWeakSpace_minimizers_of_isCompact_sublevel fun u hu hmin ↦
+  isCompact_image_minimizers_of_isCompact_sublevel (p := toWeakSpace 𝕜 V) fun u hu hmin ↦
     isCompact_toWeakSpace_sublevel_of_isClosed_toWeakSpace_inter_closedBall hV hS hE (E u)
       (hmin.minimizers_eq_sublevel hu ▸ hb)
 
@@ -287,12 +280,11 @@ theorem lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn {�
       (toWeakSpace 𝕜 V '' B) ∩ v₀ := by
     rw [← inter_assoc, ← image_inter (toWeakSpace 𝕜 V).injective]
   rw [hinter, ← hBv₀]
-  have hsub : {u ∈ S ∩ closedBall 0 R | E u ≤ b} = {u ∈ S | E u ≤ b} :=
-    (inter_right_comm S (closedBall 0 R) {u | E u ≤ b}).trans (inter_eq_left.2 hR)
   calc (toWeakSpace 𝕜 V '' S) ∩ (f ⁻¹' Iic b)
       = toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} :=
         (image_inter_preimage (toWeakSpace 𝕜 V) S (f ⁻¹' Iic b)).symm
-    _ = toWeakSpace 𝕜 V '' {u ∈ S ∩ closedBall 0 R | E u ≤ b} := by rw [hsub]
+    _ = toWeakSpace 𝕜 V '' {u ∈ S ∩ closedBall 0 R | E u ≤ b} := by
+        rw [sublevel_inter_eq hR]
     _ = (toWeakSpace 𝕜 V '' B) ∩ (f ⁻¹' Iic b) :=
         image_inter_preimage (toWeakSpace 𝕜 V) B (f ⁻¹' Iic b)
 
