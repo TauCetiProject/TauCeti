@@ -147,7 +147,13 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`: a `C^(n+1)`
   Hamiltonian has a `C^n` Hamiltonian vector field, with the version
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` for jointly
-  `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
+  `C^(n+1)` families of Hamiltonians, such as time-dependent ones, and its pointwise form
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.continuous_mvfderiv_hamiltonianVectorField`: the
+  pushforward `d e (X_{H_t})` by a `C¹` map `e` of the Hamiltonian vector field of a `C¹`
+  time-dependent Hamiltonian is continuous, and uniformly bounded on a compact manifold for a
+  Hamiltonian periodic in time
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorField_le`).
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on preconnected sets of times, with the global case
@@ -398,6 +404,14 @@ theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f
       σ.hamiltonianVectorField f x + σ.hamiltonianVectorField g x := by
   simp [hamiltonianVectorField_def, mvfderiv_add hf hg]
 
+/-- **The Leibniz rule for Hamiltonian vector fields**: `X_{fg} = f X_g + g X_f` at points where
+`f` and `g` are differentiable. -/
+theorem hamiltonianVectorField_mul {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.hamiltonianVectorField (f * g) x =
+      f x • σ.hamiltonianVectorField g x + g x • σ.hamiltonianVectorField f x := by
+  simp [hamiltonianVectorField_def, mvfderiv_mul hf hg]
+
 /-- The Hamiltonian vector field of `-f` is the opposite of that of `f`. -/
 @[simp]
 theorem hamiltonianVectorField_neg (x : M) :
@@ -643,8 +657,23 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
   ((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).clm_bundle_apply
     hf.contMDiff_totalSpaceMk_mvfderiv
 
-/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on
-a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
+/-- **Joint regularity of Hamiltonian vector fields of a family at a point.** For a nondegenerate
+two-form on a finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is
+jointly `C^(n+1)` at `q ∈ N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly
+`C^n` at `q`, for `n ≤ ∞`. This applies to families which are only regular over an open set of
+parameters, such as Hamiltonian perturbations on a punctured domain. -/
+theorem contMDiffAt_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {H : N → M → ℝ}
+    {q : N × M} (hH : ContMDiffAt (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H) q) :
+    ContMDiffAt (J.prod I) I.tangent n
+      (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) q :=
+  ((((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
+    contMDiff_snd).contMDiffAt (x := q)).clm_bundle_apply
+    hH.contMDiffAt_totalSpaceMk_mvfderiv_uncurry
+
+/-- **Joint regularity of Hamiltonian vector fields of a family.** For a nondegenerate two-form on a
+finite-dimensional manifold and a family of Hamiltonians `H : N → M → ℝ` which is jointly
 `C^(n+1)` on `N × M`, the Hamiltonian vector fields `(p, x) ↦ X_{H p}(x)` are jointly `C^n`, for
 `n ≤ ∞`. For `N = ℝ` this is the regularity of the vector field of a time-dependent Hamiltonian,
 which is what is needed to integrate it to a time-dependent Hamiltonian flow. -/
@@ -654,8 +683,32 @@ theorem contMDiff_hamiltonianVectorField_uncurry {E' H' N : Type*} [NormedAddCom
     (hH : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry H)) :
     ContMDiff (J.prod I) I.tangent n
       (fun q : N × M ↦ (⟨q.2, σ.hamiltonianVectorField (H q.1) q.2⟩ : TangentBundle I M)) :=
-  (((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).comp
-    contMDiff_snd).clm_bundle_apply hH.contMDiff_totalSpaceMk_mvfderiv_uncurry
+  fun q ↦ h.contMDiffAt_hamiltonianVectorField_uncurry hn (hH q)
+
+/-- The pushforward `(t, p) ↦ d e_p (X_{H_t}(p))` of the Hamiltonian vector field of a `C¹`
+time-dependent Hamiltonian by a `C¹` map `e` into a normed space is continuous. -/
+theorem continuous_mvfderiv_hamiltonianVectorField {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {e : M → F} {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
+    Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (σ.hamiltonianVectorField (H q.1) q.2) :=
+  (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
+    (h.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) (by simpa using hH)).continuous
+
+/-- On a compact manifold, the pushforwards `d e (X_{H_t})` of the Hamiltonian vector fields of a
+`C¹` Hamiltonian `H`, `1`-periodic in time, by a `C¹` map `e` into a normed space are uniformly
+bounded. -/
+theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_le [CompactSpace M] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {e : M → F} {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) (hHper : Function.Periodic H 1)
+    (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
+    ∃ B, ∀ t x, ‖mvfderiv I e x (σ.hamiltonianVectorField (H t) x)‖ ≤ B := by
+  obtain ⟨B, hB⟩ := ((isCompact_Icc (a := (0 : ℝ)) (b := 1)).prod
+    (isCompact_univ (X := M))).exists_bound_of_continuousOn
+      (h.continuous_mvfderiv_hamiltonianVectorField hH he).continuousOn
+  refine ⟨B, fun t x ↦ ?_⟩
+  obtain ⟨t', ht', hHt⟩ := hHper.exists_mem_Ico₀ one_pos t
+  rw [hHt]
+  exact hB (t', x) ⟨Set.Ico_subset_Icc_self ht', Set.mem_univ x⟩
 
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
@@ -1130,10 +1183,8 @@ theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
       ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply,
       Manifold.tangentSpaceOpenEquiv_apply]
     exact (flat_apply σ x v w).symm
-  have hd : mvfderiv I (f ∘ Subtype.val) x = mvfderiv I f (x : M) := by
-    ext v
-    exact Manifold.mfderiv_comp_subtype_val_apply v
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat, hd,
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hflat,
+    Manifold.mvfderiv_comp_subtype_val,
     Manifold.tangentSpaceOpenEquiv_symm_apply]
   -- The tangent spaces at `x` in `U` and at `(x : M)` in `M` are both the model space `E`.
   exact (rfl)

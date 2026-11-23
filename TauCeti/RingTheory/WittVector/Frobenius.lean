@@ -31,6 +31,8 @@ Frobenius act on its adic spectrum.
   by the `p`-power map, in characteristic `p`.
 * `WittVector.frobeniusEquiv_symm_teichmuller` : `φ⁻¹ [r] = [r ^ (1 / p)]` for perfect `R`.
 * `WittVector.isFrobeniusLift_frobenius` : `φ x ≡ x ^ p` modulo `p` for perfect `R`.
+* `WittVector.frobeniusEquiv_symm_frobenius`, `WittVector.frobenius_frobeniusEquiv_symm` :
+  `φ⁻¹ (φ x) = x` and `φ (φ⁻¹ x) = x` for perfect `R`, with `φ` written as `WittVector.frobenius`.
 * `TauCeti.WittVector.continuous_frobenius` : `φ` is continuous for the `(p, [ϖ])`-adic topology.
 * `TauCeti.WittVector.continuous_frobeniusEquiv_symm` : so is `φ⁻¹`, for perfect `R`.
 
@@ -64,6 +66,21 @@ theorem frobeniusEquiv_symm_teichmuller [PerfectRing R p] (r : R) :
     (frobeniusEquiv p R).symm (teichmuller p r) =
       teichmuller p ((_root_.frobeniusEquiv R p).symm r) := by
   simp [frobeniusEquiv_symm_apply, map_teichmuller]
+
+-- The next two lemmas are not `@[simp]`: simp first rewrites `(frobeniusEquiv p R).symm` to
+-- `map (_root_.frobeniusEquiv R p).symm` by `WittVector.frobeniusEquiv_symm_apply`.
+
+/-- For a perfect ring of characteristic `p`, the inverse of the Witt-vector Frobenius undoes
+`WittVector.frobenius`. -/
+theorem frobeniusEquiv_symm_frobenius [PerfectRing R p] (x : WittVector p R) :
+    (frobeniusEquiv p R).symm (frobenius x) = x :=
+  (frobeniusEquiv p R).symm_apply_apply x
+
+/-- For a perfect ring of characteristic `p`, `WittVector.frobenius` undoes the inverse of the
+Witt-vector Frobenius. -/
+theorem frobenius_frobeniusEquiv_symm [PerfectRing R p] (x : WittVector p R) :
+    frobenius ((frobeniusEquiv p R).symm x) = x :=
+  (frobeniusEquiv p R).apply_symm_apply x
 
 variable (p R) in
 /-- For a perfect ring of characteristic `p`, the Witt-vector Frobenius lifts the `p`-power map:
