@@ -258,8 +258,9 @@ private theorem exists_natDegree_minpoly_lt [IsUltrametricDist E] [CharZero E] [
     -- From `‖p‖ * ‖α - β‖ ^ N ≤ r ^ N` with `N = n - p ^ k`.
     by_contra! hgt
     have hpow := pow_lt_pow_left₀ hgt (by positivity) hN0.ne'
-    rw [mul_pow, ← Real.rpow_mul_natCast hc0.le, hN, ← hN] at hpow
-    have h1 : -(1 / ((n - p ^ k : ℕ) : ℝ)) * ((n - p ^ k : ℕ) : ℝ) = -1 := by
+    rw [mul_pow, ← Real.rpow_mul_natCast hc0.le] at hpow
+    have h1 : -(1 / ((p - 1 : ℝ) * p ^ k)) * ((n - p ^ k : ℕ) : ℝ) = -1 := by
+      rw [← hN]
       field_simp
     rw [h1, Real.rpow_neg_one] at hpow
     have := mul_lt_mul_of_pos_left hpow hc0
@@ -361,8 +362,7 @@ theorem fixedPoints_algEquiv_completion_eq_closure :
   · rintro _ ⟨a, rfl⟩ σ
     rw [algEquiv_smul_coe]
     exact congrArg _ (σ.commutes a)
-  · rw [MulAction.fixedPoints, Set.ofPred_forall]
-    exact isClosed_iInter fun σ ↦ isClosed_eq (continuous_const_smul σ) continuous_id
+  · exact isClosed_fixedPoints_of_continuousConstSMul
 
 /-- **The Ax–Sen–Tate theorem for subgroups.** In the setting of the Ax–Sen lemma, the elements of
 the completion of `E` fixed by a subgroup `H` of `Gal(E/F)` are the closure of the fixed field of
@@ -384,7 +384,8 @@ theorem fixedPoints_completion_eq_closure_fixedField (H : Subgroup Gal(E/F)) :
       (IntermediateField.fixedField_antitone H.le_topologicalClosure))).trans
     (InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩)
   -- An `L`-automorphism acts on `E` as the underlying `F`-automorphism.
-  have hsmulE (τ : Gal(E/L)) (x : E) : τ.restrictScalars F • x = τ • x := rfl
+  have hsmulE (τ : Gal(E/L)) (x : E) : τ.restrictScalars F • x = τ • x := by
+    rw [AlgEquiv.smul_def, AlgEquiv.smul_def, AlgEquiv.coe_restrictScalars]
   have : IsIsometricSMul Gal(E/L) E :=
     ⟨fun τ ↦ by simpa only [← hsmulE] using isometry_smul E (τ.restrictScalars F)⟩
   have : Algebra.IsAlgebraic L E := Algebra.IsAlgebraic.tower_top (K := F) L
