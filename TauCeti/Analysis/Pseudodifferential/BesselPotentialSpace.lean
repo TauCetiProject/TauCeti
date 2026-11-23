@@ -597,8 +597,12 @@ theorem quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le
         C * ‖toBesselPotentialSpaceCLM s p u‖)
     (u : 𝓢(CoordinateSpace n, V)) :
     a.quantizeUniformBesselPotentialSpace ha s p (toBesselPotentialSpaceCLM s p u) =
-      toBesselPotentialSpaceCLM (s - m) p (quantizeUniformCLM a ha u) :=
-  LinearMap.extendOfNorm_eq (denseRange_toBesselPotentialSpaceCLM s hp_top) ⟨C, hC⟩ u
+      toBesselPotentialSpaceCLM (s - m) p (quantizeUniformCLM a ha u) := by
+  rw [quantizeUniformBesselPotentialSpace,
+    ← ContinuousLinearMap.coe_coe (toBesselPotentialSpaceCLM s p),
+    LinearMap.extendOfNorm_eq (denseRange_toBesselPotentialSpaceCLM s hp_top)]
+  · simp
+  · exact ⟨C, by simpa using hC⟩
 
 section Extension
 
