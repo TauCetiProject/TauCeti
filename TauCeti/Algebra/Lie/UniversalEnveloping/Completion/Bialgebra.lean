@@ -46,12 +46,18 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "𝓕" => degreeFiltration ℒ d
 
 /-- The completed comultiplication, induced on `completedEnveloping` by `Bialgebra.comulAlgHom`. -/
-@[expose]
 noncomputable def completedCoproduct (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
     completedEnveloping ℒ d hneg →ₐ[R] ((𝓕 hneg).tensorProduct R (𝓕 hneg)).completion :=
   (𝓕 hneg).mapCompletionₐ ((𝓕 hneg).tensorProduct R (𝓕 hneg))
     (Bialgebra.comulAlgHom R U) id monotone_id
     (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1))
+
+/-- The completed comultiplication is the algebra completion map of `Bialgebra.comulAlgHom`. -/
+theorem completedCoproduct_eq_mapCompletionₐ (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
+    completedCoproduct ℒ d hneg =
+      (𝓕 hneg).mapCompletionₐ ((𝓕 hneg).tensorProduct R (𝓕 hneg))
+        (Bialgebra.comulAlgHom R U) id monotone_id
+        (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1)) := (rfl)
 
 /-- At order `k`, `completedCoproduct` is the quotient map induced by comultiplication. -/
 @[simp]
@@ -142,8 +148,8 @@ theorem isCompletedPrimitive_iff (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
   Iff.rfl
 
 /-- `IsCompletedPrimitive` in terms of the two completed tensor inclusions. -/
-theorem isCompletedPrimitive_iff_includeCompletion (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
-    {x : completedEnveloping ℒ d hneg} :
+theorem isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion
+    (hneg : ∀ n, d n < 0 → ℒ n = ⊥) {x : completedEnveloping ℒ d hneg} :
     IsCompletedPrimitive ℒ d hneg x ↔ completedCoproduct ℒ d hneg x =
       (𝓕 hneg).includeLeftCompletion R (𝓕 hneg) x +
         (𝓕 hneg).includeRightCompletion R (𝓕 hneg) x := by simp [IsCompletedPrimitive]
@@ -207,7 +213,8 @@ theorem IsCompletedPrimitive.mem_completionIdeal_one {hneg : ∀ n, d n < 0 → 
 
 /-- Zero is completed primitive. -/
 @[simp] theorem IsCompletedPrimitive.zero (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
-    IsCompletedPrimitive ℒ d hneg 0 := by simp [isCompletedPrimitive_iff_includeCompletion]
+    IsCompletedPrimitive ℒ d hneg 0 := by
+  simp [isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion]
 
 variable {ℒ d} in
 /-- Completed primitive elements are closed under addition. -/
@@ -215,14 +222,18 @@ theorem IsCompletedPrimitive.add {hneg : ∀ n, d n < 0 → ℒ n = ⊥}
     {x y : completedEnveloping ℒ d hneg}
     (hx : IsCompletedPrimitive ℒ d hneg x) (hy : IsCompletedPrimitive ℒ d hneg y) :
     IsCompletedPrimitive ℒ d hneg (x + y) := by
-  simp only [isCompletedPrimitive_iff_includeCompletion, map_add] at hx hy ⊢; rw [hx, hy]; abel
+  simp only [isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion,
+    map_add] at hx hy ⊢
+  rw [hx, hy]; abel
 
 variable {ℒ d} in
 /-- Completed primitive elements are closed under negation. -/
 theorem IsCompletedPrimitive.neg {hneg : ∀ n, d n < 0 → ℒ n = ⊥}
     {x : completedEnveloping ℒ d hneg} (hx : IsCompletedPrimitive ℒ d hneg x) :
     IsCompletedPrimitive ℒ d hneg (-x) := by
-  simp only [isCompletedPrimitive_iff_includeCompletion, map_neg] at hx ⊢; rw [hx, neg_add]
+  simp only [isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion,
+    map_neg] at hx ⊢
+  rw [hx, neg_add]
 
 variable {ℒ d} in
 /-- Completed primitive elements are closed under subtraction. -/
@@ -236,7 +247,9 @@ variable {ℒ d} in
 theorem IsCompletedPrimitive.smul {hneg : ∀ n, d n < 0 → ℒ n = ⊥} (r : R)
     {x : completedEnveloping ℒ d hneg} (hx : IsCompletedPrimitive ℒ d hneg x) :
     IsCompletedPrimitive ℒ d hneg (r • x) := by
-  simp only [isCompletedPrimitive_iff_includeCompletion, map_smul] at hx ⊢; rw [hx, smul_add]
+  simp only [isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion,
+    map_smul] at hx ⊢
+  rw [hx, smul_add]
 
 variable {ℒ d} in
 /-- Completed primitive elements are closed under the associative commutator bracket. -/
@@ -244,7 +257,7 @@ theorem IsCompletedPrimitive.lie {hneg : ∀ n, d n < 0 → ℒ n = ⊥}
     {x y : completedEnveloping ℒ d hneg}
     (hx : IsCompletedPrimitive ℒ d hneg x) (hy : IsCompletedPrimitive ℒ d hneg y) :
     IsCompletedPrimitive ℒ d hneg ⁅x, y⁆ := by
-  rw [isCompletedPrimitive_iff_includeCompletion] at hx hy ⊢
+  rw [isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion] at hx hy ⊢
   have hxy := ((𝓕 hneg).commute_includeLeftCompletion_includeRightCompletion R (𝓕 hneg) x y).eq
   have hyx := ((𝓕 hneg).commute_includeLeftCompletion_includeRightCompletion R (𝓕 hneg) y x).eq
   simp only [LieRing.of_associative_ring_bracket, map_sub, map_mul, hx, hy, add_mul, mul_add,

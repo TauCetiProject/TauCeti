@@ -162,8 +162,8 @@ theorem exists_bch_exp_mul_exp (c : ℕ) :
   exact ⟨b, by simpa only [← hb, LieIdeal.mkQ_apply, lowerCentralQuotientι_mk] using
     exp_lowerCentralQuotientι_bchElement c⟩
 
-/-- At every class `c`, `bchElement c` is sent by `lowerCentralQuotientι` to `log (exp X * exp Y)`,
-uniquely characterizing it. -/
+/-- Any element of the class-`c` quotient whose image under `lowerCentralQuotientι` is
+`log (exp X * exp Y)` equals `bchElement c`. -/
 theorem eq_bchElement_of_lowerCentralQuotientι_eq {c : ℕ}
     {z : FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c}
     (hz : lowerCentralQuotientι ℚ FreeLieTwo c z = IsNilpotent.log

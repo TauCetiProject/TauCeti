@@ -16,7 +16,7 @@ import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Exp
 
 Over a commutative `ℚ`-algebra, `completedExp` and `completedLog` exchange completed primitive
 elements in the first completion ideal with completed grouplike elements congruent to `1`. For a
-positively graded Lie algebra over `R : Type`, this identifies `d.completedLie ℒ` with the
+positively graded Lie algebra over `R`, this identifies `d.completedLie ℒ` with the
 completed grouplike elements of `completedEnveloping` (`completedLieExpEquiv`).
 -/
 
@@ -40,10 +40,11 @@ theorem completedCoproduct_completedExp (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
     completedCoproduct ℒ d hneg ((𝓕 hneg).completedExp x) =
       ((𝓕 hneg).tensorProduct R (𝓕 hneg)).completedExp
         ⟨completedCoproduct ℒ d hneg x,
-          completedCoproduct_mem_completionIdeal ℒ d hneg x.property⟩ :=
-  (𝓕 hneg).mapCompletionₐ_completedExp _ (Bialgebra.comulAlgHom R U) id monotone_id
-    (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1))
-    (degreeFiltration_le_comap_comulAlgHom ℒ d hneg 1) x
+          completedCoproduct_mem_completionIdeal ℒ d hneg x.property⟩ := by
+  simpa only [completedCoproduct_eq_mapCompletionₐ] using
+    (𝓕 hneg).mapCompletionₐ_completedExp _ (Bialgebra.comulAlgHom R U) id monotone_id
+      (fun k => degreeFiltration_le_comap_comulAlgHom ℒ d hneg (k + 1))
+      (degreeFiltration_le_comap_comulAlgHom ℒ d hneg 1) x
 
 /-- Over a commutative `ℚ`-algebra, the completed exponential of an element of the first
 completion ideal is completed grouplike if and only if that element is completed primitive. -/
@@ -63,7 +64,8 @@ theorem isCompletedGroupLike_completedExp_iff (hneg : ∀ n, d n < 0 → ℒ n =
     have h0 := completedCounit_eq_zero_of_mem_completionIdeal_one ℒ d hneg
       ((𝓕 hneg).completedExp_sub_one_mem x)
     rwa [map_sub, map_one, sub_eq_zero] at h0
-  rw [isCompletedGroupLike_iff, isCompletedPrimitive_iff_includeCompletion, hcounit,
+  rw [isCompletedGroupLike_iff,
+    isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion, hcounit,
     completedCoproduct_completedExp, (𝓕 hneg).completedTensor_completedExp R (𝓕 hneg) x x]
   refine ⟨fun h => ?_, fun h => ⟨rfl, congrArg 𝒯.completedExp (Subtype.ext h)⟩⟩
   have hlog := congrArg 𝒯.completedLog (Subtype.ext h.2 :
@@ -90,20 +92,33 @@ theorem isCompletedPrimitive_completedLog_iff (hneg : ∀ n, d n < 0 → ℒ n =
 noncomputable def completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) :
     completedPrimitiveLieSubalgebra ℒ d (fun n hn => hpos n hn.le) ≃
       {u : completedEnveloping ℒ d (fun n hn => hpos n hn.le) //
-        IsCompletedGroupLike ℒ d (fun n hn => hpos n hn.le) u} where
-  toFun x :=
-    let hx := (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property
-    ⟨(𝓕 _).completedExp ⟨x.val, hx.mem_completionIdeal_one hpos⟩,
-      (isCompletedGroupLike_completedExp_iff ℒ d _ _).mpr hx⟩
-  invFun u :=
-    ⟨(𝓕 _).completedLog ⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩,
-      (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr
-        ((isCompletedPrimitive_completedLog_iff ℒ d _ _).mpr u.property)⟩
-  left_inv x := Subtype.ext <| (𝓕 _).completedLog_completedExp
-    ⟨x.val, ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property).mem_completionIdeal_one
-      hpos⟩
-  right_inv u := Subtype.ext <| (𝓕 _).completedExp_completedLog
-    ⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩
+        IsCompletedGroupLike ℒ d (fun n hn => hpos n hn.le) u} :=
+  let hneg := fun n (hn : d n < 0) => hpos n hn.le
+  let e₁ : completedPrimitiveLieSubalgebra ℒ d hneg ≃
+      {x : (𝓕 hneg).completionIdeal 1 //
+        IsCompletedPrimitive ℒ d hneg (x : completedEnveloping ℒ d hneg)} :=
+    { toFun := fun x => ⟨⟨x.val,
+        ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property).mem_completionIdeal_one
+          hpos⟩, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property⟩
+      invFun := fun x => ⟨x.val.val,
+        (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr x.property⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
+  let e₂ : {x : (𝓕 hneg).completionIdeal 1 //
+        IsCompletedPrimitive ℒ d hneg (x : completedEnveloping ℒ d hneg)} ≃
+      {u : {u : completedEnveloping ℒ d hneg // u - 1 ∈ (𝓕 hneg).completionIdeal 1} //
+        IsCompletedGroupLike ℒ d hneg (u : completedEnveloping ℒ d hneg)} :=
+    (𝓕 hneg).completedExpEquiv.subtypeEquiv fun x => by
+      simpa only [AlgFiltration.coe_completedExpEquiv] using
+        (isCompletedGroupLike_completedExp_iff ℒ d hneg x).symm
+  let e₃ : {u : {u : completedEnveloping ℒ d hneg // u - 1 ∈ (𝓕 hneg).completionIdeal 1} //
+        IsCompletedGroupLike ℒ d hneg (u : completedEnveloping ℒ d hneg)} ≃
+      {u : completedEnveloping ℒ d hneg // IsCompletedGroupLike ℒ d hneg u} :=
+    { toFun := fun u => ⟨u.val.val, u.property⟩
+      invFun := fun u => ⟨⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩, u.property⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
+  (e₁.trans e₂).trans e₃
 
 @[simp]
 theorem coe_completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥)
@@ -112,8 +127,8 @@ theorem coe_completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥)
       completedEnveloping ℒ d (fun n hn => hpos n hn.le)) =
       (𝓕 (fun n hn => hpos n hn.le)).completedExp ⟨x.val,
         ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp x.property).mem_completionIdeal_one
-          hpos⟩ :=
-  (rfl)
+          hpos⟩ := by
+  simp [completedPrimitiveExpEquiv]
 
 @[simp]
 theorem coe_completedPrimitiveExpEquiv_symm (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥)
@@ -122,23 +137,21 @@ theorem coe_completedPrimitiveExpEquiv_symm (hpos : ∀ n, d n ≤ 0 → ℒ n =
     ((completedPrimitiveExpEquiv ℒ d hpos).symm u :
       completedEnveloping ℒ d (fun n hn => hpos n hn.le)) =
       (𝓕 (fun n hn => hpos n hn.le)).completedLog
-        ⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩ :=
-  (rfl)
+        ⟨u.val, u.property.sub_one_mem_completionIdeal_one hpos⟩ := by
+  simp [completedPrimitiveExpEquiv]
 
 end Nonneg
 
 section Positive
 
-universe u v
-
-variable {N : Type u} {R : Type} {L : Type v} [AddCommMonoid N] [CommRing R] [Algebra ℚ R]
+variable {N R L : Type*} [AddCommMonoid N] [CommRing R] [Algebra ℚ R]
   [LieRing L] [LieAlgebra R L] (d : PositiveDegrees N) (ℒ : N → Submodule R L)
   [DecidableEq N] [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
 
 local notation "Û" => completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
 local notation "𝓕" => degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, `completedExp ∘ completedLieToU` identifies
+/-- Over a commutative `ℚ`-algebra `R`, `completedExp ∘ completedLieToU` identifies
 `d.completedLie ℒ` with the completed grouplike elements of `completedEnveloping`. -/
 noncomputable def completedLieExpEquiv :
     d.completedLie ℒ ≃ {u : Û // IsCompletedGroupLike ℒ d.degree (d.eq_bot_of_degree_neg ℒ) u} :=

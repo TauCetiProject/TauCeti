@@ -14,10 +14,10 @@ import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 /-!
 # Completed primitive elements of positively graded universal enveloping algebras
 
-Let `L` be a Lie algebra over a commutative ring `R` equipped with a positive grading `ℒ` by
+For a Lie algebra `L` over a commutative ring `R` equipped with a positive grading `ℒ` by
 `(d : PositiveDegrees N)`. Every element in the image of `completedLieToU` is completed primitive,
 and every homogeneous component of a completed primitive element in `completedEnveloping` is an
-ordinary primitive element of `U(L)`. Over a commutative `ℚ`-algebra `R : Type`, this identifies
+ordinary primitive element of `U(L)`. Over a commutative `ℚ`-algebra `R`, this identifies
 `completedPrimitiveLieSubalgebra` with `d.completedLie ℒ` (`completedPrimitiveLieEquiv`).
 
 ## References
@@ -54,7 +54,7 @@ local notation "𝓕" => degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg �
 /-- Every element in the image of `completedLieToU` is completed primitive. -/
 theorem isCompletedPrimitive_completedLieToU (x : d.completedLie ℒ) :
     IsCompletedPrimitive ℒ d.degree (d.eq_bot_of_degree_neg ℒ) (completedLieToU d ℒ x) := by
-  rw [isCompletedPrimitive_iff_includeCompletion]
+  rw [isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion]
   refine ((𝓕).tensorProduct R 𝓕).completion_ext fun k => ?_
   obtain ⟨y, hy⟩ := (d.degreeIdeal ℒ k).surjective_mkQ
     (LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k x)
@@ -62,7 +62,8 @@ theorem isCompletedPrimitive_completedLieToU (x : d.completedLie ℒ) :
       (𝓕).projection k ((𝓕).toCompletion (ι R y)) := by
     simp only [projection_completedLieToU, ← hy, LieIdeal.mkQ_apply, truncatedLieToU_mk,
       AlgFiltration.projection_toCompletion]
-  have hprim := (isCompletedPrimitive_iff_includeCompletion ℒ d.degree _).mp
+  have hprim := (isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion
+      ℒ d.degree _).mp
     (isCompletedPrimitive_toCompletion_ι ℒ d.degree (d.eq_bot_of_degree_neg ℒ) y)
   simpa only [projection_completedCoproduct, map_add,
     AlgFiltration.projection_includeLeftCompletion, AlgFiltration.projection_includeRightCompletion,
@@ -94,11 +95,11 @@ private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid {u : Û}
     · rwa [hδ] at h0
     · intro m _ hmn; rw [hδ]
       exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
-        (primDefect_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ m u).property)
+        (comul_sub_tmul_add_tmul_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ m u).property)
         (hpn.trans_ne hmn.symm)
     · exact fun hns => (hns (by simp [s, k, hnP])).elim
   · exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
-      (primDefect_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ n u).property) hpn
+      (comul_sub_tmul_add_tmul_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ n u).property) hpn
 
 /-- Every homogeneous enveloping component of a completed primitive element is an ordinary
 primitive element of `U(L)`. -/
@@ -117,9 +118,7 @@ end CommRing
 
 section Rational
 
-universe u v
-
-variable {N : Type u} {R : Type} {L : Type v} [AddCommMonoid N] [CommRing R] [Algebra ℚ R]
+variable {N R L : Type*} [AddCommMonoid N] [CommRing R] [Algebra ℚ R]
   [LieRing L] [LieAlgebra R L] (d : PositiveDegrees N) (ℒ : N → Submodule R L)
   [DecidableEq N] [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
 
@@ -129,12 +128,12 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "Û" => completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
 local notation "𝓕" => degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, `completedLieToU` is injective without a freeness
+/-- Over a commutative `ℚ`-algebra `R`, `completedLieToU` is injective without a freeness
 hypothesis. -/
 theorem completedLieToU_injective_of_algebra_rat : Function.Injective (completedLieToU d ℒ) :=
   completedLieToU_injective d ℒ (ι_injective_of_algebra_rat R L)
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, an element of `completedEnveloping` is completed
+/-- Over a commutative `ℚ`-algebra `R`, an element of `completedEnveloping` is completed
 primitive if and only if it lies in the image of `completedLieToU`. -/
 theorem isCompletedPrimitive_iff_mem_range_completedLieToU (u : Û) :
     IsCompletedPrimitive ℒ d.degree (d.eq_bot_of_degree_neg ℒ) u ↔
@@ -153,7 +152,7 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU (u : Û) :
     LieIdeal.mkQ_apply, truncatedLieToU_mk, map_sum]
   simp_rw [hx]; exact mk_sum_envelopingComponent d ℒ k u
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, `completedLieToU` identifies `d.completedLie ℒ`
+/-- Over a commutative `ℚ`-algebra `R`, `completedLieToU` identifies `d.completedLie ℒ`
 with the Lie subalgebra of completed primitive elements in `completedEnveloping`. -/
 noncomputable def completedPrimitiveLieEquiv :
     d.completedLie ℒ ≃ₗ⁅R⁆

@@ -33,7 +33,7 @@ element `x` are finite sums.
 
 Injectivity of `ι` holds whenever `F` is free as an `R`-module
 (`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), in particular over every field, and also over
-every commutative `ℚ`-algebra `R : Type` via PBW symmetrization
+every commutative `ℚ`-algebra `R` via PBW symmetrization
 (`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat`).
 
 ## Main results
@@ -47,11 +47,11 @@ every commutative `ℚ`-algebra `R : Type` via PBW symmetrization
   every component of length below `N`.
 * `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι` and
   `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι_of_algebra_rat`: if `ι` is injective (in
-  particular over any commutative `ℚ`-algebra `R : Type`), the preimage of `J ^ (c + 1)` is the
+  particular over any commutative `ℚ`-algebra `R`), the preimage of `J ^ (c + 1)` is the
   `c`-th term of the lower central series.
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective` and
   `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective_of_algebra_rat`: if `ι` is injective (in
-  particular over any commutative `ℚ`-algebra `R : Type`), so is the induced map
+  particular over any commutative `ℚ`-algebra `R`), so is the induced map
   `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` from `F ⧸ lowerCentralSeries c` to
   `U(F) ⧸ J ^ (c + 1)`.
 
@@ -148,9 +148,9 @@ theorem lowerCentralQuotientι_injective
 
 section Rational
 
-variable (R : Type) [CommRing R] [Algebra ℚ R] (S : Type*)
+variable (R : Type*) [CommRing R] [Algebra ℚ R] (S : Type*)
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, the preimage of the `(c + 1)`-st power of the
+/-- Over a commutative `ℚ`-algebra `R`, the preimage of the `(c + 1)`-st power of the
 augmentation ideal under `ι R` is the `c`-th term of the lower central series. -/
 theorem comap_augmentation_pow_ι_of_algebra_rat (c : ℕ) :
     (((HopfIdeal.augmentation R
@@ -163,7 +163,7 @@ theorem comap_augmentation_pow_ι_of_algebra_rat (c : ℕ) :
   comap_augmentation_pow_ι R S
     (UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat R (_root_.FreeLieAlgebra R S)) c
 
-/-- Over a commutative `ℚ`-algebra `R : Type`, the free nilpotent Lie algebra of class at most `c`
+/-- Over a commutative `ℚ`-algebra `R`, the free nilpotent Lie algebra of class at most `c`
 embeds into the truncated enveloping algebra modulo the `(c + 1)`-st augmentation power. -/
 theorem lowerCentralQuotientι_injective_of_algebra_rat (c : ℕ) :
     Function.Injective

@@ -90,9 +90,9 @@ theorem comul_mem_tensorTotalDegree {m : Γ} {a : U} (ha : a ∈ homogeneousSubm
       (Submodule.mem_iSup_of_mem ⟨(0, b.1), zero_add b.1⟩ (Submodule.apply_mem_map₂ _
         (SetLike.one_mem_graded _) (ι_mem_homogeneousSubmodule ℒ b.2.property)))
 
-/-- The primitive defect `Δ(a) - (1 ⊗ a + a ⊗ 1)` of a degree-`m` element has total tensor
-degree `m`. -/
-theorem primDefect_mem_tensorTotalDegree {m : Γ} {a : U} (ha : a ∈ homogeneousSubmodule ℒ m) :
+/-- `Δ(a) - (1 ⊗ a + a ⊗ 1)` of a degree-`m` element has total tensor degree `m`. -/
+theorem comul_sub_tmul_add_tmul_mem_tensorTotalDegree {m : Γ} {a : U}
+    (ha : a ∈ homogeneousSubmodule ℒ m) :
     Coalgebra.comul (R := R) a - (1 ⊗ₜ[R] a + a ⊗ₜ[R] 1) ∈ tensorTotalDegree ℒ m :=
   sub_mem (comul_mem_tensorTotalDegree ℒ ha) (add_mem
     (Submodule.mem_iSup_of_mem ⟨(0, m), zero_add m⟩
@@ -101,22 +101,15 @@ theorem primDefect_mem_tensorTotalDegree {m : Γ} {a : U} (ha : a ∈ homogeneou
       (Submodule.apply_mem_map₂ _ ha (SetLike.one_mem_graded _))))
 
 private noncomputable def tensorComponentKer [DecidableEq Γ]
-    [DirectSum.Decomposition (tensorGrading ℒ)] (p : Γ × Γ) : Submodule R (U ⊗[R] U) where
-  carrier := {w | (decompose (tensorGrading ℒ) w p : U ⊗[R] U) = 0}
-  zero_mem' := by simp
-  add_mem' {a b} ha hb := by
-    change (decompose (tensorGrading ℒ) (a + b) p : U ⊗[R] U) = 0
-    rw [_root_.DirectSum.decompose_add, _root_.DirectSum.add_apply, Submodule.coe_add, ha, hb,
-      add_zero]
-  smul_mem' r {a} ha := by
-    change (decompose (tensorGrading ℒ) (r • a) p : U ⊗[R] U) = 0
-    rw [_root_.DirectSum.decompose_smul, _root_.DirectSum.smul_apply, Submodule.coe_smul, ha,
-      smul_zero]
+    [DirectSum.Decomposition (tensorGrading ℒ)] (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
+  LinearMap.ker ((Submodule.subtype _) ∘ₗ
+    (_root_.DirectSum.component R (Γ × Γ) (fun p => tensorGrading ℒ p) p) ∘ₗ
+    (_root_.DirectSum.decomposeLinearEquiv (tensorGrading ℒ)).toLinearMap)
 
 private theorem mem_tensorComponentKer [DecidableEq Γ]
     [DirectSum.Decomposition (tensorGrading ℒ)] {p : Γ × Γ} {z : U ⊗[R] U} :
     z ∈ tensorComponentKer ℒ p ↔ (decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 :=
-  Iff.rfl
+  LinearMap.mem_ker
 
 /-- A tensor of total degree `m` has vanishing `(p.1, p.2)` component whenever `p.1 + p.2 ≠ m`. -/
 theorem decompose_eq_zero_of_mem_tensorTotalDegree [DecidableEq Γ]
