@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Completion
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Algebraic comparison with a metric completion
@@ -14,6 +15,10 @@ An isometric algebra homomorphism with dense range into a complete normed algebr
 that algebra with the metric completion of its source. The comparison extends the given map
 and preserves distances. This allows completion comparisons for dense subalgebras and their
 presentation quotients to share the same construction.
+
+For a continuous nonunital algebra or `⋆`-algebra homomorphism into a complete separated
+seminormed target, any linear norm bound `‖f x‖ ≤ C * ‖x‖` extends by density to the completion
+(`NonUnitalAlgHom.norm_fromCompletion_le` and `NonUnitalStarAlgHom.norm_fromCompletion_le`).
 
 The construction factors the one used for the Monsky–Washnitzer algebra in
 `TauCeti.RingTheory.Dagger.Completion`.
@@ -70,3 +75,45 @@ theorem norm_completionAlgEquiv (f : A →ₐ[R] B) (hf : Isometry f) (hd : Dens
   (AddMonoidHomClass.isometry_iff_norm _).mp (isometry_completionAlgEquiv f hf hd) x
 
 end AlgHom
+
+namespace NonUnitalAlgHom
+
+variable {R E F : Type*} [Semiring R]
+  [NonUnitalSeminormedRing E] [Module R E] [UniformContinuousConstSMul R E]
+  [NonUnitalSeminormedRing F] [Module R F] [UniformContinuousConstSMul R F]
+  [T0Space F] [CompleteSpace F]
+
+/-- If a continuous nonunital algebra homomorphism `f : E →ₙₐ[R] F` into a complete separated
+seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
+`f.fromCompletion hf` to the completion satisfies `‖f.fromCompletion hf y‖ ≤ C * ‖y‖` for all
+`y`. -/
+theorem norm_fromCompletion_le (f : E →ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
+    (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
+    ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
+  induction y using Completion.induction_on with
+  | hp =>
+    exact isClosed_le (continuous_norm.comp (f.continuous_fromCompletion hf))
+      (continuous_const.mul continuous_norm)
+  | ih x => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using hC x
+
+end NonUnitalAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {R E F : Type*} [Semiring R]
+  [NonUnitalSeminormedRing E] [StarAddMonoid E] [ContinuousStar E]
+  [Module R E] [UniformContinuousConstSMul R E]
+  [NonUnitalSeminormedRing F] [Star F] [ContinuousStar F]
+  [Module R F] [UniformContinuousConstSMul R F] [T0Space F] [CompleteSpace F]
+
+/-- If a continuous nonunital `⋆`-algebra homomorphism `f : E →⋆ₙₐ[R] F` into a complete
+separated seminormed target satisfies `‖f x‖ ≤ C * ‖x‖` for all `x`, then its extension
+`f.fromCompletion hf` to the completion satisfies `‖f.fromCompletion hf y‖ ≤ C * ‖y‖` for all
+`y`. -/
+theorem norm_fromCompletion_le (f : E →⋆ₙₐ[R] F) (hf : Continuous f) {C : ℝ}
+    (hC : ∀ x : E, ‖f x‖ ≤ C * ‖x‖) (y : Completion E) :
+    ‖f.fromCompletion hf y‖ ≤ C * ‖y‖ := by
+  simpa only [← NonUnitalStarAlgHom.coe_toNonUnitalAlgHom, toNonUnitalAlgHom_fromCompletion] using
+    f.toNonUnitalAlgHom.norm_fromCompletion_le hf hC y
+
+end NonUnitalStarAlgHom

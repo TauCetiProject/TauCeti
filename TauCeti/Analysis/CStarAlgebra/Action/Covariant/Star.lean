@@ -94,15 +94,10 @@ def integratedStarAlgHomL1 :
 @[simp]
 theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
     (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ := by
-  ext x : 1
-  induction x using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq ((P.integratedStarAlgHom μ).continuous_fromCompletion _)
-      (P.continuous_integratedOperatorL1 μ)
-  | ih f =>
-    rw [NonUnitalStarAlgHom.coe_toNonUnitalAlgHom, integratedStarAlgHomL1,
-      NonUnitalStarAlgHom.fromCompletion_apply_coe, integratedStarAlgHom_apply,
-      integratedOperatorL1_coe]
+  rw [integratedStarAlgHomL1, NonUnitalStarAlgHom.toNonUnitalAlgHom_fromCompletion]
+  exact (P.integratedStarAlgHom μ).toNonUnitalAlgHom.fromCompletion_unique
+    (P.continuous_integratedStarAlgHom μ) (P.integratedOperatorL1 μ)
+    (P.continuous_integratedOperatorL1 μ) fun f => by simp
 
 @[simp]
 theorem integratedStarAlgHomL1_apply (x : Completion (ConvolutionAlgebra α μ)) :

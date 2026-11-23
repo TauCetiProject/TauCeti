@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Algebra
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Covariant
 public import TauCeti.Analysis.CStarAlgebra.Completion
-public import TauCeti.Analysis.Normed.Operator.Completion
+public import TauCeti.Analysis.Normed.Algebra.Completion
 public import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
@@ -105,12 +105,12 @@ def integratedOperatorL1 :
   (P.integratedNonUnitalAlgHom μ).continuous_fromCompletion _
 
 theorem norm_integratedOperatorL1_le (x : Completion (TwistedConvolutionAlgebra ω μ)) :
-    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
-  rw [integratedOperatorL1,
-    NonUnitalAlgHom.fromCompletion_eq_clm _ _ (P.integratedOperatorCLM μ) (fun f => by simp) x]
-  exact ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le
-    ((ContinuousLinearMap.norm_fromCompletion _).trans_le (P.norm_integratedOperatorCLM_le μ))
-    x).trans_eq (one_mul _)
+    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ :=
+  ((P.integratedNonUnitalAlgHom μ).norm_fromCompletion_le
+    (P.continuous_integratedNonUnitalAlgHom μ) (fun f => by
+      simpa only [integratedNonUnitalAlgHom_apply, one_mul,
+        TwistedConvolutionAlgebra.norm_eq_integral_norm] using
+        P.norm_integratedOperator_le μ f.ofConv) x).trans_eq (one_mul _)
 
 end Multiplication
 
