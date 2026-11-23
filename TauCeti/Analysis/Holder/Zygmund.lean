@@ -19,7 +19,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LineDeriv
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.MetricSpace.Holder
