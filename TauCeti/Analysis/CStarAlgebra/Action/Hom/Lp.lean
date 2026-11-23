@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Hom
+public import TauCeti.Analysis.CStarAlgebra.Action.Hom.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Lp
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.MeasureTheory.Function.Lp.Basic

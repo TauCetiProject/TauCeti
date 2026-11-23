@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Count.Topology
 import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # Bochner `L¹` integrated forms for counting measure on discrete groups
 
-This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1` to counting measure
+This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic` to counting measure
 `Measure.count` on an arbitrary discrete group `G`, expressing
 `CovariantRepresentation.integratedOperatorBochnerL1` as an unconditionally convergent `ℓ¹`
 operator-applied series `∑' g, P.coefficient (f g) (P.group g v)` and bounding its operator norm

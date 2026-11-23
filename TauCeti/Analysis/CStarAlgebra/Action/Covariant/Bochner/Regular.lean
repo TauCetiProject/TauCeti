@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Regular
 
 /-!
 # Bochner `L¹` integrated form of regular covariant representations
 
 This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Regular` and
-`TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1`, identifying the Bochner `L¹` integrated form
-of the regular covariant representation for the trivial action on `ℂ` with ordinary group
-convolution `MeasureTheory.Lp.convolutionL` on `L²(G, H)`.
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic`, identifying the Bochner `L¹`
+integrated form of the regular covariant representation for the trivial action on `ℂ` with ordinary
+group convolution `MeasureTheory.Lp.convolutionL` on `L²(G, H)`.
 
 ## References
 

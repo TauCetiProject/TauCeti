@@ -151,6 +151,8 @@ theorem coeFn_translateLp (r : G) (f : Lp A p μ) :
     Lp.coeFn_leftTranslation (𝕜 := ℂ) r f] with s hs₁ hs₂
   exact hs₁.trans (congrArg (α r) hs₂)
 
+/-- The inverse of `translateLp` at `r` is `translateLp` at `r⁻¹`. -/
+@[simp]
 theorem translateLp_symm (r : G) :
     (α.translateLp μ p r).symm = α.translateLp μ p r⁻¹ := by
   rw [map_inv, LinearIsometryEquiv.inv_def]

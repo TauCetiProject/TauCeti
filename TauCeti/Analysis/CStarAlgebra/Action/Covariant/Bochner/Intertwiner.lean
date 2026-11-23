@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic
 
 /-!
 # Bochner `L¹` intertwiners, uniqueness, and commutants
 
 This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner` and
-`TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1` to the Bochner `L¹` integrated form
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic` to the Bochner `L¹` integrated form
 `CovariantRepresentation.integratedOperatorBochnerL1`:
 
 * `CovariantRepresentation.comp_integratedOperatorBochnerL1` and

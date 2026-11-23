@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.HilbertSum
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic
 
 /-!
 # Bochner `L¹` integrated forms of Hilbert direct sums
 
 This file extends `TauCeti.Analysis.CStarAlgebra.Action.Covariant.HilbertSum` and
-`TauCeti.Analysis.CStarAlgebra.Action.Covariant.L1`, proving that
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Bochner.Basic`, proving that
 `CovariantRepresentation.integratedOperatorBochnerL1` of a Hilbert direct sum commutes with
 evaluation in each summand and equals the `lp.mapCLM` direct sum of the component integrated
 operators.

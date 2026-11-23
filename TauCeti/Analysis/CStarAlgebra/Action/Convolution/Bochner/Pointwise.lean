@@ -5,17 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Bochner.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
 import TauCeti.Analysis.Normed.Module.InfiniteSum
-import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Pointwise formulas for Bochner `Lᵖ` twisted convolution
 
 On a locally compact topological group `G` with a regular left-invariant Borel measure `μ`,
-`TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` identifies
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Bochner.Basic` identifies
 `Completion (ConvolutionAlgebra α μ)` isometrically with `Lp A 1 μ` via
 `ConvolutionAlgebra.completionEquivL1` and defines `CStarAction.convolutionLp` on `Lp A p μ` for
 `1 ≤ p < ∞`.
@@ -77,20 +78,24 @@ private theorem ae_summable_integral_norm_of_summable {p : ℝ≥0∞} [Fact (1 
     have hms : HasCompactSupport fun s => ‖ψ q.2 s‖ := (ψ q.2).hasCompactSupport.norm
     have hni : Integrable (fun r => ‖φ q.1 r‖) μ := hnc.integrable_of_hasCompactSupport hns
     have hmm : MemLp (fun s => ‖ψ q.2 s‖) p μ := hmc.memLp_of_hasCompactSupport hms
-    have hnorm_fn :
-        ‖hni.toL1 fun r => ‖φ q.1 r‖‖ =
-          ‖CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ q.1)‖ := by
-      have hL1 : ‖hni.toL1 fun r => ‖φ q.1 r‖‖ =
-          (eLpNorm (fun r => ‖φ q.1 r‖) 1 μ).toReal := by
-        simpa only [Lp.norm_def] using
-          congrArg ENNReal.toReal (eLpNorm_congr_ae hni.coeFn_toL1)
-      rw [hL1, eLpNorm_norm _ ((φ q.1).memLp 1 μ).aestronglyMeasurable,
-        CompactlySupportedContinuousMap.norm_toLp]
-    have hnorm_gn :
-        ‖hmm.toLp fun s => ‖ψ q.2 s‖‖ =
-          ‖CompactlySupportedContinuousMap.toLp p μ ℂ (ψ q.2)‖ := by
-      rw [Lp.norm_toLp, eLpNorm_norm _ ((ψ q.2).memLp p μ).aestronglyMeasurable,
-        CompactlySupportedContinuousMap.norm_toLp]
+    have hfn_eq :
+        hni.toL1 (fun r => ‖φ q.1 r‖) =
+          Lp.normLp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ q.1)) := by
+      refine Lp.ext ?_
+      filter_upwards [hni.coeFn_toL1,
+        Lp.coeFn_normLp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ q.1)),
+        CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ (φ q.1)]
+        with r h₁ h₂ h₃
+      rw [h₁, h₂, h₃]
+    have hgn_eq :
+        hmm.toLp (fun s => ‖ψ q.2 s‖) =
+          Lp.normLp (CompactlySupportedContinuousMap.toLp p μ ℂ (ψ q.2)) := by
+      refine Lp.ext ?_
+      filter_upwards [hmm.coeFn_toLp,
+        Lp.coeFn_normLp (CompactlySupportedContinuousMap.toLp p μ ℂ (ψ q.2)),
+        CompactlySupportedContinuousMap.coeFn_toLp (p := p) (μ := μ) ℂ (ψ q.2)]
+        with s h₁ h₂ h₃
+      rw [h₁, h₂, h₃]
     calc
       eLpNorm (W q) p μ
           = eLpNorm (Lp.convolutionL μ p hp (hni.toL1 fun r => ‖φ q.1 r‖)
@@ -103,7 +108,7 @@ private theorem ae_summable_integral_norm_of_summable {p : ℝ≥0∞} [Fact (1 
           ENNReal.ofReal_le_ofReal (Lp.norm_convolutionL_apply_le _ _)
       _ = ENNReal.ofReal (‖CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ q.1)‖ *
             ‖CompactlySupportedContinuousMap.toLp p μ ℂ (ψ q.2)‖) := by
-          rw [hnorm_fn, hnorm_gn]
+          rw [hfn_eq, hgn_eq, Lp.norm_normLp, Lp.norm_normLp]
   have hW_tsum : ∑' q : ℕ × ℕ, eLpNorm (W q) p μ ≠ ∞ := by
     refine lt_top_iff_ne_top.1 ?_
     calc

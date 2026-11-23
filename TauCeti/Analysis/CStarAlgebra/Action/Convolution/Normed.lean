@@ -70,12 +70,6 @@ def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ where
 theorem toL1_apply (f : ConvolutionAlgebra α μ) : toL1 f = f.ofConv.integrable.toL1 f.ofConv :=
   (rfl)
 
-/-- `toL1` on `toConv f` is the Bochner `L¹` class of `f : C_c(G, A)`. -/
-@[simp]
-theorem toL1_toConv (f : C_c(G, A)) :
-    toL1 (toConv f : ConvolutionAlgebra α μ) = f.integrable.toL1 f :=
-  (rfl)
-
 /-- The L¹ class of a convolution coefficient is represented by its underlying function. -/
 theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv :=
   f.ofConv.integrable.coeFn_toL1
@@ -122,7 +116,7 @@ theorem norm_toL1 (f : ConvolutionAlgebra α μ) : ‖toL1 f‖ = ‖f‖ := by
 variable (α μ) in
 /-- Linear isometry from `Completion (ConvolutionAlgebra α μ)` into `Lp A 1 μ`, extending
 `ConvolutionAlgebra.toL1LI` without requiring local compactness of `G`. -/
-@[expose] def toL1FromCompletion : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ :=
+def toL1FromCompletion : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ :=
   (toL1LI α μ).fromCompletion
 
 /-- On compactly supported elements, `toL1FromCompletion` agrees with `toL1`. -/

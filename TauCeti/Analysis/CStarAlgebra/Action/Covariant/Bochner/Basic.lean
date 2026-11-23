@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Bochner.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.Topology.Separation.TypeTags

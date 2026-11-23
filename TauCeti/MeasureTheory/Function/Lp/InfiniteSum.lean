@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
 
 /-!
 # Pointwise behaviour of infinite sums in `Lᵖ`
@@ -20,28 +17,17 @@ type nor summability of the norms `‖u i‖`: it only uses that some sequence o
 converges to `v` almost everywhere. A typical use is a sum of functions with disjoint supports in
 `L²`, whose norms are square-summable but need not be summable.
 
-For a countable family of compactly supported continuous functions whose `Lᵖ` classes sum to `v`
-with summable `Lᵖ` norms, the pointwise values `ψ i t` have sum `v t` and are norm-summable for
-almost every `t` (`CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp`).
-
-Also records `TauCeti.integrable_tsum_of_summable_integral_norm`, showing that a countable
-pointwise `tsum` of integrable functions with summable `L¹` norms is integrable.
-
 ## Main declarations
 
 * `MeasureTheory.Lp.ae_enorm_le_tsum_enorm_of_hasSum`: the pointwise bound.
 * `MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`: for a countable family, the sum in `Lᵖ`
   agrees almost everywhere with the pointwise sum, wherever the latter exists.
-* `CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp`: almost-everywhere absolute series
-  convergence for representatives of a norm-summable `Lᵖ` series in `C_c(X, E)`.
-* `TauCeti.integrable_tsum_of_summable_integral_norm`: a countable pointwise `tsum` of integrable
-  functions with summable `L¹` norms is integrable.
 -/
 
 public section
 
 open Filter
-open scoped CompactlySupported ENNReal Topology
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
@@ -81,50 +67,3 @@ theorem ae_eq_of_hasSum_of_ae_hasSum [Countable κ] {u : κ → Lp E p μ} {v : 
 end Lp
 
 end MeasureTheory
-
-namespace CompactlySupportedContinuousMap
-
-open MeasureTheory
-
-/-- If a countable family of compactly supported continuous functions has sum `v` in `Lᵖ` with
-summable `Lᵖ` norms, then at almost every point `t` the pointwise series `ψ i t` converges
-absolutely to `v t`. -/
-theorem ae_hasSum_of_hasSum_toLp {X E ι : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] [NormedAddCommGroup E] [CompleteSpace E] {μ : Measure X}
-    [IsFiniteMeasureOnCompacts μ] [Countable ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] (𝕜 : Type*)
-    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {ψ : ι → C_c(X, E)} {v : Lp E p μ}
-    (hsum : HasSum (fun i => toLp p μ 𝕜 (ψ i)) v)
-    (hnorm : Summable fun i => ‖toLp p μ 𝕜 (ψ i)‖) :
-    ∀ᵐ t ∂μ, HasSum (fun i => ψ i t) (v t) ∧ Summable fun i => ‖ψ i t‖ := by
-  have heNorm : ∑' i, ‖toLp p μ 𝕜 (ψ i)‖ₑ ≠ ∞ :=
-    tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
-  filter_upwards [Lp.hasSum_coeFn_tsum heNorm,
-    summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm),
-    ae_all_iff.2 fun i => (coeFn_toLp (p := p) (μ := μ) 𝕜 (ψ i)).mono fun _ h => h]
-    with t ht hnt hcoe
-  rw [hsum.tsum_eq] at ht
-  simp only [hcoe] at ht hnt
-  exact ⟨ht, hnt⟩
-
-end CompactlySupportedContinuousMap
-
-namespace TauCeti
-
-open MeasureTheory
-
-/-- If `F i` are integrable over a countable index type `ι` and `∑' i, ∫ x, ‖F i x‖ ∂μ < ∞`,
-then the pointwise `tsum` is integrable. This pairs with
-`MeasureTheory.hasSum_integral_of_summable_integral_norm`. -/
-theorem integrable_tsum_of_summable_integral_norm {α ι E : Type*} [MeasurableSpace α]
-    {μ : Measure α} [Countable ι] [NormedAddCommGroup E] [CompleteSpace E] {F : ι → α → E}
-    (hF_int : ∀ i, Integrable (F i) μ) (hF_sum : Summable fun i ↦ ∫ x, ‖F i x‖ ∂μ) :
-    Integrable (fun x ↦ ∑' i, F i x) μ := by
-  have heNorm : ∑' i, ‖(hF_int i).toL1 (F i)‖ₑ ≠ ∞ :=
-    tsum_eNorm_ne_top_iff_summable_norm.2 <| by
-      simpa only [L1.norm_of_fun_eq_integral_norm (hF_int _)] using hF_sum
-  refine (L1.integrable_coeFn (∑' i, (hF_int i).toL1 (F i))).congr ?_
-  filter_upwards [Lp.coeFn_tsum heNorm,
-    ae_all_iff.2 fun i ↦ (hF_int i).coeFn_toL1] with x hx hcoe
-  exact hx.trans (tsum_congr fun i ↦ hcoe i)
-
-end TauCeti
