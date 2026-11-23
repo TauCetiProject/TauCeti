@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.GeometricArtinMap
 public import TauCeti.NumberTheory.LocalField.Unramified.Character
-public import TauCeti.NumberTheory.Padics.UnitsCharacter
+public import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
 
 /-!
 # Characters of `Kˣ` as Galois characters

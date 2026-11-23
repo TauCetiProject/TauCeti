@@ -603,4 +603,22 @@ theorem pow_appr_eq_pow_appr (x : ℤ_[p]) {m : ℕ} (hg : g ^ p ^ m = 1) (hmn :
     g ^ x.appr n = g ^ x.appr m :=
   pow_eq_pow_of_modEq (x.appr_modEq hmn) hg
 
+/-- Any ring homomorphism `ℤ_[p] →+* k` into a ring of characteristic `p` factors through
+`PadicInt.toZMod` via `ZMod.castHom`. -/
+theorem ringHom_eq_castHom_comp_toZMod {k : Type*} [Ring k] [CharP k p] (f : ℤ_[p] →+* k) :
+    f = (ZMod.castHom (dvd_refl p) k).comp toZMod := by
+  ext x
+  obtain ⟨y, hy⟩ := dvd_sub_appr x 1
+  rw [pow_one] at hy
+  have hx : x = (x.appr 1 : ℤ_[p]) + (p : ℤ_[p]) * y := eq_add_of_sub_eq' hy
+  rw [RingHom.comp_apply, hx]
+  simp only [map_add, map_mul, map_natCast, CharP.cast_eq_zero, zero_mul, add_zero]
+
+/-- Any ring homomorphism `ℤ_[p] →+* k` into a topological ring of characteristic `p` is
+continuous, because it factors through `PadicInt.toZMod` (`ringHom_eq_castHom_comp_toZMod`). -/
+theorem continuous_of_charP {k : Type*} [Ring k] [CharP k p] [TopologicalSpace k]
+    (f : ℤ_[p] →+* k) : Continuous f := by
+  rw [ringHom_eq_castHom_comp_toZMod f, RingHom.coe_comp]
+  exact (continuous_of_discreteTopology (f := ZMod.castHom (dvd_refl p) k)).comp continuous_toZMod
+
 end PadicInt

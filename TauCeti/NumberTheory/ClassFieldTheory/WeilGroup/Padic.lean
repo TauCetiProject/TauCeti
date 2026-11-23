@@ -1,0 +1,68 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.KroneckerWeber
+public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Reciprocity
+
+/-!
+# Explicit geometric Weil reciprocity for `ℚ_p`
+
+Combining geometric local Weil reciprocity
+`TauCeti.ClassFieldTheory.localWeilGeometricArtinEquiv ℚ_[p]` with local Kronecker–Weber
+(`TauCeti.ClassFieldTheory.padicAbsoluteGaloisGroupAbelianizationEquiv`), the inverse isomorphism
+`W_{ℚ_p}^{ab} ≃ₜ* ℚ_[p]ˣ` satisfies Colmez's explicit formula:
+
+`w ↦ p ^ (-deg w) * χ_cyc(w)`
+
+(`TauCeti.ClassFieldTheory.localWeilGeometricArtinEquiv_symm_padic_mk`).
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.localWeilGeometricArtinEquiv_symm_padic_mk`: explicit Colmez inverse
+  reciprocity formula on `W_{ℚ_p}`.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti.ClassFieldTheory
+
+/-- **Explicit Colmez inverse reciprocity formula on `W_{ℚ_p}`.** Under the inverse of geometric
+local reciprocity `W_{ℚ_p}^{ab} ≃ₜ* ℚ_[p]ˣ`, a Weil element `w` maps to
+`p ^ (-deg w) * χ_cyc(w)`. -/
+theorem localWeilGeometricArtinEquiv_symm_padic_mk (p : ℕ) [Fact p.Prime] (w : WeilGroup ℚ_[p]) :
+    (localWeilGeometricArtinEquiv ℚ_[p]).symm
+        (QuotientGroup.mk w : TopologicalAbelianization (WeilGroup ℚ_[p])) =
+      padicPrimeUnit p ^ (-(weilDegree ℚ_[p] w).toAdd) *
+        padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w)) := by
+  apply (localWeilGeometricArtinEquiv ℚ_[p]).injective
+  apply injective_weilToAbsoluteAbelianization ℚ_[p]
+  apply (padicAbsoluteGaloisGroupAbelianizationEquiv p).injective
+  rw [ContinuousMulEquiv.apply_symm_apply, weilToAbsoluteAbelianization_mk,
+    weilToAbsoluteAbelianization_localWeilGeometricArtinEquiv,
+    padicAbsoluteGaloisGroupAbelianizationEquiv_apply,
+    padicAbsoluteGaloisGroupAbelianizationEquiv_geometricArtinMap,
+    unramifiedCoordinate_weilDegree, abelianizedLocalCyclotomicCharacter_mk]
+  let x : ℚ_[p]ˣ := padicPrimeUnit p ^ (-(weilDegree ℚ_[p] w).toAdd) *
+    padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w))
+  have hx_eq : padicUnitsEquivIntProd p x =
+      (.ofAdd (-(weilDegree ℚ_[p] w).toAdd),
+        localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w)) :=
+    padicUnitsEquivIntProd_eq_of_decomposition p x (-(weilDegree ℚ_[p] w).toAdd)
+      (localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w)) (by simp [x])
+  have hval : (x : ℚ_[p]).valuation = -(weilDegree ℚ_[p] w).toAdd := by
+    have h1 := congrArg (Multiplicative.toAdd ∘ Prod.fst) hx_eq
+    simpa [padicUnitsEquivIntProd_apply_fst] using h1
+  have hunit : padicUnitPart p x =
+      localCyclotomicCharacter p ℚ_[p] (weilToAbsolute ℚ_[p] w) := by
+    simpa [padicUnitsEquivIntProd_apply_snd] using congrArg Prod.snd hx_eq
+  refine Prod.ext ?_ hunit.symm
+  rw [hval, neg_neg]
+  conv_lhs => rw [← ofAdd_toAdd (weilDegree ℚ_[p] w), zHat.ofInt_ofAdd]
+
+end TauCeti.ClassFieldTheory

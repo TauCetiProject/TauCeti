@@ -5,43 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basic
-public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import TauCeti.NumberTheory.LocalField.Unramified.Character
 public import TauCeti.NumberTheory.Padics.RingHoms
-public import TauCeti.NumberTheory.Padics.UnitsSplitting
+public import TauCeti.NumberTheory.Padics.UnitsCharacter.Basic
 public import TauCeti.NumberTheory.Padics.WeightSpace.Basic
-import Mathlib.LinearAlgebra.Matrix.Notation
 
 /-!
-# Continuous characters of `ℚ_pˣ`
+# Coefficient-valued continuous characters of `ℚ_pˣ`
 
 For a prime `p` and a topological monoid `Λ`, a continuous character of `ℚ_pˣ` with values in `Λ`
 is a continuous homomorphism `δ : ℚ_[p]ˣ →ₜ* Λˣ` (`TauCeti.PadicUnitsChar p Λ`).
 
 Using `TauCeti.padicUnitsCharacterEquiv p Λˣ`, when `Λ` is a commutative topological monoid with
 continuous multiplication, `TauCeti.PadicUnitsChar p Λ` decomposes as `Λˣ × TauCeti.WeightSpace p Λ`
-via `δ ↦ (δ(p), δ|_{ℤ_pˣ})`. For two unramified characters `unramifiedCharacter ℚ_[p] a`,
-`unramifiedCharacter ℚ_[p] b` into an arbitrary topological monoid `Λ`, the pointwise product is a
-homomorphism if and only if `a` and `b` commute
-(`TauCeti.exists_monoidHom_mul_unramifiedCharacter_iff`), witnessed over `M₂(𝔽₃)` by
-`TauCeti.not_exists_monoidHom_mul_unramifiedCharacter_matrix`.
+via `δ ↦ (δ(p), δ|_{ℤ_pˣ})`.
 
 This file also constructs additional canonical characters of `ℚ_[p]ˣ` complementing
 `TauCeti.padicUnitPart` and `TauCeti.unramifiedCharacter`:
 
 * `TauCeti.padicModPCyclotomicChar p`: the mod-`p` character `ω : ℚ_[p]ˣ →ₜ* (ZMod p)ˣ`,
-  obtained by reducing `TauCeti.padicUnitPart p` modulo `p` (and agreeing with reduction modulo the
-  maximal ideal in any finite extension `L / ℚ_[p]`).
+  obtained by reducing `TauCeti.padicUnitPart p` modulo `p`. After pushing forward to the residue
+  field `k` of a finite extension `L / ℚ_[p]` along the induced maps `ℤ_[p] →+* k` and
+  `ZMod p →+* k`, `TauCeti.padicUnitPart p` agrees with the pushforward of `ω`
+  (`TauCeti.mapMonoidHom_ringHom_padicUnitPart`).
 * `TauCeti.padicAlgebraMapChar p R h`: the character `x ↦ algebraMap ℚ_[p] R x` into a topological
   `ℚ_[p]`-algebra `R` with continuous structure map.
 
 ## Main definitions
 
 * `TauCeti.PadicUnitsChar`: the type `ℚ_[p]ˣ →ₜ* Λˣ` of continuous `Λ`-valued characters.
+* `TauCeti.PadicUnitsChar.toWeight`: restriction to `ℤ_[p]ˣ` as a weight in
+  `TauCeti.WeightSpace p Λ`.
+* `TauCeti.PadicUnitsChar.mapMonoidHom`: pushforward of a character along a continuous monoid
+  homomorphism.
 * `TauCeti.padicModPCyclotomicChar`, `TauCeti.padicAlgebraMapChar`: the mod-`p` cyclotomic
   character `ω` and the algebra-map character `x ↦ x`.
+
+## Main results
+
+* `TauCeti.mapMonoidHom_ringHom_padicUnitPart`: pushing `padicUnitPart p` along any
+  `f : ℤ_[p] →+* k` with `[CharP k p]` agrees with pushing `padicModPCyclotomicChar p` along
+  `ZMod.castHom`.
 
 ## References
 
@@ -55,8 +59,6 @@ This file also constructs additional canonical characters of `ℚ_[p]ˣ` complem
 public section
 
 noncomputable section
-
-open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
 
@@ -192,28 +194,17 @@ theorem coe_padicModPCyclotomicChar_padicIntUnitsInclusion (u : ℤ_[p]ˣ) :
       PadicInt.toZMod (u : ℤ_[p]) := by
   simp [padicModPCyclotomicChar]
 
-/-- Any continuous ring homomorphism `ℤ_[p] →+* k` into a discrete ring of characteristic `p`
-factors through `PadicInt.toZMod` via `ZMod.castHom`. -/
-theorem padicInt_ringHom_eq_castHom_comp_toZMod {k : Type*} [Ring k] [CharP k p]
-    [TopologicalSpace k] [DiscreteTopology k] (f : ℤ_[p] →+* k) (hf : Continuous f) :
-    f = (ZMod.castHom (dvd_refl p) k).comp PadicInt.toZMod :=
-  DFunLike.coe_injective <|
-    PadicInt.denseRange_natCast.equalizer hf
-      ((continuous_of_discreteTopology (f := ZMod.castHom (dvd_refl p) k)).comp
-        PadicInt.continuous_toZMod)
-      (funext fun n ↦ by simp)
-
-/-- Pushing `x ↦ x |x|` along any continuous ring homomorphism `ℤ_[p] →+* k` into a discrete ring
+/-- Pushing `x ↦ x |x|` along any ring homomorphism `f : ℤ_[p] →+* k` into a topological ring
 `k` of characteristic `p` (for instance the residue field `𝓀[L]` of a finite extension `L / ℚ_[p]`)
 agrees with pushing `ω` along `ZMod.castHom`. -/
 theorem mapMonoidHom_ringHom_padicUnitPart {k : Type*} [Ring k] [CharP k p]
-    [TopologicalSpace k] [DiscreteTopology k] (f : ℤ_[p] →+* k) (hf : Continuous f) :
-    PadicUnitsChar.mapMonoidHom (padicUnitPart p) f.toMonoidHom hf =
+    [TopologicalSpace k] (f : ℤ_[p] →+* k) :
+    PadicUnitsChar.mapMonoidHom (padicUnitPart p) f.toMonoidHom (PadicInt.continuous_of_charP f) =
       (padicModPCyclotomicChar p).mapMonoidHom
         (ZMod.castHom (dvd_refl p) k).toMonoidHom continuous_of_discreteTopology := by
   ext1 x
   apply Units.ext
-  simpa using DFunLike.congr_fun (padicInt_ringHom_eq_castHom_comp_toZMod p f hf)
+  simpa using DFunLike.congr_fun (PadicInt.ringHom_eq_castHom_comp_toZMod f)
     (padicUnitPart p x : ℤ_[p])
 
 /-- The canonical character `x ↦ algebraMap ℚ_[p] R x` into a topological `ℚ_[p]`-algebra `R`
@@ -237,67 +228,5 @@ theorem coe_padicAlgebraMapChar_padicPrimeUnit {R : Type*} [Semiring R] [Topolog
   simp [padicAlgebraMapChar]
 
 end CanonicalCharacters
-
-section NoncommutativeCounterexample
-
-/-- **Commutativity criterion for pointwise products of unramified characters.** For any
-topological monoid `Λ` and units `a, b : Λˣ`, the pointwise product `x ↦ μ_a(x) * μ_b(x)` is a
-group homomorphism on `ℚ_[p]ˣ` if and only if `a` and `b` commute. -/
-theorem exists_monoidHom_mul_unramifiedCharacter_iff {p : ℕ} [Fact p.Prime] {Λ : Type*}
-    [Monoid Λ] [TopologicalSpace Λ] (a b : Λˣ) :
-    (∃ δ : ℚ_[p]ˣ →* Λˣ,
-      ∀ x : ℚ_[p]ˣ, δ x = unramifiedCharacter ℚ_[p] a x * unramifiedCharacter ℚ_[p] b x) ↔
-      Commute a b := by
-  constructor
-  · rintro ⟨δ, hδ⟩
-    have hsq : (a * b) ^ 2 = a ^ 2 * b ^ 2 := by
-      have ha : unramifiedCharacter ℚ_[p] a (padicPrimeUnit p) = a :=
-        unramifiedCharacter_apply_of_isUniformizer a (isUniformizer_padicPrimeUnit p)
-      have hb : unramifiedCharacter ℚ_[p] b (padicPrimeUnit p) = b :=
-        unramifiedCharacter_apply_of_isUniformizer b (isUniformizer_padicPrimeUnit p)
-      have h1 : δ (padicPrimeUnit p ^ 2) = (a * b) ^ 2 := by
-        rw [map_pow, hδ, ha, hb]
-      have h2 : δ (padicPrimeUnit p ^ 2) = a ^ 2 * b ^ 2 := by
-        rw [hδ, map_pow, map_pow, ha, hb]
-      exact h1.symm.trans h2
-    rw [sq, sq, sq] at hsq
-    have h1 : b * a * b = a * b * b :=
-      mul_left_cancel (a := a) (by simpa [mul_assoc] using hsq)
-    exact (mul_right_cancel h1).symm
-  · intro hcomm
-    refine ⟨(unramifiedCharacter ℚ_[p] (a * b)).toMonoidHom, fun x ↦ ?_⟩
-    simp [hcomm.mul_zpow]
-
-/-- The upper-triangular unipotent unit `A = !![1, 1; 0, 1]` in `M₂(𝔽₃)ˣ`. -/
-private def matA : (Matrix (Fin 2) (Fin 2) (ZMod 3))ˣ where
-  val := !![(1 : ZMod 3), 1; 0, 1]
-  inv := !![(1 : ZMod 3), 2; 0, 1]
-  val_inv := by decide
-  inv_val := by decide
-
-/-- The lower-triangular unipotent unit `B = !![1, 0; 1, 1]` in `M₂(𝔽₃)ˣ`. -/
-private def matB : (Matrix (Fin 2) (Fin 2) (ZMod 3))ˣ where
-  val := !![(1 : ZMod 3), 0; 1, 1]
-  inv := !![(1 : ZMod 3), 0; 2, 1]
-  val_inv := by decide
-  inv_val := by decide
-
-/-- **Commutativity of the coefficient ring is necessary for pointwise multiplication of
-characters.** Over `M₂(𝔽₃)`, the pointwise product of the unramified characters sending `p` to
-`!![1, 1; 0, 1]` and `!![1, 0; 1, 1]` is not a homomorphism on `ℚ_[p]ˣ`, because these matrices do
-not commute. -/
-theorem not_exists_monoidHom_mul_unramifiedCharacter_matrix (p : ℕ) [Fact p.Prime] :
-    ∃ δ₁ δ₂ : PadicUnitsChar p (Matrix (Fin 2) (Fin 2) (ZMod 3)),
-      ¬ ∃ δ : ℚ_[p]ˣ →* (Matrix (Fin 2) (Fin 2) (ZMod 3))ˣ,
-        ∀ x : ℚ_[p]ˣ, δ x = δ₁ x * δ₂ x := by
-  refine ⟨unramifiedCharacter ℚ_[p] matA, unramifiedCharacter ℚ_[p] matB, ?_⟩
-  rw [exists_monoidHom_mul_unramifiedCharacter_iff]
-  intro hcomm
-  have h : (matA : Matrix (Fin 2) (Fin 2) (ZMod 3)) * matB =
-      (matB : Matrix (Fin 2) (Fin 2) (ZMod 3)) * matA := by
-    simpa [Units.val_mul] using congrArg Units.val hcomm.eq
-  exact absurd h (by decide)
-
-end NoncommutativeCounterexample
 
 end TauCeti

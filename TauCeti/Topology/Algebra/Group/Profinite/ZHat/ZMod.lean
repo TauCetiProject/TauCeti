@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The profinite integers as the inverse limit of the `ZMod n`
@@ -510,6 +511,29 @@ theorem ringLift_toZMod :
   (ringLift_unique _ _ _ fun n ↦ RingHom.comp_id (toZMod n)).symm
 
 end RingLift
+
+section LiftOfFinOrder
+
+/-- **Lifting an element of finite order.** Construct a continuous homomorphism `ℤ̂ →ₜ* G` sending
+`zHat.gen` to an element `a` of finite order in any topological group `G`, by factoring through
+`Multiplicative (ZMod (orderOf a))`. -/
+noncomputable def liftOfFinOrder {G : Type v} [Group G] [TopologicalSpace G] {a : G}
+    (ha : IsOfFinOrder a) : zHat.{u} →ₜ* G :=
+  haveI : NeZero (orderOf a) := ⟨(orderOf_pos_iff.mpr ha).ne'⟩
+  let ψ : Multiplicative (ZMod (orderOf a)) →ₜ* G :=
+    ⟨(TauCeti.zmodMonoidHomEquiv (orderOf a) G).symm ⟨a, pow_orderOf_eq_one a⟩,
+      continuous_of_discreteTopology⟩
+  ψ.comp (lift (.ofAdd 1))
+
+/-- The lift of a finite-order element sends the generator to that element. -/
+@[simp]
+theorem liftOfFinOrder_gen {G : Type v} [Group G] [TopologicalSpace G] {a : G}
+    (ha : IsOfFinOrder a) : liftOfFinOrder.{u} ha gen = a := by
+  have : NeZero (orderOf a) := ⟨(orderOf_pos_iff.mpr ha).ne'⟩
+  simp only [liftOfFinOrder, ContinuousMonoidHom.coe_comp, Function.comp_apply, lift_gen]
+  exact TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_one _
+
+end LiftOfFinOrder
 
 end zHat
 

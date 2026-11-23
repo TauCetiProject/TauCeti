@@ -100,15 +100,30 @@ theorem localWeilArtinEquiv_compat (x : Kˣ) (w : WeilGroup K)
   rw [← weilToAbsoluteAbelianization_mk, hw, localWeilArtinEquiv_apply,
     weilToAbsoluteAbelianization_weilArtinMap]
 
+section
+
+omit [CharZero K]
+
+/-- Topological inversion on the commutative group `W_K^{ab}`. -/
+private def weilAbelianizationInvEquiv :
+    TopologicalAbelianization (WeilGroup K) ≃ₜ* TopologicalAbelianization (WeilGroup K) where
+  toMulEquiv := MulEquiv.inv (TopologicalAbelianization (WeilGroup K))
+  continuous_toFun := continuous_inv
+  continuous_invFun := continuous_inv
+
+private theorem weilAbelianizationInvEquiv_symm_apply
+    (y : TopologicalAbelianization (WeilGroup K)) :
+    (weilAbelianizationInvEquiv K).symm y = y⁻¹ :=
+  (rfl)
+
+end
+
 /-- **Geometric local reciprocity for the Weil group.** For a characteristic-zero nonarchimedean
 local field `K`, this is the isomorphism `Kˣ ≃ₜ* W_K^{ab}` obtained by composing
 `localWeilArtinEquiv K` with inversion in the commutative group `W_K^{ab}`. It sends a uniformizer
 to the class of a geometric Frobenius (the inverse of an arithmetic Frobenius lift). -/
 def localWeilGeometricArtinEquiv : Kˣ ≃ₜ* TopologicalAbelianization (WeilGroup K) :=
-  (localWeilArtinEquiv K).trans
-    { toMulEquiv := MulEquiv.inv (TopologicalAbelianization (WeilGroup K))
-      continuous_toFun := continuous_inv
-      continuous_invFun := continuous_inv }
+  (localWeilArtinEquiv K).trans (weilAbelianizationInvEquiv K)
 
 /-- The geometric Weil reciprocity isomorphism sends `x` to `(localWeilArtinEquiv K x)⁻¹`. -/
 @[simp]
@@ -122,9 +137,8 @@ theorem localWeilGeometricArtinEquiv_apply (x : Kˣ) :
 theorem localWeilGeometricArtinEquiv_symm_apply
     (y : TopologicalAbelianization (WeilGroup K)) :
     (localWeilGeometricArtinEquiv K).symm y = ((localWeilArtinEquiv K).symm y)⁻¹ := by
-  -- Unfold the composition with `MulEquiv.inv` on the inverse direction.
-  change (localWeilArtinEquiv K).symm y⁻¹ = _
-  rw [map_inv]
+  rw [localWeilGeometricArtinEquiv, ContinuousMulEquiv.symm_trans_apply,
+    weilAbelianizationInvEquiv_symm_apply, map_inv]
 
 /-- Mapping `localWeilGeometricArtinEquiv K x` into `G_K^{ab}` yields the geometric Artin symbol
 `geometricArtinMap K x`. -/
