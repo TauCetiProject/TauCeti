@@ -1221,7 +1221,8 @@ theorem preconnectedSpace_of_totalCriticalCount_lt_four [I.Boundaryless] [Compac
         _ ≤ 2 * ENat.card (ConnectedComponents M) := by
           gcongr; simpa [one_add_one_eq_two] using Order.add_one_le_of_lt h
     exact (this.trans hle).not_gt h4
-  exact preconnectedSpace_iff_subsingleton_connectedComponents.mpr this
+  exact preconnectedSpace_iff_connectedComponent.2 fun x ↦ eq_univ_of_forall fun _ ↦
+    ConnectedComponents.coe_eq_coe'.1 (Subsingleton.elim _ _)
 
 /-- A continuous function on a compact boundaryless manifold with exactly two critical points
 attains its minimum at one of them, `x₀`, and its maximum at the other, `x₁`. Either
