@@ -180,27 +180,32 @@ theorem strongDualCotangentSymplecticForm_fderiv_cotangentGeneratingSource_eq_ze
   rw [fderiv_cotangentFamilyFiberDeriv_apply hS] at hu hv
   simp [hu, hv]
 
-/-- At a transverse point, a vector of the kernel of the derivative of `∂_a S` which the
-derivative of the source projection kills is zero. -/
-private theorem eq_zero_of_fderiv_cotangentGeneratingSource_eq_zero
-    (hS : DifferentiableAt ℝ (fderiv ℝ S) x) (hsymm : IsSymmSndFDerivAt ℝ S x)
-    (hsurj : Function.Surjective (fderiv ℝ (cotangentFamilyFiberDeriv S) x)) {u : V × A}
-    (hu : fderiv ℝ (cotangentFamilyFiberDeriv S) x u = 0)
-    (hιu : fderiv ℝ (cotangentGeneratingSource S) x u = 0) : u = 0 := by
-  obtain ⟨a, b⟩ := u
-  rw [fderiv_cotangentGeneratingSource_apply hS, Prod.mk_eq_zero] at hιu
-  obtain ⟨rfl, hq⟩ := hιu
-  rw [fderiv_cotangentFamilyFiberDeriv_apply hS] at hu
-  -- `D²S (0, b)` vanishes on both factors, hence everywhere; by symmetry every covector in the
-  -- range of `D(∂_a S)`, which is all of `A'`, vanishes on `b`.
-  have hH (w : V × A) : fderiv ℝ (fderiv ℝ S) x (0, b) w = 0 := by
-    have h₁ := DFunLike.congr_fun hq w.1
-    have h₂ := DFunLike.congr_fun hu w.2
-    simp only [comp_apply, inl_apply, inr_apply, _root_.zero_apply] at h₁ h₂
-    rw [← Prod.fst_add_snd w, map_add, h₁, h₂, add_zero]
-  refine Prod.ext rfl (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun β ↦ ?_)
-  obtain ⟨w, rfl⟩ := hsurj β
-  rw [fderiv_cotangentFamilyFiberDeriv_apply hS, comp_apply, inr_apply, ← hsymm, hH]
+/-- The linear algebra behind the injectivity of the source projection. Let `T` keep the first
+component and send `(0, b)` to `(0, H b)`, and let `D (u, b) = H(·)(u) + B b` with `B` symmetric.
+If `D` is onto, then `T` is injective on the kernel of `D`: a kernel vector `(0, b)` with
+`H b = 0` pairs to zero with every value `D v` of `D`. -/
+theorem injOn_ker_of_forall_apply {T : V × A →L[ℝ] V × (V →L[ℝ] ℝ)}
+    {D : V × A →L[ℝ] A →L[ℝ] ℝ} {H : A →L[ℝ] V →L[ℝ] ℝ} {B : A →L[ℝ] A →L[ℝ] ℝ}
+    (hfst : ∀ w, (T w).1 = w.1) (hinr : ∀ b, T (0, b) = (0, H b)) (hB : ∀ b b', B b b' = B b' b)
+    (hD : ∀ w c, D w c = H c w.1 + B w.2 c) (hsurj : Function.Surjective D) :
+    Set.InjOn T D.ker := by
+  refine LinearMap.disjoint_ker_iff_injOn.mp (LinearMap.disjoint_ker.mpr
+    fun w (hw : D w = 0) (hTw : T w = 0) ↦ ?_)
+  have hw₁ : w.1 = 0 := by rw [← hfst, hTw, Prod.fst_zero]
+  -- The image of `(0, b)` is `(0, H b)`, so `b = w.2` lies in the kernel of `H`.
+  have hH : H w.2 = 0 := by
+    have h := hinr w.2
+    rw [← hw₁, Prod.mk.eta, hTw] at h
+    exact (congrArg Prod.snd h).symm
+  -- Since `w` lies in the kernel of `D`, the symmetric form `B` kills `b`.
+  have hBw (c : A) : B w.2 c = 0 := by
+    have h := hD w c
+    rw [hw, hw₁, map_zero, zero_add] at h
+    exact h.symm
+  -- Every value of `D` vanishes on `b`, and `D` is onto, so `b = 0`.
+  refine Prod.ext hw₁ (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_)
+  obtain ⟨v, rfl⟩ := hsurj ℓ
+  rw [hD, hH, zero_apply, zero_add, hB, hBw]
 
 /-- **Injectivity at a transverse point.** If the second derivative of `S` is symmetric and the
 derivative of the fibre derivative `∂_a S` is surjective, the derivative of the source projection
@@ -210,12 +215,19 @@ theorem injOn_fderiv_cotangentGeneratingSource_ker (hS : DifferentiableAt ℝ (f
     (hsurj : Function.Surjective (fderiv ℝ (cotangentFamilyFiberDeriv S) x)) :
     Set.InjOn (fderiv ℝ (cotangentGeneratingSource S) x)
       (LinearMap.ker (fderiv ℝ (cotangentFamilyFiberDeriv S) x).toLinearMap) := by
-  intro u hu v hv huv
-  rw [← sub_eq_zero]
-  refine eq_zero_of_fderiv_cotangentGeneratingSource_eq_zero hS hsymm hsurj ?_ ?_
-  · simp only [SetLike.mem_coe, LinearMap.mem_ker, coe_coe] at hu hv
-    rw [map_sub, hu, hv, sub_zero]
-  · rw [map_sub, huv, sub_self]
+  -- `H b = D²S (0, b) (·, 0)` and `B b = D²S (0, b) (0, ·)`.
+  refine injOn_ker_of_forall_apply
+    (H := precomp ℝ (inl ℝ V A) ∘L fderiv ℝ (fderiv ℝ S) x ∘L inr ℝ V A)
+    (B := precomp ℝ (inr ℝ V A) ∘L fderiv ℝ (fderiv ℝ S) x ∘L inr ℝ V A)
+    (fun w ↦ by rw [fderiv_cotangentGeneratingSource_apply hS])
+    (fun b ↦ by ext <;> simp [fderiv_cotangentGeneratingSource_apply hS])
+    (fun b b' ↦ by simp [hsymm (0, b)]) (fun w c ↦ ?_) hsurj
+  -- `D w c = D²S w (0, c)` splits along `w = (w.1, 0) + (0, w.2)`, and by symmetry the first
+  -- term is `D²S (0, c) (w.1, 0) = H c w.1`.
+  have hw : w = (w.1, 0) + (0, w.2) := by simp
+  rw [fderiv_cotangentFamilyFiberDeriv_apply hS, comp_apply, inr_apply, hw, map_add, add_apply,
+    ← hsymm (0, c) (w.1, 0)]
+  simp
 
 /-- **The tangent Lagrangian of a generating family.** Let `V` and `A` be finite-dimensional. If
 the second derivative of `S` is symmetric at `x` and the derivative of the fibre derivative

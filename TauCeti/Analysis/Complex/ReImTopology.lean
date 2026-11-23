@@ -12,9 +12,12 @@ public import Mathlib.Topology.Sets.Opens
 # Upper halves of open planar sets
 
 The open upper half `W ∩ {0 < im}` of an open set `W ⊆ ℂ` is packaged as an open set,
-`TopologicalSpace.Opens.upperHalf`. A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper
-half-plane has interior `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), which as an
-open set is the upper half of `Ω`
+`TopologicalSpace.Opens.upperHalf`. A closed half-plane `{a ≤ im}` is closed
+(`Complex.isClosed_setOfPred_le_im`), so its trace on an open set is locally closed
+(`IsOpen.isLocallyClosed_inter_setOfPred_le_im`), and it is a neighbourhood of each point of the
+open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively open subset
+`Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior `Ω ∩ {0 < im}`
+(`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
 (`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
 `Ω ∩ {0 ≤ im}` is a limit of interior points
 (`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
@@ -46,18 +49,27 @@ theorem TopologicalSpace.Opens.upperHalf_mono {V W : Opens ℂ} (h : V ≤ W) :
     V.upperHalf ≤ W.upperHalf :=
   fun _ hz => Opens.mem_upperHalf.2 ⟨h (Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2⟩
 
-/-- The upper half of an open set with compact closure has compact closure. -/
-theorem TopologicalSpace.Opens.isCompact_closure_upperHalf {W : Opens ℂ}
-    (hWc : IsCompact (closure (W : Set ℂ))) : IsCompact (closure (W.upperHalf : Set ℂ)) :=
-  hWc.of_isClosed_subset isClosed_closure
-    (closure_mono (by rw [Opens.coe_upperHalf]; exact Set.inter_subset_left))
-
 /-- The upper half of an open planar set lies in its closed upper half. -/
 theorem TopologicalSpace.Opens.coe_upperHalf_subset (W : Opens ℂ) :
     (W.upperHalf : Set ℂ) ⊆ (W : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} :=
   fun _ hz => ⟨(Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2.le⟩
 
+/-- A closed half-plane `{a ≤ im}` is closed. -/
+theorem Complex.isClosed_setOfPred_le_im (a : ℝ) : IsClosed {z : ℂ | a ≤ z.im} :=
+  isClosed_le continuous_const Complex.continuous_im
+
+/-- The trace `Ω ∩ {a ≤ im}` of a closed half-plane on an open set is locally closed. -/
+theorem IsOpen.isLocallyClosed_inter_setOfPred_le_im {Ω : Set ℂ} (hΩ : IsOpen Ω) (a : ℝ) :
+    IsLocallyClosed (Ω ∩ {z : ℂ | a ≤ z.im}) :=
+  hΩ.isLocallyClosed.inter (Complex.isClosed_setOfPred_le_im a).isLocallyClosed
+
 namespace TauCeti
+
+/-- A closed half-plane `{z : ℂ | a ≤ z.im}` is a neighbourhood of each point of the open
+half-plane `{z | a < z.im}`. -/
+theorem setOfPred_le_im_mem_nhds {a : ℝ} {w : ℂ} (hw : a < w.im) :
+    {z : ℂ | a ≤ z.im} ∈ 𝓝 w :=
+  mem_interior_iff_mem_nhds.mp (by rwa [Complex.interior_setOfPred_le_im])
 
 /-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
 `Ω ∩ {0 < im}` in `ℂ`: points on the real axis are not interior, since every neighbourhood meets

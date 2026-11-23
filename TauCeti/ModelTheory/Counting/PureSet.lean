@@ -41,7 +41,7 @@ theorem mk_quotient_isoSetoidOn_empty_top (V : Type w) :
     refine ⟨fun p q => ?_⟩
     induction p, q using Quotient.inductionOn₂ with
     | h c d =>
-      exact Quotient.sound (isoSetoidOn_apply.2 (isoSetoid_apply.2
+      exact Quotient.sound (classIso_apply.2 (isoSetoid_apply.2
         ((@Language.empty.nonempty_equiv_iff V V c.val.toStructure d.val.toStructure).2 rfl)))
   exact mk_eq_one _
 

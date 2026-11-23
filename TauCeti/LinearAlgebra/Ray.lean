@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Ray
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Vectors in the same ray: partitions, sums, finite orbits, and durations of segments
@@ -21,6 +23,8 @@ the final value. The explicit-partition induction follows the pattern of the Apa
 [`frenzymath/Poincare-Conjecture`](https://github.com/frenzymath/Poincare-Conjecture)
 formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
+
+Tensor products of vectors on the same rays lie on the same ray (`SameRay.tmul`).
 
 Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
 orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
@@ -68,6 +72,18 @@ theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f 
     (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map f (u • v) = u • Module.Ray.map f v := by
   induction v using Module.Ray.ind with | h v hv =>
     simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
+
+/-- **Tensor products of vectors on the same rays lie on the same ray.** -/
+theorem SameRay.tmul {N : Type*} [AddCommMonoid N] [Module R N] {x₀ : M} {y y₀ : N}
+    (hx : SameRay R x x₀) (hy : SameRay R y y₀) : SameRay R (x ⊗ₜ[R] y) (x₀ ⊗ₜ y₀) := by
+  rcases hx with rfl | rfl | ⟨r₁, r₂, hr₁, hr₂, h⟩
+  · simp
+  · simp
+  rcases hy with rfl | rfl | ⟨s₁, s₂, hs₁, hs₂, h'⟩
+  · simp
+  · simp
+  exact Or.inr (Or.inr ⟨r₁ * s₁, r₂ * s₂, mul_pos hr₁ hs₁, mul_pos hr₂ hs₂, by
+    rw [← TensorProduct.smul_tmul_smul, h, h', TensorProduct.smul_tmul_smul]⟩)
 
 end Semiring
 
@@ -247,7 +263,7 @@ end Orbit
 
 section Duration
 
-variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+variable {R M : Type*} [Field R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
   [Module R M] {S : Set M}
 
 /-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a pair `(d, v)` with `0 < d`
@@ -263,11 +279,12 @@ theorem Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem (hS : S.Pairwise fun u v ↦ �
   have hv : v ≠ 0 := by
     rintro rfl
     exact h0 (by simpa using hx.2)
-  -- Both velocities are positive multiples of `v`, hence equal.
+  -- Both velocities lie in the same ray, hence are equal: by the definition of `SameRay`, the
+  -- positive coefficients `d` and `e` witness this, since `d • d⁻¹ • v = v = e • e⁻¹ • v`.
   have hde : d⁻¹ • v = e⁻¹ • v := by
     by_contra hne
-    exact hS hx.2 hy.2 hne
-      ((SameRay.rfl.pos_smul_left (inv_pos.2 hx.1)).pos_smul_right (inv_pos.2 hy.1))
+    refine hS hx.2 hy.2 hne (.inr <| .inr ⟨d, e, hx.1, hy.1, ?_⟩)
+    rw [smul_inv_smul₀ hx.1.ne', smul_inv_smul₀ hy.1.ne']
   rw [inv_inj.1 (smul_left_injective R hv hde)]
 
 /-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a list of pairs `(d, v)` with
@@ -291,14 +308,8 @@ end Duration
 
 section Velocity
 
-variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
+variable {R M : Type*} [Semifield R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
   [Module R M]
-
-omit [LinearOrder R] [IsStrictOrderedRing R] in
-/-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
-theorem Prod.inv_fst_smul_snd_smul {a : R} (ha : a ≠ 0) (z : R × M) :
-    (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
-  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
 
 /-- Two pairs `(d, v)` and `(e, w)` with `0 < d` and `0 < e` lie in the same ray exactly when they
 have the same velocity, `d⁻¹ • v = e⁻¹ • w`. -/

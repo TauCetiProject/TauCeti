@@ -300,7 +300,8 @@ the three entries `a`, `b`, `d` of the generic upper-triangular matrix. -/
 private theorem exists_algHom_upperEntry_eq_one :
     ∃ u : UpperTriangular.coordinateHopfAlgebra k 2 →ₐ[k] k,
       u (upperEntry 0 0) = 1 ∧ u (upperEntry 0 1) = 1 ∧ u (upperEntry 1 1) = 1 := by
-  let v : Matrix.SpecialLinearGroup (Fin 2) k := ⟨!![1, 1; 0, 1], by simp [Matrix.det_fin_two]⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  let v : Matrix.SpecialLinearGroup (Fin 2) k := .mk !![1, 1; 0, 1] (by simp [Matrix.det_fin_two])
   have hv : v ∈ (upperTriangularGroup (Fin 2) k).comap Matrix.SpecialLinearGroup.toGL := by
     rw [UpperTriangularGroup.mem_comap_toGL_iff]
     intro i j hij
