@@ -32,8 +32,9 @@ congruence, and coordinate factorization also use the derivative at the base poi
 * `TauCeti.dslope_neg`: the divided difference of `-f` is the negative of that of `f`.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
-* `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local coordinate factorization
-  identifies the coordinate divided difference with its factor.
+* `TauCeti.dslope_eq_of_factorization`, `TauCeti.eqOn_dslope_of_factorization`, and
+  `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local factorization identifies the
+  divided difference with its factor.
 -/
 
 public section
@@ -116,6 +117,35 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
 
+/-- A scalar factorization identifies a divided difference `dslope f a b` with its factor `H b`:
+on the diagonal `b = a`, an eventual factorization `(fun y ↦ f y - f a) =ᶠ[𝓝 a] (y - a) • H y`
+with `H` continuous at `a` gives `dslope f a a = H a`; off the diagonal, the pointwise identity
+`f b - f a = (b - a) • H b` suffices. -/
+theorem dslope_eq_of_factorization {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f H : 𝕜 → F} {a b : 𝕜}
+    (hH : b = a → ContinuousAt H a)
+    (hfH : (b = a → (fun y ↦ f y - f a) =ᶠ[nhds a] fun y ↦ (y - a) • H y) ∧
+      (b ≠ a → f b - f a = (b - a) • H b)) :
+    dslope f a b = H b := by
+  by_cases hba : b = a
+  · subst hba
+    have hd : HasDerivAt (fun y ↦ (y - b) • H y) (H b) b := by
+      simpa only [id_eq, one_smul] using
+        ((hasDerivAt_id b).sub_const b).smul_of_eq_zero (hH rfl) (sub_self b)
+    have hd' : HasDerivAt (fun y ↦ f y) (H b) b :=
+      (hasDerivAt_sub_const_iff (f b)).mp (hd.congr_of_eventuallyEq (hfH.1 rfl))
+    simpa only [dslope_same] using hd'.deriv
+  · exact smul_right_injective _ (sub_ne_zero.mpr hba) ((sub_smul_dslope f a b).trans (hfH.2 hba))
+
+/-- On a neighborhood `s ∈ 𝓝 a`, a factorization `∀ y ∈ s, f y - f a = (y - a) • H y` with `H`
+continuous at `a` identifies `dslope f a` with `H` on `s`. -/
+theorem eqOn_dslope_of_factorization {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f H : 𝕜 → F} {a : 𝕜} {s : Set 𝕜}
+    (hs : s ∈ nhds a) (hH : ContinuousAt H a) (hfH : ∀ y ∈ s, f y - f a = (y - a) • H y) :
+    Set.EqOn (dslope f a) H s := fun _ hb ↦
+  dslope_eq_of_factorization (fun _ ↦ hH)
+    ⟨fun _ ↦ Filter.eventually_of_mem hs hfH, fun _ ↦ hfH _ hb⟩
+
 /-- A local factorization by a coordinate difference identifies the coordinate divided
 difference with its factor. On the base hyperplane only continuity of the factor's
 one-dimensional slices is needed; the index type can be infinite and the base coordinate
@@ -130,27 +160,15 @@ theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
       fun z ↦ (z i - ζ) • g z) :
     (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[nhds x] g := by
   filter_upwards [hfg.eventually_nhds, hg] with z hz hgz
-  by_cases hzi : z i = ζ
-  · have huz : Function.update z i ζ = z := by rw [← hzi, Function.update_eq_self]
-    have hu : ContinuousAt (Function.update z i) ζ :=
-      continuousAt_const.update i continuousAt_id
-    have heq := hu.tendsto.eventually (huz ▸ hz)
-    have heq' : (fun w ↦ f (Function.update z i w) - f z) =ᶠ[nhds ζ]
-        (fun w ↦ (w - ζ) • g (Function.update z i w)) := by
-      filter_upwards [heq] with w hw
+  have hd : dslope (fun w ↦ f (Function.update z i w)) ζ (z i) = g (Function.update z i (z i)) := by
+    refine dslope_eq_of_factorization (H := fun w ↦ g (Function.update z i w))
+      (fun hzi ↦ hgz hzi) ⟨fun hzi ↦ ?_, fun _ ↦ ?_⟩
+    · have huz : Function.update z i ζ = z := by rw [← hzi, Function.update_eq_self]
+      have hu : ContinuousAt (Function.update z i) ζ :=
+        continuousAt_const.update i continuousAt_id
+      filter_upwards [hu.tendsto.eventually (huz ▸ hz)] with w hw
       simpa only [Function.update_self, Function.update_idem, huz] using hw
-    have hd : HasDerivAt (fun w ↦ (w - ζ) • g (Function.update z i w))
-        (g z) ζ := by
-      simpa only [id_eq, one_smul, huz] using
-        ((hasDerivAt_id ζ).sub_const ζ).smul_of_eq_zero (hgz hzi) (sub_self ζ)
-    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) ζ :=
-      (hasDerivAt_sub_const_iff (f z)).mp (hd.congr_of_eventuallyEq heq')
-    simpa only [hzi, dslope_same] using hd'.deriv
-  · have hmul : (z i - ζ) •
-        dslope (fun w ↦ f (Function.update z i w)) ζ (z i) =
-          (z i - ζ) • g z := by
-      rw [sub_smul_dslope, Function.update_eq_self]
-      exact mem_of_mem_nhds hz
-    exact smul_right_injective _ (sub_ne_zero.mpr hzi) hmul
+    · simpa only [Function.update_eq_self] using hz.self_of_nhds
+  simpa only [Function.update_eq_self] using hd
 
 end TauCeti

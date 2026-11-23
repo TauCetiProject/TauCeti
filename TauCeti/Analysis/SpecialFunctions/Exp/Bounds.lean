@@ -39,6 +39,8 @@ is bounded on `x ≥ 0`.
   eventually bounded by `C exp (-μ t)`, so an exponential rate `k` cannot be improved.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
+* `TauCeti.inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one`, `TauCeti.inv_one_sub_exp_neg_le`:
+  `(1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹ ≤ 1 + t⁻¹` for `0 < t`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
@@ -179,6 +181,22 @@ theorem div_exp_sub_one_le_one {x : ℝ} (hx : 0 ≤ x) : x / (exp x - 1) ≤ 1 
   · simp
   rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 hx))]
   linarith [add_one_le_exp x]
+
+/-- For `t ≠ 0`, `(1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹`. -/
+theorem inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) :
+    (1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹ := by
+  have h1 : exp t - 1 ≠ 0 := sub_ne_zero.2 ((exp_eq_one_iff t).not.2 ht)
+  have h2 : exp t ≠ 0 := (exp_pos t).ne'
+  rw [exp_neg]
+  field_simp
+  ring
+
+/-- For `0 < t`, `(1 - exp (-t))⁻¹ ≤ 1 + t⁻¹`. -/
+theorem inv_one_sub_exp_neg_le {t : ℝ} (ht : 0 < t) : (1 - exp (-t))⁻¹ ≤ 1 + t⁻¹ := by
+  rw [inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one ht.ne']
+  have hdiv := div_exp_sub_one_le_one ht.le
+  rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 ht))] at hdiv
+  linarith [inv_anti₀ ht hdiv]
 
 /-- For `0 ≤ y` and `0 < ε`, the power `y ^ ε` reaches the level `exp (-t)` exactly when `y`
 reaches the level `exp (-(t / ε))`. -/

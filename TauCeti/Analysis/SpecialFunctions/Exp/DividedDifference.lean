@@ -19,7 +19,7 @@ between its arguments. In particular it is strictly positive, including when the
 coincide, and jointly real analytic, including on the diagonal. These divided differences are the
 scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
 
-For any `[RCLike 𝕜]`,
+For any `[NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜]`,
 `dslope NormedSpace.exp a b = NormedSpace.exp a * dslope NormedSpace.exp 0 (b - a)`
 (`NormedSpace.dslope_exp_eq_exp_mul_dslope_zero`), specializing to both
 `Real.dslope_exp_eq_exp_mul_dslope_zero` and `Complex.dslope_exp_eq_exp_mul_dslope_zero`.
@@ -34,18 +34,39 @@ open scoped ContDiff
 
 namespace NormedSpace
 
+private theorem exp_add_self_field {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (x y : 𝕜) : exp (x + y) = exp x * exp y :=
+  exp_add_of_mem_ball (𝕂 := 𝕜) (𝔸 := 𝕜)
+    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+
+private theorem hasDerivAt_exp_zero_field {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] : HasDerivAt (exp : 𝕜 → 𝕜) 1 0 := by
+  have h := (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕜) (𝔸 := 𝕜)).hasDerivAt
+  rwa [expSeries_apply_eq, Nat.factorial_one, Nat.cast_one, inv_one, pow_one, one_smul] at h
+
+private theorem hasDerivAt_exp_field {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (x : 𝕜) : HasDerivAt (exp : 𝕜 → 𝕜) (exp x) x := by
+  have h1 : HasDerivAt (fun y : 𝕜 => exp (x + y)) (exp x) 0 := by
+    simpa only [exp_add_self_field, mul_one] using hasDerivAt_exp_zero_field.const_mul (exp x)
+  have h2 : HasDerivAt (fun y : 𝕜 => y - x) 1 x := (hasDerivAt_id' x).sub_const x
+  have h3 : HasDerivAt (fun y : 𝕜 => exp (x + (y - x))) (exp x * 1) x :=
+    HasDerivAt.comp x (h₂ := fun y : 𝕜 => exp (x + y)) (h := fun y : 𝕜 => y - x)
+      (by simpa only [sub_self] using h1) h2
+  simpa only [add_sub_cancel, mul_one] using h3
+
 /-- Translating the divided difference of `NormedSpace.exp` to zero extracts the factor
 `NormedSpace.exp a`. -/
-theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [RCLike 𝕜] (a b : 𝕜) :
+theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+    [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] (a b : 𝕜) :
     dslope (exp : 𝕜 → 𝕜) a b = exp a * dslope (exp : 𝕜 → 𝕜) 0 (b - a) := by
   by_cases hab : b = a
   · subst hab
-    simp [dslope_same, (hasDerivAt_exp (𝕂 := 𝕜) (x := b)).deriv,
-      (hasDerivAt_exp (𝕂 := 𝕜) (x := 0)).deriv]
+    simp [dslope_same, (hasDerivAt_exp_field b).deriv, (hasDerivAt_exp_zero_field (𝕜 := 𝕜)).deriv]
   · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
     rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
     simp only [sub_zero, exp_zero]
-    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add, add_sub_cancel]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_self_field, add_sub_cancel]
 
 end NormedSpace
 
@@ -91,20 +112,6 @@ theorem contDiff_dslope_exp (m : ℕ∞ω) :
 end Real
 
 namespace Complex
-
-/-- Factoring out `exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
-theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : ℂ) :
-    exp z - 1 = exp z * (1 - exp (-z)) := by
-  rw [mul_sub, mul_one, ← exp_add, add_neg_cancel, exp_zero]
-
-/-- Rewriting `exp (-c * z) / (1 - exp (-z))` with denominator `exp z - 1`. -/
-theorem exp_neg_mul_div_one_sub_exp_neg (c z : ℂ) :
-    exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1) := by
-  have hnum : exp z * exp (-c * z) = exp ((1 - c) * z) := by
-    rw [← exp_add]
-    congr 1
-    ring
-  rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg, ← hnum, mul_div_mul_left _ _ (exp_ne_zero z)]
 
 /-- Translating the complex exponential divided difference to zero extracts the factor `exp a`. -/
 theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :

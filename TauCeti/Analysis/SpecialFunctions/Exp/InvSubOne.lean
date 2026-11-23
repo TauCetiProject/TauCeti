@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -22,12 +23,23 @@ carries its behaviour away from `0`. It satisfies the Riccati-type equation `g' 
 decays like `exp (-t)` at `+∞`, and for `t > 0` it is the geometric series
 `∑_{k ≥ 0} exp (-((k + 1) t))`.
 
+Over any complete characteristic-zero normed field `𝕜` with `[ContinuousSMul ℚ 𝕜]` (and in
+particular over `ℂ`), factoring `exp z` from `exp z - 1` gives `exp z - 1 = exp z * (1 - exp (-z))`,
+`exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1)`, and
+`exp (-z) / (1 - exp (-z)) = (exp z - 1)⁻¹`.
+
 ## Main results
 
 * `Real.exp_sub_one_ne_zero`: `exp t - 1 ≠ 0` for `t ≠ 0`, so `g` is defined away from `0`.
 * `Real.hasDerivAt_inv_exp_sub_one`: `g' = -(g + g²)` away from `0`.
 * `Real.isBigO_inv_exp_sub_one`: `g(t) = O(exp (-t))` as `t → ∞`.
 * `Real.hasSum_exp_neg_nat_succ_mul`: `g(t) = ∑_{k ≥ 0} exp (-((k + 1) t))` for `t > 0`.
+* `NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg`,
+  `NormedSpace.exp_neg_mul_div_one_sub_exp_neg`, `NormedSpace.exp_neg_div_one_sub_exp_neg`:
+  general normed-field quotient rewrites.
+* `Complex.exp_sub_one_eq_exp_mul_one_sub_exp_neg`,
+  `Complex.exp_neg_mul_div_one_sub_exp_neg`, `Complex.exp_neg_div_one_sub_exp_neg`:
+  complex specializations.
 -/
 
 public section
@@ -71,3 +83,63 @@ theorem hasSum_exp_neg_nat_succ_mul {t : ℝ} (ht : 0 < t) :
     field_simp
 
 end Real
+
+namespace NormedSpace
+
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+  [CompleteSpace 𝕜]
+
+private theorem exp_add_self_field (x y : 𝕜) : exp (x + y) = exp x * exp y :=
+  exp_add_of_mem_ball (𝕂 := 𝕜) (𝔸 := 𝕜)
+    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+    ((expSeries_radius_eq_top 𝕜 𝕜).symm ▸ edist_lt_top _ _)
+
+/-- Factoring out `NormedSpace.exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
+theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : 𝕜) :
+    exp z - 1 = exp z * (1 - exp (-z)) := by
+  rw [mul_sub, mul_one, ← exp_add_self_field, add_neg_cancel, exp_zero]
+
+/-- Rewriting `exp (-c * z) / (1 - exp (-z))` with denominator `exp z - 1`. -/
+theorem exp_neg_mul_div_one_sub_exp_neg (c z : 𝕜) :
+    exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1) := by
+  have hnum : exp z * exp (-c * z) = exp ((1 - c) * z) := by
+    rw [← exp_add_self_field]
+    congr 1
+    ring
+  have hne : exp z ≠ 0 :=
+    left_ne_zero_of_mul_eq_one (by rw [← exp_add_self_field z (-z), add_neg_cancel, exp_zero])
+  rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg, ← hnum, mul_div_mul_left _ _ hne]
+
+/-- Coefficient-free specialization of `exp_neg_mul_div_one_sub_exp_neg`:
+`exp (-z) / (1 - exp (-z)) = (exp z - 1)⁻¹`. -/
+theorem exp_neg_div_one_sub_exp_neg (z : 𝕜) :
+    exp (-z) / (1 - exp (-z)) = (exp z - 1)⁻¹ := by
+  simpa [one_div] using exp_neg_mul_div_one_sub_exp_neg (1 : 𝕜) z
+
+end Field
+
+end NormedSpace
+
+namespace Complex
+
+/-- Factoring out `Complex.exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
+theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : ℂ) :
+    exp z - 1 = exp z * (1 - exp (-z)) := by
+  simpa only [Complex.exp_eq_exp_ℂ] using
+    NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg z
+
+/-- Rewriting `Complex.exp (-c * z) / (1 - Complex.exp (-z))` with denominator `exp z - 1`. -/
+theorem exp_neg_mul_div_one_sub_exp_neg (c z : ℂ) :
+    exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1) := by
+  simpa only [Complex.exp_eq_exp_ℂ] using
+    NormedSpace.exp_neg_mul_div_one_sub_exp_neg c z
+
+/-- Coefficient-free specialization `Complex.exp (-z) / (1 - Complex.exp (-z)) = (exp z - 1)⁻¹`. -/
+theorem exp_neg_div_one_sub_exp_neg (z : ℂ) :
+    exp (-z) / (1 - exp (-z)) = (exp z - 1)⁻¹ := by
+  simpa only [Complex.exp_eq_exp_ℂ] using
+    NormedSpace.exp_neg_div_one_sub_exp_neg z
+
+end Complex

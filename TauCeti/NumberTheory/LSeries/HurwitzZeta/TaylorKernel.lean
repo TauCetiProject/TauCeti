@@ -17,6 +17,7 @@ public import TauCeti.Analysis.Analytic.TaylorSeries
 import TauCeti.Analysis.Calculus.DSlope.Iterate
 import TauCeti.Analysis.Calculus.DSlope.Parametric
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 import TauCeti.Analysis.SpecialFunctions.Exp.TaylorSeries
 
 /-!
@@ -221,26 +222,21 @@ theorem iteratedDeriv_right_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
   simpa [Polynomial.aeval_comp, Algebra.smul_def] using
     congrArg (Polynomial.aeval c) (Polynomial.bernoulli_comp_one_sub_X n)
 
-private theorem inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
-    (k.factorial : ℂ)⁻¹ • iteratedDeriv k (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c := by
-  rw [smul_eq_mul, iteratedDeriv_right_hurwitzKernel_zero, hurwitzBernoulliCoeff]
-  ring
-
 /-- The `k`-th formal Taylor coefficient of `hurwitzKernel c` at `0` is
 `hurwitzBernoulliCoeff k c`. -/
 theorem coeff_taylorSeries_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
     PowerSeries.coeff k (TauCeti.taylorSeries (hurwitzKernel c) 0) =
       hurwitzBernoulliCoeff k c := by
   rw [(analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv k,
-    inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
+    smul_eq_mul, iteratedDeriv_right_hurwitzKernel_zero, hurwitzBernoulliCoeff]
+  ring
 
 /-- The `k`-fold divided difference of `hurwitzKernel c` at `0` equals
 `hurwitzBernoulliCoeff k c`. -/
 @[simp]
 theorem iterate_dslope_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
     (Function.swap dslope (0 : ℂ))^[k] (hurwitzKernel c) 0 = hurwitzBernoulliCoeff k c := by
-  rw [(analyticAt_hurwitzKernel_zero c).iterate_dslope_apply_eq_inv_factorial_smul_iteratedDeriv k,
-    inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero]
+  rw [← TauCeti.coeff_taylorSeries, coeff_taylorSeries_hurwitzKernel_zero]
 
 /-- The order-`M` Taylor remainder quotient of `hurwitzKernel c` at `z = 0`, defined as the
 `(M + 1)`-fold divided difference `(Function.swap dslope 0)^[M + 1] (hurwitzKernel c) z`. -/
@@ -266,7 +262,9 @@ theorem hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot (M : ℕ) (c z : ℂ)
       z ^ (M + 1) * hurwitzTaylorQuot M c z := by
   have h := (analyticAt_hurwitzKernel_zero c)
     |>.sub_sum_inv_factorial_smul_iteratedDeriv_eq_pow_smul_iterate_dslope (M + 1) z
-  simp_rw [inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero] at h
+  simp_rw [
+    ← (analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv,
+    coeff_taylorSeries_hurwitzKernel_zero] at h
   simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul,
     mul_comm _ (hurwitzBernoulliCoeff _ c)] using h
 
@@ -283,7 +281,8 @@ theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
       hurwitzBernoulliCoeff (M + 1) c + z * hurwitzTaylorQuot (M + 1) c z := by
   have h := (analyticAt_hurwitzKernel_zero c).iterate_dslope_eq_inv_factorial_smul_add_sub_smul_succ
     (M + 1) z
-  rw [inv_factorial_smul_iteratedDeriv_right_hurwitzKernel_zero] at h
+  rw [← (analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv,
+    coeff_taylorSeries_hurwitzKernel_zero] at h
   simpa only [hurwitzTaylorQuot, sub_zero, smul_eq_mul] using h
 
 /-- `(c, z) ↦ iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c` is jointly analytic on

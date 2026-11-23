@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
 public import TauCeti.NumberTheory.LSeries.RiemannZeta.BernoulliKernel
-import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 
 /-!
 # Comparison between the Hurwitz and Bernoulli kernels
@@ -33,9 +33,9 @@ theorem hurwitzKernel_one_ofReal (t : ℝ) :
     hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ) := by
   rcases eq_or_ne t 0 with rfl | ht
   · simp
-  · rw [hurwitzKernel_of_ne_zero 1 (ofReal_ne_zero.mpr ht), mul_div_assoc,
-      Complex.exp_neg_mul_div_one_sub_exp_neg, bernoulliKernel_of_ne_zero ht]
+  · rw [hurwitzKernel_of_ne_zero 1 (ofReal_ne_zero.mpr ht), mul_div_assoc, neg_one_mul,
+      Complex.exp_neg_div_one_sub_exp_neg, bernoulliKernel_of_ne_zero ht]
     push_cast
-    rw [sub_self, zero_mul, Complex.exp_zero, one_div, ← div_eq_mul_inv]
+    rw [div_eq_mul_inv]
 
 end TauCeti

@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Analytic.Constructions
-import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Analytic.Hadamard
+import TauCeti.Analysis.Calculus.DSlope.Basic
 
 /-!
 # Joint analyticity of parametric divided differences
@@ -62,24 +62,11 @@ theorem AnalyticAt.dslope_snd {f : E × 𝕜 → F} {x₀ : E} {z₀ w₀ : 𝕜
     rintro ⟨x, w⟩ ⟨hx, hw⟩
     have hrel : ∀ y ∈ V, f (x, y) - f (x, w₀) = (y - w₀) • H (x, y) := fun y hy ↦
       (hUV (Set.mk_mem_prod hx hy)).1
-    dsimp only
     symm
-    rcases eq_or_ne w w₀ with rfl | hwz
-    · have hHz : AnalyticAt 𝕜 H (x, w) := (hUV (Set.mk_mem_prod hx hw)).2
-      have hHy : HasDerivAt (fun y : 𝕜 ↦ H (x, y)) (deriv (fun y : 𝕜 ↦ H (x, y)) w) w :=
-        (hHz.comp (analyticAt_const.prod analyticAt_id)).differentiableAt.hasDerivAt
-      have hprod : HasDerivAt (fun y : 𝕜 ↦ (y - w) • H (x, y) + f (x, w))
-          ((w - w) • deriv (fun y : 𝕜 ↦ H (x, y)) w + (1 : 𝕜) • H (x, w)) w :=
-        (((hasDerivAt_id w).sub_const w).smul hHy).add_const (f (x, w))
-      have hderiv : HasDerivAt (fun y : 𝕜 ↦ f (x, y)) (H (x, w)) w := by
-        have h' : HasDerivAt (fun y : 𝕜 ↦ f (x, y))
-            ((w - w) • deriv (fun y : 𝕜 ↦ H (x, y)) w + (1 : 𝕜) • H (x, w)) w :=
-          hprod.congr_of_eventuallyEq
-            (eventually_of_mem hV fun y hy ↦ eq_add_of_sub_eq (hrel y hy))
-        simpa only [sub_self, zero_smul, zero_add, one_smul] using h'
-      rw [dslope_same, hderiv.deriv]
-    · rw [dslope_of_ne _ hwz, slope_def_module, hrel w hw,
-        inv_smul_smul₀ (sub_ne_zero.mpr hwz)]
+    refine TauCeti.dslope_eq_of_factorization ?_
+      ⟨fun _ ↦ eventually_of_mem hV hrel, fun _ ↦ hrel w hw⟩
+    rintro rfl
+    exact ((hUV (Set.mk_mem_prod hx hw)).2.comp (analyticAt_const.prod analyticAt_id)).continuousAt
   · have hfx₀ : AnalyticAt 𝕜 (fun p : E × 𝕜 ↦ f (p.1, z₀)) (x₀, w₀) :=
       hf₀.comp_of_eq (analyticAt_fst.prod analyticAt_const) rfl
     have hq : AnalyticAt 𝕜 (fun p : E × 𝕜 ↦ (p.2 - z₀)⁻¹ • (f p - f (p.1, z₀))) (x₀, w₀) :=
