@@ -50,8 +50,8 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
 * `TauCeti.PDE.exists_norm_gradient_restrictL_ball_le`: the homogeneous concentric-ball
-  estimate in native Sobolev norms, with multiplier `(2Λ/λ) c / (R - ρ)`, where `c > 0`
-  depends only on the dimension.
+  estimate for additive Haar measures in native Sobolev norms, with multiplier
+  `(2Λ/λ) c / (R - ρ)`, where `c > 0` depends only on the dimension.
 
 ## References
 
@@ -451,22 +451,15 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
 local notation "E" => EuclideanSpace ℝ ι
 
 open Metric in
-omit [DecidableEq ι] in
-private theorem innerBall_le {Ω : Opens E} {p : E} {ρ R : ℝ} (hρR : ρ < R)
-    (hR : (⟨ball p R, isOpen_ball⟩ : Opens E) ≤ Ω) :
-    (⟨ball p ρ, isOpen_ball⟩ : Opens E) ≤ Ω := by
-  apply SetLike.coe_subset_coe.mp
-  simp only [Opens.coe_mk]
-  exact (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)
-
-open Metric in
 /-- **The homogeneous Caccioppoli estimate in native Sobolev norms.** For concentric balls
-`B(p, ρ) ⊆ B(p, R) ⊆ Ω` with `ρ < R`, a homogeneous uniformly elliptic weak solution satisfies
+`B(p, ρ) ⊆ B(p, R) ⊆ Ω` with `ρ < R`, an additive Haar measure, and a uniformly elliptic
+coefficient field that is a.e. strongly measurable on `Ω`, a homogeneous weak solution satisfies
 
 `‖∇w‖_{L²(B(p, ρ))} ≤ (2Λ/λ) c / (R - ρ) * ‖w‖_{L²(B(p, R))}`.
 
-Here `c > 0` depends only on the dimension, independently of the coefficient field, solution,
-measure, domain and radii; the full multiplier also contains the ellipticity factor `2Λ/λ`.
+Here `c > 0` depends only on the dimension. The same constant works for all additive Haar
+measures, coefficient fields satisfying these hypotheses, solutions, domains and radii;
+the full multiplier also contains the ellipticity factor `2Λ/λ`.
 Both norms are those of the native Sobolev restrictions. This is the homogeneous specialization
 of `TauCeti.PDE.UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1`
 and `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff`. -/
@@ -478,7 +471,10 @@ theorem exists_norm_gradient_restrictL_ball_le :
       (∀ v : W1p0 μ Ω 2, energyFormH1 a 0 0 w (v : W1p μ Ω 2) = 0) →
       ∀ (hρR : ρ < R) (hR : (⟨ball p R, isOpen_ball⟩ : Opens E) ≤ Ω),
       ‖W1p.gradient (W1p.restrictL (U := ⟨ball p ρ, isOpen_ball⟩)
-        (by exact innerBall_le hρR hR) w)‖ ≤
+        (by
+          apply SetLike.coe_subset_coe.mp
+          simpa only [Opens.coe_mk] using
+            (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)) w)‖ ≤
         (2 * Lam / lam) * c / (R - ρ) * ‖W1p.value (W1p.restrictL hR w)‖ := by
   classical
   obtain ⟨c, hc, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
@@ -490,10 +486,15 @@ theorem exists_norm_gradient_restrictL_ball_le :
       obtain ⟨v, -, -, hstep⟩ :=
         hell.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha w hψ hcpt (.inl hts)
       simpa only [hw v, mul_zero, add_zero, zero_mul] using hstep)
+  have hinnerLe : (⟨ball p ρ, isOpen_ball⟩ : Opens E) ≤ Ω := by
+    apply SetLike.coe_subset_coe.mp
+    simpa only [Opens.coe_mk] using
+      (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)
   have hinner :=
-    W1p.setIntegral_norm_gradient_sq_eq_norm_gradient_restrictL_sq (innerBall_le hρR hR) w
-  have houter := W1p.setIntegral_value_sq_eq_norm_value_restrictL_sq hR w
-  simp only [Opens.coe_mk] at hinner houter
+    W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow hinnerLe (by simp) w
+  have houter := W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow hR (by simp) w
+  simp only [Opens.coe_mk, ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
+    sq_abs] at hinner houter
   rw [hinner, houter] at hbound
   simp only [add_zero] at hbound
   have hlam := hell.pos

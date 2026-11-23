@@ -33,9 +33,9 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
 * `TauCeti.W1p.norm_gradient_restrictL_le`: restriction does not increase the `Lᵖ` norm of the
   weak gradient.
-* `TauCeti.W1p.setIntegral_norm_gradient_sq_eq_norm_gradient_restrictL_sq` and
-  `TauCeti.W1p.setIntegral_value_sq_eq_norm_value_restrictL_sq`: squared restricted `L²` norms
-  as integrals over the smaller open set.
+* `TauCeti.W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow` and
+  `TauCeti.W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow`: powers of restricted `Lᵖ`
+  norms as integrals over the smaller open set, for finite `p`.
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
@@ -44,7 +44,8 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
-* The squared restricted norm identities are adapted from Otis Chodosh's formalization in
+* The restricted norm identities generalize the square identities adapted from Otis Chodosh's
+  formalization in
   [`ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/fe6fa284d9cc53f70c80ba9c9be619cb13ab1b89/ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean).
 -/
 
@@ -276,24 +277,26 @@ theorem W1p.restrictL_restrictL (hU : U ≤ Omega) (hV : V ≤ U) (u : W1p mu Om
   exact ((W1p.value_restrictL_ae hV (W1p.restrictL hU u)).trans hsecond).trans
     (W1p.value_restrictL_ae (hV.trans hU) u).symm
 
-/-- The integral over a smaller open set of the squared weak gradient is the squared `L²`
-norm of the gradient of the Sobolev restriction. -/
-theorem W1p.setIntegral_norm_gradient_sq_eq_norm_gradient_restrictL_sq (hU : U ≤ Omega)
-    (w : W1p mu Omega 2) :
-    ∫ x in U, ‖W1p.gradient w x‖ ^ 2 ∂mu =
-      ‖W1p.gradient (W1p.restrictL hU w)‖ ^ 2 := by
-  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+/-- For finite `p`, the integral over a smaller open set of the `p`-th power of the pointwise
+weak-gradient norm is the `p`-th power of the gradient norm of the Sobolev restriction. -/
+theorem W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow (hU : U ≤ Omega)
+    (hp : p ≠ ∞) (w : W1p mu Omega p) :
+    ∫ x in U, ‖W1p.gradient w x‖ ^ p.toReal ∂mu =
+      ‖W1p.gradient (W1p.restrictL hU w)‖ ^ p.toReal := by
+  rw [← Lp.integral_norm_rpow_eq_norm_rpow
+    (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp]
   refine integral_congr_ae ?_
   filter_upwards [W1p.gradient_restrictL_ae hU w] with x hx
   rw [hx]
 
-/-- The integral over a smaller open set of the squared Sobolev value is the squared `L²`
-norm of the value of the Sobolev restriction. -/
-theorem W1p.setIntegral_value_sq_eq_norm_value_restrictL_sq (hU : U ≤ Omega)
-    (w : W1p mu Omega 2) :
-    ∫ x in U, W1p.value w x ^ 2 ∂mu =
-      ‖W1p.value (W1p.restrictL hU w)‖ ^ 2 := by
-  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+/-- For finite `p`, the integral over a smaller open set of the `p`-th power of the pointwise
+Sobolev-value norm is the `p`-th power of the value norm of the Sobolev restriction. -/
+theorem W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow (hU : U ≤ Omega)
+    (hp : p ≠ ∞) (w : W1p mu Omega p) :
+    ∫ x in U, ‖W1p.value w x‖ ^ p.toReal ∂mu =
+      ‖W1p.value (W1p.restrictL hU w)‖ ^ p.toReal := by
+  rw [← Lp.integral_norm_rpow_eq_norm_rpow
+    (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp]
   refine integral_congr_ae ?_
   filter_upwards [W1p.value_restrictL_ae hU w] with x hx
   rw [hx]
