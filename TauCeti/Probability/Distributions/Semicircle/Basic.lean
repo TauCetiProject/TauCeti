@@ -80,7 +80,7 @@ theorem ae_mem_Ioo_semicircleMeasure : ∀ᵐ x ∂semicircleMeasure, x ∈ Ioo 
 /-- The topological support of the unit-radius semicircle law is `[-1, 1]`. -/
 @[simp]
 theorem support_semicircleMeasure : semicircleMeasure.support = Icc (-1) 1 := by
-  rw [semicircleMeasure, support_map_affine (by norm_num),
+  rw [semicircleMeasure, support_map_affine,
     support_betaMeasure (show (0 : ℝ) < 3 / 2 by norm_num)
       (show (0 : ℝ) < 3 / 2 by norm_num)]
   simp only [add_comm (-1 : ℝ), image_affine_Icc' (by norm_num : (0 : ℝ) < 2)]

@@ -77,8 +77,8 @@ theorem smallPerturbationEquiv_eq_ambientPerturbationMap
       b.ambientPerturbationMap (LinearIsometry.id : E →ₗᵢ[𝕜] E) c := by
   ext x
   rw [ContinuousLinearEquiv.coe_coe, smallPerturbationEquiv_apply,
-    ambientPerturbationMap_apply b _ c
-      (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs)]
+    ambientPerturbationMap_apply b _ c (b.summable_coord_smulRight _
+      (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs))]
   simp only [LinearIsometry.id_apply]
   have herror : (∑' i, b.coord i x • (c i - b i)) =
       -∑' i, b.coord i x • (b i - c i) := by
@@ -94,8 +94,8 @@ theorem smallPerturbationEquiv_apply_basis
     (hδ : (∑' i, ‖b.coord i‖ * ‖b i - c i‖) < 1) (i : β) :
     b.smallPerturbationEquiv c hs hδ (b i) = c i := by
   rw [← ContinuousLinearEquiv.coe_coe, smallPerturbationEquiv_eq_ambientPerturbationMap]
-  exact b.ambientPerturbationMap_apply_basis LinearIsometry.id c
-    (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs) i
+  exact b.ambientPerturbationMap_apply_basis LinearIsometry.id c (b.summable_coord_smulRight _
+    (by simpa only [LinearIsometry.id_apply, norm_sub_rev] using hs)) i
 
 /-- The norm of the perturbing equivalence is at most one plus the weighted error. -/
 theorem norm_smallPerturbationEquiv_le

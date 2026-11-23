@@ -333,7 +333,7 @@ theorem minorsIdeal_eq_bot_iff_finrank_lt (U : Submodule K V) [FiniteDimensional
       simp only [LinearMap.comp_apply, Submodule.subtype_apply] at this
       simp [this, Matrix.one_apply, Finsupp.single_apply]
     have := det_mem_minorsIdeal (N := U) g (v := fun i ↦ (b (Fin.castLE hp i) : V))
-      fun i ↦ (b _).2
+      fun i ↦ (b _).property
     rw [h, hdet, Matrix.det_one, Ideal.mem_bot] at this
     exact one_ne_zero this
   · -- more than `dim U` vectors of `U` are dependent, so the rows of the minor are dependent

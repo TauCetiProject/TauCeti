@@ -149,7 +149,7 @@ columns lie in a subspace `W ⊆ Kᵐ` containing the direction `e₀` of the de
 interpolation matrix has rank at most `(T₀ + dim W choose dim W) · #T`: each row is determined by
 `t r` and by the restriction of `F r` to `W`, a polynomial of total degree at most `T₀` in
 `dim W` coordinates. -/
-theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι] [Fintype κ]
+theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι] [Finite κ]
     (α b : Fin (n + 1) → K) {F : ι → MvPolynomial (Fin (n + 1)) K} {t : ι → ℤ}
     (P : κ → Polynomial K) {s : κ → Fin (n + 1) → ℤ} {T₀ : ℕ} {T : Finset ℤ}
     (hF : ∀ r, F r ∈ restrictTotalDegree (Fin (n + 1)) K T₀) (ht : ∀ r, t r ∈ T)
@@ -158,6 +158,7 @@ theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι
     (waldschmidtInterpolationMatrix α b F t P s).rank ≤
       (T₀ + finrank K W).choose (finrank K W) * #T := by
   classical
+  have := Fintype.ofFinite κ
   obtain ⟨Φ, hΦ⟩ := exists_row_waldschmidtInterpolationMatrix_mem_map α b t P hF hW hs
   set U : ℤ → Submodule K (κ → K) := fun t' ↦ (restrictTotalDegree _ K T₀).map (Φ t')
   have hle : Submodule.span K (Set.range (waldschmidtInterpolationMatrix α b F t P s).row) ≤
@@ -179,7 +180,7 @@ theorem rank_waldschmidtInterpolationMatrix_le_of_mem {ι κ : Type*} [Finite ι
       refine (Submodule.finrank_add_le_finrank_add_finrank _ _).trans ?_
       rw [mul_add_one]
       lia
-  rw [Matrix.rank_eq_finrank_span_row]
+  rw [← Matrix.finrank_span_range_row]
   exact (Submodule.finrank_mono hle).trans (hsup T)
 
 /-- **Rank of the interpolation matrix on a residual subspace.** Let the polynomials `F r` have
@@ -188,7 +189,7 @@ total degree at most `T₀` and the exponents `t r` lie in a finite set `T`. If 
 normalized linear form, then the interpolation matrix has rank at most
 `(T₀ + d choose d) · #T` with `d = dim V`; for `T = [-T₁, T₁]` this is
 `L_d = (T₀ + d choose d) (2 T₁ + 1)`. -/
-theorem rank_waldschmidtInterpolationMatrix_le {ι κ : Type*} [Finite ι] [Fintype κ]
+theorem rank_waldschmidtInterpolationMatrix_le {ι κ : Type*} [Finite ι] [Finite κ]
     (α b : Fin (n + 1) → K) {F : ι → MvPolynomial (Fin (n + 1)) K} {t : ι → ℤ}
     (P : κ → Polynomial K) {s : κ → Fin (n + 1) → ℤ} {T₀ : ℕ} {T : Finset ℤ}
     (hF : ∀ r, F r ∈ restrictTotalDegree (Fin (n + 1)) K T₀) (ht : ∀ r, t r ∈ T)

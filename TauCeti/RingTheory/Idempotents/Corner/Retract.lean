@@ -96,11 +96,11 @@ theorem span_op_comp_eq_top {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘
     (sum_mem fun j _ ↦ op_comp_mem_span_op_comp hip _ _)
 
 private theorem comp_unop_corner_val {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
-    (c : (isIdempotentElem_op_comp hip).Corner) (x : M) : i (p (unop c.1 x)) = unop c.1 x :=
+    (c : (isIdempotentElem_op_comp hip).Corner) (x : M) : i (p (unop c.val x)) = unop c.val x :=
   LinearMap.congr_fun (congrArg unop ((isIdempotentElem_op_comp hip).corner_val_mul c)) x
 
 private theorem unop_corner_val_comp {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
-    (c : (isIdempotentElem_op_comp hip).Corner) (x : M) : unop c.1 (i (p x)) = unop c.1 x :=
+    (c : (isIdempotentElem_op_comp hip).Corner) (x : M) : unop c.val (i (p x)) = unop c.val x :=
   LinearMap.congr_fun (congrArg unop ((isIdempotentElem_op_comp hip).mul_corner_val c)) x
 
 variable (R : Type*) [CommSemiring R] [Algebra R A] [Module R X] [IsScalarTower R A X]
@@ -111,7 +111,7 @@ variable (R : Type*) [CommSemiring R] [Algebra R A] [Module R X] [IsScalarTower 
 by `f ↦ p ∘ f ∘ i`. -/
 noncomputable def cornerEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id) :
     (isIdempotentElem_op_comp hip).Corner ≃ₐ[R] (Module.End A X)ᵐᵒᵖ where
-  toFun c := op (p ∘ₗ (unop c.1 : Module.End A M) ∘ₗ i)
+  toFun c := op (p ∘ₗ (unop c.val : Module.End A M) ∘ₗ i)
   invFun g := (isIdempotentElem_op_comp hip).compress (op (i ∘ₗ unop g ∘ₗ p))
   left_inv c := by
     have hpi : ∀ y, p (i y) = y := LinearMap.congr_fun hip
@@ -141,13 +141,13 @@ noncomputable def cornerEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A] 
 @[simp]
 theorem unop_cornerEndRetractAlgEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
     (c : (isIdempotentElem_op_comp hip).Corner) :
-    unop (cornerEndRetractAlgEquiv R hip c) = p ∘ₗ (unop c.1 : Module.End A M) ∘ₗ i :=
+    unop (cornerEndRetractAlgEquiv R hip c) = p ∘ₗ (unop c.val : Module.End A M) ∘ₗ i :=
   (rfl)
 
 @[simp]
 theorem val_cornerEndRetractAlgEquiv_symm_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X}
     (hip : p ∘ₗ i = .id) (g : (Module.End A X)ᵐᵒᵖ) :
-    ((cornerEndRetractAlgEquiv R hip).symm g).1 = op (i ∘ₗ unop g ∘ₗ p) := by
+    ((cornerEndRetractAlgEquiv R hip).symm g).val = op (i ∘ₗ unop g ∘ₗ p) := by
   have hpi : ∀ y, p (i y) = y := LinearMap.congr_fun hip
   refine ((isIdempotentElem_op_comp hip).val_compress _).trans ?_
   apply unop_injective

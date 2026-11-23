@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cocompact
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.RamificationDegree
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.SidePairing
@@ -23,9 +24,11 @@ for that polygon becomes an intrinsic statement about `Γ`:
 
 `covolume Γ = 2π (-χ(X(Γ)) + ∑ₑ (1 - 1 / mₑ))`,
 
-the sum running over the elliptic orbits of `Γ`, with stabilizer orders `mₑ`. Writing
-`χ(X(Γ)) = 2 - 2g` for the topological genus `g` of the compact Riemann surface `X(Γ)`, this is
-the signature form `2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))` of the area of a cocompact group. Since the
+the sum running over the elliptic orbits of `Γ`, with stabilizer orders `mₑ`. The cell count of
+a side-paired polygon is at most `2` and even (`SidePairing.cellEulerChar_le_two`,
+`SidePairing.even_cellEulerChar`), so `χ(X(Γ)) = 2 - 2g` for the topological genus `g` of the
+compact Riemann surface `X(Γ)`, and the area formula takes the signature form
+`2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))` of the area of a cocompact group. Since the
 covolume is positive, the signature satisfies the hyperbolicity inequality
 `χ(X(Γ)) < ∑ₑ (1 - 1 / mₑ)`, that is, `2g - 2 + ∑ₑ (1 - 1 / mₑ) > 0`.
 
@@ -34,11 +37,10 @@ For a subgroup `Δ ≤ Γ` of finite index, `Δ` is again cocompact
 in the index. The area formula therefore makes the orbifold Euler characteristic
 `χ(X(Γ)) - ∑ₑ (1 - 1 / mₑ)` multiplicative in the index. Combined with the expression of the
 ramification degree of `X(Δ) → X(Γ)` through elliptic orders
-(`TauCeti.Fuchsian.ramificationDegree_eq_index_mul_cusps_add_elliptic_sub`), this gives the
-Riemann–Hurwitz formula `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R` for cocompact groups without any
-finite-CW-type hypothesis; the general form
-`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree` also asks
-for finite CW type of the free-locus quotient.
+(`TauCeti.Fuchsian.ramificationDegree_eq_index_mul_cusps_add_elliptic_sub`), this gives a
+hyperbolic-area proof of the Riemann--Hurwitz formula `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R` for
+cocompact groups, independent of the branched-cover Morse proof in
+`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`.
 
 ## Main results
 
@@ -49,6 +51,10 @@ for finite CW type of the free-locus quotient.
   `χ(X(Γ)) = χ(Γ \ ℍ)`.
 * `Subgroup.covolume_eq_two_pi_mul_neg_eulerChar_add`: the orbifold area formula
   `covolume Γ = 2π (-χ(X(Γ)) + ∑ₑ (1 - 1 / mₑ))`.
+* `Subgroup.eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus`: `χ(X(Γ)) = 2 - 2g` for
+  the topological genus `g` of `X(Γ)`.
+* `Subgroup.covolume_eq_two_pi_mul_two_mul_genus_sub_two_add`: the signature area formula
+  `covolume Γ = 2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))`.
 * `Subgroup.eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits`: the hyperbolicity
   inequality `χ(X(Γ)) < ∑ₑ (1 - 1 / mₑ)`.
 * `Subgroup.eulerChar_sub_finsum_mem_ellipticOrbits_eq_index_mul`: multiplicativity of the
@@ -127,10 +133,32 @@ the elliptic orbits with stabilizer orders `mₑ`. With `χ = 2 - 2g` this is
 theorem eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits :
     (eulerChar Γ.CompactifiedQuotient : ℝ) <
       ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) := by
-  have hpos : 0 < covolume Γ ℍ := covolume_pos <|
-    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
+  have hpos := Γ.covolume_pos
   rw [covolume_eq_two_pi_mul_neg_eulerChar_add, ENNReal.ofReal_pos] at hpos
   nlinarith [Real.pi_pos]
+
+/-- **The Euler number of the compactified quotient of a cocompact Fuchsian group.** For a
+cocompact `Γ`, `χ(X(Γ)) = 2 - 2g` for the topological genus `g` of `X(Γ)`. -/
+theorem eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus :
+    eulerChar Γ.CompactifiedQuotient = 2 - 2 * RiemannSurface.genus Γ.CompactifiedQuotient := by
+  obtain ⟨n, _, P, σ, hmap, hlf, hdisj⟩ := exists_compactConvexPolygon_sidePairing (Γ := Γ)
+  have hχ : eulerChar Γ.CompactifiedQuotient = σ.cellEulerChar := by
+    rw [eulerChar_compactifiedQuotient_eq_eulerChar_orbitRel_quotient,
+      σ.eulerChar_orbitRel_quotient_eq_cellEulerChar hmap hlf hdisj]
+  rw [RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff, hχ]
+  exact ⟨σ.cellEulerChar_le_two, σ.even_cellEulerChar⟩
+
+/-- **The signature area formula for a cocompact Fuchsian group.** The covolume of `Γ` is
+`2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))`, where `g` is the topological genus of the compactified quotient
+`X(Γ)` and `e` runs over the elliptic orbits of `Γ`, with stabilizer orders `mₑ`. -/
+theorem covolume_eq_two_pi_mul_two_mul_genus_sub_two_add :
+    covolume Γ ℍ = ENNReal.ofReal (2 * π * (2 * (RiemannSurface.genus Γ.CompactifiedQuotient : ℝ) -
+      2 + ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹))) := by
+  rw [covolume_eq_two_pi_mul_neg_eulerChar_add,
+    eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus]
+  congr 1
+  push_cast
+  ring
 
 /-- **Multiplicativity of the orbifold Euler characteristic for cocompact groups.** Let `Γ` be a
 cocompact Fuchsian group and `Δ ≤ Γ` a subgroup of finite index, so that `Δ` is cocompact as
@@ -166,13 +194,12 @@ namespace TauCeti.Fuchsian
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] [CompactSpace (orbitRel.Quotient Γ ℍ)]
 
-/-- **The Riemann–Hurwitz formula for cocompact Fuchsian groups.** Let `Δ ≤ Γ` be discrete
+/-- **The Riemann--Hurwitz formula for cocompact Fuchsian groups.** Let `Δ ≤ Γ` be discrete
 subgroups of `PSL(2, ℝ)` of finite index, with `Γ \ ℍ` compact. Then
 `χ(X(Δ)) = [Γ : Δ] · χ(X(Γ)) - R`, where `R` is the ramification degree of `X(Δ) → X(Γ)`. Unlike
-`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`, this carries
-no finite-CW-type hypotheses: both compactified quotients have finite CW type, and the formula
-follows from multiplicativity of the orbifold Euler characteristic together with the expression
-of `R` through elliptic orders. -/
+`TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree`, which uses
+the branched-cover topology on `X(Δ) → X(Γ)`, this deduces the formula from multiplicativity of
+hyperbolic covolume together with the expression of `R` through elliptic orders. -/
 theorem eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree_of_compactSpace
     (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h

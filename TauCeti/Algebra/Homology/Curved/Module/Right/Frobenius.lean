@@ -61,7 +61,7 @@ theorem gradedSplitExact_isInjective_of_isZero_homotopy
     exact hx
   let t : dgRightModuleCochains (R := R) (A := A)
       (ℳ := (ForgetEnrichment.to _ Y).grading) (ℳN := P.grading) (-1) :=
-    ⟨k.1.comp ((closedHom g).comp r.hom), dgRightModuleCochains.mem_iff.mpr
+    ⟨k.val.comp ((closedHom g).comp r.hom), dgRightModuleCochains.mem_iff.mpr
       (LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
         have hx' : x ∈ (F.obj Y).grading.piece p := by
           simpa only [F, forgetDifferential, toGradedModuleCat_piece] using hx
@@ -74,8 +74,8 @@ theorem gradedSplitExact_isInjective_of_isZero_homotopy
   intro x
   rw [closedHom_comp, LinearMap.comp_apply, closedHom_closedHomotopyBoundary_apply]
   -- Evaluate the cochain's underlying composite with the graded retraction on original carriers.
-  change P.differential (k.1 (closedHom g (r.hom (closedHom i x)))) +
-    k.1 (closedHom g (r.hom ((ForgetEnrichment.to _ Y).differential (closedHom i x)))) = _
+  change P.differential (k.val (closedHom g (r.hom (closedHom i x)))) +
+    k.val (closedHom g (r.hom ((ForgetEnrichment.to _ Y).differential (closedHom i x)))) = _
   erw [differential_closedHom i, hr, hr, ← differential_closedHom g]
   exact hk (closedHom g x)
 
@@ -97,18 +97,18 @@ theorem gradedSplitExact_isProjective_of_isZero_homotopy
     exact hx
   let t : dgRightModuleCochains (R := R) (A := A)
       (ℳ := P.grading) (ℳN := (ForgetEnrichment.to _ X).grading) (-1) :=
-    ⟨s.hom.comp ((closedHom g).comp k.1), dgRightModuleCochains.mem_iff.mpr
+    ⟨s.hom.comp ((closedHom g).comp k.val), dgRightModuleCochains.mem_iff.mpr
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
         have hgx := closedHom_mem g (dgRightModuleCochains.map_mem k hx)
-        have hgx' : closedHom g (k.1 x) ∈ (F.obj Y).grading.piece (q + -1) := by
+        have hgx' : closedHom g (k.val x) ∈ (F.obj Y).grading.piece (q + -1) := by
           -- The graded forgetful functor's pieces are those of the original curved module.
-          change closedHom g (k.1 x) ∈
+          change closedHom g (k.val x) ∈
             (toGradedModuleCat (ForgetEnrichment.to _ Y)).grading.piece (q + -1)
           rw [toGradedModuleCat_piece]
           exact hgx
         have hsx := GradedModuleCat.map_mem s hgx'
         -- Express the section's target degree in the same original-module grading.
-        change s.hom (closedHom g (k.1 x)) ∈
+        change s.hom (closedHom g (k.val x)) ∈
           (toGradedModuleCat (ForgetEnrichment.to _ X)).grading.piece (q + -1) at hsx
         rw [toGradedModuleCat_piece] at hsx
         exact hsx)⟩
@@ -119,7 +119,8 @@ theorem gradedSplitExact_isProjective_of_isZero_homotopy
   rw [map_add]
   -- Evaluate the lifted cochain's underlying composite with the graded section.
   change closedHom p ((ForgetEnrichment.to _ X).differential
-    (s.hom (closedHom g (k.1 x)))) + closedHom p (s.hom (closedHom g (k.1 (P.differential x)))) = _
+    (s.hom (closedHom g (k.val x)))) + closedHom p (s.hom (closedHom g (k.val
+        (P.differential x)))) = _
   erw [← differential_closedHom p, hs, hs, differential_closedHom g,
     ← map_add, hk]
 

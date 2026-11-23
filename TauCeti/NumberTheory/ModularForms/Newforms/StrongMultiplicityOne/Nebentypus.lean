@@ -16,7 +16,7 @@ The Fourier coefficients of a newform at the indices prime to its level determin
 at a good prime `p` the Hecke recurrence gives `χ(p) = (a_p² - a_{p²}) / p^{k-1}`
 (`TauCeti.char_prime_eq_coeff`), and by Dirichlet's theorem on primes in arithmetic progressions a
 character is determined by its values at all but finitely many primes
-(`DirichletCharacter.changeLevel_eq_changeLevel_of_eventually_apply_prime_eq`). So two newforms
+(`DirichletCharacter.changeLevel_eq_changeLevel_iff_eventually_apply_prime_eq`). So two newforms
 of levels `N` and `M` whose coefficients `a_n` agree at every `n` prime to `N M` outside a finite
 set have nebentypes inducing the same character modulo every common multiple of `N` and `M`.
 
@@ -32,10 +32,11 @@ hypothesis.
 All in the namespace `HeckeRing.GL2.Newform`:
 
 * `eventually_dirichletLift_apply_prime_eq_of_forall_notMem_qExpansion_coeff_eq`: newforms whose
-  coefficients agree at the good indices outside a finite set have nebentypes agreeing at all but
-  finitely many primes.
+  coefficients agree away from a nonzero modulus `L` outside a finite set have nebentypes agreeing
+  at all but finitely many primes.
 * `χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq`: their nebentypes induce the same
-  character modulo every common multiple of the levels.
+  character modulo a common multiple `L` of the levels when the coefficients agree away from `L`
+  outside a finite set.
 * `χ_eq_of_forall_notMem_qExpansion_coeff_eq`: at a fixed level they have the same nebentypus.
 * `eq_of_forall_notMem_qExpansion_coeff_eq` and `eq_of_forall_notMem_eigenvalue_eq`: strong
   multiplicity one at a fixed level, on the coefficients and on the eigenvalues at the good indices
@@ -60,43 +61,45 @@ namespace Newform
 
 variable {N M : ℕ} [NeZero N] [NeZero M] {k : ℤ}
 
-/-- **The coefficients of a newform at its good indices determine its nebentypus at almost all
+/-- **The coefficients of a newform at good indices determine its nebentypus at almost all
 primes.** If newforms `f` and `g` of levels `N` and `M` have the same Fourier coefficient at every
-index `n` prime to `N` and `M` outside a finite set `S`, their zero-extended nebentypes agree at
-all but finitely many primes: at a large prime `p`, both `p` and `p²` are good indices outside
-`S`, and `χ(p) = (a_p² - a_{p²}) / p^{k-1}`. -/
+index `n` prime to a nonzero modulus `L` outside a finite set `S`, their zero-extended nebentypes
+agree at all but finitely many primes: at a prime `p` larger than `N`, `M`, `L` and `S`, both `p`
+and `p²` are prime to `N`, `M` and `L` and lie outside `S`, and
+`χ(p) = (a_p² - a_{p²}) / p^{k-1}`. -/
 theorem eventually_dirichletLift_apply_prime_eq_of_forall_notMem_qExpansion_coeff_eq
-    (f : Newform N k) (g : Newform M k) {S : Finset ℕ}
-    (h : ∀ n : ℕ+, Nat.Coprime (n : ℕ) N → Nat.Coprime (n : ℕ) M → (n : ℕ) ∉ S →
+    {L : ℕ} [NeZero L] (f : Newform N k) (g : Newform M k) {S : Finset ℕ}
+    (h : ∀ n : ℕ+, Nat.Coprime (n : ℕ) L → (n : ℕ) ∉ S →
       (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = (qExpansion 1 g.toCuspForm).coeff (n : ℕ)) :
     ∀ᶠ p : ℕ in cofinite, p.Prime → f.dirichletLift p = g.dirichletLift p := by
   rw [Nat.cofinite_eq_atTop]
-  filter_upwards [eventually_gt_atTop (S.sup id + N + M)] with p hpB hp
-  -- a prime larger than `N`, `M` and every element of `S` is good, and so is its square
-  have hcop {L : ℕ} [NeZero L] (hL : L < p) : Nat.Coprime p L :=
-    hp.coprime_iff_not_dvd.mpr fun hpL ↦ (Nat.le_of_dvd (NeZero.pos L) hpL).not_gt hL
+  filter_upwards [eventually_gt_atTop (S.sup id + N + M + L)] with p hpB hp
+  -- a prime larger than `N`, `M`, `L` and every element of `S` is good, and so is its square
+  have hcop {R : ℕ} [NeZero R] (hR : R < p) : Nat.Coprime p R :=
+    hp.coprime_iff_not_dvd.mpr fun hpR ↦ (Nat.le_of_dvd (NeZero.pos R) hpR).not_gt hR
   have hpN : Nat.Coprime p N := hcop (by omega)
   have hpM : Nat.Coprime p M := hcop (by omega)
+  have hpL : Nat.Coprime p L := hcop (by omega)
   have hS {n : ℕ} (hn : p ≤ n) : n ∉ S := fun hnS ↦
     (Finset.le_sup (f := id) hnS).not_gt (by simp only [id]; omega)
   have hp2 : p ≤ p ^ 2 := Nat.le_self_pow two_ne_zero p
-  have h₁ := h ⟨p, hp.pos⟩ hpN hpM (hS le_rfl)
-  have h₂ := h ⟨p ^ 2, pow_pos hp.pos 2⟩ (hpN.pow_left 2) (hpM.pow_left 2) (hS hp2)
+  have h₁ := h ⟨p, hp.pos⟩ hpL (hS le_rfl)
+  have h₂ := h ⟨p ^ 2, pow_pos hp.pos 2⟩ (hpL.pow_left 2) (hS hp2)
   simp only [PNat.mk_coe] at h₁ h₂
   rw [f.dirichletLift_apply_of_coprime hpN, g.dirichletLift_apply_of_coprime hpM,
     TauCeti.char_prime_eq_coeff f hp hpN, TauCeti.char_prime_eq_coeff g hp hpM, h₁, h₂]
 
-/-- **The coefficients of a newform at its good indices determine its nebentypus.** If newforms
-`f` and `g` of levels `N` and `M` have the same Fourier coefficient at every index `n` prime to
-`N` and `M` outside a finite set, their nebentypes induce the same character modulo every common
-multiple `L` of `N` and `M`. -/
+/-- **The coefficients of a newform away from a common multiple determine its nebentypus.** If
+newforms `f` and `g` of levels `N` and `M` dividing `L` have the same Fourier coefficient at every
+index `n` prime to `L` outside a finite set, their nebentypes induce the same character modulo
+`L`. -/
 theorem χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq {L : ℕ} [NeZero L]
     (f : Newform N k) (g : Newform M k) (hN : N ∣ L) (hM : M ∣ L) {S : Finset ℕ}
-    (h : ∀ n : ℕ+, Nat.Coprime (n : ℕ) N → Nat.Coprime (n : ℕ) M → (n : ℕ) ∉ S →
+    (h : ∀ n : ℕ+, Nat.Coprime (n : ℕ) L → (n : ℕ) ∉ S →
       (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = (qExpansion 1 g.toCuspForm).coeff (n : ℕ)) :
     f.χ.comp (ZMod.unitsMap hN) = g.χ.comp (ZMod.unitsMap hM) := by
   have := congrArg MulChar.toUnitHom
-    (DirichletCharacter.changeLevel_eq_changeLevel_of_eventually_apply_prime_eq hN hM
+    ((DirichletCharacter.changeLevel_eq_changeLevel_iff_eventually_apply_prime_eq hN hM).mpr
       (eventually_dirichletLift_apply_prime_eq_of_forall_notMem_qExpansion_coeff_eq f g h))
   rwa [changeLevel_dirichletLift_toUnitHom, changeLevel_dirichletLift_toUnitHom] at this
 
@@ -107,8 +110,7 @@ theorem χ_eq_of_forall_notMem_qExpansion_coeff_eq {f g : Newform N k} {S : Fins
       (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = (qExpansion 1 g.toCuspForm).coeff (n : ℕ)) :
     f.χ = g.χ := by
   simpa only [ZMod.unitsMap_self, MonoidHom.comp_id] using
-    χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq f g (dvd_refl N) (dvd_refl N)
-      fun n hn _ hnS ↦ h n hn hnS
+    χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq f g (dvd_refl N) (dvd_refl N) h
 
 /-- **Strong multiplicity one, on Fourier coefficients** (Miyake's own form of Theorem 4.6.12):
 two newforms of level `N` and weight `k` whose `q`-expansion coefficients agree at every index
@@ -146,7 +148,10 @@ theorem level_eq_and_coe_eq_of_forall_notMem_qExpansion_coeff_eq (f : Newform N 
     N = M ∧ ⇑f.toCuspForm = ⇑g.toCuspForm := by
   have : NeZero (Nat.lcm N M) := ⟨Nat.lcm_ne_zero (NeZero.ne N) (NeZero.ne M)⟩
   refine level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq f g (S := S)
-    (χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq f g _ _ h) fun p hp hpN hpM hpS ↦ ?_
+    (χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq f g _ _ fun n hnL ↦
+      h n (hnL.coprime_dvd_right (Nat.dvd_lcm_left N M))
+        (hnL.coprime_dvd_right (Nat.dvd_lcm_right N M)))
+    fun p hp hpN hpM hpS ↦ ?_
   rw [← f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN,
     ← g.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpM]
   exact h ⟨p, hp.pos⟩ hpN hpM hpS
