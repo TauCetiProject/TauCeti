@@ -144,6 +144,20 @@ theorem mem_supp_iff (c : ThresholdComponent f hsymm k) (v : V) :
     v ∈ c.supp ↔ thresholdComponentMk f hsymm k v = c :=
   Iff.rfl
 
+/-- Membership in the threshold component of a vertex is governed by the threshold minimum-cut
+relation, oriented using symmetry. -/
+theorem mem_supp_thresholdComponentMk_iff (s t : V) :
+    t ∈ (thresholdComponentMk f hsymm k s).supp ↔
+      s = t ∨ k ≤ pairMinimumValue f s t := by
+  rw [mem_supp_iff, thresholdComponentMk_eq_iff]
+  constructor
+  · rintro (rfl | h)
+    · exact Or.inl rfl
+    · exact Or.inr (by simpa only [hsymm s t] using h)
+  · rintro (rfl | h)
+    · exact Or.inl rfl
+    · exact Or.inr (by simpa only [hsymm t s] using h)
+
 @[ext]
 theorem supp_injective :
     Function.Injective (supp : ThresholdComponent f hsymm k → Set V) := by
@@ -179,13 +193,6 @@ end ThresholdComponent
 
 namespace IsFlowEquivalentTree
 
-/-- Threshold relatedness is precisely reachability after deleting the tree edges lighter than
-the threshold. -/
-theorem thresholdRelated_iff_reachable_deleteEdges
-    (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
-    ThresholdRelated f k s t ↔ (T.deleteEdges {e | w e < k}).Reachable s t :=
-  (hT.reachable_deleteEdges_iff k).symm
-
 /-- A flow-equivalent tree makes the minimum cut value symmetric. -/
 theorem pairMinimumValue_comm (hT : IsFlowEquivalentTree f T w) :
     ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s := by
@@ -195,13 +202,11 @@ theorem pairMinimumValue_comm (hT : IsFlowEquivalentTree f T w) :
     rfl
   · have hle : ∀ s t, s ≠ t → pairMinimumValue f s t ≤ pairMinimumValue f t s := by
       intro s t hst
-      have hreach := (hT.thresholdRelated_iff_reachable_deleteEdges
-          (pairMinimumValue f s t) s t).mp
-        ((thresholdRelated_def f (pairMinimumValue f s t) s t).mpr (Or.inr le_rfl))
-      exact
-        ((thresholdRelated_def f (pairMinimumValue f s t) t s).mp
-          ((hT.thresholdRelated_iff_reachable_deleteEdges
-            (pairMinimumValue f s t) t s).mpr hreach.symm)).resolve_left (Ne.symm hst)
+      have hreach :
+          (T.deleteEdges {e | w e < pairMinimumValue f s t}).Reachable s t :=
+        (hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).mpr (Or.inr le_rfl)
+      exact ((hT.reachable_deleteEdges_iff
+        (pairMinimumValue f s t)).mp hreach.symm).resolve_left (Ne.symm hst)
     exact le_antisymm (hle s t hst) (hle t s (Ne.symm hst))
 
 /-- Threshold classes are canonically the connected components of the threshold graph. -/
