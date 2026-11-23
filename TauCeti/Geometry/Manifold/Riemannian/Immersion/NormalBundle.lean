@@ -216,17 +216,16 @@ section QuotientComparison
 variable (f : M → N) (x : M)
   [(LinearMap.range (mfderiv I J f x).toLinearMap).HasOrthogonalProjection]
 
-/-- The normal space `(range df_x)ᗮ` of a map at `x` is isomorphic to the quotient
+/-- The normal space `(range df_x)ᗮ` of a map at `x` is isometric to the quotient
 `T_{f x} N ⧸ range df_x` by `w ↦ [w]`, whenever the range of the differential admits an orthogonal
 projection, for instance for a finite-dimensional source. It is the inverse of Mathlib's isometry
 `Submodule.quotientEquivOrthogonal` between a quotient and the orthogonal complement of the
 subspace. The inverse is the orthogonal projection onto the normal space
 (`TauCeti.orthogonalNormalSpaceEquivQuotient_symm_mk`). -/
 def orthogonalNormalSpaceEquivQuotient :
-    orthogonalNormalSpace I J f x ≃L[ℝ]
+    orthogonalNormalSpace I J f x ≃ₗᵢ[ℝ]
       TangentSpace J (f x) ⧸ LinearMap.range (mfderiv I J f x).toLinearMap :=
   (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal.symm
-    |>.toContinuousLinearEquiv
 
 /-- The comparison takes a normal vector to its class. -/
 @[simp]
@@ -243,7 +242,7 @@ the normal space; in particular this projection depends only on the class. -/
 theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
     (orthogonalNormalSpaceEquivQuotient f x).symm (Submodule.Quotient.mk v) =
       (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, orthogonalNormalSpaceEquivQuotient_apply,
+  rw [LinearIsometryEquiv.symm_apply_eq, orthogonalNormalSpaceEquivQuotient_apply,
     Submodule.Quotient.eq, Submodule.coe_orthogonalProjectionOnto_apply]
   have h := (orthogonalNormalSpace I J f x).sub_starProjection_mem_orthogonal v
   rwa [orthogonal_orthogonalNormalSpace] at h
@@ -252,7 +251,7 @@ theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
 class `[w]` in `T_{f x} N ⧸ range df_x` is the norm of `w`. -/
 theorem norm_orthogonalNormalSpaceEquivQuotient (w : orthogonalNormalSpace I J f x) :
     ‖orthogonalNormalSpaceEquivQuotient f x w‖ = ‖(w : TangentSpace J (f x))‖ :=
-  (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal.symm.norm_map w
+  (orthogonalNormalSpaceEquivQuotient f x).norm_map w
 
 end QuotientComparison
 

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # The orthogonal normal bundle as a quotient bundle
@@ -27,8 +28,8 @@ a `C^m` diffeomorphism over the identity of `M` from the orthogonal normal bundl
 embedding (`TauCeti.SmoothEmbedding.normalSpaceFiberBundle`), fibrewise linear
 (`TauCeti.SmoothEmbedding.orthogonalNormalBundleDiffeomorph`). Smoothness of the forward map is
 smoothness of the inclusion `ν_f → f*TN` followed by the normal quotient; smoothness of the inverse
-descends, through the smooth normal quotient, from smoothness of the orthogonal projection
-`f*TN → ν_f`, given in local frames by `v ↦ v - df((df* df)⁻¹ df* v)`.
+is then automatic for a fibrewise linear equivalence of vector bundles
+(`TauCeti.bundleDiffeomorph`).
 
 ## References
 
@@ -117,30 +118,6 @@ theorem contMDiff_orthogonalNormalSpaceEquivQuotient {r : ℕ} (f : SmoothEmbedd
   exact congrArg (TotalSpace.mk p.proj)
     (orthogonalNormalSpaceEquivQuotient_eq_normalClass f p.proj hn p.snd)
 
-/-- The map taking a class of the intrinsic normal bundle `f*TN / df(TM)` of a `C^n` embedding to
-its orthogonal representative in `ν_f` is `C^m`, for `m + 1 ≤ n` and a `C^m` ambient metric. -/
-theorem contMDiff_orthogonalNormalSpaceEquivQuotient_symm {r : ℕ} (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r)
-    (hdim : finrank ℝ P = finrank ℝ V - finrank ℝ E) :
-    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-    letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
-    letI := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
-    letI := f.normalSpaceFiberBundle hn hdim
-    ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, Fin r → ℝ)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
-        (⟨p.proj, (orthogonalNormalSpaceEquivQuotient (f : M → N) p.proj).symm p.snd⟩ :
-          TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x))) := by
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
-  let := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
-  let := f.normalSpaceFiberBundle hn hdim
-  refine (f.contMDiff_normalBundle_iff hn hm hdim _).mpr ?_
-  refine (contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace f.contMDiff
-    (f.isImmersion.mfderiv_injective hn) hm hr).congr fun p ↦ ?_
-  rw [Function.comp_apply, normalQuotientMap_apply]
-  exact congrArg (TotalSpace.mk p.proj)
-    (orthogonalNormalSpaceEquivQuotient_symm_normalClass f p.proj hn p.snd)
-
 /-- **The orthogonal normal bundle is the intrinsic normal bundle.** For a `C^n` embedding `f` with
 `m + 1 ≤ n` and a `C^m` ambient metric, the map `w ↦ [w]` from the orthogonal normal bundle `ν_f`
 to the intrinsic normal bundle `f*TN / df(TM)` is a `C^m` diffeomorphism of total spaces, over the
@@ -159,14 +136,32 @@ def orthogonalNormalBundleDiffeomorph {r : ℕ} (f : SmoothEmbedding I J n M N) 
   letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   letI := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
   letI := f.normalSpaceFiberBundle hn hdim
-  { toFun p := ⟨p.proj, orthogonalNormalSpaceEquivQuotient (f : M → N) p.proj p.snd⟩
-    invFun p := ⟨p.proj, (orthogonalNormalSpaceEquivQuotient (f : M → N) p.proj).symm p.snd⟩
-    left_inv p := congrArg (TotalSpace.mk p.proj)
-      ((orthogonalNormalSpaceEquivQuotient (f : M → N) p.proj).symm_apply_apply p.snd)
-    right_inv p := congrArg (TotalSpace.mk p.proj)
-      ((orthogonalNormalSpaceEquivQuotient (f : M → N) p.proj).apply_symm_apply p.snd)
-    contMDiff_toFun := f.contMDiff_orthogonalNormalSpaceEquivQuotient hn hm hr hdim
-    contMDiff_invFun := f.contMDiff_orthogonalNormalSpaceEquivQuotient_symm hn hm hr hdim }
+  letI := f.normalSpaceVectorBundle hn hdim
+  bundleDiffeomorph (fun x ↦ ((orthogonalNormalSpaceEquivQuotient (f : M → N) x
+    |>.toContinuousLinearEquiv) : orthogonalNormalSpace I J f x ≃L[ℝ] f.NormalSpace x hn))
+    (f.contMDiff_orthogonalNormalSpaceEquivQuotient hn hm hr hdim)
+
+/-- The map taking a class of the intrinsic normal bundle `f*TN / df(TM)` of a `C^n` embedding to
+its orthogonal representative in `ν_f` is `C^m`, for `m + 1 ≤ n` and a `C^m` ambient metric. -/
+theorem contMDiff_orthogonalNormalSpaceEquivQuotient_symm {r : ℕ} (f : SmoothEmbedding I J n M N)
+    (hn : n ≠ 0) (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r)
+    (hdim : finrank ℝ P = finrank ℝ V - finrank ℝ E) :
+    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+    letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+    letI := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+    letI := f.normalSpaceFiberBundle hn hdim
+    ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, Fin r → ℝ)) m
+      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+        (⟨p.proj, (orthogonalNormalSpaceEquivQuotient (f : M → N) p.proj).symm p.snd⟩ :
+          TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x))) := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  let := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+  let := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  refine (f.orthogonalNormalBundleDiffeomorph hn hm hr hdim).symm.contMDiff.congr fun p ↦ ?_
+  symm
+  exact bundleDiffeomorph_symm_apply _ _ p
 
 /-- The comparison diffeomorphism takes a normal vector to its normal class, over the same base
 point. -/
@@ -179,12 +174,18 @@ theorem orthogonalNormalBundleDiffeomorph_apply {r : ℕ} (f : SmoothEmbedding I
     letI := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
     letI := f.normalSpaceFiberBundle hn hdim
     f.orthogonalNormalBundleDiffeomorph hn hm hr hdim p =
-      ⟨p.proj, f.normalClass p.proj hn p.snd⟩ :=
-  congrArg (TotalSpace.mk p.proj)
+      ⟨p.proj, f.normalClass p.proj hn p.snd⟩ := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  let := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+  let := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  exact (bundleDiffeomorph_apply _ _ p).trans <| congrArg (TotalSpace.mk p.proj)
     (orthogonalNormalSpaceEquivQuotient_eq_normalClass f p.proj hn p.snd)
 
 /-- The inverse comparison diffeomorphism takes a normal class to its orthogonal representative,
 over the same base point. -/
+@[simp]
 theorem orthogonalNormalBundleDiffeomorph_symm_apply {r : ℕ} (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r)
     (hdim : finrank ℝ P = finrank ℝ V - finrank ℝ E)
@@ -194,8 +195,13 @@ theorem orthogonalNormalBundleDiffeomorph_symm_apply {r : ℕ} (f : SmoothEmbedd
     letI := f.normalSpaceFiberBundle hn hdim
     (f.orthogonalNormalBundleDiffeomorph hn hm hr hdim).symm p =
       ⟨p.proj, ⟨f.normalRepresentative p.proj hn p.snd, by
-        rw [← coe_orthogonalNormalSpaceEquivQuotient_symm]; exact Subtype.coe_prop _⟩⟩ :=
-  congrArg (TotalSpace.mk p.proj)
+        rw [← coe_orthogonalNormalSpaceEquivQuotient_symm]; exact Subtype.coe_prop _⟩⟩ := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  let := orthogonalNormalFiberBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+  let := orthogonalNormalVectorBundle f.contMDiff (f.isImmersion.mfderiv_injective hn) hm hr
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  exact (bundleDiffeomorph_symm_apply _ _ p).trans <| congrArg (TotalSpace.mk p.proj)
     (Subtype.ext (coe_orthogonalNormalSpaceEquivQuotient_symm f p.proj hn p.snd))
 
 end SmoothEmbedding
