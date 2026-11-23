@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.Contraction.Classical
+import TauCeti.Analysis.Sobolev.Wkp.Contraction.Classical
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.MeasureTheory.Function.Lp.Basic
@@ -15,20 +15,15 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 # Worked examples for Sobolev directional contractions
 
 Concrete checks for `TauCeti.Wkp.lineDerivL`, `TauCeti.Wkp.iteratedLineDerivZeroL`, and the
-classical `ContDiffOn` comparison lemmas on intervals and planar discs.
+classical `ContDiffOn` comparison lemmas on intervals and planar discs:
 
-## Main declarations
-
-* `TauCeti.Wkp.exists_value_ae_eq_sq_lineDerivL`: on `(0, 1) ⊆ ℝ`, `u(x) = x²` differentiated in
-  direction `3` has value `6x` and weak derivative `6` almost everywhere.
-* `TauCeti.Wkp.exists_value_ae_eq_sq_norm_lineDerivL_top`: sharpness of
-  `‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖iteratedGradient 0 u‖` at `p = ⊤` for `u(x) = x²` on `(0, 1)` and
-  `v = 3`.
-* `TauCeti.Wkp.exists_value_ae_eq_mul_lineDerivL_comm`: on the planar unit disc, `u(x) = x₀ x₁`
-  has commuting coordinate directional derivatives both equal to `1` almost everywhere.
+* On `(0, 1) ⊆ ℝ`, `u(x) = x²` differentiated in direction `3` has value `6x` and weak derivative
+  `6` almost everywhere.
+* Sharpness of `‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖iteratedGradient 0 u‖` at exponent `p = ⊤` for
+  `u(x) = x²` on `(0, 1)` and `v = 3`.
+* On the planar unit disc, `u(x) = x₀ x₁` has commuting coordinate directional derivatives both
+  equal to `1` almost everywhere.
 -/
-
-public section
 
 noncomputable section
 
@@ -37,14 +32,9 @@ namespace TauCeti.Wkp
 open MeasureTheory TopologicalSpace
 open scoped ENNReal
 
-private theorem deriv_sq : deriv (fun x : ℝ => x ^ 2) = fun x => 2 * x := by
-  funext x
-  rw [deriv_pow_field]
-  norm_num
-
 /-- On `Ω = (0, 1) ⊆ ℝ`, `u(x) = x²` in `W^{2,p}(Ω)` differentiated in direction `v = 3` has
 value `6x` almost everywhere and weak derivative `6 = (D²u)⟨3⟩¹` almost everywhere. -/
-theorem exists_value_ae_eq_sq_lineDerivL {p : ENNReal} [Fact (1 ≤ p)] :
+example {p : ENNReal} [Fact (1 ≤ p)] :
     let Ω : Opens ℝ := ⟨Set.Ioo 0 1, isOpen_Ioo⟩
     ∃ u : Wkp volume Ω p 2,
       (value 2 u : ℝ → ℝ) =ᵐ[volume.restrict (Ω : Set ℝ)] (fun x : ℝ => x ^ 2) ∧
@@ -60,14 +50,16 @@ theorem exists_value_ae_eq_sq_lineDerivL {p : ENNReal} [Fact (1 ≤ p)] :
   · refine (value_lineDerivL_ae_eq_of_contDiffOn 1 u (3 : ℝ)
       (hf.contDiffOn.of_le one_le_two) hu).trans (.of_forall fun x => ?_)
     dsimp only
-    rw [fderiv_eq_smul_deriv, deriv_sq, smul_eq_mul]
+    rw [fderiv_eq_smul_deriv, deriv_pow_field, smul_eq_mul]
+    norm_num
     ring
   · filter_upwards [iteratedGradient_lineDerivL_ae (3 : ℝ) 0 u,
       iteratedGradient_ae_eq_of_contDiffOn 1 u hf.contDiffOn hu] with x h1 h2
     rw [h1, h2, iteratedGradientChain_succ, iteratedGradientChain_zero]
     have hgrad : gradient (fun y : ℝ => y ^ 2) = fun y : ℝ => 2 * y := by
       ext y
-      rw [gradient_eq_deriv', deriv_sq]
+      rw [gradient_eq_deriv', deriv_pow_field]
+      norm_num
     rw [hgrad]
     have hd : HasFDerivAt (fun y : ℝ => (2 : ℝ) * y)
         ((2 : ℝ) • ContinuousLinearMap.id ℝ ℝ) x := by
@@ -76,8 +68,8 @@ theorem exists_value_ae_eq_sq_lineDerivL {p : ENNReal} [Fact (1 ≤ p)] :
     norm_num
 
 /-- Sharpness of the componentwise bound `‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖iteratedGradient 0 u‖`
-at `p = ⊤` for `u(x) = x²` on `Ioo 0 1` and `v = 3`: both sides equal `6`. -/
-theorem exists_value_ae_eq_sq_norm_lineDerivL_top :
+at exponent `p = ⊤` for `u(x) = x²` on `Ioo 0 1` and `v = 3`: both sides equal `6`. -/
+example :
     let Ω : Opens ℝ := ⟨Set.Ioo 0 1, isOpen_Ioo⟩
     ∃ u : Wkp volume Ω ⊤ 1,
       (value 1 u : ℝ → ℝ) =ᵐ[volume.restrict (Ω : Set ℝ)] (fun x : ℝ => x ^ 2) ∧
@@ -91,7 +83,8 @@ theorem exists_value_ae_eq_sq_norm_lineDerivL_top :
     rw [norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf.contDiffOn hu]
     have h2 : (fun x : ℝ => ‖iteratedFDeriv ℝ 1 (fun y : ℝ => y ^ 2) x‖) =
         fun x : ℝ => ‖(2 : ℝ) * x‖ := funext fun x => by
-      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_one, deriv_sq]
+      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_one, deriv_pow_field]
+      norm_num
     have hlp : lpNorm (iteratedFDeriv ℝ 1 (fun y : ℝ => y ^ 2)) ⊤
         (volume.restrict (Ω : Set ℝ)) =
         lpNorm (fun x : ℝ => (2 : ℝ) * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) := by
@@ -120,7 +113,7 @@ theorem exists_value_ae_eq_sq_norm_lineDerivL_top :
 /-- On the open unit ball in `ℝ²`, `u(x) = x₀ * x₁` in `W^{2,p}(B(0, 1))` satisfies
 `lineDerivL e₀ 0 (lineDerivL e₁ 1 u) = lineDerivL e₁ 0 (lineDerivL e₀ 1 u)` and both equal `1`
 almost everywhere. -/
-theorem exists_value_ae_eq_mul_lineDerivL_comm {p : ENNReal} [Fact (1 ≤ p)] :
+example {p : ENNReal} [Fact (1 ≤ p)] :
     let E₂ := EuclideanSpace ℝ (Fin 2)
     let Ω : Opens E₂ := ⟨Metric.ball 0 1, Metric.isOpen_ball⟩
     let e₀ : E₂ := EuclideanSpace.single 0 1

@@ -24,6 +24,8 @@ smoothness of `f` than `C^{j+1}`.
   `iteratedLineDerivZeroL`.
 * `TauCeti.Wkp.value_iteratedLineDerivL_succ_ae_eq_of_contDiffOn`: general-order `ContDiffOn`
   identification for `iteratedLineDerivL`.
+* `TauCeti.Wkp.value_lineDerivL_ae_eq_of_contDiffOn`: single-direction specialization for
+  `lineDerivL`.
 -/
 
 public section
@@ -69,6 +71,19 @@ theorem value_iteratedLineDerivL_succ_ae_eq_of_contDiffOn (k j : ℕ)
     rwa [value_toOrderL]
   rw [value_iteratedLineDerivL_eq_iteratedLineDerivZeroL]
   exact iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn j u₀ m hf hu₀
+
+/-- Single-direction form of `TauCeti.Wkp.value_iteratedLineDerivL_succ_ae_eq_of_contDiffOn`: if
+`u ∈ W^{k+1,p}(Ω)` is represented on `Ω` by a `C¹` function `f`, then the value of
+`lineDerivL v k u` agrees almost everywhere on `Ω` with `x ↦ fderiv ℝ f x v`. Only `C¹`
+regularity of `f` is needed, regardless of `k`. -/
+theorem value_lineDerivL_ae_eq_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p (k + 1)) (v : E)
+    {f : E → ℝ} (hf : ContDiffOn ℝ 1 f Omega)
+    (hu : (value (k + 1) u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    (value k (lineDerivL v k u) : E → ℝ) =ᵐ[mu.restrict Omega] fun x => fderiv ℝ f x v := by
+  have h : (value k (iteratedLineDerivL k 1 (fun _ => v) u) : E → ℝ) =ᵐ[mu.restrict Omega]
+      fun x => iteratedFDeriv ℝ 1 f x (fun _ => v) :=
+    value_iteratedLineDerivL_succ_ae_eq_of_contDiffOn k 0 u (fun _ => v) hf hu
+  simpa only [iteratedLineDerivL_one, iteratedFDeriv_one_apply] using h
 
 end Classical
 

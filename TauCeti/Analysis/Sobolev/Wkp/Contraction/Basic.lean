@@ -133,6 +133,13 @@ theorem iteratedLineDerivL_update_smul (k : ℕ) :
             Fin.tail_update_succ, iteratedLineDerivL_update_smul k j (Fin.tail m) i c v,
             ContinuousLinearMap.smul_comp]
 
+/-- Evaluating `iteratedLineDerivL` at a tuple with zero in slot `i` gives the zero map. -/
+@[simp]
+theorem iteratedLineDerivL_update_zero (k j : ℕ) (m : Fin j → E) (i : Fin j) :
+    iteratedLineDerivL (mu := mu) (Omega := Omega) (p := p) k j
+        (Function.update m i 0) = 0 := by
+  simpa using iteratedLineDerivL_update_smul (mu := mu) (Omega := Omega) (p := p) k j m i 0 0
+
 /-- The `Lᵖ` value of `iteratedLineDerivL` depends only on the `Lᵖ` value of the input,
 not on the target order `k`. -/
 private theorem value_iteratedLineDerivL_eq_of_value_eq {k₁ k₂ : ℕ} :
@@ -195,17 +202,30 @@ theorem iteratedLineDerivZeroL_update_smul (j : ℕ) (m : Fin j → E) (i : Fin 
       c • iteratedLineDerivZeroL j (Function.update m i v) := by
   simp only [iteratedLineDerivZeroL, iteratedLineDerivL_update_smul, ContinuousLinearMap.smul_comp]
 
+/-- Evaluating `iteratedLineDerivZeroL` at a tuple with zero in slot `i` gives the zero map. -/
+@[simp]
+theorem iteratedLineDerivZeroL_update_zero (j : ℕ) (m : Fin j → E) (i : Fin j) :
+    iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) j
+        (Function.update m i 0) = 0 := by
+  rw [iteratedLineDerivZeroL, iteratedLineDerivL_update_zero, ContinuousLinearMap.zero_comp]
+
+/-- Order truncation commutes with `TauCeti.Wkp.iteratedLineDerivL`. -/
+theorem toOrderL_iteratedLineDerivL {k₁ k₂ : ℕ} (h : k₁ ≤ k₂) (j : ℕ) (m : Fin j → E)
+    (u : Wkp mu Omega p (k₂ + j)) :
+    toOrderL h (iteratedLineDerivL k₂ j m u) =
+      iteratedLineDerivL k₁ j m (toOrderL (Nat.add_le_add_right h j) u) :=
+  ext k₁ ((value_toOrderL h _).trans
+    (value_iteratedLineDerivL_eq_of_value_eq j m
+      (value_toOrderL (Nat.add_le_add_right h j) u).symm))
+
 /-- The `Lᵖ` value of `iteratedLineDerivL k j m u` agrees with
 `iteratedLineDerivZeroL j m (toOrderL _ u)`. -/
 theorem value_iteratedLineDerivL_eq_iteratedLineDerivZeroL (k j : ℕ) (m : Fin j → E)
     (u : Wkp mu Omega p (k + j)) :
     value k (iteratedLineDerivL k j m u) =
       iteratedLineDerivZeroL j m (toOrderL (Nat.le_add_left j k) u) := by
-  rw [iteratedLineDerivZeroL, ContinuousLinearMap.comp_apply,
-    ← value_zero (iteratedLineDerivL 0 j m _)]
-  exact value_iteratedLineDerivL_eq_of_value_eq j m
-    ((value_toOrderL (Nat.le_add_left j k) u).symm.trans
-      (value_toOrderL (Nat.zero_add j).le _).symm)
+  rw [← toOrderL_zero_left_apply k (Nat.zero_le k), toOrderL_iteratedLineDerivL,
+    iteratedLineDerivZeroL, ContinuousLinearMap.comp_apply, toOrderL_toOrderL]
 
 /-- **Permutation invariance of `iteratedLineDerivL`.** Reordering the tuple of directions by any
 permutation `σ : Equiv.Perm (Fin j)` leaves the operator unchanged. -/
