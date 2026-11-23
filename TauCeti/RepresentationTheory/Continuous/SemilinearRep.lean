@@ -52,6 +52,10 @@ character are different representations on the same line, with no nonzero equiva
 * `TauCeti.SemilinearRep.act_smul_of_tower`: the action is linear over the scalars fixed by `G`.
 * `TauCeti.SemilinearRep.twist_one`, `TauCeti.SemilinearRep.twist_twist`: twisting by the trivial
   character does nothing, and successive twists multiply the characters.
+* `TauCeti.SemilinearRep.Hom.kerRep_ext`, `TauCeti.SemilinearRep.Hom.prod_ext`,
+  `TauCeti.SemilinearRep.Hom.coprod_ext`, `TauCeti.SemilinearRep.Hom.pi_ext`: morphisms into a
+  kernel, into a direct sum or product, or out of a direct sum are determined by their composites
+  with the structure maps, so the lifts and (co)pairings above are unique.
 
 ## References
 
@@ -519,6 +523,19 @@ theorem Hom.kerι_comp_kerLift {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep
     f.kerι.comp (f.kerLift h hh) = h :=
   Hom.ext fun _ => rfl
 
+/-- **Uniqueness in the universal property of the kernel**: morphisms into the kernel
+representation of `f` are determined by their composite with the inclusion `f.kerι`. -/
+theorem Hom.kerRep_ext {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+    {ρ₂ : SemilinearRep G B W₂} {f : Hom ρ₁ ρ₂} {k k' : Hom ρ f.kerRep}
+    (h : f.kerι.comp k = f.kerι.comp k') : k = k' :=
+  Hom.ext fun w => Subtype.ext (by simpa using DFunLike.congr_fun h w)
+
+/-- `Hom.kerLift` is the only factorization through the kernel representation. -/
+theorem Hom.kerLift_unique {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+    {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : ∀ w, f (h w) = 0)
+    (k : Hom ρ f.kerRep) (hk : f.kerι.comp k = h) : k = f.kerLift h hh :=
+  Hom.kerRep_ext (by rw [hk, kerι_comp_kerLift])
+
 variable (ρ₁ : SemilinearRep G B W₁) (ρ₂ : SemilinearRep G B W₂)
 
 /-- The first projection out of a direct sum. -/
@@ -574,6 +591,13 @@ theorem fst_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (fst ρ₁ ρ₂)
 theorem snd_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (snd ρ₁ ρ₂).comp (f.prod f') = f' :=
   Hom.ext fun _ => rfl
 
+/-- **Uniqueness in the universal property of the direct sum**: morphisms into the direct sum are
+determined by their composites with the two projections. -/
+theorem Hom.prod_ext {f f' : Hom σ (ρ₁.prod ρ₂)} (h₁ : (fst ρ₁ ρ₂).comp f = (fst ρ₁ ρ₂).comp f')
+    (h₂ : (snd ρ₁ ρ₂).comp f = (snd ρ₁ ρ₂).comp f') : f = f' :=
+  Hom.ext fun w =>
+    Prod.ext (by simpa using DFunLike.congr_fun h₁ w) (by simpa using DFunLike.congr_fun h₂ w)
+
 /-- **The universal property of the direct sum as a coproduct**: two morphisms into `σ` copair to
 the morphism `(w₁, w₂) ↦ f w₁ + f' w₂` out of the direct sum. -/
 def Hom.coprod [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ) : Hom (ρ₁.prod ρ₂) σ :=
@@ -593,6 +617,17 @@ theorem coprod_comp_inl [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ)
 theorem coprod_comp_inr [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ) :
     (f.coprod f').comp (inr ρ₁ ρ₂) = f' :=
   Hom.ext fun _ => by simp
+
+/-- **Uniqueness in the universal property of the direct sum as a coproduct**: morphisms out of the
+direct sum are determined by their composites with the two inclusions. -/
+theorem Hom.coprod_ext {f f' : Hom (ρ₁.prod ρ₂) σ} (h₁ : f.comp (inl ρ₁ ρ₂) = f'.comp (inl ρ₁ ρ₂))
+    (h₂ : f.comp (inr ρ₁ ρ₂) = f'.comp (inr ρ₁ ρ₂)) : f = f' :=
+  Hom.ext fun w => by
+    have e₁ := DFunLike.congr_fun h₁ w.1
+    have e₂ := DFunLike.congr_fun h₂ w.2
+    simp only [comp_apply, inl_apply, inr_apply] at e₁ e₂
+    have hw : w = (w.1, 0) + (0, w.2) := by simp
+    rw [hw, map_add, map_add, e₁, e₂]
 
 end HomProd
 
@@ -653,6 +688,12 @@ theorem Hom.pi_apply (f : ∀ i, Hom σ (ρ i)) (w : W) (i : ι) : Hom.pi f w i 
 @[simp]
 theorem proj_pi (f : ∀ i, Hom σ (ρ i)) (i : ι) : (proj ρ i).comp (Hom.pi f) = f i :=
   Hom.ext fun _ => rfl
+
+/-- **Uniqueness in the universal property of the product**: morphisms into the product are
+determined by their composites with the projections. -/
+theorem Hom.pi_ext {f f' : Hom σ (SemilinearRep.pi ρ)}
+    (h : ∀ i, (proj ρ i).comp f = (proj ρ i).comp f') : f = f' :=
+  Hom.ext fun w => funext fun i => by simpa using DFunLike.congr_fun (h i) w
 
 end HomPi
 
