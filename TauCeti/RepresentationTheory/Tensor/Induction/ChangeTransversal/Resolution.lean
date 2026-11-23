@@ -120,12 +120,12 @@ private noncomputable def resolutionChangeTerm (hA : ∀ a : A.obj.V, a + a = 0)
         ((((smoothTensorInducedGradedResolutionFunctor U hU t).obj A).obj.gradedCochainComplexι
           _ _ _ _ _ n).hom x) ∈ _
       rw [TopRep.gradedCochainComplexι_apply]
-      exact resolutionChange_mem U hU s t A n x.1 x.2)
+      exact resolutionChange_mem U hU s t A n x.val x.property)
 
 private theorem resolutionChangeTerm_apply (hA : ∀ a : A.obj.V, a + a = 0) (n : ℕ)
     (x : ((tensorResolutionComplex U hU t A hA).X n).V) :
-    ((resolutionChangeTerm U hU s t A hA n).hom x).1 =
-      (resolutionChangeTotal U hU s t A).hom x.1 := by
+    ((resolutionChangeTerm U hU s t A hA n).hom x).val =
+      (resolutionChangeTotal U hU s t A).hom x.val := by
   rw [resolutionChangeTerm, TopRep.gradedCochainComplexLift_apply]
   -- The source term is a subrepresentation, and composition evaluates in its ambient carrier.
   change (resolutionChangeTotal U hU s t A).hom
@@ -145,12 +145,12 @@ private noncomputable def resolutionChange (hA : ∀ a : A.obj.V, a + a = 0) :
       ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_apply,
       resolutionChangeTerm_apply,
       TopRep.gradedCochainComplex_d_apply]
-    exact resolutionChange_d U hU s t A x.1
+    exact resolutionChange_d U hU s t A x.val
 
 private theorem resolutionChange_f_apply (hA : ∀ a : A.obj.V, a + a = 0) (n : ℕ)
     (x : ((tensorResolutionComplex U hU t A hA).X n).V) :
-    (((resolutionChange U hU s t A hA).f n).hom x).1 =
-      (resolutionChangeTotal U hU s t A).hom x.1 :=
+    (((resolutionChange U hU s t A hA).f n).hom x).val =
+      (resolutionChangeTotal U hU s t A).hom x.val :=
   resolutionChangeTerm_apply U hU s t A hA n x
 
 private theorem resolutionChange_augmentation [LinearOrder (G ⧸ U)]

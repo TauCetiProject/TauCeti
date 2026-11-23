@@ -338,7 +338,7 @@ theorem resolventTransform_sub_mul_resolventTransform_of_burgers (t : ℝ≥0) {
     (by simp [c]) (fun s hs ↦ by
       rw [add_zero, norm_mul]
       exact mul_le_mul_of_nonneg_right (norm_deriv_resolventTransform_le_inv hy
-        (him s (Ico_subset_Icc_self hs))) (norm_nonneg _)) T ⟨t.2, le_rfl⟩
+        (him s (Ico_subset_Icc_self hs))) (norm_nonneg _)) T ⟨t.property, le_rfl⟩
   rw [gronwallBound_ε0_δ0, norm_le_zero_iff, sub_eq_zero, Real.toNNReal_coe] at hgron
   exact hgron
 
@@ -358,7 +358,7 @@ theorem eq_of_resolventTransform_burgers {ν : ℝ≥0 → Measure ℝ} [∀ t, 
   set T : ℝ := (t : ℝ)
   set m₀ : ℂ → ℂ := resolventTransform (μ 0)
   obtain ⟨z₁, hz₁, hz₁T, hΦU, hΦ⟩ :=
-    exists_map_nhds_sub_mul_resolventTransform (ρ := μ 0) (show 0 ≤ T from t.2)
+    exists_map_nhds_sub_mul_resolventTransform (ρ := μ 0) (show 0 ≤ T from t.property)
   -- Near `Φ(z₁)`, both transforms at time `t` agree, since both are `m₀ ∘ Φ⁻¹` there.
   have hV : ∀ᶠ z in 𝓝 z₁, 0 < z.im ∧ 2 * T < z.im ^ 2 :=
     (continuousAt_const.eventually_lt continuous_im.continuousAt hz₁).and

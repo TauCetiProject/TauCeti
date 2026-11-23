@@ -42,7 +42,8 @@ symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
   `isCoisotropic_map_transport_iff`, `isLagrangian_map_transport_iff`,
   `isSymplectic_map_transport_iff`, and the one-way `IsIsotropic.map_transport`,
   `IsCoisotropic.map_transport`, `IsLagrangian.map_transport`, `IsSymplectic.map_transport`: the
-  transport API.
+  transport API, with `IsSymplectomorphism.isIsotropic_map_iff` and
+  `IsSymplectomorphism.isLagrangian_map_iff` for a given linear symplectomorphism.
 * `TauCeti.SymplecticForm.isIsotropic_graph_iff`, `isIsotropic_linearEquiv_graph_iff`,
   `IsSymplectomorphism.isLagrangian_graph`, `isLagrangian_graph_iff`, `isLagrangian_diagonal`,
   and `isSymplectic_graph_iff`: the graph API.
@@ -230,6 +231,20 @@ lemma isSymplectic_map_transport_iff :
     (ω.transport e).IsSymplectic (L.map e.toLinearMap) ↔ ω.IsSymplectic L := by
   rw [isSymplectic_iff_disjoint, isSymplectic_iff_disjoint, orthogonal_map_transport]
   exact disjoint_map_orderIso_iff (Submodule.orderIsoMapComap e)
+
+/-- A linear symplectomorphism carries a subspace to an isotropic subspace exactly when the subspace
+is isotropic. -/
+lemma IsSymplectomorphism.isIsotropic_map_iff {ω' : SymplecticForm W}
+    (he : IsSymplectomorphism ω ω' e) :
+    ω'.IsIsotropic (L.map e.toLinearMap) ↔ ω.IsIsotropic L := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, isIsotropic_map_transport_iff]
+
+/-- A linear symplectomorphism carries a subspace to a Lagrangian subspace exactly when the subspace
+is Lagrangian. -/
+lemma IsSymplectomorphism.isLagrangian_map_iff {ω' : SymplecticForm W}
+    (he : IsSymplectomorphism ω ω' e) :
+    ω'.IsLagrangian (L.map e.toLinearMap) ↔ ω.IsLagrangian L := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, isLagrangian_map_transport_iff]
 
 namespace IsIsotropic
 

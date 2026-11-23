@@ -600,11 +600,11 @@ private theorem repPoint_smul (P : Fin 3 → R) (u : Rˣ) :
 private noncomputable def sectionOfClass
     (P : {P : Projective.PointClass R // W.toProjective.UnimodularLift P}) :
     {g : Spec (CommRingCat.of R) ⟶ W.projModel // g ≫ W.projModelOver = 𝟙 _} :=
-  P.1.liftOn (fun Q ↦ ⟨W.repPoint Q, W.repPoint_projModelOver Q⟩) fun _ Q ⟨u, h⟩ ↦
+  P.val.liftOn (fun Q ↦ ⟨W.repPoint Q, W.repPoint_projModelOver Q⟩) fun _ Q ⟨u, h⟩ ↦
     Subtype.ext <| h ▸ W.repPoint_smul Q u
 
 private theorem sectionOfClass_mk {Q : Fin 3 → R}
-    (hQ : W.toProjective.UnimodularLift ⟦Q⟧) : (W.sectionOfClass ⟨⟦Q⟧, hQ⟩).1 = W.repPoint Q := by
+    (hQ : W.toProjective.UnimodularLift ⟦Q⟧) : (W.sectionOfClass ⟨⟦Q⟧, hQ⟩).val = W.repPoint Q := by
   rw [sectionOfClass, Quotient.liftOn_mk]
 
 -- A representative of a unimodular class over a local ring has a unit coordinate.
@@ -820,7 +820,7 @@ theorem projModelPointsEquivUnimodular_symm_mk {P : Fin 3 → R}
     (hP : W.toProjective.UnimodularLift ⟦P⟧) {i : Fin 3} (hi : IsUnit (P i))
     (α : W.toProjective.ChartRing i →ₐ[R] R)
     (hα : ∀ k, α (Ideal.Quotient.mk _ (X k)) = P k * ↑hi.unit⁻¹) :
-    (W.projModelPointsEquivUnimodular.symm ⟨⟦P⟧, hP⟩).1 =
+    (W.projModelPointsEquivUnimodular.symm ⟨⟦P⟧, hP⟩).val =
       Spec.map (CommRingCat.ofHom ((α : W.toProjective.ChartRing i →+* R).comp
         (W.toProjective.awayEquivChartRing i : _ →+* _))) ≫
         Proj.awayι W.toProjective.grading (W.toProjective.coord i)
@@ -841,7 +841,7 @@ theorem projModelPointsEquivUnimodular_symm_mk {P : Fin 3 → R}
 inclusion of `D₊(Z)`. -/
 theorem projModelPointsEquivUnimodular_symm_mk_some {x y : R} (h : W.toAffine.Equation x y) :
     (W.projModelPointsEquivUnimodular.symm
-        ⟨⟦![x, y, 1]⟧, (W.toProjective.unimodularLift_some x y).mpr h⟩).1 =
+        ⟨⟦![x, y, 1]⟧, (W.toProjective.unimodularLift_some x y).mpr h⟩).val =
       Spec.map (CommRingCat.ofHom ((W.chartRingEval h : W.toProjective.ChartRing 2 →+* R).comp
         (W.toProjective.awayEquivChartRing 2 : _ →+* _))) ≫
         Proj.awayι W.toProjective.grading (W.toProjective.coord 2)
@@ -893,7 +893,7 @@ theorem projModelPointsEquiv_projModelZero :
 `K[X, Y, Z] ⧸ (W, Z - 1)`, read on `A_(Z)` through `awayEquivChartRing`, followed by the
 inclusion of `D₊(Z)`. -/
 theorem projModelPointsEquiv_symm_some {x y : K} (h : W.toAffine.Nonsingular x y) :
-    (W.projModelPointsEquiv.symm (.some x y h)).1 =
+    (W.projModelPointsEquiv.symm (.some x y h)).val =
       Spec.map (CommRingCat.ofHom ((W.chartRingEval h.1 : W.toProjective.ChartRing 2 →+* K).comp
         (W.toProjective.awayEquivChartRing 2 : _ →+* _))) ≫
         Proj.awayι W.toProjective.grading (W.toProjective.coord 2)

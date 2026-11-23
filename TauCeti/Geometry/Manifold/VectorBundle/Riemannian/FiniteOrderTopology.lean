@@ -17,9 +17,10 @@ regularity to `C^k` and using the compact derivative topology on symmetric tenso
 Thus only derivatives through order `k` are controlled, although every metric remains smooth.
 
 This construction allows models with corners, in particular half-space models for compact
-manifolds with boundary. It does not apply a completeness theorem for boundaryless section
-spaces to a manifold with boundary. The continuity and convergence criteria use the existing
-frame-coordinate jets and their compact derivative seminorms, including at boundary points.
+manifolds with boundary. Completeness of the underlying section spaces, with boundary or
+corners, is `ContMDiffSection.completeSpace_frameTopology`. The continuity and convergence
+criteria use the existing frame-coordinate jets and their compact derivative seminorms,
+including at boundary points.
 Covering smooth frames give the same topology. Convex interpolation is continuous, and the
 smooth section topology is finer than each finite-order topology.
 

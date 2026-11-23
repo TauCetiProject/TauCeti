@@ -54,7 +54,7 @@ theorem prod_hilbertSymbol_unitAtRealPlace_of_equiv_weightedSumSquares
         hilbertSymbol (unitAtRealPlace w (a ij.1)) (unitAtRealPlace w (a ij.2)) =
       (-1) ^ (Q.realNegativeIndex w).choose 2 := by
   have hcoe : (fun i ↦ ((unitAtRealPlace w (a i) : ℝˣ) : ℝ)) =
-      fun i ↦ embedding_of_isReal w.2 (a i : K) := by
+      fun i ↦ embedding_of_isReal w.property (a i : K) := by
     funext i
     simp
   have hloc : (Q.atRealPlace w).Equivalent

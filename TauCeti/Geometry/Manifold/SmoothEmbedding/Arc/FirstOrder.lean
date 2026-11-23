@@ -195,7 +195,6 @@ private theorem fderiv_track_left_fst_ne_zero (F : Concordance K K')
     (fderiv ℝ (track F) (θ₀, t) (1, 0)).1 ≠ 0 := by
   rw [fderiv_track_left_apply]
   exact deriv_coe_fst_comp_circleExp_ne_zero
-    (F.toSmoothEmbedding.contMDiff.mdifferentiableAt (by simp))
     ((F.toSmoothEmbedding.isImmersion.isDiffImmersionAt (by simp) _).mfderiv_injective) h₀
 
 /-- The circle velocity of the straight line over `exp (θ₀ i)` is orthogonal to the point `v`. -/

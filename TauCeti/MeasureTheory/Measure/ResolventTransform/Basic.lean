@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Analytic.Within
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.Tactic.Positivity
+import TauCeti.Basic.Complex.OfRealSub
 
 /-!
 # The resolvent transform on the real line
@@ -63,11 +64,27 @@ theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (reso
   continuous_iff_continuousAt.2 fun x ↦
     (spectrum.hasDerivAt_resolvent_const_left (mem_resolventSet_real hz x)).continuousAt
 
-/-- A complex number off the real axis is not the image of a real number. -/
-theorem notMem_algebraMap_image_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) (s : Set ℝ) :
-    z ∉ algebraMap ℝ ℂ '' s := by
-  rintro ⟨x, _, hx⟩
-  exact hz (by simpa using (congrArg Complex.im hx).symm)
+/-- As a function of the real input, the resolvent kernel is Lipschitz with constant
+`|Im z|⁻²`. -/
+theorem lipschitzWith_resolvent_real {z : ℂ} (hz : z.im ≠ 0) :
+    LipschitzWith (‖z.im‖₊⁻¹ ^ 2) (resolvent (R := ℝ) z) := by
+  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
+  have hx : (x : ℂ) - z ≠ 0 := fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hy : (y : ℂ) - z ≠ 0 := fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hlow (t : ℝ) : |z.im| ≤ ‖(t : ℂ) - z‖ := by
+    simpa using abs_im_le_norm ((t : ℂ) - z)
+  calc
+    dist (resolvent z x) (resolvent z y) =
+        |x - y| / (‖(x : ℂ) - z‖ * ‖(y : ℂ) - z‖) := by
+      simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
+      rw [dist_inv_inv₀ hx hy,
+        dist_sub_right, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
+    _ ≤ |x - y| / (|z.im| * |z.im|) :=
+      div_le_div_of_nonneg_left (abs_nonneg _) (by positivity)
+        (mul_le_mul (hlow x) (hlow y) (abs_nonneg _) (norm_nonneg _))
+    _ = ((‖z.im‖₊⁻¹ ^ 2 : NNReal) : ℝ) * dist x y := by
+      simp only [NNReal.coe_pow, NNReal.coe_inv, coe_nnNorm, Real.norm_eq_abs, Real.dist_eq]
+      ring
 
 end Complex
 
@@ -94,7 +111,7 @@ variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
     Integrable (resolvent (R := ℝ) z) μ :=
-  integrable_resolvent (Complex.notMem_algebraMap_image_of_im_ne_zero hz _)
+  integrable_resolvent (Complex.notMem_image_ofReal_of_im_ne_zero hz)
 
 /-- The imaginary part of the transform is the integral of the kernel
 `z.im / ((x - z.re)² + z.im²)`, which is the Poisson kernel without the factor `π⁻¹`
@@ -137,14 +154,14 @@ theorem norm_resolventTransform_sub_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im 
 derivative `∫ (x - z)⁻² dμ`. -/
 theorem hasDerivAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
     HasDerivAt (resolventTransform μ) (∫ x, resolvent z x ^ 2 ∂μ) z :=
-  hasDerivAt_resolventTransform z (Complex.notMem_algebraMap_image_of_im_ne_zero hz _)
+  hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)
 
 /-- Off the real axis the transform of a finite measure is analytic. -/
 theorem analyticOnNhd_resolventTransform :
     AnalyticOnNhd ℂ (resolventTransform μ) {z : ℂ | z.im ≠ 0} :=
   (isClosed_eq continuous_im continuous_const).isOpen_compl.analyticOn_iff_analyticOnNhd.1
     (analyticOn_resolventTransform.mono fun _ hz ↦
-      Complex.notMem_algebraMap_image_of_im_ne_zero hz _)
+      Complex.notMem_image_ofReal_of_im_ne_zero hz)
 
 /-- The derivative of the transform of a finite measure off the real axis is
 `∫ (x - z)⁻² dμ`. -/

@@ -10,11 +10,10 @@ public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
 /-!
 # Orthogonal countable splitting for projection-valued measures
 
-The diagonal scalar measure records the squared norm of the projection of a
-Hilbert-space vector onto a measurable spectral region. For a countable
-measurable partition, these squared norms sum to the squared norm of the
-original vector. The identity applies to projection-valued measures on
-arbitrary measurable spaces.
+For a countable measurable partition, the squared extended norms of the
+spectral projections of a Hilbert-space vector sum to the squared extended norm
+of the original vector (`tsum_enorm_sq_proj`). The identity applies to
+projection-valued measures on arbitrary measurable spaces.
 
 Adapted from Kitware's DKPS formalization in
 `ForTauCeti/Analysis/InnerProductSpace/ProjValMeasure/Additivity.lean`.
@@ -31,21 +30,6 @@ variable {X : Type*} [MeasurableSpace X]
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 namespace ProjValMeasure
-
-/-- Squared extended norm of a spectral projection equals the diagonal mass
-of the corresponding measurable set. -/
-@[simp]
-theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
-    (hB : MeasurableSet B) (ξ : H) :
-    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
-  have hfin : (P.diag ξ) B ≠ ⊤ :=
-    measure_ne_top (μ := P.diag ξ) (s := B)
-  calc
-    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
-      rw [P.norm_sq_proj_apply B hB ξ]
-    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
 
 /-- For a countable measurable partition, the squared extended norms of the
 projected components sum to the squared extended norm of the original vector. -/

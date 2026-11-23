@@ -75,7 +75,7 @@ noncomputable def torusFamilyAffineQuotientPullbackHomeomorph :
     letI := periodAddAction P
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbmul
-      hcont hR hbc β hβ x).1 = (torusFamilyProjection P x, Quotient.mk _ x) := by
+      hcont hR hbc β hβ x).val = (torusFamilyProjection P x, Quotient.mk _ x) := by
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul

@@ -45,9 +45,9 @@ variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} {b : B} {e : p.fiber b} {N : Ty
 /-- **A section makes the projection surjective on homotopy groups.** If `s` is a section of `p`
 through `e`, then `p` induces a surjection `π_n(E, e) → π_n(B, b)`, split by the map induced by
 `s`. -/
-theorem surjective_homotopyGroupMap_of_section (hs : s ≫ p = 𝟙 B) (hsb : s b = e.1) :
+theorem surjective_homotopyGroupMap_of_section (hs : s ≫ p = 𝟙 B) (hsb : s b = e.val) :
     Function.Surjective
-      (HomotopyGroup.map (N := N) p.hom (Set.mem_singleton_iff.1 e.2)) := by
+      (HomotopyGroup.map (N := N) p.hom (Set.mem_singleton_iff.1 e.property)) := by
   have hps : p.hom.comp s.hom = ContinuousMap.id B := congrArg _root_.TopCat.Hom.hom hs
   exact fun a ↦ ⟨HomotopyGroup.map s.hom hsb a,
     HomotopyGroup.map_map_of_comp_eq_id p.hom s.hom hsb _ hps a⟩
@@ -56,7 +56,7 @@ theorem surjective_homotopyGroupMap_of_section (hs : s ≫ p = 𝟙 B) (hsb : s 
 through `e`, every class of `π_{n+1}(B, b)` comes from `E`, so its boundary in `π_n(F, e)` is the
 class of the constant loop. -/
 theorem fibrationBoundary_eq_of_section (hp : serreFibrations p) [Finite N] (hs : s ≫ p = 𝟙 B)
-    (hsb : s b = e.1) (a : HomotopyGroup (Option N) B b) :
+    (hsb : s b = e.val) (a : HomotopyGroup (Option N) B b) :
     fibrationBoundary hp e a = (⟦GenLoop.const⟧ : HomotopyGroup N (p.fiber b) e) :=
   (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).1
     (surjective_homotopyGroupMap_of_section hs hsb a)
@@ -65,7 +65,7 @@ theorem fibrationBoundary_eq_of_section (hp : serreFibrations p) [Finite N] (hs 
 section of `p` through `e`, the fibre inclusion induces an injection `π_n(F, e) → π_n(E, e)` for
 `n ≥ 1`: its kernel is the image of the boundary map, which is trivial. -/
 theorem injective_homotopyGroupMap_fiberι_of_section (hp : serreFibrations p) [Finite N]
-    [Nonempty N] (hs : s ≫ p = 𝟙 B) (hsb : s b = e.1) :
+    [Nonempty N] (hs : s ≫ p = 𝟙 B) (hsb : s b = e.val) :
     Function.Injective
       (HomotopyGroup.map (N := N) (p.fiberι b).hom (_root_.TopCat.Hom.fiberι_apply p b e)) := by
   classical

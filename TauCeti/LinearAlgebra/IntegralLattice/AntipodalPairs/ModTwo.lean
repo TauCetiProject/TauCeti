@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.AntipodalPairs
 public import TauCeti.RingTheory.QuotSMulTop
 
 /-!
@@ -18,6 +18,8 @@ residue modulo `2L` exactly when they differ by sign. Indeed, if `x - y = 2z`, t
 belong to the lattice and their norms sum to the minimum. They cannot both be nonzero.
 Thus antipodal pairs of minimal vectors identify with the residue classes represented by
 minimal vectors. This identification intertwines lattice isometries and reduction modulo two.
+In particular an isometry acting trivially on `L / 2L` fixes every such pair, so the congruence
+subgroup of level two lies in the kernel of the pair action.
 
 The sign-independent map exists on every norm shell; it is injective whenever the shell
 norm is less than twice every nonzero lattice norm. No unimodularity or enumeration of
@@ -224,5 +226,17 @@ theorem antipodalPairsEquiv_eq_iff {n : ℚ}
         (L.antipodalPairsToModTwo n q : QuotSMulTop (2 : ℤ) L) := by
   rw [← (L.antipodalPairsToModTwo_injective hmin).eq_iff, Subtype.ext_iff,
     L.coe_antipodalPairsToModTwo_antipodalPairsEquiv]
+
+/-- Below twice every nonzero norm, an isometry acting trivially on `L / 2L` fixes every
+antipodal pair of norm `n`: the congruence subgroup of level two lies in the kernel of the pair
+action. -/
+theorem Isometry.congruenceSubgroup_two_le_ker_antipodalPairsHom {L : IntegralLattice V} {n : ℚ}
+    (hmin : ∀ z : L, z ≠ 0 → n < 2 * L.norm z) :
+    Isometry.congruenceSubgroup L 2 ≤ (Isometry.antipodalPairsHom L n).ker := by
+  intro g hg
+  rw [← Isometry.ker_reductionHom, MonoidHom.mem_ker] at hg
+  refine MonoidHom.mem_ker.mpr <| Equiv.ext fun p ↦ ?_
+  rw [Isometry.antipodalPairsHom_apply, Equiv.Perm.one_apply,
+    antipodalPairsEquiv_eq_iff L hmin, hg, one_apply_eq_self]
 
 end TauCeti.IntegralLattice

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Matching.Capacitated
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
 
 /-!
 # The flow network of a bipartite multigraph
@@ -449,16 +449,16 @@ noncomputable def IsBipartition.matchingFlowEquiv [Fintype V(G)] [DecidableEq V(
     [Fintype E(G)] (hLR : G.IsBipartition L R) (b : V(G) → ℕ) :
     {x : E(G) → ℕ // G.IsCapacitatedMatching b x} ≃
       Flow (bipartiteCapacity L R b) (inr false) (inr true) where
-  toFun x := x.2.toBipartiteFlow hLR
+  toFun x := x.property.toBipartiteFlow hLR
   invFun f := ⟨hLR.flowMatching f, hLR.isCapacitatedMatching_flowMatching f⟩
-  left_inv x := Subtype.ext (x.2.flowMatching_toBipartiteFlow hLR)
+  left_inv x := Subtype.ext (x.property.flowMatching_toBipartiteFlow hLR)
   right_inv f := hLR.toBipartiteFlow_flowMatching f
 
 @[simp]
 theorem IsBipartition.matchingFlowEquiv_apply [Fintype V(G)] [DecidableEq V(G)]
     [Fintype E(G)] (hLR : G.IsBipartition L R) (b : V(G) → ℕ)
     (x : {x : E(G) → ℕ // G.IsCapacitatedMatching b x}) :
-    hLR.matchingFlowEquiv b x = x.2.toBipartiteFlow hLR :=
+    hLR.matchingFlowEquiv b x = x.property.toBipartiteFlow hLR :=
   (rfl)
 
 @[simp]
