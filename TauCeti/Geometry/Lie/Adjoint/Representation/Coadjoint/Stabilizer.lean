@@ -88,6 +88,8 @@ of `T`.
 * `TauCeti.Lie.adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer`: `G_ν` maps `𝔤_ν`
   into itself under the adjoint action; `TauCeti.Lie.lieAnnihilatorSubrepresentation` records `𝔤_ν`
   as a subrepresentation of the adjoint representation of any subgroup of `G_ν`.
+* `TauCeti.Lie.le_stabilizer_coadjointRepresentation_of_mem_lieSubalgebraOfSubgroup`: a
+  commutative subgroup `T` lies in `G_(B (e μ))` for every `μ` in its Lie algebra.
 
 ## References
 
@@ -295,6 +297,20 @@ theorem lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation_eq_comap_lieA
           BoundarylessManifold.isInteriorPoint).toLieHom := by
   rw [lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation,
     lieAnnihilator_bilinForm_apply_eq_of_lieInvariant hB hB']
+
+/-- **A commutative subgroup fixes the covectors of its Lie algebra.** For an invariant form `B`
+and `μ` in the Lie algebra of a commutative subgroup `T`, the subgroup `T` lies in the coadjoint
+stabilizer of `B (e μ)`. -/
+theorem le_stabilizer_coadjointRepresentation_of_mem_lieSubalgebraOfSubgroup
+    {T : Subgroup G} [IsMulCommutative T]
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    {μ : LeftInvariantDerivation I G} (hμ : μ ∈ lieSubalgebraOfSubgroup (I := I) T) :
+    T ≤ (coadjointRepresentation ℝ I G).stabilizer
+      (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint μ)) := fun g hg ↦ by
+  rw [Representation.mem_stabilizer, coadjointRepresentation_apply_bilinForm hB,
+    ← tangentAd_apply, ← leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
+    Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg hμ]
 
 end InvariantForm
 

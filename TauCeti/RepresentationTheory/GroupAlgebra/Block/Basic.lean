@@ -64,6 +64,12 @@ abbrev IsBlockIdempotent [CommSemiring R] [Monoid G] (b : Subalgebra.center R (M
     Prop :=
   IsPrimitiveIdempotent b
 
+/-- A block idempotent of `R[G]`, read in `R[G]`, is idempotent. -/
+theorem IsBlockIdempotent.isIdempotentElem_val [CommSemiring R] [Monoid G]
+    {b : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b) :
+    IsIdempotentElem (b : MonoidAlgebra R G) :=
+  hb.isIdempotentElem.map (Subalgebra.center R (MonoidAlgebra R G)).val
+
 /-- **Transport of blocks along a group isomorphism.** The algebra isomorphism `R[G] ≃ R[G']`
 induced by `G ≃* G'` restricts to the centres and carries block idempotents to block
 idempotents. -/
