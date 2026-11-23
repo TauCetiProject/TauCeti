@@ -118,4 +118,14 @@ theorem coe_normSqSublevelBoundaryDiffeomorphSphere_apply
     coe_normSqLevelDiffeomorphSphere_apply, coe_scalarRegularSublevelBoundaryDiffeomorph,
     coe_scalarRegularSublevelBoundaryHomeomorph_apply]
 
+/-- The inverse of `TauCeti.normSqSublevelBoundaryDiffeomorphSphere` is the identity of points. -/
+@[simp]
+theorem coe_normSqSublevelBoundaryDiffeomorphSphere_symm_apply (x : sphere (0 : E) 1) :
+    ((normSqSublevelBoundaryDiffeomorphSphere (n := n)).symm x).val.val = (x : E) := by
+  rw [normSqSublevelBoundaryDiffeomorphSphere, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
+    comp_apply, ← Diffeomorph.coe_toHomeomorph_symm,
+    toHomeomorph_scalarRegularSublevelBoundaryDiffeomorph,
+    coe_scalarRegularSublevelBoundaryHomeomorph_symm_apply,
+    coe_normSqLevelDiffeomorphSphere_symm_apply]
+
 end TauCeti
