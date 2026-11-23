@@ -6,18 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Gauss
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Uniqueness
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 
 /-!
-# Opposite-root–torus–root uniqueness and the rank-one normalizer criterion
+# The rank-one normalizer criterion
 
-Over any commutative ring, the opposite-intersection identities for the positive and negative
-unipotent subgroups imply uniqueness of opposite-root–torus–root factorizations
-(`ChevalleyDatum.eq_of_opposite_mul_torus_mul_eq`).
-
-Over an infinite field `K`, any element in opposite-root–torus–root form normalizing the actual
-torus must have trivial outer factors
+Over an infinite field `K`, uniqueness of opposite-root–torus–root factorizations
+(`ChevalleyDatum.eq_and_eq_and_eq_of_opposite_mul_torus_mul_eq`) forces any element in
+opposite-root–torus–root form normalizing the actual torus to have trivial outer factors
 (`ChevalleyDatum.eq_zero_of_opposite_mul_torus_mul_mem_normalizer`). Combined with Gauss
 factorization, this yields the rank-one normalizer criterion
 (`ChevalleyDatum.mul_eq_one_of_rootSubgroupPoints_mul_opposite_mul_mem_normalizer`): if
@@ -26,8 +23,6 @@ factorization, this yields the rank-one normalizer criterion
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.eq_of_opposite_mul_torus_mul_eq`: uniqueness of
-  opposite-root–torus–root factorizations over any commutative ring.
 * `TauCeti.DynkinType.ChevalleyDatum.eq_zero_of_opposite_mul_torus_mul_mem_normalizer`: a
   normalizer element in opposite-root–torus–root form over an infinite field has zero outer
   parameters.
@@ -46,111 +41,12 @@ public section
 namespace TauCeti.DynkinType.ChevalleyDatum
 
 open Multiplicative
-open TauCeti.UniversalEnvelopingAlgebra
 
 universe v
 
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-variable (A : Type v) [CommRing A]
-
-private theorem opposite_eq_torus_mul_toLinearEquiv {β : Fin t.numRoots} {u v : Multiplicative A}
-    {r₁ r₂ : Fin t.rank → Aˣ}
-    (h : D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u =
-      D.torusPoints A r₁ * D.rootSubgroupPoints β A v * D.torusPoints A r₂) :
-    chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-        D.isNilpotent_representation_rootGenerator
-        ((t.simplyConnectedRootDatum ht).reflectionPerm β β) (CommAlgCat.of ℤ A) u =
-      kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A) r₁ *
-        chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator β (CommAlgCat.of ℤ A) v *
-        kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A) r₂ :=
-  Units.map_injective (f := (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom)
-    (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective <| by
-    simpa only [MulEquiv.toMonoidHom_eq_coe, map_mul, D.coe_rootSubgroupPoints,
-      D.coe_torusPoints, Subgroup.coe_mul, basisMatrix_kostantTorusPoints,
-      kostantTorusMatrix_apply] using congrArg Subtype.val h
-
-private theorem rootSubgroupPoints_eq_one_of_opposite_eq_torus_mul (β : Fin t.numRoots)
-    (u v : Multiplicative A) (r₁ r₂ : Fin t.rank → Aˣ)
-    (h : D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u =
-      D.torusPoints A r₁ * D.rootSubgroupPoints β A v * D.torusPoints A r₂) :
-    D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u = 1 ∧
-      D.rootSubgroupPoints β A v = 1 ∧
-      D.torusPoints A (r₁ * r₂) = 1 := by
-  let β' := (t.simplyConnectedRootDatum ht).reflectionPerm β β
-  let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-  let x := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-    D.isNilpotent_representation_rootGenerator β' (CommAlgCat.of ℤ A) u
-  let y := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-    D.isNilpotent_representation_rootGenerator β (CommAlgCat.of ℤ A) v
-  let t₁ := kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A) r₁
-  let t₂ := kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A) r₂
-  have hxy : x = t₁ * y * t₂ := D.opposite_eq_torus_mul_toLinearEquiv A h
-  let T := (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range
-  have hsolve {U V : Subgroup _} (hUV : U ⊓ (V ⊔ T) = ⊥) (hVU : V ⊓ (U ⊔ T) = ⊥)
-      (hxU : x ∈ U) (hyV : y ∈ V) : x = 1 ∧ y = 1 := by
-    have hx1 : x = 1 := Subgroup.mem_bot.mp <| hUV ▸ ⟨hxU, hxy ▸ Subgroup.mul_mem _
-      (Subgroup.mul_mem _ (Subgroup.mem_sup_right ⟨r₁, rfl⟩) (Subgroup.mem_sup_left hyV))
-      (Subgroup.mem_sup_right ⟨r₂, rfl⟩)⟩
-    have hy_eq : y = t₁⁻¹ * t₂⁻¹ := by
-      rw [hx1] at hxy; calc
-        y = t₁⁻¹ * (t₁ * y * t₂) * t₂⁻¹ := by group
-        _ = t₁⁻¹ * 1 * t₂⁻¹ := by rw [← hxy]
-        _ = _ := by group
-    exact ⟨hx1, Subgroup.mem_bot.mp <| hVU ▸ ⟨hyV, hy_eq ▸ Subgroup.mul_mem _
-      (Subgroup.mem_sup_right (T.inv_mem ⟨r₁, rfl⟩))
-      (Subgroup.mem_sup_right (T.inv_mem ⟨r₂, rfl⟩))⟩⟩
-  have hxy1 : x = 1 ∧ y = 1 := by
-    rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) β
-      with hβ | hβ
-    · exact hsolve
-        (D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A)
-        (D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A)
-        (D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A)
-          (by dsimp only [β']; rw [← t.reflectionPerm_rationalRootSystem ht]
-              exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hβ) u)
-        (D.chevalleyRootSubgroup_mem_positiveSubgroup (CommAlgCat.of ℤ A) hβ v)
-    · exact hsolve
-        (D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A)
-        (D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A)
-        (D.chevalleyRootSubgroup_mem_positiveSubgroup (CommAlgCat.of ℤ A)
-          (by dsimp only [β']; rw [← t.reflectionPerm_rationalRootSystem ht]
-              exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots _ _ _).mpr hβ) u)
-        (D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A) hβ v)
-  have hux : D.rootSubgroupPoints β' A u = 1 :=
-    Subtype.ext ((D.coe_rootSubgroupPoints β' A u).trans ((congrArg m hxy1.1).trans m.map_one))
-  have hvy : D.rootSubgroupPoints β A v = 1 :=
-    Subtype.ext ((D.coe_rootSubgroupPoints β A v).trans ((congrArg m hxy1.2).trans m.map_one))
-  exact ⟨hux, hvy, by rw [map_mul]; simpa only [β', hux, hvy, mul_one] using h.symm⟩
-
-/-- **Uniqueness of opposite-root–torus–root factorizations** over any commutative ring. -/
-theorem eq_of_opposite_mul_torus_mul_eq (β : Fin t.numRoots)
-    {u₁ u₂ v₁ v₂ : Multiplicative A} {r₁ r₂ : Fin t.rank → Aˣ}
-    (h : D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₁ *
-        D.torusPoints A r₁ * D.rootSubgroupPoints β A v₁ =
-      D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₂ *
-        D.torusPoints A r₂ * D.rootSubgroupPoints β A v₂) :
-    D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₁ =
-        D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₂ ∧
-      D.torusPoints A r₁ = D.torusPoints A r₂ ∧
-      D.rootSubgroupPoints β A v₁ = D.rootSubgroupPoints β A v₂ := by
-  let β' := (t.simplyConnectedRootDatum ht).reflectionPerm β β
-  have hsep : D.rootSubgroupPoints β' A (u₂⁻¹ * u₁) =
-      D.torusPoints A r₂ * D.rootSubgroupPoints β A (v₂ * v₁⁻¹) * D.torusPoints A r₁⁻¹ := by
-    calc
-      D.rootSubgroupPoints β' A (u₂⁻¹ * u₁)
-          = (D.rootSubgroupPoints β' A u₂)⁻¹ *
-              (D.rootSubgroupPoints β' A u₁ * D.torusPoints A r₁ * D.rootSubgroupPoints β A v₁) *
-              ((D.rootSubgroupPoints β A v₁)⁻¹ * (D.torusPoints A r₁)⁻¹) := by
-            rw [map_mul, map_inv]; group
-      _ = _ := by dsimp only [β']; rw [h, map_mul, map_inv, map_inv]; group
-  obtain ⟨hu, hv, ht⟩ := D.rootSubgroupPoints_eq_one_of_opposite_eq_torus_mul A β _ _ _ _ hsep
-  refine ⟨?_, ?_, ?_⟩
-  · rw [map_mul, map_inv] at hu; exact (inv_mul_eq_one.mp hu).symm
-  · rw [map_mul, map_inv] at ht; exact (mul_inv_eq_one.mp ht).symm
-  · rw [map_mul, map_inv] at hv; exact (mul_inv_eq_one.mp hv).symm
 
 /-- Over an infinite field, any element in opposite-root–torus–root form normalizing the actual
 torus has trivial outer root parameters. -/
@@ -203,7 +99,7 @@ theorem eq_zero_of_opposite_mul_torus_mul_mem_normalizer
     rw [hR, hL] at h1
     simpa only [map_mul, mul_assoc] using h1
   -- Uniqueness of the opposite-root–torus–root factorization forces `s' = s` and kills `a, b`.
-  obtain ⟨hx', ht, hy'⟩ := D.eq_of_opposite_mul_torus_mul_eq K β hfac
+  obtain ⟨hx', ht, hy'⟩ := D.eq_and_eq_and_eq_of_opposite_mul_torus_mul_eq β hfac
   have hss' : s' = s := by
     have hm : h * s = s' * h := D.torusPoints_injective K ht
     exact mul_right_cancel (hm.symm.trans (mul_comm h s))

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.FieldTheory.IsAlgClosed.Units
-import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
 import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
@@ -30,7 +29,7 @@ The argument reduces to an algebraically closed field by passing to
   `1`, where nontriviality already holds.
 * If two distinct roots share a nontrivial element over an infinite field, conjugating by the
   annihilator of the first root character forces the second root character to be proportional to it
-  (`TauCeti.smul_eq_smul_of_torusCharacter_eq_one`). Reducedness of the pinned root datum leaves
+  (`TauCeti.smul_eq_smul_of_torusCharacter_ker_le`). Reducedness of the pinned root datum leaves
   only the opposite root, which is ruled out by the opposite-intersection theorem via
   `ChevalleyDatum.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots`.
 
@@ -129,7 +128,7 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
     exact Units.ext ((mul_right_cancel₀ hb (by simpa using heq.symm)).trans rfl)
   obtain ⟨i, hi⟩ : ∃ i, D.coordinateRoot α i ≠ 0 := Function.ne_iff.mp (D.coordinateRoot_ne_zero α)
   rcases D.eq_or_eq_reflectionPerm_of_smul_coordinateRoot_eq hi
-      (smul_eq_smul_of_torusCharacter_eq_one hker i) with heq | hα
+      (smul_eq_smul_of_torusCharacter_ker_le hker i) with heq | hα
   · exact hαβ heq
   · have hcontra {γ δ : Fin t.numRoots} {x y : K} (hy : y ≠ 0)
         (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))

@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Endomorphism.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
+import TauCeti.Algebra.Field.Equivariant
 import TauCeti.Algebra.Group.Pow
 import TauCeti.FieldTheory.RingHom
-import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
 
 /-!
 # Root permutations and field automorphisms of standard endomorphisms
@@ -22,13 +22,14 @@ rational proportionality between `φ (π α)` and `α`.
 
 Both the target root `π α` and the field endomorphism `g_α` are uniquely determined by `(α, φ)`
 alone over any infinite field, even without divisible units
-(`ChevalleyDatum.eq_of_ringHom_torusCharacter_eq`); in particular `π` commutes with root negation
-and `g_{-α} = g_α`.
+(`ChevalleyDatum.rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq`); in particular `π` commutes
+with root negation and `g_{-α} = g_α`.
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.eq_of_ringHom_torusCharacter_eq`: an injective character
-  map uniquely determines both the target root (including sign) and the field endomorphism.
+* `TauCeti.DynkinType.ChevalleyDatum.rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq`: an
+  injective character map uniquely determines both the target root (including sign) and the field
+  endomorphism.
 * `TauCeti.DynkinType.ChevalleyDatum.exists_root_and_ringEquiv_of_isStandardEndomorphism`: root
   action `F (x_α(u)) = x_β(c · g(u))` on a single root subgroup.
 * `TauCeti.DynkinType.ChevalleyDatum.exists_rootPerm_of_isStandardEndomorphism`: over an infinite
@@ -88,7 +89,7 @@ private theorem smul_coordinateRoot_eq_of_forall_ringHom_torusCharacter
       torusCharacter s (D.coordinateRoot α) = 1 →
         torusCharacter s (φ (D.coordinateRoot β)) = 1 :=
     fun s hs => Units.ext <| by simpa only [hs, Units.val_one, map_one] using (hg s).symm
-  have hp := smul_eq_smul_of_torusCharacter_eq_one hk i
+  have hp := smul_eq_smul_of_torusCharacter_ker_le hk i
   refine ⟨hp, fun h0 => ?_⟩
   rw [h0, zero_smul] at hp
   have hφβ0 : φ (D.coordinateRoot β) = 0 := (smul_eq_zero.mp hp).resolve_left hi
@@ -103,7 +104,7 @@ private theorem smul_coordinateRoot_eq_of_forall_ringHom_torusCharacter
 infinite field, an injective character map `φ` and source root `α` uniquely determine both the
 target root `β` (including its sign) and the field endomorphism `g : K →+* K` satisfying
 `g (α(s)) = (φ β)(s)` for all torus parameters `s`. Divisibility of `Kˣ` is not required. -/
-theorem eq_of_ringHom_torusCharacter_eq {K : Type*} [Field K] [Infinite K]
+theorem rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq {K : Type*} [Field K] [Infinite K]
     {φ : Module.End ℤ (Fin t.rank → ℤ)} (hinj : Function.Injective φ)
     {α β₁ β₂ : Fin t.numRoots} {g₁ g₂ : K →+* K}
     (h₁ : ∀ s : Fin t.rank → Kˣ,
@@ -192,56 +193,30 @@ private theorem exists_additive_equivariant_of_rootSubgroup_map {K : Type v} [Fi
 
 private theorem exists_ringEquiv_of_additive_equivariant {K : Type v} [Field K] [RootableBy Kˣ ℕ]
     {μ ν : Fin t.rank → ℤ} (hμ : μ ≠ 0) {f : K → K}
-    (hf_add : ∀ u v : K, f (u + v) = f u + f v) (hf_zero : f 0 = 0)
+    (hf_add : ∀ u v : K, f (u + v) = f u + f v)
     (hf_scale : ∀ (s : Fin t.rank → Kˣ) (u : K),
       f ((torusCharacter s μ : K) * u) = (torusCharacter s ν : K) * f u)
     (hf_surj : Function.Surjective f) :
     ∃ (c : Kˣ) (g : K ≃+* K),
       (∀ u : K, f u = (c : K) * g u) ∧
       (∀ s : Fin t.rank → Kˣ, g (torusCharacter s μ) = torusCharacter s ν) := by
-  -- Normalize `f` by `c = f 1`, first showing `f 1 ≠ 0` by surjectivity of `torusCharacter · μ`.
-  have hf1_ne : f 1 ≠ 0 := fun h0 => by
+  let fAdd : K →+ K := AddMonoidHom.mk' f hf_add
+  have hf_ne : fAdd ≠ 0 := fun h0 => by
     obtain ⟨u, hu⟩ := hf_surj 1
-    have hf_all (a : K) : f a = 0 := by
-      by_cases ha : a = 0
-      · rw [ha, hf_zero]
-      · obtain ⟨s, hs⟩ := torusCharacter_surjective (R := K) hμ (Units.mk0 a ha)
-        dsimp only at hs
-        simpa only [hs, Units.val_mk0, mul_one, h0, mul_zero] using hf_scale s 1
-    exact one_ne_zero (hu.symm.trans (hf_all u))
+    exact one_ne_zero (hu.symm.trans (DFunLike.congr_fun h0 u))
+  obtain ⟨g, ⟨hfg, hg_char⟩, _⟩ := fAdd.existsUnique_ringHom_of_equivariant
+    (torusCharacter_surjective (R := K) hμ) hf_ne hf_scale
+  have hfg' (x : K) : f x = f 1 * g x := hfg x
+  have hf1_ne : f 1 ≠ 0 := by
+    obtain ⟨u, hu⟩ := hf_surj 1
+    rw [hfg' u] at hu
+    exact left_ne_zero_of_mul_eq_one hu
   let c : Kˣ := Units.mk0 (f 1) hf1_ne
-  have hg_one : ((c⁻¹ : Kˣ) : K) * f 1 = 1 := by simp [c, hf1_ne]
-  have hg_scale (s : Fin t.rank → Kˣ) (u : K) :
-      ((c⁻¹ : Kˣ) : K) * f ((torusCharacter s μ : K) * u) =
-        (torusCharacter s ν : K) * (((c⁻¹ : Kˣ) : K) * f u) := by
-    rw [hf_scale s u]; ring
-  have hg_char (s : Fin t.rank → Kˣ) :
-      ((c⁻¹ : Kˣ) : K) * f (torusCharacter s μ) = torusCharacter s ν := by
-    simpa only [mul_one, hg_one] using hg_scale s 1
-  -- Build the field endomorphism `u ↦ c⁻¹ * f u` and promote it to `K ≃+* K`.
-  let gHom : K →+* K :=
-    { toFun := fun u => ((c⁻¹ : Kˣ) : K) * f u
-      map_one' := hg_one
-      map_mul' := fun a b => by
-        by_cases ha : a = 0
-        · simp [ha, hf_zero]
-        · obtain ⟨s, hs⟩ := torusCharacter_surjective (R := K) hμ (Units.mk0 a ha)
-          dsimp only at hs
-          have h1 := hg_scale s b
-          have h2 := hg_char s
-          rw [hs, Units.val_mk0] at h1 h2
-          rw [h1, h2]
-      map_zero' := by simp [hf_zero]
-      map_add' := fun a b => by rw [hf_add, mul_add] }
-  have hgHom_apply (u : K) : gHom u = ((c⁻¹ : Kˣ) : K) * f u := rfl
-  have hg_bij : Function.Bijective gHom := ⟨gHom.injective, fun v => by
+  have hg_surj : Function.Surjective g := fun v => by
     obtain ⟨u, hu⟩ := hf_surj ((c : K) * v)
-    refine ⟨u, ?_⟩
-    rw [hgHom_apply, hu, ← mul_assoc, Units.val_inv_eq_inv_val,
-      inv_mul_cancel₀ (Units.ne_zero c), one_mul]⟩
-  refine ⟨c, RingEquiv.ofBijective gHom hg_bij, fun u => ?_, hg_char⟩
-  rw [RingEquiv.ofBijective_apply, hgHom_apply, ← mul_assoc, Units.val_inv_eq_inv_val,
-    mul_inv_cancel₀ (Units.ne_zero c), one_mul]
+    refine ⟨u, mul_left_cancel₀ hf1_ne ?_⟩
+    simpa only [c, Units.val_mk0, ← hfg' u] using hu
+  exact ⟨c, RingEquiv.ofBijective g ⟨g.injective, hg_surj⟩, fun u => hfg' u, fun s => hg_char s⟩
 
 /-- **Root-subgroup structure of a standard endomorphism.** Over an infinite field with divisible
 units, a standard endomorphism `F` with character map `φ` sends each root subgroup `x_α` to
@@ -260,15 +235,23 @@ theorem exists_root_and_ringEquiv_of_isStandardEndomorphism {K : Type v} [Field 
       (∃ m n : ℤ, m ≠ 0 ∧ n ≠ 0 ∧
         n • φ (D.coordinateRoot β) = m • D.coordinateRoot α) := by
   obtain ⟨β, hβ⟩ := isStandardEndomorphism_iff.mp hstd α
-  obtain ⟨f, hf, hf_add, hf_zero, hf_scale, hf_surj⟩ :=
+  obtain ⟨f, hf, hf_add, _, hf_scale, hf_surj⟩ :=
     D.exists_additive_equivariant_of_rootSubgroup_map hφ hβ
   obtain ⟨c, g, hfg, hg_char⟩ := exists_ringEquiv_of_additive_equivariant (t := t)
-    (D.coordinateRoot_ne_zero α) hf_add hf_zero hf_scale hf_surj
+    (D.coordinateRoot_ne_zero α) hf_add hf_scale hf_surj
   obtain ⟨i, hi⟩ : ∃ i, D.coordinateRoot α i ≠ 0 := Function.ne_iff.mp (D.coordinateRoot_ne_zero α)
   obtain ⟨hp, hm⟩ := D.smul_coordinateRoot_eq_of_forall_ringHom_torusCharacter
     (g := g.toRingHom) hg_char hi
   exact ⟨β, c, g, fun u => by rw [hf u, hfg u], hg_char,
     φ (D.coordinateRoot β) i, D.coordinateRoot α i, hm, hi, hp⟩
+
+include D in
+private theorem ne_reflectionPerm_self (γ : Fin t.numRoots) :
+    γ ≠ (t.simplyConnectedRootDatum ht).reflectionPerm γ γ := by
+  intro h
+  have hneg := congrArg D.coordinateRoot h
+  rw [D.coordinateRoot_reflectionPerm_self, eq_neg_iff_add_eq_zero, ← two_smul ℤ] at hneg
+  exact D.coordinateRoot_ne_zero γ ((smul_eq_zero.mp hneg).resolve_left (by decide))
 
 private theorem rootPerm_injective_of_prop {φ : Module.End ℤ (Fin t.rank → ℤ)}
     {β : Fin t.numRoots → Fin t.numRoots}
@@ -297,13 +280,7 @@ private theorem rootPerm_injective_of_prop {φ : Module.End ℤ (Fin t.rank → 
         β α₂ = β α₁ := hβeq.symm
         _ = β ((t.simplyConnectedRootDatum ht).reflectionPerm α₂ α₂) := by rw [hα₁]
         _ = (t.simplyConnectedRootDatum ht).reflectionPerm (β α₂) (β α₂) := hneg α₂
-    have h2 : (2 : ℤ) • D.coordinateRoot (β α₂) = 0 := by
-      have hneg' := congrArg D.coordinateRoot hβ_refl
-      rw [D.coordinateRoot_reflectionPerm_self] at hneg'
-      rw [two_smul]
-      nth_rw 2 [hneg']
-      rw [add_neg_cancel]
-    exact (D.coordinateRoot_ne_zero (β α₂) ((smul_eq_zero.mp h2).resolve_left (by decide))).elim
+    exact (D.ne_reflectionPerm_self (β α₂) hβ_refl).elim
 
 /-- **A standard endomorphism with an injective character map induces a negation-preserving root
 permutation** together with compatible units and field automorphisms on every root subgroup, over
@@ -343,7 +320,7 @@ theorem exists_rootPerm_of_isStandardEndomorphism {K : Type v} [Field K] [Infini
       have hinv := congrArg Inv.inv hs
       rwa [inv_inv, ← Units.val_inv_eq_inv_val, ← torusCharacter_neg, ← map_neg,
         ← D.coordinateRoot_reflectionPerm_self (β α')] at hinv
-    obtain ⟨hβeq, hgeq⟩ := D.eq_of_ringHom_torusCharacter_eq hinj
+    obtain ⟨hβeq, hgeq⟩ := D.rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq hinj
       (g₁ := (g α).toRingHom) (g₂ := (g α').toRingHom) (hchar α) h₂
     refine ⟨?_, RingEquiv.ext fun x => DFunLike.congr_fun hgeq.symm x⟩
     rw [hβeq]

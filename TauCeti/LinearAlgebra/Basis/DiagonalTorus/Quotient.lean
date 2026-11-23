@@ -21,9 +21,6 @@ The equivalence `torusAnnihilatorEquiv` sends a quotient character to its values
 basis classes. Its inverse retains the evaluation equation on arbitrary quotient classes.
 No divisibility of the units, saturation of `Q`, or field hypothesis is needed.
 
-Over an infinite field, annihilator inclusion between two characters forces them to be rationally
-proportional (`TauCeti.smul_eq_smul_of_torusCharacter_eq_one`).
-
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 28(d).
@@ -152,35 +149,5 @@ theorem torusAnnihilatorEquiv_symm_apply_mk [DecidableEq κ] (Q : Submodule ℤ 
     (torusAnnihilatorEquiv Q).symm s (Submodule.Quotient.mk μ) = torusCharacter s.val μ := by
   rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint,
     ← coe_torusAnnihilatorEquiv, MulEquiv.apply_symm_apply]
-
-/-- Over an infinite field, if every torus point annihilating a character `α` also annihilates
-`μ`, then `α` and `μ` are proportional: `α i • μ = μ i • α` for every coordinate `i`. In
-particular, when `α ≠ 0`, `μ` is a rational multiple of `α`. -/
-theorem smul_eq_smul_of_torusCharacter_eq_one {K : Type*} [Field K] [Infinite K]
-    {α μ : κ → ℤ}
-    (h : ∀ s : κ → Kˣ, torusCharacter s α = 1 → torusCharacter s μ = 1) (i : κ) :
-    α i • μ = μ i • α := by
-  classical
-  ext j
-  simp only [Pi.smul_apply, smul_eq_mul]
-  by_contra hne
-  have hd : α i * μ j - μ i * α j ≠ 0 := sub_ne_zero.mpr hne
-  have hwt : (fun _ : Unit => α i * μ j - μ i * α j) ≠ (0 : Unit → ℤ) := fun h0 =>
-    hd (congrFun h0 ())
-  obtain ⟨v, hv⟩ := exists_torusCharacter_ne (K := K) hwt
-  let u : Kˣ := v ()
-  let s : κ → Kˣ := Pi.mulSingle i (u ^ (-α j)) * Pi.mulSingle j (u ^ (α i))
-  have hsα : torusCharacter s α = 1 := by
-    simp only [s, torusCharacter_mul, torusCharacter_mulSingle, ← _root_.zpow_mul,
-      ← _root_.zpow_add]
-    have hexp : -α j * α i + α i * α j = 0 := by ring
-    rw [hexp, zpow_zero]
-  have hsμ : torusCharacter s μ = 1 := h s hsα
-  simp only [s, torusCharacter_mul, torusCharacter_mulSingle, ← _root_.zpow_mul,
-    ← _root_.zpow_add] at hsμ
-  have hexp : -α j * μ i + α i * μ j = α i * μ j - μ i * α j := by ring
-  rw [hexp] at hsμ
-  apply hv
-  simpa [torusCharacter_def, u] using hsμ
 
 end TauCeti

@@ -18,8 +18,9 @@ respective sign, not just the simple roots. The torus uses coordinates in the da
 actual character lattice, including for proper sublattices of the full weight lattice.
 
 `ChevalleyDatum.bigCellMul` takes values in the datum's point group and commutes with ring
-maps. Injectivity supplies uniqueness of factors in its image; no assertion that the image
-is open, or that Weyl translates cover the group scheme, is made.
+maps. Injectivity supplies uniqueness of factors in its image (and in opposite-root–torus–root
+order via `ChevalleyDatum.eq_and_eq_and_eq_of_opposite_mul_torus_mul_eq`); no assertion that the
+image is open, or that Weyl translates cover the group scheme, is made.
 
 The proof uses the opposite-intersection theorems from
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite` and `Subgroup.mul_injective_of_disjoint`.
@@ -126,6 +127,47 @@ theorem eq_of_negativePoints_mul_torusPoints_mul_positivePoints_eq
     (a₁ := (⟨u, hu⟩, s, ⟨v, hv⟩)) (a₂ := (⟨u', hu'⟩, s', ⟨v', hv'⟩)) h
   exact ⟨congrArg (fun x => x.1.val) heq, congrArg (fun x => x.2.1) heq,
     congrArg (fun x => x.2.2.val) heq⟩
+
+/-- **Uniqueness of opposite-root–torus–root factorizations** over any commutative ring,
+for any root `β` (whether positive or negative). -/
+theorem eq_and_eq_and_eq_of_opposite_mul_torus_mul_eq (β : Fin t.numRoots)
+    {u₁ u₂ v₁ v₂ : Multiplicative A} {r₁ r₂ : Fin t.rank → Aˣ}
+    (h : D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₁ *
+        D.torusPoints A r₁ * D.rootSubgroupPoints β A v₁ =
+      D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₂ *
+        D.torusPoints A r₂ * D.rootSubgroupPoints β A v₂) :
+    D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₁ =
+        D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm β β) A u₂ ∧
+      D.torusPoints A r₁ = D.torusPoints A r₂ ∧
+      D.rootSubgroupPoints β A v₁ = D.rootSubgroupPoints β A v₂ := by
+  let β' := (t.simplyConnectedRootDatum ht).reflectionPerm β β
+  rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) β
+    with hβ | hβ
+  · have hβ' : β' ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+      dsimp only [β']
+      rw [← t.reflectionPerm_rationalRootSystem ht]
+      exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr hβ
+    obtain ⟨hu, hr, hv⟩ := D.eq_of_negativePoints_mul_torusPoints_mul_positivePoints_eq
+      (D.rootSubgroupPoints_mem_negativePoints A hβ' u₁)
+      (D.rootSubgroupPoints_mem_negativePoints A hβ' u₂)
+      (D.rootSubgroupPoints_mem_positivePoints A hβ v₁)
+      (D.rootSubgroupPoints_mem_positivePoints A hβ v₂) h
+    exact ⟨hu, congrArg (D.torusPoints A) hr, hv⟩
+  · have hβ' : β' ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+      dsimp only [β']
+      rw [← t.reflectionPerm_rationalRootSystem ht]
+      exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots _ _ _).mpr hβ
+    have hinv : (D.rootSubgroupPoints β A v₁)⁻¹ * D.torusPoints A r₁⁻¹ *
+          (D.rootSubgroupPoints β' A u₁)⁻¹ =
+        (D.rootSubgroupPoints β A v₂)⁻¹ * D.torusPoints A r₂⁻¹ *
+          (D.rootSubgroupPoints β' A u₂)⁻¹ := by
+      simpa only [mul_inv_rev, mul_assoc, map_inv] using congrArg Inv.inv h
+    obtain ⟨hv, hr, hu⟩ := D.eq_of_negativePoints_mul_torusPoints_mul_positivePoints_eq
+      ((D.negativePoints A).inv_mem (D.rootSubgroupPoints_mem_negativePoints A hβ v₁))
+      ((D.negativePoints A).inv_mem (D.rootSubgroupPoints_mem_negativePoints A hβ v₂))
+      ((D.positivePoints A).inv_mem (D.rootSubgroupPoints_mem_positivePoints A hβ' u₁))
+      ((D.positivePoints A).inv_mem (D.rootSubgroupPoints_mem_positivePoints A hβ' u₂)) hinv
+    exact ⟨inv_inj.mp hu, congrArg (D.torusPoints A) (inv_inj.mp hr), inv_inj.mp hv⟩
 
 /-- Ring maps preserve big-cell multiplication and each of its three factors. -/
 @[simp]

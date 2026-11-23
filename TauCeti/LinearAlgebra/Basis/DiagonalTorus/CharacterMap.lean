@@ -343,10 +343,9 @@ theorem IsCharacterMap.symm {F : G ≃* G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ �
     (h : IsCharacterMap T F.toMonoidHom φ.toLinearMap) :
     IsCharacterMap T F.symm.toMonoidHom φ.symm.toLinearMap := by
   intro s
-  have hcomp : φ.symm.toLinearMap ∘ₗ φ.toLinearMap = LinearMap.id := by ext; simp
   have hhom : (torusPointMap (R := R) φ.toLinearMap).comp
       (torusPointMap φ.symm.toLinearMap) = MonoidHom.id _ := by
-    rw [← torusPointMap_comp, hcomp, torusPointMap_id]
+    rw [← torusPointMap_comp, φ.symm_comp, torusPointMap_id]
   have hmap : torusPointMap φ.toLinearMap (torusPointMap φ.symm.toLinearMap s) = s :=
     DFunLike.congr_fun hhom s
   have hF := congrArg F.symm (h.map_apply (torusPointMap φ.symm.toLinearMap s))

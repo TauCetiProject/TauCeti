@@ -285,11 +285,6 @@ module, `Fin.castAdd 10`. -/
     | exact root_typeDSimpleIndex _ _ | exact root_e6SimpleIndex _ | exact root_e7SimpleIndex _
     | exact root_e8SimpleIndex _ | exact f4Root_castAdd _ | exact g2Root_castAdd _
 
-/-- A simple root of the pinned datum has coordinate `2` at its own Bourbaki index. -/
-theorem root_simpleIndex_apply_same (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
-    (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) i = 2 := by
-  simp
-
 /-- The pinned base is supported exactly on the first `t.rank` root indices. -/
 @[simp] theorem mem_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid)
     {k : Fin t.numRoots} :

@@ -55,6 +55,6 @@ theorem isBasedEndomorphism_chevalleyGraphAut {t : DynkinType} (ht : t.Valid)
     ⟨ChevalleyDatum.isStandardEndomorphism_iff.mpr fun α =>
         ⟨t.diagramRootPerm ht hσ α, hmap α⟩,
       fun α hα => ⟨t.diagramRootPerm ht hσ α,
-        (t.diagramRootPerm_mem_posRoots_iff ht hσ α).mpr hα, hmap α⟩⟩
+        by simpa only [mem_posRoots, isPos_diagramRootPerm_iff] using hα, hmap α⟩⟩
 
 end TauCeti.DynkinType

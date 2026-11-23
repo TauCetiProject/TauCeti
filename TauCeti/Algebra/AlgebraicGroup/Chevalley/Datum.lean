@@ -280,18 +280,54 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
   have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr ⟨_, D.root_mem_weightLattice γ⟩)
   rwa [Submodule.coe_sum] at h
 
-private theorem coordinateRoot_map_equivFun_symm (γ : Fin t.numRoots) :
-    (D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap)
-        (D.coordinateRoot γ) =
-      (t.simplyConnectedRootDatum ht).root γ :=
-  congrArg Subtype.val (D.weightLatticeBasis.equivFun.symm_apply_apply
-    ⟨_, D.root_mem_weightLattice γ⟩)
+/-- The inclusion `Λ(D) ↪ P`, with the source written in the chosen basis of `Λ(D)`. -/
+noncomputable def weightLatticeEmbedding : Module.End ℤ (Fin t.rank → ℤ) :=
+  D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
+
+/-- Including the coordinates of a lattice element recovers its ambient weight. -/
+@[simp]
+theorem weightLatticeEmbedding_repr (μ : D.weightLattice) :
+    D.weightLatticeEmbedding (D.weightLatticeBasis.repr μ) = (μ : Fin t.rank → ℤ) := by
+  simp [weightLatticeEmbedding]
+
+/-- The coordinate lattice inclusion has image exactly the weight lattice. -/
+theorem range_weightLatticeEmbedding :
+    LinearMap.range D.weightLatticeEmbedding = D.weightLattice := by
+  rw [weightLatticeEmbedding, LinearMap.range_comp,
+    LinearEquiv.range, Submodule.map_top, Submodule.range_subtype]
+
+/-- The coordinate lattice inclusion sends a standard basis vector to the corresponding chosen
+basis vector of `Λ(D)`, read in the full weight lattice. -/
+@[simp]
+theorem weightLatticeEmbedding_single (i : Fin t.rank) :
+    D.weightLatticeEmbedding (Pi.single i 1) = (D.weightLatticeBasis i : Fin t.rank → ℤ) := by
+  simp [weightLatticeEmbedding]
+
+/-- Reconstructing a coordinate weight through the lattice inclusion recovers its original weight.
+-/
+@[simp]
+theorem weightLatticeEmbedding_coordinateWeight (j : Fin D.dim) :
+    D.weightLatticeEmbedding (D.coordinateWeight j) = D.weight j := by
+  rw [← D.weightLatticeBasis.equivFun.apply_symm_apply (D.coordinateWeight j),
+    Module.Basis.equivFun_apply, weightLatticeEmbedding_repr]
+  simpa only [Module.Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul] using
+    D.sum_coordinateWeight_smul j
+
+/-- Reconstructing a coordinate root through the lattice inclusion recovers the original root. -/
+@[simp]
+theorem weightLatticeEmbedding_coordinateRoot (γ : Fin t.numRoots) :
+    D.weightLatticeEmbedding (D.coordinateRoot γ) = (t.simplyConnectedRootDatum ht).root γ := by
+  simp [coordinateRoot_def]
+
+/-- The coordinate lattice inclusion is injective, even when the weight lattice is proper. -/
+theorem weightLatticeEmbedding_injective : Function.Injective D.weightLatticeEmbedding :=
+  Subtype.val_injective.comp D.weightLatticeBasis.equivFun.symm.injective
 
 /-- Every root has a nonzero coordinate vector in the chosen basis of the weight lattice. -/
 theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0 := by
   intro h0
   apply (t.simplyConnectedRootDatum ht).ne_zero γ
-  rw [← D.coordinateRoot_map_equivFun_symm γ, h0, map_zero]
+  rw [← D.weightLatticeEmbedding_coordinateRoot γ, h0, map_zero]
 
 /-- Proportional coordinate roots (with a nonzero coefficient on `β`) come from equal or
 opposite roots, by reducedness of the pinned simply-connected root datum. -/
@@ -299,11 +335,10 @@ theorem eq_or_eq_neg_of_smul_coordinateRoot_eq {α β : Fin t.numRoots} {a b : �
     (h : a • D.coordinateRoot β = b • D.coordinateRoot α) :
     (t.simplyConnectedRootDatum ht).root α = (t.simplyConnectedRootDatum ht).root β ∨
       (t.simplyConnectedRootDatum ht).root α = -(t.simplyConnectedRootDatum ht).root β := by
-  let e := D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
   have hroot : a • (t.simplyConnectedRootDatum ht).root β =
       b • (t.simplyConnectedRootDatum ht).root α := by
-    have := congrArg e h
-    simpa only [map_zsmul, e, D.coordinateRoot_map_equivFun_symm] using this
+    have := congrArg D.weightLatticeEmbedding h
+    simpa only [map_zsmul, D.weightLatticeEmbedding_coordinateRoot] using this
   let _ := t.isReduced_simplyConnectedRootDatum ht
   refine RootPairing.IsReduced.eq_or_eq_neg (P := t.simplyConnectedRootDatum ht) α β fun hlin => ?_
   exact ha (hlin.eq_zero_of_pair (by rw [hroot, neg_smul, neg_add_cancel])).2
@@ -321,15 +356,14 @@ theorem eq_or_eq_reflectionPerm_of_smul_coordinateRoot_eq {α β : Fin t.numRoot
 /-- The simple coordinate roots of any Chevalley datum are `ℤ`-linearly independent. -/
 theorem linearIndependent_coordinateRoot_simpleIndex :
     LinearIndependent ℤ (fun i : Fin t.rank => D.coordinateRoot (t.simpleIndex ht i)) := by
-  let e := D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
   have hroot : LinearIndependent ℤ
       (fun i : Fin t.rank => (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i)) := by
     simpa only [Function.comp_def, coe_simpleSupportEquivSimplyConnectedBase_apply] using
       (t.simplyConnectedBase ht).linearIndepOn_root.linearIndependent.comp
         (t.simpleSupportEquivSimplyConnectedBase ht)
         (t.simpleSupportEquivSimplyConnectedBase ht).injective
-  refine LinearIndependent.of_comp e ?_
-  simpa only [Function.comp_def, e, D.coordinateRoot_map_equivFun_symm] using hroot
+  refine LinearIndependent.of_comp D.weightLatticeEmbedding ?_
+  simpa only [Function.comp_def, D.weightLatticeEmbedding_coordinateRoot] using hroot
 
 /-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
 coordinate roots agree with the roots of the pinned root datum. -/
@@ -351,12 +385,10 @@ theorem weylGroup_smul_mem_weightLattice (w : (t.simplyConnectedRootDatum ht).we
     rw [Subgroup.smul_def, RootPairing.Equiv.reflection_smul, RootPairing.reflection_apply]
     exact sub_mem hμ (Submodule.smul_mem _ _ (D.root_mem_weightLattice i))
   | one =>
-    change (1 : (t.simplyConnectedRootDatum ht).weylGroup) • μ ∈ D.weightLattice
-    simpa only [one_smul] using hμ
+    simpa only [Subgroup.smul_def, Subgroup.coe_mk, one_smul] using hμ
   | mul x y hx hy ih₁ ih₂ =>
-    change ((⟨x, hx⟩ : (t.simplyConnectedRootDatum ht).weylGroup) * ⟨y, hy⟩) • μ ∈ D.weightLattice
-    rw [mul_smul]
-    exact ih₁ (ih₂ hμ)
+    rw [Subgroup.smul_def, Subgroup.coe_mk, mul_smul]
+    exact ih₁ (by simpa only [Subgroup.smul_def] using ih₂ hμ)
 
 private theorem weylGroup_map_weightLattice (w : (t.simplyConnectedRootDatum ht).weylGroup) :
     D.weightLattice.map (DistribMulAction.toModuleAut ℤ (Fin t.rank → ℤ) w).toLinearMap =
@@ -390,15 +422,16 @@ noncomputable def weylCharacterAut :
       LinearEquiv.ofSubmodules_apply, DistribMulAction.toModuleAut_apply,
       DistribMulAction.toLinearEquiv_apply, mul_smul]
 
-/-- Evaluating `weylCharacterAut` under `D.weightLatticeBasis.equivFun.symm` agrees with the
-ambient Weyl action on `Λ(D)`. -/
-theorem coe_equivFun_symm_weylCharacterAut
+/-- Applying `weylCharacterAut` in the chosen basis matches the ambient Weyl action on `Λ(D)`. -/
+@[simp]
+theorem weightLatticeEmbedding_weylCharacterAut
     (w : (t.simplyConnectedRootDatum ht).weylGroup) (χ : Fin t.rank → ℤ) :
-    (D.weightLatticeBasis.equivFun.symm (D.weylCharacterAut w χ) : Fin t.rank → ℤ) =
-      w • (D.weightLatticeBasis.equivFun.symm χ : Fin t.rank → ℤ) := by
-  simp only [weylCharacterAut, MonoidHom.coe_mk, OneHom.coe_mk, LinearEquiv.trans_apply,
-    LinearEquiv.symm_apply_apply, LinearEquiv.ofSubmodules_apply,
-    DistribMulAction.toModuleAut_apply, DistribMulAction.toLinearEquiv_apply]
+    D.weightLatticeEmbedding (D.weylCharacterAut w χ) = w • D.weightLatticeEmbedding χ := by
+  simp only [weightLatticeEmbedding, weylCharacterAut, LinearMap.coe_comp,
+    LinearEquiv.coe_coe, Function.comp_apply, MonoidHom.coe_mk, OneHom.coe_mk,
+    LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, Submodule.coe_subtype,
+    LinearEquiv.ofSubmodules_apply, DistribMulAction.toModuleAut_apply,
+    DistribMulAction.toLinearEquiv_apply]
 
 /-- Evaluating `weylCharacterAut` on a coordinate root gives the coordinate root of the
 permuted root. -/
@@ -407,11 +440,9 @@ theorem weylCharacterAut_coordinateRoot
     (w : (t.simplyConnectedRootDatum ht).weylGroup) (γ : Fin t.numRoots) :
     D.weylCharacterAut w (D.coordinateRoot γ) =
       D.coordinateRoot ((t.simplyConnectedRootDatum ht).weylGroupToPerm w γ) := by
-  apply D.weightLatticeBasis.equivFun.symm.injective
-  apply Subtype.ext
-  rw [D.coe_equivFun_symm_weylCharacterAut]
-  simp only [coordinateRoot_def, ← D.weightLatticeBasis.equivFun_apply,
-    LinearEquiv.symm_apply_apply, RootPairing.weylGroup_apply_root]
+  apply D.weightLatticeEmbedding_injective
+  rw [D.weightLatticeEmbedding_weylCharacterAut, D.weightLatticeEmbedding_coordinateRoot,
+    D.weightLatticeEmbedding_coordinateRoot, RootPairing.weylGroup_apply_root]
 
 /-! ## Nilpotence of the root generators -/
 

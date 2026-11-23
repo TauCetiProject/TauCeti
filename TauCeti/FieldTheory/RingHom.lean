@@ -11,6 +11,7 @@ public import Mathlib.Basic.Finite.Defs
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Rigidity of field endomorphisms with equal pointwise powers
@@ -37,17 +38,6 @@ disagreement set `{x | g₁ x ≠ g₂ x}` is finite, and additivity on an infin
 public section
 
 namespace RingHom
-
-private theorem addMonoidHom_eq_of_finite_setOf_ne {G H : Type*} [AddCommGroup G]
-    [AddCancelMonoid H] [Infinite G] (f₁ f₂ : G →+ H) (hfin : {x : G | f₁ x ≠ f₂ x}.Finite) :
-    f₁ = f₂ := by
-  ext x
-  obtain ⟨y, hy⟩ := (Set.infinite_univ.sdiff (hfin.union (hfin.image (fun z => z - x)))).nonempty
-  have hgy : f₁ y = f₂ y := not_not.mp fun hmem => hy.2 (Or.inl hmem)
-  have hgxy : f₁ (x + y) = f₂ (x + y) := not_not.mp fun hmem =>
-    hy.2 (Or.inr ⟨x + y, hmem, add_sub_cancel_left x y⟩)
-  rw [map_add, map_add, hgy] at hgxy
-  exact add_right_cancel hgxy
 
 /-- Over an infinite field, two field endomorphisms `g₁, g₂` cannot satisfy pointwise relations
 `(g₁ x * g₂ x) ^ N = 1` for all nonzero `x` and a nonzero natural number `N`. -/
@@ -135,6 +125,6 @@ theorem eq_of_forall_apply_pow_eq {K : Type*} [Field K] [Infinite K]
   have hfin : {x : K | g₁ x ≠ g₂ x}.Finite :=
     ((Set.toFinite _).union (hB.preimage g₂.injective.injOn)).subset hbad_sub
   exact RingHom.toAddMonoidHom_injective <|
-    addMonoidHom_eq_of_finite_setOf_ne g₁.toAddMonoidHom g₂.toAddMonoidHom hfin
+    AddMonoidHom.eq_of_finite_setOf_ne g₁.toAddMonoidHom g₂.toAddMonoidHom hfin
 
 end RingHom

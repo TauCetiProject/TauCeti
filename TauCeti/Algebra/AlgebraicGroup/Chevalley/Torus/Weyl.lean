@@ -187,18 +187,6 @@ instance normal_torusPoints_subgroupOf_weylSubgroup :
 
 /-! ## The Weyl action on the actual character lattice -/
 
-/-- Applying `weylCharacterAut` in the chosen basis matches the ambient Weyl action on `Λ(D)`. -/
-@[simp]
-theorem weightLatticeEmbedding_weylCharacterAut
-    (w : (t.simplyConnectedRootDatum ht).weylGroup) (χ : Fin t.rank → ℤ) :
-    D.weightLatticeEmbedding (D.weylCharacterAut w χ) = w • D.weightLatticeEmbedding χ := by
-  have h (y : Fin t.rank → ℤ) :
-      D.weightLatticeEmbedding y = (D.weightLatticeBasis.equivFun.symm y : Fin t.rank → ℤ) := by
-    conv_lhs =>
-      rw [← D.weightLatticeBasis.equivFun.apply_symm_apply y, Module.Basis.equivFun_apply,
-        D.weightLatticeEmbedding_repr]
-  rw [h, h, D.coe_equivFun_symm_weylCharacterAut]
-
 /-- In type `A₁`, the unique simple reflection acts as negation on the actual character lattice
 of every Chevalley datum. -/
 theorem weylCharacterAut_simpleIndex_typeA1 {h1 : (DynkinType.A 1).Valid}
@@ -213,7 +201,7 @@ theorem weylCharacterAut_simpleIndex_typeA1 {h1 : (DynkinType.A 1).Valid}
   ext j
   obtain rfl : j = i := (Fin.eq_zero j).trans (Fin.eq_zero i).symm
   simp only [LinearMap.neg_apply, one_apply_eq_self, map_neg, Pi.sub_apply, Pi.smul_apply,
-    Pi.neg_apply, smul_eq_mul, DynkinType.root_simpleIndex_apply_same (DynkinType.A 1) h1 j]
+    Pi.neg_apply, smul_eq_mul, DynkinType.root_simpleIndex, DynkinType.cartanMatrix_apply_same]
   ring
 
 /-- The simple reflection on actual torus parameters is dual to the corresponding simple

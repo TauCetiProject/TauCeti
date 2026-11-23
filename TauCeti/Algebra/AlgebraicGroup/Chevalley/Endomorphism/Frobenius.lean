@@ -24,10 +24,8 @@ every perfect ring of exponential characteristic `p` (`isBasedEndomorphism_frobe
 Composing Frobenius with conjugation by a pinned simple Weyl representative yields a composite
 `Int(nᵢ) ∘ Frob_{p^k}` that is standard whenever `iterateFrobenius A p k` is surjective
 (`isStandardEndomorphism_conj_weylElement_comp_frobenius`) and is not based whenever `A` is
-nontrivial (`not_isBasedEndomorphism_conj_weylElement_comp_frobenius`). For every Chevalley datum,
-its square equals `Int(nᵢ²) ∘ Frob_{p^(2k)}` on all points
-(`conj_weylElement_comp_frobenius_comp_self`); in type `A₁`, its character map is `-(p ^ k) • 1`
-and its square agrees with `frobenius p (2 * k)` on `D.rootTorusSubgroup A`.
+nontrivial (`not_isBasedEndomorphism_conj_weylElement_comp_frobenius`). In type `A₁`, its character
+map is `-(p ^ k) • 1` and its square agrees with `frobenius p (2 * k)` on `D.rootTorusSubgroup A`.
 
 ## Main results
 
@@ -37,10 +35,9 @@ and its square agrees with `frobenius p (2 * k)` on `D.rootTorusSubgroup A`.
   is standard whenever `iterateFrobenius A p k` is surjective.
 * `ChevalleyDatum.not_isBasedEndomorphism_conj_weylElement_comp_frobenius`: `Int(nᵢ) ∘ Frob_{p^k}`
   is never based over a nontrivial commutative ring (no surjectivity assumption needed).
-* `TauCeti.DynkinType.ChevalleyDatum.conj_weylElement_comp_frobenius_comp_self` and
-  `ChevalleyDatum.conj_weylElement_comp_frobenius_comp_self_eq_on_rootTorusSubgroup_typeA1`:
-  the general square formula for `Int(nᵢ) ∘ Frob_{p^k}` and its specialization to
-  `D.rootTorusSubgroup A` in type `A₁`.
+* `ChevalleyDatum.conj_weylElement_comp_frobenius_comp_self_eq_on_rootTorusSubgroup_typeA1`:
+  specialization of the square formula for `Int(nᵢ) ∘ Frob_{p^k}` to `D.rootTorusSubgroup A` in
+  type `A₁`.
 
 ## References
 
@@ -125,26 +122,6 @@ theorem isCharacterMap_conj_weylElement_comp_frobenius (i : Fin t.rank) (p k : �
   simpa only [smul_mul_assoc, one_mul] using
     (D.isCharacterMap_conj_weylElement i A).comp (D.isCharacterMap_frobenius p k A)
 
-/-- For every Chevalley datum and every ring `A` of exponential characteristic `p`, squaring
-`Int(nᵢ) ∘ Frob_{p^k}` equals `Int(nᵢ²) ∘ Frob_{p^(2k)}` on all of `D.points A`. -/
-theorem conj_weylElement_comp_frobenius_comp_self (i : Fin t.rank) (p k : ℕ) [ExpChar A p] :
-    let F := (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1)).toMonoidHom.comp
-      (D.frobenius p k A)
-    F.comp F =
-      (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1 *
-        D.weylElement (t.simpleIndex ht i) A 1)).toMonoidHom.comp
-        (D.frobenius p (2 * k) A) := by
-  intro F
-  ext1 y
-  have hadd : D.frobenius p (2 * k) A y = D.frobenius p k A (D.frobenius p k A y) := by
-    have h := D.frobenius_add p k A k
-    rw [← two_mul] at h
-    exact DFunLike.congr_fun h y
-  dsimp only [F, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-  rw [MulAut.conj_apply, MulAut.conj_apply, MulAut.conj_apply, map_mul, map_mul, map_inv,
-    D.frobenius_weylElement, one_pow, ← hadd, mul_inv_rev]
-  simp only [mul_assoc]
-
 /-! ### Regression example in type `A₁` -/
 
 section TypeA1
@@ -168,8 +145,9 @@ private theorem torusCharacter_simpleCorootParameter_neg_one_typeA1 {h1 : (Dynki
       (D.coordinateRoot ((DynkinType.A 1).simpleIndex h1 i)) = 1 := by
   have h := D.torusCharacter_simpleCorootParameter i A (-1)
     ⟨_, D.root_mem_weightLattice ((DynkinType.A 1).simpleIndex h1 i)⟩
-  simpa only [← D.coordinateRoot_def, Submodule.coe_mk,
-    DynkinType.root_simpleIndex_apply_same (DynkinType.A 1) h1 i, zpow_ofNat, neg_one_sq] using h
+  rw [← D.coordinateRoot_def] at h
+  simpa only [Submodule.coe_mk, DynkinType.root_simpleIndex,
+    DynkinType.cartanMatrix_apply_same, zpow_ofNat, neg_one_sq] using h
 
 private theorem conj_weylElement_sq_eq_on_rootTorusSubgroup_typeA1 {h1 : (DynkinType.A 1).Valid}
     (D : ChevalleyDatum (DynkinType.A 1) h1) (i : Fin (DynkinType.A 1).rank) :

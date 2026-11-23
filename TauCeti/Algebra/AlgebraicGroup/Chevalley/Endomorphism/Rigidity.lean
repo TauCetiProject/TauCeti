@@ -10,7 +10,6 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.HomExt
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Normalizer
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.CharP.Lemmas
-import TauCeti.LinearAlgebra.End.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Basic
 
 /-!
@@ -124,7 +123,7 @@ theorem exists_torusPoints_eq_conj_comp_on_rootTorusSubgroup {K : Type v} [Field
   obtain ⟨π', c', g', hF'_root, hF'_char, hπ'_neg, _, _⟩ :=
     D.exists_rootPerm_of_isStandardEndomorphism hF' hF'φ hinj
   have hπg (α : Fin t.numRoots) : π α = π' α ∧ ∀ u : K, g α u = g' α u := by
-    obtain ⟨h1, h2⟩ := D.eq_of_ringHom_torusCharacter_eq hinj
+    obtain ⟨h1, h2⟩ := D.rootIndex_eq_and_ringHom_eq_of_torusCharacter_eq hinj
       (g₁ := (g α).toRingHom) (g₂ := (g' α).toRingHom) (hF_char α) (hF'_char α)
     exact ⟨h1, fun u => DFunLike.congr_fun h2 u⟩
   -- Step 2: match scalar ratios `c / c'` on positive simple roots via a torus parameter `s`.
@@ -205,9 +204,20 @@ theorem exists_torusPoints_conjugate_on_rootTorusSubgroup_of_pow_eq_smul_one {K 
     {n : ℕ} {m : ℤ} (hm0 : m ≠ 0) (hm1 : m ≠ 1) (hpow : φ ^ n = m • 1) :
     ∃ u : Fin t.rank → Kˣ, ∀ x ∈ D.rootTorusSubgroup K,
       F x = D.torusPoints K u * F' ((D.torusPoints K u)⁻¹ * x * D.torusPoints K u) *
-        (D.torusPoints K u)⁻¹ :=
-  D.exists_torusPoints_conjugate_on_rootTorusSubgroup hF hF' hFφ hF'φ
-    (injective_of_pow_eq_smul_one hpow hm0 hm1) (injective_one_sub_of_pow_eq_smul_one hpow hm1)
+        (D.torusPoints K u)⁻¹ := by
+  refine D.exists_torusPoints_conjugate_on_rootTorusSubgroup hF hF' hFφ hF'φ ?_
+    (injective_one_sub_of_pow_eq_smul_one hpow hm1)
+  by_cases hn : n = 0
+  · subst hn
+    rw [pow_zero] at hpow
+    intro x y _
+    have hsub : (m - 1) • (x - y) = 0 := by
+      have hmx : m • (x - y) = x - y := by
+        simpa only [LinearMap.smul_apply, one_apply_eq_self] using
+          (DFunLike.congr_fun hpow (x - y)).symm
+      rw [sub_smul, one_smul, hmx, sub_self]
+    exact sub_eq_zero.mp ((smul_eq_zero.mp hsub).resolve_left (sub_ne_zero.mpr hm1))
+  · exact injective_of_pow_eq_smul_one hpow hn hm0
 
 /-- **Torus conjugacy in positive characteristic `p` when `φ ^ n = (p ^ r) • 1` with `r > 0`.**
 Applies to Frobenius-type and twisted Steinberg endomorphisms over algebraically closed fields of
