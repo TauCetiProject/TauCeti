@@ -24,9 +24,9 @@ open Equiv
 open TauCeti
 
 /-- Evaluation at a point is invariant under its right stabilizer. -/
-example : IsLevelInvariant (MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3))
+example : (MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3)).IsLevelInvariant
     (fun g : Perm (Fin 3) ↦ g 2) := by
-  rw [isLevelInvariant_iff]
+  rw [Subgroup.isLevelInvariant_iff]
   intro u hu g
   simpa using congrArg g (MulAction.mem_stabilizer_iff.mp hu)
 
@@ -34,11 +34,11 @@ example : IsLevelInvariant (MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3))
 example :
     let J := MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3)
     let y : Perm (Fin 3) := swap 0 1 * swap 1 2
-    IsLevelInvariant (J.map (MulAut.conj y))
+    (J.map (MulAut.conj y)).IsLevelInvariant
       (rightTranslate y (fun g : Perm (Fin 3) ↦ g 2)) := by
   dsimp only
-  apply IsLevelInvariant.rightTranslate
-  rw [isLevelInvariant_iff]
+  apply Subgroup.IsLevelInvariant.rightTranslate
+  rw [Subgroup.isLevelInvariant_iff]
   intro u hu g
   simpa using congrArg g (MulAction.mem_stabilizer_iff.mp hu)
 
@@ -46,13 +46,13 @@ example :
 example :
     let J := MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3)
     let y : Perm (Fin 3) := swap 0 1 * swap 1 2
-    ¬ IsLevelInvariant (J.map (MulAut.conj y⁻¹))
+    ¬ (J.map (MulAut.conj y⁻¹)).IsLevelInvariant
       (rightTranslate y (fun g : Perm (Fin 3) ↦ g 2)) := by
   dsimp only
   intro h
   have hj : swap (0 : Fin 3) 1 ∈ MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) := by
     decide
-  have heq := isLevelInvariant_iff.mp h _ (Subgroup.mem_map_of_mem _ hj) 1
+  have heq := Subgroup.isLevelInvariant_iff.mp h _ (Subgroup.mem_map_of_mem _ hj) 1
   norm_num [MulAut.conj_apply, Perm.mul_apply, swap_apply_def] at heq
 
 /-- The two orders of right translation have distinct values on a noncommutative group. -/
@@ -67,8 +67,8 @@ example :
 /-- Invariance by the trivial subgroup does not force constancy. -/
 example :
     let f : Perm (Fin 3) → Fin 3 := fun g ↦ g 2
-    IsLeftInvariant ⊥ f ∧ IsLevelInvariant ⊥ f ∧ f ≠ (fun _ ↦ f 1) := by
-  refine ⟨isLeftInvariant_bot _, isLevelInvariant_bot _, ?_⟩
+    Subgroup.IsLeftInvariant ⊥ f ∧ Subgroup.IsLevelInvariant ⊥ f ∧ f ≠ (fun _ ↦ f 1) := by
+  refine ⟨Subgroup.isLeftInvariant_bot _, Subgroup.isLevelInvariant_bot _, ?_⟩
   intro h
   have heq := congrFun h (swap (0 : Fin 3) 2)
   norm_num [swap_apply_def] at heq

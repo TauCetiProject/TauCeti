@@ -58,7 +58,23 @@ theorem rightTranslate_mul [Semigroup G] (y z : G) (f : G → A) :
 theorem rightTranslate_const [Mul G] (y : G) (a : A) :
     rightTranslate y (fun _ : G ↦ a) = fun _ ↦ a := (rfl)
 
+/-- Right translation fixes the pointwise multiplicative unit. -/
+@[simp]
+theorem rightTranslate_one_right [Mul G] [One A] (y : G) :
+    rightTranslate y (1 : G → A) = 1 := (rfl)
+
+/-- Right translation preserves pointwise multiplication of functions. -/
+@[simp]
+theorem rightTranslate_mul_right [Mul G] [Mul A] (y : G) (f h : G → A) :
+    rightTranslate y (f * h) = rightTranslate y f * rightTranslate y h := (rfl)
+
 end Translation
+
+end TauCeti
+
+namespace Subgroup
+
+open TauCeti (rightTranslate rightTranslate_mul)
 
 section Invariance
 
@@ -213,4 +229,4 @@ theorem IsLevelInvariant.smul {R : Type*} [SMul R A] (hf : IsLevelInvariant J f)
 end Pointwise
 end Invariance
 
-end TauCeti
+end Subgroup
