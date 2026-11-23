@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Complex.BorelCaratheodory
 public import Mathlib.Analysis.Complex.AbsMax
 public import Mathlib.Analysis.Calculus.LogDeriv
-import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.Complex.MeanValue
+import TauCeti.Analysis.Complex.MeanValue
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Convex.SimplyConnected
 
@@ -54,13 +53,14 @@ exterior values are unrestricted.
 
 ## Implementation notes
 
-Write `f^{(k)}(z)` as the circle average of `K f` with the Cauchy kernel
-`K w = (w - c) / (w - z) ^ (k + 1)` on `sphere c ρ`. Since `f = 2 re f - conj f`, and the average
-of `K` against the conjugate of any holomorphic function vanishes for `k ≥ 1` (on the circle,
-`conj K` is holomorphic on the closed disc and vanishes at `c`), the average of `K f` equals
-`-2` times the average of `K (M - re f)`. As `M - re f ≥ 0`, its norm is at most
-`sup ‖K‖ ≤ ρ / (ρ - ‖z - c‖) ^ (k + 1)` times the average of `M - re f`, which is
-`M - re (f c)` by the mean value property.
+Write `f^{(k)}(z)` as `k!` times the circle average of `K f` with the Cauchy kernel
+`K w = (w - c) / (w - z) ^ (k + 1)` on `sphere c ρ`
+(`DiffContOnCl.iteratedDeriv_eq_factorial_smul_circleAverage`). Since `f = 2 re f - conj f`, and
+the average of `K` against the conjugate of any holomorphic function vanishes for `k ≥ 1` (on the
+circle, `conj K` agrees with a rational function that is holomorphic on the closed disc and
+vanishes at `c`), the average of `K f` equals `-2` times the average of `K (M - re f)`. As
+`M - re f ≥ 0`, its norm is at most `sup ‖K‖ ≤ ρ / (ρ - ‖z - c‖) ^ (k + 1)` times the average of
+`M - re f`, which is `M - re (f c)` by the mean value property.
 
 ## References
 
@@ -251,24 +251,6 @@ private theorem circleAverage_div_sub_pow_mul_eq_neg_two_mul (hf : DiffContOnCl 
   rw [hdecomp, circleAverage_fun_sub h₁ h₂, circleAverage_fun_smul, smul_eq_mul,
     circleAverage_div_sub_pow_mul_conj_eq_zero h₃ hk hz, sub_zero]
 
-/-- Cauchy's integral formula for `f^{(k)}(z)` as a circle average: the kernel is
-`(w - c) / (w - z) ^ (k + 1)`, since `dw = i (w - c) dθ` on `sphere c ρ`. -/
-private theorem iteratedDeriv_eq_factorial_mul_circleAverage (hf : DiffContOnCl ℂ f (ball c ρ))
-    (hz : z ∈ ball c ρ) :
-    iteratedDeriv k f z =
-      k.factorial * circleAverage (fun w ↦ (w - c) / (w - z) ^ (k + 1) * f w) c ρ := by
-  have hρ : 0 < ρ := dist_nonneg.trans_lt (mem_ball.mp hz)
-  rw [circleAverage_eq_circleIntegral hρ.ne',
-    circleIntegral.integral_congr hρ.le (g := fun w ↦ (1 / (w - z) ^ (k + 1)) • f w) ?_,
-    hf.circleIntegral_one_div_sub_pow_smul k hz]
-  · have : (k.factorial : ℂ) ≠ 0 := by exact_mod_cast k.factorial_ne_zero
-    simp only [smul_eq_mul]
-    field_simp
-  · intro w hw
-    have hu : w - c ≠ 0 := sub_ne_zero.2 (ne_of_mem_sphere hw hρ.ne')
-    simp only [smul_eq_mul]
-    field_simp
-
 /-- **Derivative form of the Borel–Carathéodory inequality on a closed disc.** Let `f` be
 holomorphic on `ball c ρ` and continuous on its closure, with `re (f w) ≤ M` on `sphere c ρ`. For
 `k ≥ 1` and `z ∈ ball c ρ`,
@@ -315,8 +297,9 @@ theorem norm_iteratedDeriv_le_of_forall_mem_sphere_re_le {M : ℝ}
       have hMw : 0 ≤ M - (f w).re := sub_nonneg.2 (hM w hw)
       simp only [norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg hMw, smul_eq_mul]
       exact mul_le_mul_of_nonneg_right (hKB w hw) hMw
-  rw [iteratedDeriv_eq_factorial_mul_circleAverage hf hz,
-    circleAverage_div_sub_pow_mul_eq_neg_two_mul hf hk hz M, norm_mul, norm_mul, norm_natCast,
+  rw [hf.iteratedDeriv_eq_factorial_smul_circleAverage k hz]
+  simp only [smul_eq_mul]
+  rw [circleAverage_div_sub_pow_mul_eq_neg_two_mul hf hk hz M, norm_mul, norm_mul, norm_natCast,
     norm_neg, norm_ofNat]
   calc (k.factorial : ℝ) * (2 * ‖circleAverage (fun w ↦ K w * ((M - (f w).re : ℝ) : ℂ)) c ρ‖)
       ≤ k.factorial * (2 * (B * (M - (f c).re))) := by gcongr
