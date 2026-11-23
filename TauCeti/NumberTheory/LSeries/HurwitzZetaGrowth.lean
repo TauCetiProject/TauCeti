@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.LSeries.MellinGrowth
 public import Mathlib.NumberTheory.LSeries.ZMod
-public import TauCeti.Analysis.Complex.VerticalStripGrowth
+public import TauCeti.Analysis.Complex.VerticalStrip.Growth
+import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
 
 /-!
 # Growth of the entire completed Hurwitz and periodic zeta functions
@@ -29,9 +30,12 @@ are David Loeffler's work in Mathlib.
 
 ## Main results
 
-* `HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log` and
-  `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`: global logarithmic-exponential
-  bounds.
+* `HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log`,
+  `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`,
+  `HurwitzZeta.orderLE_completedHurwitzZetaEven₀`,
+  `HurwitzZeta.orderLE_completedHurwitzZetaOdd`, and
+  `TauCeti.orderLE_completedRiemannZeta₀`: global logarithmic-exponential bounds and order at most
+  one for the even and odd completed Hurwitz zeta functions and `completedRiemannZeta₀`.
 * `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaEven₀` and
   `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaOdd`: vertical-strip growth.
 * `ZMod.exists_norm_completedLFunction₀_le_exp_mul_log`, `ZMod.orderLE_completedLFunction₀`
@@ -55,10 +59,11 @@ theorem exists_norm_hurwitzEvenFEPair_f_sub_le (a : UnitAddCircle) :
     ∃ C ≥ 0, ∃ c > 0, ∀ u ∈ Ioi 1, ‖(hurwitzEvenFEPair a).f u - (hurwitzEvenFEPair a).f₀‖ ≤
       C * Real.exp (-c * u ^ (1 : ℝ)) := by
   obtain ⟨p, hp, hO⟩ := isBigO_atTop_evenKernel_sub a
-  obtain ⟨C, hC, hb⟩ := exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO
-    (((continuousOn_evenKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu).sub
-      continuousOn_const) hO
-  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu)⟩
+  obtain ⟨C, hC, hb⟩ :=
+    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO (α := 1) (.inr zero_le_one)
+      (((continuousOn_evenKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu).sub
+        continuousOn_const) (by simpa [Pi.sub_def, rpow_one] using hO)
+  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu.le)⟩
   simp only [hurwitzEvenFEPair, Function.comp_apply]
   split_ifs <;> simp [← ofReal_one, ← ofReal_sub, norm_real]
 
@@ -67,10 +72,11 @@ theorem exists_norm_hurwitzEvenFEPair_g_sub_le (a : UnitAddCircle) :
     ∃ C ≥ 0, ∃ c > 0, ∀ u ∈ Ioi 1, ‖(hurwitzEvenFEPair a).g u - (hurwitzEvenFEPair a).g₀‖ ≤
       C * Real.exp (-c * u ^ (1 : ℝ)) := by
   obtain ⟨p, hp, hO⟩ := isBigO_atTop_cosKernel_sub a
-  obtain ⟨C, hC, hb⟩ := exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO
-    (((continuousOn_cosKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu).sub
-      continuousOn_const) hO
-  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu)⟩
+  obtain ⟨C, hC, hb⟩ :=
+    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO (α := 1) (.inr zero_le_one)
+      (((continuousOn_cosKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu).sub
+        continuousOn_const) (by simpa [Pi.sub_def, rpow_one] using hO)
+  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu.le)⟩
   simp [hurwitzEvenFEPair, ← ofReal_one, ← ofReal_sub, norm_real]
 
 /-- The odd Hurwitz kernel decays exponentially on `(1, ∞)`. -/
@@ -78,9 +84,11 @@ theorem exists_norm_hurwitzOddFEPair_f_sub_le (a : UnitAddCircle) :
     ∃ C ≥ 0, ∃ c > 0, ∀ u ∈ Ioi 1, ‖(hurwitzOddFEPair a).f u - (hurwitzOddFEPair a).f₀‖ ≤
       C * Real.exp (-c * u ^ (1 : ℝ)) := by
   obtain ⟨p, hp, hO⟩ := isBigO_atTop_oddKernel a
-  obtain ⟨C, hC, hb⟩ := exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO
-    ((continuousOn_oddKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu) hO
-  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu)⟩
+  obtain ⟨C, hC, hb⟩ :=
+    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO (α := 1) (.inr zero_le_one)
+      ((continuousOn_oddKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu)
+      (by simpa [rpow_one] using hO)
+  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu.le)⟩
   simp [hurwitzOddFEPair, norm_real]
 
 /-- The dual odd Hurwitz kernel decays exponentially on `(1, ∞)`. -/
@@ -88,10 +96,19 @@ theorem exists_norm_hurwitzOddFEPair_g_sub_le (a : UnitAddCircle) :
     ∃ C ≥ 0, ∃ c > 0, ∀ u ∈ Ioi 1, ‖(hurwitzOddFEPair a).g u - (hurwitzOddFEPair a).g₀‖ ≤
       C * Real.exp (-c * u ^ (1 : ℝ)) := by
   obtain ⟨p, hp, hO⟩ := isBigO_atTop_sinKernel a
-  obtain ⟨C, hC, hb⟩ := exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO
-    ((continuousOn_sinKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu) hO
-  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu)⟩
+  obtain ⟨C, hC, hb⟩ :=
+    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_isBigO (α := 1) (.inr zero_le_one)
+      ((continuousOn_sinKernel a).mono fun u hu ↦ zero_lt_one.trans_le hu)
+      (by simpa [rpow_one] using hO)
+  refine ⟨C, hC, p, hp, fun u hu ↦ le_of_eq_of_le ?_ (hb u hu.le)⟩
   simp [hurwitzOddFEPair, norm_real]
+
+private theorem isBigO_exp_of_forall_Ioi {f : ℝ → ℂ} {C c : ℝ}
+    (hf : ∀ u ∈ Ioi (1 : ℝ), ‖f u‖ ≤ C * Real.exp (-c * u ^ (1 : ℝ))) :
+    f =O[atTop] fun u ↦ Real.exp (-c * u ^ (1 : ℝ)) := by
+  refine IsBigO.of_bound C ?_
+  filter_upwards [eventually_gt_atTop (1 : ℝ)] with u hu
+  simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hf u hu
 
 /-- The odd pair has no constant terms, so the completed odd Hurwitz zeta function is given by
 the entire part of its Mellin continuation. -/
@@ -103,10 +120,10 @@ theorem completedHurwitzZetaOdd_eq_Λ₀ (a : UnitAddCircle) (s : ℂ) :
 theorem exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log (a : UnitAddCircle) :
     ∃ C > 0, ∀ s : ℂ, ‖completedHurwitzZetaEven₀ a s‖ ≤
       Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-  obtain ⟨C₁, hC₁, c₁, hc₁, hf⟩ := exists_norm_hurwitzEvenFEPair_f_sub_le a
-  obtain ⟨C₂, hC₂, c₂, hc₂, hg⟩ := exists_norm_hurwitzEvenFEPair_g_sub_le a
-  obtain ⟨C, hC, hΛ⟩ := (hurwitzEvenFEPair a).exists_norm_Λ₀_le_exp_mul_log hC₁ hc₁ one_pos
-    hC₂ hc₂ one_pos hf hg
+  obtain ⟨C₁, -, c₁, hc₁, hf⟩ := exists_norm_hurwitzEvenFEPair_f_sub_le a
+  obtain ⟨C₂, -, c₂, hc₂, hg⟩ := exists_norm_hurwitzEvenFEPair_g_sub_le a
+  obtain ⟨C, hC, hΛ⟩ := (hurwitzEvenFEPair a).exists_norm_Λ₀_le_exp_mul_log hc₁ one_pos
+    hc₂ one_pos (isBigO_exp_of_forall_Ioi hf) (isBigO_exp_of_forall_Ioi hg)
   refine ⟨21 * C, by positivity, fun s ↦ ?_⟩
   rw [completedHurwitzZetaEven₀, norm_div, Complex.norm_two]
   refine (div_le_self (norm_nonneg _) one_le_two).trans
@@ -118,10 +135,10 @@ theorem exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log (a : UnitAddCircl
 theorem exists_norm_completedHurwitzZetaOdd_le_exp_mul_log (a : UnitAddCircle) :
     ∃ C > 0, ∀ s : ℂ, ‖completedHurwitzZetaOdd a s‖ ≤
       Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
-  obtain ⟨C₁, hC₁, c₁, hc₁, hf⟩ := exists_norm_hurwitzOddFEPair_f_sub_le a
-  obtain ⟨C₂, hC₂, c₂, hc₂, hg⟩ := exists_norm_hurwitzOddFEPair_g_sub_le a
-  obtain ⟨C, hC, hΛ⟩ := (hurwitzOddFEPair a).exists_norm_Λ₀_le_exp_mul_log hC₁ hc₁ one_pos
-    hC₂ hc₂ one_pos hf hg
+  obtain ⟨C₁, -, c₁, hc₁, hf⟩ := exists_norm_hurwitzOddFEPair_f_sub_le a
+  obtain ⟨C₂, -, c₂, hc₂, hg⟩ := exists_norm_hurwitzOddFEPair_g_sub_le a
+  obtain ⟨C, hC, hΛ⟩ := (hurwitzOddFEPair a).exists_norm_Λ₀_le_exp_mul_log hc₁ one_pos
+    hc₂ one_pos (isBigO_exp_of_forall_Ioi hf) (isBigO_exp_of_forall_Ioi hg)
   refine ⟨21 * C, by positivity, fun s ↦ ?_⟩
   rw [completedHurwitzZetaOdd_eq_Λ₀, norm_div, Complex.norm_two]
   refine (div_le_self (norm_nonneg _) one_le_two).trans
@@ -136,7 +153,7 @@ theorem hasVerticalStripGrowth_completedHurwitzZetaEven₀ (a : UnitAddCircle) :
   obtain ⟨C₂, -, c₂, hc₂, hg⟩ := exists_norm_hurwitzEvenFEPair_g_sub_le a
   refine hasVerticalStripGrowth_of_forall_bound fun x y ↦ ?_
   obtain ⟨M, hM⟩ := (hurwitzEvenFEPair a).exists_norm_Λ₀_le_of_re_mem_Icc hc₁ one_pos hc₂
-    one_pos hf hg (x / 2) (y / 2)
+    one_pos (isBigO_exp_of_forall_Ioi hf) (isBigO_exp_of_forall_Ioi hg) (x / 2) (y / 2)
   refine ⟨M, fun s hs ↦ ?_⟩
   rw [completedHurwitzZetaEven₀, norm_div, Complex.norm_two]
   refine (div_le_self (norm_nonneg _) one_le_two).trans (hM _ ?_)
@@ -150,12 +167,24 @@ theorem hasVerticalStripGrowth_completedHurwitzZetaOdd (a : UnitAddCircle) :
   obtain ⟨C₂, -, c₂, hc₂, hg⟩ := exists_norm_hurwitzOddFEPair_g_sub_le a
   refine hasVerticalStripGrowth_of_forall_bound fun x y ↦ ?_
   obtain ⟨M, hM⟩ := (hurwitzOddFEPair a).exists_norm_Λ₀_le_of_re_mem_Icc hc₁ one_pos hc₂
-    one_pos hf hg ((x + 1) / 2) ((y + 1) / 2)
+    one_pos (isBigO_exp_of_forall_Ioi hf) (isBigO_exp_of_forall_Ioi hg) ((x + 1) / 2) ((y + 1) / 2)
   refine ⟨M, fun s hs ↦ ?_⟩
   rw [completedHurwitzZetaOdd_eq_Λ₀, norm_div, Complex.norm_two]
   refine (div_le_self (norm_nonneg _) one_le_two).trans (hM _ ?_)
   rw [Complex.div_ofNat_re, Complex.add_re, Complex.one_re]
   exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
+
+/-- The entire completed even Hurwitz zeta function has order at most one. -/
+theorem orderLE_completedHurwitzZetaEven₀ (a : UnitAddCircle) :
+    OrderLE (completedHurwitzZetaEven₀ a) 1 := by
+  obtain ⟨C, -, hC⟩ := exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log a
+  exact orderLE_one_of_norm_le_exp_mul_log hC
+
+/-- The entire completed odd Hurwitz zeta function has order at most one. -/
+theorem orderLE_completedHurwitzZetaOdd (a : UnitAddCircle) :
+    OrderLE (completedHurwitzZetaOdd a) 1 := by
+  obtain ⟨C, -, hC⟩ := exists_norm_completedHurwitzZetaOdd_le_exp_mul_log a
+  exact orderLE_one_of_norm_le_exp_mul_log hC
 
 end HurwitzZeta
 
@@ -222,3 +251,12 @@ theorem hasVerticalStripGrowth_completedLFunction₀ (Φ : ZMod N → ℂ) :
       (hasVerticalStripGrowth_completedHurwitzZetaOdd (toAddCircle j)).const_mul (Φ j)))
 
 end ZMod
+
+namespace TauCeti
+
+/-- Mathlib's entire part `completedRiemannZeta₀` has growth order at most `1`. -/
+theorem orderLE_completedRiemannZeta₀ : OrderLE completedRiemannZeta₀ 1 := by
+  rw [← funext HurwitzZeta.completedHurwitzZetaEven₀_zero]
+  exact HurwitzZeta.orderLE_completedHurwitzZetaEven₀ 0
+
+end TauCeti

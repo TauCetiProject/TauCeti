@@ -117,11 +117,11 @@ theorem continuous_transvectionHom {u : V} (hu : Q u = 0) :
     (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype
   rw [S.isQuotientMap_mkQ.continuous_iff]
   have hw : ∀ w : LinearMap.ker (Q.polarBilin u), polar Q u (w : V) = 0 := fun w ↦ by
-    simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2
+    simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.property
   apply Continuous.subtype_mk
   exact (continuous_transvection (fun _ ↦ u)
     (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) (fun _ ↦ hu) hw
-    continuous_const continuous_subtype_val).congr fun w ↦
+    continuous_const continuous_subtypeVal).congr fun w ↦
       (coe_transvectionHom_mk hu (hw w)).symm
 
 section Unbounded
@@ -179,7 +179,7 @@ theorem tendsto_transvectionHom_smul_cobounded_cocompact (hu : Q u = 0)
     rwa [ne_eq, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.coe_subtype] at hq
   let ι : Additive (specialOrthogonalGroup Q) → V ≃ₗ[K] V := fun g ↦
     ((Additive.toMul g : specialOrthogonalGroup Q) : V ≃ₗ[K] V)
-  have hι : Continuous ι := continuous_subtype_val.comp continuous_toMul
+  have hι : Continuous ι := continuous_subtypeVal.comp continuous_toMul
   refine (tendsto_comap_iff.mpr ?_).mono_right (comap_cocompact_le hι)
   refine (tendsto_transvection_smul_cobounded_cocompact hu huw hpolar hwu).congr fun t ↦ ?_
   rw [Function.comp_apply, ← Submodule.Quotient.mk_smul]

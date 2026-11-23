@@ -92,7 +92,7 @@ private theorem degree_le_three_of_not_isContained [Fintype V] [DecidableRel G.A
   obtain ⟨s, hs, hcard⟩ := Finset.exists_subset_card_eq (s := G.neighborFinset v) (n := 4)
     (by rw [card_neighborFinset_eq_degree]; omega)
   let f : Fin 4 ≃ s := (s.equivFinOfCardEq hcard).symm
-  have hf (i : Fin 4) : G.Adj v (f i) := (mem_neighborFinset _ _ _).mp (hs (f i).2)
+  have hf (i : Fin 4) : G.Adj v (f i) := (mem_neighborFinset _ _ _).mp (hs (f i).property)
   let φ : AffineD 0 → V
     | .leaf i => f i
     | .spine _ => v

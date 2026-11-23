@@ -31,8 +31,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
 
 /-- A pointwise multiplier of a nowhere-zero smooth one-form is automatically smooth. -/
-theorem contMDiff_of_eq_fun_smul (hα : ∀ x, α.1 x ≠ 0)
-    (hf : ∀ x, β.1 x = f x • α.1 x) : ContMDiff I 𝓘(ℝ) ∞ f := by
+theorem contMDiff_of_eq_fun_smul (hα : ∀ x, α.val x ≠ 0)
+    (hf : ∀ x, β.val x = f x • α.val x) : ContMDiff I 𝓘(ℝ) ∞ f := by
   intro x
   obtain ⟨v, hv⟩ : ∃ v : TangentSpace I x, degreeOneEquiv α x v ≠ 0 := by
     by_contra hn
@@ -60,15 +60,15 @@ theorem contMDiff_of_eq_fun_smul (hα : ∀ x, α.1 x ≠ 0)
 
 /-- A smooth one-form annihilating the kernel of a nowhere-zero smooth real one-form is a
 unique smooth scalar multiple of it. The multiplier may vanish where the second form does. -/
-theorem existsUnique_fun_smul_of_ker_le (hα : ∀ x, α.1 x ≠ 0)
-    (hker : ∀ x, RoughForm.ker α.1 x ≤ RoughForm.ker β.1 x) :
-    ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ ∀ x, β.1 x = f x • α.1 x := by
-  have hpoint (x : M) : ∃ c : ℝ, β.1 x = c • α.1 x := by
+theorem existsUnique_fun_smul_of_ker_le (hα : ∀ x, α.val x ≠ 0)
+    (hker : ∀ x, RoughForm.ker α.val x ≤ RoughForm.ker β.val x) :
+    ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ ∀ x, β.val x = f x • α.val x := by
+  have hpoint (x : M) : ∃ c : ℝ, β.val x = c • α.val x := by
     let a := (degreeOneEquiv α x).toLinearMap
     let b := (degreeOneEquiv β x).toLinearMap
     have hk : LinearMap.ker a ≤ LinearMap.ker b := by
       intro v hv
-      have hv' : v ∈ RoughForm.ker α.1 x := RoughForm.mem_ker.mpr
+      have hv' : v ∈ RoughForm.ker α.val x := RoughForm.mem_ker.mpr
         ((degreeOneEquiv_coe_apply α x v).symm.trans hv)
       exact (degreeOneEquiv_coe_apply β x v).trans (RoughForm.mem_ker.mp (hker x hv'))
     have hb : b ∈ Submodule.span ℝ ({a} : Set (Module.Dual ℝ (TangentSpace I x))) := by

@@ -44,7 +44,9 @@ The main results are:
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 * `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
-  `b ∘ a` by sums of products of seminorms of `b` and `a`;
+  `b ∘ a` by sums of products of seminorms of `b` and `a`, so that compositions of families with
+  uniformly bounded seminorms have uniformly bounded seminorms
+  (`TauCeti.Symbol.exists_seminorm_comp_le`);
 * `TauCeti.Symbol.continuous_comp`: composition of symbols is jointly continuous, so the
   composition of two continuous parameter families is continuous (`Continuous.symbol_comp`);
   with one factor fixed it is a continuous linear map (`TauCeti.Symbol.compLeftCLM`,
@@ -52,7 +54,8 @@ The main results are:
 
 On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` without derivatives; with
 any derivative its seminorms vanish (`TauCeti.Symbol.seminorm_const_nil_nil`,
-`TauCeti.Symbol.seminorm_const_eq_zero`).
+`TauCeti.Symbol.seminorm_const_eq_zero`). On every compact set its seminorms are at most `‖T‖`
+(`TauCeti.Symbol.seminorm_const_le`).
 
 The seminorms are set up following Mathlib's seminorms of the Schwartz space
 (`SchwartzMap.seminorm`).
@@ -245,6 +248,15 @@ theorem seminorm_const_eq_zero {α β : List (Fin n)} (h : α ≠ [] ∨ β ≠ 
     · exact mixedDeriv_comp_fst (fun _ : CoordinateSpace n => T) α hβ x ξ
   rw [hd, norm_zero, zero_mul]
 
+/-- Every seminorm of the constant symbol `T` is at most `‖T‖`. -/
+theorem seminorm_const_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
+    (T : V →L[ℂ] W) : Symbol.seminorm K α β (const T : Symbol n V W 0) ≤ ‖T‖ := by
+  by_cases h : α = [] ∧ β = []
+  · obtain ⟨rfl, rfl⟩ := h
+    exact seminorm_le_bound K [] [] _ (norm_nonneg T) fun y _ ξ => by simp
+  · rw [seminorm_const_eq_zero (not_and_or.1 h)]
+    exact norm_nonneg T
+
 /-- A symbol satisfies its estimates uniformly in the position exactly when each of its
 seminorms `p_{K,α,β}` is bounded independently of the compact set `K`. -/
 theorem isUniform_iff_bddAbove_seminorm {a : Symbol n V W m} :
@@ -424,6 +436,22 @@ theorem seminorm_comp_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n
     rw [hc]
     exact norm_mixedDeriv_comp_le b.contDiff_coefficient a.contDiff_coefficient
       (fun s t => le_seminorm K s t b hx ξ) (fun s t => le_seminorm K s t a hx ξ) α β
+
+/-- Seminorm bounds, uniform in the index, for the compositions `b i ∘ a i` of two families of
+symbols with uniformly bounded seminorms, by the Leibniz estimate `seminorm_comp_le`. -/
+theorem exists_seminorm_comp_le {ι : Type*} (K : Compacts (CoordinateSpace n))
+    {b : ι → Symbol n W U m'} {a : ι → Symbol n V W m}
+    (hb : ∀ α β : List (Fin n), ∃ C, ∀ i, Symbol.seminorm K α β (b i) ≤ C)
+    (ha : ∀ α β : List (Fin n), ∃ C, ∀ i, Symbol.seminorm K α β (a i) ≤ C)
+    (α β : List (Fin n)) :
+    ∃ C, ∀ i, Symbol.seminorm K α β ((b i).comp (a i)) ≤ C := by
+  choose Cb hCb using hb
+  choose Ca hCa using ha
+  refine ⟨(β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
+    Cb s.1 t.1 * Ca s.2 t.2).sum).sum, fun i => (seminorm_comp_le K α β _ _).trans ?_⟩
+  refine List.sum_le_sum fun t _ => List.sum_le_sum fun s _ => ?_
+  exact mul_le_mul (hCb _ _ i) (hCa _ _ i) (apply_nonneg _ _)
+    ((apply_nonneg _ _).trans (hCb _ _ i))
 
 /-- If all products `p_{K,α₁,β₁}(b_i) p_{K,α₂,β₂}(a_i)` tend to zero, then so does
 `p_{K,α,β}(b_i ∘ a_i)`, by the Leibniz estimate `seminorm_comp_le`. -/

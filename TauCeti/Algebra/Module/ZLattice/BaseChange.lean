@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import Mathlib.RingTheory.IsTensorProduct
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # A full lattice as an integral form of its ambient space
@@ -41,13 +42,10 @@ variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K]
 /-- **A full lattice is an integral form of its ambient space**: the inclusion of a discrete
 `ℤ`-submodule `L` spanning `E` over `K` exhibits `E` as the base change `K ⊗[ℤ] L`. -/
 theorem isBaseChange_subtype : IsBaseChange K L.subtype := by
-  have := ZLattice.module_finite K L
   have := ZLattice.module_free K L
+  -- `L.subtype` carries a `ℤ`-basis `b` of `L` to the `K`-basis `b.ofZLatticeBasis K L` of `E`
   let b := Free.chooseBasis ℤ L
-  -- `L.subtype` is the linear combination of the `K`-basis `b` of `E`, read in `b`-coordinates
-  have h : (Fintype.linearCombination ℤ (b.ofZLatticeBasis K L)).comp b.equivFun.toLinearMap =
-      L.subtype := b.ext fun i ↦ by
-    simp [Fintype.linearCombination_apply, Basis.equivFun_apply, Finsupp.single_apply]
-  exact h ▸ (IsBaseChange.of_fintype_basis ℤ (b.ofZLatticeBasis K L)).comp_equiv b.equivFun
+  exact b.isBaseChange_of_map_basis (b.ofZLatticeBasis K L) L.subtype
+    fun i ↦ (b.ofZLatticeBasis_apply K L i).symm
 
 end ZLattice
