@@ -407,10 +407,13 @@ lemma affinePointStabilizer_le_affineWeylGroup (x : N) :
 /-- An affine automorphism fixing `x` is determined by its linear part, so `AffineEquiv.linearHom`
 is injective on `P.affinePointStabilizer x`. -/
 theorem linearHom_injOn_affinePointStabilizer (x : N) :
-    InjOn (AffineEquiv.linearHom : (N ≃ᵃ[R] N) → _) (P.affinePointStabilizer x) :=
-  fun _ hfx _ hgx hlin ↦ AffineEquiv.toAffineMap_injective
-    (AffineMap.ext_linear (congrArg LinearEquiv.toLinearMap hlin)
-      ((P.mem_affinePointStabilizer.mp hfx).2.trans (P.mem_affinePointStabilizer.mp hgx).2.symm))
+    InjOn (AffineEquiv.linearHom : (N ≃ᵃ[R] N) → _) (P.affinePointStabilizer x) := by
+  intro f hfx g hgx hlin
+  rw [AffineEquiv.linearHom_apply, AffineEquiv.linearHom_apply] at hlin
+  refine AffineEquiv.toAffineMap_injective (AffineMap.ext_linear ?_
+    ((P.mem_affinePointStabilizer.mp hfx).2.trans (P.mem_affinePointStabilizer.mp hgx).2.symm))
+  rw [AffineEquiv.linear_toAffineMap, AffineEquiv.linear_toAffineMap]
+  exact congrArg LinearEquiv.toLinearMap hlin
 
 /-- If the Weyl group of `P` is finite, the stabilizer of every point in `W_aff` is finite, as
 `AffineEquiv.linearHom` embeds it into the coweight image of `P.weylGroup`. -/
@@ -425,8 +428,9 @@ theorem finite_affinePointStabilizer_of_finite_weylGroup [Finite P.weylGroup] (x
     Finite.of_surjective _ ((Equiv.coweightHom P).domRestrict P.weylGroup).rangeRestrict_surjective
   let φ : P.affinePointStabilizer x →
       MonoidHom.range ((Equiv.coweightHom P).domRestrict P.weylGroup) :=
-    fun f ↦ ⟨MulOpposite.op f.val.linear,
-      hop_mem (P.mem_affineWeylGroup_iff.mp (P.mem_affinePointStabilizer.mp f.property).1).1⟩
+    fun f ↦ ⟨MulOpposite.op (AffineEquiv.linearHom f.val), by
+      rw [AffineEquiv.linearHom_apply]
+      exact hop_mem (P.mem_affineWeylGroup_iff.mp (P.mem_affinePointStabilizer.mp f.property).1).1⟩
   refine Finite.of_injective φ fun f g h ↦ Subtype.ext ?_
   exact P.linearHom_injOn_affinePointStabilizer x f.property g.property
     (MulOpposite.op_injective (congrArg Subtype.val h))
@@ -535,8 +539,9 @@ theorem image_conj_affineRootReflections [P.IsCrystallographic] {g : N ≃ᵃ[R]
   · rintro ⟨_, hs, rfl⟩
     obtain ⟨j, c, hjx, rfl⟩ := P.mem_affineRootReflections.mp hs
     obtain ⟨j', c', hconj, hroot⟩ := P.exists_conj_affineCoreflection_eq hg j c
-    refine P.mem_affineRootReflections.mpr ⟨j', c', sub_eq_zero.mp ?_, hconj.symm⟩
-    rw [hroot x, hjx, sub_self]
+    refine P.mem_affineRootReflections.mpr ⟨j', c', sub_eq_zero.mp ?_, ?_⟩
+    · rw [hroot x, hjx, sub_self]
+    · rw [MulAut.conj_apply, hconj]
   · intro hs
     obtain ⟨j, c, hjgx, rfl⟩ := P.mem_affineRootReflections.mp hs
     obtain ⟨j', c', hconj, hroot⟩ := P.exists_conj_affineCoreflection_eq (inv_mem hg) j c

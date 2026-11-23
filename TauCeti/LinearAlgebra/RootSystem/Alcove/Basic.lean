@@ -33,9 +33,9 @@ positive. For the other, a positive root `α` is a nonnegative combination of th
 `Q⁺` (`RootPairing.Base.root_highestRoot_sub_mem_posRootCone`), so `α(x) ≤ θ(x) < 1`
 (`RootPairing.root'_le_root'_highestRoot`). Consequently every root, positive or negative, takes
 values in an open interval between consecutive integers on `A`, and this interval depends only on
-the sign of the root. So `A` meets none of the hyperplanes `H_{α,k}`, and a point lies in `A`
-exactly when it lies on the same side as `A` of every one of them: `A` is one of the alcoves, a
-cell of the affine root-hyperplane arrangement.
+the sign of the root. So `A` meets none of the hyperplanes `H_{α,k}`, and when `A` is nonempty
+it is a cell of the affine root-hyperplane arrangement: a point lies in `A` exactly when it lies
+on no hyperplane and on the same side of every one of them as any given point of `A`.
 
 The alcove is convex, as an intersection of open half-spaces. Over a linearly ordered field it is
 nonempty: the simple roots take arbitrary prescribed values at some point of `N`
@@ -69,9 +69,9 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   a fixed open interval `(n, n + 1)` with `n` an integer.
 * `RootPairing.root'_ne_intCast_of_mem_fundamentalAlcove`: the fundamental alcove meets no affine
   root hyperplane.
-* `RootPairing.mem_fundamentalAlcove_iff_of_mem`: **the fundamental alcove is a cell of the affine
-  root-hyperplane arrangement**: a point lies in it exactly when it lies on no affine root
-  hyperplane and on the same side as a given point of the alcove of each of them.
+* `RootPairing.mem_fundamentalAlcove_iff_of_mem`: **when the fundamental alcove is nonempty, it is
+  a cell of the affine root-hyperplane arrangement**: a point lies in it exactly when it lies on no
+  affine root hyperplane and on the same side as a given point of the alcove of each of them.
 * `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
   the part of the closed fundamental alcove lying on no affine root hyperplane.
 * `RootPairing.convex_fundamentalAlcove`, `RootPairing.convex_closedFundamentalAlcove`, and
@@ -87,8 +87,12 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   `ht(α) + n (ht(θ) + 1) = 1` is an affine simple root.
 * `RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes` and
   `RootPairing.Base.exists_mem_coweightLattice_affineSimpleRoot_eq`: for a root system
-  (`P.IsRootSystem`), at a special node `k` the closed fundamental alcove has a vertex in the
-  coweight lattice, the origin for `k = 0` and the fundamental coweight `ϖⱼ` for `k = j`.
+  (`P.IsRootSystem`), at a special node `k` the coweight lattice contains a point (`0` for `k = 0`
+  and the fundamental coweight `ϖⱼ` for `k = j`) at which `aₖ = 1` and every other affine simple
+  root vanishes; over an ordered ring, these points are the vertices of the closed fundamental
+  alcove opposite the special walls
+  (`RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
+  `RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`).
 * `RootPairing.exists_mem_fundamentalAlcove_root'_eq_height_div` and
   `RootPairing.fundamentalAlcove_nonempty`: over a linearly ordered field the fundamental alcove is
   nonempty, containing the point where every root `α` takes the value `ht(α) / (ht(θ) + 1)`.
@@ -443,9 +447,10 @@ theorem Base.root'_highestRoot_fundamentalCoweightBasis (j : b.support) :
   rw [root', b.root_highestRoot_eq_sum_affineMarks]
   simp [zsmul_eq_mul]
 
-/-- **At a special node `j`, the fundamental coweight `ϖⱼ` is the vertex of the closed fundamental
-alcove opposite the wall `αⱼ = 0`**: the affine simple root `aₖ` takes the value `1` at `ϖⱼ` for
-`k = j` and vanishes for every other `k`, since `θ(ϖⱼ) = mⱼ = 1`. -/
+/-- At a special node `j`, the affine simple root `aₖ` takes the value `1` at the fundamental
+coweight `ϖⱼ` for `k = j` and vanishes for every other `k`, since `θ(ϖⱼ) = mⱼ = 1` (so over an
+ordered ring, `ϖⱼ` is the vertex of the closed fundamental alcove opposite the wall `αⱼ = 0`; see
+`RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`). -/
 theorem Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes
     [DecidableEq ι] {j : b.support} (hj : some j ∈ b.specialNodes) (k : Option b.support) :
     b.affineSimpleRoot k (b.fundamentalCoweightBasis j) = if k = some j then 1 else 0 := by
@@ -453,10 +458,12 @@ theorem Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes
   · simp [b.mem_specialNodes.mp hj]
   · simp
 
-/-- **At a special node `k` the closed fundamental alcove has a vertex in the coweight lattice**:
-a point at which `aₖ = 1` and every other affine simple root vanishes. For `k = 0` it is the
-origin, and for a simple root `αⱼ` it is the fundamental coweight `ϖⱼ`
-(`RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes`). -/
+/-- At a special node `k`, the coweight lattice contains a point at which `aₖ = 1` and every other
+affine simple root vanishes: `0` for `k = 0`, and the fundamental coweight `ϖⱼ` for `k = j`
+(`RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes`). Over an ordered
+ring, these are the vertices of the closed fundamental alcove at special nodes
+(`RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
+`RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`). -/
 theorem Base.exists_mem_coweightLattice_affineSimpleRoot_eq {k : Option b.support}
     (hk : k ∈ b.specialNodes) :
     ∃ x ∈ P.coweightLattice,

@@ -298,8 +298,8 @@ theorem affinePointStabilizer_eq_closure_affineRootReflections [Archimedean R] (
           (MulAut.conj g⁻¹).toMonoidHom := by
         rw [affinePointStabilizer_eq_closure_affineRootReflections_of_mem_closedFundamentalAlcove
           b hgy]
-    _ = Subgroup.closure (MulAut.conj g⁻¹ '' P.affineRootReflections (g y)) :=
-        MonoidHom.map_closure _ _
+    _ = Subgroup.closure (MulAut.conj g⁻¹ '' P.affineRootReflections (g y)) := by
+        rw [MonoidHom.map_closure, MulEquiv.coe_toMonoidHom]
     _ = Subgroup.closure (P.affineRootReflections y) := by
         rw [P.image_conj_affineRootReflections (inv_mem hg) (g y), hy]
 
