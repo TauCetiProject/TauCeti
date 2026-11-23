@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Dimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
