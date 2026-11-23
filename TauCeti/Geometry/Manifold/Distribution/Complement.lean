@@ -9,9 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.Distribution
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.ConstantRank
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 

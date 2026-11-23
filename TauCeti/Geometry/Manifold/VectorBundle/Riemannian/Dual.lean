@@ -91,6 +91,8 @@ theorem ContMDiffWithinAt.innerSL_bundle {n : ℕ∞ω}
     exact (heq x v w).symm
   simpa only [hdual] using hd
 
+namespace TauCeti
+
 /-- On a finite-rank Riemannian bundle, metric duality applied to a finite family of regular
 sections `X i` gives a regular bundle map `v ↦ (⟪X i y, v⟫)ᵢ` to the trivial bundle with fibre
 `ι → ℝ`. -/
@@ -112,6 +114,8 @@ theorem contMDiffWithinAt_pi_innerSL_bundle {n : ℕ∞ω} [FiniteDimensional �
     Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.pi_apply] using
     TauCeti.contMDiffWithinAt_clm_apply.mp h u
+
+end TauCeti
 
 /-- Lowering a differentiable section with a C¹ metric gives a differentiable covector
 section, without assuming the section itself is C¹. -/
