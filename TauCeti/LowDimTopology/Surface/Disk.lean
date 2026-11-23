@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Contractible
-public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
+public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Interior
 public import TauCeti.LowDimTopology.Surface.Basic
 
 /-!
@@ -14,16 +13,14 @@ public import TauCeti.LowDimTopology.Surface.Basic
 
 The closed unit disk `D = closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1`, a manifold with boundary
 modelled on the half-plane (`TauCeti.instChartedSpaceClosedBallEuclideanSpace`), is a compact
-connected surface. Its interior is the open unit disk
-(`TauCeti.closedDiskInteriorHomeomorph`), which is contractible, so it is orientable. This file
+connected surface. Its interior is homeomorphic to the open unit disk
+(`TauCeti.closedBallInteriorHomeomorph`), which is contractible, so it is orientable. This file
 records the disk with a chosen orientation and no punctures (`TauCeti.closedDisk`), and the disk
 punctured at its centre (`TauCeti.puncturedDisk`), as surfaces in the sense of
 `TauCeti.PuncturedSurface`.
 
 ## Main definitions
 
-* `TauCeti.closedDiskInteriorHomeomorph`: the interior of the closed unit disk is homeomorphic
-  to the open unit disk.
 * `TauCeti.closedDiskOrientation`: an orientation of the closed unit disk.
 * `TauCeti.closedDisk`: the closed unit disk as a surface without punctures.
 * `TauCeti.puncturedDisk`: the closed unit disk punctured at its centre.
@@ -40,72 +37,56 @@ open scoped Manifold
 namespace TauCeti
 
 /-- The closed unit disk of the Euclidean plane. -/
-local notation "𝔻" => closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1
+local notation "𝕔𝔻" => closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1
 
 /-- The Euclidean plane has dimension two, as the closed-ball charts require. -/
 local instance factFinrankEuclideanPlane : Fact (finrank ℝ (EuclideanSpace ℝ (Fin 2)) = 2) :=
   ⟨finrank_euclideanSpace_fin⟩
 
 /-- The closed unit disk is a compact connected surface. -/
-theorem isCompactConnectedSurface_closedDisk : IsCompactConnectedSurface 𝔻 :=
-  have : ConnectedSpace 𝔻 := isConnected_iff_connectedSpace.mp
-    ((convex_closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1).isConnected
-      (nonempty_closedBall.2 zero_le_one))
-  isCompactConnectedSurface 𝔻
-
-/-- The points of the open unit disk are exactly the interior points of the closed unit disk. -/
-theorem range_val_interior_closedDisk :
-    range (fun x : (𝓡∂ 2).interior 𝔻 ↦ (x.val : EuclideanSpace ℝ (Fin 2))) = ball 0 1 := by
-  ext y
-  refine ⟨?_, fun hy ↦ ?_⟩
-  · rintro ⟨x, rfl⟩
-    have hx : (𝓡∂ 2).IsInteriorPoint x.val := x.property
-    simpa only [mem_ball_zero_iff] using isInteriorPoint_closedBall_iff.1 hx
-  · have hy' : ‖y‖ < 1 := mem_ball_zero_iff.1 hy
-    have hyD : y ∈ 𝔻 := mem_closedBall_zero_iff.2 hy'.le
-    exact ⟨⟨⟨y, hyD⟩, isInteriorPoint_closedBall_iff.2 hy'⟩, rfl⟩
-
-/-- **The interior of the closed unit disk is the open unit disk.** -/
-@[expose] def closedDiskInteriorHomeomorph :
-    (𝓡∂ 2).interior 𝔻 ≃ₜ ball (0 : EuclideanSpace ℝ (Fin 2)) 1 :=
-  (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal).toHomeomorph.trans
-    (Homeomorph.setCongr range_val_interior_closedDisk)
-
-@[simp]
-theorem coe_closedDiskInteriorHomeomorph_apply (x : (𝓡∂ 2).interior 𝔻) :
-    (closedDiskInteriorHomeomorph x : EuclideanSpace ℝ (Fin 2)) = x.val :=
-  rfl
-
-/-- The interior of the closed unit disk is contractible. -/
-instance contractibleSpace_interior_closedDisk : ContractibleSpace ((𝓡∂ 2).interior 𝔻) :=
-  have := (convex_ball (0 : EuclideanSpace ℝ (Fin 2)) 1).contractibleSpace
-    (nonempty_ball.2 zero_lt_one)
-  closedDiskInteriorHomeomorph.contractibleSpace
+theorem isCompactConnectedSurface_closedDisk : IsCompactConnectedSurface 𝕔𝔻 :=
+  have : ConnectedSpace 𝕔𝔻 :=
+    isConnected_iff_connectedSpace.mp (isConnected_closedBall zero_le_one)
+  isCompactConnectedSurface 𝕔𝔻
 
 /-- An orientation of the closed unit disk, an orientation of its interior, which exists because
 the interior is simply connected. -/
 def closedDiskOrientation :
-    HomologicalOrientation ((𝓡∂ 2).interior 𝔻) (EuclideanSpace ℝ (Fin 2)) 2 :=
-  have : Nonempty ((𝓡∂ 2).interior 𝔻) := ⟨closedDiskInteriorHomeomorph.symm ⟨0, by simp⟩⟩
+    HomologicalOrientation ((𝓡∂ 2).interior 𝕔𝔻) (EuclideanSpace ℝ (Fin 2)) 2 :=
+  have : Nonempty ((𝓡∂ 2).interior 𝕔𝔻) :=
+    ⟨(closedBallInteriorHomeomorph 2 _).symm ⟨0, by simp⟩⟩
   (HomologicalOrientation.nonempty_of_simplyConnectedSpace finrank_euclideanSpace_fin).some
 
 /-- **The closed unit disk** as a surface without punctures. -/
-@[expose] def closedDisk : PuncturedSurface 𝔻 where
+def closedDisk : PuncturedSurface 𝕔𝔻 where
   isCompactConnectedSurface := isCompactConnectedSurface_closedDisk
   orientation := closedDiskOrientation
   punctures := ∅
   punctures_subset_interior := by simp
 
 @[simp]
-theorem numPunctures_closedDisk : closedDisk.numPunctures = 0 :=
-  rfl
+theorem orientation_closedDisk : closedDisk.orientation = closedDiskOrientation :=
+  (rfl)
+
+@[simp]
+theorem punctures_closedDisk : closedDisk.punctures = ∅ :=
+  (rfl)
+
+@[simp]
+theorem numPunctures_closedDisk : closedDisk.numPunctures = 0 := by
+  rw [PuncturedSurface.numPunctures_def, punctures_closedDisk]
+  exact Finset.card_empty
 
 /-- The centre of the closed unit disk. -/
-@[expose] def closedDiskCenter : 𝔻 :=
+def closedDiskCenter : 𝕔𝔻 :=
   ⟨0, by simp⟩
 
+@[simp]
+theorem coe_closedDiskCenter : (closedDiskCenter : EuclideanSpace ℝ (Fin 2)) = 0 :=
+  (rfl)
+
 /-- **The closed unit disk punctured at its centre.** -/
-@[expose] def puncturedDisk : PuncturedSurface 𝔻 where
+def puncturedDisk : PuncturedSurface 𝕔𝔻 where
   isCompactConnectedSurface := isCompactConnectedSurface_closedDisk
   orientation := closedDiskOrientation
   punctures := {closedDiskCenter}
@@ -114,8 +95,17 @@ theorem numPunctures_closedDisk : closedDisk.numPunctures = 0 :=
     exact isInteriorPoint_closedBall_iff.2 (by simp [closedDiskCenter])
 
 @[simp]
-theorem numPunctures_puncturedDisk : puncturedDisk.numPunctures = 1 :=
-  rfl
+theorem orientation_puncturedDisk : puncturedDisk.orientation = closedDiskOrientation :=
+  (rfl)
+
+@[simp]
+theorem punctures_puncturedDisk : puncturedDisk.punctures = {closedDiskCenter} :=
+  (rfl)
+
+@[simp]
+theorem numPunctures_puncturedDisk : puncturedDisk.numPunctures = 1 := by
+  rw [PuncturedSurface.numPunctures_def, punctures_puncturedDisk]
+  exact Finset.card_singleton closedDiskCenter
 
 /-- The boundary of the punctured disk is the unit circle. -/
 theorem image_boundary_puncturedDisk :

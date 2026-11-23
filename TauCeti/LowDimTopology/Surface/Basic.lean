@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.Geometry.Manifold.Basic
-public import TauCeti.Geometry.Manifold.Boundary.Interior
 
 /-!
 # Surfaces with boundary and punctures
@@ -25,7 +24,8 @@ a collar of the boundary, gives the fundamental class of `X` relative to its bou
 The surface itself is the open subset `S.carrier = X ∖ P` of `X`. It is a charted space modelled
 on the half-plane by restricting the charts of `X` (`TopologicalSpace.Opens.instChartedSpace`), and
 it is oriented by restricting the orientation of `X`
-(`TauCeti.PuncturedSurface.carrierOrientation`). Its manifold boundary is the boundary of `X`,
+(`TauCeti.PuncturedSurface.carrierOrientation`, through
+`TauCeti.HomologicalOrientation.restrictOpens`). Its manifold boundary is the boundary of `X`,
 since the punctures are interior points (`TauCeti.PuncturedSurface.image_boundary_carrier`).
 
 Genus, Euler characteristic, homology and the intersection form are not part of the structure:
@@ -33,10 +33,6 @@ they are invariants of it.
 
 ## Main definitions
 
-* `ModelWithCorners.interiorOpensInclusion`: the inclusion of the interior of an open subset `u` of
-  a manifold with corners `M` into the interior of `M`, an open embedding.
-* `TauCeti.HomologicalOrientation.restrictOpens`: an orientation of the interior of `M` restricts
-  to an orientation of the interior of every open subset of `M`.
 * `TauCeti.PuncturedSurface X`: the data of a punctured compact connected oriented surface with
   boundary, with underlying compact surface `X`.
 * `TauCeti.PuncturedSurface.carrier`: the surface `X ∖ P`, an open subset of `X`.
@@ -64,67 +60,7 @@ open Set Topology TopologicalSpace
 
 open scoped Manifold
 
-universe w
-
-/-! ### Interiors of open subsets -/
-
-namespace ModelWithCorners
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E H M : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) [TopologicalSpace M]
-  [ChartedSpace H M]
-
-/-- The inclusion of the interior of an open subset `u` of `M` into the interior of `M`: an
-interior point of `u` is an interior point of `M` (`ModelWithCorners.interior_open`). -/
-@[expose] def interiorOpensInclusion (u : Opens M) : I.interior u → I.interior M :=
-  fun x ↦ ⟨x.val.val, by simpa only [interior_open, mem_preimage] using x.property⟩
-
-@[simp]
-theorem coe_interiorOpensInclusion (u : Opens M) (x : I.interior u) :
-    (I.interiorOpensInclusion u x : M) = x.val.val :=
-  rfl
-
-/-- The inclusion of the interior of an open subset into the interior is an open embedding: it is
-an embedding since both interiors carry the subspace topology of `M`, and its range is the preimage
-of the open set `u`. -/
-theorem isOpenEmbedding_interiorOpensInclusion (u : Opens M) :
-    IsOpenEmbedding (I.interiorOpensInclusion u) := by
-  have hc : Continuous (I.interiorOpensInclusion u) :=
-    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
-  have he : IsEmbedding (fun x : I.interior u ↦ x.val.val) :=
-    IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal
-  refine ⟨.of_comp hc continuous_subtypeVal he, ?_⟩
-  convert u.isOpen.preimage continuous_subtypeVal
-  ext ⟨y, hy⟩
-  refine ⟨?_, fun hyu ↦ ⟨⟨⟨y, hyu⟩, by simpa only [interior_open, mem_preimage] using hy⟩, rfl⟩⟩
-  rintro ⟨x, hx⟩
-  rw [← hx]
-  exact x.val.property
-
-end ModelWithCorners
-
 namespace TauCeti
-
-namespace HomologicalOrientation
-
-variable {E H M : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [T2Space M]
-  [ChartedSpace H M] {d : ℕ}
-
-/-- **The restriction of an orientation to an open subset.** An orientation of the interior of a
-manifold with corners `M` restricts to an orientation of the interior of every open subset `u` of
-`M`, by pulling it back along the inclusion of interiors. -/
-@[expose] def restrictOpens (o : HomologicalOrientation (I.interior M) E d) (u : Opens M) :
-    HomologicalOrientation (I.interior u) E d :=
-  o.comap (I.isOpenEmbedding_interiorOpensInclusion u)
-
-/-- Restricting the reversed orientation gives the reversed restriction. -/
-@[simp]
-theorem restrictOpens_neg (o : HomologicalOrientation (I.interior M) E d) (u : Opens M) :
-    (-o).restrictOpens u = -o.restrictOpens u :=
-  o.comap_neg _
-
-end HomologicalOrientation
 
 /-! ### Punctured surfaces -/
 
@@ -156,27 +92,27 @@ charted space modelled on the half-plane by the restricted charts of `X`. -/
 
 @[simp]
 theorem mem_carrier {x : X} : x ∈ S.carrier ↔ x ∉ S.punctures :=
-  Iff.rfl
+  (Iff.rfl)
 
 @[simp]
 theorem coe_carrier : (S.carrier : Set X) = (S.punctures : Set X)ᶜ :=
-  rfl
+  (rfl)
 
 /-- The number of punctures. -/
-@[expose] def numPunctures : ℕ :=
+def numPunctures : ℕ :=
   S.punctures.card
 
 theorem numPunctures_def : S.numPunctures = S.punctures.card :=
-  rfl
+  (rfl)
 
 /-- The orientation of the surface `X ∖ P`, the restriction of the orientation of `X`. -/
-@[expose] def carrierOrientation :
+def carrierOrientation :
     HomologicalOrientation ((𝓡∂ 2).interior S.carrier) (EuclideanSpace ℝ (Fin 2)) 2 :=
   S.orientation.restrictOpens S.carrier
 
 theorem carrierOrientation_def :
     S.carrierOrientation = S.orientation.restrictOpens S.carrier :=
-  rfl
+  (rfl)
 
 /-- **The boundary of `X ∖ P` is the boundary of `X`.** The punctures are interior points, so
 every boundary point of `X` lies in `X ∖ P`, where it is a boundary point. -/
@@ -197,11 +133,24 @@ theorem image_boundary_carrier :
 
 @[simp]
 theorem orientation_reverse : S.reverse.orientation = -S.orientation :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem punctures_reverse : S.reverse.punctures = S.punctures :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem reverse_reverse : S.reverse.reverse = S := by
+  cases S
+  simp only [reverse, neg_neg]
+
+@[simp]
+theorem carrier_reverse : S.reverse.carrier = S.carrier :=
+  (rfl)
+
+@[simp]
+theorem numPunctures_reverse : S.reverse.numPunctures = S.numPunctures :=
+  (rfl)
 
 @[simp]
 theorem carrierOrientation_reverse : S.reverse.carrierOrientation = -S.carrierOrientation :=
