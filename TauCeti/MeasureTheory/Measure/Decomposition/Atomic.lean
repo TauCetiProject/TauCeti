@@ -205,9 +205,9 @@ theorem atomicPart_eq_sum_dirac (μ : Measure X) :
     rw [htop, hμ]
 
 /-- Integrating the singleton masses of an s-finite measure `ν` against a measure `μ` sums the
-products of the masses of their common atoms: `∫⁻ x, ν {x} ∂μ = ∑' x, ν {x} * μ {x}`. Only the
-countably many atoms of `ν` contribute. For `μ = ν` this is the mass `∑' x, μ {x} ^ 2` of the
-diagonal under `μ.prod μ`. -/
+products of their singleton masses: `∫⁻ x, ν {x} ∂μ = ∑' x, ν {x} * μ {x}`. Only the countably
+many positive-mass singletons of `ν` contribute. When the diagonal of `X × X` is measurable and
+`μ = ν` is s-finite, this is the mass `∑' x, μ {x} ^ 2` of the diagonal under `μ.prod μ`. -/
 theorem lintegral_measure_singleton (μ ν : Measure X) [SFinite ν] :
     ∫⁻ x, ν {x} ∂μ = ∑' x, ν {x} * μ {x} := by
   rw [← setLIntegral_eq_of_support_subset (s := positiveSingletons ν) fun _ hx ↦ hx,

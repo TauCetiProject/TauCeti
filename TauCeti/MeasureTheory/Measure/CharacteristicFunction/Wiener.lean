@@ -7,8 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Measure.Decomposition.Atomic
 
 /-!
@@ -32,7 +32,7 @@ Two ingredients are of independent use.
   `ρ` of the kernel `T⁻¹ ∫₀ᵀ exp(it(ξ - a)) dt`, which is bounded by `1` and tends to the
   indicator of `{a}`.
 * The squared modulus `charFun σ t * conj (charFun σ t)` is the characteristic function of the
-  law of `ξ - η` under `σ ⊗ σ` (`TauCeti.charFun_map_prod_sub`), whose mass at `0` is the
+  law of `ξ - η` under `σ ⊗ σ` (`TauCeti.charFun_map_sub_prod`), whose mass at `0` is the
   mass `∑' ξ, σ({ξ})²` of the diagonal.
 
 ## References
@@ -49,42 +49,6 @@ open Complex Filter MeasureTheory Topology Set
 open scoped RealInnerProductSpace ComplexConjugate
 
 namespace TauCeti
-
-/-- The interval integral `∫₀ᵀ exp(itu) dt` has modulus at most `T`. -/
-private lemma norm_integral_cexp_le (u : ℝ) {T : ℝ} (hT : 0 ≤ T) :
-    ‖∫ t in (0 : ℝ)..T, cexp (↑(t * u) * I)‖ ≤ T := by
-  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1)
-    (f := fun t ↦ cexp (↑(t * u) * I)) fun t _ ↦ (norm_exp_ofReal_mul_I _).le
-  rwa [sub_zero, abs_of_nonneg hT, one_mul] at h
-
-/-- For `u ≠ 0` the interval integral `∫₀ᵀ exp(itu) dt` has modulus at most `2 / |u|`,
-uniformly in `T`. -/
-private lemma norm_integral_cexp_le_of_ne_zero {u : ℝ} (hu : u ≠ 0) (T : ℝ) :
-    ‖∫ t in (0 : ℝ)..T, cexp (↑(t * u) * I)‖ ≤ 2 / |u| := by
-  have hc : (u : ℂ) * I ≠ 0 := mul_ne_zero (ofReal_ne_zero.2 hu) I_ne_zero
-  have h : ∫ t in (0 : ℝ)..T, cexp (↑(t * u) * I) =
-      (cexp (↑(T * u) * I) - 1) / (u * I) := by
-    simp_rw [show ∀ t : ℝ, (↑(t * u) : ℂ) * I = u * I * t from fun t ↦ by push_cast; ring]
-    rw [integral_exp_mul_complex hc, ofReal_zero, mul_zero, exp_zero]
-  rw [h, norm_div, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs]
-  gcongr
-  exact (norm_sub_le _ _).trans (by rw [norm_exp_ofReal_mul_I, norm_one]; norm_num)
-
-/-- The averaged kernel `T⁻¹ ∫₀ᵀ exp(itu) dt` tends to `1` at `u = 0` and to `0` elsewhere. -/
-private lemma tendsto_average_integral_cexp (u : ℝ) :
-    Tendsto (fun T : ℝ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, cexp (↑(t * u) * I)) atTop
-      (𝓝 (({0} : Set ℝ).indicator 1 u)) := by
-  rcases eq_or_ne u 0 with rfl | hu
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_ne_atTop 0] with T hT
-    simp [hT]
-  · rw [indicator_of_notMem (by simpa using hu)]
-    refine squeeze_zero_norm' ?_ ((tendsto_inv_atTop_zero.const_mul (2 / |u|)).trans
-      (by rw [mul_zero]))
-    filter_upwards [eventually_gt_atTop 0] with T hT
-    rw [norm_mul, norm_inv, norm_real, Real.norm_of_nonneg hT.le, mul_comm]
-    gcongr
-    exact norm_integral_cexp_le_of_ne_zero hu T
 
 /-- **Atoms from twisted averages of a characteristic function.** For a finite measure `ρ` on `ℝ`
 and a frequency `a`, the averages `T⁻¹ ∫₀ᵀ exp(-iat) charFun ρ t dt` converge to the mass
@@ -128,11 +92,11 @@ theorem tendsto_average_cexp_mul_charFun (ρ : Measure ℝ) [IsFiniteMeasure ρ]
   · filter_upwards [eventually_gt_atTop 0] with T hT
     refine ae_of_all _ fun ξ ↦ ?_
     rw [norm_mul, norm_inv, norm_real, Real.norm_of_nonneg hT.le, inv_mul_le_one₀ hT]
-    exact norm_integral_cexp_le _ hT.le
+    exact (norm_integral_cexp_le _ 0 T).trans_eq (by rw [sub_zero, abs_of_pos hT])
 
 /-- The characteristic function of the law of `x - y` under `μ ⊗ ν` is
 `charFun μ t * conj (charFun ν t)`. For `ν = μ` it is the squared modulus of `charFun μ t`. -/
-theorem charFun_map_prod_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+theorem charFun_map_sub_prod {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub₂ E]
     (μ ν : Measure E) [SFinite μ] [SFinite ν] (t : E) :
     charFun ((μ.prod ν).map fun p ↦ p.1 - p.2) t = charFun μ t * conj (charFun ν t) := by
@@ -167,7 +131,7 @@ theorem tendsto_average_norm_charFun_sq (σ : Measure ℝ) [IsFiniteMeasure σ] 
   rw [← hρ]
   refine h.congr fun T ↦ ?_
   simp only [Function.comp_apply, ofReal_zero, zero_mul, neg_zero, exp_zero, one_mul]
-  simp_rw [ρ, charFun_map_prod_sub, mul_conj', ← ofReal_pow, intervalIntegral.integral_ofReal,
+  simp_rw [ρ, charFun_map_sub_prod, mul_conj', ← ofReal_pow, intervalIntegral.integral_ofReal,
     ← ofReal_inv, ← ofReal_mul, ofReal_re]
 
 end TauCeti
