@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.SpecialFunctions.Complex.CpowCharacter
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Character
 
@@ -36,7 +37,8 @@ that Tate's local theory uses.
 
 ## Main definitions
 
-* `TauCeti.normalizedAbsCpowCharacter K s`: the quasi-character `ω_s(x) = |x| ^ s`.
+* `TauCeti.normalizedAbsCpowCharacter K s`: the quasi-character `ω_s(x) = |x| ^ s`, built as
+  `MonoidHom.cpowCharacter` of the normalized absolute value.
 * `TauCeti.characterExponent K ω`: the real exponent `σ` with `‖ω(x)‖ = |x| ^ σ`.
 
 ## Main results
@@ -68,6 +70,7 @@ public section
 noncomputable section
 
 open ValuativeRel Complex
+open scoped NNReal
 
 namespace TauCeti
 
@@ -97,70 +100,87 @@ private theorem log_natCard_residueField_ne_zero_complex : log (Nat.card 𝓀[K]
   rw [log_natCard_residueField_complex, ofReal_ne_zero]
   exact log_natCard_residueField_ne_zero K
 
-private theorem natCard_residueField_cpow_ne_zero (s : ℂ) : (Nat.card 𝓀[K] : ℂ) ^ (-s) ≠ 0 := by
-  simp [natCard_residueField_ne_zero_complex K]
-
 /-! ### The norm-power characters `ω_s` -/
 
-/-- The **norm-power character** `ω_s(x) = |x| ^ s` of a nonarchimedean local field, for `s : ℂ`.
-It is the unramified character `x ↦ (q ^ (-s)) ^ v_K(x)`, where `q` is the cardinality of the
-residue field; `TauCeti.coe_normalizedAbsCpowCharacter_apply` writes it as `|x| ^ s`. -/
+/-- The normalized absolute value, as a homomorphism `Kˣ →* ℝ≥0ˣ`, is continuous: it factors
+through the normalized valuation, whose target is discrete. -/
+private theorem continuous_unitsMap_normalizedAbsoluteValue :
+    Continuous (Units.map ((NNRat.castHom ℝ≥0).toMonoidHom.comp
+      (normalizedAbsoluteValue K).toMonoidHom)) := by
+  have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
+  have h : ⇑(Units.map ((NNRat.castHom ℝ≥0).toMonoidHom.comp
+      (normalizedAbsoluteValue K).toMonoidHom)) =
+      (fun n : Multiplicative ℤ ↦ Units.mk0 ((Nat.card 𝓀[K] : ℝ≥0) ^ (-n.toAdd))
+        (zpow_ne_zero _ hq)) ∘ normalizedValuation K := by
+    ext x
+    simp
+  rw [h]
+  exact continuous_of_discreteTopology.comp (continuous_normalizedValuation K)
+
+/-- The **norm-power character** `ω_s(x) = |x| ^ s` of a nonarchimedean local field, for `s : ℂ`,
+where `|x|` is the normalized absolute value `TauCeti.normalizedAbsoluteValue`. It is the
+unramified character `x ↦ (q ^ (-s)) ^ v_K(x)`, where `q` is the cardinality of the residue
+field (`TauCeti.normalizedAbsCpowCharacter_eq_unramifiedCharacter`). -/
 def normalizedAbsCpowCharacter (s : ℂ) : Kˣ →ₜ* ℂˣ :=
-  unramifiedCharacter K (Units.mk0 _ (natCard_residueField_cpow_ne_zero K s))
+  (Units.map ((NNRat.castHom ℝ≥0).toMonoidHom.comp
+    (normalizedAbsoluteValue K).toMonoidHom)).cpowCharacter
+    (continuous_unitsMap_normalizedAbsoluteValue K) s
 
 variable {K}
-
-/-- `ω_s(x) = (q ^ (-s)) ^ v_K(x)`. -/
-theorem coe_normalizedAbsCpowCharacter_apply_eq_zpow (s : ℂ) (x : Kˣ) :
-    (normalizedAbsCpowCharacter K s x : ℂ) =
-      ((Nat.card 𝓀[K] : ℂ) ^ (-s)) ^ (normalizedValuation K x).toAdd := by
-  simp [normalizedAbsCpowCharacter]
 
 /-- `ω_s(x) = |x| ^ s`, for the normalized absolute value `|x| = q ^ (-v_K(x))`. -/
 @[simp]
 theorem coe_normalizedAbsCpowCharacter_apply (s : ℂ) (x : Kˣ) :
     (normalizedAbsCpowCharacter K s x : ℂ) =
       (((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) : ℂ) ^ s := by
-  -- Both sides are `q` to a complex power: `q ^ (v_K(x) * (-s))` and `q ^ (-v_K(x) * s)`.
-  rw [coe_normalizedAbsCpowCharacter_apply_eq_zpow, coe_normalizedAbsoluteValue_eq_zpow,
-    ← Real.rpow_intCast, ← cpow_mul_ofReal_nonneg (Nat.cast_nonneg _), ofReal_natCast,
-    ← cpow_int_mul]
-  congr 1
-  push_cast
-  ring
+  simp [normalizedAbsCpowCharacter]
 
 /-- The absolute value of `ω_s(x)` is `|x| ^ re s`. -/
 theorem norm_coe_normalizedAbsCpowCharacter_apply (s : ℂ) (x : Kˣ) :
     ‖(normalizedAbsCpowCharacter K s x : ℂ)‖ =
-      ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) ^ s.re := by
-  rw [coe_normalizedAbsCpowCharacter_apply,
-    norm_cpow_eq_rpow_re_of_pos (coe_normalizedAbsoluteValue_pos x)]
-
-/-- `ω_s` sends a uniformizer `ϖ` to `q ^ (-s)`. -/
-theorem coe_normalizedAbsCpowCharacter_apply_of_isUniformizer (s : ℂ) {ϖ : Kˣ}
-    (hϖ : IsUniformizer K ϖ) :
-    (normalizedAbsCpowCharacter K s ϖ : ℂ) = (Nat.card 𝓀[K] : ℂ) ^ (-s) := by
-  rw [normalizedAbsCpowCharacter, unramifiedCharacter_apply_of_isUniformizer _ hϖ, Units.val_mk0]
+      ((normalizedAbsoluteValue K (x : K) : ℚ≥0) : ℝ) ^ s.re :=
+  (MonoidHom.norm_coe_cpowCharacter_apply _ _ s x).trans (by simp)
 
 variable (K) in
 /-- `ω_0` is the trivial character. -/
 @[simp]
-theorem normalizedAbsCpowCharacter_zero : normalizedAbsCpowCharacter K 0 = 1 := by
-  rw [← unramifiedCharacter_one K, normalizedAbsCpowCharacter]
-  congr 1
-  ext
-  simp
+theorem normalizedAbsCpowCharacter_zero : normalizedAbsCpowCharacter K 0 = 1 :=
+  MonoidHom.cpowCharacter_zero _ _
 
 variable (K) in
 /-- `ω_{s + t} = ω_s ω_t`. -/
 theorem normalizedAbsCpowCharacter_add (s t : ℂ) :
     normalizedAbsCpowCharacter K (s + t) =
-      normalizedAbsCpowCharacter K s * normalizedAbsCpowCharacter K t := by
-  rw [normalizedAbsCpowCharacter, normalizedAbsCpowCharacter, normalizedAbsCpowCharacter,
-    ← unramifiedCharacter_mul]
-  congr 1
-  ext
-  simp [cpow_add _ _ (natCard_residueField_ne_zero_complex K), mul_comm]
+      normalizedAbsCpowCharacter K s * normalizedAbsCpowCharacter K t :=
+  MonoidHom.cpowCharacter_add _ _ s t
+
+variable (K) in
+/-- `ω_s` is the unramified character `x ↦ (q ^ (-s)) ^ v_K(x)`. -/
+theorem normalizedAbsCpowCharacter_eq_unramifiedCharacter (s : ℂ) :
+    normalizedAbsCpowCharacter K s =
+      unramifiedCharacter K (Units.mk0 ((Nat.card 𝓀[K] : ℂ) ^ (-s)) (by simp [Nat.card_pos.ne'])) :=
+  ContinuousMonoidHom.ext fun x ↦ Units.ext <| by
+    -- Both sides are `q` to a complex power: `q ^ (-v_K(x) * s)` and `q ^ (v_K(x) * (-s))`.
+    rw [coe_normalizedAbsCpowCharacter_apply, unramifiedCharacter_apply,
+      Units.val_zpow_eq_zpow_val, Units.val_mk0,
+      coe_normalizedAbsoluteValue_eq_zpow, ← Real.rpow_intCast,
+      ← cpow_mul_ofReal_nonneg (Nat.cast_nonneg _), ofReal_natCast, ← cpow_int_mul]
+    congr 1
+    push_cast
+    ring
+
+/-- `ω_s(x) = (q ^ (-s)) ^ v_K(x)`. -/
+theorem coe_normalizedAbsCpowCharacter_apply_eq_zpow (s : ℂ) (x : Kˣ) :
+    (normalizedAbsCpowCharacter K s x : ℂ) =
+      ((Nat.card 𝓀[K] : ℂ) ^ (-s)) ^ (normalizedValuation K x).toAdd := by
+  simp [normalizedAbsCpowCharacter_eq_unramifiedCharacter]
+
+/-- `ω_s` sends a uniformizer `ϖ` to `q ^ (-s)`. -/
+theorem coe_normalizedAbsCpowCharacter_apply_of_isUniformizer (s : ℂ) {ϖ : Kˣ}
+    (hϖ : IsUniformizer K ϖ) :
+    (normalizedAbsCpowCharacter K s ϖ : ℂ) = (Nat.card 𝓀[K] : ℂ) ^ (-s) := by
+  rw [normalizedAbsCpowCharacter_eq_unramifiedCharacter,
+    unramifiedCharacter_apply_of_isUniformizer _ hϖ, Units.val_mk0]
 
 /-- **`ω_s` determines `s` modulo `2πi / log q`.** -/
 theorem normalizedAbsCpowCharacter_eq_iff {s t : ℂ} :
@@ -168,8 +188,9 @@ theorem normalizedAbsCpowCharacter_eq_iff {s t : ℂ} :
       ∃ n : ℤ, s = t + n * (2 * Real.pi * I / Real.log (Nat.card 𝓀[K])) := by
   have hq := natCard_residueField_ne_zero_complex K
   have hlog := log_natCard_residueField_ne_zero_complex K
-  rw [normalizedAbsCpowCharacter, normalizedAbsCpowCharacter,
-    (unramifiedCharacter_injective K).eq_iff, Units.ext_iff, Units.val_mk0, Units.val_mk0,
+  rw [normalizedAbsCpowCharacter_eq_unramifiedCharacter,
+    normalizedAbsCpowCharacter_eq_unramifiedCharacter, (unramifiedCharacter_injective K).eq_iff,
+    Units.ext_iff, Units.val_mk0, Units.val_mk0,
     cpow_def_of_ne_zero hq, cpow_def_of_ne_zero hq, exp_eq_exp_iff_exists_int,
     log_natCard_residueField_complex]
   rw [log_natCard_residueField_complex] at hlog
@@ -196,8 +217,9 @@ theorem exists_eq_normalizedAbsCpowCharacter_iff {ω : Kˣ →ₜ* ℂˣ} :
     ⟨fun h u hu ↦ h ((mem_unitFiltration_zero u).2 hu),
       fun h u hu ↦ h u ((mem_unitFiltration_zero u).1 hu)⟩
   rw [hker, ← exists_eq_unramifiedCharacter_iff]
-  refine ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs⟩, fun ⟨a, ha⟩ ↦ ⟨-(log a / log (Nat.card 𝓀[K] : ℂ)), ?_⟩⟩
-  rw [ha, normalizedAbsCpowCharacter]
+  refine ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs.trans (normalizedAbsCpowCharacter_eq_unramifiedCharacter K s)⟩,
+    fun ⟨a, ha⟩ ↦ ⟨-(log a / log (Nat.card 𝓀[K] : ℂ)), ?_⟩⟩
+  rw [ha, normalizedAbsCpowCharacter_eq_unramifiedCharacter]
   congr 1
   ext
   rw [Units.val_mk0, neg_neg, cpow_def_of_ne_zero hq, mul_div_cancel₀ _ hlog, exp_log a.ne_zero]
