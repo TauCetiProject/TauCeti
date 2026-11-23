@@ -21,9 +21,10 @@ tensor-product rule (`TauCeti.finrank_hom_tprod_rationalWeylFDRep`), the multipl
 
 * `TauCeti.Hive.finrank_hom_eq_hiveCount`: `GLₙ(ℂ)` tensor-product multiplicity equals
   `hiveCount (productBoundary λ μ γ)` for arbitrary dominant weights `λ, μ, γ`.
-* `TauCeti.Hive.hiveCount_comm`: commutativity `c(λ, μ; γ) = c(μ, λ; γ)` deduced from symmetry of
-  tensor products in `FDRep`.
-* `TauCeti.Hive.finrank_hom_zero_eq_one`, `TauCeti.Hive.finrank_hom_one_eq_ite`,
+* `TauCeti.Hive.hiveCount_productBoundary_comm`: commutativity `c(λ, μ; γ) = c(μ, λ; γ)` deduced
+  from symmetry of tensor products in `FDRep`.
+* `TauCeti.Hive.finrank_hom_rationalWeylFDRep_rank_zero`,
+  `TauCeti.Hive.finrank_hom_rationalWeylFDRep_rank_one`,
   `TauCeti.Hive.finrank_hom_three_two_one_two_one_three_two_one`: concrete rank-`0`, rank-`1`,
   and multiplicity-`2` rank-`3` representation-theoretic checks.
 
@@ -54,7 +55,7 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
 
 /-- **Commutativity of Littlewood–Richardson hive counts**:
 `hiveCount (productBoundary λ μ γ) = hiveCount (productBoundary μ λ γ)`. -/
-theorem hiveCount_comm {n : ℕ} (lam μ γ : DominantWeight n) :
+theorem hiveCount_productBoundary_comm {n : ℕ} (lam μ γ : DominantWeight n) :
     hiveCount (productBoundary lam μ γ) = hiveCount (productBoundary μ lam γ) := by
   rw [← finrank_hom_eq_hiveCount, ← finrank_hom_eq_hiveCount]
   let e₁ := FDRep.homLinearEquiv (rationalWeylFDRep ℂ n γ)
@@ -73,13 +74,13 @@ end TensorMultiplicities
 section ConcreteChecks
 
 /-- Rank-`0` check: the unique trivial representation has tensor multiplicity `1`. -/
-theorem finrank_hom_zero_eq_one (lam μ γ : DominantWeight 0) :
+theorem finrank_hom_rationalWeylFDRep_rank_zero (lam μ γ : DominantWeight 0) :
     Module.finrank ℂ
         (rationalWeylFDRep ℂ 0 γ ⟶ rationalWeylFDRep ℂ 0 lam ⊗ rationalWeylFDRep ℂ 0 μ) = 1 := by
   rw [finrank_hom_eq_hiveCount, hiveCount_rank_zero]
 
 /-- Rank-`1` `GL₁(ℂ)` tensor-product check via `finrank_hom_eq_hiveCount`. -/
-theorem finrank_hom_one_eq_ite (lam μ γ : DominantWeight 1) :
+theorem finrank_hom_rationalWeylFDRep_rank_one (lam μ γ : DominantWeight 1) :
     Module.finrank ℂ
         (rationalWeylFDRep ℂ 1 γ ⟶ rationalWeylFDRep ℂ 1 lam ⊗ rationalWeylFDRep ℂ 1 μ) =
       if lam.val 0 + μ.val 0 = γ.val 0 then 1 else 0 := by

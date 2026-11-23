@@ -19,8 +19,8 @@ with multiplicities given by the fixed-boundary integer hive counts
 
 ## Main results
 
-* `TauCeti.Hive.schur_mul_eq_finsum_hiveCount`: hive Littlewood–Richardson expansion for products
-  of Schur polynomials over any commutative semiring.
+* `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: hive
+  Littlewood–Richardson expansion for products of Schur polynomials over any commutative semiring.
 
 ## References
 
@@ -38,8 +38,9 @@ namespace TauCeti.Hive
 `R`, the product of the Schur polynomials of two polynomial dominant weights `λ, μ` expands as a
 finitely supported sum over dominant weights `γ` with multiplicity
 `hiveCount (productBoundary λ μ γ)`. -/
-theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
-    (lam μ : DominantWeight n) (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) :
+theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R : Type*}
+    [CommSemiring R] (lam μ : DominantWeight n) (hlam : lam.IsPolynomial)
+    (hμ : μ.IsPolynomial) :
     diagramSchurPoly n R lam.shape * diagramSchurPoly n R μ.shape =
       ∑ᶠ γ : DominantWeight n,
         hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape := by

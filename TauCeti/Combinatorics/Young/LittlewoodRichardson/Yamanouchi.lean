@@ -47,7 +47,8 @@ Consequently the Littlewood–Richardson coefficient may be read off either side
   of row counts.
 * `TauCeti.natCard_lrTableau_eq_natCard_isYamanouchi`: the two counts of `c^ν_{λ μ}` agree.
 * `TauCeti.natCard_boundedSSYT_isYamanouchi_eq_natCard_lrTableau`: when `ν` has at most `n` rows,
-  counting `BoundedSSYT n μ` agrees with `Nat.card (LRTableau λ ν μ)`.
+  the number of `λ`-Yamanouchi `T : BoundedSSYT n μ` with `λ + c(T) = ν` equals
+  `Nat.card (LRTableau λ ν μ)`.
 
 ## References
 
@@ -358,8 +359,8 @@ theorem natCard_lrTableau_eq_natCard_isYamanouchi (lam ν μ : YoungDiagram) :
   Nat.card_congr (lrTableauEquivYamanouchi lam ν μ)
 
 /-- When `ν` has at most `n` rows, every `λ`-Yamanouchi tableau `T` of shape `μ` with
-`λ + c(T) = ν` has entries below `n`, so counting `BoundedSSYT n μ` agrees with the
-Littlewood–Richardson coefficient `Nat.card (LRTableau λ ν μ)`. -/
+`λ + c(T) = ν` has entries below `n`, so the number of `λ`-Yamanouchi `T : BoundedSSYT n μ`
+with `λ + c(T) = ν` equals `Nat.card (LRTableau λ ν μ)`. -/
 theorem natCard_boundedSSYT_isYamanouchi_eq_natCard_lrTableau {n : ℕ} (hν : ν.colLen 0 ≤ n) :
     Nat.card {T : BoundedSSYT n μ // T.val.IsYamanouchi lam ∧
         ∀ i, lam.rowLen i + T.val.content i = ν.rowLen i} =
