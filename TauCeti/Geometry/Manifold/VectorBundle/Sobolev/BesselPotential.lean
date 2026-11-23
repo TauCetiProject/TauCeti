@@ -100,17 +100,19 @@ open scoped Manifold ContDiff Distributions SchwartzMap CompactConvergenceCLM
 
 namespace TauCeti
 
+namespace SquareChartPartition
+
+attribute [local instance] ContMDiffSection.ChartTestData.memTrivializationAtlas
+
+section Reconstruction
+
 variable {ι : Type*} [Fintype ι]
-  {E H M : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F]
   {V : M → Type*} [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V]
-
-namespace SquareChartPartition
-
-attribute [local instance] ContMDiffSection.ChartTestData.memTrivializationAtlas
 
 variable (A : SquareChartPartition ι I F V)
 
@@ -226,9 +228,22 @@ theorem reconstruction_apply (v : ι × Fin (Module.finrank ℝ F) → 𝓢'(E, 
     A.reconstruction v s = ∑ k, (v k (A.testLocalization k.1 k.2 s)).re :=
   (rfl)
 
+end Reconstruction
+
 /-! ### Localization of distributions -/
 
-variable [T2Space M]
+section Localization
+
+variable {ι : Type*} [Fintype ι]
+  {E H M : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I]
+
+variable (A : SquareChartPartition ι I F V)
 
 omit [FiniteDimensional ℝ F] in
 /-- Extending the localization by `ψ` back through the chart and the frame gives `ψ • s`. -/
@@ -575,6 +590,8 @@ theorem norm_ofMemSobolev_sq {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemS
   simp only [ofMemSobolev_apply]
 
 end Sobolev
+
+end Localization
 
 end SquareChartPartition
 
