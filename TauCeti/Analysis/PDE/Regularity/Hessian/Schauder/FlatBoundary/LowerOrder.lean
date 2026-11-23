@@ -29,7 +29,7 @@ lower-order terms, in the `TauCeti.PDE` namespace
 No sign condition on `c` is needed.
 
 **The estimate** is, in the `TauCeti.PDE` namespace,
-`exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_add_fderiv_add_mul_of_halfSpace`.
+`exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul_of_halfSpace`.
 If `R` is small compared with the Hölder modulus of the principal coefficients, then for every
 `ρ < R` and every bound `B` on the Hölder constants and the sizes of `b` and `c` there is `C`,
 independent of the solution, such that every `u` which is `C²` near `B_R ∩ closure H`, vanishes on
@@ -97,7 +97,7 @@ constant `C (K + N)`.
 The scale condition does not involve `b` or `c`, and `C` does not depend on the centre `x₀`, the
 half-space or the coefficients beyond the bounds `λ`, `Λ`, `L`, `M` and `B`. -/
 theorem
-    exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_add_fderiv_add_mul_of_halfSpace
+    exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul_of_halfSpace
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) :
     ∃ C₀ : ℝ, 0 < C₀ ∧
       ∀ {lam Lam : ℝ} {L M : ℝ≥0} {R : ℝ}, 0 < lam →
