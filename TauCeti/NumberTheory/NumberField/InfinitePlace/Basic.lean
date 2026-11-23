@@ -83,6 +83,8 @@ equivalent to a nonarchimedean absolute value.
   `2` has a unique infinite place.
 * `NumberField.InfinitePlace.univ_embedding_eq_pair`: when `K` has a unique infinite place `w`,
   the complex embeddings of `K` are `w.embedding` and its conjugate.
+* `NumberField.InfinitePlace.embedding_fun_ext`: when `K` has a unique infinite place `w`, two
+  functions on `K →+* ℂ` agree once they agree at `w.embedding` and its conjugate.
 * `NumberField.InfinitePlace.embedding_eq_or_eq_conjugate`: an embedding inducing `w` equals
   `w.embedding` or its conjugate.
 * `NumberField.InfinitePlace.IsComplex.embedding_ne_conjugate`: at a complex place, `w.embedding`
@@ -278,6 +280,19 @@ theorem InfinitePlace.univ_embedding_eq_pair [NumberField K] [Subsingleton (Infi
     (Finset.univ : Finset (K →+* ℂ)) = {w.embedding, ComplexEmbedding.conjugate w.embedding} := by
   ext τ
   simpa using w.embedding_eq_or_eq_conjugate (Subsingleton.elim (mk τ) w)
+
+/-- When `K` has a unique infinite place `w`, two functions on complex embeddings `K →+* ℂ` are
+equal once they agree at `w.embedding` and its complex conjugate. -/
+theorem InfinitePlace.embedding_fun_ext {α : Sort*} [Subsingleton (InfinitePlace K)]
+    {f g : (K →+* ℂ) → α} (w : InfinitePlace K)
+    (h1 : f w.embedding = g w.embedding)
+    (h2 : f (ComplexEmbedding.conjugate w.embedding) =
+      g (ComplexEmbedding.conjugate w.embedding)) :
+    f = g := by
+  funext σ
+  rcases w.embedding_eq_or_eq_conjugate (Subsingleton.elim (mk σ) w) with rfl | rfl
+  · exact h1
+  · exact h2
 
 /-- At a complex infinite place `w`, `w.embedding` is distinct from its complex conjugate. -/
 theorem InfinitePlace.IsComplex.embedding_ne_conjugate {w : InfinitePlace K} (hw : w.IsComplex) :

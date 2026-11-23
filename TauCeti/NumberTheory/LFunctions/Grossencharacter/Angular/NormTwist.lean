@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Angular.Basic
-import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Splitting
 import TauCeti.RingTheory.RootsOfUnity.Complex
@@ -158,17 +157,9 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F :
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
     (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
       (∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
-  have hne : (2 : 𝓞 F) + hζ.toInteger ≠ 0 :=
-    GaussianRationals.two_add_ne_zero (K := F) hζ.minpoly_toInteger_eq_X_sq_add_one
-  let x : Fˣ := Units.mk0 (2 + ζ)
-    (by
-      simpa [RingOfIntegers.coe_eq_algebraMap, map_ofNat, hζ.coe_toInteger] using
-        RingOfIntegers.coe_ne_zero_iff.mpr hne)
-  have hcompat := (angularGrossencharacter F k).compatibility_inv_of_idealShift_eq_zero
-    (idealShift_angularGrossencharacter F k) x (isCongrOne_one x)
-    ((2 : 𝓞 F) + hζ.toInteger)
-    (by simp [x, map_ofNat, hζ.coe_toInteger])
-  simpa [x] using hcompat
+  rw [unitaryWeight_angularGrossencharacter_span_singleton_eq_inv_prod k
+    (GaussianRationals.two_add_ne_zero hζ.minpoly_toInteger_eq_X_sq_add_one)]
+  simp [hζ.coe_toInteger, map_ofNat]
 
 /-- **Sign check at `2 + i` (negative half)**: for `k ≠ 0`, the ideal value of
 `angularGrossencharacter F k` at `(2 + ζ)` is **not** equal to the uninverted archimedean monomial

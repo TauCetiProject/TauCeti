@@ -245,14 +245,12 @@ theorem unitaryWeight_eq_mul {ξ χ ψ : Grossencharacter K 𝔪}
     (h : ξ.toHeckeCharacter = χ.toHeckeCharacter * ψ.toHeckeCharacter) :
     ξ.unitaryWeight = χ.unitaryWeight * ψ.unitaryWeight := by
   refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
-  rw [UnitaryIdealWeight.val_mul, MultiplicativeIdealWeight.mul_apply]
   by_cases hv : v.asIdeal ∣ 𝔪.finitePart
-  · rw [ξ.unitaryWeight_apply_of_dvd hv, χ.unitaryWeight_apply_of_dvd hv,
-      ψ.unitaryWeight_apply_of_dvd hv, mul_zero]
+  · simp [ξ.unitaryWeight_apply_of_dvd hv, χ.unitaryWeight_apply_of_dvd hv,
+      ψ.unitaryWeight_apply_of_dvd hv]
   · obtain ⟨u, hu⟩ := v.exists_unit_valued_eq_exp K (-1)
-    rw [ξ.unitaryWeight_apply v hv u hu, χ.unitaryWeight_apply v hv u hu,
-      ψ.unitaryWeight_apply v hv u hu, h, HeckeCharacter.unitaryPart_mul,
-      HeckeCharacter.finiteComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul]
+    simp [ξ.unitaryWeight_apply v hv u hu, χ.unitaryWeight_apply v hv u hu,
+      ψ.unitaryWeight_apply v hv u hu, h]
 
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
@@ -346,22 +344,19 @@ theorem eqOn_raySubgroup_of_infinityType_eq {𝔪 : Modulus K} {χ ψ : Grossenc
       (raySubgroup 𝔪 : Set (IdeleClassGroup (𝓞 K) K)) := by
   intro c hc
   obtain ⟨y, hy, rfl⟩ := mem_raySubgroup_iff.mp hc
-  rw [QuotientGroup.mk'_apply]
-  apply Units.ext
   have hfin_mem := ideleCongruenceSubgroup.ofFiniteIdele_toFiniteIdele_mem hy
   have hfin_inf (w : InfinitePlace K) :
       w.ideleInfiniteCoord
         (IdeleGroup.ofFiniteIdele (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K y)) = 1 :=
     InfinitePlace.ideleInfiniteCoord_ofFiniteIdele w _
-  rw [← IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y, QuotientGroup.mk_mul, map_mul, map_mul,
-    χ.eq_one_of_mem _ hfin_mem hfin_inf, ψ.eq_one_of_mem _ hfin_mem hfin_inf,
-    mul_one, mul_one, QuotientGroup.mk_prod, map_prod, map_prod]
-  simp only [Units.coe_prod]
+  apply Units.ext
+  rw [QuotientGroup.mk'_apply, ← IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y]
+  simp only [QuotientGroup.mk_mul, map_mul, χ.eq_one_of_mem _ hfin_mem hfin_inf,
+    ψ.eq_one_of_mem _ hfin_mem hfin_inf, mul_one, QuotientGroup.mk_prod, map_prod, Units.coe_prod]
   -- Compare the archimedean coordinates place by place via the real and complex companions.
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  refine Finset.prod_congr rfl fun w _ ↦ congrArg Units.val ?_
   rw [← IdeleClassGroup.ofCompletion_apply, ← HeckeCharacter.infiniteComponent_apply,
     ← HeckeCharacter.infiniteComponent_apply]
-  refine congrArg Units.val ?_
   rcases w.isReal_or_isComplex with hw | hw
   · refine infiniteComponent_apply_eq_of_infinityType_eq_of_isReal h hw (w.ideleInfiniteCoord y) ?_
     by_cases hw_mem : ⟨w, hw⟩ ∈ 𝔪.infinitePart
