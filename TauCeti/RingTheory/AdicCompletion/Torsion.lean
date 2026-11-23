@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.Submodule.Essential
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Finite
+import TauCeti.Algebra.Module.Torsion.ScalarAction
 import TauCeti.RingTheory.AdicCompletion.Algebra
 
 /-!
@@ -368,28 +369,6 @@ theorem torsionLiftEquiv_symm_apply
 
 end TauCeti.AdicCompletion
 
-namespace TauCeti.AdicCompletion
-
-/-- On any `AdicCompletion I R`-module compatible with `R`, a completed scalar congruent to `r : R`
-modulo `I ^ n R̂` acts as `r` on every `I ^ n`-torsion element. -/
-theorem smul_eq_of_sub_algebraMap_mem_map_pow {R : Type*} [CommRing R] {I : Ideal R}
-    {P : Type*} [AddCommGroup P] [Module R P] [Module (_root_.AdicCompletion I R) P]
-    [IsScalarTower R (_root_.AdicCompletion I R) P] {x : P} {n : ℕ}
-    (hx : x ∈ Submodule.torsionBySet R P ↑(I ^ n)) {a : _root_.AdicCompletion I R} {r : R}
-    (ha : a - algebraMap R (_root_.AdicCompletion I R) r ∈
-      (I ^ n).map (algebraMap R (_root_.AdicCompletion I R))) :
-    a • x = r • x := by
-  have hle : (I ^ n).map (algebraMap R (_root_.AdicCompletion I R)) ≤
-      LinearMap.ker (LinearMap.toSpanSingleton (_root_.AdicCompletion I R) P x) := by
-    rw [Ideal.map_le_iff_le_comap]
-    intro m hm
-    simpa [LinearMap.mem_ker, algebraMap_smul] using
-      (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨m, hm⟩
-  have hzero : (a - algebraMap R (_root_.AdicCompletion I R) r) • x = 0 := hle ha
-  rwa [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
-
-end TauCeti.AdicCompletion
-
 namespace LinearMap
 
 /-- When `I` is finitely generated, every `R`-linear map out of an `I`-power-torsion
@@ -409,8 +388,8 @@ theorem map_adicCompletion_smul_of_mem_primaryComponent {R : Type*} [CommRing R]
     intro m
     rw [← f.map_smul, hn m, f.map_zero]
   obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow fg n a
-  rw [TauCeti.AdicCompletion.smul_eq_of_sub_algebraMap_mem_map_pow hn hr,
-    TauCeti.AdicCompletion.smul_eq_of_sub_algebraMap_mem_map_pow hfn hr, f.map_smul]
+  rw [Submodule.smul_eq_of_sub_algebraMap_mem_map hn hr,
+    Submodule.smul_eq_of_sub_algebraMap_mem_map hfn hr, f.map_smul]
 
 end LinearMap
 
@@ -539,20 +518,6 @@ theorem isEssential_restrictScalars_torsionModule_iff
     refine h (e.symm N) ?_
     apply e.injective
     rw [map_inf, e.apply_symm_apply, hN, map_bot]
-
-/-- When `I` is finitely generated, every element of an `I`-power-torsion module lies in the
-primary component of the extended ideal `I R̂` in `AdicCompletion I R`. -/
-theorem mem_map_primaryComponent_torsionModule (fg : I.FG) (x : M) :
-    letI := torsionModule hM
-    x ∈ (I.map (algebraMap R (_root_.AdicCompletion I R))).primaryComponent M := by
-  let := torsionModule hM
-  obtain ⟨n, hn⟩ := (I.primaryComponent_mem M x).mp (hM x)
-  refine ((I.map (algebraMap R (_root_.AdicCompletion I R))).primaryComponent_mem M x).mpr ⟨n, ?_⟩
-  rw [Submodule.mem_torsionBySet_iff]
-  rintro ⟨a, ha⟩
-  rw [SetLike.mem_coe, ← Ideal.map_pow, ← ker_evalₐ_eq_map_pow fg n, RingHom.mem_ker] at ha
-  have hzero : evalₐ I n a = Ideal.Quotient.mk (I ^ n) 0 := by simpa using ha
-  rw [a.torsion_smul_eq hM x 0 hn hzero, zero_smul]
 
 end SubmoduleLattice
 

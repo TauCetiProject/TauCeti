@@ -69,7 +69,7 @@ private theorem exists_ker_evalₐ_le_ker_of_torsionModule
   let IA : Ideal A := I.map (algebraMap R A)
   have hfg : I.FG := IsNoetherian.noetherian I
   obtain ⟨n, hn⟩ := IA.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent g
-    fun b ↦ mem_map_primaryComponent_torsionModule hM hfg (g b)
+    fun b ↦ Ideal.mem_primaryComponent_map_of_mem (hM (g b))
   obtain ⟨k, hk⟩ := IA.exists_pow_inf_eq_pow_smul (M := A) 𝔟
   refine ⟨n + k, fun b hb ↦ ?_⟩
   have hm : IA ^ (n + k) ⊓ 𝔟 ≤ IA ^ n • 𝔟 := by

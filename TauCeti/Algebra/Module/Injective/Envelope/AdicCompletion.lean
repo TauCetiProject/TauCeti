@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Algebra.Module.Injective.Envelope.ResidueField
 public import TauCeti.RingTheory.AdicCompletion.Injective
 public import TauCeti.RingTheory.AdicCompletion.ResidueField
-import TauCeti.Algebra.Module.Injective.Hom
 
 /-!
 # Injective envelopes of the residue field over the adic completion
@@ -24,8 +22,7 @@ By `TauCeti.AdicCompletion.torsionModule_injective`, `E` is injective over `R̂`
 the canonical identification `ResidueField R̂ ≃ₐ[R] κ`
 (`TauCeti.AdicCompletion.residueFieldAlgEquiv`) exhibits `E` as an injective envelope of the
 residue field of the complete Noetherian local ring `R̂`
-(`TauCeti.IsInjectiveEnvelope.adicCompletion`). In particular, both contravariant functors
-`Hom_R(-, E)` and `Hom_{R̂}(-, E)` valued in `R̂`-modules are exact.
+(`TauCeti.IsInjectiveEnvelope.adicCompletion`).
 
 ## Main declarations
 
@@ -33,9 +30,6 @@ residue field of the complete Noetherian local ring `R̂`
   `ResidueField R̂ ≃ₐ[R] κ` to an `R̂`-linear map `ResidueField R̂ →ₗ[R̂] E`.
 * `TauCeti.IsInjectiveEnvelope.adicCompletion`: `E` is an injective envelope of
   `ResidueField R̂` over `R̂`.
-* `TauCeti.IsInjectiveEnvelope.exact_lcomp_adicCompletion` and
-  `TauCeti.IsInjectiveEnvelope.exact_adicCompletion_lcomp`: exactness of `Hom_R(-, E)` and
-  `Hom_{R̂}(-, E)` as functors into `R̂`-modules.
 
 ## References
 
@@ -113,34 +107,5 @@ theorem adicCompletion :
         fun ⟨z, hz⟩ ↦ ⟨AdicCompletion.residueFieldAlgEquiv R z, by simpa using hz⟩⟩
     rw [hrange]
     exact hι.isEssential_range
-
-/-- The Matlis dual `Hom_R(-, E)` valued in `R̂`-modules is exact on every exact pair of
-`R`-modules. -/
-theorem exact_lcomp_adicCompletion {P Q M : Type*} [AddCommGroup P] [Module R P]
-    [AddCommGroup Q] [Module R Q] [AddCommGroup M] [Module R M]
-    {f : P →ₗ[R] Q} {g : Q →ₗ[R] M} (hfg : Function.Exact f g) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
-      (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.moduleInjective
-  exact hfg.lcomp_of_moduleInjective (_root_.AdicCompletion (maximalIdeal R) R) E
-
-/-- The completion-linear Matlis dual `Hom_{R̂}(-, E)` is exact on every exact pair of
-`R̂`-modules. -/
-theorem exact_adicCompletion_lcomp {P Q M : Type*} [AddCommGroup P]
-    [Module (_root_.AdicCompletion (maximalIdeal R) R) P]
-    [AddCommGroup Q] [Module (_root_.AdicCompletion (maximalIdeal R) R) Q]
-    [AddCommGroup M] [Module (_root_.AdicCompletion (maximalIdeal R) R) M]
-    {f : P →ₗ[_root_.AdicCompletion (maximalIdeal R) R] Q}
-    {g : Q →ₗ[_root_.AdicCompletion (maximalIdeal R) R] M}
-    (hfg : Function.Exact f g) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
-      (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := hι.adicCompletion.moduleInjective
-  exact hfg.lcomp_of_moduleInjective (_root_.AdicCompletion (maximalIdeal R) R) E
 
 end TauCeti.IsInjectiveEnvelope

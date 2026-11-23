@@ -66,6 +66,8 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
   set.
 * `Ideal.primaryComponent_quotient_primaryComponent`: for finitely generated `𝔞`,
   `Γ_𝔞(N ⧸ Γ_𝔞(N)) = 0`.
+* `Ideal.mem_primaryComponent_map_of_mem`: `I`-power torsion transfers to `I.map (algebraMap R A)`
+  along any compatible commutative `R`-algebra action.
 
 ## References
 
@@ -300,5 +302,23 @@ theorem primaryComponent_quotient_primaryComponent {N : Type*} [AddCommGroup N] 
     mem_primaryComponent_span_iff] at hn
   obtain ⟨k, hk⟩ := hn g hg
   exact ⟨k + n, by rw [pow_add, mul_smul, hk]⟩
+
+/-- For any commutative `R`-algebra `A` acting compatibly on an `R`-module `M`, every element in
+the `I`-primary component of `M` lies in the `(I.map (algebraMap R A))`-primary component of `M`. -/
+theorem mem_primaryComponent_map_of_mem {A M : Type*} [CommRing A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
+    {I : Ideal R} {x : M} (hx : x ∈ I.primaryComponent M) :
+    x ∈ (I.map (algebraMap R A)).primaryComponent M := by
+  obtain ⟨n, hn⟩ := (I.primaryComponent_mem M x).mp hx
+  refine ((I.map (algebraMap R A)).primaryComponent_mem M x).mpr ⟨n, ?_⟩
+  rw [Submodule.mem_torsionBySet_iff]
+  rintro ⟨a, ha⟩
+  rw [SetLike.mem_coe, ← Ideal.map_pow] at ha
+  have hle : (I ^ n).map (algebraMap R A) ≤ LinearMap.ker (LinearMap.toSpanSingleton A M x) := by
+    rw [Ideal.map_le_iff_le_comap]
+    intro r hr
+    simpa [LinearMap.mem_ker, algebraMap_smul] using
+      (Submodule.mem_torsionBySet_iff _ _).mp hn ⟨r, hr⟩
+  exact hle ha
 
 end Ideal

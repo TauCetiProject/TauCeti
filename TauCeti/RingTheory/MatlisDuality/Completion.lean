@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Algebra.Module.Injective.Envelope.AdicCompletion
 public import TauCeti.RingTheory.Artinian.LocalRing
 public import TauCeti.RingTheory.MatlisDuality.Complete
+import TauCeti.Algebra.Module.Injective.Hom
 
 /-!
 # Matlis duality over the completion of a Noetherian local ring
@@ -19,10 +21,12 @@ canonical `R̂`-module structure `TauCeti.AdicCompletion.torsionModule`.
 
 By `TauCeti.IsInjectiveEnvelope.adicCompletion` (from
 `TauCeti/Algebra/Module/Injective/Envelope/AdicCompletion.lean`), `E` is an injective envelope of
-the residue field of the complete Noetherian local ring `R̂`. Applying complete-ring Matlis duality
-over `R̂` then establishes the exact duality and evaluation biduality between Artinian `R`-modules
-and finitely generated `R̂`-modules (Stacks Project Remark 47.7.9, Tag 0EGL), with no finiteness
-hypothesis on `κ`:
+the residue field of the complete Noetherian local ring `R̂`. In particular, both contravariant
+functors `Hom_R(-, E)` (`TauCeti.IsInjectiveEnvelope.exact_lcomp_adicCompletion`) and
+`Hom_{R̂}(-, E)` (`TauCeti.IsInjectiveEnvelope.exact_adicCompletion_lcomp`) valued in `R̂`-modules
+are exact. Applying complete-ring Matlis duality over `R̂` then establishes the exact duality and
+evaluation biduality between Artinian `R`-modules and finitely generated `R̂`-modules (Stacks
+Project Remark 47.7.9, Tag 0EGL), with no finiteness hypothesis on `κ`:
 * An `R̂`-module `N` is finitely generated over `R̂` if and only if `Hom_{R̂}(N, E)` is Artinian
   over `R` (`TauCeti.IsInjectiveEnvelope.finite_adicCompletion_iff_isArtinian_adicCompletionDual`),
   and evaluation gives `N ≃ₗ[R̂] ((N →ₗ[R̂] E) →ₗ[R] E)`
@@ -250,6 +254,39 @@ theorem adicCompletionEquivDoubleDualOfFinite_apply_apply
   simp [adicCompletionEquivDoubleDualOfFinite]
 
 end DoubleDualCompletion
+
+section Exact
+
+/-- The Matlis dual `Hom_R(-, E)` valued in `R̂`-modules is exact on every exact pair of
+`R`-modules. -/
+theorem exact_lcomp_adicCompletion {P Q M : Type*} [AddCommGroup P] [Module R P]
+    [AddCommGroup Q] [Module R Q] [AddCommGroup M] [Module R M]
+    {f : P →ₗ[R] Q} {g : Q →ₗ[R] M} (hfg : Function.Exact f g) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
+      (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+  have := hι.moduleInjective
+  exact hfg.lcomp_of_moduleInjective (_root_.AdicCompletion (maximalIdeal R) R) E
+
+/-- The completion-linear Matlis dual `Hom_{R̂}(-, E)` is exact on every exact pair of
+`R̂`-modules. -/
+theorem exact_adicCompletion_lcomp {P Q M : Type*} [AddCommGroup P]
+    [Module (_root_.AdicCompletion (maximalIdeal R) R) P]
+    [AddCommGroup Q] [Module (_root_.AdicCompletion (maximalIdeal R) R) Q]
+    [AddCommGroup M] [Module (_root_.AdicCompletion (maximalIdeal R) R) M]
+    {f : P →ₗ[_root_.AdicCompletion (maximalIdeal R) R] Q}
+    {g : Q →ₗ[_root_.AdicCompletion (maximalIdeal R) R] M}
+    (hfg : Function.Exact f g) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
+      (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := hι.adicCompletion.moduleInjective
+  exact hfg.lcomp_of_moduleInjective (_root_.AdicCompletion (maximalIdeal R) R) E
+
+end Exact
 
 end IsInjectiveEnvelope
 
