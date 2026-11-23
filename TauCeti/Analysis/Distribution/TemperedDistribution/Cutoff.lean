@@ -59,8 +59,6 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   with `φ`.
 * `Distribution.isVanishingOn_sub_toDistribution_cutoffTempered`: `χ T` agrees with `T` where
   `χ = 1`.
-* `Distribution.apply_eq_integral_of_cutoffTempered_apply_eq_integral`: if `χ T` is a function
-  `g`, then `T` is `g` where `χ = 1`.
 
 ## References
 
@@ -361,26 +359,5 @@ theorem isVanishingOn_sub_toDistribution_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ
   · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end ToDistribution
-
-/-! ### Cut-offs of distributions given by functions -/
-
-section Integral
-
-variable [MeasurableSpace E] {μ : Measure E}
-
-/-- **A distribution is the function representing its cut-off where the cutoff is one.** If
-`χ T ψ = ∫ ψ • g` for every Schwartz function `ψ` and `χ = 1` on `V`, then `T φ = ∫ φ • g` for
-every real test function `φ` supported in `V`. -/
-theorem apply_eq_integral_of_cutoffTempered_apply_eq_integral (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℂ)}
-    {g : E → ℂ} (hg : ∀ ψ : 𝓢(E, ℂ), T.cutoffTempered χ ψ = ∫ y, ψ y • g y ∂μ) {V : Set E}
-    (hχ : ∀ y ∈ V, χ y = 1) {φ : 𝓓(Ω, ℝ)} (hφ : tsupport φ ⊆ V) :
-    T φ = ∫ y, φ y • g y ∂μ := by
-  have h := isVanishingOn_sub_toDistribution_cutoffTempered T hχ φ hφ
-  rw [sub_apply, sub_eq_zero, TemperedDistribution.toDistribution_apply, hg] at h
-  rw [h]
-  congr 1 with y
-  simp [toSchwartzMapCLM_apply, real_smul]
-
-end Integral
 
 end Distribution

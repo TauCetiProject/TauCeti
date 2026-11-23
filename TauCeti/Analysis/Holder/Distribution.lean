@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.SingularSupport
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
 public import TauCeti.Analysis.Holder.Zygmund
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.ComplexPairing
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -30,9 +28,7 @@ that is `T ψ = ∫ ψ • f` for every real test function `ψ` supported in `U`
 on `U` enter, and for `α ≤ 1` the global bounds on `f` are no restriction: a function that is `C^k`
 on an open convex neighbourhood `s ⊆ Ω` of `x`, with bounded derivatives and `α`-Hölder `k`-th
 derivative there, agrees near `x` with such an `f`
-(`Distribution.IsLocallyCkHolderAt.of_contDiffOn`, by a cutoff). In particular a distribution
-that is a smooth function near `x` is `C^{k,α}` near `x` for every `k` and every `α ≤ 1`
-(`Distribution.isLocallyCkHolderAt_of_notMem_singularSupport`). This is the form of regularity
+(`Distribution.IsLocallyCkHolderAt.of_contDiffOn`, by a cutoff). This is the form of regularity
 in which the Schauder estimates conclude: an elliptic operator of order `m` whose image `P T` is
 `C^{k,α}` near `x` forces `T` to be `C^{k + m,α}` near `x`.
 
@@ -65,9 +61,7 @@ The argument for the identification:
   `Distribution.IsLocallyCkHolderAt.sub`), smooth multipliers for `α ≤ 1`
   (`Distribution.IsLocallyCkHolderAt.smulLeftCLM`) and lowering the regularity
   (`Distribution.IsLocallyCkHolderAt.mono_exponent`, and `Distribution.IsLocallyCkHolderAt.mono`
-  for a target exponent `β ≤ 1`; `Distribution.IsLocallyCkHolderAt.of_lt` lowers the order and
-  takes any exponent `β ≤ 1`). Distributions smooth near `x` are `C^{k,α}` near `x` for `α ≤ 1`
-  (`Distribution.isLocallyCkHolderAt_of_notMem_singularSupport`).
+  for a target exponent `β ≤ 1`).
 * `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`: for `0 < α < 1`, being `C^{k,α}`
   near `x` is being `B^{k+α}_{∞,∞}` near `x`. The direction
   `Distribution.IsLocallyCkHolderAt.isLocallyMemBesovAt` holds for every `α`, and
@@ -189,19 +183,6 @@ theorem IsLocallyCkHolderAt.mono (h : T.IsLocallyCkHolderAt k α x) {j : ℕ} {�
     (fun i hi ↦ ⟨‖f‖, f.norm_iteratedFDeriv_apply_le (hi.trans hj)⟩)
     (f.holderWith_iteratedFDeriv_of_le hβ1 hj).memHolder, fun ψ hψ ↦ by simpa using hT ψ hψ⟩
 
-/-- **Lowering the order.** Being `C^{k,α}` near a point implies being `C^{j,β}` there for `j < k`
-and every `β ≤ 1`: the `j`-th derivative has a bounded derivative. -/
-theorem IsLocallyCkHolderAt.of_lt (h : T.IsLocallyCkHolderAt k α x) {j : ℕ} (hj : j < k)
-    {β : ℝ≥0} (hβ1 : β ≤ 1) : T.IsLocallyCkHolderAt j β x :=
-  let ⟨U, hU, hUΩ, f, hT⟩ := h
-  ⟨U, hU, hUΩ, CkHolderSpace.ofContDiff f (f.contDiff.of_le (by exact_mod_cast hj.le))
-    (fun i hi ↦ ⟨‖f‖, f.norm_iteratedFDeriv_apply_le (hi.trans hj.le)⟩)
-    (holderOnWith_univ.1 (f.contDiff.contDiffOn.holderOnWith_iteratedFDeriv_of_lt isOpen_univ
-      convex_univ (M := ‖f‖₊) (L := ‖f‖₊) hj hβ1
-      (fun y _ ↦ f.norm_iteratedFDeriv_apply_le hj.le y)
-      (fun y _ ↦ f.norm_iteratedFDeriv_apply_le hj y))).memHolder,
-    fun ψ hψ ↦ by simpa using hT ψ hψ⟩
-
 /-- **Local data suffice.** Let `s ⊆ Ω` be an open convex neighbourhood of `x` and `α ≤ 1`. If `T`
 is integration on `s` against a function `f` that is `C^k` on `s`, with derivatives through order
 `k` bounded on `s` and `α`-Hölder `k`-th derivative on `s`, then `T` is `C^{k,α}` near `x`. -/
@@ -233,32 +214,6 @@ theorem IsLocallyCkHolderAt.of_contDiffOn {s : Set E} {f : E → ℂ} {M H : ℝ
   by_cases hy : y ∈ tsupport ψ
   · simp [χ.one_of_mem_closedBall (Metric.ball_subset_closedBall (hψ hy))]
   · simp [image_eq_zero_of_notMem_tsupport hy]
-
-/-- **A distribution smooth near `x` is `C^{k,α}` near `x`**, for every `k` and every `α ≤ 1`. -/
-theorem isLocallyCkHolderAt_of_notMem_singularSupport (hx : x ∈ Ω)
-    (hT : x ∉ T.singularSupport) (k : ℕ) (hα : α ≤ 1) : T.IsLocallyCkHolderAt k α x := by
-  obtain ⟨U, hU, hxU, f, hf, hTf⟩ := (notMem_singularSupport_iff hx).1 hT
-  -- On a ball `s` whose closure lies in `U ∩ Ω`, the derivatives of `f` through order `k` are
-  -- bounded and the `k`-th one is `α`-Hölder.
-  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 (hU.inter Ω.isOpen) x ⟨hxU, hx⟩
-  set s := Metric.ball x (r / 2)
-  have hsub : Metric.closedBall x (r / 2) ⊆ U ∩ Ω :=
-    (Metric.closedBall_subset_ball (by linarith)).trans hrU
-  have hsU : s ⊆ U ∩ Ω := Metric.ball_subset_closedBall.trans hsub
-  have hf' : ContDiffOn ℝ (k + 1 : ℕ) f U := hf.of_le (by exact_mod_cast le_top)
-  obtain ⟨A, hA⟩ := hf'.exists_bound_iteratedFDerivWithin hU.uniqueDiffOn
-    (isCompact_closedBall x (r / 2)) (hsub.trans inter_subset_left)
-  obtain ⟨H, hH⟩ := hf'.exists_holderOnWith_iteratedFDeriv hU hα (isCompact_closedBall x (r / 2))
-    (hsub.trans inter_subset_left)
-  refine IsLocallyCkHolderAt.of_contDiffOn (M := A.toNNReal) Metric.isOpen_ball
-    (convex_ball x (r / 2)) (Metric.mem_ball_self (by positivity))
-    (hsU.trans inter_subset_right) hα
-    ((hf'.of_le (by exact_mod_cast k.le_succ)).mono (hsU.trans inter_subset_left))
-    (fun i hi y hy ↦ ?_) (hH.mono Metric.ball_subset_closedBall)
-    fun ψ hψ ↦ hTf ψ (hψ.trans (hsU.trans inter_subset_left))
-  rw [← iteratedFDerivWithin_of_isOpen i hU (hsU hy).1]
-  exact (hA i (hi.trans k.le_succ) y (Metric.ball_subset_closedBall hy)).trans
-    (Real.le_coe_toNNReal A)
 
 /-- A smooth multiple `g T` of a distribution `C^{k,α}` near `x` is `C^{k,α}` near `x`, for
 `α ≤ 1`. -/
@@ -300,9 +255,17 @@ theorem IsLocallyMemBesovAt.isLocallyCkHolderAt {φ : ContDiffBump (0 : E)} (hα
       T.cutoffTempered χ := by
     rw [BesovSpace.toLpTop_toCkHolderSpace, hχT.toDistr_toBesovSpace]
   refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ (Ω.isOpen.mem_nhds h.mem), inter_subset_right, f,
-    fun ψ hψ ↦ T.apply_eq_integral_of_cutoffTempered_apply_eq_integral (fun ψ ↦ ?_)
-      (V := {y | χ y = 1} ∩ Ω) (fun y hy ↦ hy.1) hψ⟩
-  rw [← hf, toTemperedDistribution_toLpTop_apply, CkHolderSpace.coe_toBoundedContinuousFunction]
+    fun ψ hψ ↦ ?_⟩
+  let ψS : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun y ↦ (ψ y : ℂ))
+    (ψ.hasCompactSupport.comp_left ofReal_zero) (ofRealCLM.contDiff.comp ψ.contDiff)
+  have hψS (y : E) : ψS y = ψ y := HasCompactSupport.toSchwartzMap_toFun _ _ y
+  have hψχ (y : E) : TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ψ y = χ y * ψS y := by
+    by_cases hy : y ∈ tsupport ψ
+    · simp [hψS, (hψ hy).1.out]
+    · simp [hψS, image_eq_zero_of_notMem_tsupport hy]
+  rw [← complexPairing_postcompCLM_ofRealCLM, ← cutoffTempered_apply T χ hψχ, ← hf,
+    toTemperedDistribution_toLpTop_apply]
+  simp [hψS, Complex.real_smul]
 
 /-- **Local Hölder regularity gives local Hölder–Zygmund regularity.** A complex distribution that
 is a `C^{k,α}` function near `x` is `B^{k+α}_{∞,∞}` near `x`, that is locally in the
