@@ -345,9 +345,7 @@ variable (Y Z : GeneratedByTopCat.{v} G)
 theorem prodComparison_toTopCat :
     CartesianMonoidalCategory.prodComparison toTopCat Y Z =
       (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) :=
-  TopCat.ext fun p ↦ (TopCat.prodComparison_apply toTopCat Y Z p).trans <|
-    ((Prod.ext (fst_apply Y Z p) (snd_apply Y Z p)).trans (Prod.eta _)).trans
-      (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
+  TopCat.ext fun p ↦ by rw [TopCat.prodComparison_apply]; rfl
 
 @[simp]
 theorem prodComparison_toTopCat_apply (p : ↑(Y ⊗ Z)) :
@@ -674,38 +672,39 @@ def ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq (Z : GeneratedByTopCat.{v} 
         (G := G) (Z := Z) hK
 
 @[simp]
-theorem ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv (Z : GeneratedByTopCat.{v} G) :
-    (ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv = compactOpenToIhom Y Z := by
-  refine GeneratedByTopCat.hom_ext fun f ↦ ?_
-  apply (WithGeneratedByTopology.equiv (X := G)
-    (Y := ContinuousMapGeneratedBy G Y Z)).injective
-  refine DFunLike.ext _ _ fun y ↦ ?_
-  let e := ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
-    (G := G) (Z := Z) hK
-  have h : WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
-      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv f) =
-      e.symm (WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f) :=
-    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
-      (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
-        (Y := TopCat.of C(Y, Z)) e).inv f
-  rw [equiv_compactOpenToIhom_apply Y Z f y]
-  simp [h, e]
-
-@[simp]
 theorem equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_hom_apply
     (Z : GeneratedByTopCat.{v} G) (f : ↑((ihom Y).obj Z)) (y : Y) :
     WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z))
       ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).hom f) y =
-      (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) f) y := by
-  let e := ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
-    (G := G) (Z := Z) hK
-  have h : WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z))
-      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).hom f) =
-      e (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) f) :=
+      (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) f) y :=
+  congrArg (fun φ : C(Y, Z) ↦ φ y) <|
     TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
       (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
-        (Y := TopCat.of C(Y, Z)) e).hom f
-  simp [h, e]
+        (Y := TopCat.of C(Y, Z))
+        (ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
+          (G := G) (Z := Z) hK)).hom f
+
+theorem equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv_apply
+    (Z : GeneratedByTopCat.{v} G) (f : WithGeneratedByTopology G C(Y, Z)) (y : Y) :
+    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
+      ((ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv f)) y =
+      WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f y :=
+  congrArg (fun φ : ContinuousMapGeneratedBy G Y Z ↦ φ y) <|
+    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
+      (TopCat.isoOfHomeo (X := TopCat.of (ContinuousMapGeneratedBy G Y Z))
+        (Y := TopCat.of C(Y, Z))
+        (ContinuousMapGeneratedBy.homeomorphContinuousMapOfExistsIUnionIsCompactImageEq
+          (G := G) (Z := Z) hK)).inv f
+
+@[simp]
+theorem ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv (Z : GeneratedByTopCat.{v} G) :
+    (ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq hK Z).inv = compactOpenToIhom Y Z :=
+  GeneratedByTopCat.hom_ext fun f ↦
+    (WithGeneratedByTopology.equiv (X := G)
+      (Y := ContinuousMapGeneratedBy G Y Z)).injective <|
+      DFunLike.ext _ _ fun y ↦ by
+        rw [equiv_ihomIsoCompactOpenOfExistsIUnionIsCompactImageEq_inv_apply,
+          equiv_compactOpenToIhom_apply]
 
 end CompactOpen
 

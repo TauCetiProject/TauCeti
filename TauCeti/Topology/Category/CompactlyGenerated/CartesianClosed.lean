@@ -291,12 +291,8 @@ variable (X Y : CompactlyGenerated.{u, w})
 compact-generation counit on `X × Y`. -/
 theorem prodComparison_compactlyGeneratedToTop :
     CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y =
-      adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) := by
-  refine TopCat.ext fun p ↦
-    (TopCat.prodComparison_apply compactlyGeneratedToTop.{u, w} X Y p).trans ?_
-  rw [adj_counit]
-  exact ((Prod.ext (fst_apply X Y p) (snd_apply X Y p)).trans (Prod.eta _)).trans
-    (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p).symm
+      adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) :=
+  TopCat.ext fun p ↦ by rw [TopCat.prodComparison_apply, adj_counit]; rfl
 
 @[simp]
 theorem prodComparison_compactlyGeneratedToTop_apply (p : ↑(X ⊗ Y)) :
