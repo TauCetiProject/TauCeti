@@ -22,8 +22,9 @@ Liouville measure (`Orientation.liouvilleMeasure_sphereVolumeForm_univ`). Rescal
 
 For the unit sphere of `ℝ³` the volume form is the area form `σ_x(v, w) = x ⬝ (v × w)`
 (`TauCeti.sphereAreaForm_eq_sphereVolumeForm`). Its areas `4π` and `4π |r|`
-(`TauCeti.liouvilleMeasure_sphereAreaForm_univ`, `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`)
-are computed independently, through the height function, in
+(`TauCeti.liouvilleMeasure_sphereAreaForm_univ`,
+`TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`) are computed independently, through the height
+function, in
 `TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman.Sphere`. This file obtains them for every
 oriented three-dimensional inner product space.
 
