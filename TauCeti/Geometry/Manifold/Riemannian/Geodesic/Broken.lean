@@ -76,8 +76,9 @@ compatible with the embedding `ιⁿ : 𝓛ⁿM → 𝓛ⁿ⁺¹M` repeating the
   `TauCeti.Manifold.brokenGeodesicLoop_apply_partialSum`: a broken geodesic passes through its
   vertices at the partial sums of the distances between consecutive vertices.
 * `TauCeti.Manifold.brokenGeodesicLoop_const`: a constant tuple gives the constant loop.
-* `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`:
-  `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`.
+* `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst`,
+  `TauCeti.Manifold.cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate`:
+  `geoⁿ⁺¹ ∘ ιⁿ = geoⁿ`, and `geoⁿ⁺ᵏ ∘ (ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ) = geoⁿ`.
 
 ## References
 
@@ -665,6 +666,31 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst {n : ℕ} {
       cyclicDistanceCutBrokenGeodesic hr hδ q := by
   simp only [cyclicDistanceCutBrokenGeodesic_apply, coe_cyclicDistanceCutRepeatFirst_apply]
   exact brokenGeodesicLoop_cons hr n q.val _ _
+
+/-- **`geoⁿ⁺ᵏ ∘ (ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ) = geoⁿ`.** The broken geodesics through a tuple of a distance
+cut and through the tuple obtained by repeating its first vertex `k` more times
+(`TauCeti.cyclicDistanceCutRepeatFirstIterate`) are equal free Moore loops. -/
+theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate {n k : ℕ}
+    {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + k + 1) → ℝ} (hδ : ∀ i, δ i < r) (hδ' : ∀ j, δ' j < r)
+    (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (q : cyclicDistanceCut (X := M) δ) :
+    cyclicDistanceCutBrokenGeodesic hr hδ' (cyclicDistanceCutRepeatFirstIterate k h q) =
+      cyclicDistanceCutBrokenGeodesic hr hδ q := by
+  induction k with
+  | zero =>
+    -- `ιⁿ⁺⁰ ∘ ⋯ ∘ ιⁿ` is the inclusion of the cuts.
+    rw [cyclicDistanceCutBrokenGeodesic_apply, cyclicDistanceCutBrokenGeodesic_apply]
+    congr 1
+    exact coe_cyclicDistanceCutRepeatFirstIterate_zero_apply (δ' := δ') h q
+  | succ k ih =>
+    -- Factor `ιⁿ⁺ᵏ ∘ ⋯ ∘ ιⁿ` through the cut with cut-offs `δ (j - k)` at the position `j`.
+    have h₀ : δ ⟨(0 : Fin (n + k + 1)) - k, by omega⟩ ≤ δ' 0 :=
+      (congrArg δ (Fin.ext (by simp))).trans_le (h 0)
+    have h₂ (i : Fin (n + k)) : δ ⟨(i.succ : Fin (n + k + 1)) - k, by omega⟩ ≤ δ' i.succ.succ :=
+      (congrArg δ (Fin.ext (by simp))).trans_le (h i.succ.succ)
+    rw [← cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate (fun _ ↦ le_rfl) h h₀
+      ((nonneg_of_mem_cyclicDistanceCut q.property _).trans (h 1)) h₂]
+    exact (cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirst hr (fun _ ↦ hδ _) hδ' _ _ _
+      _).trans (ih (fun _ ↦ hδ _) fun _ ↦ le_rfl)
 
 /-- The length of the closed broken geodesic through a tuple of a distance cut is at most the sum of
 the cut-offs. -/
