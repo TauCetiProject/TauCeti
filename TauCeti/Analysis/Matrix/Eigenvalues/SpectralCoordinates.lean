@@ -123,9 +123,6 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
     selfAdjointDiagonal).hasFDerivAt.comp x
     (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
   have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x ((hFF.fun_mul' hd).fun_mul' hFF.star)
-  have hread (v : FinStrictUpper n → 𝕜) (ij : FinStrictUpper n) :
-      spectralAngularFDeriv x.2 v ij = L v ij.val.1 ij.val.2 :=
-    spectralAngularFDeriv_apply x.2 v ij
   refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)).congr_fderiv ?_
   · simp only [Unitary.conjStarAlgAut_apply, Function.comp_apply, F,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', Submodule.subtypeL_apply]
@@ -141,7 +138,7 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
       Submodule.coe_subtype, coe_selfAdjointDiagonal]
     apply Prod.ext <;> funext i
     · simp [mul_diagonal, diagonal_mul, hs, mul_comm]
-    · simp [hread, mul_diagonal, diagonal_mul,
+    · simp [spectralAngularFDeriv_apply, mul_diagonal, diagonal_mul,
         diagonal_apply_ne _ i.property.ne, hs, Algebra.smul_def]
       ring
 
@@ -176,9 +173,8 @@ theorem hasFDerivAt_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
   refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
   -- Both sides are coordinates of unitary conjugates of the same self-adjoint diagonal.
   simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe]
-  rw [← selfAdjointCoordinates_selfAdjointConj, unitaryConjCoordinates_selfAdjointCoordinates,
-    ← UnitaryGroup.selfAdjointConj_mul_apply, expStrictUpper_mul_relativeFrame,
-    selfAdjointCoordinates_selfAdjointConj, spectralCoordinates]
+  rw [unitaryConjCoordinates_selfAdjointCoordinatesLinearMap_conjStarAlgAut,
+    expStrictUpper_mul_relativeFrame, spectralCoordinates]
 
 end Differentiation
 
@@ -233,13 +229,21 @@ spectral parametrization. -/
       unitaryConjCoordinates U (spectralCoordinates x) :=
   selfAdjointCoordinates.apply_symm_apply _
 
+/-- The fixed-frame chart conjugates the self-adjoint diagonal by the product of the fixed frame
+and the transverse unitary exponential. -/
+theorem spectralMatrix_eq_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
+    (x : SelfAdjointCoordinates n 𝕜) :
+    spectralMatrix U x =
+      UnitaryGroup.selfAdjointConj (U * expStrictUpper x.2) (selfAdjointDiagonal x.1) := by
+  rw [spectralMatrix, spectralCoordinates,
+    unitaryConjCoordinates_selfAdjointCoordinatesLinearMap_conjStarAlgAut,
+    ← selfAdjointCoordinates_selfAdjointConj, ContinuousLinearEquiv.symm_apply_apply]
+
 /-- Ambient matrix formula for spectral coordinates in a fixed unitary frame. -/
 theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
     (spectralMatrix U x : Matrix (Fin n) (Fin n) 𝕜) =
       Unitary.conjStarAlgAut ℝ _ (U * expStrictUpper x.2) (diagonal fun i ↦ (x.1 i : 𝕜)) := by
-  rw [spectralMatrix, spectralCoordinates, ← selfAdjointCoordinates_selfAdjointConj,
-    unitaryConjCoordinates_selfAdjointCoordinates, ContinuousLinearEquiv.symm_apply_apply,
-    ← UnitaryGroup.selfAdjointConj_mul_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+  rw [spectralMatrix_eq_selfAdjointConj, UnitaryGroup.coe_selfAdjointConj_apply,
     coe_selfAdjointDiagonal, Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
 
 /-- In the decreasing chamber the diagonal coordinate is the ordered eigenvalue vector. -/

@@ -367,4 +367,14 @@ unitary conjugate. -/
     ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply,
     LinearEquiv.coe_toContinuousLinearEquiv', LinearIsometryEquiv.coe_toLinearEquiv]
 
+/-- The unitary coordinate change of the coordinates of a unitary conjugate reads the
+coordinates of the conjugate by the product of the two frames. -/
+theorem unitaryConjCoordinates_selfAdjointCoordinatesLinearMap_conjStarAlgAut
+    (U V : unitaryGroup (Fin n) 𝕜) (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    unitaryConjCoordinates U
+        (selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ V A.val)) =
+      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ (U * V) A.val) := by
+  rw [← selfAdjointCoordinates_selfAdjointConj, unitaryConjCoordinates_selfAdjointCoordinates,
+    ← UnitaryGroup.selfAdjointConj_mul_apply, selfAdjointCoordinates_selfAdjointConj]
+
 end TauCeti
