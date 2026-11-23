@@ -232,4 +232,9 @@ structure IsHyperbolicFamily (Q : QuadraticForm R M) (e f : ι → M) : Prop whe
   polar_left_right_of_ne : Pairwise fun i j => polar Q (e i) (f j) = 0
   polar_right_right : Pairwise fun i j => polar Q (f i) (f j) = 0
 
+/-- In a hyperbolic family, `f i` is orthogonal to `e j` for `i ≠ j`. -/
+theorem IsHyperbolicFamily.polar_right_left_of_ne {Q : QuadraticForm R M} {e f : ι → M}
+    (h : IsHyperbolicFamily Q e f) : Pairwise fun i j => polar Q (f i) (e j) = 0 :=
+  fun _ _ hij => (polar_comm _ _ _).trans (h.polar_left_right_of_ne hij.symm)
+
 end QuadraticMap

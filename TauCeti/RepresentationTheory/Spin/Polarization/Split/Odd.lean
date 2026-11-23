@@ -313,8 +313,8 @@ theorem splitOddForm_remainderOne (K : Type u) [CommRing K] (n : ℕ) :
     splitOddForm K n (splitOddRemainderOne K n : SplitOddSpace K n) = 1 := by
   simp
 
-/-- The coordinate hyperbolic pairs `e_i = ((0, δ_i), 0)`, `f_i = ((δ_i^*, 0), 0)` of the
-standard split odd form `((φ, x), z) ↦ φ x + z²`. -/
+/-- The coordinate pairs `e_i = ((0, δ_i), 0)`, `f_i = ((δ_i^*, 0), 0)` form a family of mutually
+orthogonal hyperbolic pairs for the standard split odd form `((φ, x), z) ↦ φ x + z²`. -/
 theorem isHyperbolicFamily_splitOddForm (K : Type u) [CommRing K] (n : ℕ) :
     QuadraticMap.IsHyperbolicFamily (splitOddForm K n) (fun i => ((0, Pi.single i 1), 0))
       (fun i => ((LinearMap.proj i, 0), 0)) where

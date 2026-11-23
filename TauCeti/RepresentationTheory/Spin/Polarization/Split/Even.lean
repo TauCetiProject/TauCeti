@@ -147,8 +147,8 @@ theorem splitEvenPolarization_W_ne_bot {n : ℕ} (hn : n ≠ 0) :
   Submodule.finrank_eq_zero.not.1 <| by
     simpa using hn
 
-/-- The coordinate hyperbolic pairs `e_i = (0, δ_i)`, `f_i = (δ_i^*, 0)` of the standard split
-even form `(φ, x) ↦ φ x`. -/
+/-- The coordinate pairs `e_i = (0, δ_i)`, `f_i = (δ_i^*, 0)` form a family of mutually
+orthogonal hyperbolic pairs for the standard split even form `(φ, x) ↦ φ x`. -/
 theorem isHyperbolicFamily_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
     QuadraticMap.IsHyperbolicFamily (splitEvenForm K n) (fun i => (0, Pi.single i 1))
       (fun i => (LinearMap.proj i, 0)) where

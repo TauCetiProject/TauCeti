@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.NoncommPiCoprod
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.HyperbolicPair
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 
@@ -45,9 +46,9 @@ this file does not define that group.
 
 ## Main results
 
-* `CliffordAlgebra.ι_mul_ι_mul_eq_algebraMap_mul`: `x (x y) = Q x y` for a vector `x`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_of_polar_eq_one`: `e f + f e = 1`.
-* `CliffordAlgebra.isIdempotentElem_ι_mul_ι`, `CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap`:
+* `CliffordAlgebra.isIdempotentElem_ι_mul_ι`: `e f` is idempotent; with
+  `CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap` from `TauCeti.LinearAlgebra.CliffordAlgebra.Basic`,
   `e f` and `f e` are orthogonal idempotents.
 * `CliffordAlgebra.hyperbolicPairScaling_mem_even`: `u(a)` lies in the even subalgebra.
 * `CliffordAlgebra.hyperbolicPairScaling_mul`: `u(a b) = u(a) u(b)`.
@@ -79,23 +80,12 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : Quadratic
 
 section Pair
 
-/-- A vector squares to its quadratic form value, also inside a product: `x (x y) = Q x y`. -/
-theorem ι_mul_ι_mul_eq_algebraMap_mul (x : M) (y : CliffordAlgebra Q) :
-    ι Q x * (ι Q x * y) = algebraMap R _ (Q x) * y := by
-  rw [← mul_assoc, ι_sq_scalar]
-
 variable {e f : M}
 
 /-- For a pair with `polar Q e f = 1`, `e f + f e = 1` in the Clifford algebra. -/
 theorem ι_mul_ι_add_swap_of_polar_eq_one (hef : polar Q e f = 1) :
     ι Q e * ι Q f + ι Q f * ι Q e = 1 := by
   rw [ι_mul_ι_add_swap, hef, map_one]
-
-/-- The product `(e f) (f e)` is the scalar `Q e * Q f`. -/
-theorem ι_mul_ι_mul_ι_mul_ι_swap (e f : M) :
-    ι Q e * ι Q f * (ι Q f * ι Q e) = algebraMap R _ (Q e * Q f) := by
-  rw [mul_assoc, ← mul_assoc (ι Q f), ι_sq_scalar, Algebra.left_comm, ι_sq_scalar,
-    ← (algebraMap R (CliffordAlgebra Q)).map_mul, mul_comm]
 
 /-- For a pair with `polar Q e f = 1` and `Q e * Q f = 0` (for instance, one of the two vectors
 isotropic), the element `e f` is idempotent. -/
@@ -106,10 +96,8 @@ theorem isIdempotentElem_ι_mul_ι (hef : polar Q e f = 1) (h : Q e * Q f = 0) :
   calc ι Q e * ι Q f * (ι Q e * ι Q f) = ι Q e * (ι Q f * ι Q e) * ι Q f := by
         simp only [mul_assoc]
     _ = ι Q e * ι Q f := by
-        rw [h']
-        simp only [mul_sub, sub_mul, mul_one, mul_assoc]
-        rw [ι_sq_scalar, ← mul_assoc, ι_sq_scalar, ← (algebraMap R (CliffordAlgebra Q)).map_mul, h,
-          map_zero, sub_zero]
+        simp only [h', mul_sub, sub_mul, mul_one, mul_assoc, ι_mul_ι_mul_eq_algebraMap_mul,
+          ι_sq_scalar, ← map_mul, h, map_zero, sub_zero]
 
 /-- The four relations among `E = e f` and `F = f e` for `Q e = 0` and `polar Q e f = 1`:
 both are idempotent and they are orthogonal. -/
@@ -124,7 +112,8 @@ private theorem hyperbolic_relations (he : Q e = 0) (hef : polar Q e f = 1) :
 
 variable (Q) in
 /-- The element `u(a) = a e f + f e` of the Clifford algebra attached to a pair of vectors. For a
-hyperbolic pair it scales `e` by `a` and `f` by `a⁻¹` under conjugation. -/
+hyperbolic pair and a unit `t`, `u(t)` is invertible and conjugation by it scales `e` by `t` and
+`f` by `t⁻¹`. -/
 noncomputable def hyperbolicPairScaling (e f : M) (a : R) : CliffordAlgebra Q :=
   a • (ι Q e * ι Q f) + ι Q f * ι Q e
 
@@ -265,10 +254,11 @@ theorem hyperbolicPairUnitsHom_mul_ι_mul_inv (he : Q e = 0) (hf : Q f = 0)
     hyperbolicPairUnitsHom_mul_ι_mul_inv_of_polar_eq_zero he hef t hey hfy, smul_smul,
     mul_comm (polar Q x f), mul_comm (polar Q x e)]
 
-/-- The reversal of `u(a) = a e f + f e` is `a f e + e f`. -/
+/-- The reversal of `u(a) = a e f + f e` is `a f e + e f`, the element `u(a)` of the swapped
+pair. -/
 @[simp]
 theorem reverse_hyperbolicPairScaling (a : R) :
-    reverse (hyperbolicPairScaling Q e f a) = a • (ι Q f * ι Q e) + ι Q e * ι Q f := by
+    reverse (hyperbolicPairScaling Q e f a) = hyperbolicPairScaling Q f e a := by
   simp [hyperbolicPairScaling_def, reverse.map_mul]
 
 /-- For a hyperbolic pair, the Clifford norm of `u(a)` is `τ(u(a)) u(a) = a`. -/
@@ -277,7 +267,7 @@ theorem reverse_hyperbolicPairScaling_mul_self (he : Q e = 0) (hef : polar Q e f
       algebraMap R _ a := by
   have hfe : polar Q f e = 1 := by rw [polar_comm, hef]
   obtain ⟨hE, hF, hEF, hFE⟩ := hyperbolic_relations he hef
-  rw [reverse_hyperbolicPairScaling, hyperbolicPairScaling_def]
+  rw [reverse_hyperbolicPairScaling, hyperbolicPairScaling_def, hyperbolicPairScaling_def]
   simp only [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, hE, hF, hEF, hFE, smul_zero,
     add_zero, zero_add]
   rw [add_comm, ← smul_add, ι_mul_ι_add_swap_of_polar_eq_one hfe, Algebra.smul_def, mul_one]
@@ -301,9 +291,7 @@ variable {ι R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : Quadra
 theorem commute_hyperbolicPairScaling_of_ne (h : IsHyperbolicFamily Q e f)
     {i j : ι} (hij : i ≠ j) (a b : R) :
     Commute (hyperbolicPairScaling Q (e i) (f i) a) (hyperbolicPairScaling Q (e j) (f j) b) := by
-  have hfe : polar Q (f i) (e j) = 0 := by
-    rw [polar_comm]
-    exact h.polar_left_right_of_ne hij.symm
+  have hfe := h.polar_right_left_of_ne hij
   have hcomm (z : M) (h₁ : polar Q (e i) z = 0) (h₂ : polar Q (f i) z = 0) :=
     commute_hyperbolicPairScaling_ι (Q := Q) h₁ h₂ a
   exact (((hcomm _ (h.polar_left_left hij) hfe).mul_right
@@ -348,9 +336,7 @@ theorem coe_hyperbolicTorus_mulSingle [DecidableEq ι] (h : IsHyperbolicFamily Q
     (i : ι) (a : Rˣ) :
     (hyperbolicTorus h (c, Pi.mulSingle i a) : CliffordAlgebra Q) =
       algebraMap R _ c * hyperbolicPairScaling Q (e i) (f i) a := by
-  rw [hyperbolicTorus, MonoidHom.noncommCoprod_apply, Units.val_mul,
-    MonoidHom.noncommPiCoprod_mulSingle, Units.coe_map, coe_hyperbolicPairUnitsHom,
-    MonoidHom.coe_ofClass]
+  simp [hyperbolicTorus, MonoidHom.noncommPiCoprod_mulSingle]
 
 /-- The Clifford norm of the torus element `c ∏ u_i(a_i)` is `τ(x) x = c² ∏ a_i`. -/
 theorem reverse_hyperbolicTorus_mul_self (h : IsHyperbolicFamily Q e f) (c : Rˣ)
@@ -383,8 +369,7 @@ theorem reverse_hyperbolicTorus_inv_mulSingle_sq_mul_self [DecidableEq ι]
     reverse (hyperbolicTorus h (s⁻¹, Pi.mulSingle i (s ^ 2)) : CliffordAlgebra Q) *
       hyperbolicTorus h (s⁻¹, Pi.mulSingle i (s ^ 2)) = 1 := by
   rw [reverse_hyperbolicTorus_mul_self, Finset.prod_eq_single i (fun j _ hj => by
-    simp [Pi.mulSingle_eq_of_ne hj]) (by simp), Pi.mulSingle_eq_same,
-    ← Units.val_pow_eq_pow_val, ← Units.val_mul, ← mul_pow, inv_mul_cancel, one_pow,
-    Units.val_one, map_one]
+    simp [Pi.mulSingle_eq_of_ne hj]) (by simp)]
+  simp [← mul_pow]
 
 end CliffordAlgebra
