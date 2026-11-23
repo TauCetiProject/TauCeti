@@ -65,6 +65,32 @@ variable {B : Type*} {C : Type*} [CommRing B] [IsDedekindDomain B] [Algebra B F]
   [IsFractionRing B F] [CommRing C] [Algebra C F'] [Algebra B C] [Algebra B F']
   [IsScalarTower B C F'] [IsScalarTower B F F'] [IsIntegralClosure C B F']
 
+private theorem with_integralClosure_localization (F' C : Type*) [Field F'] [Algebra F F']
+    [FiniteDimensional F F'] [Algebra.IsSeparable F F']
+    [CommRing C] [Algebra C F'] [Algebra B C] [Algebra B F']
+    [IsScalarTower B C F'] [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    {Q : Prop} (P : Place k F)
+    (hB : ∀ b : B, algebraMap B F b ∈ P.integers)
+    [Algebra C (integralClosure P.integers F')]
+    [IsScalarTower C (integralClosure P.integers F') F']
+    (hQ : ∀ [Algebra B P.integers] [Module.Finite B C] [IsScalarTower B P.integers F]
+        [IsScalarTower B P.integers F']
+        [IsLocalization (P.center hB).asIdeal.primeCompl P.integers]
+        [IsScalarTower B C (integralClosure P.integers F')]
+        [IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
+          (integralClosure P.integers F')], Q) : Q :=
+  let _ := integersAlgebra P hB
+  have _ : Module.Finite B C := IsIntegralClosure.finite B F F' C
+  have _ := isScalarTower_integers P hB
+  have _ := isScalarTower_integers_extension (F' := F') P hB
+  have _ : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
+    P.isLocalization_integers_center hB
+  have _ : IsScalarTower B C (integralClosure P.integers F') := IsScalarTower.to₁₂₃ B C _ F'
+  have _ : IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
+      (integralClosure P.integers F') :=
+    isLocalization_integralClosure_center P hB
+  hQ
+
 /-- **The complementary module of the local model is spanned by the complementary module of any
 affine model**: if `B` is a Dedekind affine model of `F` contained in `𝒪_P` and `C` is its
 integral closure in `F'`, then `Submodule.traceDual 𝒪_P F 1` is the `𝒪'_P`-span of
@@ -74,18 +100,10 @@ theorem span_traceDual_one_eq_traceDual_one_integralClosure (P : Place k F)
     Submodule.span (integralClosure P.integers F')
         (Submodule.traceDual B F (1 : Submodule C F') : Set F') =
       Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F') := by
-  let _ : Module.Finite B C := IsIntegralClosure.finite B F F' C
-  let _ := integersAlgebra P hB
-  have := isScalarTower_integers P hB
-  have := isScalarTower_integers_extension (F' := F') P hB
-  have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
-    P.isLocalization_integers_center hB
   let _ := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
   have := isScalarTower_integralClosure_field (F' := F') (B := B) (C := C) P hB
-  have : IsScalarTower B C (integralClosure P.integers F') := isScalarTower_integralClosure P
-  have : IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
-      (integralClosure P.integers F') :=
-    isLocalization_integralClosure_center P hB
+  refine with_integralClosure_localization F' C P hB ?_
+  intro _ _ _ _ _ _ _
   exact TauCeti.span_traceDual_one_eq_traceDual_one (R := B) (Rₘ := P.integers) (S := C)
     (Sₘ := integralClosure P.integers F') (K := F) (L := F') (M := (P.center hB).asIdeal.primeCompl)
 
@@ -101,19 +119,11 @@ theorem map_differentIdeal_eq_differentIdeal_integralClosure [IsDedekindDomain C
     (differentIdeal B C).map f =
       differentIdeal P.integers (integralClosure P.integers F') := by
   have := IsIntegralClosure.isFractionRing_of_finite_extension B F F' C
-  let _ : Module.Finite B C := IsIntegralClosure.finite B F F' C
-  let _ := integersAlgebra P hB
-  have := isScalarTower_integers P hB
-  have := isScalarTower_integers_extension (F' := F') P hB
-  have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
-    P.isLocalization_integers_center hB
   let _ : Algebra C (integralClosure P.integers F') := f.toAlgebra
   have : IsScalarTower C (integralClosure P.integers F') F' :=
     .of_algebraMap_eq fun c ↦ by rw [RingHom.algebraMap_toAlgebra, hf]
-  have : IsScalarTower B C (integralClosure P.integers F') := isScalarTower_integralClosure P
-  have : IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
-      (integralClosure P.integers F') :=
-    isLocalization_integralClosure_center P hB
+  refine with_integralClosure_localization F' C P hB ?_
+  intro _ _ _ _ _ _ _
   simpa only [RingHom.algebraMap_toAlgebra] using
     TauCeti.map_differentIdeal_eq_differentIdeal (R := B) (Rₘ := P.integers) (S := C)
       (Sₘ := integralClosure P.integers F') (K := F) (L := F')
@@ -145,29 +155,20 @@ theorem differentExponent_eq_multiplicity_center (P' : Place k' F')
   let P : Place k F := P'.restrict k F
   have hB : ∀ b : B, algebraMap B F b ∈ P.integers :=
     algebraMap_mem_integers_restrict k F P' hC
-  let _ : Module.Finite B C := IsIntegralClosure.finite B F F' C
-  let p : HeightOneSpectrum B := P.center hB
-  let Bₘ := P.integers
-  let Cₘ := integralClosure Bₘ F'
-  let _ := integersAlgebra P hB
-  have := isScalarTower_integers P hB
-  have := isScalarTower_integers_extension (F' := F') P hB
-  have : IsLocalization p.asIdeal.primeCompl Bₘ := P.isLocalization_integers_center hB
   let _ := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
   have := isScalarTower_integralClosure_field (F' := F') (B := B) (C := C) P hB
-  have : IsScalarTower B C Cₘ := isScalarTower_integralClosure P
-  have : IsLocalization (Algebra.algebraMapSubmonoid C p.asIdeal.primeCompl) Cₘ :=
-    isLocalization_integralClosure_center P hB
+  refine with_integralClosure_localization F' C P hB ?_
+  intro _ _ _ _ _ _ _
   -- The centre of `P'` on `Cₘ` contracts to the centre on `C`, so localization preserves the
   -- coefficient.
   have hunder : (centerIntegralClosure k F P').asIdeal.under C = (P'.center hC).asIdeal := by
     ext c
     rw [Ideal.mem_under]
     simp only [centerIntegralClosure_def, mem_center_asIdeal]
-    rw [← IsScalarTower.algebraMap_apply C Cₘ F']
+    rw [← IsScalarTower.algebraMap_apply C (integralClosure P.integers F') F']
   rw [differentExponent_def, ← hunder]
-  exact multiplicity_differentIdeal_eq_multiplicity_under (R := B) (Rₘ := Bₘ) (S := C)
-    (Sₘ := Cₘ) (K := F) (L := F') (M := p.asIdeal.primeCompl)
+  exact multiplicity_differentIdeal_eq_multiplicity_under (R := B) (Rₘ := P.integers) (S := C)
+    (Sₘ := integralClosure P.integers F') (K := F) (L := F') (M := (P.center hB).asIdeal.primeCompl)
     (centerIntegralClosure k F P').ne_bot
 
 end Exponent

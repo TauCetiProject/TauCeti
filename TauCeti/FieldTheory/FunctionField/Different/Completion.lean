@@ -200,8 +200,8 @@ theorem extended_dual_one_eq_dual_one_completionIntegers (P : Place k F) (P' : P
   exact TauCeti.extended_dual_one_eq_dual_one_of_span_traceDual_one
     (P'.completionEmbedding : F' →+* P'.Completion)
     (fun y ↦ by
-      rw [AlgHom.coe_toRingHom, ValuationSubring.algebraMap_apply,
-        coe_completionIntegersIntegralClosureHom, Subalgebra.algebraMap_apply])
+      rw [AlgHom.coe_toRingHom,
+        completionEmbedding_algebraMap_eq_completionIntegersIntegralClosureHom])
     (P.traceDual_one_completionIntegers_eq_span P' hP).symm
 
 /-- **The different ideal commutes with completion.** Extending `differentIdeal 𝒪_P 𝒪'_P` along
@@ -503,8 +503,8 @@ theorem span_traceDual_one_eq_traceDual_one_completionIntegers_of_forall_mem_int
   · rintro _ ⟨x, hx, rfl⟩
     exact Submodule.map_mem_span_of_forall_exists (P'.completionEmbedding : F' →+* P'.Completion)
       _ _ (fun s ↦ ⟨P.completionIntegersIntegralClosureHom P' hP s, by
-        rw [AlgHom.coe_toRingHom, ValuationSubring.algebraMap_apply,
-          coe_completionIntegersIntegralClosureHom, Subalgebra.algebraMap_apply]⟩)
+        rw [AlgHom.coe_toRingHom,
+          completionEmbedding_algebraMap_eq_completionIntegersIntegralClosureHom]⟩)
       (fun y hy ↦ Submodule.subset_span (Set.mem_image_of_mem _ hy)) hx
 
 /-- **The different ideal of an affine model generates the completed different ideal**: if `B` is

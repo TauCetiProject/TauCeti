@@ -391,17 +391,6 @@ theorem isScalarTower_integralClosure_field {k F F' B C : Type*}
   .of_algebraMap_eq fun c ↦ by
     rw [RingHom.algebraMap_toAlgebra, Subalgebra.algebraMap_apply, coe_integralClosureHom]
 
-/-- Compatibility of `B → C → 𝒪'_P` with `B → 𝒪'_P` given compatibility into `F'`. -/
-theorem isScalarTower_integralClosure {k F F' B C : Type*}
-    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
-    [CommRing B] [CommRing C] [Algebra C F'] [Algebra B C] [Algebra B F']
-    [IsScalarTower B C F'] (P : Place k F)
-    [Algebra B P.integers] [IsScalarTower B P.integers F']
-    [Algebra C (integralClosure P.integers F')]
-    [IsScalarTower C (integralClosure P.integers F') F'] :
-    IsScalarTower B C (integralClosure P.integers F') :=
-  IsScalarTower.to₁₂₃ B C (integralClosure P.integers F') F'
-
 /-- The local integral closure `𝒪'_P` is the localization of `C` at the complement of the centre
 of `P` on `B`. -/
 theorem isLocalization_integralClosure_center {k F F' B C : Type*}
