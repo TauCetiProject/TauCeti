@@ -128,33 +128,35 @@ theorem coefficient_sharpTerm_leftParametrix (ha : a.IsElliptic) (N k : ℕ)
         refine Finset.sum_congr rfl fun j _ => ?_
         rw [Pi.smul_apply, one_smul, ← toSymbol_sharpTerm _ _ _ z, coefficient_toSymbol]
 
-/-- **The truncated left parametrix with parameter.** Let `a` be elliptic with parameter and
-`N ≥ 1`. The first `N` composition terms of the sum `Bₙ = ∑_{j < N} bⱼ` of the first `N` terms of
-its formal left parametrix with `a` add up to the identity plus a parameter-dependent symbol `r` of
-order `-N`: `∑_{k < N} sharpTerm Bₙ a k = 1 + r`. -/
-theorem exists_sum_coefficient_sharpTerm_leftParametrix_eq_add (ha : a.IsElliptic) {N : ℕ}
-    (hN : N ≠ 0) :
+/-- **The truncated left parametrix with parameter.** Let `a` be elliptic with parameter. The
+first `N` composition terms of the sum `Bₙ = ∑_{j < N} bⱼ` of the first `N` terms of its formal
+left parametrix with `a` add up to the identity plus a parameter-dependent symbol `r` of order
+`-N`: `∑_{k < N} sharpTerm Bₙ a k = 1 + r`. -/
+theorem exists_sum_coefficient_sharpTerm_leftParametrix_eq_add (ha : a.IsElliptic) (N : ℕ) :
     ∃ r : ParameterSymbol n Λ V V (-N), ∀ (x ξ : CoordinateSpace n) {z : ℂ}, z ∈ Λ →
       ∑ k ∈ range N, ((a.leftParametrix ha N).sharpTerm a k).coefficient ((x, ξ), z) =
         ContinuousLinearMap.id ℂ V + r.coefficient ((x, ξ), z) := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · exact ⟨inclusion (by simp) (-ofSpatial (fun _ => ContinuousLinearMap.id ℂ V) contDiff_const),
+      fun x ξ z hz => by simp [hz]⟩
   refine ⟨∑ j ∈ range N, ∑ i ∈ range j, inclusion
     (by have := truncatedParametrix_order_le N j i; linarith)
     ((a.leftInverseTerms ha j).sharpTerm a (N - j + i)), fun x ξ z hz => ?_⟩
   simp_rw [coefficient_sharpTerm_leftParametrix ha N _ x ξ z]
-  rw [sum_sum_eq_add hN _ _ fun L => sum_coefficient_sharpTerm_leftInverseTerms ha L x ξ hz]
+  rw [sum_sum_eq_add hN.ne' _ _ fun L => sum_coefficient_sharpTerm_leftInverseTerms ha L x ξ hz]
   simp
 
 /-- **The truncated left parametrix in the ordinary calculus.** For `a` elliptic with parameter
-and `N ≥ 1`, there is a parameter-dependent symbol `r` of order `-N` such that at every spectral
+and every `N`, there is a parameter-dependent symbol `r` of order `-N` such that at every spectral
 parameter `z ∈ Λ`, `∑_{k < N} sharpTerm Bₙ(z) a(z) k = 1 + r(z)` for the ordinary symbols at `z`.
 The remainder `r(z)` has order `-N` uniformly in `z`. -/
 theorem exists_sum_coefficient_sharpTerm_toSymbol_leftParametrix_eq_add (ha : a.IsElliptic)
-    {N : ℕ} (hN : N ≠ 0) :
+    (N : ℕ) :
     ∃ r : ParameterSymbol n Λ V V (-N), ∀ z ∈ Λ, ∀ q : CoordinateSpace n × CoordinateSpace n,
       ∑ k ∈ range N,
           (((a.leftParametrix ha N).toSymbol z).sharpTerm (a.toSymbol z) k).coefficient q =
         ContinuousLinearMap.id ℂ V + (r.toSymbol z).coefficient q := by
-  obtain ⟨r, hr⟩ := exists_sum_coefficient_sharpTerm_leftParametrix_eq_add ha hN
+  obtain ⟨r, hr⟩ := exists_sum_coefficient_sharpTerm_leftParametrix_eq_add ha N
   refine ⟨r, fun z hz ⟨x, ξ⟩ => ?_⟩
   simp_rw [← toSymbol_sharpTerm, coefficient_toSymbol]
   exact hr x ξ hz
@@ -171,33 +173,35 @@ theorem exists_coefficient_rightParametrix_eq_inverse_add (ha : a.IsElliptic) (N
   funext p
   simp [Finset.sum_range_succ', add_comm]
 
-/-- **The truncated right parametrix with parameter.** Let `a` be elliptic with parameter and
-`N ≥ 1`. The first `N` composition terms of `a` with the sum `Bₙ = ∑_{j < N} bⱼ` of the first `N`
-terms of its formal right parametrix add up to the identity plus a parameter-dependent symbol `r`
-of order `-N`: `∑_{k < N} sharpTerm a Bₙ k = 1 + r`. -/
-theorem exists_sum_coefficient_sharpTerm_rightParametrix_eq_add (ha : a.IsElliptic) {N : ℕ}
-    (hN : N ≠ 0) :
+/-- **The truncated right parametrix with parameter.** Let `a` be elliptic with parameter. The
+first `N` composition terms of `a` with the sum `Bₙ = ∑_{j < N} bⱼ` of the first `N` terms of its
+formal right parametrix add up to the identity plus a parameter-dependent symbol `r` of order
+`-N`: `∑_{k < N} sharpTerm a Bₙ k = 1 + r`. -/
+theorem exists_sum_coefficient_sharpTerm_rightParametrix_eq_add (ha : a.IsElliptic) (N : ℕ) :
     ∃ r : ParameterSymbol n Λ W W (-N), ∀ (x ξ : CoordinateSpace n) {z : ℂ}, z ∈ Λ →
       ∑ k ∈ range N, (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z) =
         ContinuousLinearMap.id ℂ W + r.coefficient ((x, ξ), z) := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · exact ⟨inclusion (by simp) (-ofSpatial (fun _ => ContinuousLinearMap.id ℂ W) contDiff_const),
+      fun x ξ z hz => by simp [hz]⟩
   refine ⟨∑ j ∈ range N, ∑ i ∈ range j, inclusion
     (by have := truncatedParametrix_order_le N j i; linarith)
     (a.sharpTerm (a.rightInverseTerms ha j) (N - j + i)), fun x ξ z hz => ?_⟩
   simp_rw [coefficient_sharpTerm_rightParametrix ha N _ x ξ z]
-  rw [sum_sum_eq_add hN _ _ fun L => sum_coefficient_sharpTerm_rightInverseTerms ha L x ξ hz]
+  rw [sum_sum_eq_add hN.ne' _ _ fun L => sum_coefficient_sharpTerm_rightInverseTerms ha L x ξ hz]
   simp
 
 /-- **The truncated right parametrix in the ordinary calculus.** For `a` elliptic with parameter
-and `N ≥ 1`, there is a parameter-dependent symbol `r` of order `-N` such that at every spectral
+and every `N`, there is a parameter-dependent symbol `r` of order `-N` such that at every spectral
 parameter `z ∈ Λ`, `∑_{k < N} sharpTerm a(z) Bₙ(z) k = 1 + r(z)` for the ordinary symbols at `z`.
 The remainder `r(z)` has order `-N` uniformly in `z`. -/
 theorem exists_sum_coefficient_sharpTerm_toSymbol_rightParametrix_eq_add (ha : a.IsElliptic)
-    {N : ℕ} (hN : N ≠ 0) :
+    (N : ℕ) :
     ∃ r : ParameterSymbol n Λ W W (-N), ∀ z ∈ Λ, ∀ q : CoordinateSpace n × CoordinateSpace n,
       ∑ k ∈ range N,
           ((a.toSymbol z).sharpTerm ((a.rightParametrix ha N).toSymbol z) k).coefficient q =
         ContinuousLinearMap.id ℂ W + (r.toSymbol z).coefficient q := by
-  obtain ⟨r, hr⟩ := exists_sum_coefficient_sharpTerm_rightParametrix_eq_add ha hN
+  obtain ⟨r, hr⟩ := exists_sum_coefficient_sharpTerm_rightParametrix_eq_add ha N
   refine ⟨r, fun z hz ⟨x, ξ⟩ => ?_⟩
   simp_rw [← toSymbol_sharpTerm, coefficient_toSymbol]
   exact hr x ξ hz
