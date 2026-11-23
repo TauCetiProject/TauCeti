@@ -42,7 +42,7 @@ private theorem intervalIntegrable_floor_div_mul_cexp_neg_mul_step (c : ℕ → 
   refine ((by fun_prop : Continuous fun t : ℝ ↦ c n * cexp (-z * t)).intervalIntegrable
     _ _).congr_uIoo fun t ht ↦ ?_
   rw [uIoo_of_le hle] at ht
-  simp only [floor_div_eq_of_mem_Ioo hh ht]
+  simp only [floor_div_eq_of_mem_Ico hh (Set.Ioo_subset_Ico_self ht)]
 
 private theorem intervalIntegral_floor_div_mul_cexp_neg_mul_step (c : ℕ → ℂ) {h : ℝ} (hh : 0 < h)
     (n : ℕ) (z : ℂ) :
@@ -52,7 +52,7 @@ private theorem intervalIntegral_floor_div_mul_cexp_neg_mul_step (c : ℕ → �
   have hcongr : ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
       ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c n * cexp (-z * t) :=
     intervalIntegral.integral_congr_Ioo_of_le hle fun t ht ↦ by
-      rw [floor_div_eq_of_mem_Ioo hh ht]
+      rw [floor_div_eq_of_mem_Ico hh (Set.Ioo_subset_Ico_self ht)]
   have hshift := intervalIntegral.integral_comp_add_left (f := fun t : ℝ ↦ cexp (-z * t))
     ((n : ℝ) * h) (a := (0 : ℝ)) (b := h)
   have hhi : (n : ℝ) * h + h = ((n + 1 : ℕ) : ℝ) * h := by push_cast; ring

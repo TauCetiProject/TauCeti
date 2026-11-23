@@ -30,6 +30,14 @@ function `f t = c ⌊t⌋₊` has `|f t| ≤ 1`, `f t → 0`, and a Laplace tran
 `∫ t in 0..N, f t = ∑ n ∈ range N, c n` is unbounded above, so `∫ t in 0..T, f t` fails to
 converge and no holomorphic continuation exists on any open set containing `{z | 0 ≤ z.re}`
 (`exists_bounded_continuousOn_laplace_not_tendsto_intervalIntegral`).
+
+## References
+
+* L. Fejér, *Sur les singularités de la série de Fourier des fonctions continues*, Ann. Sci.
+  École Norm. Sup. (3) 28 (1911), 63–104.
+* J. Korevaar, *Tauberian Theory: A Century of Developments*, Ch. III.
+* D. J. Newman, *Simple analytic proof of the prime number theorem*, Amer. Math. Monthly 87
+  (1980), 693–696.
 -/
 
 public section

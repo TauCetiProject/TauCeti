@@ -30,6 +30,14 @@ setting `a n = c (Nat.log 2 n)` (`n ≥ 1`, `a 0 = 0`), the block transfer
 `F` continuous on `1 ≤ re s` and holomorphic on `1 < re s` agreeing with `LSeries a s`, while the
 ordered harmonic partial sums `∑ n ∈ Icc 1 N, a n / n` are unbounded above and therefore converge to
 no limit `L : ℂ` (`exists_bounded_continuousOn_LSeries_not_tendsto_sum_Icc_div`).
+
+## References
+
+* L. Fejér, *Sur les singularités de la série de Fourier des fonctions continues*, Ann. Sci.
+  École Norm. Sup. (3) 28 (1911), 63–104.
+* J. Korevaar, *Tauberian Theory: A Century of Developments*, Ch. III.
+* D. J. Newman, *Simple analytic proof of the prime number theorem*, Amer. Math. Monthly 87
+  (1980), 693–696.
 -/
 
 public section
