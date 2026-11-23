@@ -339,16 +339,14 @@ theorem IsSolutionNear.exists_disc_extension {a c : ℂ} {f : ℂ → ℂ} {r : 
   let E' := E.restrict hball
   let s := (E'.initialJetEquivOfEqEBall hV haV).symm (fun j ↦ iteratedDeriv j f a)
   have hf' : E'.IsSolutionNear a f := (isSolutionNear_restrict_iff hball haV).mpr hf
-  have hjet : E'.initialJetGerm haV (E'.toSolutionGerms haV s) =
-      E'.initialJetGerm haV ⟨f, (coe_mem_solutionGerms haV).mpr hf'⟩ := by
-    rw [initialJetGerm_toSolutionGerms, initialJet_initialJetEquivOfEqEBall_symm]
-    exact funext fun j ↦ (initialJetGerm_mk haV _ j).symm
-  have hgerm := congrArg Subtype.val (E'.initialJetGerm_injective haV hjet)
-  rw [coe_toSolutionGerms] at hgerm
-  refine ⟨HolomorphicFunctions.extend s.val, fun z hz ↦ ?_, Germ.coe_eq.mp hgerm⟩
-  have hzV : z ∈ V := Opens.mem_mk.mpr hz
-  exact (isSolutionNear_restrict_iff hball hzV).mp
-    (((E'.mem_solutionSpace _).mp s.property).isSolutionNear hzV)
+  have hs := (E'.mem_solutionSpace _).mp s.property
+  refine ⟨HolomorphicFunctions.extend s.val, fun z hz ↦ ?_, ?_⟩
+  · have hzV : z ∈ V := Opens.mem_mk.mpr hz
+    exact (isSolutionNear_restrict_iff hball hzV).mp (hs.isSolutionNear hzV)
+  · apply Germ.coe_eq.mp
+    exact (initialJetGermEquiv_symm_apply haV (hs.isSolutionNear haV)
+      (E'.iteratedDeriv_extend_initialJetEquivOfEqEBall_symm hV haV _)).symm.trans
+        (initialJetGermEquiv_symm_apply haV hf' fun _ ↦ rfl)
 
 /-! The following checks fix the unscaled-jet convention of the inverse equivalence. -/
 
