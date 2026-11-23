@@ -27,7 +27,8 @@ In the homogeneous case `F : C ⥤ C ⥤ H` with a left derived bifunctor `(LF, 
 any natural transformation `γ : F.flip ⟶ F` to `CategoryTheory.Functor.leftDerived₂FlipLift`
 (`LF.flip ⟶ LF`, with counit equation `CategoryTheory.Functor.leftDerived₂FlipLift_fac` and
 composition law `CategoryTheory.Functor.flip_leftDerived₂FlipLift_comp`), and induces a natural
-isomorphism `LF.flip ≅ LF` (`CategoryTheory.Functor.leftDerived₂FlipIso`) compatible with `α` and
+isomorphism `LF.flip ≅ LF` (`CategoryTheory.Functor.leftDerived₂FlipIso`, with forward map
+`CategoryTheory.Functor.leftDerived₂FlipIso_hom`) compatible with `α` and
 any `e : F.flip ≅ F` both as natural transformations
 (`CategoryTheory.Functor.leftDerived₂FlipIso_hom_fac` and
 `CategoryTheory.Functor.leftDerived₂FlipIso_inv_fac`) and on objects in the image of `L : C ⥤ D`
@@ -172,13 +173,19 @@ def leftDerived₂FlipIso (e : F.flip ≅ F) : LF.flip ≅ LF where
     ext X Y
     simp
 
+/-- The forward morphism of `leftDerived₂FlipIso` is `leftDerived₂FlipLift` applied to `e.hom`. -/
+lemma leftDerived₂FlipIso_hom (e : F.flip ≅ F) :
+    (leftDerived₂FlipIso LF α W e).hom = leftDerived₂FlipLift LF α W e.hom :=
+  (rfl)
+
 /-- Whiskered counit compatibility of `(leftDerived₂FlipIso LF α W e).hom` with `α` and
 `e.hom`. -/
 @[reassoc (attr := simp)]
 lemma leftDerived₂FlipIso_hom_fac (e : F.flip ≅ F) :
     (((whiskeringLeft₂ H).obj L).obj L).map (leftDerived₂FlipIso LF α W e).hom ≫ α =
       (L.whiskeringLeft₂FlipIso L LF).hom ≫ (flipFunctor _ _ _).map α ≫ e.hom := by
-  simp only [leftDerived₂FlipIso, leftDerived₂FlipLift_fac, leftDerived₂FlipCounit, Category.assoc]
+  simp only [leftDerived₂FlipIso_hom, leftDerived₂FlipLift_fac, leftDerived₂FlipCounit,
+    Category.assoc]
 
 /-- Whiskered counit compatibility of `(leftDerived₂FlipIso LF α W e).inv` with `α` and
 `e.inv`. -/
@@ -205,7 +212,7 @@ lemma leftDerived₂FlipIso_inv_fac (e : F.flip ≅ F) :
 lemma leftDerived₂FlipIso_hom_app_app_L (e : F.flip ≅ F) (X Y : C) :
     ((leftDerived₂FlipIso LF α W e).hom.app (L.obj X)).app (L.obj Y) ≫ (α.app X).app Y =
       (α.app Y).app X ≫ (e.hom.app X).app Y := by
-  simp only [leftDerived₂FlipIso, leftDerived₂FlipLift_app_app]
+  simp only [leftDerived₂FlipIso_hom, leftDerived₂FlipLift_app_app]
 
 /-- Compatibility of `(leftDerived₂FlipIso LF α W e).inv` with `α` and `e.inv` on images of
 `L`. -/
