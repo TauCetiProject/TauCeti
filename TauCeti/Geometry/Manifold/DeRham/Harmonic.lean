@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Bijective
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
@@ -20,7 +21,10 @@ codifferential `d*` of `(k + 1)`-forms (zero in the top degree).
 This file proves the orthogonality half of the Hodge decomposition, which uses only that `d*` is
 the formal adjoint of `d`. On a boundaryless manifold a closed form `α` is `L²`-orthogonal to a
 coexact form `d*β`, and a coclosed form `β` to an exact form `dα`, for the pairing
-`∫_M ⟨α, β⟩ vol`, provided `α` or `β` is compactly supported. On a compact
+`∫_M ⟨α, β⟩ vol`, provided `α` or `β` is compactly supported. Consequently, if `a - dα` is
+coclosed then the coclosed summand of `a = dα + (a - dα)` is unique and
+`∫_M |a|² vol = ∫_M |a - dα|² vol + ∫_M |dα|² vol`; pairing with `d1 = 0` also gives
+`∫_M d*a vol = 0` for a compactly supported one-form `a`. On a compact
 boundaryless manifold, where harmonic forms are exactly the closed and coclosed forms,
 definiteness of the pairing gives:
 
@@ -61,6 +65,14 @@ surjective.
   `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero`: closed
   forms are orthogonal to coexact forms, and exact forms to coclosed forms, when one of the forms
   or the chosen primitive is compactly supported.
+* `TauCeti.SmoothForm.mextDerivₗ_eq_of_codifferential_sub_eq_zero`: in a decomposition
+  `a = dα + (a - dα)` with `a - dα` coclosed, the coclosed summand is unique.
+* `TauCeti.SmoothForm.integralTopForm_inner_self_eq_add_of_codifferential_sub_eq_zero`: the
+  Pythagorean identity `‖a‖² = ‖a - dα‖² + ‖dα‖²` in `L²` for such a decomposition, with its
+  consequences `TauCeti.SmoothForm.integralTopForm_inner_self_sub_le_of_codifferential_sub_eq_zero`
+  and `TauCeti.SmoothForm.integralTopForm_inner_self_mextDerivₗ_le_of_codifferential_sub_eq_zero`.
+* `TauCeti.SmoothForm.integralTopForm_codifferential_smul_riemannianVolumeForm_eq_zero`: the
+  codifferential of a compactly supported one-form has integral zero.
 * `TauCeti.mem_harmonicForms_add_one_iff`: on a compact boundaryless manifold a form is harmonic
   exactly when it is closed and coclosed.
 * `TauCeti.disjoint_closedForms_coexactForms`, `TauCeti.disjoint_harmonicForms_exactForms`,
@@ -248,6 +260,104 @@ theorem integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero
   rw [integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl α β h, hβ]
   simp only [ZeroMemClass.coe_zero, Pi.zero_apply, map_zero, zero_smul]
   exact integralTopForm_zero o
+
+/-- **The coclosed summand is unique**: on an oriented boundaryless Riemannian manifold, if both
+`a - dα` and `a - dβ` are coclosed and `α - β` is compactly supported, then `dα = dβ`, so the two
+coclosed forms agree. -/
+theorem mextDerivₗ_eq_of_codifferential_sub_eq_zero (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) {a : SmoothForm I M ℝ (k + 1)} {α β : SmoothForm I M ℝ k}
+    (hα : codifferential o hkl (a - mextDerivₗ I k α) = 0)
+    (hβ : codifferential o hkl (a - mextDerivₗ I k β) = 0)
+    (hαβ : α - β ∈ compactlySupportedForms I M k) :
+    mextDerivₗ I k α = mextDerivₗ I k β := by
+  have : NeZero m := ⟨by omega⟩
+  -- `d*d(α - β) = d*((a - dβ) - (a - dα)) = 0`, so `∫_M |d(α - β)|² vol = 0` by Green's formula.
+  have hdd : codifferential o hkl (mextDerivₗ I k (α - β)) = 0 := by
+    rw [map_sub, show mextDerivₗ I k α - mextDerivₗ I k β =
+      (a - mextDerivₗ I k β) - (a - mextDerivₗ I k α) by abel, map_sub, hα, hβ, sub_zero]
+  have h := integralTopForm_inner_codifferential_mextDeriv o hkl (α - β) (α - β) (.inl hαβ)
+  rw [hdd, integralTopForm_inner_zero_left, eq_comm,
+    integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl
+      (mextDerivₗ_mem_compactlySupportedForms I hαβ), map_sub, sub_eq_zero] at h
+  exact h
+
+/-- **The Pythagorean identity of the decomposition `a = dα + (a - dα)`**: on an oriented
+boundaryless Riemannian manifold, if `a - dα` is coclosed, with `a` and `α` compactly supported,
+then `∫_M |a|² vol = ∫_M |a - dα|² vol + ∫_M |dα|² vol`. -/
+theorem integralTopForm_inner_self_eq_add_of_codifferential_sub_eq_zero
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    {a : SmoothForm I M ℝ (k + 1)} {α : SmoothForm I M ℝ k}
+    (hα : codifferential o hkl (a - mextDerivₗ I k α) = 0)
+    (ha : a ∈ compactlySupportedForms I M (k + 1)) (hαc : α ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1) (a.val x)
+        (a.val x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+          ((a - mextDerivₗ I k α).val x) ((a - mextDerivₗ I k α).val x) •
+        riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+          ((mextDerivₗ I k α).val x) ((mextDerivₗ I k α).val x) • riemannianVolumeForm o x) := by
+  set b := a - mextDerivₗ I k α
+  set c := mextDerivₗ I k α
+  have hc : c ∈ compactlySupportedForms I M (k + 1) := mextDerivₗ_mem_compactlySupportedForms I hαc
+  have hab : a = c + b := (add_sub_cancel c a).symm
+  -- The cross term vanishes by orthogonality of exact and coclosed forms.
+  rw [hab, integralTopForm_inner_add_add_self o hkl hc (Submodule.sub_mem _ ha hc),
+    integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero o hkl α hα (.inl hαc),
+    mul_zero, add_zero, add_comm]
+
+/-- **The coclosed summand has smaller `L²` norm**: on an oriented boundaryless Riemannian
+manifold, if `a - dα` is coclosed, with `a` and `α` compactly supported, then
+`∫_M |a - dα|² vol ≤ ∫_M |a|² vol`. -/
+theorem integralTopForm_inner_self_sub_le_of_codifferential_sub_eq_zero
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    {a : SmoothForm I M ℝ (k + 1)} {α : SmoothForm I M ℝ k}
+    (hα : codifferential o hkl (a - mextDerivₗ I k α) = 0)
+    (ha : a ∈ compactlySupportedForms I M (k + 1)) (hαc : α ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((a - mextDerivₗ I k α).val x) ((a - mextDerivₗ I k α).val x) •
+      riemannianVolumeForm o x) ≤
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1) (a.val x)
+        (a.val x) • riemannianVolumeForm o x) := by
+  have : NeZero m := ⟨by omega⟩
+  rw [integralTopForm_inner_self_eq_add_of_codifferential_sub_eq_zero o hkl hα ha hαc]
+  exact le_add_of_nonneg_right
+    (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
+
+/-- **The exact summand has smaller `L²` norm**: on an oriented boundaryless Riemannian manifold,
+if `a - dα` is coclosed, with `a` and `α` compactly supported, then
+`∫_M |dα|² vol ≤ ∫_M |a|² vol`. -/
+theorem integralTopForm_inner_self_mextDerivₗ_le_of_codifferential_sub_eq_zero
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    {a : SmoothForm I M ℝ (k + 1)} {α : SmoothForm I M ℝ k}
+    (hα : codifferential o hkl (a - mextDerivₗ I k α) = 0)
+    (ha : a ∈ compactlySupportedForms I M (k + 1)) (hαc : α ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((mextDerivₗ I k α).val x) ((mextDerivₗ I k α).val x) • riemannianVolumeForm o x) ≤
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1) (a.val x)
+        (a.val x) • riemannianVolumeForm o x) := by
+  have : NeZero m := ⟨by omega⟩
+  rw [integralTopForm_inner_self_eq_add_of_codifferential_sub_eq_zero o hkl hα ha hαc]
+  exact le_add_of_nonneg_left
+    (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
+
+/-- **The codifferential of a one-form has integral zero**: on an oriented boundaryless Riemannian
+manifold, `∫_M d*a vol = 0` for every compactly supported smooth one-form `a`. It is the adjoint
+identity `∫_M ⟨dα, a⟩ vol = ∫_M ⟨α, d*a⟩ vol` for the constant function `α = 1`. -/
+theorem integralTopForm_codifferential_smul_riemannianVolumeForm_eq_zero
+    (o : Manifold.Orientation I M (Fin m)) (hkl : 0 + 1 + l = m) {a : SmoothForm I M ℝ 1}
+    (ha : a ∈ compactlySupportedForms I M 1) :
+    integralTopForm o (fun x ↦ (codifferential o hkl a).val x 0 • riemannianVolumeForm o x) =
+      0 := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  -- Pair `a` with the exterior derivative of the constant function `1`.
+  have h := integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl
+    (ofFunction (ContMDiffMap.const 1 : C^∞⟮I, M; ℝ⟯)) a (.inr ha)
+  rw [mextDerivₗ_ofFunction_const, integralTopForm_inner_zero_left] at h
+  rw [h]
+  congr 1
+  funext x
+  rw [alternatingFormInner_zero_apply _ _ 0, coe_ofFunction, RoughForm.ofFunction_apply,
+    ContMDiffMap.const_apply, one_mul]
 
 end SmoothForm
 

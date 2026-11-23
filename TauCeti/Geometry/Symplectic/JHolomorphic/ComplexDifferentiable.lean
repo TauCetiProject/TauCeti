@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # Complex-differentiable maps are `J`-holomorphic
@@ -21,6 +22,14 @@ constant-structure `J`-holomorphic for these structures
 (`DifferentiableWithinAt.isConstStructureJHolomorphicWithinAt_ofComplexModule`,
 `DifferentiableOn.isConstStructureJHolomorphicOn_ofComplexModule`). This supplies holomorphic
 reparametrizations of discs, such as affine maps of `ℂ`, as `J`-holomorphic maps.
+
+Conversely, a real-linear map commuting with multiplication by `i` is the real restriction of a
+complex-linear map (`ContinuousLinearMap.complexOfMapISmul`), so for these structures
+constant-structure `J`-holomorphicity is complex differentiability
+(`TauCeti.isConstStructureJHolomorphicAt_ofComplexModule_iff`,
+`TauCeti.isConstStructureJHolomorphicWithinAt_ofComplexModule_iff`,
+`TauCeti.isConstStructureJHolomorphicOn_ofComplexModule_iff`). This turns `J`-holomorphic
+functions on discs into holomorphic functions, to which complex analysis applies.
 -/
 
 public section
@@ -64,3 +73,43 @@ theorem DifferentiableOn.isConstStructureJHolomorphicOn_ofComplexModule
       (AlmostComplexStructure.ofComplexModule W) f s :=
   isConstStructureJHolomorphicOn_of_forall fun x hx ↦
     (hf x hx).isConstStructureJHolomorphicWithinAt_ofComplexModule
+
+namespace TauCeti
+
+/-- For the structures `v ↦ i v`, a map is constant-structure `J`-holomorphic at `x` exactly when it
+is complex differentiable at `x`. -/
+theorem isConstStructureJHolomorphicAt_ofComplexModule_iff :
+    IsConstStructureJHolomorphicAt (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) f x ↔ DifferentiableAt ℂ f x := by
+  refine ⟨fun hf ↦ ?_, DifferentiableAt.isConstStructureJHolomorphicAt_ofComplexModule⟩
+  obtain ⟨L, hL, hlin⟩ := (isConstStructureJHolomorphicAt_iff _ _ f x).1 hf
+  have hI : ∀ v, L (Complex.I • v) = Complex.I • L v := by
+    simpa [AlmostComplexStructure.ofComplexModule_apply] using
+      (isComplexLinearMap_iff_apply _ _ _).1 hlin
+  exact (hasFDerivAt_of_restrictScalars ℝ hL
+    (L.restrictScalars_complexOfMapISmul hI)).differentiableAt
+
+/-- For the structures `v ↦ i v`, a map is constant-structure `J`-holomorphic within `s` at `x`
+exactly when it is complex differentiable within `s` at `x`. -/
+theorem isConstStructureJHolomorphicWithinAt_ofComplexModule_iff :
+    IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) f s x ↔ DifferentiableWithinAt ℂ f s x := by
+  refine ⟨fun hf ↦ ?_,
+    DifferentiableWithinAt.isConstStructureJHolomorphicWithinAt_ofComplexModule⟩
+  obtain ⟨L, hL, hlin⟩ := (isConstStructureJHolomorphicWithinAt_iff _ _ f s x).1 hf
+  have hI : ∀ v, L (Complex.I • v) = Complex.I • L v := by
+    simpa [AlmostComplexStructure.ofComplexModule_apply] using
+      (isComplexLinearMap_iff_apply _ _ _).1 hlin
+  exact (hL.of_restrictScalars ℝ (L.restrictScalars_complexOfMapISmul hI)).differentiableWithinAt
+
+/-- For the structures `v ↦ i v`, a map is constant-structure `J`-holomorphic on `s` exactly when it
+is complex differentiable on `s`. -/
+theorem isConstStructureJHolomorphicOn_ofComplexModule_iff :
+    IsConstStructureJHolomorphicOn (AlmostComplexStructure.ofComplexModule V)
+      (AlmostComplexStructure.ofComplexModule W) f s ↔ DifferentiableOn ℂ f s :=
+  ⟨fun hf x hx ↦ isConstStructureJHolomorphicWithinAt_ofComplexModule_iff.1
+      ((isConstStructureJHolomorphicWithinAt_iff _ _ f s x).2
+        ((isConstStructureJHolomorphicOn_iff _ _ f s).1 hf x hx)),
+    DifferentiableOn.isConstStructureJHolomorphicOn_ofComplexModule⟩
+
+end TauCeti

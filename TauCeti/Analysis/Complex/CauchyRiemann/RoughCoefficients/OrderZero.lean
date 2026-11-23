@@ -239,8 +239,7 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
       (hψb.restrict K') (memLp_one_iff_integrable.2 ha))
   -- Test the weak equation against the mollifications of `ψ` and pass to the limit.
   choose φ hφ hφs hderiv using fun n => hψ.exists_testFunction_convolution_normed hψc hψb hDψ
-    le_top hs1 hball (ContDiffBump.shrinking hδ n) ((ContDiffBump.rOut_shrinking hδ n).trans_le
-      (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
+    le_top hs1 hball (ContDiffBump.shrinking hδ n) (ContDiffBump.rOut_shrinking_le hδ n)
   have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : ℂ)) hδ
   have hlimD : ∀ (c : ℂ) {a : ℂ → V}, MemLp a q (volume.restrict K') →
       Tendsto (fun n => ∫ z, ⟪fderiv ℝ (φ n : ℂ → V) z c, a z⟫_ℝ) atTop

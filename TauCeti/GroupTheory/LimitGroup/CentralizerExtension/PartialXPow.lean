@@ -236,8 +236,8 @@ theorem isTop_inv_iff {b : P} : S.IsTop b⁻¹ ↔ S.IsTop b :=
   ⟨fun h ↦ by simpa using h.inv, IsTop.inv⟩
 
 /-- A top element is not a proper power. -/
-theorem IsTop.not_isProperPower {b : P} (hb : S.IsTop b) : ¬Group.IsProperPower b := by
-  rw [Group.isProperPower_iff]
+theorem IsTop.not_isProperPower {b : P} (hb : S.IsTop b) : ¬IsProperPower b := by
+  rw [isProperPower_iff]
   rintro ⟨y, n, hn, hyb⟩
   have hy : Commute y b := hyb ▸ (Commute.refl y).pow_right n
   obtain ⟨d, hd, m, rfl⟩ := hb.exists_eq_mul_zpow hy
@@ -322,14 +322,14 @@ proper powers. -/
 @[simp]
 theorem isTop_trivial_iff_not_isProperPower [IsMulTorsionFree P]
     (h : ∀ g : P, g ≠ 1 → IsCyclic (centralizer {g})) {b : P} :
-    (PartialXPow.trivial h).IsTop b ↔ ¬Group.IsProperPower b := by
+    (PartialXPow.trivial h).IsTop b ↔ ¬IsProperPower b := by
   refine ⟨IsTop.not_isProperPower, fun hb ↦ (isTop_trivial_iff h).2
-    ⟨Group.ne_one_of_not_isProperPower hb, ?_⟩⟩
+    ⟨ne_one_of_not_isProperPower hb, ?_⟩⟩
   obtain ⟨c, hc⟩ := (centralizer {b}).isCyclic_iff_exists_zpowers_eq.1
-    (h b (Group.ne_one_of_not_isProperPower hb))
+    (h b (ne_one_of_not_isProperPower hb))
   obtain ⟨k, rfl⟩ := mem_zpowers_iff.1 (hc ▸ mem_centralizer_singleton_iff.2 rfl)
   rw [← hc]
-  obtain rfl | rfl := Int.natAbs_eq_iff.1 (Group.natAbs_eq_one_of_not_isProperPower_zpow hb) <;>
+  obtain rfl | rfl := Int.natAbs_eq_iff.1 (natAbs_eq_one_of_not_isProperPower_zpow hb) <;>
     simp
 
 -- An isomorphism carries a top element to an element satisfying the conditions of a top element

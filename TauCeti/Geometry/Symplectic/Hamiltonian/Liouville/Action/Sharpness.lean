@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Topology.Order.Interval
@@ -96,7 +96,8 @@ theorem exists_mem_eq_actionAngleCover_of_image_eq
       Φ y' = CotangentBundle.actionAngleCover p (θ, fun i ↦ (Φ y).snd (Pi.single i 1)) := by
   set a : ι → ℝ := fun i ↦ (Φ y).snd (Pi.single i 1)
   have hκ : (fun i ↦ (CotangentBundle.actionAngleCover p (θ, a)).snd (Pi.single i 1)) = a :=
-    funext fun i ↦ CotangentBundle.actionAngleCover_snd_apply_single p _ i
+    funext fun i ↦ (CotangentBundle.torusActions_apply p _ i).symm.trans
+      (congrFun (CotangentBundle.torusActions_actionAngleCover p (θ, a)) i)
   have ha : a ∈ D := by
     have h := mem_image_of_mem Φ hy
     rwa [hΦ] at h
