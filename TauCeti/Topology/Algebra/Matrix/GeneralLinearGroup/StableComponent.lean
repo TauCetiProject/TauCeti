@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.Topology.Algebra.Group.Connected
 
@@ -32,7 +31,9 @@ the stable elementary subgroup `E_∞(A)`, which is the commutator subgroup of `
 projection `GL_∞(A) → π₀GL_∞(A)` factors through algebraic `K₁(A) = GL_∞(A) / E_∞(A)`. The
 resulting comparison `K₁(A) → π₀GL_∞(A)` is a natural surjection whose kernel is the image of the
 stable identity component. It is not injective in general: every `GLₙ(ℂ)` is connected, so the
-stable component group of `ℂ` is trivial, while algebraic `K₁(ℂ) = ℂˣ`.
+stable component group of `ℂ` is trivial, while algebraic `K₁(ℂ) = ℂˣ`. That example is in
+`TauCeti.Analysis.Matrix.GeneralLinearGroup.StableComponent`, which keeps the polar decomposition
+of complex matrices out of this file.
 
 ## Main definitions
 
@@ -54,13 +55,12 @@ stable component group of `ℂ` is trivial, while algebraic `K₁(ℂ) = ℂˣ`.
   normal.
 * `TauCeti.StableComponentGroup.mk_eq_one_iff`: an invertible matrix has trivial class exactly
   when some stabilization of it lies in the identity component.
-* `TauCeti.StableComponentGroup.map_id`, `TauCeti.StableComponentGroup.map_comp`: functoriality.
+* `TauCeti.StableComponentGroup.map_id`, `TauCeti.StableComponentGroup.map_comp`,
+  `TauCeti.StableComponentGroup.map_map`: functoriality.
 * `TauCeti.AlgebraicK1.toStableComponentGroup_surjective`,
   `TauCeti.AlgebraicK1.ker_toStableComponentGroup`: the comparison is surjective, with kernel the
   image of the stable identity component.
 * `TauCeti.AlgebraicK1.toStableComponentGroup_map`: naturality of the comparison.
-* `TauCeti.StableGeneralLinearGroup.identityComponent_complex`: the stable identity component of
-  `ℂ` is everything, so the stable component group of `ℂ` is trivial.
 
 ## References
 
@@ -340,6 +340,13 @@ theorem map_comp (f : A →+* B) (hf : Continuous f) (g : B →+* C) (hg : Conti
   refine congrArg _ (Units.ext ?_)
   simp [Matrix.map_map]
 
+/-- Applying the homomorphisms of stable component groups induced by `f` and then `g` is applying
+the one induced by `g.comp f`. -/
+@[simp]
+theorem map_map (f : A →+* B) (hf : Continuous f) (g : B →+* C) (hg : Continuous g)
+    (x : StableComponentGroup A) : map g hg (map f hf x) = map (g.comp f) (hg.comp hf) x := by
+  rw [map_comp, MonoidHom.comp_apply]
+
 end Map
 
 end StableComponentGroup
@@ -399,23 +406,5 @@ theorem toStableComponentGroup_map {B : Type*} [Ring B] [TopologicalSpace B]
 end AlgebraicK1
 
 end Topology
-
-/-! ## Complex matrices -/
-
-/-- The stable identity component of `GL_∞(ℂ)` is the whole group, since every `GLₙ(ℂ)` is
-connected. -/
-@[simp]
-theorem StableGeneralLinearGroup.identityComponent_complex :
-    identityComponent ℂ = ⊤ := by
-  refine eq_top_iff.2 fun x _ ↦ ?_
-  obtain ⟨n, u, rfl⟩ := exists_of x
-  exact of_mem_identityComponent (by simp)
-
-/-- The stable component group of `ℂ` is trivial, although algebraic `K₁(ℂ) = ℂˣ` is not. -/
-instance : Subsingleton (StableComponentGroup ℂ) where
-  allEq x y := by
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective _ x
-    obtain ⟨y, rfl⟩ := QuotientGroup.mk'_surjective _ y
-    exact QuotientGroup.eq.2 (by simp)
 
 end TauCeti
