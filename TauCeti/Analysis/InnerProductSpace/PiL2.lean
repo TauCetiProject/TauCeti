@@ -640,7 +640,7 @@ theorem forall_snd_finsetComplEquivProd_iff (P : 𝕜 → Prop) (x : EuclideanSp
   simp
 
 /-- A vector vanishing on `Z` is recovered from its coordinates outside `Z`. -/
-theorem finsetComplEquivProd_symm_fst_zero {x : EuclideanSpace 𝕜 (Fin n)}
+theorem finsetComplEquivProd_symm_mk_fst_zero {x : EuclideanSpace 𝕜 (Fin n)}
     (hx : ∀ i ∈ Z, x i = 0) :
     (finsetComplEquivProd 𝕜 Z hZ).symm ((finsetComplEquivProd 𝕜 Z hZ x).1, 0) = x := by
   have h2 : (finsetComplEquivProd 𝕜 Z hZ x).2 = 0 := by
@@ -649,13 +649,13 @@ theorem finsetComplEquivProd_symm_fst_zero {x : EuclideanSpace 𝕜 (Fin n)}
   rw [← h2, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- Inserting a vector `w` of `𝕜ⁿ⁻ᵏ` outside `Z` gives a vector vanishing on `Z`. -/
-theorem finsetComplEquivProd_symm_zero_apply_of_mem (w : EuclideanSpace 𝕜 (Fin (n - k)))
+theorem finsetComplEquivProd_symm_mk_zero_apply_of_mem (w : EuclideanSpace 𝕜 (Fin (n - k)))
     {i : Fin n} (hi : i ∈ Z) : (finsetComplEquivProd 𝕜 Z hZ).symm (w, 0) i = 0 := by
   simp [finsetComplEquivProd_symm_apply, hi]
 
 /-- A property holds for every coordinate of `w` exactly when it holds for every coordinate
 outside `Z` of its insertion. -/
-theorem forall_finsetComplEquivProd_symm_zero_iff (P : 𝕜 → Prop)
+theorem forall_finsetComplEquivProd_symm_mk_zero_iff (P : 𝕜 → Prop)
     (w : EuclideanSpace 𝕜 (Fin (n - k))) :
     (∀ i ∉ Z, P ((finsetComplEquivProd 𝕜 Z hZ).symm (w, 0) i)) ↔ ∀ j, P (w j) := by
   rw [← forall_fst_finsetComplEquivProd_iff (hZ := hZ), ContinuousLinearEquiv.apply_symm_apply]

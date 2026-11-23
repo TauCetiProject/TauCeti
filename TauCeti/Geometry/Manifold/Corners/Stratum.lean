@@ -161,8 +161,8 @@ namespace TauCeti
 
 section Quadrant
 
-open EuclideanSpace (finsetComplEquivProd finsetComplEquivProd_symm_fst_zero
-  finsetComplEquivProd_symm_zero_apply_of_mem forall_finsetComplEquivProd_symm_zero_iff)
+open EuclideanSpace (finsetComplEquivProd finsetComplEquivProd_symm_mk_fst_zero
+  finsetComplEquivProd_symm_mk_zero_apply_of_mem forall_finsetComplEquivProd_symm_mk_zero_iff)
 
 variable {n k : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
 
@@ -214,14 +214,14 @@ private theorem stratumParam_eq_of_nonneg {x : M} {hx : #(zeroCoords n x) = k}
   rw [range_modelWithCornersEuclideanQuadrant]
   intro i
   by_cases hi : i ∈ zeroCoords n x
-  · rw [finsetComplEquivProd_symm_zero_apply_of_mem w hi]
-  · exact (forall_finsetComplEquivProd_symm_zero_iff (0 ≤ ·) w).2 hw i hi
+  · rw [finsetComplEquivProd_symm_mk_zero_apply_of_mem w hi]
+  · exact (forall_finsetComplEquivProd_symm_mk_zero_iff (0 ≤ ·) w).2 hw i hi
 
 private theorem stratumParam_apply_of_mem {x : M} {hx : #(zeroCoords n x) = k}
     (w : EuclideanSpace ℝ (Fin (n - k))) {i : Fin n} (hi : i ∈ zeroCoords n x) :
     (stratumParam k x hx w).val i = 0 := by
   simp [stratumParam, modelWithCornersEuclideanQuadrant_symm_apply,
-    finsetComplEquivProd_symm_zero_apply_of_mem w hi]
+    finsetComplEquivProd_symm_mk_zero_apply_of_mem w hi]
 
 private theorem coe_stratumAmbientChart (x : M) :
     ⇑(stratumAmbientChart n x) = chartAt (EuclideanQuadrant n) x :=
@@ -248,7 +248,7 @@ private theorem pos_of_mem_target {x : M} {hx : #(zeroCoords n x) = k}
     {w : EuclideanSpace ℝ (Fin (n - k))}
     (hw : stratumParam k x hx w ∈ (stratumAmbientChart n x).target) : ∀ j, 0 < w j := by
   obtain ⟨h₁, h₂⟩ := mem_stratumAmbientChart_target.1 hw
-  refine (forall_finsetComplEquivProd_symm_zero_iff (hZ := hx) (0 < ·) w).1 fun i hi ↦ ?_
+  refine (forall_finsetComplEquivProd_symm_mk_zero_iff (hZ := hx) (0 < ·) w).1 fun i hi ↦ ?_
   have h := h₂.2 i hi
   rw [(chartAt (EuclideanQuadrant n) x).right_inv h₁] at h
   simpa [stratumParam, modelWithCornersEuclideanQuadrant_symm_apply] using h
@@ -316,7 +316,7 @@ private theorem stratumParam_stratumProj {x : M} {hx : #(zeroCoords n x) = k} {y
   rw [stratumAmbientChart_source] at hy
   have hZ := (depth_eq_iff hy).1 (hyk.trans (hx.symm.trans (card_zeroCoords x)))
   rw [coe_stratumAmbientChart, stratumParam, stratumProj,
-    finsetComplEquivProd_symm_fst_zero (by simpa using hZ), ModelWithCorners.left_inv]
+    finsetComplEquivProd_symm_mk_fst_zero (by simpa using hZ), ModelWithCorners.left_inv]
 
 private theorem card_zeroCoords_eq (p : (𝓡c n).depthStratum M k) : #(zeroCoords n p.val) = k :=
   (card_zeroCoords p.val).trans p.prop
