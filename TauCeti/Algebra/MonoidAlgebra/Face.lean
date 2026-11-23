@@ -10,7 +10,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Ideal
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.Algebra.MonoidAlgebra.MonomialIdeal
+public import TauCeti.Algebra.MonoidAlgebra.Ideal
 
 /-!
 # Monomial ideals of semigroup faces
