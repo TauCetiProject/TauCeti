@@ -37,7 +37,7 @@ dual-tensor comparison `B∨ ⊗ A∨ ⟶ Hom(A, B∨)` followed by uncurrying
 complex of finitely generated projective modules, the dual of `A ⊗ B` is `B∨ ⊗ A∨`, for every `B`.
 
 This is how a functional on an external kernel `A ⊗ B∨` is read as an operator from `A` to `B`, as
-counts of moduli spaces are in Floer theory: uncurrying gives an operator from `A` to `B∨∨`, and the
+counts of moduli spaces are in Floer theory: currying gives an operator from `A` to `B∨∨`, and the
 inverse of the chain-compatible bidual map `j : B ⟶ B∨∨` (`CochainComplex.bidualHom`) brings it
 back to `B` (`TauCeti.linearHomComplexTensorDualIso`). Through `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨`, this
 reading is `j⁻¹` on the first factor followed by the dual-tensor comparison `B ⊗ A∨ ⟶ Hom(A, B)`
@@ -606,7 +606,7 @@ theorem isIso_linearHomComplexDualDistrib_of_isStrictlyGE_of_isStrictlyLE
 
 /-! ### Functionals on `A ⊗ B∨` as operators from `A` to `B` -/
 
-/-- **Functionals on `A ⊗ B∨` are operators from `A` to `B`.** Uncurrying identifies the dual
+/-- **Functionals on `A ⊗ B∨` are operators from `A` to `B`.** Currying identifies the dual
 `(A ⊗ B∨)∨` with `Hom(A, B∨∨)`, and the inverse of the chain-compatible bidual map
 `j : B ⟶ B∨∨` (`CochainComplex.bidualHom`, `j(b) = (-1)^|b| (φ ↦ φ(b))`) identifies this with
 `Hom(A, B)` when every term of `B` is reflexive. Through the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨` it
