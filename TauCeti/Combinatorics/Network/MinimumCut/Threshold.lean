@@ -144,6 +144,29 @@ theorem mem_supp_iff (c : ThresholdComponent f hsymm k) (v : V) :
     v ∈ c.supp ↔ thresholdComponentMk f hsymm k v = c :=
   Iff.rfl
 
+@[ext]
+theorem supp_injective :
+    Function.Injective (supp : ThresholdComponent f hsymm k → Set V) := by
+  intro c d h
+  obtain ⟨s, rfl⟩ := thresholdComponentMk_surjective f hsymm k c
+  apply (mem_supp_iff d s).mp
+  rw [← h]
+  exact (mem_supp_iff _ _).mpr rfl
+
+@[simp]
+theorem supp_inj {c d : ThresholdComponent f hsymm k} : c.supp = d.supp ↔ c = d :=
+  supp_injective.eq_iff
+
+/-- A vertex belongs to its threshold component. -/
+theorem thresholdComponentMk_mem (v : V) :
+    v ∈ (thresholdComponentMk f hsymm k v).supp :=
+  (mem_supp_iff _ _).mpr rfl
+
+/-- The support of a threshold component is nonempty. -/
+theorem nonempty_supp (c : ThresholdComponent f hsymm k) : c.supp.Nonempty := by
+  obtain ⟨v, rfl⟩ := thresholdComponentMk_surjective f hsymm k c
+  exact ⟨v, thresholdComponentMk_mem v⟩
+
 /-- To prove a property of every threshold component, it suffices to prove it on the component
 of each vertex. -/
 @[elab_as_elim]
@@ -158,7 +181,8 @@ namespace IsFlowEquivalentTree
 
 /-- Threshold relatedness is precisely reachability after deleting the tree edges lighter than
 the threshold. -/
-theorem thresholdRelated_iff_reachable (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
+theorem thresholdRelated_iff_reachable_deleteEdges
+    (hT : IsFlowEquivalentTree f T w) (k : K) (s t : V) :
     ThresholdRelated f k s t ↔ (T.deleteEdges {e | w e < k}).Reachable s t :=
   (hT.reachable_deleteEdges_iff k).symm
 
@@ -171,11 +195,12 @@ theorem pairMinimumValue_comm (hT : IsFlowEquivalentTree f T w) :
     rfl
   · have hle : ∀ s t, s ≠ t → pairMinimumValue f s t ≤ pairMinimumValue f t s := by
       intro s t hst
-      have hreach := (hT.thresholdRelated_iff_reachable (pairMinimumValue f s t) s t).mp
+      have hreach := (hT.thresholdRelated_iff_reachable_deleteEdges
+          (pairMinimumValue f s t) s t).mp
         ((thresholdRelated_def f (pairMinimumValue f s t) s t).mpr (Or.inr le_rfl))
       exact
         ((thresholdRelated_def f (pairMinimumValue f s t) t s).mp
-          ((hT.thresholdRelated_iff_reachable
+          ((hT.thresholdRelated_iff_reachable_deleteEdges
             (pairMinimumValue f s t) t s).mpr hreach.symm)).resolve_left (Ne.symm hst)
     exact le_antisymm (hle s t hst) (hle t s (Ne.symm hst))
 
@@ -225,7 +250,7 @@ theorem mem_supp_connectedComponentMk_deleteEdges_iff
   rw [ConnectedComponent.mem_supp_iff, eq_comm, hT.connectedComponentMk_deleteEdges_eq_iff]
 
 /-- The canonical equivalence preserves the vertex support of each threshold component. -/
-theorem thresholdComponentEquiv_supp (hT : IsFlowEquivalentTree f T w) (k : K)
+theorem supp_thresholdComponentEquiv (hT : IsFlowEquivalentTree f T w) (k : K)
     (c : ThresholdComponent f hT.pairMinimumValue_comm k) :
     (hT.thresholdComponentEquiv k c).supp = c.supp := by
   induction c using ThresholdComponent.ind with
@@ -236,6 +261,14 @@ theorem thresholdComponentEquiv_supp (hT : IsFlowEquivalentTree f T w) (k : K)
     constructor
     · exact fun h ↦ (hT.thresholdComponentEquiv k).injective (by simpa using h)
     · exact fun h ↦ by simpa using congrArg (hT.thresholdComponentEquiv k) h
+
+/-- The inverse canonical equivalence preserves the vertex support of each connected
+component. -/
+theorem supp_thresholdComponentEquiv_symm (hT : IsFlowEquivalentTree f T w) (k : K)
+    (c : (T.deleteEdges {e | w e < k}).ConnectedComponent) :
+    ((hT.thresholdComponentEquiv k).symm c).supp = c.supp := by
+  simpa using
+    (hT.supp_thresholdComponentEquiv k ((hT.thresholdComponentEquiv k).symm c)).symm
 
 /-- The abstract threshold quotient and the graph's connected-component type have the same
 cardinality. -/
