@@ -7,11 +7,13 @@ module
 
 import TauCeti.Topology.Separation.Basic
 import TauCeti.Topology.Spectral.Limits.Basic
+import TauCeti.Topology.Spectral.PatchCriterion
 import TauCeti.Topology.Spectral.Quotient
 import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Compactification.StoneCech
 import Mathlib.Topology.ContinuousMap.Basic
 import Mathlib.Topology.InductiveDimension.Classes
+import Mathlib.Topology.Separation.Regular
 import Mathlib.Topology.UnitInterval
 
 /-!
@@ -254,8 +256,7 @@ example :
         ¬ SpectralSpace (Quotient r) := by
   intro f r
   have : SpectralSpace (Ultrafilter unitInterval) :=
-    { toPrespectralSpace := .of_isTopologicalBasis ultrafilterBasis_is_basis
-        fun _ ⟨s, hs⟩ ↦ hs ▸ (ultrafilter_isClosed_basic s).isCompact }
+    spectralSpace_of_zeroDimensionalSpace (Ultrafilter unitInterval)
   have hR :
       IsProConstructible {q : Ultrafilter unitInterval × Ultrafilter unitInterval | r q.1 q.2} :=
     (isClosed_eq (f.continuous.comp continuous_fst)

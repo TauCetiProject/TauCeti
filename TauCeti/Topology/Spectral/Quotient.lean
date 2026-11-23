@@ -46,9 +46,8 @@ generalizing spectral map (`TauCeti.spectralSpace_quotient`): the topology coind
 so `TauCeti.spectralSpace_of_isClopen_generateFrom` applies.
 
 Finally, when the first projection from `{q : X × X // r q.1 q.2}` to `X` is an open map, it is
-automatically generalizing (by `IsSpectralMap.generalizingMap_of_isOpenMap` and
-`TauCeti.IsLocallySpectralMap.generalizingMap_of_isOpenMap`). On a spectral space `X`
-this makes `Quotient r` spectral with spectral quotient map
+automatically generalizing (by `IsSpectralMap.generalizingMap_of_isOpenMap`). On a spectral
+space `X` this makes `Quotient r` spectral with spectral quotient map
 (`TauCeti.spectralSpace_quotient_of_isOpenMap`). On any locally spectral space `X`, restricting `r`
 to spectral open charts via `IsOpen.quotientComapHomeomorphImage` — without requiring the charts to
 be `r`-invariant — shows that `Quotient r` is locally spectral and quasiseparated and that
@@ -186,7 +185,7 @@ theorem generalizingMap_quotientMk (hX : IsLocallySpectralSpace X) {r : Setoid X
       closure {z : X | r a z} :=
     hO.preimage_image_quotientMk_closure hX hs (r.preimage_image_quotientMk_setOfPred_rel a)
   have hclosed : IsClosed (Quotient.mk r '' closure {z : X | r a z}) :=
-    isQuotientMap_quot_mk.isClosed_preimage.mp (hcl.symm ▸ isClosed_closure)
+    hO.isClosed_image_quotientMk_closure hX hs (r.preimage_image_quotientMk_setOfPred_rel a)
   have hy_img : Quotient.mk r y ∈ Quotient.mk r '' closure {z : X | r a z} :=
     specializes_iff_forall_closed.mp habar _ hclosed ⟨a, subset_closure (r.refl a), rfl⟩
   have hy_cl : y ∈ closure {z : X | r a z} := hcl ▸ hy_img

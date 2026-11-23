@@ -11,15 +11,13 @@ public import Mathlib.Topology.Separation.Basic
 # Separation properties in `T₁` spaces
 
 In a `T₁` topological space, every specialization `x ⤳ y` is an equality (`specializes_iff_eq`), so
-any map into a `T₁` space trivially lifts both generalizations and specializations without any
-continuity assumption on the map. Furthermore, the complement of a point is open (`isOpen_ne`),
-so the points where a continuous map into a `T₁` space avoids finitely many given values form an
-open set.
+any map into a `T₁` space trivially lifts generalizations without any continuity assumption on
+the map. Furthermore, the complement of a point is open (`isOpen_ne`), so the points where a
+continuous map into a `T₁` space avoids finitely many given values form an open set.
 
 ## Main results
 
 * `TauCeti.generalizingMap_of_t1Space`: any map into a `T₁` space is a `GeneralizingMap`.
-* `TauCeti.specializingMap_of_t1Space`: any map into a `T₁` space is a `SpecializingMap`.
 * `TauCeti.isOpen_forall_ne`: the points where a continuous map into a `T₁` space avoids finitely
   many values form an open set.
 -/
@@ -37,12 +35,6 @@ equalities. -/
 @[simp]
 theorem generalizingMap_of_t1Space : GeneralizingMap f :=
   fun x _ hx ↦ ⟨x, specializes_rfl, (specializes_iff_eq.mp hx).symm⟩
-
-/-- Any map into a `T₁` space lifts specializations, since specializations in the target are
-equalities. -/
-@[simp]
-theorem specializingMap_of_t1Space : SpecializingMap f :=
-  fun x _ hx ↦ ⟨x, specializes_rfl, specializes_iff_eq.mp hx⟩
 
 end
 
