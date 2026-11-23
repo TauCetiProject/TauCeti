@@ -26,9 +26,9 @@ excision (`TauCeti.AlgebraicGeometry.SpecialFiber.Picard`) and following
 * **Multidegrees and weighted intersection matrix** (`SpecialFiberCohomologyFiniteDimensional`,
   `reducedSpecialFiberMultidegree`, `specialFiberMultidegreeOnFiber`, `specialFiberMultidegree`,
   `specialFiberWeightedIntersectionMatrix`, `specialFiberMultidegree_comp_verticalLineBundleLinear`,
-  `specialFiberMultidegree_prod_zpow`): compatible `ℤ`-linear multidegree homomorphisms across
-  `X_{s,red}`, `X_s`, and `X` sending `∏_i [𝒪_X(C_i)]^{v_i}` to `v ᵥ* A'` where
-  `a'_{ij} = a_{ij} / w_j`.
+  `specialFiberMultidegree_verticalLineBundleLinear`): compatible `ℤ`-linear multidegree
+  homomorphisms across `X_{s,red}`, `X_s`, and `X` sending `∏_i [𝒪_X(C_i)]^{v_i}` to `v ᵥ* A'`
+  where `a'_{ij} = a_{ij} / w_j`.
 * **Picard specialization and torsion lifting** (`specialFiberPicardSpecialization`,
   `mem_ker_specialFiberPicardSpecialization_iff`,
   `exists_dvd_specialFiberMultiplicity_and_pow_eq_one`,
@@ -84,19 +84,6 @@ theorem specialFiberCohomologyFiniteDimensional_zero {R : Type u} [CommRing R] [
     {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [UniversallyClosed toBase]
     [LocallyOfFiniteType toBase] : toBase.SpecialFiberCohomologyFiniteDimensional 0 :=
   fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
-
-namespace HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne
-
-/-- Extracts `SpecialFiberCohomologyFiniteDimensional 1` from
-`HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne` as a named theorem so callers
-avoid unfolding `SpecialFiberCohomologyFiniteDimensional` in kernel checks. -/
-theorem specialFiberCohomologyFiniteDimensional_one {R : Type u} [CommRing R] [IsLocalRing R]
-    {X : Scheme.{u}} {toBase : X ⟶ Spec (.of R)}
-    (hC : toBase.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne) :
-    toBase.SpecialFiberCohomologyFiniteDimensional 1 :=
-  hC.finiteDimensional_one
-
-end HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne
 
 /-! ### Multidegrees across `X`, `X_s`, and `(X_s)_red`, and the weighted intersection matrix -/
 
@@ -409,33 +396,6 @@ theorem reducedSpecialFiberMultidegree_comp_pullbackLinearMap_reducedSpecialFibe
   exact toBase.componentMultidegreeLinear_comp_pullbackLinearMap hX hη h₀ h₁ fun _ ↦
     subschemeToReducedSpecialFiber_reducedSpecialFiberι _
 
-/-- `specialFiberMultidegreeOnFiber` factors through restriction from `X_s` to `X_{s,red}`. -/
-theorem specialFiberMultidegreeOnFiber_eq_reducedSpecialFiberMultidegree_pullback
-    (b : LineBundleClass (specialFiber R toBase).left) :
-    toBase.specialFiberMultidegreeOnFiber hX hη h₀ h₁ (Additive.ofMul b) =
-      toBase.reducedSpecialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul (pullback
-        (reducedSpecialFiberToSpecialFiber R toBase) b)) := by
-  rw [← LineBundleClass.pullbackLinearMap_ofMul, ← LinearMap.comp_apply,
-    reducedSpecialFiberMultidegree_comp_pullbackLinearMap_reducedSpecialFiberToSpecialFiber]
-
-/-- `specialFiberMultidegree` factors through restriction from `X` to `X_s`. -/
-theorem specialFiberMultidegree_eq_specialFiberMultidegreeOnFiber_pullback
-    (a : LineBundleClass X) :
-    toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul a) =
-      toBase.specialFiberMultidegreeOnFiber hX hη h₀ h₁
-        (Additive.ofMul (pullback (specialFiberι R toBase) a)) := by
-  rw [← LineBundleClass.pullbackLinearMap_ofMul, ← LinearMap.comp_apply,
-    specialFiberMultidegreeOnFiber_comp_pullbackLinearMap_specialFiberι]
-
-/-- Pulling back a line-bundle class from `X` to `X_{s,red}` preserves its multidegree. -/
-@[simp]
-theorem reducedSpecialFiberMultidegree_pullback_reducedSpecialFiberι (a : LineBundleClass X) :
-    toBase.reducedSpecialFiberMultidegree hX hη h₀ h₁
-        (Additive.ofMul (pullback (reducedSpecialFiberι R toBase) a)) =
-      toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul a) := by
-  rw [← LineBundleClass.pullbackLinearMap_ofMul, ← LinearMap.comp_apply,
-    reducedSpecialFiberMultidegree_comp_pullbackLinearMap_reducedSpecialFiberι]
-
 /-- Multiplying the `i`-th coordinate of `specialFiberMultidegree a` by `w_i` recovers
 `(a · C_i)_k` over the residue field. -/
 theorem specialFiberMultidegree_mul_specialFiberWeight (a : Additive (LineBundleClass X)) (i) :
@@ -515,30 +475,19 @@ theorem specialFiberMultidegree_mk_toInvertibleSheaf_dual (i) :
       toBase.specialFiberWeightedIntersectionMatrix hX hη i := by
   rw [← LineBundleClass.inv_mk, specialFiberMultidegree_inv_mk_toInvertibleSheaf]
 
-/-- **Multidegree of a vertical divisor class.** For any integer vector `v` on the special-fibre
-components, the multidegree of `∏_i [𝒪_X(C_i)]^{v_i}` is `v ᵥ* A'`. -/
-theorem specialFiberMultidegree_prod_zpow
-    (v : (toBase.finite_setOf_base_eq_closedPoint
-        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) :
-    toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul (∏ i, (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-          i.val.property).toInvertibleSheaf)⁻¹ ^ v i)) =
-      v ᵥ* toBase.specialFiberWeightedIntersectionMatrix hX hη := funext fun j ↦ by
-  rw [ofMul_prod, map_sum, Finset.sum_apply, Matrix.vecMul, dotProduct]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [ofMul_zpow, map_zsmul, Pi.smul_apply, smul_eq_mul,
-    specialFiberMultidegree_inv_mk_toInvertibleSheaf]
-
 /-- **Multidegree of a vertical Cartier divisor.** Composing `specialFiberMultidegree` with
 `verticalLineBundleLinear` equals multiplication by `specialFiberWeightedIntersectionMatrix`. -/
 theorem specialFiberMultidegree_comp_verticalLineBundleLinear :
     toBase.specialFiberMultidegree hX hη h₀ h₁ ∘ₗ
         toBase.verticalLineBundleLinear hX hη =
       (toBase.specialFiberWeightedIntersectionMatrix hX hη).vecMulLinear :=
-  LinearMap.ext fun v ↦ by
+  LinearMap.ext fun v ↦ funext fun j ↦ by
     rw [LinearMap.comp_apply, ← ofMul_toMul (toBase.verticalLineBundleLinear hX hη v),
-      toMul_verticalLineBundleLinear_apply, Matrix.vecMulLinear_apply]
-    exact toBase.specialFiberMultidegree_prod_zpow hX hη h₀ h₁ v
+      toMul_verticalLineBundleLinear_apply, ofMul_prod, map_sum, Finset.sum_apply,
+      Matrix.vecMulLinear_apply, Matrix.vecMul, dotProduct]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [ofMul_zpow, map_zsmul, Pi.smul_apply, smul_eq_mul,
+      specialFiberMultidegree_inv_mk_toInvertibleSheaf]
 
 /-- Pointwise form of `specialFiberMultidegree_comp_verticalLineBundleLinear`. -/
 @[simp]
@@ -573,7 +522,9 @@ theorem specialFiberMultidegree_mem_range_of_pullback_genericFiberι_eq_one {a :
     toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul a) ∈
       LinearMap.range (toBase.specialFiberWeightedIntersectionMatrix hX hη).vecMulLinear := by
   obtain ⟨v, rfl⟩ := (toBase.pullback_genericFiberι_eq_one_iff_of_isRegular K hX hη).mp ha
-  exact ⟨v, (toBase.specialFiberMultidegree_prod_zpow hX hη h₀ h₁ v).symm⟩
+  refine ⟨v, ?_⟩
+  rw [← toBase.toMul_verticalLineBundleLinear_apply hX hη v, ofMul_toMul,
+    toBase.specialFiberMultidegree_verticalLineBundleLinear, Matrix.vecMulLinear_apply]
 
 omit [IsProper toBase] in
 include hX in
@@ -637,14 +588,14 @@ theorem mem_ker_specialFiberPicardSpecialization_iff
     rw [AddMonoidHom.mem_ker, specialFiberPicardSpecialization_pullback,
       Submodule.Quotient.mk_eq_zero, LinearMap.mem_range] at hb
     obtain ⟨v, hv⟩ := hb
-    let vert : LineBundleClass X := ∏ i, (LineBundleClass.mk
-      (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-        i.val.property).toInvertibleSheaf)⁻¹ ^ v i
+    let vert : LineBundleClass X := (toBase.verticalLineBundleLinear hX hη v).toMul
     have hvert : pullback (genericFiberι R K toBase) vert = 1 :=
-      (toBase.pullback_genericFiberι_eq_one_iff_of_isRegular K hX hη).mpr ⟨v, rfl⟩
+      (toBase.pullback_genericFiberι_eq_one_iff_of_isRegular K hX hη).mpr
+        ⟨v, toBase.toMul_verticalLineBundleLinear_apply hX hη v⟩
     refine ⟨a₀ * vert⁻¹, by simp [hvert], ?_⟩
     rw [ofMul_mul, ofMul_inv, map_add, map_neg,
-      toBase.specialFiberMultidegree_prod_zpow hX hη h₀ h₁ v,
+      show Additive.ofMul vert = toBase.verticalLineBundleLinear hX hη v from ofMul_toMul _,
+      toBase.specialFiberMultidegree_verticalLineBundleLinear,
       ← Matrix.vecMulLinear_apply, hv, add_neg_cancel]
   · rw [← haK, AddMonoidHom.mem_ker, specialFiberPicardSpecialization_pullback, ha,
       Submodule.Quotient.mk_zero]
@@ -699,7 +650,8 @@ theorem exists_dvd_specialFiberMultiplicity_and_pow_eq_one
   have hreg : IsSMulRegular R π :=
     IsSMulRegular.of_ne_zero (toBase.ne_zero_of_base_ne_closedPoint hη hπ)
   obtain ⟨v, rfl⟩ := (toBase.pullback_genericFiberι_eq_one_iff_of_isRegular K hX hη).mp haK
-  rw [toBase.specialFiberMultidegree_prod_zpow hX hη h₀ h₁ v] at ha0
+  rw [← toBase.toMul_verticalLineBundleLinear_apply hX hη v, ofMul_toMul,
+    toBase.specialFiberMultidegree_verticalLineBundleLinear] at ha0
   obtain ⟨c, hc⟩ := toBase.exists_rat_mul_specialFiberMultiplicity_of_vecMul_eq_zero
     hX hη h₀ h₁ hπ hconn ha0
   have hrel (j) : v j * (c.den : ℤ) = c.num * (toBase.specialFiberMultiplicity π j : ℤ) :=

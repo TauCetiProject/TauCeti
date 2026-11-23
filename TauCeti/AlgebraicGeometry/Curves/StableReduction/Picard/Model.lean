@@ -122,7 +122,7 @@ def numericalPicTorsionMap (ℓ : ℕ) :
         M.toBase.coheight_le_succ_of_relativeDimensionLE
         (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
         M.toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.specialFiberCohomologyFiniteDimensional_one a) := by
+        hC.finiteDimensional_one a) := by
   exact M.toBase.reducedSpecialFiberNumericalPicLinear_apply _ _ hC _ _ hconn a
 
 /-- `M.specialFiberNumericalPicLinear` sends `a` to the quotient class of its multidegree. -/
@@ -133,7 +133,7 @@ lemma specialFiberNumericalPicLinear_apply
         M.toBase.coheight_le_succ_of_relativeDimensionLE
         (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
         M.toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.specialFiberCohomologyFiniteDimensional_one a) := by
+        hC.finiteDimensional_one a) := by
   exact M.toBase.specialFiberNumericalPicLinear_apply _ _ hC _ _ hconn a
 
 /-- `M.numericalPicLinear` sends `a` to the quotient class of its multidegree. -/
@@ -143,7 +143,7 @@ lemma specialFiberNumericalPicLinear_apply
         M.toBase.coheight_le_succ_of_relativeDimensionLE
         (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
         M.toBase.specialFiberCohomologyFiniteDimensional_zero
-        hC.specialFiberCohomologyFiniteDimensional_one a) := by
+        hC.finiteDimensional_one a) := by
   exact M.toBase.numericalPicLinear_apply _ _ hC _ _ hconn a
 
 /-- `M.specialFiberNumericalPicLinear` factors through pullback to `M_{s,red}`. -/
@@ -292,7 +292,7 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
         (M.toBase.specialFiberMultidegree M.toBase.coheight_le_succ_of_relativeDimensionLE
           (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
           M.toBase.specialFiberCohomologyFiniteDimensional_zero
-          hC.specialFiberCohomologyFiniteDimensional_one) =
+          hC.finiteDimensional_one) =
       (𝒯ₘ).principalDivisors := by
   exact M.toBase.map_specialFiberMultidegree_range_verticalLineBundleLinear _ _ hC _ _ hconn
 
@@ -319,7 +319,7 @@ theorem ker_numericalPicLinear : LinearMap.ker (M.numericalPicLinear hC hconn) =
           M.toBase.coheight_le_succ_of_relativeDimensionLE
           (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
           M.toBase.specialFiberCohomologyFiniteDimensional_zero
-          hC.specialFiberCohomologyFiniteDimensional_one) ⊔
+          hC.finiteDimensional_one) ⊔
         LinearMap.range (M.toBase.verticalLineBundleLinear
           M.toBase.coheight_le_succ_of_relativeDimensionLE
           (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))) := by

@@ -63,20 +63,21 @@ multiplicities. -/
 theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
     (hspan : Ideal.span {π} = Ideal.span {π'}) (x : CodimensionOnePoint X) :
     toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
-  let φ : R →+* Γ(X, ⊤) := toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom
-  have hφ (r : R) : toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv r) = φ r := rfl
-  have : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
+  let φ : R →+* X.presheaf.stalk x :=
+    (X.presheaf.germ ⊤ x trivial).hom.comp
+      (toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom)
   have hφ_span : Ideal.span {φ π} = Ideal.span {φ π'} := by
     simpa only [Ideal.map_span, Set.image_singleton] using congrArg (Ideal.map φ) hspan
-  obtain ⟨u, hu⟩ := Ideal.span_singleton_eq_span_singleton.mp hφ_span
+  have hassoc : Associated (φ π) (φ π') :=
+    Ideal.span_singleton_eq_span_singleton.mp hφ_span
+  have hord := congrArg ENat.toNat (Ring.ord_eq_of_associated hassoc)
   apply Nat.cast_injective (R := ℤ)
-  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe, hφ, hφ]
-  rcases eq_or_ne (φ π) 0 with hπ0 | hπ0
-  · rw [← hu, hπ0, zero_mul]
-  · rw [← hu, map_mul,
-      X.ord_mul ((map_ne_zero_iff _ (X.germToFunctionField_injective ⊤)).mpr hπ0)
-        (u.isUnit.map (X.germToFunctionField ⊤).hom).ne_zero,
-      X.ord_of_isUnit u.isUnit trivial, add_zero]
+  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe,
+    ← X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := (x : X)) trivial,
+    ← X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := (x : X)) trivial,
+    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk x.property,
+    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk x.property]
+  exact congrArg Nat.cast hord
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- Associated elements of the base ring define the same special-fibre multiplicities: multiplying

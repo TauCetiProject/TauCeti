@@ -68,8 +68,15 @@ theorem coe_torsionByZModLinearMap_apply (f : A →+ B) (n : ℕ)
 theorem torsionByZModLinearMap_id (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))] :
     (AddMonoidHom.id A).torsionByZModLinearMap n = LinearMap.id := by
-  ext x
-  rw [coe_torsionByZModLinearMap_apply, AddMonoidHom.id_apply, LinearMap.id_apply]
+  have hid : (AddMonoidHom.id A).toIntLinearMap = LinearMap.id := by
+    ext x
+    rw [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.id_apply, LinearMap.id_apply]
+  have h := congrArg (fun φ : _ →ₗ[ℤ] _ ↦ φ.toAddMonoidHom.toZModLinearMap n)
+    (TauCeti.torsionByMap_id (n : ℤ) (M := A))
+  rw [torsionByZModLinearMap, hid]
+  refine h.trans (LinearMap.ext fun x ↦ ?_)
+  rw [AddMonoidHom.coe_toZModLinearMap, LinearMap.toAddMonoidHom_coe, LinearMap.id_apply,
+    LinearMap.id_apply]
 
 /-- Restriction to `n`-torsion commutes with composition of additive homomorphisms. -/
 @[simp]
@@ -79,9 +86,18 @@ theorem torsionByZModLinearMap_comp (g : B →+ C) (f : A →+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy C (n : ℤ))] :
     (g.comp f).torsionByZModLinearMap n =
       g.torsionByZModLinearMap n ∘ₗ f.torsionByZModLinearMap n := by
-  ext x
-  rw [coe_torsionByZModLinearMap_apply, AddMonoidHom.comp_apply, LinearMap.comp_apply,
-    coe_torsionByZModLinearMap_apply, coe_torsionByZModLinearMap_apply]
+  have hcomp : (g.comp f).toIntLinearMap = g.toIntLinearMap ∘ₗ f.toIntLinearMap := by
+    ext x
+    rw [AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.comp_apply, LinearMap.comp_apply,
+      AddMonoidHom.coe_toIntLinearMap, AddMonoidHom.coe_toIntLinearMap]
+  have h := congrArg (fun φ : _ →ₗ[ℤ] _ ↦ φ.toAddMonoidHom.toZModLinearMap n)
+    (TauCeti.torsionByMap_comp (n : ℤ) g.toIntLinearMap f.toIntLinearMap)
+  rw [torsionByZModLinearMap, hcomp]
+  refine h.trans (LinearMap.ext fun x ↦ ?_)
+  rw [AddMonoidHom.coe_toZModLinearMap, LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply,
+    LinearMap.comp_apply, torsionByZModLinearMap, torsionByZModLinearMap,
+    AddMonoidHom.coe_toZModLinearMap, AddMonoidHom.coe_toZModLinearMap,
+    LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe]
 
 /-- The zero additive homomorphism restricts to the zero `ZMod n`-linear map on `n`-torsion. -/
 @[simp]
@@ -119,9 +135,15 @@ injective. -/
 theorem injective_torsionByZModLinearMap {f : A →+ B} (hf : Function.Injective f) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
-    Function.Injective (f.torsionByZModLinearMap n) := fun _ _ h ↦
-  Subtype.ext <| hf <| by
-    simpa only [coe_torsionByZModLinearMap_apply] using congrArg Subtype.val h
+    Function.Injective (f.torsionByZModLinearMap n) := by
+  have hf' : Function.Injective f.toIntLinearMap := by
+    simpa only [AddMonoidHom.coe_toIntLinearMap] using hf
+  have hfun : ⇑(f.torsionByZModLinearMap n) =
+      ⇑(TauCeti.torsionByMap (n : ℤ) f.toIntLinearMap) := by
+    funext x
+    rw [torsionByZModLinearMap, AddMonoidHom.coe_toZModLinearMap, LinearMap.toAddMonoidHom_coe]
+  rw [hfun]
+  exact TauCeti.injective_torsionByMap hf'
 
 end AddMonoidHom
 
@@ -134,9 +156,10 @@ variable {A B C : Type*} [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
 theorem toAddMonoidHom_torsionByZModLinearMap_id (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))] :
     (LinearMap.id (R := ℤ) (M := A)).toAddMonoidHom.torsionByZModLinearMap n = LinearMap.id := by
-  ext x
-  rw [AddMonoidHom.coe_torsionByZModLinearMap_apply, LinearMap.toAddMonoidHom_coe,
-    LinearMap.id_apply, LinearMap.id_apply]
+  have hid : (LinearMap.id (R := ℤ) (M := A)).toAddMonoidHom = AddMonoidHom.id A := by
+    ext x
+    rw [LinearMap.toAddMonoidHom_coe, LinearMap.id_apply, AddMonoidHom.id_apply]
+  rw [hid, AddMonoidHom.torsionByZModLinearMap_id]
 
 /-- Restriction of `ℤ`-linear maps to `n`-torsion commutes with composition. -/
 @[simp]
@@ -146,11 +169,11 @@ theorem toAddMonoidHom_torsionByZModLinearMap_comp (g : B →ₗ[ℤ] C) (f : A 
     [Module (ZMod n) (AddSubgroup.torsionBy C (n : ℤ))] :
     (g.comp f).toAddMonoidHom.torsionByZModLinearMap n =
       g.toAddMonoidHom.torsionByZModLinearMap n ∘ₗ f.toAddMonoidHom.torsionByZModLinearMap n := by
-  ext x
-  rw [AddMonoidHom.coe_torsionByZModLinearMap_apply, LinearMap.toAddMonoidHom_coe,
-    LinearMap.comp_apply, LinearMap.comp_apply, AddMonoidHom.coe_torsionByZModLinearMap_apply,
-    AddMonoidHom.coe_torsionByZModLinearMap_apply, LinearMap.toAddMonoidHom_coe,
-    LinearMap.toAddMonoidHom_coe]
+  have hcomp : (g.comp f).toAddMonoidHom = g.toAddMonoidHom.comp f.toAddMonoidHom := by
+    ext x
+    rw [LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply, AddMonoidHom.comp_apply,
+      LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe]
+  rw [hcomp, AddMonoidHom.torsionByZModLinearMap_comp]
 
 end LinearMap
 

@@ -302,11 +302,13 @@ theorem ker_reducedSpecialFiberι :
       Scheme.IdealSheafData.vanishingIdeal
         ⟨toBase ⁻¹' {closedPoint R},
           (isClosed_singleton_closedPoint R).preimage toBase.continuous⟩ := by
-  have := isClosedImmersion_specialFiberι R toBase
-  rw [ker_reducedSpecialFiberι_eq_radical, ← Scheme.IdealSheafData.vanishingIdeal_support]
+  have hrad : (reducedSpecialFiberι R toBase).ker.radical =
+      (reducedSpecialFiberι R toBase).ker := by
+    rw [ker_reducedSpecialFiberι_eq_radical]
+    exact Scheme.IdealSheafData.ext (funext fun U ↦ Ideal.radical_idem _)
+  rw [← hrad, ← Scheme.IdealSheafData.vanishingIdeal_support]
   congr 1; ext1
-  refine (Scheme.Hom.support_ker (specialFiberι R toBase)).trans ?_
-  rw [range_specialFiberι R toBase, IsClosed.closure_eq]
+  rw [Scheme.Hom.support_ker, range_reducedSpecialFiberι, IsClosed.closure_eq]
   · rfl
   · exact (isClosed_singleton_closedPoint R).preimage toBase.continuous
 
