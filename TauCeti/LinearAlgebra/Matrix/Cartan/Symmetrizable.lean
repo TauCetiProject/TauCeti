@@ -103,6 +103,12 @@ variable {I J K I' I'' : Type*} (A : SymmetrizableDatum I)
 theorem symmetrizer_ne_zero (i : I) : A.symmetrizer i ≠ 0 :=
   (A.symmetrizer_pos i).ne'
 
+/-- The symmetrizer casts to a nonzero element in any characteristic-zero additive monoid with
+one. -/
+theorem symmetrizer_cast_ne_zero {R : Type*} [AddMonoidWithOne R] [CharZero R] (i : I) :
+    (A.symmetrizer i : R) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
+
 /-! ### The symmetrized matrix -/
 
 /-- The symmetrized matrix `B = (d i * a i j)` of a symmetrizable datum. -/
@@ -420,6 +426,15 @@ theorem posDef_symmetrizedMatrix_toSymmetrizableDatum (hM : M.IsFiniteCartan) :
     using hM.exists_posDef.choose_spec.2
 
 end Matrix.IsFiniteCartan
+
+namespace TauCeti.SymmetrizableDatum
+
+/-- The Cartan matrix of a `TauCeti.SymmetrizableDatum` is a generalized Cartan matrix. -/
+theorem isGeneralizedCartan {I : Type*} (D : SymmetrizableDatum I) :
+    D.cartan.IsGeneralizedCartan :=
+  ⟨D.diag, D.offDiag_nonpos, D.zero_comm⟩
+
+end TauCeti.SymmetrizableDatum
 
 /-! ### Examples -/
 

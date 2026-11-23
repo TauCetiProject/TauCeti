@@ -31,8 +31,12 @@ For explicit pullbacks of the discrete topology `⊥`, an injective map pulls `�
 A family eventually contained in a subset and converging to one of its points witnesses
 nondiscreteness when it is frequently unequal to that point (`Filter.Tendsto.not_isDiscrete`).
 This criterion uses only the target topology and applies to ranges of homomorphisms whose
-nonidentity values accumulate at the identity. Conversely, a real family converging along a
-filter and eventually in the discrete lattice `c ℤ`, `c > 0`, is eventually constant
+nonidentity values accumulate at the identity. In the other direction, a family converging to a
+point of a discrete subset and eventually contained in it is eventually equal to its limit
+(`Filter.Tendsto.eventually_eq_of_isDiscrete`); for a map continuous at a point and taking values
+near it in a discrete subgroup, such as a lattice, this says the map is constant near the point.
+Similarly, a real family converging along a filter and eventually in the discrete lattice `c ℤ`,
+`c > 0`, is eventually constant
 (`Filter.Tendsto.exists_eventually_eq_mul_intCast`); this is how convergent integer-valued
 charges stabilize.
 -/
@@ -94,15 +98,20 @@ open Topology
 
 namespace Filter
 
+/-- A family converging to a point `a` of a discrete subset `s`, and eventually contained in `s`,
+is eventually equal to `a`. -/
+theorem Tendsto.eventually_eq_of_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y}
+    {l : Filter X} {a : Y} {s : Set Y} (hf : Tendsto f l (𝓝 a)) (ha : a ∈ s)
+    (hs : ∀ᶠ x in l, f x ∈ s) (hD : IsDiscrete s) : ∀ᶠ x in l, f x = a := by
+  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
+  rwa [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
+
 /-- A subset containing the limit of an eventually contained family is nondiscrete if the family
 is frequently different from the limit. -/
 theorem Tendsto.not_isDiscrete {X Y : Type*} [TopologicalSpace Y] {f : X → Y} {l : Filter X}
     {a : Y} {s : Set Y} (hf : Tendsto f l (𝓝 a)) (ha : a ∈ s)
-    (hs : ∀ᶠ x in l, f x ∈ s) (hne : ∃ᶠ x in l, f x ≠ a) : ¬ IsDiscrete s := by
-  intro hD
-  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hf hs
-  rw [nhdsWithin_of_mem_discrete hD ha, tendsto_pure] at heq
-  exact hne (heq.mono fun _ h hne ↦ hne h)
+    (hs : ∀ᶠ x in l, f x ∈ s) (hne : ∃ᶠ x in l, f x ≠ a) : ¬ IsDiscrete s := fun hD ↦
+  hne ((hf.eventually_eq_of_isDiscrete ha hs hD).mono fun _ h hne ↦ hne h)
 
 /-- A real family that converges along `l` and eventually lies in the lattice `c ℤ`, `c > 0`, is
 eventually equal to one fixed multiple of `c`. -/

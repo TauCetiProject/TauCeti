@@ -70,9 +70,28 @@ theorem exists_nonneg_geometricRepresentation_of_mem_parabolic_pair {i j : I} {v
     ∃ a b : ℝ, 0 ≤ a ∧ 0 ≤ b ∧
       cs.geometricRepresentation v (Finsupp.single i 1) =
         a • Finsupp.single i 1 + b • Finsupp.single j 1 := by
-  obtain ⟨hword, hk⟩ := cs.wordProd_alternatingWord_eq_and_length_lt_of_mem_parabolic_pair hv hvi
+  have hlen := cs.not_isRightDescent_iff.mp hvi
+  -- a reduced alternating word for `v` ending in `i` would make `i` a right descent
+  have hword : cs.wordProd (alternatingWord i j (cs.length v)) = v := by
+    refine (cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair hv).elim id fun h ↦ ?_
+    rcases hk : cs.length v with - | k
+    · simp [cs.length_eq_zero_iff.mp hk, alternatingWord]
+    · rw [hk, alternatingWord_succ, wordProd_concat] at h
+      have hle := cs.length_wordProd_le (alternatingWord i j k)
+      rw [length_alternatingWord] at hle
+      rw [← h, cs.simple_mul_simple_cancel_right, h] at hlen
+      omega
+  -- appending `i` still gives a reduced word, so the alternating word stops before the braid length
+  have hred : cs.IsReduced (alternatingWord j i (cs.length v + 1)) := by
+    rw [IsReduced, alternatingWord_succ, wordProd_concat, hword, hlen, List.concat_eq_append,
+      List.length_append, length_alternatingWord, List.length_singleton]
+  have hk : cs.length v < M i j ∨ M i j = 0 := by
+    by_contra hcon
+    rw [not_or, not_lt] at hcon
+    rw [← M.symmetric j i] at hcon
+    exact cs.not_isReduced_alternatingWord j i hcon.2 (by omega) hred
   rw [← hword]
-  exact cs.rankTwo_nonnegative i j hk.symm
+  exact cs.rankTwo_nonnegative i j hk
 
 /-- An element without right descent at `i` sends `αᵢ` to a vector with nonnegative coefficients. -/
 private theorem geometricRepresentation_single_nonneg {w : W} {i : I}

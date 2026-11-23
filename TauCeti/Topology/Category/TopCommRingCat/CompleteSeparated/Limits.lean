@@ -73,7 +73,7 @@ instance : (isCompleteSeparated.{u}).IsClosedUnderLimitsOfShape WalkingParallelP
       have hset : ((RingHom.eqLocus f.val g.val : Subring _) : Set (F.obj .zero)) =
           {x | f.val x = g.val x} := Set.ext fun _ ↦ RingHom.mem_eqLocus
       rw [hset]
-      exact isClosed_eq f.2 g.2
+      exact isClosed_eq f.property g.property
     exact ObjectProperty.prop_of_iso _
       (IsLimit.conePointsIsoOfNatIso (equalizerForkIsLimit f g) (limit.isLimit F)
         (diagramIsoParallelPair F).symm)
@@ -85,11 +85,16 @@ end TauCeti.TopCommRingCat
 
 namespace TauCeti.CompleteSeparatedTopCommRingCat
 
--- Neither the limits nor their creation needs an instance of its own: both follow from the
--- closure instances above by synthesis alone, through
--- `hasLimitsOfShape_of_closedUnderLimits` and `createsLimitsOfShapeFullSubcategoryInclusion`
--- respectively. These `example`s pin that down, so that losing either would break the build.
-example : HasProducts.{v} CompleteSeparatedTopCommRingCat.{max u v} := inferInstance
+/-- **Small products**, each shape `Discrete β` following from the closure instances above
+through `hasLimitsOfShape_of_closedUnderLimits`. -/
+instance : HasProducts.{v} CompleteSeparatedTopCommRingCat.{max u v} :=
+  .mk fun _ ↦ inferInstance
+
+-- Apart from `HasProducts`, a class bundling all shapes `Discrete β`, neither the limits nor
+-- their creation needs an instance of its own: both follow from the closure instances above
+-- by synthesis alone, through `hasLimitsOfShape_of_closedUnderLimits` and
+-- `createsLimitsOfShapeFullSubcategoryInclusion` respectively. These `example`s pin that down,
+-- so that losing either would break the build.
 
 example : HasEqualizers CompleteSeparatedTopCommRingCat.{u} := inferInstance
 

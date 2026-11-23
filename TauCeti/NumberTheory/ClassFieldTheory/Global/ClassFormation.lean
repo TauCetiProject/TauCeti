@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondIneq
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LiftIndependence
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.InvariantKernel
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree
-import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.SumFormula
 import TauCeti.NumberTheory.ClassFieldTheory.Global.PrescribedInvariant
 

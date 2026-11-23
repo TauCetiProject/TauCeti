@@ -62,8 +62,7 @@ private def toPresentedGroup (a : α) : CentralizerExt (FreeGroup.of a) 1 →*
     PresentedGroup ({⁅FreeGroup.of (some a), FreeGroup.of none⁆} : Set (FreeGroup (Option α))) :=
   lift (FreeGroup.lift fun x => PresentedGroup.of (some x)) (fun _ => PresentedGroup.of none)
     (fun _ _ => .refl _) fun c hc _ => by
-      obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1
-        (FreeGroup.mem_zpowers_of_of_commute (Subgroup.mem_centralizer_singleton_iff.1 hc))
+      obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 ((FreeGroup.centralizer_of a).le hc)
       simpa using (commute_of_some_of_none a).zpow_left k
 
 /-- The inverse of `toPresentedGroup`: the relator `[a, t]` holds in `F(a, ℤ)` because `t`

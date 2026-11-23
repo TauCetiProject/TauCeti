@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Taylor.Parameter
 import TauCeti.Analysis.Normed.Group.UniformContinuity
-public import TauCeti.Probability.BrownianMotion.QuadraticVariation
+public import TauCeti.Probability.BrownianMotion.QuadraticVariation.Basic
 
 /-!
 # Spatial Taylor remainders along Brownian partitions with varying parameters

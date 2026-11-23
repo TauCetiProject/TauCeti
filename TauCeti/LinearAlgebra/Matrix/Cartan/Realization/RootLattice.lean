@@ -36,18 +36,14 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
 * `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
+* `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
+  `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
 
 ## Main results
 
-* `TauCeti.CartanRealization.restrictRootLatticeEquiv`: restricting to a sub-realization identifies
-  the root lattices.
 * `TauCeti.CartanRealization.linearIndependent_nat_root`: the simple roots are independent over
   `ℕ`, so `Q₊` is the natural span of an independent family.
 * `TauCeti.CartanRealization.isPointed_posRootCone`: `Q₊ ∩ (-Q₊) = 0`.
-* `TauCeti.CartanRealization.exists_nsmul_root_of_add_eq_nsmul_root`: a summand in `Q₊` of a
-  natural multiple of a simple root is itself a natural multiple of that simple root.
-* `TauCeti.CartanRealization.exists_int_apply_coroot_of_mem_rootLattice`: for an integral matrix,
-  every element of `Q` evaluates integrally on every simple coroot.
 * `TauCeti.CartanRealization.height_eq_sum`: `ht(∑ᵢ nᵢ αᵢ) = ∑ᵢ nᵢ`.
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
@@ -129,56 +125,46 @@ theorem apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter {φ : Dual K H}
   | add _ _ _ _ ihx ihy => simp [ihx, ihy]
   | smul _ _ _ ih => simp [ih]
 
-/-- Restricting functionals to a subspace `M` with `M ⊔ R.cartanCenter = ⊤` is injective on
-`R.rootLattice`. -/
-theorem injOn_dualMap_subtype_rootLattice (M : Submodule K H) (hs : M ⊔ R.cartanCenter = ⊤) :
-    Set.InjOn M.subtype.dualMap R.rootLattice := by
-  intro φ₁ hφ₁ φ₂ hφ₂ h; rw [← sub_eq_zero]; ext x
-  obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
-  have hm0 : (φ₁ - φ₂) m = 0 := by
-    simpa [sub_eq_zero] using congrArg (fun f : Dual K M ↦ f ⟨m, hm⟩) h
-  rw [map_add, hm0, R.apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter (sub_mem hφ₁ hφ₂) hz,
-    add_zero, LinearMap.zero_apply]
+section Restrict
 
-section SubRealization
 variable (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
 
-/-- Restricting a simple root of `R` to `R.restrict M hc hs` gives the corresponding simple root. -/
-@[simp] theorem dualMap_subtype_root (i : I) :
-    M.subtype.dualMap (R.root i) = (R.restrict M hc hs).root i := by ext; simp
+/-- Restriction of functionals to `M` maps `R.rootLattice` onto
+`(R.restrict M hc hs).rootLattice`. -/
+theorem range_domRestrict_dualRestrict_rootLattice :
+    LinearMap.range ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) =
+      (R.restrict M hc hs).rootLattice := by
+  rw [LinearMap.range_domRestrict, rootLattice_def, rootLattice_def, Submodule.map_span,
+    ← Set.range_comp]
+  exact congrArg (Submodule.span ℤ) <| congrArg Set.range <| funext fun i ↦
+    LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
 
-/-- The image of `R.rootLattice` under restriction to `M` is `(R.restrict M hc hs).rootLattice`. -/
-theorem map_dualMap_subtype_rootLattice :
-    R.rootLattice.map (M.subtype.dualMap.restrictScalars ℤ) = (R.restrict M hc hs).rootLattice := by
-  rw [rootLattice_def, rootLattice_def, Submodule.map_span, ← Set.range_comp]
-  exact congrArg (Submodule.span ℤ) (congrArg Set.range (funext (R.dualMap_subtype_root M hc hs)))
-
-/-- **Restriction to a sub-realization identifies root lattices.** -/
+/-- Restriction of functionals to `M` maps `R.rootLattice` isomorphically onto
+`(R.restrict M hc hs).rootLattice`. -/
 noncomputable def restrictRootLatticeEquiv :
     R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
-  LinearEquiv.ofBijective
-    ((M.subtype.dualMap.restrictScalars ℤ ∘ₗ R.rootLattice.subtype).codRestrict
-      (R.restrict M hc hs).rootLattice fun α ↦
-        R.map_dualMap_subtype_rootLattice M hc hs ▸ Submodule.mem_map_of_mem α.2)
-    ⟨fun α β h ↦ Subtype.ext <|
-        R.injOn_dualMap_subtype_rootLattice M hs α.2 β.2 (congrArg Subtype.val h),
-      fun β ↦ by
-        obtain ⟨φ, hφ, hφβ⟩ := Submodule.mem_map.mp
-          ((R.map_dualMap_subtype_rootLattice M hc hs).symm ▸ β.2 :
-            (β : Dual K M) ∈ R.rootLattice.map (M.subtype.dualMap.restrictScalars ℤ))
-        exact ⟨⟨φ, hφ⟩, Subtype.ext hφβ⟩⟩
+  (LinearEquiv.ofInjective ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) <|
+    (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ Subtype.ext <| by
+      ext x
+      obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
+      have hm' : (φ : Dual K H) m = 0 := congr($(hφ) ⟨m, hm⟩)
+      simp [hm', R.apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter φ.property hz]).trans
+    (LinearEquiv.ofEq _ _ (R.range_domRestrict_dualRestrict_rootLattice M hc hs))
 
-/-- `restrictRootLatticeEquiv` restricts a root-lattice element to `M`. -/
-@[simp] theorem coe_restrictRootLatticeEquiv_apply (α : R.rootLattice) :
-    (R.restrictRootLatticeEquiv M hc hs α : Dual K M) = M.subtype.dualMap (α : Dual K H) := (rfl)
+/-- Under `restrictRootLatticeEquiv`, a root-lattice functional is restricted along `M.subtype`. -/
+@[simp]
+theorem coe_restrictRootLatticeEquiv_apply (φ : R.rootLattice) :
+    (R.restrictRootLatticeEquiv M hc hs φ : Dual K M) = (φ : Dual K H).comp M.subtype := (rfl)
 
-/-- `restrictRootLatticeEquiv` sends each simple root of `R` to the corresponding simple root. -/
-@[simp] theorem restrictRootLatticeEquiv_root (i : I) :
+/-- `restrictRootLatticeEquiv` sends each simple root of `R` to the corresponding simple root of
+`R.restrict M hc hs`. -/
+@[simp]
+theorem restrictRootLatticeEquiv_root (i : I) :
     R.restrictRootLatticeEquiv M hc hs ⟨R.root i, R.root_mem_rootLattice i⟩ =
       ⟨(R.restrict M hc hs).root i, (R.restrict M hc hs).root_mem_rootLattice i⟩ :=
-  Subtype.ext (R.dualMap_subtype_root M hc hs i)
+  Subtype.ext <| LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
 
-end SubRealization
+end Restrict
 
 section CharZero
 
@@ -219,7 +205,7 @@ noncomputable def height : R.posRootCone →+ ℕ :=
 
 /-- The height is the `LinearIndependent.natSpanHeight` of the simple roots. -/
 theorem height_apply (x : R.posRootCone) :
-    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.2⟩ :=
+    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.property⟩ :=
   (rfl)
 
 /-- The height of a natural combination of the simple roots is the sum of its coefficients. -/
@@ -282,7 +268,7 @@ as a named relation because one dual space carries the orders of several realiza
 theorem rootLE_eq_ofAddSubmonoid_le [CharZero K] :
     R.RootLE = (PartialOrder.ofAddSubmonoid R.isPointed_posRootCone).le := by
   ext μ lam
-  simp [rootLE_iff]
+  simp [rootLE_iff, PartialOrder.ofAddSubmonoid_le_iff]
 
 /-- The order on weights is invariant under translation. -/
 @[simp]
@@ -339,21 +325,6 @@ theorem IsDominant.add [PartialOrder K] [IsOrderedAddMonoid K] {lam μ : Dual K 
   fun i ↦ add_nonneg (hlam i) (hμ i)
 
 end Dominance
-
-/-! ### Integral pairings on the root lattice -/
-
-/-- For a realization of an integral matrix, every element of the root lattice evaluates integrally
-on every simple coroot. -/
-theorem exists_int_apply_coroot_of_mem_rootLattice {A : Matrix I I ℤ}
-    (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) {α : Dual K H}
-    (hα : α ∈ R.rootLattice) (i : I) : ∃ m : ℤ, α (R.coroot i) = m := by
-  rw [R.rootLattice_def] at hα
-  induction hα using Submodule.span_induction with
-  | mem _ hx => obtain ⟨j, rfl⟩ := hx; exact ⟨A i j, by simp [R.root_coroot]⟩
-  | zero => exact ⟨0, by simp⟩
-  | add _ _ _ _ ihx ihy =>
-    obtain ⟨m₁, hm₁⟩ := ihx; obtain ⟨m₂, hm₂⟩ := ihy; exact ⟨m₁ + m₂, by simp [hm₁, hm₂]⟩
-  | smul n _ _ ih => obtain ⟨m, hm⟩ := ih; exact ⟨n * m, by simp [hm]⟩
 
 /-! ### Integral weights -/
 

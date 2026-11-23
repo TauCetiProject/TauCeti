@@ -7,8 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Coxeter.Length
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
-import TauCeti.GroupTheory.Coxeter.Geometric.Basic
-import TauCeti.GroupTheory.Coxeter.Length
 import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
 /-!
@@ -18,7 +16,8 @@ A Coxeter system on `[Unique B]` is isomorphic to `Multiplicative (ZMod 2)` via 
 (`CoxeterSystem.uniqueEquivZModTwo`). A Coxeter system on `Fin 2` with matrix `M` is isomorphic to
 `DihedralGroup (M 0 1)` (`CoxeterSystem.finTwoEquivDihedralGroup`,
 `CoxeterMatrix.finTwoGroupEquivDihedralGroup`), covering both finite dihedral groups (`0 < M 0 1`)
-and the infinite dihedral group `DihedralGroup 0` (`M 0 1 = 0`).
+and the infinite dihedral group `DihedralGroup 0` (`M 0 1 = 0`). Neither isomorphism requires the
+geometric representation.
 -/
 
 public section
@@ -62,31 +61,81 @@ end Unique
 
 section FinTwo
 
+private theorem zmod_cast_one_of_ne_one {n : ℕ} (hn : n ≠ 1) :
+    (ZMod.cast (1 : ZMod n) : ℤ) = 1 := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · rfl
+  · have : NeZero n := ⟨hn0⟩
+    have : Fact (1 < n) := ⟨by omega⟩
+    rw [ZMod.cast_eq_val, ZMod.val_one]
+    rfl
+
 variable {W : Type*} [Group W] {M : CoxeterMatrix (Fin 2)} (cs : CoxeterSystem M W)
+
+private noncomputable def finTwoToDihedralGroup : W →* DihedralGroup (M 0 1) :=
+  cs.lift ⟨![DihedralGroup.sr 0, DihedralGroup.sr 1], fun i j ↦ by
+    fin_cases i <;> fin_cases j <;> simp [M.symmetric 1 0]⟩
+
+private theorem finTwoToDihedralGroup_simple_zero :
+    cs.finTwoToDihedralGroup (cs.simple 0) = DihedralGroup.sr 0 :=
+  cs.lift_apply_simple _ 0
+
+private theorem finTwoToDihedralGroup_simple_one :
+    cs.finTwoToDihedralGroup (cs.simple 1) = DihedralGroup.sr 1 :=
+  cs.lift_apply_simple _ 1
+
+private noncomputable def dihedralGroupToFinTwo : DihedralGroup (M 0 1) →* W :=
+  TauCeti.dihedralHom (cs.simple_mul_simple_self 0) (cs.simple_mul_simple_self 1)
+    (cs.simple_mul_simple_pow 0 1)
+
+private theorem dihedralGroupToFinTwo_sr_zero :
+    cs.dihedralGroupToFinTwo (DihedralGroup.sr 0) = cs.simple 0 := by
+  simp [dihedralGroupToFinTwo]
+
+private theorem dihedralGroupToFinTwo_sr_one :
+    cs.dihedralGroupToFinTwo (DihedralGroup.sr 1) = cs.simple 1 := by
+  rw [dihedralGroupToFinTwo, TauCeti.dihedralHom_sr,
+    zmod_cast_one_of_ne_one (M.off_diagonal 0 1 (by decide)), zpow_one, ← mul_assoc,
+    cs.simple_mul_simple_self, one_mul]
+
+private theorem dihedralGroupToFinTwo_finTwoToDihedralGroup (w : W) :
+    cs.dihedralGroupToFinTwo (cs.finTwoToDihedralGroup w) = w := by
+  have hhom : cs.dihedralGroupToFinTwo.comp cs.finTwoToDihedralGroup = MonoidHom.id W :=
+    cs.ext_simple fun i ↦ by
+      fin_cases i
+      · simp [cs.finTwoToDihedralGroup_simple_zero, cs.dihedralGroupToFinTwo_sr_zero]
+      · simp [cs.finTwoToDihedralGroup_simple_one, cs.dihedralGroupToFinTwo_sr_one]
+  exact congr($hhom w)
+
+private theorem finTwoToDihedralGroup_dihedralGroupToFinTwo (x : DihedralGroup (M 0 1)) :
+    cs.finTwoToDihedralGroup (cs.dihedralGroupToFinTwo x) = x := by
+  have hr (i : ZMod (M 0 1)) :
+      cs.finTwoToDihedralGroup (cs.dihedralGroupToFinTwo (DihedralGroup.r i)) =
+        DihedralGroup.r i := by
+    rw [dihedralGroupToFinTwo, TauCeti.dihedralHom_r, map_zpow, map_mul,
+      cs.finTwoToDihedralGroup_simple_zero, cs.finTwoToDihedralGroup_simple_one,
+      DihedralGroup.sr_mul_sr, sub_zero, DihedralGroup.r_zpow, one_mul, ZMod.intCast_zmod_cast]
+  rcases x with i | i
+  · exact hr i
+  · have hsr : DihedralGroup.sr i = DihedralGroup.sr 0 * DihedralGroup.r i := by simp
+    rw [hsr, map_mul, map_mul, cs.dihedralGroupToFinTwo_sr_zero,
+      cs.finTwoToDihedralGroup_simple_zero, hr]
 
 /-- **Any Coxeter system on `Fin 2` is isomorphic to `DihedralGroup (M 0 1)`.**
 When `M 0 1 = 0`, `DihedralGroup 0` is the infinite dihedral group. -/
 noncomputable def finTwoEquivDihedralGroup : W ≃* DihedralGroup (M 0 1) :=
-  (TauCeti.dihedralGroupMulEquiv (cs.simple_mul_simple_self 0) (cs.simple_mul_simple_self 1)
-    (cs.simple_ne_one 0) (cs.simple_ne_one 1) (cs.orderOf_simple_mul_simple 0 1) <| by
-      have hrange : Set.range cs.simple = {cs.simple 0, cs.simple 1} := by
-        ext x; simp [Fin.exists_fin_two, eq_comm]
-      rw [← hrange, cs.subgroupClosure_range_simple]).symm
+  { cs.finTwoToDihedralGroup with
+    invFun := cs.dihedralGroupToFinTwo
+    left_inv := cs.dihedralGroupToFinTwo_finTwoToDihedralGroup
+    right_inv := cs.finTwoToDihedralGroup_dihedralGroupToFinTwo }
 
 @[simp] theorem finTwoEquivDihedralGroup_simple_zero :
-    cs.finTwoEquivDihedralGroup (cs.simple 0) = DihedralGroup.sr 0 := by
-  rw [finTwoEquivDihedralGroup, MulEquiv.symm_apply_eq, TauCeti.dihedralGroupMulEquiv_apply,
-    TauCeti.dihedralHom_sr, ZMod.cast_zero, zpow_zero, mul_one]
+    cs.finTwoEquivDihedralGroup (cs.simple 0) = DihedralGroup.sr 0 :=
+  cs.finTwoToDihedralGroup_simple_zero
+
 @[simp] theorem finTwoEquivDihedralGroup_simple_one :
-    cs.finTwoEquivDihedralGroup (cs.simple 1) = DihedralGroup.sr 1 := by
-  rw [finTwoEquivDihedralGroup, MulEquiv.symm_apply_eq, TauCeti.dihedralGroupMulEquiv_apply,
-    TauCeti.dihedralHom_sr]
-  have hone : (cs.simple 0 * cs.simple 1) ^ (ZMod.cast (1 : ZMod (M 0 1)) : ℤ) =
-      cs.simple 0 * cs.simple 1 := by
-    conv_rhs => rw [← zpow_one (cs.simple 0 * cs.simple 1)]
-    rw [zpow_eq_zpow_iff_modEq, cs.orderOf_simple_mul_simple 0 1,
-      ← ZMod.intCast_eq_intCast_iff, ZMod.intCast_zmod_cast, Int.cast_one]
-  rw [hone, ← mul_assoc, cs.simple_mul_simple_self, one_mul]
+    cs.finTwoEquivDihedralGroup (cs.simple 1) = DihedralGroup.sr 1 :=
+  cs.finTwoToDihedralGroup_simple_one
 
 include cs in
 /-- **A rank-two Coxeter group on `Fin 2` has cardinality `2 * M 0 1`.**
