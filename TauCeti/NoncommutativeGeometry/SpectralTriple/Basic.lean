@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
-public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Sylvester
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
 
@@ -40,7 +39,7 @@ public section
 
 noncomputable section
 
-open scoped ComplexStarModule InnerProductSpace
+open scoped InnerProductSpace
 
 namespace TauCeti
 
@@ -233,27 +232,54 @@ private theorem conjStarAlgEquiv_eq_comp (U : H ≃ₗᵢ[ℂ] H') (T : H →L[�
         (((U : H ≃L[ℂ] H').symm : H' ≃L[ℂ] H) : H' →L[ℂ] H) := by
   ext x; simp
 
+private theorem conjStarAlgEquiv_mem_conj_domain (U : H ≃ₗᵢ[ℂ] H') (D : H →ₗ.[ℂ] H)
+    {T : H →L[ℂ] H} (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain)
+    {y : H'} (hy : y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
+    U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain := by
+  rw [conjStarAlgEquiv_eq_comp]
+  exact LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') D hT hy
+
+private theorem conj_apply_conjStarAlgEquiv (U : H ≃ₗᵢ[ℂ] H') (D : H →ₗ.[ℂ] H)
+    {T : H →L[ℂ] H} (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain)
+    (y : (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain)
+    (hy : U.symm (y : H') ∈ D.domain)
+    (hmem : U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
+    D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') ⟨U.conjStarAlgEquiv T y, hmem⟩ =
+      U (D ⟨T (U.symm y), hT hy⟩) := by
+  have hcomp : (⟨U.conjStarAlgEquiv T y, hmem⟩ :
+      (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) =
+      ⟨(((U : H ≃L[ℂ] H') : H →L[ℂ] H') ∘L T ∘L
+        (((U : H ≃L[ℂ] H').symm : H' ≃L[ℂ] H) : H' →L[ℂ] H)) y,
+        LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') D hT y.property⟩ :=
+    Subtype.ext (congrArg (fun f : H' →L[ℂ] H' ↦ f y) (conjStarAlgEquiv_eq_comp U T))
+  rw [hcomp, LinearPMap.conj_apply_comp_conj (U : H ≃L[ℂ] H') D hT y]
+  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm]
+
+private theorem conjStarAlgEquiv_apply_conj (U : H ≃ₗᵢ[ℂ] H') (D : H →ₗ.[ℂ] H)
+    (T : H →L[ℂ] H) (y : (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain)
+    (hy : U.symm (y : H') ∈ D.domain) :
+    U.conjStarAlgEquiv T (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y) =
+      U (T (D ⟨U.symm y, hy⟩)) := by
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearPMap.conj_apply]
+  simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ← ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, LinearIsometryEquiv.symm_apply_apply]
+
 private theorem conj_sylvesterEquation (U : H ≃ₗᵢ[ℂ] H') (a : A) :
     LinearPMap.SylvesterEquation (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))
       (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))
       (U.conjStarAlgEquiv (S.rep a)) (U.conjStarAlgEquiv (S.commutator a)) where
-  mapsTo_domain y := by
-    rw [conjStarAlgEquiv_eq_comp]
-    exact LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') S.operator
-      (fun hx ↦ S.rep_mem_domain a hx) y.property
+  mapsTo_domain y := conjStarAlgEquiv_mem_conj_domain U S.operator (S.rep_mem_domain a) y.property
   equation y := by
-    simp only [conjStarAlgEquiv_eq_comp]
-    rw [LinearPMap.conj_apply_comp_conj (U : H ≃L[ℂ] H') S.operator
-        (fun hx ↦ S.rep_mem_domain a hx) y,
-      LinearPMap.conj_apply]
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_toLinearEquiv,
-      ← ContinuousLinearEquiv.toLinearEquiv_symm, LinearIsometryEquiv.symm_apply_apply,
-      ← map_sub]
-    congr 1
-    exact S.commutator_apply_domain a
-      ⟨U.symm (y : H'), LinearPMap.mem_conj_domain_iff.1 y.property⟩
+    have hy : U.symm (y : H') ∈ S.operator.domain := by
+      simpa using (LinearPMap.mem_conj_domain_iff
+        (e := ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))).1 y.property
+    rw [conj_apply_conjStarAlgEquiv U S.operator (S.rep_mem_domain a) y hy,
+      conjStarAlgEquiv_apply_conj U S.operator (S.rep a) y hy, ← map_sub,
+      S.commutator_apply_domain a ⟨U.symm y, hy⟩,
+      LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 
 /-- **Unitary equivalence.** The spectral triple on `H'` obtained by transporting `S` along the
 unitary `U : H ≃ₗᵢ[ℂ] H'`, with representation `U π(a) U*` and Dirac operator `U D U*`. -/
@@ -429,35 +455,22 @@ def conj (U : H ≃ₗᵢ[ℂ] H') : EvenSpectralTriple A H' where
   commute_grading_rep a := by
     rw [SpectralTriple.conj_rep_apply]
     exact (S.commute_grading_rep a).map U.conjStarAlgEquiv
-  grading_mem_domain hy := by
-    rw [SpectralTriple.conjStarAlgEquiv_eq_comp, SpectralTriple.conj_operator]
-    rw [SpectralTriple.conj_operator] at hy
-    exact LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') S.operator
-      (fun hx ↦ S.grading_mem_domain hx) hy
+  grading_mem_domain hy :=
+    SpectralTriple.conjStarAlgEquiv_mem_conj_domain U S.operator S.grading_mem_domain hy
   grading_apply_operator y := by
-    suffices h : ∀ (y' : (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain)
-        (hmem : U.conjStarAlgEquiv S.grading (y' : H') ∈
-          (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain),
-        (U.conjStarAlgEquiv S.grading) (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y') =
-          -S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
-            ⟨U.conjStarAlgEquiv S.grading (y' : H'), hmem⟩ by
-      have hy : (y : H') ∈ (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain := by
-        rw [← SpectralTriple.conj_operator (S := S.toSpectralTriple) U]
-        exact y.property
-      exact h ⟨y, hy⟩ (by
-        rw [SpectralTriple.conjStarAlgEquiv_eq_comp]
-        exact LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') S.operator
-          (fun hx ↦ S.grading_mem_domain hx) hy)
-    intro y' hmem
-    simp only [SpectralTriple.conjStarAlgEquiv_eq_comp]
-    rw [LinearPMap.conj_apply_comp_conj (U : H ≃L[ℂ] H') S.operator
-        (fun hx ↦ S.grading_mem_domain hx) y', LinearPMap.conj_apply]
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_toLinearEquiv,
-      ← ContinuousLinearEquiv.toLinearEquiv_symm, LinearIsometryEquiv.symm_apply_apply, ← map_neg]
-    congr 1
-    exact S.grading_apply_operator ⟨U.symm (y' : H'), LinearPMap.mem_conj_domain_iff.1 y'.property⟩
+    let y' : (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain := y
+    have hy : U.symm (y' : H') ∈ S.operator.domain := by
+      simpa using (LinearPMap.mem_conj_domain_iff
+        (e := ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))).1 y'.property
+    change (U.conjStarAlgEquiv S.grading)
+        (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y') =
+      -(S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
+        ⟨U.conjStarAlgEquiv S.grading y',
+          SpectralTriple.conjStarAlgEquiv_mem_conj_domain U S.operator S.grading_mem_domain
+            y'.property⟩)
+    rw [SpectralTriple.conjStarAlgEquiv_apply_conj U S.operator S.grading y' hy,
+      SpectralTriple.conj_apply_conjStarAlgEquiv U S.operator S.grading_mem_domain y' hy,
+      S.grading_apply_operator, map_neg]
 
 @[simp]
 theorem conj_toSpectralTriple (U : H ≃ₗᵢ[ℂ] H') :

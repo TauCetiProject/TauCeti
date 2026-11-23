@@ -5,7 +5,14 @@ Authors: Jon Crall, Claude Opus 5, OpenAI gpt-6.1-sol
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Basic
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
+import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
+import TauCeti.LinearAlgebra.LinearPMap.Basic
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
 # Bounded spectral multipliers of a self-adjoint partial operator
@@ -13,6 +20,14 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Basic
 A bounded symbol whose product with the real coordinate is also bounded has spectral integral
 in the operator domain. On that vector the operator acts by multiplying the symbol by the
 coordinate. This gives bounded spectral cuts and the inverse across a vector spectral gap.
+
+This file also provides eigenvector, diagonal, unitary-conjugation, and anticommutation laws for
+the bounded spectral integral `(A.spectralPVM hA).integral`:
+* `LinearPMap.spectralPVM_integral_apply_of_apply_eq_smul`: eigenvector action.
+* `LinearPMap.spectralPVM_integral_eq_diagonal`: diagonalization in an orthonormal eigenbasis.
+* `LinearPMap.spectralPVM_proj_conj`, `LinearPMap.spectralPVM_integral_conj`: unitary conjugation.
+* `LinearPMap.spectralPVM_integral_apply_of_anticommute`,
+  `LinearPMap.mul_spectralPVM_integral_of_anticommute`: anticommutation with odd symbols.
 
 ## Provenance
 
@@ -30,7 +45,7 @@ public section
 noncomputable section
 
 open Complex MeasureTheory TauCeti
-open scoped InnerProductSpace
+open scoped _root_.ENNReal InnerProductSpace _root_.lp
 
 namespace LinearPMap
 
@@ -231,5 +246,131 @@ theorem _root_.IsSelfAdjoint.mem_graph_spectralGapInverse (hA : IsSelfAdjoint A)
     exact (sub_eq_zero.mp hp0).symm
   have h := hA.mem_graph_integral_spectralPVM (reciprocalSymbol δ hδ) g hfg x
   simpa only [g, ProjValMeasure.integral_indicator, hpx, spectralGapInverse] using h
+
+private theorem spectralPVM_diag_eq_smul_dirac (hA : IsSelfAdjoint A) (x : A.domain) {r : ℝ}
+    (hx : A x = (r : ℂ) • (x : H)) :
+    (A.spectralPVM hA).diag (x : H) = ENNReal.ofReal (‖(x : H)‖ ^ 2) • Measure.dirac r := by
+  have : IsFiniteMeasure (ENNReal.ofReal (‖(x : H)‖ ^ 2) • Measure.dirac r) := ⟨by simp⟩
+  refine Measure.ext_of_resolventTransform fun z hz ↦ ?_
+  have hzA : z ∈ A.resolventSet := hA.mem_resolventSet_of_im_ne_zero hz.ne'
+  have hkernel (μ : Measure ℝ) :
+      MeasureTheory.resolventTransform μ z = -∫ s : ℝ, (z - s)⁻¹ ∂μ := by
+    rw [MeasureTheory.resolventTransform_apply, ← MeasureTheory.integral_neg]
+    congr 1 with s
+    rw [_root_.resolvent, Ring.inverse_eq_inv', ← inv_neg, neg_sub, Complex.coe_algebraMap]
+  calc
+    MeasureTheory.resolventTransform ((A.spectralPVM hA).diag (x : H)) z
+      = -⟪(x : H), A.resolvent z x⟫_ℂ := by
+        rw [hkernel, hA.inner_resolvent_apply_eq_integral hzA (x : H)]
+    _ = -((z - r)⁻¹ * ((RCLike.ofReal ‖(x : H)‖) ^ 2)) := by
+        rw [resolvent_apply_of_apply_eq_smul hzA x hx, inner_smul_right,
+          inner_self_eq_norm_sq_to_K]
+    _ = MeasureTheory.resolventTransform (ENNReal.ofReal (‖(x : H)‖ ^ 2) • Measure.dirac r) z := by
+        rw [hkernel, MeasureTheory.integral_smul_measure, ENNReal.toReal_ofReal (sq_nonneg _),
+          Complex.real_smul, MeasureTheory.integral_dirac _ r, mul_comm, Complex.ofReal_pow]
+        rfl
+
+/-- On an eigenvector of `A` with real eigenvalue `r`, `(A.spectralPVM hA).integral g` acts as
+scalar multiplication by `g r`. -/
+theorem spectralPVM_integral_apply_of_apply_eq_smul (hA : IsSelfAdjoint A)
+    (g : BoundedBorelFunction ℝ) (x : A.domain) {r : ℝ} (hx : A x = (r : ℂ) • (x : H)) :
+    (A.spectralPVM hA).integral g (x : H) = g r • (x : H) := by
+  have halg : g r • (x : H) =
+      ((A.spectralPVM hA).integral (algebraMap ℂ (BoundedBorelFunction ℝ) (g r))) (x : H) := by
+    simp [Algebra.algebraMap_eq_smul_one]
+  rw [← sub_eq_zero, halg, ← _root_.sub_apply, ← _root_.map_sub,
+    ProjValMeasure.integral_apply_eq_zero_iff]
+  rw [Filter.EventuallyEq, Filter.eventually_iff, MeasureTheory.mem_ae_iff,
+    spectralPVM_diag_eq_smul_dirac hA x hx, _root_.smul_apply, smul_eq_mul,
+    MeasureTheory.Measure.dirac_apply, Set.indicator_of_notMem (by simp)]
+  simp
+
+/-- Characterization of `(A.spectralPVM hA).integral` in any orthonormal eigenbasis of `A`. -/
+theorem spectralPVM_integral_eq_diagonal (hA : IsSelfAdjoint A)
+    {ι : Type*} (b : HilbertBasis ι ℂ H) {lam : ι → ℝ}
+    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
+    (g : BoundedBorelFunction ℝ) (m : ℓ^∞(ι, ℂ)) (hm : ∀ i, m i = g (lam i)) :
+    (A.spectralPVM hA).integral g = b.diagonal m := by
+  refine b.ext_inner_apply b fun i j ↦ ?_
+  obtain ⟨hj, hAj⟩ := hb j
+  rw [spectralPVM_integral_apply_of_apply_eq_smul hA g ⟨_, hj⟩ hAj, b.diagonal_apply_self, hm j]
+
+/-- Unitary conjugation transports the spectral projections of a self-adjoint partial operator. -/
+theorem spectralPVM_proj_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H']
+    [CompleteSpace H'] (hA : IsSelfAdjoint A) (U : H ≃ₗᵢ[ℂ] H')
+    (B : Set ℝ) (hB : MeasurableSet B) :
+    ((A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).spectralPVM (hA.conj U)).proj B hB =
+      U.conjStarAlgEquiv ((A.spectralPVM hA).proj B hB) := by
+  let P' : TauCeti.ProjValMeasure ℝ H' :=
+    { proj := fun B hB ↦ U.conjStarAlgEquiv ((A.spectralPVM hA).proj B hB)
+      diag := fun ξ ↦ (A.spectralPVM hA).diag (U.symm ξ)
+      diag_finite := fun ξ ↦ (A.spectralPVM hA).diag_finite (U.symm ξ)
+      inner_proj := fun B hB ξ ↦ by
+        have hinner : ⟪ξ, U (((A.spectralPVM hA).proj B hB) (U.symm ξ))⟫_ℂ =
+            ⟪U.symm ξ, ((A.spectralPVM hA).proj B hB) (U.symm ξ)⟫_ℂ := by
+          simpa only [U.apply_symm_apply] using
+            U.inner_map_map (U.symm ξ) (((A.spectralPVM hA).proj B hB) (U.symm ξ))
+        rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, hinner]
+        exact (A.spectralPVM hA).inner_proj B hB (U.symm ξ)
+      proj_univ := by
+        rw [(A.spectralPVM hA).proj_univ, ← ContinuousLinearMap.one_def, map_one,
+          ContinuousLinearMap.one_def]
+      proj_inter := fun B₁ B₂ hB₁ hB₂ ↦ by
+        rw [← map_mul, (A.spectralPVM hA).proj_inter] }
+  have hP' : P' = (A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).spectralPVM (hA.conj U) := by
+    refine ((hA.conj U).eq_spectralPVM_iff P').2 fun z hz ξ ↦ ?_
+    have hzA : z ∈ A.resolventSet := hA.mem_resolventSet_of_im_ne_zero hz.ne'
+    have hinner : ⟪ξ, (A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).resolvent z ξ⟫_ℂ =
+        ⟪U.symm ξ, A.resolvent z (U.symm ξ)⟫_ℂ := by
+      rw [resolvent_conj (U : H ≃L[ℂ] H') hzA, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.comp_apply]
+      simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
+        ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, U.apply_symm_apply] using
+        U.inner_map_map (U.symm ξ) (A.resolvent z (U.symm ξ))
+    exact hinner.trans (hA.inner_resolvent_apply_eq_integral hzA (U.symm ξ))
+  exact congrArg (fun P : TauCeti.ProjValMeasure ℝ H' ↦ P.proj B hB) hP'.symm
+
+/-- Unitary conjugation commutes with bounded spectral integrals of a self-adjoint partial
+operator. -/
+theorem spectralPVM_integral_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H']
+    [CompleteSpace H'] (hA : IsSelfAdjoint A) (U : H ≃ₗᵢ[ℂ] H')
+    (g : BoundedBorelFunction ℝ) :
+    ((A.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).spectralPVM (hA.conj U)).integral g =
+      U.conjStarAlgEquiv ((A.spectralPVM hA).integral g) := by
+  have hcont : Continuous (fun f : BoundedBorelFunction ℝ ↦
+      U.conjStarAlgEquiv ((A.spectralPVM hA).integral f)) :=
+    U.continuous_conjStarAlgEquiv.comp ((A.spectralPVM hA).continuous_integral)
+  refine congrFun (ProjValMeasure.eq_integral_of_continuous _ hcont fun s ↦ ?_).symm g
+  simp only [ProjValMeasure.integral_ofSimpleFunc, map_sum]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [_root_.map_smul, spectralPVM_proj_conj hA U]
+
+/-- If a bounded operator `γ` preserves `D(A)` and anticommutes with `A` on `D(A)`, then on an
+eigenvector `x` of `A` with real eigenvalue `r`,
+`(A.spectralPVM hA).integral g (γ x) = g (-r) • γ x`. -/
+theorem spectralPVM_integral_apply_of_anticommute (hA : IsSelfAdjoint A)
+    {γ : H →L[ℂ] H} (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)
+    (g : BoundedBorelFunction ℝ) (x : A.domain) {r : ℝ} (hx : A x = (r : ℂ) • (x : H)) :
+    (A.spectralPVM hA).integral g (γ x) = g (-r) • γ x := by
+  have hγeig := apply_eq_neg_smul_of_anticommute hγdom hγA x hx
+  rw [← Complex.ofReal_neg] at hγeig
+  exact spectralPVM_integral_apply_of_apply_eq_smul hA g ⟨γ x, hγdom x x.property⟩ hγeig
+
+/-- **Anticommutation with odd functions.** If a bounded operator `γ` preserves the domain of `A`
+and anticommutes with `A` on `D(A)`, then `γ` anticommutes with `(A.spectralPVM hA).integral g` for
+every bounded Borel odd function `g`. -/
+theorem mul_spectralPVM_integral_of_anticommute (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
+    {γ : H →L[ℂ] H} (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)
+    (g : BoundedBorelFunction ℝ) (hodd : ∀ t, g (-t) = -g t) :
+    γ * (A.spectralPVM hA).integral g = -((A.spectralPVM hA).integral g * γ) := by
+  obtain ⟨_, b, lam, hb⟩ := hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent h
+  refine b.ext_inner_apply b fun i j ↦ ?_
+  obtain ⟨hj, hAj⟩ := hb j
+  simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, _root_.neg_apply]
+  rw [spectralPVM_integral_apply_of_apply_eq_smul hA g ⟨_, hj⟩ hAj,
+    spectralPVM_integral_apply_of_anticommute hA hγdom hγA g ⟨_, hj⟩ hAj,
+    hodd, _root_.map_smul, _root_.neg_smul, neg_neg]
 
 end LinearPMap

@@ -90,6 +90,7 @@ theorem integral_mem_of_isClosed {E 𝕜 : Type*} [RCLike 𝕜] [NormedAddCommGr
     {K : Submodule 𝕜 E} (hK : _root_.IsClosed (K : Set E)) {f : α → E}
     (hf : Integrable f μ) (hmem : ∀ᵐ a ∂μ, f a ∈ K) :
     ∫ a, f a ∂μ ∈ K := by
+  -- Bring `hK` into typeclass scope for `Submodule.Quotient.normedAddCommGroup` used by `K.mkQL`.
   have : _root_.IsClosed (K : Set E) := hK
   have hmk_eq_zero (x : E) : K.mkQL x = 0 ↔ x ∈ K := by
     rw [Submodule.mkQL_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]

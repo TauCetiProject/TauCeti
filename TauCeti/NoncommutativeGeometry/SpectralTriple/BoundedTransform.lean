@@ -35,8 +35,6 @@ public section
 
 noncomputable section
 
-open scoped ComplexStarModule
-
 namespace TauCeti
 
 variable {A : Type*} [Semiring A] [Algebra ℂ A] [Star A]
@@ -51,7 +49,7 @@ variable (S : SpectralTriple A H)
 /-- The **bounded transform** (or Woronowicz–Baaj–Julg transform) `F_D = D (1 + D²)⁻¹/²` of the
 Dirac operator of a spectral triple. -/
 abbrev boundedTransform : H →L[ℂ] H :=
-  S.operator.boundedTransform S.isSelfAdjoint_operator S.hasCompactResolvent_operator
+  S.operator.boundedTransform S.isSelfAdjoint_operator
 
 /-- **Baaj–Julg compactness theorem for spectral triples.** For every `a : A`, the commutator
 `[F_D, π(a)]` is a compact operator. -/
@@ -73,8 +71,7 @@ theorem boundedTransform_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProduct
     [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') :
     (S.conj U).boundedTransform = U.conjStarAlgEquiv S.boundedTransform := by
   simp only [boundedTransform, conj_operator]
-  exact S.operator.boundedTransform_conj S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator U
+  exact S.operator.boundedTransform_conj S.isSelfAdjoint_operator U
 
 /-- Algebra pullback preserves the bounded transform. -/
 @[simp]
@@ -90,8 +87,7 @@ spectral triple `(A, H, D)` via its bounded transform `F_D = D (1 + D²)⁻¹/²
 def toFredholmModule : FredholmModule A H where
   rep := S.rep.toNonUnitalStarAlgHom
   operator := S.boundedTransform
-  isSelfAdjoint_operator := S.operator.isSelfAdjoint_boundedTransform
-    S.isSelfAdjoint_operator S.hasCompactResolvent_operator
+  isSelfAdjoint_operator := S.operator.isSelfAdjoint_boundedTransform S.isSelfAdjoint_operator
   isCompactOperator_commutator := S.isCompactOperator_commutator_boundedTransform
   isCompactOperator_mul_self_sub_one_mul a :=
     (S.operator.isCompactOperator_boundedTransform_mul_self_sub_one S.isSelfAdjoint_operator
@@ -129,8 +125,7 @@ theorem grading_mul_boundedTransform :
 
 /-- The grading of an even spectral triple commutes with `(1 + D²)⁻¹`. -/
 theorem commute_grading_invOneAddSq : Commute S.grading S.operator.invOneAddSq := by
-  rw [← S.operator.one_sub_boundedTransform_mul_self S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator]
+  rw [← S.operator.one_sub_boundedTransform_mul_self S.isSelfAdjoint_operator]
   have h : S.boundedTransform * S.grading = -(S.grading * S.boundedTransform) := by
     rw [S.grading_mul_boundedTransform, neg_neg]
   exact (Commute.one_right _).sub_right (TauCeti.commute_mul_of_mul_eq_neg_mul h h).symm
