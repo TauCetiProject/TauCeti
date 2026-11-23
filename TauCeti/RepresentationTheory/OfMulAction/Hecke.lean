@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.DiagonalOrbits
 
@@ -25,9 +25,11 @@ nonzero entries in each row and each column. It then acts on the permutation mod
 `(h₁ * h₂)(x, z) = Σ_y h₁(x, y) h₂(y, z)` is a finite sum which corresponds to composition. This
 makes `Fun_G(S × S, A)` a non-unital `A`-algebra.
 
-When `S` has finitely many `G`-orbits, the diagonal indicator is the unit, and
-`TauCeti.PermutationHecke.toEndAlgEquiv` identifies `Fun_G(S × S, A)` with the algebra
-`End_G(A[S])` of `G`-equivariant endomorphisms, the centralizer of the permutation action.
+Read through the coefficients `MonoidAlgebra.coeffLinearEquiv`, this action is by intertwining
+maps of the permutation representation `Representation.ofMulAction A G S` on `A[S]`. When `S` has
+finitely many `G`-orbits, the diagonal indicator is the unit, and
+`TauCeti.PermutationHecke.toIntertwiningMapAlgEquiv` identifies `Fun_G(S × S, A)` with the algebra
+`End_G(A[S])` of these intertwining maps.
 
 No measure is used, so the construction works over every coefficient ring.
 
@@ -37,11 +39,12 @@ No measure is used, so the construction works over every coefficient ring.
   `TauCeti.FiniteStabilizerOrbits.of_isCompact_of_isOpen` for compact open stabilizers.
 * `TauCeti.permutationHeckeModule G S A`: the `A`-module `Fun_G(S × S, A)`.
 * `TauCeti.PermutationHecke.toEnd`: the action of `Fun_G(S × S, A)` on `S →₀ A`, with
-  `toEnd_single` (`h * s = Σ_t h(t, s) t`), `toEnd_injective` and `toEnd_comp_lmapDomain`
-  (`G`-equivariance).
+  `toEnd_single` (`h * s = Σ_t h(t, s) t`) and `toEnd_injective`.
+* `TauCeti.PermutationHecke.toIntertwiningMap`: the same action on `A[S]`, by intertwining maps of
+  `Representation.ofMulAction A G S`.
 * `TauCeti.PermutationHecke.mul_apply`: the matrix product, with `toEnd_mul`.
-* `TauCeti.PermutationHecke.one_apply`, `TauCeti.PermutationHecke.toEndAlgEquiv`: for finitely
-  many orbits, the unit and the algebra isomorphism with `End_G(A[S])`.
+* `TauCeti.PermutationHecke.one_apply`, `TauCeti.PermutationHecke.toIntertwiningMapAlgEquiv`: for
+  finitely many orbits, the unit and the algebra isomorphism with `End_G(A[S])`.
 
 ## References
 
@@ -136,7 +139,7 @@ private theorem finite_setOf_mk_left_eq (x : S) (q : Quotient (orbitRel G (S × 
     {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite :=
   (finite_setOf_mk_right_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
     (s₂ := orbitRel G (S × S)) Prod.swap (by rintro _ b ⟨g, rfl⟩; exact ⟨g, rfl⟩) q)).subset
-    fun _ hy ↦ by subst hy; exact rfl
+    fun _ hy ↦ by subst hy; rw [Set.mem_ofPred_eq, Quotient.map'_mk'', Prod.swap_prod_mk]
 
 omit [FiniteStabilizerOrbits G S] in
 /-- The entries of `h` along a map `f : S → S × S` that meets each orbit in finitely many points
@@ -202,43 +205,64 @@ theorem toEnd_injective : Function.Injective (toEnd G S A) := by
   refine Subtype.ext (funext fun p ↦ ?_)
   simpa using congrArg (fun φ : Module.End A (S →₀ A) ↦ φ (Finsupp.single p.2 1) p.1) he
 
-/-- The action of `Fun_G(S × S, A)` commutes with the permutation action of `G` on `S →₀ A`. -/
-theorem toEnd_comp_lmapDomain (h : permutationHeckeModule G S A) (g : G) :
-    toEnd G S A h ∘ₗ Finsupp.lmapDomain A A (g • · : S → S) =
-      Finsupp.lmapDomain A A (g • · : S → S) ∘ₗ toEnd G S A h := by
-  refine Finsupp.lhom_ext fun s c ↦ ?_
-  ext t
-  have key := Finsupp.mapDomain_apply_of_injective (f := (g • · : S → S)) (MulAction.injective g)
-    (toEnd G S A h (Finsupp.single s c)) (g⁻¹ • t)
-  simp only [smul_inv_smul] at key
-  simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lmapDomain_apply,
-    Finsupp.mapDomain_single, key, toEnd_single]
-  rw [← apply_smul h g⁻¹, inv_smul_smul]
+variable (G S A) in
+/-- The action of `Fun_G(S × S, A)` on the permutation representation `A[S]` of `G`, by
+intertwining maps: `toEnd` read through the coefficients `MonoidAlgebra.coeffLinearEquiv`, so `h`
+sends the basis vector `s` to `Σ_t h(t, s) t`. -/
+def toIntertwiningMap : permutationHeckeModule G S A →ₗ[A]
+    (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S) where
+  toFun h :=
+    { toLinearMap := (MonoidAlgebra.coeffLinearEquiv A).symm.toLinearMap ∘ₗ toEnd G S A h ∘ₗ
+        (MonoidAlgebra.coeffLinearEquiv A).toLinearMap
+      isIntertwining' g := MonoidAlgebra.lhom_ext' fun s ↦ LinearMap.ext_ring <|
+        MonoidAlgebra.coeff_injective <| Finsupp.ext fun t ↦ by
+          simpa using (apply_smul h g⁻¹ t (g • s)).symm }
+  map_add' h₁ h₂ := by ext; simp
+  map_smul' c h := by ext; simp
+
+/-- `toIntertwiningMap` is `toEnd` on coefficients. -/
+@[simp]
+theorem coeff_toIntertwiningMap_apply (h : permutationHeckeModule G S A) (f : MonoidAlgebra A S) :
+    (toIntertwiningMap G S A h f).coeff = toEnd G S A h f.coeff :=
+  (rfl)
+
+variable (G S A) in
+/-- An element of `Fun_G(S × S, A)` is determined by its action on `A[S]`. -/
+theorem toIntertwiningMap_injective : Function.Injective (toIntertwiningMap G S A) := by
+  refine fun h₁ h₂ he ↦ toEnd_injective G S A (LinearMap.ext fun f ↦ ?_)
+  simpa using congrArg MonoidAlgebra.coeff
+    (DFunLike.congr_fun he (MonoidAlgebra.ofCoeff f))
 
 /-! ### The matrix product -/
 
+/-- The matrix product `(x, z) ↦ Σ_y h₁(x, y) h₂(y, z)` of two elements of `Fun_G(S × S, A)`
+lies in `Fun_G(S × S, A)`. -/
+theorem finsum_mul_mem (h₁ h₂ : permutationHeckeModule G S A) :
+    (fun p : S × S ↦ ∑ᶠ y, (h₁ : S × S → A) (p.1, y) * (h₂ : S × S → A) (y, p.2)) ∈
+      permutationHeckeModule G S A := by
+  refine ⟨fun g p ↦ ?_, ?_⟩
+  · simp only [Prod.smul_fst, Prod.smul_snd]
+    rw [← finsum_comp_equiv (MulAction.toPerm g)]
+    exact finsum_congr fun y ↦ by rw [MulAction.toPerm_apply, apply_smul, apply_smul]
+  -- The orbit of `(x, z)` is that of `(x₁, g • z)`, where `(x₁, y₁)` represents the orbit of a
+  -- pair `(x, y)` in the support of `h₁`, and `g • z` lies in the finite row of `h₂` at `y₁`.
+  let rep (q : Quotient (orbitRel G (S × S))) : S × S := q.out
+  refine (h₁.property.2.biUnion fun q _ ↦ ((finite_support_row h₂ (rep q).2).image
+    fun w ↦ Quotient.mk (orbitRel G (S × S)) ((rep q).1, w))).subset ?_
+  rintro _ ⟨⟨x, z⟩, hxz, rfl⟩
+  obtain ⟨y, hy⟩ : ∃ y, (h₁ : S × S → A) (x, y) * (h₂ : S × S → A) (y, z) ≠ 0 := by
+    by_contra! hall
+    exact hxz (finsum_eq_zero_of_forall_eq_zero hall)
+  obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G (S × S)) (x, y)
+  refine Set.mem_biUnion ⟨(x, y), left_ne_zero_of_mul hy, rfl⟩ ⟨g • z, ?_, ?_⟩
+  · simp only [Function.mem_support, rep, ← hg, Prod.smul_snd, apply_smul]
+    exact right_ne_zero_of_mul hy
+  · refine Quotient.sound ⟨g, ?_⟩
+    simp only [rep, ← hg, Prod.smul_mk]
+
 /-- The matrix product `(h₁ * h₂)(x, z) = Σ_y h₁(x, y) h₂(y, z)` on `Fun_G(S × S, A)`. -/
 instance instMulPermutationHeckeModule : Mul (permutationHeckeModule G S A) where
-  mul h₁ h₂ := ⟨fun p ↦ ∑ᶠ y, (h₁ : S × S → A) (p.1, y) * (h₂ : S × S → A) (y, p.2), by
-      refine ⟨fun g p ↦ ?_, ?_⟩
-      · simp only [Prod.smul_fst, Prod.smul_snd]
-        rw [← finsum_comp_equiv (MulAction.toPerm g)]
-        exact finsum_congr fun y ↦ by rw [MulAction.toPerm_apply, apply_smul, apply_smul]
-      -- The orbit of `(x, z)` is that of `(x₁, g • z)`, where `(x₁, y₁)` represents the orbit of a
-      -- pair `(x, y)` in the support of `h₁`, and `g • z` lies in the finite row of `h₂` at `y₁`.
-      let rep (q : Quotient (orbitRel G (S × S))) : S × S := q.out
-      refine (h₁.property.2.biUnion fun q _ ↦ ((finite_support_row h₂ (rep q).2).image
-        fun w ↦ Quotient.mk (orbitRel G (S × S)) ((rep q).1, w))).subset ?_
-      rintro _ ⟨⟨x, z⟩, hxz, rfl⟩
-      obtain ⟨y, hy⟩ : ∃ y, (h₁ : S × S → A) (x, y) * (h₂ : S × S → A) (y, z) ≠ 0 := by
-        by_contra! hall
-        exact hxz (finsum_eq_zero_of_forall_eq_zero hall)
-      obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G (S × S)) (x, y)
-      refine Set.mem_biUnion ⟨(x, y), left_ne_zero_of_mul hy, rfl⟩ ⟨g • z, ?_, ?_⟩
-      · simp only [Function.mem_support, rep, ← hg, Prod.smul_snd, apply_smul]
-        exact right_ne_zero_of_mul hy
-      · refine Quotient.sound ⟨g, ?_⟩
-        simp only [rep, ← hg, Prod.smul_mk]⟩
+  mul h₁ h₂ := ⟨_, finsum_mul_mem h₁ h₂⟩
 
 /-- The matrix product, entrywise. Only finitely many terms are nonzero. -/
 theorem mul_apply (h₁ h₂ : permutationHeckeModule G S A) (x z : S) :
@@ -256,6 +280,12 @@ theorem toEnd_mul (h₁ h₂ : permutationHeckeModule G S A) :
   refine finsum_congr fun y ↦ ?_
   rw [toEnd_single]
   ring
+
+/-- The matrix product corresponds to composition of the actions on `A[S]`. -/
+theorem toIntertwiningMap_mul (h₁ h₂ : permutationHeckeModule G S A) :
+    toIntertwiningMap G S A (h₁ * h₂) = toIntertwiningMap G S A h₁ * toIntertwiningMap G S A h₂ :=
+  Representation.IntertwiningMap.ext <| LinearMap.ext fun f ↦ MonoidAlgebra.coeff_injective <| by
+    simp [toEnd_mul]
 
 /-- The matrix product makes `Fun_G(S × S, A)` a non-unital ring. -/
 instance instNonUnitalRingPermutationHeckeModule :
@@ -369,72 +399,70 @@ theorem toEndAlgHom_apply (h : permutationHeckeModule G S A) :
     toEndAlgHom G S A h = toEnd G S A h :=
   (rfl)
 
-variable (G S A) in
-/-- `End_G(A[S])`: the endomorphisms of the permutation module `S →₀ A` commuting with the
-permutation action of `G`. -/
-abbrev equivariantEnd : Subalgebra A (Module.End A (S →₀ A)) :=
-  Subalgebra.centralizer A (Set.range fun g : G ↦ Finsupp.lmapDomain A A (g • · : S → S))
+/-- The unit acts as the identity on `A[S]`. -/
+theorem toIntertwiningMap_one : toIntertwiningMap G S A 1 = 1 :=
+  Representation.IntertwiningMap.ext <| LinearMap.ext fun f ↦ MonoidAlgebra.coeff_injective <| by
+    simp [toEnd_one]
 
 omit [FiniteStabilizerOrbits G S] [Finite (orbitRel.Quotient G S)] in
-/-- An endomorphism of `S →₀ A` is in `End_G(A[S])` exactly when it commutes with every
-`g : G`. -/
-theorem mem_equivariantEnd_iff {φ : Module.End A (S →₀ A)} :
-    φ ∈ equivariantEnd G S A ↔ ∀ g : G, φ ∘ₗ Finsupp.lmapDomain A A (g • · : S → S) =
-      Finsupp.lmapDomain A A (g • · : S → S) ∘ₗ φ := by
-  simp [Subalgebra.mem_centralizer_iff, Module.End.mul_eq_comp, eq_comm]
+/-- The entries of the matrix of an intertwining map are invariant under the diagonal action. -/
+private theorem coeff_apply_single_smul
+    (φ : (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S))
+    (g : G) (s t : S) :
+    (φ (MonoidAlgebra.single (g • s) 1)).coeff (g • t) =
+      (φ (MonoidAlgebra.single s 1)).coeff t := by
+  rw [← Representation.ofMulAction_single, φ.isIntertwining, Representation.coeff_ofMulAction,
+    inv_smul_smul]
 
 omit [FiniteStabilizerOrbits G S] in
-/-- The matrix `(t, s) ↦ φ(s)(t)` of an equivariant endomorphism `φ` lies in
+/-- The matrix `(t, s) ↦ φ(s)(t)` of an intertwining map `φ` of `A[S]` lies in
 `Fun_G(S × S, A)`. -/
-theorem matrix_mem (φ : equivariantEnd G S A) :
-    (fun p : S × S ↦ (φ : Module.End A (S →₀ A)) (Finsupp.single p.2 1) p.1) ∈
+theorem matrix_mem
+    (φ : (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S)) :
+    (fun p : S × S ↦ (φ (MonoidAlgebra.single p.2 1)).coeff p.1) ∈
       permutationHeckeModule G S A := by
-  have hφ (g : G) (f : S →₀ A) : (φ : Module.End A (S →₀ A)) (f.mapDomain (g • ·)) =
-      ((φ : Module.End A (S →₀ A)) f).mapDomain (g • ·) :=
-    LinearMap.congr_fun (mem_equivariantEnd_iff.mp φ.property g) f
-  refine ⟨fun g p ↦ ?_, ?_⟩
-  · simp only [Prod.smul_fst, Prod.smul_snd]
-    rw [← Finsupp.mapDomain_single (f := (g • · : S → S)), hφ,
-      Finsupp.mapDomain_apply_of_injective (MulAction.injective g)]
+  refine ⟨fun g p ↦ coeff_apply_single_smul φ g p.2 p.1, ?_⟩
   -- A pair `(t, s)` is in the orbit of `(g • t, s₀)`, where `s₀` represents the orbit of `s`.
   refine (Set.finite_iUnion fun q : orbitRel.Quotient G S ↦
-    (((φ : Module.End A (S →₀ A)) (Finsupp.single q.out 1)).support.finite_toSet.image
-      fun t ↦ Quotient.mk (orbitRel G (S × S)) (t, q.out))).subset ?_
+    (φ (MonoidAlgebra.single q.out 1)).coeff.support.finite_toSet.image
+      fun t ↦ Quotient.mk (orbitRel G (S × S)) (t, q.out)).subset ?_
   rintro _ ⟨⟨t, s⟩, hts, rfl⟩
   obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G S) s
   refine Set.mem_iUnion.mpr ⟨Quotient.mk _ s, g • t, ?_, Quotient.sound ⟨g, by simp [hg]⟩⟩
-  rw [Finset.mem_coe, Finsupp.mem_support_iff]
-  simp only [Function.mem_support] at hts
   simp only at hg
-  rwa [← hg, ← Finsupp.mapDomain_single (f := (g • · : S → S)), hφ,
-    Finsupp.mapDomain_apply_of_injective (MulAction.injective g)]
+  rwa [Finset.mem_coe, Finsupp.mem_support_iff, ← hg, coeff_apply_single_smul]
+
+/-- An intertwining map of `A[S]` is the action of its matrix. -/
+theorem toIntertwiningMap_matrix
+    (φ : (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S)) :
+    toIntertwiningMap G S A ⟨_, matrix_mem φ⟩ = φ :=
+  Representation.IntertwiningMap.ext <| MonoidAlgebra.lhom_ext' fun s ↦ LinearMap.ext_ring <|
+    MonoidAlgebra.coeff_injective <| Finsupp.ext fun t ↦ by simp
 
 variable (G S A) in
 /-- **`Fun_G(S × S, A) ≃ End_G(A[S])`** when `S` has finitely many `G`-orbits: the action on the
-permutation module identifies the permutation Hecke algebra with the equivariant endomorphisms. -/
-def toEndAlgEquiv : permutationHeckeModule G S A ≃ₐ[A] equivariantEnd G S A :=
+permutation representation identifies the permutation Hecke algebra with the algebra of its
+intertwining maps. -/
+def toIntertwiningMapAlgEquiv : permutationHeckeModule G S A ≃ₐ[A]
+    (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S) :=
   AlgEquiv.ofBijective
-    ((toEndAlgHom G S A).codRestrict _ fun h ↦
-      mem_equivariantEnd_iff.mpr (toEnd_comp_lmapDomain h))
-    ⟨fun h₁ h₂ he ↦ toEnd_injective G S A (congrArg Subtype.val he), fun φ ↦ ⟨⟨_, matrix_mem φ⟩,
-      Subtype.ext <| Finsupp.lhom_ext fun s c ↦ by
-        ext t
-        rw [AlgHom.coe_codRestrict, toEndAlgHom_apply, toEnd_single, ← smul_eq_mul,
-          ← Finsupp.smul_apply, ← map_smul, Finsupp.smul_single_one]⟩⟩
+    (AlgHom.ofLinearMap (toIntertwiningMap G S A) toIntertwiningMap_one toIntertwiningMap_mul)
+    ⟨toIntertwiningMap_injective G S A, fun φ ↦ ⟨_, toIntertwiningMap_matrix φ⟩⟩
 
-/-- The isomorphism `Fun_G(S × S, A) ≃ End_G(A[S])` is the action on `S →₀ A`. -/
+/-- The isomorphism `Fun_G(S × S, A) ≃ End_G(A[S])` is the action on `A[S]`. -/
 @[simp]
-theorem coe_toEndAlgEquiv_apply (h : permutationHeckeModule G S A) :
-    (toEndAlgEquiv G S A h : Module.End A (S →₀ A)) = toEnd G S A h :=
+theorem toIntertwiningMapAlgEquiv_apply (h : permutationHeckeModule G S A) :
+    toIntertwiningMapAlgEquiv G S A h = toIntertwiningMap G S A h :=
   (rfl)
 
-/-- The inverse of `toEndAlgEquiv` sends `φ` to its matrix `(t, s) ↦ φ(s)(t)`. -/
+/-- The inverse of `toIntertwiningMapAlgEquiv` sends `φ` to its matrix `(t, s) ↦ φ(s)(t)`. -/
 @[simp]
-theorem toEndAlgEquiv_symm_apply (φ : equivariantEnd G S A) (t s : S) :
-    ((toEndAlgEquiv G S A).symm φ : S × S → A) (t, s) =
-      (φ : Module.End A (S →₀ A)) (Finsupp.single s 1) t := by
-  obtain ⟨h, rfl⟩ := (toEndAlgEquiv G S A).surjective φ
-  simp
+theorem toIntertwiningMapAlgEquiv_symm_apply
+    (φ : (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S))
+    (t s : S) :
+    ((toIntertwiningMapAlgEquiv G S A).symm φ : S × S → A) (t, s) =
+      (φ (MonoidAlgebra.single s 1)).coeff t := by
+  rw [(toIntertwiningMapAlgEquiv G S A).symm_apply_eq.mpr (toIntertwiningMap_matrix φ).symm]
 
 end FiniteOrbits
 
