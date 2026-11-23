@@ -54,7 +54,9 @@ disc.
   disc is analytic on the disc exactly when `F` has a power series on the ball
   (`HasFPowerSeriesOnBall`).
 * `TauCeti.discAnalytic.series_eq` and `TauCeti.existsUnique_series_of_mem_discAnalytic`: for
-  `0 < r`, the representing series is unique.
+  `0 < r`, the representing series is unique; `TauCeti.discAnalytic.series_add`,
+  `TauCeti.discAnalytic.series_mul` and `TauCeti.discAnalytic.series_algebraMap`: it is
+  compatible with the algebra operations.
 * `TauCeti.comp_inclusion_mem_discAnalytic` and `TauCeti.comp_inclusion_mem_discAnalytic_iff`:
   over an ultrametric field, restriction to the disc of radius `r' ≤ r` about an interior point
   preserves analyticity, and analyticity on the disc does not depend on the centre.
@@ -206,6 +208,59 @@ theorem discAnalytic.series_eq {a : K} {r : ℝ≥0∞} (hr : 0 < r) (f : discAn
     discAnalytic.series f = g :=
   eq_of_forall_evalAt_sub_eq hr (discAnalytic.le_radius_series f) hg fun z ↦
     (discAnalytic.apply_eq_evalAt_series f z).symm.trans (hfg z)
+
+/-- For `0 < r`, the representing series of the element given by a series `g` of radius at least
+`r` is `g`. -/
+@[simp]
+theorem discAnalytic.series_evalAt_sub {a : K} {r : ℝ≥0∞} (hr : 0 < r) {g : K⟦X⟧}
+    (hg : r ≤ g.radius) :
+    discAnalytic.series ⟨_, evalAt_sub_mem_discAnalytic (a := a) hg⟩ = g :=
+  discAnalytic.series_eq hr _ hg fun _ ↦ rfl
+
+/-- For `0 < r`, the representing series of the constant function `c` is the constant series. -/
+@[simp]
+theorem discAnalytic.series_algebraMap {a : K} {r : ℝ≥0∞} (hr : 0 < r) (c : K) :
+    discAnalytic.series (algebraMap K (discAnalytic K a r) c) = C c :=
+  discAnalytic.series_eq hr _ (by simp [radius_eq_top_iff.mpr (isEntire_C c)]) fun z ↦ by simp
+
+/-- For `0 < r`, the representing series of the zero function is `0`. -/
+@[simp]
+theorem discAnalytic.series_zero {a : K} {r : ℝ≥0∞} (hr : 0 < r) :
+    discAnalytic.series (0 : discAnalytic K a r) = 0 := by
+  simpa using discAnalytic.series_algebraMap (a := a) hr 0
+
+/-- For `0 < r`, the representing series of the constant function `1` is `1`. -/
+@[simp]
+theorem discAnalytic.series_one {a : K} {r : ℝ≥0∞} (hr : 0 < r) :
+    discAnalytic.series (1 : discAnalytic K a r) = 1 := by
+  simpa using discAnalytic.series_algebraMap (a := a) hr 1
+
+/-- For `0 < r`, the representing series of a sum is the sum of the representing series. -/
+@[simp]
+theorem discAnalytic.series_add {a : K} {r : ℝ≥0∞} (hr : 0 < r) (f g : discAnalytic K a r) :
+    discAnalytic.series (f + g) = discAnalytic.series f + discAnalytic.series g := by
+  have hf := discAnalytic.le_radius_series f
+  have hg := discAnalytic.le_radius_series g
+  refine discAnalytic.series_eq hr _ ((le_min hf hg).trans (min_radius_le_radius_add _ _))
+    fun z ↦ ?_
+  obtain ⟨R₀, hR₀, hf₀, hg₀⟩ := exists_onOpenDisc_of_le_radius hf hg
+    (mem_eball_iff_eNorm.mp z.property)
+  rw [Subalgebra.coe_add, Pi.add_apply, discAnalytic.apply_eq_evalAt_series f,
+    discAnalytic.apply_eq_evalAt_series g, hf₀.evalAt_add hg₀ hR₀]
+
+/-- For `0 < r`, the representing series of a product is the product of the representing
+series. -/
+@[simp]
+theorem discAnalytic.series_mul {a : K} {r : ℝ≥0∞} (hr : 0 < r) (f g : discAnalytic K a r) :
+    discAnalytic.series (f * g) = discAnalytic.series f * discAnalytic.series g := by
+  have hf := discAnalytic.le_radius_series f
+  have hg := discAnalytic.le_radius_series g
+  refine discAnalytic.series_eq hr _ ((le_min hf hg).trans (min_radius_le_radius_mul _ _))
+    fun z ↦ ?_
+  obtain ⟨R₀, hR₀, hf₀, hg₀⟩ := exists_onOpenDisc_of_le_radius hf hg
+    (mem_eball_iff_eNorm.mp z.property)
+  rw [Subalgebra.coe_mul, Pi.mul_apply, discAnalytic.apply_eq_evalAt_series f,
+    discAnalytic.apply_eq_evalAt_series g, hf₀.evalAt_mul hg₀ hR₀]
 
 /-- **Derivatives.** The derivative of a function whose restriction to an open disc is analytic on
 the disc again restricts to a function analytic on the disc. -/
