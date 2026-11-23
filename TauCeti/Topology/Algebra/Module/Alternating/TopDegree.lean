@@ -93,22 +93,17 @@ theorem compContinuousLinearMap_eq_det_smul_of_basis [ContinuousConstSMul R R] [
   rw [apply_eq_det_mul _ b, compContinuousLinearMap_apply_basis]
   ring
 
-section TopDegreeField
-
-variable {K E ι : Type*} [Field K] [TopologicalSpace K] [ContinuousConstSMul K K]
-  [AddCommGroup E] [Module K E] [TopologicalSpace E] [Module.Finite K E] [Fintype ι]
-
 /-- On a finite-dimensional vector space whose dimension equals the arity `card ι`, pullback of a
 top-degree scalar-valued continuous alternating form along a continuous linear endomorphism
 multiplies the form by its determinant. -/
-theorem compContinuousLinearMap_eq_det_smul (h : Fintype.card ι = Module.finrank K E)
+theorem compContinuousLinearMap_eq_det_smul {K E ι : Type*} [Field K] [TopologicalSpace K]
+    [ContinuousConstSMul K K] [AddCommGroup E] [Module K E] [TopologicalSpace E]
+    [Module.Finite K E] [Fintype ι] (h : Fintype.card ι = Module.finrank K E)
     (ω : E [⋀^ι]→L[K] K) (A : E →L[K] E) :
     ω.compContinuousLinearMap A = A.toLinearMap.det • ω := by
   classical
   exact compContinuousLinearMap_eq_det_smul_of_basis
     ((Module.finBasisOfFinrankEq K E h.symm).reindex (Fintype.equivFin ι).symm) ω A
-
-end TopDegreeField
 
 section AboveTopDegree
 

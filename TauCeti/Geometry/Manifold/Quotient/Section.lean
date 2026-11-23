@@ -133,24 +133,23 @@ theorem contMDiff_pullback_section_iff_orbitRelQuotientRec [∀ q, Nonempty (V q
 
 section EquivariantPullback
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E' E : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] {H' H : Type*} [TopologicalSpace H'] [TopologicalSpace H]
-  {I' : ModelWithCorners 𝕜 E' H'} {I : ModelWithCorners 𝕜 E H}
+variable {𝕜 E' E H' H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E']
+  [NormedSpace 𝕜 E'] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H']
+  [TopologicalSpace H] {I' : ModelWithCorners 𝕜 E' H'} {I : ModelWithCorners 𝕜 E H}
   {G' M' G M : Type*} [Group G'] [MulAction G' M'] [TopologicalSpace M'] [ChartedSpace H' M']
   [Group G] [MulAction G M] [TopologicalSpace M] [ChartedSpace H M] {m n : ℕ∞ω}
   [ProperlyDiscontinuousSMul G' M'] [ContinuousConstSMul G' M'] [IsCancelSMul G' M'] [T2Space M']
   [LocallyCompactSpace M'] [IsManifold I' n M'] [ContMDiffConstSMul I' n G' M']
   [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M] [T2Space M]
-  [LocallyCompactSpace M] [IsManifold I n M] [ContMDiffConstSMul I n G M]
-  {σ : G' → G} {ψ : M' →ₑ[σ] M} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : MulAction.orbitRel.Quotient G M → Type*} [∀ q, Nonempty (V q)]
-  [∀ q, TopologicalSpace (V q)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+  [LocallyCompactSpace M] [IsManifold I n M] [ContMDiffConstSMul I n G M] {σ : G' → G}
+  {ψ : M' →ₑ[σ] M} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : MulAction.orbitRel.Quotient G M → Type*} [∀ q, Nonempty (V q)] [∀ q, TopologicalSpace (V q)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
   {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
 
 /-- Along a `C^m` equivariant map `ψ : M' →ₑ[σ] M` (`m ≤ n`), the `G'`-descent of
-`ψ.pullbackOrbitSection t` is a `C^m` section of the pulled-back bundle over `M' ⧸ G'` if and only
-if the composite `x' ↦ (⟦ψ x'⟧, t (ψ x'))` into `TotalSpace F V` is `C^m`. -/
+`ψ.pullbackOrbitSection t` is a `C^m` section of the pulled-back bundle over `M' ⧸ G'` iff
+`x' ↦ (⟦ψ x'⟧, t (ψ x'))` into `TotalSpace F V` is `C^m`. -/
 theorem contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff
     {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x} (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
     ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
@@ -169,8 +168,7 @@ theorem contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff
     ((isLocalDiffeomorph_quotientMk (I := I') (n := n) (G := G') (M := M')).contMDiff.of_le hm)
 
 /-- Pulling back a `G`-invariant `C^m` section `t` along a `C^m` equivariant map `ψ : M' →ₑ[σ] M`
-(`m ≤ n`) produces a `G'`-invariant section whose descent to `M' ⧸ G'` is a `C^m` section of the
-pulled-back bundle. -/
+(`m ≤ n`) produces a `G'`-invariant section descending to a `C^m` section over `M' ⧸ G'`. -/
 theorem _root_.ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec
     (ht_smooth : ContMDiff I (I.prod 𝓘(𝕜, F)) m
       (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x)))

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
-import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Basic
 
 /-!
 # Smooth bundles of continuous alternating maps
@@ -209,31 +208,25 @@ section AlternatingPullback
 open FiberBundle
 open scoped Topology
 
-variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
-  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
-  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
-  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
-  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
-  {V₁ V₂ V₃ : B → Type*}
+variable {𝕜 ι EB EM HB HM B M F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  [TopologicalSpace HB] [TopologicalSpace HM] {IB : ModelWithCorners 𝕜 EB HB}
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace B] [ChartedSpace HB B] [TopologicalSpace M]
+  [ChartedSpace HM M] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂]
+  [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] {V₁ V₂ V₃ : B → Type*}
   [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
   [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
   [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
   [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
   [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
   [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
-  [TopologicalSpace (TotalSpace F₃ V₃)]
-  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
-  [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
   {b : M → B} {α : ∀ y, V₂ (b y) [⋀^ι]→L[𝕜] V₃ (b y)} {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
   {s : Set M} {x : M} {n : ℕ∞ω}
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section over
-the same base map `b` preserves `C^n` regularity within `s` at `x`. Only the analytic order `ω`
-carries the arity-factorial condition. -/
+the same base map `b` preserves `C^n` regularity within `s` at `x`. -/
 theorem ContMDiffWithinAt.continuousAlternatingMap_comp_clm
     (hα : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s x)

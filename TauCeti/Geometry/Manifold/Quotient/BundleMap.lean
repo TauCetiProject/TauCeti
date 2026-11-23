@@ -29,7 +29,7 @@ construct the quotient of an arbitrary equivariant vector bundle.
 The proofs combine the section descent in `TauCeti.Geometry.Manifold.Quotient.Section` with
 `TauCeti.contMDiff_hom_bundle_iff` and `TauCeti.exists_bundleDiffeomorph_iff`. Pulling back an
 invariant linear family along an equivariant `C^m` map commutes with descent along
-`Pullback.lift` (`TauCeti.lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`),
+`Pullback.lift` (`MulActionHom.lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`),
 inducing `C^m` maps and diffeomorphisms of the pulled-back total spaces over the source orbit
 space (`ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`,
 `TauCeti.exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec`).
@@ -127,11 +127,10 @@ theorem exists_bundleDiffeomorph_orbitRelQuotientRec_iff (hm : m ≤ n) :
 section EquivariantPullback
 
 variable {G' M' E' H' : Type*} [Group G'] [MulAction G' M'] [TopologicalSpace M']
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
-  {I' : ModelWithCorners 𝕜 E' H'} [ChartedSpace H' M']
-  [ProperlyDiscontinuousSMul G' M'] [ContinuousConstSMul G' M'] [IsCancelSMul G' M']
-  [T2Space M'] [LocallyCompactSpace M'] [IsManifold I' n M'] [ContMDiffConstSMul I' n G' M']
-  {σ : G' → G}
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  [ChartedSpace H' M'] [ProperlyDiscontinuousSMul G' M'] [ContinuousConstSMul G' M']
+  [IsCancelSMul G' M'] [T2Space M'] [LocallyCompactSpace M'] [IsManifold I' n M']
+  [ContMDiffConstSMul I' n G' M'] {σ : G' → G}
 
 /-- Pulling back a `G`-invariant `C^m` linear bundle-map family along a `C^m` equivariant map
 `ψ : M' →ₑ[σ] M` (`m ≤ n`) yields a `G'`-invariant family whose descent induces a `C^m` map of
@@ -150,11 +149,11 @@ theorem _root_.ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec 
         (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
         (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd)) := by
   intro f
-  have hdown := (contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hφ := hφ) hm).2 hφ_smooth
   refine (Bundle.Pullback.contMDiff_fiberwise
     (fun q v ↦ MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q v)
-    hdown f (contMDiff_orbitRelQuotientMap hm hψ)).congr fun p ↦ congrArg
-      (fun T : V (f p.proj) →L[𝕜] W (f p.proj) ↦ TotalSpace.mk' F₂ (E := ⇑f *ᵖ W) p.proj (T p.snd))
+    ((contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hφ := hφ) hm).2 hφ_smooth) f
+    (contMDiff_orbitRelQuotientMap hm hψ)).congr fun p ↦ congrArg (fun T : V (f p.proj) →L[𝕜]
+      W (f p.proj) ↦ TotalSpace.mk' F₂ (E := ⇑f *ᵖ W) p.proj (T p.snd))
       (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
 
 /-- If a `G`-invariant linear family `φ` satisfies the upstairs `C^m` bundle-diffeomorphism

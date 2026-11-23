@@ -71,13 +71,11 @@ def bundleDualEquiv (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
     StrongDual 𝕜 (V₂ x) ≃L[𝕜] StrongDual 𝕜 (V₁ x) :=
   (e x).symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
 
-@[simp]
-theorem bundleDualEquiv_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) (α : StrongDual 𝕜 (V₂ x)) :
+@[simp] theorem bundleDualEquiv_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) (α : StrongDual 𝕜 (V₂ x)) :
     bundleDualEquiv e x α = ContinuousLinearMap.precomp 𝕜 (e x).toContinuousLinearMap α := by
   ext v; simp [bundleDualEquiv, ContinuousLinearEquiv.arrowCongr_apply]
 
-@[simp]
-theorem bundleDualEquiv_symm (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
+@[simp] theorem bundleDualEquiv_symm (e : ∀ x, V₁ x ≃L[𝕜] V₂ x) (x : B) :
     (bundleDualEquiv e x).symm = bundleDualEquiv (fun y ↦ (e y).symm) x := by
   ext β w; simp [bundleDualEquiv, ContinuousLinearEquiv.arrowCongr_apply]
 

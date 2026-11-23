@@ -13,20 +13,13 @@ import TauCeti.Topology.VectorBundle.Trivialization
 /-!
 # Smooth determinants of bundle endomorphisms
 
-Reading an endomorphism of a vector-bundle fibre in any local trivialization conjugates it by the
-fibre equivalence of that trivialization, so its scalar determinant `ContinuousLinearMap.det`
-agrees locally with the determinant of its coordinate operator. Combining this invariance with
-`ContinuousLinearMap.contDiff_det` shows that the fibrewise determinant of a `C^n` section of
-`End(V)` along `b : M → B` is a `C^n` scalar function (`ContMDiffWithinAt.clm_bundle_det` and its
-variants), over any complete nontrivially normed field and without finite-dimensionality or bundle
-chart-transition smoothness assumptions. When the model fibre is finite-dimensional, an
-endomorphism family induces a `C^n` bundle automorphism of `TotalSpace F V` if and only if it is
-`C^n` and its determinant vanishes nowhere (`TauCeti.exists_bundleDiffeomorph_iff_det_ne_zero`).
+The fibrewise determinant of a `C^n` section of `End(V)` along `b : M → B` is a `C^n` scalar
+function (`ContMDiffWithinAt.clm_bundle_det` and its variants). In finite rank, an endomorphism
+family induces a `C^n` automorphism of `TotalSpace F V` iff its total-space map is `C^n` and its
+determinant vanishes nowhere (`TauCeti.exists_bundleDiffeomorph_iff_contMDiff_and_det_ne_zero`).
 
 ## References
-
-* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 14 (Differential Forms).
-* Daniel Huybrechts, *Complex Geometry: An Introduction*, Section 2.2.
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 14.
 -/
 
 public section
@@ -38,18 +31,13 @@ open scoped Manifold Bundle ContDiff Topology
 
 section EndomorphismDet
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
-  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
-  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {n : ℕ∞ω}
+variable {𝕜 EB EM HB HM B M F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  [TopologicalSpace HB] [TopologicalSpace HM] {IB : ModelWithCorners 𝕜 EB HB}
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace B] [ChartedSpace HB B] [TopologicalSpace M]
+  [ChartedSpace HM M] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {V : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω}
 
 section
 
@@ -57,10 +45,8 @@ variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
   {b : M → B} {φ : ∀ y, V (b y) →L[𝕜] V (b y)} {s : Set M} {x : M}
 
 /-- The fibrewise determinant of an endomorphism-bundle section `C^n` within `s` at `x` is a `C^n`
-scalar function within `s` at `x`. Over infinite-dimensional fibres, `ContinuousLinearMap.det` is
-identically `1` by convention. -/
-theorem ContMDiffWithinAt.clm_bundle_det
-    (hφ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+scalar function within `s` at `x`. Over infinite-dimensional fibres, `det` is `1`. -/
+theorem ContMDiffWithinAt.clm_bundle_det (hφ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (φ y)) s x) :
     ContMDiffWithinAt IM 𝓘(𝕜) n (fun y ↦ (φ y).det) s x := by
   rw [contMDiffWithinAt_hom_bundle] at hφ
@@ -71,32 +57,26 @@ theorem ContMDiffWithinAt.clm_bundle_det
   have heq : (fun y ↦ (φ y).det) =ᶠ[𝓝[insert x s] x]
       fun y ↦ (ContinuousLinearMap.inCoordinates F V F V (b x) (b y) (b x) (b y) (φ y)).det := by
     filter_upwards [hnear] with y hy
-    let e := (trivializationAt F V (b x)).continuousLinearEquivAt 𝕜 (b y) hy
     rw [ContinuousLinearMap.inCoordinates_eq hy hy]
-    exact (LinearMap.det_conj (φ y : V (b y) →ₗ[𝕜] V (b y)) e.toLinearEquiv).symm
+    exact (LinearMap.det_conj (φ y : V (b y) →ₗ[𝕜] V (b y))
+      ((trivializationAt F V (b x)).continuousLinearEquivAt 𝕜 (b y) hy).toLinearEquiv).symm
   exact hdet.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
     (heq.self_of_nhdsWithin (mem_insert x s))
 
 /-- The fibrewise determinant of an endomorphism-bundle section `C^n` at `x` is `C^n` at `x`. -/
-theorem ContMDiffAt.clm_bundle_det
-    (hφ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+theorem ContMDiffAt.clm_bundle_det (hφ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (φ y)) x) :
-    ContMDiffAt IM 𝓘(𝕜) n (fun y ↦ (φ y).det) x :=
-  ContMDiffWithinAt.clm_bundle_det hφ
+    ContMDiffAt IM 𝓘(𝕜) n (fun y ↦ (φ y).det) x := ContMDiffWithinAt.clm_bundle_det hφ
 
 /-- The fibrewise determinant of an endomorphism-bundle section `C^n` on `s` is `C^n` on `s`. -/
-theorem ContMDiffOn.clm_bundle_det
-    (hφ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+theorem ContMDiffOn.clm_bundle_det (hφ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (φ y)) s) :
-    ContMDiffOn IM 𝓘(𝕜) n (fun y ↦ (φ y).det) s :=
-  fun y hy ↦ (hφ y hy).clm_bundle_det
+    ContMDiffOn IM 𝓘(𝕜) n (fun y ↦ (φ y).det) s := fun y hy ↦ (hφ y hy).clm_bundle_det
 
 /-- The fibrewise determinant of a `C^n` endomorphism-bundle section is `C^n`. -/
-theorem ContMDiff.clm_bundle_det
-    (hφ : ContMDiff IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+theorem ContMDiff.clm_bundle_det (hφ : ContMDiff IM (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun z ↦ V z →L[𝕜] V z) (b y) (φ y))) :
-    ContMDiff IM 𝓘(𝕜) n (fun y ↦ (φ y).det) :=
-  fun y ↦ (hφ y).clm_bundle_det
+    ContMDiff IM 𝓘(𝕜) n (fun y ↦ (φ y).det) := fun y ↦ (hφ y).clm_bundle_det
 
 end
 
@@ -115,9 +95,9 @@ theorem contMDiff_det_of_totalSpaceMap (ψ : ∀ x, V x →L[𝕜] V x)
   exact ((contMDiff_hom_bundle_iff (IB := IB) ψ).2 hψ).clm_bundle_det
 
 /-- For a finite-rank vector bundle, a family of fibrewise endomorphisms is realized by a `C^n`
-automorphism of `TotalSpace F V` covering the identity if and only if its total-space map is `C^n`
-and its fibrewise determinant vanishes nowhere. -/
-theorem exists_bundleDiffeomorph_iff_det_ne_zero (ψ : ∀ x, V x →L[𝕜] V x) :
+automorphism of `TotalSpace F V` covering the identity iff its total-space map is `C^n` and its
+fibrewise determinant vanishes nowhere. -/
+theorem exists_bundleDiffeomorph_iff_contMDiff_and_det_ne_zero (ψ : ∀ x, V x →L[𝕜] V x) :
     (∃ Φ : TotalSpace F V ≃ₘ^n⟮IB.prod 𝓘(𝕜, F), IB.prod 𝓘(𝕜, F)⟯ TotalSpace F V,
         ⇑Φ = fun p ↦ TotalSpace.mk' F p.proj (ψ p.proj p.snd)) ↔
       ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n

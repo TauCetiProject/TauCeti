@@ -854,12 +854,11 @@ theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*) {n : ℕ∞ω}
     [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
     [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
     [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
-    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
-    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, (F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃)
-        (E := fun z ↦ (V₂ z →L[𝕜] V₃ z) →L[𝕜] V₁ z →L[𝕜] V₃ z)
-        (b y) (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) s x := by
+    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
+      (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, (F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃)) n (fun y ↦
+      TotalSpace.mk' ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) (E := fun z ↦ (V₂ z →L[𝕜] V₃ z) →L[𝕜]
+        V₁ z →L[𝕜] V₃ z) (b y) (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) s x := by
   let _ : NormedAddCommGroup ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
   let _ : NormedSpace 𝕜 ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
   rw [contMDiffWithinAt_hom_bundle] at hA ⊢
@@ -871,15 +870,14 @@ theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*) {n : ℕ∞ω}
         ⟨⟨mem_baseSet_trivializationAt' (b x), mem_baseSet_trivializationAt' (b x)⟩,
           mem_baseSet_trivializationAt' (b x)⟩
   let L := (ContinuousLinearMap.compL 𝕜 F₁ F₂ F₃).flip
-  have hL := L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hA.2
   have heq : (fun y ↦ ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
       (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) (b x) (b y) (b x) (b y)
         (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) =ᶠ[𝓝[insert x s] x]
-      fun y ↦ L
-        (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y)) := by
+      fun y ↦ L (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y)) := by
     filter_upwards [hnear] with y hy
     exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy.1.1 hy.1.2 hy.2
-  exact hL.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
+  exact (L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hA.2).congr_of_eventuallyEq
+    (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
     (heq.self_of_nhdsWithin (mem_insert x s))
 
 end Composition
