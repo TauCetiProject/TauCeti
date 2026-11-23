@@ -5,10 +5,10 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
 public import TauCeti.Algebra.Lie.Free.LowerCentral
 public import TauCeti.Algebra.Lie.Presentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cofinality
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Basic
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 
@@ -41,6 +41,8 @@ every commutative `ℚ`-algebra `R : Type` via PBW symmetrization
 * `TauCeti.FreeLieAlgebra.degreeFiltration_eq_augmentation_pow` and
   `TauCeti.FreeLieAlgebra.naturals_degreeFiltration_eq_augmentation_pow`: the word-length
   filtration of `U(F)` is the filtration by powers of the augmentation ideal.
+* `TauCeti.FreeLieAlgebra.quotientEquivAlgOfEq_truncatedLieToU`: comparison between
+  `truncatedLieToU` and `lowerCentralQuotientι`.
 * `TauCeti.FreeLieAlgebra.mem_augmentation_pow_iff`: membership in `J ^ N` is the vanishing of
   every component of length below `N`.
 * `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι` and
@@ -101,6 +103,19 @@ theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
     rintro _ _ rfl
     exact degreeFiltration_eq_augmentation_pow R S k
   exact h _ _ (AddMonoidHom.ext fun n => PositiveDegrees.naturals_degree n)
+
+/-- `truncatedLieToU` for `PositiveDegrees.naturals` agrees with `lowerCentralQuotientι` across the
+identifications of degree ideals with lower central terms and filtration ideals with augmentation
+powers. -/
+theorem quotientEquivAlgOfEq_truncatedLieToU (c : ℕ)
+    (z : PositiveDegrees.naturals.truncatedLie ℒ c) :
+    Ideal.quotientEquivAlgOfEq R (naturals_degreeFiltration_eq_augmentation_pow R S (c + 1))
+        (UniversalEnvelopingAlgebra.truncatedLieToU PositiveDegrees.naturals ℒ c z) =
+      UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c
+        (((PositiveDegrees.naturals.degreeIdeal ℒ c).quotEquivOfEq _
+          (naturals_degreeIdeal_eq_lowerCentralSeries R S c)) z) := by
+  obtain ⟨x, rfl⟩ := (PositiveDegrees.naturals.degreeIdeal ℒ c).surjective_mkQ z
+  simp [LieIdeal.mkQ_apply, LieIdeal.quotEquivOfEq_mk]
 
 /-- An element of the enveloping algebra of a free Lie algebra lies in the `N`-th power of the
 augmentation ideal exactly when its components of word length below `N` vanish. -/

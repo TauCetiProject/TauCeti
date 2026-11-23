@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Ideal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Map
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Powers
 
 /-!

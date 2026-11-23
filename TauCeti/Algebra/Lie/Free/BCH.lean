@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Free.Enveloping
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Primitive
 
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Nilpotent.BCH
 
 /-!
@@ -80,32 +81,11 @@ open _root_.UniversalEnvelopingAlgebra (ι)
 open _root_.FreeLieAlgebra (of)
 open LieModule (lowerCentralSeries)
 open PositiveDegrees (naturals)
-open _root_.TauCeti.UniversalEnvelopingAlgebra (degreeFiltration truncatedLieToU
+open _root_.TauCeti.UniversalEnvelopingAlgebra (degreeFiltration
   completedLieToU completedLieToU_mem_completionIdeal_one toCompletion_ι_mem_completionIdeal_one
   projection_completedLieToU completedLieToU_toCompletion completedLieExpEquiv
   coe_completedLieExpEquiv_apply lowerCentralQuotientι lowerCentralQuotientι_mk
   isNilpotent_lowerCentralQuotientι)
-
-section Grading
-
-variable (R : Type*) [CommRing R] (S : Type*)
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- `truncatedLieToU` for `PositiveDegrees.naturals` agrees with `lowerCentralQuotientι` across the
-identifications of degree ideals with lower central terms and filtration ideals with augmentation
-powers. -/
-theorem quotientEquivAlgOfEq_truncatedLieToU (c : ℕ)
-    (z : naturals.truncatedLie (homogeneousSubmodule R S) c) :
-    Ideal.quotientEquivAlgOfEq R (naturals_degreeFiltration_eq_augmentation_pow R S (c + 1))
-        (truncatedLieToU naturals (homogeneousSubmodule R S) c z) =
-      lowerCentralQuotientι R (_root_.FreeLieAlgebra R S) c
-        (((naturals.degreeIdeal (homogeneousSubmodule R S) c).quotEquivOfEq _
-          (naturals_degreeIdeal_eq_lowerCentralSeries R S c)) z) := by
-  obtain ⟨x, rfl⟩ := (naturals.degreeIdeal (homogeneousSubmodule R S) c).surjective_mkQ z
-  simp [LieIdeal.mkQ_apply, LieIdeal.quotEquivOfEq_mk]
-
-end Grading
 
 section BCH
 
@@ -119,48 +99,39 @@ noncomputable abbrev freeAugmentation : Ideal (_root_.UniversalEnvelopingAlgebra
   (HopfIdeal.augmentation ℚ (_root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo)).toIdeal
 
 local notation "𝓛" => homogeneousSubmodule ℚ (Fin 2)
-local notation "𝓕" =>
-  degreeFiltration 𝓛 naturals.degree (naturals.eq_bot_of_degree_neg 𝓛)
+local notation "𝓕" => degreeFiltration 𝓛 naturals.degree (naturals.eq_bot_of_degree_neg 𝓛)
 
 /-- The preimage of `freeAugmentation ^ (c + 1)` under `ι ℚ` is the `c`-th lower central term of
 `FreeLieTwo`. -/
 theorem comap_freeAugmentation_pow_ι (c : ℕ) :
     ((freeAugmentation ^ (c + 1)).restrictScalars ℚ).comap
-        (ι ℚ :
-          FreeLieTwo →ₗ⁅ℚ⁆ _root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo).toLinearMap =
+        (ι ℚ : FreeLieTwo →ₗ⁅ℚ⁆ _root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo).toLinearMap =
       (lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c).toSubmodule :=
   comap_augmentation_pow_ι_of_algebra_rat ℚ (Fin 2) c
 
 private noncomputable def bchGroupLikeFactor (i : Fin 2) :=
   completedLieExpEquiv naturals 𝓛
-    (LieIdeal.toCompletion (naturals.degreeIdeal 𝓛)
-      (naturals.degreeIdeal_antitone 𝓛) (of ℚ i))
+    (LieIdeal.toCompletion (naturals.degreeIdeal 𝓛) (naturals.degreeIdeal_antitone 𝓛) (of ℚ i))
 
 /-- The completed Baker–Campbell–Hausdorff series in the word-length completion of `FreeLieTwo`,
 obtained by pulling back the product of the completed exponentials of the two free generators. -/
 noncomputable def bchCompleted : naturals.completedLie 𝓛 :=
-  (completedLieExpEquiv naturals 𝓛).symm
-    ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
-      (bchGroupLikeFactor 0).2.mul (bchGroupLikeFactor 1).2⟩
+  (completedLieExpEquiv naturals 𝓛).symm ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
+    (bchGroupLikeFactor 0).2.mul (bchGroupLikeFactor 1).2⟩
 
 /-- In the completed enveloping algebra of `FreeLieTwo`, the completed exponential of `bchCompleted`
 is the product of the completed exponentials of the two canonical generators. -/
 theorem completedExp_completedLieToU_bchCompleted :
-    (𝓕).completedExp
-      ⟨completedLieToU naturals 𝓛 bchCompleted,
+    (𝓕).completedExp ⟨completedLieToU naturals 𝓛 bchCompleted,
         completedLieToU_mem_completionIdeal_one naturals 𝓛 bchCompleted⟩ =
-    (𝓕).completedExp
-      ⟨(𝓕).toCompletion (ι ℚ (of ℚ 0)),
+      (𝓕).completedExp ⟨(𝓕).toCompletion (ι ℚ (of ℚ 0)),
         toCompletion_ι_mem_completionIdeal_one 𝓛 naturals.degree
           (naturals.eq_bot_of_degree_nonpos 𝓛) (of ℚ 0)⟩ *
-    (𝓕).completedExp
-      ⟨(𝓕).toCompletion (ι ℚ (of ℚ 1)),
+      (𝓕).completedExp ⟨(𝓕).toCompletion (ι ℚ (of ℚ 1)),
         toCompletion_ι_mem_completionIdeal_one 𝓛 naturals.degree
           (naturals.eq_bot_of_degree_nonpos 𝓛) (of ℚ 1)⟩ := by
-  have happ := congrArg Subtype.val <|
-    (completedLieExpEquiv naturals 𝓛).apply_symm_apply
-      ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
-        (bchGroupLikeFactor 0).2.mul (bchGroupLikeFactor 1).2⟩
+  have happ := congrArg Subtype.val <| (completedLieExpEquiv naturals 𝓛).apply_symm_apply
+    ⟨_, (bchGroupLikeFactor 0).2.mul (bchGroupLikeFactor 1).2⟩
   simp only [bchCompleted, bchGroupLikeFactor, coe_completedLieExpEquiv_apply,
     completedLieToU_toCompletion] at happ ⊢
   exact happ
@@ -211,8 +182,7 @@ theorem exp_lowerCentralQuotientι_bchElement (c : ℕ) :
     ← quotientEquivAlgOfEq_truncatedLieToU ℚ (Fin 2) c,
     ← projection_completedLieToU naturals 𝓛 c bchCompleted,
     ← bchEnvEquiv_projection_completedExp c
-      ⟨completedLieToU naturals 𝓛 bchCompleted,
-        completedLieToU_mem_completionIdeal_one naturals 𝓛 bchCompleted⟩,
+      ⟨_, completedLieToU_mem_completionIdeal_one naturals 𝓛 bchCompleted⟩,
     completedExp_completedLieToU_bchCompleted, map_mul, map_mul,
     bchEnvEquiv_projection_completedExp c, bchEnvEquiv_projection_completedExp c]
   simp [bchEnvEquiv, freeAugmentation]
@@ -223,8 +193,7 @@ theorem lowerCentralQuotientι_bchElement (c : ℕ) :
     lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c) =
       IsNilpotent.log
         (IsNilpotent.exp (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ (of ℚ 0))) *
-          IsNilpotent.exp
-            (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ (of ℚ 1)))) := by
+          IsNilpotent.exp (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ (of ℚ 1)))) := by
   rw [← exp_lowerCentralQuotientι_bchElement c,
     (isNilpotent_lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c)).log_exp]
 
@@ -235,11 +204,10 @@ theorem exists_bch_exp_mul_exp (c : ℕ) :
       IsNilpotent.exp (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ b)) =
         IsNilpotent.exp (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ (of ℚ 0))) *
           IsNilpotent.exp (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ (of ℚ 1))) := by
-  obtain ⟨b, hb⟩ :=
-    LieIdeal.surjective_mkQ (lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c) (bchElement c)
-  exact ⟨b, by
-    simpa only [← hb, LieIdeal.mkQ_apply, lowerCentralQuotientι_mk] using
-      exp_lowerCentralQuotientι_bchElement c⟩
+  obtain ⟨b, hb⟩ := LieIdeal.surjective_mkQ
+    (lowerCentralSeries ℚ FreeLieTwo FreeLieTwo c) (bchElement c)
+  exact ⟨b, by simpa only [← hb, LieIdeal.mkQ_apply, lowerCentralQuotientι_mk] using
+    exp_lowerCentralQuotientι_bchElement c⟩
 
 /-- `bchElement c` is the unique element of `FreeLieTwo ⧸ lowerCentralSeries c` sent by
 `lowerCentralQuotientι` to `log (exp X * exp Y)`. -/
@@ -274,13 +242,11 @@ theorem factor_bchElement {c₁ c₂ : ℕ} (h : c₁ ≤ c₂) :
         (bchElement c₂) = bchElement c₁ := by
   let d := naturals
   obtain ⟨x, hx⟩ := (d.degreeIdeal 𝓛 c₂).surjective_mkQ
-    (LieIdeal.completionProjection
-      (d.degreeIdeal 𝓛) (d.degreeIdeal_antitone 𝓛) c₂ bchCompleted)
+    (LieIdeal.completionProjection (d.degreeIdeal 𝓛) (d.degreeIdeal_antitone 𝓛) c₂ bchCompleted)
   have hc₁ : LieIdeal.completionProjection (d.degreeIdeal 𝓛) (d.degreeIdeal_antitone 𝓛) c₁
       bchCompleted = LieSubmodule.Quotient.mk x := by
-    rw [← LieIdeal.factor_completionProjection
-      (d.degreeIdeal 𝓛) (d.degreeIdeal_antitone 𝓛) h, ← hx, LieIdeal.mkQ_apply,
-      LieIdeal.factor_apply]
+    rw [← LieIdeal.factor_completionProjection (d.degreeIdeal 𝓛) (d.degreeIdeal_antitone 𝓛) h,
+      ← hx, LieIdeal.mkQ_apply, LieIdeal.factor_apply]
   rw [bchElement, bchElement, ← hx, hc₁]
   simp [LieIdeal.mkQ_apply, LieIdeal.quotEquivOfEq_mk, LieIdeal.factor_apply]
 
@@ -289,28 +255,6 @@ theorem factor_bchElement {c₁ c₂ : ℕ} (h : c₁ ≤ c₂) :
 private noncomputable def quotAugmentationIdeal (c : ℕ) :
     Ideal (_root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo ⧸ freeAugmentation ^ (c + 1)) :=
   freeAugmentation.map (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)))
-
-private theorem quotAugmentationIdeal_pow_le_map (c : ℕ) :
-    ∀ m : ℕ, quotAugmentationIdeal c ^ m ≤
-      (freeAugmentation ^ m).map (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)))
-  | 0 => fun z _ => by
-    obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective z
-    exact Ideal.mem_map_of_mem _ (by simp [Submodule.pow_zero, Ideal.one_eq_top])
-  | m + 1 => by
-    rw [Submodule.pow_succ (quotAugmentationIdeal c), Submodule.mul_le]
-    intro x hx y hy
-    obtain ⟨u, hu, rfl⟩ := Ideal.mem_image_of_mem_map_of_surjective _
-      Ideal.Quotient.mk_surjective (quotAugmentationIdeal_pow_le_map c m hx)
-    obtain ⟨v, hv, rfl⟩ := Ideal.mem_image_of_mem_map_of_surjective _
-      Ideal.Quotient.mk_surjective hy
-    rw [← map_mul]
-    exact Ideal.mem_map_of_mem _ (Submodule.pow_succ freeAugmentation ▸ Ideal.mul_mem_mul hu hv)
-
-private theorem quotAugmentationIdeal_pow_eq_bot (c : ℕ) :
-    quotAugmentationIdeal c ^ (c + 1) = ⊥ :=
-  eq_bot_iff.mpr <| (quotAugmentationIdeal_pow_le_map c (c + 1)).trans <|
-    Ideal.map_le_iff_le_comap.mpr fun _ hu =>
-      Ideal.mem_bot.mpr (Ideal.Quotient.eq_zero_iff_mem.mpr hu)
 
 private theorem mk_ι_mem_quotAugmentationIdeal (c : ℕ) (x : FreeLieTwo) :
     Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) (ι ℚ x) ∈ quotAugmentationIdeal c :=
@@ -326,47 +270,44 @@ theorem bchElement_zero : bchElement 0 = 0 :=
 theorem bchElement_one :
     bchElement 1 = LieSubmodule.Quotient.mk (of ℚ 0) + LieSubmodule.Quotient.mk (of ℚ 1) := by
   symm; apply eq_bchElement_of_lowerCentralQuotientι_eq
-  have hI3 : quotAugmentationIdeal 1 ^ 3 = ⊥ := le_bot_iff.mp <|
-    quotAugmentationIdeal_pow_eq_bot 1 ▸ Ideal.pow_le_pow_right (by decide : 2 ≤ 3)
-  rw [Ideal.log_exp_mul_exp_of_pow_three_eq_bot (quotAugmentationIdeal 1) hI3
+  rw [Ideal.log_exp_mul_exp_of_pow_three_eq_bot (quotAugmentationIdeal 1)
+    (Ideal.map_mk_pow_eq_bot_of_le (Ideal.pow_le_pow_right (by decide : 1 + 1 ≤ 3)))
     (mk_ι_mem_quotAugmentationIdeal 1 (of ℚ 0)) (mk_ι_mem_quotAugmentationIdeal 1 (of ℚ 1))]
   simp [LieRing.of_associative_ring_bracket]
 
 /-- At class `2`, `bchElement 2` is `X + Y + (1 / 2) • ⁅X, Y⁆`. -/
 theorem bchElement_two :
-    bchElement 2 =
-      LieSubmodule.Quotient.mk (of ℚ 0) + LieSubmodule.Quotient.mk (of ℚ 1) +
-        (1 / 2 : ℚ) • ⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
+    bchElement 2 = LieSubmodule.Quotient.mk (of ℚ 0) + LieSubmodule.Quotient.mk (of ℚ 1) +
+      (1 / 2 : ℚ) • ⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
           FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 2),
-          LieSubmodule.Quotient.mk (of ℚ 1)⁆ := by
+        LieSubmodule.Quotient.mk (of ℚ 1)⁆ := by
   symm; apply eq_bchElement_of_lowerCentralQuotientι_eq
   rw [Ideal.log_exp_mul_exp_of_pow_three_eq_bot (quotAugmentationIdeal 2)
-    (quotAugmentationIdeal_pow_eq_bot 2)
+    (Ideal.map_mk_pow_self freeAugmentation 3)
     (mk_ι_mem_quotAugmentationIdeal 2 (of ℚ 0)) (mk_ι_mem_quotAugmentationIdeal 2 (of ℚ 1))]
   simp only [map_add, map_smul, LieHom.map_lie, lowerCentralQuotientι_mk]
 
 /-- At class `3`, `bchElement 3` is
 `X + Y + (1 / 2) • ⁅X, Y⁆ + (1 / 12) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
 theorem bchElement_three :
-    bchElement 3 =
-      LieSubmodule.Quotient.mk (of ℚ 0) + LieSubmodule.Quotient.mk (of ℚ 1) +
-        (1 / 2 : ℚ) • ⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
+    bchElement 3 = LieSubmodule.Quotient.mk (of ℚ 0) + LieSubmodule.Quotient.mk (of ℚ 1) +
+      (1 / 2 : ℚ) • ⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
           FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
-          LieSubmodule.Quotient.mk (of ℚ 1)⁆ +
-        (1 / 12 : ℚ) •
-          (⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
+        LieSubmodule.Quotient.mk (of ℚ 1)⁆ +
+      (1 / 12 : ℚ) •
+        (⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
+            FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
+          ⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
               FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
-            ⁅(LieSubmodule.Quotient.mk (of ℚ 0) :
-                FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
-              LieSubmodule.Quotient.mk (of ℚ 1)⁆⁆ +
-           ⁅(LieSubmodule.Quotient.mk (of ℚ 1) :
+            LieSubmodule.Quotient.mk (of ℚ 1)⁆⁆ +
+         ⁅(LieSubmodule.Quotient.mk (of ℚ 1) :
+            FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
+          ⁅(LieSubmodule.Quotient.mk (of ℚ 1) :
               FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
-            ⁅(LieSubmodule.Quotient.mk (of ℚ 1) :
-                FreeLieTwo ⧸ lowerCentralSeries ℚ FreeLieTwo FreeLieTwo 3),
-              LieSubmodule.Quotient.mk (of ℚ 0)⁆⁆) := by
+            LieSubmodule.Quotient.mk (of ℚ 0)⁆⁆) := by
   symm; apply eq_bchElement_of_lowerCentralQuotientι_eq
   rw [Ideal.log_exp_mul_exp_of_pow_four_eq_bot (quotAugmentationIdeal 3)
-    (quotAugmentationIdeal_pow_eq_bot 3)
+    (Ideal.map_mk_pow_self freeAugmentation 4)
     (mk_ι_mem_quotAugmentationIdeal 3 (of ℚ 0)) (mk_ι_mem_quotAugmentationIdeal 3 (of ℚ 1))]
   simp only [map_add, map_smul, LieHom.map_lie, lowerCentralQuotientι_mk]
 
