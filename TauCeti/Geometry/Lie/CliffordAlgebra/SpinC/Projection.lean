@@ -198,24 +198,23 @@ theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
 theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
-  have h := congrArg (fun φ ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := ISO) φ X)
-    (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
-  rw [ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO),
+  simpa only [ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO),
     ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO),
-    ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
-    ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
-    ← realSpinLieEquivUnitsRange_apply,
-    ← realSpinToSpecialOrthogonalLieEquiv_apply] at h
-  exact h
+    realSpinToSpecialOrthogonalLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
+    realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+    realSpinLieEquivUnitsRange_apply] using
+    congrArg (fun φ ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := ISO) φ X)
+      (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
 @[simp]
 theorem lieMap_realToSpecialOrthogonalRange_realSpinProdDetLinearEquiv (p : 𝔰 × ℝ) :
-    πO (realSpinProdDetLinearEquiv n hQ p) = realSpinToSpecialOrthogonalLieEquiv n p.1 :=
-  (congrArg (πO) (realSpinProdDetLinearEquiv_apply n hQ p)).trans <| (map_add (πO) _ _).trans <|
-    (congrArg₂ (· + ·) (lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin n hQ p.1)
-      (lieMap_realToSpecialOrthogonalRange_realDetLieLift n hQ p.2)).trans (add_zero _)
+    πO (realSpinProdDetLinearEquiv n hQ p) = realSpinToSpecialOrthogonalLieEquiv n p.1 := by
+  rw [realSpinProdDetLinearEquiv_apply]
+  simp only [map_add, lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin,
+    lieMap_realToSpecialOrthogonalRange_realDetLieLift, add_zero]
 
 /-- **Exactness of the rotation differential**: the kernel of `(realToSpecialOrthogonalRange)_*` is
 precisely the central determinant line `range (realDetLieLift n hQ)`. -/

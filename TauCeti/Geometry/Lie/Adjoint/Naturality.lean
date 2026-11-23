@@ -49,17 +49,12 @@ theorem ContMDiffMonoidMorphism.lieMap_Ad
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra hG
   let e' := leftInvariantDerivationLieEquivGroupLieAlgebra hG'
   apply EquivLike.injective e'
-  have h1 : e' (lieMap φ (TauCeti.Lie.Ad (I := I) g X)) =
-      φ.toMonoidHom.groupLieAlgebraMap I I' (e (TauCeti.Lie.Ad (I := I) g X)) := by
+  have hmap (Y : LeftInvariantDerivation I G) :
+      e' (lieMap φ Y) = φ.toMonoidHom.groupLieAlgebraMap I I' (e Y) := by
     rw [MonoidHom.groupLieAlgebraMap_apply]
-    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ (TauCeti.Lie.Ad (I := I) g X)
-  have h2 : e' (TauCeti.Lie.Ad (I := I') (φ g) (lieMap φ X)) =
-      TauCeti.Lie.tangentAd (I := I') (φ g) (e' (lieMap φ X)) :=
-    TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad (φ g) (lieMap φ X)
-  have h3 : e' (lieMap φ X) = φ.toMonoidHom.groupLieAlgebraMap I I' (e X) := by
-    rw [MonoidHom.groupLieAlgebraMap_apply]
-    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ X
-  rw [h1, TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, h2, h3,
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ Y
+  rw [hmap, TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
+    TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, hmap,
     TauCeti.Lie.tangentAd_apply, TauCeti.Lie.tangentAd_apply]
   exact φ.toMonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap g (e X)
 

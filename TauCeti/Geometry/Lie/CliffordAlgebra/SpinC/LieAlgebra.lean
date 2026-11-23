@@ -218,12 +218,10 @@ theorem realSpinProdDetLinearEquiv_apply (p : 𝔰 × ℝ) :
 /-- Evaluating the determinant weight on `realSpinProdDetLinearEquiv (X, a)` recovers `a`. -/
 @[simp]
 theorem lieWeight_detContinuousMonoidHom_realSpinProdDetLinearEquiv (p : 𝔰 × ℝ) :
-    d (realSpinProdDetLinearEquiv n hQ p) = p.2 :=
-  (congrArg d (realSpinProdDetLinearEquiv_apply n hQ p)).trans <|
-    (map_add d _ _).trans <|
-      (congrArg₂ (· + ·)
-        (lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom n hQ p.1)
-        (lieWeight_detContinuousMonoidHom_realDetLieLift n hQ p.2)).trans (zero_add p.2)
+    d (realSpinProdDetLinearEquiv n hQ p) = p.2 := by
+  rw [realSpinProdDetLinearEquiv_apply]
+  simp only [map_add, lieWeight_detContinuousMonoidHom_lieMap_ofSpinContinuousMonoidHom,
+    lieWeight_detContinuousMonoidHom_realDetLieLift, zero_add]
 
 /-- The second component of `(realSpinProdDetLinearEquiv n hQ).symm Y` is the determinant weight
 `d det(Y)`. -/
@@ -315,13 +313,9 @@ component and fixes the determinant parameter. -/
 theorem Ad_mk_realSpinProdDetLinearEquiv
     (s : spinGroup (realCliffordForm n 0)) (z : Circle) (p : 𝔰 × ℝ) :
     Lie.Ad (I := IC) (mk _ hQ (s, z)) (realSpinProdDetLinearEquiv n hQ p) =
-      realSpinProdDetLinearEquiv n hQ (Lie.Ad (I := IS) s p.1, p.2) :=
-  (congrArg (Lie.Ad (I := IC) (mk _ hQ (s, z)))
-      (realSpinProdDetLinearEquiv_apply n hQ p)).trans <|
-    (map_add (Lie.Ad (I := IC) (mk _ hQ (s, z))) _ _).trans <|
-    (congrArg₂ (· + ·) (Ad_mk_lieMap_ofSpinContinuousMonoidHom n hQ s z p.1)
-      (Ad_realDetLieLift n hQ (mk _ hQ (s, z)) p.2)).trans
-      (realSpinProdDetLinearEquiv_apply n hQ (Lie.Ad (I := IS) s p.1, p.2)).symm
+      realSpinProdDetLinearEquiv n hQ (Lie.Ad (I := IS) s p.1, p.2) := by
+  rw [realSpinProdDetLinearEquiv_apply, realSpinProdDetLinearEquiv_apply]
+  simp only [map_add, Ad_mk_lieMap_ofSpinContinuousMonoidHom, Ad_realDetLieLift]
 
 /-- The Spin–determinant splitting of `Lie(Spinᶜ(n))` in quadratic Clifford coordinates. -/
 def realQuadraticProdDetLinearEquiv :
