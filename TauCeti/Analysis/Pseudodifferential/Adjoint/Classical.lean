@@ -220,11 +220,9 @@ theorem exists_inclusion_eq_adjoint_sub_map :
   obtain ⟨c, hc⟩ := (principal_eq_zero_iff_exists_inclusion _).1 h0
   refine ⟨c, hc, fun z => ?_⟩
   -- The principal symbol of `c` is the term of index `1` of the difference.
-  have hterm := congrArg (fun d : ClassicalSymbol n W V m => (d.term (1 + 0)).coefficient z) hc
-  simp only [term_inclusion_add, coefficient_castDegree] at hterm
-  rw [coefficient_principal, hterm, term_sub, HomogeneousSymbol.coefficient_sub, Pi.sub_apply,
-    coefficient_term_one_adjoint, term_map, HomogeneousSymbol.coefficient_map,
-    adjointRealCLM_apply, sub_sub_cancel_left, neg_smul]
+  have hterm := congrArg (fun d => (d.term 1).coefficient z) hc
+  simp only [term_inclusion_self, coefficient_castDegree] at hterm
+  simp [hterm, coefficient_term_one_adjoint, -term_adjoint, adjointRealCLM_apply]
 
 end Adjoint
 

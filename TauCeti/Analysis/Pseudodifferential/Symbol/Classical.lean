@@ -680,6 +680,13 @@ theorem term_inclusion_add (j : ℕ) :
   simp only [term_inclusion, Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
   rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
 
+/-- The term of index `k` of a classical symbol included `k` steps up is its principal symbol. -/
+@[simp]
+theorem term_inclusion_self :
+    (inclusion k hk b).term k = b.principal.castDegree (by simp [hk]) := by
+  ext1
+  simpa using congrArg HomogeneousSymbol.coefficient (term_inclusion_add k hk b 0)
+
 /-- Including a classical symbol into an equal order (a change of the order's expression) keeps
 its homogeneous terms. -/
 @[simp]
