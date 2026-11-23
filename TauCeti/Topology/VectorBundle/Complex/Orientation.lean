@@ -17,7 +17,7 @@ import TauCeti.Geometry.Symplectic.ExistsCompatible
 /-!
 # The complex orientation of a complex vector bundle
 
-A continuous complex structure `J` on a real vector bundle `V` with finite-dimensional fibres
+A continuous complex structure `J` on a real vector bundle `V` with finite-dimensional model fibre
 (`TauCeti.Bundle.ContinuousComplexStructure`) orients each fibre `V b` by the complex orientation
 of `J b` (`TauCeti.AlmostComplexStructure.orientation`), in which the `J b`-adapted bases
 `(v₁, J v₁, …, vₙ, J vₙ)` are positive. These fibre orientations form an orientation of the
@@ -60,25 +60,27 @@ variable {B : Type*} [TopologicalSpace B]
   {V : B → Type*} [∀ b, AddCommGroup (V b)] [∀ b, Module ℝ (V b)] [∀ b, TopologicalSpace (V b)]
   [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousSMul ℝ (V b)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [∀ b, FiniteDimensional ℝ (V b)]
   (J : ContinuousComplexStructure F V) {k : ℕ} (hk : finrank ℝ F = k)
 
-omit [FiniteDimensional ℝ F] [∀ b, FiniteDimensional ℝ (V b)] in
+omit [FiniteDimensional ℝ F] in
 /-- Read in the trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`. -/
 theorem transport_almostComplexStructureAt_apply {b₀ b : B}
     (hb : b ∈ (trivializationAt F V b₀).baseSet) (w : F) :
     (J.almostComplexStructureAt b).transport ((trivializationAt F V b₀).linearEquivAt ℝ b hb) w =
       J.coord b₀ b w := by
+  -- On the base set, the trivialization's linear equivalence is its continuous linear map.
+  have he (v : V b) : (trivializationAt F V b₀).linearEquivAt ℝ b hb v =
+      (trivializationAt F V b₀).continuousLinearMapAt ℝ b v :=
+    ((trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb v).symm
   obtain ⟨v, rfl⟩ := ((trivializationAt F V b₀).linearEquivAt ℝ b hb).surjective w
   rw [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply,
-    almostComplexStructureAt_apply, Trivialization.linearEquivAt_apply,
-    Trivialization.linearEquivAt_apply,
-    ← (trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb,
-    ← (trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb, coord_apply J hb]
+    almostComplexStructureAt_apply, he, he, coord_apply J hb]
 
 /-- The fibre complex orientations are locally constant in the preferred trivializations of `V`. -/
 private theorem eventually_mapOrientation_orientation_eq (b : B) :
     ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ (trivializationAt F V b).baseSet,
+      haveI := VectorBundle.finiteDimensional ℝ F V x
+      haveI := VectorBundle.finiteDimensional ℝ F V b
       (trivializationAt F V b).mapOrientation (Fin k) hx
           ((J.almostComplexStructureAt x).orientation
             ((VectorBundle.finrank_eq ℝ F V x).trans hk)) =
@@ -86,6 +88,7 @@ private theorem eventually_mapOrientation_orientation_eq (b : B) :
           (FiberBundle.mem_baseSet_trivializationAt' b)
           ((J.almostComplexStructureAt b).orientation
             ((VectorBundle.finrank_eq ℝ F V b).trans hk)) := by
+  have (x : B) : FiniteDimensional ℝ (V x) := VectorBundle.finiteDimensional ℝ F V x
   set e := trivializationAt F V b
   have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' b
   -- A symplectic form on `F` taming `J` read at `x` induces the orientation at `x`.
@@ -116,12 +119,14 @@ private theorem eventually_mapOrientation_orientation_eq (b : B) :
 `J`: on the fibre over `b` it is the complex orientation of `J b`, in which the `J b`-adapted bases
 `(v₁, J v₁, …, vₙ, J vₙ)` are positive. -/
 noncomputable def orientation : VectorBundleOrientation F V (Fin k) :=
-  ⟨fun b ↦ (J.almostComplexStructureAt b).orientation ((VectorBundle.finrank_eq ℝ F V b).trans hk),
+  ⟨fun b ↦ haveI := VectorBundle.finiteDimensional ℝ F V b
+    (J.almostComplexStructureAt b).orientation ((VectorBundle.finrank_eq ℝ F V b).trans hk),
     J.eventually_mapOrientation_orientation_eq hk⟩
 
 /-- The complex orientation of `V` orients the fibre over `b` by the complex orientation of
 `J b`. -/
 theorem orientation_apply (b : B) (hb : finrank ℝ (V b) = k) :
+    haveI := VectorBundle.finiteDimensional ℝ F V b
     J.orientation hk b = (J.almostComplexStructureAt b).orientation hb :=
   (rfl)
 

@@ -408,10 +408,13 @@ complex orientation of multiplication by `i` is the canonical orientation
 `TauCeti.complexOrientation E`, in which the real bases `(b₀, i b₀, b₁, i b₁, …)` underlying the
 complex bases `b` are positive. -/
 theorem orientation_ofComplexModule (E : Type*) [AddCommGroup E] [Module ℂ E] [Module ℝ E]
-    [IsScalarTower ℝ ℂ E] [FiniteDimensional ℂ E] [FiniteDimensional ℝ E]
-    (hk : finrank ℝ E = k) (h : 2 * finrank ℂ E = k) :
+    [IsScalarTower ℝ ℂ E] [FiniteDimensional ℂ E] (hk : finrank ℝ E = k) :
+    haveI := FiniteDimensional.trans ℝ ℂ E
     (ofComplexModule E).orientation hk =
-      Orientation.reindex ℝ E (finCongr h) (complexOrientation E) := by
+      Orientation.reindex ℝ E (finCongr (finrank_real_eq_two_mul_finrank_complex.symm.trans hk))
+        (complexOrientation E) := by
+  have := FiniteDimensional.trans ℝ ℂ E
+  have h : 2 * finrank ℂ E = k := finrank_real_eq_two_mul_finrank_complex.symm.trans hk
   set b := (finBasis ℂ E).complexToReal
   have hb : ∀ i, b (i, 1) = ofComplexModule E (b (i, 0)) := fun i ↦ by
     simp [b, ofComplexModule_apply]

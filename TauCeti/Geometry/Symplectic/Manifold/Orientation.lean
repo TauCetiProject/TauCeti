@@ -220,7 +220,7 @@ theorem orientation_ofComplexManifold :
           (AlmostComplexStructure.ofComplexModule_apply (V := E) v).symm)
     rw [orientationAt_orientation, orientationAt_complexManifoldOrientation_eq_complexOrientation,
       h]
-    exact (AlmostComplexStructure.orientation_ofComplexModule E _ rfl).trans (by simp)
+    exact (AlmostComplexStructure.orientation_ofComplexModule E _).trans (by simp)
 
 end ComplexManifold
 
