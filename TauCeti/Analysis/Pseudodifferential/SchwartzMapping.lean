@@ -79,13 +79,14 @@ where the profile is bounded by `‖u‖_{L¹}`.
 * `TauCeti.Symbol.besselMultiplier_two_quantizeUniformCLM`: the same commutator for the Bessel
   multiplier `J² = 1 - (2π)⁻² Δ` of order `2`.
 * `TauCeti.Symbol.quantizeUniformCLM_const`: a constant symbol `T` quantizes to the composition
-  with `T`, and `TauCeti.Symbol.quantizeUniformCLM_ofSpatial_smul_id`: the symbol `φ(x) id`
-  quantizes to multiplication by `φ`.
+  with `T`.
 * `TauCeti.Symbol.quantizeRightUniformCLM`: the right quantization of a uniform symbol as a
   continuous linear map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`, with its formula
   `TauCeti.Symbol.quantizeRightUniformCLM_apply`, its Fourier transform
-  `TauCeti.Symbol.fourier_quantizeRightUniformCLM` and its linearity in the symbol
-  (`TauCeti.Symbol.quantizeRightUniformCLM_add` and its companions).
+  `TauCeti.Symbol.fourier_quantizeRightUniformCLM`, its linearity in the symbol
+  (`TauCeti.Symbol.quantizeRightUniformCLM_add` and its companions) and its dependence only on
+  the integrand `c(y, ξ) (u y)`
+  (`TauCeti.Symbol.quantizeRightUniformCLM_eq_of_coefficient_apply_eq`).
 * `TauCeti.Symbol.IsUniform.integrable_coefficient_apply`: `y ↦ c(y, ξ) u(y)` is integrable for a
   uniform symbol `c` and a Schwartz function `u`.
 
@@ -220,7 +221,7 @@ private lemma exists_bound_of_isControlled {X : Type*} [NormedAddCommGroup X] [N
         C * s.sup (schwartzSeminormFamily ℂ (CoordinateSpace n) V) u := by
   obtain ⟨q, hq, hle⟩ := IsControlled.sum (Finset.univ : Finset (Fin k → Fin n)) fun w _ ↦ h w
   obtain ⟨s, C, -, hqC⟩ := Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ _ _) q hq
-  refine ⟨s, C, C.2, fun u x ↦ ?_⟩
+  refine ⟨s, C, C.property, fun u x ↦ ?_⟩
   calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ N (F u) x‖ ≤
         (∑ j, |x j|) ^ k * ‖iteratedFDeriv ℝ N (F u) x‖ := by
         gcongr
@@ -430,22 +431,16 @@ theorem smulLeftCLM_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (
 theorem quantizeUniformCLM_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) :
     quantizeUniformCLM (const T) (isUniform_const T) =
       SchwartzMap.postcompCLM (E := CoordinateSpace n) T := by
-  have hT : (const T : Symbol n V W 0).coefficient = fun _ ↦ T := funext (coefficient_const T)
   ext u x
-  simpa [hT] using quantizeSchwartzValue_comp_fst (fun _ ↦ T) u x
+  exact quantizeSchwartzValue_const T u x
 
-/-- The symbol `φ(x) id` of multiplication by a Schwartz function `φ` quantizes to multiplication
-by `φ`. -/
-theorem quantizeUniformCLM_ofSpatial_smul_id [CompleteSpace V] (φ : 𝓢(CoordinateSpace n, ℂ))
-    (hφ : ContDiff ℝ ∞ fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-    (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) hφ).IsUniform) :
-    quantizeUniformCLM _ h = SchwartzMap.smulLeftCLM V φ := by
-  have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) hφ).coefficient =
-      fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_ofSpatial _ hφ)
-  ext u x
-  simpa [hc, SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth] using
-    quantizeSchwartzValue_comp_fst (fun y ↦ φ y • ContinuousLinearMap.id ℂ V) u x
+/-- The symbol of a smooth function `f` of the position quantizes to multiplication by `f`:
+`Op(f) u (x) = f(x) (u(x))`. -/
+theorem quantizeUniformCLM_ofSpatial_apply [CompleteSpace V] [CompleteSpace W]
+    {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (ha : (ofSpatial f hf).IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeUniformCLM (ofSpatial f hf) ha u x = f x (u x) := by
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_ofSpatial]
 
 /-! ### The Fourier profile of the right quantization -/
 
@@ -635,7 +630,7 @@ private lemma continuous_integrandFDeriv (c : Symbol n V W m) (u : 𝓢(Coordina
   refine continuous_clm_apply.2 fun h ↦ ?_
   simp only [integrandFDeriv_apply]
   have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 (-⟪y, ζ⟫) : ℂ) :=
-    (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
+    (Real.continuous_fourierChar.comp (by fun_prop)).subtypeVal
   refine (he.smul ((hD.clm_apply continuous_const).clm_apply u.continuous)).add ?_
   exact (((continuous_const.mul (Complex.continuous_ofReal.comp (by fun_prop))).mul he).smul
     (hc.clm_apply u.continuous))
@@ -1004,6 +999,15 @@ theorem quantizeRightUniformCLM_apply (c : Symbol n V W m) (hc : c.IsUniform)
   rw [quantizeRightUniformCLM, ContinuousLinearMap.comp_apply,
     FourierTransform.fourierInvCLM_apply, SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
   simp_rw [profileCLM_apply]
+
+/-- Two right quantizations agree when their integrands `c(y, ξ) (u y)` agree pointwise. -/
+theorem quantizeRightUniformCLM_eq_of_coefficient_apply_eq {m' : ℝ} {c : Symbol n V W m}
+    {c' : Symbol n V W m'} (hc : c.IsUniform) (hc' : c'.IsUniform)
+    {u u' : 𝓢(CoordinateSpace n, V)}
+    (h : ∀ y ξ, c.coefficient (y, ξ) (u y) = c'.coefficient (y, ξ) (u' y)) :
+    quantizeRightUniformCLM c hc u = quantizeRightUniformCLM c' hc' u' := by
+  ext x
+  simp only [quantizeRightUniformCLM_apply, h]
 
 /-- The right quantization is additive in the symbol. -/
 theorem quantizeRightUniformCLM_add {c c' : Symbol n V W m} (hc : c.IsUniform)

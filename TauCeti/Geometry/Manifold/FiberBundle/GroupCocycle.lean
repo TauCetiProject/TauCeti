@@ -123,7 +123,7 @@ private theorem contMDiff_of_localTriv_snd [ContMDiffSMul IG IF n G F]
     rw [trivializationAt_fiberBundleCoreOfGroupCocycle] at hsnd
     rw [hproj, trivializationAt_fiberBundleCoreOfGroupCocycle]
     refine ContMDiffAt.congr_of_eventuallyEq ?_
-      (eventually_of_mem hU₀ fun x hx ↦ hf i _ ((ManifoldTotalSpace.homeomorph F _).symm x).2 hx)
+      (eventually_of_mem hU₀ fun x hx ↦ hf i _ ((ManifoldTotalSpace.homeomorph F _).symm x).snd hx)
     exact (((hk i).contMDiffAt ((hU i).mem_nhds (hindex _))).comp x₀ hproj₀).smul hsnd
 
 variable [LieGroup IG n G] [ContMDiffSMul IG IF n G F] (h : ι → B → G)

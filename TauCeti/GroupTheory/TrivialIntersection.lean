@@ -395,7 +395,7 @@ private theorem IsTISet.range_conjugatesOfSetParam (hS : IsTISet S H) :
     obtain ⟨x, rfl⟩ := isConj_iff.1 hconj
     obtain ⟨h, hout⟩ := QuotientGroup.mk_out_eq_mul H x
     refine ⟨⟨QuotientGroup.mk x, ⟨(h : G)⁻¹ * s * h, ?_⟩⟩, ?_⟩
-    · simpa using hS.conj_mem (h : G)⁻¹ (H.inv_mem h.2) s hs
+    · simpa using hS.conj_mem (h : G)⁻¹ (H.inv_mem h.property) s hs
     · simp only [conjugatesOfSetParam, hout]
       group
 
