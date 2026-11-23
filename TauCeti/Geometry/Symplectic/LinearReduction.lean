@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
+public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 import TauCeti.Algebra.Lie.SkewAdjoint
@@ -40,8 +41,10 @@ reduced space (`TauCeti.SymplecticForm.reducedSpaceSkewAdjoint`).
 
 For a semisimple representation preserving `ω` and `U`, the quotient map `U → U_red` has an
 equivariant linear right inverse (`TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`):
-an equivariant projection onto the radical `U ∩ U^ω` splits it off. Any lift `s` of the reduced
-space of `U^ω` embeds it into `V` beside `U`
+an equivariant projection onto the radical `U ∩ U^ω` splits it off. Even without
+semisimplicity, a representation acting on `U_red` by `[u] ↦ [g u]` preserves the reduced form
+(`TauCeti.SymplecticForm.isInvariantForm_reduction`). Any lift `s` of the reduced space of `U^ω`
+embeds it into `V` beside `U`
 (`TauCeti.SymplecticForm.injective_coprod_subtype_comp`), with coisotropic sum
 `U + s(U^ω ⧸ (U ∩ U^ω))` (`TauCeti.SymplecticForm.isCoisotropic_sup_range_subtype_comp`).
 
@@ -91,6 +94,8 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
   reduced spaces intertwines the two induced quadratic forms.
 * `TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`: an equivariant lift of the
   reduced space for a semisimple representation.
+* `TauCeti.SymplecticForm.isInvariantForm_reduction`: an action induced on the reduced space
+  preserves the reduced form.
 * `TauCeti.SymplecticForm.injective_coprod_subtype_comp`,
   `TauCeti.SymplecticForm.isCoisotropic_sup_range_subtype_comp`: for a lift `s` of the reduced
   space of `U^ω`, `(w, v) ↦ ι w + s v` is injective for injective `ι` with image in `U`, and
@@ -515,6 +520,22 @@ theorem exists_equivariant_lift_reducedSpace {K : Type*} [Group K] {πT : Repres
       simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
         Submodule.subtype_apply, Submodule.coe_sub, map_sub] at h ⊢
       exact congrArg (fun t ↦ πT k u - t) h
+
+/-- **An induced action preserves the reduced form.** If `πT` preserves `ω` and `U`, a
+representation `πV` on the reduced space `U ⧸ (U ∩ U^ω)` acting by `[u] ↦ [πT k u]` preserves the
+reduced form. -/
+theorem isInvariantForm_reduction {K : Type*} [Group K] {πT : Representation ℝ K V}
+    (hπT : ∀ k u v, ω (πT k u) (πT k v) = ω u v) {U : Submodule ℝ V}
+    (hU : ∀ k, ∀ u ∈ U, πT k u ∈ U) {πV : Representation ℝ K (ω.ReducedSpace U)}
+    (hπV : ∀ k (u u' : U), (u' : V) = πT k u →
+      πV k (Submodule.Quotient.mk u) = Submodule.Quotient.mk u') :
+    Representation.IsInvariantForm πV (ω.reduction U).toBilinForm := by
+  refine Representation.isInvariantForm_iff.2 fun k v v' ↦ ?_
+  induction v using Submodule.Quotient.induction_on with | H u => ?_
+  induction v' using Submodule.Quotient.induction_on with | H u' => ?_
+  have h := hπV k u ⟨_, hU k u u.property⟩ rfl
+  have h' := hπV k u' ⟨_, hU k u' u'.property⟩ rfl
+  simpa [h, h'] using hπT k u u'
 
 end Functoriality
 

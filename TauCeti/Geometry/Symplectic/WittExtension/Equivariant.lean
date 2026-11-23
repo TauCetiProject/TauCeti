@@ -86,12 +86,10 @@ private theorem isInvariantForm_model (hB : B.IsAlt) {P : W →ₗ[ℝ] LinearMa
       ((hB.coisotropicModel P hP).prod
         (ω.reduction (ω.orthogonal (LinearMap.range ι)))).toBilinForm := by
   have hρ' (g : G) (u v : E) : ω (ρ g u) (ρ g v) = ω u v := hρ.apply g u v
+  have hV := isInvariantForm_reduction hρ'
+    (fun g _ hu ↦ apply_mem_orthogonal_range hρ' hισ g hu) hπV
   refine isInvariantForm_iff.2 fun g ⟨x, v⟩ ⟨x', v'⟩ ↦ ?_
-  induction v using Submodule.Quotient.induction_on with | H u => ?_
-  induction v' using Submodule.Quotient.induction_on with | H u' => ?_
-  have h := hπV g u ⟨ρ g u, apply_mem_orthogonal_range hρ' hισ g u.property⟩ rfl
-  have h' := hπV g u' ⟨ρ g u', apply_mem_orthogonal_range hρ' hισ g u'.property⟩ rfl
-  simpa [h, h', hρ'] using (hB.isInvariantForm_coisotropicModel hP hσ hPσ).apply g x x'
+  simpa [hV.apply g v v'] using (hB.isInvariantForm_coisotropicModel hP hσ hPσ).apply g x x'
 
 /-- **The equivariant presymplectic Witt extension.** Let `G` act on a finite-dimensional
 symplectic vector space `(E, ω)` by a semisimple representation `ρ` preserving `ω`, and on `W` by

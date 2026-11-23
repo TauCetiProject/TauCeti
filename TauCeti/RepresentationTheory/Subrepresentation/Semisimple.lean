@@ -71,21 +71,12 @@ instance Representation.isSemisimpleRepresentation_dual {G : Type*} [Group G]
     [FiniteDimensional k V] {σ : Representation k G V} [σ.IsSemisimpleRepresentation] :
     σ.dual.IsSemisimpleRepresentation := by
   refine ⟨fun S ↦ ?_⟩
-  let T : Subrepresentation σ := ⟨S.toSubmodule.dualCoannihilator, fun g v hv ↦ by
-    rw [Submodule.mem_dualCoannihilator] at hv ⊢
-    intro φ hφ
-    simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
-      hv _ (S.apply_mem_toSubmodule g⁻¹ hφ)⟩
-  obtain ⟨C, hC⟩ := exists_isCompl T
-  refine ⟨⟨C.toSubmodule.dualAnnihilator, fun g φ hφ ↦ ?_⟩, ?_⟩
-  · rw [Submodule.mem_dualAnnihilator] at hφ ⊢
-    intro v hv
-    simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
-      hφ _ (C.apply_mem_toSubmodule g⁻¹ hv)
-  · rw [← Subrepresentation.isCompl_toSubmodule]
-    have h := Subspace.isCompl_dualAnnihilator (Subrepresentation.isCompl_toSubmodule.2 hC)
-    rwa [show T.toSubmodule.dualAnnihilator = S.toSubmodule from
-      Subspace.dualCoannihilator_dualAnnihilator_eq] at h
+  obtain ⟨C, hC⟩ := exists_isCompl S.dualCoannihilator
+  refine ⟨C.dualAnnihilator, ?_⟩
+  rw [← Subrepresentation.isCompl_toSubmodule, Subrepresentation.toSubmodule_dualAnnihilator]
+  have h := Subspace.isCompl_dualAnnihilator (Subrepresentation.isCompl_toSubmodule.2 hC)
+  rwa [Subrepresentation.toSubmodule_dualCoannihilator,
+    Subspace.dualCoannihilator_dualAnnihilator_eq] at h
 
 namespace Subrepresentation
 

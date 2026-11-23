@@ -209,7 +209,9 @@ private theorem injective_coprod_coprod [FiniteDimensional ℝ T]
     (range_coprod h𝔪' h𝔮).le hs
   convert h.comp (LinearEquiv.prodAssoc ℝ 𝔪 𝔮 _).symm.injective using 1
   ext ⟨a, b, v⟩
-  exact (add_assoc _ _ _).symm
+  have hv : (LinearEquiv.prodAssoc ℝ 𝔪 𝔮 _).symm (a, b, v) = ((a, b), v) :=
+    (LinearEquiv.symm_apply_eq _).2 (by simp)
+  simp [hv, add_assoc]
 
 /-- The model `(𝔪 × 𝔪*) × (𝔮 × V)` is finite-dimensional, since `𝔪 × (𝔮 × V)` embeds into `T`. -/
 private theorem finiteDimensional_model [FiniteDimensional ℝ T]
@@ -300,15 +302,11 @@ private theorem isInvariantForm_model (hρ : ∀ ξ ζ, ω (ρ ξ) (ρ ζ) = ν 
       (𝔮.toRepresentation.prod πV)) (cotangentSymplecticForm.prod
         ((ν.kirillovSymplecticForm h𝔮).prod
           (ω.reduction (ω.orthogonal (LinearMap.range ρ))))).toBilinForm := by
+  have hV := isInvariantForm_reduction (fun k u v ↦ hπT.apply k u v)
+    (fun k _ hu ↦ apply_mem_orthogonal_range (fun k u v ↦ hπT.apply k u v) hρπ k hu) hπV
   refine Representation.isInvariantForm_iff.2 fun k ⟨⟨ξ, a⟩, ζ, v⟩ ⟨⟨ξ', a'⟩, ζ', v'⟩ ↦ ?_
-  induction v using Submodule.Quotient.induction_on with | H u => ?_
-  induction v' using Submodule.Quotient.induction_on with | H u' => ?_
-  have h := hπV k u ⟨πT k u,
-    apply_mem_orthogonal_range (fun k u v ↦ hπT.apply k u v) hρπ k u.property⟩ rfl
-  have h' := hπV k u' ⟨πT k u',
-    apply_mem_orthogonal_range (fun k u v ↦ hπT.apply k u v) hρπ k u'.property⟩ rfl
-  simp [prod_apply, h, h', Module.Dual.transpose_apply, Representation.inv_self_apply,
-    apply_lie_apply hπT hρπ hρ, hπT.apply]
+  simp [prod_apply, hV.apply k v v', Module.Dual.transpose_apply, Representation.inv_self_apply,
+    apply_lie_apply hπT hρπ hρ]
 
 omit hπT in
 /-- The model representation on `(𝔪 × 𝔪*) × (𝔮 × V)` is semisimple when `πT` is: `𝔪`, `𝔮` and `V`
