@@ -31,7 +31,9 @@ For `G` compact and `A` discrete this gives the reduction of `H¹(G, A)` to fini
 every class is inflated from `G ⧸ U` for an open normal subgroup `U`, and `G ⧸ U` is finite.
 Together with the injectivity of inflation, `H¹(G, A)` is the union of the injective images of
 the sets `H¹(G ⧸ U, Aᵁ)`. For a profinite Galois group this is the reduction of continuous Galois
-cohomology to the cohomology of finite Galois extensions.
+cohomology to the cohomology of finite Galois extensions. The transition maps between the finite
+levels and the resulting colimit statement are in
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Nonabelian/FiniteQuotient.lean`.
 
 The key construction is `TauCeti.NonabelianH1.Cocycle.descend`: a cocycle trivial on `N` is
 constant on the cosets of `N`, takes values in `Aᴺ`, and so descends to a cocycle of `G ⧸ N`.
@@ -48,7 +50,8 @@ injectivity of inflation then gives the identity, composition, and injectivity l
 
 ## Main results
 
-* `TauCeti.NonabelianH1.infl_injective`: inflation is injective.
+* `TauCeti.NonabelianH1.infl_injective`: inflation is injective; in particular it reflects the
+  base point (`TauCeti.NonabelianH1.infl_eq_one_iff`).
 * `TauCeti.NonabelianH1.infl_transition`: inflation commutes with refinement.
 * `TauCeti.NonabelianH1.res_eq_one_iff`: a class restricts to the base point exactly when it is
   inflated.
@@ -145,6 +148,14 @@ theorem map_descend (hf : ∀ n ∈ N, f n = 1) :
       (ContinuousMonoidHom.subgroupSubtype _) (subgroupSubtype_quotientMk_smul N) = f :=
   ext fun g ↦ by simp
 
+variable {N} in
+/-- Two cocycles of `G ⧸ N` with values in `Aᴺ` are equal when their values, as elements of `A`,
+agree at the class of every `g : G`. -/
+theorem ext_quotientMk {d d' : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)}
+    (h : ∀ g : G, (d g : A) = d' g) : d = d' :=
+  ext fun q ↦ by
+    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (h g)
+
 end Cocycle
 
 /-- The class of a cocycle trivial on `N` is the inflation of the class of its descent. -/
@@ -172,6 +183,12 @@ theorem infl_injective : Function.Injective (infl (A := A) N) := by
   refine mk_eq_mk_iff.mpr ⟨⟨a, haN⟩, fun q ↦ ?_⟩
   induction q using QuotientGroup.induction_on with | H g =>
   exact Subtype.ext (by simpa using ha g)
+
+/-- A class is inflated to the base point exactly when it is the base point. -/
+@[simp]
+theorem infl_eq_one_iff {c : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)} :
+    infl N c = 1 ↔ c = 1 :=
+  (infl_injective N).eq_iff' (infl_one N)
 
 section Transition
 
@@ -224,18 +241,14 @@ theorem map_transition (h : M ≤ N)
 /-- Refinement to the same subgroup fixes each cocycle. -/
 @[simp]
 theorem transition_refl (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
-    transition (le_refl N) c = c := by
-  ext q
-  induction q using QuotientGroup.induction_on with | H g =>
-  exact coe_transition_apply _ c g
+    transition (le_refl N) c = c :=
+  ext_quotientMk (coe_transition_apply _ c)
 
 /-- Successive refinements agree with direct refinement. -/
 theorem transition_transition (hPM : P ≤ M) (hMN : M ≤ N)
     (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
-    transition hPM (transition hMN c) = transition (hPM.trans hMN) c := by
-  ext q
-  induction q using QuotientGroup.induction_on with | H g =>
-  simp
+    transition hPM (transition hMN c) = transition (hPM.trans hMN) c :=
+  ext_quotientMk fun g ↦ by simp
 
 /-- Refinement preserves the trivial cocycle. -/
 @[simp]
@@ -245,12 +258,10 @@ theorem transition_one (h : M ≤ N) :
 
 /-- Refinement is injective on cocycles. -/
 theorem transition_injective (h : M ≤ N) :
-    Function.Injective (transition (A := A) h) := by
-  intro c d hcd
-  ext q
-  induction q using QuotientGroup.induction_on with | H g =>
-  simpa using congrArg (fun f : Cocycle (G ⧸ M) (FixedPoints.subgroup M A) ↦
-    (f (g : G ⧸ M) : A)) hcd
+    Function.Injective (transition (A := A) h) := fun c d hcd ↦
+  ext_quotientMk fun g ↦ by
+    simpa using congrArg (fun f : Cocycle (G ⧸ M) (FixedPoints.subgroup M A) ↦
+      (f (g : G ⧸ M) : A)) hcd
 
 end Cocycle
 
@@ -301,6 +312,12 @@ theorem transition_injective (h : M ≤ N) :
   intro a b hab
   apply infl_injective N
   simpa only [infl_transition] using congrArg (infl M) hab
+
+/-- A class is refined to the base point exactly when it is the base point. -/
+@[simp]
+theorem transition_eq_one_iff (h : M ≤ N)
+    {a : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)} : transition h a = 1 ↔ a = 1 :=
+  (transition_injective h).eq_iff' (transition_one h)
 
 end Transition
 
