@@ -142,7 +142,8 @@ private theorem gaussianBetaGasPartitionFunction_two_eq_pair (β : ℝ) :
     ← (volume_preserving_finTwoArrow ℝ).integral_comp' (twoParticleGaussianBetaGasWeight β)]
   apply integral_congr_ae
   filter_upwards with x
-  simpa using gaussianBetaGasWeight_two_eq β x
+  change gaussianBetaGasWeight 2 β x = twoParticleGaussianBetaGasWeight β (x 0, x 1)
+  exact gaussianBetaGasWeight_two_eq β x
 
 /-- The Gaussian beta-gas partition function at `n = 2`, for positive inverse temperature. -/
 theorem gaussianBetaGasPartitionFunction_two_eq {β : ℝ} (hβ : 0 < β) :

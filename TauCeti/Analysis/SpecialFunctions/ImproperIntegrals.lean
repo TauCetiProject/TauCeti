@@ -67,6 +67,26 @@ namespace TauCeti
 open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
 
+private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
+    (hp : 0 ≤ p) (ha : 0 < a) (hx : 1 ≤ |x|) (hVx : c * log |x| ≤ vx) :
+    (1 + |x|) ^ p * exp (-a * vx) ≤ 2 ^ p * |x| ^ (p - a * c) := by
+  have hxabs : 0 < |x| := lt_of_lt_of_le zero_lt_one hx
+  have hpoly : (1 + |x|) ^ p ≤ (2 * |x|) ^ p :=
+    Real.rpow_le_rpow (by positivity) (by nlinarith) hp
+  have hexp : exp (-a * vx) ≤ |x| ^ (-a * c) := by
+    rw [Real.rpow_def_of_pos hxabs]
+    apply exp_le_exp.mpr
+    have hmul := mul_le_mul_of_nonpos_left hVx (by linarith : -a ≤ 0)
+    nlinarith [hmul]
+  calc
+    _ ≤ (2 * |x|) ^ p * |x| ^ (-a * c) :=
+      mul_le_mul hpoly hexp (by positivity) (by positivity)
+    _ = 2 ^ p * |x| ^ (p - a * c) := by
+      rw [Real.mul_rpow (by positivity) (by positivity)]
+      rw [mul_assoc, ← Real.rpow_add hxabs]
+      congr 2
+      ring
+
 /-- A continuous potential with sufficient logarithmic growth dominates a
 polynomial factor and makes the resulting exponential weight integrable. -/
 theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V : ℝ → ℝ}
@@ -83,25 +103,6 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
   have hR' : 1 ≤ R' := le_max_right _ _
   have hRbound (x : ℝ) (hx : R' ≤ |x|) : c * log |x| ≤ V x := by
     exact hR _ (le_trans (le_max_left _ _) hx) x rfl
-  have hpoint (x : ℝ) (hx : 1 ≤ |x|) (hVx : c * log |x| ≤ V x) :
-      (1 + |x|) ^ p * exp (-a * V x) ≤ 2 ^ p * |x| ^ q := by
-    have hxabs : 0 < |x| := lt_of_lt_of_le zero_lt_one hx
-    have hpoly : (1 + |x|) ^ p ≤ (2 * |x|) ^ p :=
-      Real.rpow_le_rpow (by positivity) (by nlinarith) hp
-    have hexp : exp (-a * V x) ≤ |x| ^ (-a * c) := by
-      rw [Real.rpow_def_of_pos hxabs]
-      apply exp_le_exp.mpr
-      have hmul := mul_le_mul_of_nonpos_left hVx (by linarith : -a ≤ 0)
-      nlinarith [hmul]
-    calc
-      _ ≤ (2 * |x|) ^ p * |x| ^ (-a * c) :=
-        mul_le_mul hpoly hexp (by positivity) (by positivity)
-      _ = 2 ^ p * |x| ^ q := by
-        rw [Real.mul_rpow (by positivity) (by positivity)]
-        rw [mul_assoc, ← Real.rpow_add hxabs]
-        congr 2
-        dsimp [q]
-        ring
   have hpowPos : IntegrableOn (fun x : ℝ => x ^ q) (Ioi R') volume :=
     integrableOn_Ioi_rpow_of_lt hq' (lt_of_lt_of_le zero_lt_one hR')
   have hpowNeg : IntegrableOn (fun x : ℝ => (-x) ^ q) (Iio (-R')) volume := by
@@ -117,7 +118,7 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
       ‖(1 + |x|) ^ p * exp (-a * V x)‖ ≤ 2 ^ p * ‖|x| ^ q‖ := by
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), Real.norm_eq_abs,
       abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q)]
-    exact hpoint x (hR'.trans hx) (hRbound x hx)
+    exact one_add_abs_rpow_mul_exp_neg_le hp ha (hR'.trans hx) (hRbound x hx)
   have hneg : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atBot]
       (fun x : ℝ => (-x) ^ q) := by
     apply Asymptotics.IsBigO.of_bound (2 ^ p)

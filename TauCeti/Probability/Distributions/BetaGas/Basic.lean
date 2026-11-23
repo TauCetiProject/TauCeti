@@ -189,7 +189,11 @@ theorem integrable_betaGasPDFReal (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
       (volume : Measure (Fin n → ℝ)) := by
   by_cases hint : Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ))
-  · exact hint.div_const _
+  · have hdens : betaGasPDFReal n β V =
+        fun x => betaGasWeight n β V x / betaGasPartitionFunction n β V :=
+      funext (betaGasPDFReal_def n β V)
+    rw [hdens]
+    exact hint.div_const _
   · rw [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
     exact integrable_zero _ _ _
 
