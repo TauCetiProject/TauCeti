@@ -494,8 +494,8 @@ theorem chargeConj_mul_ofCircle (x : spinCGroup Q hQ) (z : Circle) :
 /-- An element is fixed by charge conjugation exactly when its determinant character is trivial. -/
 theorem chargeConj_eq_self_iff {x : spinCGroup Q hQ} :
     chargeConj Q hQ x = x ↔ det Q hQ x = 1 := by
-  rw [chargeConj_eq_mul_ofCircle_inv_det, mul_eq_left, ← map_one (ofCircle Q hQ),
-    (ofCircle_injective Q hQ).eq_iff, inv_eq_one]
+  rw [chargeConj_eq_mul_ofCircle_inv_det]
+  simp [map_eq_one_iff _ (ofCircle_injective Q hQ)]
 
 end spinCGroup
 
