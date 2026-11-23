@@ -35,6 +35,10 @@ triangle of the conflation.
   of a conflation is distinguished.
 * `TauCeti.ExactStructure.BoundedDerivedCategory.conflationδ_naturality`: the third morphism is
   natural in morphisms of conflations.
+* `TauCeti.ExactStructure.BoundedDerivedCategory.isIso_Q_map_mkMap_doubleι`: the resolution
+  `X ⟶ (Y ⟶ Z)` is inverted in `Dᵇ(E)`.
+* `TauCeti.ExactStructure.BoundedDerivedCategory.conflationδ_comp_shift_map_doubleι`: the third
+  morphism followed by the shifted resolution, described in `Kᵇ(C)`; this determines it.
 
 ## References
 
@@ -174,6 +178,16 @@ theorem acyclic_mappingCone_doubleι {S : ShortComplex C} (hS : E.Conflation S) 
       exact S.doubleι_f_zero.symm
     · exact (isZero_single_X S hm).eq_of_src _ _
 
+/-- **The resolution `X ⟶ (Y ⟶ Z)` of a conflation is inverted in `Dᵇ(E)`**. -/
+theorem BoundedDerivedCategory.isIso_Q_map_mkMap_doubleι {S : ShortComplex C}
+    (hS : E.Conflation S) :
+    IsIso ((BoundedDerivedCategory.Q E).map
+      (mkMap S.doubleι : HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 0 S.X₁) ⟶
+        HomotopyCategory.Bounded.mk _
+          (CochainComplex.bounded_double S.g ComplexShape.up_rel_zero_one))) :=
+  Localization.inverts _ E.acyclicBounded.trW _
+    (E.acyclicBounded_trW_homMk_quotient_map _ (acyclic_mappingCone_doubleι hS))
+
 namespace ConflationTriangle
 
 /-! ### The triangle in the bounded derived category -/
@@ -192,17 +206,11 @@ private noncomputable abbrev bDoubleι₁ {X₀ X₁ : C} (g : X₀ ⟶ X₁) : 
 
 variable {S : ShortComplex C}
 
-private theorem isIso_Q_map_doubleι (hS : E.Conflation S) :
-    IsIso ((BoundedDerivedCategory.Q E).map
-      (mkMap S.doubleι : bSingle 0 S.X₁ ⟶ bDouble S.g)) :=
-  Localization.inverts _ E.acyclicBounded.trW _
-    (E.acyclicBounded_trW_homMk_quotient_map _ (acyclic_mappingCone_doubleι hS))
-
 /-- The resolution `X ⟶ (Y ⟶ Z)`, as an isomorphism of `Dᵇ(E)`. -/
 private noncomputable def doubleιIso (hS : E.Conflation S) :
     (BoundedDerivedCategory.Q E).obj (bSingle 0 S.X₁) ≅
       (BoundedDerivedCategory.Q E).obj (bDouble S.g) :=
-  have := isIso_Q_map_doubleι hS
+  have := BoundedDerivedCategory.isIso_Q_map_mkMap_doubleι hS
   asIso ((BoundedDerivedCategory.Q E).map (mkMap S.doubleι : bSingle 0 S.X₁ ⟶ bDouble S.g))
 
 @[simp]
@@ -358,6 +366,27 @@ theorem conflationδ_naturality (φ : S ⟶ S') (hS : E.Conflation S) (hS' : E.C
   simp only [conflationδ, Category.assoc, ← Functor.map_comp, k]
   rw [Functor.map_comp, Functor.map_comp, reassoc_of% (δ'_naturality hS hS'),
     reassoc_of% (Q_map_singleIso_hom_naturality φ.τ₃)]
+
+/-- **The connecting morphism through the resolution of the first term**: for a conflation
+`X ↣ Y ↠ Z`, the connecting morphism `Z ⟶ X⟦1⟧` followed by the shifted resolution
+`X ⟶ (Y ⟶ Z)` is minus the shifted inclusion `Z[-1] ⟶ (Y ⟶ Z)`, after `Z[0] ≅ Z[-1]⟦1⟧`. Since the
+resolution is inverted in `Dᵇ(E)` (`isIso_Q_map_mkMap_doubleι`), this determines
+`conflationδ hS`. -/
+theorem conflationδ_comp_shift_map_doubleι (hS : E.Conflation S) :
+    conflationδ hS ≫ ((Q E).map ((singleFunctorObjIsoMk 0 S.X₁).hom ≫
+      (mkMap S.doubleι : _ ⟶ HomotopyCategory.Bounded.mk _
+        (CochainComplex.bounded_double S.g ComplexShape.up_rel_zero_one))))⟦(1 : ℤ)⟧' =
+      (Q E).map ((singleFunctorObjIsoMk 0 S.X₃).hom ≫
+        (mkSingleIsoShift 1 0 1 (by simp) S.X₃).hom) ≫ ((Q E).commShiftIso (1 : ℤ)).hom.app _ ≫
+        (-((Q E).map (mkMap (HomologicalComplex.doubleι₁ S.g ComplexShape.up_rel_zero_one
+          zero_ne_one) : _ ⟶ HomotopyCategory.Bounded.mk _
+            (CochainComplex.bounded_double S.g ComplexShape.up_rel_zero_one)))⟦(1 : ℤ)⟧') := by
+  have h : (Q E).map (singleIso S.X₁).inv ≫
+      (Q E).map ((singleIso S.X₁).hom ≫ mkMap S.doubleι) = (doubleιIso hS).hom := by
+    rw [← Functor.map_comp, Iso.inv_hom_id_assoc, doubleιIso_hom]
+  simp only [conflationδ, δ', shiftSingleIsoQ, Iso.trans_hom, Functor.mapIso_hom, Iso.app_hom,
+    Category.assoc, ← Functor.map_comp, h, Iso.inv_hom_id]
+  rw [CategoryTheory.Functor.map_id, Category.comp_id, Functor.map_comp, Category.assoc]
 
 end BoundedDerivedCategory
 

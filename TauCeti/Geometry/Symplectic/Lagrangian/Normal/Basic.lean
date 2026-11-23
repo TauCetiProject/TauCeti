@@ -80,7 +80,7 @@ normal-duality evaluation lemma already supplies the simplifier normal form. -/
 theorem normalEquivDual_cotangentZeroSection_mk_apply (n : V × Module.Dual ℝ V)
     (v : cotangentZeroSection (V := V)) :
     isLagrangian_cotangentZeroSection.normalEquivDual (Submodule.Quotient.mk n) v =
-      n.2 v.1.1 := by
-  simp [mem_cotangentZeroSection_iff.mp v.2]
+      n.2 v.val.1 := by
+  simp [mem_cotangentZeroSection_iff.mp v.property]
 
 end TauCeti.SymplecticForm

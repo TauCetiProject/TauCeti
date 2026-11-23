@@ -32,7 +32,7 @@ ceiling still reads the cusp order.
 
 * `TauCeti.ModularForm.intervalIntegral_fdBoundarySegment5_eq_circleIntegral_logDeriv_cuspFunction`
   (the ceiling bridge).
-* `TauCeti.ModularForm.not_exists_norm_fdBoundary_sub_le_of_mem_Icc_four_five` (the excision
+* `TauCeti.ModularForm.not_exists_norm_fdBoundary_sub_le_of_four_le` (the excision
   never fires on the ceiling) and
   `intervalIntegral_excised_logDeriv_fdBoundarySegment5_eq_two_pi_I_mul_qExpansionOrderAtCusp`
   (same namespace; the fully qualified name does not fit the line limit — so the excised
@@ -135,12 +135,12 @@ theorem intervalIntegral_fdBoundarySegment5_eq_circleIntegral_logDeriv_cuspFunct
 /-- **The excision never fires on the ceiling.** The ceiling runs at height `H`, so a centre
 whose height clears `ε` below it — `s.im + ε < H` — has no ceiling point within `ε`. This is
 the exact condition; callers with centres on the unit circle get it from `ε < H - 1`. -/
-theorem not_exists_norm_fdBoundary_sub_le_of_mem_Icc_four_five {H ε : ℝ} {S : Finset ℂ}
-    (hlt : ∀ s ∈ S, s.im + ε < H) {t : ℝ} (ht : t ∈ Icc (4 : ℝ) 5) :
+theorem not_exists_norm_fdBoundary_sub_le_of_four_le {H ε : ℝ} {S : Finset ℂ}
+    (hlt : ∀ s ∈ S, s.im + ε < H) {t : ℝ} (ht : 4 ≤ t) :
     ¬ ∃ s ∈ S, ‖fdBoundary H t - s‖ ≤ ε := by
   rintro ⟨s, hs, hle⟩
   have himle : |(fdBoundary H t - s).im| ≤ ‖fdBoundary H t - s‖ := Complex.abs_im_le_norm _
-  rw [Complex.sub_im, im_fdBoundarySegment5 H ht] at himle
+  rw [Complex.sub_im, im_fdBoundary_of_four_le ht] at himle
   have : H - s.im ≤ ε := (le_abs_self _).trans (himle.trans hle)
   linarith [hlt s hs]
 
@@ -162,7 +162,7 @@ theorem intervalIntegral_excised_logDeriv_fdBoundarySegment5_eq_two_pi_I_mul_qEx
     (intervalIntegral_fdBoundarySegment5_eq_circleIntegral_logDeriv_cuspFunction hper).trans
       (circleIntegral_logDeriv_cuspFunction hga hgz)]
   rw [uIcc_of_le (by norm_num : (4 : ℝ) ≤ 5)] at ht
-  exact ite_eq_right (not_exists_norm_fdBoundary_sub_le_of_mem_Icc_four_five hlt ht)
+  exact ite_eq_right (not_exists_norm_fdBoundary_sub_le_of_four_le hlt ht.1)
 
 end ModularForm
 

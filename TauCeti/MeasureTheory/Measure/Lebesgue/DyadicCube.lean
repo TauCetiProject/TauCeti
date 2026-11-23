@@ -43,8 +43,12 @@ Mathlib's differentiation theorem along closed balls with moving centres.
   length around its centre.
 * `TauCeti.dist_lt_of_mem_dyadicCube`: two points of a cube of level `k` are at sup distance less
   than `2ᵏ`.
+* `TauCeti.dyadicCube_subset_ball_two_mul`: a ball centred outside the concentric cube of three
+  times the side of `Q` that meets `Q` contains `Q` once its radius is doubled.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
+* `TauCeti.volume_closedBall_dyadicCube_le`, `TauCeti.volume_ball_dyadicCube_le`: the concentric
+  cube of `c` times the side, a sup-norm ball, has at most `cⁿ` times the volume.
 * `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
   `Q` with `δ |Q| < a`, for `δ ≠ 0` and `a` finite, have bounded level.
 * `TauCeti.exists_subset_pairwiseDisjoint_forall_dyadicCube_subset`: in a family of dyadic cubes
@@ -246,6 +250,22 @@ theorem dist_lt_of_mem_dyadicCube (hx : x ∈ dyadicCube k m) (hy : y ∈ dyadic
   rw [Real.dist_eq, abs_sub_lt_iff]
   constructor <;> nlinarith [hxi.1, hxi.2, hyi.1, hyi.2]
 
+/-- If `x` lies outside the open sup-norm ball of radius `3 · 2ᵏ / 2` about the centre of a
+dyadic cube `Q` of level `k`, the concentric cube of three times its side, and the ball `B(x, ρ)`
+meets `Q`, then `Q ⊆ B(x, 2 ρ)`. -/
+theorem dyadicCube_subset_ball_two_mul {ρ : ℝ}
+    (hx : x ∉ ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (3 * (2 ^ k / 2)))
+    (hne : (ball x ρ ∩ dyadicCube k m).Nonempty) : dyadicCube k m ⊆ ball x (2 * ρ) := by
+  obtain ⟨y, hyB, hyQ⟩ := hne
+  have hxc := le_of_not_gt (mt mem_ball.2 hx)
+  have hyc := mem_closedBall.1 (dyadicCube_subset_closedBall k m hyQ)
+  have hxy := mem_ball.1 hyB
+  intro z hz
+  have hyz := dist_lt_of_mem_dyadicCube hyQ hz
+  rw [mem_ball]
+  linarith [dist_triangle x y (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k), dist_triangle z y x,
+    dist_comm z y, dist_comm y x]
+
 /-- A dyadic cube of level `k` has volume `(2ᵏ)ⁿ`. -/
 theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :
     volume (dyadicCube k m) = ENNReal.ofReal ((2 ^ k) ^ Fintype.card ι) := by
@@ -265,6 +285,26 @@ theorem volume_dyadicCube_ne_top (k : ℤ) (m : ι → ℤ) : volume (dyadicCube
 theorem volume_dyadicCube_add_one (k : ℤ) (m m' : ι → ℤ) :
     volume (dyadicCube (k + 1) m') = 2 ^ Fintype.card ι * volume (dyadicCube k m) := by
   simp [volume_dyadicCube, zpow_add_one₀, mul_pow, ENNReal.ofReal_mul, mul_comm]
+
+/-- The closed sup-norm ball about the centre of a dyadic cube of level `k` whose radius is `c`
+times half the side of the cube, the concentric cube of `c` times its side, has at most `cⁿ` times
+the volume of the cube. -/
+theorem volume_closedBall_dyadicCube_le (c : ℝ) (k : ℤ) (m : ι → ℤ) :
+    volume (closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (c * (2 ^ k / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube k m) := by
+  rcases lt_or_ge c 0 with hc | hc
+  · rw [closedBall_eq_empty.2 (mul_neg_of_neg_of_pos hc (by positivity)), measure_empty]
+    exact zero_le
+  have hr : (2 : ℝ) * (c * (2 ^ k / 2)) = c * 2 ^ k := by ring
+  rw [Real.volume_pi_closedBall _ (by positivity), volume_dyadicCube, hr, mul_pow,
+    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hc]
+
+/-- The open sup-norm ball about the centre of a dyadic cube of level `k` whose radius is `c` times
+half the side of the cube has at most `cⁿ` times the volume of the cube. -/
+theorem volume_ball_dyadicCube_le (c : ℝ) (k : ℤ) (m : ι → ℤ) :
+    volume (ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (c * (2 ^ k / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube k m) :=
+  (measure_mono ball_subset_closedBall).trans (volume_closedBall_dyadicCube_le c k m)
 
 /-- In positive dimension, dyadic cubes become arbitrarily large as the level tends to `+∞`. -/
 theorem tendsto_volume_dyadicCube_atTop [Nonempty ι] (m : ℤ → ι → ℤ) :

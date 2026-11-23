@@ -79,7 +79,7 @@ theorem mem_normTwoShell_iff {a : Fin 6 → ℤ} :
 noncomputable def rootEquiv : Fin 72 ≃ (CartanMatrix.E 6).normTwoShell :=
   Equiv.ofBijective (fun i ↦ ⟨e6Coroot i, coroot_mem_normTwoShell i⟩)
     ⟨fun _ _ h ↦ e6Coroot.injective (congrArg Subtype.val h), fun a ↦ by
-      obtain ⟨i, hi⟩ := mem_normTwoShell_iff.mp a.2
+      obtain ⟨i, hi⟩ := mem_normTwoShell_iff.mp a.property
       exact ⟨i, Subtype.ext hi⟩⟩
 
 @[simp]

@@ -99,7 +99,7 @@ theorem tateRangeIso_inv_H0π (T : LayerRestriction small big) (F : Formation G)
       TauCeti.TateCohomology.H0π (small.rep F)
         ⟨(T.repIso F).inv.hom x, fun g ↦ by
           rw [← Rep.hom_comm_apply]
-          exact congrArg (T.repIso F).inv.hom (x.2 ⟨T.galHom g, g, rfl⟩)⟩ := by
+          exact congrArg (T.repIso F).inv.hom (x.property ⟨T.galHom g, g, rfl⟩)⟩ := by
   rw [tateRangeIso, TauCeti.TateCohomology.mapIso_inv,
     TauCeti.TateCohomology.H0π_comp_map_apply]
   congr 1

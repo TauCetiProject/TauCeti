@@ -75,13 +75,13 @@ has the moments of the free Poisson law of rate `r` and jump size `c`:
 structure IsFreePoisson (φ : A →ₗ[R] R) (a : A) (r c : R) : Prop where
   /-- The `n`-th moment is `c ^ n * ∑_{π ∈ NC(n)} r ^ |π|`. -/
   apply_pow (n : ℕ) :
-    φ (a ^ n) = c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.1.parts
+    φ (a ^ n) = c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.val.parts
 
 /-- An element is free Poisson of rate `r` and jump size `c` exactly when it has the moments
 `φ (a ^ n) = c ^ n * ∑_{π ∈ NC(n)} r ^ |π|`. -/
 theorem isFreePoisson_iff_apply_pow :
     IsFreePoisson φ a r c ↔ ∀ n : ℕ,
-      φ (a ^ n) = c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.1.parts :=
+      φ (a ^ n) = c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.val.parts :=
   ⟨fun h => h.apply_pow, fun h => ⟨h⟩⟩
 
 namespace IsFreePoisson
@@ -134,7 +134,7 @@ theorem isFreePoisson_iff_freeCumulant_const (hφ : φ 1 = 1) :
   rw [card_univ, Fintype.card_fin] at hm hc
   rw [hm, ← hc]
   exact sum_congr rfl fun π _ => prod_congr rfl fun B hB => by
-    rw [coeff_freeCumulantSeries, h _ (π.1.nonempty_of_mem_parts hB).card_pos.ne']
+    rw [coeff_freeCumulantSeries, h _ (π.val.nonempty_of_mem_parts hB).card_pos.ne']
 
 /-- For a normalised `φ`, the zero element is free Poisson of rate `r` and jump size `c` exactly
 when `r * c = 0`: its moments are those of the Dirac mass at `0`, which is the free Poisson law

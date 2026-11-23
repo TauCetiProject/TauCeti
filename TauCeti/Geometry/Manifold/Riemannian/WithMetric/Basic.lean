@@ -179,6 +179,28 @@ instance : MeasurableSpace (WithMetric g) := borel _
 
 instance : BorelSpace (WithMetric g) := ⟨rfl⟩
 
+/-- The projection from the metric copy is a measurable embedding for the Borel structures. -/
+theorem measurableEmbedding_ofWithMetric [MeasurableSpace M] [BorelSpace M] :
+    MeasurableEmbedding (ofWithMetric : WithMetric g → M) :=
+  (homeomorph g).measurableEmbedding
+
+/-- The inclusion into the metric copy is a measurable embedding for the Borel structures. -/
+theorem measurableEmbedding_toWithMetric [MeasurableSpace M] [BorelSpace M] :
+    MeasurableEmbedding (toWithMetric g) :=
+  (homeomorph g).symm.measurableEmbedding
+
+/-- The identity map from the copy of `M` carrying `g` to the copy carrying `g'` is a measurable
+embedding. -/
+theorem measurableEmbedding_toWithMetric_ofWithMetric {n' : ℕ∞ω}
+    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)) :
+    MeasurableEmbedding fun x : WithMetric g ↦ toWithMetric g' x.ofWithMetric := by
+  have hcoe : ⇑((homeomorph g).trans (homeomorph g').symm) =
+      (fun x : WithMetric g ↦ toWithMetric g' x.ofWithMetric) := by
+    funext x
+    simp only [Homeomorph.trans_apply, coe_homeomorph, coe_homeomorph_symm]
+  rw [← hcoe]
+  exact ((homeomorph g).trans (homeomorph g').symm).measurableEmbedding
+
 /-- The copy of `M` carrying `g` has the charts of `M`, precomposed with `ofWithMetric`. -/
 instance : ChartedSpace H (WithMetric g) :=
   (homeomorph g).pullbackChartedSpace
@@ -475,6 +497,19 @@ theorem mfderiv_ofWithMetric_chartLocalFrame (α x : WithMetric g)
         (by simpa only [TangentBundle.trivializationAt_baseSet] using
           (mem_chartAt_source_iff α x).not.1 hx),
       map_zero]
+
+open Riemannian.Tensor in
+/-- The chart Gram matrix of the copy of `M` carrying `g` is the Gram matrix of `g` in the chart
+frame of `M`. -/
+theorem _root_.Bundle.ContMDiffRiemannianMetric.chartGramMatrix_toWithMetric
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (α x : M) :
+    chartGramMatrix (I := I) (WithMetric.toWithMetric g α) (WithMetric.toWithMetric g x) =
+      Matrix.of fun i j ↦
+        g.inner x (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
+  ext i j
+  rw [chartGramMatrix_apply, WithMetric.inner_def, WithMetric.mfderiv_ofWithMetric_chartLocalFrame,
+    WithMetric.mfderiv_ofWithMetric_chartLocalFrame]
+  rfl
 
 end Metric
 

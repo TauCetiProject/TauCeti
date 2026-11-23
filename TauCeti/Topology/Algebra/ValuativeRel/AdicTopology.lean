@@ -89,7 +89,7 @@ theorem _root_.Irreducible.exists_valuation_pow_lt {π : 𝒪[K]} (hπ : Irreduc
     refine ⟨m + 1, ?_⟩
     rw [hcu, pow_succ]
     exact mul_lt_of_lt_one_right
-      (pow_pos (zero_lt_iff.mpr (by simpa using hπ.ne_zero)) m) hπ1
+      (pow_pos (pos_iff_ne_zero.mpr (by simpa using hπ.ne_zero)) m) hπ1
   · -- A non-integral `c` has `v(π) < 1 < v(c)`.
     exact ⟨1, (pow_one (valuation K (π : K))).symm ▸ hπ1.trans (not_le.mp hcO)⟩
 
@@ -105,7 +105,7 @@ theorem isAdic_maximalIdeal : IsAdic 𝓂[K] := by
     refine (𝓂[K] ^ n).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_
     have hball : {x : K | valuation K x < valuation K (π : K) ^ n} ∈ 𝓝 (0 : K) :=
       (IsValuativeTopology.hasBasis_nhds_zero K).mem_of_mem (i := Units.mk0 _ hπ0 ^ n) trivial
-    refine mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds hball)
+    refine mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds hball)
       fun x hx ↦ ?_
     exact (mem_maximalIdeal_pow_iff_valuation_le hπ n x).mpr (le_of_lt hx)
   · -- `s` contains the trace of a ball of some radius `γ`, and `v(π) ^ n < γ` for large `n`.
@@ -121,19 +121,19 @@ theorem hasBasis_nhds_zero_maximalIdeal_pow :
     (𝓝 (0 : K)).HasBasis (fun _ : ℕ ↦ True)
       fun n ↦ ((↑) : 𝒪[K] → K) '' ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K]) := by
   have h := ((isAdic_maximalIdeal K).hasBasis_nhds_zero).map ((↑) : 𝒪[K] → K)
-  rwa [map_nhds_subtype_val, ZeroMemClass.coe_zero,
+  rwa [map_nhds_subtypeVal, ZeroMemClass.coe_zero,
     nhdsWithin_eq_nhds.mpr (((valuation K).isOpen_integer).mem_nhds (zero_mem _))] at h
 
 /-- Each power `𝓂[K] ^ n` of the maximal ideal is open in `K`. -/
 theorem isOpen_image_maximalIdeal_pow (n : ℕ) :
     IsOpen (((↑) : 𝒪[K] → K) '' ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K])) :=
-  ((valuation K).isOpen_integer).isOpenMap_subtype_val _ ((isAdic_maximalIdeal K).isOpen_pow n)
+  ((valuation K).isOpen_integer).isOpenMap_subtypeVal _ ((isAdic_maximalIdeal K).isOpen_pow n)
 
 /-- If `𝒪[K]` is compact, as for a nonarchimedean local field, then each power `𝓂[K] ^ n` of the
 maximal ideal is compact in `K`. -/
 theorem isCompact_image_maximalIdeal_pow [CompactSpace 𝒪[K]] (n : ℕ) :
     IsCompact (((↑) : 𝒪[K] → K) '' ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K])) :=
-  ((isAdic_maximalIdeal K).isClosed_pow n).isCompact.image continuous_subtype_val
+  ((isAdic_maximalIdeal K).isClosed_pow n).isCompact.image continuous_subtypeVal
 
 /-- In a complete discretely valued field `K`, the valuation ring `𝒪[K]` is `𝓂[K]`-adically
 complete. Together with `IsAdicComplete.henselianLocalRing`, this makes `𝒪[K]` a Henselian local
