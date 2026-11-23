@@ -370,6 +370,77 @@ theorem connectedComponentEquiv_trans {α'' β'' : Type*} {K : Graph α'' β''} 
   ext1 C
   simp [connectedComponentEquiv]
 
+/-- A multigraph isomorphism restricts to an isomorphism from each connected-component subgraph to
+the corresponding connected-component subgraph. -/
+noncomputable def connectedComponentIso (f : Iso G H) (C : G.ConnectedComponent) :
+    Iso C.val (f.connectedComponentEquiv C).val where
+  vertexEquiv :=
+    { toFun x := ⟨f.vertexEquiv ⟨x, C.property.le.vertexSet_mono x.property⟩,
+        (f.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff C _).mpr x.property⟩
+      invFun y := ⟨f.vertexEquiv.symm ⟨y, (f.connectedComponentEquiv C).property.le.vertexSet_mono
+          y.property⟩, by
+        have h := (f.vertexEquiv_symm_mem_vertexSet_connectedComponentEquiv_symm_iff
+          (f.connectedComponentEquiv C)
+          ⟨y, (f.connectedComponentEquiv C).property.le.vertexSet_mono y.property⟩).mpr y.property
+        simpa using h⟩
+      left_inv _ := Subtype.ext (by simp)
+      right_inv _ := Subtype.ext (by simp) }
+  edgeEquiv :=
+    { toFun e := ⟨f.edgeEquiv ⟨e, C.property.le.edgeSet_mono e.property⟩,
+        (f.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff C _).mpr e.property⟩
+      invFun e := ⟨f.edgeEquiv.symm ⟨e, (f.connectedComponentEquiv C).property.le.edgeSet_mono
+          e.property⟩, by
+        have h := (f.edgeEquiv_symm_mem_edgeSet_connectedComponentEquiv_symm_iff
+          (f.connectedComponentEquiv C)
+          ⟨e, (f.connectedComponentEquiv C).property.le.edgeSet_mono e.property⟩).mpr e.property
+        simpa using h⟩
+      left_inv _ := Subtype.ext (by simp)
+      right_inv _ := Subtype.ext (by simp) }
+  map_isLink_iff e x y := by
+    have heH : (f.edgeEquiv ⟨e, C.property.le.edgeSet_mono e.property⟩ : β') ∈
+        E((f.connectedComponentEquiv C).val) :=
+      (f.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff C _).mpr e.property
+    have hlink := f.map_isLink_iff ⟨e, C.property.le.edgeSet_mono e.property⟩
+      ⟨x, C.property.le.vertexSet_mono x.property⟩ ⟨y, C.property.le.vertexSet_mono y.property⟩
+    rw [(f.connectedComponentEquiv C).property.le.isLink_iff', C.property.le.isLink_iff']
+    exact ⟨fun h ↦ ⟨hlink.mp h.1, e.property⟩, fun h ↦ ⟨hlink.mpr h.1, heH⟩⟩
+
+/-- The vertex equivalence of a restricted component isomorphism acts by the original vertex
+equivalence. -/
+@[simp]
+theorem coe_connectedComponentIso_vertexEquiv_apply (f : Iso G H) (C : G.ConnectedComponent)
+    (x : V(C.val)) :
+    ((f.connectedComponentIso C).vertexEquiv x : α') =
+      f.vertexEquiv ⟨x, C.property.le.vertexSet_mono x.property⟩ :=
+  (rfl)
+
+/-- The inverse vertex equivalence of a restricted component isomorphism acts by the original
+inverse vertex equivalence. -/
+@[simp]
+theorem coe_connectedComponentIso_vertexEquiv_symm_apply (f : Iso G H) (C : G.ConnectedComponent)
+    (y : V((f.connectedComponentEquiv C).val)) :
+    ((f.connectedComponentIso C).vertexEquiv.symm y : α) =
+      f.vertexEquiv.symm ⟨y, (f.connectedComponentEquiv C).property.le.vertexSet_mono y.property⟩ :=
+  (rfl)
+
+/-- The edge equivalence of a restricted component isomorphism acts by the original edge
+equivalence. -/
+@[simp]
+theorem coe_connectedComponentIso_edgeEquiv_apply (f : Iso G H) (C : G.ConnectedComponent)
+    (e : E(C.val)) :
+    ((f.connectedComponentIso C).edgeEquiv e : β') =
+      f.edgeEquiv ⟨e, C.property.le.edgeSet_mono e.property⟩ :=
+  (rfl)
+
+/-- The inverse edge equivalence of a restricted component isomorphism acts by the original
+inverse edge equivalence. -/
+@[simp]
+theorem coe_connectedComponentIso_edgeEquiv_symm_apply (f : Iso G H) (C : G.ConnectedComponent)
+    (e : E((f.connectedComponentEquiv C).val)) :
+    ((f.connectedComponentIso C).edgeEquiv.symm e : β) =
+      f.edgeEquiv.symm ⟨e, (f.connectedComponentEquiv C).property.le.edgeSet_mono e.property⟩ :=
+  (rfl)
+
 /-- The number of connected components is invariant under multigraph isomorphism. -/
 theorem componentCount_eq (f : Iso G H) : H.componentCount = G.componentCount := by
   rw [componentCount_def, componentCount_def]

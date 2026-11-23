@@ -556,4 +556,109 @@ theorem mapSubgraph_inf (f : Iso G H) (S T : Set.Iic G) :
   simpa only [coe_subgraphOrderIso_apply, Iic.coe_inf] using
     congrArg Subtype.val (f.subgraphOrderIso.map_inf S T)
 
+/-- Edge deletion commutes with multigraph isomorphisms when the deleted edge sets correspond
+on actual edges. -/
+def deleteEdgesIso (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) :
+    Iso (G.deleteEdges F) (H.deleteEdges F') where
+  vertexEquiv := f.vertexEquiv
+  edgeEquiv :=
+    { toFun e := ⟨f.edgeEquiv ⟨e, e.property.1⟩,
+        (f.edgeEquiv ⟨e, e.property.1⟩).property,
+        fun hmem ↦ e.property.2 ((hF ⟨e, e.property.1⟩).mp hmem)⟩
+      invFun e := ⟨f.edgeEquiv.symm ⟨e, e.property.1⟩,
+        (f.edgeEquiv.symm ⟨e, e.property.1⟩).property,
+        fun hmem ↦ e.property.2 (by
+          simpa using (hF (f.edgeEquiv.symm ⟨e, e.property.1⟩)).mpr hmem)⟩
+      left_inv _ := Subtype.ext (by simp)
+      right_inv _ := Subtype.ext (by simp) }
+  map_isLink_iff e x y := by
+    have hlink := f.map_isLink_iff ⟨e, e.property.1⟩ x y
+    simp only [deleteEdges_isLink]
+    exact ⟨fun h ↦ ⟨hlink.mp h.1, e.property.2⟩,
+      fun h ↦ ⟨hlink.mpr h.1, fun hmem ↦ e.property.2 ((hF ⟨e, e.property.1⟩).mp hmem)⟩⟩
+
+/-- Deleting edges preserves the vertex equivalence of a multigraph isomorphism. -/
+theorem deleteEdgesIso_vertexEquiv (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) :
+    (f.deleteEdgesIso hF).vertexEquiv = f.vertexEquiv :=
+  (rfl)
+
+/-- The vertex equivalence of a deleted-edge isomorphism acts by the original vertex
+equivalence. -/
+@[simp]
+theorem coe_deleteEdgesIso_vertexEquiv_apply (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
+    (x : (G.deleteEdges F).vertexSet) :
+    ((f.deleteEdgesIso hF).vertexEquiv x : α') =
+      f.vertexEquiv ⟨x, deleteEdges_le.vertexSet_mono x.property⟩ :=
+  (rfl)
+
+/-- The inverse vertex equivalence of a deleted-edge isomorphism acts by the original inverse
+vertex equivalence. -/
+@[simp]
+theorem coe_deleteEdgesIso_vertexEquiv_symm_apply (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
+    (y : (H.deleteEdges F').vertexSet) :
+    ((f.deleteEdgesIso hF).vertexEquiv.symm y : α) =
+      f.vertexEquiv.symm ⟨y, deleteEdges_le.vertexSet_mono y.property⟩ :=
+  (rfl)
+
+/-- The edge equivalence of a deleted-edge isomorphism acts by the original edge equivalence. -/
+@[simp]
+theorem coe_deleteEdgesIso_edgeEquiv_apply (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
+    (e : (G.deleteEdges F).edgeSet) :
+    ((f.deleteEdgesIso hF).edgeEquiv e : β') = f.edgeEquiv ⟨e, e.property.1⟩ :=
+  (rfl)
+
+/-- The inverse edge equivalence of a deleted-edge isomorphism acts by the original inverse. -/
+@[simp]
+theorem coe_deleteEdgesIso_edgeEquiv_symm_apply (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
+    (e : (H.deleteEdges F').edgeSet) :
+    ((f.deleteEdgesIso hF).edgeEquiv.symm e : β) = f.edgeEquiv.symm ⟨e, e.property.1⟩ :=
+  (rfl)
+
+/-- Edge deletion sends the identity isomorphism to the identity isomorphism. -/
+@[simp]
+theorem deleteEdgesIso_refl (G : Graph α β) (F : Set β) :
+    (refl G).deleteEdgesIso (F := F) (F' := F) (fun _ ↦ by simp) = refl (G.deleteEdges F) := by
+  ext <;> simp
+
+/-- Edge deletion commutes with inversion of isomorphisms. -/
+@[simp]
+theorem deleteEdgesIso_symm (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) :
+    (f.deleteEdgesIso hF).symm =
+      f.symm.deleteEdgesIso fun e ↦ by simpa using (hF (f.edgeEquiv.symm e)).symm := by
+  ext <;> simp
+
+/-- Edge deletion commutes with composition of isomorphisms. -/
+@[simp]
+theorem deleteEdgesIso_trans (f : Iso G H) (g : Iso H K)
+    {F : Set β} {F' : Set β'} {F'' : Set β''}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
+    (hF' : ∀ e : H.edgeSet, (g.edgeEquiv e : β'') ∈ F'' ↔ (e : β') ∈ F') :
+    (f.deleteEdgesIso hF).trans (g.deleteEdgesIso hF') =
+      (f.trans g).deleteEdgesIso fun e ↦ by
+        simpa using (hF' (f.edgeEquiv e)).trans (hF e) := by
+  ext <;> simp
+
+/-- Transporting a vertex set along a deleted-edge isomorphism agrees with transporting it along
+the original isomorphism. -/
+@[simp]
+theorem mapVertexSet_deleteEdgesIso (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) (S : Set α) :
+    (f.deleteEdgesIso hF).mapVertexSet S = f.mapVertexSet S := by
+  ext y
+  by_cases hy : y ∈ V(H)
+  · have hy' : y ∈ V(H.deleteEdges F') := by rwa [vertexSet_deleteEdges]
+    exact ((f.deleteEdgesIso hF).mem_mapVertexSet_iff S ⟨y, hy'⟩).trans
+      ((f.mem_mapVertexSet_iff S ⟨y, hy⟩).symm)
+  · exact iff_of_false
+      (fun h ↦ hy (vertexSet_deleteEdges (G := H) (F := F') ▸
+        (f.deleteEdgesIso hF).mapVertexSet_subset_vertexSet S h))
+      (fun h ↦ hy (f.mapVertexSet_subset_vertexSet S h))
+
 end Graph.Iso

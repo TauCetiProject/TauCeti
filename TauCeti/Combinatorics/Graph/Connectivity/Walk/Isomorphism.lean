@@ -288,6 +288,18 @@ theorem mapWalk_cons (f : Iso G H) {x y z : G.vertexSet}
     Walk.nil_append, Graph.IsLink.toWalk_eq_cons, Walk.cons_append]
   congr 1
 
+/-- Walk transport commutes with rewriting endpoint equalities (`Walk.copy`). -/
+@[simp]
+theorem mapWalk_copy (f : Iso G H) {x y x' y' : G.vertexSet}
+    (p : G.Walk x y) (hx : (x : α) = x') (hy : (y : α) = y') :
+    f.mapWalk (x := x') (y := y') (p.copy hx hy) =
+      (f.mapWalk p).copy
+        (congrArg (fun v : G.vertexSet ↦ (f.vertexEquiv v : α')) (Subtype.ext hx))
+        (congrArg (fun v : G.vertexSet ↦ (f.vertexEquiv v : α')) (Subtype.ext hy)) := by
+  obtain rfl := Subtype.ext hx
+  obtain rfl := Subtype.ext hy
+  simp
+
 /-- Transporting a one-edge walk gives the one-edge walk of the transported link. -/
 @[simp]
 theorem mapWalk_toWalk (f : Iso G H) {x y : G.vertexSet} {e : β}
