@@ -345,6 +345,12 @@ theorem renameAlgEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolyno
       ofMvPolynomial τ R (MvPolynomial.rename e p) :=
   Subtype.ext (by simp [_root_.MvPowerSeries.rename_coe])
 
+/-- Renaming the variables along `e` sends the variable `Xᵢ` to `X_{e i}`. -/
+@[simp]
+theorem renameAlgEquiv_X {τ : Type*} (e : σ ≃ τ) (i : σ) :
+    renameAlgEquiv e (X σ R i) = X τ R (e i) := by
+  rw [← ofMvPolynomial_X, renameAlgEquiv_ofMvPolynomial, MvPolynomial.rename_X, ofMvPolynomial_X]
+
 variable (σ R) in
 /-- **Overconvergent series in no variables.** With no variables every series is a constant, so
 the constant coefficient is an `R`-algebra isomorphism `R⟨⟩† ≃ R`. -/
@@ -569,7 +575,8 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
   · exact Subtype.ext (by simpa [hu, g, v] using congrArg Subtype.val u.inv_mul)
 
 /-- An overconvergent series is a unit of the Tate algebra iff it is a unit of the
-Monsky–Washnitzer algebra: the inverse of an overconvergent series is overconvergent. -/
+Monsky–Washnitzer algebra: the Tate-algebra inverse of an overconvergent series, when it exists, is
+overconvergent. -/
 theorem washnitzerAlgebra.isUnit_toTate_iff (f : washnitzerAlgebra σ K) :
     IsUnit (washnitzerAlgebra.toTate σ K f) ↔ IsUnit f :=
   ⟨fun hf ↦ (isUnit_washnitzerAlgebra_iff f).2 ⟨constantCoeff_ne_zero_of_isUnit_toTate hf,

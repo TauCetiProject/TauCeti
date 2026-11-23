@@ -17,18 +17,26 @@ Applying a ring homomorphism `f : R →+* S` entrywise commutes with taking the 
 matrix, provided `f` is a local homomorphism (`Matrix.map_nonsing_inv`). The inverse
 `A⁻¹ = Ring.inverse (det A) • adjugate A` is built from the determinant and the adjugate, which
 commute with every ring homomorphism (`RingHom.map_det`, `RingHom.map_adjugate`), and a local
-homomorphism commutes with `Ring.inverse` (`map_ringInverse`).
+homomorphism commutes with `Ring.inverse` (`map_ringInverse`). For the same reason a local
+homomorphism preserves and reflects invertibility of square matrices (`Matrix.isUnit_map_iff`).
 
 Locality is needed: `ℤ →+* ℚ` is not local, and the `1 × 1` matrix `2` over `ℤ` has inverse `0`,
 while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a field to a nontrivial
 ring is local, so the statement applies, for instance, to the casts `ℚ → ℝ` and `ℝ → ℂ`: an
-inverse computed over `ℚ` is the inverse over `ℝ`.
+inverse computed over `ℚ` is the inverse over `ℝ`. Consequently the entrywise map `f.mapMatrix` of
+a local homomorphism is again local (`Matrix.isLocalHom_mapMatrix`).
 
 `Matrix.inv_submatrix_mul_row_eq_single` normalizes the rows of a matrix whose columns off a pivot
 set vanish to coordinate vectors, by the inverse of its pivot submatrix.
 
 Two matrices `L` and `M` with the same Gram matrix `L * Lᵀ = M * Mᵀ`, where `det L` is a unit,
 differ by the orthogonal matrix `L⁻¹ * M` (`Matrix.inv_mul_mul_transpose_inv_mul_eq_one`).
+
+Scaling a square matrix by a semifield scalar scales its nonsingular inverse by the inverse scalar
+(`Matrix.nonsing_inv_smul`), including at zero and for singular matrices. Given a ring homomorphism
+`f : R →+* A`, a matrix `w` with right inverse `w_inv`, and an invariance relation
+`v * M.map f * w = M.map f`, the mapped inverse satisfies `w * M⁻¹.map f * v = M⁻¹.map f`
+(`Matrix.mul_map_nonsing_inv_mul`).
 
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
@@ -55,6 +63,70 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   rw [inv_def, inv_def, ← hdet, ← hadj, ← map_ringInverse f]
   ext i j
   simp
+
+/-- A local ring homomorphism applied entrywise preserves and reflects invertibility of a square
+matrix. Every ring homomorphism from a field to a nontrivial ring is local, so this covers the
+casts `ℚ → ℝ` and `ℝ → ℂ`. -/
+@[simp]
+theorem isUnit_map_iff (f : F) [IsLocalHom f] (A : Matrix n n R) :
+    IsUnit (A.map f) ↔ IsUnit A := by
+  have hdet : f A.det = (A.map f).det := RingHom.map_det (f : R →+* S) A
+  rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det, ← hdet, _root_.isUnit_map_iff]
+
+omit [FunLike F R S] [RingHomClass F R S] in
+/-- A local ring homomorphism stays local when applied entrywise to square matrices
+(`Matrix.isUnit_map_iff`). -/
+instance isLocalHom_mapMatrix (f : R →+* S) [IsLocalHom f] :
+    IsLocalHom (f.mapMatrix : Matrix n n R →+* Matrix n n S) where
+  map_nonunit M hM := (isUnit_map_iff f M).mp hM
+
+/-- Scaling a square matrix by a scalar in a semifield scales its nonsingular inverse by the
+inverse scalar (including when the scalar is zero or the matrix is singular). -/
+theorem nonsing_inv_smul {n R α : Type*} [Fintype n] [DecidableEq n]
+    [Semifield R] [CommRing α] [Module R α] [SMulCommClass R α α] [IsScalarTower R α α]
+    (r : R) (A : Matrix n n α) :
+    (r • A)⁻¹ = r⁻¹ • A⁻¹ := by
+  by_cases hr : r = 0
+  · simp [hr]
+  · by_cases hdet : IsUnit A.det
+    · refine inv_eq_left_inv ?_
+      rw [smul_mul_smul_comm, inv_mul_cancel₀ hr, one_smul, nonsing_inv_mul A hdet]
+    · have hrdet : ¬IsUnit (r • A).det := fun hu ↦ hdet <|
+        isUnit_det_of_left_inverse (B := r • (r • A)⁻¹) (by
+          rw [smul_mul, ← Matrix.mul_smul, nonsing_inv_mul (r • A) hu])
+      rw [nonsing_inv_apply_not_isUnit _ hrdet, nonsing_inv_apply_not_isUnit _ hdet, smul_zero]
+
+/-- Invert an invariance equation `v * M.map f * w = M.map f` across a ring homomorphism `f` when
+`w` has a right inverse `w_inv` (handling singular `M` via `M⁻¹ = 0`). -/
+theorem mul_map_nonsing_inv_mul {n R A F : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [Semiring A] [FunLike F R A] [RingHomClass F R A] (f : F)
+    {w w_inv v : Matrix n n A} (hw : w * w_inv = 1) {M : Matrix n n R}
+    (hinv : v * M.map f * w = M.map f) :
+    w * M⁻¹.map f * v = M⁻¹.map f := by
+  by_cases hdet : IsUnit M.det
+  · set MA := M.map f
+    set MiA := M⁻¹.map f
+    have hMMi : MA * MiA = 1 := by
+      rw [← Matrix.map_mul, mul_nonsing_inv M hdet, Matrix.map_one _ (map_zero f) (map_one f)]
+    have hMiM : MiA * MA = 1 := by
+      rw [← Matrix.map_mul, nonsing_inv_mul M hdet, Matrix.map_one _ (map_zero f) (map_one f)]
+    have hvM : v * MA = MA * w_inv := by
+      calc
+        v * MA = v * MA * (w * w_inv) := by rw [hw, Matrix.mul_one]
+        _ = (v * MA * w) * w_inv := by simp only [Matrix.mul_assoc]
+        _ = MA * w_inv := by rw [hinv]
+    have hMiv : MiA * v = w_inv * MiA := by
+      calc
+        MiA * v = MiA * (v * (MA * MiA)) := by rw [hMMi, Matrix.mul_one]
+        _ = (MiA * MA) * w_inv * MiA := by
+          rw [← Matrix.mul_assoc v MA MiA, hvM]; simp only [Matrix.mul_assoc]
+        _ = w_inv * MiA := by rw [hMiM, Matrix.one_mul]
+    calc
+      w * MiA * v = w * (MiA * v) := by rw [Matrix.mul_assoc]
+      _ = (w * w_inv) * MiA := by rw [hMiv, Matrix.mul_assoc]
+      _ = MiA := by rw [hw, Matrix.one_mul]
+  · rw [nonsing_inv_apply_not_isUnit _ hdet, Matrix.map_zero _ (map_zero f),
+      Matrix.mul_zero, Matrix.zero_mul]
 
 /-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
 the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/

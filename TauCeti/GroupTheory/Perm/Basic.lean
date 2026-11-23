@@ -19,6 +19,9 @@ import Mathlib.Tactic.FinCases
 /-!
 # Elementary facts about permutations
 
+`TauCeti.sum_sign_smul_eq_zero_of_mul_swap` cancels a signed sum invariant under a fixed
+transposition, for arbitrary additive commutative groups.
+
 This file records general-purpose facts about permutations: a map intertwining two permutations
 intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
 preserves the complement of a set containing neither of its swapped points, an identity between
@@ -672,6 +675,18 @@ theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β �
   choose τ hτ using hfiber
   refine ⟨Equiv.ofFiberEquiv τ, Equiv.ofFiberEquiv_map τ, fun i => ?_⟩
   exact (hτ (c (a i)) ⟨⟨a i, i, rfl⟩, rfl⟩).trans (hg i)
+
+/-- A signed permutation sum vanishes if its summand is invariant under a fixed transposition.
+This pairs each ordering with its translate by that odd involution. -/
+theorem sum_sign_smul_eq_zero_of_mul_swap {M : Type*} [AddCommGroup M]
+    (F : Perm α → M) (i j : α) (hij : i ≠ j)
+    (hF : ∀ σ, F (σ * swap i j) = F σ) : ∑ σ : Perm α, σ.sign • F σ = 0 := by
+  refine Finset.sum_involution (fun σ _ ↦ σ * swap i j) (fun σ _ ↦ ?_)
+    (fun σ _ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _) (fun σ _ ↦ by simp [mul_assoc])
+  · rw [hF, Perm.sign_mul, Perm.sign_swap hij]
+    simp [Units.smul_def]
+  · rw [Ne, mul_eq_left, swap_eq_one_iff]
+    exact hij
 
 /-- Alternating a signed sum over the permutations of `α` a second time, along any
 sign-preserving map `ext` from the permutations of `β`, only multiplies it by the number of

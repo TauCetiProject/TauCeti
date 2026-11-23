@@ -92,6 +92,7 @@ algebra, which needs the diagram basis developed separately.
 * `TauCeti.TemperleyLieb.linearIndependent_two`, `TauCeti.TemperleyLieb.finrank_two`, and
   `TauCeti.TemperleyLieb.e_ne_zero_two`: linear independence of `![1, e δ 0]`, exact `finrank`
   equal to `2`, and non-degeneracy on two strands.
+* `TauCeti.TemperleyLieb.eq_of_algHom_e_two`: parameter rigidity on two strands.
 
 ## References
 
@@ -423,6 +424,18 @@ theorem smul_left_injective_e_two (i : Fin (2 - 1)) :
   intro r s h
   have h' := congrArg (fun x ↦ twoStrandRep δ x 1 0) h
   simpa using h'
+
+/-- On two strands, an `R`-algebra map sending `e δ 0` to `e δ' 0` forces `δ = δ'`, since
+`e 0 ^ 2 = δ • e 0` and scalar multiples of the two-strand generator are distinct. -/
+theorem eq_of_algHom_e_two {δ' : R}
+    (f : TemperleyLieb R δ 2 →ₐ[R] TemperleyLieb R δ' 2)
+    (hf : f (e δ 0) = e δ' 0) : δ = δ' := by
+  apply smul_left_injective_e_two (R := R) (δ := δ') 0
+  calc
+    δ • e δ' 0 = f (δ • e δ 0) := by rw [map_smul, hf]
+    _ = f (e δ 0 * e δ 0) := by rw [e_mul_self]
+    _ = e δ' 0 * e δ' 0 := by rw [map_mul, hf]
+    _ = δ' • e δ' 0 := e_mul_self 0
 
 end SmallCases
 

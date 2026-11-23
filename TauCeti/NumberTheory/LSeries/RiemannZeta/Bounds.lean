@@ -123,9 +123,10 @@ theorem norm_riemannZeta₀_le_one_add_norm_div_re {s : ℂ} (hs : 0 < s.re) :
   rw [riemannZeta₀_eq_one_sub_mul_integral hs]
   have hint_bound : ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤
       1 / s.re :=
-    norm_integral_mul_cpow_le_of_bound (fun t (ht : 1 < t) ↦ by
+    (norm_integral_mul_cpow_le_of_bound one_pos (fun t (ht : 1 < t) ↦ by
       simpa only [norm_real, Real.norm_eq_abs] using
-        Nat.abs_sub_floor_le (zero_lt_one.trans ht).le) hs
+        Nat.abs_sub_floor_le (zero_lt_one.trans ht).le) hs).trans_eq
+      (by rw [Real.one_rpow, one_mul])
   calc ‖1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖
       ≤ ‖(1 : ℂ)‖ + ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ :=
         (norm_sub_le _ _).trans (by rw [norm_mul])

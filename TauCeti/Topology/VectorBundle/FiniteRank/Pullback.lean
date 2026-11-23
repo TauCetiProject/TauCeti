@@ -23,9 +23,11 @@ presenting bundles in the universe of their base.
 bundle maps, and preserves addition. Identity and composition of base maps give
 strict equalities of functors, not just equality of bundle classes, and `pullbackRankClass`
 gives the induced contravariant action on isomorphism classes of fixed rank. Pullback is also
-strictly compatible with trivial cores, constant maps, Whitney sums, and actual bundles
-(`pullback_trivial`, `pullback_const`, `pullback_whitneySum`, `pullback_ofBundle`) together
-with the Whitney projections, inclusions, pairings, copairings, and direct sums of maps.
+strictly compatible with trivial cores, constant maps, constant intertwining morphisms and
+isomorphisms, Whitney sums, and actual bundles (`pullback_trivial`, `pullback_const`,
+`pullbackMap_constHom`, `pullbackMap_constIso_hom`, `pullbackMap_constIso_inv`,
+`pullback_whitneySum`, `pullback_ofBundle`) together with the Whitney projections, inclusions,
+pairings, copairings, and direct sums of maps.
 The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`
 (and for `ofBundle` by `pullbackOfBundleHomeomorph`), which carries each core chart to
 Mathlib's pulled-back trivialization (`pullbackHomeomorph_localTriv`,
@@ -231,6 +233,50 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
   intro x
   exact (fiberMap_pullbackMap (pullbackMap a g) f x).trans
     ((fiberMap_pullbackMap a g (f x)).trans (fiberMap_pullbackMap a (g.comp f) x).symm)
+
+/-- Pulling back a constant intertwining bundle map gives the constant intertwining bundle map
+with the same coordinate matrix over the new base. -/
+@[simp] theorem pullbackMap_constHom {A D : FiniteRankBundleCore 𝕜 Y}
+    (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
+    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
+    (hT : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
+      T.comp (A.core.coordChange i j y) = (D.core.coordChange i j y).comp T)
+    (f : C(X, Y)) :
+    pullbackMap (constHom hbase T hT) f =
+      constHom (A := A.pullback f) (D := D.pullback f)
+        (fun x => Set.preimage_mono (hbase (f x))) T
+        (fun i j x hi hj => hT (f i) (f j) (f x) hi hj) :=
+  hom_ext fun _ => by simp
+
+/-- Pulling back the forward morphism of `constIso` gives the forward morphism of `constIso`
+on the pulled-back cores. -/
+@[simp] theorem pullbackMap_constIso_hom {A D : FiniteRankBundleCore 𝕜 Y}
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j y) =
+        (D.core.coordChange i j y).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
+    (f : C(X, Y)) :
+    pullbackMap (constIso hbase e he).hom f =
+      (constIso (A := A.pullback f) (D := D.pullback f)
+        (fun x => congrArg (f ⁻¹' ·) (hbase (f x))) e
+        (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).hom :=
+  hom_ext fun _ => by simp
+
+/-- Pulling back the inverse morphism of `constIso` gives the inverse morphism of `constIso`
+on the pulled-back cores. -/
+@[simp] theorem pullbackMap_constIso_inv {A D : FiniteRankBundleCore 𝕜 Y}
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j y) =
+        (D.core.coordChange i j y).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
+    (f : C(X, Y)) :
+    pullbackMap (constIso hbase e he).inv f =
+      (constIso (A := A.pullback f) (D := D.pullback f)
+        (fun x => congrArg (f ⁻¹' ·) (hbase (f x))) e
+        (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).inv :=
+  hom_ext fun _ => by simp
 
 private def pullbackTotalEquiv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (A.pullback f).core.TotalSpace ≃ TotalSpace (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber) where

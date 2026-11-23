@@ -40,6 +40,9 @@ with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of t
 `TopPair` (`TopPair.sigmaCofanIsColimit`), and the ambient map out of it induced by maps of pairs
 is `ContinuousMap.sigma` of their ambient maps (`TopPair.sigmaCofanIsColimit_desc_fst`).  Relative
 singular homology is additive along it.
+Maps `Pᵢ ⟶ X` exhibit `X` as such a coproduct when they induce a homeomorphism `Σ i, Xᵢ ≃ X` and
+every point of the subspace of `X` comes from a subspace `Aᵢ`
+(`TopPair.isColimitCofanOfIsHomeomorph`).
 
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
@@ -127,6 +130,12 @@ lemma ofSubset_map (B : Set X) :
 /-- The embedding of the pair `(X, B)` has range `B`. -/
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
+
+/-- The ambient space of the pair `(T, B)` is `T`, so it is compact when `T` is. It is stated
+for `TopCat.of T`, so that instance search finds it for a concrete space `T`. -/
+instance compactSpace_ofSubset_fst {T : Type u} [TopologicalSpace T] [CompactSpace T]
+    (A : Set (TopCat.of T)) : CompactSpace (ofSubset A).fst :=
+  ‹CompactSpace T›
 
 /-- The embedding of the pair `(X, B)` is an isomorphism when `B` is all of `X`. -/
 lemma isIso_ofSubset_map_of_eq_univ (h : B = Set.univ) : IsIso (ofSubset B).map := by
@@ -507,6 +516,27 @@ lemma sigmaCofanIsColimit_desc_fst_apply {Q : TopPair.{u}} (g : ∀ i, P i ⟶ Q
     Hom.fst (Cofan.IsColimit.desc (sigmaCofanIsColimit P) g) x = Hom.fst (g x.1) x.2 :=
   (rfl)
 
+variable {P} in
+/-- **A recognition principle for coproducts of pairs.** Maps of pairs `f i : Pᵢ ⟶ X` exhibit `X`
+as the coproduct of the `Pᵢ` in `TopPair` when the induced map `Σ i, Xᵢ → X` of ambient spaces is
+a homeomorphism and every point of the subspace of `X` comes from the subspace of some `Pᵢ`. -/
+noncomputable def isColimitCofanOfIsHomeomorph {X : TopPair.{u}} (f : ∀ i, P i ⟶ X)
+    (hf : IsHomeomorph fun x : Σ i, (P i).fst ↦ Hom.fst (f x.1) x.2)
+    (hsnd : ∀ y : X.snd, ∃ (i : ι) (a : (P i).snd), Hom.fst (f i) ((P i).map a) = X.map y) :
+    IsColimit (Cofan.mk X f) :=
+  let hσ := sigmaCofanIsColimit P
+  let φ := hσ.desc (Cofan.mk X f)
+  -- On the summand of `i`, `φ` is `f i`.
+  have hφ (x : Σ i, (P i).fst) : Hom.fst φ x = Hom.fst (f x.1) x.2 :=
+    ConcreteCategory.congr_hom (congrArg Hom.fst (hσ.fac _ ⟨x.1⟩)) x.2
+  have : IsIso (Hom.fst φ) := by
+    rw [TopCat.isIso_iff_isHomeomorph, (funext hφ : ⇑(Hom.fst φ) = _)]
+    exact hf
+  have : IsIso φ := isIso_of_isIso_fst_of_surjective_snd φ fun y ↦ by
+    obtain ⟨i, a, ha⟩ := hsnd y
+    exact ⟨⟨i, a⟩, X.isEmbedding_map.injective ((Hom.w_apply φ _).trans ((hφ _).trans ha))⟩
+  IsColimit.ofIsoColimit hσ (Cofan.ext (asIso φ) fun i ↦ hσ.fac _ ⟨i⟩)
+
 end sigma
 
 section prodLeft
@@ -818,6 +848,27 @@ lemma prodPreimageFstIso_inv_comp_whiskerRight :
     (prodPreimageFstIso X Y A).inv ≫ (TopPair.ofSubset A).map ▷ Y =
       (TopPair.ofSubset (fst X Y ⁻¹' A)).map :=
   (Iso.inv_comp_eq _).2 (prodPreimageFstIso_hom_comp_map X Y A).symm
+
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` followed by the first projection of the pair
+`(X × Y, fst⁻¹(A)) ⟶ (X, A)` is the first projection of `A × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_ofSubsetMap_fst_snd :
+    (prodPreimageFstIso X Y A).hom ≫
+        TopPair.Hom.snd (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _) :
+          TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ TopPair.ofSubset A) =
+      fst (TopPair.ofSubset A).snd Y :=
+  (rfl)
+
+variable (X Y A) in
+/-- The homeomorphism `A × Y ≅ fst⁻¹(A)` followed by the inclusion into `X × Y` and the second
+projection is the second projection of `A × Y`. -/
+@[reassoc]
+lemma prodPreimageFstIso_hom_comp_map_snd :
+    (prodPreimageFstIso X Y A).hom ≫ (TopPair.ofSubset (fst X Y ⁻¹' A)).map ≫
+        (snd X Y : (TopPair.ofSubset (fst X Y ⁻¹' A)).fst ⟶ Y) =
+      snd (TopPair.ofSubset A).snd Y :=
+  (rfl)
 
 end Preimage
 

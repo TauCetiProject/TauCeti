@@ -60,6 +60,11 @@ active, non-active, parametric and constant sections.
 * `TauCeti.GenEq.closedSectionOfBase_eq_iff`: every variable base lies in exactly one closed
   section.
 * `TauCeti.GenEq.degree_eq_zero_iff`: an item is free exactly when its degree is zero.
+* `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_forall_isOpenBoundary`: in a
+  solution, the word of a section whose inner boundaries are all open, for instance of a closed
+  section, is reduced as written.
+* `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_isOpenBoundary`: under a solution,
+  reduced substituted segments meeting at an open boundary glue without cancellation.
 
 ## References
 
@@ -124,6 +129,18 @@ theorem mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numItems} :
 theorem left_mem_baseItems (μ : Fin Ω.numBases) :
     ⟨Ω.left μ, Ω.left_lt_numItems μ⟩ ∈ Ω.baseItems μ :=
   Ω.mem_baseItems.2 ⟨le_rfl, Ω.left_lt_right μ⟩
+
+variable {Ω} in
+/-- The left end-point of an item of a variable base `μ` is a boundary of `μ`. -/
+theorem left_le_castSucc_of_mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
+    (hk : k ∈ Ω.baseItems μ) : Ω.left μ ≤ k.castSucc :=
+  Fin.le_def.2 (Ω.mem_baseItems.1 hk).1
+
+variable {Ω} in
+/-- The right end-point of an item of a variable base `μ` is a boundary of `μ`. -/
+theorem succ_le_right_of_mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
+    (hk : k ∈ Ω.baseItems μ) : k.succ ≤ Ω.right μ :=
+  Fin.le_def.2 (Ω.mem_baseItems.1 hk).2
 
 /-- A base `μ` is contained in a base `ν`, that is `σ(μ) ⊆ σ(ν)`, exactly when
 `α(ν) ≤ α(μ) < β(μ) ≤ β(ν)`. -/
@@ -547,6 +564,78 @@ theorem closedSectionOfBase_eq_iff {μ : Fin Ω.numBases}
 theorem existsUnique_mem_closedSections_and_baseItems_subset (μ : Fin Ω.numBases) :
     ∃! s, s ∈ Ω.closedSections ∧ Ω.baseItems μ ⊆ Ω.sectionItems s.1 s.2 :=
   ⟨_, Ω.closedSectionOfBase_eq_iff.1 rfl, fun _ h ↦ (Ω.closedSectionOfBase_eq_iff.2 h).symm⟩
+
+/-! ### Words of sections in a solution -/
+
+namespace Solution
+
+open FreeGroup (IsReduced substituteVars)
+
+variable {Ω} (U : Ω.Solution)
+
+/-- In a solution, if `U[i, m]` is reduced as written and the boundary `m` crosses a base `μ`,
+then `U[i, m + 1]` is reduced as written: `U[m - 1, m + 1]` lies in `U[μ]`. -/
+private theorem isReduced_substituteVars_segment_succ {i m : ℕ} {μ : Fin Ω.numBases} (him : i < m)
+    (hm : m < Ω.numItems) (hμ₁ : (Ω.left μ : ℕ) < m) (hμ₂ : m < Ω.right μ)
+    (h : IsReduced (substituteVars U.word (Ω.segment i m true))) :
+    IsReduced (substituteVars U.word (Ω.segment i (m + 1) true)) := by
+  have h' := U.isReduced_substituteVars_segment_of_le μ (i := m - 1) (j := m + 1) (by omega)
+    (by omega)
+  rw [← Ω.segment_append (i := i) (j := m - 1) (k := m) (by omega) (by omega),
+    FreeGroup.substituteVars_append] at h
+  rw [← Ω.segment_append (i := m - 1) (j := m) (k := m + 1) (by omega) (by omega),
+    FreeGroup.substituteVars_append] at h'
+  rw [← Ω.segment_append (i := i) (j := m) (k := m + 1) (by omega) (by omega),
+    ← Ω.segment_append (i := i) (j := m - 1) (k := m) (by omega) (by omega)]
+  simp only [FreeGroup.substituteVars_append]
+  exact h.append_overlap h' (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos
+    (by simp; omega)))
+
+/-- In a solution, the word `U[i, j]` of a section whose inner boundaries are all open is reduced
+as written: each inner boundary crosses a base, whose word is reduced. -/
+theorem isReduced_substituteVars_segment_of_forall_isOpenBoundary
+    {i j : Fin (Ω.numItems + 1)} (h : ∀ l, i < l → l < j → Ω.IsOpenBoundary l) :
+    IsReduced (substituteVars U.word (Ω.segment i j true)) := by
+  suffices ∀ m : ℕ, m ≤ j → IsReduced (substituteVars U.word (Ω.segment i m true)) from
+    this j le_rfl
+  intro m hm
+  have hj := j.isLt
+  induction m with
+  | zero => simp [Ω.segment_eq_nil_of_le (Nat.zero_le _)]
+  | succ m ih =>
+    rcases Nat.lt_or_ge (i : ℕ) m with him | him
+    · -- The boundary `m` is open: a base `μ` crosses it.
+      obtain ⟨μ, hμ⟩ :=
+        Ω.isOpenBoundary_iff.1 (h ⟨m, by omega⟩ (Fin.lt_def.2 him) (Fin.lt_def.2 hm))
+      exact U.isReduced_substituteVars_segment_succ him (by omega)
+        (Fin.lt_def.1 (Ω.crosses_iff.1 hμ).1) (Fin.lt_def.1 (Ω.crosses_iff.1 hμ).2) (ih (by omega))
+    · obtain him | him := him.lt_or_eq
+      · simp [Ω.segment_eq_nil_of_le (show m + 1 ≤ i by omega)]
+      · have hseg := Ω.segment_succ ⟨m, by omega⟩ true
+        simp only at hseg
+        rw [← him, hseg, FreeGroup.substituteVars_singleton_inl]
+        exact U.isReduced_word _
+
+/-- If a boundary `j` is open and the substituted segments `U[i, j] ^ ±1` and `U[j, k] ^ ±1`
+(with the same sign `s`) of a solution `U` are reduced, then `U[i, k] ^ ±1` is reduced: some
+variable base crosses `j`, preventing cancellation across the junction. -/
+theorem isReduced_substituteVars_segment_of_isOpenBoundary {i k : ℕ}
+    {j : Fin (Ω.numItems + 1)} {s : Bool} (hj : Ω.IsOpenBoundary j)
+    (h₁ : IsReduced (substituteVars U.word (Ω.segment i j s)))
+    (h₂ : IsReduced (substituteVars U.word (Ω.segment j k s))) :
+    IsReduced (substituteVars U.word (Ω.segment i k s)) := by
+  rw [Ω.isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  obtain ⟨β, hβ⟩ := Ω.isOpenBoundary_iff.1 hj
+  obtain ⟨hβ₁, hβ₂⟩ := Ω.crosses_iff.1 hβ
+  have hstep := Ω.isReduced_substituteVars_segment_of_overlap h₁
+    (U.isReduced_substituteVars_segment β)
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := j.is_le; omega)))
+  exact Ω.isReduced_substituteVars_segment_of_overlap hstep h₂
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := (Ω.right β).is_le; omega)))
+
+end Solution
 
 end GenEq
 

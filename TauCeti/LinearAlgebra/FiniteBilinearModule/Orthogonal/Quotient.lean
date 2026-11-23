@@ -37,7 +37,7 @@ Lagrangian.  Read through the discriminant form of an integral lattice, that las
 the module-level form of "an overlattice glued along a Lagrangian subgroup is unimodular".
 
 The quadratic refinement `TauCeti.FiniteQuadraticModule.orthogonalQuotient` of
-`TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic` carries a quadratic map on the same
+`TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic` carries a quadratic map on the same
 quotient group, and its underlying bilinear module is definitionally the construction of this
 file; `TauCeti.FiniteQuadraticModule.orthogonalQuotient_toFiniteBilinearModule` records that
 identification.
