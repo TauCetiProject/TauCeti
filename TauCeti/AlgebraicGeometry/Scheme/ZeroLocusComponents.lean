@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 
 /-!
 # Irreducible components of the zero locus of a global function

@@ -16,7 +16,8 @@ This file supplements `PartialEquiv.image_source_inter_eq'` and `PartialEquiv.im
 compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate transitions
 `e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space). It also
 shows that if `e` intertwines a self-map of its source with a map `A`, then `e.symm` intertwines
-them in the other direction.
+them in the other direction, and that two partial equivalences which agree on a subset of both
+sources differ there by their comparison `e₂⁻¹ ∘ e₁`, which fixes that subset pointwise.
 
 ## Main declarations
 
@@ -35,6 +36,10 @@ them in the other direction.
   `f x`.
 * `PartialEquiv.symm_map_of_intertwines`: if `e` intertwines a self-map `f` of its source with a
   map `A`, then `A` preserves the target and `e.symm` intertwines `A` with `f`.
+* `PartialEquiv.subset_trans_symm_source`, `PartialEquiv.trans_symm_apply_eq_self` and
+  `PartialEquiv.apply_trans_symm_apply`: if `e₁` and `e₂` agree on a subset `S` of both sources,
+  the comparison `θ = e₂⁻¹ ∘ e₁` is defined on `S`, fixes its points, and satisfies `e₂ ∘ θ = e₁`
+  on its whole source.
 -/
 
 public section
@@ -121,5 +126,37 @@ theorem symm_map_of_intertwines (e : PartialEquiv α β) {f : α → α} {A : β
   rw [e.right_inv hz] at hfe
   rw [← hfe]
   exact ⟨e.map_source hfs, e.left_inv hfs⟩
+
+/-! ### Comparing two partial equivalences which agree at a point -/
+
+section Comparison
+
+variable {e₁ e₂ : PartialEquiv α β} {x : α}
+
+/-- If `e₁` and `e₂` agree at a point `x` of both sources, then `x` lies in the source of the
+comparison `e₂⁻¹ ∘ e₁`. -/
+theorem mem_trans_symm_source (h₁ : x ∈ e₁.source) (h₂ : x ∈ e₂.source) (h : e₁ x = e₂ x) :
+    x ∈ (e₁.trans e₂.symm).source :=
+  ⟨h₁, by rw [Set.mem_preimage, symm_source, symm_symm, h]; exact e₂.map_source h₂⟩
+
+/-- If `e₁` and `e₂` agree on a subset `S` of both sources, then `S` lies in the source of the
+comparison `e₂⁻¹ ∘ e₁`. -/
+theorem subset_trans_symm_source {S : Set α} (h₁ : S ⊆ e₁.source) (h₂ : S ⊆ e₂.source)
+    (h : Set.EqOn e₁ e₂ S) : S ⊆ (e₁.trans e₂.symm).source :=
+  fun _ hx ↦ mem_trans_symm_source (h₁ hx) (h₂ hx) (h hx)
+
+/-- If `e₁` and `e₂` agree at a point `x` of the source of `e₂`, the comparison `e₂⁻¹ ∘ e₁`
+fixes `x`. -/
+theorem trans_symm_apply_eq_self (h₂ : x ∈ e₂.source) (h : e₁ x = e₂ x) :
+    e₁.trans e₂.symm x = x := by
+  rw [coe_trans, Function.comp_apply, h]
+  exact e₂.left_inv h₂
+
+/-- On its source, the comparison `θ = e₂⁻¹ ∘ e₁` satisfies `e₂ ∘ θ = e₁`. -/
+theorem apply_trans_symm_apply (hx : x ∈ (e₁.trans e₂.symm).source) :
+    e₂ (e₁.trans e₂.symm x) = e₁ x :=
+  e₂.right_inv hx.2
+
+end Comparison
 
 end PartialEquiv

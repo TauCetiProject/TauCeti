@@ -62,6 +62,8 @@ The continuity of the gauge action on `A_m^k` and the resulting Hausdorff quotie
   determined by its `L²` function (`TauCeti.Vortex.SobolevFieldSpace.subRef_eq_iff`).
 * `TauCeti.Vortex.SobolevFieldSpace.toFramedFieldSpace`: a continuous field as an element of
   `A_m^s`.
+* `TauCeti.Vortex.SobolevFieldSpace.congrOrder`: the identity of fields between `A_m^s` and
+  `A_m^s'` for equal orders `s = s'`, as a homeomorphism.
 
 ## References
 
@@ -250,6 +252,28 @@ theorem tendsto_iff {ι : Type*} {l : Filter ι} {xs : ι → SobolevFieldSpace 
 /-- For `s ≥ 0`, the topology of `A_m^s` on its continuous fields is Hausdorff. -/
 theorem t2Space (h : 0 ≤ s) : T2Space (SobolevFieldSpace f m s) :=
   (isEmbedding_subRef h).t2Space
+
+/-- **Equal orders give the same fields.** For `s = s'`, the continuous fields of `A_m^s` and of
+`A_m^s'` are the same functions, and this is the identity on them as a homeomorphism. It
+identifies, for instance, the spaces of order `↑(k + 1)` and `↑k + 1`, whose orders are equal but
+not definitionally. -/
+def congrOrder {s' : ℝ} (h : s = s') : SobolevFieldSpace f m s ≃ₜ SobolevFieldSpace f m s' where
+  toFun x := ⟨x, h ▸ x.mem_framedFieldSpace, x.continuous⟩
+  invFun x := ⟨x, h.symm ▸ x.mem_framedFieldSpace, x.continuous⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by subst h; exact continuous_id
+  continuous_invFun := by subst h; exact continuous_id
+
+@[simp]
+theorem coe_congrOrder {s' : ℝ} (h : s = s') (x : SobolevFieldSpace f m s) :
+    ⇑(congrOrder h x) = ⇑x :=
+  (rfl)
+
+@[simp]
+theorem congrOrder_symm {s' : ℝ} (h : s = s') :
+    (congrOrder (f := f) (m := m) h).symm = congrOrder h.symm :=
+  (rfl)
 
 /-- **Convergence in `A_m^s`, `s > 1`, implies uniform convergence of the fields.** -/
 theorem tendstoUniformly_of_tendsto (hs : 1 < s) {ι : Type*} {l : Filter ι}
