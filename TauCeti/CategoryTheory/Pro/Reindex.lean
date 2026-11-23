@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Pro.Basic
-public import Mathlib.CategoryTheory.Limits.Final
 
 /-!
 # Reindexing presented pro-objects
@@ -104,13 +103,11 @@ theorem reindexNatTrans_app (G : K ⥤ I) (F : I ⥤ C) :
 of index categories gives an isomorphic pro-object: the reindexing comparison is an
 isomorphism. -/
 instance isIso_reindex (G : K ⥤ I) [G.Initial] (F : I ⥤ C) : IsIso (reindex G F) := by
-  -- `reindex G F` underlies a morphism from the restricted presentation cone of `F`, which is
-  -- a limit cone since `G` is initial, to the presentation cone of `G ⋙ F`.
-  let f : (mkCone F).whisker G ⟶ mkCone (G ⋙ F) := ⟨reindex G F, reindex_π G F⟩
-  have := IsLimit.hom_isIso
-    ((Functor.Initial.isLimitWhiskerEquiv G (mkCone F)).symm (mkConeIsLimit F))
-    (mkConeIsLimit (G ⋙ F)) f
-  exact inferInstanceAs (IsIso ((Cone.forget _).map f))
+  -- `reindex G F` is the lift of the restricted presentation cone of `F`, which is a limit
+  -- cone since `G` is initial, into the presentation cone of `G ⋙ F`.
+  rw [(mkConeIsLimit (G ⋙ F)).uniq ((mkCone F).whisker G) _ (reindex_π G F)]
+  exact (IsLimit.nonempty_isLimit_iff_isIso_lift _).mp
+    ⟨(Functor.Initial.isLimitWhiskerEquiv G (mkCone F)).symm (mkConeIsLimit F)⟩
 
 /-- Along an initial functor, the reindexing comparisons form a natural isomorphism. -/
 instance isIso_reindexNatTrans (G : K ⥤ I) [G.Initial] :

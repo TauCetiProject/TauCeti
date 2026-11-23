@@ -26,7 +26,7 @@ inclusion, and mapped to a chosen greatest element.
 * `TauCeti.FinsetWithGreatest α`: the finite subsets of `α` with a greatest element, ordered
   by inclusion.
 * `TauCeti.FinsetWithGreatest.greatest`: a chosen greatest element.
-* `TauCeti.FinsetWithGreatest.monotone_greatest` and
+* `TauCeti.FinsetWithGreatest.greatest_monotone` and
   `TauCeti.FinsetWithGreatest.isCofinal_range_greatest`: the chosen greatest element is a
   monotone map with cofinal range.
 * `TauCeti.FinsetWithGreatest.finite_Iic`: the order is cofinite.
@@ -45,9 +45,13 @@ noncomputable section
 
 namespace TauCeti
 
-variable (α : Type*) [Preorder α]
+variable (α : Type*)
 
-/-- The finite subsets of a preorder `α` that have a greatest element. They are ordered by
+section LE
+
+variable [LE α]
+
+/-- The finite subsets of an ordered type `α` that have a greatest element. They are ordered by
 inclusion; when `α` is directed they form a cofinite directed set refining `α`. -/
 @[ext]
 structure FinsetWithGreatest where
@@ -78,6 +82,7 @@ theorem isGreatest_greatest (s : FinsetWithGreatest α) :
     IsGreatest (s.toFinset : Set α) s.greatest :=
   s.exists_isGreatest.choose_spec
 
+@[simp]
 theorem greatest_mem (s : FinsetWithGreatest α) : s.greatest ∈ s.toFinset :=
   s.isGreatest_greatest.1
 
@@ -85,8 +90,22 @@ theorem le_greatest {s : FinsetWithGreatest α} {a : α} (ha : a ∈ s.toFinset)
     a ≤ s.greatest :=
   s.isGreatest_greatest.2 ha
 
+/-- Each finite subset with a greatest element contains only finitely many others: the order
+is cofinite. -/
+theorem finite_Iic (s : FinsetWithGreatest α) : (Set.Iic s).Finite :=
+  (s.toFinset.powerset.finite_toSet.preimage toFinset_injective.injOn).subset
+    fun _ ht ↦ Finset.mem_coe.2 (Finset.mem_powerset.2 ht)
+
+end FinsetWithGreatest
+
+end LE
+
+namespace FinsetWithGreatest
+
+variable {α} [Preorder α]
+
 /-- Enlarging a finite subset can only increase its chosen greatest element. -/
-theorem monotone_greatest : Monotone (greatest : FinsetWithGreatest α → α) :=
+theorem greatest_monotone : Monotone (greatest : FinsetWithGreatest α → α) :=
   fun _ t hst ↦ le_greatest (s := t) (hst (greatest_mem _))
 
 /-- The singleton `{a}`, whose greatest element is `a`. -/
@@ -104,12 +123,6 @@ theorem greatest_singleton (a : α) : (singleton a).greatest = a :=
 of `greatest` is cofinal. -/
 theorem isCofinal_range_greatest : IsCofinal (Set.range (greatest : FinsetWithGreatest α → α)) :=
   fun a ↦ ⟨a, ⟨singleton a, greatest_singleton a⟩, le_rfl⟩
-
-/-- Each finite subset with a greatest element contains only finitely many others: the order
-is cofinite. -/
-theorem finite_Iic (s : FinsetWithGreatest α) : (Set.Iic s).Finite :=
-  (s.toFinset.powerset.finite_toSet.preimage toFinset_injective.injOn).subset
-    fun _ ht ↦ Finset.mem_coe.2 (Finset.mem_powerset.2 ht)
 
 instance [Nonempty α] : Nonempty (FinsetWithGreatest α) :=
   ⟨singleton (Classical.arbitrary α)⟩

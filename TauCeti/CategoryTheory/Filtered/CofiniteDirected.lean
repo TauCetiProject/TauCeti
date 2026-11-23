@@ -51,10 +51,10 @@ theorem IsFiltered.exists_cofinite_directed (J : Type w) [SmallCategory J] [IsFi
     ∃ (α : Type w) (_ : PartialOrder α) (_ : IsDirected α (· ≤ ·)) (_ : Nonempty α)
       (_ : ∀ a : α, (Set.Iic a).Finite) (F : α ⥤ J), F.Final := by
   obtain ⟨β, _, _, _, F, _⟩ := CategoryTheory.IsFiltered.exists_directed J
-  have := (FinsetWithGreatest.monotone_greatest (α := β)).final_functor_iff.2 fun b ↦
-    ⟨FinsetWithGreatest.singleton b, (FinsetWithGreatest.greatest_singleton b).ge⟩
+  have := (FinsetWithGreatest.greatest_monotone (α := β)).final_functor_iff.2 fun b ↦
+    Set.exists_range_iff.mp (FinsetWithGreatest.isCofinal_range_greatest b)
   exact ⟨FinsetWithGreatest β, inferInstance, inferInstance, inferInstance,
-    FinsetWithGreatest.finite_Iic, FinsetWithGreatest.monotone_greatest.functor ⋙ F,
+    FinsetWithGreatest.finite_Iic, FinsetWithGreatest.greatest_monotone.functor ⋙ F,
     inferInstance⟩
 
 /-- **Cofinite directed presentations, cofiltered form.** A small cofiltered category receives
