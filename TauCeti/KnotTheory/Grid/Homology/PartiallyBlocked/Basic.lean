@@ -165,6 +165,16 @@ theorem simplyBlockedSpecialization_eq_zero_iff {i : Fin n} {c : GridChainMinus 
     killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange, Finset.coe_singleton,
     Set.image_singleton, Ideal.mem_span_singleton]
 
+variable (R) in
+/-- The kernel of the linear specialization at `V_i = 0` consists of the chains blocked for the
+single column `i`. -/
+theorem ker_simplyBlockedSpecializationLinearMap (i : Fin n) :
+    LinearMap.ker (simplyBlockedSpecializationLinearMap (n := n) R i) =
+      (blockedChains R {i}).restrictScalars R := by
+  ext c
+  rw [LinearMap.mem_ker, Submodule.restrictScalars_mem, simplyBlockedSpecializationLinearMap_apply,
+    simplyBlockedSpecialization_eq_zero_iff]
+
 /-- A chain is blocked for every column exactly when its constant coefficients vanish. -/
 theorem mapRange_constantCoeff_eq_zero_iff {c : GridChainMinus R n} :
     c.mapRange constantCoeff (map_zero _) = 0 ↔ c ∈ blockedChains R Finset.univ := by
@@ -302,13 +312,6 @@ theorem IsKnot.finrank_partiallyBlockedHomology_insert_eq_two_pow_mul {G : GridD
 
 /-! ### Simply blocked and fully blocked homology -/
 
-private theorem ker_simplyBlockedSpecializationLinearMap (i : Fin n) :
-    LinearMap.ker (simplyBlockedSpecializationLinearMap (n := n) F i) =
-      (blockedChains F {i}).restrictScalars F := by
-  ext c
-  rw [LinearMap.mem_ker, Submodule.restrictScalars_mem, simplyBlockedSpecializationLinearMap_apply,
-    simplyBlockedSpecialization_eq_zero_iff]
-
 /-- **Blocking one column gives simply blocked grid homology.** For a knot grid, the partially
 blocked homology of a single column `i` is the simply blocked grid homology `G-hat`, viewed over
 `𝔽₂`. -/
@@ -322,7 +325,7 @@ noncomputable def IsKnot.partiallyBlockedHomologySingletonEquiv {G : GridDiagram
     (G.blockedChains_le_comap_unblockedDifferential {i})
     (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero F i)
     (simplyBlockedSpecializationLinearMap F i) (simplyBlockedSpecializationLinearMap_surjective F i)
-    (ker_simplyBlockedSpecializationLinearMap i)
+    (ker_simplyBlockedSpecializationLinearMap F i)
     (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential F i)).trans
     (G.oneVariableSpecializationHomologyEquivLinearMapHomology F i).symm
 
@@ -347,7 +350,7 @@ theorem IsKnot.partiallyBlockedHomologySingletonEquiv_mk {G : GridDiagram n} (hG
       (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero F i)
       (simplyBlockedSpecializationLinearMap F i)
       (simplyBlockedSpecializationLinearMap_surjective F i)
-      (ker_simplyBlockedSpecializationLinearMap i)
+      (ker_simplyBlockedSpecializationLinearMap F i)
       (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential F i) c hc,
     oneVariableSpecializationHomologyEquivLinearMapHomology_symm_mk]
   exact congrArg (G.oneVariableSpecializationHomologyClass F i)

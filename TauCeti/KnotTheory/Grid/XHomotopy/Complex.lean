@@ -206,7 +206,8 @@ theorem IsKnot.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp {
     G.unblockedDifferential_comp_componentPathXHomotopy_add_componentPathXHomotopy_comp R c
       (hG.traversalIndex c c')
 
-/-- On a cycle `a`, the chosen homotopy has boundary `∂⁻(H a) = (V_c + V_c') a`. -/
+/-- On a cycle `a`, the `X`-marking homotopy `H = hG.XSmulHomotopy R c c'` has boundary
+`∂⁻(H a) = (V_c + V_c') a`. -/
 theorem IsKnot.unblockedDifferential_XSmulHomotopy_of_eq_zero {G : GridDiagram n}
     (hG : G.IsKnot) (c c' : Fin n) {a : GridChainMinus R n}
     (ha : G.unblockedDifferential R a = 0) :
@@ -216,8 +217,8 @@ theorem IsKnot.unblockedDifferential_XSmulHomotopy_of_eq_zero {G : GridDiagram n
   simpa only [LinearMap.add_apply, LinearMap.comp_apply, ha, map_zero, add_zero,
     LinearMap.smul_apply, LinearMap.id_apply] using h
 
-/-- If `∂⁻ x = V_c a`, then `∂⁻(x + H a) = V_c' a` for the chosen homotopy `H` between the
-actions of `V_c` and `V_c'`. -/
+/-- If `∂⁻ x = V_c a`, then `∂⁻(x + H a) = V_c' a` for the `X`-marking homotopy
+`H = hG.XSmulHomotopy R c c'` between the actions of `V_c` and `V_c'`. -/
 theorem IsKnot.unblockedDifferential_add_XSmulHomotopy_left {G : GridDiagram n} (hG : G.IsKnot)
     (c c' : Fin n) (x a : GridChainMinus R n)
     (hx : G.unblockedDifferential R x = (MvPolynomial.X c : MvPolynomial (Fin n) R) • a) :
@@ -227,8 +228,8 @@ theorem IsKnot.unblockedDifferential_add_XSmulHomotopy_left {G : GridDiagram n} 
     (G.unblockedDifferential_eq_zero_of_eq_X_smul R hx), add_smul, ← add_assoc, ← add_smul,
     CharTwo.add_self_eq_zero, zero_smul, zero_add]
 
-/-- If `∂⁻ x = V_c' a`, then `∂⁻(x + H a) = V_c a` for the chosen homotopy `H` between the
-actions of `V_c` and `V_c'`. -/
+/-- If `∂⁻ x = V_c' a`, then `∂⁻(x + H a) = V_c a` for the `X`-marking homotopy
+`H = hG.XSmulHomotopy R c c'` between the actions of `V_c` and `V_c'`. -/
 theorem IsKnot.unblockedDifferential_add_XSmulHomotopy_right {G : GridDiagram n} (hG : G.IsKnot)
     (c c' : Fin n) (x a : GridChainMinus R n)
     (hx : G.unblockedDifferential R x = (MvPolynomial.X c' : MvPolynomial (Fin n) R) • a) :
