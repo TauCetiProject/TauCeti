@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.JetOperator
 public import TauCeti.Analysis.Sobolev.Conformal
 import TauCeti.Algebra.Ring.Periodic
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Transfer between the cylinder and the pair of pants along an end chart
@@ -696,7 +696,11 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
     jetOperator (volume.restrict thricePuncturedSphereReal) M (endTransfer q β f) =
       endChartLp q (jetOperator StripSobolev.stripMeasure
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
-  have hMφ := memLp_top_comp_comp (quasiMeasurePreserving_positiveEndChart q) hM hN
+  have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
+      StripSobolev.stripMeasure :=
+    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).of_bilin
+      (fun A B ↦ A.comp B) 1 hN (ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).continuous₂
+      (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
   refine Lp.ext ?_
   filter_upwards [coeFn_jetOperator hM (endTransfer q β f), coeFn_endTransfer q hN f,
     coeFn_endChartLp q (jetOperator StripSobolev.stripMeasure
