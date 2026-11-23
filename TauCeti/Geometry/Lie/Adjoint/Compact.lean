@@ -23,6 +23,8 @@ nonpositive, with diagonal zero exactly on the centre. Connectedness is not requ
   derived ideal.
 * `TauCeti.Lie.isCompl_center_derivedSeries_one_of_compactSpace`: the centre and derived ideal
   complement one another.
+* `TauCeti.Lie.derivedSeries_one_eq_top_iff_center_eq_bot`: the Lie algebra is perfect exactly
+  when its centre is trivial.
 * `TauCeti.Lie.isSemisimple_derivedSeries_one_of_compactSpace`: the derived algebra is semisimple.
 * `TauCeti.Lie.hasCentralRadical_of_compactSpace`: the radical equals the centre.
 * `LeftInvariantDerivation.killingForm_self_nonpos`: the Killing form is nonpositive.
@@ -82,6 +84,16 @@ theorem isCompl_center_derivedSeries_one_of_compactSpace :
   obtain ⟨B, hinv, hsymm, hpos, _⟩ :=
     exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
   exact B.isCompl_center_derivedSeries_one_of_anisotropic hsymm.isRefl hpos.anisotropic hinv
+
+/-- The Lie algebra of a compact finite-dimensional real smooth Lie group is perfect exactly when
+its centre is trivial. -/
+theorem derivedSeries_one_eq_top_iff_center_eq_bot :
+    derivedSeries ℝ (LeftInvariantDerivation I G) 1 = ⊤ ↔
+      center ℝ (LeftInvariantDerivation I G) = ⊥ := by
+  have h := isCompl_center_derivedSeries_one_of_compactSpace (I := I) (G := G)
+  refine ⟨fun hd ↦ ?_, fun hc ↦ eq_top_of_bot_isCompl (hc ▸ h)⟩
+  have hinf := h.inf_eq_bot
+  rwa [hd, inf_top_eq] at hinf
 
 /-- The derived algebra of the Lie algebra of a compact finite-dimensional real smooth
 Lie group is semisimple. -/
