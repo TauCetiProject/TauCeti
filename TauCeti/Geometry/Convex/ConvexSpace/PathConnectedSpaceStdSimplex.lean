@@ -16,6 +16,11 @@ Values of Mathlib's homeomorphism `Convexity.StdSimplex.homeomorphI` between the
 the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
 (`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`).
 
+Through this parametrization, a pair of points `f 0` and `f 1` of `M` gives the path
+`Convexity.StdSimplex.edgePath f` in the standard simplex on `M` from the vertex `f 0` to the
+vertex `f 1`, the image of the standard `1`-simplex under `StdSimplex.map f`; for a face map `f`
+of the standard `2`-simplex, this is the path along one of its edges.
+
 More generally, the weight of a vertex of any real standard simplex is a continuous map to the
 unit interval (`weightI`), and so is the sum of the weights of the last two vertices of the
 standard `2`-simplex (`weightsOneAddTwoI`).
@@ -41,6 +46,22 @@ lemma homeomorphI_map_succAbove_zero (w : StdSimplex ℝ (Fin 1)) :
 lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
     homeomorphI (map (Fin.succAbove (1 : Fin 2)) w) = 0 := by
   simp [Subsingleton.elim w (single 0)]
+
+/-- The path in the standard simplex on `M` from the vertex `f 0` to the vertex `f 1`: the
+standard `1`-simplex, parametrized by the unit interval through `homeomorphI`, followed by
+`StdSimplex.map f`. For a face map `f = i.succAbove` of the standard `2`-simplex, it runs along
+the `i`-th edge. -/
+noncomputable def edgePath {M : Type*} (f : Fin 2 → M) :
+    Path (single (R := ℝ) (f 0)) (single (f 1)) where
+  toFun t := map f (homeomorphI.symm t)
+  continuous_toFun := (continuous_map ℝ f).comp homeomorphI.symm.continuous
+  source' := by rw [homeomorphI_symm_zero, map_single]
+  target' := by rw [homeomorphI_symm_one, map_single]
+
+@[simp]
+lemma edgePath_apply {M : Type*} (f : Fin 2 → M) (t : unitInterval) :
+    edgePath f t = map f (homeomorphI.symm t) :=
+  (rfl)
 
 /-- The weight of the vertex `i` of a real standard simplex, as a point of the unit interval. -/
 noncomputable def weightI {ι : Type*} (i : ι) : C(StdSimplex ℝ ι, unitInterval) :=
