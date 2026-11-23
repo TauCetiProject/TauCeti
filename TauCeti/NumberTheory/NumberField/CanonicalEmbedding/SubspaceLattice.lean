@@ -13,8 +13,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Rat
 public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
-import Mathlib.Topology.Algebra.Module.Equiv.Submodule
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Pi
@@ -232,77 +231,6 @@ theorem mulMixedSubmodule_mul (W : Submodule K (ι → K)) (c₁ c₂ : mixedSpa
     exact LinearMap.restrict_comp _ _ _
   exact congrArg (· x) h
 
-open Classical in
-private theorem continuous_mulMixedAmbient (c : mixedSpace K) :
-    Continuous (mulMixedAmbient (ι := ι) c) := by
-  let e : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) ≃L[ℝ] (ι → mixedSpace K) :=
-    (PiLp.continuousLinearEquiv 2 ℝ _).trans
-      (ContinuousLinearEquiv.piCongrRight fun _ ↦ euclidean.toMixed K)
-  have h1 : (⇑(mulMixedAmbient (ι := ι) c)) = fun x ↦ e.symm ((fun _ ↦ c) * e x) := by
-    ext x i
-    simp [e]
-  rw [h1]
-  exact e.symm.continuous.comp ((continuous_const.mul continuous_id).comp e.continuous)
-
-/-- Coordinatewise multiplication by a unit `c : mixedSpace K` as a continuous linear equivalence
-on `W.euclideanSpan`. -/
-def mulMixedSubmoduleEquiv (W : Submodule K (ι → K)) {c : mixedSpace K} (hc : IsUnit c) :
-    W.euclideanSpan ≃L[ℝ] W.euclideanSpan :=
-  let f : LinearMap.GeneralLinearGroup ℝ (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :=
-    Units.map (mulMixedAmbient (K := K) (ι := ι) : mixedSpace K →* Module.End ℝ _) hc.unit
-  have hf_to : ⇑f.toLinearEquiv = mulMixedAmbient c := by
-    ext x
-    simp [f, LinearMap.GeneralLinearGroup.coe_toLinearEquiv, Units.coe_map]
-  have hf_inv :
-      ⇑f.toLinearEquiv.symm =
-        mulMixedAmbient ((hc.unit⁻¹ : (mixedSpace K)ˣ) : mixedSpace K) := by
-    ext x
-    rw [← LinearEquiv.coe_inv, ← LinearMap.GeneralLinearGroup.toLinearEquiv_inv,
-      LinearMap.GeneralLinearGroup.coe_toLinearEquiv]
-    simp [f]
-  let eAmb : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) ≃L[ℝ]
-      (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) :=
-    { toLinearEquiv := f.toLinearEquiv
-      continuous_toFun := by
-        rw [LinearEquiv.toFun_eq_coe, hf_to]
-        exact continuous_mulMixedAmbient c
-      continuous_invFun := by
-        rw [LinearEquiv.invFun_eq_symm, hf_inv]
-        exact continuous_mulMixedAmbient ((hc.unit⁻¹ : (mixedSpace K)ˣ) : mixedSpace K) }
-  have he_to (x) : (eAmb : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ] _) x =
-      mulMixedAmbient c x :=
-    congrFun hf_to x
-  have he_inv (x) :
-      eAmb.symm x = mulMixedAmbient ((hc.unit⁻¹ : (mixedSpace K)ˣ) : mixedSpace K) x :=
-    congrFun hf_inv x
-  eAmb.ofSubmodules W.euclideanSpan W.euclideanSpan <| by
-    refine le_antisymm
-      (Submodule.map_le_iff_le_comap.2 fun x hx ↦ ?_)
-      fun x hx ↦ ⟨eAmb.symm x, ?_, eAmb.apply_symm_apply x⟩
-    · rw [Submodule.mem_comap, he_to]
-      exact W.mulMixedAmbient_mem_euclideanSpan c hx
-    · rw [he_inv]
-      exact W.mulMixedAmbient_mem_euclideanSpan _ hx
-
-/-- Applying `W.mulMixedSubmoduleEquiv hc` agrees with `W.mulMixedSubmodule c`. -/
-@[simp]
-theorem mulMixedSubmoduleEquiv_apply (W : Submodule K (ι → K)) {c : mixedSpace K} (hc : IsUnit c)
-    (x : W.euclideanSpan) :
-    W.mulMixedSubmoduleEquiv hc x = W.mulMixedSubmodule c x := by
-  apply Subtype.ext
-  rw [mulMixedSubmoduleEquiv, ContinuousLinearEquiv.ofSubmodules_apply]
-  simp only [ContinuousLinearEquiv.coe_mk, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
-    Units.coe_map, MonoidHom.coe_ofClass, hc.unit_spec, coe_mulMixedSubmodule]
-
-/-- The underlying `ℝ`-linear map of `W.mulMixedSubmoduleEquiv hc` is `W.mulMixedSubmodule c`. -/
-@[simp]
-theorem toLinearMap_mulMixedSubmoduleEquiv (W : Submodule K (ι → K)) {c : mixedSpace K}
-    (hc : IsUnit c) :
-    (W.mulMixedSubmoduleEquiv hc : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
-      W.mulMixedSubmodule c := by
-  ext1 x
-  exact W.mulMixedSubmoduleEquiv_apply hc x
-
 end MulMixedSubmodule
 
 open Classical in
@@ -441,25 +369,6 @@ theorem mixedEmbedding_integerPointsEquivIntegerLattice_symm_apply (W : Submodul
   conv_rhs => rw [← W.integerPointsEquivIntegerLattice.apply_symm_apply w,
     coe_integerPointsEquivIntegerLattice_apply]
   simp
-
-open Classical in
-/-- For any unit `c : mixedSpace K`, `W.integerPoints` is `ℤ`-linearly equivalent to the scaled
-lattice `ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap`. -/
-def integerPointsEquivComapMulMixed [Fintype ι] (W : Submodule K (ι → K)) {c : mixedSpace K}
-    (hc : IsUnit c) :
-    W.integerPoints ≃ₗ[ℤ]
-      ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap :=
-  W.integerPointsEquivIntegerLattice.trans
-    (ZLattice.comap_equiv ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearEquiv)
-
-/-- Forward evaluation of `W.integerPointsEquivComapMulMixed hc` in `W.euclideanSpan`. -/
-theorem coe_integerPointsEquivComapMulMixed_apply [Fintype ι] (W : Submodule K (ι → K))
-    {c : mixedSpace K} (hc : IsUnit c) (z : W.integerPoints) :
-    (W.integerPointsEquivComapMulMixed hc z : W.euclideanSpan) =
-      W.mulMixedSubmodule c (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) := by
-  rw [integerPointsEquivComapMulMixed, LinearEquiv.trans_apply, ZLattice.comap_equiv_apply,
-    ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm,
-    ContinuousLinearEquiv.coe_toLinearEquiv, W.mulMixedSubmoduleEquiv_apply hc]
 
 end Equiv
 
@@ -800,6 +709,56 @@ theorem det_mulMixedSubmodule [Finite ι] (W : Submodule K (ι → K)) (c : mixe
       (mulMixedSubmodule_comp_piMixedEquivEuclideanSpan W c)
   rw [hconj, LinearMap.det_conj, LinearMap.det_piMap]
   simp [Algebra.norm_apply]
+
+open Classical in
+/-- Coordinatewise multiplication by a unit `c : mixedSpace K` as a continuous linear equivalence
+on `W.euclideanSpan`. -/
+def mulMixedSubmoduleEquiv [Finite ι] (W : Submodule K (ι → K)) {c : mixedSpace K}
+    (hc : IsUnit c) :
+    W.euclideanSpan ≃L[ℝ] W.euclideanSpan :=
+  letI : Fintype ι := Fintype.ofFinite ι
+  haveI : FiniteDimensional ℝ W.euclideanSpan :=
+    Module.Finite.of_basis
+      (euclideanSpanBasisOfPseudoBasis (Module.finBasis K W) fun _ ↦ top_ne_bot)
+  have hdet : LinearMap.det (W.mulMixedSubmodule c) ≠ 0 := by
+    rw [W.det_mulMixedSubmodule]
+    exact pow_ne_zero _ (hc.map (Algebra.norm ℝ)).ne_zero
+  ((W.mulMixedSubmodule c).equivOfDetNeZero hdet).toContinuousLinearEquiv
+
+/-- Applying `W.mulMixedSubmoduleEquiv hc` agrees with `W.mulMixedSubmodule c`. -/
+@[simp]
+theorem mulMixedSubmoduleEquiv_apply [Finite ι] (W : Submodule K (ι → K)) {c : mixedSpace K}
+    (hc : IsUnit c) (x : W.euclideanSpan) :
+    W.mulMixedSubmoduleEquiv hc x = W.mulMixedSubmodule c x := by
+  rfl
+
+/-- The underlying `ℝ`-linear map of `W.mulMixedSubmoduleEquiv hc` is `W.mulMixedSubmodule c`. -/
+@[simp]
+theorem toLinearMap_mulMixedSubmoduleEquiv [Finite ι] (W : Submodule K (ι → K))
+    {c : mixedSpace K} (hc : IsUnit c) :
+    (W.mulMixedSubmoduleEquiv hc : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
+      W.mulMixedSubmodule c := by
+  ext1 x
+  exact W.mulMixedSubmoduleEquiv_apply hc x
+
+open Classical in
+/-- For any unit `c : mixedSpace K`, `W.integerPoints` is `ℤ`-linearly equivalent to the scaled
+lattice `ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap`. -/
+def integerPointsEquivComapMulMixed [Fintype ι] (W : Submodule K (ι → K)) {c : mixedSpace K}
+    (hc : IsUnit c) :
+    W.integerPoints ≃ₗ[ℤ]
+      ZLattice.comap ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearMap :=
+  W.integerPointsEquivIntegerLattice.trans
+    (ZLattice.comap_equiv ℝ W.integerLattice (W.mulMixedSubmoduleEquiv hc).symm.toLinearEquiv)
+
+/-- Forward evaluation of `W.integerPointsEquivComapMulMixed hc` in `W.euclideanSpan`. -/
+theorem coe_integerPointsEquivComapMulMixed_apply [Fintype ι] (W : Submodule K (ι → K))
+    {c : mixedSpace K} (hc : IsUnit c) (z : W.integerPoints) :
+    (W.integerPointsEquivComapMulMixed hc z : W.euclideanSpan) =
+      W.mulMixedSubmodule c (W.integerPointsEquivIntegerLattice z : W.euclideanSpan) := by
+  rw [integerPointsEquivComapMulMixed, LinearEquiv.trans_apply, ZLattice.comap_equiv_apply,
+    ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm,
+    ContinuousLinearEquiv.coe_toLinearEquiv, W.mulMixedSubmoduleEquiv_apply hc]
 
 open Classical in
 /-- Scaling `x : W.euclideanSpan` coordinatewise by `c : mixedSpace K` multiplies each infinite
