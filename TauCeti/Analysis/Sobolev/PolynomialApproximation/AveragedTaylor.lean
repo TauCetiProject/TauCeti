@@ -62,15 +62,15 @@ Consequently, whenever `φ` is `C^m` with compact support:
    belonging to `Lᵖ(μ.restrict Ω)` (`TauCeti.averagedTaylorPolynomialLp_toLp_eq_self`).
 
 Limit of polynomial reproduction: on `EuclideanSpace ℝ ι` equipped with an additive Haar
-measure `μ`, for any even `C¹` compactly supported cutoff `φ` supported in `B`, the degree-`1`
+measure `μ`, for any even `C¹` compactly supported cutoff `φ` supported in `B`, the order-`1`
 averaged Taylor polynomial `averagedTaylorPolynomial (μ.restrict B) 1 φ` (using `μ` restricted
 to `B`) sends the coordinate quadratic `x ↦ (x i) ^ 2` (when `L¹`-integrable on `B`) to the
 constant `-∫ y, (y i) ^ 2 * φ y ∂μ` (`TauCeti.averagedTaylorPolynomial_sq_one_of_even`), which is
 strictly negative when `φ` is nonnegative with nontrivial support (as for
 `(ballBump 0 hρ).normed μ`). In particular,
-`TauCeti.averagedTaylorPolynomial_normed_ballBump_sq_one_ne_self` shows that degree-`1` averaging
+`TauCeti.averagedTaylorPolynomial_normed_ballBump_sq_one_ne_self` shows that order-`1` averaging
 does not reproduce `x ↦ (x i) ^ 2`, whereas `averagedTaylorPolynomial_toLp_eq_self` reproduces any
-`L¹`-admissible quadratic at `m = 2`.
+`L¹`-admissible quadratic at order `m = 2`.
 
 ## Main definitions
 
@@ -306,31 +306,27 @@ private theorem averagedTaylorKernel_eq_sum_monomial {φ : EuclideanSpace ℝ ι
       (iteratedFDerivAlong_const_smul (contDiff_kernelMonomialTerm hφ I S)
         (∏ l ∈ S, x (I l)) (coordDirections I) hlen) y
 
-/-- Shared degree bound for the three-level weighted monomial sum appearing in both
-`averagedTaylorKernel` and its integrals. -/
-private theorem weightedMonomialSum_mem_polynomialsDegLE (m : ℕ)
-    (c : ∀ j : ℕ, (Fin j → ι) → Finset (Fin j) → ℝ) :
-    (∑ j ∈ Finset.range (m + 1), ((-1 : ℝ) ^ j / (j.factorial : ℝ)) •
-      ∑ I : Fin j → ι, ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
-        c j I S • fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l)) ∈
-      polynomialsDegLE ι m :=
-  Submodule.sum_mem _ fun j hj ↦ Submodule.smul_mem _ _ <|
-    Submodule.sum_mem _ fun I _ ↦ Submodule.sum_mem _ fun S _ ↦ Submodule.smul_mem _ _ <|
-      polynomialsDegLE_mono ι
-        ((Finset.card_le_univ S).trans (by
-          simpa using Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)))
-        (prod_coord_mem_polynomialsDegLE S I)
+/-- Monomial basis function `x ↦ ∏ l ∈ S, x (I l)` packaged in `polynomialsDegLE ι m` for
+`j ≤ m`. -/
+private def kernelMonomialElem (m : ℕ) {j : ℕ} (hj : j ≤ m) (I : Fin j → ι)
+    (S : Finset (Fin j)) : polynomialsDegLE ι m :=
+  ⟨fun x ↦ ∏ l ∈ S, x (I l),
+    polynomialsDegLE_mono ι ((Finset.card_le_univ S).trans (by simpa using hj))
+      (prod_coord_mem_polynomialsDegLE S I)⟩
 
 /-- For every fixed `y`, if `φ` is `C^m`, the map `x ↦ averagedTaylorKernel φ m x y` is a
 polynomial of total degree at most `m`. -/
 theorem averagedTaylorKernel_mem_polynomialsDegLE {φ : EuclideanSpace ℝ ι → ℝ} {m : ℕ}
     (hφ : ContDiff ℝ m φ) (y : EuclideanSpace ℝ ι) :
     (fun x ↦ averagedTaylorKernel φ m x y) ∈ polynomialsDegLE ι m := by
-  convert weightedMonomialSum_mem_polynomialsDegLE m fun _ I S ↦
-    kernelMonomialWeight φ I S y using 1
+  let P : polynomialsDegLE ι m :=
+    ∑ j : Fin (m + 1), ((-1 : ℝ) ^ (j : ℕ) / ((j : ℕ).factorial : ℝ)) •
+      ∑ I : Fin j → ι, ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
+        kernelMonomialWeight φ I S y • kernelMonomialElem m (Nat.le_of_lt_succ j.isLt) I S
+  convert P.property using 1
   ext x
-  rw [averagedTaylorKernel_eq_sum_monomial hφ]
-  simp [Finset.mul_sum, mul_comm]
+  rw [averagedTaylorKernel_eq_sum_monomial hφ, ← Fin.sum_univ_eq_sum_range]
+  simp [P, kernelMonomialElem, Finset.mul_sum, mul_comm]
 
 end Kernel
 
@@ -360,6 +356,13 @@ private theorem integral_sum_range_mul_sum {α : Type*} [MeasurableSpace α] {μ
   rw [integral_const_mul, integral_finsetSum _ fun I _ ↦
     hg j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) I]
 
+private theorem memLp_top_kernelMonomialWeight (μ : Measure (EuclideanSpace ℝ ι)) {m j : ℕ}
+    {φ : EuclideanSpace ℝ ι → ℝ} (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
+    (hj : j ≤ m) (I : Fin j → ι) (S : Finset (Fin j)) :
+    MemLp (kernelMonomialWeight φ I S) ∞ μ :=
+  (contDiff_kernelMonomialWeight hφ hj I S).continuous.memLp_top_of_hasCompactSupport
+    (hasCompactSupport_kernelMonomialWeight hsupp I S) μ
+
 /-- Monomial expansion of `x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ` obtained by
 interchanging the finite monomial sum with integration against `f`. -/
 private theorem integral_mul_averagedTaylorKernel_eq_sum_monomial
@@ -372,9 +375,7 @@ private theorem integral_mul_averagedTaylorKernel_eq_sum_monomial
             fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l) := by
   have hint_w {j : ℕ} (hj : j ≤ m) (I : Fin j → ι) (S : Finset (Fin j)) :
       Integrable (fun y ↦ f y * kernelMonomialWeight φ I S y) μ :=
-    hf.mul_of_top_left
-      ((contDiff_kernelMonomialWeight hφ hj I S).continuous.memLp_top_of_hasCompactSupport
-        (hasCompactSupport_kernelMonomialWeight hsupp I S) μ)
+    hf.mul_of_top_left (memLp_top_kernelMonomialWeight μ hφ hsupp hj I S)
   let g (x : EuclideanSpace ℝ ι) (j : ℕ) (I : Fin j → ι) (y : EuclideanSpace ℝ ι) : ℝ :=
     ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
       (∏ l ∈ S, x (I l)) * (f y * kernelMonomialWeight φ I S y)
@@ -399,16 +400,6 @@ private theorem integral_mul_averagedTaylorKernel_eq_sum_monomial
   rw [integral_finsetSum _ fun S _ ↦ (hint_w hjle I S).const_mul _]
   exact Finset.sum_congr rfl fun S _ ↦ by rw [integral_const_mul, mul_comm]
 
-/-- If `φ` is `C^m` and compactly supported, integrating any `Integrable f μ` against
-`averagedTaylorKernel φ m` produces a polynomial of total degree at most `m`. -/
-theorem integral_mul_averagedTaylorKernel_mem_polynomialsDegLE
-    {μ : Measure (EuclideanSpace ℝ ι)} {m : ℕ} {φ f : EuclideanSpace ℝ ι → ℝ}
-    (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) (hf : Integrable f μ) :
-    (fun x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ) ∈ polynomialsDegLE ι m := by
-  rw [integral_mul_averagedTaylorKernel_eq_sum_monomial hφ hsupp hf]
-  exact weightedMonomialSum_mem_polynomialsDegLE m fun _ I S ↦
-    ∫ y, f y * kernelMonomialWeight φ I S y ∂μ
-
 /-- Since `y ↦ averagedTaylorKernel φ m x y` is supported in `tsupport φ`, integrating
 `f y * averagedTaylorKernel φ m x y` over any superset `s` of `tsupport φ` equals the
 full-space integral. -/
@@ -422,43 +413,37 @@ theorem setIntegral_mul_averagedTaylorKernel_eq_integral
     simp [image_eq_zero_of_notMem_tsupport
       fun h ↦ hy (hs (tsupport_averagedTaylorKernel_subset φ m x h))]
 
-/-- Pointwise evaluation `f ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ` as a continuous linear
-map via Mathlib's `L¹`–`L^∞` Hölder pairing `ContinuousLinearMap.lpPairing`. -/
-private def averagedTaylorEvalCLM (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
+/-- Scalar continuous linear functional `f ↦ ∫ y, f y * kernelMonomialWeight φ I S y ∂μ` via
+Mathlib's `L¹`–`L^∞` Hölder pairing `ContinuousLinearMap.lpPairing`. -/
+private def kernelMonomialPairing (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
     {φ : EuclideanSpace ℝ ι → ℝ} (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
-    (x : EuclideanSpace ℝ ι) :
+    {j : ℕ} (hj : j ≤ m) (I : Fin j → ι) (S : Finset (Fin j)) :
     Lp ℝ 1 μ →L[ℝ] ℝ :=
   ((ContinuousLinearMap.mul ℝ ℝ).lpPairing μ 1 (∞ : ℝ≥0∞)).flip
-    (((continuous_averagedTaylorKernel_right hφ x).memLp_top_of_hasCompactSupport
-      (hasCompactSupport_averagedTaylorKernel hsupp m x) μ).toLp
-      (averagedTaylorKernel φ m x))
+    ((memLp_top_kernelMonomialWeight μ hφ hsupp hj I S).toLp (kernelMonomialWeight φ I S))
 
-private theorem averagedTaylorEvalCLM_apply (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
+private theorem kernelMonomialPairing_apply (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
     {φ : EuclideanSpace ℝ ι → ℝ} (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
-    (x : EuclideanSpace ℝ ι) (f : Lp ℝ 1 μ) :
-    averagedTaylorEvalCLM μ m hφ hsupp x f =
-      ∫ y, f y * averagedTaylorKernel φ m x y ∂μ := by
-  rw [averagedTaylorEvalCLM, ContinuousLinearMap.flip_apply,
+    {j : ℕ} (hj : j ≤ m) (I : Fin j → ι) (S : Finset (Fin j)) (f : Lp ℝ 1 μ) :
+    kernelMonomialPairing μ m hφ hsupp hj I S f =
+      ∫ y, f y * kernelMonomialWeight φ I S y ∂μ := by
+  rw [kernelMonomialPairing, ContinuousLinearMap.flip_apply,
     ContinuousLinearMap.lpPairing_eq_integral]
   exact integral_congr_ae
-    ((((continuous_averagedTaylorKernel_right hφ x).memLp_top_of_hasCompactSupport
-      (hasCompactSupport_averagedTaylorKernel hsupp m x) μ).coeFn_toLp).mono fun y hy ↦ by
+    ((memLp_top_kernelMonomialWeight μ hφ hsupp hj I S).coeFn_toLp.mono fun y hy ↦ by
       simp [hy])
 
 /-- **The averaged Taylor polynomial on `L¹`.** For any Borel measure `μ` on `EuclideanSpace ℝ ι`
-and any `C^m` compactly supported cutoff `φ`, pairing `f ∈ Lp ℝ 1 μ` against
-`averagedTaylorKernel φ m` defines a continuous linear map into `polynomialsDegLE ι m`. -/
+and any `C^m` compactly supported cutoff `φ`, pairing `f ∈ Lp ℝ 1 μ` against each
+`kernelMonomialWeight` and lifting via `ContinuousLinearMap.smulRight` defines a continuous
+linear map directly into `polynomialsDegLE ι m`. -/
 def averagedTaylorPolynomial (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
     (φ : EuclideanSpace ℝ ι → ℝ) (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) :
     Lp ℝ 1 μ →L[ℝ] polynomialsDegLE ι m :=
-  (ContinuousLinearMap.pi fun x ↦ averagedTaylorEvalCLM μ m hφ hsupp x).codRestrict
-    (polynomialsDegLE ι m) fun f ↦ by
-      have hfun : (ContinuousLinearMap.pi fun x ↦ averagedTaylorEvalCLM μ m hφ hsupp x) f =
-          fun x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ :=
-        funext fun x ↦ (ContinuousLinearMap.pi_apply _ _ x).trans
-          (averagedTaylorEvalCLM_apply μ m hφ hsupp x f)
-      rw [hfun]
-      exact integral_mul_averagedTaylorKernel_mem_polynomialsDegLE hφ hsupp (L1.integrable_coeFn f)
+  ∑ j : Fin (m + 1), ((-1 : ℝ) ^ (j : ℕ) / ((j : ℕ).factorial : ℝ)) •
+    ∑ I : Fin j → ι, ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
+      (kernelMonomialPairing μ m hφ hsupp (Nat.le_of_lt_succ j.isLt) I S).smulRight
+        (kernelMonomialElem m (Nat.le_of_lt_succ j.isLt) I S)
 
 /-- Pointwise evaluation formula for `averagedTaylorPolynomial`. -/
 @[simp]
@@ -467,7 +452,25 @@ theorem averagedTaylorPolynomial_apply (μ : Measure (EuclideanSpace ℝ ι)) (m
     (f : Lp ℝ 1 μ) (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomial μ m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
       ∫ y, f y * averagedTaylorKernel φ m x y ∂μ := by
-  simp [averagedTaylorPolynomial, averagedTaylorEvalCLM_apply]
+  have hexp := congrFun (integral_mul_averagedTaylorKernel_eq_sum_monomial hφ hsupp
+    (L1.integrable_coeFn f)) x
+  rw [hexp, ← Fin.sum_univ_eq_sum_range]
+  simp [averagedTaylorPolynomial, kernelMonomialPairing_apply, kernelMonomialElem]
+
+/-- If `φ` is `C^m` and compactly supported, integrating any `Integrable f μ` against
+`averagedTaylorKernel φ m` produces a polynomial of total degree at most `m`. -/
+theorem integral_mul_averagedTaylorKernel_mem_polynomialsDegLE
+    {μ : Measure (EuclideanSpace ℝ ι)} {m : ℕ} {φ f : EuclideanSpace ℝ ι → ℝ}
+    (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) (hf : Integrable f μ) :
+    (fun x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ) ∈ polynomialsDegLE ι m := by
+  have hf1 : MemLp f 1 μ := memLp_one_iff_integrable.mpr hf
+  have heq : (fun x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ) =
+      (averagedTaylorPolynomial μ m φ hφ hsupp (hf1.toLp f) : EuclideanSpace ℝ ι → ℝ) := by
+    ext x
+    rw [averagedTaylorPolynomial_apply]
+    exact integral_congr_ae (hf1.coeFn_toLp.mono fun y hy ↦ by dsimp only; rw [hy])
+  rw [heq]
+  exact (averagedTaylorPolynomial μ m φ hφ hsupp (hf1.toLp f)).property
 
 /-- At order `0`, `averagedTaylorPolynomial` sends `f` to the constant function
 `∫ y, f y * φ y ∂μ`. -/
@@ -806,9 +809,9 @@ theorem averagedTaylorPolynomial_sq_one_of_even
       fun y ↦ by simp [heven y], zero_sub]
 
 /-- Limit of polynomial reproduction: on `Metric.ball 0 ρ` (`0 < ρ`) in `EuclideanSpace ℝ ι`
-with cutoff `(ballBump 0 hρ).normed μ` and any coordinate `i : ι`, the degree-`1` averaged Taylor
+with cutoff `(ballBump 0 hρ).normed μ` and any coordinate `i : ι`, the order-`1` averaged Taylor
 polynomial does **not** reproduce `z ↦ (z i) ^ 2` (whereas `averagedTaylorPolynomial_toLp_eq_self`
-reproduces it at degree `2`). -/
+reproduces it at order `2`). -/
 theorem averagedTaylorPolynomial_normed_ballBump_sq_one_ne_self
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {ρ : ℝ} (hρ : 0 < ρ) (i : ι) :
     let hqL1 : MemLp (fun z : EuclideanSpace ℝ ι ↦ (z i) ^ 2) 1 (μ.restrict (ball 0 ρ)) :=

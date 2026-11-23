@@ -157,11 +157,6 @@ theorem polynomialEvalₗ_X (i : ι) :
   ext x
   simp
 
-theorem polynomialEvalₗ_mul (p q : MvPolynomial ι ℝ) :
-    polynomialEvalₗ ι (p * q) = polynomialEvalₗ ι p * polynomialEvalₗ ι q := by
-  ext x
-  simp
-
 /-- Every constant function belongs to every nonnegative degree bound. -/
 @[simp]
 theorem const_mem_polynomialsDegLE (m : ℕ) (c : ℝ) :
@@ -234,7 +229,8 @@ theorem mul_mem_polynomialsDegLE {m k : ℕ} {f g : EuclideanSpace ℝ ι → �
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
   obtain ⟨q, hq, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hg
   exact (mem_polynomialsDegLE_iff ι).2
-    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), polynomialEvalₗ_mul ι p q⟩
+    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), by
+      ext x; simp only [Pi.mul_apply, polynomialEvalₗ_apply, MvPolynomial.eval_mul]⟩
 
 /-- A finite product of polynomial functions has degree at most the sum of their degree bounds. -/
 theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
@@ -242,12 +238,20 @@ theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
     (hf : ∀ a ∈ s, f a ∈ polynomialsDegLE ι (d a)) :
     (∏ a ∈ s, f a) ∈ polynomialsDegLE ι (∑ a ∈ s, d a) := by
   classical
-  induction s using Finset.induction_on with
-  | empty => exact const_mem_polynomialsDegLE ι 0 1
-  | insert a s ha ih =>
-    rw [Finset.prod_insert ha, Finset.sum_insert ha]
-    exact mul_mem_polynomialsDegLE (hf a (Finset.mem_insert_self a s))
-      (ih fun b hb ↦ hf b (Finset.mem_insert_of_mem hb))
+  have hrep : ∀ a, ∃ p : MvPolynomial ι ℝ,
+      a ∈ s → p.totalDegree ≤ d a ∧ polynomialEvalₗ ι p = f a := fun a ↦ by
+    by_cases ha : a ∈ s
+    · obtain ⟨p, hp, hpe⟩ := (mem_polynomialsDegLE_iff ι).1 (hf a ha)
+      exact ⟨p, fun _ ↦ ⟨hp, hpe⟩⟩
+    · exact ⟨1, fun h ↦ absurd h ha⟩
+  choose p hp using hrep
+  refine (mem_polynomialsDegLE_iff ι).2 ⟨∏ a ∈ s, p a,
+    (MvPolynomial.totalDegree_finsetProd s p).trans
+      (Finset.sum_le_sum fun a ha ↦ (hp a ha).1), ?_⟩
+  ext x
+  simp only [Finset.prod_apply, polynomialEvalₗ_apply, MvPolynomial.eval_prod]
+  exact Finset.prod_congr rfl fun a ha ↦ by
+    simpa [polynomialEvalₗ_apply] using congrFun (hp a ha).2 x
 
 /-- A finite product of coordinate projections indexed by `S : Finset α` has total degree at most
 `S.card`. -/

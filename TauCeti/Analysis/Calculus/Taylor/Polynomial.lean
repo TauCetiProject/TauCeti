@@ -122,6 +122,8 @@ theorem taylorPolynomial_zero_fun (m : ℕ) (y : E) :
     taylorPolynomial 𝕜 m (0 : E → F) y = 0 :=
   taylorPolynomial_const m (0 : F) y
 
+/-- Negation commutes with `taylorPolynomial` unconditionally, without any regularity hypothesis on
+`u`. -/
 theorem taylorPolynomial_neg (m : ℕ) (u : E → F) (y : E) :
     taylorPolynomial 𝕜 m (-u) y = -taylorPolynomial 𝕜 m u y := by
   ext x; simp [taylorPolynomial_apply, iteratedFDeriv_neg_apply, Finset.sum_neg_distrib]
@@ -133,6 +135,8 @@ theorem _root_.Filter.EventuallyEq.taylorPolynomial_eq {m : ℕ} {u v : E → F}
   ext x; simp only [taylorPolynomial_apply]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [(h.iteratedFDeriv 𝕜 j).eq_of_nhds]
 
+/-- When `u` and `v` are `C^m` at the expansion center `y`, `taylorPolynomial` is additive at
+`y`. -/
 theorem taylorPolynomial_add {m : ℕ} {u v : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (hv : ContDiffAt 𝕜 m v y) :
     taylorPolynomial 𝕜 m (u + v) y = taylorPolynomial 𝕜 m u y + taylorPolynomial 𝕜 m v y := by
@@ -141,12 +145,16 @@ theorem taylorPolynomial_add {m : ℕ} {u v : E → F} {y : E}
   have hjle : (j : ℕ∞ω) ≤ m := by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
   rw [iteratedFDeriv_add_apply (hu.of_le hjle) (hv.of_le hjle), add_apply, smul_add]
 
+/-- When `u` and `v` are `C^m` at the expansion center `y`, `taylorPolynomial` respects subtraction
+at `y`. -/
 theorem taylorPolynomial_sub {m : ℕ} {u v : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (hv : ContDiffAt 𝕜 m v y) :
     taylorPolynomial 𝕜 m (u - v) y = taylorPolynomial 𝕜 m u y - taylorPolynomial 𝕜 m v y := by
   rw [sub_eq_add_neg, taylorPolynomial_add hu (Pi.neg_def v ▸ hv.neg),
     taylorPolynomial_neg, sub_eq_add_neg]
 
+/-- When `u` is `C^m` at the expansion center `y`, `taylorPolynomial` commutes with scalar
+multiplication at `y`. -/
 theorem taylorPolynomial_const_smul {m : ℕ} {u : E → F} {y : E}
     (hu : ContDiffAt 𝕜 m u y) (c : 𝕜) :
     taylorPolynomial 𝕜 m (c • u) y = c • taylorPolynomial 𝕜 m u y := by
