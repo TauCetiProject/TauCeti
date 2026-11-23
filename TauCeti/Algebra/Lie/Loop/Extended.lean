@@ -8,8 +8,9 @@ module
 public import Mathlib.Algebra.Lie.Loop
 public import TauCeti.Algebra.Lie.Extension.Basic
 public import TauCeti.Algebra.Lie.SemiDirect.Basic
--- Proof-only: mode formulas and bilinear-rescaling lemma for the residue pairing.
+-- Proof-only: mode formulas, bilinear-rescaling lemma, and graded tensor membership.
 import TauCeti.Algebra.Lie.Loop.Cocycle
+import TauCeti.RingTheory.GradedAlgebra.DecomposeTensor
 
 /-!
 # The extended affine loop algebra and its invariant bilinear form
@@ -80,7 +81,8 @@ theorem degreeDerivationOf_single_tmul {A : Type*} [AddCommMonoid A] [DecidableE
     (χ : A →+ R) (a : A) (x : L) :
     degreeDerivationOf R L χ (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x) =
       χ a • (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x) :=
-  LieDerivation.ofGrading_apply_apply _ χ (single_tmul_mem_decomposeTensor a x)
+  LieDerivation.ofGrading_apply_apply _ χ
+    (DirectSum.tmul_mem_decomposeTensor (AddMonoidAlgebra.single_mem_grade a 1) x)
 
 /-- `degreeDerivationOf R L χ` vanishes on constant loops `1 ⊗ x`. -/
 @[simp]
@@ -395,10 +397,8 @@ theorem mode_apply (n : ℤ) (x : L) :
 theorem mode_injective (n : ℤ) : Function.Injective (mode Φ hΦ hΦs n) := fun x y h ↦ by
   have h' := congrArg
     (fun v ↦ toFinsupp R ℤ L ((ofProd c).symm (extendedToProd Φ hΦ hΦs v).fst).fst n) h
-  rw [mode_apply, mode_apply, extendedToProd_toExtendedResidueExtension,
-    extendedToProd_toExtendedResidueExtension, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-    toFinsupp_single_tmul, toFinsupp_single_tmul, Finsupp.single_eq_same,
-    Finsupp.single_eq_same] at h'
+  simp only [mode_apply, extendedToProd_toExtendedResidueExtension, Equiv.symm_apply_apply,
+    toFinsupp_single_tmul, Finsupp.single_eq_same] at h'
   exact h'
 
 /-- The degree projection vanishes on every loop mode `tⁿ ⊗ x`. -/
@@ -625,10 +625,13 @@ local notation "Z" => TrivialLieModule R P R
 local notation "cΦ" => twoCocycleOfBilinear R ℤ L Φ hΦ hΦs
 local notation "cΨ" => twoCocycleOfBilinear R ℤ L Ψ hΨ hΨs
 
+private theorem twoCocycleOfBilinear_eq_smul {r : R} (h : Ψ = r • Φ) : cΨ = r • cΦ := by
+  subst h; exact twoCocycleOfBilinear_smul r hΦ hΨ hΦs hΨs
+
 /-- Rescaling the level of the polynomial loop central extension: if `Ψ = r • Φ`, the Lie
 homomorphism `ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ` fixing loops and sending `K ↦ r • K`. -/
 def levelHom {r : R} (h : Ψ = r • Φ) : ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.smulMap cΦ cΨ r (by subst h; exact twoCocycleOfBilinear_smul r hΦ hΨ hΦs hΨs)
+  ofTwoCocycle.smulMap cΦ cΨ r (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
 
 @[simp]
 theorem levelHom_ofProd {r : R} (h : Ψ = r • Φ) (u : P) (z : Z) :
@@ -650,8 +653,7 @@ theorem levelHom_centralElement {r : R} (h : Ψ = r • Φ) :
 `(v, z) ↦ (v, u • z)`. -/
 def levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     ofTwoCocycle cΦ ≃ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.smulMapEquiv cΦ cΨ u
-    (by subst h; exact twoCocycleOfBilinear_smul (u : R) hΦ hΨ hΦs hΨs)
+  ofTwoCocycle.smulMapEquiv cΦ cΨ u (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
 
 @[simp]
 theorem levelEquiv_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : P) (z : Z) :
@@ -670,8 +672,8 @@ theorem levelEquiv_symm_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : P) (z : 
 
 /-- The inverse of `levelEquiv` is the level isomorphism for the reciprocal scalar `u⁻¹`. -/
 theorem levelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    (levelEquiv hΦ hΦs hΨ hΨs h).symm = levelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs
-      (by rw [h, smul_smul, Units.inv_mul, one_smul]) := by
+    (levelEquiv hΦ hΦs hΨ hΨs h).symm =
+      levelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs (by simp [h, smul_smul]) := by
   rw [levelEquiv, levelEquiv]; exact ofTwoCocycle.smulMapEquiv_symm cΦ cΨ u _
 
 @[simp]
@@ -745,42 +747,35 @@ theorem extendedBilinForm_extendedLevelHom {r : R} (h : Ψ = r • Φ)
 `extendedResidueExtension Φ` and `extendedResidueExtension Ψ` are isomorphic as Lie algebras via
 the map fixing all loop modes and `d` and sending `K ↦ u • K`. -/
 def extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    extendedResidueExtension Φ hΦ hΦs ≃ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs where
-  __ := (extendedToProd Φ hΦ hΦs).trans
-    (((levelEquiv hΦ hΦs hΨ hΨs h).toLinearEquiv.prodCongr (LinearEquiv.refl R R)).trans
-      (extendedToProd Ψ hΨ hΨs).symm)
-  map_lie' {x y} := by
-    have hcoe (z : extendedResidueExtension Φ hΦ hΦs) :
-        (extendedToProd Ψ hΨ hΨs).symm
-            (((levelEquiv hΦ hΦs hΨ hΨs h).toLinearEquiv.prodCongr (LinearEquiv.refl R R))
-              (extendedToProd Φ hΦ hΦs z)) =
-          extendedLevelHom hΦ hΦs hΨ hΨs h z := by
-      apply (extendedToProd Ψ hΨ hΨs).injective
-      rw [LinearEquiv.apply_symm_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
-        LieEquiv.coe_toLinearEquiv, extendedToProd_extendedLevelHom]
-      exact Prod.ext (LieHom.congr_fun (toLieHom_levelEquiv hΦ hΦs hΨ hΨs h) _) rfl
-    simp only [LinearEquiv.toFun_eq_coe, LinearEquiv.trans_apply]
-    rw [hcoe ⁅x, y⁆, hcoe x, hcoe y, LieHom.map_lie]
+    extendedResidueExtension Φ hΦ hΦs ≃ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs :=
+  LieDerivation.liftLineEquiv (extensionDegreeDerivation Φ hΦ hΦs)
+    (extensionDegreeDerivation Ψ hΨ hΨs) (levelEquiv hΦ hΦs hΨ hΨs h) fun x ↦ by
+      obtain ⟨⟨v, z⟩, rfl⟩ := (ofProd cΦ).surjective x; simp
 
 @[simp]
 theorem toLieHom_extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     (extendedLevelEquiv hΦ hΦs hΨ hΨs h).toLieHom = extendedLevelHom hΦ hΦs hΨ hΨs h := by
-  ext x; apply (extendedToProd Ψ hΨ hΨs).injective
-  rw [extendedToProd_extendedLevelHom]
-  exact Prod.ext (LieHom.congr_fun (toLieHom_levelEquiv hΦ hΦs hΨ hΨs h) _) rfl
+  rw [extendedLevelEquiv, LieDerivation.toLieHom_liftLineEquiv]
+  ext x <;> simp [extendedLevelHom]
+
+/-- `extendedLevelEquiv` acts by `levelEquiv` on the `ĝ` coordinate and fixes the `R` coordinate. -/
+@[simp]
+theorem extendedToProd_extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ)
+    (x : extendedResidueExtension Φ hΦ hΦs) :
+    extendedToProd Ψ hΨ hΨs (extendedLevelEquiv hΦ hΦs hΨ hΨs h x) =
+      (levelEquiv hΦ hΦs hΨ hΨs h (extendedToProd Φ hΦ hΦs x).fst,
+        (extendedToProd Φ hΦ hΦs x).snd) := by
+  rw [← LieEquiv.coe_toLieHom, toLieHom_extendedLevelEquiv, extendedToProd_extendedLevelHom,
+    ← toLieHom_levelEquiv, LieEquiv.coe_toLieHom]
 
 /-- The inverse of `extendedLevelEquiv` is the extended level isomorphism for `u⁻¹`. -/
 theorem extendedLevelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    (extendedLevelEquiv hΦ hΦs hΨ hΨs h).symm = extendedLevelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs
-      (by rw [h, smul_smul, Units.inv_mul, one_smul]) := by
-  have h' : Φ = (↑u⁻¹ : R) • Ψ := by rw [h, smul_smul, Units.inv_mul, one_smul]
-  ext x; rw [LieEquiv.symm_apply_eq]; apply (extendedToProd Ψ hΨ hΨs).injective
-  rw [← LieEquiv.coe_coe, toLieHom_extendedLevelEquiv hΦ hΦs hΨ hΨs h,
-    ← LieEquiv.coe_coe, toLieHom_extendedLevelEquiv hΨ hΨs hΦ hΦs h',
-    extendedToProd_extendedLevelHom, extendedToProd_extendedLevelHom,
-    ← toLieHom_levelEquiv hΦ hΦs hΨ hΨs h, ← toLieHom_levelEquiv hΨ hΨs hΦ hΦs h',
-    LieEquiv.coe_coe, LieEquiv.coe_coe, ← levelEquiv_symm hΦ hΦs hΨ hΨs h,
-    LieEquiv.apply_symm_apply, Prod.mk.eta]
+    (extendedLevelEquiv hΦ hΦs hΨ hΨs h).symm =
+      extendedLevelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs (by simp [h, smul_smul]) := by
+  refine LieEquiv.ext fun x ↦ (LieEquiv.symm_apply_eq _).mpr ?_
+  apply (extendedToProd Ψ hΨ hΨs).injective
+  rw [extendedToProd_extendedLevelEquiv, extendedToProd_extendedLevelEquiv,
+    ← levelEquiv_symm hΦ hΦs hΨ hΨs h, LieEquiv.apply_symm_apply, Prod.mk.eta]
 
 @[simp]
 theorem extendedLevelEquiv_mode {u : Rˣ} (h : Ψ = (u : R) • Φ) (n : ℤ) (x : L) :

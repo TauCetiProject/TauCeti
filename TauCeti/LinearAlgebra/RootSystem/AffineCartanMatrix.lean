@@ -9,9 +9,9 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.DualCoxeterNumber
+public import TauCeti.LinearAlgebra.RootSystem.Flip
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
-import TauCeti.LinearAlgebra.RootSystem.Flip
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 
@@ -237,7 +237,8 @@ the highest root. These are the coefficients of the central coroot `c = ∑ₖ a
 affine realization, and their sum is the dual Coxeter number `1 + ht(θ^∨)`. -/
 noncomputable def affineComarks : Option b.support → ℤ
   | none => 1
-  | some i => b.flip.toWeightBasisInt.repr (P.flip.rootSpanMem ℤ b.highestRoot) ⟨i.val, i.property⟩
+  | some i =>
+      b.flip.toWeightBasisInt.repr (P.flip.rootSpanMem ℤ b.highestRoot) (b.flipSupportEquiv.symm i)
 
 @[simp]
 theorem affineComarks_none : b.affineComarks none = 1 := (rfl)
@@ -247,23 +248,25 @@ coefficients. -/
 theorem coroot_highestRoot_eq_sum_affineComarks :
     P.coroot b.highestRoot = ∑ i : b.support, b.affineComarks (some i) • P.coroot i := by
   rw [← P.flip_root, b.flip.root_eq_sum_toWeightBasisInt_repr b.highestRoot]
-  exact Fintype.sum_equiv (Equiv.subtypeEquiv (Equiv.refl ι) fun _ ↦ by simp) _ _ fun _ ↦ rfl
+  exact Fintype.sum_equiv b.flipSupportEquiv _ _ fun i ↦ by simp [affineComarks]
 
 /-- The comarks are the *only* coefficients expressing the coroot of the highest root in the simple
 coroots. -/
 theorem affineComarks_some_eq_of_coroot_highestRoot_eq_sum {f : b.support → ℤ}
     (hf : P.coroot b.highestRoot = ∑ i : b.support, f i • P.coroot i) (i : b.support) :
     b.affineComarks (some i) = f i := by
-  refine b.flip.toWeightBasisInt_repr_eq_of_root_eq_sum
-    (r := b.highestRoot) (f := fun j ↦ f ⟨j.val, j.property⟩) ?_ ⟨i.val, i.property⟩
-  rw [P.flip_root, hf]
-  exact Fintype.sum_equiv (Equiv.subtypeEquiv (Equiv.refl ι) fun _ ↦ by simp) _ _ fun _ ↦ rfl
+  have h := b.flip.toWeightBasisInt_repr_eq_of_root_eq_sum
+    (r := b.highestRoot) (f := fun j ↦ f (b.flipSupportEquiv j)) ?_ (b.flipSupportEquiv.symm i)
+  · simpa [affineComarks] using h
+  · rw [P.flip_root, hf]
+    exact (Fintype.sum_equiv b.flipSupportEquiv _ _ fun j ↦ by simp).symm
 
 /-- **The sum of the comarks** is the dual Coxeter number `ht(θ^∨) + 1`. -/
 theorem sum_affineComarks : ∑ k, b.affineComarks k = b.dualCoxeterNumber := by
   rw [Fintype.sum_option, affineComarks_none, dualCoxeterNumber_def, add_comm,
     ← b.flip.sum_toWeightBasisInt_repr b.highestRoot]
   congr 1
+  exact Fintype.sum_equiv b.flipSupportEquiv.symm _ _ fun i ↦ by simp [affineComarks]
 
 /-- **Marks and comarks are proportional by root squared lengths** for any invariant bilinear form
 `B` on a root pairing: `aᵢ^∨ B(θ, θ) = aᵢ B(αᵢ, αᵢ)` for every simple root `αᵢ`. -/
@@ -285,7 +288,9 @@ theorem affineComarks_zsmul_form_highestRoot (B : P.InvariantForm) (i : b.suppor
     rw [two_mul, ← eq_sub_iff_add_eq]
     nth_rw 1 [← B.isOrthogonal_reflection j]
     rw [RootPairing.reflection_apply, RootPairing.reflection_apply_self, LinearMap.map_sub₂,
-      LinearMap.map_smul₂, smul_eq_mul, map_neg, map_neg, mul_neg, neg_sub_neg]
+      LinearMap.map_smul₂, smul_eq_mul, map_neg, map_neg, mul_neg, neg_sub_neg,
+      ← RootPairing.toPerfPair_flip_comp_coroot]
+    -- `P.flip.toPerfPair` is definitionally `P.toLinearMap.flip.toPerfPair`.
     rfl
   have hpair : P.flip.toPerfPair (P.coroot b.highestRoot) x =
       ∑ j : b.support, (b.affineComarks (some j) : R) * P.flip.toPerfPair (P.coroot j) x := by
@@ -437,9 +442,8 @@ private theorem pairingIn_apply_highestRoot_eq_sum_affineComarks (k : ι) :
       ∑ i : b.support, P.pairingIn ℤ k i * b.affineComarks (some i) := by
   rw [← RootPairing.pairingIn_flip ℤ P b.highestRoot k,
     b.flip.pairingIn_eq_sum_toWeightBasisInt_repr b.highestRoot k]
-  refine Fintype.sum_equiv (Equiv.subtypeEquiv (Equiv.refl ι) fun _ ↦ by simp) _ _ fun _ ↦ ?_
-  rw [RootPairing.pairingIn_flip, mul_comm]
-  rfl
+  refine Fintype.sum_equiv b.flipSupportEquiv _ _ fun i ↦ ?_
+  simp [affineComarks, mul_comm]
 
 /-- **The null-root relation**: the marks are a left null vector of the affine Cartan matrix,
 since `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`. In an affine realization, where `α₀ = δ - θ`, this says that

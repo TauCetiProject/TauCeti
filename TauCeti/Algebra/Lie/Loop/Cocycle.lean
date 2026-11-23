@@ -65,10 +65,9 @@ class of the Killing form.
 
 ## Main results
 
-* `TauCeti.LieAlgebra.LoopAlgebra.loopAlgebra_induction_linear`,
-  `TauCeti.LieAlgebra.LoopAlgebra.linearMap_ext_single_tmul`, and
-  `TauCeti.LieAlgebra.LoopAlgebra.single_tmul_mem_decomposeTensor`: linear induction, linear-map
-  extensionality on pure modes, and graded-piece membership for `loopAlgebra`.
+* `TauCeti.LieAlgebra.LoopAlgebra.loopAlgebra_induction_linear` and
+  `TauCeti.LieAlgebra.LoopAlgebra.linearMap_ext_single_tmul`: linear induction and linear-map
+  extensionality on pure modes for `loopAlgebra`.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul`: the residue pairing on modes.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_one_tmul`: the residue pairing vanishes when its
   first argument is a constant loop.
@@ -144,14 +143,6 @@ theorem linearMap_ext_single_tmul {M : Type*} [AddCommMonoid M] [Module R M]
   refine LinearMap.ext fun u ↦ ?_
   refine loopAlgebra_induction_linear (fun u ↦ f u = g u) (by simp)
     (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂]) h u
-
-open DirectSum in
-/-- Every pure mode `tᵃ ⊗ x` lies in the `a`-th graded piece of `loopAlgebra R A L`. -/
-theorem single_tmul_mem_decomposeTensor (a : A) (x : L) :
-    (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x : loopAlgebra R A L) ∈
-      decomposeTensor (AddMonoidAlgebra.grade R) L a := by
-  rw [decomposeTensor_apply]
-  exact ⟨⟨AddMonoidAlgebra.single a 1, AddMonoidAlgebra.single_mem_grade a 1⟩ ⊗ₜ[R] x, by simp⟩
 
 end Modes
 

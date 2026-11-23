@@ -409,6 +409,66 @@ theorem liftLineHom_inr {L' : Type*} [LieRing L'] [LieAlgebra R L']
     liftLineHom D D' f hf (inr D.lineHom t) = inr D'.lineHom t := by
   ext <;> simp
 
+/-- Lifting a Lie algebra isomorphism `e : L ≃ₗ⁅R⁆ L'` intertwining derivations `D` and `D'` to
+the one-dimensional semidirect sums `(L ⋊⁅D.lineHom⁆ R) ≃ₗ⁅R⁆ (L' ⋊⁅D'.lineHom⁆ R)`. -/
+def liftLineEquiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) :
+    (L ⋊⁅D.lineHom⁆ R) ≃ₗ⁅R⁆ (L' ⋊⁅D'.lineHom⁆ R) where
+  __ := liftLineHom D D' e.toLieHom he
+  invFun := liftLineHom D' D e.symm.toLieHom fun y ↦ by
+    simpa using congrArg e.symm (he (e.symm y)).symm
+  left_inv x := by ext <;> simp [liftLineHom]
+  right_inv y := by ext <;> simp [liftLineHom]
+
+/-- The Lie homomorphism underlying `liftLineEquiv` is `liftLineHom` of `e.toLieHom`. -/
+@[simp]
+theorem toLieHom_liftLineEquiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) :
+    (liftLineEquiv D D' e he).toLieHom = liftLineHom D D' e.toLieHom he :=
+  (rfl)
+
+/-- The left coordinate of `liftLineEquiv` applies `e`. -/
+@[simp]
+theorem liftLineEquiv_left {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineEquiv D D' e he x).left = e x.left :=
+  (rfl)
+
+/-- The right coordinate of `liftLineEquiv` is the identity on `R`. -/
+@[simp]
+theorem liftLineEquiv_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineEquiv D D' e he x).right = x.right :=
+  (rfl)
+
+/-- The inverse of `liftLineEquiv` is `liftLineEquiv` of `e.symm`. -/
+theorem liftLineEquiv_symm {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) :
+    (liftLineEquiv D D' e he).symm =
+      liftLineEquiv D' D e.symm (fun y ↦ by simpa using congrArg e.symm (he (e.symm y)).symm) :=
+  (rfl)
+
+/-- The left coordinate of `(liftLineEquiv D D' e he).symm` applies `e.symm`. -/
+@[simp]
+theorem liftLineEquiv_symm_left {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L' ⋊⁅D'.lineHom⁆ R) :
+    ((liftLineEquiv D D' e he).symm x).left = e.symm x.left :=
+  (rfl)
+
+/-- The right coordinate of `(liftLineEquiv D D' e he).symm` is the identity on `R`. -/
+@[simp]
+theorem liftLineEquiv_symm_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L' ⋊⁅D'.lineHom⁆ R) :
+    ((liftLineEquiv D D' e he).symm x).right = x.right :=
+  (rfl)
+
 /-- Every element of `L ⋊⁅D.lineHom⁆ R` is the sum of an element of `L` and a multiple of the
 adjoined generator `inr D.lineHom 1`. -/
 theorem exists_eq_add_smul_inr_one (D : LieDerivation R L L) (y : L ⋊⁅D.lineHom⁆ R) :
