@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
-public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
 /-!
 # Exterior algebra of alternating bundle sections
@@ -38,56 +37,6 @@ variable {𝕜 E H M FW FV : Type*} [NontriviallyNormedField 𝕜] [NormedAddCom
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W]
   [VectorBundle 𝕜 FW W] [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V]
   [VectorBundle 𝕜 FV V] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] {n : ℕ∞ω}
-
-section CurryRegularity
-variable {k : ℕ} {u : Set M} {x : M}
-
-/-- Inserting a `C^n` section of `W` into a `C^n` alternating section preserves regularity within a
-set at a point. -/
-theorem _root_.ContMDiffWithinAt.curryLeftTopological_section
-    {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiffAt[u] n (T% s) x)
-    (hφ : ContMDiffWithinAt I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y)) u x) :
-    ContMDiffWithinAt I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
-      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) u x := by
-  rw [contMDiffWithinAt_section_iff] at hs
-  rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hφ ⊢; refine ⟨hφ.1, ?_⟩
-  let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := 𝕜) (E := FW) (F := FV)
-    (n := k)).toContinuousLinearMap
-  have hL := (L.contDiff.comp_contMDiffWithinAt hφ.2).clm_apply hs
-  have heq : (fun y ↦ ContinuousAlternatingMap.inCoordinates FW FV x y x y
-      ((φ y).curryLeftTopological (s y))) =ᶠ[𝓝 x] fun y ↦
-      L (ContinuousAlternatingMap.inCoordinates FW FV x y x y (φ y))
-        ((trivializationAt FW W x ⟨y, s y⟩).2) := by
-    filter_upwards [(trivializationAt FW W x).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt FW W x)] with y hy using
-      TauCeti.inCoordinates_curryLeftTopological (s y) (φ y) hy
-  exact hL.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
-
-theorem _root_.ContMDiffAt.curryLeftTopological_section
-    {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiffAt n (T% s) x)
-    (hφ : ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y)) x) :
-    ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦ TotalSpace.mk'
-      (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) x :=
-  ContMDiffWithinAt.curryLeftTopological_section hs hφ
-
-theorem _root_.ContMDiffOn.curryLeftTopological_section
-    {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiff[u] n (T% s))
-    (hφ : ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y)) u) :
-    ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦ TotalSpace.mk'
-      (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) u :=
-  fun y hy ↦ (hs y hy).curryLeftTopological_section (hφ y hy)
-
-theorem _root_.ContMDiff.curryLeftTopological_section
-    {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiff n (T% s))
-    (hφ : ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) y (φ y))) :
-    ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦ TotalSpace.mk'
-      (FW [⋀^Fin k]→L[𝕜] FV) y ((φ y).curryLeftTopological (s y))) :=
-  fun y ↦ (hs y).curryLeftTopological_section (hφ y)
-end CurryRegularity
 
 namespace ContMDiffSection
 

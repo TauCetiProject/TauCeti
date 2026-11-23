@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge.Regularity
+public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap.Wedge
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Hom
 The `C^n(M, ℝ)`-bilinear paired wedge `ContMDiffSection.pairedWedge`, and the scalar wedge product
 `ContMDiffSection.wedge` with its graded commutativity, associativity, degree-zero, and
 interior-antiderivation laws. Regularity of unbundled paired wedges lives in
-`TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge.Regularity`.
+`TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap.Wedge`.
 
 ## References
 
