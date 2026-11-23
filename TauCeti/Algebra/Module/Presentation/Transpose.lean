@@ -45,12 +45,13 @@ When `f` comes from a quadratic presentation `P` of `M` with relation matrix `P.
 carries a canonical quadratic presentation over `S` with relation matrix `P.relᵀ.map σ.symm` up to
 canonical index identification (`PresentationTranspose.quadraticPresentation`), of determinant
 `σ⁻¹(det P.rel)` (`PresentationTranspose.det_quadraticPresentation_rel`), and therefore its zeroth
-Fitting ideal over `S` is `σ⁻¹(Fitt₀(M))` (`PresentationTranspose.fittingIdeal_eq`, Dasgupta–Kakde
-Lemma 6.1). More generally, if `P₁ →f P₀ → M → 0` is an exact presentation by finitely generated
-projective `R`-modules of constant ranks `t` and `t + s` (without assuming `P₁` or `P₀` free),
-localizing at maximal ideals of `R` reduces to the free case
-(`PresentationTranspose.fittingIdeal_eq_of_free`) and shows `Fitt₀_S(M^tr) = σ⁻¹(Fitt_s(M))`
-(`PresentationTranspose.fittingIdeal_eq_of_projective`, Dasgupta–Kakde equation (171)).
+Fitting ideal over `S` is `σ⁻¹(Fitt₀(M))`
+(`PresentationTranspose.fittingIdeal_eq_of_quadraticPresentation`, Dasgupta–Kakde Lemma 6.1). More
+generally, if `P₁ →f P₀ → M → 0` is an exact presentation by finitely generated projective
+`R`-modules of constant ranks `t` and `t + s` (without assuming `P₁` or `P₀` free), localizing at
+maximal ideals of `R` reduces to the free case (`PresentationTranspose.fittingIdeal_eq_of_free`)
+and shows `Fitt₀_S(M^tr) = σ⁻¹(Fitt_s(M))` (`PresentationTranspose.fittingIdeal_eq_of_projective`,
+Dasgupta–Kakde equation (171)).
 
 ## Main definitions
 
@@ -73,8 +74,9 @@ localizing at maximal ideals of `R` reduces to the free case
 ## Main results
 
 * `TauCeti.PresentationTranspose.det_quadraticPresentation_rel` and
-  `TauCeti.PresentationTranspose.fittingIdeal_eq`: for a quadratic presentation `P` of a finite
-  `R`-module `M`, the transposed relation determinant is `σ⁻¹(det P.rel)` and
+  `TauCeti.PresentationTranspose.fittingIdeal_eq_of_quadraticPresentation`: for a quadratic
+  presentation `P` of a finite `R`-module `M`, the transposed relation determinant is
+  `σ⁻¹(det P.rel)` and
   `Fitt₀_S(PresentationTranspose σ (Matrix.toLin' P.rel)) = σ⁻¹(Fitt₀_R(M))`.
 * `TauCeti.PresentationTranspose.fittingIdeal_toLin'_eq_minorsIdeal` and
   `TauCeti.PresentationTranspose.fittingIdeal_eq_of_free`: the free excess-generators formula
@@ -213,7 +215,7 @@ theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] 
   simp only [congr, LinearEquiv.trans_apply, toAuslanderReitenTranspose_mk,
     LinearEquiv.restrictScalars_apply, AuslanderReitenTranspose.linearEquiv_mk,
     toAuslanderReitenTranspose_symm_mk]
-  congr 1
+  refine congrArg Submodule.Quotient.mk ?_
   ext x
   simp [LinearMap.lcomp_apply]
 
@@ -224,10 +226,8 @@ theorem congr_symm_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →�
     (congr σ e₁ e₀ hfg).symm (Submodule.Quotient.mk ψ) =
       Submodule.Quotient.mk (ContragredientDual.congr σ e₁ ψ) := by
   apply (congr σ e₁ e₀ hfg).injective
-  simp only [LinearEquiv.apply_symm_apply, congr_mk]
-  congr 1
-  ext x
-  simp
+  rw [LinearEquiv.apply_symm_apply, congr_mk, ← ContragredientDual.congr_symm,
+    LinearEquiv.symm_apply_apply]
 
 /-- The transpose of the identity presentation `id : P₁ →ₗ[R] P₁` vanishes. -/
 instance subsingleton_id (σ : S ≃+* R) :
@@ -237,44 +237,21 @@ instance subsingleton_id (σ : S ≃+* R) :
   (toAuslanderReitenTranspose σ (LinearMap.id : P₁ →ₗ[R] P₁)).toEquiv.subsingleton_congr.2
     (AuslanderReitenTranspose.subsingleton_of_comp_eq_id _ (LinearMap.id_comp LinearMap.id))
 
-@[instance_reducible]
-private def uniqueAuslanderReitenTransposeId (R : Type*) [CommRing R] :
-    Unique (AuslanderReitenTranspose (LinearMap.id : R →ₗ[R] R)) :=
-  letI : Subsingleton (AuslanderReitenTranspose (LinearMap.id : R →ₗ[R] R)) :=
-    AuslanderReitenTranspose.subsingleton_of_comp_eq_id _ (LinearMap.id_comp _)
-  uniqueOfSubsingleton 0
-
-private theorem ar_mk_heq_of_eq {A P₀ P₁ : Type*} [Ring A] [AddCommMonoid P₀] [Module A P₀]
-    [AddCommMonoid P₁] [Module A P₁] {f g : P₁ →ₗ[A] P₀} (h : f = g)
-    (φ : Module.Dual A P₁) :
-    HEq (AuslanderReitenTranspose.mk f φ) (AuslanderReitenTranspose.mk g φ) :=
-  h ▸ HEq.rfl
-
 /-- The presentation `fst : R × R →ₗ[R] R`, `(a, b) ↦ a`, of the zero module has transpose
 isomorphic to `S` via `[φ] ↦ σ⁻¹(φ (0, 1))`. This exhibits the dependence of the transpose on the
 chosen presentation. -/
 def fstEquiv (σ : S ≃+* R) : PresentationTranspose σ (LinearMap.fst R R R) ≃ₗ[S] S :=
-  letI := uniqueAuslanderReitenTransposeId R
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
   ((toAuslanderReitenTranspose σ (LinearMap.fst R R R)).trans
-    ((AuslanderReitenTranspose.compFstEquiv (LinearMap.id : R →ₗ[R] R) R).restrictScalars R)).trans
-    (LinearEquiv.uniqueProd.trans
-      ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm))
+    ((AuslanderReitenTranspose.fstEquiv R R).restrictScalars R)).trans
+    ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm)
 
 /-- `fstEquiv` sends the class of `φ` to `σ⁻¹(φ (0, 1))`. -/
 @[simp]
 theorem fstEquiv_mk (σ : S ≃+* R) (φ : ContragredientDual σ (R × R)) :
     fstEquiv σ (Submodule.Quotient.mk φ) = σ.symm (φ (0, 1)) := by
-  let _ := uniqueAuslanderReitenTransposeId R
-  have hmk : AuslanderReitenTranspose.mk (LinearMap.fst R R R) φ.toDual =
-      AuslanderReitenTranspose.mk ((LinearMap.id : R →ₗ[R] R) ∘ₗ LinearMap.fst R R R)
-        φ.toDual :=
-    eq_of_heq (ar_mk_heq_of_eq (LinearMap.id_comp _).symm _)
-  simp only [fstEquiv, LinearEquiv.trans_apply, toAuslanderReitenTranspose_mk,
-    LinearEquiv.restrictScalars_apply]
-  rw [hmk, AuslanderReitenTranspose.compFstEquiv_mk]
-  simp
+  simp [fstEquiv]
 
 /-- The inverse of `fstEquiv` sends `s : S` to `s • [snd]`. -/
 @[simp]
@@ -292,8 +269,8 @@ def mulLeftEquiv (σ : S ≃+* R) (a : R) :
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
   let eval₁ : ContragredientDual σ R ≃ₗ[S] S :=
-    ((ContragredientDual.toDualLinearEquiv σ R).trans (LinearMap.ringLmapEquivSelf R R R)).trans
-      σ.toSemilinearEquiv.symm
+    (ContragredientDual.toDualLinearEquiv σ R).trans
+      ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm)
   have he : (LinearMap.range (ContragredientDual.map σ (LinearMap.mulLeft R a))).map
       eval₁.toLinearMap = Ideal.span {σ.symm a} := by
     have hdual : (LinearMap.range (ContragredientDual.map σ (LinearMap.mulLeft R a))).map
@@ -312,8 +289,7 @@ def mulLeftEquiv (σ : S ≃+* R) (a : R) :
         Ideal.span {σ.symm a} := by
       rw [LinearMap.range_dualMap_dual_eq_span_singleton, Submodule.map_span]
       simp [Ideal.submodule_span_eq]
-    rw [← hspan, ← hdual, ← Submodule.map_comp]
-    congr 1
+    rw [← hspan, ← hdual, ← Submodule.map_comp, ← LinearEquiv.coe_trans]
   Submodule.Quotient.equiv _ (Ideal.span {σ.symm a}) eval₁ he
 
 /-- `mulLeftEquiv` sends the class of `φ` to the quotient class of `σ⁻¹(φ 1)` modulo
@@ -323,11 +299,7 @@ theorem mulLeftEquiv_mk (σ : S ≃+* R) (a : R) (φ : ContragredientDual σ R) 
     mulLeftEquiv σ a (Submodule.Quotient.mk φ) =
       Ideal.Quotient.mk (Ideal.span {σ.symm a}) (σ.symm (φ 1)) := by
   rw [← Ideal.Quotient.mk_eq_mk]
-  simp only [mulLeftEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
-    LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearMap.ringLmapEquivSelf_apply,
-    ContragredientDual.toDualLinearEquiv_apply, ContragredientDual.toDual_apply,
-    RingEquiv.toSemilinearEquiv_symm_apply, Equiv.invFun_as_coe,
-    RingEquiv.toEquiv_eq_coe, RingEquiv.coe_coe_toEquiv_symm]
+  simp [mulLeftEquiv, Submodule.Quotient.equiv_apply]
 
 /-- The inverse of `mulLeftEquiv` sends `[s]` to `s • [id]`. -/
 @[simp]
@@ -388,7 +360,9 @@ theorem quadraticPresentation_rel (σ : S ≃+* R) (P : QuadraticPresentation R 
   ext i j
   simp only [quadraticPresentation, QuadraticPresentation.ofExact_rel,
     ContragredientDual.toMatrix_map_toLin', Equiv.symm_symm]
-  congr 1
+  -- `(quadraticPresentation σ P).size` is definitionally `P.size`.
+  refine congrArg₂ (P.relᵀ.map σ.symm) (Fin.ext ?_) (Fin.ext ?_) <;>
+    simp
 
 /-- The relation matrix of `quadraticPresentation σ P` has determinant `σ⁻¹(det P.rel)`. -/
 theorem det_quadraticPresentation_rel (σ : S ≃+* R) (P : QuadraticPresentation R M) :
@@ -398,12 +372,15 @@ theorem det_quadraticPresentation_rel (σ : S ≃+* R) (P : QuadraticPresentatio
 
 /-- The generator map of `quadraticPresentation σ P` sends `v` to the linear combination of the
 classes of the coordinate projections in `PresentationTranspose σ (Matrix.toLin' P.rel)`. -/
+@[simp]
 theorem quadraticPresentation_gen_apply (σ : S ≃+* R) (P : QuadraticPresentation R M)
     (v : Fin (quadraticPresentation σ P).size → S) :
     (quadraticPresentation σ P).gen v =
       ∑ i : Fin P.size, v ((finCongr (quadraticPresentation_size σ P)).symm i) •
         (Submodule.Quotient.mk (ContragredientDual.ofDual (LinearMap.proj i)) :
           PresentationTranspose σ (Matrix.toLin' P.rel)) := by
+  have hcoord (i : Fin P.size) : (Pi.basisFun R (Fin P.size)).coord i = LinearMap.proj i :=
+    LinearMap.ext fun x ↦ by simp [Module.Basis.coord_apply]
   have h (w : Fin P.size → S) :
       (LinearMap.range (ContragredientDual.map σ (Matrix.toLin' P.rel))).mkQ
         (((Pi.basisFun R (Fin P.size)).contragredientDual σ).equivFun.symm w) =
@@ -412,14 +389,16 @@ theorem quadraticPresentation_gen_apply (σ : S ≃+* R) (P : QuadraticPresentat
             PresentationTranspose σ (Matrix.toLin' P.rel)) := by
     rw [Module.Basis.equivFun_symm_apply, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [map_smul, Module.Basis.contragredientDual_apply, Submodule.mkQ_apply]
-    congr 3
-  exact h v
+    rw [map_smul, Module.Basis.contragredientDual_apply, Submodule.mkQ_apply, hcoord]
+  -- `(quadraticPresentation σ P).size` is definitionally `P.size`.
+  refine (h v).trans (Finset.sum_congr rfl fun i _ ↦ congrArg (fun c ↦ c • _) ?_)
+  exact congrArg v (Fin.ext (by simp [finCongr_apply]))
 
 /-- **Fitting ideal of a transposed quadratic presentation** (Dasgupta–Kakde, Lemma 6.1): for a
 quadratic presentation `P` of a finite `R`-module `M`,
 `Fitt₀_S(PresentationTranspose σ (Matrix.toLin' P.rel)) = σ⁻¹(Fitt₀_R(M))`. -/
-theorem fittingIdeal_eq (σ : S ≃+* R) (P : QuadraticPresentation R M) [Module.Finite R M] :
+theorem fittingIdeal_eq_of_quadraticPresentation (σ : S ≃+* R) (P : QuadraticPresentation R M)
+    [Module.Finite R M] :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' P.rel)) 0 =
       Ideal.map σ.symm (TauCeti.fittingIdeal R M 0) := by
   rw [(quadraticPresentation σ P).fittingIdeal_eq, P.fittingIdeal_eq,
@@ -461,8 +440,7 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
     Matrix.minorsIdeal_range_eq_span_det_submatrix,
     Matrix.minorsIdeal_range_eq_span_det_submatrix,
     Ideal.map_span, ← Set.range_comp]
-  congr 2
-  funext rc
+  refine congrArg Ideal.span (congrArg Set.range (funext fun rc ↦ ?_))
   exact ((σ.symm : R →+* S).map_det_submatrix Aᵀ rc.1 rc.2).symm
 
 /-- **Free form of the excess-generators Fitting-ideal identity**: if `P₁ →f P₀ →π M → 0` is an

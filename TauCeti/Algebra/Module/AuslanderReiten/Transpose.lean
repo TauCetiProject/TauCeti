@@ -54,8 +54,9 @@ is supplied here alongside the opposite-ring module structure.
   diagrams.
 * `AuslanderReitenTranspose.prodMapEquiv`: the transpose of a direct sum of arrows is the direct
   sum of their transposes.
-* `AuslanderReitenTranspose.compFstEquiv`: a zero source summand contributes its dual to the
-  transpose.
+* `AuslanderReitenTranspose.compFstEquiv` and `AuslanderReitenTranspose.fstEquiv`: a zero source
+  summand contributes its dual to the transpose (and the transpose of a coordinate projection is the
+  dual of the discarded summand).
 
 ## Main results
 
@@ -424,6 +425,16 @@ theorem subsingleton_of_comp_eq_id {r : P₀ →ₗ[A] P₁} (hr : r ∘ₗ p₁
   ext y
   simpa using LinearMap.congr_fun (congrArg (fun f => φ ∘ₗ f) hr) y
 
+/-- The Auslander--Reiten transpose of the identity map vanishes. -/
+instance subsingleton_id :
+    Subsingleton (AuslanderReitenTranspose (LinearMap.id : P₁ →ₗ[A] P₁)) :=
+  subsingleton_of_comp_eq_id _ (LinearMap.id_comp _)
+
+/-- The Auslander--Reiten transpose of the identity map is a `Unique` type. -/
+instance instUniqueId :
+    Unique (AuslanderReitenTranspose (LinearMap.id : P₁ →ₗ[A] P₁)) :=
+  uniqueOfSubsingleton 0
+
 /-- **A vanishing transpose splits the presenting map.**  If `P₁` is a finitely generated
 projective module and the transpose of `p₁ : P₁ → P₀` vanishes, then `p₁` admits a retraction.
 
@@ -551,6 +562,47 @@ theorem linearEquiv_symm {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q�
     exact congrArg φ (e₁.apply_symm_apply y).symm
 
 end Equivalence
+
+section Fst
+
+open LinearMap
+
+variable (A₁ C : Type*) [AddCommMonoid A₁] [Module A A₁] [AddCommMonoid C] [Module A C]
+
+/-- **The transpose of a coordinate projection is the dual of the discarded summand.**
+A `compFstEquiv`-style identification for `LinearMap.fst A A₁ C`: the transpose
+`AuslanderReitenTranspose (LinearMap.fst A A₁ C)` is opposite-linearly equivalent to
+`Module.Dual A C`. -/
+def fstEquiv :
+    AuslanderReitenTranspose (fst A A₁ C) ≃ₗ[Aᵐᵒᵖ] Module.Dual A C :=
+  LinearEquiv.ofLinearMap
+    (lift (fst A A₁ C) ((inr A A₁ C).lcomp Aᵐᵒᵖ A) fun φ => by ext; simp)
+    (mk (fst A A₁ C) ∘ₗ (snd A A₁ C).lcomp Aᵐᵒᵖ A)
+    (by
+      ext ψ x
+      simp [lcomp_apply'])
+    (by
+      ext φ
+      simp only [comp_apply, lift_mk, lcomp_apply', id_apply]
+      rw [mk_eq_mk_iff]
+      refine ⟨-(φ ∘ₗ inl A A₁ C), ?_⟩
+      ext <;> simp [sub_eq_add_neg, ← Prod.zero_eq_mk])
+
+/-- `fstEquiv` restricts a representative functional on `A₁ × C` to the second summand `C`. -/
+@[simp]
+theorem fstEquiv_mk (φ : Module.Dual A (A₁ × C)) :
+    fstEquiv A₁ C (mk (fst A A₁ C) φ) = φ ∘ₗ inr A A₁ C := by
+  simp [fstEquiv, LinearMap.lcomp_apply']
+
+/-- The inverse of `fstEquiv` lifts a functional on `C` to `A₁ × C` via `snd`. -/
+@[simp]
+theorem fstEquiv_symm_apply (ψ : Module.Dual A C) :
+    (fstEquiv A₁ C).symm ψ = mk (fst A A₁ C) (ψ ∘ₗ snd A A₁ C) := by
+  apply (fstEquiv A₁ C).injective
+  ext x
+  simp
+
+end Fst
 
 end AuslanderReitenTranspose
 
