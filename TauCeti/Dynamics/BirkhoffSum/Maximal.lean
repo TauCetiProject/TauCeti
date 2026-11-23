@@ -11,14 +11,14 @@ public import Mathlib.Dynamics.BirkhoffSum.Maximal
 # Companion lemmas for the maximal ergodic operator
 
 Complements `Mathlib.Dynamics.BirkhoffSum.Maximal` with almost-everywhere finiteness of
-`birkhoffAverageSup T (‖f ·‖)` for an integrable observable under a measure-preserving
+`birkhoffAverageSup T (‖f ·‖)` when `fun y ↦ ‖f y‖` is integrable under a measure-preserving
 endomorphism of a finite measure space.
 
 ## Main results
 
 * `MeasureTheory.MeasurePreserving.ae_birkhoffAverageSup_norm_lt_top` — almost-everywhere
-  finiteness of `birkhoffAverageSup T (‖f ·‖)` for an integrable observable on a finite measure
-  space, derived from Mathlib's `mul_measureReal_lt_birkhoffAverageSup_le_norm`.
+  finiteness of `birkhoffAverageSup T (‖f ·‖)` when `fun y ↦ ‖f y‖` is integrable on a finite
+  measure space, derived from Mathlib's `mul_measureReal_lt_birkhoffAverageSup_le_norm`.
 -/
 
 public section
@@ -28,11 +28,13 @@ open scoped Topology
 
 namespace MeasureTheory.MeasurePreserving
 
-/-- For a measure-preserving endomorphism of a finite measure space and an integrable observable,
-the maximal ergodic function `birkhoffAverageSup T (‖f ·‖)` is almost everywhere finite. -/
+/-- For a measure-preserving endomorphism of a finite measure space and an observable whose
+pointwise norm is integrable, the maximal ergodic function `birkhoffAverageSup T (‖f ·‖)` is
+almost everywhere finite. -/
 theorem ae_birkhoffAverageSup_norm_lt_top {Ω E : Type*} [MeasurableSpace Ω]
-    [NormedAddCommGroup E] {μ : Measure Ω} [IsFiniteMeasure μ]
-    {T : Ω → Ω} (hT : MeasurePreserving T μ μ) {f : Ω → E} (hf : Integrable f μ) :
+    [SeminormedAddCommGroup E] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {T : Ω → Ω} (hT : MeasurePreserving T μ μ) {f : Ω → E}
+    (hf : Integrable (fun y ↦ ‖f y‖) μ) :
     ∀ᵐ x ∂μ, birkhoffAverageSup T (fun y ↦ ‖f y‖) x < ⊤ := by
   rw [ae_iff]
   have hreal : μ.real {x | ¬ birkhoffAverageSup T (fun y ↦ ‖f y‖) x < ⊤} = 0 := by
@@ -51,7 +53,8 @@ theorem ae_birkhoffAverageSup_norm_lt_top {Ω E : Type*} [MeasurableSpace Ω]
       (n : ℝ) * μ.real {x | ¬ birkhoffAverageSup T (fun y ↦ ‖f y‖) x < ⊤}
         ≤ (n : ℝ) * μ.real {x | ((n : ℝ) : EReal) < birkhoffAverageSup T (fun y ↦ ‖f y‖) x} :=
           mul_le_mul_of_nonneg_left (measureReal_mono hsub) hn'.le
-      _ ≤ ∫ y, ‖f y‖ ∂μ := mul_measureReal_lt_birkhoffAverageSup_le_norm μ hT hf (n : ℝ)
+      _ ≤ ∫ y, ‖f y‖ ∂μ := by
+          simpa only [norm_norm] using mul_measureReal_lt_birkhoffAverageSup_le_norm μ hT hf (n : ℝ)
   exact (measureReal_eq_zero_iff (measure_ne_top μ _)).mp hreal
 
 end MeasureTheory.MeasurePreserving

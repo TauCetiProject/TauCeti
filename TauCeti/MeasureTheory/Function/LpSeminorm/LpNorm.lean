@@ -34,7 +34,7 @@ integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral
 
 Additional helpers convert `eLpNorm` estimates into bounds for the Bochner `L¹` integral
 `∫ x, ‖f x‖ ∂μ`:
-* `MeasureTheory.integral_norm_le_integral_norm_of_eLpNorm_one_le` — transfers
+* `MeasureTheory.Integrable.integral_norm_le_integral_norm_of_eLpNorm_one_le` — transfers
   `eLpNorm f 1 μ ≤ eLpNorm g 1 μ` to `∫ x, ‖f x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ` when `g` is integrable.
 * `MeasureTheory.integral_norm_lt_of_eLpNorm_one_lt_ofReal` — transfers
   `eLpNorm f 1 μ < ENNReal.ofReal η` to `∫ x, ‖f x‖ ∂μ < η` with no extra hypotheses.
@@ -65,7 +65,7 @@ theorem lpNorm_le_mul_lpNorm_of_ae_le_mul {f : α → F} {g : α → G} {c : ℝ
 /-- If `g` is integrable and `eLpNorm f 1 μ ≤ eLpNorm g 1 μ`, then
 `∫ x, ‖f x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ`. No measurability hypothesis on `f` is needed: finiteness of
 `eLpNorm f 1 μ` follows from the inequality. -/
-theorem integral_norm_le_integral_norm_of_eLpNorm_one_le {f : α → F} {g : α → G}
+theorem Integrable.integral_norm_le_integral_norm_of_eLpNorm_one_le {f : α → F} {g : α → G}
     (hg : Integrable g μ) (h : eLpNorm f 1 μ ≤ eLpNorm g 1 μ) :
     ∫ x, ‖f x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ := by
   have hg1 : MemLp g 1 μ := memLp_one_iff_integrable.mpr hg

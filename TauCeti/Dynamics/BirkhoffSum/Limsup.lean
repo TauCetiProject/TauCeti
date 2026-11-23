@@ -33,6 +33,41 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- Multiplying an `EReal`-valued sequence by factors in `[0, 1]` converging to `1` preserves
+its `limsup`. -/
+private lemma limsup_mul_eq_of_tendsto_one {u b : ℕ → EReal}
+    (hb0 : 0 ≤ᶠ[atTop] b) (hb1 : b ≤ᶠ[atTop] 1) (hb : Tendsto b atTop (𝓝 1)) :
+    limsup (u * b) atTop = limsup u atTop := by
+  by_cases hu : ∃ᶠ n in atTop, 0 ≤ u n
+  · exact le_antisymm
+      ((EReal.limsup_mul_le hu hb0 (.inr (by rw [hb.limsup_eq]; exact EReal.coe_ne_top 1))
+        (.inr (by simp [hb.limsup_eq]))).trans_eq (by rw [hb.limsup_eq, mul_one]))
+      (by simpa [hb.liminf_eq] using EReal.le_limsup_mul hu hb0)
+  · push Not at hu
+    refine le_antisymm ?_ (limsup_le_limsup ?_)
+    · have h1 := EReal.le_liminf_mul (u := -u) (hu.mono fun _ hn ↦ by simpa using hn.le) hb0
+      have hneg : (-u) * b = -(u * b) := by ext n; simp [neg_mul]
+      rwa [hb.liminf_eq, mul_one, hneg, EReal.liminf_neg, EReal.liminf_neg,
+        EReal.neg_le_neg_iff] at h1
+    · filter_upwards [hu, hb0, hb1] with n hnu hn0 hn1
+      have hn0' : (0 : EReal) ≤ b n := hn0
+      have hn1' : b n ≤ (1 : EReal) := hn1
+      simp only [Pi.mul_apply]
+      cases hx : u n with
+      | bot => exact bot_le
+      | top => simp [hx] at hnu
+      | coe r =>
+        have hr : r < 0 := EReal.coe_lt_coe_iff.mp (hx ▸ hnu)
+        cases hy : b n with
+        | bot => simp [hy] at hn0'
+        | top => exact absurd (hy ▸ hn1') (not_le_of_gt (EReal.coe_lt_top 1))
+        | coe s =>
+          have hs1 : s ≤ 1 := by
+            rw [hy, ← EReal.coe_one, EReal.coe_le_coe_iff] at hn1'
+            exact hn1'
+          rw [← EReal.coe_mul, EReal.coe_le_coe_iff]
+          nlinarith
+
 /-- The extended-real `limsup` of the Birkhoff averages of a real-valued function along a forward
 orbit is invariant under shifting the starting point from `x` to `T x`. -/
 theorem limsup_birkhoffAverage_comp {Ω : Type*} (T : Ω → Ω) (g : Ω → ℝ) (x : Ω) :
@@ -53,6 +88,10 @@ theorem limsup_birkhoffAverage_comp {Ω : Type*} (T : Ω → Ω) (g : Ω → ℝ
   have hb : Tendsto b atTop (𝓝 1) := EReal.tendsto_coe.mpr <| by
     simpa only [Nat.cast_add, Nat.cast_one] using tendsto_natCast_div_add_atTop (1 : ℝ)
   have hb0 : 0 ≤ᶠ[atTop] b := Eventually.of_forall fun n ↦ EReal.coe_nonneg.mpr (by positivity)
+  have hb1 : b ≤ᶠ[atTop] 1 := Eventually.of_forall fun n ↦ by
+    change b n ≤ ((1 : ℝ) : EReal)
+    rw [EReal.coe_le_coe_iff, div_le_one (by positivity)]
+    push_cast; linarith
   have heq : (fun n ↦ ((birkhoffAverage ℝ T g (n + 1) x : ℝ) : EReal)) =ᶠ[atTop] u * b + a := by
     filter_upwards [eventually_ne_atTop 0] with n hn
     have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
@@ -65,26 +104,7 @@ theorem limsup_birkhoffAverage_comp {Ω : Type*} (T : Ω → Ω) (g : Ω → ℝ
     ((EReal.limsup_add_le (.inr (by simp [ha.limsup_eq]))
       (.inr (by simp [ha.limsup_eq]))).trans (by simp [ha.limsup_eq]))
     (by simpa [ha.liminf_eq] using EReal.le_limsup_add (u := u * b) (v := a) (f := atTop))
-  rw [hadd]
-  -- Drop the multiplicative factor `b → 1` (`0 ≤ b ≤ 1`) by splitting on the sign of `u n`:
-  -- * if `0 ≤ u n` frequently, `EReal.limsup_mul_le` and `EReal.le_limsup_mul` apply directly;
-  -- * if `u n < 0` eventually, `b n ≤ 1` yields `u n ≤ u n * b n` pointwise, while applying
-  --   `EReal.le_liminf_mul` to `-u ≥ 0` and negating yields `limsup (u * b) ≤ limsup u`.
-  by_cases hu : ∃ᶠ n in atTop, 0 ≤ u n
-  · exact (le_antisymm
-      ((EReal.limsup_mul_le hu hb0 (.inr (by rw [hb.limsup_eq]; exact EReal.coe_ne_top 1))
-        (.inr (by simp [hb.limsup_eq]))).trans_eq (by rw [hb.limsup_eq, mul_one]))
-      (by simpa [hb.liminf_eq] using EReal.le_limsup_mul hu hb0)).symm
-  · push Not at hu
-    refine le_antisymm (limsup_le_limsup <| hu.mono fun n hn ↦ ?_) ?_
-    · have hn' : birkhoffAverage ℝ T g n (T x) < 0 := EReal.coe_lt_coe_iff.mp hn
-      have hb1 : (n : ℝ) / ((n + 1 : ℕ) : ℝ) ≤ 1 := by
-        rw [div_le_one (by positivity)]; push_cast; linarith
-      exact EReal.coe_le_coe_iff.mpr (by nlinarith)
-    · have h1 := EReal.le_liminf_mul (u := -u) (hu.mono fun _ hn ↦ by simpa using hn.le) hb0
-      have hneg : (-u) * b = -(u * b) := by ext n; simp [neg_mul]
-      rwa [hb.liminf_eq, mul_one, hneg, EReal.liminf_neg, EReal.liminf_neg,
-        EReal.neg_le_neg_iff] at h1
+  rw [hadd, limsup_mul_eq_of_tendsto_one hb0 hb1 hb]
 
 /-- The extended-real `liminf` of the Birkhoff averages of a real-valued function along a forward
 orbit is invariant under shifting the starting point from `x` to `T x`. -/

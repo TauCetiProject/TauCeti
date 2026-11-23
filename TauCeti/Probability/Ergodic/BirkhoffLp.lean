@@ -8,11 +8,10 @@ module
 public import Mathlib.Dynamics.BirkhoffSum.Average
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
-# Birkhoff averages on `Lᵖ`, integral invariance, and `Lᵖ` contractivity
+# Birkhoff averages on `Lᵖ` and `Lᵖ` contractivity
 
 The Birkhoff sums and averages of the composition (Koopman) operator of a measure-preserving map
 `T` on `Lᵖ` are elements of `Lᵖ`, while the ergodic theorems a probabilist states are about the
@@ -21,8 +20,8 @@ two agree: an `Lᵖ` Birkhoff average of `g` is represented by the pointwise Bir
 coercion `⇑g`. For another representative `f =ᵐ[μ] ⇑g`, compose with Mathlib's
 `QuasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq`.
 
-It also collects the basic integral-invariance and `Lᵖ`/`L¹` contractivity properties of pointwise
-Birkhoff sums and averages under a measure-preserving map `T`.
+It also collects the `Lᵖ` (`1 ≤ p`) and `L¹` contractivity properties of pointwise Birkhoff
+averages under a measure-preserving map `T`.
 
 ## Main results
 
@@ -33,9 +32,6 @@ Birkhoff sums and averages under a measure-preserving map `T`.
   of the composition operator are represented by the pointwise Birkhoff sums and averages of the
   coercion of the argument; the averages may be taken over any normed division ring acting
   boundedly on the target;
-* `MeasureTheory.MeasurePreserving.integral_birkhoffSum` and
-  `MeasureTheory.MeasurePreserving.integral_birkhoffAverage` — invariance of Bochner integrals
-  under Birkhoff summation and averaging;
 * `MeasureTheory.MeasurePreserving.eLpNorm_birkhoffAverage_le` and
   `MeasureTheory.MeasurePreserving.integral_norm_birkhoffAverage_le` — `Lᵖ` (`1 ≤ p`) and `L¹`
   contractivity of Birkhoff averaging.
@@ -83,26 +79,6 @@ namespace MeasureTheory.MeasurePreserving
 variable {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E]
   {μ : Measure Ω} {T : Ω → Ω} {f : Ω → E}
 
-/-- The integral of the `n`-th Birkhoff sum of an integrable observable under a measure-preserving
-map is `n` times the integral of the observable. -/
-theorem integral_birkhoffSum (hT : MeasurePreserving T μ μ) (hf : Integrable f μ) (n : ℕ) :
-    ∫ x, birkhoffSum T f n x ∂μ = n • ∫ x, f x ∂μ := by
-  simp_rw [birkhoffSum]
-  rw [integral_finsetSum (Finset.range n) (f := fun k x ↦ f (T^[k] x))
-    fun k _ ↦ (hT.iterate k).integrable_comp_of_integrable hf]
-  have hterm (k : ℕ) : ∫ x, f (T^[k] x) ∂μ = ∫ x, f x ∂μ :=
-    (hT.iterate k).hasLaw.integral_comp hf.aestronglyMeasurable
-  simp [hterm]
-
-/-- The integral of a nonempty Birkhoff average of an integrable observable under a
-measure-preserving map equals the integral of the observable. -/
-theorem integral_birkhoffAverage (hT : MeasurePreserving T μ μ) (hf : Integrable f μ)
-    {n : ℕ} (hn : n ≠ 0) :
-    ∫ x, birkhoffAverage ℝ T f n x ∂μ = ∫ x, f x ∂μ := by
-  simp_rw [birkhoffAverage]
-  rw [integral_smul, hT.integral_birkhoffSum hf n, ← Nat.cast_smul_eq_nsmul ℝ,
-    inv_smul_smul₀ (Nat.cast_ne_zero.mpr hn)]
-
 /-- Birkhoff averaging under a measure-preserving map is a contraction on `Lᵖ` for `1 ≤ p`. -/
 theorem eLpNorm_birkhoffAverage_le (hT : MeasurePreserving T μ μ)
     {p : ℝ≥0∞} (hp : 1 ≤ p) (f : Ω → E) (n : ℕ) :
@@ -136,6 +112,6 @@ theorem eLpNorm_birkhoffAverage_le (hT : MeasurePreserving T μ μ)
 theorem integral_norm_birkhoffAverage_le (hT : MeasurePreserving T μ μ)
     (hf : Integrable f μ) (n : ℕ) :
     ∫ x, ‖birkhoffAverage ℝ T f n x‖ ∂μ ≤ ∫ x, ‖f x‖ ∂μ :=
-  integral_norm_le_integral_norm_of_eLpNorm_one_le hf (hT.eLpNorm_birkhoffAverage_le le_rfl f n)
+  hf.integral_norm_le_integral_norm_of_eLpNorm_one_le (hT.eLpNorm_birkhoffAverage_le le_rfl f n)
 
 end MeasureTheory.MeasurePreserving
