@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 
 /-!
@@ -31,6 +32,8 @@ definite they meet only in `0`. The spectral theory over finite-dimensional real
   eigenvalues in `Ω`.
 * `LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂`: naturality under linear
   equivalences.
+* `LinearMap.BilinForm.relativeEigenspace_compLeft`: for left-separating `g`, the eigenspaces of
+  `(v, w) ↦ g (f v) w` relative to `g` are the eigenspaces of the endomorphism `f`.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace`: spectral subspaces for
   disjoint sets are orthogonal for `g` and for `q`;
   `LinearMap.BilinForm.disjoint_relativeSpectralSubspace`: for anisotropic `g` they meet only
@@ -146,6 +149,15 @@ theorem map_relativeSpectralSubspace_compl₁₂ (e : W ≃ₗ[R] V) :
       g.relativeSpectralSubspace q Ω := by
   simp only [relativeSpectralSubspace, Submodule.map_iSup, relativeEigenspace_compl₁₂,
     Submodule.map_comap_eq_of_surjective e.surjective]
+
+/-- Relative to a left-separating form `g`, the eigenspaces of `g.compLeft f`, the form
+`(v, w) ↦ g (f v) w`, are the eigenspaces of the endomorphism `f`. -/
+theorem relativeEigenspace_compLeft (hg : g.SeparatingLeft) (f : Module.End R V) (μ : R) :
+    g.relativeEigenspace (g.compLeft f) μ = f.eigenspace μ := by
+  ext v
+  rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
+  refine ⟨fun h ↦ sub_eq_zero.mp (hg _ fun w ↦ ?_), fun h w ↦ by simp [h]⟩
+  simp [← compLeft_apply, h]
 
 end CommRing
 

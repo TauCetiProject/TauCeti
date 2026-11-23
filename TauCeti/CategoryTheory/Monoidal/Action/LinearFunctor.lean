@@ -64,18 +64,10 @@ variable (F : D ⥤ D') (G : D' ⥤ D'') [F.LaxLeftLinear C] [G.LaxLeftLinear C]
 @[simps]
 instance comp : (F ⋙ G).LaxLeftLinear C where
   μₗ c d := μₗ G c (F.obj d) ≫ G.map (μₗ F c d)
-  μₗ_naturality_left f d := by
-    simp_rw [comp_obj, comp_map, μₗ_naturality_left_assoc, Category.assoc, ← G.map_comp,
-      μₗ_naturality_left]
-  μₗ_naturality_right c _ _ f := by
-    simp_rw [comp_obj, comp_map, μₗ_naturality_right_assoc, Category.assoc, ← G.map_comp,
-      μₗ_naturality_right]
-  μₗ_associativity c c' d := by
-    simp only [comp_obj, comp_map, Category.assoc, actionHomRight_comp,
-      μₗ_naturality_right_assoc, ← μₗ_associativity_assoc G, ← G.map_comp, μₗ_associativity]
-  μₗ_unitality d := by
-    simp only [comp_obj, comp_map, Category.assoc, ← G.map_comp, ← μₗ_unitality,
-      ← μₗ_unitality G]
+  μₗ_naturality_left f d := by simp [← G.map_comp, -Functor.map_comp]
+  μₗ_naturality_right c _ _ f := by simp [← G.map_comp, -Functor.map_comp]
+  μₗ_associativity c c' d := by simp [← G.map_comp, -Functor.map_comp, ← μₗ_associativity_assoc G]
+  μₗ_unitality d := by simp [← G.map_comp, ← μₗ_unitality]
 
 end LaxLeftLinear
 
@@ -94,18 +86,11 @@ at `c` and `d` is `G.map (δₗ F c d) ≫ δₗ G c (F.obj d)`. -/
 @[simps]
 instance comp : (F ⋙ G).OplaxLeftLinear C where
   δₗ c d := G.map (δₗ F c d) ≫ δₗ G c (F.obj d)
-  δₗ_naturality_left f d := by
-    simp_rw [comp_obj, comp_map, ← G.map_comp_assoc, δₗ_naturality_left, G.map_comp,
-      Category.assoc, δₗ_naturality_left]
-  δₗ_naturality_right c _ _ f := by
-    simp_rw [comp_obj, comp_map, ← G.map_comp_assoc, δₗ_naturality_right, G.map_comp,
-      Category.assoc, δₗ_naturality_right]
+  δₗ_naturality_left f d := by simp [← G.map_comp_assoc]
+  δₗ_naturality_right c _ _ f := by simp [← G.map_comp_assoc]
   δₗ_associativity c c' d := by
-    simp only [comp_obj, comp_map, Category.assoc, δₗ_associativity, ← G.map_comp_assoc,
-      actionHomRight_comp, ← δₗ_naturality_right_assoc]
-  δₗ_unitality_inv d := by
-    simp only [comp_obj, comp_map, δₗ_unitality_inv G, δₗ_unitality_inv F d, G.map_comp,
-      Category.assoc]
+    simp [← G.map_comp_assoc, -Functor.map_comp, ← δₗ_naturality_right_assoc]
+  δₗ_unitality_inv d := by simp
 
 end OplaxLeftLinear
 

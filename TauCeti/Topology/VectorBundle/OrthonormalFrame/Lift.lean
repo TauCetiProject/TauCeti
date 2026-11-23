@@ -161,16 +161,9 @@ theorem finrank_model [NormedAddCommGroup F] [NormedSpace ℝ F]
 /-- Elements of the kernel of `ρ` act trivially on frames: if `ρ g = 1`, the frame of `p • g` is
 the frame of `p`. -/
 theorem toFrame_smul_of_map_eq_one (s : OrthonormalFrameLift F E n G ρ) {g : G} (hg : ρ g = 1)
-    (x : X) (p : s.P x) : s.toFrame ⟨x, op g • p⟩ = s.toFrame ⟨x, p⟩ := by
-  have h (v : Fin n → ℝ) := s.toFrame_smul x p g v
-  simp only [hg, FunLike.coe_one_eq_id, id_eq, TotalSpace.mk'] at h
-  generalize s.toFrame ⟨x, op g • p⟩ = q at h
-  generalize s.toFrame ⟨x, p⟩ = q' at h
-  obtain ⟨b, φ⟩ := q
-  obtain ⟨b', ψ⟩ := q'
-  obtain rfl : b = b' := congrArg TotalSpace.proj (h 0)
-  refine OrthonormalFrameBundle.mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
-  simpa using TotalSpace.mk_inj.1 (h (WithLp.ofLp w))
+    (x : X) (p : s.P x) : s.toFrame ⟨x, op g • p⟩ = s.toFrame ⟨x, p⟩ :=
+  OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ by
+    rw [s.toFrame_smul, hg, FunLike.coe_one_eq_id, id_eq]
 
 /-! ### Equivalences -/
 

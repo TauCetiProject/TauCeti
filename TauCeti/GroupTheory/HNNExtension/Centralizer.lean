@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.HNNExtension
+public import TauCeti.GroupTheory.HNNExtension.Basic
 
 /-!
 # Centralizers of base elements in an HNN extension

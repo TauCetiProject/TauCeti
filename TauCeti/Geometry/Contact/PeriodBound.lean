@@ -46,9 +46,10 @@ theorem IsContactForm.exists_pos_period_le (hα : α.IsContactForm) :
     ∃ ε > 0, ∀ γ : ℝ → M, IsMIntegralCurve γ α.reebVectorField →
       ∀ T > 0, Function.Periodic γ T → ε ≤ T := by
   let hc := hα.isCompleteVectorField_reebVectorField
-  obtain ⟨ε, hε, hbound⟩ := (hα.reebFlow hc).exists_pos_period_le_of_isCompact isCompact_univ
-    fun x _ ↦ hα.exists_reebFlow_ne hc x
-  refine ⟨ε, hε, fun γ hγ T hT hperiod ↦ hbound (γ 0) (mem_univ _) T hT ?_⟩
+  obtain ⟨ε, hε, hbound⟩ :=
+    (hα.reebFlow hc).exists_pos_eventually_period_le_of_isCompact isCompact_univ
+      fun x _ ↦ hα.exists_reebFlow_ne hc x
+  refine ⟨ε, hε, fun γ hγ T hT hperiod ↦ hbound.self_of_nhdsSet (γ 0) (mem_univ _) T hT ?_⟩
   rw [hα.reebFlow_eq_of_isMIntegralCurve hc hγ T]
   simpa only [zero_add] using hperiod 0
 
