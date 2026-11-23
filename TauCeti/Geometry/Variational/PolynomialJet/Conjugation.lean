@@ -113,24 +113,17 @@ theorem conjugation_conjugation {σ : α → α} (hσ : Function.Involutive σ)
     · simp [hp]
     · simp [hp, hσ a]
 
+/-- Conjugation along an involution of the field labels is an involutive map of polynomial
+jets. -/
 theorem conjugation_involutive {σ : α → α} (hσ : Function.Involutive σ) :
     Function.Involutive (conjugation (R := R) (ι := ι) σ) :=
   conjugation_conjugation hσ
 
 /-- **Conjugation commutes with total differentiation.** -/
+@[simp]
 theorem totalDeriv_conjugation (σ : α → α) (i : ι) (p : PolynomialJet R ι α) :
-    totalDeriv i (conjugation σ p) = conjugation σ (totalDeriv i p) := by
-  classical
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p v hp =>
-    have hv : totalDeriv (R := R) i (conjugation σ (X v)) = conjugation σ (totalDeriv i (X v)) := by
-      rcases v with j | ⟨a, I⟩
-      · simp only [conjugation_X_base, totalDeriv_X_base]
-        split <;> simp
-      · simp
-    simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, hp, hv]
+    totalDeriv i (conjugation σ p) = conjugation σ (totalDeriv i p) :=
+  totalDeriv_eval₂Hom_relabel (starRingEnd R) σ i p
 
 /-- Conjugation preserves each finite stage. -/
 theorem conjugation_mem_stage (σ : α → α) {r : ℕ} {p : PolynomialJet R ι α}
@@ -146,6 +139,8 @@ theorem conjugation_mem_stage (σ : α → α) {r : ℕ} {p : PolynomialJet R ι
     obtain ⟨-, rfl⟩ := hva
     exact hp b J (vars_map _ _ hv)
 
+/-- Along an involution of the field labels, an expression lies in stage `r` exactly when its
+conjugate does: conjugation neither raises nor lowers the jet order. -/
 theorem conjugation_mem_stage_iff {σ : α → α} (hσ : Function.Involutive σ) {r : ℕ}
     {p : PolynomialJet R ι α} : conjugation σ p ∈ stage R ι α r ↔ p ∈ stage R ι α r :=
   ⟨fun h ↦ conjugation_conjugation hσ p ▸ conjugation_mem_stage σ h, conjugation_mem_stage σ⟩
@@ -162,28 +157,6 @@ theorem coe_conjugationₛₗ (σ : α → α) :
   (rfl)
 
 end Conjugation
-
-section Map
-
-variable {R S ι α : Type*} [CommSemiring R] [CommSemiring S]
-
-/-- Total differentiation commutes with changing the coefficients along a ring homomorphism. -/
-theorem totalDeriv_map (f : R →+* S) (i : ι) (p : PolynomialJet R ι α) :
-    totalDeriv i (map f p) = map f (totalDeriv i p) := by
-  classical
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p v hp =>
-    have hv : totalDeriv (R := S) i (map f (X v)) =
-        map f (totalDeriv (α := α) i (X v)) := by
-      rcases v with j | ⟨a, I⟩
-      · simp only [map_X, totalDeriv_X_base]
-        split <;> simp
-      · simp
-    simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, hp, hv]
-
-end Map
 
 section Evaluation
 
@@ -260,7 +233,7 @@ def realPolynomialJetEquiv :
           Complex.coe_algebraMap] }
     ⟨fun q q' h ↦ map_injective _ (algebraMap ℝ ℂ).injective (congrArg Subtype.val h),
       fun p ↦ by
-        obtain ⟨q, hq⟩ := (mem_realPoints_conjugationₛₗ_id_iff p.1).1 p.2
+        obtain ⟨q, hq⟩ := (mem_realPoints_conjugationₛₗ_id_iff p.val).1 p.property
         exact ⟨q, Subtype.ext hq⟩⟩
 
 @[simp]
@@ -272,7 +245,7 @@ theorem coe_realPolynomialJetEquiv_apply (q : PolynomialJet ℝ ι α) :
 theorem coe_realPolynomialJetEquiv_totalDeriv (i : ι) (q : PolynomialJet ℝ ι α) :
     (realPolynomialJetEquiv (totalDeriv i q) : PolynomialJet ℂ ι α) =
       totalDeriv i (realPolynomialJetEquiv q : PolynomialJet ℂ ι α) := by
-  simp [totalDeriv_map]
+  simp
 
 end RealDescent
 
@@ -383,6 +356,7 @@ theorem realPairEquiv_symm_X_field_inr (a : α) (I : ι →₀ ℕ) :
   simp [realPairEquiv_symm_apply, pairField]
 
 /-- Passing to real and imaginary parts commutes with total differentiation. -/
+@[simp]
 theorem totalDeriv_realPairEquiv (i : ι) (p : PolynomialJet ℂ ι (α ⊕ α)) :
     totalDeriv i (realPairEquiv p) = realPairEquiv (totalDeriv i p) := by
   classical
@@ -390,6 +364,9 @@ theorem totalDeriv_realPairEquiv (i : ι) (p : PolynomialJet ℂ ι (α ⊕ α))
   refine (totalDeriv i).aeval_polynomialJet i _ _ (fun j ↦ by simp) (fun a I ↦ ?_) p
   rcases a with a | a <;> simp [realPairField]
 
+/-- Recovering the conjugate-paired field `(ψ, ψ*)` from its real and imaginary parts also
+commutes with total differentiation. -/
+@[simp]
 theorem totalDeriv_realPairEquiv_symm (i : ι) (p : PolynomialJet ℂ ι (α ⊕ α)) :
     totalDeriv i (realPairEquiv.symm p) = realPairEquiv.symm (totalDeriv i p) := by
   apply realPairEquiv.injective
@@ -397,6 +374,7 @@ theorem totalDeriv_realPairEquiv_symm (i : ι) (p : PolynomialJet ℂ ι (α ⊕
 
 /-- Passing to real and imaginary parts turns conjugation of a conjugate-paired field, which
 swaps `ψ` and `ψ*`, into conjugation of real fields. -/
+@[simp]
 theorem conjugation_id_realPairEquiv (p : PolynomialJet ℂ ι (α ⊕ α)) :
     conjugation id (realPairEquiv p) = realPairEquiv (conjugation Sum.swap p) := by
   induction p using MvPolynomial.induction_on with
@@ -445,8 +423,9 @@ theorem aeval_star_eq_aeval_realPairEquiv [StarRing A] [StarModule ℂ A] (x : �
   · rfl
   · exact (realPart_add_I_smul_imaginaryPart (φ a I)).symm
   · dsimp only [Sum.elim_inr, Sum.elim_inl]
-    nth_rewrite 1 [← realPart_add_I_smul_imaginaryPart (φ a I)]
-    simp [sub_eq_add_neg]
+    calc star (φ a I) = star ((ℜ (φ a I) : A) + Complex.I • (ℑ (φ a I) : A)) := by
+          rw [realPart_add_I_smul_imaginaryPart]
+      _ = (ℜ (φ a I) : A) - Complex.I • (ℑ (φ a I) : A) := by simp [sub_eq_add_neg]
 
 end Evaluation
 
