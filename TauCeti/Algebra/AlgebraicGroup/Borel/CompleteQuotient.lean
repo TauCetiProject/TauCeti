@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.FlagStabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Flag
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Borel.Dimension
-import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character
+import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Boundary
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flag
@@ -17,7 +17,6 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Solvability
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.StabilizerDimension
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank
-import TauCeti.LinearAlgebra.ExteriorPower.Flag.Cone
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
@@ -185,8 +184,7 @@ theorem IsBorelOverAlgClosed.exists_isClosed_projectiveOrbit_stabilizerHopfIdeal
     hB.isClosed_range_projectiveOrbitMap_exteriorFlagVector b hb0_stab htri hw
   have hcoset (A : CommAlgCat.{u} k) (g h : HopfAlgebra.points (R := k) (H := G.obj) A) :=
     B.coset_eq_iff_exists_units_matrixCoefficient w hw A (fun a ↦ by
-      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker, ← hstab_w,
-        Submodule.stabilizerHopfIdeal_le_ker_iff]) g h
+      rw [← hstab_w, Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]) g h
   exact ⟨W, instAddW, inferInstance, instComodW, inferInstance, w, hw, hstab_w, hclosed,
     (Comodule.isClosedImmersion_projectiveOrbitι_iff_isClosed w hw).2 hclosed,
     Comodule.isProper_projectiveOrbitToSpec_of_isClosed W w hw hclosed,

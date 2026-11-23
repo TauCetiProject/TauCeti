@@ -46,8 +46,9 @@ time.
 * `Module.Basis.lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis`: dually, an element of
   `S(M*)`, a polynomial function on `M`, is a polynomial in the coordinates of a finite basis of
   `M`, and its value at `x : M` is that polynomial evaluated at the coordinates of `x`.
-* `SymmetricAlgebra.lift_eval_map_dualMap`: pulling back a polynomial function along `f.dualMap`
-  and evaluating at `v` agrees with evaluating at `f v`.
+* `SymmetricAlgebra.lift_eval_comp_dualMap` and `SymmetricAlgebra.lift_eval_map_dualMap`:
+  pulling back a polynomial function along `f.dualMap` and evaluating at `v` agrees with
+  evaluating at `f v`.
 * `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
   linear forms, the evaluations of an element of `S(M)` are the values of a polynomial.
 * `SymmetricAlgebra.isPrime_ker_lift` and `SymmetricAlgebra.isMaximal_ker_lift`: the kernel of
@@ -93,6 +94,16 @@ end Module.Basis
 
 namespace SymmetricAlgebra
 
+/-- Composing the evaluator at `v : V` with `f.dualMap` before lifting to `S(W*)` agrees with
+evaluating at `f v : W`. -/
+@[simp]
+theorem lift_eval_comp_dualMap {R V W : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
+    [AddCommMonoid W] [Module R W] (f : V →ₗ[R] W) (v : V)
+    (s : SymmetricAlgebra R (Module.Dual R W)) :
+    lift ((Module.Dual.eval R V v).comp f.dualMap) s =
+      lift (Module.Dual.eval R W (f v)) s :=
+  congrArg (fun h ↦ lift h s) (LinearMap.congr_fun (Module.Dual.eval_naturality f) v)
+
 /-- Pulling back a polynomial function in `S(W*)` along `f.dualMap` and evaluating at `v : V`
 agrees with evaluating the original polynomial at `f v : W`. -/
 theorem lift_eval_map_dualMap {R V W : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
@@ -100,8 +111,7 @@ theorem lift_eval_map_dualMap {R V W : Type*} [CommSemiring R] [AddCommMonoid V]
     (s : SymmetricAlgebra R (Module.Dual R W)) :
     lift (Module.Dual.eval R V v) (map R f.dualMap s) =
       lift (Module.Dual.eval R W (f v)) s := by
-  rw [lift_map_apply]
-  exact congrArg (fun h ↦ lift h s) (LinearMap.congr_fun (Module.Dual.eval_naturality f) v)
+  simp
 
 /-- For any `R`-linear map `f : M →ₗ[R] A` into a nontrivial commutative `R`-algebra without zero
 divisors, the kernel of `SymmetricAlgebra.lift f` is a prime ideal. -/

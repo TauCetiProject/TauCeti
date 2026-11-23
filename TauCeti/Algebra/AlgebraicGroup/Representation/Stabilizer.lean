@@ -46,6 +46,8 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
 * `Submodule.stabilizerHopfIdeal`: the Hopf ideal of the stabilizer of `W`.
 * `Submodule.stabilizerHopfIdeal_le_ker_iff`: its points are the points carrying `A ⊗ W` onto
   itself.
+* `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint`: algebra-valued point
+  membership in the quotient points subgroup.
 * `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff`: its rational points are the
   rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
@@ -322,6 +324,16 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
       exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.property
 
+/-- An algebra-valued point lies in the stabilizer of `W` as a subgroup of `H(A)` exactly when its
+action carries `A ⊗ W` onto itself. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (W : Submodule k M)
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (W.stabilizerHopfIdeal H) (CommAlgCat.of k A) ↔
+      (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
+    W.stabilizerHopfIdeal_le_ker_iff g]
+
 /-- A rational point lies in the stabilizer of `W` exactly when its action carries `W` onto
 itself. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
@@ -343,8 +355,8 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
     simp only [e, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_symm_apply]
     rw [Comodule.endOfPoint_tmul, one_smul,
       Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
-    W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint, hbc, ← map_comp, hcomp,
+    map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
 /-- A subspace `W` of an `H`-comodule `M` has stabilizer Hopf ideal at most `J` if and only if `W`
@@ -379,11 +391,8 @@ theorem stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff
   refine HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
     (H := _root_.CommHopfAlgCat.of k H) fun A ↦ ?_
   ext g
-  have hA := h A g
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker] at hA
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker, hA,
-    ← W.stabilizerHopfIdeal_le_ker_iff g]
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]
+  exact (h A g).symm
 
 end Hopf
 
@@ -404,8 +413,7 @@ theorem stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff
     W₁.stabilizerHopfIdeal H = W₂.stabilizerHopfIdeal H :=
   stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff W₁ (W₂.stabilizerHopfIdeal H)
     fun A _ _ g ↦ by
-      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff_toIdeal_le_ker, h A g,
-        ← W₂.stabilizerHopfIdeal_le_ker_iff g]
+      rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint, h A g]
 
 /-- Transporting a comodule along a linear equivalence preserves subspace stabilizer Hopf ideals. -/
 theorem stabilizerHopfIdeal_map_transport
@@ -416,15 +424,12 @@ theorem stabilizerHopfIdeal_map_transport
   let _ : Comodule k H N := Comodule.Transport (R := k) (C := H) e
   refine stabilizerHopfIdeal_eq_of_forall_map_endOfPoint_eq_iff (W.map e.toLinearMap) W
     fun A _ _ g ↦ ?_
-  have hcomp : Comodule.endOfPoint N g.ofConv ∘ₗ e.toLinearMap.baseChange A =
-      e.toLinearMap.baseChange A ∘ₗ Comodule.endOfPoint M g.ofConv := by
-    simpa only [Comodule.transportToHom_toLinearMap] using
-      (Comodule.baseChange_comp_endOfPoint
-        (Comodule.transportToHom (R := k) (C := H) e) g.ofConv).symm
-  have hinj : Function.Injective (e.toLinearMap.baseChange A) :=
-    (e.baseChange k A).injective
-  rw [Submodule.baseChange_map, ← Submodule.map_comp, hcomp, Submodule.map_comp]
-  exact (Submodule.map_injective_of_injective hinj).eq_iff
+  have hinj : Function.Injective (Comodule.transportToHom (R := k) (C := H) e) := by
+    rw [← Comodule.Hom.coe_toLinearMap, Comodule.transportToHom_toLinearMap]
+    exact e.injective
+  simpa only [Comodule.transportToHom_toLinearMap] using
+    Comodule.Hom.map_endOfPoint_baseChange_eq_iff
+      (Comodule.transportToHom (R := k) (C := H) e) hinj W g.ofConv
 
 end Comparison
 

@@ -42,7 +42,7 @@ variable (R : Type*) (M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
 `ι m₁ * ι m₂` in `SymmetricAlgebra R M`. -/
 noncomputable def quadFormOfTensor :
     M ⊗[R] M →ₗ[R] homogeneousSubmodule R M 2 :=
-  TensorProduct.lift (DirectSum.gMulLHom R fun n ↦ homogeneousSubmodule R M n) ∘ₗ
+  homogeneousSubmoduleMul R M 1 1 ∘ₗ
     TensorProduct.map
       (homogeneousSubmoduleOneEquiv R M).symm.toLinearMap
       (homogeneousSubmoduleOneEquiv R M).symm.toLinearMap
@@ -54,7 +54,10 @@ variable {R M}
 theorem coe_quadFormOfTensor_tmul (m₁ m₂ : M) :
     (quadFormOfTensor R M (m₁ ⊗ₜ[R] m₂) : _root_.SymmetricAlgebra R M) =
       _root_.SymmetricAlgebra.ι R M m₁ * _root_.SymmetricAlgebra.ι R M m₂ := by
-  simp [quadFormOfTensor, DirectSum.gMulLHom_apply_apply, SetLike.coe_gMul]
+  simpa [quadFormOfTensor] using
+    coe_homogeneousSubmoduleMul_tmul R M
+      ((homogeneousSubmoduleOneEquiv R M).symm m₁)
+      ((homogeneousSubmoduleOneEquiv R M).symm m₂)
 
 /-- Evaluating the image of `z : Dual R V ⊗[R] Dual R V` under `quadFormOfTensor` at `v : V`
 agrees with `TensorProduct.dualDistrib R V V z (v ⊗ₜ[R] v)`. -/

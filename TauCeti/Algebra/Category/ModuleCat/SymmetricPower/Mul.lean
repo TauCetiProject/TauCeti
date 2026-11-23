@@ -56,14 +56,14 @@ open TauCeti.SymmetricAlgebra (homogeneousSubmodule)
 `Symⁱ M` and `Symʲ M`, as a morphism `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M` in `ModuleCat R`. -/
 noncomputable def mul (M : ModuleCat.{u} R) (i j : ℕ) :
     M.symmetricPower i ⊗ M.symmetricPower j ⟶ M.symmetricPower (i + j) :=
-  ofHom (TensorProduct.lift (DirectSum.gMulLHom R fun n ↦ homogeneousSubmodule R M n))
+  ofHom (TauCeti.SymmetricAlgebra.homogeneousSubmoduleMul R M i j)
 
 /-- The multiplication of symmetric powers is the product in the symmetric algebra. -/
 @[simp]
 lemma coe_mul_tmul (M : ModuleCat.{u} R) {i j : ℕ} (x : M.symmetricPower i)
     (y : M.symmetricPower j) :
     Subtype.val (mul M i j (x ⊗ₜ y)) = x.val * y.val :=
-  (rfl)
+  TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMul_tmul R M x y
 
 /-- Transport along an equality of degrees does not change the underlying element of the
 symmetric algebra. -/
@@ -91,7 +91,7 @@ lemma mul_surjective (M : ModuleCat.{u} R) (i j : ℕ) : Function.Surjective (mu
   -- `mul M i j` is `Submodule.mulMap` with its codomain restricted to `Symⁱ⁺ʲ M`
   have h : (homogeneousSubmodule R M (i + j)).subtype ∘ₗ (mul M i j).hom =
       Submodule.mulMap (homogeneousSubmodule R M i) (homogeneousSubmodule R M j) :=
-    TensorProduct.ext' fun _ _ ↦ rfl
+    TensorProduct.ext' fun x y ↦ TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMul_tmul R M x y
   exact ⟨t, Subtype.ext (LinearMap.congr_fun h t)⟩
 
 /-- The multiplication `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M` is an epimorphism. -/

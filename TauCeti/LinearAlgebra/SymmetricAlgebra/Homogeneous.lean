@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.Algebra.WordFiltration.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
@@ -30,6 +31,8 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.iSup_homogeneousSubmodule_eq_top`: the homogeneous pieces span the
   whole symmetric algebra.
 * `TauCeti.SymmetricAlgebra.instGradedMonoid`: the homogeneous submodules form a graded monoid.
+* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleMul`: multiplication of homogeneous submodules
+  `Symⁱ M ⊗ Symʲ M →ₗ[R] Symⁱ⁺ʲ M`.
 * `TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv`,
   `TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv`: the homogeneous pieces of degree zero
   and one are the scalars and the module itself.
@@ -43,6 +46,8 @@ These pieces are the domains of the degreewise PBW comparison maps in
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace TauCeti.SymmetricAlgebra
 
@@ -177,6 +182,22 @@ theorem ι_homogeneousSubmoduleOneEquiv_apply (x : homogeneousSubmodule R M 1) :
 multiplication adds degrees. -/
 instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule R M) :=
   Submodule.nat_power_gradedMonoid (LinearMap.range (SymmetricAlgebra.ι R M))
+
+/-- Multiplication of homogeneous submodules of a symmetric algebra, as an `R`-linear map
+`homogeneousSubmodule R M i ⊗[R] homogeneousSubmodule R M j →ₗ[R]
+homogeneousSubmodule R M (i + j)`. -/
+@[expose]
+noncomputable def homogeneousSubmoduleMul (i j : ℕ) :
+    homogeneousSubmodule R M i ⊗[R] homogeneousSubmodule R M j →ₗ[R]
+      homogeneousSubmodule R M (i + j) :=
+  TensorProduct.lift (DirectSum.gMulLHom R fun n ↦ homogeneousSubmodule R M n)
+
+/-- Multiplication of homogeneous submodules is the product in the symmetric algebra. -/
+@[simp]
+theorem coe_homogeneousSubmoduleMul_tmul {i j : ℕ} (x : homogeneousSubmodule R M i)
+    (y : homogeneousSubmodule R M j) :
+    (homogeneousSubmoduleMul R M i j (x ⊗ₜ[R] y) : SymmetricAlgebra R M) = (x : _) * (y : _) :=
+  (rfl)
 
 /-- A derivation of the symmetric algebra sending every generator into degree one preserves every
 homogeneous submodule. -/

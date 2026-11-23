@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Exterior
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.ExteriorPower
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Transport
-import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
+import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Basic
 
 /-!
 # Base-point action on exterior flag spaces

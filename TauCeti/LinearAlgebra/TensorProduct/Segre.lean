@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.Unimodular
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.LinearAlgebra.TensorProduct.Dual
 import TauCeti.LinearAlgebra.TensorProduct.Separation
-import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # Segre minor criterion for pure tensors
@@ -28,8 +26,6 @@ of its dual evaluation vanish:
   invertible dual pairing and the Segre minor relations.
 * `TensorProduct.exists_eq_tmul_iff`: characterization of pure tensors over a field by the
   vanishing of all `2 × 2` dual minors.
-* `TensorProduct.exists_units_smul_of_tmul_eq_tmul`: uniqueness of nonzero pure-tensor factors
-  over a field up to a unit scalar.
 -/
 
 public section
@@ -117,20 +113,6 @@ theorem exists_eq_tmul_iff (z : M ⊗[k] N) :
       (fun n hn ↦ (Module.forall_dual_apply_eq_zero_iff k n).mp hn) z fun φ ψ ↦ by
         simpa [← LinearMap.congr_fun (lid_comp_map_eq_dualDistrib φ ψ) z] using h0 φ ψ
     exact ⟨0, 0, by simp [hz]⟩
-
-/-- Two pure-tensor representations of the same nonzero element of `M ⊗[k] N` over a field differ
-by reciprocal unit scalars. -/
-theorem exists_units_smul_of_tmul_eq_tmul {m₁ m₂ : M} {n₁ n₂ : N}
-    (h : m₁ ⊗ₜ[k] n₁ = m₂ ⊗ₜ[k] n₂) (hne : m₁ ⊗ₜ[k] n₁ ≠ 0) :
-    ∃ u : kˣ, m₁ = u • m₂ ∧ n₂ = u • n₁ := by
-  let _ := Module.addCommMonoidToAddCommGroup k (M := M)
-  let _ := Module.addCommMonoidToAddCommGroup k (M := N)
-  have hm₂ : m₂ ≠ 0 := fun hm ↦ hne (by simp [h, hm])
-  have hn₂ : n₂ ≠ 0 := fun hn ↦ hne (by simp [h, hn])
-  obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one k hm₂
-  obtain ⟨ψ, hψ⟩ := Module.Projective.exists_dual_eq_one k hn₂
-  exact (Module.isUnimodular_of_apply_eq_one hφ).exists_units_smul_of_tmul_eq_tmul
-    (Module.isUnimodular_of_apply_eq_one hψ) h
 
 end Field
 

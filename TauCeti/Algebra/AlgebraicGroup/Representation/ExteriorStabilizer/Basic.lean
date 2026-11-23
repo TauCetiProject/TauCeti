@@ -20,14 +20,19 @@ ideal realizes that subgroup as a subspace stabilizer. Over every commutative va
 the top-exterior-line criterion in the exterior algebra over `A` of `A ⊗ V`, together with
 compatibility of the exterior point action with scalar extension, turns this into the stabilizer
 of a line in the finite-dimensional exterior-power comodule `⋀ᵈ V`, where `d` is the dimension of
-the defining subspace. This works for nonreduced value algebras and subgroup schemes. The
-existence of a stabilizing line, together with its unique subgroup character, is proved in
+the defining subspace. This works for nonreduced value algebras and subgroup schemes. The subgroup
+character on that line is constructed in
 `TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character`.
 
 ## Main statements
 
 * `TauCeti.Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff`: a point
   stabilizes the top exterior line of a subspace exactly when it stabilizes the subspace.
+* `TauCeti.HopfIdeal.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq`:
+  a finite regular subcomodule containing ideal generators realizes the subgroup as a line
+  stabilizer over every value algebra.
+* `TauCeti.HopfIdeal.exists_line_stabilizerHopfIdeal_eq`: every closed subgroup with finitely
+  generated defining ideal is the stabilizer Hopf ideal of a line in a finite-dimensional comodule.
 * `Submodule.stabilizerHopfIdeal_range_exteriorPowerMap`: the stabilizer Hopf ideal of the top
   exterior line `range (exteriorPower.map n W.subtype)` of a subspace `W` (where `n = finrank k W`)
   equals `W.stabilizerHopfIdeal H`.
@@ -92,6 +97,25 @@ theorem mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   rw [Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff]
   exact I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V hgen A g
+
+/-- Every closed subgroup with finitely generated defining ideal is the stabilizer Hopf ideal of a
+one-dimensional subspace of a finite-dimensional comodule. -/
+theorem exists_line_stabilizerHopfIdeal_eq (I : HopfIdeal k H) (hI : I.toIdeal.FG) :
+    ∃ (M : Type (max u v)) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k H M)
+      (_ : Module.Finite k M) (L : Submodule k M),
+      Module.finrank k L = 1 ∧ L.stabilizerHopfIdeal H = I := by
+  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
+  let : Module.Finite k V := hV
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  let W := I.definingSubspace V
+  let n := Module.finrank k W
+  let L := LinearMap.range (_root_.exteriorPower.map n W.subtype)
+  let instComodM : Comodule k H (⋀[k]^n V) := Comodule.exteriorPower k H V n
+  refine ⟨⋀[k]^n V, inferInstance, inferInstance, instComodM, inferInstance, L, ?_, ?_⟩
+  · rw [TauCeti.exteriorPower.finrank_range_map W.injective_subtype, Nat.choose_self]
+  · exact L.stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff I fun A _ _ g ↦
+      I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq V hgen
+        (CommAlgCat.of k A) g
 
 end TauCeti.HopfIdeal
 

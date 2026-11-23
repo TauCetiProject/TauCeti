@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Unimodular elements: scalar extension, unit rescaling, and local coordinates
@@ -41,6 +43,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   factors of a pure tensor whose reference factors are unimodular, over any commutative semiring.
 * `Module.IsUnimodular.span_singleton_tmul_eq_iff`: a pure tensor spans the same cyclic submodule as
   a tensor of unimodular vectors precisely when its factors span the same cyclic submodules.
+* `TensorProduct.exists_units_smul_of_tmul_eq_tmul`: uniqueness of nonzero pure-tensor factors
+  over a field up to a unit scalar.
 * `IsUnit.isUnimodular_pi`: a coordinate vector with a unit coordinate is unimodular.
 * `Module.isUnimodular_mk_one`: a vector `(v, 1)` of `M × R` is unimodular.
 * `Module.Basis.isUnimodular`: every vector of a basis is unimodular.
@@ -347,3 +351,23 @@ theorem span_singleton_tmul_eq_iff {u u₀ : M} {v v₀ : N}
 end TensorProduct
 
 end Module.IsUnimodular
+
+namespace TensorProduct
+
+variable {k M N : Type*} [Field k] [AddCommMonoid M] [Module k M] [AddCommMonoid N] [Module k N]
+
+/-- Two pure-tensor representations of the same nonzero element of `M ⊗[k] N` over a field differ
+by reciprocal unit scalars. -/
+theorem exists_units_smul_of_tmul_eq_tmul {m₁ m₂ : M} {n₁ n₂ : N}
+    (h : m₁ ⊗ₜ[k] n₁ = m₂ ⊗ₜ[k] n₂) (hne : m₁ ⊗ₜ[k] n₁ ≠ 0) :
+    ∃ u : kˣ, m₁ = u • m₂ ∧ n₂ = u • n₁ := by
+  let _ := Module.addCommMonoidToAddCommGroup k (M := M)
+  let _ := Module.addCommMonoidToAddCommGroup k (M := N)
+  have hm₂ : m₂ ≠ 0 := fun hm ↦ hne (by simp [h, hm])
+  have hn₂ : n₂ ≠ 0 := fun hn ↦ hne (by simp [h, hn])
+  obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one k hm₂
+  obtain ⟨ψ, hψ⟩ := Module.Projective.exists_dual_eq_one k hn₂
+  exact (Module.isUnimodular_of_apply_eq_one hφ).exists_units_smul_of_tmul_eq_tmul
+    (Module.isUnimodular_of_apply_eq_one hψ) h
+
+end TensorProduct
