@@ -397,11 +397,7 @@ private theorem contMDiff_negSq_posSq_rescale (h : i.IsNondegenerateCriticalSubm
   let := i.normalSpaceVectorBundle hn hdim
   set X := TotalSpace P fun s ↦ i.NormalSpace s hn
   have hneg := h.contMDiff_negativeNormalProjection hn hk hf2 hdim g
-  have hpos : ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) ∞ fun w : X ↦
-      TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj
-        (w.snd - h.negativeNormalProjection hn g.toRiemannianMetric w.proj w.snd) :=
-    (h.contMDiff_projection_positiveNormalSpace hn hk hf2 hdim g).congr fun w ↦ by
-      rw [h.projection_positiveNormalSpace_apply hn g.toRiemannianMetric]
+  have hpos := h.contMDiff_sub_negativeNormalProjection hn hk hf2 hdim g
   have hH := h.toIsCriticalSubmanifold.contMDiff_normalHessian_apply_self hn hk hf2 hdim
   refine ⟨(contMDiff_const.mul (hH.comp hneg)).neg, contMDiff_const.mul (hH.comp hpos),
     fun p₀ ↦ ?_⟩

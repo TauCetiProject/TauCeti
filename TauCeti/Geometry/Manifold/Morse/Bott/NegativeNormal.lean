@@ -247,7 +247,8 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, ← mul_apply_eq_comp,
       hidem.eq, sub_self]
   rw [← e.symmₗ_apply (R := ℝ) hs.2, ← e.symmₗ_apply (R := ℝ) hs.2]
-  exact (h.negativeNormalProjection_apply_eq_of_mem hn _ h₁ (by rwa [← map_sub])).symm
+  exact (h.negativeNormalProjection_apply_eq_of_mem_of_sub_mem hn _ h₁
+    (by rwa [← map_sub])).symm
 
 end NormedSpace
 

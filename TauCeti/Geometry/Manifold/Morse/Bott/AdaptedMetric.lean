@@ -115,16 +115,10 @@ private theorem adaptedForm_pos {s : S} {v : i.NormalSpace s hn} (hv : v ≠ 0) 
     0 < h.adaptedForm hn g s v v := by
   set P := h.negativeNormalProjection hn g s
   rw [adaptedForm_apply]
-  have hneg : h.normalHessian hn s (P v) (P v) ≤ 0 := by
-    rcases eq_or_ne (P v) 0 with h0 | h0
-    · simp [h0]
-    · exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g
-        (h.negativeNormalProjection_apply_mem hn g v) h0).le
-  have hpos : 0 ≤ h.normalHessian hn s (v - P v) (v - P v) := by
-    rcases eq_or_ne (v - P v) 0 with h0 | h0
-    · simp [h0]
-    · exact (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g
-        (h.sub_negativeNormalProjection_apply_mem hn g v) h0).le
+  have hneg := h.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g v)
+  have hpos := h.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn g
+    (h.sub_negativeNormalProjection_apply_mem hn g v)
   -- The two components of the nonzero vector `v` do not both vanish.
   rcases eq_or_ne (P v) 0 with h0 | h0
   · have h1 : v - P v ≠ 0 := by simpa [h0] using hv
@@ -272,7 +266,7 @@ theorem negativeNormalProjection_adaptedMetric :
     simpa using h.negativeNormalProjection_apply_mem hn (h.adaptedMetric hn g) v
   have h₂ : v - P' v ∈ h.positiveNormalSpace hn g s := by
     simpa using h.sub_negativeNormalProjection_apply_mem hn (h.adaptedMetric hn g) v
-  exact (h.negativeNormalProjection_apply_eq_of_mem hn g h₁ h₂).symm
+  exact (h.negativeNormalProjection_apply_eq_of_mem_of_sub_mem hn g h₁ h₂).symm
 
 end Pointwise
 
@@ -312,7 +306,8 @@ theorem contMDiff_adaptedMetric (h : i.IsNondegenerateCriticalSubmanifold f) (hk
   have hs₀ : s₀ ∈ e.baseSet := i.mem_normalSpaceTrivialization_baseSet hn hdim s₀
   -- In the trivialization at `s₀`, the projections onto the negative normal spaces are a `C^k`
   -- family `p`, and the normal Hessian is a `C^k` family `Q` of bilinear forms.
-  obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalSpace_eq_map hn hk hf hdim g s₀
+  obtain ⟨p, hp, hps⟩ :=
+    h.exists_contMDiffOn_negativeNormalProjection_trivializationAt hn hk hf hdim g s₀
   simp only [normalSpaceFiberBundle_trivializationAt] at hp hps
   obtain ⟨Q, hQ, hQs⟩ :=
     h.toIsCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn

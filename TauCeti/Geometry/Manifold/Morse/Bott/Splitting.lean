@@ -298,7 +298,8 @@ theorem isIdempotentElem_negativeNormalProjection (s : S) :
 
 /-- The projection of `v` is the unique `x` in the negative normal space with `v - x` in the
 positive normal space. -/
-theorem negativeNormalProjection_apply_eq_of_mem {s : S} {v x : i.NormalSpace s hn}
+theorem negativeNormalProjection_apply_eq_of_mem_of_sub_mem {s : S}
+    {v x : i.NormalSpace s hn}
     (hx : x ∈ h.negativeNormalSpace hn g s) (hvx : v - x ∈ h.positiveNormalSpace hn g s) :
     h.negativeNormalProjection hn g s v = x := by
   conv_lhs => rw [← add_sub_cancel x v]
