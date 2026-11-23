@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
 /-!
@@ -113,7 +114,8 @@ private theorem isLocallySobolevAt_chartComponent_of_forall
     {y : E} (hy : y ∈ (c'.symm.trans c).source)
     (h : ∀ w, (t.chartComponent c hc hct T w).IsLocallySobolevAt s (c'.symm.trans c y)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsLocallySobolevAt s y := by
-  obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
+  obtain ⟨he, he'⟩ :=
+    OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hc' hcs' hc hcs
   obtain ⟨B, hB, hBc, g, hg, hyB, hS⟩ := exists_restrictCLM_chartComponent_eq_sum (hc := hc)
     (hct := hct) (hc' := hc') (hct' := hct') hcs' he he' T v hy
   rw [← isLocallySobolevAt_restrictCLM_iff (fun z hz ↦ (hB hz).1) hyB, hS]

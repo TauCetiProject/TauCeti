@@ -34,9 +34,10 @@ where `S_{bⱼ}` are the components in `(t, c)` along the basis `(bⱼ) = Module
 `G = t ∘ t'⁻¹` is the change of frame and `κ^*` is the pullback of distributions
 (`Distribution.compCLMOfOpenPartialHomeomorph`)
 (`Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`). The transition `κ` is smooth with
-smooth inverse (`Bundle.Trivialization.contDiffOn_transition`), and the coefficients `gⱼ` are
-smooth on the source of `κ` (`Bundle.Trivialization.contDiffOn_transitionCoeff`), so near every
-point of the source of `κ` the formula holds with globally smooth coefficients
+smooth inverse (`OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn`), and the
+coefficients `gⱼ` are smooth on the source of `κ`
+(`Bundle.Trivialization.contDiffOn_transitionCoeff`), so near every point of the source of `κ` the
+formula holds with globally smooth coefficients
 (`Bundle.Trivialization.exists_restrictCLM_chartComponent_eq_sum`). Any property of distributions
 at a point that is preserved by pullback, smooth multiples and finite sums, such as local Sobolev
 regularity, is therefore independent of the chart and the frame. Microlocal smoothness transfers
@@ -56,8 +57,6 @@ which carries the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), giv
   `T` in a chart and a frame, as a complex distribution on the chart target.
 * `Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`: the change of chart and frame for the
   components.
-* `Bundle.Trivialization.contDiffOn_transition`: the smoothness of the chart transition and its
-  inverse.
 * `Bundle.Trivialization.contDiffOn_transitionCoeff`: the smoothness of the coefficients.
 * `Bundle.Trivialization.exists_restrictCLM_chartComponent_eq_sum`: the change of chart and frame
   near a point, with globally smooth coefficients.
@@ -174,18 +173,6 @@ variable {t c hc hct}
 variable {t' : Trivialization F (π F V)} [MemTrivializationAtlas t']
   {c' : OpenPartialHomeomorph M E}
   {hc' : ContMDiffOn I 𝓘(ℝ, E) ∞ c' c'.source} {hct' : c'.source ⊆ t'.baseSet}
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-include hc hc' in
-/-- The chart transition `κ = c ∘ c'⁻¹` between smooth charts with smooth inverses is smooth on its
-source, and so is its inverse on its target. -/
-theorem contDiffOn_transition (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source ∧
-      ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
-  refine ⟨OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs', ?_⟩
-  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-  exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
 
 /-- **Change of chart and frame for test functions.** Let `φ` be a test function supported in an
 open set `B` of the source of the chart transition `κ = c ∘ c'⁻¹`, and `gⱼ` smooth functions equal

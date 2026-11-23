@@ -164,7 +164,8 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_forall
     (h : ∀ w, (t.chartComponent c hc hct T w).IsMicrolocallySmoothAt (c'.symm.trans c y)
       (((fderiv ℝ (c'.symm.trans c).symm (c'.symm.trans c y))†) ξ)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsMicrolocallySmoothAt y ξ := by
-  obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
+  obtain ⟨he, he'⟩ :=
+    OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hc' hcs' hc hcs
   obtain ⟨B, hB, hBc, g, hg, hyB, hS⟩ := exists_restrictCLM_chartComponent_eq_sum (hc := hc)
     (hct := hct) (hc' := hc') (hct' := hct') hcs' he he' T v hy
   rw [← isMicrolocallySmoothAt_restrictCLM_iff (fun z hz ↦ (hB hz).1) hyB, hS]
@@ -195,7 +196,8 @@ theorem forall_isMicrolocallySmoothAt_chartComponent_iff
     rw [hzy]
     exact h w
   · intro h v
-    obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
+    obtain ⟨he, he'⟩ :=
+    OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hc' hcs' hc hcs
     refine isMicrolocallySmoothAt_chartComponent_of_forall (t := t) (hc := hc) (hct := hct)
       (t' := t') (hc' := hc') (hct' := hct') hcs hcs' T hys (fun w ↦ ?_) v
     have hη := (c'.symm.trans c).adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he
