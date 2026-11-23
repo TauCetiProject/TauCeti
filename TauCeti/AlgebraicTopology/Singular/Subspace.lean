@@ -19,7 +19,7 @@ singular simplex whose image lies in an open set `V` corestricts to a singular s
 
 public section
 
-open CategoryTheory Limits Topology TopologicalSpace
+open Simplicial CategoryTheory Limits Topology TopologicalSpace
 
 universe u
 
@@ -40,6 +40,17 @@ lemma mem_range_toSSet_subtypeVal_iff (S : Set X) (n : SimplexCategoryᵒᵖ)
   rw [ConcreteCategory.hom_ofHom,
     show Set.range (⇑(ContinuousMap.subtypeVal S)) = S from Subtype.range_coe]
 
+/-- A singular simplex of an open set `W` comes from the open subset `V ≤ W` exactly when its image
+lies in `V`. -/
+lemma mem_range_toSSet_map_inclusion_iff {M : Type*} [TopologicalSpace M] {V W : Opens M}
+    (h : V ≤ W) (n : SimplexCategoryᵒᵖ) (σ : (toSSet.obj (of W)).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
+      Set.range ((of W).toSSetObjEquiv n σ) ⊆ {x | (x : M) ∈ V} := by
+  rw [Subfunctor.range_obj,
+    IsInducing.mem_range_toSSet_map_app_iff (IsEmbedding.inclusion h).isInducing n σ]
+  exact Iff.of_eq (congrArg _ (Set.range_inclusion h))
+
 section Opens
 
 variable {V : Opens X} {n : SimplexCategoryᵒᵖ}
@@ -55,7 +66,7 @@ viewed in `X`. -/
 @[simp]
 lemma coe_toSSetObjEquiv_toSSetObjCodRestrict (σ : (toSSet.obj X).obj n)
     (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) (z : Convexity.StdSimplex ℝ (Fin (n.unop.len + 1))) :
-    (toSSetObjEquiv _ n (toSSetObjCodRestrict σ h) z).1 = X.toSSetObjEquiv n σ z := by
+    (toSSetObjEquiv _ n (toSSetObjCodRestrict σ h) z).val = X.toSSetObjEquiv n σ z := by
   rw [toSSetObjCodRestrict, Equiv.apply_symm_apply]
   -- Evaluating a corestriction and coercing back to `X` evaluates the original map.
   rfl
@@ -65,7 +76,16 @@ lemma range_toSSetObjEquiv_toSSet_map_inclusion'_subset
     (τ : (toSSet.obj ((Opens.toTopCat X).obj V)).obj n) :
     Set.range (X.toSSetObjEquiv n ((toSSet.map (Opens.inclusion' V)).app n τ)) ⊆ V := by
   rintro _ ⟨z, rfl⟩
-  exact (toSSetObjEquiv _ n τ z).2
+  exact (toSSetObjEquiv _ n τ z).property
+
+/-- A simplicial operator preserves containment of the image of a singular simplex. -/
+lemma range_toSSetObjEquiv_map_subset (A : Set X) {m n : ℕ}
+    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (hσ : Set.range (X.toSSetObjEquiv _ σ) ⊆ A)
+    (f : SimplexCategory.mk m ⟶ SimplexCategory.mk n) :
+    Set.range (X.toSSetObjEquiv _ ((TopCat.toSSet.obj X).map f.op σ)) ⊆ A := by
+  rintro _ ⟨z, rfl⟩
+  rw [TopCat.toSSetObjEquiv_naturality_apply]
+  exact hσ ⟨_, rfl⟩
 
 /-- The corestriction of a singular simplex to an open set `V`, followed by the inclusion of `V`,
 is the singular simplex itself. -/

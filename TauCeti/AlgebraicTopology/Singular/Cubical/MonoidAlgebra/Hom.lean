@@ -34,6 +34,7 @@ the push-forward `TauCeti.cubicalChainSumMap` of the direct sums of chains.
 
 ## Main results
 
+* `TauCeti.cubicalChainDGAlgHom_apply`: the induced morphism is the push-forward of chains.
 * `TauCeti.cubicalChainDGAlgHom_id`, `TauCeti.cubicalChainDGAlgHom_comp`: functoriality.
 * `TauCeti.cubicalChainAugmentation_comp_dgAlgHom`: compatibility with the augmentations.
 
@@ -118,6 +119,11 @@ theorem cubicalChainDGAlgHom_lof (φ : G →ₜ* G') (n : ℕ) (y : NormalizedCu
     cubicalChainDGAlgHom R φ (cubicalChainLof G R n y) =
       cubicalChainLof G' R n (map R φ.toContinuousMap n y) :=
   cubicalChainAlgHom_lof φ n y
+
+/-- The induced DG algebra morphism is the push-forward of chains along `φ`. -/
+theorem cubicalChainDGAlgHom_apply (φ : G →ₜ* G') (a : normalizedCubicalChainAlgebra G R) :
+    cubicalChainDGAlgHom R φ a = cubicalChainSumMap R φ.toContinuousMap a :=
+  LinearMap.congr_fun (cubicalChainAlgHom_toLinearMap φ) a
 
 /-- Two DG algebra morphisms out of `C^□_*(G; R)` agree if they agree on chains of each
 dimension. -/

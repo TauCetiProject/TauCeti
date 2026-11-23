@@ -35,7 +35,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 local instance boundaryChartStokes_isManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 
 /-- Stokes for a compactly supported form in one preferred chart, with its boundary term
@@ -126,7 +126,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 2 M]
 
 local instance orientedChartStokes_isManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- Local Stokes for the canonical manifold integrals. The source sign need only be constant
 on the form's support, as supplied by a local smooth partition. -/

@@ -155,7 +155,7 @@ theorem span_vectorsOfNorm_two_e8PowLattice (k : ℕ) :
     refine ⟨⟨_, hj⟩, Submodule.subset_span ?_, rfl⟩
     rwa [mem_vectorsOfNorm, norm_apply]
   refine eq_top_iff.mpr fun x _ ↦ ?_
-  obtain ⟨y, hy, hyx⟩ := hle x.2
+  obtain ⟨y, hy, hyx⟩ := hle x.property
   rwa [← Subtype.ext hyx]
 
 /-- **Positive definite even unimodular lattices exist exactly in ranks divisible by eight.**

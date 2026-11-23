@@ -57,10 +57,9 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared reporting tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: .
 
       - name: Discover retained intents from this exact original run
@@ -132,7 +131,7 @@ jobs:
       - name: Prepare scoped CI reporting credentials
         if: steps.intents.outputs.present == 'true'
         id: credentials
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@2e715e060777c57cb634987090139964547b6fc8
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           workflow-token: ${{ github.token }}
           owner: ${{ github.repository_owner }}
@@ -184,7 +183,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: TauCetiProject/TauCetiTools
-          ref: 2e715e060777c57cb634987090139964547b6fc8
+          ref: main
           sparse-checkout: tauceti_tools
           persist-credentials: false
       - name: Recover abandoned PR builds
