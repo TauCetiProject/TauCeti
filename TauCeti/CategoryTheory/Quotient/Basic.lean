@@ -21,6 +21,8 @@ natural isomorphism (`functor r ⋙ F ≅ G`).
   holds if and only if `G` identifies every pair of morphisms related by `r`.
 * `CategoryTheory.Quotient.exists_iso_lift_iff`: factorization through `Quotient.functor r` up to
   natural isomorphism holds under the exact same condition.
+* `CategoryTheory.Quotient.natIso_ext`: natural isomorphisms out of `Quotient r` are determined by
+  their components on objects in the image of `Quotient.functor r`.
 -/
 
 public section
@@ -48,5 +50,12 @@ theorem exists_iso_lift_iff (r : HomRel C) (G : C ⥤ D) :
   mp := fun ⟨F, ⟨e⟩⟩ _ _ _ _ hfg ↦
     (NatIso.map_eq_iff e).mp (congrArg F.map (Quotient.sound r hfg))
   mpr hG := ⟨lift r G hG, ⟨lift.isLift r G hG⟩⟩
+
+/-- Two natural isomorphisms between functors out of a quotient category are equal if their
+hom-components agree on all objects in the image of the quotient functor. -/
+theorem natIso_ext {r : HomRel C} {F G : Quotient r ⥤ D} {e₁ e₂ : F ≅ G}
+    (h : ∀ X : C, e₁.hom.app ((functor r).obj X) = e₂.hom.app ((functor r).obj X)) :
+    e₁ = e₂ :=
+  Iso.ext <| Quotient.natTrans_ext e₁.hom e₂.hom <| NatTrans.ext <| funext h
 
 end CategoryTheory.Quotient

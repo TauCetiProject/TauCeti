@@ -227,14 +227,11 @@ private lemma liftPreIso_hom_app {D : Type u'} [Category.{v'} D] [MonoidalCatego
     (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
       (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
     (X : S.FreeMonoidal) :
-    (liftPreIso α hI hJ).hom.app X = (FreeMonoidalCategory.projectObjIso α.iso X.as).hom := by
-  change (isLiftIso I.obj I.coupon hI).hom.app X ≫
-    (((Interpretation.extension S D).map α).iso.hom.hom.hom.app X ≫
-      (isLiftIso J.obj J.coupon hJ).inv.app X) = _
-  exact (congrArg₂ (· ≫ ·) (isLiftIso_hom_app I.obj I.coupon hI X)
+    (liftPreIso α hI hJ).hom.app X = (FreeMonoidalCategory.projectObjIso α.iso X.as).hom :=
+  ((congrArg₂ (· ≫ ·) (isLiftIso_hom_app I.obj I.coupon hI X)
     ((congrArg₂ (· ≫ ·) (Interpretation.extension_map_iso_hom_hom_hom_app α X)
       (isLiftIso_inv_app J.obj J.coupon hJ X)).trans (Category.comp_id _))).trans
-    (Category.id_comp _)
+    (Category.id_comp _))
 
 private instance {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
     {I J : Interpretation S D} (α : I ⟶ J)
@@ -300,6 +297,34 @@ instance {D : Type u'} [Category.{v'} D] [MonoidalCategory D] {I J : Interpretat
     (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
       (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g) :
     NatTrans.IsMonoidal (liftIso α hI hJ).hom := by dsimp only [liftIso]; infer_instance
+
+/-- Lifting the identity morphism of an interpretation gives the identity natural isomorphism. -/
+@[simp] theorem liftIso_id {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+    {I : Interpretation S D}
+    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g) :
+    liftIso (R := R) (𝟙 I) hI hI = Iso.refl (lift I.obj I.coupon hI) :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
+  simp only [liftIso_hom_app, Iso.refl_hom, NatTrans.id_app]
+  rw [funext (Interpretation.id_iso I), FreeMonoidalCategory.projectObjIso_refl, Iso.refl_hom]
+  rfl
+
+/-- Lifting a composite morphism of interpretations gives the composite of the lifted natural
+isomorphisms. -/
+theorem liftIso_comp {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+    {I J K : Interpretation S D} (α : I ⟶ J) (β : J ⟶ K)
+    (hI : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+      (FreeMonoidal.lift I.obj I.coupon).map f = (FreeMonoidal.lift I.obj I.coupon).map g)
+    (hJ : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+      (FreeMonoidal.lift J.obj J.coupon).map f = (FreeMonoidal.lift J.obj J.coupon).map g)
+    (hK : ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+      (FreeMonoidal.lift K.obj K.coupon).map f = (FreeMonoidal.lift K.obj K.coupon).map g) :
+    liftIso (R := R) (α ≫ β) hI hK = liftIso (R := R) α hI hJ ≪≫ liftIso (R := R) β hJ hK :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
+  simp only [liftIso_hom_app, Iso.trans_hom, NatTrans.comp_app]
+  exact (congrArg (fun e ↦ (FreeMonoidalCategory.projectObjIso e X.as).hom)
+    (funext (Interpretation.comp_iso α β))).trans
+    (congrArg Iso.hom (FreeMonoidalCategory.projectObjIso_trans _ _ X.as))
 
 end Lift
 
@@ -717,18 +742,13 @@ theorem mapSubstCompIso_id_left
     mapSubstCompIso (mapSubst_id_respects R) hσ ≪≫
         Functor.isoWhiskerRight (mapSubstIdIso R) (mapSubst σ hσ) ≪≫
         Functor.leftUnitor (mapSubst σ hσ) =
-      eqToIso (mapSubst_congr (Substitution.id_comp σ) _ hσ) := by
-  refine Iso.ext <| CategoryTheory.Quotient.natTrans_ext _ _ <| NatTrans.ext <| funext fun X ↦ ?_
-  rw [Functor.whiskerLeft_app, Functor.whiskerLeft_app, Iso.trans_hom, Iso.trans_hom,
-    NatTrans.comp_app, NatTrans.comp_app, Functor.isoWhiskerRight_hom, Functor.whiskerRight_app,
-    Functor.leftUnitor_hom_app, eqToIso.hom, eqToHom_app]
-  have h1 := mapSubstCompIso_hom_app (mapSubst_id_respects R) hσ X
-  have h2 : (mapSubst σ hσ).map ((mapSubstIdIso R).hom.app ((quotientFunctor R).obj X)) =
-      eqToHom (congrArg (mapSubst σ hσ).obj
-        (congrArg (quotientFunctor R).obj (Substitution.toFunctor_id_obj S X))) :=
-    (congrArg (mapSubst σ hσ).map (mapSubstIdIso_hom_app R X)).trans (eqToHom_map _ _)
-  exact (congrArg₂ (· ≫ ·) h1 ((congrArg (· ≫ _) h2).trans (Category.comp_id _))).trans
-    (eqToHom_trans _ _)
+      eqToIso (mapSubst_congr (Substitution.id_comp σ) _ hσ) :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
+    mapSubstCompIso_hom_app, mapSubstIdIso_hom_app, mapSubst_obj, eqToIso.hom, eqToHom_app,
+    eqToHom_map, Category.comp_id]
+  exact eqToHom_trans _ _
 
 /-- Right unit coherence for `mapSubst`: composing `mapSubstCompIso` with `mapSubstIdIso R'`
 agrees with `Substitution.comp_id`. -/
@@ -742,9 +762,9 @@ theorem mapSubstCompIso_id_right
     mapSubstCompIso hσ (mapSubst_id_respects R') ≪≫
         Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstIdIso R') ≪≫
         Functor.rightUnitor (mapSubst σ hσ) =
-      eqToIso (mapSubst_congr (Substitution.comp_id σ) _ hσ) := by
-  refine Iso.ext <| CategoryTheory.Quotient.natTrans_ext _ _ <| NatTrans.ext <| funext fun X ↦ ?_
-  simp only [Functor.whiskerLeft_app, Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+      eqToIso (mapSubst_congr (Substitution.comp_id σ) _ hσ) :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
     Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
     mapSubstCompIso_hom_app, mapSubst_obj, mapSubstIdIso_hom_app, eqToHom_trans,
     Category.comp_id, eqToIso.hom, eqToHom_app]
@@ -772,11 +792,11 @@ theorem mapSubstCompIso_assoc
         Functor.associator (mapSubst σ hσ) (mapSubst τ hτ) (mapSubst ρ hρ) =
       eqToIso (mapSubst_congr (Substitution.comp_assoc σ τ ρ) _ _) ≪≫
         mapSubstCompIso hσ (mapSubst_comp_respects hτ hρ) ≪≫
-        Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstCompIso hτ hρ) := by
-  refine Iso.ext <| CategoryTheory.Quotient.natTrans_ext _ _ <| NatTrans.ext <| funext fun X ↦ ?_
-  simp only [Functor.whiskerLeft_app, Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+        Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstCompIso hτ hρ) :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
     Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
-    Functor.comp_obj, mapSubstCompIso_hom_app, mapSubst_obj, eqToHom_map,
+    Functor.whiskerLeft_app, Functor.comp_obj, mapSubstCompIso_hom_app, mapSubst_obj, eqToHom_map,
     eqToHom_trans, Category.comp_id, eqToIso.hom, eqToHom_app]
   exact (eqToHom_trans _ _).trans (eqToHom_trans _ _).symm
 
@@ -955,10 +975,10 @@ theorem mapSubstCompLiftIso_natural (σ : Substitution S T)
       mapSubstCompLiftIso σ hσ I.obj I.coupon hI ≪≫
         liftIso ((σ.pullback D).map α)
           (pullback_respects σ hσ I.obj I.coupon hI)
-          (pullback_respects σ hσ J.obj J.coupon hJ) := by
-  refine Iso.ext <| CategoryTheory.Quotient.natTrans_ext _ _ <| NatTrans.ext <| funext fun X ↦ ?_
-  simp only [Functor.whiskerLeft_app, Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-    mapSubst_obj]
+          (pullback_respects σ hσ J.obj J.coupon hJ) :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, mapSubst_obj]
   refine (congrArg₂ (· ≫ ·)
     (liftIso_hom_app_extension α hI hJ (σ.toFunctor.obj X))
     (mapSubstCompLiftIso_hom_app_eq σ hσ J.obj J.coupon hJ X)).trans ?_
@@ -979,9 +999,8 @@ theorem mapSubstCompLiftIso_id (fo : S.Obj → D)
         liftIso ((Substitution.pullbackIdIso D).hom.app ⟨fo, fc⟩)
           (pullback_respects (Substitution.id S) (mapSubst_id_respects R) fo fc hR) hR =
       Functor.isoWhiskerRight (mapSubstIdIso R) (lift fo fc hR) ≪≫
-        Functor.leftUnitor (lift fo fc hR) := by
-  refine Iso.ext <| CategoryTheory.Quotient.natTrans_ext _ _ <| NatTrans.ext <| funext fun X ↦ ?_
-  rw [Functor.whiskerLeft_app, Functor.whiskerLeft_app]
+        Functor.leftUnitor (lift fo fc hR) :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
   have hLHS := (congrArg₂ (· ≫ ·)
     (mapSubstCompLiftIso_hom_app_eq (Substitution.id S) (mapSubst_id_respects R) fo fc hR X)
     (liftIso_hom_app_extension ((Substitution.pullbackIdIso D).hom.app ⟨fo, fc⟩)
@@ -1018,9 +1037,8 @@ theorem mapSubstCompLiftIso_comp
         Functor.associator (mapSubst σ hσ) (mapSubst τ hτ) (lift fo fc hR'') ≪≫
         Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstCompLiftIso τ hτ fo fc hR'') ≪≫
         mapSubstCompLiftIso σ hσ (τ.pullbackObj fo) (τ.pullbackCoupon fo fc)
-          (pullback_respects τ hτ fo fc hR'') := by
-  refine Iso.ext <| CategoryTheory.Quotient.natTrans_ext _ _ <| NatTrans.ext <| funext fun X ↦ ?_
-  rw [Functor.whiskerLeft_app, Functor.whiskerLeft_app]
+          (pullback_respects τ hτ fo fc hR'') :=
+  CategoryTheory.Quotient.natIso_ext fun X ↦ by
   have hLHS := (congrArg₂ (· ≫ ·)
     (mapSubstCompLiftIso_hom_app_eq (σ.comp τ) (mapSubst_comp_respects hσ hτ) fo fc hR'' X)
     (liftIso_hom_app_extension ((Substitution.pullbackCompIso D σ τ).hom.app ⟨fo, fc⟩)
