@@ -95,7 +95,7 @@ private theorem exists_valuationSubring_of_isPrime {Bplus : Subring B}
           V.valuation (algebraMap (B ⧸ 𝔭) _ (Ideal.Quotient.mk 𝔭 (s : B))) < 1 := by
   set g : B →+* FractionRing (B ⧸ 𝔭) := (algebraMap (B ⧸ 𝔭) _).comp (Ideal.Quotient.mk 𝔭)
   set gp : Bplus →+* Bplus.map g :=
-    (g.comp Bplus.subtype).codRestrict _ fun b ↦ Subring.mem_map.mpr ⟨b, b.2, rfl⟩
+    (g.comp Bplus.subtype).codRestrict _ fun b ↦ Subring.mem_map.mpr ⟨b, b.property, rfl⟩
   have hgp : Function.Surjective gp := by
     rintro ⟨x, hx⟩
     obtain ⟨b, hb, rfl⟩ := Subring.mem_map.mp hx
@@ -134,7 +134,7 @@ private theorem exists_mem_spaAnalytic_le_supp_of_notMem {Bplus : Subring B}
   set Q' : PairOfDefinition (B ⧸ 𝔭) := Q.map mk (QuotientRing.isOpenQuotientMap_mk 𝔭)
   set f₀ : Q.ringOfDefinition →+* Q'.ringOfDefinition :=
     (mk.comp Q.ringOfDefinition.subtype).codRestrict Q'.ringOfDefinition fun a ↦
-      Q.map_ringOfDefinition mk _ ▸ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+      Q.map_ringOfDefinition mk _ ▸ Subring.mem_map.mpr ⟨a, a.property, rfl⟩
   have hf₀ : Function.Surjective f₀ := by
     rintro ⟨x, hx⟩
     obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp (Q.map_ringOfDefinition mk _ ▸ hx)
@@ -145,7 +145,7 @@ private theorem exists_mem_spaAnalytic_le_supp_of_notMem {Bplus : Subring B}
   set v₀ : Valuation Q'.ringOfDefinition V.ValueGroup := w₀.comap Q'.ringOfDefinition.subtype
   have hv₀le : ∀ a : Q'.ringOfDefinition, v₀ a ≤ 1 := fun a ↦ by
     obtain ⟨b, rfl⟩ := hf₀ a
-    exact (V.valuation_le_one_iff _).mpr (hBV _ (hQ b.2))
+    exact (V.valuation_le_one_iff _).mpr (hBV _ (hQ b.property))
   have hv₀lt : ∀ s ∈ Q'.idealOfDefinition, v₀ s < 1 := fun s hs ↦ by
     rw [hI'] at hs
     obtain ⟨s', hs', rfl⟩ := (Ideal.mem_map_iff_of_surjective f₀ hf₀).mp hs
@@ -168,7 +168,7 @@ private theorem exists_mem_spaAnalytic_le_supp_of_notMem {Bplus : Subring B}
   -- coarsen along the dominating generator `t₀` and extend to a continuous point of `B ⧸ 𝔭`
   obtain ⟨w, hwc, ht₀w, hcmp⟩ := Q'.exists_continuous_coarsened_extension_of_valuation v₀ hv₀le hS
     (hSI t₀ ht₀S) (fun s hs ↦ ht₀max s hs) (hv₀lt t₀ (hSI t₀ ht₀S))
-    (lt_of_lt_of_le (zero_lt_iff.mpr hs₁) (ht₀max s₁ hs₁S)).ne'
+    (lt_of_lt_of_le (pos_iff_ne_zero.mpr hs₁) (ht₀max s₁ hs₁S)).ne'
   have hwan : IsAnalyticPoint w :=
     (isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp Q' w).mpr
       ⟨t₀, by rw [Q'.extendedIdealOfDefinition_def]; exact Ideal.mem_map_of_mem _ (hSI t₀ ht₀S),

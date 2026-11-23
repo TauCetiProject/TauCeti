@@ -177,7 +177,7 @@ theorem irreducibleMorphismValuation_fst_eq_one_iff :
       ⟨f, mem_jacobsonRadicalSubmodule.mpr hf.mem_jacobsonRadical⟩,
       irreducibleMorphismMk_ne_zero_iff.mpr hf, fun w => ?_⟩
     obtain ⟨u, rfl⟩ := irreducibleMorphismMk_surjective w
-    obtain ⟨g, hg⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.2)
+    obtain ⟨g, hg⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.property)
     refine ⟨Ideal.Quotient.mk _ (End.of g), ?_⟩
     rw [residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff]
     simpa using neg_mem hg
@@ -202,7 +202,7 @@ theorem irreducibleMorphismValuation_snd_eq_one_iff :
       ⟨f, mem_jacobsonRadicalSubmodule.mpr hf.mem_jacobsonRadical⟩,
       irreducibleMorphismMk_ne_zero_iff.mpr hf, fun w => ?_⟩
     obtain ⟨u, rfl⟩ := irreducibleMorphismMk_surjective w
-    obtain ⟨a, ha⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.2)
+    obtain ⟨a, ha⟩ := hgen u (mem_jacobsonRadicalSubmodule.mp u.property)
     refine ⟨Ideal.Quotient.mk _ (MulOpposite.op (End.of a)), ?_⟩
     rw [residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff]
     simpa using neg_mem ha

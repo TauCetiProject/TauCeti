@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Tactic.FinCases
+import TauCeti.Geometry.Manifold.Algebra.LieGroup
 
 /-!
 # Smooth circle presentations
@@ -86,14 +87,12 @@ theorem circleRotationHom_injective : Function.Injective circleRotationHom := by
 
 /-- Complex conjugation, as the orientation-reversing smooth self-diffeomorphism of the circle. -/
 def circleReflection : Diff (𝓡 1) Circle ∞ :=
-  { toEquiv := Equiv.inv Circle
-    contMDiff_toFun := contMDiff_inv (𝓡 1) ∞
-    contMDiff_invFun := contMDiff_inv (𝓡 1) ∞ }
+  Lie.invDiffeomorph (𝓡 1) ∞ Circle
 
 /-- Reflection of the complex unit circle is inversion. -/
 @[simp]
-theorem circleReflection_apply (x : Circle) : circleReflection x = x⁻¹ := by
-  rfl
+theorem circleReflection_apply (x : Circle) : circleReflection x = x⁻¹ :=
+  Lie.invDiffeomorph_apply x
 
 /-- Reflection of the circle is an involution. -/
 @[simp]
