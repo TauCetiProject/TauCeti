@@ -9,7 +9,6 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.OrderIsoNat
 public import Mathlib.SetTheory.Cardinal.Order
-import TauCeti.Data.Set.Card
 
 /-!
 # Enumerating a family in nondecreasing order
@@ -30,8 +29,7 @@ with the finiteness of the multiplicities.
 The enumeration sorts `ι` lexicographically by the value of `f` and, among indices with equal
 values, by an arbitrary well-ordering of `ι`; each index is then sent to the number of indices
 below it (`ncardIioOrderEmbedding`), which is finite. For any linear order whose strict initial
-segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`,
-every rank below its extended cardinality is attained (`exists_ncard_Iio_eq_of_finite_Iio`), and
+segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`, and
 for a strictly increasing tail after a finite prefix, the rank equals the prefix cardinality plus
 the tail index (`ncard_Iio_eq_ncard_add_of_strictMono`).
 -/
@@ -55,16 +53,6 @@ theorem ncardIioOrderEmbedding_apply {α : Type*} [LinearOrder α]
     (hfin : ∀ a : α, (Set.Iio a).Finite) (a : α) :
     ncardIioOrderEmbedding hfin a = (Set.Iio a).ncard :=
   (rfl)
-
-/-- In a linear order whose strict initial segments `Set.Iio a` are finite, every rank `n`
-strictly below `ENat.card α` is attained as `(Set.Iio a).ncard = n`. -/
-theorem exists_ncard_Iio_eq_of_finite_Iio {α : Type*} [LinearOrder α]
-    (hfin : ∀ a : α, (Set.Iio a).Finite) {n : ℕ} (hn : (n : ℕ∞) < ENat.card α) :
-    ∃ a : α, (Set.Iio a).ncard = n := by
-  have hn' : (n : ℕ∞) < (univ : Set α).encard := by simpa [Set.encard_univ] using hn
-  obtain ⟨a, -, ha⟩ := Set.exists_mem_ncard_sep_lt_eq (s := (univ : Set α)) (f := id)
-    Function.injective_id.injOn (fun a _ ↦ by simpa [Set.Iio] using hfin a) hn'
-  exact ⟨a, by simpa [Set.Iio] using ha⟩
 
 /-- If `A : Set α` is a finite prefix strictly preceding a strictly increasing tail `z : ℕ → α`
 that together exhaust `α`, then `z n` has rank `(Set.Iio (z n)).ncard = A.ncard + n`. -/
