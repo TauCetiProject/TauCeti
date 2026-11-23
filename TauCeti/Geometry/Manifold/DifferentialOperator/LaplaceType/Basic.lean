@@ -39,12 +39,12 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
   real-linear map to `C^∞(M)`.
 * `TauCeti.smoothLaplaceBeltrami I M`: the Laplace–Beltrami operator of a smooth metric as a
   real-linear endomorphism of `C^∞(M)`.
-* `TauCeti.mem_eigenspace_smoothLaplaceBeltrami_iff`: `u` is a `μ`-eigenfunction of `Δ` exactly
-  when `Δu = μ u` everywhere.
 * `TauCeti.IsLaplaceType D c`: `D` is of Laplace type with constant `c`.
 
 ## Main results
 
+* `TauCeti.mem_eigenspace_smoothLaplaceBeltrami_iff`: `u` is a `μ`-eigenfunction of `Δ` exactly
+  when `Δu = μ u` everywhere.
 * `TauCeti.smulCommutator_smulCommutator_smoothLaplaceBeltrami_apply`: the double commutators
   `[[Δ, f], g] h = 2 ⟪grad f, grad g⟫ h`.
 * `TauCeti.smoothLaplaceBeltrami_mem_differentialOperators_two`: `Δ` has order at most two.
