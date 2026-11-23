@@ -284,17 +284,18 @@ private theorem isDistinguished_support_chainSimplexTimed {n : ℕ} {S : Set V} 
         IsDistinguished S (chainSimplexTimed (v ∘ φ) w') ∧
         (chainSimplexTimed (v ∘ φ) w').map (fun x ↦ x.1⁻¹ • x.2) = List.ofFn (v ∘ φ) := by
   intro φ
-  have hrange : ↑w.weights.support ⊆ Set.range φ := by
-    simp [φ]
-  let w' := w.comap φ.injective hrange
+  have hbij : Set.BijOn φ (φ ⁻¹' ↑w.weights.support) ↑w.weights.support :=
+    ⟨Set.mapsTo_preimage _ _, φ.injective.injOn, by
+      simp [φ, Set.SurjOn, Set.image_preimage_eq_inter_range]⟩
+  let w' := w.comap hbij
   have hw'pos (i : Fin w.weights.support.card) : 0 < w'.weights i := by
     rw [Convexity.StdSimplex.weights_comap_apply]
     exact (w.nonneg (φ i)).lt_of_ne' (Finsupp.mem_support_iff.mp (Finset.orderEmbOfFin_mem _ _ i))
   have hslope (i : Fin w.weights.support.card) :
       (w'.weights i)⁻¹ • (w'.weights i • v (φ i)) = v (φ i) :=
     inv_smul_smul₀ (hw'pos i).ne' _
-  refine ⟨w', Convexity.StdSimplex.map_comap φ.injective w hrange,
-    fun i ↦ Convexity.StdSimplex.weights_comap_apply φ.injective w hrange i,
+  refine ⟨w', Convexity.StdSimplex.map_comap w hbij,
+    fun i ↦ Convexity.StdSimplex.weights_comap_apply w hbij i,
     isDistinguished_chainSimplexTimed (fun i ↦ hvS (φ i))
       (fun i hi h ↦ (Fin.ne_of_lt (Nat.lt_succ_self i.val) : i ≠ ⟨i.val + 1, hi⟩)
         (φ.injective (hv h))) hw'pos, ?_⟩
@@ -698,9 +699,8 @@ theorem mem_lsChainSimplexSet_and_weights_pos_iff {l : ℕ}
       by_contra hj
       have h0 : ((π.durationSimplex.mapRange (Rat.castHom 𝕜 : ℚ →+ 𝕜) Rat.cast_one
           (fun _ ↦ Rat.cast_nonneg.2)).map φ).weights j = 0 := by
-        rw [Convexity.StdSimplex.weights_map_apply]
-        exact Finset.sum_eq_zero fun i hi ↦
-          absurd (Finset.mem_filter.mp hi).2 fun h ↦ hj ⟨i, h⟩
+        rw [Convexity.StdSimplex.weights_map]
+        exact Finsupp.mapDomain_of_notMem_range _ j hj
       exact (hpos j).ne' h0
     have hcard := Fintype.card_of_bijective ⟨φ.injective, hsurj⟩
     simp only [Fintype.card_fin] at hcard
