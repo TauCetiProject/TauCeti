@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.MumfordTate
+public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.MumfordTate.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 
@@ -16,15 +16,14 @@ Let `h : S → G_ℝ` be a homomorphism from the Deligne torus to the real exten
 group `G` over `ℚ` with coordinate Hopf algebra `H`. Twisting `h` by an automorphism of `G`
 defined over `ℚ` moves its Mumford–Tate group by that automorphism. For an inner automorphism,
 conjugation by a rational point `g` of `G`, the Mumford–Tate group of the conjugate homomorphism
-`g⁻¹ h g` is the conjugate subgroup. In coordinates, twisting `h` means precomposing it with the
-real extension of a Hopf automorphism of `H`, and the Mumford–Tate ideal moves by the inverse
-image under that automorphism.
+`g h g⁻¹` (that is, `s ↦ g h(s) g⁻¹`) is the conjugate subgroup `g MT(h) g⁻¹`. In coordinates,
+twisting `h` means precomposing it with the real extension of a Hopf automorphism of `H`, and the
+Mumford–Tate ideal moves by the inverse image under that automorphism.
 
-For `G = GL_d`, conjugation by an invertible rational matrix `P` is a change of basis of the
-underlying `ℚ`-vector space. So when the homomorphism `h_V` of a rational Hodge structure `V` is
-written in a basis of `V`, changing the basis conjugates its Mumford–Tate group inside `GL_d` by
-the change-of-basis matrix, and the Mumford–Tate groups computed in any two bases are isomorphic
-affine groups over `ℚ`.
+For `G = GL_d`, twisting `h` by the coordinate automorphism of conjugation by an invertible
+rational matrix `P` conjugates its Mumford–Tate group by the rational point `P`. This is the
+coordinate input for showing that the Mumford–Tate group of a rational Hodge structure, computed
+in a basis, is well defined up to conjugation.
 
 ## Main declarations
 
@@ -33,8 +32,8 @@ affine groups over `ℚ`.
   that of its twist by `e`.
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal_innerConjugationIso`: twisting `h` by conjugation by
   a rational point conjugates its Mumford–Tate group by that point.
-* `TauCeti.DeligneTorus.mumfordTateHopfIdeal_conjCoordinateIso`: for `G = GL_d`, the change of
-  basis by an invertible rational matrix `P` conjugates the Mumford–Tate group by `P`.
+* `TauCeti.DeligneTorus.mumfordTateHopfIdeal_conjCoordinateIso`: for `G = GL_d`, twisting `h`
+  by conjugation by an invertible rational matrix `P` conjugates the Mumford–Tate group by `P`.
 
 ## References
 
@@ -81,13 +80,12 @@ theorem mumfordTateHopfIdeal_innerConjugationIso
   rw [← comapOfSurjective_mumfordTateHopfIdeal]
   ext x
   rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_comapOfSurjective,
-    ← innerConjugationIso_hom_toAlgHom]
-  rfl
+    ← innerConjugationIso_hom_toAlgHom, BialgHom.coe_toAlgHom]
 
-/-- **Change of basis conjugates the Mumford–Tate group.** For `G = GL_d`, twisting
-`h : S → GL_{d,ℝ}` by the coordinate automorphism of conjugation by an invertible rational
-matrix `P`, as happens when the basis in which `h` is written changes by `P`, replaces its
-Mumford–Tate ideal by its conjugate by the rational point `P`. -/
+/-- **Conjugating by a rational matrix conjugates the Mumford–Tate group.** For `G = GL_d`,
+twisting `h : S → GL_{d,ℝ}` by the coordinate automorphism of conjugation by an invertible
+rational matrix `P` replaces its Mumford–Tate ideal by its conjugate by the rational point `P`.
+This is the coordinate input for the change-of-basis behaviour of Mumford–Tate groups. -/
 theorem mumfordTateHopfIdeal_conjCoordinateIso {d : ℕ}
     (P : Matrix.GeneralLinearGroup (Fin d) ℚ)
     (h : baseChange (K := ℝ) (GeneralLinear.coordinateHopfAlgebra ℚ d) ⟶
@@ -95,17 +93,7 @@ theorem mumfordTateHopfIdeal_conjCoordinateIso {d : ℕ}
     mumfordTateHopfIdeal (baseChangeMap (K := ℝ) (GeneralLinear.conjCoordinateIso P).hom ≫ h) =
       (mumfordTateHopfIdeal h).conjugate
         ((GeneralLinear.pointsMulEquiv (R := ℚ) (A := ℚ) d).symm P) := by
-  have hP : ((GeneralLinear.conjCoordinateIso P).hom.hom :
-      GeneralLinear.coordinateHopfAlgebra ℚ d →ₐ[ℚ] GeneralLinear.coordinateHopfAlgebra ℚ d) =
-        HopfAlgebra.pointConjugationAlgHom
-          ((GeneralLinear.pointsMulEquiv (R := ℚ) (A := ℚ) d).symm P) := by
-    have h₁ := GeneralLinear.pointsMulEquiv_toConv_comp_conjCoordinateIso P
-      (GeneralLinear.coordinateHopfAlgebra ℚ d) (WithConv.toConv (AlgHom.id ℚ _))
-    rw [← GeneralLinear.pointsMulEquiv_toConv_comp_pointConjugationAlgHom] at h₁
-    simpa using (GeneralLinear.pointsMulEquiv d).injective h₁
-  rw [← comapOfSurjective_mumfordTateHopfIdeal]
-  ext x
-  rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_comapOfSurjective, ← hP]
-  rfl
+  rw [GeneralLinear.conjCoordinateIso_eq_innerConjugationIso]
+  exact mumfordTateHopfIdeal_innerConjugationIso _ h
 
 end TauCeti.DeligneTorus
