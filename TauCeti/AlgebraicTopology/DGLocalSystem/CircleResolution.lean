@@ -454,15 +454,13 @@ theorem exists_loopCellCocycle_differential_eq_of_isUnit_windingNumber {p : ℝ}
   -- `MooreLoopSpace.fundamentalGroupHom` takes the inverse of the path class of the loop.
   have hγg : MooreLoopSpace.fundamentalGroupHom x γ = g⁻¹ :=
     MooreLoopSpace.fundamentalGroupHom_apply γ
-  have he : e g = Multiplicative.ofAdd (AddCircle.windingNumber g) := rfl
+  rw [AddCircle.windingNumber] at hγ
   refine exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
     (fun n ↦ inferInstance) ?_ ?_ hu hε <;> rw [hγg]
-  · rcases Int.isUnit_iff.mp hγ with hγ | hγ
-    · rw [Subgroup.zpowers_inv]
-      exact e.zpowers_eq_top_of_apply_eq_ofAdd_one (by rw [he, hγ])
-    · exact e.zpowers_eq_top_of_apply_eq_ofAdd_one (by rw [map_inv, he, hγ, ofAdd_neg, inv_inv])
+  · rw [Subgroup.zpowers_inv]
+    exact e.zpowers_eq_top_iff_isUnit_toAdd.mpr hγ
   · rw [isOfFinOrder_inv_iff, ← e.injective.isOfFinOrder_iff (f := e.toMonoidHom),
-      MulEquiv.coe_toMonoidHom, he, isOfFinOrder_ofAdd_iff]
+      MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd (e g), isOfFinOrder_ofAdd_iff]
     exact not_isOfFinAddOrder_of_isAddTorsionFree hγ.ne_zero
 
 end Circle

@@ -238,9 +238,8 @@ theorem loopChainMap_loopPointChain (f : C(B, B')) (hf : f b = b') (γ : MooreLo
   have h : (MooreLoopSpace.map f hf).toContinuousMap.comp (SingularCube.point γ) =
       SingularCube.point (MooreLoopSpace.map f hf γ) := by
     refine ContinuousMap.ext fun t ↦ ?_
-    rw [ContinuousMap.comp_apply, SingularCube.point_apply, SingularCube.point_apply]
-    -- The underlying continuous map of `Ωf` evaluates as `Ωf` itself.
-    rfl
+    rw [ContinuousMap.comp_apply, SingularCube.point_apply, SingularCube.point_apply,
+      ContinuousMonoidHom.coe_toContinuousMap, ContinuousMap.coe_ofClass]
   rw [loopPointChain_def, loopPointChain_def, loopChainMap_lof, NormalizedCubicalChain.map_ofCube,
     h]
 
@@ -554,7 +553,8 @@ theorem groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom (γ : MooreLoop
           (cubicalChainDifferential_loopPointChain γ)⟩ := by
   have h := groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra B b R
     (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ))
-  rwa [loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply, ← MonoidAlgebra.of_apply] at h
+  simpa only [loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply,
+    ← MonoidAlgebra.of_apply, ← loopPointChain_def] using h
 
 /-- `groupAlgebraToLoopChainCohomology` lands in degree zero: the group ring is `H₀(Ω_b B; R)`. -/
 theorem groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero
