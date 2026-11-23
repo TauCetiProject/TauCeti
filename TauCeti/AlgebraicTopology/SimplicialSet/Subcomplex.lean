@@ -5,17 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
 
 /-!
-# Subcomplexes transported along isomorphisms
+# Subcomplexes transported along isomorphisms, and the empty subcomplex
 
 An isomorphism `e : X ≅ Y` of simplicial sets carries a subcomplex `A` of `X` to the subcomplex
 `A.preimage e.inv` of `Y`, and the inclusions of the two subcomplexes are isomorphic arrows. Hence
 any class of morphisms that respects isomorphisms, such as the (inner) anodyne extensions, contains
 one inclusion exactly when it contains the other. Likewise, two monomorphisms into the same
 simplicial set with the same range have isomorphic sources, compatibly with the monomorphisms.
+
+The empty subcomplex `⊥` has no simplices, so it is not `Nonempty`; for instance, slices and
+coslices over a diagram restricted to `⊥` are the whole simplicial set.
 
 ## Main results
 
@@ -25,6 +28,7 @@ simplicial set with the same range have isomorphic sources, compatibly with the 
   `W` of morphisms respecting isomorphisms, `W A.ι ↔ W B.ι`.
 * `SSet.Subcomplex.isoOfRangeEq`: for monomorphisms `f : X ⟶ Z` and `g : Y ⟶ Z` with the same
   range, the isomorphism `X ≅ Y` through which `f` factors as `g`.
+* `SSet.Subcomplex.not_nonempty_bot`: the empty subcomplex `⊥` is not nonempty.
 -/
 
 public section
@@ -99,5 +103,10 @@ lemma isoOfRangeEq_inv_comp : (isoOfRangeEq f g h).inv ≫ f = g := by
   rw [Iso.inv_comp_eq, isoOfRangeEq_hom_comp]
 
 end range
+
+/-- The empty subcomplex has no simplices: it has dimension `< 0`. -/
+@[simp]
+lemma not_nonempty_bot : ¬ ((⊥ : X.Subcomplex) : SSet.{u}).Nonempty :=
+  (notNonempty_iff_hasDimensionLT_zero _).2 inferInstance
 
 end SSet.Subcomplex

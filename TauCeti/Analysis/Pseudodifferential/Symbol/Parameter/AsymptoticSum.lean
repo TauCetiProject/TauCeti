@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Parametrix
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -220,29 +219,13 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le {m : ℝ}
       obtain ⟨C, -, hC⟩ := exists_norm_parameterIteratedFDeriv_parameterCutoff_le (n := n) i
       exact eventually_atTop.2 ⟨C, fun C' hCC' t ht p => (hC t ht p).trans hCC'⟩)
     |>.and (eventually_ge_atTop 0) |>.exists
-  obtain ⟨CB, hCB, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
-    ((CoordinateSpace n × CoordinateSpace n) × ℂ)
+  obtain ⟨CB, hCB, hB⟩ := exists_norm_parameterIteratedFDeriv_bilinear_le (n := n)
     (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] (V →L[ℂ] W) →L[ℝ] V →L[ℂ] W) k
   refine ⟨CB * (Cψ * Ca), by positivity, fun t ht i hi x hx ξ z hz => ?_⟩
-  obtain ⟨hU, h0, hgT⟩ := contDiffOn_comp_parameterDilation Λ.isOpen a.contDiffOn_coefficient
-    (p := ((x, ξ), z)) hz (parameterWeight ξ z)
-  have hfT : ContDiffOn ℝ ∞
-      (fun v => parameterCutoff t (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v))
-      ((fun v => ((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v) ⁻¹'
-        (univ ×ˢ (Λ : Set ℂ))) :=
-    ((contDiff_parameterCutoff t).comp
-      (contDiff_const.add (parameterDilation n (parameterWeight ξ z)).contDiff)).contDiffOn
-  have hkk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
-  have key := hB _ _ _ 0 hU h0 (hfT.of_le hkk) (hgT.of_le hkk) Cψ
-    (Ca * parameterWeight ξ z ^ m)
-    (fun j hj => by
-      rw [← parameterIteratedFDeriv_mk_eq]
-      exact hψ j hj t ht _)
-    (fun j hj => by
-      rw [← parameterIteratedFDeriv_mk_eq]
-      exact ha j hj x hx ξ z hz) i hi
+  have key := hB Λ.isOpen _ _ (contDiff_parameterCutoff t).contDiffOn a.contDiffOn_coefficient
+    ((x, ξ), z) hz Cψ (Ca * parameterWeight ξ z ^ m) (fun j hj => hψ j hj t ht _)
+    (fun j hj => ha j hj x hx ξ z hz) i hi
   simp only [ContinuousLinearMap.lsmul_apply] at key
-  rw [parameterIteratedFDeriv_mk_eq]
   exact key.trans_eq (by ring)
 
 /-- `ψₜ f` vanishes near the points where the weight is less than `t`. -/

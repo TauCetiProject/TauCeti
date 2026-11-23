@@ -5,20 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monad.Limits
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.Homotopy
+public import TauCeti.Algebra.Homology.HomotopyCategory.Coproduct
+public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 
 /-!
-# Maps out of a coproduct placed in one degree
+# Coproducts in the derived category
 
-Let `C` be an abelian category with K-injective resolutions, `N` an object of its derived category
-and `(Xᵢ)` a family of objects of `C` with a coproduct `∐ Xᵢ`. If every map from each `Xᵢ` placed
-in degree `n` to `N` vanishes, then so does every map from `∐ Xᵢ` placed in degree `n`
+Let `C` be an abelian category with K-injective resolutions, for instance a Grothendieck abelian
+category such as the category of sheaves of modules on a ringed site.
+
+The derived category `D(C)` is a reflective subcategory of the homotopy category, via the
+K-injective replacement functor `TauCeti.kInjectiveReplacement`, and the homotopy category has the
+coproducts of `C` (`TauCeti.Algebra.Homology.HomotopyCategory.Coproduct`). Hence `D(C)` has all
+coproducts which exist in `C`, and the localization functor
+`DerivedCategory.Q : CochainComplex C ℤ ⥤ DerivedCategory C` preserves them: a coproduct in `D(C)`
+is represented by the degreewise coproduct of complexes. When these coproducts are exact in `C`,
+the homology functors `DerivedCategory.homologyFunctor C n` preserve them as well.
+
+Further, let `N` be an object of the derived category and `(Xᵢ)` a family of objects of `C` with a
+coproduct `∐ Xᵢ`. If every map from each `Xᵢ` placed in degree `n` to `N` vanishes, then so does
+every map from `∐ Xᵢ` placed in degree `n`
 (`DerivedCategory.singleFunctor_hom_eq_zero_of_isColimit`). No exactness of coproducts in `C` is
-assumed.
-
-Represent `N` by a K-injective complex `L`. Maps from `X` placed in degree `n` to `L` in the
-derived category are homotopy classes of chain maps, that is, maps `X ⟶ Lⁿ` killed by the
+assumed. Represent `N` by a K-injective complex `L`. Maps from `X` placed in degree `n` to `L` in
+the derived category are homotopy classes of chain maps, that is, maps `X ⟶ Lⁿ` killed by the
 differential, modulo those factoring through the differential `Lⁿ⁻¹ ⟶ Lⁿ`
 (`CochainComplex.nonempty_homotopy_zero_iff_of_single`). A factorization through the differential
 can be chosen on each summand and glued along the coproduct.
@@ -30,12 +42,46 @@ noncomputable section
 
 open CategoryTheory Limits DerivedCategory
 
-universe w v u
+universe w' w v u
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
   [TauCeti.HasKInjectiveResolutions C]
 
 namespace DerivedCategory
+
+section
+
+variable {J : Type w'} [HasColimitsOfShape (Discrete J) C]
+
+/-- The derived category of an abelian category with K-injective resolutions has the coproducts
+which exist in the abelian category: it is a reflective subcategory of the homotopy category. -/
+instance : HasColimitsOfShape (Discrete J) (DerivedCategory C) :=
+  have : Reflective (TauCeti.kInjectiveReplacement C) :=
+    { L := Qh, adj := TauCeti.kInjectiveReplacementAdjunction C }
+  hasColimitsOfShape_of_reflective (TauCeti.kInjectiveReplacement C)
+
+/-- A coproduct in the derived category is represented by the degreewise coproduct of
+complexes. -/
+instance : PreservesColimitsOfShape (Discrete J) (Q : CochainComplex C ℤ ⥤ DerivedCategory C) :=
+  have := (TauCeti.kInjectiveReplacementAdjunction C).leftAdjoint_preservesColimits
+  preservesColimitsOfShape_of_natIso (quotientCompQhIso C)
+
+/-- When coproducts are exact in `C`, the homology functors of the derived category preserve
+coproducts. -/
+instance [HasExactColimitsOfShape (Discrete J) C] (n : ℤ) :
+    PreservesColimitsOfShape (Discrete J) (homologyFunctor C n) where
+  preservesColimit {G} := by
+    -- represent the diagram by complexes, and compute its coproduct degreewise
+    let K : Discrete J ⥤ CochainComplex C ℤ := Discrete.functor fun j ↦ Q.objPreimage (G.obj ⟨j⟩)
+    let e : K ⋙ Q ≅ G := Discrete.natIso fun j ↦ Q.objObjPreimageIso (G.obj j)
+    have : PreservesColimitsOfShape (Discrete J) (Q ⋙ homologyFunctor C n) :=
+      preservesColimitsOfShape_of_natIso (homologyFunctorFactors C n).symm
+    have : PreservesColimit (K ⋙ Q) (homologyFunctor C n) :=
+      preservesColimit_of_preserves_colimit_cocone (isColimitOfPreserves Q (colimit.isColimit K))
+        (isColimitOfPreserves (Q ⋙ homologyFunctor C n) (colimit.isColimit K))
+    exact preservesColimit_of_iso_diagram _ e
+
+end
 
 open CochainComplex in
 /-- If every map from each `Xᵢ` placed in degree `n` to `N` vanishes, then so does every map from
