@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.Columns
-public import TauCeti.Combinatorics.Young.Diagram
-public import TauCeti.Combinatorics.Young.Kostka
-public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
-public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 public import Mathlib.Data.Fintype.Fin
 import TauCeti.Data.Finset.Sort

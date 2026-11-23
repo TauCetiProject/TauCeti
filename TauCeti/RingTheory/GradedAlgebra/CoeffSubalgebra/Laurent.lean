@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.TensorProduct
-public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Localization.Finiteness
 

@@ -14,22 +14,26 @@ public import TauCeti.Combinatorics.Young.OfRowLens
 
 A bounded semistandard Young tableau `T : BoundedSSYT n μ` of shape `μ` with entries in
 `{0, …, n - 1}` has strictly increasing columns, so its `m`-th column determines an order
-embedding `T.colOrderEmb m : Fin (μ.colLen m) ↪o Fin n` and a finite subset
+embedding `T.colOrderEmb m : Fin (μ.colLen m) ↪o Fin n` and a finite subset of letters
 `T.colFinset m : Finset (Fin n)`. Counting the columns that contain a given letter `r : Fin n`
 recovers the tableau content `T.val.content r`
-(`TauCeti.BoundedSSYT.sum_ite_mem_colFinset_eq_content`).
+(`TauCeti.BoundedSSYT.sum_ite_mem_colFinset_eq_content`, and as `T.weight r` in
+`TauCeti.BoundedSSYT.sum_ite_mem_colFinset_eq_weight`).
 
-Two column sets `I` and `J` can appear as left-to-right columns of a semistandard tableau when
-`#J ≤ #I` and the sorted entries satisfy `i_p ≤ j_p` for every `p < #J`
-(`TauCeti.FlagTableauLe I J`). Conversely, any `FlagTableauLe`-chain `I : Fin k → Finset (Fin n)`
-of nonempty subsets is the sequence of nonempty columns of a reconstructed bounded semistandard
-tableau `TauCeti.boundedSSYTOfFlagChain` of shape `TauCeti.shapeOfFlagChain I hanti`
-(`TauCeti.exists_boundedSSYT_colFinset_eq`).
+Two subsets `I` and `J` of `Fin n` satisfy `TauCeti.FlagTableauLe I J` when `#J ≤ #I` and the sorted
+entries satisfy `i_p ≤ j_p` for every `p < #J` — equivalently, `I` and `J` can appear as adjacent
+columns of a semistandard tableau once empty subsets are interpreted as padded empty columns.
+Conversely, any `FlagTableauLe`-chain `I : Fin k → Finset (Fin n)` of nonempty subsets is the
+sequence of nonempty columns of a unique bounded semistandard tableau of shape with at most `n`
+rows, constructed as `TauCeti.boundedSSYTOfFlagChain I hchain` of shape
+`TauCeti.shapeOfFlagChain I (antitone_card_of_flagChain hchain)`
+(`TauCeti.existsUnique_boundedSSYT_colFinset_eq`).
 
 ## Main definitions
 
-* `TauCeti.BoundedSSYT.colOrderEmb` and `TauCeti.BoundedSSYT.colFinset`: the sorted entries and row
-  subset of column `m` of a bounded semistandard tableau.
+* `TauCeti.BoundedSSYT.colOrderEmb` and `TauCeti.BoundedSSYT.colFinset`: the sorted entries and the
+  set of letters in column `m` of a bounded semistandard tableau (in flag-minor applications, these
+  letters index matrix rows).
 * `TauCeti.FlagTableauLe`: the column-standardness order `#J ≤ #I` and `i_p ≤ j_p` for `p < #J`,
   with a decidable instance.
 * `TauCeti.shapeOfFlagChain` and `TauCeti.boundedSSYTOfFlagChain`: reconstruction of a Young
@@ -37,13 +41,16 @@ tableau `TauCeti.boundedSSYTOfFlagChain` of shape `TauCeti.shapeOfFlagChain I ha
 
 ## Main results
 
-* `TauCeti.BoundedSSYT.sum_ite_mem_colFinset_eq_content`: the number of columns containing `r` is
-  `T.val.content r`.
+* `TauCeti.BoundedSSYT.sum_ite_mem_colFinset_eq_content` and
+  `TauCeti.BoundedSSYT.sum_ite_mem_colFinset_eq_weight`: the number of columns containing `r` is
+  `T.val.content r = T.weight r`.
+* `TauCeti.BoundedSSYT.ext_colFinset`: a bounded tableau is determined by its columns on
+  `m < μ.rowLen 0`.
 * `TauCeti.BoundedSSYT.flagTableauLe_colFinset`: columns of a bounded tableau form a
   `FlagTableauLe`-chain.
-* `TauCeti.flagTableauLe_of_adjacent` and `TauCeti.exists_boundedSSYT_colFinset_eq`: an adjacent
-  `FlagTableauLe`-chain of nonempty subsets is the column sequence of a bounded tableau of width
-  `k` with at most `n` rows.
+* `TauCeti.flagTableauLe_of_adjacent`, `TauCeti.exists_boundedSSYT_colFinset_eq`, and
+  `TauCeti.existsUnique_boundedSSYT_colFinset_eq`: an adjacent `FlagTableauLe`-chain of nonempty
+  subsets is the column sequence of a unique bounded tableau of width `k` and at most `n` rows.
 -/
 
 public section
@@ -71,7 +78,8 @@ theorem coe_colOrderEmb_apply (T : BoundedSSYT n μ) (m : ℕ) (i : Fin (μ.colL
     (T.colOrderEmb m i : ℕ) = T.val i m :=
   (rfl)
 
-/-- The set of row indices appearing in column `m` of a bounded semistandard Young tableau `T`. -/
+/-- The set of letters appearing in column `m` of a bounded semistandard Young tableau `T`
+(in flag-minor applications, these letters index matrix rows). -/
 def colFinset (T : BoundedSSYT n μ) (m : ℕ) : Finset (Fin n) :=
   univ.map (T.colOrderEmb m).toEmbedding
 
@@ -83,7 +91,7 @@ theorem colFinset_def (T : BoundedSSYT n μ) (m : ℕ) :
 theorem card_colFinset (T : BoundedSSYT n μ) (m : ℕ) : #(T.colFinset m) = μ.colLen m := by
   simp [colFinset_def]
 
-/-- A row index `r : Fin n` belongs to `T.colFinset m` if and only if it appears at some cell
+/-- A letter `r : Fin n` belongs to `T.colFinset m` if and only if it appears at some cell
 `(i, m)` of column `m` of `μ`. -/
 theorem mem_colFinset_iff (T : BoundedSSYT n μ) {m : ℕ} {r : Fin n} :
     r ∈ T.colFinset m ↔ ∃ i < μ.colLen m, T.val i m = r := by
@@ -152,13 +160,41 @@ theorem sum_ite_mem_colFinset_eq_content (T : BoundedSSYT n μ) (r : Fin n) :
     · exact (T.val.col_strict hgt (YoungDiagram.mem_iff_lt_colLen.mpr hspec.left)).ne
         (hcr.trans hspec.right.symm)
 
+/-- Counting the columns of `T` containing a letter `r : Fin n` recovers the content
+`T.weight r`. -/
+theorem sum_ite_mem_colFinset_eq_weight (T : BoundedSSYT n μ) (r : Fin n) :
+    (∑ m ∈ range (μ.rowLen 0), if r ∈ T.colFinset m then 1 else 0) = T.weight r := by
+  rw [weight_apply]
+  exact T.sum_ite_mem_colFinset_eq_content r
+
+private theorem orderEmbOfFin_congr {k : ℕ} {s₁ s₂ : Finset (Fin n)} (hs : s₁ = s₂)
+    {h₁ : #s₁ = k} {h₂ : #s₂ = k} (i : Fin k) :
+    s₁.orderEmbOfFin h₁ i = s₂.orderEmbOfFin h₂ i := by
+  subst hs
+  rfl
+
+/-- A bounded semistandard Young tableau of shape `μ` is uniquely determined by its column subsets
+on the nonempty column range `m < μ.rowLen 0`. -/
+theorem ext_colFinset {T₁ T₂ : BoundedSSYT n μ}
+    (h : ∀ m < μ.rowLen 0, T₁.colFinset m = T₂.colFinset m) : T₁ = T₂ := by
+  refine Subtype.ext (_root_.SemistandardYoungTableau.ext fun i m ↦ ?_)
+  by_cases him : (i, m) ∈ μ
+  · have hm : m < μ.rowLen 0 :=
+      (YoungDiagram.mem_iff_lt_rowLen.mp him).trans_le (μ.rowLen_anti 0 i (Nat.zero_le _))
+    have hi : i < μ.colLen m := YoungDiagram.mem_iff_lt_colLen.mp him
+    rw [← T₁.coe_orderEmbOfFin_colFinset_apply m (T₁.card_colFinset m) ⟨i, hi⟩,
+      ← T₂.coe_orderEmbOfFin_colFinset_apply m (T₂.card_colFinset m) ⟨i, hi⟩,
+      orderEmbOfFin_congr (h m hm)]
+  · rw [T₁.val.zeros him, T₂.val.zeros him]
+
 end BoundedSSYT
 
 /-! ### The column-standardness order and tableau reconstruction -/
 
 /-- **Column-standardness order** on subsets of `Fin n`: `FlagTableauLe I J` holds when `#J ≤ #I`
 and the `p`-th smallest element of `I` is at most the `p`-th smallest element of `J` for every
-`p < #J`, i.e., `I` and `J` can appear as adjacent columns of a semistandard Young tableau. -/
+`p < #J`, i.e., `I` and `J` can appear as adjacent columns of a semistandard Young tableau (allowing
+empty subsets as padded empty columns). -/
 def FlagTableauLe (I J : Finset (Fin n)) : Prop :=
   ∃ h : #J ≤ #I, ∀ p : Fin #J, I.orderEmbOfFin rfl (Fin.castLE h p) ≤ J.orderEmbOfFin rfl p
 
@@ -245,11 +281,16 @@ theorem rowLen_zero_shapeOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
     (not_lt.mp fun hk ↦ (YoungDiagram.mem_iff_lt_rowLen.mp
       (mem_shapeOfFlagChain_iff.mpr ⟨hk, (hne _).card_pos⟩)).false)
 
+/-- Cardinalities along a `FlagTableauLe`-chain are antitone. -/
+theorem antitone_card_of_flagChain {k : ℕ} {I : Fin k → Finset (Fin n)}
+    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) :
+    Antitone fun m : Fin k ↦ #(I m) :=
+  fun _ _ h ↦ (hchain _ _ h).card_le
+
 /-- Construct the `BoundedSSYT` whose columns are a given `FlagTableauLe`-chain `I`. -/
 def boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
-    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂))
-    (hanti : Antitone fun m : Fin k ↦ #(I m)) :
-    BoundedSSYT n (shapeOfFlagChain I hanti) :=
+    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) :
+    BoundedSSYT n (shapeOfFlagChain I (antitone_card_of_flagChain hchain)) :=
   ⟨{ entry := fun i m ↦
        if h : ∃ hm : m < k, i < #(I ⟨m, hm⟩) then
          ((I ⟨m, h.1⟩).orderEmbOfFin rfl ⟨i, h.2⟩ : ℕ)
@@ -257,14 +298,14 @@ def boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
      row_weak' := fun {i m₁ m₂} hm hcell ↦ by
        have h₂ := mem_shapeOfFlagChain_iff.mp hcell
        have h₁ := mem_shapeOfFlagChain_iff.mp
-         ((shapeOfFlagChain I hanti).up_left_mem le_rfl hm.le hcell)
+         ((shapeOfFlagChain I (antitone_card_of_flagChain hchain)).up_left_mem le_rfl hm.le hcell)
        simp only [h₁, h₂, ↓reduceDIte]
        exact Fin.le_iff_val_le_val.mp
          ((hchain ⟨m₁, h₁.1⟩ ⟨m₂, h₂.1⟩ (Fin.le_def.mpr hm.le)).2 ⟨i, h₂.2⟩)
      col_strict' := fun {i₁ i₂ m} hi hcell ↦ by
        have h₂ := mem_shapeOfFlagChain_iff.mp hcell
        have h₁ := mem_shapeOfFlagChain_iff.mp
-         ((shapeOfFlagChain I hanti).up_left_mem hi.le le_rfl hcell)
+         ((shapeOfFlagChain I (antitone_card_of_flagChain hchain)).up_left_mem hi.le le_rfl hcell)
        simp only [h₁, h₂, ↓reduceDIte]
        exact Fin.lt_def.mp (((I ⟨m, h₂.1⟩).orderEmbOfFin rfl).strictMono hi)
      zeros' := fun h ↦ dite_eq_right (h ∘ mem_shapeOfFlagChain_iff.mpr) },
@@ -276,9 +317,8 @@ def boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
 
 theorem boundedSSYTOfFlagChain_apply {k : ℕ} (I : Fin k → Finset (Fin n))
     (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂))
-    (hanti : Antitone fun m : Fin k ↦ #(I m)) {i : ℕ} (m : Fin k) (hi : i < #(I m)) :
-    (boundedSSYTOfFlagChain I hchain hanti).val i m =
-      ((I m).orderEmbOfFin rfl ⟨i, hi⟩ : ℕ) := by
+    {i : ℕ} (m : Fin k) (hi : i < #(I m)) :
+    (boundedSSYTOfFlagChain I hchain).val i m = ((I m).orderEmbOfFin rfl ⟨i, hi⟩ : ℕ) := by
   dsimp only [boundedSSYTOfFlagChain]
   rw [← SemistandardYoungTableau.to_fun_eq_coe]
   have hmem : ∃ hm : (m : ℕ) < k, i < #(I ⟨m, hm⟩) := ⟨m.isLt, hi⟩
@@ -286,16 +326,46 @@ theorem boundedSSYTOfFlagChain_apply {k : ℕ} (I : Fin k → Finset (Fin n))
 
 @[simp]
 theorem colFinset_boundedSSYTOfFlagChain {k : ℕ} (I : Fin k → Finset (Fin n))
-    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂))
-    (hanti : Antitone fun m : Fin k ↦ #(I m)) (m : Fin k) :
-    (boundedSSYTOfFlagChain I hchain hanti).colFinset m = I m := by
+    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) (m : Fin k) :
+    (boundedSSYTOfFlagChain I hchain).colFinset m = I m := by
   ext r
   rw [BoundedSSYT.mem_colFinset_iff, colLen_shapeOfFlagChain]
   refine ⟨fun ⟨i, hi, hir⟩ ↦ ?_, fun hr ↦ ?_⟩
-  · rw [boundedSSYTOfFlagChain_apply I hchain hanti m hi] at hir
+  · rw [boundedSSYTOfFlagChain_apply I hchain m hi] at hir
     exact Fin.ext hir ▸ (I m).orderEmbOfFin_mem rfl _
   · obtain ⟨i, rfl⟩ := (Finset.range_orderEmbOfFin (I m) rfl).symm.subset hr
-    exact ⟨i, i.isLt, boundedSSYTOfFlagChain_apply I hchain hanti m i.isLt⟩
+    exact ⟨i, i.isLt, boundedSSYTOfFlagChain_apply I hchain m i.isLt⟩
+
+/-- Every `FlagTableauLe`-chain of nonempty subsets of `Fin n` is the sequence of nonempty columns
+of a unique bounded semistandard Young tableau of width `k` and shape with at most `n` rows. -/
+theorem existsUnique_boundedSSYT_colFinset_eq {k : ℕ} (I : Fin k → Finset (Fin n))
+    (hne : ∀ m, (I m).Nonempty)
+    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) :
+    ∃! s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val,
+      s.fst.val.rowLen 0 = k ∧ ∀ m : Fin k, s.snd.colFinset m = I m := by
+  refine ⟨⟨⟨shapeOfFlagChain I (antitone_card_of_flagChain hchain),
+      colLen_zero_shapeOfFlagChain_le I _⟩,
+      boundedSSYTOfFlagChain I hchain⟩,
+    ⟨rowLen_zero_shapeOfFlagChain I _ hne, colFinset_boundedSSYTOfFlagChain I hchain⟩, ?_⟩
+  rintro ⟨⟨μ₁, hμ₁⟩, T₁⟩ ⟨hrow₁, hcol₁⟩
+  have hshape : μ₁ = shapeOfFlagChain I (antitone_card_of_flagChain hchain) := by
+    refine YoungDiagram.ext (Finset.ext fun ⟨i, m⟩ ↦ ?_)
+    simp only [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_colLen]
+    by_cases hm : m < k
+    · simp only [← T₁.card_colFinset m, colLen_shapeOfFlagChain I _ ⟨m, hm⟩, hcol₁ ⟨m, hm⟩]
+    · have hm₁ : μ₁.rowLen 0 ≤ m := hrow₁.symm ▸ not_lt.mp hm
+      have hm₂ : (shapeOfFlagChain I (antitone_card_of_flagChain hchain)).rowLen 0 ≤ m :=
+        (rowLen_zero_shapeOfFlagChain I _ hne).symm ▸ not_lt.mp hm
+      have h1 : μ₁.colLen m = 0 := by
+        rw [← T₁.card_colFinset, T₁.colFinset_eq_empty_of_rowLen_zero_le hm₁, card_empty]
+      have h2 : (shapeOfFlagChain I (antitone_card_of_flagChain hchain)).colLen m = 0 := by
+        rw [← (boundedSSYTOfFlagChain I hchain).card_colFinset,
+          (boundedSSYTOfFlagChain I hchain).colFinset_eq_empty_of_rowLen_zero_le hm₂, card_empty]
+      rw [h1, h2]
+  subst hshape
+  refine congrArg (Sigma.mk _) (BoundedSSYT.ext_colFinset fun m hm ↦ ?_)
+  have hmk : m < k := hm.trans_eq hrow₁
+  rw [hcol₁ ⟨m, hmk⟩, colFinset_boundedSSYTOfFlagChain I hchain ⟨m, hmk⟩]
 
 /-- Every `FlagTableauLe`-chain of nonempty subsets of `Fin n` is the sequence of nonempty columns
 of a bounded semistandard Young tableau of width `k` and shape with at most `n` rows. -/
@@ -303,11 +373,8 @@ theorem exists_boundedSSYT_colFinset_eq {k : ℕ} (I : Fin k → Finset (Fin n))
     (hne : ∀ m, (I m).Nonempty)
     (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) :
     ∃ (μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}) (T : BoundedSSYT n μ.val),
-      μ.val.rowLen 0 = k ∧ ∀ m : Fin k, T.colFinset m = I m := by
-  have hanti : Antitone (fun m : Fin k ↦ #(I m)) := fun _ _ h ↦ (hchain _ _ h).card_le
-  exact ⟨⟨shapeOfFlagChain I hanti, colLen_zero_shapeOfFlagChain_le I hanti⟩,
-    boundedSSYTOfFlagChain I hchain hanti,
-    rowLen_zero_shapeOfFlagChain I hanti hne,
-    colFinset_boundedSSYTOfFlagChain I hchain hanti⟩
+      μ.val.rowLen 0 = k ∧ ∀ m : Fin k, T.colFinset m = I m :=
+  let ⟨⟨μ, T⟩, h, _⟩ := existsUnique_boundedSSYT_colFinset_eq I hne hchain
+  ⟨μ, T, h⟩
 
 end TauCeti

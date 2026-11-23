@@ -175,6 +175,12 @@ theorem coe_weightReesInclusion (g : A.weightReesAlgebra w) :
       Polynomial.map A.val.toRingHom (g : A[X]) := by
   simp [weightReesInclusion]
 
+/-- `weightReesInclusion` is injective. -/
+theorem weightReesInclusion_injective : Function.Injective (A.weightReesInclusion w) := by
+  intro g₁ g₂ h
+  refine Subtype.ext (Polynomial.map_injective A.val.toRingHom Subtype.coe_injective ?_)
+  simpa only [coe_weightReesInclusion] using congrArg Subtype.val h
+
 /-- `weightReesInclusion` sends monomials of `A.weightReesAlgebra w` to the corresponding ambient
 Rees monomials. -/
 @[simp]
@@ -330,5 +336,27 @@ theorem coe_weightReesAlgebraSpecialFiberEquiv_tmul_monomial
   let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
   rw [coe_weightReesAlgebraSpecialFiberEquiv_tmul, one_smul, weightReesInclusion_monomial,
     TauCeti.MvPolynomial.weightReesSymbol_monomial]
+
+open scoped TensorProduct in
+/-- `weightReesAlgebraSpecialFiberEquiv.symm` sends the weight-initial form of `b : A` to `1 ⊗ₜ`
+the Rees monomial of `b` in its weighted total degree. -/
+@[simp]
+theorem weightReesAlgebraSpecialFiberEquiv_symm_weightInitialForm (b : A) :
+    letI := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+    letI := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
+    (A.weightReesAlgebraSpecialFiberEquiv w).symm
+        ⟨_root_.MvPolynomial.weightInitialForm w (b : MvPolynomial σ R),
+          Algebra.subset_adjoin ⟨(b : MvPolynomial σ R), b.property, rfl⟩⟩ =
+      1 ⊗ₜ[R[X]] coeffSubalgebra.monomial (A.weightFiltration w)
+        ((b : MvPolynomial σ R).weightedTotalDegree w) b
+        ((A.mem_weightFiltration_iff w).mpr
+          (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl)) := by
+  let := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
+  let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
+  refine (A.weightReesAlgebraSpecialFiberEquiv w).injective ?_
+  rw [AlgEquiv.apply_symm_apply]
+  refine Subtype.ext ?_
+  rw [coe_weightReesAlgebraSpecialFiberEquiv_tmul_monomial,
+    ← _root_.MvPolynomial.weightInitialForm_def]
 
 end Subalgebra

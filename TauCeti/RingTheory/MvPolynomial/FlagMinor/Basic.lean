@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Tower
 public import Mathlib.RingTheory.Adjoin.FG
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
-public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 public import TauCeti.Data.Finset.Basic
 public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 import TauCeti.Data.Finset.Sort
+import TauCeti.Data.Fintype.Sort
 
 /-!
 # Flag minors, the flag-minor subalgebra, and Gelfand-Tsetlin patterns
@@ -61,6 +61,8 @@ leading-exponent monoid of the whole flag-minor algebra, is proved in
 * `TauCeti.degree_rename_toLex_flagMinor` and `TauCeti.monic_rename_toLex_flagMinor`: for the
   row-major lexicographic order, a flag minor is monic, and over `[Nontrivial R]` its leading
   exponent is its diagonal exponent.
+* `TauCeti.mvPolynomialMinor_eq_zero_or_sign_smul_flagMinor`: a minor on arbitrary rows `u` and
+  an initial column prefix either vanishes or equals `± flagMinor R (univ.image u)`.
 * `TauCeti.flagMinor_univ`: the flag minor of all rows is the determinant of the generic matrix.
 * `TauCeti.flagMinor_pair` and `TauCeti.flagDiagonalExponent_pair`: the flag minor of two rows is a
   `2 × 2` minor, with diagonal exponent that of `z_(i,0) z_(j,1)`.
@@ -113,6 +115,37 @@ theorem flagMinor_def (I : Finset (Fin n)) :
     flagMinor R I =
       Matrix.mvPolynomialMinor R (I.orderEmbOfFin rfl) (Fin.castLE (card_finset_fin_le I)) :=
   (rfl)
+
+/-- A minor of the generic `n × n` matrix on rows `u : Fin d → Fin n` and the first `d` columns
+either vanishes (when `u` repeats a row) or equals `± flagMinor R (univ.image u)`. -/
+theorem mvPolynomialMinor_eq_zero_or_sign_smul_flagMinor
+    {d : ℕ} (hd : d ≤ n) (u : Fin d → Fin n) :
+    Matrix.mvPolynomialMinor R u (Fin.castLE hd) = 0 ∨
+      Function.Injective u ∧
+        ∃ s : ℤˣ, Matrix.mvPolynomialMinor R u (Fin.castLE hd) =
+          (s : ℤ) • flagMinor R (univ.image u) := by
+  by_cases hu : Function.Injective u
+  · right
+    set I' := univ.image u
+    have hcard : #I' = d := (card_image_of_injective univ hu).trans (Fintype.card_fin d)
+    obtain ⟨τ, hτ, -⟩ := Equiv.Perm.existsUnique_strictMono_comp hu
+    have hord : (u ∘ τ) ∘ finCongr hcard = I'.orderEmbOfFin rfl :=
+      orderEmbOfFin_unique rfl (fun _ ↦ mem_image_of_mem u (mem_univ _))
+        (hτ.comp (Fin.castOrderIso hcard).strictMono)
+    have hu_eq : u = (I'.orderEmbOfFin rfl ∘ finCongr hcard.symm) ∘ τ.symm :=
+      funext fun i ↦ by simpa using congr_fun hord (finCongr hcard.symm (τ.symm i))
+    have hc_eq : Fin.castLE hd = (Fin.castLE (card_finset_fin_le I') ∘ finCongr hcard.symm) ∘ id :=
+      funext fun _ ↦ Fin.ext rfl
+    refine ⟨hu, Equiv.Perm.sign τ.symm, ?_⟩
+    rw [Matrix.mvPolynomialMinor_eq_det_submatrix, flagMinor_def,
+      Matrix.mvPolynomialMinor_eq_det_submatrix, hu_eq, hc_eq,
+      ← Matrix.submatrix_submatrix, Matrix.det_permute,
+      ← Matrix.submatrix_submatrix, Matrix.det_submatrix_equiv_self]
+    simp [zsmul_eq_mul]
+  · left
+    obtain ⟨_, _, hij, hne⟩ := Function.not_injective_iff.mp hu
+    rw [Matrix.mvPolynomialMinor_eq_det_submatrix]
+    exact Matrix.det_zero_of_row_eq hne (by ext; simp [hij])
 
 /-- The flag minor of the empty set of rows is the empty minor `1`. -/
 @[simp]
@@ -320,8 +353,8 @@ theorem map_flagMinorAlgebra_le (R S : Type*) [CommRing R] [CommRing S] [Algebra
       (flagMinorAlgebra n S).restrictScalars R := by
   rw [Subalgebra.map_le, flagMinorAlgebra_le_iff]
   intro I
-  change map (algebraMap R S) (flagMinor R I) ∈ flagMinorAlgebra n S
-  rw [map_flagMinor]
+  rw [Subalgebra.mem_comap, Subalgebra.mem_restrictScalars, MvPolynomial.mapAlgHom_apply,
+    map_flagMinor]
   exact flagMinor_mem_flagMinorAlgebra S I
 
 /-- Under any ring homomorphism `f : R →+* S`, the image of `flagMinorAlgebra n R` generates
@@ -331,7 +364,7 @@ theorem adjoin_map_flagMinorAlgebra {R S : Type*} [CommRing R] [CommRing S] (f :
       flagMinorAlgebra n S := by
   refine le_antisymm (Algebra.adjoin_le ?_) (Algebra.adjoin_le ?_)
   · rintro _ ⟨p, hp, rfl⟩
-    change p ∈ Algebra.adjoin R (Set.range (flagMinor R)) at hp
+    rw [SetLike.mem_coe, flagMinorAlgebra_def] at hp
     induction hp using Algebra.adjoin_induction with
     | mem _ hx =>
       obtain ⟨I, rfl⟩ := hx
@@ -356,7 +389,7 @@ theorem map_flagMinorAlgebra_eq_restrictScalars (R S : Type*) [CommRing R] [Comm
     (flagMinorAlgebra n R).map (MvPolynomial.mapAlgHom (Algebra.ofId R S)) =
       (flagMinorAlgebra n S).restrictScalars R := by
   refine le_antisymm (map_flagMinorAlgebra_le R S) fun p hp ↦ ?_
-  change p ∈ Algebra.adjoin S (Set.range (flagMinor S)) at hp
+  rw [Subalgebra.mem_restrictScalars, flagMinorAlgebra_def] at hp
   induction hp using Algebra.adjoin_induction with
   | mem _ hx =>
     obtain ⟨I, rfl⟩ := hx

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Tableau
 public import TauCeti.RingTheory.MvPolynomial.FlagMinor.Homogeneous
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 
 /-!
 # Tableau products of flag minors and their multigradings
@@ -16,7 +15,9 @@ A bounded semistandard Young tableau `T : BoundedSSYT n μ` of shape `μ` with e
 `{0, …, n - 1}` has strictly increasing columns, so its `m`-th column determines a set
 `T.colFinset m` of `μ.colLen m` rows of the generic `n × n` matrix. Multiplying the corresponding
 flag minors across the nonempty columns `m < μ.rowLen 0` produces the **tableau product**
-`T.flagMinorProd R`.
+`T.flagMinorProd R`. Conversely, any `FlagTableauLe`-chain of nonempty row subsets arises as the
+columns of a bounded tableau whose tableau product is the product of those flag minors
+(`TauCeti.exists_boundedSSYT_flagMinorProd_eq`).
 
 Under the row-major lexicographic order on the matrix variables, each `T.flagMinorProd R` is monic
 over every commutative ring `R`. Over any nontrivial commutative ring `R`, the partial column sums
@@ -42,12 +43,16 @@ Finally, `T.flagMinorProd R` is doubly multihomogeneous:
 
 ## Main results
 
+* `TauCeti.exists_boundedSSYT_flagMinorProd_eq`: reconstruction of a tableau product from a
+  `FlagTableauLe`-chain of nonempty row subsets.
 * `TauCeti.BoundedSSYT.monic_rename_toLex_flagMinorProd`: `T.flagMinorProd R` is monic over every
   `CommRing R`.
-* `TauCeti.BoundedSSYT.degree_rename_toLex_flagMinorProd` and
-  `TauCeti.BoundedSSYT.exponentEntries_degree_rename_toLex_flagMinorProd`: over `[Nontrivial R]`,
-  the leading exponent of `T.flagMinorProd R` is the sum of its column diagonal exponents and
-  records `toGTPattern T.1 n`.
+* `TauCeti.BoundedSSYT.degree_rename_toLex_flagMinorProd`,
+  `TauCeti.BoundedSSYT.exponentEntries_degree_rename_toLex_flagMinorProd`, and
+  `TauCeti.BoundedSSYT.degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm`: over
+  `[Nontrivial R]`, the leading exponent of `T.flagMinorProd R` is the sum of its column diagonal
+  exponents, records `toGTPattern T.1 n`, and matches `flagExponentEquiv.symm` via
+  `nonnegEquivBoundedSSYT.symm`.
 * `TauCeti.BoundedSSYT.degree_rename_toLex_flagMinorProd_injective` and
   `TauCeti.BoundedSSYT.range_degree_rename_toLex_flagMinorProd`: over `[Nontrivial R]`, the leading
   exponents of the tableau products biject onto
@@ -148,6 +153,19 @@ theorem flagMinorProd_ne_zero (R : Type*) [CommRing R] [Nontrivial R] (T : Bound
     T.flagMinorProd R ≠ 0 := fun h ↦
   (T.monic_rename_toLex_flagMinorProd R).ne_zero (by rw [h, map_zero])
 
+/-- **Equivalence compatibility for tableau leading exponents.** Over `[Nontrivial R]`, the
+row-major lexicographic leading exponent of `s.snd.flagMinorProd R` is the underlying exponent of
+`GTPattern.flagExponentEquiv.symm ((GTPattern.nonnegEquivBoundedSSYT n).symm s)`. -/
+theorem degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm (R : Type*) [CommRing R]
+    [Nontrivial R] (s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) :
+    lex.degree (rename toLex (s.snd.flagMinorProd R)) =
+      (GTPattern.flagExponentEquiv.symm ((GTPattern.nonnegEquivBoundedSSYT n).symm s) :
+        Fin n ×ₗ Fin n →₀ ℕ) := by
+  refine GTPattern.exponentEntries_injective ?_
+  rw [s.snd.exponentEntries_degree_rename_toLex_flagMinorProd R,
+    ← GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply s,
+    ← GTPattern.coe_flagExponentEquiv_apply, AddEquiv.apply_symm_apply]
+
 /-- **Distinct bounded tableaux have distinct leading exponents**, across all shapes `μ` with at
 most `n` rows. -/
 theorem degree_rename_toLex_flagMinorProd_injective (R : Type*) [CommRing R] [Nontrivial R] :
@@ -155,14 +173,9 @@ theorem degree_rename_toLex_flagMinorProd_injective (R : Type*) [CommRing R] [No
       (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) ↦
         lex.degree (rename toLex (s.snd.flagMinorProd R))) := by
   intro s₁ s₂ h
-  apply (GTPattern.nonnegEquivBoundedSSYT n).symm.injective
-  apply Subtype.ext
-  apply DFunLike.coe_injective
-  rw [GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply,
-    GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply,
-    ← s₁.snd.exponentEntries_degree_rename_toLex_flagMinorProd R,
-    ← s₂.snd.exponentEntries_degree_rename_toLex_flagMinorProd R]
-  exact congrArg GTPattern.exponentEntries h
+  simp only [degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm] at h
+  exact (GTPattern.nonnegEquivBoundedSSYT n).symm.injective
+    (GTPattern.flagExponentEquiv.symm.injective (Subtype.ext h))
 
 /-- **The leading exponents of the tableau products exhaust the diagonal-exponent monoid.** -/
 theorem range_degree_rename_toLex_flagMinorProd (R : Type*) [CommRing R] [Nontrivial R] :
@@ -171,29 +184,34 @@ theorem range_degree_rename_toLex_flagMinorProd (R : Type*) [CommRing R] [Nontri
         lex.degree (rename toLex (s.snd.flagMinorProd R))) =
       (AddSubmonoid.closure (Set.range (flagDiagonalExponent (n := n))) :
         Set (Fin n ×ₗ Fin n →₀ ℕ)) := by
-  refine Set.Subset.antisymm (Set.range_subset_iff.mpr fun s ↦ ?_) ?_
-  · rw [SetLike.mem_coe, s.snd.degree_rename_toLex_flagMinorProd R]
-    exact AddSubmonoid.sum_mem _ fun m _ ↦ AddSubmonoid.subset_closure ⟨_, rfl⟩
-  · intro e he
-    let P := GTPattern.flagExponentEquiv ⟨e, he⟩
-    let s := GTPattern.nonnegEquivBoundedSSYT n P
-    refine ⟨s, GTPattern.exponentEntries_injective ?_⟩
-    rw [s.snd.exponentEntries_degree_rename_toLex_flagMinorProd R,
-      ← GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply s, Equiv.symm_apply_apply,
-      GTPattern.coe_flagExponentEquiv_apply]
+  ext e
+  simp only [Set.mem_range, degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm,
+    SetLike.mem_coe]
+  refine ⟨?_, fun he ↦ ?_⟩
+  · rintro ⟨s, rfl⟩
+    exact (GTPattern.flagExponentEquiv.symm _).property
+  · refine ⟨GTPattern.nonnegEquivBoundedSSYT n (GTPattern.flagExponentEquiv ⟨e, he⟩), ?_⟩
+    simp
 
 end BoundedSSYT
+
+/-- Every `FlagTableauLe`-chain of nonempty subsets of `Fin n` is the sequence of nonempty columns
+of a bounded semistandard Young tableau of width `k` and shape with at most `n` rows, whose
+tableau product equals the product of the corresponding flag minors. -/
+theorem exists_boundedSSYT_flagMinorProd_eq {k : ℕ} (R : Type*) [CommRing R]
+    (I : Fin k → Finset (Fin n)) (hne : ∀ m, (I m).Nonempty)
+    (hchain : ∀ m₁ m₂, m₁ ≤ m₂ → FlagTableauLe (I m₁) (I m₂)) :
+    ∃ (μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}) (T : BoundedSSYT n μ.val),
+      μ.val.rowLen 0 = k ∧ (∀ m : Fin k, T.colFinset m = I m) ∧
+        T.flagMinorProd R = ∏ m : Fin k, flagMinor R (I m) := by
+  obtain ⟨μ, T, hrow0, hcol⟩ := exists_boundedSSYT_colFinset_eq I hne hchain
+  refine ⟨μ, T, hrow0, hcol, ?_⟩
+  rw [T.flagMinorProd_def R, hrow0, ← Fin.prod_univ_eq_prod_range]
+  exact Fintype.prod_congr _ _ fun m ↦ congrArg (flagMinor R) (hcol m)
 
 /-! ### Row-content and fundamental column-shape multigradings -/
 
 namespace BoundedSSYT
-
-/-- Counting the columns of `T` containing a letter `r : Fin n` recovers the content
-`T.weight r`. -/
-theorem sum_ite_mem_colFinset_eq_weight (T : BoundedSSYT n μ) (r : Fin n) :
-    (∑ m ∈ range (μ.rowLen 0), if r ∈ T.colFinset m then 1 else 0) = T.weight r := by
-  rw [weight_apply]
-  exact T.sum_ite_mem_colFinset_eq_content r
 
 /-- **Content comparison for tableau products.** Every `T.flagMinorProd R` is multihomogeneous for
 the row multigrading, of multidegree the content `⇑T.weight` of the tableau `T`. -/

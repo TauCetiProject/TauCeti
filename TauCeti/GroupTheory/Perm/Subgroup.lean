@@ -11,6 +11,7 @@ public import Mathlib.Order.Sum.Order
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.GroupTheory.Perm.Finite
 import TauCeti.Data.Fintype.Sort
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Subgroups of permutation groups
@@ -30,8 +31,9 @@ must carry at least one element of the left summand into the right summand
 `Equiv.Perm.exists_apply_inl_eq_inr_of_strictMono_toLex_of_ne_one`), so it does not preserve the
 left summand (`Equiv.Perm.map_inl_ne_of_strictMono_of_ne_one`) and, when every value of an additive
 weight on `κ₂` lies strictly below every value on `κ₁`, strictly decreases the sum of that weight
-over `κ₁` while preserving the total sum across `κ₁ ⊕ κ₂`
-(`Equiv.Perm.sum_comp_inl_add_sum_comp_inr`, `Equiv.Perm.sum_comp_inl_lt_of_strictMono_of_ne_one`).
+over `κ₁` (`Equiv.Perm.sum_comp_inl_lt_of_strictMono_of_ne_one`) and thus conserves the total
+image sum across two summand-split injections while strictly decreasing the first-factor image sum
+(`Equiv.Perm.sum_image_shuffle_eq_and_lt`).
 The underlying fact is that exactly one permutation of a finite linear order sorts the values of
 an injective map (`Equiv.Perm.existsUnique_strictMono_comp`, from `TauCeti.Data.Fintype.Sort`).
 -/
@@ -180,14 +182,6 @@ theorem map_inl_ne_of_strictMono_of_ne_one {κ₁ κ₂ L : Type*} [LinearOrder 
   obtain ⟨x, _, hx⟩ := Finset.mem_map.mp hmem
   exact Sum.inl_ne_inr hx
 
-/-- Splitting a sum over `κ₁ ⊕ κ₂` along a permutation `σ` preserves the total sum across both
-summands. -/
-theorem sum_comp_inl_add_sum_comp_inr {κ₁ κ₂ M : Type*} [Fintype κ₁] [Fintype κ₂]
-    [AddCommMonoid M] (g : κ₁ ⊕ κ₂ → M) (σ : Perm (κ₁ ⊕ κ₂)) :
-    (∑ x : κ₁, g (σ (.inl x))) + ∑ y : κ₂, g (σ (.inr y)) =
-      (∑ x : κ₁, g (.inl x)) + ∑ y : κ₂, g (.inr y) := by
-  rw [← Fintype.sum_sum_type fun z ↦ g (σ z), Equiv.sum_comp σ g, Fintype.sum_sum_type]
-
 /-- For a map `f : κ₁ ⊕ κ₂ → L` strictly increasing on each summand and an additive weight `g`
 whose values on `κ₂` are bounded above by `a₀ < b₀` while its values on `κ₁` are bounded below
 by `b₀`, any non-identity shuffle `σ ≠ 1` strictly decreases the sum of `g` on `κ₁`. -/
@@ -230,5 +224,58 @@ theorem sum_comp_inl_lt_of_strictMono_of_ne_one {κ₁ κ₂ L M : Type*}
     hcard ▸ nsmul_lt_nsmul_right hpos.ne' hab
   rw [hsumS, hsumL]
   exact add_lt_add_left ((hle_S.trans_lt hnsmul).trans_le hle_L) _
+
+private theorem sum_image_sum_elim_comp {α θ ι κ M : Type*} [DecidableEq α]
+    [Fintype θ] [Fintype ι] [Fintype κ] [AddCommMonoid M]
+    (w : α → M) (e : θ ≃ ι ⊕ κ) (f : ι → α) (g : κ → α)
+    (hinj : Function.Injective (Sum.elim f g ∘ e)) :
+    ∑ x ∈ Finset.univ.image (Sum.elim f g ∘ e), w x =
+      (∑ x : ι, w (f x)) + ∑ y : κ, w (g y) := by
+  rw [Finset.sum_image fun _ _ _ _ h ↦ hinj h]
+  simp only [Function.comp_apply]
+  rw [Fintype.sum_equiv e _ (fun z ↦ w (Sum.elim f g z)) fun _ ↦ rfl, Fintype.sum_sum_type]
+  simp
+
+/-- Shuffling the `κ₁` and `κ₂` blocks of two injective maps `r₁` and `r₂` along a permutation
+`σ` of `κ₁ ⊕ κ₂` preserves the combined image sum of an additive weight `w` whenever the shuffled
+maps remain injective, and strictly decreases the first image sum whenever `σ` strictly decreases
+the `w`-sum on `κ₁`. -/
+theorem sum_image_shuffle_eq_and_lt {α θ₁ θ₂ ι₁ κ₁ ι₂ κ₂ M : Type*}
+    [DecidableEq α] [Fintype θ₁] [Fintype θ₂]
+    [Finite ι₁] [Fintype κ₁] [Finite ι₂] [Finite κ₂]
+    [AddCommMonoid M] [PartialOrder M] [IsOrderedCancelAddMonoid M]
+    (w : α → M) (e₁ : θ₁ ≃ ι₁ ⊕ κ₁) (e₂ : θ₂ ≃ ι₂ ⊕ κ₂)
+    (a : ι₁ → α) (b : ι₂ → α) (γ : κ₁ ⊕ κ₂ → α)
+    {r₁ : θ₁ → α} {r₂ : θ₂ → α} (hr₁ : Function.Injective r₁) (hr₂ : Function.Injective r₂)
+    (he₁ : Sum.elim a (γ ∘ Sum.inl) ∘ e₁ = r₁)
+    (he₂ : Sum.elim b (γ ∘ Sum.inr) ∘ e₂ = r₂)
+    {σ : Perm (κ₁ ⊕ κ₂)}
+    (hlt : ∑ x : κ₁, w (γ (σ (.inl x))) < ∑ x : κ₁, w (γ (.inl x)))
+    (hu₁ : Function.Injective (Sum.elim a (γ ∘ σ ∘ Sum.inl) ∘ e₁))
+    (hu₂ : Function.Injective (Sum.elim b (γ ∘ σ ∘ Sum.inr) ∘ e₂)) :
+    let u₁ := Sum.elim a (γ ∘ σ ∘ Sum.inl) ∘ e₁
+    let u₂ := Sum.elim b (γ ∘ σ ∘ Sum.inr) ∘ e₂
+    (∑ x ∈ Finset.univ.image u₁, w x) + ∑ y ∈ Finset.univ.image u₂, w y =
+      (∑ x ∈ Finset.univ.image r₁, w x) + ∑ y ∈ Finset.univ.image r₂, w y ∧
+    ∑ x ∈ Finset.univ.image u₁, w x < ∑ x ∈ Finset.univ.image r₁, w x := by
+  cases nonempty_fintype ι₁; cases nonempty_fintype ι₂; cases nonempty_fintype κ₂
+  intro u₁ u₂
+  have hr₁_sum : ∑ x ∈ Finset.univ.image r₁, w x =
+      (∑ x : ι₁, w (a x)) + ∑ x : κ₁, w (γ (.inl x)) := by
+    rw [← he₁]
+    exact sum_image_sum_elim_comp w e₁ a (γ ∘ Sum.inl) (he₁.symm ▸ hr₁)
+  have hr₂_sum : ∑ y ∈ Finset.univ.image r₂, w y =
+      (∑ y : ι₂, w (b y)) + ∑ y : κ₂, w (γ (.inr y)) := by
+    rw [← he₂]
+    exact sum_image_sum_elim_comp w e₂ b (γ ∘ Sum.inr) (he₂.symm ▸ hr₂)
+  have hu₁_sum := sum_image_sum_elim_comp w e₁ a (γ ∘ σ ∘ Sum.inl) hu₁
+  have hu₂_sum := sum_image_sum_elim_comp w e₂ b (γ ∘ σ ∘ Sum.inr) hu₂
+  have hperm := sum_comp_inl_add_sum_comp_inr (fun z ↦ w (γ z)) σ
+  dsimp only [Function.comp_apply] at hu₁_sum hu₂_sum
+  dsimp only [u₁, u₂]
+  refine ⟨?_, ?_⟩
+  · rw [hu₁_sum, hu₂_sum, hr₁_sum, hr₂_sum, add_add_add_comm, hperm, add_add_add_comm]
+  · rw [hu₁_sum, hr₁_sum]
+    exact add_lt_add_right hlt _
 
 end Equiv.Perm

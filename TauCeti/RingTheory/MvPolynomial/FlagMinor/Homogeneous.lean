@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.SupIndep
 public import TauCeti.RingTheory.MvPolynomial.FlagMinor.Basic
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
+import Mathlib.LinearAlgebra.DFinsupp
 
 /-!
 # Row and column multigradings of flag minors
@@ -19,15 +21,22 @@ multihomogeneous:
   is `1` if `c < #I` and `0` otherwise (`TauCeti.isWeightedHomogeneous_flagColWeight_flagMinor`),
   corresponding to the fundamental weight `(GTPattern.rowSubset I).topRow`.
 
+Cutting `TauCeti.flagMinorAlgebra n R` out by the column weights `flagColWeight c` gives the
+graded family of submodules `TauCeti.flagMinorColSubmodule n R d`, which are mutually independent
+(`TauCeti.iSupIndep_flagMinorColSubmodule`).
+
 ## Main definitions
 
 * `TauCeti.flagColWeight`: the indicator weight of column `c` of the generic `n × n` matrix.
+* `TauCeti.flagMinorColSubmodule`: the homogeneous component of `flagMinorAlgebra n R` of column
+  multidegree `d : Fin n → ℕ`.
 
 ## Main results
 
 * `TauCeti.isMultiHomogeneous_flagMinor`: row-indicator multihomogeneity of a flag minor.
 * `TauCeti.isWeightedHomogeneous_flagColWeight_flagMinor`: fundamental column-weight homogeneity
   of a flag minor.
+* `TauCeti.iSupIndep_flagMinorColSubmodule`: independence of the column-multidegree components.
 -/
 
 public section
@@ -107,5 +116,47 @@ theorem isWeightedHomogeneous_flagColWeight_flagMinor (R : Type*) [CommRing R]
   · rwa [hσ, one_smul]
   · rw [hσ, Units.neg_smul, one_smul]
     exact hprod.neg
+
+/-- The homogeneous component of `flagMinorAlgebra n R` of column multidegree `d : Fin n → ℕ` for
+the indicator weights `flagColWeight c` of the columns of the generic matrix. -/
+noncomputable def flagMinorColSubmodule (n : ℕ) (R : Type*) [CommRing R] (d : Fin n → ℕ) :
+    Submodule R (flagMinorAlgebra n R) where
+  carrier := {f | ∀ c : Fin n,
+    (f : MvPolynomial (Fin n × Fin n) R).IsWeightedHomogeneous (flagColWeight c) (d c)}
+  zero_mem' c := isWeightedHomogeneous_zero R (flagColWeight c) (d c)
+  add_mem' hf hg c := (hf c).add (hg c)
+  smul_mem' r _ hf c := by
+    rw [Subalgebra.coe_smul, Algebra.smul_def, algebraMap_eq]; exact (hf c).C_mul r
+
+@[simp]
+theorem mem_flagMinorColSubmodule_iff {R : Type*} [CommRing R] {d : Fin n → ℕ}
+    {f : flagMinorAlgebra n R} :
+    f ∈ flagMinorColSubmodule n R d ↔
+      ∀ c : Fin n,
+        (f : MvPolynomial (Fin n × Fin n) R).IsWeightedHomogeneous (flagColWeight c) (d c) :=
+  Iff.rfl
+
+/-- The column-multidegree submodules form a graded monoid inside `flagMinorAlgebra n R`. -/
+instance (n : ℕ) (R : Type*) [CommRing R] :
+    SetLike.GradedMonoid (flagMinorColSubmodule n R) where
+  one_mem c := isWeightedHomogeneous_one R (flagColWeight c)
+  mul_mem {_ _ _ _} hf hg c := (hf c).mul (hg c)
+
+/-- Column-multidegree components of `flagMinorAlgebra n R` are independent because polynomials of
+distinct column multidegrees have disjoint monomial supports. -/
+theorem iSupIndep_flagMinorColSubmodule (R : Type*) [CommRing R] :
+    iSupIndep (flagMinorColSubmodule n R) := by
+  classical
+  rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
+  intro s v hv hv0 d₀ hd₀; ext1; ext x
+  simp only [ZeroMemClass.coe_zero, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
+  by_cases hx : ∀ c : Fin n, Finsupp.weight (flagColWeight c) x = d₀ c
+  · have h0 : ((flagMinorAlgebra n R).val (∑ d ∈ s, v d)).coeff x = 0 := by simp [hv0]
+    rw [map_sum, coeff_sum, sum_eq_single d₀] at h0
+    · exact h0
+    · exact fun d hd hdne ↦ let ⟨c, hc⟩ := Function.ne_iff.mp hdne
+        by_contra fun hne ↦ hc ((hv d hd c hne).symm.trans (hx c))
+    · exact fun h ↦ absurd hd₀ h
+  · push Not at hx; obtain ⟨c, hc⟩ := hx; exact by_contra fun hne ↦ hc (hv d₀ hd₀ c hne)
 
 end TauCeti

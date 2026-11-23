@@ -5,17 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
-public import Mathlib.RingTheory.Localization.Away.Basic
-public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.RingTheory.MvPolynomial.FlagMinor.StandardMonomial
-public import TauCeti.RingTheory.MvPolynomial.Subalgebra.WeightFiltration
-public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
-import TauCeti.Data.Finsupp.Weight
-import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Laurent
+public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
 
 /-!
-# Diagonal SAGBI basis, Gelfand-Tsetlin initial algebra, and weight-Rees degeneration
+# Diagonal SAGBI basis and Gelfand-Tsetlin initial algebra
 
 For the generic `n × n` matrix `(z_(r,c))` with variables ordered row by row along `toLex` and
 equipped with the lexicographic monomial order `MonomialOrder.lex`, this file proves that the flag
@@ -23,15 +17,15 @@ minors indexed by the `2 ^ n - 1` nonempty subsets of `Fin n` (which include the
 `flagMinor R univ` when `0 < n`, and are pairwise distinct over `[Nontrivial R]`) form a finite
 monic SAGBI basis of the flag-minor subalgebra over **every** commutative ring `R`, identifies its
 initial algebra with the semigroup algebra of nonnegative Gelfand-Tsetlin patterns over every
-commutative ring `R`, characterizes and proves saturation and finite generation of the
-leading-exponent monoid `lex.leadingExponents` over `[NoZeroDivisors R] [Nontrivial R]`, and
-constructs the flat positive weight-Rees degeneration over any field.
+commutative ring `R`, and characterizes and proves saturation and finite generation of the
+leading-exponent monoid `lex.leadingExponents` over `[NoZeroDivisors R] [Nontrivial R]`.
 
 Note that it is the **initial** algebra
 `lex.initialAlgebra ((flagMinorAlgebra n R).map (rename toLex))` that is isomorphic to the affine
 semigroup algebra `AddMonoidAlgebra R (AddSubmonoid.nonneg (GTPattern n))`; the flag-minor algebra
 `flagMinorAlgebra n R` itself is not thereby toric, and instead over any field `k` admits a flat
-one-parameter Rees degeneration to this toric initial algebra.
+one-parameter Rees degeneration to this toric initial algebra
+(`TauCeti.RingTheory.MvPolynomial.FlagMinor.Degeneration`).
 
 ## Main definitions
 
@@ -59,16 +53,6 @@ one-parameter Rees degeneration to this toric initial algebra.
   `TauCeti.fg_leadingExponents_rename_toLex_flagMinorAlgebra`: over `[CommRing R] [NoZeroDivisors R]
   [Nontrivial R]`, explicit description, saturation, and finite generation of the leading-exponent
   monoid.
-* `TauCeti.exists_pos_weight_flagMinorAlgebra_degeneration`: over any field `k`, existence of a
-  strictly positive integral weight `w : (Fin n ×ₗ Fin n) → ℕ` realizing the diagonal monomials as
-  weight-initial forms of all flag minors (with weighted degree equal to the diagonal weight),
-  identifying the `w`-initial algebra with the `lex`-initial algebra, identifying the image of
-  `weightReesAeval` on the `2 ^ n - 1` nonempty-subset flag minors with the embedded weight-Rees
-  algebra, proving flatness over `k[X]`, constructing a `k`-algebra isomorphism from the special
-  fiber at `t = 0` (`k ⊗[k[X]] A.weightReesAlgebra w`) to
-  `AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n))` sending each homogenized flag minor to
-  `single ⟨GTPattern.rowSubset I, GTPattern.zero_le_rowSubset I⟩ 1`, and identifying the
-  localization away from `t` with `LaurentPolynomial (flagMinorAlgebra n k)`.
 
 ## References
 
@@ -85,7 +69,6 @@ one-parameter Rees degeneration to this toric initial algebra.
 public section
 
 open Finset MvPolynomial MonomialOrder
-open scoped Polynomial TensorProduct
 
 namespace TauCeti
 
@@ -251,10 +234,8 @@ theorem coe_initialAlgebraFlagMinorEquiv_single_one_eq_leadingTerm (R : Type*) [
   let s := GTPattern.nonnegEquivBoundedSSYT n P
   have hdeg : (GTPattern.flagExponentEquiv.symm P : Fin n ×ₗ Fin n →₀ ℕ) =
       lex.degree (rename toLex (s.2.flagMinorProd R)) := by
-    apply GTPattern.exponentEntries_injective
-    rw [← GTPattern.coe_flagExponentEquiv_apply, AddEquiv.apply_symm_apply,
-      s.2.exponentEntries_degree_rename_toLex_flagMinorProd R,
-      ← GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply s, Equiv.symm_apply_apply]
+    rw [BoundedSSYT.degree_rename_toLex_flagMinorProd_eq_coe_flagExponentEquiv_symm R s,
+      Equiv.symm_apply_apply]
   rw [hdeg, MonomialOrder.leadingTerm, (s.2.monic_rename_toLex_flagMinorProd R).leadingCoeff_eq_one]
 
 /-- The `lex`-initial algebra of `(flagMinorAlgebra n R).map (rename toLex)` is finitely generated
@@ -336,185 +317,6 @@ theorem fg_leadingExponents_rename_toLex_flagMinorAlgebra (n : ℕ) (R : Type*) 
   (AddSubmonoid.fg_iff _).mpr
     ⟨Set.range (flagDiagonalExponent (n := n)),
       (leadingExponents_rename_toLex_flagMinorAlgebra R).symm, Set.finite_range _⟩
-
-/-! ### Flat positive weight-Rees degeneration over a field -/
-
-/-- **Positive integral weight-Rees degeneration of the flag-minor algebra.** Over any field `k`,
-there exists a strictly positive weight `w : (Fin n ×ₗ Fin n) → ℕ` such that, writing
-`A = (flagMinorAlgebra n k).map (rename toLex)` and `t` for the Rees parameter
-`coeffSubalgebra.X (A.weightFiltration w) (A.one_mem_weightFiltration_one w)` in
-`A.weightReesAlgebra w`:
-1. on every flag minor `flagMinor k I`, its `w`-initial form is its diagonal monomial
-   `monomial (flagDiagonalExponent I) 1` and its weighted total degree is
-   `Finsupp.weight w (flagDiagonalExponent I)`;
-2. the `w`-weight initial algebra of `A` equals its row-major lexicographic initial algebra
-   (isomorphic to `AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n))` via
-   `initialAlgebraFlagMinorEquiv`);
-3. the Rees presentation map `weightReesAeval` on the `2 ^ n - 1` nonempty-subset flag minors has
-   image the embedded weight-Rees algebra
-   `(A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val)`;
-4. `A.weightReesAlgebra w` is flat over `k[X]` and admits a `k`-algebra isomorphism from its
-   special fiber at `t = 0` (`k ⊗[k[X]] A.weightReesAlgebra w` along `Polynomial.evalRingHom 0`)
-   to `AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n))` sending each homogenized flag minor
-   to `AddMonoidAlgebra.single ⟨GTPattern.rowSubset I, GTPattern.zero_le_rowSubset I⟩ 1`;
-5. the invertible-`t` fiber `Localization.Away t` is `k`-algebra isomorphic to
-   `LaurentPolynomial (flagMinorAlgebra n k)` via an isomorphism sending `t` to `T 1`. -/
-theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
-    ∃ w : (Fin n ×ₗ Fin n) → ℕ,
-      (∀ s, 0 < w s) ∧
-      (∀ I : Finset (Fin n),
-        MvPolynomial.weightInitialForm w (rename toLex (flagMinor k I)) =
-          monomial (flagDiagonalExponent I) 1 ∧
-        (rename toLex (flagMinor k I)).weightedTotalDegree w =
-          Finsupp.weight w (flagDiagonalExponent I)) ∧
-      Algebra.adjoin k
-          (MvPolynomial.weightInitialForm w ''
-            (((flagMinorAlgebra n k).map (rename toLex)) : Set _)) =
-        lex.initialAlgebra ((flagMinorAlgebra n k).map (rename toLex)) ∧
-      (TauCeti.MvPolynomial.weightReesAeval
-          (fun I : {I : Finset (Fin n) // I.Nonempty} ↦ rename toLex (flagMinor k I.val))
-          (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))).range =
-        (((flagMinorAlgebra n k).map (rename toLex)).weightReesAlgebra w).map
-          (Polynomial.mapAlgHom ((flagMinorAlgebra n k).map (rename toLex)).val) ∧
-      (letI := TauCeti.coeffSubalgebra.algebra
-          (((flagMinorAlgebra n k).map (rename toLex)).weightFiltration w)
-          (((flagMinorAlgebra n k).map (rename toLex)).one_mem_weightFiltration_one w)
-      letI := Algebra.compHom k (Polynomial.evalRingHom (0 : k))
-      Module.Flat k[X] (((flagMinorAlgebra n k).map (rename toLex)).weightReesAlgebra w) ∧
-      ∃ e0 : (k ⊗[k[X]] (((flagMinorAlgebra n k).map (rename toLex)).weightReesAlgebra w)) ≃ₐ[k]
-          AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n)),
-        ∀ (I : Finset (Fin n))
-          (hIm : ⟨rename toLex (flagMinor k I), Subalgebra.mem_map.mpr
-            ⟨flagMinor k I, flagMinor_mem_flagMinorAlgebra k I, rfl⟩⟩ ∈
-              ((flagMinorAlgebra n k).map (rename toLex)).weightFiltration w
-                (Finsupp.weight w (flagDiagonalExponent I))),
-          e0 (1 ⊗ₜ[k[X]] TauCeti.coeffSubalgebra.monomial
-            (((flagMinorAlgebra n k).map (rename toLex)).weightFiltration w)
-            (Finsupp.weight w (flagDiagonalExponent I))
-            ⟨rename toLex (flagMinor k I), Subalgebra.mem_map.mpr
-              ⟨flagMinor k I, flagMinor_mem_flagMinorAlgebra k I, rfl⟩⟩ hIm) =
-            AddMonoidAlgebra.single ⟨GTPattern.rowSubset I, GTPattern.zero_le_rowSubset I⟩ 1) ∧
-      ∃ e : Localization.Away
-          (TauCeti.coeffSubalgebra.X
-            (((flagMinorAlgebra n k).map (rename toLex)).weightFiltration w)
-            (((flagMinorAlgebra n k).map (rename toLex)).one_mem_weightFiltration_one w)) ≃ₐ[k]
-          LaurentPolynomial (flagMinorAlgebra n k),
-        e (algebraMap _ _ (TauCeti.coeffSubalgebra.X
-            (((flagMinorAlgebra n k).map (rename toLex)).weightFiltration w)
-            (((flagMinorAlgebra n k).map (rename toLex)).one_mem_weightFiltration_one w))) =
-          LaurentPolynomial.T 1 := by
-  classical
-  set A : Subalgebra k (MvPolynomial (Fin n ×ₗ Fin n) k) :=
-    (flagMinorAlgebra n k).map (rename toLex)
-  let c : {I : Finset (Fin n) // I.Nonempty} → MvPolynomial (Fin n ×ₗ Fin n) k :=
-    fun I ↦ rename toLex (flagMinor k I.val)
-  have hrange : Set.range c =
-      (fun I : Finset (Fin n) ↦ rename toLex (flagMinor k I)) '' {I | I.Nonempty} := by
-    ext p; simp [c]
-  have hadj : Algebra.adjoin k (Set.range c) = A := by
-    rw [hrange, ← Set.image_image, ← AlgHom.map_adjoin, adjoin_flagMinor_nonempty]
-  have hsagbi : lex.IsSAGBIBasis (Set.range c) (Algebra.adjoin k (Set.range c)) := by
-    rw [hadj, hrange]; exact isSAGBIBasis_image_nonempty_rename_toLex_flagMinor k
-  have hc_monic : ∀ I : {I : Finset (Fin n) // I.Nonempty}, lex.Monic (c I) :=
-    fun I ↦ monic_rename_toLex_flagMinor k I.val
-  set a := fun I : {I : Finset (Fin n) // I.Nonempty} ↦ lex.degree (c I)
-  obtain ⟨B, hB, hspan⟩ := TauCeti.exists_finset_toricIdeal_eq_span a
-  let b : B → MvPolynomial {I : Finset (Fin n) // I.Nonempty} k :=
-    fun j ↦ monomial j.val.1 1 - monomial j.val.2 1
-  have hJ : TauCeti.toricIdeal k a = Ideal.span (Set.range b) := by
-    rw [hspan k]
-    congr 1
-    exact Set.image_eq_range _ _
-  choose Q hQc hQ using fun j : B ↦
-    hsagbi.exists_aeval_eq_aeval_sub hc_monic (hB j.val j.property)
-  obtain ⟨w, hw, hcw, hgw, hQw⟩ :=
-    exists_pos_weight_forall_mem_weightFiltrationLT hc_monic hQ
-  let d := fun I ↦ Finsupp.weight w (a I)
-  have hwA (u : {I : Finset (Fin n) // I.Nonempty} →₀ ℕ) :
-      Finsupp.weight d u = Finsupp.weight w (Finsupp.linearCombination ℕ a u) :=
-    Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a u
-  have hb (j : B) : (b j).IsWeightedHomogeneous d (Finsupp.weight d j.val.1) :=
-    (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-      (isWeightedHomogeneous_monomial _ _ _ (by rw [hwA, hwA, hB j.val j.property]))
-  have hker : RingHom.ker (aeval (fun I ↦ monomial (a I) (1 : k))) =
-      Ideal.span (Set.range b) := by
-    rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ]
-  have hinit := TauCeti.MvPolynomial.adjoin_weightInitialForm_eq hcw hgw hker hb hQw hQc
-  have hlead : Algebra.adjoin k (Set.range fun I ↦ monomial (a I) (1 : k)) =
-      lex.initialAlgebra (Algebra.adjoin k (Set.range c)) := by
-    rw [← hsagbi.adjoin_leadingTerm, ← Set.range_comp]
-    congr 1
-    apply congrArg Set.range
-    funext I
-    simp [MonomialOrder.leadingTerm, (hc_monic I).leadingCoeff_eq_one, a]
-  have hinit' : Algebra.adjoin k (MvPolynomial.weightInitialForm w '' (A : Set _)) =
-      lex.initialAlgebra A := by
-    rw [← hadj]
-    exact hinit.trans hlead
-  have hd_eq : d = fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val) :=
-    funext fun I ↦ by simp [d, a, c]
-  have hrees_eq : (TauCeti.MvPolynomial.weightReesAeval c
-      (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))).range =
-      (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) := by
-    rw [← hd_eq]
-    exact (A.map_weightReesAlgebra_eq_range_weightReesAeval w hadj.symm
-      hcw hgw hker hb hQw hQc).symm
-  have htop : ∀ I : Finset (Fin n),
-      MvPolynomial.weightInitialForm w (rename toLex (flagMinor k I)) =
-        monomial (flagDiagonalExponent I) 1 ∧
-      (rename toLex (flagMinor k I)).weightedTotalDegree w =
-        Finsupp.weight w (flagDiagonalExponent I) := by
-    intro I
-    rcases I.eq_empty_or_nonempty with rfl | hI
-    · have h0 : flagDiagonalExponent (∅ : Finset (Fin n)) = 0 := by
-        rw [← degree_rename_toLex_flagMinor (R := k), flagMinor_empty, map_one, degree_one]
-      rw [h0, map_zero, flagMinor_empty, map_one, monomial_zero', C_1,
-        MvPolynomial.weightInitialForm_one]
-      exact ⟨rfl, Nat.eq_zero_of_le_zero
-        (TauCeti.MvPolynomial.mem_weightFiltration_iff_weightedTotalDegree_le.mp
-          SetLike.GradedOne.one_mem)⟩
-    · let J : {I : Finset (Fin n) // I.Nonempty} := ⟨I, hI⟩
-      have hdeg_le : (c J).weightedTotalDegree w ≤ d J :=
-        TauCeti.MvPolynomial.mem_weightFiltration_iff_weightedTotalDegree_le.mp (hcw J)
-      have hdeg_eq : (c J).weightedTotalDegree w = d J := by
-        refine le_antisymm hdeg_le (le_of_not_gt fun hlt ↦ ?_)
-        have h0 := MvPolynomial.weightedHomogeneousComponent_eq_zero (d J) (c J) hlt
-        rw [hgw J] at h0
-        exact one_ne_zero (MvPolynomial.monomial_eq_zero.mp h0)
-      have haJ : a J = flagDiagonalExponent I := degree_rename_toLex_flagMinor (R := k) I
-      have hdJ : d J = Finsupp.weight w (flagDiagonalExponent I) := by simp [d, haJ]
-      have hinit_J :
-          MvPolynomial.weightInitialForm w (c J) = monomial (flagDiagonalExponent I) 1 := by
-        rw [MvPolynomial.weightInitialForm_def, hdeg_eq, hgw J]
-        exact congrArg (fun e ↦ monomial e (1 : k)) haJ
-      exact ⟨hinit_J, by simpa [J, c, hdJ] using hdeg_eq⟩
-  refine ⟨w, hw, htop, hinit', hrees_eq, ⟨A.flat_weightReesAlgebra w, ?_⟩, ?_⟩
-  · let := TauCeti.coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
-    let := Algebra.compHom k (Polynomial.evalRingHom (0 : k))
-    let e0 : (k ⊗[k[X]] A.weightReesAlgebra w) ≃ₐ[k]
-        AddMonoidAlgebra k (AddSubmonoid.nonneg (GTPattern n)) :=
-      (A.weightReesAlgebraSpecialFiberEquiv w).trans
-        ((Subalgebra.equivOfEq _ _ hinit').trans (initialAlgebraFlagMinorEquiv n k).symm)
-    refine ⟨e0, fun I hIm ↦ ?_⟩
-    rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_apply_eq]
-    apply Subtype.ext
-    rw [Subalgebra.equivOfEq_apply, Subalgebra.coe_weightReesAlgebraSpecialFiberEquiv_tmul_monomial]
-    have hcomp : weightedHomogeneousComponent w (Finsupp.weight w (flagDiagonalExponent I))
-        (rename toLex (flagMinor k I)) = monomial (flagDiagonalExponent I) 1 := by
-      rw [← (htop I).2, ← MvPolynomial.weightInitialForm_def, (htop I).1]
-    rw [hcomp, coe_initialAlgebraFlagMinorEquiv_single,
-      ← GTPattern.flagExponentEquiv_flagDiagonalExponent I, AddEquiv.symm_apply_apply]
-  · let e1 := TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent (A.weightFiltration w)
-      (A.one_mem_weightFiltration_one w) (A.weightFiltration_mono w) (A.iSup_weightFiltration w)
-    have he1 := TauCeti.coeffSubalgebra.localizationAwayXEquivLaurent_algebraMap_X
-      (A.weightFiltration w) (A.one_mem_weightFiltration_one w) (A.weightFiltration_mono w)
-      (A.iSup_weightFiltration w)
-    let eA : A ≃ₐ[k] flagMinorAlgebra n k :=
-      ((flagMinorAlgebra n k).equivMapOfInjective (rename toLex)
-        (rename_injective _ toLex.injective)).symm
-    refine ⟨e1.trans (AddMonoidAlgebra.mapAlgEquiv k ℤ eA), ?_⟩
-    rw [AlgEquiv.trans_apply, he1]
-    exact (AddMonoidAlgebra.mapAlgHom_single eA.toAlgHom 1 1).trans (by rw [map_one]; rfl)
 
 end SAGBI
 
