@@ -10,16 +10,17 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
-# Power series and circle integrals for `Complex.besselJ`
+# Power series, circle integrals and plane integrals for `Complex.besselJ`
 
 Mathlib defines the Bessel function of the first kind `Complex.besselJ ν z` through the regularized
 hypergeometric function `₀F₁`, establishes its parity and `J_{-n}(z) = (-1)^n J_n(z)` for integer
 orders, and proves analyticity on `Complex.slitPlane` (and on all of `ℂ` for integer orders).
 
-This file develops the power series and full-period circle integrals of `Complex.besselJ`,
-paralleling the real modified-Bessel development in
+This file develops the power series, full-period circle integrals and polar plane integrals of
+`Complex.besselJ`, paralleling the real modified-Bessel development in
 `TauCeti/Analysis/SpecialFunctions/Bessel/I.lean`:
 
 * Power series: `Complex.hasSum_besselJ` expresses `J_ν(z)` as its alternating power series
@@ -34,9 +35,12 @@ paralleling the real modified-Bessel development in
   give Bessel's integral for `J₀`: `∫_{-π}^{π} e^{i a cos θ} dθ = 2 π J_0(a)`
   (`Complex.integral_exp_mul_cos_mul_I`) and `J_0(a) = (2π)⁻¹ ∫_0^{2π} e^{i a cos θ} dθ`
   (`Complex.besselJ_zero_left_eq_integral`), DLMF 10.9.1 at `n = 0`. The right side is the
-  average of the plane wave `e^{i a cos φ}` over all directions, so in polar coordinates it
-  reduces a plane integral of `e^{i r cos φ}` times a radial weight to a one-dimensional integral
-  against `J₀(r)`; this is how the representation DLMF 9.11.3 of the square of the Airy function
+  average of the plane wave `e^{i a cos φ}` over all directions.
+* Plane integrals: in polar coordinates, the plane integral of `e^{i k(|z|) Re z} h(|z|)` reduces
+  to the one-dimensional integral `2π ∫₀^∞ J₀(r k(r)) h(r) r dr`
+  (`Complex.integral_exp_re_mul_mul_I_mul_eq_integral_besselJ`). With a constant `k` this is the
+  two-dimensional Fourier transform of a radial function as a Hankel transform of order zero; with
+  `k(r) = r²/12 + x` it is how the representation DLMF 9.11.3 of the square of the Airy function
   is derived.
 
 ## Main results
@@ -44,6 +48,7 @@ paralleling the real modified-Bessel development in
 * `Complex.hasSum_besselJ`, `Complex.hasSum_besselJ_natCast`, `Complex.hasSum_besselJ_zero_left`
 * `Complex.integral_exp_I_mul_cos_mul_exp`, `Complex.integral_zero_two_pi_exp_I_mul_cos_mul_exp`
 * `Complex.integral_exp_mul_cos_mul_I`, `Complex.besselJ_zero_left_eq_integral`
+* `Complex.integral_exp_re_mul_mul_I_mul_eq_integral_besselJ`
 
 ## References
 
@@ -176,5 +181,28 @@ theorem besselJ_zero_left_eq_integral (a : ℂ) :
   simp only [Int.cast_zero, zero_mul, exp_zero, mul_one, zpow_zero, mul_comm I a,
     mul_right_comm a I] at h
   rw [h, inv_mul_cancel_left₀ h2pi]
+
+/-! ### Plane integrals of radial plane waves -/
+
+open MeasureTheory Set in
+/-- **Plane integrals of radial plane waves.** If the plane wave `e^{i k(|z|) Re z}`, with a
+frequency `k(|z|)` depending on the distance to the origin, times a radial weight `h(|z|)` is
+integrable on `ℂ`, then its integral is `2π ∫₀^∞ J₀(r k(r)) h(r) r dr`. For constant `k` this is
+the two-dimensional Fourier transform of a radial function, a Hankel transform of order zero. -/
+theorem integral_exp_re_mul_mul_I_mul_eq_integral_besselJ {k h : ℝ → ℂ}
+    (hint : Integrable fun z : ℂ => exp (z.re * k ‖z‖ * I) * h ‖z‖) :
+    ∫ z : ℂ, exp (z.re * k ‖z‖ * I) * h ‖z‖ =
+      2 * π * ∫ r in Ioi (0 : ℝ), r • (besselJ 0 (r * k r) * h r) := by
+  rw [hint.integral_eq_integral_circleMap 0, ← integral_const_mul]
+  refine setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) => ?_
+  -- On the circle of radius `r`, the integrand is Bessel's integrand `e^{i (r k(r)) cos θ}`.
+  have hcirc (θ : ℝ) : exp ((circleMap 0 r θ).re * k ‖circleMap 0 r θ‖ * I) *
+      h ‖circleMap 0 r θ‖ = exp (r * k r * Real.cos θ * I) * h r := by
+    rw [norm_circleMap_zero, abs_of_pos hr, circleMap_zero]
+    congr 2
+    simp
+    ring
+  simp only [hcirc, intervalIntegral.integral_mul_const, integral_exp_mul_cos_mul_I, real_smul]
+  ring
 
 end Complex
