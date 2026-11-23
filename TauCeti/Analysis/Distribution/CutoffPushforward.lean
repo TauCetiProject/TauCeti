@@ -272,16 +272,13 @@ theorem dsupport_comp_subset_image_of_tsupport_subset {G G' : Type*}
     [AddCommMonoid V] [FunLike 𝓕 𝓓(Ω, G) V] [AddMonoidHomClass 𝓕 𝓓(Ω, G) V] (T : 𝓕)
     (hΦc : ContinuousOn Φ Ω) {P : 𝓓(Ω', G') → 𝓓(Ω, G)}
     (hP : ∀ φ, tsupport (P φ) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport φ) :
-    dsupport (T ∘ P) ⊆ Φ '' (tsupport χ ∩ dsupport T) := by
-  have hS : IsCompact (Φ '' (tsupport χ ∩ dsupport T)) :=
-    (IsCompact.inter_right χ.hasCompactSupport isClosed_dsupport).image_of_continuousOn
-      (hΦc.mono (inter_subset_left.trans χ.tsupport_subset))
+    dsupport (T ∘ P) ⊆ Φ '' (tsupport χ ∩ dsupport T) :=
   -- A test function supported off this image is taken to one supported off `spt T`.
-  have hvan : IsVanishingOn (T ∘ P) (Φ '' (tsupport χ ∩ dsupport T))ᶜ := fun φ hφ ↦
-    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦
-      hφ (hP φ hx).2 ⟨x, ⟨(hP φ hx).1, hxT⟩, rfl⟩
-  have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
-  rwa [compl_compl] at h
+  dsupport_comp_subset_of_disjoint T ((IsCompact.inter_right χ.hasCompactSupport
+    isClosed_dsupport).image_of_continuousOn
+      (hΦc.mono (inter_subset_left.trans χ.tsupport_subset))).isClosed
+    fun φ hφ ↦ disjoint_left.2 fun x hx hxT ↦
+      disjoint_left.1 hφ (hP φ hx).2 ⟨x, ⟨(hP φ hx).1, hxT⟩, rfl⟩
 
 /-- **The support of a pushforward**: the support of `T ∘ (χ Φ^*)` lies in the image under `Φ` of
 the part of the support of `T` in the support of `χ`. In particular it is compact, and when `χ` is
@@ -300,15 +297,11 @@ theorem dsupport_comp_pullbackCLM_subset [AddCommMonoid V]
     [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) {hΦp : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ Φ ⁻¹' K)} :
     dsupport (T ∘ (pullbackCLM Φ hΦ hΦp : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ⊆
-      closure (Φ '' ((Ω : Set E) ∩ dsupport T)) := by
+      closure (Φ '' ((Ω : Set E) ∩ dsupport T)) :=
   -- A test form supported off this closure pulls back to a test form supported off `spt T`.
-  have hvan : IsVanishingOn (T ∘ (pullbackCLM Φ hΦ hΦp : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _))
-      (closure (Φ '' ((Ω : Set E) ∩ dsupport T)))ᶜ := fun ω hω ↦
-    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦
-      hω (tsupport_pullbackCLM_subset ω hx).2 <| subset_closure
-        ⟨x, ⟨(tsupport_pullbackCLM_subset ω hx).1, hxT⟩, rfl⟩
-  have h := (hvan.disjoint_dsupport isClosed_closure.isOpen_compl).subset_compl_left
-  rwa [compl_compl] at h
+  dsupport_comp_subset_of_disjoint T isClosed_closure fun ω hω ↦ disjoint_left.2 fun x hx hxT ↦
+    disjoint_left.1 hω (tsupport_pullbackCLM_subset ω hx).2 <| subset_closure
+      ⟨x, ⟨(tsupport_pullbackCLM_subset ω hx).1, hxT⟩, rfl⟩
 
 /-- **The mass of a pushforward**: if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then the
 pushforward `T ∘ (χ Φ^*)` of a `k`-current `T` has mass at most `L ^ k` times the mass of `T`. -/
@@ -317,25 +310,15 @@ theorem mass_comp_cutoffPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V
     (T : 𝓕) (hχ : ∀ x, |χ x| ≤ 1) {L : ℝ≥0} (hL : ∀ x ∈ tsupport χ, ‖fderiv ℝ Φ x‖ ≤ L) :
     mass (T ∘ (cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ≤
       (L : ℝ≥0∞) ^ k * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hb : ‖(cutoffPullbackCLM χ Φ hΦ ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ L ^ k := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [coe_toBoundedContinuousFunction]
-    by_cases hx : x ∈ tsupport χ
-    · refine (norm_cutoffPullbackCLM_apply_le ω x).trans ?_
-      calc |χ x| * (‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k) ≤ 1 * (1 * (L : ℝ) ^ k) := by
-            gcongr
-            exacts [hχ x, hω _, hL x hx]
-        _ = L ^ k := by ring
-    · simp [image_eq_zero_of_notMem_tsupport hx]
-  calc ‖T (cutoffPullbackCLM χ Φ hΦ ω)‖ₑ
-      ≤ mass T * ‖(cutoffPullbackCLM χ Φ hΦ ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (L : ℝ≥0∞) ^ k := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
-        exact ENNReal.ofReal_le_ofReal hb
-    _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+  refine (mass_comp_le_of_norm_apply_le T (c := L ^ k) (by positivity) fun ω hω x ↦ ?_).trans_eq
+    (by simp [ENNReal.ofReal_pow, ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ tsupport χ
+  · refine (norm_cutoffPullbackCLM_apply_le ω x).trans ?_
+    calc |χ x| * (‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k) ≤ 1 * (1 * (L : ℝ) ^ k) := by
+          gcongr
+          exacts [hχ x, hω _, hL x hx]
+      _ = L ^ k := by ring
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 section Homotopy
 
@@ -350,20 +333,14 @@ theorem dsupport_comp_cutoffHomotopyPullbackCLM_subset [AddCommMonoid V]
     (T : 𝓕) :
     dsupport (T ∘ (cutoffHomotopyPullbackCLM χ hH :
         𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ⊆
-      H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1) := by
-  have hS : IsCompact (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1)) :=
-    ((IsCompact.inter_right χ.hasCompactSupport isClosed_dsupport).prod
-      isCompact_Icc).image_of_continuousOn fun p hp ↦
-        (hH p ⟨χ.tsupport_subset hp.1.1, hp.2⟩).continuousAt.continuousWithinAt
+      H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1) :=
   -- A test form supported off this image is sent to a test form supported off `spt T`.
-  have hvan : IsVanishingOn (T ∘ (cutoffHomotopyPullbackCLM χ hH :
-      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _))
-      (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1))ᶜ := fun ω hω ↦
-    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦ by
+  dsupport_comp_subset_of_disjoint T (((IsCompact.inter_right χ.hasCompactSupport
+    isClosed_dsupport).prod isCompact_Icc).image_of_continuousOn fun p hp ↦
+      (hH p ⟨χ.tsupport_subset hp.1.1, hp.2⟩).continuousAt.continuousWithinAt).isClosed
+    fun ω hω ↦ disjoint_left.2 fun x hx hxT ↦ by
       obtain ⟨p, ⟨⟨hpχ, hpt⟩, hpω⟩, rfl⟩ := tsupport_cutoffHomotopyPullbackCLM_subset ω hx
-      exact hω hpω ⟨p, ⟨⟨hpχ, hxT⟩, hpt⟩, rfl⟩
-  have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
-  rwa [compl_compl] at h
+      exact disjoint_left.1 hω hpω ⟨p, ⟨⟨hpχ, hxT⟩, hpt⟩, rfl⟩
 
 /-- **The mass of a homotopy current with compact support**: if `|χ| ≤ 1`, `‖∂ₜ H‖ ≤ A` and the
 spatial derivative of `H` has operator norm at most `L` on `tsupport χ × [0, 1]`, then
@@ -376,29 +353,17 @@ theorem mass_comp_cutoffHomotopyPullbackCLM_le [NormedAddCommGroup V] [NormedSpa
     (hL : ∀ p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ L) :
     mass (T ∘ (cutoffHomotopyPullbackCLM χ hH :
         𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ≤ A * L ^ k * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hb : ‖(cutoffHomotopyPullbackCLM χ hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ A * L ^ k := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [coe_toBoundedContinuousFunction]
-    by_cases hx : x ∈ tsupport χ
-    · refine (norm_cutoffHomotopyPullbackCLM_apply_le (B := 1) (fun t _ ↦ hω _)
-        (fun t ht ↦ hA _ ⟨hx, ht⟩) fun t ht ↦ hL _ ⟨hx, ht⟩).trans ?_
-      calc |χ x| * (1 * A * L ^ k : ℝ) ≤ 1 * (1 * A * L ^ k) := by gcongr; exact hχ x
-        _ = A * L ^ k := by ring
-    · rw [cutoffHomotopyPullbackCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul,
-        norm_zero]
-      positivity
-  calc ‖T (cutoffHomotopyPullbackCLM χ hH ω)‖ₑ
-      ≤ mass T * ‖(cutoffHomotopyPullbackCLM χ hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (A * L ^ k : ℝ≥0) := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-        exact ENNReal.ofReal_le_ofReal (by simpa using hb)
-    _ = A * L ^ k * mass T := by
-        rw [mul_comm]
-        push_cast
-        ring
+  refine (mass_comp_le_of_norm_apply_le T (c := A * L ^ k) (by positivity)
+    fun ω hω x ↦ ?_).trans_eq (by simp [ENNReal.ofReal_mul, ENNReal.ofReal_pow,
+      ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ tsupport χ
+  · refine (norm_cutoffHomotopyPullbackCLM_apply_le (B := 1) (fun t _ ↦ hω _)
+      (fun t ht ↦ hA _ ⟨hx, ht⟩) fun t ht ↦ hL _ ⟨hx, ht⟩).trans ?_
+    calc |χ x| * (1 * A * L ^ k : ℝ) ≤ 1 * (1 * A * L ^ k) := by gcongr; exact hχ x
+      _ = A * L ^ k := by ring
+  · rw [cutoffHomotopyPullbackCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul,
+      norm_zero]
+    positivity
 
 /-- The homotopy current `T ∘ K_χ` of a normal current `T` whose support lies in the interior of
 `{χ = 1}` is normal. -/

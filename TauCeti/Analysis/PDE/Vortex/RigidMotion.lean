@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import Mathlib.Analysis.Complex.Isometry
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
