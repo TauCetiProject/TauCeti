@@ -32,6 +32,7 @@ theorem isPrimitive_fundamentalModuleGenerator (i : Fin t.rank) :
     IsPrimitive (⟨t.fundamentalModuleGenerator ht i,
       t.fundamentalModuleGenerator_mem_fundamentalLattice ht i⟩ :
         t.fundamentalLattice ht i) := by
+  have := Submodule.IsLattice.free ℚ (t.fundamentalLattice ht i)
   apply Submodule.isPrimitive_of_forall_smul_mem
   exact fun q hq => (t.smul_fundamentalModuleGenerator_mem_fundamentalLattice_iff ht i q).mp hq
 

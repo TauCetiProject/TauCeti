@@ -68,14 +68,14 @@ instance instSMulUniversalGSpace : SMul G (universalGSpace G) where
 /-- Translation pushes barycentric coordinates forward along left multiplication of labels. -/
 theorem universalGSpace_smul_val (g : G) (x : universalGSpace G) :
     ((g • x : universalGSpace G) : (Σ _ : ℕ, G) →₀ ℝ) =
-      Finsupp.mapDomain (fun v => ⟨v.1, g * v.2⟩) x.1 := by
+      Finsupp.mapDomain (fun v => ⟨v.1, g * v.2⟩) x.val := by
   -- Match the classical decidable equality fixed in `instSMulUniversalGSpace`.
   let : DecidableEq ℕ := Classical.decEq ℕ
   let : DecidableEq G := Classical.decEq G
   exact (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val
     (indexedJoinMap (A := fun _ : ℕ => G) (B := fun _ : ℕ => G)
       id Function.injective_id (fun _ h => g * h)) x).trans
-    (congrArg (Finsupp.mapDomain · x.1)
+    (congrArg (Finsupp.mapDomain · x.val)
       (funext (indexedJoinMap_apply (A := fun _ : ℕ => G) (B := fun _ : ℕ => G)
         id Function.injective_id (fun _ h => g * h))))
 
@@ -83,13 +83,13 @@ theorem universalGSpace_smul_val (g : G) (x : universalGSpace G) :
 at the vertex obtained by translating the label back. -/
 @[simp]
 theorem universalGSpace_smul_apply (g : G) (x : universalGSpace G) (v : Σ _ : ℕ, G) :
-    (g • x : universalGSpace G).1 v = x.1 ⟨v.1, g⁻¹ * v.2⟩ := by
+    (g • x : universalGSpace G).val v = x.val ⟨v.1, g⁻¹ * v.2⟩ := by
   have hinj : Function.Injective fun w : Σ _ : ℕ, G => (⟨w.1, g * w.2⟩ : Σ _ : ℕ, G) :=
 by
     rintro ⟨i, a⟩ ⟨j, b⟩ h
     simpa using h
   rw [universalGSpace_smul_val]
-  simpa using Finsupp.mapDomain_apply_of_injective hinj x.1 ⟨v.1, g⁻¹ * v.2⟩
+  simpa using Finsupp.mapDomain_apply_of_injective hinj x.val ⟨v.1, g⁻¹ * v.2⟩
 
 /-- The action of a group on Milnor's countable join of copies of itself by relabelling
 vertices. -/

@@ -10,8 +10,9 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
-import Mathlib.Analysis.Calculus.TaylorIntegral
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.FDeriv.NormalSegment
+import TauCeti.Analysis.Calculus.IteratedFDeriv.SliceLimit
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
@@ -58,10 +59,22 @@ tubular map defined on a disk bundle. This file proves:
   `C¹`, and `TauCeti.tendstoUniformlyOn_iteratedFDeriv_normalDilation`,
   `TauCeti.tendstoUniformlyOn_normalDilation` for globally defined fields). The proof writes
   `δ_a^* J` through Hadamard's lemma as a field depending smoothly on `(a, z, W)` jointly,
-  including `a = 0`, where its value is `J_N`. These statements take `N` complete, so that the
-  average in Hadamard's lemma is a Bochner integral;
-* `J_N(z, W)` squares to `-1` when `J` is differentiable at `(z, 0)`, squares to `-1` near
-  `(z, 0)`, and `J(z, 0)` preserves `E × {0}`
+  including `a = 0`, where its value is `J_N`. It is smooth on the open set
+  `TauCeti.normalSegmentDomain Ω` of parameters whose normal segments from `(z, 0)` to `(z, a W)`
+  lie in `Ω`. Hadamard's lemma along these segments is stated for any function on `Ω` in
+  `TauCeti.Analysis.Calculus.FDeriv.NormalSegment`
+  (`TauCeti.contDiffOn_integral_fderiv_normalSegmentDomain`,
+  `TauCeti.inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain`, and
+  `TauCeti.integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain` to pass a fixed
+  linear map such as a block projection through the average), so that it also serves the normal
+  dilations of maps. The convergence theorems take `N` complete, so that the average in
+  Hadamard's lemma is a Bochner integral;
+* the base block of `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
+  (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the base block of `J` on the
+  zero section uniformly on compact sets as `a → 0` when `J` is only continuous along the zero
+  section (`TauCeti.tendstoUniformlyOn_fst_comp_normalDilation_comp_inl`);
+* `J_N(z, W)` squares to `-1` when `J` squares to `-1` near `(z, 0)` and `J(z, 0)` preserves
+  `E × {0}`
   (`TauCeti.normalLinearization_apply_normalLinearization_apply`); `J_N` is `Cᵐ` near `(z, W)`
   when `J` is `C^(m+1)` near `(z, 0)` (`TauCeti.contDiffAt_normalLinearization`); and it is
   invariant under every nonzero normal dilation (`TauCeti.normalDilation_normalLinearization`);
@@ -175,6 +188,19 @@ theorem normalLinearization_apply (J : E × N → E × N →L[ℝ] E × N) (p v 
         (fderiv ℝ J (p.1, 0) (0, p.2) (v.1, 0)).2 + (J (p.1, 0) (0, v.2)).2) := by
   simp [normalLinearization]
 
+/-- The normal linearization preserves the vertical directions `{0} × N`, acting on them by the
+block `J_NN(z, 0)`. -/
+theorem normalLinearization_apply_zero_mk (J : E × N → E × N →L[ℝ] E × N) (p : E × N) (n : N) :
+    normalLinearization J p (0, n) = (0, (J (p.1, 0) (0, n)).2) := by
+  simp [Prod.mk_zero_zero]
+
+/-- The normal linearization acts on a general vector `(v, n)` as on `(v, 0)`, plus the block
+`J_NN(z, 0)` acting on the vertical part `(0, n)`. -/
+theorem normalLinearization_apply_mk (J : E × N → E × N →L[ℝ] E × N) (p : E × N) (v : E)
+    (n : N) : normalLinearization J p (v, n) =
+      normalLinearization J p (v, 0) + (0, (J (p.1, 0) (0, n)).2) := by
+  rw [← normalLinearization_apply_zero_mk, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+
 /-- The operator norm of the normal linearization grows at most linearly in the normal
 coordinate: `‖J_N(z, W)‖ ≤ ‖J(z, 0)‖ + ‖dJ(z, 0)‖ ‖W‖`. -/
 theorem norm_normalLinearization_le (J : E × N → E × N →L[ℝ] E × N) (p : E × N) :
@@ -272,12 +298,12 @@ theorem cauchyRiemannOperator_normalLinearization (J : E × N → E × N →L[�
     abel
 
 /-- **The normal linearization of an almost complex structure is an almost complex structure.**
-At `p`, it suffices that `J` is differentiable at `(p.1, 0)`, squares to `-1` near `(p.1, 0)`, and
-`J(p.1, 0)` preserves `E × {0}`: the identity `J' J + J J' = 0` obtained by differentiating
-`J² = -1` in the direction `(0, p.2)` makes the block `E → N` of `J_N(p)` anticommute with the
-diagonal blocks. -/
+At `p`, it suffices that `J` squares to `-1` near `(p.1, 0)` and `J(p.1, 0)` preserves `E × {0}`:
+the identity `J' J + J J' = 0` obtained by differentiating `J² = -1` in the direction `(0, p.2)`
+(`TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`) makes the block `E → N` of `J_N(p)`
+anticommute with the diagonal blocks. -/
 theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E × N →L[ℝ] E × N}
-    {p : E × N} (hJ : DifferentiableAt ℝ J (p.1, 0)) (hJ₀ : ∀ w, (J (p.1, 0) (w, 0)).2 = 0)
+    {p : E × N} (hJ₀ : ∀ w, (J (p.1, 0) (w, 0)).2 = 0)
     (hJ₂ : ∀ᶠ q in 𝓝 (p.1, 0), ∀ w, J q (J q w) = -w) (v : E × N) :
     normalLinearization J p (normalLinearization J p v) = -v := by
   rw [normalLinearization_apply, normalLinearization_apply]
@@ -285,11 +311,7 @@ theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E ×
   set J' := fderiv ℝ J x ((0 : E), p.2)
   -- Differentiating `q ↦ J q (J q w) = -w` at `x`.
   have hderiv (w : E × N) : J' (J x w) + J x (J' w) = 0 := by
-    have hf := hJ.hasFDerivAt.clm_apply (hJ.hasFDerivAt.clm_apply (hasFDerivAt_const w x))
-    have h0 : HasFDerivAt (fun q ↦ J q (J q w)) (0 : E × N →L[ℝ] E × N) x :=
-      (hasFDerivAt_const (-w) x).congr_of_eventuallyEq (hJ₂.mono fun q hq ↦ hq w)
-    have h := congrArg (fun L : E × N →L[ℝ] E × N ↦ L ((0 : E), p.2)) (hf.unique h0)
-    simpa [J', add_comm] using h
+    rw [fderiv_apply_apply_eq_neg_of_eventually_sq hJ₂, neg_add_cancel]
   have hJx := hJ₂.self_of_nhds
   have hA : J x (v.1, 0) = ((J x (v.1, 0)).1, 0) := Prod.ext rfl (hJ₀ v.1)
   -- The normal component of `J x u` only depends on the normal component of `u`.
@@ -306,6 +328,38 @@ theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E ×
     rw [Prod.snd_add, hsplit (J' (v.1, 0))] at h
     rw [hadd, Prod.snd_add, ← hsplit (J x (0, v.2)), ← hA, ← add_assoc, h]
     simp [hJx]
+
+/-! ### The base block of the normal dilation -/
+
+/-- The base block of the normal dilation of `J` at `p` is the base block of `J` at the dilated
+point `(p.1, a p.2)`: the dilation only rescales the normal directions. -/
+theorem fst_comp_normalDilation_comp_inl (J : E × N → E × N →L[ℝ] E × N) (a : ℝ) (p : E × N) :
+    ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L ContinuousLinearMap.inl ℝ E N =
+      ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L ContinuousLinearMap.inl ℝ E N := by
+  ext v
+  simp
+
+/-- **The base blocks of the normal dilations converge to that of the zero section.** If `J` is
+continuous along the zero section over a compact set `K`, the base blocks of `δ_a^* J` converge to
+the base block of `J` on the zero section, uniformly on `K`, as `a → 0`. -/
+theorem tendstoUniformlyOn_fst_comp_normalDilation_comp_inl {J : E × N → E × N →L[ℝ] E × N}
+    {K : Set (E × N)} (hK : IsCompact K) (hJ : ∀ p ∈ K, ContinuousAt J (p.1, 0)) :
+    TendstoUniformlyOn
+      (fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L
+        ContinuousLinearMap.inl ℝ E N)
+      (fun p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, 0) ∘L ContinuousLinearMap.inl ℝ E N)
+      (𝓝 0) K := by
+  simp only [fst_comp_normalDilation_comp_inl]
+  have h := hK.tendstoUniformlyOn_of_continuousAt (q := (0 : ℝ))
+    (Φ := fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L
+      ContinuousLinearMap.inl ℝ E N) fun p hp ↦ by
+    have hd : ContinuousAt (fun q : ℝ × (E × N) ↦ (q.2.1, q.1 • q.2.2)) (0, p) :=
+      (continuous_snd.fst.prodMk (continuous_fst.smul continuous_snd.snd)).continuousAt
+    have hJd : ContinuousAt (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2)) (0, p) := by
+      refine ContinuousAt.comp (g := J) ?_ hd
+      simpa using hJ p hp
+    exact continuousAt_const.clm_comp (hJd.clm_comp continuousAt_const)
+  simpa using h
 
 /-! ### Regularity -/
 
@@ -360,25 +414,6 @@ theorem contDiff_normalLinearization {J : E × N → E × N →L[ℝ] E × N} {m
 
 /-! ### The normal dilation through Hadamard's lemma -/
 
-/-- The parameters `(a, z, W)` for which the segment from `(z, 0)` to `(z, a W)` lies in `Ω`, so
-that Hadamard's lemma applies to a field defined on `Ω`. -/
-private def hadamardDomain (Ω : Set (E × N)) : Set (ℝ × (E × N)) :=
-  {q | ∀ t ∈ Icc (0 : ℝ) 1, (q.2.1, t • q.1 • q.2.2) ∈ Ω}
-
-omit [NormedSpace ℝ E] in
-private theorem isOpen_hadamardDomain {Ω : Set (E × N)} (hΩ : IsOpen Ω) :
-    IsOpen (hadamardDomain Ω) := by
-  refine isOpen_iff_mem_nhds.2 fun q hq ↦ ?_
-  have hc : Continuous fun y : (ℝ × (E × N)) × ℝ ↦ ((y.1.2.1, y.2 • y.1.1 • y.1.2.2) : E × N) :=
-    by fun_prop
-  exact isCompact_Icc.eventually_forall_of_forall_eventually (P := fun (q : ℝ × (E × N)) (t : ℝ) ↦
-    (q.2.1, t • q.1 • q.2.2) ∈ Ω) fun t ht ↦ hc.continuousAt.preimage_mem_nhds
-      (hΩ.mem_nhds (hq t ht))
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-private theorem zero_mem_hadamardDomain {Ω : Set (E × N)} {p : E × N} (hp : (p.1, 0) ∈ Ω) :
-    ((0 : ℝ), p) ∈ hadamardDomain Ω := fun t _ ↦ by simpa using hp
-
 /-- The normal dilation of `J` at `(a, p)`, written with Hadamard's lemma so that it is defined
 and smooth in `(a, p)` jointly, including `a = 0`: the block `E → N` of `J(z, a W)` divided by
 `a` is replaced by the average `∫₀¹ ∂_W J_NE(z, t a W)[W] dt` of the normal derivative. -/
@@ -407,28 +442,35 @@ private theorem hadamardField_apply (J : E × N → E × N →L[ℝ] E × N) (q 
     ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply, Prod.smul_mk, smul_zero,
     Prod.mk_add_mk, add_zero, zero_add]
 
+/-- On `normalSegmentDomain Ω`, the block `E → N` of the average normal derivative of `J` is the
+average normal derivative of the block `x ↦ J_NE(x)` of `J`. -/
+private theorem integral_fderiv_blockNE_eq {J : E × N → E × N →L[ℝ] E × N} {Ω : Set (E × N)}
+    (hΩ : IsOpen Ω) (hJ : ContDiffOn ℝ 1 J Ω) {q : ℝ × (E × N)} (hq : q ∈ normalSegmentDomain Ω) :
+    ∫ t in (0 : ℝ)..1, ContinuousLinearMap.snd ℝ E N ∘L
+        fderiv ℝ J (q.2.1, t • q.1 • q.2.2) (0, q.2.2) ∘L ContinuousLinearMap.inl ℝ E N =
+      ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ ContinuousLinearMap.snd ℝ E N ∘L J x ∘L
+        ContinuousLinearMap.inl ℝ E N) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
+  have h := integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain
+    ((ContinuousLinearMap.compL ℝ E (E × N) N (ContinuousLinearMap.snd ℝ E N)).comp
+      ((ContinuousLinearMap.compL ℝ E (E × N) (E × N)).flip (ContinuousLinearMap.inl ℝ E N)))
+    hΩ (hJ.differentiableOn one_ne_zero) hq
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.compL_apply] using h
+
 /-- The Hadamard form of the normal dilation is `Cⁿ` in `(a, z, W)` where the segments lie in an
 open set on which `J` is `C^(n+1)`. -/
 private theorem contDiffOn_hadamardField {J : E × N → E × N →L[ℝ] E × N} {Ω : Set (E × N)}
     (hΩ : IsOpen Ω) {n : ℕ∞} (hJ : ContDiffOn ℝ ((n : WithTop ℕ∞) + 1) J Ω) :
-    ContDiffOn ℝ n (hadamardField J) (hadamardDomain Ω) := by
-  have hJn : ContDiffOn ℝ n J Ω := hJ.of_le le_self_add
-  have hJ' : ContDiffOn ℝ n (fderiv ℝ J) Ω := hJ.fderiv_of_isOpen hΩ le_rfl
-  have hJa : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2)) (hadamardDomain Ω) :=
-    hJn.comp (by fun_prop : ContDiff ℝ n fun q : ℝ × (E × N) ↦
-      ((q.2.1, q.1 • q.2.2) : E × N)).contDiffOn fun q hq ↦ by
-        simpa using hq 1 (right_mem_Icc.2 zero_le_one)
+    ContDiffOn ℝ n (hadamardField J) (normalSegmentDomain Ω) := by
+  have hJa : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2))
+      (normalSegmentDomain Ω) :=
+    (hJ.of_le le_self_add).comp_normalSegmentDomain
   have hI : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ ∫ t in (0 : ℝ)..1,
       ContinuousLinearMap.snd ℝ E N ∘L fderiv ℝ J (q.2.1, t • q.1 • q.2.2) (0, q.2.2) ∘L
-        ContinuousLinearMap.inl ℝ E N) (hadamardDomain Ω) := by
-    refine ContDiffOn.parametric_intervalIntegral (isOpen_hadamardDomain hΩ) ?_
-    have hpt : ContDiffOn ℝ n (fun y : (ℝ × (E × N)) × ℝ ↦
-        fderiv ℝ J (y.1.2.1, y.2 • y.1.1 • y.1.2.2)) (hadamardDomain Ω ×ˢ uIcc 0 1) :=
-      hJ'.comp (by fun_prop : ContDiff ℝ n fun y : (ℝ × (E × N)) × ℝ ↦
-        ((y.1.2.1, y.2 • y.1.1 • y.1.2.2) : E × N)).contDiffOn fun y hy ↦ by
-        rw [uIcc_of_le zero_le_one] at hy
-        exact hy.1 y.2 hy.2
-    exact contDiffOn_const.clm_comp ((hpt.clm_apply (by fun_prop)).clm_comp contDiffOn_const)
+        ContinuousLinearMap.inl ℝ E N) (normalSegmentDomain Ω) :=
+    (contDiffOn_integral_fderiv_normalSegmentDomain hΩ
+      (contDiffOn_const.clm_comp (hJ.clm_comp contDiffOn_const))).congr fun q hq ↦
+        integral_fderiv_blockNE_eq hΩ (hJ.of_le le_add_self) hq
   unfold hadamardField
   -- Every term is a fixed linear map composed with one of the smooth fields above.
   exact (((contDiffOn_const.clm_comp
@@ -452,49 +494,20 @@ set containing the segment from `(p.1, 0)` to `(p.1, a • p.2)` and `J(p.1, 0)`
 `E × {0}`. -/
 private theorem hadamardField_of_ne_zero {J : E × N → E × N →L[ℝ] E × N} {Ω : Set (E × N)}
     (hΩ : IsOpen Ω) (hJ : ContDiffOn ℝ 1 J Ω) {a : ℝ} {p : E × N}
-    (hJ₀ : ∀ v, (J (p.1, 0) (v, 0)).2 = 0) (ha : a ≠ 0) (hq : (a, p) ∈ hadamardDomain Ω) :
+    (hJ₀ : ∀ v, (J (p.1, 0) (v, 0)).2 = 0) (ha : a ≠ 0) (hq : (a, p) ∈ normalSegmentDomain Ω) :
     hadamardField J (a, p) = normalDilation J a p := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have hseg (t : ℝ) : (p.1, (0 : N)) + t • ((0 : E), a • p.2) = (p.1, t • a • p.2) := by simp
-  have hJt (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ContDiffAt ℝ 1 J (p.1, t • a • p.2) :=
-    hJ.contDiffAt (hΩ.mem_nhds (hq t ht))
   -- The block `E → N` of `J(z, a W)` is `a` times the average of the normal derivative.
   have hNE : a⁻¹ • (J (p.1, a • p.2) (v.1, 0)).2 =
       (∫ t in (0 : ℝ)..1, ContinuousLinearMap.snd ℝ E N ∘L
         fderiv ℝ J (p.1, t • a • p.2) (0, p.2) ∘L ContinuousLinearMap.inl ℝ E N) v.1 := by
-    let f : E × N → N := fun q ↦ (J q (v.1, 0)).2
-    have hf (q : E × N) (hq : ContDiffAt ℝ 1 J q) (y : E × N) :
-        fderiv ℝ f q y = (fderiv ℝ J q y (v.1, 0)).2 := by
-      have h := ((hq.differentiableAt one_ne_zero).hasFDerivAt.clm_apply
-        (hasFDerivAt_const (v.1, 0) q)).snd.fderiv
-      simp [f, h]
-    have hT := map_add_eq_sum_add_integral_iteratedFDeriv (n := 0) (f := f) (x := (p.1, 0))
-      (y := ((0 : E), a • p.2)) fun t ht ↦ by
-        rw [hseg]
-        exact contDiffAt_snd.comp _ ((hJt t ht).clm_apply contDiffAt_const)
-    have hcont : ContinuousOn (fun t : ℝ ↦ ContinuousLinearMap.snd ℝ E N ∘L
-        fderiv ℝ J (p.1, t • a • p.2) (0, p.2) ∘L ContinuousLinearMap.inl ℝ E N) (uIcc 0 1) := by
-      refine fun t ht ↦ ContinuousAt.continuousWithinAt ?_
-      rw [uIcc_of_le zero_le_one] at ht
-      have hd := ((hJt t ht).fderiv_right (m := 0) (by norm_num)).continuousAt
-      have hγ : ContinuousAt (fun t : ℝ ↦ ((p.1, t • a • p.2) : E × N)) t := by fun_prop
-      exact continuousAt_const.clm_comp
-        (((hd.comp_of_eq hγ rfl).clm_apply continuousAt_const).clm_comp continuousAt_const)
-    rw [ContinuousLinearMap.intervalIntegral_apply (hcont.intervalIntegrable)]
-    simp only [zero_add, Finset.range_one, Finset.sum_singleton, Nat.factorial_zero,
-      Nat.cast_one, inv_one, one_smul, pow_zero, iteratedFDeriv_zero_apply,
-      Prod.mk_add_mk, add_zero, f, hJ₀] at hT
-    have hone (x : E × N) (m : Fin (0 + 1) → E × N) :
-        iteratedFDeriv ℝ (0 + 1) f x m = fderiv ℝ f x (m 0) :=
-      iteratedFDeriv_one_apply m
-    rw [hT, intervalIntegral.integral_congr (g := fun t ↦ a • (fderiv ℝ J (p.1, t • a • p.2)
-      (0, p.2) (v.1, 0)).2), intervalIntegral.integral_smul, inv_smul_smul₀ ha]
-    · simp
-    intro t ht
-    rw [uIcc_of_le zero_le_one] at ht
-    have hdir : ((0 : E), a • p.2) = a • ((0 : E), p.2) := by simp
-    dsimp only
-    rw [hone, hseg, hf _ (hJt t ht), hdir, map_smul, smul_apply, Prod.smul_snd]
+    have h₀ : ContinuousLinearMap.snd ℝ E N ∘L J (p.1, 0) ∘L ContinuousLinearMap.inl ℝ E N = 0 :=
+      ContinuousLinearMap.ext fun w ↦ by simp [hJ₀]
+    have h := inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain (f := fun x ↦
+      ContinuousLinearMap.snd ℝ E N ∘L J x ∘L ContinuousLinearMap.inl ℝ E N) hΩ
+      (contDiffOn_const.clm_comp (hJ.clm_comp contDiffOn_const)) ha hq
+    rw [h₀, sub_zero, ← integral_fderiv_blockNE_eq hΩ hJ hq] at h
+    simpa using congr($h v.1)
   have hv : (v.1, a • v.2) = (v.1, 0) + a • ((0 : E), v.2) := by simp
   rw [hadamardField_apply, normalDilation_apply, hv, map_add, map_smul]
   refine Prod.ext ?_ ?_
@@ -515,42 +528,14 @@ theorem tendstoUniformlyOn_iteratedFDeriv_normalDilation_of_isOpen {Ω K : Set (
     (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
     TendstoUniformlyOn (fun a ↦ iteratedFDeriv ℝ i (normalDilation J a))
       (iteratedFDeriv ℝ i (normalLinearization J)) (𝓝[≠] 0) K := by
-  have hD := isOpen_hadamardDomain hΩ
-  have hG : ContDiffOn ℝ i (hadamardField J) (hadamardDomain Ω) :=
-    contDiffOn_hadamardField hΩ (hJ.of_le (by exact_mod_cast hi))
   have hJ1 : ContDiffOn ℝ 1 J Ω := hJ.of_le (le_trans (by exact_mod_cast Nat.le_add_left 1 i) hi)
-  -- The derivatives in `p` of `p ↦ G(a, p)` are jointly continuous near `{0} × K`.
-  have hΦ : ∀ p ∈ K, ContinuousAt (Function.uncurry fun a p ↦
-      iteratedFDeriv ℝ i (fun y ↦ hadamardField J (a, y)) p) (0, p) := by
-    intro p hp
-    have hmem := zero_mem_hadamardDomain (hKΩ p hp)
-    have hc : ContinuousAt (fun z : ℝ × (E × N) ↦
-        (iteratedFDeriv ℝ i (hadamardField J) z).compContinuousLinearMap
-          fun _ ↦ ContinuousLinearMap.inr ℝ ℝ (E × N)) (0, p) :=
-      (ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.continuousAt.comp
-        ((hG.contDiffAt (hD.mem_nhds hmem)).continuousAt_iteratedFDeriv le_rfl)
-    refine hc.congr ?_
-    filter_upwards [hD.mem_nhds hmem] with z hz
-    exact ((hG.contDiffAt (hD.mem_nhds hz)).iteratedFDeriv_prod_right i le_rfl).symm
-  have h := hK.tendstoUniformlyOn_of_continuousAt hΦ
-  have h0 : (fun y ↦ hadamardField J ((0 : ℝ), y)) = normalLinearization J :=
-    funext (hadamardField_zero J)
-  simp only [h0] at h
-  have h' : TendstoUniformlyOn (fun a ↦ iteratedFDeriv ℝ i fun y ↦ hadamardField J (a, y))
-      (iteratedFDeriv ℝ i (normalLinearization J)) (𝓝[≠] 0) K :=
-    fun u hu ↦ nhdsWithin_le_nhds (h u hu)
-  refine h'.congr ?_
-  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds
-    (hK.eventually_forall_of_forall_eventually (P := fun a p ↦ (a, p) ∈ hadamardDomain Ω)
-      fun p hp ↦ hD.mem_nhds (zero_mem_hadamardDomain (hKΩ p hp)))] with a ha haK p hp
-  refine (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ i).eq_of_nhds
-  have hy : ∀ᶠ y in 𝓝 p, (a, y) ∈ hadamardDomain Ω :=
-    (continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
-      (hD.mem_nhds (haK p hp))
-  filter_upwards [hy] with y hy
-  have hy0 : (y.1, 0) ∈ Ω := by
-    simpa using hy 0 (left_mem_Icc.2 zero_le_one)
-  exact hadamardField_of_ne_zero hΩ hJ1 (hJ₀ y.1 hy0) ha hy
+  have h := ContDiffOn.tendstoUniformlyOn_iteratedFDeriv_slice
+    (contDiffOn_hadamardField (n := i) hΩ (hJ.of_le (by exact_mod_cast hi)))
+    (isOpen_normalSegmentDomain hΩ) hK (fun p hp ↦ zero_mem_normalSegmentDomain (hKΩ p hp))
+    nhdsWithin_le_nhds (g := normalDilation J)
+    (eventually_nhdsWithin_of_forall (s := {0}ᶜ) fun a ha y hy ↦ (hadamardField_of_ne_zero hΩ hJ1
+      (hJ₀ y.1 (mk_zero_mem_of_mem_normalSegmentDomain hy)) ha hy).symm)
+  rwa [funext (hadamardField_zero J)] at h
 
 /-- **The normal dilations of `J` converge to its normal linearization.** If `J` is `C¹` on an
 open set `Ω` and the zero section is `J`-holomorphic where it meets `Ω`, then `δ_a^* J → J_N`

@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+public import TauCeti.Analysis.Sobolev.Cylinder.Morrey
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # The quadratic estimate for the Floer operator
@@ -23,7 +26,7 @@ iteration: with a right inverse `Q` of `D_w`, a solution is a fixed point of
 `ξ ↦ -Q (F(w) + N_w(ξ))`. The iteration contracts once `N_w` is quadratically small in the sense
 `‖N_w(ξ₁) - N_w(ξ₂)‖ ≲ (‖ξ₁‖ + ‖ξ₂‖) ‖ξ₁ - ξ₂‖`, which is the hypothesis of the abstract
 theorem `TauCeti.exists_mem_range_norm_le_add_add_eq_zero`. This file proves the pointwise form of
-that estimate, from which its Sobolev forms follow.
+that estimate, its `Lᵖ` form, and its `W^{1,p}` form on the cylinder for `p > 2`.
 
 **The remainder depends only on first-order data.** The `∂s` terms of `F` are linear and cancel
 from `N_w`, so at a domain point `z` the remainder is a function
@@ -56,14 +59,39 @@ and for `ξ₂ = 0` it is the quadratic estimate
 Taking `φ = id` gives domain-dependent coefficients over a compact part of the domain; taking
 `φ z = z.2` gives `t`-dependent coefficients with constants uniform over a whole strip
 `ℝ × [0, 1]`, as on the cylindrical ends used in gluing.
-Since `W^{1,p}` embeds in `C⁰` for `p > 2` on a two-dimensional domain, integrating the pointwise
-bound gives the `W^{1,p} → Lᵖ` estimate needed by the Newton iteration, provided the slice defect
-of `w` is bounded.
+
+**The estimate in `Lᵖ`.** For `J` jointly `C¹` and `Ks`, `Kt` jointly `C²`, the remainder is
+jointly continuous in all its arguments (`TauCeti.SymplecticForm.continuous_floerRemainder`), so
+it is measurable along measurable fields. For `J` jointly `C²` and `Ks`, `Kt` jointly `C³` the
+pointwise bound then integrates. If the increments
+satisfy `‖e₁‖, ‖e₂‖ ≤ a ≤ δ` and `‖e₁ - e₂‖ ≤ b`, and the slice defect is at most `A`, almost
+everywhere, then for `1 ≤ p`
+
+`‖N(e₁, d₁) - N(e₂, d₂)‖_p ≤ C (a (1 + A) ‖e₁ - e₂‖_p + b ‖d₁‖_p + a ‖d₁ - d₂‖_p)`
+
+on any measure space (`TauCeti.SymplecticForm.exists_pos_forall_eLpNorm_floerRemainder_sub_le`).
+Here `e` and `d` are arbitrary measurable fields, such as a Sobolev map and its weak slice
+derivative. For maps differentiable on a measurable subset of the domain this is the `Lᵖ` bound on
+`F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)`
+(`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le`), and
+for `ξ₂ = 0` the `Lᵖ` quadratic estimate
+(`exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_sub_floerLinearization_le`).
+**The estimate in `W^{1,p}` on the cylinder.** For `p > 2`, Morrey's estimate on the cylinder
+(`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`) bounds the sup norm of a `C¹` map of
+period one in `t` by the `Lᵖ` norm on the strip `ℝ × [0, 1]` of its jet `(ξ, ∂s ξ, ∂t ξ)`, which is
+its `W^{1,p}` norm up to a constant. Bounding `a` and `b` this way, the `Lᵖ` estimate on the strip
+becomes the `W^{1,p} → Lᵖ` estimate
+`‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_p ≤ C (1 + A) (‖jet ξ₁‖_p + ‖jet ξ₂‖_p) ‖jet (ξ₁ - ξ₂)‖_p`
+for increments with `‖jet ξᵢ‖_p ≤ δ`
+(`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_jet`). This
+is the hypothesis `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` of the Newton iteration, provided the
+slice defect `A` of `w` is bounded on the strip.
 
 The constants come from Taylor's theorem and the mean value inequality with uniform constants
 over compact parameter sets (`IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul`,
 `IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sub`). The domain is a coordinate patch
-and the target a vector space; no Sobolev space is constructed here.
+and the target a vector space. The `W^{1,p}` estimate is stated for `C¹` increments; no Sobolev
+space of the cylinder for `p ≠ 2`, and no right inverse of `D_w` on it, is constructed here.
 
 ## References
 
@@ -388,5 +416,384 @@ theorem exists_pos_forall_norm_floerOperator_add_sub_floerOperator_sub_floerLine
   convert h using 2
   simp only [norm_zero, max_eq_left (norm_nonneg _), sub_zero, zero_mul, add_zero]
   ring
+
+/-! ### The quadratic estimate in `Lᵖ` -/
+
+section Lp
+
+open MeasureTheory
+open scoped NNReal ENNReal
+
+/-- **Continuity of the remainder.** If `J` is jointly `C¹` and the Hamiltonians `Ks`, `Kt` are
+jointly `C²` in the parameter and the target point, then the remainder with coefficients
+`J p`, `Ks p`, `Kt p` is jointly continuous in `p`, the base point and slice velocity, and the
+increment and its slice velocity. -/
+theorem continuous_floerRemainder (hJ : ContDiff ℝ 1 (Function.uncurry J))
+    (hKs : ContDiff ℝ 2 (Function.uncurry Ks)) (hKt : ContDiff ℝ 2 (Function.uncurry Kt)) :
+    Continuous fun q : P × V × V × V × V ↦
+      ω.floerRemainder (J q.1) (Ks q.1) (Kt q.1) q.2.1 q.2.2.1 q.2.2.2.1 q.2.2.2.2 := by
+  -- The coefficients and their target derivatives are jointly continuous.
+  have hS := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKs
+  have hT := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKt
+  have hpair : ContDiff ℝ 1 fun w : (P × V) × V ↦ (w.1.1, w.2) :=
+    contDiff_fst.fst.prodMk contDiff_snd
+  have hdS : Continuous fun w : P × V ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks w.1)) w.2 :=
+    Continuous.fderiv_one (hS.comp hpair) continuous_snd
+  have hdT : Continuous fun w : P × V ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt w.1)) w.2 :=
+    Continuous.fderiv_one (hT.comp hpair) continuous_snd
+  have hdJ : Continuous fun w : P × V ↦ fderiv ℝ (J w.1) w.2 :=
+    Continuous.fderiv_one (hJ.comp hpair) continuous_snd
+  have hp : Continuous fun q : P × V × V × V × V ↦ q.1 := continuous_fst
+  have hy : Continuous fun q : P × V × V × V × V ↦ q.2.1 := continuous_snd.fst
+  have hv : Continuous fun q : P × V × V × V × V ↦ q.2.2.1 := continuous_snd.snd.fst
+  have he : Continuous fun q : P × V × V × V × V ↦ q.2.2.2.1 := continuous_snd.snd.snd.fst
+  have hd : Continuous fun q : P × V × V × V × V ↦ q.2.2.2.2 := continuous_snd.snd.snd.snd
+  -- Evaluate each coefficient along the parameter and the target points `y` and `y + e`.
+  have hye := hy.add he
+  have hSy := hS.continuous.comp (hp.prodMk hy)
+  have hSye := hS.continuous.comp (hp.prodMk hye)
+  have hTy := hT.continuous.comp (hp.prodMk hy)
+  have hTye := hT.continuous.comp (hp.prodMk hye)
+  have hJy := hJ.continuous.comp (hp.prodMk hy)
+  have hJye := hJ.continuous.comp (hp.prodMk hye)
+  have hdSy := hdS.comp (hp.prodMk hy)
+  have hdTy := hdT.comp (hp.prodMk hy)
+  have hdJy := hdJ.comp (hp.prodMk hy)
+  simp only [floerRemainder_def]
+  exact ((hSye.neg.add (hJye.clm_apply ((hv.add hd).sub hTye))).sub
+      (hSy.neg.add (hJy.clm_apply (hv.sub hTy)))).sub
+    (((hdSy.clm_apply he).neg.add ((hdJy.clm_apply he).clm_apply (hv.sub hTy))).add
+      (hJy.clm_apply (hd.sub (hdTy.clm_apply he))))
+
+/-- The pointwise quadratic estimate, with the norms of the increments, the norm of their
+difference and the slice defect bounded by constants. -/
+private theorem norm_floerRemainder_sub_le_of_le {j : V → V →L[ℝ] V} {ks kt : V → ℝ}
+    {y v e₁ e₂ d₁ d₂ : V} {C a A b : ℝ}
+    (hC : ‖ω.floerRemainder j ks kt y v e₁ d₁ - ω.floerRemainder j ks kt y v e₂ d₂‖ ≤
+      C * (max ‖e₁‖ ‖e₂‖ * (1 + ‖v - ω.hamiltonianVectorField kt y‖) * ‖e₁ - e₂‖ +
+        ‖e₁ - e₂‖ * ‖d₁‖ + ‖e₂‖ * ‖d₁ - d₂‖))
+    (h₁ : ‖e₁‖ ≤ a) (h₂ : ‖e₂‖ ≤ a) (hb : ‖e₁ - e₂‖ ≤ b)
+    (hA : ‖v - ω.hamiltonianVectorField kt y‖ ≤ A) :
+    ‖ω.floerRemainder j ks kt y v e₁ d₁ - ω.floerRemainder j ks kt y v e₂ d₂‖ ≤
+      max C 0 * (a * (1 + A) * ‖e₁ - e₂‖ + b * ‖d₁‖ + a * ‖d₁ - d₂‖) := by
+  have hS : max ‖e₁‖ ‖e₂‖ * (1 + ‖v - ω.hamiltonianVectorField kt y‖) * ‖e₁ - e₂‖ +
+      ‖e₁ - e₂‖ * ‖d₁‖ + ‖e₂‖ * ‖d₁ - d₂‖ ≤ a * (1 + A) * ‖e₁ - e₂‖ + b * ‖d₁‖ + a * ‖d₁ - d₂‖ := by
+    have ha0 : 0 ≤ a := (norm_nonneg _).trans h₁
+    gcongr
+    exact max_le h₁ h₂
+  exact hC.trans ((mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)).trans
+    (mul_le_mul_of_nonneg_left hS (le_max_right _ _)))
+
+/-- **The quadratic estimate for the Floer remainder in `Lᵖ`.** Let `J` be jointly `C²` and the
+Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point, and let `K` be a
+compact set of pairs `(p, y)`. There are `δ > 0` and `C` with the following property. Let
+`φ`, `y`, `v`, `e₁`, `e₂`, `d₁`, `d₂` be almost everywhere strongly measurable fields of
+parameters, base points, base slice velocities, increments and their slice velocities on a measure
+space, with `(φ, y) ∈ K`, `‖e₁‖, ‖e₂‖ ≤ a ≤ δ`, `‖e₁ - e₂‖ ≤ b` and slice defect
+`‖v - X_Kt(y)‖ ≤ A` almost everywhere. Then for `1 ≤ p` the `Lᵖ` norm of the difference of the
+remainders `N(e₁, d₁) - N(e₂, d₂)` is at most
+`C (a (1 + A) ‖e₁ - e₂‖_p + b ‖d₁‖_p + a ‖d₁ - d₂‖_p)`.
+
+The fields need not be derivatives: the increments may be Sobolev maps with their weak slice
+derivatives. When `a` and `b` are sup norms dominated by a `W^{1,p}` norm, as for `p > 2` on a
+two-dimensional domain, this is the hypothesis `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` of
+`TauCeti.exists_mem_range_norm_le_add_add_eq_zero`. -/
+theorem exists_pos_forall_eLpNorm_floerRemainder_sub_le (hK : IsCompact K)
+    (hJ : ContDiff ℝ 2 (Function.uncurry J)) (hKs : ContDiff ℝ 3 (Function.uncurry Ks))
+    (hKt : ContDiff ℝ 3 (Function.uncurry Kt)) :
+    ∃ δ > 0, ∃ C : ℝ≥0, ∀ {α : Type*} [MeasurableSpace α] (μ : Measure α) {p : ℝ≥0∞},
+      1 ≤ p → ∀ {φ : α → P} {y v e₁ e₂ d₁ d₂ : α → V} {a A b : ℝ},
+      AEStronglyMeasurable φ μ → AEStronglyMeasurable y μ → AEStronglyMeasurable v μ →
+      AEStronglyMeasurable e₁ μ → AEStronglyMeasurable e₂ μ → AEStronglyMeasurable d₁ μ →
+      AEStronglyMeasurable d₂ μ → (∀ᵐ x ∂μ, (φ x, y x) ∈ K) → a ≤ δ →
+      (∀ᵐ x ∂μ, ‖e₁ x‖ ≤ a) → (∀ᵐ x ∂μ, ‖e₂ x‖ ≤ a) → (∀ᵐ x ∂μ, ‖e₁ x - e₂ x‖ ≤ b) →
+      (∀ᵐ x ∂μ, ‖v x - ω.hamiltonianVectorField (Kt (φ x)) (y x)‖ ≤ A) →
+      eLpNorm (fun x ↦
+          ω.floerRemainder (J (φ x)) (Ks (φ x)) (Kt (φ x)) (y x) (v x) (e₁ x) (d₁ x) -
+            ω.floerRemainder (J (φ x)) (Ks (φ x)) (Kt (φ x)) (y x) (v x) (e₂ x) (d₂ x)) p μ ≤
+        C * (ENNReal.ofReal (a * (1 + A)) * eLpNorm (e₁ - e₂) p μ +
+          ENNReal.ofReal b * eLpNorm d₁ p μ + ENNReal.ofReal a * eLpNorm (d₁ - d₂) p μ) := by
+  obtain ⟨δ, hδ, C, hC⟩ := ω.exists_pos_forall_norm_floerRemainder_sub_le hK
+    (fun _ _ ↦ hJ.contDiffAt) (fun _ _ ↦ hKs.contDiffAt) (fun _ _ ↦ hKt.contDiffAt)
+  refine ⟨δ, hδ, C.toNNReal, ?_⟩
+  intro α _ μ p hp φ y v e₁ e₂ d₁ d₂ a A b hφ hy hv he₁ he₂ hd₁ hd₂ hK' haδ ha₁ ha₂ hb hA
+  have hR := ω.continuous_floerRemainder (hJ.of_le (by norm_num)) (hKs.of_le (by norm_num))
+    (hKt.of_le (by norm_num))
+  have hm₁ := hR.comp_aestronglyMeasurable (hφ.prodMk (hy.prodMk (hv.prodMk (he₁.prodMk hd₁))))
+  have hm₂ := hR.comp_aestronglyMeasurable (hφ.prodMk (hy.prodMk (hv.prodMk (he₂.prodMk hd₂))))
+  -- The three terms of the bound, as real functions.
+  set g₁ : α → ℝ := fun x ↦ a * (1 + A) * ‖e₁ x - e₂ x‖ with hg₁
+  set g₂ : α → ℝ := fun x ↦ b * ‖d₁ x‖ with hg₂
+  set g₃ : α → ℝ := fun x ↦ a * ‖d₁ x - d₂ x‖ with hg₃
+  -- The constants are nonnegative wherever the bounds hold.
+  have ha0 : ∀ᵐ _ ∂μ, 0 ≤ a := ha₁.mono fun _ h ↦ (norm_nonneg _).trans h
+  have hb0 : ∀ᵐ _ ∂μ, 0 ≤ b := hb.mono fun _ h ↦ (norm_nonneg _).trans h
+  have hA0 : ∀ᵐ _ ∂μ, 0 ≤ A := hA.mono fun _ h ↦ (norm_nonneg _).trans h
+  -- The pointwise estimate, almost everywhere.
+  have hpt : ∀ᵐ x ∂μ,
+      ‖ω.floerRemainder (J (φ x)) (Ks (φ x)) (Kt (φ x)) (y x) (v x) (e₁ x) (d₁ x) -
+        ω.floerRemainder (J (φ x)) (Ks (φ x)) (Kt (φ x)) (y x) (v x) (e₂ x) (d₂ x)‖ ≤
+          (C.toNNReal : ℝ) * ‖(g₁ + g₂ + g₃) x‖ := by
+    filter_upwards [hK', ha₁, ha₂, hb, hA, ha0, hb0, hA0] with x hx h₁ h₂ hbx hAx ha0 hb0 hA0
+    rw [Real.norm_of_nonneg (by simp only [hg₁, hg₂, hg₃, Pi.add_apply]; positivity),
+      Real.coe_toNNReal']
+    exact ω.norm_floerRemainder_sub_le_of_le (hC (φ x) (y x) hx (v x) (e₁ x) (e₂ x) (d₁ x) (d₂ x)
+      (h₁.trans haδ) (h₂.trans haδ)) h₁ h₂ hbx hAx
+  -- Each term of the bound is controlled by the corresponding `Lᵖ` norm: scaling a norm by a
+  -- constant that is nonnegative almost everywhere scales its `Lᵖ` norm.
+  have hscale {c : ℝ} {f : α → V} (hf : AEStronglyMeasurable f μ) (hc : ∀ᵐ _ ∂μ, 0 ≤ c) :
+      eLpNorm (fun x ↦ c * ‖f x‖) p μ ≤ ENNReal.ofReal c * eLpNorm f p μ :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hf.norm.const_mul c)
+      (hc.mono fun _ hc ↦ (Real.norm_of_nonneg (by positivity)).le) p
+  have h₁ : eLpNorm g₁ p μ ≤ ENNReal.ofReal (a * (1 + A)) * eLpNorm (e₁ - e₂) p μ :=
+    hscale (he₁.sub he₂) (by filter_upwards [ha0, hA0] with _ ha0 hA0; positivity)
+  have h₂ : eLpNorm g₂ p μ ≤ ENNReal.ofReal b * eLpNorm d₁ p μ := hscale hd₁ hb0
+  have h₃ : eLpNorm g₃ p μ ≤ ENNReal.ofReal a * eLpNorm (d₁ - d₂) p μ := hscale (hd₁.sub hd₂) ha0
+  calc _ ≤ ENNReal.ofReal (C.toNNReal : ℝ) * eLpNorm (g₁ + g₂ + g₃) p μ :=
+        eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hm₁.sub hm₂) hpt p
+    _ ≤ C.toNNReal * (eLpNorm g₁ p μ + eLpNorm g₂ p μ + eLpNorm g₃ p μ) := by
+      rw [ENNReal.ofReal_coe_nnreal]
+      gcongr
+      exact (eLpNorm_add_le hp).trans (add_le_add_left (eLpNorm_add_le hp) _)
+    _ ≤ _ := by gcongr
+
+/-- **The quadratic estimate for the Floer operator in `Lᵖ`.** Let `J` be jointly `C²` and the
+Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point, and let `K` be a
+compact set of pairs `(p, y)`. There are `δ > 0` and `C` with the following property. Let `μ` be a
+measure on `ℝ × ℝ`, `s` a measurable set, `φ : ℝ × ℝ → P` a parameter map, measurable for `μ` on
+`s`, and `w`, `ξ₁`, `ξ₂` maps differentiable at every point of `s`, with `(φ, w) ∈ K`,
+`‖ξ₁‖, ‖ξ₂‖ ≤ a ≤ δ`, `‖ξ₁ - ξ₂‖ ≤ b` and slice defect `‖∂t w - X_Kt(w)‖ ≤ A` on `s`. Then for
+`1 ≤ p` the Floer operator with coefficients `J (φ z)`, `Ks (φ z)`, `Kt (φ z)` satisfies
+`‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_p ≤ C (a (1 + A) ‖ξ₁ - ξ₂‖_p + b ‖∂t ξ₁‖_p +
+  a ‖∂t ξ₁ - ∂t ξ₂‖_p)`, all norms in `Lᵖ(s, μ)`. -/
+theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le
+    (hK : IsCompact K) (hJ : ContDiff ℝ 2 (Function.uncurry J))
+    (hKs : ContDiff ℝ 3 (Function.uncurry Ks)) (hKt : ContDiff ℝ 3 (Function.uncurry Kt)) :
+    ∃ δ > 0, ∃ C : ℝ≥0, ∀ (μ : Measure (ℝ × ℝ)) {p : ℝ≥0∞}, 1 ≤ p →
+      ∀ {s : Set (ℝ × ℝ)} {φ : ℝ × ℝ → P} {w ξ₁ ξ₂ : ℝ × ℝ → V} {a A b : ℝ}, MeasurableSet s →
+      AEStronglyMeasurable φ (μ.restrict s) → (∀ z ∈ s, DifferentiableAt ℝ w z) →
+      (∀ z ∈ s, DifferentiableAt ℝ ξ₁ z) → (∀ z ∈ s, DifferentiableAt ℝ ξ₂ z) →
+      (∀ z ∈ s, (φ z, w z) ∈ K) → a ≤ δ → (∀ z ∈ s, ‖ξ₁ z‖ ≤ a) → (∀ z ∈ s, ‖ξ₂ z‖ ≤ a) →
+      (∀ z ∈ s, ‖ξ₁ z - ξ₂ z‖ ≤ b) →
+      (∀ z ∈ s, ‖fderiv ℝ w z stdComplexLineImag -
+        ω.hamiltonianVectorField (Kt (φ z)) (w z)‖ ≤ A) →
+      eLpNorm (fun z ↦
+          ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ₁) z -
+            ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ₂) z -
+            ω.floerLinearization (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w
+              (ξ₁ - ξ₂) z) p (μ.restrict s) ≤
+        C * (ENNReal.ofReal (a * (1 + A)) * eLpNorm (ξ₁ - ξ₂) p (μ.restrict s) +
+          ENNReal.ofReal b * eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag) p (μ.restrict s) +
+          ENNReal.ofReal a * eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag -
+            fderiv ℝ ξ₂ z stdComplexLineImag) p (μ.restrict s)) := by
+  obtain ⟨δ, hδ, C, hC⟩ := ω.exists_pos_forall_eLpNorm_floerRemainder_sub_le hK hJ hKs hKt
+  refine ⟨δ, hδ, C, fun μ p hp s φ w ξ₁ ξ₂ a A b hs hφ hw hξ₁ hξ₂ hK' haδ ha₁ ha₂ hb hA ↦ ?_⟩
+  -- Measurability of the maps, which are continuous on `s`, and of their slice velocities.
+  borelize V
+  have hcont {f : ℝ × ℝ → V} (hf : ∀ z ∈ s, DifferentiableAt ℝ f z) :
+      AEStronglyMeasurable f (μ.restrict s) :=
+    ContinuousOn.aestronglyMeasurable (fun z hz ↦ (hf z hz).continuousAt.continuousWithinAt) hs
+  have hder (f : ℝ × ℝ → V) :
+      AEStronglyMeasurable (fun z ↦ fderiv ℝ f z stdComplexLineImag) (μ.restrict s) :=
+    (measurable_fderiv_apply_const ℝ f _).aestronglyMeasurable
+  have hb' := hC (μ.restrict s) hp hφ (hcont hw) (hder w) (hcont hξ₁) (hcont hξ₂) (hder ξ₁)
+    (hder ξ₂) (ae_restrict_of_forall_mem hs hK') haδ (ae_restrict_of_forall_mem hs ha₁)
+    (ae_restrict_of_forall_mem hs ha₂) (ae_restrict_of_forall_mem hs hb)
+    (ae_restrict_of_forall_mem hs hA)
+  refine le_of_eq_of_le (eLpNorm_congr_ae (ae_restrict_of_forall_mem hs fun z hz ↦ ?_)) hb'
+  -- On `s` the operator difference is the difference of the remainders.
+  have h₁ := ω.floerOperator_add_sub_floerOperator_sub_floerLinearization
+    (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w ξ₁ (hw z hz) (hξ₁ z hz)
+  have h₂ := ω.floerOperator_add_sub_floerOperator_sub_floerLinearization
+    (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w ξ₂ (hw z hz) (hξ₂ z hz)
+  dsimp only
+  rw [floerLinearization_sub ω _ _ _ w ξ₁ ξ₂ z (hξ₁ z hz) (hξ₂ z hz), ← h₁, ← h₂]
+  abel
+
+/-- **The quadratic estimate for the Floer operator at a map, in `Lᵖ`.** Let `J` be jointly `C²`
+and the Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point, and let `K` be
+a compact set of pairs `(p, y)`. There are `δ > 0` and `C` with the following property. Let `μ` be
+a measure on `ℝ × ℝ`, `s` a measurable set, `φ : ℝ × ℝ → P` a parameter map, measurable for `μ` on
+`s`, and `w`, `ξ` maps differentiable at every point of `s`, with `(φ, w) ∈ K`, `‖ξ‖ ≤ a ≤ δ` and
+slice defect `‖∂t w - X_Kt(w)‖ ≤ A` on `s`. Then for `1 ≤ p` the Floer operator with
+coefficients `J (φ z)`, `Ks (φ z)`, `Kt (φ z)` satisfies
+`‖F(w + ξ) - F(w) - D_w ξ‖_p ≤ C (a (1 + A) ‖ξ‖_p + a ‖∂t ξ‖_p)`, all norms in `Lᵖ(s, μ)`. -/
+theorem exists_pos_forall_eLpNorm_floerOperator_add_sub_floerOperator_sub_floerLinearization_le
+    (hK : IsCompact K) (hJ : ContDiff ℝ 2 (Function.uncurry J))
+    (hKs : ContDiff ℝ 3 (Function.uncurry Ks)) (hKt : ContDiff ℝ 3 (Function.uncurry Kt)) :
+    ∃ δ > 0, ∃ C : ℝ≥0, ∀ (μ : Measure (ℝ × ℝ)) {p : ℝ≥0∞}, 1 ≤ p →
+      ∀ {s : Set (ℝ × ℝ)} {φ : ℝ × ℝ → P} {w ξ : ℝ × ℝ → V} {a A : ℝ}, MeasurableSet s →
+      AEStronglyMeasurable φ (μ.restrict s) → (∀ z ∈ s, DifferentiableAt ℝ w z) →
+      (∀ z ∈ s, DifferentiableAt ℝ ξ z) → (∀ z ∈ s, (φ z, w z) ∈ K) → a ≤ δ →
+      (∀ z ∈ s, ‖ξ z‖ ≤ a) →
+      (∀ z ∈ s, ‖fderiv ℝ w z stdComplexLineImag -
+        ω.hamiltonianVectorField (Kt (φ z)) (w z)‖ ≤ A) →
+      eLpNorm (fun z ↦
+          ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ) z -
+            ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w z -
+            ω.floerLinearization (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w ξ z)
+          p (μ.restrict s) ≤
+        C * (ENNReal.ofReal (a * (1 + A)) * eLpNorm ξ p (μ.restrict s) + ENNReal.ofReal a *
+          eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p (μ.restrict s)) := by
+  obtain ⟨δ, hδ, C, hC⟩ :=
+    ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le
+      hK hJ hKs hKt
+  refine ⟨δ, hδ, 2 * C, fun μ p hp s φ w ξ a A hs hφ hw hξ hK' haδ ha hA ↦ ?_⟩
+  have h0 : ∀ z ∈ s, DifferentiableAt ℝ (0 : ℝ × ℝ → V) z := fun z _ ↦ differentiableAt_const _
+  have ha₀ : ∀ z ∈ s, ‖(0 : ℝ × ℝ → V) z‖ ≤ a := fun z hz ↦ by
+    simpa using (norm_nonneg _).trans (ha z hz)
+  have hb : ∀ z ∈ s, ‖ξ z - (0 : ℝ × ℝ → V) z‖ ≤ a := fun z hz ↦ by simpa using ha z hz
+  have h := hC μ hp hs hφ hw hξ h0 hK' haδ ha ha₀ hb hA
+  simp only [add_zero, sub_zero, Pi.zero_apply, fderiv_zero, zero_apply] at h
+  refine h.trans ?_
+  set P := ENNReal.ofReal (a * (1 + A)) * eLpNorm ξ p (μ.restrict s)
+  set Q := ENNReal.ofReal a * eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p (μ.restrict s)
+  -- `P + Q + Q ≤ (P + Q) + (P + Q) = 2 (P + Q)`.
+  calc (C : ℝ≥0∞) * (P + Q + Q) ≤ C * (P + Q + (P + Q)) := by
+        gcongr
+        exact le_add_self
+    _ = ((2 * C : ℝ≥0) : ℝ≥0∞) * (P + Q) := by push_cast; ring
+
+end Lp
+
+/-! ### The estimate in `W^{1,p}` on the cylinder -/
+
+section Jet
+
+open MeasureTheory Set
+open StripSobolev (jet stripMeasure jet_sub eLpNorm_le_eLpNorm_jet
+  eLpNorm_fderiv_zero_one_le_eLpNorm_jet)
+open scoped NNReal ENNReal
+
+omit [FiniteDimensional ℝ V] in
+/-- Morrey's estimate on the cylinder with constant `M`, as a bound on the norm by the constant
+`M + 1` times the real `Lᵖ` norm of the jet. -/
+private theorem norm_le_mul_toReal_eLpNorm_jet {M p : ℝ≥0} {η : ℝ × ℝ → V}
+    (hM : ∀ z, ‖η z‖ₑ ≤ M * eLpNorm (jet η) p stripMeasure)
+    (hfin : eLpNorm (jet η) p stripMeasure ≠ ∞) (z : ℝ × ℝ) :
+    ‖η z‖ ≤ (M + 1 : ℝ≥0) * (eLpNorm (jet η) p stripMeasure).toReal := by
+  rw [← toReal_eNorm]
+  calc (‖η z‖ₑ).toReal ≤ (M * eLpNorm (jet η) p stripMeasure).toReal :=
+        ENNReal.toReal_mono (by finiteness) (hM z)
+    _ ≤ (M + 1 : ℝ≥0) * (eLpNorm (jet η) p stripMeasure).toReal := by
+        rw [ENNReal.toReal_mul, ENNReal.coe_toReal]
+        gcongr
+        exact_mod_cast le_add_of_nonneg_right zero_le_one
+
+/-- The arithmetic combining the three terms of the `Lᵖ` quadratic estimate into a product of
+norms of jets. -/
+private theorem mul_add_add_le_of_ofReal_le {C c : ℝ≥0} {a b A : ℝ} {E₁ E₂ E T₁ T₂ T₃ : ℝ≥0∞}
+    (ha0 : 0 ≤ a) (hA0 : 0 ≤ A) (ha : ENNReal.ofReal a ≤ c * (E₁ + E₂))
+    (hb : ENNReal.ofReal b = c * E) (hT₁ : T₁ ≤ E) (hT₂ : T₂ ≤ E₁) (hT₃ : T₃ ≤ E) :
+    (C : ℝ≥0∞) * (ENNReal.ofReal (a * (1 + A)) * T₁ + ENNReal.ofReal b * T₂ +
+        ENNReal.ofReal a * T₃) ≤
+      ((3 * C * c : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (1 + A) * (E₁ + E₂) * E := by
+  set X := E₁ + E₂
+  set R := ENNReal.ofReal (1 + A)
+  have hR : 1 ≤ R := by rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hXR : X ≤ X * R := le_mul_of_one_le_right' hR
+  have haA : ENNReal.ofReal (a * (1 + A)) ≤ c * X * R := by
+    rw [ENNReal.ofReal_mul ha0]
+    gcongr
+  calc (C : ℝ≥0∞) * (ENNReal.ofReal (a * (1 + A)) * T₁ + ENNReal.ofReal b * T₂ +
+        ENNReal.ofReal a * T₃)
+      ≤ C * (c * X * R * E + c * E * (X * R) + c * (X * R) * E) := by
+        rw [hb]
+        gcongr
+        · exact (hT₂.trans le_self_add).trans hXR
+        · exact ha.trans (by gcongr)
+    _ = ((3 * C * c : ℝ≥0) : ℝ≥0∞) * R * X * E := by push_cast; ring
+
+/-- **The quadratic estimate for the Floer operator in `W^{1,p}` on the cylinder.** Let `J` be
+jointly `C²` and the Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point,
+let `K` be a compact set of pairs `(p, y)`, and let `p > 2`. There are `δ > 0` and `C` with the
+following property. Let `φ : ℝ × ℝ → P` be a parameter map, measurable on the strip
+`ℝ × [0, 1]`, let `w` be differentiable on the strip, with `(φ, w) ∈ K` and slice defect
+`‖∂t w - X_Kt(w)‖ ≤ A` there, and let `ξ₁`, `ξ₂` be `C¹` maps of period one in `t` whose jets
+`(ξ, ∂s ξ, ∂t ξ)` have `Lᵖ` norm at most `δ` on the strip. Then, all norms on the strip,
+
+`‖F(w + ξ₁) - F(w + ξ₂) - D_w(ξ₁ - ξ₂)‖_p ≤ C (1 + A) (‖jet ξ₁‖_p + ‖jet ξ₂‖_p) ‖jet (ξ₁ - ξ₂)‖_p`,
+
+where `F` is the Floer operator with coefficients `J (φ z)`, `Ks (φ z)`, `Kt (φ z)`. This is the
+estimate `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` of
+`TauCeti.exists_mem_range_norm_le_add_add_eq_zero` for the remainder `N` of `F` at `w`, in the
+`W^{1,p}` norm of the cylinder. It follows from the `Lᵖ` estimate
+`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le` and
+Morrey's estimate on the cylinder (`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`),
+which bounds the sup norms of `ξ₁`, `ξ₂` and `ξ₁ - ξ₂` by the `Lᵖ` norms of their jets. -/
+theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_jet
+    (hK : IsCompact K) (hJ : ContDiff ℝ 2 (Function.uncurry J))
+    (hKs : ContDiff ℝ 3 (Function.uncurry Ks)) (hKt : ContDiff ℝ 3 (Function.uncurry Kt))
+    {p : ℝ≥0} (hp : 2 < p) :
+    ∃ δ > 0, ∃ C : ℝ≥0, ∀ {φ : ℝ × ℝ → P} {w ξ₁ ξ₂ : ℝ × ℝ → V} {A : ℝ},
+      AEStronglyMeasurable φ stripMeasure →
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, DifferentiableAt ℝ w z) →
+      ContDiff ℝ 1 ξ₁ → ContDiff ℝ 1 ξ₂ →
+      (∀ s t, ξ₁ (s, t + 1) = ξ₁ (s, t)) → (∀ s t, ξ₂ (s, t + 1) = ξ₂ (s, t)) →
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, (φ z, w z) ∈ K) →
+      eLpNorm (jet ξ₁) p stripMeasure ≤ ENNReal.ofReal δ →
+      eLpNorm (jet ξ₂) p stripMeasure ≤ ENNReal.ofReal δ →
+      (∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ w z stdComplexLineImag -
+        ω.hamiltonianVectorField (Kt (φ z)) (w z)‖ ≤ A) →
+      eLpNorm (fun z ↦
+          ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ₁) z -
+            ω.floerOperator (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) (w + ξ₂) z -
+            ω.floerLinearization (fun z ↦ J (φ z)) (fun z ↦ Ks (φ z)) (fun z ↦ Kt (φ z)) w
+              (ξ₁ - ξ₂) z) p stripMeasure ≤
+        C * ENNReal.ofReal (1 + A) *
+          (eLpNorm (jet ξ₁) p stripMeasure + eLpNorm (jet ξ₂) p stripMeasure) *
+          eLpNorm (jet (ξ₁ - ξ₂)) p stripMeasure := by
+  obtain ⟨δ, hδ, C, hC⟩ :=
+    ω.exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le
+      hK hJ hKs hKt
+  obtain ⟨M, hM⟩ := CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet (V := V) hp
+  have hc0 : (0 : ℝ) < (M + 1 : ℝ≥0) := by positivity
+  refine ⟨δ / (M + 1 : ℝ≥0), by positivity, 3 * C * (M + 1), fun {φ w ξ₁ ξ₂ A} hφ hw hξ₁ hξ₂
+    hper₁ hper₂ hK' h₁ h₂ hA ↦ ?_⟩
+  have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast (one_le_two.trans hp.le)
+  have hξ := hξ₁.sub hξ₂
+  have hper : ∀ s t, (ξ₁ - ξ₂) (s, t + 1) = (ξ₁ - ξ₂) (s, t) := by simp [hper₁, hper₂]
+  have hE₁ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top h₁
+  have hE₂ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top h₂
+  have hE : eLpNorm (jet (ξ₁ - ξ₂)) p stripMeasure ≠ ∞ := by
+    refine ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hE₁, hE₂⟩) ?_
+    rw [jet_sub (hξ₁.differentiable one_ne_zero) (hξ₂.differentiable one_ne_zero)]
+    exact eLpNorm_sub_le hp1
+  -- Morrey's estimate bounds the sup norms by `a` and `b`, the scaled `Lᵖ` norms of the jets.
+  set a := (M + 1 : ℝ≥0) * max (eLpNorm (jet ξ₁) p stripMeasure).toReal
+    (eLpNorm (jet ξ₂) p stripMeasure).toReal
+  have haδ : a ≤ δ := by
+    have hδc : 0 ≤ δ / (M + 1 : ℝ≥0) := by positivity
+    calc a ≤ (M + 1 : ℝ≥0) * (δ / (M + 1 : ℝ≥0)) := mul_le_mul_of_nonneg_left (max_le
+          (ENNReal.toReal_le_of_le_ofReal hδc h₁) (ENNReal.toReal_le_of_le_ofReal hδc h₂)) hc0.le
+      _ = δ := mul_div_cancel₀ δ hc0.ne'
+  have hQ := hC volume hp1 (MeasurableSet.univ.prod measurableSet_Icc) hφ hw
+    (fun z _ ↦ hξ₁.differentiable one_ne_zero z) (fun z _ ↦ hξ₂.differentiable one_ne_zero z) hK'
+    haδ (fun z _ ↦ (norm_le_mul_toReal_eLpNorm_jet (hM hξ₁ hper₁) hE₁ z).trans
+      (mul_le_mul_of_nonneg_left (le_max_left _ _) hc0.le))
+    (fun z _ ↦ (norm_le_mul_toReal_eLpNorm_jet (hM hξ₂ hper₂) hE₂ z).trans
+      (mul_le_mul_of_nonneg_left (le_max_right _ _) hc0.le))
+    (fun z _ ↦ norm_le_mul_toReal_eLpNorm_jet (hM hξ hper) hE z) hA
+  refine hQ.trans (mul_add_add_le_of_ofReal_le (by positivity)
+    ((norm_nonneg _).trans (hA (0, 0) ⟨mem_univ _, left_mem_Icc.2 zero_le_one⟩)) ?_ ?_
+    (eLpNorm_le_eLpNorm_jet hξ.continuous.aestronglyMeasurable _) ?_ ?_)
+  · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ← ENNReal.toReal_max hE₁ hE₂]
+    gcongr
+    exact ENNReal.ofReal_toReal_le.trans (max_le le_self_add le_add_self)
+  · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal]
+    exact congrArg _ (ENNReal.ofReal_toReal hE)
+  · rw [stdComplexLineImag_eq]
+    exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
+      ((hξ₁.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
+  · -- The difference of the slice velocities is the slice velocity of the difference.
+    have h : (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag) =
+        fun z ↦ fderiv ℝ (ξ₁ - ξ₂) z stdComplexLineImag := funext fun z ↦ by
+      rw [fderiv_sub (hξ₁.differentiable one_ne_zero z) (hξ₂.differentiable one_ne_zero z),
+        sub_apply]
+    rw [h, stdComplexLineImag_eq]
+    exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
+      ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
+
+end Jet
 
 end TauCeti.SymplecticForm

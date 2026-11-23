@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Semigroups.GrowthBound
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -36,26 +37,7 @@ open MeasureTheory
 
 namespace TauCeti.Semigroups
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
-
-/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function that is locally strongly
-measurable and continuous at `0` from the right tend to `g 0` as `t → 0⁺`. -/
-private theorem tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
-    {g : ℝ → X} (hmeas : StronglyMeasurableAtFilter g (nhdsWithin (0 : ℝ) (Set.Ioi 0)) volume)
-    (hg0 : ContinuousWithinAt g (Set.Ioi 0) 0) :
-    Filter.Tendsto
-      (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, g u)
-      (nhdsWithin 0 (Set.Ioi 0)) (nhds (g 0)) := by
-  have h_ftc :
-      HasDerivWithinAt (fun u => ∫ t in (0 : ℝ)..u, g t) (g 0) (Set.Ioi 0) 0 :=
-    (intervalIntegral.integral_hasDerivWithinAt_right IntervalIntegrable.refl hmeas
-      hg0).Ioi_of_Ici
-  have h_slope :=
-    (hasDerivWithinAt_iff_tendsto_slope' (by simp : (0 : ℝ) ∉ Set.Ioi 0)).mp h_ftc
-  refine h_slope.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-  rw [slope_def_module, sub_zero, intervalIntegral.integral_same, sub_zero,
-    intervalIntegral.integral_of_le ht.le, one_div]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-! ## The Infinitesimal Generator -/
 
@@ -64,7 +46,6 @@ exists) is the generator value at `x`. -/
 private def StronglyContinuousSemigroup.genQuot (S : StronglyContinuousSemigroup X)
     (x : X) (t : ℝ) : X := (1 / t) • (S.realOperator t x - x)
 
-omit [CompleteSpace X] in
 /-- The generator difference quotient is additive in the limit. -/
 private theorem StronglyContinuousSemigroup.genQuot_tendsto_add
     (S : StronglyContinuousSemigroup X) {x y Ax Ay : X}
@@ -78,7 +59,6 @@ private theorem StronglyContinuousSemigroup.genQuot_tendsto_add
     rw [ContinuousLinearMap.map_add, add_sub_add_comm, smul_add]
   exact (hx.add hy).congr' (heq.mono (fun _ h => h.symm))
 
-omit [CompleteSpace X] in
 /-- The generator difference quotient is `ℝ`-homogeneous in the limit. -/
 private theorem StronglyContinuousSemigroup.genQuot_tendsto_smul
     (S : StronglyContinuousSemigroup X) (c : ℝ) {x Ax : X}
@@ -133,13 +113,11 @@ noncomputable def StronglyContinuousSemigroup.generator
         rw [← Submodule.coe_smul] at h
         exact tendsto_nhds_unique (Classical.choose_spec (c • x).property) h }
 
-omit [CompleteSpace X] in
 /-- `S.generator.domain` is the generator domain submodule. -/
 @[simp] theorem StronglyContinuousSemigroup.generator_domain
     (S : StronglyContinuousSemigroup X) : S.generator.domain = S.domain := by
   rfl
 
-omit [CompleteSpace X] in
 /-- A vector lies in the generator domain iff its difference quotient `(S t x - x)/t`
 converges as `t → 0⁺` ([EN] Def. II.1.2). -/
 theorem StronglyContinuousSemigroup.mem_domain_iff_tendsto
@@ -148,7 +126,6 @@ theorem StronglyContinuousSemigroup.mem_domain_iff_tendsto
       (nhdsWithin 0 (Set.Ioi 0)) (nhds y) :=
   by rfl
 
-omit [CompleteSpace X] in
 /-- Characteristic property of the generator: for `x` in the domain, the difference
 quotient `(S t x - x)/t` converges to `S.generator x` as `t → 0⁺` ([EN] Def. II.1.2). -/
 theorem StronglyContinuousSemigroup.generator_tendsto
@@ -161,7 +138,6 @@ theorem StronglyContinuousSemigroup.generator_tendsto
   simp only [StronglyContinuousSemigroup.generator]
   exact Classical.choose_spec x.property
 
-omit [CompleteSpace X] in
 /-- The generator difference quotient, rebased at `s`: the defining quotient of `S.generator` at
 `x` (`generator_tendsto`), precomposed with `u ↦ u - s` so that it approaches `s` from the right
 rather than `0`. -/
@@ -177,7 +153,6 @@ theorem StronglyContinuousSemigroup.generator_tendsto_comp_sub_const
     le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   simpa [Function.comp_def, one_div] using (S.generator_tendsto x).comp hshift
 
-omit [CompleteSpace X] in
 /-- Eliminator for the generator: if the difference quotient `(S t x - x)/t` of an
 `x ∈ D(A)` converges to `y`, then `A x = y`. -/
 theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
@@ -189,7 +164,6 @@ theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
       exact hx⟩ = y :=
   tendsto_nhds_unique (S.generator_tendsto ⟨x, hx⟩) h
 
-omit [CompleteSpace X] in
 /-- If the generator difference quotient of every vector of `A.domain` converges to `A x`, then
 `A` is a restriction of the generator. -/
 theorem StronglyContinuousSemigroup.le_generator_of_forall_tendsto
@@ -206,7 +180,6 @@ theorem StronglyContinuousSemigroup.le_generator_of_forall_tendsto
   · rw [← S.generator_eq_of_tendsto (hmem x) (h x)]
     exact congrArg _ (Subtype.ext hxy)
 
-omit [CompleteSpace X] in
 /-- If every generator difference quotient converges to `L x` for a linear operator `L`, then
 the generator domain is the whole space and the generator is `L` as a total `LinearPMap`. -/
 theorem StronglyContinuousSemigroup.generator_eq_toPMap_top_of_forall_tendsto
@@ -227,32 +200,6 @@ theorem StronglyContinuousSemigroup.generator_eq_toPMap_top_of_forall_tendsto
     change S.generator ⟨x, hx⟩ = L x
     exact S.generator_eq_of_tendsto (hmem x) (h x)
 
-
-
-/-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` of the orbit tends to `x` as `t → 0⁺`. -/
-theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
-    (S : StronglyContinuousSemigroup X) (x : X) :
-    Filter.Tendsto
-      (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
-      (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
-  have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) :=
-    (S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self
-  have h := tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
-    (g := fun u => S.realOperator u x)
-    (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
-    ((S.realOperator_continuousWithinAt x 0).mono Set.Ioi_subset_Ici_self)
-  simpa using h
-
-/-- Joint continuity of the orbit integral `(τ, y) ↦ ∫_0^τ S(σ) y dσ`. -/
-theorem StronglyContinuousSemigroup.continuous_intervalIntegral_orbit
-    (S : StronglyContinuousSemigroup X) :
-    Continuous fun p : ℝ × X => ∫ σ in (0 : ℝ)..p.1, S.realOperator σ p.2 :=
-  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous
-    (f := fun (p : ℝ × X) σ => S.realOperator σ p.2)
-    (S.continuous_realOperator_uncurry.comp
-      (continuous_snd.prodMk (continuous_snd.comp continuous_fst))) continuous_fst
-
-omit [CompleteSpace X] in
 /-- `‖∫_0^τ S(σ) y dσ‖ ≤ C ‖y‖ τ` when `S` is bounded by `C` on `(0, τ]`. -/
 theorem StronglyContinuousSemigroup.norm_intervalIntegral_orbit_le
     (S : StronglyContinuousSemigroup X) {C τ : ℝ} (hτ : 0 ≤ τ)
@@ -263,6 +210,34 @@ theorem StronglyContinuousSemigroup.norm_intervalIntegral_orbit_le
       rw [Set.uIoc_of_le hτ] at hσ
       exact (S.realOperator σ).le_of_opNorm_le (hC _ hσ) _
   rwa [sub_zero, abs_of_nonneg hτ] at h
+
+variable [CompleteSpace X]
+
+/-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` of the orbit tends to `x` as `t → 0⁺`. -/
+theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
+    (S : StronglyContinuousSemigroup X) (x : X) :
+    Filter.Tendsto
+      (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
+  have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) :=
+    (S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self
+  have h := intervalIntegral.tendsto_sub_inv_smul_integral_nhdsGT
+    (g := fun u => S.realOperator u x)
+    (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
+    ((S.realOperator_continuousWithinAt x 0).mono Set.Ioi_subset_Ici_self)
+  rw [S.realOperator_zero] at h
+  refine h.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+  rw [sub_zero, one_div, intervalIntegral.integral_of_le ht.le]
+
+/-- Joint continuity of the orbit integral `(τ, y) ↦ ∫_0^τ S(σ) y dσ`. -/
+theorem StronglyContinuousSemigroup.continuous_intervalIntegral_orbit
+    (S : StronglyContinuousSemigroup X) :
+    Continuous fun p : ℝ × X => ∫ σ in (0 : ℝ)..p.1, S.realOperator σ p.2 :=
+  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous
+    (f := fun (p : ℝ × X) σ => S.realOperator σ p.2)
+    (S.continuous_realOperator_uncurry.comp
+      (continuous_snd.prodMk (continuous_snd.comp continuous_fst))) continuous_fst
 
 /-- `S(a) ∫_0^b S(σ) y dσ = ∫_a^{a+b} S(σ) y dσ` for `a, b ≥ 0`. -/
 theorem StronglyContinuousSemigroup.realOperator_intervalIntegral_orbit

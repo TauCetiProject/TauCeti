@@ -143,7 +143,7 @@ theorem towerOrigin_ι {k n : ℕ} (i : cell (W k) n) : towerOrigin ι (k + 1) (
 the underlying functions agree, while the inverses may differ off the open cells. -/
 @[simp]
 theorem coe_map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
-    ⇑(map n (towerOrigin ι k i).2.1) = ⇑(map n i)
+    ⇑(map n (towerOrigin ι k i).2.val) = ⇑(map n i)
   | 0, _, _ => rfl
   | k + 1, n, i => by
     by_cases h : i ∈ range (ι k n)
@@ -154,14 +154,14 @@ theorem coe_map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
 cell. -/
 @[simp]
 theorem openCell_towerOrigin (k : ℕ) {n : ℕ} (i : cell (W k) n) :
-    openCell n (towerOrigin ι k i).2.1 = openCell n i := by
+    openCell n (towerOrigin ι k i).2.val = openCell n i := by
   simp only [openCell, coe_map_towerOrigin hι]
 
 /-- The closed cell of the new cell from which a cell of `W k` comes is the closed cell of that
 cell. -/
 @[simp]
 theorem closedCell_towerOrigin (k : ℕ) {n : ℕ} (i : cell (W k) n) :
-    closedCell n (towerOrigin ι k i).2.1 = closedCell n i := by
+    closedCell n (towerOrigin ι k i).2.val = closedCell n i := by
   simp only [closedCell, coe_map_towerOrigin hι]
 
 /-- The stages of a tower of CW complexes increase. -/
@@ -174,9 +174,9 @@ theorem monotone_of_forall_map_eq : Monotone W := by
 /-- The stage `W k` of a tower of CW complexes is the union of the open cells of the new cells
 born at the stages up to `k`. -/
 theorem iUnion_openCell_towerNewCell_of_le (k : ℕ) :
-    ⋃ (n : ℕ) (c : {c : TowerNewCell ι n // c.1 ≤ k}), openCell n c.1.2.1 = W k := by
+    ⋃ (n : ℕ) (c : {c : TowerNewCell ι n // c.1 ≤ k}), openCell n c.val.2.val = W k := by
   refine Subset.antisymm (iUnion₂_subset fun n c ↦ ?_) ?_
-  · exact (openCell_subset_complex n _).trans (monotone_of_forall_map_eq hι c.2)
+  · exact (openCell_subset_complex n _).trans (monotone_of_forall_map_eq hι c.property)
   · conv_lhs => rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)]
     refine iUnion₂_subset fun n j ↦ ?_
     exact subset_iUnion₂_of_subset n ⟨towerOrigin ι k j, towerOrigin_fst_le ι k j⟩
@@ -200,7 +200,7 @@ theorem disjoint_openCell_of_lt_of_isNewTowerCell {k l n m : ℕ} (hkl : k < l) 
 
 /-- The open cells of distinct new cells of a tower of CW complexes are disjoint. -/
 theorem disjoint_openCell_towerNewCell_of_ne {c d : Σ n, TowerNewCell ι n} (h : c ≠ d) :
-    Disjoint (openCell c.1 c.2.2.1) (openCell d.1 d.2.2.1) := by
+    Disjoint (openCell c.1 c.2.2.val) (openCell d.1 d.2.2.val) := by
   obtain ⟨n, k, i, hi⟩ := c
   obtain ⟨m, l, j, hj⟩ := d
   rcases lt_trichotomy k l with hkl | rfl | hlk
@@ -213,7 +213,7 @@ theorem disjoint_openCell_towerNewCell_of_ne {c d : Σ n, TowerNewCell ι n} (h 
 
 /-- Two new cells of a tower of CW complexes whose open cells meet are equal. -/
 theorem eq_of_not_disjoint_openCell_towerNewCell {c d : Σ n, TowerNewCell ι n}
-    (h : ¬Disjoint (openCell c.1 c.2.2.1) (openCell d.1 d.2.2.1)) : c = d := by
+    (h : ¬Disjoint (openCell c.1 c.2.2.val) (openCell d.1 d.2.2.val)) : c = d := by
   by_contra hcd
   exact h (disjoint_openCell_towerNewCell_of_ne hι hcd)
 
@@ -232,14 +232,14 @@ The structure is not an instance, since it depends on the maps `ι`. -/
 @[instance_reducible]
 def cwSubcomplexTowerUnion : CWComplex (⋃ k, W k) where
   cell n := TowerNewCell ι n
-  map n c := map n c.2.1
-  source_eq n c := source_eq n c.2.1
-  continuousOn n c := RelCWComplex.continuousOn n c.2.1
-  continuousOn_symm n c := continuousOn_symm n c.2.1
+  map n c := map n c.2.val
+  source_eq n c := source_eq n c.2.val
+  continuousOn n c := RelCWComplex.continuousOn n c.2.val
+  continuousOn_symm n c := continuousOn_symm n c.2.val
   pairwiseDisjoint' _ _ _ _ h := disjoint_openCell_towerNewCell_of_ne hι h
   mapsTo' n c := by
     classical
-    obtain ⟨I, hI⟩ := RelCWComplex.mapsTo (C := W c.1) n c.2.1
+    obtain ⟨I, hI⟩ := RelCWComplex.mapsTo (C := W c.1) n c.2.val
     refine ⟨fun m ↦ (I m).image (towerOrigin ι c.1), hI.mono_right ?_⟩
     rw [empty_union]
     refine iUnion₂_mono fun m _ ↦ iUnion₂_subset fun j hj ↦ ?_
@@ -256,7 +256,7 @@ def cwSubcomplexTowerUnion : CWComplex (⋃ k, W k) where
     exact hA n (towerOrigin ι k j)
   union' := by
     refine Subset.antisymm (iUnion₂_subset fun n c ↦ ?_) (iUnion_subset fun k ↦ ?_)
-    · exact (closedCell_subset_complex n c.2.1).trans (subset_iUnion W c.1)
+    · exact (closedCell_subset_complex n c.2.val).trans (subset_iUnion W c.1)
     · rw [← CWComplex.union (C := W k)]
       refine iUnion₂_subset fun n j ↦ ?_
       exact subset_iUnion₂_of_subset n (towerOrigin ι k j) (closedCell_towerOrigin hι k j).ge
@@ -272,7 +272,7 @@ map in that stage. -/
 @[simp]
 theorem map_cwSubcomplexTowerUnionCellEquiv_symm {n : ℕ} (c : TowerNewCell ι n) :
     @map X _ (⋃ k, W k) ∅ (@CWComplex.instRelCWComplex X _ _ (cwSubcomplexTowerUnion hι hW)) n
-      ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm c) = map n c.2.1 :=
+      ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm c) = map n c.2.val :=
   (rfl)
 
 /-- The open cell of a new cell of a stage, as a cell of the union, is its open cell in that
@@ -280,7 +280,7 @@ stage. -/
 @[simp]
 theorem openCell_cwSubcomplexTowerUnionCellEquiv_symm {n : ℕ} (c : TowerNewCell ι n) :
     @openCell X _ (⋃ k, W k) ∅ (@CWComplex.instRelCWComplex X _ _ (cwSubcomplexTowerUnion hι hW))
-      n ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm c) = openCell n c.2.1 :=
+      n ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm c) = openCell n c.2.val :=
   (rfl)
 
 /-- The closed cell of a new cell of a stage, as a cell of the union, is its closed cell in that
@@ -288,7 +288,7 @@ stage. -/
 @[simp]
 theorem closedCell_cwSubcomplexTowerUnionCellEquiv_symm {n : ℕ} (c : TowerNewCell ι n) :
     @closedCell X _ (⋃ k, W k) ∅ (@CWComplex.instRelCWComplex X _ _ (cwSubcomplexTowerUnion hι hW))
-      n ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm c) = closedCell n c.2.1 :=
+      n ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm c) = closedCell n c.2.val :=
   (rfl)
 
 omit hW in
@@ -300,13 +300,13 @@ def towerStageCellEquiv (k n : ℕ) : cell (W k) n ≃ {c : TowerNewCell ι n //
     · have h' : towerOrigin ι k i = towerOrigin ι k j := congrArg Subtype.val h
       exact RelCWComplex.openCell_congr n
         (by rw [← openCell_towerOrigin hι k i, ← openCell_towerOrigin hι k j, h'])
-    · have hx : map n c.2.1 0 ∈ W k := monotone_of_forall_map_eq hι hc
-        (openCell_subset_complex n c.2.1 (map_zero_mem_openCell n c.2.1))
+    · have hx : map n c.2.val 0 ∈ W k := monotone_of_forall_map_eq hι hc
+        (openCell_subset_complex n c.2.val (map_zero_mem_openCell n c.2.val))
       rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)] at hx
       obtain ⟨m, j, hxj⟩ := mem_iUnion₂.1 hx
       have h := eq_of_not_disjoint_openCell_towerNewCell hι (c := ⟨m, towerOrigin ι k j⟩)
         (d := ⟨n, c⟩) (not_disjoint_iff.2 ⟨_, (openCell_towerOrigin hι k j).symm ▸ hxj,
-          map_zero_mem_openCell n c.2.1⟩)
+          map_zero_mem_openCell n c.2.val⟩)
       obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
       exact ⟨j, Subtype.ext (eq_of_heq h)⟩
 
@@ -322,7 +322,7 @@ omit hW in
 it corresponds. -/
 @[simp]
 theorem coe_map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
-    ⇑(map n ((towerStageCellEquiv hι k n).symm c)) = ⇑(map n c.1.2.1) := by
+    ⇑(map n ((towerStageCellEquiv hι k n).symm c)) = ⇑(map n c.val.2.val) := by
   conv_rhs => rw [← (towerStageCellEquiv hι k n).apply_symm_apply c]
   rw [coe_towerStageCellEquiv_apply, coe_map_towerOrigin hι]
 
@@ -330,14 +330,14 @@ omit hW in
 /-- A cell of the stage `W k` has the open cell of the new cell to which it corresponds. -/
 @[simp]
 theorem openCell_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
-    openCell n ((towerStageCellEquiv hι k n).symm c) = openCell n c.1.2.1 := by
+    openCell n ((towerStageCellEquiv hι k n).symm c) = openCell n c.val.2.val := by
   simp only [openCell, coe_map_towerStageCellEquiv_symm hι]
 
 omit hW in
 /-- A cell of the stage `W k` has the closed cell of the new cell to which it corresponds. -/
 @[simp]
 theorem closedCell_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
-    closedCell n ((towerStageCellEquiv hι k n).symm c) = closedCell n c.1.2.1 := by
+    closedCell n ((towerStageCellEquiv hι k n).symm c) = closedCell n c.val.2.val := by
   simp only [closedCell, coe_map_towerStageCellEquiv_symm hι]
 
 omit hW in
@@ -345,7 +345,7 @@ omit hW in
 @[simp]
 theorem towerStageCellEquiv_ι {k n : ℕ} (i : cell (W k) n) :
     towerStageCellEquiv hι (k + 1) n (ι k n i) =
-      ⟨towerStageCellEquiv hι k n i, (towerStageCellEquiv hι k n i).2.trans k.le_succ⟩ :=
+      ⟨towerStageCellEquiv hι k n i, (towerStageCellEquiv hι k n i).property.trans k.le_succ⟩ :=
   Subtype.ext (towerOrigin_ι hι i)
 
 /-- **The stages are subcomplexes.** In a Hausdorff space, each stage `W k` of a tower of CW

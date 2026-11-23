@@ -36,14 +36,14 @@ namespace TauCeti.PolarGraph
 abbrev PolarPoint := {p : ℝ × ℝ // 0 < p.1}
 
 /-- The radius of a point in the polar coordinate cover. -/
-def radius (p : PolarPoint) : ℝ := p.1.1
+def radius (p : PolarPoint) : ℝ := p.val.1
 
 /-- The angle of a point in the polar coordinate cover. -/
-def angle (p : PolarPoint) : ℝ := p.1.2
+def angle (p : PolarPoint) : ℝ := p.val.2
 
-theorem radius_def (p : PolarPoint) : radius p = p.1.1 := (rfl)
+theorem radius_def (p : PolarPoint) : radius p = p.val.1 := (rfl)
 
-theorem angle_def (p : PolarPoint) : angle p = p.1.2 := (rfl)
+theorem angle_def (p : PolarPoint) : angle p = p.val.2 := (rfl)
 
 @[simp, grind =] theorem radius_mk (r θ : ℝ) (hr : 0 < r) :
     radius ⟨(r, θ), hr⟩ = r := (rfl)
@@ -51,7 +51,7 @@ theorem angle_def (p : PolarPoint) : angle p = p.1.2 := (rfl)
 @[simp, grind =] theorem angle_mk (r θ : ℝ) (hr : 0 < r) :
     angle ⟨(r, θ), hr⟩ = θ := (rfl)
 
-@[simp] theorem radius_pos (p : PolarPoint) : 0 < radius p := p.2
+@[simp] theorem radius_pos (p : PolarPoint) : 0 < radius p := p.property
 
 @[simp] theorem radius_ne_zero (p : PolarPoint) : radius p ≠ 0 := ne_of_gt (radius_pos p)
 

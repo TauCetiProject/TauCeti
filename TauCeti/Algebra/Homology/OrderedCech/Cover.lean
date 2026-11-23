@@ -70,7 +70,7 @@ is characterised by the summand inclusions `TauCeti.freeCechι`, which form a co
 (`TauCeti.isColimitFreeCechCofan`), and by `TauCeti.ι_freeCechFunctor_map`. -/
 def freeCechFunctor : (Finset ι)ᵒᵖ ⥤ C :=
   { obj s := {a : A // ∀ i ∈ s.unop, a ∈ P i}
-    map f := TypeCat.ofHom fun a ↦ ⟨a.1, fun i hi ↦ a.2 i (leOfHom f.unop hi)⟩ } ⋙
+    map f := TypeCat.ofHom fun a ↦ ⟨a.val, fun i hi ↦ a.property i (leOfHom f.unop hi)⟩ } ⋙
     sigmaConst.obj R
 
 variable {P}
@@ -86,13 +86,13 @@ variable (P) in
 at `s` as the coproduct of copies of `R` indexed by the points of `⋂_{i ∈ s} P i`. -/
 def isColimitFreeCechCofan (s : Finset ι) :
     IsColimit (Cofan.mk ((freeCechFunctor R P).obj (op s))
-      fun a : {a : A // ∀ i ∈ s, a ∈ P i} ↦ freeCechι R a.1 a.2) :=
+      fun a : {a : A // ∀ i ∈ s, a ∈ P i} ↦ freeCechι R a.val a.property) :=
   coproductIsCoproduct _
 
 /-- The morphism out of the value of `TauCeti.freeCechFunctor R P` at `s` given on each summand. -/
 def freeCechDesc {s : Finset ι} {Y : C} (f : ∀ a : A, (∀ i ∈ s, a ∈ P i) → (R ⟶ Y)) :
     (freeCechFunctor R P).obj (op s) ⟶ Y :=
-  Sigma.desc fun a ↦ f a.1 a.2
+  Sigma.desc fun a ↦ f a.val a.property
 
 /-- The morphism `TauCeti.freeCechDesc R f` restricts to `f a ha` on the summand of `a`. -/
 @[reassoc (attr := simp)]
@@ -106,7 +106,7 @@ summand. -/
 @[ext]
 lemma freeCechFunctor_hom_ext {s : Finset ι} {Y : C} {f g : (freeCechFunctor R P).obj (op s) ⟶ Y}
     (h : ∀ a ha, freeCechι R a ha ≫ f = freeCechι R a ha ≫ g) : f = g :=
-  Sigma.hom_ext _ _ fun a ↦ h a.1 a.2
+  Sigma.hom_ext _ _ fun a ↦ h a.val a.property
 
 /-- The map of `TauCeti.freeCechFunctor R P` induced by an inclusion of finite sets sends the
 summand of a point to the summand of the same point. -/
@@ -136,7 +136,7 @@ def freeCechAugmentation :
 summand of `a`. -/
 @[reassoc (attr := simp)]
 lemma freeCechι_freeCechAugmentation_f_zero (s : {s : Finset ι // #s = 0 + 1}) (a : A)
-    (ha : ∀ i ∈ s.1, a ∈ P i) :
+    (ha : ∀ i ∈ s.val, a ∈ P i) :
     freeCechι R a ha ≫ (freeCechFunctor R P).orderedCechComplexι s ≫
         (freeCechAugmentation R P).f 0 =
       Sigma.ι (fun _ : A ↦ R) a := by
@@ -187,7 +187,7 @@ private lemma hom_ext {p : ℕ} {Y : C} {f g : (freeCechFunctor R P).orderedCech
     (h : ∀ (s : Finset ι) (_ : #s = p + 1) (a : A) (ha : ∀ i ∈ s, a ∈ P i),
       single R p s a ha ≫ f = single R p s a ha ≫ g) : f = g := by
   refine Functor.orderedCechComplex_hom_ext _ fun s ↦ freeCechFunctor_hom_ext R fun a ha ↦ ?_
-  simpa only [single_of_card_eq R ha s.2, Category.assoc] using h s.1 s.2 a ha
+  simpa only [single_of_card_eq R ha s.property, Category.assoc] using h s.val s.property a ha
 
 private lemma single_d {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) {a : A}
     (ha : ∀ i ∈ s, a ∈ P i) :
@@ -198,7 +198,7 @@ private lemma single_d {p : ℕ} {s : Finset ι} (hs : #s = p + 1 + 1) {a : A}
     Preadditive.comp_sum, ← sum_coe_sort s]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Preadditive.comp_zsmul, ι_freeCechFunctor_map_assoc,
-    single_of_card_eq R _ (by rw [card_erase_of_mem i.2, hs, Nat.add_sub_cancel])]
+    single_of_card_eq R _ (by rw [card_erase_of_mem i.property, hs, Nat.add_sub_cancel])]
 
 variable [HasZeroObject C] in
 /-- The augmentation on a summand inclusion of degree `0`. -/
@@ -230,8 +230,8 @@ for the chosen member `c` of the cover containing `a`. The sign makes `c` the ve
 private def homotopy (p j : ℕ) :
     (freeCechFunctor R P).orderedCechComplex.X p ⟶ (freeCechFunctor R P).orderedCechComplex.X j :=
   Functor.orderedCechComplexDesc _ fun s ↦ freeCechDesc R fun a ha ↦
-    ((-1 : ℤ) ^ #{k ∈ s.1 | k < vertex hP a}) •
-      single R j (insert (vertex hP a) s.1) a
+    ((-1 : ℤ) ^ #{k ∈ s.val | k < vertex hP a}) •
+      single R j (insert (vertex hP a) s.val) a
         ((forall_mem_insert _ _ _).2 ⟨mem_vertex hP a, ha⟩)
 
 private lemma single_homotopy {p : ℕ} (j : ℕ) {s : Finset ι} (hs : #s = p + 1) {a : A}

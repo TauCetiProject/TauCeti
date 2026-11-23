@@ -332,7 +332,7 @@ omit [CharP R 2] in
 theorem simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece {g : ℤ × ℤ}
     {c : GridChainHat R (n + 1) j}
     (hc : c ∈ (G.stabilizeXSucc s).bigradedChainHatPiece R j g) :
-    G.1.simplyBlockedStabilizeXSuccMap s i R c ∈ G.bigradedChainHatPiece R i g := by
+    G.val.simplyBlockedStabilizeXSuccMap s i R c ∈ G.bigradedChainHatPiece R i g := by
   obtain ⟨b, hb, rfl⟩ := (G.stabilizeXSucc s).mem_bigradedChainHatPiece_iff_exists.mp hc
   rw [GridDiagram.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization]
   exact G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i
@@ -341,16 +341,16 @@ theorem simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece {g : ℤ × ℤ
 /-- The north-east total homology comparison is homogeneous of bidegree zero. -/
 theorem isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv :
     LinearMap.IsHomogeneous
-      (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
+      (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
       ((G.stabilizeXSucc s).bigradedHatHomologyGrading R j).piece
       (G.bigradedHatHomologyGrading R i).piece 0 := by
   refine (G.stabilizeXSucc s).isHomogeneous_bigradedHatHomologyGrading_of_cycles R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
-    (G.1.oneVariableSpecializationStabilizeXSuccCyclesMap s i R) ?_ ?_
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
+    (G.val.oneVariableSpecializationStabilizeXSuccCyclesMap s i R) ?_ ?_
   · intro z
     exact
       oneVariableSpecializationStabilizeXSuccHomologyEquiv_oneVariableSpecializationHomologyClass
-        G.1 s i R z
+        G.val s i R z
   · intro g z hz
     rw [GridDiagram.simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXSuccCyclesMap]
     simpa only [add_zero] using G.simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece s i R hz
@@ -359,32 +359,32 @@ theorem isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv :
 @[simp]
 theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomologyPiece_iff
     (g : ℤ × ℤ)
-    (y : (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())) :
-    G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y ∈
+    (y : (BaseS).obj (((G.stabilizeXSucc s).val.simplyBlockedComplex R j).homology ())) :
+    G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g := by
   exact (G.stabilizeXSucc s).linearEquiv_mem_bigradedHatHomologyPiece_iff R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
 /-- The inverse north-east comparison preserves and reflects the absolute homology bidegree. -/
 @[simp↓]
 theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_mem_bigradedHatHomologyPiece_iff
-    (g : ℤ × ℤ) (y : (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) :
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y ∈
+    (g : ℤ × ℤ) (y : (BaseA).obj ((G.val.simplyBlockedComplex R i).homology ())) :
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y ∈
         (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g ↔
       y ∈ G.bigradedHatHomologyPiece R i g := by
   exact (G.stabilizeXSucc s).linearEquiv_symm_mem_bigradedHatHomologyPiece_iff R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
 /-- The semilinear north-east comparison preserves and reflects homology bidegrees. -/
 @[simp]
 theorem oneVariableSpecializationStabilizeXSuccHomologyMap_mem_bigradedHatHomologyPiece_iff
     (g : ℤ × ℤ)
-    (y : (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())) :
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :
-        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
+    (y : (BaseS).obj (((G.stabilizeXSucc s).val.simplyBlockedComplex R j).homology ())) :
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :
+        (BaseA).obj ((G.val.simplyBlockedComplex R i).homology ())) ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g := by
   rw [← GridDiagram.oneVariableSpecializationStabilizeXSuccHomologyEquiv_apply]
@@ -397,7 +397,7 @@ noncomputable def oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv (g :
     (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g ≃ₗ[R]
       G.bigradedHatHomologyPiece R i g :=
   (G.stabilizeXSucc s).bigradedHatHomologyPieceEquiv R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g
 
 /-- The piece comparison is the restriction of the total homology comparison. -/
@@ -405,10 +405,10 @@ noncomputable def oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv (g :
 theorem coe_oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g) :
     (G.oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv s i R g y :
-        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) =
-      G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y := by
+        (BaseA).obj ((G.val.simplyBlockedComplex R i).homology ())) =
+      G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y := by
   exact (G.stabilizeXSucc s).coe_bigradedHatHomologyPieceEquiv_apply R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
 /-- The inverse piece comparison is the restriction of the inverse total comparison. -/
@@ -416,10 +416,10 @@ theorem coe_oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv_apply (g :
 theorem coe_oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
     (y : G.bigradedHatHomologyPiece R i g) :
     ((G.oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv s i R g).symm y :
-        (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())) =
-      (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y := by
+        (BaseS).obj (((G.stabilizeXSucc s).val.simplyBlockedComplex R j).homology ())) =
+      (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y := by
   exact (G.stabilizeXSucc s).coe_bigradedHatHomologyPieceEquiv_symm_apply R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
+    (G.val.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
     (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
 /-- North-east `X`-stabilization preserves the coefficient-ring rank in every bidegree. -/

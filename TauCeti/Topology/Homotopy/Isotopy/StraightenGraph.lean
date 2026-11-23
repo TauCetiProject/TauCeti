@@ -133,13 +133,13 @@ private def disp (κ : ℝ) (q : I × (X × W)) : W :=
 omit [NormedSpace ℝ W] in
 private theorem coeff_mem_Icc (κ : ℝ) (q : I × (X × W)) :
     (q.1 : ℝ) * weight κ ‖g q.2.1‖ ‖q.2.2‖ ∈ Icc (0 : ℝ) q.1 :=
-  ⟨mul_nonneg q.1.2.1 (weight_nonneg _ _ _),
-    mul_le_of_le_one_right q.1.2.1 (weight_le_one _ _ _)⟩
+  ⟨mul_nonneg q.1.property.1 (weight_nonneg _ _ _),
+    mul_le_of_le_one_right q.1.property.1 (weight_le_one _ _ _)⟩
 
 private theorem norm_disp_le (κ : ℝ) (q : I × (X × W)) : ‖disp g κ q‖ ≤ ‖g q.2.1‖ := by
   obtain ⟨h₀, h₁⟩ := coeff_mem_Icc g κ q
   rw [disp, norm_smul, Real.norm_of_nonneg h₀]
-  exact mul_le_of_le_one_left (norm_nonneg _) (h₁.trans q.1.2.2)
+  exact mul_le_of_le_one_left (norm_nonneg _) (h₁.trans q.1.property.2)
 
 /-- The displacement is continuous. Where `g x ≠ 0` this is continuity of the weight; where
 `g x = 0` the displacement vanishes and is bounded by `‖g x‖` nearby. -/
@@ -157,7 +157,7 @@ private theorem continuous_disp (hκ : 1 < κ) : Continuous (disp g κ) := by
       refine ContinuousAt.sup (continuousAt_const.sub (ContinuousAt.sup ?_ continuousAt_const))
         continuousAt_const
       exact ContinuousAt.div (by fun_prop) (by fun_prop) hden
-    exact ((continuous_subtype_val.comp continuous_fst).continuousAt.mul hw).smul
+    exact ((continuous_subtypeVal.comp continuous_fst).continuousAt.mul hw).smul
       (by fun_prop)
 
 /-- In each fibre, at each time, the straightening is a bijection of `W`: it is the identity over
@@ -218,7 +218,7 @@ private theorem isClosedMap_straightenGraph_total (hκ : 2 < κ) :
     constructor
     · rintro ⟨q, hq, rfl⟩
       have hs := coeff_mem_Icc g κ q
-      let s : I := ⟨_, hs.1, hs.2.trans q.1.2.2⟩
+      let s : I := ⟨_, hs.1, hs.2.trans q.1.property.2⟩
       have hGF : G (F q, s) = q := by
         simp only [G, F, s, disp, sub_add_cancel]
       refine ⟨(F q, s), ⟨?_, ?_⟩, rfl⟩
@@ -357,7 +357,7 @@ private theorem exists_chordProfile {γ : ℝ → E} {a b : ℝ} (hγ : Continuo
     · rw [projIcc_of_right_le _ hr, sub_eq_iff_eq_add', ← hφb] at h1
       rw [hg, projIcc_of_right_le _ hr, hφ.injOn (hτ_mem r) hb h1]
       simp [div_self hL.ne']
-  · have hc := (projIcc 0 L hL.le r).2
+  · have hc := (projIcc 0 L hL.le r).property
     have hc0 : 0 ≤ (projIcc 0 L hL.le r : ℝ) / L := div_nonneg hc.1 hL.le
     have hc1 : (projIcc 0 L hL.le r : ℝ) / L ≤ 1 := (div_le_one hL).2 hc.2
     calc ‖(g r : E)‖ ≤ ‖γ (τ r) - γ a‖ + ‖((projIcc 0 L hL.le r : ℝ) / L) • (γ b - γ a)‖ := by

@@ -76,11 +76,6 @@ section Construction
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-private theorem ae_restrict_top :
-    ae ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E)))) = ae volume := by
-  simp
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Splitting a direction `v` into its normal and tangential parts, the pairing of `w - R w'`
 with `v` is `v.fst (⟪w, ν⟫ + ⟪w', ν⟫) + (⟪w, τ⟫ - ⟪w', τ⟫)`, where `ν = (1, 0)` and
@@ -200,7 +195,7 @@ private theorem exists_wkp_one_value_ae_eq_inner_normal_add_comp_normalReflectio
         (WithLp.toLp 2 ((1 : ℝ), (0 : E)))), v⟫_ℝ)
     (fun v => (((hD _).add hρD).inner_const v).restrict _) fun v => by
       simpa only [innerSL_apply_apply] using h4.hasWeakLineDerivOn v
-  rw [ae_restrict_top] at h
+  rw [Measure.ae_restrict_coe_opens_top] at h
   exact h
 
 /-- The tangential components of the gradient of an odd reflection are first-order Sobolev
@@ -247,7 +242,7 @@ private theorem exists_wkp_one_value_ae_eq_inner_tangent_sub_comp_normalReflecti
       have h := ((h6 y).smul_direction v.fst).add_direction (h5 y v.snd)
       rw [hsplit v] at h
       exact h
-  rw [ae_restrict_top] at h
+  rw [Measure.ae_restrict_coe_opens_top] at h
   exact h
 
 /-- The odd reflection `f - f ∘ ρ` is the value of an element `W` of `W^{2,p}` whenever the
@@ -274,22 +269,22 @@ private theorem exists_wkp_two_value_ae_eq_sub_comp_normalReflection {a : ℝ}
     ((hf.sub (hf.comp_measurePreserving hρ)).restrict _)
     (fun v => v.fst • N + T v.snd) fun v => by
       refine (h2.hasWeakLineDerivOn v).congr_ae_deriv ?_
-      rw [ae_restrict_top]
+      rw [Measure.ae_restrict_coe_opens_top]
       have hadd := Lp.coeFn_add (v.fst • Wkp.value 1 N) (Wkp.value 1 (T v.snd))
       have hsmul := Lp.coeFn_smul v.fst (Wkp.value 1 N)
-      rw [ae_restrict_top] at hadd hsmul
+      rw [Measure.ae_restrict_coe_opens_top] at hadd hsmul
       filter_upwards [hN, hT v.snd, hadd, hsmul] with x h1 h2 h3 h4
       rw [Wkp.value_add, Wkp.value_smul, h3, Pi.add_apply, h4, Pi.smul_apply, h1, h2,
         innerSL_apply_apply, inner_sub_normalLinearReflection_eq, smul_eq_mul]
-  rw [ae_restrict_top] at hW
+  rw [Measure.ae_restrict_coe_opens_top] at hW
   refine ⟨W, hW, ?_⟩
   have hval : Wkp.value 1 (Wkp.lowerOrder 1 W) =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict
       ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E)))]
       fun x => f x - f (normalReflection E a x) := by
-    rw [ae_restrict_top, ← Wkp.value_succ]
+    rw [Measure.ae_restrict_coe_opens_top, ← Wkp.value_succ]
     exact hW
   have h := ((Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 W)).congr_ae hval).ae_eq h2
-  rw [ae_restrict_top] at h
+  rw [Measure.ae_restrict_coe_opens_top] at h
   filter_upwards [h] with x hx
   exact ext_inner_right ℝ fun v => by
     simpa only [innerSL_apply_apply] using DFunLike.congr_fun hx v
@@ -311,7 +306,7 @@ private theorem hasWeakLineDerivOn_inner_iteratedGradient_one {a : ℝ}
     simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm c] using
       ((Wkp.hasWeakFDerivOn_iteratedGradient 0 W).clm_comp (innerSL ℝ c)).hasWeakLineDerivOn v
   refine h.congr_ae ?_
-  rw [ae_restrict_top]
+  rw [Measure.ae_restrict_coe_opens_top]
   filter_upwards [hg] with x hx
   rw [hx]
 
@@ -340,7 +335,7 @@ private theorem ae_inner_iteratedGradient_normal_eq {a : ℝ}
   have hae := ((hcomp v).congr_ae (Eventually.of_forall fun x =>
     inner_sub_normalLinearReflection_normal (G x) (G (normalReflection E a x)))).ae_eq
       (h4.hasWeakLineDerivOn v)
-  rw [ae_restrict_top] at hae
+  rw [Measure.ae_restrict_coe_opens_top] at hae
   filter_upwards [hae, hsymm v (WithLp.toLp 2 ((1 : ℝ), (0 : E))),
     hρ.quasiMeasurePreserving.ae
       (hsymm (normalLinearReflection E v) (WithLp.toLp 2 ((1 : ℝ), (0 : E))))]
@@ -377,7 +372,7 @@ private theorem ae_inner_iteratedGradient_normal_tangent_eq {a : ℝ}
             (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
   have hae := (hcomp.congr_ae (Eventually.of_forall fun x =>
     inner_sub_normalLinearReflection_tangent (G x) (G (normalReflection E a x)) y)).ae_eq h6
-  rw [ae_restrict_top] at hae
+  rw [Measure.ae_restrict_coe_opens_top] at hae
   filter_upwards [hae] with x h1
   rw [h1]
   simp only [sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
@@ -409,7 +404,7 @@ private theorem ae_inner_iteratedGradient_tangent_eq {a : ℝ}
   have hρ := measurePreserving_normalReflection (E := E) a
   have hae := (hcomp.congr_ae (Eventually.of_forall fun x =>
     inner_sub_normalLinearReflection_tangent (G x) (G (normalReflection E a x)) y)).ae_eq h5
-  rw [ae_restrict_top] at hae
+  rw [Measure.ae_restrict_coe_opens_top] at hae
   filter_upwards [hae, hsymm (WithLp.toLp 2 ((0 : ℝ), z)) (WithLp.toLp 2 ((0 : ℝ), y)),
     hρ.quasiMeasurePreserving.ae
       (hsymm (WithLp.toLp 2 ((0 : ℝ), z)) (WithLp.toLp 2 ((0 : ℝ), y)))] with x h1 h2 h3

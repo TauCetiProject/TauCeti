@@ -6,8 +6,10 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.MeasureTheory.Integral.OddSymmetric
 public import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # Symmetry of Gaussian measures
@@ -16,9 +18,17 @@ A centered Gaussian measure on a real separable Banach space is invariant under 
 Consequently, an odd function of a Gaussian vector centered at its mean has integral zero.
 This applies in particular to odd products of centered linear observables, without assuming
 independence or a nonsingular covariance.
-The standard real Gaussian product law is also invariant under planar reflections, and centered
-real Gaussian laws and their independent products are invariant under multiplication by
-deterministic scalars of unit modulus.
+The standard real Gaussian product law is also invariant under planar reflections, linear isometry
+equivalences intertwine scaled standard Gaussian measures on finite-dimensional real inner product
+spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), centered real
+Gaussian laws assign equal mass to opposite half-lines (giving positive-variance half-line mass
+`2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
+multiplication by deterministic scalars of unit modulus.
+In particular, integrals against the standard Gaussian measure are invariant under linear isometry
+equivalences (`LinearIsometryEquiv.integral_comp_stdGaussian`), such as the
+coordinate sign changes `TauCeti.Probability.signFlip` of `EuclideanSpace ℝ ι`, so a standard
+Gaussian integral may be replaced by the integral of the average of the integrand over all sign
+changes (`TauCeti.Probability.integral_eq_integral_expect_signFlip`).
 -/
 
 public section
@@ -70,7 +80,36 @@ end ProbabilityTheory.IsGaussian
 
 namespace TauCeti.Probability
 
-open ProbabilityTheory Real
+open ProbabilityTheory Real Set
+open scoped NNReal ENNReal
+
+/-- Every centered real Gaussian law is invariant under negation. -/
+instance isNegInvariant_gaussianReal_zero (v : ℝ≥0) : (gaussianReal 0 v).IsNegInvariant :=
+  ⟨by simp [Measure.neg_def]⟩
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(0, ∞)`. -/
+@[simp] theorem gaussianReal_zero_Ioi_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Ioi 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Ioi_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(-∞, 0)`. -/
+@[simp] theorem gaussianReal_zero_Iio_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Iio 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Iio_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `[0, ∞)`. -/
+@[simp] theorem gaussianReal_zero_Ici_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Ici 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Ici_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(-∞, 0]`. -/
+@[simp] theorem gaussianReal_zero_Iic_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Iic 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Iic_zero_eq_inv_two (measure_singleton 0)
 
 /-- The standard Gaussian product law is invariant under reflection across a line. -/
 theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
@@ -88,6 +127,92 @@ theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
   convert ((MeasurePreserving.id (gaussianReal 0 1)).prod hneg).comp hrot using 1
   funext p
   simp [ContinuousLinearMap.rotation_apply, sub_eq_add_neg, add_comm]
+
+/-- Every linear isometry equivalence between finite-dimensional real inner product spaces
+intertwines scaled standard Gaussian measures; in particular, a linear isometry self-equivalence
+preserves every scaled standard Gaussian measure. -/
+theorem map_linearIsometryEquiv_map_smul_stdGaussian {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F]
+    (f : E ≃ₗᵢ[ℝ] F) (c : ℝ) :
+    ((stdGaussian E).map (fun x ↦ c • x)).map f = (stdGaussian F).map (fun y ↦ c • y) := by
+  rw [Measure.map_map f.continuous.measurable (by fun_prop),
+    show f ∘ (fun x : E ↦ c • x) = (fun y : F ↦ c • y) ∘ f from funext (map_smul f c),
+    ← Measure.map_map (by fun_prop) f.continuous.measurable, stdGaussian_map f]
+
+end TauCeti.Probability
+
+namespace LinearIsometryEquiv
+
+open ProbabilityTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
+
+/-- A linear isometry equivalence between finite-dimensional real inner product spaces carries the
+standard Gaussian measure of the source to that of the target. -/
+theorem measurePreserving_stdGaussian (f : E ≃ₗᵢ[ℝ] F) :
+    MeasurePreserving f (stdGaussian E) (stdGaussian F) :=
+  ⟨f.continuous.measurable, stdGaussian_map f⟩
+
+/-- Integrals against the standard Gaussian measure are invariant under linear isometry
+equivalences between finite-dimensional real inner product spaces. -/
+theorem integral_comp_stdGaussian {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (f : E ≃ₗᵢ[ℝ] F) (φ : F → G) :
+    ∫ x, φ (f x) ∂stdGaussian E = ∫ y, φ y ∂stdGaussian F :=
+  f.measurePreserving_stdGaussian.integral_comp f.toHomeomorph.measurableEmbedding φ
+
+end LinearIsometryEquiv
+
+namespace TauCeti.Probability
+
+open ProbabilityTheory
+
+section SignFlip
+
+open scoped BigOperators
+
+variable {ι : Type*} [Fintype ι]
+
+/-- Changing the signs of the coordinates of `EuclideanSpace ℝ ι` according to `ε : ι → ℤˣ`, as a
+linear isometry equivalence. -/
+def signFlip (ε : ι → ℤˣ) : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
+  LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
+    if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
+
+/-- The `i`-th coordinate of `signFlip ε g` is `ε i • g i`. -/
+@[simp]
+theorem signFlip_apply (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    signFlip ε g i = ε i • g i := by
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [signFlip, h]
+
+/-- Changing the signs of the coordinates is an involution. -/
+@[simp]
+theorem signFlip_symm (ε : ι → ℤˣ) : (signFlip ε).symm = signFlip ε := by
+  refine LinearIsometryEquiv.ext fun g ↦ ?_
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  simp [smul_smul, Int.units_mul_self]
+
+/-- A standard Gaussian integral equals the standard Gaussian integral of the average of the
+integrand over all coordinate sign changes. -/
+theorem integral_eq_integral_expect_signFlip [DecidableEq ι] {φ : EuclideanSpace ℝ ι → ℝ}
+    (hφ : Integrable φ (stdGaussian (EuclideanSpace ℝ ι))) :
+    ∫ g, φ g ∂stdGaussian (EuclideanSpace ℝ ι) =
+      ∫ g, 𝔼 ε : ι → ℤˣ, φ (signFlip ε g) ∂stdGaussian (EuclideanSpace ℝ ι) := by
+  have hint (ε : ι → ℤˣ) :
+      Integrable (fun g ↦ φ (signFlip ε g)) (stdGaussian (EuclideanSpace ℝ ι)) :=
+    ((signFlip ε).measurePreserving_stdGaussian.integrable_comp_emb
+      (signFlip ε).toHomeomorph.measurableEmbedding).2 hφ
+  simp_rw [Finset.expect_eq_sum_div_card]
+  rw [integral_div, integral_finsetSum _ fun ε _ ↦ hint ε]
+  simp [LinearIsometryEquiv.integral_comp_stdGaussian]
+
+end SignFlip
 
 end TauCeti.Probability
 

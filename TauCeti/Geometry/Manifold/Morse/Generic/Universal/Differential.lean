@@ -178,6 +178,7 @@ theorem sectionLinearization_universalDifferential_apply (hk : 2 ≤ k)
 
 end FiniteRegularity
 
+omit [LocallyCompactSpace E] in
 include hK in
 /-- **The universal differential is transverse to the zero section.** On a smooth Hausdorff
 manifold and for `k ≥ 2`, its intrinsic linearization is surjective at every point of

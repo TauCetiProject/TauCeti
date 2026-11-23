@@ -169,7 +169,7 @@ theorem narrowPicClass_eq_one_iff (J : integralIdealsPrimeTo O.narrowConductorMo
       O.toRingOfIntegersEquiv.symm.toRingHom).toMonoidHom w
     have hu : ((u : 𝓞 K) : K) = (w : K) := by
       simp [u, Units.coe_map, O.coe_toRingOfIntegersEquiv_symm]
-    refine ⟨u * β, O.toRingOfIntegers.mul_mem (O.toRingOfIntegersEquiv.symm w).2 hβ, ?_, ?_⟩
+    refine ⟨u * β, O.toRingOfIntegers.mul_mem (O.toRingOfIntegersEquiv.symm w).property hβ, ?_, ?_⟩
     · have huβ : (((u * β : 𝓞 K)) : K) = (w : K) * (x : K) := by simp [hx, hu]
       simpa only [huβ, Units.smul_def, Subalgebra.smul_def, smul_eq_mul] using hw
     · rw [hJ, Ideal.span_singleton_mul_left_unit u.isUnit]

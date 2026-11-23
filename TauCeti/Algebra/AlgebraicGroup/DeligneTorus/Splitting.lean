@@ -229,6 +229,17 @@ theorem characterGroup_apply (p q : ℤ) (f : WithConv (S →ₐ[ℝ] R)) :
       (complexSplitting R f).1 ^ p * (complexSplitting R f).2 ^ q :=
   (rfl)
 
+/-- The character of a sum of pairs is the product of the characters. -/
+theorem characterGroup_add_apply (a b : ℤ × ℤ) (f : WithConv (S →ₐ[ℝ] R)) :
+    characterGroup R (.ofAdd (a + b)) f =
+      characterGroup R (.ofAdd a) f * characterGroup R (.ofAdd b) f := by
+  rw [ofAdd_add, map_mul, MonoidHom.mul_apply]
+
+/-- The character of the negative of a pair is the inverse of the character. -/
+theorem characterGroup_neg_apply (a : ℤ × ℤ) (f : WithConv (S →ₐ[ℝ] R)) :
+    characterGroup R (.ofAdd (-a)) f = (characterGroup R (.ofAdd a) f)⁻¹ := by
+  rw [ofAdd_neg, map_inv, MonoidHom.inv_apply]
+
 /-- The character `(p, q)` takes the value `z ^ p` on `μ(z)`; in particular `(1, 0)` takes the
 value `z` and `(0, 1)` the value `1`. -/
 theorem characterGroup_mu (p q : ℤ) (z : Rˣ) :

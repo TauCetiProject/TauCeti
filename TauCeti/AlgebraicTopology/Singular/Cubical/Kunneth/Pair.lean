@@ -39,9 +39,13 @@ a product of pairs**. Consequently the Künneth map
 when the relative homology of `P` is projective
 (`TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`). Everything is natural in both pairs.
 
-No hypothesis is placed on the subspaces. When `A` and `B` are open, the homology of `N(P × Q)`
-is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth map in relative
-singular homology (`TauCeti.singularHomologyKunnethPair`, in
+No hypothesis is placed on the subspaces. When `A × Y` and `X × B` form an excisive couple, for
+instance when `A` and `B` are open, the homology of `N(P × Q)` is the relative homology of
+`(X × Y, A × Y ∪ X × B)`
+(`TopPair.quasiIso_cubicalChainComplexProdComparison_of_isIso`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Excisive`). When `A` and `B` are
+open, it is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth map in
+relative singular homology (`TauCeti.singularHomologyKunnethPair`, in
 `TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`) is an isomorphism over a field
 (`TauCeti.isIso_singularHomologyKunnethPair_of_isSemisimpleRing`) or when the relative homology
 of `(X, A)` is projective (`TauCeti.isIso_singularHomologyKunnethPair_of_projective`). For compact

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
+public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Germ
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Topology.Sheaves.Abelian
@@ -20,7 +22,9 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 Local divisor sections are normalized to zero at permitted poles. This file compares them
 with meromorphic coordinate germs, whose values at their centre are discarded. The comparison
 is linear, satisfies the divisor order bound, and commutes with restriction and native divisor
-inclusions despite their normalization of newly permitted poles.
+inclusions despite their normalization of newly permitted poles. For a global section it is the
+coordinate germ of the associated meromorphic function
+(`MeromorphicFunction.toChartGerm_toMeromorphic`).
 
 The local divisor-section condition persists on a neighbourhood. Every meromorphic function
 satisfying its order bound has a normalized representative at the centre: allowed poles are
@@ -136,16 +140,16 @@ variable {D : WeilDivisor X} {U : Opens X} {x : X}
 /-- The meromorphic coordinate germ of a divisor section at a point in its domain. Values
 assigned at a pole are discarded, as required for the native meromorphic germ field. -/
 def toChartGerm (D : WeilDivisor X) (U : Opens X) (x : U) :
-    divisorSections D U →ₗ[ℂ] meromorphicGerms ℂ (chartAt ℂ x.1 x.1) where
+    divisorSections D U →ₗ[ℂ] meromorphicGerms ℂ (chartAt ℂ x.val x.val) where
   toFun f := meromorphicGerms.mk
-    ((Subtype.val.extend f.1 0) ∘ (chartAt ℂ x.1).symm)
-    ((meromorphicAt_def _ _).1 (isDivisorSectionAt_extend f.2 x).meromorphicAt)
+    ((Subtype.val.extend f.val 0) ∘ (chartAt ℂ x.val).symm)
+    ((meromorphicAt_def _ _).1 (isDivisorSectionAt_extend f.property x).meromorphicAt)
   map_add' f g := by
     apply Subtype.ext
     rw [meromorphicGerms.coe_mk, Subring.coe_add, meromorphicGerms.coe_mk,
       meromorphicGerms.coe_mk, ← Germ.coe_add]
     apply Germ.coe_eq.2
-    have he := Function.extend_add Subtype.val f.1 g.1 (0 : X → ℂ) (0 : X → ℂ)
+    have he := Function.extend_add Subtype.val f.val g.val (0 : X → ℂ) (0 : X → ℂ)
     simp only [add_zero] at he
     rw [Submodule.coe_add, he]
     exact Filter.Eventually.of_forall fun _ ↦ rfl
@@ -154,7 +158,7 @@ def toChartGerm (D : WeilDivisor X) (U : Opens X) (x : U) :
     rw [meromorphicGerms.coe_mk, meromorphicGerms.coe_smul,
       meromorphicGerms.coe_mk, ← Germ.coe_smul]
     apply Germ.coe_eq.2
-    have he := Function.extend_smul c Subtype.val f.1 (0 : X → ℂ)
+    have he := Function.extend_smul c Subtype.val f.val (0 : X → ℂ)
     simp only [smul_zero] at he
     rw [Submodule.coe_smul, he, RingHom.id_apply]
     exact Filter.Eventually.of_forall fun _ ↦ rfl
@@ -162,39 +166,39 @@ def toChartGerm (D : WeilDivisor X) (U : Opens X) (x : U) :
 /-- The coordinate germ is represented by the extension of the section in the preferred chart. -/
 @[simp]
 theorem coe_toChartGerm (f : divisorSections D U) (x : U) :
-    (toChartGerm D U x f : Germ (𝓝[≠] (chartAt ℂ x.1 x.1)) ℂ) =
-      (Subtype.val.extend f.1 (0 : X → ℂ) ∘ (chartAt ℂ x.1).symm) := by
+    (toChartGerm D U x f : Germ (𝓝[≠] (chartAt ℂ x.val x.val)) ℂ) =
+      (Subtype.val.extend f.val (0 : X → ℂ) ∘ (chartAt ℂ x.val).symm) := by
   simp only [toChartGerm, LinearMap.coe_mk, AddHom.coe_mk, meromorphicGerms.coe_mk]
 
 /-- The coordinate germ has the meromorphic order of its normalized section representative. -/
 theorem order_toChartGerm (f : divisorSections D U) (x : U) :
     meromorphicGerms.order (toChartGerm D U x f) =
-      meromorphicOrderAt (Subtype.val.extend f.1 (0 : X → ℂ)) x.1 := by
+      meromorphicOrderAt (Subtype.val.extend f.val (0 : X → ℂ)) x.val := by
   simp only [toChartGerm, LinearMap.coe_mk, AddHom.coe_mk, meromorphicGerms.order_mk,
     meromorphicOrderAt_def]
 
 /-- The coordinate germ satisfies the divisor's prescribed order bound. -/
 theorem toChartGerm_mem_orderGE (f : divisorSections D U) (x : U) :
-    toChartGerm D U x f ∈ meromorphicGerms.orderGE (chartAt ℂ x.1 x.1) (-D x.1) := by
+    toChartGerm D U x f ∈ meromorphicGerms.orderGE (chartAt ℂ x.val x.val) (-D x.val) := by
   rw [meromorphicGerms.mem_orderGE, toChartGerm, LinearMap.coe_mk, AddHom.coe_mk,
     meromorphicGerms.order_mk]
   simpa only [meromorphicOrderAt_def] using
-    (isDivisorSectionAt_extend f.2 x).neg_le_meromorphicOrderAt
+    (isDivisorSectionAt_extend f.property x).neg_le_meromorphicOrderAt
 
 /-- Restricting a section does not change its meromorphic coordinate germ. -/
 theorem toChartGerm_restrict {V : Opens X} (h : V ≤ U) (hx : x ∈ V)
     (f : divisorSections D U) :
     toChartGerm D V ⟨x, hx⟩
-      ⟨f.1 ∘ Opens.inclusion h, comp_inclusion_mem_divisorSections h f.2⟩ =
+      ⟨f.val ∘ Opens.inclusion h, comp_inclusion_mem_divisorSections h f.property⟩ =
         toChartGerm D U ⟨x, h hx⟩ f := by
   apply Subtype.ext
   simp only [toChartGerm, LinearMap.coe_mk, AddHom.coe_mk, meromorphicGerms.coe_mk]
   apply Germ.coe_eq.2
   filter_upwards [(tendsto_chartAt_symm_nhdsNE x).eventually
     (eventually_nhdsWithin_of_eventually_nhds (V.isOpen.mem_nhds hx))] with z hz
-  exact (Subtype.val_injective.extend_apply (f.1 ∘ Opens.inclusion h)
+  exact (Subtype.val_injective.extend_apply (f.val ∘ Opens.inclusion h)
     (0 : X → ℂ) ⟨_, hz⟩).trans
-      (Subtype.val_injective.extend_apply f.1 (0 : X → ℂ) ⟨_, h hz⟩).symm
+      (Subtype.val_injective.extend_apply f.val (0 : X → ℂ) ⟨_, h hz⟩).symm
 
 /-- Divisor inclusions preserve meromorphic coordinate germs despite the change in normalized
 values at newly permitted poles. -/
@@ -207,25 +211,25 @@ theorem toChartGerm_mapOfLE {A : WeilDivisor X} (h : D ≤ A)
   apply Subtype.ext
   simp only [toChartGerm, LinearMap.coe_mk, AddHom.coe_mk, meromorphicGerms.coe_mk]
   apply Germ.coe_eq.2
-  filter_upwards [(tendsto_chartAt_symm_nhdsNE x.1).eventually
-      (nhdsWithin_le_nhds (U.isOpen.mem_nhds x.2)),
-    (tendsto_chartAt_symm_nhdsNE x.1).eventually (A.eventually_eq_zero_nhdsNE x.1)]
+  filter_upwards [(tendsto_chartAt_symm_nhdsNE x.val).eventually
+      (nhdsWithin_le_nhds (U.isOpen.mem_nhds x.property)),
+    (tendsto_chartAt_symm_nhdsNE x.val).eventually (A.eventually_eq_zero_nhdsNE x.val)]
     with z hzU hzA
   simp only [Function.comp_apply]
   calc
     Subtype.val.extend (divisorSheafSectionsEquiv A U
-        ((divisorSheafMapOfLE h).hom.app (op U) f)).1 0 ((chartAt ℂ x.1).symm z) =
+        ((divisorSheafMapOfLE h).hom.app (op U) f)).val 0 ((chartAt ℂ x.val).symm z) =
         (divisorSheafSectionsEquiv A U
-          ((divisorSheafMapOfLE h).hom.app (op U) f)).1 ⟨_, hzU⟩ :=
+          ((divisorSheafMapOfLE h).hom.app (op U) f)).val ⟨_, hzU⟩ :=
       Subtype.val_injective.extend_apply
-        (divisorSheafSectionsEquiv A U ((divisorSheafMapOfLE h).hom.app (op U) f)).1
+        (divisorSheafSectionsEquiv A U ((divisorSheafMapOfLE h).hom.app (op U) f)).val
         (0 : X → ℂ) (⟨_, hzU⟩ : U)
-    _ = (divisorSheafSectionsEquiv D U f).1 ⟨_, hzU⟩ := by
+    _ = (divisorSheafSectionsEquiv D U f).val ⟨_, hzU⟩ := by
       rw [divisorSheafMapOfLE_app]
       exact Set.indicator_of_mem (s := {y : U | A y ≤ 0}) hzA.le _
-    _ = Subtype.val.extend (divisorSheafSectionsEquiv D U f).1 0
-        ((chartAt ℂ x.1).symm z) :=
-      (Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv D U f).1
+    _ = Subtype.val.extend (divisorSheafSectionsEquiv D U f).val 0
+        ((chartAt ℂ x.val).symm z) :=
+      (Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv D U f).val
         (0 : X → ℂ) (⟨_, hzU⟩ : U)).symm
 
 
@@ -263,7 +267,7 @@ theorem exists_section_toChartGerm_eq (D : WeilDivisor X) (x : X)
   refine (divisorSections.coe_toChartGerm s ⟨x, hxv⟩).trans ?_
   rw [meromorphicGerms.coe_mk]
   apply Germ.coe_eq.2
-  have he : Subtype.val.extend s.1 (0 : X → ℂ) =ᶠ[𝓝 x] g := by
+  have he : Subtype.val.extend s.val (0 : X → ℂ) =ᶠ[𝓝 x] g := by
     filter_upwards [U.isOpen.mem_nhds hxv] with y hy
     exact Subtype.val_injective.extend_apply (g ∘ Subtype.val) (0 : X → ℂ) (⟨y, hy⟩ : U)
   exact ((he.filter_mono nhdsWithin_le_nhds).comp_tendsto
@@ -275,21 +279,21 @@ theorem exists_section_toChartGerm_eq (D : WeilDivisor X) (x : X)
 lifts near `y` through the divisor inclusion, including its normalization at allowed poles. -/
 theorem exists_divisorSheafMapOfLE_app_eq {D E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
     (f : (divisorSheaf E).obj.obj (op U)) (y : U)
-    (hb : ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
-      (Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y.1) :
-    ∃ (V : Opens X) (_hyV : y.1 ∈ V) (hVU : V ≤ U) (t : (divisorSheaf D).obj.obj (op V)),
+    (hb : ((-D y.val : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
+      (Subtype.val.extend (divisorSheafSectionsEquiv E U f).val 0) y.val) :
+    ∃ (V : Opens X) (_hyV : y.val ∈ V) (hVU : V ≤ U) (t : (divisorSheaf D).obj.obj (op V)),
       (divisorSheafMapOfLE h).hom.app (op V) t = (divisorSheaf E).obj.map (homOfLE hVU).op f := by
   have := ChartedSpace.t1Space ℂ X
-  let F := Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 (0 : X → ℂ)
-  have hf : IsDivisorSectionAt E F y.1 :=
-    isDivisorSectionAt_extend (divisorSheafSectionsEquiv E U f).2 y
+  let F := Subtype.val.extend (divisorSheafSectionsEquiv E U f).val (0 : X → ℂ)
+  have hf : IsDivisorSectionAt E F y.val :=
+    isDivisorSectionAt_extend (divisorSheafSectionsEquiv E U f).property y
   obtain ⟨g, hg, hFg⟩ := exists_isDivisorSectionAt hf.meromorphicAt hb
-  have hk : {z | E z ≤ 0}.indicator g =ᶠ[𝓝[≠] y.1] g := by
-    filter_upwards [E.eventually_eq_zero_nhdsNE y.1] with z hz
+  have hk : {z | E z ≤ 0}.indicator g =ᶠ[𝓝[≠] y.val] g := by
+    filter_upwards [E.eventually_eq_zero_nhdsNE y.val] with z hz
     exact Set.indicator_of_mem (s := {z | E z ≤ 0}) hz.le g
   have hEq := hf.eventuallyEq_of_nhdsNE (hg.indicator h) (hFg.trans hk.symm)
   obtain ⟨v, hv, hvo, hyv⟩ := eventually_nhds_iff.1
-    ((hg.eventually.and (U.isOpen.mem_nhds y.2)).and hEq)
+    ((hg.eventually.and (U.isOpen.mem_nhds y.property)).and hEq)
   let V : Opens X := ⟨v, hvo⟩
   have hVU : V ≤ U := fun z hz ↦ (hv z hz).1.2
   let s : divisorSections D V := ⟨g ∘ Subtype.val,
@@ -302,14 +306,14 @@ theorem exists_divisorSheafMapOfLE_app_eq {D E : WeilDivisor X} (h : D ≤ E) (U
   simp only [LinearEquiv.apply_symm_apply]
   -- Divisor inclusion is defined by normalization with this indicator on the open carrier.
   change {z : V | E z ≤ 0}.indicator (g ∘ Subtype.val) z =
-    (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩
+    (divisorSheafSectionsEquiv E U f).val ⟨z.val, hVU z.property⟩
   calc
-    _ = {z | E z ≤ 0}.indicator g z.1 := by
+    _ = {z | E z ≤ 0}.indicator g z.val := by
       simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
-    _ = F z.1 := (hv z.1 z.2).2.symm
-    _ = (divisorSheafSectionsEquiv E U f).1 ⟨z.1, hVU z.2⟩ :=
-      Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv E U f).1
-        (0 : X → ℂ) (⟨z.1, hVU z.2⟩ : U)
+    _ = F z.val := (hv z.val z.property).2.symm
+    _ = (divisorSheafSectionsEquiv E U f).val ⟨z.val, hVU z.property⟩ :=
+      Subtype.val_injective.extend_apply (divisorSheafSectionsEquiv E U f).val
+        (0 : X → ℂ) (⟨z.val, hVU z.property⟩ : U)
 
 /-- **Exactness through the divisor inclusion.** If every section of `𝒪_E` annihilated by a sheaf
 map `g` satisfies the order bound of `D ≤ E` at every point, then `𝒪_D ⟶ 𝒪_E ⟶ G` is exact: such
@@ -318,8 +322,8 @@ theorem exact_divisorSheafMapOfLE_of_neg_le_order {D E : WeilDivisor X} (h : D �
     {G : TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X)} (g : divisorSheaf E ⟶ G)
     (w : divisorSheafMapOfLE h ≫ g = 0)
     (hg : ∀ {U : Opens X} (f : (divisorSheaf E).obj.obj (op U)), g.hom.app (op U) f = 0 →
-      ∀ y : U, ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
-        (Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y.1) :
+      ∀ y : U, ((-D y.val : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
+        (Subtype.val.extend (divisorSheafSectionsEquiv E U f).val 0) y.val) :
     (ShortComplex.mk (divisorSheafMapOfLE h) g w).Exact := by
   apply (TopCat.Sheaf.exact_iff_stalkFunctor_map_exact _).2
   intro y
@@ -345,5 +349,23 @@ theorem exact_divisorSheafMapOfLE_of_neg_le_order {D E : WeilDivisor X} (h : D �
     TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
 
 end Representation
+
+section Meromorphic
+
+variable [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X] {E : WeilDivisor X}
+
+/-- The coordinate germ of the meromorphic function of a global section of `𝒪_E` is the coordinate
+germ of the section. -/
+theorem MeromorphicFunction.toChartGerm_toMeromorphic (s : divisorSections E ⊤) (x : X) :
+    MeromorphicFunction.toChartGerm x (divisorSections.toMeromorphic E s) =
+      divisorSections.toChartGerm E ⊤ ⟨x, trivial⟩ s := by
+  apply Subtype.ext
+  rw [MeromorphicFunction.coe_toChartGerm, divisorSections.coe_toChartGerm]
+  apply Filter.Germ.coe_eq.2
+  filter_upwards [(tendsto_chartAt_symm_nhdsNE x).eventually
+    (divisorSections.finitePart_toMeromorphic_eventuallyEq s x)] with z hz
+  exact hz.trans (Subtype.val_injective.extend_apply s.val (0 : X → ℂ) ⟨_, trivial⟩).symm
+
+end Meromorphic
 
 end TauCeti.RiemannSurface

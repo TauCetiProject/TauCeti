@@ -257,6 +257,12 @@ theorem complexGenerator_domain (U : StronglyContinuousGroup H) (hU : U.IsUnitar
     (U.complexGenerator hU).domain = U.complexDomain hU := by
   rw [complexGenerator, complexDomain, U.toSemigroup.complexGenerator_domain]
 
+/-- Membership in the domain of the complex generator of a unitary group is membership in the
+domain of its real generator. -/
+theorem mem_complexGenerator_domain_iff (U : StronglyContinuousGroup H) (hU : U.IsUnitary)
+    (x : H) : x ∈ (U.complexGenerator hU).domain ↔ x ∈ U.domain := by
+  rw [U.complexGenerator_domain hU, U.mem_complexDomain_iff hU]
+
 @[simp]
 theorem complexGenerator_apply (U : StronglyContinuousGroup H) (hU : U.IsUnitary)
     (x : (U.complexGenerator hU).domain) :

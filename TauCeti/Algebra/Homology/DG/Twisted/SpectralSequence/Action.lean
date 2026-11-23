@@ -69,7 +69,7 @@ noncomputable def shiftedModuleComplexActX {a : A} (ha : a ∈ 𝒜 0) (q n : �
       (ℳ (n + (q + 1))).subtype).codRestrict _ fun x ↦ by
         have hdeg : n + 1 + q = n + (q + 1) := by ring
         rw [hdeg]
-        exact op_smul_koszulTwist_mem_of_mem_zero ha x.2 1) ∘ₗ
+        exact op_smul_koszulTwist_mem_of_mem_zero ha x.property 1) ∘ₗ
     (shiftedModuleComplexXEquiv hM (q + 1) n).toLinearMap
 
 @[simp]
@@ -96,7 +96,8 @@ noncomputable def shiftedModuleComplexAct {a : A} (ha : a ∈ 𝒜 0) (hda : d a
       LinearMap.neg_apply, map_neg, Submodule.coe_neg]
     rw [shiftedModuleComplexXEquiv_shiftedModuleComplexActX, shiftedModuleComplexXEquiv_d,
       shiftedModuleComplexXEquiv_d, shiftedModuleComplexXEquiv_shiftedModuleComplexActX]
-    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).1).symm
+    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM
+        (q + 1) i α).val).symm
 
 /-- The components of `shiftedModuleComplexAct` are the linear maps `shiftedModuleComplexActX`. -/
 @[simp]
@@ -167,7 +168,7 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
   have hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n' (n' + 1)).hom
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) = 0 := by
     rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, hβ]
-    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).1
+    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).val
     rw [(shiftedModuleComplexXEquiv_d_eq_zero_iff hM (q + 1) n α).1 hα, map_zero,
       smul_zero] at h
     exact neg_eq_zero.1 h.symm
@@ -197,7 +198,7 @@ theorem shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology {a : A
   congr 1
   ext
   rw [hβ, InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _
-      (shiftedModuleComplexXEquiv hM (q + 1) n α).2, one_mul, Int.cast_smul_eq_zsmul,
+      (shiftedModuleComplexXEquiv hM (q + 1) n α).property, one_mul, Int.cast_smul_eq_zsmul,
     Submodule.coe_smul_of_tower, Submodule.coe_smul_of_tower, Units.smul_def, smul_comm]
   -- The opposite cycle `op ⟨a, _⟩` acts on `ℳ` as `op a` does, by definition of the action.
   rfl

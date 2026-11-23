@@ -39,20 +39,24 @@ carriers is needed.
 * `FirstOrder.Language.OmitsType.of_aElementary`: omission of a partial type in `A` passes along
   `A`-elementary embeddings.
 * `FirstOrder.Language.aElementary_of_tarskiVaught`: the fragment Tarski–Vaught criterion.
+* `FirstOrder.Language.AElementary.comap`, `FirstOrder.Language.aElementary_map_iff` and
+  `FirstOrder.Language.aElementary_map_iff_exists`: transport of fragment elementarity along
+  expansions by a language homomorphism.
 
 ## References
 
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 1.
 * Ported from `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, `InfinitaryLogic/ModelTheory/AElementary.lean`.
-* Divergences from that source: monotonicity in the fragment and isomorphism transport are added;
-  the atomic cases are proved from Mathlib's term realization along homomorphisms. As in the
-  source, the language and the carriers live in independent universes.
+* Divergences from that source: monotonicity in the fragment, isomorphism transport, and transport
+  along language homomorphisms are added; the atomic cases are proved from Mathlib's term
+  realization along homomorphisms. As in the source, the language and the carriers live in
+  independent universes.
 -/
 
 public section
 
-universe u v w w' w''
+universe u v u' v' w w' w''
 
 namespace FirstOrder
 
@@ -186,6 +190,58 @@ theorem aElementary_of_tarskiVaught {A : Fragment L} (f : N ↪[L] M)
     intro hmem a
     simp only [BoundedFormulaInf.realize_iInf]
     exact forall_congr' fun k => ih k (A.iInf_mem hmem k) a
+
+/-! ### Transport along language maps -/
+
+section LanguageMap
+
+variable {L' : Language.{u', v'}} [L'.Structure M] [L'.Structure N]
+
+/-- Pulling back elementarity along a language homomorphism: if `M` and `N` expand along
+`g : L →ᴸ L'` and `f' : N ↪[L'] M` has the same underlying map as `f : N ↪[L] M`, then
+`B`-elementarity of `f'` gives `(B.comap g)`-elementarity of `f`. -/
+theorem AElementary.comap {B : Fragment L'} (g : L →ᴸ L')
+    [g.IsExpansionOn M] [g.IsExpansionOn N] {f : N ↪[L] M} {f' : N ↪[L'] M}
+    (hf : ⇑f' = ⇑f) (h : AElementary B f') : AElementary (B.comap g) f := by
+  intro n φ hφ a
+  calc φ.Realize Empty.elim (f ∘ a)
+      ↔ (g.onBoundedFormulaInf φ).Realize Empty.elim (f' ∘ a) := by
+          rw [hf, g.realize_onBoundedFormulaInf]
+    _ ↔ (g.onBoundedFormulaInf φ).Realize Empty.elim a :=
+          h.realize_iff (Fragment.mem_comap.1 hφ) a
+    _ ↔ φ.Realize Empty.elim a := g.realize_onBoundedFormulaInf _ _ _
+
+/-- **Elementarity of a mapped fragment.** Along expansions of `M` and `N` by `g : L →ᴸ L'`, an
+`L'`-embedding `f'` with the same underlying map as `f : N ↪[L] M` is `(A.map g)`-elementary
+exactly when `f` is `A`-elementary. No injectivity of `g` is needed. -/
+theorem aElementary_map_iff {A : Fragment L} {g : L →ᴸ L'}
+    [g.IsExpansionOn M] [g.IsExpansionOn N] {f : N ↪[L] M} {f' : N ↪[L'] M}
+    (hf : ⇑f' = ⇑f) : AElementary (A.map g) f' ↔ AElementary A f := by
+  refine ⟨fun h => AElementary.mono (Fragment.le_comap_map g A) (h.comap g hf),
+    fun h n ψ hψ a => ?_⟩
+  simp only [Fragment.mem_map] at hψ
+  obtain ⟨φ, hφ, rfl⟩ := hψ
+  rw [hf, g.realize_onBoundedFormulaInf, g.realize_onBoundedFormulaInf]
+  exact h.realize_iff hφ a
+
+/-- Along expansions of `M` and `N` by `g : L →ᴸ L'`, an `L'`-embedding `f'` is
+`(A.map g)`-elementary iff its underlying map is an `A`-elementary `L`-embedding. -/
+theorem aElementary_map_iff_exists {A : Fragment L} {g : L →ᴸ L'}
+    [g.IsExpansionOn M] [g.IsExpansionOn N] (f' : N ↪[L'] M) :
+    AElementary (A.map g) f' ↔ ∃ f : N ↪[L] M, ⇑f' = ⇑f ∧ AElementary A f := by
+  refine ⟨fun h => ?_, fun ⟨f, hf, h⟩ => (aElementary_map_iff hf).2 h⟩
+  let f : N ↪[L] M :=
+    { toFun := f'
+      inj' := f'.injective
+      map_fun' fn x := by
+        rw [← g.map_onFunction fn x, ← g.map_onFunction fn (f' ∘ x)]
+        exact f'.map_fun (g.onFunction fn) x
+      map_rel' r x := by
+        rw [← g.map_onRelation r (f' ∘ x), ← g.map_onRelation r x]
+        exact f'.map_rel (g.onRelation r) x }
+  exact ⟨f, rfl, (aElementary_map_iff (f := f) (f' := f') rfl).1 h⟩
+
+end LanguageMap
 
 end Language
 

@@ -12,11 +12,12 @@ public import Mathlib.Topology.Category.TopCat.Limits.Basic
 /-!
 # Limits of spectral spaces
 
-Products of spectral spaces are spectral. Equalizers of spectral maps into a T₀ prespectral
-space are pro-constructible, so the compatible locus of a diagram of spectral spaces with
-spectral transition maps is spectral as well. Its coordinate projections are spectral.
-These results apply to arbitrary small diagrams, including cofiltered inverse systems and the
-empty diagram.
+Arbitrary and binary products of spectral spaces (and of spectral subspaces) are spectral, and
+projections from pro-constructible subsets of binary products are spectral maps. Equalizers of
+spectral maps into a T₀ prespectral space are pro-constructible, so the compatible locus of a
+diagram of spectral spaces with spectral transition maps is spectral as well. Its coordinate
+projections are spectral. These results apply to arbitrary small diagrams, including cofiltered
+inverse systems and the empty diagram.
 
 The product proof uses `TauCeti.spectralSpace_of_isClopen_generateFrom`: finite cylinders of
 compact opens are clopen for the compact product of the constructible topologies. Compatibility
@@ -52,6 +53,47 @@ instance spectralSpace_pi {ι : Type*} {X : ι → Type*} [t : ∀ i, Topologica
     @IsClopen.preimage _ _ t' (constructibleTopology (X i)) _
       ((hV i hi).2.isClopen_constructibleTopology_of_isOpen (hV i hi).1)
       (fun x ↦ x i) (@continuous_apply ι X (fun i ↦ constructibleTopology (X i)) i)
+
+/-- The binary product of two spectral spaces, with its product topology, is spectral. -/
+instance spectralSpace_prod {X Y : Type*} [tX : TopologicalSpace X] [tY : TopologicalSpace Y]
+    [SpectralSpace X] [SpectralSpace Y] : SpectralSpace (X × Y) := by
+  have hb := (PrespectralSpace.isTopologicalBasis (X := X)).prod
+    (PrespectralSpace.isTopologicalBasis (X := Y))
+  have hgen := hb.eq_generateFrom
+  have hT0 : T0Space (X × Y) := inferInstance
+  let t' : TopologicalSpace (X × Y) :=
+    @instTopologicalSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
+  have hc : @CompactSpace (X × Y) t' :=
+    @instCompactSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
+      (compactSpace_constructibleTopology X) (compactSpace_constructibleTopology Y)
+  refine @spectralSpace_of_isClopen_generateFrom _ _ t' (@instTopologicalSpaceProd X Y tX tY)
+    hgen hc ?_ hT0
+  rintro W ⟨U, ⟨hUo, hUc⟩, V, ⟨hVo, hVc⟩, rfl⟩
+  exact @IsClopen.prod X Y (constructibleTopology X) (constructibleTopology Y) U V
+    (hUc.isClopen_constructibleTopology_of_isOpen hUo)
+    (hVc.isClopen_constructibleTopology_of_isOpen hVo)
+
+/-- The product `U ×ˢ V` of two spectral subspaces is spectral. -/
+theorem spectralSpace_set_prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {U : Set X} {V : Set Y} [SpectralSpace U] [SpectralSpace V] :
+    SpectralSpace (U ×ˢ V : Set (X × Y)) := by
+  let e := Homeomorph.Set.prod U V
+  have : CompactSpace (U ×ˢ V : Set (X × Y)) := e.symm.compactSpace
+  exact e.isOpenEmbedding.spectralSpace
+
+/-- The first projection from a pro-constructible subset of a product of two spectral spaces is a
+spectral map. -/
+theorem IsProConstructible.isSpectralMap_fst {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [SpectralSpace X] [SpectralSpace Y] {R : Set (X × Y)} (hR : IsProConstructible R) :
+    IsSpectralMap (fun q : R ↦ q.val.1) :=
+  isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
+
+/-- The second projection from a pro-constructible subset of a product of two spectral spaces is a
+spectral map. -/
+theorem IsProConstructible.isSpectralMap_snd {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [SpectralSpace X] [SpectralSpace Y] {R : Set (X × Y)} (hR : IsProConstructible R) :
+    IsSpectralMap (fun q : R ↦ q.val.2) :=
+  isProperMap_snd_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
 
 end TauCeti
 

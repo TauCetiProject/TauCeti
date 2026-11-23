@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.MvPolynomial.Coeff
 
 /-!
-# Polynomials whose coefficients generate the unit ideal
+# Coefficients of multivariate polynomials
+
+The coefficients of a power sum `∑ g ∈ s, (∑ i, a g i • X i) ^ n` of linear forms are multinomial
+multiples of the power sums `∑ g ∈ s, ∏ i, a g i ^ e i`.
 
 If some combination `∑ i ∈ s, p.coeff (m i) * c i` of coefficients of a multivariate polynomial
 `p` equals `1`, then scalar multiplication on `p` is faithful: `r ↦ r • p` is injective, since
@@ -18,6 +21,8 @@ torsion, where `p` having a nonzero coefficient would not be enough.
 
 ## Main results
 
+* `MvPolynomial.coeff_sum_linearCombination_X_pow_of_fintype`: the coefficients of a power sum of
+  linear forms.
 * `MvPolynomial.smul_left_injective_of_sum_coeff_mul_eq_one`: if a combination of the
   coefficients of `p` is `1`, then `r ↦ r • p` is injective.
 * `MvPolynomial.smul_eq_zero_iff_left_of_sum_coeff_mul_eq_one`: under the same hypothesis,
@@ -35,12 +40,24 @@ variable {R σ ι : Type*} [CommSemiring R] {p : MvPolynomial σ R}
 theorem smul_left_injective_of_sum_coeff_mul_eq_one (s : Finset ι) (m : ι → σ →₀ ℕ) (c : ι → R)
     (hc : ∑ i ∈ s, p.coeff (m i) * c i = 1) : Function.Injective fun r : R => r • p :=
   Function.LeftInverse.injective (g := fun q => ∑ i ∈ s, q.coeff (m i) * c i) fun r => by
-    simp only [coeff_smul, smul_eq_mul, mul_assoc, ← Finset.mul_sum, hc, mul_one]
+    simp only [AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, hc,
+      mul_one]
 
 /-- If some combination `∑ i ∈ s, p.coeff (m i) * c i` of coefficients of `p` is `1`, then
 `r • p = 0` if and only if `r = 0`. -/
 theorem smul_eq_zero_iff_left_of_sum_coeff_mul_eq_one (s : Finset ι) (m : ι → σ →₀ ℕ)
     (c : ι → R) (hc : ∑ i ∈ s, p.coeff (m i) * c i = 1) {r : R} : r • p = 0 ↔ r = 0 :=
   (smul_left_injective_of_sum_coeff_mul_eq_one s m c hc).eq_iff' (zero_smul R p)
+
+/-- **Coefficients of power sums of linear forms.** The coefficient of `X ^ e` in
+`∑ g ∈ s, (∑ i, a g i • X i) ^ n` is `multinomial e * ∑ g ∈ s, ∏ i, a g i ^ e i` if `e` has total
+degree `n`, and zero otherwise. -/
+theorem coeff_sum_linearCombination_X_pow_of_fintype [Fintype σ] (s : Finset ι) (a : ι → σ → R)
+    (e : σ →₀ ℕ) (n : ℕ) :
+    (∑ g ∈ s, (∑ i, a g i • X i : MvPolynomial σ R) ^ n).coeff e =
+      if e.sum (fun _ m ↦ m) = n then e.multinomial * ∑ g ∈ s, e.prod (fun i m ↦ a g i ^ m)
+      else 0 := by
+  simp only [coeff_sum, coeff_linearCombination_X_pow_of_fintype]
+  split_ifs <;> simp [Finset.mul_sum]
 
 end MvPolynomial

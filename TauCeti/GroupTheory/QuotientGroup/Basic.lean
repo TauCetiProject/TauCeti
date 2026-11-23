@@ -308,7 +308,7 @@ representative of a left coset of `H` and an element of `H`. -/
 theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
   have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
-    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
+    rw [QuotientGroup.mk_mul_of_mem _ h.property, QuotientGroup.out_eq']
   have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
     refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
       ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
