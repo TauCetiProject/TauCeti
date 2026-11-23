@@ -7,9 +7,11 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
+import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -40,6 +42,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`) and the powers `‖p‖ ^ n`
   tend to zero along the cofinite filter (`PadicInt.tendsto_norm_p_pow_cofinite`,
   `PadicInt.tendsto_norm_p_pow_mul_cofinite`).
+* `PadicInt.not_isOpen_singleton_zero`, `PadicInt.not_isOpen_singleton_one_multiplicative`: `ℤ_p`
+  is not discrete, as a ring or as the group `Multiplicative ℤ_[p]`.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
@@ -51,6 +55,10 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
+* `PadicInt.mem_span_singleton_iff_norm_le`: the `ℤ_p`-line through `y` in `ℚ_p` is the ball
+  `‖x‖ ≤ ‖y‖`, so lines are compared by the norms of their generators
+  (`PadicInt.span_singleton_le_span_singleton_iff_norm_le`,
+  `PadicInt.span_singleton_eq_span_singleton_iff_norm_eq`).
 * `PadicInt.exists_apply_eq_one_and_eq_smul`: a nonempty family in `ℤ_[p]` is `q • w` with
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
@@ -82,6 +90,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
+* `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -118,6 +128,20 @@ theorem tendsto_norm_p_pow_cofinite :
     Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) Filter.cofinite (nhds 0) := by
   rw [Nat.cofinite_eq_atTop]
   exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) norm_p_lt_one
+
+/-- The singleton `{0}` is not open in `ℤ_p`: the powers of `p` are nonzero and tend to `0`. -/
+theorem not_isOpen_singleton_zero : ¬IsOpen ({0} : Set ℤ_[p]) := fun h ↦ by
+  obtain ⟨n, hn⟩ := ((tendsto_pow_atTop_nhds_zero_of_norm_lt_one norm_p_lt_one).eventually
+    (h.mem_nhds rfl)).exists
+  exact pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) hn
+
+/-- The identity is not an isolated point of the additive group of `ℤ_p`, written multiplicatively
+as `Multiplicative ℤ_[p]`. -/
+theorem not_isOpen_singleton_one_multiplicative : ¬IsOpen ({1} : Set (Multiplicative ℤ_[p])) :=
+  fun h ↦ not_isOpen_singleton_zero <| by
+    convert h.preimage continuous_ofAdd
+    ext x
+    simp
 
 /-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` tend to zero along the cofinite
 filter. -/
@@ -287,6 +311,36 @@ theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
   have := (Units.mul_left_dvd (u := unitCoeff hy)).2 hx
   rwa [← unitCoeff_spec hy] at this
 
+/-- A `p`-adic number lies in the `ℤ_p`-line through `y` exactly when its norm is at most `‖y‖`.
+For `y = 0` both sides say `x = 0`. -/
+theorem mem_span_singleton_iff_norm_le {x y : ℚ_[p]} : x ∈ ℤ_[p] ∙ y ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [Submodule.mem_span_singleton]
+  constructor
+  · rintro ⟨c, rfl⟩
+    rw [Algebra.smul_def, algebraMap_apply, norm_mul, ← norm_def]
+    exact mul_le_of_le_one_left (norm_nonneg y) (norm_le_one c)
+  · intro h
+    rcases eq_or_ne y 0 with rfl | hy
+    · exact ⟨0, by rw [norm_zero, norm_le_zero_iff] at h; simp [h]⟩
+    · have hxy : ‖x / y‖ ≤ 1 := by
+        rw [norm_div]
+        exact div_le_one_of_le₀ h (norm_nonneg y)
+      obtain ⟨c, hc⟩ : ∃ c : ℤ_[p], (c : ℚ_[p]) = x / y := ⟨⟨x / y, hxy⟩, rfl⟩
+      refine ⟨c, ?_⟩
+      rw [Algebra.smul_def, algebraMap_apply, hc]
+      exact div_mul_cancel₀ x hy
+
+/-- One `ℤ_p`-line of `ℚ_p` is contained in another exactly when its generator has smaller norm. -/
+theorem span_singleton_le_span_singleton_iff_norm_le {x y : ℚ_[p]} :
+    ℤ_[p] ∙ x ≤ ℤ_[p] ∙ y ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [Submodule.span_singleton_le_iff_mem, mem_span_singleton_iff_norm_le]
+
+/-- Two `ℤ_p`-lines of `ℚ_p` agree exactly when their generators have the same norm. -/
+theorem span_singleton_eq_span_singleton_iff_norm_eq {x y : ℚ_[p]} :
+    ℤ_[p] ∙ x = ℤ_[p] ∙ y ↔ ‖x‖ = ‖y‖ := by
+  rw [le_antisymm_iff, le_antisymm_iff, span_singleton_le_span_singleton_iff_norm_le,
+    span_singleton_le_span_singleton_iff_norm_le]
+
 /-- **A nonempty family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
 `v : ι → ℤ_p` with `ι` nonempty there are an index `i₀`, a scalar `q` and a family `w`
 with `w i₀ = 1` and `v = q • w`. -/
@@ -378,5 +432,21 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
   rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
     Padic.valuation_natCast]
+
+/-- The `p`-adic norm of a natural number `m` is at least `p ^ (-k)` exactly when `p ^ (k + 1)`
+does not divide `m`. -/
+theorem zpow_neg_le_norm_natCast_iff {m k : ℕ} :
+    (p : ℝ) ^ (-(k : ℤ)) ≤ ‖(m : ℚ_[p])‖ ↔ ¬p ^ (k + 1) ∣ m := by
+  have hp : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  rcases eq_or_ne m 0 with rfl | hm
+  · simpa using pow_pos (zero_lt_one.trans hp) k
+  rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.2 hm), Padic.valuation_natCast,
+    zpow_le_zpow_iff_right₀ hp, neg_le_neg_iff, multiplicity_dvd_iff_le hm]
+  omega
+
+/-- A `p`-adic number integral over `ℤ` is a `p`-adic integer: its norm is at most one. -/
+theorem norm_le_one_of_isIntegral {x : ℚ_[p]} (hx : IsIntegral ℤ x) : ‖x‖ ≤ 1 := by
+  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hx.tower_top (A := ℤ_[p]))
+  exact PadicInt.norm_le_one y
 
 end Padic

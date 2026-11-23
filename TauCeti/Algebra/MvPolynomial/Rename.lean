@@ -46,6 +46,8 @@ discarding `X a` and renaming back.
   complement of a single variable `X a`, the remainder modulo `X a` is `rename f (p.killCompl hf)`.
 * `MvPolynomial.killCompl_monomial_of_apply_zero`: discarding coordinate `0` from a monomial whose
   `0`-th exponent is zero drops coordinate `0`.
+* `MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq`: a ring homomorphism moving the points
+  along a map of indices carries the value of an integral polynomial to that of its renaming.
 * `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
   specializing after renaming the parameters along `f` is specializing at the composite point.
 -/
@@ -135,6 +137,16 @@ theorem modMonomial_single_one_eq_rename_killCompl (ha : Set.range f = {a}ᶜ)
   · rw [coeff_modMonomial_of_le _ (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero hγ))]
     exact (coeff_rename_eq_zero f _ γ fun u hu ↦
       False.elim (hγ (hu ▸ Finsupp.mapDomain_of_notMem_range u a (by simp [ha])))).symm
+
+/-- A ring homomorphism `φ` that moves a family of points along a map of indices,
+`φ ∘ x = y ∘ π`, carries the value at `x` of an integral polynomial `Ψ` to the value at `y` of `Ψ`
+renamed along `π`. -/
+theorem apply_eval₂_intCastRingHom_of_comp_eq {ι κ L L' : Type*} [CommRing L] [CommRing L']
+    (Ψ : MvPolynomial ι ℤ) (φ : L →+* L') {x : ι → L} {y : κ → L'} {π : ι → κ}
+    (h : ⇑φ ∘ x = y ∘ π) :
+    φ (eval₂ (Int.castRingHom L) x Ψ) = eval₂ (Int.castRingHom L') y (rename π Ψ) := by
+  rw [hom_eval₂, eval₂_rename, ← h, RingHom.ext_int (φ.comp _) (Int.castRingHom L')]
+  rfl
 
 end MvPolynomial
 
