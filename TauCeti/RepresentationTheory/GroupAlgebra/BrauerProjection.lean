@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.PGroup.FixedPointSum
 public import TauCeti.RepresentationTheory.GroupAlgebra.RelativeTrace
+import TauCeti.GroupTheory.Subgroup.Centralizer
 
 /-!
 # The Brauer homomorphism
@@ -16,6 +18,8 @@ For a subgroup `P` of `G`, the **Brauer projection** `Br_P : R[G] → R[C_G(P)]`
 coefficients of an element of `R[G]` on the centralizer `C_G(P)` and discards the others
 (`TauCeti.brauerProjection`). It is `R`-linear on all of `R[G]` and is not multiplicative there:
 in `S₃` with `P = ⟨(12)⟩` and `r` a `3`-cycle, `Br_P(r · r²) = 1` while `Br_P(r) = Br_P(r²) = 0`.
+It vanishes exactly on the elements with no coefficient on `C_G(P)`, and conjugation by `g`
+carries its kernel at `P` to its kernel at `gPg⁻¹`.
 
 When `P` is a `p`-group and `R` has characteristic `p`, `Br_P` is multiplicative on the fixed
 points `R[G]^P` of conjugation by `P` (`TauCeti.brauerProjection_mul`), and so restricts to an
@@ -40,6 +44,8 @@ idempotent is nonzero. Neither statement is formalized here.
 
 ## Main results
 
+* `TauCeti.brauerProjection_eq_zero_iff`: `Br_P(x) = 0` exactly when `x` vanishes on `C_G(P)`.
+* `TauCeti.brauerProjection_conj_eq_zero_iff`: `Br_{gPg⁻¹}(g x g⁻¹) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
 
 ## References
@@ -54,6 +60,7 @@ public section
 namespace TauCeti
 
 open MonoidAlgebra
+open scoped Pointwise
 
 variable {R G : Type*} [CommSemiring R] [Group G]
 
@@ -74,6 +81,30 @@ theorem coeff_brauerProjection (P : Subgroup G) (x : MonoidAlgebra R G)
     (c : Subgroup.centralizer (P : Set G)) :
     (brauerProjection P x).coeff c = x.coeff c := by
   simp [brauerProjection]
+
+/-- `Br_P(x) = 0` exactly when `x` has no nonzero coefficient on the centralizer `C_G(P)`. -/
+theorem brauerProjection_eq_zero_iff {P : Subgroup G} {x : MonoidAlgebra R G} :
+    brauerProjection P x = 0 ↔ ∀ c ∈ Subgroup.centralizer (P : Set G), x.coeff c = 0 := by
+  constructor
+  · intro h c hc
+    simpa using congrArg (fun y => y.coeff ⟨c, hc⟩) h
+  · intro h
+    ext c
+    simpa using h c c.property
+
+/-- **Conjugation and the Brauer projection.** `Br_{gPg⁻¹}(g x g⁻¹) = 0` exactly when
+`Br_P(x) = 0`. -/
+theorem brauerProjection_conj_eq_zero_iff (g : G) {P : Subgroup G} {x : MonoidAlgebra R G} :
+    brauerProjection (MulAut.conj g • P) (conjRepresentation R G g x) = 0 ↔
+      brauerProjection P x = 0 := by
+  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff]
+  constructor
+  · intro h c hc
+    simpa [mul_assoc] using h _ ((conj_mem_centralizer_conj_smul_iff g).2 hc)
+  · intro h c hc
+    rw [coeff_conjRepresentation]
+    refine h _ ((conj_mem_centralizer_conj_smul_iff g).1 ?_)
+    simpa [mul_assoc] using hc
 
 /-- `Br_P` keeps a basis element `single c r` with `c ∈ C_G(P)`. -/
 @[simp]

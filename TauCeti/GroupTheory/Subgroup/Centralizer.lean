@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -16,7 +17,8 @@ A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` int
 `C_G(u) →* C_{G'}(f u)`. An injective `f` pulls `C_{G'}(f(s))` back to `C_G(s)`, and an
 isomorphism `e : G ≃* G'` maps `C_G(s)` onto `C_{G'}(e(s))`, so restricts to an isomorphism
 `C_G(s) ≃* C_{G'}(e(s))`; for an inner automorphism this identifies the centralizers of conjugate
-elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
+elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`. Likewise conjugate subgroups have conjugate
+centralizers, `C_G(gPg⁻¹) = g C_G(P) g⁻¹`.
 
 ## Main definitions
 
@@ -30,6 +32,7 @@ elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
 * `Subgroup.comap_centralizer_image_of_injective`: `f⁻¹(C_{G'}(f(s))) = C_G(s)` for injective `f`.
 * `MulEquiv.map_centralizer`: a group isomorphism carries the centralizer of a set onto the
   centralizer of its image.
+* `TauCeti.conj_mem_centralizer_conj_smul_iff`: `gcg⁻¹ ∈ C_G(gPg⁻¹)` exactly when `c ∈ C_G(P)`.
 -/
 
 public section
@@ -109,3 +112,26 @@ theorem centralizerMap_symm_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (
   (rfl)
 
 end MulEquiv
+
+namespace TauCeti
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G]
+
+/-- `C_G(gPg⁻¹) = g C_G(P) g⁻¹`: `gcg⁻¹` centralizes `gPg⁻¹` exactly when `c` centralizes `P`. -/
+theorem conj_mem_centralizer_conj_smul_iff (g : G) {P : Subgroup G} {c : G} :
+    g * c * g⁻¹ ∈ Subgroup.centralizer ((MulAut.conj g • P : Subgroup G) : Set G) ↔
+      c ∈ Subgroup.centralizer (P : Set G) := by
+  simp only [Subgroup.mem_centralizer_iff, SetLike.mem_coe,
+    Subgroup.mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def, MulAut.conj_inv_apply]
+  constructor
+  · intro h m hm
+    have := h (g * m * g⁻¹) (by simpa [mul_assoc] using hm)
+    simpa [mul_assoc] using congrArg (· * g) this
+  · intro h m hm
+    have := h _ hm
+    have h' := congrArg (fun y => g * y * g⁻¹) this
+    simpa [mul_assoc] using h'
+
+end TauCeti
