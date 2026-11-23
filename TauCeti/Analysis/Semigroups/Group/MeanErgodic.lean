@@ -170,12 +170,14 @@ theorem norm_average_orbit_le (U : StronglyContinuousGroup X)
     ‖T⁻¹ • ∫ t in (0 : ℝ)..T, U t v‖ ≤ ‖v‖ := by
   by_cases hT : T = 0
   · simp [hT]
-  rw [← show (∫ t in (0 : ℝ)..1, U (T * t) v) = T⁻¹ • ∫ t in (0 : ℝ)..T, U t v by
-      simpa only [mul_zero, mul_one] using
-        intervalIntegral.integral_comp_mul_left (a := 0) (b := 1) (fun t => U t v) hT]
-  simpa only [sub_zero, abs_one, mul_one] using
-    intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := 1) (C := ‖v‖) fun t _ =>
-      (U.norm_map_apply_eq_of_norm_le_one (T * t) (hnorm _) (hnorm _) v).le
+  have hint : ‖∫ t in (0 : ℝ)..T, U t v‖ ≤ ‖v‖ * |T| := by
+    simpa only [sub_zero] using U.norm_intervalIntegral_orbit_le hnorm 0 T v
+  rw [norm_smul, Real.norm_eq_abs, abs_inv]
+  calc
+    |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, U t v‖
+        ≤ |T|⁻¹ * (‖v‖ * |T|) := mul_le_mul_of_nonneg_left hint (inv_nonneg.mpr (abs_nonneg T))
+    _ = ‖v‖ := by
+      rw [mul_left_comm, inv_mul_cancel₀ (abs_ne_zero.mpr hT), mul_one]
 
 /-- Quantitative decay of the time average on a coboundary `U s v - v`, for every `T : ℝ`. -/
 theorem norm_average_orbit_apply_sub_le (U : StronglyContinuousGroup X)
@@ -210,12 +212,9 @@ theorem tendsto_average_orbit_apply_sub (U : StronglyContinuousGroup X)
 
 private theorem iterate_one_apply (U : StronglyContinuousGroup X) (n : ℕ) (x : X) :
     (U 1)^[n] x = U (n : ℝ) x := by
-  have hpow : (U.toRealContRep (Multiplicative.ofAdd (1 : ℝ)) ^ n) x =
-      U.toRealContRep (Multiplicative.ofAdd (1 : ℝ) ^ n) x :=
-    congrArg (fun T => T x) (map_pow U.toRealContRep (Multiplicative.ofAdd (1 : ℝ)) n).symm
-  rw [← FunLike.coe_pow_eq_iterate, show U 1 = U.toRealContRep (Multiplicative.ofAdd (1 : ℝ))
-    from rfl, hpow, ← ofAdd_nsmul, nsmul_eq_mul, mul_one]
-  rfl
+  have hpow := U.toSemigroup.map_natCast_mul 1 n
+  simp only [mul_one, U.toSemigroup_apply, NNReal.coe_one, NNReal.coe_natCast] at hpow
+  rw [← FunLike.coe_pow_eq_iterate, ← hpow]
 
 private theorem birkhoffAverage_one_intervalIntegral (U : StronglyContinuousGroup X)
     [CompleteSpace X] (N : ℕ) (v : X) :
