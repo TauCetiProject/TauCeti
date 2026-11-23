@@ -30,7 +30,7 @@ and the planes to span `L`.
 * Maximal abelian subspaces exist, so some root-plane decomposition has a regular element
   (`TauCeti.exists_isRootPlaneDecomposition`).
 
-Regular elements are those whose heights on coadjoint orbits are Morse functions
+The height of a regular element is a Morse function on every coadjoint orbit
 (`TauCeti.IsRootPlaneDecomposition.isMorse_orbitMap_coadjointRepresentation_apply`).
 The subspace `t` here is only a maximal abelian subspace of the Lie algebra; no maximal torus of a
 Lie group is involved.
