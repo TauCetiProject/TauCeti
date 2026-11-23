@@ -50,20 +50,15 @@ in the row convention of `TauCeti.ConstantForm`. -/
 def pointsSubgroup (C : Matrix ι ι A) : Subgroup (GL ι A) where
   carrier := {g | (g : Matrix ι ι A) * C * (g : Matrix ι ι A)ᵀ = C}
   mul_mem' {g h} hg hh := by
-    change (g : Matrix ι ι A) * C * (g : Matrix ι ι A)ᵀ = C at hg
-    change (h : Matrix ι ι A) * C * (h : Matrix ι ι A)ᵀ = C at hh
-    change ((g * h : GL ι A) : Matrix ι ι A) * C * ((g * h : GL ι A) : Matrix ι ι A)ᵀ = C
-    rw [Units.val_mul, transpose_mul]
+    simp only [Set.mem_ofPred_eq, Units.val_mul, transpose_mul] at hg hh ⊢
     calc _ = (g : Matrix ι ι A) * ((h : Matrix ι ι A) * C * (h : Matrix ι ι A)ᵀ) *
             (g : Matrix ι ι A)ᵀ := by
           simp only [Matrix.mul_assoc]
       _ = C := by rw [hh, hg]
   one_mem' := by
-    change ((1 : GL ι A) : Matrix ι ι A) * C * ((1 : GL ι A) : Matrix ι ι A)ᵀ = C
-    rw [Units.val_one, transpose_one, Matrix.one_mul, Matrix.mul_one]
+    simp only [Set.mem_ofPred_eq, Units.val_one, transpose_one, Matrix.one_mul, Matrix.mul_one]
   inv_mem' {g} hg := by
-    change (g : Matrix ι ι A) * C * (g : Matrix ι ι A)ᵀ = C at hg
-    change ((g⁻¹ : GL ι A) : Matrix ι ι A) * C * ((g⁻¹ : GL ι A) : Matrix ι ι A)ᵀ = C
+    simp only [Set.mem_ofPred_eq] at hg ⊢
     have hinv : ((g⁻¹ : GL ι A) : Matrix ι ι A) * (g : Matrix ι ι A) = 1 := by
       rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
     conv_lhs => rw [← hg]
