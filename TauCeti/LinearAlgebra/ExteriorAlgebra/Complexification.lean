@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
-public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
+public import TauCeti.LinearAlgebra.ExteriorPower.Complexification
 
 /-!
 # Complexification of exterior sesquilinear Gram forms
@@ -16,18 +15,17 @@ Complex-valued exterior forms on a real module `V` naturally live in two isomorp
 tensor-product complexification `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`, which carries the sesquilinearly
 complexified real exterior Gram form `(B.sesqExteriorAlgebra).sesqComplexification`, and the
 complex exterior algebra `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)`, on which complex Clifford/Chevalley maps
-and complexified wedge bases act via `B.sesqComplexification.sesqExteriorAlgebra`. This file
-transports Hermitian Gram metrics between the two models across
-`TauCeti.exteriorPower.equivBaseChange ℂ n` and `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, feeding
-complexified Euclidean exterior metrics and the basis-free spinor-endomorphism and spinor-tensor
-metric comparisons.
+and complexified wedge bases act via `B.sesqComplexification.sesqExteriorAlgebra`. For any real
+bilinear form `B : LinearMap.BilinForm ℝ V`, this file transports these sesquilinear Gram forms
+between the two models across `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ` (building on the
+exterior-power comparison in `TauCeti.LinearAlgebra.ExteriorPower.Complexification`), and relates
+`sesqComplexification B.sesqExteriorAlgebra` to homogeneous degrees. When `B` is symmetric, the
+transported forms are Hermitian, feeding complexified Euclidean exterior metrics and the
+basis-free spinor-endomorphism and spinor-tensor metric comparisons.
 
 Let `B : LinearMap.BilinForm ℝ V` be a real bilinear form on `V`, with sesquilinear complexification
 `B.sesqComplexification` on `ℂ ⊗[ℝ] V`:
 
-* on each exterior power, `TauCeti.exteriorPower.equivBaseChange ℂ n` intertwines
-  `B.sesqComplexification.sesqExteriorPower n` on `⋀[ℂ]^n (ℂ ⊗[ℝ] V)` with
-  `LinearMap.BilinForm.sesqComplexification (B.sesqExteriorPower n)` on `ℂ ⊗[ℝ] ⋀[ℝ]^n V`;
 * on the exterior algebra, `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ` intertwines
   `B.sesqComplexification.sesqExteriorAlgebra` on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` with
   `LinearMap.BilinForm.sesqComplexification B.sesqExteriorAlgebra` on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`;
@@ -40,9 +38,6 @@ No finiteness, flatness, or basis assumption is needed for the comparison theore
 
 ## Main results
 
-* `LinearMap.BilinForm.sesqExteriorPower_sesqComplexification_equivBaseChange_symm` and
-  `LinearMap.BilinForm.sesqComplexification_sesqExteriorPower_equivBaseChange`: compatibility of
-  `sesqExteriorPower` with `sesqComplexification` across `equivBaseChange ℂ n`.
 * `LinearMap.BilinForm.sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv` and
   `LinearMap.BilinForm.sesqComplexification_sesqExteriorAlgebra_baseChangeEquiv_symm`:
   compatibility of `sesqExteriorAlgebra` with `sesqComplexification` across
@@ -68,54 +63,6 @@ namespace LinearMap.BilinForm
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
-/-- **Complexification commutes with exterior Gram forms on exterior powers** (inverse comparison
-form): pulling `B.sesqComplexification.sesqExteriorPower n` back along
-`(TauCeti.exteriorPower.equivBaseChange ℂ n).symm` gives the sesquilinear complexification of
-`B.sesqExteriorPower n`. -/
-@[simp]
-theorem sesqExteriorPower_sesqComplexification_equivBaseChange_symm (B : BilinForm ℝ V) (n : ℕ)
-    (x y : ℂ ⊗[ℝ] ⋀[ℝ]^n V) :
-    B.sesqComplexification.sesqExteriorPower n
-        ((TauCeti.exteriorPower.equivBaseChange ℂ n).symm x)
-        ((TauCeti.exteriorPower.equivBaseChange ℂ n).symm y) =
-      sesqComplexification (B.sesqExteriorPower n) x y := by
-  let e := (TauCeti.exteriorPower.equivBaseChange (R := ℝ) ℂ (M := V) n).symm.toLinearMap
-  let K := TauCeti.tmulConj (⋀[ℝ]^n V)
-  have h : (((B.sesqComplexification.sesqExteriorPower n).comp e).compl₂ e ∘ₛₗ K :
-        ℂ ⊗[ℝ] ⋀[ℝ]^n V →ₗ[ℂ] ℂ ⊗[ℝ] ⋀[ℝ]^n V →ₗ[ℂ] ℂ) =
-      (sesqComplexification (B.sesqExteriorPower n) ∘ₛₗ K) := by
-    apply TensorProduct.AlgebraTensorModule.curry_injective
-    apply LinearMap.ext_ring
-    refine LinearMap.ext_on_range (exteriorPower.ιMulti_span ℝ n V) fun u ↦ ?_
-    apply TensorProduct.AlgebraTensorModule.curry_injective
-    apply LinearMap.ext_ring
-    refine LinearMap.ext_on_range (exteriorPower.ιMulti_span ℝ n V) fun v ↦ ?_
-    simp only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
-      LinearMap.restrictScalars_apply, LinearMap.comp_apply, LinearMap.compl₂_apply, K, e,
-      TauCeti.tmulConj_tmul, map_one, LinearEquiv.coe_coe,
-      TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti, one_smul,
-      LinearMap.sesqExteriorPower_ιMulti_ιMulti, sesqComplexification_tmul_tmul, one_mul]
-    have hmat : (Matrix.of fun i j ↦ ((B (u i) (v j) : ℝ) : ℂ)) =
-        (algebraMap ℝ ℂ).mapMatrix (Matrix.of fun i j ↦ B (u i) (v j)) := by
-      ext i j
-      simp [Complex.coe_algebraMap]
-    rw [hmat, ← RingHom.map_det, Complex.coe_algebraMap]
-  simpa [K, e, TauCeti.tmulConj_tmulConj] using LinearMap.congr_fun₂ h (K x) y
-
-/-- **Complexification commutes with exterior Gram forms on exterior powers** (forward cancellation
-form): evaluating `sesqComplexification (B.sesqExteriorPower n)` on
-`TauCeti.exteriorPower.equivBaseChange ℂ n` recovers
-`B.sesqComplexification.sesqExteriorPower n`. -/
-@[simp]
-theorem sesqComplexification_sesqExteriorPower_equivBaseChange (B : BilinForm ℝ V) (n : ℕ)
-    (x y : ⋀[ℂ]^n (ℂ ⊗[ℝ] V)) :
-    sesqComplexification (B.sesqExteriorPower n)
-        (TauCeti.exteriorPower.equivBaseChange ℂ n x)
-        (TauCeti.exteriorPower.equivBaseChange ℂ n y) =
-      B.sesqComplexification.sesqExteriorPower n x y := by
-  rw [← sesqExteriorPower_sesqComplexification_equivBaseChange_symm,
-    LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply]
-
 /-- **Complexified exterior Gram form in homogeneous degree `n`**: on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`,
 restricting `B.sesqExteriorAlgebra.sesqComplexification` along `(⋀[ℝ]^n V).subtype.baseChange ℂ`
 gives `(B.sesqExteriorPower n).sesqComplexification`. -/
@@ -136,6 +83,8 @@ theorem sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
     (B : BilinForm ℝ V) {p q : ℕ} (hpq : p ≠ q) {x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V}
     (hx : x ∈ (⋀[ℝ]^p V).baseChange ℂ) (hy : y ∈ (⋀[ℝ]^q V).baseChange ℂ) :
     sesqComplexification B.sesqExteriorAlgebra x y = 0 := by
+  rw [← Submodule.range_subtype (⋀[ℝ]^p V), LinearMap.baseChange_range] at hx
+  rw [← Submodule.range_subtype (⋀[ℝ]^q V), LinearMap.baseChange_range] at hy
   obtain ⟨x', rfl⟩ := hx
   obtain ⟨y', rfl⟩ := hy
   induction x' using TensorProduct.inductionOn with
@@ -167,8 +116,15 @@ theorem sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv (B : BilinForm 
         sesqComplexification_sesqExteriorPower_equivBaseChange]
     · simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, e,
         ← TauCeti.exteriorPower.subtype_baseChange_equivBaseChange]
+      have hmem {m : ℕ} (z : ℂ ⊗[ℝ] ⋀[ℝ]^m V) :
+          (⋀[ℝ]^m V).subtype.baseChange ℂ z ∈ (⋀[ℝ]^m V).baseChange ℂ := by
+        have hr : LinearMap.range ((⋀[ℝ]^m V).subtype.baseChange ℂ) =
+            (⋀[ℝ]^m V).baseChange ℂ := by
+          rw [← LinearMap.baseChange_range, Submodule.range_subtype]
+        rw [← hr]
+        exact LinearMap.mem_range_self _ z
       exact sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne B hpq
-        (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
+        (hmem _) (hmem _)
   simpa [e] using
     (LinearMap.congr_fun₂ h (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
       (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y)).symm

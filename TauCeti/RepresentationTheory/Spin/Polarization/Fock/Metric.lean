@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 -- Private: the polar form of `Q v = -‖v‖²` and the Clifford `*`-representation criterion are
 -- used only inside proofs.
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 
@@ -72,7 +73,8 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_fockAction_left`: the normalized Fock action is
   a `*`-representation for the wedge-basis metric of an orthonormal polarization basis.
 * `AlmostComplexStructure.sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower`:
-  the `2 ^ p` degree-`p` scaling factor of the exterior Gram metric.
+  the `2 ^ p` degree-`p` scaling factor for the exterior Gram form of an arbitrary real bilinear
+  form `g`, which specializes to the native Fock metric in the Euclidean case.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower` and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_spinAction_left`: the `2 ^ p`
   degree-`p` scaling factor and `*`-representation property for the native action.
@@ -324,7 +326,7 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra {g : LinearM
         (1 : Matrix (Finset ι) (Finset ι) ℂ) =
       ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
         (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra :=
-  (ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one b (starRingEnd ℂ)).trans <|
+  (b.toLinearMapₛₗ₂_exteriorAlgebra_one (starRingEnd ℂ)).trans <|
     congrArg LinearMap.sesqExteriorAlgebra
       (J.toLinearMapₛₗ₂_eq_domRestrict₁₂_sesqComplexification hQJ hQ b hb hg hQg)
 
@@ -356,8 +358,8 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq {ι' : Type*} [Fintype ι'] [Lin
         (1 : Matrix (Finset ι) (Finset ι) ℂ) =
       toLinearMapₛₗ₂ (starRingEnd ℂ) b'.ExteriorAlgebra b'.ExteriorAlgebra
         (1 : Matrix (Finset ι') (Finset ι') ℂ) := by
-  rw [ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one b (starRingEnd ℂ),
-    ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one b' (starRingEnd ℂ)]
+  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_one (starRingEnd ℂ),
+    b'.toLinearMapₛₗ₂_exteriorAlgebra_one (starRingEnd ℂ)]
   congr 1
   refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
   rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb,
@@ -378,13 +380,12 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure
   (hQ : Q.Nondegenerate) {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2)
 include hr
 
-private theorem star_mul_self_of_eq_sqrt_two : star (r : ℂ) * r = 2 := by
-  rw [hr, Complex.star_def, Complex.conj_ofReal, ← Complex.ofReal_mul,
-    Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
-
-/-- **The native Fock metric has degree-`p` factor `2 ^ p`**: for the basis-free exterior Gram
-metric `H = ((g.sesqComplexification).domRestrict₁₂ W W).sesqExteriorAlgebra` and the degree
-scaling `T` by `√2`, the pullback `H (T s) (T t)` is `2 ^ p` times `H s t` for `s` in `⋀^p W`. -/
+/-- **Degree-`p` scaling factor `2 ^ p` for the exterior Gram form**: for an arbitrary real
+bilinear form `g`, its restricted complexified exterior Gram form
+`H = ((g.sesqComplexification).domRestrict₁₂ W W).sesqExteriorAlgebra`, and the degree scaling
+`T` by `√2`, the pullback `H (T s) (T t)` is `2 ^ p` times `H s t` for `s` in `⋀^p W`. When
+`g` is the Euclidean inner product `innerₗ V` (with `Q v = -g v v`), this gives the degree-`p`
+scaling of the native Fock metric. -/
 theorem sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower
     (g : LinearMap.BilinForm ℝ V) {p : ℕ}
     {s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W}
@@ -396,8 +397,10 @@ theorem sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower
       2 ^ p * ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
         (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra
         s t := by
-  rw [LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t,
-    ← Complex.star_def, star_mul_self_of_eq_sqrt_two hr]
+  have hr2 : starRingEnd ℂ (r : ℂ) * r = 2 := by
+    rw [hr, ← Complex.star_def]
+    simpa using Complex.star_mul_self_ofReal_sqrt zero_le_two
+  rw [LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t, hr2]
 
 /-- **The native Fock metric has degree-`p` factor `2 ^ p`**: for the metric `H` making the wedge
 basis of `b` orthonormal and the degree scaling `T` by `√2`, the pullback `H (T s) (T t)` is
@@ -411,9 +414,11 @@ theorem toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower {ι : Type*} [Fi
         (1 : Matrix (Finset ι) (Finset ι) ℂ) (degreeScaling r s) (degreeScaling r t) =
       2 ^ p * toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
         (1 : Matrix (Finset ι) (Finset ι) ℂ) s t := by
-  rw [ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one b (starRingEnd ℂ),
-    LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t,
-    ← Complex.star_def, star_mul_self_of_eq_sqrt_two hr]
+  have hr2 : starRingEnd ℂ (r : ℂ) * r = 2 := by
+    rw [hr, ← Complex.star_def]
+    simpa using Complex.star_mul_self_ofReal_sqrt zero_le_two
+  rw [b.toLinearMapₛₗ₂_exteriorAlgebra_one (starRingEnd ℂ),
+    LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t, hr2]
 
 /-- **The native action is a `*`-representation for the native Fock metric**: for an orthonormal
 basis `b` of `W`, the metric `H` making its wedge basis orthonormal and the degree scaling `T` by
@@ -470,7 +475,7 @@ theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
   have hw (i j : Fin ℓ) : polar (Q.baseChange ℂ) (tmulConj V (w i : ℂ ⊗[ℝ] V)) (w j) =
       if i = j then -2 else 0 := by
     have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
-      rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
+      simpa [Complex.star_def] using Complex.star_mul_self_ofReal_sqrt zero_le_two
     simp only [w, Submodule.coe_smul, map_smulₛₗ, Complex.conj_ofReal, tmulConj_holomorphicPart,
       polar_smul_left, polar_smul_right, smul_eq_mul]
     rw [polar_comm, J.polar_holomorphicPart_antiholomorphicPart hQJ, ← hu i, hpolar, hpolar,

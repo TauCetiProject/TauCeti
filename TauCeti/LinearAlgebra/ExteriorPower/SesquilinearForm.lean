@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Algebra.Algebra.RestrictScalars
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
@@ -29,8 +27,9 @@ bilinear case (`σ = RingHom.id R`), whereas Hermitian metrics on complexified e
 polarized Fock spaces require conjugate-linear-first Gram forms. `LinearMap.sesqExteriorPower`
 extends that construction to arbitrary `σ`-sesquilinear forms and feeds
 `LinearMap.sesqExteriorAlgebra` (`TauCeti/LinearAlgebra/ExteriorAlgebra/HermitianMetric.lean`),
-complexified exterior metrics (`TauCeti/LinearAlgebra/ExteriorAlgebra/Complexification.lean`), and
-Fock metrics (`TauCeti/RepresentationTheory/Spin/Polarization/Fock/Metric.lean`).
+complexified exterior metrics (`TauCeti/LinearAlgebra/ExteriorPower/Complexification.lean`,
+`TauCeti/LinearAlgebra/ExteriorAlgebra/Complexification.lean`), and Fock metrics
+(`TauCeti/RepresentationTheory/Spin/Polarization/Fock/Metric.lean`).
 
 When `σ = RingHom.id R`, `B.sesqExteriorPower n` agrees with Mathlib's `B.exteriorPower n`.
 When `σ` is involutive and `B` is `σ`-Hermitian (`B.IsSymm`), `B.sesqExteriorPower n` is
@@ -44,13 +43,15 @@ orthonormal.
 
 ## Main results
 
+* `LinearMap.sesqExteriorPower_ιMulti`: pairing a pure wedge gives
+  `alternatingMapToDual R M n (B ∘ v)`.
 * `LinearMap.sesqExteriorPower_ιMulti_ιMulti`: evaluation on pure wedges as `det (B (v i) (w j))`.
 * `LinearMap.eq_sesqExteriorPower_iff`: uniqueness by values on pure wedges.
 * `LinearMap.sesqExteriorPower_map_map`: naturality under `R`-linear maps preserving the form.
 * `LinearMap.IsSymm.sesqExteriorPower`: `σ`-Hermitian symmetry for involutive `σ`.
 * `LinearMap.BilinForm.sesqExteriorPower_eq_exteriorPower`: bilinear specialization matching
   Mathlib's `LinearMap.BilinForm.exteriorPower`.
-* `Matrix.toLinearMapₛₗ₂_exteriorPower_one`: compatibility with the coordinate form of
+* `Module.Basis.toLinearMapₛₗ₂_exteriorPower_one`: compatibility with the coordinate form of
   `b.exteriorPower n`.
 
 ## References
@@ -96,7 +97,9 @@ noncomputable def sesqExteriorPower (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ
       (RestrictScalars.module R R N) alt
   toDual.comp f
 
-private theorem sesqExteriorPower_ιMulti (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) (v : Fin n → M) :
+/-- Pairing a pure wedge `ιMulti R n v` with `B.sesqExteriorPower n` yields the linear
+functional `alternatingMapToDual R M n (B ∘ v)`. -/
+theorem sesqExteriorPower_ιMulti (B : M →ₛₗ[σ] M →ₗ[R] R) (n : ℕ) (v : Fin n → M) :
     B.sesqExteriorPower n (ιMulti R n v) = alternatingMapToDual R M n (B ∘ v) := by
   unfold sesqExteriorPower
   let N := Module.Dual R (⋀[R]^n M)
@@ -209,13 +212,13 @@ theorem BilinForm.sesqExteriorPower_eq_exteriorPower (B : LinearMap.BilinForm R 
 
 end LinearMap
 
-namespace Matrix
+namespace Module.Basis
 
 /-- **Coordinate comparison on exterior powers**: for a finite ordered basis `b` of `M`, the
 `σ`-sesquilinear form making the induced basis `b.exteriorPower n` orthonormal is the `n`-th
 exterior Gram form of the `σ`-sesquilinear form making `b` orthonormal. -/
 theorem toLinearMapₛₗ₂_exteriorPower_one {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    [Fintype I] [LinearOrder I] (b : Module.Basis I R M) (σ : R →+* R) (n : ℕ) :
+    [Fintype I] [LinearOrder I] (b : _root_.Module.Basis I R M) (σ : R →+* R) (n : ℕ) :
     toLinearMapₛₗ₂ σ (b.exteriorPower n) (b.exteriorPower n)
         (1 : Matrix (Set.powersetCard I n) (Set.powersetCard I n) R) =
       (toLinearMapₛₗ₂ σ b b (1 : Matrix I I R)).sesqExteriorPower n := by
@@ -228,4 +231,4 @@ theorem toLinearMapₛₗ₂_exteriorPower_one {R M I : Type*} [CommRing R] [Add
   ext i j
   simp [toLinearMapₛₗ₂_one_basis_eq_coord]
 
-end Matrix
+end Module.Basis

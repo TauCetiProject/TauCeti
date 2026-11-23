@@ -81,7 +81,7 @@ theorem toLinearMap₂_toBasis_exteriorAlgebra_one [Fintype I] [LinearOrder I]
     Matrix.toLinearMap₂ b.toBasis.ExteriorAlgebra b.toBasis.ExteriorAlgebra
         (1 : Matrix (Finset I) (Finset I) ℝ) =
       (innerₗ V).sesqExteriorAlgebra := by
-  rw [Matrix.toLinearMap₂, ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one]
+  rw [Matrix.toLinearMap₂, Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_one]
   refine congrArg LinearMap.sesqExteriorAlgebra
     (LinearMap.ext_basis b.toBasis b.toBasis fun i j ↦ ?_)
   have h := LinearMap.congr_fun₂ b.toLinearMapₛₗ₂_real (b.toBasis i) (b.toBasis j)
@@ -97,7 +97,7 @@ theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one [Fintype I] 
     toLinearMapₛₗ₂ (starRingEnd ℂ) (b.toBasis.baseChange ℂ).ExteriorAlgebra
         (b.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ) =
       (LinearMap.BilinForm.sesqComplexification (innerₗ V)).sesqExteriorAlgebra := by
-  rw [ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one, b.toLinearMapₛₗ₂_baseChange_complex]
+  rw [Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_one, b.toLinearMapₛₗ₂_baseChange_complex]
 
 /-- Under `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, the Hermitian wedge-basis form of an orthonormal
 basis `b` pulls back to

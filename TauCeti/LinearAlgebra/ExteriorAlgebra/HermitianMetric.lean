@@ -55,7 +55,7 @@ involutive, so that `Matrix.toLinearMapₛₗ₂ σ b b 1` is `σ`-Hermitian).
 * `LinearMap.sesqExteriorAlgebra_ι_mul_left` and `LinearMap.sesqExteriorAlgebra_ι_mul_right`:
   basis-free creation–annihilation adjointness.
 * `LinearMap.IsSymm.sesqExteriorAlgebra`: `σ`-Hermitian symmetry when `σ` is involutive.
-* `ExteriorAlgebra.toLinearMapₛₗ₂_exteriorAlgebra_one`: the wedge-basis form equals
+* `Module.Basis.toLinearMapₛₗ₂_exteriorAlgebra_one`: the wedge-basis form equals
   `(Matrix.toLinearMapₛₗ₂ σ b b 1).sesqExteriorAlgebra`.
 
 ## References
@@ -340,10 +340,10 @@ theorem sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower
 
 end LinearMap
 
-namespace ExteriorAlgebra
+namespace Module.Basis
 
 variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [Fintype I] [LinearOrder I] (b : Module.Basis I R M)
+  [Fintype I] [LinearOrder I] (b : _root_.Module.Basis I R M)
 
 /-- **The wedge-basis coordinate form is the exterior Gram form**: for any ring endomorphism `σ`,
 the `σ`-sesquilinear form making `b.ExteriorAlgebra` orthonormal equals
@@ -357,23 +357,23 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_one (σ : R →+* R) :
   · let s : Set.powersetCard I S.card := ⟨S, rfl⟩
     let t : Set.powersetCard I S.card := ⟨T, Set.powersetCard.mem_iff.mpr hcard.symm⟩
     have hS : b.ExteriorAlgebra S = (b.exteriorPower S.card s : _root_.ExteriorAlgebra R M) :=
-      basis_eq_coe_basis b s
+      ExteriorAlgebra.basis_eq_coe_basis b s
     have hT : b.ExteriorAlgebra T = (b.exteriorPower S.card t : _root_.ExteriorAlgebra R M) :=
-      basis_eq_coe_basis b t
+      ExteriorAlgebra.basis_eq_coe_basis b t
     have hst : (s = t) ↔ (S = T) := Subtype.ext_iff
-    rw [hS, hT, LinearMap.sesqExteriorAlgebra_coe_coe, ← toLinearMapₛₗ₂_exteriorPower_one,
+    rw [hS, hT, LinearMap.sesqExteriorAlgebra_coe_coe, ← b.toLinearMapₛₗ₂_exteriorPower_one,
       toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
     simp [hst]
   · have hne : S ≠ T := fun h ↦ hcard (congrArg Finset.card h)
     let s : Set.powersetCard I S.card := ⟨S, rfl⟩
     let t : Set.powersetCard I T.card := ⟨T, rfl⟩
     have hS : b.ExteriorAlgebra S ∈ ⋀[R]^S.card M := by
-      rw [basis_eq_coe_basis b s]
+      rw [ExteriorAlgebra.basis_eq_coe_basis b s]
       exact (b.exteriorPower S.card s).property
     have hT : b.ExteriorAlgebra T ∈ ⋀[R]^T.card M := by
-      rw [basis_eq_coe_basis b t]
+      rw [ExteriorAlgebra.basis_eq_coe_basis b t]
       exact (b.exteriorPower T.card t).property
     rw [LinearMap.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne _ hcard hS hT]
     simp [hne]
 
-end ExteriorAlgebra
+end Module.Basis
