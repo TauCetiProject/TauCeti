@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 
 import TauCeti.RingTheory.Ideal.Operations
 
@@ -37,6 +39,8 @@ from `R`, so the Krull intersection theorem applies to its powers.
 
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
+* `Ideal.quotSMulTopEquivQuotMap`: the quotient of `A` by the `R`-submodule `I • ⊤` is, as an
+  `R`-module, the quotient of `A` by the extended ideal.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
 * `Ideal.map_algebraMap_eq_top_iff`: in a nontrivial free `R`-algebra, the extension of `I` is the
   unit ideal exactly when `I` is.
@@ -176,6 +180,27 @@ theorem span_pow_smul_top_eq_restrictScalars_span_image_pow (s : Set R) (n : ℕ
   rw [pow_smul_top_eq_restrictScalars_map_pow, map_span]
 
 end Semiring
+
+section Ring
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (I : Ideal R)
+
+/-- The quotient of `A` by the `R`-submodule `I • ⊤` is the quotient of `A` by the extended ideal
+`I.map (algebraMap R A)`, as an `R`-module. -/
+@[expose] noncomputable def quotSMulTopEquivQuotMap :
+    (A ⧸ (I • ⊤ : Submodule R A)) ≃ₗ[R] A ⧸ I.map (algebraMap R A) :=
+  (Submodule.quotEquivOfEq _ _ (smul_top_eq_restrictScalars_map I)).trans
+    (Submodule.Quotient.restrictScalarsEquiv R _)
+
+/-- `Ideal.quotSMulTopEquivQuotMap` sends the class of `x` modulo `I • ⊤` to its class modulo the
+extended ideal. -/
+@[simp]
+theorem quotSMulTopEquivQuotMap_mk (x : A) :
+    quotSMulTopEquivQuotMap I (Submodule.Quotient.mk x) =
+      Ideal.Quotient.mk (I.map (algebraMap R A)) x :=
+  rfl
+
+end Ring
 
 section IntRing
 

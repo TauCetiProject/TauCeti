@@ -104,28 +104,33 @@ theorem exists_pow_two_mul_eq_pow [Finite N] (t : N) :
   simp [Nat.ModEq, mul_left_comm]
 
 open Nat in
-/-- In a finite monoid the factorial powers of an element are constant from the cardinality of
-the monoid on: `t ^ n ! = t ^ m !` whenever `|N| ≤ m ≤ n`. -/
-theorem pow_factorial_eq_pow_factorial_of_card_le [Finite N] (t : N) {m n : ℕ}
-    (hm : Nat.card N ≤ m) (hmn : m ≤ n) : t ^ n ! = t ^ m ! := by
+/-- In a finite monoid, `t ^ a = t ^ b` for all positive multiples `a` and `b` of `m !` as soon as
+`|N| ≤ m`. -/
+private theorem pow_eq_pow_of_factorial_dvd [Finite N] (t : N) {m a b : ℕ}
+    (hm : Nat.card N ≤ m) (ha : m ! ∣ a) (hb : m ! ∣ b) (ha0 : 0 < a) (hb0 : 0 < b) :
+    t ^ a = t ^ b := by
   obtain ⟨p, hp, hpN, h⟩ := exists_pow_two_mul_eq_pow t
   rw [two_mul] at h
   have hpm : p ∣ m ! := Nat.dvd_factorial hp (hpN.trans hm)
-  have hpn : p ∣ n ! := Nat.dvd_factorial hp (hpN.trans (hm.trans hmn))
-  exact pow_eq_pow_of_modEq_of_pow_add_eq h (Nat.le_of_dvd (Nat.factorial_pos n) hpn)
-    (Nat.le_of_dvd (Nat.factorial_pos m) hpm)
-    ((Nat.modEq_zero_iff_dvd.2 hpn).trans (Nat.modEq_zero_iff_dvd.2 hpm).symm)
+  have hpa := hpm.trans ha
+  have hpb := hpm.trans hb
+  exact pow_eq_pow_of_modEq_of_pow_add_eq h (Nat.le_of_dvd ha0 hpa) (Nat.le_of_dvd hb0 hpb)
+    ((Nat.modEq_zero_iff_dvd.2 hpa).trans (Nat.modEq_zero_iff_dvd.2 hpb).symm)
+
+open Nat in
+/-- In a finite monoid the factorial powers of an element are constant from the cardinality of
+the monoid on: `t ^ n ! = t ^ m !` whenever `|N| ≤ m ≤ n`. -/
+theorem pow_factorial_eq_pow_factorial_of_card_le [Finite N] (t : N) {m n : ℕ}
+    (hm : Nat.card N ≤ m) (hmn : m ≤ n) : t ^ n ! = t ^ m ! :=
+  pow_eq_pow_of_factorial_dvd t hm (Nat.factorial_dvd_factorial hmn) dvd_rfl
+    (Nat.factorial_pos n) (Nat.factorial_pos m)
 
 open Nat in
 /-- In a finite monoid the factorial power `t ^ m !` is idempotent as soon as `|N| ≤ m`. -/
 theorem isIdempotentElem_pow_factorial_of_card_le [Finite N] (t : N) {m : ℕ}
     (hm : Nat.card N ≤ m) : IsIdempotentElem (t ^ m !) := by
-  obtain ⟨p, hp, hpN, h⟩ := exists_pow_two_mul_eq_pow t
-  rw [two_mul] at h
-  have hpm : p ∣ m ! := Nat.dvd_factorial hp (hpN.trans hm)
-  have hle : p ≤ m ! := Nat.le_of_dvd (Nat.factorial_pos m) hpm
   rw [isIdempotentElem_iff, ← pow_add]
-  refine pow_eq_pow_of_modEq_of_pow_add_eq h (by lia) hle ?_
-  exact (Nat.modEq_zero_iff_dvd.2 (Nat.dvd_add hpm hpm)).trans (Nat.modEq_zero_iff_dvd.2 hpm).symm
+  exact pow_eq_pow_of_factorial_dvd t hm (Nat.dvd_add dvd_rfl dvd_rfl) dvd_rfl
+    (Nat.add_pos_left (Nat.factorial_pos m) _) (Nat.factorial_pos m)
 
 end TauCeti
