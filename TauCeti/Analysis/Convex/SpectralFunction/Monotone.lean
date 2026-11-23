@@ -79,17 +79,6 @@ theorem mem_of_le_of_forall_add_mem (hΓo : IsOpen Γ)
     linarith
   rwa [sub_add_add_cancel, add_sub_cancel] at h
 
-/-- The derivative of `f` in a direction `d` is `Σ_i d_i ∂_i f`. -/
-private theorem fderiv_apply_eq_sum (L : (Fin n → ℝ) →L[ℝ] ℝ) (d : Fin n → ℝ) :
-    L d = ∑ i, d i * L (Pi.single i 1) := by
-  conv_lhs => rw [← Finset.univ_sum_single d]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← smul_eq_mul, ← map_smul]
-  congr 1
-  ext j
-  simp [Pi.single_apply]
-
 /-- Along the segment from `μ` to `ν ≥ μ`, the function `t ↦ f (μ + t • (ν - μ))` has derivative
 `fderiv ℝ f (μ + t • (ν - μ)) (ν - μ)` for `0 ≤ t`. -/
 private theorem hasDerivAt_segment (hΓo : IsOpen Γ)
@@ -103,7 +92,9 @@ private theorem hasDerivAt_segment (hΓo : IsOpen Γ)
     nlinarith
   refine ⟨hmem, ?_⟩
   have hline : HasDerivAt (fun s : ℝ ↦ μ + s • (ν - μ)) (ν - μ) t := by
-    simpa using ((hasDerivAt_id t).smul_const (ν - μ)).const_add μ
+    convert AffineMap.hasDerivAt_lineMap (a := μ) (b := ν) (x := t) using 1
+    ext s : 1
+    rw [AffineMap.lineMap_apply_module', add_comm]
   exact HasFDerivAt.comp_hasDerivAt t
     ((hf _ hmem).differentiableAt (hΓo.mem_nhds hmem)).hasFDerivAt hline
 
@@ -118,7 +109,10 @@ theorem le_of_le_of_forall_fderiv_single_nonneg (hΓo : IsOpen Γ)
   have hmono := monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc (0 : ℝ) 1)
     (fun t ht ↦ (hd t ht).2.continuousAt.continuousWithinAt)
     (fun t ht ↦ (hd t (interior_subset ht)).2.hasDerivWithinAt) fun t ht ↦ by
-      rw [fderiv_apply_eq_sum]
+      rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
+      simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
+        show ∀ i : Fin n, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
+          fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
       exact Finset.sum_nonneg fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i))
         (hf' _ (hd t (interior_subset ht)).1 i)
   simpa using hmono ⟨le_rfl, zero_le_one⟩ ⟨zero_le_one, le_rfl⟩ zero_le_one
@@ -136,7 +130,10 @@ theorem lt_of_le_of_ne_of_forall_fderiv_single_pos (hΓo : IsOpen Γ)
     (fun t ht ↦ (hd t ht).2.continuousAt.continuousWithinAt)
     (fun t ht ↦ (hd t (interior_subset ht)).2.hasDerivWithinAt) fun t ht ↦ by
       have hmem := (hd t (interior_subset ht)).1
-      rw [fderiv_apply_eq_sum]
+      rw [← ContinuousLinearMap.coe_coe, LinearMap.pi_apply_eq_sum_univ]
+      simp only [ContinuousLinearMap.coe_coe, smul_eq_mul, Pi.sub_apply,
+        show ∀ i : Fin n, (fun j ↦ if i = j then (1 : ℝ) else 0) = Pi.single i 1 from
+          fun i ↦ funext fun j ↦ by simp [Pi.single_apply, eq_comm]]
       exact Finset.sum_pos' (fun i _ ↦ mul_nonneg (sub_nonneg.mpr (hle i)) (hf' _ hmem i).le)
         ⟨j, Finset.mem_univ _, mul_pos (sub_pos.mpr ((hle j).lt_of_ne hj)) (hf' _ hmem j)⟩
   simpa using hmono ⟨le_rfl, zero_le_one⟩ ⟨zero_le_one, le_rfl⟩ zero_lt_one
