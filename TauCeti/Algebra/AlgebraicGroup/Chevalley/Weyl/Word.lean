@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
-import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
@@ -117,54 +116,6 @@ theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints (A : Type v) [Comm
     exact mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
       (D.torusPoints_mem_weylSubgroup A s)
 
-private theorem chevalleyWeylSign_reflectionPerm_self (α β : Fin t.numRoots) :
-    t.chevalleyWeylSign ht α ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
-      t.chevalleyWeylSign ht α β := by
-  let ω := (t.chevalleyInvolution ht : t.lieAlgebra ht →ₗ⁅ℚ⁆ t.lieAlgebra ht)
-  have hωf :
-      ω (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α α)) =
-        -t.chevalleySystem ht α := by
-    change (t.chevalleyInvolution ht) _ = _
-    rw [t.chevalleyInvolution_chevalleySystem, RootPairing.reflectionPerm_reflectionPerm_self]
-  have hcomm := ω.map_weylAut (t.isSl2Triple_chevalleySystem ht α)
-    (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-    (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-    (t.chevalleyInvolution_chevalleySystem ht α) hωf (t.chevalleySystem ht β)
-  have hidx :
-      (t.simplyConnectedRootDatum ht).reflectionPerm α
-          ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
-        (t.simplyConnectedRootDatum ht).reflectionPerm
-          ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
-          ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
-    simpa only [RootPairing.weylGroupToPerm_ofIdx_apply] using
-      (t.simplyConnectedRootDatum ht).weylGroupToPerm_reflectionPerm_self
-        (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) α) β
-  have hL :
-      ω (TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-          (t.chevalleySystem ht β)) =
-        -((t.chevalleyWeylSign ht α β : ℤ) •
-          t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm
-            ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
-            ((t.simplyConnectedRootDatum ht).reflectionPerm α β))) := by
-    rw [t.weylAut_chevalleySystem ht α β, map_zsmul]
-    change (t.chevalleyWeylSign ht α β : ℤ) • (t.chevalleyInvolution ht) _ = _
-    rw [t.chevalleyInvolution_chevalleySystem, smul_neg]
-  have hR :
-      TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-          (ω (t.chevalleySystem ht β)) =
-        -TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-          (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm β β)) := by
-    change TauCeti.weylAut _ _ _ ((t.chevalleyInvolution ht) _) = _
-    rw [t.chevalleyInvolution_chevalleySystem, map_neg]
-  rw [hL, hR, neg_inj, ← hidx] at hcomm
-  exact (eq_chevalleyWeylSign_iff.mpr hcomm.symm).symm
-
 /-- Conjugating any root Weyl representative `n_γ(1)` by a pinned simple Weyl representative
 `n_i(1)` produces `n_{s_i γ}(ε)` (`ε = ±1`), equal to a coroot torus factor times
 `n_{s_i γ}(1)`. -/
@@ -201,7 +152,7 @@ theorem weylElement_simpleIndex_conj_weylElement (i : Fin t.rank) (γ : Fin t.nu
     group
   rw [hconj, D.weylElement_conj_rootSubgroupPoints i γ A 1,
     D.weylElement_conj_rootSubgroupPoints i _ A (-1),
-    chevalleyWeylSign_reflectionPerm_self, hneg]
+    t.chevalleyWeylSign_reflectionPerm_self ht, hneg]
   have hweyl :
       D.rootSubgroupPoints γ' A (ofAdd (((ε : ℤ) : A) * 1)) *
           D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm γ' γ') A
@@ -212,6 +163,13 @@ theorem weylElement_simpleIndex_conj_weylElement (i : Fin t.rank) (γ : Fin t.nu
     simp only [s, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, eq_intCast,
       mul_one, mul_neg]
   rw [hweyl, D.weylElement_eq_corootPoints_mul γ' A s]
+
+/-- Every coroot point `h_γ(s)` lies in `D.weylSubgroup A` over every commutative ring `A`. -/
+theorem corootPoints_mem_weylSubgroup (A : Type v) [CommRing A]
+    (γ : Fin t.numRoots) (s : Aˣ) :
+    D.corootPoints γ A s ∈ D.weylSubgroup A := by
+  rw [D.corootPoints_apply]
+  exact D.torusPoints_mem_weylSubgroup A _
 
 /-- Every Steinberg Weyl representative `n_γ(s)` of an arbitrary root `γ` and unit `s` belongs
 to `D.weylSubgroup A` over every commutative ring `A`. -/
@@ -238,13 +196,11 @@ theorem weylElement_root_mem_weylSubgroup (A : Type v) [CommRing A]
                 (D.weylElement (t.simpleIndex ht i) A 1)⁻¹) := by
         rw [hconj, inv_mul_cancel_left]
       rw [hweyl]
-      refine mul_mem (inv_mem ?_)
+      exact mul_mem (inv_mem (D.corootPoints_mem_weylSubgroup A _ _))
         (mul_mem (mul_mem (D.weylElement_mem_weylSubgroup A i) hδ)
           (inv_mem (D.weylElement_mem_weylSubgroup A i)))
-      rw [D.corootPoints_apply]
-      exact D.torusPoints_mem_weylSubgroup A _
-  rw [D.weylElement_eq_corootPoints_mul γ A s, D.corootPoints_apply]
-  exact mul_mem (D.torusPoints_mem_weylSubgroup A _) (h_one γ)
+  rw [D.weylElement_eq_corootPoints_mul γ A s]
+  exact mul_mem (D.corootPoints_mem_weylSubgroup A γ s) (h_one γ)
 
 /-- `D.weylSubgroup A` coincides with the subgroup generated by the actual torus and the
 Steinberg Weyl representatives `n_γ(1)` of all roots `γ`, over every commutative ring `A`. -/

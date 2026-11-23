@@ -97,6 +97,23 @@ def weylQuotientLift (A : Type v) [CommRing A] :
       D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)) :=
   (t.simplyConnectedWeylCoxeterSystem ht).lift ⟨_, D.isLiftable_weylQuotient A⟩
 
+/-- Modulo the actual torus, every point of the actual torus has trivial coset. -/
+@[simp]
+theorem mk_torusPoints_eq_one (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :
+        D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
+  (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
+
+/-- Modulo the actual torus, every coroot point `h_γ(s)` has trivial coset. -/
+@[simp]
+theorem mk_corootPoints_eq_one (A : Type v) [CommRing A] (γ : Fin t.numRoots) (s : Aˣ) :
+    (QuotientGroup.mk ⟨D.corootPoints γ A s, D.corootPoints_mem_weylSubgroup A γ s⟩ :
+        D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 := by
+  have h : (⟨D.corootPoints γ A s, D.corootPoints_mem_weylSubgroup A γ s⟩ : D.weylSubgroup A) =
+      ⟨D.torusPoints A _, D.torusPoints_mem_weylSubgroup A _⟩ :=
+    Subtype.ext (D.corootPoints_apply γ A s)
+  rw [h, D.mk_torusPoints_eq_one]
+
 /-- Modulo the actual torus, every Steinberg Weyl representative `n_γ(s)` lies in the same coset
 as `n_γ(1)`. -/
 theorem mk_weylElement_eq_mk_one (A : Type v) [CommRing A] (γ : Fin t.numRoots) (s : Aˣ) :
@@ -106,18 +123,36 @@ theorem mk_weylElement_eq_mk_one (A : Type v) [CommRing A] (γ : Fin t.numRoots)
         ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ := by
   have hfac :
       (⟨D.weylElement γ A s, D.weylElement_root_mem_weylSubgroup A γ s⟩ : D.weylSubgroup A) =
-        ⟨D.corootPoints γ A s, by
-          rw [D.corootPoints_apply]
-          exact D.torusPoints_mem_weylSubgroup A _⟩ *
+        ⟨D.corootPoints γ A s, D.corootPoints_mem_weylSubgroup A γ s⟩ *
           ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ :=
     Subtype.ext (D.weylElement_eq_corootPoints_mul γ A s)
-  have htorus :
-      (QuotientGroup.mk ⟨D.corootPoints γ A s, by
-          rw [D.corootPoints_apply]
-          exact D.torusPoints_mem_weylSubgroup A _⟩ :
-          D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨_, (D.corootPoints_apply γ A s).symm⟩
-  rw [hfac, QuotientGroup.mk_mul, htorus, one_mul]
+  rw [hfac, QuotientGroup.mk_mul, D.mk_corootPoints_eq_one, one_mul]
+
+/-- Modulo the actual torus, conjugating the coset of `n_γ(1)` by the coset of a pinned simple
+Weyl representative `n_i(1)` produces the coset of `n_{s_i γ}(1)`. -/
+theorem mk_weylElement_simpleIndex_conj (A : Type v) [CommRing A]
+    (i : Fin t.rank) (γ : Fin t.numRoots) :
+    (QuotientGroup.mk ⟨D.weylElement (t.simpleIndex ht i) A 1,
+        D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩ :
+        D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) *
+      QuotientGroup.mk ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ *
+      (QuotientGroup.mk ⟨D.weylElement (t.simpleIndex ht i) A 1,
+        D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩)⁻¹ =
+      QuotientGroup.mk
+        ⟨D.weylElement ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A 1,
+          D.weylElement_root_mem_weylSubgroup A _ 1⟩ := by
+  rw [← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul]
+  have hweyl :
+      (⟨D.weylElement (t.simpleIndex ht i) A 1,
+          D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩ *
+        ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ *
+        (⟨D.weylElement (t.simpleIndex ht i) A 1,
+          D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩)⁻¹ :
+          D.weylSubgroup A) =
+        ⟨D.corootPoints _ A _, D.corootPoints_mem_weylSubgroup A _ _⟩ *
+          ⟨D.weylElement _ A 1, D.weylElement_root_mem_weylSubgroup A _ 1⟩ :=
+    Subtype.ext (D.weylElement_simpleIndex_conj_weylElement i γ A)
+  rw [hweyl, QuotientGroup.mk_mul, D.mk_corootPoints_eq_one, one_mul]
 
 /-- `weylQuotientLift` sends each root reflection `s_γ` to the coset of the Steinberg Weyl
 representative `n_γ(1)`. -/
@@ -152,30 +187,7 @@ theorem weylQuotientLift_ofIdx (A : Type v) [CommRing A] (γ : Fin t.numRoots) :
       simpa only [RootPairing.weylGroupToPerm_ofIdx_apply] using
         RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj (t.simplyConnectedRootDatum ht)
           (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) γ
-    rw [hconj_w, map_mul, map_mul, map_inv, hsimple i, ih, ← QuotientGroup.mk_inv,
-      ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul]
-    set γ' := (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ
-    set sε : Aˣ := Units.map (Int.castRingHom A).toMonoidHom
-      (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ)
-    have hweyl :
-        (⟨D.weylElement (t.simpleIndex ht i) A 1,
-            D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩ *
-          ⟨D.weylElement γ A 1, D.weylElement_root_mem_weylSubgroup A γ 1⟩ *
-          (⟨D.weylElement (t.simpleIndex ht i) A 1,
-            D.weylElement_root_mem_weylSubgroup A (t.simpleIndex ht i) 1⟩)⁻¹ :
-            D.weylSubgroup A) =
-          ⟨D.corootPoints γ' A sε, by
-            rw [D.corootPoints_apply]
-            exact D.torusPoints_mem_weylSubgroup A _⟩ *
-            ⟨D.weylElement γ' A 1, D.weylElement_root_mem_weylSubgroup A γ' 1⟩ :=
-      Subtype.ext (D.weylElement_simpleIndex_conj_weylElement i γ A)
-    have htorus :
-        (QuotientGroup.mk ⟨D.corootPoints γ' A sε, by
-            rw [D.corootPoints_apply]
-            exact D.torusPoints_mem_weylSubgroup A _⟩ :
-            D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
-      (QuotientGroup.eq_one_iff _).mpr ⟨_, (D.corootPoints_apply γ' A sε).symm⟩
-    rw [hweyl, QuotientGroup.mk_mul, htorus, one_mul]
+    rw [hconj_w, map_mul, map_mul, map_inv, hsimple i, ih, D.mk_weylElement_simpleIndex_conj]
 
 /-- `weylQuotientLift` sends the Weyl element spelled by a node word `l` to the coset of the
 corresponding product of pinned simple Weyl representatives. -/
@@ -205,10 +217,8 @@ theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :
       ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
         D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ *
         ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ := Subtype.ext (by simp)
-  have htorus : (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :
-      D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
-  rw [D.weylQuotientLift_geckWeylWordProd A l, hfac, QuotientGroup.mk_mul, htorus, mul_one]
+  rw [D.weylQuotientLift_geckWeylWordProd A l, hfac, QuotientGroup.mk_mul,
+    D.mk_torusPoints_eq_one, mul_one]
 
 /-- Over every commutative ring `A`, any word in the pinned simple Weyl representatives that
 spells `1` in the Weyl group lies in the actual torus `(D.torusPoints A).range`. -/

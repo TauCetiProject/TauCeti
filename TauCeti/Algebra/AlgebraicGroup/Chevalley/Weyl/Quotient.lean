@@ -143,15 +143,11 @@ theorem weylQuotientEquiv_mk_weylWord (A : Type v) [CommRing A] [Nontrivial A]
   rw [← D.weylQuotientLift_geckWeylWordProd A l, D.weylQuotientEquiv_weylQuotientLift]
 
 /-- Cosets of points of the actual torus map to `1` under `weylQuotientEquiv`. -/
-@[simp]
 theorem weylQuotientEquiv_mk_torusPoints (A : Type v) [CommRing A] [Nontrivial A]
     (s : Fin t.rank → Aˣ) :
     D.weylQuotientEquiv A
         (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩) = 1 := by
-  have hmk : (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :
-      D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨s, rfl⟩
-  rw [hmk, map_one]
+  rw [D.mk_torusPoints_eq_one, map_one]
 
 /-! ## Comparison with `weylProjection` over a field -/
 
