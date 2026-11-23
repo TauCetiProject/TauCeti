@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.Curves.AffineCover
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
-import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 
 /-!
 # The genus of a proper curve under extension of the base field
@@ -29,8 +28,7 @@ there the invariance holds without finiteness hypotheses
 (`TauCeti.AlgebraicGeometry.genus_eq_of_isPullback_of_smooth`); the dimension of `H¹` is also
 computed on a cover by two affine opens (`Scheme.exists_two_affine_opens_of_smooth`). It is the
 invariance of the genus that comparisons of curves and of their Jacobians across field extensions
-rely on. For an isomorphism over `k` itself no properness is needed
-(`TauCeti.AlgebraicGeometry.genus_eq_of_isIso`).
+rely on.
 
 ## References
 
@@ -105,15 +103,5 @@ theorem genus_eq_of_isPullback_of_smooth
     Y.genus K = X.genus k := by
   have := finiteDimensional_cohomology_one_trivial_of_smooth k X
   exact genus_eq_of_isPullback_of_isProper H
-
-/-- **The genus is invariant under isomorphisms over the base field.** No properness is needed:
-an isomorphism over `k` identifies the cohomology of the structure sheaves as `k`-vector spaces. -/
-theorem genus_eq_of_isIso {X₁ X₂ : Scheme.{u}} [X₁.Over (Spec (.of k))] [X₂.Over (Spec (.of k))]
-    (f : X₁ ⟶ X₂) [IsIso f] [f.IsOver (Spec (.of k))]
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X₁).obj 1)]
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X₂).obj 1)] :
-    X₁.genus k = X₂.genus k := by
-  rw [Scheme.genus_def, Scheme.genus_def]
-  exact f.finrank_cohomology_trivial_of_isIso k 1
 
 end TauCeti.AlgebraicGeometry

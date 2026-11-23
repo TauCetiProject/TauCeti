@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
 public import TauCeti.AlgebraicGeometry.Curves.Node.Normalization
-public import TauCeti.AlgebraicGeometry.Curves.Prestable
 public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 import TauCeti.AlgebraicGeometry.Curves.Normalization
 import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite

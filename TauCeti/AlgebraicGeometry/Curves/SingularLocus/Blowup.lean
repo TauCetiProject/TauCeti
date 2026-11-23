@@ -171,7 +171,7 @@ compatibility of `e.symm` with the structure morphisms is derived from `he`. -/
 theorem singularLocusBlowupIso_symm :
     singularLocusBlowupIso e.symm (by rw [Iso.symm_hom, Iso.inv_comp_eq, he]) =
       (singularLocusBlowupIso e he).symm :=
-  Iso.ext (eq_singularLocusBlowupIso_hom _ _ (by simp)).symm
+  IdealSheafData.blowupIso_symm e _
 
 variable [Flat (Z ↘ Spec (.of R))] [LocallyOfFinitePresentation (Z ↘ Spec (.of R))]
   [PureRelativeDimension 1 (Z ↘ Spec (.of R))] in
@@ -181,7 +181,7 @@ theorem singularLocusBlowupIso_trans (e' : Y ≅ Z)
     (he' : e'.hom ≫ Z ↘ Spec (.of R) = Y ↘ Spec (.of R)) :
     singularLocusBlowupIso (e ≪≫ e') (by rw [Iso.trans_hom, Category.assoc, he', he]) =
       singularLocusBlowupIso e he ≪≫ singularLocusBlowupIso e' he' :=
-  Iso.ext (eq_singularLocusBlowupIso_hom _ _ (by simp)).symm
+  IdealSheafData.blowupIso_trans e _ e' _
 
 end Iso
 

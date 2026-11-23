@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Iso
 public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph.Basic
-import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
 
 /-!
 # Transporting the dual graph of a prestable curve along an isomorphism
@@ -119,7 +118,7 @@ private theorem genus_blowupComponent_blowupComponentsEquiv
     exact Set.preimage_image_eq _ (Scheme.homeoOfIso f).injective
   let g := ((X.singularLocus K).blowup.isoOfEq hpre.symm).hom ≫ f.hom ∣_ _
   have : g.IsOver (Spec (.of K)) := ⟨by simp [g, f, he]⟩
-  exact (TauCeti.AlgebraicGeometry.genus_eq_of_isIso g).symm
+  exact (TauCeti.AlgebraicGeometry.genus_eq_of_isIso K g).symm
 
 /-! ### The isomorphism of dual graphs -/
 
@@ -173,7 +172,7 @@ private theorem ends_edgeEquivOfIso (x : (X.dualGraph p).Edge) :
   -- The branch indices `j₀ ≠ j₁` are `0` and `1` in some order.
   have hj : s((0 : Fin 2), 1) = s(j₀, j₁) :=
     (Sym2.mem_and_mem_iff hne).1 ⟨by fin_cases j₀ <;> simp, by fin_cases j₁ <;> simp⟩
-  rw [DualGraph.ends_def, DualGraph.ends_def, Sym2.map_mk, hv, hv, hj₀, hj₁, hw, hw]
+  simp only [DualGraph.ends_def, Sym2.map_mk, hv, hj₀, hj₁, hw]
   simpa only [Sym2.map_mk] using congrArg (Sym2.map fun j ↦ (Y.dualGraphVertexEquiv q).symm
     (irreducibleComponentOf (Y.branchPointEquiv (nodeEquiv e he x') j :
       (Y.singularLocus K).blowup))) hj
@@ -181,8 +180,8 @@ private theorem ends_edgeEquivOfIso (x : (X.dualGraph p).Edge) :
 /-- The bijection of vertices preserves the genera. -/
 private theorem genus_vertexEquivOfIso (v : (X.dualGraph p).Vertex) :
     (Y.dualGraph q).genus (vertexEquivOfIso e he p q v) = (X.dualGraph p).genus v := by
-  rw [dualGraph_genus, dualGraph_genus]
-  rw [vertexEquivOfIso, Equiv.trans_apply, Equiv.trans_apply, Equiv.apply_symm_apply]
+  simp only [dualGraph_genus, vertexEquivOfIso, Equiv.trans_apply]
+  rw [Equiv.apply_symm_apply]
   exact genus_blowupComponent_blowupComponentsEquiv e he _
 
 /-- The bijection of vertices matches the components carrying the markings, when `e` carries
@@ -191,8 +190,8 @@ private theorem vertexEquivOfIso_marking (hpq : ∀ i, e.hom (p i : X) = q i) (i
     vertexEquivOfIso e he p q ((X.dualGraph p).marking i) = (Y.dualGraph q).marking i := by
   obtain ⟨b, hb⟩ := X.surjective_blowupToBase_singularLocus (K := K)
     (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := X ↘ Spec (.of K))) |>.surj (p i : X)
-  rw [vertexEquivOfIso, Equiv.trans_apply, Equiv.trans_apply,
-    X.dualGraphVertexEquiv_marking p i hb, blowupComponentsEquiv_irreducibleComponentOf,
+  simp only [vertexEquivOfIso, Equiv.trans_apply]
+  rw [X.dualGraphVertexEquiv_marking p i hb, blowupComponentsEquiv_irreducibleComponentOf,
     Equiv.symm_apply_eq, Y.dualGraphVertexEquiv_marking q i
       (by rw [blowupToBase_singularLocusBlowupIso_hom_apply e he, hb, hpq])]
 
@@ -267,13 +266,12 @@ theorem dualGraphIsoOfIso_symm :
   ext w
   · rw [DualGraph.Iso.symm_vertexEquiv, Equiv.eq_symm_apply]
     refine (Y.dualGraphVertexEquiv q).injective (Subtype.ext ?_)
-    rw [coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv,
-      coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv, singularLocusBlowupIso_symm e he]
+    simp only [coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv,
+      singularLocusBlowupIso_symm e he]
     exact (Scheme.homeoOfIso (singularLocusBlowupIso e he)).toEquiv.image_symm_image _
   · rw [DualGraph.Iso.symm_edgeEquiv, Equiv.eq_symm_apply]
     refine (Y.dualGraphEdgeEquiv q).injective (Subtype.ext ?_)
-    rw [dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv,
-      dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv]
+    simp only [dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv]
     exact (Scheme.homeoOfIso e).apply_symm_apply _
 
 /-- The isomorphism of dual graphs induced by a composite of isomorphisms is the composite. The
@@ -288,16 +286,13 @@ theorem dualGraphIsoOfIso_trans {Z : Scheme.{u}} [Z.Over (Spec (.of K))]
       (dualGraphIsoOfIso e he p q hpq).trans (dualGraphIsoOfIso e' he' q r hqr) := by
   ext v
   · refine (Z.dualGraphVertexEquiv r).injective (Subtype.ext ?_)
-    rw [DualGraph.Iso.trans_vertexEquiv, Equiv.trans_apply,
-      coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv,
-      coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv,
+    simp only [DualGraph.Iso.trans_vertexEquiv, Equiv.trans_apply,
       coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv,
       singularLocusBlowupIso_trans e he e' he', Set.image_image]
     exact Set.image_congr fun b _ ↦ by rw [Iso.trans_hom, Scheme.Hom.comp_apply]
   · refine (Z.dualGraphEdgeEquiv r).injective (Subtype.ext ?_)
-    rw [DualGraph.Iso.trans_edgeEquiv, Equiv.trans_apply,
-      dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv,
-      dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv,
-      dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv, Iso.trans_hom, Scheme.Hom.comp_apply]
+    simp only [DualGraph.Iso.trans_edgeEquiv, Equiv.trans_apply,
+      dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv]
+    rw [Iso.trans_hom, Scheme.Hom.comp_apply]
 
 end AlgebraicGeometry.Scheme
