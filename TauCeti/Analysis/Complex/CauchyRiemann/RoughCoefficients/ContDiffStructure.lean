@@ -68,6 +68,15 @@ section InnerProduct
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ω : Opens ℂ} {A : ℂ → V →L[ℝ] V} {u : ℂ → V}
 
+/-- A `C¹` solution of `∂ₜu = A ∂ₛu` is a weak solution of `∂ₛu + A ∂ₜu = 0`. -/
+private theorem isWeakCRSolution_of_cauchyRiemann (hA : ContDiffOn ℝ 1 A Ω)
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ V) (hu : ContDiffOn ℝ 1 u Ω)
+    (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) {p : ℝ≥0} :
+    IsWeakCRSolution p Ω A (fderiv ℝ A) 0 u 0 :=
+  (isWeakCRSolution_iff_of_contDiffOn hA continuous_zero.continuousOn hu
+    continuous_zero.continuousOn).2 fun z hz ↦ by
+      simpa using apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq (hAA z hz) (hCR z hz)
+
 /-- `W^{2,p}_loc` regularity for `2 < p < ∞` on an inner product space. -/
 private theorem memWkpLoc_two_of_two_lt (hA : ContDiffOn ℝ 1 A Ω)
     (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ V) (hu : ContDiffOn ℝ 1 u Ω)
@@ -75,11 +84,8 @@ private theorem memWkpLoc_two_of_two_lt (hA : ContDiffOn ℝ 1 A Ω)
     MemWkpLoc p Ω 2 u := by
   have hJ2 : ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), A z * A z = -1 :=
     (ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall hAA)
-  have hsol : IsWeakCRSolution p Ω A (fderiv ℝ A) 0 u 0 :=
-    (isWeakCRSolution_iff_of_contDiffOn hA continuous_zero.continuousOn hu
-      continuous_zero.continuousOn).2 fun z hz ↦ by
-        simpa using apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq (hAA z hz) (hCR z hz)
-  exact hsol.memWkpLoc_succ (k := 1) (.of_contDiffOn hA continuous_zero.continuousOn p) hp hJ2
+  exact (isWeakCRSolution_of_cauchyRiemann hA hAA hu hCR).memWkpLoc_succ (k := 1)
+    (.of_contDiffOn hA continuous_zero.continuousOn p) hp hJ2
     (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp)) le_rfl
     (hA.memWkpLoc subset_rfl) memWkpLoc_zero_fun memWkpLoc_zero_fun
 
@@ -100,11 +106,8 @@ private theorem isWeakLinearCauchyRiemannOn_of_two_lt (hA : ContDiffOn ℝ 1 A �
     (Filter.EventuallyEq.refl _ _)
   obtain ⟨-, D, hD, hDp⟩ := memWkpLoc_succ_iff_of_isOpen.1 hDu
   have hDI := hD.clm_comp (ContinuousLinearMap.apply ℝ V I)
-  have hsol0 : IsWeakCRSolution p Ω A (fderiv ℝ A) 0 u 0 :=
-    (isWeakCRSolution_iff_of_contDiffOn hA continuous_zero.continuousOn hu
-      continuous_zero.continuousOn).2 fun z hz ↦ by
-        simpa using apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq (hAA z hz) (hCR z hz)
-  have hsol := hsol0.apply_I_of_hasWeakFDerivOn hc hpq ENNReal.coe_ne_top ENNReal.coe_ne_top
+  have hsol := (isWeakCRSolution_of_cauchyRiemann (p := p) hA hAA hu hCR
+    ).apply_I_of_hasWeakFDerivOn hc hpq ENNReal.coe_ne_top ENNReal.coe_ne_top
     hasWeakFDerivOn_zero memLpLoc_zero hu.hasWeakFDerivOn_fderiv hdu.memLpLoc
     hasWeakFDerivOn_zero
   have hlin := ((hc.add_zeroth (hc.memLpLoc_deriv_apply I)).isWeakLinearCauchyRiemannOn_iff hpq
@@ -133,13 +136,21 @@ private theorem euclidean_model (hA : ContDiffOn ℝ 1 A Ω)
       (∀ z ∈ Ω, e.arrowCongr e (A z) ∘L e.arrowCongr e (A z) = -ContinuousLinearMap.id ℝ _) ∧
       ContDiffOn ℝ 1 (fun z ↦ e (u z)) Ω ∧
       (∀ z ∈ Ω, fderiv ℝ (fun z ↦ e (u z)) z = (e : E →L[ℝ] _) ∘L fderiv ℝ u z) ∧
+      (∀ z ∈ Ω, fderiv ℝ (fun z ↦ e.arrowCongr e (A z)) z I =
+        e.arrowCongr e (fderiv ℝ A z I)) ∧
       ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e (u z)) z I =
         e.arrowCongr e (A z) (fderiv ℝ (fun z ↦ e (u z)) z 1) := by
   have hfd : ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e (u z)) z = (e : E →L[ℝ] _) ∘L fderiv ℝ u z :=
     fun z hz ↦ (e.hasFDerivAt.comp z ((hu.differentiableOn one_ne_zero).differentiableAt
       (Ω.isOpen.mem_nhds hz)).hasFDerivAt).fderiv
+  have hfdA : ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e.arrowCongr e (A z)) z I =
+      e.arrowCongr e (fderiv ℝ A z I) := fun z hz ↦ by
+    have h := ((e.arrowCongr e).hasFDerivAt.comp z ((hA.differentiableOn one_ne_zero
+      ).differentiableAt (Ω.isOpen.mem_nhds hz)).hasFDerivAt).fderiv
+    simp only [Function.comp_def] at h
+    rw [h, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
   refine ⟨(e.arrowCongr e).contDiff.comp_contDiffOn hA,
-    fun z hz ↦ ?_, e.contDiff.comp_contDiffOn hu, hfd, fun z hz ↦ ?_⟩
+    fun z hz ↦ ?_, e.contDiff.comp_contDiffOn hu, hfd, hfdA, fun z hz ↦ ?_⟩
   · ext1 v
     have h := congr($(hAA z hz) (e.symm v))
     simp only [ContinuousLinearMap.comp_apply, neg_apply,
@@ -158,7 +169,7 @@ theorem memWkpLoc_two_of_contDiffOn_of_cauchyRiemann (hA : ContDiffOn ℝ 1 A Ω
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let e := ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) (E := E)
     (F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) (by simp)
-  obtain ⟨hA', hAA', hu', -, hCR'⟩ := euclidean_model hA hAA hu hCR e
+  obtain ⟨hA', hAA', hu', -, -, hCR'⟩ := euclidean_model hA hAA hu hCR e
   lift p to ℝ≥0 using hp
   have h := (memWkpLoc_two_of_two_lt hA' hAA' hu' hCR' (p := max p 3)
     (lt_max_of_lt_right (by norm_num))).mono_exponent (q := p) (by exact_mod_cast le_max_left _ _)
@@ -175,18 +186,12 @@ theorem isWeakLinearCauchyRiemannOn_fderiv_I_of_contDiffOn_of_cauchyRiemann
     IsWeakLinearCauchyRiemannOn p Ω A (fun z ↦ fderiv ℝ A z I) (fun z ↦ fderiv ℝ u z I) := by
   let e := ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) (E := E)
     (F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) (by simp)
-  obtain ⟨hA', hAA', hu', hfd, hCR'⟩ := euclidean_model hA hAA hu hCR e
+  obtain ⟨hA', hAA', hu', hfd, hfdA, hCR'⟩ := euclidean_model hA hAA hu hCR e
   lift p to ℝ≥0 using hp
   have h := ((isWeakLinearCauchyRiemannOn_of_two_lt hA' hAA' hu' hCR' (p := max p 3)
     (lt_max_of_lt_right (by norm_num))).mono_exponent (q := p)
     (by exact_mod_cast le_max_left _ _)).continuousLinearEquiv_comp e.symm
   -- read the transported equation back on `E`
-  have hfdA : ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e.arrowCongr e (A z)) z I =
-      e.arrowCongr e (fderiv ℝ A z I) := fun z hz ↦ by
-    have h := ((e.arrowCongr e).hasFDerivAt.comp z ((hA.differentiableOn one_ne_zero
-      ).differentiableAt (Ω.isOpen.mem_nhds hz)).hasFDerivAt).fderiv
-    simp only [Function.comp_def] at h
-    rw [h, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
   refine (isWeakCauchyRiemannOn_congr (fun z hz ↦ ?_)).1
     ((isWeakCauchyRiemannOn_congr_ae ?_ ?_).1 h)
   · simp [hfd z hz]
