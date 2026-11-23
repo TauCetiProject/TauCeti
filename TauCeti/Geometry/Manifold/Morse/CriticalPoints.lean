@@ -136,9 +136,11 @@ polynomial in the Morse inequalities.
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
-* `TauCeti.IsMorse.setOf_neg_band_eq` and `TauCeti.IsMorse.neg_band`: the critical points of `-f`
-  in a band, counted by index, are those of `f` counted by complementary index, and the hypotheses
-  on `f` over `[a, b]` hold for `-f` over `[-b, -a]`.
+* `TauCeti.IsMorse.setOf_neg_band_eq`: the critical points of index `i` of `-f` with values in
+  `(-b, -a]` are those of `f` with values in `[a, b)` and complementary index `dim M - i`.
+* `TauCeti.IsMorse.neg_band`: if `f` is Morse, `f ⁻¹' [a, b]` is compact and `a`, `b` are regular
+  values of `f`, then `-f` is Morse, `(-f) ⁻¹' [-b, -a]` is compact and `-b`, `-a` are regular
+  values of `-f`.
 * `TauCeti.totalCriticalCount_of_isEmpty`, `TauCeti.totalCriticalCount_of_subsingleton`,
   `TauCeti.totalCriticalCount_const` and `TauCeti.totalCriticalCount_const_eq_top`: the count on
   the empty manifold, in dimension zero and for a constant function, which is `⊤` on a nonempty
@@ -1369,7 +1371,9 @@ theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
       hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
 
-/-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
+/-- If `f` is a Morse function on all of `M` whose band `f ⁻¹' [a, b]` is compact and whose
+endpoints `a` and `b` are regular values, then `-f` is a Morse function on all of `M` whose band
+`(-f) ⁻¹' [-b, -a]` is compact and whose endpoints `-b` and `-a` are regular values. -/
 theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) :
