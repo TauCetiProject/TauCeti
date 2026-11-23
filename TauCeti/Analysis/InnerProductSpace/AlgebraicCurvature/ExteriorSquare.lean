@@ -212,9 +212,9 @@ theorem ofBivectorEnd_curvatureEndomorphism_of_antisymm {r : FourTensor V}
 theorem mem_range_ofBivectorEnd_iff {r : FourTensor V} :
     r ∈ LinearMap.range (ofBivectorEnd (V := V)) ↔
       (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
-        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :=
-  ⟨fun ⟨T, hT⟩ ↦ hT ▸ ⟨ofBivectorEnd_antisymm_first T, ofBivectorEnd_antisymm_last T⟩,
-   fun ⟨h₁, h₂⟩ ↦ ⟨curvatureEndomorphism r, ofBivectorEnd_curvatureEndomorphism_of_antisymm h₁ h₂⟩⟩
+        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) := by
+  simpa only [ofBivectorEnd, LinearEquiv.coe_coe, LinearEquiv.range_comp] using
+    (mem_range_ofExteriorSquareBilin_iff (r := r))
 
 /-- If a four-tensor is symmetric under pair interchange, its bivector operator is symmetric. -/
 theorem isSymmetric_curvatureEndomorphism_of_swap_pairs {r : FourTensor V}

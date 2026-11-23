@@ -26,9 +26,7 @@ of traces and traces of products.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
-* `Matrix.sum_diag_mul_diag`, `Matrix.sum_offDiag_mul_eq_trace_mul`, and
-  `Matrix.sum_symmMinor_eq_two_mul_trace_sub`: double-sum identities for diagonal products,
-  off-diagonal products, and symmetrized `2 × 2` minors.
+* `Matrix.sum_symmMinor_eq_two_mul_trace_sub`: double-sum identity for symmetrized `2 × 2` minors.
 -/
 
 public section
@@ -58,25 +56,17 @@ theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matr
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
 
-/-- The double sum of products of diagonal entries of two square matrices is the product of their
-traces. -/
-theorem sum_diag_mul_diag (A : Matrix m m R) (C : Matrix n n R) :
-    ∑ i, ∑ j, A i i * C j j = A.trace * C.trace := by
-  simp_rw [← Finset.mul_sum, ← Finset.sum_mul, Matrix.trace, Matrix.diag]
-
-/-- The double sum of cross entries `A j i * C i j` is the trace of `A * C`. -/
-theorem sum_offDiag_mul_eq_trace_mul (A : Matrix m n R) (C : Matrix n m R) :
-    ∑ i, ∑ j, A j i * C i j = (A * C).trace := by
-  simp_rw [Matrix.trace, Matrix.diag, Matrix.mul_apply]
-  exact Finset.sum_comm
-
 /-- The double sum of symmetrized `2 × 2` minor terms equals
 `2 * (A.trace * C.trace - (A * C).trace)`. -/
 theorem sum_symmMinor_eq_two_mul_trace_sub {R : Type*} [CommRing R] (A C : Matrix m m R) :
     ∑ i, ∑ j, (A i i * C j j - A j i * C i j + C i i * A j j - C j i * A i j) =
       2 * (A.trace * C.trace - (A * C).trace) := by
-  simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, sum_diag_mul_diag,
-    sum_offDiag_mul_eq_trace_mul, trace_mul_comm C A]
+  have hdiag (X Y : Matrix m m R) : ∑ i, ∑ j, X i i * Y j j = X.trace * Y.trace :=
+    (Fintype.sum_mul_sum (fun i ↦ X i i) (fun j ↦ Y j j)).symm
+  have hcross (X Y : Matrix m m R) : ∑ i, ∑ j, X j i * Y i j = (X * Y).trace := by
+    simpa only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply, Matrix.transpose_apply] using
+      Matrix.trace_transpose_mul X Y
+  simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, hdiag, hcross, trace_mul_comm C A]
   ring
 
 end Matrix

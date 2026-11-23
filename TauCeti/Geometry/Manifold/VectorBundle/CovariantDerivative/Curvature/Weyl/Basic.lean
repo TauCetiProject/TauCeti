@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schouten
-import TauCeti.LinearAlgebra.Multilinear.CurvatureDimThree
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 
 /-!
 # The Weyl curvature tensor of a smooth connection
@@ -210,15 +211,21 @@ theorem IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun y : M ↦ TangentSpace I y) cov)
     (x : M) (hn : Module.finrank ℝ (TangentSpace I x) = 3) :
-    cov.weylTensor x = 0 :=
-  LinearMap.eq_zero_of_sum_basis_eq_zero_of_card_eq_three
-    ((two_ne_zero (α := ℝ)).isUnit.isSMulRegular ℝ)
-    (stdOrthonormalBasis ℝ (TangentSpace I x)).toBasis (by simpa using hn)
-    (cov.weylTensor_antisymm_first x)
-    (IsMetricCompatible.weylTensor_antisymm_last (cov := cov) hcov x)
-    fun u v ↦ by
-      simpa only [OrthonormalBasis.coe_toBasis] using
-        cov.sum_weylTensor_eq_zero x (by omega) (stdOrthonormalBasis ℝ _) u v
+    cov.weylTensor x = 0 := by
+  have hweyl : TauCeti.FourTensor.weyl (cov.curvatureFourTensor x) = 0 :=
+    TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm hn.le
+      (fun u v z w ↦ by
+        simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+          cov.riemannCurvatureTensor_antisymm_first x u v w z)
+      (fun u v z w ↦ by
+        simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+          hcov.riemannCurvatureTensor_antisymm_last cov x u v w z)
+  ext u v w z
+  have hval := congr($hweyl ![u, v, z, w])
+  rw [TauCeti.FourTensor.weyl_eq_sub_kulkarniNomizu_schouten (by omega)] at hval
+  simpa [cov.curvatureFourTensor_eq_riemannCurvatureTensor,
+    TauCeti.FourTensor.kulkarniNomizu_apply, TauCeti.FourTensor.schouten_apply_apply,
+    cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor] using hval
 
 /-- In dimension `3`, the curvature tensor of a metric-compatible connection is the
 Kulkarni–Nomizu product `Rm = P ⊙ g` of its Schouten tensor with the metric, so it is determined

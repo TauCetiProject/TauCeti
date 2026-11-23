@@ -25,8 +25,7 @@ symmetric exterior product `symmMap₂ f g`.
 
 * `exteriorPower.inner_symmMap₂_ιMulti_two`: inner product of `symmMap₂ f g (a ∧ b)` against
   `u ∧ w`.
-* `exteriorPower.adjoint_symmMap₂` and `exteriorPower.inner_symmMap₂_left`:
-  `(symmMap₂ f g)* = symmMap₂ f* g*`.
+* `exteriorPower.adjoint_symmMap₂`: `(symmMap₂ f g)* = symmMap₂ f* g*`.
 * `LinearMap.IsSymmetric.symmMap₂`: symmetry of `symmMap₂ f g` for symmetric `f` and `g`.
 
 ## References
@@ -67,17 +66,11 @@ theorem adjoint_symmMap₂ (f g : E →ₗ[ℝ] F) :
     simp only [LinearMap.adjoint_inner_left, real_inner_comm]
     ring
 
-/-- Moving `symmMap₂ f g` across the bivector inner product replaces `f` and `g` by their
-adjoints. -/
-theorem inner_symmMap₂_left (f g : E →ₗ[ℝ] F) (x : ⋀[ℝ]^2 E) (y : ⋀[ℝ]^2 F) :
-    ⟪symmMap₂ f g x, y⟫ = ⟪x, symmMap₂ f.adjoint g.adjoint y⟫ := by
-  rw [← LinearMap.adjoint_inner_right, adjoint_symmMap₂]
-
 /-- The symmetric exterior product of two symmetric endomorphisms of `E` is a symmetric
 endomorphism of `⋀[ℝ]^2 E`. -/
 theorem _root_.LinearMap.IsSymmetric.symmMap₂ {f g : Module.End ℝ E}
     (hf : f.IsSymmetric) (hg : g.IsSymmetric) :
     (exteriorPower.symmMap₂ f g).IsSymmetric := fun x y ↦ by
-  rw [inner_symmMap₂_left, hf.adjoint_eq, hg.adjoint_eq]
+  rw [← LinearMap.adjoint_inner_right, adjoint_symmMap₂, hf.adjoint_eq, hg.adjoint_eq]
 
 end exteriorPower

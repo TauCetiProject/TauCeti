@@ -36,11 +36,10 @@ identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back `B.compl�
 * `LinearMap.BilinForm.inner_bilinFormToEnd_left`, `LinearMap.bilinFormToEnd_symm_apply`,
   `LinearMap.BilinForm.innerₗ_comp_bilinFormToEnd`, `LinearMap.bilinFormToEnd_innerₗ_comp`, and
   `TauCeti.bilinFormToEnd_innerₗ`: pairing and inverse laws.
-* `TauCeti.isSymmetric_bilinFormToEnd_iff`, `TauCeti.mem_selfAdjoint_submodule_iff_isSymmetric`,
-  `TauCeti.coe_symmBilinEquivSelfAdjoint`, `TauCeti.coe_symmBilinEquivSelfAdjoint_symm`,
-  `LinearMap.BilinForm.trace_bilinFormToEnd`, `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
-  `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`, and
-  `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
+* `TauCeti.isSymmetric_bilinFormToEnd_iff`, `TauCeti.coe_symmBilinEquivSelfAdjoint`,
+  `TauCeti.coe_symmBilinEquivSelfAdjoint_symm`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
+  `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`, `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`,
+  and `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
 -/
 
 public section
@@ -124,12 +123,6 @@ namespace TauCeti
    fun h u v ↦ by
     rw [B.inner_bilinFormToEnd_left, real_inner_comm, B.inner_bilinFormToEnd_left, h.eq]⟩
 
-/-- An endomorphism of a finite-dimensional real inner product space belongs to
-`selfAdjoint.submodule ℝ (Module.End ℝ E)` if and only if it is symmetric. -/
-theorem mem_selfAdjoint_submodule_iff_isSymmetric {T : Module.End ℝ E} :
-    T ∈ selfAdjoint.submodule ℝ (Module.End ℝ E) ↔ T.IsSymmetric :=
-  (LinearMap.isSymmetric_iff_isSelfAdjoint T).symm
-
 /-- Metric index raising restricts to a linear equivalence between symmetric bilinear forms and
 self-adjoint endomorphisms. -/
 def symmBilinEquivSelfAdjoint :
@@ -137,13 +130,10 @@ def symmBilinEquivSelfAdjoint :
   bilinFormToEnd.ofSubmodules (BilinForm.symmSubmodule ℝ E)
     (selfAdjoint.submodule ℝ (Module.End ℝ E)) <| by
     ext T
-    simp only [Submodule.mem_map, LinearEquiv.coe_coe, BilinForm.mem_symmSubmodule,
-      mem_selfAdjoint_submodule_iff_isSymmetric]
-    refine ⟨?_, fun hT ↦ ⟨bilinFormToEnd.symm T, ?_, LinearEquiv.apply_symm_apply _ T⟩⟩
-    · rintro ⟨B, hB, rfl⟩
-      exact isSymmetric_bilinFormToEnd_iff.mpr hB
-    · rw [← isSymmetric_bilinFormToEnd_iff, LinearEquiv.apply_symm_apply]
-      exact hT
+    rw [Submodule.mem_map_equiv, BilinForm.mem_symmSubmodule]
+    change (bilinFormToEnd.symm T).IsSymm ↔ IsSelfAdjoint T
+    rw [← LinearMap.isSymmetric_iff_isSelfAdjoint, ← isSymmetric_bilinFormToEnd_iff,
+      LinearEquiv.apply_symm_apply]
 
 /-- Coercion of `symmBilinEquivSelfAdjoint` is `bilinFormToEnd`. -/
 @[simp] theorem coe_symmBilinEquivSelfAdjoint (B : BilinForm.symmSubmodule ℝ E) :

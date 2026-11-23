@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.Tactic.Module
-import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
@@ -35,8 +34,7 @@ via `id ∧ id = id` and the traceless-Ricci operator via `Ric₀ ∧ id`.
   `exteriorPower.symmMap₂_self`, `exteriorPower.symmMap₂_eq_invOf_two_smul_map_add_sub`,
   `exteriorPower.symmMap₂_id_right`, `exteriorPower.symmMap₂_id_left`,
   `exteriorPower.symmMap₂_comp_symmMap₂`, `exteriorPower.map_comp_symmMap₂`,
-  `exteriorPower.symmMap₂_comp_map`, `LinearEquiv.exteriorPower_arrowCongr_symmMap₂`, and
-  `LinearEquiv.exteriorPower_conj_symmMap₂`.
+  `exteriorPower.symmMap₂_comp_map`, and `LinearEquiv.exteriorPower_arrowCongr_symmMap₂`.
 
 ## References
 
@@ -149,14 +147,11 @@ theorem exteriorPower_arrowCongr_symmMap₂ (e₁ : M ≃ₗ[R] M') (e₂ : N �
     (f g : M →ₗ[R] N) :
     ((e₁.exteriorPower 2).arrowCongr (e₂.exteriorPower 2)) (exteriorPower.symmMap₂ f g) =
       exteriorPower.symmMap₂ (e₁.arrowCongr e₂ f) (e₁.arrowCongr e₂ g) := by
-  rw [arrowCongr_eq_comp, arrowCongr_eq_comp, arrowCongr_eq_comp]
+  change (e₂.exteriorPower 2).toLinearMap ∘ₗ exteriorPower.symmMap₂ f g ∘ₗ
+      (e₁.exteriorPower 2).symm.toLinearMap =
+    exteriorPower.symmMap₂ (e₂.toLinearMap ∘ₗ f ∘ₗ e₁.symm.toLinearMap)
+      (e₂.toLinearMap ∘ₗ g ∘ₗ e₁.symm.toLinearMap)
   simp only [LinearEquiv.exteriorPower_symm, LinearEquiv.exteriorPower_toLinearMap,
     exteriorPower.symmMap₂_comp_map, exteriorPower.map_comp_symmMap₂]
-
-/-- Conjugating `exteriorPower.symmMap₂ f g` by `e.exteriorPower 2` conjugates each factor. -/
-theorem exteriorPower_conj_symmMap₂ (e : M ≃ₗ[R] N) (f g : Module.End R M) :
-    (e.exteriorPower 2).conj (exteriorPower.symmMap₂ f g) =
-      exteriorPower.symmMap₂ (e.conj f) (e.conj g) :=
-  exteriorPower_arrowCongr_symmMap₂ e e f g
 
 end LinearEquiv
