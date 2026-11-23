@@ -15,9 +15,8 @@ Let `P` be a property of morphisms stable under base change. If the base change
 `pullback.snd f k` of `f` along `k` has `P`, then so does every further base change of `f` along a
 morphism factoring through `k`: this file records the forms of this used when reducing a property
 of morphisms of schemes to an affine base. Mathlib's `MorphismProperty.pullback_snd` is the case
-where `f` itself has `P`. On underlying objects, the product `prod.map f g` of two morphisms of
-`Over S` is a base change of `f.left` followed by a base change of `g.left`, so it has `P` whenever
-`f.left` and `g.left` do and `P` is moreover stable under composition.
+where `f` itself has `P`. If `P` is moreover stable under composition, then the product of two
+morphisms of `Over S` has `P` on underlying morphisms whenever both factors do.
 
 ## Main results
 
@@ -87,9 +86,8 @@ theorem pullback_snd_comp_left [P.IsStableUnderComposition] {X' : C} (f : X ⟶ 
     ((IsPullback.of_hasPullback (e ≫ f) k).of_bot' (.of_hasPullback f k)) he) h
 
 /-- For a property stable under base change and composition, a product of morphisms in `Over S`
-has the property on underlying morphisms when both factors do. Indeed
-`prod.map f g = prod.map f (𝟙 Y) ≫ prod.map (𝟙 X') g`, and the two factors are the base changes
-of `f.left` and `g.left` along the product projections of `X' ⨯ Y` and `X' ⨯ Y'`. -/
+has the property on underlying morphisms when both factors do. This parallels Mathlib's
+`MorphismProperty.pullbackMap`, which treats `pullback.map`. -/
 theorem prod_map_left [P.IsStableUnderComposition] {S : C} [HasBinaryProducts (Over S)]
     {X Y X' Y' : Over S} (f : X ⟶ X') (g : Y ⟶ Y') (hf : P f.left) (hg : P g.left) :
     P (prod.map f g).left := by

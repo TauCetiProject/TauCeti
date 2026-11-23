@@ -21,8 +21,9 @@ A closed immersion also preserves the height of every point for the specializati
 carried homeomorphically onto the closure of its image. So the dimension of the closure of a point
 can be computed in a closed subscheme or in the ambient scheme alike.
 
-An open subscheme with closed underlying set has a closed-immersion inclusion, as does every
-member of a pairwise-disjoint open cover. These inclusions support clopen decompositions.
+The inclusion of an open subscheme is a closed immersion exactly when its underlying set is
+closed, so every member of a pairwise-disjoint open cover has a closed-immersion inclusion.
+These inclusions support clopen decompositions.
 -/
 
 public section
@@ -85,11 +86,12 @@ end AlgebraicGeometry.Scheme.Hom
 
 namespace AlgebraicGeometry.Scheme.Opens
 
-/-- The inclusion of an open subscheme whose underlying set is closed is a closed immersion. -/
-theorem isClosedImmersion_ι_of_isClosed {X : Scheme} (U : X.Opens)
-    (hU : IsClosed (U : Set X)) : IsClosedImmersion U.ι :=
-  IsClosedImmersion.of_isPreimmersion _
-    (by simpa only [AlgebraicGeometry.Scheme.Opens.range_ι] using hU)
+/-- The inclusion of an open subscheme is a closed immersion exactly when its underlying set is
+closed. -/
+theorem isClosedImmersion_ι_iff {X : Scheme} (U : X.Opens) :
+    IsClosedImmersion U.ι ↔ IsClosed (U : Set X) := by
+  rw [IsClosedImmersion.iff_isPreimmersion, range_ι]
+  exact and_iff_right inferInstance
 
 end AlgebraicGeometry.Scheme.Opens
 
@@ -102,7 +104,7 @@ theorem isClosedImmersion_ι_of_pairwiseDisjoint_iSup_eq_top {X : Scheme} {J : T
     (U : J → X.Opens)
     (hcover : ⨆ j, U j = ⊤) (hdisj : Pairwise fun i j ↦ Disjoint (U i) (U j)) (j : J) :
     IsClosedImmersion (U j).ι :=
-  (U j).isClosedImmersion_ι_of_isClosed
+  (U j).isClosedImmersion_ι_iff.mpr
     (TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
       U hcover hdisj j).isClosed
 
