@@ -504,6 +504,22 @@ theorem inner_starProjection_sq_of_finrank_eq_one (L : Submodule ℝ F) [L.HasOr
   rw [hyx] at h
   rw [sq, h, mul_comm]
 
+omit R in
+/-- The orthogonal projection onto `(ℝ ∙ e)ᗮ` sends `x` to `y` exactly when `x` lies on the line
+through `y` parallel to `e`. -/
+theorem orthogonalProjectionOnto_orthogonal_span_singleton_eq_iff {e : F} (y : (ℝ ∙ e)ᗮ)
+    (x : F) : (ℝ ∙ e)ᗮ.orthogonalProjectionOnto x = y ↔ ∃ t : ℝ, (y : F) + t • e = x := by
+  constructor
+  · intro hx
+    have hmem := (ℝ ∙ e)ᗮ.sub_starProjection_mem_orthogonal x
+    rw [Submodule.orthogonal_orthogonal, Submodule.starProjection_apply, hx] at hmem
+    obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 hmem
+    exact ⟨t, by rw [ht]; abel⟩
+  · rintro ⟨t, rfl⟩
+    rw [map_add, map_smul,
+      Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero, smul_zero,
+      add_zero, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
+
 end Real
 
 section Commute
