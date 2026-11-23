@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.RingTheory.Coprime.Basic
+public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Data.Int.GCD
@@ -15,7 +16,10 @@ import Mathlib.Data.Int.GCD
 # Basic facts about local rings
 
 This file records basic facts about possibly noncommutative local rings. Their only idempotents
-are `0` and `1`; this fact applies to endomorphism rings in the Krull-Schmidt theorem. In
+are `0` and `1`; this fact applies to endomorphism rings in the Krull-Schmidt theorem. Their
+Jacobson radical is the set of nonunits, a two-sided ideal which is maximal as a left ideal, so
+the quotient by it is a division ring; this is how Nakayama's lemma, stated for the Jacobson
+radical, applies over a noncommutative local ring. In
 characteristic two the idempotent criterion identifies the zeros of the Artin–Schreier map
 `t ↦ t² + t`, without a finiteness assumption.
 
@@ -24,6 +28,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 * `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
   or `1`.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
+* `IsLocalRing.mem_ringJacobson_iff`: in a possibly noncommutative local ring, the Jacobson radical
+  consists of the nonunits, and `IsLocalRing.isMaximal_ringJacobson`: it is a maximal left ideal.
 * `TauCeti.IsLocalRing.maximalIdeal_pow_ne_top`: a positive power of the maximal ideal is proper.
 * `TauCeti.isUnit_add_of_isUnit_of_not_isUnit`: adding a nonunit to a unit in a local ring
   yields a unit.
@@ -68,6 +74,36 @@ instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R]
       rw [IsIdempotentElem, mul_assoc, ← mul_assoc p, hpq, one_mul]
     refine he.eq_zero_or_eq_one_of_isLocalRing.resolve_left fun h0 ↦ one_ne_zero (α := R) ?_
     simpa only [mul_assoc, hpq, mul_one, mul_zero, zero_mul] using congr(p * $h0 * q)
+
+end TauCeti
+
+/-- In a possibly noncommutative local ring, the Jacobson radical consists of the nonunits. For a
+commutative local ring this is `IsLocalRing.ringJacobson_eq_maximalIdeal`. -/
+theorem IsLocalRing.mem_ringJacobson_iff {R : Type*} [Ring R] [IsLocalRing R] {a : R} :
+    a ∈ Ring.jacobson R ↔ ¬IsUnit a := by
+  refine ⟨fun ha hu ↦ (Ring.jacobson_lt_top R).ne (Ideal.eq_top_of_isUnit_mem _ ha hu),
+    fun ha ↦ Submodule.mem_sInf.mpr fun m hm ↦ ?_⟩
+  -- If `a ∉ m` for a maximal left ideal `m`, then `y * a = 1 - i` with `i ∈ m` a nonunit, so
+  -- `y * a` is a unit and `a` has a left inverse, hence is a unit.
+  by_contra ham
+  obtain ⟨y, i, hi, hyi⟩ := Ideal.IsMaximal.exists_inv (I := m) ⟨hm⟩ ham
+  have hi' : ¬IsUnit i := fun hu ↦ hm.1 (Ideal.eq_top_of_isUnit_mem _ hi hu)
+  have hya : IsUnit (y * a) := by
+    rw [eq_sub_of_add_eq hyi]
+    exact (IsLocalRing.isUnit_or_isUnit_one_sub_self i).resolve_left hi'
+  exact ha (isUnit_of_mul_isUnit_right hya)
+
+/-- The Jacobson radical of a possibly noncommutative local ring is a maximal left ideal, so the
+quotient by it is a division ring (`Ideal.Quotient.divisionRing`). -/
+theorem IsLocalRing.isMaximal_ringJacobson (R : Type*) [Ring R] [IsLocalRing R] :
+    (Ring.jacobson R).IsMaximal := by
+  refine Ideal.isMaximal_iff.mpr ⟨fun h ↦ IsLocalRing.mem_ringJacobson_iff.mp h isUnit_one,
+    fun J x _ hx hxJ ↦ ?_⟩
+  -- An element outside the Jacobson radical is a unit, so an ideal containing it is everything.
+  obtain ⟨u, rfl⟩ := not_not.mp (IsLocalRing.mem_ringJacobson_iff.not.mp hx)
+  simpa using J.smul_mem (↑u⁻¹ : R) hxJ
+
+namespace TauCeti
 
 /-- A positive power of the maximal ideal of a commutative local semiring is a proper ideal. -/
 theorem IsLocalRing.maximalIdeal_pow_ne_top {R : Type*} [CommSemiring R] [IsLocalRing R]
