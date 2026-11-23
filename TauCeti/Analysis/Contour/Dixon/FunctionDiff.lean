@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Dixon.H1Diff
 import TauCeti.Analysis.Contour.Dixon.H2.Diff
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # The Dixon function is entire
@@ -120,8 +119,7 @@ private theorem differentiable_dixonFunction_of_windingNumber_zero_near (hU : Is
 continuous curve `γ` with image in `U` that is null-homologous in `U`, the glued function
 `dixonFunction f U γ a b` is complex-differentiable on all of `ℂ`. Closedness of `γ` is not needed
 here: it follows from null-homology about any point outside `U`, and there is no such point when
-`U = ℂ`. This specialises `differentiable_dixonFunction_of_windingNumber_zero_near`, discharging
-its local winding hypothesis via `AbsolutelyContinuousOnInterval.exists_ball_windingNumber_zero`. -/
+`U = ℂ`. -/
 theorem differentiable_dixonFunction (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (h_null : IsNullHomologous γ a b U) :

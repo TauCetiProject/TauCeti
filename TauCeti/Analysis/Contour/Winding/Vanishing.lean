@@ -141,10 +141,9 @@ theorem windingNumber_eventually_zero_cocompact {γ : ℝ → ℂ} {a b : ℝ} {
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     ∀ᶠ w in Filter.cocompact ℂ,
       (∀ t ∈ uIcc a b, γ t ≠ w) ∧ windingNumber γ a b w = 0 := by
-  have hac := hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
-    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int
   simpa only [mem_image, not_exists, not_and] using
-    (hγ_cont.windingNumber_eventually_zero_cocompact_of_integer hderiv_int
-      (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz))
+    (hγ_cont.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable hP
+      (fun t ht ↦ (hγ_diff t ht).hasDerivAt) hderiv_int).windingNumber_eventually_zero_cocompact
+      hclosed
 
 end TauCeti.Contour

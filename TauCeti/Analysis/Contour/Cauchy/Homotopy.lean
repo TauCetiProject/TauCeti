@@ -83,11 +83,7 @@ theorem isNullHomologous_of_pathHomotopy_refl {x : ℂ} {p : Path x x} {Ω : Set
 
 /-- **Cauchy's theorem for a null-homotopic contour.** Let `p` be a piecewise-`C¹` loop admitting
 a continuous path homotopy to its constant path inside an open set `Ω`. If `f` is holomorphic on
-`Ω`, then the contour integral of `f` along `p` vanishes.
-
-The homotopy supplies containment of the source path in `Ω` and its null-homology there, and a
-piecewise-`C¹` path is absolutely continuous, which is the regularity `homologyCauchyTheorem`
-asks for. -/
+`Ω`, then the contour integral of `f` along `p` vanishes. -/
 theorem cauchyTheorem_of_pathHomotopy_refl {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω)
     {x : ℂ} (p : Path x x) (hp : IsPiecewiseC1On p.extend 0 1)
     (φ : p.Homotopy (Path.refl x)) (hφΩ : ∀ st : I × I, φ st ∈ Ω)

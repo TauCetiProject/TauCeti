@@ -16,12 +16,12 @@ import Mathlib.Analysis.Complex.Liouville
 /-!
 # The Dixon function vanishes (Liouville step)
 
-Dixon's glued function `dixonFunction f U γ a b` is entire (`differentiable_dixonFunction`) and,
-for a closed null-homologous absolutely continuous curve, tends to `0` at infinity, so Liouville's
-theorem forces it to vanish identically. The decay comes from the eventual agreement
-`dixonFunction = dixonH2` far from the origin — off `U` by definition, and on `U` because the
-winding number is eventually `0`, which collapses the `h₁`/`h₂` identity — combined with the `L¹`
-decay of `dixonH2`.
+For `f` holomorphic on an open set `U` and a closed absolutely continuous curve `γ` in `U` that is
+null-homologous there, Dixon's glued function `dixonFunction f U γ a b` is entire
+(`differentiable_dixonFunction`) and tends to `0` at infinity, so Liouville's theorem forces it to
+vanish identically. The decay comes from the eventual agreement `dixonFunction = dixonH2` far from
+the origin — off `U` by definition, and on `U` because the winding number is eventually `0`, which
+collapses the `h₁`/`h₂` identity — combined with the `L¹` decay of `dixonH2`.
 
 ## Main results
 
@@ -30,8 +30,8 @@ decay of `dixonH2`.
   set `U`.
 
 This pointwise vanishing is the hinge of Dixon's proof of the homology form of Cauchy's theorem
-for null-homologous curves: applying it to `(· - w₀) * f` yields the Cauchy integral formula and
-thence `∮_γ f = 0`.
+for null-homologous curves: applied to `f` it yields Cauchy's integral formula, and applied to
+`(· - w₀) * f` it yields `∮_γ f = 0`.
 
 ## Provenance
 

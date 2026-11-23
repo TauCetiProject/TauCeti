@@ -35,40 +35,6 @@ theorem _root_.AbsolutelyContinuousOnInterval.isLocallyConstant_windingNumber
     hγ.intervalIntegrable_deriv_of_finiteDimensional
     (fun _ hz ↦ hγ.exists_int_windingNumber hclosed hz)
 
-/-- **The winding number vanishes on a ball around an off-curve null point.** For an absolutely
-continuous curve `γ`, if the winding number about an off-curve point `w` is `0`, then it is `0`
-throughout a ball around `w` that stays off the curve. The curve is automatically closed: the
-endpoint-ratio identity `exp (2πi · n) = (γ b - w) / (γ a - w)` at the null point `w` gives
-`γ a = γ b`. This is the local matching input for Dixon's argument: the off-curve set is open, so
-the subtype-open set on which local constancy pins the winding number to `0` pushes forward, along
-the open inclusion `Subtype.val`, to a `ℂ`-ball. -/
-theorem _root_.AbsolutelyContinuousOnInterval.exists_ball_windingNumber_zero
-    {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
-    (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) (hw_zero : windingNumber γ a b w = 0) :
-    ∃ ε > 0, ∀ w' ∈ Metric.ball w ε,
-      (∀ t ∈ uIcc a b, γ t ≠ w') ∧ windingNumber γ a b w' = 0 := by
-  have hw : w ∉ γ '' uIcc a b := by
-    simpa only [mem_image, not_exists, not_and] using hoff
-  -- A null winding number at an off-curve point forces the curve to be closed.
-  have hclosed : γ a = γ b := by
-    have h := hγ.exp_two_pi_I_mul_windingNumber hw
-    rw [hw_zero, mul_zero, Complex.exp_zero, eq_comm,
-      div_eq_one_iff_eq (sub_ne_zero.mpr (hoff a left_mem_uIcc))] at h
-    exact (sub_left_inj.mp h).symm
-  -- The off-curve set is open: it is the complement of the compact curve image.
-  have hSopen : IsOpen {z : ℂ | z ∉ γ '' uIcc a b} :=
-    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isClosed.isOpen_compl
-  -- The winding number is locally constant off the curve, so it is `0` on a subtype-open set
-  -- around `w`; push that set forward along the open inclusion to a `ℂ`-ball, every point of
-  -- which is off the curve, being the value of a point of the subtype.
-  obtain ⟨V, hV_open, hwV, hV_const⟩ :=
-    (hγ.isLocallyConstant_windingNumber hclosed).exists_open ⟨w, hw⟩
-  obtain ⟨ε, hε, hball⟩ :=
-    Metric.isOpen_iff.mp (hSopen.isOpenMap_subtypeVal V hV_open) w ⟨⟨w, hw⟩, hwV, rfl⟩
-  refine ⟨ε, hε, fun w' hw' ↦ ?_⟩
-  obtain ⟨p, hpV, rfl⟩ := hball hw'
-  exact ⟨fun t ht heq ↦ p.property ⟨t, ht, heq⟩, (hV_const p hpV).trans hw_zero⟩
-
 /-- The winding number of a closed absolutely continuous curve is constant on each connected
 component of the complement of its trace. -/
 theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedComponentIn
@@ -79,5 +45,28 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedC
   exact hγ.continuousOn.windingNumber_eq_of_mem_connectedComponentIn_of_integer
     hγ.intervalIntegrable_deriv_of_finiteDimensional
     (fun _ hz ↦ hγ.exists_int_windingNumber hclosed hz) hw
+
+/-- **The winding number vanishes on a ball around an off-curve null point.** For an absolutely
+continuous curve `γ`, if the winding number about an off-curve point `w` is `0`, then it is `0`
+throughout a ball around `w` that stays off the curve. No closedness hypothesis is needed: a
+vanishing winding number about an off-curve point forces `γ a = γ b`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.exists_ball_windingNumber_zero
+    {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) (hw_zero : windingNumber γ a b w = 0) :
+    ∃ ε > 0, ∀ w' ∈ Metric.ball w ε,
+      (∀ t ∈ uIcc a b, γ t ≠ w') ∧ windingNumber γ a b w' = 0 := by
+  have hw : w ∈ (γ '' uIcc a b)ᶜ := by
+    simpa only [mem_compl_iff, mem_image, not_exists, not_and] using hoff
+  -- The endpoint-ratio identity `exp (2πi · n) = (γ b - w) / (γ a - w)` at `n = 0`.
+  have hclosed : γ a = γ b := by
+    simpa [hw_zero, eq_div_iff (sub_ne_zero.mpr (hoff a left_mem_uIcc))] using
+      hγ.exp_two_pi_I_mul_windingNumber hw
+  -- A ball around `w` inside the open complement of the trace lies in one connected component.
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp
+    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isClosed.isOpen_compl w hw
+  refine ⟨ε, hε, fun w' hw' ↦ ⟨fun t ht heq ↦ hball hw' ⟨t, ht, heq⟩, ?_⟩⟩
+  rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+    ((convex_ball w ε).isPreconnected.subset_connectedComponentIn (Metric.mem_ball_self hε)
+      hball hw'), hw_zero]
 
 end TauCeti.Contour

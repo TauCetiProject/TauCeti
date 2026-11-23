@@ -5,9 +5,8 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.Dixon.Def
+public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Contour.Cauchy.IntegralFormula
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.Dixon.FunctionDiff
@@ -15,21 +14,22 @@ import TauCeti.Analysis.Contour.Dixon.Liouville
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
-# The homology Cauchy theorem, via Dixon's argument
+# The homology Cauchy theorem and integral formula, via Dixon's argument
 
-Dixon's argument in `Dixon.Liouville` (`dixonFunction_eq_zero`) proves that the glued Dixon
-function vanishes for a closed null-homologous absolutely continuous curve. `Cauchy.IntegralFormula`
-then extracts two algebraic consequences from pointwise vanishing
+Let `f` be holomorphic on an open set `U` and let `γ` be a closed absolutely continuous curve in `U`
+that is null-homologous there. Dixon's argument in `Dixon.Liouville` (`dixonFunction_eq_zero`)
+proves that the glued Dixon function of `f` along `γ` vanishes identically, and
+`Cauchy.IntegralFormula` extracts two algebraic consequences from its vanishing at a single point
 (`dixonH2_eq_windingNumber_mul_f_of_dixonFunction_eq_zero` and
-`intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero`). This file packages the direct
-null-homologous forms and assembles the theorem:
+`intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero`). This file discharges the vanishing
+hypothesis and records the two resulting statements:
 
-* `dixonH2_eq_windingNumber_mul_f_of_nullHomologous` — Cauchy's integral formula at an off-curve
-  point.
-* `homologyCauchyTheorem` — **the homology form of Cauchy's theorem**: for a closed absolutely
-  continuous curve `γ`, null-homologous in an open `Ω`, and `f` holomorphic on `Ω`, the contour
-  integral `∫ t in a..b, deriv γ t • f (γ t)` vanishes. The base point off the curve that Dixon's
-  argument needs comes from `exists_mem_off_curve`.
+* `cauchyIntegralFormula_nullHomologous` — **Cauchy's integral formula in homology form**: for a
+  point `z` off the curve,
+  `∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z)) = 2πi · windingNumber γ a b z · f z`.
+* `homologyCauchyTheorem` — **the homology form of Cauchy's theorem**:
+  `∫ t in a..b, deriv γ t • f (γ t) = 0`. The base point off the curve that Dixon's argument needs
+  comes from `exists_mem_off_curve`.
 
 Absolute continuity is the natural regularity for the contour integral
 `∫ t in a..b, deriv γ t • f (γ t)`: it makes `deriv γ` interval-integrable and the winding number
@@ -54,44 +54,53 @@ open scoped Real Interval
 
 namespace TauCeti.Contour
 
-/-- **Null-homologous Cauchy integral formula at an off-curve point.** Let `γ` be a closed
-absolutely continuous curve in an open set `U`, null-homologous in `U`. If `f` is holomorphic on
-`U` and `w` is a point not on the curve, then the Cauchy-type integral evaluates to
-`2πi · windingNumber γ a b w · f w`. (For `w ∉ U` both sides vanish.)
+/-- **Cauchy's integral formula, homology form.** Let `f` be holomorphic on an open set `U`, let
+`γ` be a closed absolutely continuous curve in `U` that is null-homologous there, and let `z` be a
+point off the curve. Then
 
-This is the Cauchy-integral-formula output of Dixon's vanishing theorem. The point is kept as an
-explicit hypothesis: it is any point off the curve, not necessarily in `U`; since the trace of the
-curve is compact, such a point always exists. -/
-theorem dixonH2_eq_windingNumber_mul_f_of_nullHomologous {f : ℂ → ℂ} {U : Set ℂ}
-    {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ} (hU : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) (hγ : AbsolutelyContinuousOnInterval γ a b)
-    (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
-    (h_null : IsNullHomologous γ a b U) (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) :
-    dixonH2 f γ a b w = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b w * f w := by
+`∫ t in a..b, γ' t • (f (γ t) / (γ t − z)) = 2πi · n_z(γ) · f z`,
+
+where `n_z(γ) = windingNumber γ a b z` is the generalized winding number. The Cauchy-type integral
+thus determines the winding-weighted value `n_z(γ) · f z`; it determines `f z` itself only when
+`n_z(γ) ≠ 0`. The point `z` need not lie in `U`: for `z ∉ U` the winding number vanishes by
+null-homology and the formula says that the integral is `0`.
+
+The companion statement without the Cauchy kernel is `TauCeti.Contour.homologyCauchyTheorem`, and
+the formulas for the derivatives of `f` are
+`TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_nullHomologous`. -/
+theorem cauchyIntegralFormula_nullHomologous {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
+    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U)
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
+    ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))
+      = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z := by
   have hderiv_int := hγ.intervalIntegrable_deriv_of_finiteDimensional
-  have h_zero := dixonFunction_eq_zero hU hf hγ hγU hclosed h_null w
-  by_cases hwU : w ∈ U
-  · exact dixonH2_eq_windingNumber_mul_f_of_dixonFunction_eq_zero hγ.continuousOn hwU hoff h_zero
-      (cauchy_integrand_intervalIntegrable hf.continuousOn hγ.continuousOn hγU hderiv_int hoff)
-      (intervalIntegrable_inv_sub_mul_deriv hγ.continuousOn hoff hderiv_int)
-  · rw [dixonFunction_eq_dixonH2 hwU] at h_zero
-    rw [h_zero, isNullHomologous_iff.mp h_null w hwU]
-    simp
+  -- Dixon's function vanishes at `z`. On `U` that is the formula, by the `h₁`/`h₂` identity; off
+  -- `U` it says that the Cauchy-type integral `dixonH2` vanishes, and so does the winding number.
+  have h_zero := dixonFunction_eq_zero hU hf hγ hγU hclosed hnull z
+  have hH2 : dixonH2 f γ a b z = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z := by
+    by_cases hzU : z ∈ U
+    · exact dixonH2_eq_windingNumber_mul_f_of_dixonFunction_eq_zero hγ.continuousOn hzU hoff h_zero
+        (cauchy_integrand_intervalIntegrable hf.continuousOn hγ.continuousOn hγU hderiv_int hoff)
+        (intervalIntegrable_inv_sub_mul_deriv hγ.continuousOn hoff hderiv_int)
+    · rw [dixonFunction_eq_dixonH2 hzU] at h_zero
+      rw [h_zero, isNullHomologous_iff.mp hnull z hzU]
+      simp
+  rw [← hH2, dixonH2_def]
+  exact intervalIntegral.integral_congr fun t _ ↦ by rw [smul_eq_mul, mul_comm]
 
 /-- **The homology Cauchy theorem.** Let `γ` be a closed absolutely continuous curve on
 `[[a, b]]`, null-homologous in an open set `Ω` containing it, and let `f` be holomorphic on `Ω`.
-Then the contour integral of `f` along `γ` vanishes: `∫ t in a..b, deriv γ t • f (γ t) = 0`.
-
-Dixon's argument: the compact curve image cannot exhaust the open `Ω`, giving a base point
-`w₀ ∈ Ω` off the curve (`exists_mem_off_curve`); the glued Dixon function of `(· - w₀) * f`
-vanishes identically by Liouville (`dixonFunction_eq_zero`); and its vanishing at `w₀` is the
-Cauchy integral formula there, which reads `∫ t in a..b, deriv γ t • f (γ t) = 0`. -/
+Then the contour integral of `f` along `γ` vanishes: `∫ t in a..b, deriv γ t • f (γ t) = 0`. -/
 theorem homologyCauchyTheorem {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω) (γ : ℝ → ℂ) (a b : ℝ)
     (hγ_ac : AbsolutelyContinuousOnInterval γ a b) (hγ : ∀ t ∈ uIcc a b, γ t ∈ Ω)
     (hclosed : γ a = γ b) (hf : DifferentiableOn ℂ f Ω) (hnull : IsNullHomologous γ a b Ω) :
     ∫ t in a..b, deriv γ t • f (γ t) = 0 := by
   have hγ_cont := hγ_ac.continuousOn
   have hderiv_int := hγ_ac.intervalIntegrable_deriv_of_finiteDimensional
+  -- Dixon's argument. The compact curve image cannot exhaust the open `Ω`, which gives a base
+  -- point `w₀ ∈ Ω` off the curve. The glued Dixon function of `(· - w₀) * f` vanishes identically,
+  -- and its vanishing at `w₀` reads `∫ t in a..b, deriv γ t • f (γ t) = 0`.
   -- Mathlib keeps path-connectedness of real vector spaces out of instance search.
   have : PathConnectedSpace ℂ := IsTopologicalAddGroup.pathConnectedSpace
   obtain ⟨w₀, hw₀Ω, hw₀off⟩ := exists_mem_off_curve hΩ hγ_cont hγ

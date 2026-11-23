@@ -18,9 +18,9 @@ A **polar-part decomposition** of `f` on `U` at the finite singular set `S`: for
 explicit finite Laurent tail `polarPart s z = ∑ k, coeff s k / (z - s)^(k+1)`, such that `f`
 minus the total polar part extends to a function differentiable on all of `U`, and the residue at
 each `s` is the first Laurent coefficient. This bundles exactly the data the generalized residue
-theorem manipulates: the analytic remainder integrates to zero around any null-homologous closed
-curve — even one passing through the poles — so the principal value of `∮ f` reduces to the polar
-parts.
+theorem manipulates: the analytic remainder integrates to zero around any closed absolutely
+continuous curve in `U` that is null-homologous there — even one passing through the poles — so
+the principal value of `∮ f` reduces to the polar parts.
 
 ## Main definitions
 
