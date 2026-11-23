@@ -65,6 +65,9 @@ band, and when `F` preserves area and the line `y = 0`:
 These are the global generating functions of the twist factors in the generating-function proof of
 the Poincaré–Birkhoff theorem. With the convention `y = -∂₁ S'`, `Y = ∂₂ S'`, a positive twist
 `(x, y) ↦ (x + c y, y)`, `c > 0`, has the generator `(X - x)² / (2c)`, with `∂₁ ∂₂ S' = -1 / c`.
+More generally, for `c ≠ 0` the band generating function of the affine shear
+`(x, y) ↦ (x + a + c y, y)` over the whole plane is `(X - x - a)² / (2c)`
+(`TauCeti.stripBandGeneratingFunction_affineShear`).
 
 ## References
 
@@ -406,5 +409,37 @@ theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J
     ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst']
   field_simp
   linear_combination (-(v.1 * w.2)) * hdetq
+
+
+/-! ### Affine shears -/
+
+/-- **The band generating function of an affine shear.** For `c ≠ 0`, the affine shear
+`(x, y) ↦ (x + a + c y, y)` twists everywhere, and its band generating function over the whole
+plane is `S'(x, X) = (X - x - a)² / (2c)`. For instance the negative twist
+`(x, y) ↦ (x - (6y + 1) / 8, y)` (`a = -1 / 8`, `c = -3 / 4`) has the generator
+`-(2/3) (x - X)² + (x - X) / 6 - 1 / 96`. -/
+theorem stripBandGeneratingFunction_affineShear {a c : ℝ} (hc : c ≠ 0) (z : ℝ × ℝ) :
+    stripBandGeneratingFunction (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) univ z =
+      (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+  set F : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1 + a + c * q.2, q.2)
+  have hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' univ) := by
+    rintro ⟨x, y⟩ - ⟨x', y'⟩ - h
+    simp only [stripTwistCoord_apply, F, Prod.mk.injEq] at h
+    obtain ⟨rfl, h⟩ := h
+    simpa [hc] using h
+  -- The point of the plane over `z` is `(z.1, (z.2 - z.1 - a) / c)`.
+  have hz : stripTwistCoord F (z.1, (z.2 - z.1 - a) / c) = z := by
+    ext
+    · simp
+    · simp only [stripTwistCoord_apply, F]
+      field_simp
+      ring
+  calc stripBandGeneratingFunction F univ z
+      = stripBandGeneratingFunction F univ (stripTwistCoord F (z.1, (z.2 - z.1 - a) / c)) := by
+        rw [hz]
+    _ = (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+        rw [stripBandGeneratingFunction_stripTwistCoord hinj (mem_preimage.2 (mem_univ _)),
+          stripGeneratingFunction_affineShear]
+        field_simp
 
 end TauCeti
