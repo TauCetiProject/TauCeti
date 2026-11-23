@@ -369,7 +369,8 @@ theorem tendsto_deriv_deriv_callPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 �
     (hsK : s ≠ K) :
     Tendsto (fun u => deriv (deriv fun x => callPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
   rcases eq_or_ne σ 0 with rfl | hσ
-  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_callPrice_spot_volatility_zero ..).symm
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero
+      (zero_mul _)).symm
   rcases hK.eq_or_lt with rfl | hK
   · -- At `K = 0` the call price `x Φ(d₊)` is linear in the spot `x`.
     refine tendsto_const_nhds.congr fun u => ?_
@@ -457,7 +458,8 @@ tends to `0⁺`. As for the call, this holds for every volatility `σ` and every
 theorem tendsto_deriv_deriv_putPrice_spot_maturity_zero (hs : 0 < s) (hK : 0 ≤ K) (hsK : s ≠ K) :
     Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
   rcases eq_or_ne σ 0 with rfl | hσ
-  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_putPrice_spot_volatility_zero ..).symm
+  · exact tendsto_const_nhds.congr fun u => (deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero
+      (zero_mul _)).symm
   rcases hK.eq_or_lt with rfl | hK
   · -- At `K = 0` the put price `-x Φ(-d₊)` is linear in the spot `x`.
     refine tendsto_const_nhds.congr fun u => ?_

@@ -49,9 +49,9 @@ which satisfy `∂V/∂t + r (s ∂V/∂s - V) = 0`.
 * `TauCeti.BlackScholes.hasDerivAt_callPrice_maturity` — the derivative of the call in `τ`.
 * `TauCeti.BlackScholes.hasDerivAt_callPrice_volatility` — the call vega.
 * `TauCeti.BlackScholes.deriv_callPrice_spot_mem_Ioo` — `0 < ∂C/∂s < 1`.
-* `TauCeti.BlackScholes.deriv_callPrice_spot_volatility_zero`,
-  `TauCeti.BlackScholes.deriv_deriv_callPrice_spot_volatility_zero` — at `σ = 0` the call formula
-  has delta `1 / 2` and gamma `0`.
+* `TauCeti.BlackScholes.deriv_callPrice_spot_of_mul_sqrt_eq_zero`,
+  `TauCeti.BlackScholes.deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero` — without a diffusion
+  term (`σ √τ = 0`, for instance at `σ = 0`) the call formula has delta `1 / 2` and gamma `0`.
 * The corresponding `putPrice` statements.
 * `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot
   on `s > 0` (for `τ > 0`, `σ ≠ 0`, `K > 0`).
@@ -303,35 +303,37 @@ theorem deriv_putPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
     ← (hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   exact deriv_callPrice_volatility_pos hs hK hσ hτ
 
-/-! ### Delta and gamma of the formulas at zero volatility -/
+/-! ### Delta and gamma of the formulas without a diffusion term -/
 
-/-- At `σ = 0` the closed-form call formula is the affine function `(s - K e^{-rτ}) / 2` of the
-spot (`callPrice_volatility_zero`, through Lean's convention `x / 0 = 0`), so its delta is `1 / 2`
-at every spot. -/
-theorem deriv_callPrice_spot_volatility_zero (r K τ : ℝ) :
-    deriv (fun x => callPrice x r 0 K τ) = fun _ => 1 / 2 := by
+/-- Without a diffusion term (`σ √τ = 0`, for instance at `σ = 0`), the closed-form call formula
+is the affine function `(s - K e^{-rτ}) / 2` of the spot (`callPrice_of_mul_sqrt_eq_zero`, through
+Lean's convention `x / 0 = 0`), so its delta is `1 / 2` at every spot. -/
+theorem deriv_callPrice_spot_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    deriv (fun x => callPrice x r σ K τ) = fun _ => 1 / 2 := by
   ext x
-  simp only [callPrice_volatility_zero]
+  simp only [callPrice_of_mul_sqrt_eq_zero h]
   exact (((hasDerivAt_id x).sub_const _).div_const 2).deriv
 
-/-- At `σ = 0` the closed-form call formula is affine in the spot, so its gamma vanishes. -/
-theorem deriv_deriv_callPrice_spot_volatility_zero (s r K τ : ℝ) :
-    deriv (deriv fun x => callPrice x r 0 K τ) s = 0 := by
-  rw [deriv_callPrice_spot_volatility_zero, deriv_const]
+/-- Without a diffusion term (`σ √τ = 0`) the closed-form call formula is affine in the spot, so
+its gamma vanishes. -/
+theorem deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    deriv (deriv fun x => callPrice x r σ K τ) s = 0 := by
+  rw [deriv_callPrice_spot_of_mul_sqrt_eq_zero h, deriv_const]
 
-/-- At `σ = 0` the closed-form put formula is the affine function `(K e^{-rτ} - s) / 2` of the
-spot (`putPrice_volatility_zero`, through Lean's convention `x / 0 = 0`), so its delta is `-1 / 2`
-at every spot. -/
-theorem deriv_putPrice_spot_volatility_zero (r K τ : ℝ) :
-    deriv (fun x => putPrice x r 0 K τ) = fun _ => -1 / 2 := by
+/-- Without a diffusion term (`σ √τ = 0`, for instance at `σ = 0`), the closed-form put formula
+is the affine function `(K e^{-rτ} - s) / 2` of the spot (`putPrice_of_mul_sqrt_eq_zero`, through
+Lean's convention `x / 0 = 0`), so its delta is `-1 / 2` at every spot. -/
+theorem deriv_putPrice_spot_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    deriv (fun x => putPrice x r σ K τ) = fun _ => -1 / 2 := by
   ext x
-  simp only [putPrice_volatility_zero]
+  simp only [putPrice_of_mul_sqrt_eq_zero h]
   exact (((hasDerivAt_id x).const_sub _).div_const 2).deriv
 
-/-- At `σ = 0` the closed-form put formula is affine in the spot, so its gamma vanishes. -/
-theorem deriv_deriv_putPrice_spot_volatility_zero (s r K τ : ℝ) :
-    deriv (deriv fun x => putPrice x r 0 K τ) s = 0 := by
-  rw [deriv_putPrice_spot_volatility_zero, deriv_const]
+/-- Without a diffusion term (`σ √τ = 0`) the closed-form put formula is affine in the spot, so
+its gamma vanishes. -/
+theorem deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    deriv (deriv fun x => putPrice x r σ K τ) s = 0 := by
+  rw [deriv_putPrice_spot_of_mul_sqrt_eq_zero h, deriv_const]
 
 /-! ### The Black–Scholes equation -/
 
@@ -350,7 +352,8 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
         (0 - K * (exp (-r * (T - t)) * (-r * -1))) / 2 :=
       (((hasDerivAt_const t s).sub
         ((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K)).div_const 2).deriv
-    rw [deriv_deriv_callPrice_spot_volatility_zero, deriv_callPrice_spot_volatility_zero]
+    rw [deriv_deriv_callPrice_spot_of_mul_sqrt_eq_zero (zero_mul _),
+      deriv_callPrice_spot_of_mul_sqrt_eq_zero (zero_mul _)]
     simp only [callPrice_volatility_zero]
     rw [hu]
     ring
@@ -377,7 +380,8 @@ theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
         K * (exp (-r * (T - t)) * (-r * -1)) / 2 :=
       ((((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K).sub_const s).div_const
         2).deriv
-    rw [deriv_deriv_putPrice_spot_volatility_zero, deriv_putPrice_spot_volatility_zero]
+    rw [deriv_deriv_putPrice_spot_of_mul_sqrt_eq_zero (zero_mul _),
+      deriv_putPrice_spot_of_mul_sqrt_eq_zero (zero_mul _)]
     simp only [putPrice_volatility_zero]
     rw [hu]
     ring

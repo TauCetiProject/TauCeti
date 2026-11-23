@@ -50,8 +50,9 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
 * `TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus` — the density identity
   `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard Gaussian density.
 * `TauCeti.BlackScholes.callPrice`, `TauCeti.BlackScholes.putPrice` — the closed-form prices.
-* `TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero` — the call price is `(s - K e^{-rτ}) / 2`
-  when `σ √τ = 0`.
+* `TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero`,
+  `TauCeti.BlackScholes.putPrice_of_mul_sqrt_eq_zero` — the call and put prices are
+  `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2` when `σ √τ = 0`.
 * `TauCeti.BlackScholes.riskNeutralPrice_id` — the discounted stock is priced at `s`.
 * `TauCeti.BlackScholes.callPrice_sub_putPrice` — put–call parity.
 * `TauCeti.BlackScholes.callPrice_volatility_zero`,
@@ -303,6 +304,13 @@ theorem putPrice_eq_callPrice (s r σ K τ : ℝ) :
     putPrice s r σ K τ = callPrice s r σ K τ - s + K * exp (-r * τ) := by
   linear_combination -callPrice_sub_putPrice s r σ K τ
 
+/-- Without a diffusion term (`σ √τ = 0`) both `d₊` and `d₋` vanish, and the put price is the
+affine function `(K e^{-rτ} - s) / 2` of the spot. -/
+theorem putPrice_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    putPrice s r σ K τ = (K * exp (-r * τ) - s) / 2 := by
+  rw [putPrice_eq_callPrice, callPrice_of_mul_sqrt_eq_zero h]
+  ring
+
 /-- At `σ = 0` the closed-form call formula evaluates to `(s - K e^{-rτ}) / 2`: through Lean's
 convention `x / 0 = 0` both `d₊` and `d₋` are `0`. This is a value of the formula, not the price of
 a call on a stock without volatility (which is the discounted intrinsic value). -/
@@ -314,9 +322,8 @@ a call on a stock without volatility (which is the discounted intrinsic value). 
 convention `x / 0 = 0` both `d₊` and `d₋` are `0`. This is a value of the formula, not the price of
 a put on a stock without volatility (which is the discounted intrinsic value). -/
 @[simp] theorem putPrice_volatility_zero (s r K τ : ℝ) :
-    putPrice s r 0 K τ = (K * exp (-r * τ) - s) / 2 := by
-  rw [putPrice_eq_callPrice, callPrice_volatility_zero]
-  ring
+    putPrice s r 0 K τ = (K * exp (-r * τ) - s) / 2 :=
+  putPrice_of_mul_sqrt_eq_zero (zero_mul _)
 
 /-! ### Risk-neutral prices of calls and puts -/
 
