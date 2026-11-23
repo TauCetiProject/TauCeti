@@ -28,8 +28,9 @@ does not move the `Sym(Z)` factor
 For `ζ ∈ Z^*` and `λ ∈ H^*`, the character `TauCeti.productCentralCharacter b ζ λ` of
 `Z(U(Z × S))` is evaluation at `ζ` on `Sym(Z)` and the central character `χ_λ` of the Verma module
 `M(λ)` on `Z(U(S))`. It is evaluation at `(ζ, λ)` after the Harish-Chandra isomorphism
-(`TauCeti.productCentralCharacter_eq_lift_productHarishChandraIso`), and two of these characters
-agree exactly when the `Z`-weights agree and the `H`-weights lie in one dot orbit
+(`TauCeti.productCentralCharacter_eq_lift_productHarishChandraIso`), or at `(ζ, λ + ρ)` after the
+linear one (`TauCeti.productCentralCharacter_sub_eq_lift_productHarishChandraLinearIso`). Two of
+these characters agree exactly when the `Z`-weights agree and the `H`-weights lie in one dot orbit
 (`TauCeti.productCentralCharacter_eq_iff`).
 
 ## Main definitions
@@ -118,6 +119,24 @@ theorem productHarishChandraLinearIso_apply (z : Subalgebra.center K (U (Z × S)
         (harishChandraLinearIso b) (productCenterEquiv K Z S z) :=
   (rfl)
 
+/-- The Harish-Chandra isomorphism of `Z × S` on the product of an element of `Sym(Z)` and a
+central element of `U(S)`. -/
+@[simp]
+theorem productHarishChandraIso_productCenterEquiv_symm_tmul (a : _root_.SymmetricAlgebra K Z)
+    (c : Subalgebra.center K (U S)) :
+    productHarishChandraIso Z b ((productCenterEquiv K Z S).symm (a ⊗ₜ[K] c)) =
+      a ⊗ₜ[K] harishChandraIso b c := by
+  simp [productHarishChandraIso_apply]
+
+/-- The linear Harish-Chandra isomorphism of `Z × S` on the product of an element of `Sym(Z)` and
+a central element of `U(S)`. -/
+@[simp]
+theorem productHarishChandraLinearIso_productCenterEquiv_symm_tmul
+    (a : _root_.SymmetricAlgebra K Z) (c : Subalgebra.center K (U S)) :
+    productHarishChandraLinearIso Z b ((productCenterEquiv K Z S).symm (a ⊗ₜ[K] c)) =
+      a ⊗ₜ[K] harishChandraLinearIso b c := by
+  simp [productHarishChandraLinearIso_apply]
+
 /-- The inverse Harish-Chandra isomorphism of `Z × S` on a pure tensor `a ⊗ p` is the product of
 the image of `a ∈ Sym(Z) = U(Z)` and the image of the central element of `U(S)` with
 Harish-Chandra image `p`. -/
@@ -163,7 +182,20 @@ theorem productCentralCharacter_eq_lift_productHarishChandraIso (ζ : Module.Dua
         (productHarishChandraIso Z b z) := by
   obtain ⟨t, rfl⟩ := (productCenterEquiv K Z S).symm.surjective z
   induction t using TensorProduct.inductionOn with
-  | tmul a c => simp [productHarishChandraIso_apply, lift_hcProjection]
+  | tmul a c => simp [lift_hcProjection]
+  | add s t hs ht => simp only [map_add, hs, ht]
+
+/-- **Central characters through the linear Harish-Chandra isomorphism.** The central character of
+weight `(ζ, λ - ρ)` is evaluation of the linear Harish-Chandra image at `(ζ, λ)`. -/
+theorem productCentralCharacter_sub_eq_lift_productHarishChandraLinearIso (ζ : Module.Dual K Z)
+    (lam : Module.Dual K H) (z : Subalgebra.center K (U (Z × S))) :
+    productCentralCharacter Z b ζ (lam - weylVector (IsKilling.rootSystem H) b) z =
+      Algebra.TensorProduct.lift (_root_.SymmetricAlgebra.lift ζ)
+        ((_root_.SymmetricAlgebra.lift lam).comp (linearInvariants H).val) (fun _ _ ↦ .all _ _)
+        (productHarishChandraLinearIso Z b z) := by
+  obtain ⟨t, rfl⟩ := (productCenterEquiv K Z S).symm.surjective z
+  induction t using TensorProduct.inductionOn with
+  | tmul a c => simp [lift_hcProjectionLinear]
   | add s t hs ht => simp only [map_add, hs, ht]
 
 /-- **Harish-Chandra's theorem on central characters for `Z × S`.** The central characters of
