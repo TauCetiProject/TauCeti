@@ -203,7 +203,7 @@ private theorem existsUnique_rowLen_eq (hlam : lam.colLen 0 ≤ N) (T : BoundedS
     by_cases hi : i < N
     · exact (YoungDiagram.rowLen_ofRowLensFin _ hanti ⟨i, hi⟩).symm
     · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ hanti (not_lt.mp hi),
-        YoungDiagram.rowLen_eq_zero_of_colLen_le (hlam.trans (not_lt.mp hi)),
+        YoungDiagram.rowLen_eq_zero_iff.mpr (hlam.trans (not_lt.mp hi)),
         content_eq_zero T (not_lt.mp hi)]
   have hcard : Y.card = lam.card + μ.card := by
     rw [YoungDiagram.card_ofRowLensFin, sum_add_distrib, ← sum_weight T,
@@ -243,12 +243,8 @@ private theorem diagramSchurPoly_mul_diagramSchurPoly_int {lam μ : YoungDiagram
     refine sum_congr rfl fun T hT => ?_
     obtain ⟨-, hν⟩ := (mem_filter.mp hT).2
     have hνN : (ofPartition ν).colLen 0 ≤ N := by
-      by_contra hlt
-      have hmem : ((N, 0) : ℕ × ℕ) ∈ ofPartition ν :=
-        YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le hlt)
-      have := YoungDiagram.mem_iff_lt_rowLen.mp hmem
-      rw [← hν N, YoungDiagram.rowLen_eq_zero_of_colLen_le hlam, content_eq_zero T le_rfl] at this
-      omega
+      rw [← YoungDiagram.rowLen_eq_zero_iff, ← hν N, YoungDiagram.rowLen_eq_zero_iff.mpr hlam,
+        content_eq_zero T le_rfl]
     rw [diagramSchurPoly_mul_alternant N _ hνN]
     congr 1
     funext j

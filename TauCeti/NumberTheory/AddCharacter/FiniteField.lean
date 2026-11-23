@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.NumberTheory.AddCharacter.Trace
 public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import TauCeti.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 
 /-!
 # The canonical additive character of a finite field
@@ -49,6 +50,8 @@ relations `AddChar.sum_mulShift`.
   trace.
 * `TauCeti.FiniteField.isPrimitive_stdAddChar`: `ψ_F` is primitive.
 * `TauCeti.FiniteField.stdAddChar_zmod`: over `ZMod p`, `ψ_F` is `ZMod.stdAddChar`.
+* `TauCeti.FiniteField.existsUnique_ne_zero_mulShift_stdAddChar_eq`: every nontrivial complex
+  additive character of `F` is `ψ_F.mulShift u` for exactly one `u ≠ 0`.
 
 ## References
 
@@ -125,5 +128,16 @@ trace of `ZMod p` over itself being the identity. -/
 theorem stdAddChar_zmod (p : ℕ) [Fact p.Prime] : stdAddChar (ZMod p) = ZMod.stdAddChar := by
   ext x
   rw [stdAddChar_apply (p := p), Algebra.trace_self_apply]
+
+variable {F}
+
+/-- Every nontrivial complex additive character of a finite field `F` is the shift
+`ψ_F.mulShift u` of the canonical one by exactly one nonzero `u`. -/
+theorem existsUnique_ne_zero_mulShift_stdAddChar_eq {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
+    ∃! u : F, u ≠ 0 ∧ (stdAddChar F).mulShift u = ψ := by
+  obtain ⟨u, hu, huniq⟩ := (isPrimitive_stdAddChar F).existsUnique_mulShift_eq ψ
+  refine ⟨u, ⟨?_, hu⟩, fun v hv ↦ huniq v hv.2⟩
+  rintro rfl
+  exact hψ (hu ▸ AddChar.mulShift_zero _)
 
 end TauCeti.FiniteField
