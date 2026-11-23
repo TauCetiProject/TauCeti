@@ -39,7 +39,10 @@ surface is the disc.
   finite order exactly on the disc.
 * `TauCeti.SurfaceGroup.Orientable.zpowersHom_peripheral_injective` and
   `TauCeti.SurfaceGroup.Nonorientable.zpowersHom_peripheral_injective`: the boundary maps
-  `ℤ → S±(g, m)` are injective unless the surface is the disc.
+  `ℤ → S±(g, m)` are injective unless the surface is the disc; so are the boundary maps of the
+  opposite orientation, `n ↦ pⱼ ^ (-n)`
+  (`TauCeti.SurfaceGroup.Orientable.zpowersHom_inv_peripheral_injective` and
+  `TauCeti.SurfaceGroup.Nonorientable.zpowersHom_inv_peripheral_injective`).
 
 ## References
 
@@ -102,6 +105,13 @@ theorem zpowersHom_peripheral_injective (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) :
     injective_zpow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_peripheral h j) <| by
       simpa using hxy
 
+/-- Unless the surface is the disc, the boundary map `ℤ → S⁺(g, m)` of the opposite orientation,
+`n ↦ pⱼ ^ (-n)`, is injective. -/
+theorem zpowersHom_inv_peripheral_injective (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) :
+    Function.Injective (zpowersHom (Orientable g m) (peripheral g m j)⁻¹) := fun x y hxy ↦
+  Multiplicative.toAdd.injective <| injective_zpow_iff_not_isOfFinOrder.2
+    (isOfFinOrder_inv_iff.not.2 (not_isOfFinOrder_peripheral h j)) <| by simpa using hxy
+
 end Orientable
 
 namespace Nonorientable
@@ -149,6 +159,13 @@ theorem zpowersHom_peripheral_injective (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) :
   Multiplicative.toAdd.injective <|
     injective_zpow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_peripheral h j) <| by
       simpa using hxy
+
+/-- Unless `g = 0` and `m = 1`, the boundary map `ℤ → S⁻(g, m)` of the opposite orientation,
+`n ↦ pⱼ ^ (-n)`, is injective. -/
+theorem zpowersHom_inv_peripheral_injective (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) :
+    Function.Injective (zpowersHom (Nonorientable g m) (peripheral g m j)⁻¹) := fun x y hxy ↦
+  Multiplicative.toAdd.injective <| injective_zpow_iff_not_isOfFinOrder.2
+    (isOfFinOrder_inv_iff.not.2 (not_isOfFinOrder_peripheral h j)) <| by simpa using hxy
 
 end Nonorientable
 

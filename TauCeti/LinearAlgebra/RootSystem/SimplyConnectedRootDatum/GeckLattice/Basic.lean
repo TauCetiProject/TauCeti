@@ -48,7 +48,7 @@ coordinate lattice reduces finite generation to Noetherianity of `ℤ`.
   the whole simple-generator Kostant form.
 * `TauCeti.DynkinType.geckOrbit_eq_geckCoordinateLattice`: the integral orbit of the standard
   coordinate vectors is exactly the coordinate lattice.
-* `TauCeti.DynkinType.instIsLatticeGeckOrbit`: the integral orbit is therefore a full lattice,
+* `TauCeti.DynkinType.instIsFullLatticeGeckOrbit`: the integral orbit is therefore a full lattice,
   finitely generated over `ℤ`.
 
 ## References
@@ -174,9 +174,9 @@ theorem geckCoordinateLattice_le_geckOrbit :
 
 /-- The coordinate lattice is finitely generated over `ℤ` and spans the ambient rational Geck
 module. -/
-instance instIsLatticeGeckCoordinateLattice :
-    Submodule.IsLattice ℚ (t.geckCoordinateLattice ht) where
-  __ := TauCeti.instIsLatticeCoordinateLattice (t.GeckIndex ht)
+instance instIsFullLatticeGeckCoordinateLattice :
+    Submodule.IsFullLattice ℚ (t.geckCoordinateLattice ht) where
+  __ := TauCeti.instIsFullLatticeCoordinateLattice (t.GeckIndex ht)
 
 /-! ## Stability under integral matrices -/
 
@@ -396,10 +396,10 @@ generated over `ℤ` and spanning the rational Geck module. This is the admissib
 in the sense of Humphreys §27, that the Chevalley--Demazure construction consumes; its finite
 generation needs no integral Poincaré--Birkhoff--Witt theorem, only containment in the finitely
 generated coordinate lattice. -/
-instance instIsLatticeGeckOrbit : Submodule.IsLattice ℚ (t.geckOrbit ht) where
-  fg := by
+instance instIsFullLatticeGeckOrbit : Submodule.IsFullLattice ℚ (t.geckOrbit ht) where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := t.geckOrbit ht) (by
     rw [geckOrbit_eq_geckCoordinateLattice]
-    exact (instIsLatticeGeckCoordinateLattice t ht).fg
+    exact Submodule.IsLattice.fg ℚ (t.geckCoordinateLattice ht))
   span_eq_top := t.span_geckOrbit_eq_top ht
 
 end

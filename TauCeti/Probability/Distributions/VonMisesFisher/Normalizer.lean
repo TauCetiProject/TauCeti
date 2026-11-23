@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.BesselI
+public import TauCeti.Analysis.SpecialFunctions.Bessel.I
 public import TauCeti.Probability.Distributions.VonMisesFisher.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Distributions.Uniform.Sphere.Coordinate

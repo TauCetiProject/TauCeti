@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.Topology.MetricSpace.Annulus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -63,7 +64,9 @@ capped actions converge to `a` as `R → ∞`, then the energy of the solution o
 results following it). These are the energy and action bounds of PSS planes in a manifold whose
 asymptotic orbits carry the cap given by the plane itself: the capped output orbits of negative
 planes have action at most `B`, and the energy of a plane is bounded by its capped end action. The
-convergence of the capped actions is a hypothesis here; it is not derived from finite energy.
+convergence of the capped actions is a hypothesis here. It follows from the integrability of the
+energy density, and the limit is identified with the capped action of the asymptotic orbit, in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Energy`.
 
 ## References
 
@@ -290,7 +293,8 @@ theorem rectangleIntegral_comp_endDisc [IsManifold I 1 M] {φ : RoughForm I M F 
     rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
       Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
     exact integral_annulus_eq_integral_circleMap le_rfl hρ
-      (hf.comp Complex.equivRealProdCLM.continuous).continuousOn
+      ((hf.comp Complex.equivRealProdCLM.continuous).continuousOn.integrableOn_compact
+        (isCompact_setOf_le_norm_sub_le 0 0 ρ))
   rw [hrect, ← hdisc]
   congr 1
   refine setIntegral_congr_fun ?_ fun z _ ↦ mpullback_apply_pair u φ z (1, 0) (0, 1)
@@ -322,7 +326,7 @@ theorem
         ω.floerEnergyDensity
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      p.endSign * cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+      p.endSign * cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
           (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u ∘ p.endDisc R) -
         ∫ z, ω.hamiltonianCurvature
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -331,7 +335,7 @@ theorem
   have harea : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * R)),
       (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) =
-      p.endSign * rectangleIntegral ω.1 (u ∘ p.endDisc R) (0, 0) (1, 1) := by
+      p.endSign * rectangleIntegral ω.val (u ∘ p.endDisc R) (0, 0) (1, 1) := by
     rw [rectangleIntegral_comp_endDisc (ω.isSmoothForm.of_le (by simp)) hu R, smul_eq_mul,
       ← mul_assoc, endSign_mul_endSign, one_mul]
     simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal, stdComplexLineImag]
@@ -362,9 +366,9 @@ theorem integral_floerEnergyDensity_pssPlanePerturbation_closedBall_of_isLoopCyl
         ω.floerEnergyDensity
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      p.endSign * (cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+      p.endSign * (cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
           (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) D -
-          rectangleIntegral ω.1
+          rectangleIntegral ω.val
             (rectangleTrans D ((u ∘ p.endDisc R) ∘ Prod.map (fun s ↦ 1 - s) id)) (0, 0) (1, 1)) -
         ∫ z, ω.hamiltonianCurvature
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -385,7 +389,7 @@ theorem abs_integral_floerEnergyDensity_pssPlanePerturbation_closedBall_sub_le
         ω.floerEnergyDensity
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) -
-      p.endSign * cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+      p.endSign * cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
           (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u ∘ p.endDisc R)| ≤ B := by
   rw [hω.integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_cappedLoopAction
       hH hHs hu hR, sub_sub_cancel_left, abs_neg]
@@ -410,7 +414,7 @@ theorem neg_le_endSign_mul_cappedLoopAction_pssPlanePerturbation
         (ω.perturbedMFDeriv (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z).toLinearMap) :
-    -B ≤ p.endSign * cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+    -B ≤ p.endSign * cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u ∘ p.endDisc R) := by
   -- The energy over the disc is nonnegative.
   have hE := setIntegral_nonneg (μ := volume)
@@ -438,7 +442,7 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_eq
       (ω.perturbedMFDeriv (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z).toLinearMap)
-    {a : ℝ} (ha : Tendsto (fun R ↦ cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+    {a : ℝ} (ha : Tendsto (fun R ↦ cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u ∘ p.endDisc R)) atTop
         (𝓝 a)) :
     ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
@@ -477,7 +481,7 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_le
       (ω.perturbedMFDeriv (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z).toLinearMap)
-    {a : ℝ} (ha : Tendsto (fun R ↦ cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+    {a : ℝ} (ha : Tendsto (fun R ↦ cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u ∘ p.endDisc R)) atTop
         (𝓝 a)) :
     ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
@@ -506,7 +510,7 @@ theorem neg_le_endSign_mul_of_tendsto_cappedLoopAction_pssPlanePerturbation
       (ω.perturbedMFDeriv (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z).toLinearMap)
-    {a : ℝ} (ha : Tendsto (fun R ↦ cappedLoopAction ω.1 H (fun t ↦ u (Complex.equivRealProdCLM
+    {a : ℝ} (ha : Tendsto (fun R ↦ cappedLoopAction ω.val H (fun t ↦ u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u ∘ p.endDisc R)) atTop
         (𝓝 a)) :
     -B ≤ p.endSign * a :=

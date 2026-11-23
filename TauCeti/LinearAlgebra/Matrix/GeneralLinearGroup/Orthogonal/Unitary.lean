@@ -120,7 +120,7 @@ theorem exists_mem_orthogonalGroup_map_eq_of_mul_transpose_eq_one (O : unitaryGr
     val_unitarySubgroupUnitsEquiv_symm_apply_coe O
   have hOU : (unitarySubgroupUnitsEquiv.symm O : GL n 𝕜) ∈
       TauCeti.GLOrthogonal n 𝕜 ⊓ unitarySubgroup (GL n 𝕜) :=
-    ⟨TauCeti.GLOrthogonal.mem_iff'.2 (hval ▸ hO), (unitarySubgroupUnitsEquiv.symm O).2⟩
+    ⟨TauCeti.GLOrthogonal.mem_iff'.2 (hval ▸ hO), (unitarySubgroupUnitsEquiv.symm O).property⟩
   rw [TauCeti.GLOrthogonal.inf_unitarySubgroup_eq_map_real] at hOU
   obtain ⟨B, hB, hBO⟩ := hOU
   refine ⟨B, TauCeti.GLOrthogonal.mem_iff_mem_orthogonalGroup.1 hB, ?_⟩

@@ -106,7 +106,7 @@ theorem taylor_apply_eq_of_forall_m_eq (hG : 𝒜.grading = ℋ.grading) {n : �
     rw [LinearMap.mem_eqLocus]
     induction x using PiTensorProduct.induction_on with
     | smul_tprod c x =>
-        rw [map_smul, map_smul, map_smul, taylor_of_tprod, taylor_of_tprod, hG, hm k k.2 hk]
+        rw [map_smul, map_smul, map_smul, taylor_of_tprod, taylor_of_tprod, hG, hm k k.property hk]
     | add u v hu hv => rw [map_add, map_add, map_add, hu, hv]
   exact h hz
 
@@ -191,7 +191,7 @@ theorem obstruction_apply_of_mem_filtration {n : ℕ}
 /-- If two `A∞` structures with the same grading have the same operation of arity `n`, the
 obstruction in arity `n` vanishes. -/
 theorem obstruction_eq_zero_of_m_eq (hG : 𝒜.grading = ℋ.grading)
-    {n : {n : ℕ // 0 < n}} (hm : 𝒜.m n.1 = ℋ.m n.1) :
+    {n : {n : ℕ // 0 < n}} (hm : 𝒜.m n.val = ℋ.m n.val) :
     𝒜.obstruction ℋ n = 0 := by
   have h : 𝒜.taylor ∘ₗ of R A n = ℋ.taylor ∘ₗ of R A n := by
     apply PiTensorProduct.ext

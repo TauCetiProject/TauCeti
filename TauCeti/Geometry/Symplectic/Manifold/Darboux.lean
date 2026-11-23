@@ -72,6 +72,9 @@ field of a contact form `α`.
   `TauCeti.SmoothTwoForm.IsSymplectic.exists_standardDarbouxChart_fst_single`, and their
   `_of_isInteriorPoint` counterparts: standard Euclidean Darboux charts straightening a prescribed
   nonzero tangent vector at `x₀`.
+* `TauCeti.SmoothTwoForm.eval₂_mfderiv_eq_of_darbouxChart`: a diffeomorphism of `M` which reads,
+  in a Darboux chart, as a form-preserving diffeomorphism of the model space, and is the identity
+  near every point outside the chart, preserves the symplectic form.
 
 ## References
 
@@ -148,6 +151,57 @@ private theorem mvfderiv_ne_zero_of_eval₂_eq {form : SmoothTwoForm I M}
 
 end Helpers
 
+section Transport
+
+variable {E H M : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- **Transporting a form-preserving diffeomorphism through a Darboux chart.** Let `κ` be a Darboux
+chart pulling the constant form `ω₀` on `E` back to `σ`, and `ψ` a diffeomorphism of `E` preserving
+`ω₀` and mapping the target of `κ` into itself. A diffeomorphism `Φ` of `M` which is
+`κ⁻¹ ∘ ψ ∘ κ` on the source of `κ`, and the identity near every point outside the source, preserves
+`σ`. -/
+theorem eval₂_mfderiv_eq_of_darbouxChart {σ : SmoothTwoForm I M}
+    {κ : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞} {ω₀ : SymplecticForm E}
+    (hκσ : ∀ x ∈ κ.source, ∀ v w : TangentSpace I x,
+      σ.eval₂ x v w = ω₀ (mvfderiv I κ x v) (mvfderiv I κ x w))
+    {ψ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E}
+    (hψσ : ∀ y u v, ω₀ (fderiv ℝ ψ y u) (fderiv ℝ ψ y v) = ω₀ u v)
+    (hψt : ∀ y ∈ κ.target, ψ y ∈ κ.target) {Φ : M ≃ₘ⟮I, I⟯ M}
+    (hΦs : ∀ x ∈ κ.source, Φ x = κ.symm (ψ (κ x)))
+    (hΦid : ∀ x ∉ κ.source, ⇑Φ =ᶠ[𝓝 x] id) (x : M) (v w : TangentSpace I x) :
+    σ.eval₂ (Φ x) (mfderiv I I Φ x v) (mfderiv I I Φ x w) = σ.eval₂ x v w := by
+  by_cases hx : x ∈ κ.source
+  · have hκx : κ x ∈ κ.target := κ.toPartialEquiv.map_source hx
+    have hΦx : Φ x ∈ κ.source := by
+      rw [hΦs x hx]
+      exact κ.toPartialEquiv.map_target (hψt _ hκx)
+    -- Read in the chart, `Φ` is `ψ`: `κ ∘ Φ = ψ ∘ κ` near `x`.
+    have hcomp : κ ∘ Φ =ᶠ[𝓝 x] ψ ∘ κ := eventually_of_mem (κ.open_source.mem_nhds hx)
+      fun z hz ↦ by
+        rw [Function.comp_apply, hΦs z hz]
+        exact κ.toPartialEquiv.right_inv (hψt _ (κ.toPartialEquiv.map_source hz))
+    have h₁ : HasMFDerivAt I 𝓘(ℝ, E) (κ ∘ Φ) x
+        ((mfderiv I 𝓘(ℝ, E) κ (Φ x)).comp (mfderiv I I Φ x)) :=
+      (κ.mdifferentiableAt (by simp) hΦx).hasMFDerivAt.comp x
+        ((Φ.contMDiff.mdifferentiable (by simp)) x).hasMFDerivAt
+    have h₂ : HasMFDerivAt I 𝓘(ℝ, E) (ψ ∘ κ) x
+        ((fderiv ℝ ψ (κ x)).comp (mfderiv I 𝓘(ℝ, E) κ x)) :=
+      (hasMFDerivAt_iff_hasFDerivAt.2 (((contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable
+        (by simp)) (κ x)).hasFDerivAt).comp x (κ.mdifferentiableAt (by simp) hx).hasMFDerivAt
+    have h₃ (u : TangentSpace I x) :
+        mvfderiv I κ (Φ x) (mfderiv I I Φ x u) = fderiv ℝ ψ (κ x) (mvfderiv I κ x u) :=
+      congrArg (· u) ((h₁.congr_of_eventuallyEq hcomp.symm).mfderiv.symm.trans h₂.mfderiv)
+    rw [hκσ _ hΦx, hκσ _ hx, h₃, h₃, hψσ]
+  · have hD : mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
+      ((hasMFDerivAt_id x).congr_of_eventuallyEq (hΦid x hx)).mfderiv
+    simp only [hD]
+    rw [(hΦid x hx).eq_of_nhds, id_eq, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
+end Transport
+
 section Darboux
 
 variable {E H M : Type*}
@@ -171,11 +225,11 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.1 x₀
+  let η : E → E [⋀^Fin 2]→L[ℝ] ℝ := RoughForm.inChartAt form.val x₀
   let W : Set E := interior (extChartAt I x₀).target
   let y₀ : E := extChartAt I x₀ x₀
   have hy₀W : y₀ ∈ W := (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx₀
-  have hηy₀ : η y₀ = form.1 x₀ := RoughForm.inChartAt_extChartAt_self form.1 x₀
+  have hηy₀ : η y₀ = form.val x₀ := RoughForm.inChartAt_extChartAt_self form.val x₀
   -- `TangentSpace I x₀` carries the model vector-space structure of `E`.
   let form₀ : SymplecticForm E :=
     { toBilinForm := form.bilinFormAt x₀
@@ -210,7 +264,7 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
       ![mvfderiv I (extChartAt I x₀) x v, mvfderiv I (extChartAt I x₀) x w] := by
     ext i
     fin_cases i <;> rfl
-  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.1 hxS.1, hvec,
+  rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.val hxS.1, hvec,
     hmvf x hx v, hmvf x hx w]
   rw [hform₀_apply, hη_inv (extChartAt I x₀ x) hxS.2]
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
