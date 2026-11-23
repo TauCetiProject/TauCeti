@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.EtaleEquivRel
+public import TauCeti.AlgebraicGeometry.Cover.Open
 public import TauCeti.RingTheory.Localization.Away.NegX
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
@@ -23,21 +24,21 @@ the affine line of Stacks, Example 65.14.1 (02Z1); the kernel pair of a fold map
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.coprod_desc`: for an étale monomorphism
+* `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.coprodDesc`: for an étale monomorphism
   `ι : V ⟶ U` and an involution `τ` of `V` without fixed points (no nonempty `f : T ⟶ V` has
   `f ≫ τ = f`), the relation `Δ ⊔ Γ` on `U`, with total space `U ⨿ V`, target
   `coprod.desc (𝟙 U) ι` and source `coprod.desc (𝟙 U) (τ ≫ ι)`, is an étale equivalence relation.
-* `TauCeti.AlgebraicGeometry.Spaces.not_mono_coprod_desc`: when `V` is nonempty, its projections
+* `TauCeti.AlgebraicGeometry.Spaces.not_mono_coprodDesc`: when `V` is nonempty, its projections
   are not monomorphisms, in particular not isomorphisms.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.kernelPair_codiag`: the kernel pair of the fold
   map `U ⨿ U ⟶ U` is an étale equivalence relation on `U ⨿ U`.
 * `TauCeti.AlgebraicGeometry.Spaces.not_jointlyMono₂_codiag`: for nonempty `U`, the pair
   `(𝟙 ⊔ 𝟙, 𝟙 ⊔ 𝟙) : U ⨿ U ⟶ U × U` is not jointly monic, so it is not an equivalence relation.
-* `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.coprod_desc_gmToAffineLine`: over a ring `k` in
+* `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.coprodDesc_gmToAffineLine`: over a ring `k` in
   which `2` is a unit, `Δ ⊔ Γ` on `𝔸¹_k = Spec k[X]`, with `Γ = {(x, -x) : x ≠ 0}` the graph of
   `x ↦ -x` on `Spec k[X, X⁻¹]`, is an étale equivalence relation, and
-  `TauCeti.AlgebraicGeometry.Spaces.not_isIso_coprod_desc_gmToAffineLine`,
-  `TauCeti.AlgebraicGeometry.Spaces.not_isIso_coprod_desc_gmNeg_comp_gmToAffineLine`: for
+  `TauCeti.AlgebraicGeometry.Spaces.not_isIso_coprodDesc_gmToAffineLine`,
+  `TauCeti.AlgebraicGeometry.Spaces.not_isIso_coprodDesc_gmNeg_comp_gmToAffineLine`: for
   nontrivial `k` its projections are not isomorphisms.
 * `TauCeti.AlgebraicGeometry.Spaces.isEquivalenceRelation_pullback_affineLine`,
   `TauCeti.AlgebraicGeometry.Spaces.not_etale_pullback_fst_affineLine`, `..._snd_...`:
@@ -67,7 +68,7 @@ variable {U V : Scheme.{u}} (ι : V ⟶ U) (τ : V ⟶ V)
 
 /-- The pair `t = 𝟙 ⊔ ι`, `s = 𝟙 ⊔ (τ ≫ ι)` on `U ⨿ V` is jointly monic when `ι` is a monomorphism
 and `τ` has no fixed points. -/
-private lemma jointlyMono₂_coprod_desc [Mono ι]
+private lemma jointlyMono₂_coprodDesc [Mono ι]
     (hτ : ∀ {T : Scheme.{u}} (f : T ⟶ V), f ≫ τ = f → IsEmpty T) :
     JointlyMono₂ (coprod.desc (𝟙 U) ι) (coprod.desc (𝟙 U) (τ ≫ ι)) := by
   -- On a piece where one morphism goes through `U` and the other through `V`, the latter is
@@ -76,9 +77,9 @@ private lemma jointlyMono₂_coprod_desc [Mono ι]
       (hs : x = y ≫ τ ≫ ι) : IsEmpty T :=
     hτ y (by rw [← cancel_mono ι, Category.assoc, ← hs, ht])
   refine ⟨fun T f g ht hs ↦ ?_⟩
-  obtain ⟨𝒰, h𝒰⟩ := exists_openCover_coprod f
+  obtain ⟨𝒰, h𝒰⟩ := f.exists_openCover_coprod
   refine 𝒰.hom_ext _ _ fun i ↦ ?_
-  obtain ⟨𝒱, h𝒱⟩ := exists_openCover_coprod (𝒰.f i ≫ g)
+  obtain ⟨𝒱, h𝒱⟩ := (𝒰.f i ≫ g).exists_openCover_coprod
   refine 𝒱.hom_ext _ _ fun j ↦ ?_
   have ht' := congr(𝒱.f j ≫ 𝒰.f i ≫ $ht)
   have hs' := congr(𝒱.f j ≫ 𝒰.f i ≫ $hs)
@@ -97,11 +98,11 @@ private lemma jointlyMono₂_coprod_desc [Mono ι]
 points (every `f : T ⟶ V` with `f ≫ τ = f` has empty source), the relation on `U` with total space
 `U ⨿ V`, target `coprod.desc (𝟙 U) ι` and source `coprod.desc (𝟙 U) (τ ≫ ι)` is an étale
 equivalence relation: the diagonal together with the graph of `τ` on `V`. -/
-theorem EtaleEquivRel.coprod_desc [Etale ι] [Mono ι] (hττ : τ ≫ τ = 𝟙 V)
+theorem EtaleEquivRel.coprodDesc [Etale ι] [Mono ι] (hττ : τ ≫ τ = 𝟙 V)
     (hτ : ∀ {T : Scheme.{u}} (f : T ⟶ V), f ≫ τ = f → IsEmpty T) :
     EtaleEquivRel (coprod.desc (𝟙 U) (τ ≫ ι)) (coprod.desc (𝟙 U) ι) := by
   have : IsIso τ := ⟨τ, hττ, hττ⟩
-  have := jointlyMono₂_coprod_desc ι τ hτ
+  have := jointlyMono₂_coprodDesc ι τ hτ
   refine ⟨(isEquivalenceRelation_iff).2 ⟨this, fun T ↦ ⟨fun a ↦ ?_, fun hr ↦ ?_,
       fun hr₁ hr₂ ↦ ?_⟩⟩, ?_, ?_⟩
   · exact Rel.ofPairHom_iff.2 ⟨a ≫ coprod.inl, by simp, by simp⟩
@@ -115,14 +116,14 @@ theorem EtaleEquivRel.coprod_desc [Etale ι] [Mono ι] (hττ : τ ≫ τ = 𝟙
     obtain ⟨r₂, h₁', h₂'⟩ := Rel.ofPairHom_iff.1 hr₂
     refine Rel.ofPairHom_iff.2 ?_
     subst h₁ h₂'
-    obtain ⟨𝒰, h𝒰⟩ := exists_openCover_coprod r₁
-    refine exists_lift_of_openCover 𝒰 fun i ↦ ?_
+    obtain ⟨𝒰, h𝒰⟩ := r₁.exists_openCover_coprod
+    refine 𝒰.exists_lift_of_jointlyMono₂ fun i ↦ ?_
     rcases h𝒰 i with ⟨x, hx⟩ | ⟨x, hx⟩
     · refine ⟨𝒰.f i ≫ r₂, ?_, rfl⟩
       rw [Category.assoc, h₁', ← h₂, reassoc_of% hx, reassoc_of% hx]
       simp
-    obtain ⟨𝒱, h𝒱⟩ := exists_openCover_coprod (𝒰.f i ≫ r₂)
-    refine exists_lift_of_openCover 𝒱 fun j ↦ ?_
+    obtain ⟨𝒱, h𝒱⟩ := (𝒰.f i ≫ r₂).exists_openCover_coprod
+    refine 𝒱.exists_lift_of_jointlyMono₂ fun j ↦ ?_
     have hb := congr(𝒱.f j ≫ 𝒰.f i ≫ $(h₂.trans h₁'.symm))
     rcases h𝒱 j with ⟨y, hy⟩ | ⟨y, hy⟩
     · refine ⟨𝒱.f j ≫ 𝒰.f i ≫ r₁, rfl, ?_⟩
@@ -139,7 +140,7 @@ theorem EtaleEquivRel.coprod_desc [Etale ι] [Mono ι] (hττ : τ ≫ τ = 𝟙
 /-- If `V` is nonempty, no morphism `coprod.desc (𝟙 U) g : U ⨿ V ⟶ U` is a monomorphism: it
 identifies `coprod.inr` with `g ≫ coprod.inl`. In particular neither projection of `Δ ⊔ Γ` is an
 isomorphism. -/
-theorem not_mono_coprod_desc [Nonempty V] (g : V ⟶ U) :
+theorem not_mono_coprodDesc [Nonempty V] (g : V ⟶ U) :
     ¬ Mono (coprod.desc (𝟙 U) g) := by
   intro h
   have : (coprod.inr : V ⟶ U ⨿ V) = g ≫ coprod.inl := by
@@ -188,6 +189,7 @@ noncomputable abbrev gmNeg :
   Spec.map (CommRingCat.ofHom (negAwayX k).toRingHom)
 
 /-- `x ↦ -x` is an involution of `Spec k[X, X⁻¹]`. -/
+@[reassoc (attr := simp)]
 theorem gmNeg_comp_gmNeg : gmNeg k ≫ gmNeg k = 𝟙 _ := by
   rw [← Spec.map_comp, ← Spec.map_id]
   congr 1
@@ -228,20 +230,20 @@ variable {k} in
 with total space `𝔸¹_k ⨿ 𝔾_m`, the diagonal on `𝔸¹_k` together with the graph
 `Γ = {(x, -x) : x ≠ 0}` of `x ↦ -x` on `𝔾_m = Spec k[X, X⁻¹]`, is an étale equivalence relation
 (Stacks, Example 65.14.1 (02Z1)). -/
-theorem EtaleEquivRel.coprod_desc_gmToAffineLine (h2 : IsUnit (2 : k)) :
+theorem EtaleEquivRel.coprodDesc_gmToAffineLine (h2 : IsUnit (2 : k)) :
     EtaleEquivRel (coprod.desc (𝟙 _) (gmNeg k ≫ gmToAffineLine k))
       (coprod.desc (𝟙 _) (gmToAffineLine k)) :=
-  coprod_desc _ _ (gmNeg_comp_gmNeg k) (isEmpty_of_comp_gmNeg h2)
+  coprodDesc _ _ (gmNeg_comp_gmNeg k) (isEmpty_of_comp_gmNeg h2)
 
 /-- The target projection of `Δ ⊔ Γ` on `𝔸¹_k` is not an isomorphism. -/
-theorem not_isIso_coprod_desc_gmToAffineLine [Nontrivial k] :
+theorem not_isIso_coprodDesc_gmToAffineLine [Nontrivial k] :
     ¬ IsIso (coprod.desc (𝟙 _) (gmToAffineLine k)) :=
-  fun _ ↦ not_mono_coprod_desc (gmToAffineLine k) inferInstance
+  fun _ ↦ not_mono_coprodDesc (gmToAffineLine k) inferInstance
 
 /-- The source projection of `Δ ⊔ Γ` on `𝔸¹_k` is not an isomorphism. -/
-theorem not_isIso_coprod_desc_gmNeg_comp_gmToAffineLine [Nontrivial k] :
+theorem not_isIso_coprodDesc_gmNeg_comp_gmToAffineLine [Nontrivial k] :
     ¬ IsIso (coprod.desc (𝟙 _) (gmNeg k ≫ gmToAffineLine k)) :=
-  fun _ ↦ not_mono_coprod_desc (gmNeg k ≫ gmToAffineLine k) inferInstance
+  fun _ ↦ not_mono_coprodDesc (gmNeg k ≫ gmToAffineLine k) inferInstance
 
 /-- The structure morphism `𝔸¹_k = Spec k[X] ⟶ Spec k`. -/
 noncomputable abbrev affineLineToSpec : Spec (.of k[X]) ⟶ Spec (.of k) :=
