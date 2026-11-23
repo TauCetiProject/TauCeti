@@ -279,12 +279,16 @@ theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_of_measurable
   obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := exists_bool_thinning hN (Kernel.bernoulli true false hp)
   have htrue : (fun x ↦ Kernel.bernoulli true false hp x {true}) =
       fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞) :=
-    funext fun x ↦
-      Kernel.bernoulli_apply_singleton_left (measurableSet_singleton true) (by decide) hp x
+    funext fun x ↦ by
+      rw [Kernel.bernoulli_apply,
+        bernoulliMeasure_apply_of_mem_of_notMem (p x) (measurableSet_singleton true) rfl
+          (by decide)]
   have hfalse : (fun x ↦ Kernel.bernoulli true false hp x {false}) =
       fun x ↦ ((1 - unitInterval.toNNReal (p x) : ℝ≥0) : ℝ≥0∞) :=
     funext fun x ↦ by
-      rw [Kernel.bernoulli_apply_singleton_right (measurableSet_singleton false) (by decide) hp x,
+      rw [Kernel.bernoulli_apply,
+        bernoulliMeasure_apply_of_notMem_of_mem (p x) (measurableSet_singleton false)
+          (by decide) rfl,
         unitInterval.toNNReal_symm]
   exact ⟨η, hη, htrue ▸ h₁, hfalse ▸ h₂, hind, hadd⟩
 
