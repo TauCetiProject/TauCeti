@@ -88,12 +88,12 @@ open scoped Pointwise
 
 universe u v w
 
-variable {k : Type w} [Field k] {V : Type u} {G : SimpleGraph V} [Finite V]
+variable {k : Type w} [Field k] {V : Type u} {G : SimpleGraph V}
 
 attribute [local instance] zigzagIntegerGradedAlgebra
 
 /-- The radical, spanned by the arrows and volume classes, lies in positive degree. -/
-private theorem zigzagPositiveSpan_le_iSup (hns : ∀ i : V, ∃ j, G.Adj i j) :
+private theorem zigzagPositiveSpan_le_iSup [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j) :
     zigzagPositiveSpan k G ≤ ⨆ (i : ℤ) (_ : 0 < i), zigzagIntegerGrade k G i := by
   intro x hx
   rw [mem_zigzagPositiveSpan_iff hns] at hx
@@ -114,7 +114,9 @@ private theorem zigzagPositiveSpan_le_iSup (hns : ∀ i : V, ∃ j, G.Adj i j) :
 
 section GeneratedInDegree
 
-variable {P : GradedModuleCat.{v} (zigzagIntegerGrade k G)} {n : ℤ}
+section Finite
+
+variable [Finite V] {P : GradedModuleCat.{v} (zigzagIntegerGrade k G)} {n : ℤ}
 
 /-- A graded module generated in degree `n` vanishes above degree `n + 2`, since `Z` does. -/
 private theorem piece_eq_bot_of_add_two_lt
@@ -186,7 +188,7 @@ private theorem bijective_zigzagVolumeSMulPiece (hns : ∀ i : V, ∃ j, G.Adj i
     (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n) (u : V) :
     Function.Bijective (zigzagVolumeSMulPiece (P := P) u n) := by
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx => Subtype.ext
-    (eq_zero_of_zigzagVolume_smul_eq_zero hns hP x.2
+    (eq_zero_of_zigzagVolume_smul_eq_zero hns hP x.property
     (by rw [← coe_zigzagVolumeSMulPiece_apply, hx, ZeroMemClass.coe_zero])), ?_⟩
   rintro ⟨z, hz⟩
   rw [GradedModuleCat.mem_smul_grading_piece_iff (isIdempotentElem_zigzagVertexIdempotent k G _)
@@ -233,16 +235,19 @@ theorem finrank_zigzagVertexIdempotent_smul_piece_add_two (hns : ∀ i : V, ∃ 
 
 end Volume
 
+end Finite
+
 /-! ### The arrow map -/
 
 section Arrow
 
 /-- The dart `w → u` from a neighbour `w` of `u`. -/
 private def inDart (u : V) (w : G.neighborSet u) : G.Dart :=
-  ⟨(w, u), ((G.mem_neighborSet u w).1 w.2).symm⟩
+  ⟨(w, u), ((G.mem_neighborSet u w).1 w.property).symm⟩
 
-private theorem ofArrow_inDart_smul_mem {u : V} (w : G.neighborSet u) {p : ℤ} {x : P}
-    (hx : x ∈ zigzagVertexIdempotent k G w • P.grading.piece p) :
+private theorem ofArrow_inDart_smul_mem [Finite V]
+    {P : GradedModuleCat.{v} (zigzagIntegerGrade k G)} {u : V} (w : G.neighborSet u) {p : ℤ}
+    {x : P} (hx : x ∈ zigzagVertexIdempotent k G w • P.grading.piece p) :
     zigzagMk k G (ofArrow (arrow G (inDart u w).adj)) • x ∈
       zigzagVertexIdempotent k G u • P.grading.piece (p + 1) := by
   rw [GradedModuleCat.mem_smul_grading_piece_iff (isIdempotentElem_zigzagVertexIdempotent k G _)
@@ -257,7 +262,8 @@ private theorem ofArrow_inDart_smul_mem {u : V} (w : G.neighborSet u) {p : ℤ} 
     (zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G (inDart u w)) hx.1
   rwa [vadd_eq_add, add_comm] at h
 
-variable [Fintype V] [DecidableRel G.Adj]
+variable [Fintype V] [DecidableRel G.Adj] {P : GradedModuleCat.{v} (zigzagIntegerGrade k G)}
+  {n : ℤ}
 
 /-- The sum of the arrows into `u`, from `⨁_{w ∼ u} e_w • P_p` to `e_u • P_{p+1}`. -/
 private noncomputable def zigzagArrowSumPiece (u : V) (p : ℤ) :
@@ -268,7 +274,7 @@ private noncomputable def zigzagArrowSumPiece (u : V) (p : ℤ) :
         (zigzagVertexIdempotent k G w • P.grading.piece p).subtype ∘ₗ LinearMap.proj w)
     fun f => by
       rw [LinearMap.sum_apply]
-      exact Submodule.sum_mem _ fun w _ => ofArrow_inDart_smul_mem w (f w).2
+      exact Submodule.sum_mem _ fun w _ => ofArrow_inDart_smul_mem w (f w).property
 
 private theorem coe_zigzagArrowSumPiece_apply (u : V) (p : ℤ)
     (f : ∀ w : G.neighborSet u, ↥(zigzagVertexIdempotent k G w • P.grading.piece p)) :
@@ -294,7 +300,7 @@ private theorem injective_zigzagArrowSumPiece (hns : ∀ i : V, ∃ j, G.Adj i j
   · have hvol := zigzagMk_ofArrow_mul_ofArrow_symm k G (inDart u w₀).symm
     rw [SimpleGraph.Dart.symm_symm] at hvol
     rw [hvol] at hf'
-    exact eq_zero_of_zigzagVolume_smul_eq_zero hns hP (f w₀).2 hf'
+    exact eq_zero_of_zigzagVolume_smul_eq_zero hns hP (f w₀).property hf'
   · have hne : inDart u w ≠ (inDart u w₀).symm.symm := by
       rw [SimpleGraph.Dart.symm_symm]
       intro h
@@ -359,9 +365,9 @@ private theorem bijective_zigzagArrowSumPiece (hns : ∀ i : V, ∃ j, G.Adj i j
 projective over the zigzag algebra generated in degree `n`, with finite-dimensional vertex parts
 `e_w • P_n`, then the arrows into `u` identify `e_u • P_{n+1}` with `⨁_{w ∼ u} e_w • P_n`. -/
 theorem finrank_zigzagVertexIdempotent_smul_piece_add_one (hns : ∀ i : V, ∃ j, G.Adj i j)
-    (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n)
-    [∀ w : V, FiniteDimensional k ↥(zigzagVertexIdempotent k G w • P.grading.piece n)]
-    (u : V) :
+    (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n) (u : V)
+    [∀ w : G.neighborSet u,
+      FiniteDimensional k ↥(zigzagVertexIdempotent k G w • P.grading.piece n)] :
     Module.finrank k ↥(zigzagVertexIdempotent k G u • P.grading.piece (n + 1)) =
       ∑ w ∈ G.neighborFinset u,
         Module.finrank k ↥(zigzagVertexIdempotent k G w • P.grading.piece n) := by
@@ -379,7 +385,9 @@ end GeneratedInDegree
 
 section Resolution
 
-variable {M : GradedModuleCat.{v} (zigzagIntegerGrade k G)}
+section Finite
+
+variable [Finite V] {M : GradedModuleCat.{v} (zigzagIntegerGrade k G)}
   {r : GradedProjectiveResolution.{w, max u w, v, v} (zigzagIntegerGrade k G) M.grading}
 
 /-- The vertex part of a zero piece is zero. -/
@@ -449,7 +457,8 @@ variable [Module.Finite k M]
 
 /-- The lowest vertex parts of a linear resolution of a finite-dimensional module are
 finite-dimensional. -/
-private theorem finiteDimensional_smul_piece (hns : ∀ i : V, ∃ j, G.Adj i j) (hr : r.IsLinear) :
+private theorem finiteDimensional_smul_piece (hns : ∀ i : V, ∃ j, G.Adj i j)
+    (hr : r.IsLinear) :
     ∀ (n : ℕ) (u : V),
       FiniteDimensional k ↥(zigzagVertexIdempotent k G u • (r.grading n).piece n)
   | 0, u => FiniteDimensional.of_injective _ (injective_smulPieceMap_augmentation hr u)
@@ -465,7 +474,13 @@ private theorem finiteDimensional_smul_piece (hns : ∀ i : V, ∃ j, G.Adj i j)
         (r.isLinear_iff.1 hr n) u)).finiteDimensional
     exact FiniteDimensional.of_injective _ (injective_smulPieceMap_differential hr u n)
 
-variable [Fintype V]
+end Finite
+
+section Fintype
+
+variable [Fintype V] {M : GradedModuleCat.{v} (zigzagIntegerGrade k G)}
+  {r : GradedProjectiveResolution.{w, max u w, v, v} (zigzagIntegerGrade k G) M.grading}
+  [Module.Finite k M]
 
 section NeighborFinset
 
@@ -612,6 +627,8 @@ theorem zigzagGradedCartanMatrix_map_aeval_neg_X_mulVec_eq (hns : ∀ i : V, ∃
     rw [← Nat.cast_sum, ← Nat.cast_add, sub_eq_zero, Nat.cast_inj]
     exact h
 
+end Fintype
+
 end Resolution
 
 /-! ### Linear resolutions of the graded simples -/
@@ -625,7 +642,7 @@ variable [DecidableEq V]
 
 /-- The vertex parts of the graded simple `S_v`: one-dimensional at `v` in degree `0`, and zero
 otherwise. -/
-private theorem finrank_smul_zigzagGradedSimple_piece (v u : V) (p : ℤ) :
+private theorem finrank_smul_zigzagGradedSimple_piece [Finite V] (v u : V) (p : ℤ) :
     Module.finrank k
         ↥(zigzagVertexIdempotent k G u • (zigzagGradedSimple k G v).grading.piece p) =
       if p = 0 ∧ u = v then 1 else 0 := by

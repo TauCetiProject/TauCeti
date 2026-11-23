@@ -86,10 +86,10 @@ theorem formallySmooth_of_isRegularLocalRing_of_surjective [IsRegularLocalRing P
   let c' : Fin size → P := fun i ↦ if h : (i : ℕ) < count then c ⟨i, h⟩ else 0
   have hc' : ∑ i, c' i * gen i = ∑ t : τ, c t * gen t := by
     rw [← Fintype.sum_subtype_add_sum_subtype (fun i : Fin size ↦ (i : ℕ) < count)]
-    refine (add_eq_left.mpr (Finset.sum_eq_zero fun i _ ↦ by simp [c', i.2])).trans ?_
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [c', i.2]
-  simpa [c', t.2] using
-    IsLocalRing.mem_maximalIdeal_of_sum_mul_mem_sq hspan hrank (c := c') (hc' ▸ hc) t.1
+    refine (add_eq_left.mpr (Finset.sum_eq_zero fun i _ ↦ by simp [c', i.property])).trans ?_
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [c', i.property]
+  simpa [c', t.property] using
+    IsLocalRing.mem_maximalIdeal_of_sum_mul_mem_sq hspan hrank (c := c') (hc' ▸ hc) t.val
 
 end Quotient
 

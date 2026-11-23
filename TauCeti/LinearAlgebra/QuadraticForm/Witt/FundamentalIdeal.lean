@@ -144,6 +144,11 @@ theorem oneFoldPfisterClass_neg_one :
   rw [oneFoldPfisterClass, neg_neg, RegularFormClass.mk_rankOne_one, ← two_nsmul, map_nsmul,
     map_one]
 
+/-- Multiplication by `⟨⟨-1⟩⟩ = 2⟨1⟩` is doubling. -/
+theorem oneFoldPfisterClass_neg_one_mul (x : WittRing K) :
+    oneFoldPfisterClass (-1 : Kˣ) * x = 2 • x := by
+  rw [oneFoldPfisterClass_neg_one, smul_mul_assoc, one_mul]
+
 /-- The one-fold Pfister class `⟨⟨1⟩⟩ = ⟨1, -1⟩` is hyperbolic, hence zero in the Witt ring. -/
 @[simp]
 theorem oneFoldPfisterClass_one : oneFoldPfisterClass (1 : Kˣ) = 0 := by

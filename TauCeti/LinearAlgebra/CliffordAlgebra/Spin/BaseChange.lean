@@ -78,7 +78,7 @@ def spinGroupBaseChange (Q : QuadraticForm R M) :
     spinGroup Q →* spinGroup (Q.baseChange A) where
   toFun x := ⟨ofBaseChangeAux A Q x, by
     rw [spinGroup.mem_iff, pinGroup.mem_iff]
-    refine ⟨⟨?_, ?_⟩, ofBaseChangeAux_mem_even (A := A) Q x.2.2⟩
+    refine ⟨⟨?_, ?_⟩, ofBaseChangeAux_mem_even (A := A) Q x.property.2⟩
     · -- `spinGroup.toUnits` leaves the Clifford value untouched, so extending the scalars of
       -- `x`'s underlying Lipschitz unit produces a Lipschitz unit with value
       -- `ofBaseChangeAux A Q x`.
@@ -86,15 +86,15 @@ def spinGroupBaseChange (Q : QuadraticForm R M) :
           ((y : (CliffordAlgebra (Q.baseChange A))ˣ) : CliffordAlgebra (Q.baseChange A)) =
             ofBaseChangeAux A Q (x : CliffordAlgebra Q) :=
         ⟨lipschitzGroupBaseChange (A := A) Q
-            ⟨spinGroup.toUnits x, spinGroup.units_mem_lipschitzGroup x.2⟩,
+            ⟨spinGroup.toUnits x, spinGroup.units_mem_lipschitzGroup x.property⟩,
           coe_lipschitzGroupBaseChange_apply (A := A) Q _⟩
       rw [← hy]
-      exact lipschitzGroup.coe_mem_iff_mem.mpr y.2
+      exact lipschitzGroup.coe_mem_iff_mem.mpr y.property
     · rw [Unitary.mem_iff]
       constructor
-      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.star_mul_self_of_mem x.2,
+      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.star_mul_self_of_mem x.property,
           map_one]
-      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.mul_star_self_of_mem x.2,
+      · rw [← ofBaseChangeAux_star, ← map_mul, spinGroup.mul_star_self_of_mem x.property,
           map_one]⟩
   map_one' := Subtype.ext (map_one (ofBaseChangeAux A Q))
   map_mul' x y := Subtype.ext
@@ -231,8 +231,8 @@ coefficient algebras restricts `CliffordAlgebra.baseChangeCongr σ Q` to an isom
 Spin groups of `Q_A` and `Q_B`. For complex conjugation of `ℂ` over `ℝ` this is coefficientwise
 conjugation of the Spin group of a complexified real quadratic form. -/
 def spinGroupBaseChangeCongr : spinGroup (Q.baseChange A) ≃* spinGroup (Q.baseChange B) where
-  toFun x := ⟨baseChangeCongr σ Q x, baseChangeCongr_mem_spinGroup σ Q x.2⟩
-  invFun x := ⟨baseChangeCongr σ.symm Q x, baseChangeCongr_mem_spinGroup σ.symm Q x.2⟩
+  toFun x := ⟨baseChangeCongr σ Q x, baseChangeCongr_mem_spinGroup σ Q x.property⟩
+  invFun x := ⟨baseChangeCongr σ.symm Q x, baseChangeCongr_mem_spinGroup σ.symm Q x.property⟩
   left_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
   right_inv x := Subtype.ext <| by simp [← baseChangeCongr_symm]
   map_mul' x y := Subtype.ext (map_mul (baseChangeCongr σ Q) (x : CliffordAlgebra _) y)
@@ -262,7 +262,7 @@ def evenUnitaryGroupBaseChange (Q : QuadraticForm R M) :
     evenUnitaryGroup Q →* evenUnitaryGroup (Q.baseChange A) :=
   ((Units.map (ofBaseChangeAux A Q : CliffordAlgebra Q →* CliffordAlgebra (Q.baseChange A))).comp
       (evenUnitaryGroup Q).subtype).codRestrict _ fun x ↦ by
-    have hx := (evenUnitaryGroup.mem_iff Q).mp x.2
+    have hx := (evenUnitaryGroup.mem_iff Q).mp x.property
     rw [evenUnitaryGroup.mem_iff, MonoidHom.comp_apply, Units.coe_map, Unitary.mem_iff]
     refine ⟨ofBaseChangeAux_mem_even Q hx.1, ?_, ?_⟩ <;>
       rw [MonoidHom.coe_ofClass, ← ofBaseChangeAux_star, ← map_mul] <;>
@@ -369,7 +369,7 @@ theorem spinGroupBaseChange_comp_transvectionLiftHom [Invertible (2 : L)]
   apply AddMonoidHom.ext
   intro q
   induction q using Submodule.Quotient.induction_on with | H w =>
-    have huw : polar Q u (w : V) = 0 := LinearMap.mem_ker.mp w.2
+    have huw : polar Q u (w : V) = 0 := LinearMap.mem_ker.mp w.property
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
       LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]

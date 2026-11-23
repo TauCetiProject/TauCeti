@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.Interior
+public import TauCeti.Geometry.Manifold.Boundary.InteriorInclusion
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 
 /-!
 # Orientations of the interior of a manifold with corners
 
-An orientation `o` of a `C¹` manifold with corners `M` restricts to its interior
-`TauCeti.ManifoldInterior I M`, the manifold without boundary modelled on the vector space `E`. The
-inclusion of the interior is a local diffeomorphism whose manifold derivative is the identity of
-`E`, so the restricted orientation `o.manifoldInterior` is the pullback of `o` along it
+An orientation `o` of a `C¹` manifold with corners `M`, modelled on a finite-dimensional real space
+`E`, restricts to its interior `I.interior M`, the manifold without boundary modelled on `E`
+(`ModelWithCorners.instChartedSpaceInterior`). The inclusion of the interior is smooth with the
+identity of `E` as its manifold derivative (`ModelWithCorners.mfderiv_subtypeVal_interior`), so
+the restricted orientation `o.manifoldInterior` is the pullback of `o` along it
 (`TauCeti.Manifold.Orientation.pullback`), and its tangent orientation at every point is the
 tangent orientation of `o` at the same point of `M`
 (`TauCeti.Manifold.Orientation.orientationAt_manifoldInterior`).
@@ -51,25 +52,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] {ι : Type*} [Fintype ι]
 
-omit [FiniteDimensional ℝ E] in
+omit [IsManifold I 1 M] in
 /-- The derivative of the inclusion of the interior is invertible, being the identity. -/
-private theorem isInvertible_mfderiv_val (x : ManifoldInterior I M) :
-    (mfderiv 𝓘(ℝ, E) I ManifoldInterior.val x).IsInvertible := by
-  rw [ManifoldInterior.mfderiv_val]
+private theorem isInvertible_mfderiv_val (x : I.interior M) :
+    (mfderiv 𝓘(ℝ, E) I Subtype.val x).IsInvertible := by
+  rw [ModelWithCorners.mfderiv_subtypeVal_interior]
   exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ E)
 
 /-- The **orientation of the interior** of an oriented manifold with corners: the pullback of `o`
 along the inclusion of the interior, whose tangent orientation at every point is that of `o`. -/
-def manifoldInterior (o : Orientation I M ι) : Orientation 𝓘(ℝ, E) (ManifoldInterior I M) ι :=
-  o.pullback (ManifoldInterior.contMDiff_val 1) isInvertible_mfderiv_val o.card_eq
+def manifoldInterior (o : Orientation I M ι) : Orientation 𝓘(ℝ, E) (I.interior M) ι :=
+  o.pullback (I.contMDiff_subtypeVal_interior (M := M) (n := 1)) isInvertible_mfderiv_val o.card_eq
 
 /-- The tangent orientation of the interior at `x` is the tangent orientation of `M` at `x`. -/
 @[simp]
-theorem orientationAt_manifoldInterior (o : Orientation I M ι) (x : ManifoldInterior I M) :
-    o.manifoldInterior.orientationAt x = o.orientationAt x.val := by
-  have h := map_orientationAt_pullback o (ManifoldInterior.contMDiff_val 1)
+theorem orientationAt_manifoldInterior (o : Orientation I M ι) (x : I.interior M) :
+    o.manifoldInterior.orientationAt x = o.orientationAt (x : M) := by
+  have h := map_orientationAt_pullback o (I.contMDiff_subtypeVal_interior (M := M) (n := 1))
     isInvertible_mfderiv_val o.card_eq x (ContinuousLinearEquiv.refl ℝ E)
-    (ManifoldInterior.mfderiv_val x).symm
+    (ModelWithCorners.mfderiv_subtypeVal_interior x).symm
   have hrefl : (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv = LinearEquiv.refl ℝ E :=
     LinearEquiv.ext fun v ↦ by simp
   rw [hrefl] at h
@@ -78,23 +79,23 @@ theorem orientationAt_manifoldInterior (o : Orientation I M ι) (x : ManifoldInt
 /-- The inclusion of the interior preserves orientation. -/
 @[simp]
 theorem isOrientationPreservingAt_manifoldInterior (o : Orientation I M ι)
-    (x : ManifoldInterior I M) :
-    IsOrientationPreservingAt o.manifoldInterior o ManifoldInterior.val x :=
+    (x : I.interior M) :
+    IsOrientationPreservingAt o.manifoldInterior o Subtype.val x :=
   isOrientationPreservingAt_pullback o _ _ _ x
 
 /-- The orientation of the interior induced by `o` is the only orientation of the interior whose
 tangent orientations are those of `o`. -/
 theorem eq_manifoldInterior_iff {o : Orientation I M ι}
-    {o' : Orientation 𝓘(ℝ, E) (ManifoldInterior I M) ι} :
-    o' = o.manifoldInterior ↔ ∀ x, o'.orientationAt x = o.orientationAt x.val := by
+    {o' : Orientation 𝓘(ℝ, E) (I.interior M) ι} :
+    o' = o.manifoldInterior ↔ ∀ x, o'.orientationAt x = o.orientationAt (x : M) := by
   refine ⟨fun h x ↦ h ▸ orientationAt_manifoldInterior o x, fun h ↦ ext fun x ↦ ?_⟩
   rw [h x, orientationAt_manifoldInterior]
 
 /-- The orientation of the interior induced by `o` is the only orientation of the interior from
 which the inclusion preserves orientation at every point. -/
 theorem eq_manifoldInterior_iff_isOrientationPreservingAt {o : Orientation I M ι}
-    {o' : Orientation 𝓘(ℝ, E) (ManifoldInterior I M) ι} :
-    o' = o.manifoldInterior ↔ ∀ x, IsOrientationPreservingAt o' o ManifoldInterior.val x :=
+    {o' : Orientation 𝓘(ℝ, E) (I.interior M) ι} :
+    o' = o.manifoldInterior ↔ ∀ x, IsOrientationPreservingAt o' o Subtype.val x :=
   eq_pullback_iff o _ _ _
 
 /-- The interior of the opposite orientation carries the opposite orientation. -/

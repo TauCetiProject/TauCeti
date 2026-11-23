@@ -159,13 +159,13 @@ noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L]
   toFun x := ⟨MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ x, by
     rw [IsLocalRing.mem_maximalIdeal]
     intro hx
-    have hx' : ¬IsUnit (x : 𝒪[L]) := x.2
+    have hx' : ¬IsUnit (x : 𝒪[L]) := x.property
     exact hx' ((isUnit_map_iff (MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ)
       (x : 𝒪[L])).mp hx)⟩
   invFun x := ⟨MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ.symm x, by
     rw [IsLocalRing.mem_maximalIdeal]
     intro hx
-    have hx' : ¬IsUnit (x : 𝒪[L]) := x.2
+    have hx' : ¬IsUnit (x : 𝒪[L]) := x.property
     exact hx' ((isUnit_map_iff
       (MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ.symm) (x : 𝒪[L])).mp hx)⟩
   left_inv x := by

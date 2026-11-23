@@ -88,7 +88,7 @@ theorem isWeakCauchyRiemannOn_iff_locally :
   refine ⟨fun h _ _ => ⟨U, self_mem_nhdsWithin, h⟩, fun h => ?_⟩
   have hO : ∀ x : U, ∃ O : Opens ℂ, (x : ℂ) ∈ O ∧ IsWeakCauchyRiemannOn p (U ∩ O) J η u :=
     fun x => by
-      obtain ⟨W, hW, huW⟩ := h x x.2
+      obtain ⟨W, hW, huW⟩ := h x x.property
       obtain ⟨O, hO, hxO, hOW⟩ := mem_nhdsWithin.1 hW
       exact ⟨⟨O, hO⟩, hxO, huW.mono fun z hz => hOW ⟨hz.2, hz.1⟩⟩
   choose O hxO huO using hO
