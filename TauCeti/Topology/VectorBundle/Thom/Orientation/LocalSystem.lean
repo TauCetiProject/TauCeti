@@ -156,8 +156,10 @@ private theorem ofHom_signLocalSystemFiberEquiv_neg_trans {b : B} (o : Orientati
         ULift.moduleEquiv.{u, u, max w uι}.symm).toLinearMap =
       -ModuleCat.ofHom (signLocalSystemFiberEquiv hι o ≪≫ₗ
         ULift.moduleEquiv.{u, u, max w uι}.symm).toLinearMap := by
-  ext φ
-  exact signLocalSystemFiberEquiv_neg hι o φ
+  refine ModuleCat.hom_ext (LinearMap.ext fun φ ↦ ?_)
+  rw [ModuleCat.hom_neg, LinearMap.neg_apply, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom,
+    LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    signLocalSystemFiberEquiv_neg, map_neg]
 
 /-- **The identification does not depend on the trivialization.** Two linear trivializations
 whose base sets contain `b` give the same identification of the fibre of `o(E)` over `b` with
@@ -450,12 +452,17 @@ def isColimitThomPairSingularHomologyCocone :
       rw [he x hx, he y hy,
         ← s.w (FundamentalGroupoid.fromPath (X := TopCat.of B) (Path.Homotopic.Quotient.mk γ)),
         reassoc_of% hmap]
-    refine ⟨Φ, fun x ↦ ?_, fun Φ' hΦ' ↦ hΦu Φ' fun b ↦ ?_⟩
+    refine ⟨Φ, fun ⟨x⟩ ↦ ?_, fun Φ' hΦ' ↦ hΦu Φ' fun b ↦ ?_⟩
+    -- The cocone point is `(thomPair F E).singularHomology _ _` only by unfolding the cocone
+    -- (`thomPairSingularHomologyCocone_pt`), so neither `rw [Category.assoc]` nor `rw [hΦ]` can
+    -- match the composites with `Φ`; these steps are applied as terms, which unify up to that
+    -- unfolding.
     · rw [thomPairSingularHomologyCocone_ι_app]
-      exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (hΦ x.as)).trans
+      exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (hΦ x)).trans
         (Iso.hom_inv_id_assoc _ _))
     · rw [← cancel_epi (signLocalSystemFiberIsoSingularHomology K E hι ωF b).hom,
-        Iso.hom_inv_id_assoc, ← hΦ' (FundamentalGroupoid.mk b)]
+        Iso.hom_inv_id_assoc, ← hΦ' (FundamentalGroupoid.mk b),
+        thomPairSingularHomologyCocone_ι_app]
       exact (Category.assoc _ _ _).symm
 
 variable (E) in
