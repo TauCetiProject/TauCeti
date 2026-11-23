@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Fin.Tuple
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
+public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
+public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Topology.Order.Sublevel
 import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Geometry.Manifold.Morse.Bott.Projectivization
+import TauCeti.LinearAlgebra.ExtendByZero
 
 /-!
 # Crossing a critical hyperplane of real projective space
@@ -24,13 +29,25 @@ For `N ≥ 2` its weights are not distinct, so it is not a Morse function. Its c
 point `[e_N]`, where `f` takes its minimum `0`, together with the hyperplane `{v_N = 0}`
 (`TauCeti.criticalPoints_projectiveHyperplaneMomentFunction`). For `N ≥ 1` this hyperplane is a
 copy of `ℝℙᴺ⁻¹`, on which `f` attains its maximum `1`
-(`TauCeti.projectiveHyperplaneMomentFunction_eq_one_iff`). At the coordinate points of the
-hyperplane the Morse index is `1`
-(`TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_mk_single_castSucc`): the Hessian
-is negative only in the direction normal to the hyperplane. The hyperplane is the critical
-component of a Morse–Bott function of index `1`, whose negative normal bundle is the normal line
-bundle of `ℝℙᴺ⁻¹` in `ℝℙᴺ`, the tautological line bundle; for `N = 2` it is the Möbius line over
-the circle `ℝℙ¹`. These two facts are background here and are not formalized in this file.
+(`TauCeti.projectiveHyperplaneMomentFunction_eq_one_iff`).
+
+The Morse index is `1` at every point of the hyperplane
+(`TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`): the only
+weight below the value `1` is the weight `0` of the normal coordinate `v_N`. Like every projective
+moment function (`TauCeti.exists_isMorseBottFamily_projectiveMomentFunction`), it is Morse–Bott.
+For `N ≥ 1` the hyperplane is the image of `ℝℙᴺ⁻¹` under the smooth embedding `[v] ↦ [v : 0]`
+(`TauCeti.projectiveHyperplaneEmbedding`, an instance of the embedding
+`Projectivization.isSmoothEmbedding_map` of a linear inclusion), and it is a nondegenerate
+critical submanifold (`TauCeti.isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding`).
+The hyperplane and the minimum, embedded as copies of `ℝℙᴺ⁻¹` and of the point `ℝℙ⁰`, form a
+Morse–Bott family (`TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`). These are the
+general theorems `TauCeti.isNondegenerateCriticalSubmanifold_projectiveMomentFunction` and
+`TauCeti.isMorseBottFamily_projectiveMomentFunction` for the weights `1, …, 1, 0`. Since `ℝℙᴺ⁻¹`
+needs `N ≥ 1`, every declaration of the section on the critical components is stated with ambient
+space `ℝℙᴺ⁺¹`, that is, with `N + 1` in place of `N`. The negative normal bundle of the
+hyperplane is its normal line bundle in `ℝℙᴺ`, the tautological line bundle of `ℝℙᴺ⁻¹`; for
+`N = 2` it is the Möbius line over the circle `ℝℙ¹`. This identification is background here and
+is not formalized in this file.
 
 Below the top level, every sublevel `{f ≤ c}` with `0 ≤ c < 1` lies in the affine chart where
 `v_N ≠ 0`, and in that chart it is the ball `{z | ‖z‖₂² / (1 + ‖z‖₂²) ≤ c}`, so it is contractible
@@ -59,8 +76,14 @@ so the integral formula cannot be stated with untwisted coefficients.
   `[e_N]` together with the hyperplane `{v_N = 0}`.
 * `TauCeti.projectiveHyperplaneMomentFunction_eq_one_iff`: the hyperplane is the level set
   `f⁻¹(1)`.
-* `TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_mk_single_castSucc`: the Morse
-  index at the coordinate points `[eₖ]`, `k < N`, of the hyperplane is `1`.
+* `TauCeti.range_projectiveHyperplaneEmbedding`: the embedding `[v] ↦ [v : 0]` of `ℝℙᴺ` into
+  `ℝℙᴺ⁺¹` has image the hyperplane `{v_{N+1} = 0}`.
+* `TauCeti.isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding`: the hyperplane
+  `{v_{N+1} = 0}` of `ℝℙᴺ⁺¹` is a Morse–Bott critical submanifold.
+* `TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`: the Morse
+  index at every point of the hyperplane is `1`.
+* `TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`: on `ℝℙᴺ⁺¹`, the hyperplane
+  `{v_{N+1} = 0}` and the minimum `[e_{N+1}]` exhibit the moment function as a Morse–Bott function.
 * `TauCeti.contractibleSpace_sublevel_projectiveHyperplaneMomentFunction`: the sublevels
   `{f ≤ c}` with `0 ≤ c < 1` are contractible.
 * `TauCeti.singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` and
@@ -177,19 +200,215 @@ theorem criticalPoints_projectiveHyperplaneMomentFunction :
     · exact .inl (by simpa [hj, mk_mem_affineOpen_iff] using hx)
     · exact .inr (by simp [hj])
 
-/-- **The Morse index at the coordinate points of the critical hyperplane.** At each coordinate
-point `[eₖ]`, `k < N`, of the critical hyperplane `{v_N = 0}`, the Morse index is `1`: the only
-weight below the weight `1` of `eₖ` is the weight `0` of the normal coordinate `v_N`. -/
-theorem manifoldMorseIndex_projectiveHyperplaneMomentFunction_mk_single_castSucc (k : Fin N) :
-    manifoldMorseIndex 𝓘(ℝ, Fin N → ℝ) (projectiveHyperplaneMomentFunction N)
-      (mk ℝ (Pi.single k.castSucc 1) (by simp)) = 1 := by
-  rw [projectiveHyperplaneMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
+/-- **The Morse index along the critical hyperplane.** At every point of the critical hyperplane
+`{v_N = 0}` the Morse index of the moment function is `1`: the only weight below the value `1` is
+the weight `0` of the normal coordinate `v_N`. -/
+theorem manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen
+    {x : ℙ ℝ (Fin (N + 1) → ℝ)} (hx : x ∉ affineOpen (Fin.last N)) :
+    manifoldMorseIndex 𝓘(ℝ, Fin N → ℝ) (projectiveHyperplaneMomentFunction N) x = 1 := by
+  have hcrit : x ∈ criticalPoints 𝓘(ℝ, Fin N → ℝ) (projectiveHyperplaneMomentFunction N) := by
+    rw [criticalPoints_projectiveHyperplaneMomentFunction]
+    exact .inr hx
+  rw [projectiveHyperplaneMomentFunction_def] at hcrit ⊢
+  rw [manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints hcrit,
+    ← projectiveHyperplaneMomentFunction_def, projectiveHyperplaneMomentFunction_eq_one_iff.2 hx,
     Module.finrank_self, one_mul]
-  have : {i | (if i = Fin.last N then (0 : ℝ) else 1) <
-      if k.castSucc = Fin.last N then 0 else 1} = {Fin.last N} := by
+  have : {i | (if i = Fin.last N then (0 : ℝ) else 1) < 1} = {Fin.last N} := by
     ext i
-    by_cases hi : i = Fin.last N <;> simp [hi, Fin.castSucc_ne_last]
+    by_cases hi : i = Fin.last N <;> simp [hi]
   rw [this, ncard_singleton]
+
+/-! ### The critical components
+
+The statements in this section are indexed by `N + 1`: the ambient space is
+`ℝℙᴺ⁺¹ = ℙ ℝ (Fin (N + 2) → ℝ)`, with moment function `projectiveHyperplaneMomentFunction (N + 1)`,
+critical hyperplane `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, and minimum `[e_{N+1}]`. The circle `ℝℙ¹` in
+`ℝℙ²`, which is the case `N = 2` in the module docstring, is the case `N = 1` here.
+-/
+
+section Components
+
+/-- The homogeneous coordinates `(v, 0)` of the point `[v]` of `ℝℙᴺ` on the hyperplane
+`{v_{N+1} = 0}` of `ℝℙᴺ⁺¹`, as a linear map. -/
+private noncomputable def hyperplaneCoord : (Fin (N + 1) → ℝ) →ₗ[ℝ] Fin (N + 2) → ℝ :=
+  Function.ExtendByZero.linearMap ℝ ℝ Fin.castSucc
+
+private theorem injective_hyperplaneCoord : Function.Injective (hyperplaneCoord (N := N)) :=
+  Function.extend_injective (Fin.castSucc_injective _) 0
+
+/-- The coordinate of weight `0` of the homogeneous coordinates `(v, 0)` of a point of the
+hyperplane vanishes. -/
+private theorem hyperplaneCoord_apply_of_ne (v : Fin (N + 1) → ℝ) {i : Fin (N + 2)}
+    (hi : (if i = Fin.last (N + 1) then (0 : ℝ) else 1) ≠ 1) : hyperplaneCoord v i = 0 := by
+  obtain rfl : i = Fin.last (N + 1) := by
+    by_contra h
+    simp [h] at hi
+  exact Function.ExtendByZero.linearMap_castSucc_last ℝ v
+
+/-- Exactly `N + 1` coordinates of `ℝℙᴺ⁺¹` have weight `1`. -/
+private theorem ncard_weight_eq_one :
+    {i : Fin (N + 2) | (if i = Fin.last (N + 1) then (0 : ℝ) else 1) = 1}.ncard = N + 1 := by
+  have : {i : Fin (N + 2) | (if i = Fin.last (N + 1) then (0 : ℝ) else 1) = 1} =
+      {Fin.last (N + 1)}ᶜ := by
+    ext i
+    by_cases hi : i = Fin.last (N + 1) <;> simp [hi]
+  rw [this, ncard_compl, ncard_singleton, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rfl
+
+variable (N) in
+/-- The critical hyperplane `{v_{N+1} = 0}` of `ℝℙᴺ⁺¹` as a smooth embedding of `ℝℙᴺ`, sending `[v]`
+to `[v : 0]`. -/
+noncomputable def projectiveHyperplaneEmbedding :
+    SmoothEmbedding 𝓘(ℝ, Fin N → ℝ) 𝓘(ℝ, Fin (N + 1) → ℝ) ∞ (ℙ ℝ (Fin (N + 1) → ℝ))
+      (ℙ ℝ (Fin (N + 2) → ℝ)) :=
+  .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ injective_hyperplaneCoord (by simp))
+
+private theorem coe_projectiveHyperplaneEmbedding :
+    ⇑(projectiveHyperplaneEmbedding N) = map hyperplaneCoord injective_hyperplaneCoord :=
+  SmoothEmbedding.coe_ofIsSmoothEmbedding _ _
+
+/-- The hyperplane embedding in homogeneous coordinates: `[v] ↦ [v : 0]`. -/
+@[simp]
+theorem projectiveHyperplaneEmbedding_mk (v : Fin (N + 1) → ℝ) (hv : v ≠ 0) :
+    projectiveHyperplaneEmbedding N (mk ℝ v hv) =
+      mk ℝ (Fin.snoc v 0) (Fin.snoc_ne_zero_iff.2 (.inl hv)) := by
+  rw [coe_projectiveHyperplaneEmbedding, map_mk]
+  simp only [hyperplaneCoord, Function.ExtendByZero.linearMap_castSucc_apply]
+
+/-- The image of the hyperplane embedding is the hyperplane `{v_{N+1} = 0}`, the complement of the
+affine open where the last homogeneous coordinate is nonzero. -/
+theorem range_projectiveHyperplaneEmbedding :
+    range (projectiveHyperplaneEmbedding N) = (affineOpen (Fin.last (N + 1)))ᶜ := by
+  rw [coe_projectiveHyperplaneEmbedding,
+    range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction _ injective_hyperplaneCoord
+      (fun v _ ↦ hyperplaneCoord_apply_of_ne v) ncard_weight_eq_one,
+    ← projectiveHyperplaneMomentFunction_def, criticalPoints_projectiveHyperplaneMomentFunction]
+  -- Inside the critical set, the level set `f⁻¹(1)` is the hyperplane.
+  ext x
+  simp only [mem_inter_iff, mem_insert_iff, mem_compl_iff, mem_preimage, mem_singleton_iff,
+    projectiveHyperplaneMomentFunction_eq_one_iff]
+  exact ⟨And.right, fun hx ↦ ⟨.inr hx, hx⟩⟩
+
+/-- **The critical hyperplane is a Morse–Bott critical submanifold.** The hyperplane
+`{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, is a nondegenerate critical submanifold of the moment function
+on `ℝℙᴺ⁺¹`, as the projective subspace of the weight space of `1`. -/
+theorem isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding :
+    (projectiveHyperplaneEmbedding N).IsNondegenerateCriticalSubmanifold
+      (projectiveHyperplaneMomentFunction (N + 1)) :=
+  isNondegenerateCriticalSubmanifold_projectiveMomentFunction _ injective_hyperplaneCoord
+    (fun v _ ↦ hyperplaneCoord_apply_of_ne v) ncard_weight_eq_one (by simp)
+
+/-- The homogeneous coordinates `c • e_{N+1}` of the minimum `[e_{N+1}]` of the moment function on
+`ℝℙᴺ⁺¹`, as a linear map on `ℝ¹`. -/
+private noncomputable def minimumCoord : (Fin 1 → ℝ) →ₗ[ℝ] Fin (N + 2) → ℝ :=
+  LinearMap.single ℝ (fun _ ↦ ℝ) (Fin.last (N + 1)) ∘ₗ LinearMap.proj 0
+
+private theorem minimumCoord_apply (v : Fin 1 → ℝ) :
+    minimumCoord (N := N) v = v 0 • Pi.single (Fin.last (N + 1)) 1 := by
+  ext j
+  by_cases hj : j = Fin.last (N + 1)
+  · subst hj
+    simp [minimumCoord]
+  · simp [minimumCoord, hj]
+
+private theorem injective_minimumCoord : Function.Injective (minimumCoord (N := N)) :=
+  fun v w h ↦ funext fun j ↦ by
+    rw [Subsingleton.elim j 0]
+    simpa [minimumCoord] using h
+
+/-- Every coordinate of weight `1` of a point of the line through `e_{N+1}` vanishes. -/
+private theorem minimumCoord_apply_of_ne (v : Fin 1 → ℝ) {i : Fin (N + 2)}
+    (hi : (if i = Fin.last (N + 1) then (0 : ℝ) else 1) ≠ 0) : minimumCoord v i = 0 := by
+  have hi' : i ≠ Fin.last (N + 1) := by
+    rintro rfl
+    simp at hi
+  simp [minimumCoord_apply, hi']
+
+/-- Exactly one coordinate of `ℝℙᴺ⁺¹` has weight `0`. -/
+private theorem ncard_weight_eq_zero :
+    {i : Fin (N + 2) | (if i = Fin.last (N + 1) then (0 : ℝ) else 1) = 0}.ncard = 0 + 1 := by
+  have : {i : Fin (N + 2) | (if i = Fin.last (N + 1) then (0 : ℝ) else 1) = 0} =
+      {Fin.last (N + 1)} := by
+    ext i
+    by_cases hi : i = Fin.last (N + 1) <;> simp [hi]
+  rw [this, ncard_singleton]
+
+variable (N) in
+/-- The minimum `[e_{N+1}]` of the moment function on `ℝℙᴺ⁺¹` as a smooth embedding of the point
+`ℝℙ⁰`. -/
+noncomputable def projectiveMinimumEmbedding :
+    SmoothEmbedding 𝓘(ℝ, Fin 0 → ℝ) 𝓘(ℝ, Fin (N + 1) → ℝ) ∞ (ℙ ℝ (Fin 1 → ℝ))
+      (ℙ ℝ (Fin (N + 2) → ℝ)) :=
+  .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ injective_minimumCoord (by simp))
+
+private theorem coe_projectiveMinimumEmbedding :
+    ⇑(projectiveMinimumEmbedding N) = map minimumCoord injective_minimumCoord :=
+  SmoothEmbedding.coe_ofIsSmoothEmbedding _ _
+
+/-- The point embedding sends the point of `ℝℙ⁰` to the minimum `[e_{N+1}]`. -/
+@[simp]
+theorem projectiveMinimumEmbedding_apply (x : ℙ ℝ (Fin 1 → ℝ)) :
+    projectiveMinimumEmbedding N x = mk ℝ (Pi.single (Fin.last (N + 1)) 1) (by simp) := by
+  induction x using Projectivization.ind with | h v hv =>
+  rw [coe_projectiveMinimumEmbedding, map_mk,
+    mk_eq_mk_iff' ℝ _ _ _ (by simp)]
+  exact ⟨v 0, (minimumCoord_apply v).symm⟩
+
+/-- The homogeneous coordinates of the two critical components: those of the hyperplane for `true`
+and those of the minimum for `false`. -/
+private noncomputable def componentCoord :
+    (b : Bool) → (Fin (cond b N 0 + 1) → ℝ) →ₗ[ℝ] Fin (N + 2) → ℝ
+  | true => hyperplaneCoord
+  | false => minimumCoord
+
+variable (N) in
+/-- The two critical components of the moment function on `ℝℙᴺ⁺¹`: for `true` the critical
+hyperplane `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, and for `false` the minimum `[e_{N+1}]`, a copy of
+`ℝℙ⁰`. -/
+noncomputable def projectiveHyperplaneCriticalComponent :
+    (b : Bool) → SmoothEmbedding 𝓘(ℝ, Fin (cond b N 0) → ℝ) 𝓘(ℝ, Fin (N + 1) → ℝ) ∞
+      (ℙ ℝ (Fin (cond b N 0 + 1) → ℝ)) (ℙ ℝ (Fin (N + 2) → ℝ))
+  | true => projectiveHyperplaneEmbedding N
+  | false => projectiveMinimumEmbedding N
+
+/-- The critical component indexed by `true` is the critical hyperplane. -/
+@[simp]
+theorem projectiveHyperplaneCriticalComponent_true :
+    projectiveHyperplaneCriticalComponent N true = projectiveHyperplaneEmbedding N :=
+  (rfl)
+
+/-- The critical component indexed by `false` is the minimum. -/
+@[simp]
+theorem projectiveHyperplaneCriticalComponent_false :
+    projectiveHyperplaneCriticalComponent N false = projectiveMinimumEmbedding N :=
+  (rfl)
+
+/-- **The moment function with weights `1, …, 1, 0` is a Morse–Bott function.** On `ℝℙᴺ⁺¹` its
+critical components are the critical hyperplane `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, and the minimum
+`[e_{N+1}]`, a copy of `ℝℙ⁰`. The index `1` along the hyperplane is
+`manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`. -/
+theorem isMorseBottFamily_projectiveHyperplaneMomentFunction :
+    IsMorseBottFamily (projectiveHyperplaneCriticalComponent N)
+      (projectiveHyperplaneMomentFunction (N + 1)) :=
+  isMorseBottFamily_projectiveMomentFunction (c := fun b ↦ cond b 1 0) (m := fun b ↦ cond b N 0)
+    (by rintro (_ | _) (_ | _) h <;> simp_all)
+    (by
+      rintro _ ⟨i, rfl⟩
+      by_cases hi : i = Fin.last (N + 1)
+      exacts [⟨false, by simp [hi]⟩, ⟨true, by simp [hi]⟩])
+    componentCoord (by rintro (_ | _); exacts [injective_minimumCoord, injective_hyperplaneCoord])
+    (by
+      rintro (_ | _) v j hj
+      exacts [minimumCoord_apply_of_ne v hj, hyperplaneCoord_apply_of_ne v hj])
+    (by rintro (_ | _); exacts [ncard_weight_eq_zero, ncard_weight_eq_one])
+    (by
+      -- After unfolding the `Bool` matches, each goal is the coercion lemma of its embedding up to
+      -- the type index `cond b N 0`, which reduces to `N` or `0` definitionally.
+      rintro (_ | _) <;> simp only [projectiveHyperplaneCriticalComponent_true,
+        projectiveHyperplaneCriticalComponent_false, componentCoord]
+      exacts [coe_projectiveMinimumEmbedding, coe_projectiveHyperplaneEmbedding])
+
+end Components
 
 /-- Every sublevel below the top level lies in the affine open where the last homogeneous
 coordinate is nonzero. -/
