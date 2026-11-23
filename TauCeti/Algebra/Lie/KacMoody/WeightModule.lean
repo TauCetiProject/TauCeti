@@ -172,16 +172,13 @@ theorem lie_cartanAction_cartanAction (x y : H) :
 
 theorem commute_cartanAction (x y : H) :
     Commute (cartanAction R M x) (cartanAction R M y) := by
-  rw [commute_iff_eq, ← sub_eq_zero, ← Ring.lie_def]
-  exact lie_cartanAction_cartanAction R M x y
+  rw [commute_iff_eq, ← sub_eq_zero, ← Ring.lie_def]; exact lie_cartanAction_cartanAction R M x y
 
 private theorem end_apply_comp_of_lie {K' M' : Type*} [Ring K'] [AddCommGroup M'] [Module K' M']
-    {u v w : Module.End K' M'} (h : ⁅u, v⁆ = w) (m : M') :
-    u (v m) = v (u m) + w m := by
+    {u v w : Module.End K' M'} (h : ⁅u, v⁆ = w) (m : M') : u (v m) = v (u m) + w m := by
   have h' := LinearMap.congr_fun h m
   rw [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp,
-    sub_eq_iff_eq_add, add_comm] at h'
-  exact h'
+    sub_eq_iff_eq_add, add_comm] at h'; exact h'
 
 @[simp]
 theorem lie_cartanAction_positiveAction (x : H) (j : I) :
@@ -429,18 +426,14 @@ theorem coe_weightSpaceMap_apply (f : M →ₗ[Enveloping R] N) (μ : Dual K H)
 /-- The identity `Enveloping R`-linear map induces the identity on each weight space. -/
 @[simp]
 theorem weightSpaceMap_id (μ : Dual K H) :
-    weightSpaceMap (LinearMap.id : M →ₗ[Enveloping R] M) μ = LinearMap.id := by
-  ext v
-  simp [coe_weightSpaceMap_apply]
+    weightSpaceMap (LinearMap.id : M →ₗ[Enveloping R] M) μ = LinearMap.id := by ext v; simp
 
 /-- `weightSpaceMap` preserves composition of `Enveloping R`-linear maps. -/
 @[simp]
 theorem weightSpaceMap_comp {P : Type*} [AddCommGroup P] [Module K P] [Module (Enveloping R) P]
     [IsScalarTower K (Enveloping R) P] (g : N →ₗ[Enveloping R] P) (f : M →ₗ[Enveloping R] N)
     (μ : Dual K H) :
-    weightSpaceMap (g.comp f) μ = (weightSpaceMap g μ).comp (weightSpaceMap f μ) := by
-  ext v
-  simp [coe_weightSpaceMap_apply]
+    weightSpaceMap (g.comp f) μ = (weightSpaceMap g μ).comp (weightSpaceMap f μ) := by ext v; simp
 
 /-- The kernel of `weightSpaceMap f μ` is the pullback of `(LinearMap.ker f).restrictScalars K`
 to `weightSpace R M μ`. -/
@@ -459,11 +452,9 @@ theorem range_weightSpaceMap (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
 /-- An injective `Enveloping R`-linear map induces an injective map on every weight space. -/
 theorem weightSpaceMap_injective {f : M →ₗ[Enveloping R] N} (hf : Function.Injective f)
     (μ : Dual K H) :
-    Function.Injective (weightSpaceMap f μ) := by
-  intro v w h
-  apply Subtype.ext
-  apply hf
-  simpa only [coe_weightSpaceMap_apply] using congrArg Subtype.val h
+    Function.Injective (weightSpaceMap f μ) :=
+  fun _ _ h ↦ Subtype.ext
+    (hf (by simpa only [coe_weightSpaceMap_apply] using congrArg Subtype.val h))
 
 /-- An injective `Enveloping R`-linear map reflects weight-space membership: `f m` lies in
 `weightSpace R N μ` if and only if `m` lies in `weightSpace R M μ`. -/
@@ -479,16 +470,14 @@ the corresponding target weight space. -/
 theorem weightSpace_eq_comap_of_injective {f : M →ₗ[Enveloping R] N} (hf : Function.Injective f)
     (μ : Dual K H) :
     weightSpace R M μ = (weightSpace R N μ).comap (f.restrictScalars K) := by
-  ext m
-  exact (apply_mem_weightSpace_iff_of_injective hf).symm
+  ext m; exact (apply_mem_weightSpace_iff_of_injective hf).symm
 
 /-- The weight space of a product of `Enveloping R`-modules is the product of their weight
 spaces. -/
 @[simp]
 theorem weightSpace_prod (μ : Dual K H) :
     weightSpace R (M × N) μ = (weightSpace R M μ).prod (weightSpace R N μ) := by
-  ext ⟨m, n⟩
-  simp [mem_weightSpace_iff, cartanAction_apply, Prod.ext_iff, forall_and]
+  ext ⟨m, n⟩; simp [mem_weightSpace_iff, cartanAction_apply, Prod.ext_iff, forall_and]
 
 section DirectSum
 
@@ -513,8 +502,7 @@ theorem mem_weightSpace_directSum_iff {μ : Dual K H} {v : ⨁ j, P j} :
 private theorem weightSpace_directSum_eq_piSubmodule (μ : Dual K H) :
     weightSpace R (⨁ j, P j) μ =
       TauCeti.DirectSum.piSubmodule (fun j ↦ weightSpace R (P j) μ) := by
-  ext v
-  rw [mem_weightSpace_directSum_iff, TauCeti.DirectSum.mem_piSubmodule_iff]
+  ext v; rw [mem_weightSpace_directSum_iff, TauCeti.DirectSum.mem_piSubmodule_iff]
 
 /-- The `μ`-weight space of a direct sum `⨁ j, P j` is canonically `K`-linearly isomorphic to the
 direct sum `⨁ j, weightSpace R (P j) μ`. -/
@@ -558,9 +546,7 @@ theorem weightSpaceDirectSumEquiv_lof [DecidableEq κ] (μ : Dual K H) (j : κ)
           exact map_weightSpace_le (DirectSum.lof (Enveloping R) κ P j) μ ⟨v, v.property, rfl⟩⟩ =
       DirectSum.lof K κ (fun j ↦ weightSpace R (P j) μ) j v := by
   apply (weightSpaceDirectSumEquiv (R := R) (P := P) μ).symm.injective
-  rw [LinearEquiv.symm_apply_apply]
-  apply Subtype.ext
-  exact (coe_weightSpaceDirectSumEquiv_symm_lof (R := R) (P := P) μ j v).symm
+  exact Subtype.ext (by simp)
 
 /-- A weight `μ` has a nonzero weight space in `⨁ j, P j` iff it has a nonzero weight space in
 at least one summand `P j`. -/
@@ -570,16 +556,13 @@ theorem weightSpace_directSum_ne_bot_iff {μ : Dual K H} :
   constructor
   · intro h
     obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h
-    obtain ⟨j, hj⟩ : ∃ j, v j ≠ 0 := by
-      by_contra! hall
-      exact hv0 (DFinsupp.ext hall)
+    obtain ⟨j, hj⟩ : ∃ j, v j ≠ 0 := by by_contra! hall; exact hv0 (DFinsupp.ext hall)
     exact ⟨j, (Submodule.ne_bot_iff _).mpr ⟨v j, mem_weightSpace_directSum_iff.mp hv j, hj⟩⟩
   · rintro ⟨j, hj⟩
     obtain ⟨m, hm, hm0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hj
-    refine (Submodule.ne_bot_iff _).mpr ⟨DirectSum.lof (Enveloping R) κ P j m, ?_, ?_⟩
-    · exact map_weightSpace_le (DirectSum.lof (Enveloping R) κ P j) μ ⟨m, hm, rfl⟩
-    · intro h0
-      exact hm0 (by simpa using congrArg (fun w : ⨁ j, P j ↦ w j) h0)
+    refine (Submodule.ne_bot_iff _).mpr ⟨DirectSum.lof (Enveloping R) κ P j m,
+      map_weightSpace_le (DirectSum.lof (Enveloping R) κ P j) μ ⟨m, hm, rfl⟩,
+      fun h0 ↦ hm0 (by simpa using congrArg (fun w : ⨁ j, P j ↦ w j) h0)⟩
 
 end DirectSum
 
@@ -639,10 +622,8 @@ theorem IsWeightModule.exists_weightSpace_inf_ne_bot_of_ne_bot (hM : IsWeightMod
     {P : Submodule (Enveloping R) M} (hP : P ≠ ⊥) :
     ∃ μ : Dual K H, P.restrictScalars K ⊓ weightSpace R M μ ≠ ⊥ := by
   by_contra! hall
-  have hbot : P.restrictScalars K = ⊥ := by
-    rw [← hM.iSup_inf_weightSpace_eq P]
-    simp [hall]
-  exact hP (Submodule.restrictScalars_injective K _ _ (by simpa using hbot))
+  exact hP (Submodule.restrictScalars_injective K _ _
+    (by rw [← hM.iSup_inf_weightSpace_eq P]; simp [hall]))
 
 section Closure
 
@@ -655,20 +636,17 @@ theorem IsWeightModule.of_injective (hN : IsWeightModule R N) {f : M →ₗ[Enve
     (hf : Function.Injective f) : IsWeightModule R M := by
   rw [isWeightModule_iff, eq_top_iff]
   intro m _
-  have hrange : ∀ x : H, Set.MapsTo (cartanAction R N x)
-      (LinearMap.range (f.restrictScalars K)) (LinearMap.range (f.restrictScalars K)) := by
-    rintro x _ ⟨y, rfl⟩
-    exact ⟨cartanAction R M x y, map_cartanAction f x y⟩
   have hmem : f m ∈ ⨆ μ : Dual K H,
       LinearMap.range (f.restrictScalars K) ⊓ weightSpace R N μ := by
-    rw [hN.iSup_inf_weightSpace_eq_of_forall_mapsTo _ hrange]
+    rw [hN.iSup_inf_weightSpace_eq_of_forall_mapsTo _
+      (by rintro x _ ⟨y, rfl⟩; exact ⟨cartanAction R M x y, map_cartanAction f x y⟩)]
     exact ⟨m, rfl⟩
   have hsub : ⨆ μ : Dual K H, LinearMap.range (f.restrictScalars K) ⊓ weightSpace R N μ ≤
-      (⨆ μ : Dual K H, weightSpace R M μ).map (f.restrictScalars K) := by
-    refine iSup_le fun μ ↦ ?_
-    rintro _ ⟨⟨y, rfl⟩, hy⟩
-    exact Submodule.mem_map_of_mem
-      (le_iSup (weightSpace R M) μ ((apply_mem_weightSpace_iff_of_injective hf).mp hy))
+      (⨆ μ : Dual K H, weightSpace R M μ).map (f.restrictScalars K) :=
+    iSup_le fun μ ↦ by
+      rintro _ ⟨⟨y, rfl⟩, hy⟩
+      exact Submodule.mem_map_of_mem
+        (le_iSup (weightSpace R M) μ ((apply_mem_weightSpace_iff_of_injective hf).mp hy))
   obtain ⟨y, hy, hy_eq⟩ := hsub hmem
   exact hf hy_eq ▸ hy
 
@@ -706,14 +684,12 @@ theorem IsWeightModule.weightSpaceMap_surjective (hM : IsWeightModule R M)
   rintro ⟨y, hy⟩
   rw [← hM.map_weightSpace_of_surjective hf μ, Submodule.mem_map] at hy
   obtain ⟨x, hx, hxy⟩ := hy
-  refine ⟨⟨x, hx⟩, Subtype.ext ?_⟩
-  rw [coe_weightSpaceMap_apply, ← LinearMap.restrictScalars_apply K f x, hxy]
+  exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
 
 /-- Surjective `Enveloping R`-linear images of weight modules are weight modules. -/
 theorem IsWeightModule.of_surjective (hM : IsWeightModule R M) {f : M →ₗ[Enveloping R] N}
     (hf : Function.Surjective f) : IsWeightModule R N := by
-  rw [isWeightModule_iff]
-  simp_rw [← hM.map_weightSpace_of_surjective hf]
+  rw [isWeightModule_iff]; simp_rw [← hM.map_weightSpace_of_surjective hf]
   exact hM.iSup_map_weightSpace_eq_top hf
 
 /-- Quotients of weight modules are weight modules. -/
@@ -726,12 +702,10 @@ theorem IsWeightModule.prod (hM : IsWeightModule R M) (hN : IsWeightModule R N) 
     IsWeightModule R (M × N) := by
   rw [isWeightModule_iff, eq_top_iff]
   rintro ⟨m, n⟩ _
-  have hm : (m, (0 : N)) ∈ ⨆ μ : Dual K H, weightSpace R (M × N) μ :=
-    map_iSup_weightSpace_le (LinearMap.inl (Enveloping R) M N)
-      ⟨m, hM.symm ▸ Submodule.mem_top, rfl⟩
-  have hn : ((0 : M), n) ∈ ⨆ μ : Dual K H, weightSpace R (M × N) μ :=
-    map_iSup_weightSpace_le (LinearMap.inr (Enveloping R) M N)
-      ⟨n, hN.symm ▸ Submodule.mem_top, rfl⟩
+  have hm := map_iSup_weightSpace_le (LinearMap.inl (Enveloping R) M N)
+    ⟨m, hM.symm ▸ Submodule.mem_top, rfl⟩
+  have hn := map_iSup_weightSpace_le (LinearMap.inr (Enveloping R) M N)
+    ⟨n, hN.symm ▸ Submodule.mem_top, rfl⟩
   simpa using add_mem hm hn
 
 /-- Direct sums of weight modules are weight modules. -/
@@ -742,7 +716,7 @@ theorem IsWeightModule.directSum {κ : Type*} {P : κ → Type*} [∀ j, AddComm
   classical
   rw [isWeightModule_iff, eq_top_iff]
   intro v _
-  refine DirectSum.induction_on v (zero_mem _) (fun j m ↦ ?_) fun x y hx hy ↦ add_mem hx hy
+  refine DirectSum.induction_on v (zero_mem _) (fun j m ↦ ?_) fun _ _ hx hy ↦ add_mem hx hy
   rw [← DirectSum.lof_eq_of (Enveloping R)]
   exact map_iSup_weightSpace_le (DirectSum.lof (Enveloping R) κ P j)
     ⟨m, (hP j).symm ▸ Submodule.mem_top, rfl⟩
@@ -779,9 +753,9 @@ variable {N : Type*} [AddCommGroup N] [Module K N] [Module (Enveloping R) N]
 theorem IsCategoryO.of_injective (hN : IsCategoryO R N) {f : M →ₗ[Enveloping R] N}
     (hf : Function.Injective f) : IsCategoryO R M where
   isWeightModule := hN.isWeightModule.of_injective hf
-  finiteDimensional_weightSpace μ := by
-    have := hN.finiteDimensional_weightSpace μ
-    exact FiniteDimensional.of_injective (weightSpaceMap f μ) (weightSpaceMap_injective hf μ)
+  finiteDimensional_weightSpace μ :=
+    let _ := hN.finiteDimensional_weightSpace μ
+    FiniteDimensional.of_injective (weightSpaceMap f μ) (weightSpaceMap_injective hf μ)
   exists_finset_rootLE := by
     obtain ⟨S, hS⟩ := hN.exists_finset_rootLE
     refine ⟨S, fun μ hμ ↦ hS μ ?_⟩
@@ -800,8 +774,7 @@ theorem IsCategoryO.of_surjective (hM : IsCategoryO R M) {f : M →ₗ[Envelopin
   isWeightModule := hM.isWeightModule.of_surjective hf
   finiteDimensional_weightSpace μ := by
     have := hM.finiteDimensional_weightSpace μ
-    rw [← hM.isWeightModule.map_weightSpace_of_surjective hf μ]
-    infer_instance
+    rw [← hM.isWeightModule.map_weightSpace_of_surjective hf μ]; infer_instance
   exists_finset_rootLE := by
     obtain ⟨S, hS⟩ := hM.exists_finset_rootLE
     refine ⟨S, fun μ hμ ↦ hS μ fun hbot ↦ hμ ?_⟩
@@ -817,26 +790,17 @@ theorem IsCategoryO.prod (hM : IsCategoryO R M) (hN : IsCategoryO R N) :
     IsCategoryO R (M × N) where
   isWeightModule := hM.isWeightModule.prod hN.isWeightModule
   finiteDimensional_weightSpace μ := by
-    have := hM.finiteDimensional_weightSpace μ
-    have := hN.finiteDimensional_weightSpace μ
+    have := hM.finiteDimensional_weightSpace μ; have := hN.finiteDimensional_weightSpace μ
     rw [weightSpace_prod]
-    exact Module.Finite.equiv (Submodule.prodEquiv (weightSpace R M μ) (weightSpace R N μ)).symm
+    exact Module.Finite.equiv (Submodule.prodEquiv _ _).symm
   exists_finset_rootLE := by
     classical
-    obtain ⟨S₁, hS₁⟩ := hM.exists_finset_rootLE
-    obtain ⟨S₂, hS₂⟩ := hN.exists_finset_rootLE
+    obtain ⟨S₁, hS₁⟩ := hM.exists_finset_rootLE; obtain ⟨S₂, hS₂⟩ := hN.exists_finset_rootLE
     refine ⟨S₁ ∪ S₂, fun μ hμ ↦ ?_⟩
-    have hor : weightSpace R M μ ≠ ⊥ ∨ weightSpace R N μ ≠ ⊥ := by
-      by_contra! hboth
-      apply hμ
-      rw [weightSpace_prod, hboth.left, hboth.right]
-      ext ⟨x, y⟩
-      simp
-    rcases hor with h₁ | h₂
-    · obtain ⟨lam, hlam, hle⟩ := hS₁ μ h₁
-      exact ⟨lam, Finset.mem_union_left _ hlam, hle⟩
-    · obtain ⟨lam, hlam, hle⟩ := hS₂ μ h₂
-      exact ⟨lam, Finset.mem_union_right _ hlam, hle⟩
+    by_cases h₁ : weightSpace R M μ = ⊥
+    · have h₂ : weightSpace R N μ ≠ ⊥ := fun h₂ ↦ hμ (by ext ⟨x, y⟩; simp [h₁, h₂])
+      obtain ⟨lam, hlam, hle⟩ := hS₂ μ h₂; exact ⟨lam, Finset.mem_union_right _ hlam, hle⟩
+    · obtain ⟨lam, hlam, hle⟩ := hS₁ μ h₁; exact ⟨lam, Finset.mem_union_left _ hlam, hle⟩
 
 /-- Finite direct sums of modules in `IsCategoryO` lie in `IsCategoryO`. -/
 theorem IsCategoryO.directSum {κ : Type*} [Finite κ] {P : κ → Type*}

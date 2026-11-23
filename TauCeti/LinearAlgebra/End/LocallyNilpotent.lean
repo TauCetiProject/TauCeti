@@ -41,8 +41,9 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   `f` may be truncated at any length beyond `k`.
 * `Module.End.span_range_pow_apply_eq_span_range_fin`: the orbit of a vector killed by
   `u ^ (n + 1)` spans the same submodule as its first `n + 1` vectors.
-* `Module.End.neg_pow_apply_eq_zero_iff`: a power of `-f` kills a vector exactly when the same
-  power of `f` does.
+* `Module.End.neg_pow_apply_eq_zero_iff` and `Module.End.exists_neg_pow_apply_eq_zero`: a power of
+  `-f` kills a vector exactly when the same power of `f` does, so `-f` is locally nilpotent
+  whenever `f` is.
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
 * `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
@@ -106,6 +107,11 @@ theorem Module.End.neg_pow_apply_eq_zero_iff (f : Module.End R M) (n : ℕ) (x :
     ((-f) ^ n) x = 0 ↔ (f ^ n) x = 0 := by
   rcases neg_one_pow_eq_or (Module.End R M) n with h | h <;>
     simp [neg_pow, h]
+
+/-- If every vector is annihilated by some power of `f`, then the same holds for `-f`. -/
+theorem Module.End.exists_neg_pow_apply_eq_zero {f : Module.End R M}
+    (hf : ∀ x, ∃ n, (f ^ n) x = 0) (x : M) : ∃ n, ((-f) ^ n) x = 0 := by
+  simpa only [neg_pow_apply_eq_zero_iff] using hf x
 
 /-- If every vector is annihilated by some power of `f`, then `1 + f` is invertible. -/
 theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module.End R M)

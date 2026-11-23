@@ -66,7 +66,9 @@ Three structural mechanisms govern integrable Kac–Moody representations here:
 * `TauCeti.KacMoody.IsIntegrableO`: integrable objects in Kac's category `O`.
 * `TauCeti.KacMoody.simpleWeylIntertwiner`: the `K`-linear automorphism
   `exp(eᵢ) ∘ exp(-fᵢ) ∘ exp(eᵢ) : M ≃ₗ[K] M` at any node where `eᵢ` and `fᵢ` act locally
-  nilpotently in characteristic zero (acting as the simple reflection on weights when `A i i = 2`).
+  nilpotently in characteristic zero (matching `TauCeti.Sl2Std.weylUnit`, acting as the simple
+  reflection on weights when `A i i = 2`; Kac §3.8 uses the mirror form
+  `exp(fᵢ) ∘ exp(-eᵢ) ∘ exp(fᵢ)`).
 * `TauCeti.KacMoody.simpleWeylIntertwinerWeightEquiv` and
   `TauCeti.KacMoody.simpleWeylIntertwinerSimpleReflectionEquiv`: when `A i i = 2` (respectively,
   `∀ j, (A.map Int.cast) j j = 2`), the induced `K`-linear equivalences
@@ -208,9 +210,9 @@ theorem exists_lieAction_pow_eq_zero_of_span_eq_top {x : PresentedLieAlgebra R}
     {S : Set M} (hS : Submodule.span (Enveloping R) S = ⊤)
     (hnil : ∀ v ∈ S, ∃ k : ℕ, (lieAction R M x ^ k) v = 0) (m : M) :
     ∃ k : ℕ, (lieAction R M x ^ k) m = 0 := by
-  have htop : locallyNilpotentActionSubmodule R M x hx = ⊤ := by
-    rw [← top_le_iff, ← hS, Submodule.span_le]
-    exact fun v hv ↦ mem_locallyNilpotentActionSubmodule.mpr (hnil v hv)
+  have htop : locallyNilpotentActionSubmodule R M x hx = ⊤ :=
+    top_le_iff.mp (hS ▸ Submodule.span_le.mpr fun v hv ↦
+      mem_locallyNilpotentActionSubmodule.mpr (hnil v hv))
   exact mem_locallyNilpotentActionSubmodule.mp (htop ▸ Submodule.mem_top)
 
 /-- **Local nilpotence of `eᵢ` spreads from any `Enveloping R`-generating set.** -/
@@ -218,20 +220,18 @@ theorem exists_positiveAction_pow_eq_zero_of_span_eq_top {S : Set M}
     (hS : Submodule.span (Enveloping R) S = ⊤) {i : I}
     (hnil : ∀ v ∈ S, ∃ k : ℕ, (positiveAction R M i ^ k) v = 0) (m : M) :
     ∃ k : ℕ, (positiveAction R M i ^ k) m = 0 := by
-  simpa only [lieAction_positiveGenerator] using
-    exists_lieAction_pow_eq_zero_of_span_eq_top
-      (exists_ad_positiveGenerator_pow_apply_eq_zero R i) hS
-      (by simpa only [lieAction_positiveGenerator] using hnil) m
+  rw [← lieAction_positiveGenerator] at hnil ⊢
+  exact exists_lieAction_pow_eq_zero_of_span_eq_top
+    (exists_ad_positiveGenerator_pow_apply_eq_zero R i) hS hnil m
 
 /-- **Local nilpotence of `fᵢ` spreads from any `Enveloping R`-generating set.** -/
 theorem exists_negativeAction_pow_eq_zero_of_span_eq_top {S : Set M}
     (hS : Submodule.span (Enveloping R) S = ⊤) {i : I}
     (hnil : ∀ v ∈ S, ∃ k : ℕ, (negativeAction R M i ^ k) v = 0) (m : M) :
     ∃ k : ℕ, (negativeAction R M i ^ k) m = 0 := by
-  simpa only [lieAction_negativeGenerator] using
-    exists_lieAction_pow_eq_zero_of_span_eq_top
-      (exists_ad_negativeGenerator_pow_apply_eq_zero R i) hS
-      (by simpa only [lieAction_negativeGenerator] using hnil) m
+  rw [← lieAction_negativeGenerator] at hnil ⊢
+  exact exists_lieAction_pow_eq_zero_of_span_eq_top
+    (exists_ad_negativeGenerator_pow_apply_eq_zero R i) hS hnil m
 
 /-- On a simple `Enveloping R`-module, if `ad x` is locally nilpotent on `PresentedLieAlgebra R`
 and `lieAction R M x` acts nilpotently at one nonzero vector then it acts locally nilpotently on
@@ -243,27 +243,25 @@ theorem exists_lieAction_pow_eq_zero_of_isSimpleModule [IsSimpleModule (Envelopi
     ∃ k : ℕ, (lieAction R M x ^ k) m = 0 :=
   exists_lieAction_pow_eq_zero_of_span_eq_top hx
     (IsSimpleModule.span_singleton_eq_top (Enveloping R) hv)
-    (fun w hw ↦ by rcases Set.mem_singleton_iff.mp hw with rfl; exact ⟨k₀, hk₀⟩) m
+    (fun _ hw ↦ by rcases Set.mem_singleton_iff.mp hw with rfl; exact ⟨k₀, hk₀⟩) m
 
 /-- On a simple `Enveloping R`-module, if `eᵢ` acts nilpotently at one nonzero vector then it acts
 locally nilpotently on the whole module. -/
 theorem exists_positiveAction_pow_eq_zero_of_isSimpleModule [IsSimpleModule (Enveloping R) M]
     {i : I} {v : M} (hv : v ≠ 0) {k₀ : ℕ} (hk₀ : (positiveAction R M i ^ k₀) v = 0) (m : M) :
     ∃ k : ℕ, (positiveAction R M i ^ k) m = 0 := by
-  simpa only [lieAction_positiveGenerator] using
-    exists_lieAction_pow_eq_zero_of_isSimpleModule
-      (exists_ad_positiveGenerator_pow_apply_eq_zero R i) hv
-      (by simpa only [lieAction_positiveGenerator] using hk₀) m
+  rw [← lieAction_positiveGenerator] at hk₀ ⊢
+  exact exists_lieAction_pow_eq_zero_of_isSimpleModule
+    (exists_ad_positiveGenerator_pow_apply_eq_zero R i) hv hk₀ m
 
 /-- On a simple `Enveloping R`-module, if `fᵢ` acts nilpotently at one nonzero vector then it acts
 locally nilpotently on the whole module. -/
 theorem exists_negativeAction_pow_eq_zero_of_isSimpleModule [IsSimpleModule (Enveloping R) M]
     {i : I} {v : M} (hv : v ≠ 0) {k₀ : ℕ} (hk₀ : (negativeAction R M i ^ k₀) v = 0) (m : M) :
     ∃ k : ℕ, (negativeAction R M i ^ k) m = 0 := by
-  simpa only [lieAction_negativeGenerator] using
-    exists_lieAction_pow_eq_zero_of_isSimpleModule
-      (exists_ad_negativeGenerator_pow_apply_eq_zero R i) hv
-      (by simpa only [lieAction_negativeGenerator] using hk₀) m
+  rw [← lieAction_negativeGenerator] at hk₀ ⊢
+  exact exists_lieAction_pow_eq_zero_of_isSimpleModule
+    (exists_ad_negativeGenerator_pow_apply_eq_zero R i) hv hk₀ m
 
 end LocallyNilpotentSubmodule
 
@@ -312,12 +310,10 @@ theorem IsIntegrable.of_injective (hN : IsIntegrable R N) {f : M →ₗ[Envelopi
   isWeightModule := hN.isWeightModule.of_injective hf
   locallyNilpotent_positiveAction i :=
     Module.End.exists_pow_apply_eq_zero_of_injective (g := f.restrictScalars K)
-      (LinearMap.ext fun m ↦ map_positiveAction f i m) hf
-      (hN.locallyNilpotent_positiveAction i)
+      (LinearMap.ext fun m ↦ map_positiveAction f i m) hf (hN.locallyNilpotent_positiveAction i)
   locallyNilpotent_negativeAction i :=
     Module.End.exists_pow_apply_eq_zero_of_injective (g := f.restrictScalars K)
-      (LinearMap.ext fun m ↦ map_negativeAction f i m) hf
-      (hN.locallyNilpotent_negativeAction i)
+      (LinearMap.ext fun m ↦ map_negativeAction f i m) hf (hN.locallyNilpotent_negativeAction i)
 
 /-- Submodules of integrable modules are integrable. -/
 theorem IsIntegrable.submodule (hM : IsIntegrable R M) (P : Submodule (Enveloping R) M) :
@@ -330,12 +326,10 @@ theorem IsIntegrable.of_surjective (hM : IsIntegrable R M) {f : M →ₗ[Envelop
   isWeightModule := hM.isWeightModule.of_surjective hf
   locallyNilpotent_positiveAction i :=
     Module.End.exists_pow_apply_eq_zero_of_surjective (g := f.restrictScalars K)
-      (LinearMap.ext fun m ↦ map_positiveAction f i m) hf
-      (hM.locallyNilpotent_positiveAction i)
+      (LinearMap.ext fun m ↦ map_positiveAction f i m) hf (hM.locallyNilpotent_positiveAction i)
   locallyNilpotent_negativeAction i :=
     Module.End.exists_pow_apply_eq_zero_of_surjective (g := f.restrictScalars K)
-      (LinearMap.ext fun m ↦ map_negativeAction f i m) hf
-      (hM.locallyNilpotent_negativeAction i)
+      (LinearMap.ext fun m ↦ map_negativeAction f i m) hf (hM.locallyNilpotent_negativeAction i)
 
 /-- Quotients of integrable modules are integrable. -/
 theorem IsIntegrable.quotient (hM : IsIntegrable R M) (P : Submodule (Enveloping R) M) :
@@ -436,12 +430,10 @@ theorem positiveAction_negativeAction_pow_succ_apply {i : I} (hA : A i i = 2) {�
       negativeAction R M i * cartanAction R M (R.coroot i) = -(2 • negativeAction R M i) := by
     rw [← Ring.lie_def, lie_cartanAction_negativeAction, R.root_coroot_eq_two hA,
       two_smul, two_smul]
-  have h := LinearMap.congr_fun (TauCeti.Sl2.e_mul_f_pow_succ hef hhf k) v
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.sub_apply,
-    _root_.mul_apply_eq_comp, _root_.natCast_apply_eq_smul,
-    cartanAction_apply_of_mem_weightSpace hv, ← Nat.cast_smul_eq_nsmul K, ← sub_smul, map_smul,
-    smul_smul] at h
-  exact h
+  simpa [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
+    _root_.natCast_apply_eq_smul, cartanAction_apply_of_mem_weightSpace hv,
+    ← Nat.cast_smul_eq_nsmul K, ← sub_smul, map_smul, smul_smul] using
+    LinearMap.congr_fun (TauCeti.Sl2.e_mul_f_pow_succ hef hhf k) v
 
 /-- **Integrality of a primitive weight at node `i`.** Over a field of characteristic zero, if
 `A i i = 2` and `v` is a nonzero weight vector of weight `μ` killed by `eᵢ` and by some power of
@@ -454,13 +446,11 @@ theorem exists_nat_apply_coroot_and_negativeAction_pow_succ_eq_zero_of_positiveA
   obtain ⟨n, hnz, hz⟩ :=
     TauCeti.exists_pow_smul_ne_zero_and_smul_eq_zero (x := negativeAction R M i) hv0 hnil
   simp only [Module.End.smul_def] at hnz hz
-  have hz' : (negativeAction R M i ^ (n + 1)) v = 0 := by
-    rwa [pow_succ', _root_.mul_apply_eq_comp]
+  have hz' : (negativeAction R M i ^ (n + 1)) v = 0 := by rwa [pow_succ', _root_.mul_apply_eq_comp]
   have hcomm := positiveAction_negativeAction_pow_succ_apply hA hv n
   rw [hz', he, map_zero, map_zero, zero_add, eq_comm, smul_eq_zero] at hcomm
-  have hscalar : ((n + 1 : ℕ) : K) * (μ (R.coroot i) - n) = 0 := hcomm.resolve_right hnz
-  have hn1 : ((n + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
-  exact ⟨n, sub_eq_zero.mp ((mul_eq_zero.mp hscalar).resolve_left hn1), hz'⟩
+  exact ⟨n, sub_eq_zero.mp ((mul_eq_zero.mp (hcomm.resolve_right hnz)).resolve_left
+    (Nat.cast_ne_zero.mpr n.succ_ne_zero)), hz'⟩
 
 /-- **Existence of dominant integral primitive vectors in `IsIntegrableO`.** Over a field of
 characteristic zero, when `∀ i, A i i = 2`, every nonzero `Enveloping R`-submodule `P` of a module
@@ -471,11 +461,11 @@ theorem IsIntegrableO.exists_primitive_vector_of_ne_bot [CharZero K] (hA : ∀ i
     ∃ (μ : Dual K H) (v : M), v ∈ P ∧ v ≠ 0 ∧ v ∈ weightSpace R M μ ∧
       (∀ i : I, positiveAction R M i v = 0) ∧ ∀ i : I, ∃ n : ℕ, μ (R.coroot i) = n := by
   obtain ⟨μ, v, hvP, hv0, hvw, hprim⟩ := hM.toIsCategoryO.exists_primitive_vector_of_ne_bot hP
-  refine ⟨μ, v, hvP, hv0, hvw, hprim, fun i ↦ ?_⟩
-  obtain ⟨n, hn, -⟩ :=
-    exists_nat_apply_coroot_and_negativeAction_pow_succ_eq_zero_of_positiveAction_eq_zero
-      (hA i) hv0 hvw (hprim i) (hM.locallyNilpotent_negativeAction i v)
-  exact ⟨n, hn⟩
+  exact ⟨μ, v, hvP, hv0, hvw, hprim, fun i ↦
+    let ⟨n, hn, _⟩ :=
+      exists_nat_apply_coroot_and_negativeAction_pow_succ_eq_zero_of_positiveAction_eq_zero
+        (hA i) hv0 hvw (hprim i) (hM.locallyNilpotent_negativeAction i v)
+    ⟨n, hn⟩⟩
 
 end PrimitiveIntegrality
 
@@ -488,16 +478,17 @@ variable {R : CartanRealization (A.map (Int.cast : ℤ → K)) H}
 variable {M : Type*} [AddCommGroup M] [Module K M] [Module (Enveloping R) M]
   [IsScalarTower K (Enveloping R) M]
 
-/-- Kac's **simple Weyl intertwiner** `rᵢ^M = exp(eᵢ) ∘ exp(-fᵢ) ∘ exp(eᵢ) : M ≃ₗ[K] M` (§3.8) at
-any node `i` where `positiveAction R M i` and `negativeAction R M i` act locally nilpotently over a
-field of characteristic zero. -/
+/-- The **simple Weyl intertwiner** `exp(eᵢ) ∘ exp(-fᵢ) ∘ exp(eᵢ) : M ≃ₗ[K] M` at any node `i`
+where `positiveAction R M i` and `negativeAction R M i` act locally nilpotently over a field of
+characteristic zero (matching `TauCeti.Sl2Std.weylUnit`; Kac §3.8 uses the mirror form
+`exp(fᵢ) ∘ exp(-eᵢ) ∘ exp(fᵢ)`). -/
 noncomputable def simpleWeylIntertwiner {i : I}
     (he : ∀ m : M, ∃ k : ℕ, (positiveAction R M i ^ k) m = 0)
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0) : M ≃ₗ[K] M :=
   letI : Module ℚ M := Module.compHom M (algebraMap ℚ K)
   (Module.End.locallyNilpotentExp (positiveAction R M i) he).trans
     ((Module.End.locallyNilpotentExp (-negativeAction R M i)
-        (fun m ↦ by simpa [Module.End.neg_pow_apply_eq_zero_iff] using hf m)).trans
+        (Module.End.exists_neg_pow_apply_eq_zero hf)).trans
       (Module.End.locallyNilpotentExp (positiveAction R M i) he))
 
 /-- Using the canonical `ℚ`-scalar restriction `Module.compHom M (algebraMap ℚ K)`,
@@ -509,7 +500,7 @@ theorem simpleWeylIntertwiner_apply {i : I}
     simpleWeylIntertwiner he hf m =
       Module.End.locallyNilpotentExp (positiveAction R M i) he
         (Module.End.locallyNilpotentExp (-negativeAction R M i)
-          (fun x ↦ by simpa [Module.End.neg_pow_apply_eq_zero_iff] using hf x)
+          (Module.End.exists_neg_pow_apply_eq_zero hf)
           (Module.End.locallyNilpotentExp (positiveAction R M i) he m)) := by
   dsimp only [simpleWeylIntertwiner, LinearEquiv.trans_apply]
 
@@ -521,14 +512,14 @@ theorem simpleWeylIntertwiner_symm_apply {i : I}
     letI : Module ℚ M := Module.compHom M (algebraMap ℚ K)
     (simpleWeylIntertwiner he hf).symm m =
       Module.End.locallyNilpotentExp (-positiveAction R M i)
-        (fun x ↦ by simpa [Module.End.neg_pow_apply_eq_zero_iff] using he x)
+        (Module.End.exists_neg_pow_apply_eq_zero he)
         (Module.End.locallyNilpotentExp (negativeAction R M i) hf
           (Module.End.locallyNilpotentExp (-positiveAction R M i)
-            (fun x ↦ by simpa [Module.End.neg_pow_apply_eq_zero_iff] using he x) m)) := by
+            (Module.End.exists_neg_pow_apply_eq_zero he) m)) := by
   let : Module ℚ M := Module.compHom M (algebraMap ℚ K)
   have hneg_symm (x : M) :
       (Module.End.locallyNilpotentExp (-negativeAction R M i)
-        (fun y ↦ by simpa [Module.End.neg_pow_apply_eq_zero_iff] using hf y)).symm x =
+        (Module.End.exists_neg_pow_apply_eq_zero hf)).symm x =
         Module.End.locallyNilpotentExp (negativeAction R M i) hf x := by
     rw [Module.End.locallyNilpotentExp_symm]
     simp only [neg_neg]
@@ -552,11 +543,9 @@ theorem map_simpleWeylIntertwiner {N : Type*} [AddCommGroup N] [Module K N]
   have hneg : Function.Semiconj f (-negativeAction R M i : Module.End K M)
       (-negativeAction R N i : Module.End K N) := fun x ↦ by
     simp [map_negativeAction]
-  have hneg_nil_N (y : N) : ∃ k, ((-negativeAction R N i) ^ k) y = 0 := by
-    simpa [Module.End.neg_pow_apply_eq_zero_iff] using hfN y
   rw [simpleWeylIntertwiner_apply, simpleWeylIntertwiner_apply,
     Module.End.map_locallyNilpotentExp _ _ heN f hpos,
-    Module.End.map_locallyNilpotentExp _ _ hneg_nil_N f hneg,
+    Module.End.map_locallyNilpotentExp _ _ (Module.End.exists_neg_pow_apply_eq_zero hfN) f hneg,
     Module.End.map_locallyNilpotentExp _ _ heN f hpos]
 
 /-- **Naturality of `(simpleWeylIntertwiner he hf).symm`.** Every `Enveloping R`-linear map
@@ -584,7 +573,7 @@ private theorem exp_positiveAction_comp_cartanAction [Module ℚ M] {i : I}
   have h1 : ⁅positiveAction R M i, cartanAction R M x⁆ = -(R.root i x • positiveAction R M i) := by
     rw [← lie_skew, lie_cartanAction_positiveAction]
   have h2 : ⁅positiveAction R M i, ⁅positiveAction R M i, cartanAction R M x⁆⁆ = 0 := by
-    rw [h1, lie_neg, lie_smul, lie_self, smul_zero, neg_zero]
+    simp [h1, lie_smul]
   ext m
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
     Module.End.locallyNilpotentExp_apply_of_lie_lie_eq_zero _ _ h2, h1, sub_eq_add_neg]
@@ -620,14 +609,16 @@ private theorem exp_neg_negativeAction_comp_step [Module ℚ M] {i : I} (hA : A 
       lie_cartanAction_negativeAction, hrx, neg_smul, neg_neg, lie_smul,
       ← lie_skew (negativeAction R M i) (positiveAction R M i),
       lie_positiveAction_negativeAction_self]
+  have hneg_cartan : ⁅negativeAction R M i, cartanAction R M (R.coroot i)⁆ =
+      (2 : K) • negativeAction R M i := by
+    rw [← lie_skew, lie_cartanAction_negativeAction, hrc, neg_neg]
   have hd₂ : ⁅-negativeAction R M i, ⁅-negativeAction R M i, g⁆⁆ =
       -((2 : K) • (R.root i x • negativeAction R M i)) := by
-    rw [hd₁, lie_add, neg_lie, lie_smul, lie_self, smul_zero, neg_zero, zero_add, neg_lie,
-      lie_smul, ← lie_skew (negativeAction R M i) (cartanAction R M _),
-      lie_cartanAction_negativeAction, hrc, neg_neg, smul_comm (R.root i x) (2 : K)]
+    simp only [hd₁, lie_add, neg_lie, lie_smul, lie_self, smul_zero, neg_zero, zero_add,
+      hneg_cartan]
+    module
   have hd₃ : ⁅-negativeAction R M i, ⁅-negativeAction R M i, ⁅-negativeAction R M i, g⁆⁆⁆ = 0 := by
-    rw [hd₂, lie_neg, lie_smul, lie_smul, neg_lie, lie_self, neg_zero, smul_zero, smul_zero,
-      neg_zero]
+    rw [hd₂]; simp only [lie_neg, lie_smul, neg_lie, lie_self, smul_zero, neg_zero]
   have hhalf : ((2⁻¹ : ℚ) • ⁅-negativeAction R M i, ⁅-negativeAction R M i, g⁆⁆ :
       Module.End K M) = -(R.root i x • negativeAction R M i) := by
     rw [hd₂, smul_neg, ← Rat.cast_smul_eq_qsmul K, smul_smul, Rat.cast_inv, Rat.cast_ofNat,
@@ -635,13 +626,21 @@ private theorem exp_neg_negativeAction_comp_step [Module ℚ M] {i : I} (hA : A 
   have hop : g + (R.root i x • negativeAction R M i + R.root i x • cartanAction R M (R.coroot i)) +
       -(R.root i x • negativeAction R M i) =
       cartanAction R M x + R.root i x • positiveAction R M i := by
-    simp only [g, Module.reflection_apply, map_sub, map_smul]
-    abel
+    simp only [g, Module.reflection_apply, map_sub, map_smul]; abel
   ext m
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [Module.End.locallyNilpotentExp_apply_of_lie_lie_lie_eq_zero (-negativeAction R M i) hneg
-      hd₃ m,
-    hhalf, hd₁, hop]
+      hd₃ m, hhalf, hd₁, hop]
+
+omit [CharZero K] in
+private theorem comp_three_conj {a b c x₀ x₁ x₂ x₃ : Module.End K M}
+    (h₁ : c ∘ₗ x₀ = x₁ ∘ₗ c) (h₂ : b ∘ₗ x₁ = x₂ ∘ₗ b) (h₃ : a ∘ₗ x₂ = x₃ ∘ₗ a) :
+    (a ∘ₗ b ∘ₗ c) ∘ₗ x₀ = x₃ ∘ₗ (a ∘ₗ b ∘ₗ c) := by
+  calc (a ∘ₗ b ∘ₗ c) ∘ₗ x₀
+      = a ∘ₗ b ∘ₗ (c ∘ₗ x₀) := by simp only [LinearMap.comp_assoc]
+    _ = a ∘ₗ (b ∘ₗ x₁) ∘ₗ c := by rw [h₁]; simp only [LinearMap.comp_assoc]
+    _ = (a ∘ₗ x₂) ∘ₗ b ∘ₗ c := by rw [h₂]; simp only [LinearMap.comp_assoc]
+    _ = x₃ ∘ₗ (a ∘ₗ b ∘ₗ c) := by rw [h₃]; simp only [LinearMap.comp_assoc]
 
 /-- **Conjugating the Cartan action by `simpleWeylIntertwiner`.** When `A i i = 2`,
 `cartanAction R M x (simpleWeylIntertwiner he hf m) =
@@ -654,13 +653,12 @@ theorem cartanAction_simpleWeylIntertwiner_apply {i : I}
       simpleWeylIntertwiner he hf (cartanAction R M (x - R.root i x • R.coroot i) m) := by
   let : Module ℚ M := Module.compHom M (algebraMap ℚ K)
   have hrc := R.root_coroot_eq_two hA
-  have hneg : ∀ v : M, ∃ k : ℕ, ((-negativeAction R M i) ^ k) v = 0 := fun v ↦ by
-    simpa [Module.End.neg_pow_apply_eq_zero_iff] using hf v
   let eExp : Module.End K M := Module.End.locallyNilpotentExp (positiveAction R M i) he
-  let fExp : Module.End K M := Module.End.locallyNilpotentExp (-negativeAction R M i) hneg
-  have hsw : (simpleWeylIntertwiner he hf : Module.End K M) = eExp ∘ₗ fExp ∘ₗ eExp := by
-    ext v
-    exact simpleWeylIntertwiner_apply he hf v
+  let fExp : Module.End K M :=
+    Module.End.locallyNilpotentExp (-negativeAction R M i)
+      (Module.End.exists_neg_pow_apply_eq_zero hf)
+  have hsw : (simpleWeylIntertwiner he hf : Module.End K M) = eExp ∘ₗ fExp ∘ₗ eExp :=
+    LinearMap.ext fun v ↦ simpleWeylIntertwiner_apply he hf v
   have hstep1 : eExp ∘ₗ cartanAction R M (Module.reflection hrc x) =
       (cartanAction R M (Module.reflection hrc x) + R.root i x • positiveAction R M i) ∘ₗ
         eExp := by
@@ -674,14 +672,12 @@ theorem cartanAction_simpleWeylIntertwiner_apply {i : I}
   have hstep2 : fExp ∘ₗ (cartanAction R M (Module.reflection hrc x) +
       R.root i x • positiveAction R M i) =
       (cartanAction R M x + R.root i x • positiveAction R M i) ∘ₗ fExp :=
-    exp_neg_negativeAction_comp_step hA hneg x
+    exp_neg_negativeAction_comp_step hA _ x
   have hcomp :
       (simpleWeylIntertwiner he hf : Module.End K M) ∘ₗ
           cartanAction R M (Module.reflection hrc x) =
-        cartanAction R M x ∘ₗ (simpleWeylIntertwiner he hf : Module.End K M) := by
-    rw [hsw, LinearMap.comp_assoc, LinearMap.comp_assoc, hstep1,
-      ← LinearMap.comp_assoc eExp, hstep2, LinearMap.comp_assoc,
-      ← LinearMap.comp_assoc _ _ eExp, hstep3, LinearMap.comp_assoc]
+        cartanAction R M x ∘ₗ (simpleWeylIntertwiner he hf : Module.End K M) :=
+    hsw ▸ comp_three_conj hstep1 hstep2 hstep3
   rw [← Module.reflection_apply x hrc]
   exact (LinearMap.congr_fun hcomp m).symm
 
@@ -709,8 +705,7 @@ theorem simpleWeylIntertwiner_mem_weightSpace {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : A i i = 2) {μ : Dual K H} {m : M} (hm : m ∈ weightSpace R M μ) :
     simpleWeylIntertwiner he hf m ∈ weightSpace R M (μ - μ (R.coroot i) • R.root i) := by
-  rw [mem_weightSpace_iff]
-  intro x
+  rw [mem_weightSpace_iff]; intro x
   rw [cartanAction_simpleWeylIntertwiner_apply he hf hA,
     cartanAction_apply_of_mem_weightSpace hm, map_smul, sub_apply_coroot_smul_root_apply]
 
@@ -722,8 +717,7 @@ theorem simpleWeylIntertwiner_symm_mem_weightSpace {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : A i i = 2) {μ : Dual K H} {m : M} (hm : m ∈ weightSpace R M μ) :
     (simpleWeylIntertwiner he hf).symm m ∈ weightSpace R M (μ - μ (R.coroot i) • R.root i) := by
-  rw [mem_weightSpace_iff]
-  intro x
+  rw [mem_weightSpace_iff]; intro x
   apply (simpleWeylIntertwiner he hf).injective
   rw [map_smul, LinearEquiv.apply_symm_apply, simpleWeylIntertwiner_cartanAction_apply he hf hA,
     LinearEquiv.apply_symm_apply, cartanAction_apply_of_mem_weightSpace hm,
@@ -743,16 +737,10 @@ noncomputable def simpleWeylIntertwinerWeightEquiv {i : I}
   have hinv : (μ - μ (R.coroot i) • R.root i) -
       (μ - μ (R.coroot i) • R.root i) (R.coroot i) • R.root i = μ := by
     simpa [Module.reflection_apply, Dual.eval_apply] using Module.involutive_reflection hrc' μ
-  have hmap : (weightSpace R M μ).map (simpleWeylIntertwiner he hf).toLinearMap =
-      weightSpace R M (μ - μ (R.coroot i) • R.root i) := by
-    refine le_antisymm ?_ fun w hw ↦ ?_
-    · rintro _ ⟨v, hv, rfl⟩
-      exact simpleWeylIntertwiner_mem_weightSpace he hf hA hv
-    · refine ⟨(simpleWeylIntertwiner he hf).symm w, ?_,
-        (simpleWeylIntertwiner he hf).apply_symm_apply w⟩
-      have hw' := simpleWeylIntertwiner_symm_mem_weightSpace he hf hA hw
-      rwa [hinv] at hw'
-  exact (simpleWeylIntertwiner he hf).ofSubmodules _ _ hmap
+  refine (simpleWeylIntertwiner he hf).ofSubmodules _ _ (le_antisymm ?_ fun w hw ↦ ?_)
+  · rintro _ ⟨v, hv, rfl⟩; exact simpleWeylIntertwiner_mem_weightSpace he hf hA hv
+  · exact ⟨_, hinv ▸ simpleWeylIntertwiner_symm_mem_weightSpace he hf hA hw,
+      (simpleWeylIntertwiner he hf).apply_symm_apply w⟩
 
 /-- The forward coercion of `simpleWeylIntertwinerWeightEquiv` is `simpleWeylIntertwiner`. -/
 @[simp]
@@ -760,9 +748,8 @@ theorem coe_simpleWeylIntertwinerWeightEquiv_apply {i : I}
     (he : ∀ m : M, ∃ k : ℕ, (positiveAction R M i ^ k) m = 0)
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : A i i = 2) (μ : Dual K H) (v : weightSpace R M μ) :
-    (simpleWeylIntertwinerWeightEquiv he hf hA μ v : M) = simpleWeylIntertwiner he hf v := by
-  unfold simpleWeylIntertwinerWeightEquiv
-  exact LinearEquiv.ofSubmodules_apply ..
+    (simpleWeylIntertwinerWeightEquiv he hf hA μ v : M) = simpleWeylIntertwiner he hf v :=
+  LinearEquiv.ofSubmodules_apply ..
 
 /-- The inverse coercion of `simpleWeylIntertwinerWeightEquiv` is
 `(simpleWeylIntertwiner he hf).symm`. -/
@@ -773,9 +760,8 @@ theorem coe_simpleWeylIntertwinerWeightEquiv_symm_apply {i : I}
     (hA : A i i = 2) (μ : Dual K H)
     (w : weightSpace R M (μ - μ (R.coroot i) • R.root i)) :
     ((simpleWeylIntertwinerWeightEquiv he hf hA μ).symm w : M) =
-      (simpleWeylIntertwiner he hf).symm w := by
-  unfold simpleWeylIntertwinerWeightEquiv
-  exact LinearEquiv.ofSubmodules_symm_apply ..
+      (simpleWeylIntertwiner he hf).symm w :=
+  LinearEquiv.ofSubmodules_symm_apply ..
 
 /-- Cardinal rank (`Module.rank`) of weight spaces is invariant under the simple reflection at a
 node `i` with `A i i = 2` where `eᵢ` and `fᵢ` act locally nilpotently. -/
@@ -823,9 +809,9 @@ theorem cartanAction_simpleWeylIntertwiner_simpleCoreflection {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) (x : H) (m : M) :
     cartanAction R M x (simpleWeylIntertwiner he hf m) =
-      simpleWeylIntertwiner he hf (cartanAction R M (R.simpleCoreflection hA i x) m) := by
-  rw [R.simpleCoreflection_apply]
-  exact cartanAction_simpleWeylIntertwiner_apply he hf (diag_eq_two_of_map hA i) x m
+      simpleWeylIntertwiner he hf (cartanAction R M (R.simpleCoreflection hA i x) m) :=
+  R.simpleCoreflection_apply hA i x ▸
+    cartanAction_simpleWeylIntertwiner_apply he hf (diag_eq_two_of_map hA i) x m
 
 /-- Pushing `cartanAction` forward across `simpleWeylIntertwiner` using the canonical
 `CartanRealization.simpleCoreflection`, under `∀ j, (A.map (Int.cast : ℤ → K)) j j = 2` (compare
@@ -835,9 +821,9 @@ theorem simpleWeylIntertwiner_cartanAction_simpleCoreflection {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) (x : H) (m : M) :
     simpleWeylIntertwiner he hf (cartanAction R M x m) =
-      cartanAction R M (R.simpleCoreflection hA i x) (simpleWeylIntertwiner he hf m) := by
-  rw [R.simpleCoreflection_apply]
-  exact simpleWeylIntertwiner_cartanAction_apply he hf (diag_eq_two_of_map hA i) x m
+      cartanAction R M (R.simpleCoreflection hA i x) (simpleWeylIntertwiner he hf m) :=
+  R.simpleCoreflection_apply hA i x ▸
+    simpleWeylIntertwiner_cartanAction_apply he hf (diag_eq_two_of_map hA i) x m
 
 /-- **Simple Weyl intertwiners permute weight spaces by canonical simple reflections**, under the
 all-node diagonal hypothesis `∀ j, (A.map (Int.cast : ℤ → K)) j j = 2` (compare
@@ -847,9 +833,9 @@ theorem simpleWeylIntertwiner_mem_weightSpace_simpleReflection {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) {μ : Dual K H} {m : M}
     (hm : m ∈ weightSpace R M μ) :
-    simpleWeylIntertwiner he hf m ∈ weightSpace R M (R.simpleReflection hA i μ) := by
-  rw [R.simpleReflection_apply]
-  exact simpleWeylIntertwiner_mem_weightSpace he hf (diag_eq_two_of_map hA i) hm
+    simpleWeylIntertwiner he hf m ∈ weightSpace R M (R.simpleReflection hA i μ) :=
+  (R.simpleReflection_apply hA i μ).symm ▸
+    simpleWeylIntertwiner_mem_weightSpace he hf (diag_eq_two_of_map hA i) hm
 
 /-- **Simple Weyl intertwiners permute weight spaces by canonical simple reflections (inverse
 direction)**, under the all-node diagonal hypothesis `∀ j, (A.map (Int.cast : ℤ → K)) j j = 2`
@@ -859,9 +845,9 @@ theorem simpleWeylIntertwiner_symm_mem_weightSpace_simpleReflection {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) {μ : Dual K H} {m : M}
     (hm : m ∈ weightSpace R M μ) :
-    (simpleWeylIntertwiner he hf).symm m ∈ weightSpace R M (R.simpleReflection hA i μ) := by
-  rw [R.simpleReflection_apply]
-  exact simpleWeylIntertwiner_symm_mem_weightSpace he hf (diag_eq_two_of_map hA i) hm
+    (simpleWeylIntertwiner he hf).symm m ∈ weightSpace R M (R.simpleReflection hA i μ) :=
+  (R.simpleReflection_apply hA i μ).symm ▸
+    simpleWeylIntertwiner_symm_mem_weightSpace he hf (diag_eq_two_of_map hA i) hm
 
 /-- **Canonical simple-reflection equivalence of weight spaces.** Over a field of characteristic
 zero, when every diagonal entry satisfies `(A.map (Int.cast : ℤ → K)) j j = 2` and `eᵢ`, `fᵢ`
@@ -885,8 +871,7 @@ theorem coe_simpleWeylIntertwinerSimpleReflectionEquiv_apply {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) (μ : Dual K H) (v : weightSpace R M μ) :
     (simpleWeylIntertwinerSimpleReflectionEquiv he hf hA μ v : M) =
-      simpleWeylIntertwiner he hf v := by
-  simp [simpleWeylIntertwinerSimpleReflectionEquiv]
+      simpleWeylIntertwiner he hf v := by simp [simpleWeylIntertwinerSimpleReflectionEquiv]
 
 /-- The inverse coercion of `simpleWeylIntertwinerSimpleReflectionEquiv` is
 `(simpleWeylIntertwiner he hf).symm`. -/
@@ -897,8 +882,7 @@ theorem coe_simpleWeylIntertwinerSimpleReflectionEquiv_symm_apply {i : I}
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) (μ : Dual K H)
     (w : weightSpace R M (R.simpleReflection hA i μ)) :
     ((simpleWeylIntertwinerSimpleReflectionEquiv he hf hA μ).symm w : M) =
-      (simpleWeylIntertwiner he hf).symm w := by
-  simp [simpleWeylIntertwinerSimpleReflectionEquiv]
+      (simpleWeylIntertwiner he hf).symm w := by simp [simpleWeylIntertwinerSimpleReflectionEquiv]
 
 /-- Cardinal rank (`Module.rank`) of weight spaces is invariant under a canonical simple reflection
 `R.simpleReflection hA i` when `∀ j, (A.map (Int.cast : ℤ → K)) j j = 2` and `eᵢ`, `fᵢ` act
@@ -947,28 +931,21 @@ theorem IsIntegrable.nonempty_linearEquiv_weightSpace_of_mem_weylGroup (hM : IsI
     Nonempty (weightSpace R M (w μ) ≃ₗ[K] weightSpace R M μ) := by
   rw [R.weylGroup_def] at hw
   induction hw using Subgroup.closure_induction'' generalizing μ with
-  | mem s hs =>
-    obtain ⟨i, rfl⟩ := hs
-    exact ⟨(simpleWeylIntertwinerSimpleReflectionEquiv
+  | mem _ hs => obtain ⟨i, rfl⟩ := hs; exact ⟨(simpleWeylIntertwinerSimpleReflectionEquiv
       (hM.locallyNilpotent_positiveAction i) (hM.locallyNilpotent_negativeAction i) hA μ).symm⟩
-  | inv_mem s hs =>
-    obtain ⟨i, rfl⟩ := hs
-    rw [R.simpleReflection_inv]
+  | inv_mem _ hs =>
+    obtain ⟨i, rfl⟩ := hs; rw [R.simpleReflection_inv]
     exact ⟨(simpleWeylIntertwinerSimpleReflectionEquiv
       (hM.locallyNilpotent_positiveAction i) (hM.locallyNilpotent_negativeAction i) hA μ).symm⟩
   | one => exact ⟨LinearEquiv.refl K _⟩
-  | mul w₁ w₂ _ _ ih₁ ih₂ =>
-    obtain ⟨e₁⟩ := ih₁ (w₂ μ)
-    obtain ⟨e₂⟩ := ih₂ μ
-    exact ⟨e₁.trans e₂⟩
+  | mul _ _ _ _ ih₁ ih₂ => obtain ⟨e₁⟩ := ih₁ _; obtain ⟨e₂⟩ := ih₂ _; exact ⟨e₁.trans e₂⟩
 
 /-- **Weyl-group invariance of cardinal rank on an integrable module.** -/
 theorem IsIntegrable.rank_weightSpace_of_mem_weylGroup (hM : IsIntegrable R M)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) {w : Dual K H ≃ₗ[K] Dual K H}
     (hw : w ∈ R.weylGroup hA) (μ : Dual K H) :
-    Module.rank K (weightSpace R M (w μ)) = Module.rank K (weightSpace R M μ) := by
-  obtain ⟨e⟩ := hM.nonempty_linearEquiv_weightSpace_of_mem_weylGroup hA hw μ
-  exact e.rank_eq
+    Module.rank K (weightSpace R M (w μ)) = Module.rank K (weightSpace R M μ) :=
+  (hM.nonempty_linearEquiv_weightSpace_of_mem_weylGroup hA hw μ).elim fun e ↦ e.rank_eq
 
 /-- **Weyl-group invariance of `Module.finrank` on an integrable module**, as a corollary of
 `IsIntegrable.nonempty_linearEquiv_weightSpace_of_mem_weylGroup` (both sides are `0` for
@@ -977,9 +954,8 @@ cardinal rank). -/
 theorem IsIntegrable.finrank_weightSpace_of_mem_weylGroup (hM : IsIntegrable R M)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) {w : Dual K H ≃ₗ[K] Dual K H}
     (hw : w ∈ R.weylGroup hA) (μ : Dual K H) :
-    Module.finrank K (weightSpace R M (w μ)) = Module.finrank K (weightSpace R M μ) := by
-  obtain ⟨e⟩ := hM.nonempty_linearEquiv_weightSpace_of_mem_weylGroup hA hw μ
-  exact e.finrank_eq
+    Module.finrank K (weightSpace R M (w μ)) = Module.finrank K (weightSpace R M μ) :=
+  (hM.nonempty_linearEquiv_weightSpace_of_mem_weylGroup hA hw μ).elim fun e ↦ e.finrank_eq
 
 /-- **Weyl-group invariance of weight support on an integrable module.** -/
 theorem IsIntegrable.weightSpace_eq_bot_iff_of_mem_weylGroup (hM : IsIntegrable R M)
