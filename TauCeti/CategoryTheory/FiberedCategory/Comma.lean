@@ -50,13 +50,9 @@ The object computation is exposed to retain the original endpoints in morphism t
 @[expose]
 def fiberToStructuredArrow : Fiber p d ⥤ StructuredArrow d p :=
   (fiberInclusion : Fiber p d ⥤ C).toStructuredArrow d p
-    (fun a => eqToHom a.property.symm) (fun {a b} f => by
-      calc
-        _ = eqToHom a.property.symm ≫
-            (eqToHom a.property ≫ 𝟙 d ≫ eqToHom b.property.symm) :=
-          congrArg (eqToHom a.property.symm ≫ ·)
-            (IsHomLift.fac' p (𝟙 d) (fiberInclusion.map f))
-        _ = _ := by simp [fiberInclusion])
+    (fun a => eqToHom a.property.symm) (fun f => by
+      -- The inverse of the fibre-to-constant isomorphism gives the comma triangles.
+      simpa using! ((fiberInclusionCompIsoConst (p := p) (S := d)).inv.naturality f).symm)
 
 @[simp]
 lemma fiberToStructuredArrow_obj_right (a : Fiber p d) :
@@ -84,24 +80,15 @@ variable {d}
 lemma isHomLift_fiberToStructuredArrow_right {a : Fiber p d} {x : StructuredArrow d p}
     (f : (p.fiberToStructuredArrow d).obj a ⟶ x) : p.IsHomLift x.hom f.right :=
   IsHomLift.of_fac p x.hom f.right a.property rfl (by
-    rw [eqToHom_refl, comp_id]
-    have hw := f.w.symm
-    rw [fiberToStructuredArrow_obj_hom] at hw
-    exact hw)
+    simpa only [eqToHom_refl, comp_id, fiberToStructuredArrow_obj_hom] using! f.w.symm)
 
 /-- Turn a lift of a base arrow into a morphism out of the strict fibre. -/
 def fiberToStructuredArrowHomMk {a : Fiber p d} {x : StructuredArrow d p}
     (f : fiberInclusion.obj a ⟶ x.right) [hf : p.IsHomLift x.hom f] :
     (p.fiberToStructuredArrow d).obj a ⟶ x :=
   StructuredArrow.homMk f (by
-    have h : p.map f = eqToHom a.property ≫ x.hom := by
-      have hf' := IsHomLift.fac' p x.hom f
-      rw [eqToHom_refl, comp_id] at hf'
-      exact hf'
-    calc
-      _ = eqToHom a.property.symm ≫ (eqToHom a.property ≫ x.hom) :=
-        congrArg (eqToHom a.property.symm ≫ ·) h
-      _ = _ := by simp)
+    rw [fiberToStructuredArrow_obj_hom]
+    simpa only [eqToHom_refl, comp_id] using! (IsHomLift.fac p x.hom f).symm)
 
 @[simp]
 lemma fiberToStructuredArrowHomMk_right {a : Fiber p d} {x : StructuredArrow d p}
@@ -137,16 +124,23 @@ noncomputable def isTerminalOfIsCartesian
       have : p.IsHomLift x.hom s.hom.right := p.isHomLift_fiberToStructuredArrow_right s.hom
       let g := IsCartesian.map p x.hom t.hom.right s.hom.right
       have hg := IsCartesian.map_isHomLift p x.hom t.hom.right s.hom.right
-      exact CostructuredArrow.homMk ⟨g, hg⟩
-        (by apply StructuredArrow.hom_ext; exact IsCartesian.fac p x.hom t.hom.right s.hom.right))
+      refine CostructuredArrow.homMk ⟨g, hg⟩ (StructuredArrow.hom_ext _ _ ?_)
+      rw [StructuredArrow.comp_right, fiberToStructuredArrow_map_right]
+      -- The strict-fibre inclusion sends the subtype constructor back to `g`.
+      exact IsCartesian.fac p x.hom t.hom.right s.hom.right)
     (fun s f => by
       apply CostructuredArrow.hom_ext
       apply Fiber.hom_ext
       have : p.IsHomLift x.hom s.hom.right := p.isHomLift_fiberToStructuredArrow_right s.hom
-      let g := ((p.fiberToStructuredArrow d).map f.left).right
-      have : p.IsHomLift (𝟙 d) g := f.left.property
-      exact IsCartesian.map_uniq p x.hom t.hom.right s.hom.right g
-        (congrArg CommaMorphism.right f.w))
+      have : p.IsHomLift (𝟙 d) ((p.fiberToStructuredArrow d).map f.left).right := by
+        rw [fiberToStructuredArrow_map_right]
+        exact f.left.property
+      have hw := congrArg
+        (fun k : (p.fiberToStructuredArrow d).obj s.left ⟶ x => k.right) f.w
+      rw [StructuredArrow.comp_right] at hw
+      have hu := IsCartesian.map_uniq p x.hom t.hom.right s.hom.right
+        ((p.fiberToStructuredArrow d).map f.left).right hw
+      rwa [fiberToStructuredArrow_map_right] at hu)
 
 /-- The underlying arrow of a universal arrow from the fibre is Cartesian. -/
 lemma isCartesian_of_isTerminal (t : CostructuredArrow (p.fiberToStructuredArrow d) x)
@@ -160,15 +154,21 @@ lemma isCartesian_of_isTerminal (t : CostructuredArrow (p.fiberToStructuredArrow
         (p.fiberToStructuredArrowHomMk (d := d) (x := x) (a := a') f (hf := hf))
     have hs : s.hom.right = f :=
       p.fiberToStructuredArrowHomMk_right (a := a') (x := x) f (hf := hf)
+    have hcomp (k : s.left ⟶ t.left) :
+        (((p.fiberToStructuredArrow d).map k) ≫ t.hom).right =
+          fiberInclusion.map k ≫ t.hom.right := by
+      rw [StructuredArrow.comp_right, fiberToStructuredArrow_map_right]
+      -- The right objects of the inclusion are the original fibre objects in `C`.
+      rfl
     refine ⟨fiberInclusion.map (ht.from s).left, ⟨(ht.from s).left.property, ?_⟩, ?_⟩
     · have hw := congrArg
         (fun k : (p.fiberToStructuredArrow d).obj s.left ⟶ x => k.right) (ht.from s).w
-      rw [StructuredArrow.comp_right, fiberToStructuredArrow_map_right, hs] at hw
+      rw [hcomp, hs] at hw
       exact hw
     · rintro g ⟨hg, hgf⟩
       let g' : s ⟶ t := CostructuredArrow.homMk ⟨g, hg⟩ (by
         apply StructuredArrow.hom_ext
-        rw [StructuredArrow.comp_right, fiberToStructuredArrow_map_right, hs]
+        rw [hcomp, hs]
         exact hgf)
       exact congrArg (fun k => fiberInclusion.map k.left) (ht.hom_ext g' (ht.from s))
 
