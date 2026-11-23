@@ -69,6 +69,9 @@ The proof has three steps.
   nondecreasing.
 * `TauCeti.monotoneOn_setIntegral_norm_deriv_sq_div_sq`: the area over the preimage of the ball of
   radius `t` divided by `t²` is nondecreasing.
+* `TauCeti.integrableOn_norm_deriv_sq_sep_norm_sub_lt` and
+  `TauCeti.ofReal_setIntegral_norm_deriv_sq_eq_setLIntegral_enorm_deriv_sq`: the area over the
+  preimage of a ball is finite, and its Bochner and lower Lebesgue integral forms agree.
 * `TauCeti.ofReal_analyticOrderNatAt_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over
   the ball of radius `r` is at least `m π r²`, for the local multiplicity `m`.
 * `TauCeti.ofReal_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over the ball of radius `r`
@@ -105,6 +108,10 @@ private theorem lt_of_notMem_sep {U : Set ℂ} {f : ℂ → ℝ} {ρ : ℝ} {z :
 /-- Beyond radius `t`, the squared ratio `a ^ 2 / t ^ 2` exceeds `1`. -/
 private theorem one_lt_sq_div_sq {a t : ℝ} (ht : 0 < t) (h : t < a) : 1 < a ^ 2 / t ^ 2 :=
   (one_lt_div (by positivity)).2 (pow_lt_pow_left₀ h ht.le two_ne_zero)
+
+/-- From radius `t` on, the squared ratio `a ^ 2 / t ^ 2` is at least `1`. -/
+private theorem one_le_sq_div_sq {a t : ℝ} (ht : 0 < t) (h : t ≤ a) : 1 ≤ a ^ 2 / t ^ 2 :=
+  (one_le_div (by positivity)).2 (pow_le_pow_left₀ ht.le h 2)
 
 /-- A nonincreasing cutoff vanishing on `(1, ∞)` is nonnegative. -/
 private theorem cutoff_nonneg {χ : ℝ → ℝ} (hχa : Antitone χ) (hχ1 : ∀ s, 1 < s → χ s = 0)
@@ -481,14 +488,43 @@ private theorem measurableSet_sep_norm_sub_lt {U : Set ℂ} {u : ℂ → E} {x�
   rw [this]
   exact (ContinuousOn.isOpen_inter_preimage (by fun_prop) hU isOpen_Iio).measurableSet
 
+omit [InnerProductSpace ℂ E] [CompleteSpace E] in
+/-- A point of `U` outside the preimage `{z ∈ U | ‖u z - x₀‖ < t}` of the open ball of radius
+`t > 0` satisfies `1 ≤ ‖u z - x₀‖² / t²`. -/
+private theorem one_le_sq_div_sq_of_notMem {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ} {z : ℂ}
+    (ht : 0 < t) (hz : z ∈ U) (hzS : z ∉ {z ∈ U | ‖u z - x₀‖ < t}) :
+    1 ≤ ‖u z - x₀‖ ^ 2 / t ^ 2 :=
+  one_le_sq_div_sq ht (not_lt.1 fun h ↦ hzS ⟨hz, h⟩)
+
+/-- The area density `‖u'‖²` of a holomorphic map `u` is integrable on the preimage
+`{z ∈ U | ‖u z - x₀‖ < t}` of the open ball of radius `t` around `x₀` when the sublevel set
+`{z ∈ U | ‖u z - x₀‖ ≤ t}` is compact. -/
+theorem integrableOn_norm_deriv_sq_sep_norm_sub_lt {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ}
+    (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    IntegrableOn (fun z ↦ ‖deriv u z‖ ^ 2) {z ∈ U | ‖u z - x₀‖ < t} :=
+  ((((hu.analyticOnNhd hU).deriv.continuousOn.norm.pow 2).mono
+    fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ ≤ t}) ↦ hz.1).integrableOn_compact hK).mono_set
+    fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ < t}) ↦ ⟨hz.1, hz.2.le⟩
+
+/-- When the sublevel set `{z ∈ U | ‖u z - x₀‖ ≤ t}` is compact, the area `∫ ‖u'‖²` of a
+holomorphic map `u` over the preimage of the open ball of radius `t` around `x₀` agrees with the
+lower Lebesgue integral `∫⁻ ‖u'‖ₑ²` used in
+`TauCeti.ofReal_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`. -/
+theorem ofReal_setIntegral_norm_deriv_sq_eq_setLIntegral_enorm_deriv_sq {U : Set ℂ} {u : ℂ → E}
+    {x₀ : E} {t : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U)
+    (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    ENNReal.ofReal (∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2) =
+      ∫⁻ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ₑ ^ 2 := by
+  rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_deriv_sq_sep_norm_sub_lt hU hu hK)
+    (Eventually.of_forall fun _ ↦ sq_nonneg _)]
+  simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
 /-- The area density restricted to the preimage `{z ∈ U | ‖u z - x₀‖ < t}` of an open ball is
 integrable on `U` when the sublevel set `{z ∈ U | ‖u z - x₀‖ ≤ t}` is compact. -/
 private theorem integrableOn_indicator_norm_deriv_sq {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ}
     (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
     IntegrableOn ({z ∈ U | ‖u z - x₀‖ < t}.indicator fun z ↦ ‖deriv u z‖ ^ 2) U :=
-  (((((hu.analyticOnNhd hU).deriv.continuousOn.norm.pow 2).mono
-    fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ ≤ t}) ↦ hz.1).integrableOn_compact hK).mono_set
-    fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ < t}) ↦ ⟨hz.1, hz.2.le⟩).integrable_indicator
+  (integrableOn_norm_deriv_sq_sep_norm_sub_lt hU hu hK).integrable_indicator
     (measurableSet_sep_norm_sub_lt hU hu.continuousOn t) |>.integrableOn
 
 omit [CompleteSpace E] in
@@ -501,6 +537,20 @@ private theorem setIntegral_indicator_norm_deriv_sq {U : Set ℂ} {u : ℂ → E
   rw [setIntegral_indicator (measurableSet_sep_norm_sub_lt hU hu t),
     inter_eq_right.2 fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ < t}) ↦ hz.1]
 
+omit [CompleteSpace E] in
+/-- At each point of `U`, the area density weighted by `χ(‖u - x₀‖² / t²)`, for a cutoff `χ ≤ 1`
+vanishing on `[1, ∞)`, is at most the area density restricted to the preimage of the open ball of
+radius `t`. -/
+private theorem cutoff_mul_norm_deriv_sq_le_indicator {U : Set ℂ} {u : ℂ → E} {x₀ : E}
+    {χ : ℝ → ℝ} {t : ℝ} {z : ℂ} (hχle : ∀ x, χ x ≤ 1) (hχ1 : ∀ s, 1 ≤ s → χ s = 0)
+    (ht : 0 < t) (hz : z ∈ U) :
+    χ (‖u z - x₀‖ ^ 2 / t ^ 2) * ‖deriv u z‖ ^ 2 ≤
+      {z ∈ U | ‖u z - x₀‖ < t}.indicator (fun z ↦ ‖deriv u z‖ ^ 2) z := by
+  by_cases hzS : z ∈ {z ∈ U | ‖u z - x₀‖ < t}
+  · rw [indicator_of_mem hzS]
+    exact mul_le_of_le_one_left (sq_nonneg _) (hχle _)
+  · rw [indicator_of_notMem hzS, hχ1 _ (one_le_sq_div_sq_of_notMem ht hz hzS), zero_mul]
+
 /-- For a cutoff `0 ≤ χ ≤ 1` vanishing on `[1, ∞)`, the area weighted by `χ(‖u - x₀‖² / t²)` is
 at most the area over the preimage of the open ball of radius `t`. -/
 private theorem setIntegral_cutoff_le_setIntegral {U : Set ℂ} {u : ℂ → E} {x₀ : E} {χ : ℝ → ℝ}
@@ -511,13 +561,8 @@ private theorem setIntegral_cutoff_le_setIntegral {U : Set ℂ} {u : ℂ → E} 
       ∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2 := by
   rw [← setIntegral_indicator_norm_deriv_sq hU hu.continuousOn]
   refine setIntegral_mono_on (integrableOn_cutoff hU hu hχ (fun s hs ↦ hχ1 s hs.le) ht hK)
-    (integrableOn_indicator_norm_deriv_sq hU hu hK) hU.measurableSet fun z hz ↦ ?_
-  by_cases hzS : z ∈ {z ∈ U | ‖u z - x₀‖ < t}
-  · rw [indicator_of_mem hzS]
-    exact mul_le_of_le_one_left (sq_nonneg _) (hχle _)
-  · have : t ≤ ‖u z - x₀‖ := not_lt.1 fun h ↦ hzS ⟨hz, h⟩
-    rw [indicator_of_notMem hzS, hχ1 _ ((one_le_div (by positivity)).2
-      (pow_le_pow_left₀ ht.le this 2)), zero_mul]
+    (integrableOn_indicator_norm_deriv_sq hU hu hK) hU.measurableSet
+    fun z hz ↦ cutoff_mul_norm_deriv_sq_le_indicator hχle hχ1 ht hz
 
 /-- The cutoffs `x ↦ smoothTransition ((1 - x) * (n + 1))` vanish on `[1, ∞)`. -/
 private theorem smoothTransition_one_sub_mul_eq_zero (n : ℕ) {x : ℝ} (hx : 1 ≤ x) :
@@ -543,12 +588,10 @@ private theorem tendsto_setIntegral_smoothTransition {U : Set ℂ} {u : ℂ → 
     (ae_restrict_of_forall_mem hU.measurableSet fun z hz ↦ ?_)
   · rw [Real.norm_eq_abs,
       abs_of_nonneg (mul_nonneg (Real.smoothTransition.nonneg _) (sq_nonneg _))]
-    by_cases hzS : z ∈ {z ∈ U | ‖u z - x₀‖ < t}
-    · rw [indicator_of_mem hzS]
-      exact mul_le_of_le_one_left (sq_nonneg _) (Real.smoothTransition.le_one _)
-    · have : t ≤ ‖u z - x₀‖ := not_lt.1 fun h ↦ hzS ⟨hz, h⟩
-      rw [indicator_of_notMem hzS, smoothTransition_one_sub_mul_eq_zero n
-        ((one_le_div (by positivity)).2 (pow_le_pow_left₀ ht.le this 2)), zero_mul]
+    exact cutoff_mul_norm_deriv_sq_le_indicator
+      (χ := fun x ↦ Real.smoothTransition ((1 - x) * (n + 1)))
+      (fun _ ↦ Real.smoothTransition.le_one _)
+      (fun x hx ↦ smoothTransition_one_sub_mul_eq_zero n hx) ht hz
   · by_cases hzS : z ∈ {z ∈ U | ‖u z - x₀‖ < t}
     · rw [indicator_of_mem hzS]
       have hlt : ‖u z - x₀‖ ^ 2 / t ^ 2 < 1 :=
@@ -559,11 +602,10 @@ private theorem tendsto_setIntegral_smoothTransition {U : Set ℂ} {u : ℂ → 
       rw [Real.smoothTransition.one_of_one_le, one_mul]
       rw [div_le_iff₀ (sub_pos.2 hlt)] at hn
       nlinarith
-    · have : t ≤ ‖u z - x₀‖ := not_lt.1 fun h ↦ hzS ⟨hz, h⟩
-      rw [indicator_of_notMem hzS]
+    · rw [indicator_of_notMem hzS]
       exact tendsto_const_nhds.congr fun n ↦ by
-        rw [smoothTransition_one_sub_mul_eq_zero n
-          ((one_le_div (by positivity)).2 (pow_le_pow_left₀ ht.le this 2)), zero_mul]
+        rw [smoothTransition_one_sub_mul_eq_zero n (one_le_sq_div_sq_of_notMem ht hz hzS),
+          zero_mul]
 
 /-- **Monotonicity of the area of a holomorphic curve.** Let `u` be holomorphic on an open set
 `U ⊆ ℂ` and `x₀` a point such that the sublevel sets `{z ∈ U | ‖u z - x₀‖ ≤ t}`, `t < r`, are
