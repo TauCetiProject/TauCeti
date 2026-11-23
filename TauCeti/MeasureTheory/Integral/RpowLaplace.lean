@@ -355,8 +355,8 @@ private theorem isBigO_integral_exp_neg_mul_smul_of_integrableOn {G : ℝ → E}
   filter_upwards [hexp, eventually_ge_atTop σ, eventually_gt_atTop 0] with x hxe hxσ hx0
   rw [Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), add_mul]
   have hI := hint.exp_neg_mul_smul_of_le hxσ
-  rw [← Ioc_union_Ioi_eq_Ioi hδ0.le, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
-    measurableSet_Ioi (hI.mono_set Ioc_subset_Ioi_self) (hI.mono_set (Ioi_subset_Ioi hδ0.le))]
+  rw [← intervalIntegral.integral_interval_add_Ioi hI (hI.mono_set (Ioi_subset_Ioi hδ0.le)),
+    intervalIntegral.integral_of_le hδ0.le]
   refine (norm_add_le _ _).trans
     (add_le_add (norm_setIntegral_Ioc_exp_neg_mul_smul_le hs hx0 hK0.le hGb) ?_)
   -- the tail: `e^{-(x-σ)δ} = e^{σδ} e^{-δx}`

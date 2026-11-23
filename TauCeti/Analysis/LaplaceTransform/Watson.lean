@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.MeasureTheory.Integral.Exp.Damped
 import TauCeti.MeasureTheory.Integral.RpowLaplace
@@ -58,7 +59,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set Filter Finset Complex
+open MeasureTheory Set Filter Finset Complex TauCeti
 open scoped Topology
 
 namespace Asymptotics
@@ -79,16 +80,6 @@ theorem hasAsymptoticExpansion_laplace {q : ℝ → ℂ} {α c : ℕ → ℂ} {�
     HasAsymptoticExpansion atTop (fun s (x : ℝ) => (x : ℂ) ^ (-α s)) (fun s => Gamma (α s) * c s)
       fun x : ℝ => ∫ t in Ioi (0 : ℝ), cexp (-(x * t)) * q t := by
   refine HasAsymptoticExpansion.of_isBigO fun N => ?_
-  have hsmul (x t : ℝ) (z : ℂ) : Real.exp (-x * t) • z = cexp (-(x * t)) * z := by
-    simp [Complex.real_smul]
-  -- each term `e^{-xt} c_s t^{α_s - 1}` is integrable for `x > 0`
-  have hterm (x : ℝ) (hx : 0 < x) (s : ℕ) :
-      IntegrableOn (fun t : ℝ => Real.exp (-x * t) • (c s * (t : ℂ) ^ (α s - 1))) (Ioi 0) :=
-    IntegrableOn.congr_fun ((Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi (w := (x : ℂ)) (hα s)
-      (by rwa [ofReal_re])).const_mul (c s)) (fun t _ => by rw [hsmul]; ring) measurableSet_Ioi
-  have hsum (x : ℝ) (hx : 0 < x) : IntegrableOn
-      (fun t : ℝ => ∑ s ∈ range N, Real.exp (-x * t) • (c s * (t : ℂ) ^ (α s - 1))) (Ioi 0) :=
-    integrable_finsetSum _ fun s _ => hterm x hx s
   have hb := TauCeti.isBigO_integral_exp_neg_mul_smul (hq N)
   -- compare the real power `x^{-Re α_N}` with the norm of the complex scale
   have hnorm : (fun x : ℝ => x ^ (-(α N).re)) =ᶠ[atTop] fun x => ‖(x : ℂ) ^ (-α N)‖ := by
@@ -96,15 +87,25 @@ theorem hasAsymptoticExpansion_laplace {q : ℝ → ℂ} {α c : ℕ → ℂ} {�
     rw [norm_cpow_eq_rpow_re_of_pos hx, neg_re]
   refine (isBigO_norm_right.mp (hb.congr' EventuallyEq.rfl hnorm)).congr' ?_ EventuallyEq.rfl
   filter_upwards [eventually_ge_atTop σ, eventually_gt_atTop 0] with x hxσ hx
-  simp only [smul_sub, Finset.smul_sum]
-  rw [integral_sub (hint.exp_neg_mul_smul_of_le hxσ) (hsum x hx),
-    integral_finsetSum _ fun s _ => hterm x hx s]
-  congr 1
-  · exact setIntegral_congr_fun measurableSet_Ioi fun t _ => hsmul x t (q t)
-  refine sum_congr rfl fun s _ => ?_
-  have hM := Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos (z := (x : ℂ)) (hα s)
-    (by rwa [ofReal_re])
-  rw [smul_eq_mul, ← mul_assoc, mul_comm ((x : ℂ) ^ (-α s)), ← hM, ← integral_mul_const]
-  exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by rw [hsmul]; ring
+  have hx' : 0 < (x : ℂ).re := by rwa [ofReal_re]
+  have hkernel (t : ℝ) (z : ℂ) : Real.exp (-x * t) • z = cexp (-(x : ℂ) * t) • z := by
+    simp [Complex.real_smul]
+  -- the Laplace transforms of `q` and of the Gamma terms `t^{α_s - 1}`
+  have hLq : HasLaplace q x (∫ t in Ioi (0 : ℝ), cexp (-(x * t)) * q t) :=
+    HasLaplace.intro ((hint.exp_neg_mul_smul_of_le hxσ).congr_fun (fun t _ => hkernel t (q t))
+      measurableSet_Ioi) (setIntegral_congr_fun measurableSet_Ioi fun t _ => by simp)
+  have hLs (s : ℕ) :
+      HasLaplace (fun t : ℝ => (t : ℂ) ^ (α s - 1)) x (Gamma (α s) * (x : ℂ) ^ (-α s)) := by
+    refine HasLaplace.intro ((integrableOn_cpow_mul_exp_neg_mul_Ioi (hα s) hx').congr_fun
+      (fun t _ => by simp [mul_comm]) measurableSet_Ioi) ?_
+    rw [← integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos (hα s) hx']
+    exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by simp [mul_comm]
+  have hL := (hLq.sub (hasLaplace_sum (u := range N) fun s _ =>
+    (hLs s).const_smul (c s))).integral_eq
+  refine (setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_).trans (hL.trans ?_)
+  · simp only [hkernel, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+  · refine congrArg (_ - ·) (sum_congr rfl fun s _ => ?_)
+    simp only [smul_eq_mul]
+    ring
 
 end Asymptotics
