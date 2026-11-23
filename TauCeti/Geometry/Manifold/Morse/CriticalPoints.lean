@@ -24,10 +24,13 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 import TauCeti.Geometry.Manifold.RegularValue.Open
 import TauCeti.Topology.Instances.Real.SeparatingGrid
+import TauCeti.Topology.Order.Sublevel
+import TauCeti.Topology.Perfect
 
 /-!
 # The critical set of a real function on a manifold
@@ -111,6 +114,8 @@ polynomial in the Morse inequalities.
   sublevel sets of proper functions bounded below.
 * `TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`: on a compact manifold, the zeros of the
   manifold derivative of a Morse function are finite.
+* `TauCeti.IsMorse.exists_countable_dense_forall_apply_notMem`: on a compact manifold, a Morse
+  function has a countable dense set of levels containing no critical point.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
 * `TauCeti.IsMorse.exists_lt_lt_forall_mem_Ioo`: on a compact manifold, for `a < b` there are
@@ -135,6 +140,11 @@ polynomial in the Morse inequalities.
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.IsMorse.setOf_neg_band_eq`: the critical points of index `i` of `-f` with values in
+  `(-b, -a]` are those of `f` with values in `[a, b)` and complementary index `dim M - i`.
+* `TauCeti.IsMorse.neg_band`: if `f` is Morse, `f ⁻¹' [a, b]` is compact and `a`, `b` are regular
+  values of `f`, then `-f` is Morse, `(-f) ⁻¹' [-b, -a]` is compact and `-b`, `-a` are regular
+  values of `-f`.
 * `TauCeti.totalCriticalCount_of_isEmpty`, `TauCeti.totalCriticalCount_of_subsingleton`,
   `TauCeti.totalCriticalCount_const` and `TauCeti.totalCriticalCount_const_eq_top`: the count on
   the empty manifold, in dimension zero and for a constant function, which is `⊤` on a nonempty
@@ -249,8 +259,8 @@ theorem criticalPoints_const (c : ℝ) : criticalPoints I (fun _ : M ↦ c) = un
 /-- On a manifold modelled on a zero-dimensional space every point is critical. -/
 @[simp]
 theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
-  -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
-  eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
+  -- The derivative at `x` is a linear form on the tangent space, which is the zero space.
+  eq_univ_of_forall fun _ ↦ Subsingleton.elim _ _
 
 /-- **A constant function is Morse only in dimension zero.** On a nonempty manifold every point is
 a critical point of a constant function, and its Hessian vanishes, which is invertible only on the
@@ -801,6 +811,15 @@ theorem IsMorse.exists_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) 
   have h₂ := T.le_max' _ (hmem hx hxab)
   constructor <;> linarith [hmin.1, hmax.2]
 
+/-- **Dense regular levels.** For a Morse function on a compact manifold there is a countable dense
+set of levels none of which is the level of a critical point. -/
+theorem IsMorse.exists_countable_dense_forall_apply_notMem [CompactSpace M] (hf : IsMorse I f) :
+    ∃ L : Set ℝ, L.Countable ∧ Dense L ∧ ∀ x ∈ criticalPoints I f, f x ∉ L :=
+  -- The rationals that are not one of the finitely many critical values.
+  ⟨range ((↑) : ℚ → ℝ) \ f '' criticalPoints I f, (countable_range _).mono sdiff_subset,
+    Rat.denseRange_cast.sdiff_finite (hf.finite_criticalPoints.image f),
+    fun _ hx h ↦ h.2 (mem_image_of_mem f hx)⟩
+
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/
 theorem IsMorse.finite_criticalPoints_inter_preimage_Iic (hf : IsMorse I f) (hp : IsProperMap f)
@@ -1192,7 +1211,8 @@ theorem two_mul_card_connectedComponents_le_totalCriticalCount [I.Boundaryless] 
   -- Each component is a nonempty compact boundaryless manifold with no isolated points.
   obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
   have : Nonempty (ConnectedComponents.mk x).opens := ⟨⟨x, ConnectedComponents.mem_opens.2 rfl⟩⟩
-  have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
+  have := ChartedSpace.perfectSpace (H := H) (X := (ConnectedComponents.mk x).opens)
+  have := PerfectSpace.nontrivial (ConnectedComponents.mk x).opens
   have : CompactSpace (ConnectedComponents.mk x).opens :=
     isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
   exact two_le_totalCriticalCount (hf.comp continuous_subtypeVal)
@@ -1364,6 +1384,17 @@ theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
   · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
+
+/-- If `f` is a Morse function on all of `M` whose band `f ⁻¹' [a, b]` is compact and whose
+endpoints `a` and `b` are regular values, then `-f` is a Morse function on all of `M` whose band
+`(-f) ⁻¹' [-b, -a]` is compact and whose endpoints `-b` and `-a` are regular values. -/
+theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
+      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
+  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
+    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
 
 /-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
 signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,

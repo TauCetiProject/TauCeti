@@ -311,7 +311,7 @@ theorem finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber {D : �
       · exact finsum_weight_of_le h ht'
       have hD : (0 : ℤ) < D := by exact_mod_cast NeZero.pos D
       have hpos : 0 < n - t + 1 := by nlinarith [sq_nonneg (t - 2)]
-      have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos
+      have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos.ne'
       have hn' : n - t + 1 + (t - 2) + 1 = n := by ring
       rw [sub_add_cancel, hn'] at hstep
       rw [hstep]
