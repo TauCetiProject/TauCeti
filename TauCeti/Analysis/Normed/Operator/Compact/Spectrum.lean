@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Eigenvalue thresholds for compact operators
@@ -47,7 +49,6 @@ private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddC
     (hv : ∀ n, Module.End.HasEigenvector (K : Module.End 𝕜 E) (μ n) (v n)) :
     ∃ V : ℕ → Submodule 𝕜 E, (∀ n, IsClosed (V n : Set E)) ∧ (∀ n, V n < V (n + 1)) ∧
       (∀ n x, x ∈ V (n + 1) → K x - μ n • x ∈ V n) := by
-  have hvapply (n : ℕ) : K (v n) = μ n • v n := (hv n).apply_eq_smul
   let P (n : ℕ) : E →L[𝕜] E := aeval K (∏ i ∈ Finset.range n, (X - C (μ i)))
   -- The factors of `P (n + 1)` commute, so `K - μ n • 1` can be split off on either side.
   have hP (n : ℕ) : P (n + 1) = P n * (K - μ n • 1) := by
@@ -56,12 +57,11 @@ private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddC
   have hP' (n : ℕ) : P (n + 1) = (K - μ n • 1) * P n := by
     simp only [P, Finset.prod_range_succ, mul_comm _ (X - C (μ n)), map_mul, map_sub, aeval_X,
       aeval_C, Algebra.algebraMap_eq_smul_one]
+  -- `P n` acts on the eigenvector `v m` by the value of its polynomial at `μ m`.
   have hPv (n m : ℕ) : P n (v m) = (∏ i ∈ Finset.range n, (μ m - μ i)) • v m := by
-    induction n with
-    | zero => simp [P]
-    | succ n ih =>
-      rw [hP', _root_.mul_apply_eq_comp, ih, map_smul, _root_.sub_apply, _root_.smul_apply,
-        one_apply_eq_self, hvapply, ← sub_smul, smul_smul, Finset.prod_range_succ, mul_comm]
+    rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_aeval,
+      Module.End.aeval_apply_of_hasEigenvector (hv m), eval_prod]
+    simp only [eval_sub, eval_X, eval_C]
   let V (n : ℕ) : Submodule 𝕜 E := LinearMap.ker (P n : E →ₗ[𝕜] E)
   have hmem (n : ℕ) (x : E) : x ∈ V n ↔ P n x = 0 := by
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
@@ -82,8 +82,8 @@ private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddC
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {K : E →L[𝕜] E}
 
-/-- An injective sequence of eigenvalues bounded away from zero would yield a strictly
-increasing chain of closed subspaces that the compact operator steps down. -/
+/-- A sequence of eigenvalues of a compact operator whose norms are bounded below by a positive
+constant is not injective. -/
 private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     {ε : ℝ} (hε : 0 < ε) (μ : ℕ → 𝕜)
     (hμ : ∀ n, Module.End.HasEigenvalue (K : Module.End 𝕜 E) (μ n)) (hnorm : ∀ n, ε ≤ ‖μ n‖) :

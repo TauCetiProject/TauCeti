@@ -27,7 +27,8 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   replaced by a `t`-orthogonal sequence `e` with the same initial spans,
   `span (e '' Iio n) = span (w '' Iio n)`. The vector `e n` is `w n` minus an almost best
   approximation of `w n` in the span of the previous vectors (`TauCeti.riesz_lemma_translate`);
-  the losses at the successive steps are chosen with product at least `t`.
+  the losses at the successive steps are chosen with product at least `t`. This holds over any
+  complete normed field, trivially normed or not.
 * `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: a space of countable type has a
   `t`-orthogonal basis indexed by a set of natural numbers.
 * `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional space has a `t`-orthogonal
@@ -62,7 +63,9 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   normed (using open-ball submodules `{y | ‖y‖ < ‖x‖}` when `K` has the trivial norm).
 
 Neither a discrete valuation nor completeness of `E` is needed: only the finite-dimensional
-subspaces spanned by initial segments have to be closed, which holds over a complete field.
+subspaces spanned by initial segments have to be closed, which holds over a complete field. Over a
+trivially normed field, adding one vector `v` to a closed subspace `W` keeps it closed, because
+the vectors of `W ⊔ K ∙ v` of norm less than `infDist v W` lie in `W`.
 The constant `c` in the approximation theorem does not depend on `G`; this uniformity is what
 lets the subspaces `W` attached to the increasing initial spans together span a dense subspace of
 the closure of `D`. Quotients of spaces of countable type are of countable type by
@@ -84,14 +87,68 @@ open scoped NNReal
 
 namespace TauCeti
 
-variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
+/-- Over a trivially normed field, adding a vector `v` to a closed subspace `W` gives a closed
+subspace. A vector of `W ⊔ K ∙ v` of norm less than `infDist v W` lies in `W`, so near each of its
+points `W ⊔ K ∙ v` agrees with a translate of `W`. -/
+private theorem isClosed_sup_span_singleton_of_discreteTopology {K E : Type*} [NormedField K]
+    [DiscreteTopology K] [SeminormedAddCommGroup E] [NormedSpace K E] {W : Submodule K E}
+    (hW : IsClosed (W : Set E)) (v : E) : IsClosed ((W ⊔ K ∙ v : Submodule K E) : Set E) := by
+  by_cases hv : v ∈ W
+  · rwa [sup_eq_left.2 ((span_singleton_le_iff_mem v W).2 hv)]
+  have hδ : 0 < infDist v W := (hW.notMem_iff_infDist_pos ⟨0, W.zero_mem⟩).1 hv
+  -- A nonzero coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`.
+  have hsmall {u : E} (hu : u ∈ W ⊔ K ∙ v) (hlt : ‖u‖ < infDist v W) : u ∈ W := by
+    obtain ⟨w, hw, _, hd, rfl⟩ := mem_sup.1 hu
+    obtain ⟨d, rfl⟩ := mem_span_singleton.1 hd
+    rcases eq_or_ne d 0 with rfl | hd
+    · simpa using hw
+    refine absurd hlt (not_lt.2 ?_)
+    calc infDist v W ≤ dist v (-(d⁻¹ • w)) :=
+          infDist_le_dist_of_mem (W.neg_mem (W.smul_mem _ hw))
+      _ = ‖d‖ * ‖v + d⁻¹ • w‖ := by
+          rw [NormedDivisionRing.norm_eq_one_iff_ne_zero_of_discrete.2 hd, one_mul, dist_eq_norm,
+            sub_neg_eq_add]
+      _ = ‖w + d • v‖ := by rw [← norm_smul, smul_add, smul_inv_smul₀ hd, add_comm]
+  refine closure_subset_iff_isClosed.1 fun x hx ↦ ?_
+  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx _ (half_pos hδ)
+  obtain ⟨w, hw, _, hc, rfl⟩ := mem_sup.1 hy
+  obtain ⟨c, rfl⟩ := mem_span_singleton.1 hc
+  -- Points of `W ⊔ K ∙ v` close to `x` lie in the translate `W + c • v`, so `x` lies in it too.
+  have hx' : x - c • v ∈ W := by
+    refine hW.closure_subset (Metric.mem_closure_iff.2 fun ε hε ↦ ?_)
+    obtain ⟨z, hz, hxz⟩ := Metric.mem_closure_iff.1 hx _ (lt_min hε (half_pos hδ))
+    have hu : w + c • v - z ∈ W := by
+      refine hsmall (sub_mem hy hz) ?_
+      rw [← dist_eq_norm]
+      linarith [dist_triangle (w + c • v) x z, dist_comm x (w + c • v),
+        min_le_right ε (infDist v W / 2)]
+    refine ⟨z - c • v, ?_, (dist_sub_right _ _ _).trans_lt (hxz.trans_le (min_le_left _ _))⟩
+    have hzc : z - c • v = w - (w + c • v - z) := by abel
+    rw [SetLike.mem_coe, hzc]
+    exact sub_mem hw hu
+  exact mem_sup.2 ⟨_, hx', _, mem_span_singleton.2 ⟨c, rfl⟩, sub_add_cancel x _⟩
 
-variable [CompleteSpace K] [IsUltrametricDist E]
+/-- Over a complete normed field, the span of a finite set is closed. Over a nontrivially normed
+field the span is a finite-dimensional subspace, and over a trivially normed field each new
+vector keeps the span closed (`isClosed_sup_span_singleton_of_discreteTopology`). -/
+private theorem isClosed_span_of_finite {K E : Type*} [NormedField K] [CompleteSpace K]
+    [NormedAddCommGroup E] [NormedSpace K E] {s : Set E} (hs : s.Finite) :
+    IsClosed (span K s : Set E) := by
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨⟨_, rfl⟩⟩
+  · induction s, hs using Set.Finite.induction_on with
+    | empty => simp
+    | insert _ _ ih =>
+      rw [span_insert, sup_comm]
+      exact isClosed_sup_span_singleton_of_discreteTopology ih _
+  · have := FiniteDimensional.span_of_finite K hs
+    exact (span K s).isClosed_of_finiteDimensional
 
-/-- **Approximate Gram–Schmidt process**: over a complete nontrivially normed field, every sequence
-`w` in an ultrametric normed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence
-`e` with the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
-theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥0} (ht : t < 1) :
+/-- **Approximate Gram–Schmidt process**: over a complete normed field, every sequence `w` in an
+ultrametric normed space can be replaced, for each `t < 1`, by a `t`-orthogonal sequence `e` with
+the same initial spans: `span K (e '' Iio n) = span K (w '' Iio n)` for every `n`. -/
+theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField K]
+    [CompleteSpace K] [NormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E] (w : ℕ → E)
+    {t : ℝ≥0} (ht : t < 1) :
     ∃ e : ℕ → E, IsTOrthogonalFamily K t e ∧
       ∀ n, span K (e '' Iio n) = span K (w '' Iio n) := by
   -- Orthogonality constants of the successive initial segments: a strictly decreasing sequence
@@ -99,10 +156,9 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥
   obtain ⟨T, hT, hTt, -⟩ := exists_seq_strictAnti_tendsto' ht
   have hT' (n : ℕ) : 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 :=
     ⟨zero_le.trans_lt (hTt n).1, (hTt n).1.le, (hTt n).2.le⟩
-  -- The initial spans `span K (w '' Iio n)` are finite-dimensional, hence closed.
+  -- The initial spans `span K (w '' Iio n)` are spans of finite sets, hence closed.
   have hF (n : ℕ) : IsClosed (span K (w '' Iio n) : Set E) :=
-    have := FiniteDimensional.span_of_finite K ((finite_Iio n).image w)
-    (span K (w '' Iio n)).isClosed_of_finiteDimensional
+    isClosed_span_of_finite ((finite_Iio n).image w)
   -- Subtract from `w n` an almost best approximation `y n` in the previous span, with loss
   -- `T (n + 1) / T n < 1`.
   have hr (n : ℕ) : ((T (n + 1) / T n : ℝ≥0) : ℝ) < 1 := by
@@ -135,6 +191,10 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥
   rw [← Finset.subtype_map_of_mem hs, Finset.sup_map, Finset.sum_map]
   exact (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans
     (isTOrthogonalFamily_def.1 (key _) _ fun i ↦ a i)
+
+variable {K E : Type*} [NontriviallyNormedField K] [NormedAddCommGroup E] [NormedSpace K E]
+
+variable [CompleteSpace K] [IsUltrametricDist E]
 
 /-- **`t`-orthogonal bases of spaces of countable type**: over a complete nontrivially normed
 field, if a sequence `v` has dense span in an ultrametric normed space `E`, then for every `t < 1`
