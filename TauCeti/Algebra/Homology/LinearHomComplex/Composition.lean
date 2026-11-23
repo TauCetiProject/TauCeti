@@ -130,7 +130,7 @@ private lemma cochainCompTensor_d (p q j : ℤ)
         (linearHomComplex R G K ⊗ linearHomComplex R F G).d j (j + 1) ≫
         HomologicalComplex.mapBifunctorDesc (cochainCompTensor R F G K · · (j + 1) ·) =
       cochainCompTensor R F G K p q j h ≫ (linearHomComplex R F K).d j (j + 1) := by
-  dsimp at h
+  rw [ComplexShape.π_eq_add] at h
   rw [HomologicalComplex.ιTensorObj_tensor_d_assoc]
   simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
     HomologicalComplex.ι_mapBifunctorDesc]

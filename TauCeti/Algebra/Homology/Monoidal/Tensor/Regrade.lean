@@ -151,7 +151,7 @@ private lemma regradeTensorSummand_comp_d (a b k : ℤ) (h : a + b = k) :
             ιTensorObj K L (n₁ - a) (n₂ - (b + 1)) (n₁ + n₂ - (k + 1)) (by omega))) := by
   rw [Linear.units_smul_comp, ιTensorObj_d_of_rel K L _
     (down_mk (n₁ - a) (n₁ - (a + 1)) (by omega)) (down_mk (n₂ - b) (n₂ - (b + 1)) (by omega))
-    (by omega) (by omega)]
+    (by omega)]
   simp only [ε_down_ℤ, Linear.comp_units_smul, smul_add, smul_smul]
   congr 2
   rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
@@ -170,7 +170,7 @@ noncomputable def regradeTensorHom :
     subst hk
     apply mapBifunctor.hom_ext
     intro a b h
-    replace h : a + b = k := h
+    rw [π_eq_add] at h
     rw [ι_mapBifunctorDesc_assoc, ιTensorObj_d_assoc]
     simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc, ι_mapBifunctorDesc]
     -- The summands and differentials of the regraded complexes are those of `K`, `L` and `K ⊗ L`

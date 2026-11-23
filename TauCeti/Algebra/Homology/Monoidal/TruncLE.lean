@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.Embedding.TruncLE
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
+import TauCeti.Algebra.Homology.ComplexShape.Signs
 
 /-!
 # The good truncation is lax monoidal
@@ -94,34 +95,35 @@ private lemma tensorTruncLE'ToRestrictionX_comm (j : ℕ) :
       (K.truncLE' embeddingDownNat ⊗ L.truncLE' embeddingDownNat).d (j + 1) j ≫
         tensorTruncLE'ToRestrictionX K L j := by
   refine mapBifunctor.hom_ext (fun p q h => ?_)
-  have h' : p + q = j + 1 := h
+  rw [π_eq_add] at h
   rw [ι_tensorTruncLE'ToRestrictionX_assoc, restriction_d_eq _ embeddingDownNat
     (embeddingDownNat_f (j + 1)) (embeddingDownNat_f j)]
   simp only [Iso.inv_hom_id_assoc]
-  rw [tensor_d (K.truncLE' embeddingDownNat) (L.truncLE' embeddingDownNat)]
-  -- Expand both differentials on the summand; the bidegree `(0, 0)` does not occur.
+  -- Expand the differential of `K ⊗ L` on the summand once, towards the successor degrees `p'`
+  -- and `q'` of `-p` and `-q`; they are named so that each case below can substitute them.
+  generalize hp' : -(p : ℤ) + 1 = p'
+  generalize hq' : -(q : ℤ) + 1 = q'
+  rw [ιTensorObj_tensor_d'_assoc K L (j := -((j + 1 : ℕ) : ℤ)) (j' := -(j : ℤ)) (by omega) hp' hq'
+      (by omega),
+    tensor_d (K.truncLE' embeddingDownNat) (L.truncLE' embeddingDownNat)]
+  -- Expand the differential of `τ_{≥ 0} K ⊗ τ_{≥ 0} L`; the bidegree `(0, 0)` does not occur.
   obtain _ | r := p <;> obtain _ | s := q
   · omega
   on_goal 1 =>
     obtain rfl : s = j := by omega
-    rw [ιTensorObj_tensor_d'_assoc K L (p := -((0 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
-      (j := -((s + 1 : ℕ) : ℤ)) (p' := -((0 : ℕ) : ℤ) + 1) (q' := -(s : ℤ)) (j' := -(s : ℤ))
-      (by omega) rfl (by omega) (by omega),
-      ιTensorObj_d_of_not_rel_left_assoc _ _ (p := 0) (q := s + 1) (q' := s) (j' := s) _
-        (by simp) (by simp) (by omega)]
+    obtain rfl : q' = -(s : ℤ) := by omega
+    rw [ιTensorObj_d_of_not_rel_left_assoc _ _ (p := 0) (q := s + 1) (q' := s) (j' := s) _
+      (by simp) (by simp) (by omega)]
   on_goal 2 =>
     obtain rfl : r = j := by omega
-    rw [ιTensorObj_tensor_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((0 : ℕ) : ℤ))
-      (j := -((r + 1 : ℕ) : ℤ)) (p' := -(r : ℤ)) (q' := -((0 : ℕ) : ℤ) + 1) (j' := -(r : ℤ))
-      (by omega) (by omega) rfl (by omega),
-      ιTensorObj_d_of_not_rel_right_assoc _ _ (p := r + 1) (q := 0) (p' := r) (j' := r) _
-        (by simp) (by simp) (by omega)]
+    obtain rfl : p' = -(r : ℤ) := by omega
+    rw [ιTensorObj_d_of_not_rel_right_assoc _ _ (p := r + 1) (q := 0) (p' := r) (j' := r) _
+      (by simp) (by simp) (by omega)]
   on_goal 3 =>
-    rw [ιTensorObj_tensor_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
-      (j := -((j + 1 : ℕ) : ℤ)) (p' := -(r : ℤ)) (q' := -(s : ℤ)) (j' := -(j : ℤ)) (by omega)
-      (by omega) (by omega) (by omega),
-      ιTensorObj_d_of_rel_assoc _ _ (p := r + 1) (q := s + 1) (p' := r) (q' := s) (j' := j) _
-        (by simp) (by simp) (by omega) (by omega)]
+    obtain rfl : p' = -(r : ℤ) := by omega
+    obtain rfl : q' = -(s : ℤ) := by omega
+    rw [ιTensorObj_d_of_rel_assoc _ _ (p := r + 1) (q := s + 1) (p' := r) (q' := s) (j' := j) _
+      (by simp) (by simp) (by omega)]
   -- Match the parts of the two differentials, using that degree `0` of `τ_{≥ 0}` is cycles.
   all_goals
     simp only [Preadditive.comp_add, Preadditive.add_comp, Category.assoc, Linear.smul_comp,

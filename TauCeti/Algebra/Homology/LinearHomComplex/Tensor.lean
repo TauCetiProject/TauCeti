@@ -375,9 +375,7 @@ private lemma cochainTensorTensor_d (p q j : ℤ)
         HomologicalComplex.mapBifunctorDesc (cochainTensorTensor R X₁ Y₁ X₂ Y₂ · · (j + 1) ·) =
       cochainTensorTensor R X₁ Y₁ X₂ Y₂ p q j h ≫
         (linearHomComplex R (X₁ ⊗ X₂) (Y₁ ⊗ Y₂)).d j (j + 1) := by
-  -- `ComplexShape.π` is an abbreviation; Mathlib has no named specialization at
-  -- `ComplexShape.up ℤ`.
-  replace h : p + q = j := h
+  rw [ComplexShape.π_eq_add] at h
   rw [HomologicalComplex.ιTensorObj_tensor_d_assoc _ _ p q j h]
   simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
     HomologicalComplex.ι_mapBifunctorDesc]

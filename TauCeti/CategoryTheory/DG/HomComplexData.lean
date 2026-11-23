@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.DG.Basic
+import TauCeti.Algebra.Homology.ComplexShape.Signs
 
 /-!
 # Differential graded categories from explicit Hom-complex data
@@ -133,8 +134,8 @@ noncomputable def enrichedComp (X Y Z : C) : D.hom X Y ⊗ D.hom Y Z ⟶ D.hom X
     simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc, ι_mapBifunctorDesc]
     apply ModuleCat.MonoidalCategory.tensor_ext
     intro f g
-    have hn : p + q = n := h
-    subst hn
+    rw [ComplexShape.π_eq_add] at h
+    subst h
     simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, compMap_tmul,
       ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply, LinearMap.smul_apply]
     exact D.d_comp rfl f g
