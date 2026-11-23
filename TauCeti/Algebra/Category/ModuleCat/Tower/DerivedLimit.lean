@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
+public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
 
 /-!
@@ -196,19 +197,8 @@ theorem Q_map_homotopyLimitFst_comp_Q_map_complexShift
 /-- The homotopy limit sends quasi-isomorphisms of complexes of towers to quasi-isomorphisms. -/
 instance quasiIso_homotopyLimitFunctor_map {K L : CochainComplex (ModuleTower.{v} R) ℤ}
     (f : K ⟶ L) [QuasiIso f] : QuasiIso ((homotopyLimitFunctor R).map f) := by
-  let _ := HasDerivedCategory.standard (ModuleCat.{v} R)
-  have comm := ((complexShift R).naturality f).symm
-  -- The cone map is the third component of a morphism of distinguished mapping cone triangles
-  -- whose first two components are quasi-isomorphisms.
-  have : QuasiIso (mappingCone.map _ _ _ _ comm) := by
-    rw [← DerivedCategory.isIso_Q_map_iff_quasiIso]
-    exact Pretriangulated.isIso₃_of_isIso₁₂
-      (DerivedCategory.Q.mapTriangle.map (mappingCone.triangleMap _ _ _ _ comm))
-      (DerivedCategory.mappingCone_triangle_distinguished _)
-      (DerivedCategory.mappingCone_triangle_distinguished _)
-      (inferInstanceAs (IsIso (DerivedCategory.Q.map ((productComplexFunctor R).map f))))
-      (inferInstanceAs (IsIso (DerivedCategory.Q.map ((productComplexFunctor R).map f))))
-  exact (quasiIso_shift_iff _ (-1)).2 this
+  rw [homotopyLimitFunctor_map]
+  exact (quasiIso_shift_iff _ (-1)).2 inferInstance
 
 variable (R)
 
@@ -244,18 +234,22 @@ theorem limComplexι_app_comp_complexShift_app (K : CochainComplex (ModuleTower.
   ext i : 1
   exact limι_app_comp_shiftNatTrans_app R (K.X i)
 
+private abbrev limComplexShortComplex (K : CochainComplex (ModuleTower.{v} R) ℤ) :=
+  ShortComplex.mk ((limComplexι R).app K) ((complexShift R).app K)
+    (limComplexι_app_comp_complexShift_app K)
+
 /-- The comparison map `lim K → holim K` from the termwise limit of a complex of towers to its
 homotopy limit, lifting the inclusion `lim K → ∏ₙ Kₙ` through the mapping cocone of `δ`. -/
 def homotopyLimitLift (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     (limComplexFunctor R).obj K ⟶ (homotopyLimitFunctor R).obj K :=
-  mappingCocone.lift _ ((limComplexι R).app K) 0 (by simp)
+  mappingCocone.liftShortComplex (limComplexShortComplex K)
 
 /-- The comparison map `lim K → holim K` followed by `holim K → ∏ₙ Kₙ` is the inclusion of the
 termwise limit. -/
 @[reassoc (attr := simp)]
 theorem homotopyLimitLift_comp_homotopyLimitFst (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     homotopyLimitLift K ≫ homotopyLimitFst K = (limComplexι R).app K :=
-  mappingCocone.lift_fst _ _ _ _
+  mappingCocone.liftShortComplex_fst (limComplexShortComplex K)
 
 /-- The comparison map `lim K → holim K` has vanishing second component in the mapping cocone
 of `δ`. -/
@@ -263,7 +257,7 @@ of `δ`. -/
 theorem homotopyLimitLift_f_snd_v (K : CochainComplex (ModuleTower.{v} R) ℤ) (p q : ℤ)
     (hpq : p + -1 = q) :
     (homotopyLimitLift K).f p ≫ (mappingCocone.snd ((complexShift R).app K)).v p q hpq = 0 :=
-  (mappingCocone.lift_f_snd_v _ _ _ _ p q hpq).trans (HomComplex.Cochain.zero_v ..)
+  mappingCocone.liftShortComplex_f_snd_v (limComplexShortComplex K) p q hpq
 
 /-- The comparison map `lim K → holim K` is natural in the complex of towers `K`. -/
 @[reassoc]
@@ -298,8 +292,7 @@ transitions, the comparison map `lim K → holim K` is a quasi-isomorphism. -/
 theorem quasiIso_homotopyLimitLift {K : CochainComplex (ModuleTower.{v} R) ℤ}
     (hK : ∀ i, Subsingleton (K.X i).limOne) :
     QuasiIso (homotopyLimitLift K) :=
-  mappingCocone.quasiIso_lift_of_shortExact (S := ShortComplex.mk _ _
-    (limComplexι_app_comp_complexShift_app K))
+  mappingCocone.quasiIso_lift_of_shortExact (S := limComplexShortComplex K)
     (HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦
       shortExact_limι_shiftNatTrans (hK i))
 

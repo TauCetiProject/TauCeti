@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCocone
 public import Mathlib.CategoryTheory.Abelian.Refinements
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.CategoryTheory.Shift.CommShift
+import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 
 /-!
 # Projections of the mapping cocone and short exact sequences
@@ -18,8 +20,9 @@ public import TauCeti.CategoryTheory.Shift.CommShift
 The mapping cocone `mappingCocone φ` of a morphism `φ : K ⟶ L` of cochain complexes is
 `(mappingCone φ)⟦-1⟧`, and its projections `mappingCocone.fst φ : mappingCocone φ ⟶ K` and
 `mappingCocone.snd φ` are built from those of the mapping cone. This file records the components
-of these projections, the differential of the second projection, and their naturality
-with respect to the shifted mapping cone map induced by a commutative square.
+of these projections, the differential of the second projection and of the two inclusions, and
+the naturality of the projections with respect to the shifted mapping cone map induced by a
+commutative square.
 
 For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of cochain complexes in an abelian category,
 the first map lifts to the mapping cocone of the second, and this lift `X₁ ⟶ mappingCocone S.g`
@@ -33,8 +36,16 @@ compares the mapping cone of the first map with the third term.
 * `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst` and
   `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v`: the projections of
   the mapping cocone are natural in commutative squares.
-* `CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`: for a short exact sequence `S` of
-  cochain complexes, the lift `S.X₁ ⟶ mappingCocone S.g` of `S.f` is a quasi-isomorphism.
+* `CochainComplex.mappingCocone.inl_v_d`, `CochainComplex.mappingCocone.inr_v_d`: the
+  differential of the mapping cocone on the two inclusions; in particular `inr φ` sends cocycles
+  to cocycles (`CochainComplex.mappingCocone.comp_inr_v_d_eq_zero`).
+* `CochainComplex.mappingCocone.triangle_mor₃_f_shiftFunctorObjXIso_hom`: the connecting morphism
+  of `CochainComplex.mappingCocone.triangle` is, in components, `CochainComplex.mappingCocone.inr`.
+* `CochainComplex.mappingCocone.isStrictlyGE`: the mapping cocone of a morphism of complexes
+  strictly concentrated in degrees at least `n` is strictly concentrated in degrees at least `n`.
+* `CochainComplex.mappingCocone.liftShortComplex`: the lift `S.X₁ ⟶ mappingCocone S.g` of `S.f`.
+  It is a quasi-isomorphism when `S` is short exact
+  (`CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`).
 
 ## Mapping cocones of natural transformations and shifts
 
@@ -69,7 +80,7 @@ variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
 /-- The components of the first projection of the mapping cocone are those of the first
 projection of the mapping cone. -/
 lemma fst_f {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p : ℤ) :
-    (fst φ).f p = (mappingCone.fst φ).1.v (p + -1) p (by lia) := by
+    (fst φ).f p = (mappingCone.fst φ).val.v (p + -1) p (by lia) := by
   simp [fst, Cochain.leftShift_v (n := 1) _ _ _ _ _ p _ (p + -1) (by lia)]
   rfl
 
@@ -85,8 +96,8 @@ lemma shiftFunctor_map_mappingCone_map_comp_fst {K₁ L₁ K₂ L₂ : CochainCo
     (fst φ₁).f n ≫ a.f n
   rw [fst_f, fst_f, shiftFunctor_map_f']
   change (mappingCone.map φ₁ φ₂ a b comm).f (n + -1) ≫
-      (mappingCone.fst φ₂).1.v (n + -1) n (by lia) =
-    (mappingCone.fst φ₁).1.v (n + -1) n (by lia) ≫ a.f n
+      (mappingCone.fst φ₂).val.v (n + -1) n (by lia) =
+    (mappingCone.fst φ₁).val.v (n + -1) n (by lia) ≫ a.f n
   apply mappingCone.ext_from φ₁ n (n + -1) (by lia) <;> simp [mappingCone.map]
 
 /-- The components of the second projection of the mapping cocone are those of the second
@@ -145,7 +156,6 @@ lemma ext_to {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 
 
 /-- The first map of a short complex of cochain complexes lifts to the mapping cocone
 of its second map, using the zero null-homotopy. -/
-@[expose]
 noncomputable def liftShortComplex (S : ShortComplex (CochainComplex C ℤ)) :
     S.X₁ ⟶ mappingCocone S.g := lift S.g S.f 0 (by simp)
 
@@ -154,11 +164,73 @@ noncomputable def liftShortComplex (S : ShortComplex (CochainComplex C ℤ)) :
 lemma liftShortComplex_fst (S : ShortComplex (CochainComplex C ℤ)) :
     liftShortComplex S ≫ fst S.g = S.f := lift_fst _ _ _ _
 
+/-- In each degree the first projection of the short-complex lift is the component of `S.f`. -/
+@[reassoc (attr := simp)]
+lemma liftShortComplex_f_fst_f (S : ShortComplex (CochainComplex C ℤ)) (p : ℤ) :
+    (liftShortComplex S).f p ≫ (fst S.g).f p = S.f.f p :=
+  HomologicalComplex.congr_hom (liftShortComplex_fst S) p
+
 /-- The second projection of the short-complex lift vanishes in every degree. -/
 @[reassoc (attr := simp)]
 lemma liftShortComplex_f_snd_v (S : ShortComplex (CochainComplex C ℤ))
     (p q : ℤ) (hpq : p + -1 = q) : (liftShortComplex S).f p ≫ (snd S.g).v p q hpq = 0 :=
   (lift_f_snd_v _ _ _ _ p q hpq).trans (Cochain.zero_v ..)
+
+/-- The differential of the mapping cocone on the inclusion of `K`:
+`d (inl a) = inl (d a) - inr (φ a)`. -/
+@[reassoc]
+lemma inl_v_d {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 1 = q) :
+    (inl φ).v p p (add_zero p) ≫ (mappingCocone φ).d p q =
+      K.d p q ≫ (inl φ).v q q (add_zero q) - φ.f p ≫ (inr φ).val.v p q hpq := by
+  obtain rfl : q = p + 1 := hpq.symm
+  apply ext_to φ (p + 1) p (by lia)
+  · rw [Category.assoc, ← (fst φ).comm, inl_v_fst_f_assoc]
+    simp
+  · simp [d_snd_v]
+
+/-- The inclusion `inr φ` of `L` is a cocycle of degree `1`:
+`d (inr b) = -inr (d b)`. -/
+@[reassoc]
+lemma inr_v_d {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q r : ℤ) (hpq : p + 1 = q)
+    (hqr : q + 1 = r) :
+    (inr φ).val.v p q hpq ≫ (mappingCocone φ).d q r = -(L.d p q ≫ (inr φ).val.v q r hqr) := by
+  have h := δ_v 1 2 rfl (inr φ).val p r (by lia) q q (by lia) hpq
+  rw [Cocycle.δ_eq_zero, Cochain.zero_v, Int.negOnePow_even 2 ⟨1, rfl⟩, one_smul] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
+
+/-- The inclusion `inr φ` sends cocycles of `L` to cocycles of the mapping cocone: if
+`x ≫ d = 0`, then `(x ≫ inr φ) ≫ d = 0`. -/
+lemma comp_inr_v_d_eq_zero {K L : CochainComplex C ℤ} (φ : K ⟶ L) {A : C} (p q r : ℤ)
+    (hpq : p + 1 = q) (hqr : q + 1 = r) (x : A ⟶ L.X p) (hx : x ≫ L.d p q = 0) :
+    (x ≫ (inr φ).val.v p q hpq) ≫ (mappingCocone φ).d q r = 0 := by
+  simp [inr_v_d φ p q r hpq hqr, reassoc_of% hx]
+
+/-- The connecting morphism `L ⟶ (mappingCocone φ)⟦1⟧` of the triangle `mappingCocone.triangle φ`
+is, in components, the inclusion `mappingCocone.inr φ` of `L` into the mapping cocone, without
+sign. -/
+@[reassoc]
+lemma triangle_mor₃_f_shiftFunctorObjXIso_hom {K L : CochainComplex C ℤ} (φ : K ⟶ L)
+    (p q : ℤ) (hpq : p + 1 = q) :
+    (triangle φ).mor₃.f p ≫ ((mappingCocone φ).shiftFunctorObjXIso 1 p q (by omega)).hom =
+      (inr φ).val.v p q hpq := by
+  subst hpq
+  -- `mappingCocone φ` is `(mappingCone φ)⟦-1⟧` only up to unfolding, so the components are
+  -- restated in matching types before `rightShift_v` applies.
+  change ((mappingCone.inr φ).f p ≫ ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1
+      (by lia)).inv.app (mappingCone φ)).f p) ≫
+      (((mappingCone φ)⟦(-1 : ℤ)⟧).shiftFunctorObjXIso 1 p (p + 1) rfl).hom =
+    ((Cochain.ofHom (mappingCone.inr φ)).rightShift (-1) 1 (by lia)).v p (p + 1) rfl
+  rw [Cochain.rightShift_v _ _ _ _ p (p + 1) rfl p (add_zero p)]
+  simp [shiftFunctorCompIsoId, shiftFunctorAdd'_hom_app_f', shiftFunctorZero_inv_app_f,
+    shiftFunctorObjXIso]
+  rfl
+
+/-- The mapping cocone of a morphism of cochain complexes which are both strictly concentrated
+in degrees at least `n` is strictly concentrated in degrees at least `n`. -/
+instance isStrictlyGE {K L : CochainComplex C ℤ} (φ : K ⟶ L) (n : ℤ) [K.IsStrictlyGE n]
+    [L.IsStrictlyGE n] : (mappingCocone φ).IsStrictlyGE n := by
+  have := isStrictlyGE_mappingCone φ n n (n - 1)
+  exact (mappingCone φ).isStrictlyGE_shift (n - 1) (-1) n (by lia)
 
 end
 
@@ -202,7 +274,7 @@ private lemma epi_toId_f (p : ℤ) [Epi (φ.f p)] : Epi ((toId φ).f p) := by
   obtain ⟨A', π, hπ, x, hx⟩ :=
     surjective_up_to_refinements_of_epi (φ.f p) (y ≫ (fst (𝟙 L)).f p)
   refine ⟨A', π, hπ, x ≫ (inl φ).v p p (add_zero p) +
-    π ≫ y ≫ (snd (𝟙 L)).v p (p + -1) rfl ≫ (inr φ).1.v (p + -1) p (by lia), ?_⟩
+    π ≫ y ≫ (snd (𝟙 L)).v p (p + -1) rfl ≫ (inr φ).val.v (p + -1) p (by lia), ?_⟩
   apply ext_to (𝟙 L) p (p + -1) rfl
   · simp [toId_f_fst_f, hx]
   · simp [toId_f_snd_v]
@@ -210,10 +282,11 @@ private lemma epi_toId_f (p : ℤ) [Epi (φ.f p)] : Epi ((toId φ).f p) := by
 variable {S : ShortComplex (CochainComplex C ℤ)}
 
 @[reassoc (attr := simp)]
-private lemma lift_comp_toId : lift S.g S.f 0 (by simp) ≫ toId S.g = 0 := by
+private lemma lift_comp_toId : liftShortComplex S ≫ toId S.g = 0 := by
   ext p
   apply ext_to _ p (p + -1) rfl
-  · rw [← HomologicalComplex.comp_f, Category.assoc, toId_comp_fst, lift_fst_assoc, S.zero]
+  · rw [← HomologicalComplex.comp_f, Category.assoc, toId_comp_fst, liftShortComplex_fst_assoc,
+      S.zero]
     simp
   · simp [toId_f_snd_v]
 
@@ -225,7 +298,7 @@ private lemma shortExact_lift_toId (hS : S.ShortExact) :
   have hSp := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS p
   have : Mono (S.f.f p) := hSp.mono_f
   have : Epi (S.g.f p) := hSp.epi_g
-  refine .mk' ?_ (mono_of_mono_fac (lift_f_fst_f S.g S.f 0 (by simp) p)) (epi_toId_f S.g p)
+  refine .mk' ?_ (mono_of_mono_fac (liftShortComplex_f_fst_f S p)) (epi_toId_f S.g p)
   rw [ShortComplex.exact_iff_exact_up_to_refinements]
   intro A x (hx : x ≫ (toId S.g).f p = 0)
   have h₁ : (x ≫ (fst S.g).f p) ≫ S.g.f p = 0 := by
@@ -234,15 +307,14 @@ private lemma shortExact_lift_toId (hS : S.ShortExact) :
     simpa [toId_f_snd_v] using hx =≫ (snd (𝟙 S.X₃)).v p (p + -1) rfl
   obtain ⟨A', π, hπ, z, hz⟩ :=
     (ShortComplex.exact_iff_exact_up_to_refinements _).1 hSp.exact _ h₁
-  refine ⟨A', π, hπ, z, (?_ : π ≫ x = z ≫ (lift S.g S.f 0 (by simp)).f p)⟩
+  refine ⟨A', π, hπ, z, (?_ : π ≫ x = z ≫ (liftShortComplex S).f p)⟩
   apply ext_to S.g p (p + -1) rfl
   · simpa using hz
   · simp [h₂]
 
 /-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of cochain complexes, the lift
 `X₁ ⟶ mappingCocone S.g` of `S.f` is a quasi-isomorphism. -/
-theorem quasiIso_lift_of_shortExact (hS : S.ShortExact) :
-    QuasiIso (lift S.g S.f 0 (by simp)) := by
+theorem quasiIso_lift_of_shortExact (hS : S.ShortExact) : QuasiIso (liftShortComplex S) := by
   -- The proof does not compare connecting maps: the lift is the kernel of a degreewise
   -- epimorphism onto the mapping cocone of `𝟙 X₃`, which is contractible. We use the long exact
   -- homology sequence of the short exact sequence
@@ -252,10 +324,10 @@ theorem quasiIso_lift_of_shortExact (hS : S.ShortExact) :
   rw [quasiIso_iff]
   intro n
   rw [quasiIsoAt_iff_isIso_homologyMap]
-  have : Mono (homologyMap (lift S.g S.f 0 (by simp)) n) :=
+  have : Mono (homologyMap (liftShortComplex S) n) :=
     (hT.homology_exact₁ (n - 1) n (by simp)).mono_g
       (((hC (n - 1)).isZero_homology).eq_of_src _ _)
-  have : Epi (homologyMap (lift S.g S.f 0 (by simp)) n) :=
+  have : Epi (homologyMap (liftShortComplex S) n) :=
     (hT.homology_exact₂ n).epi_f (((hC n).isZero_homology).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 

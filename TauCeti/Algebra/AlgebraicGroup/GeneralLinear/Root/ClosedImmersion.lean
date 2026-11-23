@@ -56,12 +56,12 @@ noncomputable def rootSubgroupClosedSubgroup (hij : i ≠ j) :
 /-- The root map represents its named closed root subgroup. -/
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup (hij : i ≠ j) :
-    (rootSubgroupClosedSubgroup (R := R) hij).1 = Subobject.mk (rootSubgroup hij) :=
+    (rootSubgroupClosedSubgroup (R := R) hij).val = Subobject.mk (rootSubgroup hij) :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- The closed matrix root subgroup is canonically isomorphic to the additive group scheme. -/
 noncomputable def rootSubgroupClosedSubgroupIso (hij : i ≠ j) :
-    ((rootSubgroupClosedSubgroup (R := R) hij).1 :
+    ((rootSubgroupClosedSubgroup (R := R) hij).val :
       Grp (Over (Spec (CommRingCat.of R)))) ≅ AdditiveGroup.groupScheme R :=
   ClosedSubgroupScheme.mkIso (rootSubgroup hij)
 
@@ -69,7 +69,7 @@ noncomputable def rootSubgroupClosedSubgroupIso (hij : i ≠ j) :
 @[simp]
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (hij : i ≠ j) :
     (rootSubgroupClosedSubgroupIso (R := R) hij).inv ≫
-        (rootSubgroupClosedSubgroup (R := R) hij).1.arrow = rootSubgroup hij :=
+        (rootSubgroupClosedSubgroup (R := R) hij).val.arrow = rootSubgroup hij :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow _
 
 end TauCeti.GeneralLinear

@@ -303,13 +303,13 @@ theorem ContDiffOn.exists_continuousOn_hasFDerivWithinAt_stdSimplex {F : (α →
   -- `P z` is the projection onto the directions of the simplex along `z`.
   let σ : (α → ℝ) →L[ℝ] ℝ := ∑ a, ContinuousLinearMap.proj a
   let P : (α → ℝ) → (α → ℝ) →L[ℝ] α → ℝ := fun z =>
-    ContinuousLinearMap.id ℝ (α → ℝ) - ContinuousLinearMap.smulRightL ℝ (α → ℝ) (α → ℝ) σ z
+    ContinuousLinearMap.id ℝ (α → ℝ) - ContinuousLinearMap.smulRightL ℝ ℝ ℝ (α → ℝ) (α → ℝ) σ z
   have hP (z v : α → ℝ) : P z v = v - (∑ a, v a) • z := by
     simp [P, σ, Finset.sum_smul]
   have hPdir {z : α → ℝ} (hz : z ∈ S) (v : α → ℝ) : ∑ a, P z v a = 0 := by
     simp [hP, Finset.sum_sub_distrib, ← Finset.mul_sum, hsum hz]
   have hPcont : Continuous P :=
-    continuous_const.sub (ContinuousLinearMap.smulRightL ℝ (α → ℝ) (α → ℝ) σ).continuous
+    continuous_const.sub (ContinuousLinearMap.smulRightL ℝ ℝ ℝ (α → ℝ) (α → ℝ) σ).continuous
   have hdiff := hF.differentiableOn one_ne_zero
   refine ⟨fun z => (fderivWithin ℝ F S z).comp (P z), fun y hy => ?_, fun y hy => ?_⟩
   · -- On the simplex, `P y` fixes every difference `x - y`, so the projected derivative is still a

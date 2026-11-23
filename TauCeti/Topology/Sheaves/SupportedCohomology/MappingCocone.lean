@@ -252,9 +252,10 @@ lemma relativeCoordinates_supportedSubmoduleSectionsMappingCoconeMap
     mappingCocone.relativeCoordinates (moduleSectionsComplRestriction S' W' L) p q hpq
         ((supportedSubmoduleSectionsMappingCoconeMap S W K φ).f p a) =
       ((extendMap φ.τ₂ embeddingUpNat).f p
-          (mappingCocone.relativeCoordinates (moduleSectionsComplRestriction S W K) p q hpq a).1,
+          (mappingCocone.relativeCoordinates (moduleSectionsComplRestriction S W K) p q hpq a).fst,
         (extendMap φ.τ₃ embeddingUpNat).f q
-          (mappingCocone.relativeCoordinates (moduleSectionsComplRestriction S W K) p q hpq a).2) :=
+          (mappingCocone.relativeCoordinates (moduleSectionsComplRestriction S W K)
+            p q hpq a).snd) :=
   mappingCocone.relativeCoordinates_map _ _ _ _
     (((embeddingUpNat.extendFunctor _).mapShortComplex.map φ).comm₂₃.symm) p q hpq a
 
@@ -310,7 +311,7 @@ lemma supportedSubmoduleSectionsMappingCoconeHomologyIso_hom_naturality
       (supportedSubmoduleSectionsMappingCoconeHomologyIso S W K n).hom ≫
         homologyMap (supportedSubmoduleSectionsMappingCoconeMap S W K φ) (n : ℤ) := by
   apply (cancel_epi ((supportedSubmoduleSectionsShortComplex S W K).X₁.extendHomologyIso
-    embeddingUpNat (embeddingUpNat_f n)).hom).1
+    embeddingUpNat (embeddingUpNat_f n)).hom).mp
   rw [← Category.assoc, ← extendHomologyIso_hom_naturality φ.τ₁ embeddingUpNat (embeddingUpNat_f n),
     Category.assoc, extendHomologyIso_hom_supportedSubmoduleSectionsMappingCoconeHomologyIso_hom,
     extendHomologyIso_hom_supportedSubmoduleSectionsMappingCoconeHomologyIso_hom_assoc,

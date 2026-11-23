@@ -23,7 +23,9 @@ height.
   (`TauCeti.contractibleSpace_sublevel_sphereHeight`). It misses the north pole, and stereographic
   projection from the north pole carries it onto a closed ball about the origin. So, up to
   homotopy, the lower sublevel is the `0`-cell at the south pole; in particular it is path
-  connected.
+  connected. For `-1 < a < 1` the sublevel is moreover homeomorphic to the closed disc `𝔻 n`, by a
+  homeomorphism carrying the level `{h = a}` onto the boundary sphere
+  (`TauCeti.exists_homeomorph_sublevel_sphereHeight_disk`): the rescaled stereographic projection.
 * For `-1 < a < 1 < b`, the relative homology of the sublevel pair `({h ≤ b}, {h ≤ a})` is one
   copy of the coefficients in degree `n` and vanishes in every other degree
   (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso` and
@@ -50,6 +52,8 @@ height.
 
 * `TauCeti.contractibleSpace_sublevel_sphereHeight`: the lower sublevels of the height are
   contractible.
+* `TauCeti.exists_homeomorph_sublevel_sphereHeight_disk`: the lower sublevels of the height
+  below the maximum are closed discs, with the level as boundary sphere.
 * `TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`,
   `TauCeti.isZero_singularHomology_sublevelPair_sphereHeight`: the relative homology of the band
   across the maximum.
@@ -74,6 +78,26 @@ namespace TauCeti
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+/-- The sublevel `{h ≤ a}`, for `a < 1`, misses the north pole `v`, so it lies in the source of
+the stereographic projection from `v`. -/
+private theorem sublevel_sphereHeight_subset_source (v : sphere (0 : E) 1) {a : ℝ} (ha' : a < 1) :
+    {x | sphereHeight v x ≤ a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source := by
+  intro x hx hxv
+  rw [mem_singleton_iff] at hxv
+  simp only [mem_ofPred_eq, hxv, Subtype.coe_eta, sphereHeight_self] at hx
+  linarith
+
+/-- The stereographic projection from the north pole `v` carries the sublevel `{h ≤ a}`, for
+`a < 1`, onto the sublevel `{w | -stereographicHeight w ≤ a}` of the height read in the chart. -/
+private theorem image_stereographic_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
+    (ha' : a < 1) : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
+      {w | -stereographicHeight w ≤ a} := by
+  rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _
+    (sublevel_sphereHeight_subset_source v ha')]
+  ext w
+  simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
+    sphereHeight_stereographic_symm_apply]
+
 /-- **The lower sublevels of the height are contractible.** For `-1 ≤ a < 1`, the sublevel
 `{x | ⟪x, v⟫ ≤ a}` of the unit sphere is contractible: it misses the north pole `v`, and the
 stereographic projection from `v` carries it onto a closed ball about the origin. -/
@@ -81,16 +105,8 @@ theorem contractibleSpace_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
     (ha' : a < 1) : ContractibleSpace {x | sphereHeight v x ≤ a} := by
   set e := stereographic (norm_eq_of_mem_sphere v)
   set s := {x | sphereHeight v x ≤ a}
-  have hs : s ⊆ e.source := by
-    intro x hx hxv
-    rw [mem_singleton_iff] at hxv
-    simp only [s, mem_ofPred_eq, hxv, Subtype.coe_eta, sphereHeight_self] at hx
-    linarith
-  have himage : e '' s = {w | -stereographicHeight w ≤ a} := by
-    rw [e.image_eq_target_inter_inv_preimage hs]
-    ext w
-    simp only [e, s, stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
-      sphereHeight_stereographic_symm_apply]
+  have hs := sublevel_sphereHeight_subset_source v ha'
+  have himage := image_stereographic_sublevel_sphereHeight v ha'
   -- The image is star-convex about the origin, since the height decreases with `‖w‖`.
   have hstar : StarConvex ℝ 0 (e '' s) := by
     rw [himage]
@@ -117,6 +133,40 @@ private theorem contractibleSpace_sublevelPair_snd_sphereHeight (v : sphere (0 :
   contractibleSpace_sublevel_sphereHeight v ha ha'
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
+
+/-- **The lower sublevels of the height are closed discs.** For `-1 < a < 1`, the sublevel
+`{x | ⟪x, v⟫ ≤ a}` of the unit sphere `Sⁿ` is homeomorphic to the closed disc `𝔻 n`, by a
+homeomorphism carrying the level `{x | ⟪x, v⟫ = a}` onto the boundary sphere of the disc. It is the
+stereographic projection from the north pole `v`, which carries the sublevel onto a closed ball
+about the origin, rescaled to the unit ball. -/
+theorem exists_homeomorph_sublevel_sphereHeight_disk (v : sphere (0 : E) 1) {a : ℝ}
+    (ha : -1 < a) (ha' : a < 1) :
+    ∃ e : {x | sphereHeight v x ≤ a} ≃ₜ TopCat.disk.{w} n,
+      ∀ x : {x | sphereHeight v x ≤ a},
+        sphereHeight v x = a ↔ ‖((e x).down : EuclideanSpace ℝ (Fin n))‖ = 1 := by
+  set R := √(4 * (1 + a) / (1 - a))
+  have hR : 0 < R := Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))
+  have himage : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
+      closedBall 0 R := by
+    rw [image_stereographic_sublevel_sphereHeight v ha']
+    ext w
+    rw [mem_ofPred_eq, neg_stereographicHeight_le_iff ha.le ha' w, mem_closedBall_zero_iff]
+  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+    (ne_zero_of_mem_unit_sphere v)).repr
+  set e₀ := (stereographic (norm_eq_of_mem_sphere v)).homeomorphOfImageSubsetSource
+    (sublevel_sphereHeight_subset_source v ha') himage
+  -- `e₀` is the stereographic projection, restricted to the sublevel and the ball.
+  have he₀ : ∀ x, (e₀ x : (ℝ ∙ (v : E))ᗮ) = stereographic (norm_eq_of_mem_sphere v) x :=
+    fun _ ↦ rfl
+  -- Rescale the ball of radius `R` to the unit ball; the boundary spheres correspond.
+  obtain ⟨S, hS⟩ := exists_homeomorph_closedBall_one_norm_eq (V := (ℝ ∙ (v : E))ᗮ) hR
+  refine ⟨(e₀.trans S).trans U.closedBallHomeomorphDisk, fun x ↦ ?_⟩
+  have hx := sublevel_sphereHeight_subset_source v ha' x.property
+  rw [← (stereographic (norm_eq_of_mem_sphere v)).left_inv hx,
+    sphereHeight_stereographic_symm_apply, neg_stereographicHeight_eq_iff ha.le ha', ← he₀,
+    Homeomorph.trans_apply, Homeomorph.trans_apply,
+    LinearIsometryEquiv.coe_closedBallHomeomorphDisk_apply_down,
+    LinearIsometryEquiv.norm_map, hS]
 
 variable {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
 
@@ -160,7 +210,7 @@ theorem nonempty_singularHomology_sublevelPair_sphereHeight_iso (v : sphere (0 :
   have : Unique {p : ↥(criticalPoints (𝓡 n) (sphereHeight v) ∩ sphereHeight v ⁻¹' {1}) //
       manifoldMorseIndex (𝓡 n) (sphereHeight v) p = n} :=
     { default := p
-      uniq q := Subtype.ext <| Subtype.ext <| sphereHeight_eq_one_iff.1 q.1.2.2 }
+      uniq q := Subtype.ext <| Subtype.ext <| sphereHeight_eq_one_iff.1 q.val.property.2 }
   exact ⟨e ≪≫ coproductUniqueIso _⟩
 
 /-- For `-1 < a < 1 < b`, the relative homology `Hₖ({h ≤ b}, {h ≤ a})` of the sublevel pair of the
@@ -172,8 +222,8 @@ theorem isZero_singularHomology_sublevelPair_sphereHeight (v : sphere (0 : E) 1)
     nonempty_singularHomology_sublevelPair_sphereHeight_iso_sigma (n := n) R v ha ha' hb k
   have : IsEmpty {p : ↥(criticalPoints (𝓡 n) (sphereHeight v) ∩ sphereHeight v ⁻¹' {1}) //
       manifoldMorseIndex (𝓡 n) (sphereHeight v) p = k} := ⟨fun q ↦ by
-    have hq := q.2
-    rw [sphereHeight_eq_one_iff.1 q.1.2.2, manifoldMorseIndex_sphereHeight_self] at hq
+    have hq := q.property
+    rw [sphereHeight_eq_one_iff.1 q.val.property.2, manifoldMorseIndex_sphereHeight_self] at hq
     exact hk hq.symm⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun q ↦ isEmptyElim q)).of_iso e
 

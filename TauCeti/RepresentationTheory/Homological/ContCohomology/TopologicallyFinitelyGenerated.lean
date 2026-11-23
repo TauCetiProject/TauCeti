@@ -40,7 +40,8 @@ theorem IsTopologicallyFinitelyGenerated.finite_Z1 (hG : IsTopologicallyFinitely
     [Finite M] : Finite (Z1 G M) := by
   obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.1 hG
   refine Finite.of_injective (fun f : Z1 G M ↦ fun x : s ↦ (f : G → M) x) fun f f' h ↦ ?_
-  exact Subtype.ext (eq_of_mem_Z1_of_eqOn_of_topologicalClosure_closure_eq_top f.2 f'.2 hs
+  exact Subtype.ext (eq_of_mem_Z1_of_eqOn_of_topologicalClosure_closure_eq_top f.property
+      f'.property hs
     fun x hx ↦ congrFun h ⟨x, hx⟩)
 
 /-- **Finiteness of `H¹`.** Over a topologically finitely generated group, `H¹(G, M)` is finite for

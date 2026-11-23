@@ -51,7 +51,7 @@ theorem exists_graded_retraction (hU : DirectSum.SetLike.IsHomogeneous 𝒱 U) :
   let W (i : ι) := U.comap (𝒱 i).subtype
   let q (i : ι) : 𝒱 i →ₗ[k] W i := (W i).subtype.leftInverse
   let r (i : ι) : 𝒱 i →ₗ[k] U :=
-    (((𝒱 i).subtype ∘ₗ (W i).subtype).codRestrict U (fun x ↦ x.2)) ∘ₗ q i
+    (((𝒱 i).subtype ∘ₗ (W i).subtype).codRestrict U (fun x ↦ x.property)) ∘ₗ q i
   let p := DirectSum.toModule k ι U r ∘ₗ (DirectSum.decomposeLinearEquiv 𝒱).toLinearMap
   have hp (i : ι) (x : 𝒱 i) : p x = r i x := by
     simp only [p, LinearMap.comp_apply, LinearEquiv.coe_coe,
@@ -64,8 +64,8 @@ theorem exists_graded_retraction (hU : DirectSum.SetLike.IsHomogeneous 𝒱 U) :
     apply Subtype.ext
     rw [← DirectSum.sum_support_decompose 𝒱 (x : V), map_sum, Submodule.coe_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by
-      rw [hp, hr i _ (hU i x.2)]
+      rw [hp, hr i _ (hU i x.property)]
   · rw [hp i ⟨x, hx⟩]
-    exact (q i ⟨x, hx⟩).1.2
+    exact (q i ⟨x, hx⟩).val.property
 
 end Submodule

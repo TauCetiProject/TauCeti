@@ -66,12 +66,12 @@ family `ℋ`. -/
 abbrev RelFreeProduct : Type _ :=
   -- The monoid structure of each factor is given as that of the group `H`: with the structure
   -- found by instance search, unification does not find the group structure of the free product.
-  Coprod (FreeGroup α) (@CoprodI ℋ (fun H => (H : Subgroup G)) fun H => H.1.toGroup.toMonoid)
+  Coprod (FreeGroup α) (@CoprodI ℋ (fun H => (H : Subgroup G)) fun H => H.val.toGroup.toMonoid)
 
 /-- The natural homomorphism `F(Ω) ∗ (∗_{H ∈ ℋ} H) → G` extending a homomorphism `φ` from the
 free group `F(Ω)` to `G` by the inclusions of the subgroups in the family `ℋ`. -/
 def relPresentationHom (φ : FreeGroup α →* G) (ℋ : Set (Subgroup G)) : RelFreeProduct α ℋ →* G :=
-  Coprod.lift φ (CoprodI.lift fun H => H.1.subtype)
+  Coprod.lift φ (CoprodI.lift fun H => H.val.subtype)
 
 @[simp]
 theorem relPresentationHom_inl (φ : FreeGroup α →* G) (ℋ : Set (Subgroup G)) (x : FreeGroup α) :
@@ -116,7 +116,7 @@ subgroups is finitely generated. -/
 private theorem fg_relFreeProduct [Finite α] (hℋ : ℋ.Finite) (hfg : ∀ H ∈ ℋ, H.FG) :
     _root_.Group.FG (RelFreeProduct α ℋ) :=
   have : Finite ℋ := hℋ
-  have (H : ℋ) : _root_.Group.FG (H : Subgroup G) := hfg H H.2
+  have (H : ℋ) : _root_.Group.FG (H : Subgroup G) := hfg H H.property
   inferInstance
 
 /-- Relative finite presentation does not depend on the relative generating set: if the natural
@@ -213,7 +213,7 @@ theorem isFinitelyPresentedRel_empty :
   · have hρ : relPresentationHom φ ∅ = φ.comp (Coprod.lift (.id _) 1) := by
       ext H
       · simp
-      · exact H.2.elim
+      · exact H.property.elim
     have hsurj : Surjective (Coprod.lift (.id _) 1 :
         RelFreeProduct (Fin n) (∅ : Set (Subgroup G)) →* FreeGroup (Fin n)) :=
       fun x => ⟨Coprod.inl x, by simp⟩
