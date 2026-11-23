@@ -131,10 +131,10 @@ theorem hasFDerivAt_chordLength (hs : ContDiffAt ℝ 2 χ x.1)
   have hB : HasFDerivAt χ.nextCollision B' x :=
     ((χ.contDiffAt_nextCollision hs ht hx).differentiableAt one_ne_zero).hasFDerivAt
   -- The next collision parameter is the first component of `B`.
-  have ht : HasFDerivAt (fun y : ℝ × ℝ ↦ χ.nextParam y.1 y.2)
+  have hT : HasFDerivAt (fun y : ℝ × ℝ ↦ χ.nextParam y.1 y.2)
       ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp B') x := by
     simpa [Function.comp_def] using hasFDerivAt_fst.comp x hB
-  have hd := ((χ.differentiableAt t).hasDerivAt.hasFDerivAt.comp x ht).sub
+  have hd := ((χ.differentiableAt t).hasDerivAt.hasFDerivAt.comp x hT).sub
     ((χ.differentiableAt x.1).hasDerivAt.hasFDerivAt.comp x hasFDerivAt_fst)
   have hℓ := (hasFDerivAt_norm_of_ne (sub_ne_zero.2 (χ.apply_nextParam_ne hx))).comp x hd
   convert hℓ using 1
