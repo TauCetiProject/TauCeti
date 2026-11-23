@@ -97,8 +97,9 @@ endpoints `eₙ` stay at distance at least `1` from each other
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`: Arzelà–Ascoli for maps that
   are uniformly Lipschitz with values in a compact set on exhausting bands of the plane.
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn`: an equicontinuous
-  sequence of maps on an open subset of a proper space, with values at each point in a compact
-  set, has a locally uniformly convergent subsequence, with a limit continuous on that subset.
+  sequence of maps on an open subset of a second-countable locally compact space, with values at
+  each point in a compact set, has a locally uniformly convergent subsequence, with a limit
+  continuous on that subset.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`: Arzelà–Ascoli
   for uniformly Lipschitz maps with values in a compact set on exhausting discs of the plane.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
@@ -355,12 +356,14 @@ theorem isCompact_setOf_periodic_lipschitzWith {M : Type*} [MetricSpace M] {K : 
         (Eventually.of_forall fun n ↦ (hf (ψ n)).2.2.dist_le_mul t t')⟩, ψ, hψ,
     UniformFun.tendsto_iff_tendstoUniformly.2 hux⟩
 
-/-- **Arzelà–Ascoli on an open set of a proper space.** Let `u n` be an equicontinuous sequence of
-maps on an open subset `Ω` of a proper metric space, with values in a pseudometric space, such that
-for each `x ∈ Ω` the values `u n x` lie in a common compact set. A subsequence of the `u n`
-converges locally uniformly on `Ω` to a map continuous on `Ω`. -/
+/-- **Arzelà–Ascoli on an open set, with a continuous limit.** Let `u n` be an equicontinuous
+sequence of maps on an open subset `Ω` of a second-countable locally compact space, for instance a
+proper metric space, with values in a pseudometric space, such that for each `x ∈ Ω` the values
+`u n x` lie in a common compact set. A subsequence of the `u n` converges locally uniformly on `Ω`
+to a map continuous on `Ω`. -/
 theorem exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn {X M : Type*}
-    [MetricSpace X] [ProperSpace X] [PseudoMetricSpace M] {Ω : Set X} (hΩ : IsOpen Ω)
+    [TopologicalSpace X] [LocallyCompactSpace X] [SecondCountableTopology X] [PseudoMetricSpace M]
+    {Ω : Set X} (hΩ : IsOpen Ω)
     {u : ℕ → X → M} (hu : EquicontinuousOn u Ω)
     (hbd : ∀ x ∈ Ω, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : X → M, ContinuousOn g Ω ∧
@@ -513,10 +516,10 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_holderOnWith {Z M : Type*}
     obtain ⟨K, hK, hxK, hKU⟩ := exists_compact_subset hU hx
     obtain ⟨C, hC⟩ := hholder K hKU hK
     exact ⟨C, K, mem_interior_iff_mem_nhds.1 hxK, hC⟩
-  obtain ⟨φ, hφ, v, hconv⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hU hpt
-  -- The limit is continuous, and a common Hölder bound passes to it.
-  exact ⟨φ, hφ, v, hconv.continuousOn (Eventually.of_forall fun n ↦
-    hequi.continuousOn (φ n)).frequently, hconv, fun K hKU C hC ↦ HolderOnWith.of_tendsto
+  obtain ⟨φ, hφ, v, hv, hconv⟩ :=
+    exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hU hequi hpt
+  -- A common Hölder bound passes to the limit.
+  exact ⟨φ, hφ, v, hv, hconv, fun K hKU C hC ↦ HolderOnWith.of_tendsto
     (fun x hx ↦ hconv.tendsto_at (hKU hx)) (Eventually.of_forall fun n ↦ hC (φ n))⟩
 
 section Lipschitz
