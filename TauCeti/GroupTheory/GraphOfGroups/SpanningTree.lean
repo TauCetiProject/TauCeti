@@ -21,9 +21,15 @@ classes generate `π₁(𝔸, v₀)`. More generally, reading the letters of an 
 `b` gives an element of `π₁(𝔸, T)`, which the inverse sends to the class of
 `[v₀, a]_T p [b, v₀]_T`.
 
+For a graph of groups with trivial vertex groups over a rose, the maximal tree has no darts, so
+`π₁(𝔸, v₀)` is the free group on the petals, the class of the loop traversing the dart `(a, true)`
+of the petal `a` being the generator `a`.
+
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.π₁Equiv`: the isomorphism `π₁(𝔸, v₀) ≃* π₁(𝔸, T)`.
+* `TauCeti.GraphOfGroups.π₁.roseEquivFreeGroup`: the isomorphism of `π₁(𝔸, v₀)` with the free
+  group on the petals, for a graph of groups with trivial vertex groups over a rose.
 
 ## Main results
 
@@ -37,6 +43,7 @@ classes generate `π₁(𝔸, v₀)`. More generally, reading the letters of an 
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
   Internat. J. Algebra Comput. 15 (2005), §2, Definitions 2.2–2.3 and Proposition 2.4(3).
 * J.-P. Serre, *Trees*, Chapter I, §5.1.
+* A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
 -/
 
 public section
@@ -138,7 +145,7 @@ private theorem ofπ₁Tree_toπ₁Tree {x y : 𝔸.LetterVertex} (p : 𝔸.Path
 
 /-- The dart generators of `π₁(𝔸, T)` along a tree path multiply to `1`. -/
 @[simp] theorem π₁Tree.weight_path_edge_eq_one (a b : Γ.V) :
-    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T.darts e.1) = 1 :=
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T.darts e.val) = 1 :=
   T.weight_path_eq_one (fun _ => π₁Tree.edge_eq_one) a b
 
 private theorem toπ₁Tree_comp_ofπ₁Tree :
@@ -198,3 +205,40 @@ to `b` to the class of the loop `[v₀, a]_T p [b, v₀]_T`. -/
   ofπ₁Tree_toπ₁Tree 𝔸 v₀ T p
 
 end TauCeti.GraphOfGroups
+
+namespace TauCeti.GraphOfGroups.π₁
+
+/-! ### The rose -/
+
+variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
+  [∀ a, Subsingleton (𝔸.vertexGroup a)] (v₀ : (SerreGraph.rose α).V)
+
+/-- The fundamental group at the vertex of a graph of groups with trivial vertex groups over a
+rose is the free group on the petals: the class of the loop traversing the dart `(a, true)` of the
+petal `a` corresponds to the generator `a`. -/
+noncomputable def roseEquivFreeGroup : π₁ 𝔸 v₀ ≃* FreeGroup α :=
+  (π₁Equiv 𝔸 v₀ (SerreGraph.roseTree α)).trans (π₁Tree.roseEquivFreeGroup 𝔸 _)
+
+/-- The class of the loop traversing the dart `(a, true)` of the petal `a` corresponds to the
+generator `a`. -/
+@[simp] theorem roseEquivFreeGroup_ofPathGroup_loop_true (a : α) :
+    roseEquivFreeGroup 𝔸 v₀ (ofPathGroup 𝔸 v₀ ((SerreGraph.roseTree α).loop v₀ (a, true))) =
+      FreeGroup.of a :=
+  (congrArg (π₁Tree.roseEquivFreeGroup 𝔸 _) (π₁Equiv_ofPathGroup_loop 𝔸 v₀ _ (a, true))).trans
+    (π₁Tree.roseEquivFreeGroup_edge_true 𝔸 _ a)
+
+/-- The class of the loop traversing the dart `(a, false)` of the petal `a` corresponds to the
+inverse of the generator `a`. -/
+@[simp] theorem roseEquivFreeGroup_ofPathGroup_loop_false (a : α) :
+    roseEquivFreeGroup 𝔸 v₀ (ofPathGroup 𝔸 v₀ ((SerreGraph.roseTree α).loop v₀ (a, false))) =
+      (FreeGroup.of a)⁻¹ :=
+  (congrArg (π₁Tree.roseEquivFreeGroup 𝔸 _) (π₁Equiv_ofPathGroup_loop 𝔸 v₀ _ (a, false))).trans
+    (π₁Tree.roseEquivFreeGroup_edge_false 𝔸 _ a)
+
+/-- The inverse sends the generator `a` to the class of the loop traversing the dart `(a, true)`. -/
+@[simp] theorem roseEquivFreeGroup_symm_of (a : α) :
+    (roseEquivFreeGroup 𝔸 v₀).symm (FreeGroup.of a) =
+      ofPathGroup 𝔸 v₀ ((SerreGraph.roseTree α).loop v₀ (a, true)) := by
+  rw [MulEquiv.symm_apply_eq, roseEquivFreeGroup_ofPathGroup_loop_true]
+
+end TauCeti.GraphOfGroups.π₁

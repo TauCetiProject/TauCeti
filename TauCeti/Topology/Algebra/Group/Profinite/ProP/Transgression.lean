@@ -89,7 +89,7 @@ theorem explicitRes1_eq_zero_of_le_proPFrattini {N : Subgroup G}
     funext n
     simpa only [cocyclesMap1_apply, ContinuousMonoidHom.subgroupSubtype_apply,
       AddMonoidHom.id_apply, Pi.zero_apply] using
-      apply_eq_zero_of_mem_proPFrattini htriv hpM c (hN n.2)
+      apply_eq_zero_of_mem_proPFrattini htriv hpM c (hN n.property)
 
 variable {N : Subgroup G} [N.Normal]
 

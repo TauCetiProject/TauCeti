@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.Injective.Hom
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.RingTheory.Finiteness.Projective
+public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Self-injective algebras
@@ -37,6 +38,7 @@ ring.
 
 * `Function.Bijective.moduleBaer_self` and `Function.Bijective.moduleInjective_self`: an algebra
   over a field carrying an associative bilinear form whose flip is bijective is self-injective.
+* `TauCeti.moduleInjective_self_of_isSemisimpleRing`: a semisimple ring is self-injective.
 * `Module.Baer.of_leftInverse`: a retract of a Baer module is Baer.
 * `Module.Baer.of_isIdempotentElem`: over a self-injective ring, a left ideal consisting of the
   elements fixed by right multiplication by an idempotent is Baer.
@@ -88,9 +90,21 @@ theorem _root_.Module.Baer.of_isIdempotentElem (hA : Module.Baer A A) {e : A}
     { toFun := fun x => ⟨x * e, (hp _).2 (by rw [mul_assoc, he.eq])⟩
       map_add' := fun x y => Subtype.ext (add_mul x y e)
       map_smul' := fun a x => Subtype.ext (by simp [mul_assoc]) }
-    fun m => Subtype.ext ((hp m).1 m.2)
+    fun m => Subtype.ext ((hp m).1 m.property)
 
 end Idempotent
+
+/-! ### Semisimple rings -/
+
+section Semisimple
+
+/-- **A semisimple ring is self-injective**, for instance a field: every module over it is
+injective. -/
+instance moduleInjective_self_of_isSemisimpleRing (R : Type u) [Ring R] [IsSemisimpleRing R] :
+    Module.Injective R R :=
+  Module.injective_of_isSemisimpleRing R R
+
+end Semisimple
 
 /-! ### Finite projective modules over a self-injective ring -/
 
@@ -175,7 +189,7 @@ theorem _root_.Function.Bijective.moduleBaer_self (hB : Function.Bijective B.fli
   -- The trace turns `f` into a `k`-linear functional on `I`, which extends to all of `A`.
   obtain ⟨ψ, hψ⟩ : ∃ ψ : A →ₗ[k] k, ∀ (x : A) (hx : x ∈ I), ψ x = B 1 (f ⟨x, hx⟩) := by
     let e : I.restrictScalars k →ₗ[k] I :=
-      { toFun := fun x => ⟨x, x.2⟩
+      { toFun := fun x => ⟨x, x.property⟩
         map_add' := fun _ _ => Subtype.ext rfl
         map_smul' := fun _ _ => Subtype.ext rfl }
     obtain ⟨ψ, hψ⟩ := LinearMap.exists_extend

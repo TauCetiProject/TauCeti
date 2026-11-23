@@ -109,11 +109,11 @@ hemisphere. -/
 private def upperArc (h : IsConnectedSumPosition ι K)
     (x : {x : sphere (0 : ℂ) 1 // 0 < ⟪(x : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫}) :
     {y : sphere (0 : E) 1 // 0 < ⟪(y : E), ((axis ι : sphere (0 : E) 1) : E)⟫} :=
-  ⟨K x.1, h.inner_pos (by have hx := x.2; rwa [inner_axisC] at hx)⟩
+  ⟨K x.val, h.inner_pos (by have hx := x.property; rwa [inner_axisC] at hx)⟩
 
 private theorem coe_upperArc (h : IsConnectedSumPosition ι K)
     (x : {x : sphere (0 : ℂ) 1 // 0 < ⟪(x : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫}) :
-    ((upperArc h x : sphere (0 : E) 1) : E) = K x.1 :=
+    ((upperArc h x : sphere (0 : E) 1) : E) = K x.val :=
   (rfl)
 
 /-! ### The disc of chords -/
@@ -125,13 +125,13 @@ of the equator it is `ι`. -/
 private def chordDisc (h : IsConnectedSumPosition ι K) (z : closedBall (0 : ℂ) 1) :
     closedBall (0 : E) 1 :=
   if hz : ‖(z : ℂ)‖ ^ 2 - ⟪(z : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫ ^ 2 < 1 then
-    (hemisphereChord (axis ι) (Prod.map (upperArc h) id ((hemisphereChord axisC).symm ⟨z, hz⟩))).1
+    (hemisphereChord (axis ι) (Prod.map (upperArc h) id ((hemisphereChord axisC).symm ⟨z, hz⟩))).val
   else ι.unitClosedBallMap z
 
 private theorem chordDisc_of_mem (h : IsConnectedSumPosition ι K) {z : closedBall (0 : ℂ) 1}
     (hz : ‖(z : ℂ)‖ ^ 2 - ⟪(z : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫ ^ 2 < 1) :
     chordDisc h z = (hemisphereChord (axis ι)
-      (Prod.map (upperArc h) id ((hemisphereChord axisC).symm ⟨z, hz⟩))).1 := by
+      (Prod.map (upperArc h) id ((hemisphereChord axisC).symm ⟨z, hz⟩))).val := by
   rw [chordDisc, dite_eq_left hz]
 
 private theorem chordDisc_of_not_mem (h : IsConnectedSumPosition ι K) {z : closedBall (0 : ℂ) 1}
@@ -144,7 +144,7 @@ through the image under `K` of the upper end of the chord of `z`. -/
 private theorem coe_chordDisc_of_mem (h : IsConnectedSumPosition ι K)
     {z : closedBall (0 : ℂ) 1}
     (hz : ‖(z : ℂ)‖ ^ 2 - ⟪(z : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫ ^ 2 < 1) :
-    (chordDisc h z : E) = chordPoint (axis ι) (K ((hemisphereChord axisC).symm ⟨z, hz⟩).1.1)
+    (chordDisc h z : E) = chordPoint (axis ι) (K ((hemisphereChord axisC).symm ⟨z, hz⟩).1.val)
       ((hemisphereChord axisC).symm ⟨z, hz⟩).2 := by
   rw [chordDisc_of_mem h hz, coe_hemisphereChord_apply, Prod.map_fst, Prod.map_snd, id_eq,
     coe_upperArc]
@@ -153,7 +153,7 @@ private theorem coe_chordDisc_of_mem (h : IsConnectedSumPosition ι K)
 upper end of its chord. -/
 private theorem coe_eq_chordPoint
     (z : OffEquator) :
-    ((z : closedBall (0 : ℂ) 1) : ℂ) = chordPoint axisC ((hemisphereChord axisC).symm z).1.1
+    ((z : closedBall (0 : ℂ) 1) : ℂ) = chordPoint axisC ((hemisphereChord axisC).symm z).1.val
       ((hemisphereChord axisC).symm z).2 := by
   rw [← coe_hemisphereChord_apply, Homeomorph.apply_symm_apply]
 
@@ -162,7 +162,7 @@ point of the circle; it is continuous on the whole disc. -/
 private def chordTop (z : closedBall (0 : ℂ) 1) : Circle :=
   ⟨(z : ℂ).re + √(1 - (z : ℂ).re ^ 2) * Complex.I, mem_sphere_zero_iff_norm.2 <| by
     have hre : (z : ℂ).re ^ 2 ≤ 1 := by
-      have := (Complex.abs_re_le_norm (z : ℂ)).trans (mem_closedBall_zero_iff.1 z.2)
+      have := (Complex.abs_re_le_norm (z : ℂ)).trans (mem_closedBall_zero_iff.1 z.property)
       nlinarith [abs_nonneg (z : ℂ).re, sq_abs (z : ℂ).re]
     rw [Complex.norm_add_mul_I, Real.sq_sqrt (by linarith), add_sub_cancel, Real.sqrt_one]⟩
 
@@ -173,7 +173,7 @@ private theorem continuous_chordTop : Continuous chordTop :=
 chord. -/
 private theorem hemisphereChord_symm_fst_eq_chordTop
     (z : OffEquator) :
-    (((hemisphereChord axisC).symm z).1.1 : ℂ) = chordTop z := by
+    (((hemisphereChord axisC).symm z).1.val : ℂ) = chordTop z := by
   have hr : 1 - ‖((z : closedBall (0 : ℂ) 1) : ℂ)‖ ^ 2 + ((z : closedBall (0 : ℂ) 1) : ℂ).im ^ 2 =
       1 - ((z : closedBall (0 : ℂ) 1) : ℂ).re ^ 2 := by
     rw [← Complex.sq_norm_sub_sq_im]
@@ -195,18 +195,18 @@ private theorem chordDisc_eq_of_mem (h : IsConnectedSumPosition ι K) {z : close
     (hz : chordTop z ∈ greatCircleLocus ι K) : chordDisc h z = ι.unitClosedBallMap z := by
   by_cases hU : ‖(z : ℂ)‖ ^ 2 - ⟪(z : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫ ^ 2 < 1
   · set z' : OffEquator := ⟨z, hU⟩
-    have hx : ((hemisphereChord axisC).symm z').1.1 = (chordTop z : sphere (0 : ℂ) 1) :=
+    have hx : ((hemisphereChord axisC).symm z').1.val = (chordTop z : sphere (0 : ℂ) 1) :=
       Subtype.ext (hemisphereChord_symm_fst_eq_chordTop z')
     -- The upper end of the chord of `z` is a point where `K` is the great circle.
-    have hK : (K ((hemisphereChord axisC).symm z').1.1 : E) =
-        ι ((hemisphereChord axisC).symm z').1.1 := by
+    have hK : (K ((hemisphereChord axisC).symm z').1.val : E) =
+        ι ((hemisphereChord axisC).symm z').1.val := by
       rw [hx]
       exact congrArg Subtype.val hz.eq_of_nhds |>.trans (coe_greatCircle_apply ι _)
     refine Subtype.ext ?_
     rw [coe_chordDisc_of_mem h hU, hK, LinearIsometry.coe_unitClosedBallMap_apply,
       coe_eq_chordPoint z']
     simpa only [axis, axisC, z'] using (ι.map_chordPoint axisC
-      ((hemisphereChord axisC).symm z').1.1 ((hemisphereChord axisC).symm z').2).symm
+      ((hemisphereChord axisC).symm z').1.val ((hemisphereChord axisC).symm z').2).symm
   · exact chordDisc_of_not_mem h hU
 
 /-- Every point of the disc is off the equator, or near `±1` where `K` is the great circle. -/
@@ -230,10 +230,10 @@ private theorem isImmersionAt_upperArc (h : IsConnectedSumPosition ι K)
     (x : hemisphereOpens axisC) :
     IsImmersionAt (𝓡 1) (𝓡 n) ∞ (M := hemisphereOpens axisC) (N := hemisphereOpens (axis ι))
       (upperArc h) x := by
-  have hK : IsImmersionAt (𝓡 1) (𝓡 n) ∞ (fun y : hemisphereOpens axisC ↦ K y.1) x :=
+  have hK : IsImmersionAt (𝓡 1) (𝓡 n) ∞ (fun y : hemisphereOpens axisC ↦ K y.val) x :=
     isImmersionAt_comp_subtypeVal_iff.2 (K.isSmoothEmbedding.isImmersion.isImmersionAt _)
   exact (isImmersionAt_codRestrict_opens_iff (U := hemisphereOpens (axis ι))
-    (f := fun y : hemisphereOpens axisC ↦ K y.1) (fun y ↦ (upperArc h y).2)).2 hK
+    (f := fun y : hemisphereOpens axisC ↦ K y.val) (fun y ↦ (upperArc h y).property)).2 hK
 
 /-- Off the equator, the disc of chords is the product of the arc of `K` with `[-1, 1]`, read in
 the chord coordinates of the disc and of the ball. -/
@@ -243,7 +243,7 @@ private theorem chordDisc_comp_coe (h : IsConnectedSumPosition ι K) :
         hemisphereChordDiffeomorph (n := n) (axis ι) ∘ Prod.map (upperArc h) id ∘
           (hemisphereChordDiffeomorph (n := 1) axisC).symm := by
   funext z
-  rw [Function.comp_apply, chordDisc_of_mem h z.2]
+  rw [Function.comp_apply, chordDisc_of_mem h z.property]
   simp only [Function.comp_apply, coe_hemisphereChordDiffeomorph,
     coe_hemisphereChordDiffeomorph_symm]
   -- `⟨↑z, _⟩` is `z` itself, read in the subtype `OffEquator` underlying `chordBallOpens axisC`.
@@ -299,7 +299,7 @@ private theorem norm_sq_sub_inner_sq_chordDisc_lt_one_iff (h : IsConnectedSumPos
   by_cases hz : ‖(z : ℂ)‖ ^ 2 - ⟪(z : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫ ^ 2 < 1
   · simp only [hz, iff_true]
     rw [chordDisc_of_mem h hz]
-    exact (hemisphereChord (axis ι) _).2
+    exact (hemisphereChord (axis ι) _).property
   · simp only [hz, iff_false, not_lt]
     rw [chordDisc_of_not_mem h hz, LinearIsometry.coe_unitClosedBallMap_apply, ι.norm_map]
     simpa [axis, axisC, ι.inner_map_map] using not_lt.1 hz
@@ -332,11 +332,11 @@ private theorem norm_chordDisc_eq_one_iff (h : IsConnectedSumPosition ι K)
   · let z' : OffEquator := ⟨z, hz⟩
     have h₁ := coe_chordDisc_of_mem h hz
     have h₂ := coe_eq_chordPoint z'
-    have hKx := (upperArc h ((hemisphereChord axisC).symm z').1).2
+    have hKx := (upperArc h ((hemisphereChord axisC).symm z').1).property
     generalize (hemisphereChord axisC).symm z' = q at h₁ h₂ hKx
     rw [h₁, h₂]
     exact (norm_chordPoint_eq_one_iff _ (norm_eq_of_mem_sphere _) hKx.ne' _).trans
-      (norm_chordPoint_eq_one_iff _ (norm_eq_of_mem_sphere _) q.1.2.ne' _).symm
+      (norm_chordPoint_eq_one_iff _ (norm_eq_of_mem_sphere _) q.1.property.ne' _).symm
   · rw [chordDisc_of_not_mem h hz, LinearIsometry.coe_unitClosedBallMap_apply, ι.norm_map]
 
 /-- On the boundary circle the disc of chords is `K # -K`: the arc of `K` over the upper half, and

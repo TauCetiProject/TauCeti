@@ -64,7 +64,7 @@ theorem eq_of_linearlyEquivalent_ofPoint_of_genus_pos
     (UniversallyClosed.eq_valuativeCriterion ▸
       (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
   have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out x.2
+    k hX.out x.property
   have hgF : 0 < genus k X.functionField := by
     rwa [← genus_eq_genus_functionField hex hX.out hF hk]
   apply (CodimensionOnePoint.equivPlace hex hX.out).injective
@@ -83,11 +83,11 @@ theorem injective_toLineBundleClass_pointDifference
     (x₀ : CodimensionOnePoint X) :
     Function.Injective fun x : {x : CodimensionOnePoint X //
       (X ↘ Spec (.of k)).residueDegree x = 1} ↦
-        toLineBundleClass hX.out (WeilDivisor.pointDifference x.1 x₀) := by
+        toLineBundleClass hX.out (WeilDivisor.pointDifference x.val x₀) := by
   intro x y h
   have hlin := (toLineBundleClass_eq_iff hX.out).mp h
   apply Subtype.ext
-  apply eq_of_linearlyEquivalent_ofPoint_of_genus_pos k hk hg x.2
+  apply eq_of_linearlyEquivalent_ofPoint_of_genus_pos k hk hg x.property
   simpa [WeilDivisor.pointDifference] using
     hlin.add_right (WeilDivisor.OrderSystem.ofScheme X) (WeilDivisor.ofPoint x₀)
 
@@ -104,7 +104,7 @@ theorem finrank_cohomology_zero_sheaf_ofPoint_eq_one_of_genus_pos (hg : 0 < X.ge
   have hex := (UniversallyClosed.eq_valuativeCriterion.le _ _
     (X ↘ Spec (.of k)) inferInstance).1
   have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out p.2
+    k hX.out p.property
   have hgF : 0 < genus k X.functionField := by
     rwa [← genus_eq_genus_functionField hex hX.out hF hk]
   rw [finrank_cohomology_zero_sheaf_eq_dim hex hX.out,
@@ -123,7 +123,7 @@ theorem cohomologyMap_sheafHomOfLE_zero_add_ofPoint_bijective_of_genus_pos
   have hex := (UniversallyClosed.eq_valuativeCriterion.le _ _
     (X ↘ Spec (.of k)) inferInstance).1
   have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out p.2
+    k hX.out p.property
   have := finiteDimensional_cohomology_zero_sheaf (k := k) hX.out
     (D := (0 : SchemeWeilDivisor X))
   have := finiteDimensional_cohomology_zero_sheaf (k := k) hX.out

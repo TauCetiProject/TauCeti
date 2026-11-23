@@ -36,8 +36,10 @@ which that Gauss norm equals `‖c‖`.
 A normed field whose norm takes every positive real value is densely normed
 (`DenselyNormedField.ofForallExistsNormEq`).
 
-Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
-into a relative error bound for `F - w / c`.
+Finally, `NormedField.iSup_eNorm_eq_top` records that the extended norms of a nontrivially normed
+field have supremum `⊤`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio
+`F / w` near `c⁻¹` into a relative error bound for `F - w / c`, while
+`TauCeti.norm_pow_div_le_norm_inv` bounds `‖z ^ m / a‖` by `‖a⁻¹‖` when `‖z‖ ≤ 1`.
 -/
 
 public section
@@ -47,9 +49,22 @@ theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K
     {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
   simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
 
+/-- A power of an element of norm at most one, divided by `a`, has norm at most `‖a⁻¹‖`. -/
+theorem TauCeti.norm_pow_div_le_norm_inv {K : Type*} [NormedDivisionRing K] {z : K}
+    (hz : ‖z‖ ≤ 1) (m : ℕ) (a : K) : ‖z ^ m / a‖ ≤ ‖a⁻¹‖ := by
+  rw [div_eq_mul_inv, norm_mul, norm_pow]
+  exact mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hz)
+
 namespace NormedField
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+
+/-- Over a nontrivially normed field `𝕜`, the norms are unbounded, so `⨆ x : 𝕜, ‖x‖ₑ = ⊤`. -/
+@[simp]
+theorem iSup_eNorm_eq_top : (⨆ x : 𝕜, ‖x‖ₑ) = ⊤ := by
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  obtain ⟨x, hx⟩ := exists_lt_nnNorm 𝕜 r
+  exact (ENNReal.coe_le_coe.mpr hx.le).trans (le_iSup (fun y : 𝕜 ↦ ‖y‖ₑ) x)
 
 /-- **Two radii `0 < r < s` are separated by a norm after raising to a power**: there are `m : ℕ`
 and `c : 𝕜` with `rᵐ < ‖c‖ < sᵐ`. -/

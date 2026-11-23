@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Normed.Field.WithAbs
 public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.Normed.Module.Bases.CountableType
 
 /-!
 # The Frobenius-root normed algebra of an ultrametric field
@@ -24,17 +26,21 @@ of norm `‖a‖ ^ (p ^ e)⁻¹`, while `‖algebraMap K (FrobeniusRoot K p e) a
 Wrapping `WithAbs` in a dedicated one-field structure avoids an `Algebra K` diamond with the
 untwisted `K`-algebra structure that `WithAbs` inherits from `Algebra.id K`.
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.FrobeniusRoot K p e`: a copy of `K` carrying the norm `‖x‖ ^ (p ^ e)⁻¹` and the
   `K`-algebra structure given by `iterateFrobenius K p e`.
 * `TauCeti.FrobeniusRoot.ringEquiv`: the underlying ring isomorphism `FrobeniusRoot K p e ≃+* K`.
 * `TauCeti.FrobeniusRoot.root`: the inverse ring homomorphism `K →+* FrobeniusRoot K p e` sending
   each scalar `a` to its `p ^ e`-th root over `K`.
+* `TauCeti.FrobeniusRoot.exists_dual_norm_le_and_ne_zero_span_of_countable`: over a complete
+  ultrametric normed field `K` (nontrivially or trivially normed), norm-bounded `K`-linear
+  functionals separate nonzero elements on the `K`-span of any countable subset of
+  `FrobeniusRoot K p e`.
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §3.5.3.
+* S. Bosch, U. Güntzer, and R. Remmert, *Non-Archimedean Analysis*, §3.5.3.
 -/
 
 public section
@@ -169,6 +175,36 @@ theorem isUniformInducing_root : IsUniformInducing (root K p e) := by
 instance [CompleteSpace K] : CompleteSpace (FrobeniusRoot K p e) :=
   ((isUniformInducing_root (K := K) (p := p) (e := e)).completeSpace_congr
     (ringEquiv K p e).symm.surjective).mp inferInstance
+
+/-- Over a complete ultrametric normed field `K` (nontrivially or trivially normed), norm-bounded
+`K`-linear functionals separate nonzero elements on the `K`-span of any countable subset of
+`FrobeniusRoot K p e` (Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §3.5.3). -/
+theorem exists_dual_norm_le_and_ne_zero_span_of_countable [CompleteSpace K]
+    {S : Set (FrobeniusRoot K p e)} (hS : S.Countable)
+    {x : Submodule.span K S} (hx : x ≠ 0) :
+    ∃ (f : Submodule.span K S →ₗ[K] K) (C : ℝ),
+      0 ≤ C ∧ (∀ v, ‖f v‖ ≤ C * ‖v‖) ∧ f x ≠ 0 := by
+  by_cases hnt : ∃ a : K, 1 < ‖a‖
+  · let _ : NontriviallyNormedField K :=
+      { __ := (inferInstance : NormedField K), non_trivial := hnt }
+    have : SeparatingDual K (Submodule.span K S) := Submodule.separatingDual_span_of_countable hS
+    obtain ⟨f, hfx⟩ := SeparatingDual.exists_ne_zero (R := K) hx
+    exact ⟨f.toLinearMap, ‖f‖, norm_nonneg f, f.le_opNorm, hfx⟩
+  · push Not at hnt
+    have ha_norm {a : K} (ha : a ≠ 0) : ‖a‖ = 1 := by
+      refine le_antisymm (hnt a) ?_
+      have h1 : (1 : ℝ) = ‖a‖ * ‖a⁻¹‖ := by rw [← norm_mul, mul_inv_cancel₀ ha, norm_one]
+      nlinarith [hnt a⁻¹, norm_nonneg a]
+    have hv_norm {v : Submodule.span K S} (hv : v ≠ 0) : ‖v‖ = 1 := by
+      have hval : val K p e v.val ≠ 0 :=
+        (map_ne_zero_iff _ val_injective).mpr (Subtype.coe_ne_coe.mpr hv)
+      rw [← Submodule.norm_coe, norm_def, ha_norm hval, Real.one_rpow]
+    obtain ⟨f, hfx⟩ := Module.Projective.exists_dual_ne_zero K hx
+    refine ⟨f, 1, zero_le_one, fun v ↦ ?_, hfx⟩
+    rcases eq_or_ne v 0 with rfl | hv
+    · simp
+    · rw [hv_norm hv, mul_one]
+      exact hnt (f v)
 
 end NormedField
 
