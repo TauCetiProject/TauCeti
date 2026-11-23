@@ -372,12 +372,6 @@ theorem projectiveCharpolyRev_restrict_range_of_isPrCompact {u E : M →L[R] M} 
   have hPr : TauCeti.HasPr R E.range :=
     hu.hasPr_source.of_isTopCompl
       (ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem)
-  let : NormedAddCommGroup E.range :=
-    NormedAddCommGroup.ofSeparation fun x hx ↦ by
-      obtain ⟨J, _, _, i, r, hri⟩ := (TauCeti.hasPr_def R E.range).1 hPr
-      have hix : i x = 0 :=
-        ((Metric.inseparable_iff.2 (dist_zero_right x ▸ hx)).map i.continuous).eq.trans (map_zero i)
-      simpa using (DFunLike.congr_fun hri x).symm.trans (congrArg r hix)
   apply Polynomial.coe_inj.mp
   rw [← ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev hPr
     (u.restrict hE.mapsTo_range)]

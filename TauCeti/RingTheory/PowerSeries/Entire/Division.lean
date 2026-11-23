@@ -669,6 +669,7 @@ theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
   (rfl)
 
 /-- On polynomials, reduction modulo `p` is `AdjoinRoot.mk p`. -/
+@[simp high]
 theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
     IsEntire.mkAdjoinRoot hp (IsEntire.polynomialHom g) = AdjoinRoot.mk p g := by
   rw [IsEntire.mkAdjoinRoot_apply, IsEntire.coe_polynomialHom, modByMonic_coe _ hp,
@@ -793,6 +794,7 @@ theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧
 /-- Over a complete ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
 polynomial divisibility `Q ∣ P`. -/
+@[simp]
 theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
     IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P ↔ Q ∣ P := by
   refine ⟨?_, ?_⟩

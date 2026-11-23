@@ -236,7 +236,7 @@ end RowCompact
 section Finite
 
 variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
-  [TauCeti.NormedRing.IsTate R] {M : Type u} [NormedAddCommGroup M] [Module R M]
+  [TauCeti.NormedRing.IsTate R] {M : Type u} [SeminormedAddCommGroup M] [Module R M]
   [IsBoundedSMul R M]
 
 /-- **Comparison with the finite projective determinant.** On a finitely generated module with
@@ -247,6 +247,7 @@ theorem charPowerSeries_eq_projectiveCharpolyRev [Module.Finite R M] (hM : HasPr
     (u : M →L[R] M) :
     haveI := hM.projective
     u.charPowerSeries = ((u : M →ₗ[R] M).projectiveCharpolyRev : PowerSeries R) := by
+  let : NormedAddCommGroup M := NormedAddCommGroup.ofSeparation fun _ ↦ hM.eq_zero_of_norm_eq_zero
   have := hM.projective
   obtain ⟨n, i, r, hri⟩ := hM.exists_comp_eq_id_of_finite
   have h : ∀ x, r (i x) = x := fun x ↦ by simpa using DFunLike.congr_fun hri x

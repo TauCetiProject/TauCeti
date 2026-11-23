@@ -321,21 +321,30 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
     hv.isRieszProjection_rieszProjection
       (fun _ ↦ hv_good.evalAt_hasseDeriv_eq_zero) hv_good.isUnit_evalAt_hasseDeriv
   have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
+  have mem_elemental_iff (w x : C₀(I, R) →L[R] C₀(I, R)) :
+      x ∈ Algebra.elemental R w ↔
+        x ∈ closure (Algebra.adjoin R {w} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+    rw [← SetLike.mem_coe, Algebra.elemental, Subalgebra.topologicalClosure_coe]
   have hsub : Algebra.elemental R v ≤ Algebra.elemental R u :=
     Algebra.elemental.le_of_mem (Algebra.elemental.isClosed R u)
-      (Subalgebra.le_topologicalClosure _ (Polynomial.aeval_mem_adjoin_singleton R u))
+      ((mem_elemental_iff u v).mpr (subset_closure (Polynomial.aeval_mem_adjoin_singleton R u)))
+  have hclosure : ∀ {x}, x ∈ closure (Algebra.adjoin R {v} : Set (C₀(I, R) →L[R] C₀(I, R))) →
+      x ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
+    fun hx ↦ (mem_elemental_iff u _).mp (hsub ((mem_elemental_iff v _).mpr hx))
+  have hE_mem : E ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
+    hclosure hEv.mem_closure_adjoin
   have hEu : Commute u E :=
     (Subalgebra.mem_centralizer_iff R).mp
-      (Algebra.elemental.le_centralizer_centralizer R u (hsub hEv.mem_closure_adjoin)) u
+      (Algebra.elemental.le_centralizer_centralizer R u ((mem_elemental_iff u E).mpr hE_mem)) u
       ((Subalgebra.mem_centralizer_iff R).mpr fun _ hy ↦ by rw [Set.mem_singleton_iff.mp hy])
-  have hex := exists_inverse_aeval_reverse_of_isRieszProjection hEv (fun _ hx ↦ hsub hx)
+  have hex := exists_inverse_aeval_reverse_of_isRieszProjection hEv fun _ hx ↦ hclosure hx
   have hunit_compl := isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu
   have hE_rc := hEv.isRowCompact hv
   have hrank := hEv.rankAtStalk_range hv hv_good
   obtain ⟨hcharE, hcharCompl, hzero⟩ :=
     charPowerSeries_and_aeval_reverse_rieszColemanProjection hu hQ0 hQ hS hQS
       hEv.isIdempotentElem hEu hunit_compl hE_rc hrank
-  exact ⟨⟨hEv.isIdempotentElem, hEu, hsub hEv.mem_closure_adjoin, hzero, hex⟩,
+  exact ⟨⟨hEv.isIdempotentElem, hEu, hE_mem, hzero, hex⟩,
     hrank, hcharE, hcharCompl⟩
 
 /-- Wraps `rieszColemanProjection_aux` by normalising `Q` once and returning the Riesz–Coleman

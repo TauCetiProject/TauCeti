@@ -25,8 +25,9 @@ continuously complemented; the section is obtained by descending the complementa
 through the quotient.
 A continuous linear functional taking a nonzero value on a vector `u` splits the space as the
 product of the scalars and the kernel (`TauCeti.exists_homeomorph_prod_ker`).
-The restriction of an invariant endomorphism to a topologically complemented submodule factors
-through the complementary projection (`ContinuousLinearMap.restrict_eq_projectionOntoL_comp`).
+For a `u`-invariant submodule `p` with topological complement `q`, the restriction of `u` to `p`
+is inclusion into the ambient module, followed by `u`, then projection onto `p` along `q`
+(`ContinuousLinearMap.restrict_eq_projectionOntoL_comp`).
 -/
 
 public section

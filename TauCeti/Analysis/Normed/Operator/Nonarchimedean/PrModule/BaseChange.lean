@@ -271,7 +271,9 @@ theorem completedBaseChange_mul (u v : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ 
 @[simp]
 theorem completedBaseChange_pow (u : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁) (n : ℕ) :
     (u ^ n).completedBaseChange α α = u.completedBaseChange α α ^ n :=
-  Nat.rec (by simp) (fun _ ih ↦ by rw [pow_succ, pow_succ, completedBaseChange_mul, ih]) n
+  MonoidHom.map_pow
+    ⟨⟨(·.completedBaseChange α α), completedBaseChange_one α⟩, (completedBaseChange_mul · · α)⟩
+    u n
 
 /-- **Endomorphism ring homomorphism.** Along `α : S ⊗̂_R M₁ ≃L[S] N₁`,
 `completedBaseChange · α α` is a unital ring homomorphism `(M₁ →L[R] M₁) →+* (N₁ →L[S] N₁)`. -/
@@ -291,12 +293,9 @@ theorem aeval_completedBaseChange [IsTopologicalAddGroup M₁] [ContinuousConstS
     [IsTopologicalAddGroup N₁] [ContinuousConstSMul S N₁]
     (u : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁) (P : R[X]) :
     Polynomial.aeval (u.completedBaseChange α α) (Polynomial.map (algebraMap R S) P) =
-      (Polynomial.aeval u P).completedBaseChange α α := by
-  induction P using Polynomial.induction_on' with
-  | add p q hp hq => rw [Polynomial.map_add, map_add, map_add, completedBaseChange_add, hp, hq]
-  | monomial n a =>
-    simp only [Polynomial.map_monomial, Polynomial.aeval_monomial, ← Algebra.smul_def,
-      completedBaseChange_smul, completedBaseChange_pow]
+      (Polynomial.aeval u P).completedBaseChange α α :=
+  (Polynomial.map_aeval_eq_aeval_map (ψ := completedBaseChangeRingHom α)
+    (RingHom.ext fun r ↦ by simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 /-- **Compatibility with changing module realisations and equivalent norms.** Post-composing
 `α₁`, `α₂` with equivalences `e₁`, `e₂` conjugates `completedBaseChange` by `e₁` and `e₂`. -/
@@ -545,12 +544,22 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
       (E.completedBaseChange α α) := by
   let Φ := completedBaseChangeRingHom α
   have h1sub : Φ (1 - a • u) = 1 - algebraMap R S a • u.completedBaseChange α α := by
-    simp [Φ, completedBaseChangeRingHom]
-  exact ⟨hE.isIdempotentElem.map Φ, hE.commute.map Φ,
-    completedBaseChange_mem_closure_adjoin hS hM α hE.mem_closure_adjoin,
-    by simpa [Φ, map_mul, map_pow, h1sub] using congrArg Φ hE.pow_mul_eq_zero,
-    TauCeti.exists_complementaryInverse_map Φ h1sub hE.exists_inverse
-      (fun hw ↦ completedBaseChange_mem_closure_adjoin hS hM α hw)⟩
+    simp only [Φ, map_sub, map_one, completedBaseChangeRingHom_apply, completedBaseChange_smul]
+  have hidem : IsIdempotentElem (E.completedBaseChange α α) := by
+    simpa only [Φ, completedBaseChangeRingHom_apply] using hE.isIdempotentElem.map Φ
+  have hcomm : Commute (u.completedBaseChange α α) (E.completedBaseChange α α) := by
+    simpa only [Φ, completedBaseChangeRingHom_apply] using hE.commute.map Φ
+  have hpow : (1 - algebraMap R S a • u.completedBaseChange α α) ^ h *
+      E.completedBaseChange α α = 0 := by
+    simpa only [Φ, map_mul, map_pow, h1sub, map_zero, completedBaseChangeRingHom_apply] using
+      congrArg Φ hE.pow_mul_eq_zero
+  have hinv := TauCeti.exists_complementaryInverse_map Φ h1sub hE.exists_inverse
+    (fun hw ↦ by
+      simpa only [Φ, completedBaseChangeRingHom_apply] using
+        completedBaseChange_mem_closure_adjoin hS hM α hw)
+  simp only [Φ, completedBaseChangeRingHom_apply] at hinv
+  exact ⟨hidem, hcomm, completedBaseChange_mem_closure_adjoin hS hM α hE.mem_closure_adjoin,
+    hpow, hinv⟩
 
 end PrTransport
 

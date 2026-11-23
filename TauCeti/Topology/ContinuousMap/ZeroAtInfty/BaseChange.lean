@@ -181,24 +181,17 @@ theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖
 @[simp]
 theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (n : ℕ) :
-    (u ^ n).mapCoeffs f hf = u.mapCoeffs f hf ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+    (u ^ n).mapCoeffs f hf = u.mapCoeffs f hf ^ n :=
+  RingHom.map_pow (mapCoeffsRingHom f hf) u n
 
 /-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
 extension. -/
 @[simp]
 theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
-    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by
-  induction P using Polynomial.induction_on' with
-  | add p q hp hq =>
-    rw [Polynomial.map_add, map_add, map_add, mapCoeffs_add, hp, hq]
-  | monomial n a =>
-    rw [Polynomial.map_monomial, Polynomial.aeval_monomial, Polynomial.aeval_monomial,
-      Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
-      smul_mul_assoc, one_mul, mapCoeffs_smul, mapCoeffs_pow]
+    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf :=
+  (Polynomial.map_aeval_eq_aeval_map (ψ := mapCoeffsRingHom f hf)
+    (RingHom.ext fun r ↦ by simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 section Topology
 
