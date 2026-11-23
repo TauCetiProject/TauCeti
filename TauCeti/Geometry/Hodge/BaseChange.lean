@@ -10,6 +10,7 @@ public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Geometry.Hodge.Conjugation
 import TauCeti.LinearAlgebra.LinearMap.PseudoInverse
@@ -58,6 +59,8 @@ imposed later as structure data.
   conjugation, for arbitrary complex models.
 * `TauCeti.Hodge.latticeConj_rationalToComplexLinearEquiv_one_tmul`: lattice conjugation fixes
   every purely rational vector of the ambient complexification.
+* `TauCeti.Hodge.rationalBasis` and `TauCeti.Hodge.latticeConjugation_rationalBasis`: the basis of
+  the complexification induced by a rational basis, which lattice conjugation fixes.
 * `TauCeti.Hodge.rationalToComplexSubmodule_conj`: the complexification of a rational subspace is
   stable under lattice-induced conjugation.
 * `TauCeti.Hodge.rationalToComplexSubmodule_sup`: complexification preserves joins of rational
@@ -321,6 +324,33 @@ theorem latticeConj_rationalToComplexLinearEquiv_tmul (hℚ : IsBaseChange ℚ �
     rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   rw [hz z, hz ((starRingEnd ℂ) z), map_smul, map_smulₛₗ, map_smul,
     latticeConj_rationalToComplexLinearEquiv_one_tmul]
+
+section RationalBasis
+
+attribute [local instance low] moduleRatOfComplex
+attribute [local instance] ratComplexScalarTower
+
+/-- The basis of the complexification `Vℂ` induced by a basis of the rational structure `Vℚ`. -/
+noncomputable def rationalBasis {d : ℕ} (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (b : Module.Basis (Fin d) ℚ Vℚ) : Module.Basis (Fin d) ℂ Vℂ :=
+  (isBaseChange_rationalToComplexMap hℚ hℂ).basis b
+
+/-- The induced basis consists of the images of the rational basis vectors. -/
+@[simp]
+theorem rationalBasis_apply {d : ℕ} (hℚ : IsBaseChange ℚ ιℚ) {hℂ : IsBaseChange ℂ ιℂ}
+    (b : Module.Basis (Fin d) ℚ Vℚ) (i : Fin d) :
+    rationalBasis hℚ hℂ b i = rationalToComplexMap hℚ ιℂ (b i) :=
+  IsBaseChange.basis_apply _ _ i
+
+/-- The lattice conjugation fixes a basis induced by a rational basis. -/
+theorem latticeConjugation_rationalBasis {d : ℕ} (hℚ : IsBaseChange ℚ ιℚ)
+    {hℂ : IsBaseChange ℂ ιℂ} (b : Module.Basis (Fin d) ℚ Vℚ) (i : Fin d) :
+    (latticeConjugation hℂ).toEquiv (rationalBasis hℚ hℂ b i) = rationalBasis hℚ hℂ b i := by
+  rw [rationalBasis_apply, latticeConjugation_toEquiv_apply,
+    ← rationalToComplexLinearEquiv_one_tmul hℚ hℂ,
+    latticeConj_rationalToComplexLinearEquiv_one_tmul]
+
+end RationalBasis
 
 /-- The complexification of a rational subspace is stable under lattice-induced conjugation. -/
 @[simp]

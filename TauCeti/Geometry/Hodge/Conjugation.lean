@@ -193,6 +193,23 @@ theorem toEquiv_symm (ω : Conjugation W) : ω.toEquiv.symm = ω.toEquiv := by
 theorem apply_apply (ω : Conjugation W) (x : W) : ω.toEquiv (ω.toEquiv x) = x :=
   ω.involutive x
 
+/-- In a basis fixed by a conjugation, the coordinates of a conjugate vector are the conjugate
+coordinates. -/
+theorem repr_toEquiv_of_fixed (ω : Conjugation W) {ι : Type*} (e : Module.Basis ι ℂ W)
+    (he : ∀ i, ω.toEquiv (e i) = e i) (x : W) (i : ι) :
+    e.repr (ω.toEquiv x) i = starRingEnd ℂ (e.repr x i) := by
+  have hx : x ∈ Submodule.span ℂ (Set.range e) := e.span_eq ▸ Submodule.mem_top
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨k, rfl⟩ := hx
+    classical
+    rw [he, e.repr_self, Finsupp.single_apply]
+    split_ifs <;> simp
+  | zero => simp
+  | add x y _ _ hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
+  | smul c x _ hx =>
+    simp only [LinearEquiv.map_smulₛₗ, map_smul, Finsupp.smul_apply, smul_eq_mul, hx, map_mul]
+
 section TensorProduct
 
 variable {W₁ : Type u} {W₂ : Type v} [AddCommGroup W₁] [Module ℂ W₁]

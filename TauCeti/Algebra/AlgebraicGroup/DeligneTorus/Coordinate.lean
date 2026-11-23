@@ -60,6 +60,8 @@ of the fact that complex conjugation of `S(ℂ)` exchanges the two factors
 * `TauCeti.DeligneTorus.liftEquiv_splittingBialgEquiv_symm_single`: read through the inverse, a
   point of `S` sends `X^{(p,q)}` to its character `(p, q)`.
 * `TauCeti.DeligneTorus.conjSwap_comp_splittingPoint`: `conjSwap` fixes `splittingPoint`.
+* `TauCeti.DeligneTorus.splittingBialgEquiv_map_conj`: through the splitting, complex
+  conjugation of the scalars of `ℂ ⊗[ℝ] S` is `conjSwap`.
 
 ## References
 
@@ -376,5 +378,20 @@ theorem conjSwap_comp_splittingPoint :
     rw [hu]
     simp
   simpa using congrArg ofConv key
+
+/-- **Complex conjugation of `ℂ ⊗[ℝ] S` is `conjSwap`**: through the splitting
+`ℂ ⊗[ℝ] S ≃ ℂ[ℤ²]`, conjugating the scalars becomes `conjSwap`. -/
+@[simp]
+theorem splittingBialgEquiv_map_conj (z : ℂ ⊗[ℝ] S) :
+    splittingBialgEquiv (TensorProduct.map Complex.conjAe.toLinearMap LinearMap.id z) =
+      conjSwap (splittingBialgEquiv z) := by
+  induction z with
+  | tmul c s =>
+    rw [TensorProduct.map_tmul, LinearMap.id_apply, AlgEquiv.toLinearMap_apply,
+      TensorProduct.tmul_eq_smul_one_tmul, TensorProduct.tmul_eq_smul_one_tmul c, map_smul,
+      map_smul, splittingBialgEquiv_one_tmul, conjSwap_smul, Complex.conjAe_coe]
+    congr 1
+    exact (congrArg (fun φ ↦ φ s) conjSwap_comp_splittingPoint).symm
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end TauCeti.DeligneTorus
