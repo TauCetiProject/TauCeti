@@ -58,7 +58,7 @@ homotopy group at a time, along the Whitehead tower.
   (`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`, via
   `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`). Hence vanishing of
   `H_q(Z; 𝔽₂)` passes to `Z⟨m + 2⟩` for any individual degree `q`
-  (`TauCeti.isZero_singularHomology_nConnectedCover_mod_two`).
+  (`TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`).
 * **The induction.** The shared Whitehead-tower driver
   `TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology` climbs the tower one homotopy group
   at a time, using `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two` for the
@@ -71,15 +71,11 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
 
 ## Main results
 
-* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`,
-  `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_int_zmod_two`: if `(Z, z)` is Hausdorff,
+* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`: if `(Z, z)` is Hausdorff,
   `(m + 1)`-connected, and has vanishing mod-two homology in degrees `m + 2` and `m + 3`, then
   `nConnectedCoverProj (m + 2) Z z` induces isomorphisms on mod-two homology in all degrees.
-* `TauCeti.isZero_singularHomology_nConnectedCover_mod_two`: under the same hypotheses, vanishing
-  of `H_q(Z; 𝔽₂)` passes from `Z` to `nConnectedCover (m + 2) Z z`.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_int_zmod_two`: if
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le`: if
   `(Y, y)` is path-connected with trivial `π₁(Y, y)` and has vanishing mod-two homology in degrees
   `2, …, m + 3`, then `π_{m+2}(Y, y)` is uniquely two-divisible.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`: the homotopy
@@ -142,39 +138,6 @@ theorem isIso_singularHomologyMap_nConnectedCoverProj_mod_two (e : k ≃+* ZMod 
       hdiv (hX.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
     q
 
-/-- Integral-coefficient `ZMod 2` form of
-`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`. -/
-theorem isIso_singularHomologyMap_nConnectedCoverProj_int_zmod_two
-    {Z : TopCat.{0}} [T2Space Z] {z : Z} {m : ℕ}
-    (hZ : ∀ j < m + 2, Subsingleton (π_ j Z z))
-    (hm₂ : IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj
-      (ModuleCat.of ℤ (ZMod 2))).obj Z))
-    (hm₃ : IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 3)).obj
-      (ModuleCat.of ℤ (ZMod 2))).obj Z)) (q : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj
-      (ModuleCat.of ℤ (ZMod 2))).map (nConnectedCoverProj (m + 2) Z z)) := by
-  have hm₂' := (Z.isZero_singularHomology_modTwo_iff (M := ZMod 2) (m + 2)).1 hm₂
-  have hm₃' := (Z.isZero_singularHomology_modTwo_iff (M := ZMod 2) (m + 3)).1 hm₃
-  rw [singularHomologyFunctor_obj_obj] at hm₂' hm₃'
-  exact (TopCat.Hom.isIso_singularHomologyMap_modTwo_iff (M := ZMod 2) _ q).2
-    (isIso_singularHomologyMap_nConnectedCoverProj_mod_two (RingEquiv.refl (ZMod 2))
-      hZ hm₂' hm₃' q)
-
-/-- **One-step preservation of mod-two homology vanishing.** If `(Z, z)` is Hausdorff,
-`(m + 1)`-connected, and has vanishing mod-two homology in degrees `m + 2`, `m + 3`, and `q`, then
-its `(m + 2)`-connected cover `nConnectedCover (m + 2) Z z` also has vanishing mod-two homology in
-degree `q`. -/
-theorem isZero_singularHomology_nConnectedCover_mod_two (e : k ≃+* ZMod 2)
-    (hZ : ∀ j < m + 2, Subsingleton (π_ j Z z))
-    (hm₂ : IsZero (((singularChains k).obj Z).homology (m + 2)))
-    (hm₃ : IsZero (((singularChains k).obj Z).homology (m + 3))) {q : ℕ}
-    (hq : IsZero (((singularChains k).obj Z).homology q)) :
-    IsZero (((singularChains k).obj (nConnectedCover (m + 2) Z z)).homology q) := by
-  have := isIso_singularHomologyMap_nConnectedCoverProj_mod_two e hZ hm₂ hm₃ q
-  exact ModuleCat.isZero_iff_subsingleton.2
-    ((subsingleton_singularChains_homology_iff_of_isIso k
-      (nConnectedCoverProj (m + 2) Z z) q).2 (ModuleCat.isZero_iff_subsingleton.1 hq))
-
 end OneStep
 
 section WhiteheadTower
@@ -214,21 +177,6 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_
     fun q hq ↦ ModuleCat.isZero_iff_subsingleton.1
       (((TopCat.of Y).isZero_singularHomology_modTwo_iff_of_ringEquiv ULift.ringEquiv _).1
         (hH q hq))
-
-/-- Integral-coefficient `ZMod 2` form of
-`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le` in `Type`. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_int_zmod_two
-    {Y : Type} [TopologicalSpace Y] [PathConnectedSpace Y] {y : Y}
-    (hπ₁ : Subsingleton (π_ 1 Y y)) {m : ℕ}
-    (hH : ∀ q ≤ m + 1, IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (q + 2)).obj
-      (ModuleCat.of ℤ (ZMod 2))).obj (TopCat.of Y))) :
-    IsUniquelyTwoDivisible (Additive (π_ (m + 2) Y y)) :=
-  isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le
-    (RingEquiv.refl (ZMod 2)) hπ₁ fun q hq ↦ by
-      have hq' := ((TopCat.of Y).isZero_singularHomology_modTwo_iff (M := ZMod 2) (q + 2)).1
-        (hH q hq)
-      rw [singularHomologyFunctor_obj_obj] at hq'
-      exact ModuleCat.isZero_iff_subsingleton.1 hq'
 
 /-- **Mod-two vanishing** (Serre). The homotopy groups `πᵢ(Y)`, `i ≥ 2`, of a simply connected
 space `Y` with the mod-two homology of a point are uniquely two-divisible: multiplication by two
