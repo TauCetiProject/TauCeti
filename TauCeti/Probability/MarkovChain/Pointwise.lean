@@ -87,6 +87,21 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
     (fun _ => measureReal_nonneg) hshift hb
     (fun n k _ => κ.sum_range_pow_comp_real_singleton_div_le ν y n k)
 
+/-- If an irreducible aperiodic chain has infinite extended mean positive return time at `y`,
+then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`. -/
+private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
+    [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
+    (hy : κ.meanReturnTime y = ⊤) (ν : Measure α) [IsProbabilityMeasure ν] :
+    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+  have := countable_of_isIrreducible_count (κ := κ)
+  by_cases hr : (κ ∥ₖ κ).IsRecurrent (y, y)
+  · let := hκ.isIrreducible_parallelComp hκ
+    apply κ.tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent hr _ ν
+    simpa only [hy, ENNReal.inv_top, ENNReal.toReal_zero] using
+      κ.tendsto_cesaro_pow_real_singleton_self y
+  · exact κ.tendsto_pow_comp_apply_singleton_of_parallelComp_return_lt_one ν
+      (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr hr))
+
 /-- **Pointwise decay at an infinite-mean state.** For an irreducible
 aperiodic Markov kernel, if the expected first positive return time to `y` is infinite,
 then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
@@ -97,20 +112,10 @@ theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_to
       (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤)
     (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
-  have := countable_of_isIrreducible_count (κ := κ)
-  by_cases hr : (κ ∥ₖ κ).IsRecurrent (y, y)
-  · let := hκ.isIrreducible_parallelComp hκ
-    have hm : κ.meanReturnTime y = ⊤ := by
-      rw [meanReturnTime_def, ← hy]
-      refine lintegral_congr fun x ↦ ?_
-      induction hittingAfter (fun n x => x n) {y} 1 x using WithTop.recTopCoe <;> rfl
-    have hlim := HasLaw.tendsto_integral_visitCount_div_markovChainLaw_dirac
-      (HasLaw.id (μ := markovChainLaw (Measure.dirac y) κ))
-    apply κ.tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent hr _ ν
-    simpa only [id_eq, integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac,
-      hm, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
-  · exact κ.tendsto_pow_comp_apply_singleton_of_parallelComp_return_lt_one ν
-      (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr hr))
+  have hm : κ.meanReturnTime y = ⊤ := by
+    rw [meanReturnTime_def, ← hy]
+    simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
+  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hm ν
 
 end Aperiodic
 
@@ -138,16 +143,10 @@ private theorem cesaro_pow_mul_le (κ : Kernel α α) {d : ℕ} (hd : 0 < d) (y 
       (Nat.mul_le_mul_left d hj)
   have hsum_le :
       (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) ≤
-        ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} := calc
-    (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y})
-      = ∑ j ∈ Finset.range k, ((κ ^ (φ j + 1)) y).real {y} := by
-          refine Finset.sum_congr rfl fun j _ => ?_
-          rw [← pow_mul, hφ j]
-    _ = ∑ i ∈ (Finset.range k).image φ, ((κ ^ (i + 1)) y).real {y} :=
-          (Finset.sum_image (f := fun i => ((κ ^ (i + 1)) y).real {y})
-            fun _ _ _ _ hij => hφ_inj hij).symm
-    _ ≤ ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} :=
-          Finset.sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ => measureReal_nonneg
+        ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} :=
+    Finset.sum_le_sum_of_injOn φ hφ_inj.injOn hsub
+      (fun j _ => le_of_eq (by rw [← pow_mul, hφ j]))
+      (fun _ _ _ => measureReal_nonneg)
   have hd0 : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
   rw [Nat.cast_mul, ← mul_div_assoc, mul_div_mul_left _ _ hd0]
   exact div_le_div_of_nonneg_right hsum_le (Nat.cast_nonneg k)
@@ -187,15 +186,6 @@ theorem IsNullRecurrent.pow_period [Countable α] {κ : Kernel α α} [IsMarkovK
   exact squeeze_zero (fun k => div_nonneg (Finset.sum_nonneg fun _ _ => measureReal_nonneg)
     (Nat.cast_nonneg k)) (cesaro_pow_mul_le κ hd y) hlim_dk
 
-omit [MeasurableSingletonClass α] in
-private theorem lintegral_return_eq_top_of_not_isPositiveRecurrent {κ : Kernel α α}
-    [IsMarkovKernel κ] {y : α} (hy : ¬ κ.IsPositiveRecurrent y) :
-    (∫⁻ ω, (hittingAfter (fun n ω => ω n) {y} 1 ω).recTopCoe ⊤ (fun n => (n : ℝ≥0∞))
-      ∂markovChainLaw (Measure.dirac y) κ) = ⊤ := by
-  simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
-  rw [← meanReturnTime_def]
-  exact not_lt_top_iff.mp ((isPositiveRecurrent_iff κ y).not.mp hy)
-
 private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositiveRecurrent_finite
     {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
     (hκ : κ.IsAperiodic) {y : α} (hy : ¬ κ.IsPositiveRecurrent y)
@@ -206,8 +196,8 @@ private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositive
   have hν : ν = (m.mass : ℝ≥0∞) • (m.normalize : Measure α) :=
     (congrArg (fun (μ : FiniteMeasure α) => (μ : Measure α)) m.self_eq_mass_smul_normalize).trans
       (Measure.coe_nnreal_smul m.mass (m.normalize : Measure α)).symm
-  have hprob := κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ
-    (lintegral_return_eq_top_of_not_isPositiveRecurrent hy) (m.normalize : Measure α)
+  have hprob := κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ
+    (not_lt_top_iff.mp ((isPositiveRecurrent_iff κ y).not.mp hy)) (m.normalize : Measure α)
   have hscale (n : ℕ) : ((κ ^ n) ∘ₘ ν).real {y} =
       ν.real Set.univ * ((κ ^ n) ∘ₘ (m.normalize : Measure α)).real {y} := by
     rw [hν, Measure.comp_smul]

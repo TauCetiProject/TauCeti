@@ -273,7 +273,7 @@ theorem tendsto_integral_visitCount_div_markovChainLaw [IsFiniteMeasure ν]
   have heq (n : ℕ) :
       (∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) =
         ∫ x, (visitCount (fun k => x (k + 1)) y n : ℝ) / n ∂markovChainLaw ν κ := by
-    rw [← hX.map_eq, integral_map hX.aemeasurable (hm n).aestronglyMeasurable]
+    simpa only [Function.comp_apply] using hX.integral_comp (hm n).aestronglyMeasurable
   have hE : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
     measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0
   have hreal : P.real {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} =

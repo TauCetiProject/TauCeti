@@ -235,25 +235,19 @@ theorem not_isNullRecurrent_deterministic {f : S → S} (hf : Measurable f) (x :
   rintro ⟨hrec, hmean⟩
   let w₀ : ℕ → S := fun n => f^[n] x
   have hex : ∃ k : ℕ, 1 ≤ k ∧ (Measure.dirac (w₀ k) : Measure S) = Measure.dirac x := by
-    by_contra! hne
-    have hA : ∀ k : {k : ℕ // 1 ≤ k}, ∃ A : Set S, MeasurableSet A ∧ x ∈ A ∧ w₀ k.val ∉ A :=
-      fun ⟨k, hk⟩ => dirac_ne_dirac_iff_exists_measurableSet.mp (hne k hk).symm
-    choose A hAm hxA hwA using hA
-    let E : Set (ℕ → S) := ⋃ k : {k : ℕ // 1 ≤ k}, (fun w : ℕ → S => w k.val) ⁻¹' A k
-    have hEm : MeasurableSet E :=
-      MeasurableSet.iUnion fun k => (hAm k).preimage (measurable_pi_apply k.val)
-    have hsub : {w : ℕ → S | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} ⊆ E := fun w hw => by
-      simp only [mem_ofPred_eq, ne_eq, hittingAfter_eq_top_iff, mem_singleton_iff, not_forall,
-        not_not] at hw
-      obtain ⟨k, hk, rfl⟩ := hw
-      exact mem_iUnion.mpr ⟨⟨k, hk⟩, hxA ⟨k, hk⟩⟩
-    have h1 := isRecurrent_iff.mp hrec
-    rw [markovChainLaw_dirac_deterministic] at h1
-    have h0 : (Measure.dirac w₀ : Measure (ℕ → S))
-        {w | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} = 0 :=
-      nonpos_iff_eq_zero.mp
-        ((measure_mono hsub).trans (by simp [E, Measure.dirac_apply' _ hEm, hwA]))
-    exact one_ne_zero (h1.symm.trans h0)
+    have hne : (deterministic f hf).returnLengths x ≠ ∅ :=
+      period_eq_zero_iff.not.mp hrec.period_pos.ne'
+    obtain ⟨k, hk⟩ := Set.ne_empty_iff_nonempty.mp hne
+    rw [mem_returnLengths] at hk
+    obtain ⟨hk_pos, hpos⟩ := hk
+    refine ⟨k, hk_pos, ?_⟩
+    by_contra hne_dirac
+    obtain ⟨A, hAm, hxA, hwA⟩ := dirac_ne_dirac_iff_exists_measurableSet.mp (Ne.symm hne_dirac)
+    rw [deterministic_pow, deterministic_apply] at hpos
+    have hle : (Measure.dirac (f^[k] x) : Measure S) {x} ≤ Measure.dirac (f^[k] x) A :=
+      measure_mono (Set.singleton_subset_iff.mpr hxA)
+    rw [Measure.dirac_apply' _ hAm, Set.indicator_of_notMem hwA] at hle
+    exact (hle.trans_lt' hpos).false
   obtain ⟨k, hk, hdirac_k⟩ := hex
   let w' : ℕ → S := Function.update w₀ k x
   have hdirac : (Measure.dirac w₀ : Measure (ℕ → S)) = Measure.dirac w' := by
@@ -544,9 +538,9 @@ theorem ae_exists_isPositiveRecurrent_and_forall_mem_communicatingClass
     ∀ᵐ ω ∂μ, ∃ n,
       κ.IsPositiveRecurrent (X n ω) ∧ κ.IsClosedSet (κ.communicatingClass (X n ω)) ∧
         ∀ m, n ≤ m → X m ω ∈ κ.communicatingClass (X n ω) := by
-  filter_upwards [h.ae_exists_forall_mem_isClosedSet_communicatingClass] with ω ⟨n, hclosed, hm⟩
-  exact ⟨n, hclosed.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _)
-    ((Kernel.mem_communicatingClass_iff _ _).mpr (Kernel.Communicates.refl _)), hclosed, hm⟩
+  have hae := κ.ae_exists_isPositiveRecurrent_and_forall_mem_communicatingClass ν
+  rw [← h.map_eq] at hae
+  exact ae_of_ae_map h.aemeasurable hae
 
 end Finite
 

@@ -11,6 +11,7 @@ public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import TauCeti.Probability.MarkovChain.Invariant
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Infinite mean return time of nearest-neighbor integer walks
@@ -66,14 +67,6 @@ theorem tendsto_integerWalk_pow_real_self (p : unitInterval) (hp : (p : ℝ) = 1
   exact squeeze_zero (fun _ => measureReal_nonneg) hbound
     (TauCeti.tendsto_centralBinom_div_four_pow.comp (Nat.tendsto_div_const_atTop (by omega)))
 
-private theorem tendsto_integerWalk_integral_visitCount_div (p : unitInterval)
-    (hp : (p : ℝ) = 1 / 2) (x : ℤ) :
-    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) x n : ℝ) / n
-      ∂markovChainLaw (Measure.dirac x) (integerWalk p)) atTop (𝓝 0) := by
-  simp_rw [integral_div, (integerWalk p).integral_visitCount_succ_markovChainLaw_dirac]
-  simpa only [div_eq_inv_mul, Function.comp_apply] using
-    ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
-
 /-- The extended mean first positive return time of every nearest-neighbor integer walk is
 infinite, for both symmetric and biased parameters (including the deterministic endpoints). -/
 -- Simplify before the endpoint rules replace `integerWalk` by a deterministic kernel.
@@ -85,8 +78,13 @@ theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (x : ℤ) :
     have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
       Kernel.inv_meanReturnTime_toReal_pos_iff.mpr
         ((Kernel.isPositiveRecurrent_iff _ _).mpr (lt_top_iff_ne_top.mpr hfinite))
-    have hLLN := (integerWalk p).tendsto_integral_visitCount_div_markovChainLaw_dirac x
-    exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
+    have hcesaro :
+        Tendsto (fun n : ℕ =>
+          (∑ i ∈ Finset.range n, (((integerWalk p) ^ (i + 1)) x).real {x}) / n) atTop (𝓝 0) := by
+      simpa only [div_eq_inv_mul, Function.comp_apply] using
+        ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
+    exact hpos.ne' (tendsto_nhds_unique
+      ((integerWalk p).tendsto_cesaro_pow_real_singleton_self x) hcesaro)
   · exact ((integerWalk_isTransient_iff p x).mpr hp).meanReturnTime_eq_top
 
 end TauCeti.Probability
@@ -108,11 +106,12 @@ theorem lintegral_integerWalk_hittingAfter_eq_top
   have hm := (measurable_of_countable (fun t : WithTop ℕ => ENat.toENNReal t)).comp hτ
   -- Entrance times depend only on the coordinate path; evaluation after composition
   -- therefore identifies the integrand with the canonical path functional.
-  convert (hX.lintegral_comp hm.aemeasurable).trans
+  have hhit (ω : Ω) : hittingAfter (fun n ω => X ω n) {x} 1 ω =
+      hittingAfter (fun n (w : ℕ → ℤ) => w n) {x} 1 (X ω) :=
+    congrFun (hittingAfter_comp_right (fun n (w : ℕ → ℤ) => w n) X {x} 1) ω
+  simp_rw [hhit]
+  simpa only [Function.comp_apply] using (hX.lintegral_comp hm.aemeasurable).trans
     (by simpa only [Kernel.meanReturnTime_def, Function.comp_def] using
-      integerWalk_meanReturnTime_eq_top p x) using 1
-  apply lintegral_congr
-  intro ω
-  simp only [Function.comp_apply, hittingAfter_def]
+      integerWalk_meanReturnTime_eq_top p x)
 
 end ProbabilityTheory.HasLaw

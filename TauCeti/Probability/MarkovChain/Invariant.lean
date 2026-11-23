@@ -257,14 +257,11 @@ even without measurable singletons. -/
 theorem meanReturnTime_le_cycleOccupation_univ (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
     κ.meanReturnTime x ≤ κ.cycleOccupation x Set.univ := by
   refine (meanReturnTime_def.trans_le (lintegral_enat_le_tsum _ _)).trans_eq ?_
-  rw [cycleOccupation_def, Measure.sum_apply _ MeasurableSet.univ]
-  refine tsum_congr fun n => ?_
-  rw [Measure.map_apply (measurable_pi_apply n) MeasurableSet.univ, Set.preimage_univ,
-    Measure.restrict_apply_univ]
-  refine congrArg (markovChainLaw (Measure.dirac x) κ) (Set.ext fun w => ?_)
+  rw [κ.cycleOccupation_apply x MeasurableSet.univ]
+  refine tsum_congr fun n => congrArg (markovChainLaw (Measure.dirac x) κ) (Set.ext fun w => ?_)
   -- `ℕ∞` is `WithTop ℕ`, so the `ℕ∞` cast comparison in `lintegral_enat_le_tsum` agrees with
   -- the `WithTop ℕ` cast comparison from `hittingAfter`.
-  simp only [Set.mem_ofPred_eq]
+  simp only [Set.mem_ofPred_eq, Set.mem_univ, true_and]
   cases hittingAfter (fun k w => w k) {x} 1 w <;> norm_cast
 
 /-- At any state that is not positive recurrent, the cycle occupation measure has infinite total

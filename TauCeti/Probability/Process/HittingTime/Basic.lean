@@ -26,12 +26,10 @@ the sample-space map (`MeasureTheory.hittingAfter_comp_right`), and applying an 
 * `Set.MapsTo.hittingAfter_comp_le`: monotonicity under `Set.MapsTo`.
 * `MeasureTheory.hittingAfter_comp_right`: precomposing the sample space precomposes
   `hittingAfter`.
-* `Function.Injective.hittingAfter_singleton` and
-  `MeasureTheory.hittingAfter_subtype_coe_singleton`: singleton hitting times under injective state
-  maps and subtype inclusion.
-* `MeasureTheory.hittingAfter_eval_comp` and
-  `MeasureTheory.hittingAfter_eval_subtype_coe_singleton`: specialization to the coordinate process
-  on trajectories.
+* `Function.Injective.hittingAfter_singleton`: singleton hitting times under injective state
+  maps.
+* `MeasureTheory.hittingAfter_eval_subtype_coe_singleton`: specialization to the coordinate
+  process on included subtype trajectories.
 -/
 
 public section
@@ -62,20 +60,6 @@ theorem _root_.Function.Injective.hittingAfter_singleton {f : α → β} (hf : F
     hittingAfter (fun i ω => f (u i ω)) {f x} n = hittingAfter u {x} n := by
   rw [hittingAfter_comp, ← Set.image_singleton, hf.preimage_image]
 
-/-- Including a subtype-valued process into the ambient type preserves singleton hitting times. -/
-theorem hittingAfter_subtype_coe_singleton {s : Set α} (u : ι → Ω → s) (x : s) (n : ι) :
-    hittingAfter (fun i ω => (u i ω).val) {x.val} n = hittingAfter u {x} n :=
-  Subtype.coe_injective.hittingAfter_singleton u x n
-
-/-- Evaluating coordinate-process `hittingAfter` on a postcomposed trajectory `i ↦ f (ω i)` pulls
-back the target set along `f`. -/
-theorem hittingAfter_eval_comp (f : α → β) (t : Set β) (n : ι) (ω : ι → α) :
-    hittingAfter (fun i w => w i) t n (fun i => f (ω i)) =
-      hittingAfter (fun i w => w i) (f ⁻¹' t) n ω :=
-  (congrFun (hittingAfter_comp_right (fun i (w : ι → β) => w i)
-    (fun (w : ι → α) i => f (w i)) t n) ω).symm.trans
-    (congrFun (hittingAfter_comp (fun i (w : ι → α) => w i) f t n) ω)
-
 /-- Evaluating coordinate-process `hittingAfter` on an included subtype trajectory preserves
 singleton hitting times. -/
 theorem hittingAfter_eval_subtype_coe_singleton {s : Set α} (x : s) (n : ι) (ω : ι → s) :
@@ -83,7 +67,8 @@ theorem hittingAfter_eval_subtype_coe_singleton {s : Set α} (x : s) (n : ι) (�
       hittingAfter (fun i w => w i) {x} n ω :=
   (congrFun (hittingAfter_comp_right (fun i (w : ι → α) => w i)
     (fun (w : ι → s) i => (w i).val) {x.val} n) ω).symm.trans
-    (congrFun (hittingAfter_subtype_coe_singleton (fun i (w : ι → s) => w i) x n) ω)
+    (congrFun (Subtype.coe_injective.hittingAfter_singleton
+      (fun i (w : ι → s) => w i) x n) ω)
 
 end Composition
 
