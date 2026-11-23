@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Asymp
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Rescale
 import TauCeti.Geometry.Manifold.Riemannian.Distance
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
 
 /-!
 # Finite-ended asymptotically Euclidean manifolds
@@ -21,7 +20,7 @@ truncation, scaling, and infinite-volume results.
 Note that `IsFiniteEndedAsymptoticallyEuclidean.isCompact_compl_iUnion` controls only the complement
 of the initial cover at radii `R`; cutting the ends at larger radii `R' ≥ R` need not leave a
 compact complement on an incomplete manifold, so compact truncation is proved separately under a
-compact-collar, properness, or Riemannian completeness hypothesis.
+compact-collar or Riemannian completeness hypothesis.
 
 ## Main results
 
@@ -34,10 +33,9 @@ compact-collar, properness, or Riemannian completeness hypothesis.
   images is open on any `C¹` manifold.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.isCompact_compl_iUnion_of_compact_collar`,
   `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.mono_radius_of_compact_collar`,
-  `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.mono_radius_of_properSpace`,
   `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.mono_radius_of_completeSpace`: cutting the ends at
-  larger radii preserves compactness of the complement under a compact-collar, properness, or
-  completeness hypothesis.
+  larger radii preserves compactness of the complement under a compact-collar or completeness
+  hypothesis.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.rescale`: constant metric rescaling `g ↦ c • g`
   preserves finite-ended asymptotically Euclidean structures.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.riemannianVolume_univ_eq_top`: every finite-ended
@@ -173,9 +171,8 @@ private theorem norm_mfderiv_le_of_compl_closedBall {R R₁ : ℝ} {φ : Euclide
     refine Real.le_sqrt_of_sq_le ?_
     rw [NormedSpace.fromTangentSpace_symm_apply, ← real_inner_self_eq_norm_sq,
       ← pullbackMetricCoeff_apply]
-    have hz0 := hC 0 (Nat.zero_le 2) i i z (by simpa using hz_gt)
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, Matrix.sub_apply, Matrix.one_apply_eq,
-      Nat.cast_zero, sub_zero] at hz0
+    have hz0 := abs_pullbackMetricCoeff_sub_one_le hC (by simpa using hz_gt) (i := i) (j := i)
+    rw [Matrix.sub_apply, Matrix.one_apply_eq] at hz0
     have hrpow : ‖z‖ ^ (-t) ≤ max (R ^ (-t)) (R₁ ^ (-t)) := by
       rcases le_total 0 (-t) with ht0 | ht0
       · exact (Real.rpow_le_rpow (norm_nonneg z) hz_le ht0).trans (le_max_right _ _)
@@ -256,56 +253,40 @@ private theorem edist_image_radial_le {M : Type*} [PseudoEMetricSpace M] [Charte
   rw [← NormedSpace.fromTangentSpace_symm_apply z (y - x), ← hnorm_yx]
   exact norm_mfderiv_le_of_compl_closedBall h hC (hseg z hz).1 (hseg z hz).2 (y - x)
 
-/-- On a Riemannian manifold, the image of the collar `(closedBall 0 R)ᶜ ∩ closedBall 0 R'` under
-an asymptotically Euclidean end is bounded, since each point is joined radially to the compact
-sphere of radius `max R R' + 1` along a segment of uniformly bounded differential. -/
-private theorem isBounded_image_compl_inter_closedBall {M : Type*} [PseudoMetricSpace M]
-    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsRiemannianManifold I M] {R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
-    (h : IsAsymptoticallyEuclideanEnd I t R φ) (R' : ℝ) :
-    Bornology.IsBounded
-      (φ '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ ∩ closedBall 0 R')) := by
-  set R₁ : ℝ := max R R' + 1
-  have hR₁_gt : R < R₁ := lt_of_le_of_lt (le_max_left R R') (lt_add_one _)
-  have hR₁_pos : 0 < R₁ := h.radius_pos.trans hR₁_gt
-  have hsph_sub : sphere (0 : EuclideanSpace ℝ (Fin n)) R₁ ⊆ (closedBall 0 R)ᶜ := fun y hy ↦ by
-    simpa [mem_sphere_zero_iff_norm.1 hy] using hR₁_gt
-  have hsph_bdd : Bornology.IsBounded (φ '' sphere (0 : EuclideanSpace ℝ (Fin n)) R₁) :=
-    ((isCompact_sphere (0 : EuclideanSpace ℝ (Fin n)) R₁).image_of_continuousOn
-      (h.contMDiffOn.continuousOn.mono hsph_sub)).isBounded
-  rcases (φ '' sphere (0 : EuclideanSpace ℝ (Fin n)) R₁).eq_empty_or_nonempty with hs | ⟨p₀, -⟩
-  · have hempty :
-        φ '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ ∩ closedBall 0 R') = ∅ := by
-      refine eq_empty_of_subset_empty ?_
-      rintro _ ⟨x, hx, rfl⟩
-      have hx0 : x ≠ 0 := norm_ne_zero_iff.1 (h.radius_pos.trans (by simpa using hx.1)).ne'
-      have hy : (R₁ / ‖x‖) • x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) R₁ := by
-        simp [norm_smul, abs_of_pos hR₁_pos, div_mul_cancel₀ _ (norm_ne_zero_iff.2 hx0)]
-      exact (Set.eq_empty_iff_forall_notMem.1 hs) _ ⟨(R₁ / ‖x‖) • x, hy, rfl⟩
-    rw [hempty]
-    exact Bornology.isBounded_empty
-  · obtain ⟨r₀, hr₀⟩ := (Metric.isBounded_iff_subset_closedBall p₀).1 hsph_bdd
-    obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-    let M₀ : ℝ := (n : ℝ) * Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))
-    let D : ℝ := R₁ * M₀
-    refine (Metric.isBounded_iff_subset_closedBall p₀).2 ⟨D + r₀, ?_⟩
-    rintro _ ⟨x, ⟨hxR, hxR'⟩, rfl⟩
-    have hxR_lt : R < ‖x‖ := by simpa using hxR
-    have hx_pos : 0 < ‖x‖ := h.radius_pos.trans hxR_lt
-    have hx_lt_R₁ : ‖x‖ < R₁ :=
-      (by simpa using hxR' : ‖x‖ ≤ R').trans_lt (lt_of_le_of_lt (le_max_right R R') (lt_add_one _))
-    have hy_sph : (R₁ / ‖x‖) • x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) R₁ := by
-      simp [norm_smul, abs_of_pos hR₁_pos, div_mul_cancel₀ _ hx_pos.ne']
-    have hM₀ : 0 ≤ M₀ := mul_nonneg (Nat.cast_nonneg n) (Real.sqrt_nonneg _)
-    have hed : edist (φ x) (φ ((R₁ / ‖x‖) • x)) ≤ ENNReal.ofReal D := by
-      refine (edist_image_radial_le le_rfl h hC hxR_lt hx_lt_R₁).trans (ENNReal.ofReal_le_ofReal ?_)
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_right (sub_le_self R₁ (norm_nonneg x)) hM₀
-    have hdist_xy : dist (φ x) (φ ((R₁ / ‖x‖) • x)) ≤ D := by
-      rw [dist_edist]
-      exact ENNReal.toReal_le_of_le_ofReal (mul_nonneg hR₁_pos.le hM₀) hed
-    exact mem_closedBall.2 ((dist_triangle _ _ _).trans
-      (add_le_add hdist_xy (mem_closedBall.1 (hr₀ ⟨_, hy_sph, rfl⟩))))
+/-- Helper: given `ε > 0` in `ℝ≥0∞` and `0 ≤ M₁`, find `0 < η ≤ 1` with
+`ofReal (η * M₁) < ε / 2`. -/
+private theorem exists_pos_le_one_ofReal_mul_lt_half {ε : ℝ≥0∞} (hε : 0 < ε) {M₁ : ℝ}
+    (hM₁ : 0 ≤ M₁) :
+    ∃ η : ℝ, 0 < η ∧ η ≤ 1 ∧ ENNReal.ofReal (η * M₁) < ε / 2 := by
+  obtain ⟨r, hr0, hr_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 (ENNReal.half_pos hε.ne')
+  have hr0' : (0 : ℝ) < r := NNReal.coe_pos.2 (ENNReal.coe_pos.1 hr0)
+  refine ⟨min 1 ((r : ℝ) / (M₁ + 1)), lt_min zero_lt_one (div_pos hr0' (by linarith)),
+    min_le_left _ _, ?_⟩
+  have hmul : min 1 ((r : ℝ) / (M₁ + 1)) * M₁ ≤ r := by
+    calc min 1 ((r : ℝ) / (M₁ + 1)) * M₁ ≤ ((r : ℝ) / (M₁ + 1)) * M₁ :=
+          mul_le_mul_of_nonneg_right (min_le_right _ _) hM₁
+      _ = (r : ℝ) * (M₁ / (M₁ + 1)) := by ring
+      _ ≤ (r : ℝ) * 1 :=
+          mul_le_mul_of_nonneg_left ((div_le_one (by linarith)).2 (by linarith)) hr0'.le
+      _ = r := mul_one _
+  exact (ENNReal.ofReal_le_ofReal hmul).trans_lt (by simpa using hr_lt)
+
+/-- Helper: the truncated inner collar `((ball 0 (R + η))ᶜ ∩ closedBall 0 R') ∪ sphere 0 (R + η)`
+is compact and lies inside `(closedBall 0 R)ᶜ` when `0 < η`. -/
+private theorem isCompact_truncCollar {R R' η : ℝ} (hη : 0 < η) :
+    IsCompact (((ball (0 : EuclideanSpace ℝ (Fin n)) (R + η))ᶜ ∩ closedBall 0 R') ∪
+        sphere 0 (R + η)) ∧
+      ((ball (0 : EuclideanSpace ℝ (Fin n)) (R + η))ᶜ ∩ closedBall 0 R') ∪ sphere 0 (R + η) ⊆
+        (closedBall 0 R)ᶜ := by
+  refine ⟨((isCompact_closedBall 0 R').of_isClosed_subset
+      (isOpen_ball.isClosed_compl.inter isClosed_closedBall) inter_subset_right).union
+      (isCompact_sphere 0 (R + η)), ?_⟩
+  rintro z (⟨hz, -⟩ | hz)
+  · simp only [mem_compl_iff, mem_ball_zero_iff, not_lt, mem_closedBall_zero_iff] at hz ⊢
+    linarith
+  · simp only [mem_sphere_zero_iff_norm] at hz
+    simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le, hz]
+    linarith
 
 /-- On an extended-metric Riemannian manifold, the image of the collar
 `(closedBall 0 R)ᶜ ∩ closedBall 0 R'` under an asymptotically Euclidean end is totally bounded,
@@ -318,42 +299,23 @@ private theorem totallyBounded_image_compl_inter_closedBall {M : Type*} [PseudoE
     TotallyBounded (φ '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ ∩ closedBall 0 R')) := by
   rw [EMetric.totallyBounded_iff]
   intro ε hε
-  obtain ⟨r, hr0, hr_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 (ENNReal.half_pos hε.ne')
-  have hr0' : (0 : ℝ) < r := NNReal.coe_pos.2 (ENNReal.coe_pos.1 hr0)
+  -- Step 1: Choose a radial collar thickness `0 < η ≤ 1` so radial travel across `η` is `< ε / 2`.
   obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
   set R₁ : ℝ := R + 1
   let M₁ : ℝ := (n : ℝ) * Real.sqrt (1 + max C 0 * max (R ^ (-t)) (R₁ ^ (-t)))
   have hM₁ : 0 ≤ M₁ := mul_nonneg (Nat.cast_nonneg n) (Real.sqrt_nonneg _)
-  set η : ℝ := min 1 ((r : ℝ) / (M₁ + 1))
-  have hη_pos : 0 < η := lt_min zero_lt_one (div_pos hr0' (by linarith))
-  have hη_le1 : η ≤ 1 := min_le_left _ _
-  have hη_mul : ENNReal.ofReal (η * M₁) < ε / 2 := by
-    have hmul : η * M₁ ≤ r := by
-      calc η * M₁ ≤ ((r : ℝ) / (M₁ + 1)) * M₁ :=
-            mul_le_mul_of_nonneg_right (min_le_right _ _) hM₁
-        _ = (r : ℝ) * (M₁ / (M₁ + 1)) := by ring
-        _ ≤ (r : ℝ) * 1 :=
-            mul_le_mul_of_nonneg_left ((div_le_one (by linarith)).2 (by linarith)) hr0'.le
-        _ = r := mul_one _
-    exact (ENNReal.ofReal_le_ofReal hmul).trans_lt (by simpa using hr_lt)
+  obtain ⟨η, hη_pos, hη_le1, hη_mul⟩ := exists_pos_le_one_ofReal_mul_lt_half hε hM₁
+  -- Step 2: Cover the compact truncated collar `A` by finitely many `(ε / 2)`-balls.
   let A : Set (EuclideanSpace ℝ (Fin n)) :=
     ((ball (0 : EuclideanSpace ℝ (Fin n)) (R + η))ᶜ ∩ closedBall 0 R') ∪ sphere 0 (R + η)
-  have hA_comp : IsCompact A :=
-    ((isCompact_closedBall 0 R').of_isClosed_subset
-      (isOpen_ball.isClosed_compl.inter isClosed_closedBall) inter_subset_right).union
-      (isCompact_sphere 0 (R + η))
-  have hA_sub : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
-    rintro z (⟨hz, -⟩ | hz)
-    · simp only [mem_compl_iff, mem_ball_zero_iff, not_lt, mem_closedBall_zero_iff] at hz ⊢
-      linarith
-    · simp only [mem_sphere_zero_iff_norm] at hz
-      simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le, hz]
-      linarith
+  obtain ⟨hA_comp, hA_sub⟩ := isCompact_truncCollar (n := n) (R := R) (R' := R') hη_pos
   have hφA_tb : TotallyBounded (φ '' A) :=
     (hA_comp.image_of_continuousOn (h.contMDiffOn.continuousOn.mono hA_sub)).totallyBounded
   obtain ⟨t₀, ht₀_fin, ht₀_cov⟩ :=
     EMetric.totallyBounded_iff.1 hφA_tb (ε / 2) (ENNReal.half_pos hε.ne')
   refine ⟨t₀, ht₀_fin, ?_⟩
+  -- Step 3: Points with `R + η ≤ ‖x‖` lie directly in `A`; points with `R < ‖x‖ < R + η`
+  -- lie within `ε / 2` of their radial projection onto `sphere 0 (R + η) ⊆ A`.
   rintro _ ⟨x, ⟨hxR, hxR'⟩, rfl⟩
   have hxR_lt : R < ‖x‖ := by simpa using hxR
   rcases le_or_gt (R + η) ‖x‖ with hx_ge | hx_lt
@@ -377,19 +339,6 @@ private theorem totallyBounded_image_compl_inter_closedBall {M : Type*} [PseudoE
     rw [Metric.mem_eball] at hyp ⊢
     exact (edist_triangle _ (φ y) _).trans_lt
       ((ENNReal.add_lt_add hed hyp).trans_eq (ENNReal.add_halves ε))
-
-/-- Cutting the ends of a finite-ended asymptotically Euclidean structure on a proper `C¹`
-Riemannian manifold at larger radii `R' ≥ R` preserves the finite-ended structure. -/
-theorem mono_radius_of_properSpace {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-    [ProperSpace M] [IsManifold I 1 M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
-    (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) {R' : ι → ℝ} (hR : ∀ a, R a ≤ R' a) :
-    IsFiniteEndedAsymptoticallyEuclidean I t R' φ :=
-  h.mono_radius_of_compact_collar hR fun a ↦
-    ⟨closure (φ a '' ((closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ ∩ closedBall 0 (R' a))),
-      (isBounded_image_compl_inter_closedBall (h.isAsymptoticallyEuclideanEnd a)
-        (R' a)).isCompact_closure,
-      subset_closure⟩
 
 /-- Cutting the ends of a finite-ended asymptotically Euclidean structure on a complete `C¹`
 Riemannian manifold (with extended Riemannian distance) at larger radii `R' ≥ R` preserves the
@@ -424,18 +373,10 @@ theorem rescale (m : ℕ∞ω) [IsManifold I 1 M]
       (fun y ↦ WithMetric.toWithMetric g_c (φ a (s⁻¹ • y))) ''
           (closedBall (0 : EuclideanSpace ℝ (Fin n)) (s * R a))ᶜ =
         WithMetric.toWithMetric g_c '' (φ a '' (closedBall 0 (R a))ᶜ) := by
-    have hsmul : (s⁻¹ • ·) '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (s * R a))ᶜ =
-        (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ := by
-      ext z
-      simp only [mem_image, mem_compl_iff, mem_closedBall_zero_iff, not_le]
-      refine ⟨?_, fun hz ↦ ⟨s • z, ?_, by simp [smul_smul, hs.ne']⟩⟩
-      · rintro ⟨w, hw, rfl⟩
-        rwa [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le), lt_inv_mul_iff₀ hs]
-      · rwa [norm_smul, Real.norm_of_nonneg hs.le, mul_lt_mul_iff_right₀ hs]
     rw [show ((fun y ↦ WithMetric.toWithMetric g_c (φ a (s⁻¹ • y))) :
         EuclideanSpace ℝ (Fin n) → WithMetric g_c) =
         WithMetric.toWithMetric g_c ∘ φ a ∘ (s⁻¹ • ·) from rfl,
-      image_comp, image_comp, hsmul]
+      image_comp, image_comp, IsAsymptoticallyEuclideanEnd.image_inv_smul_compl_closedBall hs]
   refine
     { finite := h.finite
       nonempty := h.nonempty

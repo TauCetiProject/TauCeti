@@ -51,9 +51,10 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 
 * `TauCeti.IsAsymptoticallyEuclideanEnd.finiteDimensional`: the model space of an end is
   finite-dimensional.
-* `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
-  `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
-  image of an end is open and path-connected.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image`: the image of an end is open on any `C¹`
+  manifold.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
+  image of an end is path-connected.
 * `TauCeti.isAsymptoticallyEuclideanEnd_comp_iff` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_comp_iff`: both notions are invariant under
   Riemannian isometries.

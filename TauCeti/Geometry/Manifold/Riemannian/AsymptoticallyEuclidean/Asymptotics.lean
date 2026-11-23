@@ -23,8 +23,7 @@ converges to the identity matrix. Outside a sufficiently large ball `‖x‖ > R
 determinant is uniformly bounded below by `1 / 4`, the metric entries `g_ij(x)` and inverse metric
 entries `g⁻¹_ij(x)` satisfy `|g_ij(x) - δ_ij| ≤ C₁ ‖x‖ ^ (-t)` and
 `|g⁻¹_ij(x) - δ_ij| ≤ C₁ ‖x‖ ^ (-t)`, and all derivatives of order `k ≤ 2` of `g_ij - δ_ij` obey the
-`O(‖x‖ ^ (-t - k))` bounds with a single constant `C₁` (higher-order asymptotics of the inverse
-metric, volume density, sphere area density, and unit normals are left to follow-up modules).
+`O(‖x‖ ^ (-t - k))` bounds with a single constant `C₁`.
 
 As a geometric consequence, every asymptotically Euclidean end of positive order has infinite
 Riemannian volume (`riemannianVolume_image_eq_top`), and hence no compact `C¹` manifold with a
@@ -81,6 +80,17 @@ theorem riemannianJacobian_eq_sqrt_det_pullbackMetricCoeff
   ext i j
   rw [Matrix.gram_apply, OrthonormalBasis.coe_toBasis, pullbackMetricCoeff_apply]
 
+/-- Order-0 specialization of an asymptotic derivative bound: `|(g(x) - 1) i j| ≤ C ‖x‖ ^ (-t)`
+outside `closedBall 0 R`. -/
+theorem abs_pullbackMetricCoeff_sub_one_le {t R C : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
+    (hC : ∀ k ≤ 2, ∀ (i j : Fin n), ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ,
+      ‖iteratedFDeriv ℝ k (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x‖ ≤ C * ‖x‖ ^ (-t - k))
+    {i j : Fin n} {x : EuclideanSpace ℝ (Fin n)}
+    (hx : x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) :
+    |(pullbackMetricCoeff I φ x - 1) i j| ≤ C * ‖x‖ ^ (-t) := by
+  simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs, Nat.cast_zero, sub_zero] using
+    hC 0 (Nat.zero_le 2) i j x hx
+
 namespace IsAsymptoticallyEuclideanEnd
 
 variable {t R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
@@ -104,8 +114,8 @@ theorem tendsto_pullbackMetricCoeff_one (h : IsAsymptoticallyEuclideanEnd I t R 
     intro ε hε
     filter_upwards [hzero ε hε,
       tendsto_norm_cobounded_atTop.eventually (Ioi_mem_atTop R)] with x hx hrx
-    have h1 := hC 0 (Nat.zero_le 2) i j x (by simpa using hrx)
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, Matrix.sub_apply, Nat.cast_zero, sub_zero] at h1
+    have h1 := abs_pullbackMetricCoeff_sub_one_le hC (by simpa using hrx) (i := i) (j := j)
+    rw [Matrix.sub_apply] at h1
     rw [Real.dist_eq, sub_zero, abs_of_nonneg ((abs_nonneg _).trans h1)] at hx
     exact (Real.dist_eq _ _).trans_lt (h1.trans_lt hx)
   exact tendsto_pi_nhds.2 fun i ↦ tendsto_pi_nhds.2 fun j ↦ hentry i j
@@ -217,10 +227,9 @@ theorem exists_asymptotic_bounds (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht
   have hC1 : max C 0 ≤ C₁ := le_max_left _ _
   have h2nC : (n : ℝ) * 2 * max C 0 ≤ C₁ := le_max_right _ _
   have hcoeff0 (k l : Fin n) :
-      |(pullbackMetricCoeff I φ x - 1) k l| ≤ max C 0 * ‖x‖ ^ (-t) := by
-    have hk := hC 0 (Nat.zero_le 2) k l x hrx
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, Nat.cast_zero, sub_zero] at hk
-    exact hk.trans (mul_le_mul_of_nonneg_right hC0 (Real.rpow_nonneg (norm_nonneg x) _))
+      |(pullbackMetricCoeff I φ x - 1) k l| ≤ max C 0 * ‖x‖ ^ (-t) :=
+    (abs_pullbackMetricCoeff_sub_one_le hC hrx).trans
+      (mul_le_mul_of_nonneg_right hC0 (Real.rpow_nonneg (norm_nonneg x) _))
   have hinv_diff : |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤ C₁ * ‖x‖ ^ (-t) :=
     (abs_inv_pullbackMetricCoeff_sub_le φ hdet_ne (by norm_num) hinv_le hcoeff0 i j).trans <| by
       rw [← mul_assoc]; exact mul_le_mul_of_nonneg_right h2nC (Real.rpow_nonneg (norm_nonneg x) _)
