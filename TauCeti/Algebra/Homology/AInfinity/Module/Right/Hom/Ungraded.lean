@@ -375,15 +375,21 @@ private theorem relationLHS_add
     LinearMap.add_apply, map_add, sum_add_distrib]
   abel
 
+/-- The relation of length `n` of a morphism, through `relationLHS`, which is by definition the
+left-hand side of its field `TauCeti.UngradedAInfinityRightModuleHom.stasheff`. -/
+private theorem relationLHS_eq_zero (f : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ)
+    (a : Fin n → A) (m : M) : relationLHS Mm Mm' f.map n a m = 0 :=
+  f.stasheff n a m
+
 /-- The **sum** of two morphisms, componentwise: `(f + g)_{n+1} = f_{n+1} + g_{n+1}`. Every term
 of the relations is additive in the components, so the relations of `f + g` are the sums of
 those of `f` and `g`. -/
 @[no_expose] instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
   add f g :=
     { map := fun n => f.map n + g.map n
+      -- The field `stasheff` of `f + g` is by definition `relationLHS` of its components.
       stasheff := fun n a m => (relationLHS_add f.map g.map n a m).trans <| by
-        rw [show relationLHS Mm Mm' f.map n a m = 0 from f.stasheff n a m,
-          show relationLHS Mm Mm' g.map n a m = 0 from g.stasheff n a m, add_zero] }
+        rw [relationLHS_eq_zero f, relationLHS_eq_zero g, add_zero] }
 
 @[simp]
 theorem add_map (f g : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) :
@@ -443,14 +449,20 @@ def symm (H : Homotopy f g) : Homotopy g f where
 theorem symm_map (H : Homotopy f g) : H.symm.map = H.map :=
   (rfl)
 
+/-- The homotopy relation of length `n`, through `relationLHS`, which is by definition the
+left-hand side of the field `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.stasheff`. -/
+private theorem relationLHS_eq (H : Homotopy f g) (n : ℕ) (a : Fin n → A) (m : M) :
+    relationLHS Mm Mm' H.map n a m = f.map n a m + g.map n a m :=
+  H.stasheff n a m
+
 /-- The sum of homotopies between `f` and `g` and between `g` and `k` is a homotopy between `f`
 and `k`, over a ring of characteristic two: its defect is `(f + g) + (g + k) = f + k`. -/
 def trans [CharP R 2] (H : Homotopy f g) (H' : Homotopy g k) : Homotopy f k where
   map n := H.map n + H'.map n
+  -- The field `stasheff` of the sum is by definition `relationLHS` of its components.
   stasheff n a m := (relationLHS_add H.map H'.map n a m).trans <| by
-    rw [show relationLHS Mm Mm' H.map n a m = _ from H.stasheff n a m,
-      show relationLHS Mm Mm' H'.map n a m = _ from H'.stasheff n a m, add_assoc,
-      ← add_assoc (g.map n a m), add_self_eq_zero_of_charTwo R, zero_add]
+    rw [H.relationLHS_eq, H'.relationLHS_eq, add_assoc, ← add_assoc (g.map n a m),
+      add_self_eq_zero_of_charTwo R, zero_add]
 
 @[simp]
 theorem trans_map [CharP R 2] (H : Homotopy f g) (H' : Homotopy g k) (n : ℕ) :
