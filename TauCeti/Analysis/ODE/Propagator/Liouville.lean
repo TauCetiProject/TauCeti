@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -67,20 +68,16 @@ open scoped Matrix.Norms.Operator in
 theorem hasFDerivAt_linearMapDet_one :
     HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) (traceCLM 𝕜 E) 1 := by
   let b := Module.finBasis 𝕜 E
-  let L : (E →L[𝕜] E) →L[𝕜] Matrix (Fin (Module.finrank 𝕜 E)) (Fin (Module.finrank 𝕜 E)) 𝕜 :=
-    LinearMap.toContinuousLinearMap
-      ((LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜))
-  have hL : ∀ f : E →L[𝕜] E, L f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) := fun _ ↦ rfl
+  let L := ContinuousLinearMap.toMatrixCLM b
   have hdet : HasFDerivAt (Matrix.det : Matrix (Fin (Module.finrank 𝕜 E))
       (Fin (Module.finrank 𝕜 E)) 𝕜 → 𝕜)
       ⟨Matrix.traceLinearMap (Fin (Module.finrank 𝕜 E)) 𝕜 𝕜, continuous_id.matrix_trace⟩ (L 1) := by
-    rw [hL, ContinuousLinearMap.toLinearMap_one, Module.End.one_eq_id, LinearMap.toMatrix_id]
+    rw [ContinuousLinearMap.toMatrixCLM_apply, ContinuousLinearMap.toLinearMap_one,
+      Module.End.one_eq_id, LinearMap.toMatrix_id]
     exact Matrix.hasFDerivAt_det_one
-  have hLd : HasFDerivAt (L : (E →L[𝕜] E) → _) L 1 := L.hasFDerivAt
-  have h := hdet.comp _ hLd
-  convert h using 1
+  convert hdet.comp _ L.hasFDerivAt using 1
   · funext f
-    simp only [Function.comp_apply, hL, LinearMap.det_toMatrix]
+    simp [L]
   · ext H
     simp only [traceCLM_apply, LinearMap.trace_eq_matrix_trace 𝕜 b]
     rfl
@@ -119,15 +116,6 @@ end Jacobi
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] {P : ℝ → E →L[𝕜] E} {a b s t : ℝ}
 
-omit [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] in
-/-- Over an infinite-dimensional space the trace is `0` (and the determinant is `1`), so both
-sides of Liouville's formula are `1`. -/
-private theorem trace_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional 𝕜 E) :
-    LinearMap.trace 𝕜 E = 0 := by
-  have H : ¬∃ s : Finset E, Nonempty (Module.Basis s 𝕜 E) := fun ⟨_, ⟨b⟩⟩ ↦
-    hE (Module.Finite.of_basis b)
-  simp [LinearMap.trace, H]
-
 /-- **The derivative of the determinant of the propagator.** `t ↦ det N_P(t, s)` has derivative
 `trace P(t) * det N_P(t, s)` at almost every `t ∈ (a, b)`. -/
 theorem ae_hasDerivAt_det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
@@ -137,7 +125,7 @@ theorem ae_hasDerivAt_det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈
   swap
   · refine Filter.Eventually.of_forall fun t _ ↦ ?_
     simpa [LinearMap.det_eq_one_of_not_module_finite hE,
-      trace_eq_zero_of_not_finiteDimensional hE] using hasDerivAt_const t (1 : 𝕜)
+      LinearMap.trace_eq_zero_of_not_finite hE] using hasDerivAt_const t (1 : 𝕜)
   have := FiniteDimensional.completeSpace 𝕜 E
   filter_upwards [ae_hasDerivAt_propagator_left hP hs] with t hd ht
   have ht' : t ∈ Icc a b := Ioo_subset_Icc_self ht
@@ -159,7 +147,7 @@ theorem det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) (ht 
       NormedSpace.exp (∫ u in s..t, LinearMap.trace 𝕜 E (P u)) := by
   by_cases hE : FiniteDimensional 𝕜 E
   swap
-  · simp [LinearMap.det_eq_one_of_not_module_finite hE, trace_eq_zero_of_not_finiteDimensional hE]
+  · simp [LinearMap.det_eq_one_of_not_module_finite hE, LinearMap.trace_eq_zero_of_not_finite hE]
   have := FiniteDimensional.completeSpace 𝕜 E
   have hab : a ≤ b := hs.1.trans hs.2
   have hs' : s ∈ uIcc a b := by rwa [uIcc_of_le hab]

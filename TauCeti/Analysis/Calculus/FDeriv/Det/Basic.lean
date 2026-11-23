@@ -40,6 +40,8 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 ## Main results
 
 * `Matrix.contDiff_det`: the matrix determinant is smooth without scalar completeness.
+* `ContinuousLinearMap.toMatrixCLM`: the matrix of a continuous endomorphism in a basis, as a
+  continuous linear map, with `ContinuousLinearMap.det_toMatrixCLM`.
 * `ContinuousLinearMap.contDiff_det`: the determinant of a continuous linear endomorphism
   of a normed space is smooth over a complete field (it is the constant `1` in infinite
   dimension).
@@ -231,6 +233,24 @@ namespace ContinuousLinearMap
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace 𝕜]
 
+/-- The matrix in a basis `b` of a continuous endomorphism of a finite-dimensional space, as a
+continuous linear map. -/
+@[expose] noncomputable def toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜 :=
+  LinearMap.toContinuousLinearMap
+    ((LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜))
+
+/-- `toMatrixCLM b` evaluates to `LinearMap.toMatrix b b`. -/
+@[simp]
+theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : toMatrixCLM b f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) :=
+  rfl
+
+/-- The determinant of the matrix of `f` in any basis is the determinant of `f`. -/
+theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
+  LinearMap.det_toMatrix b _
+
 omit [FiniteDimensional 𝕜 E] in
 /-- The determinant of an endomorphism of a normed space is smooth. Over an infinite-dimensional
 space it is the constant `1` by convention. -/
@@ -240,19 +260,8 @@ theorem contDiff_det {r : ℕ∞ω} :
   by_cases hE : FiniteDimensional 𝕜 E
   swap
   · simpa [LinearMap.det_eq_one_of_not_module_finite hE] using contDiff_const
-  let b := Module.finBasis 𝕜 E
-  let L : (E →L[𝕜] E) →L[𝕜] Matrix (Fin (Module.finrank 𝕜 E))
-      (Fin (Module.finrank 𝕜 E)) 𝕜 :=
-    { (LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜) with
-      cont := ((LinearMap.toMatrix b b).toLinearMap.comp
-        (ContinuousLinearMap.coeLM 𝕜)).continuous_of_finiteDimensional }
-  have h := (Matrix.contDiff_det (𝕜 := 𝕜) (n := Fin (Module.finrank 𝕜 E)) (r := r)).comp
-    L.contDiff
-  have hL (f : E →L[𝕜] E) : L f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) := (rfl)
-  have hfun : Matrix.det ∘ (L : (E →L[𝕜] E) → _) =
-      (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
-    funext f
-    exact (congrArg Matrix.det (hL f)).trans (LinearMap.det_toMatrix b _)
-  exact hfun ▸ h
+  have h := Matrix.contDiff_det (r := r).comp (toMatrixCLM (Module.finBasis 𝕜 E)).contDiff
+  convert h using 2 with f
+  exact (det_toMatrixCLM _ f).symm
 
 end ContinuousLinearMap
