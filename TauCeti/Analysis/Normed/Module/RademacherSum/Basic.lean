@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 public import Mathlib.Analysis.InnerProductSpace.Basic
+import TauCeti.Algebra.Ring.Int.Units
 
 /-!
 # Second moments of finite Rademacher sums
@@ -66,12 +67,6 @@ section Signs
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-omit [Fintype ι] [DecidableEq ι] in
-/-- A Rademacher sign squares to `1`. -/
-private theorem units_apply_mul_self (ε : ι → ℤˣ) (i : ι) :
-    ((ε i : ℤ) : ℝ) * (ε i : ℤ) = 1 := by
-  simp [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-
 /-- If `g` does not change when the `i`-th sign is flipped, then `εᵢ g(ε)` averages to zero over
 the sign cube. -/
 theorem expect_units_apply_mul_eq_zero (i : ι) {g : (ι → ℤˣ) → ℝ}
@@ -90,7 +85,7 @@ theorem expect_units_apply_mul_apply (i j : ι) :
     𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
   split_ifs with hij
   · subst hij
-    simp [units_apply_mul_self]
+    simp [← sq]
   · exact expect_units_apply_mul_eq_zero i fun ε ↦ by simp [Ne.symm hij]
 
 /-- Averaged over the sign cube, a product of four signs is `1` when its indices match in pairs
@@ -105,7 +100,7 @@ theorem expect_units_apply_mul_apply_mul_apply_mul_apply (i j k l : ι) :
       (ε i : ℤ) * (ε i : ℤ) * ((ε a : ℤ) * (ε b : ℤ))) :
       𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
         if a = b then 1 else 0 := by
-    simp_rw [h, units_apply_mul_self, one_mul, expect_units_apply_mul_apply]
+    simp_rw [h, ← sq, Int.cast_units_sq, one_mul, expect_units_apply_mul_apply]
   by_cases hij : i = j
   · subst hij
     rw [hcancel k l fun ε ↦ by ring]
