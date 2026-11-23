@@ -19,7 +19,6 @@ public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
-import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
@@ -298,6 +297,12 @@ lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
 lemma squarefree_f [W.IsElliptic] [W.IsCharNeTwoNF] : Squarefree W.f :=
   (separable_f W).squarefree
 
+/-- At a root `x` of `f`, the cofactor `fCofactor x` is coprime to `X - C x` when `W` is elliptic
+and in characteristic `≠ 2` normal form, because `f = fCofactor x * (X - C x)` is separable. -/
+lemma isCoprime_fCofactor_X_sub_C [W.IsElliptic] [W.IsCharNeTwoNF] {x : R}
+    (hx : W.f.eval x = 0) : IsCoprime (W.fCofactor x) (X - C x) :=
+  (W.f_eq_mul_of_eval_eq_zero hx ▸ separable_f W).isCoprime
+
 /-- The cubic quotient algebra `R[X]/(f)`. It is étale when `W` is elliptic and in
 characteristic `≠ 2` normal form, by `separable_f`. -/
 abbrev A : Type _ := AdjoinRoot W.f
@@ -313,8 +318,7 @@ noncomputable def equivProdA' [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f
     Ideal.quotEquivOfEq <| by
       rw [Ideal.span_singleton_mul_span_singleton, mul_comm, ← W.f_eq_mul_of_eval_eq_zero hx]
   have H : IsCoprime (Ideal.span {X - C x}) (Ideal.span {W.fCofactor x}) :=
-    (Ideal.isCoprime_span_singleton_iff _ _).mpr <|
-      (W.f_eq_mul_of_eval_eq_zero hx ▸ separable_f W).isCoprime.symm
+    (Ideal.isCoprime_span_singleton_iff _ _).mpr (W.isCoprime_fCofactor_X_sub_C hx).symm
   eA.trans <|
     (Ideal.quotientMulEquivQuotientProd (Ideal.span {X - C x}) (Ideal.span {W.fCofactor x})
       H).trans <|
@@ -341,13 +345,10 @@ corrected representative `x - T + fCofactor x` is a unit of the cubic quotient a
 lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : R}
     (h : W.f.eval x = 0) :
     IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
-  have hc : IsCoprime (X - C x) (W.fCofactor x) :=
-    (W.f_eq_mul_of_eval_eq_zero h ▸ separable_f W).isCoprime.symm
-  rw [W.f_eq_mul_of_eval_eq_zero h, AdjoinRoot.isUnit_mk_mul_X_sub_C_iff]
-  refine ⟨by simpa using (isCoprime_X_sub_C_iff_isUnit_eval _).mp hc, ?_⟩
-  rw [map_add, AdjoinRoot.mk_self, add_zero, AdjoinRoot.isUnit_mk_iff_isCoprime, ← neg_sub,
-    IsCoprime.neg_right_iff]
-  exact hc.symm
+  -- The representative is `fCofactor x - (X - C x)`, the difference of the two factors of `f`.
+  rw [W.f_eq_mul_of_eval_eq_zero h, ← neg_sub X (C x), ← sub_eq_neg_add,
+    AdjoinRoot.isUnit_mk_mul_sub_iff_isCoprime]
+  exact W.isCoprime_fCofactor_X_sub_C h
 
 /-! ### Square classes of the cubic quotient algebra -/
 
