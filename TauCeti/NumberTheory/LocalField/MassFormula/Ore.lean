@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
+import TauCeti.NumberTheory.LocalField.Different.Eisenstein
 import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
@@ -286,11 +287,11 @@ private theorem addVal_Eisenstein_top {n : ℕ} (hn : 0 < n) {f : 𝒪[K][X]}
     n • addVal 𝒪[K] (f.coeff ((n - 1) + 1) * (((n - 1 : ℕ) : 𝒪[K]) + 1)) +
       (((n - 1) + 1 : ℕ) : ℕ∞) = n • (addVal 𝒪[K] (n : 𝒪[K]) + 1) := by
   have hsub : n - 1 + 1 = n := by omega
-  have hcast : (((n - 1 : ℕ) : 𝒪[K]) + 1) = (n : 𝒪[K]) := by rw [← Nat.cast_add_one, hsub]
-  have hlc : addVal 𝒪[K] (f.coeff n) = 0 := by
-    rw [← hdeg, coeff_natDegree]
-    exact addVal_eq_zero_iff.mpr hf.isUnit_leadingCoeff
-  rw [hsub, hcast, addVal_mul, hlc, zero_add, nsmul_eq_mul, nsmul_eq_mul, mul_add, mul_one]
+  have hderiv : f.coeff ((n - 1) + 1) * (((n - 1 : ℕ) : 𝒪[K]) + 1) =
+      (derivative f).coeff (f.natDegree - 1) := by
+    simp [hdeg, coeff_derivative]
+  rw [hderiv, addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt hf (hdeg ▸ hn), hdeg,
+    hsub, nsmul_eq_mul, nsmul_eq_mul, mul_add, mul_one]
 
 /-- Top-index equality condition for the Eisenstein derivative valuation term at `i = n - 1`. -/
 private theorem addVal_Eisenstein_top_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪[K][X]}

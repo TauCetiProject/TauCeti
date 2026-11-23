@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Box
 public import TauCeti.NumberTheory.LocalField.MassFormula.Main
-import TauCeti.NumberTheory.LocalField.MassFormula.Countable
+import TauCeti.NumberTheory.LocalField.MassFormula.Total
 
 /-!
 # Krasner's discriminant-refined count of totally ramified extensions
@@ -157,10 +157,7 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
       (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) =
       n * μ (eisensteinBox K n j) := by
   classical
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simp [totallyRamifiedOfDegree_zero]
   set w : ℝ≥0∞ := 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))
-  have := (countable_totallyRamifiedOfDegree hn (K := K)).to_subtype
   calc ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.encard : ℝ≥0∞) * w
       = ∑' L : totallyRamifiedOfDegree K n, if L.val.wildExponent = j then w else 0 :=
           ((tsum_ite_wildExponent_eq (totallyRamifiedOfDegree K n) j fun _ ↦ w).trans
@@ -168,16 +165,14 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
     _ = ∑' L : totallyRamifiedOfDegree K n,
           ∫⁻ a in eisensteinBox K n j, (L.val.rootCount a : ℝ≥0∞) ∂μ :=
           tsum_congr fun L ↦ (L.val.lintegral_rootCount_eisensteinBox L.property μ hμ).symm
-    _ = ∫⁻ a in eisensteinBox K n j,
-          (∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞)) ∂μ :=
-          (lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinBox μ L.property).symm
-    _ = ∫⁻ _ in eisensteinBox K n j, (n : ℝ≥0∞) ∂μ := by
-          refine setLIntegral_congr_fun measurableSet_eisensteinBox fun a ha ↦ ?_
+    _ = n * μ (eisensteinBox K n j) := by
+          refine tsum_lintegral_rootCount_eq_of_subset μ
+            (eisensteinBox_subset_eisensteinSet K n j)
+            (ae_restrict_of_forall_mem measurableSet_eisensteinBox fun a ha ↦ ?_)
           obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
             (eisensteinBox_subset_eisensteinSet K n j ha)
           exact tsum_rootCount_eq_of_separable he hf
             (separable_monicOfCoeff_of_mem_eisensteinBox ha)
-    _ = n * μ (eisensteinBox K n j) := by simp
 
 /-- **Finiteness of each wild-exponent stratum**: for every `n` and `j`, the set of
 `E ∈ σ_K(n)` with `E.wildExponent = j` is finite, including in equal characteristic `p` with

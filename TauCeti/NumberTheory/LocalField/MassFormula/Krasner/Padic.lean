@@ -26,6 +26,8 @@ and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildE
 
 ## Main definitions
 
+* `TauCeti.IsOreAdmissiblePadic p n j`: computable predicate characterizing Ore-admissible
+  `(n, j)` over `ℚ_[p]`.
 * `TauCeti.krasnerCountPadic p n j`: executable `ℕ` closed form for the number of totally ramified
   degree-`n` extensions of `ℚ_[p]` with wild exponent `j`.
 
@@ -59,14 +61,23 @@ open ValuativeRel IsDiscreteValuationRing
 
 namespace TauCeti
 
+/-- **Ore's `p`-adic admissibility predicate** (Pauli–Roblot, Proposition 3.1): computable condition
+on `(p, n, j)` equivalent to `IsOreAdmissible ℚ_[p] n j` (`TauCeti.isOreAdmissible_padic_iff`). -/
+@[expose] def IsOreAdmissiblePadic (p n j : ℕ) : Prop :=
+  0 < n ∧
+    (if j % n = 0 then padicValNat p n * n
+      else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
+      j ≤ padicValNat p n * n
+
+instance (p n j : ℕ) : Decidable (IsOreAdmissiblePadic p n j) := by
+  delta IsOreAdmissiblePadic
+  infer_instance
+
 /-- **Krasner's count over `ℚ_[p]`** (Pauli–Roblot, Theorem 6.1): executable `ℕ` formula for the
 number of totally ramified degree-`n` extensions of `ℚ_[p]` with wild exponent `j`, returning `0`
-unless `0 < n` and `j` satisfies Ore's inequality (`TauCeti.isOreAdmissible_padic_iff`). -/
+unless `IsOreAdmissiblePadic p n j` holds. -/
 def krasnerCountPadic (p n j : ℕ) : ℕ :=
-  if 0 < n ∧
-      (if j % n = 0 then padicValNat p n * n
-        else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
-      j ≤ padicValNat p n * n then
+  if IsOreAdmissiblePadic p n j then
     if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
     else n * (p - 1) *
       p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
@@ -75,15 +86,12 @@ def krasnerCountPadic (p n j : ℕ) : ℕ :=
 noncomputable section
 
 /-- **Ore's inequality over `ℚ_[p]`** (Pauli–Roblot, Proposition 3.1): a wild exponent `j` is
-Ore-admissible for degree `n` over `ℚ_[p]` if and only if `0 < n` and
-`min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`, with `v_p(0)` read as `∞` so that `n ∣ j`
-requires `j = v_p(n) * n`. -/
+Ore-admissible for degree `n` over `ℚ_[p]` if and only if `IsOreAdmissiblePadic p n j` holds, i.e.,
+`0 < n` and `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`, with `v_p(0)` read as `∞` so
+that `n ∣ j` requires `j = v_p(n) * n`. -/
 theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
-    IsOreAdmissible ℚ_[p] n j ↔
-      0 < n ∧
-        (if j % n = 0 then padicValNat p n * n
-          else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
-          j ≤ padicValNat p n * n := by
+    IsOreAdmissible ℚ_[p] n j ↔ IsOreAdmissiblePadic p n j := by
+  rw [IsOreAdmissiblePadic]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
   have hn0 : (n : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
@@ -270,8 +278,8 @@ exponent `1`, `6` of wild exponent `2`, and `9` of wild exponent `3`). -/
 theorem ncard_totallyRamifiedOfDegree_three_padicThree :
     (totallyRamifiedOfDegree ℚ_[3] 3).ncard = 21 := by
   rw [ncard_totallyRamifiedOfDegree_padic 3 (by decide)]
-  simp only [krasnerCountPadic, Nat.padicValNat_def, Nat.multiplicity_self (by decide : 1 < 3),
-    Finset.sum_range_succ, Finset.sum_range_zero,
+  simp only [krasnerCountPadic, IsOreAdmissiblePadic, Nat.padicValNat_def,
+    Nat.multiplicity_self (by decide : 1 < 3), Finset.sum_range_succ, Finset.sum_range_zero,
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 1),
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 3 ∣ 2)]
   norm_num
@@ -285,8 +293,9 @@ theorem ncard_totallyRamifiedOfDegree_four_padicTwo :
     rw [Finset.sum_Icc_succ_top (by decide : 1 ≤ 2), Finset.Icc_self]
     norm_num
   rw [ncard_totallyRamifiedOfDegree_padic 2 (by decide)]
-  simp only [krasnerCountPadic, Nat.padicValNat_def, hm4, Finset.sum_range_succ,
-    Finset.sum_range_zero, multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1),
+  simp only [krasnerCountPadic, IsOreAdmissiblePadic, Nat.padicValNat_def, hm4,
+    Finset.sum_range_succ, Finset.sum_range_zero,
+    multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 1),
     Nat.multiplicity_self (by decide : 1 < 2),
     multiplicity_eq_zero_of_not_dvd (by decide : ¬ 2 ∣ 3), hIcc2]
   norm_num

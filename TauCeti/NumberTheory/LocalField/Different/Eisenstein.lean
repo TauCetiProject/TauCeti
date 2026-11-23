@@ -22,6 +22,8 @@ valuation residues, so these terms cannot cancel.
 
 * `Polynomial.natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoin_eq_top`
   identifies the different exponent with the valuation of `f'(ξ)`.
+* `TauCeti.addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt` computes the valuation of
+  the `(f.natDegree - 1)`-th coefficient of `f.derivative` for an Eisenstein polynomial `f`.
 * `TauCeti.natCast_differentExponent_eq_iInf_of_eisenstein_adjoin_eq_top` gives the exact
   derivative-term formula for the different exponent.
 * The upper-bound theorem
@@ -78,6 +80,19 @@ end Polynomial
 
 namespace TauCeti
 
+/-- For an Eisenstein polynomial `f` of positive degree over a discrete valuation ring `A`, the
+valuation of the `(f.natDegree - 1)`-th coefficient of `f.derivative` equals
+`addVal A (f.natDegree : A)`. -/
+theorem addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt {A : Type*} [CommRing A]
+    [IsDomain A] [_root_.IsDiscreteValuationRing A] {f : A[X]}
+    (hf : f.IsEisensteinAt (IsLocalRing.maximalIdeal A)) (hdeg : 0 < f.natDegree) :
+    addVal A ((derivative f).coeff (f.natDegree - 1)) = addVal A (f.natDegree : A) := by
+  have hsub : f.natDegree - 1 + 1 = f.natDegree := by omega
+  have hcast : (((f.natDegree - 1 : ℕ) : A) + 1) = (f.natDegree : A) := by
+    rw [← Nat.cast_add_one, hsub]
+  rw [Polynomial.coeff_derivative, hsub, hcast, Polynomial.coeff_natDegree, addVal_mul,
+    (addVal_eq_zero_iff).mpr hf.isUnit_leadingCoeff, zero_add]
+
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
@@ -126,13 +141,8 @@ theorem
     ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
   have hdeg : 0 < f.natDegree := he ▸ ramificationIndex_pos (K := K) (L := L)
   let j : Fin f.natDegree := ⟨f.natDegree - 1, by omega⟩
-  have hc : c j = f.leadingCoeff * (f.natDegree : 𝒪[K]) := by
-    have hsub : f.natDegree - 1 + 1 = f.natDegree := by omega
-    simp only [c, j, hsub, Polynomial.coeff_natDegree]
-    exact congrArg (f.leadingCoeff * ·)
-      (by exact_mod_cast congrArg (fun n : ℕ => (n : 𝒪[K])) hsub)
-  have hlc : addVal 𝒪[K] f.leadingCoeff = 0 :=
-    (addVal_eq_zero_iff).mpr hf.isUnit_leadingCoeff
+  have hc : c j = (derivative f).coeff (f.natDegree - 1) := by
+    simp [c, j, Polynomial.coeff_derivative]
   have h : (differentExponent K L : ℕ∞) ≤
       (ramificationIndex K L : ℕ) - 1 +
         ramificationIndex K L • addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) := by
@@ -144,9 +154,8 @@ theorem
       _ = (ramificationIndex K L : ℕ) - 1 +
           ramificationIndex K L • addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) := by
         have hj : (j : ℕ) = ramificationIndex K L - 1 := by simp [j, he]
-        have hcast : (f.natDegree : 𝒪[K]) = (ramificationIndex K L : 𝒪[K]) :=
-          congrArg (fun n : ℕ => (n : 𝒪[K])) he.symm
-        rw [hc, addVal_mul, hlc, zero_add, hcast, hj, add_comm]
+        rw [hc, addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt hf hdeg, hj, ← he,
+          add_comm]
         norm_cast
   have hv : ramificationIndex K L •
       addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) =
