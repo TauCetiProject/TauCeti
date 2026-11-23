@@ -61,21 +61,22 @@ theorem tendsto_atTop_ciInf_of_antitoneOn_Ici [ConditionallyCompletePartialOrder
 
 /-- **A monotone summand of a bounded sum converges.** If finitely many functions are monotone on
 `[a, ∞)` and their sum is bounded above there, then each of them converges at infinity: it is
-bounded above by the bound minus the values of the others at `a`. -/
-theorem exists_tendsto_of_monotoneOn_Ici_of_sum_le {κ : Type*} [AddCommGroup α]
-    [ConditionallyCompletePartialOrderSup α] [IsOrderedAddMonoid α] [SupConvergenceClass α]
-    {s : Finset κ} {f : κ → ι → α} {M : α} (hf : ∀ i ∈ s, MonotoneOn (f i) (Ici a))
-    (hM : ∀ t ∈ Ici a, ∑ i ∈ s, f i t ≤ M) {i : κ} (hi : i ∈ s) :
+bounded above by its value at `a` plus the slack `c` of the bound at `a`, where
+`M = ∑ i ∈ s, f i a + c`. -/
+theorem exists_tendsto_of_monotoneOn_Ici_of_sum_le {κ : Type*} [AddCommMonoid α]
+    [ConditionallyCompletePartialOrderSup α] [IsOrderedCancelAddMonoid α] [ExistsAddOfLE α]
+    [SupConvergenceClass α] {s : Finset κ} {f : κ → ι → α} {M : α}
+    (hf : ∀ i ∈ s, MonotoneOn (f i) (Ici a)) (hM : ∀ t ∈ Ici a, ∑ i ∈ s, f i t ≤ M) {i : κ}
+    (hi : i ∈ s) :
     ∃ l, Tendsto (f i) atTop (𝓝 l) := by
   classical
-  refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hf i hi)
-    ⟨M - ∑ j ∈ s.erase i, f j a, ?_⟩⟩
+  obtain ⟨c, hc⟩ := exists_add_of_le (hM a (mem_Ici.2 le_rfl))
+  refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hf i hi) ⟨f i a + c, ?_⟩⟩
   rintro _ ⟨t, ht, rfl⟩
   have hrest : ∑ j ∈ s.erase i, f j a ≤ ∑ j ∈ s.erase i, f j t :=
     Finset.sum_le_sum fun j hj ↦ hf j (Finset.mem_of_mem_erase hj) (mem_Ici.2 le_rfl) ht ht
   have h := hM t ht
-  rw [← Finset.add_sum_erase _ _ hi] at h
-  rw [le_sub_iff_add_le]
-  exact (add_le_add_right hrest _).trans h
+  rw [hc, ← Finset.add_sum_erase _ _ hi, ← Finset.add_sum_erase _ _ hi, add_right_comm] at h
+  exact le_of_add_le_add_right ((add_le_add_right hrest _).trans h)
 
 end TauCeti

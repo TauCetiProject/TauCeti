@@ -46,7 +46,10 @@ For a map `u` into a symplectic vector space `(V, ω)`, the energy identity of
   `E(u) = ∑_{r ≠ q} ±b_r + ∑_{r ≠ ∞} a_r - ∫_Σ R_K(u)`
 
   (`SymplecticForm.lintegral_floerEnergyDensity_plumbedPerturbation_eq`), since the truncations
-  `Σ_R` exhaust `Σ` (`TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`).
+  `Σ_R` exhaust `Σ` (`TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`). The
+  right-hand side is nonnegative, as a limit of energies over the truncations
+  (`SymplecticForm.sum_add_sum_sub_integral_hamiltonianCurvature_nonneg_of_plumbedPerturbation`),
+  so the identity holds in `ℝ` and not only after clipping by `ENNReal.ofReal`.
   Conversely, finite energy bounds the signed sum of the end actions
   (`SymplecticForm.sum_add_sum_hamiltonianAction_le_of_plumbedPerturbation`), so by monotonicity
   every end action converges: a Floer solution on the plumbed sphere has finite energy exactly
@@ -54,8 +57,10 @@ For a map `u` into a symplectic vector space `(V, ω)`, the energy identity of
   (`SymplecticForm.lintegral_floerEnergyDensity_plumbedPerturbation_ne_top_iff`).
 
 The plumbed spheres are the long-neck ends of the families joining the two compositions of the
-pair-of-pants product, and this identity bounds the energy of their Floer solutions by the actions
-of their asymptotic orbits, as needed for the finiteness of the counts of such solutions.
+pair-of-pants product, and this identity expresses the energy of their Floer solutions through the
+limits of their end actions and the integrated curvature. Here these limits are only limits of real
+action values; identifying them with the actions of asymptotic Hamiltonian orbits, as needed for the
+finiteness of the counts of such solutions, requires a separate asymptotic convergence theorem.
 
 ## References
 
@@ -359,7 +364,11 @@ actions of the end loops `ℓ_r(R)(t) = u(φ_r(±R + i t))` of the receiving end
 `b r`, and those of the end loops `ℓ'_r(R)(t) = u(ψ(φ_r(R + i t)))` of the inserted ends `r ≠ ∞`
 tend to `a r`, as `R → ∞`, then the energy of `u` is
 
-`E(u) = ∑_{r ≠ q} ±b_r + ∑_{r ≠ ∞} a_r - ∫_Σ R_K(u)`. -/
+`E(u) = ∑_{r ≠ q} ±b_r + ∑_{r ≠ ∞} a_r - ∫_Σ R_K(u)`.
+
+The right-hand side is nonnegative by
+`SymplecticForm.sum_add_sum_sub_integral_hamiltonianCurvature_nonneg_of_plumbedPerturbation`, so
+the `ENNReal.ofReal` on it loses no information. -/
 theorem lintegral_floerEnergyDensity_plumbedPerturbation_eq (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
@@ -416,6 +425,56 @@ theorem lintegral_floerEnergyDensity_plumbedPerturbation_eq (ω : SymplecticForm
   filter_upwards [eventually_ge_atTop (L / 2)] with R hR
   exact (lintegral_floerEnergyDensity_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hu hJ
     hfloer hR).symm
+
+/-- **The right-hand side of the energy identity is nonnegative.** Under the hypotheses of
+`SymplecticForm.lintegral_floerEnergyDensity_plumbedPerturbation_eq`, the limiting signed sum of the
+end actions minus the integrated curvature, `∑_{r ≠ q} ±b_r + ∑_{r ≠ ∞} a_r - ∫_Σ R_K(u)`, is
+nonnegative: it is the limit of the energies of `u` over the truncations `Σ_R`. So the energy
+identity holds without clipping by `ENNReal.ofReal`, also when the energy vanishes. -/
+theorem sum_add_sum_sub_integral_hamiltonianCurvature_nonneg_of_plumbedPerturbation
+    (ω : SymplecticForm V)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L)
+    (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, ω.Tames (J z))
+    (hfloer : ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z) (ω.perturbedFDeriv
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z : ℝ × ℝ →ₗ[ℝ] V))
+    {a b : Puncture → ℝ}
+    (hb : ∀ r ≠ q, Tendsto (fun R ↦ ω.hamiltonianAction (Hb r) (fun t ↦ u
+      (Complex.equivRealProdCLM (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))))
+      atTop (𝓝 (b r)))
+    (ha : ∀ r ≠ inf, Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (Ha r) (fun t ↦ u
+      (Complex.equivRealProdCLM (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))))
+      atTop (𝓝 (a r))) :
+    0 ≤ (∑ r ∈ Finset.univ.erase q, r.endSign * b r) + (∑ r ∈ Finset.univ.erase inf, a r) -
+      ∫ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+          Complex.equivRealProdCLM.symm z ≠ 1) ∧
+          Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) := by
+  -- The right-hand side is the limit of the real energies over the truncations `Σ_R`.
+  refine ge_of_tendsto (((tendsto_finsetSum _ fun r hr ↦
+    (hb r (Finset.ne_of_mem_erase hr)).const_mul r.endSign).add
+      (tendsto_finsetSum _ fun r hr ↦ ha r (Finset.ne_of_mem_erase hr))).sub_const _) ?_
+  filter_upwards [eventually_ge_atTop (L / 2)] with R hR
+  rw [← setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hR u,
+    ← integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction ω hq hHa hHb hHas hHbs
+      hab hL hR hu]
+  exact setIntegral_nonneg (measurableSet_preimage_plumbedTruncation q L R) fun z hz ↦
+    ω.floerEnergyDensity_nonneg (hJ z (plumbedTruncation_subset hq (by linarith) R hz))
+      (hfloer z (plumbedTruncation_subset hq (by linarith) R hz))
 
 /-- **The end actions are bounded by the energy.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_plumbedPerturbation_eq`, if the energy of `u` is
