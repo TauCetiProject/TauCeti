@@ -24,6 +24,8 @@ and along the cobounded filter with finite `n` the symbols at infinity
 This file proves, once for every filter, the rules of the symbol calculus that do not depend on
 the filter:
 
+* dependence only on the map near the points of a set of the filter
+  (`IsSymbolAlong.congr_of_eventually_nhds`);
 * sums, finite sums, negatives, differences, linear images and passage to lower regularity
   (`IsSymbolAlong.add`, `IsSymbolAlong.sum`, `IsSymbolAlong.neg`, `IsSymbolAlong.sub`,
   `IsSymbolAlong.continuousLinearMap_comp`, `IsSymbolAlong.of_le`), with constants of order `0`
@@ -96,9 +98,16 @@ theorem isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq {l : Filter E} {f : E �
 /-- A map `f` is a **symbol of order `ℓ` and regularity `n` along a filter `l`** if it is `Cⁿ` at
 the points of a set of `l` and, for every `j ≤ n`, its `j`-th derivative is `O(‖x‖ ^ (ℓ - j))`
 along `l`. -/
-@[expose] def IsSymbolAlong (l : Filter E) (n : ℕ∞) (ℓ : ℝ) (f : E → F) : Prop :=
+def IsSymbolAlong (l : Filter E) (n : ℕ∞) (ℓ : ℝ) (f : E → F) : Prop :=
   (∀ᶠ x in l, ContDiffAt ℝ n f x) ∧
     ∀ j : ℕ, j ≤ n → iteratedFDeriv ℝ j f =O[l] fun x ↦ ‖x‖ ^ (ℓ - j)
+
+/-- The defining properties of a symbol along `l`: `Cⁿ` regularity at the points of a set of `l`
+and the bounds `D^j f = O(‖x‖ ^ (ℓ - j))` along `l` for `j ≤ n`. -/
+theorem isSymbolAlong_iff {l : Filter E} {n : ℕ∞} {ℓ : ℝ} {f : E → F} :
+    IsSymbolAlong l n ℓ f ↔ (∀ᶠ x in l, ContDiffAt ℝ n f x) ∧
+      ∀ j : ℕ, j ≤ n → iteratedFDeriv ℝ j f =O[l] fun x ↦ ‖x‖ ^ (ℓ - j) :=
+  Iff.rfl
 
 /-! ### Basic properties -/
 
@@ -118,9 +127,16 @@ theorem isBigO_iteratedFDeriv (hf : IsSymbolAlong l n ℓ f) {j : ℕ} (hj : j �
 
 /-- A symbol of order `ℓ` along `l` is `O(‖x‖ ^ ℓ)` along `l`. -/
 theorem isBigO (hf : IsSymbolAlong l n ℓ f) : f =O[l] fun x ↦ ‖x‖ ^ ℓ := by
-  have h := (hf.2 0 (by simp)).norm_left
-  simp only [norm_iteratedFDeriv_zero, CharP.cast_eq_zero, sub_zero] at h
-  exact h.of_norm_left
+  simpa using isBigO_iteratedFDeriv_zero_iff.1 (hf.2 0 (by simp))
+
+/-- Being a symbol along `l` only depends on the map near the points of a set of `l`. -/
+theorem congr_of_eventually_nhds (hf : IsSymbolAlong l n ℓ f) (h : ∀ᶠ x in l, f =ᶠ[𝓝 x] f₁) :
+    IsSymbolAlong l n ℓ f₁ := by
+  refine ⟨?_, fun j hj ↦ (hf.2 j hj).congr' ?_ EventuallyEq.rfl⟩
+  · filter_upwards [hf.1, h] with x hx hx'
+    exact hx.congr_of_eventuallyEq hx'.symm
+  · filter_upwards [h] with x hx
+    exact (hx.iteratedFDeriv ℝ j).eq_of_nhds
 
 /-- A symbol of regularity `n` has every smaller regularity. -/
 theorem of_le (hf : IsSymbolAlong l n ℓ f) (h : n' ≤ n) : IsSymbolAlong l n' ℓ f :=
@@ -195,9 +211,7 @@ theorem isSymbolAlong_add_one_iff {f : E → F} :
       (f =O[l] fun x ↦ ‖x‖ ^ ℓ) ∧ IsSymbolAlong l n (ℓ - 1) (fderiv ℝ f) := by
   refine ⟨fun hf ↦ ⟨hf.1, hf.isBigO, hf.fderiv⟩, fun ⟨hC, h0, hD⟩ ↦ ⟨hC, fun j hj ↦ ?_⟩⟩
   cases j with
-  | zero =>
-    refine IsBigO.of_norm_left (h0.norm_left.congr' ?_ ?_) <;>
-      exact Eventually.of_forall fun x ↦ by simp
+  | zero => simpa using isBigO_iteratedFDeriv_zero_iff.2 h0
   | succ j =>
     have hj' : (j : ℕ∞) ≤ n := (ENat.add_le_add_iff_right ENat.one_ne_top).1 (by exact_mod_cast hj)
     have h := (hD.2 j hj').norm_left

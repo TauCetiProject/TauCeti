@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Basic
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
@@ -63,19 +64,6 @@ namespace TauCeti
 
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
 
-/-! ### Auxiliary facts about neighbourhoods of infinity -/
-
-private theorem eventually_one_le_norm : ∀ᶠ x in cobounded E, 1 ≤ ‖x‖ :=
-  tendsto_norm_cobounded_atTop.eventually_ge_atTop 1
-
-/-- Near infinity, a power of the norm is dominated by every power of larger exponent. -/
-private theorem isBigO_rpow_rpow {a b : ℝ} (h : a ≤ b) :
-    (fun x : E ↦ ‖x‖ ^ a) =O[cobounded E] fun x ↦ ‖x‖ ^ b := by
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [eventually_one_le_norm] with x hx
-  rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_exponent_le hx h
-
 variable [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G]
 
 /-- A map `f` is a **symbol of order `ℓ` and regularity `k` at infinity** if it is `Cᵏ` near
@@ -91,7 +79,7 @@ bounds `D^j f = O(‖x‖ ^ (ℓ - j))` for `j ≤ k`. -/
 theorem isSymbolAtInfinity_iff {k : ℕ} {ℓ : ℝ} {f : E → F} :
     IsSymbolAtInfinity k ℓ f ↔ (∀ᶠ x in cobounded E, ContDiffAt ℝ k f x) ∧
       ∀ j ≤ k, iteratedFDeriv ℝ j f =O[cobounded E] fun x ↦ ‖x‖ ^ (ℓ - j) :=
-  and_congr (by norm_cast) (forall_congr' fun _ ↦ by norm_cast)
+  isSymbolAlong_iff.trans (and_congr (by norm_cast) (forall_congr' fun _ ↦ by norm_cast))
 
 /-! ### Basic properties -/
 
@@ -108,7 +96,7 @@ theorem eventually_contDiffAt (hf : IsSymbolAtInfinity k ℓ f) :
 most the regularity. -/
 theorem isBigO_iteratedFDeriv (hf : IsSymbolAtInfinity k ℓ f) {j : ℕ} (hj : j ≤ k) :
     iteratedFDeriv ℝ j f =O[cobounded E] fun x ↦ ‖x‖ ^ (ℓ - j) :=
-  hf.2 j (by exact_mod_cast hj)
+  (isSymbolAtInfinity_iff.1 hf).2 j hj
 
 /-- A symbol of negative order tends to `0` at infinity. -/
 theorem tendsto_zero (hf : IsSymbolAtInfinity k ℓ f) (hℓ : ℓ < 0) :
@@ -125,18 +113,14 @@ theorem tendsto_of_sub {c : F} (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c)
 
 /-- Being a symbol at infinity only depends on the map near infinity. -/
 theorem congr (hf : IsSymbolAtInfinity k ℓ f) (h : f =ᶠ[cobounded E] f₁) :
-    IsSymbolAtInfinity k ℓ f₁ := by
-  have hloc : ∀ᶠ x in cobounded E, f =ᶠ[𝓝 x] f₁ :=
-    Metric.eventually_cobounded_eventually_nhds.2 h
-  refine ⟨?_, fun j hj ↦ (hf.2 j hj).congr' ?_ EventuallyEq.rfl⟩
-  · filter_upwards [hf.1, hloc] with x hx hx'
-    exact hx.congr_of_eventuallyEq hx'.symm
-  · filter_upwards [hloc] with x hx
-    exact (hx.iteratedFDeriv ℝ j).eq_of_nhds
+    IsSymbolAtInfinity k ℓ f₁ :=
+  hf.congr_of_eventually_nhds (Metric.eventually_cobounded_eventually_nhds.2 h)
 
 /-- A symbol of order `ℓ` at infinity has every larger order. -/
 theorem mono (hf : IsSymbolAtInfinity k ℓ f) (h : ℓ ≤ m) : IsSymbolAtInfinity k m f :=
-  ⟨hf.1, fun j hj ↦ (hf.2 j hj).trans (isBigO_rpow_rpow (by linarith))⟩
+  isSymbolAlong_iff.2 ⟨IsSymbolAlong.eventually_contDiffAt hf, fun _ hj ↦
+    (IsSymbolAlong.isBigO_iteratedFDeriv hf hj).trans
+      (isBigO_norm_rpow_norm_rpow_cobounded (by linarith))⟩
 
 /-- Differentiation lowers the order of a symbol at infinity by one, and its regularity by
 one. -/
@@ -210,30 +194,18 @@ private theorem isBigO_iteratedFDeriv_comp (hf : IsSymbolAtInfinity k ℓ fun x 
     have hc : ContinuousAt (iteratedFDeriv ℝ j g) c :=
       (hg.iteratedFDeriv_right (m := 0) (i := j)
         (by exact_mod_cast (by omega : 0 + j ≤ k))).continuousAt
-    have h := ((hc.tendsto.comp hfc).isBigO_one ℝ).norm_left
-    refine IsBigO.of_norm_left (h.congr' (Eventually.of_forall fun x ↦ ?_)
-      (Eventually.of_forall fun x ↦ ?_))
-    · simp [norm_iteratedFDeriv_zero]
-    · simp
+    exact isBigO_iteratedFDeriv_zero_iff.2 (((hc.tendsto.comp hfc).isBigO_one ℝ).congr'
+      EventuallyEq.rfl (Eventually.of_forall fun x ↦ by simp))
   | succ n ih =>
     intro j i hi hij
     cases i with
     | zero => exact ih j 0 (Nat.zero_le _) hij
     | succ i =>
       refine (isBigO_iteratedFDeriv_comp_succ hf hℓ hg (by omega)
-        fun i' hi' ↦ ih (j + 1) i' (by omega) (by omega)).trans (isBigO_rpow_rpow ?_)
+        fun i' hi' ↦ ih (j + 1) i' (by omega) (by omega)).trans
+          (isBigO_norm_rpow_norm_rpow_cobounded ?_)
       push_cast
       linarith
-
-/-- `G ∘ f` read as `(D^0 G) ∘ f` through the isometry `G ≃ (Fin 0 → F) → G`. -/
-private theorem norm_iteratedFDeriv_comp_eq {i : ℕ} (x : E) :
-    ‖iteratedFDeriv ℝ i (fun x ↦ iteratedFDeriv ℝ 0 g (f x)) x‖ =
-      ‖iteratedFDeriv ℝ i (fun x ↦ g (f x)) x‖ := by
-  have heq : (fun x ↦ iteratedFDeriv ℝ 0 g (f x)) =
-      (continuousMultilinearCurryFin0 ℝ F G).symm ∘ fun x ↦ g (f x) := by
-    funext x
-    simp [iteratedFDeriv_zero_eq_comp]
-  rw [heq, LinearIsometryEquiv.norm_iteratedFDeriv_comp_left]
 
 namespace IsSymbolAtInfinity
 
@@ -246,7 +218,7 @@ theorem comp_of_contDiffAt (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c) (h�
   refine isSymbolAtInfinity_iff.2 ⟨(eventually_contDiffAt_comp hf hℓ hg).mono
     fun x hx ↦ hx.1.comp x hx.2, fun j hj ↦ ?_⟩
   have h := (isBigO_iteratedFDeriv_comp hf hℓ hg j 0 j le_rfl (by omega)).norm_left
-  simp_rw [norm_iteratedFDeriv_comp_eq] at h
+  simp_rw [norm_iteratedFDeriv_iteratedFDeriv_zero_comp] at h
   exact h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun x ↦ by simp)
 
 /-- **Composition with a map smooth at the limit, with decay.** If `f - c` is a symbol of
@@ -263,12 +235,11 @@ theorem comp_sub (hf : IsSymbolAtInfinity k ℓ fun x ↦ f x - c) (hℓ : ℓ <
     -- `g` is differentiable at `c`, so `g ∘ f - g c = O(f - c) = O(‖x‖ ^ ℓ)`.
     have hd : DifferentiableAt ℝ g c := hg.differentiableAt (by exact_mod_cast (by omega))
     have h := (hd.hasFDerivAt.isBigO_sub.comp_tendsto (hf.tendsto_of_sub hℓ)).trans hf.isBigO
-    refine IsBigO.of_norm_left (h.norm_left.congr' ?_ ?_) <;>
-      exact Eventually.of_forall fun x ↦ by simp
+    exact isBigO_iteratedFDeriv_zero_iff.2 (by simpa [Function.comp_def] using h)
   | succ j =>
     have h := (isBigO_iteratedFDeriv_comp_succ hf hℓ hgk (j := 0) (by omega)
       fun i hi ↦ isBigO_iteratedFDeriv_comp hf hℓ hgk j 1 i hi (by omega)).norm_left
-    simp_rw [norm_iteratedFDeriv_comp_eq] at h
+    simp_rw [norm_iteratedFDeriv_iteratedFDeriv_zero_comp] at h
     refine h.of_norm_left.congr' (Eventually.of_forall fun x ↦ ?_) EventuallyEq.rfl
     simp_rw [sub_eq_add_neg, iteratedFDeriv_succ_add_const]
 

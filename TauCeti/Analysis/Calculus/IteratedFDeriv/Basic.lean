@@ -54,8 +54,11 @@ adding `L` to a differentiable function adds them to its derivatives of positive
 `m < n`, the derivative of `D^m f` is `D^(m + 1) f`, curried on the left
 (`ContDiff.hasFDerivAt_iteratedFDeriv`). The derivative of
 `(D^j g) ∘ f` is the bilinear expression `(D^{j+1} g ∘ f) ∘ Df`
-(`TauCeti.fderiv_iteratedFDeriv_comp`), and where `Df` agrees locally with a map `g` whose `n`-th
-derivative is `O(ρ)` along a filter, the `(n + 1)`-th derivative of `f` is `O(ρ)`
+(`TauCeti.fderiv_iteratedFDeriv_comp`), and the derivatives of `(D^0 g) ∘ f` have the same norms as
+those of `g ∘ f` (`TauCeti.norm_iteratedFDeriv_iteratedFDeriv_zero_comp`). Along a filter, the
+zeroth derivative of `f` is `O(ρ)` exactly when `f` is
+(`TauCeti.isBigO_iteratedFDeriv_zero_iff`), and where `Df` agrees locally with a map `g` whose
+`n`-th derivative is `O(ρ)`, the `(n + 1)`-th derivative of `f` is `O(ρ)`
 (`TauCeti.isBigO_iteratedFDeriv_succ_of_eventuallyEq`).
 -/
 
@@ -355,6 +358,25 @@ theorem fderiv_iteratedFDeriv_comp {G : Type*} [NormedAddCommGroup G] [NormedSpa
         (iteratedFDeriv 𝕜 (j + 1) g (f y)) (fderiv 𝕜 f y) := by
   rw [fderiv_fun_comp y hg hf]
   simp [iteratedFDeriv_succ_eq_comp_left]
+
+/-- The derivatives of `(D^0 g) ∘ f` have the same norms as those of `g ∘ f`: `D^0 g` is `g` read
+through the isometry `G ≃ (Fin 0 → F) → G`. -/
+theorem norm_iteratedFDeriv_iteratedFDeriv_zero_comp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] (g : F → G) (f : E → F) (i : ℕ) (x : E) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ iteratedFDeriv 𝕜 0 g (f y)) x‖ =
+      ‖iteratedFDeriv 𝕜 i (fun y ↦ g (f y)) x‖ := by
+  have heq : (fun y ↦ iteratedFDeriv 𝕜 0 g (f y)) =
+      (continuousMultilinearCurryFin0 𝕜 F G).symm ∘ fun y ↦ g (f y) := by
+    funext y
+    simp [iteratedFDeriv_zero_eq_comp]
+  rw [heq, LinearIsometryEquiv.norm_iteratedFDeriv_comp_left]
+
+open Asymptotics in
+/-- The zeroth derivative of `f` is `O(ρ)` along a filter exactly when `f` is. -/
+theorem isBigO_iteratedFDeriv_zero_iff {l : Filter E} {f : E → F} {R : Type*} [Norm R]
+    {ρ : E → R} : iteratedFDeriv 𝕜 0 f =O[l] ρ ↔ f =O[l] ρ := by
+  rw [← isBigO_norm_left, ← isBigO_norm_left (f' := f)]
+  simp only [norm_iteratedFDeriv_zero]
 
 open Asymptotics in
 /-- If `fderiv 𝕜 f` agrees near every point of a set of the filter `l` with a map `g` whose `n`-th

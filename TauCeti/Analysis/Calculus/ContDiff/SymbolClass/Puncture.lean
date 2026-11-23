@@ -110,7 +110,7 @@ and the bounds `D^j f = O(‖z‖ ^ (ℓ - j))` for every `j`. -/
 theorem isPuncturedSymbol_iff {ℓ : ℝ} {f : E → F} :
     IsPuncturedSymbol ℓ f ↔ (∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ f z) ∧
       ∀ j : ℕ, iteratedFDeriv ℝ j f =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - j) :=
-  and_congr_right' <| forall_congr' fun _ ↦ forall_prop_of_true le_top
+  isSymbolAlong_iff.trans (and_congr_right' <| forall_congr' fun _ ↦ forall_prop_of_true le_top)
 
 /-! ### Basic properties -/
 
@@ -121,7 +121,7 @@ variable {ℓ m : ℝ} {f f₁ : E → F}
 /-- The `j`-th derivative of a punctured symbol of order `ℓ` is `O(‖z‖ ^ (ℓ - j))`. -/
 theorem isBigO_iteratedFDeriv (hf : IsPuncturedSymbol ℓ f) (j : ℕ) :
     iteratedFDeriv ℝ j f =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - j) :=
-  hf.2 j le_top
+  IsSymbolAlong.isBigO_iteratedFDeriv hf le_top
 
 /-- A punctured symbol of positive order tends to `0` at the puncture. -/
 theorem tendsto_zero (hf : IsPuncturedSymbol ℓ f) (hℓ : 0 < ℓ) :
@@ -133,18 +133,14 @@ theorem tendsto_zero (hf : IsPuncturedSymbol ℓ f) (hℓ : 0 < ℓ) :
 
 /-- Being a punctured symbol only depends on the map on a punctured neighbourhood of `0`. -/
 theorem congr (hf : IsPuncturedSymbol ℓ f) (h : f =ᶠ[𝓝[≠] (0 : E)] f₁) :
-    IsPuncturedSymbol ℓ f₁ := by
-  have hloc : ∀ᶠ z in 𝓝[≠] (0 : E), f =ᶠ[𝓝 z] f₁ :=
-    (eventually_nhdsWithin_eventually_nhds_iff_of_isOpen isOpen_compl_singleton).2 h
-  refine ⟨?_, fun j hj ↦ (hf.2 j hj).congr' ?_ EventuallyEq.rfl⟩
-  · filter_upwards [hf.1, hloc] with z hz hz'
-    exact hz.congr_of_eventuallyEq hz'.symm
-  · filter_upwards [hloc] with z hz
-    exact (hz.iteratedFDeriv ℝ j).eq_of_nhds
+    IsPuncturedSymbol ℓ f₁ :=
+  hf.congr_of_eventually_nhds
+    ((eventually_nhdsWithin_eventually_nhds_iff_of_isOpen isOpen_compl_singleton).2 h)
 
 /-- A punctured symbol of order `ℓ` has every smaller order. -/
 theorem mono (hf : IsPuncturedSymbol ℓ f) (h : m ≤ ℓ) : IsPuncturedSymbol m f := by
-  refine ⟨hf.1, fun j hj ↦ (hf.2 j hj).trans (IsBigO.of_bound 1 ?_)⟩
+  refine isSymbolAlong_iff.2 ⟨IsSymbolAlong.eventually_contDiffAt hf, fun j hj ↦
+    (IsSymbolAlong.isBigO_iteratedFDeriv hf hj).trans (IsBigO.of_bound 1 ?_)⟩
   filter_upwards [eventually_norm_pos, eventually_norm_le_one] with z hz hz1
   rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
   exact Real.rpow_le_rpow_of_exponent_ge hz hz1 (by linarith)
@@ -159,7 +155,7 @@ end IsPuncturedSymbol
 /-- A continuous linear map is a punctured symbol of order `1`. -/
 theorem _root_.ContinuousLinearMap.isPuncturedSymbol (L : E →L[ℝ] F) :
     IsPuncturedSymbol 1 L := by
-  refine ⟨Eventually.of_forall fun _ ↦ L.contDiff.contDiffAt, fun j _ ↦ ?_⟩
+  refine isSymbolAlong_iff.2 ⟨Eventually.of_forall fun _ ↦ L.contDiff.contDiffAt, fun j _ ↦ ?_⟩
   cases j with
   | zero =>
     refine IsBigO.of_bound ‖L‖ (Eventually.of_forall fun z ↦ ?_)
@@ -167,7 +163,7 @@ theorem _root_.ContinuousLinearMap.isPuncturedSymbol (L : E →L[ℝ] F) :
   | succ j =>
     exact isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq (g := fun _ ↦ L)
       (Eventually.of_forall fun _ ↦ .of_forall fun _ ↦ L.fderiv)
-      ((isSymbolAlong_const (n := ⊤) L).2 j le_top) (by ring)
+      ((isSymbolAlong_const (n := ⊤) L).isBigO_iteratedFDeriv le_top) (by ring)
 
 /-- The identity is a punctured symbol of order `1`. -/
 theorem isPuncturedSymbol_id : IsPuncturedSymbol 1 fun z : E ↦ z :=
@@ -229,7 +225,8 @@ private theorem isBigO_iteratedFDeriv_inv (hf : IsPuncturedSymbol ℓ f) {c : �
         hg.mono fun _ hz ↦ (ContinuousLinearMap.mulLeftRight ℝ R).isBoundedBilinearMap.contDiff
           |>.comp₂_contDiffAt hz hz
       have hprod := (-ContinuousLinearMap.compL ℝ E R R).isBigO_iteratedFDeriv_of_bilinear_rpow
-        hgg hDf.1 (n := k) (ℓ := -ℓ + -ℓ) (m := ℓ - 1) (by exact_mod_cast le_top)
+        hgg hDf.eventually_contDiffAt (n := k) (ℓ := -ℓ + -ℓ) (m := ℓ - 1)
+        (by exact_mod_cast le_top)
         (fun i hi ↦ (ContinuousLinearMap.mulLeftRight ℝ R).isBigO_iteratedFDeriv_of_bilinear_rpow
           hg hg (by exact_mod_cast le_top) (fun j hj ↦ ih j (hj.trans (hi.trans hk)))
           (fun j hj ↦ ih j (hj.trans (hi.trans hk))))
@@ -244,9 +241,9 @@ theorem IsPuncturedSymbol.inv (hf : IsPuncturedSymbol ℓ f) {c : ℝ} (hc : 0 <
     (hlow : ∀ᶠ z in 𝓝[≠] (0 : E), c * ‖z‖ ^ ℓ ≤ ‖f z‖) :
     IsPuncturedSymbol (-ℓ) fun z ↦ (f z)⁻¹ := by
   have hne : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ f z ∧ f z ≠ 0 := by
-    filter_upwards [hf.1, hlow, eventually_norm_pos] with z hfz hz hz0
+    filter_upwards [hf.eventually_contDiffAt, hlow, eventually_norm_pos] with z hfz hz hz0
     exact ⟨hfz, norm_pos_iff.1 (lt_of_lt_of_le (by positivity) hz)⟩
-  exact ⟨eventually_contDiffAt_inv hne,
+  exact isSymbolAlong_iff.2 ⟨eventually_contDiffAt_inv hne,
     fun j _ ↦ isBigO_iteratedFDeriv_inv hf hc hlow hne j j le_rfl⟩
 
 end Inverse
@@ -304,7 +301,7 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
       =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - j - i) := by
   have hφ0 := tendsto_nhdsNE_of_le hφ hc hlow
   have hs : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g (φ z) ∧ ContDiffAt ℝ ∞ φ z :=
-    (hφ0.eventually hg.1).and hφ.1
+    (hφ0.eventually hg.eventually_contDiffAt).and hφ.eventually_contDiffAt
   have hDφ := hφ.fderiv
   induction n with
   | zero =>
@@ -318,10 +315,8 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
     have h := ((hg.isBigO_iteratedFDeriv j).comp_tendsto hφ0).norm_left.trans
       (hθ.rpow (r := ℓ - j) (Eventually.of_forall fun _ ↦ norm_nonneg _)
         (Eventually.of_forall fun _ ↦ norm_nonneg _)).isBigO
-    refine IsBigO.of_norm_left (h.congr' (Eventually.of_forall fun z ↦ ?_)
-      (Eventually.of_forall fun z ↦ ?_))
-    · simp [norm_iteratedFDeriv_zero]
-    · simp
+    exact isBigO_iteratedFDeriv_zero_iff.2 (IsBigO.of_norm_left
+      (h.congr' EventuallyEq.rfl (Eventually.of_forall fun z ↦ by simp)))
   | succ n ih =>
     intro j i hi
     cases i with
@@ -336,7 +331,7 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
         (H := E →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)
         ((ContinuousLinearMap.compL ℝ E F (ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)).comp
           (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ F)
-            G).toContinuousLinearEquiv.toContinuousLinearMap) hDj hDφ.1 (n := k)
+            G).toContinuousLinearEquiv.toContinuousLinearMap) hDj hDφ.eventually_contDiffAt (n := k)
         (ℓ := ℓ - (j + 1 : ℕ)) (m := 1 - 1) (by exact_mod_cast le_top)
         (fun i hi ↦ ih (j + 1) i (hi.trans hk)) (fun i _ ↦ hDφ.isBigO_iteratedFDeriv i)
       exact isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq
@@ -348,17 +343,12 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
 theorem IsPuncturedSymbol.comp (hg : IsPuncturedSymbol ℓ g) (hφ : IsPuncturedSymbol 1 φ) {c : ℝ}
     (hc : 0 < c) (hlow : ∀ᶠ z in 𝓝[≠] (0 : E), c * ‖z‖ ≤ ‖φ z‖) :
     IsPuncturedSymbol ℓ fun z ↦ g (φ z) := by
-  refine ⟨?_, fun j _ ↦ ?_⟩
-  · filter_upwards [(tendsto_nhdsNE_of_le hφ hc hlow).eventually hg.1, hφ.1] with z hgz hz
+  refine isSymbolAlong_iff.2 ⟨?_, fun j _ ↦ ?_⟩
+  · filter_upwards [(tendsto_nhdsNE_of_le hφ hc hlow).eventually hg.eventually_contDiffAt,
+      hφ.eventually_contDiffAt] with z hgz hz
     exact hgz.comp z hz
-  · -- `D^0 g ∘ φ` is `g ∘ φ` read through the isometry `G ≃ (Fin 0 → F) → G`.
-    have heq : (fun z ↦ iteratedFDeriv ℝ 0 g (φ z)) =
-        (continuousMultilinearCurryFin0 ℝ F G).symm ∘ fun z ↦ g (φ z) := by
-      funext z
-      simp [iteratedFDeriv_zero_eq_comp]
-    have h := (isBigO_iteratedFDeriv_comp hg hφ hc hlow j 0 j le_rfl).norm_left
-    rw [heq] at h
-    simp_rw [LinearIsometryEquiv.norm_iteratedFDeriv_comp_left] at h
+  · have h := (isBigO_iteratedFDeriv_comp hg hφ hc hlow j 0 j le_rfl).norm_left
+    simp_rw [norm_iteratedFDeriv_iteratedFDeriv_zero_comp] at h
     exact h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun z ↦ by simp)
 
 end Composition
@@ -375,7 +365,7 @@ variable {ℓ : ℝ} {f : E → F}
 the full neighbourhood filter. -/
 private theorem eventually_nhds_contDiffAt_of_ne (hf : IsPuncturedSymbol ℓ f) :
     ∀ᶠ z in 𝓝 (0 : E), z ≠ 0 → ContDiffAt ℝ ∞ f z :=
-  eventually_nhdsWithin_iff.1 hf.1
+  eventually_nhdsWithin_iff.1 hf.eventually_contDiffAt
 
 /-- A punctured symbol of positive order which vanishes at `0` is continuous at `0`. -/
 theorem continuousAt (hf : IsPuncturedSymbol ℓ f) (hℓ : 0 < ℓ) (h0 : f 0 = 0) :
@@ -442,7 +432,7 @@ private theorem exists_ball_bounds (hf : IsPuncturedSymbol ℓ f) :
       DifferentiableAt ℝ f z ∧ ‖f z‖ ≤ A * ‖z‖ ^ ℓ ∧ ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ (ℓ - 1) := by
   obtain ⟨A, hA, hAf⟩ := hf.isBigO.exists_nonneg
   obtain ⟨B, hB, hBf⟩ := hf.fderiv.isBigO.exists_nonneg
-  have h := hf.1.and (hAf.bound.and hBf.bound)
+  have h := hf.eventually_contDiffAt.and (hAf.bound.and hBf.bound)
   obtain ⟨r, hr, hrf⟩ := Metric.eventually_nhds_iff_ball.1 (eventually_nhdsWithin_iff.1 h)
   refine ⟨r, hr, A.toNNReal, B.toNNReal, fun z hz hz0 ↦ ?_⟩
   obtain ⟨h1, h2, h3⟩ := hrf z hz hz0
