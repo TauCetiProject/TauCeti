@@ -59,9 +59,8 @@ longer windows linearly in their length, and so makes the measure locally finite
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
   `(n + 1) * C`, and is locally finite.
-* `MeasureTheory.measure_Ioc_bot_eq_measure_Iic`,
-  `MeasureTheory.measure_Ioc_add_measure_Ioc`: removing a null bottom element identifies `(⊥, t]`
-  with `(-∞, t]`, and adjacent left-open, right-closed intervals have additive measures.
+* `MeasureTheory.measure_Ioc_bot_eq_measure_Iic`: removing a null bottom element identifies
+  `(⊥, t]` with `(-∞, t]`.
 -/
 
 public section
@@ -80,18 +79,6 @@ theorem measure_Ioc_bot_eq_measure_Iic {α : Type*} [PartialOrder α] [OrderBot 
     ext x
     simp [bot_lt_iff_ne_bot, and_comm]
   rw [heq, measure_sdiff_null hbot]
-
-/-- The measure of adjacent left-open, right-closed intervals is additive when at least one
-of the two intervals is null-measurable. -/
-theorem measure_Ioc_add_measure_Ioc {α : Type*} [LinearOrder α] [MeasurableSpace α]
-    {μ : Measure α} {a b c : α} (hab : a ≤ b) (hbc : b ≤ c)
-    (h : NullMeasurableSet (Ioc a b) μ ∨ NullMeasurableSet (Ioc b c) μ) :
-    μ (Ioc a b) + μ (Ioc b c) = μ (Ioc a c) := by
-  rcases h with h | h
-  · rw [← measure_union₀' h (Ioc_disjoint_Ioc_of_le le_rfl).aedisjoint,
-      Ioc_union_Ioc_eq_Ioc hab hbc]
-  · rw [← measure_union₀ h (Ioc_disjoint_Ioc_of_le le_rfl).aedisjoint,
-      Ioc_union_Ioc_eq_Ioc hab hbc]
 
 namespace Measure
 
