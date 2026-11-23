@@ -52,7 +52,7 @@ noncomputable def kernelDifferential : LinearMap.ker (closedHom f) →ₗ[R]
     (fun x ↦ by
       simp only [Submodule.restrictScalars_mem, LinearMap.mem_ker, LinearMap.comp_apply,
         LinearMap.restrictScalars_apply, Submodule.subtype_apply]
-      rw [← differential_closedHom, x.2, map_zero])
+      rw [← differential_closedHom, x.property, map_zero])
 
 /-- The restricted differential is the source differential on underlying elements. -/
 @[simp]
@@ -96,7 +96,7 @@ noncomputable def kernelObj : CurvedDGRightModuleCat.{u, u, u} h := by
   · intro x
     apply Subtype.ext
     simpa only [coe_kernelDifferential, Submodule.coe_smul] using
-      M.isCurvedDGRightModule.sq_eq x.1
+      M.isCurvedDGRightModule.sq_eq x.val
 
 /-- The kernel carrier is the kernel submodule. Its linearity characterizes the inherited
 right action; consumers use this equivalence rather than unfolding `kernelObj`. -/
@@ -140,7 +140,7 @@ theorem kernelι_comp : kernelι f ≫ f = 0 := by
   intro x
   simp only [closedHom_comp, hom_kernelι, closedHom_zero, LinearMap.comp_apply,
     LinearMap.zero_apply, LinearEquiv.coe_coe, Submodule.subtype_apply]
-  exact (kernelEquiv f x).2
+  exact (kernelEquiv f x).property
 
 /-- The kernel fork in the closed category of curved right modules. -/
 noncomputable def kernelCone : KernelFork f :=

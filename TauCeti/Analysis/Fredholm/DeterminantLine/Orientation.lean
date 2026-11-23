@@ -22,6 +22,10 @@ canonically and without any choice of connection. This transport is how orientat
 spaces in Morse and Floer theory, which are orientations of the determinant lines of their
 linearized operators, are compared along paths of operators.
 
+The module `TauCeti.Analysis.Fredholm.DeterminantLine.Transport` transports orientations along
+real-parameter families of operators directly, through coherent families of elements in kernel
+charts (`TauCeti.detLineOrientationTransport`), without forming the bundle or its cover.
+
 ## Main results
 
 * `TauCeti.FredholmDetLine.isCoveringMap_orientationCover_proj`: over `ℝ`, the orientation double

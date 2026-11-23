@@ -18,6 +18,9 @@ pair of them, is in `TauCeti/LinearAlgebra/Matrix/OneSubVecMulVec.lean`; the bra
 form indexed by adjacent elementary braids is here, since it is the generator adjacency of
 `Fin (n - 1)` that it is phrased in.
 
+The braid relation and the homomorphism hold over an arbitrary ring; only the determinant
+character needs a commutative ring.
+
 ## Main definitions
 
 * `TauCeti.KnotTheory.braidHomOfOneSubVecMulVec`: the braid-group homomorphism into `GL`
@@ -36,7 +39,11 @@ open Matrix
 
 namespace TauCeti.KnotTheory
 
-variable {R α : Type*} {n : ℕ} [CommRing R] [Fintype α] [DecidableEq α]
+variable {R α : Type*} {n : ℕ} [Fintype α] [DecidableEq α]
+
+section Ring
+
+variable [Ring R]
 
 /-- The braid relation for two members of a family of rank-one perturbations of the identity
 indexed by adjacent elementary braids, in the symmetric form: the two possible adjacency orders
@@ -51,14 +58,14 @@ theorem one_sub_vecMulVec_braid_of_adjacent (t : R) (u v : Fin (n - 1) → α �
   rcases h with h | h
   · apply one_sub_vecMulVec_braid
     · rw [hself, hforward h, hreverse h]
-      ring
+      grind
     · rw [hself, hforward h, hreverse h]
-      ring
+      grind
   · apply one_sub_vecMulVec_braid
     · rw [hself, hreverse h, hforward h]
-      ring
+      grind
     · rw [hself, hreverse h, hforward h]
-      ring
+      grind
 
 /-- The braid-group homomorphism into `GL` associated to a family of rank-one perturbations of the
 identity with the Burau pairings. -/
@@ -89,6 +96,10 @@ theorem braidHomOfOneSubVecMulVec_sigma (n : ℕ) (t : Rˣ) (u v : Fin (n - 1) �
     braidHomOfOneSubVecMulVec n t u v hself hcomm hforward hreverse
         (BraidGroup.sigma i) = oneSubVecMulVecGL t (u i) (v i) (hself i) :=
   BraidGroup.lift_sigma _ _ _ i
+
+end Ring
+
+variable [CommRing R]
 
 /-- The determinant character of a braid-group homomorphism by rank-one perturbations of the
 identity with the Burau pairings. -/
