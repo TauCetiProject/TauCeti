@@ -113,7 +113,7 @@ theorem iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_s
         (Polynomial.eval_iterate_derivative_nonneg
           (coeff_pairedPartialPoly_nonneg hc m γ s) k hx)
   open scoped ComplexOrder in
-  exact ⟨(Complex.le_def.mp hle).2.symm, (Complex.le_def.mp hle).1⟩
+  simpa only [Complex.nonneg_iff, eq_comm, and_comm] using hle
 
 /-- If `c > 0` and `t : Finset ℕ` is a set of indices with `γ n ≠ 0`, then the derivative of order
 `m + 2 * t.card` at `0` of the paired quadratic canonical product has strictly positive real
@@ -146,6 +146,33 @@ theorem re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq
   open scoped ComplexOrder in
   exact (mul_pos (Nat.cast_pos.mpr N.factorial_pos) ht_pos).trans_le (Complex.le_def.mp hle).1
 
+/-- An entire function `h` whose Taylor derivatives at `0` are real and nonnegative satisfies
+`a₀ * x ^ n₀ ≤ (h x).re` for all `x ≥ 0` whenever `a₀ * n₀! ≤ (iteratedDeriv n₀ h 0).re`. -/
+private theorem mul_pow_le_re_of_iteratedDeriv_nonneg {h : ℂ → ℂ} (hh : Differentiable ℂ h)
+    (hnonneg : ∀ n : ℕ, (iteratedDeriv n h 0).im = 0 ∧ 0 ≤ (iteratedDeriv n h 0).re)
+    {n₀ : ℕ} {a₀ : ℝ} (ha₀ : a₀ * (n₀.factorial : ℝ) ≤ (iteratedDeriv n₀ h 0).re)
+    {x : ℝ} (hx : 0 ≤ x) :
+    a₀ * x ^ n₀ ≤ (h (x : ℂ)).re := by
+  have hrem_diff : Differentiable ℂ (fun z : ℂ ↦ h z - (a₀ : ℂ) • z ^ n₀) :=
+    hh.sub ((differentiable_id.pow n₀).const_smul (a₀ : ℂ))
+  open scoped ComplexOrder in
+  have hrem_deriv (n : ℕ) :
+      0 ≤ iteratedDeriv n (fun z : ℂ ↦ h z - (a₀ : ℂ) • z ^ n₀) 0 := by
+    rw [iteratedDeriv_fun_sub hh.contDiff.contDiffAt (by fun_prop),
+      iteratedDeriv_fun_const_smul_field, iteratedDeriv_fun_pow_zero]
+    split_ifs with hn
+    · subst n
+      have hc_eq : iteratedDeriv n₀ h 0 = (((iteratedDeriv n₀ h 0).re : ℝ) : ℂ) :=
+        Complex.ext rfl (hnonneg n₀).1
+      rw [hc_eq, smul_eq_mul, Complex.nonneg_iff]
+      exact ⟨by simpa using sub_nonneg.mpr ha₀, by simp⟩
+    · simpa [Complex.nonneg_iff, eq_comm, and_comm] using hnonneg n
+  open scoped ComplexOrder in
+  have hrem_nonneg : (0 : ℂ) ≤ h (x : ℂ) - (a₀ : ℂ) • (x : ℂ) ^ n₀ :=
+    hrem_diff.nonneg_of_iteratedDeriv_nonneg hrem_deriv (Complex.real_le_real.mpr hx)
+  open scoped ComplexOrder in
+  simpa [sub_nonneg, ← Complex.ofReal_pow] using (Complex.nonneg_iff.mp hrem_nonneg).1
+
 /-- If `c > 0` and `t : Finset ℕ` is a finite set of indices with `γ n ≠ 0` such that
 `k ≤ m + 2 * t.card`, then the `k`-th iterated derivative of the paired quadratic canonical
 product has strictly positive real part on `(0, ∞)`. -/
@@ -156,50 +183,29 @@ theorem re_iteratedDeriv_pos_of_eq_mul_pow_tprod_one_add_div_sq_of_le
     {t : Finset ℕ} (ht : ∀ n ∈ t, γ n ≠ 0) {k : ℕ} (hk : k ≤ m + 2 * t.card)
     {x : ℝ} (hx : 0 < x) :
     0 < (iteratedDeriv k f (x : ℂ)).re := by
+  -- `f` is entire as a locally uniform limit of mapped partial polynomials.
   have hf_diff : Differentiable ℂ f := by
     rw [← differentiableOn_univ]
     exact (tendstoLocallyUniformlyOn_pairedPartialPoly c m γ hsum hf_eq).differentiableOn
       (Eventually.of_forall fun s ↦
         ((pairedPartialPoly c m γ s).map (algebraMap ℝ ℂ)).differentiableOn)
       isOpen_univ
+  -- Choose the positive Taylor margin `a₀` of `iteratedDeriv k f` at `n₀ = m + 2 * t.card - k`.
   set n₀ : ℕ := m + 2 * t.card - k
   have hn₀_add : n₀ + k = m + 2 * t.card := by omega
-  have hpos_coeff : 0 < (iteratedDeriv (n₀ + k) f 0).re := by
-    rw [hn₀_add]
-    exact re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq hc hsum hf_eq ht
-  have him_coeff : (iteratedDeriv (n₀ + k) f 0).im = 0 :=
-    (iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
-      hc.le hsum hf_eq (n₀ + k) le_rfl).1
   set a₀ : ℝ := (iteratedDeriv (n₀ + k) f 0).re / (n₀.factorial : ℝ)
-  have ha₀_pos : 0 < a₀ := div_pos hpos_coeff (Nat.cast_pos.mpr n₀.factorial_pos)
-  have hrem_diff : Differentiable ℂ (fun z : ℂ ↦ iteratedDeriv k f z - (a₀ : ℂ) • z ^ n₀) :=
-    (hf_diff.iteratedDeriv k).sub ((differentiable_id.pow n₀).const_smul (a₀ : ℂ))
-  open scoped ComplexOrder in
-  have hrem_deriv (n : ℕ) :
-      0 ≤ iteratedDeriv n (fun z : ℂ ↦ iteratedDeriv k f z - (a₀ : ℂ) • z ^ n₀) 0 := by
-    rw [iteratedDeriv_fun_sub ((hf_diff.iteratedDeriv k).contDiff.contDiffAt)
-        (by fun_prop : ContDiffAt ℂ n (fun z : ℂ ↦ (a₀ : ℂ) • z ^ n₀) 0),
-      iteratedDeriv_iteratedDeriv, iteratedDeriv_fun_const_smul_field,
-      iteratedDeriv_fun_pow_zero]
-    split_ifs with hn
-    · subst hn
-      have hc_eq : iteratedDeriv (n₀ + k) f 0 = (((iteratedDeriv (n₀ + k) f 0).re : ℝ) : ℂ) :=
-        Complex.ext rfl him_coeff
-      have hfac : (n₀.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr n₀.factorial_ne_zero
-      rw [hc_eq, smul_eq_mul, ← Complex.ofReal_natCast, ← Complex.ofReal_mul,
-        div_mul_cancel₀ _ hfac, sub_self]
-    · simp only [Nat.cast_zero, smul_zero, sub_zero]
-      have hnonneg := iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
+  have ha₀_pos : 0 < a₀ := div_pos
+    (hn₀_add ▸ re_iteratedDeriv_zero_pos_of_eq_mul_pow_tprod_one_add_div_sq hc hsum hf_eq ht)
+    (Nat.cast_pos.mpr n₀.factorial_pos)
+  -- Compare `iteratedDeriv k f` against `a₀ * x ^ n₀` on `[0, ∞)`.
+  have hle : a₀ * x ^ n₀ ≤ (iteratedDeriv k f (x : ℂ)).re := by
+    refine mul_pow_le_re_of_iteratedDeriv_nonneg (hf_diff.iteratedDeriv k) (fun n ↦ ?_) ?_ hx.le
+    · rw [iteratedDeriv_iteratedDeriv]
+      exact iteratedDeriv_im_eq_zero_and_re_nonneg_of_eq_mul_pow_tprod_one_add_div_sq
         hc.le hsum hf_eq (n + k) le_rfl
-      exact Complex.le_def.mpr ⟨hnonneg.2, hnonneg.1.symm⟩
-  open scoped ComplexOrder in
-  have hrem_nonneg : (0 : ℂ) ≤ iteratedDeriv k f (x : ℂ) - (a₀ : ℂ) • (x : ℂ) ^ n₀ :=
-    hrem_diff.nonneg_of_iteratedDeriv_nonneg hrem_deriv (Complex.real_le_real.mpr hx.le)
-  open scoped ComplexOrder in
-  have hre := (Complex.le_def.mp hrem_nonneg).1
-  rw [Complex.zero_re, Complex.sub_re, sub_nonneg, smul_eq_mul, ← Complex.ofReal_pow,
-    ← Complex.ofReal_mul, Complex.ofReal_re] at hre
-  exact (mul_pos ha₀_pos (pow_pos hx n₀)).trans_le hre
+    · rw [iteratedDeriv_iteratedDeriv]
+      exact (div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr n₀.factorial_ne_zero)).le
+  exact (mul_pos ha₀_pos (pow_pos hx n₀)).trans_le hle
 
 /-- If `c > 0` and infinitely many `γ n` are nonzero, then every iterated derivative of the
 paired quadratic canonical product has strictly positive real part on `(0, ∞)`. -/

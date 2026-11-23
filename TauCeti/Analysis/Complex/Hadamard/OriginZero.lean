@@ -27,6 +27,8 @@ Applying `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne` to `g` yields
 
 ## Main results
 
+* `TauCeti.OrderLE.exists_eq_pow_mul`: factoring out the zero at `0` as
+  `z ^ (analyticOrderAt f 0).toNat * g z`.
 * `TauCeti.OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne`: Hadamard factorization for any
   nonzero entire function of order at most one, allowing a zero at the origin.
 
@@ -45,6 +47,16 @@ namespace TauCeti
 
 variable {f : ℂ → ℂ}
 
+/-- Factoring out the origin zero of a nonzero entire function `f` of finite order `ρ` writes
+`f z = z ^ (analyticOrderAt f 0).toNat * g z`, where `g` is entire, `g 0 ≠ 0`, and
+`OrderLE g ρ`. -/
+theorem OrderLE.exists_eq_pow_mul {ρ : ℝ} (h : OrderLE f ρ) (hf : Differentiable ℂ f)
+    (hf0 : f ≠ 0) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ g 0 ≠ 0 ∧ OrderLE g ρ ∧
+      ∀ z : ℂ, f z = z ^ (analyticOrderAt f 0).toNat * g z := by
+  obtain ⟨g, hg, hg0, hg_ord, hfg⟩ := h.exists_eq_sub_pow_mul hf (Function.ne_iff.mp hf0) 0
+  exact ⟨g, hg, hg0, hg_ord, fun z ↦ by simpa only [sub_zero, analyticOrderNatAt] using hfg z⟩
+
 /-- **Hadamard factorization at order at most one, allowing a zero at the origin.** Every nonzero
 entire function `f` with `OrderLE f 1` has the form
 `f z = z ^ m * exp (a + b * z) * divisorProductOne f z`, where `m = (analyticOrderAt f 0).toNat`
@@ -56,22 +68,20 @@ theorem OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne (h : OrderLE f 1)
         ((analyticOrderAt f 0).toNat.factorial : ℂ) ∧
       ∀ z : ℂ, f z = z ^ (analyticOrderAt f 0).toNat * exp (a + b * z) *
         divisorProductOne f z := by
-  obtain ⟨g, hg, hg0, hg_ord, hfg⟩ := h.exists_eq_sub_pow_mul hf (Function.ne_iff.mp hf0) 0
-  have hfg' (z : ℂ) : f z = z ^ (analyticOrderAt f 0).toNat * g z := by
-    simpa only [sub_zero, analyticOrderNatAt] using hfg z
-  have hfun : f = fun z : ℂ ↦ (z - 0) ^ (analyticOrderAt f 0).toNat • g z :=
-    funext fun z ↦ by simpa only [smul_eq_mul, analyticOrderNatAt] using hfg z
+  obtain ⟨g, hg, hg0, hg_ord, hfg⟩ := h.exists_eq_pow_mul hf hf0
   have hg_der : g 0 = iteratedDeriv (analyticOrderAt f 0).toNat f 0 /
       ((analyticOrderAt f 0).toNat.factorial : ℂ) := by
     have hinv := inv_factorial_smul_iteratedDeriv_pow_sub_smul (analyticOrderAt f 0).toNat 0
       (hg.analyticAt 0).contDiffAt
-    rw [← hfun] at hinv
+    have hfun : (fun z : ℂ ↦ (z - 0) ^ (analyticOrderAt f 0).toNat • g z) = f :=
+      funext fun z ↦ by simpa only [sub_zero, smul_eq_mul] using (hfg z).symm
+    rw [hfun] at hinv
     simpa [div_eq_inv_mul] using hinv.symm
   obtain ⟨a, ha, hga⟩ := hg_ord.exists_eq_cexp_mul_divisorProductOne hg hg0
   have hprod : divisorProductOne f = divisorProductOne g :=
-    divisorProductOne_eq_of_eq_pow_mul hg hfg'
+    divisorProductOne_eq_of_eq_pow_mul hg hfg
   refine ⟨a, logDeriv g 0, ha.trans hg_der, fun z ↦ ?_⟩
-  rw [hfg' z, hga z, hprod, mul_assoc]
+  rw [hfg z, hga z, hprod, mul_assoc]
 
 /-! ### Examples -/
 

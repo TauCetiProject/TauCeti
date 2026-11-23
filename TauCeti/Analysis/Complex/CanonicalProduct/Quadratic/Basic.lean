@@ -108,15 +108,16 @@ theorem im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq {f : ℂ → ℂ} {a 
   obtain ⟨R, hR⟩ := hpositive
   set x₀ : ℝ := max R 1
   obtain ⟨hfx_im, hfx_re⟩ := hR x₀ (le_max_left R 1)
-  have hP_le : (1 : ℝ) ≤ (∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2)).re ∧
-      (0 : ℝ) = (∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2)).im := by
-    open scoped ComplexOrder in
-    exact Complex.le_def.mp (one_le_tprod_one_add_div_sq hsum x₀)
+  open scoped ComplexOrder in
+  have hP_le : (1 : ℂ) ≤ ∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2) :=
+    one_le_tprod_one_add_div_sq hsum x₀
   set P₀ : ℂ := ∏' n : ℕ, (1 + (x₀ : ℂ) ^ 2 / (γ n : ℂ) ^ 2) with hP₀_def
   have hK_pos : 0 < x₀ ^ m * P₀.re :=
     mul_pos (pow_pos (lt_of_lt_of_le zero_lt_one (le_max_right R 1)) m)
-      (zero_lt_one.trans_le hP_le.1)
-  have hP_coe : P₀ = (P₀.re : ℂ) := Complex.ext rfl hP_le.2.symm
+      (zero_lt_one.trans_le (Complex.le_def.mp hP_le).1)
+  have hP_coe : P₀ = (P₀.re : ℂ) := by
+    open scoped ComplexOrder in
+    exact Complex.eq_re_of_ofReal_le (r := 1) (by simpa only [Complex.ofReal_one] using hP_le)
   have hfx_eval : f (x₀ : ℂ) = a * (((x₀ ^ m * P₀.re : ℝ) : ℂ)) := by
     conv_lhs => rw [hf_eq (x₀ : ℂ), ← hP₀_def, hP_coe]
     push_cast
@@ -153,25 +154,24 @@ theorem exists_nat_seq_tprod_one_add_div_sq {α : Type*} {y : α → ℝ} {m : �
     split_ifs with hn
     · exact (hy hn.choose.1).le
     · exact le_rfl
+  have hγ_ext {β : Type} (φ : ℝ → β) (b₀ : β) (h0 : φ 0 = b₀) (n : ℕ) :
+      φ (γ n) = Function.extend emb (fun p : ι ↦ φ (y p.1)) (fun _ ↦ b₀) n := by
+    rw [Function.apply_extend φ, Function.comp_def, Function.comp_def]
+    simp only [Pi.zero_apply, h0]
   have hγ_inv_eq : (fun n : ℕ ↦ (γ n)⁻¹ ^ 2) =
-      Function.extend emb (fun p : ι ↦ (y p.1)⁻¹ ^ 2) 0 := by
-    ext n
-    dsimp only [γ]
-    rw [Function.apply_extend (fun r : ℝ ↦ r⁻¹ ^ 2)]
-    simp [Function.comp_def]
-    rfl
+      Function.extend emb (fun p : ι ↦ (y p.1)⁻¹ ^ 2) 0 :=
+    funext fun n ↦ by
+      simpa only [← Pi.zero_def] using hγ_ext (fun r : ℝ ↦ r⁻¹ ^ 2) 0 (by norm_num) n
   have hγ_sum : Summable (fun n : ℕ ↦ (γ n)⁻¹ ^ 2) := by
     rw [hγ_inv_eq]
     exact (summable_extend_zero hemb).mpr hι_sum
   refine ⟨γ, hγ_nonneg, hγ_sum, fun z ↦ ?_⟩
   have hfactor_ext :
       (fun n : ℕ ↦ (1 : ℂ) + z ^ 2 / (γ n : ℂ) ^ 2) =
-        Function.extend emb (fun p : ι ↦ (1 : ℂ) + z ^ 2 / (y p.1 : ℂ) ^ 2) 1 := by
-    ext n
-    dsimp only [γ]
-    rw [Function.apply_extend (fun r : ℝ ↦ (1 : ℂ) + z ^ 2 / (r : ℂ) ^ 2)]
-    simp [Function.comp_def]
-    rfl
+        Function.extend emb (fun p : ι ↦ (1 : ℂ) + z ^ 2 / (y p.1 : ℂ) ^ 2) 1 :=
+    funext fun n ↦ by
+      simpa only [← Pi.one_def] using
+        hγ_ext (fun r : ℝ ↦ (1 : ℂ) + z ^ 2 / (r : ℂ) ^ 2) 1 (by simp) n
   have hmult_nat : Multipliable (fun n : ℕ ↦ (1 : ℂ) + z ^ 2 / (γ n : ℂ) ^ 2) :=
     (hasProd_one_add_div_sq hγ_sum z).multipliable
   rw [hfactor_ext] at hmult_nat

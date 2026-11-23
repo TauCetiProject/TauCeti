@@ -60,17 +60,12 @@ private noncomputable def imagPairEquiv {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S
 private theorem imagPairEquiv_inl {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
     ((imagPairEquiv hneg him (Sum.inl ρ) : S) : ℂ) = ρ := by
-  dsimp only [imagPairEquiv]
-  rw [Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl, Equiv.Set.sumCompl_apply_inl,
-    Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe]
+  simp [imagPairEquiv, Equiv.subtypeSubtypeEquivSubtypeInter]
 
 private theorem imagPairEquiv_inr {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
     ((imagPairEquiv hneg him (Sum.inr ρ) : S) : ℂ) = -ρ := by
-  dsimp only [imagPairEquiv]
-  rw [Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr, Equiv.Set.sumCompl_apply_inr]
-  simp only [Equiv.trans_apply, Equiv.subtypeEquiv_apply, Equiv.neg_apply]
-  rw [Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe]
+  simp [imagPairEquiv, Equiv.subtypeSubtypeEquivSubtypeInter]
 
 /-- Grouping each upper-half-plane zero `ρ` (`Im ρ > 0`) of an even entire function `g` with `-ρ`
 rewrites `divisorProductOne g z` as a product over `{ρ ∈ d.support | 0 < ρ.im}`. -/
