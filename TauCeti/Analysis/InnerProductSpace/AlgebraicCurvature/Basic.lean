@@ -376,12 +376,20 @@ theorem pullbackAlgebraicCurvature_id :
       ContinuousLinearMap.id ℝ (algebraicCurvatureSubmodule V) := by ext; simp
 
 /-- Pulling back algebraic curvature tensors is contravariantly functorial under composition. -/
-@[simp]
 theorem pullbackAlgebraicCurvature_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
     (f : W →L[ℝ] V) (g : U →L[ℝ] W) :
     (f.comp g).pullbackAlgebraicCurvature =
       g.pullbackAlgebraicCurvature.comp f.pullbackAlgebraicCurvature := by
   ext; simp [ContinuousMultilinearMap.compContinuousLinearMap_apply]
+
+/-- Composing two algebraic curvature pullbacks equals pulling back along their composition. -/
+@[simp]
+theorem pullbackAlgebraicCurvature_comp_pullbackAlgebraicCurvature
+    {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (f : W →L[ℝ] V) (g : U →L[ℝ] W) :
+    g.pullbackAlgebraicCurvature.comp f.pullbackAlgebraicCurvature =
+      (f.comp g).pullbackAlgebraicCurvature :=
+  (pullbackAlgebraicCurvature_comp f g).symm
 
 /-- If `f : W →L[ℝ] V` has dense range, `f.pullbackAlgebraicCurvature` is injective. -/
 theorem pullbackAlgebraicCurvature_injective (f : W →L[ℝ] V) (hf : DenseRange f) :
@@ -412,6 +420,32 @@ def algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) :
   left_inv _ := by ext; simp
   right_inv _ := by ext; simp
   norm_map' r := r.val.norm_compContinuous_linearIsometryEquiv fun _ ↦ e
+
+/-- The inverse of `algebraicCurvatureLinearIsometryEquiv e` is
+`algebraicCurvatureLinearIsometryEquiv e.symm`. -/
+@[simp]
+theorem algebraicCurvatureLinearIsometryEquiv_symm (e : W ≃ₗᵢ[ℝ] V) :
+    (algebraicCurvatureLinearIsometryEquiv e).symm =
+      algebraicCurvatureLinearIsometryEquiv e.symm := by
+  ext; rfl
+
+/-- As a continuous linear map, `algebraicCurvatureLinearIsometryEquiv e` is
+`(e : W →L[ℝ] V).pullbackAlgebraicCurvature`. -/
+@[simp]
+theorem toContinuousLinearMap_algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) :
+    ((algebraicCurvatureLinearIsometryEquiv e :
+        algebraicCurvatureSubmodule V →L[ℝ] algebraicCurvatureSubmodule W)) =
+      (e : W →L[ℝ] V).pullbackAlgebraicCurvature := by
+  ext; rfl
+
+/-- As a continuous linear map via `toLinearIsometry`, `algebraicCurvatureLinearIsometryEquiv e` is
+`(e : W →L[ℝ] V).pullbackAlgebraicCurvature`. -/
+@[simp]
+theorem toLinearIsometry_toContinuousLinearMap_algebraicCurvatureLinearIsometryEquiv
+    (e : W ≃ₗᵢ[ℝ] V) :
+    (algebraicCurvatureLinearIsometryEquiv e).toLinearIsometry.toContinuousLinearMap =
+      (e : W →L[ℝ] V).pullbackAlgebraicCurvature := by
+  ext; rfl
 
 /-- Coercion of `algebraicCurvatureLinearIsometryEquiv` to `FourTensor`. -/
 @[simp]
