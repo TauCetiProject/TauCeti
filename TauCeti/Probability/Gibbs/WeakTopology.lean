@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.SymbolicDynamics.Basic
-public import Mathlib.MeasureTheory.Constructions.Cylinders
-public import Mathlib.MeasureTheory.Measure.Prokhorov
+public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
@@ -18,8 +16,9 @@ Let `S` be an alphabet with the discrete topology and the discrete σ-algebra, a
 of configurations, with the subspace topology and the trace of the product σ-algebra. When `S` is
 finite and `X` is closed, `X` is compact (`isCompact_iff_compactSpace.mp hX.isCompact`), and
 Mathlib's instances then make it a compact metrisable Borel space when `I` is countable, so the
-space of probability measures `ProbabilityMeasure X` with the weak topology is compact. This
-applies to the carrier of a subshift `SymbolicDynamics.FullShift.Subshift`.
+space of probability measures `ProbabilityMeasure X` with the weak topology is compact by the
+instance in `Mathlib.MeasureTheory.Measure.Prokhorov`. This applies to the carrier of a subshift
+`SymbolicDynamics.FullShift.Subshift`.
 
 The traces on `X` of cylinder events `{ω : ω|_s ∈ t}`, for a finite `s ⊆ I`, are clopen, and
 measurable when `S` is countable (`TauCeti.isClopen_preimage_cylinder`,
@@ -50,59 +49,6 @@ public section
 
 open MeasureTheory Filter Topology Set
 open scoped NNReal
-
-namespace SymbolicDynamics.FullShift
-
-variable {G A : Type*}
-
-/-- A cylinder set is the cylinder event, in the sense of `MeasureTheory.cylinder`, of the single
-pattern `x|_U`. -/
-theorem cylinder_eq_cylinder_singleton (U : Finset G) (x : G → A) :
-    FullShift.cylinder U x = MeasureTheory.cylinder (α := fun _ : G => A) U {U.restrict x} := by
-  ext y
-  simp [FullShift.mem_cylinder, funext_iff]
-
-/-- Cylinder sets are measurable. -/
-theorem measurableSet_cylinder [MeasurableSpace A] [MeasurableSingletonClass A] (U : Finset G)
-    (x : G → A) : MeasurableSet (FullShift.cylinder U x) := by
-  rw [cylinder_eq_cylinder_singleton]
-  exact MeasurableSet.cylinder _ (measurableSet_singleton _)
-
-/-- The intersection of two cylinder sets is the cylinder set, on the union of their supports, of
-any configuration that lies in both. -/
-theorem cylinder_inter_cylinder [DecidableEq G] {U V : Finset G} {x y z : G → A}
-    (hzx : ∀ i ∈ U, z i = x i) (hzy : ∀ i ∈ V, z i = y i) :
-    FullShift.cylinder U x ∩ FullShift.cylinder V y = FullShift.cylinder (U ∪ V) z := by
-  ext w
-  simp only [mem_inter_iff, FullShift.mem_cylinder, Finset.mem_union]
-  constructor
-  · rintro ⟨hwx, hwy⟩ j (hj | hj)
-    · rw [hwx j hj, hzx j hj]
-    · rw [hwy j hj, hzy j hj]
-  · intro hw
-    exact ⟨fun j hj => (hw j (Or.inl hj)).trans (hzx j hj),
-      fun j hj => (hw j (Or.inr hj)).trans (hzy j hj)⟩
-
-/-- The cylinder set of a configuration on a union is the intersection of its cylinder sets. -/
-theorem cylinder_union [DecidableEq G] (U V : Finset G) (x : G → A) :
-    FullShift.cylinder (U ∪ V) x = FullShift.cylinder U x ∩ FullShift.cylinder V x :=
-  (cylinder_inter_cylinder (fun _ _ => rfl) fun _ _ => rfl).symm
-
-/-- The cylinder sets form a π-system. -/
-theorem isPiSystem_cylinder :
-    IsPiSystem {C : Set (G → A) | ∃ (U : Finset G) (x : G → A), C = FullShift.cylinder U x} := by
-  classical
-  rintro _ ⟨U, x, rfl⟩ _ ⟨V, y, rfl⟩ ⟨z, hzx, hzy⟩
-  exact ⟨U ∪ V, z, cylinder_inter_cylinder hzx hzy⟩
-
-/-- The cylinder sets of a fixed configuration form a π-system. -/
-theorem isPiSystem_cylinder_fixed (x : G → A) :
-    IsPiSystem {C : Set (G → A) | ∃ U : Finset G, C = FullShift.cylinder U x} := by
-  classical
-  rintro _ ⟨U, rfl⟩ _ ⟨V, rfl⟩ -
-  exact ⟨U ∪ V, (cylinder_union U V x).symm⟩
-
-end SymbolicDynamics.FullShift
 
 open SymbolicDynamics
 
