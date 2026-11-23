@@ -16,7 +16,9 @@ the raw pole-cleared product with its spurious values at poles. For a meromorphi
 continued record this is equivalent to a global exponential-of-power bound. This is the
 growth hypothesis used when applying strip convexity to a pole-cleared L-function.
 
-No particular order bound, such as order at most one, is built into the predicate.
+No particular order bound, such as order at most one, is built into the predicate. An order bound
+on the entire completion forces it to be analytic outside a bounded set
+(`eventually_analyticAt_entireCompletion`).
 -/
 
 public section
@@ -45,5 +47,13 @@ theorem HasMeromorphicContinuation.isFiniteOrder_iff_exists_bound
     d.IsFiniteOrder ↔ ∃ A : ℝ, 0 < A ∧ ∃ C > 0,
       ∀ z, ‖d.entireCompletion z‖ ≤ C * Real.exp (‖z‖ ^ A) :=
   TauCeti.isFiniteOrder_iff_exists_bound h.differentiable_entireCompletion.continuous
+
+/-- **An entire completion of finite order has no poles outside a bounded set**, whether or not
+the record has a meromorphic continuation. -/
+theorem eventually_analyticAt_entireCompletion {A : ℝ} (hA : OrderLE d.entireCompletion A) :
+    ∀ᶠ z in Bornology.cobounded ℂ, AnalyticAt ℂ d.entireCompletion z :=
+  hA.eventually_analyticAt_cobounded fun z ↦ by
+    rw [entireCompletion_def]
+    exact meromorphicNFOn_toMeromorphicNFOn _ Set.univ (Set.mem_univ z)
 
 end TauCeti.LFunctions.AnalyticLFunctionData

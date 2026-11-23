@@ -48,6 +48,8 @@ the inputs of the tubular-neighbourhood and surgery constructions.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
   smooth embedding.
 * `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
+* `Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn`: a complemented linear
+  normal form in preferred charts makes an embedding a smooth embedding, including corners.
 * `ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding`,
   `ContinuousLinearMap.isSmoothEmbedding_of_injective`: a continuous linear map with a continuous
   linear left inverse, for instance an injective one into a finite-dimensional space over a
@@ -346,6 +348,17 @@ theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
     (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
+
+/-- An embedding with a complemented linear normal form in the preferred charts is a
+smooth embedding. Source and target may have corners; the complement is explicit. -/
+theorem _root_.Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn
+    [IsManifold I n M] [IsManifold J n N] {f : M → N} (hf : IsEmbedding f)
+    (L : (E × F) ≃L[𝕜] E')
+    (hL : ∀ x, Set.EqOn (writtenInExtChartAt I J x f) (L ∘ fun v ↦ (v, 0))
+      (extChartAt I x).target) : Manifold.IsSmoothEmbedding I J n f := by
+  refine ⟨Manifold.IsImmersionOfComplement.isImmersion (F := F) fun x ↦ ?_, hf⟩
+  exact Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
+    hf.continuous.continuousAt L (hL x)
 
 /-- A continuous linear map with a continuous linear left inverse is a `C^n` embedding. -/
 theorem _root_.ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding {f : E →L[𝕜] E'}

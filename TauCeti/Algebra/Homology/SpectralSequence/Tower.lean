@@ -5,36 +5,92 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.SpectralSequence.Basic
-public import TauCeti.Algebra.Homology.ShortComplex.Subquotient
+public import TauCeti.Algebra.Homology.SpectralSequence.Basic
+public import TauCeti.Algebra.Homology.ShortComplex.SubquotientPresentation
 import TauCeti.CategoryTheory.Subobject.Basic
 
 /-!
-# Cycle and boundary towers, stabilisation, and degeneration of spectral sequences
+# The cycle and boundary towers of a spectral sequence
 
-Given `E : SpectralSequence C c r₀` in an abelian category `C`, iterating
-`ShortComplex.homologyPresentation` along `E.iso` presents each `(E.page r).X pq` as a subquotient
-`Z_r(pq) / B_r(pq)` of `(E.page r₀).X pq`:
+Each page of a spectral sequence `E` is the homology of the previous one, so the object at a
+position `pq` on the page `r` is a subquotient `Z_r(pq) / B_r(pq)` of the object at `pq` on the
+first page `r₀`. This file constructs these subquotient presentations by recursion over the
+pages (`CategoryTheory.SpectralSequence.pagePresentation`). On the first page the presentation is
+the identity one, by `⊥ ≤ ⊤`. From the page `r` to the page `r + 1`, the presentation of the
+homology of the page `r` at `pq`, by the image of the entering differential and the kernel of the
+leaving one, is pulled back along the presentation of the page `r`, and then transported along
+the isomorphism `E.iso r (r + 1) pq` from that homology to the page `r + 1`.
 
-* `pagePresentation`, `cyclesSubobject` (`Z_r`), `boundariesSubobject` (`B_r`), and `fromPage`
-  (rebasing to a later page `s ≥ r₀`, compatible with `pagePresentation` via composition).
-* `StabilisesAt`, `IsRegularAt`, `IsCoregularAt`, and `DegeneratesAt`, characterised by eventual
-  constancy of the cycle and boundary towers.
-* `pageXIsoOfStabilises`: coherent stabilisation isomorphisms `(E.page s).X pq ≅ (E.page r).X pq`
-  compatible with `pagePresentation`, composition, rebasing, and morphisms.
+The larger subobjects form the decreasing *cycle tower* `Z_r(pq)`
+(`CategoryTheory.SpectralSequence.cyclesSubobject`) and the smaller ones the increasing *boundary
+tower* `B_r(pq)` (`CategoryTheory.SpectralSequence.boundariesSubobject`) of subobjects of
+`(E.page r₀).X pq`, with `B_r ≤ B_{r+1} ≤ Z_{r+1} ≤ Z_r`. The cycle tower stays the same from
+`r` to `r + 1` exactly when the differential leaving `pq` on the page `r` vanishes, and the
+boundary tower stays the same exactly when the differential entering `pq` vanishes. The object at
+`pq` on the page `r` is zero exactly when `B_r(pq) = Z_r(pq)`.
+
+The towers are natural: a morphism `f : E ⟶ E'` of spectral sequences maps the presentation of
+each page of `E` to that of `E'` through its first-page component, over its component on that page
+(`CategoryTheory.SpectralSequence.pagePresentation_mapsTo`). So the first-page component maps
+`Z_r(E, pq)` into `Z_r(E', pq)` and `B_r(E, pq)` into `B_r(E', pq)`, and an isomorphism of spectral
+sequences identifies the towers.
+
+This file also provides rebasing (`CategoryTheory.SpectralSequence.fromPage`), stabilisation and
+regularity predicates (`StabilisesAt`, `IsRegularAt`, `IsCoregularAt`, `DegeneratesAt`)
+characterised by eventual constancy of the towers, and coherent stabilisation isomorphisms
+(`CategoryTheory.SpectralSequence.pageXIsoOfStabilises`).
+
+## Main definitions
+
+* `CategoryTheory.SpectralSequence.fromPage`, `fromPageFunctor`: rebasing to a later page.
+* `CategoryTheory.SpectralSequence.pagePresentation`: the presentation of `(E.page r).X pq` inside
+  `(E.page r₀).X pq`.
+* `CategoryTheory.SpectralSequence.cyclesSubobject`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject`: the cycle and boundary towers `Z_r(pq)`
+  and `B_r(pq)`.
+* `CategoryTheory.SpectralSequence.StabilisesAt`, `IsRegularAt`, `IsCoregularAt`, `DegeneratesAt`,
+  and `pageXIsoOfStabilises`: stabilisation and degeneration criteria.
+
+## Main results
+
+* `CategoryTheory.SpectralSequence.pagePresentation_self`,
+  `CategoryTheory.SpectralSequence.pagePresentation_add_one`: the recursion defining the
+  presentations.
+* `CategoryTheory.SpectralSequence.cyclesSubobject_add_one`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject_add_one`: `Z_{r+1}` and `B_{r+1}` are the
+  preimages of the kernel of the leaving differential and of the image of the entering one.
+* `CategoryTheory.SpectralSequence.cyclesSubobject_anti`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject_mono`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject_le_cyclesSubobject`: the cycle tower
+  decreases, the boundary tower increases, and every boundary subobject lies below every cycle
+  subobject.
+* `CategoryTheory.SpectralSequence.cyclesSubobject_add_one_eq_iff`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject_add_one_eq_iff`: a tower stays the same
+  from one page to the next exactly when the corresponding differential vanishes.
+* `CategoryTheory.SpectralSequence.isZero_page_X_iff`: the object at `pq` on the page `r` is zero
+  exactly when `B_r(pq) = Z_r(pq)`.
+* `CategoryTheory.SpectralSequence.pagePresentation_mapsTo`,
+  `CategoryTheory.SpectralSequence.cyclesSubobject_le_pullback`,
+  `CategoryTheory.SpectralSequence.boundariesSubobject_le_pullback`: naturality of the
+  presentations and the towers in morphisms of spectral sequences.
+* `CategoryTheory.SpectralSequence.pullback_cyclesSubobject_of_iso`,
+  `CategoryTheory.SpectralSequence.pullback_boundariesSubobject_of_iso`: isomorphic spectral
+  sequences have towers corresponding under the first-page isomorphism.
 
 ## References
 
-* Stacks Project, Tag 011N (Section 12.20, *Spectral sequences*) and Tag 0BDV (Lemma 12.24.8).
+* [Stacks, Tag 011N](https://stacks.math.columbia.edu/tag/011N), the construction after
+  Definition 20.1, and [Tag 0BDV](https://stacks.math.columbia.edu/tag/0BDV) (Lemma 12.24.8).
+* G. O. Helle and J. Rognes, *Boardman's whole-plane obstruction group for Cartan–Eilenberg
+  systems*, Documenta Math. 24 (2019), 1855–1878, Lemma 2.2.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001.
 -/
 
 public section
 
-open CategoryTheory Limits
-open TauCeti (SubquotientPresentation)
-
 namespace CategoryTheory.SpectralSequence
+
+open Limits Subobject TauCeti
 
 universe v u
 
@@ -50,22 +106,22 @@ abbrev fromPage (s : ℤ) (hs : r₀ ≤ s := by lia) : SpectralSequence C c s w
   iso r r' pq hrr' hr := E.iso r r' pq hrr' (hs.trans hr)
 
 @[simp]
-theorem fromPage_page (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hr : s ≤ r) :
+lemma fromPage_page (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hr : s ≤ r) :
     (E.fromPage s hs).page r hr = E.page r (hs.trans hr) := rfl
 
 @[simp]
-theorem fromPage_iso (s : ℤ) (hs : r₀ ≤ s) (r r' : ℤ) (pq : κ) (hrr' : r + 1 = r') (hr : s ≤ r) :
+lemma fromPage_iso (s : ℤ) (hs : r₀ ≤ s) (r r' : ℤ) (pq : κ) (hrr' : r + 1 = r') (hr : s ≤ r) :
     (E.fromPage s hs).iso r r' pq hrr' hr = E.iso r r' pq hrr' (hs.trans hr) := rfl
 
 /-- Restrict a morphism of spectral sequences to start at a later page `s ≥ r₀`. -/
-def Hom.fromPage {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s := by lia) :
-    E.fromPage s hs ⟶ E'.fromPage s hs where
+@[expose] def Hom.fromPage {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ)
+    (hs : r₀ ≤ s := by lia) : E.fromPage s hs ⟶ E'.fromPage s hs where
   hom r hr := f.hom r (hs.trans hr)
   comm r r' pq hrr' hr := f.comm r r' pq hrr' (hs.trans hr)
 
 @[simp]
-theorem Hom.fromPage_hom {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s)
-    (r : ℤ) (hr : s ≤ r) : (f.fromPage s hs).hom r hr = f.hom r (hs.trans hr) := by rfl
+lemma Hom.fromPage_hom {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s)
+    (r : ℤ) (hr : s ≤ r) : (f.fromPage s hs).hom r hr = f.hom r (hs.trans hr) := rfl
 
 /-- Rebasing spectral sequences from page `r₀` to page `s ≥ r₀`, as a functor. -/
 @[expose, simps]
@@ -75,7 +131,7 @@ def fromPageFunctor (C : Type u) [Category.{v} C] [Abelian C] {κ : Type*}
   obj E := E.fromPage s hs
   map f := f.fromPage s hs
 
-theorem fromPage_fromPage (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t) :
+lemma fromPage_fromPage (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t) :
     (E.fromPage s hs).fromPage t hst = E.fromPage t (hs.trans hst) := rfl
 
 end FromPage
@@ -84,144 +140,185 @@ section Tower
 
 variable (E : SpectralSequence C c r₀) (pq : κ)
 
-/-- The canonical subquotient presentation of `(E.page r).X pq` inside `(E.page r₀).X pq`, built
-by induction on `r ≥ r₀` from `SubquotientPresentation.refl` and `ShortComplex.homologyPresentation`
-transported along `E.iso`. -/
+/-- The presentation of the object at `pq` on the page `r` as a subquotient of the object at `pq`
+on the first page `r₀`. On the first page it is the identity presentation; the presentation on the
+page `r + 1` presents the homology of the page `r` at `pq` inside the presentation on the page
+`r`, and transports it along `E.iso r (r + 1) pq`. -/
 noncomputable def pagePresentation (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    SubquotientPresentation ((E.page r₀).X pq) ((E.page r hr).X pq) :=
+    SubquotientPresentation ((E.page r₀).X pq) ((E.page r).X pq) :=
   Int.leInduction
     (motive := fun r hr ↦ SubquotientPresentation ((E.page r₀).X pq) ((E.page r hr).X pq))
-    (SubquotientPresentation.refl ((E.page r₀).X pq))
-    (fun s hs p ↦ p.trans ((((E.page s hs).sc pq).homologyPresentation).mapIso
-      (E.iso s (s + 1) pq rfl hs))) r hr
+    (SubquotientPresentation.refl _)
+    (fun s hs P ↦ (P.trans ((E.page s).sc pq).homologyPresentation).mapIso (E.iso s (s + 1) pq))
+    r hr
 
+/-- On the first page, the presentation is the identity presentation. -/
 @[simp]
-theorem pagePresentation_base :
-    E.pagePresentation pq r₀ le_rfl = SubquotientPresentation.refl ((E.page r₀).X pq) :=
+lemma pagePresentation_self : E.pagePresentation pq r₀ le_rfl = SubquotientPresentation.refl _ :=
   Int.leInduction_base _ _
 
-theorem pagePresentation_add_one (r : ℤ) (hr : r₀ ≤ r) :
-    E.pagePresentation pq (r + 1) (Int.le_add_one hr) = (E.pagePresentation pq r hr).trans
-      ((((E.page r hr).sc pq).homologyPresentation).mapIso (E.iso r (r + 1) pq rfl hr)) :=
+/-- The presentation on the page `r + 1` is the presentation of the homology of the page `r` at
+`pq`, taken inside the presentation on the page `r`, and transported along `E.iso r (r + 1) pq`.
+-/
+lemma pagePresentation_add_one (r : ℤ) (hr : r₀ ≤ r) :
+    E.pagePresentation pq (r + 1) (Int.le_add_one hr) =
+      ((E.pagePresentation pq r hr).trans ((E.page r).sc pq).homologyPresentation).mapIso
+        (E.iso r (r + 1) pq) :=
   Int.leInduction_add_one _ _ r hr
 
-/-- The `r`-cycle subobject `Z_r(pq) ≤ (E.page r₀).X pq` at position `pq`. -/
-noncomputable abbrev cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    Subobject ((E.page r₀).X pq) := (E.pagePresentation pq r hr).Z
+/-- The cycle tower `Z_r(pq)`: the subobject of the object at `pq` on the first page whose
+quotient by the boundary subobject `B_r(pq)` is the object at `pq` on the page `r`. It consists of
+the elements that survive to the page `r`. -/
+@[expose] noncomputable def cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    Subobject ((E.page r₀).X pq) :=
+  (E.pagePresentation pq r hr).Z
 
-/-- The `r`-boundary subobject `B_r(pq) ≤ (E.page r₀).X pq` at position `pq`. -/
-noncomputable abbrev boundariesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    Subobject ((E.page r₀).X pq) := (E.pagePresentation pq r hr).B
+/-- The boundary tower `B_r(pq)`: the subobject of the object at `pq` on the first page that is
+divided out in the object at `pq` on the page `r`. It consists of the elements that are boundaries
+by the page `r`. -/
+@[expose] noncomputable def boundariesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    Subobject ((E.page r₀).X pq) :=
+  (E.pagePresentation pq r hr).B
 
 @[simp]
-theorem cyclesSubobject_base : E.cyclesSubobject pq r₀ le_rfl = ⊤ := by
-  rw [cyclesSubobject, pagePresentation_base, SubquotientPresentation.refl_Z]
+lemma pagePresentation_Z (r : ℤ) (hr : r₀ ≤ r) :
+    (E.pagePresentation pq r hr).Z = E.cyclesSubobject pq r :=
+  (rfl)
 
 @[simp]
-theorem boundariesSubobject_base : E.boundariesSubobject pq r₀ le_rfl = ⊥ := by
-  rw [boundariesSubobject, pagePresentation_base, SubquotientPresentation.refl_B]
+lemma pagePresentation_B (r : ℤ) (hr : r₀ ≤ r) :
+    (E.pagePresentation pq r hr).B = E.boundariesSubobject pq r :=
+  (rfl)
 
-/-- On page `r + 1`, `Z_{r+1}(pq)` is the preimage of `kernelSubobject ((E.page r).dFrom pq)`. -/
-theorem cyclesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
+/-- On the first page every element is a cycle. -/
+@[simp]
+lemma cyclesSubobject_self : E.cyclesSubobject pq r₀ le_rfl = ⊤ := by
+  rw [cyclesSubobject, pagePresentation_self, SubquotientPresentation.refl_Z]
+
+/-- On the first page only zero is a boundary. -/
+@[simp]
+lemma boundariesSubobject_self : E.boundariesSubobject pq r₀ le_rfl = ⊥ := by
+  rw [boundariesSubobject, pagePresentation_self, SubquotientPresentation.refl_B]
+
+/-- The cycles of the page `r + 1` are the preimage, under the presentation of the page `r`, of
+the kernel of the differential of the page `r` leaving `pq`. -/
+lemma cyclesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) =
-      (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).dFrom pq)) := by
-  rw [cyclesSubobject, pagePresentation_add_one E pq r hr, SubquotientPresentation.trans_Z,
-    SubquotientPresentation.mapIso_Z, SubquotientPresentation.ofIsColimit_Z]
-  rfl
+      (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r).dFrom pq)) := by
+  rw [cyclesSubobject, pagePresentation_add_one _ _ r hr, SubquotientPresentation.mapIso_Z,
+    SubquotientPresentation.trans_Z, ShortComplex.homologyPresentation_Z,
+    HomologicalComplex.shortComplexFunctor_obj_g]
 
-/-- On page `r + 1`, `B_{r+1}(pq)` is the preimage of `imageSubobject ((E.page r).dTo pq)`. -/
-theorem boundariesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
+/-- The boundaries of the page `r + 1` are the preimage, under the presentation of the page `r`,
+of the image of the differential of the page `r` entering `pq`. -/
+lemma boundariesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
     E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) =
-      (E.pagePresentation pq r hr).preimage (imageSubobject ((E.page r hr).dTo pq)) := by
-  rw [boundariesSubobject, pagePresentation_add_one E pq r hr, SubquotientPresentation.trans_B,
-    SubquotientPresentation.mapIso_B, SubquotientPresentation.ofIsColimit_B]
-  rfl
+      (E.pagePresentation pq r hr).preimage (imageSubobject ((E.page r).dTo pq)) := by
+  rw [boundariesSubobject, pagePresentation_add_one _ _ r hr, SubquotientPresentation.mapIso_B,
+    SubquotientPresentation.trans_B, ShortComplex.homologyPresentation_B,
+    HomologicalComplex.shortComplexFunctor_obj_f]
 
-/-- On every page `r ≥ r₀`, boundaries lie inside cycles: `B_r(pq) ≤ Z_r(pq)`. -/
-theorem boundariesSubobject_le_cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    E.boundariesSubobject pq r hr ≤ E.cyclesSubobject pq r hr := (E.pagePresentation pq r hr).le
+/-- On each page, every boundary is a cycle. -/
+lemma boundariesSubobject_le_cyclesSubobject_self (r : ℤ) (hr : r₀ ≤ r) :
+    E.boundariesSubobject pq r ≤ E.cyclesSubobject pq r :=
+  (E.pagePresentation pq r hr).le
 
-/-- The cycle tower decreases at each page: `Z_{r+1}(pq) ≤ Z_r(pq)`. -/
-theorem cyclesSubobject_add_one_le (r : ℤ) (hr : r₀ ≤ r) :
-    E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) ≤ E.cyclesSubobject pq r hr := by
-  rw [cyclesSubobject_add_one E pq r hr]; exact (E.pagePresentation pq r hr).preimage_le_Z _
+/-- The cycles of the page `r + 1` are cycles of the page `r`. -/
+lemma cyclesSubobject_add_one_le (r : ℤ) (hr : r₀ ≤ r) :
+    E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) ≤ E.cyclesSubobject pq r := by
+  rw [cyclesSubobject_add_one]
+  exact (E.pagePresentation pq r hr).preimage_le_Z _
 
-/-- The boundary tower increases at each page: `B_r(pq) ≤ B_{r+1}(pq)`. -/
-theorem le_boundariesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
-    E.boundariesSubobject pq r hr ≤ E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) := by
-  rw [boundariesSubobject_add_one E pq r hr]; exact (E.pagePresentation pq r hr).B_le_preimage _
+/-- The boundaries of the page `r` are boundaries of the page `r + 1`. -/
+lemma boundariesSubobject_le_boundariesSubobject_add_one (r : ℤ) (hr : r₀ ≤ r) :
+    E.boundariesSubobject pq r ≤ E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) := by
+  rw [boundariesSubobject_add_one]
+  exact (E.pagePresentation pq r hr).B_le_preimage _
 
-/-- The cycle tower `r ↦ Z_r(pq)` is antitone. -/
-theorem cyclesSubobject_anti {r₁ r₂ : ℤ} (h₁ : r₀ ≤ r₁) (h₁₂ : r₁ ≤ r₂) :
-    E.cyclesSubobject pq r₂ (h₁.trans h₁₂) ≤ E.cyclesSubobject pq r₁ h₁ := by
-  induction r₂, h₁₂ using Int.leInduction with
+/-- The cycle tower is decreasing. -/
+lemma cyclesSubobject_anti {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
+    E.cyclesSubobject pq r' (hr.trans hrr') ≤ E.cyclesSubobject pq r := by
+  induction r', hrr' using Int.leInduction with
   | base => exact le_rfl
-  | succ r h ih => exact (E.cyclesSubobject_add_one_le pq r (h₁.trans h)).trans ih
+  | succ s hrs ih => exact (E.cyclesSubobject_add_one_le pq s (hr.trans hrs)).trans ih
 
-/-- The boundary tower `r ↦ B_r(pq)` is monotone. -/
-theorem boundariesSubobject_mono {r₁ r₂ : ℤ} (h₁ : r₀ ≤ r₁) (h₁₂ : r₁ ≤ r₂) :
-    E.boundariesSubobject pq r₁ h₁ ≤ E.boundariesSubobject pq r₂ (h₁.trans h₁₂) := by
-  induction r₂, h₁₂ using Int.leInduction with
+/-- The boundary tower is increasing. -/
+lemma boundariesSubobject_mono {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
+    E.boundariesSubobject pq r ≤ E.boundariesSubobject pq r' (hr.trans hrr') := by
+  induction r', hrr' using Int.leInduction with
   | base => exact le_rfl
-  | succ r h ih => exact ih.trans (E.le_boundariesSubobject_add_one pq r (h₁.trans h))
+  | succ s hrs ih =>
+    exact ih.trans (E.boundariesSubobject_le_boundariesSubobject_add_one pq s (hr.trans hrs))
 
-/-- Every boundary subobject `B_{r₁}(pq)` lies below every cycle subobject `Z_{r₂}(pq)`. -/
-theorem boundariesSubobject_le_cyclesSubobject_of_any (r₁ r₂ : ℤ)
-    (h₁ : r₀ ≤ r₁ := by lia) (h₂ : r₀ ≤ r₂ := by lia) :
-    E.boundariesSubobject pq r₁ h₁ ≤ E.cyclesSubobject pq r₂ h₂ :=
-  (E.boundariesSubobject_mono pq h₁ (le_max_left r₁ r₂)).trans <|
-    (E.boundariesSubobject_le_cyclesSubobject pq (max r₁ r₂) (h₁.trans (le_max_left r₁ r₂))).trans
-      (E.cyclesSubobject_anti pq h₂ (le_max_right r₁ r₂))
+/-- Every boundary subobject lies below every cycle subobject: `B_r(pq) ≤ Z_{r'}(pq)` for all
+pages `r` and `r'`. -/
+lemma boundariesSubobject_le_cyclesSubobject (r r' : ℤ) (hr : r₀ ≤ r) (hr' : r₀ ≤ r') :
+    E.boundariesSubobject pq r ≤ E.cyclesSubobject pq r' := by
+  rcases le_total r r' with h | h
+  · exact (E.boundariesSubobject_mono pq hr h).trans
+      (E.boundariesSubobject_le_cyclesSubobject_self pq r' hr')
+  · exact (E.boundariesSubobject_le_cyclesSubobject_self pq r hr).trans
+      (E.cyclesSubobject_anti pq hr' h)
 
 /-- The differential `dFrom pq` on page `r` vanishes iff every differential leaving `pq` does. -/
-theorem page_dFrom_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
+lemma page_dFrom_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (E.page r hr).dFrom pq = 0 ↔ ∀ pq' : κ, (E.page r hr).d pq pq' = 0 :=
   ⟨fun h pq' ↦ by classical exact if hrel : (c r).Rel pq pq' then (c r).next_eq' hrel ▸ h
       else (E.page r hr).shape pq pq' hrel, fun h ↦ h ((c r).next pq)⟩
 
 /-- The differential `dTo pq` on page `r` vanishes iff every differential entering `pq` does. -/
-theorem page_dTo_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
+lemma page_dTo_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (E.page r hr).dTo pq = 0 ↔ ∀ pq' : κ, (E.page r hr).d pq' pq = 0 :=
   ⟨fun h pq' ↦ by classical exact if hrel : (c r).Rel pq' pq then (c r).prev_eq' hrel ▸ h
       else (E.page r hr).shape pq' pq hrel, fun h ↦ h ((c r).prev pq)⟩
 
-/-- `Z_{r+1}(pq) = Z_r(pq)` if and only if the differential of page `r` leaving `pq` vanishes. -/
-theorem cyclesSubobject_add_one_eq_iff (r : ℤ) (hr : r₀ ≤ r) :
-    E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) = E.cyclesSubobject pq r hr ↔
-      (E.page r hr).dFrom pq = 0 := by
-  rw [cyclesSubobject_add_one E pq r hr, (E.pagePresentation pq r hr).preimage_eq_Z_iff,
-    kernelSubobject_eq_top_iff]
+/-- The cycles do not change from the page `r` to the page `r + 1` exactly when the differential
+of the page `r` leaving `pq` vanishes. -/
+lemma cyclesSubobject_add_one_eq_iff (r : ℤ) (hr : r₀ ≤ r) :
+    E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) = E.cyclesSubobject pq r ↔
+      (E.page r).dFrom pq = 0 := by
+  rw [E.cyclesSubobject_add_one pq r hr, ← E.pagePresentation_Z pq r hr,
+    ← SubquotientPresentation.preimage_top, SubquotientPresentation.preimage_inj]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, kernelSubobject_zero]⟩
+  rw [← Category.id_comp ((E.page r).dFrom pq), ← kernelSubobject_factors_iff, h]
+  exact top_factors _
 
-/-- `B_{r+1}(pq) = B_r(pq)` if and only if the differential of page `r` entering `pq` vanishes. -/
-theorem boundariesSubobject_add_one_eq_iff (r : ℤ) (hr : r₀ ≤ r) :
-    E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) = E.boundariesSubobject pq r hr ↔
-      (E.page r hr).dTo pq = 0 := by
-  rw [boundariesSubobject_add_one E pq r hr, (E.pagePresentation pq r hr).preimage_eq_B_iff,
-    imageSubobject_eq_bot_iff]
+/-- The boundaries do not change from the page `r` to the page `r + 1` exactly when the
+differential of the page `r` entering `pq` vanishes. -/
+lemma boundariesSubobject_add_one_eq_iff (r : ℤ) (hr : r₀ ≤ r) :
+    E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) = E.boundariesSubobject pq r ↔
+      (E.page r).dTo pq = 0 := by
+  rw [E.boundariesSubobject_add_one pq r hr, ← E.pagePresentation_B pq r hr,
+    ← SubquotientPresentation.preimage_bot, SubquotientPresentation.preimage_inj]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, imageSubobject_zero]⟩
+  rw [← bot_factors_iff_zero, ← h]
+  simpa using imageSubobject_factors_comp_self ((E.page r).dTo pq) (𝟙 _)
 
-/-- The object `(E.page r).X pq` vanishes if and only if `B_r(pq) = Z_r(pq)`. -/
-theorem isZero_page_X_iff_boundariesSubobject_eq_cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    IsZero ((E.page r hr).X pq) ↔ E.boundariesSubobject pq r hr = E.cyclesSubobject pq r hr :=
-  (E.pagePresentation pq r hr).isZero_iff
+/-- The object at `pq` on the page `r` is zero exactly when its boundary and cycle subobjects
+agree. -/
+lemma isZero_page_X_iff (r : ℤ) (hr : r₀ ≤ r) :
+    IsZero ((E.page r).X pq) ↔ E.boundariesSubobject pq r = E.cyclesSubobject pq r :=
+  (E.pagePresentation pq r hr).isZero_iff_B_eq_Z
 
 /-- Rebasing compatibility for `pagePresentation`. -/
-theorem pagePresentation_eq_comp_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+lemma pagePresentation_eq_comp_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
     E.pagePresentation pq r (hs.trans hsr) =
       (E.pagePresentation pq s hs).trans ((E.fromPage s hs).pagePresentation pq r hsr) := by
   induction r, hsr using Int.leInduction with
-  | base => rw [pagePresentation_base, SubquotientPresentation.trans_refl]
+  | base => rw [pagePresentation_self, SubquotientPresentation.trans_refl]
   | succ r hsr ih =>
     rw [pagePresentation_add_one E pq r (hs.trans hsr),
-      pagePresentation_add_one (E.fromPage s hs) pq r hsr, ih, SubquotientPresentation.trans_assoc]
+      pagePresentation_add_one (E.fromPage s hs) pq r hsr, ih, SubquotientPresentation.trans_assoc,
+      SubquotientPresentation.trans_mapIso]
 
 /-- Rebasing compatibility for cycles. -/
-theorem cyclesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+lemma cyclesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
     E.cyclesSubobject pq r (hs.trans hsr) =
       (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).cyclesSubobject pq r hsr) :=
   congrArg SubquotientPresentation.Z (E.pagePresentation_eq_comp_fromPage pq s hs r hsr)
 
 /-- Rebasing compatibility for boundaries. -/
-theorem boundariesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+lemma boundariesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
     E.boundariesSubobject pq r (hs.trans hsr) =
       (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).boundariesSubobject pq r hsr) :=
   congrArg SubquotientPresentation.B (E.pagePresentation_eq_comp_fromPage pq s hs r hsr)
@@ -230,116 +327,129 @@ end Tower
 
 section Naturality
 
-variable {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (pq : κ)
+variable {E} {E' : SpectralSequence C c r₀}
 
-private theorem mapInduced_pagePresentation_aux (r : ℤ) (hr : r₀ ≤ r) :
-    ∃ (hZ : (Subobject.exists ((f.hom r₀).f pq)).obj (E.cyclesSubobject pq r hr) ≤
-        E'.cyclesSubobject pq r hr)
-      (hB : (Subobject.exists ((f.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) ≤
-        E'.boundariesSubobject pq r hr),
-      (E.pagePresentation pq r hr).mapInduced (E'.pagePresentation pq r hr)
-        ((f.hom r₀).f pq) hZ hB = (f.hom r hr).f pq := by
+/-- **Naturality of the presentations.** A morphism `f : E ⟶ E'` maps the presentation of the page
+`r` of `E` at `pq` to that of `E'`, through its first-page component and over its page-`r`
+component. -/
+lemma pagePresentation_mapsTo (pq : κ) (f : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) :
+    (E.pagePresentation pq r hr).MapsTo (E'.pagePresentation pq r hr) ((f.hom r₀).f pq)
+      ((f.hom r).f pq) := by
+  induction r, hr using Int.leInduction with
+  | base =>
+    rw [pagePresentation_self, pagePresentation_self]
+    exact SubquotientPresentation.mapsTo_refl _
+  | succ s hs ih =>
+    rw [pagePresentation_add_one, pagePresentation_add_one]
+    exact (ih.trans (ShortComplex.homologyPresentation_mapsTo _
+      ((HomologicalComplex.shortComplexFunctor C (c s) pq).map (f.hom s)))).mapIso
+        (f.comm s (s + 1) pq)
+
+/-- A morphism of spectral sequences maps the cycles of each page into the cycles of that page. -/
+lemma cyclesSubobject_le_pullback (pq : κ) (f : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) :
+    E.cyclesSubobject pq r ≤ (Subobject.pullback ((f.hom r₀).f pq)).obj (E'.cyclesSubobject pq r) :=
+  (pagePresentation_mapsTo pq f r hr).Z_le_pullback
+
+/-- A morphism of spectral sequences maps the boundaries of each page into the boundaries of that
+page. -/
+lemma boundariesSubobject_le_pullback (pq : κ) (f : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) :
+    E.boundariesSubobject pq r ≤
+      (Subobject.pullback ((f.hom r₀).f pq)).obj (E'.boundariesSubobject pq r) :=
+  (pagePresentation_mapsTo pq f r hr).B_le_pullback
+
+/-- Naturality of the cycle tower: `f : E ⟶ E'` maps `Z_r(E, pq)` into `Z_r(E', pq)`. -/
+lemma Hom.exists_cyclesSubobject_le (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    (Subobject.exists ((f.hom r₀).f pq)).obj (E.cyclesSubobject pq r hr) ≤
+      E'.cyclesSubobject pq r hr :=
+  (Subobject.existsPullbackAdj _).gc.le_iff_le.mpr (cyclesSubobject_le_pullback pq f r hr)
+
+/-- Naturality of the boundary tower: `f : E ⟶ E'` maps `B_r(E, pq)` into `B_r(E', pq)`. -/
+lemma Hom.exists_boundariesSubobject_le (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    (Subobject.exists ((f.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) ≤
+      E'.boundariesSubobject pq r hr :=
+  (Subobject.existsPullbackAdj _).gc.le_iff_le.mpr (boundariesSubobject_le_pullback pq f r hr)
+
+/-- The morphism induced by `(f.hom r₀).f pq` on `pagePresentation` is `(f.hom r).f pq`. -/
+lemma Hom.mapInduced_pagePresentation (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
+    (E.pagePresentation pq r hr).mapInduced (E'.pagePresentation pq r hr) ((f.hom r₀).f pq)
+        (f.exists_cyclesSubobject_le pq r hr) (f.exists_boundariesSubobject_le pq r hr) =
+      (f.hom r hr).f pq := by
   let f₀ := (f.hom r₀).f pq
   induction r, hr using Int.leInduction with
   | base =>
-    refine ⟨by simp, by rw [boundariesSubobject_base, boundariesSubobject_base,
-      (Subobject.existsPullbackAdj f₀).gc.l_bot], ?_⟩
-    rw [SubquotientPresentation.mapInduced_congr (E.pagePresentation_base pq)
-      (E'.pagePresentation_base pq) rfl _ _ (by simp)
-      (by simp only [SubquotientPresentation.refl_B, le_bot_iff]
-          exact (Subobject.existsPullbackAdj _).gc.l_bot)]
-    exact SubquotientPresentation.refl_mapInduced_refl f₀ _ _
+    exact (SubquotientPresentation.mapInduced_congr (E.pagePresentation_self pq)
+      (E'.pagePresentation_self pq) rfl _ _
+      (by simp only [SubquotientPresentation.refl_Z]; exact le_top)
+      (by simp only [SubquotientPresentation.refl_B, (Subobject.existsPullbackAdj _).gc.l_bot,
+        bot_le])).trans (SubquotientPresentation.refl_mapInduced_refl f₀ _ _)
   | succ r hr ih =>
-    obtain ⟨hZ, hB, hmap⟩ := ih
     let p := E.pagePresentation pq r hr; let p' := E'.pagePresentation pq r hr
     let φ := (HomologicalComplex.shortComplexFunctor C (c r) pq).map (f.hom r hr)
+    have hZ := f.exists_cyclesSubobject_le pq r hr
+    have hB := f.exists_boundariesSubobject_le pq r hr
     have hZ_s : (Subobject.exists (p.mapInduced p' f₀ hZ hB)).obj
         (kernelSubobject ((E.page r hr).sc pq).g) ≤ kernelSubobject ((E'.page r hr).sc pq).g :=
-      hmap.symm ▸ ShortComplex.exists_kernelSubobject_le φ
+      ih.symm ▸ ShortComplex.exists_kernelSubobject_le φ
     have hB_s : (Subobject.exists (p.mapInduced p' f₀ hZ hB)).obj
         (imageSubobject ((E.page r hr).sc pq).f) ≤ imageSubobject ((E'.page r hr).sc pq).f :=
-      hmap.symm ▸ ShortComplex.exists_imageSubobject_le φ
+      ih.symm ▸ ShortComplex.exists_imageSubobject_le φ
     have hZ' := (p.exists_preimage_le_preimage_iff p' f₀ hZ hB _ _).mpr hZ_s
     have hB' := (p.exists_preimage_le_preimage_iff p' f₀ hZ hB _ _).mpr hB_s
     have hhom : ((E.page r hr).sc pq).homologyPresentation.mapInduced
           ((E'.page r hr).sc pq).homologyPresentation (p.mapInduced p' f₀ hZ hB) hZ_s hB_s =
         HomologicalComplex.homologyMap (f.hom r hr) pq :=
-      (SubquotientPresentation.mapInduced_congr rfl rfl hmap _ _ _ _).trans
+      (SubquotientPresentation.mapInduced_congr rfl rfl ih _ _ _ _).trans
         (ShortComplex.mapInduced_homologyPresentation φ)
-    refine ⟨by rwa [cyclesSubobject_add_one, cyclesSubobject_add_one],
-      by rwa [boundariesSubobject_add_one, boundariesSubobject_add_one], ?_⟩
     refine (SubquotientPresentation.mapInduced_congr (pagePresentation_add_one E pq r hr)
         (pagePresentation_add_one E' pq r hr) rfl _ _ hZ' hB').trans ?_
-    refine (SubquotientPresentation.mapInduced_trans p p' _ _ f₀ hZ hB hZ_s hB_s).trans ?_
     refine (SubquotientPresentation.mapInduced_mapIso
-        ((E.page r hr).sc pq).homologyPresentation
-        ((E'.page r hr).sc pq).homologyPresentation
-        (E.iso r (r + 1) pq rfl hr) (E'.iso r (r + 1) pq rfl hr)
-        (p.mapInduced p' f₀ hZ hB) hZ_s hB_s).trans ?_
-    rw [hhom, f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
+        (p.trans ((E.page r hr).sc pq).homologyPresentation)
+        (p'.trans ((E'.page r hr).sc pq).homologyPresentation)
+        (E.iso r (r + 1) pq rfl hr) (E'.iso r (r + 1) pq rfl hr) f₀ _ _).trans ?_
+    rw [SubquotientPresentation.mapInduced_trans p p' _ _ f₀ hZ hB hZ_s hB_s, hhom,
+      f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
 
-/-- Naturality of the cycle tower: `f : E ⟶ E'` maps `Z_r(E, pq)` into `Z_r(E', pq)`. -/
-theorem Hom.exists_cyclesSubobject_le (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    (Subobject.exists ((f.hom r₀).f pq)).obj (E.cyclesSubobject pq r hr) ≤
-      E'.cyclesSubobject pq r hr := (mapInduced_pagePresentation_aux f pq r hr).choose
+/-- Under an isomorphism of spectral sequences, the cycles of `E` are the pullback of the cycles
+of `E'` along the first-page component. -/
+lemma pullback_cyclesSubobject_of_iso (pq : κ) (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) :
+    (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.cyclesSubobject pq r) =
+      E.cyclesSubobject pq r :=
+  pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
+    (cyclesSubobject_le_pullback pq e.hom r hr) (cyclesSubobject_le_pullback pq e.inv r hr)
 
-/-- Naturality of the boundary tower: `f : E ⟶ E'` maps `B_r(E, pq)` into `B_r(E', pq)`. -/
-theorem Hom.exists_boundariesSubobject_le (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    (Subobject.exists ((f.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) ≤
-      E'.boundariesSubobject pq r hr :=
-  (mapInduced_pagePresentation_aux f pq r hr).choose_spec.choose
+/-- Under an isomorphism of spectral sequences, the boundaries of `E` are the pullback of the
+boundaries of `E'` along the first-page component. -/
+lemma pullback_boundariesSubobject_of_iso (pq : κ) (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) :
+    (Subobject.pullback ((e.hom.hom r₀).f pq)).obj (E'.boundariesSubobject pq r) =
+      E.boundariesSubobject pq r :=
+  pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
+    (boundariesSubobject_le_pullback pq e.hom r hr) (boundariesSubobject_le_pullback pq e.inv r hr)
 
-/-- Adjoint form of naturality for cycles. -/
-theorem Hom.cyclesSubobject_le_pullback (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    E.cyclesSubobject pq r hr ≤
-      (Subobject.pullback ((f.hom r₀).f pq)).obj (E'.cyclesSubobject pq r hr) :=
-  (Subobject.existsPullbackAdj _).gc.le_iff_le.mp (f.exists_cyclesSubobject_le pq r hr)
-
-/-- Adjoint form of naturality for boundaries. -/
-theorem Hom.boundariesSubobject_le_pullback (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    E.boundariesSubobject pq r hr ≤
-      (Subobject.pullback ((f.hom r₀).f pq)).obj (E'.boundariesSubobject pq r hr) :=
-  (Subobject.existsPullbackAdj _).gc.le_iff_le.mp (f.exists_boundariesSubobject_le pq r hr)
-
-/-- The morphism induced by `(f.hom r₀).f pq` on `pagePresentation` is `(f.hom r).f pq`. -/
-theorem Hom.mapInduced_pagePresentation (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    (E.pagePresentation pq r hr).mapInduced (E'.pagePresentation pq r hr) ((f.hom r₀).f pq)
-        (f.exists_cyclesSubobject_le pq r hr) (f.exists_boundariesSubobject_le pq r hr) =
-      (f.hom r hr).f pq := (mapInduced_pagePresentation_aux f pq r hr).choose_spec.choose_spec
-
-end Naturality
-
-section NaturalityIso
-
-variable {E E' : SpectralSequence C c r₀} (e : E ≅ E') (pq : κ)
-
-private theorem exists_eq_of_iso_aux {S : Subobject ((E.page r₀).X pq)}
+private lemma exists_eq_of_iso_aux (e : E ≅ E') (pq : κ) {S : Subobject ((E.page r₀).X pq)}
     {S' : Subobject ((E'.page r₀).X pq)}
     (h1 : (Subobject.exists ((e.hom.hom r₀).f pq)).obj S ≤ S')
     (h2 : (Subobject.exists ((e.inv.hom r₀).f pq)).obj S' ≤ S) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj S = S' := by
   refine le_antisymm h1 ?_
   have h := (Subobject.exists ((e.hom.hom r₀).f pq)).monotone h2
-  have hid : (e.inv.hom r₀).f pq ≫ (e.hom.hom r₀).f pq = 𝟙 ((E'.page r₀).X pq) :=
-    ((pageFunctor C c r₀ r₀ le_rfl ⋙ HomologicalComplex.eval C (c r₀) pq).mapIso e).inv_hom_id
-  rw [← Subobject.exists_comp, hid, Subobject.exists_id] at h
+  rw [← Subobject.exists_comp, inv_hom_id_hom_f e r₀ le_rfl pq, Subobject.exists_id] at h
   exact h
 
 /-- An isomorphism `e : E ≅ E'` carries `Z_r(E, pq)` onto `Z_r(E', pq)`. -/
-theorem exists_cyclesSubobject_eq_of_iso (r : ℤ) (hr : r₀ ≤ r := by lia) :
+lemma exists_cyclesSubobject_eq_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj (E.cyclesSubobject pq r hr) =
       E'.cyclesSubobject pq r hr :=
   exists_eq_of_iso_aux e pq (e.hom.exists_cyclesSubobject_le pq r hr)
     (e.inv.exists_cyclesSubobject_le pq r hr)
 
 /-- An isomorphism `e : E ≅ E'` carries `B_r(E, pq)` onto `B_r(E', pq)`. -/
-theorem exists_boundariesSubobject_eq_of_iso (r : ℤ) (hr : r₀ ≤ r := by lia) :
+lemma exists_boundariesSubobject_eq_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) =
       E'.boundariesSubobject pq r hr :=
   exists_eq_of_iso_aux e pq (e.hom.exists_boundariesSubobject_le pq r hr)
     (e.inv.exists_boundariesSubobject_le pq r hr)
 
-end NaturalityIso
+end Naturality
 
 section Stabilisation
 
@@ -365,22 +475,22 @@ def IsCoregularAt (pq : κ) : Prop :=
 def DegeneratesAt (s : ℤ) (hs : r₀ ≤ s := by lia) : Prop :=
   ∀ (r : ℤ) (hsr : s ≤ r) (i j : κ), (E.page r (hs.trans hsr)).d i j = 0
 
-theorem stabilisesAt_iff (pq : κ) (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma stabilisesAt_iff (pq : κ) (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.StabilisesAt pq s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r),
       (E.page r (hs.trans hsr)).dFrom pq = 0 ∧ (E.page r (hs.trans hsr)).dTo pq = 0 :=
   Iff.rfl
 
-theorem isRegularAt_iff (pq : κ) :
+lemma isRegularAt_iff (pq : κ) :
     E.IsRegularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r),
       (E.page r (hs.trans hsr)).dFrom pq = 0 :=
   Iff.rfl
 
-theorem isCoregularAt_iff (pq : κ) :
+lemma isCoregularAt_iff (pq : κ) :
     E.IsCoregularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r),
       (E.page r (hs.trans hsr)).dTo pq = 0 :=
   Iff.rfl
 
-theorem degeneratesAt_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma degeneratesAt_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.DegeneratesAt s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r) (i j : κ),
       (E.page r (hs.trans hsr)).d i j = 0 :=
   Iff.rfl
@@ -392,42 +502,42 @@ section
 variable {E : SpectralSequence C c r₀} {pq : κ} {s : ℤ} {hs : r₀ ≤ s} (h : E.StabilisesAt pq s hs)
 include h
 
-theorem StabilisesAt.dFrom_eq_zero {r : ℤ} (hsr : s ≤ r) :
+lemma StabilisesAt.dFrom_eq_zero {r : ℤ} (hsr : s ≤ r) :
     (E.page r (hs.trans hsr)).dFrom pq = 0 := (h r hsr).1
 
-theorem StabilisesAt.dTo_eq_zero {r : ℤ} (hsr : s ≤ r) :
+lemma StabilisesAt.dTo_eq_zero {r : ℤ} (hsr : s ≤ r) :
     (E.page r (hs.trans hsr)).dTo pq = 0 := (h r hsr).2
 
-theorem StabilisesAt.d_out {r : ℤ} (hsr : s ≤ r) (pq' : κ) :
+lemma StabilisesAt.d_out {r : ℤ} (hsr : s ≤ r) (pq' : κ) :
     (E.page r (hs.trans hsr)).d pq pq' = 0 :=
   (E.page_dFrom_eq_zero_iff pq r (hs.trans hsr)).mp (h.dFrom_eq_zero hsr) pq'
 
-theorem StabilisesAt.d_in {r : ℤ} (hsr : s ≤ r) (pq' : κ) :
+lemma StabilisesAt.d_in {r : ℤ} (hsr : s ≤ r) (pq' : κ) :
     (E.page r (hs.trans hsr)).d pq' pq = 0 :=
   (E.page_dTo_eq_zero_iff pq r (hs.trans hsr)).mp (h.dTo_eq_zero hsr) pq'
 
 /-- Stabilisation from page `s` persists to every later page `s' ≥ s`. -/
-theorem StabilisesAt.of_le {s' : ℤ} (hss' : s ≤ s') : E.StabilisesAt pq s' (hs.trans hss') :=
+lemma StabilisesAt.of_le {s' : ℤ} (hss' : s ≤ s') : E.StabilisesAt pq s' (hs.trans hss') :=
   fun r hs'r ↦ h r (hss'.trans hs'r)
 
-theorem StabilisesAt.isRegularAt : E.IsRegularAt pq := ⟨s, hs, fun r hsr ↦ (h r hsr).1⟩
+lemma StabilisesAt.isRegularAt : E.IsRegularAt pq := ⟨s, hs, fun r hsr ↦ (h r hsr).1⟩
 
-theorem StabilisesAt.isCoregularAt : E.IsCoregularAt pq := ⟨s, hs, fun r hsr ↦ (h r hsr).2⟩
+lemma StabilisesAt.isCoregularAt : E.IsCoregularAt pq := ⟨s, hs, fun r hsr ↦ (h r hsr).2⟩
 
 end
 
-theorem DegeneratesAt.d_eq_zero {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
+lemma DegeneratesAt.d_eq_zero {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
     (hd : E.DegeneratesAt s hs) {r : ℤ} (hsr : s ≤ r) (i j : κ) :
     (E.page r (hs.trans hsr)).d i j = 0 :=
   hd r hsr i j
 
 /-- Degeneration at page `s` persists to every later page `s' ≥ s`. -/
-theorem DegeneratesAt.of_le {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
+lemma DegeneratesAt.of_le {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
     (hd : E.DegeneratesAt s hs) {s' : ℤ} (hss' : s ≤ s') : E.DegeneratesAt s' (hs.trans hss') :=
   fun r hs'r i j ↦ hd r (hss'.trans hs'r) i j
 
 /-- Degeneration at page `s` implies stabilisation at every position from page `s`. -/
-theorem DegeneratesAt.stabilisesAt {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
+lemma DegeneratesAt.stabilisesAt {E : SpectralSequence C c r₀} {s : ℤ} {hs : r₀ ≤ s}
     (hd : E.DegeneratesAt s hs) (pq : κ) : E.StabilisesAt pq s hs :=
   fun r hsr ↦ ⟨hd r hsr pq _, hd r hsr _ pq⟩
 
@@ -435,7 +545,7 @@ section
 
 variable (E : SpectralSequence C c r₀) (pq : κ)
 
-theorem stabilisesAt_iff_forall_d_eq_zero (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma stabilisesAt_iff_forall_d_eq_zero (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.StabilisesAt pq s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r) (pq' : κ),
       (E.page r (hs.trans hsr)).d pq pq' = 0 ∧ (E.page r (hs.trans hsr)).d pq' pq = 0 :=
   ⟨fun h _ hsr pq' ↦ ⟨h.d_out hsr pq', h.d_in hsr pq'⟩,
@@ -443,19 +553,19 @@ theorem stabilisesAt_iff_forall_d_eq_zero (s : ℤ) (hs : r₀ ≤ s := by lia) 
      (E.page_dTo_eq_zero_iff pq r (hs.trans hsr)).mpr (fun pq' ↦ (h r hsr pq').2)⟩⟩
 
 /-- `E` is both regular and coregular at `pq` iff it stabilises at `pq` from some page. -/
-theorem isRegularAt_and_isCoregularAt_iff_exists_stabilisesAt :
+lemma isRegularAt_and_isCoregularAt_iff_exists_stabilisesAt :
     E.IsRegularAt pq ∧ E.IsCoregularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), E.StabilisesAt pq s hs :=
   ⟨fun ⟨⟨s₁, hs₁, h₁⟩, ⟨s₂, _, h₂⟩⟩ ↦ ⟨max s₁ s₂, hs₁.trans (le_max_left s₁ s₂), fun r hr ↦
       ⟨h₁ r ((le_max_left s₁ s₂).trans hr), h₂ r ((le_max_right s₁ s₂).trans hr)⟩⟩,
    fun ⟨_, _, h⟩ ↦ ⟨h.isRegularAt, h.isCoregularAt⟩⟩
 
 /-- `E` degenerates at page `s` iff it stabilises at every position from page `s`. -/
-theorem degeneratesAt_iff_forall_stabilisesAt (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma degeneratesAt_iff_forall_stabilisesAt (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.DegeneratesAt s hs ↔ ∀ pq : κ, E.StabilisesAt pq s hs :=
   ⟨fun h pq ↦ h.stabilisesAt pq, fun h _ hsr i j ↦ (h i).d_out hsr j⟩
 
 /-- If differentials leaving `pq` vanish from page `s` onward, `Z_r(pq) = Z_s(pq)` for `r ≥ s`. -/
-theorem cyclesSubobject_eq_of_forall_dFrom_eq_zero {s : ℤ} (hs : r₀ ≤ s)
+lemma cyclesSubobject_eq_of_forall_dFrom_eq_zero {s : ℤ} (hs : r₀ ≤ s)
     (h : ∀ (r : ℤ) (hsr : s ≤ r), (E.page r (hs.trans hsr)).dFrom pq = 0) (r : ℤ) (hsr : s ≤ r) :
     E.cyclesSubobject pq r (hs.trans hsr) = E.cyclesSubobject pq s hs := by
   induction r, hsr using Int.leInduction with
@@ -463,7 +573,7 @@ theorem cyclesSubobject_eq_of_forall_dFrom_eq_zero {s : ℤ} (hs : r₀ ≤ s)
   | succ t hst ih => rw [(E.cyclesSubobject_add_one_eq_iff pq t (hs.trans hst)).mpr (h t hst), ih]
 
 /-- If differentials entering `pq` vanish from page `s` onward, `B_r(pq) = B_s(pq)` for `r ≥ s`. -/
-theorem boundariesSubobject_eq_of_forall_dTo_eq_zero {s : ℤ} (hs : r₀ ≤ s)
+lemma boundariesSubobject_eq_of_forall_dTo_eq_zero {s : ℤ} (hs : r₀ ≤ s)
     (h : ∀ (r : ℤ) (hsr : s ≤ r), (E.page r (hs.trans hsr)).dTo pq = 0) (r : ℤ) (hsr : s ≤ r) :
     E.boundariesSubobject pq r (hs.trans hsr) = E.boundariesSubobject pq s hs := by
   induction r, hsr using Int.leInduction with
@@ -472,7 +582,7 @@ theorem boundariesSubobject_eq_of_forall_dTo_eq_zero {s : ℤ} (hs : r₀ ≤ s)
     rw [(E.boundariesSubobject_add_one_eq_iff pq t (hs.trans hst)).mpr (h t hst), ih]
 
 /-- `E` is regular at `pq` if and only if the cycle tower `r ↦ Z_r(pq)` is eventually constant. -/
-theorem isRegularAt_iff_eventually_const_cyclesSubobject :
+lemma isRegularAt_iff_eventually_const_cyclesSubobject :
     E.IsRegularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r),
       E.cyclesSubobject pq r (hs.trans hsr) = E.cyclesSubobject pq s hs :=
   ⟨fun ⟨s, hs, h⟩ ↦ ⟨s, hs, E.cyclesSubobject_eq_of_forall_dFrom_eq_zero pq hs h⟩,
@@ -480,15 +590,16 @@ theorem isRegularAt_iff_eventually_const_cyclesSubobject :
       (by rw [h (r + 1) (Int.le_add_one hsr), h r hsr])⟩⟩
 
 /-- `E` is coregular at `pq` iff the boundary tower `r ↦ B_r(pq)` is eventually constant. -/
-theorem isCoregularAt_iff_eventually_const_boundariesSubobject :
+lemma isCoregularAt_iff_eventually_const_boundariesSubobject :
     E.IsCoregularAt pq ↔ ∃ (s : ℤ) (hs : r₀ ≤ s), ∀ (r : ℤ) (hsr : s ≤ r),
       E.boundariesSubobject pq r (hs.trans hsr) = E.boundariesSubobject pq s hs :=
   ⟨fun ⟨s, hs, h⟩ ↦ ⟨s, hs, E.boundariesSubobject_eq_of_forall_dTo_eq_zero pq hs h⟩,
-   fun ⟨s, hs, h⟩ ↦ ⟨s, hs, fun r hsr ↦ (E.boundariesSubobject_add_one_eq_iff pq r _).mp
-      (by rw [h (r + 1) (Int.le_add_one hsr), h r hsr])⟩⟩
+   fun ⟨s, hs, h⟩ ↦ ⟨s, hs, fun r hsr ↦
+      (E.boundariesSubobject_add_one_eq_iff pq r (hs.trans hsr)).mp
+        (by rw [h (r + 1) (Int.le_add_one hsr), h r hsr])⟩⟩
 
 /-- `E` stabilises at `pq` from page `s` iff `Z_r(pq)` and `B_r(pq)` are constant for `r ≥ s`. -/
-theorem stabilisesAt_iff_const_cyclesSubobject_and_boundariesSubobject (s : ℤ)
+lemma stabilisesAt_iff_const_cyclesSubobject_and_boundariesSubobject (s : ℤ)
     (hs : r₀ ≤ s := by lia) :
     E.StabilisesAt pq s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r),
       E.cyclesSubobject pq r (hs.trans hsr) = E.cyclesSubobject pq s hs ∧
@@ -501,20 +612,20 @@ theorem stabilisesAt_iff_const_cyclesSubobject_and_boundariesSubobject (s : ℤ)
       (E.boundariesSubobject_add_one_eq_iff pq r (hs.trans hsr)).mp
         (by rw [(h (r + 1) (Int.le_add_one hsr)).2, (h r hsr).2])⟩⟩
 
-theorem stabilisesAt_fromPage_iff (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t) :
+lemma stabilisesAt_fromPage_iff (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t) :
     (E.fromPage s hs).StabilisesAt pq t hst ↔ E.StabilisesAt pq t (hs.trans hst) := Iff.rfl
 
-theorem isRegularAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma isRegularAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
     (E.fromPage s hs).IsRegularAt pq ↔ E.IsRegularAt pq :=
   ⟨fun ⟨t, hst, h⟩ ↦ ⟨t, hs.trans hst, h⟩,
    fun ⟨t, _, h⟩ ↦ ⟨max s t, le_max_left s t, fun r hr ↦ h r ((le_max_right s t).trans hr)⟩⟩
 
-theorem isCoregularAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma isCoregularAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s := by lia) :
     (E.fromPage s hs).IsCoregularAt pq ↔ E.IsCoregularAt pq :=
   ⟨fun ⟨t, hst, h⟩ ↦ ⟨t, hs.trans hst, h⟩,
    fun ⟨t, _, h⟩ ↦ ⟨max s t, le_max_left s t, fun r hr ↦ h r ((le_max_right s t).trans hr)⟩⟩
 
-theorem degeneratesAt_fromPage_iff (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t) :
+lemma degeneratesAt_fromPage_iff (s t : ℤ) (hs : r₀ ≤ s) (hst : s ≤ t) :
     (E.fromPage s hs).DegeneratesAt t hst ↔ E.DegeneratesAt t (hs.trans hst) := Iff.rfl
 
 /-- When `E` stabilises at `pq` from page `s`, the canonical iso `(E.page s).X pq ≅ (E.page r).X pq`
@@ -528,10 +639,10 @@ noncomputable def pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s) (h : E.Stabil
       E.iso t (t + 1) pq rfl (hs.trans hst)) r hsr
 
 @[simp]
-theorem pageXIsoOfStabilises_self (s : ℤ) (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs) :
+lemma pageXIsoOfStabilises_self (s : ℤ) (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs) :
     E.pageXIsoOfStabilises pq s hs h s le_rfl = Iso.refl _ := Int.leInduction_base _ _
 
-theorem pageXIsoOfStabilises_add_one (s : ℤ) (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs) (t : ℤ)
+lemma pageXIsoOfStabilises_add_one (s : ℤ) (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs) (t : ℤ)
     (hst : s ≤ t) :
     E.pageXIsoOfStabilises pq s hs h (t + 1) (Int.le_add_one hst) =
       E.pageXIsoOfStabilises pq s hs h t hst ≪≫
@@ -541,7 +652,7 @@ theorem pageXIsoOfStabilises_add_one (s : ℤ) (hs : r₀ ≤ s) (h : E.Stabilis
 
 /-- When `E` stabilises at `pq` from page `s`, `pagePresentation` on page `r ≥ s` is the
 page-`s` presentation transported along `pageXIsoOfStabilises`. -/
-theorem pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s)
+lemma pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s)
     (h : E.StabilisesAt pq s hs) (r : ℤ) (hsr : s ≤ r) :
     E.pagePresentation pq r (hs.trans hsr) =
       (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h r hsr) := by
@@ -551,16 +662,16 @@ theorem pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤
     rw [pagePresentation_add_one E pq t (hs.trans hst), ih,
       pageXIsoOfStabilises_add_one E pq s hs h t hst,
       ShortComplex.homologyPresentation_eq_refl_mapIso _ (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst),
-      SubquotientPresentation.mapIso_trans, SubquotientPresentation.trans_mapIso]
+      SubquotientPresentation.trans_mapIso]
     have htr : ((E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst)).trans
         (SubquotientPresentation.refl (((E.page t (hs.trans hst)).sc pq).X₂)) =
       (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst) :=
       SubquotientPresentation.trans_refl _
-    rw [htr, SubquotientPresentation.mapIso_trans]
+    rw [htr, SubquotientPresentation.mapIso_trans, SubquotientPresentation.mapIso_trans]
     simp only [Iso.trans_assoc]
 
 /-- Composition compatibility of `pageXIsoOfStabilises` for `s ≤ t ≤ r`. -/
-theorem pageXIsoOfStabilises_trans {s t r : ℤ} (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs)
+lemma pageXIsoOfStabilises_trans {s t r : ℤ} (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs)
     (hst : s ≤ t) (htr : t ≤ r) :
     E.pageXIsoOfStabilises pq s hs h t hst ≪≫
         E.pageXIsoOfStabilises pq t (hs.trans hst) (h.of_le hst) r htr =
@@ -571,7 +682,7 @@ theorem pageXIsoOfStabilises_trans {s t r : ℤ} (hs : r₀ ≤ s) (h : E.Stabil
     rw [pageXIsoOfStabilises_add_one E pq t (hs.trans hst) (h.of_le hst) u htu,
       pageXIsoOfStabilises_add_one E pq s hs h u (hst.trans htu), ← Iso.trans_assoc, ih]
 
-theorem pageXIsoOfStabilises_fromPage {s t r : ℤ} (hs : r₀ ≤ s) (hst : s ≤ t)
+lemma pageXIsoOfStabilises_fromPage {s t r : ℤ} (hs : r₀ ≤ s) (hst : s ≤ t)
     (h : E.StabilisesAt pq t (hs.trans hst)) (htr : t ≤ r) :
     (E.fromPage s hs).pageXIsoOfStabilises pq t hst
         ((E.stabilisesAt_fromPage_iff pq s t hs hst).mpr h) r htr =
@@ -589,42 +700,49 @@ section
 
 variable {E E' : SpectralSequence C c r₀}
 
-theorem StabilisesAt.cyclesSubobject_eq {pq : κ} {s : ℤ} {hs : r₀ ≤ s} (h : E.StabilisesAt pq s hs)
+lemma StabilisesAt.cyclesSubobject_eq {pq : κ} {s : ℤ} {hs : r₀ ≤ s} (h : E.StabilisesAt pq s hs)
     (r : ℤ) (hsr : s ≤ r) : E.cyclesSubobject pq r (hs.trans hsr) = E.cyclesSubobject pq s hs :=
   ((E.stabilisesAt_iff_const_cyclesSubobject_and_boundariesSubobject pq s hs).mp h r hsr).1
 
-theorem StabilisesAt.boundariesSubobject_eq {pq : κ} {s : ℤ} {hs : r₀ ≤ s}
+lemma StabilisesAt.boundariesSubobject_eq {pq : κ} {s : ℤ} {hs : r₀ ≤ s}
     (h : E.StabilisesAt pq s hs) (r : ℤ) (hsr : s ≤ r) :
     E.boundariesSubobject pq r (hs.trans hsr) = E.boundariesSubobject pq s hs :=
   ((E.stabilisesAt_iff_const_cyclesSubobject_and_boundariesSubobject pq s hs).mp h r hsr).2
 
-theorem DegeneratesAt.cyclesSubobject_eq_top (h : E.DegeneratesAt r₀ le_rfl) (pq : κ) (r : ℤ)
+lemma DegeneratesAt.cyclesSubobject_eq_top (h : E.DegeneratesAt r₀ le_rfl) (pq : κ) (r : ℤ)
     (hr : r₀ ≤ r := by lia) : E.cyclesSubobject pq r hr = ⊤ := by
-  rw [(h.stabilisesAt pq).cyclesSubobject_eq r hr, cyclesSubobject_base]
+  rw [(h.stabilisesAt pq).cyclesSubobject_eq r hr, cyclesSubobject_self]
 
-theorem DegeneratesAt.boundariesSubobject_eq_bot (h : E.DegeneratesAt r₀ le_rfl) (pq : κ) (r : ℤ)
+lemma DegeneratesAt.boundariesSubobject_eq_bot (h : E.DegeneratesAt r₀ le_rfl) (pq : κ) (r : ℤ)
     (hr : r₀ ≤ r := by lia) : E.boundariesSubobject pq r hr = ⊥ := by
-  rw [(h.stabilisesAt pq).boundariesSubobject_eq r hr, boundariesSubobject_base]
+  rw [(h.stabilisesAt pq).boundariesSubobject_eq r hr, boundariesSubobject_self]
 
 /-- Naturality of `pageXIsoOfStabilises` with respect to morphisms of spectral sequences. -/
 @[reassoc]
-theorem Hom.pageXIsoOfStabilises_naturality (f : E ⟶ E') (pq : κ) (s : ℤ) (hs : r₀ ≤ s)
+lemma Hom.pageXIsoOfStabilises_naturality (f : E ⟶ E') (pq : κ) (s : ℤ) (hs : r₀ ≤ s)
     (h : E.StabilisesAt pq s hs) (h' : E'.StabilisesAt pq s hs) (r : ℤ) (hsr : s ≤ r) :
     (f.hom s hs).f pq ≫ (E'.pageXIsoOfStabilises pq s hs h' r hsr).hom =
       (E.pageXIsoOfStabilises pq s hs h r hsr).hom ≫ (f.hom r (hs.trans hsr)).f pq := by
-  have hmap := f.mapInduced_pagePresentation pq r (hs.trans hsr)
-  rw [SubquotientPresentation.mapInduced_congr
+  have hmap := (SubquotientPresentation.mapInduced_mapIso (E.pagePresentation pq s hs)
+      (E'.pagePresentation pq s hs) (E.pageXIsoOfStabilises pq s hs h r hsr)
+      (E'.pageXIsoOfStabilises pq s hs h' r hsr) ((f.hom r₀).f pq)
+      (f.exists_cyclesSubobject_le pq s hs)
+      (f.exists_boundariesSubobject_le pq s hs)).symm.trans <|
+    (SubquotientPresentation.mapInduced_congr
       (E.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h r hsr)
-      (E'.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h' r hsr) rfl _ _
-      (f.exists_cyclesSubobject_le pq s hs) (f.exists_boundariesSubobject_le pq s hs),
-    SubquotientPresentation.mapInduced_mapIso, f.mapInduced_pagePresentation pq s hs] at hmap
+      (E'.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h' r hsr) rfl
+      (f.exists_cyclesSubobject_le pq r (hs.trans hsr))
+      (f.exists_boundariesSubobject_le pq r (hs.trans hsr))
+      (f.exists_cyclesSubobject_le pq s hs) (f.exists_boundariesSubobject_le pq s hs)).symm.trans
+    (f.mapInduced_pagePresentation pq r (hs.trans hsr))
+  rw [f.mapInduced_pagePresentation pq s hs] at hmap
   rw [← hmap, Iso.hom_inv_id_assoc]
 
 variable (e : E ≅ E')
 include e
 
 /-- Isomorphic spectral sequences have the same vanishing differentials on every page. -/
-theorem page_d_eq_zero_iff_of_iso (r : ℤ) (hr : r₀ ≤ r) (i j : κ) :
+lemma page_d_eq_zero_iff_of_iso (r : ℤ) (hr : r₀ ≤ r) (i j : κ) :
     (E.page r hr).d i j = 0 ↔ (E'.page r hr).d i j = 0 := by
   have : IsIso ((e.hom.hom r hr).f i) :=
     ((pageFunctor C c r₀ r hr ⋙ HomologicalComplex.eval C (c r) i).mapIso e).isIso_hom
@@ -635,21 +753,21 @@ theorem page_d_eq_zero_iff_of_iso (r : ℤ) (hr : r₀ ≤ r) (i j : κ) :
     fun h ↦ (cancel_mono ((e.hom.hom r hr).f j)).mp (by rw [zero_comp, ← hcomm, h, comp_zero])⟩
 
 /-- Isomorphic spectral sequences stabilise at the same positions and pages. -/
-theorem stabilisesAt_iff_of_iso (pq : κ) (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma stabilisesAt_iff_of_iso (pq : κ) (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.StabilisesAt pq s hs ↔ E'.StabilisesAt pq s hs := by
   simp only [StabilisesAt, HomologicalComplex.dFrom, HomologicalComplex.dTo,
     page_d_eq_zero_iff_of_iso e]
 
 /-- Isomorphic spectral sequences are regular at the same positions. -/
-theorem isRegularAt_iff_of_iso (pq : κ) : E.IsRegularAt pq ↔ E'.IsRegularAt pq := by
+lemma isRegularAt_iff_of_iso (pq : κ) : E.IsRegularAt pq ↔ E'.IsRegularAt pq := by
   simp only [IsRegularAt, HomologicalComplex.dFrom, page_d_eq_zero_iff_of_iso e]
 
 /-- Isomorphic spectral sequences are coregular at the same positions. -/
-theorem isCoregularAt_iff_of_iso (pq : κ) : E.IsCoregularAt pq ↔ E'.IsCoregularAt pq := by
+lemma isCoregularAt_iff_of_iso (pq : κ) : E.IsCoregularAt pq ↔ E'.IsCoregularAt pq := by
   simp only [IsCoregularAt, HomologicalComplex.dTo, page_d_eq_zero_iff_of_iso e]
 
 /-- Isomorphic spectral sequences degenerate at the same pages. -/
-theorem degeneratesAt_iff_of_iso (s : ℤ) (hs : r₀ ≤ s := by lia) :
+lemma degeneratesAt_iff_of_iso (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.DegeneratesAt s hs ↔ E'.DegeneratesAt s hs := by
   simp only [DegeneratesAt, page_d_eq_zero_iff_of_iso e]
 

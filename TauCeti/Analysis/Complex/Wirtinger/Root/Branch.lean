@@ -53,8 +53,10 @@ union of graphs of solutions of `D_C`, that is, of pseudoholomorphic sections of
   `x`.
 
 The collisions of roots, where `P'` vanishes, are shown to be isolated in
-`TauCeti.Analysis.Complex.Wirtinger.Root.Collision`; the normalization of the branches across them
-is not treated here.
+`TauCeti.Analysis.Complex.Wirtinger.Root.Collision`. At an isolated collision of roots in a disc of
+`ℂ`, with the roots simple elsewhere on the disc, the roots are parametrized after a power
+substitution by continuous weak solutions of the pulled-back equation in
+`TauCeti.Analysis.Complex.Wirtinger.Root.Normalization`.
 
 ## References
 
