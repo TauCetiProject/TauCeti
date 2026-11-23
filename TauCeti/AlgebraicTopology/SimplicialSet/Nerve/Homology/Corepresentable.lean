@@ -86,6 +86,12 @@ end Coefficients
 
 variable [HasCoproducts.{max u v} A]
 
+/-! The summands below are typed only up to unfolding `ComposableArrows.precomp`,
+`ComposableArrows.mk₀`, the nerve (`ComposableArrows C n` against `nerve C _⦋n⦌`) and the unexposed
+`categorySimplicialObjectFunctor`, so `rw` and `simp` reject most of these goals as not
+type-correct at instance transparency. The proofs therefore compose the `ιCategorySimplicial_*` and
+`ιCoeff_*` lemmas with `Eq.trans` and `congrArg`, which elaborate up to definitional unfolding. -/
+
 /-- The simplicial object of `(evaluationLeftAdjoint A X).obj V`, augmented to `V` by sending
 every coefficient summand to `V` by the identity. -/
 private def augmented (X : C) (V : A) : SimplicialObject.Augmented A :=

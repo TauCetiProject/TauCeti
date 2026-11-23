@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Adjunction.Evaluation
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
@@ -15,8 +16,8 @@ public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 For an object `X` of `C`, Mathlib's `evaluationLeftAdjoint A X` sends `V : A` to the free
 corepresentable functor `c ↦ ∐_{X ⟶ c} V`, left adjoint to evaluation at `X`. When evaluation at
-`X` preserves epimorphisms, for instance when `A` has pushouts, it sends projective objects to
-projective functors (`CategoryTheory.projective_evaluationLeftAdjoint_obj`).
+`X` preserves epimorphisms, for instance when `A` has pushouts, it preserves projective objects
+(`CategoryTheory.preservesProjectiveObjects_evaluationLeftAdjoint`).
 
 Every functor `M : C ⥤ A` is a quotient of the coproduct, over the objects `X` of `C`, of these
 functors at projective presentations of `M.obj X`
@@ -45,10 +46,11 @@ variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A]
 
 /-- The free corepresentable functor `c ↦ ∐_{X ⟶ c} V` on a projective object `V` is projective,
 when evaluation at `X` preserves epimorphisms. -/
-instance projective_evaluationLeftAdjoint_obj (X : C)
-    [((evaluation C A).obj X).PreservesEpimorphisms] (V : A) [Projective V] :
-    Projective ((evaluationLeftAdjoint A X).obj V) :=
-  (evaluationAdjunctionRight A X).map_projective V inferInstance
+instance preservesProjectiveObjects_evaluationLeftAdjoint (X : C)
+    [((evaluation C A).obj X).PreservesEpimorphisms] :
+    (evaluationLeftAdjoint A X).PreservesProjectiveObjects :=
+  Functor.preservesProjectiveObjects_of_adjunction_of_preservesEpimorphisms
+    (evaluationAdjunctionRight A X)
 
 variable [HasColimitsOfShape (Discrete C) A]
 
