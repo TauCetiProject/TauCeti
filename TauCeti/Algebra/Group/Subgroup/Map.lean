@@ -68,13 +68,6 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
   isomorphisms `subgroupOfEquivOfLe` and `congrOfMapEq` commute with the inclusions of subgroups.
-* `Subgroup.apply_coe_equivMapOfInjective_symm`,
-  `AddSubgroup.apply_coe_equivMapOfInjective_symm`: applying an injective homomorphism to the
-  inverse of `equivMapOfInjective` recovers the underlying element of the image subgroup.
-* `Subgroup.equivSubgroupOfMapEq`, `AddSubgroup.equivAddSubgroupOfMapEq`,
-  `Subgroup.coe_equivSubgroupOfMapEq_apply`, `Subgroup.coe_equivSubgroupOfMapEq_symm_apply`:
-  isomorphism `B ≃* A` induced by an injective homomorphism carrying `A` onto `B`, together with
-  its forward and inverse coercion formulas.
 * `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` through a scalar
   action of `G` agree on elements with the same image in `G`.
 * `MonoidHom.closure_preimage_eq_of_injective`, `AddMonoidHom.closure_preimage_eq_of_injective`:
@@ -107,42 +100,6 @@ theorem _root_.Subgroup.subtype_comp_subgroupOfEquivOfLe {A B : Subgroup G} (h :
     A.subtype.comp (Subgroup.subgroupOfEquivOfLe h : A.subgroupOf B →* A) =
       B.subtype.comp (A.subgroupOf B).subtype :=
   MonoidHom.ext <| Subgroup.subgroupOfEquivOfLe_apply_coe h
-
-/-- Applying an injective homomorphism `f : G →* H` to the inverse of
-`A.equivMapOfInjective f hf` recovers the underlying element in `H`. -/
-@[to_additive (attr := simp) /-- Applying an injective additive homomorphism `f : G →+ H` to the
-inverse of `A.equivMapOfInjective f hf` recovers the underlying element in `H`. -/]
-theorem _root_.Subgroup.apply_coe_equivMapOfInjective_symm (A : Subgroup G) (f : G →* H)
-    (hf : Function.Injective f) (y : A.map f) :
-    f ((A.equivMapOfInjective f hf).symm y : G) = (y : H) := by
-  rw [← Subgroup.coe_equivMapOfInjective_apply A f hf, MulEquiv.apply_symm_apply]
-
-/-- An injective homomorphism `f : G →* H` carrying a subgroup `A` onto `B` induces an
-isomorphism `B ≃* A`. -/
-@[to_additive /-- An injective additive homomorphism `f : G →+ H` carrying an additive subgroup `A`
-onto `B` induces an isomorphism `B ≃+ A`. -/]
-noncomputable def _root_.Subgroup.equivSubgroupOfMapEq (f : G →* H) (hf : Function.Injective f)
-    {A : Subgroup G} {B : Subgroup H} (h : A.map f = B) : B ≃* A :=
-  (MulEquiv.subgroupCongr h.symm).trans (A.equivMapOfInjective f hf).symm
-
-/-- Applying `f` to the image under `Subgroup.equivSubgroupOfMapEq f hf h` recovers the underlying
-element of `H`. -/
-@[to_additive (attr := simp) /-- Applying `f` to the image under
-`AddSubgroup.equivAddSubgroupOfMapEq f hf h` recovers the underlying element of `H`. -/]
-theorem _root_.Subgroup.coe_equivSubgroupOfMapEq_apply (f : G →* H) (hf : Function.Injective f)
-    {A : Subgroup G} {B : Subgroup H} (h : A.map f = B) (y : B) :
-    f (Subgroup.equivSubgroupOfMapEq f hf h y : G) = (y : H) := by
-  rw [Subgroup.equivSubgroupOfMapEq, MulEquiv.trans_apply,
-    Subgroup.apply_coe_equivMapOfInjective_symm, MulEquiv.subgroupCongr_apply]
-
-/-- The inverse of `Subgroup.equivSubgroupOfMapEq f hf h` acts by `f` on underlying elements. -/
-@[to_additive (attr := simp) /-- The inverse of `AddSubgroup.equivAddSubgroupOfMapEq f hf h` acts
-by `f` on underlying elements. -/]
-theorem _root_.Subgroup.coe_equivSubgroupOfMapEq_symm_apply (f : G →* H)
-    (hf : Function.Injective f) {A : Subgroup G} {B : Subgroup H} (h : A.map f = B) (x : A) :
-    ((Subgroup.equivSubgroupOfMapEq f hf h).symm x : H) = f (x : G) := by
-  rw [Subgroup.equivSubgroupOfMapEq, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
-    MulEquiv.subgroupCongr_symm_apply, Subgroup.coe_equivMapOfInjective_apply]
 
 /-- The actions of a subgroup `V` of `G` and of the subgroup `V.subgroupOf U` of `U` (the preimage
 of `V` in `U`) on a type with a scalar action of `G` agree on elements with the same image in `G`:

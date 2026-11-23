@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!

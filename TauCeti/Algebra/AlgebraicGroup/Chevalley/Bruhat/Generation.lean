@@ -93,4 +93,24 @@ theorem borelSubgroup_sup_weylSubgroup :
     rw [D.elementarySubgroup_eq_closure_simpleRootPair, Subgroup.closure_iUnion]
     exact iSup_le (D.closure_simpleRootPair_le_borelSubgroup_sup_weylSubgroup A)
 
+/-- Every Weyl-group element lifts to a Weyl subgroup element lying in `D.elementarySubgroup K`,
+over every field `K`. -/
+theorem exists_mem_elementarySubgroup_weylProjection_eq (K : Type v) [Field K]
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    ∃ n : D.weylSubgroup K,
+      (n : D.points K) ∈ D.elementarySubgroup K ∧ D.weylProjection K n = w := by
+  have hword (l : List (Fin t.rank)) :
+      ∃ n : D.weylSubgroup K,
+        (n : D.points K) ∈ D.elementarySubgroup K ∧
+          D.weylProjection K n = t.geckWeylWordProd ht l := by
+    induction l with
+    | nil => exact ⟨1, one_mem _, by simp⟩
+    | cons i l ih =>
+      obtain ⟨n, hnE, hnw⟩ := ih
+      refine ⟨D.simpleWeylLift K i * n, ?_, by simp [hnw]⟩
+      rw [Subgroup.coe_mul, D.coe_simpleWeylLift]
+      exact (D.elementarySubgroup K).mul_mem (D.weylElement_mem_elementarySubgroup K _ 1) hnE
+  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  exact hword l
+
 end TauCeti.DynkinType.ChevalleyDatum
