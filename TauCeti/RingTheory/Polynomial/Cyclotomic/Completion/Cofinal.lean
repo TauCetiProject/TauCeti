@@ -118,7 +118,7 @@ variable (hS : S.Finite)
 `∏_{n ∈ S} Φ_n`. -/
 noncomputable def cycloProdPowEquiv :
     CycloCompletion R S ≃A[R] PolyFamilyLimit (fun k : ℕ ↦ cycloProd R hS ^ k) :=
-  cofinalEquiv (directed_dvd_cycloProd_pow R hS)
+  cofinalEquiv (directed_dvd_pow (cycloProd R hS))
     (fun k ↦ ⟨_, pow_mem (cycloProd_mem_cycloIndex R hS) k, dvd_refl _⟩)
     (fun _ hf ↦ exists_dvd_cycloProd_pow hS hf)
 

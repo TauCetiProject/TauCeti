@@ -53,6 +53,7 @@ No hypothesis on `R` is needed; in particular `R` may have torsion or be the zer
 
 ## Main results
 
+* `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
 * `TauCeti.PolyFamilyLimit.ext`: an element is determined by its projections.
 * `TauCeti.PolyFamilyLimit.proj_liftCompatAlgHom`,
   `TauCeti.PolyFamilyLimit.liftCompatAlgHom_unique`: the universal property of the inverse limit.
@@ -82,6 +83,12 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] {ι κ ν : Type*}
 
+/-- The powers of an element of a monoid form a directed family for divisibility. This is the
+directedness hypothesis of `TauCeti.PolyFamilyLimit.cofinalEquiv` for the presentations along the
+powers of one polynomial. -/
+theorem directed_dvd_pow {M : Type*} [Monoid M] (a : M) : Directed (· ∣ ·) (fun k : ℕ ↦ a ^ k) :=
+  fun k l ↦ ⟨max k l, pow_dvd_pow a (le_max_left k l), pow_dvd_pow a (le_max_right k l)⟩
+
 /-- The compatible families in `∏ i, R[X]/(g i)`: those `x` for which, whenever `g i ∣ g j`, the
 reduction from the quotient by `g j` to the quotient by `g i` sends `x j` to `x i`. -/
 noncomputable def polyFamilyCompat (g : ι → R[X]) : Subalgebra R (∀ i, AdjoinRoot (g i)) where
@@ -94,6 +101,22 @@ theorem mem_polyFamilyCompat {g : ι → R[X]} {x : ∀ i, AdjoinRoot (g i)} :
     x ∈ polyFamilyCompat g ↔
       ∀ (i j : ι) (h : g i ∣ g j), AdjoinRoot.algHomOfDvd R (g j) (g i) h (x j) = x i :=
   Iff.rfl
+
+/-- The compatible families form a closed subset of the product of the discrete quotients
+`R[X]/(g i)`. -/
+theorem isClosed_polyFamilyCompat (g : ι → R[X]) :
+    @IsClosed (∀ i, AdjoinRoot (g i)) (@Pi.topologicalSpace ι (fun i ↦ AdjoinRoot (g i)) fun _ ↦ ⊥)
+      (polyFamilyCompat g : Set (∀ i, AdjoinRoot (g i))) := by
+  let _ : ∀ i, TopologicalSpace (AdjoinRoot (g i)) := fun _ ↦ ⊥
+  have : ∀ i, DiscreteTopology (AdjoinRoot (g i)) := fun _ ↦ discreteTopology_bot _
+  have hset : (polyFamilyCompat g : Set (∀ i, AdjoinRoot (g i))) =
+      ⋂ (i : ι) (j : ι) (h : g i ∣ g j),
+        {x | AdjoinRoot.algHomOfDvd R (g j) (g i) h (x j) = x i} := by
+    ext x
+    simp [mem_polyFamilyCompat]
+  rw [hset]
+  exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun _ ↦
+    isClosed_eq (continuous_of_discreteTopology.comp (continuous_apply j)) (continuous_apply i)
 
 /-- The polynomial-family limit `lim_i R[X]/(g i)`: the algebra of families of residues compatible
 with the reductions along divisibility in the family `g`. -/
@@ -150,8 +173,8 @@ noncomputable def liftCompatAlgHom (φ : ∀ i, A →ₐ[R] AdjoinRoot (g i))
 /-- The coordinate at `i` of the induced map is `φ i`. -/
 @[simp]
 theorem proj_liftCompatAlgHom (hφ) (i : ι) (a : A) :
-    proj i (liftCompatAlgHom φ hφ a) = φ i a :=
-  (rfl)
+    proj i (liftCompatAlgHom φ hφ a) = φ i a := by
+  simp [proj_apply, liftCompatAlgHom]
 
 theorem proj_comp_liftCompatAlgHom (hφ) (i : ι) :
     (proj i).comp (liftCompatAlgHom φ hφ) = φ i :=
@@ -175,8 +198,8 @@ noncomputable def fromPoly : R[X] →ₐ[R] PolyFamilyLimit g :=
   liftCompatAlgHom (fun i ↦ AdjoinRoot.mkₐ (g i)) fun i j hij ↦ AlgHom.ext fun p ↦ by simp
 
 @[simp]
-theorem proj_fromPoly (i : ι) (p : R[X]) : proj i (fromPoly g p) = AdjoinRoot.mk (g i) p :=
-  (rfl)
+theorem proj_fromPoly (i : ι) (p : R[X]) : proj i (fromPoly g p) = AdjoinRoot.mk (g i) p := by
+  simp [fromPoly]
 
 theorem proj_comp_fromPoly (i : ι) : (proj i).comp (fromPoly g) = AdjoinRoot.mkₐ (g i) :=
   AlgHom.ext (proj_fromPoly i)
@@ -250,22 +273,6 @@ noncomputable instance (g : ι → R[X]) : UniformSpace (PolyFamilyLimit g) :=
 
 instance (g : ι → R[X]) : IsUniformAddGroup (PolyFamilyLimit g) :=
   isUniformAddGroup_of_addCommGroup
-
-/-- The compatible families form a closed subset of the product of the discrete quotients
-`R[X]/(g i)`. -/
-theorem isClosed_polyFamilyCompat (g : ι → R[X]) :
-    @IsClosed (∀ i, AdjoinRoot (g i)) (@Pi.topologicalSpace ι (fun i ↦ AdjoinRoot (g i)) fun _ ↦ ⊥)
-      (polyFamilyCompat g : Set (∀ i, AdjoinRoot (g i))) := by
-  let _ : ∀ i, TopologicalSpace (AdjoinRoot (g i)) := fun _ ↦ ⊥
-  have : ∀ i, DiscreteTopology (AdjoinRoot (g i)) := fun _ ↦ discreteTopology_bot _
-  have hset : (polyFamilyCompat g : Set (∀ i, AdjoinRoot (g i))) =
-      ⋂ (i : ι) (j : ι) (h : g i ∣ g j),
-        {x | AdjoinRoot.algHomOfDvd R (g j) (g i) h (x j) = x i} := by
-    ext x
-    simp [mem_polyFamilyCompat]
-  rw [hset]
-  exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun _ ↦
-    isClosed_eq (continuous_of_discreteTopology.comp (continuous_apply j)) (continuous_apply i)
 
 /-- `PolyFamilyLimit g` is complete for its group uniformity: it is a closed additive subgroup of
 the product of the discrete, hence complete, quotients `R[X]/(g i)`. -/
@@ -370,7 +377,6 @@ theorem reduce_eq_id (hg : Directed (· ∣ ·) g) (hgg : ∀ i, ∃ i', g i ∣
       AlgHom.id_apply]
 
 /-- Comparison maps compose. -/
-@[simp]
 theorem reduce_comp_reduce (hg : Directed (· ∣ ·) g) (hh : Directed (· ∣ ·) h)
     (hhg : ∀ j, ∃ i, h j ∣ g i) (hkh : ∀ l, ∃ j, k l ∣ h j) (hkg : ∀ l, ∃ i, k l ∣ g i) :
     (reduce hh hkh).comp (reduce hg hhg) = reduce hg hkg :=
@@ -380,7 +386,6 @@ theorem reduce_comp_reduce (hg : Directed (· ∣ ·) g) (hh : Directed (· ∣ 
     rw [AlgHom.comp_apply, proj_reduce hh hkh hlj, proj_reduce hg hhg hji,
       AdjoinRoot.algHomOfDvd_algHomOfDvd, proj_reduce hg hkg (hlj.trans hji)]
 
-@[simp]
 theorem reduce_reduce (hg : Directed (· ∣ ·) g) (hh : Directed (· ∣ ·) h)
     (hhg : ∀ j, ∃ i, h j ∣ g i) (hkh : ∀ l, ∃ j, k l ∣ h j) (hkg : ∀ l, ∃ i, k l ∣ g i)
     (x : PolyFamilyLimit g) :
@@ -422,7 +427,9 @@ theorem cofinalEquiv_apply (x : PolyFamilyLimit g) :
 @[simp]
 theorem cofinalEquiv_symm :
     (cofinalEquiv hg hh hhg hgh).symm = cofinalEquiv hh hg hgh hhg :=
-  (rfl)
+  ContinuousAlgEquiv.ext <| funext fun x ↦ by
+    rw [ContinuousAlgEquiv.symm_apply_eq, cofinalEquiv_apply, cofinalEquiv_apply,
+      reduce_reduce hh hg hgh hhg fun j ↦ ⟨j, dvd_refl (h j)⟩, reduce_eq_id, AlgHom.id_apply]
 
 /-- The coordinate equation of a cofinal equivalence. -/
 theorem proj_cofinalEquiv {j : κ} {i : ι} (hji : h j ∣ g i) (x : PolyFamilyLimit g) :
@@ -437,7 +444,6 @@ theorem cofinalEquiv_fromPoly (p : R[X]) :
 
 /-- **Transitivity of cofinal replacement.** Composing the cofinal equivalences `g → h` and
 `h → k` gives the cofinal equivalence `g → k`. -/
-@[simp]
 theorem cofinalEquiv_trans (hk : Directed (· ∣ ·) k) (hkh : ∀ l, ∃ j, k l ∣ h j)
     (hhk : ∀ j, ∃ l, h j ∣ k l) (hkg : ∀ l, ∃ i, k l ∣ g i) (hgk : ∀ i, ∃ l, g i ∣ k l) :
     (cofinalEquiv hg hh hhg hgh).trans (cofinalEquiv hh hk hkh hhk) =
