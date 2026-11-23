@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
+import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SumPrimePow
 
 /-!
@@ -53,7 +54,6 @@ from the exponential sum `∑_{n ≤ x} Λ(n) e(an/q)` to `ψ(x; q, b)` for unit
   `ω(q) log x` for `x ≥ 1`.
 * `Chebyshev.norm_sum_vonMangoldt_smul_sub_sum_psiAP_smul_le`: restricting the decomposition to
   the reduced classes costs at most `ω(q) log x` for `x ≥ 1` and a weight bounded by `1`.
-* `Nat.Prime.filter_dvd_primesLE`: the only prime `r ≤ n` divisible by a prime `p` is `p`.
 
 ## References
 
@@ -65,18 +65,6 @@ public section
 
 open Finset ArithmeticFunction
 open scoped Chebyshev Nat.Prime
-
-/-- The only prime `r ≤ n` divisible by a prime `p` is `p` itself, present when `p ≤ n`. -/
-theorem Nat.Prime.filter_dvd_primesLE {p : ℕ} (hp : p.Prime) (n : ℕ) :
-    {r ∈ Nat.primesLE n | p ∣ r} = if p ≤ n then {p} else ∅ := by
-  ext r
-  simp only [mem_filter, Nat.mem_primesLE]
-  split_ifs with h
-  · simp only [mem_singleton]
-    exact ⟨fun ⟨⟨_, hr⟩, hpr⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp hr).1 hpr).symm,
-      by rintro rfl; exact ⟨⟨h, hp⟩, dvd_rfl⟩⟩
-  · simp only [notMem_empty, iff_false, not_and]
-    exact fun ⟨hrn, hr⟩ hpr ↦ h <| ((Nat.prime_dvd_prime_iff_eq hp hr).1 hpr) ▸ hrn
 
 namespace Chebyshev
 
