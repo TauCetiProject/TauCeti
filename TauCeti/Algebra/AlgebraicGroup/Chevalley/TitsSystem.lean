@@ -304,6 +304,11 @@ private theorem titsSystem_intersection_eq_comap :
     (D.titsSystem K).intersection =
       (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
         (D.titsSubgroupNMulEquiv K).toMonoidHom := by
+  -- Unfold `TitsSystem.intersection` (`abbrev` for `subgroupB.subgroupOf subgroupN`),
+  -- `titsSystem_subgroupB`/`titsSystem_subgroupN`, and `titsSubgroupNMulEquiv`
+  -- (`Subgroup.subgroupOfEquivOfLe`) by defeq so we can reuse
+  -- `borelSubgroupOf_subgroupOf_weylSubgroupOf_eq` (proved prior to `titsSystem` for
+  -- `intersection_normal`) without repeating its `ext` proof.
   change ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
       ((D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) =
     (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
