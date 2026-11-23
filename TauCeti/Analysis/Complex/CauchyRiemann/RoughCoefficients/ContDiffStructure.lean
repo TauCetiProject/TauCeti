@@ -169,8 +169,7 @@ theorem memWkpLoc_two_of_contDiffOn_of_cauchyRiemann (hA : ContDiffOn ℝ 1 A Ω
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) {p : ℝ≥0∞} (hp : p ≠ ⊤) :
     MemWkpLoc p Ω 2 u := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  let e := ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) (E := E)
-    (F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) (by simp)
+  let e : E ≃L[ℝ] _ := toEuclidean
   obtain ⟨hA', hAA', hu', -, -, hCR'⟩ := euclidean_model hA hAA hu hCR e
   lift p to ℝ≥0 using hp
   have h := (memWkpLoc_two_of_two_lt hA' hAA' hu' hCR' (p := max p 3)
@@ -186,8 +185,7 @@ theorem isWeakLinearCauchyRiemannOn_fderiv_I_of_contDiffOn_of_cauchyRiemann
     (hu : ContDiffOn ℝ 1 u Ω) (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     {p : ℝ≥0∞} (hp : p ≠ ⊤) :
     IsWeakLinearCauchyRiemannOn p Ω A (fun z ↦ fderiv ℝ A z I) (fun z ↦ fderiv ℝ u z I) := by
-  let e := ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) (E := E)
-    (F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) (by simp)
+  let e : E ≃L[ℝ] _ := toEuclidean
   obtain ⟨hA', hAA', hu', hfd, hfdA, hCR'⟩ := euclidean_model hA hAA hu hCR e
   lift p to ℝ≥0 using hp
   have h := ((isWeakLinearCauchyRiemannOn_of_two_lt hA' hAA' hu' hCR' (p := max p 3)
