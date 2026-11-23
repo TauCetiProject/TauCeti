@@ -207,12 +207,10 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of
         ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  have hS : volume.restrict thricePuncturedSphereReal = volume :=
-    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
   have hEint := hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
     hK hKH hH hHc hB hu huB he hA hR
-  rw [IntegrableOn, hS] at hEint hA hR
-  simp only [hS]
+  rw [IntegrableOn, volume_restrict_thricePuncturedSphereReal] at hEint hA hR
+  simp only [volume_restrict_thricePuncturedSphereReal]
   exact hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu hEint hA hR
     fun q ↦ tendsto_intervalIntegral_endChart_of_isCompact (hHc q) hB hu.continuousOn huB (hy q)
 

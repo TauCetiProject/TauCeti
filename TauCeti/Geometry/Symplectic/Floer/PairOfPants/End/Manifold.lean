@@ -505,8 +505,9 @@ theorem
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
     hω q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc (hHq.of_le one_le_two) hnull
-    (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHq
-      contractiblePeriodicSolutions_subset hnd)
+    (forall_mem_eventually_eq_of_forall_eventually_eq
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHq
+        contractiblePeriodicSolutions_subset hnd))
 
 end Nondegenerate
 
@@ -633,7 +634,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
     q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc hHs
-    fun y hy hyB _ ↦ (hiso y hy hyB).mono fun _ hp y' hy' hy'B _ hy'p ↦ hp y' hy' hy'B hy'p
+    (forall_mem_eventually_eq_of_forall_eventually_eq hiso)
 
 /-- **Convergence of an end of a Floer pair of pants in a manifold to a nondegenerate orbit.** Let
 `ω` be a nondegenerate two-form on a Hausdorff boundaryless manifold `M`, `K` equal to `H_q(t) dt`
@@ -677,10 +678,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated q hKH hH
     (hHs.of_le one_le_two) he hB he_inj hde hu huB J hfloer hE hC hc hJc
-    (fun y hy hyB ↦
-      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs Subset.rfl
-        (R := fun _ ↦ True) hnd y hy hyB trivial).mono
-        fun _ hp y' hy' hy'B ↦ hp y' hy' hy'B trivial)
+    (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs Subset.rfl hnd)
 
 /-- **Convergence of an end of a Floer pair of pants in a closed manifold to a nondegenerate
 orbit.** Specialization of

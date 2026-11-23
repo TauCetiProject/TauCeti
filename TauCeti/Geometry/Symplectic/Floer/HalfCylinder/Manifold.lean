@@ -462,8 +462,9 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
   hω.exists_mem_contractiblePeriodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
     hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE (hH.of_le one_le_two) hnull hC
-    (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hH
-      contractiblePeriodicSolutions_subset hnd)
+    (forall_mem_eventually_eq_of_forall_eventually_eq
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hH
+        contractiblePeriodicSolutions_subset hnd))
 
 end Nondegenerate
 
@@ -692,7 +693,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
   hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated_lim
     hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hH hC
-    fun x hx hxK _ ↦ (hiso x hx hxK).mono fun _ hp y hy hyK _ hyp ↦ hp y hy hyK hyp
+    (forall_mem_eventually_eq_of_forall_eventually_eq hiso)
 
 /-- **Convergence of a finite-energy Floer half-cylinder to an isolated orbit, from a bound on the
 strip.** The conclusion of
@@ -763,10 +764,8 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
       (hH.of_le one_le_two) hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper
       (fun _ _ _ ↦ mem_univ _) J hc hJc hfloer hE hC
-      (fun x hx hxK ↦
-        (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hH Subset.rfl
-          (R := fun _ ↦ True) (fun x hx _ ↦ hnd x hx) x hx hxK trivial).mono
-          fun _ hp y hy hyK ↦ hp y hy hyK trivial)
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hH Subset.rfl
+        fun x hx _ ↦ hnd x hx)
   exact ⟨x, hx, h⟩
 
 end SmoothTwoForm

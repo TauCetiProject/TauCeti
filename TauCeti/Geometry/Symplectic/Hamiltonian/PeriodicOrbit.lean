@@ -145,22 +145,20 @@ theorem eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq
 /-- **Nondegenerate 1-periodic orbits in a subset are isolated among orbits in that subset.** Let
 `σ` be a nondegenerate two-form on a Hausdorff boundaryless manifold modelled on a
 finite-dimensional space, `H` a time-dependent Hamiltonian, jointly `C²`, `P` a subset of the
-`1`-periodic orbits of `H`, `K ⊆ M`, and `R` a side predicate on orbits. If every orbit `γ ∈ P` in
-`K` is nondegenerate — `γ 0` is a nondegenerate fixed point of the time-one map
-`timeDependentFlowOf X_H 0 1` — then every orbit `γ ∈ P` in `K` satisfying `R γ` is isolated at
-`t = 0` among the orbits in `P` in `K` satisfying `R`. -/
+`1`-periodic orbits of `H`, and `K ⊆ M`. If every orbit `γ ∈ P` in `K` is nondegenerate — `γ 0` is
+a nondegenerate fixed point of the time-one map `timeDependentFlowOf X_H 0 1` — then every orbit
+`γ ∈ P` in `K` is isolated at `t = 0` among the orbits in `P` in `K`. -/
 theorem forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
     (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H))
     {P : Set (ℝ → M)}
-    (hP : P ⊆ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1)
-    {R : (ℝ → M) → Prop} {K : Set M}
+    (hP : P ⊆ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) 1) {K : Set M}
     (hnd : ∀ γ ∈ P, (∀ t, γ t ∈ K) → IsNondegenerateFixedPt I
       (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 1) (γ 0)) :
-    ∀ γ ∈ P, (∀ t, γ t ∈ K) → R γ →
-      ∀ᶠ y in 𝓝 (γ 0), ∀ γ' ∈ P, (∀ t, γ' t ∈ K) → R γ' → γ' 0 = y → γ' = γ :=
-  fun γ hγ hγK _ ↦
+    ∀ γ ∈ P, (∀ t, γ t ∈ K) →
+      ∀ᶠ y in 𝓝 (γ 0), ∀ γ' ∈ P, (∀ t, γ' t ∈ K) → γ' 0 = y → γ' = γ :=
+  fun γ hγ hγK ↦
     (h.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH (hP hγ)
-      (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ _ ↦ hy γ' (hP hγ')
+      (hnd γ hγ hγK)).mono fun _ hy γ' hγ' _ ↦ hy γ' (hP hγ')
 
 /-- **Finiteness of nondegenerate 1-periodic orbits.** Let `σ` be a nondegenerate two-form on a
 compact boundaryless manifold modelled on a finite-dimensional space, and `H` a time-dependent

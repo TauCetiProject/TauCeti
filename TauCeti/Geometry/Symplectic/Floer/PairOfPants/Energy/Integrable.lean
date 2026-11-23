@@ -21,9 +21,7 @@ ends without any global bound on `H_q` or pointwise end limits. By the bounded-e
 criterion `SmoothTwoForm.IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm`
 of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity`, the Floer energy density of
 `u` is integrable over `S`
-(`IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`)
-and its Lebesgue energy is finite
-(`IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact`).
+(`IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`).
 -/
 
 public section
@@ -67,9 +65,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u)
       thricePuncturedSphereReal := by
-  have hS : volume.restrict thricePuncturedSphereReal = volume :=
-    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
-  rw [IntegrableOn, hS] at hA hR ⊢
+  rw [IntegrableOn, volume_restrict_thricePuncturedSphereReal] at hA hR ⊢
   have hbound : ∀ q, ∃ C : ℝ, ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ B, ‖uncurry (H q) p‖ ≤ C := fun q ↦
     (isCompact_Icc.prod hB).exists_bound_of_continuousOn (hHc q).continuousOn
   choose C hC using hbound
@@ -83,37 +79,5 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
     intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦
       hC q (t, u (endChart q (q.endSign * σ, t)))
         ⟨Ioc_subset_Icc_self (uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1) ▸ ht), huB _ (hmem t)⟩
-
-/-- **Automatic finiteness of the Lebesgue Floer energy on a compact set.** -/
-theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact
-    {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
-    (hω : ω.IsNondegenerate)
-    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q))) (hB : IsCompact B)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
-    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
-    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
-    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-      thricePuncturedSphereReal) :
-    ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
-  have hS : volume.restrict thricePuncturedSphereReal = volume :=
-    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
-  have hEint := hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
-    hK hKH hH hHc hB hu huB he hA hR
-  rw [IntegrableOn, hS] at hEint
-  rw [hS, ← ofReal_integral_eq_lintegral_ofReal hEint (ae_mem_thricePuncturedSphereReal.mono he)]
-  exact ENNReal.ofReal_ne_top
 
 end TauCeti.SmoothTwoForm

@@ -21,8 +21,7 @@ with image in a compact set `B ⊆ M` and integrable symplectic area density and
 In `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable` and
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic`, compactness of `[0, 1] × B`
 bounds `H_q` along end loops, giving automatic finite energy
-(`integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`,
-`lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact`) and the energy
+(`integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`) and the energy
 identity from pointwise end limits
 (`integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`). Combined with
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, this yields:
@@ -144,14 +143,19 @@ private theorem exists_energy_of_endConvergence {P : Puncture → Set (ℝ → M
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z := fun z hz ↦
     floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
-  have hE := hω.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact
+  have hEint := hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
     hK hKH hH hHc hB hu huB he₀ hA hR
+  have hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
+    rw [← ofReal_integral_eq_lintegral_ofReal hEint
+      (ae_restrict_of_forall_mem isOpen_thricePuncturedSphereReal.measurableSet he₀)]
+    exact ENNReal.ofReal_ne_top
   choose y hy using hex hE
   exact ⟨y, fun q ↦ ⟨(hy q).1, (hy q).2.1, (hy q).2.2.1, (hy q).2.2.2,
       tendsto_intervalIntegral_endChart_of_isCompact (hHc q) hB hu.continuousOn huB
         (hy q).2.2.2⟩,
-    hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
-      hK hKH hH hHc hB hu huB he₀ hA hR,
+    hEint,
     hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
       hK hKH hH hHc hB hu huB he₀ hA hR fun q ↦ (hy q).2.2.2⟩
 
@@ -293,8 +297,9 @@ theorem exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompac
   exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact_of_isolated_lim
     hω hH he hB he_inj hde hu huB J hJ hJc hA hC hK hKH hfloer hR
     (fun q ↦ (hHs q).of_le one_le_two)
-    fun q ↦ hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
-      (hHs q) Subset.rfl (hnd q)
+    fun q ↦ forall_mem_eventually_eq_of_forall_eventually_eq
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
+        (hHs q) Subset.rfl (hnd q))
 
 /-- **The manifold pair-of-pants energy identity at nondegenerate contractible asymptotic orbits.**
 Corollary for `C²` `H_q` assuming nondegeneracy only on `contractiblePeriodicSolutions`. -/
@@ -330,8 +335,9 @@ theorem
   exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_nullhomotopic_of_isolated_lim
     hω hH he hB he_inj hde hu huB J hJ hJc hA hC hK hKH hfloer hR
     (fun q ↦ (hHs q).of_le one_le_two) hnull
-    fun q ↦ hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
-      (hHs q) contractiblePeriodicSolutions_subset (hnd q)
+    fun q ↦ forall_mem_eventually_eq_of_forall_eventually_eq
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
+        (hHs q) contractiblePeriodicSolutions_subset (hnd q))
 
 end Nondegenerate
 

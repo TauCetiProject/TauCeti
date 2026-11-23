@@ -372,6 +372,12 @@ theorem ae_mem_thricePuncturedSphereReal : ∀ᵐ z : ℝ × ℝ, z ∈ thricePu
   · rw [Measure.volume_eq_prod]
     exact (Set.toFinite _).measure_zero _
 
+/-- Restricting Lebesgue measure on `ℝ × ℝ` to `thricePuncturedSphereReal` leaves it unchanged. -/
+@[simp]
+theorem volume_restrict_thricePuncturedSphereReal :
+    (volume : Measure (ℝ × ℝ)).restrict thricePuncturedSphereReal = volume :=
+  Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
+
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
 theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
