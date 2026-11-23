@@ -10,10 +10,12 @@ public import Mathlib.RingTheory.HahnSeries.Multiplication
 /-!
 # Powers of Hahn series and compatibility with coefficient scalars
 
-Over a reduced semiring, taking a power multiplies `orderTop` and raises the leading coefficient
-to that power. Here `orderTop` takes the value `⊤` on the zero series, so the `orderTop` formula
-holds for the zero series too. These formulas detect whether a leading pole term can be cancelled
-by a power.
+Over a reduced semiring, taking a power raises the leading coefficient to that power. Over a
+reduced semiring that is also nontrivial, taking a power multiplies `orderTop`. Here `orderTop`
+takes the value `⊤` on the zero series, so the `orderTop` formula holds for the zero series too.
+Nontriviality is needed for the zeroth power: over the trivial semiring `1 = 0`, so the series
+`1` has `orderTop` equal to `⊤` rather than `0`. These formulas detect whether a leading pole term
+can be cancelled by a power.
 
 The `orderTop` formula allows semiring coefficients; Mathlib's `HahnSeries.addVal` requires
 coefficients in a domain that is a ring, so its `AddValuation.map_pow` does not cover this
@@ -22,7 +24,8 @@ generality.
 The formulas are `HahnSeries.leadingCoeff_pow` and `HahnSeries.orderTop_pow`, both
 simplification lemmas, companions of Mathlib's `HahnSeries.order_pow`. Mathlib's
 `HahnSeries.order_pow`, `HahnSeries.leadingCoeff_mul` and `HahnSeries.orderTop_mul` assume no zero
-divisors; for powers it suffices that the coefficients are reduced.
+divisors; for powers it suffices that the coefficients are reduced, and, for `orderTop`, that
+they form a nontrivial semiring.
 
 This file also records that coefficientwise scalar multiplication associates and commutes with
 multiplication of Hahn series (`TauCeti.hahnSeries_isScalarTower` and
