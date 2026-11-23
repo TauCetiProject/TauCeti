@@ -37,7 +37,8 @@ variable {R S : Type u} [CommRing R] [CommRing S]
 /-- Restricting from `V` to `W ⊆ V` after the comap map `Γ(Spec R, U) → Γ(Spec S, V)` gives the
 comap map `Γ(Spec R, U) → Γ(Spec S, W)`. -/
 theorem map_comp_comap (f : R →+* S) (U : Opens (PrimeSpectrum.Top R))
-    {V W : Opens (PrimeSpectrum.Top S)} (h : V.1 ⊆ PrimeSpectrum.comap f ⁻¹' U.1) (i : W ⟶ V) :
+    {V W : Opens (PrimeSpectrum.Top S)} (h : V.carrier ⊆ PrimeSpectrum.comap f ⁻¹' U.carrier)
+        (i : W ⟶ V) :
     ((Spec.structureSheaf S).obj.map i.op).hom.comp (comap f U V h) =
       comap f U W fun _ hp ↦ h (leOfHom i hp) := by
   rw [← comap_id_eq_map]
@@ -46,7 +47,8 @@ theorem map_comp_comap (f : R →+* S) (U : Opens (PrimeSpectrum.Top R))
 /-- Restricting from `U` to `U' ⊆ U` before the comap map `Γ(Spec R, U') → Γ(Spec S, W)` gives
 the comap map `Γ(Spec R, U) → Γ(Spec S, W)`. -/
 theorem comap_comp_map (f : R →+* S) {U U' : Opens (PrimeSpectrum.Top R)}
-    (W : Opens (PrimeSpectrum.Top S)) (h : W.1 ⊆ PrimeSpectrum.comap f ⁻¹' U'.1) (i : U' ⟶ U) :
+    (W : Opens (PrimeSpectrum.Top S)) (h : W.carrier ⊆ PrimeSpectrum.comap f ⁻¹' U'.carrier)
+        (i : U' ⟶ U) :
     (comap f U' W h).comp ((Spec.structureSheaf R).obj.map i.op).hom =
       comap f U W (h.trans fun _ hp ↦ leOfHom i hp) := by
   rw [← comap_id_eq_map]
@@ -55,8 +57,8 @@ theorem comap_comp_map (f : R →+* S) {U U' : Opens (PrimeSpectrum.Top R)}
 /-- Equal ring homomorphisms have equal comap maps; this transports a comap map along an equation
 between ring homomorphisms. -/
 theorem comap_congr {f g : R →+* S} (hfg : f = g) (U : Opens (PrimeSpectrum.Top R))
-    (V : Opens (PrimeSpectrum.Top S)) (hf : V.1 ⊆ PrimeSpectrum.comap f ⁻¹' U.1)
-    (hg : V.1 ⊆ PrimeSpectrum.comap g ⁻¹' U.1) : comap f U V hf = comap g U V hg := by
+    (V : Opens (PrimeSpectrum.Top S)) (hf : V.carrier ⊆ PrimeSpectrum.comap f ⁻¹' U.carrier)
+    (hg : V.carrier ⊆ PrimeSpectrum.comap g ⁻¹' U.carrier) : comap f U V hf = comap g U V hg := by
   subst hfg
   rfl
 

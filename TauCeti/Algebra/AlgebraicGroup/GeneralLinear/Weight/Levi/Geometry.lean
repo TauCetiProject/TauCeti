@@ -157,7 +157,7 @@ private def weightLeviPolynomialToQuotient (w : Fin N → ℤ) :
     MvPolynomial (WeightLeviIndex w) R →ₐ[R] weightLeviCoordinateHopfAlgebra R w :=
   MvPolynomial.aeval fun ij ↦
     Ideal.Quotient.mkₐ R (weightLeviDefiningHopfIdeal R w).toIdeal
-      ((genericMatrix R N) ij.1.1 ij.1.2)
+      ((genericMatrix R N) ij.val.1 ij.val.2)
 
 private theorem weightLeviPolynomialToQuotient_determinant_isUnit (w : Fin N → ℤ) :
     IsUnit (weightLeviPolynomialToQuotient R w
@@ -221,7 +221,7 @@ private theorem weightLeviQuotientToCoordinateRing_comp_coordinateRingToQuotient
     weightLeviPolynomialToQuotient, MvPolynomial.aeval_X,
     weightLeviQuotientToCoordinateRing_mk_genericMatrix_apply,
     weightLeviLocalizedGenericMatrix, Matrix.map_apply,
-    weightLeviPolynomialGenericMatrix_apply_of_eq R w ij.2]
+    weightLeviPolynomialGenericMatrix_apply_of_eq R w ij.property]
 
 private theorem weightLeviCoordinateRingToQuotient_comp_quotientToCoordinateRing
     (w : Fin N → ℤ) :
@@ -277,11 +277,11 @@ theorem weightLeviCoordinateAlgEquiv_symm_algebraMap_X
         (algebraMap (MvPolynomial (WeightLeviIndex w) R)
           (WeightLeviCoordinateRing R w) (MvPolynomial.X ij)) =
       Ideal.Quotient.mkₐ R (weightLeviDefiningHopfIdeal R w).toIdeal
-        ((genericMatrix R N) ij.1.1 ij.1.2) := by
+        ((genericMatrix R N) ij.val.1 ij.val.2) := by
   apply (weightLeviCoordinateAlgEquiv R w).injective
   rw [AlgEquiv.apply_symm_apply, genericMatrix_apply, Ideal.Quotient.mkₐ_eq_mk,
     weightLeviCoordinateAlgEquiv_mk_genericMatrix_apply,
-    weightLeviLocalizedGenericMatrix_apply_of_eq R w ij.2]
+    weightLeviLocalizedGenericMatrix_apply_of_eq R w ij.property]
   rw [IsScalarTower.toAlgHom_apply]
 
 /-- The weight-Levi coordinate algebra is smooth over its base ring. -/
@@ -298,7 +298,7 @@ theorem weightLeviPolynomialGenericMatrix_det_ne_zero
     Matrix.det (weightLeviPolynomialGenericMatrix R w) ≠ 0 := by
   intro hzero
   let e : MvPolynomial (WeightLeviIndex w) R →ₐ[R] R :=
-    MvPolynomial.aeval fun ij ↦ if ij.1.1 = ij.1.2 then 1 else 0
+    MvPolynomial.aeval fun ij ↦ if ij.val.1 = ij.val.2 then 1 else 0
   have hmatrix : (weightLeviPolynomialGenericMatrix R w).map e = 1 := by
     ext i j
     by_cases hij : w i = w j

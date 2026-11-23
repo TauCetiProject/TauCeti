@@ -396,9 +396,9 @@ theorem complexDixmierTrace_add {ω : GeneralizedLimit} (hω : ω.IsDilationInva
   rw [complexDixmierTrace_of_mem ω (Submodule.add_mem _ hS hT),
     complexDixmierTrace_of_mem ω hS, complexDixmierTrace_of_mem ω hT]
   simp only [map_add, AddSubgroup.coe_add]
-  rw [signedDixmierTrace_selfAdjoint_add hω (ℜ S).2 (ℜ T).2
+  rw [signedDixmierTrace_selfAdjoint_add hω (ℜ S).property (ℜ T).property
       (realPart_mem_finiteSubmodule hS) (realPart_mem_finiteSubmodule hT),
-    signedDixmierTrace_selfAdjoint_add hω (ℑ S).2 (ℑ T).2
+    signedDixmierTrace_selfAdjoint_add hω (ℑ S).property (ℑ T).property
       (imaginaryPart_mem_finiteSubmodule hS) (imaginaryPart_mem_finiteSubmodule hT)]
   push_cast; ring
 
@@ -451,8 +451,8 @@ theorem complexDixmierTrace_smul {ω : GeneralizedLimit} (hω : ω.IsDilationInv
 noncomputable def linearDixmierTrace (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℂ E]
     [CompleteSpace E] {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant) :
     ((logarithmic ℂ).operatorGauge E E).finiteSubmodule →ₗ[ℂ] ℂ where
-  toFun T := complexDixmierTrace ω T.1
-  map_add' S T := complexDixmierTrace_add hω S.2 T.2
+  toFun T := complexDixmierTrace ω T.val
+  map_add' S T := complexDixmierTrace_add hω S.property T.property
   map_smul' c T := by simp [complexDixmierTrace_smul hω]
 
 /-- Applying `TauCeti.linearDixmierTrace` evaluates `TauCeti.complexDixmierTrace` on the underlying
@@ -460,7 +460,7 @@ operator. -/
 @[simp]
 theorem linearDixmierTrace_apply {ω : GeneralizedLimit} (hω : ω.IsDilationInvariant)
     (T : ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
-    linearDixmierTrace E hω T = complexDixmierTrace ω T.1 := (rfl)
+    linearDixmierTrace E hω T = complexDixmierTrace ω T.val := (rfl)
 
 /-! ### Traciality and sharp norm bounds -/
 

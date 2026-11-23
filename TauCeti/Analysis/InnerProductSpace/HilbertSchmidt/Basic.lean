@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
-public import TauCeti.Analysis.InnerProductSpace.Parseval
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
@@ -101,7 +101,7 @@ Hilbert basis `(cⱼ)` of the target gives `E_b(T) = ∑' i, ∑' j, ‖⟪cⱼ,
 theorem hilbertSchmidtEnergy_eq_tsum_tsum (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
     (c : HilbertBasis κ 𝕜 F) :
     T.hilbertSchmidtEnergy b = ∑' i, ∑' j, ‖⟪c j, T (b i)⟫_𝕜‖ₑ ^ 2 := by
-  simp only [hilbertSchmidtEnergy_def, c.tsum_enorm_sq_inner]
+  simp only [hilbertSchmidtEnergy_def, c.tsum_eNorm_inner_sq]
 
 @[simp]
 theorem hilbertSchmidtEnergy_zero (b : HilbertBasis ι 𝕜 E) :
@@ -201,7 +201,7 @@ theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis 
   -- `‖T x‖ₑ² = ∑' j, ‖⟪T† cⱼ, x⟫‖ₑ² ≤ (∑' j, ‖T† cⱼ‖ₑ²) ‖x‖ₑ² = E_c(T†) ‖x‖ₑ²`.
   have key (x : E) : ‖T x‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b * ‖x‖ₑ ^ 2 := by
     rw [← hilbertSchmidtEnergy_adjoint T b c, hilbertSchmidtEnergy_def, ← ENNReal.tsum_mul_right,
-      ← c.tsum_enorm_sq_inner]
+      ← c.tsum_eNorm_inner_sq]
     refine _root_.tsum_le_tsum fun j ↦ ?_
     rw [← adjoint_inner_left, ← mul_pow]
     exact pow_le_pow_left₀ zero_le (eNorm_inner_le_eNorm _ _) 2

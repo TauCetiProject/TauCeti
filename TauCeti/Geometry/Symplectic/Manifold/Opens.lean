@@ -38,7 +38,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 the tangent spaces of the submanifold and of the ambient manifold are the same model space. -/
 @[simp]
 theorem bilinFormAt_mpullback_subtype_val {U : Opens M} (x : U) :
-    (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).bilinFormAt x =
+    (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).bilinFormAt x =
       σ.bilinFormAt (x : M) := by
   ext v w
   simp only [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
@@ -48,7 +48,7 @@ theorem bilinFormAt_mpullback_subtype_val {U : Opens M} (x : U) :
 /-- A two-form restricted to an open submanifold is nondegenerate at a point exactly when the
 two-form is nondegenerate there. -/
 theorem nondegenerate_bilinFormAt_mpullback_subtype_val_iff {U : Opens M} (x : U) :
-    ((SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).bilinFormAt
+    ((SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).bilinFormAt
         x).Nondegenerate ↔ (σ.bilinFormAt (x : M)).Nondegenerate := by
   rw [bilinFormAt_mpullback_subtype_val]
   -- Both sides are nondegeneracy of the same form, on tangent spaces which are the model space.
@@ -56,7 +56,7 @@ theorem nondegenerate_bilinFormAt_mpullback_subtype_val_iff {U : Opens M} (x : U
 
 /-- A nondegenerate two-form restricts to a nondegenerate form on every open submanifold. -/
 theorem IsNondegenerate.mpullback_subtype_val (hσ : σ.IsNondegenerate) (U : Opens M) :
-    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) := by
+    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) := by
   rw [isNondegenerate_iff_separatingLeft]
   intro x v hv
   exact ((nondegenerate_bilinFormAt_mpullback_subtype_val_iff x).2
@@ -79,7 +79,7 @@ theorem IsNondegenerate.symplecticFormAt_mpullback_subtype_val_transport
 
 /-- A symplectic form restricts to a symplectic form on every open submanifold. -/
 theorem IsSymplectic.mpullback_subtype_val (hσ : σ.IsSymplectic) (U : Opens M) :
-    IsSymplectic (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) :=
+    IsSymplectic (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) :=
   ⟨hσ.isClosed.mpullback _ _, hσ.isNondegenerate.mpullback_subtype_val U⟩
 
 end TauCeti.SmoothTwoForm

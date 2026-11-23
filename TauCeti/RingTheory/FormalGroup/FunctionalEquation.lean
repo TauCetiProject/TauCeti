@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
-import Mathlib.NumberTheory.Basic
 import TauCeti.Algebra.Ring.FrobeniusLift
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.RingTheory.MvPowerSeries.Expand
@@ -276,7 +275,7 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
   obtain ⟨ψA, hψA⟩ : ∃ ψA, map A.subtype ψA = ψ := ⟨_, map_toSubring ψ A hψ⟩
   set σA := σ.restrict A A fun _ h ↦ hσ h
   have hσA (a : A) : (p : A) ∣ σA a - a ^ p := by
-    obtain ⟨b, hb, hb'⟩ := hσp a a.2
+    obtain ⟨b, hb, hb'⟩ := hσp a a.property
     exact ⟨⟨b, hb⟩, Subtype.ext (by simpa [σA] using hb')⟩
   set U := ψA ^ p ^ i
   set W := expand (p ^ i) (NeZero.ne _) (map (σA ^ i) ψA)
@@ -288,10 +287,8 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
     rw [map_expand, map_map, hcomp, ← map_map, hψA]
   set r := m.factorization p
   obtain ⟨E, hE⟩ : (p : MvPowerSeries τ A) ^ (r + 1) ∣ U ^ m - W ^ m := by
-    refine (dvd_sub_pow_of_dvd_sub (natCast_dvd_pow_sub_expand_map i
-      (dvd_pow_apply_sub_pow_pow hσA i) ψA) r).trans ?_
-    conv_rhs => rw [← Nat.ordProj_mul_ordCompl_eq_self m p, pow_mul, pow_mul]
-    exact sub_dvd_pow_sub_pow _ _ _
+    exact pow_factorization_succ_dvd_pow_sub_pow (natCast_dvd_pow_sub_expand_map i
+      (dvd_pow_apply_sub_pow_pow hσA i) ψA) m
   have hcoeff : coeff d ((ψ ^ p ^ i) ^ m - expand (p ^ i) (NeZero.ne _) (map (σ ^ i) ψ) ^ m) =
       (p : K) ^ (r + 1) * A.subtype (coeff d E) := by
     -- `E` is the quotient over `A`; write the factor `p ^ (r + 1)` as a constant series

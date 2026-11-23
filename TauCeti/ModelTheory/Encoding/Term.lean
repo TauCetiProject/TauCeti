@@ -134,9 +134,9 @@ theorem listEncode_ne_singleton_inr_add_one {n : ℕ} (f : L.Functions (n + 1)) 
 /-- Spelling the terms `l[0], …, l[n - 1]` of a list one after the other. -/
 private theorem flatMap_finRange_listEncode_getElem (l : List (L.Term α)) {n : ℕ}
     (h : n ≤ l.length) :
-    ((List.finRange n).flatMap fun i => (l[i.1]'(i.2.trans_le h)).listEncode) =
+    ((List.finRange n).flatMap fun i => (l[i.val]'(i.isLt.trans_le h)).listEncode) =
       ((l.map listEncode).take n).flatten := by
-  have : (List.finRange n).map (fun i => l[i.1]'(i.2.trans_le h)) = l.take n :=
+  have : (List.finRange n).map (fun i => l[i.val]'(i.isLt.trans_le h)) = l.take n :=
     List.ext_getElem (by simp [h]) (by simp)
   rw [← List.map_take, ← this, List.map_map, List.flatMap_def]
   rfl

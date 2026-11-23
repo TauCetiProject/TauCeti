@@ -20,8 +20,8 @@ also makes the weight unitary, so its norm coefficients can be used in the Diric
 arithmetic characters.
 
 The trivial character extends to the indicator of ideals prime to the modulus, which is generally
-different from the everywhere-good unitary weight. Pointwise products still commute with the
-extension.
+different from the everywhere-good unitary weight, except at the trivial modulus
+(`toUnitaryIdealWeight_one`). Pointwise products still commute with the extension.
 
 The zero extension here is the usual convention for the Dirichlet series of a ray class
 character. See Neukirch, *Algebraic Number Theory*, Chapter VII, §6.
@@ -105,8 +105,17 @@ noncomputable def toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
 /-- The underlying multiplicative weight of the unitary extension. -/
 @[simp]
 theorem val_toUnitaryIdealWeight (χ : RayClassCharacter 𝔪) :
-    χ.toUnitaryIdealWeight.1 = χ.toMultiplicativeIdealWeight := by
+    χ.toUnitaryIdealWeight.val = χ.toMultiplicativeIdealWeight := by
   simp [toUnitaryIdealWeight]
+
+/-- At the trivial modulus, the trivial ray class character gives the everywhere-good trivial
+unitary ideal weight. -/
+@[simp]
+theorem toUnitaryIdealWeight_one :
+    (1 : RayClassCharacter (Modulus.one K)).toUnitaryIdealWeight = 1 := by
+  apply Subtype.ext
+  ext I
+  by_cases hI : I = ⊥ <;> simp [Modulus.support_one, hI, Ideal.isPrimeTo_iff]
 
 /-- The unitary extension respects pointwise multiplication of characters. -/
 @[simp]

@@ -162,7 +162,7 @@ noncomputable def ofAlgHom (φ : E.extensionField →ₐ[K] F.extensionField)
     rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
       IsLocalization.AtPrime.isUnit_to_map_iff F.localRing F.prime]
     intro h
-    exact y.2 (hφ.le (Ideal.mem_comap.mpr h))
+    exact y.property (hφ.le (Ideal.mem_comap.mpr h))
   let l : E.localRing →ₐ[R] F.localRing := IsLocalization.liftAlgHom hψ
   have hl : ∀ c, l (algebraMap E.integralClosure E.localRing c) = ψ c := fun c =>
     IsLocalization.lift_eq hψ c

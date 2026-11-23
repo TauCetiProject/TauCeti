@@ -201,11 +201,14 @@ lemma smallEtaleBaseChangeId_inv_app_left (X : Scheme.{u}) (V : X.Etale) :
     ((MorphismProperty.Over.w ((smallEtaleBaseChangeId X).inv.app V)).trans
       (pullback.lift_snd _ _ _).symm)
 
-/-- Base change along `f ≫ g` on small étale sites is naturally isomorphic to base change along `g`
-followed by base change along `f`. -/
-noncomputable def smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) :
-    (f ≫ g).smallEtaleBaseChange ≅ g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange :=
-  MorphismProperty.Over.pullbackComp f g
+/-- Base change along a composite `fg = f ≫ g` on small étale sites is naturally isomorphic to base
+change along `g` followed by base change along `f`. -/
+-- Exposed so projection lemmas for arbitrary factorizations `fg = f ≫ g` can unfold it.
+@[expose]
+noncomputable def smallEtaleBaseChangeComp (f : X ⟶ Y) (g : Y ⟶ Z) (fg : X ⟶ Z := f ≫ g)
+    (hfg : fg = f ≫ g := by cat_disch) :
+    fg.smallEtaleBaseChange ≅ g.smallEtaleBaseChange ⋙ f.smallEtaleBaseChange :=
+  MorphismProperty.Over.pullbackComp f g fg hfg
 
 @[simp]
 lemma smallEtaleBaseChangeComp_hom_app_left (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.Etale) :
@@ -222,6 +225,8 @@ lemma smallEtaleBaseChangeComp_inv_app_left (f : X ⟶ Y) (g : Y ⟶ Z) (V : Z.E
     ((congrArg (_ ≫ ·) pullback.map_id).trans (Category.comp_id _))
 
 /-- Equal scheme morphisms induce naturally isomorphic base change functors on small étale sites. -/
+-- Exposed so projection lemmas in `TauCeti.AlgebraicGeometry.Sites.Etale.BaseChange` can unfold it.
+@[expose]
 noncomputable def smallEtaleBaseChangeCongr {f f' : X ⟶ Y} (h : f = f') :
     f.smallEtaleBaseChange ≅ f'.smallEtaleBaseChange :=
   MorphismProperty.Over.pullbackCongr h

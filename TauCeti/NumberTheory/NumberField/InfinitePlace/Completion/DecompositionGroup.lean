@@ -142,7 +142,7 @@ theorem toRingEquiv_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
 @[simp]
 theorem completionCongr_algebraMap (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : L) :
     completionCongr v σ h (x : w.Completion) = (σ x : w'.Completion) :=
-  AbsoluteValue.Completion.congr_coe (apply_eq_of_eq_smul σ h) (WithAbs.toAbs w.1 x)
+  AbsoluteValue.Completion.congr_coe (apply_eq_of_eq_smul σ h) (WithAbs.toAbs w.val x)
 
 /-- `completionCongr` preserves the norm. -/
 @[simp]
@@ -209,18 +209,18 @@ variable (v) (w : InfinitePlace L) [w.LiesOver v]
 stabilizer of `w` extends by continuity to a `K_v`-algebra automorphism of `L_w`. -/
 def decompositionHom :
     MulAction.stabilizer (L ≃ₐ[K] L) w →* (w.Completion ≃ₐ[v.Completion] w.Completion) where
-  toFun τ := completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.2).symm
+  toFun τ := completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.property).symm
   map_one' := completionCongr_one
   map_mul' σ τ := (completionCongr_trans (τ : L ≃ₐ[K] L) (σ : L ≃ₐ[K] L)
-      (MulAction.mem_stabilizer_iff.mp τ.2).symm
-      (MulAction.mem_stabilizer_iff.mp σ.2).symm).symm
+      (MulAction.mem_stabilizer_iff.mp τ.property).symm
+      (MulAction.mem_stabilizer_iff.mp σ.property).symm).symm
 
 variable {v w}
 
 /-- An element of the decomposition group acts on `L_w` by `completionCongr`. -/
 theorem decompositionHom_apply (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
     decompositionHom v w τ =
-      completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.2).symm :=
+      completionCongr v (τ : L ≃ₐ[K] L) (MulAction.mem_stabilizer_iff.mp τ.property).symm :=
   (rfl)
 
 /-- The defining property of `decompositionHom`: on `L` it is the action of the automorphism. -/

@@ -116,7 +116,7 @@ theorem archimedeanValue_apply (χ : Grossencharacter K 𝔪) (x : Kˣ) :
 `∏_τ τ(x) ^ (n τ)` of the algebraic infinity type `n`. At a real place outside `𝔪` the parities of
 the Hecke character and of `n` agree, so no sign condition is needed there. -/
 theorem archimedeanValue_eq_embeddingCharacter (χ : Grossencharacter K 𝔪) {x : Kˣ}
-    (hx : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
+    (hx : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)) :
     χ.archimedeanValue x = χ.infinityType.embeddingCharacter x := by
   refine Units.ext ?_
   rw [archimedeanValue_apply, Units.coe_prod]
@@ -157,7 +157,7 @@ theorem finiteCharacterK_eq_one_of_residueHom_eq_one (χ : Grossencharacter K �
   -- `x` is congruent to one modulo the finite part of `𝔪` without real places, hence modulo the
   -- finite conductor.
   have hx₀ : IsCongrOne 𝔪₀ (x : Kˣ) :=
-    (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq (𝔪 := 𝔪₀) (𝔫 := 𝔪) rfl x.2).mpr
+    (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq (𝔪 := 𝔪₀) (𝔫 := 𝔪) rfl x.property).mpr
       ⟨hx, by simp [𝔪₀]⟩
   have hx𝔣 : IsCongrOne
       ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ (x : Kˣ) :=
@@ -180,7 +180,7 @@ ideal prime to `𝔪` is the unitary weight times the norm to the ideal-side shi
 theorem coe_finiteCharacterK_of_algebraMap_eq (χ : Grossencharacter K 𝔪)
     (x : primeToSubgroup 𝔪) {a : 𝓞 K} (ha : algebraMap (𝓞 K) K a = ((x : Kˣ) : K)) :
     (χ.finiteCharacterK x : ℂ) =
-      χ.unitaryWeight.1 (Ideal.span {a}) *
+      χ.unitaryWeight.val (Ideal.span {a}) *
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
           (χ.archimedeanValue x : ℂ) := by
   -- The ideal `(a)` is prime to `𝔪`, since `x` is a unit at the primes dividing `𝔪`.
@@ -227,7 +227,7 @@ not prime to `𝔪` (`finiteCharacter_eq_zero_iff`), and at a nonzero integer it
 character at its class modulo `𝔪₀` (`finiteCharacter_eq_residueCharacter`). -/
 def finiteCharacter (χ : Grossencharacter K 𝔪) : 𝓞 K →*₀ ℂ :=
   (MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ))
-      χ.unitaryWeight.1).toMonoidWithZeroHom.comp (Submodule.spanSingleton (𝓞 K)) *
+      χ.unitaryWeight.val).toMonoidWithZeroHom.comp (Submodule.spanSingleton (𝓞 K)) *
     (MulChar.ofUnitHom χ.archimedeanValue).toMonoidWithZeroHom.comp
       (algebraMap (𝓞 K) K : 𝓞 K →*₀ K)
 
@@ -235,7 +235,7 @@ def finiteCharacter (χ : Grossencharacter K 𝔪) : 𝓞 K →*₀ ℂ :=
 value, extended by `0`, at `a`. -/
 private theorem finiteCharacter_apply (χ : Grossencharacter K 𝔪) (a : 𝓞 K) :
     χ.finiteCharacter a =
-      MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ)) χ.unitaryWeight.1
+      MultiplicativeIdealWeight.normTwist (-(χ.idealShift : ℂ)) χ.unitaryWeight.val
           (Ideal.span {a}) *
         MulChar.ofUnitHom χ.archimedeanValue (algebraMap (𝓞 K) K a) :=
   (rfl)
@@ -244,7 +244,7 @@ private theorem finiteCharacter_apply (χ : Grossencharacter K 𝔪) (a : 𝓞 K
 is the unit `x`; such an `a` is nonzero. -/
 theorem finiteCharacter_apply_of_algebraMap_eq (χ : Grossencharacter K 𝔪) {a : 𝓞 K} {x : Kˣ}
     (hx : algebraMap (𝓞 K) K a = x) :
-    χ.finiteCharacter a = χ.unitaryWeight.1 (Ideal.span {a}) *
+    χ.finiteCharacter a = χ.unitaryWeight.val (Ideal.span {a}) *
       ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
         (χ.archimedeanValue x : ℂ) := by
   simp [finiteCharacter_apply, hx]
