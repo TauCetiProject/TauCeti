@@ -21,11 +21,14 @@ Definition 65.9.2 (02WS), following parts (1) and (2) of Stacks, Spaces, Lemma 6
 kernel pair criterion `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.of_isKernelPair` does not
 apply directly. Instead, `(t, s)` is an equivalence relation because `a` is relatively
 representable (`CategoryTheory.Functor.relativelyRepresentable.isEquivalenceRelation`). The
-projection `s` is a base change of `a`, hence étale, and `t` is `s` composed with the automorphism
+projection `s` is a base change of `a`, hence étale whenever `a` is representable by étale
+morphisms (surjectivity of the atlas is not needed), and `t` is `s` composed with the automorphism
 of `R` exchanging the factors.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.of_etale`: the kernel pair of a morphism
+  representable by étale morphisms of schemes is an étale equivalence relation.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.of_etaleAtlas`: the kernel pair of an étale
   atlas is an étale equivalence relation.
 
@@ -47,16 +50,24 @@ universe u
 
 variable {F : SchemePresheaf.{u}} {U : Scheme.{u}} {a : yoneda.obj U ⟶ F}
 
-/-- **The kernel pair of an étale atlas is an étale equivalence relation** (Stacks, Spaces,
-Lemma 65.9.1 (0262), parts (1) and (2)). For an étale atlas `a : h_U ⟶ F`, the scheme `U ×_F U`
-representing the kernel pair of `a`, with its two projections to `U`, is an étale equivalence
-relation on `U`. -/
-theorem EtaleEquivRel.of_etaleAtlas (ha : EtaleAtlas a) :
-    EtaleEquivRel (ha.relativelyRepresentable.snd a) (ha.relativelyRepresentable.fst' a) := by
-  set hr := ha.relativelyRepresentable
-  have := ha.etale_snd a
+/-- **The kernel pair of a morphism representable by étale morphisms is an étale equivalence
+relation** (Stacks, Spaces, Lemma 65.9.1 (0262), parts (1) and (2)). If `a : h_U ⟶ F` is
+representable by étale morphisms of schemes, then the scheme `U ×_F U` representing the kernel
+pair of `a`, with its two projections to `U`, is an étale equivalence relation on `U`. -/
+theorem EtaleEquivRel.of_etale (ha : MorphismProperty.presheaf @Etale a) :
+    EtaleEquivRel (ha.rep.snd a) (ha.rep.fst' a) := by
+  set hr := ha.rep
+  have := ha.property_snd a
   refine ⟨hr.isEquivalenceRelation, this, ?_⟩
   rw [← hr.symmetry_snd hr]
   infer_instance
+
+/-- **The kernel pair of an étale atlas is an étale equivalence relation** (Stacks, Spaces,
+Lemma 65.9.1 (0262), parts (1) and (2)). For an étale atlas `a : h_U ⟶ F`, the scheme `U ×_F U`
+representing the kernel pair of `a`, with its two projections to `U`, is an étale equivalence
+relation on `U`. This is `EtaleEquivRel.of_etale` applied to the étale half of the atlas. -/
+theorem EtaleEquivRel.of_etaleAtlas (ha : EtaleAtlas a) :
+    EtaleEquivRel (ha.relativelyRepresentable.snd a) (ha.relativelyRepresentable.fst' a) :=
+  of_etale ha.etale
 
 end TauCeti.AlgebraicGeometry.Spaces
