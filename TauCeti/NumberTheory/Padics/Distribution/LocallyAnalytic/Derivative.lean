@@ -34,8 +34,8 @@ invertible on the coefficients. For a field `𝕜` acting on `E` in which `p ≠
 (`transition_derivative`). It therefore induces the derivative
 `TauCeti.LocallyAnalytic.derivative 𝕜` of locally analytic functions `LA(ℤ_p, E)`, which is the
 derivative of the evaluated functions with a quadratic remainder
-(`LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`). It vanishes on the functions
-that are constant on each disc of some level (`LocallyAnalytic.derivative_ofStage_eq_zero`).
+(`LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`). It vanishes on stage vectors
+whose coefficients of positive degree vanish (`LocallyAnalytic.derivative_ofStage_eq_zero`).
 
 The transpose derivative of distributions is in
 `TauCeti.NumberTheory.Padics.Distribution.Derivative`, and the Leibniz rules for multiplication by
@@ -55,8 +55,8 @@ the coordinate are in `TauCeti.NumberTheory.Padics.Distribution.MulCoord`.
   `TauCeti.LocallyAnalytic.exists_norm_eval_sub_sub_smul_eval_derivative_le`: the derivatives
   differentiate the evaluated functions, with a quadratic remainder.
 * `TauCeti.AnalyticStage.transition_derivative`: the derivative commutes with re-expansion.
-* `TauCeti.LocallyAnalytic.derivative_ofStage_eq_zero`: the derivative vanishes on functions that
-  are constant on each disc of a stage.
+* `TauCeti.LocallyAnalytic.derivative_ofStage_eq_zero`: the derivative vanishes on stage vectors
+  whose coefficients of positive degree vanish.
 
 ## References
 
@@ -89,10 +89,8 @@ private theorem norm_discDerivativeCoeff_le (c : AnalyticStage p h E) (i : ZMod 
 
 private theorem tendsto_discDerivativeCoeff (c : AnalyticStage p h E) :
     Tendsto (discDerivativeCoeff c) cofinite (𝓝 0) := by
-  have hinj : Function.Injective fun i : ZMod (p ^ h) × ℕ ↦ (i.1, i.2 + 1) := by
-    rintro ⟨a, n⟩ ⟨b, m⟩ hi
-    simp only [Prod.mk.injEq, Nat.add_right_cancel_iff] at hi
-    rw [hi.1, hi.2]
+  have hinj : Function.Injective fun i : ZMod (p ^ h) × ℕ ↦ (i.1, i.2 + 1) :=
+    Function.injective_id.prodMap Nat.succ_injective
   exact squeeze_zero_norm (norm_discDerivativeCoeff_le c)
     ((tendsto_zero_iff_norm_tendsto_zero.mp c.tendsto_cofinite).comp hinj.tendsto_cofinite)
 
@@ -124,16 +122,13 @@ noncomputable def discDerivative : AnalyticStage p h E →L[S] AnalyticStage p h
       rw [one_mul]
       exact norm_mkOfDiscrete_discDerivativeCoeff_le c }
 
-private theorem coe_discDerivative (c : AnalyticStage p h E) :
-    ⇑(discDerivative S c) = discDerivativeCoeff c :=
-  ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ _
-
 /-- The coefficient of `wⁿ` in the derivative in `w` on the disc of `a` is `(n + 1) • c(a, n + 1)`.
 -/
 @[simp]
 theorem discDerivative_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : ℕ) :
-    discDerivative S c (a, n) = (n + 1) • c (a, n + 1) := by
-  rw [coe_discDerivative, discDerivativeCoeff]
+    discDerivative S c (a, n) = (n + 1) • c (a, n + 1) :=
+  congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete (discDerivativeCoeff c)
+    (tendsto_discDerivativeCoeff c)) (a, n)
 
 /-- The derivative in the disc coordinate does not increase norms. -/
 theorem norm_discDerivative_le (c : AnalyticStage p h E) : ‖discDerivative S c‖ ≤ ‖c‖ :=
@@ -313,9 +308,7 @@ theorem derivative_ofStage (h : ℕ) (c : AnalyticStage p h E) :
     derivative 𝕜 (ofStage 𝕜 h c) = ofStage 𝕜 h (AnalyticStage.derivative 𝕜 c) := by
   rw [derivative, ofStage_def, Module.DirectLimit.map_apply_of, ContinuousLinearMap.coe_coe]
 
-/-- **The derivative of a locally constant function is zero.** The derivative vanishes on a stage
-vector whose coefficients of positive degree vanish, that is, on a function that is constant on
-each disc of the stage. -/
+/-- **The derivative vanishes on a stage vector with no coefficients of positive degree.** -/
 theorem derivative_ofStage_eq_zero {h : ℕ} {c : AnalyticStage p h E}
     (hc : ∀ a n, c (a, n + 1) = 0) : derivative 𝕜 (ofStage 𝕜 h c) = 0 := by
   have hc' : AnalyticStage.derivative 𝕜 c = 0 := by

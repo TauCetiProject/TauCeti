@@ -152,7 +152,7 @@ theorem range_eval :
   ext f
   constructor
   · rintro ⟨z, rfl⟩
-    obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of z
+    obtain ⟨h, c, rfl⟩ := exists_ofStage S z
     exact Set.mem_iUnion.mpr ⟨h, c, (eval_ofStage S h c).symm⟩
   · intro hf
     obtain ⟨h, c, rfl⟩ := Set.mem_iUnion.mp hf

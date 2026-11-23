@@ -265,21 +265,20 @@ theorem compMulLeft_ofStage (a : ℤ_[p]) (h : ℕ) (c : AnalyticStage p h E) :
 @[simp]
 theorem eval_compMulLeft (a : ℤ_[p]) (f : LocallyAnalytic p S E) (x : ℤ_[p]) :
     eval S (compMulLeft S a f) x = eval S f (a * x) := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, compMulLeft_ofStage, eval_ofStage, eval_ofStage,
-    AnalyticStage.eval_compMulLeft]
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  rw [compMulLeft_ofStage, eval_ofStage, eval_ofStage, AnalyticStage.eval_compMulLeft]
 
 /-- Dilation by `1` is the identity. -/
 @[simp]
 theorem compMulLeft_one (f : LocallyAnalytic p S E) : compMulLeft S 1 f = f := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, compMulLeft_ofStage, AnalyticStage.compMulLeft_one]
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  rw [compMulLeft_ofStage, AnalyticStage.compMulLeft_one]
 
 /-- Dilations compose: `x ↦ f(a a' x)` is `x ↦ f(a x)` dilated by `a'`. -/
 theorem compMulLeft_mul (a a' : ℤ_[p]) (f : LocallyAnalytic p S E) :
     compMulLeft S (a * a') f = compMulLeft S a' (compMulLeft S a f) := by
-  obtain ⟨h, c, rfl⟩ := Module.DirectLimit.exists_of f
-  rw [← ofStage_def, compMulLeft_ofStage, compMulLeft_ofStage, compMulLeft_ofStage,
+  obtain ⟨h, c, rfl⟩ := exists_ofStage S f
+  rw [compMulLeft_ofStage, compMulLeft_ofStage, compMulLeft_ofStage,
     AnalyticStage.compMulLeft_mul]
 
 /-- **Mahler terms of a dilation.** Dilation by `a` sends the Mahler term `x ↦ (x choose n) • e`
