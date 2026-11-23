@@ -31,7 +31,7 @@ variable {G : Type*} [Group G] [Fintype G] [DecidableEq G]
 
 /-- The type of factorizations of `g` with first factor in `Cᵢ` and second factor in `Cⱼ`. -/
 private def StructureConstantFiber (Cᵢ Cⱼ : ConjClasses G) (g : G) :=
-  {p : Cᵢ.carrier × Cⱼ.carrier // (p.1.1 : G) * p.2.1 = g}
+  {p : Cᵢ.carrier × Cⱼ.carrier // (p.1.val : G) * p.2.val = g}
 
 private instance (Cᵢ Cⱼ : ConjClasses G) (g : G) :
     Fintype (StructureConstantFiber Cᵢ Cⱼ g) :=
@@ -43,12 +43,12 @@ private def structureConstantFiberEquiv (Cᵢ Cⱼ : ConjClasses G) {g h : G}
     (s : G) (hs : s * g * s⁻¹ = h) :
     StructureConstantFiber Cᵢ Cⱼ g ≃ StructureConstantFiber Cᵢ Cⱼ h where
   toFun p := ⟨
-    (conjugateCarrierEquiv s Cᵢ p.1.1, conjugateCarrierEquiv s Cⱼ p.1.2),
-    by simpa [conj_mul, p.2] using hs⟩
+    (conjugateCarrierEquiv s Cᵢ p.val.1, conjugateCarrierEquiv s Cⱼ p.val.2),
+    by simpa [conj_mul, p.property] using hs⟩
   invFun p := ⟨
-    (conjugateCarrierEquiv s⁻¹ Cᵢ p.1.1, conjugateCarrierEquiv s⁻¹ Cⱼ p.1.2),
+    (conjugateCarrierEquiv s⁻¹ Cᵢ p.val.1, conjugateCarrierEquiv s⁻¹ Cⱼ p.val.2),
     by
-      rw [conjugateCarrierEquiv_apply, conjugateCarrierEquiv_apply, conj_mul, p.2, ← hs]
+      rw [conjugateCarrierEquiv_apply, conjugateCarrierEquiv_apply, conj_mul, p.property, ← hs]
       simp [mul_assoc]⟩
   left_inv p := by
     apply Subtype.ext
@@ -73,11 +73,11 @@ factorizations of `g`. -/
 @[simp] theorem structureConstant_mk (Cᵢ Cⱼ : ConjClasses G) (g : G) :
     structureConstant Cᵢ Cⱼ (ConjClasses.mk g) =
       ((Finset.univ ×ˢ Finset.univ).filter
-        fun p : Cᵢ.carrier × Cⱼ.carrier => (p.1.1 : G) * p.2.1 = g).card := by
+        fun p : Cᵢ.carrier × Cⱼ.carrier => (p.1.val : G) * p.2.val = g).card := by
   calc
     structureConstant Cᵢ Cⱼ (ConjClasses.mk g) =
         Fintype.card {p : Cᵢ.carrier × Cⱼ.carrier //
-          (p.1.1 : G) * p.2.1 = g} := rfl
+          (p.1.val : G) * p.2.val = g} := rfl
     _ = _ := Fintype.card_of_subtype _ (by simp)
 
 /-- Multiplication of class sums is governed by the structure constants. -/
@@ -95,7 +95,7 @@ theorem classSum_mul (k : Type*) [Semiring k] (Cᵢ Cⱼ : ConjClasses G) :
   · rw [ite_eq_left rfl, mul_one, structureConstant_mk]
     simpa only [Finset.sum_product] using
       (Finset.sum_boole (R := k)
-        (fun p : Cᵢ.carrier × Cⱼ.carrier => (p.1.1 : G) * p.2.1 = g)
+        (fun p : Cᵢ.carrier × Cⱼ.carrier => (p.1.val : G) * p.2.val = g)
         (Finset.univ ×ˢ Finset.univ))
   · intro Cₖ _ hCₖ
     rw [ite_eq_right hCₖ.symm, mul_zero]
@@ -165,7 +165,8 @@ theorem structureConstant_mk_eq_card_filter (Cᵢ Cⱼ : ConjClasses G) (g : G) 
   · rintro ⟨x, y⟩ hp
     rw [Finset.mem_filter] at hp
     exact Finset.mem_filter.2 ⟨Finset.mem_univ _,
-      ConjClasses.mem_carrier_iff_mk_eq.1 x.2, ConjClasses.mem_carrier_iff_mk_eq.1 y.2, hp.2⟩
+      ConjClasses.mem_carrier_iff_mk_eq.1 x.property, ConjClasses.mem_carrier_iff_mk_eq.1
+          y.property, hp.2⟩
   · rintro ⟨x, y⟩ _ ⟨x', y'⟩ _ h
     rw [Prod.mk.injEq] at h
     exact Prod.ext (Subtype.ext h.1) (Subtype.ext h.2)

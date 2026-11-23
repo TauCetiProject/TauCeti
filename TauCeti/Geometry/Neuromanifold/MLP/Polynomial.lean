@@ -136,7 +136,7 @@ theorem polynomialPrefix_eq_polynomialChainPrefix (A : MLPSpec K L)
         (layerPolynomial q i) := by
   funext o
   rw [polynomialPrefix_eq_polynomialChainPrefix, polynomialChainPrefix_succ,
-    ← Polynomial.aeval_algHom_apply (bind₁ _), ← polynomialPrefix_eq_polynomialChainPrefix]
+    ← Polynomial.aeval_algHom_apply (aeval _), ← polynomialPrefix_eq_polynomialChainPrefix]
   simp [polynomialDense_apply]
 
 /-- If the hidden activations of `A` evaluate the polynomials `q`, then evaluating the prefix

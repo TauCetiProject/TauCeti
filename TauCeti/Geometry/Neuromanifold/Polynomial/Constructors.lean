@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Convolution.Basic
 public import TauCeti.Geometry.Neuromanifold.Dense
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Basic
-import TauCeti.Algebra.MvPolynomial.Monad
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Constructors of jointly polynomial models
@@ -54,7 +54,7 @@ with polynomial activations as a single jointly polynomial model.
 The jointly polynomial setting follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
 [arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), §3.1. Substitution is Mathlib's
-`MvPolynomial.bind₁`, evaluated with `MvPolynomial.aeval_bind₁`.
+`MvPolynomial.aeval`, evaluated with `MvPolynomial.comp_aeval_apply`.
 -/
 
 public section
@@ -128,20 +128,20 @@ section Substitution
 leaving the input variables unchanged. -/
 def polynomialReparametrize (R : W → MvPolynomial W' K) (P : J → MvPolynomial (W ⊕ I) K) :
     J → MvPolynomial (W' ⊕ I) K :=
-  fun j => bind₁ (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j)
+  fun j => aeval (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j)
 
 /-- Each output of a reparametrized model is the substitution into the original output. -/
 theorem polynomialReparametrize_apply (R : W → MvPolynomial W' K)
     (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
     polynomialReparametrize R P j =
-      bind₁ (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j) := (rfl)
+      aeval (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j) := (rfl)
 
 /-- Substituting polynomials `R` for the parameters substitutes them into the parameter
 coefficients of each collected input polynomial. -/
 @[simp] theorem inputPolynomial_polynomialReparametrize (R : W → MvPolynomial W' K)
     (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
     inputPolynomial (polynomialReparametrize R P) j =
-      map (bind₁ R : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
+      map (aeval R : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
   have hinr (q : MvPolynomial W' K) : sumAlgEquiv K I W' (rename Sum.inr q) = C q := by
     simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') q
   simp only [inputPolynomial_def, polynomialReparametrize_apply]
@@ -157,7 +157,8 @@ polynomial parameters. -/
     polynomialRealization (polynomialReparametrize R P) =
       fun w' => polynomialRealization P fun i => eval w' (R i) := by
   funext w' x j
-  simp only [polynomialRealization_apply, polynomialReparametrize, ← aeval_eq_eval, aeval_bind₁]
+  simp only [polynomialRealization_apply, polynomialReparametrize, ← aeval_eq_eval,
+    comp_aeval_apply]
   refine congrArg (fun F => aeval F (P j)) (funext fun i => ?_)
   cases i <;> simp [eval_rename, Function.comp_def]
 
@@ -171,8 +172,8 @@ theorem polynomialInputDegree_polynomialReparametrize_le [Fintype J] (R : W → 
 @[simp] theorem polynomialReparametrize_X (f : W → W') (P : J → MvPolynomial (W ⊕ I) K) :
     polynomialReparametrize (fun w => X (f w)) P = fun j => rename (Sum.map f id) (P j) := by
   funext j
-  rw [polynomialReparametrize_apply, ← bind₁_X_comp (Sum.map f id)]
-  refine congrArg (fun F => bind₁ F (P j)) (funext fun i => ?_)
+  rw [polynomialReparametrize_apply, rename_eq_aeval (Sum.map f id)]
+  refine congrArg (fun F : W ⊕ I → MvPolynomial (W' ⊕ I) K => aeval F (P j)) (funext fun i => ?_)
   cases i <;> simp
 
 /-- Renaming the parameter variables maps the parameter-polynomial coefficients of each collected
@@ -181,7 +182,8 @@ input polynomial. -/
     (j : J) :
     inputPolynomial (fun k => rename (Sum.map f id) (P k)) j =
       map (rename f : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
-  rw [← polynomialReparametrize_X, inputPolynomial_polynomialReparametrize, bind₁_X_comp]
+  rw [← polynomialReparametrize_X, inputPolynomial_polynomialReparametrize, rename_eq_aeval]
+  rfl
 
 /-- Renaming the parameter variables precomposes the realization map with that renaming. -/
 @[simp] theorem polynomialRealization_rename_sumMap (f : W → W')
@@ -211,7 +213,7 @@ theorem sumElim_X_zero_eq_rename {ι : Type*} {V B : ι → Type*} :
 composite are those of `P` followed by those of `Q`. -/
 def polynomialCompose (P : J → MvPolynomial (W ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) :
     L → MvPolynomial ((W ⊕ V) ⊕ I) K :=
-  fun l => bind₁ (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
+  fun l => aeval (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
     (fun j => rename (Sum.map Sum.inl id) (P j))) (Q l)
 
 /-- Each output of a composite model is the substitution of the outputs of `P` into the
@@ -219,28 +221,28 @@ corresponding output of `Q`. -/
 theorem polynomialCompose_apply (P : J → MvPolynomial (W ⊕ I) K)
     (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
     polynomialCompose P Q l =
-      bind₁ (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
+      aeval (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
         (fun j => rename (Sum.map Sum.inl id) (P j))) (Q l) := (rfl)
 
 /-- Collecting the inputs after substituting parameter polynomials `R` for the parameters and `P`
-for the inputs of `Q` maps the parameter coefficients of `Q` by `bind₁ R` and substitutes the
+for the inputs of `Q` maps the parameter coefficients of `Q` by `aeval R` and substitutes the
 collected input polynomials of `P` for the inputs of `Q`. -/
-theorem inputPolynomial_bind₁_sumElim {W' : Type*} (R : V → MvPolynomial W' K)
+theorem inputPolynomial_aeval_sumElim {W' : Type*} (R : V → MvPolynomial W' K)
     (P : J → MvPolynomial (W' ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
-    inputPolynomial (fun k => bind₁ (Sum.elim (fun v => rename Sum.inl (R v)) P) (Q k)) l =
-      eval₂ (C.comp (bind₁ R : MvPolynomial V K →ₐ[K] MvPolynomial W' K))
+    inputPolynomial (fun k => aeval (Sum.elim (fun v => rename Sum.inl (R v)) P) (Q k)) l =
+      eval₂ (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K))
         (inputPolynomial P) (inputPolynomial Q l) := by
   have hC :
-      (C.comp (bind₁ R : MvPolynomial V K →ₐ[K] MvPolynomial W' K) :
+      (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K) :
           MvPolynomial V K →+* MvPolynomial I (MvPolynomial W' K)) =
         eval₂Hom (C.comp C) (fun v => C (R v)) := by
     apply ringHom_ext <;> simp
-  -- Express `inputPolynomial` as a `RingHom` application so `hom_bind₁` rewrites `φ (bind₁ _ _)`.
+  -- Express `inputPolynomial` as a `RingHom` application so `map_aeval` rewrites `φ (aeval _ _)`.
   let φ : MvPolynomial (W' ⊕ I) K →+* MvPolynomial I (MvPolynomial W' K) :=
     ((sumAlgEquiv K I W').toAlgHom.comp (rename Sum.swap)).toRingHom
   have hφ (p : MvPolynomial (W' ⊕ I) K) : sumAlgEquiv K I W' (rename Sum.swap p) = φ p := rfl
   rw [inputPolynomial_def, inputPolynomial_def (P := Q), hC, eval₂_sumAlgEquiv, eval₂_rename,
-    hφ, hom_bind₁]
+    hφ, map_aeval, algebraMap_eq]
   refine congrArg₂ (fun f g => eval₂ f g (Q l)) (RingHom.ext fun k => by simp [φ])
     (funext fun x => ?_)
   rcases x with v | j
@@ -260,12 +262,14 @@ theorem inputPolynomial_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
         (inputPolynomial Q l) := by
   have hcomp :
       polynomialCompose P Q =
-        fun k => bind₁ (Sum.elim (fun v => rename Sum.inl (X (Sum.inr v)))
+        fun k => aeval (Sum.elim (fun v => rename Sum.inl (X (Sum.inr v)))
           (fun j => rename (Sum.map Sum.inl id) (P j))) (Q k) := by
     funext k
     simp [polynomialCompose_apply]
-  rw [hcomp, inputPolynomial_bind₁_sumElim, bind₁_X_comp]
-  exact congrArg (fun g => eval₂ _ g _) (funext fun j => inputPolynomial_rename_sumMap Sum.inl P j)
+  rw [hcomp, inputPolynomial_aeval_sumElim, rename_eq_aeval Sum.inr]
+  congr 2
+  funext j
+  exact inputPolynomial_rename_sumMap Sum.inl P j
 
 /-- The uniform input-degree bound of `polynomialCompose P Q` is at most the product of the uniform
 input-degree bounds of `P` and `Q`. -/
@@ -274,8 +278,9 @@ theorem polynomialInputDegree_polynomialCompose_le [Fintype J] [Fintype L]
     polynomialInputDegree (polynomialCompose P Q) ≤
       polynomialInputDegree P * polynomialInputDegree Q := by
   refine (polynomialInputDegree_le_iff _).2 fun l => ?_
-  rw [inputPolynomial_polynomialCompose, ← eval₂_map, ← coe_eval₂Hom, eval₂Hom_C_eq_bind₁]
-  refine (totalDegree_bind₁_le (fun j => totalDegree_map_inputPolynomial_le P _ j) _).trans ?_
+  rw [inputPolynomial_polynomialCompose, ← eval₂_map, ← coe_eval₂Hom,
+    ← algebraMap_eq (R := MvPolynomial (W ⊕ V) K) (σ := I), ← coe_aeval_eq_eval₂Hom]
+  refine (totalDegree_aeval_le _ fun j _ => totalDegree_map_inputPolynomial_le P _ j).trans ?_
   rw [mul_comm]
   exact Nat.mul_le_mul_left _ (totalDegree_map_inputPolynomial_le Q _ l)
 
@@ -287,7 +292,7 @@ maps, after splitting the parameters into those of `P` and those of `Q`. -/
       compose (polynomialRealization P) (polynomialRealization Q) ∘
         Equiv.sumArrowEquivProdArrow W V K := by
   funext p x l
-  simp only [polynomialRealization_apply, polynomialCompose, ← aeval_eq_eval, aeval_bind₁,
+  simp only [polynomialRealization_apply, polynomialCompose, ← aeval_eq_eval, comp_aeval_apply,
     Function.comp_apply, compose_apply_apply]
   refine congrArg (fun F => aeval F (Q l)) (funext fun i => ?_)
   rcases i with v | j
@@ -413,7 +418,7 @@ outputs. -/
     polynomialReparametrize R (fun j => Polynomial.aeval (P j) p) =
       fun j => Polynomial.aeval (polynomialReparametrize R P j) p := by
   funext j
-  exact (Polynomial.aeval_algHom_apply (bind₁ _) (P j) p).symm
+  exact (Polynomial.aeval_algHom_apply (aeval _) (P j) p).symm
 
 /-- The coordinatewise activation by a polynomial `p`, as a polynomial model whose
 parameters `W` do not occur. -/
@@ -439,7 +444,7 @@ each output and embeds the parameters of the first model into the composite para
       fun j => rename (Sum.map Sum.inl id) (Polynomial.aeval (P j) p) := by
   funext j
   rw [polynomialCompose_apply, polynomialActivation_apply,
-    ← Polynomial.aeval_algHom_apply (bind₁ _),
+    ← Polynomial.aeval_algHom_apply (aeval _),
     ← Polynomial.aeval_algHom_apply (rename (Sum.map Sum.inl id))]
   simp
 

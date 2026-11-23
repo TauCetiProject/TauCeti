@@ -142,6 +142,16 @@ theorem isFreeAction_iff_subsingleton [Nonempty X] [Subsingleton X] :
     exact (h g hg).1 ⟨x, Subsingleton.elim _ _⟩
   rw [hfix g₁, hfix g₂]
 
+/-- A free action has no inversions. -/
+theorem IsFreeAction.not_isInversion (hfree : IsFreeAction G X) (g : G) :
+    ¬IsInversion X g := by
+  intro hinv
+  obtain ⟨hne, hsq⟩ := isInversion_iff.1 hinv
+  rcases eq_or_ne g 1 with rfl | hg
+  · rw [one_pow] at hsq
+    exact hne hsq
+  · exact (isHyperbolic_iff.1 (isFreeAction_iff.1 hfree g hg)).2 hsq
+
 end Classification
 
 /-- The reflection `n ↦ 1 - n` of `ℤ` is an inversion: it fixes no integer, and its square is the
@@ -269,6 +279,48 @@ theorem isFree_basedLength_iff (x : X) : (hd.basedLength hG x).IsFree ↔ IsFree
     rwa [basedLength_apply, basedLength_apply, hd.dist_smul_lt_dist_sq_smul_iff hG] at this
   · rw [basedLength_apply, basedLength_apply, hd.dist_smul_lt_dist_sq_smul_iff hG]
     exact h g hg
+
+/-- If an isometry `g` of a `Λ`-tree `(X, d)` satisfies `g ^ 2 • x = x` and `f : Λ → X`
+isometrically parametrises `[x, g • x]` on `[0, d x (g • x)]`, then `g` reverses `f`:
+`g • f t = f (d x (g • x) - t)` for every `t ∈ [0, d x (g • x)]`. -/
+theorem smul_apply_of_sq_smul_eq {g : G} {x : X} (hx : g ^ 2 • x = x) {f : Λ → X}
+    (hf0 : f 0 = x) (hfD : f (d x (g • x)) = g • x)
+    (hf : d.IsometricOn f (Set.Icc 0 (d x (g • x))))
+    {t : Λ} (ht : t ∈ Set.Icc 0 (d x (g • x))) :
+    g • f t = f (d x (g • x) - t) := by
+  have hσ : f '' Set.Icc 0 (d x (g • x)) = hd.segment x (g • x) :=
+    hd.isSegment_iff_eq_segment.1 (d.isSegment_iff.2 ⟨f, hf0, hfD, hf, rfl⟩)
+  set D := d x (g • x)
+  obtain ⟨ht0, htD⟩ := ht
+  have ht' : D - t ∈ Set.Icc 0 D := ⟨sub_nonneg.2 htD, sub_le_self D ht0⟩
+  have hgx_dist : d x (g • f t) = D - t := by
+    have h1 : d x (g • f t) = d (g • x) (f t) := by
+      conv_lhs => rw [← hx, pow_two, mul_smul]
+      exact hG.dist_smul_smul g (g • x) (f t)
+    rw [h1, ← hfD, hf.dist_eq ⟨ht0.trans htD, le_rfl⟩ ⟨ht0, htD⟩, abs_of_nonneg ht'.1]
+  have hg_dist : d (g • f t) (g • x) = t := by
+    rw [hG.dist_smul_smul, ← hf0, hf.dist_eq ⟨ht0, htD⟩ ⟨le_rfl, ht0.trans htD⟩, sub_zero,
+      abs_of_nonneg ht0]
+  have hmem₁ : g • f t ∈ hd.segment x (g • x) :=
+    hd.mem_segment_iff.2 (by rw [hgx_dist, hg_dist, sub_add_cancel])
+  have hmem₂ : f (D - t) ∈ hd.segment x (g • x) := hσ ▸ Set.mem_image_of_mem f ht'
+  have hf_dist : d x (f (D - t)) = D - t := by
+    rw [← hf0, hf.dist_eq ⟨le_rfl, ht0.trans htD⟩ ht', zero_sub, abs_neg, abs_of_nonneg ht'.1]
+  exact hd.eq_of_mem_segment_of_dist_eq hmem₁ hmem₂ (hgx_dist.trans hf_dist.symm)
+
+/-- If `g` fixes no point of a `Λ`-tree `(X, d)` while `g ^ 2 • x = x`, then the displacement
+`d x (g • x)` is not even in `Λ` (otherwise `g` would fix the midpoint of `[x, g • x]`). -/
+theorem not_even_dist_smul_of_sq_smul_eq {g : G} {x : X} (hne : ¬IsElliptic X g)
+    (hx : g ^ 2 • x = x) : ¬Even (d x (g • x)) := by
+  rintro ⟨m, hm⟩
+  obtain ⟨f, hf0, hfD, hf, -⟩ := d.isSegment_iff.1 (hd.isSegment_segment x (g • x))
+  have hm0 : 0 ≤ m := by
+    have := d.nonneg x (g • x)
+    grind
+  have hmIcc : m ∈ Set.Icc 0 (d x (g • x)) := ⟨hm0, by grind⟩
+  have hfix := hd.smul_apply_of_sq_smul_eq hG hx hf0 hfD hf hmIcc
+  rw [hm, add_sub_cancel_right] at hfix
+  exact hne (isElliptic_iff.2 ⟨f m, hfix⟩)
 
 end IsTree
 

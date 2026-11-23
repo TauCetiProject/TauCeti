@@ -100,7 +100,7 @@ instance isFiniteRelIndex_raySubgroup_normOne (𝔪 : Modulus K) :
     (raySubgroup 𝔪).IsFiniteRelIndex (normOne K) := by
   rw [Subgroup.isFiniteRelIndex_iff_finiteIndex]
   have := Subgroup.quotient_finite_of_isOpen ((raySubgroup 𝔪).subgroupOf (normOne K))
-    ((isOpen_raySubgroup 𝔪).preimage continuous_subtype_val)
+    ((isOpen_raySubgroup 𝔪).preimage continuous_subtypeVal)
   exact Subgroup.finiteIndex_of_finite_quotient
 
 /-- **The ray class group is a quotient of the norm-one idele class group**: the ray class map

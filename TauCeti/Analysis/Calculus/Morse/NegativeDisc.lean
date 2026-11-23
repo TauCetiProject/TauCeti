@@ -90,11 +90,11 @@ private noncomputable def negativeColumnHomotopy {X : Type*} [TopologicalSpace X
         simp only [ContinuousMap.coe_mk]
         have ht : ‖1 - (t : ℝ)‖ ≤ 1 := by
           rw [Real.norm_eq_abs, abs_le]
-          constructor <;> linarith [t.2.1, t.2.2]
+          constructor <;> linarith [t.property.1, t.property.2]
         exact ⟨norm_prod_le_iff.2 ⟨norm_fst_le (C q.1 q.2), (norm_smul_le _ _).trans
             ((mul_le_of_le_one_left (norm_nonneg _) ht).trans (norm_snd_le _))⟩,
           (C q.1).neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub (hCQ q.1)
-            (abs_le.mpr ⟨by linarith [t.2.2], by linarith [t.2.1]⟩) q.2⟩ }
+            (abs_le.mpr ⟨by linarith [t.property.2], by linarith [t.property.1]⟩) q.2⟩ }
     { toFun := fun q ↦ ((N q.2.1).polarDeformation q.1 q.2.2, 0)
       continuous_toFun := by
         have hc : Continuous fun q : I × (X × E) ↦ (N q.2.1).polarDeformation q.1 :=
@@ -107,7 +107,7 @@ private noncomputable def negativeColumnHomotopy {X : Type*} [TopologicalSpace X
       map_one_left := fun q ↦ by simp [N]
       prop' := fun t q ↦ by
         simp only [ContinuousMap.coe_mk]
-        have h := (N q.1).norm_le_norm_polarDeformation_apply_le (hN q.1) t.2 q.2
+        have h := (N q.1).norm_le_norm_polarDeformation_apply_le (hN q.1) t.property q.2
         exact ⟨(norm_prod_le_iff.2 ⟨h.2, by simp⟩).trans (norm_fst_le _),
           by simpa using pow_le_pow_left₀ (norm_nonneg _) h.1 2⟩ }
 
@@ -153,14 +153,12 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
   let N : E →L[ℝ] E := (ContinuousLinearMap.fst ℝ E F).comp C
   have hN : ∀ u, ‖u‖ ≤ ‖N u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
   -- Its polar factor is a linear isometry.
-  let h₀ : E →ₗᵢ[ℝ] E :=
-    { toLinearMap := N.polarFactor
-      norm_map' := N.norm_polarFactor_apply_of_injective
-        (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x) }
-  refine ⟨h₀, rfl, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
-  let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let h₀ : E →ₗᵢ[ℝ] E := N.polarIsometry
+    (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x)
+  refine ⟨h₀, N.coe_polarIsometry _, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
+  let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   have hw (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
-    have := mem_closedBall_zero_iff.mp w.2
+    have := mem_closedBall_zero_iff.mp w.property
     simpa [Prod.norm_def] using this.trans hδ.2
   have hCw (w : closedBall (0 : E) δ) : ‖C w‖ ≤ L * δ₀ := by
     have := mem_closedBall_zero_iff.mp (hw w)
@@ -182,11 +180,11 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
       continuous_toFun := hcont.comp_continuous
         (f := fun p : I × closedBall (0 : E) δ ↦ ((σ p.1 : ℝ), ((p.2 : E), (0 : F))))
         (by fun_prop) fun p ↦
-        ⟨⟨(σ p.1).2.1, (σ p.1).2.2⟩, hw p.2⟩
+        ⟨⟨(σ p.1).property.1, (σ p.1).property.2⟩, hw p.2⟩
       map_zero_left := fun w ↦ by simp [derivativeRescale_one, hT0]
       map_one_left := fun w ↦ by simp [derivativeRescale_zero, C, ι]
       prop' := fun t w ↦ by
-        obtain ⟨-, hV', hq⟩ := hbound _ ⟨(σ t).2.1, (σ t).2.2⟩ _ (hw w)
+        obtain ⟨-, hV', hq⟩ := hbound _ ⟨(σ t).property.1, (σ t).property.2⟩ _ (hw w)
         exact ⟨hV', le_of_eq (by simpa using hq)⟩ }
   -- Stages 2 and 3: contract the positive component, then deform the negative block to its
   -- polar factor.
@@ -199,7 +197,7 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
       prop' := fun t w ↦ hP w (G.prop t (ι' w)).1 (G.prop t (ι' w)).2 }
   let H := H₁.trans H₂
   exact ⟨fun w hw' ↦ hδU (hw ⟨w, hw'⟩), H.toContinuousMap, fun w ↦ H.apply_zero w,
-    fun w ↦ H.apply_one w, fun t w ↦ H.prop t w⟩
+    fun w ↦ (H.apply_one w).trans (by simp [h₀]), fun t w ↦ H.prop t w⟩
 
 section Family
 
@@ -258,7 +256,7 @@ theorem exists_negativeDisc_homotopy_family (hr : 0 < r)
     have := (le_div_iff₀ (by positivity : 0 < 2 * L)).mp (hδ.2.trans (min_le_right _ _))
     nlinarith [hδ.1]
   have hw (w : closedBall (0 : E) δ) : ‖((w : E), (0 : F))‖ ≤ δ := by
-    simpa [Prod.norm_def] using mem_closedBall_zero_iff.mp w.2
+    simpa [Prod.norm_def] using mem_closedBall_zero_iff.mp w.property
   have hwr (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ ball (0 : E × F) r :=
     mem_ball_zero_iff.mpr ((hw w).trans_lt (hδρ.trans_le hρr))
   have hCw (p : P) (w : closedBall (0 : E) δ) : ‖C p w‖ ≤ L * δ :=
@@ -272,8 +270,8 @@ theorem exists_negativeDisc_homotopy_family (hr : 0 < r)
       z ∈ V ∧ -‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 ≤ -‖(x.2 : E)‖ ^ 2 :=
     ⟨hsV (mem_ball_zero_iff.mpr ((hz.trans (hCw x.1 x.2)).trans_lt hδs)), hq⟩
   have hσ (t : I) : (σ t : ℝ) ∈ closedBall (0 : ℝ) 1 := by
-    rw [mem_closedBall_zero_iff, Real.norm_of_nonneg (σ t).2.1]
-    exact (σ t).2.2
+    rw [mem_closedBall_zero_iff, Real.norm_of_nonneg (σ t).property.1]
+    exact (σ t).property.2
   -- The intermediate map `(p, u) ↦ C p u`.
   let gC : C(P × closedBall (0 : E) δ, E × F) := ⟨fun x ↦ C x.1 x.2, by fun_prop⟩
   -- Stage 1: rescale `T p` to its derivative, continuously in `p`.
@@ -299,7 +297,7 @@ theorem exists_negativeDisc_homotopy_family (hr : 0 < r)
           hL.le)).trans_lt hδs)), le_of_eq ?_⟩
         simpa using (hT x.1 0 h0r).derivativeRescale_neg_norm_fst_sq_add_norm_snd_sq_eq (hT0 x.1)
           (hQ x.1) (fun c hc ↦ (convex_ball (0 : E × F) r).smul_mem_of_zero_mem h0r (hwr x.2) hc)
-          ⟨(σ t).2.1, (σ t).2.2⟩ }
+          ⟨(σ t).property.1, (σ t).property.2⟩ }
   -- Stages 2 and 3: the linear part, read on the discs.
   let ι : C(P × closedBall (0 : E) δ, P × E) := ⟨fun x ↦ (x.1, x.2), by fun_prop⟩
   let G := negativeColumnHomotopy C hCc hC hPc

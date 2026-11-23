@@ -89,7 +89,7 @@ activation polynomial except at the affine output head. -/
           X (Sum.inl ⟨i, Sum.inr ()⟩)
       if h : i.val + 1 < L then Polynomial.aeval z (q ⟨i.val, by omega⟩) else z := by
   rw [polynomialPrefix_eq_polynomialChainPrefix, polynomialChainPrefix_succ,
-    ← Polynomial.aeval_algHom_apply (bind₁ _), ← polynomialPrefix_eq_polynomialChainPrefix]
+    ← Polynomial.aeval_algHom_apply (aeval _), ← polynomialPrefix_eq_polynomialChainPrefix]
   dsimp only
   split_ifs with h
   · rw [MLPSpec.layerPolynomial_of_lt q i h]
