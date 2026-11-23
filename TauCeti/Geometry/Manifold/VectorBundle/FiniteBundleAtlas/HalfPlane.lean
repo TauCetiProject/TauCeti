@@ -57,8 +57,10 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
   expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.eqOn_halfClosedImage_of_ae_eq`: functions continuous on a chart
   image that agree almost everywhere on its interior agree on the whole image.
-* `TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq`: continuous sections are
-  determined by their chart expressions almost everywhere.
+* `TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq`,
+  `TauCeti.FiniteBundleAtlas.continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero`: continuous
+  sections and continuous functions of their chart expressions are determined up to the boundary by
+  almost-everywhere agreement on chart interiors.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_halfCoord`: the chart coordinates of a `Cᵏ` section are
   `Cᵏ` up to the boundary.
 * `TauCeti.FiniteBundleAtlas.isCompact_closure_halfImage`,
@@ -273,6 +275,21 @@ theorem eq_of_continuous_of_halfCoord_ae_eq [T2Space F] {μ : Measure ℂ} [μ.I
     (A.continuousOn_halfCoord ht i) (A.coe_mem_halfClosedImage.2 (A.mem_image.2 ⟨x, hx, rfl⟩))
   rw [halfCoord_def, halfCoord_def, closedUpperHalfPlaneModel_symm_coe] at hxz
   exact A.eq_of_coord_chart_eq hx hxz
+
+/-- If a continuous map `f : F → X` into a `T2` space with zero vanishes on `A.halfCoord i s`
+almost everywhere on the interior `A.halfImage i` of chart `i` for a continuous section `s` and a
+measure `μ` charging nonempty open sets, then it vanishes at `A.chart i x` for every `x ∈ A.dom i`,
+boundary points included. -/
+theorem continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero
+    {X : Type*} [TopologicalSpace X] [T2Space X] [Zero X]
+    {μ : Measure ℂ} [μ.IsOpenPosMeasure] {f : F → X} (hf : Continuous f)
+    {s : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
+    {i : Fin A.n} {x : M} (hx : x ∈ A.dom i)
+    (hae : (fun z ↦ f (A.halfCoord i s z)) =ᵐ[μ.restrict (A.halfImage i : Set ℂ)] 0) :
+    f (A.halfCoord i s (A.chart i x : ℂ)) = 0 :=
+  A.eqOn_halfClosedImage_of_ae_eq hae
+    (hf.comp_continuousOn (A.continuousOn_halfCoord hs i))
+    continuousOn_const (A.coe_chart_mem_halfClosedImage hx)
 
 /-- The extended chart `i` sends a point to its image under the manifold chart, read in `ℂ`. -/
 theorem extChartAt_center_apply (i : Fin A.n) (x : M) :
