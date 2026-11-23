@@ -36,6 +36,8 @@ arbitrary measurable additive monoid: the convolution powers satisfy
 
 * `TauCeti.Probability.compoundPoissonMeasure_conv_compoundPoissonMeasure` — rates add under
   convolution at a fixed jump law;
+* `ProbabilityTheory.HasLaw.neg_compoundPoissonMeasure` — negating a random variable negates its
+  compound Poisson jump law;
 * `TauCeti.Probability.charFun_compoundPoissonMeasure` — the characteristic function
   `exp (r * (φ_μ t - 1))`.
 
@@ -216,6 +218,15 @@ theorem map_neg_compoundPoissonMeasure {G : Type*} [MeasurableSpace G] [AddCommG
   have hmap := map_compoundPoissonMeasure r μ (negAddMonoidHom : G →+ G)
   rw [coe_negAddMonoidHom] at hmap
   exact hmap measurable_neg
+
+/-- Negating a random variable with a compound Poisson law negates its jump law and keeps its
+rate. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_compoundPoissonMeasure
+    {Ω G : Type*} [MeasurableSpace Ω] [MeasurableSpace G] [AddCommGroup G]
+    [MeasurableAdd₂ G] [MeasurableNeg G] {P : Measure Ω} {X : Ω → G} {r : ℝ≥0}
+    {μ : Measure G} [SFinite μ] (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
+    HasLaw (fun ω ↦ -X ω) (compoundPoissonMeasure r (μ.map fun x ↦ -x)) P :=
+  HasLaw.comp ⟨by fun_prop, map_neg_compoundPoissonMeasure r μ⟩ hX
 
 /-- The sum of two independent random variables with compound Poisson laws of rates `r` and `s`
 and a common jump law `μ` is compound Poisson with rate `r + s` and jump law `μ`. -/
