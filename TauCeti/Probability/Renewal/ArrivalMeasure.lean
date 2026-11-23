@@ -9,7 +9,6 @@ public import TauCeti.Probability.Renewal.Exponential.Basic
 public import TauCeti.Probability.Renewal.Measure
 public import TauCeti.Probability.PointProcess.OccurrenceTime.Gap
 public import Mathlib.MeasureTheory.Measure.GiryMonad
-import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
@@ -155,9 +154,8 @@ theorem renewalArrivalMeasure_singleton_zero {ω : Ω} (hT : 0 < T 0 ω) :
 No nonexplosion assumption is needed, and the count may be infinite. -/
 theorem renewalArrivalMeasure_Ioc {ω : Ω} (hT : 0 < T 0 ω) (t : ℝ≥0) :
     renewalArrivalMeasure T ω (Ioc 0 t) = renewalCount T t ω := by
-  rw [← bot_eq_zero,
-    measure_Ioc_bot_eq_measure_Iic (renewalArrivalMeasure_singleton_zero T hT),
-    renewalArrivalMeasure_Iic]
+  rw [measure_congr (Ioc_ae_eq_Icc' (renewalArrivalMeasure_singleton_zero T hT)),
+    ← bot_eq_zero, Icc_bot, renewalArrivalMeasure_Iic]
 
 /-- On a nonexplosive path with a positive first increment, counting arrivals on `(0, t]`
 recovers the cast natural renewal count. -/

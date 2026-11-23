@@ -300,14 +300,14 @@ theorem ae_forall_Ioc_eq_renewalCountNat_toNNReal_occurrenceGap
         simp [arrival_def, hω]
       exact zero_lt_one.not_ge (h0 ▸ hN)
     simp [hω, renewalCountNat_eq_zero_of_not_tendsto _ hnot t]
-  · filter_upwards [h.ae_isLocallyFiniteMeasure,
-      h.ae_eq_renewalArrivalMeasure_occurrenceGap hr,
-      h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hlf heq hposfin t
-    have hpos0 : 0 < ((M ω).occurrenceGap 0).toNNReal :=
-      ENNReal.toNNReal_pos (hposfin 0).1.ne' (hposfin 0).2.ne
-    have htend := (isLocallyFiniteMeasure_renewalArrivalMeasure_iff _ ω).mp (heq ▸ hlf)
-    rw [heq]
-    exact renewalArrivalMeasure_Ioc_eq_renewalCountNat _ htend hpos0 t
+  · filter_upwards [h.ae_isLocallyFiniteMeasure, h.ae_isIntegerValued,
+      h.ae_forall_occurrenceGap_pos_lt_top hr,
+      h.ae_eq_zero (A := ({0} : Set ℝ≥0)) (by simp)] with ω hlf hint hposfin h0 t
+    have : IsLocallyFiniteMeasure (M ω) := hlf
+    rw [measure_congr (Ioc_ae_eq_Icc' h0), ← bot_eq_zero, Icc_bot,
+      renewalCountNat_comp (fun n (ν : Measure ℝ≥0) ↦ (ν.occurrenceGap n).toNNReal) M t ω]
+    exact apply_Iic_eq_renewalCountNat_toNNReal_occurrenceGap hint
+      (fun n ↦ ((M ω).occurrenceGap_ne_top_iff n).mp (hposfin n).2.ne) t
 
 /-- For a homogeneous Poisson random measure on `ℝ≥0` of any rate `r : ℝ≥0` (including rate
 zero), almost surely and simultaneously at all times `t`, the natural floor of the real count on

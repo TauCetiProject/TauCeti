@@ -59,8 +59,6 @@ longer windows linearly in their length, and so makes the measure locally finite
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
   `(n + 1) * C`, and is locally finite.
-* `MeasureTheory.measure_Ioc_bot_eq_measure_Iic`: removing a null bottom element identifies
-  `(⊥, t]` with `(-∞, t]`.
 -/
 
 public section
@@ -69,16 +67,6 @@ open Set Filter
 open scoped Topology ENNReal NNReal
 
 namespace MeasureTheory
-
-/-- If the bottom element has measure zero, the left-open, right-closed interval `(⊥, t]` has
-the same measure as `(-∞, t]`. -/
-theorem measure_Ioc_bot_eq_measure_Iic {α : Type*} [PartialOrder α] [OrderBot α]
-    [MeasurableSpace α] {μ : Measure α} (hbot : μ {⊥} = 0) (t : α) :
-    μ (Ioc ⊥ t) = μ (Iic t) := by
-  have heq : Ioc (⊥ : α) t = Iic t \ {⊥} := by
-    ext x
-    simp [bot_lt_iff_ne_bot, and_comm]
-  rw [heq, measure_sdiff_null hbot]
 
 namespace Measure
 
