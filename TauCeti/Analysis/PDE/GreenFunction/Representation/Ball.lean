@@ -204,8 +204,8 @@ theorem contDiffOn_integral_ballGreenKernel_mul {k : ℕ∞} (hf : ContDiff ℝ 
     ContDiffOn ℝ k (fun x => ∫ y, ballGreenKernel n x y * f y) (ball 0 1) :=
   ((contDiff_newtonianKernel_convolution hf
     (HasCompactSupport.of_tsupport_subset_ball hsupp)).contDiffOn.sub
-    (harmonicOnNhd_integral_ballGreenCorrector_mul hf.continuous
-      hsupp).analyticOnNhd.contDiffOn).congr fun x hx =>
+    ((harmonicOnNhd_integral_ballGreenCorrector_mul hf.continuous
+      hsupp).analyticOnNhd.contDiffOn isOpen_ball.uniqueDiffOn)).congr fun _ hx =>
     integral_ballGreenKernel_mul_eq_sub hf.continuous hsupp (mem_ball_zero_iff.1 hx).le
 
 /-- **The Green potential is continuous up to the boundary.** For `f` continuous with
@@ -216,7 +216,7 @@ theorem continuousOn_integral_ballGreenKernel_mul (hf : Continuous f)
     ContinuousOn (fun x => ∫ y, ballGreenKernel n x y * f y) (closedBall 0 1) :=
   (((HasCompactSupport.of_tsupport_subset_ball hsupp).continuous_convolution_right
     (ContinuousLinearMap.lsmul ℝ ℝ) (locallyIntegrable_newtonianKernel n) hf).continuousOn.sub
-    (continuousOn_integral_ballGreenCorrector_mul hf hsupp)).congr fun x hx =>
+    (continuousOn_integral_ballGreenCorrector_mul hf hsupp)).congr fun _ hx =>
     integral_ballGreenKernel_mul_eq_sub hf hsupp (mem_closedBall_zero_iff.1 hx)
 
 /-- **The Green potential solves Poisson's equation.** For `n = 1` or `n ≥ 3` and `f` of class
