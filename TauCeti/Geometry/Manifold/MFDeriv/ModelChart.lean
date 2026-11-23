@@ -31,8 +31,6 @@ open set.
 ## Main results
 
 * `TauCeti.mfderiv_eq_fderiv_comp_of_eqOn`: `df_y = dh_{e y} ∘ de_y` where `f = h ∘ e`.
-* `TauCeti.mdifferentiable_of_mem_maximalAtlas`: a chart of the `C^1` maximal atlas and its inverse
-  are differentiable.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
   invertible, and so is the derivative of its inverse (`TauCeti.isInvertible_mfderiv_chart_symm`).
 * `TauCeti.hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm`: a map into a normed space has a given
@@ -67,21 +65,6 @@ open Function Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-section MDifferentiable
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
-  {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- `mdifferentiable_of_mem_atlas` for the maximal atlas: a chart of the `C^1` maximal atlas is
-differentiable on its source, and its inverse on its target. -/
-theorem mdifferentiable_of_mem_maximalAtlas {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) : e.MDifferentiable I I :=
-  ⟨fun _ hy ↦ (mdifferentiableAt_of_mem_maximalAtlas he hy).mdifferentiableWithinAt,
-    fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
-
-end MDifferentiable
 
 section Chart
 

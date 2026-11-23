@@ -25,9 +25,9 @@ Kupka–Smale theorem for closed orbits on a manifold.
 
 **The chart.** Since the orbit is not a rest point, `v p ≠ 0`
 (`TauCeti.apply_ne_zero_of_forall_flowOf_ne`). For a smooth field the flow-box theorem, translated
-to centre the chart at `p` (`TauCeti.exists_chart_mfderiv_eq_const_of_ne_zero`), gives a chart `e`
-of the smooth maximal atlas sending `p` to `0`, in which `v` is a constant field `u ≠ 0`. In this
-chart the orbit starts along the axis `ℝ • u`.
+to centre the chart at `p` (`TauCeti.exists_chart_mfderiv_eq_const_apply_eq_zero`), gives a chart
+`e` of the smooth maximal atlas sending `p` to `0`, in which `v` is a constant field `u ≠ 0`. In
+this chart the orbit starts along the axis `ℝ • u`.
 
 **The perturbation.** In the chart, the flow-box dilation field `W_E` of
 `TauCeti.exists_contDiff_flowOf_const_add_smul_axis` is supported near a short segment of the
@@ -411,7 +411,7 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul
       (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)) := hv.of_le (by simp)
   -- The orbit is not a rest point, so `v p ≠ 0` and `v` is straightened by a chart centred at `p`.
   have hvp : v p ≠ 0 := apply_ne_zero_of_forall_flowOf_ne hv1 hT₀ hmin
-  obtain ⟨e, u, he, hpe, hep, heu⟩ := exists_chart_mfderiv_eq_const_of_ne_zero hv hvp
+  obtain ⟨e, u, he, hpe, hep, heu⟩ := exists_chart_mfderiv_eq_const_apply_eq_zero hv hvp
   obtain ⟨r, hr, hrt⟩ := Metric.isOpen_iff.1 e.open_target 0 (hep ▸ e.map_source hpe)
   refine exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart hv1 hT₀ hP hp hmin he
     hpe hep (u := u) hr hrt (fun z hz ↦ ?_) hN

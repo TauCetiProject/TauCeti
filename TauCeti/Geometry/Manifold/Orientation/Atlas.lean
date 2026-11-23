@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas

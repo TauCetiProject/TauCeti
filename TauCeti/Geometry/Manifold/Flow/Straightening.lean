@@ -51,7 +51,7 @@ interior chart of the model, it is a chart of the manifold
 * `TauCeti.exists_chart_mfderiv_eq_const_of_eventually_mlieBracket_eq_zero`: finitely many
   pointwise independent `C^m` vector fields with vanishing brackets are simultaneously constant in a
   suitable chart of the `C^m` maximal atlas.
-* `TauCeti.exists_chart_mfderiv_eq_const_of_ne_zero`: on a smooth manifold modelled on `E`, the
+* `TauCeti.exists_chart_mfderiv_eq_const_apply_eq_zero`: on a smooth manifold modelled on `E`, the
   chart can moreover be centred at the given point.
 
 ## References
@@ -172,8 +172,8 @@ omit [ChartedSpace H M] in
 /-- **A flow-box chart centred at a point.** On a smooth manifold modelled on `E`, a smooth vector
 field `v` with `v p ≠ 0` is a constant field `u` in some chart of the smooth maximal atlas sending
 `p` to `0`. -/
-theorem exists_chart_mfderiv_eq_const_of_ne_zero [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
-    {v : (y : M) → TangentSpace 𝓘(ℝ, E) y} {p : M}
+theorem exists_chart_mfderiv_eq_const_apply_eq_zero [ChartedSpace E M]
+    [IsManifold 𝓘(ℝ, E) ∞ M] {v : (y : M) → TangentSpace 𝓘(ℝ, E) y} {p : M}
     (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun y ↦ (⟨y, v y⟩ : TangentBundle 𝓘(ℝ, E) M)))
     (hvp : v p ≠ 0) :
     ∃ (e : OpenPartialHomeomorph M E) (u : E), e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
