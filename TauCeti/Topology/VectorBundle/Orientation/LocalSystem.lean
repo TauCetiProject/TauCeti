@@ -255,11 +255,8 @@ priority so that `simp` applies it before unfolding the evaluation by
 theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
     signLocalSystemFiberEquiv hι (-o) f = -signLocalSystemFiberEquiv hι o f := by
-  -- The deck involution sends the point `⟨b, o⟩` of the cover to `⟨b, -o⟩`.
-  have h := liftFiberEquiv_deck hι ⟨b, o⟩ rfl (proj_deck _) f
-  simp only [deck_apply] at h
-  -- `signLocalSystemFiberEquiv` is `liftFiberEquiv` at the point `⟨b, o⟩` by definition.
-  exact h
+  rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← fiberMap_deck_mk o]
+  exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).property _
 
 /-- Evaluation at the opposite orientation is the negative of evaluation at `o`, stated for the
 inverse equivalences. -/
