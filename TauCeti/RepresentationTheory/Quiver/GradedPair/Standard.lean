@@ -111,6 +111,7 @@ theorem standardBasis_repr_apply (v : (standardSpace m).Carrier) (x : StandardIn
   simp [standardBasis]
 
 /-- The basis vector of a valid label lies in the grade of the label's degree. -/
+@[simp]
 theorem standardBasis_mem_grade (x : StandardIndex m) :
     standardBasis m x ∈ (standardSpace m).grade x.2 := by
   rw [standardBasis_apply, ← degree_standardSpace_standardIndexEquiv]
@@ -174,6 +175,7 @@ theorem standardVector_eq_zero_iff {i : Fin m.card} {a : ℤ} :
   exact (standardBasis m).ne_zero _ h0
 
 /-- A standard vector lies in the grade of its degree, also when it is zero. -/
+@[simp]
 theorem standardVector_mem_grade (i : Fin m.card) (a : ℤ) :
     standardVector m i a ∈ (standardSpace m).grade a := by
   by_cases h : a ∈ occurrenceInterval m i
@@ -207,7 +209,7 @@ theorem mem_grade_standardSpace_iff {a : ℤ} {v : (standardSpace m).Carrier} :
     v ∈ (standardSpace m).grade a ↔
       ∀ x : StandardIndex m, (x.2 : ℤ) ≠ a → (standardBasis m).repr v x = 0 := by
   rw [GradedCoordSpace.mem_grade_iff, ← (standardIndexEquiv m).forall_congr_right]
-  simp [standardBasis]
+  simp only [degree_standardSpace_standardIndexEquiv, standardBasis_repr_apply]
 
 variable (m) in
 /-- The degree-`a` piece of the standard space is spanned by the standard vectors of degree `a`.
@@ -222,8 +224,8 @@ theorem grade_standardSpace (a : ℤ) :
     rw [Set.mem_ofPred_eq, degree_standardSpace_standardIndexEquiv] at hk
     refine Submodule.subset_span ⟨x.1, ?_⟩
     dsimp only
-    rw [← hk, ← standardBasis_eq_standardVector, standardBasis, Basis.reindex_apply,
-      Equiv.symm_symm]
+    rw [← hk, ← standardBasis_eq_standardVector]
+    simp only [standardBasis_apply, Pi.basisFun_apply]
   · rintro _ ⟨i, rfl⟩
     exact standardVector_mem_grade i a
 
