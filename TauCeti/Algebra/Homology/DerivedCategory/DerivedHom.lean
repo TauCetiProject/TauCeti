@@ -69,11 +69,6 @@ section IsKInjective
 variable (R : Type w) [Ring R] {C : Type u} [Category.{v} C] [Abelian C] [Linear R C]
   [HasDerivedCategory.{t} C]
 
-/-- The shift of a complex represents the shift of its image in the derived category. -/
-private def qhShiftIso (L : CochainComplex C ℤ) (n : ℤ) :
-    Qh.obj ((HomotopyCategory.quotient C _).obj (L⟦n⟧)) ≅ (Q.obj L)⟦n⟧ :=
-  (quotientCompQhIso C).app _ ≪≫ (Q.commShiftIso n).app L
-
 /-- For a K-injective complex `L`, the `n`-th cohomology of the linear Hom complex
 `CochainComplex.linearHomComplex R K L` is the `R`-module of morphisms `K ⟶ L⟦n⟧` in the derived
 category. No boundedness of `K` or `L` is assumed. -/
@@ -84,7 +79,8 @@ def linearHomComplexHomologyLinearEquivOfIsKInjective (K L : CochainComplex C �
     LinearEquiv.ofBijective (Qh.mapLinearMap R) (by
       rw [Functor.coe_mapLinearMap]
       exact CochainComplex.IsKInjective.Qh_map_bijective _ _) ≪≫ₗ
-    Linear.homCongr R ((quotientCompQhIso C).app K) (qhShiftIso L n)
+    Linear.homCongr R ((quotientCompQhIso C).app K)
+      ((quotientCompQhIso C).app (L⟦n⟧) ≪≫ (Q.commShiftIso n).app L)
 
 /-- The class of a cocycle `x` of degree `n` corresponds to the image under `Q` of the chain map
 `K ⟶ L⟦n⟧` defined by `x`, followed by the commutation of `Q` with the shift. -/
@@ -94,10 +90,10 @@ theorem linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk {K L : Cochain
     linearHomComplexHomologyLinearEquivOfIsKInjective R K L n
         ((homologyLinearEquiv R K L n).symm (CohomologyClass.mk x)) =
       Q.map (Cocycle.equivHomShift.symm x) ≫ (Q.commShiftIso n).hom.app L := by
-  simp only [linearHomComplexHomologyLinearEquivOfIsKInjective, qhShiftIso,
-    LinearEquiv.trans_apply, linearHomComplexHomologyLinearEquiv_symm_mk,
-    LinearEquiv.ofBijective_apply, Functor.coe_mapLinearMap, Linear.homCongr_apply,
-    Iso.trans_hom, Iso.app_hom, Iso.app_inv, Category.assoc]
+  simp only [linearHomComplexHomologyLinearEquivOfIsKInjective, LinearEquiv.trans_apply,
+    linearHomComplexHomologyLinearEquiv_symm_mk, LinearEquiv.ofBijective_apply,
+    Functor.coe_mapLinearMap, Linear.homCongr_apply, Iso.trans_hom, Iso.app_hom, Iso.app_inv,
+    Category.assoc]
   rw [quotientCompQhIso_hom_naturality_assoc, Iso.inv_hom_id_app_assoc]
 
 /-- Transporting the identification along isomorphisms out of the derived-category images of
@@ -107,7 +103,8 @@ private lemma homCongr_linearHomComplexHomologyLinearEquivOfIsKInjective
     (e : Qh.obj ((HomotopyCategory.quotient C _).obj K) ≅ X)
     (e' : Qh.obj ((HomotopyCategory.quotient C _).obj (L⟦n⟧)) ≅ Y)
     (a : (CochainComplex.linearHomComplex R K L).homology n) :
-    Linear.homCongr R ((quotientCompQhIso C).symm.app K ≪≫ e) ((qhShiftIso L n).symm ≪≫ e')
+    Linear.homCongr R ((quotientCompQhIso C).symm.app K ≪≫ e)
+      (((quotientCompQhIso C).app (L⟦n⟧) ≪≫ (Q.commShiftIso n).app L).symm ≪≫ e')
         (linearHomComplexHomologyLinearEquivOfIsKInjective R K L n a) =
       (e.inv ≫ Qh.map (linearHomComplexHomologyLinearEquiv R K L n a)) ≫ e'.hom := by
   simp [linearHomComplexHomologyLinearEquivOfIsKInjective, Linear.homCongr_apply]
@@ -211,7 +208,8 @@ def derivedHomHomologyLinearEquiv (L M : DerivedCategory C) (n : ℤ) :
       ((kInjectiveReplacement C).obj M).as n ≪≫ₗ
     Linear.homCongr R ((quotientCompQhIso C).symm.app _ ≪≫
         (asIso (kInjectiveReplacementAdjunction C).counit).app L)
-      ((qhShiftIso _ n).symm ≪≫ shiftKInjectiveReplacementIso M n)
+      (((quotientCompQhIso C).app _ ≪≫ (Q.commShiftIso n).app _).symm ≪≫
+        shiftKInjectiveReplacementIso M n)
 
 /-- The identification of `Hⁿ RHom(L, M)` with `L ⟶ M⟦n⟧`, written through the cohomology of the
 Hom complex of the K-injective replacements. -/
