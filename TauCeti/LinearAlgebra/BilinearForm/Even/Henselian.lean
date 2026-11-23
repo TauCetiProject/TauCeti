@@ -10,10 +10,10 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.Algebra.Group.Even
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -322,7 +322,7 @@ private theorem IsSymm.exists_pair_of_even (hR : Nat.card (ResidueField R) = 2) 
       B e₁ x = 0 ∧ B f₁ x = 0 :=
     ⟨hx e₁ (Submodule.subset_span ⟨0, rfl⟩), hx f₁ (Submodule.subset_span ⟨1, rfl⟩)⟩
   obtain ⟨e, f, h⟩ := hB.exists_hyperbolic_of_two_one_one_two h2 h₁ hV.1 hV.2 h₂ hV₂.1 hV₂.2
-    (hT _ e₂.2).1 (hT _ f₂.2).1 (hT _ e₂.2).2 (hT _ f₂.2).2
+    (hT _ e₂.property).1 (hT _ f₂.property).1 (hT _ e₂.property).2 (hT _ f₂.property).2
   exact ⟨e, f, h.1, Or.inl h.2⟩
 
 /-- Even forms with unit Gram determinant in rank below two are isometric to any form in the same
@@ -429,13 +429,15 @@ private theorem IsSymm.exists_pair_mem_span_of_sub_mem (hR : Nat.card (ResidueFi
   have hBW := hB.restrict W
   rcases hq with rfl | rfl
   · obtain ⟨e, f, h⟩ := hBW.exists_hyperbolic_of_mem_maximalIdeal hxy hxx hyy (by simpa using hm₁)
-    exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
+    exact ⟨e, e.property, f, f.property, by simpa using h.1, by simpa using h.2.1,
+        by simpa using h.2.2⟩
   · obtain ⟨e, f, h⟩ := hBW.exists_two_one_one_two_of_isUnit hR hxy hxx hyy
       (by simpa [add_comm] using
         TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp hm₁))
       ((hu.unit⁻¹.isUnit.pow 2).mul (by simpa [add_comm] using
         TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one ((mem_maximalIdeal _).mp hm₂)))
-    exact ⟨e, e.2, f, f.2, by simpa using h.1, by simpa using h.2.1, by simpa using h.2.2⟩
+    exact ⟨e, e.property, f, f.property, by simpa using h.1, by simpa using h.2.1,
+        by simpa using h.2.2⟩
 
 /-- **Projecting away from a binary block.** Let `C` be symmetric, let `φ` carry a form `C'` to `C`
 modulo `𝔪`, and the self-pairings modulo `2𝔪`, and let `e, f` in the span of `φ e'` and `φ f'` have
@@ -460,10 +462,10 @@ private theorem IsSymm.sub_mem_restrict_of_sub_mem_span_pair (h2 : (2 : R) ∈ m
     -- `φ x` pairs into `𝔪` with the span of `φ e'` and `φ f'`, which contains `e` and `f`.
     have hpair (z : M) (hz : z ∈ Submodule.span R {φ e', φ f'})
         (hzS : z ∈ Submodule.span R {e, f}) : C (φ x - ψ x) z ∈ maximalIdeal R := by
-      rw [map_sub, LinearMap.sub_apply, hC.eq (ψ x), hT (ψ x).2 z hzS, sub_zero]
+      rw [map_sub, LinearMap.sub_apply, hC.eq (ψ x), hT (ψ x).property z hzS, sub_zero]
       obtain ⟨γ, δ, rfl⟩ := Submodule.mem_span_pair.mp hz
       have hx' (u : N) (hu : u ∈ ({e', f'} : Set N)) : C (φ x) (φ u) ∈ maximalIdeal R := by
-        have h0 : C' u x = 0 := hT' x.2 u (Submodule.subset_span hu)
+        have h0 : C' u x = 0 := hT' x.property u (Submodule.subset_span hu)
         have := hφ u x
         rw [h0, zero_sub, ← hC.eq] at this
         simpa using (maximalIdeal R).neg_mem this
@@ -477,8 +479,10 @@ private theorem IsSymm.sub_mem_restrict_of_sub_mem_span_pair (h2 : (2 : R) ∈ m
     exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
   -- The discarded components change the pairings by multiples of their coordinates.
   have hfe : C f e = 1 := by rw [← hC.eq, h₁]
-  have hTe (z : T) : C z e = 0 := (hC.eq _ _).trans (hT z.2 e (Submodule.subset_span (by simp)))
-  have hTf (z : T) : C z f = 0 := (hC.eq _ _).trans (hT z.2 f (Submodule.subset_span (by simp)))
+  have hTe (z : T) : C z e = 0 := (hC.eq _ _).trans (hT z.property e (Submodule.subset_span
+      (by simp)))
+  have hTf (z : T) : C z f = 0 := (hC.eq _ _).trans (hT z.property f (Submodule.subset_span
+      (by simp)))
   have hdiff {x y : T'} {α β α' β' : R} (hx : φ x = α • e + β • f + ψ x)
       (hy : φ y = α' • e + β' • f + ψ y) : C (φ x) (φ y) - C (ψ x) (ψ y) =
         α * α' * (2 * q) + α * β' + β * α' + β * β' * (2 * q) := by
@@ -619,7 +623,7 @@ theorem IsJordanSplitting.equivalent_restrict_of_equivalent_of_even
       hCs.equivalent_of_sub_mem_maximalIdeal_of_even hR hC's (fun x ↦ ?_) b b' hdet hdet' φ
         (fun x y ↦ Ideal.mem_of_dvd _ (hφ x y) h2) fun x ↦ ?_
   · -- The unimodular rescaling of a constituent of type II is even.
-    obtain ⟨c, hc⟩ := hj x x.2
+    obtain ⟨c, hc⟩ := hj x x.property
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem (mem_nonZeroDivisors_of_ne_zero h20)
       j)).mp (by rw [hCapp, hc, pow_succ, mul_assoc])⟩
   · -- Between neighbours of type II, the self-pairings agree modulo `4`.

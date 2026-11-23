@@ -28,9 +28,14 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 
 ## Main results
 
+* `ModularForm.abscissaOfAbsConv_qExpansion_coeff_eq_bot_of_weight_nonpos`: in weight `k ≤ 0`,
+  all positive `q`-expansion coefficients vanish
+  (`ModularForm.qExpansion_coeff_eq_zero_of_weight_nonpos`), so the abscissa of absolute
+  convergence is `⊥`.
 * `ModularForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a modular form of weight
   `k`, the abscissa of absolute convergence of the coefficient series is at most
-  `k + 1` (from `aₙ = O(nᵏ)`).
+  `k + 1` (from `aₙ = O(nᵏ)`), with `ModularForm.LSeriesSummable_qExpansion_coeff` giving
+  absolute convergence on `Re s > k + 1`.
 * `CuspForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a cusp form, at most `(k+1)/2`
   (from Mathlib's mean-square coefficient bound and Cauchy–Schwarz). In weight one this
   gives the bound `1`, which the pointwise estimate `aₙ = O(n^{k/2})` does not give.
@@ -49,11 +54,12 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
   continuation.
 
 The non-cuspidal abscissa bound `k + 1` is weaker than Diamond–Shurman Prop. 5.9.1
-(which gives convergence for `Re s > k`). In weight `k ≥ 2` on a level containing `Γ₁(N)`,
-`TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le` sharpens it to `k`,
-via `aₙ = O(n^{k-1})` in weight `k ≥ 3` and via `aₙ = O(n^{1+ε})` for every `ε > 0` in weight
-two. The entire continuation of the cusp-form
-series is `CuspForm.hasEntireExtension_qExpansion_coeff` below.
+(which gives convergence for `Re s > k`). On any level containing `Γ₁(N)`,
+`TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le` sharpens it to `k`
+in all weights (for the period-`1` `q`-expansion), via `aₙ = O(n^{k-1})` in weight `k ≥ 3`,
+`aₙ = O(n^{1+ε})` in weight two, and the weight-one cusp–Eisenstein decomposition combined with
+the cuspidal mean-square bound in weight one. The entire continuation of the cusp-form series is
+`CuspForm.hasEntireExtension_qExpansion_coeff` below.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/LFunction.lean`), rebuilt to consume Mathlib's
@@ -89,6 +95,16 @@ private lemma LSeries_eq_of_hasSum {a : ℕ → ℂ} {v : ℂ} (hs0 : s ≠ 0)
 
 namespace ModularForm
 
+/-- In nonpositive weight `k ≤ 0`, the `q`-expansion coefficient L-series has abscissa of
+absolute convergence `⊥`, for any width `h`. -/
+theorem abscissaOfAbsConv_qExpansion_coeff_eq_bot_of_weight_nonpos (hk : k ≤ 0) {h : ℝ}
+    [ModularFormClass F Γ k] (f : F) :
+    abscissaOfAbsConv (fun n ↦ (qExpansion h f).coeff n) = ⊥ := by
+  rw [LSeries.abscissaOfAbsConv_congr (g := 0) fun hn ↦
+    qExpansion_coeff_eq_zero_of_weight_nonpos hk f hn]
+  exact eq_bot_iff.mpr (LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun _ _ ↦
+    LSeriesSummable_zero)
+
 /-- **Hecke's abscissa bound for modular forms**: the Dirichlet series of the `q`-expansion
 coefficients converges absolutely for `Re s > k + 1` (from `aₙ = O(nᵏ)` for `k ≥ 0`; in negative
 weight the form is zero). -/
@@ -100,10 +116,16 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [ModularFormClass F Γ k] (f : F) 
     refine (ModularFormClass.qExpansion_isBigO hk f).congr' EventuallyEq.rfl
       (Eventually.of_forall fun n ↦ ?_)
     simp only [Real.rpow_intCast]
-  · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
-    rw [qExpansion_eq_zero_of_neg_weight (lt_of_not_ge hk) f]
-    simp only [map_zero]
-    exact LSeriesSummable_zero
+  · rw [abscissaOfAbsConv_qExpansion_coeff_eq_bot_of_weight_nonpos (le_of_not_ge hk) f]
+    exact bot_le
+
+/-- The Dirichlet series of the `q`-expansion coefficients of a modular form converges absolutely
+on the half-plane `Re s > k + 1`. -/
+theorem LSeriesSummable_qExpansion_coeff [ModularFormClass F Γ k] (f : F)
+    (hs : (k : ℝ) + 1 < s.re) :
+    LSeriesSummable (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) s :=
+  LSeriesSummable_of_abscissaOfAbsConv_lt_re
+    ((abscissaOfAbsConv_qExpansion_coeff_le f).trans_lt (mod_cast hs))
 
 /-- On the half-plane `Re s > k + 1`, the Dirichlet series of the `q`-expansion
 coefficients is Mathlib's `ModularForm.L`, up to the width factor. Not `@[simp]`: the

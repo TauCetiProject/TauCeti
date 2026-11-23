@@ -41,7 +41,7 @@ parameters' ring need not be.
 
 * `normEDS_eq_aeval`: every sequence of the form `normEDS b c d` is `universalNormEDS` specialised
   along `NormEDSParam.rec b c d`.
-* `universalNormEDS_ne_zero`: the universal sequence vanishes only at `0`.
+* `universalNormEDS_eq_zero_iff`: the universal sequence vanishes exactly at `0`.
 * `preNormEDS_eq_aeval`, `complEDS₂_eq_aeval`, `complEDS_eq_aeval`: the same for the three companion
   sequences, each specialising **its own** construction over `ℤ[B, C, D]` — `preNormEDS`,
   `complEDS₂` and `complEDS` at the three indeterminates — not `universalNormEDS`, which is only
@@ -88,9 +88,9 @@ complements but not for `preNormEDS`, although Mathlib's `map_preNormEDS` makes 
 one-line proof and consumers reaching for the pre-normalised sequence would otherwise have to
 redo it.
 
-`universalNormEDS_ne_zero` adapts the same AINTLIB file's declaration at
-`dev/modular-curves @ 9fec8eba7652`. It specialises the universal parameters using Mathlib's
-`normEDS_two_three_two`.
+`universalNormEDS_eq_zero_iff` adapts the same AINTLIB file's nonvanishing declaration at
+`dev/modular-curves @ 9fec8eba7652`, stated here as an iff since `normEDS_zero` gives the converse.
+It specialises the universal parameters using Mathlib's `normEDS_two_three_two`.
 -/
 
 public section
@@ -104,8 +104,6 @@ of indeterminates. -/
 inductive NormEDSParam : Type | B : NormEDSParam | C : NormEDSParam | D : NormEDSParam
 
 namespace NormEDSParam
-
-open NormEDSParam
 
 variable {R : Type*} [CommRing R] (b c d : R)
 
@@ -151,13 +149,13 @@ theorem complEDS_eq_aeval :
       fun k n ↦ aeval (NormEDSParam.rec b c d) (complEDS (X (R := ℤ) B) (X C) (X D) k n) := by
   simp_rw [map_complEDS, aeval_X]
 
-end NormEDSParam
-
-open NormEDSParam
-
-/-- **The universal normalised EDS is nonzero away from `0`.** Specialising the three
+/-- **The universal normalised EDS vanishes exactly at `0`.** Specialising the three
 indeterminates at `(2, 3, 2)` sends `universalNormEDS n` to `n` itself, by
-`normEDS_two_three_two`, so a vanishing value forces a vanishing index. -/
-theorem universalNormEDS_ne_zero {n : ℤ} (hn : n ≠ 0) : universalNormEDS n ≠ 0 := fun h ↦ hn <| by
+`normEDS_two_three_two`, so a vanishing value forces a vanishing index; conversely
+`normEDS_zero`. -/
+theorem universalNormEDS_eq_zero_iff {n : ℤ} : universalNormEDS n = 0 ↔ n = 0 := by
+  refine ⟨fun h ↦ ?_, fun hn ↦ by simp [hn]⟩
   apply_fun aeval (NormEDSParam.rec (2 : ℤ) 3 2) at h
   simpa using h
+
+end NormEDSParam

@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # Hamiltonian vector fields and gradients for compatible metrics
@@ -54,14 +53,6 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V}
-
-/-- **`J X_H` is the gradient of `H` on a vector space.** If the inner product of `V` is the
-metric `ω(·, J ·)`, then `J X_H(x)` is the gradient of `H` at `x`. -/
-theorem apply_hamiltonianVectorField_eq_gradient (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (H : V → ℝ)
-    (x : V) : J (ω.hamiltonianVectorField H x) = ∇ H x :=
-  ext_inner_right ℝ fun w ↦ by
-    rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, apply_hamiltonianVectorField,
-      inner_gradient_left]
 
 /-- **`J dX_H` is the Hessian of `H` on a vector space.** If the inner product of `V` is the
 metric `ω(·, J ·)`, then `J dX_H(x)` is the Hessian operator `d(∇H)(x)` of `H` at `x`. No

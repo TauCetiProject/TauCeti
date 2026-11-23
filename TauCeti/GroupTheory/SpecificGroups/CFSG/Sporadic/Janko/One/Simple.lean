@@ -82,7 +82,7 @@ private theorem eq_of_apply_base {g h : J1}
       (h : Equiv.Perm (Fin 266)) (Fin.ofNat 266 i)) :
     g = h := by
   refine Subtype.ext (Subgroup.eq_of_forall_smul_eq_of_stabilizerChain_eq_bot _ _
-    stabilizerChain_three_eq_bot g.2 h.2 fun j hj ↦ ?_)
+    stabilizerChain_three_eq_bot g.property h.property fun j hj ↦ ?_)
   simpa [pointSequence_apply] using hgh ⟨j, hj⟩
 
 /-! ### Normal generation -/
@@ -290,18 +290,18 @@ instance isSimpleGroup_J1 : IsSimpleGroup J1 := by
   · exact fun _ hx ↦ hx
   · intro p hp hd g hg
     rcases prime_cases p hp hd with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ⟨t, normalClosure_t, isConj_of_mem_sylowTwo (by simpa [localSubgroup] using g.2)
+    · exact ⟨t, normalClosure_t, isConj_of_mem_sylowTwo (by simpa [localSubgroup] using g.property)
       ((Subgroup.orderOf_coe g).trans hg)⟩
     all_goals refine ⟨g, ?_, IsConj.refl _⟩
-    · exact normalClosure_eq_top_of_mem_zpowers 0 (by simpa [localSubgroup] using g.2)
+    · exact normalClosure_eq_top_of_mem_zpowers 0 (by simpa [localSubgroup] using g.property)
         ((Subgroup.orderOf_coe g).trans hg)
-    · exact normalClosure_eq_top_of_mem_zpowers 1 (by simpa [localSubgroup] using g.2)
+    · exact normalClosure_eq_top_of_mem_zpowers 1 (by simpa [localSubgroup] using g.property)
         ((Subgroup.orderOf_coe g).trans hg)
-    · exact normalClosure_eq_top_of_mem_zpowers 2 (by simpa [localSubgroup] using g.2)
+    · exact normalClosure_eq_top_of_mem_zpowers 2 (by simpa [localSubgroup] using g.property)
         ((Subgroup.orderOf_coe g).trans hg)
-    · exact normalClosure_eq_top_of_mem_zpowers 3 (by simpa [localSubgroup] using g.2)
+    · exact normalClosure_eq_top_of_mem_zpowers 3 (by simpa [localSubgroup] using g.property)
         ((Subgroup.orderOf_coe g).trans hg)
-    · exact normalClosure_eq_top_of_mem_zpowers 4 (by simpa [localSubgroup] using g.2)
+    · exact normalClosure_eq_top_of_mem_zpowers 4 (by simpa [localSubgroup] using g.property)
         ((Subgroup.orderOf_coe g).trans hg)
 
 end TauCeti.Sporadic
