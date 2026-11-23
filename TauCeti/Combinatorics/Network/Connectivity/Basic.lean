@@ -27,8 +27,10 @@ is `⊤` and the vertex strong connectivity is `0`.
 The threshold `1` for arc strength is strong connectivity in the sense of Mathlib's
 `Quiver.IsStronglyConnected`; for vertex strength it additionally requires at least two vertices.
 The predicates are the directed counterparts of the undirected edge and vertex connectivity
-predicates. Directed Menger gives path-family characterizations of both local arc reachability and
-global arc strength.
+predicates. When the vertex type and every arrow type are finite,
+`TauCeti.forall_reachableWithout_iff_exists_paths` gives path-family characterizations of both
+local arc reachability and global arc strength. These use `Fin k`-indexed families, and when the
+endpoints coincide the empty path may fill every index.
 
 ## Main results
 
@@ -89,8 +91,10 @@ theorem isArcReachable_def : IsArcReachable Q k s t ↔
     ∀ F : Finset (Σ x y, Q x y), #F < k → ReachableWithout (F : Set (Σ x y, Q x y)) s t :=
   Iff.rfl
 
-/-- **Menger's theorem for local arc connectivity.** A vertex `t` is `k`-arc-reachable from `s`
-exactly when there are `k` directed `s`-to-`t` paths, no two of which traverse a common arrow. -/
+/-- **Menger's theorem for local arc connectivity.** When the vertex type and every arrow type are
+finite, a vertex `t` is `k`-arc-reachable from `s` exactly when there is a `Fin k`-indexed family
+of directed `s`-to-`t` paths, no two of which traverse a common arrow. When `s = t`, the empty path
+may fill every index. -/
 theorem isArcReachable_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] :
     IsArcReachable Q k s t ↔
       ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
@@ -143,9 +147,10 @@ def IsArcStrong (k : ℕ) : Prop :=
 theorem isArcStrong_def : IsArcStrong Q k ↔ ∀ s t, IsArcReachable Q k s t :=
   Iff.rfl
 
-/-- **Menger's theorem for arc-strong arrow families.** A finite arrow family is `k`-arc-strong
-exactly when every ordered pair of vertices is joined by `k` directed paths, no two of which
-traverse a common arrow. -/
+/-- **Menger's theorem for arc-strong arrow families.** When the vertex type and every arrow type
+are finite, an arrow family is `k`-arc-strong exactly when every ordered pair of vertices is joined
+by a `Fin k`-indexed family of directed paths, no two of which traverse a common arrow. For a pair
+of coinciding vertices, the empty path may fill every index. -/
 theorem isArcStrong_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] :
     IsArcStrong Q k ↔ ∀ s t,
       ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
