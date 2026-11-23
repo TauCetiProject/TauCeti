@@ -46,7 +46,7 @@ example : toAntisymmetrization TuringReducible ({0, 3, 5} : Set ℕ).oracle = �
 -- A column `{⟨x, e⟩ | x : ℕ}` has the least degree, although it is infinite.
 example (e : ℕ) : toAntisymmetrization TuringReducible e.pairColumn.oracle = ⊥ := by
   rw [TuringDegree.toAntisymmetrization_eq_bot_iff, Set.partrec_oracle_iff]
-  exact (Primrec.mem_pairColumn.comp (Primrec.const e) Primrec.id).computablePred
+  exact e.computablePred_mem_pairColumn
 
 -- The halting set is a noncomputable subset of `Set.univ`, which has the least degree as the
 -- complement of the empty set: inclusion does not give Turing reducibility.
@@ -55,7 +55,7 @@ example :
       toAntisymmetrization TuringReducible (Set.univ : Set ℕ).oracle = ⊥ ∧
       ¬TuringReducible (∅ : Set ℕ).jump.oracle (Set.univ : Set ℕ).oracle := by
   have huniv : toAntisymmetrization TuringReducible (Set.univ : Set ℕ).oracle = ⊥ := by
-    rw [← Set.compl_empty, TuringDegree.toAntisymmetrization_oracle_compl,
+    rw [← Set.compl_empty, Set.toAntisymmetrization_oracle_compl,
       TuringDegree.toAntisymmetrization_oracle_empty]
   refine ⟨Set.subset_univ _, huniv, fun h => Set.not_computablePred_mem_jump ∅ ?_⟩
   have hK : toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle = ⊥ :=
@@ -78,4 +78,4 @@ example (Z : Set ℕ) (e : ℕ) :
 
 -- Shifting a set down by one, a computable change of presentation, does not raise its degree.
 example (A : Set ℕ) : TuringReducible ((· + 1) ⁻¹' A).oracle A.oracle :=
-  Set.oracle_preimage_turingReducible Computable.succ A
+  A.oracle_preimage_turingReducible Computable.succ
