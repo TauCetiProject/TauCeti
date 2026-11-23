@@ -23,8 +23,8 @@ Concrete positive checks, degenerate boundary checks, and sharpness non-examples
   `TauCeti.CAff.ratTopology`;
 * `TauCeti.CAff.IsRationalSheafy` and
   `TauCeti.CAff.isRationalSheafy_iff_isSheafyForEveryPresentation`;
-* `TauCeti.ValuationSpectrum.isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens` and
-  `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_iff_isSheaf_forget`.
+* `TauCeti.ValuationSpectrum.isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens`
+  and `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_iff_isSheaf_forget`.
 -/
 
 open CategoryTheory Opposite TopologicalSpace
@@ -148,7 +148,7 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
     isSheaf_presentationLimitPresheaf_iff_isSheaf_forget P
       S.isRingOfIntegralElements.isPowerBounded_of_mem,
     fun {W} {κ} _ {V} hW hV hcov ↦
-      (isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens P
+      (isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens P
         S.isRingOfIntegralElements.isPowerBounded_of_mem hW hV
         (fun k ↦ (le_iSup V k).trans_eq hcov) ?_).isInducing⟩
   subst hcov
@@ -238,6 +238,7 @@ example (p : ℕ) [Fact p.Prime] :
   · have hopen_emp : IsOpen ({0} : Set ℤ_[p]) := by
       simpa only [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] using hcovZp.isOpen_span ()
     exact _root_.PadicInt.not_isOpen_singleton_zero hopen_emp
-  · exact ratTopology.pullback_stable ψ.op (generate_rationalCoverPresieve_mem_ratTopology hcovZ)
+  · exact ratTopology.pullback_stable ψ.op
+      (generate_rationalCoverPresieve_mem_ratTopology hcovZ.isOpen_span hcovZ.iUnion_eq_univ)
 
 end TauCeti.CAff

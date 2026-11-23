@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
-public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 
 /-!

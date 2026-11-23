@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Yoneda
 public import TauCeti.AlgebraicGeometry.AdicSpace.CAff.Basic
 
 import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
@@ -135,7 +134,10 @@ theorem eval_affineLineVar (X : CAff.{u}) (a : X.ring) :
   rw [← affineLineRingEquiv_X, eval_toRingHom_apply_affineLineRingEquiv]
   exact eval₂_X _ a
 
-private theorem eq_of_toRingHom_affineLineVar {X : CAff.{u}} {f g : affineLine.{u} ⟶ X}
+/-- Extensionality for morphisms out of `CAff.affineLine`: two morphisms `CAff.affineLine ⟶ X` are
+equal if they agree on the coordinate `CAff.affineLineVar`. -/
+@[ext]
+theorem eq_of_toRingHom_affineLineVar {X : CAff.{u}} {f g : affineLine.{u} ⟶ X}
     (hX : f.toRingHom affineLineVar = g.toRingHom affineLineVar) : f = g := by
   apply Pair.Hom.ext
   refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)

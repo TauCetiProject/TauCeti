@@ -230,48 +230,53 @@ theorem isSheaf_restrictedTopology_of_isSheafFor_ofArrows
       ((inducedFunctor (Subtype.val : B → Opens X)).restrictedTopology
         (Opens.grothendieckTopology X))
       ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F) := by
+  let ι := inducedFunctor (Subtype.val : B → Opens X)
+  let isPullback_inf {Z A C : InducedCategory (Opens X) (Subtype.val : B → Opens X)}
+      (f : A ⟶ Z) (g : C ⟶ Z) :
+      @IsPullback (InducedCategory (Opens X) (Subtype.val : B → Opens X)) _
+        ⟨A.val ⊓ C.val, hBinf A.property C.property⟩ A C Z
+        (InducedCategory.homMk (homOfLE inf_le_left))
+        (InducedCategory.homMk (homOfLE inf_le_right))
+        f g := by
+    refine IsPullback.mk' (InducedCategory.hom_ext (Subsingleton.elim _ _))
+      (fun _ _ _ _ _ ↦ InducedCategory.hom_ext (Subsingleton.elim _ _))
+      fun T a b _ ↦ ⟨InducedCategory.homMk (homOfLE (le_inf a.hom.le b.hom.le)),
+        InducedCategory.hom_ext (Subsingleton.elim _ _),
+        InducedCategory.hom_ext (Subsingleton.elim _ _)⟩
   rw [Functor.restrictedTopology, Precoverage.isSheaf_toGrothendieck_iff]
   intro W Y f R hR
-  obtain ⟨ι, U, π, rfl⟩ := R.exists_eq_ofArrows
+  obtain ⟨κ, U, π, rfl⟩ := R.exists_eq_ofArrows
   rw [Precoverage.mem_comap_iff, GrothendieckTopology.mem_toPrecoverage_iff,
     Presieve.map_ofArrows, _root_.Opens.mem_grothendieckTopology] at hR
-  let V : ι → InducedCategory (Opens X) (Subtype.val : B → Opens X) :=
+  let V : κ → InducedCategory (Opens X) (Subtype.val : B → Opens X) :=
     fun i ↦ ⟨Y.val ⊓ (U i).val, hBinf Y.property (U i).property⟩
+  let hVle (i : κ) : V i ⟶ Y := InducedCategory.homMk (homOfLE inf_le_left)
   have hcovV : ⨆ i, (V i).val = Y.val := by
     refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
     obtain ⟨W', g, ⟨_, a, _, ⟨i⟩, -⟩, hxW'⟩ := hR x (f.hom.le hx)
     exact Opens.mem_iSup.mpr ⟨i, hx, a.le hxW'⟩
-  let hVle (i : ι) : V i ⟶ Y := InducedCategory.homMk (homOfLE inf_le_left)
   have hgen : (Sieve.generate (Presieve.ofArrows U π)).pullback f =
-      Sieve.generate (Presieve.ofArrows V hVle) := by
-    refine le_antisymm ?_ ?_
-    · intro Z g hg
-      obtain ⟨_, a, _, ⟨i⟩, -⟩ := hg
-      refine ⟨V i, InducedCategory.homMk (homOfLE (le_inf g.hom.le a.hom.le)), hVle i,
-        Presieve.ofArrows.mk i, InducedCategory.hom_ext (Subsingleton.elim _ _)⟩
-    · rw [Sieve.generate_le_iff]
-      rintro Z _ ⟨i⟩
-      exact ⟨U i, InducedCategory.homMk (homOfLE inf_le_right), π i,
-        Presieve.ofArrows.mk i, InducedCategory.hom_ext (Subsingleton.elim _ _)⟩
-  rw [hgen, ← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
-  have hrat := hcover Y.property (fun i ↦ (V i).property) hcovV
-  rw [Presieve.isSheafFor_arrows_iff] at hrat
-  have hVpi (i : ι) : (inducedFunctor (Subtype.val : B → Opens X)).map (hVle i) =
-      homOfLE ((le_iSup (fun i ↦ (V i).val) i).trans_eq hcovV) := Subsingleton.elim _ _
-  intro x hx
-  have hcompat : Presieve.Arrows.Compatible F
-      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (V i).val) i).trans_eq hcovV)) x := by
-    apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
-    intro i j
-    let Vij : InducedCategory (Opens X) (Subtype.val : B → Opens X) :=
-      ⟨(V i).val ⊓ (V j).val, hBinf (V i).property (V j).property⟩
-    exact hx i j Vij (InducedCategory.homMk (homOfLE inf_le_left))
-      (InducedCategory.homMk (homOfLE inf_le_right))
-      (InducedCategory.hom_ext (Subsingleton.elim _ _))
-  obtain ⟨a, ha, hu⟩ := hrat x hcompat
-  refine ⟨a, fun i ↦ ?_, fun b hb ↦ hu b fun i ↦ ?_⟩
-  · simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hVpi] using ha i
-  · simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hVpi] using hb i
+      Sieve.generate (Presieve.ofArrows V hVle) :=
+    (Sieve.ofArrows_eq_pullback_of_isPullback π fun i ↦ isPullback_inf f (π i)).symm
+  have : (Presieve.ofArrows V hVle).HasPairwisePullbacks :=
+    ⟨by rintro _ _ _ ⟨i⟩ _ ⟨j⟩; exact (isPullback_inf (hVle i) (hVle j)).hasPullback⟩
+  have : ι.PreservesPairwisePullbacks (Presieve.ofArrows V hVle) :=
+    ⟨fun {Y₁ Y₂} {f g} hf hg ↦ by
+      cases hf with | mk i =>
+      cases hg with | mk j =>
+      exact ⟨fun {c} hc ↦
+        ⟨{ lift := fun s ↦ homOfLE ((le_inf (s.π.app .left).le (s.π.app .right).le).trans
+             ((isPullback_inf (hVle i) (hVle j)).isLimit.conePointUniqueUpToIso hc).hom.hom.le)
+           fac := fun _ _ ↦ Subsingleton.elim _ _
+           uniq := fun _ _ _ ↦ Subsingleton.elim _ _ }⟩⟩⟩
+  rw [hgen, ← Presieve.isSheafFor_iff_generate,
+    Presieve.IsSheafFor.comp_iff_of_preservesPairwisePullbacks ι F (Presieve.ofArrows V hVle),
+    Presieve.map_ofArrows]
+  have hpi : (fun i ↦ ι.map (hVle i)) =
+      fun i ↦ homOfLE ((le_iSup (fun i ↦ (V i).val) i).trans_eq hcovV) :=
+    funext fun i ↦ Subsingleton.elim _ _
+  rw [hpi]
+  exact hcover Y.property (fun i ↦ (V i).property) hcovV
 
 end TopologicalSpace.Opens
 

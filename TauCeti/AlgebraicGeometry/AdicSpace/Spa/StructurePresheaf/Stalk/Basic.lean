@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 public import Mathlib.Geometry.RingedSpace.Stalks
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 /-!
@@ -15,15 +14,13 @@ public import Mathlib.Algebra.Category.Ring.FilteredColimits
 
 The presentation-limit presheaf is naturally valued in complete separated topological
 commutative rings. Stalks, however, are algebraic colimits: their topology is discarded. This
-file forgets the topology on sections, packages the result as a `CommRingCat`-valued
-presheafed space, and constructs the canonical germ map from the coordinate ring of every
-rational neighbourhood to the stalk.
+file packages the underlying `CommRingCat`-valued presheaf as a presheafed space and constructs
+the canonical germ map from the coordinate ring of every rational neighbourhood to the stalk.
 
 ## Main definitions
 
-* `TauCeti.ValuationSpectrum.presentationLimitPresheafInCommRingCat` is the underlying
-  commutative-ring presheaf.
-* `TauCeti.ValuationSpectrum.presentationLimitPresheafedSpace` packages it on `Spa(A,A⁺)`.
+* `TauCeti.ValuationSpectrum.presentationLimitPresheafedSpace` packages `Spa(A,A⁺)` with its
+  underlying commutative-ring presheaf.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalGerm` maps the coordinate ring of a
   rational neighbourhood to the stalk at a point.
 
@@ -50,61 +47,6 @@ public section
 universe v
 
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-
-/-- The presentation-limit presheaf after forgetting the topology on its section rings.
-
-This is the presheaf whose stalks are the ring colimits used in the locally ringed-space
-structure. The topology is forgotten only after taking the limits that define sections. -/
-@[expose] noncomputable def presentationLimitPresheafInCommRingCat (P : PairOfDefinition A)
-    (Aplus : Subring A) : (TopCat.of ↥(spa Aplus)).Presheaf CommRingCat.{v} :=
-  presentationLimitPresheaf P Aplus ⋙
-    TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat
-
-/-- Forgetting the topology of the presentation-limit presheaf gives its ring presheaf. -/
-@[simp]
-theorem presentationLimitPresheafInCommRingCat_def (P : PairOfDefinition A)
-    (Aplus : Subring A) :
-    presentationLimitPresheafInCommRingCat P Aplus = presentationLimitPresheaf P Aplus ⋙
-      TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat :=
-  rfl
-
-/-- Evaluating the underlying ring presheaf on an open gives the underlying ring of the
-presentation limit over that open. -/
-theorem presentationLimitPresheafInCommRingCat_obj (P : PairOfDefinition A)
-    (Aplus : Subring A) (V : (Opens ↥(spa Aplus))ᵒᵖ) :
-    (presentationLimitPresheafInCommRingCat P Aplus).obj V =
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-        (presentationLimit (P := P) Aplus V.unop) :=
-  (Functor.congr_obj (presentationLimitPresheafInCommRingCat_def P Aplus) V).trans <|
-    congrArg (TopCommRingCat.isCompleteSeparated.ι ⋙
-      forget₂ TopCommRingCat CommRingCat).obj (presentationLimitPresheaf_obj P Aplus V)
-
-/-- Restriction in the underlying ring presheaf is the underlying morphism of the reindexing map
-between presentation limits. The equality transports account for the sealed evaluation theorem
-`presentationLimitPresheaf_obj`. -/
-theorem presentationLimitPresheafInCommRingCat_map (P : PairOfDefinition A)
-    (Aplus : Subring A) {V W : (Opens ↥(spa Aplus))ᵒᵖ} (h : V ⟶ W) :
-    (presentationLimitPresheafInCommRingCat P Aplus).map h ≫
-        eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus W) =
-      eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus V) ≫
-        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-          (presentationLimitMap (P := P) (leOfHom h.unop)) := by
-  let e := presentationLimitPresheafInCommRingCat_def P Aplus
-  let eV := congrArg
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-    (presentationLimitPresheaf_obj P Aplus V)
-  let eW := congrArg
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-    (presentationLimitPresheaf_obj P Aplus W)
-  have hV : presentationLimitPresheafInCommRingCat_obj P Aplus V =
-      (Functor.congr_obj e V).trans eV := Subsingleton.elim _ _
-  have hW : presentationLimitPresheafInCommRingCat_obj P Aplus W =
-      (Functor.congr_obj e W).trans eW := Subsingleton.elim _ _
-  rw [hV, hW, ← eqToHom_trans (Functor.congr_obj e W) eW,
-    ← eqToHom_trans (Functor.congr_obj e V) eV, ← eqToHom_app e W,
-    ← eqToHom_app e V, (eqToHom e).naturality_assoc]
-  simp only [Functor.comp_map, presentationLimitPresheaf_map, Functor.map_comp, eqToHom_map,
-    Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-- `Spa(A,A⁺)` equipped with the underlying commutative-ring presentation-limit presheaf. -/
 noncomputable def presentationLimitPresheafedSpace (P : PairOfDefinition A)
@@ -137,86 +79,6 @@ theorem presentationLimitPresheafedSpace_presheaf (P : PairOfDefinition A)
   rw [presentationLimitPresheafedSpace_def, presentationLimitPresheafInCommRingCat_def]
 
 variable {P : PairOfDefinition A} {Aplus : Subring A}
-
-/-- On a rational open, the underlying ring of the presentation limit is the underlying ring of
-its rational coordinate ring. -/
-noncomputable def presentationLimitRationalIsoInCommRingCat
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
-    (presentationLimitPresheafInCommRingCat P Aplus).obj
-        (Opposite.op (spaBasicOpen Aplus p.num p.den)) ≅
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-        p.completionLocObj :=
-  (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapIso
-    (eqToIso (presentationLimitPresheaf_obj P Aplus
-      (Opposite.op (spaBasicOpen Aplus p.num p.den))) ≪≫
-        presentationLimitRationalIso Aplus hAplus p hp)
-
-private theorem presentationLimitRationalIsoInCommRingCat_def
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
-    presentationLimitRationalIsoInCommRingCat hAplus p hp =
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).mapIso
-        (eqToIso (presentationLimitPresheaf_obj P Aplus
-          (Opposite.op (spaBasicOpen Aplus p.num p.den))) ≪≫
-            presentationLimitRationalIso Aplus hAplus p hp) :=
-  rfl
-
-/-- The rational comparison isomorphism is the underlying ring map of the comparison
-`presentationLimitRationalIso`, after transporting along `presentationLimitPresheaf_obj`. -/
-@[simp]
-theorem presentationLimitRationalIsoInCommRingCat_hom
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
-    (presentationLimitRationalIsoInCommRingCat hAplus p hp).hom =
-      eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus
-          (Opposite.op (spaBasicOpen Aplus p.num p.den))) ≫
-        (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-          (presentationLimitRationalIso Aplus hAplus p hp).hom := by
-  rw [presentationLimitRationalIsoInCommRingCat_def]
-  simp only [Functor.mapIso_hom, Iso.trans_hom, eqToIso.hom, Functor.comp_map,
-    Functor.map_comp, eqToHom_map]
-  rfl
-
-/-- The inverse rational comparison is the underlying inverse comparison followed by transport
-along `presentationLimitPresheafInCommRingCat_obj`. -/
-@[simp]
-theorem presentationLimitRationalIsoInCommRingCat_inv
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
-    (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv =
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-          (presentationLimitRationalIso Aplus hAplus p hp).inv ≫
-        eqToHom (presentationLimitPresheafInCommRingCat_obj P Aplus
-          (Opposite.op (spaBasicOpen Aplus p.num p.den))).symm := by
-  rw [presentationLimitRationalIsoInCommRingCat_def]
-  simp only [Functor.mapIso_inv, Iso.trans_inv, eqToIso.inv, Functor.comp_map,
-    Functor.map_comp, eqToHom_map]
-  rfl
-
-/-- The rational-open comparison isomorphisms identify restriction with the comparison map of
-rational coordinate rings, after forgetting topology. -/
-theorem presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p q : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
-    (hq : IsOpen (Ideal.span (q.num : Set A) : Set A))
-    (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den) :
-    (presentationLimitRationalIsoInCommRingCat hAplus p hp).inv ≫
-        (presentationLimitPresheafInCommRingCat P Aplus).map
-          (homOfLE h).op ≫
-        (presentationLimitRationalIsoInCommRingCat hAplus q hq).hom =
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
-        (homOfRationalSubsetSubset Aplus hAplus
-          (spaBasicOpen_le_spaBasicOpen_iff.mp h)) := by
-  simpa only [presentationLimitRationalIsoInCommRingCat,
-    presentationLimitPresheafInCommRingCat, Iso.trans_hom, Iso.trans_inv,
-    Functor.mapIso_hom, Functor.mapIso_inv, Functor.comp_map,
-    presentationLimitPresheaf_map, ← Functor.map_comp, Category.assoc, eqToIso.hom,
-    eqToIso.inv, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl, Functor.map_id,
-    Category.id_comp, Category.comp_id] using congrArg
-      (fun f ↦ (TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget₂ TopCommRingCat CommRingCat).map f)
-      (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hp hq h)
 
 /-- The germ map from a rational coordinate ring to the stalk at a point of the corresponding
 rational open. It first identifies the coordinate ring with the presentation-limit sections and

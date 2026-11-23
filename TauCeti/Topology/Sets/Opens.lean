@@ -125,11 +125,9 @@ theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
 theorem exists_finite_subcover_of_isCompact {W : Opens X} (hW : IsCompact (W : Set X))
     {ι : Type*} {U : ι → Opens X} (hcov : ⨆ i, U i = W) :
     ∃ I : Finset ι, (⨆ k : ↥I, U k.val) = W := by
-  obtain ⟨I, hIW⟩ := hW.elim_finite_subcover (fun i ↦ (U i : Set X))
-    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
-  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.val).trans_eq hcov) fun x hx ↦ ?_⟩
-  obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
-  exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
+  obtain ⟨I, hIW⟩ := ((Opens.isCompactElement_iff W).mpr hW).exists_finset_of_le_iSup U hcov.ge
+  exact ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.val).trans_eq hcov)
+    (by simpa only [iSup_subtype] using hIW)⟩
 
 /-- Every member of a pairwise-disjoint open cover is clopen, without a finiteness assumption
 on the indexing type. -/

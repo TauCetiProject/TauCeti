@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Polynomial.IsIntegral
 
-import Mathlib.RingTheory.Algebraic.Integral
 import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.Tactic.ComputeDegree
 

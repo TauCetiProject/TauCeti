@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.Topology.Category.TopCommRingCat.Sheaf
 import TauCeti.Topology.Homeomorph.Inducing
@@ -31,16 +32,16 @@ coordinate ring `B k`, which is completely metrizable. When the set-level preshe
 sheaf condition for `(V k)`, the product restriction map `B → ∏ k, B k` is injective and its range
 is cut out by pairwise overlap equalities in the Hausdorff rings of sections over `V k ⊓ V l`,
 hence is closed. Henkel's open mapping theorem then makes the product restriction map strict and
-therefore a topological embedding. Since rational opens are quasi-compact, arbitrary rational
+therefore a closed topological embedding. Since rational opens are quasi-compact, arbitrary rational
 covers reduce to finite subcovers, and `TauCeti.TopCommRingCat.isSheafFor_of_isSheafFor_forget`
 upgrades set-level gluing to topological-ring gluing on the basis of rational opens.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens`:
+* `TauCeti.ValuationSpectrum.isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens`:
   over a Tate ring, if the underlying presheaf of sets satisfies the sheaf condition for a
   countable family of rational open subsets of a rational open, then the product restriction map
-  on presentation limits is a topological embedding.
+  on presentation limits is a closed topological embedding.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens`:
   over a Tate ring with `A⁺ ⊆ A°`, set-level gluing for finite rational covers of rational opens
   implies that `presentationLimitPresheaf P Aplus` is a sheaf of complete separated topological
@@ -67,46 +68,18 @@ namespace TauCeti.ValuationSpectrum
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
 
-/-- Helper packaging a rational open `U ∈ spaRationalOpens Aplus` with a concrete admissible
-presentation `p : Presentation P` and the isomorphism `presentationLimit Aplus U ≅ A⟨p⟩` in
-`TopCommRingCat`. -/
-private noncomputable def rationalLimitRingIso (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-    {U : Opens ↥(spa Aplus)} (hU : U ∈ spaRationalOpens Aplus) :
-    Σ (p : Presentation P),
-      letI := locUniformSpace P p.num p.den (Localization.Away p.den) p.hasDenominatorPower
-      letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-      letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-      (presentationLimit (P := P) Aplus U).obj ≅
-        TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) := by
-  have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  have hex := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
-  let T := hex.choose
-  let s := hex.choose_spec.choose
-  have hT : IsOpen (Ideal.span (T : Set A) : Set A) := hex.choose_spec.choose_spec.1
-  have hUeq : U = spaBasicOpen Aplus T s := hex.choose_spec.choose_spec.2
-  let p : Presentation P :=
-    ⟨T, s, hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT⟩
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  refine ⟨p, ?_⟩
-  exact TopCommRingCat.isCompleteSeparated.ι.mapIso
-    (eqToIso (congrArg (presentationLimit (P := P) Aplus) hUeq) ≪≫
-      presentationLimitRationalIso Aplus hAplus p hT) ≪≫
-    eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)
-
 /-- **Strictness of restriction on a countable rational family.** Over a Tate ring `A`, if
 `A⁺ ⊆ A°` and the underlying presheaf of sets satisfies the sheaf condition for a countable family
 `(V k)` of rational open subsets of a rational open `W`, then the product restriction map on
-presentation limits is a topological embedding. -/
-theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
+presentation limits is a closed topological embedding. -/
+theorem isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
     (hW : W ∈ spaRationalOpens Aplus) {κ : Type*} [Countable κ] {V : κ → Opens ↥(spa Aplus)}
     (hV : ∀ k, V k ∈ spaRationalOpens Aplus) (hVW : ∀ k, V k ≤ W)
     (hSheaf : (Presieve.ofArrows V fun k ↦ homOfLE (hVW k)).IsSheafFor
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat)) :
-    IsEmbedding fun (x : presentationLimit (P := P) Aplus W) (k : κ) ↦
+    IsClosedEmbedding fun (x : presentationLimit (P := P) Aplus W) (k : κ) ↦
       (presentationLimitMap (P := P) (hVW k)).hom.val x := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   -- Extract the coordinate ring `B ≃ presentationLimit W` and `B_k ≃ presentationLimit (V k)`.
@@ -118,9 +91,6 @@ theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
   have _ := isTateRing_completion_locTopology_of_isTateRing P pW.num pW.den _
     pW.hasDenominatorPower
   let B := UniformSpace.Completion (Localization.Away pW.den)
-  have _ : (𝓝 (0 : B)).IsCountablyGenerated :=
-    (completionLocalization P pW.num pW.den _ pW.hasDenominatorPower).hasBasis_nhds_zero
-      |>.isCountablyGenerated
   let dataV (k : κ) := rationalLimitRingIso P hAplus (hV k)
   let pV (k : κ) : Presentation P := (dataV k).1
   let uV (k : κ) := locUniformSpace P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
@@ -128,13 +98,12 @@ theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
     isUniformAddGroup_locUniformSpace P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
   have rV (k : κ) :=
     isTopologicalRing_locUniformSpace P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
+  have hHuberV (k : κ) :=
+    isHuberRing_completion_locTopology P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
   let Bk (k : κ) := UniformSpace.Completion (Localization.Away (pV k).den)
   let isoV (k : κ) := (dataV k).2
-  have nhdsV (k : κ) : (𝓝 (0 : Bk k)).IsCountablyGenerated :=
-    (completionLocalization P (pV k).num (pV k).den _
-      (pV k).hasDenominatorPower).hasBasis_nhds_zero.isCountablyGenerated
   have uCountV (k : κ) : (uniformity (Bk k)).IsCountablyGenerated :=
-    have := nhdsV k
+    have := hHuberV k
     IsUniformAddGroup.uniformity_countably_generated
   have cMetV (k : κ) : IsCompletelyMetrizableSpace (Bk k) :=
     have := uCountV k
@@ -151,11 +120,9 @@ theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
         simp_rw [hsmul]
         exact continuous_const.mul (continuous_apply k) }
   have _ : IsCompletelyMetrizableSpace N := IsCompletelyMetrizableSpace.pi_countable
-  let L : B →ₗ[B] N :=
-    { toFun b k := (φHom k).val b
-      map_add' b₁ b₂ := funext fun k ↦ (φHom k).val.map_add b₁ b₂
-      map_smul' c b := funext fun k ↦ (φHom k).val.map_mul c b }
-  have hLcont : Continuous (L : B → N) := continuous_pi fun k ↦ (φHom k).property
+  let L : B →ₗ[B] N := LinearMap.toSpanSingleton B N (fun _ ↦ 1)
+  have hLcont : Continuous (L : B → N) := continuous_pi fun k ↦ by
+    simpa [L, hsmul] using (φHom k).property
   -- Relate `L` to the presentation-limit restriction map `r` via homeomorphisms.
   let eW : presentationLimit (P := P) Aplus W ≃ₜ B :=
     TopCat.homeoOfIso ((forget₂ _root_.TopCommRingCat TopCat).mapIso isoW)
@@ -170,6 +137,8 @@ theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
     have h1 : (isoW.hom ≫ φHom k) =
         (presentationLimitMap (P := P) (hVW k)).hom ≫ (isoV k).hom := by
       simp [φHom]
+    dsimp [L]
+    rw [LinearMap.toSpanSingleton_apply, hsmul, mul_one]
     exact ConcreteCategory.congr_hom h1 x
   -- Extract injectivity and closed range of `r` from the set-level sheaf condition.
   have hglue := (isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P hVW).mp hSheaf
@@ -181,8 +150,24 @@ theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
       (ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom) (presentationLimitMap_comp (P := P)
         (Aplus := Aplus) (hVW l) (inf_le_right : V k ⊓ V l ≤ V l))) x).symm
   have hr_inj : Function.Injective r := fun x₁ x₂ hx ↦ by
-    obtain ⟨_, _, hu⟩ := hglue (r x₁) (hr_compat x₁)
-    exact (hu x₁ fun _ ↦ rfl).trans (hu x₂ fun k ↦ congrFun hx.symm k).symm
+    let eW₀ : (presentationLimitPresheaf P Aplus).obj (op W) ≅
+        presentationLimit (P := P) Aplus W :=
+      eqToIso (presentationLimitPresheaf_obj P Aplus (op W))
+    have hinv (x : presentationLimit (P := P) Aplus W) :
+        (eqToHom (presentationLimitPresheaf_obj P Aplus (op W))).hom.val (eW₀.inv.hom.val x) =
+          x :=
+      ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom) eW₀.inv_hom_id) x
+    have hy : eW₀.inv.hom.val x₁ = eW₀.inv.hom.val x₂ := hSheaf.isSeparatedFor.ext fun _ _ hg ↦ by
+      cases hg with | mk k =>
+      refine (ConcreteCategory.bijective_of_isIso
+        (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k))))).1 ?_
+      change (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k)))).hom.val _ =
+        (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k)))).hom.val _
+      rw [eqToHom_apply_presentationLimitPresheaf_map_apply,
+        eqToHom_apply_presentationLimitPresheaf_map_apply, hinv x₁, hinv x₂]
+      exact congrFun hx k
+    rw [← hinv x₁, ← hinv x₂]
+    exact congrArg eW₀.hom.hom.val hy
   have hr_range : Set.range r = { y | ∀ k l : κ,
       (presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.val (y k) =
         (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.val (y l) } :=
@@ -206,8 +191,9 @@ theorem isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
   have hL_emb : IsEmbedding (L : B → N) :=
     isEmbedding_iff_isStrictMap_injective.mpr
       ⟨L.isStrictMap_of_isClosed_range_of_isTateRing hLcont.continuousAt hL_closed, hL_inj⟩
-  exact ePi.isEmbedding.of_comp_iff.mp <|
+  have hr_emb : IsEmbedding r := ePi.isEmbedding.of_comp_iff.mp <|
     (funext hcomm : (L : B → N) ∘ eW = ePi ∘ r) ▸ hL_emb.comp eW.isEmbedding
+  exact ⟨hr_emb, hr_closed⟩
 
 /-- **Topological sheafhood from finite rational covers of rational opens.** Over a Tate ring `A`
 with `A⁺ ⊆ A°`, if the presheaf of sets underlying `presentationLimitPresheaf P Aplus` satisfies
@@ -234,7 +220,7 @@ theorem isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens
   obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens hW hcov
   have hIndI := (isInducing_restrictionMap_iff_isInducing_presentationLimitMap P
     (fun k : ↥I ↦ (le_iSup (fun k : ↥I ↦ U k.val) k).trans_eq hcovI)).mpr
-      (isEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens P hAplus hW
+      (isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens P hAplus hW
         (fun k : ↥I ↦ hU k.val) (fun k : ↥I ↦ (le_iSup (fun k : ↥I ↦ U k.val) k).trans_eq hcovI)
         (hfin (V := fun k : ↥I ↦ U k.val) hW (fun k ↦ hU k.val) hcovI)).isInducing
   let F := presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι
