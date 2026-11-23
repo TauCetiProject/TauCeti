@@ -50,9 +50,9 @@ The comparison of smooth with singular chains passes to smooth homotopy retracts
 in every degree `f` and `g` exhibit the comparison map of `M` as a retract, in the arrow category,
 of that of `N`. A retract of an isomorphism is an isomorphism, so if the comparison is a
 quasi-isomorphism for `N` then it is one for `M`
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy`). Unlike transport
-along mutually inverse smooth maps, this needs no inverse of `f`, only a smooth homotopy from the
-identity to `g ∘ f`.
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy`). This needs no
+inverse of `f`, only a smooth homotopy from the identity to `g ∘ f`; for mutually inverse smooth
+maps, take the constant homotopy `Prod.snd`.
 
 Homotopy invariance is an input of the comparison of smooth with continuous singular homology by a
 Mayer–Vietoris induction; its consequences for smoothly contractible manifolds are in
