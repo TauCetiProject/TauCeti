@@ -39,10 +39,12 @@ in a unitary representation is the adjoint of that of `a`.
 
 * `TauCeti.LieTestFunction.support_convolution_subset`,
   `TauCeti.LieTestFunction.tsupport_convolution_subset`: `supp (a * b) ⊆ supp a * supp b`.
+* `TauCeti.LieTestFunction.conj_convolution`: `conj (a * b) = conj a * conj b`.
 * `TauCeti.LieTestFunction.rightTranslate_convolution`: `R(y) (a * b) = a * R(y) b`.
 * `TauCeti.LieTestFunction.leftTranslate_convolution`: `L(y) (a * b) = L(y) a * b`.
 * `TauCeti.LieTestFunction.convolution_assoc`: convolution is associative.
 * `TauCeti.LieTestFunction.integral_convolution`: `∫ a * b = (∫ a) * ∫ b`.
+* `TauCeti.LieTestFunction.inversion_convolution`: `(a * b)^∨ = b^∨ * a^∨` for inversion.
 * `TauCeti.LieTestFunction.involution_convolution`: `(a * b)^* = b^* * a^*`.
 
 ## References
@@ -161,6 +163,12 @@ theorem rightTranslate_convolution (y : G) (a b : LieTestFunction I G) :
     rightTranslate y (convolution μ a b) = convolution μ a (rightTranslate y b) :=
   ext fun g ↦ by simp [convolution_apply, mul_assoc]
 
+/-- Complex conjugation distributes over convolution: `conj (a * b) = conj a * conj b`. -/
+theorem conj_convolution (a b : LieTestFunction I G) :
+    conj (convolution μ a b) = convolution μ (conj a) (conj b) := by
+  ext g
+  simp only [conj_apply, convolution_apply, ← integral_conj, map_mul]
+
 /-! ### Left-invariant measures -/
 
 section LeftInvariant
@@ -210,6 +218,16 @@ theorem integral_convolution (a b : LieTestFunction I G) :
       fun _ _ ↦ mem_tsupport_of_mul_ne_zero a b), ← integral_mul_const]
   congr 1 with x
   rw [integral_const_mul, integral_mul_left_eq_self (fun g ↦ b g) x⁻¹]
+
+/-- Inversion `a g ↦ a g⁻¹` reverses convolution products with respect to a left-invariant measure:
+`(a * b)^∨ = b^∨ * a^∨`. -/
+theorem inversion_convolution (a b : LieTestFunction I G) :
+    inversion (convolution μ a b) = convolution μ (inversion b) (inversion a) := by
+  ext g
+  simp only [inversion_apply, convolution_apply]
+  conv_rhs => rw [← integral_mul_left_eq_self _ g]
+  congr 1 with x
+  simp [mul_comm]
 
 /-- The involution `a^* g = conj (a g⁻¹)` reverses convolution products with respect to a
 left-invariant measure: `(a * b)^* = b^* * a^*`. -/
