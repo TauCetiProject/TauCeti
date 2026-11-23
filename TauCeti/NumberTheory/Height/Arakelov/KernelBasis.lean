@@ -669,13 +669,8 @@ theorem exists_basis_ker_mulVecLin_prod_absHeight_le (A : Matrix m ι K) :
             (((Fintype.card ι - A.rank : ℕ) * nrComplexPlaces K : ℝ) / finrank ℚ K) *
           |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
           (span K (Set.range A.row)).subspaceHeight := by
-  obtain ⟨x, hx_li, _, hx_ker, hx_le⟩ :=
-    A.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le
-  obtain ⟨b, hb, hb_int⟩ := Submodule.exists_basis_of_linearIndependent_integerPoints
-    A.finrank_ker_mulVecLin hx_li fun j ↦
-      mem_integerPoints.mpr (by
-        simpa only [LinearMap.mem_ker, Matrix.mulVecLin_apply] using hx_ker j)
-  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
+  rw [← A.finrank_ker_mulVecLin, ← A.subspaceHeight_ker_mulVecLin]
+  exact (LinearMap.ker A.mulVecLin).exists_basis_mem_range_algebraMap_prod_absHeight_le
 
 open scoped Classical in
 /-- `Basis` packaging of `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`: the
@@ -694,12 +689,8 @@ theorem exists_basis_ker_mulVecLin_prod_height2_le (A : Matrix m ι K) :
               nrComplexPlaces K) ^ (finrank ℚ K : ℝ)⁻¹ *
           |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
           (span K (Set.range A.row)).subspaceHeight := by
-  obtain ⟨x, hx_li, _, hx_ker, hx_le⟩ := A.exists_linearIndependent_mulVec_eq_zero_prod_height2_le
-  obtain ⟨b, hb, hb_int⟩ := Submodule.exists_basis_of_linearIndependent_integerPoints
-    A.finrank_ker_mulVecLin hx_li fun j ↦
-      mem_integerPoints.mpr (by
-        simpa only [LinearMap.mem_ker, Matrix.mulVecLin_apply] using hx_ker j)
-  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
+  rw [← A.finrank_ker_mulVecLin, ← A.subspaceHeight_ker_mulVecLin]
+  exact (LinearMap.ker A.mulVecLin).exists_basis_mem_range_algebraMap_prod_height2_le
 
 end NumberField
 
