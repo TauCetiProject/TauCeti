@@ -220,11 +220,11 @@ section GradedPairing
 variable [CommRing k] [TopologicalSpace k] {X Y Z : TopRep.{max v w} k G}
   {M₁ M₂ M₃ : TopRep.{max v w} k G}
   {ℳ₁ : ℤ → Submodule k M₁.V} {hρ₁ : ∀ n g x, x ∈ ℳ₁ n → M₁.ρ g x ∈ ℳ₁ n} {d₁ : M₁ ⟶ M₁}
-  {hd₁ : TauCeti.LinearMap.IsHomogeneous d₁.hom.toLinearMap ℳ₁ ℳ₁ 1} {hdd₁ : d₁ ≫ d₁ = 0}
+  {hd₁ : LinearMap.IsHomogeneous d₁.hom.toLinearMap ℳ₁ ℳ₁ 1} {hdd₁ : d₁ ≫ d₁ = 0}
   {ℳ₂ : ℤ → Submodule k M₂.V} {hρ₂ : ∀ n g x, x ∈ ℳ₂ n → M₂.ρ g x ∈ ℳ₂ n} {d₂ : M₂ ⟶ M₂}
-  {hd₂ : TauCeti.LinearMap.IsHomogeneous d₂.hom.toLinearMap ℳ₂ ℳ₂ 1} {hdd₂ : d₂ ≫ d₂ = 0}
+  {hd₂ : LinearMap.IsHomogeneous d₂.hom.toLinearMap ℳ₂ ℳ₂ 1} {hdd₂ : d₂ ≫ d₂ = 0}
   {ℳ₃ : ℤ → Submodule k M₃.V} {hρ₃ : ∀ n g x, x ∈ ℳ₃ n → M₃.ρ g x ∈ ℳ₃ n} {d₃ : M₃ ⟶ M₃}
-  {hd₃ : TauCeti.LinearMap.IsHomogeneous d₃.hom.toLinearMap ℳ₃ ℳ₃ 1} {hdd₃ : d₃ ≫ d₃ = 0}
+  {hd₃ : LinearMap.IsHomogeneous d₃.hom.toLinearMap ℳ₃ ℳ₃ 1} {hdd₃ : d₃ ≫ d₃ = 0}
   (c₁ : ResolutionContraction X (M₁.gradedCochainComplex ℳ₁ hρ₁ d₁ hd₁ hdd₁))
   (c₂ : ResolutionContraction Y (M₂.gradedCochainComplex ℳ₂ hρ₂ d₂ hd₂ hdd₂))
   (c₃ : ResolutionContraction Z (M₃.gradedCochainComplex ℳ₃ hρ₃ d₃ hd₃ hdd₃))
@@ -271,7 +271,7 @@ theorem gradedCohomologyClass_pairing [LocallyCompactSpace G]
   -- the differential of `gradedCochainComplex` into any degree `j = i + 1` is `d`
   have hdv {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
       {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
-      {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+      {hd : LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
       (i j : ℕ) (hij : i + 1 = j) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X i).V) :
       (((M.gradedCochainComplex ℳ hρ d hd hdd).d i j).hom v).val = d.hom v.val := by
     subst hij

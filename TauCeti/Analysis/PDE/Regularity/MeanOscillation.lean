@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 public import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
-import TauCeti.Analysis.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -193,9 +193,6 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
   set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ :=
     fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖
   have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hK : 0 ≤ K :=
-    (norm_nonneg (matrixBilinearForm (a x₀) - matrixBilinearForm A)).trans
-      (haK x₀ (mem_ball_self hr))
   have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
@@ -205,7 +202,6 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
   have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hgq
   set Iθ := ∫ x in ball x₀ r, θ x
   set Ig := ∫ x in ball x₀ r, ‖g x‖ ^ (2 * q)
-  have hIg : 0 ≤ Ig := integral_nonneg fun x => by positivity
   have key :=
     setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_norm_matrixBilinearForm_sub_le
       hA ha haK hu hball hGc hρ hρr
@@ -224,9 +220,8 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
     havg r θ, havg r (fun x => ‖g x‖ ^ (2 * q)), hVρ]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm]
+    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
     exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
-      (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))) hIg
       hq.symm.inv_add_inv_eq_one
   rw [hsplit]
   have hs : 0 < ρ / r := div_pos hρ hr
