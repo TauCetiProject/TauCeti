@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Semilinear
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 
@@ -156,9 +156,9 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
       (Eventually.of_forall fun z ↦ by
         rw [Real.norm_eq_abs, Real.norm_of_nonneg (by linarith [hn1 z])]
         exact hvbound z)
-  have hvC (z : ℂ) : v z ≤ 2 := by
+  have hvC (z : ℂ) : |v z| ≤ 2 := by
     have h0 : 0 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by positivity
-    linarith [le_abs_self (v z), hvbound z]
+    linarith [hvbound z]
   -- `v` solves `Δv = (exp v - 1) / 4 + g` with `g` smooth and compactly supported.
   set g : ℂ → ℝ := fun z ↦ Δ v z - 1 / 4 * (Real.exp (v z) - 1) with hg_def
   have hgc : ContDiff ℝ ∞ g :=
