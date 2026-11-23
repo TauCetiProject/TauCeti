@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.Topology.CWComplex.Classical.CWType
 
 /-!
@@ -16,7 +16,7 @@ Milnor's classifying space `TauCeti.classifyingSpace G` carries a CW structure
 (`TauCeti.instCWComplexClassifyingSpace` in `TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex`)
 and hence has CW type. The strict functor
 `TauCeti.classifyingSpaceFunctor : GrpCat ⥤ BasedTopologicalSpace` (defined in
-`TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality`) sends `G` to `classifyingSpace G`
+`TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic`) sends `G` to `classifyingSpace G`
 equipped with its base point. This module bridges those two files by providing the `CWType`
 instance on `(classifyingSpaceFunctor.obj G).carrier`.
 

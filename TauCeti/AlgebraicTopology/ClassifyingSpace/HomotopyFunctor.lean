@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EssentialImage
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
 public import TauCeti.Topology.CWComplex.Classical.CWType
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.CWType
@@ -21,7 +21,7 @@ import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 Milnor's classifying space is strictly functorial in the group
 (`MonoidHom.classifyingSpaceMap`), giving the functor
 `TauCeti.classifyingSpaceFunctor : GrpCat ⥤ BasedTopologicalSpace` to based spaces (defined in
-`TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality`). Composing with the quotient by
+`TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic`). Composing with the quotient by
 pointed homotopy gives the classifying-space functor
 `TauCeti.classifyingSpaceHomotopyFunctor : GrpCat ⥤ PointedHomotopyCat` to the pointed homotopy
 category, which the strict functor refines by construction.

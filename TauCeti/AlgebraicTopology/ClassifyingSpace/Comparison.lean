@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.HomotopyEquiv
 import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.CWType
