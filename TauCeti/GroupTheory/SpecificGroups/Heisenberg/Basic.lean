@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 public import Mathlib.LinearAlgebra.Matrix.Notation
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
@@ -65,7 +65,7 @@ group.
 public section
 
 open Subgroup
-open scoped commutatorElement
+open scoped commutatorElement Matrix
 
 namespace TauCeti
 
@@ -229,6 +229,12 @@ def toMatrix : HeisenbergGroup R →* Matrix (Fin 3) (Fin 3) R where
 theorem toMatrix_apply (a : HeisenbergGroup R) :
     toMatrix a = !![1, a.x, a.z; 0, 1, a.y; 0, 0, 1] := (rfl)
 
+/-- The Heisenberg matrix acts on vectors by its three coordinate formulas. -/
+theorem toMatrix_mulVec (a : HeisenbergGroup R) (v : Fin 3 → R) :
+    toMatrix a *ᵥ v = ![v 0 + a.x * v 1 + a.z * v 2, v 1 + a.y * v 2, v 2] := by
+  ext i
+  fin_cases i <;> simp [toMatrix_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+
 /-- A group element is determined by its matrix. -/
 theorem toMatrix_injective : Function.Injective (toMatrix : HeisenbergGroup R → _) := by
   intro a b h
@@ -371,9 +377,9 @@ theorem isPGroup_zmod (p : ℕ) : IsPGroup p (HeisenbergGroup (ZMod p)) :=
 /-- The central element with third coordinate one in the integer Heisenberg group is not a
 proper power. -/
 theorem not_isProperPower_mk_zero_zero_one :
-    ¬ Group.IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
+    ¬ IsProperPower (⟨0, 0, 1⟩ : HeisenbergGroup ℤ) := by
   intro h
-  obtain ⟨y, n, hn, heq⟩ := Group.isProperPower_iff.mp h
+  obtain ⟨y, n, hn, heq⟩ := isProperPower_iff.mp h
   have hx := congrArg HeisenbergGroup.x heq
   have hy := congrArg HeisenbergGroup.y heq
   simp only [pow_eq, Int.nsmul_eq_mul, zero_eq_mul, Int.natCast_eq_zero] at hx hy

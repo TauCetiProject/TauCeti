@@ -14,7 +14,7 @@ import TauCeti.Analysis.PDE.Vortex.Asymptotics
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Polynomial.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
-import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
 import TauCeti.MeasureTheory.Function.LpSeminorm.Exp
 

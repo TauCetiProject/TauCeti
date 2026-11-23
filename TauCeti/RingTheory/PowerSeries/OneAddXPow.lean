@@ -36,6 +36,7 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 ## Main results
 
 * `PowerSeries.one_add_X_pow_sub_one_eq_X_pow`: in characteristic `p`, `ω_n = X ^ pⁿ`.
+* `PowerSeries.one_add_X_pow_sub_one_ne_zero`: `(1 + X) ^ N - 1 ≠ 0` for `N ≠ 0`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot`: for a prime `ϖ` of a
   local domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 * `PowerSeries.one_add_X_pow_sub_one_mem_comap_constantCoeff_pow`: `ω_n` lies in the
@@ -62,6 +63,14 @@ theorem one_add_X_pow_sub_one_eq_X_pow [Fact p.Prime] [CharP O p] (n : ℕ) :
     (1 + X : O⟦X⟧) ^ p ^ n - 1 = X ^ p ^ n := by
   have : CharP O⟦X⟧ p := charP_of_injective_ringHom C_injective p
   rw [add_pow_char_pow, one_pow, add_sub_cancel_left]
+
+/-- The series `(1 + X) ^ N - 1` is nonzero for `N ≠ 0`: it is the image of a monic polynomial of
+degree `N`. -/
+theorem one_add_X_pow_sub_one_ne_zero [Nontrivial O] {N : ℕ} (hN : N ≠ 0) :
+    (1 + X : O⟦X⟧) ^ N - 1 ≠ 0 := fun h ↦ by
+  refine (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := O) hN).ne_zero ?_
+  rw [← Polynomial.coe_eq_zero_iff]
+  simpa using h
 
 /-- Over a local domain `O` with a prime `ϖ`, `(1 + X) ^ N - 1` acts injectively on
 `O⟦X⟧ ⧸ (ϖ ^ m)` for `N ≠ 0`; in particular `(O⟦X⟧ ⧸ (ϖ ^ m))[ω_n] = 0` for
