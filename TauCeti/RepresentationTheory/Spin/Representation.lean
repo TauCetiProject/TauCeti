@@ -30,7 +30,8 @@ parities of the ambient dimension: in *positive* even dimension it splits off th
 blocks, while in odd dimension it is still everything. Dimension zero is the degenerate exception
 to the even description, `W` being `⊥` there, so that `S = K` is one-dimensional, the odd block is
 zero and the even action is again onto. These parity comparisons are proved elsewhere; this file
-proves only the factorization and the surjectivity of the full Clifford action.
+proves the factorization, the surjectivity of the full Clifford action and the resulting
+description of the action of central Clifford elements by scalars.
 
 ## Main definitions and results
 
