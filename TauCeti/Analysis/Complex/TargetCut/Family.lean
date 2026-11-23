@@ -30,9 +30,10 @@ near `u p₀ z` it is the zero set of a function `g` with values in `ℂ`, such 
 derivative of `g ∘ u p₀` at `z` is invertible. Near `z` the cut points of `u p` are then the zeros
 of `g ∘ u p`, and by the persistence of nondegenerate zeros
 (`IsCompact.eventually_exists_equiv_sep_eq_zero`) each map `u p` near `u p₀` has exactly one cut
-point near `z`, at which it is again transverse. Away from these points `u p₀` does not meet `D`,
-on a compact set by continuity and near `∞` by a hypothesis on the family at `∞`, and neither does
-`u p` for `p` near `p₀`. Hence:
+point near `z`, at which it is again transverse. Away from these points neither `u p₀` nor `u p`
+for `p` near `p₀` meets `D`: near `∞` by the hypothesis that, for `p` near `p₀`, the maps `u p` do
+not meet `D` outside a common compact set (uniformly near `∞`), and on that compact set by
+continuity. Hence:
 
 * every map `u p` with `p` near `p₀` meets `D` transversally at each of its cut points, and its cut
   points are in a bijection with those of `u p₀` moving each by at most any prescribed `ε > 0`
@@ -108,8 +109,9 @@ theorem IsTransverseCutFamilyAt.isTransverseCutAt {z : ℂ} (hp₀ : p₀ ∈ s)
 /-- **The cut point near a transverse cut point persists.** Let `D` be cut out by `g` on an open
 set `W`, with `g ∘ u p` differentiable where `u p` takes values in `W` and its derivative continuous
 in `(p, w)`, and let `z` be the only cut point of `u p₀` in a closed ball `B` around `z` which
-`u p₀` maps into `W`, with `g ∘ u p₀` of invertible derivative at `z`. Then for `p ∈ s` near `p₀`
-the map `u p` has exactly one cut point in `B`, at which it meets `D` transversally. -/
+`u p` maps into `W` for all `p ∈ s` near `p₀`, with `g ∘ u p₀` of invertible derivative at `z`.
+Then for `p ∈ s` near `p₀` the map `u p` has exactly one cut point in `B`, at which it meets `D`
+transversally. -/
 private theorem eventually_exists_inter_closedBall_eq_singleton (hp₀ : p₀ ∈ s)
     (hu : ContinuousOn (Function.uncurry u) (s ×ˢ univ)) {W : Set X} {g : X → ℂ}
     (hW : IsOpen W) (hWD : ∀ x ∈ W, x ∈ D ↔ g x = 0) (hg : ContinuousOn g W)
@@ -117,16 +119,10 @@ private theorem eventually_exists_inter_closedBall_eq_singleton (hp₀ : p₀ �
     (hgd' : ContinuousOn (fun q : P × ℂ ↦ fderiv ℝ (g ∘ u q.1) q.2)
       {q | q.1 ∈ s ∧ u q.1 q.2 ∈ W})
     {z : ℂ} (hz : (fderiv ℝ (g ∘ u p₀) z).IsInvertible) {r : ℝ} (hr : 0 < r)
-    (hrW : closedBall z r ⊆ u p₀ ⁻¹' W) (hrD : u p₀ ⁻¹' D ∩ closedBall z r = {z}) :
+    (hsW : ∀ᶠ p in 𝓝[s] p₀, ∀ w ∈ closedBall z r, u p w ∈ W)
+    (hrD : u p₀ ⁻¹' D ∩ closedBall z r = {z}) :
     ∀ᶠ p in 𝓝[s] p₀, ∃ w, u p ⁻¹' D ∩ closedBall z r = {w} ∧ IsTransverseCutAt (u p) D w := by
   have hK : IsCompact (closedBall z r) := isCompact_closedBall z r
-  -- For `p ∈ s` near `p₀`, the map `u p` sends the ball into `W`.
-  have hsW : ∀ᶠ p in 𝓝[s] p₀, ∀ w ∈ closedBall z r, u p w ∈ W :=
-    hK.eventually_forall_mem_of_tendsto_prod_nhds hW
-      (fun w _ ↦ by
-        simpa [ContinuousWithinAt, nhdsWithin_prod_eq, Function.uncurry_def] using
-          hu (p₀, w) ⟨hp₀, trivial⟩)
-      hrW
   set s' := {p ∈ s | ∀ w ∈ closedBall z r, u p w ∈ W}
   have hs' : s' ∈ 𝓝[s] p₀ := inter_mem self_mem_nhdsWithin hsW
   have hle : 𝓝[s] p₀ ≤ 𝓝[s'] p₀ := le_inf nhdsWithin_le_nhds (le_principal_iff.2 hs')
@@ -136,7 +132,7 @@ private theorem eventually_exists_inter_closedBall_eq_singleton (hp₀ : p₀ �
     ext w
     exact ⟨fun ⟨hwD, hw⟩ ↦ ⟨hw, (hWD _ (hp.2 w hw)).1 hwD⟩,
       fun ⟨hw, hw0⟩ ↦ ⟨(hWD _ (hp.2 w hw)).2 hw0, hw⟩⟩
-  have hp₀' : p₀ ∈ s' := ⟨hp₀, hrW⟩
+  have hp₀' : p₀ ∈ s' := ⟨hp₀, hsW.self_of_nhdsWithin hp₀⟩
   have h := hK.eventually_exists_equiv_sep_eq_zero (𝕜 := ℝ) (u := fun p ↦ g ∘ u p) (s := s')
     (fun p hp w hw ↦ hgd p hp.1 w (hp.2 w hw))
     (hg.comp (hu.mono (prod_mono (sep_subset _ _) (subset_univ _))) fun q hq ↦ hq.1.2 _ hq.2)
@@ -182,12 +178,12 @@ private theorem isTransverseCutAt_and_exists_equiv {v : ℂ → X} {Z : Set ℂ}
 
 /-- **Transverse target cuts persist along families of sphere maps.** Let `u p : ℂ → X` be maps,
 continuous jointly in `(p, z)` for `p ∈ s`, that for `p` near `p₀` do not meet the closed set `D`
-near `∞`, and suppose that every cut point of `u p₀` can be followed along the family
-(`TauCeti.IsTransverseCutFamilyAt`): near it `D` is the zero set of a function `g` such that the
-compositions `g ∘ u p` vary in `C¹` with `p` and `g ∘ u p₀` has invertible derivative there. Then
-for every `ε > 0` and every `p ∈ s` near `p₀`, the map `u p` meets `D` transversally at each of
-its cut points, and these are in a bijection with the cut points of `u p₀` moving each by at most
-`ε`. -/
+outside a common compact set (uniformly near `∞`), and suppose that every cut point of `u p₀` can
+be followed along the family (`TauCeti.IsTransverseCutFamilyAt`): near it `D` is the zero set of a
+function `g` such that the compositions `g ∘ u p` vary in `C¹` with `p` and `g ∘ u p₀` has
+invertible derivative there. Then for every `ε > 0` and every `p ∈ s` near `p₀`, the map `u p`
+meets `D` transversally at each of its cut points, and these are in a bijection with the cut points
+of `u p₀` moving each by at most `ε`. -/
 theorem eventually_isTransverseCutAt_and_exists_equiv_preimage (hD : IsClosed D) (hp₀ : p₀ ∈ s)
     (hu : ContinuousOn (Function.uncurry u) (s ×ˢ univ))
     (hinf : ∀ᶠ q in 𝓝[s] p₀ ×ˢ cocompact ℂ, Function.uncurry u q ∉ D)
@@ -195,6 +191,10 @@ theorem eventually_isTransverseCutAt_and_exists_equiv_preimage (hD : IsClosed D)
     ∀ᶠ p in 𝓝[s] p₀, (∀ z ∈ u p ⁻¹' D, IsTransverseCutAt (u p) D z) ∧
       ∃ e : u p₀ ⁻¹' D ≃ u p ⁻¹' D, ∀ z, dist (e z : ℂ) z ≤ ε := by
   set Z := u p₀ ⁻¹' D
+  -- The maps `u p` converge to `u p₀` as `p → p₀`, jointly with their argument.
+  have hconv (w : ℂ) : Tendsto (fun q : P × ℂ ↦ u q.1 q.2) (𝓝[s] p₀ ×ˢ 𝓝 w) (𝓝 (u p₀ w)) := by
+    rw [← nhdsWithin_univ w, ← nhdsWithin_prod_eq]
+    exact (hu (p₀, w) ⟨hp₀, trivial⟩).tendsto
   have hu₀ : Continuous (u p₀) := continuousOn_univ.1 (hu.uncurry_left p₀ hp₀)
   have hZ : Z.Finite := finite_preimage_of_isTransverseCutAt hu₀ hD
     (hinf.curry.self_of_nhdsWithin hp₀) fun z hz ↦ (hcut z hz).isTransverseCutAt hp₀
@@ -216,18 +216,16 @@ theorem eventually_isTransverseCutAt_and_exists_equiv_preimage (hD : IsClosed D)
       IsTransverseCutAt (u p) D w :=
     hZ.eventually_all.2 fun z hz ↦ eventually_exists_inter_closedBall_eq_singleton hp₀ hu
       (hW z hz) (hWD z hz) (hg z hz) (hgd z hz) (hgd' z hz) (hinv z hz) hr.1
-      (fun w hw ↦ (hrW z hz hw).1) (hrD z hz)
+      ((isCompact_closedBall z r).eventually_forall_mem_of_tendsto_prod_nhds (hW z hz)
+        (fun w _ ↦ hconv w) fun w hw ↦ (hrW z hz hw).1) (hrD z hz)
   -- Near `p₀`, `u p` has no cut point outside the balls: near `∞` by `hinf`, and on the
   -- remaining compact set `C` by continuity.
   obtain ⟨t, ht, c, hc, htc⟩ := eventually_prod_iff.1 hinf
   obtain ⟨C, hC, hCc⟩ := mem_cocompact.1 hc
   have haway : ∀ᶠ p in 𝓝[s] p₀, ∀ w ∈ C \ ⋃ z ∈ Z, ball z r, u p w ∈ Dᶜ :=
     (hC.diff (isOpen_biUnion fun _ _ ↦ isOpen_ball)).eventually_forall_mem_of_tendsto_prod_nhds
-      hD.isOpen_compl
-      (fun w _ ↦ by
-        simpa [ContinuousWithinAt, nhdsWithin_prod_eq, Function.uncurry_def] using
-          hu (p₀, w) ⟨hp₀, trivial⟩)
-      fun w hw hwD ↦ hw.2 (mem_biUnion hwD (mem_ball_self hr.1))
+      hD.isOpen_compl (fun w _ ↦ hconv w) fun w hw hwD ↦
+        hw.2 (mem_biUnion hwD (mem_ball_self hr.1))
   filter_upwards [hloc, haway, ht] with p hp hpaway hpt
   refine (isTransverseCutAt_and_exists_equiv hdisj (fun w hw ↦ ?_) hp).imp_right
     fun ⟨e, he⟩ ↦ ⟨e, fun z ↦ (he z).trans hr.2.le⟩
