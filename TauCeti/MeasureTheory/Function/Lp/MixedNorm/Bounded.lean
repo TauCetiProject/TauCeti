@@ -317,7 +317,8 @@ private theorem eLpNorm_eLpNorm_le_of_ne_top [SigmaFinite μ] [SigmaFinite ν]
 
 /-- The case `p = ∞` of `eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le`. For a
 set `A` of finite measure, testing against `1_A G` and applying the case `p = 1` to the
-restriction of `ν` to `A` gives `∫_A ‖F t‖_q ≤ C ν(A)`. As `A` is arbitrary, `‖F t‖_q ≤ C` for almost every `t`. -/
+restriction of `ν` to `A` gives `∫_A ‖F t‖_q ≤ C ν(A)`. As `A` is arbitrary, `‖F t‖_q ≤ C` for
+almost every `t`. -/
 private theorem eLpNorm_eLpNorm_top_le [SigmaFinite μ] [SigmaFinite ν] {q q' : ℝ≥0∞}
     [hqq : q.HolderConjugate q'] {F : T → Lp E 2 μ} (hF : AEStronglyMeasurable F ν) {C : ℝ≥0∞}
     (hC : ∀ (G : T → Lp E 2 μ) (s : Set T), ν s ≠ ∞ → (∀ t, t ∉ s → G t = 0) →

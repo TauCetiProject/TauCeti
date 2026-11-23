@@ -598,7 +598,7 @@ theorem exists_seq_eLpNorm_eq_iSup_ofReal_re_inner [SigmaFinite μ] {q q' : ℝ�
         ⋃ g : Γ, {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (g : Lp E 2 μ)⟫_𝕜} := by
     intro c
     refine isOpen_iUnion_countable _ fun g ↦ isOpen_lt continuous_const ?_
-    exact RCLike.continuous_re.comp ((continuous_subtype_val).inner continuous_const)
+    exact RCLike.continuous_re.comp (continuous_subtypeVal.inner continuous_const)
   choose D hDc hD using hcount
   set D' : Set (Lp E 2 μ) := insert 0 (⋃ c : ℚ, Subtype.val '' D c)
   have hD'c : D'.Countable :=
@@ -611,7 +611,7 @@ theorem exists_seq_eLpNorm_eq_iSup_ofReal_re_inner [SigmaFinite μ] {q q' : ℝ�
     · exact hn ▸ Lp.eLpNorm_coeFn_zero.trans_le zero_le_one
     · obtain ⟨c, hc⟩ := Set.mem_iUnion.1 hn
       obtain ⟨γ, -, hγ⟩ := hc
-      exact hγ ▸ γ.2
+      exact hγ ▸ γ.property
   refine ⟨g, hgΓ, fun h hh ↦ le_antisymm ?_ (iSup_le fun n ↦ ?_)⟩
   · -- Below `‖h‖_q`, a rational level is exceeded by the pairing with some `gₙ`.
     refine le_of_forall_lt fun b hb ↦ ?_
