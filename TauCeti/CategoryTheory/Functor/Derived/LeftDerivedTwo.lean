@@ -32,8 +32,11 @@ isomorphism `LF.flip ≅ LF` (`CategoryTheory.Functor.leftDerived₂FlipIso`, wi
 any `e : F.flip ≅ F` both as natural transformations
 (`CategoryTheory.Functor.leftDerived₂FlipIso_hom_fac` and
 `CategoryTheory.Functor.leftDerived₂FlipIso_inv_fac`) and on objects in the image of `L : C ⥤ D`
-(`CategoryTheory.Functor.leftDerived₂FlipIso_hom_app_app_L` and
-`CategoryTheory.Functor.leftDerived₂FlipIso_inv_app_app_L`).
+(`CategoryTheory.Functor.leftDerived₂FlipIso_hom_app_app_L`,
+`CategoryTheory.Functor.leftDerived₂FlipIso_inv_app_app_L`, and, when the relevant comparison maps
+are invertible, `CategoryTheory.Functor.leftDerived₂FlipIso_app_app_L_hom`,
+`CategoryTheory.Functor.leftDerived₂FlipIso_app_app_L_inv`, and
+`CategoryTheory.Functor.leftDerived₂FlipIso_app_app_L`).
 
 Moreover, when `e` is involutive
 (`(flipFunctor _ _ _).map e.hom ≫ e.hom = (flipping _).counitIso.hom.app F`), the induced
@@ -223,6 +226,36 @@ lemma leftDerived₂FlipIso_inv_app_app_L (e : F.flip ≅ F) (X Y : C) :
   have h := congr_app (congr_app (leftDerived₂FlipIso_inv_fac LF α W e) X) Y
   simpa only [NatTrans.comp_app, whiskeringLeft₂_obj_obj_map_app_app,
     whiskeringLeft₂FlipIso_hom_app_app, flipFunctor_map_app_app, Category.id_comp] using h
+
+/-- Forward component formula for `leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` when the target
+comparison `(α.app X).app Y` is invertible. -/
+@[simp]
+lemma leftDerived₂FlipIso_app_app_L_hom (e : F.flip ≅ F) (X Y : C)
+    [IsIso ((α.app X).app Y)] :
+    ((leftDerived₂FlipIso LF α W e).hom.app (L.obj X)).app (L.obj Y) =
+      (α.app Y).app X ≫ (e.hom.app X).app Y ≫ CategoryTheory.inv ((α.app X).app Y) := by
+  rw [← cancel_mono ((α.app X).app Y)]
+  simp
+
+/-- Inverse component formula for `leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` when the source
+comparison `(α.app Y).app X` is invertible. -/
+@[simp]
+lemma leftDerived₂FlipIso_app_app_L_inv (e : F.flip ≅ F) (X Y : C)
+    [IsIso ((α.app Y).app X)] :
+    ((leftDerived₂FlipIso LF α W e).inv.app (L.obj X)).app (L.obj Y) =
+      (α.app X).app Y ≫ (e.inv.app X).app Y ≫ CategoryTheory.inv ((α.app Y).app X) := by
+  rw [← cancel_mono ((α.app Y).app X)]
+  simp
+
+/-- When both comparison morphisms `(α.app Y).app X` and `(α.app X).app Y` are invertible,
+`leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` is the swapped comparison followed by
+`(e.app X).app Y` and the inverse target comparison. -/
+lemma leftDerived₂FlipIso_app_app_L (e : F.flip ≅ F) (X Y : C)
+    [IsIso ((α.app Y).app X)] [IsIso ((α.app X).app Y)] :
+    ((leftDerived₂FlipIso LF α W e).app (L.obj X)).app (L.obj Y) =
+      asIso ((α.app Y).app X) ≪≫ (e.app X).app Y ≪≫ (asIso ((α.app X).app Y)).symm := by
+  ext
+  simp
 
 /-- If `e : F.flip ≅ F` is involutive, then `leftDerived₂FlipIso LF α W e` is involutive as a
 natural transformation. -/
