@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
+import TauCeti.Analysis.PDE.HeatKernel.Generator
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -19,7 +24,7 @@ time,
 
 `G_λ(x) = ∫₀^∞ e^{-λt} K_t(x) dt` (`TauCeti.heatResolventKernel`).
 
-It is nonnegative and integrable with mass `∫ G_λ = 1 / λ`, and its Fourier transform is
+It is nonnegative, even and integrable with mass `∫ G_λ = 1 / λ`, and its Fourier transform is
 `𝓕 G_λ(ξ) = (λ + 4π² ‖ξ‖²)⁻¹`, the reciprocal of the symbol of `λ - Δ` in Mathlib's normalization
 of the Fourier transform. So `G_λ` is the Bessel-type kernel of `λ - Δ`.
 
@@ -33,7 +38,8 @@ where `A` is the generator `(heatSemigroup hp).generator` of the heat semigroup
 In particular `u = G_λ ⋆ f` lies in the domain of `A` and solves `λ u - A u = f`. As a
 convolution with a nonnegative kernel of mass `1 / λ`, the resolvent preserves positivity, has
 norm at most `1 / λ` on every `Lᵖ` by Young's inequality, and on `L¹` it scales the integral by
-`1 / λ`, so its norm on real-valued `L¹(E; ℝ)` is exactly `1 / λ`.
+`1 / λ`. The bound `1 / λ` is attained: `‖(λ - A)⁻¹‖ = 1 / λ` on `Lᵖ(E; F)` for every
+nontrivial `F` (`TauCeti.norm_resolvent_heatSemigroup`).
 
 ## The argument
 
@@ -43,6 +49,14 @@ iterated integral of `(t, y) ↦ e^{-λt} K_t(y) • f(· - y)` over `(0, ∞) �
 since `‖f(· - y)‖ = ‖f‖` and `∫∫ e^{-λt} K_t(y) dy dt = ∫ e^{-λt} dt = 1 / λ`. Exchanging the
 two integrals gives `∫ y, G_λ(y) • f(· - y) dy = G_λ ⋆ f`. The Fourier transform is computed the
 same way from the Fourier transform `exp(-4π² t ‖ξ‖²)` of `K_t`.
+
+For the lower bound on the norm, the dilates `φ(r⁻¹ ·)` of a smooth compactly supported `φ ≠ 0`
+are approximate solutions of `Δ u = 0`: they lie in the domain of the generator, which acts on
+them as the Laplacian (`TauCeti.generator_heatSemigroup`), and their Laplacian has `Lᵖ` norm `r⁻²`
+times smaller than their own. Writing `φ(r⁻¹ ·) = (λ - A)⁻¹ (λ φ(r⁻¹ ·) - Δ φ(r⁻¹ ·))` therefore
+gives `1 ≤ λ ‖(λ - A)⁻¹‖ + O(r⁻²)`, and `r → ∞` gives `λ ‖(λ - A)⁻¹‖ ≥ 1`; this approximate
+eigenvector argument holds for the resolvent of any operator
+(`LinearPMap.IsResolventAt.inv_norm_sub_le_norm_of_tendsto`).
 
 ## Main declarations
 
@@ -56,8 +70,7 @@ same way from the Fourier transform `exp(-4π² t ‖ξ‖²)` of `K_t`.
   convolution with `G_λ` is the resolvent `(λ - A)⁻¹` of the heat generator `A`.
 * `TauCeti.resolvent_heatSemigroup_ae_eq_convolution`: the resolvent of the class of `f` is
   represented by the classical convolution `G_λ ⋆ f`.
-* `TauCeti.norm_resolvent_heatSemigroup_L1`: on real-valued `L¹(E; ℝ)` the resolvent has norm
-  exactly `1 / λ`.
+* `TauCeti.norm_resolvent_heatSemigroup`: on `Lᵖ(E; F)` the resolvent has norm exactly `1 / λ`.
 
 ## References
 
@@ -97,6 +110,12 @@ theorem heatResolventKernel_apply (lam : ℝ) (x : E) :
 theorem heatResolventKernel_nonneg (lam : ℝ) (x : E) : 0 ≤ heatResolventKernel lam x :=
   setIntegral_nonneg measurableSet_Ioi fun _ ht ↦
     mul_nonneg (exp_pos _).le (heatKernel_pos ht x).le
+
+/-- The heat resolvent kernel is even. -/
+@[simp]
+theorem heatResolventKernel_neg (lam : ℝ) (x : E) :
+    heatResolventKernel lam (-x) = heatResolventKernel lam x := by
+  simp only [heatResolventKernel_apply, heatKernel_neg]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -249,27 +268,77 @@ theorem norm_resolvent_heatSemigroup_of_nonneg (hlam : 0 < lam)
       (resolvent_heatSemigroup_nonneg ENNReal.one_ne_top hlam hf),
     L1.norm_eq_integral_of_nonneg hf, integral_resolvent_heatSemigroup, smul_eq_mul]
 
-/-- **The norm of the heat resolvent on real-valued `L¹`**: `‖(λ - A)⁻¹‖ = 1 / λ` for `λ > 0`,
-where `A` is the heat generator on `L¹(E; ℝ)`. The upper bound
-holds for every contraction semigroup; it is attained on every nonnegative function, for
-instance on the heat kernel. -/
-theorem norm_resolvent_heatSemigroup_L1 (hlam : 0 < lam) :
-    ‖(heatSemigroup (E := E) (F := ℝ) ENNReal.one_ne_top).resolvent lam hlam‖ = lam⁻¹ := by
-  refine le_antisymm (by simpa using ContractionSemigroup.resolvent_norm_le _ lam hlam) ?_
-  -- Test on the class of the heat kernel at time `1`, which is nonnegative with norm `1`.
-  set k : Lp ℝ 1 (volume : Measure E) := (integrable_heatKernel one_pos).toL1 _
-  have hk : 0 ≤ k := by
-    rw [← Lp.coeFn_nonneg]
-    filter_upwards [Integrable.coeFn_toL1 (integrable_heatKernel (E := E) one_pos)] with x hx
-    rw [hx]
-    exact (heatKernel_pos one_pos x).le
-  have hk1 : ‖k‖ = 1 := by
-    rw [L1.norm_eq_integral_of_nonneg hk, integral_congr_ae (Integrable.coeFn_toL1 _),
-      integral_heatKernel one_pos]
-  calc lam⁻¹ = ‖(heatSemigroup ENNReal.one_ne_top).resolvent lam hlam k‖ := by
-        rw [norm_resolvent_heatSemigroup_of_nonneg hlam hk, hk1, mul_one]
-    _ ≤ ‖(heatSemigroup ENNReal.one_ne_top).resolvent lam hlam‖ * ‖k‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-    _ = _ := by rw [hk1, mul_one]
+open InnerProductSpace Laplacian Topology in
+/-- **The norm of the heat resolvent.** For `1 ≤ p < ∞`, `λ > 0` and a nontrivial Banach space
+`F`, the resolvent `(λ - A)⁻¹` of the heat generator `A` on `Lᵖ(E; F)` has operator norm exactly
+`1 / λ`: the Hille–Yosida bound of a contraction semigroup is attained. -/
+@[simp]
+theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlam : 0 < lam) :
+    ‖(heatSemigroup (E := E) (F := F) hp).resolvent lam hlam‖ = lam⁻¹ := by
+  set S := heatSemigroup (E := E) (F := F) hp
+  refine le_antisymm ((S.resolvent_norm_le lam hlam).trans_eq (one_div _)) ?_
+  -- A nonzero smooth compactly supported test function `φ = b • v`.
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  let b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  set φ : E → F := fun x ↦ b x • v
+  have hφ : ContDiff ℝ 2 φ := b.contDiff.smul contDiff_const
+  have hφc : HasCompactSupport φ := b.hasCompactSupport.smul_right
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  set a := (eLpNorm φ p volume).toReal
+  set c := (eLpNorm (Δ φ) p volume).toReal
+  have ha : 0 < a := by
+    refine ENNReal.toReal_pos (fun h ↦ hv ?_)
+      (hφ.continuous.memLp_of_hasCompactSupport hφc).eLpNorm_ne_top
+    have h0 := (Continuous.ae_eq_iff_eq volume hφ.continuous continuous_const).1
+      ((eLpNorm_eq_zero_iff hp0).1 h)
+    have hb0 : b 0 = 1 := b.one_of_mem_closedBall (Metric.mem_closedBall_self b.rIn_pos.le)
+    have h1 := congr_fun h0 0
+    simp only [φ, hb0, one_smul] at h1
+    exact h1
+  -- The dilates `φ(r⁻¹ ·)`, `r = n + 1`, lie in the generator domain, where the generator acts
+  -- as the Laplacian.
+  have hr (n : ℕ) : (0 : ℝ) < n + 1 := n.cast_add_one_pos
+  have hφr (n : ℕ) : ContDiff ℝ 2 fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x) :=
+    hφ.comp (contDiff_const_smul _)
+  have hφrc (n : ℕ) : HasCompactSupport fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x) :=
+    hφc.comp_smul (inv_ne_zero (hr n).ne')
+  have hf (n : ℕ) :=
+    (hφr n).continuous.memLp_of_hasCompactSupport (μ := volume) (p := p) (hφrc n)
+  have hg (n : ℕ) := (hφr n).continuous_laplacian.memLp_of_hasCompactSupport (μ := volume)
+    (p := p) (hφrc n).laplacian
+  let f (n : ℕ) : S.generator.domain := ⟨(hf n).toLp _, by
+    rw [StronglyContinuousSemigroup.generator_domain]
+    exact mem_domain_heatSemigroup hp (hφr n) (hφrc n) (hf n).coeFn_toLp⟩
+  -- They are nonzero approximate solutions of `Δ u = 0`: the `Lᵖ` norms of the dilate and of its
+  -- Laplacian scale like `r^{n/p}` and `r^{n/p - 2}`.
+  have hf_ratio (n : ℕ) : ‖(f n : Lp F p (volume : Measure E))‖ ≠ 0 ∧
+      ‖S.generator (f n) - (0 : ℝ) • (f n : Lp F p (volume : Measure E))‖ /
+        ‖(f n : Lp F p (volume : Measure E))‖ = (((n : ℝ) + 1) ^ 2)⁻¹ * (c / a) := by
+    set s := ((n : ℝ) + 1) ^ ((Module.finrank ℝ E : ℝ) / p.toReal)
+    have hs : 0 < s := by positivity
+    have hnf : ‖(f n : Lp F p (volume : Measure E))‖ = s * a := by
+      rw [Lp.norm_toLp, Measure.eLpNorm_comp_inv_smul volume φ (hr n).ne', abs_of_pos (hr n)]
+      simp [ENNReal.toReal_ofReal hs.le, s, a]
+    have hng : ‖(hg n).toLp (Δ fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x))‖ =
+        (((n : ℝ) + 1) ^ 2)⁻¹ * (s * c) := by
+      have hΔ : (Δ fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x)) =
+          (((n : ℝ) + 1)⁻¹) ^ 2 • fun x ↦ Δ φ (((n : ℝ) + 1)⁻¹ • x) :=
+        laplacian_comp_smul_right _ φ
+      rw [Lp.norm_toLp, hΔ, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (hr n).ne',
+        abs_of_pos (hr n)]
+      simp [ENNReal.toReal_ofReal hs.le, abs_of_pos (hr n), s, c]
+    refine ⟨hnf ▸ (mul_pos hs ha).ne', ?_⟩
+    rw [zero_smul, sub_zero,
+      generator_heatSemigroup hp (hφr n) (hφrc n) (hf n).coeFn_toLp (hg n).coeFn_toLp, hng, hnf]
+    field_simp
+  -- Let `r → ∞`.
+  have h := (S.isResolventAt_generator S.hasGrowthBound (lambda := lam)
+    (by simpa using hlam)).inv_norm_sub_le_norm_of_tendsto (mu := 0) (l := atTop) f
+    (Eventually.of_forall fun n ↦ (hf_ratio n).1) ?_
+  · rwa [sub_zero, Real.norm_eq_abs, abs_of_pos hlam,
+      ← ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent] at h
+  · refine (tendsto_congr fun n ↦ (hf_ratio n).2).2 ?_
+    simpa [one_div, inv_pow] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat.pow 2).mul_const (c / a)
 
 end TauCeti
