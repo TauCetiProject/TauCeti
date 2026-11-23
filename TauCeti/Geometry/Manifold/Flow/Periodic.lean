@@ -454,22 +454,14 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (
     mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
       mfderiv I I (timeDependentFlowOf X s t) (timeDependentFlowOf X s (s + T) x)
         (mfderiv I I (timeDependentFlowOf X s (s + T)) x v) := by
-  have hopen := isOpen_timeDependentFlowDomain hX
-  set R := timeDependentFlowOf X s (s + T)
-  have hR : MDifferentiableAt I I R x := mdifferentiableAt_timeDependentFlowOf hX h
-  -- Near `x`, flowing to `t + T` is the return map followed by the flow to `t`.
-  have heq : timeDependentFlowOf X s (t + T) =ᶠ[𝓝 x] timeDependentFlowOf X s t ∘ R := by
-    filter_upwards [(continuousAt_const.prodMk continuousAt_id).preimage_mem_nhds
-        (hopen.mem_nhds h),
-      (continuousAt_const.prodMk hR.continuousAt).preimage_mem_nhds (hopen.mem_nhds ht)]
-      with y h₁ h₂
-    obtain ⟨hmem, hshift⟩ := timeDependentFlowOf_add_period_of_mem hX hT h₂
-    exact (timeDependentFlowOf_trans_of_mem hX h₁ hmem).2.symm.trans hshift
-  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) (R x) :=
-    mdifferentiableAt_timeDependentFlowOf hX ht
-  rw [heq.mfderiv_eq, mfderiv_comp x hφ hR]
-  -- `tangentSpaceCast` between the equal points `(φ_{s, t} ∘ R) x` and `φ_{s, t + T} x` is the
-  -- identity.
+  -- Shifting a `T`-periodic field by `T` does not change it, so neither does shifting its flow.
+  have hshift : timeDependentFlowOf X (s + T) (t + T) = timeDependentFlowOf X s t := by
+    funext y
+    rw [← timeDependentFlowOf_comp_add_right hX T, funext hT]
+  rw [mfderiv_timeDependentFlowOf_trans_of_mem hX h
+    (timeDependentFlowOf_add_period_of_mem hX hT ht).1, hshift]
+  -- The tangent spaces at the two images of `x` are the same model space, and the cast between
+  -- them is the identity.
   rfl
 
 omit [CompleteSpace E] in
