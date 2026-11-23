@@ -192,9 +192,8 @@ theorem nonempty_realProjectiveMomentSpectralSequence_page_two_X_iso {k : ℤ} (
 /-! ### The second page -/
 
 /-- The spectral object of the filtration, whose abutment is the homology of `ℝℙᴺ`. -/
-local notation "𝔄[" N "]" => CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-  (monotone_singularChainFiltration (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) (ModuleCat.of ℤ ℤ)
-    (Monotone.comp (sublevel_mono 𝔣[N]) monotone_cut)))
+local notation "𝔄[" N "]" => filteredSpaceSpectralObject (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))
+  (ModuleCat.of ℤ ℤ) (Monotone.comp (sublevel_mono 𝔣[N]) monotone_cut)
 
 private theorem sublevel_cut_zero :
     ((fun b ↦ {x | 𝔣[N] x ≤ b}) ∘ fun q : ℤ ↦ (q : ℝ) - 1 / 2) 0 = ∅ :=
@@ -238,9 +237,9 @@ private def cokernelAbutmentFiltrationMapIsoSingularHomology (k : ℕ) :
     (CochainComplex.isZero_filtrationAbutmentFiltration _ _
       (singularChainFiltration_eq_bot _ (sublevel_cut_zero N)) _)
     (CochainComplex.isIso_filtrationAbutmentFiltrationι _ _
-      (singularChainFiltration_eq_top _ (sublevel_cut_top N)) _)
+      (chainFiltration_eq_top _ (sublevel_cut_top N)) _)
     (fun j hj₀ hjN hjk ↦ isZero_cokernel_abutmentFiltrationMap N hj₀ (by lia) (by lia)) ≪≫
-  filteredSpaceAbutmentIso _ (Monotone.comp (sublevel_mono 𝔣[N]) monotone_cut) k
+  chainFiltrationAbutmentIso _ (Monotone.comp (sublevel_mono 𝔣[N]) monotone_cut) k
 
 /-- On the second page (numbered `3`), every position joined to `(-2k, k)` by a differential of a
 page `s ≥ 3` vanishes. -/
