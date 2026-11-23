@@ -363,19 +363,21 @@ end lift
 and a point `e₁ v` of the first summand is recorded as the point `e₂ (inversion 0 1 v)` of the
 second: there is a function on the connected sum recording this. -/
 private theorem exists_eq_some_comp_inr (he₁ : Injective e₁) :
-    ∃ Ψ : ConnectedSum e₁ e₂ → Option N, (∀ y, Ψ (inr e₁ e₂ y) = some y.1) ∧
-      (∀ x v, v ≠ 0 → e₁ v = x.1 → Ψ (inl e₁ e₂ x) = some (e₂ (inversion 0 1 v))) ∧
-      ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.1) → Ψ (inl e₁ e₂ x) = none := by
+    ∃ Ψ : ConnectedSum e₁ e₂ → Option N, (∀ y, Ψ (inr e₁ e₂ y) = some y.val) ∧
+      (∀ x v, v ≠ 0 → e₁ v = x.val → Ψ (inl e₁ e₂ x) = some (e₂ (inversion 0 1 v))) ∧
+      ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.val) → Ψ (inl e₁ e₂ x) = none := by
   classical
+  let j : {v : E // v ≠ 0} → M := fun v ↦ e₁ v
+  have hj : Injective j := he₁.comp Subtype.val_injective
   let f : puncture e₁ → Option N :=
-    fun x ↦ if h : ∃ v ≠ 0, e₁ v = x.1 then some (e₂ (inversion 0 1 h.choose)) else none
-  have hf : ∀ x v, v ≠ 0 → e₁ v = x.1 → f x = some (e₂ (inversion 0 1 v)) := by
-    intro x v hv hx
-    have hex : ∃ v ≠ 0, e₁ v = x.1 := ⟨v, hv, hx⟩
-    have hc : hex.choose = v := he₁ (hex.choose_spec.2.trans hx.symm)
-    simp only [f, dite_eq_left hex, hc]
-  exact ⟨lift f (fun y ↦ some y.1) fun v hv _ _ ↦ hf _ v hv rfl, fun y ↦ rfl,
-    fun x v hv hx ↦ hf x v hv hx, fun x hx ↦ dite_eq_right hx⟩
+    fun x ↦ Function.extend j (fun v ↦ some (e₂ (inversion 0 1 v.val))) (fun _ ↦ none) x.val
+  have hf : ∀ x v, v ≠ 0 → e₁ v = x.val → f x = some (e₂ (inversion 0 1 v)) := fun x v hv hx ↦ by
+    simpa only [f, ← hx] using
+      hj.extend_apply (fun v ↦ some (e₂ (inversion 0 1 v.val))) (fun _ ↦ none) ⟨v, hv⟩
+  have hf' : ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.val) → f x = none := fun x hx ↦
+    Function.extend_apply' _ _ _ fun ⟨⟨v, hv⟩, h⟩ ↦ hx ⟨v, hv, h⟩
+  exact ⟨lift f (fun y ↦ some y.val) fun v hv _ _ ↦ hf _ v hv rfl, fun y ↦ rfl,
+    fun x v hv hx ↦ hf x v hv hx, hf'⟩
 
 theorem inr_injective (he₁ : Injective e₁) : Injective (inr e₁ e₂) := by
   obtain ⟨Ψ, hΨ, -⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
@@ -392,7 +394,7 @@ theorem inl_eq_inr_iff (he₁ : Injective e₁) {x : puncture e₁} {y : punctur
   obtain ⟨Ψ, hΨ₁, hΨ₂, hΨ₃⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
   have h' := congrArg Ψ h
   rw [hΨ₁] at h'
-  by_cases hv : ∃ v ≠ 0, e₁ v = x.1
+  by_cases hv : ∃ v ≠ 0, e₁ v = x.val
   · obtain ⟨v, hv0, hvx⟩ := hv
     rw [hΨ₂ x v hv0 hvx] at h'
     exact ⟨v, hv0, hvx, Option.some.inj h'⟩
