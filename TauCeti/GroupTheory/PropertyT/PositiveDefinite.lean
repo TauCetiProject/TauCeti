@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
 public import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
@@ -66,6 +67,13 @@ open ContRepresentation
 
 variable {Γ : Type v} [Group Γ] {Λ : Subgroup Γ}
 
+/-- For a unit vector `ξ`, the coefficient `⟪ξ, x⟫` lies within `‖x - ξ‖` of `1`. -/
+private theorem norm_inner_sub_one_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {ξ : E} (hξ : ‖ξ‖ = 1) (x : E) : ‖⟪ξ, x⟫_𝕜 - 1‖ ≤ ‖x - ξ‖ := by
+  have h1 : ⟪ξ, ξ⟫_𝕜 = 1 := by simp [inner_self_eq_norm_sq_to_K, hξ]
+  rw [← h1, ← inner_sub_right]
+  simpa [hξ] using norm_inner_le_norm (𝕜 := 𝕜) ξ (x - ξ)
+
 /-- **Relative property (T) by positive-definite functions, uniform form.** If a normal subgroup
 `Λ` has relative property (T), then for every `ε > 0` there are a finite set `F` and a `δ > 0` such
 that every positive-definite function `φ` with `φ 1 = 1` and `‖φ g - 1‖ < δ` for `g ∈ F` satisfies
@@ -90,11 +98,8 @@ theorem RelativePropertyT.exists_forall_norm_sub_one_lt [Λ.Normal]
     calc ‖π h ξ - ξ‖ = ‖π h (ξ - η) - (ξ - η)‖ := by rw [map_sub, hπη]; abel_nf
       _ ≤ ‖π h (ξ - η)‖ + ‖ξ - η‖ := norm_sub_le _ _
       _ = 2 * ‖ξ - η‖ := by rw [hπ.norm_map]; ring
-  have hξ : ‖ξ‖ = 1 := hφ.norm_gnsVector_one hφ1
-  have h1 : ⟪ξ, ξ⟫_ℂ = 1 := by simp [inner_self_eq_norm_sq_to_K, hξ]
-  calc ‖φ h - 1‖ = ‖⟪ξ, π h ξ - ξ⟫_ℂ‖ := by
-        rw [inner_sub_right, h1, hφ.inner_gnsVector_one_gnsRepresentation]
-    _ ≤ ‖π h ξ - ξ‖ := by simpa [hξ] using norm_inner_le_norm (𝕜 := ℂ) ξ (π h ξ - ξ)
+  calc ‖φ h - 1‖ = ‖⟪ξ, π h ξ⟫_ℂ - 1‖ := by rw [hφ.inner_gnsVector_one_gnsRepresentation]
+    _ ≤ ‖π h ξ - ξ‖ := norm_inner_sub_one_le (hφ.norm_gnsVector_one hφ1) _
     _ < ε := by linarith
 
 /-- **Relative property (T) by positive-definite functions.** If a normal subgroup `Λ` has relative
@@ -129,18 +134,12 @@ theorem relativePropertyT_of_exists_forall_norm_sub_one_lt {ε : ℝ} (hε : ε 
   -- The coefficient of `ξ` is a normalized positive-definite function close to `1` on `F`.
   have h1 : ⟪ξ, ξ⟫_ℂ = 1 := by simp [inner_self_eq_norm_sq_to_K, hξ]
   have hclose := hF (fun g ↦ ⟪ξ, ρ g ξ⟫_ℂ) (hρ.posSemidef_inner_map_inv_mul ξ) (by simpa using h1)
-    fun g hg ↦ by
-      rw [← h1, ← inner_sub_right]
-      exact (norm_inner_le_norm (𝕜 := ℂ) ξ _).trans_lt (by rw [hξ, one_mul]; exact hξF g hg)
+    fun g hg ↦ (norm_inner_sub_one_le hξ _).trans_lt (hξF g hg)
   -- So its real part is at least `1 - ε > 0` on `Λ`.
   refine (hρ.restrict Λ.subtype).exists_ne_zero_mem_invariants_of_le_re_inner (ξ := ξ)
     (sub_pos.mpr hε) fun h ↦ ?_
-  have hh := hclose h h.property
-  have hre := RCLike.re_le_norm (1 - ⟪ξ, ρ h ξ⟫_ℂ)
-  rw [← norm_neg, neg_sub] at hh
-  rw [map_sub, RCLike.one_re] at hre
   simp only [restrict_apply_apply, coe_subtype]
-  linarith
+  linarith [hclose h h.property, RCLike.one_sub_re_le_norm_sub_one ⟪ξ, ρ h ξ⟫_ℂ]
 
 /-- **Relative property (T) from positive-definite functions.** If every net of positive-definite
 functions `φᵢ` with `φᵢ 1 = 1` converging pointwise to `1`, indexed by a type in the universe of
