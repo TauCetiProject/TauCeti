@@ -384,22 +384,6 @@ theorem fourierCoeffOn_circleMap_eq_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub
 
 /-! ### The derivative of the Cauchy integral -/
 
-/-- A derivative of the boundary values along the rotations, read in the angle: `θ ↦ φ (e^{iθ})`
-has derivative `v (e^{iθ})` at every `θ`. -/
-private theorem hasDerivAt_comp_circleMap {φ v : ℂ → E}
-    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
-    (θ : ℝ) : HasDerivAt (fun θ ↦ φ (circleMap 0 1 θ)) (v (circleMap 0 1 θ)) θ := by
-  have hc (θ : ℝ) : circleMap 0 1 θ = exp (I * θ) * 1 := by
-    simp only [circleMap, zero_add, ofReal_one, one_mul, mul_one, mul_comm I]
-  simpa only [← hc] using hasDerivAt_comp_exp_I_mul_mul hv (w := 1) (by simp) θ
-
-/-- A derivative along the rotations at every point of the unit circle makes the boundary values
-`θ ↦ φ (e^{iθ})` continuous. -/
-private theorem continuous_comp_circleMap_of_hasDerivAt {φ v : ℂ → E}
-    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0) :
-    Continuous fun θ ↦ φ (circleMap 0 1 θ) :=
-  continuous_iff_continuousAt.2 fun θ ↦ (hasDerivAt_comp_circleMap hv θ).continuousAt
-
 /-- The kernel `θ ↦ i e^{iθ} / (e^{iθ} - z)` of the Cauchy integral, written in the angle, has
 derivative `z e^{iθ} / (e^{iθ} - z)²`. -/
 private theorem hasDerivAt_circleMap_mul_I_div_sub {z : ℂ} {θ : ℝ} (hne : circleMap 0 1 θ - z ≠ 0) :
@@ -475,9 +459,7 @@ private theorem hasDerivAt_comp_exp_I_mul_mul_of_mem_ball [CompleteSpace E] {φ 
     HasDerivAt (fun t : ℝ ↦ G (exp (I * t) * z)) (G' (exp (I * t) * z)) t := by
   have hφi : CircleIntegrable φ 0 1 :=
     (continuous_comp_circleMap_of_hasDerivAt hv).intervalIntegrable _ _
-  have hξ : exp (I * t) * z ∈ ball (0 : ℂ) 1 := by
-    rw [mem_ball_zero_iff, norm_exp_I_mul_mul]
-    exact mem_ball_zero_iff.1 hz
+  have hξ : exp (I * t) * z ∈ ball (0 : ℂ) 1 := exp_I_mul_mul_mem_ball_iff.2 hz
   have hF : HasDerivAt G (deriv (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w)
       (exp (I * t) * z)) (exp (I * t) * z) :=
     (((differentiableOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul hφi).differentiableAt
@@ -497,8 +479,8 @@ private theorem sub_eq_integral_of_mem_sphere [CompleteSpace E] {G G' : ℂ → 
     {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) (t : ℝ) :
     G (exp (I * t) * w) - G w = ∫ s in 0..t, G' (exp (I * s) * w) := by
   have hw1 : ‖w‖ = 1 := mem_sphere_zero_iff_norm.1 hw
-  have hrot {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) (s : ℝ) : exp (I * s) * z ∈ closedBall 0 1 := by
-    rwa [mem_closedBall_zero_iff, norm_exp_I_mul_mul, ← mem_closedBall_zero_iff]
+  have hrot {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) (s : ℝ) : exp (I * s) * z ∈ closedBall 0 1 :=
+    exp_I_mul_mul_mem_closedBall_iff.2 hz
   set P : ℝ → ℂ := fun r ↦ ((projIcc (0 : ℝ) 1 zero_le_one r : ℝ) : ℂ) * w
   have hP (r : ℝ) : P r ∈ closedBall (0 : ℂ) 1 := by
     rw [mem_closedBall_zero_iff, norm_mul, hw1, mul_one, norm_real, Real.norm_eq_abs,
@@ -547,8 +529,8 @@ theorem hasDerivAt_comp_exp_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv
   have hint := sub_eq_integral_of_mem_sphere hG hG'
     (fun z hz t ↦ hasDerivAt_comp_exp_I_mul_mul_of_mem_ball hv hvc hGF hG'F hz t) hw
   have hcont : Continuous fun s : ℝ ↦ G' (exp (I * s) * w) :=
-    hG'.comp_continuous (by fun_prop) fun s ↦ by
-      rw [mem_closedBall_zero_iff, norm_exp_I_mul_mul, mem_sphere_zero_iff_norm.1 hw]
+    hG'.comp_continuous (by fun_prop) fun s ↦
+      sphere_subset_closedBall (exp_I_mul_mul_mem_sphere_iff.2 hw)
   have hd := (hcont.integral_hasStrictDerivAt 0 0).hasDerivAt.const_add (G w)
   simp only [ofReal_zero, mul_zero, exp_zero, one_mul] at hd
   convert hd using 1

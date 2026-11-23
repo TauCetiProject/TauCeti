@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -29,10 +30,14 @@ the circle, since the arc between two points is at most `π / 2` times their dis
 
 ## Main declarations
 
-* `TauCeti.norm_exp_I_mul_mul`: rotations preserve the norm.
+* `TauCeti.norm_exp_I_mul_mul`: rotations preserve the norm, so they preserve the spheres, open
+  balls and closed balls about `0` (`TauCeti.exp_I_mul_mul_mem_sphere_iff`,
+  `TauCeti.exp_I_mul_mul_mem_ball_iff`, `TauCeti.exp_I_mul_mul_mem_closedBall_iff`).
 * `TauCeti.hasDerivAt_exp_I_mul_mul`: the rotation `t ↦ e^{it} z` has velocity `i e^{it} z`.
 * `TauCeti.hasDerivAt_comp_exp_I_mul_mul`: a derivative along the rotations at every point of the
   circle gives the derivative of `t ↦ φ (e^{it} w)` at every `t`.
+* `TauCeti.hasDerivAt_comp_circleMap`, `TauCeti.continuous_comp_circleMap_of_hasDerivAt`: the same
+  derivative read in the angle, `θ ↦ φ (e^{iθ})`, and the continuity it implies.
 * `TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul`: a derivative along the rotations bounded
   by `M` makes a function `2 M`-Lipschitz on the circle.
 -/
@@ -50,6 +55,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem norm_exp_I_mul_mul (t : ℝ) (z : ℂ) : ‖exp (I * t) * z‖ = ‖z‖ := by
   rw [norm_mul, norm_exp_I_mul_ofReal, one_mul]
 
+/-- Rotations preserve the sphere `sphere 0 r`. -/
+theorem exp_I_mul_mul_mem_sphere_iff {t : ℝ} {z : ℂ} {r : ℝ} :
+    exp (I * t) * z ∈ sphere (0 : ℂ) r ↔ z ∈ sphere 0 r := by
+  rw [mem_sphere_zero_iff_norm, mem_sphere_zero_iff_norm, norm_exp_I_mul_mul]
+
+/-- Rotations preserve the open ball `ball 0 r`. -/
+theorem exp_I_mul_mul_mem_ball_iff {t : ℝ} {z : ℂ} {r : ℝ} :
+    exp (I * t) * z ∈ ball (0 : ℂ) r ↔ z ∈ ball 0 r := by
+  rw [mem_ball_zero_iff, mem_ball_zero_iff, norm_exp_I_mul_mul]
+
+/-- Rotations preserve the closed ball `closedBall 0 r`. -/
+theorem exp_I_mul_mul_mem_closedBall_iff {t : ℝ} {z : ℂ} {r : ℝ} :
+    exp (I * t) * z ∈ closedBall (0 : ℂ) r ↔ z ∈ closedBall 0 r := by
+  rw [mem_closedBall_zero_iff, mem_closedBall_zero_iff, norm_exp_I_mul_mul]
+
 /-- The rotation `t ↦ e^{it} z` has velocity `i e^{it} z`. -/
 theorem hasDerivAt_exp_I_mul_mul (z : ℂ) (t : ℝ) :
     HasDerivAt (fun t : ℝ ↦ exp (I * t) * z) (I * (exp (I * t) * z)) t := by
@@ -66,12 +86,27 @@ theorem hasDerivAt_comp_exp_I_mul_mul {φ v : ℂ → E}
     HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v (exp (I * t) * w)) t := by
   have h := HasDerivAt.comp_sub_const t t (by
     rw [sub_self]
-    exact hv (exp (I * t) * w)
-      (by rw [mem_sphere_zero_iff_norm, norm_exp_I_mul_mul, mem_sphere_zero_iff_norm.1 hw]))
+    exact hv (exp (I * t) * w) (exp_I_mul_mul_mem_sphere_iff.2 hw))
   convert h using 2 with x
   rw [← mul_assoc, ← exp_add]
   push_cast
   rw [show I * (x - t) + I * t = I * x by ring]
+
+/-- A derivative of the boundary values along the rotations, read in the angle: `θ ↦ φ (e^{iθ})`
+has derivative `v (e^{iθ})` at every `θ`. -/
+theorem hasDerivAt_comp_circleMap {φ v : ℂ → E}
+    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
+    (θ : ℝ) : HasDerivAt (fun θ ↦ φ (circleMap 0 1 θ)) (v (circleMap 0 1 θ)) θ := by
+  have hc (θ : ℝ) : circleMap 0 1 θ = exp (I * θ) * 1 := by
+    simp only [circleMap, zero_add, ofReal_one, one_mul, mul_one, mul_comm I]
+  simpa only [← hc] using hasDerivAt_comp_exp_I_mul_mul hv (w := 1) (by simp) θ
+
+/-- A derivative along the rotations at every point of the unit circle makes the boundary values
+`θ ↦ φ (e^{iθ})` continuous. -/
+theorem continuous_comp_circleMap_of_hasDerivAt {φ v : ℂ → E}
+    (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0) :
+    Continuous fun θ ↦ φ (circleMap 0 1 θ) :=
+  continuous_iff_continuousAt.2 fun θ ↦ (hasDerivAt_comp_circleMap hv θ).continuousAt
 
 /-- **A derivative along the rotations bounds the oscillation on the circle.** If at every point
 `w` of the unit circle `t ↦ φ (e^{it} w)` has derivative `v w` at `t = 0`, and `‖v‖ ≤ M` on the
@@ -92,7 +127,7 @@ theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_mul {φ v : ℂ → E} {M : ℝ
   have hmv := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
     (f := fun t : ℝ ↦ φ (exp (I * t) * w'))
     (fun t _ ↦ (hasDerivAt_comp_exp_I_mul_mul hv hw' t).hasDerivWithinAt)
-    (fun t _ ↦ hM _ (by rw [mem_sphere_zero_iff_norm, norm_exp_I_mul_mul, hw1']))
+    (fun t _ ↦ hM _ (exp_I_mul_mul_mem_sphere_iff.2 hw'))
     (mem_univ 0) (mem_univ s)
   simp only [ofReal_zero, mul_zero, exp_zero, one_mul, hws, sub_zero, Real.norm_eq_abs] at hmv
   have hchord : |s| ≤ 2 * dist w w' := by
