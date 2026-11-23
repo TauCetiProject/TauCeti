@@ -30,6 +30,7 @@ permutation of the fibre given by path lifting along it
 * `IsCoveringMap.monodromy_signRankOneLocalSystem`: the monodromy of the sign local system is the
   sign character.
 * `IsCoveringMap.inv_signRankOneLocalSystem`: `o⁻¹ = o`.
+* `IsCoveringMap.signRankOneLocalSystem_mul_self`: `o ⊗ o = 1`.
 
 ## References
 
@@ -76,6 +77,13 @@ theorem signRankOneLocalSystem_ρ_apply (hx : (p ⁻¹' {x}).Finite) (γ : Moore
 theorem inv_signRankOneLocalSystem (hx : (p ⁻¹' {x}).Finite) :
     (hp.signRankOneLocalSystem R hx)⁻¹ = hp.signRankOneLocalSystem R hx :=
   RankOneLocalSystem.inv_ofMonodromy_unitsMap_comp _
+
+/-- The square of the sign local system is trivial. -/
+@[simp]
+theorem signRankOneLocalSystem_mul_self (hx : (p ⁻¹' {x}).Finite) :
+    hp.signRankOneLocalSystem R hx * hp.signRankOneLocalSystem R hx = 1 := by
+  nth_rw 1 [← hp.inv_signRankOneLocalSystem hx]
+  exact inv_mul_cancel _
 
 /-- A trivial sign character gives a trivial sign local system. -/
 theorem signRankOneLocalSystem_eq_one (hx : (p ⁻¹' {x}).Finite) (h : hp.signCharacter hx = 1) :

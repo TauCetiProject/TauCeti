@@ -231,6 +231,13 @@ loop space (`freeLoopOrientationCharacter_eq_of_joined`). -/
 def freeLoopOrientationCharacter (hι : Fintype.card ι = finrank ℝ F) (f : C(Circle, B)) : ℤˣ :=
   (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignCharacter (finite_fiber hι) f
 
+/-- The orientation character of a free loop is its sign character in the orientation double
+cover. -/
+theorem freeLoopOrientationCharacter_eq_freeLoopSignCharacter (f : C(Circle, B)) :
+    freeLoopOrientationCharacter F E hι f =
+      (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignCharacter (finite_fiber hι) f :=
+  (rfl)
+
 /-- The orientation character of a free loop is the orientation character of its based loop at
 `f 1`. -/
 theorem freeLoopOrientationCharacter_def (f : C(Circle, B)) :
