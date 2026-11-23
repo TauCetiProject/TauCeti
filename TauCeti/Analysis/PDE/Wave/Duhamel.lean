@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Wave.DAlembert
 import Mathlib.Analysis.Calculus.FDeriv.Partial
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 
 /-!
@@ -31,11 +32,11 @@ Banach space, and classical solutions are `C²` on the whole space-time plane.
 * **Existence.** For `G` continuous with a continuous spatial derivative, `dAlembertDuhamel G` is
   `C²`, solves `∂ₜ²u = ∂ₓ²u + G` and has zero initial data; together with d'Alembert's formula it
   solves the Cauchy problem. No derivative of `G` in time is needed.
-* **Representation, uniqueness and finite speed of propagation.** Every `C²` solution is the sum
-  of d'Alembert's formula for its own data and Duhamel's formula for its forcing. Hence `u(t, x)`
-  depends only on the data on `[x - |t|, x + |t|]` and on the forcing on the backward
-  characteristic triangle with apex `(t, x)`. Uniqueness for the Cauchy problem needs no
-  regularity of `G` at all.
+* **Representation, uniqueness and finite speed of propagation.** For `G` continuous with a
+  continuous spatial derivative, every `C²` solution is the sum of d'Alembert's formula for its
+  own data and Duhamel's formula for its forcing. Hence, for such forcings, `u(t, x)` depends only
+  on the data on `[x - |t|, x + |t|]` and on the forcing on the backward characteristic triangle
+  with apex `(t, x)`. Only uniqueness for the Cauchy problem needs no regularity of `G` at all.
 * **Bound.** If `‖G‖ ≤ K` on that triangle, then `‖dAlembertDuhamel G t x‖ ≤ t² K / 2`. The
   constant forcing `G = K`, with solution `u = t² K / 2`, attains it.
 
@@ -69,7 +70,8 @@ All declarations are in the `TauCeti.PDE` namespace.
 * `contDiff_dAlembertDuhamel`, `deriv_deriv_dAlembertDuhamel`, `dAlembertDuhamel_time_zero`,
   `deriv_dAlembertDuhamel_zero`: it is a classical solution with zero initial data.
 * `deriv_deriv_dAlembert_add_dAlembertDuhamel`: d'Alembert's and Duhamel's formulas together
-  solve the Cauchy problem.
+  solve the forced equation; their initial data come from `dAlembert_time_zero`,
+  `deriv_dAlembert_zero`, `dAlembertDuhamel_time_zero` and `deriv_dAlembertDuhamel_zero`.
 * `eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq`: every classical solution is given by
   these formulas.
 * `eq_of_deriv_deriv_eq_add_of_eqOn`, `eq_of_deriv_deriv_eq_add_of_eq_initial`: the domain of
@@ -394,20 +396,6 @@ section CauchyProblem
 
 variable {G G' : ℝ → ℝ → F} {u v : ℝ → ℝ → F}
 
-/-- The second derivative of a sum of `C²` functions of one variable: Mathlib's
-`iteratedDeriv_fun_add` at order two, written with `deriv`. -/
-private theorem deriv_deriv_add_apply {a b : ℝ → F} (ha : ContDiff ℝ 2 a) (hb : ContDiff ℝ 2 b)
-    (z : ℝ) : deriv (deriv fun y ↦ a y + b y) z = deriv (deriv a) z + deriv (deriv b) z := by
-  simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using
-    iteratedDeriv_fun_add (n := 2) (x := z) ha.contDiffAt hb.contDiffAt
-
-/-- The second derivative of a difference of `C²` functions of one variable: Mathlib's
-`iteratedDeriv_fun_sub` at order two, written with `deriv`. -/
-private theorem deriv_deriv_sub_apply {a b : ℝ → F} (ha : ContDiff ℝ 2 a) (hb : ContDiff ℝ 2 b)
-    (z : ℝ) : deriv (deriv fun y ↦ a y - b y) z = deriv (deriv a) z - deriv (deriv b) z := by
-  simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using
-    iteratedDeriv_fun_sub (n := 2) (x := z) ha.contDiffAt hb.contDiffAt
-
 /-- The time slices `r ↦ u r x` of a `C²` function on space-time are `C²`. -/
 private theorem contDiff_slice_time (hu : ContDiff ℝ 2 (uncurry u)) (x : ℝ) :
     ContDiff ℝ 2 fun r ↦ u r x :=
@@ -427,8 +415,9 @@ private theorem deriv_deriv_sub_eq (hu : ContDiff ℝ 2 (uncurry u))
     (t x : ℝ) :
     deriv (fun s ↦ deriv (fun r ↦ u r x - v r x) s) t =
       deriv (deriv fun y ↦ u t y - v t y) x := by
-  rw [deriv_deriv_sub_apply (contDiff_slice_time hu x) (contDiff_slice_time hv x),
-    deriv_deriv_sub_apply (contDiff_slice_space hu t) (contDiff_slice_space hv t), hwu, hwv]
+  rw [deriv_deriv_fun_sub (contDiff_slice_time hu x).contDiffAt
+    (contDiff_slice_time hv x).contDiffAt, deriv_deriv_fun_sub
+    (contDiff_slice_space hu t).contDiffAt (contDiff_slice_space hv t).contDiffAt, hwu, hwv]
   abel
 
 variable [CompleteSpace F]
@@ -454,7 +443,7 @@ variable (hG : Continuous (uncurry G)) (hGd : ∀ s, Differentiable ℝ (G s))
   (hGd' : Continuous (uncurry fun s ↦ deriv (G s)))
 include hG hGd hGd'
 
-/-- **The forced Cauchy problem.** For `f` of class `C²`, `g` of class `C¹` and `G` continuous
+/-- **The forced wave equation.** For `f` of class `C²`, `g` of class `C¹` and `G` continuous
 with a continuous spatial derivative, `u = dAlembert f g + dAlembertDuhamel G` satisfies
 `∂ₜ²u = ∂ₓ²u + G` everywhere. It is `C²` by `contDiff_dAlembert` and
 `contDiff_dAlembertDuhamel`, and its initial displacement `f` and initial velocity `g` come from
@@ -465,15 +454,17 @@ theorem deriv_deriv_dAlembert_add_dAlembertDuhamel {f g : ℝ → F} (hf : ContD
       deriv (deriv fun y ↦ dAlembert f g t y + dAlembertDuhamel G t y) x + G t x := by
   have hU := contDiff_dAlembert hf hg
   have hW := contDiff_dAlembertDuhamel hG hGd hGd'
-  rw [deriv_deriv_add_apply (contDiff_slice_time hU x) (contDiff_slice_time hW x),
-    deriv_deriv_add_apply (contDiff_slice_space hU t) (contDiff_slice_space hW t),
+  rw [deriv_deriv_fun_add (contDiff_slice_time hU x).contDiffAt
+    (contDiff_slice_time hW x).contDiffAt, deriv_deriv_fun_add
+    (contDiff_slice_space hU t).contDiffAt (contDiff_slice_space hW t).contDiffAt,
     deriv_deriv_dAlembert hf hg, deriv_deriv_dAlembertDuhamel hG hGd hGd']
   abel
 
-/-- **Representation of classical solutions.** Every `C²` solution `u` of the forced wave equation
-`∂ₜ²u = ∂ₓ²u + G` on the space-time plane is the sum of d'Alembert's formula for its initial
-displacement `u(0, ·)` and initial velocity `∂ₜu(0, ·)` and Duhamel's formula for the forcing. No
-growth condition at infinity is assumed. -/
+/-- **Representation of classical solutions.** For `G` continuous with a continuous spatial
+derivative, every `C²` solution `u` of the forced wave equation `∂ₜ²u = ∂ₓ²u + G` on the
+space-time plane is the sum of d'Alembert's formula for its initial displacement `u(0, ·)` and
+initial velocity `∂ₜu(0, ·)` and Duhamel's formula for the forcing. No growth condition at
+infinity is assumed. -/
 theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2 (uncurry u))
     (hwave : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
     (t x : ℝ) :
