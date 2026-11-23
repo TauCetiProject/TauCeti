@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient.Form
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LevelShift
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Basic
 
 /-!
 # Magnetic cotangent reduction at a coadjoint-fixed value
@@ -17,9 +17,9 @@ Let a Lie group `G` act smoothly, freely and properly on a manifold `Q`, with or
 action on `T*Q` (`TauCeti.CotangentBundle.momentMap`). At the value `0`, the reduction map
 `Ψ : (q, p) ↦ (ρ q, p')`, where `p = p' ∘ dρ_q`, identifies the level `μ⁻¹(0)` modulo `G` with
 `T*(Q ⧸ G)` and pulls back its canonical symplectic form
-(`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent`). This file treats a nonzero value
-`ν ∈ 𝔤*`, after choosing a one-form `α` on `Q` that is invariant under `G` and pairs the fundamental
-vector fields with the constant `-ν`:
+(`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Basic`). This file treats a nonzero
+value `ν ∈ 𝔤*`, after choosing a one-form `α` on `Q` that is invariant under `G` and pairs the
+fundamental vector fields with the constant `-ν`:
 
 `α(ξ_Q) = -ν(ξ)`.
 
