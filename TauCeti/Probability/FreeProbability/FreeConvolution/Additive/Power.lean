@@ -15,12 +15,12 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 This file develops finite-family free additive convolution via `Finset.fold`, C⋆- and von Neumann
 transport for finite sums of freely independent selfadjoint families, and the `n`-fold free additive
-convolution power `MeasureTheory.Measure.freeConvolutionPower` (`μ^{⊞ n}`).
+convolution power `MeasureTheory.Measure.freeConvolutionPower`.
 
 ## Main definitions
 
 * `MeasureTheory.Measure.freeConvolutionPower`: the `n`-fold free additive convolution power
-  `μ^{⊞ n}`, with `μ^{⊞ 0} = Measure.dirac 0`.
+  `μ.freeConvolutionPower n`, with `μ.freeConvolutionPower 0 = Measure.dirac 0`.
 
 ## Main results
 
@@ -303,8 +303,8 @@ end TauCeti
 
 namespace MeasureTheory.Measure
 
-/-- The `n`-fold free additive convolution power `μ^{⊞ n}` of a measure on `ℝ`, with zeroth power
-`Measure.dirac 0`. -/
+/-- The `n`-fold free additive convolution power `μ.freeConvolutionPower n` of a measure on `ℝ`,
+with zeroth power `Measure.dirac 0`. -/
 def freeConvolutionPower (μ : Measure ℝ) : ℕ → Measure ℝ
   | 0 => Measure.dirac 0
   | n + 1 => (freeConvolutionPower μ n).freeConv μ
@@ -313,7 +313,8 @@ def freeConvolutionPower (μ : Measure ℝ) : ℕ → Measure ℝ
 @[simp] theorem freeConvolutionPower_zero (μ : Measure ℝ) :
     μ.freeConvolutionPower 0 = Measure.dirac 0 := by rfl
 
-/-- Right recursion `μ^{⊞ (n + 1)} = μ^{⊞ n} ⊞ μ` for free convolution powers. -/
+/-- Right recursion `μ.freeConvolutionPower (n + 1) = (μ.freeConvolutionPower n).freeConv μ` for
+free convolution powers. -/
 theorem freeConvolutionPower_succ (μ : Measure ℝ) (n : ℕ) :
     μ.freeConvolutionPower (n + 1) = (μ.freeConvolutionPower n).freeConv μ := by rfl
 
@@ -386,7 +387,8 @@ theorem freeConvolutionPower_add (μ : Measure ℝ) (m n : ℕ) :
   | succ n ih =>
       rw [Nat.add_succ, freeConvolutionPower_succ, freeConvolutionPower_succ, ih, freeConv_assoc]
 
-/-- Left recursion `μ^{⊞ (n + 1)} = μ ⊞ μ^{⊞ n}`, unconditionally for all measures on `ℝ`. -/
+/-- Left recursion `μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n)`,
+unconditionally for all measures on `ℝ`. -/
 theorem freeConvolutionPower_succ' (μ : Measure ℝ) (n : ℕ) :
     μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n) := freeConv_comm _ _
 
@@ -450,7 +452,7 @@ theorem support_freeConvolutionPower_subset_Icc {μ : Measure ℝ} {m M : ℝ}
   simpa [fold_freeConv_const _ μ, nsmul_eq_mul] using
     support_fold_freeConv_subset_Icc (univ : Finset (Fin n)) (μ := fun _ => μ) fun _ _ => hI
 
-/-- **Formal R-series of a free convolution power**: `R_{μ^{⊞ n}} = n • R_μ`. -/
+/-- The formal R-series of `μ.freeConvolutionPower n` is `n` times the formal R-series of `μ`. -/
 theorem rSeries_integral_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
     TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConvolutionPower n)) id =
@@ -458,7 +460,7 @@ theorem rSeries_integral_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityM
   simpa [fold_freeConv_const _ μ] using rSeries_integral_fold_freeConv (univ : Finset (Fin n))
     (μ := fun _ => μ) (fun _ _ => inferInstance) (fun _ _ => hμ)
 
-/-- **Free cumulants of a free convolution power**: `κ_s(μ^{⊞ n}) = n • κ_s(μ)` for nonempty `s`. -/
+/-- Every nonempty free cumulant of `μ.freeConvolutionPower n` is `n` times that of `μ`. -/
 theorem freeCumulant_integral_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) {α : Type*} [LinearOrder α] {s : Finset α}
     (hs : s.Nonempty) :
@@ -494,14 +496,14 @@ theorem eq_freeConvolutionPower_iff_forall_freeCumulant_integral_eq {ρ μ : Mea
   exact forall₂_congr fun k hk => by
     rw [freeCumulant_integral_freeConvolutionPower hμ n ⟨⟨0, Nat.pos_of_ne_zero hk⟩, mem_univ _⟩]
 
-/-- The mean of `μ^{⊞ n}` is `n` times the mean of `μ`. -/
+/-- The mean of `μ.freeConvolutionPower n` is `n` times the mean of `μ`. -/
 theorem integral_id_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
     ∫ x, x ∂(μ.freeConvolutionPower n) = n * ∫ x, x ∂μ := by
   simpa [PowerSeries.coeff_zero_eq_constantCoeff_apply, TauCeti.constantCoeff_rSeries, nsmul_eq_mul]
     using congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConvolutionPower hμ n)
 
-/-- The variance of `μ^{⊞ n}` is `n` times the variance of `μ`. -/
+/-- The variance of `μ.freeConvolutionPower n` is `n` times the variance of `μ`. -/
 theorem variance_id_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
     variance id (μ.freeConvolutionPower n) = n * variance id μ := by
