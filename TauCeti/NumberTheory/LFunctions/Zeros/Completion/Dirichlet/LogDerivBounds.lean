@@ -119,7 +119,7 @@ theorem exists_sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le :
     (by linarith)
   have h1 := hprin q hη hη1
   have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
-  have h1_le : 1 ≤ Real.log (3 * q) := (Real.one_lt_log_of_three_le (by linarith)).le
+  have h1_le : 1 ≤ Real.log (3 * q) := (Real.one_lt_log_three_mul hq1).le
   have hlogq_le : Real.log q ≤ Real.log (3 * q) :=
     Real.log_le_log (by positivity) (by linarith)
   have hC0_le :

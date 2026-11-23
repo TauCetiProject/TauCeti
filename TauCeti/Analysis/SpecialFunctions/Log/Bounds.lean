@@ -43,6 +43,10 @@ in explicit prime-counting estimates.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.one_lt_log_three`, `Real.one_lt_log_of_three_le`, `Real.one_le_log_abs_add_three`:
   `1 < log 3`, `1 < log x` for `3 ≤ x`, and `1 ≤ log (|u| + 3)`.
+* `Real.one_lt_log_three_mul`, `Real.log_three_mul_pos`, `Real.log_three_mul_le`,
+  `Real.one_lt_log_mul_abs_add_three`, `Real.log_le_log_mul_abs_add_three`,
+  `Real.log_abs_add_three_le_log_mul`, `Real.log_two_mul_abs_add_three_le`:
+  elementary comparisons and positivity for `log (3 * x)` and `log (x * (|t| + 3))`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
@@ -74,6 +78,54 @@ theorem one_lt_log_of_three_le {x : ℝ} (hx : 3 ≤ x) : 1 < log x :=
 /-- For every real `u`, `1 ≤ log (|u| + 3)`. -/
 theorem one_le_log_abs_add_three (u : ℝ) : 1 ≤ log (|u| + 3) :=
   (one_lt_log_of_three_le (by linarith [abs_nonneg u])).le
+
+/-- For `1 ≤ x`, `1 < log (3 * x)`. -/
+theorem one_lt_log_three_mul {x : ℝ} (hx : 1 ≤ x) : 1 < log (3 * x) :=
+  one_lt_log_of_three_le (by linarith)
+
+/-- For `1 ≤ x`, `0 < log (3 * x)`. -/
+theorem log_three_mul_pos {x : ℝ} (hx : 1 ≤ x) : 0 < log (3 * x) :=
+  zero_lt_one.trans (one_lt_log_three_mul hx)
+
+/-- For all real `x` and `t`, `log (3 * x) ≤ log (x * (|t| + 3))`. -/
+theorem log_three_mul_le (x t : ℝ) : log (3 * x) ≤ log (x * (|t| + 3)) := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  rw [← log_abs (3 * x), ← log_abs (x * (|t| + 3)), abs_mul, abs_mul,
+    abs_of_pos (by positivity : (0 : ℝ) < 3), abs_of_pos (by positivity : (0 : ℝ) < |t| + 3)]
+  exact log_le_log (by positivity) (by nlinarith [abs_pos.mpr hx0, abs_nonneg t])
+
+/-- For `1 ≤ x` and any real `t`, `1 < log (x * (|t| + 3))`. -/
+theorem one_lt_log_mul_abs_add_three {x : ℝ} (hx : 1 ≤ x) (t : ℝ) :
+    1 < log (x * (|t| + 3)) :=
+  (one_lt_log_three_mul hx).trans_le (log_three_mul_le x t)
+
+/-- For all real `x` and `t`, `log x ≤ log (x * (|t| + 3))`. -/
+theorem log_le_log_mul_abs_add_three (x t : ℝ) : log x ≤ log (x * (|t| + 3)) := by
+  rcases eq_or_ne x 0 with rfl | hx0
+  · simp
+  rw [← log_abs x, ← log_abs (x * (|t| + 3)), abs_mul,
+    abs_of_pos (by positivity : (0 : ℝ) < |t| + 3)]
+  exact log_le_log (abs_pos.mpr hx0)
+    (le_mul_of_one_le_right (abs_nonneg x) (by linarith [abs_nonneg t]))
+
+/-- For `1 ≤ x` and any real `t`, `log (|t| + 3) ≤ log (x * (|t| + 3))`. -/
+theorem log_abs_add_three_le_log_mul {x : ℝ} (hx : 1 ≤ x) (t : ℝ) :
+    log (|t| + 3) ≤ log (x * (|t| + 3)) :=
+  log_le_log (by positivity) (le_mul_of_one_le_left (by positivity) hx)
+
+/-- For `1 ≤ x` and any real `t`, `log (|2 * t| + 3) ≤ 2 * log (x * (|t| + 3))`. -/
+theorem log_two_mul_abs_add_three_le {x : ℝ} (hx : 1 ≤ x) (t : ℝ) :
+    log (|2 * t| + 3) ≤ 2 * log (x * (|t| + 3)) := by
+  have hlog2 : log 2 ≤ 1 :=
+    (log_le_iff_le_exp (by norm_num)).mpr (by linarith [exp_one_gt_d9])
+  have hL : 1 < log (x * (|t| + 3)) := one_lt_log_mul_abs_add_three hx t
+  calc
+    log (|2 * t| + 3) ≤ log (2 * (|t| + 3)) :=
+      log_le_log (by positivity) (by rw [abs_mul, abs_two]; linarith)
+    _ = log 2 + log (|t| + 3) := log_mul (by norm_num) (by positivity)
+    _ ≤ 1 + log (x * (|t| + 3)) := add_le_add hlog2 (log_abs_add_three_le_log_mul hx t)
+    _ ≤ 2 * log (x * (|t| + 3)) := by linarith
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by

@@ -9,13 +9,13 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ThreeFourOne
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Order
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamard
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDerivBounds
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFree.RiemannZeta
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
 
@@ -52,42 +52,17 @@ retained-zero budget `17 / (16 * η₀)`.
 
 public section
 
-open Complex DirichletCharacter Filter Set TauCeti.LFunctions
+open Complex DirichletCharacter Filter Set
 open scoped Topology
 
 namespace TauCeti
-
-private theorem one_lt_log_three_mul (q : ℕ) [NeZero q] : 1 < Real.log (3 * q) :=
-  Real.one_lt_log_of_three_le (by linarith [(Nat.one_le_cast.mpr NeZero.one_le : (1 : ℝ) ≤ q)])
-
-private theorem log_three_mul_pos (q : ℕ) [NeZero q] : 0 < Real.log (3 * q) :=
-  zero_lt_one.trans (one_lt_log_three_mul q)
-
-private theorem log_three_mul_le {q : ℕ} [NeZero q] (t : ℝ) :
-    Real.log (3 * q) ≤ Real.log (q * (|t| + 3)) := by
-  have hq : (0 : ℝ) < q := Nat.cast_pos.mpr (NeZero.pos q)
-  exact Real.log_le_log (by positivity) (by nlinarith [abs_nonneg t])
-
-private theorem one_lt_log_mul_abs_add_three {q : ℕ} [NeZero q] (t : ℝ) :
-    1 < Real.log (q * (|t| + 3)) :=
-  (one_lt_log_three_mul q).trans_le (log_three_mul_le t)
-
-private theorem log_le_log_mul_abs_add_three {q : ℕ} [NeZero q] (t : ℝ) :
-    Real.log q ≤ Real.log (q * (|t| + 3)) := by
-  have hq : (0 : ℝ) < q := Nat.cast_pos.mpr (NeZero.pos q)
-  exact Real.log_le_log hq (le_mul_of_one_le_right hq.le (by linarith [abs_nonneg t]))
-
-private theorem log_abs_add_three_le_log_mul {q : ℕ} [NeZero q] (t : ℝ) :
-    Real.log (|t| + 3) ≤ Real.log (q * (|t| + 3)) :=
-  Real.log_le_log (by positivity)
-    (le_mul_of_one_le_left (by positivity) (Nat.one_le_cast.mpr NeZero.one_le))
 
 private theorem re_pos_of_le_one_sub_div_log {c : ℝ} (hc : c ≤ Real.log 3 / 2) {q : ℕ}
     [NeZero q] (ρ : ℂ) (hre : 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re) : 0 < ρ.re := by
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
   have hlog_ge : Real.log 3 ≤ Real.log (q * (|ρ.im| + 3)) :=
     (Real.log_le_log (by norm_num) (by linarith [abs_nonneg ρ.im])).trans
-      (log_abs_add_three_le_log_mul ρ.im)
+      (Real.log_abs_add_three_le_log_mul (Nat.one_le_cast.mpr NeZero.one_le) ρ.im)
   have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ 1 / 2 := by
     calc
       c / Real.log (q * (|ρ.im| + 3)) ≤ (Real.log 3 / 2) / Real.log 3 := by
@@ -97,18 +72,6 @@ private theorem re_pos_of_le_one_sub_div_log {c : ℝ} (hc : c ≤ Real.log 3 / 
         · exact div_le_div₀ (by positivity) hc hlog3 hlog_ge
       _ = 1 / 2 := by field_simp
   linarith
-
-private theorem log_two_mul_abs_add_three_le {q : ℕ} [NeZero q] (t : ℝ) :
-    Real.log (|2 * t| + 3) ≤ 2 * Real.log (q * (|t| + 3)) := by
-  have hlog2 : Real.log 2 ≤ 1 :=
-    (Real.log_le_iff_le_exp (by norm_num)).mpr (by linarith [Real.exp_one_gt_d9])
-  have hL : 1 < Real.log (q * (|t| + 3)) := one_lt_log_mul_abs_add_three t
-  calc
-    Real.log (|2 * t| + 3) ≤ Real.log (2 * (|t| + 3)) :=
-      Real.log_le_log (by positivity) (by rw [abs_mul, abs_two]; linarith)
-    _ = Real.log 2 + Real.log (|t| + 3) := Real.log_mul (by norm_num) (by positivity)
-    _ ≤ 1 + Real.log (q * (|t| + 3)) := add_le_add hlog2 (log_abs_add_three_le_log_mul t)
-    _ ≤ 2 * Real.log (q * (|t| + 3)) := by linarith
 
 private theorem neg_re_logDeriv_sq_add_two_mul_le {C_ne C_ζ : ℝ} (hCne : 0 < C_ne) (hCζ : 0 < C_ζ)
     (hnonprin : ∀ {q : ℕ} [NeZero q] (ψ : DirichletCharacter ℂ q), ψ ≠ 1 →
@@ -124,9 +87,10 @@ private theorem neg_re_logDeriv_sq_add_two_mul_le {C_ne C_ζ : ℝ} (hCne : 0 < 
       1 / (2 * η) +
         max (3 / 2 + 2 * C_ne) (1 + 2 * C_ζ) * Real.log (q * (|t| + 3)) := by
   set L : ℝ := Real.log (q * (|t| + 3))
-  have hLpos : 0 < L := zero_lt_one.trans (one_lt_log_mul_abs_add_three t)
-  have hlogq_le : Real.log q ≤ L := log_le_log_mul_abs_add_three t
-  have hlog2t_le : Real.log (|2 * t| + 3) ≤ 2 * L := log_two_mul_abs_add_three_le t
+  have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
+  have hLpos : 0 < L := zero_lt_one.trans (Real.one_lt_log_mul_abs_add_three hq1 t)
+  have hlogq_le : Real.log q ≤ L := Real.log_le_log_mul_abs_add_three q t
+  have hlog2t_le : Real.log (|2 * t| + 3) ≤ 2 * L := Real.log_two_mul_abs_add_three_le hq1 t
   have h2t_eq : (1 : ℂ) + η + 2 * t * I = 1 + η + ((2 * t : ℝ) : ℂ) * I := by push_cast; ring
   rcases hcase with hsq | ⟨hχ2_1, ht_big⟩
   · have h0 := hnonprin (χ ^ 2) hsq hη hη1 (2 * t)
@@ -187,9 +151,11 @@ private theorem threeFourOne_contradiction_of_primitive_ne_one {C_prin C_zero C_
     (hcase : χ ^ 2 ≠ 1 ∨ (χ ^ 2 = 1 ∧ (1 / (16 * K * Real.log (q * (|t| + 3)))) / 2 ≤ |t|)) :
     False := by
   set L : ℝ := Real.log (q * (|t| + 3))
-  have hL1 : 1 < L := one_lt_log_mul_abs_add_three t
-  have hlogq_le : Real.log q ≤ L := log_le_log_mul_abs_add_three t
-  have hlogt_le : Real.log (|t| + 3) ≤ L := log_abs_add_three_le_log_mul t
+  have hL1 : 1 < L :=
+    Real.one_lt_log_mul_abs_add_three (Nat.one_le_cast.mpr NeZero.one_le) t
+  have hlogq_le : Real.log q ≤ L := Real.log_le_log_mul_abs_add_three q t
+  have hlogt_le : Real.log (|t| + 3) ≤ L :=
+    Real.log_abs_add_three_le_log_mul (Nat.one_le_cast.mpr NeZero.one_le) t
   set η : ℝ := 1 / (16 * K * L)
   have hηpos : 0 < η := by positivity
   have hη1 : η ≤ 1 := div_le_one_of_le₀ (by nlinarith) (by positivity)
@@ -242,7 +208,8 @@ private theorem eta_budget_le {C_sum K η₀ : ℝ} {q : ℕ} [NeZero q] (hK1 : 
     0 < η₀ ∧ η₀ ≤ 1 ∧
       ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((1 + η₀ : ℂ) - ρ)).re ≤
         17 / (16 * η₀) := by
-  have hlog3q_ge1 : 1 ≤ Real.log (3 * q) := (one_lt_log_three_mul q).le
+  have hlog3q_ge1 : 1 ≤ Real.log (3 * q) :=
+    (Real.one_lt_log_three_mul (Nat.one_le_cast.mpr NeZero.one_le)).le
   have hlog3q_pos : 0 < Real.log (3 * q) := zero_lt_one.trans_le hlog3q_ge1
   have hη₀_pos : 0 < η₀ := by rw [hη₀]; positivity
   have hη₀_1 : η₀ ≤ 1 := by rw [hη₀]; exact div_le_one_of_le₀ (by nlinarith) (by positivity)
@@ -359,7 +326,7 @@ private theorem sq_eq_one_and_abs_im_lt_of_primitive_ne_one {K c₁ : ℝ}
     by_contra h
     exact χ.LFunction_ne_zero_of_one_le_re (.inl hne) (not_lt.mp h) hzero
   have hlog_pos : 0 < Real.log (q * (|ρ.im| + 3)) :=
-    zero_lt_one.trans (one_lt_log_mul_abs_add_three ρ.im)
+    zero_lt_one.trans (Real.one_lt_log_mul_abs_add_three (Nat.one_le_cast.mpr NeZero.one_le) ρ.im)
   have hre' : 1 - 1 / (160 * K) / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re := by
     have hc_le : c₁ / Real.log (q * (|ρ.im| + 3)) ≤ 1 / (160 * K) / Real.log (q * (|ρ.im| + 3)) :=
       div_le_div_of_nonneg_right hc₁_K hlog_pos.le
@@ -375,8 +342,9 @@ private theorem sq_eq_one_and_abs_im_lt_of_primitive_ne_one {K c₁ : ℝ}
 private theorem gap_le_of_le_one_sub_div_log {K c₁ : ℝ} (hK1 : 1 ≤ K) (hc₁_K : c₁ ≤ 1 / (160 * K))
     {q : ℕ} [NeZero q] {ρ : ℂ} (hre : 1 - c₁ / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re) :
     1 - ρ.re ≤ (1 / (16 * K * Real.log (3 * q))) / 10 := by
-  have hlog3q_pos : 0 < Real.log (3 * q) := log_three_mul_pos q
-  have hL3 : Real.log (3 * q) ≤ Real.log (q * (|ρ.im| + 3)) := log_three_mul_le ρ.im
+  have hlog3q_pos : 0 < Real.log (3 * q) :=
+    Real.log_three_mul_pos (Nat.one_le_cast.mpr NeZero.one_le)
+  have hL3 : Real.log (3 * q) ≤ Real.log (q * (|ρ.im| + 3)) := Real.log_three_mul_le q ρ.im
   have hc_le : c₁ / Real.log (q * (|ρ.im| + 3)) ≤ 1 / (160 * K) / Real.log (3 * q) :=
     div_le_div₀ (by positivity) hc₁_K hlog3q_pos hL3
   have hscale : 1 / (160 * K) / Real.log (3 * q) = (1 / (16 * K * Real.log (3 * q))) / 10 := by
@@ -393,11 +361,12 @@ private theorem real_of_primitive_ne_one {C_sum K c₁ : ℝ} (hK1 : 1 ≤ K) (h
   by_contra ht0
   have hzero : χ.LFunction ρ = 0 := (χ.meromorphicOrderAt_LFunction_pos_iff hne ρ).mp hord
   have hρpos : 0 < ρ.re := re_pos_of_le_one_sub_div_log hc₁_log ρ hre
-  have hlog3q_pos : 0 < Real.log (3 * q) := log_three_mul_pos q
+  have hlog3q_pos : 0 < Real.log (3 * q) :=
+    Real.log_three_mul_pos (Nat.one_le_cast.mpr NeZero.one_le)
   have hη_le :
       1 / (16 * K * Real.log (q * (|ρ.im| + 3))) ≤ 1 / (16 * K * Real.log (3 * q)) :=
     div_le_div_of_nonneg_left zero_le_one (by positivity)
-      (mul_le_mul_of_nonneg_left (log_three_mul_le ρ.im) (by positivity))
+      (mul_le_mul_of_nonneg_left (Real.log_three_mul_le q ρ.im) (by positivity))
   have hgap : 1 - ρ.re ≤ (1 / (16 * K * Real.log (3 * q))) / 10 :=
     gap_le_of_le_one_sub_div_log hK1 hc₁_K hre
   have him_le : |ρ.im| ≤ (1 / (16 * K * Real.log (3 * q))) / 2 := ht_lt.le.trans (by linarith)
@@ -425,7 +394,8 @@ private theorem simple_and_unique_of_real_sq {C_sum K c₁ : ℝ} (hK1 : 1 ≤ K
       1 - c₁ / Real.log (q * (|ρ₂.im| + 3)) ≤ ρ₂.re →
       0 < meromorphicOrderAt χ.LFunction ρ₁ →
       0 < meromorphicOrderAt χ.LFunction ρ₂ → ρ₁ = ρ₂ := by
-  have hlog3q_pos : 0 < Real.log (3 * q) := log_three_mul_pos q
+  have hlog3q_pos : 0 < Real.log (3 * q) :=
+    Real.log_three_mul_pos (Nat.one_le_cast.mpr NeZero.one_le)
   refine ⟨fun ρ hre hord ↦ ?_, fun ρ₁ ρ₂ hre₁ hre₂ hord₁ hord₂ ↦ ?_⟩
   · obtain ⟨him, hsq⟩ := hreal_sq hre hord
     refine ⟨him, hsq, ?_⟩
@@ -501,7 +471,7 @@ private theorem principal_meromorphicOrderAt_not_pos {c c_ζ : ℝ} (hc_ζ : 0 <
     (q : ℕ) [NeZero q] (ρ : ℂ) (hre : 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re)
     (hord : 0 < meromorphicOrderAt (1 : DirichletCharacter ℂ q).LFunction ρ) : False := by
   rcases eq_or_ne ρ 1 with rfl | hρ1
-  · rw [meromorphicOrderAt_LFunction_one_one q] at hord
+  · rw [meromorphicOrderAt_LFunctionTrivChar_one q] at hord
     exact absurd hord (by decide)
   · have hpos := re_pos_of_le_one_sub_div_log hc_log ρ hre
     rw [← changeLevel_one (q.one_dvd),
@@ -512,10 +482,32 @@ private theorem principal_meromorphicOrderAt_not_pos {c c_ζ : ℝ} (hc_ζ : 0 <
       rw [(analyticOn_riemannZeta ρ hρ1).analyticOrderAt_eq_zero.mpr hne] at hord
       simp at hord
     have hlog_ge : Real.log (|ρ.im| + 3) ≤ Real.log (q * (|ρ.im| + 3)) :=
-      log_abs_add_three_le_log_mul ρ.im
+      Real.log_abs_add_three_le_log_mul (Nat.one_le_cast.mpr NeZero.one_le) ρ.im
     have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ c_ζ / Real.log (|ρ.im| + 3) :=
       div_le_div₀ hc_ζ.le hc_le_ζ (Real.log_pos (by linarith [abs_nonneg ρ.im])) hlog_ge
     exact hζ_zfr ρ (by linarith) hζ0
+
+private theorem transfer_to_primitiveCharacter {c c₁ : ℝ} (hc₁ : 0 < c₁) (hc_le₁ : c ≤ c₁)
+    (hc_log : c ≤ Real.log 3 / 2) {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q)
+    (ρ : ℂ) (hre : 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re) :
+    1 - c₁ / Real.log (χ.conductor * (|ρ.im| + 3)) ≤ ρ.re ∧
+      meromorphicOrderAt χ.LFunction ρ = meromorphicOrderAt χ.primitiveCharacter.LFunction ρ := by
+  have hpos := re_pos_of_le_one_sub_div_log hc_log ρ hre
+  have hq₀ : (χ.conductor : ℝ) ≤ q := by
+    exact_mod_cast Nat.le_of_dvd (NeZero.pos q) χ.conductor_dvd_level
+  have hlog_ge : Real.log (χ.conductor * (|ρ.im| + 3)) ≤ Real.log (q * (|ρ.im| + 3)) :=
+    Real.log_le_log (mul_pos (Nat.cast_pos.mpr (NeZero.pos χ.conductor)) (by positivity))
+      (mul_le_mul_of_nonneg_right hq₀ (by positivity))
+  have hlog_pos : 0 < Real.log (χ.conductor * (|ρ.im| + 3)) :=
+    zero_lt_one.trans
+      (Real.one_lt_log_mul_abs_add_three (Nat.one_le_cast.mpr NeZero.one_le) ρ.im)
+  have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ c₁ / Real.log (χ.conductor * (|ρ.im| + 3)) :=
+    div_le_div₀ hc₁.le hc_le₁ hlog_pos hlog_ge
+  have hord_eq : meromorphicOrderAt χ.LFunction ρ =
+      meromorphicOrderAt (changeLevel χ.conductor_dvd_level χ.primitiveCharacter).LFunction ρ := by
+    rw [χ.changeLevel_primitiveCharacter]
+  exact ⟨by linarith, hord_eq.trans
+    (meromorphicOrderAt_LFunction_changeLevel χ.primitiveCharacter χ.conductor_dvd_level hpos)⟩
 
 /-- **The de la Vallée Poussin zero-free region for Dirichlet L-functions.** There is one absolute
 constant `c`, with `0 < c ≤ log 3 / 2`, such that for every modulus `q ≥ 1` and every Dirichlet
@@ -543,34 +535,17 @@ theorem dirichletLFunction_zeroFreeRegion :
     have no_zero := principal_meromorphicOrderAt_not_pos hc_ζ (min_le_left _ _) hc_log hζ_zfr q
     exact ⟨fun ρ hre hord ↦ (no_zero ρ hre hord).elim,
       fun ρ₁ _ hre₁ _ hord₁ _ ↦ (no_zero ρ₁ hre₁ hord₁).elim⟩
-  · let q₀ : ℕ := χ.conductor
-    let χ₀ : DirichletCharacter ℂ q₀ := χ.primitiveCharacter
-    have hχ₀_ne : χ₀ ≠ 1 := mt χ.primitiveCharacter_eq_one_iff.mp hχ1
-    obtain ⟨hsingle, huniq⟩ := hprim_zfr q₀ χ₀ χ.primitiveCharacter_isPrimitive hχ₀_ne
-    have htransfer (ρ : ℂ) (hre : 1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re) :
-        1 - c₁ / Real.log (q₀ * (|ρ.im| + 3)) ≤ ρ.re ∧
-          meromorphicOrderAt χ.LFunction ρ = meromorphicOrderAt χ₀.LFunction ρ := by
-      have hpos := re_pos_of_le_one_sub_div_log hc_log ρ hre
-      have hq₀ : (q₀ : ℝ) ≤ q := by
-        exact_mod_cast Nat.le_of_dvd (NeZero.pos q) χ.conductor_dvd_level
-      have hlog_ge : Real.log (q₀ * (|ρ.im| + 3)) ≤ Real.log (q * (|ρ.im| + 3)) :=
-        Real.log_le_log (mul_pos (Nat.cast_pos.mpr (NeZero.pos q₀)) (by positivity))
-          (mul_le_mul_of_nonneg_right hq₀ (by positivity))
-      have hc_le : c / Real.log (q * (|ρ.im| + 3)) ≤ c₁ / Real.log (q₀ * (|ρ.im| + 3)) :=
-        div_le_div₀ hc₁.le (min_le_right _ _)
-          (zero_lt_one.trans (one_lt_log_mul_abs_add_three ρ.im)) hlog_ge
-      have hord_eq : meromorphicOrderAt χ.LFunction ρ =
-          meromorphicOrderAt (changeLevel χ.conductor_dvd_level χ₀).LFunction ρ := by
-        rw [χ.changeLevel_primitiveCharacter]
-      exact ⟨by linarith,
-        hord_eq.trans (meromorphicOrderAt_LFunction_changeLevel χ₀ χ.conductor_dvd_level hpos)⟩
+  · have hχ₀_ne : χ.primitiveCharacter ≠ 1 := mt χ.primitiveCharacter_eq_one_iff.mp hχ1
+    obtain ⟨hsingle, huniq⟩ :=
+      hprim_zfr χ.conductor χ.primitiveCharacter χ.primitiveCharacter_isPrimitive hχ₀_ne
+    have htr := transfer_to_primitiveCharacter hc₁ (min_le_right _ _) hc_log χ
     refine ⟨fun ρ hre hord ↦ ?_, fun ρ₁ ρ₂ hre₁ hre₂ hord₁ hord₂ ↦ ?_⟩
-    · obtain ⟨hre', hord_eq⟩ := htransfer ρ hre
+    · obtain ⟨hre', hord_eq⟩ := htr ρ hre
       rw [hord_eq] at hord ⊢
       obtain ⟨him, hsq, h1⟩ := hsingle ρ hre' hord
       exact ⟨him, by rw [← χ.changeLevel_primitiveCharacter, ← map_pow, hsq, map_one], h1⟩
-    · obtain ⟨hre₁', hord_eq₁⟩ := htransfer ρ₁ hre₁
-      obtain ⟨hre₂', hord_eq₂⟩ := htransfer ρ₂ hre₂
+    · obtain ⟨hre₁', hord_eq₁⟩ := htr ρ₁ hre₁
+      obtain ⟨hre₂', hord_eq₂⟩ := htr ρ₂ hre₂
       rw [hord_eq₁] at hord₁
       rw [hord_eq₂] at hord₂
       exact huniq ρ₁ ρ₂ hre₁' hre₂' hord₁ hord₂

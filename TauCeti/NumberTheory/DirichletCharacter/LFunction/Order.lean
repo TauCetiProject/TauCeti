@@ -55,8 +55,7 @@ theorem meromorphicOrderAt_LFunction_eq_analyticOrderNatAt (hne : χ ≠ 1) (s :
     meromorphicOrderAt χ.LFunction s = (analyticOrderNatAt χ.LFunction s : ℤ) := by
   have haL := (differentiable_LFunction hne).analyticAt s
   rw [haL.meromorphicOrderAt_eq,
-    ← Nat.cast_analyticOrderNatAt (χ.analyticOrderAt_LFunction_ne_top hne s)]
-  rfl
+    ← Nat.cast_analyticOrderNatAt (χ.analyticOrderAt_LFunction_ne_top hne s), ENat.map_natCast]
 
 /-- A nonprincipal continued Dirichlet L-function vanishes at `s` if and only if its natural
 analytic order at `s` is at least `1`. -/
