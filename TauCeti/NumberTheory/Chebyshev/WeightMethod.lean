@@ -20,7 +20,7 @@ Chebyshev's elementary bounds for `ψ(x) = ∑_{n ≤ x} Λ(n)` with explicit co
 (`Chebyshev.floorWeight`). Then `E` takes only the values `0` and `1`, is periodic of period `30`
 on `y ≥ 0` and equals `1` on `[1, 6)`. Chebyshev's identity
 `log ⌊x⌋₊! = ∑_{n ≤ x} Λ(n) ⌊x / n⌋` (`Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`) applied
-to each `x / m` gives
+to each `x / m` (`Chebyshev.log_floor_div_factorial_eq_sum_vonMangoldt`) gives
 
 `U(x) = ∑_m ν(m) log ⌊x / m⌋₊! = ∑_{n ≤ x} Λ(n) E(x / n)`
 
@@ -51,7 +51,7 @@ known.
   `ψ(x) ≤ 1.11 x` for every `x > 0`.
 
 The two finite ranges are computations on the values of `ψ` (the largest value of `ψ(y) / y` is
-`ψ(19) / 19 = 1.0140…` on `(0, 30]` and `ψ(113) / 113 = 1.0388…` on `(0, 11723]`); they are
+`ψ(19) / 19 = 1.0139…` on `(0, 30]` and `ψ(113) / 113 = 1.0388…` on `(0, 11723]`); they are
 hypotheses here, and no computation is performed.
 
 ## References
@@ -84,11 +84,17 @@ theorem floorWeight_def (y : ℝ) :
 /-- `E(y)` depends only on `k = ⌊y⌋₊`: it is `(k + ⌊k/30⌋) − (⌊k/2⌋ + ⌊k/3⌋ + ⌊k/5⌋)`. -/
 private theorem floorWeight_eq_natCast_sub_natCast (y : ℝ) :
     floorWeight y = ((⌊y⌋₊ + ⌊y⌋₊ / 30 : ℕ) : ℝ) - ((⌊y⌋₊ / 2 + ⌊y⌋₊ / 3 + ⌊y⌋₊ / 5 : ℕ) : ℝ) := by
-  have h (m : ℕ) [m.AtLeastTwo] : ⌊y / (OfNat.ofNat m : ℝ)⌋₊ = ⌊y⌋₊ / OfNat.ofNat m :=
-    Nat.floor_div_natCast y m
-  rw [floorWeight_def, h, h, h, h]
+  rw [floorWeight_def, Nat.floor_div_ofNat, Nat.floor_div_ofNat, Nat.floor_div_ofNat,
+    Nat.floor_div_ofNat]
   push_cast
   ring
+
+/-- Shifting `k` by `30` shifts `k / 2`, `k / 3`, `k / 5` and `k / 30` by `15`, `10`, `6`
+and `1`. -/
+private theorem add_thirty_div (k : ℕ) :
+    (k + 30) / 2 = k / 2 + 15 ∧ (k + 30) / 3 = k / 3 + 10 ∧ (k + 30) / 5 = k / 5 + 6 ∧
+      (k + 30) / 30 = k / 30 + 1 := by
+  omega
 
 /-- The integer form of `E ∈ {0, 1}`, proved on `[0, 30)` by cases and extended by periodicity. -/
 private theorem add_div_thirty_eq_or (k : ℕ) :
@@ -97,11 +103,9 @@ private theorem add_div_thirty_eq_or (k : ℕ) :
   | _ k ih =>
     rcases lt_or_ge k 30 with hk | hk
     · interval_cases k <;> omega
-    · have := ih (k - 30) (by omega)
-      have : k / 2 = (k - 30) / 2 + 15 := by omega
-      have : k / 3 = (k - 30) / 3 + 10 := by omega
-      have : k / 5 = (k - 30) / 5 + 6 := by omega
-      have : k / 30 = (k - 30) / 30 + 1 := by omega
+    · obtain ⟨j, rfl⟩ : ∃ j, k = j + 30 := ⟨k - 30, by omega⟩
+      have := ih j (by omega)
+      obtain ⟨h₂, h₃, h₅, h₃₀⟩ := add_thirty_div j
       omega
 
 /-- Chebyshev's weight takes only the values `0` and `1`. -/
@@ -129,10 +133,7 @@ theorem floorWeight_eq_one {y : ℝ} (h₁ : 1 ≤ y) (h₆ : y < 6) : floorWeig
 theorem floorWeight_add_thirty {y : ℝ} (hy : 0 ≤ y) : floorWeight (y + 30) = floorWeight y := by
   rw [floorWeight_eq_natCast_sub_natCast, floorWeight_eq_natCast_sub_natCast,
     Nat.floor_add_ofNat hy]
-  have h₂ : (⌊y⌋₊ + 30) / 2 = ⌊y⌋₊ / 2 + 15 := by omega
-  have h₃ : (⌊y⌋₊ + 30) / 3 = ⌊y⌋₊ / 3 + 10 := by omega
-  have h₅ : (⌊y⌋₊ + 30) / 5 = ⌊y⌋₊ / 5 + 6 := by omega
-  have h₃₀ : (⌊y⌋₊ + 30) / 30 = ⌊y⌋₊ / 30 + 1 := by omega
+  obtain ⟨h₂, h₃, h₅, h₃₀⟩ := add_thirty_div ⌊y⌋₊
   rw [h₂, h₃, h₅, h₃₀]
   push_cast
   ring
@@ -149,23 +150,10 @@ theorem weightedLogFactorial_def (x : ℝ) :
     weightedLogFactorial x =
       log ⌊x⌋₊ ! - log ⌊x / 2⌋₊ ! - log ⌊x / 3⌋₊ ! - log ⌊x / 5⌋₊ ! + log ⌊x / 30⌋₊ ! := (rfl)
 
-/-- Chebyshev's identity at `x / m`, with the sum extended to all `n ≤ x`:
-`log ⌊x / m⌋₊! = ∑_{n ≤ x} Λ(n) ⌊(x / n) / m⌋`. -/
-private theorem log_floor_div_factorial_eq_sum (x : ℝ) (m : ℕ) :
-    log ⌊x / m⌋₊ ! = ∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n * ⌊x / n / m⌋₊ := by
-  rw [log_floor_factorial_eq_sum_vonMangoldt]
-  have hsub : Ioc 0 ⌊x / m⌋₊ ⊆ Ioc 0 ⌊x⌋₊ :=
-    Ioc_subset_Ioc_right (by rw [Nat.floor_div_natCast]; exact Nat.div_le_self _ _)
-  rw [sum_subset hsub fun n hn hn' ↦ ?_]
-  · exact sum_congr rfl fun n _ ↦ by rw [div_right_comm]
-  · simp only [mem_Ioc, not_and, not_le] at hn hn'
-    rw [Nat.floor_div_natCast, Nat.div_eq_of_lt (hn' hn.1)]
-    simp
-
 /-- **Chebyshev's identity** for the weighted sum: `U(x) = ∑_{n ≤ x} Λ(n) E(x / n)`. -/
 theorem weightedLogFactorial_eq_sum_vonMangoldt (x : ℝ) :
     weightedLogFactorial x = ∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n * floorWeight (x / n) := by
-  have h := log_floor_div_factorial_eq_sum x
+  have h := log_floor_div_factorial_eq_sum_vonMangoldt x
   have h₁ := h 1
   have h₂ := h 2
   have h₃ := h 3
@@ -263,7 +251,8 @@ theorem weightConstant_mul_sub_le_psi {x : ℝ} (hx : 30 ≤ x) :
 /-- **Chebyshev's lower bound** with a decimal constant: `0.92129 x − 5 log x + 5 ≤ ψ(x)` for
 `x ≥ 30`. -/
 theorem mul_sub_le_psi {x : ℝ} (hx : 30 ≤ x) : 0.92129 * x - 5 * log x + 5 ≤ ψ x := by
-  nlinarith [weightConstant_mul_sub_le_psi hx, weightConstant_gt_d5]
+  have := mul_le_mul_of_nonneg_right weightConstant_gt_d5.le (by linarith : (0 : ℝ) ≤ x)
+  linarith [weightConstant_mul_sub_le_psi hx]
 
 /-- The upper bound for one step of Chebyshev's iteration:
 `ψ(x) − ψ(x / 6) ≤ a x + 5 log x − 5` for `x ≥ 30`. -/
@@ -307,7 +296,11 @@ theorem psi_le_of_forall_psi_le_mul (h : ∀ y, 0 < y → y ≤ 30 → ψ y ≤ 
       have hq : 1 ≤ log (x / 5) / log 6 := by
         rw [le_div_iff₀ hlog6, one_mul]
         exact log_le_log (by norm_num) (by linarith)
-      nlinarith
+      -- `ψ(x / 6) ≤ 1.015 x / 6 ≤ a x / 5`, and
+      -- `5 log x − 5 ≤ (log (x / 5) / log 6) (5 log x − 5)`.
+      have := mul_le_mul_of_nonneg_right ha.le (by linarith : (0 : ℝ) ≤ x)
+      have := mul_le_mul_of_nonneg_right hq hL
+      linarith
     · -- Otherwise apply the induction hypothesis at `x / 6 ≥ 30`.
       have hy := ih (x / 6) (by linarith) (by rw [pow_succ] at hx'; linarith)
       have hlog : log (x / 6) ≤ log x := log_le_log (by positivity) (by linarith)
@@ -317,7 +310,12 @@ theorem psi_le_of_forall_psi_le_mul (h : ∀ y, 0 < y → y ≤ 30 → ψ y ≤ 
         rw [div_add_one hlog6.ne', ← log_mul (by positivity) (by norm_num)]
         congr 2
         ring
-      nlinarith
+      -- `a x + (6a / 5)(x / 6) = (6a / 5) x`, and the coefficients of `5 log − 5` add up to `hq'`.
+      have : log (x / 6 / 5) / log 6 * (5 * log (x / 6) - 5) ≤
+          log (x / 6 / 5) / log 6 * (5 * log x - 5) :=
+        mul_le_mul_of_nonneg_left (by linarith) hq
+      rw [← hq']
+      linarith
 
 /-- `5 log x − 5 ≤ 0.0037 x` for `x ≥ 11723`, from the tangent line of `log` at `12000`. -/
 private theorem five_mul_log_sub_five_le {x : ℝ} (hx : 11723 ≤ x) :
@@ -350,6 +348,8 @@ theorem psi_le_mul_of_forall_psi_le_mul (h : ∀ y, 0 < y → y ≤ 11723 → ψ
     have hy := ih (x / 6) (by positivity) (by rw [pow_succ] at hx'; linarith)
     have hstep := psi_sub_psi_div_six_le (by linarith : (30 : ℝ) ≤ x)
     have hL := five_mul_log_sub_five_le hlarge.le
-    nlinarith
+    have := mul_le_mul_of_nonneg_right ha.le hx.le
+    -- The constants have no slack: `1.11 / 6 + 0.9213 + 0.0037 = 1.11` exactly.
+    linarith
 
 end Chebyshev
