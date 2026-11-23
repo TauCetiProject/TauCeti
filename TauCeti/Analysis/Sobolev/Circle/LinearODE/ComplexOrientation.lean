@@ -114,7 +114,8 @@ real cokernel of the Fredholm operator `L_S` is. -/
 instance finiteDimensional_coker_complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
     FiniteDimensional ℂ (CircleSobolev 0 E ⧸
       range (complexLoopOperator T hS : CircleSobolev 1 E →ₗ[ℂ] CircleSobolev 0 E)) :=
-  (isFredholm_loopOperator T S).finiteDimensional_quotient_range_of_restrictScalars_eq rfl
+  (isFredholm_loopOperator T S).finiteDimensional_quotient_range_of_restrictScalars_eq <| by
+    rw [← restrictScalars_complexLoopOperator T hS, ContinuousLinearMap.coe_restrictScalars]
 
 /-! ### Transport from a complex-linear reference -/
 

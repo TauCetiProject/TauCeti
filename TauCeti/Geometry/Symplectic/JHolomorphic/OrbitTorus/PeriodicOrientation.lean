@@ -299,7 +299,8 @@ theorem isComplexPositiveDetLine_detLineCongrOfEq_detLinePeriodicTorusOperatorEq
   set A : CircleSobolev 1 F →ₗ[ℂ] CircleSobolev 0 F := (complexLoopOperator T hSI :
     CircleSobolev 1 F →ₗ[ℂ] CircleSobolev 0 F)
   have hA : (loopOperator T S : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) =
-      A.restrictScalars ℝ := rfl
+      A.restrictScalars ℝ := by
+    rw [← restrictScalars_complexLoopOperator T hSI, ContinuousLinearMap.coe_restrictScalars]
   -- The transport law for complex orientations, read through the equalities of the real maps
   -- with the underlying maps of `A` and `f`.
   have key (g : CircleSobolev 1 F →ₗ[ℝ] CircleSobolev 0 F) (hg : g = A.restrictScalars ℝ)
@@ -414,8 +415,9 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det (hℓ : �
   have hx' := congrArg (r⁻¹ • ·) hrx
   simp only [smul_smul, inv_mul_cancel₀ hr.ne', one_smul] at hx'
   rw [hx', detLinePeriodicTorusOperatorEquiv_symm_detLineEndGenerator_eq_det_smul T hℓ _ _ hb,
-    smul_smul, LinearEquiv.map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, sign_mul,
-    sign_pos (inv_pos.2 hr), one_mul]
+    smul_smul, LinearEquiv.map_smul, LinearEquiv.apply_symm_apply]
+  -- What remains is `sgn ((r⁻¹ * det (1 - P)) • 1) = sgn det (1 - P)` in `ℝ`, with `r > 0`.
+  simp [sign_mul, inv_pos.2 hr]
 
 /-- **The orbit-torus operator twisted along the orbit has determinant sign `sgn det (1 + P)`.**
 Let `M` be a path of infinitesimally symplectic loops, continuous on `[a, b]`, whose loop `M a`
