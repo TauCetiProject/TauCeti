@@ -1340,6 +1340,27 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm
   exact (hω.integral_truncation_mul_floerEnergyDensity_eq_sum hK hKH hH hu hR
     (le_of_max_le_left hT) (le_of_max_le_right hT)).symm
 
+omit [TopologicalSpace M] in
+/-- Per-end bound for the boundary term in
+`IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm`. -/
+private theorem abs_endSign_mul_integral_deriv_smoothTransition_mul_le
+    {H : ℝ → M → ℝ} {u : ℝ × ℝ → M} (q : Puncture) {S T C : ℝ} (hST : S ≤ T)
+    (hS : ∀ σ, S ≤ σ → |∫ t in (0 : ℝ)..1, H t (u (endChart q (q.endSign * σ, t)))| ≤ C) :
+    |q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
+      ∫ t in (0 : ℝ)..1, H t (u (endChart q (s, t)))| ≤ max C 0 := by
+  rw [abs_mul, abs_endSign, one_mul, ← Real.norm_eq_abs]
+  refine (norm_integral_le_of_norm_le
+    (((smoothTransition.integrable_deriv.comp_sub_right T).comp_mul_left'
+      q.endSign_ne_zero).mul_const (max C 0)) (ae_of_all _ fun s ↦ ?_)).trans_eq ?_
+  · rw [norm_mul, Real.norm_of_nonneg smoothTransition.monotone.deriv_nonneg, Real.norm_eq_abs]
+    by_cases hs : q.endSign * s - T < 0
+    · simp [smoothTransition.deriv_of_nonpos hs.le]
+    · have h := hS (q.endSign * s) (by linarith)
+      rw [← mul_assoc, endSign_mul_self, one_mul] at h
+      exact mul_le_mul_of_nonneg_left (h.trans (le_max_left _ _))
+        smoothTransition.monotone.deriv_nonneg
+  · rw [integral_mul_const, smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one, one_mul]
+
 /-- **A nonnegative energy density with bounded end-loop Hamiltonian integrals is integrable, for a
 manifold target.** Only an eventual bound on the end-loop integrals
 `∫₀¹ H_q(t, u(φ_q(±σ, t))) dt` is needed, not their convergence. -/
@@ -1371,9 +1392,11 @@ theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
   have hT : Tendsto T atTop atTop := tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
   have hM (n : ℕ) : max (max 2 T₀) S ≤ T n := le_add_of_nonneg_left n.cast_nonneg
   have hχe (n : ℕ) := (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR (T n)).1
+  -- Stage 1: measurability as an a.e. limit of the integrable truncated energy densities.
   refine ⟨aestronglyMeasurable_of_tendsto_ae (u := atTop) (fun n ↦ (hχe n).1)
     (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦ by
       simpa using ((SymplecticForm.tendsto_truncation hz).comp hT).mul_const _), ?_⟩
+  -- Stage 2: finite integral via monotone convergence of the truncated energies.
   rw [HasFiniteIntegral, lintegral_congr_ae (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦
     Real.eNorm_eq_ofReal (he z hz))]
   refine lt_of_le_of_lt (le_of_tendsto (SymplecticForm.tendsto_lintegral_truncation_mul he hT
@@ -1383,6 +1406,7 @@ theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)‖) + (∑ q, max (C q) 0) +
       ∫ z, ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖))
+  -- Stage 3: uniform bound on each truncated identity using area, curvature, and end bounds.
   rw [← ofReal_integral_eq_lintegral_ofReal (hχe n)
     (ae_of_all _ (SymplecticForm.truncation_mul_nonneg he (T n)))]
   refine ENNReal.ofReal_le_ofReal ?_
@@ -1391,20 +1415,10 @@ theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
     (((le_max_right 2 T₀).trans (le_max_left _ S)).trans (hM n)), sub_eq_add_neg]
   refine add_le_add (add_le_add
     ((le_abs_self _).trans (SymplecticForm.abs_integral_truncation_mul_le hA (T n)))
-    (Finset.sum_le_sum (s := Finset.univ) fun q _ ↦ (le_abs_self _).trans ?_))
+    (Finset.sum_le_sum (s := Finset.univ) fun q _ ↦ (le_abs_self _).trans
+      (abs_endSign_mul_integral_deriv_smoothTransition_mul_le q
+        ((le_max_right _ S).trans (hM n)) fun σ hσ ↦ hS σ hσ q)))
     ((neg_le_abs _).trans (SymplecticForm.abs_integral_truncation_mul_le hR (T n)))
-  rw [abs_mul, abs_endSign, one_mul, ← Real.norm_eq_abs]
-  refine (norm_integral_le_of_norm_le
-    (((smoothTransition.integrable_deriv.comp_sub_right (T n)).comp_mul_left'
-      q.endSign_ne_zero).mul_const (max (C q) 0)) (ae_of_all _ fun s ↦ ?_)).trans_eq ?_
-  · rw [norm_mul, Real.norm_of_nonneg smoothTransition.monotone.deriv_nonneg, Real.norm_eq_abs]
-    by_cases hs : q.endSign * s - T n < 0
-    · simp [smoothTransition.deriv_of_nonpos hs.le]
-    · have h := hS (q.endSign * s) (by linarith [(le_max_right _ S).trans (hM n)]) q
-      rw [← mul_assoc, endSign_mul_self, one_mul] at h
-      exact mul_le_mul_of_nonneg_left (h.trans (le_max_left _ _))
-        smoothTransition.monotone.deriv_nonneg
-  · rw [integral_mul_const, smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one, one_mul]
 
 /-- **The energy identity for a nonnegative energy density, for a manifold target.** Under the
 hypotheses of

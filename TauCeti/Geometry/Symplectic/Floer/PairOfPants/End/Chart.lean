@@ -843,21 +843,6 @@ theorem eq_comp_positiveEndChart {α β : Type*} {u : ℝ × ℝ → α} {J : �
   simp only [comp_apply, positiveEndChart_mk]
   exact hJ s _ hz
 
-/-- If the end loops `t ↦ u(φ_q(±s, t))` converge uniformly to `y`, then the loops of `u ∘ φ'_q`
-converge uniformly to `t ↦ y(±t)`. -/
-theorem tendstoUniformly_comp_positiveEndChart {α : Type*} [UniformSpace α] {u : ℝ × ℝ → α}
-    {q : Puncture} {y : ℝ → α} {l : Filter ℝ}
-    (h : TendstoUniformly (fun s t ↦ u (endChart q (q.endSign * s, t))) y l) :
-    TendstoUniformly (fun s t ↦ (u ∘ positiveEndChart q) (s, t)) (fun t ↦ y (q.endSign * t))
-      l := by
-  have hloop (s : ℝ) : (fun t ↦ (u ∘ positiveEndChart q) (s, t)) =
-      (fun t ↦ u (endChart q (q.endSign * s, t))) ∘ fun t ↦ q.endSign * t := by
-    rw [comp_endChart_eq_comp_positiveEndChart]
-    funext t
-    simp only [comp_apply, endSign_mul_endSign_mul]
-  rw [funext hloop]
-  exact h.comp _
-
 /-- Uniform convergence of `t ↦ u(φ'_q(r i, t))` to `x` transports to uniform convergence of
 `t ↦ u(φ_q(±r i, t))` to `t ↦ x(±t)`. -/
 theorem tendstoUniformly_endChart_of_positiveEndChart {α ι : Type*} [UniformSpace α]

@@ -22,7 +22,7 @@ In `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable` and
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic`, compactness of `[0, 1] × B`
 bounds `H_q` along end loops, giving automatic finite energy
 (`integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`,
-`lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact`) and the energy
+`lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact`) and the energy
 identity from pointwise end limits
 (`integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`). Combined with
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, this yields:
@@ -144,7 +144,7 @@ private theorem exists_energy_of_endConvergence {P : Puncture → Set (ℝ → M
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z := fun z hz ↦
     floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
-  have hE := hω.lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact
+  have hE := hω.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact
     hK hKH hH hHc hB hu huB he₀ hA hR
   choose y hy using hex hE
   exact ⟨y, fun q ↦ ⟨(hy q).1, (hy q).2.1, (hy q).2.2.1, (hy q).2.2.2,
@@ -293,7 +293,7 @@ theorem exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompac
   exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact_of_isolated_lim
     hω hH he hB he_inj hde hu huB J hJ hJc hA hC hK hKH hfloer hR
     (fun q ↦ (hHs q).of_le one_le_two)
-    fun q ↦ hω.forall_mem_of_subset_periodicSolutions_hamiltonianVectorField_eventually_eq
+    fun q ↦ hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
       (hHs q) Subset.rfl (hnd q)
 
 /-- **The manifold pair-of-pants energy identity at nondegenerate contractible asymptotic orbits.**
@@ -330,7 +330,7 @@ theorem
   exists_integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_nullhomotopic_of_isolated_lim
     hω hH he hB he_inj hde hu huB J hJ hJc hA hC hK hKH hfloer hR
     (fun q ↦ (hHs q).of_le one_le_two) hnull
-    fun q ↦ hω.forall_mem_of_subset_periodicSolutions_hamiltonianVectorField_eventually_eq
+    fun q ↦ hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq
       (hHs q) contractiblePeriodicSolutions_subset (hnd q)
 
 end Nondegenerate

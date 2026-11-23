@@ -23,7 +23,7 @@ of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity`, the Floer en
 `u` is integrable over `S`
 (`IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`)
 and its Lebesgue energy is finite
-(`IsNondegenerate.lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact`).
+(`IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact`).
 -/
 
 public section
@@ -85,7 +85,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
         ⟨Ioc_subset_Icc_self (uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1) ▸ ht), huB _ (hmem t)⟩
 
 /-- **Automatic finiteness of the Lebesgue Floer energy on a compact set.** -/
-theorem IsNondegenerate.lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact
+theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_eq_smul_endAngularForm_of_isCompact
     {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
     (hω : ω.IsNondegenerate)
     (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1

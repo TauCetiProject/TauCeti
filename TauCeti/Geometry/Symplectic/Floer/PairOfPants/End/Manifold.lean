@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Homotopy
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Asymptotic orbits at the ends of a Floer pair of pants in a manifold
@@ -122,10 +122,42 @@ private theorem mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveE
         (f ∘ fun t ↦ x (q.endSign * t)) l ∧
       ∀ t, Tendsto (fun i ↦ u (endChart q (q.endSign * σ i, t))) l
         (𝓝 (x (q.endSign * t))) := by
-  refine ⟨mem_periodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _, ?_, fun t ↦ ?_⟩
-  · rw [funext fun i ↦ comp_endChart_eq_comp_positiveEndChart (fun z ↦ f (u z)) q (σ i)]
-    exact hconv.comp _
-  · simpa only [endChart_eq_positiveEndChart] using hpt (q.endSign * t)
+  refine ⟨mem_periodicSolutions_comp_endSign_mul hx, fun _ ↦ hxB _,
+    tendstoUniformly_endChart_of_positiveEndChart (u := f ∘ u) hconv, fun t ↦ ?_⟩
+  simpa only [endChart_eq_positiveEndChart] using hpt (q.endSign * t)
+
+/-- If one end loop `t ↦ u(φ_q(±s, t))` (`s > 0`) is null-homotopic, any uniform limit along `e`
+of end loops as the radial parameter tends to `∞` solving the Hamiltonian ODE is contractible. -/
+private theorem mem_contractible_endChart {F : Type*} [UniformSpace F] {e : M → F}
+    {B : Set M} {u : ℝ × ℝ → M} (q : Puncture) (he : IsInducing fun p : B ↦ e p)
+    (hu : ContinuousOn u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    {ι : Type*} {l : Filter ι} [NeBot l] {r : ι → ℝ} (hr : Tendsto r l atTop)
+    (hnull : ∃ s > (0 : ℝ), ∃ g : C(AddCircle (1 : ℝ), M),
+      g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
+    {y : ℝ → M} (hy : y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1)
+    (hyB : ∀ t, y t ∈ B)
+    (hconv : TendstoUniformly (fun i t ↦ e (u (endChart q (q.endSign * r i, t)))) (e ∘ y) l) :
+    y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 := by
+  obtain ⟨s₀, hs₀, hg₀⟩ := hnull
+  obtain ⟨g₀, hg₀_null, hg₀_eq⟩ := exists_nullhomotopic_comp_endSign_mul_iff (q := q).2 hg₀
+  have hnull' : ∃ s > (0 : ℝ), ∃ g : C(AddCircle (1 : ℝ), M),
+      g.Nullhomotopic ∧ ∀ t : ℝ, g t = (u ∘ positiveEndChart q) (s, t) :=
+    ⟨s₀, hs₀, g₀, hg₀_null, fun t ↦
+      (hg₀_eq t).trans (by simp only [comp_apply, endChart_eq_positiveEndChart,
+        endSign_mul_endSign_mul])⟩
+  have hy' := mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic
+    ((mem_periodicSolutions_positiveEndHamiltonian_iff (ω := ω) (H := H) (q := q)).2
+      (by simpa only [endSign_mul_endSign_mul] using hy))
+    zero_lt_one (fun _ ↦ hyB _) he (hr.eventually (eventually_gt_atTop (0 : ℝ)))
+    (hu.comp (contDiff_positiveEndChart q 1).continuous.continuousOn
+      fun _ hz ↦ positiveEndChart_mem_thricePuncturedSphereReal hz.1)
+    (fun _ _ _ ↦ by simp only [comp_apply, positiveEndChart_add_one])
+    (fun _ hs _ ↦ huB _ (positiveEndChart_mem_thricePuncturedSphereReal hs))
+    hnull' (tendstoUniformly_positiveEndChart_of_endChart (u := e ∘ u) hconv)
+  simpa only [endSign_mul_endSign_mul] using
+    (mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff
+      (ω := ω) (H := H) (q := q)).1 hy'
 
 variable [FiniteDimensional ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {e : M → F}
@@ -329,38 +361,6 @@ variable (hω : ω.IsNondegenerate) (q : Puncture)
     (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
 
-include he hB he_inj hu huB in
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- If one end loop `t ↦ u(φ_q(±s, t))` (`s > 0`) is null-homotopic, any uniform limit along `e`
-of end loops as the radial parameter tends to `∞` solving the Hamiltonian ODE is contractible. -/
-private theorem mem_contractible_endChart {ι : Type*} {l : Filter ι} [NeBot l]
-    {r : ι → ℝ} (hr : Tendsto r l atTop)
-    (hnull : ∃ s > (0 : ℝ), ∃ g : C(AddCircle (1 : ℝ), M),
-      g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (endChart q (q.endSign * s, t)))
-    {y : ℝ → M} (hy : y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1)
-    (hyB : ∀ t, y t ∈ B)
-    (hconv : TendstoUniformly (fun i t ↦ e (u (endChart q (q.endSign * r i, t)))) (e ∘ y) l) :
-    y ∈ contractiblePeriodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1 := by
-  obtain ⟨s₀, hs₀, hg₀⟩ := hnull
-  obtain ⟨g₀, hg₀_null, hg₀_eq⟩ := exists_nullhomotopic_comp_endSign_mul_iff (q := q).2 hg₀
-  have hnull' : ∃ s > (0 : ℝ), ∃ g : C(AddCircle (1 : ℝ), M),
-      g.Nullhomotopic ∧ ∀ t : ℝ, g t = (u ∘ positiveEndChart q) (s, t) :=
-    ⟨s₀, hs₀, g₀, hg₀_null, fun t ↦
-      (hg₀_eq t).trans (by simp only [comp_apply, endChart_eq_positiveEndChart,
-        endSign_mul_endSign_mul])⟩
-  have hy' := IsNondegenerate.mem_contractible_of_nullhomotopic
-    (hr.eventually (eventually_gt_atTop (0 : ℝ))) he hB he_inj
-    (hu.comp (contDiff_positiveEndChart q 1).contMDiff.contMDiffOn
-      fun _ hz ↦ positiveEndChart_mem_thricePuncturedSphereReal hz.1)
-    (fun _ _ _ ↦ by simp only [comp_apply, positiveEndChart_add_one])
-    (fun _ hs _ ↦ huB _ (positiveEndChart_mem_thricePuncturedSphereReal hs)) hnull'
-    ((mem_periodicSolutions_positiveEndHamiltonian_iff (ω := ω) (H := H) (q := q)).2
-      (by simpa only [endSign_mul_endSign_mul] using hy))
-    (fun _ ↦ hyB _) (tendstoUniformly_positiveEndChart_of_endChart (u := e ∘ u) hconv)
-  simpa only [endSign_mul_endSign_mul] using
-    (mem_contractiblePeriodicSolutions_positiveEndHamiltonian_iff
-      (ω := ω) (H := H) (q := q)).1 hy'
-
 include hω q hKH hH he hB he_inj hde hu huB J hfloer hE
 
 /-- **Breaking off a contractible periodic orbit at a contractible end of a Floer pair of pants.**
@@ -383,8 +383,9 @@ theorem exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_of_fl
   obtain ⟨y, hy, hyB, σ, hσ, hconv, hpt⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact q hKH hH
       hHq he hB he_inj hde hu huB J hc hJc hfloer hE
-  exact ⟨y, mem_contractible_endChart q he hB he_inj hu huB hσ hnull hy hyB hconv, hyB,
-    σ, hσ, hconv, hpt⟩
+  exact ⟨y, mem_contractible_endChart q
+    (hB.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
+    hu.continuousOn huB hσ hnull hy hyB hconv, hyB, σ, hσ, hconv, hpt⟩
 
 section AtTop
 
@@ -443,9 +444,8 @@ theorem
         (fun w hw ↦ hC w (hab w hw)) hz)
       fun x hx hxB hlim ↦ eventually_eq_positiveEndChart_of_endChart
         (fun _ ↦ mem_periodicSolutions_positiveEndHamiltonian_iff.1) hiso hx hxB hlim
-  refine ⟨fun t ↦ x (q.endSign * t), mem_periodicSolutions_comp_endSign_mul hx,
-    fun t ↦ hxB _, tendstoUniformly_endChart_of_positiveEndChart (u := e ∘ u) hux, fun t ↦ ?_⟩
-  simpa only [comp_apply, endChart_eq_positiveEndChart] using hpt (q.endSign * t)
+  exact ⟨_, mem_periodicSolutions_and_tendstoUniformly_endChart_of_positiveEndChart (σ := id) hx hxB
+    hux hpt⟩
 
 /-- **Convergence of a contractible end of a pair of pants to an isolated contractible orbit.**
 Variant of
@@ -471,17 +471,16 @@ theorem
       (∀ t, y t ∈ B) ∧
       TendstoUniformly (fun s t ↦ e (u (endChart q (q.endSign * s, t)))) (e ∘ y) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) := by
+  have hind : IsInducing fun p : B ↦ e p :=
+    (hB.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj).isInducing
   obtain ⟨y, hy, hyB, hconv, hpt⟩ :=
     exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
       hω q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc hHq
-      fun y hy hyB ⟨σ, hσ, hσy⟩ ↦
-        (hiso y (mem_contractible_endChart q he hB he_inj hu huB hσ hnull hy hyB hσy) hyB
-            ⟨σ, hσ, hσy⟩).mono
-          fun _ hp y' hy' hy'B ⟨τ, hτ, hτy'⟩ hy'p ↦
-            hp y' (mem_contractible_endChart q he hB he_inj hu huB hτ hnull hy' hy'B hτy') hy'B
-              ⟨τ, hτ, hτy'⟩ hy'p
-  exact ⟨y, mem_contractible_endChart q he hB he_inj hu huB tendsto_id hnull hy hyB hconv, hyB,
-    hconv, hpt⟩
+      (forall_mem_periodicSolutions_eventually_eq_of_forall_mem
+        (fun y hy hyB ⟨σ, hσ, hσy⟩ ↦
+          mem_contractible_endChart q hind hu.continuousOn huB hσ hnull hy hyB hσy) hiso)
+  exact ⟨y, mem_contractible_endChart q hind hu.continuousOn huB tendsto_id hnull hy hyB hconv,
+    hyB, hconv, hpt⟩
 
 section Nondegenerate
 
@@ -506,7 +505,7 @@ theorem
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   exists_mem_contractiblePeriodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated_lim
     hω q hKH hH he hB he_inj hde hu huB J hfloer hE hC hc hJc (hHq.of_le one_le_two) hnull
-    (hω.forall_mem_of_subset_periodicSolutions_hamiltonianVectorField_eventually_eq hHq
+    (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHq
       contractiblePeriodicSolutions_subset hnd)
 
 end Nondegenerate
@@ -678,7 +677,10 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) :=
   hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isolated q hKH hH
     (hHs.of_le one_le_two) he hB he_inj hde hu huB J hfloer hE hC hc hJc
-    (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs hnd)
+    (fun y hy hyB ↦
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs Subset.rfl
+        (R := fun _ ↦ True) hnd y hy hyB trivial).mono
+        fun _ hp y' hy' hy'B ↦ hp y' hy' hy'B trivial)
 
 /-- **Convergence of an end of a Floer pair of pants in a closed manifold to a nondegenerate
 orbit.** Specialization of

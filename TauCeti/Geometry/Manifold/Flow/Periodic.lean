@@ -115,8 +115,12 @@ rotates the orbit at that end.
   field whose periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
   assuming only that they are nondegenerate.
-* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`: a periodic solution that is a
-  uniform limit (along an inducing map) of null-homotopic loops is contractible.
+* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`,
+  `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic`: a periodic
+  solution that is a uniform limit (along an inducing map) of null-homotopic loops is contractible.
+* `TauCeti.forall_mem_periodicSolutions_eventually_eq_of_forall_mem`: isolation within a subset
+  containing all periodic solutions satisfying a side predicate implies isolation among all
+  periodic solutions satisfying that predicate.
 
 ## References
 
@@ -236,31 +240,47 @@ theorem exists_mem_periodicSolutions_comp_eq {F : Type*} [NormedAddCommGroup F] 
 
 /-- **Isolated periodic solutions read through `e`.** In the setting of
 `TauCeti.exists_mem_periodicSolutions_comp_eq`, suppose that the `T`-periodic solutions of `X` in
-`K` are isolated: for each such solution `x`, every `T`-periodic solution in `K` starting close
-enough to `x 0` is `x`. Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in
-`e(K)` is isolated in the uniform distance among the `T`-periodic solutions with values in
-`e(K)`. -/
+`K` satisfying a side condition `R (e ∘ x)` are isolated: for each such solution `x`, every
+`T`-periodic solution in `K` satisfying `R (e ∘ x')` and starting close enough to `x 0` is `x`.
+Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in `e(K)` satisfying `R y` is
+isolated in the uniform distance among the `T`-periodic solutions with values in `e(K)` satisfying
+`R`. -/
 theorem exists_pos_forall_eq_of_forall_dist_lt_of_mem_image {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [FiniteDimensional ℝ F] {e : M → F} {K : Set M} (hK : IsCompact K)
     (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p))
     {Y : ℝ → F → F} (hY : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (X t p))
-    (hiso : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) →
-      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions X T, (∀ t, x' t ∈ K) → x' 0 = p → x' = x)
+    {R : (ℝ → F) → Prop}
+    (hiso : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) → R (e ∘ x) →
+      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions X T, (∀ t, x' t ∈ K) → R (e ∘ x') →
+        x' 0 = p → x' = x)
     {y : ℝ → F} (hyper : Periodic y T) (hy : ∀ t, HasDerivAt y (Y t (y t)) t)
-    (hyK : ∀ t, y t ∈ e '' K) :
+    (hyK : ∀ t, y t ∈ e '' K) (hRy : R y) :
     ∃ ε > 0, ∀ y' : ℝ → F, Periodic y' T → (∀ t, HasDerivAt y' (Y t (y' t)) t) →
-      (∀ t, y' t ∈ e '' K) → (∀ t, dist (y' t) (y t) < ε) → y' = y := by
+      (∀ t, y' t ∈ e '' K) → R y' → (∀ t, dist (y' t) (y t) < ε) → y' = y := by
   have he : ContinuousOn e K := fun p hp ↦ (mdifferentiableAt_of_mfderiv_injective
     (injective_mvfderiv_iff.1 (hde p hp))).continuousAt.continuousWithinAt
   obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hyper hy hyK
   -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
   obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hxK 0)
-    (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK))
+    (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK hRy))
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
+  refine ⟨ε, hε, fun y' hy'per hy' hy'K hRy' hdist ↦ ?_⟩
   obtain ⟨x', hx', hx'K, rfl⟩ :=
     exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hy'per hy' hy'K
-  rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K rfl]
+  rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K hRy' rfl]
+
+/-- If every `T`-periodic solution in `K` satisfying a side predicate `R` belongs to a subset `P`,
+then isolation at time `t₀` within `P` under `R` implies isolation at time `t₀` within
+`periodicSolutions X T` under `R`. -/
+theorem forall_mem_periodicSolutions_eventually_eq_of_forall_mem
+    {P : Set (ℝ → M)} {K : Set M} {R : (ℝ → M) → Prop} {t₀ : ℝ}
+    (hP : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) → R x → x ∈ P)
+    (hiso : ∀ x ∈ P, (∀ t, x t ∈ K) → R x →
+      ∀ᶠ p in 𝓝 (x t₀), ∀ y ∈ P, (∀ t, y t ∈ K) → R y → y t₀ = p → y = x) :
+    ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) → R x →
+      ∀ᶠ p in 𝓝 (x t₀), ∀ y ∈ periodicSolutions X T, (∀ t, y t ∈ K) → R y → y t₀ = p → y = x :=
+  fun x hx hxK hRx ↦ (hiso x (hP x hx hxK hRx) hxK hRx).mono fun _ hp y hy hyK hRy ↦
+    hp y (hP y hy hyK hRy) hyK hRy
 
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
@@ -296,6 +316,29 @@ theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly {γ : ℝ → M}
   let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact ⟨hγ, Periodic.exists_nullhomotopic_of_tendstoUniformly hγ.2
     (continuous_of_mem_periodicSolutions hγ) hγK he huK hunif hnull⟩
+
+/-- **Uniform limits of a continuous half-cylinder of periodic curves with one null-homotopic
+loop are contractible periodic solutions.** If a continuous family `t ↦ u (s, t)` (`s > a`) of
+`T`-periodic curves (`0 < T`) in `K` has one null-homotopic loop, and `e ∘ u (r i, ·)` converges
+uniformly along a filter staying in `(a, ∞)` to `e ∘ γ` for a `T`-periodic solution `γ` in `K`
+(with `e` topologically inducing on `K`), then `γ` is contractible. -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly_of_nullhomotopic {γ : ℝ → M}
+    (hγ : γ ∈ periodicSolutions X T) (hT : 0 < T) {K : Set M} (hγK : ∀ t, γ t ∈ K)
+    {F : Type*} [UniformSpace F] {e : M → F} (he : IsInducing fun p : K ↦ e p)
+    {ι : Type*} {l : Filter ι} [NeBot l] {a : ℝ} {r : ι → ℝ} (hr : ∀ᶠ i in l, a < r i)
+    {u : ℝ × ℝ → M} (hu : ContinuousOn u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) T) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hnull : ∃ s > a, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
+    (hunif : TendstoUniformly (fun i t ↦ e (u (r i, t))) (e ∘ γ) l) :
+    γ ∈ contractiblePeriodicSolutions X T := by
+  have : Fact (0 < T) := ⟨hT⟩
+  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  obtain ⟨s₀, hs₀, hg₀⟩ := hnull
+  have hall := forall_exists_nullhomotopic_of_isPreconnected isPreconnected_Ioi
+    (u := fun s t ↦ u (s, t)) hu (fun s hs ↦ hper s hs) hs₀ hg₀
+  exact mem_contractiblePeriodicSolutions_of_tendstoUniformly hγ hT hγK he
+    (hr.mono fun _ hi t ↦ huK _ hi t) hunif (hr.mono fun _ hi ↦ hall _ hi).frequently
 
 /-- The **loop of a contractible `1`-periodic solution** `γ`: the loop `t ↦ γ t`, `t ∈ [0, 1]`,
 based at `γ 0`. -/

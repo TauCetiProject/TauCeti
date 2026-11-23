@@ -298,10 +298,13 @@ theorem exists_nullhomotopic_of_tendstoUniformly {p : ℝ} [Fact (0 < p)] {X : T
     ∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
   let g₀ : C(AddCircle p, X) := ⟨hp.lift, hγ.quotient_liftOn' _⟩
   have hg₀γ (t : ℝ) : g₀ t = γ t := hp.lift_coe t
+  -- Restrict `l` to the frequent set of indices where `u i` lies in `K` and is null-homotopic.
   let P (i : ι) : Prop :=
     (∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) ∧ ∀ t, u i t ∈ K
   let l' : Filter ι := l ⊓ 𝓟 {i | P i}
   have : l'.NeBot := frequently_iff_neBot.1 (hnull.and_eventually huK)
+  -- Lift `g₀` and the frequent maps to `C(AddCircle p, K)` and prove convergence in the
+  -- compact-open topology via the inducing map `e : K → F`.
   let g₀K : C(AddCircle p, K) :=
     ⟨fun θ ↦ ⟨g₀ θ, QuotientAddGroup.induction_on θ fun t ↦ (hg₀γ t).symm ▸ hγK t⟩,
       g₀.continuous.subtype_mk _⟩
@@ -321,9 +324,11 @@ theorem exists_nullhomotopic_of_tendstoUniformly {p : ℝ} [Fact (0 < p)] {X : T
     simp only [gK, hiP, dite_true, eK, g₀K, Function.comp_apply, ContinuousMap.comp_apply,
       ContinuousMap.coe_mk, hg₀γ, hiP.1.choose_spec.2]
     exact hiV t
-  have hg₀eq : (ContinuousMap.subtypeVal K).comp g₀K = g₀ := by ext; rfl
+  -- Push convergence forward to `C(AddCircle p, X)` along `Subtype.val`.
+  have hg₀eq : (ContinuousMap.subtypeVal K).comp g₀K = g₀ := by ext; simp [g₀K]
   have hval : Tendsto (fun i ↦ (ContinuousMap.subtypeVal K).comp (gK i)) l' (𝓝 g₀) :=
     hg₀eq ▸ ((ContinuousMap.continuous_postcomp (ContinuousMap.subtypeVal K)).tendsto g₀K).comp hlim
+  -- Conclude by closedness of the set of null-homotopic maps in `C(AddCircle p, X)`.
   refine ⟨g₀, TauCeti.isClopen_setOf_nullhomotopic_addCircle.isClosed.mem_of_tendsto hval ?_, hg₀γ⟩
   filter_upwards [mem_inf_of_right (mem_principal_self _)] with i hiP
   have heq : (ContinuousMap.subtypeVal K).comp (gK i) = hiP.1.choose := by
