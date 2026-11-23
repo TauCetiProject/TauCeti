@@ -8,7 +8,6 @@ module
 public import TauCeti.KnotTheory.Foam.EquivariantRing.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.RingTheory.PrincipalIdealDomain
-import TauCeti.Algebra.Category.GradedModuleCat.Free.Range
 import TauCeti.Algebra.Module.GradedModule.Idempotent.PID
 
 /-!
@@ -17,17 +16,13 @@ import TauCeti.Algebra.Module.GradedModule.Idempotent.PID
 Because `ℤ` is a principal ideal domain and every generator of `TauCeti.EquivariantRing N` has
 strictly positive degree, every degree-zero idempotent endomorphism on a finite shifted free module
 over `EquivariantRing N` splits homogeneously
-(`EquivariantRing.exists_homogeneous_splitting_of_idempotent`), its image admits a finite
-homogeneous `EquivariantRing N`-basis (`TauCeti.exists_homogeneous_basis_range_idempotent`), and
-the multiset of basis shifts is uniquely determined
-(`EquivariantRing.multiset_map_eq_of_homogeneous_basis_range_idempotent`).
+(`EquivariantRing.exists_homogeneous_splitting_of_idempotent`), and its image admits a finite
+homogeneous `EquivariantRing N`-basis (`TauCeti.exists_homogeneous_basis_range_idempotent`).
 
 ## Main results
 
 * `TauCeti.EquivariantRing.exists_homogeneous_splitting_of_idempotent`: explicit homogeneous
   splitting `π ∘ₗ ι = id`, `ι ∘ₗ π = p` of a degree-zero idempotent over `EquivariantRing N`.
-* `TauCeti.EquivariantRing.multiset_map_eq_of_homogeneous_basis_range_idempotent`: uniqueness of the
-  multiset of basis shifts.
 * `TauCeti.exists_homogeneous_basis_range_idempotent`: the image of any degree-zero idempotent on a
   finite sum of shifted copies of `EquivariantRing N` has a finite homogeneous basis.
 
@@ -63,23 +58,6 @@ theorem exists_homogeneous_splitting_of_idempotent (N : ℕ) {I : Type*} [Finite
   exists_homogeneous_splitting_of_idempotent_of_connected
     (𝒜 := grading N) (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
     (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s p hp hhom
-
-/-- Any two finite homogeneous bases of the range of a degree-zero endomorphism on
-`I → EquivariantRing N` (`[Finite I]`) have the same multiset of basis shifts. -/
-theorem multiset_map_eq_of_homogeneous_basis_range_idempotent (N : ℕ) {I : Type*} [Finite I]
-    (s : I → ℤ)
-    (p : (I → EquivariantRing N) →ₗ[EquivariantRing N] (I → EquivariantRing N))
-    (hhom : ∀ (d : ℤ) (v : I → EquivariantRing N),
-      (∀ j, v j ∈ grading N (d - s j)) → ∀ j, p v j ∈ grading N (d - s j))
-    {n₁ n₂ : ℕ}
-    (b₁ : Module.Basis (Fin n₁) (EquivariantRing N) (LinearMap.range p)) (d₁ : Fin n₁ → ℤ)
-    (hb₁ : ∀ i j, (b₁ i).val j ∈ grading N (d₁ i - s j))
-    (b₂ : Module.Basis (Fin n₂) (EquivariantRing N) (LinearMap.range p)) (d₂ : Fin n₂ → ℤ)
-    (hb₂ : ∀ i j, (b₂ i).val j ∈ grading N (d₂ i - s j)) :
-    Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val :=
-  GradedModuleCat.multiset_map_eq_of_homogeneous_basis_range
-    (𝒜 := grading N) (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
-    (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s p hhom b₁ d₁ hb₁ b₂ d₂ hb₂
 
 end EquivariantRing
 

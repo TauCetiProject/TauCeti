@@ -95,6 +95,14 @@ theorem freeGenerator_eq_lof [DecidableEq I] (i : I) :
   ext j
   simp [freeGenerator, DirectSum.lof_eq_of, DirectSum.of_apply]
 
+/-- Every element of `free 𝒜 d` is the sum over its support of its coordinates times the
+corresponding free generators. -/
+theorem eq_sum_support_smul_freeGenerator [DecidableEq I] [DecidableEq A] (x : free 𝒜 d) :
+    x = ∑ j ∈ x.support, x j • freeGenerator (𝒜 := 𝒜) (d := d) j := by
+  conv_lhs => rw [← DirectSum.sum_support_of x]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [freeGenerator_eq_lof, ← LinearMap.map_smul, smul_eq_mul, mul_one, DirectSum.lof_eq_of]
+
 /-- The basis vector indexed by `i` has internal degree `d i`. -/
 theorem freeGenerator_mem_free_piece (i : I) : freeGenerator (𝒜 := 𝒜) (d := d) i ∈
     (free 𝒜 d).grading.piece (d i) := by

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.Submodule
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 
@@ -34,8 +35,6 @@ graded abelian category, whose canonical exact structure is
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.submoduleObj`: a homogeneous `A`-submodule packaged as a graded
-  `𝒜`-module.
 * `TauCeti.GradedModuleCat.kernelObj`, `TauCeti.GradedModuleCat.kernelι` and
   `TauCeti.GradedModuleCat.kernelCone`: the kernel of a morphism of graded modules, its inclusion
   and the corresponding kernel fork, formed on underlying modules.
@@ -81,33 +80,12 @@ universe v w uk uA
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 variable {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
 
-section Submodule
-
-/-- A homogeneous `A`-submodule of a graded `𝒜`-module, packaged as a graded `𝒜`-module with the
-induced internal grading. -/
-noncomputable abbrev submoduleObj (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
-    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) : GradedModuleCat.{v} 𝒜 where
-  carrier := U
-  isAddCommGroup := Submodule.addCommGroup _
-  isModule := Submodule.module _
-  isModuleBase := Submodule.module' _
-  grading := M.grading.submodule U hU
-  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
-    rw [InternalGrading.mem_submodule_piece] at hx ⊢
-    exact SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hx⟩
-
-end Submodule
-
 section Kernel
 
 /-- The kernel of a morphism of graded modules: the kernel of the underlying linear map, with
 the grading of the source. -/
-noncomputable abbrev kernelObj : GradedModuleCat.{v} 𝒜 where
-  carrier := LinearMap.ker f.hom
-  grading := M.grading.ker f.isHomogeneous
-  gradedSMul := ⟨fun {_ _} _ _ ha hz ↦ by
-    rw [InternalGrading.mem_ker_piece] at hz ⊢
-    exact SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hz⟩
+noncomputable abbrev kernelObj : GradedModuleCat.{v} 𝒜 :=
+  M.submoduleObj (LinearMap.ker f.hom) f.isHomogeneous.isHomogeneous_ker
 
 /-- The inclusion of the kernel of a morphism of graded modules. -/
 @[expose]
@@ -137,7 +115,7 @@ theorem hom_kernelCone_ι : (kernelCone f).ι.hom = (LinearMap.ker f.hom).subtyp
 @[simp]
 theorem mem_kernelCone_pt_piece_iff {p : ℤ} {z : (kernelCone f).pt} :
     z ∈ (kernelCone f).pt.grading.piece p ↔ (kernelCone f).ι.hom z ∈ M.grading.piece p :=
-  InternalGrading.mem_ker_piece _ _
+  InternalGrading.mem_submodule_piece _ _ _
 
 /-- The kernel of a morphism of graded modules is a limit. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=

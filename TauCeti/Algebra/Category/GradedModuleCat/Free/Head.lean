@@ -61,16 +61,6 @@ section HeadCoordinates
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A] [FaithfulSMul k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-omit [FaithfulSMul k A] in
-/-- Every element of `free 𝒜 s` is the sum over its support of its coordinates times the
-corresponding free generators. -/
-private theorem eq_sum_support_smul_freeGenerator {I : Type uI} [DecidableEq I] [DecidableEq A]
-    (s : I → ℤ) (x : free 𝒜 s) :
-    x = ∑ j ∈ x.support, x j • freeGenerator (𝒜 := 𝒜) (d := s) j := by
-  conv_lhs => rw [← DirectSum.sum_support_of x]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [freeGenerator_eq_lof, ← LinearMap.map_smul, smul_eq_mul, mul_one, DirectSum.lof_eq_of]
-
 /-- Reading the augmented coordinates at summands of shift `q` defines a `k`-linear head map on
 the degree-`q` piece of `free 𝒜 s`. -/
 def freeHeadCoord (hneg : ∀ i < 0, 𝒜 i = ⊥)
@@ -97,9 +87,10 @@ private theorem coord_mem_positive_of_mem_positive_smul_top (hneg : ∀ i < 0, �
     {I : Type uI} (s : I → ℤ) {x : free 𝒜 s}
     (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (free 𝒜 s))) (j : I) :
     x j ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
-  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_) (fun u v hu hv ↦ by
-    simpa using Submodule.add_mem _ hu hv)
-  simpa only [DirectSum.smul_apply, smul_eq_mul] using mul_mem_positive_of_left hneg ha (y j)
+  change x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i).comap (DirectSum.component k I (fun _ ↦ A) j)
+  refine Submodule.smul_le.mpr (fun a ha y _ ↦ ?_) hx
+  exact show (a • y) j ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i by
+    simpa only [DirectSum.smul_apply, smul_eq_mul] using mul_mem_positive_of_left hneg ha (y j)
 
 /-- A degree-`q` element of `free 𝒜 s` has vanishing head coordinates in degree `q` if and only if
 it lies in `A₊ (free 𝒜 s)`. -/
@@ -111,7 +102,7 @@ theorem freeHeadCoord_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥)
   constructor
   · intro hx0
     classical
-    rw [eq_sum_support_smul_freeGenerator s x.val]
+    rw [eq_sum_support_smul_freeGenerator x.val]
     refine Submodule.sum_mem _ fun j _ ↦ ?_
     have hxj : x.val j ∈ 𝒜 (q - s j) := (mem_free_piece_iff 𝒜 s q x.val).mp x.property j
     rcases lt_trichotomy (s j) q with hlt | hsq | hgt

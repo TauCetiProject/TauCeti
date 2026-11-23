@@ -14,8 +14,7 @@ import TauCeti.LinearAlgebra.Pi
 /-!
 # Concrete examples for equivariant foam ring idempotents
 
-Four concrete checks exercising `TauCeti.exists_homogeneous_basis_range_idempotent`,
-`TauCeti.EquivariantRing.multiset_map_eq_of_homogeneous_basis_range_idempotent`, and
+Four concrete checks exercising `TauCeti.exists_homogeneous_basis_range_idempotent` and
 `TauCeti.GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range` on zero, identity,
 diagonal, and off-diagonal degree-zero idempotents over `EquivariantRing N`.
 -/

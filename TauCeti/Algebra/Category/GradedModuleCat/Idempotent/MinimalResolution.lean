@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Simple
 public import TauCeti.Algebra.Module.GradedModule.Nakayama
 public import TauCeti.RingTheory.SimpleModule.Basic
 import TauCeti.Algebra.Category.GradedModuleCat.PieceQuotient
+import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
 # Minimal graded projective surjections and resolutions
@@ -155,22 +156,13 @@ degree-zero multiple of that generator. -/
 private theorem exists_smul_coverGen_sub_mem (j : J) (a : A) :
     ∃ c : SetLike.GradeZero.subalgebra 𝒜, a • coverGen he₀ d j - c • coverGen he₀ d j ∈
       (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (coverObj he₀ d)) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => exact ⟨0, by simp⟩
-  | add a b ha hb =>
-    obtain ⟨c, hc⟩ := ha
-    obtain ⟨c', hc'⟩ := hb
-    exact ⟨c + c', by simpa [add_smul, sub_add_sub_comm] using add_mem hc hc'⟩
-  | @homogeneous r a =>
-    obtain ⟨a, ha⟩ := a
-    rcases lt_trichotomy r 0 with hr | rfl | hr
-    · rw [hneg r hr, Submodule.mem_bot] at ha
-      exact ⟨0, by simp [ha]⟩
-    · exact ⟨⟨a, ha⟩, by simp [Subalgebra.smul_def]⟩
-    · have hmem : a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i :=
-        Submodule.mem_iSup_of_mem r (Submodule.mem_iSup_of_mem (i := hr) ha)
-      have h := Submodule.smul_mem_smul hmem (Submodule.mem_top (R := k) (x := coverGen he₀ d j))
-      exact ⟨0, by simpa using h⟩
+  let c := GradedAlgebra.projZeroAlgHom hneg a
+  refine ⟨⟨(c : A), c.property⟩, ?_⟩
+  have hmem : a - (c : A) ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
+    rw [← GradedAlgebra.projZeroAlgHom_eq_zero_iff hneg, map_sub,
+      GradedAlgebra.projZeroAlgHom_apply_coe hneg c, sub_self]
+  simpa [Subalgebra.smul_def, sub_smul] using
+    Submodule.smul_mem_smul hmem (Submodule.mem_top (R := k) (x := coverGen he₀ d j))
 
 include hneg he in
 /-- Modulo the positive-degree action, every element of the cover is a combination of its
@@ -474,7 +466,7 @@ theorem exists_isMinimal (M : GradedModuleCat.{max uA v} 𝒜) (b : ℤ)
       refine ⟨P, π, hP, hπ, hmin, hPb, fun p hp => ?_⟩
       rw [Submodule.eq_bot_iff]
       intro z hz
-      rw [InternalGrading.mem_ker_piece, hPb p hp, Submodule.mem_bot] at hz
+      rw [InternalGrading.mem_submodule_piece, hPb p hp, Submodule.mem_bot] at hz
       exact Subtype.ext hz) M hb
 
 variable [HasExt.{w} (GradedModuleCat.{max uA v} 𝒜)]

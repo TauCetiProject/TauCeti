@@ -81,33 +81,32 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
     rw [LinearEquiv.symm_trans_apply,
       GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff]
     exact ⟨fun h i ↦ h (ULift.up i), fun h j ↦ h j.down⟩
+  let rD := (Retract.ofIso Φ).trans rR
   let ι : (Fin n → A) →ₗ[A] (I → A) :=
-    eF.toLinearMap ∘ₗ rR.i.hom ∘ₗ Φ.hom.hom ∘ₗ eD.symm.toLinearMap
+    eF.toLinearMap ∘ₗ rD.i.hom ∘ₗ eD.symm.toLinearMap
   let π : (I → A) →ₗ[A] (Fin n → A) :=
-    eD.toLinearMap ∘ₗ Φ.inv.hom ∘ₗ rR.r.hom ∘ₗ eF.symm.toLinearMap
+    eD.toLinearMap ∘ₗ rD.r.hom ∘ₗ eF.symm.toLinearMap
   refine ⟨n, d, ι, π, ?_, ?_, ?_, ?_⟩
   · refine LinearMap.ext fun u ↦ ?_
-    have h1 : rR.r.hom (rR.i.hom (Φ.hom.hom (eD.symm u))) = Φ.hom.hom (eD.symm u) :=
-      LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom rR.retract) _
-    have h2 : Φ.inv.hom (Φ.hom.hom (eD.symm u)) = eD.symm u :=
-      LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom Φ.hom_inv_id) _
-    simp only [ι, π, LinearMap.comp_apply, LinearEquiv.coe_coe, eF.symm_apply_apply, h1, h2,
-      eD.apply_symm_apply, LinearMap.id_apply]
-  · refine LinearMap.ext fun v ↦ ?_
-    have h1 : Φ.hom.hom (Φ.inv.hom (rR.r.hom (eF.symm v))) = rR.r.hom (eF.symm v) :=
-      LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom Φ.inv_hom_id) _
-    have h2 : rR.i.hom (rR.r.hom (eF.symm v)) =
+    have hret : rD.r.hom (rD.i.hom (eD.symm u)) = eD.symm u :=
+      LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom rD.retract) _
+    simp [ι, π, hret]
+  · have hri : rD.r ≫ rD.i = GradedModuleCat.freeEndOfPiEnd s p hhom := by
+      calc rD.r ≫ rD.i = (rR.r ≫ Φ.inv) ≫ (Φ.hom ≫ rR.i) := rfl
+        _ = rR.r ≫ (Φ.inv ≫ Φ.hom) ≫ rR.i := by simp only [Category.assoc]
+        _ = rR.r ≫ rR.i := by rw [Φ.inv_hom_id, Category.id_comp]
+        _ = GradedModuleCat.freeEndOfPiEnd s p hhom :=
+          GradedModuleCat.hom_ext (LinearMap.subtype_comp_rangeRestrict _)
+    refine LinearMap.ext fun v ↦ ?_
+    have hv : rD.i.hom (rD.r.hom (eF.symm v)) =
         (GradedModuleCat.freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
-      LinearMap.congr_fun (LinearMap.subtype_comp_rangeRestrict _) _
-    simp only [ι, π, LinearMap.comp_apply, LinearEquiv.coe_coe, eD.symm_apply_apply, h1, h2]
-    dsimp [GradedModuleCat.freeEndOfPiEnd, GradedModuleCat.ofHom]
-    simp [eF]
+      LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom hri) (eF.symm v)
+    simp [ι, π, hv, eF, GradedModuleCat.freeEndOfPiEnd]
   · exact fun q u hu ↦ (GradedModuleCat.mem_free_piece_iff 𝒜 s q _).mp
-      (GradedModuleCat.map_mem rR.i (GradedModuleCat.map_mem Φ.hom ((heD_symm q u).mpr hu)))
+      (GradedModuleCat.map_mem rD.i ((heD_symm q u).mpr hu))
   · exact fun q v hv ↦ (heD_symm q (π v)).mp <| by
-      simpa [π] using GradedModuleCat.map_mem Φ.inv
-        (GradedModuleCat.map_mem rR.r
-          ((GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q v).mpr hv))
+      simpa [π] using GradedModuleCat.map_mem rD.r
+        ((GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q v).mpr hv)
 
 /-- **Homogeneous basis of the image of a degree-zero idempotent on `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, the range of any degree-zero
