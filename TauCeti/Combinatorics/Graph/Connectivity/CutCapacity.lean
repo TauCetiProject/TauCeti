@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
+public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 public import Mathlib.Data.Set.Card
 
@@ -29,7 +30,13 @@ For a simple graph, the multigraph cut capacity of `Graph.ofSimpleGraph G` agree
 
 * `Graph.edgeCutCapacity_one`: a unit-capacity cut has value equal to the number of crossing
   edge identities.
-* `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
+* `Graph.pairCutCapacity_pairCapacity`: aggregation preserves the cut function.
+* `Graph.isMinimum_pairCutCapacity_pairCapacity_iff`: aggregation preserves minimizing source
+  sides for terminal-set cuts.
+* `Graph.minimumValue_pairCutCapacity_pairCapacity`: aggregation preserves terminal-set minimum
+  cut values.
+* `Graph.pairMinimumValue_pairCutCapacity_pairCapacity`: aggregation preserves pairwise
+  minimum-cut values.
 * `Graph.isSubmodular_edgeCutCapacity`: an edge-capacity function nonnegative on nonloop edges has
   a submodular cut function.
 * `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
@@ -137,10 +144,12 @@ theorem pairCapacity_eq_zero_of_isDiag [Fintype G.edgeSet] [AddCommMonoid K]
   intro e _
   simp [hp]
 
-/-- Aggregating parallel edge weights by their distinct ends preserves every cut capacity. -/
+/-- Aggregating parallel edge weights by their distinct ends preserves the cut function. -/
+@[simp]
 theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
-    [AddCommMonoid K] (c : G.edgeSet → K) (S : Finset G.vertexSet) :
-    TauCeti.pairCutCapacity (G.pairCapacity c) S = G.edgeCutCapacity c S := by
+    [AddCommMonoid K] (c : G.edgeSet → K) :
+    TauCeti.pairCutCapacity (G.pairCapacity c) = G.edgeCutCapacity c := by
+  funext S
   classical
   rw [TauCeti.pairCutCapacity_def, edgeCutCapacity_def]
   simp only [pairCapacity_def]
@@ -176,6 +185,33 @@ theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
       apply sum_congr rfl
       intro e _
       simp only [G.edgeEnds_crosses_iff_mem_edgeCut e S]
+
+/-- Aggregating parallel edge weights by their distinct ends preserves the minimizing source sides
+of every terminal-set cut problem. -/
+theorem isMinimum_pairCutCapacity_pairCapacity_iff [Fintype G.vertexSet]
+    [Fintype G.edgeSet] [AddCommMonoid K] [Preorder K] (c : G.edgeSet → K)
+    {A B S : Finset G.vertexSet} :
+    TauCeti.TerminalCut.IsMinimum (TauCeti.pairCutCapacity (G.pairCapacity c)) A B S ↔
+      TauCeti.TerminalCut.IsMinimum (G.edgeCutCapacity c) A B S := by
+  rw [G.pairCutCapacity_pairCapacity c]
+
+/-- Aggregating parallel edge weights by their distinct ends preserves every terminal-set minimum
+cut value. -/
+theorem minimumValue_pairCutCapacity_pairCapacity [Fintype G.vertexSet]
+    [Fintype G.edgeSet] [AddCommMonoid K] [LinearOrder K] (c : G.edgeSet → K)
+    {A B : Finset G.vertexSet} (hAB : Disjoint A B) :
+    TauCeti.TerminalCut.minimumValue (TauCeti.pairCutCapacity (G.pairCapacity c)) hAB =
+      TauCeti.TerminalCut.minimumValue (G.edgeCutCapacity c) hAB := by
+  rw [G.pairCutCapacity_pairCapacity c]
+
+/-- Aggregating parallel edge weights by their distinct ends preserves pairwise minimum-cut
+values. -/
+theorem pairMinimumValue_pairCutCapacity_pairCapacity [Fintype G.vertexSet]
+    [Fintype G.edgeSet] [AddCommMonoid K] [LinearOrder K] (c : G.edgeSet → K)
+    (s t : G.vertexSet) :
+    TauCeti.TerminalCut.pairMinimumValue (TauCeti.pairCutCapacity (G.pairCapacity c)) s t =
+      TauCeti.TerminalCut.pairMinimumValue (G.edgeCutCapacity c) s t := by
+  rw [G.pairCutCapacity_pairCapacity c]
 
 /-- Multigraph cut capacity is unchanged when the two sides of the cut are exchanged. -/
 @[simp]
