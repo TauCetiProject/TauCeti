@@ -90,7 +90,7 @@ private abbrev component {W : Opens (TopCat.of M)}
     (x : (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj).obj (op W))
     (i : ι) : (U i ⨯ W : Opens (TopCat.of M)) → V :=
   (sectionsEquiv I 𝕜 V (U i ⨯ W) ((Pi.π _ i : (∏ᶜ fun i ↦
-    (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj) ⟶ _).app (op W) x)).1
+    (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj) ⟶ _).app (op W) x)).val
 
 variable {U} in
 private lemma component_add {W : Opens (TopCat.of M)}
@@ -115,7 +115,7 @@ private lemma contMDiff_glueFun {W : Opens (TopCat.of M)}
     {s : ∀ i, (U i ⨯ W : Opens (TopCat.of M)) → V} (hs : ∀ i, ContMDiff I 𝓘(ℝ, V) ∞ (s i)) :
     ContMDiff I 𝓘(ℝ, V) ∞ fun y : W ↦ glueFun U ρ s y := fun y ↦
   contMDiffAt_subtype_iff.2 <| ρ.contMDiffAt_finsum fun i hy ↦
-    ContMDiffAt.extend_subtypeVal (hs i ⟨y, mem_prod_iff.2 ⟨hρ i hy, y.2⟩⟩) 0
+    ContMDiffAt.extend_subtypeVal (hs i ⟨y, mem_prod_iff.2 ⟨hρ i hy, y.property⟩⟩) 0
 
 /-- Only finitely many terms of the glued sum are nonzero at each point. -/
 private lemma finite_support_glue {W : Opens (TopCat.of M)}
@@ -153,7 +153,7 @@ private def glue (W : Opens (TopCat.of M)) :
       (smoothSheafModule I M 𝕜 V).obj.obj (op W) where
   toFun x := (sectionsEquiv I 𝕜 V W).symm ⟨fun y ↦ glueFun U ρ (component x) y,
     mem_smoothSections_iff.2 <| contMDiff_glueFun U ρ hρ fun i ↦
-      mem_smoothSections_iff.1 (sectionsEquiv I 𝕜 V _ _).2⟩
+      mem_smoothSections_iff.1 (sectionsEquiv I 𝕜 V _ _).property⟩
   map_add' x x' := by
     rw [← map_add]
     congr 1
@@ -172,7 +172,7 @@ private def glue (W : Opens (TopCat.of M)) :
 private lemma sectionsEquiv_glue (W : Opens (TopCat.of M))
     (x : (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj).obj
       (op W)) :
-    (sectionsEquiv I 𝕜 V W (glue U ρ hρ W x)).1 = fun y : W ↦ glueFun U ρ (component x) y := by
+    (sectionsEquiv I 𝕜 V W (glue U ρ hρ W x)).val = fun y : W ↦ glueFun U ρ (component x) y := by
   simp only [glue, LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
 
 variable {U} in
@@ -206,12 +206,12 @@ private def glueHom :
     refine finsum_congr fun i ↦ congrArg (ρ i y • ·) ?_
     rw [component_map]
     exact Function.extend_subtypeVal_comp_inclusion _ _ _ fun hy ↦
-      mem_prod_iff.2 ⟨(mem_prod_iff.1 hy).1, y.2⟩
+      mem_prod_iff.2 ⟨(mem_prod_iff.1 hy).1, y.property⟩
 
 private lemma sectionsEquiv_glueHom_app (W : Opens (TopCat.of M))
     (x : (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj).obj
       (op W)) :
-    (sectionsEquiv I 𝕜 V W ((glueHom U ρ hρ).app (op W) x)).1 =
+    (sectionsEquiv I 𝕜 V W ((glueHom U ρ hρ).app (op W) x)).val =
       fun y : W ↦ glueFun U ρ (component x) y :=
   sectionsEquiv_glue U ρ hρ W x
 
@@ -229,7 +229,7 @@ variable {U} in
 private lemma component_restrictHom {W : Opens (TopCat.of M)}
     (s : (smoothSheafModule I M 𝕜 V).obj.obj (op W)) (i : ι) :
     component ((Pi.lift (restrictHom (U := U))).app (op W) s) i =
-      (sectionsEquiv I 𝕜 V W s).1 ∘ Opens.inclusion (prod.snd : U i ⨯ W ⟶ W).le := by
+      (sectionsEquiv I 𝕜 V W s).val ∘ Opens.inclusion (prod.snd : U i ⨯ W ⟶ W).le := by
   rw [component, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
     Pi.lift_comp_π]
   exact sectionsEquiv_map _ _
@@ -249,11 +249,11 @@ def retractPiRestrict : Retract (smoothSheafModule I M 𝕜 V).obj
       ConcreteCategory.id_apply, sectionsEquiv_glueHom_app]
     -- the terms with `ρ i y ≠ 0` have `y ∈ U i`, so they are `ρ i y • s y`
     have h (i : ι) : ρ i y • Subtype.val.extend (component ((Pi.lift (restrictHom (U := U))).app
-        (op W) s) i) 0 y = ρ i y • (sectionsEquiv I 𝕜 V W s).1 y := by
+        (op W) s) i) 0 y = ρ i y • (sectionsEquiv I 𝕜 V W s).val y := by
       by_cases hi : ρ i y = 0
       · simp [hi]
       · have hy : (y : M) ∈ (U i ⨯ W : Opens (TopCat.of M)) :=
-          mem_prod_iff.2 ⟨hρ i (subset_closure hi), y.2⟩
+          mem_prod_iff.2 ⟨hρ i (subset_closure hi), y.property⟩
         rw [component_restrictHom]
         exact congrArg _ (Subtype.val_injective.extend_apply _ (0 : M → V) ⟨y, hy⟩)
     simp only [glueFun]
@@ -277,10 +277,10 @@ by zero. -/
 theorem sectionsEquiv_retractPiRestrict_r_app (W : Opens (TopCat.of M))
     (x : (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj).obj
       (op W)) (y : W) :
-    (sectionsEquiv I 𝕜 V W ((retractPiRestrict U ρ hρ).r.app (op W) x)).1 y =
+    (sectionsEquiv I 𝕜 V W ((retractPiRestrict U ρ hρ).r.app (op W) x)).val y =
       ∑ᶠ i, ρ i y • Subtype.val.extend (sectionsEquiv I 𝕜 V (U i ⨯ W)
         ((Pi.π (fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj) i).app
-          (op W) x)).1 0 (y : M) :=
+          (op W) x)).val 0 (y : M) :=
   congrFun (sectionsEquiv_glueHom_app U ρ hρ W x) y
 
 end Retract

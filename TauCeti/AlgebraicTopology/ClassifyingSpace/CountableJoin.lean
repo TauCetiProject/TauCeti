@@ -72,7 +72,7 @@ noncomputable def universalGSpaceMap (φ : G →* H) : C(universalGSpace G, univ
 @[simp]
 theorem universalGSpaceMap_val (φ : G →* H) (x : universalGSpace G) :
     (universalGSpaceMap φ x : (Σ _ : ℕ, H) →₀ ℝ) =
-      Finsupp.mapDomain (fun v : Σ _ : ℕ, G => (⟨v.1, φ v.2⟩ : Σ _ : ℕ, H)) x.1 := by
+      Finsupp.mapDomain (fun v : Σ _ : ℕ, G => (⟨v.1, φ v.2⟩ : Σ _ : ℕ, H)) x.val := by
   classical
   let : DecidableEq ℕ := Classical.decEq ℕ
   simp [universalGSpaceMap]

@@ -82,10 +82,11 @@ noncomputable def bandLevelDiffeomorph (has : a ≤ s) (hsb : s ≤ b)
   letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) hregs hn
   letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) hrega hn
   have hdown (x : {x : M // f x = s}) : f (φ (s - a) x) = a := by
-    rw [hφf x _ (sub_nonneg.2 has) (by rw [x.2]; linarith) (x.2.trans_le hsb), x.2]
+    rw [hφf x _ (sub_nonneg.2 has)
+        (by rw [x.property]; linarith) (x.property.trans_le hsb), x.property]
     ring
   have hup (y : {x : M // f x = a}) : f (φ (a - s) y) = s := by
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf.continuous hanti hφf hφa y.2
+    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf.continuous hanti hφf hφa y.property
       (sub_nonneg.2 has) (by linarith), add_sub_cancel]
   { toFun x := ⟨φ (s - a) x, hdown x⟩
     invFun y := ⟨φ (a - s) y, hup y⟩
@@ -137,18 +138,18 @@ noncomputable def bandInteriorDiffeomorph (hrega : IsRegularValue I 𝓘(ℝ) f 
   letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) hrega hn
   have hmem (x : (⟨f ⁻¹' Ioo a b, isOpen_Ioo.preimage hf.continuous⟩ : Opens M)) :
       f x ∈ Ioo a b :=
-    mem_preimage.1 (Opens.mem_mk.1 x.2)
+    mem_preimage.1 (Opens.mem_mk.1 x.property)
   have hdown (x : (⟨f ⁻¹' Ioo a b, isOpen_Ioo.preimage hf.continuous⟩ : Opens M)) :
       f (φ (f x - a) x) = a := by
     rw [hφf x _ (by linarith [(hmem x).1]) (by linarith) (hmem x).2.le]
     ring
   have hup (p : {x : M // f x = a} × (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ)) :
       f (φ (a - p.2) p.1) = p.2 := by
-    have hp : (p.2 : ℝ) ∈ Ioo a b := Opens.mem_mk.1 p.2.2
-    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf.continuous hanti hφf hφa p.1.2
+    have hp : (p.2 : ℝ) ∈ Ioo a b := Opens.mem_mk.1 p.2.property
+    rw [← neg_sub, φ.apply_neg_eq_add_of_apply_eq_sub hf.continuous hanti hφf hφa p.1.property
       (by linarith [hp.1]) (by linarith [hp.2]), add_sub_cancel]
   { toFun x := (⟨φ (f x - a) x, hdown x⟩, ⟨f x, Opens.mem_mk.2 (hmem x)⟩)
-    invFun p := ⟨φ (a - p.2) p.1, by rw [Opens.mem_mk, mem_preimage, hup p]; exact p.2.2⟩
+    invFun p := ⟨φ (a - p.2) p.1, by rw [Opens.mem_mk, mem_preimage, hup p]; exact p.2.property⟩
     left_inv x := Subtype.ext <| by
       dsimp only
       rw [← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
@@ -159,13 +160,13 @@ noncomputable def bandInteriorDiffeomorph (hrega : IsRegularValue I 𝓘(ℝ) f 
     contMDiff_toFun := by
       have hemb := isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt) hrega hn
       refine ContMDiff.prodMk (hemb.contMDiff_iff_comp.2 ?_)
-        ((ContMDiff.subtypeVal_comp_iff _ _).1 (hf.comp contMDiff_subtype_val))
-      exact hφ.comp (((hf.comp contMDiff_subtype_val).sub contMDiff_const).prodMk
-        contMDiff_subtype_val)
+        ((ContMDiff.subtypeVal_comp_iff _ _).1 (hf.comp contMDiff_subtypeVal))
+      exact hφ.comp (((hf.comp contMDiff_subtypeVal).sub contMDiff_const).prodMk
+        contMDiff_subtypeVal)
     contMDiff_invFun := by
       have hemb := isSmoothEmbedding_coe_regularLevel (by simp) (fun _ _ ↦ hf.contMDiffAt) hrega hn
       refine (ContMDiff.subtypeVal_comp_iff _ _).1 ?_
-      exact hφ.comp ((contMDiff_const.sub (contMDiff_subtype_val.comp contMDiff_snd)).prodMk
+      exact hφ.comp ((contMDiff_const.sub (contMDiff_subtypeVal.comp contMDiff_snd)).prodMk
         (hemb.contMDiff.comp contMDiff_fst)) }
 
 @[simp]
@@ -214,12 +215,14 @@ theorem exists_bandHomeomorph_diffeomorph [T2Space M] (hf : ContMDiff I 𝓘(ℝ
       (∀ x, ((e x).2 : ℝ) = f x) ∧ (∀ x : f ⁻¹' Icc a b, f x = a → ((e x).1 : M) = x) ∧
       (∃ Ψ : (⟨f ⁻¹' Ioo a b, isOpen_Ioo.preimage hf.continuous⟩ : Opens M) ≃ₘ⟮I,
           𝓘(ℝ, Fin n → ℝ).prod 𝓘(ℝ, ℝ)⟯ {x : M // f x = a} × (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ),
-        ∀ x, ((Ψ x).1 : M) = (e ⟨x, preimage_mono Ioo_subset_Icc_self (Opens.mem_mk.1 x.2)⟩).1 ∧
+        ∀ x, ((Ψ x).1 : M) = (e ⟨x, preimage_mono Ioo_subset_Icc_self
+            (Opens.mem_mk.1 x.property)⟩).1 ∧
           ((Ψ x).2 : ℝ) = f x) ∧
       ∀ s (hs : s ∈ Icc a b),
         letI := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt.of_le (by simp)) (hreg s hs) hn
         ∃ g : {x : M // f x = s} ≃ₘ⟮𝓘(ℝ, Fin n → ℝ), 𝓘(ℝ, Fin n → ℝ)⟯ {x : M // f x = a},
-          ∀ x : {x : M // f x = s}, (g x : M) = (e ⟨x, by rw [mem_preimage, x.2]; exact hs⟩).1 := by
+          ∀ x : {x : M // f x = s}, (g x : M) = (e ⟨x,
+              by rw [mem_preimage, x.property]; exact hs⟩).1 := by
   have hreg' (x : M) (hxa : a ≤ f x) (hxb : f x ≤ b) : mfderiv I 𝓘(ℝ) f x ≠ 0 :=
     mvfderiv_eq_zero_iff.not.1
       (isRegularPoint_iff_mvfderiv_ne_zero.1 ((hreg _ ⟨hxa, hxb⟩).isRegularPoint rfl))
@@ -234,6 +237,6 @@ theorem exists_bandHomeomorph_diffeomorph [T2Space M] (hf : ContMDiff I 𝓘(ℝ
     fun s hs ↦ ⟨φ.bandLevelDiffeomorph hφ hf hanti' hφf hφa hn hs.1 hs.2 _ _, fun x ↦ ?_⟩⟩
   · rw [Flow.coe_bandInteriorDiffeomorph_apply_fst, Flow.coe_bandHomeomorph_apply_fst]
   · rw [Flow.coe_bandInteriorDiffeomorph_apply_snd]
-  · rw [Flow.coe_bandLevelDiffeomorph_apply, Flow.coe_bandHomeomorph_apply_fst, x.2]
+  · rw [Flow.coe_bandLevelDiffeomorph_apply, Flow.coe_bandHomeomorph_apply_fst, x.property]
 
 end TauCeti

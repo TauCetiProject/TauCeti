@@ -48,9 +48,10 @@ full set of sections of a finite locally free subgroup scheme.
 
 * `TauCeti.isFullSetOfSections_comp_algEquiv_iff`: being a full set of sections is invariant under
   isomorphisms of `B`.
-* `TauCeti.isFullSetOfSections_sectionBaseChange_iff_of_isPushout` and
-  `TauCeti.isFullSetOfSections_iff_of_isPushout`: full sets of sections and base change along a
-  pushout square.
+* `TauCeti.IsFullSetOfSections.baseChange_of_univ`,
+  `TauCeti.isFullSetOfSections_sectionBaseChange_iff_of_isPushout`, and
+  `TauCeti.isFullSetOfSections_iff_of_isPushout`: full sets of sections and base change in the
+  same universe or along a pushout square.
 * `TauCeti.IsFullSetOfSections.of_localizationSpan`: being a full set of sections is Zariski-local
   on `Spec A`: it can be checked after localizing at a family of elements generating the unit
   ideal. `TauCeti.IsFullSetOfSections.of_localization_maximal` permits checking at all maximal
@@ -164,13 +165,33 @@ theorem isFullSetOfSections_comp_algEquiv_iff {B' : Type*} [CommRing B'] [Algebr
     (IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) ↔ IsFullSetOfSections s :=
   ⟨.of_comp_algEquiv e, fun h ↦ .of_comp_algEquiv e.symm (by simpa [AlgHom.comp_assoc] using h)⟩
 
-/-- The base change of a family of sections along the identity `A → A` is a full set of sections
-if and only if the family itself is. -/
+/-- Any finite family of sections of a subsingleton algebra is a full set of sections. -/
+@[simp] theorem isFullSetOfSections_of_subsingleton [Subsingleton B] (s : ι → B →ₐ[A] A) :
+    IsFullSetOfSections s := by
+  rw [isFullSetOfSections_iff]; intro T _ _ _ f
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · have : Subsingleton (T ⊗[A] B) := inferInstance
+    rw [Subsingleton.elim f 1, map_one, Finset.univ_eq_empty, Finset.prod_empty]
+  · have : Subsingleton A := subsingleton_of_zero_eq_one <| by
+      rw [← map_zero (s i₀), ← map_one (s i₀), Subsingleton.elim (0 : B) 1]
+    have : Subsingleton T := subsingleton_of_zero_eq_one <| by
+      rw [← map_zero (algebraMap A T), ← map_one (algebraMap A T), Subsingleton.elim (0 : A) 1]
+    exact Subsingleton.elim _ _
+
+/-- Being a full set of sections is invariant under reindexing by an equivalence. -/
+@[simp] theorem isFullSetOfSections_comp_equiv_iff {ι' : Type*} [Fintype ι'] {s : ι → B →ₐ[A] A}
+    (e : ι' ≃ ι) : IsFullSetOfSections (s ∘ e) ↔ IsFullSetOfSections s := by
+  rw [isFullSetOfSections_iff, isFullSetOfSections_iff]
+  refine forall_congr' fun T ↦ forall_congr' fun _ ↦ forall_congr' fun _ ↦
+    forall_congr' fun _ ↦ forall_congr' fun f ↦ ?_
+  exact Iff.of_eq (congrArg (Algebra.norm T f = ·) (Fintype.prod_equiv e
+    (fun j ↦ (s (e j)).sectionBaseChange T f) (fun i ↦ (s i).sectionBaseChange T f) fun _ ↦ rfl))
+
+/-- The base change of `s` along `A → A` is a full set of sections iff `s` is. -/
 theorem isFullSetOfSections_sectionBaseChange_self_iff :
     (IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A) ↔ IsFullSetOfSections s := by
   rw [← isFullSetOfSections_comp_algEquiv_iff (Algebra.TensorProduct.lid A B).symm]
-  refine Iff.of_eq (congrArg _ (funext fun i ↦ AlgHom.ext fun b ↦ ?_))
-  simp
+  exact Iff.of_eq (congrArg _ (funext fun i ↦ AlgHom.ext fun b ↦ by simp))
 
 section Free
 
@@ -269,9 +290,9 @@ private theorem forall_norm_eq_prod_cancelBaseChange_iff {A' T : Type*} [CommRin
   refine e.toEquiv.forall_congr fun g ↦ ?_
   simp [e, Algebra.norm_eq_of_algEquiv]
 
--- A full set of sections remains one after a base change `A → A'` with `A'` in the universe of
--- `A`: the test algebras over `A'` are test algebras over `A`.
-private theorem IsFullSetOfSections.baseChange_of_univ (h : IsFullSetOfSections s)
+/-- A full set of sections remains one after a base change `A → A'` with `A'` in the universe of
+`A`, with no finiteness or flatness assumption on `B`. -/
+theorem IsFullSetOfSections.baseChange_of_univ (h : IsFullSetOfSections s)
     (A' : Type u) [CommRing A'] [Algebra A A'] :
     IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A' := by
   intro T _ _ _ g
@@ -312,10 +333,10 @@ private theorem IsFullSetOfSections.algebraMap_norm_eq_prod
 localizations `A[1/r]`, `r ∈ t`, are full sets of sections, then `s` is a full set of sections. -/
 theorem IsFullSetOfSections.of_localizationSpan (t : Set A)
     (ht : Ideal.span t = ⊤)
-    (h : ∀ r : t, IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.Away r.1)) :
+    (h : ∀ r : t, IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.Away r.val)) :
     IsFullSetOfSections s := by
   intro T _ _ _ f
-  let T' (r : t) := Localization (Algebra.algebraMapSubmonoid T (Submonoid.powers r.1))
+  let T' (r : t) := Localization (Algebra.algebraMapSubmonoid T (Submonoid.powers r.val))
   refine Module.eq_of_isLocalized_span t ht (Mₚ := T')
     (f := fun r ↦ (IsScalarTower.toAlgHom A T (T' r)).toLinearMap) _ _ fun r ↦ ?_
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
@@ -707,7 +728,7 @@ noncomputable def quotientFullSetIdealHomEquiv (u : ι → B →ₐ[A] C) (T : T
   toFun g := ⟨g.comp (Ideal.Quotient.mkₐ A _), (isFullSetOfSections_liftEquiv_comp_iff u _).2
     fun x hx ↦ by simp [Ideal.Quotient.eq_zero_iff_mem.2 hx]⟩
   invFun φ := Ideal.Quotient.liftₐ _ φ fun _ hx ↦ (isFullSetOfSections_liftEquiv_comp_iff u _).1
-    φ.2 hx
+    φ.property hx
   left_inv g := Ideal.Quotient.algHom_ext A (Ideal.Quotient.liftₐ_comp _ _ _)
   right_inv φ := Subtype.ext (Ideal.Quotient.liftₐ_comp _ _ _)
 
@@ -724,7 +745,7 @@ theorem coe_quotientFullSetIdealHomEquiv_apply (u : ι → B →ₐ[A] C) {T : T
 theorem quotientFullSetIdealHomEquiv_symm_apply_mk (u : ι → B →ₐ[A] C) {T : Type w}
     [CommRing T] [Algebra A T]
     (φ : {φ : C →ₐ[A] T // IsFullSetOfSections fun i ↦ AlgHom.liftEquiv A T B T (φ.comp (u i))})
-    (x : C) : (quotientFullSetIdealHomEquiv u T).symm φ (Ideal.Quotient.mk _ x) = φ.1 x :=
+    (x : C) : (quotientFullSetIdealHomEquiv u T).symm φ (Ideal.Quotient.mk _ x) = φ.val x :=
   (rfl)
 
 end Locus

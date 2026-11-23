@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# The scaled sinc function `t ↦ t sinc (ω t)`
+# The sinc function: nonnegativity and the scaled function `t ↦ t sinc (ω t)`
+
+`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
+zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
+the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`.
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
@@ -40,5 +45,33 @@ theorem hasDerivAt_mul_sinc_mul (ω t : ℝ) :
   · simp_rw [mul_sinc_mul_of_ne_zero hω]
     convert ((hasDerivAt_id' t).const_mul ω).sin.div_const ω using 1
     field_simp
+
+/-- The function `sinc` is nonnegative on `[-π, π]`. -/
+theorem sinc_nonneg {x : ℝ} (hx : |x| ≤ π) : 0 ≤ sinc x := by
+  wlog hx₀ : 0 ≤ x generalizing x
+  · rw [← sinc_neg]
+    exact this (by rwa [abs_neg]) (by linarith)
+  rcases hx₀.eq_or_lt with rfl | hx₀
+  · simp
+  rw [sinc_of_ne_zero hx₀.ne']
+  exact div_nonneg (sin_nonneg_of_nonneg_of_le_pi hx₀.le (abs_le.1 hx).2) hx₀.le
+
+/-- `|sinc x - 1| ≤ x² / 6` for every real `x`. -/
+theorem abs_sinc_sub_one_le (x : ℝ) : |sinc x - 1| ≤ x ^ 2 / 6 := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hx' : 0 < |x| := abs_pos.2 hx
+  rw [sinc_of_ne_zero hx, div_sub_one hx, abs_div, div_le_iff₀ hx', abs_sub_comm]
+  calc |x - sin x| ≤ |x| ^ 3 / 6 := abs_sub_sin_le x
+    _ = x ^ 2 / 6 * |x| := by rw [← sq_abs x]; ring
+
+/-- `1 - cos x = (x² / 2) sinc (x / 2)²` for every real `x`. -/
+theorem one_sub_cos_eq_sq_div_two_mul_sinc_sq (x : ℝ) :
+    1 - cos x = x ^ 2 / 2 * sinc (x / 2) ^ 2 := by
+  have h₁ := cos_two_mul (x / 2)
+  rw [show 2 * (x / 2) = x by ring] at h₁
+  have h₂ := sin_sq_add_cos_sq (x / 2)
+  rw [← mul_sinc (x / 2)] at h₂
+  linear_combination -h₁ - 2 * h₂
 
 end Real

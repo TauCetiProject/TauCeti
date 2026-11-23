@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 
 import TauCeti.GroupTheory.Coxeter.ChainProperty
+import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
@@ -51,6 +52,10 @@ saturated chains of orbit weights, in which each step is a reflection `ξ ↦ s_
   of that parabolic subgroup exactly when they move the dominant weight to the same point.
 * `TauCeti.existsUnique_isMinimalCosetRep_smul_eq`: each orbit weight has a unique minimal coset
   representative.
+* `TauCeti.eq_of_isMinimalCosetRep_of_apply_smul_eq` and
+  `TauCeti.eq_of_isMinimalCosetRep_of_smul_apply_smul_eq`: a minimal coset representative is
+  determined by the image (or a nonzero scalar multiple of the image) of its orbit weight under any
+  map injective on the Weyl orbit.
 * `TauCeti.bruhatLE_of_isMinimalCosetRep_of_smul_eq`: that representative lies below every
   Weyl-group element with the same orbit weight.
 * `TauCeti.bruhatStep_ofIdx_mul_of_coroot'_neg`: `s_β w < w` in the Weyl group itself when
@@ -145,14 +150,14 @@ def _root_.RootPairing.minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠
 @[simp]
 theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0)
     (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
-    (P.minimalCosetRepNsmulEquiv b lam n hn w).1 = w.1 := by
+    (P.minimalCosetRepNsmulEquiv b lam n hn w).val = w.val := by
   simp only [minimalCosetRepNsmulEquiv, Equiv.subtypeEquivRight_apply]
 
 /-- Inverse scaling preserves the Weyl-group element of a minimal representative. -/
 @[simp]
 theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv_symm (lam : M) (n : ℕ) (hn : n ≠ 0)
     (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w}) :
-    ((P.minimalCosetRepNsmulEquiv b lam n hn).symm w).1 = w.1 := by
+    ((P.minimalCosetRepNsmulEquiv b lam n hn).symm w).val = w.val := by
   rfl
 
 end IntegerScaling
@@ -162,7 +167,7 @@ the walls through a weight. -/
 lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) : P.wallIndices b (x + χ) = P.wallIndices b x := by
   ext i
-  rw [mem_wallIndices, mem_wallIndices, map_add, hχ i i.2, add_zero]
+  rw [mem_wallIndices, mem_wallIndices, map_add, hχ i i.property, add_zero]
 
 variable (P b) [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
   [P.IsReduced] [P.flip.IsReduced] {lam : M}
@@ -213,6 +218,27 @@ theorem eq_of_isMinimalCosetRep_of_smul_eq (hlam : lam ∈ dominantChamber P b)
     (h : u • lam = v • lam) : u = v :=
   hu.eq_of_inv_mul_mem _ hv ((inv_mul_mem_parabolic_wallIndices_iff hlam).mpr h.symm)
 
+/-- Minimal coset representatives are determined by the image of their orbit weight under any map
+`f` injective on the Weyl orbit of a dominant weight `λ`. -/
+theorem eq_of_isMinimalCosetRep_of_apply_smul_eq {α : Type*} {f : M → α}
+    (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    {u v : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (h : f (u.val • lam) = f (v.val • lam)) : u = v :=
+  Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam u.property v.property (hf ⟨_, rfl⟩ ⟨_,
+      rfl⟩ h))
+
+/-- Minimal coset representatives are determined by a nonzero scalar multiple of the image of their
+orbit weight under any map `f` injective on the Weyl orbit of a dominant weight `λ`. -/
+theorem eq_of_isMinimalCosetRep_of_smul_apply_smul_eq {𝕜 V : Type*}
+    [GroupWithZero 𝕜] [MulAction 𝕜 V] {f : M → V}
+    (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    {u v : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    {a : 𝕜} (ha : a ≠ 0) (h : a • f (u.val • lam) = a • f (v.val • lam)) : u = v :=
+  eq_of_isMinimalCosetRep_of_apply_smul_eq hlam hf
+    (by simpa only [inv_smul_smul₀ ha] using congrArg (a⁻¹ • ·) h)
+
 /-- **The minimal coset representative of an orbit weight is Bruhat-below every Weyl-group element
 with that orbit weight.** -/
 theorem bruhatLE_of_isMinimalCosetRep_of_smul_eq (hlam : lam ∈ dominantChamber P b)
@@ -231,13 +257,8 @@ theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
     {w : P.weylGroup} {β : ι} (hβ : b.IsPos β) (hneg : P.coroot' β (w • lam) < 0) :
     (weylCoxeterSystem P b).BruhatStep (RootPairing.weylGroup.ofIdx P β * w) w := by
   have := P.flip_isReduced
-  have hinv : β ∈ inversions P b w⁻¹ := by
-    refine (mem_inversions P b w⁻¹ β).mpr ⟨hβ, fun hpos ↦ hneg.not_ge ?_⟩
-    have h := coroot'_weylGroupToPerm_smul P w⁻¹ β (w • lam)
-    rw [inv_smul_smul] at h
-    rw [← h]
-    exact coroot'_nonneg_of_mem_posRoots P b hlam ((mem_posRoots P b _).mpr hpos)
-  exact (P.bruhatStep_ofIdx_mul_iff_mem_inversions b w hβ).mpr hinv
+  exact (P.bruhatStep_ofIdx_mul_iff_mem_inversions b w hβ).mpr
+    (mem_inversions_inv_of_coroot'_smul_neg P b hlam hβ hneg)
 
 omit [P.flip.IsReduced] in
 /-- **A simple reflection that does not shorten `w` pairs nonnegatively.** If `sᵢ` is not a left
@@ -247,7 +268,8 @@ theorem coroot'_smul_nonneg_of_not_isLeftDescent (hlam : lam ∈ dominantChamber
     0 ≤ P.coroot' i (w • lam) := by
   refine not_lt.mp fun hneg ↦ hi ?_
   rw [CoxeterSystem.IsLeftDescent, weylCoxeterSystem_simple]
-  exact (bruhatStep_ofIdx_mul_of_coroot'_neg hlam (b.isPos_of_mem_support i.2) hneg).length_lt
+  exact (bruhatStep_ofIdx_mul_of_coroot'_neg hlam (b.isPos_of_mem_support i.property)
+      hneg).length_lt
 
 omit [P.flip.IsReduced] in
 /-- **A left descent pairs nonpositively.** If `sᵢ` is a left descent of `w`, then
@@ -363,7 +385,7 @@ theorem reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg
     (hx : P.coroot' i (x • lam) < 0) (hy : 0 ≤ P.coroot' i (y • lam)) :
     P.reflection i (x • lam) = y • lam := by
   set cs := weylCoxeterSystem P b
-  have hi : b.IsPos i := b.isPos_of_mem_support i.2
+  have hi : b.IsPos i := b.isPos_of_mem_support i.property
   have hsmul (w : P.weylGroup) :
       (RootPairing.weylGroup.ofIdx P i * w) • lam = P.reflection i (w • lam) := by
     rw [mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul]

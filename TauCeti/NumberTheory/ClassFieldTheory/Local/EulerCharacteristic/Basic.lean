@@ -77,7 +77,7 @@ def localEulerCharacteristic (hn : (n : F) ≠ 0) (A : GalRep n F)
 @[simp]
 theorem localEulerCharacteristic_coe (hn : (n : F) ≠ 0) (A : GalRep n F)
     [Finite A.V] [Fact (IsSmoothDiscrete (ZMod n) A)] :
-    ((localEulerCharacteristic hn A).1 : ℚ) =
+    ((localEulerCharacteristic hn A).val : ℚ) =
       (Nat.card (continuousCohomology 0 A) : ℚ) * Nat.card (continuousCohomology 2 A) /
         Nat.card (continuousCohomology 1 A) := by
   rfl
@@ -118,7 +118,7 @@ def localCardNorm (A : GalRep n F) [Finite A.V] : Units.posSubgroup ℚ :=
 /-- The value of `localCardNorm` in `ℚ`. -/
 @[simp]
 theorem localCardNorm_coe (A : GalRep n F) [Finite A.V] :
-    ((localCardNorm p A).1 : ℚ) = padicNorm p (Nat.card A.V) ^ Module.finrank ℚ_[p] F := by
+    ((localCardNorm p A).val : ℚ) = padicNorm p (Nat.card A.V) ^ Module.finrank ℚ_[p] F := by
   rfl
 
 /-- **Isomorphism invariance of `localCardNorm`.** Isomorphic representations have the same

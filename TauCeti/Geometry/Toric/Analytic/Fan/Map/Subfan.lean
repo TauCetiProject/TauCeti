@@ -98,7 +98,7 @@ theorem range_preimageSubfanAnalyticMap :
       (f.preimageCones_subset S) (f.preimageCones_closedUnderFaces S hface) hx,
     mem_preimage, Psi.mem_range_subfanAnalyticMap_iff hPsi S hS hface
       (f.mapsTo_analyticConeOrbit hPhi hPsi sigma hx),
-    f.mem_preimageCones_iff S sigma.2]
+    f.mem_preimageCones_iff S sigma.property]
 
 /-- Restriction to an open subfan is a base change: the analytic realization of the preimage
 subfan is the pullback of the target open-subfan embedding along the ambient toric map. -/

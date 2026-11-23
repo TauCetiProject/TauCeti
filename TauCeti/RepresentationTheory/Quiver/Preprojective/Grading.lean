@@ -284,7 +284,7 @@ theorem preprojectiveGrade_eq_span_range_ofPath (n : ℕ) :
     preprojectiveGrade k Q n =
       Submodule.span k (Set.range fun x :
           {x : Quiver.TotalPath (Symmetrify Q) // x.2.2.length = n} =>
-          preprojectiveMk k Q (PathAlgebra.ofPath x.1)) := by
+          preprojectiveMk k Q (PathAlgebra.ofPath x.val)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
     refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
@@ -296,7 +296,7 @@ theorem preprojectiveGrade_eq_span_range_ofPath (n : ℕ) :
   · rw [Submodule.span_le]
     rintro z ⟨x, rfl⟩
     exact preprojectiveMk_mem_preprojectiveGrade k Q
-      (PathAlgebra.ofPath_mem_grade_of_length x.2)
+      (PathAlgebra.ofPath_mem_grade_of_length x.property)
 
 end Grade
 

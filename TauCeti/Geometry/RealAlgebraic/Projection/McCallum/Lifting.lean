@@ -51,17 +51,17 @@ theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
     (hfiber : ∀ b ∈ A, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
       q.orderAt x = q.orderAt y) :
-    ∃ D : Delineation fun (b : A) (x : S) ↦ b.1.map (MvPolynomial.eval x.1),
+    ∃ D : Delineation fun (b : A) (x : S) ↦ b.val.map (MvPolynomial.eval x.val),
       ∀ i, ∀ x y : S,
-        ((finSuccEquiv ℝ n).symm (∏ b : A, b.1)).orderAt (Fin.cons (D.root i x) x.1) =
-          ((finSuccEquiv ℝ n).symm (∏ b : A, b.1)).orderAt (Fin.cons (D.root i y) y.1) := by
+        ((finSuccEquiv ℝ n).symm (∏ b : A, b.val)).orderAt (Fin.cons (D.root i x) x.val) =
+          ((finSuccEquiv ℝ n).symm (∏ b : A, b.val)).orderAt (Fin.cons (D.root i y) y.val) := by
   classical
   have hdegree (b : A) (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
-      (b.1.map (MvPolynomial.eval x)).natDegree =
-        (b.1.map (MvPolynomial.eval y)).natDegree :=
+      (b.val.map (MvPolynomial.eval x)).natDegree =
+        (b.val.map (MvPolynomial.eval y)).natDegree :=
     Finset.natDegree_map_eq_of_mcCallumProjection
-      (fun q hq ↦ eval_eq_zero_iff_of_orderAt_eq (hproj q hq x hx y hy)) (hAB b.2)
-  let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b : A, b.1
+      (fun q hq ↦ eval_eq_zero_iff_of_orderAt_eq (hproj q hq x hx y hy)) (hAB b.property)
+  let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b : A, b.val
   have hp_eq : p = ∏ b ∈ A, b := Finset.prod_coe_sort A fun b ↦ b
   have hp_discr_ne : p.discr ≠ 0 := by
     rw [hp_eq]
@@ -72,12 +72,12 @@ theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
     exact hB.orderAt_discr_prod_eq_of_mcCallumProjection hAB x y
       (fun q hq ↦ hproj q hq x hx y hy)
   apply exists_delineation_of_locally_chart
-    (d := d) (P := fun (b : A) x ↦ b.1.map (MvPolynomial.eval x))
+    (d := d) (P := fun (b : A) x ↦ b.val.map (MvPolynomial.eval x))
     (q := fun x t ↦ ((finSuccEquiv ℝ n).symm p).orderAt (Fin.cons t x)) hconn
   intro x hx
   obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
-  exact ⟨e, he, hxe, he.exists_delineation_orderAt_prod_eq (P := fun b : A ↦ b.1) hxe hx
-    (fun b ↦ hfiber b b.2) hdegree hp_discr_ne hp_discr⟩
+  exact ⟨e, he, hxe, he.exists_delineation_orderAt_prod_eq (P := fun b : A ↦ b.val) hxe hx
+    (fun b ↦ hfiber b b.property) hdegree hp_discr_ne hp_discr⟩
 
 end TauCeti
 
@@ -98,7 +98,7 @@ theorem exists_delineation_orderAt_eq_of_mcCallumProjection
     (hfiber : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
       q.orderAt x = q.orderAt y) :
-    ∃ D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1),
+    ∃ D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.val.map (MvPolynomial.eval x.val),
       ∀ E ∈ TauCeti.stackCells S D.root,
         (∃ e, (e = d ∨ e = d + 1) ∧ TauCeti.IsAnalyticSubmanifold e E) ∧
         ∀ f ∈ F,
@@ -109,14 +109,14 @@ theorem exists_delineation_orderAt_eq_of_mcCallumProjection
   classical
   obtain ⟨D, hprod⟩ := TauCeti.exists_delineation_orderAt_prod_eq_of_mcCallumProjection
     hB Subset.rfl hS hconn hfiber hproj
-  let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b : B, b.1
+  let p : Polynomial (MvPolynomial (Fin n) ℝ) := ∏ b : B, b.val
   have hp_eq : p = ∏ b ∈ B, b := Finset.prod_coe_sort B fun b ↦ b
   have hcontent (f : Polynomial (MvPolynomial (Fin n) ℝ)) (hf : f ∈ F)
       (x : Fin n → ℝ) (hx : x ∈ S) (y : Fin n → ℝ) (hy : y ∈ S) :
       f.content.orderAt x = f.content.orderAt y :=
     hproj f.content (content_mem_mcCallumProjection hf) x hx y hy
   refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS
-    (fun (b : B) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.1 j) hE, ?_⟩⟩
+    (fun (b : B) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.val j) hE, ?_⟩⟩
   have hp_mv_eq : (finSuccEquiv ℝ n).symm p =
       ∏ b ∈ B, (finSuccEquiv ℝ n).symm b := by
     rw [hp_eq, map_prod]
