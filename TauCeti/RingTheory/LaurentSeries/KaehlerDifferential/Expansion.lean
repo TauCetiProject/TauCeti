@@ -42,8 +42,8 @@ commuting square `e₁ ∘ f = substAlgHom q ∘ e₂` satisfies the Laurent cha
   square of algebra maps with Laurent substitution by a nonzero power series `q` with zero constant
   coefficient.
 * `TauCeti.derivative_algHom_eq_mul_of_D_eq_smul`: `dz = c dt` implies `(e z)' = e c · (e t)'`.
-* `TauCeti.D_ne_zero_of_algHom_laurentSeries`: if `e t = X` and `A` is nontrivial, then
-  `dt ≠ 0` in `Ω[F⁄k]`.
+* `TauCeti.D_ne_zero_of_algHom_laurentSeries`: if `e t = X` and the coefficient ring `A` is
+  nontrivial, then `dt ≠ 0` in `Ω[F⁄k]`.
 -/
 
 public section
@@ -111,25 +111,6 @@ theorem differentialLaurentExpansion_smul {k F C : Type*} [CommRing k] [CommRing
   let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
   have _ := isScalarTower_toAlgebra e
   exact LinearMap.map_smul ((laurentDerivation e).liftKaehlerDifferential) a η
-
-/-- When the coefficient ring coincides with the base ring `k`, `differentialLaurentExpansion`
-lifts `TauCeti.laurentSeriesDerivation k` along `e`. -/
-theorem differentialLaurentExpansion_apply {k F : Type*} [CommRing k] [CommRing F]
-    [Algebra k F] (e : F →ₐ[k] k⸨X⸩) (η : Ω[F⁄k]) :
-    e.differentialLaurentExpansion η =
-      (TauCeti.laurentSeriesDerivation k).liftKaehlerDifferential
-        (KaehlerDifferential.mapSemilinear e η) := by
-  induction (KaehlerDifferential.span_range_derivation k F ▸ Submodule.mem_top :
-      η ∈ Submodule.span F (Set.range (D k F))) using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨a, rfl⟩ := h
-    rw [differentialLaurentExpansion_D, KaehlerDifferential.mapSemilinear_D,
-      Derivation.liftKaehlerDifferential_comp_D, TauCeti.laurentSeriesDerivation_apply]
-  | zero => rw [map_zero, map_zero, map_zero]
-  | add _ _ _ _ ih₁ ih₂ => rw [map_add, map_add, map_add, ih₁, ih₂]
-  | smul a _ _ ih =>
-    rw [differentialLaurentExpansion_smul, KaehlerDifferential.mapSemilinear_smul,
-      LinearMap.map_smul, smul_eq_mul, ih]
 
 end AlgHom
 

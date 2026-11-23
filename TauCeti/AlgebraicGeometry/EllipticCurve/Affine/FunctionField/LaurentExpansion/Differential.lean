@@ -25,6 +25,8 @@ nonzero (in particular on any elliptic curve), the invariant differential
 
 ## Main results
 
+* `WeierstrassCurve.isSeparating_neg_genericX_div_genericY`: `z = -x / y` is a separating element
+  of `K(W) / K` over any field `K` and for any Weierstrass curve `W`.
 * `WeierstrassCurve.differentialLaurentExpansion_injective`,
   `WeierstrassCurve.differentialLaurentExpansion_eq_zero_iff`, and
   `WeierstrassCurve.differentialLaurentExpansion_inj`: injectivity of Laurent expansion on Kähler
@@ -46,101 +48,139 @@ namespace WeierstrassCurve
 
 variable {K : Type*} [Field K] (W : WeierstrassCurve K)
 
-/-- The local parameter `z = -x / y` at infinity is separating for `K(W) / K`, over any field
-`K` and for any Weierstrass curve `W` (even singular in characteristic `2`): `w = -1 / y` is a
-simple root of the `w`-equation polynomial over `K(z)`. -/
-private theorem isSeparating_neg_genericX_div_genericY :
-    let z : W.toAffine.FunctionField := -W.toAffine.genericX / W.toAffine.genericY
-    Transcendental K z ∧ Algebra.IsSeparable K⟮z⟯ W.toAffine.FunctionField := by
+/-- The local parameter `z = -x / y` at infinity is transcendental over `K`. -/
+private theorem transcendental_neg_genericX_div_genericY :
+    Transcendental K (-W.toAffine.genericX / W.toAffine.genericY) := by
+  have hzX : W.functionFieldLaurentExpansion (-W.toAffine.genericX / W.toAffine.genericY) =
+      ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) :=
+    W.functionFieldLaurentExpansion_neg_genericX_div_genericY
+  have hX : Transcendental K ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) := by
+    rw [← _root_.LaurentSeries.coe_algebraMap, ← IsScalarTower.toAlgHom_apply K K⟦X⟧ K⸨X⸩]
+    exact (isAlgebraic_algHom_iff (IsScalarTower.toAlgHom K K⟦X⟧ K⸨X⸩) (by
+      simpa [_root_.LaurentSeries.coe_algebraMap] using
+        ofPowerSeries_injective (Γ := ℤ) (R := K))).not.mpr
+      (PowerSeries.transcendental_of_constantCoeff_eq_zero
+        PowerSeries.constantCoeff_X PowerSeries.X_ne_zero)
+  exact (isAlgebraic_algHom_iff W.functionFieldLaurentExpansion
+    W.functionFieldLaurentExpansion.injective).not.mp (hzX ▸ hX)
+
+/-- `K(W)` is generated over `K(-x / y)` by `w = -1 / y`. -/
+private theorem adjoin_neg_inv_genericY_eq_top :
+    K⟮-W.toAffine.genericX / W.toAffine.genericY⟯⟮-W.toAffine.genericY⁻¹⟯ = ⊤ := by
   let x : W.toAffine.FunctionField := W.toAffine.genericX
   let y : W.toAffine.FunctionField := W.toAffine.genericY
   let z : W.toAffine.FunctionField := -x / y
   let w : W.toAffine.FunctionField := -y⁻¹
-  have hzX : W.functionFieldLaurentExpansion z = (PowerSeries.X : K⟦X⟧) :=
+  have hz_mem : z ∈ (K⟮z⟯⟮w⟯).restrictScalars K :=
+    (K⟮z⟯⟮w⟯).algebraMap_mem ⟨z, IntermediateField.mem_adjoin_simple_self K z⟩
+  have hw_mem : w ∈ (K⟮z⟯⟮w⟯).restrictScalars K :=
+    IntermediateField.mem_adjoin_simple_self K⟮z⟯ w
+  have hle : K⟮x, y⟯ ≤ (K⟮z⟯⟮w⟯).restrictScalars K := by
+    rw [IntermediateField.adjoin_le_iff]
+    rintro u (rfl | rfl)
+    · have hyw : y = -w⁻¹ := by simp [w]
+      have hxz : x = -z * y := by
+        have hy0 : y ≠ 0 := W.toAffine.genericY_ne_zero
+        simp [z, hy0]
+      rw [hxz, hyw]
+      exact mul_mem (neg_mem hz_mem) (neg_mem (inv_mem hw_mem))
+    · have hyw : y = -w⁻¹ := by simp [w]
+      rw [hyw]
+      exact neg_mem (inv_mem hw_mem)
+  rw [W.toAffine.adjoin_genericX_genericY_eq_top] at hle
+  exact eq_top_iff.mpr fun a _ ↦ hle trivial
+
+/-- The cubic `w`-equation polynomial over `K(-x / y)` with root `w = -1 / y`. -/
+private noncomputable def wEquationPoly : K⟮-W.toAffine.genericX / W.toAffine.genericY⟯[X] :=
+  let z' : K⟮-W.toAffine.genericX / W.toAffine.genericY⟯ :=
+    ⟨_, IntermediateField.mem_adjoin_simple_self K _⟩
+  Polynomial.C (algebraMap K _ W.a₆) * X ^ 3 +
+    Polynomial.C (algebraMap K _ W.a₃ + algebraMap K _ W.a₄ * z') * X ^ 2 +
+    Polynomial.C (algebraMap K _ W.a₁ * z' + algebraMap K _ W.a₂ * z' ^ 2 - 1) * X +
+    Polynomial.C (z' ^ 3)
+
+/-- `w = -1 / y` is a root of `W.wEquationPoly`. -/
+private theorem aeval_neg_inv_genericY_wEquationPoly :
+    aeval (-W.toAffine.genericY⁻¹) W.wEquationPoly = 0 := by
+  have hw_eq : -W.toAffine.genericY⁻¹ =
+      (-W.toAffine.genericX / W.toAffine.genericY) ^ 3 +
+        algebraMap K W.toAffine.FunctionField W.a₁ *
+          (-W.toAffine.genericX / W.toAffine.genericY) * (-W.toAffine.genericY⁻¹) +
+        algebraMap K W.toAffine.FunctionField W.a₂ *
+          (-W.toAffine.genericX / W.toAffine.genericY) ^ 2 * (-W.toAffine.genericY⁻¹) +
+        algebraMap K W.toAffine.FunctionField W.a₃ * (-W.toAffine.genericY⁻¹) ^ 2 +
+        algebraMap K W.toAffine.FunctionField W.a₄ *
+          (-W.toAffine.genericX / W.toAffine.genericY) * (-W.toAffine.genericY⁻¹) ^ 2 +
+        algebraMap K W.toAffine.FunctionField W.a₆ * (-W.toAffine.genericY⁻¹) ^ 3 := by
+    have heq := W.wEquation_of_equation W.toAffine.equation_genericX_genericY
+    rw [wEquationRHS_def] at heq
+    simpa only [← neg_div] using heq
+  have hz' : algebraMap K⟮-W.toAffine.genericX / W.toAffine.genericY⟯ W.toAffine.FunctionField
+      ⟨_, IntermediateField.mem_adjoin_simple_self K _⟩ =
+      -W.toAffine.genericX / W.toAffine.genericY := rfl
+  simp only [wEquationPoly, map_add, map_mul, map_sub, map_pow, map_one, aeval_C, aeval_X,
+    ← IsScalarTower.algebraMap_apply K K⟮-W.toAffine.genericX / W.toAffine.genericY⟯
+      W.toAffine.FunctionField, hz']
+  linear_combination -hw_eq
+
+/-- Formula for the derivative of `W.wEquationPoly`. -/
+private theorem derivative_wEquationPoly :
+    let z' : K⟮-W.toAffine.genericX / W.toAffine.genericY⟯ :=
+      ⟨_, IntermediateField.mem_adjoin_simple_self K _⟩
+    W.wEquationPoly.derivative =
+      3 * Polynomial.C (algebraMap K _ W.a₆) * X ^ 2 +
+        2 * Polynomial.C (algebraMap K _ W.a₃ + algebraMap K _ W.a₄ * z') * X +
+        Polynomial.C (algebraMap K _ W.a₁ * z' + algebraMap K _ W.a₂ * z' ^ 2 - 1) := by
+  simp only [wEquationPoly, derivative_add, derivative_mul, derivative_C, zero_mul, zero_add,
+    derivative_X_pow, derivative_X, mul_one, Nat.cast_ofNat, map_ofNat]
+  ring
+
+/-- `w = -1 / y` is a simple root of `W.wEquationPoly`, since the Laurent expansion of
+`P'(-1 / y)` has constant term `-1`. -/
+private theorem aeval_derivative_wEquationPoly_ne_zero :
+    aeval (-W.toAffine.genericY⁻¹) W.wEquationPoly.derivative ≠ 0 := by
+  intro h0
+  let D : K⟦X⟧ :=
+    3 * PowerSeries.C W.a₆ * formalW W ^ 2 +
+      2 * (PowerSeries.C W.a₃ + PowerSeries.C W.a₄ * PowerSeries.X) * formalW W +
+      (PowerSeries.C W.a₁ * PowerSeries.X + PowerSeries.C W.a₂ * PowerSeries.X ^ 2 - 1)
+  have hzX : W.functionFieldLaurentExpansion (-W.toAffine.genericX / W.toAffine.genericY) =
+      ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) :=
     W.functionFieldLaurentExpansion_neg_genericX_div_genericY
-  have htr : Transcendental K z := by
-    have hX : Transcendental K ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) := by
-      rw [← _root_.LaurentSeries.coe_algebraMap, ← IsScalarTower.toAlgHom_apply K K⟦X⟧ K⸨X⸩]
-      exact (isAlgebraic_algHom_iff (IsScalarTower.toAlgHom K K⟦X⟧ K⸨X⸩) (by
-        simpa [_root_.LaurentSeries.coe_algebraMap] using
-          ofPowerSeries_injective (Γ := ℤ) (R := K))).not.mpr
-        (PowerSeries.transcendental_of_constantCoeff_eq_zero
-          PowerSeries.constantCoeff_X PowerSeries.X_ne_zero)
-    exact (isAlgebraic_algHom_iff W.functionFieldLaurentExpansion
-      W.functionFieldLaurentExpansion.injective).not.mp (hzX ▸ hX)
-  have hgen : K⟮z⟯⟮w⟯ = ⊤ := by
-    have hz_mem : z ∈ (K⟮z⟯⟮w⟯).restrictScalars K :=
-      (K⟮z⟯⟮w⟯).algebraMap_mem ⟨z, IntermediateField.mem_adjoin_simple_self K z⟩
-    have hw_mem : w ∈ (K⟮z⟯⟮w⟯).restrictScalars K :=
-      IntermediateField.mem_adjoin_simple_self K⟮z⟯ w
-    have hle : K⟮x, y⟯ ≤ (K⟮z⟯⟮w⟯).restrictScalars K := by
-      rw [IntermediateField.adjoin_le_iff]
-      rintro u (rfl | rfl)
-      · have hyw : y = -w⁻¹ := by simp [w]
-        have hxz : x = -z * y := by
-          have hy0 : y ≠ 0 := W.toAffine.genericY_ne_zero
-          simp [z, hy0]
-        rw [hxz, hyw]
-        exact mul_mem (neg_mem hz_mem) (neg_mem (inv_mem hw_mem))
-      · have hyw : y = -w⁻¹ := by simp [w]
-        rw [hyw]
-        exact neg_mem (inv_mem hw_mem)
-    rw [W.toAffine.adjoin_genericX_genericY_eq_top] at hle
-    exact eq_top_iff.mpr fun a _ ↦ hle trivial
-  let z' : K⟮z⟯ := ⟨z, IntermediateField.mem_adjoin_simple_self K z⟩
-  let P : K⟮z⟯[X] :=
-    Polynomial.C (algebraMap K K⟮z⟯ W.a₆) * X ^ 3 +
-      Polynomial.C (algebraMap K K⟮z⟯ W.a₃ + algebraMap K K⟮z⟯ W.a₄ * z') * X ^ 2 +
-      Polynomial.C (algebraMap K K⟮z⟯ W.a₁ * z' + algebraMap K K⟮z⟯ W.a₂ * z' ^ 2 - 1) * X +
-      Polynomial.C (z' ^ 3)
-  have hPw : aeval w P = 0 := by
-    have hw_eq : w = z ^ 3 + algebraMap K W.toAffine.FunctionField W.a₁ * z * w +
-        algebraMap K W.toAffine.FunctionField W.a₂ * z ^ 2 * w +
-        algebraMap K W.toAffine.FunctionField W.a₃ * w ^ 2 +
-        algebraMap K W.toAffine.FunctionField W.a₄ * z * w ^ 2 +
-        algebraMap K W.toAffine.FunctionField W.a₆ * w ^ 3 := by
-      have heq := W.wEquation_of_equation W.toAffine.equation_genericX_genericY
-      rw [wEquationRHS_def] at heq
-      simpa only [← neg_div] using heq
-    simp only [P, map_add, map_mul, map_pow, aeval_C, aeval_X]
-    change algebraMap K W.toAffine.FunctionField W.a₆ * w ^ 3 +
-        (algebraMap K W.toAffine.FunctionField W.a₃ +
-          algebraMap K W.toAffine.FunctionField W.a₄ * z) * w ^ 2 +
-        (algebraMap K W.toAffine.FunctionField W.a₁ * z +
-          algebraMap K W.toAffine.FunctionField W.a₂ * z ^ 2 - 1) * w +
-        z ^ 3 = 0
-    linear_combination -hw_eq
-  have hder : P.derivative =
-      3 * Polynomial.C (algebraMap K K⟮z⟯ W.a₆) * X ^ 2 +
-        2 * Polynomial.C (algebraMap K K⟮z⟯ W.a₃ + algebraMap K K⟮z⟯ W.a₄ * z') * X +
-        Polynomial.C (algebraMap K K⟮z⟯ W.a₁ * z' + algebraMap K K⟮z⟯ W.a₂ * z' ^ 2 - 1) := by
-    simp only [P, derivative_add, derivative_mul, derivative_C, zero_mul, zero_add,
-      derivative_X_pow, derivative_X, mul_one, Nat.cast_ofNat, map_ofNat]
-    ring
-  have hPdw : aeval w P.derivative ≠ 0 := by
-    intro h0
-    have h0' := congrArg W.functionFieldLaurentExpansion h0
-    let D : K⟦X⟧ :=
-      3 * PowerSeries.C W.a₆ * formalW W ^ 2 +
-        2 * (PowerSeries.C W.a₃ + PowerSeries.C W.a₄ * PowerSeries.X) * formalW W +
-        (PowerSeries.C W.a₁ * PowerSeries.X + PowerSeries.C W.a₂ * PowerSeries.X ^ 2 - 1)
-    have hwW : W.functionFieldLaurentExpansion w = (formalW W : K⸨X⸩) :=
-      W.functionFieldLaurentExpansion_neg_inv_genericY
-    have hz' : algebraMap K⟮z⟯ W.toAffine.FunctionField z' = z := rfl
-    have hc (a : K) : ofPowerSeries ℤ K (PowerSeries.C a) = algebraMap K K⸨X⸩ a := by
-      rw [← PowerSeries.algebraMap_eq, ← _root_.LaurentSeries.coe_algebraMap,
-        ← IsScalarTower.algebraMap_apply]
-    have hD : W.functionFieldLaurentExpansion (aeval w P.derivative) = (D : K⸨X⸩) := by
-      simp only [hder, D, map_add, map_mul, map_sub, map_pow, map_one, map_ofNat, aeval_C,
-        aeval_X, ← IsScalarTower.algebraMap_apply K K⟮z⟯ W.toAffine.FunctionField, hz',
-        AlgHom.commutes, hzX, hwW, hc]
-    rw [hD, map_zero] at h0'
-    have hDc : PowerSeries.constantCoeff D = 0 := by
-      simpa using congrArg PowerSeries.constantCoeff
-        ((map_eq_zero_iff (ofPowerSeries ℤ K) ofPowerSeries_injective).mp h0')
-    simp [D] at hDc
-  exact ⟨htr, (TauCeti.finiteDimensional_and_isSeparable_of_aeval_derivative_ne_zero
-    hgen hPw hPdw).2⟩
+  have hwW : W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹) = (formalW W : K⸨X⸩) :=
+    W.functionFieldLaurentExpansion_neg_inv_genericY
+  have hz' : algebraMap K⟮-W.toAffine.genericX / W.toAffine.genericY⟯ W.toAffine.FunctionField
+      ⟨_, IntermediateField.mem_adjoin_simple_self K _⟩ =
+      -W.toAffine.genericX / W.toAffine.genericY := rfl
+  have hc (a : K) : ofPowerSeries ℤ K (PowerSeries.C a) = algebraMap K K⸨X⸩ a := by
+    rw [← PowerSeries.algebraMap_eq, ← _root_.LaurentSeries.coe_algebraMap,
+      ← IsScalarTower.algebraMap_apply]
+  have hD : W.functionFieldLaurentExpansion
+      (aeval (-W.toAffine.genericY⁻¹) W.wEquationPoly.derivative) = (D : K⸨X⸩) := by
+    simp only [W.derivative_wEquationPoly, D, map_add, map_mul, map_sub, map_pow, map_one,
+      map_ofNat, aeval_C, aeval_X,
+      ← IsScalarTower.algebraMap_apply K K⟮-W.toAffine.genericX / W.toAffine.genericY⟯
+        W.toAffine.FunctionField,
+      hz', AlgHom.commutes, hzX, hwW, hc]
+  have h0' := congrArg W.functionFieldLaurentExpansion h0
+  rw [hD, map_zero] at h0'
+  have hDc : PowerSeries.constantCoeff D = 0 := by
+    simpa using congrArg PowerSeries.constantCoeff
+      ((map_eq_zero_iff (ofPowerSeries ℤ K) ofPowerSeries_injective).mp h0')
+  simp [D] at hDc
+
+/-- **The local parameter `z = -x / y` at infinity is separating for `K(W) / K`**, over any
+field `K` and for any Weierstrass curve `W` (even singular in characteristic `2`): `z` is
+transcendental over `K` and `K(W)` is separable over `K⟮z⟯`, because `w = -1 / y` is a simple
+root of `W.wEquationPoly` over `K⟮z⟯`. -/
+theorem isSeparating_neg_genericX_div_genericY :
+    let z : W.toAffine.FunctionField := -W.toAffine.genericX / W.toAffine.genericY
+    Transcendental K z ∧ Algebra.IsSeparable K⟮z⟯ W.toAffine.FunctionField :=
+  ⟨W.transcendental_neg_genericX_div_genericY,
+    (TauCeti.finiteDimensional_and_isSeparable_of_aeval_derivative_ne_zero
+      W.adjoin_neg_inv_genericY_eq_top
+      W.aeval_neg_inv_genericY_wEquationPoly
+      W.aeval_derivative_wEquationPoly_ne_zero).2⟩
 
 /-- **Laurent expansion of Kähler differentials at infinity is injective**, over any field `K` and
 for any Weierstrass curve `W`. -/
