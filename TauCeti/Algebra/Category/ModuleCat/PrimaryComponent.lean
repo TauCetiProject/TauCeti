@@ -86,6 +86,22 @@ def primaryComponentFunctorι : J.primaryComponentFunctor ⟶ 𝟭 (ModuleCat.{v
     ext x
     rfl
 
+/-- `primaryComponentFunctorObjIso` followed by the submodule inclusion `subtype` is
+`primaryComponentFunctorι`. -/
+@[reassoc (attr := simp)]
+theorem primaryComponentFunctorObjIso_hom_comp_subtype (M : ModuleCat.{v} R) :
+    (J.primaryComponentFunctorObjIso M).hom ≫ ModuleCat.ofHom (J.primaryComponent M).subtype =
+      J.primaryComponentFunctorι.app M :=
+  (rfl)
+
+/-- Under `primaryComponentFunctorObjIso`, elements map to themselves in `M` via
+`primaryComponentFunctorι`. -/
+@[simp]
+lemma coe_primaryComponentFunctorObjIso_hom_apply (M : ModuleCat.{v} R)
+    (x : J.primaryComponentFunctor.obj M) :
+    ((J.primaryComponentFunctorObjIso M).hom x : M) = J.primaryComponentFunctorι.app M x :=
+  (rfl)
+
 /-- Composing `(J.primaryComponentFunctorObjIso M).inv` with `J.primaryComponentFunctorι.app M`
 recovers the submodule inclusion `(J.primaryComponent M).subtype`. -/
 @[reassoc (attr := simp)]

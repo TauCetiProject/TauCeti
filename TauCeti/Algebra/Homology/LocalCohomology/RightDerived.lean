@@ -89,6 +89,14 @@ def diagramIsoRightDerivedLinearCoyoneda (q : ℕ) :
   NatIso.ofComponents (fun _ ↦ extObjIsoRightDerivedLinearCoyoneda R _ q) fun w ↦
     extObjIsoRightDerivedLinearCoyoneda_hom_naturality_left R ((ringModIdeals I).map w.unop) q
 
+/-- On each object `t`, `diagramIsoRightDerivedLinearCoyoneda` is
+`extObjIsoRightDerivedLinearCoyoneda`. -/
+@[simp]
+lemma diagramIsoRightDerivedLinearCoyoneda_hom_app (q : ℕ) (t : Dᵒᵖ) :
+    (diagramIsoRightDerivedLinearCoyoneda I q).hom.app t =
+      (extObjIsoRightDerivedLinearCoyoneda R ((ringModIdeals I).obj t.unop) q).hom :=
+  (rfl)
+
 /-- When `ModuleCat.{u} R` has exact colimits of shape `Dᵒᵖ`, `localCohomology.ofDiagram I q` is
 naturally isomorphic to the `q`-th right derived functor of `colimit_t Hom_R(R ⧸ I(t), -)`. -/
 def ofDiagramIsoRightDerivedColimitLinearCoyoneda (q : ℕ)
@@ -99,6 +107,18 @@ def ofDiagramIsoRightDerivedColimitLinearCoyoneda (q : ℕ)
   HasColimit.isoOfNatIso (diagramIsoRightDerivedLinearCoyoneda I q) ≪≫
     colimitRightDerivedIso ((ringModIdeals I).op ⋙ linearCoyoneda R (ModuleCat.{u} R)) q
 
+/-- `ofDiagramIsoRightDerivedColimitLinearCoyoneda` is the composite of `HasColimit.isoOfNatIso`
+and `colimitRightDerivedIso`. -/
+@[simp]
+lemma ofDiagramIsoRightDerivedColimitLinearCoyoneda_hom (q : ℕ)
+    [HasColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)]
+    [HasExactColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] :
+    (ofDiagramIsoRightDerivedColimitLinearCoyoneda I q).hom =
+      (HasColimit.isoOfNatIso (diagramIsoRightDerivedLinearCoyoneda I q)).hom ≫
+        (colimitRightDerivedIso
+          ((ringModIdeals I).op ⋙ linearCoyoneda R (ModuleCat.{u} R)) q).hom :=
+  (rfl)
+
 end DiagramComparison
 
 /-- **Local cohomology as right derived `J`-power torsion.** For any commutative ring `R`, ideal
@@ -106,12 +126,24 @@ end DiagramComparison
 naturally isomorphic to the `q`-th right derived functor of `J.primaryComponentFunctor` (`Γ_J`). -/
 @[stacks 0954]
 def isoRightDerivedPrimaryComponent (q : ℕ) :
-    localCohomology J q ≅ J.primaryComponentFunctor.{u}.rightDerived q := by
-  have : AB5OfSize.{0, 0} (ModuleCat.{u} R) := AB5OfSize_of_univLE.{0, 0, u, u} (ModuleCat.{u} R)
-  have := Functor.additive_comp_obj (ringModIdeals (idealPowersDiagram J)).op
+    localCohomology J q ≅ J.primaryComponentFunctor.{u}.rightDerived q :=
+  letI : AB5OfSize.{0, 0} (ModuleCat.{u} R) := AB5OfSize_of_univLE.{0, 0, u, u} (ModuleCat.{u} R)
+  letI := Functor.additive_comp_obj (ringModIdeals (idealPowersDiagram J)).op
     (linearCoyoneda R (ModuleCat.{u} R))
-  exact ofDiagramIsoRightDerivedColimitLinearCoyoneda (idealPowersDiagram J) q ≪≫
+  ofDiagramIsoRightDerivedColimitLinearCoyoneda (idealPowersDiagram J) q ≪≫
     NatIso.rightDerived (colimitLinearCoyonedaIsoPrimaryComponentFunctor J) q
+
+/-- `isoRightDerivedPrimaryComponent` is the composite of
+`ofDiagramIsoRightDerivedColimitLinearCoyoneda` and `NatIso.rightDerived` of
+`colimitLinearCoyonedaIsoPrimaryComponentFunctor`. -/
+lemma isoRightDerivedPrimaryComponent_hom (q : ℕ) :
+    letI : AB5OfSize.{0, 0} (ModuleCat.{u} R) := AB5OfSize_of_univLE.{0, 0, u, u} (ModuleCat.{u} R)
+    letI := Functor.additive_comp_obj (ringModIdeals (idealPowersDiagram J)).op
+      (linearCoyoneda R (ModuleCat.{u} R))
+    (isoRightDerivedPrimaryComponent J q).hom =
+      (ofDiagramIsoRightDerivedColimitLinearCoyoneda (idealPowersDiagram J) q).hom ≫
+        (NatIso.rightDerived (colimitLinearCoyonedaIsoPrimaryComponentFunctor J) q).hom :=
+  (rfl)
 
 /-- For any `R`-module `M`, the `q`-th local cohomology module `H^q_J(M)` is `R`-linearly
 equivalent to `(R^q Γ_J)(M)`. -/

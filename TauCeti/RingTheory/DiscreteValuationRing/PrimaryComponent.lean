@@ -34,22 +34,17 @@ variable (R : Type*) [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `R` itself has no nonzero `𝔪`-power torsion. -/
 lemma primaryComponent_maximalIdeal_self :
-    (IsLocalRing.maximalIdeal R).primaryComponent R = ⊥ := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  rw [hϖ.maximalIdeal_eq, Ideal.primaryComponent_span_singleton_eq_bot_iff]
-  exact fun _ _ hxy ↦ mul_left_cancel₀ hϖ.ne_zero hxy
+    (IsLocalRing.maximalIdeal R).primaryComponent R = ⊥ :=
+  Ideal.primaryComponent_eq_bot_of_ne_bot (_root_.IsDiscreteValuationRing.not_a_field R)
 
 /-- Over a discrete valuation ring `(R, 𝔪)` with fraction ring `K`, `K` has no nonzero `𝔪`-power
-torsion because any uniformizer acts invertibly on `K`. -/
+torsion because `K` is torsion-free over `R` and `𝔪 ≠ ⊥`. -/
 lemma primaryComponent_maximalIdeal_fractionRing :
     (IsLocalRing.maximalIdeal R).primaryComponent K = ⊥ := by
   let := IsFractionRing.toField R (K := K)
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  rw [hϖ.maximalIdeal_eq, Ideal.primaryComponent_span_singleton_eq_bot_iff]
-  intro x y hxy
-  have hϖK : algebraMap R K ϖ ≠ 0 := by
-    simpa using (FaithfulSMul.algebraMap_injective R K).ne hϖ.ne_zero
-  simpa only [Algebra.smul_def, mul_eq_mul_left_iff, hϖK, or_false] using hxy
+  have : Module.IsTorsionFree R K := .of_smul_eq_zero fun r x hrx ↦ by
+    simpa [Algebra.smul_def, (FaithfulSMul.algebraMap_injective R K).eq_iff] using hrx
+  exact Ideal.primaryComponent_eq_bot_of_ne_bot (_root_.IsDiscreteValuationRing.not_a_field R)
 
 /-- Over a discrete valuation ring `(R, 𝔪)` with fraction ring `K`, the quotient `K ⧸ R` is
 entirely `𝔪`-power torsion: every fraction has denominator a unit times a power of a

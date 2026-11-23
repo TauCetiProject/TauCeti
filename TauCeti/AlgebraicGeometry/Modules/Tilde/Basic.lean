@@ -192,6 +192,16 @@ abbrev tildeSheafFunctor (R : CommRingCat.{u}) :
     ModuleCat.{u} R ⥤ Sheaf (Opens.grothendieckTopology (Spec R)) (ModuleCat.{u} R) :=
   tilde.functor R ⋙ modulesSpecToSheaf
 
+/-- `tildeSheafFunctor R` sends an `R`-module `M` to `modulesSpecToSheaf.obj (tilde M)`. -/
+lemma tildeSheafFunctor_obj (R : CommRingCat.{u}) (M : ModuleCat.{u} R) :
+    (tildeSheafFunctor R).obj M = modulesSpecToSheaf.obj (tilde M) :=
+  rfl
+
+/-- `tildeSheafFunctor R` sends a morphism `f` to `modulesSpecToSheaf.map (tilde.map f)`. -/
+lemma tildeSheafFunctor_map (R : CommRingCat.{u}) {M N : ModuleCat.{u} R} (f : M ⟶ N) :
+    (tildeSheafFunctor R).map f = modulesSpecToSheaf.map (tilde.map f) :=
+  rfl
+
 end Exactness
 
 section BaseChange

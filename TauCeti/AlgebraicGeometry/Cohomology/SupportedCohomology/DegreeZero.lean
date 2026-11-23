@@ -174,7 +174,7 @@ private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
   have he : (primaryComponentEquivSupportedSubmoduleTopIso hI M).hom ≫
       (((tildeSheafFunctor R).obj M).supportedSubmoduleι
         (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) =
-    ModuleCat.ofHom (I.primaryComponent M).subtype ≫ tilde.toOpen M ⊤ := by
+      ModuleCat.ofHom (I.primaryComponent M).subtype ≫ tilde.toOpen M ⊤ := by
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro m
@@ -182,10 +182,11 @@ private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
       (Spec.zeroLocusClosed (R := R) (I : Set R)) (op ⊤)
       (primaryComponentEquivSupportedSubmoduleTop hI M m)).trans
       (coe_primaryComponentEquivSupportedSubmoduleTop_apply hI M m)
-  dsimp only [primaryComponentIsoSupportedSubmoduleTop]
-  rw [Iso.trans_hom, Category.assoc, he]
-  -- `erw` bridges the `ModuleCat.of R ↑M` / `tildeSheafFunctor` wrapper unfolding.
-  erw [← I.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc M, Iso.hom_inv_id_assoc]
+  have hcomp : (primaryComponentIsoSupportedSubmoduleTop hI M).hom =
+      (I.primaryComponentFunctorObjIso M).hom ≫
+        (primaryComponentEquivSupportedSubmoduleTopIso hI M).hom := rfl
+  rw [hcomp, Category.assoc, he]
+  exact I.primaryComponentFunctorObjIso_hom_comp_subtype_assoc M (tilde.toOpen M ⊤)
 
 /-- For a finitely generated ideal `I` of `R`, `M ↦ Γ_{V(I)}(Spec R, M~)` is naturally isomorphic
 to the `I`-power torsion functor `I.primaryComponentFunctor`. -/
@@ -202,11 +203,21 @@ def tildeCompSupportedSubmoduleSectionsTopIso {I : Ideal R} (hI : I.FG) :
     rw [Functor.comp_map, supportedSubmoduleSectionsFunctor_map_ι_hom_app,
       ← Category.assoc (primaryComponentIsoSupportedSubmoduleTop hI M).hom,
       primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI M,
-      primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI N]
-    -- `erw` identifies the underlying `tilde` sheaf codomain across `tildeSheafFunctor`.
-    erw [I.primaryComponentFunctorι.naturality_assoc, Functor.id_map, Category.assoc,
-      tilde.toOpen_map_app]
-    rfl).symm
+      primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI N,
+      tildeSheafFunctor_map]
+    calc
+      I.primaryComponentFunctor.map f ≫ I.primaryComponentFunctorι.app N ≫ tilde.toOpen N ⊤
+        = (I.primaryComponentFunctor.map f ≫ I.primaryComponentFunctorι.app N) ≫
+            tilde.toOpen N ⊤ := (Category.assoc _ _ _).symm
+      _ = (I.primaryComponentFunctorι.app M ≫ (𝟭 (ModuleCat.{u} R)).map f) ≫
+            tilde.toOpen N ⊤ := by
+          rw [I.primaryComponentFunctorι.naturality]
+      _ = I.primaryComponentFunctorι.app M ≫ f ≫ tilde.toOpen N ⊤ :=
+          Category.assoc _ _ _
+      _ = I.primaryComponentFunctorι.app M ≫ tilde.toOpen M ⊤ ≫
+            (modulesSpecToSheaf.map (tilde.map f)).hom.app (op ⊤) :=
+          congrArg _ (tilde.toOpen_map_app f ⊤).symm
+      _ = _ := (Category.assoc _ _ _).symm).symm
 
 end DegreeZero
 

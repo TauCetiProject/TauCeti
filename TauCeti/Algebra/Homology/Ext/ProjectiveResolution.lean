@@ -334,16 +334,36 @@ lemma isoExt_hom_naturality_left {X' : C} (P' : ProjectiveResolution X') (f : X'
       (P.isoExt n Y).hom ≫ HomologicalComplex.homologyMap
         (K := P.complex.linearYonedaObj k Y) (L := P'.complex.linearYonedaObj k Y)
         ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op) n := by
-  have hL := congrArg Quiver.Hom.unop (ProjectiveResolution.isoLeftDerivedObj_inv_naturality
-    f P' P φ comm ((linearYoneda k C).obj Y).rightOp n)
+  have hL : ((_root_.Ext k C n).map f.op).app Y ≫
+      (P'.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop =
+      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyMap
+          ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).map φ) n).unop := by
+    have h := congrArg Quiver.Hom.unop (ProjectiveResolution.isoLeftDerivedObj_inv_naturality
+      f P' P φ comm ((linearYoneda k C).obj Y).rightOp n)
+    simp only [unop_comp] at h
+    exact h
   have hn := TauCeti.HomologicalComplex.homologyUnop_inv_naturality
     ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).map φ) n
-  -- `isoExt` is the unopposed inverse of `isoLeftDerivedObj` followed by `(homologyUnop _ n).inv`;
-  -- composing the two squares in term mode avoids unfolding native homology to its short-complex
-  -- presentation.
-  exact (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ _) hL).trans
-      ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) hn).trans (Category.assoc _ _ _).symm)))
+  have eP : (P.isoExt n Y).hom =
+      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv := rfl
+  have step1 : ((_root_.Ext k C n).map f.op).app Y ≫ (P'.isoExt n Y).hom =
+      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyMap
+          ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).map φ) n).unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv :=
+    (reassoc_of% hL) (HomologicalComplex.homologyUnop _ n).inv
+  have step2 : (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyMap
+          ((((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).map φ) n).unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv =
+      (P.isoExt n Y).hom ≫
+        HomologicalComplex.homologyMap
+          ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op) n := by
+    rw [hn, eP]
+    exact (Category.assoc _ _ _).symm
+  exact step1.trans step2
 
 /-- `ProjectiveResolution.isoExt` is natural with respect to morphisms in the second variable. -/
 @[reassoc]
@@ -357,28 +377,41 @@ lemma isoExt_hom_naturality_right {Y' : C} (g : Y ⟶ Y') (n : ℕ) :
         ((NatTrans.mapHomologicalComplex α _).app P.complex).op := by
     ext i (a : P.complex.X i ⟶ Y)
     exact P.complex.linearYonedaObjMap_f_hom_apply k g i a
-  have hL := congrArg Quiver.Hom.unop (P.leftDerived_app_eq α n)
-  have hn := TauCeti.HomologicalComplex.homologyUnop_inv_naturality
-    ((NatTrans.mapHomologicalComplex α _).app P.complex) n
-  have hcancel : (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).hom.unop ≫
-      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).inv.unop = 𝟙 _ := by
-    rw [← unop_comp, Iso.inv_hom_id, unop_id]
-  -- Cancel the inverse and forward components of `isoLeftDerivedObj` at `Y'` in term mode.
-  have hmid :
-      ((P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
-        ((NatTrans.mapHomologicalComplex α _).app P.complex |>
-          (HomologicalComplex.homologyFunctor _ _ n).map).unop ≫
-        (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).hom.unop) ≫
-        (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).inv.unop =
+  have hL : ((_root_.Ext k C n).obj (op X)).map g ≫
+      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).inv.unop =
       (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
         (HomologicalComplex.homologyMap
           ((NatTrans.mapHomologicalComplex α _).app P.complex) n).unop := by
-    simp only [Category.assoc, hcancel, Category.comp_id]
-    rfl
-  rw [hmap]
-  exact ((congrArg (· ≫ (P.isoExt n Y').hom) hL).trans (Category.assoc _ _ _).symm).trans
-    (((congrArg (· ≫ _) hmid).trans (Category.assoc _ _ _)).trans
-      ((congrArg (_ ≫ ·) hn).trans (Category.assoc _ _ _).symm))
+    have h := congrArg Quiver.Hom.unop (P.leftDerived_app_eq α n)
+    simp only [unop_comp] at h
+    have hcancel : (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).hom.unop ≫
+        (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).inv.unop = 𝟙 _ := by
+      rw [← unop_comp, Iso.inv_hom_id, unop_id]
+    have h' := congrArg
+      (· ≫ (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).inv.unop) h
+    simp only [Category.assoc, hcancel, Category.comp_id,
+      HomologicalComplex.homologyFunctor_map] at h'
+    exact h'
+  have hn := TauCeti.HomologicalComplex.homologyUnop_inv_naturality
+    ((NatTrans.mapHomologicalComplex α _).app P.complex) n
+  have eY : (P.isoExt n Y).hom =
+      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv := rfl
+  have step1 : ((_root_.Ext k C n).obj (op X)).map g ≫ (P.isoExt n Y').hom =
+      (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyMap
+          ((NatTrans.mapHomologicalComplex α _).app P.complex) n).unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv :=
+    (reassoc_of% hL) (HomologicalComplex.homologyUnop _ n).inv
+  have step2 : (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫
+        (HomologicalComplex.homologyMap
+          ((NatTrans.mapHomologicalComplex α _).app P.complex) n).unop ≫
+        (HomologicalComplex.homologyUnop _ n).inv =
+      (P.isoExt n Y).hom ≫
+        HomologicalComplex.homologyMap (P.complex.linearYonedaObjMap k g) n := by
+    rw [hn, hmap, eY]
+    exact (Category.assoc _ _ _).symm
+  exact step1.trans step2
 
 end IsoExtNaturality
 

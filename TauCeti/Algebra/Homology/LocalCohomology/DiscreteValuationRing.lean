@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Injective
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import TauCeti.Algebra.Homology.LocalCohomology.RightDerived
-import Mathlib.Algebra.Category.ModuleCat.Injective
-import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
-import TauCeti.RingTheory.DiscreteValuationRing.PrimaryComponent
+public import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
+public import TauCeti.RingTheory.DiscreteValuationRing.PrimaryComponent
 
 /-!
 # Local cohomology of a discrete valuation ring
@@ -73,17 +73,11 @@ private lemma dvrShortComplex_shortExact : (dvrShortComplex R K).ShortExact :=
     (FaithfulSMul.algebraMap_injective R K)
     (Submodule.mkQ_surjective _)
 
-private instance injective_fractionRing_obj : Injective (ModuleCat.of R K) := by
-  let := IsFractionRing.toField R (K := K)
-  have : Module.Injective R K :=
-    Module.Injective.of_ringEquiv (RingEquiv.refl R)
-      (Submodule.quotEquivOfEqBot (⊥ : Submodule R K) rfl)
-  exact Module.injective_object_of_injective_module R K
+private instance : Injective (dvrShortComplex R K).X₂ :=
+  Module.injective_object_of_injective_module R K
 
-private instance injective_quotient_fractionRing_obj :
-    Injective (ModuleCat.of R (K ⧸ LinearMap.range (Algebra.linearMap R K))) := by
-  let := IsFractionRing.toField R (K := K)
-  exact Module.injective_object_of_injective_module R _
+private instance : Injective (dvrShortComplex R K).X₃ :=
+  Module.injective_object_of_injective_module R _
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H⁰_𝔪(R) = 0`. -/
 theorem isZero_obj_maximalIdeal_zero_of_isDiscreteValuationRing :
@@ -97,13 +91,11 @@ theorem isZero_obj_maximalIdeal_zero_of_isDiscreteValuationRing :
 computed from the two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0`. -/
 def maximalIdealOneObjIsoQuotientFractionRing :
     ((localCohomology (IsLocalRing.maximalIdeal R) 1).obj (.of R R)) ≅
-      .of R (K ⧸ LinearMap.range (Algebra.linearMap R K)) := by
+      .of R (K ⧸ LinearMap.range (Algebra.linearMap R K)) :=
   let 𝔪 := IsLocalRing.maximalIdeal R
-  let S := dvrShortComplex R K
-  have hS : S.ShortExact := dvrShortComplex_shortExact R K
-  have : Injective S.X₂ := injective_fractionRing_obj R K
-  have : Injective S.X₃ := injective_quotient_fractionRing_obj R K
-  let I : InjectiveResolution S.X₁ := (InjectiveResolution.self S.X₃).ofShortExact hS
+  let I : InjectiveResolution (dvrShortComplex R K).X₁ :=
+    (InjectiveResolution.self (dvrShortComplex R K).X₃).ofShortExact
+      (dvrShortComplex_shortExact R K)
   let C := (𝔪.primaryComponentFunctor.{u}.mapHomologicalComplex _).obj I.cocomplex
   let T := C.sc' 0 1 2
   have : Subsingleton (𝔪.primaryComponent K) :=
@@ -113,16 +105,104 @@ def maximalIdealOneObjIsoQuotientFractionRing :
       (𝔪.primaryComponentFunctorObjIso (.of R K))
   have hX₃ : IsZero T.X₃ :=
     𝔪.primaryComponentFunctor.{u}.map_isZero
-      (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℕ) 0 S.X₃ 1 (by decide))
-  exact ((isoRightDerivedPrimaryComponent 𝔪 1).app S.X₁) ≪≫
+      (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℕ) 0
+        (dvrShortComplex R K).X₃ 1 (by decide))
+  ((isoRightDerivedPrimaryComponent 𝔪 1).app (dvrShortComplex R K).X₁) ≪≫
     I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1 ≪≫
     C.homologyIsoSc' 0 1 2 (by simp) (by simp) ≪≫
     (ShortComplex.HomologyData.ofZeros T (hX₁.eq_of_src _ _)
       (hX₃.eq_of_tgt _ _)).left.homologyIso ≪≫
-    𝔪.primaryComponentFunctorObjIso S.X₃ ≪≫
+    𝔪.primaryComponentFunctorObjIso (dvrShortComplex R K).X₃ ≪≫
     (LinearEquiv.ofTop _
       (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
         R K)).toModuleIso
+
+/-- On the two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0`,
+`maximalIdealOneObjIsoQuotientFractionRing` sends the homology class of a `1`-cycle in
+`Γ_𝔪(K ⧸ R)` to its underlying element in `K ⧸ R`. -/
+lemma homologyπ_comp_maximalIdealOneObjIsoQuotientFractionRing_hom :
+    let 𝔪 := IsLocalRing.maximalIdeal R
+    let S := ShortComplex.moduleCatMk (Algebra.linearMap R K)
+      (LinearMap.range (Algebra.linearMap R K)).mkQ
+      (Algebra.linearMap R K).exact_map_mkQ_range.linearMap_comp_eq_zero
+    let hS : S.ShortExact := ModuleCat.shortComplex_shortExact S
+      (Algebra.linearMap R K).exact_map_mkQ_range
+      (FaithfulSMul.algebraMap_injective R K) (Submodule.mkQ_surjective _)
+    let _ : Injective S.X₂ := Module.injective_object_of_injective_module R K
+    let _ : Injective S.X₃ := Module.injective_object_of_injective_module R _
+    let I : InjectiveResolution S.X₁ := (InjectiveResolution.self S.X₃).ofShortExact hS
+    let C := (𝔪.primaryComponentFunctor.{u}.mapHomologicalComplex _).obj I.cocomplex
+    C.homologyπ 1 ≫ (I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1).inv ≫
+        (isoRightDerivedPrimaryComponent 𝔪 1).inv.app S.X₁ ≫
+        (maximalIdealOneObjIsoQuotientFractionRing R K).hom =
+      C.iCycles 1 ≫ (𝔪.primaryComponentFunctorObjIso S.X₃).hom ≫
+        (LinearEquiv.ofTop _
+          (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
+            R K)).toModuleIso.hom := by
+  intro 𝔪 S hS _ _ I C
+  have : Subsingleton (𝔪.primaryComponent K) :=
+    TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_fractionRing R K ▸ inferInstance
+  have hX₁ : IsZero (C.sc' 0 1 2).X₁ :=
+    IsZero.of_iso (ModuleCat.isZero_of_subsingleton _) (𝔪.primaryComponentFunctorObjIso (.of R K))
+  have hX₃ : IsZero (C.sc' 0 1 2).X₃ :=
+    𝔪.primaryComponentFunctor.{u}.map_isZero
+      (HomologicalComplex.isZero_single_obj_X (ComplexShape.up ℕ) 0 S.X₃ 1 (by decide))
+  have hL := (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+    (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.homologyπ_comp_homologyIso_hom
+  have hci : (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+        (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.cyclesIso.hom ≫
+      (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+        (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.π = (C.sc' 0 1 2).iCycles :=
+    (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+      (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.cyclesIso_hom_comp_i
+  have h1 : (I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1).inv ≫
+        (isoRightDerivedPrimaryComponent 𝔪 1).inv.app S.X₁ ≫
+        (maximalIdealOneObjIsoQuotientFractionRing R K).hom =
+      (C.homologyIsoSc' 0 1 2 (by simp) (by simp)).hom ≫
+        (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+          (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.homologyIso.hom ≫
+        (𝔪.primaryComponentFunctorObjIso S.X₃).hom ≫
+        (LinearEquiv.ofTop _
+          (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
+            R K)).toModuleIso.hom :=
+    (congrArg ((I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1).inv ≫ ·)
+      (Iso.inv_hom_id_assoc ((isoRightDerivedPrimaryComponent 𝔪 1).app S.X₁) _)).trans
+      (Iso.inv_hom_id_assoc (I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1) _)
+  have h2 : (C.homologyπ 1 ≫ (C.homologyIsoSc' 0 1 2 (by simp) (by simp)).hom) ≫
+        (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+          (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.homologyIso.hom =
+      C.iCycles 1 := by
+    rw [Category.assoc, HomologicalComplex.π_homologyIsoSc'_hom_assoc, hL,
+      hci, HomologicalComplex.cyclesIsoSc'_hom_iCycles]
+  calc
+    C.homologyπ 1 ≫ (I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1).inv ≫
+        (isoRightDerivedPrimaryComponent 𝔪 1).inv.app S.X₁ ≫
+        (maximalIdealOneObjIsoQuotientFractionRing R K).hom
+      = C.homologyπ 1 ≫ (C.homologyIsoSc' 0 1 2 (by simp) (by simp)).hom ≫
+          (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+            (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.homologyIso.hom ≫
+          (𝔪.primaryComponentFunctorObjIso S.X₃).hom ≫
+          (LinearEquiv.ofTop _
+            (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
+              R K)).toModuleIso.hom :=
+        congrArg (C.homologyπ 1 ≫ ·) h1
+    _ = (C.homologyπ 1 ≫ (C.homologyIsoSc' 0 1 2 (by simp) (by simp)).hom) ≫
+          (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+            (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.homologyIso.hom ≫
+          (𝔪.primaryComponentFunctorObjIso S.X₃).hom ≫
+          (LinearEquiv.ofTop _
+            (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
+              R K)).toModuleIso.hom :=
+        (Category.assoc _ _ _).symm
+    _ = ((C.homologyπ 1 ≫ (C.homologyIsoSc' 0 1 2 (by simp) (by simp)).hom) ≫
+          (ShortComplex.HomologyData.ofZeros (C.sc' 0 1 2)
+            (hX₁.eq_of_src _ _) (hX₃.eq_of_tgt _ _)).left.homologyIso.hom) ≫
+          (𝔪.primaryComponentFunctorObjIso S.X₃).hom ≫
+          (LinearEquiv.ofTop _
+            (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
+              R K)).toModuleIso.hom :=
+        (Category.assoc _ _ _).symm
+    _ = _ := congrArg (· ≫ _) h2
 
 /-- Over a discrete valuation ring `(R, 𝔪)` with fraction field `K`, `H¹_𝔪(R)` is `R`-linearly
 equivalent to `K ⧸ R`. -/
@@ -131,17 +211,24 @@ def maximalIdealOneObjLinearEquivQuotientFractionRing :
       K ⧸ LinearMap.range (Algebra.linearMap R K) :=
   (maximalIdealOneObjIsoQuotientFractionRing R K).toLinearEquiv
 
+/-- `maximalIdealOneObjLinearEquivQuotientFractionRing` acts by the forward map of
+`maximalIdealOneObjIsoQuotientFractionRing`. -/
+@[simp]
+lemma maximalIdealOneObjLinearEquivQuotientFractionRing_apply
+    (x : (localCohomology (IsLocalRing.maximalIdeal R) 1).obj (.of R R)) :
+    maximalIdealOneObjLinearEquivQuotientFractionRing R K x =
+      (maximalIdealOneObjIsoQuotientFractionRing R K).hom x :=
+  (rfl)
+
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H^{n+2}_𝔪(R) = 0` for every `n : ℕ`. -/
 theorem isZero_obj_maximalIdeal_add_two_of_isDiscreteValuationRing (n : ℕ) :
     IsZero ((localCohomology (IsLocalRing.maximalIdeal R) (n + 2)).obj (.of R R)) := by
   let 𝔪 := IsLocalRing.maximalIdeal R
-  let S := dvrShortComplex R (FractionRing R)
-  have hS : S.ShortExact := dvrShortComplex_shortExact R (FractionRing R)
-  have : Injective S.X₂ := injective_fractionRing_obj R (FractionRing R)
-  have : Injective S.X₃ := injective_quotient_fractionRing_obj R (FractionRing R)
-  refine IsZero.of_iso ?_ ((isoRightDerivedPrimaryComponent 𝔪 (n + 2)).app S.X₁ ≪≫
-    𝔪.primaryComponentFunctor.{u}.rightDerivedObjX₁IsoOfShortExact hS n)
-  exact Functor.isZero_rightDerived_obj_injective_succ 𝔪.primaryComponentFunctor.{u} n S.X₃
+  refine IsZero.of_iso ?_ ((isoRightDerivedPrimaryComponent 𝔪 (n + 2)).app (.of R R) ≪≫
+    𝔪.primaryComponentFunctor.{u}.rightDerivedObjX₁IsoOfShortExact
+      (dvrShortComplex_shortExact R (FractionRing R)) n)
+  exact Functor.isZero_rightDerived_obj_injective_succ 𝔪.primaryComponentFunctor.{u} n
+    (dvrShortComplex R (FractionRing R)).X₃
 
 end DiscreteValuationRing
 

@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Algebra.Homology.LocalCohomology.RightDerived
 public import TauCeti.AlgebraicGeometry.Cohomology.SupportedCohomology.DegreeZero
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Flasque
+public import TauCeti.CategoryTheory.Abelian.AcyclicResolution
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Derived
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Flasque
-import TauCeti.Topology.Sheaves.SupportedCohomology.Resolution
+public import TauCeti.Topology.Sheaves.SupportedCohomology.Resolution
 
 /-!
 # Algebraic local cohomology and sheaf cohomology with closed supports
@@ -98,6 +99,59 @@ def tildeCompRightDerivedSupportedSectionsIso [IsNoetherianRing R] (I : Ideal R)
     (fun M _ ↦ isFlasque_iff.mpr (isFlasque_modulesSpecToSheaf_tilde_of_injective M))
     q
 
+/-- At each module `M`, `tildeCompRightDerivedSupportedSectionsIso` is computed by
+`Functor.compRightDerivedIsoOfResolution_hom_app` from the chosen injective resolution of `M`. -/
+lemma tildeCompRightDerivedSupportedSectionsIso_hom_app [IsNoetherianRing R]
+    (I : Ideal R) (q : ℕ) (M : ModuleCat.{u} R) :
+    (tildeCompRightDerivedSupportedSectionsIso I q).hom.app M =
+      ((supportedSubmoduleSectionsFunctor (R := R)
+          (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).rightDerivedObjIsoOfResolution
+          (isFlasque (Spec R) (ModuleCat.{u} R))
+          (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _))
+          (fun _ hT h₁ h₂ ↦ by
+            have := isFlasque_iff.mp h₁
+            have := isFlasque_iff.mp h₂
+            exact isFlasque_iff.mpr hT.isFlasque_X₃_of_isFlasque)
+          (fun _ hT h₁ _ ↦ by
+            have := isFlasque_iff.mp h₁
+            exact shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque _ ⊤ hT)
+          ((injectiveResolution M).mapι (tildeSheafFunctor R))
+          (fun m ↦ isFlasque_iff.mpr (isFlasque_modulesSpecToSheaf_tilde_of_injective _)) q).hom ≫
+        (HomologicalComplex.homologyFunctor (ModuleCat.{u} R) _ q).map
+          ((Functor.mapHomologicalComplexCompIso
+            (tildeCompSupportedSubmoduleSectionsTopIso (IsNoetherian.noetherian I))
+            (ComplexShape.up ℕ)).app (injectiveResolution M).cocomplex).hom ≫
+        ((injectiveResolution M).isoRightDerivedObj I.primaryComponentFunctor.{u} q).inv :=
+  Functor.compRightDerivedIsoOfResolution_hom_app _ _ _ _ _ _ _ _ _ q M
+
+/-- For any injective resolution `J` of `M`, `tildeCompRightDerivedSupportedSectionsIso` agrees
+with `Functor.rightDerivedObjIsoOfResolution` on `J.mapι (tildeSheafFunctor R)` followed by
+`tildeCompSupportedSubmoduleSectionsTopIso` on `J.cocomplex`. -/
+@[reassoc]
+lemma tildeCompRightDerivedSupportedSectionsIso_hom_app_comp_isoRightDerivedObj
+    [IsNoetherianRing R] (I : Ideal R) (q : ℕ) {M : ModuleCat.{u} R}
+    (J : InjectiveResolution M) :
+    (tildeCompRightDerivedSupportedSectionsIso I q).hom.app M ≫
+        (J.isoRightDerivedObj I.primaryComponentFunctor.{u} q).hom =
+      ((supportedSubmoduleSectionsFunctor (R := R)
+          (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).rightDerivedObjIsoOfResolution
+          (isFlasque (Spec R) (ModuleCat.{u} R))
+          (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _))
+          (fun _ hT h₁ h₂ ↦ by
+            have := isFlasque_iff.mp h₁
+            have := isFlasque_iff.mp h₂
+            exact isFlasque_iff.mpr hT.isFlasque_X₃_of_isFlasque)
+          (fun _ hT h₁ _ ↦ by
+            have := isFlasque_iff.mp h₁
+            exact shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque _ ⊤ hT)
+          (J.mapι (tildeSheafFunctor R))
+          (fun m ↦ isFlasque_iff.mpr (isFlasque_modulesSpecToSheaf_tilde_of_injective _)) q).hom ≫
+        (HomologicalComplex.homologyFunctor (ModuleCat.{u} R) _ q).map
+          ((Functor.mapHomologicalComplexCompIso
+            (tildeCompSupportedSubmoduleSectionsTopIso (IsNoetherian.noetherian I))
+            (ComplexShape.up ℕ)).app J.cocomplex).hom :=
+  Functor.compRightDerivedIsoOfResolution_hom_app_comp_isoRightDerivedObj _ _ _ _ _ _ _ _ _ q J
+
 /-- **Algebraic local cohomology agrees with sheaf cohomology with supports (Stacks 0A6T).**
 Over a Noetherian ring `R`, the functor `M ↦ H^q_{V(I)}(Spec R, M~)` is naturally isomorphic to
 `localCohomology I q`. -/
@@ -114,6 +168,20 @@ def tildeCompSupportedModuleHTopIsoLocalCohomology [IsNoetherianRing R] (I : Ide
     tildeCompRightDerivedSupportedSectionsIso I q ≪≫
     (localCohomology.isoRightDerivedPrimaryComponent I q).symm
 
+/-- `tildeCompSupportedModuleHTopIsoLocalCohomology` is the composite of
+`rightDerivedSupportedSubmoduleSectionsIso`, `tildeCompRightDerivedSupportedSectionsIso`, and
+`localCohomology.isoRightDerivedPrimaryComponent`. -/
+@[simp]
+lemma tildeCompSupportedModuleHTopIsoLocalCohomology_hom [IsNoetherianRing R]
+    (I : Ideal R) (q : ℕ) :
+    (tildeCompSupportedModuleHTopIsoLocalCohomology I q).hom =
+      (Functor.isoWhiskerLeft (tildeSheafFunctor R)
+        (rightDerivedSupportedSubmoduleSectionsIso
+          (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q)).inv ≫
+        (tildeCompRightDerivedSupportedSectionsIso I q).hom ≫
+        (localCohomology.isoRightDerivedPrimaryComponent I q).inv :=
+  (rfl)
+
 /-- **Module-level local cohomology comparison (Stacks 0A6T).** Over a Noetherian ring `R`,
 `H^q_{V(I)}(Spec R, M~)` is `R`-linearly equivalent to `H^q_I(M)`. -/
 @[stacks 0A6T]
@@ -123,6 +191,17 @@ def supportedModuleHTopTildeLinearEquivLocalCohomology [IsNoetherianRing R]
         (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q ≃ₗ[R]
       (localCohomology I q).obj M :=
   ((tildeCompSupportedModuleHTopIsoLocalCohomology I q).app M).toLinearEquiv
+
+/-- `supportedModuleHTopTildeLinearEquivLocalCohomology` acts by the component of
+`tildeCompSupportedModuleHTopIsoLocalCohomology`. -/
+@[simp]
+lemma supportedModuleHTopTildeLinearEquivLocalCohomology_apply [IsNoetherianRing R]
+    (I : Ideal R) (M : ModuleCat.{u} R) (q : ℕ)
+    (x : (modulesSpecToSheaf.obj (tilde M)).supportedModuleH
+      (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q) :
+    supportedModuleHTopTildeLinearEquivLocalCohomology I M q x =
+      (tildeCompSupportedModuleHTopIsoLocalCohomology I q).hom.app M x :=
+  (rfl)
 
 /-- `supportedModuleHTopTildeLinearEquivLocalCohomology` commutes with morphisms `f : M ⟶ N` of
 `R`-modules. -/

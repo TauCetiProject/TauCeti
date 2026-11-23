@@ -304,6 +304,11 @@ private noncomputable def diagramZeroIsoLinearCoyoneda :
       exact ConcreteCategory.congr_hom (extZeroIso_hom_naturality_left
         ((ringModIdeals (idealPowersDiagram J)).map w.unop) M) x
 
+private lemma diagramZeroIsoLinearCoyoneda_inv_app_app (t : ℕᵒᵖᵒᵖ) (M : ModuleCat.{u} R) :
+    ((diagramZeroIsoLinearCoyoneda J).inv.app t).app M =
+      (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).inv :=
+  (rfl)
+
 /-- The filtered colimit of `Hom_R(R ⧸ J^n, -)` is naturally isomorphic to the `J`-power torsion
 functor `Γ_J`. -/
 noncomputable def colimitLinearCoyonedaIsoPrimaryComponentFunctor :
@@ -311,5 +316,37 @@ noncomputable def colimitLinearCoyonedaIsoPrimaryComponentFunctor :
       J.primaryComponentFunctor :=
   (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).symm ≪≫
     degreeZeroIsoPrimaryComponentFunctor J
+
+/-- On the term of index `t` of the colimit, `colimitLinearCoyonedaIsoPrimaryComponentFunctor`
+acts by `extZeroIso` followed by the `t`-th coprojection into `localCohomology J 0` and
+`degreeZeroIsoPrimaryComponentFunctor`. -/
+@[reassoc]
+lemma ι_app_colimitLinearCoyonedaIsoPrimaryComponentFunctor_hom (t : ℕᵒᵖᵒᵖ)
+    (M : ModuleCat.{u} R) :
+    (colimit.ι ((ringModIdeals (idealPowersDiagram J)).op ⋙
+        linearCoyoneda R (ModuleCat.{u} R)) t).app M ≫
+        (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M =
+      (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).inv ≫
+        (colimit.ι (diagram (idealPowersDiagram J) 0) t).app M ≫
+        (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := by
+  have e : (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M =
+      (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).inv.app M ≫
+        (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := rfl
+  have hι := congrArg (fun η ↦ η.app M)
+    (HasColimit.ι_isoOfNatIso_inv (diagramZeroIsoLinearCoyoneda J) t)
+  simp only [NatTrans.comp_app] at hι
+  calc
+    (colimit.ι ((ringModIdeals (idealPowersDiagram J)).op ⋙
+          linearCoyoneda R (ModuleCat.{u} R)) t).app M ≫
+        (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M
+      = ((colimit.ι ((ringModIdeals (idealPowersDiagram J)).op ⋙
+            linearCoyoneda R (ModuleCat.{u} R)) t).app M ≫
+          (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).inv.app M) ≫
+          (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := by
+        rw [e]
+        exact (Category.assoc _ _ _).symm
+    _ = _ := by
+        rw [hι, diagramZeroIsoLinearCoyoneda_inv_app_app]
+        exact Category.assoc _ _ _
 
 end localCohomology

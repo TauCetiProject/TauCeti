@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.PrincipalIdealDomain
 public import Mathlib.RingTheory.Ideal.Span
+public import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
 # Injective modules over principal ideal rings
@@ -33,8 +34,12 @@ need not be projective (for instance `ℤ/2` over `ℤ/4`), but `Hom(-, O/πⁿ)
 ## Main results
 
 * `Module.Baer.of_surjective_smul`: scalar divisibility implies Baer's criterion.
+* `Module.Injective.of_isPrincipalIdealRing_of_divisionRing`: a division algebra faithfully
+  containing a principal ideal ring is injective over that ring.
 * `Submodule.injective_quotient_of_divisionRing`: quotients of a faithful division algebra are
   injective over a principal ideal ring.
+* `Module.Injective.of_isFractionRing` and `Submodule.injective_quotient_of_isFractionRing`: the
+  fraction ring of a principal ideal domain and its quotients are injective.
 * `Module.Baer.quotient_self`, `Module.Injective.quotient_self`: a principal ideal domain modulo a
   nonzero ideal is self-injective.
 
@@ -68,6 +73,16 @@ theorem Module.Baer.of_surjective_smul {R M : Type*} [Ring R] [IsPrincipalIdealR
   have hx' : (⟨s • r, hx⟩ : Submodule.span R {r}) = s • ⟨r, hrI⟩ := Subtype.ext rfl
   simp only [hx', map_smul, LinearMap.toSpanSingleton_apply, hm]
 
+/-- Every division algebra faithfully containing a principal ideal ring is injective as a module
+over that ring. -/
+instance Module.Injective.of_isPrincipalIdealRing_of_divisionRing {R K : Type*} [CommRing R]
+    [IsPrincipalIdealRing R] [DivisionRing K] [Algebra R K] [FaithfulSMul R K] :
+    Module.Injective R K := by
+  refine (Module.Baer.of_surjective_smul fun r hr x ↦ ?_).injective
+  have hR : algebraMap R K r ≠ 0 := by
+    simpa using (FaithfulSMul.algebraMap_injective R K).ne hr
+  exact ⟨(algebraMap R K r)⁻¹ * x, by simp [Algebra.smul_def, hR]⟩
+
 /-- Every quotient of a division algebra faithfully containing a principal ideal ring is
 injective as a module over that ring. In particular, this applies to the quotient of a fraction
 field by any submodule, such as `ℚ_p / ℤ_p` over `ℤ_p`. -/
@@ -83,6 +98,21 @@ instance Submodule.injective_quotient_of_divisionRing {R K : Type*} [CommRing R]
   dsimp only
   rw [← map_smul]
   simp [Algebra.smul_def, hR]
+
+/-- The fraction ring of a principal ideal domain is injective as a module over that domain. -/
+instance Module.Injective.of_isFractionRing {R K : Type*} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] [CommRing K] [Algebra R K] [IsFractionRing R K] :
+    Module.Injective R K := by
+  let := IsFractionRing.toField R (K := K)
+  exact Module.Injective.of_isPrincipalIdealRing_of_divisionRing
+
+/-- Every quotient of the fraction ring of a principal ideal domain is injective as a module over
+that domain. -/
+instance Submodule.injective_quotient_of_isFractionRing {R K : Type*} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+    (S : Submodule R K) : Module.Injective R (K ⧸ S) := by
+  let := IsFractionRing.toField R (K := K)
+  exact Submodule.injective_quotient_of_divisionRing S
 
 /- Adapted from Jujian Zhang's Module.Baer.of_divisible in
 Mathlib/Algebra/Category/Grp/Injective.lean, with divisibility from the factorization `a = c * e`

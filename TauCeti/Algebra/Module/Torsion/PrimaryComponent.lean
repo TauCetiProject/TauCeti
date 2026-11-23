@@ -66,6 +66,8 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
   set.
 * `Ideal.primaryComponent_quotient_primaryComponent`: for finitely generated `𝔞`,
   `Γ_𝔞(N ⧸ Γ_𝔞(N)) = 0`.
+* `Ideal.primaryComponent_eq_bot_of_ne_bot`: over a domain, a torsion-free module has no nonzero
+  `I`-power torsion for any nonzero ideal `I`.
 
 ## References
 
@@ -285,6 +287,21 @@ theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] 
     obtain ⟨n, hn⟩ := (mem_primaryComponent_span_singleton_iff r).mp hx
     rw [Submodule.mem_bot]
     exact (h.pow n) (hn.trans (smul_zero _).symm)
+
+/-- Over a domain, a torsion-free module has no nonzero `I`-power torsion for any nonzero
+ideal `I`. -/
+theorem primaryComponent_eq_bot_of_ne_bot {M : Type*} [IsDomain R] [AddCommMonoid M]
+    [Module R M] [Module.IsTorsionFree R M] {I : Ideal R} (hI : I ≠ ⊥) :
+    I.primaryComponent M = ⊥ := by
+  have ⟨r, hrI, hr0⟩ : ∃ r ∈ I, r ≠ 0 := by
+    by_contra! h
+    exact hI (eq_bot_iff.mpr h)
+  refine eq_bot_iff.mpr fun x hx ↦ ?_
+  obtain ⟨n, hn⟩ := (I.primaryComponent_mem M x).mp hx
+  have hrn : r ^ n • x = 0 := (mem_torsionBySet_iff _ _).mp hn ⟨r ^ n, Ideal.pow_mem_pow hrI n⟩
+  rw [Submodule.mem_bot]
+  exact Module.IsTorsionFree.isSMulRegular (M := M) (IsRegular.of_ne_zero (pow_ne_zero n hr0))
+    (hrn.trans (smul_zero _).symm)
 
 /-- For a finitely generated ideal `𝔞`, the quotient of a module by its `𝔞`-primary component has
 no `𝔞`-power torsion. -/

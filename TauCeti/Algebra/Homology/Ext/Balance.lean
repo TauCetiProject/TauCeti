@@ -53,6 +53,22 @@ noncomputable def extObjIsoRightDerivedLinearCoyoneda (X : C) (n : ℕ) :
     (_root_.Ext k C n).obj (op X) ≅ ((linearCoyoneda k C).obj (op X)).rightDerived n :=
   extObjIsoLinearExtFunctor k X n ≪≫ (rightDerivedLinearCoyonedaIsoExt k X n).symm
 
+/-- `extObjIsoRightDerivedLinearCoyoneda` is the composite of `extObjIsoLinearExtFunctor` and the
+inverse of `rightDerivedLinearCoyonedaIsoExt`. -/
+@[simp]
+lemma extObjIsoRightDerivedLinearCoyoneda_hom (X : C) (n : ℕ) :
+    (extObjIsoRightDerivedLinearCoyoneda k X n).hom =
+      (extObjIsoLinearExtFunctor k X n).hom ≫ (rightDerivedLinearCoyonedaIsoExt k X n).inv :=
+  (rfl)
+
+/-- The inverse of `extObjIsoRightDerivedLinearCoyoneda` is the composite of
+`rightDerivedLinearCoyonedaIsoExt` and the inverse of `extObjIsoLinearExtFunctor`. -/
+@[simp]
+lemma extObjIsoRightDerivedLinearCoyoneda_inv (X : C) (n : ℕ) :
+    (extObjIsoRightDerivedLinearCoyoneda k X n).inv =
+      (rightDerivedLinearCoyonedaIsoExt k X n).hom ≫ (extObjIsoLinearExtFunctor k X n).inv :=
+  (rfl)
+
 /-- The balance isomorphism `extObjIsoRightDerivedLinearCoyoneda` is natural in the first
 variable. -/
 @[reassoc]
