@@ -475,15 +475,16 @@ If `H` carries a nonzero nonnegative weight `a` with `∑_{y ∼ x} a y ≤ 2 * 
 then `f` is an isomorphism: every vertex of `H` is a value of `f`, and every edge of `H` between
 two values of `f` is the image of an edge of `G`.
 
-So a graph containing a graph with a positive additive function as a proper subgraph, induced or
-not, carries no such weight. -/
+So if the image of `f` is a proper subgraph of `H`, induced or not, then `H` carries no such
+weight. -/
 theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Preconnected)
     {δ : V → R} (hδpos : ∀ v, 0 < δ v) (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, δ u = 2 * δ v)
     {a : W → R} (ha0 : 0 ≤ a) (ha : a ≠ 0)
     (hle : ∀ x, ∑ y ∈ H.neighborFinset x, a y ≤ 2 * a x) :
     ∃ e : G ≃g H, ⇑e = f := by
   have := Fintype.ofFinite V
-  have hpos : ∀ x, 0 < a x := hH.pos_of_sum_le_smul (c := (2 : R)) ha0 ha hle
+  have hpos : ∀ x, 0 < a x :=
+    hH.pos_of_sum_le_smul ha0 ha fun x ↦ (hle x).trans_eq (smul_eq_mul 2 (a x)).symm
   -- The neighbours of `v` map to neighbours of `f v`.
   have hsub (v : V) : (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
     rw [← coe_subset, coe_map, coe_neighborFinset, coe_neighborFinset]
@@ -497,8 +498,7 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
       sum_comm' fun v u ↦ by
         simp only [mem_univ, true_and, and_true, mem_neighborFinset]
         exact ⟨Adj.symm, Adj.symm⟩
-    simp_rw [mul_sum]
-    rw [swap]
+    simp_rw [mul_sum, swap]
     refine sum_congr rfl fun u _ ↦ ?_
     -- The numeral `2` is central, so it moves past `δ u` without commutativity of `R`.
     rw [← sum_mul, hδ u, (Commute.ofNat_left 2 (δ u)).eq, mul_assoc]
