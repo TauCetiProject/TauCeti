@@ -168,7 +168,7 @@ theorem pullbackThomPairSignLocalSystemIso_hom_app_apply
 fibre of `o(E)` whose value at the orientation `v.proj` is `r`. -/
 -- Not `@[simp]`: simp rewrites the coercion of the constant fibre on the left-hand side, so the
 -- statement is not in simp normal form.
-theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app
+theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply
     (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) (r : R) :
     (signLocalSystemObjEquiv hι
         (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj)
@@ -182,7 +182,7 @@ theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app
 /-- Over the image of a vector `v` of `E'` under the lift of the deck involution, the inverse of the
 trivialization sends `r` to the element of the fibre of `o(E)` whose value at the orientation
 `v.proj` is `-r`: the image lies over the opposite orientation. -/
-theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_deckThomPairMap
+theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply_deckThomPairMap
     (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) (r : R) :
     (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι)
           (TopPair.Hom.fst (deckThomPairMap F E ι) v)).proj)
@@ -204,7 +204,7 @@ theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_deckT
   rw [← he, ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h),
     signFiberEquiv_fiberMap, signFiberEquiv_apply]
   exact congrArg Neg.neg
-    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app hι R w r)
+    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R w r)
 
 variable (F E) in
 /-- The orientation local system `π^*o(E)` of `E` pulled back to its total space, written out as a
@@ -241,7 +241,7 @@ def thomPairSignChainMap :
 trivialization `pullbackThomPairSignLocalSystemIso`, the push-forward along `q`, and the
 identification of the pulled-back orientation system with `π^*o(E)`
 (`TauCeti.thomPairSignLocalSystem_def`). -/
-theorem thomPairSignChainMap_eq :
+theorem thomPairSignChainMap_def :
     thomPairSignChainMap F E hι R =
       ((thomPair F _).twistedChainComplexConstantIso (ModuleCat.of R R)).inv ≫
         (thomPair F _).twistedChainComplexCoefficientMap
@@ -279,12 +279,12 @@ private theorem pullbackThomPairSignLocalSystemIso_inv_deckThomPairMap :
   refine (coverFiberEquiv hι R v).injective ((coverFiberEquiv_apply hι R v _).trans
     (((signLocalSystemObjEquiv_eqToHom_apply hι
       (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)) _ v.proj _ _).trans
-    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_deckThomPairMap hι
+    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply_deckThomPairMap hι
       R v r)).trans ?_))
   -- The component of `-ψ` at `v` is `-(ψ.app v)` by definition of the negation of natural
   -- transformations, through which `map_neg` applies.
   exact (congrArg Neg.neg ((coverFiberEquiv_apply hι R v _).trans
-    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app hι R v r))).symm.trans
+    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R v r))).symm.trans
     (map_neg (coverFiberEquiv hι R v) _).symm
 
 private theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMapAux :
