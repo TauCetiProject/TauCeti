@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Torsor
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
+public import TauCeti.Topology.Algebra.Torsor.Semilinear
 
 /-!
 # Equivariant torsors and continuous nonabelian first cohomology
@@ -32,13 +32,14 @@ For a curve `X` with base point `b`, the torsor of étale (or unipotent) paths f
 rational point `x` is a torsor of this kind under the fundamental group at `b`, with `G` the
 absolute Galois group; its class is the path class of `x` used in nonabelian Chabauty.
 
+The semilinearity class `TauCeti.IsSemilinearTorsor` and the isomorphisms
+`TauCeti.TorsorEquiv` of `(G, A)`-torsors are in `TauCeti.Topology.Algebra.Torsor.Semilinear`.
+
 ## Main definitions
 
-* `TauCeti.NonabelianH1.IsSemilinearTorsor G A P`: the action of `G` on the right `A`-torsor `P`
-  is semilinear.
-* `TauCeti.NonabelianH1.TorsorEquiv G A P Q`: isomorphisms of `(G, A)`-torsors, homeomorphisms
-  respecting both actions.
 * `TauCeti.NonabelianH1.Cocycle.ofPoint G p`: the cocycle `c_p` of a point `p`.
+* `TauCeti.TorsorEquiv.ofCocycleEq p q h`: the isomorphism of torsors sending `p` to a point `q`
+  with the same cocycle.
 * `TauCeti.NonabelianH1.Cocycle.TorsorModel c`: the torsor `A` with the action
   `g ⋆ x = c g * g • x` defined by a cocycle `c`.
 * `TauCeti.NonabelianH1.ofTorsor G P`: the class `[P]` of a torsor in `H¹(G, A)`.
@@ -77,135 +78,6 @@ namespace NonabelianH1
 universe u v w
 
 variable {G : Type u} {A : Type v} [Group G] [Group A]
-
-section Semilinear
-
-variable (G A) (P : Type*) [MulDistribMulAction G A] [Torsor Aᵐᵒᵖ P] [MulAction G P]
-
-/-- The action of `G` on a right `A`-torsor `P` is **semilinear**:
-`g • (p · a) = (g • p) · (g • a)`, where `p · a` is `MulOpposite.op a • p`. -/
-class IsSemilinearTorsor : Prop where
-  /-- The action of `G` is semilinear for the right action of `A`. -/
-  smul_op_smul (g : G) (a : A) (p : P) : g • (op a • p) = op (g • a) • g • p
-
-variable {G A P} [IsSemilinearTorsor G A P] in
-/-- The difference of the `G`-translates of two points is the `G`-translate of their
-difference. -/
-theorem IsSemilinearTorsor.smul_sdiv_smul (g : G) (p q : P) :
-    (g • p) /ₛ (g • q) = op (g • unop (p /ₛ q)) :=
-  (eq_smul_iff_sdiv_eq _ _ _).mp <| by rw [← smul_op_smul, op_unop, sdiv_smul]
-
-end Semilinear
-
-section TorsorEquiv
-
-variable (G A) (P Q R : Type*) [TopologicalSpace P] [Torsor Aᵐᵒᵖ P] [MulAction G P]
-  [TopologicalSpace Q] [Torsor Aᵐᵒᵖ Q] [MulAction G Q]
-  [TopologicalSpace R] [Torsor Aᵐᵒᵖ R] [MulAction G R]
-
-/-- An **isomorphism of `(G, A)`-torsors**: a homeomorphism `P ≃ₜ Q` commuting with the right
-action of `A` and the action of `G`. -/
-structure TorsorEquiv extends P ≃ₜ Q where
-  /-- An isomorphism of torsors commutes with the right action of `A`. -/
-  map_op_smul' (a : Aᵐᵒᵖ) (p : P) : toFun (a • p) = a • toFun p
-  /-- An isomorphism of torsors commutes with the action of `G`. -/
-  map_smul' (g : G) (p : P) : toFun (g • p) = g • toFun p
-
-namespace TorsorEquiv
-
-variable {G A P Q R}
-
-instance : EquivLike (TorsorEquiv G A P Q) P Q where
-  coe e := e.toFun
-  inv e := e.invFun
-  left_inv e := e.left_inv
-  right_inv e := e.right_inv
-  coe_injective' e e' h _ := by
-    obtain ⟨⟨⟨_, _, _, _⟩, _, _⟩, _, _⟩ := e
-    obtain ⟨⟨⟨_, _, _, _⟩, _, _⟩, _, _⟩ := e'
-    congr
-
-@[ext]
-theorem ext {e e' : TorsorEquiv G A P Q} (h : ∀ p, e p = e' p) : e = e' :=
-  DFunLike.ext _ _ h
-
-@[simp]
-theorem coe_toHomeomorph (e : TorsorEquiv G A P Q) : ⇑e.toHomeomorph = e :=
-  (rfl)
-
-/-- An isomorphism of torsors commutes with the right action of `A`. -/
-@[simp]
-theorem map_op_smul (e : TorsorEquiv G A P Q) (a : Aᵐᵒᵖ) (p : P) : e (a • p) = a • e p :=
-  e.map_op_smul' a p
-
-/-- An isomorphism of torsors commutes with the action of `G`. -/
-@[simp]
-theorem map_smul (e : TorsorEquiv G A P Q) (g : G) (p : P) : e (g • p) = g • e p :=
-  e.map_smul' g p
-
-variable (G A P) in
-/-- The identity isomorphism of a torsor. -/
-def refl : TorsorEquiv G A P P where
-  toHomeomorph := .refl P
-  map_op_smul' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem coe_refl : ⇑(refl G A P) = id :=
-  (rfl)
-
-/-- The inverse of an isomorphism of torsors. -/
-def symm (e : TorsorEquiv G A P Q) : TorsorEquiv G A Q P where
-  toHomeomorph := e.toHomeomorph.symm
-  map_op_smul' a q := e.toHomeomorph.symm_apply_eq.mpr <| by
-    rw [coe_toHomeomorph, map_op_smul]
-    exact (congrArg (a • ·) (e.toHomeomorph.apply_symm_apply q)).symm
-  map_smul' g q := e.toHomeomorph.symm_apply_eq.mpr <| by
-    rw [coe_toHomeomorph, map_smul]
-    exact (congrArg (g • ·) (e.toHomeomorph.apply_symm_apply q)).symm
-
-@[simp]
-theorem apply_symm_apply (e : TorsorEquiv G A P Q) (q : Q) : e (e.symm q) = q :=
-  e.toHomeomorph.apply_symm_apply q
-
-@[simp]
-theorem symm_apply_apply (e : TorsorEquiv G A P Q) (p : P) : e.symm (e p) = p :=
-  e.toHomeomorph.symm_apply_apply p
-
-/-- The composite of two isomorphisms of torsors. -/
-def trans (e : TorsorEquiv G A P Q) (e' : TorsorEquiv G A Q R) : TorsorEquiv G A P R where
-  toHomeomorph := e.toHomeomorph.trans e'.toHomeomorph
-  map_op_smul' a p := by simp
-  map_smul' g p := by simp
-
-@[simp]
-theorem trans_apply (e : TorsorEquiv G A P Q) (e' : TorsorEquiv G A Q R) (p : P) :
-    e.trans e' p = e' (e p) :=
-  (rfl)
-
-@[simp]
-theorem toHomeomorph_symm (e : TorsorEquiv G A P Q) : e.symm.toHomeomorph = e.toHomeomorph.symm :=
-  (rfl)
-
-@[simp]
-theorem symm_symm (e : TorsorEquiv G A P Q) : e.symm.symm = e :=
-  (rfl)
-
-@[simp]
-theorem refl_symm : (refl G A P).symm = refl G A P :=
-  (rfl)
-
-@[simp]
-theorem trans_refl (e : TorsorEquiv G A P Q) : e.trans (refl G A Q) = e :=
-  (rfl)
-
-@[simp]
-theorem refl_trans (e : TorsorEquiv G A P Q) : (refl G A P).trans e = e :=
-  (rfl)
-
-end TorsorEquiv
-
-end TorsorEquiv
 
 variable [TopologicalSpace G] [TopologicalSpace A] [MulDistribMulAction G A]
 
@@ -264,12 +136,10 @@ theorem ofPoint_map (e : TorsorEquiv G A P Q) (p : P) : ofPoint G (e p) = ofPoin
 
 end Cocycle
 
-namespace TorsorEquiv
-
 /-- The isomorphism of torsors sending a point `p` to a point `q` with the same cocycle: it sends
 `p · a` to `q · a`. -/
-def ofCocycleEq (p : P) (q : Q) (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) :
-    TorsorEquiv G A P Q where
+def _root_.TauCeti.TorsorEquiv.ofCocycleEq (p : P) (q : Q)
+    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) : TorsorEquiv G A P Q where
   toHomeomorph := (Homeomorph.smulConst p).symm.trans (Homeomorph.smulConst q)
   map_op_smul' a x := by simp [smul_sdiv_assoc, mul_smul]
   map_smul' g x := by
@@ -279,16 +149,15 @@ def ofCocycleEq (p : P) (q : Q) (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) 
       ← IsSemilinearTorsor.smul_op_smul, op_unop]
 
 @[simp]
-theorem ofCocycleEq_apply (p : P) (q : Q) (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q)
-    (x : P) : ofCocycleEq p q h x = (x /ₛ p) • q :=
+theorem _root_.TauCeti.TorsorEquiv.ofCocycleEq_apply (p : P) (q : Q)
+    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) (x : P) :
+    TorsorEquiv.ofCocycleEq p q h x = (x /ₛ p) • q :=
   (rfl)
 
-/-- The isomorphism `TauCeti.NonabelianH1.TorsorEquiv.ofCocycleEq p q h` sends `p` to `q`. -/
-theorem ofCocycleEq_apply_self (p : P) (q : Q)
-    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) : ofCocycleEq p q h p = q := by
+/-- The isomorphism `TauCeti.TorsorEquiv.ofCocycleEq p q h` sends `p` to `q`. -/
+theorem _root_.TauCeti.TorsorEquiv.ofCocycleEq_apply_self (p : P) (q : Q)
+    (h : Cocycle.ofPoint G p = Cocycle.ofPoint G q) : TorsorEquiv.ofCocycleEq p q h p = q := by
   simp
-
-end TorsorEquiv
 
 end Point
 
@@ -391,6 +260,12 @@ instance : SMul G (TorsorModel.{u, v, w} c) :=
 @[simp]
 theorem toOriginal_smul (g : G) (x : TorsorModel.{u, v, w} c) :
     (g • x).toOriginal = c g * g • x.toOriginal :=
+  (rfl)
+
+/-- The `G`-translate of the point `x` of the torsor model is the point `c g * g • x`. -/
+@[simp]
+theorem smul_ofOriginal (g : G) (x : A) :
+    g • (ofOriginal x : TorsorModel.{u, v, w} c) = ofOriginal (c g * g • x) :=
   (rfl)
 
 instance : MulAction G (TorsorModel.{u, v, w} c) where
