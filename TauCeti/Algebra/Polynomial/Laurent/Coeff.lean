@@ -15,7 +15,7 @@ import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 /-!
 # Coefficients of Laurent polynomials
 
-Multiplying a Laurent polynomial on the left by `T n` shifts its coefficients by `n`, and
+Multiplying a Laurent polynomial by `T n` shifts its coefficients by `n`, and
 multiplying it by a constant scales every coefficient. The constant `1` has a single coefficient,
 at exponent `0`, and `LaurentPolynomial.trunc` retains every coefficient of nonnegative exponent.
 For leading coefficients taken with respect to the degree map `ℤ → WithBot ℤ`, a constant has
@@ -26,7 +26,7 @@ over commutative semirings, needs commutativity.
 
 ## Main results
 
-* `LaurentPolynomial.coeff_T_mul`: `(T n * f).coeff d = f.coeff (d - n)`.
+* `LaurentPolynomial.coeff_mul_T`: `(f * T n).coeff d = f.coeff (d - n)`.
 * `LaurentPolynomial.T_mul_eq_self_iff`: a nonzero Laurent polynomial is fixed by multiplication
   by `T n` only for `n = 0`.
 * `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
@@ -49,11 +49,12 @@ section Semiring
 
 variable {R : Type*} [Semiring R]
 
-/-- Left multiplication by `T n` shifts coefficients by `n`. This is not a `simp` lemma: `simp`
-moves `T n` to the right with `LaurentPolynomial.T_mul`. -/
-theorem coeff_T_mul (n : ℤ) (f : R[T;T⁻¹]) (d : ℤ) : (T n * f).coeff d = f.coeff (d - n) := by
-  simpa only [T, one_mul, sub_eq_add_neg, add_comm] using
-    AddMonoidAlgebra.coeff_single_mul_apply f (1 : R) n d
+/-- Multiplication by `T n` shifts coefficients by `n`. It is stated with `T n` on the right,
+where `simp` puts it with `LaurentPolynomial.T_mul`; rewrite a left factor with `T_mul` first. -/
+@[simp]
+theorem coeff_mul_T (f : R[T;T⁻¹]) (n d : ℤ) : (f * T n).coeff d = f.coeff (d - n) := by
+  simpa only [T, mul_one, sub_eq_add_neg] using
+    AddMonoidAlgebra.coeff_mul_single_apply f (1 : R) n d
 
 /-- A Laurent polynomial is fixed by left multiplication by `T n` only when `n = 0` or it is
 zero: otherwise its coefficients repeat with period `n`, and its support would be infinite. -/
@@ -145,16 +146,14 @@ theorem leadingCoeff_mul_T (f : LaurentPolynomial R) (n : ℤ) :
   rcases eq_or_ne f 0 with rfl | hf
   · simp
   obtain ⟨a, ha, he⟩ := exists_supDegree_mem_support ((↑) : ℤ → WithBot ℤ) hf
-  have hc (b : ℤ) : (f * T n).coeff b = f.coeff (b - n) := by
-    rw [← T_mul, coeff_T_mul]
   -- The exponent `a + n` is in the support and bounds every exponent of the support.
   have hd : (f * T n).supDegree ((↑) : ℤ → WithBot ℤ) = ↑(a + n) := by
     refine supDegree_eq_of_isMaxOn ?_ (isMaxOn_iff.mpr fun b hb => ?_)
-    · simpa [hc] using ha
-    · have hle : ((b - n : ℤ) : WithBot ℤ) ≤ ↑a := he ▸ Finset.le_sup (by simpa [hc] using hb)
+    · simpa using ha
+    · have hle : ((b - n : ℤ) : WithBot ℤ) ≤ ↑a := he ▸ Finset.le_sup (by simpa using hb)
       exact WithBot.coe_le_coe.mpr (by have := WithBot.coe_le_coe.mp hle; omega)
-  simp only [leadingCoeff, hd, he, Function.leftInverse_invFun WithBot.coe_injective _, hc,
-    add_sub_cancel_right]
+  simp only [leadingCoeff, hd, he, Function.leftInverse_invFun WithBot.coe_injective _,
+    coeff_mul_T, add_sub_cancel_right]
 
 /-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
 theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :

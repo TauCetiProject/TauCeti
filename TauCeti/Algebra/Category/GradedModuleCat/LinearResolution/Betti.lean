@@ -333,7 +333,7 @@ theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_one
   rw [PowerSeries.coeff_C_mul]
   refine mul_left_cancel₀ hself (LaurentPolynomial.ext fun j ↦ ?_)
   rw [hr₁.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc,
-    mul_left_comm, coeff_T_mul,
+    mul_left_comm, T_mul, coeff_mul_T,
     hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc]
   -- `Ext(M{1}, Sᵢ{j})` is the bigraded `Ext^{n,j}(M{1}, Sᵢ)`, which is `Ext^{n,j-1}(M, Sᵢ)`.
   rw [← GradedModuleCat.shift_functor_obj]

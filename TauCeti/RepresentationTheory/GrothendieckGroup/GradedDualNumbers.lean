@@ -145,8 +145,8 @@ otherwise. -/
 private theorem finrank_dualNumberIntegerGrade (p : ℤ) :
     (Module.finrank k (dualNumberIntegerGrade k p) : ℤ) =
       (1 + T 2 : LaurentPolynomial ℤ).coeff p := by
-  rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, ← mul_one (T 2 : LaurentPolynomial ℤ),
-    coeff_T_mul, coeff_one, coeff_one]
+  rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, ← one_mul (T 2 : LaurentPolynomial ℤ),
+    coeff_mul_T, coeff_one, coeff_one]
   rcases lt_or_ge p 0 with hp | hp
   · rw [dualNumberIntegerGrade_eq_bot_of_neg k hp, finrank_bot]
     simp [hp.ne, show p - 2 ≠ 0 by omega]

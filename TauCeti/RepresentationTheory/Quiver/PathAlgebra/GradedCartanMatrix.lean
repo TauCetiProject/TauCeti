@@ -140,7 +140,7 @@ theorem one_sub_T_smul_transpose_mul_gradedCartanMatrix_eq_one [DecidableEq Q] :
   rw [Matrix.sub_mul, Matrix.one_mul, Matrix.smul_mul, Matrix.sub_apply, Matrix.smul_apply,
     smul_eq_mul, Matrix.mul_apply]
   ext n
-  simp only [AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, coeff_T_mul,
+  simp only [AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, T_mul, coeff_mul_T,
     AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, Matrix.transpose_apply, Matrix.of_apply,
     AddMonoidAlgebra.coeff_natCast_mul, Matrix.one_apply]
   rcases lt_or_ge n 0 with hn | hn
