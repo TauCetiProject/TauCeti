@@ -17,6 +17,7 @@ import Mathlib.RingTheory.RamificationInertia.Basic
 import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.RamificationInertia.Inert
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Prime ideals of rings of integers
@@ -142,67 +143,81 @@ theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal 
     rw [hT, Set.mem_singleton_iff] at hQ
     exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
 
+omit [NumberField K] in
+private theorem liesOver_span_natCast_iff {𝔭 : Ideal (𝓞 K)} (h𝔭 : 𝔭 ≠ ⊤) :
+    𝔭.LiesOver (span {(p : ℤ)}) ↔ (p : 𝓞 K) ∈ 𝔭 := by
+  simpa using liesOver_span_iff h𝔭 (Nat.prime_iff_prime_int.mp hp.out)
+
+private noncomputable def heightOneSpectrumOfMemPrimesOver
+    (q : {𝔭 : Ideal (𝓞 K) // 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K)}) :
+    HeightOneSpectrum (𝓞 K) :=
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
+  have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
+  have := hmem.2
+  ⟨q.val, hmem.1, ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) hp0 q.val⟩
+
+@[simp]
+private theorem heightOneSpectrumOfMemPrimesOver_asIdeal
+    (q : {𝔭 : Ideal (𝓞 K) // 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K)}) :
+    (heightOneSpectrumOfMemPrimesOver (K := K) (p := p) q).asIdeal = q.val := rfl
+
+private theorem heightOneSpectrumOfMemPrimesOver_injective :
+    Function.Injective (heightOneSpectrumOfMemPrimesOver (K := K) (p := p)) :=
+  fun _ _ h ↦ Subtype.ext (congrArg HeightOneSpectrum.asIdeal h)
+
 variable (K p) in
 /-- The finite set of height-one primes of `𝓞 K` lying above the rational prime `p`. -/
 noncomputable def heightOneSpectrumPrimesOverFinset : Finset (HeightOneSpectrum (𝓞 K)) :=
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
   (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach.map
-    ⟨fun q ↦
-      have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
-      have := hmem.2
-      ⟨q.val, hmem.1, ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) hp0 q.val⟩,
-     fun _ _ h ↦ Subtype.ext (congrArg HeightOneSpectrum.asIdeal h)⟩
+    ⟨heightOneSpectrumOfMemPrimesOver, heightOneSpectrumOfMemPrimesOver_injective⟩
 
 /-- A height-one prime `P` belongs to `heightOneSpectrumPrimesOverFinset K p` iff
 `(p : 𝓞 K) ∈ P.asIdeal`. -/
 @[simp]
 theorem mem_heightOneSpectrumPrimesOverFinset_iff {P : HeightOneSpectrum (𝓞 K)} :
     P ∈ heightOneSpectrumPrimesOverFinset K p ↔ (p : 𝓞 K) ∈ P.asIdeal := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
   constructor
   · intro hP
     obtain ⟨q, -, rfl⟩ := Finset.mem_map.mp hP
     have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
-    change (p : 𝓞 K) ∈ q.val
-    simpa using (liesOver_span_iff hmem.1.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mp hmem.2
+    simp only [Function.Embedding.coeFn_mk, heightOneSpectrumOfMemPrimesOver_asIdeal]
+    exact (liesOver_span_natCast_iff hmem.1.ne_top).mp hmem.2
   · intro hP
     refine mem_of_natCast_mem_asIdeal (fun Q hQ ↦ ?_) P hP
     have hQT : Q.asIdeal ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K) :=
       (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ
-    exact Finset.mem_map.mpr ⟨⟨Q.asIdeal, hQT⟩, Finset.mem_attach _ _, HeightOneSpectrum.ext rfl⟩
+    refine Finset.mem_map.mpr ⟨⟨Q.asIdeal, hQT⟩, Finset.mem_attach _ _,
+      HeightOneSpectrum.ext ?_⟩
+    simp only [Function.Embedding.coeFn_mk, heightOneSpectrumOfMemPrimesOver_asIdeal]
 
 /-- Every member of `heightOneSpectrumPrimesOverFinset K p` lies over `span {(p : ℤ)}`. -/
 theorem liesOver_of_mem_heightOneSpectrumPrimesOverFinset {P : HeightOneSpectrum (𝓞 K)}
     (hP : P ∈ heightOneSpectrumPrimesOverFinset K p) :
     P.asIdeal.LiesOver (span {(p : ℤ)}) :=
-  (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
-    (by simpa using mem_heightOneSpectrumPrimesOverFinset_iff.mp hP)
+  (liesOver_span_natCast_iff P.isPrime.ne_top).mpr (mem_heightOneSpectrumPrimesOverFinset_iff.mp hP)
 
 /-- Mapping `heightOneSpectrumPrimesOverFinset K p` by `HeightOneSpectrum.asIdeal` recovers
 `primesOverFinset (span {(p : ℤ)}) (𝓞 K)`. -/
 @[simp]
 theorem map_asIdeal_heightOneSpectrumPrimesOverFinset :
     (heightOneSpectrumPrimesOverFinset K p).map
-        ⟨HeightOneSpectrum.asIdeal, fun _ _ ↦ HeightOneSpectrum.ext⟩ =
+        ⟨HeightOneSpectrum.asIdeal, HeightOneSpectrum.asIdeal_injective⟩ =
       primesOverFinset (span {(p : ℤ)}) (𝓞 K) := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
   ext 𝔭
   simp only [Finset.mem_map, mem_heightOneSpectrumPrimesOverFinset_iff]
   constructor
   · rintro ⟨P, hP, rfl⟩
     exact (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr
-      ⟨P.isPrime, (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
-        (by simpa using hP)⟩
+      ⟨P.isPrime, (liesOver_span_natCast_iff P.isPrime.ne_top).mpr hP⟩
   · intro h𝔭
     have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp h𝔭
     have := hmem.1
     have := hmem.2
     refine ⟨heightOneSpectrumOfLiesOver p 𝔭, ?_, heightOneSpectrumOfLiesOver_asIdeal p 𝔭⟩
     rw [heightOneSpectrumOfLiesOver_asIdeal]
-    simpa using (liesOver_span_iff hmem.1.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mp hmem.2
+    exact (liesOver_span_natCast_iff hmem.1.ne_top).mp hmem.2
 
 /-- Reindexing a product over `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` to a product over
 `heightOneSpectrumPrimesOverFinset K p`. -/
@@ -212,8 +227,8 @@ theorem prod_primesOverFinset_eq_prod_heightOneSpectrumPrimesOverFinset
     {M : Type*} [CommMonoid M] (f : Ideal (𝓞 K) → M) :
     ∏ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K), f 𝔭 =
       ∏ P ∈ heightOneSpectrumPrimesOverFinset K p, f P.asIdeal := by
-  rw [← map_asIdeal_heightOneSpectrumPrimesOverFinset, Finset.prod_map]
-  rfl
+  rw [← map_asIdeal_heightOneSpectrumPrimesOverFinset]
+  simp only [Finset.prod_map, Function.Embedding.coeFn_mk]
 
 end HeightOne
 
