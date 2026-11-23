@@ -127,41 +127,38 @@ theorem exists_continuous_stronglyAdapted_version_of_summable
   exact tendsto_nhds_unique (((hω.2 t).tendsto_at le_rfl).comp hns.tendsto_atTop) hsubω
 
 omit [CompleteSpace E] in
-/-- A uniformly Cauchy sequence in probability converges uniformly in probability to any
-almost surely pointwise subsequential limit on the same horizon. -/
-private lemma tendsto_uniformlyInMeasure_of_cauchy_of_subseq_tendsto_ae
-    {Y : ℝ≥0 → Ω → E} {ns : ℕ → ℕ} {T : ℝ≥0}
-    (hC : ∀ ε : ℝ, 0 < ε → ∀ δ : ℝ≥0∞, 0 < δ →
-      ∃ N : ℕ, ∀ n ≥ N, ∀ m ≥ N,
-        P {ω | ∃ t ≤ T, ε < ‖X n t ω - X m t ω‖} ≤ δ)
+/-- A filter-indexed process family uniformly close in probability to a reference sequence
+converges uniformly in probability on the same horizon to any almost surely pointwise
+subsequential limit of the reference sequence. -/
+theorem tendsto_uniformlyInMeasure_of_subseq_tendsto_ae
+    {ι : Type*} {l : Filter ι} {Z : ι → ℝ≥0 → Ω → E}
+    {Y : ℝ≥0 → Ω → E} {ns : ℕ → ℕ} {T : ℝ≥0} {ε : ℝ}
+    (hC : ∀ δ : ℝ≥0∞, 0 < δ → ∀ᶠ i in l, ∀ᶠ m in atTop,
+      P {ω | ∃ t ≤ T, ε / 2 < ‖Z i t ω - X m t ω‖} ≤ δ)
     (hns : Tendsto ns atTop atTop)
     (hlim : ∀ᵐ ω ∂P, ∀ t ≤ T,
-      Tendsto (fun k ↦ X (ns k) t ω) atTop (𝓝 (Y t ω)))
-    (ε : ℝ) (hε : 0 < ε) :
-    Tendsto (fun n ↦ P {ω | ∃ t ≤ T, ε < ‖X n t ω - Y t ω‖}) atTop (𝓝 0) := by
-  -- Pass the Cauchy bound to the limit using continuity from below of outer measure.
-  apply ENNReal.tendsto_atTop_zero.mpr
+      Tendsto (fun k ↦ X (ns k) t ω) atTop (𝓝 (Y t ω))) :
+    Tendsto (fun i ↦ P {ω | ∃ t ≤ T, ε < ‖Z i t ω - Y t ω‖}) l (𝓝 0) := by
+  -- Pass the uniform comparison to the limit using continuity from below of outer measure.
+  rw [ENNReal.tendsto_nhds_zero]
   intro δ hδ
-  obtain ⟨K, hK⟩ := hC (ε / 2) (by positivity) δ hδ
-  refine ⟨K, fun n hn ↦ ?_⟩
-  let A (k : ℕ) := {ω | ∃ t ≤ T, ε / 2 < ‖X n t ω - X (ns k) t ω‖}
+  filter_upwards [hC δ hδ] with i hi
+  obtain ⟨K, hK⟩ := eventually_atTop.1 hi
+  let A (k : ℕ) := {ω | ∃ t ≤ T, ε / 2 < ‖Z i t ω - X (ns k) t ω‖}
   let B (j : ℕ) := ⋂ k ≥ j, A k
   obtain ⟨J, hJ⟩ := eventually_atTop.1 (hns.eventually_ge_atTop K)
-  have hB : ∀ j, P (B j) ≤ δ := by
-    intro j
-    exact (measure_mono (iInter_subset_of_subset (max j J)
+  have hB : ∀ j, P (B j) ≤ δ := fun j ↦
+    (measure_mono (iInter_subset_of_subset (max j J)
       (iInter_subset_of_subset (le_max_left _ _) Subset.rfl))).trans
-      (hK n hn (ns (max j J)) (hJ _ (le_max_right _ _)))
-  have hmono : Monotone B := by
-    intro i j hij ω hω
-    exact mem_iInter₂.mpr fun k hk ↦ mem_iInter₂.mp hω k (hij.trans hk)
-  have hsub : {ω | ∃ t ≤ T, ε < ‖X n t ω - Y t ω‖} ≤ᵐ[P] ⋃ j, B j := by
-    filter_upwards [hlim] with ω hω hbad
-    obtain ⟨t, ht, herr⟩ := hbad
-    have hp := hω t ht
-    have he : ∀ᶠ k in atTop, ε / 2 < ‖X n t ω - X (ns k) t ω‖ :=
-      ((tendsto_const_nhds.sub hp).norm).eventually
-        (lt_mem_nhds (by linarith : ε / 2 < ‖X n t ω - Y t ω‖))
+      (hK (ns (max j J)) (hJ _ (le_max_right _ _)))
+  have hmono : Monotone B := fun a b hab ω hω ↦
+    mem_iInter₂.mpr fun k hk ↦ mem_iInter₂.mp hω k (hab.trans hk)
+  have hsub : {ω | ∃ t ≤ T, ε < ‖Z i t ω - Y t ω‖} ≤ᵐ[P] ⋃ j, B j := by
+    filter_upwards [hlim] with ω hω ⟨t, ht, herr⟩
+    have he : ∀ᶠ k in atTop, ε / 2 < ‖Z i t ω - X (ns k) t ω‖ :=
+      ((tendsto_const_nhds.sub (hω t ht)).norm).eventually
+        (lt_mem_nhds (by linarith [norm_nonneg (Z i t ω - Y t ω)] :
+          ε / 2 < ‖Z i t ω - Y t ω‖))
     obtain ⟨j, hj⟩ := eventually_atTop.1 he
     exact mem_iUnion.mpr ⟨j, mem_iInter₂.mpr fun k hk ↦ ⟨t, ht, hj k hk⟩⟩
   exact (measure_mono_ae hsub).trans (by rw [hmono.measure_iUnion]; exact iSup_le hB)
@@ -214,7 +211,9 @@ theorem exists_stronglyAdapted_tendsto_uniformlyInMeasure_of_cauchy [IsFiniteMea
     (fun k ↦ hX (ns k)) (fun k ↦ hc (ns k)) hr herr
   refine ⟨Y, hY, ?_, ns, hns, hlim⟩
   intro T ε hε
-  exact tendsto_uniformlyInMeasure_of_cauchy_of_subseq_tendsto_ae (hC T)
-    hns.tendsto_atTop (hlim.mono fun ω hω t ht ↦ (hω.2 T).tendsto_at ht) ε hε
+  exact tendsto_uniformlyInMeasure_of_subseq_tendsto_ae
+    (fun δ hδ ↦ let ⟨N, hN⟩ := hC T (ε / 2) (half_pos hε) δ hδ
+      eventually_atTop.2 ⟨N, fun n hn ↦ eventually_atTop.2 ⟨N, fun m hm ↦ hN n hn m hm⟩⟩)
+    hns.tendsto_atTop (hlim.mono fun ω hω t ht ↦ (hω.2 T).tendsto_at ht)
 
 end TauCeti.Probability

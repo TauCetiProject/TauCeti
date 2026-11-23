@@ -22,11 +22,11 @@ import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file identifies
 `TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
 (`ae_eq_l2Integral`) and deduces zero expectation (`integral_eq_zero`), covariance
-(`integral_mul`), increment square integrability (`memLp_sub`), unconditional and event-wise
-increment Itô isometries (`integral_sub_sq_of_memLp`, `setIntegral_sub_sq_of_memLp`),
-finite-horizon `L²(P)` continuity (`continuous_toLp`), and for deterministic `L²` integrands
-identification with `wienerIntegral` (`ae_eq_wienerIntegral`) and its centered Gaussian law
-(`hasLaw_gaussianReal`).
+(`integral_mul`), increment square integrability (`memLp_sub`, `memLp_sub_restrict`),
+unconditional and event-wise increment Itô isometries (`integral_sub_sq_of_memLp`,
+`setIntegral_sub_sq_of_memLp`), finite-horizon `L²(P)` continuity (`continuous_toLp`), and for
+deterministic `L²` integrands identification with `wienerIntegral` (`ae_eq_wienerIntegral`) and
+its centered Gaussian law (`hasLaw_gaussianReal`).
 
 ## References
 
@@ -138,14 +138,27 @@ private theorem isItoIntegral_ite_lt_indicator_memLp (hW : IsFilteredPreBrownian
     with p hp
   by_cases hs : s < p.1 <;> by_cases hpA : p.2 ∈ A <;> simp [Function.uncurry, hs, hp.2, hpA]
 
+/-- For `s ≤ t` and an event `A ∈ ℱ s`, if `H` has finite expected square energy on `(s, t] × A`,
+then the increment `I t - I s` is square integrable on `A`. -/
+theorem memLp_sub_restrict (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t)
+    {A : Set Ω} (hA : MeasurableSet[ℱ s] A)
+    (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ A))) :
+    MemLp (I t - I s) 2 (P.restrict A) := by
+  obtain ⟨hcut, hH_mem⟩ := isItoIntegral_ite_lt_indicator_memLp hW hI hA hH
+  refine (memLp_indicator_iff_restrict (ℱ.le s A hA).nullMeasurableSet).1 ?_
+  convert hcut.memLp hW hH_mem using 1
+  ext ω
+  by_cases hω : ω ∈ A <;> simp [hω, min_eq_left hst]
+
 /-- For `s ≤ t`, if `H` has finite expected square energy on `(s, t]`, then the increment
 `I t - I s` is square integrable. -/
 theorem memLp_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t)
     (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ Set.univ))) :
     MemLp (I t - I s) 2 P := by
-  obtain ⟨hcut, hH_mem⟩ := isItoIntegral_ite_lt_indicator_memLp hW hI MeasurableSet.univ hH
-  simpa only [indicator_univ, one_mul, min_eq_left hst, Pi.sub_def] using hcut.memLp hW hH_mem
+  simpa only [Measure.restrict_univ] using
+    hI.memLp_sub_restrict hW hst (MeasurableSet.univ : MeasurableSet[ℱ s] Set.univ) hH
 
 /-- **Event-wise Itô increment `L²` isometry.** For `s ≤ t` and an event `A ∈ ℱ s`, if `H` has
 finite expected square energy on `(s, t] × A`, then the squared increment integrated over `A` equals

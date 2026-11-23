@@ -18,6 +18,8 @@ import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Martingale.LpLimit
+import TauCeti.Probability.Martingale.MaximalInequality.Lp
+import TauCeti.Probability.Process.UniformLimit
 import TauCeti.Topology.Order.LeftRight
 
 /-!
@@ -35,6 +37,10 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   `TauCeti.Probability.IsItoIntegral.integral_sq`: whenever `H` is square integrable on
   `(0, t] × Ω`, every Itô integral `I` of `H` is square integrable at `t`, with
   `E[I_t²] = E ∫_(0,t] H_s² ds`.
+* `TauCeti.Probability.IsItoIntegral.tendsto_eLpNorm_iSup_eNorm_simpleGains_sub`: when `W`
+  has almost surely continuous paths and `H` is square integrable on `(0, T] × Ω`, elementary
+  gains of simple holdings converging to `H` in `L²((timeMeasure T).prod P)` converge uniformly
+  on `[0, T]` in `L²(P)` to `I`.
 * `TauCeti.Probability.IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt`: when `W`
   has almost surely continuous paths, the elementary gains of any simple holdings converging to `H`
   in pathwise square energy in probability on `(0, T]` converge uniformly on `[0, T]` in outer
@@ -179,53 +185,62 @@ theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
   exact hZ.congr hIa fun t ↦ (hIZ t).1.symm
 
 /-- Restricting an integrand in `L²((timeMeasure t).prod P)` to `(0, t]` produces a
-`BrownianIntegrable` integrand and preserves the Itô integral value at `t`. -/
-private theorem IsItoIntegral.exists_martingale_ae_eq_of_memLp
-    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
-    {t : ℝ≥0} (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    MemLp (I t) 2 P ∧
-      eLpNorm (I t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
+`BrownianIntegrable` integrand and preserves the Itô integral up to `t`. -/
+private theorem IsItoIntegral.ite_le_brownianIntegrable
+    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P) (t : ℝ≥0)
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    IsItoIntegral ℱ P W (H - fun s ω ↦ if t < s then H s ω else 0)
+        (I - fun s ω ↦ I s ω - I (min t s) ω) ∧
+      BrownianIntegrable ℱ P (H - fun s ω ↦ if t < s then H s ω else 0) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   let H_t : ℝ≥0 → Ω → ℝ := H - fun s ω ↦ if t < s then H s ω else 0
   let I_t : ℝ≥0 → Ω → ℝ := I - fun s ω ↦ I s ω - I (min t s) ω
   have hIt_ito : IsItoIntegral ℱ P W H_t I_t := by
     simpa only [one_mul] using
       hI.sub (hI.ite_lt_mul hW t (ξ := fun _ ↦ 1) stronglyMeasurable_const)
-  have hHt_bi : BrownianIntegrable ℱ P H_t := by
-    refine ⟨hIt_ito.isStronglyPredictable, fun S ↦ ?_⟩
-    have hm := (hIt_ito.isStronglyPredictable.mono ℱ.predictable_le_prod).aestronglyMeasurable
-      (μ := (timeMeasure S).prod P)
-    rw [hm.memLp_two_iff_lintegral_enorm_sq_lt_top, lintegral_prod _ (hm.eNorm.pow_const 2)]
-    calc
-      _ = ∫⁻ s, ∫⁻ ω, (if s ≤ t then ‖H s ω‖ₑ ^ 2 else 0) ∂P ∂timeMeasure S := by
-        refine lintegral_congr fun s ↦ lintegral_congr fun ω ↦ ?_
-        simp only [Function.uncurry, H_t, Pi.sub_apply]
-        by_cases hs : t < s
-        · simp [hs, hs.not_ge]
-        · simp [hs, not_lt.1 hs]
-      _ = ∫⁻ s in Ioc 0 t, ∫⁻ ω, ‖H s ω‖ₑ ^ 2 ∂P ∂timeMeasure S := by
-        rw [← lintegral_indicator measurableSet_Ioc]
-        refine lintegral_congr_ae ((ae_mem_Ioc_timeMeasure S).mono fun s hs ↦ ?_)
-        by_cases hle : s ≤ t
-        · simp [hle, hs.1]
-        · simp [hle]
-      _ = ∫⁻ s, ∫⁻ ω, ‖H s ω‖ₑ ^ 2 ∂P ∂timeMeasure (min t S) := by
-        rw [timeMeasure_restrict]
-      _ ≤ ∫⁻ s, ∫⁻ ω, ‖H s ω‖ₑ ^ 2 ∂P ∂timeMeasure t :=
-        lintegral_mono' (timeMeasure_mono (min_le_left t S)) le_rfl
-      _ = ∫⁻ p, ‖H p.1 p.2‖ₑ ^ 2 ∂(timeMeasure t).prod P :=
-        (lintegral_prod _ (hH.aestronglyMeasurable.eNorm.pow_const 2)).symm
-      _ < ∞ := hH.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hH
+  refine ⟨hIt_ito, hIt_ito.isStronglyPredictable, fun S ↦ ?_⟩
+  have hm := (hIt_ito.isStronglyPredictable.mono ℱ.predictable_le_prod).aestronglyMeasurable
+    (μ := (timeMeasure S).prod P)
+  rw [hm.memLp_two_iff_lintegral_enorm_sq_lt_top, lintegral_prod _ (hm.eNorm.pow_const 2)]
+  calc
+    _ = ∫⁻ s, ∫⁻ ω, (if s ≤ t then ‖H s ω‖ₑ ^ 2 else 0) ∂P ∂timeMeasure S := by
+      refine lintegral_congr fun s ↦ lintegral_congr fun ω ↦ ?_
+      simp only [Function.uncurry, H_t, Pi.sub_apply]
+      by_cases hs : t < s
+      · simp [hs, hs.not_ge]
+      · simp [hs, not_lt.1 hs]
+    _ = ∫⁻ s in Ioc 0 t, ∫⁻ ω, ‖H s ω‖ₑ ^ 2 ∂P ∂timeMeasure S := by
+      rw [← lintegral_indicator measurableSet_Ioc]
+      refine lintegral_congr_ae ((ae_mem_Ioc_timeMeasure S).mono fun s hs ↦ ?_)
+      by_cases hle : s ≤ t
+      · simp [hle, hs.1]
+      · simp [hle]
+    _ = ∫⁻ s, ∫⁻ ω, ‖H s ω‖ₑ ^ 2 ∂P ∂timeMeasure (min t S) := by
+      rw [timeMeasure_restrict]
+    _ ≤ ∫⁻ s, ∫⁻ ω, ‖H s ω‖ₑ ^ 2 ∂P ∂timeMeasure t :=
+      lintegral_mono' (timeMeasure_mono (min_le_left t S)) le_rfl
+    _ = ∫⁻ p, ‖H p.1 p.2‖ₑ ^ 2 ∂(timeMeasure t).prod P :=
+      (lintegral_prod _ (hH.aestronglyMeasurable.eNorm.pow_const 2)).symm
+    _ < ∞ := hH.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hH
+
+/-- Restricting an integrand in `L²((timeMeasure t).prod P)` to `(0, t]` produces a
+`BrownianIntegrable` integrand and preserves the Itô integral value at `t`. -/
+private theorem IsItoIntegral.exists_martingale_ae_eq_of_memLp
+    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
+    {t : ℝ≥0} (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    MemLp (I t) 2 P ∧
+      eLpNorm (I t) 2 P = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
+  obtain ⟨hIt_ito, hHt_bi⟩ := hI.ite_le_brownianIntegrable hW t hH
   obtain ⟨Z, -, hIZ⟩ := hIt_ito.exists_martingale_ae_eq hW hHt_bi
-  have hIt_eq : I_t t = I t := by ext ω; simp [I_t]
+  have hIt_eq : (I - fun s ω ↦ I s ω - I (min t s) ω) t = I t := by ext ω; simp
   have hIZt := hIZ t
   rw [hIt_eq] at hIZt
-  have hH_eq : eLpNorm (Function.uncurry H_t) 2 ((timeMeasure t).prod P) =
-      eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
+  have hH_eq : eLpNorm (Function.uncurry (H - fun s ω ↦ if t < s then H s ω else 0)) 2
+      ((timeMeasure t).prod P) = eLpNorm (Function.uncurry H) 2 ((timeMeasure t).prod P) := by
     refine eLpNorm_congr_ae ?_
     filter_upwards [Measure.quasiMeasurePreserving_fst.tendsto_ae (ae_mem_Ioc_timeMeasure t)]
       with p hp
-    simp [Function.uncurry, H_t, not_lt.2 hp.2]
+    simp [Function.uncurry, not_lt.2 hp.2]
   exact ⟨hIZt.2.1.ae_eq hIZt.1.symm, (eLpNorm_congr_ae hIZt.1).trans (hIZt.2.2.trans hH_eq)⟩
 
 /-- An Itô integral of an integrand with finite expected square energy on `(0, t]` is square
@@ -257,27 +272,147 @@ theorem IsItoIntegral.integral_sq (hI : IsItoIntegral ℱ P W H I)
     ← integral_norm_sq_eq_toReal_eLpNorm_sq hH.aestronglyMeasurable, Real.norm_eq_abs, sq_abs] at h
   exact h
 
-/-- **Finite-horizon uniform convergence of elementary gains in outer probability.** Against an
-almost surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple
-holdings converging to `H` in pathwise square energy in probability on `(0, T]` has elementary
-gains converging uniformly on `[0, T]` in outer probability to every Itô integral `I` of `H`. -/
-theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
+/-- A simple holding in `L²((timeMeasure T).prod P)` agrees on `[0, T]` with the simple gains of
+a clipped holding whose heights are all square integrable, hence a martingale. -/
+private theorem exists_martingale_simpleGains_eq_on_Iic
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
+    {T : ℝ≥0} {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hK : MemLp (Function.uncurry (Finance.simpleHolding τ n a)) 2 ((timeMeasure T).prod P)) :
+    ∃ M : ℝ≥0 → Ω → ℝ, Martingale M ℱ P ∧ (∀ᵐ ω ∂P, Continuous fun t ↦ M t ω) ∧
+      ∀ t ≤ T, ∀ ω, M t ω = Finance.simpleGains τ n a W t ω := by
+  classical
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let a' (j : ℕ) : Ω → ℝ := if min (τ j) T < min (τ (j + 1)) T then a j else 0
+  have ha' (j : ℕ) (hj : j < n) : StronglyMeasurable[ℱ (τ j)] (a' j) := by
+    dsimp only [a']
+    split_ifs
+    · exact ha j hj
+    · exact stronglyMeasurable_zero
+  have ha'₂ (j : ℕ) (hj : j < n) : MemLp (a' j) 2 P := by
+    dsimp only [a']; split_ifs with hlt
+    · have hτj : τ j < T := lt_of_not_ge fun hle ↦ hlt.not_ge <| by
+        simpa only [min_eq_right hle] using min_le_right (τ (j + 1)) T
+      have hne : timeMeasure T (Ioc (τ j) (τ (j + 1))) ≠ 0 := by
+        rw [timeMeasure_Ioc]
+        exact (ENNReal.ofReal_pos.2 (sub_pos.2 (by
+          exact_mod_cast (min_eq_left hτj.le ▸ hlt)))).ne'
+      have hsec : ∀ᵐ s ∂timeMeasure T, MemLp (fun ω ↦ Finance.simpleHolding τ n a s ω) 2 P := by
+        simpa only [Function.uncurry_apply_pair] using hK.ae_memLp_prod_right
+      have hex : ∃ s ∈ Ioc (τ j) (τ (j + 1)),
+          MemLp (fun ω ↦ Finance.simpleHolding τ n a s ω) 2 P := by
+        by_contra hnot; push Not at hnot
+        exact hne (measure_mono_null (fun s hs ↦ hnot s hs) (ae_iff.1 hsec))
+      obtain ⟨s, hs, hs_mem⟩ := hex
+      exact hs_mem.ae_eq (.of_forall fun ω ↦ Finance.simpleHolding_of_mem_Ioc hτ hj hs ω)
+    · exact MemLp.zero
+  refine ⟨Finance.simpleGains τ n a' W, hW.martingale.simpleGains hτ ha' fun j hj t ↦ ?_,
+    hWc.mono fun _ hω ↦ Finance.continuous_simpleGains hω, fun t ht ω ↦ ?_⟩
+  · by_cases hjt : τ j ≤ t
+    · change Integrable (fun ω ↦ a' j ω * (W (min (τ (j + 1)) t) ω - W (min (τ j) t) ω)) P
+      rw [min_eq_left hjt]
+      exact (hW.memLp_mul_sub (le_min (hτ hj.le hj (Nat.le_succ j)) hjt)
+        (ha' j hj) (ha'₂ j hj)).integrable one_le_two
+    · have htj : t ≤ τ j := (not_le.1 hjt).le
+      simp only [min_eq_right htj, min_eq_right (htj.trans (hτ hj.le hj (Nat.le_succ j))),
+        sub_self, mul_zero]
+      exact integrable_zero _ _ _
+  · simp only [Finance.simpleGains_def]
+    refine Finset.sum_congr rfl fun j hj ↦ ?_
+    have hj' := Finset.mem_range.1 hj
+    dsimp only [a']; split_ifs with hlt
+    · rfl
+    · have heq : min (τ j) T = min (τ (j + 1)) T :=
+        le_antisymm (min_le_min_right T (hτ hj'.le hj' (Nat.le_succ j))) (not_lt.1 hlt)
+      have hmin : min (τ j) t = min (τ (j + 1)) t := calc
+        min (τ j) t = min (min (τ j) T) t := by rw [min_assoc, min_eq_right ht]
+        _ = min (min (τ (j + 1)) T) t := by rw [heq]
+        _ = min (τ (j + 1)) t := by rw [min_assoc, min_eq_right ht]
+      simp [hmin]
+
+/-- **Finite-horizon uniform `L²` convergence of elementary approximants.** Against an almost
+surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple holdings
+converging in `L²((timeMeasure T).prod P)` to a square-integrable integrand `H` has elementary
+gains whose running supremum error on `[0, T]` converges to zero in `L²(P)`. -/
+theorem IsItoIntegral.tendsto_eLpNorm_iSup_eNorm_simpleGains_sub
     (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
     (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
-    {ι : Type*} {l : Filter ι} {T : ℝ≥0} {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
+    {ι : Type*} {l : Filter ι} {T : ℝ≥0}
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P))
+    {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
     (hτ : ∀ i, MonotoneOn (τ i) (Iic (n i)))
     (ha : ∀ i j, j < n i → StronglyMeasurable[ℱ (τ i j)] (a i j))
-    (hE : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun i ↦ P {ω | δ ≤
-      ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure T}) l (𝓝 0))
-    {ε : ℝ≥0} (hε : 0 < ε) :
-    Tendsto (fun i ↦ P {ω | ∃ t ≤ T,
-      (ε : ℝ) < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - I t ω‖}) l (𝓝 0) := by
+    (hlim : Tendsto (fun i ↦ eLpNorm
+      (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i)) - Function.uncurry H) 2
+        ((timeMeasure T).prod P)) l (𝓝 0)) :
+    Tendsto (fun i ↦ eLpNorm (fun ω ↦
+      ⨆ t ≤ T, ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - I t ω‖ₑ) 2 P) l (𝓝 0) := by
+  classical
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨hIt_ito, hHt_bi⟩ := hI.ite_le_brownianIntegrable hW T hH
+  obtain ⟨Y, hY_ito, -, hY_mart⟩ := hHt_bi.exists_isItoIntegral hW hWc
+  have hIY_ind : (I - fun s ω ↦ I s ω - I (min T s) ω) ≡ᵐ[P] Y :=
+    isItoIntegral_unique hW hIt_ito hY_ito
+  have hIY : ∀ᵐ ω ∂P, ∀ t ≤ T, I t ω = Y t ω :=
+    hIY_ind.mono fun ω hω t ht ↦ by simpa [ht] using hω t
+  have hMem : ∀ i, ∃ M : ℝ≥0 → Ω → ℝ, Martingale M ℱ P ∧ (∀ᵐ ω ∂P, Continuous fun t ↦ M t ω) ∧
+      (MemLp (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i))) 2
+          ((timeMeasure T).prod P) →
+        ∀ t ≤ T, ∀ ω, M t ω = Finance.simpleGains (τ i) (n i) (a i) W t ω) := fun i ↦ by
+    by_cases hK : MemLp (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i))) 2
+        ((timeMeasure T).prod P)
+    · obtain ⟨M, hM, hMc, hMeq⟩ := exists_martingale_simpleGains_eq_on_Iic hW hWc (hτ i) (ha i) hK
+      exact ⟨M, hM, hMc, fun _ ↦ hMeq⟩
+    · exact ⟨0, martingale_zero _ ℱ P, .of_forall fun _ ↦ continuous_const, fun h ↦ absurd h hK⟩
+  choose M hM_mart hM_cont hM_eq using hMem
+  have hterm : Tendsto (fun i ↦ eLpNorm (M i T - Y T) 2 P) l (𝓝 0) := by
+    refine hlim.congr' ?_
+    filter_upwards [hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)] with i hi
+    have hsub_mem : MemLp (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i)) -
+        Function.uncurry H) 2 ((timeMeasure T).prod P) := hi
+    have hK_mem : MemLp (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i))) 2
+        ((timeMeasure T).prod P) := by
+      simpa only [sub_add_cancel] using hsub_mem.add hH
+    have hGI : eLpNorm (Finance.simpleGains (τ i) (n i) (a i) W T - I T) 2 P =
+        eLpNorm (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i)) -
+          Function.uncurry H) 2 ((timeMeasure T).prod P) :=
+      ((isItoIntegral_simpleGains hWc (hτ i) (ha i)).sub hI).eLpNorm_eq hW hsub_mem
+    refine hGI.symm.trans (eLpNorm_congr_ae ?_)
+    filter_upwards [hIY] with ω hω
+    simp [hM_eq i hK_mem T le_rfl ω, hω T le_rfl]
+  have hdoob := MeasureTheory.Martingale.tendsto_eLpNorm_iSup_eNorm_sub hY_mart hM_mart
+    (hY_ito.ae_continuous.mono fun _ hc t _ ↦ hc.continuousAt.continuousWithinAt)
+    (fun i ↦ (hM_cont i).mono fun _ hc t _ ↦ hc.continuousAt.continuousWithinAt)
+    (by norm_num : (1 : ℝ≥0∞) < 2) (by norm_num) hterm
+  refine hdoob.congr' ?_
+  filter_upwards [hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)] with i hi
+  have hsub_mem : MemLp (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i)) -
+      Function.uncurry H) 2 ((timeMeasure T).prod P) := hi
+  have hK_mem : MemLp (Function.uncurry (Finance.simpleHolding (τ i) (n i) (a i))) 2
+      ((timeMeasure T).prod P) := by
+    simpa only [sub_add_cancel] using hsub_mem.add hH
+  refine eLpNorm_congr_ae (hIY.mono fun ω hω ↦ ?_)
+  refine iSup_congr fun t ↦ iSup_congr fun ht ↦ ?_
+  rw [hM_eq i hK_mem t ht ω, hω t ht]
+
+/-- Extract an approximating sequence of simple holdings whose elementary gains have a subsequence
+converging almost surely pointwise on `[0, T]` to the Itô integral `I`. -/
+private theorem IsItoIntegral.exists_approx_subseq_tendsto_ae
+    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) (T : ℝ≥0) :
+    ∃ (n₂ : ℕ → ℕ) (τ₂ : ℕ → ℕ → ℝ≥0) (a₂ : ℕ → ℕ → Ω → ℝ) (k : ℕ → ℕ),
+      (∀ m, MonotoneOn (τ₂ m) (Iic (n₂ m))) ∧
+      (∀ m j, j < n₂ m → StronglyMeasurable[ℱ (τ₂ m j)] (a₂ m j)) ∧
+      (∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun m ↦ P {ω | ε ≤
+        ∫⁻ s, ‖Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m) s ω - H s ω‖ₑ ^ 2
+          ∂timeMeasure T}) atTop (𝓝 0)) ∧
+      Tendsto k atTop atTop ∧
+      ∀ᵐ ω ∂P, ∀ t ≤ T, Tendsto (fun m ↦
+        Finance.simpleGains (τ₂ (k m)) (n₂ (k m)) (a₂ (k m)) W t ω) atTop (𝓝 (I t ω)) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, _⟩ := hI.exists_approx T
   let G₂ (m : ℕ) := Finance.simpleGains (τ₂ m) (n₂ m) (a₂ m) W
   let K₂ (m : ℕ) := Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m)
-  -- Step 1: Extract a rapidly uniformly Cauchy subsequence of `G₂` on `[0, T]`.
   have hcauchy (m : ℕ) : ∃ N, ∀ p ≥ N, ∀ q ≥ N,
       P {ω | ∃ t ≤ T, (2⁻¹ ^ m : ℝ) < ‖G₂ p t ω - G₂ q t ω‖} ≤ (2⁻¹ ^ m : ℝ≥0∞) := by
     have hlim : Tendsto (fun p : ℕ × ℕ ↦ P {ω | ∃ t ≤ T, (2⁻¹ ^ m : ℝ) <
@@ -297,17 +432,14 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
           (fun _ hγ ↦ (hE₂ _ hγ).comp tendsto_fst)
           (fun _ hγ ↦ (hE₂ _ hγ).comp tendsto_snd) (ENNReal.ofReal_pos.2 hδ))
         (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ (hω : ENNReal.ofReal δ < _) ↦ hω.le
-    obtain ⟨U, hU, hUU⟩ :=
-      mem_prod_self_iff.1 (hlim (gt_mem_nhds (show (0 : ℝ≥0∞) < 2⁻¹ ^ m from
-        ENNReal.pow_pos (by norm_num) m)))
+    obtain ⟨U, hU, hUU⟩ := mem_prod_self_iff.1 (hlim (gt_mem_nhds
+      (show (0 : ℝ≥0∞) < 2⁻¹ ^ m from ENNReal.pow_pos (by norm_num) m)))
     obtain ⟨N, hN⟩ := mem_atTop_sets.1 hU
     exact ⟨N, fun p hp q hq ↦ (hUU (show (p, q) ∈ U ×ˢ U from ⟨hN p hp, hN q hq⟩)).le⟩
   choose N hN using hcauchy
   let k : ℕ → ℕ := Nat.rec (N 0) fun m km ↦ max (km + 1) (N (m + 1))
   have hk_ge (m : ℕ) : N m ≤ k m := by
-    cases m with
-    | zero => exact le_rfl
-    | succ m => exact le_max_right _ _
+    cases m with | zero => exact le_rfl | succ m => exact le_max_right _ _
   have hk_succ (m : ℕ) : N m ≤ k (m + 1) :=
     (hk_ge m).trans (Nat.le_succ _ |>.trans (le_max_left _ _))
   have hk_mono : StrictMono k := strictMono_nat_of_lt_succ fun m ↦
@@ -319,7 +451,6 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
     have hm' : ¬ ∃ t ≤ T, (2⁻¹ ^ m : ℝ) < ‖G₂ (k (m + 1)) t ω - G₂ (k m) t ω‖ := hm
     push Not at hm'
     exact hm' t ht
-  -- Step 2: Identify the uniform limit with `I` on `[0, T]` via a countable dense set `S`.
   obtain ⟨S, hSc, hST, hS⟩ := TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
   have hW_meas : ∀ s, AEStronglyMeasurable (W s) P :=
     fun s ↦ ((hW.martingale.stronglyAdapted s).mono (ℱ.le s)).aestronglyMeasurable
@@ -344,8 +475,7 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
           Nat.sub_add_cancel (le_trans (Nat.le_add_left M K) hq)] using
           hK (p - M) (Nat.le_sub_of_add_le hp) (q - M) (Nat.le_sub_of_add_le hq)⟩
     have hlim_in : TendstoInMeasure P (fun m ↦ G₂ (k m) s) atTop (I s) :=
-      (hI.tendstoInMeasure_simpleGains_of_le hW (hST hs) hτ₂ ha₂ hE₂).comp
-        hk_mono.tendsto_atTop
+      (hI.tendstoInMeasure_simpleGains_of_le hW (hST hs) hτ₂ ha₂ hE₂).comp hk_mono.tendsto_atTop
     let L (ω : Ω) := limUnder atTop fun m ↦ G₂ (k m) s ω
     have hae_L : ∀ᵐ ω ∂P, Tendsto (fun m ↦ G₂ (k m) s ω) atTop (𝓝 (L ω)) :=
       hcau.mono fun ω hω ↦ hω.tendsto_limUnder
@@ -353,176 +483,79 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
       (tendstoInMeasure_of_tendsto_ae (fun m ↦ hG₂_meas _ s) hae_L)
     filter_upwards [hae_L, hIL] with ω hω hωL
     exact hωL ▸ hω
-  have hsub_lim (η : ℝ) (hη : 0 < η) :
-      Tendsto (fun m ↦ P {ω | ∃ t ≤ T, η < ‖G₂ (k m) t ω - I t ω‖}) atTop (𝓝 0) := by
-    have hunif : ∀ᵐ ω ∂P, ∀ᶠ m in atTop, ∀ s ∈ S, ‖G₂ (k m) s ω - I s ω‖ ≤ η := by
-      filter_upwards [hbc, hS_lim] with ω hωbc hωS
-      obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hωbc
-      obtain ⟨M₁, hM₁⟩ := exists_nat_one_div_lt (by positivity : 0 < η / 2)
-      refine eventually_atTop.2 ⟨max M₀ M₁, fun m hm s hs ↦ ?_⟩
-      have hm₀ : M₀ ≤ m := (le_max_left _ _).trans hm
-      have hm₁ : M₁ ≤ m := (le_max_right _ _).trans hm
-      have hdiff (p : ℕ) (hmp : m ≤ p) : ‖G₂ (k p) s ω - G₂ (k m) s ω‖ ≤ 2 * (2⁻¹ ^ m : ℝ) := by
-        have htele : G₂ (k p) s ω - G₂ (k m) s ω =
-            ∑ j ∈ Finset.Ico m p, (G₂ (k (j + 1)) s ω - G₂ (k j) s ω) := by
-          calc
-            G₂ (k p) s ω - G₂ (k m) s ω
-                = G₂ (k (m + (p - m))) s ω - G₂ (k (m + 0)) s ω := by
-                  rw [Nat.add_sub_of_le hmp, add_zero]
-            _ = ∑ i ∈ Finset.range (p - m), (G₂ (k (m + (i + 1))) s ω - G₂ (k (m + i)) s ω) :=
-                  (Finset.sum_range_sub (fun i ↦ G₂ (k (m + i)) s ω) (p - m)).symm
-            _ = ∑ j ∈ Finset.Ico m p, (G₂ (k (j + 1)) s ω - G₂ (k j) s ω) := by
-                  rw [Finset.sum_Ico_eq_sum_range]
-                  refine Finset.sum_congr rfl fun i _ ↦ by rw [Nat.add_assoc]
-        rw [htele]
-        calc
-          ‖∑ j ∈ Finset.Ico m p, (G₂ (k (j + 1)) s ω - G₂ (k j) s ω)‖
-              ≤ ∑ j ∈ Finset.Ico m p, ‖G₂ (k (j + 1)) s ω - G₂ (k j) s ω‖ :=
-            norm_sum_le _ _
-          _ ≤ ∑ j ∈ Finset.Ico m p, (2⁻¹ ^ j : ℝ) :=
-            Finset.sum_le_sum fun j hj ↦
-              hM₀ j (hm₀.trans (Finset.mem_Ico.1 hj).1) s (hST hs)
-          _ = (2⁻¹ ^ m : ℝ) * ∑ j ∈ Finset.range (p - m), (2⁻¹ ^ j : ℝ) := by
-            rw [Finset.sum_Ico_eq_sum_range, Finset.mul_sum]
-            refine Finset.sum_congr rfl fun j _ ↦ by rw [pow_add]
-          _ ≤ (2⁻¹ ^ m : ℝ) * 2 :=
-            mul_le_mul_of_nonneg_left (by simpa only [one_div] using sum_geometric_two_le (p - m))
-              (by positivity)
-          _ = 2 * (2⁻¹ ^ m : ℝ) := mul_comm _ _
-      have hlim_norm : Tendsto (fun p ↦ ‖G₂ (k p) s ω - G₂ (k m) s ω‖) atTop
-          (𝓝 ‖I s ω - G₂ (k m) s ω‖) :=
-        ((hωS s hs).sub tendsto_const_nhds).norm
-      have hbound : ‖G₂ (k m) s ω - I s ω‖ ≤ 2 * (2⁻¹ ^ m : ℝ) := by
-        rw [norm_sub_rev]
-        exact le_of_tendsto hlim_norm (eventually_atTop.2 ⟨m, hdiff⟩)
-      have hpow : (2⁻¹ ^ m : ℝ) ≤ 1 / ((m : ℝ) + 1) := by
-        rw [inv_pow, one_div]
-        gcongr
-        exact_mod_cast Nat.lt_two_pow_self (n := m)
-      have hsmall : 2 * (2⁻¹ ^ m : ℝ) < η := by
-        calc
-          2 * (2⁻¹ ^ m : ℝ) ≤ 2 * (1 / ((m : ℝ) + 1)) := by gcongr
-          _ ≤ 2 * (1 / ((M₁ : ℝ) + 1)) := by gcongr
-          _ < 2 * (η / 2) := by gcongr
-          _ = η := mul_div_cancel₀ η two_ne_zero
-      exact hbound.trans hsmall.le
-    let A (m : ℕ) : Set Ω := ⋃ j ≥ m, ⋃ s ∈ S, {ω | η < ‖G₂ (k j) s ω - I s ω‖}
-    have hA_meas (m : ℕ) : NullMeasurableSet (A m) P :=
-      .iUnion fun j ↦ .iUnion fun _ ↦ .biUnion hSc fun s _ ↦
-        nullMeasurableSet_lt aemeasurable_const
-          ((hG₂_meas (k j) s).sub (hI.aestronglyMeasurable hW_meas s)).norm.aemeasurable
-    have hA_anti : Antitone A := fun m₁ m₂ hm ↦ iUnion₂_mono' fun j hj ↦ ⟨j, hm.trans hj, le_rfl⟩
-    have hA_null : P (⋂ m, A m) = 0 := by
-      refine measure_mono_null (t := {ω | ¬ ∀ᶠ m in atTop, ∀ s ∈ S, ‖G₂ (k m) s ω - I s ω‖ ≤ η})
-        (fun ω hω hunifω ↦ ?_) (ae_iff.1 hunif)
-      obtain ⟨M, hM⟩ := eventually_atTop.1 hunifω
-      obtain ⟨j, hj, s, hs, hlt⟩ := by
-        simpa only [A, mem_iUnion, mem_ofPred_eq] using mem_iInter.1 hω M
-      exact (hM j hj s hs).not_gt hlt
-    have hA_lim : Tendsto (fun m ↦ P (A m)) atTop (𝓝 0) :=
-      hA_null ▸ tendsto_measure_iInter_atTop hA_meas hA_anti ⟨0, measure_ne_top P _⟩
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hA_lim (fun _ ↦ zero_le)
-      fun m ↦ measure_mono_ae ?_
-    filter_upwards [hWc, hI.ae_continuous] with ω hωW hωI ⟨t, ht, hlt⟩
-    have hcont : Continuous fun u ↦ ‖G₂ (k m) u ω - I u ω‖ :=
-      ((Finance.continuous_simpleGains hωW).sub hωI).norm
-    obtain ⟨s, hs, hlt'⟩ := hS (fun u _ ↦ hcont.continuousAt.continuousWithinAt) ht hlt
-    exact mem_iUnion₂.2 ⟨m, le_rfl, mem_iUnion₂.2 ⟨s, hs, hlt'⟩⟩
-  -- Step 3: Approximate `I` by `G₂ (k m)` uniformly on `[0, T]`, and compare `G i` to `G₂ (k m)`.
-  rw [ENNReal.tendsto_nhds_zero]
-  intro c hc
-  let c' : ℝ≥0∞ := min c 1
-  have hc'0 : 0 < c' := lt_min hc one_pos
-  have hc'top : c' ≠ ∞ := (min_le_right c 1 |>.trans_lt ENNReal.one_lt_top).ne
-  have hc'4 : 0 < c' / 4 := ENNReal.div_pos hc'0.ne' (by norm_num)
-  let ε₂ : ℝ := (ε : ℝ) / 2
-  have hε₂ : 0 < ε₂ := half_pos hε
-  let γ : ℝ := c'.toReal * ε₂ ^ 2 / 4
-  have hγ : 0 < γ := by
-    have : 0 < c'.toReal := ENNReal.toReal_pos hc'0.ne' hc'top
-    positivity
-  let γ' : ℝ≥0∞ := ENNReal.ofReal γ / 4
-  have hγ' : 0 < γ' := ENNReal.div_pos (ENNReal.ofReal_pos.2 hγ).ne' (by norm_num)
-  obtain ⟨m, hm1, hm2⟩ := (((hsub_lim ε₂ hε₂).eventually (gt_mem_nhds hc'4)).and
-    (((hE₂ γ' hγ').comp hk_mono.tendsto_atTop).eventually (gt_mem_nhds hc'4))).exists
-  filter_upwards [(hE γ' hγ').eventually (gt_mem_nhds hc'4)] with i hi
-  have hsub_set : {ω | ∃ t ≤ T, (ε : ℝ) < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - I t ω‖} ⊆
-      {ω | ∃ t ≤ T, ε₂ < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - G₂ (k m) t ω‖} ∪
-        {ω | ∃ t ≤ T, ε₂ < ‖G₂ (k m) t ω - I t ω‖} := by
-    rintro ω ⟨t, ht, hlt⟩
-    by_contra hnot
-    simp only [mem_union, mem_ofPred_eq, not_or, not_exists, not_and, not_lt] at hnot
-    have htri := (norm_sub_le_norm_sub_add_norm_sub _ (G₂ (k m) t ω) _).trans
-      (add_le_add (hnot.1 t ht) (hnot.2 t ht))
-    linarith [show ε₂ + ε₂ = (ε : ℝ) by ring]
-  have henergy_set : {ω | ENNReal.ofReal γ < ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω -
-        K₂ (k m) s ω‖ₑ ^ 2 ∂timeMeasure T} ⊆
-      {ω | γ' ≤ ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-          ∂timeMeasure T} ∪
-        {ω | γ' ≤ ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T} := by
-    intro ω hω
-    by_contra hnot
-    simp only [mem_union, mem_ofPred_eq, not_or, not_le] at hnot
-    have hsm : AEMeasurable (fun s ↦ ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2) (timeMeasure T) :=
-      (((Finance.isStronglyPredictable_simpleHolding (ha₂ (k m))).stronglyMeasurable_path ω).sub
-        (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2 |>.aemeasurable
-    have hle : ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - K₂ (k m) s ω‖ₑ ^ 2
-        ∂timeMeasure T ≤
-        2 * ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T +
-          2 * ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T := by
-      rw [← mul_add]
-      refine (lintegral_congr fun s ↦ by rw [eNorm_sub_rev]).trans_le ?_
-      exact (lintegral_enorm_sub_sq_le_two_mul hsm).trans_eq (by simp only [add_comm])
-    have hlt_gam : ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - K₂ (k m) s ω‖ₑ ^ 2
-        ∂timeMeasure T < ENNReal.ofReal γ := by
-      calc
-        _ ≤ 2 * ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-              ∂timeMeasure T +
-            2 * ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T := hle
-        _ < 2 * γ' + 2 * γ' := ENNReal.add_lt_add
-          (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num) hnot.1)
-          (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num) hnot.2)
-        _ = ENNReal.ofReal γ := by
-          dsimp only [γ']
-          rw [← mul_add, ← two_mul, ← mul_assoc]
-          norm_num
-          exact ENNReal.mul_div_cancel (by norm_num) (by norm_num)
-    exact hlt_gam.not_ge (Set.mem_ofPred.1 hω).le
-  have hofReal_le : ENNReal.ofReal (γ / ε₂ ^ 2) ≤ c' / 4 := by
-    have hquot : γ / ε₂ ^ 2 = c'.toReal / 4 := by dsimp [γ]; field_simp
-    rw [hquot, ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_toReal hc'top]
-    norm_num
-  have hG_diff : P {ω | ∃ t ≤ T, ε₂ < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω -
-      G₂ (k m) t ω‖} ≤ c' / 4 +
-      (P {ω | γ' ≤ ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-          ∂timeMeasure T} +
-        P {ω | γ' ≤ ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T}) := by
-    refine le_trans ?_
-      (add_le_add hofReal_le ((measure_mono henergy_set).trans (measure_union_le _ _)))
-    simpa only [G₂, K₂, Real.norm_eq_abs] using
-      hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ i) (hτ₂ (k m))
-        (ha i) (ha₂ (k m)) T hε₂ (δ := γ)
-  have hc4_sum : c' / 4 + c' / 4 + c' / 4 + c' / 4 = c' := by
-    calc
-      c' / 4 + c' / 4 + c' / 4 + c' / 4 = (c' + c' + c' + c') / 4 := by
-        simp only [add_assoc, ENNReal.div_add_div_same]
-      _ = c' * 4 / 4 := by ring_nf
-      _ = c' := ENNReal.mul_div_cancel_right (by norm_num) (by norm_num)
-  calc
-    P {ω | ∃ t ≤ T, (ε : ℝ) < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - I t ω‖}
-        ≤ P {ω | ∃ t ≤ T, ε₂ < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - G₂ (k m) t ω‖} +
-          P {ω | ∃ t ≤ T, ε₂ < ‖G₂ (k m) t ω - I t ω‖} :=
-      (measure_mono hsub_set).trans (measure_union_le _ _)
-    _ ≤ (c' / 4 + (P {ω | γ' ≤ ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-            ∂timeMeasure T} +
-          P {ω | γ' ≤ ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T})) +
-        P {ω | ∃ t ≤ T, ε₂ < ‖G₂ (k m) t ω - I t ω‖} :=
-      add_le_add hG_diff le_rfl
-    _ ≤ c' / 4 + c' / 4 + c' / 4 + c' / 4 := by
-      have hm2' : P {ω | γ' ≤ ∫⁻ s, ‖K₂ (k m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T} ≤ c' / 4 :=
-        hm2.le
-      exact (add_le_add (add_le_add le_rfl (add_le_add hi.le hm2')) hm1.le).trans_eq
-        (by simp only [add_assoc])
-    _ ≤ c := hc4_sum.le.trans (min_le_left _ _)
+  refine ⟨n₂, τ₂, a₂, k, hτ₂, ha₂, hE₂, hk_mono.tendsto_atTop, ?_⟩
+  filter_upwards [hbc, hWc, hI.ae_continuous, hS_lim] with ω hωbc hωW hωI hωS
+  let L (t : ℝ≥0) := limUnder atTop fun m ↦ G₂ (k m) t ω
+  have hs := tendstoUniformlyOn_tsum_nat_eventually
+    (f := fun m t ↦ G₂ (k (m + 1)) t ω - G₂ (k m) t ω) (s := Iic T)
+    (by simpa only [one_div] using summable_geometric_two) hωbc
+  have hconst : TendstoUniformlyOn (fun (_ : ℕ) t ↦ G₂ (k 0) t ω)
+      (fun t ↦ G₂ (k 0) t ω) atTop (Iic T) := by
+    intro V hV; exact Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hV
+  have ht : TendstoUniformlyOn (fun m t ↦ G₂ (k m) t ω)
+      (fun t ↦ (∑' m, (G₂ (k (m + 1)) t ω - G₂ (k m) t ω)) + G₂ (k 0) t ω)
+      atTop (Iic T) := by
+    have htel (m : ℕ) (t : ℝ≥0) :
+        ∑ i ∈ Finset.range m, (G₂ (k (i + 1)) t ω - G₂ (k i) t ω) = G₂ (k m) t ω - G₂ (k 0) t ω :=
+      Finset.sum_range_sub (fun i ↦ G₂ (k i) t ω) m
+    simpa only [Pi.add_def, htel, sub_add_cancel] using hs.add hconst
+  have hL_unif : TendstoUniformlyOn (fun m t ↦ G₂ (k m) t ω) L atTop (Iic T) :=
+    ht.congr_right fun t ht' ↦ (ht.tendsto_at ht').limUnder_eq.symm
+  have hL_cont : ContinuousOn L (Iic T) :=
+    hL_unif.continuousOn
+      (Frequently.of_forall fun _ ↦ (Finance.continuous_simpleGains hωW).continuousOn)
+  intro t htT
+  have hLI : L t = I t ω := by
+    by_contra hne
+    obtain ⟨s, hs, hspos⟩ := hS (g := fun u ↦ ‖L u - I u ω‖) (fun u hu ↦
+      (((hL_cont u hu.le).mono_of_mem_nhdsWithin (nhdsWithin_le_nhds (Iic_mem_nhds hu))).sub
+        hωI.continuousAt.continuousWithinAt).norm) htT (norm_sub_pos_iff.2 hne)
+    dsimp only [L] at hspos
+    rw [(hωS s hs).limUnder_eq, sub_self, norm_zero] at hspos
+    exact lt_irrefl 0 hspos
+  exact hLI ▸ hL_unif.tendsto_at htT
+
+/-- **Finite-horizon uniform convergence of elementary gains in outer probability.** Against an
+almost surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple
+holdings converging to `H` in pathwise square energy in probability on `(0, T]` has elementary
+gains converging uniformly on `[0, T]` in outer probability to every Itô integral `I` of `H`. -/
+theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
+    (hI : IsItoIntegral ℱ P W H I) (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
+    {ι : Type*} {l : Filter ι} {T : ℝ≥0} {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
+    (hτ : ∀ i, MonotoneOn (τ i) (Iic (n i)))
+    (ha : ∀ i j, j < n i → StronglyMeasurable[ℱ (τ i j)] (a i j))
+    (hE : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun i ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T}) l (𝓝 0))
+    {ε : ℝ≥0} (hε : 0 < ε) :
+    Tendsto (fun i ↦ P {ω | ∃ t ≤ T,
+      (ε : ℝ) < ‖Finance.simpleGains (τ i) (n i) (a i) W t ω - I t ω‖}) l (𝓝 0) := by
+  obtain ⟨n₂, τ₂, a₂, k, hτ₂, ha₂, hE₂, hk, hlim_ae⟩ :=
+    hI.exists_approx_subseq_tendsto_ae hW hWc T
+  let G₂ (m : ℕ) := Finance.simpleGains (τ₂ m) (n₂ m) (a₂ m) W
+  let K₂ (m : ℕ) := Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m)
+  refine tendsto_uniformlyInMeasure_of_subseq_tendsto_ae (X := G₂) (ns := k) ?_ hk hlim_ae
+  intro δ hδ
+  have hlim : Tendsto (fun p : ι × ℕ ↦ P {ω | ∃ t ≤ T, (ε : ℝ) / 2 <
+      ‖Finance.simpleGains (τ p.1) (n p.1) (a p.1) W t ω - G₂ p.2 t ω‖})
+      (l ×ˢ atTop) (𝓝 0) := by
+    refine tendsto_measure_of_le_ofReal_div_sq_add (ε := (ε : ℝ) / 2) (fun γ hγ ↦ ?_)
+      fun γ _ p ↦ by
+        simpa only [G₂, K₂, Real.norm_eq_abs] using
+          hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ p.1) (hτ₂ p.2)
+            (ha p.1) (ha₂ p.2) T (half_pos (NNReal.coe_pos.2 hε))
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (tendsto_measure_lintegral_enorm_sub_sq (l := l ×ˢ atTop)
+        (f := fun p ↦ Finance.simpleHolding (τ p.1) (n p.1) (a p.1))
+        (g := fun p ↦ K₂ p.2) (h := fun _ ↦ H)
+        (.of_forall fun p ↦ .of_forall fun ω ↦
+          (((Finance.isStronglyPredictable_simpleHolding (ha p.1)).stronglyMeasurable_path ω).sub
+            (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
+            |>.aemeasurable)
+        (fun _ hη ↦ (hE _ hη).comp tendsto_fst)
+        (fun _ hη ↦ (hE₂ _ hη).comp tendsto_snd) (ENNReal.ofReal_pos.2 hγ))
+      (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ (hω : ENNReal.ofReal γ < _) ↦ hω.le
+  exact (ENNReal.tendsto_nhds_zero.1 hlim δ hδ).curry
 
 end TauCeti.Probability
