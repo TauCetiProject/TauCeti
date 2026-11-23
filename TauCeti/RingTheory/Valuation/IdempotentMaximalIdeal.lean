@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.Valuation.ValuationRing
@@ -19,14 +19,15 @@ Conversely, a nonzero idempotent maximal ideal cannot be finitely generated. Thi
 algebraic input for almost mathematics over nondiscrete valuation rings; no rank or
 completeness assumption is needed.
 
-For a valuation ring whose fraction field is algebraically closed the maximal ideal is always
-idempotent: every element of the maximal ideal is the square of an element of the maximal
-ideal. A nonzero such maximal ideal is therefore not finitely generated.
+Both results are stated for a nontrivial commutative ring whose elements are totally ordered by
+divisibility (a `PreValuationRing`); valuation domains are the main example. They need no domain
+assumption, so they also cover such rings with zero divisors.
 
-All results are stated for a nontrivial commutative ring whose elements are totally ordered by
-divisibility (a `PreValuationRing`); valuation domains are the main example. The first two
-results need no domain assumption, so they also cover such rings with zero divisors. The third
-requires an algebraically closed fraction field, which forces the ring to be a domain.
+Algebraic closedness produces idempotent maximal ideals. In a ring that is integrally closed in
+an algebraically closed field, every element is the square of an element, so every radical
+ideal, in particular every prime or maximal ideal, is idempotent. This applies to a valuation
+ring whose fraction field is algebraically closed, so its maximal ideal, if nonzero, is not
+finitely generated.
 
 ## References
 
@@ -71,24 +72,27 @@ theorem isIdempotentElem_maximalIdeal_iff (hne : maximalIdeal V ≠ ⊥) :
   exact Submodule.eq_bot_of_le_smul_of_le_jacobson _ _ hfg (by rw [smul_eq_mul, hi.eq])
     (ringJacobson_eq_maximalIdeal V).ge
 
-/-- The maximal ideal of a valuation ring whose fraction field `K` is algebraically closed is
-idempotent, including when the valuation ring is the field itself. -/
-theorem isIdempotentElem_maximalIdeal_of_isAlgClosed (K : Type*) [Field K] [Algebra V K]
-    [IsFractionRing V K] [IsAlgClosed K] :
-    IsIdempotentElem (maximalIdeal V) := by
-  -- `V` is a valuation domain, hence integrally closed.
-  have : IsDomain V := (IsFractionRing.injective V K).isDomain _
-  have : _root_.ValuationRing V := {}
+end TauCeti.ValuationRing
+
+namespace Ideal.IsRadical
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+
+/-- In a ring that is integrally closed in an algebraically closed field `K`, every radical ideal
+is idempotent: each of its elements is the square of an element of the ideal. This covers the
+maximal ideal of a valuation ring whose fraction field is algebraically closed. -/
+theorem isIdempotentElem_of_isAlgClosed (hI : I.IsRadical) (K : Type*) [Field K] [Algebra R K]
+    [IsIntegrallyClosedIn R K] [IsAlgClosed K] : IsIdempotentElem I := by
   apply le_antisymm Ideal.mul_le_left
   intro x hx
-  -- A square root of `x` in `K` is integral over `V`, so it is the image of some `c ∈ V`.
-  obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap V K x) two_pos
-  obtain ⟨c, rfl⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (R := V) two_pos
+  -- A square root of `x` in `K` is integral over `R`, so it is the image of some `c ∈ R`.
+  obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap R K x) two_pos
+  obtain ⟨c, rfl⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow (R := R) two_pos
     (hy ▸ isIntegral_algebraMap)
-  have hc : c ^ 2 = x := IsFractionRing.injective V K (by simpa using hy)
-  -- `c ∈ m` since `c ^ 2 = x ∈ m` and `m` is prime.
-  have hcm : c ∈ maximalIdeal V := (maximalIdeal.isMaximal V).isPrime.mem_of_pow_mem 2 (hc ▸ hx)
+  have hc : c ^ 2 = x := IsIntegralClosure.algebraMap_injective R R K (by simpa using hy)
+  -- `c ∈ I` since `c ^ 2 = x ∈ I` and `I` is radical.
+  have hcI : c ∈ I := hI ⟨2, hc ▸ hx⟩
   rw [← hc, pow_two]
-  exact Ideal.mul_mem_mul hcm hcm
+  exact Ideal.mul_mem_mul hcI hcI
 
-end TauCeti.ValuationRing
+end Ideal.IsRadical

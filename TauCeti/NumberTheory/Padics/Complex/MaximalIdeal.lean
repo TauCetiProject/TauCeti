@@ -35,14 +35,10 @@ variable (p : ℕ) [Fact p.Prime]
 theorem not_fg_maximalIdeal : ¬ (maximalIdeal 𝓞_ℂ_[p]).FG := by
   intro hfg
   refine TauCeti.not_fg_maximalIdeal_integer (K := ℂ_[p]) ?_
-  -- Transport `hfg` along the identity of `𝓞_ℂ_[p]` with the closed unit ball of the norm.
-  have hmem (x : ℂ_[p]) : x ∈ 𝓞_ℂ_[p] ↔ ‖x‖ ≤ 1 := by
-    rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe,
-      PadicComplex.valuation_coe, NNReal.coe_one]
-  let f : 𝓞_ℂ_[p] →+* _ := 𝓞_ℂ_[p].subtype.codRestrict _
-    fun x ↦ Valued.integer.mem_iff.2 ((hmem x).1 x.property)
-  have hf : Function.Surjective f := fun y ↦
-    ⟨⟨y, (hmem y).2 (Valued.integer.mem_iff.1 y.property)⟩, rfl⟩
-  exact map_maximalIdeal_of_surjective f hf ▸ hfg.map f
+  -- `𝓞_ℂ_[p]` is the closed unit ball of the norm, so it is the subring `Valued.integer ℂ_[p]`.
+  have h : 𝓞_ℂ_[p].toSubring = _ := Subring.ext fun x ↦
+    PadicComplexInt.mem_iff_norm_le_one.trans Valued.integer.mem_iff.symm
+  let e : 𝓞_ℂ_[p] ≃+* _ := RingEquiv.subringCongr h
+  exact map_maximalIdeal_of_surjective e.toRingHom e.surjective ▸ hfg.map e.toRingHom
 
 end TauCeti.PadicComplexInt
