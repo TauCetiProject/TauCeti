@@ -664,12 +664,6 @@ noncomputable def regradeSingleLeftUnitor :
     exact (ι_mapBifunctorDesc_assoc _ p q h _).trans
       (regradeSingleLeftUnitorSummand_comp_d n₁ n₂ L k p q h)
 
-private lemma regradeSingleLeftUnitor_f (k : ℤ) :
-    (regradeSingleLeftUnitor n₁ n₂ L).f k =
-      mapBifunctorDesc (j := n₁ + n₂ - k)
-        (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) :=
-  rfl
-
 /-- On the summand `𝟙[n₁]_p ⊗ L_q` with `p = n₁`, `ChainComplex.regradeSingleLeftUnitor` is the left
 unitor of `L_q` with the sign `(-1)^(n₁ q)`, after identifying `𝟙[n₁]_p` with `𝟙_ C`. -/
 @[reassoc]
@@ -687,21 +681,29 @@ lemma ι_regradeSingleLeftUnitor_f (p q k : ℤ) (h : p + q = n₁ + n₂ - k) (
   -- `n₂ - k` and `(embeddingUpIntDownIntSub n₂).f k`.
   rfl
 
-/-- On the summand `𝟙 ⊗ L_q` of the tensor product of the regradings, the composite in
-`ChainComplex.regradeTensorHom_left_unitality` is the left unitor of `L_q`: the sign
-`(-1)^(n₁ q)` of the comparison cancels that of `ChainComplex.regradeSingleLeftUnitor`. -/
-private lemma regradeSingleLeftUnitor_left_unitality_summand (k : ℤ) :
-    (λ_ (L.X (n₂ - k))).inv ≫ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).inv ▷ L.X (n₂ - k) ≫
-        ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
-          (singleObjXIsoOfEq (down ℤ) n₁ (𝟙_ C) (n₁ - 0) (by omega)).inv) ▷ L.X (n₂ - k) ≫
-        ((n₁ * (n₂ - k)).negOnePow • ιTensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L (n₁ - 0)
-          (n₂ - k) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
-            (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) =
-      𝟙 _ := by
-  rw [Linear.units_smul_comp, ι_mapBifunctorDesc]
-  simp only [regradeSingleLeftUnitorSummand, sub_zero, ↓reduceDIte, smul_smul, Int.units_mul_self,
-    one_smul, XIsoOfEq_rfl, Iso.refl_hom, Category.comp_id, ← comp_whiskerRight_assoc,
-    Category.assoc, Iso.inv_hom_id, id_whiskerRight, Category.id_comp]
+/-- On the summand `𝟙 ⊗ L^k` of the tensor product of the regradings, identifying the unit with the
+regrading of `𝟙[n₁]`, then the comparison between regradings of tensor products, then
+`ChainComplex.regradeSingleLeftUnitor`, is the left unitor of `L^k = L_(n₂ - k)`: the sign
+`(-1)^(n₁ (n₂ - k))` of the comparison cancels that of `ChainComplex.regradeSingleLeftUnitor`. -/
+private lemma regradeSingleIso_inv_whiskerRight_comp_regradeSingleLeftUnitor_f (k : ℤ) :
+    (regradeSingleIso n₁ (𝟙_ C)).inv.f 0 ▷ (L.restriction (embeddingUpIntDownIntSub n₂)).X k ≫
+        regradeTensorSummand n₁ n₂ ((single C (down ℤ) n₁).obj (𝟙_ C)) L 0 k k (zero_add k) ≫
+          (regradeSingleLeftUnitor n₁ n₂ L).f k =
+      (singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ▷ (L.restriction (embeddingUpIntDownIntSub n₂)).X k ≫
+        (λ_ ((L.restriction (embeddingUpIntDownIntSub n₂)).X k)).hom := by
+  rw [regradeSingleIso_inv_f_zero]
+  -- `ChainComplex.regradeTensorSummand` is the signed inclusion of `𝟙[n₁]_(n₁) ⊗ L_(n₂ - k)` into
+  -- `(𝟙[n₁] ⊗ L).X (n₁ + n₂ - k)`, the degree-`k` object of the regrading by definition of
+  -- `HomologicalComplex.restriction`.
+  change ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
+      (singleObjXIsoOfEq (down ℤ) n₁ (𝟙_ C) (n₁ - 0) (sub_zero n₁)).inv) ▷ L.X (n₂ - k) ≫
+    ((n₁ * (n₂ - k)).negOnePow • ιTensorObj ((single C (down ℤ) n₁).obj (𝟙_ C)) L (n₁ - 0)
+      (n₂ - k) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
+        (fun p q h ↦ regradeSingleLeftUnitorSummand n₁ n₂ L k p q h) = _
+  simp [Linear.units_smul_comp, regradeSingleLeftUnitorSummand, smul_smul]
+  -- The two sides are stated through the defeq degrees `n₂ - k` and
+  -- `(embeddingUpIntDownIntSub n₂).f k`.
+  rfl
 
 /-- The summand components of `ChainComplex.regradeSingleRightUnitor` in cochain degree `k`: on
 `K_p ⊗ 𝟙_q` with `q = n₂`, the right unitor of `K_p`, and zero on the other summands, which are
@@ -758,12 +760,6 @@ noncomputable def regradeSingleRightUnitor :
     exact (ι_mapBifunctorDesc_assoc _ p q h _).trans
       (regradeSingleRightUnitorSummand_comp_d n₁ n₂ K k p q h)
 
-private lemma regradeSingleRightUnitor_f (k : ℤ) :
-    (regradeSingleRightUnitor n₁ n₂ K).f k =
-      mapBifunctorDesc (j := n₁ + n₂ - k)
-        (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) :=
-  rfl
-
 /-- On the summand `K_p ⊗ 𝟙[n₂]_q` with `q = n₂`, `ChainComplex.regradeSingleRightUnitor` is the
 right unitor of `K_p`, after identifying `𝟙[n₂]_q` with `𝟙_ C`. -/
 @[reassoc]
@@ -781,21 +777,30 @@ lemma ι_regradeSingleRightUnitor_f (p q k : ℤ) (h : p + q = n₁ + n₂ - k) 
   -- `n₁ - k` and `(embeddingUpIntDownIntSub n₁).f k`.
   rfl
 
-/-- On the summand `K_q ⊗ 𝟙` of the tensor product of the regradings, the composite in
-`ChainComplex.regradeTensorHom_right_unitality` is the right unitor of `K_q`, up to the sign
-`(-1)^(n₁ n₂)` of the comparison. -/
-private lemma regradeSingleRightUnitor_right_unitality_summand (k : ℤ) :
-    (ρ_ (K.X (n₁ - k))).inv ≫ K.X (n₁ - k) ◁ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).inv ≫
-        K.X (n₁ - k) ◁ ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
-          (singleObjXIsoOfEq (down ℤ) n₂ (𝟙_ C) (n₂ - 0) (by omega)).inv) ≫
-        ((n₁ * (n₂ - 0)).negOnePow • ιTensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C)) (n₁ - k)
-          (n₂ - 0) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
-            (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) =
-      (n₁ * n₂).negOnePow • 𝟙 _ := by
-  rw [Linear.units_smul_comp, ι_mapBifunctorDesc]
-  simp only [regradeSingleRightUnitorSummand, sub_zero, ↓reduceDIte, Linear.comp_units_smul,
-    XIsoOfEq_rfl, Iso.refl_hom, Category.comp_id, ← whiskerLeft_comp_assoc, Category.assoc,
-    Iso.inv_hom_id, whiskerLeft_id, Category.id_comp]
+/-- On the summand `K^k ⊗ 𝟙` of the tensor product of the regradings, identifying the unit with the
+regrading of `𝟙[n₂]`, then the comparison between regradings of tensor products, then
+`ChainComplex.regradeSingleRightUnitor`, is `(-1)^(n₁ n₂)` times the right unitor of
+`K^k = K_(n₁ - k)`: the sign is that of the comparison, as `𝟙[n₂]` sits in chain degree `n₂`. -/
+private lemma whiskerLeft_regradeSingleIso_inv_comp_regradeSingleRightUnitor_f (k : ℤ) :
+    (K.restriction (embeddingUpIntDownIntSub n₁)).X k ◁ (regradeSingleIso n₂ (𝟙_ C)).inv.f 0 ≫
+        regradeTensorSummand n₁ n₂ K ((single C (down ℤ) n₂).obj (𝟙_ C)) k 0 k (add_zero k) ≫
+          (regradeSingleRightUnitor n₁ n₂ K).f k =
+      (n₁ * n₂).negOnePow •
+        ((K.restriction (embeddingUpIntDownIntSub n₁)).X k ◁ (singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
+          (ρ_ ((K.restriction (embeddingUpIntDownIntSub n₁)).X k)).hom) := by
+  rw [regradeSingleIso_inv_f_zero]
+  -- `ChainComplex.regradeTensorSummand` is the signed inclusion of `K_(n₁ - k) ⊗ 𝟙[n₂]_(n₂)` into
+  -- `(K ⊗ 𝟙[n₂]).X (n₁ + n₂ - k)`, the degree-`k` object of the regrading by definition of
+  -- `HomologicalComplex.restriction`.
+  change K.X (n₁ - k) ◁ ((singleObjXSelf (up ℤ) 0 (𝟙_ C)).hom ≫
+      (singleObjXIsoOfEq (down ℤ) n₂ (𝟙_ C) (n₂ - 0) (sub_zero n₂)).inv) ≫
+    ((n₁ * (n₂ - 0)).negOnePow • ιTensorObj K ((single C (down ℤ) n₂).obj (𝟙_ C)) (n₁ - k)
+      (n₂ - 0) (n₁ + n₂ - k) (by omega)) ≫ mapBifunctorDesc (j := n₁ + n₂ - k)
+        (fun p q h ↦ regradeSingleRightUnitorSummand n₁ n₂ K k p q h) = _
+  simp [Linear.units_smul_comp, regradeSingleRightUnitorSummand]
+  -- The two sides are stated through the defeq degrees `n₁ - k` and
+  -- `(embeddingUpIntDownIntSub n₁).f k`.
+  rfl
 
 variable [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
@@ -861,13 +866,9 @@ theorem regradeTensorHom_left_unitality :
           regradeSingleLeftUnitor n₁ n₂ L := by
   rw [← cancel_epi (λ_ (L.restriction (embeddingUpIntDownIntSub n₂))).inv, Iso.inv_hom_id]
   ext k
-  rw [comp_f, comp_f, comp_f, leftUnitor_inv_f, Category.assoc, Category.assoc,
-    ι_whiskerRight_assoc, ι_regradeTensorHom_f_assoc, regradeTensorSummand_def,
-    regradeSingleIso_inv_f_zero, id_f, regradeSingleLeftUnitor_f]
-  -- The summands of the regraded complexes are those of `𝟙[n₁]`, `L` and `𝟙[n₁] ⊗ L` by
-  -- definition of `HomologicalComplex.restriction`, so the identity between plain summands closes
-  -- the goal.
-  exact (regradeSingleLeftUnitor_left_unitality_summand n₁ n₂ L k).symm
+  simp only [comp_f, leftUnitor_inv_f, Category.assoc, ι_whiskerRight_assoc,
+    ι_regradeTensorHom_f_assoc, regradeSingleIso_inv_whiskerRight_comp_regradeSingleLeftUnitor_f,
+    inv_hom_whiskerRight_assoc, Iso.inv_hom_id, id_f]
 
 /-- **The regrading of tensor products is compatible with the right unitors, up to the sign
 `(-1)^(n₁ n₂)`.** Let `𝟙[n₂]` be the monoidal unit of `C` placed in chain degree `n₂`, whose
@@ -889,17 +890,12 @@ theorem regradeTensorHom_right_unitality :
         (regradeSingleIso n₂ (𝟙_ C)).inv ≫
         regradeTensorHom n₁ n₂ K ((single C (down ℤ) n₂).obj (𝟙_ C)) ≫
           regradeSingleRightUnitor n₁ n₂ K) := by
-  rw [← cancel_epi (ρ_ (K.restriction (embeddingUpIntDownIntSub n₁))).inv, Iso.inv_hom_id,
-    Linear.comp_units_smul, ← smul_left_cancel_iff (n₁ * n₂).negOnePow, smul_smul,
-    Int.units_mul_self, one_smul]
+  rw [← cancel_epi (ρ_ (K.restriction (embeddingUpIntDownIntSub n₁))).inv, Iso.inv_hom_id]
   ext k
-  rw [units_smul_f_apply, id_f, comp_f, comp_f, comp_f, rightUnitor_inv_f, Category.assoc,
-    Category.assoc, ι_whiskerLeft_assoc, ι_regradeTensorHom_f_assoc, regradeTensorSummand_def,
-    regradeSingleIso_inv_f_zero, regradeSingleRightUnitor_f]
-  -- The summands of the regraded complexes are those of `K`, `𝟙[n₂]` and `K ⊗ 𝟙[n₂]` by
-  -- definition of `HomologicalComplex.restriction`, so the identity between plain summands closes
-  -- the goal.
-  exact (regradeSingleRightUnitor_right_unitality_summand n₁ n₂ K k).symm
+  simp only [comp_f, units_smul_f_apply, rightUnitor_inv_f, Category.assoc, ι_whiskerLeft_assoc,
+    ι_regradeTensorHom_f_assoc, whiskerLeft_regradeSingleIso_inv_comp_regradeSingleRightUnitor_f,
+    Linear.comp_units_smul, smul_smul, Int.units_mul_self, one_smul, whiskerLeft_inv_hom_assoc,
+    Iso.inv_hom_id, id_f]
 
 end Unitor
 
