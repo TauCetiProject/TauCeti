@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.ODE.Gronwall
 import TauCeti.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.ODE.Gluing
@@ -289,7 +290,7 @@ theorem add_mem_forwardSemiflowInterval_iff (hX : LocallyLipschitzOn S X)
         dsimp only; split_ifs with hus
         exacts [forwardSemiflow_mem (hsub₁ ⟨hu.1, hus.trans_lt hsb₁⟩),
           hS₂ ⟨by linarith, by linarith [hu.2]⟩])
-      (fun _ hu ↦ hasDerivWithinAt_ite_Ico X h0₂
+      (fun _ hu ↦ hasDerivWithinAt_ite_Ico (fun _ ↦ X) h0₂
         (fun _ hv ↦ (hX.hasDerivWithinAt_forwardSemiflow_Ico hsub₁
           ⟨hv.1, hv.2.trans_lt hsb₁⟩).mono fun _ hr ↦ ⟨hr.1, hr.2.trans_lt hsb₁⟩) hγ₂' hu)
       ⟨by positivity, by linarith [htI₂.2]⟩
@@ -310,21 +311,21 @@ theorem forwardSemiflow_add (hX : LocallyLipschitzOn S X)
 
 /-- Spatial Grönwall Lipschitz bound and joint continuity of `forwardSemiflow` on `Icc 0 τ ×ˢ B`
 from a Lipschitz bound on `X` over a trapping region `B'`. -/
-theorem exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod {B B' : Set E}
+theorem lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod {B B' : Set E}
     (hX : LocallyLipschitzOn S X) {τ : ℝ} {K : ℝ≥0}
     (hKLip : LipschitzOnWith K X B')
     (hsub : ∀ y ∈ B, τ ∈ forwardSemiflowInterval X S y)
     (hmem : ∀ y ∈ B, ∀ t ∈ Ico 0 τ, forwardSemiflow X S t y ∈ B') :
-    ∃ KΦ : ℝ≥0,
-      (∀ t ∈ Icc 0 τ, LipschitzOnWith KΦ (fun y ↦ forwardSemiflow X S t y) B) ∧
+    (∀ t ∈ Icc 0 τ, LipschitzOnWith (Real.toNNReal (Real.exp ((K : ℝ) * t)))
+        (fun y ↦ forwardSemiflow X S t y) B) ∧
       ContinuousOn (uncurry (forwardSemiflow X S)) (Icc 0 τ ×ˢ B) := by
-  let KΦ : ℝ≥0 := Real.toNNReal (Real.exp ((K : ℝ) * τ))
   have hcont {y : E} (hy : y ∈ B) : ContinuousOn (fun u ↦ forwardSemiflow X S u y) (Icc 0 τ) := by
     obtain ⟨b, hτb, hsub_y⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval (hsub y hy)
     exact fun s hs ↦ ((hX.hasDerivWithinAt_forwardSemiflow_Ico hsub_y
       ⟨hs.1, hs.2.trans_lt hτb⟩).continuousWithinAt).mono fun _ hu ↦ ⟨hu.1, hu.2.trans_lt hτb⟩
   have hLipΦ (t : ℝ) (ht : t ∈ Icc 0 τ) :
-      LipschitzOnWith KΦ (fun y ↦ forwardSemiflow X S t y) B := by
+      LipschitzOnWith (Real.toNNReal (Real.exp ((K : ℝ) * t)))
+        (fun y ↦ forwardSemiflow X S t y) B := by
     refine lipschitzOnWith_iff_dist_le_mul.mpr fun y₁ hy₁ y₂ hy₂ ↦ ?_
     have hIci {y : E} (hy : y ∈ B) (s : ℝ) (hs : s ∈ Ico 0 τ) : HasDerivWithinAt
         (fun u ↦ forwardSemiflow X S u y) (X (forwardSemiflow X S s y)) (Ici s) s := by
@@ -337,11 +338,13 @@ theorem exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod {B B' :
       (hcont hy₂) (hIci hy₂) (hmem y₂ hy₂)
       (by simp only [forwardSemiflow_zero]; exact le_rfl) t ht).trans ?_
     rw [sub_zero, mul_comm (dist y₁ y₂), Real.coe_toNNReal _ (Real.exp_pos _).le]
-    gcongr; exact ht.2
-  exact ⟨KΦ, hLipΦ,
-    continuousOn_prod_of_continuousOn_lipschitzOnWith' _ KΦ hLipΦ fun _ hy ↦ hcont hy⟩
+  let KΦ : ℝ≥0 := Real.toNNReal (Real.exp ((K : ℝ) * τ))
+  refine ⟨hLipΦ, continuousOn_prod_of_continuousOn_lipschitzOnWith' _ KΦ (fun t ht ↦ ?_)
+    fun _ hy ↦ hcont hy⟩
+  exact (hLipΦ t ht).weaken (Real.toNNReal_mono (Real.exp_le_exp.mpr
+    (mul_le_mul_of_nonneg_left ht.2 K.coe_nonneg)))
 
-/-- Restart, cocycle-shift, and gluing step for `exists_Icc_prod_of_mem_forwardSemiflowInterval`:
+/-- Restart, cocycle-shift, and gluing step for `forwardSemiflow_prod_induction`:
 combines a property `Q` on `Icc 0 (s + δs) ×ˢ B₁` with a property `Q` on `Icc 0 τz ×ˢ B₂` when
 `forwardSemiflow X S s` maps `B ⊆ B₁` into `B₂`. -/
 private theorem cocycle_glue_Icc_prod (hX : LocallyLipschitzOn S X)
@@ -399,7 +402,7 @@ property `Q : Set (ℝ × E) → ℝ × E → Prop` of `forwardSemiflow X S` tha
 is closed under restriction, neighborhood-within localization, and cocycle time-shifting, and holds
 locally around every point of `S`, propagates to `Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ S)` for every
 `T ∈ forwardSemiflowInterval X S x₀`. -/
-theorem exists_Icc_prod_of_mem_forwardSemiflowInterval
+theorem forwardSemiflow_prod_induction
     (hX : LocallyLipschitzOn S X) {Q : Set (ℝ × E) → ℝ × E → Prop}
     (hQ_mono : ∀ ⦃S₁ S₂ p⦄, p ∈ S₁ → S₁ ⊆ S₂ → Q S₂ p → Q S₁ p)
     (hQ_cont : ∀ ⦃S'⦄, (∀ p ∈ S', Q S' p) → ContinuousOn (uncurry (forwardSemiflow X S)) S')

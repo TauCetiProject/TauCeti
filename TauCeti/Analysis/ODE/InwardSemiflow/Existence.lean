@@ -214,7 +214,7 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
     (hU : IsOpen U) {X : E → E}
     (hX : LocallyLipschitzOn (U ∩ C) X) {x₀ : E} (hx₀ : x₀ ∈ U ∩ C)
     (hX_in : X x₀ ∈ strictInwardCone C x₀) :
-    ∃ r > 0, ∃ τ > 0, ∃ K KΦ : ℝ≥0,
+    ∃ r > 0, ∃ τ > 0, ∃ K : ℝ≥0,
       ball x₀ (2 * r) ⊆ U ∧
       LipschitzOnWith K X (ball x₀ (2 * r) ∩ C) ∧
       (∀ y ∈ ball x₀ r ∩ C, Ico 0 (2 * τ) ⊆ forwardSemiflowInterval X (U ∩ C) y) ∧
@@ -223,8 +223,8 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
       (∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
         forwardSemiflow X (U ∩ C) t y = y + ∫ s in (0 : ℝ)..t,
           X (forwardSemiflow X (U ∩ C) s y)) ∧
-      (∀ t ∈ Icc 0 τ,
-        LipschitzOnWith KΦ (fun y ↦ forwardSemiflow X (U ∩ C) t y) (ball x₀ r ∩ C)) ∧
+      (∀ t ∈ Icc 0 τ, LipschitzOnWith (Real.toNNReal (Real.exp ((K : ℝ) * t)))
+        (fun y ↦ forwardSemiflow X (U ∩ C) t y) (ball x₀ r ∩ C)) ∧
       ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) (Icc 0 τ ×ˢ (ball x₀ r ∩ C)) := by
   -- Step 1: Choose `r > 0` on which `U`, local Lipschitzness of `X`, and uniform inward balls hold.
   obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
@@ -249,11 +249,11 @@ theorem Convex.exists_local_forwardSemiflow_continuousOn {C U : Set E} (hC : Con
   obtain ⟨τ, hτ, hsub, hmem, hint⟩ := exists_Ico_and_Icc_forwardSemiflow_of_ball_subset hX hx₀
     hr hε hδ h2rU hKLip hin_ball
   -- Step 3: Spatial Grönwall Lipschitz bound and joint continuity on `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`.
-  obtain ⟨KΦ, hLipΦ, hcontΦ⟩ :=
-    hX.exists_lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod hKLip
+  obtain ⟨hLipΦ, hcontΦ⟩ :=
+    hX.lipschitzOnWith_and_continuousOn_forwardSemiflow_Icc_prod hKLip
       (fun y hy ↦ hsub y hy ⟨hτ.le, by linarith⟩)
       (fun y hy t ht ↦ hmem y hy t (Ico_subset_Icc_self ht))
-  exact ⟨r, hr, τ, hτ, K, KΦ, h2rU, hKLip, hsub, hmem, hint, hLipΦ, hcontΦ⟩
+  exact ⟨r, hr, τ, hτ, K, h2rU, hKLip, hsub, hmem, hint, hLipΦ, hcontΦ⟩
 
 /-- At any point `x ∈ U ∩ C` where a locally Lipschitz field `X` is strictly inward to the convex
 set `C`, `0` belongs to `forwardSemiflowInterval X (U ∩ C) x`. -/
@@ -261,7 +261,7 @@ theorem Convex.zero_mem_forwardSemiflowInterval {C U : Set E} (hC : Convex ℝ C
     (hU : IsOpen U) {X : E → E} (hX : LocallyLipschitzOn (U ∩ C) X) {x : E} (hx : x ∈ U ∩ C)
     (hX_in : X x ∈ strictInwardCone C x) :
     (0 : ℝ) ∈ forwardSemiflowInterval X (U ∩ C) x := by
-  obtain ⟨r, hr, τ, hτ, _, _, _, _, hsub, -⟩ :=
+  obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
     hC.exists_local_forwardSemiflow_continuousOn hU hX hx hX_in
   exact hsub x ⟨mem_ball_self hr, hx.2⟩ ⟨le_rfl, by positivity⟩
 
@@ -275,7 +275,7 @@ theorem Convex.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval {C U 
       (∀ y ∈ ball x₀ r ∩ C, Ico 0 (T + 2 * δ) ⊆ forwardSemiflowInterval X (U ∩ C) y) ∧
       ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C)) := by
   obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
-  obtain ⟨r, hr, δ, hδ, hsub, hcont⟩ := hX.exists_Icc_prod_of_mem_forwardSemiflowInterval
+  obtain ⟨r, hr, δ, hδ, hsub, hcont⟩ := hX.forwardSemiflow_prod_induction
     (Q := ContinuousWithinAt (uncurry (forwardSemiflow X (U ∩ C))))
     (fun _ _ _ _ hsub h ↦ h.mono hsub) (fun _ h ↦ h)
     (fun _ _ _ _ hmem h ↦ h.mono_of_mem_nhdsWithin hmem)
@@ -289,7 +289,7 @@ theorem Convex.exists_continuousOn_Icc_prod_of_mem_forwardSemiflowInterval {C U 
         fun p hp ↦ ⟨⟨by dsimp; linarith [hp.1.1], by dsimp; linarith [hp.1.2]⟩,
           hmaps p.2 hp.2⟩).congr hcocycle)
     (fun x hx ↦ by
-      obtain ⟨r, hr, τ, hτ, _, _, _, _, hsub, _, _, _, hcont⟩ :=
+      obtain ⟨r, hr, τ, hτ, _, _, _, hsub, _, _, _, hcont⟩ :=
         hC.exists_local_forwardSemiflow_continuousOn hU hX hx (hX_in x hx)
       exact ⟨r, hr, τ, hτ, fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩,
         hcont.mono (prod_mono Subset.rfl fun _ hy ↦ ⟨hy.1, hy.2.2⟩)⟩)
@@ -361,7 +361,7 @@ theorem Convex.eventually_notMem_nhdsLT_forwardSemiflow {C U : Set E} (hC : Conv
     ∀ᶠ t in 𝓝[<] b, forwardSemiflow X (U ∩ C) t x ∉ K := by
   by_contra h
   obtain ⟨z, hzK, hz⟩ := hK.exists_mapClusterPt_of_frequently (by simpa [not_eventually] using h)
-  obtain ⟨r, hr, τ, hτ, _, _, _, _, hsub, -⟩ :=
+  obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
     hC.exists_local_forwardSemiflow_continuousOn hU hX (hKU hzK) (hX_in z hzK)
   exact hX.not_mapClusterPt_nhdsLT_forwardSemiflow ⟨0, h0⟩ hb
     ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ, fun y hy ↦

@@ -35,7 +35,7 @@ single Lipschitz constant along their joint image, giving forward uniqueness on 
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
 * `LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt`: solutions of an autonomous locally Lipschitz
   ODE on `[a, b]` are determined by their value at `a`.
-* `LocallyLipschitzOn.eqOn_of_hasDerivAt_interior_of_isPreconnected`: uniqueness on any
+* `LocallyLipschitzOn.eqOn_of_isPreconnected_of_hasDerivAt_interior`: uniqueness on any
   preconnected time set `I` for trajectories in `S` agreeing at any `c ∈ I`.
 * `LocallyLipschitzOn.eqOn_Icc_of_hasDerivAt_Ioo`,
   `LocallyLipschitzOn.eqOn_Ico_of_hasDerivAt_Ioo`: uniqueness on `[a, b]` and `[a, b)` for
@@ -220,7 +220,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : ℝ → E
 /-- **Uniqueness on a preconnected time set.** If `X` is locally Lipschitz on `S`, any two
 continuous curves on a preconnected set `I : Set ℝ` mapping `I` into `S`, solving `γ' = X ∘ γ` on
 `interior I`, and agreeing at some `c ∈ I` agree throughout `I`. -/
-theorem eqOn_of_hasDerivAt_interior_of_isPreconnected {S : Set E} {X : E → E}
+theorem eqOn_of_isPreconnected_of_hasDerivAt_interior {S : Set E} {X : E → E}
     (hX : LocallyLipschitzOn S X) {I : Set ℝ} (hI : IsPreconnected I) {c : ℝ} (hc : c ∈ I)
     (hf : ContinuousOn f I) (hf' : ∀ t ∈ interior I, HasDerivAt f (X (f t)) t)
     (hf_mem : MapsTo f I S)
@@ -260,7 +260,7 @@ theorem eqOn_Ico_of_hasDerivAt_Ioo {S : Set E} {X : E → E} (hX : LocallyLipsch
     (hg_mem : MapsTo g (Ico a b) S)
     (hfc : f c = g c) :
     EqOn f g (Ico a b) :=
-  hX.eqOn_of_hasDerivAt_interior_of_isPreconnected isPreconnected_Ico hc
+  hX.eqOn_of_isPreconnected_of_hasDerivAt_interior isPreconnected_Ico hc
     hf (fun t ht ↦ hf' t (interior_Ico (α := ℝ) ▸ ht)) hf_mem
     hg (fun t ht ↦ hg' t (interior_Ico (α := ℝ) ▸ ht)) hg_mem hfc
 

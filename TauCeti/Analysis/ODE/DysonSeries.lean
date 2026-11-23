@@ -718,12 +718,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 
 /-- **Volterra integral bound for a forced linear equation.** If a continuous curve `δ` on `[0, τ]`
 satisfies `δ t = δ 0 + ∫ s in 0..t, (M s (δ s) + r s)` for a continuous path of operators `M`
-with `‖M s‖ ≤ CD` and continuous forcing residual `r` with `‖r s‖ ≤ R₀` on `[0, τ]`, then
-`w t = δ t - dysonSeriesLeft M t (δ 0)` satisfies
+with `‖M s‖ ≤ CD` and interval-integrable forcing residual `r` with `‖r s‖ ≤ R₀` on `[0, τ]`,
+then `w t = δ t - dysonSeriesLeft M t (δ 0)` satisfies
 `‖w t‖ ≤ R₀ * t + CD * ∫ s in 0..t, ‖w s‖` on `[0, τ]`. -/
 theorem norm_sub_dysonSeriesLeft_apply_le_add_mul_integral {M : ℝ → E →L[ℝ] E} {δ r : ℝ → E}
     {τ R₀ CD : ℝ} (hM : Continuous M) (hδ : ContinuousOn δ (Icc 0 τ))
-    (hr : ContinuousOn r (Icc 0 τ)) (hCD : ∀ s ∈ Icc 0 τ, ‖M s‖ ≤ CD)
+    (hr : IntervalIntegrable r MeasureTheory.volume 0 τ) (hCD : ∀ s ∈ Icc 0 τ, ‖M s‖ ≤ CD)
     (hr_le : ∀ s ∈ Icc 0 τ, ‖r s‖ ≤ R₀)
     (hδ_int : ∀ t ∈ Icc 0 τ, δ t = δ 0 + ∫ s in (0 : ℝ)..t, (M s (δ s) + r s))
     {t : ℝ} (ht : t ∈ Icc 0 τ) :
@@ -735,13 +735,15 @@ theorem norm_sub_dysonSeriesLeft_apply_le_add_mul_integral {M : ℝ → E →L[�
   have hw_cont : ContinuousOn (fun s ↦ ‖w s‖) (Icc 0 τ) :=
     (hδ.sub hA_cont.continuousOn).norm
   have hsub_t : uIcc 0 t ⊆ Icc 0 τ := uIcc_of_le ht.1 ▸ Icc_subset_Icc_right ht.2
+  have hsub_τ : uIcc 0 t ⊆ uIcc 0 τ :=
+    uIcc_of_le (ht.1.trans ht.2) ▸ hsub_t
   have hIntA := (hM.clm_apply hA_cont).intervalIntegrable (μ := MeasureTheory.volume) 0 t
+  have hIntδ : IntervalIntegrable (fun s ↦ M s (δ s) + r s) MeasureTheory.volume 0 t :=
+    ((hM.continuousOn.clm_apply hδ).mono hsub_t).intervalIntegrable.add (hr.mono_set hsub_τ)
   have hA_int : dysonSeriesLeft M t (δ 0) - δ 0 =
       ∫ s in (0 : ℝ)..t, M s (dysonSeriesLeft M s (δ 0)) := by
     simpa using (intervalIntegral.integral_eq_sub_of_hasDerivAt
       (fun s _ ↦ hasDerivAt_dysonSeriesLeft_apply hM (δ 0) s) hIntA).symm
-  have hIntδ : IntervalIntegrable (fun s ↦ M s (δ s) + r s) MeasureTheory.volume 0 t :=
-    ((hM.continuousOn.clm_apply hδ).add hr |>.mono hsub_t).intervalIntegrable
   have hw_eq : w t = ∫ s in (0 : ℝ)..t, (r s + M s (w s)) := by
     rw [show w t = (δ t - δ 0) - (dysonSeriesLeft M t (δ 0) - δ 0) by dsimp [w]; abel,
       hδ_int t ht, add_sub_cancel_left, hA_int, ← intervalIntegral.integral_sub hIntδ hIntA]
@@ -750,7 +752,7 @@ theorem norm_sub_dysonSeriesLeft_apply_le_add_mul_integral {M : ℝ → E →L[�
   have hw_int : IntervalIntegrable (fun s ↦ CD * ‖w s‖) MeasureTheory.volume 0 t :=
     ((continuousOn_const.mul hw_cont).mono hsub_t).intervalIntegrable
   have hrem_int : IntervalIntegrable (fun s ↦ ‖r s‖ + CD * ‖w s‖) MeasureTheory.volume 0 t :=
-    ((hr.norm.add (continuousOn_const.mul hw_cont)).mono hsub_t).intervalIntegrable
+    (hr.norm.mono_set hsub_τ).add hw_int
   change ‖w t‖ ≤ R₀ * t + CD * ∫ s in (0 : ℝ)..t, ‖w s‖
   rw [hw_eq]
   refine (intervalIntegral.norm_integral_le_of_norm_le ht.1 ?_ hrem_int).trans ?_
