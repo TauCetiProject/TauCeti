@@ -784,22 +784,6 @@ theorem hiveCount_two_std_dual_excluded :
   refine ⟨fun ⟨_, hb⟩ => ?_⟩
   have hlast := last_le_of_productBoundary hb; simp at hlast
 
-/-- On `Δ₃`, the boundary determines every vertex except the unique interior vertex `(1, 1, 1)`. -/
-private theorem eq_of_boundary_eq_of_interior_eq_three {h₁ h₂ : IntegerHive 3}
-    (hb : h₁.boundary = h₂.boundary) (hm : h₁ ⟨1, 1, 1, rfl⟩ = h₂ ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
-  refine Hive.ext fun p => ?_
-  have := p.sum_eq
-  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0 ∨ (p.x = 1 ∧ p.y = 1 ∧ p.z = 1)) with
-    hz | hx | hy | ⟨hx, hy, hz⟩
-  · have hp : p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
-    rw [hp, apply_edgePoint_zero, apply_edgePoint_zero, hb]
-  · have hp : p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
-    rw [hp, apply_edgePoint_one, apply_edgePoint_one, hb]
-  · have hp : p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
-    rw [hp, apply_edgePoint_two, apply_edgePoint_two, hb]
-  · have hp : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp [hx, hy, hz]
-    rw [hp, hm]
-
 private def hiveThreeTwoOneFun (t : ℤ) (p : Vertex 3) : ℤ :=
   match p.z, p.y + p.z with
   | 0, 1 => 2

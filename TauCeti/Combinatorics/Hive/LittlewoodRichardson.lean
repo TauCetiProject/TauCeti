@@ -515,11 +515,17 @@ def fixedIntegerHiveEquivLRTableauShift {a b : ℤ} (hlam : (lam.shift a).IsPoly
   (fixedIntegerHiveShiftEquiv lam μ γ a b).trans
     (fixedIntegerHiveEquivLRTableauShape hlam hμ hγ)
 
-private theorem toGTPattern_fixedIntegerHiveShiftEquiv (lam μ γ : DominantWeight n) (a b : ℤ)
-    (h : FixedIntegerHive (productBoundary lam μ γ)) :
-    (fixedIntegerHiveShiftEquiv lam μ γ a b h).val.toGTPattern =
-      h.val.toGTPattern.shift b := by
-  simp [GTPattern.shift_eq_add_const]
+/-- The tableau of a hive `h` under `fixedIntegerHiveEquivLRTableauShift` has row counts given by
+the differences of `h.val.toGTPattern.shift b` for `r < n`. -/
+theorem natCast_rowCount_fixedIntegerHiveEquivLRTableauShift {a b : ℤ}
+    (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial) (h : FixedIntegerHive (productBoundary lam μ γ))
+    {r : ℕ} (hr : r < n) (k : ℕ) :
+    ((fixedIntegerHiveEquivLRTableauShift hlam hμ hγ h).val.rowCount r k : ℤ) =
+      (h.val.toGTPattern.shift b) k (r + 1) - (h.val.toGTPattern.shift b) k r := by
+  rw [fixedIntegerHiveEquivLRTableauShift, Equiv.trans_apply,
+    natCast_rowCount_fixedIntegerHiveEquivLRTableauShape hlam hμ hγ _ hr k,
+    toGTPattern_fixedIntegerHiveShiftEquiv]
 
 /-- Canonical transport between shifted Littlewood–Richardson tableaux attached to two admissible
 shift pairs `(a₁, b₁)` and `(a₂, b₂)` for the same weights `λ, μ, γ`. -/
@@ -566,7 +572,7 @@ def lrTableauShiftEquiv {a₁ b₁ a₂ b₂ : ℤ}
 
 /-- `lrTableauShiftEquiv` intertwines `fixedIntegerHiveEquivLRTableauShift` across admissible shift
 pairs. -/
-theorem lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift {a₁ b₁ a₂ b₂ : ℤ}
+@[simp] theorem lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift {a₁ b₁ a₂ b₂ : ℤ}
     (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
     (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
     (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
@@ -579,7 +585,7 @@ theorem lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift {a₁ b₁ a₂ 
 
 /-- Inverse commuting law between `lrTableauShiftEquiv` and
 `fixedIntegerHiveEquivLRTableauShift`. -/
-theorem fixedIntegerHiveEquivLRTableauShift_symm_lrTableauShiftEquiv {a₁ b₁ a₂ b₂ : ℤ}
+@[simp] theorem fixedIntegerHiveEquivLRTableauShift_symm_lrTableauShiftEquiv {a₁ b₁ a₂ b₂ : ℤ}
     (hlam₁ : (lam.shift a₁).IsPolynomial) (hμ₁ : (μ.shift b₁).IsPolynomial)
     (hγ₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
     (hlam₂ : (lam.shift a₂).IsPolynomial) (hμ₂ : (μ.shift b₂).IsPolynomial)
@@ -597,9 +603,7 @@ private theorem rowCount_fixedIntegerHiveEquivLRTableauShift_of_ne {a b : ℤ}
     ((fixedIntegerHiveEquivLRTableauShift hlam hμ hγ h).val.rowCount r k : ℤ) =
       if r < n then h.val.toGTPattern k (r + 1) - h.val.toGTPattern k r else 0 := by
   split_ifs with hr
-  · rw [fixedIntegerHiveEquivLRTableauShift, Equiv.trans_apply,
-      natCast_rowCount_fixedIntegerHiveEquivLRTableauShape hlam hμ hγ _ hr k,
-      toGTPattern_fixedIntegerHiveShiftEquiv]
+  · rw [natCast_rowCount_fixedIntegerHiveEquivLRTableauShift hlam hμ hγ h hr k]
     rcases lt_or_gt_of_ne hrk with hlt | hgt
     · rw [GTPattern.shift_apply_of_not_lt_le _ _ (by omega),
         GTPattern.shift_apply_of_not_lt_le _ _ (by omega),
@@ -647,9 +651,7 @@ theorem rowCount_lrTableauShiftEquiv_diag {a₁ b₁ a₂ b₂ : ℤ}
       (hc : (γ.shift (a + b)).IsPolynomial) :
       ((fixedIntegerHiveEquivLRTableauShift ha hb hc h).val.rowCount r r : ℤ) =
         h.val.toGTPattern r (r + 1) + b := by
-    rw [fixedIntegerHiveEquivLRTableauShift, Equiv.trans_apply,
-      natCast_rowCount_fixedIntegerHiveEquivLRTableauShape ha hb hc _ hr r,
-      toGTPattern_fixedIntegerHiveShiftEquiv,
+    rw [natCast_rowCount_fixedIntegerHiveEquivLRTableauShift ha hb hc h hr r,
       GTPattern.shift_apply_of_lt_of_le _ _ (Nat.lt_succ_self r) hr,
       GTPattern.shift_apply_of_not_lt_le _ _ (by omega), sub_zero]
   rw [hT, lrTableauShiftEquiv_fixedIntegerHiveEquivLRTableauShift,

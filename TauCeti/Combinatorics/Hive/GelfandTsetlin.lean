@@ -648,6 +648,13 @@ def fixedIntegerHiveShiftEquiv (lam μ γ : DominantWeight n) (a b : ℤ) :
     ⇑((fixedIntegerHiveShiftEquiv lam μ γ a b).symm h).val = ⇑h.val - ⇑(affine n a (a + b)) := by
   rw [eq_sub_iff_add_eq, ← coe_add, ← fixedIntegerHiveShiftEquiv_apply_coe, Equiv.apply_symm_apply]
 
+/-- Determinant shifts act on the hive's Gelfand–Tsetlin pattern by `GTPattern.shift b`. -/
+theorem toGTPattern_fixedIntegerHiveShiftEquiv (lam μ γ : DominantWeight n) (a b : ℤ)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) :
+    (fixedIntegerHiveShiftEquiv lam μ γ a b h).val.toGTPattern =
+      h.val.toGTPattern.shift b := by
+  simp [GTPattern.shift_eq_add_const]
+
 /-- Determinant shifts of the inputs by `a, b` and of the output by `a + b` preserve hive
 counts. -/
 theorem hiveCount_productBoundary_shift (lam μ γ : DominantWeight n) (a b : ℤ) :
