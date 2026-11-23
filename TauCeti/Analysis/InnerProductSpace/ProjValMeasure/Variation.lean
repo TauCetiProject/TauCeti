@@ -122,36 +122,6 @@ theorem variation_polarizedComplexMeasure_comm (P : ProjValMeasure X H) (ψ ξ :
         (P.polarizedComplexMeasure v u)
   exact le_antisymm (hle ψ ξ) (hle ξ ψ)
 
-/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to the
-diagonal measure `P.diag ξ`. -/
-theorem variation_polarizedComplexMeasure_absolutelyContinuous_diag (P : ProjValMeasure X H)
-    (ψ ξ : H) :
-    (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ξ := by
-  refine Measure.AbsolutelyContinuous.mk fun B hB h0 => ?_
-  have hproj : P.proj B hB ξ = 0 :=
-    eNorm_eq_zero.1 (sq_eq_zero_iff.1 ((P.enorm_sq_proj_apply B hB ξ).trans h0))
-  have hres : (P.polarizedComplexMeasure ψ ξ).restrict B = 0 := by
-    rw [← P.polarizedComplexMeasure_proj_right B hB ψ ξ, hproj,
-      P.polarizedComplexMeasure_zero_right]
-  have hvar := congrArg (fun ν => ν.variation Set.univ) hres
-  simpa [VectorMeasure.variation_restrict hB, Measure.restrict_apply_univ] using hvar
-
-/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to the
-diagonal measure `P.diag ψ`. -/
-theorem variation_polarizedComplexMeasure_absolutelyContinuous_diag_left (P : ProjValMeasure X H)
-    (ψ ξ : H) :
-    (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ψ := by
-  rw [P.variation_polarizedComplexMeasure_comm ψ ξ]
-  exact P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ξ ψ
-
-/-- The variation of the diagonal polarized measure is the diagonal measure. -/
-@[simp]
-theorem variation_polarizedComplexMeasure_self (P : ProjValMeasure X H) (ξ : H) :
-    (P.polarizedComplexMeasure ξ ξ).variation = P.diag ξ := by
-  rw [polarizedComplexMeasure_self_eq_withDensityᵥ,
-    Measure.variation_withDensityᵥ (integrable_const _)]
-  simp
-
 /-- Local variation bound on a measurable set: `|μ_(ψ,ξ)|(B) ≤ ‖P(B) ψ‖ₑ * ‖P(B) ξ‖ₑ`. -/
 theorem polarizedComplexMeasure_variation_apply_le_enorm (P : ProjValMeasure X H) (ψ ξ : H)
     (B : Set X) (hB : MeasurableSet B) :
@@ -193,6 +163,32 @@ theorem polarizedComplexMeasure_variation_apply_le (P : ProjValMeasure X H) (ψ 
         rw [hdiag ψ, hdiag ξ]
     _ ≤ (P.diag ψ B) ^ (1 / 2 : ℝ) * (P.diag ξ B) ^ (1 / 2 : ℝ) := by
         gcongr
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to the
+diagonal measure `P.diag ξ`. -/
+theorem variation_polarizedComplexMeasure_absolutelyContinuous_diag (P : ProjValMeasure X H)
+    (ψ ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ξ := by
+  refine Measure.AbsolutelyContinuous.mk fun B _ h0 => ?_
+  have h := P.polarizedComplexMeasure_variation_apply_le ψ ξ B
+  rw [h0, ENNReal.zero_rpow_of_pos (by positivity), mul_zero, nonpos_iff_eq_zero] at h
+  exact h
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to the
+diagonal measure `P.diag ψ`. -/
+theorem variation_polarizedComplexMeasure_absolutelyContinuous_diag_left (P : ProjValMeasure X H)
+    (ψ ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ψ := by
+  rw [P.variation_polarizedComplexMeasure_comm ψ ξ]
+  exact P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ξ ψ
+
+/-- The variation of the diagonal polarized measure is the diagonal measure. -/
+@[simp]
+theorem variation_polarizedComplexMeasure_self (P : ProjValMeasure X H) (ξ : H) :
+    (P.polarizedComplexMeasure ξ ξ).variation = P.diag ξ := by
+  rw [polarizedComplexMeasure_self_eq_withDensityᵥ,
+    Measure.variation_withDensityᵥ (integrable_const _)]
+  simp
 
 /-- Simple-function Cauchy–Schwarz inequality for the variation of a polarized spectral measure. -/
 private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ ξ : H)

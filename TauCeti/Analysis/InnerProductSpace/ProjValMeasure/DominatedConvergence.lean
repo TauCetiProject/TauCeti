@@ -20,8 +20,9 @@ It identifies the map `f ↦ (∫ f dP) ξ` as an isometry from the symbols, wit
 
 * the integral only sees the symbol `P`-almost everywhere, and in fact two symbols have the
   same integral exactly when they agree `P`-almost everywhere;
-* uniformly bounded symbols converging `P`-almost everywhere have integrals converging strongly,
-  that is on every vector, by Lebesgue's dominated convergence theorem.
+* symbols eventually uniformly bounded `P.diag ξ`-almost everywhere and converging
+  `P.diag ξ`-almost everywhere along a countably generated filter have integrals converging at `ξ`
+  by Lebesgue's dominated convergence theorem.
 
 Strong convergence is the right conclusion here: the indicators of `(0, 1 / (n + 1))` converge
 pointwise to `0` on `ℝ`, but the norm of their integral is `1` against any projection-valued
@@ -31,15 +32,16 @@ measure that charges every such interval.
 
 * `ProjValMeasure.integral_eq_integral_iff`: `∫ f dP = ∫ g dP` iff `f = g` `P`-almost everywhere.
 * `ProjValMeasure.integral_congr_ae`: symbols equal `P`-almost everywhere have equal integrals.
-* `ProjValMeasure.tendsto_integral_apply_filter_of_dominated_convergence`: bounded `P`-almost
-  everywhere convergence of symbols gives strong convergence of their integrals.
+* `ProjValMeasure.tendsto_integral_apply_filter_of_dominated_convergence`: eventually bounded
+  `P.diag ξ`-almost everywhere convergence of symbols along a countably generated filter gives
+  convergence of their integrals at `ξ`.
 * `ProjValMeasure.tendsto_proj_apply_of_eventually_mem_iff`, `ProjValMeasure.tendsto_proj_apply`,
   `ProjValMeasure.tendsto_proj_apply_iUnion_of_monotone`, and
   `ProjValMeasure.tendsto_proj_norm_le_apply`: strong convergence on `ξ` of spectral projections
   along families whose membership eventually matches a measurable target set `P.diag ξ`-almost
-  everywhere along a countably generated filter, families covering `P.diag ξ`-almost every point
-  along a countably generated filter, monotone families with measurable union along a preorder
-  with countably generated `atTop`, and norm sublevel sets.
+  everywhere along a countably generated filter, families that eventually contain each point for
+  `P.diag ξ`-almost every point along a countably generated filter, monotone families with
+  measurable union along a preorder with countably generated `atTop`, and norm sublevel sets.
 
 ## References
 
@@ -77,8 +79,11 @@ theorem integral_congr_ae (P : ProjValMeasure X H) {f g : BoundedBorelFunction X
     (h : ⇑f =ᶠ[P.ae] g) : P.integral f = P.integral g :=
   (P.integral_eq_integral_iff f g).2 h
 
-/-- Vectorwise dominated convergence helper with `P.diag ξ`-almost everywhere hypotheses. -/
-private theorem tendsto_integral_apply_filter_of_dominated_convergence_diag
+/-- **Dominated convergence** for the integral against a projection-valued measure: if bounded
+Borel symbols `F n` are eventually bounded by a common constant `P.diag ξ`-almost everywhere along
+a countably generated filter `l` and converge to `f` `P.diag ξ`-almost everywhere along `l`, then
+their integrals at `ξ` converge to `P.integral f ξ`. -/
+theorem tendsto_integral_apply_filter_of_dominated_convergence
     (P : ProjValMeasure X H) {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
     {F : ι → BoundedBorelFunction X} {f : BoundedBorelFunction X} {M : ℝ} (ξ : H)
     (h_bound : ∀ᶠ n in l, ∀ᵐ x ∂P.diag ξ, ‖F n x‖ ≤ M)
@@ -104,18 +109,6 @@ private theorem tendsto_integral_apply_filter_of_dominated_convergence_diag
         simpa using (tendsto_iff_norm_sub_tendsto_zero.1 hx).pow 2)
   simpa [Real.sqrt_sq (norm_nonneg _)] using hsq.sqrt
 
-/-- **Dominated convergence** for the integral against a projection-valued measure: if bounded
-Borel symbols `F n` are eventually bounded by a common constant `P`-almost everywhere and
-converge to `f` `P`-almost everywhere, then their integrals converge to the integral of `f`
-strongly, that is on every vector. -/
-theorem tendsto_integral_apply_filter_of_dominated_convergence (P : ProjValMeasure X H)
-    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {F : ι → BoundedBorelFunction X}
-    {f : BoundedBorelFunction X} {M : ℝ} (h_bound : ∀ᶠ n in l, ∀ᶠ x in P.ae, ‖F n x‖ ≤ M)
-    (h_lim : ∀ᶠ x in P.ae, Tendsto (fun n => F n x) l (𝓝 (f x))) (ξ : H) :
-    Tendsto (fun n => P.integral (F n) ξ) l (𝓝 (P.integral f ξ)) :=
-  P.tendsto_integral_apply_filter_of_dominated_convergence_diag ξ
-    (h_bound.mono fun _ hn => P.ae_diag_of_ae ξ hn) (P.ae_diag_of_ae ξ h_lim)
-
 /-- If a family of measurable sets `B i` has membership eventually equivalent to membership in a
 measurable set `A` `P.diag ξ`-almost everywhere along a countably generated filter `l`, then the
 spectral projections `P.proj (B i) (hB i) ξ` converge to `P.proj A hA ξ` along `l`. -/
@@ -131,15 +124,15 @@ theorem tendsto_proj_apply_of_eventually_mem_iff (P : ProjValMeasure X H) {ι : 
     simpa only [F, G, BoundedBorelFunction.coe_indicator, BoundedBorelFunction.coe_one,
       Pi.one_def, tendsto_indicator_const_apply_iff_eventually] using ht
   have hlim' : Tendsto (fun i => P.integral (F i) ξ) l (𝓝 (P.integral G ξ)) :=
-    P.tendsto_integral_apply_filter_of_dominated_convergence_diag (M := 1) ξ
+    P.tendsto_integral_apply_filter_of_dominated_convergence (M := 1) ξ
       (Eventually.of_forall fun i => Eventually.of_forall fun t => by
         by_cases ht : t ∈ B i <;> simp [F, ht])
       hG_lim
   simpa only [F, G, P.integral_indicator] using hlim'
 
-/-- If a family of measurable sets `B i` eventually covers `P.diag ξ`-almost every point along a
-countably generated filter `l`, then the spectral projections `P.proj (B i) (hB i) ξ` converge to
-`ξ` along `l`. -/
+/-- If a family of measurable sets `B i` eventually contains each point for `P.diag ξ`-almost every
+point along a countably generated filter `l`, then the spectral projections `P.proj (B i) (hB i) ξ`
+converge to `ξ` along `l`. -/
 theorem tendsto_proj_apply (P : ProjValMeasure X H) {ι : Type*} {l : Filter ι}
     [l.IsCountablyGenerated] {B : ι → Set X} (hB : ∀ i, MeasurableSet (B i)) (ξ : H)
     (hcov : ∀ᵐ t ∂P.diag ξ, ∀ᶠ i in l, t ∈ B i) :

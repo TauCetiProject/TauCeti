@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.VectorMeasure.Integral
 
 /-!
@@ -134,13 +135,6 @@ private theorem cauchy_map_integral_truncate (P : ProjValMeasure X H) {f : X →
     (hf : Measurable f) (x : spectralIntegralDomain P f) :
     Cauchy (Filter.map (fun M : ℝ =>
       P.integral (BoundedBorelFunction.truncate f hf M) x) atTop) := by
-  have henorm (g : BoundedBorelFunction X) : ‖P.integral g x‖ₑ = eLpNorm g 2 (P.diag x) := by
-    refine ENNReal.rpow_left_injective (show (2 : ℝ) ≠ 0 by norm_num) ?_
-    dsimp only
-    rw [ENNReal.rpow_two, ENNReal.rpow_two, P.enorm_sq_integral_apply g x,
-      TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (n := 2) two_ne_zero
-        g.measurable.aestronglyMeasurable]
-    simp
   have hmem : MemLp f 2 (P.diag x) :=
     hf.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.2 x.property
   have hmem_tr (M : ℝ) : MemLp (BoundedBorelFunction.truncate f hf M) 2 (P.diag x) :=
@@ -165,8 +159,8 @@ private theorem cauchy_map_integral_truncate (P : ProjValMeasure X H) {f : X →
         (P.integral (BoundedBorelFunction.truncate f hf M₂) x) =
       edist ((hmem_tr M₁).toLp (BoundedBorelFunction.truncate f hf M₁))
         ((hmem_tr M₂).toLp (BoundedBorelFunction.truncate f hf M₂)) := by
-    rw [eDist_eq_eNorm_sub, ← sub_apply, ← map_sub, henorm, BoundedBorelFunction.coe_sub,
-      Lp.edist_toLp_toLp]
+    rw [eDist_eq_eNorm_sub, ← sub_apply, ← map_sub, P.enorm_integral_apply_eq_eLpNorm,
+      BoundedBorelFunction.coe_sub, Lp.edist_toLp_toLp]
   rw [cauchy_map_iff, uniformity_basis_edist.tendsto_right_iff] at hlp_cauchy ⊢
   simpa only [Set.mem_ofPred_eq, hedist] using hlp_cauchy
 
@@ -417,7 +411,7 @@ theorem spectralIntegral_integral_apply (P : ProjValMeasure X H) {f : X → ℂ}
     rw [P.polarizedComplexMeasure_integral_right, P.polarizedComplexMeasure_integral_left]
     simp
   rw [P.inner_spectralIntegral_apply, hpol, ← P.inner_spectralIntegral_apply,
-    map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+    P.inner_integral_star_left]
 
 /-- Every spectral projection `P.proj B hB` commutes with `P.spectralIntegral f hf` on its
 domain. -/
@@ -449,10 +443,8 @@ theorem diag_spectralIntegral (P : ProjValMeasure X H) {f : X → ℂ} (hf : Mea
     _ = ENNReal.ofReal (∫ t in B, ‖f t‖ ^ 2 ∂(P.diag x)) := by
       rw [P.norm_sq_spectralIntegral_apply hf xB, P.diag_proj B hB x]
     _ = ∫⁻ t in B, ‖f t‖ₑ ^ 2 ∂(P.diag x) := by
-      rw [ofReal_integral_eq_lintegral_ofReal hint.integrableOn
-        (ae_of_all _ fun _ => sq_nonneg _)]
-      refine lintegral_congr fun t => ?_
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+      simpa only [ENNReal.rpow_two] using
+        MeasureTheory.ofReal_setIntegral_norm_sq_eq hint.integrableOn
     _ = ((P.diag x).withDensity fun t => ‖f t‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
 
 /-- Applying `P.spectralIntegral f hf` in the linear argument weights the polarized complex measure
@@ -503,9 +495,8 @@ theorem eq_spectralIntegral_of_domain_of_inner (P : ProjValMeasure X H) {f : X �
 theorem mem_spectralIntegral_domain_congr_ae (P : ProjValMeasure X H) {f g : X → ℂ}
     (hf : Measurable f) (hg : Measurable g) {x : H} (h : f =ᵐ[P.diag x] g) :
     x ∈ (P.spectralIntegral f hf).domain ↔ x ∈ (P.spectralIntegral g hg).domain := by
-  have hlin : (∫⁻ t, ‖f t‖ₑ ^ 2 ∂P.diag x) = ∫⁻ t, ‖g t‖ₑ ^ 2 ∂P.diag x :=
-    lintegral_congr_ae (h.fun_comp fun z : ℂ => ‖z‖ₑ ^ 2)
-  rw [P.mem_spectralIntegral_domain_iff hf, P.mem_spectralIntegral_domain_iff hg, hlin]
+  rw [P.mem_spectralIntegral_domain_iff_memLp hf, P.mem_spectralIntegral_domain_iff_memLp hg]
+  exact memLp_congr_ae h
 
 /-- If two measurable symbols agree `P.diag x`-almost everywhere and `x` lies in the domain of
 `P.spectralIntegral f hf`, then `x` also lies in the domain of `P.spectralIntegral g hg` and the
@@ -791,8 +782,8 @@ private theorem adjoint_domain_le_spectralIntegral_star (P : ProjValMeasure X H)
       ⟨P.proj {t | ‖f t‖ ≤ (n : ℝ)} hBn x, P.proj_norm_le_mem_spectralIntegral_domain hf n x⟩
     calc
       ⟪P.integral (star (BoundedBorelFunction.truncate f hf n)) y, x⟫_ℂ
-          = ⟪y, P.integral (BoundedBorelFunction.truncate f hf n) x⟫_ℂ := by
-        rw [map_star, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+          = ⟪y, P.integral (BoundedBorelFunction.truncate f hf n) x⟫_ℂ :=
+        P.inner_integral_star_left _ y x
       _ = ⟪y, P.spectralIntegral f hf xn⟫_ℂ := by
         rw [← P.spectralIntegral_proj_norm_le_eq_integral_truncate hf n x]
       _ = ⟪(P.spectralIntegral f hf).adjoint y', (xn : H)⟫_ℂ :=
