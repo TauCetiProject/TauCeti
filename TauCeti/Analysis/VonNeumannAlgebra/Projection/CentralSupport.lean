@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 public import TauCeti.Analysis.VonNeumannAlgebra.Projection.Basic
 import Mathlib.Algebra.Order.Star.Projection
+import TauCeti.Analysis.VonNeumannAlgebra.Density
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
@@ -76,18 +77,21 @@ theorem centralSupport_mem_commutant (M : VonNeumannAlgebra H) (a : H →L[ℂ] 
     M.centralSupport a ∈ M.commutant :=
   (mem_inf.1 (M.centralSupportProjection a).coe_mem).2
 
+/-- A bundled projection fixes an operator `a` on the left if and only if its closed range contains
+the closure of `a.range`. -/
+private theorem projection_mul_eq_right_iff {M' : VonNeumannAlgebra H}
+    (p : M'.Projection) (a : H →L[ℂ] H) :
+    (p : H →L[ℂ] H) * a = a ↔ a.range.closure ≤ p.closedRange := by
+  rw [ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
+    p.isStarProjection.isIdempotentElem a,
+    ← Projection.toSubmodule_closedRange, ← Submodule.closure_le]
+
 @[simp]
 theorem centralSupport_mul_self (M : VonNeumannAlgebra H) (a : H →L[ℂ] H) :
     M.centralSupport a * a = a := by
-  have hid := (M.centralSupportProjection a).isStarProjection.isIdempotentElem
-  rw [← coe_centralSupportProjection,
-    ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff hid,
-    ← Projection.toSubmodule_closedRange, ← Submodule.closure_le,
+  rw [← coe_centralSupportProjection, projection_mul_eq_right_iff,
     centralSupportProjection, Projection.closedRange_sInf]
-  refine le_sInf (Set.forall_mem_image.2 fun z hz => ?_)
-  rw [Submodule.closure_le, Projection.toSubmodule_closedRange]
-  exact (ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-    z.isStarProjection.isIdempotentElem a).1 hz
+  exact le_sInf (Set.forall_mem_image.2 fun z hz => (projection_mul_eq_right_iff z a).1 hz)
 
 theorem mul_centralSupport_self {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} (ha : a ∈ M) :
     a * M.centralSupport a = a := by
@@ -99,11 +103,9 @@ theorem mul_centralSupport_self {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} (h
 theorem centralSupportProjection_le_iff {M : VonNeumannAlgebra H} {a : H →L[ℂ] H}
     {z : (M ⊓ M.commutant).Projection} :
     M.centralSupportProjection a ≤ z ↔ (z : H →L[ℂ] H) * a = a :=
-  ⟨fun h => (ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-      z.isStarProjection.isIdempotentElem a).2 <|
-      ((ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-        (M.isStarProjection_centralSupport a).isIdempotentElem a).1
-          (M.centralSupport_mul_self a)).trans (Projection.le_iff_range_le.1 h),
+  ⟨fun h => (projection_mul_eq_right_iff z a).2 <|
+      ((projection_mul_eq_right_iff (M.centralSupportProjection a) a).1
+        (M.centralSupport_mul_self a)).trans (Projection.le_iff_closedRange_le.1 h),
     fun hz => sInf_le hz⟩
 
 /-- Bundled central support is left adjoint to the inclusion of central projections into
@@ -127,11 +129,9 @@ theorem centralSupport_le_iff {M : VonNeumannAlgebra H} {a z : H →L[ℂ] H}
 theorem centralSupportProjection_mono_of_range_le {M : VonNeumannAlgebra H} {a b : H →L[ℂ] H}
     (h : a.range ≤ b.range) :
     M.centralSupportProjection a ≤ M.centralSupportProjection b := by
-  rw [centralSupportProjection_le_iff, coe_centralSupportProjection]
-  exact (ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-    (M.isStarProjection_centralSupport b).isIdempotentElem a).2 <|
-    h.trans ((ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-      (M.isStarProjection_centralSupport b).isIdempotentElem b).1 (M.centralSupport_mul_self b))
+  rw [centralSupportProjection_le_iff, projection_mul_eq_right_iff]
+  exact Submodule.closure_le.2 <| h.trans <| Submodule.closure_le.1 <|
+    (projection_mul_eq_right_iff (M.centralSupportProjection b) b).1 (M.centralSupport_mul_self b)
 
 /-- Central support is monotone with respect to range inclusion. -/
 theorem centralSupport_mono_of_range_le {M : VonNeumannAlgebra H} {a b : H →L[ℂ] H}
@@ -168,6 +168,11 @@ theorem centralSupport_zero (M : VonNeumannAlgebra H) : M.centralSupport 0 = 0 :
     ((centralSupport_le_iff (.zero _) (zero_mem M) (zero_mem M.commutant)).2 (zero_mul 0))
     (M.isStarProjection_centralSupport 0).nonneg
 
+@[simp]
+theorem centralSupportProjection_zero (M : VonNeumannAlgebra H) :
+    M.centralSupportProjection 0 = ⊥ :=
+  Projection.coe_inj.1 (by simp)
+
 /-- The bundled central support of an operator vanishes if and only if the operator is zero. -/
 @[simp]
 theorem centralSupportProjection_eq_bot_iff {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} :
@@ -177,7 +182,7 @@ theorem centralSupportProjection_eq_bot_iff {M : VonNeumannAlgebra H} {a : H →
       rw [← coe_centralSupportProjection, h, Projection.coe_bot]
     rw [← M.centralSupport_mul_self a, h0, zero_mul]
   · subst h
-    exact Projection.coe_inj.1 (by simp)
+    exact centralSupportProjection_zero M
 
 /-- The central support of an operator vanishes if and only if the operator is zero. -/
 @[simp]
@@ -188,6 +193,11 @@ theorem centralSupport_eq_zero_iff {M : VonNeumannAlgebra H} {a : H →L[ℂ] H}
 @[simp]
 theorem centralSupport_one (M : VonNeumannAlgebra H) : M.centralSupport 1 = 1 :=
   centralSupport_eq_self_of_mem_commutant (.one _) (one_mem M) (one_mem M.commutant)
+
+@[simp]
+theorem centralSupportProjection_one (M : VonNeumannAlgebra H) :
+    M.centralSupportProjection 1 = ⊤ :=
+  Projection.coe_inj.1 (by simp)
 
 /-- Conjugating an operator by a unitary in `M` preserves its bundled central support. -/
 @[simp]
@@ -227,8 +237,9 @@ theorem centralSupport_eq_starProjection_closure_span {M : VonNeumannAlgebra H} 
       := by
   set W : Submodule ℂ H := Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η}
   set K : Submodule ℂ H := W.topologicalClosure
-  -- Step 1: `W` is invariant under both `M.commutant` and `M = M.commutant.commutant`, so
-  -- `K.starProjection` lies in `M ⊓ M.commutant`.
+  -- Step 1: `W` is invariant under `M.commutant` (so `K.starProjection ∈ M`) and is the span of
+  -- the orbits `M (a ξ)` (so `K.starProjection ∈ M.commutant` by
+  -- `starProjection_topologicalClosure_iSup_mem`).
   have hW_comm : ∀ y ∈ M.commutant, W ∈ Module.End.invtSubmodule y := by
     intro y hy
     rw [Module.End.mem_invtSubmodule, Submodule.span_le]
@@ -240,15 +251,33 @@ theorem centralSupport_eq_starProjection_closure_span {M : VonNeumannAlgebra H} 
   have hKM : K.starProjection ∈ M := by
     rw [IsStarProjection.mem_iff isStarProjection_starProjection M, Submodule.range_starProjection]
     exact fun y hy => Submodule.topologicalClosure_mem_invtSubmodule (hW_comm y hy)
-  have hW_M : ∀ y ∈ M, W ∈ Module.End.invtSubmodule y := by
-    intro y hy
-    rw [Module.End.mem_invtSubmodule, Submodule.span_le]
-    rintro _ ⟨x, hx, ξ, rfl⟩
-    exact Submodule.subset_span ⟨y * x, mul_mem hy hx, ξ, rfl⟩
   have hKC : K.starProjection ∈ M.commutant := by
-    rw [IsStarProjection.mem_iff isStarProjection_starProjection M.commutant,
-      Submodule.range_starProjection, M.commutant_commutant]
-    exact fun y hy => Submodule.topologicalClosure_mem_invtSubmodule (hW_M y hy)
+    let A := M.toStarSubalgebra.toNonUnitalStarSubalgebra
+    let O : H → Submodule ℂ H := fun ξ =>
+      A.toNonUnitalSubalgebra.toSubmodule.map (ContinuousLinearMap.apply ℂ H (a ξ)).toLinearMap
+    have hW_eq : W = ⨆ ξ, O ξ := by
+      have hset : {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} = ⋃ ξ, (O ξ : Set H) := by
+        ext η
+        simp only [Set.mem_ofPred_eq, Set.mem_iUnion, SetLike.mem_coe, O, Submodule.mem_map,
+          NonUnitalSubalgebra.mem_toSubmodule, ContinuousLinearMap.coe_coe,
+          ContinuousLinearMap.apply_apply, A]
+        exact ⟨fun ⟨x, hx, ξ, h⟩ => ⟨ξ, x, hx, h⟩, fun ⟨ξ, x, hx, h⟩ => ⟨x, hx, ξ, h⟩⟩
+      change Submodule.span ℂ {η : H | ∃ x ∈ M, ∃ ξ : H, x (a ξ) = η} = _
+      rw [hset, Submodule.span_iUnion]
+      simp only [Submodule.span_eq]
+    have hK_eq : K = (⨆ ξ, (O ξ).closure : ClosedSubmodule ℂ H).toSubmodule := by
+      have gc : GaloisConnection (Submodule.closure : Submodule ℂ H → ClosedSubmodule ℂ H)
+          ClosedSubmodule.toSubmodule := fun _ _ => Submodule.closure_le
+      have hcl : W.closure = ⨆ ξ, (O ξ).closure := by
+        rw [hW_eq]
+        exact gc.l_iSup
+      exact congrArg ClosedSubmodule.toSubmodule hcl
+    rw [Submodule.starProjection_inj.2 hK_eq]
+    refine starProjection_topologicalClosure_iSup_mem (fun ξ => (O ξ).closure) fun ξ => ?_
+    rw [Submodule.starProjection_inj.2
+        (rfl : (O ξ).closure.toSubmodule = (O ξ).topologicalClosure),
+      ← SetLike.mem_coe, coe_commutant, ← coe_toStarSubalgebra]
+    exact A.starProjection_topologicalClosure_map_apply_mem_centralizer (a ξ)
   -- Step 2: `K.starProjection * a = a` since `a ξ = 1 (a ξ) ∈ W ≤ K`.
   have hKa : K.starProjection * a = a := by
     rw [ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff

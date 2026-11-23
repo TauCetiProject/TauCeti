@@ -58,7 +58,9 @@ theorem exists_sum_four_unitary {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (h
   obtain ⟨u, c, hsum, hc⟩ := CStarAlgebra.exists_sum_four_unitary (⟨x, hx⟩ : M.toStarSubalgebra)
   refine ⟨fun i => (u i : H →L[ℂ] H), c,
     fun i => ⟨(u i).val.property, Unitary.map_mem M.toStarSubalgebra.subtype (u i).property⟩,
-    congrArg Subtype.val hsum, hc⟩
+    ?_, hc⟩
+  simpa only [StarSubalgebra.coe_subtype, map_sum, map_smul] using
+    congrArg M.toStarSubalgebra.subtype hsum
 
 /-- The complex linear span of the unitary operators in a von Neumann algebra `M` equals `M`. -/
 @[simp]

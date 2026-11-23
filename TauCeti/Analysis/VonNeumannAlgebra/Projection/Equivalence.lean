@@ -22,8 +22,7 @@ operator in `M` are equivalent via its polar factor
 ## Main declarations
 
 * `VonNeumannAlgebra.ProjectionEquivalent`, `VonNeumannAlgebra.projectionEquivalent_iff`,
-  `VonNeumannAlgebra.ProjectionEquivalent.of_isPartialIsometry`,
-  `VonNeumannAlgebra.ProjectionEquivalent.exists_isPartialIsometry`: Murray–von Neumann equivalence
+  `VonNeumannAlgebra.ProjectionEquivalent.of_isPartialIsometry`: Murray–von Neumann equivalence
   of projections in `M`, witnessed by a partial isometry in `M`.
 * `VonNeumannAlgebra.ProjectionEquivalent.mono`: monotonicity of Murray–von Neumann equivalence
   along inclusions `M ≤ N`.
@@ -88,12 +87,6 @@ theorem exists_mem (h : ProjectionEquivalent M p q) :
   let ⟨v, hvM, _, hvp, hvq⟩ := h
   ⟨v, hvM, hvp, hvq⟩
 
-/-- Recover an implementing partial isometry `v ∈ M` for a Murray–von Neumann equivalence
-`ProjectionEquivalent M p q`. -/
-theorem exists_isPartialIsometry (h : ProjectionEquivalent M p q) :
-    ∃ v : H →L[ℂ] H, v ∈ M ∧ v.IsPartialIsometry ∧ star v * v = p ∧ v * star v = q :=
-  h
-
 /-- Murray–von Neumann equivalence is monotone in the ambient von Neumann algebra: if `M ≤ N`,
 then projections equivalent in `M` are equivalent in `N`. -/
 theorem mono (hMN : M ≤ N) (h : ProjectionEquivalent M p q) : ProjectionEquivalent N p q :=
@@ -134,8 +127,7 @@ theorem trans (hpq : ProjectionEquivalent M p q) (hqr : ProjectionEquivalent M q
       _ = (w * star w) * (w * star w) := by simp only [mul_assoc]
       _ = r := by rw [hwr, hr.isIdempotentElem.eq]
   refine ⟨w * v, mul_mem hwM hvM, ?_, hwvp, hwvr⟩
-  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
-    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hwvp]
+  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_star_mul_self, hwvp]
   exact hp
 
 /-- Equivalent projections vanish simultaneously. -/
@@ -170,8 +162,7 @@ theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (
   have hadd_q : (v₁ + v₂) * star (v₁ + v₂) = q₁ + q₂ := by
     rw [hortho.add_mul_star_add, hv₁q, hv₂q]
   refine ⟨v₁ + v₂, add_mem hv₁M hv₂M, ?_, hadd_p, hadd_q⟩
-  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
-    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hadd_p]
+  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_star_mul_self, hadd_p]
   exact hp₁.add hp₂ hp₁₂
 
 /-- Equivalent projections in `M` have the same central support. -/

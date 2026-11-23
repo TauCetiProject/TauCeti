@@ -230,6 +230,12 @@ theorem closedRange_ofClosedSubmodule (U : ClosedSubmodule ℂ H)
     (ofClosedSubmodule U hU).closedRange = U :=
   ClosedSubmodule.toSubmodule_injective (Submodule.range_starProjection U.toSubmodule)
 
+@[simp]
+theorem ofClosedSubmodule_closedRange (p : M.Projection) :
+    ofClosedSubmodule p.closedRange p.starProjection_closedRange_mem = p :=
+  Projection.ext <| by
+    simp only [coe_ofClosedSubmodule, toSubmodule_closedRange, starProjection_range]
+
 /-- The complete sublattice of closed subspaces of `H` whose orthogonal projections belong to
 `M`. -/
 noncomputable def closedProjectionSublattice (M : VonNeumannAlgebra H) :
@@ -253,8 +259,7 @@ private noncomputable def closedRangeEquiv (M : VonNeumannAlgebra H) :
     M.Projection ≃ closedProjectionSublattice M where
   toFun p := ⟨p.closedRange, mem_closedProjectionSublattice.2 p.starProjection_closedRange_mem⟩
   invFun U := ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
-  left_inv p := Projection.ext <| by
-    simp only [coe_ofClosedSubmodule, toSubmodule_closedRange, starProjection_range]
+  left_inv p := ofClosedSubmodule_closedRange p
   right_inv U := Subtype.ext <|
     closedRange_ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
 
