@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
 
 import Mathlib.Algebra.Category.ModuleCat.Projective

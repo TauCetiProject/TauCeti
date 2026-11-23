@@ -202,17 +202,12 @@ private theorem inhomogeneousLittlewoodPaley_mul_lowPass {n₀ : ℕ}
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) *
         ⇑(φ.lowPassSchwartz (pow_ne_zero (j + n₀) two_ne_zero)) =
       fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-  ext ξ
-  rw [Pi.mul_apply, ContDiffBump.coe_lowPassSchwartz]
-  by_cases hξ : φ.inhomogeneousLittlewoodPaley j ξ = 0
-  · simp [hξ]
-  have hball : ‖ξ‖ ≤ 2 ^ j * φ.rOut := mem_closedBall_zero_iff.1 <|
-    φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j (subset_tsupport _ hξ)
-  dsimp only
-  rw [φ.one_of_mem_closedBall, Complex.ofReal_one, mul_one]
-  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
-    inv_mul_le_iff₀ (by positivity), pow_add, mul_assoc]
-  exact hball.trans (by gcongr)
+  refine φ.mul_lowPassSchwartz_of_support_subset (by positivity) <| (subset_tsupport _).trans <|
+    (tsupport_comp_subset Complex.ofReal_zero _).trans <|
+      (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j).trans <|
+        Metric.closedBall_subset_closedBall ?_
+  rw [pow_add, mul_assoc]
+  gcongr
 
 /-- The smoothing `Kⱼ ⋆ g` of an `L^∞` function by the kernel `Kⱼ = 𝓕⁻ (φ (2^{-(j + n₀)} ·))`,
 an everywhere-defined function. -/
