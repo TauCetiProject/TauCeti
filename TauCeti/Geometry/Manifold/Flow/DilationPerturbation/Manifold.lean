@@ -46,9 +46,7 @@ the two fields agree, so by `TauCeti.returnDerivative_eq_smul_of_eqOn_compl`:
 This needs `v` only `C¹`, given a smooth chart in which `v` is constant near `p`
 (`TauCeti.exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart`). For a smooth field the
 flow-box chart is smooth (`TauCeti.exists_contMDiff_returnDerivative_add_smul_eq_exp_smul`); for a
-`C^k` field it is only `C^k`, and the pulled-back perturbation loses a derivative. For a field on
-`E` that is already constant near `0`, the identity chart is such a chart
-(`TauCeti.exists_contDiff_returnDerivative_add_smul_eq_exp_smul`).
+`C^k` field it is only `C^k`, and the pulled-back perturbation loses a derivative.
 
 **Nondegeneracy of every cover.** The linearized return map at time `m * T₀` is the `m`-th power of
 the one at time `T₀` (`TauCeti.returnDerivative_natCast_mul`), and by
@@ -68,9 +66,6 @@ power with the eigenvalue `1`.
 * `TauCeti.exists_contMDiff_countable_setOf_hasEigenvalue_one_pow`: for a smooth field and all but
   countably many `a`, no positive power of the linearized return map of `v + a • W` has the
   eigenvalue `1`.
-* `TauCeti.exists_contDiff_returnDerivative_add_smul_eq_exp_smul`,
-  `TauCeti.exists_contDiff_countable_setOf_hasEigenvalue_one_pow`: the same two statements for a
-  `C¹` field on `E` constant near `0`.
 
 ## References
 
@@ -445,73 +440,5 @@ theorem exists_contMDiff_countable_setOf_hasEigenvalue_one_pow
     exists_contMDiff_returnDerivative_add_smul_eq_exp_smul hv hT₀ hP hp hmin hN
   exact ⟨W, hW, hWK, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦
     countable_setOf_hasEigenvalue_one_pow_of_returnDerivative_eq fun a ↦ (hWa a).2.2 g hg hgv⟩
-
-section ModelSpace
-
-/-- **The flow-box dilation of a closed orbit in a flow box of `E`.** Let `v` be a `C¹` field on
-`E` with a closed orbit through `0` of least period `T₀ > 0`, equal to a constant field `u` near
-`0`. For every neighbourhood `N` of `0` there is a smooth compactly supported field `W`, supported
-in `N` and vanishing along the orbit, such that for every `a` the closed orbit of `v` through `0` is
-a closed orbit of `v + a • W` of the same period, and the linearized return map of every section
-`{g = g 0}` transverse to `v` is multiplied by `exp a`. -/
-theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul {v : E → E} {u : E}
-    (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, v z⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    (hT₀ : 0 < T₀) (hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v)
-    (hp : flowOf (I := 𝓘(ℝ, E)) v T₀ 0 = 0)
-    (hmin : ∀ t ∈ Ioo 0 T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ≠ 0)
-    (hvu : ∀ᶠ z in 𝓝 0, v z = u) {N : Set E} (hN : N ∈ 𝓝 0) :
-    ∃ W : E → E, ContDiff ℝ ∞ W ∧ HasCompactSupport W ∧ tsupport W ⊆ N ∧
-      (∀ t ∈ Icc 0 T₀, W (flowOf (I := 𝓘(ℝ, E)) v t 0) = 0) ∧
-      ∀ a : ℝ, (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) (v + a • W) ∧
-        flowOf (I := 𝓘(ℝ, E)) (v + a • W) T₀ 0 = 0 ∧
-        ∀ g : E → ℝ, ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 1 g 0 → mvfderiv 𝓘(ℝ, E) g 0 (v 0) ≠ 0 →
-          returnDerivative (I := 𝓘(ℝ, E)) (v + a • W) g T₀ 0 =
-            Real.exp a • returnDerivative (I := 𝓘(ℝ, E)) v g T₀ 0 := by
-  -- In the identity chart of `E`, `v` is the constant field `u` on a ball around `0`.
-  obtain ⟨r, hr, hrv⟩ := Metric.eventually_nhds_iff_ball.1 hvu
-  obtain ⟨W, hW, ⟨K, hK, hKN, hW0⟩, horb, hWa⟩ :=
-    exists_contMDiff_returnDerivative_add_smul_eq_exp_smul_of_chart (M := E)
-      (e := OpenPartialHomeomorph.refl E) hv hT₀ hP hp hmin
-      (StructureGroupoid.id_mem_maximalAtlas _)
-      (by rw [OpenPartialHomeomorph.refl_source]; exact mem_univ _)
-      (by rw [OpenPartialHomeomorph.refl_apply, id_eq]) (u := u) hr
-      (by rw [OpenPartialHomeomorph.refl_target]; exact subset_univ _)
-      (fun z hz ↦ by
-        -- The identity chart has the identity as derivative.
-        rw [OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply, mfderiv_id, id_eq]
-        exact (ContinuousLinearMap.id_apply (R₁ := ℝ) (M₁ := TangentSpace 𝓘(ℝ, E) z) u).trans
-          (hrv z hz).symm) hN
-  have hts : tsupport W ⊆ K :=
-    closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (hW0 x h)) hK.isClosed
-  exact ⟨W, contMDiff_vectorSpace_iff_contDiff.1 hW,
-    hK.of_isClosed_subset (isClosed_tsupport _) hts, hts.trans hKN, horb, hWa⟩
-
-/-- **Every cover of a closed orbit becomes nondegenerate under a flow-box dilation.** Let `v` be
-a `C¹` field on `E` with a closed orbit through `0` of least period `T₀ > 0`, equal to a constant
-field `u` near `0`. For every neighbourhood `N` of `0` there is a smooth compactly supported
-field `W`, supported in `N` and vanishing along the orbit, such that the closed orbit of `v`
-through `0` is a closed orbit of every `v + a • W` of the same period and, for every section
-`{g = g 0}` transverse to `v`, only countably many `a` give a positive power of the linearized
-return map of `v + a • W` the eigenvalue `1`. -/
-theorem exists_contDiff_countable_setOf_hasEigenvalue_one_pow {v : E → E} {u : E}
-    (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, v z⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    (hT₀ : 0 < T₀) (hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v)
-    (hp : flowOf (I := 𝓘(ℝ, E)) v T₀ 0 = 0)
-    (hmin : ∀ t ∈ Ioo 0 T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ≠ 0)
-    (hvu : ∀ᶠ z in 𝓝 0, v z = u) {N : Set E} (hN : N ∈ 𝓝 0) :
-    ∃ W : E → E, ContDiff ℝ ∞ W ∧ HasCompactSupport W ∧ tsupport W ⊆ N ∧
-      (∀ t ∈ Icc 0 T₀, W (flowOf (I := 𝓘(ℝ, E)) v t 0) = 0) ∧
-      (∀ a : ℝ, (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) (v + a • W) ∧
-        flowOf (I := 𝓘(ℝ, E)) (v + a • W) T₀ 0 = 0) ∧
-      ∀ g : E → ℝ, ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 1 g 0 → mvfderiv 𝓘(ℝ, E) g 0 (v 0) ≠ 0 →
-        {a : ℝ | ∃ m ≠ 0,
-          (returnDerivative (I := 𝓘(ℝ, E)) (v + a • W) g T₀ 0 ^ m).HasEigenvalue 1}.Countable := by
-  obtain ⟨W, hW, hWc, hWN, hWorb, hWa⟩ :=
-    exists_contDiff_returnDerivative_add_smul_eq_exp_smul hv hT₀ hP hp hmin hvu hN
-  exact ⟨W, hW, hWc, hWN, hWorb, fun a ↦ ⟨(hWa a).1, (hWa a).2.1⟩, fun g hg hgv ↦
-    countable_setOf_hasEigenvalue_one_pow_of_returnDerivative_eq (M := E) fun a ↦
-      (hWa a).2.2 g hg hgv⟩
-
-end ModelSpace
 
 end TauCeti

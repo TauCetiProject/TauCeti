@@ -29,10 +29,11 @@ and the flow of `u + a • W` still runs along the axis, with time-`t` map of de
 `exp a` modulo the flow line `ℝ ∙ u`.
 
 **The effect on the return maps.** On a manifold, let `w` agree with `v` off a closed set avoided
-by the orbit of `p` from time `σ` to the period `T₀`, and let the time-`σ` map of `w` at `p` be that
-of `v` composed with a map acting as `c` modulo the flow line `ℝ ∙ v p`. Since the orbit returns to
-`p` through the region where the fields agree, `p` returns to itself at time `T₀` under `w`, and
-the linearized return maps of `w` are `c` times those of `v`
+by the orbit of `p` from time `σ` to the period `T₀`. Let the time-`σ` maps of `w` and `v` carry `p`
+to the same point, the derivative at `p` of that of `w` being that of `v` precomposed with a map of
+`T_p M` acting as `c` modulo the flow line `ℝ ∙ v p`. Since the orbit returns to `p` through the
+region where the fields agree, `p` returns to itself at time `T₀` under `w`, and the linearized
+return maps of `w` are `c` times those of `v`
 (`TauCeti.returnDerivative_eq_smul_of_eqOn_compl`, from
 `TauCeti.returnDerivative_eq_smul_of_mfderiv_flowOf_eq` and
 `TauCeti.mfderiv_flowOf_add_eq_of_eqOn`).
@@ -45,8 +46,9 @@ Together, in a chart in which `v` is the constant field `u` near `p`, they give 
 * `TauCeti.exists_contDiff_flowOf_const_add_smul_axis`: the flow-box dilation field `W` of a
   constant field `u`, supported in a prescribed open set around a segment of the axis.
 * `TauCeti.returnDerivative_eq_smul_of_eqOn_compl`: a field agreeing with `v` off a set avoided by
-  the rest of a closed orbit, whose flow near `p` composes that of `v` with a map acting as `c`
-  modulo the flow line, has `c` times the linearized return maps of `v`.
+  the rest of a closed orbit, whose time-`σ` map at `p` has derivative that of `v` precomposed with
+  a map of `T_p M` acting as `c` modulo the flow line, has `c` times the linearized return maps of
+  `v`.
 
 ## References
 
