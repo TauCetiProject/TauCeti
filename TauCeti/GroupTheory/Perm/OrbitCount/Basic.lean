@@ -29,6 +29,8 @@ permutations of the same type.
 * `TauCeti.orbitCount_mul_comm` and `Equiv.Perm.sameCycle_mul_comm_iff`: the two products `σ * τ`
   and `τ * σ` are conjugate, so they have the same number of orbits, and their cycles correspond
   under `σ`.
+* `Function.Involutive.orbitCount_eq_natCard_le`: an involution of a linear order has one orbit
+  for each point `i` with `i ≤ f i`.
 * `TauCeti.orbitCount_prodCongrRight_const`: permuting the second factor of a product by the same
   permutation over every point of the first multiplies the number of orbits by the size of the
   first factor.
@@ -235,6 +237,35 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
       simpa only [Equiv.permCongrHom_coe] using map_zpow e.permCongrHom σ i
     rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply] at hi
     exact hi
+
+/-- An involution of a linearly ordered type has one orbit for each point `i` with `i ≤ f i`:
+each orbit `{i, f i}` is represented by its least element. -/
+theorem _root_.Function.Involutive.orbitCount_eq_natCard_le [LinearOrder α] {f : Equiv.Perm α}
+    (hf : Function.Involutive f) : orbitCount f = Nat.card {i : α // i ≤ f i} := by
+  -- each orbit `{i, f i}` is sent to its least element
+  let r : α → {i : α // i ≤ f i} := fun i ↦ ⟨min i (f i), by
+    rcases le_total i (f i) with h | h
+    · rwa [min_eq_left h]
+    · rw [min_eq_right h, hf i]
+      exact h⟩
+  have hr : Function.Surjective r := fun i ↦ ⟨i, Subtype.ext (min_eq_left i.property)⟩
+  have hker (i j : α) : f.SameCycle i j ↔ r i = r j := by
+    rw [hf.sameCycle_iff, Subtype.ext_iff]
+    constructor
+    · rintro (rfl | rfl)
+      · rfl
+      · simp only [r, hf j, min_comm]
+    · intro h
+      simp only [r] at h
+      rcases min_choice i (f i) with hi | hi <;>
+        rcases min_choice j (f j) with hj | hj <;> rw [hi, hj] at h
+      · exact Or.inl h
+      · exact Or.inr h
+      · exact Or.inr (by rw [← h, hf i])
+      · exact Or.inl (f.injective h)
+  rw [orbitCount_def]
+  exact Nat.card_congr ((Quotient.congrRight (r := SameCycle.setoid f) (r' := Setoid.ker r)
+    hker).trans (Setoid.quotientKerEquivOfSurjective r hr))
 
 /-- Rotating the second coordinate of `α × β` by the same permutation `τ` over every point of `α`
 has one copy of each orbit of `τ` over every point of `α`. -/
