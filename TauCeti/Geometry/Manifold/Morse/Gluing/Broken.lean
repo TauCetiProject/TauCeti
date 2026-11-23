@@ -41,8 +41,8 @@ same gluing produces points of `W^u(p) ∩ Z` converging to `y`, on orbits which
 trajectory from `p` to `q`. With `Z` the stable manifold of a second pseudo-gradient, this glues
 the broken configurations of a Morse–Smale pair.
 
-The Morse box at the break (`exists_morseBox_of_broken`, together with the transverse set carried
-to its exit point in `exists_morseBox_of_broken_of_isSliceChart`), the local description of the
+The Morse box at the break, with the transverse set carried to its exit point
+(`exists_morseBox_of_broken_of_isSliceChart`), the local description of the
 split coordinates near its entrance and exit points (`eventually_of_morseBox`) and the continuity of
 reading gluing pairs back on `M` (`continuousAt_toChart_symm_of_mem_insert_splitGluingPairs`), in
 the namespace `TauCeti.IsAdaptedPseudoGradient`, are also the setting of the half-open gluing
@@ -58,8 +58,7 @@ of `W^u(p)` at the entrance face that meet it at a late time are the fixed point
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `exists_morseBox_of_broken`: a Morse box at the middle of a broken trajectory.
-* `exists_morseBox_of_broken_of_isSliceChart`: such a box at a broken configuration ending in a
+* `exists_morseBox_of_broken_of_isSliceChart`: a Morse box at a broken configuration ending in a
   transverse set, with that set carried by the flow to the exit point.
 * `IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart`: points of `W^u(p) ∩ Z`
   accumulate at each point `y` of `W^u(q)`, `q` included, where a flattened set `Z` meets
@@ -183,7 +182,7 @@ linear and a radius `ε` such that the cube of radius `2 ε` lies in the chart, 
 unstable sets of `q` are the coordinate planes on a cube of radius larger than `2 ε`, and the two
 trajectories cross the entrance and exit faces of the box at points `y₁` and `y₂` of the
 coordinate planes. -/
-theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
+private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
     (hf : IsMorse 𝓘(ℝ, E) f) {p q r a₁ a₂ : M}
     (hpq : p ≠ q) (hqr : q ≠ r) (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (ha₂ : a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
@@ -451,10 +450,10 @@ theorem exists_isSliceChart_preimage_flow (hX : IsAdaptedPseudoGradient f X) {q 
 trajectory from `p` to a critical point `q ≠ p`, and `y ≠ q` a point of `W^u(q)`. Let `Z` be a set
 through `y`, flattened near `y` by a chart of the maximal atlas and transverse to `W^u(q)` at `y`.
 Then `y` lies on a trajectory from `q` to a critical point `r ≠ q`, and there is a Morse box at
-`q` as in `exists_morseBox_of_broken`, with entrance point `y₁` on the trajectory through `a₁` and
-exit point `y₂ = flow T₂ y`. The image `flow (-T₂) ⁻¹' Z` of `Z` under the flow passes through
-`y₂`, is flattened near `y₂` by a chart of the maximal atlas, and is transverse to `W^u(q)`
-there. -/
+`q`, in a Morse chart in which `X` is linear and the stable and unstable sets of `q` are the
+coordinate planes, with entrance point `y₁` on the trajectory through `a₁` and exit point
+`y₂ = flow T₂ y`. The image `flow (-T₂) ⁻¹' Z` of `Z` under the flow passes through `y₂`, is
+flattened near `y₂` by a chart of the maximal atlas, and is transverse to `W^u(q)` there. -/
 theorem exists_morseBox_of_broken_of_isSliceChart (hX : IsAdaptedPseudoGradient f X)
     (hf : IsMorse 𝓘(ℝ, E) f) {p q a₁ y : M} {Z : Set M} (hpq : p ≠ q)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (hy : y ∈ hX.flow.unstableSet q)
