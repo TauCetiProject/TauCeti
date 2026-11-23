@@ -74,21 +74,18 @@ namespace ModelWithCorners
 /-! ### The extended charts of the interior -/
 
 /-- The extended chart of the interior at `x` is the extended chart of `M` at `x`. -/
-@[simp, mfld_simps]
 theorem extChartAt_interior_apply (x y : I.interior M) :
     extChartAt 𝓘(𝕜, E) x y = extChartAt I (x : M) y := by
   simp only [extChartAt_coe, comp_apply, modelWithCornersSelf_coe, id_eq, chartAt_interior_apply]
 
 /-- The source of the extended chart of the interior at `x` consists of the interior points in the
 source of the extended chart of `M` at `x`. -/
-@[simp, mfld_simps]
 theorem extChartAt_interior_source (x : I.interior M) :
     (extChartAt 𝓘(𝕜, E) x).source = Subtype.val ⁻¹' (extChartAt I (x : M)).source := by
   rw [extChartAt_source, extChartAt_source, chartAt_interior_source]
 
 /-- The target of the extended chart of the interior at `x` consists of the points of the target
 of the extended chart of `M` at `x` lying in the interior of the range of `I`. -/
-@[simp, mfld_simps]
 theorem extChartAt_interior_target (x : I.interior M) :
     (extChartAt 𝓘(𝕜, E) x).target = (extChartAt I (x : M)).target ∩ interior (range I) := by
   rw [extChartAt_target, extChartAt_target, chartAt_interior_target, modelWithCornersSelf_coe_symm,
