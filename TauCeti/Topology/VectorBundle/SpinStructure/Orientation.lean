@@ -317,6 +317,18 @@ theorem pullback_negOne {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K 
     rw [pullback_toEquiv]
     exact (negOne_toEquiv_apply s (f y) p).trans (negOne_toEquiv_apply (s.pullback f) y p).symm
 
+/-- Transporting the sheet-exchange automorphism along fibrewise isometries gives the
+sheet-exchange automorphism of the transport. -/
+@[simp]
+theorem map_negOne {F' : Type*} {E' : X → Type w} [TopologicalSpace (TotalSpace F' E')]
+    [∀ x, NormedAddCommGroup (E' x)] [∀ x, InnerProductSpace ℝ (E' x)]
+    (s : SpinStructure F E n) {Φ : ∀ x, E x ≃ₗᵢ[ℝ] E' x}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E')) :
+    (negOne s).map Φ hΦ = negOne (s.map Φ hΦ) :=
+  ext fun x p ↦ by
+    rw [map_toEquiv]
+    exact (negOne_toEquiv_apply s x p).trans (negOne_toEquiv_apply (s.map Φ hΦ) x p).symm
+
 /-- An automorphism of a Spin structure acts on each point of a fibre either as the identity or by
 the central element `-1` of `Spin(n)`. -/
 theorem toEquiv_apply_eq_self_or_negOne_smul {s : SpinStructure F E n} (φ : s.Equiv s) (x : X)

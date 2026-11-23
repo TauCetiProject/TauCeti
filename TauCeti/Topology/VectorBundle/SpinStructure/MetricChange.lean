@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Orientation
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.MetricChange
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.MetricChange
 public import TauCeti.Topology.VectorBundle.SpinStructure.Orientation
 
 /-!
@@ -51,7 +51,9 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
 
 /-- **A change of metric preserves the orientation of a Spin structure**: the metric change of `s`
 to `g` induces on each fibre the orientation induced by `s`, read on the copy of the fibre carrying
-`g`. The transport `B ^ (-1/2)` has positive determinant. -/
+`g`. The transport `B ^ (-1/2)` has positive determinant. It takes precedence over the general
+transport rule `TauCeti.SpinStructure.fiberOrientation_map` in `simp`. -/
+@[simp high]
 theorem fiberOrientation_metricChange (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
     fiberOrientation (s.metricChange g) o x =
