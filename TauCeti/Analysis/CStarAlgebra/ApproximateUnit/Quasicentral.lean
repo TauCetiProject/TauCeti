@@ -98,6 +98,14 @@ private theorem eventually_lipschitzWith_commutator_left {A : Type*} [NonUnitalS
   (eventually_nnNorm_le_one hnorm).mono fun e he =>
     (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he)
 
+private theorem tendsto_commutator_of_dense {A : Type*} [NonUnitalSeminormedRing A]
+    {l : Filter A} (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) {sA : Set A} (hsA : Dense sA)
+    (hcomm : ∀ a ∈ sA, Tendsto (fun e => e * a - a * e) l (𝓝 0)) (a : A) :
+    Tendsto (fun e => e * a - a * e) l (𝓝 0) :=
+  TauCeti.tendsto_of_mem_closure_of_lipschitzWith
+    (eventually_lipschitzWith_commutator_left hnorm)
+    continuousWithinAt_const hcomm (hsA a)
+
 private theorem tendsto_nhds_iff_norm_lt {α E : Type*} [SeminormedAddCommGroup E]
     {f : α → E} {l : Filter α} {y : E} :
     Tendsto f l (𝓝 y) ↔ ∀ ε > 0, ∀ᶠ x in l, ‖f x - y‖ < ε := by
@@ -216,9 +224,7 @@ theorem of_tendsto_mul_right_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
       ((eventually_nnNorm_le_one hnorm).mono fun e he =>
         (TauCeti.lipschitzWith_mul_left e).weaken he)
       continuousWithinAt_id hmul (hsI hx))
-    (fun a => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (eventually_lipschitzWith_commutator_left hnorm)
-      continuousWithinAt_const hcomm (hsA a))
+    (tendsto_commutator_of_dense hnorm hsA hcomm)
 
 /-- Dense-subset criterion for `IsQuasicentralApproximateUnit`: for a proper filter `l` eventually
 in the nonnegative closed unit ball of `I`, checking `x * e → x` on a subset `sI` with
@@ -235,9 +241,7 @@ theorem of_tendsto_mul_left_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
       ((eventually_nnNorm_le_one hnorm).mono fun e he =>
         (TauCeti.lipschitzWith_mul_right e).weaken he)
       continuousWithinAt_id hmul (hsI hx))
-    (fun a => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (eventually_lipschitzWith_commutator_left hnorm)
-      continuousWithinAt_const hcomm (hsA a))
+    (tendsto_commutator_of_dense hnorm hsA hcomm)
 
 /-- The closed unit ball belongs to any quasicentral approximate unit. -/
 theorem closedBall_mem (hl : I.IsQuasicentralApproximateUnit l) : Metric.closedBall 0 1 ∈ l :=
@@ -311,8 +315,7 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
 /-- Pushing `l.comap ((↑) : I → A)` forward to `A` recovers `l`. -/
 theorem map_coe_comap_coe (hl : I.IsQuasicentralApproximateUnit l) :
     (l.comap ((↑) : I → A)).map ((↑) : I → A) = l :=
-  (subtypeVal_map_comap (I : Set A) l).trans
-    (inf_eq_left.mpr (le_principal_iff.mpr hl.eventually_mem))
+  map_comap_of_mem (by rw [Subtype.range_coe]; exact hl.eventually_mem)
 
 /-- Elements along a quasicentral approximate unit in a star-ordered C⋆-algebra are eventually
 self-adjoint. -/
@@ -507,8 +510,9 @@ theorem mem_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {s : Set A} :
 theorem map_coe_comap_coe_quasicentralApproximateUnit (I : TwoSidedIdeal A) :
     (I.quasicentralApproximateUnit.comap ((↑) : I → A)).map ((↑) : I → A) =
       I.quasicentralApproximateUnit :=
-  (subtypeVal_map_comap (I : Set A) _).trans <| inf_eq_left.mpr <| le_principal_iff.mpr <|
-    mem_quasicentralApproximateUnit_iff.mpr
+  map_comap_of_mem <| by
+    rw [Subtype.range_coe]
+    exact mem_quasicentralApproximateUnit_iff.mpr
       ⟨∅, ∅, 1, zero_lt_one, fun _ h => (mem_quasicentralSet_iff.mp h).1⟩
 
 /-- Universal property of `I.quasicentralApproximateUnit`: a filter `l` is finer than
