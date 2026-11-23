@@ -511,10 +511,12 @@ theorem baseSet_orthonormalFrameBundle :
       Trivialization _ (proj : OrthonormalFrameBundle 𝕜 F E V → B)).baseSet = e.baseSet :=
   (rfl)
 
-private theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
+/-- The inverse of the trivialization carries `(y, g)` to the frame `orthonormalFrameAt` at `y`
+acted on by `g`, for every `y`. -/
+theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
     (e.orthonormalFrameBundle c b).toOpenPartialHomeomorph.symm q =
       op q.2 • (⟨q.1, orthonormalFrameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
-  rfl
+  (rfl)
 
 private theorem orthonormalFrameBundle_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
     e.orthonormalFrameBundle c b p =
