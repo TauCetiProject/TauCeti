@@ -61,6 +61,7 @@ theorem re_trace_mul_conjTranspose_self (X : Matrix m n 𝕜) :
 
 open scoped ComplexOrder in
 /-- The real part of the trace of `X * Xᴴ` vanishes only for `X = 0`. -/
+@[simp]
 theorem re_trace_mul_conjTranspose_self_eq_zero_iff {X : Matrix m n 𝕜} :
     RCLike.re (X * X.conjTranspose).trace = 0 ↔ X = 0 := by
   rw [← trace_mul_conjTranspose_self_eq_zero_iff]

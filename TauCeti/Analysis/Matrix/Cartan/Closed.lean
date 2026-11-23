@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Cartan
+public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 import TauCeti.Analysis.Matrix.Frobenius
-import TauCeti.Analysis.Matrix.Mostow
+import TauCeti.Analysis.Matrix.Exponential.Mostow
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
 import TauCeti.Geometry.Lie.Subgroup.Units
@@ -56,7 +56,7 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
 
 * `Matrix.GeneralLinearGroup.exists_mem_coe_eq_exp_smul_of_isClosed`: the line through a
   positive element `exp X` of `H` lies in `H`.
-* `Matrix.GeneralLinearGroup.polarUnitary_mem_of_isClosed`: the unitary polar factor of an
+* `Matrix.GeneralLinearGroup.toUnits_polarUnitary_mem_of_isClosed`: the unitary polar factor of an
   element of `H` lies in `H`.
 * `Matrix.GeneralLinearGroup.cartanHomeomorphOfIsClosed`: the homeomorphism
   `K_H × 𝔭_H ≃ₜ H`, `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
@@ -104,7 +104,9 @@ private theorem exists_add_orthogonal {V : Submodule ℝ (Matrix n n 𝕜)}
   have hinner (A B : Matrix n n 𝕜) : ⟪A, B⟫_ℝ = RCLike.re (Aᴴ * B).trace := by
     rw [frobenius_inner_def, ← frobenius_inner_eq_trace_conjTranspose_mul, frobenius_inner_def,
       map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_sum]; rfl
+    exact Finset.sum_congr rfl fun i _ ↦ by
+      rw [map_sum]
+      exact Finset.sum_congr rfl fun j _ ↦ real_inner_eq_re_inner 𝕜 (A i j) (B i j)
   obtain ⟨X₀, hX₀, Z₀, hZ₀, hsum⟩ := V.exists_add_mem_mem_orthogonal X
   -- `Z₀ ⊥ V` gives `re (trace (Z₀ * W)) = 0` and `re (trace (Z₀ᴴ * W)) = 0` for `W ∈ V`.
   have horth (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ * W).trace = 0 := by
@@ -423,6 +425,12 @@ section Cartan
 
 variable {H : Subgroup (GL n 𝕜)}
 
+/-- A unit of `H` whose matrix is `exp x` is the unit exponential of `x`. -/
+private theorem expUnit_mem_of_coe_eq {x : Matrix n n 𝕜} {g : GL n 𝕜} (hg : g ∈ H)
+    (hgx : (g : Matrix n n 𝕜) = NormedSpace.exp x) : TauCeti.expUnit x ∈ H := by
+  have h : g = TauCeti.expUnit x := Units.ext (by rw [TauCeti.expUnit_coe, hgx])
+  rwa [← h]
+
 /-- **The line through a positive element.** Let `H` be a closed subgroup of `GL n 𝕜`, for
 `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose and with finitely many connected components.
 If `H` contains `exp X` for a Hermitian matrix `X`, then it contains `exp (t X)` for every real
@@ -431,9 +439,7 @@ theorem exists_mem_coe_eq_exp_smul_of_isClosed (hH : IsClosed (H : Set (GL n �
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {X : Matrix n n 𝕜}
     (hX : X.IsHermitian) {g : GL n 𝕜} (hg : g ∈ H) (hgX : (g : Matrix n n 𝕜) = NormedSpace.exp X)
     (t : ℝ) : ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
-  have hXH : TauCeti.expUnit X ∈ H := by
-    convert hg
-    exact Units.ext (by rw [TauCeti.expUnit_coe, hgX])
+  have hXH : TauCeti.expUnit X ∈ H := expUnit_mem_of_coe_eq hg hgX
   exact ⟨_, mem_lieAlg_of_finite hH hstar hfin hX hXH t, TauCeti.expUnit_coe _⟩
 
 variable (H) in
@@ -452,8 +458,7 @@ def cartanHomeomorphOfIsClosed (hH : IsClosed (H : Set (GL n 𝕜)))
       ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • x) := by
     refine ⟨fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩, fun h t ↦ ?_⟩
     obtain ⟨g, hg, hgx⟩ := h t
-    convert hg
-    exact Units.ext (by rw [TauCeti.expUnit_coe, hgx])
+    exact expUnit_mem_of_coe_eq hg hgx
   have hexp (x : Matrix n n 𝕜) (hx : IsSelfAdjoint x) (hxH : TauCeti.expUnit x ∈ H) (t : ℝ) :
       TauCeti.expUnit (t • x) ∈ H :=
     (hline x).2 (exists_mem_coe_eq_exp_smul_of_isClosed hH hstar hfin hx.isHermitian hxH
@@ -519,7 +524,7 @@ theorem existsUnique_unitary_mul_exp_of_isClosed (hH : IsClosed (H : Set (GL n �
 
 /-- The unitary polar factor of an element of a closed subgroup `H` of `GL n 𝕜` stable under the
 conjugate transpose, with finitely many connected components, lies in `H`. -/
-theorem polarUnitary_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
+theorem toUnits_polarUnitary_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {g : GL n 𝕜}
     (hg : g ∈ H) : Unitary.toUnits g.polarUnitary ∈ H := by
   have h := ((cartanHomeomorphOfIsClosed H hH hstar hfin).symm ⟨g, hg⟩).1.property
@@ -533,7 +538,7 @@ theorem maximal_isCompact_unitarySubgroup_subgroupOf_of_isClosed
     Maximal (fun K : Subgroup H ↦ IsCompact (K : Set H))
       ((unitarySubgroup (GL n 𝕜)).subgroupOf H) :=
   maximal_isCompact_unitarySubgroup_subgroupOf
-    (fun _ hg ↦ polarUnitary_mem_of_isClosed hH hstar hfin hg) hH
+    (fun _ hg ↦ toUnits_polarUnitary_mem_of_isClosed hH hstar hfin hg) hH
 
 end Cartan
 
