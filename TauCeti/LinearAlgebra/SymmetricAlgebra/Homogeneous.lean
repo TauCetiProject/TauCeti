@@ -186,7 +186,6 @@ instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule R M) :=
 /-- Multiplication of homogeneous submodules of a symmetric algebra, as an `R`-linear map
 `homogeneousSubmodule R M i ⊗[R] homogeneousSubmodule R M j →ₗ[R]
 homogeneousSubmodule R M (i + j)`. -/
-@[expose]
 noncomputable def homogeneousSubmoduleMul (i j : ℕ) :
     homogeneousSubmodule R M i ⊗[R] homogeneousSubmodule R M j →ₗ[R]
       homogeneousSubmodule R M (i + j) :=

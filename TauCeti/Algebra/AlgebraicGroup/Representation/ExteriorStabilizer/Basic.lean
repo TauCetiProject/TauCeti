@@ -31,6 +31,9 @@ character on that line is constructed in
 * `TauCeti.HopfIdeal.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq`:
   a finite regular subcomodule containing ideal generators realizes the subgroup as a line
   stabilizer over every value algebra.
+* `TauCeti.HopfIdeal.exists_finite_subcomodule_topExteriorLine_stabilizer`: shared Chevalley witness
+  construction producing a finite regular subcomodule `V` whose defining subspace's top exterior
+  line has stabilizer equal to the subgroup over every value algebra.
 * `TauCeti.HopfIdeal.exists_line_stabilizerHopfIdeal_eq`: every closed subgroup with finitely
   generated defining ideal is the stabilizer Hopf ideal of a line in a finite-dimensional comodule.
 * `Submodule.stabilizerHopfIdeal_range_exteriorPowerMap`: the stabilizer Hopf ideal of the top
@@ -98,24 +101,45 @@ theorem mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq
   rw [Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff]
   exact I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V hgen A g
 
+/-- Shared Chevalley witness construction: every closed subgroup with finitely generated defining
+ideal has a finite regular subcomodule `V` such that the top exterior line of `I.definingSubspace V`
+in `⋀ᵈ V` is one-dimensional and has point-functor stabilizer equal to `I`. -/
+theorem exists_finite_subcomodule_topExteriorLine_stabilizer (I : HopfIdeal k H)
+    (hI : I.toIdeal.FG) :
+    ∃ (V : Subcomodule k H H), Module.Finite k V.toSubmodule ∧
+      letI : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+      let L := LinearMap.range (_root_.exteriorPower.map
+        (Module.finrank k (I.definingSubspace V)) (I.definingSubspace V).subtype)
+      Module.finrank k L = 1 ∧
+        ∀ (A : CommAlgCat.{w} k) (g : HopfAlgebra.points (R := k) (H := H) A),
+          g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
+            (L.baseChange A).map
+              (Comodule.endOfPoint (⋀[k]^(Module.finrank k (I.definingSubspace V)) V) g.ofConv) =
+              L.baseChange A := by
+  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
+  let : Module.Finite k V := hV
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  refine ⟨V, hV, ?_, fun A g ↦
+    I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq V hgen A g⟩
+  rw [TauCeti.exteriorPower.finrank_range_map (I.definingSubspace V).injective_subtype,
+    Nat.choose_self]
+
 /-- Every closed subgroup with finitely generated defining ideal is the stabilizer Hopf ideal of a
 one-dimensional subspace of a finite-dimensional comodule. -/
 theorem exists_line_stabilizerHopfIdeal_eq (I : HopfIdeal k H) (hI : I.toIdeal.FG) :
     ∃ (M : Type (max u v)) (_ : AddCommGroup M) (_ : Module k M) (_ : Comodule k H M)
       (_ : Module.Finite k M) (L : Submodule k M),
       Module.finrank k L = 1 ∧ L.stabilizerHopfIdeal H = I := by
-  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
+  obtain ⟨V, hV, hdim, hpts⟩ := I.exists_finite_subcomodule_topExteriorLine_stabilizer.{u, v, v} hI
   let : Module.Finite k V := hV
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   let W := I.definingSubspace V
   let n := Module.finrank k W
   let L := LinearMap.range (_root_.exteriorPower.map n W.subtype)
   let instComodM : Comodule k H (⋀[k]^n V) := Comodule.exteriorPower k H V n
-  refine ⟨⋀[k]^n V, inferInstance, inferInstance, instComodM, inferInstance, L, ?_, ?_⟩
-  · rw [TauCeti.exteriorPower.finrank_range_map W.injective_subtype, Nat.choose_self]
-  · exact L.stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff I fun A _ _ g ↦
-      I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq V hgen
-        (CommAlgCat.of k A) g
+  refine ⟨⋀[k]^n V, inferInstance, inferInstance, instComodM, inferInstance, L, hdim, ?_⟩
+  exact L.stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff I fun A _ _ g ↦
+    hpts (CommAlgCat.of k A) g
 
 end TauCeti.HopfIdeal
 

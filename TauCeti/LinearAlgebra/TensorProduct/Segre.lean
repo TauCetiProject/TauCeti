@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.Algebra.Module.Projective
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.LinearAlgebra.TensorProduct.Dual
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 

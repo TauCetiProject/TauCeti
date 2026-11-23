@@ -20,6 +20,7 @@ import all TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 import all TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 import all TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 import all TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Mul
+import all TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 
 /-!
 # Affine sections of graded symmetric algebras

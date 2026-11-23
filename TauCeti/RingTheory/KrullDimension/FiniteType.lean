@@ -510,9 +510,8 @@ theorem le_of_add_ringKrullDim_quotient_eq_of_le
   have := finiteRingKrullDim_of_finiteType k (A ⧸ I)
   have htop := ringKrullDim_ne_top (R := A ⧸ I)
   lift ringKrullDim (A ⧸ I) to ℕ∞ using ringKrullDim_ne_bot with d
-  lift d to ℕ using by simpa using htop
-  simp only [ENat.WithBot.coe_eq_natCast] at ho₂ hIJ
-  refine (ENat.WithBot.add_le_add_natCast_right_iff (c := d)).mp ?_
+  refine ((ENat.addLECancellable_of_ne_top (by simpa using htop)).withBot.add_le_add_iff_right).mp
+    ?_
   rw [ho₂, ← ho₁]
   exact add_le_add le_rfl hIJ
 

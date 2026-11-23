@@ -13,7 +13,6 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Boundary
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flag
-import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Solvability
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.StabilizerDimension
 import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finrank

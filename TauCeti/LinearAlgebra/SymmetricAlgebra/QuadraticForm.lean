@@ -61,6 +61,7 @@ theorem coe_quadFormOfTensor_tmul (m₁ m₂ : M) :
 
 /-- Evaluating the image of `z : Dual R V ⊗[R] Dual R V` under `quadFormOfTensor` at `v : V`
 agrees with `TensorProduct.dualDistrib R V V z (v ⊗ₜ[R] v)`. -/
+@[simp]
 theorem lift_eval_quadFormOfTensor {V : Type*} [AddCommMonoid V] [Module R V]
     (v : V) (z : Module.Dual R V ⊗[R] Module.Dual R V) :
     _root_.SymmetricAlgebra.lift (Module.Dual.eval R V v)
@@ -70,21 +71,23 @@ theorem lift_eval_quadFormOfTensor {V : Type*} [AddCommMonoid V] [Module R V]
   | tmul φ ψ => simp
   | add x y hx hy => simp [hx, hy]
 
-/-- The degree-`2` homogeneous element of `SymmetricAlgebra R (Module.Dual R V)` representing
-`v ↦ B v v` for a bilinear form `B` on a finite projective module `V`. -/
+/-- The `R`-linear map sending a bilinear form `B` on a finite projective module `V` to the
+degree-`2` homogeneous element of `SymmetricAlgebra R (Module.Dual R V)` representing
+`v ↦ B v v`. -/
 noncomputable def bilinearToQuadForm {V : Type*} [AddCommMonoid V] [Module R V]
-    [Module.Finite R V] [Module.Projective R V] (B : V →ₗ[R] V →ₗ[R] R) :
-    homogeneousSubmodule R (Module.Dual R V) 2 :=
-  quadFormOfTensor R (Module.Dual R V)
-    ((TensorProduct.dualDistribEquiv R V V).symm (TensorProduct.lift B))
+    [Module.Finite R V] [Module.Projective R V] :
+    (V →ₗ[R] V →ₗ[R] R) →ₗ[R] homogeneousSubmodule R (Module.Dual R V) 2 :=
+  quadFormOfTensor R (Module.Dual R V) ∘ₗ
+    (TensorProduct.dualDistribEquiv R V V).symm.toLinearMap ∘ₗ
+      (TensorProduct.lift.equiv (RingHom.id R) V V R).toLinearMap
 
 /-- Evaluating `bilinearToQuadForm B` at `v` returns the diagonal value `B v v`. -/
 @[simp]
 theorem lift_eval_bilinearToQuadForm {V : Type*} [AddCommMonoid V] [Module R V]
     [Module.Finite R V] [Module.Projective R V] (B : V →ₗ[R] V →ₗ[R] R) (v : V) :
     _root_.SymmetricAlgebra.lift (Module.Dual.eval R V v) (bilinearToQuadForm B : _) = B v v := by
-  rw [bilinearToQuadForm, lift_eval_quadFormOfTensor,
-    ← TensorProduct.toLinearMap_dualDistribEquiv, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply, TensorProduct.lift.tmul]
+  simp only [bilinearToQuadForm, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    lift_eval_quadFormOfTensor, ← TensorProduct.toLinearMap_dualDistribEquiv,
+    LinearEquiv.apply_symm_apply, TensorProduct.lift.equiv_apply]
 
 end TauCeti.SymmetricAlgebra

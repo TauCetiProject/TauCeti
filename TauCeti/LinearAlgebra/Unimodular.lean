@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!

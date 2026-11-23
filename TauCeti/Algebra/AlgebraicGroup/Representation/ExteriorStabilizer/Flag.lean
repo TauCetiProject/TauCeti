@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.Solvable
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Exterior
-import Mathlib.RingTheory.HopfAlgebra.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Stabilizer
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic

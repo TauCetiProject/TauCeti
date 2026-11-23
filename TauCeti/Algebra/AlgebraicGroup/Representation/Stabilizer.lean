@@ -15,7 +15,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.HopfAlgebra.Antipode
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.RingTheory.HopfAlgebra.Quotient
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 import TauCeti.LinearAlgebra.TensorProduct.Separation
