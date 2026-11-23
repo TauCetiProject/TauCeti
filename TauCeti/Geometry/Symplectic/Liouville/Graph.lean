@@ -179,11 +179,8 @@ noncomputable def liouvilleGraphHomotopy (hι : Continuous ι) (hf : Continuous 
   toFun := liouvilleGraph Z (ι ∘ Prod.snd) fun p : unitInterval × S ↦ (1 - (p.1 : ℝ)) * f p.2 + p.1
   continuous_toFun := by
     have hpos (p : unitInterval × S) : 0 < (1 - (p.1 : ℝ)) * f p.2 + p.1 := by
-      rcases eq_or_lt_of_le (unitInterval.le_one p.1) with h | h
-      · rw [h, sub_self, zero_mul, zero_add]
-        exact one_pos
-      · exact add_pos_of_pos_of_nonneg (mul_pos (sub_pos.2 h) (hf₀ p.2))
-          (unitInterval.nonneg p.1)
+      nlinarith [unitInterval.nonneg p.1, hf₀ p.2,
+        mul_nonneg (sub_nonneg.2 (unitInterval.le_one p.1)) (hf₀ p.2).le]
     exact continuous_liouvilleGraph hZ hc (hι.comp continuous_snd) (by fun_prop)
       fun p ↦ (hpos p).ne'
   map_zero_left s := by simp
@@ -239,7 +236,10 @@ theorem isTransverseAlong_liouvilleGraph (hι : MDifferentiable J I ι)
   rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain t (ι s)) (hι s) (hf s) (hf₀ s), hZt] at hw
   have h : (a - 1) • Z (ι s) + mfderiv J I ι s w = 0 := by
     refine injective_mfderiv_flowOf hZ hc t (ι s) ?_
-    rw [map_zero, sub_smul, one_smul, sub_add_eq_add_sub, map_sub, hw, sub_self]
+    rw [liouvilleGraph_apply] at hw
+    -- Keep `mvfderiv` folded, so that its value stays a real scalar.
+    simpa [-mvfderiv_apply_eq_mfderiv_apply, sub_smul, sub_add_eq_add_sub, map_sub, a] using
+      sub_eq_zero.2 hw
   obtain ⟨ha, hw0⟩ := hZι.eq_zero_of_smul_add_eq_zero (hιs s) h
   subst hw0
   rw [show a = 0 from map_zero _, zero_sub] at ha
@@ -268,14 +268,11 @@ theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.ta
   have hs := congrArg (fun β ↦ β ![mvfderiv J (fun s ↦ Real.log (f s)) s w • Z (ι s) +
     mfderiv J I ι s w]) hscale
   simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at hs
+    Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at hs ⊢
   -- Differentiate the graph, then use that `α` is linear and vanishes on `Z`.
-  simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
-    mfderiv_liouvilleGraph_apply hZ hp hι hf hfs.ne']
-  rw [liouvilleGraph_apply, hs, Real.exp_log hfs, ContinuousAlternatingMap.vecCons_add,
-    ContinuousAlternatingMap.vecCons_smul, RoughForm.apply_eq_zero_of_interior_eq hZα, smul_zero,
-    zero_add]
+  rw [mfderiv_liouvilleGraph_apply hZ hp hι hf hfs.ne', liouvilleGraph_apply, hs]
+  simp [-mvfderiv_apply_eq_mfderiv_apply, Real.exp_log hfs, ContinuousAlternatingMap.vecCons_add,
+    ContinuousAlternatingMap.vecCons_smul, RoughForm.apply_eq_zero_of_interior_eq hZα]
 
 /-- The Liouville graph of a `C^n` nowhere vanishing function over a `C^n` map, for a complete
 `C^n` field `Z` and `1 ≤ n`, is `C^n`. -/
