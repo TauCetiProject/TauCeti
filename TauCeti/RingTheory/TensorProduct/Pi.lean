@@ -20,11 +20,11 @@ structures on `A₁` and `A₂` restrict to their given `R`-algebra structures
 `Algebra.TensorProduct.piScalarRight : A ⊗[R] (ι → R) ≃ₐ[S] (ι → A)` on `Pi.single i x`, so that
 `simp` computes the matrix entries of a base change of an algebra map between function algebras.
 Finally, let `s : B k →ₐ[A] A` be an `A`-algebra map from one factor `B k` of a finite product
-`∀ k, B k` of `A`-algebras back to the base `A`; it splits the structure map `A → B k`, so it is a
-section of `Spec (B k) → Spec A`. Base-changing the composite of `s` with the projection onto `B k`
-agrees with applying Mathlib's `Algebra.TensorProduct.piRight` decomposition, projecting to
-coordinate `k`, and then applying the base change of `s`
-(`AlgHom.sectionBaseChange_comp_evalAlgHom`).
+`∀ k, B k` of `A`-algebras back to the base `A`; it splits the structure map `A → B k` (so, when
+`A` and `B k` are commutative rings, it gives a section of `Spec (B k) → Spec A`). Base-changing
+the composite of `s` with the projection onto `B k` agrees with applying Mathlib's
+`Algebra.TensorProduct.piRight` decomposition, projecting to coordinate `k`, and then applying the
+base change of `s` (`AlgHom.sectionBaseChange_comp_evalAlgHom`).
 
 ## Main declarations
 
@@ -96,9 +96,10 @@ end TauCeti.Algebra.TensorProduct
 namespace AlgHom
 
 /-- For an `A`-algebra map `s : B k →ₐ[A] A` from one factor of a finite product back to the
-base `A` (a section of `Spec (B k) → Spec A`), the base change to `T` of `s` composed with the
-projection `Pi.evalAlgHom A B k` is Mathlib's `Algebra.TensorProduct.piRight`, followed by the
-projection to coordinate `k` and the base change of `s`. -/
+base `A` (it splits the structure map `A → B k`; when `A` and `B k` are commutative rings, it gives
+a section of `Spec (B k) → Spec A`), the base change to `T` of `s` composed with the projection
+`Pi.evalAlgHom A B k` is Mathlib's `Algebra.TensorProduct.piRight`, followed by the projection to
+coordinate `k` and the base change of `s`. -/
 @[simp]
 theorem sectionBaseChange_comp_evalAlgHom {A : Type*} [CommSemiring A]
     {κ : Type*} [Fintype κ] [DecidableEq κ] {B : κ → Type*}
