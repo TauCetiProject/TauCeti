@@ -78,7 +78,9 @@ point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
 
 The derivative of an invariant function vanishes on every fundamental vector field, so a moment map
 is conserved along the integral curves of a Hamiltonian vector field of an invariant function
-(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`). This is
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`), and for a
+nondegenerate form every component of the moment map Poisson-commutes with the invariant function
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero_of_smul_invariant`). This is
 **Noether's theorem** for Hamiltonian systems.
 
 ## Main definitions
@@ -103,6 +105,9 @@ is conserved along the integral curves of a Hamiltonian vector field of an invar
 * `TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`: **Noether's
   theorem**, a moment map is conserved along the integral curves of a Hamiltonian vector field of
   an invariant function.
+* `TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero_of_smul_invariant`: **Noether's
+  theorem**, Poisson form: for a nondegenerate form, every component of a moment map
+  Poisson-commutes with an invariant function.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_momentDefect_one`: the derivative of the defect at
   the identity is the moment cocycle.
 * `TauCeti.SmoothTwoForm.IsMomentMap.momentDefect_eq_of_mem_connectedComponent`,
@@ -230,6 +235,22 @@ theorem IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant
     exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant (hf u hu)
       ((ContMDiffSMul.contMDiff_smul_const (n := ∞) (γ u)).mdifferentiableAt (by simp))
       (fun g ↦ hfG g (γ u)) ξ) ht₀ ht
+
+/-- **Noether's theorem for Hamiltonian systems, Poisson form.** For a nondegenerate form on a
+finite-dimensional manifold, every component `μ_ξ` of a moment map of the action by fundamental
+vector fields Poisson-commutes with a `G`-invariant function `f`: `{μ_ξ, f} = 0`. -/
+theorem IsMomentMap.poissonBracket_eq_zero_of_smul_invariant [FiniteDimensional ℝ E']
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
+    {f : M → ℝ} (hfG : ∀ (g : G) x, f (g • x) = f x) (ξ : GroupLieAlgebra I G) :
+    σ.poissonBracket (fun x ↦ μ x ξ) f = 0 := by
+  refine (h.poissonBracket_eq_zero_iff hσ f ξ).2 fun x ↦ ?_
+  rw [InfinitesimalAction.fundamental_apply]
+  by_cases hf : MDifferentiableAt I' 𝓘(ℝ) f x
+  · exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant hf
+      ((ContMDiffSMul.contMDiff_smul_const (n := ∞) x).mdifferentiableAt (by simp))
+      (fun g ↦ hfG g x) ξ
+  · -- Where `f` is not differentiable its derivative is zero by convention.
+    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf]
 
 variable (σ) in
 /-- `μ : M → 𝔤*` is a **group-level moment map** of the smooth action of `G` on `(M, σ)` when it
