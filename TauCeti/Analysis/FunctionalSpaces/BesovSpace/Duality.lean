@@ -43,9 +43,10 @@ The pairing extends the action of tempered distributions on test functions, from
 `w` is a scalar Schwartz function `ψ`, then `⟨u, w⟩ = u ψ` for the pairing `B v c = c • v`
 (`TauCeti.BesovSpace.toDistr_apply_eq_besovPairing`). If `u` is a scalar Schwartz function `ψ`,
 then `⟨u, w⟩ = w ψ` for the pairing `B c v = c • v`
-(`TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`). Both follow from the symmetry
+(`TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`). The first follows from the symmetry
 `(Δⱼ u) ψ = u (Δⱼ ψ)` of the blocks, whose pieces are even
-(`TemperedDistribution.littlewoodPaleyBlock_apply_apply`), and the reconstruction `u = ∑ₖ Δₖ u`.
+(`TemperedDistribution.littlewoodPaleyBlock_apply_apply`), and the reconstruction `u = ∑ₖ Δₖ u`;
+the second follows from the first by the symmetry of the pairing.
 
 In particular an element `v` of `B^{-s}_{p',q'}`, with values in any complex Banach space, acts
 boundedly on the Schwartz functions for the norm of `B^s_{p,q}`: there is a constant `C`,
@@ -349,31 +350,15 @@ theorem besovPairing_flip_apply (B : F →L[ℂ] G →L[ℂ] K) (u : BesovSpace 
     (w : BesovSpace G φ (-s) p' q') {u' : BesovSpace F φ (-(-s)) p q}
     (hu : u'.toDistr = u.toDistr) :
     B.flip.besovPairing φ (-s) p' p q' q w u' = B.besovPairing φ s p p' q q' u w := by
-  obtain ⟨S, hf⟩ := summable_integral_block B u w
   set L := φ.littlewoodPaleyOverlap φ
-  -- Both series are fiberwise sums of the same summable family over the pairs `|j - k| < L`.
-  have hR : HasSum (fun k ↦ ∑ j ∈ Finset.Ico (k + 1 - L) (k + L),
-      ∫ y, B (u.block k y) (w.block j y)) S := by
-    refine hf.prod_fiberwise fun k ↦ ?_
-    rw [← Finset.sum_ite_of_true (fun j hj ↦ hj) _ fun _ ↦ (0 : K)]
-    exact hasSum_sum_of_ne_finset_zero fun j hj ↦ ite_eq_right hj
-  have hL : HasSum (fun k ↦ ∑ j ∈ Finset.Ico (k + 1 - L) (k + L),
-      ∫ y, B.flip (w.block k y) (u'.block j y)) S := by
-    refine ((Equiv.prodComm ℕ ℕ).hasSum_iff.2 hf).prod_fiberwise fun k ↦ ?_
-    have hmem : ∀ j, j ∈ Finset.Ico (k + 1 - L) (k + L) ↔ k ∈ Finset.Ico (j + 1 - L) (j + L) :=
-      fun j ↦ by simp only [Finset.mem_Ico]; omega
-    have hterm : ∀ j, (if k ∈ Finset.Ico (j + 1 - L) (j + L) then
-        ∫ y, B (u.block j y) (w.block k y) else 0) =
-        if j ∈ Finset.Ico (k + 1 - L) (k + L) then
-          ∫ y, B.flip (w.block k y) (u'.block j y) else 0 := fun j ↦ by
-      simp only [hmem, flip_apply, block_eq_of_toDistr_eq hu]
-    have h := hasSum_sum_of_ne_finset_zero (L := .unconditional ℕ)
-      (f := fun j ↦ if k ∈ Finset.Ico (j + 1 - L) (j + L) then
-        ∫ y, B (u.block j y) (w.block k y) else 0)
-      (s := Finset.Ico (k + 1 - L) (k + L)) fun j hj ↦ ite_eq_right (mt (hmem j).2 hj)
-    rw [Finset.sum_congr rfl fun j hj ↦ (hterm j).trans (ite_eq_left hj)] at h
-    exact h
-  rw [(hasSum_besovPairing B.flip w u').unique hL, (hasSum_besovPairing B u w).unique hR]
+  -- Both series sum the same summable family over the pairs `|j - k| < L`, in swapped order.
+  simp only [besovPairing_apply, sum_eq_tsum_indicator _ _ (.unconditional ℕ), Set.indicator_apply,
+    Finset.mem_coe]
+  refine .trans (tsum_congr fun k ↦ tsum_congr fun j ↦ ?_)
+    ((summable_integral_block B u w).tsum_comm (f := fun k j ↦
+      if j ∈ Finset.Ico (k + 1 - L) (k + L) then ∫ y, B (u.block k y) (w.block j y) else 0))
+  simp only [flip_apply, block_eq_of_toDistr_eq hu]
+  exact if_congr (by simp only [Finset.mem_Ico]; omega) rfl rfl
 
 /-- **The pairing as a limit.** If the `k`-th term `∫ B ((Δₖ u) x) ((Δ⁺ₖ w) x) dx` of the pairing
 is `a k` and the partial sums of `a` tend to `y`, then the pairing is `y`. -/
@@ -472,25 +457,10 @@ multiplication `(c, v) ↦ c • v` is the action `w ψ` of the tempered distrib
 theorem besovPairing_eq_toDistr_apply {u : BesovSpace ℂ φ s p q} {ψ : 𝓢(E, ℂ)}
     (hu : u.toDistr = (ψ : 𝓢'(E, ℂ))) (w : BesovSpace G φ (-s) p' q') :
     (ContinuousLinearMap.lsmul ℂ ℂ).besovPairing φ s p p' q q' u w = w.toDistr ψ := by
-  refine (ContinuousLinearMap.lsmul ℂ ℂ).besovPairing_eq_of_tendsto (fun k ↦ ?_)
-    (tendsto_sum_littlewoodPaleyBlock_apply φ w.toDistr ψ)
-  set ψₖ := SchwartzMap.fourierMultiplierCLM ℂ
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) ψ
-  -- Move the block `Δₖ` onto the enlarged block of `w`, which it reproduces.
-  calc ∫ x, ContinuousLinearMap.lsmul ℂ ℂ (u.block k x) (enlargedBlock w k x) =
-        ∫ x, ψₖ x • enlargedBlock w k x := by
-        refine integral_congr_ae ?_
-        filter_upwards [(block_eq_toLp hu k).symm ▸ SchwartzMap.coeFn_toLp _ p volume] with x hx
-        simp [hx, ψₖ]
-    _ = ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
-          littlewoodPaleyBlock G φ j (littlewoodPaleyBlock G φ k w.toDistr) ψ := by
-        rw [← Lp.toTemperedDistribution_apply, enlargedBlock, Lp.toTemperedDistribution_sum]
-        simp only [coe_block, sum_apply, ψₖ, ← littlewoodPaleyBlock_apply_apply,
-          littlewoodPaleyBlock_comm φ k]
-    _ = littlewoodPaleyBlock G φ k w.toDistr ψ := by
-        rw [← sum_apply, ← sum_apply, ← enlargedLittlewoodPaleyBlock_eq_sum_Ico,
-          enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock φ
-            fun _ _ hjk ξ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ hjk ξ]
+  -- Pair `w` with `ψ`, viewed in `B^{-(-s)}_{p,q}`, through the flipped multiplication.
+  have hψ := SchwartzMap.toDistr_toBesovSpaceCLM φ (-(-s)) p q ψ
+  rw [← (ContinuousLinearMap.lsmul ℂ ℂ).besovPairing_flip_apply u w (hψ.trans hu.symm)]
+  exact (toDistr_apply_eq_besovPairing w hψ).symm
 
 /-- The pairing of a scalar Schwartz function `ψ ∈ B^s_{p,q}` with `w ∈ B^{-s}_{p',q'}(E, G)` for
 the scalar multiplication `(c, v) ↦ c • v` is the action `w ψ` of the tempered distribution `w`. -/
