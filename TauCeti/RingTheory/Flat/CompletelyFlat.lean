@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Complete flatness of modules
@@ -81,6 +82,12 @@ theorem isCompletelyFlatModule_iff {M : ModuleCat.{u} A} :
       Module.Flat (A ⧸ I) ((A ⧸ I) ⊗[A] M) :=
   Iff.rfl
 
+/-- Unfolding lemma for `IsCompletelyFaithfullyFlatModule`. -/
+theorem isCompletelyFaithfullyFlatModule_iff {M : ModuleCat.{u} A} :
+    IsCompletelyFaithfullyFlatModule A I M ↔
+      IsCompletelyFlatModule A I M ∧ Module.FaithfullyFlat (A ⧸ I) ((A ⧸ I) ⊗[A] M) :=
+  Iff.rfl
+
 /-- A completely faithfully flat module is completely flat. -/
 theorem IsCompletelyFaithfullyFlatModule.isCompletelyFlatModule {M : ModuleCat.{u} A}
     (h : IsCompletelyFaithfullyFlatModule A I M) : IsCompletelyFlatModule A I M :=
@@ -125,23 +132,18 @@ theorem not_isCompletelyFlatModule_quotient_self {a : A} (ha : IsRegular a) (hu 
     ¬ IsCompletelyFlatModule A (Ideal.span {a}) (ModuleCat.of A (A ⧸ Ideal.span {a})) := by
   intro h
   let J := Ideal.span {a}
-  have hcomp : J.mkQ.comp (LinearMap.mulLeft A a) = 0 := by
-    ext
-    simp [J]
-  let S := ModuleCat.shortComplexOfCompEqZero (LinearMap.mulLeft A a) J.mkQ hcomp
-  have hS : S.ShortExact := by
-    refine ModuleCat.shortComplex_shortExact _ (fun y => ?_) ha.left J.mkQ_surjective
-    simp only [S, ModuleCat.hom_ofHom, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, J,
-      Ideal.mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply, mul_comm a]
+  have hex := Ideal.exact_mulLeft_mkₐ_span_singleton (R := A) a
+  let S := ModuleCat.shortComplexOfCompEqZero _ _ hex.linearMap_comp_eq_zero
+  have hS : S.ShortExact :=
+    ModuleCat.shortComplex_shortExact S hex ha.left (Ideal.Quotient.mkₐ_surjective A J)
   have hinj := hS.rTensor_injective_of_isZero_Tor_one (ModuleCat.of A (A ⧸ J)) (h.1 1 one_pos)
+  have ha0 : ∀ z : A ⧸ J, a • z = 0 := fun z => by
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
+    simp [J, Algebra.smul_def]
   have hzero : S.f.hom.rTensor (A ⧸ J) = 0 := by
     refine TensorProduct.ext' fun x z => ?_
-    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
     simp only [S, ModuleCat.hom_ofHom, LinearMap.rTensor_tmul, LinearMap.mulLeft_apply,
-      LinearMap.zero_apply, ← smul_eq_mul, TensorProduct.smul_tmul]
-    convert TensorProduct.tmul_zero (A ⧸ J) x
-    rw [Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-    exact J.mul_mem_right _ (Ideal.mem_span_singleton_self a)
+      LinearMap.zero_apply, ← smul_eq_mul, TensorProduct.smul_tmul, ha0, TensorProduct.tmul_zero]
   have : Subsingleton (A ⊗[A] (A ⧸ J)) :=
     ⟨fun x y => hinj (by simp only [hzero, LinearMap.zero_apply])⟩
   have : Subsingleton (A ⧸ J) := (TensorProduct.lid A (A ⧸ J)).symm.injective.subsingleton
