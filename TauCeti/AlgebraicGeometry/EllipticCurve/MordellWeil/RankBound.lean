@@ -150,8 +150,8 @@ theorem two_mul_card_selmerGroup₂_le_card_selmerGroupA {S : Set (HeightOneSpec
   set φ := W.normM.domRestrict (W.selmerGroupA (𝓞 F) S)
   have hker : Nat.card (W.selmerGroup₂ (𝓞 F) Loc) ≤ Nat.card φ.ker :=
     Nat.card_le_card_of_injective
-      (fun m ↦ ⟨⟨m, W.selmerGroup₂_le_selmerGroupA Loc ha₂ ha₄ ha₆ hd m.2⟩,
-        ((W.mem_selmerGroup₂_iff (𝓞 F) Loc).mp m.2).1⟩)
+      (fun m ↦ ⟨⟨m, W.selmerGroup₂_le_selmerGroupA Loc ha₂ ha₄ ha₆ hd m.property⟩,
+        ((W.mem_selmerGroup₂_iff (𝓞 F) Loc).mp m.property).1⟩)
       fun m m' hm ↦ Subtype.ext (congrArg (fun x : φ.ker ↦ ((x : W.selmerGroupA (𝓞 F) S) : W.M)) hm)
   have hne : φ ⟨_, W.neg_one_mem_selmerGroupA (𝓞 F) S⟩ ≠ 1 := by
     rw [MonoidHom.domRestrict_apply, normM_neg_one, Ne,

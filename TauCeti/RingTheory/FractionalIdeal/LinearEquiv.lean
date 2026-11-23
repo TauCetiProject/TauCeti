@@ -39,6 +39,7 @@ to an integral ideal `I'` coprime to `J'`
 * `FractionalIdeal.spanSingletonMulEquiv`: multiplication by a left-regular element `a` is an
   isomorphism from `I` onto `(a) I`.
 * `FractionalIdeal.coeIdealEquiv`: an integral ideal is isomorphic to its fractional ideal.
+* `FractionalIdeal.linearEquivOne`: `R` is isomorphic to the unit fractional ideal `(1)`.
 
 ## Main results
 
@@ -68,7 +69,7 @@ noncomputable def spanSingletonMulEquiv [IsLocalization S P] {a : P} (ha : IsLef
     (I : FractionalIdeal S P) : I ≃ₗ[R] (spanSingleton S a * I : FractionalIdeal S P) :=
   (Submodule.equivMapOfInjective (LinearMap.mulLeft R a) ha (I : Submodule R P)).trans <|
     LinearEquiv.ofEq _ _ <| by
-      rw [coe_mul, coe_spanSingleton, Submodule.span_singleton_mul]
+      rw [coeToSubmodule_mul, coeToSubmodule_spanSingleton, Submodule.span_singleton_mul]
       ext x
       simp [Submodule.mem_smul_pointwise_iff_exists, eq_comm]
 
@@ -92,6 +93,18 @@ theorem coe_coeIdealEquiv_symm_apply (I : Ideal R) (x : I) :
 theorem algebraMap_coeIdealEquiv_apply (I : Ideal R) (x : (I : FractionalIdeal S P)) :
     algebraMap R P (coeIdealEquiv I x) = x := by
   rw [← coe_coeIdealEquiv_symm_apply, LinearEquiv.symm_apply_apply]
+
+variable (S P) in
+/-- The identification `x ↦ x` of `R` with the unit fractional ideal `(1)`, the image of `R` in
+`P`, as `R`-modules. -/
+noncomputable def linearEquivOne : R ≃ₗ[R] (1 : FractionalIdeal S P) :=
+  (LinearEquiv.ofInjective (Algebra.linearMap R P) (FaithfulSMul.algebraMap_injective R P)).trans
+    (LinearEquiv.ofEq _ _ (by rw [coeToSubmodule_one, Submodule.one_eq_range]))
+
+@[simp]
+theorem coe_linearEquivOne_apply (x : R) : (linearEquivOne S P x : P) = algebraMap R P x := by
+  rw [linearEquivOne, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact LinearEquiv.ofInjective_apply _ x
 
 end Equiv
 

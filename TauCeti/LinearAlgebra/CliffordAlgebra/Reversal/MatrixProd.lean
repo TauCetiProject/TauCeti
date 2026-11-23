@@ -68,7 +68,7 @@ theorem map_reverseEven_eq_adjugate_prod_of_finrank_eq_four
   let ek : (Fin 2 → K) ≃ₐ[K] K × K :=
     AlgEquiv.ofRingEquiv (f := RingEquiv.piFinTwo (fun _ : Fin 2 => K)) (fun _ => rfl)
   have hE : Nonempty (Subalgebra.center K (even Q) ≃ₐ[K] K × K) :=
-    ⟨(TauCeti.centerCongr (e.trans ep.symm)).trans <|
+    ⟨(Subalgebra.centerCongr (e.trans ep.symm)).trans <|
       TauCeti.centerPiAlgEquiv.trans <|
         (AlgEquiv.piCongrRight (fun _ => TauCeti.centerAlgEquivOfIsCentral K M)).trans ek⟩
   let f : M × M →ₗ[K] M × M :=

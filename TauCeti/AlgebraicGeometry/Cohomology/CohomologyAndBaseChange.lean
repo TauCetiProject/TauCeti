@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.AlgebraicGeometry.Cohomology.Semicontinuity
+import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange

@@ -72,7 +72,7 @@ variable {σ ι : Type*} {m : MonomialOrder σ}
 
 section CommSemiring
 
-variable {R : Type*} [CommSemiring R] [Nontrivial R] {c : ι → MvPolynomial σ R}
+variable {R : Type*} [CommSemiring R] {c : ι → MvPolynomial σ R}
 
 /-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
 `P` satisfies `A w ≼ δ` and the coefficient of `X^δ` in `aeval c P` vanishes, then the part of `P`
@@ -131,10 +131,7 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
   -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
   have hβ (j : J) :
       (monomial (u j) (1 : R) - monomial (v j) 1).IsWeightedHomogeneous a (A (u j)) := by
-    have hmem : monomial (u j) (1 : R) - monomial (v j) 1 ∈ TauCeti.toricIdeal R a := by
-      rw [hJ]
-      exact Ideal.subset_span ⟨j, rfl⟩
-    have huv : A (u j) = A (v j) := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
+    have huv : A (u j) = A (v j) := TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
     exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
       (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
   -- The part `P₀` of `P` of weight `δ` lies in the toric ideal, so `P₀ = ∑ j, g j * β j` for some
@@ -155,7 +152,8 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     ring
   rw [heq] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent, hA] at hw
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
+      hA] at hw
     have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
     have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
     exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
@@ -227,7 +225,7 @@ private theorem degree_aeval_mem_closure (hc : ∀ i, m.Monic (c i)) {u v : J �
     exact ih _ (hlt w₀ hw₀) (A w₀) (by rwa [hP']) hmax rfl
   · -- Otherwise the leading exponent of `aeval c P` is `δ`, a value of `A`.
     have hdeg : m.degree (aeval c P) = δ := m.toSyn.injective <|
-      le_antisymm (degree_aeval_le_of_forall_le hc hPδ) (m.le_degree (mem_support_iff.2 htop))
+      le_antisymm (degree_aeval_le_of_forall_le hPδ) (m.le_degree (mem_support_iff.2 htop))
     rw [coeff_aeval_of_forall_le hc hPδ] at htop
     obtain ⟨w, hw, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero htop
     rw [hdeg, ← (Finset.mem_filter.1 hw).2]
@@ -248,9 +246,7 @@ theorem isSAGBIBasis_range_iff_forall_exists_aeval_eq (hc : ∀ i, m.Monic (c i)
         ∀ w ∈ Q.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
           Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j) := by
   refine ⟨fun h j ↦ h.exists_aeval_eq_aeval_sub hc ?_, fun hQ ↦ ?_⟩
-  · refine (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1 ?_
-    rw [hJ]
-    exact Ideal.subset_span ⟨j, rfl⟩
+  · exact TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
   refine isSAGBIBasis_iff_degree_mem_closure.2 ⟨Algebra.subset_adjoin, fun f hf hf0 ↦ ?_⟩
   rw [Algebra.adjoin_range_eq_range_aeval] at hf
   obtain ⟨P, rfl⟩ := hf

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
@@ -13,8 +14,12 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Comparison
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The twisted differential of a real function
@@ -32,6 +37,18 @@ differential of a real function `f` is the one-form `d^c_J f = -(1/2) df ∘ J`.
   `d^c_J (H ∘ f) = H'(f) • d^c_J f`.
 * `TauCeti.AlmostComplexStructure.twistedDifferential_add`,
   `TauCeti.AlmostComplexStructure.twistedDifferential_const_smul`: linearity.
+* `TauCeti.AlmostComplexStructure.extDeriv_twistedDifferential_apply`: the second-derivative
+  formula `d d^c_J f (v, w) = (D²f(w, J v) - D²f(v, J w)) / 2`.
+* `TauCeti.AlmostComplexStructure.sum_extDeriv_twistedDifferential_apply_eq_laplacian`: for an
+  orthogonal `J` and an orthonormal basis `(eᵢ)`, `∑ᵢ d d^c_J f (eᵢ, J eᵢ) = Δ f`. For the
+  standard structure on `ℂ` this is `d d^c f = (Δ f / 2) dx ∧ dy`.
+* `TauCeti.AlmostComplexStructure.laplacian_comp_add_re_smul_add_im_smul`: along a `J`-complex line
+  `z ↦ y + Re z • n + Im z • J n`, the Laplacian of the restriction of `f` is
+  `2 d d^c_J f (n, J n)`.
+* `TauCeti.AlmostComplexStructure.abs_le_add_mul_sq_div_two_of_abs_extDeriv_twistedDifferential_le`:
+  for orthogonal `J` and a unit vector `n`, a `C²` function with `|d d^c_J f (n, J n)| ≤ C`
+  everywhere and `|f| ≤ ε` wherever the component of its argument along `span {n, J n}` has norm
+  at least `R` is bounded by `ε + C R² / 2`.
 * `TauCeti.AlmostComplexStructure.integral_twistedDifferential_wedge_eq`: integration by parts.
   For a compactly supported form `η` of complementary degree,
   `∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`, where `((-J)^* η)(x)(v₁, …, vₘ) =
@@ -65,6 +82,22 @@ theorem twistedDifferential_apply (f : E → ℝ) (x : E) (v : Fin 1 → E) :
     J.twistedDifferential f x v = -2⁻¹ * fderiv ℝ f x (J (v 0)) := by
   simp [twistedDifferential]
 
+/-- The twisted differential of a constant function vanishes. -/
+@[simp]
+theorem twistedDifferential_fun_const (c : ℝ) : J.twistedDifferential (fun _ ↦ c) = 0 := by
+  ext x v
+  simp
+
+/-- The twisted differential of a constant function vanishes. -/
+@[simp]
+theorem twistedDifferential_const (c : ℝ) : J.twistedDifferential (Function.const E c) = 0 :=
+  J.twistedDifferential_fun_const c
+
+/-- The twisted differential of the zero function vanishes. -/
+@[simp]
+theorem twistedDifferential_zero : J.twistedDifferential (0 : E → ℝ) = 0 :=
+  J.twistedDifferential_fun_const 0
+
 /-- **Chain rule for the twisted differential.** If `H` has derivative `h'` at `f x`, then
 `d^c_J (H ∘ f) = h' • d^c_J f` at `x`. -/
 theorem twistedDifferential_comp {H : ℝ → ℝ} {h' : ℝ} {f : E → ℝ} {x : E}
@@ -89,12 +122,56 @@ theorem twistedDifferential_const_smul (c : ℝ) (f : E → ℝ) (x : E) :
   simp [fderiv_const_smul_field]
   ring
 
-/-- The twisted differential of a `C^(n+1)` function is `C^n`. -/
-theorem contDiff_twistedDifferential {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ (n + 1) f) :
-    ContDiff ℝ n (J.twistedDifferential f) := by
+/-- The twisted differential of a function that is `C^m` at a point is `C^n` at that point, for
+`n + 1 ≤ m`. -/
+theorem contDiffAt_twistedDifferential {m n : WithTop ℕ∞} {f : E → ℝ} {x : E}
+    (hf : ContDiffAt ℝ m f x) (hnm : n + 1 ≤ m) : ContDiffAt ℝ n (J.twistedDifferential f) x := by
   unfold twistedDifferential
-  exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).contDiff.comp
-    (((hf.fderiv_right le_rfl).clm_comp contDiff_const).const_smul _)
+  exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).contDiff.contDiffAt.comp x
+    (((hf.fderiv_right hnm).clm_comp contDiffAt_const).const_smul _)
+
+/-- The twisted differential of a `C^m` function is `C^n`, for `n + 1 ≤ m`. -/
+theorem contDiff_twistedDifferential {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ m f)
+    (hnm : n + 1 ≤ m) : ContDiff ℝ n (J.twistedDifferential f) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ J.contDiffAt_twistedDifferential hf.contDiffAt hnm
+
+/-- **The exterior derivative of the twisted differential.**
+`d d^c_J f (v, w) = (D²f(w, J v) - D²f(v, J w)) / 2`. -/
+theorem extDeriv_twistedDifferential_apply (f : E → ℝ) (x v w : E) :
+    extDeriv (J.twistedDifferential f) x ![v, w] =
+      2⁻¹ * (fderiv ℝ (fderiv ℝ f) x w (J v) - fderiv ℝ (fderiv ℝ f) x v (J w)) := by
+  by_cases hd : DifferentiableAt ℝ (fderiv ℝ f) x
+  · have hω : DifferentiableAt ℝ (J.twistedDifferential f) x := by
+      unfold twistedDifferential
+      exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).differentiableAt.comp x
+        ((hd.clm_comp (differentiableAt_const
+          (LinearMap.toContinuousLinearMap J.toLinearMap))).const_smul (-2⁻¹ : ℝ))
+    have hcoef (u : E) : (fun y ↦ J.twistedDifferential f y (fun _ ↦ u)) =
+        fun y ↦ -2⁻¹ * fderiv ℝ f y (J u) := by
+      funext y
+      simp
+    rw [extDeriv_apply_pair_of_differentiableAt hω, hcoef, hcoef,
+      fderiv_const_mul (hd.clm_apply (differentiableAt_const _)),
+      fderiv_const_mul (hd.clm_apply (differentiableAt_const _)),
+      fderiv_clm_apply hd (differentiableAt_const _),
+      fderiv_clm_apply hd (differentiableAt_const _)]
+    simp
+    ring
+  · -- `df = 2 (d^c_J f) ∘ J`, so `d^c_J f` is not differentiable at `x` either.
+    have hω : ¬DifferentiableAt ℝ (J.twistedDifferential f) x := fun hω ↦ hd <| by
+      have hdf : fderiv ℝ f = fun y ↦ (2 : ℝ) • ((ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
+          (0 : Fin 1)).symm (J.twistedDifferential f y)).comp
+            (LinearMap.toContinuousLinearMap J.toLinearMap) := by
+        funext y
+        ext u
+        simp [twistedDifferential, J.apply_apply]
+      rw [hdf]
+      exact (((ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).symm.differentiableAt.comp
+        x hω).clm_comp (differentiableAt_const
+          (LinearMap.toContinuousLinearMap J.toLinearMap))).const_smul (2 : ℝ)
+    rw [extDeriv_apply_pair, fderiv_zero_of_not_differentiableAt hω,
+      fderiv_zero_of_not_differentiableAt hd]
+    simp
 
 open MeasureTheory in
 /-- **Integration by parts for the twisted differential.** For a C1 function `g` and a compactly
@@ -196,5 +273,95 @@ theorem exists_abs_integral_twistedDifferential_wedge_le [MeasurableSpace E] [Bo
     _ = _ := by
         rw [integral_const_mul]
         ring
+
+/-! ### The Laplacian as the `J`-trace of `d d^c_J` -/
+
+section Laplacian
+
+open InnerProductSpace Laplacian
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The `J`-trace of `d d^c_J f` is the Laplacian of `f`.** For an orthogonal almost complex
+structure `J` and an orthonormal basis `(eᵢ)`, `∑ᵢ d d^c_J f (eᵢ, J eᵢ) = Δ f`. Each term is
+`(D²f(eᵢ, eᵢ) + D²f(J eᵢ, J eᵢ)) / 2`, and `(J eᵢ)` is again an orthonormal basis. -/
+theorem sum_extDeriv_twistedDifferential_apply_eq_laplacian (J : AlmostComplexStructure V)
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (f : V → ℝ) (x : V)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ V) :
+    ∑ i, extDeriv (J.twistedDifferential f) x ![e i, J (e i)] = Δ f x := by
+  have hΔ := congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis f e) x
+  have hΔJ := congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis f
+    (e.map (J.linearEquiv.isometryOfInner hJ))) x
+  simp only [iteratedFDeriv_two_apply, OrthonormalBasis.map_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one] at hΔ hΔJ
+  have hJe (v : V) : J.linearEquiv.isometryOfInner hJ v = J v :=
+    congrFun (LinearEquiv.coe_isometryOfInner J.linearEquiv hJ) v
+  simp only [hJe] at hΔJ
+  simp only [J.extDeriv_twistedDifferential_apply, J.apply_apply, map_neg]
+  rw [← Finset.mul_sum, Finset.sum_sub_distrib, ← hΔJ, hΔ]
+  simp only [Finset.sum_neg_distrib]
+  ring
+
+/-- **The Laplacian along a `J`-complex line.** For a `C²` function `f`, a point `y` and a vector
+`n`, the restriction `z ↦ f (y + Re z • n + Im z • J n)` of `f` to the complex line through `y`
+spanned by `n` has Laplacian `2 d d^c_J f (n, J n)`. No metric on `E` is needed. -/
+theorem laplacian_comp_add_re_smul_add_im_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (J : AlmostComplexStructure E) {f : E → ℝ}
+    (hf : ContDiff ℝ 2 f) (y n : E) (z : ℂ) :
+    Δ (fun z : ℂ ↦ f (y + z.re • n + z.im • J n)) z =
+      2 * extDeriv (J.twistedDifferential f) (y + z.re • n + z.im • J n) ![n, J n] := by
+  -- The line is `y + L z` for the real-linear `L z = Re z • n + Im z • J n`.
+  set L : ℂ →L[ℝ] E := Complex.reCLM.smulRight n + Complex.imCLM.smulRight (J n) with hL
+  have hLz (w : ℂ) : L w = w.re • n + w.im • J n := by simp [hL]
+  have hfun : (fun z : ℂ ↦ f (y + z.re • n + z.im • J n)) = (fun v ↦ f (y + v)) ∘ L := by
+    funext w
+    simp [hLz, add_assoc]
+  have hfy : ContDiff ℝ 2 fun v ↦ f (y + v) := hf.comp (contDiff_const.add contDiff_id)
+  have hD (w : ℂ) : iteratedFDeriv ℝ 2 (fun z : ℂ ↦ f (y + z.re • n + z.im • J n)) z ![w, w] =
+      fderiv ℝ (fderiv ℝ f) (y + z.re • n + z.im • J n) (L w) (L w) := by
+    rw [hfun, L.iteratedFDeriv_comp_right hfy z le_rfl,
+      ContinuousMultilinearMap.compContinuousLinearMap_apply, iteratedFDeriv_comp_add_left,
+      iteratedFDeriv_two_apply, hLz z, add_assoc]
+    simp
+  simp [laplacian_eq_iteratedFDeriv_complexPlane, hD, J.extDeriv_twistedDifferential_apply, hLz,
+    add_comm]
+
+/-- **A bound along complex lines.** Let `J` be orthogonal, `n` a unit vector and `K` the complex
+line spanned by `n` and `J n`. If a `C²` function `f` has `|d d^c_J f (n, J n)| ≤ C` everywhere
+and `|f| ≤ ε` wherever its argument has component along `K` of norm at least `R ≥ 0`, then
+`|f| ≤ ε + C R² / 2` everywhere. No bound along the directions complementary to `K` is
+assumed. -/
+theorem abs_le_add_mul_sq_div_two_of_abs_extDeriv_twistedDifferential_le
+    (J : AlmostComplexStructure V) (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {n : V} (hn : ‖n‖ = 1)
+    {f : V → ℝ} (hf : ContDiff ℝ 2 f) {C ε R : ℝ} (hR : 0 ≤ R)
+    (hC : ∀ y, |extDeriv (J.twistedDifferential f) y ![n, J n]| ≤ C)
+    (hout : ∀ y, R ≤ ‖(Submodule.span ℝ {n, J n}).starProjection y‖ → |f y| ≤ ε) (p : V) :
+    |f p| ≤ ε + C * R ^ 2 / 2 := by
+  set K := Submodule.span ℝ {n, J n}
+  -- `p` lies on the translate `z ↦ y₀ + Re z • n + Im z • J n` of `K` through `y₀ ∈ Kᗮ`.
+  obtain ⟨a, c, hac⟩ := Submodule.mem_span_pair.1 (K.starProjection_apply_mem p)
+  set y₀ := p - K.starProjection p
+  have hproj (z : ℂ) : ‖K.starProjection (y₀ + z.re • n + z.im • J n)‖ = ‖z‖ := by
+    simp [y₀, add_assoc,
+      K.starProjection_eq_self_iff.2 (Submodule.mem_span_pair.2 ⟨z.re, z.im, rfl⟩),
+      K.starProjection_eq_self_iff.2 (K.starProjection_apply_mem p),
+      J.norm_re_smul_add_im_smul hJ hn]
+  have hu : ContDiff ℝ 2 fun z : ℂ ↦ f (y₀ + z.re • n + z.im • J n) :=
+    hf.comp ((contDiff_const.add (Complex.reCLM.contDiff.smul contDiff_const)).add
+      (Complex.imCLM.contDiff.smul contDiff_const))
+  have hΔ (z : ℂ) : |Δ (fun z : ℂ ↦ f (y₀ + z.re • n + z.im • J n)) z| ≤ 2 * C := by
+    rw [J.laplacian_comp_add_re_smul_add_im_smul hf, abs_mul, abs_two]
+    linarith [hC (y₀ + z.re • n + z.im • J n)]
+  have hmax := TauCeti.abs_le_add_mul_sq_div_of_abs_laplacian_le hR hu.continuous.continuousOn
+    (fun z _ ↦ hu.contDiffAt) (fun z _ ↦ hΔ z) (fun z hz ↦ hout _ (by rwa [hproj])) ⟨a, c⟩
+  have hp : y₀ + (⟨a, c⟩ : ℂ).re • n + (⟨a, c⟩ : ℂ).im • J n = p := by
+    simp only [y₀, add_assoc, hac, sub_add_cancel]
+  rw [hp, Complex.finrank_real_complex] at hmax
+  convert hmax using 1
+  push_cast
+  ring
+
+end Laplacian
 
 end TauCeti.AlmostComplexStructure

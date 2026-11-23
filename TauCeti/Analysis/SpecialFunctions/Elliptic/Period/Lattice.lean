@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Topology
+import Mathlib.AlgebraicGeometry.EllipticCurve.IsomOfJ
+import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 # The period lattice of a complex elliptic curve
@@ -29,8 +31,9 @@ The normalization `u = 1` is the one under which the invariant differential
 the chosen change of variables with `u = 1`, so
 `E.periodLattice` is the lattice of periods of that differential; differentials themselves are not
 used here. The period lattice scales by `u` under a change of variables with scaling factor `u`
-(`WeierstrassCurve.variableChange_periodLattice`), and `E(ℂ)` is isomorphic as a topological
-group to `ℂ / E.periodLattice`.
+(`WeierstrassCurve.variableChange_periodLattice`), so its complex scalar multiplier order
+`E.periodLattice.leftOrder` is invariant under coordinate changes and `j`-equivalence, and `E(ℂ)`
+is isomorphic as a topological group to `ℂ / E.periodLattice`.
 
 ## Main definitions
 
@@ -50,12 +53,15 @@ group to `ℂ / E.periodLattice`.
   `E_Λ` under a change of variables with `u = 1`.
 * `WeierstrassCurve.variableChange_periodLattice`: rescaling naturality of the period
   lattice.
+* `WeierstrassCurve.leftOrder_variableChange_periodLattice`,
+  `WeierstrassCurve.leftOrder_periodLattice_eq_of_j_eq`: coordinate-change and `j`-invariance of
+  the complex scalar multiplier order `leftOrder` of a period lattice.
 * `WeierstrassCurve.nonempty_continuousAddEquiv_periodLattice`: `E(ℂ) ≃ₜ+ ℂ / E.periodLattice`.
 
 ## References
 
 * J. H. Silverman, *The Arithmetic of Elliptic Curves*, 2nd ed., Graduate Texts in Mathematics
-  106, Springer, 2009, §III.1, §VI.3 and §VI.5.
+  106, Springer, 2009, §III.1, §VI.3–6.
 * J.-P. Serre, *A Course in Arithmetic*, Graduate Texts in Mathematics 7, Springer, 1973,
   §VII.3.
 -/
@@ -63,6 +69,7 @@ group to `ℂ / E.periodLattice`.
 public noncomputable section
 
 open Complex WeierstrassCurve
+open scoped Pointwise
 
 /-! ### The period lattice of a complex elliptic curve -/
 
@@ -99,6 +106,19 @@ theorem exists_periodPair_lattice_eq_periodLattice :
     ∃ L : PeriodPair, L.lattice = E.periodLattice :=
   ⟨E.exists_periodPair_variableChange_smul_eq.choose, by rw [periodLattice]⟩
 
+/-- The period lattice of a complex elliptic curve is discrete. -/
+instance : DiscreteTopology E.periodLattice := by
+  obtain ⟨L, hL⟩ := E.exists_periodPair_lattice_eq_periodLattice
+  rw [← hL]
+  infer_instance
+
+/-- The period lattice of a complex elliptic curve spans `ℂ` over `ℝ`. -/
+instance : IsZLattice ℝ E.periodLattice where
+  span_top := by
+    obtain ⟨L, hL⟩ := E.exists_periodPair_lattice_eq_periodLattice
+    rw [← hL]
+    exact IsZLattice.span_top
+
 /-- The period lattice of the Weierstrass curve of `Λ` is `Λ`. -/
 @[simp]
 theorem _root_.PeriodPair.periodLattice_weierstrassCurve (L : PeriodPair) :
@@ -124,5 +144,18 @@ theorem nonempty_continuousAddEquiv_periodLattice :
   rw [periodLattice_eq_iff.mpr ⟨C, hu, rfl⟩]
   exact ⟨L.weierstrassPointContinuousAddEquiv.trans
     (Projective.Point.continuousAddEquivVariableChange _ C).symm⟩
+
+/-- Isomorphic complex elliptic curves have the same period-lattice multiplier order. -/
+@[simp] theorem leftOrder_variableChange_periodLattice (E : WeierstrassCurve ℂ) [E.IsElliptic]
+    (C : VariableChange ℂ) : (C • E).periodLattice.leftOrder = E.periodLattice.leftOrder := by
+  rw [variableChange_periodLattice]
+  exact E.periodLattice.leftOrder_smul C.u.isUnit.isRegular.left (by simp)
+
+/-- Complex elliptic curves with the same `j`-invariant have the same period-lattice multiplier
+order. -/
+theorem leftOrder_periodLattice_eq_of_j_eq {E E' : WeierstrassCurve ℂ} [E.IsElliptic]
+    [E'.IsElliptic] (h : E.j = E'.j) : E.periodLattice.leftOrder = E'.periodLattice.leftOrder := by
+  obtain ⟨C, rfl⟩ := exists_variableChange_of_j_eq E E' h
+  exact (leftOrder_variableChange_periodLattice E C).symm
 
 end WeierstrassCurve

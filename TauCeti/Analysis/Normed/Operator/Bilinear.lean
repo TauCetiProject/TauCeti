@@ -8,10 +8,14 @@ module
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
-# Pulling back continuous bilinear maps, and their quadratic maps
+# Continuous bilinear maps
+
+A family of continuous bilinear maps gives a continuous bilinear map into the product
+(`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -28,11 +32,12 @@ constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ +
 nonlinear terms of an equation that is quadratic in its unknown.
 
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
-invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and it
-conjugates the comparison operator `B₀⁻¹ ∘ B` of two such maps by the equivalence in the first
-slot (`ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp`). This is how operators built
-from a pair of bilinear forms, such as the Morse congruence of a form with a reference form,
-transform under a linear change of coordinates.
+invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and
+conversely (`ContinuousLinearMap.isInvertible_bilinearComp_iff`). It conjugates the comparison
+operator `B₀⁻¹ ∘ B` of two such maps by the equivalence in the first slot
+(`ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp`). This is how operators built from a
+pair of bilinear forms, such as the Morse congruence of a form with a reference form, transform
+under a linear change of coordinates.
 
 An invertible bilinear map `B₀ : V →L V →L G` determines adjoints of operators on `V`: the
 adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
@@ -41,6 +46,12 @@ reverses products, fixes the identity, and tends to the identity as `B₀` stays
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+
+On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
+`σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
+Mathlib's flip: `μ.toLinearMap.pairingFlip hμ = μ.flip`, where `hμ` is a proof of joint continuity
+of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which callers supply
+explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`).
 -/
 
 public section
@@ -52,6 +63,19 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
+def piBilin {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) : V →L[𝕜] W →L[𝕜] ∀ i, G i :=
+  (ContinuousLinearMap.piEquivL 𝕜 W G).toContinuousLinearMap.comp (ContinuousLinearMap.pi B)
+
+@[simp]
+theorem piBilin_apply {ι : Type*} {G : ι → Type*}
+    [∀ i, SeminormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+    (B : ∀ i, V →L[𝕜] W →L[𝕜] G i) (x : V) (y : W) (i : ι) :
+    piBilin B x y i = B i x y :=
+  (rfl)
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/
@@ -117,13 +141,33 @@ theorem IsInvertible.bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G} (hB₀ :
       simp
     simp [h, hB₀.inverse_apply_self]
 
+/-- A bilinear map is invertible, as a map to the space of linear maps on its second argument,
+exactly when its pullback along continuous linear equivalences in both arguments is. -/
+@[simp]
+theorem isInvertible_bilinearComp_iff {B₀ : V →L[𝕜] V' →L[𝕜] G} (e₁ : W ≃L[𝕜] V)
+    (e₂ : W' ≃L[𝕜] V') :
+    (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).IsInvertible ↔ B₀.IsInvertible := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.bilinearComp e₁ e₂⟩
+  have hB₀ : B₀ = (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).bilinearComp
+      (e₁.symm : V →L[𝕜] W) (e₂.symm : V' →L[𝕜] W') := by
+    ext x y
+    simp
+  rw [hB₀]
+  exact h.bilinearComp e₁.symm e₂.symm
+
 /-- Pulling two bilinear maps back along continuous linear equivalences conjugates their
-comparison operator `B₀⁻¹ ∘ B` by the equivalence `e₁` in the first argument. -/
-theorem inverse_bilinearComp_comp_bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G}
-    (hB₀ : B₀.IsInvertible) (B : V →L[𝕜] V' →L[𝕜] G) (e₁ : W ≃L[𝕜] V) (e₂ : W' ≃L[𝕜] V') :
+comparison operator `B₀⁻¹ ∘ B` by the equivalence `e₁` in the first argument. If `B₀` is not
+invertible, both sides vanish. -/
+theorem inverse_bilinearComp_comp_bilinearComp (B₀ B : V →L[𝕜] V' →L[𝕜] G) (e₁ : W ≃L[𝕜] V)
+    (e₂ : W' ≃L[𝕜] V') :
     (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).inverse ∘L
         B.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V') =
       (e₁.symm : V →L[𝕜] W) ∘L (B₀.inverse ∘L B) ∘L (e₁ : W →L[𝕜] V) := by
+  by_cases hB₀ : B₀.IsInvertible
+  swap
+  · rw [inverse_of_not_isInvertible (by rwa [isInvertible_bilinearComp_iff]),
+      inverse_of_not_isInvertible hB₀]
+    simp
   ext w
   rw [comp_apply, (hB₀.bilinearComp e₁ e₂).inverse_apply_eq]
   ext w'
@@ -206,6 +250,36 @@ theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H}
   simpa only [hB₀.pairingAdjoint_one] using h.tendsto
 
 end Tendsto
+
+section PairingFlip
+
+variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  [RingHomSurjective σ₂₃]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
+
+/-- On normable spaces, when both scalar homomorphisms are isometric and the second is
+surjective, the flip of a continuous pairing `μ` is Mathlib's flip:
+`μ.toLinearMap.pairingFlip hμ = μ.flip`, where the caller supplies `hμ`, a proof of joint
+continuity of `μ` (continuity of the uncurried pairing `Function.uncurry fun x y ↦ μ x y`). The
+topological additive group structures of `F` and `H` used by `LinearMap.pairingFlip`, by
+Mathlib's flip and by the topology of `F →SL[σ₂₃] H` come from their normability
+(`PolynormableSpace.isTopologicalAddGroup`). -/
+@[simp]
+theorem pairingFlip_eq_flip
+    (μ : haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H; E →SL[σ₁₃] F →SL[σ₂₃] H)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+    μ.toLinearMap.pairingFlip hμ = μ.flip := by
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
+  ext
+  rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
+
+end PairingFlip
 
 end ContinuousLinearMap
 

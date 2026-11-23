@@ -87,21 +87,16 @@ lemma mk_eq_point {f : ι → X} (i : ι) (hi : f i = X.point) : mk f = (X.smash
 wedge. -/
 lemma mk_eq_mk_iff {f g : ι → X} :
     mk f = mk g ↔ f = g ∨ (∃ i, f i = X.point) ∧ ∃ i, g i = X.point := by
-  by_cases hf : ∀ i, f i ≠ X.point <;> by_cases hg : ∀ i, g i ≠ X.point
-  · rw [mk_of_forall hf, mk_of_forall hg]
-    refine ⟨fun h ↦ .inl (congrArg Subtype.val (Option.some.inj h)), ?_⟩
-    rintro (rfl | ⟨⟨i, hi⟩, -⟩)
-    exacts [rfl, (hf i hi).elim]
-  · rw [mk_of_forall hf, mk_of_not_forall hg]
-    refine iff_of_false (Option.some_ne_none _) ?_
-    rintro (rfl | ⟨⟨i, hi⟩, -⟩)
-    exacts [hg hf, hf i hi]
-  · rw [mk_of_not_forall hf, mk_of_forall hg]
-    refine iff_of_false (Option.some_ne_none _).symm ?_
-    rintro (rfl | ⟨-, ⟨i, hi⟩⟩)
-    exacts [hf hg, hg i hi]
-  · rw [mk_of_not_forall hf, mk_of_not_forall hg]
-    exact iff_of_true rfl (.inr ⟨by simpa using hf, by simpa using hg⟩)
+  by_cases hf : ∃ i, f i = X.point
+  · rw [mk_eq_point_iff.2 hf, eq_comm, mk_eq_point_iff]
+    exact ⟨fun hg ↦ .inr ⟨hf, hg⟩, by rintro (rfl | ⟨-, hg⟩) <;> assumption⟩
+  by_cases hg : ∃ i, g i = X.point
+  · rw [mk_eq_point_iff.2 hg, mk_eq_point_iff]
+    exact ⟨fun h ↦ absurd h hf, by rintro (rfl | ⟨h, -⟩) <;> assumption⟩
+  -- Off the fat wedge, both classes are the families themselves.
+  push Not at hf hg
+  rw [mk_of_forall hf, mk_of_forall hg, or_iff_left fun ⟨⟨i, hi⟩, _⟩ ↦ hf i hi]
+  exact Option.some_inj.trans Subtype.ext_iff
 
 /-- Induction on the smash power: it suffices to treat the basepoint and the classes of
 families. -/
@@ -222,12 +217,7 @@ lemma append_point_right (a : X.smashPow ι) :
 /-- Concatenation commutes with the smash power of a pointed map. -/
 lemma map_append (g : X ⟶ Y) (a : X.smashPow ι) (b : X.smashPow κ) :
     (map (ι ⊕ κ) g).toFun (append a b) = append ((map ι g).toFun a) ((map κ g).toFun b) := by
-  induction a using ind with
-  | point => simp [Hom.map_point]
-  | mk f =>
-    induction b using ind with
-    | point => simp [Hom.map_point]
-    | mk h => simp [Sum.comp_elim]
+  induction a using ind <;> induction b using ind <;> simp [Hom.map_point, Sum.comp_elim]
 
 end smashPow
 

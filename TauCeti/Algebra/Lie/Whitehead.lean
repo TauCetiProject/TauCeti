@@ -134,7 +134,7 @@ theorem exists_d₁₂_eq (c : twoCocycle K L M) : ∃ f : oneCochain K L M, d�
   ext x y
   have h := congrArg (fun z : S ↦ ((ofProd c).symm (z : ofTwoCocycle c)).2) (e.symm.map_lie x y)
   simp only [LieSubalgebra.coe_bracket, bracket_ofTwoCocycle, Equiv.symm_apply_apply, hfst] at h
-  simp only [d₁₂_apply_coe_apply_apply, LinearMap.neg_apply, hg, h, lie_neg]
+  simp only [twoCochain_val_apply, d₁₂_apply_apply, LinearMap.neg_apply, hg, h, lie_neg]
   abel
 
 /-- **Whitehead's second lemma**, as an equality of submodules: the 2-cocycles of a

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.SupSeminorm
+public import TauCeti.RingTheory.Affinoid.Pushout.Basic
 public import TauCeti.RingTheory.Affinoid.Restricted
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 
@@ -42,6 +43,13 @@ algebra `K⟨X₁, …, Xₙ⟩` with `n ≥ 1` the variable `X₁` admits no su
 polynomial in `X₁` over the unit ball has Gauss norm one: the closed unit polydisc is not inner
 in itself over `K`.
 
+Relative compactness is stable under the operations used to handle Kiehl's proper morphisms:
+enlarging the base along a factorisation `A → C → B`, passing to closed subspaces, fibre
+products over `A` and affinoid base change `A → A'`. For the last two, the affinoid pushout
+`B ⊗̂_A C` is presented by the inner presentations of its factors
+(`TauCeti.AffinoidPushout.exists_surjective_algHom_of_surjective`); the variables coming from
+`A'` are then absorbed into the new base.
+
 ## Main definitions
 
 * `TauCeti.AffinoidSubdomain.IsInner`: `U ⋐_A Sp B`, relative compactness of an affinoid
@@ -65,6 +73,13 @@ in itself over `K`.
   up to an element of supremum norm less than one.
 * `TauCeti.AffinoidSubdomain.not_isInner_univ_tate`: the closed unit polydisc of positive
   dimension is not inner in itself over `K`.
+* `TauCeti.AffinoidSubdomain.IsInner.of_comp`: change of base along `A → C → B`.
+* `TauCeti.AffinoidSubdomain.IsInner.comp_of_surjective`: relative compactness passes to closed
+  subspaces.
+* `TauCeti.AffinoidSubdomain.IsInner.affinoidPushout`: fibre products of inner subdomains are
+  inner.
+* `TauCeti.AffinoidSubdomain.IsInner.baseChange`: relative compactness is preserved by affinoid
+  base change.
 
 ## References
 
@@ -234,7 +249,145 @@ theorem isInner_univ_of_finite [CompleteSpace A] (hA : IsAffinoidAlgebra K A)
   · rw [IsAffinoidAlgebra.restrictedLift_X]
     exact (hB.pointNorm_le_supSeminorm y _).trans_lt (hcb i)
 
+/-- A surjection `Θ : A⟨X₁, …, Xₘ, Y₁, …, Yₙ⟩ → B` compatible with `χ ∘ θ`, whose variables `Yⱼ`
+are sent to images `χ cⱼ` of power-bounded elements of `C` and whose variables `Xᵢ` are small on
+`U`, shows that `U ⋐_C Sp B` for `χ`: it factors through `C⟨X₁, …, Xₘ⟩ → B` along the map
+`A⟨X, Y⟩ → C⟨X⟩` applying `θ` to coefficients and sending `Yⱼ` to `cⱼ`. -/
+private theorem isInner_of_surjective_append [CompleteSpace A] (hA : IsAffinoidAlgebra K A)
+    {C : Type*} [NormedCommRing C] [NormedAlgebra K C] [IsUltrametricDist C] [CompleteSpace C]
+    (hC : IsAffinoidAlgebra K C) {θ : A →ₐ[K] C} {χ : C →ₐ[K] B}
+    {m n : ℕ} {Θ : IsRestricted.subring (R := A) (fun _ : Fin (m + n) ↦ 1) →ₐ[K] B}
+    (hΘ : Function.Surjective Θ) (hΘA : ∀ a, Θ (algebraMap A _ a) = χ (θ a)) {c : Fin n → C}
+    (hc : ∀ j, Huber.IsPowerBounded (c j))
+    (hΘc : ∀ j, Θ ⟨X (Fin.natAdd m j), isRestricted_X _ _⟩ = χ (c j))
+    (hΘX : ∀ i, supSeminorm K (U.toSections (Θ ⟨X (Fin.castAdd n i), isRestricted_X _ _⟩)) < 1) :
+    U.IsInner χ := by
+  have hB := (hA.isRestricted_subring (τ := Fin (m + n))).of_surjective Θ hΘ
+  -- Equip `B` with a complete algebra norm, to apply the universal property of `C⟨X⟩`.
+  let := hB.residueNormedCommRing
+  let := hB.residueNormedAlgebra
+  have := hB.isUltrametricDist_residueNormedCommRing
+  have := hB.completeSpace_residueNormedCommRing
+  have := hC.isNoetherianRing
+  have := (hA.isRestricted_subring (τ := Fin (m + n))).isNoetherianRing
+  have hC' := hC.isRestricted_subring (τ := Fin m)
+  have hb (i : Fin m) : Huber.IsPowerBounded (Θ ⟨X (Fin.castAdd n i), isRestricted_X _ _⟩) :=
+    hB.isPowerBounded_map Θ (isPowerBounded_X _)
+  -- The map `θ' : A⟨X, Y⟩ → C⟨X⟩` satisfies `χ' ∘ θ' = Θ` for the extension `χ'` of `χ`.
+  let b : Fin (m + n) → IsRestricted.subring (R := C) (fun _ : Fin m ↦ 1) :=
+    Fin.append (fun i ↦ ⟨X i, isRestricted_X _ i⟩) fun j ↦ algebraMap C _ (c j)
+  have hb' (k : Fin (m + n)) : Huber.IsPowerBounded (b k) := by
+    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
+    · simpa [b] using isPowerBounded_X i
+    · simpa [b] using hC'.isPowerBounded_map (IsScalarTower.toAlgHom K C _) (hc j)
+  let θ' := hA.restrictedLift hC' ((IsScalarTower.toAlgHom K C _).comp θ) hb'
+  have hcomp : (hC.restrictedLift hB χ hb).comp θ' = Θ := by
+    refine hA.algHom_ext_isRestricted_subring hB (fun a ↦ by simp [θ', hΘA]) fun k ↦ ?_
+    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k <;> simp [θ', b, hΘc]
+  refine ⟨m, hC.restrictedLift hB χ hb, fun x ↦ ?_,
+    IsAffinoidAlgebra.restrictedLift_algebraMap hC hB χ hb, fun i ↦ ?_⟩
+  · obtain ⟨g, rfl⟩ := hΘ x
+    exact ⟨θ' g, congr($hcomp g)⟩
+  · rw [IsAffinoidAlgebra.restrictedLift_X]
+    exact hΘX i
+
+/-- **Change of base.** Let `φ = χ ∘ θ` factor through a homomorphism `θ : A → C` of affinoid
+algebras with complete norms. If `U ⋐_A Sp B` for `φ`, then `U ⋐_C Sp B` for `χ`. -/
+theorem IsInner.of_comp [CompleteSpace A] (hA : IsAffinoidAlgebra K A) {C : Type*}
+    [NormedCommRing C] [NormedAlgebra K C] [IsUltrametricDist C] [CompleteSpace C]
+    (hC : IsAffinoidAlgebra K C) {θ : A →ₐ[K] C} {χ : C →ₐ[K] B}
+    (h : U.IsInner (χ.comp θ)) : U.IsInner χ := by
+  obtain ⟨n, ψ, hψ, hφ, hX⟩ := h
+  exact isInner_of_surjective_append (n := 0) hA hC hψ hφ (c := Fin.elim0) (fun j ↦ j.elim0)
+    (fun j ↦ j.elim0) hX
+
+/-- **Closed subspaces.** Let `π : B → B'` be a surjection of affinoid algebras, so that `Sp B'` is
+a closed subspace of `Sp B`. If `U ⋐_A Sp B`, then every affinoid subdomain `W` of `Sp B'` which
+maps into `U` satisfies `W ⋐_A Sp B'`. -/
+theorem IsInner.comp_of_surjective (hB : IsAffinoidAlgebra K B) (h : U.IsInner φ)
+    {B' : Type u} [CommRing B'] [Algebra K B'] {π : B →ₐ[K] B'} (hπ : Function.Surjective π)
+    {W : AffinoidSubdomain K B'}
+    (hW : Set.MapsTo ((hB.of_surjective π hπ).maximalSpectrumComap π) W U) :
+    W.IsInner (π.comp φ) := by
+  have hB' := hB.of_surjective π hπ
+  obtain ⟨n, ψ, hψ, hφ, hX⟩ := (isInner_iff_forall_pointNorm_lt hB).mp h
+  refine (isInner_iff_forall_pointNorm_lt hB').mpr
+    ⟨n, π.comp ψ, hπ.comp hψ, fun a ↦ by simp [hφ], fun i y hy ↦ ?_⟩
+  rw [AlgHom.comp_apply, ← hB'.pointNorm_maximalSpectrumComap]
+  exact hX i _ (hW hy)
+
 end Inner
+
+section Pushout
+
+variable {A : Type u} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
+  [CompleteSpace A] {m n : ℕ} {I : Ideal (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1))}
+  {J : Ideal (IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1))}
+
+/-- **Products.** Let `B = A⟨X⟩ ⧸ I` and `C = A⟨Y⟩ ⧸ J` be affinoid `A`-algebras, with affinoid
+pushout `B ⊗̂_A C = A⟨X, Y⟩ ⧸ (I, J)`. If `U ⋐_A Sp B` and `V ⋐_A Sp C`, then every affinoid
+subdomain `W` of `Sp (B ⊗̂_A C)` which maps into `U` and into `V`, such as the fibre product
+`U ×_A V`, satisfies `W ⋐_A Sp (B ⊗̂_A C)`. -/
+theorem IsInner.affinoidPushout (hA : IsAffinoidAlgebra K A)
+    {U : AffinoidSubdomain K (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I)}
+    {V : AffinoidSubdomain K (IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) ⧸ J)}
+    (hU : U.IsInner (IsScalarTower.toAlgHom K A _)) (hV : V.IsInner (IsScalarTower.toAlgHom K A _))
+    {W : AffinoidSubdomain K (AffinoidPushout I J)}
+    (hWU : Set.MapsTo ((AffinoidPushout.isAffinoidAlgebra I J hA).maximalSpectrumComap
+      ((AffinoidPushout.inl I J).restrictScalars K)) W U)
+    (hWV : Set.MapsTo ((AffinoidPushout.isAffinoidAlgebra I J hA).maximalSpectrumComap
+      ((AffinoidPushout.inr I J).restrictScalars K)) W V) :
+    W.IsInner (IsScalarTower.toAlgHom K A (AffinoidPushout I J)) := by
+  have hP := AffinoidPushout.isAffinoidAlgebra I J hA
+  obtain ⟨k, ψ, hψ, hψA, hψX⟩ :=
+    (isInner_iff_forall_pointNorm_lt ((hA.isRestricted_subring (τ := Fin m)).quotient I)).mp hU
+  obtain ⟨l, χ, hχ, hχA, hχX⟩ :=
+    (isInner_iff_forall_pointNorm_lt ((hA.isRestricted_subring (τ := Fin n)).quotient J)).mp hV
+  -- Present the pushout by `A⟨X', Y'⟩`, sending `X'ᵢ` to `inl (ψ X'ᵢ)` and `Y'ⱼ` to `inr (χ Y'ⱼ)`.
+  obtain ⟨Θ, hΘ, hΘA, hΘl, hΘr⟩ :=
+    AffinoidPushout.exists_surjective_algHom_of_surjective hA hψ hψA hχ hχA
+  refine (isInner_iff_forall_pointNorm_lt hP).mpr ⟨k + l, Θ, hΘ, hΘA, fun i z hz ↦ ?_⟩
+  refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) i
+  · rw [hΘl, ← AlgHom.restrictScalars_apply K, ← hP.pointNorm_maximalSpectrumComap]
+    exact hψX i _ (hWU hz)
+  · rw [hΘr, ← AlgHom.restrictScalars_apply K, ← hP.pointNorm_maximalSpectrumComap]
+    exact hχX j _ (hWV hz)
+
+/-- **Affinoid base change.** Let `B = A⟨X⟩ ⧸ I` be an affinoid `A`-algebra and let
+`π : A⟨Y⟩ → A'` be a surjection onto an algebra `A'` with a complete ultrametric norm, so that
+`A'` is an affinoid `A`-algebra and `B ⊗̂_A A' = A⟨X, Y⟩ ⧸ (I, ker π)`. If `U ⋐_A Sp B`, then
+every affinoid subdomain `W` of `Sp (B ⊗̂_A A')` which maps into `U`, such as `U ×_A Sp A'`,
+satisfies `W ⋐_{A'} Sp (B ⊗̂_A A')`. -/
+theorem IsInner.baseChange (hA : IsAffinoidAlgebra K A) {A' : Type*} [NormedCommRing A']
+    [NormedAlgebra K A'] [IsUltrametricDist A'] [CompleteSpace A']
+    {π : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) →ₐ[K] A'} (hπ : Function.Surjective π)
+    {U : AffinoidSubdomain K (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I)}
+    (hU : U.IsInner (IsScalarTower.toAlgHom K A _))
+    {W : AffinoidSubdomain K (AffinoidPushout I (RingHom.ker π))}
+    (hWU : Set.MapsTo ((AffinoidPushout.isAffinoidAlgebra I _ hA).maximalSpectrumComap
+      ((AffinoidPushout.inl I (RingHom.ker π)).restrictScalars K)) W U) :
+    W.IsInner (((AffinoidPushout.inr I (RingHom.ker π)).restrictScalars K).comp
+      (Ideal.quotientKerAlgEquivOfSurjective hπ).symm.toAlgHom) := by
+  have hP := AffinoidPushout.isAffinoidAlgebra I (RingHom.ker π) hA
+  have hA' := (hA.isRestricted_subring (τ := Fin n)).of_surjective π hπ
+  obtain ⟨k, ψ, hψ, hψA, hψX⟩ :=
+    (isInner_iff_forall_pointNorm_lt ((hA.isRestricted_subring (τ := Fin m)).quotient I)).mp hU
+  -- Present the pushout by `A⟨X', Y⟩`, sending `X'ᵢ` to `inl (ψ X'ᵢ)` and `Yⱼ` to `inr Yⱼ`.
+  obtain ⟨Θ, hΘ, hΘA, hΘl, hΘr⟩ := AffinoidPushout.exists_surjective_algHom_of_surjective hA
+    hψ hψA (Ideal.Quotient.mkₐ_surjective K (RingHom.ker π)) fun a ↦ by simp
+  -- The variables `Yⱼ` come from `A'`, and the variables `X'ᵢ` are small on `W`.
+  refine isInner_of_surjective_append hA hA' hΘ (θ := π.comp (IsScalarTower.toAlgHom K A _))
+    (fun a ↦ ?_) (c := fun j ↦ π ⟨X j, isRestricted_X _ j⟩) (fun j ↦ ?_) (fun j ↦ ?_) fun i ↦ ?_
+  · simp [hΘA, ← Ideal.Quotient.mk_algebraMap]
+  · have := (hA.isRestricted_subring (τ := Fin n)).isNoetherianRing
+    exact hA'.isPowerBounded_map π (isPowerBounded_X j)
+  · simp [hΘr]
+  · rw [supSeminorm_toSections_lt_iff hP W _ one_pos]
+    intro z hz
+    rw [hΘl, ← AlgHom.restrictScalars_apply K, ← hP.pointNorm_maximalSpectrumComap]
+    exact hψX i _ (hWU hz)
+
+end Pushout
 
 section Reduction
 
@@ -266,7 +419,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
   let κ : T₀ →+* K := constantCoeff.comp ((IsRestricted.subring _).subtype.comp T₀.subtype)
   refine ⟨Q.map κ, hQm.map κ, fun j ↦ ?_, ?_⟩
   · rw [Polynomial.coeff_map]
-    exact (norm_constantCoeff_le _).trans (Subring.mem_unitClosedBall.mp (Q.coeff j).2)
+    exact (norm_constantCoeff_le _).trans (Subring.mem_unitClosedBall.mp (Q.coeff j).property)
   -- `q(f) = ∑ (κ Qⱼ - ψ Qⱼ) fʲ` since `P(f) = 0`, and each term is at most `ε`.
   have hP0 : ∑ j ∈ Finset.range (Q.natDegree + 1), ψ (Q.coeff j) * f ^ j = 0 := by
     rw [← hP, ← hQ, eval₂_map, eval₂_eq_sum_range]
@@ -281,7 +434,7 @@ theorem IsInner.exists_monic_supSeminorm_aeval_lt_one (hB : IsAffinoidAlgebra K 
     (fun a b ha hb ↦ (hB.supSeminorm_add_le a b).trans (max_le ha hb))
     (supSeminorm_zero.trans_le hε0.le) fun j _ ↦ ?_
   have hj := hB.supSeminorm_map_sub_algebraMap_constantCoeff_le ψ hε0 hε1.le hXε
-    (Subring.mem_unitClosedBall.mp (Q.coeff j).2)
+    (Subring.mem_unitClosedBall.mp (Q.coeff j).property)
   have hfj : supSeminorm K (f ^ j) ≤ 1 := supSeminorm_le zero_le_one fun y ↦ by
     rw [y.pointNorm_pow]
     exact pow_le_one₀ (pointNorm_nonneg f) ((hB.pointNorm_le_supSeminorm y f).trans hf)

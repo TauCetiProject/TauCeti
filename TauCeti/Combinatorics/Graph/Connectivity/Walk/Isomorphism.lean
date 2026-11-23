@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
 
 import TauCeti.Data.List.Attach
@@ -20,6 +20,7 @@ reachability, including after deleting a transported edge set.
 
 ## Main definitions
 
+* `Graph.Iso.bidirectedHomEquiv`: the induced equivalence between corresponding bidirected arrows.
 * `Graph.Iso.toPrefunctor`: the induced prefunctor between bidirected arrow families.
 * `Graph.Iso.mapPath`: transport of directed walks of the bidirected family.
 * `Graph.Iso.mapWalk`: transport of edge-labelled multigraph walks.
@@ -42,20 +43,20 @@ namespace Iso
 /-- Transport an arrow of the bidirected arrow family. -/
 def mapHom (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
     H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) :=
-  ⟨f.edgeEquiv ⟨a.1, a.2.edge_mem⟩,
-    (f.map_isLink_iff ⟨a.1, a.2.edge_mem⟩ _ _).2 a.2⟩
+  ⟨f.edgeEquiv ⟨a.val, a.property.edge_mem⟩,
+    (f.map_isLink_iff ⟨a.val, a.property.edge_mem⟩ _ _).2 a.property⟩
 
 /-- The underlying edge of a transported bidirected arrow is the transported edge. -/
 @[simp]
 theorem mapHom_fst (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
-    (f.mapHom a).1 = f.edgeEquiv ⟨a.1, a.2.edge_mem⟩ :=
+    (f.mapHom a).val = f.edgeEquiv ⟨a.val, a.property.edge_mem⟩ :=
   (rfl)
 
 /-- Transporting a bidirected arrow along the identity isomorphism fixes it. -/
 @[simp]
 theorem mapHom_refl (G : Graph α β) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
     @Quiver.Hom.cast G.vertexSet (Quiver.mk G.BidirectedHom) _ _ x y
-      (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapHom a) = a := by
+      (by simp) (by simp) ((refl G).mapHom a) = a := by
   apply Subtype.ext
   simp [mapHom]
 
@@ -64,10 +65,35 @@ theorem mapHom_refl (G : Graph α β) {x y : G.vertexSet} (a : G.BidirectedHom x
 theorem mapHom_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
     (a : G.BidirectedHom x y) :
     @Quiver.Hom.cast K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _
-      (trans_vertexEquiv_apply f g x) (trans_vertexEquiv_apply f g y) ((f.trans g).mapHom a) =
+      (by simp) (by simp) ((f.trans g).mapHom a) =
         g.mapHom (f.mapHom a) := by
   apply Subtype.ext
   simp [mapHom]
+
+/-- The equivalence between bidirected arrows induced by a graph isomorphism. It sends an arrow
+to the arrow of the corresponding edge between the corresponding vertices. -/
+def bidirectedHomEquiv (f : Iso G H) (x y : V(G)) :
+    G.BidirectedHom x y ≃ H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) where
+  toFun := f.mapHom
+  invFun b := ⟨f.edgeEquiv.symm ⟨b.val, b.property.edge_mem⟩,
+    (f.map_isLink_iff (f.edgeEquiv.symm ⟨b.val, b.property.edge_mem⟩) x y).1
+        (by simpa using b.property)⟩
+  left_inv a := Subtype.ext (by simp)
+  right_inv b := Subtype.ext (by simp)
+
+/-- The isomorphism of bidirected arrows is arrow transport along the graph isomorphism. -/
+@[simp]
+theorem bidirectedHomEquiv_apply (f : Iso G H) {x y : V(G)} (a : G.BidirectedHom x y) :
+    f.bidirectedHomEquiv x y a = f.mapHom a :=
+  (rfl)
+
+/-- The underlying edge of the inverse image of a bidirected arrow is the inverse image of its
+edge. -/
+@[simp]
+theorem bidirectedHomEquiv_symm_apply_fst (f : Iso G H) {x y : V(G)}
+    (b : H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y)) :
+    ((f.bidirectedHomEquiv x y).symm b).val = f.edgeEquiv.symm ⟨b.val, b.property.edge_mem⟩ :=
+  (rfl)
 
 /-- A graph isomorphism as a prefunctor between the two bidirected arrow families. -/
 def toPrefunctor (f : Iso G H) :
@@ -87,8 +113,8 @@ theorem toPrefunctor_obj (f : Iso G H) (x : G.vertexSet) :
 @[simp]
 theorem toPrefunctor_map_fst (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
     (@Prefunctor.map G.vertexSet (Quiver.mk G.BidirectedHom)
-      H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor x y a).1 =
-        f.edgeEquiv ⟨a.1, a.2.edge_mem⟩ :=
+      H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor x y a).val =
+        f.edgeEquiv ⟨a.val, a.property.edge_mem⟩ :=
   (rfl)
 
 /-- The identity graph isomorphism induces the identity prefunctor. -/
@@ -96,7 +122,7 @@ theorem toPrefunctor_map_fst (f : Iso G H) {x y : G.vertexSet} (a : G.Bidirected
 theorem toPrefunctor_refl (G : Graph α β) :
     (refl G).toPrefunctor = @Prefunctor.id G.vertexSet (Quiver.mk G.BidirectedHom) := by
   refine @Prefunctor.ext G.vertexSet (Quiver.mk G.BidirectedHom)
-    G.vertexSet (Quiver.mk G.BidirectedHom) _ _ (refl_vertexEquiv_apply G)
+    G.vertexSet (Quiver.mk G.BidirectedHom) _ _ (fun _ ↦ by simp)
       fun x y a ↦ eq_of_heq ?_
   rw [heq_eqRec_iff, heq_eqRec_iff]
   exact (@Quiver.Hom.cast_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _).symm.trans
@@ -110,7 +136,7 @@ theorem toPrefunctor_trans (f : Iso G H) (g : Iso H K) :
         H.vertexSet (Quiver.mk H.BidirectedHom) K.vertexSet (Quiver.mk K.BidirectedHom)
         f.toPrefunctor g.toPrefunctor := by
   refine @Prefunctor.ext G.vertexSet (Quiver.mk G.BidirectedHom)
-    K.vertexSet (Quiver.mk K.BidirectedHom) _ _ (trans_vertexEquiv_apply f g)
+    K.vertexSet (Quiver.mk K.BidirectedHom) _ _ (fun _ ↦ by simp)
       fun x y a ↦ eq_of_heq ?_
   rw [heq_eqRec_iff, heq_eqRec_iff]
   exact (@Quiver.Hom.cast_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _).symm.trans
@@ -142,7 +168,7 @@ theorem mapPath_cons (f : Iso G H) {x y z : G.vertexSet}
 theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
     (p : ArrowWalk G.BidirectedHom x y) :
     @Quiver.Path.cast G.vertexSet (Quiver.mk G.BidirectedHom) _ _ x y
-      (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapPath p) = p :=
+      (by simp) (by simp) ((refl G).mapPath p) = p :=
   -- The public prefunctor law identifies this transport with the identity prefunctor.
   by
     exact (@Prefunctor.cast_mapPath_eq_of_eq G.vertexSet G.vertexSet
@@ -155,7 +181,7 @@ theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
 theorem mapPath_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
     (p : ArrowWalk G.BidirectedHom x y) :
     @Quiver.Path.cast K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _
-      (trans_vertexEquiv_apply f g x) (trans_vertexEquiv_apply f g y) ((f.trans g).mapPath p) =
+      (by simp) (by simp) ((f.trans g).mapPath p) =
         g.mapPath (f.mapPath p) :=
   -- The public prefunctor law identifies this transport with composite prefunctor transport.
   by
@@ -236,12 +262,13 @@ theorem isCycle_mapPath (f : Iso G H) {x : G.vertexSet}
 /-- Transport an edge-labelled walk between actual vertices along a graph isomorphism. -/
 def mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     H.Walk (f.vertexEquiv x) (f.vertexEquiv y) :=
-  (f.mapPath (p.toBidirected x.2)).toGraphWalk
+  (f.mapPath (p.toBidirected x.property)).toGraphWalk
 
 /-- Converting a transported walk to the bidirected family recovers directed-walk transport. -/
 @[simp]
 theorem toBidirected_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
-    (f.mapWalk p).toBidirected (f.vertexEquiv x).2 = f.mapPath (p.toBidirected x.2) := by
+    (f.mapWalk p).toBidirected (f.vertexEquiv x).property = f.mapPath (p.toBidirected x.property)
+        := by
   rw [mapWalk, Walk.toBidirected_toGraphWalk]
 
 /-- Walk transport preserves the empty walk. -/
@@ -300,22 +327,20 @@ private theorem mapWalk_reverse_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
 @[simp]
 theorem mapWalk_reverse (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     f.mapWalk p.reverse = (f.mapWalk p).reverse := by
-  exact mapWalk_reverse_aux f p x.2 y.2
+  exact mapWalk_reverse_aux f p x.property y.property
 
 /-- The identity graph isomorphism fixes walks. -/
 @[simp]
 theorem mapWalk_refl (G : Graph α β) {x y : G.vertexSet} (p : G.Walk x y) :
     ((refl G).mapWalk p).copy
-      (congrArg Subtype.val (refl_vertexEquiv_apply G x))
-      (congrArg Subtype.val (refl_vertexEquiv_apply G y)) = p := by
+      (by simp) (by simp) = p := by
   simp [mapWalk, ← ArrowWalk.toGraphWalk_cast]
 
 /-- Transport along a composite isomorphism applies the two walk transports in order. -/
 @[simp]
 theorem mapWalk_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet} (p : G.Walk x y) :
     ((f.trans g).mapWalk p).copy
-      (congrArg Subtype.val (trans_vertexEquiv_apply f g x))
-      (congrArg Subtype.val (trans_vertexEquiv_apply f g y)) =
+      (by simp) (by simp) =
         g.mapWalk (f.mapWalk p) := by
   simp [mapWalk, ← ArrowWalk.toGraphWalk_cast]
 
@@ -337,7 +362,7 @@ theorem mapWalk_mapWalk_symm (f : Iso G H) {x y : H.vertexSet} (p : H.Walk x y) 
 
 /-- The support of a transported walk is the pointwise image of the original support. -/
 theorem support_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
-    (f.mapWalk p).support = ((p.toBidirected x.2).vertices.map f.vertexEquiv).unattach := by
+    (f.mapWalk p).support = ((p.toBidirected x.property).vertices.map f.vertexEquiv).unattach := by
   rw [mapWalk, ArrowWalk.support_toGraphWalk, vertices_mapPath]
 
 /-- A vertex occurs on a transported walk exactly when its inverse image occurs on the original
@@ -346,7 +371,7 @@ walk. -/
 theorem vertexEquiv_mem_support_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (z : G.vertexSet) :
     (f.vertexEquiv z : α') ∈ (f.mapWalk p).support ↔ (z : α) ∈ p.support := by
-  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.2, List.val_mem_unattach_iff,
+  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.property, List.val_mem_unattach_iff,
     List.val_mem_unattach_iff,
     List.mem_map_of_injective f.vertexEquiv.injective]
 
@@ -364,7 +389,7 @@ private theorem edges_mapWalk_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
 /-- The edges of a transported walk are the pointwise image of the original traversed edges. -/
 theorem edges_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).edges = (p.edgesAttach.map f.edgeEquiv).unattach := by
-  exact edges_mapWalk_aux f p x.2 y.2
+  exact edges_mapWalk_aux f p x.property y.property
 
 /-- An edge occurs on a transported walk exactly when its inverse image occurs on the original
 walk. -/
@@ -396,7 +421,7 @@ theorem isPath_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
 theorem isCycle_mapWalk (f : Iso G H) {x : G.vertexSet} (p : G.Walk x x) :
     (f.mapWalk p).IsCycle ↔ p.IsCycle := by
   rw [Walk.isCycle_iff_isCycle_toBidirected_and_isTrail (f.mapWalk p)
-    (f.vertexEquiv x).2, Walk.isCycle_iff_isCycle_toBidirected_and_isTrail p x.2]
+    (f.vertexEquiv x).property, Walk.isCycle_iff_isCycle_toBidirected_and_isTrail p x.property]
   rw [isTrail_mapWalk]
   simp only [toBidirected_mapWalk, isCycle_mapPath]
 

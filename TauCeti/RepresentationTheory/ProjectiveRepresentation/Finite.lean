@@ -58,7 +58,7 @@ instance : Finite (schurMultiplier k G) := by
   let : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
   let S := {α : G → G → kˣ // IsFactorSet α ∧ ∀ g h, α g h ^ Nat.card G = 1}
   let encode (a : S) (g h : G) : rootsOfUnity (Nat.card G) k :=
-    ⟨a.1 g h, (mem_rootsOfUnity _ _).2 (a.2.2 g h)⟩
+    ⟨a.val g h, (mem_rootsOfUnity _ _).2 (a.property.2 g h)⟩
   have hinj : Function.Injective encode := by
     intro a b hab
     apply Subtype.ext
@@ -66,8 +66,8 @@ instance : Finite (schurMultiplier k G) := by
     exact congrArg (fun f ↦ (f g h : kˣ)) hab
   let : Finite S := Finite.of_injective encode hinj
   let f (a : S) : schurMultiplier k G :=
-    let := a.2.1
-    (isProjectiveRep_twistedRegularRep k G a.1).cohomologyClass
+    let := a.property.1
+    (isProjectiveRep_twistedRegularRep k G a.val).cohomologyClass
   apply Finite.of_surjective f
   intro x
   obtain ⟨α, hα, hpow, hx⟩ := exists_isFactorSet_pow_card_eq_one_cohomologyClass_eq x

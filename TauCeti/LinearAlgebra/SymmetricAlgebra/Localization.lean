@@ -22,7 +22,7 @@ semilinear map on each homogeneous piece is a localization map.
 public section
 
 open scoped TensorProduct
-open TauCeti.SymmetricAlgebra
+open SymmetricAlgebra TauCeti.SymmetricAlgebra
 
 noncomputable section
 
@@ -74,7 +74,7 @@ theorem coe_symmetricPowerEquiv_tmul (h : IsBaseChange A f) (n : ℕ)
     (f' : M →ₛₗ[algebraMap R A] N) (hf : ∀ m, f' m = f m)
     (a : A) (x : homogeneousSubmodule R M n) :
     (h.symmetricPowerEquiv n (a ⊗ₜ[R] x) : SymmetricAlgebra A N) =
-      a • SymmetricAlgebra.mapₛₗ f' x.1 := by
+      a • SymmetricAlgebra.mapₛₗ f' x.val := by
   have he : (SymmetricAlgebra.map A h.equiv.toLinearMap : _ →+* _).comp
       ((scalarTensorBialgEquiv (k := R) (K := A)).toAlgEquiv.toRingHom.comp
         Algebra.TensorProduct.includeRight.toRingHom) = SymmetricAlgebra.mapₛₗ f' := by
@@ -95,11 +95,11 @@ theorem coe_symmetricPowerEquiv_tmul (h : IsBaseChange A f) (n : ℕ)
         _ = _ := (AlgHom.commutes _ _).trans (SymmetricAlgebra.mapₛₗ_algebraMap f' r).symm
     · intro m
       simp [Algebra.TensorProduct.includeRight_apply, hf, h.equiv_tmul]
-  have ht : a ⊗ₜ[R] x.1 = a • (1 ⊗ₜ[R] x.1) := by simp [TensorProduct.smul_tmul']
+  have ht : a ⊗ₜ[R] x.val = a • (1 ⊗ₜ[R] x.val) := by simp [TensorProduct.smul_tmul']
   rw [coe_symmetricPowerEquiv_apply, LinearMap.baseChange_tmul]
   simp only [Submodule.subtype_apply]
   rw [ht, map_smul, map_smul]
-  exact congrArg (a • ·) (RingHom.congr_fun he x.1)
+  exact congrArg (a • ·) (RingHom.congr_fun he x.val)
 
 variable {M' N' : Type*} [AddCommMonoid M'] [Module R M'] [AddCommMonoid N']
   [Module R N'] [Module A N'] [IsScalarTower R A N'] {f' : M' →ₗ[R] N'}
@@ -133,7 +133,7 @@ theorem symmetricPowerEquiv_naturality (h : IsBaseChange A f) (h' : IsBaseChange
     apply congrArg (SymmetricAlgebra.map A h'.equiv.toLinearMap)
     simpa only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
       AlgEquiv.toAlgHom_apply, BialgEquiv.coe_toAlgEquiv] using
-      (AlgHom.congr_fun (g.scalarTensorBialgEquiv_comp_map (S := A)) (a ⊗ₜ[R] x.1)).symm
+      (AlgHom.congr_fun (g.scalarTensorBialgEquiv_comp_map (S := A)) (a ⊗ₜ[R] x.val)).symm
 
 end IsBaseChange
 
@@ -150,7 +150,7 @@ theorem isLocalizedModule_symmetricPower (n : ℕ)
       (homogeneousSubmodule A N n).module.toSMul symR.toSMul]
     (f' : M →ₛₗ[algebraMap R A] N) (hf : ∀ m, f' m = f m)
     (g : homogeneousSubmodule R M n →ₗ[R] homogeneousSubmodule A N n)
-    (hg : ∀ x, (g x : SymmetricAlgebra A N) = SymmetricAlgebra.mapₛₗ f' x.1) :
+    (hg : ∀ x, (g x : SymmetricAlgebra A N) = SymmetricAlgebra.mapₛₗ f' x.val) :
     IsLocalizedModule S g := by
   -- Use Mathlib's scalar-extension characterization `isLocalizedModule_iff_isBaseChange`.
   rw [@isLocalizedModule_iff_isBaseChange R _ S A _ _ _
