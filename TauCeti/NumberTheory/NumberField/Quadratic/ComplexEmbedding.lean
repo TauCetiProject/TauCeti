@@ -30,8 +30,12 @@ chosen square root of the radicand lies in the upper half-plane.
 
 * `QuadraticAlgebra.complexEmbedding`: the embedding `ω ↦ √(-a) · i`.
 * `QuadraticAlgebra.complexEmbedding_star`: it intertwines `star` with complex conjugation.
+* `QuadraticAlgebra.complexEmbedding_injective`: for `a < 0`, the distinguished embedding is
+  injective.
 * `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv`: every `ℚ`-algebra map to `ℂ` is the
   distinguished embedding or its precomposition with `starAlgEquiv`.
+* `QuadraticAlgebra.norm_ringHom_eq_norm_complexEmbedding`: for all rational `a ≤ 0`, including
+  `a = 0`, every ring homomorphism to `ℂ` agrees in norm with the distinguished map.
 * `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_pos`,
   `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_neg`: along the rescaling isomorphism
   `QuadraticAlgebra.smulOmegaEquiv u h : ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` with `d = u² e`, the distinguished
@@ -93,6 +97,12 @@ theorem complexEmbedding_apply (ha : a ≤ 0) (z : QuadraticAlgebra ℚ a 0) :
     complexEmbedding ha (star z) = conj (complexEmbedding ha z) := by
   apply Complex.ext <;> simp
 
+/-- For `a < 0`, the distinguished complex embedding of `ℚ(√a)` is injective. -/
+theorem complexEmbedding_injective (ha : a < 0) :
+    Function.Injective (complexEmbedding ha.le) :=
+  have : Fact (¬ IsSquare a) := ⟨not_isSquare_of_neg ha⟩
+  (complexEmbedding ha.le).injective
+
 /-- **The two complex embeddings of `ℚ(√a)`.** For `a ≤ 0`, every `ℚ`-algebra map
 `QuadraticAlgebra ℚ a 0 → ℂ` is the distinguished embedding or its precomposition with the
 quadratic involution, since it sends `ω` to a square root of `a`. -/
@@ -107,6 +117,17 @@ theorem algHom_eq_or_eq_comp_starAlgEquiv (ha : a ≤ 0)
   rcases mul_self_eq_mul_self_iff.mp hφ with h | h
   · exact Or.inl (algHom_ext (by simp [h]))
   · exact Or.inr (algHom_ext (by simp [h]))
+
+/-- For any rational radicand `a ≤ 0`, every ring homomorphism from `QuadraticAlgebra ℚ a 0`
+to `ℂ` has the same image norm as the distinguished `complexEmbedding` at every element.
+This includes the degenerate algebra at `a = 0`. -/
+theorem norm_ringHom_eq_norm_complexEmbedding
+    {a : ℚ} (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ)
+    (z : QuadraticAlgebra ℚ a 0) :
+    ‖φ z‖ = ‖QuadraticAlgebra.complexEmbedding ha z‖ := by
+  rcases QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv ha φ.toRatAlgHom with h | h
+  · exact congrArg Norm.norm (AlgHom.congr_fun h z)
+  · simpa using congrArg Norm.norm (AlgHom.congr_fun h z)
 
 /-- **The upper half-plane picks out the distinguished embedding.** For `a < 0`, a ring
 homomorphism `QuadraticAlgebra ℚ a 0 →+* ℂ` is the distinguished embedding exactly when it sends

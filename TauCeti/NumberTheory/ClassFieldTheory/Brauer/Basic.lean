@@ -315,7 +315,7 @@ private def relBrLevelCocycle
 private theorem relBrLevelCocycle_apply
     (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
     (g h : AbsoluteGaloisGroup K) :
-    ((relBrLevelCocycle K L σ c).1 (g, h) : UnitsCoeff K) =
+    ((relBrLevelCocycle K L σ c).val (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
   rw [relBrLevelCocycle]
@@ -352,7 +352,7 @@ the restrictions of the two absolute Galois elements. -/
 theorem relBrCocycle_apply
     (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
     (g h : AbsoluteGaloisGroup K) :
-    ((relBrCocycle K L σ c).1 (g, h) : UnitsCoeff K) =
+    ((relBrCocycle K L σ c).val (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
   rw [relBrCocycle, cocyclesMap2_apply]
@@ -366,7 +366,7 @@ private theorem relBrLevelEquiv_H2π
     (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
     (z : Z2 (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
       (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K)))
-    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.val (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
     relBrLevelEquiv K L σ (groupCohomology.H2π _ c) = (z : H2 _ _) := by
@@ -400,7 +400,7 @@ and `z = relBrCocycle K L σ c`, so that the class of `z` is `relBrInfl K L σ [
 (`relBrInfl_H2π`). -/
 theorem exists_relBrCocycle_eq (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K))
     (u : Gal(L/K) × Gal(L/K) → Lˣ)
-    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.val (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
     ∃ c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ),
@@ -422,14 +422,14 @@ theorem exists_relBrCocycle_eq (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K))
     obtain ⟨h, rfl⟩ := σ.restrictNormalHom_surjective t
     obtain ⟨j, rfl⟩ := σ.restrictNormalHom_surjective r
     have hΦf (a b : AbsoluteGaloisGroup K) :
-        Φ (f (σ.restrictNormalHom a, σ.restrictNormalHom b)) = z.1 (a, b) :=
+        Φ (f (σ.restrictNormalHom a, σ.restrictNormalHom b)) = z.val (a, b) :=
       (hz a b).symm
     have hΦρ (a : AbsoluteGaloisGroup K) (m : Rep.ofMulDistribMulAction Gal(L/K) Lˣ) :
         Φ ((Rep.ofMulDistribMulAction Gal(L/K) Lˣ).ρ (σ.restrictNormalHom a) m) = a • Φ m :=
       embeddedUnitsEquivInvariants_restrictNormalHom_smul K L σ a (Rep.toAdditive m)
     apply hΦ
     rw [← map_mul, ← map_mul, map_add, map_add, hΦρ, hΦf, hΦf, hΦf, hΦf]
-    exact (mem_Z2_iff.1 z.2).2 g h j
+    exact (mem_Z2_iff.1 z.property).2 g h j
   refine ⟨⟨f, hf⟩, fun _ ↦ rfl, Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_)⟩
   exact (relBrCocycle_apply K L σ _ g h).trans (hz g h).symm
 
@@ -475,7 +475,7 @@ theorem relBrInfl_map (x : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) L
     (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K M τ).toSubgroup (UnitsCoeff K))
     _ _ _ _ (relBrLevelCocycle K L σ c) g h)).trans ?_
   refine (coe_fixedPointsInclusion _ _).trans ?_
-  refine (congrArg₂ (fun a b => ((relBrLevelCocycle K L σ c).1 (a, b) : UnitsCoeff K))
+  refine (congrArg₂ (fun a b => ((relBrLevelCocycle K L σ c).val (a, b) : UnitsCoeff K))
     (continuousFiniteQuotientMap_mk _ hVU g) (continuousFiniteQuotientMap_mk _ hVU h)).trans ?_
   refine (relBrLevelCocycle_apply K L σ c g h).trans ?_
   rw [← hres g, ← hres h]

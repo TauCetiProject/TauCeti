@@ -102,15 +102,15 @@ Clifford algebra map induced by `f` sends the quadratic element of a type-`D` ma
 quadratic element of its zero extension `LieAlgebra.Orthogonal.typeB.ofTypeD A`. -/
 theorem map_typeDQuadraticEquiv (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i) = b₂ i)
     (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (A : LieAlgebra.Orthogonal.typeD ι K) :
-    map f (P₁.typeDQuadraticEquiv b₁ hline A : CliffordAlgebra Q₁) =
+    CliffordAlgebra.map f (P₁.typeDQuadraticEquiv b₁ hline A : CliffordAlgebra Q₁) =
       P₂.typeBQuadraticEquiv b₂ z hz (LieAlgebra.Orthogonal.typeB.ofTypeD A) := by
   set q := (P₁.typeDQuadraticEquiv b₁ hline A : CliffordAlgebra Q₁)
   have hq : q ∈ quadraticLieSubalgebra Q₁ := (P₁.typeDQuadraticEquiv b₁ hline A).property
   -- The image of a quadratic element commutes with the remainder vector, which is orthogonal to
   -- the image of `f`.
-  have hz_comm : ⁅map f q, CliffordAlgebra.ι Q₂ (z : V₂)⁆ = 0 := by
+  have hz_comm : ⁅CliffordAlgebra.map f q, CliffordAlgebra.ι Q₂ (z : V₂)⁆ = 0 := by
     have key : (quadraticLieSubalgebra Q₁).toSubmodule ≤
-        { carrier := {x | ⁅map f x, CliffordAlgebra.ι Q₂ (z : V₂)⁆ = 0}
+        { carrier := {x | ⁅CliffordAlgebra.map f x, CliffordAlgebra.ι Q₂ (z : V₂)⁆ = 0}
           add_mem' := fun hx hy => by simp_all [add_lie]
           zero_mem' := by simp
           smul_mem' := fun r x hx => by simp_all [smul_lie] } :=
@@ -120,17 +120,18 @@ theorem map_typeDQuadraticEquiv (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i
   -- The commutator with the image of `q` matches the zero-extended matrix on the odd hyperbolic
   -- basis: on the remainder vector both vanish, and on the image of `f` this is the type-`D`
   -- commutator formula transported by `f`.
-  have hbasis : ∀ c, ⁅map f q, CliffordAlgebra.ι Q₂ (P₂.typeBBasis b₂ z hz c)⁆ =
+  have hbasis : ∀ c, ⁅CliffordAlgebra.map f q, CliffordAlgebra.ι Q₂ (P₂.typeBBasis b₂ z hz c)⁆ =
       CliffordAlgebra.ι Q₂ (Matrix.toLinAlgEquiv (P₂.typeBBasis b₂ z hz)
         (LieAlgebra.Orthogonal.typeB.ofTypeD A) (P₂.typeBBasis b₂ z hz c)) := by
     rintro (⟨⟩ | c)
     · rw [typeBBasis_inl, hz_comm, ← typeBBasis_inl P₂ b₂ z hz (), Matrix.toLinAlgEquiv_self]
       simp [Fintype.sum_sum_type]
-    · have hmap : map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ =
-          ⁅map f q, map f (CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c))⁆ :=
-        (map f).toLieHom.map_lie _ _
+    · have hmap : CliffordAlgebra.map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ =
+          ⁅CliffordAlgebra.map f q,
+            CliffordAlgebra.map f (CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c))⁆ :=
+        (CliffordAlgebra.map f).toLieHom.map_lie _ _
       calc
-        _ = map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ := by
+        _ = CliffordAlgebra.map f ⁅q, CliffordAlgebra.ι Q₁ (P₁.typeDBasis b₁ hline c)⁆ := by
           simpa only [map_apply_ι, apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW']
             using hmap.symm
         _ = CliffordAlgebra.ι Q₂
@@ -141,7 +142,7 @@ theorem map_typeDQuadraticEquiv (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i
           simp only [Matrix.toLinAlgEquiv_self, map_sum, map_smul,
             apply_typeDBasis P₁ P₂ b₁ b₂ z hz hline hb hW']
           simp [Fintype.sum_sum_type]
-  have h : LieAlgebra.ad K (CliffordAlgebra Q₂) (map f q) ∘ₗ CliffordAlgebra.ι Q₂ =
+  have h : LieAlgebra.ad K (CliffordAlgebra Q₂) (CliffordAlgebra.map f q) ∘ₗ CliffordAlgebra.ι Q₂ =
       CliffordAlgebra.ι Q₂ ∘ₗ Matrix.toLinAlgEquiv (P₂.typeBBasis b₂ z hz)
         (LieAlgebra.Orthogonal.typeB.ofTypeD A) :=
     (P₂.typeBBasis b₂ z hz).ext fun c => by
@@ -150,7 +151,7 @@ theorem map_typeDQuadraticEquiv (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i
   -- Both sides are quadratic, so it suffices to compare their commutators with generators.
   refine congrArg Subtype.val (quadraticLieSubalgebra_ext Q₂
     (P₂.nondegenerate ((isUnit_of_invertible (2 : K)).isSMulRegular K))
-    (a := ⟨map f q, map_mem_quadraticLieSubalgebra f hq⟩) fun x => ?_)
+    (a := ⟨CliffordAlgebra.map f q, map_mem_quadraticLieSubalgebra f hq⟩) fun x => ?_)
   rw [P₂.typeBQuadraticEquiv_lie_ι]
   simpa only [LinearMap.comp_apply, LieAlgebra.ad_apply] using LinearMap.congr_fun h x
 
@@ -169,8 +170,11 @@ theorem typeBSpinLieRep_ofTypeD_comp_exteriorAlgebraMap (hline : P₁.line = ⊥
         P₁.typeDSpinLieRep b₁ hline A := by
   rw [typeBSpinLieRep_apply, typeDSpinLieRep_apply,
     ← map_typeDQuadraticEquiv P₁ P₂ b₁ b₂ z hz hline hb hW']
-  exact spinAction_map_comp_exteriorAlgebraMap P₁ P₂ hline
+  refine spinAction_map_comp_exteriorAlgebraMap P₁ P₂ (fun l => ⟨0, ?_⟩)
     (apply_coe_eq_basisEquiv P₁ P₂ b₁ b₂ hb) hW' _
+  -- The remainder of the even polarization `P₁` is zero.
+  obtain rfl : l = 0 := Subtype.ext (by simpa [hline] using l.property)
+  simp
 
 end TypeB
 

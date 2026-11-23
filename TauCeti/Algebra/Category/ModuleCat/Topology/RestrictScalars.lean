@@ -90,8 +90,8 @@ variable {M N : TopModuleCat.{v} R} (f : M ⟶ N)
 /-- The kernel of `f`, computed after forgetting the scalars, is the kernel of `f` computed before,
 as a topological `ℤ`-module. -/
 def kerEquiv : ker (restrictScalarsInt.map f) ≃L[ℤ] restrictScalarsInt.obj (ker f) where
-  toFun x := ⟨x.1, x.2⟩
-  invFun x := ⟨x.1, x.2⟩
+  toFun x := ⟨x.val, x.property⟩
+  invFun x := ⟨x.val, x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -102,7 +102,7 @@ def kerEquiv : ker (restrictScalarsInt.map f) ≃L[ℤ] restrictScalarsInt.obj (
 /-- `kerEquiv` is the identity on the underlying elements. -/
 @[simp]
 theorem coe_kerEquiv_apply (x : ker (restrictScalarsInt.map f)) :
-    (kerEquiv f x).1 = x.1 :=
+    (kerEquiv f x).val = x.val :=
   (rfl)
 
 /-- The kernel of `f`, computed after forgetting the scalars, is the kernel of `f` computed

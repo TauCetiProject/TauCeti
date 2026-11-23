@@ -41,6 +41,8 @@ form of Riemann–Hurwitz. The ramification divisor of a composite satisfies the
 * `TauCeti.RiemannSurface.ramificationDegree`: the ramification degree, and
   `TauCeti.RiemannSurface.degree_ramificationDivisor`: it is the degree of the ramification
   divisor.
+* `TauCeti.RiemannSurface.ramificationDegree_eq_zero_iff`: the ramification degree vanishes
+  exactly when the map is unramified.
 * `TauCeti.RiemannSurface.card_fiber_add_sum_localMultiplicity_sub_one` and
   `TauCeti.RiemannSurface.coeff_pushforward_ramificationDivisor`: the fibre count.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.ncard_preimage_add_finsum_localMultiplicity_sub_one`:
@@ -80,6 +82,20 @@ def ramificationDegree (f : X → Y) : ℕ := ∑ᶠ x, (localMultiplicity f x -
 theorem ramificationDegree_def (f : X → Y) :
     ramificationDegree f = ∑ᶠ x, (localMultiplicity f x - 1) :=
   (rfl)
+
+/-- **A degree-one map is unramified.** A finite holomorphic map of degree `1` has ramification
+degree `0`. -/
+theorem FiniteHolomorphicMap.ramificationDegree_eq_zero_of_degree_eq_one
+    {f : FiniteHolomorphicMap X Y} (hf : degree f = 1) : ramificationDegree f = 0 := by
+  have hbdd : BddAbove (Set.range (fiberMultiplicitySum f)) := by
+    by_contra h
+    rw [degree_def, Nat.iSup_of_not_bddAbove h] at hf
+    exact zero_ne_one hf
+  rw [ramificationDegree_def]
+  refine finsum_eq_zero_of_forall_eq_zero fun x ↦ Nat.sub_eq_zero_of_le ?_
+  rw [← hf, degree_def]
+  exact (localMultiplicity_le_fiberMultiplicitySum (f.finite_fiber (f x)) rfl).trans
+    (le_ciSup hbdd (f x))
 
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
@@ -193,6 +209,18 @@ theorem degree_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
   · intro x hx
     rw [support_ramificationDivisor]
     exact Nat.lt_of_sub_ne_zero hx
+
+/-- A finite holomorphic map from a compact Riemann surface has ramification degree `0` exactly
+when it is unramified, that is, has local multiplicity `1` everywhere. -/
+theorem ramificationDegree_eq_zero_iff (f : FiniteHolomorphicMap X Y) :
+    ramificationDegree f = 0 ↔ ∀ x, localMultiplicity f x = 1 := by
+  rw [ramificationDegree_def, finsum_eq_sum _ f.finite_support_localMultiplicity_sub_one,
+    Finset.sum_eq_zero_iff]
+  refine ⟨fun h x ↦ ?_, fun h x _ ↦ by simp [h x]⟩
+  have hpos := localMultiplicity_pos f x
+  by_contra hx
+  have := h x (by simp only [Set.Finite.mem_toFinset, mem_support]; omega)
+  omega
 
 section Fiber
 

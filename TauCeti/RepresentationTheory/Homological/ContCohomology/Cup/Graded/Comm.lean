@@ -366,12 +366,12 @@ underlying elements of the resolution, which is invariant by equivariance. -/
 def cupOneCochain (m n : ℕ) : (TopRep.homogeneousCochains X).X m →ₗ[R]
     (TopRep.homogeneousCochains Y).X (n + 1) →ₗ[R] (TopRep.homogeneousCochains Z).X (m + n) :=
   LinearMap.mk₂ R
-    (fun a b ↦ ⟨P.cupOne m n (m + n) (Nat.add_comm m n) (a.1, b.1), fun g ↦ by
-      rw [← P.cupOne_ρ, a.2 g, b.2 g]⟩)
-    (fun a a' b ↦ Subtype.ext (P.cupOne_add_left m n _ _ a.1 a'.1 b.1))
-    (fun r a b ↦ Subtype.ext (P.cupOne_smul_left m n _ _ r a.1 b.1))
-    (fun a b b' ↦ Subtype.ext (P.cupOne_add_right m n _ _ a.1 b.1 b'.1))
-    (fun r a b ↦ Subtype.ext (P.cupOne_smul_right m n _ _ r a.1 b.1))
+    (fun a b ↦ ⟨P.cupOne m n (m + n) (Nat.add_comm m n) (a.val, b.val), fun g ↦ by
+      rw [← P.cupOne_ρ, a.property g, b.property g]⟩)
+    (fun a a' b ↦ Subtype.ext (P.cupOne_add_left m n _ _ a.val a'.val b.val))
+    (fun r a b ↦ Subtype.ext (P.cupOne_smul_left m n _ _ r a.val b.val))
+    (fun a b b' ↦ Subtype.ext (P.cupOne_add_right m n _ _ a.val b.val b'.val))
+    (fun r a b ↦ Subtype.ext (P.cupOne_smul_right m n _ _ r a.val b.val))
 
 /-- The underlying resolution element of `cupOneCochain` is `cupOne`. -/
 -- Not a `simp` lemma, for the same reason as `coe_cupCochain`: `simp` rewrites the implicit
@@ -380,7 +380,7 @@ def cupOneCochain (m n : ℕ) : (TopRep.homogeneousCochains X).X m →ₗ[R]
 theorem coe_cupOneCochain (m n : ℕ) (a : (TopRep.homogeneousCochains X).X m)
     (b : (TopRep.homogeneousCochains Y).X (n + 1)) :
     Subtype.val (P.cupOneCochain m n a b) =
-      P.cupOne m n (m + n) (Nat.add_comm m n) (a.1, b.1) := by
+      P.cupOne m n (m + n) (Nat.add_comm m n) (a.val, b.val) := by
   rw [cupOneCochain, LinearMap.mk₂_apply]
 
 /-- **The differential of the cup-one product of two cocycles**: for a cocycle `a` of degree `m`

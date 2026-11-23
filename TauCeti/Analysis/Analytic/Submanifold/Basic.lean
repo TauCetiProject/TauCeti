@@ -273,6 +273,15 @@ theorem _root_.IsOpen.isAnalyticSubmanifold (hU : IsOpen U) (hne : U.Nonempty) :
     ⟨analyticOnNhd_id, analyticOnNhd_id, fun y hy ↦ ?_⟩⟩⟩
   simpa [fun i : Fin n ↦ i.isLt.not_ge] using hy.2
 
+/-- An analytic submanifold of `𝕜ⁿ` of full dimension `n` is open. -/
+theorem IsAnalyticSubmanifold.isOpen {S : Set (Fin n → 𝕜)} (hS : IsAnalyticSubmanifold n S) :
+    IsOpen S := by
+  -- An analytic chart of a full-dimensional submanifold imposes no condition on its source.
+  refine isOpen_iff_mem_nhds.2 fun x hx ↦ ?_
+  obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
+  exact mem_of_superset (e.open_source.mem_nhds hxe) fun y hy ↦
+    (he.mem_iff hy).2 fun i hi ↦ absurd i.isLt hi.not_gt
+
 /-- A point of `𝕜ⁿ` is a `0`-dimensional analytic submanifold. -/
 theorem isAnalyticSubmanifold_singleton (a : Fin n → 𝕜) : IsAnalyticSubmanifold 0 {a} := by
   refine ⟨singleton_nonempty a, n.zero_le, fun x _ ↦
