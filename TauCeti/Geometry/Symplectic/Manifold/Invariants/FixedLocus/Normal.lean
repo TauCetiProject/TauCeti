@@ -201,11 +201,13 @@ theorem IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinran
   refine SmoothEmbedding.invariants_fixedNormalRepresentation_eq_bot (hσ := hσ) _ _ hσK ?_ y _ _ ?_
   · simpa using hemb.hasSymplecticTangentImages
   · -- Replace the bundled embedding by its underlying inclusion, on which `hrange` is stated.
-    rw [SmoothEmbedding.tangentRange]
+    -- Membership in `tangentRange` mentions the embedding only through its coercion.
+    refine fun v hv ↦ (SmoothEmbedding.mem_tangentRange_iff _ _ _ _).2 ?_
+    revert v
     generalize hG : ⇑(SmoothEmbedding.ofIsSmoothEmbedding (I := 𝓘(ℝ, L)) (J := 𝓘(ℝ, E))
       (n := ∞) _ hemb.isSmoothEmbedding) = G
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding] at hG
     subst hG
-    exact hrange y
+    exact fun v hv ↦ LinearMap.mem_range.1 (hrange y hv)
 
 end TauCeti.SmoothTwoForm
