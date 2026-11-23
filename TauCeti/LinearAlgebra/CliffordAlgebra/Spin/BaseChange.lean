@@ -187,7 +187,7 @@ section Field
 
 variable {K : Type u} {L : Type v} {V : Type w}
 variable [Field K] [Field L] [Algebra K L]
-variable [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+variable [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 variable {Q : QuadraticForm K V} {u w : V}
 
 /-- Extension of scalars carries the canonical Spin lift of `E_{u,w}` to the canonical lift of
@@ -386,7 +386,7 @@ theorem spinToOrthogonal_baseChange [Invertible (2 : A)] (Q : QuadraticForm R M)
 open _root_.QuadraticMap
 
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+  [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 
 /-- Extending scalars along a field extension carries the canonical Spin root-subgroup
 homomorphism to that of the extended quotient parameters, preserving its additive composition
