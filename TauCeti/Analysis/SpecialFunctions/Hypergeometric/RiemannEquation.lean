@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import TauCeti.Algebra.Field.CrossRatio
+import TauCeti.Analysis.Calculus.Deriv.CrossRatio
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -72,7 +73,7 @@ analytic where both quotients lie in the slit plane. -/
 private theorem analyticAt_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
     (hA : (z - α) / (z - γ) ∈ slitPlane) (hB : (z - β) / (z - γ) ∈ slitPlane) :
     AnalyticAt ℂ (fun w => ((w - α) / (w - γ)) ^ a₁ * ((w - β) / (w - γ)) ^ b₁) z := by
-  have hzγ : z - γ ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane hA).2
+  have hzγ : z - γ ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero hA)).2
   exact ((analyticAt_id.sub analyticAt_const).div (analyticAt_id.sub analyticAt_const) hzγ
     |>.cpow analyticAt_const hA).mul
     (((analyticAt_id.sub analyticAt_const).div (analyticAt_id.sub analyticAt_const) hzγ).cpow
@@ -96,8 +97,8 @@ private theorem hasDerivAt_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
         ((a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹)) ^ 2 +
           (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) +
             b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹)))) z := by
-  obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane hA
-  have hzβ : z - β ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane hB).1
+  obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp (slitPlane_ne_zero hA)
+  have hzβ : z - β ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero hB)).1
   -- Both quotients stay in the open slit plane near `z`, so `P′ = P L` near `z`.
   have hc : ∀ δ : ℂ, ContinuousAt (fun w : ℂ => (w - δ) / (w - γ)) z := fun δ =>
     (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const) hzγ
@@ -144,15 +145,11 @@ theorem riemannEquation_residual_eq_mul_hypergeometricEquation_residual
   set T : ℂ → ℂ := fun x => crossRatio x β α γ with hTdef
   set P : ℂ → ℂ := fun x => ((x - α) / (x - γ)) ^ a₁ * ((x - β) / (x - γ)) ^ b₁ with hPdef
   have hw : w = fun x => P x * u (T x) := rfl
-  obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane hA
-  have hzβ : z - β ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane hB).1
+  obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp (slitPlane_ne_zero hA)
+  have hzβ : z - β ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero hB)).1
   -- Analyticity of the prefactor and of the Möbius variable, for the product and chain rules.
   have hPa : AnalyticAt ℂ P z := analyticAt_riemannPrefactor hA hB
-  have hTa : AnalyticAt ℂ T z := by
-    simp only [hTdef, crossRatio_def]
-    exact ((analyticAt_id.sub analyticAt_const).mul analyticAt_const).div
-      ((analyticAt_id.sub analyticAt_const).mul analyticAt_const)
-      (mul_ne_zero hzγ (sub_ne_zero.mpr hαβ.symm))
+  have hTa : AnalyticAt ℂ T z := analyticAt_crossRatio_first (sub_ne_zero.mp hzγ)
   -- Expand `w′′` and `w′` by the product and chain rules, and insert the derivatives of `P` and
   -- `T`.
   have hTd : deriv T z = (β - γ) * (α - γ) / (β - α) * ((z - γ) ^ 2)⁻¹ := by
@@ -215,16 +212,12 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
     rw [crossRatio_def]
     exact hu.analyticAt (hV.mem_nhds (hUV z hz))
   refine ⟨fun z hz => ?_, fun z hz => ?_⟩
-  · have hzγ : z - γ ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane (hUs z hz).1).2
-    have hTa : AnalyticAt ℂ (fun x => (x - α) * (β - γ) / ((x - γ) * (β - α))) z :=
-      ((analyticAt_id.sub analyticAt_const).mul analyticAt_const).div
-        ((analyticAt_id.sub analyticAt_const).mul analyticAt_const)
-        (mul_ne_zero hzγ (sub_ne_zero.mpr hαβ.symm))
-    have hFz : AnalyticAt ℂ u ((z - α) * (β - γ) / ((z - γ) * (β - α))) :=
-      hu.analyticAt (hV.mem_nhds (hUV z hz))
-    exact ((analyticAt_riemannPrefactor (hUs z hz).1 (hUs z hz).2).mul
-      (AnalyticAt.comp (f := fun x => (x - α) * (β - γ) / ((x - γ) * (β - α)))
-        hFz hTa)).differentiableAt.differentiableWithinAt
+  · have hzγ : z - γ ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero (hUs z hz).1)).2
+    have h := (analyticAt_riemannPrefactor (a₁ := a₁) (b₁ := b₁) (hUs z hz).1 (hUs z hz).2).mul
+      (AnalyticAt.comp (f := fun x => crossRatio x β α γ) (hFa z hz)
+        (analyticAt_crossRatio_first (sub_ne_zero.mp hzγ)))
+    simp only [Function.comp_def, crossRatio_def] at h
+    exact h.differentiableAt.differentiableWithinAt
   -- The operator identity, with the hypergeometric operator vanishing at the Möbius variable.
   have h := riemannEquation_residual_eq_mul_hypergeometricEquation_residual hαβ hsum
     (hUs z hz).1 (hUs z hz).2 (hFa z hz)

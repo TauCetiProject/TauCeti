@@ -364,7 +364,7 @@ theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) �
     HasDerivAt (fun w ↦ ((w - α) / (w - γ)) ^ a)
       (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
   have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
-  obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane h
+  obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp hq
   -- The quotient is the fractional-linear map with `k = m = 1`, `l = -α`, `n = -γ`.
   have hfun : (fun w : ℂ ↦ (1 * w + -α) / (1 * w + -γ)) = fun w ↦ (w - α) / (w - γ) := by
     funext w
