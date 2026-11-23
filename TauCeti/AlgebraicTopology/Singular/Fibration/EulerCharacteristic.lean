@@ -116,9 +116,7 @@ private lemma serreFirstPagePos_add (k q : ℕ) :
 private lemma serreFirstPagePos_injective :
     Function.Injective (fun kq : ℕ × ℕ ↦ serreFirstPagePos kq.1 kq.2) := by
   rintro ⟨k, q⟩ ⟨k', q'⟩ h
-  have h1 := congrArg Prod.fst h
-  have h2 := congrArg Prod.snd h
-  dsimp [serreFirstPagePos] at h1 h2
+  simp only [serreFirstPagePos, Prod.mk.injEq] at h
   ext <;> lia
 
 /-- The position `(-n - b, b)` on a page of `serreSpectralSequence` corresponding to total degree
@@ -135,9 +133,7 @@ private lemma serrePagePos_add (n : ℕ) (b : ℤ) :
 private lemma serrePagePos_injective :
     Function.Injective (fun nb : ℕ × ℤ ↦ serrePagePos nb.1 nb.2) := by
   rintro ⟨n, b⟩ ⟨n', b'⟩ h
-  have h1 := congrArg Prod.fst h
-  have h2 := congrArg Prod.snd h
-  dsimp [serrePagePos] at h1 h2
+  simp only [serrePagePos, Prod.mk.injEq] at h
   ext <;> lia
 
 variable {E B B' : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
@@ -327,12 +323,8 @@ private lemma isZero_singularHomology_of_cell_and_fiber_bounds {K Q : ℕ}
   have hzero2 : IsZero ((S.page 2).X (serrePagePos n b)) :=
     isZero_serreSpectralSequence_page_two_X_of_notMem hp C g R hK hQ fun hmem ↦ by
       rcases Finset.mem_image.1 hmem with ⟨⟨m, q⟩, hmq, heq⟩
-      rcases Finset.mem_product.1 hmq with ⟨hm, hq⟩
-      have hm' : m < K := Finset.mem_range.1 hm
-      have hq' : q < Q := Finset.mem_range.1 hq
-      have h1 := congrArg Prod.fst heq
-      have h2 := congrArg Prod.snd heq
-      dsimp [serreFirstPagePos, serrePagePos] at h1 h2
+      simp only [Finset.mem_product, Finset.mem_range, serreFirstPagePos, serrePagePos,
+        Prod.mk.injEq] at hmq heq
       lia
   exact (S.isZero_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) hzero2 r hr).of_iso
     (serreSpectralSequencePageXIsoCokernel hp C g R hC r hr n b (by lia) (by lia)).symm
@@ -430,16 +422,10 @@ theorem finite_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivale
     have hb' := Finset.mem_Ico.1 hb
     have : Module.Finite R ((S.page 2).X (serrePagePos n b)) :=
       finite_serreSpectralSequence_page_two_X hp C g R _
-        (fun k q hpq ↦ hcell k (by
-          have h1 := congrArg Prod.fst hpq
-          have h2 := congrArg Prod.snd hpq
-          dsimp [serreFirstPagePos, serrePagePos] at h1 h2
-          lia))
-        (fun k q hpq b' ↦ hfin b' q (by
-          have h1 := congrArg Prod.fst hpq
-          have h2 := congrArg Prod.snd hpq
-          dsimp [serreFirstPagePos, serrePagePos] at h1 h2
-          lia))
+        (fun k q hpq ↦ hcell k
+          (by simp only [serreFirstPagePos, serrePagePos, Prod.mk.injEq] at hpq; lia))
+        (fun k q hpq b' ↦ hfin b' q
+          (by simp only [serreFirstPagePos, serrePagePos, Prod.mk.injEq] at hpq; lia))
     have : Module.Finite R ((S.page r hr).X (serrePagePos n b)) :=
       S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
     exact Module.Finite.equiv
