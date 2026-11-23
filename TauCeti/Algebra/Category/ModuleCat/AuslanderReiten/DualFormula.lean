@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Defect
 public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Formula
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.StableEquivalence
-import TauCeti.RingTheory.MatlisDuality.Semilocal
 
 /-!
 # The second Auslander–Reiten formula
@@ -19,8 +18,8 @@ projectives, write `τX = D Tr X`. Then for every module `M`
 
 `Ext¹_A(M, τX) ≅ D (Hom_A(X, M) modulo the maps factoring through projectives)`.
 
-This is Auslander's defect formula `D δ^*(X) ≅ δ_*(τX)` for a short exact sequence `K ⟶ P ⟶ M` with
-`P` projective: its contravariant defect at `X` is the stable `Hom` from `X` to `M`, and its
+This is Auslander's defect formula `D δ^*(X) ≅ δ_*(τX)` for a short exact sequence `K ⟶ Q ⟶ M` with
+`Q` projective: its contravariant defect at `X` is the stable `Hom` from `X` to `M`, and its
 covariant defect at `τX` is `Ext¹(M, τX)`
 (`TauCeti/Algebra/Category/ModuleCat/AuslanderReiten/Defect.lean`). Here `Mod A / 𝒫` is the
 category of all modules modulo the maps through projectives.
@@ -89,7 +88,7 @@ noncomputable def ext1TranslateEquivDualStableHom :
   (((contravariantDefectEquivStableHom R e he X).arrowCongr (LinearEquiv.refl R E)).symm ≪≫ₗ
     Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
       e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact) ≪≫ₗ
+      e.function_exact ≪≫ₗ
     covariantDefectEquivExt1 R (matlisDualTransposeEquiv R E P) e he).symm
 
 /-- The inverse of `Ext¹(M, τX) ≅ D (Mod A / 𝒫)(X, M)` is the defect formula applied to
@@ -101,10 +100,10 @@ theorem ext1TranslateEquivDualStableHom_symm_apply
       covariantDefectEquivExt1 R (matlisDualTransposeEquiv R E P) e he
         (Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
           e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-          ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact)
+          e.function_exact
           (χ ∘ₗ (contravariantDefectEquivStableHom R e he X).toLinearMap)) := by
-  simp [ext1TranslateEquivDualStableHom]
-  rfl
+  simp only [ext1TranslateEquivDualStableHom, LinearEquiv.symm_symm, LinearEquiv.trans_apply]
+  congr 2
 
 variable {M' K' : ModuleCat.{max u v w} A} (e' : (ExactStructure.abelian _).Extension M' K')
   (he' : (ExactStructure.abelian _).isProjective e'.obj)
@@ -130,11 +129,11 @@ private theorem ext1TranslateEquivDualStableHom_naturality_aux {a₁ : K ⟶ K'}
     rw [contravariantDefectEquivStableHom_map R e he e' he' k₂]
   rw [hχ, Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality _ _ _ _ _
     e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact) k₁ k₂,
+    e'.function_exact k₁ k₂,
     covariantDefectEquivExt1_map R (matlisDualTransposeEquiv R E P) e he e' he' h₁ h₂]
 
 /-- **Naturality of `Ext¹(M, τX) ≅ D (Mod A / 𝒫)(X, M)` in `M`.** For short exact sequences
-`K ⟶ P ⟶ M` and `K' ⟶ P' ⟶ M'` with projective middle terms and a map `f : M ⟶ M'`, base change
+`K ⟶ Q ⟶ M` and `K' ⟶ Q' ⟶ M'` with projective middle terms and a map `f : M ⟶ M'`, base change
 along `f` corresponds to the dual of postcomposition with the stable class of `f`. -/
 theorem ext1TranslateEquivDualStableHom_naturality (f : M ⟶ M')
     (ξ : (ExactStructure.abelian _).Ext1 M' (matlisDualTranspose R E P)) :
@@ -174,7 +173,7 @@ theorem ext1TranslateEquivDualStableHom_comap (ht₀ : P'.π ∘ₗ t₀ = t.hom
     rw [contravariantDefectEquivStableHom_comap]
   rw [hχ, Function.Exact.dualContravariantDefectEquivCovariantDefect_comap P.exact P.surjective
     P'.exact P'.surjective e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact) ht₀ ht₁,
+    e.function_exact ht₀ ht₁,
     covariantDefectEquivExt1_homCokernelMap, matlisDualTransposeMap_eq]
 
 end ModuleCat

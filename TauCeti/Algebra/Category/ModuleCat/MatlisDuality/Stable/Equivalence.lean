@@ -305,6 +305,8 @@ theorem finiteStableMatlisDualOpObjIso_naturality
   rw [ObjectProperty.homMk_hom, stableMatlisDualOp_map_projectiveStableFunctor_map,
     finiteStableMatlisDualOpObjIso_hom_hom, finiteStableMatlisDualOpObjIso_hom_hom, ← hg]
   simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
+  -- Evaluation lives in `ModuleCat.{max v u}` and the stable categories in `ModuleCat.{max u v}`;
+  -- `rw` does not match across the two spellings, so the remaining steps are applied as terms.
   refine (Functor.map_comp _ _ _).symm.trans
     ((congrArg (ExactStructure.abelian _).injectiveStableFunctor.map ?_).trans
       (Functor.map_comp _ _ _))
@@ -331,6 +333,9 @@ theorem finiteStableMatlisDualEquivalenceInverseObjIso_naturality
   rw [Functor.map_comp, Functor.map_comp] at h'
   rw [finiteStableMatlisDualEquivalenceInverseObjIso_hom,
     finiteStableMatlisDualEquivalenceInverseObjIso_hom]
+  -- The composites produced by `Functor.map_comp` use the instance `Category.opposite`, while the
+  -- statement uses `CategoryStruct.opposite`; `rw` does not identify the two, so the associativity
+  -- steps are applied as terms, checked up to definitional unfolding.
   refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h'.symm).trans ?_)
   refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
     ((finiteStableMatlisDualEquivalence R A E hE).unitIso.inv.naturality _)).trans ?_)

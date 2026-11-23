@@ -100,7 +100,7 @@ noncomputable def dualExt1EquivCostableHom :
   (contravariantDefectEquivExt1 R e he X).symm.arrowCongr (LinearEquiv.refl R E) ≪≫ₗ
     Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
       e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact) ≪≫ₗ
+      e.function_exact ≪≫ₗ
     covariantDefectEquivCostableHom R (matlisDualTransposeEquiv R E P) e he
 
 /-- The defect formula applied to `χ ∘ (δ^*(X) ≅ Ext¹(X, N))`, read in `(A/ℐ)(N, τX)`. -/
@@ -110,7 +110,7 @@ theorem dualExt1EquivCostableHom_apply
       covariantDefectEquivCostableHom R (matlisDualTransposeEquiv R E P) e he
         (Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
           e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-          ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact)
+          e.function_exact
           (χ ∘ₗ (contravariantDefectEquivExt1 R e he X).toLinearMap)) :=
   (rfl)
 
@@ -143,11 +143,11 @@ theorem dualExt1EquivCostableHom_naturality (h₁ : e.f ≫ a₂ = a ≫ e'.f)
   rw [dualExt1EquivCostableHom_apply, hχ,
     Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality _ _ _ _ _
       e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact) k₁ k₂,
+      e'.function_exact k₁ k₂,
     dualExt1EquivCostableHom_apply]
   generalize Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
     e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact)
+    e'.function_exact
     (χ ∘ₗ (contravariantDefectEquivExt1 R e' he' X).toLinearMap) = y
   induction y using Submodule.Quotient.induction_on with
   | _ u =>

@@ -378,7 +378,7 @@ variable {N N' : ModuleCat.{max v w} Aᵐᵒᵖ}
 
 include hE in
 /-- **Matlis duality is bijective on morphisms** of right modules into a module of finite length
-over `R`: `ModuleCat.matlisDualOpObjEquiv` transports `MatlisDual.bijective_mapOp`. -/
+over `R`. -/
 theorem bijective_matlisDualOpMap (hN' : IsFiniteLength R N') :
     Function.Bijective
       (matlisDualOpMap R E : (N ⟶ N') → (matlisDualOpObj R E N' ⟶ matlisDualOpObj R E N)) := by

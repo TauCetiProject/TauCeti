@@ -438,9 +438,8 @@ theorem MatlisDual.bijective_map [Module A N] [IsScalarTower R A N]
     simp
 
 /-- **Matlis duality is fully faithful on right modules.** Dualizing is a bijection from morphisms
-of right `A`-modules into a module of finite length over `R` to morphisms of their dual left
-modules. A preimage of `F : D N' → D N` is evaluation `N → D (D N)` followed by `D F` and the
-inverse of biduality on `N'`; only the target `N'` needs finite length. -/
+of right `A`-modules `N → N'` to morphisms of their dual left modules, for `N'` of finite length
+over `R`; the source `N` is arbitrary. -/
 theorem MatlisDual.bijective_mapOp [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
     {N' : Type*} [AddCommGroup N'] [Module R N'] [Module Aᵐᵒᵖ N'] [IsScalarTower R Aᵐᵒᵖ N']
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)

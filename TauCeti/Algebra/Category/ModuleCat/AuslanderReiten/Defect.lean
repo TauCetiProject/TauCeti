@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Basic
 public import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
 public import TauCeti.CategoryTheory.Exact.Abelian
@@ -73,15 +74,13 @@ universe u v t
 
 variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
 
-/-! ### Defects as cokernels of `Hom` maps -/
+/-- The underlying linear maps of a short exact sequence of `A`-modules form an exact sequence. -/
+theorem _root_.TauCeti.ExactStructure.Extension.function_exact {M K : ModuleCat.{t} A}
+    (e : (ExactStructure.abelian (ModuleCat.{t} A)).Extension M K) :
+    Function.Exact e.f.hom e.g.hom :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact
 
-/-- The bundled `Hom` equivalence `(Y ⟶ N) ≃ (Y →ₗ[A] N)` carries postcomposition with `g` to
-postcomposition with the underlying linear map of `g`. -/
-theorem homLinearEquiv_comp_rightComp {M N Y : ModuleCat.{t} A} (g : M ⟶ N) :
-    (homLinearEquiv (S := R) : (Y ⟶ N) ≃ₗ[R] (Y →ₗ[A] N)).toLinearMap ∘ₗ
-        Linear.rightComp R Y g =
-      g.hom.compRight R ∘ₗ (homLinearEquiv (S := R) : (Y ⟶ M) ≃ₗ[R] (Y →ₗ[A] M)).toLinearMap :=
-  LinearMap.ext fun _ ↦ rfl
+/-! ### Defects as cokernels of `Hom` maps -/
 
 /-- The contravariant defect of a map `g : M ⟶ N` of `A`-modules at `Y`, as the cokernel of the
 `R`-linear map `Hom(Y, M) → Hom(Y, N)` between `Hom` spaces of `ModuleCat A`. -/
@@ -100,6 +99,7 @@ theorem contravariantDefectEquivHomQuotient_mk {M N : ModuleCat.{t} A} (g : M �
       Submodule.Quotient.mk (ofHom g') := by
   simp only [contravariantDefectEquivHomQuotient, Submodule.Quotient.equiv_symm,
     Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  -- `homLinearEquiv.symm g'` is `ofHom g'` by definition.
   rfl
 
 /-! ### Sequences with injective middle term -/
@@ -165,10 +165,11 @@ theorem contravariantDefectEquivStableHom_map {M' K' : ModuleCat.{t} A}
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   rw [contravariantDefectMap_mk, contravariantDefectEquivStableHom_mk,
     contravariantDefectEquivStableHom_mk, ← Functor.map_comp]
+  -- `ofHom` of a composite of linear maps is the composite of morphisms, by definition.
   rfl
 
 /-- **Naturality of the contravariant defect as stable `Hom` in the test module.** Precomposition
-with `t : Y ⟶ Y'` on defects is precomposition with the stable class of `t`. -/
+with `s : Y ⟶ Y'` on defects is precomposition with the stable class of `s`. -/
 theorem contravariantDefectEquivStableHom_comap {Y Y' : ModuleCat.{t} A} (s : Y ⟶ Y')
     (x : contravariantDefect R e.g.hom Y') :
     contravariantDefectEquivStableHom R e he Y (contravariantDefectComap R e.g.hom s.hom x) =
@@ -177,6 +178,7 @@ theorem contravariantDefectEquivStableHom_comap {Y Y' : ModuleCat.{t} A} (s : Y 
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   rw [contravariantDefectComap_mk, contravariantDefectEquivStableHom_mk,
     contravariantDefectEquivStableHom_mk, ← Functor.map_comp]
+  -- `ofHom` of a composite of linear maps is the composite of morphisms, by definition.
   rfl
 
 end Projective
@@ -194,38 +196,6 @@ section Covariant
 variable {W : Type t} [AddCommGroup W] [Module A W] [Module R W] [IsScalarTower R A W]
   {B : ModuleCat.{t} A} (eW : W ≃ₗ[A] B)
 
-/-- Morphisms into a bundled module `B` are the `A`-linear maps into `W`, for `W ≃ₗ[A] B`. On the
-left, `R` acts through the `R`-linear structure of `ModuleCat A`, and on the right through its
-action on `W`. -/
-noncomputable def homLinearEquivOfLinearEquiv (N : ModuleCat.{t} A) :
-    (N ⟶ B) ≃ₗ[R] (N →ₗ[A] W) where
-  toFun f := eW.symm.toLinearMap ∘ₗ f.hom
-  invFun g := ofHom (eW.toLinearMap ∘ₗ g)
-  map_add' f g := LinearMap.ext fun x ↦ eW.symm.map_add (f x) (g x)
-  -- Both actions of `c` are the action of `algebraMap R A c`.
-  map_smul' c f := LinearMap.ext fun x ↦
-    (eW.symm.map_smul (algebraMap R A c) (f.hom x)).trans
-      (IsScalarTower.algebraMap_smul (M := W) A c (eW.symm (f.hom x)))
-  left_inv f := by ext; simp
-  right_inv g := by ext; simp
-
-@[simp]
-theorem homLinearEquivOfLinearEquiv_apply {N : ModuleCat.{t} A} (f : N ⟶ B) (x : N) :
-    homLinearEquivOfLinearEquiv R eW N f x = eW.symm (f x) :=
-  (rfl)
-
-@[simp]
-theorem homLinearEquivOfLinearEquiv_symm_apply {N : ModuleCat.{t} A} (g : N →ₗ[A] W) :
-    (homLinearEquivOfLinearEquiv R eW N).symm g = ofHom (eW.toLinearMap ∘ₗ g) :=
-  (rfl)
-
-/-- Transporting `Hom` along `W ≃ B` carries precomposition with the underlying linear map of
-`f : N ⟶ N'` to precomposition with `f`. -/
-theorem homLinearEquivOfLinearEquiv_symm_comp_lcomp {N N' : ModuleCat.{t} A} (f : N ⟶ N') :
-    (homLinearEquivOfLinearEquiv R eW N).symm.toLinearMap ∘ₗ f.hom.lcomp R W =
-      Linear.leftComp R B f ∘ₗ (homLinearEquivOfLinearEquiv R eW N').symm.toLinearMap :=
-  LinearMap.ext fun _ ↦ by ext; simp
-
 /-- The covariant defect of a map `f : N ⟶ N'` of `A`-modules at `W`, as the cokernel of the
 `R`-linear map `Hom(N', B) → Hom(N, B)` between `Hom` spaces of `ModuleCat A`. -/
 noncomputable def covariantDefectEquivHomQuotient {N N' : ModuleCat.{t} A} (f : N ⟶ N') :
@@ -239,8 +209,8 @@ noncomputable def covariantDefectEquivHomQuotient {N N' : ModuleCat.{t} A} (f : 
 theorem covariantDefectEquivHomQuotient_mk {N N' : ModuleCat.{t} A} (f : N ⟶ N')
     (u : N →ₗ[A] W) :
     covariantDefectEquivHomQuotient R eW f (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk (ofHom (eW.toLinearMap ∘ₗ u)) :=
-  (rfl)
+      Submodule.Quotient.mk (ofHom (eW.toLinearMap ∘ₗ u)) := by
+  simp [covariantDefectEquivHomQuotient]
 
 section Injective
 

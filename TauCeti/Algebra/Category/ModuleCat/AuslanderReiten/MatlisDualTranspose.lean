@@ -105,7 +105,8 @@ theorem matlisDualTransposeMap_eq (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁) :
 @[simp]
 theorem matlisDualTransposeMap_id (ht₁ : LinearMap.id ∘ₗ P.p = P.p ∘ₗ LinearMap.id) :
     matlisDualTransposeMap R E P P ht₁ = 𝟙 _ := by
-  rw [matlisDualTransposeMap, LinearMap.auslanderReitenTranslateMap_id]
+  rw [matlisDualTransposeMap, LinearMap.auslanderReitenTranslateMap_id, ModuleCat.ofHom_id]
+  -- `τX` is the bundled module of `Hom_R(Tr X, E)`.
   rfl
 
 /-- The maps `D Tr(t)` compose along composed lifts. -/
@@ -116,7 +117,9 @@ theorem matlisDualTransposeMap_comp {X'' : ModuleCat.{max u v w} A}
     matlisDualTransposeMap R E P P'' ht₁'' =
       matlisDualTransposeMap R E P P' ht₁ ≫ matlisDualTransposeMap R E P' P'' ht₁' := by
   rw [matlisDualTransposeMap, matlisDualTransposeMap, matlisDualTransposeMap,
-    ← LinearMap.auslanderReitenTranslateMap_comp_map t₀ t₁ ht₁ t₀' t₁' ht₁']
+    ← LinearMap.auslanderReitenTranslateMap_comp_map t₀ t₁ ht₁ t₀' t₁' ht₁', ModuleCat.ofHom_comp]
+  -- The two sides differ only in the universe spelling of the objects `of A (Hom_R(Tr X, E))`
+  -- and `τX`, which `rw` does not identify.
   rfl
 
 /-- The bundled dual of `Tr X`, with the action of `R` through `Aᵐᵒᵖ`, is `τX = D Tr X`. -/
@@ -133,6 +136,8 @@ theorem matlisDualOp_map_comp_matlisDualOpTransposeIso_hom (ht₁ : t₀ ∘ₗ 
       (matlisDualOpTransposeIso R E P).hom ≫ matlisDualTransposeMap R E P P' ht₁ := by
   ext φ : 2
   refine (MatlisDual.equivLinearMap R E _).injective (LinearMap.ext fun τ ↦ ?_)
+  -- `simp` does not apply `ModuleCat.hom_comp` here: the objects `D (Tr X)` and `τX` live in
+  -- `ModuleCat` under two spellings of the same universe. Evaluate both sides instead.
   have h₁ := matlisDualOpObjEquivOfLinearEquiv_apply R E (of Aᵐᵒᵖ (AuslanderReitenTranspose P'.p))
     (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose P'.p))
     (matlisDualOpMap R E (ofHom (AuslanderReitenTranspose.map t₀ t₁ ht₁)) φ) τ

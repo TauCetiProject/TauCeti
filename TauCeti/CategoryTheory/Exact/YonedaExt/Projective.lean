@@ -134,7 +134,7 @@ noncomputable def homQuotientEquivStableHom (Y : C) :
       ext f
       rw [LinearMap.mem_range, MorphismIdeal.mem_homSubmodule,
         mem_projectiveStableIdeal_iff_of_isDeflation (E.isDeflation_g e.conflation) he]
-      rfl) ≪≫ₗ
+      simp only [Linear.rightComp_apply]) ≪≫ₗ
     E.projectiveStableIdeal.homLinearEquiv R Y Z
 
 /-- The class of `f : Y ⟶ Z` corresponds to its image in the projective stable category. -/
