@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Parameters
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Transformation
 
 /-!
@@ -199,60 +200,12 @@ theorem tricomiIncompleteGamma_ode (a z : ℂ) :
 
 /-! ### Entirety in the parameter -/
 
-/- Entirety in `a` is proved first on the half-plane `0 < Re a`, by the Weierstrass M-test with
-the bound `Complex.norm_inv_Gamma_add_natCast_le`, and then carried to the whole plane by the
-recurrence in `a`, as Mathlib does for `Complex.differentiable_one_div_Gamma`. -/
-
-/-- Tricomi's function is holomorphic in its parameter on the half-plane `0 < Re a`. -/
-private theorem differentiableAt_tricomiIncompleteGamma_left_of_re_pos (z : ℂ) {a₀ : ℂ}
-    (ha₀ : 0 < a₀.re) : DifferentiableAt ℂ (fun a => tricomiIncompleteGamma a z) a₀ := by
-  obtain ⟨C, hC⟩ := (isCompact_closedBall a₀ a₀.re).exists_bound_of_continuousOn
-    (differentiable_one_div_Gamma.comp (differentiable_id.add_const 1)).continuous.continuousOn
-  have hre : ∀ a ∈ Metric.ball a₀ a₀.re, 0 < a.re := fun a ha => by
-    have := (abs_re_le_norm (a - a₀)).trans_lt (by rwa [← dist_eq_norm])
-    rw [sub_re, abs_lt] at this
-    linarith
-  have hsum : Summable fun k : ℕ => C * ‖z‖ ^ k / k ! := by
-    simpa [mul_div_assoc] using (Real.summable_pow_div_factorial ‖z‖).mul_left C
-  have hM := differentiableOn_tsum_of_summable_norm hsum
-    (F := fun (k : ℕ) a => (Gamma (a + 1 + k))⁻¹ * z ^ k) (U := Metric.ball a₀ a₀.re)
-    (fun k => ((differentiable_one_div_Gamma.comp
-      ((differentiable_id.add_const 1).add_const _)).mul_const _).differentiableOn)
-    Metric.isOpen_ball (fun k a ha => ?_)
-  · have heq : (fun a => tricomiIncompleteGamma a z) =
-        fun a => cexp (-z) * ∑' k : ℕ, (Gamma (a + 1 + k))⁻¹ * z ^ k := by
-      ext a
-      rw [tricomiIncompleteGamma_def,
-        ← (hasSum_regularizedHGFun (b := {a + 1}) (by simp) z).tsum_eq]
-      simp
-    rw [heq]
-    exact ((hM _ (Metric.mem_ball_self ha₀)).differentiableAt
-      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self ha₀))).const_mul _
-  · have h1 : 1 ≤ (a + 1).re := by rw [add_re, one_re]; linarith [hre a ha]
-    have hCa : ‖(Gamma (a + 1))⁻¹‖ ≤ C := hC a (Metric.ball_subset_closedBall ha)
-    rw [norm_mul, norm_pow, mul_comm, mul_div_assoc, ← mul_div_assoc]
-    calc ‖z‖ ^ k * ‖(Gamma (a + 1 + k))⁻¹‖ ≤ ‖z‖ ^ k * (‖(Gamma (a + 1))⁻¹‖ / k !) := by
-          gcongr
-          exact Complex.norm_inv_Gamma_add_natCast_le h1 k
-      _ ≤ ‖z‖ ^ k * (C / k !) := by gcongr
-      _ = C * ‖z‖ ^ k / k ! := by ring
-
-/-- Tricomi's function is entire in its parameter. -/
+/-- Tricomi's function is entire in its parameter, since the regularized Kummer function
+`𝐌(1, a + 1, z)` is entire in `a` (`Differentiable.regularizedHGFun_singleton`). -/
 theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
     Differentiable ℂ fun a => tricomiIncompleteGamma a z := by
-  intro a
-  obtain ⟨n, hn⟩ := exists_nat_gt (-a.re)
-  induction n generalizing a with
-  | zero => exact differentiableAt_tricomiIncompleteGamma_left_of_re_pos z (by simpa using hn)
-  | succ n ih =>
-    have hrec : (fun a => tricomiIncompleteGamma a z) =
-        fun a => z * tricomiIncompleteGamma (a + 1) z + cexp (-z) * (Gamma (a + 1))⁻¹ :=
-      funext fun a => by
-        rw [tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one, div_eq_mul_inv]
-    have h := ih (a + 1) (by rw [add_re, one_re]; push_cast at hn; linarith)
-    rw [hrec]
-    exact ((h.comp a (differentiableAt_id.add_const 1)).const_mul z).add
-      ((differentiable_one_div_Gamma.comp (differentiable_id.add_const 1) a).const_mul _)
+  simp only [tricomiIncompleteGamma_def]
+  fun_prop
 
 /-! ### The series in powers of `−z` and the integral -/
 
