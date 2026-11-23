@@ -172,6 +172,32 @@ theorem signLocalSystemObjEquiv_map_apply {x y : FundamentalGroupoid (TopCat.of 
         ((isCoveringMap_proj hι).monodromy (inv γ) e) :=
   (isCoveringMap_proj hι).signLocalSystemObjEquiv_map_apply _ proj_comp_deck γ f e
 
+/-- Transport in the orientation local system along a path, evaluated at the endpoint of the lift
+starting at an orientation `e`, is the original value at `e`. -/
+theorem signLocalSystemObjEquiv_map_apply_monodromy {x y : FundamentalGroupoid (TopCat.of B)}
+    (γ : x ⟶ y) (f : (signLocalSystem F E R hι).obj x)
+    (e : (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι))) :
+    (signLocalSystemObjEquiv hι y (((signLocalSystem F E R hι).map γ).hom f) :
+      (proj ⁻¹' {y.as} : Set (VectorBundleOrientationCover F E ι)) → R)
+        ((isCoveringMap_proj hι).monodromy γ e) =
+      (signLocalSystemObjEquiv hι x f :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → R) e :=
+  (isCoveringMap_proj hι).signLocalSystemObjEquiv_map_apply_monodromy _ proj_comp_deck γ f e
+
+/-- Transport in the orientation local system along an equality of base points does not change
+the value at an orientation. -/
+theorem signLocalSystemObjEquiv_eqToHom_apply {x y : B} (h : x = y)
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x))
+    (e : VectorBundleOrientationCover F E ι) (hx : e.proj = x) (hy : e.proj = y) :
+    (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk y)
+        ((eqToHom (congrArg (fun b ↦ (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) h) :
+          (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x) ⟶ _) f) :
+        (proj ⁻¹' {y} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, hy⟩ =
+      (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk x) f :
+        (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, hx⟩ := by
+  subst h
+  rfl
+
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation
 local system over `b` with `R`. -/
 def signLocalSystemFiberEquiv {b : B} (o : Orientation ℝ (E b) ι) :

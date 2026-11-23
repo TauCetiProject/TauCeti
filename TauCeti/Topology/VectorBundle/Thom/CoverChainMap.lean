@@ -91,45 +91,28 @@ variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [Norm
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {ι : Type}
 
-variable (F E ι) in
-/-- The map `(E', E'₀) ⟶ (E, E₀)` from the Thom pair of the pull-back `E'` of `E` to its
-orientation cover. It is `TauCeti.pullbackThomPairMap`, with the zero of the fibres of `E'` read
-through their module structure, as in the lift of the deck involution `deckThomPairMap`, so that
-the two maps compose. -/
-def coverThomPairMap :
-    thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) ⟶ thomPair F E :=
-  pullbackThomPairMap F E _
-
-/-- The map of Thom pairs of the orientation cover sends a vector of `E'` to the same vector of
-`E`. -/
-theorem coverThomPairMap_fst_apply
-    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
-    TopPair.Hom.fst (coverThomPairMap F E ι) v = Pullback.lift _ v :=
-  pullbackThomPairMap_fst_apply F E _ v
-
-/-- A vector `v` of `E'` lies over the point `v.proj` of the orientation cover, which lies over the
-image of `v` in the base. -/
-theorem proj_proj_eq_proj_coverThomPairMap_fst
-    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
-    v.proj.proj = (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj :=
-  (congrArg TotalSpace.proj (coverThomPairMap_fst_apply v)).symm
-
-/-- The lift of the deck involution does not move the underlying vector of `E`. -/
-theorem coverThomPairMap_fst_deckThomPairMap_fst
-    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
-    TopPair.Hom.fst (coverThomPairMap F E ι) (TopPair.Hom.fst (deckThomPairMap F E ι) v) =
-      TopPair.Hom.fst (coverThomPairMap F E ι) v :=
-  (coverThomPairMap_fst_apply _).trans
-    ((lift_deckThomPairMap_fst v).trans (coverThomPairMap_fst_apply v).symm)
-
-variable (F E ι) in
-/-- **The lift of the deck involution covers the identity of `(E, E₀)`**. -/
-@[reassoc (attr := simp)]
-theorem deckThomPairMap_comp_coverThomPairMap :
-    deckThomPairMap F E ι ≫ coverThomPairMap F E ι = coverThomPairMap F E ι :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext coverThomPairMap_fst_deckThomPairMap_fst)
-
 variable [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [Ring R]
+
+/-- Over a vector `v` of `E'`, evaluation at the orientation `v.proj` on the fibre of `o(E)` over
+the image of `v` in the base. -/
+private def coverFiberEquiv
+    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
+    (signLocalSystem F E R hι).obj
+        (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) ≃ₗ[R] R :=
+  signLocalSystemObjEquiv hι _ ≪≫ₗ signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+    ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩
+
+private theorem coverFiberEquiv_apply
+    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+    (f : (signLocalSystem F E R hι).obj
+      (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj)) :
+    coverFiberEquiv hι R v f =
+      (signLocalSystemObjEquiv hι
+          (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) f :
+        (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
+          Set (VectorBundleOrientationCover F E ι)) → R)
+        ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ :=
+  signFiberEquiv_apply _ _ _ _
 
 variable (F E) in
 /-- **The orientation system is trivial on the Thom pair of the orientation cover.** The pull-back
@@ -141,11 +124,7 @@ def pullbackThomPairSignLocalSystemIso :
         ((LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
           ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι)) ≅
       (LocalCoefficientSystem.constantFunctor _).obj (ModuleCat.of R R) :=
-  NatIso.ofComponents
-    (fun v ↦ (signLocalSystemObjEquiv hι
-      (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v.as).proj) ≪≫ₗ
-      signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-        ⟨v.as.proj, proj_proj_eq_proj_coverThomPairMap_fst v.as⟩).toModuleIso)
+  NatIso.ofComponents (fun v ↦ (coverFiberEquiv hι R v.as).toModuleIso)
     fun {v v'} p ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦ by
       -- The image of `p` in the base, as a morphism of the fundamental groupoid.
       let γ : FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v.as).proj ⟶
@@ -153,7 +132,7 @@ def pullbackThomPairSignLocalSystemIso :
         (p.map (TopPair.Hom.fst (coverThomPairMap F E ι)).hom).map
           ⟨π F E, FiberBundle.continuous_proj F E⟩
       -- The projection `E' ⟶ B'` lifts `γ`, so monodromy in the cover carries `v.proj` to
-      -- `v'.proj`, and monodromy along the inverse path carries `v'.proj` back to `v.proj`.
+      -- `v'.proj`.
       have hm := (isCoveringMap_proj (F := F) (E := E) hι).monodromy_map_of_lift
         (g := (⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).comp
           (TopPair.Hom.fst (coverThomPairMap F E ι)).hom)
@@ -161,31 +140,14 @@ def pullbackThomPairSignLocalSystemIso :
       -- `erw`: the lemma writes the image path as `p.map (π ∘ q)`, which is `γ` by
       -- `Path.Homotopic.Quotient.map_comp`.
       erw [Path.Homotopic.Quotient.map_comp] at hm
-      have hm' : (isCoveringMap_proj (F := F) (E := E) hι).monodromy (inv γ)
-          ⟨v'.as.proj, proj_proj_eq_proj_coverThomPairMap_fst v'.as⟩ =
-          ⟨v.as.proj, proj_proj_eq_proj_coverThomPairMap_fst v.as⟩ := by
-        rw [← hm]
-        erw [← (isCoveringMap_proj (F := F) (E := E) hι).monodromy_trans_apply]
-        rw [← FundamentalGroupoid.comp_eq]
-        erw [IsIso.hom_inv_id γ]
-        exact congrFun (isCoveringMap_proj (F := F) (E := E) hι).monodromy_refl _
       -- `change`: the components are the linear equivalences themselves, and the constant system
       -- transports by the identity.
-      change (signLocalSystemObjEquiv hι
-          (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v'.as).proj) ≪≫ₗ
-          signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-            ⟨v'.as.proj, proj_proj_eq_proj_coverThomPairMap_fst v'.as⟩)
-          ((signLocalSystem F E R hι).map γ f) =
-        (signLocalSystemObjEquiv hι
-          (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v.as).proj) ≪≫ₗ
-          signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-            ⟨v.as.proj, proj_proj_eq_proj_coverThomPairMap_fst v.as⟩) f
-      rw [LinearEquiv.trans_apply, signFiberEquiv_apply]
-      -- `erw`: the transport is applied through `ConcreteCategory.hom` rather than
-      -- `ModuleCat.Hom.hom`.
-      erw [signLocalSystemObjEquiv_map_apply]
-      rw [hm']
-      exact (signFiberEquiv_apply _ _ _ _).symm)
+      change coverFiberEquiv hι R v'.as ((signLocalSystem F E R hι).map γ f) =
+        coverFiberEquiv hι R v.as f
+      refine (coverFiberEquiv_apply hι R v'.as _).trans
+        (.trans ?_ (coverFiberEquiv_apply hι R v.as f).symm)
+      rw [← hm]
+      exact signLocalSystemObjEquiv_map_apply_monodromy hι γ f _)
 
 /-- Over a vector `v` of `E'`, the trivialization evaluates at the orientation `v.proj`. -/
 @[simp]
@@ -200,7 +162,7 @@ theorem pullbackThomPairSignLocalSystemIso_hom_app_apply
         (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
           Set (VectorBundleOrientationCover F E ι)) → R)
         ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ :=
-  signFiberEquiv_apply _ _ _ _
+  coverFiberEquiv_apply hι R v f
 
 /-- Over a vector `v` of `E'`, the inverse of the trivialization sends `r` to the element of the
 fibre of `o(E)` whose value at the orientation `v.proj` is `r`. -/
@@ -213,17 +175,9 @@ theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app
         (((pullbackThomPairSignLocalSystemIso F E hι R).inv.app (FundamentalGroupoid.mk v)) r) :
         (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
           Set (VectorBundleOrientationCover F E ι)) → R)
-      ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ = r := by
-  have h := signFiberEquiv_symm_apply_self (R := R) (hσ := proj_comp_deck) deck_ne_self
-    (fun _ _ h ↦ eq_or_eq_deck hι h)
-    (⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ :
-      (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
-        Set (VectorBundleOrientationCover F E ι))) r
-  rw [← LinearEquiv.apply_symm_apply (signLocalSystemObjEquiv hι
-    (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj))
-    ((signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) _).symm r)] at h
-  -- The inverse of the component at `v` is the inverse of the composite linear equivalence.
-  exact h
+      ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ = r :=
+  -- The component of the inverse at `v` is the inverse of `coverFiberEquiv`.
+  (coverFiberEquiv_apply hι R v _).symm.trans (LinearEquiv.apply_symm_apply _ r)
 
 /-- Over the image of a vector `v` of `E'` under the lift of the deck involution, the inverse of the
 trivialization sends `r` to the element of the fibre of `o(E)` whose value at the orientation
@@ -240,21 +194,17 @@ theorem signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_deckT
       ⟨v.proj, (proj_proj_eq_proj_coverThomPairMap_fst v).trans
         (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)).symm⟩ = -r := by
   set w := TopPair.Hom.fst (deckThomPairMap F E ι) v
-  -- The deck involution exchanges the two points `w.proj` and `v.proj` of the fibre.
-  have he : Function.fiberMap _ proj_comp_deck (TopPair.Hom.fst (coverThomPairMap F E ι) w).proj
+  -- The deck involution carries the point `w.proj` of the fibre to `v.proj`.
+  have he : Function.fiberMap _ (funext proj_deck) (TopPair.Hom.fst (coverThomPairMap F E ι) w).proj
       ⟨w.proj, proj_proj_eq_proj_coverThomPairMap_fst w⟩ =
       ⟨v.proj, (proj_proj_eq_proj_coverThomPairMap_fst v).trans
         (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)).symm⟩ :=
     Subtype.ext ((Function.fiberMap_apply_coe _ _ _ _).trans
       ((congrArg (fun x ↦ deck x) (deckThomPairMap_fst_proj v)).trans (deck_deck v.proj)))
-  have hφ := mem_signFiber_iff.1 (signLocalSystemObjEquiv hι
-    (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) w).proj)
-    (((pullbackThomPairSignLocalSystemIso F E hι R).inv.app (FundamentalGroupoid.mk w)) r)).property
-    ⟨w.proj, proj_proj_eq_proj_coverThomPairMap_fst w⟩
-  -- `erw`: `he` writes the deck involution as a continuous map, the membership lemma as a
-  -- homeomorphism.
-  erw [he, signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app] at hφ
-  exact hφ
+  rw [← he, ← signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h),
+    signFiberEquiv_fiberMap, signFiberEquiv_apply]
+  exact congrArg Neg.neg
+    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app hι R w r)
 
 variable (F E) in
 /-- The orientation local system `π^*o(E)` of `E` pulled back to its total space, written out as a
@@ -262,20 +212,6 @@ pull-back (`TauCeti.thomPairSignLocalSystem_def`). -/
 private abbrev signSystem : LocalCoefficientSystem R (TopCat.of (TotalSpace F E)) :=
   (LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
     ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι)
-
-/-- Transport in the orientation local system along an equality of base points does not change
-the value at an orientation. -/
-private theorem signLocalSystemObjEquiv_eqToHom {x y : B} (h : x = y)
-    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x))
-    (e : VectorBundleOrientationCover F E ι) (hx : e.proj = x) (hy : e.proj = y) :
-    (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk y)
-        ((eqToHom (congrArg (fun b ↦ (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) h) :
-          (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x) ⟶ _) f) :
-        (proj ⁻¹' {y} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, hy⟩ =
-      (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk x) f :
-        (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, hx⟩ := by
-  subst h
-  rfl
 
 /-- The chain map `TauCeti.VectorBundleOrientationCover.thomPairSignChainMap`, with the
 orientation system `π^*o(E)` written out as a pull-back. -/
@@ -300,6 +236,23 @@ def thomPairSignChainMap :
   thomPairSignChainMapAux hι R ≫ (thomPair F E).twistedChainComplexCoefficientMap
     (eqToHom (thomPairSignLocalSystem_def (F := F) (E := E) (R := R) hι).symm)
 
+/-- The chain map `TauCeti.VectorBundleOrientationCover.thomPairSignChainMap` is the comparison of
+`C(E', E'₀; R)` with chains twisted by the constant system, followed by the inverse of the
+trivialization `pullbackThomPairSignLocalSystemIso`, the push-forward along `q`, and the
+identification of the pulled-back orientation system with `π^*o(E)`
+(`TauCeti.thomPairSignLocalSystem_def`). -/
+theorem thomPairSignChainMap_eq :
+    thomPairSignChainMap F E hι R =
+      ((thomPair F _).twistedChainComplexConstantIso (ModuleCat.of R R)).inv ≫
+        (thomPair F _).twistedChainComplexCoefficientMap
+          (pullbackThomPairSignLocalSystemIso F E hι R).inv ≫
+        TopPair.twistedChainComplexMap (coverThomPairMap F E ι)
+          ((LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
+            ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι)) ≫
+        (thomPair F E).twistedChainComplexCoefficientMap
+          (eqToHom (thomPairSignLocalSystem_def (F := F) (E := E) (R := R) hι).symm) := by
+  rw [thomPairSignChainMap, thomPairSignChainMapAux, Category.assoc, Category.assoc]
+
 /-- The trivializations of the pulled-back orientation system at `v` and at `δ v` differ by sign,
 read on the coefficient systems through the identification of `δ ≫ q` with `q`. -/
 private theorem pullbackThomPairSignLocalSystemIso_inv_deckThomPairMap :
@@ -323,21 +276,16 @@ private theorem pullbackThomPairSignLocalSystemIso_inv_deckThomPairMap :
   -- The remaining components are identities and a transport between equal base points, so the
   -- left side is the component of the inverse of the trivialization at `δ v`; compare both sides
   -- by their values at `v.proj`.
-  refine (signLocalSystemObjEquiv hι
-    (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) ≪≫ₗ
-    signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-      ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩).injective ?_
-  refine (signFiberEquiv_apply _ _ _ _).trans (((signLocalSystemObjEquiv_eqToHom hι R
-    (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)) _ v.proj _ _).trans
+  refine (coverFiberEquiv hι R v).injective ((coverFiberEquiv_apply hι R v _).trans
+    (((signLocalSystemObjEquiv_eqToHom_apply hι
+      (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)) _ v.proj _ _).trans
     (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_deckThomPairMap hι
-      R v r)).trans ?_)
-  exact (congrArg Neg.neg ((signFiberEquiv_apply _ _ _ _).trans
+      R v r)).trans ?_))
+  -- The component of `-ψ` at `v` is `-(ψ.app v)` by definition of the negation of natural
+  -- transformations, through which `map_neg` applies.
+  exact (congrArg Neg.neg ((coverFiberEquiv_apply hι R v _).trans
     (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app hι R v r))).symm.trans
-    (map_neg (signLocalSystemObjEquiv hι
-      (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) ≪≫ₗ
-      signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-        ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩)
-      (((pullbackThomPairSignLocalSystemIso F E hι R).inv.app (FundamentalGroupoid.mk v)) r)).symm
+    (map_neg (coverFiberEquiv hι R v) _).symm
 
 private theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMapAux :
     TopPair.singularChainComplexMap (deckThomPairMap F E ι) (ModuleCat.of R R) ≫
@@ -412,9 +360,14 @@ theorem thomPairSignCochainMap_comp_singularCochainComplexMap_deckThomPairMap :
     thomPairSignCochainMap F E hι R k M ≫
         TopPair.singularCochainComplexMap (deckThomPairMap F E ι) =
       -thomPairSignCochainMap F E hι R k M := by
+  rw [thomPairSignCochainMap, TopPair.singularCochainComplexMap]
+  -- `Functor.map_comp` as a term: `rw` does not match its composition with the one of cochain
+  -- complexes.
   refine ((ChainComplex.linearYonedaFunctor k M).map_comp _ _).symm.trans ?_
   rw [← op_comp, singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMap, op_neg,
     Functor.map_neg]
+  -- The two sides agree up to unfolding the instances of the cochain complexes, beyond the
+  -- reducible unfolding with which `rw` tries `rfl`.
   rfl
 
 variable (F E) in
