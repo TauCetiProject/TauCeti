@@ -27,10 +27,11 @@ constant action through the completed extension. Every element of `F'` remains s
 completed extension restricts to an injective local homomorphism `completionIntegersExtension` of
 completed valuation rings, whose algebra `completionIntegersExtensionAlgebra` is likewise installed
 locally and makes `𝒪̂_{P'}` a torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}`
-(`isScalarTower_completionIntegersExtensionAlgebra`, `isTorsionFree_completionIntegers`), and the
-local integral closure `𝒪'_P` embeds injectively into `𝒪̂_{P'}` via
-`completionIntegersIntegralClosureHom`. No finiteness, separability, or residue-field assumptions
-are needed.
+(`isScalarTower_completionIntegersExtensionAlgebra`, `isTorsionFree_completionIntegers`), via the
+induced base algebra `completionIntegersBaseAlgebra`
+(`isScalarTower_completionIntegersBaseAlgebra`), and the local integral closure `𝒪'_P` embeds
+injectively into `𝒪̂_{P'}` via `completionIntegersIntegralClosureHom`. No finiteness,
+separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
 argument follows `IsDedekindDomain.HeightOneSpectrum.valued_adicCompletionExtension` in
@@ -181,6 +182,38 @@ theorem completionExtension_algebraMap (c : k) :
     completionExtension_completionEmbedding, ← IsScalarTower.algebraMap_apply k F F',
     IsScalarTower.algebraMap_apply k k' F', P'.completionEmbedding.commutes]
 
+/-- For each place `Q` in the fibre above `P`, the `F`-algebra structure on `F̂_Q` whose scalar
+multiplication matches `UniformSpace.Completion.instSMul`. -/
+@[expose, instance_reducible]
+noncomputable def completionFibreBaseAlgebra (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+    Algebra F Q.val.Completion :=
+  haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower F Q.val.valuation
+  UniformSpace.Completion.algebra (WithVal Q.val.valuation) F
+
+/-- The `F`-algebra map into `F̂_Q` embeds `F` into `F'` and then into `F̂_Q`. -/
+@[simp]
+theorem algebraMap_completionFibreBaseAlgebra (Q : {P' : Place k' F' // P'.restrict k F = P})
+    (x : F) :
+    letI := P.completionFibreBaseAlgebra Q
+    algebraMap F Q.val.Completion x = Q.val.completionEmbedding (algebraMap F F' x) := by
+  let _ := P.completionFibreBaseAlgebra Q
+  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
+    Q.val.completionEmbedding_apply]
+
+/-- For each place `Q` in the fibre above `P`, `F → F̂_P → F̂_Q` is a scalar tower. -/
+theorem completionFibreIsScalarTower (Q : {P' : Place k' F' // P'.restrict k F = P}) :
+    letI := P.completionFibreBaseAlgebra Q
+    letI := P.completionExtensionAlgebra Q.val Q.property
+    letI := P.completionAlgebra
+    IsScalarTower F P.Completion Q.val.Completion := by
+  let _ := P.completionFibreBaseAlgebra Q
+  let _ := P.completionExtensionAlgebra Q.val Q.property
+  let _ := P.completionAlgebra
+  exact IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [algebraMap_completionFibreBaseAlgebra, algebraMap_completion,
+      algebraMap_completionExtensionAlgebra,
+      P.completionExtension_completionEmbedding Q.val Q.property x]
+
 /-- Every element of `F'` remains separable over `F̂_P` inside `F̂_{P'}`. -/
 theorem isSeparable_completionEmbedding [Algebra.IsSeparable F F'] (y : F') :
     letI := P.completionExtensionAlgebra P' hP
@@ -188,18 +221,10 @@ theorem isSeparable_completionEmbedding [Algebra.IsSeparable F F'] (y : F') :
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionAlgebra
   let _ := P'.completionAlgebra
-  let _ : Algebra F P'.Completion :=
-    haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower F P'.valuation
-    UniformSpace.Completion.algebra (WithVal P'.valuation) F
-  have hFP' (x : F) :
-      algebraMap F P'.Completion x = P'.completionEmbedding (algebraMap F F' x) := by
-    rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
-      P'.completionEmbedding_apply]
+  let _ := P.completionFibreBaseAlgebra ⟨P', hP⟩
   have : IsScalarTower F F' P'.Completion := .of_algebraMap_eq fun x ↦ by
-    rw [hFP', algebraMap_completion]
-  have : IsScalarTower F P.Completion P'.Completion := .of_algebraMap_eq fun x ↦ by
-    rw [hFP', algebraMap_completion, algebraMap_completionExtensionAlgebra,
-      completionExtension_completionEmbedding]
+    rw [algebraMap_completionFibreBaseAlgebra P ⟨P', hP⟩, algebraMap_completion]
+  have := P.completionFibreIsScalarTower ⟨P', hP⟩
   simpa only [IsScalarTower.coe_toAlgHom', algebraMap_completion] using
     ((Algebra.IsSeparable.isSeparable F y).map
       (IsScalarTower.toAlgHom F F' P'.Completion) (RingHom.injective _)).tower_top P.Completion
@@ -303,20 +328,48 @@ section IntegralClosure
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+/-- The completed valuation ring `𝒪̂_{P'}` is an `𝒪_P`-algebra via `𝒪_P → 𝒪̂_P → 𝒪̂_{P'}`.
+Like `TauCeti.Place.completionIntegersExtensionAlgebra`, this structure depends on the chosen place
+over `P` and is installed locally. -/
+@[instance_reducible]
+noncomputable def completionIntegersBaseAlgebra :
+    Algebra P.integers P'.completionPlace.integers :=
+  ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+
+/-- The chosen `𝒪_P`-algebra map into `𝒪̂_{P'}` factors through `completionIntegersExtension`. -/
+@[simp]
+theorem algebraMap_completionIntegersBaseAlgebra (r : P.integers) :
+    letI := P.completionIntegersBaseAlgebra P' hP
+    algebraMap P.integers P'.completionPlace.integers r =
+      P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) :=
+  RingHom.congr_fun (RingHom.algebraMap_toAlgebra _) r
+
+/-- The scalar tower `𝒪_P → 𝒪̂_P → 𝒪̂_{P'}` for the local `𝒪_P`-algebra structure on `𝒪̂_{P'}`. -/
+theorem isScalarTower_completionIntegersBaseAlgebra :
+    letI := P.completionIntegersBaseAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    letI := P.completionIntegersAlgebra
+    IsScalarTower P.integers P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersBaseAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  let _ := P.completionIntegersAlgebra
+  refine IsScalarTower.of_algebraMap_eq fun r ↦ ?_
+  rw [algebraMap_completionIntegersBaseAlgebra, algebraMap_completionIntegersAlgebra,
+    P.algebraMap_completionIntegersExtensionAlgebra P' hP]
+
 /-- The canonical `𝒪_P`-algebra homomorphism from the local integral closure `𝒪'_P` to the
 completed valuation ring `𝒪̂_{P'}` at a place `P'` lying over `P`. -/
 noncomputable def completionIntegersIntegralClosureHom :
-    letI : Algebra P.integers P'.completionPlace.integers :=
-      ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+    letI := P.completionIntegersBaseAlgebra P' hP
     integralClosure P.integers F' →ₐ[P.integers] P'.completionPlace.integers :=
-  letI : Algebra P.integers P'.completionPlace.integers :=
-    ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+  letI := P.completionIntegersBaseAlgebra P' hP
   ⟨P'.completionIntegersEmbedding.toRingHom.comp
       ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers fun b ↦ by
         subst hP
         exact algebraMap_mem_integers_of_mem_integralClosure k F P' b),
     fun r ↦ Subtype.ext <| by
-      simp [RingHom.algebraMap_toAlgebra, IsScalarTower.algebraMap_apply P.integers F F']⟩
+      simp [algebraMap_completionIntegersBaseAlgebra,
+        IsScalarTower.algebraMap_apply P.integers F F']⟩
 
 /-- Coercing `completionIntegersIntegralClosureHom` to `F̂_{P'}` is `P'.completionEmbedding`. -/
 @[simp]
@@ -331,9 +384,8 @@ theorem completionIntegersIntegralClosureHom_algebraMap (r : P.integers) :
     P.completionIntegersIntegralClosureHom P' hP
         (algebraMap P.integers (integralClosure P.integers F') r) =
       P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) := by
-  apply Subtype.ext
-  rw [coe_completionIntegersIntegralClosureHom]
-  simp [IsScalarTower.algebraMap_apply P.integers F F']
+  let _ := P.completionIntegersBaseAlgebra P' hP
+  rw [AlgHom.commutes, algebraMap_completionIntegersBaseAlgebra]
 
 /-- The canonical homomorphism `𝒪'_P →ₐ[𝒪_P] 𝒪̂_{P'}` is injective. -/
 theorem completionIntegersIntegralClosureHom_injective :

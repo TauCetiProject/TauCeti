@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
+public import TauCeti.FieldTheory.FunctionField.Place.Adic
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
@@ -20,9 +20,8 @@ Dedekind domain `R` with fraction field `F` is canonically `p.adicCompletion F`
 ring equivalence of completed valuation rings
 (`TauCeti.Place.completionIntegersRingEquivAdicCompletionIntegersOfValuationEq`), upgrades to a
 `k`-algebra equivalence when `R` is a `k`-algebra, identifies maximal ideals and residue fields,
-carries the centre on `𝒪'_P` to the completed maximal ideal
-(`TauCeti.Place.map_centerIntegralClosure_completionIntegers`), and commutes with completed field
-extensions (`TauCeti.Place.completionEquivAdicCompletionOfValuationEq_completionExtension`).
+and commutes with completed field extensions
+(`TauCeti.Place.completionEquivAdicCompletionOfValuationEq_completionExtension`).
 
 The field comparison uses Mathlib's `HeightOneSpectrum.adicCompletion.equiv` and
 `adicCompletion.uniformEquiv`; the residue comparison uses
@@ -335,53 +334,6 @@ theorem algebraMap_comp_completionEquivAdicCompletionOfValuationEq :
   exact (completionEquivAdicCompletionOfValuationEq_completionExtension v w P P' hP hv hw x).symm
 
 end Extension
-
-section CenterIntegralClosure
-
-attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-variable (k F : Type*) {k' F' : Type*} [Field k] [Field k'] [Field F] [Field F']
-  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-/-- **The centre of `P'` on `𝒪'_P` generates the completed maximal ideal `𝔪̂_{P'}`.** -/
-@[simp]
-theorem map_centerIntegralClosure_completionIntegers
-    [FiniteDimensional F F'] [Algebra.IsSeparable F F'] (P' : Place k' F') :
-    letI : Algebra (P'.restrict k F).integers P'.completionPlace.integers :=
-      (((P'.restrict k F).completionIntegersExtension P' rfl).comp
-        (P'.restrict k F).completionIntegersEmbedding.toRingHom).toAlgebra
-    (centerIntegralClosure k F P').asIdeal.map
-        (((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
-          integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers)) =
-      IsLocalRing.maximalIdeal P'.completionPlace.integers := by
-  let _ : Algebra (P'.restrict k F).integers P'.completionPlace.integers :=
-    (((P'.restrict k F).completionIntegersExtension P' rfl).comp
-      (P'.restrict k F).completionIntegersEmbedding.toRingHom).toAlgebra
-  let w := centerIntegralClosure k F P'
-  have hw : P'.valuation = w.valuation F' := (valuation_centerIntegralClosure k F P').symm
-  let eB := completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k' F' w P' hw
-  have hcomp : eB.toRingHom.comp
-        ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
-          integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers) =
-      algebraMap (integralClosure (P'.restrict k F).integers F') (w.adicCompletionIntegers F') := by
-    ext b
-    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe,
-      completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply,
-      coe_completionIntegersIntegralClosureHom,
-      completionEquivAdicCompletionOfValuationEq_completionEmbedding]
-    rfl
-  have hmap : ((w.asIdeal.map
-      ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
-        integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers)).map
-      eB.toRingHom) =
-      (IsLocalRing.maximalIdeal P'.completionPlace.integers).map eB.toRingHom := by
-    rw [Ideal.map_map, hcomp, w.map_asIdeal_adicCompletionIntegers (K := F'),
-      RingEquiv.toRingHom_eq_coe, ← IsLocalRing.map_ringEquiv_maximalIdeal eB]
-    rfl
-  exact eB.idealComapOrderIso.symm.injective hmap
-
-end CenterIntegralClosure
 
 end TauCeti.Place
 

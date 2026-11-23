@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
 import TauCeti.RingTheory.AdicCompletion.Pi
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # The local degree of a completed extension of function fields
@@ -64,10 +65,10 @@ completed extension.
   local degree** `[F̂'_{P'} : F̂_P] = e(P' ∣ P) f(P' ∣ P)`.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`,
   `TauCeti.Place.adjoin_range_completionEmbedding_eq_top`,
-  `TauCeti.Place.isSeparable_completion`, and `TauCeti.Place.restrict_completionPlace`: `𝒪̂_{P'}`
-  is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, the image of `F'` generates `F̂'_{P'}` over
-  `F̂_P`, separability of `F' / F` passes to `F̂'_{P'} / F̂_P`, and the completed upper place
-  restricts to the completed lower place.
+  `TauCeti.Place.isSeparable_completion`, `TauCeti.Place.restrict_completionPlace`, and
+  `TauCeti.Place.relativeDegree_completionPlace`: `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in
+  `F̂'_{P'}`, the image of `F'` generates `F̂'_{P'}` over `F̂_P`, separability of `F' / F` passes to
+  `F̂'_{P'} / F̂_P`, and completion preserves restriction and the relative degree `f(P' ∣ P)`.
 
 ## References
 
@@ -575,6 +576,36 @@ theorem restrict_completionPlace :
     fun x hx ↦ ?_
   rw [P.algebraMap_completionExtensionAlgebra P' hP]
   exact P.completionExtension_mem_integers P' hP hx
+
+/-- Completion preserves the full relative degree `f(P' ∣ P)`, including any inseparable
+residue factor. -/
+@[simp]
+theorem relativeDegree_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI := P'.isScalarTower_restrictConstants_completion k
+    haveI := P.isScalarTower_completionExtensionAlgebra P' hP
+    haveI : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' hP
+    relativeDegree k P.Completion P'.completionPlace = relativeDegree k F P' := by
+  subst hP
+  let P := P'.restrict k F
+  let _ := P.completionExtensionAlgebra P' rfl
+  let _ := (P'.restrictConstants k).instAlgebraCompletion
+  have := P'.isScalarTower_restrictConstants_completion k
+  have := P.isScalarTower_completionExtensionAlgebra P' rfl
+  let _ := P.completionIntegersExtensionAlgebra P' rfl
+  have : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' rfl
+  have hsub : (P'.completionPlace.restrict k P.Completion).integers.toSubring =
+      P.completionPlace.integers.toSubring :=
+    congrArg (fun R : Place k P.Completion ↦ R.integers.toSubring)
+      (restrict_completionPlace P P' rfl)
+  rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
+  refine finrank_residueField_eq_of_equiv_equiv (RingEquiv.subringCongr hsub) (.refl _)
+    (RingHom.ext fun x ↦ Subtype.ext ?_)
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.refl_apply]
+  rw [coe_algebraMap_integers, coe_algebraMap_completionIntegersExtensionAlgebra,
+    algebraMap_completionExtensionAlgebra, RingEquiv.coe_subringCongr_apply]
 
 end Degree
 

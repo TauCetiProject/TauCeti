@@ -101,22 +101,11 @@ theorem finrank_residueField_eq_of_equiv_equiv
     Module.finrank (ResidueField R₀) (ResidueField S₀) =
       Module.finrank (ResidueField R₁) (ResidueField S₁) := by
   refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv i) (ResidueField.mapEquiv j) ?_
-  have h₁ : algebraMap (ResidueField R₁) (ResidueField S₁) =
-      ResidueField.map (algebraMap R₁ S₁) :=
-    Ideal.Quotient.ringHom_ext <| RingHom.ext fun _ ↦ rfl
-  have h₀ : algebraMap (ResidueField R₀) (ResidueField S₀) =
-      ResidueField.map (algebraMap R₀ S₀) :=
-    Ideal.Quotient.ringHom_ext <| RingHom.ext fun _ ↦ rfl
-  have : IsLocalHom i.toRingHom := ⟨fun _ h ↦ by simpa using i.symm.toRingHom.isUnit_map h⟩
-  have : IsLocalHom j.toRingHom := ⟨fun _ h ↦ by simpa using j.symm.toRingHom.isUnit_map h⟩
-  rw [h₁, h₀]
-  change (ResidueField.map (algebraMap R₁ S₁)).comp (ResidueField.map i.toRingHom) =
-    (ResidueField.map j.toRingHom).comp (ResidueField.map (algebraMap R₀ S₀))
-  rw [← ResidueField.map_comp, ← ResidueField.map_comp]
-  exact Ideal.Quotient.ringHom_ext <| RingHom.ext fun x ↦ by
-    change ResidueField.map ((algebraMap R₁ S₁).comp i.toRingHom) (residue R₀ x) =
-      ResidueField.map (j.toRingHom.comp (algebraMap R₀ S₀)) (residue R₀ x)
-    simp only [ResidueField.map_residue, RingHom.comp_apply, RingHom.congr_fun hc x]
+  refine Ideal.Quotient.ringHom_ext <| RingHom.ext fun x ↦ ?_
+  change (algebraMap (ResidueField R₁) (ResidueField S₁)) (ResidueField.mapEquiv i (residue R₀ x)) =
+    ResidueField.mapEquiv j (algebraMap (ResidueField R₀) (ResidueField S₀) (residue R₀ x))
+  simp only [ResidueField.mapEquiv_apply, ResidueField.map_residue, ResidueField.algebraMap_residue]
+  exact congrArg (residue S₁) (RingHom.congr_fun hc x)
 
 /-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
 of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as

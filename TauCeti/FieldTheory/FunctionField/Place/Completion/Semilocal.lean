@@ -382,16 +382,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- For each place `Q` in the fibre above `P`, the `F`-algebra structure on `F̂_Q` whose scalar
-multiplication matches `UniformSpace.Completion.instSMul`. Installed in the
-`PlaceCompletionExtension` scope. -/
-@[instance_reducible]
-def completionFibreBaseAlgebra [Algebra.IsIntegral F F'] (P : Place k F)
-    (Q : {P' : Place k' F' // P'.restrict k F = P}) :
-    Algebra F Q.val.Completion :=
-  haveI := WithVal.uniformContinuousConstSMul_of_isScalarTower F Q.val.valuation
-  UniformSpace.Completion.algebra (WithVal Q.val.valuation) F
-
 /-- For each place `Q` in the fibre above `P`, the local field extension algebra `F̂_P → F̂_Q`.
 Installed in the `PlaceCompletionExtension` scope so dependent products over the fibre inherit the
 factorwise `F̂_P`-algebra structure without introducing a global self-algebra diamond. Marked
@@ -418,14 +408,6 @@ scoped[PlaceCompletionExtension] attribute [instance]
   TauCeti.Place.completionFibreAlgebra
   TauCeti.Place.completionIntegersFibreAlgebra
 
-/-- The scoped `F`-algebra map into `F̂_Q` embeds `F` into `F'` and then into `F̂_Q`. -/
-@[simp]
-theorem algebraMap_completionFibreBaseAlgebra [Algebra.IsIntegral F F'] (P : Place k F)
-    (Q : {P' : Place k' F' // P'.restrict k F = P}) (x : F) :
-    algebraMap F Q.val.Completion x = Q.val.completionEmbedding (algebraMap F F' x) := by
-  rw [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply,
-    Q.val.completionEmbedding_apply]
-
 /-- The scoped `F̂_P`-algebra map into `F̂_Q` acts via `TauCeti.Place.completionExtension`. -/
 @[simp]
 theorem algebraMap_completionFibreAlgebra [Algebra.IsIntegral F F'] (P : Place k F)
@@ -441,16 +423,6 @@ theorem algebraMap_completionIntegersFibreAlgebra [Algebra.IsIntegral F F'] (P :
     algebraMap P.completionPlace.integers Q.val.completionPlace.integers x =
       P.completionIntegersExtension Q.val Q.property x :=
   congrArg (fun f ↦ f x) (P.algebraMap_completionIntegersExtensionAlgebra Q.val Q.property)
-
-/-- For each place `Q` in the fibre above `P`, `F → F̂_P → F̂_Q` is a scalar tower. Installed in the
-`PlaceCompletionExtension` scope. -/
-theorem completionFibreIsScalarTower [Algebra.IsIntegral F F'] (P : Place k F)
-    (Q : {P' : Place k' F' // P'.restrict k F = P}) :
-    IsScalarTower F P.Completion Q.val.Completion :=
-  IsScalarTower.of_algebraMap_eq fun x ↦ by
-    rw [algebraMap_completionFibreBaseAlgebra, algebraMap_completion,
-      algebraMap_completionFibreAlgebra,
-      P.completionExtension_completionEmbedding Q.val Q.property x]
 
 /-- For each place `Q` in the fibre above `P`, `𝒪̂_Q` is torsion-free over `𝒪̂_P`. Installed in the
 `PlaceCompletionExtension` scope. -/
@@ -535,14 +507,10 @@ def integralCompletionSemilocalHom :
       ∀ Q : {P' : Place k' F' // P'.restrict k F = P}, Q.val.completionPlace.integers :=
   letI (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       Algebra P.integers Q.val.completionPlace.integers :=
-    ((P.completionIntegersExtension Q.val Q.property).comp
-      P.completionIntegersEmbedding.toRingHom).toAlgebra
+    P.completionIntegersBaseAlgebra Q.val Q.property
   letI (Q : {P' : Place k' F' // P'.restrict k F = P}) :
       IsScalarTower P.integers P.completionPlace.integers Q.val.completionPlace.integers :=
-    .of_algebraMap_eq fun r ↦ by
-      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-        algebraMap_completionIntegersAlgebra, algebraMap_completionIntegersFibreAlgebra]
-      rfl
+    P.isScalarTower_completionIntegersBaseAlgebra Q.val Q.property
   Algebra.TensorProduct.lift (Algebra.ofId _ _)
     (AlgHom.pi fun Q ↦ P.completionIntegersIntegralClosureHom Q.val Q.property)
     fun _ _ ↦ .all _ _

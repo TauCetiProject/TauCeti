@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Localization
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.LocalDegree
 public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 import TauCeti.FieldTheory.FunctionField.Place.Completion.Adic
 import TauCeti.RingTheory.DedekindDomain.Different.Completion
@@ -191,8 +191,7 @@ theorem extended_dual_one_eq_dual_one_completionIntegers
         (1 : FractionalIdeal (P'.completionPlace.integers)⁰ P'.Completion) := by
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionIntegersExtensionAlgebra P' hP
-  let _ : Algebra P.integers P'.completionPlace.integers :=
-    ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+  let _ := P.completionIntegersBaseAlgebra P' hP
   have := P.finiteDimensional_completion P' hP
   have := P.isSeparable_completion P' hP
   have := P.isIntegralClosure_completionIntegers P' hP
@@ -209,15 +208,13 @@ over `𝒪̂_P`. -/
 theorem map_differentIdeal_eq_differentIdeal_completionIntegers
     (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P) :
     letI := P.completionIntegersExtensionAlgebra P' hP
-    letI : Algebra P.integers P'.completionPlace.integers :=
-      ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+    letI := P.completionIntegersBaseAlgebra P' hP
     (differentIdeal P.integers (integralClosure P.integers F')).map
         (P.completionIntegersIntegralClosureHom P' hP).toRingHom =
       differentIdeal P.completionPlace.integers P'.completionPlace.integers := by
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionIntegersExtensionAlgebra P' hP
-  let _ : Algebra P.integers P'.completionPlace.integers :=
-    ((P.completionIntegersExtension P' hP).comp P.completionIntegersEmbedding.toRingHom).toAlgebra
+  let _ := P.completionIntegersBaseAlgebra P' hP
   have := P.finiteDimensional_completion P' hP
   have := P.isSeparable_completion P' hP
   have := P.isIntegralClosure_completionIntegers P' hP
