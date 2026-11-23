@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+import TauCeti.Data.Set.Card
 public import TauCeti.Topology.CWComplex.Classical.Covering
 import TauCeti.Topology.CWComplex.Comparison
 public import TauCeti.Topology.Covering.Pullback
@@ -152,8 +153,9 @@ theorem eulerChar_eq_mul_of_isCoveringMap [FiniteCWType B] {d : ℕ}
   have hqfin (z : Z) :
       Finite ↥((Function.Pullback.fst : Function.Pullback e.symm p → Z) ⁻¹' {z}) :=
     Function.Pullback.finite_preimage_fst_singleton z (hfin _)
-  have h := eulerChar_eq_mul_of_isCoveringMap_of_cwComplex hq hqfin fun z ↦
-    (Nat.card_congr (Function.Pullback.fstPreimageEquiv z)).trans (hd _)
+  have h := eulerChar_eq_mul_of_isCoveringMap_of_cwComplex hq hqfin fun z ↦ by
+    simpa only [Nat.card_coe_set_eq, Function.Pullback.ncard_preimage_fst_singleton]
+      using hd (e.symm z)
   have := hq.finiteCWType hqfin
   rw [← (hp.pullbackHomotopyEquiv e.symm).eulerChar_eq, h, e.eulerChar_eq]
 
@@ -171,7 +173,7 @@ theorem _root_.IsCoveringMap.eulerChar_pullback {X Z : Type u} {Y : Type*}
     letI : FiniteCWType (f.Pullback p) := hq.finiteCWType hqfin
     eulerChar (f.Pullback p) = d * eulerChar X := by
   intro hq hqfin
-  exact eulerChar_eq_mul_of_isCoveringMap hq hqfin fun x ↦
-    (Nat.card_congr (Function.Pullback.fstPreimageEquiv x)).trans (hd x)
+  exact eulerChar_eq_mul_of_isCoveringMap hq hqfin fun x ↦ by
+    simpa only [Nat.card_coe_set_eq, Function.Pullback.ncard_preimage_fst_singleton] using hd x
 
 end TauCeti
