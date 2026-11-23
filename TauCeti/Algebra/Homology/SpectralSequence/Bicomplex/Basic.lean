@@ -172,6 +172,17 @@ variable (K : HomologicalComplex₂ C (down ℕ) (down ℕ))
 @[simp]
 lemma toTotalRowsGE_zero : K.toTotalRowsGE 0 = 𝟙 _ := (rfl)
 
+/-- The projection of the total complex onto the rows `≥ 1` drops row `0`. -/
+@[simp]
+lemma totalRowsGEMap_zero : K.totalRowsGEMap 0 = K.dropRowZero := (rfl)
+
+/-- The projection of the rows `≥ s + 1` onto the rows `≥ s + 2` is that of the rows `≥ s` of the
+bicomplex of rows `≥ 1` onto its rows `≥ s + 1`, placed one degree higher. -/
+lemma totalRowsGEMap_succ (s : ℕ) :
+    K.totalRowsGEMap (s + 1) =
+      HomologicalComplex.extendMap (K.rowsSucc.totalRowsGEMap s) (embeddingDownNatAdd 1) :=
+  (rfl)
+
 /-- The projection onto the total complex of the rows `≥ s + 1` drops row `0` and then projects
 the rows `≥ 1` onto their rows `≥ s`. -/
 lemma toTotalRowsGE_succ (s : ℕ) :

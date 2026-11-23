@@ -29,8 +29,8 @@ the homology of the original total complexes
 ## Main definitions and results
 
 * `HomologicalComplex₂.mapTotalRowsGE`: the morphism of the total complexes of the rows `≥ s`,
-  compatible with the projections from the total complexes
-  (`HomologicalComplex₂.toTotalRowsGE_naturality`).
+  compatible with the projections from the total complexes and between the rows
+  (`HomologicalComplex₂.toTotalRowsGE_naturality`, `HomologicalComplex₂.totalRowsGEMap_naturality`).
 * `HomologicalComplex₂.rowFiltrationFunctorMap`,
   `HomologicalComplex₂.rowFiltrationSpectralObjectMap`,
   `HomologicalComplex₂.rowFiltrationSpectralSequenceMap`: the induced morphisms, compatible
@@ -98,6 +98,20 @@ lemma toTotalRowsGE_naturality (s : ℕ) :
       ← HomologicalComplex.extendMap_comp, ih, HomologicalComplex.extendMap_comp,
       dropRowZero_naturality_assoc]
 
+/-- The projections of the total complexes of the rows `≥ s` onto the rows `≥ s + 1` are
+natural. -/
+@[reassoc]
+lemma totalRowsGEMap_naturality (s : ℕ) :
+    mapTotalRowsGE s φ ≫ L.totalRowsGEMap s = K.totalRowsGEMap s ≫ mapTotalRowsGE (s + 1) φ := by
+  induction s generalizing K L with
+  | zero =>
+    rw [mapTotalRowsGE_zero, totalRowsGEMap_zero, totalRowsGEMap_zero, mapTotalRowsGE_succ,
+      mapTotalRowsGE_zero, dropRowZero_naturality]
+  | succ s ih =>
+    rw [mapTotalRowsGE_succ, totalRowsGEMap_succ, totalRowsGEMap_succ,
+      mapTotalRowsGE_succ _ (s + 1), ← HomologicalComplex.extendMap_comp, ih,
+      HomologicalComplex.extendMap_comp]
+
 /-- On the summand `(K.X p).X q`, `s ≤ q`, the morphism of the total complexes of the rows `≥ s`
 is the component `(φ.f p).f q`. -/
 @[reassoc (attr := simp)]
@@ -130,6 +144,18 @@ def rowFiltrationFunctorMap :
     CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration ⟶
       CochainComplex.filtrationFunctor L.rowFiltration L.monotone_rowFiltration :=
   CochainComplex.filtrationFunctorMap _ _ _ (rowFiltration_factors φ)
+
+/-- On each stage, the morphism of filtration functors is the restriction of the morphism of
+total complexes. -/
+@[reassoc (attr := simp)]
+lemma rowFiltrationFunctorMap_app_comp (a : EInt) :
+    (rowFiltrationFunctorMap φ).app a ≫
+        (CochainComplex.filtrationFunctorObjIso L.rowFiltration L.monotone_rowFiltration a).hom ≫
+        (CochainComplex.filtrationEInt L.rowFiltration a).arrow =
+      (CochainComplex.filtrationFunctorObjIso K.rowFiltration K.monotone_rowFiltration a).hom ≫
+        (CochainComplex.filtrationEInt K.rowFiltration a).arrow ≫
+        HomologicalComplex.extendMap (total.map φ (down ℕ)) embeddingDownNat :=
+  CochainComplex.filtrationFunctorMap_app_comp _ _ a
 
 /-- The morphism `HomologicalComplex₂.rowFiltrationFunctorMap φ` is the morphism of filtration
 functors induced by the morphism of total complexes. -/

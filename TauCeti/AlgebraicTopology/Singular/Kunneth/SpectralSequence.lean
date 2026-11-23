@@ -63,10 +63,10 @@ spectral sequence
   `hom`s (`Iso.trans_hom`, `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty_hom`).
 
 * **Naturality in `X`.** A map `g : X ⟶ X'` induces a morphism of spectral sequences
-  `TopCat.singularKunnethSpectralSequenceMap Y R g`, functorially in `g`, through the morphism
+  `TopCat.singularKunnethSpectralSequenceMapLeft Y R g`, functorially in `g`, through the morphism
   `g_* ▷ Q.X p` of Künneth bicomplexes (`HomologicalComplex.kunnethBicomplexMapLeft`). On the
   abutment it is `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`
-  (`TopCat.singularKunnethAbutmentIso_naturality`).
+  (`TopCat.singularKunnethAbutmentIso_naturality_left`).
 
 Naturality in `Y`, which needs a comparison of Cartan–Eilenberg resolutions, the identification
 of the second page naturality with the map induced on `Tor`, the edge maps and the collapse
@@ -225,78 +225,80 @@ variable {X} {X' X'' : TopCat.{u}} (g : X ⟶ X') (g' : X' ⟶ X'')
 
 /-- The morphism of singular Künneth bicomplexes induced by a map `g : X ⟶ X'`: on column `p` it
 is `g_* ▷ Q.X p`, for the Cartan–Eilenberg resolution `Q` of `C(Y; R)`. -/
-abbrev singularKunnethBicomplexMap :
+abbrev singularKunnethBicomplexMapLeft :
     singularKunnethBicomplex X Y R ⟶ singularKunnethBicomplex X' Y R :=
   kunnethBicomplexMapLeft ((TauCeti.singularChains R).map g) ((TauCeti.singularChains R).obj Y)
 
 /-- The morphism of the spectral objects of the singular Künneth spectral sequences induced by a
 map `g : X ⟶ X'`. -/
-abbrev singularKunnethSpectralObjectMap :
+abbrev singularKunnethSpectralObjectMapLeft :
     singularKunnethSpectralObject X Y R ⟶ singularKunnethSpectralObject X' Y R :=
   HomologicalComplex₂.rowFiltrationSpectralObjectMap
-    ((HomologicalComplex₂.flipFunctor _ _ _).map (singularKunnethBicomplexMap Y R g))
+    ((HomologicalComplex₂.flipFunctor _ _ _).map (singularKunnethBicomplexMapLeft Y R g))
 
 /-- **Naturality of the singular Künneth spectral sequence in the first space**: the morphism of
 spectral sequences induced by a map `g : X ⟶ X'`. It is compatible with identities and
-composition (`TopCat.singularKunnethSpectralSequenceMap_id`,
-`TopCat.singularKunnethSpectralSequenceMap_comp`) and, on the abutment, it is the map
-`(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)` (`TopCat.singularKunnethAbutmentIso_naturality`). -/
-abbrev singularKunnethSpectralSequenceMap :
+composition (`TopCat.singularKunnethSpectralSequenceMapLeft_id`,
+`TopCat.singularKunnethSpectralSequenceMapLeft_comp`) and, on the abutment, it is the map
+`(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)` (`TopCat.singularKunnethAbutmentIso_naturality_left`). -/
+abbrev singularKunnethSpectralSequenceMapLeft :
     singularKunnethSpectralSequence X Y R ⟶ singularKunnethSpectralSequence X' Y R :=
   kunnethSpectralSequenceMapLeft ((TauCeti.singularChains R).map g)
     ((TauCeti.singularChains R).obj Y)
 
 @[simp]
-lemma singularKunnethBicomplexMap_id : singularKunnethBicomplexMap Y R (𝟙 X) = 𝟙 _ := by
-  rw [singularKunnethBicomplexMap, CategoryTheory.Functor.map_id, kunnethBicomplexMapLeft_id]
+lemma singularKunnethBicomplexMapLeft_id : singularKunnethBicomplexMapLeft Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, kunnethBicomplexMapLeft_id]
 
 @[simp]
-lemma singularKunnethBicomplexMap_comp :
-    singularKunnethBicomplexMap Y R (g ≫ g') =
-      singularKunnethBicomplexMap Y R g ≫ singularKunnethBicomplexMap Y R g' := by
-  rw [singularKunnethBicomplexMap, CategoryTheory.Functor.map_comp, kunnethBicomplexMapLeft_comp]
+lemma singularKunnethBicomplexMapLeft_comp :
+    singularKunnethBicomplexMapLeft Y R (g ≫ g') =
+      singularKunnethBicomplexMapLeft Y R g ≫ singularKunnethBicomplexMapLeft Y R g' := by
+  rw [singularKunnethBicomplexMapLeft, CategoryTheory.Functor.map_comp,
+    kunnethBicomplexMapLeft_comp]
 
 @[simp]
-lemma singularKunnethSpectralObjectMap_id :
-    singularKunnethSpectralObjectMap Y R (𝟙 X) = 𝟙 _ := by
-  rw [singularKunnethSpectralObjectMap, singularKunnethBicomplexMap_id,
+lemma singularKunnethSpectralObjectMapLeft_id :
+    singularKunnethSpectralObjectMapLeft Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethSpectralObjectMapLeft, singularKunnethBicomplexMapLeft_id,
     CategoryTheory.Functor.map_id]
   -- the identity of `(flipFunctor _ _ _).obj B` is that of `B.flip` only after unfolding
   -- `flipFunctor`
   exact HomologicalComplex₂.rowFiltrationSpectralObjectMap_id
 
 @[simp]
-lemma singularKunnethSpectralObjectMap_comp :
-    singularKunnethSpectralObjectMap Y R (g ≫ g') =
-      singularKunnethSpectralObjectMap Y R g ≫ singularKunnethSpectralObjectMap Y R g' := by
-  rw [singularKunnethSpectralObjectMap, singularKunnethBicomplexMap_comp,
+lemma singularKunnethSpectralObjectMapLeft_comp :
+    singularKunnethSpectralObjectMapLeft Y R (g ≫ g') =
+      singularKunnethSpectralObjectMapLeft Y R g ≫ singularKunnethSpectralObjectMapLeft Y R g' := by
+  rw [singularKunnethSpectralObjectMapLeft, singularKunnethBicomplexMapLeft_comp,
     CategoryTheory.Functor.map_comp, HomologicalComplex₂.rowFiltrationSpectralObjectMap_comp]
 
 @[simp]
-lemma singularKunnethSpectralSequenceMap_id :
-    singularKunnethSpectralSequenceMap Y R (𝟙 X) = 𝟙 _ := by
-  rw [singularKunnethSpectralSequenceMap, CategoryTheory.Functor.map_id,
+lemma singularKunnethSpectralSequenceMapLeft_id :
+    singularKunnethSpectralSequenceMapLeft Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethSpectralSequenceMapLeft, CategoryTheory.Functor.map_id,
     kunnethSpectralSequenceMapLeft_id]
 
 @[simp]
-lemma singularKunnethSpectralSequenceMap_comp :
-    singularKunnethSpectralSequenceMap Y R (g ≫ g') =
-      singularKunnethSpectralSequenceMap Y R g ≫ singularKunnethSpectralSequenceMap Y R g' := by
-  rw [singularKunnethSpectralSequenceMap, CategoryTheory.Functor.map_comp,
+lemma singularKunnethSpectralSequenceMapLeft_comp :
+    singularKunnethSpectralSequenceMapLeft Y R (g ≫ g') =
+      singularKunnethSpectralSequenceMapLeft Y R g ≫
+        singularKunnethSpectralSequenceMapLeft Y R g' := by
+  rw [singularKunnethSpectralSequenceMapLeft, CategoryTheory.Functor.map_comp,
     kunnethSpectralSequenceMapLeft_comp]
 
 /-- The comparison `TopCat.singularKunnethTotalHomologyIso` of the total homology of the singular
 Künneth bicomplex with `Hₙ(X × Y; R)` is natural in `X`. -/
 @[reassoc]
-lemma singularKunnethTotalHomologyIso_naturality (n : ℕ) :
-    homologyMap (HomologicalComplex₂.total.map (singularKunnethBicomplexMap Y R g)
+lemma singularKunnethTotalHomologyIso_naturality_left (n : ℕ) :
+    homologyMap (HomologicalComplex₂.total.map (singularKunnethBicomplexMapLeft Y R g)
         (ComplexShape.down ℕ)) n ≫ (singularKunnethTotalHomologyIso X' Y R n).hom =
       (singularKunnethTotalHomologyIso X Y R n).hom ≫
         ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).map (g ▷ Y) := by
   -- the cross product is natural in the first space
   have h := TauCeti.singularCrossProduct_naturality R g (𝟙 Y)
   rw [CategoryTheory.Functor.map_id, tensorHom_id, tensorHom_id] at h
-  have h' : HomologicalComplex₂.total.map (singularKunnethBicomplexMap Y R g)
+  have h' : HomologicalComplex₂.total.map (singularKunnethBicomplexMapLeft Y R g)
         (ComplexShape.down ℕ) ≫ kunnethBicomplexAugmentation ((TauCeti.singularChains R).obj X')
           ((TauCeti.singularChains R).obj Y) ≫ TauCeti.singularCrossProduct R X' Y =
       (kunnethBicomplexAugmentation ((TauCeti.singularChains R).obj X)
@@ -314,14 +316,14 @@ lemma singularKunnethTotalHomologyIso_naturality (n : ℕ) :
 spectral objects induced by `g : X ⟶ X'` is, on the abutment in degree `n`, the map
 `(g × 𝟙)_* : Hₙ(X × Y; R) ⟶ Hₙ(X' × Y; R)`. -/
 @[reassoc]
-lemma singularKunnethAbutmentIso_naturality (n : ℕ) :
-    ((singularKunnethSpectralObjectMap Y R g).hom (-n)).app
+lemma singularKunnethAbutmentIso_naturality_left (n : ℕ) :
+    ((singularKunnethSpectralObjectMapLeft Y R g).hom (-n)).app
         (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
         (singularKunnethAbutmentIso X' Y R n).hom =
       (singularKunnethAbutmentIso X Y R n).hom ≫
         ((singularHomologyFunctor _ n).obj (𝟙_ (ModuleCat.{u} R))).map (g ▷ Y) := by
   rw [singularKunnethAbutmentIso_eq, singularKunnethAbutmentIso_eq, Iso.trans_hom, Iso.trans_hom,
     HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality_assoc,
-    singularKunnethTotalHomologyIso_naturality, Category.assoc]
+    singularKunnethTotalHomologyIso_naturality_left, Category.assoc]
 
 end TopCat
