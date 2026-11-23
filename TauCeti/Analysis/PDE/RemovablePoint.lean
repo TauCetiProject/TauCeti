@@ -74,31 +74,30 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
   -- Cut off φ near p and bound the error using the uniform bounds on V, φ and its derivative.
   have hbound (ε : ℝ) (hε : 0 < ε) :
       ‖I‖ ≤ μ.real (closedBall p (2 * ε)) * (C' * A + B * (K / ε) * C') := by
-    obtain ⟨η, η', hηs', hη01, hη1', hη0, hηderiv, hηbound, -⟩ := hcut p ε hε
+    obtain ⟨η, η', hηs', hη01, hη1', hη0, hηderiv, hηbound, -, hηderiv0⟩ := hcut p ε hε
     have hηs : ContDiff ℝ ∞ η := hηs' ⊤
     have hη1 (x : E) (hx : x ∈ ball p ε) : η x = 1 :=
       hη1' x (ball_subset_closedBall hx)
-    have htsupp : tsupport η ⊆ closedBall p (2 * ε) := by
-      refine closure_minimal (fun x hx ↦ ?_) isClosed_closedBall
-      by_contra hxb
-      exact hx (hη0 x (not_le.mp hxb))
     have hηd (x : E) : ‖fderiv ℝ η x‖ ≤ K / ε := by
       simpa only [(hηderiv x).fderiv, div_eq_mul_inv] using hηbound x
     let ψ : 𝓓(Ω, ℝ) :=
       TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℝ ℝ)
         ((contDiff_const (c := (1 : ℝ))).sub hηs) φ
+    have hψ : (ψ : E → ℝ) = fun x ↦ φ x * (1 - η x) := by
+      simp only [ψ, TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
     have hψp : p ∉ tsupport (ψ : E → ℝ) := by
       rw [notMem_tsupport_iff_eventuallyEq]
       filter_upwards [ball_mem_nhds p hε] with x hx
-      simp [ψ, hη1 x hx]
+      simp only [hψ, hη1 x hx, sub_self, mul_zero, Pi.zero_apply]
     have hψ1 : ContDiff ℝ 1 (ψ : E → ℝ) := ψ.contDiff.of_le (by simp)
     have hdiff (x : E) : ⟪V x, ∇ (φ : E → ℝ) x⟫_ℝ - ⟪V x, ∇ (ψ : E → ℝ) x⟫_ℝ =
         η x * fderiv ℝ φ x (V x) + φ x * fderiv ℝ η x (V x) := by
       have hφd := (hφ1.differentiable one_ne_zero x).hasFDerivAt
       have hηd' := ((hηs.differentiable (by simp)) x).hasFDerivAt
       have hd : HasFDerivAt (ψ : E → ℝ)
-          ((φ x) • (-fderiv ℝ η x) + (1 - η x) • fderiv ℝ φ x) x :=
-        hφd.mul (hηd'.const_sub 1)
+          ((φ x) • (-fderiv ℝ η x) + (1 - η x) • fderiv ℝ φ x) x := by
+        rw [hψ]
+        exact hφd.mul (hηd'.const_sub 1)
       simp only [inner_gradient_right, RCLike.conj_to_real, hd.fderiv]
       simp only [add_apply, smul_apply, neg_apply, smul_eq_mul]
       ring
@@ -136,8 +135,9 @@ theorem setIntegral_inner_gradient_eq_zero_of_forall_notMem_tsupport
       exact mul_le_mul_of_nonneg_right
         (measureReal_mono inter_subset_right measure_closedBall_lt_top.ne) hM
     · intro x hx
-      have hxs : x ∉ tsupport η := fun hs ↦ hx.2 ⟨hx.1, htsupp hs⟩
-      rw [image_eq_zero_of_notMem_tsupport hxs, fderiv_of_notMem_tsupport ℝ hxs]
+      have hxball : x ∉ closedBall p (2 * ε) := fun hxball ↦ hx.2 ⟨hx.1, hxball⟩
+      have hxdist : 2 * ε < dist x p := lt_of_not_ge (mt Metric.mem_closedBall.2 hxball)
+      rw [hη0 x hxdist, (hηderiv x).fderiv, hηderiv0 x hxdist]
       simp
   -- Ball volume scales as ε^(m + 2); the cutoff derivative costs 1/ε, so the error tends to zero.
   obtain ⟨m, hm⟩ : ∃ m, Module.finrank ℝ E = m + 2 := ⟨_, (Nat.sub_add_cancel hE).symm⟩
