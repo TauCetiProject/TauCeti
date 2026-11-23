@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.RepresentationTheory.Smooth.Basic
+import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # Admissible representations
@@ -28,17 +29,21 @@ meant for locally profinite groups: a group with no compact open subgroup impose
 * `Representation.IsAdmissible.of_hasBasis`: over a noetherian ring, it suffices to check finite
   generation of `V^U` for the members `U` of a basis of neighbourhoods of `1` made of subgroups,
   since `V^U` is a submodule of `V^{U'}` for `U' ≤ U`.
-* `Representation.IsAdmissible.prod`: a direct sum of two admissible representations is
-  admissible.
+* `Representation.IsAdmissible.prod`, `Representation.IsAdmissible.directSum`: a direct sum of
+  finitely many admissible representations is admissible.
+* `Representation.IsAdmissible.comp`: the restriction of an admissible representation along a
+  continuous open homomorphism, in particular to an open subgroup
+  (`Representation.IsAdmissible.comp_openSubgroup`), is admissible.
 * `Representation.IsAdmissible.of_injective`: over a noetherian ring, a representation with an
   injective intertwining map to an admissible one is admissible; in particular so is every
   subrepresentation of an admissible representation
   (`Representation.IsAdmissible.subrepresentation`).
 * `Representation.Equiv.isAdmissible_iff`: equivalent representations are admissible together.
-* `Representation.IsAdmissible.of_subsingleton`, `Representation.IsAdmissible.trivial`: the zero
-  representation, and a trivial representation on a finitely generated module, are admissible.
-* `Representation.isAdmissible_trivial_iff`: for a group with a compact open subgroup, a trivial
-  representation is admissible exactly when the module is finitely generated.
+* `Representation.IsAdmissible.of_subsingleton`, `Representation.IsAdmissible.of_isTrivial`: the
+  zero representation, and a trivial representation on a finitely generated module, are
+  admissible.
+* `Representation.isAdmissible_iff_finite_of_isTrivial`: for a group with a compact open subgroup,
+  a trivial representation is admissible exactly when the module is finitely generated.
 
 ## References
 
@@ -102,61 +107,89 @@ theorem IsAdmissible.of_injective [IsNoetherianRing A] [IsAdmissible σ] (f : ρ
 instance IsAdmissible.subrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
     (ρ' : Subrepresentation ρ) :
     IsAdmissible ρ'.toRepresentation :=
-  IsAdmissible.of_injective (σ := ρ) ⟨ρ'.toSubmodule.subtype, fun _ ↦ rfl⟩
-    ρ'.toSubmodule.injective_subtype
+  IsAdmissible.of_injective ρ'.subtype ρ'.subtype_injective
 
-omit [TopologicalSpace G] in
-/-- An equivalence of representations maps the invariants of every subgroup onto those of the
-target. -/
-private theorem Equiv.map_invariants_comp_subtype (e : Equiv ρ σ) (U : Subgroup G) :
-    (invariants (ρ.comp U.subtype)).map e.toLinearEquiv.toLinearMap =
-      invariants (σ.comp U.subtype) := by
-  refine le_antisymm ?_ fun w hw ↦ ⟨e.symm w, fun u ↦ ?_, e.apply_symm_apply w⟩
-  · rintro _ ⟨v, hv, rfl⟩ u
-    have h := IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap u v
-    rw [show ρ u v = v from hv u] at h
-    exact h.symm
-  · have h := IntertwiningMap.isIntertwining _ _ e.symm.toIntertwiningMap u w
-    rw [show σ u w = w from hw u] at h
-    exact h.symm
+/-- The restriction of an admissible representation over a noetherian ring to an invariant
+submodule is admissible. -/
+instance IsAdmissible.instSubrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
+    (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
+    IsAdmissible (ρ.subrepresentation W le_comap) :=
+  IsAdmissible.of_injective (σ := ρ) ⟨W.subtype, fun _ ↦ rfl⟩ W.injective_subtype
 
 /-- An admissible representation transfers admissibility along an equivalence. -/
 private theorem IsAdmissible.of_equiv [IsAdmissible ρ] (e : Equiv ρ σ) : IsAdmissible σ := by
   have : IsSmooth σ := (e.isSmooth_iff).1 inferInstance
   refine ⟨fun U hU ↦ ?_⟩
   have := IsAdmissible.finite_invariants (ρ := ρ) U hU
-  rw [Module.Finite.iff_fg] at this ⊢
-  rw [← e.map_invariants_comp_subtype]
-  exact this.map _
+  exact Module.Finite.equiv (e.res (U : Subgroup G).subtype).invariantsLinearEquiv
 
 /-- Equivalent representations are admissible together. -/
 theorem Equiv.isAdmissible_iff (e : Equiv ρ σ) : IsAdmissible ρ ↔ IsAdmissible σ :=
   ⟨fun _ ↦ IsAdmissible.of_equiv e, fun _ ↦ IsAdmissible.of_equiv e.symm⟩
 
-omit [TopologicalSpace G] in
-/-- The invariants of a direct sum are the product of the invariants. -/
-private theorem invariants_prod_comp_subtype (U : Subgroup G) :
-    invariants ((ρ.prod σ).comp U.subtype) =
-      (invariants (ρ.comp U.subtype)).prod (invariants (σ.comp U.subtype)) := by
-  ext x
-  simp only [mem_invariants, Submodule.mem_prod, Prod.ext_iff, forall_and]
-  rfl
+/-- The restriction of an admissible representation along a continuous open homomorphism is
+admissible: the image of a compact open subgroup is a compact open subgroup of `G`. -/
+theorem IsAdmissible.comp [IsAdmissible ρ] {H : Type*} [Group H] [TopologicalSpace H]
+    {φ : H →* G} (hφ : Continuous φ) (hφo : IsOpenMap φ) : IsAdmissible (ρ.comp φ) := by
+  have : IsSmooth (ρ.comp φ) := IsSmooth.comp hφ
+  refine ⟨fun U hU ↦ ?_⟩
+  let U' : OpenSubgroup G :=
+    ⟨(U : Subgroup H).map φ, by
+      change IsOpen (((U : Subgroup H).map φ : Subgroup G) : Set G)
+      rw [Subgroup.coe_map]
+      exact hφo _ U.isOpen⟩
+  have hU' : IsCompact (U' : Set G) := by
+    change IsCompact (((U : Subgroup H).map φ : Subgroup G) : Set G)
+    rw [Subgroup.coe_map]
+    exact hU.image hφ
+  have := IsAdmissible.finite_invariants (ρ := ρ) U' hU'
+  have h : invariants ((ρ.comp φ).comp (U : Subgroup H).subtype) =
+      invariants (ρ.comp (U' : Subgroup G).subtype) := by
+    ext v
+    rw [mem_invariants_comp_subtype_iff, mem_invariants_comp_subtype_iff, stabilizer_comp]
+    exact Subgroup.map_le_iff_le_comap.symm
+  rw [h]
+  infer_instance
 
-/-- The direct sum of two admissible representations is admissible. -/
+/-- The restriction of an admissible representation to an open subgroup is admissible. -/
+instance IsAdmissible.comp_openSubgroup [IsAdmissible ρ] (H : OpenSubgroup G) :
+    IsAdmissible (ρ.comp (H : Subgroup G).subtype) :=
+  IsAdmissible.comp continuous_subtypeVal H.isOpen.isOpenMap_subtypeVal
+
+/-- The direct sum of two admissible representations is admissible: the invariants of a direct
+sum are the product of the invariants. -/
 instance IsAdmissible.prod [IsAdmissible ρ] [IsAdmissible σ] :
     IsAdmissible (ρ.prod σ) := by
-  have : IsSmooth (ρ.prod σ) := ⟨fun x ↦ ?_⟩
-  · refine ⟨fun U hU ↦ ?_⟩
-    have := IsAdmissible.finite_invariants (ρ := ρ) U hU
-    have := IsAdmissible.finite_invariants (ρ := σ) U hU
-    rw [Module.Finite.iff_fg] at *
-    rw [invariants_prod_comp_subtype]
-    exact Submodule.FG.prod ‹_› ‹_›
-  · have h : (ρ.prod σ).stabilizer x = ρ.stabilizer x.1 ⊓ σ.stabilizer x.2 := by
-      ext g
-      simp [mem_stabilizer, Prod.ext_iff]
-    rw [h, Subgroup.coe_inf]
-    exact (IsSmooth.isOpen_stabilizer (ρ := ρ) x.1).inter (IsSmooth.isOpen_stabilizer (ρ := σ) x.2)
+  refine ⟨fun U hU ↦ ?_⟩
+  have := IsAdmissible.finite_invariants (ρ := ρ) U hU
+  have := IsAdmissible.finite_invariants (ρ := σ) U hU
+  have h : invariants ((ρ.prod σ).comp (U : Subgroup G).subtype) =
+      (invariants (ρ.comp (U : Subgroup G).subtype)).prod
+        (invariants (σ.comp (U : Subgroup G).subtype)) := by
+    ext x
+    simp only [mem_invariants_comp_subtype_iff, Submodule.mem_prod, stabilizer_prod, le_inf_iff]
+  rw [Module.Finite.iff_fg] at *
+  rw [h]
+  exact Submodule.FG.prod ‹_› ‹_›
+
+/-- The direct sum of a finite family of admissible representations is admissible: its
+invariants correspond to the product of the invariants. -/
+instance IsAdmissible.directSum {ι : Type*} [Finite ι] {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i))
+    [∀ i, IsAdmissible (ρ i)] : IsAdmissible (directSum ρ) := by
+  classical
+  have := Fintype.ofFinite ι
+  refine ⟨fun U hU ↦ ?_⟩
+  have := fun i ↦ IsAdmissible.finite_invariants (ρ := ρ i) U hU
+  have h : invariants ((Representation.directSum ρ).comp (U : Subgroup G).subtype) =
+      (Submodule.pi Set.univ fun i ↦ invariants ((ρ i).comp (U : Subgroup G).subtype)).comap
+        (DirectSum.linearEquivFunOnFintype A ι V).toLinearMap := by
+    ext x
+    simp only [mem_invariants_comp_subtype_iff, Submodule.mem_comap, Submodule.mem_pi,
+      Set.mem_univ, true_implies, stabilizer_directSum, le_iInf_iff, LinearEquiv.coe_coe,
+      DirectSum.linearEquivFunOnFintype_apply]
+  rw [Module.Finite.iff_fg, h, Submodule.comap_equiv_eq_map_symm]
+  exact (Submodule.fg_pi fun i ↦ Module.Finite.iff_fg.1 (this i)).map _
 
 /-- A representation on a module with at most one vector, such as the zero representation, is
 admissible. -/
@@ -165,24 +198,25 @@ instance IsAdmissible.of_subsingleton [Subsingleton V] : IsAdmissible ρ :=
 
 omit [TopologicalSpace G] in
 /-- Every vector of a trivial representation is invariant under every subgroup. -/
-private theorem invariants_trivial_comp_subtype (U : Subgroup G) :
-    invariants ((trivial A G V).comp U.subtype) = ⊤ :=
-  eq_top_iff.2 fun _ _ _ ↦ rfl
+private theorem invariants_comp_subtype_eq_top [ρ.IsTrivial] (U : Subgroup G) :
+    invariants (ρ.comp U.subtype) = ⊤ :=
+  eq_top_iff.2 fun v _ _ ↦ ρ.isTrivial_apply _ v
 
 /-- A trivial representation on a finitely generated module is admissible. -/
-instance IsAdmissible.trivial [Module.Finite A V] : IsAdmissible (trivial A G V) :=
+instance IsAdmissible.of_isTrivial [ρ.IsTrivial] [Module.Finite A V] : IsAdmissible ρ :=
   ⟨fun U _ ↦ by
-    rw [Module.Finite.iff_fg, invariants_trivial_comp_subtype]
+    rw [Module.Finite.iff_fg, invariants_comp_subtype_eq_top]
     exact Module.finite_def.1 inferInstance⟩
 
 /-- For a group with a compact open subgroup, a trivial representation is admissible exactly when
 the module is finitely generated. -/
-theorem isAdmissible_trivial_iff (hG : ∃ U : OpenSubgroup G, IsCompact (U : Set G)) :
-    IsAdmissible (trivial A G V) ↔ Module.Finite A V := by
+theorem isAdmissible_iff_finite_of_isTrivial [ρ.IsTrivial]
+    (hG : ∃ U : OpenSubgroup G, IsCompact (U : Set G)) :
+    IsAdmissible ρ ↔ Module.Finite A V := by
   refine ⟨fun h ↦ ?_, fun _ ↦ inferInstance⟩
   obtain ⟨U, hU⟩ := hG
   have := h.finite_invariants U hU
-  rw [Module.Finite.iff_fg, invariants_trivial_comp_subtype] at this
+  rw [Module.Finite.iff_fg, invariants_comp_subtype_eq_top] at this
   exact Module.finite_def.2 this
 
 end Representation

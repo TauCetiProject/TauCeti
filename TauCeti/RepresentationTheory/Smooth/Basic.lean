@@ -40,6 +40,8 @@ open subgroups `U` of `G`.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
+* `Representation.IsSmooth.prod`, `Representation.IsSmooth.directSum`: direct sums of finitely
+  many smooth representations are smooth.
 * `Representation.IsSmooth.comp`: smoothness passes to the restriction along a continuous
   homomorphism, in particular to subgroups.
 * `Representation.isSmooth_ofMulAction_iff`: the permutation representation on `A[X]` is smooth
@@ -121,6 +123,20 @@ theorem IsSmooth.comp [IsSmooth ρ] {H : Type*} [Group H] [TopologicalSpace H] {
 /-- The restriction of a smooth representation to a subgroup is smooth. -/
 instance [IsSmooth ρ] (H : Subgroup G) : IsSmooth (ρ.comp H.subtype) :=
   IsSmooth.comp continuous_subtypeVal
+
+/-- The direct sum of two smooth representations is smooth. -/
+instance IsSmooth.prod [IsSmooth ρ] [IsSmooth σ] : IsSmooth (ρ.prod σ) :=
+  ⟨fun x ↦ by
+    rw [stabilizer_prod, Subgroup.coe_inf]
+    exact (IsSmooth.isOpen_stabilizer x.1).inter (IsSmooth.isOpen_stabilizer x.2)⟩
+
+/-- The direct sum of a finite family of smooth representations is smooth. -/
+instance IsSmooth.directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommMonoid (V i)]
+    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) [∀ i, IsSmooth (ρ i)] :
+    IsSmooth (directSum ρ) :=
+  ⟨fun x ↦ by
+    rw [stabilizer_directSum, Subgroup.coe_iInf]
+    exact isOpen_iInter_of_finite fun i ↦ IsSmooth.isOpen_stabilizer (x i)⟩
 
 /-- Every representation of a discrete group is smooth. -/
 instance [DiscreteTopology G] : IsSmooth ρ :=

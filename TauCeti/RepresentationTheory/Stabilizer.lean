@@ -45,6 +45,8 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.IntertwiningMap.stabilizer_apply_of_injective`
 * `Representation.Equiv.stabilizer_apply`
 * `Subrepresentation.stabilizer_toRepresentation`
+* `Representation.stabilizer_prod`, `Representation.stabilizer_directSum`: stabilizers in direct
+  sums.
 * `Representation.mem_invariants_comp_subtype_iff`
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
@@ -91,6 +93,22 @@ theorem _root_.Subrepresentation.stabilizer_toRepresentation (ρ' : Subrepresent
     (v : ρ'.toSubmodule) : ρ'.toRepresentation.stabilizer v = ρ.stabilizer v := by
   ext g
   rw [mem_stabilizer, mem_stabilizer, Subrepresentation.toRepresentation_apply_coe]
+
+/-- The stabilizer of a vector of a direct sum is the intersection of the stabilizers of its
+components. -/
+theorem stabilizer_prod (x : V × W) :
+    (ρ.prod σ).stabilizer x = ρ.stabilizer x.1 ⊓ σ.stabilizer x.2 := by
+  ext g
+  simp [mem_stabilizer, Prod.ext_iff]
+
+/-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
+of its components. -/
+theorem stabilizer_directSum {ι : Type*} {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i))
+    (x : DirectSum ι V) :
+    (directSum ρ).stabilizer x = ⨅ i, (ρ i).stabilizer (x i) := by
+  ext g
+  simp [mem_stabilizer, DirectSum.ext_iff]
 
 /-- The stabilizer of a basis vector of a permutation representation is the stabilizer of the
 point, for nonzero coefficient. -/
