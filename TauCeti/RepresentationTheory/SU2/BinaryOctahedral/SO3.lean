@@ -45,7 +45,8 @@ open Quaternion
 subgroup. -/
 theorem ker_toSO3_le_binaryOctahedralSubgroup : toSO3.ker ≤ binaryOctahedralSubgroup := by
   intro g hg
-  rcases (ker_toSO3_eq_pair ▸ hg : g ∈ ({1, torusHom (-1)} : Set SU2)) with rfl | rfl
+  simp only [← SetLike.mem_coe, ker_toSO3_eq_pair, Set.mem_insert_iff, Set.mem_singleton_iff] at hg
+  rcases hg with rfl | rfl
   · exact binaryOctahedralSubgroup.one_mem
   · exact torusHom_neg_one_mem_binaryOctahedralSubgroup
 
@@ -108,7 +109,9 @@ theorem map_toSO3_binaryOctahedralSubgroup :
   have hle : binaryOctahedralSubgroup.map toSO3 ≤
       (cubeRotationToSpecialOrthogonalGroup ℝ).range := by
     rw [binaryOctahedralSubgroup_eq_closure_pair, MonoidHom.map_closure, Subgroup.closure_le]
-    rintro _ ⟨g, rfl | rfl, rfl⟩
+    rintro _ ⟨g, hg, rfl⟩
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hg
+    rcases hg with rfl | rfl
     · exact toSO3_binaryDihedralRotation_four_mem_range
     · exact toSO3_binaryTetrahedralOmega_mem_range
   have hcard : Nat.card (cubeRotationToSpecialOrthogonalGroup ℝ).range = 24 := by
