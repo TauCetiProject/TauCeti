@@ -151,7 +151,7 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
   rw [G.edgeConnectivity_eq_iInf_edgeReachability, ← iInf_subtype'']
   simp_rw [← iInf_subtype'']
   simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue]
-  exact hvalue
+  simpa only [OrderEmbedding.toOrderHom_coe, Nat.castOrderEmbedding_apply] using hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

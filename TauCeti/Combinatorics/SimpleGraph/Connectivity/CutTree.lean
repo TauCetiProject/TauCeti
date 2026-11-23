@@ -102,7 +102,7 @@ theorem exists_edge_simpleGraph_edgeConnectivity_eq_weight [Nontrivial V]
   refine ⟨u, v, huv, hmin, ?_⟩
   rw [G.edgeConnectivity_eq_iInf_edgeReachability]
   simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity]
-  exact hvalue
+  simpa only [OrderEmbedding.toOrderHom_coe, Nat.castOrderEmbedding_apply] using hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 
