@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Data.Matrix.DotProduct
 
 /-!
