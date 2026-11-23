@@ -24,6 +24,11 @@ image can be smaller than the actual torus. The proof uses the existing pinning 
 and the simple-coroot root-word identity, rather than extending torus parameters to the
 full weight lattice.
 
+The `ℤ`-linear map `D.simpleReflectionCharacterMap i` represents the simple reflection `sᵢ`
+on `D.weightLattice`, induces `D.simpleReflectionTorusParameter i A` on torus points, is the
+character map of conjugation by the simple Weyl element `D.weylElement (t.simpleIndex ht i) A 1`,
+and equals `-1` in rank one.
+
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 19 and 22.

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.Ring.Hom
-import TauCeti.RingTheory.Subring.Basic
+import TauCeti.Algebra.Polynomial.Roots
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 
 /-!

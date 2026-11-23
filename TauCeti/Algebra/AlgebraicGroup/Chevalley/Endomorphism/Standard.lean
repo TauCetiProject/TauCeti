@@ -16,8 +16,9 @@ import TauCeti.Algebra.Group.End
 
 An endomorphism `F` of `D.points A` is **standard** (`D.IsStandard F`) if it acts on
 `D.torusPoints A` via an injective character-lattice endomorphism and maps each root subgroup onto
-a root subgroup, and **based** (`D.IsBased F`) if it maps positive root subgroups onto positive
-ones, equivalently `(D.borelSubgroup A).map F ≤ D.borelSubgroup A`
+a root subgroup, and **based** (`D.IsBased F`) if it is standard and maps positive root
+subgroups onto positive ones; for standard `F` this is equivalent to
+`(D.borelSubgroup A).map F ≤ D.borelSubgroup A`
 (`isBased_iff_isStandard_and_map_borelSubgroup_le`). Over a perfect ring, `D.frobenius p k A` is
 based (`isBased_frobenius`). Over an infinite field `K`, `hF : D.IsStandard F` has a unique
 character map `hF.characterMap`, root permutation `hF.rootPerm` with positive proportionality
@@ -221,28 +222,33 @@ end CommRing
 section Field
 variable {K : Type v} [Field K] {D} {F F' : D.points K →* D.points K}
 
-private noncomputable def IsStandard.rawParamHom (hF : D.IsStandard F) (α : Fin t.numRoots) :
-    K →+ K := AddMonoidHom.toMultiplicative.symm ((MonoidHom.ofInjective
-  (D.rootSubgroupPoints_injective K (hF.rawRootMap α))).symm.toMonoidHom.comp
-  ((F.comp (D.rootSubgroupPoints α K)).codRestrict _ fun u => by
-    rw [← hF.map_range_rootSubgroupPoints_rawRootMap α]; exact ⟨_, ⟨u, rfl⟩, rfl⟩))
+private noncomputable def IsStandard.paramHomOf (_ : D.IsStandard F)
+    (α β : Fin t.numRoots)
+    (hβ : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range) : K →+ K :=
+  AddMonoidHom.toMultiplicative.symm ((MonoidHom.ofInjective
+    (D.rootSubgroupPoints_injective K β)).symm.toMonoidHom.comp
+    ((F.comp (D.rootSubgroupPoints α K)).codRestrict _ fun u => by
+      rw [← hβ]; exact ⟨_, ⟨u, rfl⟩, rfl⟩))
 
-private theorem IsStandard.rootSubgroupPoints_rawParamHom (hF : D.IsStandard F) (α) (u : K) :
-    D.rootSubgroupPoints (hF.rawRootMap α) K (ofAdd (hF.rawParamHom α u)) =
-      F (D.rootSubgroupPoints α K (ofAdd u)) := by simp [IsStandard.rawParamHom]
+private theorem IsStandard.rootSubgroupPoints_paramHomOf (hF : D.IsStandard F)
+    {α β : Fin t.numRoots}
+    (hβ : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range) (u : K) :
+    D.rootSubgroupPoints β K (ofAdd (hF.paramHomOf α β hβ u)) =
+      F (D.rootSubgroupPoints α K (ofAdd u)) := by simp [IsStandard.paramHomOf]
 
-private theorem IsStandard.rawParamHom_surjective (hF : D.IsStandard F) (α) :
-    Function.Surjective (hF.rawParamHom α) := fun v => by
-  obtain ⟨_, ⟨u, rfl⟩, hFu⟩ : D.rootSubgroupPoints (hF.rawRootMap α) K (ofAdd v) ∈
-      (D.rootSubgroupPoints α K).range.map F :=
-    hF.map_range_rootSubgroupPoints_rawRootMap α ▸ ⟨ofAdd v, rfl⟩
-  have hinj := D.rootSubgroupPoints_injective K (hF.rawRootMap α)
-    ((hF.rootSubgroupPoints_rawParamHom α (toAdd u)).trans (by rw [ofAdd_toAdd, hFu]))
+private theorem IsStandard.paramHomOf_surjective (hF : D.IsStandard F) {α β : Fin t.numRoots}
+    (hβ : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range) :
+    Function.Surjective (hF.paramHomOf α β hβ) := fun v => by
+  obtain ⟨_, ⟨u, rfl⟩, hFu⟩ : D.rootSubgroupPoints β K (ofAdd v) ∈
+      (D.rootSubgroupPoints α K).range.map F := hβ ▸ ⟨ofAdd v, rfl⟩
+  have hinj := D.rootSubgroupPoints_injective K β
+    ((hF.rootSubgroupPoints_paramHomOf hβ (toAdd u)).trans (by rw [ofAdd_toAdd, hFu]))
   exact ⟨toAdd u, by simpa only [toAdd_ofAdd] using congrArg toAdd hinj⟩
 
-private theorem IsStandard.rawParamHom_ne_zero (hF : D.IsStandard F) (α) :
-    hF.rawParamHom α ≠ 0 := fun h0 => by
-  obtain ⟨u, hu⟩ := hF.rawParamHom_surjective α 1
+private theorem IsStandard.paramHomOf_ne_zero (hF : D.IsStandard F) {α β : Fin t.numRoots}
+    (hβ : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range) :
+    hF.paramHomOf α β hβ ≠ 0 := fun h0 => by
+  obtain ⟨u, hu⟩ := hF.paramHomOf_surjective hβ 1
   exact (one_ne_zero (α := K)) (hu.symm.trans (by simp [h0]))
 
 variable [Infinite K]
@@ -291,21 +297,25 @@ theorem IsStandard.characterMap_injective (hF : D.IsStandard F) :
     (D.isStandard_frobenius (A := K) p k).characterMap = (p ^ k : ℕ) • 1 :=
   (D.isStandard_frobenius p k).characterMap_eq_of_isCharacterMap (D.isCharacterMap_frobenius p k K)
 
-private theorem IsStandard.rawParamHom_torusCharacter_mul (hF : D.IsStandard F)
-    (α : Fin t.numRoots) (s : Fin t.rank → Kˣ) (u : K) :
-    hF.rawParamHom α ((torusCharacter s (D.coordinateRoot α) : K) * u) =
-      (torusCharacter s (hF.characterMap (D.coordinateRoot (hF.rawRootMap α))) : K) *
-        hF.rawParamHom α u := by
+private theorem IsStandard.paramHomOf_torusCharacter_mul (hF : D.IsStandard F)
+    {α β : Fin t.numRoots}
+    (hβ : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range)
+    (s : Fin t.rank → Kˣ) (u : K) :
+    hF.paramHomOf α β hβ ((torusCharacter s (D.coordinateRoot α) : K) * u) =
+      (torusCharacter s (hF.characterMap (D.coordinateRoot β)) : K) *
+        hF.paramHomOf α β hβ u := by
   have hconj := congrArg F (D.torusPoints_conj_rootSubgroupPoints α K s u)
-  rw [map_mul, map_mul, map_inv, ← hF.rootSubgroupPoints_rawParamHom,
-    ← hF.rootSubgroupPoints_rawParamHom, hF.isCharacterMap.map_apply,
+  rw [map_mul, map_mul, map_inv, ← hF.rootSubgroupPoints_paramHomOf hβ,
+    ← hF.rootSubgroupPoints_paramHomOf hβ, hF.isCharacterMap.map_apply,
     D.torusPoints_conj_rootSubgroupPoints, torusCharacter_torusPointMap] at hconj
   simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective K _ hconj.symm)
 
 private theorem IsStandard.rawRootMap_injective (hF : D.IsStandard F) :
     Function.Injective hF.rawRootMap := fun α₁ α₂ hβ => by
-  have hrel (α) := (hF.rawParamHom α).exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul
-    (hF.rawParamHom_ne_zero α) (hF.rawParamHom_torusCharacter_mul α)
+  have hrel (α) := AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul
+    (hF.paramHomOf α (hF.rawRootMap α) (hF.map_range_rootSubgroupPoints_rawRootMap α))
+    (hF.paramHomOf_ne_zero (hF.map_range_rootSubgroupPoints_rawRootMap α))
+    (hF.paramHomOf_torusCharacter_mul (hF.map_range_rootSubgroupPoints_rawRootMap α))
   obtain ⟨d₁, m₁, _, hm₁, hrel₁⟩ := hrel α₁; obtain ⟨d₂, m₂, hd₂, _, hrel₂⟩ := hrel α₂
   rw [hβ] at hrel₁
   refine D.eq_of_nsmul_coordinateRoot_eq (d := d₁ * m₂) (Nat.mul_pos hd₂ hm₁) ?_
@@ -332,17 +342,14 @@ theorem IsStandard.rootPerm_eq_of_map_range (hF : D.IsStandard F) {α β : Fin t
 /-- **The additive parameter map `K →+ K` of a standard endomorphism on the `α`-root subgroup**,
 satisfying `x_{hF.rootPerm α}(hF.rootParamHom α u) = F (x_α(u))`. -/
 noncomputable def IsStandard.rootParamHom (hF : D.IsStandard F) (α : Fin t.numRoots) : K →+ K :=
-  AddMonoidHom.toMultiplicative.symm ((MonoidHom.ofInjective
-    (D.rootSubgroupPoints_injective K (hF.rootPerm α))).symm.toMonoidHom.comp
-    ((F.comp (D.rootSubgroupPoints α K)).codRestrict _ fun u => by
-      rw [← hF.map_range_rootSubgroupPoints α]; exact ⟨_, ⟨u, rfl⟩, rfl⟩))
+  hF.paramHomOf α (hF.rootPerm α) (hF.map_range_rootSubgroupPoints α)
 
 /-- Pointwise action of a standard endomorphism on a root subgroup via `hF.rootParamHom`. -/
 theorem IsStandard.rootSubgroupPoints_rootParamHom (hF : D.IsStandard F) (α : Fin t.numRoots)
     (u : K) :
     D.rootSubgroupPoints (hF.rootPerm α) K (ofAdd (hF.rootParamHom α u)) =
-      F (D.rootSubgroupPoints α K (ofAdd u)) := by
-  simp [IsStandard.rootParamHom]
+      F (D.rootSubgroupPoints α K (ofAdd u)) :=
+  hF.rootSubgroupPoints_paramHomOf (hF.map_range_rootSubgroupPoints α) u
 
 /-- Recognition lemma for `hF.rootParamHom α` from its action on `D.rootSubgroupPoints α K`. -/
 theorem IsStandard.rootParamHom_eq_of_map_rootSubgroupPoints (hF : D.IsStandard F)
@@ -355,31 +362,21 @@ theorem IsStandard.rootParamHom_eq_of_map_rootSubgroupPoints (hF : D.IsStandard 
 
 /-- Each additive root-parameter map `hF.rootParamHom α` is surjective. -/
 theorem IsStandard.rootParamHom_surjective (hF : D.IsStandard F) (α : Fin t.numRoots) :
-    Function.Surjective (hF.rootParamHom α) := fun v => by
-  obtain ⟨_, ⟨u, rfl⟩, hFu⟩ : D.rootSubgroupPoints (hF.rootPerm α) K (ofAdd v) ∈
-      (D.rootSubgroupPoints α K).range.map F :=
-    hF.map_range_rootSubgroupPoints α ▸ ⟨ofAdd v, rfl⟩
-  have hinj := D.rootSubgroupPoints_injective K (hF.rootPerm α)
-    ((hF.rootSubgroupPoints_rootParamHom α (toAdd u)).trans (by rw [ofAdd_toAdd, hFu]))
-  exact ⟨toAdd u, by simpa only [toAdd_ofAdd] using congrArg toAdd hinj⟩
+    Function.Surjective (hF.rootParamHom α) :=
+  hF.paramHomOf_surjective (hF.map_range_rootSubgroupPoints α)
 
 /-- Each additive root-parameter map `hF.rootParamHom α` is nonzero. -/
 theorem IsStandard.rootParamHom_ne_zero (hF : D.IsStandard F) (α : Fin t.numRoots) :
-    hF.rootParamHom α ≠ 0 := fun h0 => by
-  obtain ⟨u, hu⟩ := hF.rootParamHom_surjective α 1
-  exact (one_ne_zero (α := K)) (hu.symm.trans (by simp [h0]))
+    hF.rootParamHom α ≠ 0 :=
+  hF.paramHomOf_ne_zero (hF.map_range_rootSubgroupPoints α)
 
 /-- Torus-character intertwining of `hF.rootParamHom α`. -/
 theorem IsStandard.rootParamHom_torusCharacter_mul (hF : D.IsStandard F)
     (α : Fin t.numRoots) (s : Fin t.rank → Kˣ) (u : K) :
     hF.rootParamHom α ((torusCharacter s (D.coordinateRoot α) : K) * u) =
       (torusCharacter s (hF.characterMap (D.coordinateRoot (hF.rootPerm α))) : K) *
-        hF.rootParamHom α u := by
-  have hconj := congrArg F (D.torusPoints_conj_rootSubgroupPoints α K s u)
-  rw [map_mul, map_mul, map_inv, ← hF.rootSubgroupPoints_rootParamHom,
-    ← hF.rootSubgroupPoints_rootParamHom, hF.isCharacterMap.map_apply,
-    D.torusPoints_conj_rootSubgroupPoints, torusCharacter_torusPointMap] at hconj
-  simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective K _ hconj.symm)
+        hF.rootParamHom α u :=
+  hF.paramHomOf_torusCharacter_mul (hF.map_range_rootSubgroupPoints α) s u
 
 /-- **Positive rational proportionality on coordinate roots**:
 `d • φ (D.coordinateRoot (σ α)) = m • D.coordinateRoot α` with `0 < d` and `0 < m`. -/
@@ -592,7 +589,9 @@ theorem IsStandard.eq_of_map_rootSubgroupPoints (hF : D.IsStandard F) {α β : F
     hF.fieldEnd ((t.simplyConnectedRootDatum ht).reflectionPerm α α) = hF.fieldEnd α :=
   eq_of_map_torusCharacter_eq (torusCharacter_surjective (D.coordinateRoot_ne_zero α)) fun s => by
     have hneg := hF.fieldEnd_torusCharacter ((t.simplyConnectedRootDatum ht).reflectionPerm α α) s
-    simp [torusCharacter_neg] at hneg; exact hneg.trans (hF.fieldEnd_torusCharacter α s).symm
+    simp only [D.coordinateRoot_reflectionPerm_self, torusCharacter_neg, Units.val_inv_eq_inv_val,
+      map_inv₀, IsStandard.rootPerm_reflectionPerm_self, map_neg, inv_inj] at hneg
+    exact hneg.trans (hF.fieldEnd_torusCharacter α s).symm
 
 /-- **Two standard endomorphisms with equal character maps induce the same field endomorphism.** -/
 theorem IsStandard.fieldEnd_eq_of_characterMap_eq (hF : D.IsStandard F) (hF' : D.IsStandard F')

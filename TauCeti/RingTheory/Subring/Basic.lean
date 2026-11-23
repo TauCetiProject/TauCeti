@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import TauCeti.Algebra.Group.Submonoid.Defs
-import Mathlib.Algebra.Polynomial.Roots
 
 /-!
 # Basic facts about subrings
@@ -34,8 +33,6 @@ generators to the subring they generate, and then to powers of `z * w`.
   `a ^ N xⁿ ∈ A` for every integer `n` with `|n| ≤ N`.
 * `Subring.prod_pow_mul_prod_zpow_mem`: the same for a finite product `∏ⱼ xⱼ ^ nⱼ`, with the
   denominator `∏ⱼ aⱼ ^ Nⱼ`.
-* `Subring.infinite_of_pow_mem`: a subring of an infinite commutative ring without zero divisors
-  containing every `a`-th power (`0 < a`) is infinite.
 * `TauCeti.Subring.exists_mul_eq_mul_of_mem_closure`: if `s * z ⊆ z * closure s`, then
   `closure s * z ⊆ z * closure s`.
 * `TauCeti.Subring.exists_mul_pow_eq_pow_mul_of_mem_closure_insert`: if `s * z ⊆ z * s` and
@@ -113,17 +110,6 @@ theorem prod_pow_mul_prod_zpow_mem {K ι : Type*} [Field K] (A : Subring K) {s :
     (∏ j ∈ s, a j ^ N j) * ∏ j ∈ s, x j ^ n j ∈ A := by
   rw [← Finset.prod_mul_distrib]
   exact prod_mem fun j hj ↦ A.pow_mul_zpow_mem (ha j hj) (hx j hj) (hx' j hj) (hn j hj)
-
-/-- A subring of an infinite commutative ring without zero divisors containing every `a`-th power
-(`0 < a`) is infinite. -/
-theorem infinite_of_pow_mem {R : Type*} [CommRing R] [NoZeroDivisors R] [Infinite R]
-    (E : Subring R) {a : ℕ} (ha : 0 < a) (hpow : ∀ x : R, x ^ a ∈ E) : Infinite E := by
-  classical
-  have : IsDomain R := NoZeroDivisors.to_isDomain R
-  by_contra hfin; rw [not_infinite_iff_finite] at hfin
-  exact Set.infinite_univ
-    ((Set.finite_iUnion fun c : E => (Polynomial.nthRootsFinset a c.val).finite_toSet).subset
-      fun x _ => Set.mem_iUnion.mpr ⟨⟨x ^ a, hpow x⟩, by simp [Polynomial.mem_nthRootsFinset ha]⟩)
 
 end Subring
 
