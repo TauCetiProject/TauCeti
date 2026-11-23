@@ -421,6 +421,7 @@ theorem conjStarAlgEquiv_mem_grassmannian (U : E ≃ₗᵢ[𝕜] F) (hP : P ∈ 
   rw [← range_conjStarAlgEquiv, hP.2, Cardinal.lift_natCast, Cardinal.lift_eq_nat_iff] at h
   exact h
 
+@[simp]
 theorem conjStarAlgEquiv_mem_grassmannian_iff (U : E ≃ₗᵢ[𝕜] F) :
     U.conjStarAlgEquiv P ∈ grassmannian 𝕜 F k ↔ P ∈ grassmannian 𝕜 E k :=
   ⟨fun h ↦ by
