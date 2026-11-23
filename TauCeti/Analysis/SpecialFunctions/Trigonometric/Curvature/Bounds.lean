@@ -120,9 +120,7 @@ curvature or zero radius, for any signed radius. -/
     have hklt : κ < 0 := lt_of_le_of_ne hκ hk
     rcases lt_or_gt_of_ne hrne with hrneg | hrpos
     · have h := curvatureCotangent_lt_inv_sub_mul_div_three hklt (neg_pos.mpr hrneg)
-      have hn : curvatureCotangent κ (-r) = -curvatureCotangent κ r := by
-        simp only [curvatureCotangent_def, curvatureCosine_neg, curvatureSine_neg, div_neg]
-      rw [hn, inv_neg, mul_neg, neg_div] at h
+      rw [curvatureCotangent_neg, inv_neg, mul_neg, neg_div] at h
       linarith
     · exact (curvatureCotangent_lt_inv_sub_mul_div_three hklt hrpos).ne heq
   · rintro (rfl | rfl) <;> simp
