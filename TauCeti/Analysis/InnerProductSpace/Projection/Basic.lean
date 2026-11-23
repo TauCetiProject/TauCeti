@@ -27,8 +27,10 @@ vector followed by a linearly independent family in its orthogonal complement is
 independent.
 
 In a seminormed inner product space, the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal
-to `ν` and does not increase norms. In a normed space it is `z - (𝕜 ∙ ν).starProjection z`, and a
-linear map `ℓ` takes the projection of `a` onto the line `𝕜 ∙ ν` to `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
+to `ν` and does not increase norms, and neither does the projection `(⟪ν, z⟫ / ‖ν‖²) ν` onto the
+line spanned by `ν`. In a normed space they are `z - (𝕜 ∙ ν).starProjection z` and
+`(𝕜 ∙ ν).starProjection z`, and a linear map `ℓ` takes the projection of `a` onto the line
+`𝕜 ∙ ν` to `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
 
 For a family of subspaces `K x` of a finite-dimensional real inner product space whose orthogonal
 projections are continuous at `x₀`, projecting linearly independent vectors of `K x₀` onto `K x`
@@ -101,6 +103,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `TauCeti.inner_sub_div_norm_sq_smul_self_eq_zero`, `TauCeti.norm_sub_div_norm_sq_smul_self_le`:
   the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal to `ν` and does not increase
   norms, in a seminormed inner product space.
+* `TauCeti.norm_inner_div_norm_sq_smul_self_le`: the explicit projection `(⟪ν, z⟫ / ‖ν‖²) ν`
+  onto the line spanned by `ν` does not increase norms, in a seminormed inner product space.
 * `TauCeti.apply_starProjection_singleton`: a linear map `ℓ` at the projection onto the line
   `𝕜 ∙ ν` is `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
@@ -603,6 +607,17 @@ theorem norm_sub_div_norm_sq_smul_self_le (z ν : E) :
   rw [sub_add_cancel] at h
   rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
   exact le_add_of_nonneg_right (mul_self_nonneg _)
+
+/-- The projection `(⟪ν, z⟫ / ‖ν‖²) ν` onto the line spanned by `ν` does not increase norms. In a
+normed space it is `(𝕜 ∙ ν).starProjection z`, by `Submodule.starProjection_singleton`. -/
+theorem norm_inner_div_norm_sq_smul_self_le (z ν : E) :
+    ‖(⟪ν, z⟫_𝕜 / (‖ν‖ : 𝕜) ^ 2) • ν‖ ≤ ‖z‖ := by
+  rcases eq_or_ne ‖ν‖ 0 with hν | hν
+  · simp [hν]
+  -- `‖(⟪ν, z⟫ / ‖ν‖²) ν‖ = ‖⟪ν, z⟫‖ / ‖ν‖`, and Cauchy–Schwarz bounds `‖⟪ν, z⟫‖` by `‖ν‖ ‖z‖`.
+  rw [norm_smul, norm_div, norm_pow, RCLike.norm_ofReal, abs_norm, pow_two, div_mul_eq_mul_div,
+    mul_div_mul_right _ _ hν, div_le_iff₀ (lt_of_le_of_ne (norm_nonneg ν) hν.symm), mul_comm]
+  exact norm_inner_le_norm ν z
 
 end Seminormed
 

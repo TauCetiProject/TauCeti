@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Boundary.VariableCoefficientDecay
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Scaled
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.Sobolev.W1p.Multiplication
 import TauCeti.MeasureTheory.Function.Campanato
@@ -893,7 +894,8 @@ private theorem exists_setIntegral_norm_gradient_sub_sq_le {α : ℝ≥0} {γ : 
       NNReal.coe_inv, NNReal.coe_ofNat] at havg
     obtain ⟨c, hc⟩ := exists_setIntegral_ball_sub_sq_le_of_near hd hR hw₁ ht.le hc₁
       Ka.coe_nonneg hM hC hVc hsub measure_ball_inter_ne_top hgS
-      ((norm_inner_div_norm_sq_smul_self_le _ _).trans havg) hB2
+      (le_of_eq_of_le (by rw [real_inner_comm, RCLike.ofReal_real_eq_id, id_eq])
+        ((norm_inner_div_norm_sq_smul_self_le (𝕜 := ℝ) _ _).trans havg)) hB2
       fun W hW hΦ => hIx x _ d W hxd hd (by linarith) hW hΦ t ht htd
     exact ⟨ball x t, c, inter_subset_left, htx,
       hc.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (by linarith) hV0) htR)⟩

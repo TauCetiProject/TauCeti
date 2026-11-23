@@ -19,9 +19,8 @@ closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν�
 `ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫`
 (`TauCeti.ball_subset_setOf_lt_inner`). For `ν ≠ 0` and `x` in the closed half-space
 `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about `x + (ρ / ‖ν‖) ν` lies in the open
-half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`).
-The projection `(⟪z, ν⟫ / ‖ν‖²) ν` onto the line `ℝ ∙ ν` does not increase norms. For `ν ≠ 0`,
-the foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the hyperplane
+half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`). For `ν ≠ 0`, the
+foot `x - ((⟪x, ν⟫ - c) / ‖ν‖²) ν` of the perpendicular from `x` lies on the hyperplane
 `{y | ⟪y, ν⟫ = c}`, at distance `|⟪x, ν⟫ - c| / ‖ν‖` from `x`, and every point of that
 hyperplane lies at distance at least `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
@@ -99,16 +98,6 @@ theorem ball_add_smul_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E]
       rw [pow_two, ← mul_assoc, div_mul_cancel₀ _ (norm_ne_zero_iff.2 hν)]
     rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, h]
     linarith)
-
-/-- The projection `(⟪z, ν⟫ / ‖ν‖²) ν` of `z` onto the line spanned by `ν` does not increase
-norms. It is the explicit form of `(ℝ ∙ ν).starProjection z`, by
-`Submodule.starProjection_singleton`. -/
-theorem norm_inner_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (z ν : E) : ‖(⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ≤ ‖z‖ := by
-  have h := Submodule.starProjection_singleton ℝ (v := ν) z
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h
-  rw [real_inner_comm, ← h]
-  exact Submodule.norm_starProjection_apply_le _ z
 
 /-- The vector `(t / ‖ν‖²) ν` has norm `|t| / ‖ν‖`. -/
 theorem norm_div_norm_sq_smul_self {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
