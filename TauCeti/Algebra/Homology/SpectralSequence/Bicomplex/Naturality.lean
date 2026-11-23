@@ -32,7 +32,9 @@ the homology of the original total complexes
 * `HomologicalComplex₂.rowFiltrationFunctorMap`,
   `HomologicalComplex₂.rowFiltrationSpectralObjectMap`,
   `HomologicalComplex₂.rowFiltrationSpectralSequenceMap`: the induced morphisms, compatible
-  with identities and composition.
+  with identities and composition, and their column versions
+  `HomologicalComplex₂.columnFiltrationSpectralObjectMap`,
+  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap`.
 * `HomologicalComplex₂.rowFiltrationSpectralObjectMap_abutment_naturality`,
   `HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality`: the induced
   morphisms on the abutments.
@@ -134,6 +136,45 @@ lemma rowFiltrationSpectralSequenceMap_comp :
   simp [rowFiltrationSpectralSequenceMap, rowFiltrationSpectralObjectMap_comp,
     Abelian.SpectralObject.spectralSequenceMap_comp]
 
+/-- The morphism of the spectral objects of the column filtrations induced by a morphism of
+bicomplexes: that of the row filtrations of the flipped bicomplexes. -/
+abbrev columnFiltrationSpectralObjectMap :
+    K.flip.rowFiltrationSpectralObject ⟶ L.flip.rowFiltrationSpectralObject :=
+  rowFiltrationSpectralObjectMap ((flipFunctor C _ _).map φ)
+
+/-- The morphism of the spectral sequences of the column filtrations induced by a morphism of
+bicomplexes: that of the row filtrations of the flipped bicomplexes. -/
+abbrev columnFiltrationSpectralSequenceMap :
+    K.columnFiltrationSpectralSequence ⟶ L.columnFiltrationSpectralSequence :=
+  rowFiltrationSpectralSequenceMap ((flipFunctor C _ _).map φ)
+
+-- The identity of `(flipFunctor C _ _).obj K` is that of `K.flip` only after unfolding
+-- `flipFunctor`, so the lemmas on the flipped bicomplexes are applied up to that unfolding.
+@[simp]
+lemma columnFiltrationSpectralObjectMap_id : columnFiltrationSpectralObjectMap (𝟙 K) = 𝟙 _ := by
+  rw [columnFiltrationSpectralObjectMap, CategoryTheory.Functor.map_id]
+  exact rowFiltrationSpectralObjectMap_id
+
+@[simp]
+lemma columnFiltrationSpectralObjectMap_comp :
+    columnFiltrationSpectralObjectMap (φ ≫ ψ) =
+      columnFiltrationSpectralObjectMap φ ≫ columnFiltrationSpectralObjectMap ψ := by
+  rw [columnFiltrationSpectralObjectMap, CategoryTheory.Functor.map_comp,
+    rowFiltrationSpectralObjectMap_comp]
+
+@[simp]
+lemma columnFiltrationSpectralSequenceMap_id :
+    columnFiltrationSpectralSequenceMap (𝟙 K) = 𝟙 _ := by
+  rw [columnFiltrationSpectralSequenceMap, CategoryTheory.Functor.map_id]
+  exact rowFiltrationSpectralSequenceMap_id
+
+@[simp]
+lemma columnFiltrationSpectralSequenceMap_comp :
+    columnFiltrationSpectralSequenceMap (φ ≫ ψ) =
+      columnFiltrationSpectralSequenceMap φ ≫ columnFiltrationSpectralSequenceMap ψ := by
+  rw [columnFiltrationSpectralSequenceMap, CategoryTheory.Functor.map_comp,
+    rowFiltrationSpectralSequenceMap_comp]
+
 open CochainComplex in
 /-- **Naturality on the abutment.** Through `HomologicalComplex₂.rowFiltrationAbutmentIso`, the
 morphism of spectral objects induced by `φ` is, on the abutment in degree `-n`, the map induced on
@@ -155,7 +196,7 @@ filtrations induced by `φ` is, on the abutment in degree `-n`, the map induced 
 the total complexes in degree `n`. -/
 @[reassoc]
 lemma columnFiltrationSpectralObjectMap_abutment_naturality (n : ℕ) :
-    ((rowFiltrationSpectralObjectMap ((flipFunctor C _ _).map φ)).hom (-n)).app
+    ((columnFiltrationSpectralObjectMap φ).hom (-n)).app
         (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (L.columnFiltrationAbutmentIso n).hom =
       (K.columnFiltrationAbutmentIso n).hom ≫
         HomologicalComplex.homologyMap (total.map φ (down ℕ)) n := by

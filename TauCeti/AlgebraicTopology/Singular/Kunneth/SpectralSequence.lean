@@ -233,8 +233,7 @@ abbrev singularKunnethBicomplexMapLeft :
 map `g : X ⟶ X'`. -/
 abbrev singularKunnethSpectralObjectMapLeft :
     singularKunnethSpectralObject X Y R ⟶ singularKunnethSpectralObject X' Y R :=
-  HomologicalComplex₂.rowFiltrationSpectralObjectMap
-    ((HomologicalComplex₂.flipFunctor _ _ _).map (singularKunnethBicomplexMapLeft Y R g))
+  HomologicalComplex₂.columnFiltrationSpectralObjectMap (singularKunnethBicomplexMapLeft Y R g)
 
 /-- **Naturality of the singular Künneth spectral sequence in the first space**: the morphism of
 spectral sequences induced by a map `g : X ⟶ X'`. It is compatible with identities and
@@ -261,17 +260,14 @@ lemma singularKunnethBicomplexMapLeft_comp :
 lemma singularKunnethSpectralObjectMapLeft_id :
     singularKunnethSpectralObjectMapLeft Y R (𝟙 X) = 𝟙 _ := by
   rw [singularKunnethSpectralObjectMapLeft, singularKunnethBicomplexMapLeft_id,
-    CategoryTheory.Functor.map_id]
-  -- the identity of `(flipFunctor _ _ _).obj B` is that of `B.flip` only after unfolding
-  -- `flipFunctor`
-  exact HomologicalComplex₂.rowFiltrationSpectralObjectMap_id
+    HomologicalComplex₂.columnFiltrationSpectralObjectMap_id]
 
 @[simp]
 lemma singularKunnethSpectralObjectMapLeft_comp :
     singularKunnethSpectralObjectMapLeft Y R (g ≫ g') =
       singularKunnethSpectralObjectMapLeft Y R g ≫ singularKunnethSpectralObjectMapLeft Y R g' := by
   rw [singularKunnethSpectralObjectMapLeft, singularKunnethBicomplexMapLeft_comp,
-    CategoryTheory.Functor.map_comp, HomologicalComplex₂.rowFiltrationSpectralObjectMap_comp]
+    HomologicalComplex₂.columnFiltrationSpectralObjectMap_comp]
 
 @[simp]
 lemma singularKunnethSpectralSequenceMapLeft_id :

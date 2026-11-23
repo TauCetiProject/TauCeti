@@ -143,7 +143,10 @@ lemma kunnethBicomplexMapLeft_f (p : ℕ) :
 
 @[simp]
 lemma kunnethBicomplexMapLeft_id : kunnethBicomplexMapLeft (𝟙 K₁) M = 𝟙 _ := by
-  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, NatTrans.mapHomologicalComplex_id]
+  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, NatTrans.mapHomologicalComplex_id,
+    NatTrans.id_app]
+  -- `(tensorLeft K₁).mapHomologicalComplex _` applied to `Q` is `kunnethBicomplex K₁ M` by
+  -- definition
   rfl
 
 @[simp]
@@ -151,7 +154,9 @@ lemma kunnethBicomplexMapLeft_comp :
     kunnethBicomplexMapLeft (f ≫ f') M =
       kunnethBicomplexMapLeft f M ≫ kunnethBicomplexMapLeft f' M := by
   rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_comp,
-    NatTrans.mapHomologicalComplex_comp]
+    NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app]
+  -- the composite is that of the morphisms of Künneth bicomplexes, which are morphisms out of
+  -- `kunnethBicomplex K₁ M` only by definition
   rfl
 
 /-- The morphism of Künneth bicomplexes induced by `f` is compatible with the augmentations of the

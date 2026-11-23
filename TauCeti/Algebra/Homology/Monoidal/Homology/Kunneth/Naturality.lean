@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.Naturality
 A chain map `f : K ⟶ K'` of complexes of modules over a commutative ring induces a morphism of
 Künneth spectral sequences (`HomologicalComplex.kunnethSpectralSequenceMapLeft`): the morphism of
 the spectral sequences of the column filtrations
-(`HomologicalComplex₂.rowFiltrationSpectralSequenceMap`) induced by the morphism of Künneth
+(`HomologicalComplex₂.columnFiltrationSpectralSequenceMap`) induced by the morphism of Künneth
 bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, `f ▷ Q.X p` on column `p` for the
 Cartan–Eilenberg resolution `Q` of `L`.
 
@@ -47,8 +47,7 @@ Künneth spectral sequences induced by a chain map `f : K ⟶ K'`, that of the s
 the column filtrations induced by `HomologicalComplex.kunnethBicomplexMapLeft f L`. -/
 abbrev kunnethSpectralSequenceMapLeft :
     kunnethSpectralSequence K L ⟶ kunnethSpectralSequence K' L :=
-  HomologicalComplex₂.rowFiltrationSpectralSequenceMap
-    ((HomologicalComplex₂.flipFunctor _ _ _).map (kunnethBicomplexMapLeft f L))
+  HomologicalComplex₂.columnFiltrationSpectralSequenceMap (kunnethBicomplexMapLeft f L)
 
 @[simp]
 lemma kunnethSpectralSequenceMapLeft_id : kunnethSpectralSequenceMapLeft (𝟙 K) L = 𝟙 _ := by
@@ -58,7 +57,6 @@ lemma kunnethSpectralSequenceMapLeft_id : kunnethSpectralSequenceMapLeft (𝟙 K
 lemma kunnethSpectralSequenceMapLeft_comp :
     kunnethSpectralSequenceMapLeft (f ≫ f') L =
       kunnethSpectralSequenceMapLeft f L ≫ kunnethSpectralSequenceMapLeft f' L := by
-  simp [kunnethSpectralSequenceMapLeft,
-    HomologicalComplex₂.rowFiltrationSpectralSequenceMap_comp]
+  simp [kunnethSpectralSequenceMapLeft]
 
 end HomologicalComplex
