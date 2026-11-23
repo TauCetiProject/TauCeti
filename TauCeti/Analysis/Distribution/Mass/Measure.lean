@@ -54,6 +54,9 @@ them by open sets of almost the same measure.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
 * `Distribution.massMeasure_coe_linearMap`: coercing a continuous linear functional to a linear
   map preserves its mass measure.
+* `Distribution.aemeasurable_massMeasure_apply`, `Distribution.aemeasurable_lintegral_massMeasure`:
+  a.e. measurability of `t ↦ ‖S t‖ A` and `t ↦ ∫⁻ x, w x ∂‖S t‖` for a pointwise measurable
+  family that is a.e. of locally finite mass when `F` is second countable.
 
 ## References
 
@@ -395,6 +398,7 @@ theorem eq_massMeasure_of_preimage_coe (hT : HasLocallyFiniteMass T) (ν : Measu
 
 /-- Coercing a continuous linear functional `T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ` to a linear map does not
 change its mass measure. -/
+@[simp]
 theorem massMeasure_coe_linearMap (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) :
     massMeasure (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) = massMeasure T := by
   by_cases hT : HasLocallyFiniteMass T
@@ -403,6 +407,99 @@ theorem massMeasure_coe_linearMap (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) :
     rfl
   · rw [massMeasure_of_not_hasLocallyFiniteMass hT,
       massMeasure_of_not_hasLocallyFiniteMass (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT]
+
+/-- For a pointwise measurable family of continuous linear functionals `S t` that almost everywhere
+have locally finite mass, if `F` is second countable then `t ↦ ‖S t‖ A` is `ν`-a.e. measurable
+for every measurable set `A ⊆ Ω`. -/
+theorem aemeasurable_massMeasure_apply {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    [SecondCountableTopology F] [ContinuousMapClass 𝓕 𝓓^{n}(Ω, F) ℝ] {S : α → 𝓕}
+    (hSm : ∀ φ, Measurable fun t => S t φ) (hSfin : ∀ᵐ t ∂ν, HasLocallyFiniteMass (S t))
+    {A : Set Ω} (hA : MeasurableSet A) :
+    AEMeasurable (fun t => massMeasure (S t) A) ν := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · have h0 (t : α) : massMeasure (S t) A = 0 := by
+      rw [massMeasure_eq_zero_of_not_finiteDimensional hE]; simp
+    simp_rw [h0]
+    exact aemeasurable_const
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  let Kex := CompactExhaustion.choice Ω
+  let U (m : ℕ) : Set Ω := interior (Kex (m + 1))
+  have hUo (m : ℕ) : IsOpen (U m) := isOpen_interior
+  have hopen : ∀ W : Set Ω, IsOpen W → AEMeasurable (fun t => massMeasure (S t) W) ν := by
+    intro W hW
+    let W' : Set E := (↑) '' W
+    have hW' : IsOpen W' := Ω.isOpen.isOpenMap_subtypeVal _ hW
+    have hm : Measurable fun t => localMass (S t) W' :=
+      measurable_localMass (fun t => map_continuous (S t)) hSm W'
+    refine hm.aemeasurable.congr ?_
+    filter_upwards [hSfin] with t ht
+    have hpre : ((↑) ⁻¹' W' : Set Ω) = W := Subtype.val_injective.preimage_image W
+    rw [← hpre, massMeasure_preimage_coe ht hW']
+  have hUm : ∀ m : ℕ, ∀ B : Set Ω, MeasurableSet B →
+      AEMeasurable (fun t => massMeasure (S t) (B ∩ U m)) ν := by
+    intro m
+    refine MeasurableSpace.induction_on_inter BorelSpace.measurable_eq isPiSystem_isOpen
+      (by simp [aemeasurable_const]) (fun W hW => hopen _ (hW.inter (hUo m)))
+      (fun B hBm hPB => ?_) fun f hf_disj hfm hPf => ?_
+    · have hcompl : (fun t => massMeasure (S t) (U m) - massMeasure (S t) (B ∩ U m)) =ᵐ[ν]
+          fun t => massMeasure (S t) (Bᶜ ∩ U m) := by
+        filter_upwards [hSfin] with t ht
+        have hK_cpt : IsCompact ((↑) '' Kex (m + 1) : Set E) :=
+          (Kex.isCompact (m + 1)).image continuous_subtypeVal
+        have hK_sub : ((↑) '' Kex (m + 1) : Set E) ⊆ Ω := Subtype.coe_image_subset _ _
+        let Um' : Set E := (↑) '' U m
+        have hUm' : IsOpen Um' := Ω.isOpen.isOpenMap_subtypeVal _ (hUo m)
+        have hUm_pre : ((↑) ⁻¹' Um' : Set Ω) = U m :=
+          Subtype.val_injective.preimage_image (U m)
+        have hUm_eq : massMeasure (S t) (U m) = localMass (S t) Um' := by
+          rw [← hUm_pre]
+          exact massMeasure_preimage_coe ht hUm'
+        have hUm_lt : massMeasure (S t) (U m) ≠ ⊤ := by
+          rw [hUm_eq]
+          exact ne_top_of_le_ne_top
+            ((hasLocallyFiniteMass_iff_localMass_ne_top (S t)).1 ht _ hK_cpt hK_sub)
+            (localMass_mono (image_mono interior_subset))
+        have hBU_lt : massMeasure (S t) (B ∩ U m) ≠ ⊤ :=
+          ne_top_of_le_ne_top hUm_lt (measure_mono inter_subset_right)
+        have hsdiff : Bᶜ ∩ U m = U m \ (B ∩ U m) := by ext x; by_cases hx : x ∈ B <;> simp [hx]
+        rw [hsdiff,
+          measure_sdiff inter_subset_right (hBm.inter (hUo m).measurableSet).nullMeasurableSet
+            hBU_lt]
+      exact ((hopen (U m) (hUo m)).sub hPB).congr hcompl
+    · have hUnion : (⋃ i, f i) ∩ U m = ⋃ i, (f i ∩ U m) := iUnion_inter _ _
+      have hdisj : Pairwise (Disjoint on fun i => f i ∩ U m) := fun i j hij =>
+        (hf_disj hij).mono inter_subset_left inter_subset_left
+      have hmeas (i : ℕ) : MeasurableSet (f i ∩ U m) := hfm i |>.inter (hUo m).measurableSet
+      simp_rw [hUnion, measure_iUnion hdisj hmeas]
+      exact AEMeasurable.tsum hPf
+  have hU_mono : Monotone U := fun m n hmn => by
+    induction hmn with
+    | refl => exact Subset.rfl
+    | @step k _ ih => exact ih.trans (interior_subset.trans (Kex.subset_interior_succ (k + 1)))
+  have hU_iUnion : ⋃ m, U m = univ :=
+    eq_univ_of_forall fun x =>
+      let ⟨m, hm⟩ := mem_iUnion.1 (Kex.iUnion_eq.symm ▸ mem_univ x)
+      mem_iUnion.2 ⟨m, Kex.subset_interior_succ m hm⟩
+  have hmono : Monotone fun m => A ∩ U m := fun _ _ hmn =>
+    inter_subset_inter_right A (hU_mono hmn)
+  have hA_eq (t : α) : massMeasure (S t) A = ⨆ m : ℕ, massMeasure (S t) (A ∩ U m) := by
+    rw [← hmono.measure_iUnion, ← inter_iUnion, hU_iUnion, inter_univ]
+  simp_rw [hA_eq]
+  exact AEMeasurable.iSup fun m => hUm m A hA
+
+/-- For a pointwise measurable family of continuous linear functionals `S t` that almost everywhere
+have locally finite mass, if `F` is second countable and `w : Ω → ℝ≥0∞` is Borel measurable,
+then `t ↦ ∫⁻ x, w x ∂‖S t‖` is `ν`-a.e. measurable. -/
+theorem aemeasurable_lintegral_massMeasure {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    [SecondCountableTopology F] [ContinuousMapClass 𝓕 𝓓^{n}(Ω, F) ℝ] {S : α → 𝓕}
+    (hSm : ∀ φ, Measurable fun t => S t φ) (hSfin : ∀ᵐ t ∂ν, HasLocallyFiniteMass (S t))
+    {w : Ω → ℝ≥0∞} (hw : Measurable w) :
+    AEMeasurable (fun t => ∫⁻ x : Ω, w x ∂massMeasure (S t)) ν := by
+  simp only [lintegral_eq_iSup_eapprox_lintegral hw, SimpleFunc.lintegral]
+  refine AEMeasurable.iSup fun m => Finset.aemeasurable_fun_sum _ fun r _ => ?_
+  exact (aemeasurable_massMeasure_apply hSm hSfin
+    (SimpleFunc.measurableSet_preimage _ _)).const_mul r
 
 end Measure
 

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Mass.Slice.Basic
-import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
+import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
+import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
 # Slicing of currents by Lipschitz and locally Lipschitz functions
@@ -36,8 +37,11 @@ shift yield smooth `K`-Lipschitz `g_j` with `u < g_j` on `Ω` converging uniform
 * `Distribution.ae_isNormal_slice_of_lipschitzOnWith`,
   `Distribution.ae_isNormal_massRestrict_lt_of_lipschitzOnWith`: for normal `T` and `u` Lipschitz
   on `Ω`, `⟨T, u, t⟩` and `T ⌞ {u < t}` are normal for Lebesgue-a.e. `t`.
-* `Distribution.ae_isLocallyNormal_slice_of_locallyLipschitzOn`: for locally normal `T` and `u`
-  locally Lipschitz on `Ω`, `⟨T, u, t⟩` is locally normal for Lebesgue-a.e. `t`.
+* `Distribution.ae_isLocallyNormal_slice_of_locallyLipschitzOn`,
+  `Distribution.aemeasurable_lintegral_massMeasure_slice_of_locallyLipschitzOn`: for locally
+  normal `T` and `u` locally Lipschitz on `Ω`, `⟨T, u, t⟩` is locally normal for Lebesgue-a.e.
+  `t`, and weighted mass integrals `t ↦ ∫⁻ x, w x ∂‖⟨T, u, t⟩‖` are a.e. measurable when `F` is
+  second countable.
 -/
 
 public section
@@ -199,11 +203,6 @@ theorem ae_isNormal_massRestrict_lt_of_lipschitzOnWith
         (measurable_const (a := t)))) := by
   have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
   obtain ⟨hT1, hT2⟩ := isNormal_succ_iff.1 hT
-  have hres_fin {m : ℕ} {Q : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] ℝ} (hQ : mass Q ≠ ⊤)
-      {A : Set Ω} (hA : MeasurableSet A) : mass (massRestrict Q hA) ≠ ⊤ :=
-    ne_top_of_le_ne_top hQ <| (mass_massRestrict_le hA).trans <|
-      (measure_mono (subset_univ _)).trans_eq
-        (massMeasure_univ (hasLocallyFiniteMass_of_mass_ne_top Q hQ))
   filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT1 hu] with t ht
   have hA : MeasurableSet {x : Ω | u x < t} :=
     measurableSet_lt hu_meas (measurable_const (a := t))
@@ -213,9 +212,10 @@ theorem ae_isNormal_massRestrict_lt_of_lipschitzOnWith
   rw [massRestrict_congr_set (T := T)
     (measurableSet_lt hu.continuousOn.domRestrict.measurable (measurable_const (a := t)))
     hA (by ext x; rfl)]
-  refine isNormal_succ_iff.2 ⟨hres_fin hT1 hA, ?_⟩
+  refine isNormal_succ_iff.2 ⟨mass_massRestrict_ne_top hT1 hA, ?_⟩
   rw [hbd, FunLike.coe_add]
-  exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨ht.ne, hres_fin hT2 hA⟩) mass_add_le
+  exact ne_top_of_le_ne_top
+    (ENNReal.add_ne_top.2 ⟨ht.ne, mass_massRestrict_ne_top hT2 hA⟩) mass_add_le
 
 /-- For a locally normal current `T` and `u` locally Lipschitz on `Ω`, the slice `⟨T, u, t⟩` has
 locally finite mass for Lebesgue-a.e. `t ∈ ℝ`. -/
@@ -284,6 +284,19 @@ theorem slice_eq_zero_of_lipschitzOnWith_zero
     have h : EqOn u (fun _ => 0) Ω := fun x hx => (hΩ.false ⟨x, hx⟩).elim
     rw [slice_congr_of_eqOn T h, slice_const hT]
 
+/-- For a locally normal `(k + 1)`-current `T`, `u` locally Lipschitz on `Ω`, a second-countable
+codomain `F`, and a Borel measurable weight `w : Ω → ℝ≥0∞`,
+`t ↦ ∫⁻ x, w x ∂‖⟨T, u, t⟩‖` is Lebesgue-a.e. measurable. -/
+theorem aemeasurable_lintegral_massMeasure_slice_of_locallyLipschitzOn
+    [SecondCountableTopology F] {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hT : IsLocallyNormal T) (hu : LocallyLipschitzOn Ω u) {w : Ω → ℝ≥0∞} (hw : Measurable w) :
+    AEMeasurable (fun t : ℝ => ∫⁻ x : Ω, w x ∂massMeasure (slice T u t)) := by
+  have : SecondCountableTopology (E [⋀^Fin k]→L[ℝ] F) :=
+    (ContinuousAlternatingMap.toContinuousMultilinearMapLI (𝕜 := ℝ) (E := E) (F := F)
+      (ι := Fin k)).isometry.isEmbedding.secondCountableTopology
+  exact aemeasurable_lintegral_massMeasure (measurable_slice_apply T u)
+    (ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT hu) hw
+
 private theorem lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LipschitzOnWith K u Ω) {c₀ : ℝ≥0∞} (hc₀top : c₀ ≠ ⊤)
@@ -293,170 +306,17 @@ private theorem lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_aux
     {w : Ω → ℝ≥0∞} (hw : Measurable w) :
     ∫⁻ t : ℝ, ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) ≤
       c₀ * ∫⁻ x : Ω, w x ∂massMeasure T := by
-  by_cases hc₀0 : c₀ = 0
-  · subst hc₀0
-    obtain ⟨m, hm_meas, hm_le, hm_int⟩ := hmaj Ω le_rfl
-    have hm0 : ∀ᵐ t : ℝ, m t = 0 :=
-      (lintegral_eq_zero_iff hm_meas).1 (nonpos_iff_eq_zero.1 (by simpa using hm_int))
-    have hae : ∀ᵐ t : ℝ, ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) = 0 := by
-      filter_upwards [ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT hu.locallyLipschitzOn,
-        hm0] with t ht hmt
-      have hμ0 : massMeasure (slice T u t) = 0 := by
-        rw [← Measure.measure_univ_eq_zero]
-        have huniv : ((↑) ⁻¹' (Ω : Set E) : Set Ω) = univ :=
-          eq_univ_of_forall fun x => x.property
-        rw [← huniv, massMeasure_preimage_coe ht Ω.isOpen]
-        exact nonpos_iff_eq_zero.1 ((hm_le t).trans_eq hmt)
-      simp [hμ0]
-    simp [lintegral_congr_ae hae]
-  by_cases hwint : ∫⁻ x : Ω, w x ∂massMeasure T = ⊤
-  · rw [hwint, ENNReal.mul_top hc₀0]
-    exact le_top
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
-  have hε' : 0 < (ε : ℝ≥0∞) / c₀ :=
-    ENNReal.div_pos (ENNReal.coe_pos.2 hε).ne' hc₀top
-  let d : ℕ → SimpleFunc Ω ℝ≥0 := SimpleFunc.eapproxDiff w
-  let ι := Σ n : ℕ, {r : ℝ≥0 // r ∈ (d n).range.erase 0}
-  let c (p : ι) : ℝ≥0∞ := (p.snd.val : ℝ≥0∞)
-  let A (p : ι) : Set Ω := (d p.fst) ⁻¹' {p.snd.val}
-  have hc_pos (p : ι) : c p ≠ 0 :=
-    ENNReal.coe_ne_zero.2 (Finset.mem_erase.1 p.snd.property).1
-  have hA_meas (p : ι) : MeasurableSet (A p) :=
-    (d p.fst).measurableSet_fiber p.snd.val
-  have hw_eq (x : Ω) : w x = ∑' p : ι, c p * (A p).indicator 1 x := by
-    rw [tsum_sigma', ← SimpleFunc.tsum_eapproxDiff w hw x]
-    refine tsum_congr fun n => ?_
-    have hsum : (d n x : ℝ≥0∞) =
-        ∑ r ∈ (d n).range.erase 0, (r : ℝ≥0∞) * ((d n ⁻¹' {r}).indicator 1 x) := by
-      by_cases h0 : d n x = 0
-      · rw [h0, ENNReal.coe_zero, eq_comm]
-        exact Finset.sum_eq_zero fun r hr => by
-          simp [(Finset.ne_of_mem_erase hr).symm, h0]
-      · have hmem : d n x ∈ (d n).range.erase 0 :=
-          Finset.mem_erase.2 ⟨h0, SimpleFunc.mem_range_self (d n) x⟩
-        rw [Finset.sum_eq_single_of_mem (d n x) hmem]
-        · simp
-        · intro r _ hne
-          simp [Ne.symm hne]
-    rw [hsum, ← Finset.tsum_subtype' ((d n).range.erase 0) fun r =>
-      (r : ℝ≥0∞) * ((d n ⁻¹' {r}).indicator 1 x)]
-    rfl
-  have hw_int_eq : ∫⁻ x : Ω, w x ∂massMeasure T = ∑' p : ι, c p * massMeasure T (A p) := by
-    rw [lintegral_congr hw_eq, lintegral_tsum fun p =>
-      ((measurable_one.indicator (hA_meas p)).const_mul (c p)).aemeasurable]
-    refine tsum_congr fun p => ?_
-    rw [lintegral_const_mul _ (measurable_one.indicator (hA_meas p)),
-      lintegral_indicator_one (hA_meas p)]
-  have hA_fin (p : ι) : massMeasure T (A p) ≠ ⊤ := by
-    have hle : c p * massMeasure T (A p) ≤ ∫⁻ x : Ω, w x ∂massMeasure T := by
-      rw [hw_int_eq]
-      exact le_tsum (fun p => c p * massMeasure T (A p)) p
-    exact fun htop => hwint (top_le_iff.1 (by rw [← ENNReal.mul_top (hc_pos p), ← htop]; exact hle))
-  let δ (p : ι) : ℝ≥0∞ :=
-    ((ε : ℝ≥0∞) / c₀) / (c p * 2 ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞))
-  have hδ_pos (p : ι) : δ p ≠ 0 :=
-    ENNReal.div_ne_zero.2 ⟨hε'.ne', by finiteness⟩
-  have hU_ex (p : ι) : ∃ U : Set Ω, A p ⊆ U ∧ IsOpen U ∧
-      massMeasure T U < massMeasure T (A p) + δ p :=
-    (A p).exists_isOpen_lt_of_lt _ (ENNReal.lt_add_right (hA_fin p) (hδ_pos p))
-  choose U hAU hUo hU_lt using hU_ex
-  let V (p : ι) : Opens E := ⟨(↑) '' U p, Ω.isOpen.isOpenMap_subtypeVal _ (hUo p)⟩
-  have hV_le (p : ι) : V p ≤ Ω := Subtype.coe_image_subset _ _
-  have hV_pre (p : ι) : ((↑) ⁻¹' (V p : Set E) : Set Ω) = U p :=
-    Subtype.val_injective.preimage_image (U p)
-  choose m hm_meas hm_le hm_int using fun p : ι => hmaj (V p) (hV_le p)
-  have hstep1 (t : ℝ) : ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) ≤
-      ∑' p : ι, c p * massMeasure (slice T u t) (U p) := by
-    calc ∫⁻ x : Ω, w x ∂massMeasure (slice T u t)
-        ≤ ∫⁻ x : Ω, ∑' p : ι, c p * (U p).indicator 1 x ∂massMeasure (slice T u t) := by
-          refine lintegral_mono fun x => ?_
-          rw [hw_eq]
-          refine tsum_le_tsum fun p => ?_
-          gcongr
-          exact hAU p
-      _ = ∑' p : ι, c p * massMeasure (slice T u t) (U p) := by
-          rw [lintegral_tsum fun p =>
-            ((measurable_one.indicator (hUo p).measurableSet).const_mul (c p)).aemeasurable]
-          refine tsum_congr fun p => ?_
-          rw [lintegral_const_mul _ (measurable_one.indicator (hUo p).measurableSet),
-            lintegral_indicator_one (hUo p).measurableSet]
-  have hae_slice : ∀ᵐ t : ℝ,
-      ∫⁻ x : Ω, w x ∂massMeasure (slice T u t) ≤ ∑' p : ι, c p * m p t := by
-    filter_upwards [ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT
+  refine Measure.lintegral_lintegral_le_of_isOpen hc₀top (fun U hU => ?_) hw
+  let V : Opens E := ⟨(↑) '' U, Ω.isOpen.isOpenMap_subtypeVal _ hU⟩
+  have hV_le : V ≤ Ω := Subtype.coe_image_subset _ _
+  have hV_pre : ((↑) ⁻¹' (V : Set E) : Set Ω) = U := Subtype.val_injective.preimage_image U
+  obtain ⟨m, hm_meas, hm_le, hm_int⟩ := hmaj V hV_le
+  refine ⟨m, hm_meas, ?_, ?_⟩
+  · filter_upwards [ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT
       hu.locallyLipschitzOn] with t ht
-    refine (hstep1 t).trans (tsum_le_tsum fun p => ?_)
-    gcongr
-    rw [← hV_pre p, massMeasure_preimage_coe ht (V p).isOpen]
-    exact hm_le p t
-  calc ∫⁻ t : ℝ, ∫⁻ x : Ω, w x ∂massMeasure (slice T u t)
-      ≤ ∫⁻ t : ℝ, ∑' p : ι, c p * m p t := lintegral_mono_ae hae_slice
-    _ = ∑' p : ι, c p * ∫⁻ t : ℝ, m p t := by
-        rw [lintegral_tsum fun p => ((hm_meas p).const_mul (c p)).aemeasurable]
-        refine tsum_congr fun p => ?_
-        rw [lintegral_const_mul _ (hm_meas p)]
-    _ ≤ ∑' p : ι, c p * (c₀ * localMass T (V p)) :=
-        tsum_le_tsum fun p => by gcongr; exact hm_int p
-    _ = c₀ * ∑' p : ι, c p * massMeasure T (U p) := by
-        simp_rw [← massMeasure_preimage_coe hT.hasLocallyFiniteMass (V _).isOpen, hV_pre,
-          ← mul_assoc, mul_comm (c _) c₀, mul_assoc, ENNReal.tsum_mul_left]
-    _ ≤ c₀ * ∑' p : ι, c p * (massMeasure T (A p) + δ p) := by
-        gcongr with p
-        exact (hU_lt p).le
-    _ = c₀ * (∫⁻ x : Ω, w x ∂massMeasure T + ∑' p : ι, c p * δ p) := by
-        congr 1
-        rw [tsum_congr fun p => mul_add (c p) _ _,
-          Summable.tsum_add CompleteLattice.summable CompleteLattice.summable, hw_int_eq]
-    _ ≤ c₀ * (∫⁻ x : Ω, w x ∂massMeasure T + (ε : ℝ≥0∞) / c₀) := by
-        gcongr
-        have hterm (p : ι) : c p * δ p = ((ε : ℝ≥0∞) / c₀) *
-            ((2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹) := by
-          calc c p * δ p
-              = ((ε : ℝ≥0∞) / c₀) * ((c p * (c p)⁻¹) *
-                  ((2 ^ (p.fst + 1) : ℝ≥0∞)⁻¹ * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹)) := by
-                dsimp [δ]
-                rw [div_eq_mul_inv,
-                  ENNReal.mul_inv (Or.inl (mul_ne_zero (hc_pos p) (by positivity)))
-                    (Or.inl (by finiteness)),
-                  ENNReal.mul_inv (Or.inl (hc_pos p)) (Or.inl ENNReal.coe_ne_top)]
-                ring
-            _ = ((ε : ℝ≥0∞) / c₀) *
-                  ((2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹) := by
-                rw [ENNReal.mul_inv_cancel (hc_pos p) ENNReal.coe_ne_top, one_mul,
-                  ENNReal.inv_pow]
-        simp_rw [hterm, ENNReal.tsum_mul_left]
-        calc ((ε : ℝ≥0∞) / c₀) *
-                ∑' p : ι, (2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹
-            ≤ ((ε : ℝ≥0∞) / c₀) * 1 := by
-              gcongr
-              rw [tsum_sigma']
-              calc ∑' n : ℕ, ∑' _ : {r : ℝ≥0 // r ∈ (d n).range.erase 0},
-                      (2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹
-                  = ∑' n : ℕ, ((d n).range.erase 0).card *
-                      ((2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹) := by
-                    refine tsum_congr fun n => ?_
-                    rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_coe,
-                      nsmul_eq_mul]
-                _ ≤ ∑' n : ℕ, (2⁻¹ : ℝ≥0∞) ^ (n + 1) := by
-                    refine tsum_le_tsum fun n => ?_
-                    have hcard : (((d n).range.erase 0).card : ℝ≥0∞) ≤
-                        ((d n).range.card + 1 : ℝ≥0∞) := by
-                      exact_mod_cast (Finset.card_erase_le.trans (Nat.le_succ _))
-                    calc (((d n).range.erase 0).card : ℝ≥0∞) *
-                            ((2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹)
-                        ≤ ((d n).range.card + 1 : ℝ≥0∞) *
-                            ((2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹) := by
-                          gcongr
-                      _ = ((d n).range.card + 1 : ℝ≥0∞) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹ *
-                            (2⁻¹ : ℝ≥0∞) ^ (n + 1) := by ring
-                      _ = (2⁻¹ : ℝ≥0∞) ^ (n + 1) := by
-                          rw [ENNReal.mul_inv_cancel (by positivity) (by finiteness), one_mul]
-                _ = 1 := by
-                    simp_rw [pow_succ', ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
-                    norm_num
-                    exact ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top
-          _ = (ε : ℝ≥0∞) / c₀ := mul_one _
-    _ = c₀ * ∫⁻ x : Ω, w x ∂massMeasure T + (ε : ℝ≥0∞) := by
-        rw [mul_add, ENNReal.mul_div_cancel hc₀0 hc₀top]
+    rw [← hV_pre, massMeasure_preimage_coe ht V.isOpen]
+    exact hm_le t
+  · rwa [← hV_pre, massMeasure_preimage_coe hT.hasLocallyFiniteMass V.isOpen]
 
 /-- **Weighted Lipschitz slicing inequality** on a general normed space: for a locally normal
 `(k + 1)`-current `T`, `K`-Lipschitz `u` on `Ω`, and Borel measurable `w : Ω → ℝ≥0∞`,

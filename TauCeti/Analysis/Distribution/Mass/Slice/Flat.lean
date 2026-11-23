@@ -57,24 +57,7 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
   let Av (t : ℝ) : Set Ω := {x : Ω | v x < t}
   have hAu (t : ℝ) : MeasurableSet (Au t) := measurableSet_lt hu_meas (measurable_const (a := t))
   have hAv (t : ℝ) : MeasurableSet (Av t) := measurableSet_lt hv_meas (measurable_const (a := t))
-  -- Step 1: bound the mass of the difference of sublevel restrictions by the symmetric difference.
-  have hmass_diff {m : ℕ} (Q : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) (t : ℝ) :
-      mass (massRestrict Q (hAv t) - massRestrict Q (hAu t)) ≤
-        massMeasure Q (Av t ∆ Au t) := by
-    have hsplit : massRestrict Q (hAv t) - massRestrict Q (hAu t) =
-        massRestrict Q ((hAv t).diff (hAu t)) - massRestrict Q ((hAu t).diff (hAv t)) := by
-      rw [massRestrict_congr_set (T := Q) (hAv t) (((hAv t).inter (hAu t)).union
-          ((hAv t).diff (hAu t))) (inter_union_sdiff _ _).symm,
-        massRestrict_congr_set (T := Q) (hAu t) (((hAv t).inter (hAu t)).union
-          ((hAu t).diff (hAv t))) (by rw [inter_comm]; exact (inter_union_sdiff _ _).symm),
-        massRestrict_union ((hAv t).inter (hAu t)) ((hAv t).diff (hAu t)) disjoint_inf_sdiff,
-        massRestrict_union ((hAv t).inter (hAu t)) ((hAu t).diff (hAv t))
-          (disjoint_sdiff_self_right.mono_left inter_subset_left),
-        add_sub_add_left_eq_sub]
-    rw [hsplit, Set.symmDiff_def,
-      measure_union disjoint_sdiff_sdiff ((hAu t).diff (hAv t))]
-    exact mass_sub_le.trans <| add_le_add (mass_massRestrict_le _) (mass_massRestrict_le _)
-  -- Step 2: decompose `⟨T, v, t⟩ - ⟨T, u, t⟩ = Rt + ∂St` to bound its normal flat mass a.e.
+  -- Step 1: decompose `⟨T, v, t⟩ - ⟨T, u, t⟩ = Rt + ∂St` to bound its normal flat mass a.e.
   let μ : Measure Ω := massMeasure T + massMeasure (T ∘L extDerivCLM)
   have hae_bound : ∀ᵐ t : ℝ, (slice T v t - slice T u t).normalFlatMass ≤ μ (Av t ∆ Au t) := by
     filter_upwards [ae_isNormal_massRestrict_lt_of_lipschitzOnWith hT hu,
@@ -94,8 +77,9 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
     refine ((slice T v t - slice T u t).normalFlatMass_le_of_eq_add_comp_extDerivCLM
       hRt_normal (hNv_r.sub hNu_r) hdecomp).trans ?_
     rw [FunLike.coe_neg, mass_neg, _root_.add_apply, add_comm]
-    exact add_le_add (hmass_diff T t) (hmass_diff (T ∘L extDerivCLM) t)
-  -- Step 3: integrate the a.e. bound and apply the superlevel symmetric-difference identity via
+    exact add_le_add (mass_massRestrict_sub_le T (hAv t) (hAu t))
+      (mass_massRestrict_sub_le (T ∘L extDerivCLM) (hAv t) (hAu t))
+  -- Step 2: integrate the a.e. bound and apply the superlevel symmetric-difference identity via
   -- negation (`v x < t ↔ -t < -v x`).
   refine (lintegral_mono_ae hae_bound).trans_eq ?_
   calc ∫⁻ t : ℝ, μ (Av t ∆ Au t)

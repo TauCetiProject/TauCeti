@@ -45,8 +45,9 @@ and is `T` itself for `A = Ω`. Its boundary need not have locally finite mass.
   it extends `T`, has norm at most one, and is the only continuous extension.
 * `Distribution.massRestrict`: the Borel restriction `T ⌞ A`.
 * `Distribution.enorm_massRestrict_apply_le`: `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`.
-* `Distribution.mass_massRestrict_le`, `Distribution.massMeasure_massRestrict_le`: the mass
-  bounds `M(T ⌞ A) ≤ ‖T‖ A` and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
+* `Distribution.mass_massRestrict_le`, `Distribution.mass_massRestrict_ne_top`,
+  `Distribution.massMeasure_massRestrict_le`: the mass bounds `M(T ⌞ A) ≤ ‖T‖ A`, finite mass
+  of Borel restrictions, and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
 * `Distribution.massMeasure_massRestrict`, `Distribution.mass_massRestrict`: exact mass-measure
   localization and total mass for `T` of locally finite mass.
 * `Distribution.massRestrict_eq_zero_iff`: a restriction of `T` of locally finite mass vanishes
@@ -57,7 +58,9 @@ and is `T` itself for `A = Ω`. Its boundary need not have locally finite mass.
 * `Distribution.tendsto_apply_smulLeftCLM_massRestrict`: smooth multiples `T (fᵢ φ)` converge to
   `(T ⌞ A) φ` when the bounded smooth functions `fᵢ` converge pointwise on `Ω` to `1_A`.
 * `Distribution.massRestrict_add`, `Distribution.massRestrict_smul`,
-  `Distribution.massRestrict_neg`, `Distribution.massRestrict_sub`: linearity in the current.
+  `Distribution.massRestrict_neg`, `Distribution.massRestrict_sub`,
+  `Distribution.mass_massRestrict_sub_le`: linearity in the current and the symmetric-difference
+  mass bound `M(T ⌞ A - T ⌞ B) ≤ ‖T‖ (A ∆ B)`.
 * `Distribution.massRestrict_massRestrict`: iterated Borel restriction `(T ⌞ A) ⌞ B = T ⌞ (A ∩ B)`.
 * `Distribution.measurable_massRestrict_lt_apply`: `t ↦ (T ⌞ {u < t}) φ` is Borel measurable.
 * `Distribution.massRestrict_comp_monoCLM`, `Distribution.massRestrict_comp_pullbackCLM`:
@@ -76,7 +79,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter
-open scoped BoundedContinuousFunction ENNReal Distributions Topology
+open scoped BoundedContinuousFunction ENNReal Distributions Topology symmDiff
 
 namespace Distribution
 
@@ -260,6 +263,13 @@ theorem mass_massRestrict_le (hA : MeasurableSet A) :
     mass (massRestrict T hA) ≤ massMeasure T A := by
   rw [← massMeasure_univ (hasLocallyFiniteMass_massRestrict hA)]
   simpa using Measure.le_iff'.1 (massMeasure_massRestrict_le hA) univ
+
+/-- If `T` has finite mass, then so does any Borel restriction `T ⌞ A`. -/
+theorem mass_massRestrict_ne_top (hT : mass T ≠ ⊤) (hA : MeasurableSet A) :
+    mass (massRestrict T hA) ≠ ⊤ :=
+  ne_top_of_le_ne_top hT <| (mass_massRestrict_le hA).trans <|
+    (measure_mono (subset_univ _)).trans_eq
+      (massMeasure_univ (hasLocallyFiniteMass_of_mass_ne_top T hT))
 
 /-- The total mass of a Borel restriction is the mass measure of its restricting set,
 including when that value is infinite. -/
@@ -508,6 +518,23 @@ theorem massRestrict_sub {T S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (hT : HasLocallyF
     massRestrict (T - S) hA = massRestrict T hA - massRestrict S hA := by
   rw [sub_eq_add_neg, massRestrict_add hT (by simpa using hS.neg) hA, massRestrict_neg,
     sub_eq_add_neg]
+
+/-- The mass of the difference of two Borel restrictions is bounded by the mass measure of the
+symmetric difference of their restricting sets. -/
+theorem mass_massRestrict_sub_le (T : 𝓕) (hA : MeasurableSet A) (hB : MeasurableSet B) :
+    mass (massRestrict T hA - massRestrict T hB) ≤ massMeasure T (A ∆ B) := by
+  have hsplit : massRestrict T hA - massRestrict T hB =
+      massRestrict T (hA.diff hB) - massRestrict T (hB.diff hA) := by
+    rw [massRestrict_congr_set (T := T) hA ((hA.inter hB).union (hA.diff hB))
+        (inter_union_sdiff _ _).symm,
+      massRestrict_congr_set (T := T) hB ((hA.inter hB).union (hB.diff hA))
+        (by rw [inter_comm]; exact (inter_union_sdiff _ _).symm),
+      massRestrict_union (hA.inter hB) (hA.diff hB) disjoint_inf_sdiff,
+      massRestrict_union (hA.inter hB) (hB.diff hA)
+        (disjoint_sdiff_self_right.mono_left inter_subset_left),
+      add_sub_add_left_eq_sub]
+  rw [hsplit, Set.symmDiff_def, measure_union disjoint_sdiff_sdiff (hB.diff hA)]
+  exact mass_sub_le.trans <| add_le_add (mass_massRestrict_le _) (mass_massRestrict_le _)
 
 /-- **Iterated Borel restriction.** Restricting `T ⌞ A` to `B` is restricting `T` to `A ∩ B`. -/
 @[simp]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Mass.Slice.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # The coarea pairing identity for slices by smooth functions

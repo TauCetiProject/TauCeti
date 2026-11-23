@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Normal
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Distribution.TestFunction.Separable
 import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
 
 /-!
@@ -52,8 +51,8 @@ form is zero, so every current and every slice is zero.
 
 ## Main declarations
 
-* `Distribution.slice`: the slice `⟨T, u, t⟩`, zero by convention when `u` is not measurable on
-  `Ω`.
+* `Distribution.slice`, `Distribution.slice_def`, `Distribution.slice_apply`: the slice `⟨T, u, t⟩`,
+  zero by convention when `u` is not measurable on `Ω`.
 * `Distribution.slice_const`: the slice of a locally normal current by a constant is zero.
 * `Distribution.slice_comp_extDerivCLM`: the boundary law `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`.
 * `Distribution.dsupport_slice_subset`, `Distribution.dsupport_slice_inter_subset`: support
@@ -62,10 +61,10 @@ form is zero, so every current and every slice is zero.
   `Distribution.measurable_mass_slice`, `Distribution.hasCompactSupport_slice_apply`,
   `Distribution.integrable_mul_slice_apply`: regularity of `t ↦ ⟨T, u, t⟩ φ` and measurability of
   `t ↦ localMass ⟨T, u, t⟩ U` and `t ↦ M(⟨T, u, t⟩)`.
-* `Distribution.slice_comp_monoCLM`, `Distribution.slice_comp_pullbackCLM`: compatibility with
-  open restriction and proper smooth pushforward.
+* `Distribution.slice_comp_monoCLM`, `Distribution.slice_comp_pullbackCLM_of_measurable_comp`,
+  `Distribution.slice_comp_pullbackCLM`, `Distribution.slice_comp_pullbackCLM_of_measurable`:
+  compatibility with open restriction and proper smooth pushforward.
 * `Distribution.continuous_apply_smulLeftCLM_smoothTransition`,
-  `Distribution.continuous_neg_oneFormWedgeCLM_smoothTransition`,
   `Distribution.tendsto_neg_oneFormWedgeCLM_slice_apply`: continuity and weak convergence of the
   smooth-transition slice approximants.
 * `Distribution.lintegral_mass_slice_le`,
@@ -111,13 +110,21 @@ section Defs
 
 variable (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ)
 
+/-- For `u` measurable on `Ω`, `⟨T, u, t⟩ = ∂(T ⌞ {u < t}) - (∂T) ⌞ {u < t}` as continuous linear
+maps. -/
+theorem slice_def (hu : Measurable fun x : Ω => u x) :
+    slice T u t =
+      massRestrict T (measurableSet_lt hu (measurable_const (a := t))) ∘L extDerivCLM -
+        massRestrict (T ∘L extDerivCLM) (measurableSet_lt hu (measurable_const (a := t))) := by
+  simp [slice, hu]
+
 /-- For `u` measurable on `Ω`, the slice evaluates as
 `(T ⌞ {u < t}) (dφ) - ((∂T) ⌞ {u < t}) φ`. -/
 theorem slice_apply (hu : Measurable fun x : Ω => u x) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     slice T u t φ =
       massRestrict T (measurableSet_lt hu (measurable_const (a := t))) (extDerivCLM φ) -
         massRestrict (T ∘L extDerivCLM) (measurableSet_lt hu (measurable_const (a := t))) φ := by
-  simp [slice, hu]
+  simp [slice_def T hu]
 
 /-- The slice by a function not measurable on `Ω` is zero by convention. -/
 @[simp]
@@ -201,6 +208,7 @@ theorem slice_sub {T S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
   rw [sub_eq_add_neg, slice_add hT hS.neg, slice_neg, sub_eq_add_neg]
 
 /-- **The boundary of a slice.** `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`. -/
+@[simp]
 theorem slice_comp_extDerivCLM (T : 𝓓(Ω, E [⋀^Fin (k + 2)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ)
     (t : ℝ) : slice T u t ∘L extDerivCLM = -slice (T ∘L extDerivCLM) u t := by
   by_cases hu : Measurable fun x : Ω => u x
@@ -342,49 +350,16 @@ theorem measurable_localMass_slice [SecondCountableTopology F]
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ) (U : Set E) :
     Measurable fun t : ℝ => localMass (slice T u t) U := by
   by_cases hE : FiniteDimensional ℝ E
-  swap
+  · have : SecondCountableTopology (E [⋀^Fin k]→L[ℝ] F) :=
+      (ContinuousAlternatingMap.toContinuousMultilinearMapLI (𝕜 := ℝ) (E := E) (F := F)
+        (ι := Fin k)).isometry.isEmbedding.secondCountableTopology
+    exact measurable_localMass (fun t => (slice T u t).continuous)
+      (measurable_slice_apply T u) U
   · have h0 (t : ℝ) : localMass (slice T u t) U = 0 :=
       le_antisymm (localMass_le_iff.2 fun φ _ _ => by
         simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]) bot_le
     simp_rw [h0]
     exact measurable_const
-  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  let Kex := CompactExhaustion.choice Ω
-  let C (n : ℕ) : Compacts E := ⟨(↑) '' Kex n, (Kex.isCompact n).image continuous_subtypeVal⟩
-  have hC (n : ℕ) : (C n : Set E) ⊆ Ω := Subtype.coe_image_subset _ _
-  have : SecondCountableTopology (E [⋀^Fin k]→L[ℝ] F) :=
-    (ContinuousAlternatingMap.toContinuousMultilinearMapLI (𝕜 := ℝ) (E := E) (F := F)
-      (ι := Fin k)).isometry.isEmbedding.secondCountableTopology
-  let S (n : ℕ) : Set 𝓓_{C n}(E, E [⋀^Fin k]→L[ℝ] F) :=
-    {ψ | tsupport (ψ : E → E [⋀^Fin k]→L[ℝ] F) ⊆ U ∧ ∀ x, ‖ψ x‖ ≤ 1}
-  choose D hDc hDd using fun n : ℕ => TopologicalSpace.exists_countable_dense (S n)
-  have heq (t : ℝ) : localMass (slice T u t) U =
-      ⨆ (n : ℕ) (ψ : D n), ‖slice T u t (ofSupportedIn (hC n) ψ.val.val)‖ₑ := by
-    refine le_antisymm (localMass_le_iff.2 fun φ hφU hφ => ?_)
-      (iSup_le fun n => iSup_le fun ψ => enorm_le_localMass ψ.val.property.1 ψ.val.property.2)
-    obtain ⟨n, hn⟩ := Kex.exists_superset_of_isCompact (TestFunction.isCompact_preimage_tsupport φ)
-    have hφCn : tsupport φ ⊆ C n := fun x hx => ⟨⟨x, φ.tsupport_subset hx⟩, hn hx, rfl⟩
-    let ψ₀ : 𝓓_{C n}(E, E [⋀^Fin k]→L[ℝ] F) :=
-      ⟨φ, φ.contDiff, fun x hx => image_eq_zero_of_notMem_tsupport fun h => hx (hφCn h)⟩
-    have hψ₀ : ψ₀ ∈ S n := ⟨hφU, hφ⟩
-    have hcont : Continuous fun ψ : S n => ‖slice T u t (ofSupportedIn (hC n) ψ.val)‖ₑ :=
-      ((slice T u t).continuous.comp
-        ((continuous_ofSupportedIn (hC n)).comp continuous_subtypeVal)).eNorm
-    have hφ_eq : φ = ofSupportedIn (hC n) ψ₀ := TestFunction.ext fun _ => rfl
-    rw [hφ_eq]
-    have hsub : (D n : Set (S n)) ⊆ {ψ : S n |
-        ‖slice T u t (ofSupportedIn (hC n) ψ.val)‖ₑ ≤
-          ⨆ (m : ℕ) (ψ' : D m), ‖slice T u t (ofSupportedIn (hC m) ψ'.val.val)‖ₑ} :=
-      fun ψ hψ => le_trans
-        (le_iSup (fun ψ' : D n => ‖slice T u t (ofSupportedIn (hC n) ψ'.val.val)‖ₑ) ⟨ψ, hψ⟩)
-        (le_iSup (fun m : ℕ =>
-          ⨆ ψ' : D m, ‖slice T u t (ofSupportedIn (hC m) ψ'.val.val)‖ₑ) n)
-    exact (isClosed_le hcont continuous_const).closure_subset_iff.2 hsub
-      ((hDd n).closure_eq.symm ▸ mem_univ (⟨ψ₀, hψ₀⟩ : S n))
-  simp_rw [heq]
-  refine Measurable.iSup fun n => ?_
-  have : Countable (D n) := (hDc n).to_subtype
-  exact Measurable.iSup fun ψ => (measurable_slice_apply T u _).eNorm
 
 /-- For a second countable codomain `F`, `t ↦ mass ⟨T, u, t⟩` is Borel measurable. -/
 theorem measurable_mass_slice [SecondCountableTopology F]
@@ -438,9 +413,11 @@ theorem slice_comp_monoCLM {Ω' : Opens E} {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L
     massRestrict_congr_set _ (measurableSet_lt hu' measurable_const) hset,
     massRestrict_congr_set _ (measurableSet_lt hu' measurable_const) hset]
 
-private theorem slice_comp_pullbackCLM_aux {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [FiniteDimensional ℝ E'] [MeasurableSpace E'] [BorelSpace E'] {Ω' : Opens E'} {Φ : E → E'}
-    {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω}
+/-- **Slicing commutes with proper smooth pushforward** under domain measurability hypotheses on
+`u` and `u ∘ Φ`: `⟨Φ_# T, u, t⟩ = Φ_# ⟨T, u ∘ Φ, t⟩`. -/
+theorem slice_comp_pullbackCLM_of_measurable_comp {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [MeasurableSpace E'] [BorelSpace E']
+    {Ω' : Opens E'} {Φ : E → E'} {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω}
     {hΦp : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ Φ ⁻¹' K)}
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) {u : E' → ℝ}
     (hu' : Measurable fun y : Ω' => u y) (huΦ : Measurable fun x : Ω => (u ∘ Φ) x) (t : ℝ) :
@@ -484,7 +461,7 @@ theorem slice_comp_pullbackCLM {E' : Type*} [NormedAddCommGroup E'] [NormedSpace
     (hT : IsLocallyNormal T) {u : E' → ℝ} (hu : Measurable fun y : Ω' => u y) (t : ℝ) :
     slice (T ∘L pullbackCLM Φ hΦ hΦp) u t =
       slice T (u ∘ Φ) t ∘L pullbackCLM Φ hΦ hΦp :=
-  slice_comp_pullbackCLM_aux hT hu
+  slice_comp_pullbackCLM_of_measurable_comp hT hu
     (hu.comp (hΦ.continuousOn.domRestrict.subtype_mk fun x => hmaps x.property).measurable) t
 
 /-- **Slicing commutes with proper smooth pushforward** for any globally measurable `u : E' → ℝ`,
@@ -497,7 +474,7 @@ theorem slice_comp_pullbackCLM_of_measurable {E' : Type*} [NormedAddCommGroup E'
     {u : E' → ℝ} (hu : Measurable u) (t : ℝ) :
     slice (T ∘L pullbackCLM Φ hΦ hΦp) u t =
       slice T (u ∘ Φ) t ∘L pullbackCLM Φ hΦ hΦp :=
-  slice_comp_pullbackCLM_aux hT (hu.comp measurable_subtypeVal)
+  slice_comp_pullbackCLM_of_measurable_comp hT (hu.comp measurable_subtypeVal)
     (hu.comp hΦ.continuousOn.domRestrict.measurable) t
 
 /-! ### The slicing inequality for smooth functions
@@ -530,24 +507,6 @@ theorem continuous_apply_smulLeftCLM_smoothTransition {n : ℕ∞} {S : 𝓓^{n}
         Real.smoothTransition.abs_le_one (c * (s₀ - u x))])
     fun x _ => (Real.smoothTransition.continuous.comp
       (continuous_const.mul (continuous_id.sub continuous_const))).tendsto s₀
-
-/-- Continuity of the smooth-transition slice approximant `t ↦ -T (df(t) ∧ φ)` in `t`, where
-`f(t) x = ψ(c (t - u x))`. -/
-theorem continuous_neg_oneFormWedgeCLM_smoothTransition
-    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u)
-    (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) (c : ℝ) :
-    Continuous fun t : ℝ =>
-      -T (oneFormWedgeCLM (k := k)
-        (contDiff_infty_iff_fderiv.1 (hu.smoothTransition_mul_sub c t)).2 φ) := by
-  obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
-  refine ((continuous_apply_smulLeftCLM_smoothTransition hT₁ hu (extDerivCLM φ) c).sub
-    (continuous_apply_smulLeftCLM_smoothTransition hT₂ hu φ c)).congr fun t => ?_
-  have hL := DFunLike.congr_fun
-    (comp_smulLeftCLM_comp_extDerivCLM T (hu.smoothTransition_mul_sub c t)) φ
-  simp only [comp_apply, sub_apply] at hL
-  dsimp only [Pi.sub_apply]
-  rw [comp_apply]
-  linarith
 
 /-- For smooth `u`, `-T ⌞ dfₘ` with `fₘ x = ψ((m + 1) (t - u x))` converges weakly to
 `⟨T, u, t⟩`. -/
