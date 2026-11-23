@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.Moments.Chebyshev
 
 /-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
@@ -48,6 +49,10 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
 
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`: a sequence converging
+  in mean square has an almost everywhere convergent subsequence.
+* `MeasureTheory.ae_le_of_tendsto_integral_norm_sub_sq`: almost everywhere bounds
+  `φ x (f n x) ≤ c n`, for continuous `φ x`, pass to the limit in mean square.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -342,6 +347,31 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
     (Eventually.of_forall fun _ ↦ zero_le) ?_
   filter_upwards [hint] with k hk
   exact TauCeti.meas_ge_le_integral_sq_div_sq hk hε
+
+/-- **Convergence in mean square gives an almost everywhere convergent subsequence.** If
+`‖f n - g‖²` is eventually integrable and `∫ ‖f n - g‖² → 0`, then a subsequence of `f n`
+converges to `g` almost everywhere. -/
+theorem exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq {α E : Type*}
+    [MeasurableSpace α] {μ : Measure α} [SeminormedAddCommGroup E] {f : ℕ → α → E} {g : α → E}
+    (hint : ∀ᶠ n in atTop, Integrable (fun x ↦ ‖f n x - g x‖ ^ 2) μ)
+    (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) :
+    ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ x ∂μ, Tendsto (fun k ↦ f (ns k) x) atTop (𝓝 (g x)) :=
+  (tendstoInMeasure_of_tendsto_integral_norm_sq hint h).exists_seq_tendsto_ae
+
+/-- **Pointwise bounds pass to limits in mean square.** If `‖f n - g‖²` is eventually integrable
+and `∫ ‖f n - g‖² → 0`, each `φ x` is continuous and `φ x (f n x) ≤ c n` almost everywhere with
+`c n → M`, then `φ x (g x) ≤ M` almost everywhere. -/
+theorem ae_le_of_tendsto_integral_norm_sub_sq {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SeminormedAddCommGroup E] {f : ℕ → α → E} {g : α → E} {φ : α → E → ℝ} {c : ℕ → ℝ} {M : ℝ}
+    (hint : ∀ᶠ n in atTop, Integrable (fun x ↦ ‖f n x - g x‖ ^ 2) μ)
+    (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) (hφ : ∀ x, Continuous (φ x))
+    (hc : Tendsto c atTop (𝓝 M)) (hle : ∀ n, ∀ᵐ x ∂μ, φ x (f n x) ≤ c n) :
+    ∀ᵐ x ∂μ, φ x (g x) ≤ M := by
+  obtain ⟨ns, hns, hlim⟩ := exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq hint h
+  exact TauCeti.ae_le_of_tendsto_of_tendsto_of_frequently (F₂ := fun k _ ↦ c (ns k))
+    (G₂ := fun _ ↦ M) (hlim.mono fun x hx ↦ ((hφ x).tendsto (g x)).comp hx)
+    (Eventually.of_forall fun _ ↦ hc.comp hns.tendsto_atTop)
+    (Eventually.of_forall fun k ↦ hle (ns k)).frequently
 
 section Algebra
 
