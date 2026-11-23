@@ -247,7 +247,7 @@ theorem isIntegral_root (n : ℕ) : IsIntegral ℤ_[p] (root p Ω n) :=
 
 /-- The element `ζ n - 1` is integral over `ℤ_p`. -/
 theorem isIntegral_root_sub_one (n : ℕ) : IsIntegral ℤ_[p] (root p Ω n - 1) :=
-  (isIntegral_root p Ω n).sub isIntegral_one
+  (isPrimitiveRoot_root p Ω n).isIntegral_sub_one ℤ_[p] (NeZero.pos _)
 
 /-- The chosen root `ζ n` as an element of the integral closure of `ℤ_p` in `ℚ_p(ρ n)`. -/
 noncomputable def integralRoot (n : ℕ) : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) :=

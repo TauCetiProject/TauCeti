@@ -55,6 +55,12 @@ open Polynomial
 
 namespace IsPrimitiveRoot
 
+/-- If `ζ` is a primitive `n`-th root of unity with `0 < n`, then `ζ - 1` is integral over any
+ring `R`. -/
+theorem isIntegral_sub_one {n : ℕ} (R : Type*) {A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    {ζ : A} (hζ : IsPrimitiveRoot ζ n) (hn : 0 < n) : IsIntegral R (ζ - 1) :=
+  (hζ.isIntegral hn).tower_top.sub isIntegral_one
+
 variable {p k : ℕ} [Fact p.Prime] (R : Type*) {L : Type*} [CommRing R] [IsIntegrallyClosed R]
   [Field L] [Algebra R L] {ζ : L}
 
@@ -69,7 +75,7 @@ theorem minpoly_sub_one_eq_cyclotomic_comp_of_prime (hζ : IsPrimitiveRoot ζ (p
     (hpR : Prime (p : R)) : minpoly R (ζ - 1) = (cyclotomic (p ^ k) R).comp (X + 1) := by
   have := IsDomain.of_faithfulSMul R L
   let := FractionRing.liftAlgebra R L
-  have hint : IsIntegral R (ζ - 1) := (hζ.isIntegral (NeZero.pos _)).tower_top.sub isIntegral_one
+  have hint := hζ.isIntegral_sub_one R (NeZero.pos _)
   have : NeZero ((p ^ k : ℕ) : FractionRing R) := ⟨by
     rw [Nat.cast_pow, ← map_natCast (algebraMap R (FractionRing R))]
     exact pow_ne_zero _
@@ -107,8 +113,7 @@ theorem integralClosure_eq_adjoin_sub_one [IsCyclotomicExtension {p ^ k} K L]
     integralClosure R L = Algebra.adjoin R {ζ - 1} := by
   have := (IsFractionRing.isDomain_iff_isField (R := R) (K := K)).2 (Field.toIsField K)
   have := FaithfulSMul.of_field_isFractionRing R L K L
-  have hζint : IsIntegral R ζ := (hζ.isIntegral (NeZero.pos _)).tower_top
-  have hint : IsIntegral R (ζ - 1) := hζint.sub isIntegral_one
+  have hint := hζ.isIntegral_sub_one R (NeZero.pos _)
   refine le_antisymm (fun z hz ↦ ?_) (adjoin_le_integralClosure hint)
   replace hz := (mem_integralClosure_iff R L).1 hz
   have hirr := irreducible_cyclotomic_prime_pow_of_prime K hpR k
@@ -117,12 +122,11 @@ theorem integralClosure_eq_adjoin_sub_one [IsCyclotomicExtension {p ^ k} K L]
   -- The discriminant `± p ^ m` of the power basis of `ζ` multiplies `z` into `R[ζ] = R[ζ - 1]`.
   have H := (TauCeti.Algebra.adjoin_sub_one_eq_adjoin ζ).ge
     (Algebra.discr_mul_isIntegral_mem_adjoin K (B := hζ.powerBasis K)
-      (by rwa [hζ.powerBasis_gen K]) hz)
+      (by simpa using (hζ.isIntegral (NeZero.pos _)).tower_top) hz)
   obtain ⟨u, m, hum⟩ := IsCyclotomicExtension.discr_prime_pow_eq_unit_mul_pow hζ hirr
   -- Multiplying the discriminant `u * p ^ m` by the unit `u` leaves `p ^ m`, as `u * u = 1`.
   have hu : ((u : ℤ) : K) * (u * (p : K) ^ m) = algebraMap R K ((p : R) ^ m) := by
-    rw [← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-    simp
+    obtain rfl | rfl := Int.units_eq_one_or u <;> simp
   have hpm : (p : R) ^ m • z ∈ Algebra.adjoin R {ζ - 1} := by
     convert Subalgebra.zsmul_mem _ H (u : ℤ) using 1
     rw [hum, ← smul_assoc, zsmul_eq_mul, hu, algebraMap_smul]
@@ -154,7 +158,7 @@ noncomputable def subOneIntegralClosurePowerBasis [IsCyclotomicExtension {p ^ k}
   haveI := FaithfulSMul.of_field_isFractionRing R L K L
   haveI := IsDomain.of_faithfulSMul R L
   haveI := Module.IsTorsionFree.trans_faithfulSMul R K L
-  (Algebra.adjoin.powerBasis' ((hζ.isIntegral (NeZero.pos _)).tower_top.sub isIntegral_one)).map
+  (Algebra.adjoin.powerBasis' (hζ.isIntegral_sub_one R (NeZero.pos _))).map
     (Subalgebra.equivOfEq _ _ (hζ.integralClosure_eq_adjoin_sub_one R K hpR).symm)
 
 @[simp]
