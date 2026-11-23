@@ -27,8 +27,6 @@ The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
 (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
-The coordinate map `Complex.equivRealProdCLM` preserves planar area
-(`Complex.volume_preserving_equivRealProdCLM`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
@@ -112,14 +110,6 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
     exact le_antisymm (not_lt.1 h2) h1
   · have h1 : c < z.im := hz.1
     exact absurd h1.le hz.2
-
-/-- The continuous linear coordinate map `z ↦ (re z, im z)` preserves Lebesgue measure. It is the
-same map as `Complex.measurableEquivRealProd`
-(`Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM`), so this restates
-`Complex.volume_preserving_equiv_real_prod` for `Complex.equivRealProdCLM`. -/
-theorem volume_preserving_equivRealProdCLM :
-    MeasurePreserving equivRealProdCLM (volume : Measure ℂ) volume :=
-  coe_measurableEquivRealProd_eq_equivRealProdCLM ▸ volume_preserving_equiv_real_prod
 
 /-- Restricted to a rectangle, planar Lebesgue measure is the product of the restrictions to its
 sides. -/

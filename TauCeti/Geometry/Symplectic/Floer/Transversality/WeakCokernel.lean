@@ -28,7 +28,8 @@ the first step of that regularity: such an `η` is in `W^{1,r}_loc` for every fi
 
 The Sobolev classes `W^{k,r}_loc` of Tau Ceti live on `ℂ`, so the statement reads the domain
 through `e = Complex.equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ`, `s + i t ↦ (s, t)`, which carries Lebesgue
-measure to Lebesgue measure (`Complex.volume_preserving_equivRealProdCLM`).
+measure to Lebesgue measure: it is Mathlib's measure-preserving `Complex.measurableEquivRealProd`
+(`Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM`).
 
 On an open set `Ω ⊆ ℂ`, a test function `φ` on `Ω` gives the test map `ξ = φ ∘ e⁻¹` on
 `ℝ × ℝ`, and `D_u ξ (e w) = ∂ₛφ(w) + J_c(w) ∂ₜφ(w) + S_c(w) φ(w)` with `J_c(w) = J(e w, u(e w))`
@@ -128,8 +129,8 @@ theorem memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero {Ω : 
   set ψ : 𝓓(U, V) := e.transportTestFunction hmaps φ
   have hψ : (ψ : ℝ × ℝ → V) = (φ : ℂ → V) ∘ e.symm := funext fun y ↦ by simp [ψ]
   have h := hηD ψ ψ.contDiff ψ.hasCompactSupport ψ.tsupport_subset
-  rw [← volume_preserving_equivRealProdCLM.integral_comp e.toHomeomorph.measurableEmbedding,
-    hψ] at h
+  rw [← volume_preserving_equiv_real_prod.integral_comp measurableEquivRealProd.measurableEmbedding,
+    coe_measurableEquivRealProd_eq_equivRealProdCLM, hψ] at h
   rw [← h]
   exact integral_congr_ae (Filter.Eventually.of_forall fun w ↦ congrArg (η (e w))
     (floerLinearization_comp_equivRealProdCLM_symm ω J Ks Kt u _ w).symm)

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
-import Mathlib.Analysis.Normed.Affine.MazurUlam
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 
 /-!
 # Sobolev regularity of the annihilator of a real Cauchy–Riemann operator
@@ -119,23 +119,17 @@ theorem memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero {V : Type*}
       S z ((φ : ℂ → V) z)) = 0)
     (hr : 1 < r) (hr_top : r ≠ ⊤) : MemWkpLoc r Ω 1 η := by
   -- Transport everything to a Euclidean model `W` of `V`, and covectors to vectors in `W`.
-  let L : V ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ V)) :=
-    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  let L : V ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ V)) := toEuclidean
   let P := L.arrowCongr L
   let Q := L.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)
-  -- The Riesz map `InnerProductSpace.toDual` is conjugate-linear, hence real-linear.
+  -- Over `ℝ`, the inverse Riesz map `InnerProductSpace.toDual` is a real-linear equivalence.
   let T : StrongDual ℝ (EuclideanSpace ℝ (Fin (finrank ℝ V))) ≃L[ℝ]
       EuclideanSpace ℝ (Fin (finrank ℝ V)) :=
-    ((InnerProductSpace.toDual ℝ _).toIsometryEquiv.toRealLinearIsometryEquivOfMapZero
-      (by simp)).symm.toContinuousLinearEquiv
+    (InnerProductSpace.toDual ℝ _).symm.toContinuousLinearEquiv
   have hT (f : StrongDual ℝ (EuclideanSpace ℝ (Fin (finrank ℝ V))))
       (x : EuclideanSpace ℝ (Fin (finrank ℝ V))) : ⟪x, T f⟫_ℝ = f x := by
-    -- `T` is `toDual⁻¹`, regarded as a real-linear equivalence.
-    have hTf : T f = (InnerProductSpace.toDual ℝ _).symm f := by
-      simp only [T, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-        IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero_symm,
-        LinearIsometryEquiv.coe_symm_toIsometryEquiv]
-    rw [real_inner_comm, hTf, InnerProductSpace.toDual_symm_apply]
+    rw [real_inner_comm]
+    exact InnerProductSpace.toDual_symm_apply
   have hP2 (z : ℂ) (hz : z ∈ Ω) : P (J z) * P (J z) = -1 := by
     refine ContinuousLinearMap.ext fun x ↦ ?_
     simpa [P] using congrArg L (congrArg (fun A : V →L[ℝ] V ↦ A (L.symm x)) (hJ2 z hz))
