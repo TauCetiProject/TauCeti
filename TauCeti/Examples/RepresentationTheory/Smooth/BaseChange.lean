@@ -32,8 +32,8 @@ example {A B G V : Type*} [CommSemiring A] [Semiring B] [Algebra A B] [Group G]
 /-- For a finite group and a field extension `K → L`, `L ⊗ V^G → (L ⊗ V)^G` is bijective. -/
 example {K L G V : Type*} [Field K] [Field L] [Algebra K L] [Group G] [Finite G]
     [AddCommGroup V] [Module K V] (ρ : Representation K G V) :
-    Function.Bijective (ρ.invariantsBaseChangeMap (B := L)) :=
-  ρ.bijective_invariantsBaseChangeMap
+    Function.Bijective (ρ.invariantsBaseChangeMap (A := L)) :=
+  ρ.invariantsBaseChangeMap_bijective
 
 /-- The sign representation of `ℤˣ` on `ℤ`. -/
 noncomputable abbrev signRepresentation : Representation ℤ ℤˣ ℤ :=
@@ -42,8 +42,8 @@ noncomputable abbrev signRepresentation : Representation ℤ ℤˣ ℤ :=
 /-- **Base change need not commute with invariants.** For the sign representation of `ℤˣ` on `ℤ`
 and `B = ℤ/2`, the comparison map `B ⊗ V^U → (B ⊗ V)^U` is not surjective: its source is zero,
 while `1 ⊗ 1` is a nonzero invariant of the target. -/
-theorem not_surjective_invariantsBaseChangeMap_sign :
-    ¬Function.Surjective (signRepresentation.invariantsBaseChangeMap (B := ZMod 2)) := by
+theorem signRepresentation_invariantsBaseChangeMap_not_surjective :
+    ¬Function.Surjective (signRepresentation.invariantsBaseChangeMap (A := ZMod 2)) := by
   intro h
   have h0 (v : signRepresentation.invariants) : v = 0 := by
     have hv := (mem_invariants _ _).1 v.property (-1)
@@ -58,8 +58,8 @@ theorem not_surjective_invariantsBaseChangeMap_sign :
     refine (mem_invariants _ _).2 fun g ↦ ?_
     rw [baseChange_apply, LinearMap.baseChange_tmul, ofDistribMulAction_apply_apply]
     rcases Int.units_eq_one_or g with rfl | rfl
-    · rw [one_smul]
-    · rw [Units.neg_smul, one_smul, tmul_neg, ← neg_tmul, show (-1 : ZMod 2) = 1 from rfl]
+    · simp
+    · simp [tmul_neg, ← neg_tmul, CharTwo.neg_eq]
   obtain ⟨y, hy⟩ := h ⟨_, hmem⟩
   have h1 := congrArg Subtype.val hy
   rw [Subsingleton.elim y 0, map_zero] at h1
