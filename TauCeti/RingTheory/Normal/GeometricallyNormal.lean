@@ -32,7 +32,7 @@ every field extension, but is not normal after adjoining `t ^ (1 / p)`.
 
 ## Main results
 
-* `Algebra.IsGeometricallyNormal.forall_isDomain_and_isIntegrallyClosed_self`: a geometrically
+* `Ideal.isDomain_and_isIntegrallyClosed_atPrime_of_isGeometricallyNormal`: a geometrically
   normal algebra is a normal ring.
 
 ## References
@@ -67,17 +67,14 @@ variable {k : Type u} {A : Type v} [Field k] [CommRing A] [Algebra k A]
 
 /-- **A geometrically normal algebra is a normal ring**: taking `K = k`, the ring
 `k ⊗[k] A ≅ A` is normal. -/
-theorem forall_isDomain_and_isIntegrallyClosed_self [IsGeometricallyNormal k A] (q : Ideal A)
+theorem _root_.Ideal.isDomain_and_isIntegrallyClosed_atPrime_of_isGeometricallyNormal
+    [IsGeometricallyNormal k A] (q : Ideal A)
     [q.IsPrime] :
     IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) := by
   let e : k ⊗[k] A ≃+* A := (TensorProduct.lid k A).toRingEquiv
   obtain ⟨_, _⟩ := forall_isDomain_and_isIntegrallyClosed (A := A) k (q.comap e)
-  have H : (q.comap e).primeCompl.map e.toMonoidHom = q.primeCompl := by
-    ext x
-    refine ⟨fun ⟨_, hy, hyx⟩ ↦ hyx ▸ hy, fun hx ↦ ⟨e.symm x, ?_, e.apply_symm_apply x⟩⟩
-    simpa [Ideal.primeCompl] using hx
   let e' : Localization.AtPrime (q.comap e) ≃+* Localization.AtPrime q :=
-    IsLocalization.ringEquivOfRingEquiv _ _ e H
+    Localization.localRingEquiv (q.comap e) q e rfl
   exact ⟨e'.symm.toMulEquiv.isDomain _,
     IsIntegrallyClosed.of_equiv (R := Localization.AtPrime (q.comap e)) e'⟩
 

@@ -12,6 +12,8 @@ import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.RingTheory.Int.Basic
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import Mathlib.RingTheory.Polynomial.ScaleRoots
+import TauCeti.Algebra.Colimit.CommonStage
+import TauCeti.RingTheory.Polynomial.ScaleRoots
 
 /-!
 # Directed colimits of normal rings
@@ -25,8 +27,9 @@ normality of `Spec R`. This file shows that a directed colimit of normal rings i
 
 The colimit is described elementwise: ring maps `φ i : G i →+* R` compatible with the transition
 maps `f i j`, such that every element of `R` comes from some `G i`, and an element of `G i` sent
-to `0` in `R` is sent to `0` in some `G j`. Mathlib's `Ring.DirectLimit` is such a colimit, and so
-is a ring that is the directed union of subrings.
+to `0` in `R` is sent to `0` in some `G j`. For a nonempty directed system, Mathlib's
+`Ring.DirectLimit` is such a colimit, and so is a ring that is the directed union of subrings. For
+an empty index set the direct limit is `ℤ` (`Ring.DirectLimit.ringEquivIntOfIsEmpty`).
 
 For a prime `P` of `R` with preimages `P_i` in `G i`, the local ring `R_P` is again such a colimit
 of the local rings `(G i)_{P_i}`. A relation `a * b = 0` in a colimit of domains holds at some
@@ -59,25 +62,15 @@ namespace TauCeti
 variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
   {R : Type*} [CommRing R]
 
-/-- In a directed colimit, finitely many elements come from a common stage. -/
-private theorem exists_forall_exists_eq (f : ∀ i j, i ≤ j → G i →+* G j)
-    (φ : ∀ i, G i →+* R) (hf : ∀ i j h x, φ j (f i j h x) = φ i x)
+omit [∀ i, CommRing (G i)] [CommRing R] in
+/-- In a directed colimit, finitely many elements come from a common stage
+(`TauCeti.DirectLimit.exists_lift`). -/
+private theorem exists_forall_exists_eq [∀ i, Nonempty (G i)] [Nonempty R]
+    (f : ∀ i j, i ≤ j → G i → G j) (φ : ∀ i, G i → R) (hf : ∀ i j h x, φ j (f i j h x) = φ i x)
     (hsurj : ∀ x : R, ∃ i y, φ i y = x) (s : Finset R) :
-    ∃ i, ∀ x ∈ s, ∃ y, φ i y = x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    obtain ⟨i, -⟩ := hsurj 0
-    exact ⟨i, by simp⟩
-  | insert a s _ ih =>
-    obtain ⟨i, hi⟩ := ih
-    obtain ⟨i', y, rfl⟩ := hsurj a
-    obtain ⟨j, hij, hi'j⟩ := exists_ge_ge i i'
-    refine ⟨j, fun x hx ↦ ?_⟩
-    rcases Finset.mem_insert.mp hx with rfl | hx
-    · exact ⟨f i' j hi'j y, hf ..⟩
-    · obtain ⟨z, rfl⟩ := hi x hx
-      exact ⟨f i j hij z, hf ..⟩
+    ∃ i, ∀ x ∈ s, ∃ y, φ i y = x :=
+  let ⟨i, g, hg⟩ := DirectLimit.exists_lift hf hsurj s
+  ⟨i, fun x hx ↦ ⟨g x, hg x hx⟩⟩
 
 /-- **A directed colimit of domains is a domain.** Here `R` is the colimit of
 the `G i` along `φ`: every element of `R` comes from some `G i`, and an element of `G i` sent to
@@ -94,7 +87,8 @@ theorem isDomain_of_directed (f : ∀ i j, i ≤ j → G i →+* G j) (φ : ∀ 
     obtain ⟨j, hij, hj⟩ := hker i 1 (by rw [map_one, h])
     exact one_ne_zero (by rwa [map_one] at hj)
   have : NoZeroDivisors R := ⟨fun {a b} hab ↦ by
-    obtain ⟨i, hi⟩ := exists_forall_exists_eq f φ hf hsurj {a, b}
+    obtain ⟨i, hi⟩ := exists_forall_exists_eq (fun i j h ↦ f i j h) (fun i ↦ φ i) hf
+      hsurj {a, b}
     obtain ⟨x, rfl⟩ := hi a (by simp)
     obtain ⟨y, rfl⟩ := hi b (by simp)
     obtain ⟨j, hij, h⟩ := hker i (x * y) (by rw [map_mul, hab])
@@ -102,13 +96,6 @@ theorem isDomain_of_directed (f : ∀ i j, i ≤ j → G i →+* G j) (φ : ∀ 
     rw [← hf i j hij x, ← hf i j hij y]
     exact h.imp (fun h ↦ by rw [h, map_zero]) fun h ↦ by rw [h, map_zero]⟩
   exact NoZeroDivisors.to_isDomain R
-
-/-- A ring map `φ` with nontrivial target sends the evaluation of `p.scaleRoots b` at `a`, for a
-monic `p`, to the evaluation of `(p.map φ).scaleRoots (φ b)` at `φ a`. -/
-private theorem map_eval_scaleRoots {S T : Type*} [CommRing S] [CommRing T] [Nontrivial T]
-    (φ : S →+* T) {p : S[X]} (hp : p.Monic) (a b : S) :
-    φ ((p.scaleRoots b).eval a) = ((p.map φ).scaleRoots (φ b)).eval (φ a) := by
-  rw [← map_scaleRoots _ _ _ (by simp [hp.leadingCoeff]), eval_map, eval₂_at_apply]
 
 /-- **A directed colimit of integrally closed domains is an integrally closed domain**
 (`TauCeti.isDomain_of_directed` gives the domain). Here `R` is the colimit of the `G i` along `φ`,
@@ -127,10 +114,11 @@ theorem isIntegrallyClosed_of_directed (f : ∀ i j, i ≤ j → G i →+* G j)
   -- The cleared equation `(p.scaleRoots b).eval a = 0` holds in `R`.
   have hrel : (p.scaleRoots b).eval a = 0 := by
     apply IsFractionRing.injective R (FractionRing R)
-    have := scaleRoots_eval₂_eq_zero (algebraMap R (FractionRing R)) (s := b) hp
-    rwa [mul_div_cancel₀ _ hb', eval₂_at_apply, ← map_zero (algebraMap R _)] at this
+    rw [← eval₂_at_apply, map_zero]
+    exact scaleRoots_eval₂_eq_zero_of_eval₂_div_eq_zero (IsFractionRing.injective R _) hp hb
   -- Lift `a`, `b` and the coefficients of `p` to a common stage `i`.
-  obtain ⟨i, hi⟩ := exists_forall_exists_eq f φ hf hsurj (insert a (insert b p.coeffs))
+  obtain ⟨i, hi⟩ := exists_forall_exists_eq (fun i j h ↦ f i j h) (fun i ↦ φ i) hf
+      hsurj (insert a (insert b p.coeffs))
   obtain ⟨a', rfl⟩ := hi a (by simp)
   obtain ⟨b', rfl⟩ := hi b (by simp)
   have hlifts : p ∈ lifts (φ i) := (lifts_iff_coeff_lifts _).mpr fun n ↦ by
@@ -194,13 +182,14 @@ theorem forall_isDomain_and_isIntegrallyClosed_of_directed (f : ∀ i j, i ≤ j
     Localization.localRingHom _ P (φ i) rfl
   have hψ : ∀ i j h x, ψ j (g i j h x) = ψ i x := by
     intro i j h x
-    obtain ⟨⟨y, t⟩, rfl⟩ := IsLocalization.mk'_surjective (P.comap (φ i)).primeCompl x
-    simp only [ψ, g, Localization.localRingHom_mk']
-    congr 1 <;> simp [hf]
+    have hcomp : (φ j).comp (f i j h) = φ i := RingHom.ext (hf i j h)
+    rw [← RingHom.comp_apply, ← Localization.localRingHom_comp _ _ _ _ (hcomap i j h) _ rfl]
+    simp only [ψ, hcomp]
   have hsurj' : ∀ z, ∃ i y, ψ i y = z := by
     intro z
     obtain ⟨⟨x, s⟩, rfl⟩ := IsLocalization.mk'_surjective P.primeCompl z
-    obtain ⟨i, hi⟩ := exists_forall_exists_eq f φ hf hsurj {x, (s : R)}
+    obtain ⟨i, hi⟩ := exists_forall_exists_eq (fun i j h ↦ f i j h) (fun i ↦ φ i) hf
+      hsurj {x, (s : R)}
     obtain ⟨x', hx'⟩ := hi x (by simp)
     obtain ⟨s', hs'⟩ := hi s (by simp)
     have hs : s' ∈ (P.comap (φ i)).primeCompl := by
@@ -226,16 +215,21 @@ theorem forall_isDomain_and_isIntegrallyClosed_of_directed (f : ∀ i j, i ≤ j
 
 omit [IsDirectedOrder ι] in
 /-- Over an empty index set, `Ring.DirectLimit G f` is `ℤ`. -/
+noncomputable def _root_.Ring.DirectLimit.ringEquivIntOfIsEmpty [IsEmpty ι]
+    (f : ∀ i j, i ≤ j → G i →+* G j) : ℤ ≃+* Ring.DirectLimit G fun i j h ↦ f i j h :=
+  RingEquiv.ofRingHom (Int.castRingHom _)
+    (Ring.DirectLimit.lift G _ ℤ (fun i ↦ isEmptyElim i) fun i ↦ isEmptyElim i)
+    (Ring.DirectLimit.hom_ext (h := fun i ↦ isEmptyElim i)) (RingHom.ext_int _ _)
+
+omit [IsDirectedOrder ι] in
+/-- Over an empty index set, `Ring.DirectLimit G f`, which is `ℤ`, is an integrally closed
+domain. -/
 private theorem isDomain_and_isIntegrallyClosed_directLimit_of_isEmpty [IsEmpty ι]
     (f : ∀ i j, i ≤ j → G i →+* G j) :
     IsDomain (Ring.DirectLimit G fun i j h ↦ f i j h) ∧
-      IsIntegrallyClosed (Ring.DirectLimit G fun i j h ↦ f i j h) := by
-  let g : Ring.DirectLimit G (fun i j h ↦ f i j h) →+* ℤ :=
-    Ring.DirectLimit.lift G _ ℤ (fun i ↦ isEmptyElim i) fun i ↦ isEmptyElim i
-  let e : ℤ ≃+* Ring.DirectLimit G fun i j h ↦ f i j h :=
-    RingEquiv.ofRingHom (Int.castRingHom _) g
-      (Ring.DirectLimit.hom_ext (h := fun i ↦ isEmptyElim i)) (RingHom.ext_int _ _)
-  exact ⟨e.symm.toMulEquiv.isDomain _, IsIntegrallyClosed.of_equiv e⟩
+      IsIntegrallyClosed (Ring.DirectLimit G fun i j h ↦ f i j h) :=
+  ⟨(Ring.DirectLimit.ringEquivIntOfIsEmpty f).symm.toMulEquiv.isDomain _,
+    IsIntegrallyClosed.of_equiv (Ring.DirectLimit.ringEquivIntOfIsEmpty f)⟩
 
 /-- **The direct limit of a directed system of normal rings is normal**: if every localization of
 every `G i` at a prime is an integrally closed domain, then so is every localization of
