@@ -143,7 +143,7 @@ theorem equivalent_toBilin'_hyperbolic_two_unary (k : ℕ) {a : ℤ_[2]} (ha : I
       (toBilin' ((2 : ℤ_[2]) ^ k • !![2, 1, 0; 1, 2, 0; 0, 0, 10 * a])) := by
   simp only [map_smul]
   exact (LinearMap.BilinForm.equivalent_smul_iff
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).left).mpr
       (even_lower_hyperbolic ha)
 
 /-- **Mixed-type adjacent sign walking starting from the other even plane.**
@@ -154,7 +154,7 @@ theorem equivalent_toBilin'_anisotropic_two_unary (k : ℕ) {a : ℤ_[2]} (ha : 
       (toBilin' ((2 : ℤ_[2]) ^ k • !![0, 1, 0; 1, 0, 0; 0, 0, 10 * a])) := by
   simp only [map_smul]
   apply (LinearMap.BilinForm.equivalent_smul_iff
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).left).mpr
   have h5 : IsUnit (5 : ℤ_[2]) := PadicInt.isUnit_natCast_of_coprime (by decide)
   -- Reverse the hyperbolic move at `5a`; rescaling the unary coordinate by `5` removes `25`.
   let D : Matrix (Fin 3) (Fin 3) ℤ_[2] := Matrix.diagonal ![1, 1, 5]

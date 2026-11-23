@@ -404,7 +404,7 @@ theorem IsJordanSplitting.exists_signWalk_add_two_of_odd_of_odd [Module.Free ℤ
   have hwalk : (Matrix.toBilin' ((2 : ℤ_[2]) ^ k • Matrix.diagonal ![a, 4 * b])).Equivalent
       (Matrix.toBilin' ((2 : ℤ_[2]) ^ k • Matrix.diagonal ![5 * a, 4 * (5 * b)])) := by
     simp only [map_smul]
-    exact (equivalent_smul_iff (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    exact (equivalent_smul_iff (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).left).mpr
       (TauCeti.equivalent_toBilin'_diagonal_four_mul_five_mul ha hb)
   obtain ⟨z', hz', hspan⟩ := exists_span_range_eq_of_equivalent_toBilin' (B := B) (v := ![x, y])
     (fun i j ↦ by

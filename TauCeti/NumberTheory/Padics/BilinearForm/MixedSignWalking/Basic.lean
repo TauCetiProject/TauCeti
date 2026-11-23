@@ -166,7 +166,7 @@ theorem equivalent_toBilin'_unary_two_hyperbolic (k : ℕ) {a : ℤ_[2]} (ha : I
       (toBilin' ((2 : ℤ_[2]) ^ k • !![5 * a, 0, 0; 0, 4, 2; 0, 2, 4])) := by
   simp only [map_smul]
   exact (LinearMap.BilinForm.equivalent_smul_iff
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).left).mpr
       (mixed_sign_walking_hyperbolic ha)
 
 /-- **Mixed-type sign walking, with the anisotropic even plane.** At adjacent scales
@@ -177,7 +177,7 @@ theorem equivalent_toBilin'_unary_two_anisotropic (k : ℕ) {a : ℤ_[2]} (ha : 
       (toBilin' ((2 : ℤ_[2]) ^ k • !![5 * a, 0, 0; 0, 0, 2; 0, 2, 0])) := by
   simp only [map_smul]
   exact (LinearMap.BilinForm.equivalent_smul_iff
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).left).mpr
       (mixed_sign_walking_anisotropic ha)
 
 /-- The anisotropic plane `V`, of determinant `3`, is unimodular over `ℤ_[2]`. -/

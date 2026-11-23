@@ -10,14 +10,13 @@ public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
-import Mathlib.Algebra.Ring.NonZeroDivisors
 
 /-!
 # Isometric endomorphisms of a bilinear form
 
 This file defines the predicate that an endomorphism preserves a bilinear form and provides its
 elementary API, including the bridge to Mathlib's bundled isometric maps. It also records that
-scaling two forms by the same non-zero-divisor preserves whether they are isometric
+scaling two forms by the same left-regular scalar preserves whether they are isometric
 (`LinearMap.BilinForm.equivalent_smul_iff`), and gives the underlying-equivalence and evaluation
 lemmas `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_refl`,
 `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm`,
@@ -96,9 +95,9 @@ end IsIsometry
 
 end CommSemiring
 
-section CommRing
+section AddCommGroup
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
   {B : BilinForm R M} {f : M →ₗ[R] M}
 
 /-- **Unipotent isometries of anisotropic forms are trivial.** If `f` preserves a bilinear form
@@ -107,13 +106,16 @@ nilpotent, then `f = 1`. A nontrivial transvection such as the shear `(q, p) ↦
 therefore preserves no inner product. -/
 theorem IsIsometry.eq_one_of_isNilpotent_sub_one (hf : IsIsometry B f)
     (hB : B.toQuadraticMap.Anisotropic) (hN : IsNilpotent (f - 1)) : f = 1 := by
-  -- A vector `w = f u - u` fixed by `f` vanishes: `B w w = B (f u) w - B u w`, and
+  -- A vector `w = f u - u` fixed by `f` vanishes: `B w w = B (f u) w + B (-u) w`, and
   -- `B (f u) w = B (f u) (f w) = B u w`.
   have key (u : M) (hfw : f (f u - u) = f u - u) : f u - u = 0 := by
     refine hB _ ?_
     have hw := hf.apply u (f u - u)
     rw [hfw] at hw
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.map_sub₂, hw, sub_self]
+    rw [LinearMap.BilinMap.toQuadraticMap_apply]
+    calc B (f u - u) (f u - u) = B (f u + -u) (f u - u) := by rw [sub_eq_add_neg]
+      _ = B (u + -u) (f u - u) := by rw [LinearMap.map_add₂, hw, ← LinearMap.map_add₂]
+      _ = 0 := by rw [add_neg_cancel, LinearMap.map_zero₂]
   -- Hence `(f - 1) ^ (n + 1) v = 0` forces `(f - 1) v = 0`, by induction on `n`: the induction
   -- hypothesis applied to `(f - 1) v` says that `f v - v` is fixed by `f`.
   have descend (n : ℕ) (v : M) (hv : ((f - 1) ^ (n + 1)) v = 0) : (f - 1) v = 0 := by
@@ -127,7 +129,7 @@ theorem IsIsometry.eq_one_of_isNilpotent_sub_one (hf : IsIsometry B f)
   rw [← sub_eq_zero]
   exact LinearMap.ext fun v ↦ descend n v (by rw [pow_succ, hn, zero_mul, LinearMap.zero_apply])
 
-end CommRing
+end AddCommGroup
 
 end BilinForm
 
@@ -137,16 +139,15 @@ namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
 
-variable {R M M' : Type*} [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
+variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] {C : BilinForm R M} {C' : BilinForm R M'} {a : R}
 
-/-- Scaling two bilinear forms by the same non-zero-divisor `a` neither creates nor destroys an
+/-- Scaling two bilinear forms by the same left-regular scalar `a` neither creates nor destroys an
 isometry between them. In particular the constituents `a • C` and `a • C'` of two Jordan splittings
 are isometric exactly when their unimodular rescalings `C` and `C'` are. -/
-@[simp] theorem equivalent_smul_iff (ha : a ∈ nonZeroDivisors R) :
+@[simp] theorem equivalent_smul_iff (ha : IsLeftRegular a) :
     (a • C).Equivalent (a • C') ↔ C.Equivalent C' :=
-  ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-      simpa using e.map_app y x)⟩⟩,
+  ⟨fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ ha (by simpa using e.map_app y x)⟩⟩,
     fun ⟨e⟩ ↦ ⟨⟨e.toLinearEquiv, fun x y ↦ by simp⟩⟩⟩
 
 namespace IsometryEquiv
@@ -224,19 +225,36 @@ hypothesis on `2` is needed: over `ZMod 2`, the identity matrix and the all-ones
 `Fin 2 → ZMod 2` define symmetric forms with the same quadratic map `x 0 + x 1`, and only the
 first is nondegenerate. -/
 theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
-    {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
     {B : BilinForm R M} {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
     (h2 : (2 : R) ∈ nonZeroDivisors R) :
     B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
   refine ⟨Equivalent.toQuadraticMap, ?_⟩
   rintro ⟨f⟩
-  -- Polarization recovers `2 • B` from the quadratic map, and `2` can be cancelled.
   refine ⟨{ toLinearEquiv := f.toLinearEquiv
-            map_app' := fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors h2).mp ?_ }⟩
-  have h : QuadraticMap.polar C.toQuadraticMap (f x) (f y) =
-      QuadraticMap.polar B.toQuadraticMap x y := by
-    simp only [QuadraticMap.polar, ← map_add, f.map_app]
-  simp only [BilinMap.polar_toQuadraticMap, hB.eq y x, hC.eq (f y) (f x), ← two_mul] at h
-  exact h
+            map_app' := fun x y ↦ ?_ }⟩
+  -- `M` is an additive group, so `B (-z) w` is an additive inverse of `B z w` in `R`.
+  have hneg (z w : M) : B z w + B (-z) w = 0 := by
+    rw [← LinearMap.map_add₂, add_neg_cancel, LinearMap.map_zero₂]
+  -- Expanding both quadratic maps at `x + y` recovers `2 * C (f x) (f y)` and `2 * B x y`.
+  have h : B x x + B y y + 2 * C (f x) (f y) = B x x + B y y + 2 * B x y := by
+    have hf (z : M) : C (f z) (f z) = B z z := f.map_app z
+    have h := hf (x + y)
+    simp only [map_add, LinearMap.add_apply, hB.eq y x, hC.eq (f y) (f x)] at h
+    rw [hf x, hf y] at h
+    rw [two_mul, two_mul]
+    convert h using 1 <;> abel
+  -- Adding the inverses of `B x x`, `B y y` and `2 * B x y` cancels everything but
+  -- `2 * (C (f x) (f y) + B (-x) y)`, which therefore vanishes; now cancel `2`.
+  have hd : 2 * (C (f x) (f y) + B (-x) y) = 0 := by
+    calc 2 * (C (f x) (f y) + B (-x) y)
+        = 2 * (C (f x) (f y) + B (-x) y) + ((B x x + B (-x) x) + (B y y + B (-y) y)) := by
+          simp only [hneg, add_zero]
+      _ = (B x x + B y y + 2 * C (f x) (f y)) + (B (-x) x + B (-y) y + 2 * B (-x) y) := by ring
+      _ = (B x x + B (-x) x) + (B y y + B (-y) y) + 2 * (B x y + B (-x) y) := by rw [h]; ring
+      _ = 0 := by simp only [hneg, add_zero, mul_zero]
+  calc C (f x) (f y) = C (f x) (f y) + (B (-x) y + B x y) := by
+        rw [add_comm (B (-x) y), hneg, add_zero]
+    _ = B x y := by rw [← add_assoc, (mul_left_mem_nonZeroDivisors_eq_zero_iff h2).mp hd, zero_add]
 
 end LinearMap.BilinForm

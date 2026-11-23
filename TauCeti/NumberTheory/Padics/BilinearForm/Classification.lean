@@ -122,7 +122,7 @@ theorem IsJordanSplitting.equivalent_restrict_iff (h : B.IsJordanSplitting 2 N)
   have hCs : C.IsSymm := h2r.isSMulRegular.isSymm_smul_iff.mp (hC ▸ hB.restrict (N i))
   have hC's : C'.IsSymm := h2r.isSMulRegular.isSymm_smul_iff.mp (hC' ▸ hB'.restrict (N' i))
   set d'' := d'.reindex (Fintype.equivOfCardEq hcard).symm
-  rw [← hC, ← hC', equivalent_smul_iff h2,
+  rw [← hC, ← hC', equivalent_smul_iff h2r,
     hCs.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd hC's d d''
       ((h.isModular i).isUnit_det_of_smul_eq h2 hC d) ((h'.isModular i).isUnit_det_of_smul_eq h2 hC'
         d'') hw hw',
