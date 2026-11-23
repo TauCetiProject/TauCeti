@@ -37,8 +37,8 @@ equivalent (`CategoryTheory.ShortComplex.ShortExact.homologyMap_g_surjective_iff
 
 For maps `φ : X ⟶ Y` and `ψ : Y ⟶ Z` of complexes of modules with `ψ` a monomorphism, the short
 exact sequence `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`
-(`TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`) also has a connecting map on
-homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSequence_L₃_eq`.
+(`TauCeti.cokernelCompSequence_shortExact`) also has a connecting map on
+homology, computed on classes of elements in `TauCeti.exists_δ_cokernelCompSequence_eq`.
 
 ## Main declarations
 
@@ -52,7 +52,7 @@ homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSe
   `CategoryTheory.ShortComplex.ShortExact.homologyMap_f_injective_iff_homologyMap_g_surjective`:
   equivalences between surjectivity of `Hᵢ(S.g)`, vanishing of `hS.δ i j hij`, and injectivity of
   `Hⱼ(S.f)`.
-* `TauCeti.exists_δ_kernelCokernelSequence_L₃_eq`: the connecting map of
+* `TauCeti.exists_δ_cokernelCompSequence_eq`: the connecting map of
   `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ` on classes of elements.
 -/
 
@@ -180,17 +180,17 @@ universe w
 `cokernel ψ` is a cycle `x`. Then the image of `t` in `cokernel φ` is a cycle, and it represents
 the image of the class of `x` under the connecting map of
 `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`. -/
-theorem exists_δ_kernelCokernelSequence_L₃_eq {R : Type*} [Ring R]
+theorem exists_δ_cokernelCompSequence_eq {R : Type*} [Ring R]
     {X Y Z : CochainComplex (ModuleCat.{w} R) ℤ} (φ : X ⟶ Y) (ψ : Y ⟶ Z) [Mono ψ] (n : ℤ)
     (s : Z.X n) (t : Y.X (n + 1)) (hst : (ψ.f (n + 1)).hom t = (Z.d n (n + 1)).hom s)
     (x : (cokernel ψ).X n) (hx : ((cokernel ψ).d n (n + 1)).hom x = 0)
     (hsx : ((cokernel.π ψ).f n).hom s = x) :
     ∃ hc : ((cokernel φ).d (n + 1) (n + 1 + 1)).hom (((cokernel.π φ).f (n + 1)).hom t) = 0,
-      ((kernelCokernelCompSequence_snakeInput_L₃_shortExact φ ψ).δ n (n + 1) rfl).hom
+      ((cokernelCompSequence_shortExact φ ψ).δ n (n + 1) rfl).hom
           (((cokernel ψ).homologyπ n).hom ((cokernel ψ).moduleCatCyclesMk x (n + 1) (by simp) hx)) =
         ((cokernel φ).homologyπ (n + 1)).hom ((cokernel φ).moduleCatCyclesMk
           (((cokernel.π φ).f (n + 1)).hom t) (n + 1 + 1) (by simp) hc) := by
-  have hS := kernelCokernelCompSequence_snakeInput_L₃_shortExact φ ψ
+  have hS := cokernelCompSequence_shortExact φ ψ
   have hLg : cokernel.π (φ ≫ ψ) ≫ (kernelCokernelCompSequence.snakeInput φ ψ).L₃.g =
       cokernel.π ψ := by
     simp [kernelCokernelCompSequence.snakeInput]

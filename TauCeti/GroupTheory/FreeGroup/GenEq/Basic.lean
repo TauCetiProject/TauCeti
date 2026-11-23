@@ -318,6 +318,56 @@ theorem isReduced_substituteVars_segment_iff (U : Fin Ω.numItems → List (A ×
   · rw [segment_false, substituteVars_invRev, FreeGroup.isReduced_invRev]
   · rfl
 
+/-- After substituting words for the items, a subword `h[i', j']` of `h[i, j]`, for `i ≤ i'` and
+`j' ≤ j`, is reduced as written if `h[i, j]` is. -/
+theorem isReduced_substituteVars_segment_of_le_of_le {w : Fin Ω.numItems → List (A × Bool)}
+    {i j i' j' : ℕ} (h : FreeGroup.IsReduced (substituteVars w (Ω.segment i j true)))
+    (hi : i ≤ i') (hj : j' ≤ j) :
+    FreeGroup.IsReduced (substituteVars w (Ω.segment i' j' true)) := by
+  obtain ⟨t, ht⟩ := Ω.segment_prefix_segment (i := i') hj
+  obtain ⟨t', ht'⟩ := Ω.segment_suffix_segment (k := j) hi
+  rw [← ht', ← ht, substituteVars_append, substituteVars_append] at h
+  exact h.infix ⟨substituteVars w t', substituteVars w t, List.append_assoc _ _ _⟩
+
+/-- If two substituted segments `u[a, b] ^ ±1` and `u[c, d] ^ ±1` (with the same sign `s`) are
+reduced and `u[c, b] ^ ±1` is nonempty, then `u[a, d] ^ ±1` is reduced. -/
+theorem isReduced_substituteVars_segment_of_overlap {u : Fin Ω.numItems → List (A × Bool)}
+    {a b c d : ℕ} {s : Bool}
+    (h₁ : FreeGroup.IsReduced (substituteVars u (Ω.segment a b s)))
+    (h₂ : FreeGroup.IsReduced (substituteVars u (Ω.segment c d s)))
+    (hne : substituteVars u (Ω.segment c b s) ≠ []) :
+    FreeGroup.IsReduced (substituteVars u (Ω.segment a d s)) := by
+  rw [isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  have hne' : substituteVars u (Ω.segment c b true) ≠ [] := by
+    cases s
+    · rw [segment_false, substituteVars_invRev] at hne
+      exact fun h => hne (by rw [h, FreeGroup.invRev_empty])
+    · exact hne
+  rcases le_or_gt c a with hca | hac
+  · exact h₂.infix ((Ω.segment_suffix_segment hca).flatMap _).isInfix
+  rcases le_or_gt d b with hdb | hbd
+  · exact h₁.infix ((Ω.segment_prefix_segment hdb).flatMap _).isInfix
+  have hseg (x y : ℕ) : Ω.segment x y true = Ω.segment x (min y Ω.numItems) true := by
+    have hlen : (List.finRange Ω.numItems).take Ω.numItems = List.finRange Ω.numItems :=
+      List.take_of_length_le (by simp)
+    simp only [segment_true, ← List.take_take, hlen]
+  set b' := min b Ω.numItems
+  set d' := min d Ω.numItems
+  have hcb' : c < b' := by
+    by_contra h
+    apply hne'
+    have hnil : Ω.segment c b true = [] :=
+      List.eq_nil_of_length_eq_zero (by rw [length_segment]; omega)
+    rw [hnil, FreeGroup.substituteVars_nil]
+  have hb'd' : b' ≤ d' := min_le_min_right _ hbd.le
+  rw [hseg a b, ← Ω.segment_append hac.le hcb'.le, substituteVars_append] at h₁
+  rw [hseg c d, ← Ω.segment_append hcb'.le hb'd', substituteVars_append] at h₂
+  rw [hseg c b] at hne'
+  rw [hseg a d, ← Ω.segment_append (hac.le.trans hcb'.le) hb'd',
+    ← Ω.segment_append hac.le hcb'.le,
+    substituteVars_append, substituteVars_append]
+  exact h₁.append_overlap h₂ hne'
+
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
     List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool) :=
@@ -351,13 +401,17 @@ theorem basicEquation_snd (μ : Fin Ω.numBases) :
       Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) (Ω.sign (Ω.dual μ)) :=
   (rfl)
 
+/-- The basic equation of `Δ(μ)` is the basic equation of `μ` with its sides exchanged. -/
+theorem basicEquation_dual (μ : Fin Ω.numBases) :
+    Ω.basicEquation (Ω.dual μ) = (Ω.basicEquation μ).swap :=
+  Prod.ext (by simp) (by simp [Ω.dual_involutive μ])
+
 /-- The basic equations of `μ` and `Δ(μ)` have the same two sides, exchanged: as relators, each is
 the inverse of the other. -/
 theorem mk_basicEquation_dual (μ : Fin Ω.numBases) :
     FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1 * (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)⁻¹ =
       (FreeGroup.mk (Ω.basicEquation μ).1 * (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹)⁻¹ := by
-  rw [basicEquation_fst, basicEquation_snd, basicEquation_fst, basicEquation_snd,
-    Ω.dual_involutive, mul_inv_rev, inv_inv]
+  rw [basicEquation_dual, Prod.fst_swap, Prod.snd_swap, mul_inv_rev, inv_inv]
 
 /-- The left side of the coefficient equation of a constant base on item `k` is `hₖ`. -/
 @[simp]
@@ -767,14 +821,8 @@ theorem isReduced_substituteVars_segment (μ : Fin Ω.numBases) :
 empty. -/
 theorem isReduced_substituteVars_segment_of_le (ν : Fin Ω.numBases) {i j : ℕ}
     (hi : Ω.left ν ≤ i) (hj : j ≤ Ω.right ν) :
-    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j true)) := by
-  rcases le_total i j with hij | hji
-  · have h := U.isReduced_substituteVars_segment ν
-    rw [← Ω.segment_append hi (hij.trans hj), ← Ω.segment_append hij hj, substituteVars_append,
-      substituteVars_append, ← List.append_assoc] at h
-    exact h.infix (List.infix_append _ _ _)
-  · rw [Ω.segment_eq_nil_of_le hji, FreeGroup.substituteVars_nil]
-    exact FreeGroup.IsReduced.nil
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j true)) :=
+  Ω.isReduced_substituteVars_segment_of_le_of_le (U.isReduced_substituteVars_segment ν) hi hj
 
 /-- When `ε(μ) = ε(Δμ)`, a solution assigns the same word to the bases `μ` and `Δ(μ)`. -/
 theorem substituteVars_segment_eq_of_sign_eq {μ : Fin Ω.numBases}
@@ -989,29 +1037,25 @@ private theorem eq_of_left_eq (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × F
   rw [hleft] at e
   exact Fin.ext (U.prefixLength_injOn (Set.mem_Iic.2 p.is_le) (Set.mem_Iic.2 q.is_le) (by omega))
 
+/-- The item of a constant base carries the one-letter word of its label. -/
+theorem word_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)} (hb : b ∈ Ω.constBases) :
+    U.word b.1 = [b.2] := by
+  simpa using U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
+
 include U in
 private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.constBases)
     (b' : Fin Ω.numItems × (A × Bool)) (hb' : b' ∈ Ω.constBases) (hk : b.1 = b'.1) :
-    b.2 = b'.2 := by
-  have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
-  have e' := U.subst_eq _ (Ω.coeffEquation_mem_equations hb')
-  simp only [coeffEquation_fst, coeffEquation_snd, substituteVars_singleton_inl,
-    substituteVars_singleton_inr] at e e'
-  rw [hk, e'] at e
-  simp only [List.cons.injEq, and_true] at e
-  exact e.symm
+    b.2 = b'.2 :=
+  List.singleton_inj.1 ((U.word_of_mem_constBases hb).symm.trans
+    (hk ▸ U.word_of_mem_constBases hb'))
 
 /-- The item of a constant base carries a one-letter word, so the prefix length grows by one
 across it. -/
 theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) : U.prefixLength (b.1 + 1) = U.prefixLength b.1 + 1 := by
-  have hone : (U.word b.1).length = 1 := by
-    have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
-    simp only [coeffEquation_fst, coeffEquation_snd, substituteVars_singleton_inl,
-      substituteVars_singleton_inr] at e
-    simp [e]
   have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right b.1 1)
-  rw [segment_succ, substituteVars_singleton_inl, hone] at this
+  rw [segment_succ, substituteVars_singleton_inl, U.word_of_mem_constBases hb,
+    List.length_singleton] at this
   omega
 
 include U in

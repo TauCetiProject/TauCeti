@@ -10,7 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.Space
 public import TauCeti.Analysis.BoundedVariation.Translation
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Isometric transport of distributional total variation, BV spaces, and perimeter

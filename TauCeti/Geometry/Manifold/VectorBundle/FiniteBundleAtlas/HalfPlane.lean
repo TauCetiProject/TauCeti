@@ -64,6 +64,8 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
 * `TauCeti.FiniteBundleAtlas.isCompact_closure_halfImage`,
   `TauCeti.FiniteBundleAtlas.closure_halfImage_subset_extChartAt_target`: the interior of a chart
   image has compact closure inside the target of the extended chart.
+* `TauCeti.FiniteBundleAtlas.continuousOn_halfCoord_closure_halfImage`: the chart expression of a
+  continuous section is continuous on that closure.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm`: the
   chart readings of a `Cⁿ` function are `Cⁿ` up to the boundary.
 * `TauCeti.FiniteBundleAtlas.halfCoord_fun_smul`: chart readings of sections are linear over
@@ -332,6 +334,43 @@ theorem closure_halfImage_subset_extChartAt_target (i : Fin A.n) :
     exact (extChartAt closedUpperHalfPlaneModel (A.center i)).map_source (by
       rw [extChartAt_source]; exact A.closure_dom_subset_source i hx)
 
+/-- A point of the closure of the interior of the image of chart `i` in `ℂ` comes from a point of
+the closure of the chart domain. -/
+theorem exists_mem_closure_dom_of_mem_closure_halfImage {i : Fin A.n} {z : ℂ}
+    (hz : z ∈ closure (A.halfImage i : Set ℂ)) :
+    ∃ x ∈ closure (A.dom i), closedUpperHalfPlaneModel.symm z = A.chart i x := by
+  obtain ⟨x, hx, rfl⟩ := A.closure_halfImage_subset_extChartAt_image_closure_dom i hz
+  exact ⟨x, hx, by rw [extChartAt_coe, Function.comp_apply, ModelWithCorners.left_inv]⟩
+
+/-- A point of the closure of the interior of the image of chart `i` in `ℂ`, read back in `M`,
+lies in the base set of the bundle chart `i`. -/
+theorem chart_symm_mem_baseSet_of_mem_closure_halfImage {i : Fin A.n} {z : ℂ}
+    (hz : z ∈ closure (A.halfImage i : Set ℂ)) :
+    (A.chart i).symm (closedUpperHalfPlaneModel.symm z) ∈ (A.triv i).baseSet := by
+  obtain ⟨x, hx, hxz⟩ := A.exists_mem_closure_dom_of_mem_closure_halfImage hz
+  rw [hxz, (A.chart i).left_inv (A.closure_dom_subset_source i hx)]
+  exact A.closure_dom_subset_baseSet i hx
+
+/-- The chart expression in chart `i` of a continuous section is continuous on the closure of the
+interior of the image of the chart in `ℂ`, which contains the points of the image on the real
+axis and lies in the image of the closure of the chart domain. -/
+theorem continuousOn_halfCoord_closure_halfImage {s : ∀ x, V x}
+    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) (i : Fin A.n) :
+    ContinuousOn (A.halfCoord i s) (closure (A.halfImage i : Set ℂ)) := by
+  have hmaps : MapsTo closedUpperHalfPlaneModel.symm (closure (A.halfImage i : Set ℂ))
+      (A.chart i).target := fun z hz ↦ by
+    obtain ⟨x, hx, hxz⟩ := A.exists_mem_closure_dom_of_mem_closure_halfImage hz
+    rw [hxz]
+    exact (A.chart i).map_source (A.closure_dom_subset_source i hx)
+  have hpt : ContinuousOn (fun z ↦ (A.chart i).symm (closedUpperHalfPlaneModel.symm z))
+      (closure (A.halfImage i : Set ℂ)) :=
+    (A.chart i).continuousOn_symm.comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
+      hmaps
+  refine (continuous_snd.comp_continuousOn ((A.triv i).continuousOn.comp
+    (hs.comp_continuousOn hpt) fun z hz ↦ (A.triv i).mem_source.2
+      (A.chart_symm_mem_baseSet_of_mem_closure_halfImage hz))).congr fun z _ ↦ by
+      rw [A.halfCoord_def i s z, coord_def]; rfl
+
 /-- **The chart readings of a `Cⁿ` function are `Cⁿ` up to the boundary**, on the target of the
 extended chart, a relatively open subset of the closed upper half-plane. -/
 theorem contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm {G : Type*}
@@ -425,6 +464,16 @@ theorem contDiffOn_halfCoord {k : ℕ} [IsManifold closedUpperHalfPlaneModel k M
     ((contMDiffOn_extChartAt_symm (A.center i)).mono inter_subset_left) fun _ hy ↦ hy.2).congr
       fun y _ ↦ ?_
   rw [halfCoord, coord_def, Function.comp_apply, extChartAt_coe_symm, Function.comp_apply]
+
+/-- On the closure of the interior of the image of chart `i` in `ℂ`, the chart expression of a
+section is the image of its value under the trivialization of chart `i`, a linear map. -/
+theorem halfCoord_eq_continuousLinearMapAt {i : Fin A.n} {z : ℂ}
+    (hz : z ∈ closure (A.halfImage i : Set ℂ)) (s : ∀ x, V x) :
+    A.halfCoord i s z = (A.triv i).continuousLinearMapAt ℝ
+      ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))
+        (s ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) := by
+  rw [halfCoord_def, coord_def, Trivialization.continuousLinearMapAt_apply_of_mem ℝ (A.triv i)
+    (A.chart_symm_mem_baseSet_of_mem_closure_halfImage hz)]
 
 /-- On the interior of the overlap of two charts, the coordinates of a section in chart `i'` are
 the coordinate change applied to its coordinates in chart `i` at the transition point. -/

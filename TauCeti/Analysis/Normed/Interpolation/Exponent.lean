@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Interpolation.RealMethod
+public import TauCeti.Analysis.Normed.Interpolation.RealMethod.Basic
 public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!

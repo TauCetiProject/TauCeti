@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.Basic
+public import TauCeti.Analysis.Normed.Lp.Dual
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.Normed.Module.Dual.Spectrum
 
 /-!
 # Unilateral shifts on `ℓᵖ`
@@ -30,6 +32,14 @@ left shift (`lp.leftShift`) is a contraction satisfying `leftShift ∘ rightShif
 * on `ℓ²(ℕ, E)` for a Hilbert space `E`, `rightShift` and `leftShift` are Hilbert-space adjoints
   (`lp.adjoint_rightShift`, `lp.adjoint_leftShift`, `lp.star_rightShift`, `lp.star_leftShift`).
 
+For scalar sequences and Hölder conjugate exponents `p` and `q` with `1 ≤ p < ∞`, the Banach
+transposes of the shifts are computed under the series duality `ℓ^q ≃ (ℓ^p)*` of `lp.dualEquiv`,
+which is bilinear, without complex conjugation: the transpose of the right shift on `ℓ^p` is the
+left shift on `ℓ^q`, and the transpose of the left shift on `ℓ^p` is the right shift on `ℓ^q`.
+This includes `p = 1`, where `q = ∞`. Since the Banach transpose preserves the spectrum, the left
+shift on `ℓ^q` and the right shift on `ℓ^p` have the same spectrum, and likewise the right shift on
+`ℓ^q` and the left shift on `ℓ^p`.
+
 Fredholmness and index formulas for the unilateral shifts and their powers live in
 `TauCeti.Analysis.Fredholm.Shift`.
 
@@ -45,6 +55,11 @@ Fredholmness and index formulas for the unilateral shifts and their powers live 
   quotient properties of the shifts and their powers.
 * `lp.adjoint_rightShift`, `lp.adjoint_leftShift`: adjointness of the unilateral shifts on
   `ℓ²(ℕ, E)`.
+* `lp.precomp_rightShift_eq_conjContinuousAlgEquiv_leftShift`,
+  `lp.precomp_leftShift_eq_conjContinuousAlgEquiv_rightShift`: the Banach transposes of the shifts
+  on `ℓ^p`, `1 ≤ p < ∞`, are the opposite shifts on `ℓ^q` under `lp.dualEquiv`.
+* `lp.spectrum_leftShift_eq_spectrum_rightShift`, `lp.spectrum_rightShift_eq_spectrum_leftShift`:
+  the resulting equalities of spectra between `ℓ^q` and `ℓ^p`.
 
 ## References
 
@@ -612,5 +627,68 @@ theorem star_leftShift [CompleteSpace E] :
   rw [ContinuousLinearMap.star_eq_adjoint, adjoint_leftShift]
 
 end Adjoint
+
+section Transpose
+
+open ContinuousLinearMap
+
+variable {𝕜 : Type*} [RCLike 𝕜] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  [q.HolderConjugate p]
+
+/-- Under the duality `ℓ^q ≃ (ℓ^p)*` of `lp.dualEquiv`, `1 ≤ p < ∞`, precomposing the functional
+of `a` with the right shift on `ℓ^p` gives the functional of the left-shifted sequence:
+`∑ i, a i * (R x) i = ∑ i, (L a) i * x i`. -/
+@[simp]
+theorem dualEquiv_comp_rightShift (hp : p ≠ ∞) (a : ℓ^q(ℕ, 𝕜)) :
+    (dualEquiv 𝕜 ℕ q p hp a).comp (rightShift 𝕜 𝕜 p) =
+      dualEquiv 𝕜 ℕ q p hp (leftShift 𝕜 𝕜 q a) := by
+  refine ext_lp_of_ne_top hp fun i ↦ ?_
+  simp
+
+/-- Under the duality `ℓ^q ≃ (ℓ^p)*` of `lp.dualEquiv`, `1 ≤ p < ∞`, precomposing the functional
+of `a` with the left shift on `ℓ^p` gives the functional of the right-shifted sequence:
+`∑ i, a i * (L x) i = ∑ i, (R a) i * x i`. -/
+@[simp]
+theorem dualEquiv_comp_leftShift (hp : p ≠ ∞) (a : ℓ^q(ℕ, 𝕜)) :
+    (dualEquiv 𝕜 ℕ q p hp a).comp (leftShift 𝕜 𝕜 p) =
+      dualEquiv 𝕜 ℕ q p hp (rightShift 𝕜 𝕜 q a) := by
+  refine ext_lp_of_ne_top hp fun i ↦ ?_
+  cases i <;> simp
+
+/-- The Banach transpose of the right shift on `ℓ^p`, `1 ≤ p < ∞`, is the left shift on `ℓ^q`
+transported along the duality `ℓ^q ≃ (ℓ^p)*` of `lp.dualEquiv`. -/
+theorem precomp_rightShift_eq_conjContinuousAlgEquiv_leftShift (hp : p ≠ ∞) :
+    precomp 𝕜 (rightShift 𝕜 𝕜 p) =
+      (dualEquiv 𝕜 ℕ q p hp).toContinuousLinearEquiv.conjContinuousAlgEquiv
+        (leftShift 𝕜 𝕜 q) := by
+  ext f : 1
+  obtain ⟨a, rfl⟩ := (dualEquiv 𝕜 ℕ q p hp).surjective f
+  simp [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+
+/-- The Banach transpose of the left shift on `ℓ^p`, `1 ≤ p < ∞`, is the right shift on `ℓ^q`
+transported along the duality `ℓ^q ≃ (ℓ^p)*` of `lp.dualEquiv`. -/
+theorem precomp_leftShift_eq_conjContinuousAlgEquiv_rightShift (hp : p ≠ ∞) :
+    precomp 𝕜 (leftShift 𝕜 𝕜 p) =
+      (dualEquiv 𝕜 ℕ q p hp).toContinuousLinearEquiv.conjContinuousAlgEquiv
+        (rightShift 𝕜 𝕜 q) := by
+  ext f : 1
+  obtain ⟨a, rfl⟩ := (dualEquiv 𝕜 ℕ q p hp).surjective f
+  simp [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+
+/-- For Hölder conjugate exponents with `1 ≤ p < ∞`, the left shift on `ℓ^q` has the same spectrum
+as the right shift on `ℓ^p`, since it is the Banach transpose of the latter. -/
+theorem spectrum_leftShift_eq_spectrum_rightShift (hp : p ≠ ∞) :
+    spectrum 𝕜 (leftShift 𝕜 𝕜 q) = spectrum 𝕜 (rightShift 𝕜 𝕜 p) := by
+  rw [← spectrum_precomp (rightShift 𝕜 𝕜 p),
+    precomp_rightShift_eq_conjContinuousAlgEquiv_leftShift (q := q) hp, AlgEquiv.spectrum_eq]
+
+/-- For Hölder conjugate exponents with `1 ≤ p < ∞`, the right shift on `ℓ^q` has the same
+spectrum as the left shift on `ℓ^p`, since it is the Banach transpose of the latter. -/
+theorem spectrum_rightShift_eq_spectrum_leftShift (hp : p ≠ ∞) :
+    spectrum 𝕜 (rightShift 𝕜 𝕜 q) = spectrum 𝕜 (leftShift 𝕜 𝕜 p) := by
+  rw [← spectrum_precomp (leftShift 𝕜 𝕜 p),
+    precomp_leftShift_eq_conjContinuousAlgEquiv_rightShift (q := q) hp, AlgEquiv.spectrum_eq]
+
+end Transpose
 
 end lp

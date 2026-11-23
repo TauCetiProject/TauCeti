@@ -6,17 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.IsLocalHomeomorph
+public import Mathlib.Topology.LocalAtTarget
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Topology.SeparatedMap
+
+import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # Local homeomorphisms: path-connectedness, local inverses, fiber sums, products, base change
 
 A map that is a local homeomorphism at each point of an open set sends that set to an open set.
-Being a local homeomorphism at a point only depends on the germ of the map there.
+Being a local homeomorphism at a point only depends on the germ of the map there. A continuous
+closed map that sends the preimage of an open set bijectively onto it restricts to a homeomorphism
+there, so it is a local homeomorphism on that preimage; this is how the local degree of a map of
+spheres is read at a point with a single preimage nearby.
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -45,6 +52,12 @@ groupoid.
   set.
 * `IsLocalHomeomorphOn.congr_of_eventuallyEq`: being a local homeomorphism at a point depends only
   on the germ of the map there.
+* `IsClosedMap.isLocalHomeomorphOn_preimage`: a continuous closed map that sends the preimage of
+  an open set bijectively onto it is a local homeomorphism on that preimage.
+* `IsLocalHomeomorphOn.exists_ncard_inter_preimage_eq`: a local homeomorphism has one preimage
+  nearby.
+* `IsClosedMap.eventually_ncard_preimage_eq_finsum`: for a closed map with finite fibres, the local
+  preimage counts at the points of a fibre add up to the number of preimages of nearby points.
 * `IsLocalHomeomorph.locallyPathConnectedSpace`: the domain of a local homeomorphism into a
   locally path-connected space is locally path-connected.
 * `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
@@ -88,6 +101,75 @@ theorem _root_.IsLocalHomeomorphOn.congr_of_eventuallyEq {f g : E → B} {s : Se
   refine ⟨e.restrOpen U hUo, by simpa using ⟨hxe, hxU⟩, fun z hz ↦ ?_⟩
   rw [OpenPartialHomeomorph.restrOpen_source] at hz
   rw [← hfgU z hz.2, he, OpenPartialHomeomorph.coe_restrOpen]
+
+/-- **A closed map is a local homeomorphism over an open set it covers bijectively.** If a
+continuous closed map `f` sends the preimage of an open set `V` bijectively onto `V`, then it
+restricts to a homeomorphism `f⁻¹(V) ≃ₜ V`, so it is a local homeomorphism at every point of
+`f⁻¹(V)`. Every continuous map from a compact space to a Hausdorff space is closed, so for such a
+map it suffices that each point of `V` have exactly one preimage. -/
+theorem _root_.IsClosedMap.isLocalHomeomorphOn_preimage {f : E → B} (hf : Continuous f)
+    (hcl : IsClosedMap f) {V : Set B} (hV : IsOpen V) (hbij : Set.BijOn f (f ⁻¹' V) V) :
+    IsLocalHomeomorphOn f (f ⁻¹' V) := by
+  -- The restriction `f⁻¹(V) → V` is a continuous closed bijection, hence a homeomorphism.
+  -- `V.restrictPreimage f` is by definition `(mapsTo_preimage f V).restrict`, which is the map
+  -- `hbij.mapsTo.restrict` that `Set.BijOn.bijective` proves bijective.
+  have hres : Function.Bijective (V.restrictPreimage f) := hbij.bijective
+  let e := (Equiv.ofBijective _ hres).toHomeomorphOfContinuousClosed
+    hf.restrictPreimage (hcl.restrictPreimage V)
+  exact (isLocalHomeomorphOn_iff_isOpenEmbedding_restrict _).2 fun x hx ↦
+    ⟨f ⁻¹' V, (hV.preimage hf).mem_nhds hx, hV.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding⟩
+
+open Set in
+/-- **A local homeomorphism has one preimage nearby.** If `f` is a local homeomorphism at every
+point of `s` and `x ∈ s`, then inside any neighbourhood `N` of `x` there is an open neighbourhood
+`V` of `x` such that every point close enough to `f x` has exactly one preimage in `V`. This is the
+count of `TauCeti.IsLocalPowerAt.exists_ncard_inter_preimage_eq` with exponent `1`, and it needs no
+chart into `ℂ`, so it also applies at boundary points of surfaces. -/
+theorem _root_.IsLocalHomeomorphOn.exists_ncard_inter_preimage_eq {f : E → B} {s : Set E}
+    {x : E} (hf : IsLocalHomeomorphOn f s) (hx : x ∈ s) {N : Set E} (hN : N ∈ 𝓝 x) :
+    ∃ V ⊆ N, IsOpen V ∧ x ∈ V ∧ ∀ᶠ y in 𝓝 (f x), (V ∩ f ⁻¹' {y}).ncard = 1 := by
+  obtain ⟨φ, hxφ, rfl⟩ := hf x hx
+  obtain ⟨W, hWN, hWo, hxW⟩ := mem_nhds_iff.1 hN
+  refine ⟨φ.source ∩ W, inter_subset_right.trans hWN, φ.open_source.inter hWo, ⟨hxφ, hxW⟩, ?_⟩
+  filter_upwards [(φ.isOpen_image_source_inter hWo).mem_nhds (mem_image_of_mem φ ⟨hxφ, hxW⟩)]
+    with y ⟨x', hx', hx'y⟩
+  refine ncard_eq_one.2 ⟨x', Subset.antisymm (fun z hz => ?_) ?_⟩
+  · exact φ.injOn hz.1.1 hx'.1 ((mem_singleton_iff.1 hz.2).trans hx'y.symm)
+  · exact singleton_subset_iff.2 ⟨hx', hx'y⟩
+
+open Filter Set in
+/-- **Local preimage counts add up over a finite fibre.** Let `p : X → Y` be a closed map with
+finite fibres, `X` Hausdorff. Suppose that every point `x` of the fibre over `y` has arbitrarily
+small open neighbourhoods `V` in which every point `y' ≠ y` close enough to `y` has exactly `e x`
+preimages, as `TauCeti.IsLocalPowerAt.exists_ncard_inter_preimage_eq` provides at a local power map
+of exponent `e x`. Then every point `y' ≠ y` close enough to `y` has exactly `∑ᶠ x ∈ p ⁻¹' {y}, e x`
+preimages: closedness of `p` puts all of them in disjoint such neighbourhoods of the points over
+`y`. This is how the local degrees over a fibre of a branched cover add up to the number of sheets
+nearby. -/
+theorem _root_.IsClosedMap.eventually_ncard_preimage_eq_finsum {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space X] {p : X → Y} (hp : IsClosedMap p)
+    (hfin : ∀ y, (p ⁻¹' {y}).Finite) {e : X → ℕ} {y : Y}
+    (he : ∀ x ∈ p ⁻¹' {y}, ∀ N ∈ 𝓝 x, ∃ V ⊆ N, IsOpen V ∧ x ∈ V ∧
+      ∀ᶠ y' in 𝓝[≠] y, (V ∩ p ⁻¹' {y'}).ncard = e x) :
+    ∀ᶠ y' in 𝓝[≠] y, (p ⁻¹' {y'}).ncard = ∑ᶠ x ∈ p ⁻¹' {y}, e x := by
+  set F := p ⁻¹' {y}
+  have hF : F.Finite := hfin y
+  -- Separate the points of the fibre `F` by pairwise disjoint neighbourhoods `V x`, on which the
+  -- preimages of each point near `y` are counted by `e x`.
+  obtain ⟨U, hU, hUdisj⟩ := hF.t2_separation
+  choose! V hVU hVo hxV hV using fun x (hx : x ∈ F) => he x hx (U x) ((hU x).2.mem_nhds (hU x).1)
+  -- Since `p` is closed, the fibres near `y` lie in the union of the `V x`.
+  have ht : ∀ᶠ y' in 𝓝 y, ∀ x' ∈ p ⁻¹' {y'}, x' ∈ ⋃ x ∈ F, V x :=
+    hp.eventually_nhds_fiber y fun x hx =>
+      Filter.mem_of_superset ((hVo x hx).mem_nhds (hxV x hx)) fun _ h => mem_biUnion hx h
+  filter_upwards [nhdsWithin_le_nhds ht, hF.eventually_all.2 hV] with y' hy't hy'V
+  have hcover : p ⁻¹' {y'} = ⋃ x ∈ F, V x ∩ p ⁻¹' {y'} := by
+    refine Subset.antisymm (fun x' hx' => ?_) (iUnion₂_subset fun _ _ => inter_subset_right)
+    obtain ⟨x, hx, hx'x⟩ := mem_iUnion₂.1 (hy't x' hx')
+    exact mem_biUnion hx ⟨hx'x, hx'⟩
+  rw [hcover, hF.ncard_biUnion (fun _ _ => (hfin y').subset inter_subset_right)
+    (hUdisj.mono_on fun x hx => inter_subset_left.trans (hVU x hx))]
+  exact finsum_mem_congr rfl hy'V
 
 /-- **A local homeomorphism with locally path-connected codomain has locally path-connected
 domain.** In particular the total space of a covering of a locally path-connected space is
@@ -175,6 +257,33 @@ theorem eventually_finsum_mem_preimage_singleton_eq_sum
     simp only [L, Set.mem_sdiff, subset_tsupport f hfe', true_and, not_not, Set.mem_iUnion₂] at he'L
     obtain ⟨e, he, he'W⟩ := he'L
     exact ⟨e, he, hWinj e (hbσ e he).1 he'W ((hbσ e he).2.trans hpe'.symm)⟩
+
+/-- A continuous function on the domain of a local homeomorphism of Hausdorff spaces has a
+continuous fiberwise sum if the base is weakly locally compact and its support meets the
+preimage of every compact set in a compact set. The codomain has continuous addition. -/
+theorem continuous_finsum_mem_preimage_singleton
+    [T2Space E] [T2Space B] [WeaklyLocallyCompactSpace B]
+    {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [ContinuousAdd M]
+    {p : E → B} (hp : IsLocalHomeomorph p) {f : E → M} (hf : Continuous f)
+    (hproper : ∀ ⦃K : Set B⦄, IsCompact K → IsCompact (p ⁻¹' K ∩ tsupport f)) :
+    Continuous fun b ↦ ∑ᶠ e ∈ p ⁻¹' {b}, f e := by
+  classical
+  refine continuous_iff_continuousAt.2 fun b ↦ ?_
+  obtain ⟨F, hF, hev⟩ := hp.eventually_finsum_mem_preimage_singleton_eq_sum hproper
+    (σ := fun e ↦ hp.localInverseAt e)
+    (fun e ↦ (hp.localInverseAt e).continuousAt hp.apply_self_mem_localInverseAt_source)
+    (fun _ ↦ hp.localInverseAt_apply_self)
+    (fun e ↦ by
+      filter_upwards [(hp.localInverseAt e).open_source.mem_nhds
+        hp.apply_self_mem_localInverseAt_source] with b hb
+      exact hp.apply_localInverseAt_of_mem hb) b
+  have hcont : ContinuousAt (fun b ↦ ∑ e ∈ F, f (hp.localInverseAt e b)) b := by
+    apply tendsto_finsetSum
+    intro e he
+    rw [← hF e he]
+    exact hf.continuousAt.comp
+      ((hp.localInverseAt e).continuousAt hp.apply_self_mem_localInverseAt_source)
+  exact hcont.congr_of_eventuallyEq hev
 
 end FiberSum
 

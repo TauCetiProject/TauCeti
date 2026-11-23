@@ -16,7 +16,10 @@ In an abelian braided monoidal preadditive category `C` satisfying the graded-te
 `HomologicalComplex.monoidalCategory`, the Koszul braiding exchanges the two factors of the
 totalized tensor product on `CochainComplex C ℤ`, so tensoring on the right with a K-flat complex
 also preserves quasi-isomorphisms (`CochainComplex.quasiIso_tensorHom_id`,
-`CochainComplex.quasiIso_whiskerRight`).
+`CochainComplex.quasiIso_whiskerRight`). Hence the tensor product of two quasi-isomorphisms
+`f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a quasi-isomorphism whenever `L₁` and `K₂` are K-flat
+(`CochainComplex.quasiIso_tensorHom_of_isKFlat_right_left`) or `K₁` and `L₂` are K-flat
+(`CochainComplex.quasiIso_tensorHom_of_isKFlat_left_right`).
 
 When in addition `(CochainComplex.KFlat.localizerMorphism C).HasLeftResolutions` holds, every
 arbitrary cochain complex admits a left resolution by a K-flat complex, so any quasi-isomorphism
@@ -30,6 +33,10 @@ by any object of `C` (`CochainComplex.quasiIso_mapHomologicalComplex_tensorLeft_
 `HasDerivedCategory C` also holds, any quasi-isomorphism between K-flat complexes induces a natural
 isomorphism of derived tensor endofunctors `CochainComplex.kFlatTensor`
 (`CochainComplex.isIso_kFlatTensorMap`).
+
+No boundedness or termwise flatness is required of either input. Complexes of modules over a
+commutative ring and complexes of sheaves of modules over a sheaf of commutative rings satisfy
+these hypotheses.
 
 ## References
 
@@ -71,8 +78,8 @@ instance quasiIso_tensorHom_id (A : CochainComplex C ℤ) [A.IsKFlat]
     QuasiIso (tensorHom f (𝟙 A)) := by
   rw [HomologicalComplex.tensorHom, ← whiskerRight_eq_mapBifunctorMap]
   exact quasiIso_of_arrow_mk_iso (A ◁ f) (f ▷ A)
-    (Arrow.isoMk (TauCeti.koszulBraiding C A K) (TauCeti.koszulBraiding C A L)
-      (by simp [TauCeti.koszulBraidingHom_naturality_right]))
+    (Arrow.isoMk (HomologicalComplex.tensorBraiding A K) (HomologicalComplex.tensorBraiding A L)
+      (HomologicalComplex.tensorBraiding_hom_naturality (𝟙 A) f).symm)
 
 /-- Tensoring a quasi-isomorphism on the right with a K-flat complex via `▷` is a
 quasi-isomorphism. -/
@@ -81,6 +88,28 @@ instance quasiIso_whiskerRight (Q : CochainComplex C ℤ) [Q.IsKFlat]
     QuasiIso (f ▷ Q) := by
   rw [whiskerRight_eq_mapBifunctorMap]
   exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 Q)))
+
+/-- The tensor product of two quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a
+quasi-isomorphism whenever `L₁` and `K₂` are K-flat. -/
+lemma quasiIso_tensorHom_of_isKFlat_right_left
+    {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} [L₁.IsKFlat] [K₂.IsKFlat]
+    (f : K₁ ⟶ L₁) (g : K₂ ⟶ L₂) [QuasiIso f] [QuasiIso g] :
+    QuasiIso (tensorHom f g) := by
+  have h : tensorHom f g = tensorHom f (𝟙 K₂) ≫ tensorHom (𝟙 L₁) g := by
+    simp [HomologicalComplex.tensorHom, ← mapBifunctorMap_comp]
+  rw [h]
+  infer_instance
+
+/-- The tensor product of two quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a
+quasi-isomorphism whenever `K₁` and `L₂` are K-flat. -/
+lemma quasiIso_tensorHom_of_isKFlat_left_right
+    {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} [K₁.IsKFlat] [L₂.IsKFlat]
+    (f : K₁ ⟶ L₁) (g : K₂ ⟶ L₂) [QuasiIso f] [QuasiIso g] :
+    QuasiIso (tensorHom f g) := by
+  have h : tensorHom f g = tensorHom (𝟙 K₁) g ≫ tensorHom f (𝟙 L₂) := by
+    simp [HomologicalComplex.tensorHom, ← mapBifunctorMap_comp]
+  rw [h]
+  infer_instance
 
 section HasLeftResolutions
 
@@ -115,8 +144,8 @@ instance quasiIso_id_tensorHom_of_isKFlat (A : CochainComplex C ℤ)
     rw [whiskerRight_eq_mapBifunctorMap]
     exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 A)))
   exact quasiIso_of_arrow_mk_iso (f ▷ A) (A ◁ f)
-    (Arrow.isoMk (TauCeti.koszulBraiding C P A) (TauCeti.koszulBraiding C Q A)
-      (by simp [TauCeti.koszulBraidingHom_naturality_left]))
+    (Arrow.isoMk (HomologicalComplex.tensorBraiding P A) (HomologicalComplex.tensorBraiding Q A)
+      (HomologicalComplex.tensorBraiding_hom_naturality f (𝟙 A)).symm)
 
 /-- Whiskering a quasi-isomorphism between K-flat complexes on the right by an arbitrary complex
 gives a quasi-isomorphism. -/
@@ -192,8 +221,8 @@ instance isIso_kFlatTensorMap [HasDerivedCategory C]
       DerivedCategory.Q) := by
     rw [NatTrans.isIso_iff_isIso_app]
     intro A
-    simp only [whiskerRight_app, curriedTensor_map₂CochainComplex_map_app,
-      Functor.comp_obj, curriedTensor_map₂CochainComplex_obj_obj]
+    simp only [whiskerRight_app, Functor.map₂HomologicalComplex_map_app,
+      Functor.comp_obj, Functor.map₂HomologicalComplex_obj_obj]
     infer_instance
   rw [kFlatTensorMap_eq_liftNatTrans]
   exact (Localization.liftNatIso DerivedCategory.Q (quasiIso C (.up ℤ))

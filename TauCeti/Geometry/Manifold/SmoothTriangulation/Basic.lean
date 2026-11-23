@@ -399,7 +399,8 @@ theorem exists_contMDiff_not_isSmoothTriangulation_trans :
   have hzero : HasFDerivWithinAt (Subtype.val ∘ F) (0 : (σ.val → ℝ) →L[ℝ] ℝ) S t₀.weights := by
     simpa [t₀, i₀, i₁] using ((hasFDerivWithinAt_apply (𝕜 := ℝ) i₁ (⇑t₀.weights) S).pow 2).congr
       hformula.symm (hformula ⟨t₀, rfl⟩).symm
-  -- The derivative supplied by `hT`, read in `ℝ`, is a second derivative there.
+  -- The derivative supplied by `hT`, read in `ℝ`, is another derivative of the same function
+  -- within the simplex there.
   -- Typed into `ℝ` rather than a tangent space of `ℝ`, so that `ℝ`'s own instances are used.
   let L : (σ.val → ℝ) →L[ℝ] ℝ := (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val (F t₀.weights)).comp F'
   have hG : HasFDerivWithinAt (Subtype.val ∘ F) L S t₀.weights :=

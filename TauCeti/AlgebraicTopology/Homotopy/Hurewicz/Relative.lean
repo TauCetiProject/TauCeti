@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Hurewicz
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
 
 /-!
