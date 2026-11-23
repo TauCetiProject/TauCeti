@@ -201,7 +201,7 @@ theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
 
 /-- Two variations of the section alone agree at a point exactly when their sections do. -/
 @[simp]
-theorem sectionVariation_eq_sectionVariation_iff {F G : ℂ → ℂ} {z : ℂ} :
+theorem sectionVariation_left_inj {F G : ℂ → ℂ} {z : ℂ} :
     sectionVariation F z = sectionVariation G z ↔ F z = G z := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [sectionVariation, h]⟩
   have hs : sectionValue (sectionVariation F) z = sectionValue (sectionVariation G) z := by

@@ -157,7 +157,7 @@ private theorem exists_cutoffPole (hx : ContDiff ℝ ∞ x) {z : ℂ} {j : ℕ} 
     have hne : (w - z) ^ (j + 1) ≠ 0 := pow_ne_zero _ (sub_ne_zero.2 hwz)
     rw [(hy₀_off w hwz).eq_of_nhds, logVariation_congr_nhds x (hη₀pp w hw),
       logVariation_eq_of_differentiableAt x (hppC w hwz)]
-    refine sectionVariation_eq_sectionVariation_iff.2 ?_
+    refine sectionVariation_left_inj.2 ?_
     simp only [pp, hαq]
     field_simp
   have hy₀_zero (w : ℂ) (hw : w ∉ closedBall z 2) : y₀ w = 0 := by

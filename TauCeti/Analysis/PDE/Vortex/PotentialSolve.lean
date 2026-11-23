@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Laplacian
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
