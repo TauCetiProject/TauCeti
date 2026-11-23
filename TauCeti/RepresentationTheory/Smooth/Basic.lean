@@ -40,8 +40,8 @@ open subgroups `U` of `G`.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
-* `Representation.IsSmooth.prod`, `Representation.IsSmooth.directSum`: direct sums of finitely
-  many smooth representations are smooth.
+* `Representation.IsSmooth.prod`, `Representation.IsSmooth.directSum`: direct sums of smooth
+  representations are smooth.
 * `Representation.IsSmooth.comp`: smoothness passes to the restriction along a continuous
   homomorphism, in particular to subgroups.
 * `Representation.isSmooth_ofMulAction_iff`: the permutation representation on `A[X]` is smooth
@@ -130,13 +130,24 @@ instance IsSmooth.prod [IsSmooth ρ] [IsSmooth σ] : IsSmooth (ρ.prod σ) :=
     rw [stabilizer_prod, Subgroup.coe_inf]
     exact (IsSmooth.isOpen_stabilizer x.1).inter (IsSmooth.isOpen_stabilizer x.2)⟩
 
-/-- The direct sum of a finite family of smooth representations is smooth. -/
-instance IsSmooth.directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommMonoid (V i)]
+/-- The direct sum of a family of smooth representations is smooth: the stabilizer of a vector is
+the intersection of the stabilizers of its finitely many nonzero components. -/
+instance IsSmooth.directSum {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoid (V i)]
     [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) [∀ i, IsSmooth (ρ i)] :
     IsSmooth (directSum ρ) :=
   ⟨fun x ↦ by
-    rw [stabilizer_directSum, Subgroup.coe_iInf]
-    exact isOpen_iInter_of_finite fun i ↦ IsSmooth.isOpen_stabilizer (x i)⟩
+    classical
+    have h : (Representation.directSum ρ).stabilizer x =
+        ⨅ i ∈ x.support, (ρ i).stabilizer (x i) := by
+      rw [stabilizer_directSum]
+      refine le_antisymm (le_iInf₂ fun i _ ↦ iInf_le _ i) (le_iInf fun i ↦ ?_)
+      by_cases hi : i ∈ x.support
+      · exact iInf₂_le i hi
+      · rw [DFinsupp.notMem_support_iff.1 hi]
+        exact fun g _ ↦ mem_stabilizer.2 (map_zero _)
+    rw [h]
+    simp only [Subgroup.coe_iInf]
+    exact x.support.finite_toSet.isOpen_biInter fun i _ ↦ IsSmooth.isOpen_stabilizer (x i)⟩
 
 /-- Every representation of a discrete group is smooth. -/
 instance [DiscreteTopology G] : IsSmooth ρ :=

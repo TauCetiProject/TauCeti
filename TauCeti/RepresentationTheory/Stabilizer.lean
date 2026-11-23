@@ -96,6 +96,7 @@ theorem _root_.Subrepresentation.stabilizer_toRepresentation (ρ' : Subrepresent
 
 /-- The stabilizer of a vector of a direct sum is the intersection of the stabilizers of its
 components. -/
+@[simp]
 theorem stabilizer_prod (x : V × W) :
     (ρ.prod σ).stabilizer x = ρ.stabilizer x.1 ⊓ σ.stabilizer x.2 := by
   ext g
@@ -103,6 +104,7 @@ theorem stabilizer_prod (x : V × W) :
 
 /-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
 of its components. -/
+@[simp]
 theorem stabilizer_directSum {ι : Type*} {V : ι → Type*}
     [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i))
     (x : DirectSum ι V) :
