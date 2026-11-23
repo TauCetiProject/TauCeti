@@ -69,7 +69,7 @@ theorem finite_range_matrixMutationWord_fromBlocks_iff :
       (Set.range (matrixMutationWord row₁ B₁)).Finite ∧
         (Set.range (matrixMutationWord row₂ B₂)).Finite := by
   rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
-    Set.finite_image_iff (Matrix.fromBlocks_injective_diag 0 0).injOn, Set.finite_prod]
+    Set.finite_image_iff (Matrix.fromBlocks_diagonal_blocks_injective 0 0).injOn, Set.finite_prod]
   simp only [(Set.range_nonempty (matrixMutationWord row₁ B₁)).ne_empty,
     (Set.range_nonempty (matrixMutationWord row₂ B₂)).ne_empty, or_false]
 
@@ -82,7 +82,7 @@ theorem encard_range_matrixMutationWord_fromBlocks :
       (Set.range (matrixMutationWord row₁ B₁)).encard *
         (Set.range (matrixMutationWord row₂ B₂)).encard := by
   rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
-    (Matrix.fromBlocks_injective_diag 0 0).encard_image, Set.encard_prod]
+    (Matrix.fromBlocks_diagonal_blocks_injective 0 0).encard_image, Set.encard_prod]
 
 /-- Natural cardinality of a block mutation class is the product of its component
 cardinalities, with Mathlib's zero convention for infinite sets. -/
@@ -120,19 +120,13 @@ theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff
       (∀ w : List K₂, ∀ i j, i ≠ j →
         |matrixMutationWord row₂ B₂ w (row₂ i) j *
           matrixMutationWord row₂ B₂ w (row₂ j) i| ≤ bound) := by
-  have hp (C₁ : Matrix I₁ K₁ ℤ) (C₂ : Matrix I₂ K₂ ℤ) :
-      (∀ i j, i ≠ j → |fromBlocks C₁ 0 0 C₂ ((row₁.sumMap row₂) i) j *
-        fromBlocks C₁ 0 0 C₂ ((row₁.sumMap row₂) j) i| ≤ bound) ↔
-      (∀ i j, i ≠ j → |C₁ (row₁ i) j * C₁ (row₁ j) i| ≤ bound) ∧
-        (∀ i j, i ≠ j → |C₂ (row₂ i) j * C₂ (row₂ j) i| ≤ bound) := by
-    simp [Sum.forall, Function.Embedding.coe_sumMap, hbound]
   rw [← Set.forall_mem_range
     (f := matrixMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂))
     (p := fun C : Matrix (I₁ ⊕ I₂) (K₁ ⊕ K₂) ℤ ↦ ∀ i j, i ≠ j →
       |C ((row₁.sumMap row₂) i) j * C ((row₁.sumMap row₂) j) i| ≤ bound)]
   rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
     Set.forall_mem_image, Set.forall_prod_set]
-  simp_rw [hp]
+  simp_rw [forall_abs_mul_le_fromBlocks_zero_iff _ _ row₁ row₂ bound hbound]
   simp only [Set.forall_mem_range, forall_and, forall_const]
 
 end Matrix
