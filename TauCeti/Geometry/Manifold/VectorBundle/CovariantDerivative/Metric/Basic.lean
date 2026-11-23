@@ -22,6 +22,10 @@ This module characterizes metric compatibility as the vanishing of `derivMetricT
 assuming manifold regularity
 (`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
 
+For differentiable sections with locally constant inner product, metric compatibility gives
+the skew-symmetry identity for their covariant derivatives, including orthogonality to a
+section of locally constant length.
+
 For sections whose covariant derivatives vanish, metric compatibility implies that their inner
 product has vanishing differential (`IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero`,
 `IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero`), is locally constant on open sets
@@ -79,6 +83,29 @@ theorem IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero (hcov : cov.IsMetricCom
       hcov.mvfderiv_inner_eq (fun _ ↦ w) hσ hτ
   simpa only [hd] using (hσ.inner_bundle hτ).hasMFDerivAt
 
+/-- For a metric-compatible connection, two differentiable sections with locally constant
+inner product have skew-symmetric covariant derivatives at the point. -/
+theorem IsMetricCompatible.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {σ τ : Π x : M, V x} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) {c : ℝ}
+    (hc : (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ c)
+    (v : TangentSpace I x) :
+    inner ℝ (cov σ x v) (τ x) + inner ℝ (σ x) (cov τ x v) = 0 := by
+  classical
+  simpa only [Pi.single_eq_same, hc.mvfderiv_eq, mvfderiv_const, zero_apply] using
+    (hcov.mvfderiv_inner_eq (Pi.single x v) hσ hτ).symm
+
+/-- The covariant derivative of a section of locally constant length is orthogonal to that
+section for a metric-compatible connection. -/
+theorem IsMetricCompatible.inner_apply_self_eq_zero_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {σ : Π x : M, V x} {x : M}
+    (hσ : MDiffAt (T% σ) x) {c : ℝ}
+    (hc : (fun y ↦ inner ℝ (σ y) (σ y)) =ᶠ[𝓝 x] fun _ ↦ c)
+    (v : TangentSpace I x) : inner ℝ (cov σ x v) (σ x) = 0 := by
+  have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const hσ hσ hc v
+  rw [real_inner_comm (cov σ x v) (σ x)] at h
+  linarith
+
 /-- For a metric-compatible connection, the inner product of two sections that are differentiable
 and parallel at `x` has vanishing differential at `x`. -/
 theorem IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero
@@ -117,11 +144,11 @@ theorem IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero
     inner ℝ (σ x) (τ x) = inner ℝ (σ y) (τ y) := by
   let Uo : TopologicalSpace.Opens M := ⟨U, hU⟩
   have : PreconnectedSpace Uo := isPreconnected_iff_preconnectedSpace.mp hUconn
-  let φ : Uo → ℝ := fun z ↦ inner ℝ (σ z.1) (τ z.1)
+  let φ : Uo → ℝ := fun z ↦ inner ℝ (σ z.val) (τ z.val)
   have hloc : IsLocallyConstant φ :=
     (IsLocallyConstant.iff_eventually_eq φ).mpr fun z ↦ by
-      have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.2
-      exact continuous_subtype_val.continuousAt.eventually hev
+      have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.property
+      exact continuous_subtypeVal.continuousAt.eventually hev
   exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 variable {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]
