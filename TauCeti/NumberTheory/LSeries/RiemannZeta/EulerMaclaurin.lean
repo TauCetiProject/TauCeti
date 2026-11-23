@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -39,6 +39,13 @@ so the length of the sum can be chosen according to the height `Im s`.
   `a = N ≥ 1`, where `B₁({N}) = -1/2`, and at a half-integer `a = N + 1/2`, where `B₁({a}) = 0`.
 * `TauCeti.riemannZeta_eq_one_add_inv_sub_integral_fract`: the case `a = 1`, written with the
   fractional part, `ζ(s) = 1 + (s - 1)⁻¹ - s ∫_1^∞ {x} x^(-s-1) dx`.
+* `TauCeti.riemannZeta₁_eq_add_mul_sum_sawtooth` and
+  `TauCeti.riemannZeta₀_eq_one_half_sub_integral_sawtooth`: the formula multiplied by `s - 1`, and
+  the formula for `riemannZeta₀ s = ζ(s) - (s - 1)⁻¹` cut at `1`, both valid at `s = 1` too.
+* `TauCeti.eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth` and
+  `TauCeti.integral_Ioi_bernoulliFun_one_fract_div_sq`: their derivative and value at `s = 1`,
+  `γ = ∑_{1 ≤ n ≤ a} 1/n - log a + B₁({a})/a - ∫_a^∞ B₁({x})/x² dx` and
+  `∫_1^∞ B₁({x})/x² dx = 1/2 - γ`.
 
 The proof applies the first-order Euler–Maclaurin formula with real endpoints to `x ↦ x^(-s)`
 on `[a, b]`. This shows that the right side does not depend on `a`; for `1 < Re s` it tends to
@@ -77,6 +84,13 @@ theorem norm_integral_sawtooth_mul_cpow_le {a : ℝ} (ha : 0 < a) {s : ℂ} (hs 
     ‖∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))‖ ≤
       a ^ (-s.re) / (2 * s.re) :=
   (norm_integral_mul_cpow_le_of_bound ha (fun x _ ↦ norm_sawtooth_le x) hs).trans_eq (by ring)
+
+/-- The sawtooth `B₁({x})` is bounded, so `O(x ^ 0)` at infinity. -/
+private theorem isBigO_sawtooth :
+    (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ)) =O[atTop] fun x : ℝ ↦ x ^ (0 : ℝ) :=
+  Asymptotics.IsBigO.of_bound (1 / 2) (Eventually.of_forall fun x ↦ by
+    rw [Real.rpow_zero, norm_one, mul_one]
+    exact norm_sawtooth_le x)
 
 /-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`. -/
 private noncomputable def zetaSawtooth (a : ℝ) (s : ℂ) : ℂ :=
@@ -192,14 +206,9 @@ private theorem zetaSawtooth_one {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
     ∫ x in Set.Ioi (1 : ℝ), (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(z + 1))
   have hone (z : ℂ) : zetaSawtooth 1 z = 1 + 1 / (z - 1) - 1 / 2 - z * I z :=
     zetaSawtooth_one_eq z
-  have hO : (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ)) =O[atTop]
-      fun x : ℝ ↦ x ^ (0 : ℝ) :=
-    Asymptotics.IsBigO.of_bound (1 / 2) (Eventually.of_forall fun x ↦ by
-      rw [Real.rpow_zero, norm_one, mul_one]
-      exact norm_sawtooth_le x)
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
   have hI : DifferentiableOn ℂ I {z : ℂ | 0 < z.re} :=
-    differentiableOn_integral_mul_cpow_of_isBigO hO
+    differentiableOn_integral_mul_cpow_of_isBigO one_pos isBigO_sawtooth
   have hH : AnalyticOnNhd ℂ (fun z ↦ 1 + (z - 1) * (1 / 2 - z * I z)) {z : ℂ | 0 < z.re} :=
     DifferentiableOn.analyticOnNhd (by fun_prop) hopen
   have hZ : AnalyticOnNhd ℂ riemannZeta₁ {z : ℂ | 0 < z.re} :=
@@ -297,5 +306,123 @@ theorem riemannZeta_eq_one_add_inv_sub_integral_fract {s : ℂ} (hs : 0 < s.re) 
   rw [ofReal_one, one_cpow]
   field_simp
   ring
+
+/-! ### The regularized formula and the Euler–Mascheroni constant -/
+
+/-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`, without the polar term
+`a^(1-s)/(s - 1)`. It is holomorphic on `0 < Re s`. -/
+private noncomputable def sawtoothReg (a : ℝ) (s : ℂ) : ℂ :=
+  ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) + bernoulliFun 1 (Int.fract a) * (a : ℂ) ^ (-s) -
+    s * ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))
+
+private theorem differentiableOn_sawtoothReg {a : ℝ} (ha : 0 < a) :
+    DifferentiableOn ℂ (sawtoothReg a) {s : ℂ | 0 < s.re} := by
+  have hsum : Differentiable ℂ fun s : ℂ ↦ ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) :=
+    Differentiable.fun_sum fun n hn ↦ differentiable_id.neg.const_cpow
+      (Or.inl (Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1)))
+  have hbd : Differentiable ℂ fun s : ℂ ↦ (bernoulliFun 1 (Int.fract a) : ℂ) * (a : ℂ) ^ (-s) :=
+    (differentiable_id.neg.const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))).const_mul _
+  exact (hsum.differentiableOn.add hbd.differentiableOn).sub
+    (differentiableOn_id.mul (differentiableOn_integral_mul_cpow_of_isBigO ha isBigO_sawtooth))
+
+/-- **The regularized Euler–Maclaurin formula.** For real `a > 0` and every `s` with `0 < Re s`,
+including `s = 1`, Mathlib's entire function `riemannZeta₁ s = (s - 1) ζ(s)` is
+`a^(1-s) + (s - 1) (∑_{1 ≤ n ≤ a} n^(-s) + B₁({a}) a^(-s) - s ∫_a^∞ B₁({x}) x^(-s-1) dx)`. -/
+theorem riemannZeta₁_eq_add_mul_sum_sawtooth {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₁ s = (a : ℂ) ^ (1 - s) + (s - 1) * (∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) +
+      bernoulliFun 1 (Int.fract a) * (a : ℂ) ^ (-s) -
+      s * ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) := by
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · simp [riemannZeta₁_one]
+  have hs₁' : s - 1 ≠ 0 := sub_ne_zero.mpr hs₁
+  have h : riemannZeta₁ s = (s - 1) * riemannZeta s := by
+    rw [riemannZeta_eq_inv_sub_mul hs₁]
+    field_simp
+  rw [h, riemannZeta_eq_sum_add_integral_sawtooth ha hs hs₁]
+  field_simp
+  ring
+
+/-- **The formula for `riemannZeta₀` cut at `1`.** For every `s` with `0 < Re s`, including
+`s = 1`, the function `riemannZeta₀ s = ζ(s) - (s - 1)⁻¹` (with value `γ` at `s = 1`) is
+`1/2 - s ∫_1^∞ B₁({x}) x^(-s-1) dx`. -/
+theorem riemannZeta₀_eq_one_half_sub_integral_sawtooth {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s = 1 / 2 -
+      s * ∫ x in Set.Ioi (1 : ℝ), (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)) := by
+  set R : ℂ → ℂ := fun z ↦ 1 / 2 -
+    z * ∫ x in Set.Ioi (1 : ℝ), (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(z + 1))
+  have hne {z : ℂ} (hz : 0 < z.re) (hz₁ : z ≠ 1) : riemannZeta₀ z = R z := by
+    have h := zetaSawtooth_one hz hz₁
+    rw [zetaSawtooth_one_eq, riemannZeta_eq_inv_sub_add hz₁, one_div (z - 1)] at h
+    simp only [R]
+    linear_combination -h
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · have hmem : {z : ℂ | 0 < z.re} ∈ 𝓝 (1 : ℂ) :=
+      (isOpen_lt continuous_const continuous_re).mem_nhds (by simp)
+    have hR : ContinuousAt R 1 :=
+      (((differentiableOn_const _).sub (differentiableOn_id.mul
+        (differentiableOn_integral_mul_cpow_of_isBigO one_pos isBigO_sawtooth))).continuousOn)
+        |>.continuousAt hmem
+    refine tendsto_nhds_unique (l := 𝓝[≠] (1 : ℂ))
+      (differentiable_riemannZeta₀.continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
+      ((hR.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_)
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hmem] with z hz₁ hz
+    exact (hne hz hz₁).symm
+  · exact hne hs hs₁
+
+/-- **The Euler–Mascheroni constant by the first-order Euler–Maclaurin formula.** For real `a > 0`,
+`γ = ∑_{1 ≤ n ≤ a} 1/n - log a + B₁({a})/a - ∫_a^∞ B₁({x})/x² dx`. This is the derivative at
+`s = 1` of the regularized formula `TauCeti.riemannZeta₁_eq_add_mul_sum_sawtooth`, since
+`deriv riemannZeta₁ 1 = γ`. -/
+theorem eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth {a : ℝ} (ha : 0 < a) :
+    Real.eulerMascheroniConstant = ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℝ)⁻¹ - Real.log a +
+      bernoulliFun 1 (Int.fract a) / a -
+      ∫ x in Set.Ioi a, bernoulliFun 1 (Int.fract x) / x ^ 2 := by
+  have hmem : {z : ℂ | 0 < z.re} ∈ 𝓝 (1 : ℂ) :=
+    (isOpen_lt continuous_const continuous_re).mem_nhds (by simp)
+  have heq : riemannZeta₁ =ᶠ[𝓝 1] fun z ↦ (a : ℂ) ^ (1 - z) + (z - 1) * sawtoothReg a z := by
+    filter_upwards [hmem] with z hz
+    exact riemannZeta₁_eq_add_mul_sum_sawtooth ha hz
+  have hd₁ : HasDerivAt (fun z : ℂ ↦ (a : ℂ) ^ (1 - z)) (-(Real.log a : ℂ)) 1 := by
+    simpa [ofReal_log ha.le] using ((hasDerivAt_const (1 : ℂ) (1 : ℂ)).sub
+      (hasDerivAt_id (1 : ℂ))).const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))
+  have hd₂ : HasDerivAt (fun z : ℂ ↦ (z - 1) * sawtoothReg a z) (sawtoothReg a 1) 1 := by
+    simpa using ((hasDerivAt_id (1 : ℂ)).sub_const (1 : ℂ)).fun_mul
+      ((differentiableOn_sawtoothReg ha).differentiableAt hmem).hasDerivAt
+  have hγ : (Real.eulerMascheroniConstant : ℂ) = -(Real.log a : ℂ) + sawtoothReg a 1 := by
+    rw [← deriv_riemannZeta₁_one, heq.deriv_eq, (hd₁.fun_add hd₂).deriv]
+  have hI : ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-((1 : ℂ) + 1)) =
+      ((∫ x in Set.Ioi a, bernoulliFun 1 (Int.fract x) / x ^ 2 : ℝ) : ℂ) := by
+    rw [← integral_complex_ofReal]
+    refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
+    rw [show -((1 : ℂ) + 1) = -(2 : ℕ) by norm_num, cpow_neg, cpow_natCast]
+    push_cast
+    ring
+  have hval : sawtoothReg a 1 = ((∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℝ)⁻¹ +
+      bernoulliFun 1 (Int.fract a) / a -
+      ∫ x in Set.Ioi a, bernoulliFun 1 (Int.fract x) / x ^ 2 : ℝ) : ℂ) := by
+    rw [sawtoothReg, one_mul, hI, cpow_neg_one]
+    simp_rw [cpow_neg_one]
+    push_cast
+    ring
+  rw [hval] at hγ
+  have h : Real.eulerMascheroniConstant = -Real.log a + (∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℝ)⁻¹ +
+      bernoulliFun 1 (Int.fract a) / a -
+      ∫ x in Set.Ioi a, bernoulliFun 1 (Int.fract x) / x ^ 2) := by
+    exact_mod_cast hγ
+  rw [h]
+  ring
+
+/-- `∫_1^∞ B₁({x})/x² dx = 1/2 - γ`, the case `a = 1` of
+`TauCeti.eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth`. -/
+theorem integral_Ioi_bernoulliFun_one_fract_div_sq :
+    ∫ x in Set.Ioi (1 : ℝ), bernoulliFun 1 (Int.fract x) / x ^ 2 =
+      1 / 2 - Real.eulerMascheroniConstant := by
+  have h := eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth one_pos
+  have hB : bernoulliFun 1 0 = -1 / 2 := by
+    rw [bernoulliFun_one]
+    norm_num
+  rw [Nat.floor_one, Finset.Icc_self, Finset.sum_singleton, Nat.cast_one, inv_one, Real.log_one,
+    Int.fract_one, hB] at h
+  linarith
 
 end TauCeti
