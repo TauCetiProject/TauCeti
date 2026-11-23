@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
 import TauCeti.Algebra.MvPolynomial.Support
-import TauCeti.Algebra.Order.Ring.Basic
 
 /-!
 # Coefficient bounds for linear and block-linear substitutions
@@ -178,6 +177,23 @@ theorem abv_coeff_linearSubst_monomial_le_of_isNonarchimedean [Fintype σ] [Comm
       ((v.nonneg _).trans (hM i i)) fun j _ ↦ hM i j)
     a t
 
+private theorem card_mul_nonneg_of_forall_le {ι S : Type*} [Fintype ι] [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] {f : ι → S} {B : S} (hf0 : ∀ i, 0 ≤ f i) (hfB : ∀ i, f i ≤ B) :
+    0 ≤ (Fintype.card ι : S) * B := by
+  by_cases hι : Nonempty ι
+  · obtain ⟨i₀⟩ := hι
+    exact mul_nonneg (Nat.cast_nonneg _) ((hf0 i₀).trans (hfB i₀))
+  · rw [not_nonempty_iff] at hι
+    simp
+
+private theorem mul_mul_pow_le_sq_mul_pow {S : Type*} [CommSemiring S] [PartialOrder S]
+    [IsOrderedRing S] {a r B C : S} {n : ℕ} (ha : a ≤ r ^ n) (hB0 : 0 ≤ r * B) (hC0 : 0 ≤ C) :
+    a * ((r * B) ^ n * C) ≤ (r ^ 2 * B) ^ n * C := by
+  calc a * ((r * B) ^ n * C)
+      ≤ r ^ n * ((r * B) ^ n * C) :=
+        mul_le_mul_of_nonneg_right ha (mul_nonneg (pow_nonneg hB0 _) hC0)
+    _ = (r ^ 2 * B) ^ n * C := by rw [← mul_assoc, ← mul_pow, sq, mul_assoc]
+
 /-- For a homogeneous polynomial `p` of degree `n`, if the entries of `M` are bounded by `B` and
 the coefficients of `p` are bounded by `C` under `v`, then every coefficient of `linearSubst M p` is
 bounded by `(card σ ^ 2 * B) ^ n * C`. -/
@@ -192,11 +208,11 @@ theorem abv_coeff_linearSubst_le_of_isHomogeneous [Fintype σ] [CommSemiring S] 
     (fun i _ ↦ abv_coeff_sum_C_mul_X_le Function.injective_id.injOn
       ((v.nonneg _).trans (hM i i)) fun j _ ↦ hM i j)
     hpC t).trans
-    (TauCeti.mul_mul_pow_le_sq_mul_pow
+    (mul_mul_pow_le_sq_mul_pow
       (by simpa only [Nat.cast_pow] using
         (Nat.mono_cast (card_support_le_pow_of_isHomogeneous hp) :
           (#p.support : S) ≤ ((Fintype.card σ ^ n : ℕ) : S)))
-      (TauCeti.card_mul_nonneg_of_forall_le (fun i ↦ v.nonneg (M i i)) fun i ↦ hM i i)
+      (card_mul_nonneg_of_forall_le (fun i ↦ v.nonneg (M i i)) fun i ↦ hM i i)
       ((v.nonneg _).trans (hpC 0)))
 
 /-- Nonarchimedean companion to `abv_coeff_linearSubst_le_of_isHomogeneous`. -/
@@ -260,11 +276,11 @@ theorem abv_coeff_blockSubst_le_of_isMultiHomogeneous [Fintype κ] [DecidableEq 
         abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1).injOn
           ((v.nonneg _).trans (hA p.2 p.2)) (fun j _ ↦ hA p.2 j) m)
     hPC t).trans
-    (TauCeti.mul_mul_pow_le_sq_mul_pow
+    (mul_mul_pow_le_sq_mul_pow
       (by simpa only [Nat.cast_pow] using
         (Nat.mono_cast (card_support_le_pow_of_isMultiHomogeneous hP) :
           (#P.support : S) ≤ ((Fintype.card ι ^ ∑ h, d h : ℕ) : S)))
-      (TauCeti.card_mul_nonneg_of_forall_le (fun i ↦ v.nonneg (A i i)) fun i ↦ hA i i)
+      (card_mul_nonneg_of_forall_le (fun i ↦ v.nonneg (A i i)) fun i ↦ hA i i)
       ((v.nonneg _).trans (hPC 0)))
 
 /-- For a homogeneous polynomial `P` of degree `n` under a nonarchimedean absolute value `v`, if
