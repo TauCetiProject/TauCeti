@@ -41,9 +41,9 @@ integration-by-parts arguments:
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
-* `MeasureTheory.Lp.lpSMul_comm`, `MeasureTheory.Lp.tendsto_lpSMul`, and
-  `MeasureTheory.Lp.continuous_lpSMul`: commutativity over a commutative normed ring and joint
-  continuity of heterogeneous `Lp` scalar multiplication.
+* `MeasureTheory.Lp.lpSMul_comm`, `MeasureTheory.Lp.lpSMulₗ`, `MeasureTheory.Lp.tendsto_lpSMul`,
+  and `MeasureTheory.Lp.continuous_lpSMul`: commutativity over a commutative normed ring, bilinear
+  map packaging, and joint continuity of heterogeneous `Lp` scalar multiplication.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
   `f • g`; `MeasureTheory.Lp.one_smul`: the constant one of `L^∞` acts trivially.
 -/
@@ -220,6 +220,21 @@ theorem lpSMul_comm {R : Type*} [NormedCommRing R] (f : Lp R p μ) (g : Lp R q �
   ext
   filter_upwards [coeFn_lpSMul (r := r) f g, coeFn_lpSMul (r := r) g f] with x h₁ h₂
   simp [h₁, h₂, mul_comm]
+
+/-- Heterogeneous `Lp` scalar multiplication `(f, g) ↦ (f • g : Lp E r μ)` as a `𝕜'`-bilinear
+map. -/
+noncomputable def lpSMulₗ (𝕜' : Type*) [NormedCommRing 𝕜'] [Module 𝕜' E] [Module 𝕜' 𝕜]
+    [IsBoundedSMul 𝕜' E] [IsBoundedSMul 𝕜' 𝕜] [IsScalarTower 𝕜' 𝕜 E] [SMulCommClass 𝕜' 𝕜 E] :
+    Lp 𝕜 p μ →ₗ[𝕜'] Lp E q μ →ₗ[𝕜'] Lp E r μ :=
+  LinearMap.mk₂ 𝕜' (fun f g ↦ (f • g : Lp E r μ))
+    Lp.smul_add Lp.smul_assoc Lp.add_smul fun c f g ↦ (Lp.smul_comm c f g).symm
+
+@[simp]
+theorem lpSMulₗ_apply_apply (𝕜' : Type*) [NormedCommRing 𝕜'] [Module 𝕜' E] [Module 𝕜' 𝕜]
+    [IsBoundedSMul 𝕜' E] [IsBoundedSMul 𝕜' 𝕜] [IsScalarTower 𝕜' 𝕜 E] [SMulCommClass 𝕜' 𝕜 E]
+    (f : Lp 𝕜 p μ) (g : Lp E q μ) :
+    lpSMulₗ (p := p) (q := q) (r := r) (𝕜 := 𝕜) (E := E) (μ := μ) 𝕜' f g = f • g := by
+  simp [lpSMulₗ]
 
 /-- If `f i → f₀` in `Lᵖ` and `g i → g₀` in `L^q` (`1/p + 1/q = 1/r`), then `f i • g i → f₀ • g₀`
 in `Lʳ`. -/

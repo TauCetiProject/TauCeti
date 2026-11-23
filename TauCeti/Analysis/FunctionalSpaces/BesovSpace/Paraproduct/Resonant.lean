@@ -29,9 +29,7 @@ for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85:
 * `TauCeti.BesovSpace.resonantCLM`: `B^α_{p₁,q₁} × B^β_{p₂,q₂} →L[ℂ] B^{α + β}_{r,q}` for
   `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`, with uniform norm bound, truncated-sum
   convergence (`tendsto_sum_block_smul_sum_resonantCLM`), and scalar symmetry
-  (`toDistr_resonantCLM_comm`), together with the weighted-block term bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_smul_sum_block_le` and unconstrained-fine-index
-  existential estimate `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`.
+  (`toDistr_resonantCLM_comm`).
 * Single-block (`toDistr_resonantCLM_of_block_eq_zero`) and constant-`1`
   (`toDistr_resonantCLM_one_left`, `toDistr_resonantCLM_one_right`) identities; companion
   paraproduct estimates live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`,
@@ -66,62 +64,73 @@ variable {φ : ContDiffBump (0 : E)} {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ�
   [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [p₁.HolderTriple p₂ r]
 
 variable (r) in
+/-- Bilinear map packaging the `j`-th resonant piece `Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v`. -/
+private def resonantTermₗ (N j : ℕ) :
+    BesovSpace ℂ φ α p₁ q₁ →ₗ[ℂ] BesovSpace F φ β p₂ q₂ →ₗ[ℂ] Lp F r (volume : Measure E) :=
+  ((Lp.lpSMulₗ ℂ).comp (blockₗ ℂ φ α p₁ q₁ j)).compl₂
+    (∑ k ∈ Finset.Icc (j - N) (j + N), blockₗ F φ β p₂ q₂ k)
+
+variable (r) in
 /-- The `j`-th piece `Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` of Bony's resonant remainder with gap `N`, as an
 `Lʳ` function (`1/r = 1/p₁ + 1/p₂`). -/
 def resonantTerm (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     Lp F r (volume : Measure E) :=
-  u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k
+  resonantTermₗ r N j u v
 
 /-- Unfolding `TauCeti.BesovSpace.resonantTerm`. -/
 theorem resonantTerm_eq_smul_sum (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂)
     (j : ℕ) :
-    resonantTerm r N u v j = u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k := by rfl
+    resonantTerm r N u v j = u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k := by
+  simp only [resonantTerm, resonantTermₗ, LinearMap.compl₂_apply, LinearMap.comp_apply,
+    blockₗ_apply, Lp.lpSMulₗ_apply_apply, LinearMap.coe_sum, Finset.sum_apply]
 
 @[simp] theorem resonantTerm_zero_left (N : ℕ) (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
-    resonantTerm r N (0 : BesovSpace ℂ φ α p₁ q₁) v j = 0 := by simp [resonantTerm_eq_smul_sum]
+    resonantTerm r N (0 : BesovSpace ℂ φ α p₁ q₁) v j = 0 := by
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_zero_right (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁) (j : ℕ) :
-    resonantTerm r N u (0 : BesovSpace F φ β p₂ q₂) j = 0 := by simp [resonantTerm_eq_smul_sum]
+    resonantTerm r N u (0 : BesovSpace F φ β p₂ q₂) j = 0 := by
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_add_left (N : ℕ) (u₁ u₂ : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N (u₁ + u₂) v j = resonantTerm r N u₁ v j + resonantTerm r N u₂ v j := by
-  simp [resonantTerm_eq_smul_sum, Lp.smul_add]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_smul_left (N : ℕ) (c : ℂ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N (c • u) v j = c • resonantTerm r N u v j := by
-  simp [resonantTerm_eq_smul_sum, Lp.smul_assoc]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_neg_left (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N (-u) v j = -resonantTerm r N u v j := by
-  simp [resonantTerm_eq_smul_sum, Lp.neg_smul]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_sub_left (N : ℕ) (u₁ u₂ : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N (u₁ - u₂) v j = resonantTerm r N u₁ v j - resonantTerm r N u₂ v j := by
-  rw [sub_eq_add_neg, resonantTerm_add_left, resonantTerm_neg_left, ← sub_eq_add_neg]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_add_right (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v₁ v₂ : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N u (v₁ + v₂) j = resonantTerm r N u v₁ j + resonantTerm r N u v₂ j := by
-  simp [resonantTerm_eq_smul_sum, Finset.sum_add_distrib, Lp.add_smul]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_smul_right (N : ℕ) (c : ℂ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N u (c • v) j = c • resonantTerm r N u v j := by
-  simp_rw [resonantTerm_eq_smul_sum, block_smul, ← Finset.smul_sum, ← Lp.smul_comm]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_neg_right (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N u (-v) j = -resonantTerm r N u v j := by
-  simp [resonantTerm_eq_smul_sum, Lp.smul_neg]
+  simp [resonantTerm]
 
 @[simp] theorem resonantTerm_sub_right (N : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
     (v₁ v₂ : BesovSpace F φ β p₂ q₂) (j : ℕ) :
     resonantTerm r N u (v₁ - v₂) j = resonantTerm r N u v₁ j - resonantTerm r N u v₂ j := by
-  rw [sub_eq_add_neg, resonantTerm_add_right, resonantTerm_neg_right, ← sub_eq_add_neg]
+  simp [resonantTerm]
 
 /-- **Spectral localisation of a resonant piece.** The Fourier transform of `resonantTerm r N u v j`
 vanishes outside the closed ball of radius `2 ^ j (1 + 2 ^ N) φ.rOut`. -/
@@ -129,8 +138,9 @@ theorem isVanishingOn_fourier_resonantTerm [Fact (1 ≤ r)] (N j : ℕ)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
     IsVanishingOn (𝓕 ((resonantTerm r N u v j : Lp F r (volume : Measure E)) :
         𝓢'(E, F)) : 𝓢'(E, F))
-      (closedBall 0 (2 ^ j * ((1 + 2 ^ N) * φ.rOut)))ᶜ :=
-  isVanishingOn_fourier_block_smul_sum_block N j (fun _ hk ↦ (Finset.mem_Icc.1 hk).2) u v
+      (closedBall 0 (2 ^ j * ((1 + 2 ^ N) * φ.rOut)))ᶜ := by
+  rw [resonantTerm_eq_smul_sum]
+  exact isVanishingOn_fourier_block_smul_sum_block N j (fun _ hk ↦ (Finset.mem_Icc.1 hk).2) u v
 
 /-- Weighted `Lʳ` bound on `Δⱼ u · ∑_{k ∈ t} Δₖ v` for any window `t ⊆ [j - N, j + N]`: moving the
 dyadic weight `2 ^ (β j)` onto `k` costs at most `2 ^ (|β| (N + 1))`. -/
@@ -157,26 +167,6 @@ private theorem two_rpow_mul_norm_block_smul_sum_le (N j : ℕ) {t : Finset ℕ}
     _ ≤ ‖u.weightedBlocks j‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
           ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), ‖v.weightedBlocks k‖) :=
         mul_le_mul_of_nonneg_left hsum (norm_nonneg _)
-    _ = _ := by ring
-
-/-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}`, `v ∈ B^β_{p₂,q}` and a set `t` of
-block indices with `|k - j| ≤ N` for `k ∈ t`, with `L = N + 1`,
-`2^{j(α+β)} ‖Δⱼ u · ∑_{k ∈ t} Δₖ v‖_r ≤ ‖u‖ 2^{|β| L} ∑_{j - L ≤ k < j + L} 2^{kβ} ‖Δₖ v‖`.
-For `t = [j - N, j + N]` this bounds the `j`-th term of `R(u, v)` with gap `N`. -/
-theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r q q₁ : ℝ≥0∞}
-    [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r]
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q) {N j : ℕ} {t : Finset ℕ}
-    (ht : t ⊆ Finset.Icc (j - N) (j + N)) :
-    2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖ ≤
-      ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
-        ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖) := by
-  have h := two_rpow_mul_norm_block_smul_sum_le (r := r) N j ht u v
-  simp only [norm_weightedBlocks_apply] at h
-  have hu : 2 ^ (α * j) * ‖u.block j‖ ≤ ‖u‖ := u.rpow_mul_norm_block_le j
-  calc 2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖
-      ≤ 2 ^ (|β| * (N + 1 : ℕ)) * ‖u‖ *
-          ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖ :=
-        h.trans (by gcongr)
     _ = _ := by ring
 
 end Term
@@ -220,25 +210,6 @@ private theorem exists_resonant (N : ℕ) (α β : ℝ) (hαβ : 0 < α + β) :
           (mul_le_mul_of_nonneg_left hb (norm_nonneg a))
     _ = C₀ * K * (2 * (N + 1 : ℕ)) * ‖u‖ * ‖v‖ := by rw [ha, hb₀]; ring
 
-variable (φ) in
-/-- **The resonant estimate** (Bahouri–Chemin–Danchin, Theorem 2.85). Let `0 < α + β` and let `N`
-be a gap. There is `C ≥ 0`, depending only on `φ`, `N`, `α` and `β`, with the following property
-for all exponents `1 ≤ p₁, p₂, r, q, q₁ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and
-`v ∈ B^β_{p₂,q}`, then the resonant part `R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` converges in
-the tempered distributions to an element of `B^{α+β}_{r,q}` of norm at most `C ‖u‖ ‖v‖`. -/
-theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 < α + β) (N : ℕ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₁ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
-      [Fact (1 ≤ q)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q₁)
-      (v : BesovSpace F φ β p₂ q), ∃ w : BesovSpace F φ (α + β) r q,
-        HasSum (fun j ↦ ((u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
-          Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  obtain ⟨C, hC, hres⟩ := exists_resonant (F := F) (φ := φ) N α β hαβ
-  refine ⟨C, hC, fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
-  set u' : BesovSpace ℂ φ α p₁ ∞ := inclusion ℂ φ p₁ le_rfl le_top u
-  obtain ⟨w, hw, hwn⟩ := hres (r := r) (q := q) u' v
-  refine ⟨w, by simpa only [u', block_inclusion, resonantTerm_eq_smul_sum] using hw,
-    hwn.trans (by gcongr; exact norm_inclusion_le _ _ u)⟩
-
 variable (r q) in
 /-- **Bony's resonant remainder** (Bahouri–Chemin–Danchin, Theorem 2.85). For any gap `N : ℕ`,
 `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, and `1/q = 1/q₁ + 1/q₂`, the series
@@ -247,26 +218,19 @@ variable (r q) in
 `p₁, p₂, r, q₁, q₂, q`. -/
 def resonantCLM (N : ℕ) (hαβ : 0 < α + β) :
     BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ (α + β) r q :=
-  mkContinuousOfHasSum₂ (fun j u v ↦ resonantTerm r N u v j)
-    (fun j x₁ x₂ y ↦ resonantTerm_add_left N x₁ x₂ y j)
-    (fun j c x y ↦ resonantTerm_smul_left N c x y j)
-    (fun j x y₁ y₂ ↦ resonantTerm_add_right N x y₁ y₂ j)
-    (fun j c x y ↦ resonantTerm_smul_right N c x y j)
-    (fun u v ↦ (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.2 u v)
+  mkContinuousOfHasSum₂ (resonantTermₗ r N)
+    ((exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.2)
 
 /-- The tempered distribution of `resonantCLM r q N hαβ u v` is the sum of the resonant series
 `∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v`. -/
 theorem hasSum_resonantCLM (N : ℕ) (hαβ : 0 < α + β)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
     HasSum (fun j ↦ ((resonantTerm r N u v j : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
-      (resonantCLM r q N hαβ u v).toDistr :=
-  hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q₁) (Y := BesovSpace F φ β p₂ q₂)
-    (r := r) (q := q) (γ := α + β) (fun j u v ↦ resonantTerm r N u v j)
-    (fun j x₁ x₂ y ↦ resonantTerm_add_left N x₁ x₂ y j)
-    (fun j c x y ↦ resonantTerm_smul_left N c x y j)
-    (fun j x y₁ y₂ ↦ resonantTerm_add_right N x y₁ y₂ j)
-    (fun j c x y ↦ resonantTerm_smul_right N c x y j)
-    (fun u v ↦ (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.2 u v) u v
+      (resonantCLM r q N hαβ u v).toDistr := by
+  rw [resonantCLM]
+  exact hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q₁)
+    (Y := BesovSpace F φ β p₂ q₂) (r := r) (q := q) (γ := α + β) (resonantTermₗ r N)
+    ((exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.2) u v
 
 /-- **Uniform operator norm bound for `resonantCLM`.** The operator norm is bounded by a constant
 depending only on `E`, `F`, `φ`, `N`, `α` and `β`, independently of `p₁, p₂, r, q₁, q₂, q`. -/
@@ -277,8 +241,10 @@ theorem exists_norm_resonantCLM_le (N : ℕ) (α β : ℝ) (hαβ : 0 < α + β)
       ‖resonantCLM (F := F) (φ := φ) (α := α) (β := β)
         (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) r q N hαβ‖ ≤ C :=
   ⟨_, (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.1,
-    fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.1⟩
+    fun {_ _ r _ _ _} _ _ _ _ _ _ _ _ ↦ by
+      rw [resonantCLM]
+      exact norm_mkContinuousOfHasSum₂_le _ _
+        (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.1⟩
 
 omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] [q₁.HolderTriple q₂ q] in
 /-- Geometric decay bound on any partial-window resonant piece when `u ∈ B^α_{p₁,q₁}` and
@@ -342,8 +308,9 @@ private theorem norm_sum_block_smul_sum_sub_le (N M : ℕ) (hαβ : 0 < α + β)
       (fun k hk ↦ by simp only [tM, Finset.mem_filter, Finset.mem_Icc] at hk ⊢; omega) u v
     have h₂ := norm_block_smul_sum_le_pow (r := r) N j Finset.Subset.rfl u v
     have : 0 ≤ K := by positivity
+    rw [resonantTerm_eq_smul_sum]
     exact (norm_sub_le _ _).trans ((add_le_add h₁ h₂).trans (by
-      rw [← two_mul, mul_assoc (2 : ℝ)]; gcongr))
+      rw [← two_mul, ← mul_assoc (2 : ℝ)]; gcongr))
   · have : 0 ≤ 2 * K * ρ ^ (M - N) := by positivity
     rw [nsmul_eq_mul, mul_assoc (N : ℝ)]; gcongr; rw [Nat.card_Ico]; omega
 

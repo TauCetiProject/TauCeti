@@ -89,6 +89,26 @@ namespace TauCeti.BesovSpace
 variable {φ : ContDiffBump (0 : E)} {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)]
   [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r]
 
+/-- Combines the `HasSum` limits of the two paraproduct series and the truncated-resonant
+convergence into `S_M u • S_M v → w₁ + w₂ + w₃` in `𝓢'(E, F)`. -/
+private theorem tendsto_lowPass_smul_lowPass_of_hasSum {N : ℕ} {q₁' q₂' : ℝ≥0∞}
+    {s₁ s₂ : ℝ} (u : BesovSpace ℂ φ s₁ p₁ q₁')
+    (v : BesovSpace F φ s₂ p₂ q₂') {w₁ w₂ w₃ : 𝓢'(E, F)}
+    (h₁ : HasSum (fun j ↦ ((u.lowPass (j - N) • v.block j :
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) w₁)
+    (h₂ : HasSum (fun j ↦ ((u.block j • v.lowPass (j - N) :
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) w₂)
+    (h₃ : Tendsto (fun M ↦ ((∑ j ∈ Finset.range M, (u.block j •
+        ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k :
+          Lp F r (volume : Measure E)) : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 w₃)) :
+    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 (w₁ + w₂ + w₃)) := by
+  refine ((h₁.tendsto_sum_nat.add h₂.tendsto_sum_nat).add h₃).congr'
+    (Eventually.of_forall fun M ↦ ?_)
+  simp_rw [← Lp.toTemperedDistributionCLM_apply]
+  rw [← map_sum, ← map_sum, ← map_add, ← map_add, lowPass_smul_lowPass N M u v]
+
 /-- For every admissible gap `N`, `S_M u · S_M v` converges in `𝓢'(E, F)` to
 `T_u^N v + T_v^N u + R_N(u, v)`. -/
 private theorem tendsto_lowPass_smul_lowPass_paraproductNegCLM_add {N : ℕ}
@@ -103,12 +123,12 @@ private theorem tendsto_lowPass_smul_lowPass_paraproductNegCLM_add {N : ℕ}
             (resonantCLM r q₁ N hαβ u (inclusion F φ p₂ le_rfl le_top v))).toDistr) := by
   simp only [toDistr_add, toDistr_inclusion]
   set v' : BesovSpace F φ β p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
-  have h₁ := (hasSum_paraproductNegCLM (r := r) (q := q₁) hN hα u v').tendsto_sum_nat
-  have h₂ := (hasSum_paraproductRightLpCLM_of_toDistr_eq (r := r) hN u
-    (coe_toLpCLM (by linarith : 0 < β) v).symm).tendsto_sum_nat
+  have h₁ := hasSum_paraproductNegCLM (r := r) (q := q₁) hN hα u v'
+  have h₂ := hasSum_paraproductRightLpCLM_of_toDistr_eq (r := r) hN u
+    (coe_toLpCLM (by linarith : 0 < β) v).symm
   have h₃ := tendsto_sum_block_smul_sum_resonantCLM (r := r) (q := q₁) N hαβ u v'
-  refine ((h₁.add h₂).add h₃).congr' (Eventually.of_forall fun M ↦ ?_)
-  simp [v', lowPass_smul_lowPass N M u v, block_inclusion]
+  simp only [v', block_inclusion] at h₁ h₃
+  exact tendsto_lowPass_smul_lowPass_of_hasSum u v h₁ h₂ h₃
 
 variable (φ) in
 /-- **The product estimate**, with a constant independent of the integrability exponents. -/
@@ -300,13 +320,11 @@ private theorem tendsto_lowPass_smul_lowPass_smulLOfPosAux {N : ℕ}
   rw [smulLOfPosAux_apply]
   simp only [toDistr_add, toDistr_inclusion]
   set v' : BesovSpace F φ s p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
-  have h₁ := (hasSum_paraproductLpCLM_of_toDistr_eq (r := r) hN (coe_toLpCLM hs u).symm v)
-    |>.tendsto_sum_nat
-  have h₂ := (hasSum_paraproductRightLpCLM_of_toDistr_eq (r := r) hN u (coe_toLpCLM hs v).symm)
-    |>.tendsto_sum_nat
+  have h₁ := hasSum_paraproductLpCLM_of_toDistr_eq (r := r) hN (coe_toLpCLM hs u).symm v
+  have h₂ := hasSum_paraproductRightLpCLM_of_toDistr_eq (r := r) hN u (coe_toLpCLM hs v).symm
   have h₃ := tendsto_sum_block_smul_sum_resonantCLM (r := r) (q := q) N (add_pos hs hs) u v'
-  refine ((h₁.add h₂).add h₃).congr' (Eventually.of_forall fun M ↦ ?_)
-  simp [v', lowPass_smul_lowPass N M u v, block_inclusion]
+  simp only [v', block_inclusion] at h₃
+  exact tendsto_lowPass_smul_lowPass_of_hasSum u v h₁ h₂ h₃
 
 variable (r) in
 /-- **The product of Besov elements of positive regularity.** For `0 < s` and Hölder exponents

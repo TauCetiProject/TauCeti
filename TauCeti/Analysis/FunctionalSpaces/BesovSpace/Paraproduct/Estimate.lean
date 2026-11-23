@@ -31,10 +31,7 @@ Theorem 2.82:
 * **Negative regularity:** `TauCeti.BesovSpace.paraproductNegCLM` (`α < 0`) and
   `TauCeti.BesovSpace.paraproductRightNegCLM` (`β < 0`) mapping
   `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^{α + β}_{r,q}` (`1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`),
-  proved via `TauCeti.BesovSpace.exists_lp_lowPass_sub_le_of_neg` and `lp.mulL`, together with the
-  unconstrained-fine-index existential forms
-  `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg` and
-  `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_neg`.
+  proved via `TauCeti.BesovSpace.exists_lp_lowPass_sub_le_of_neg` and `lp.mulL`.
 * **Vanishing and constant-`1` identities:** `paraproductLpCLM_eq_zero`,
   `paraproductRightLpCLM_eq_zero`, `paraproductNegCLM_eq_zero`, `paraproductRightNegCLM_eq_zero`
   (with single-block corollaries) and `toDistr_paraproductLpCLM_one_left`,
@@ -208,45 +205,46 @@ theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (α : ℝ) {N
         _ = A * ‖g‖ * (2 ^ (α * j) * ‖u.block j‖) := by ring
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
-private def paraproductLpTerm (N : ℕ) (j : ℕ) (f : Lp ℂ p₁ (volume : Measure E))
-    (v : BesovSpace F φ β p₂ q) : Lp F r (volume : Measure E) :=
-  (ofLpCLM ℂ φ p₁ f).lowPass (j - N) • v.block j
+private def paraproductNegTerm {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ≥0∞}
+    [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [p₁.HolderTriple p₂ r] (N j : ℕ) :
+    BesovSpace ℂ φ α p₁ q₁ →ₗ[ℂ] BesovSpace F φ β p₂ q₂ →ₗ[ℂ] Lp F r (volume : Measure E) :=
+  ((Lp.lpSMulₗ ℂ).comp (lowPassₗ ℂ φ α p₁ q₁ (j - N))).compl₂ (blockₗ F φ β p₂ q₂ j)
 
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductLpTerm_add_left (N j : ℕ) (f₁ f₂ : Lp ℂ p₁ (volume : Measure E))
-    (v : BesovSpace F φ β p₂ q) :
-    paraproductLpTerm (r := r) N j (f₁ + f₂) v =
-      paraproductLpTerm (r := r) N j f₁ v + paraproductLpTerm (r := r) N j f₂ v := by
-  simp [paraproductLpTerm, Lp.smul_add]
+private theorem paraproductNegTerm_apply {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ≥0∞}
+    [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [p₁.HolderTriple p₂ r] (N j : ℕ)
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
+    paraproductNegTerm (φ := φ) (F := F) (α := α) (β := β)
+      (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) (r := r) N j u v =
+      u.lowPass (j - N) • v.block j := by
+  simp only [paraproductNegTerm, LinearMap.compl₂_apply, LinearMap.comp_apply,
+    Lp.lpSMulₗ_apply_apply, lowPassₗ_apply, blockₗ_apply]
 
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductLpTerm_smul_left (N j : ℕ) (c : ℂ)
-    (f : Lp ℂ p₁ (volume : Measure E)) (v : BesovSpace F φ β p₂ q) :
-    paraproductLpTerm (r := r) N j (c • f) v = c • paraproductLpTerm (r := r) N j f v := by
-  simp [paraproductLpTerm, Lp.smul_assoc]
+private def paraproductRightNegTerm {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ≥0∞}
+    [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [p₁.HolderTriple p₂ r] (N j : ℕ) :
+    BesovSpace ℂ φ α p₁ q₁ →ₗ[ℂ] BesovSpace F φ β p₂ q₂ →ₗ[ℂ] Lp F r (volume : Measure E) :=
+  ((Lp.lpSMulₗ ℂ).comp (blockₗ ℂ φ α p₁ q₁ j)).compl₂ (lowPassₗ F φ β p₂ q₂ (j - N))
 
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductLpTerm_add_right (N j : ℕ) (f : Lp ℂ p₁ (volume : Measure E))
-    (v₁ v₂ : BesovSpace F φ β p₂ q) :
-    paraproductLpTerm (r := r) N j f (v₁ + v₂) =
-      paraproductLpTerm (r := r) N j f v₁ + paraproductLpTerm (r := r) N j f v₂ := by
-  simp [paraproductLpTerm, block_add, Lp.add_smul]
+private theorem paraproductRightNegTerm_apply {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ≥0∞}
+    [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [p₁.HolderTriple p₂ r] (N j : ℕ)
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
+    paraproductRightNegTerm (φ := φ) (F := F) (α := α) (β := β)
+      (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) (r := r) N j u v =
+      u.block j • v.lowPass (j - N) := by
+  simp only [paraproductRightNegTerm, LinearMap.compl₂_apply, LinearMap.comp_apply,
+    Lp.lpSMulₗ_apply_apply, blockₗ_apply, lowPassₗ_apply]
 
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductLpTerm_smul_right (N j : ℕ) (c : ℂ)
-    (f : Lp ℂ p₁ (volume : Measure E)) (v : BesovSpace F φ β p₂ q) :
-    paraproductLpTerm (r := r) N j f (c • v) = c • paraproductLpTerm (r := r) N j f v := by
-  simp [paraproductLpTerm, block_smul, ← Lp.smul_comm]
-
-private theorem paraproductLpTerm_hasSum (hN : φ.rOut < 2 ^ N * φ.rIn)
+private theorem paraproductLp_hasSum (hN : φ.rOut < 2 ^ N * φ.rIn)
     (f : Lp ℂ p₁ (volume : Measure E)) (v : BesovSpace F φ β p₂ q) :
     ∃ w : BesovSpace F φ β r q,
-      HasSum (fun j ↦ ((paraproductLpTerm (r := r) N j f v : Lp F r (volume : Measure E)) :
-        𝓢'(E, F))) w.toDistr ∧
+      HasSum (fun j ↦ ((((paraproductNegTerm (φ := φ) (F := F) (α := 0) (β := β)
+        (p₁ := p₁) (p₂ := p₂) (q₁ := ∞) (q₂ := q) (r := r) N j).comp
+        (ofLpCLM ℂ φ p₁).toLinearMap f v : Lp F r (volume : Measure E)) : 𝓢'(E, F))))
+        w.toDistr ∧
       ‖w‖ ≤ (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose *
-        ‖f‖ * ‖v‖ :=
-  (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.2
-    (ofLpCLM ℂ φ p₁ f) (toDistr_ofLpCLM f) v
+        ‖f‖ * ‖v‖ := by
+  simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, paraproductNegTerm_apply] using
+    (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.2
+      (ofLpCLM ℂ φ p₁ f) (toDistr_ofLpCLM f) v
 
 variable (r) in
 /-- **Bony's paraproduct with an `L^{p₁}` low-frequency factor** (Bahouri–Chemin–Danchin,
@@ -256,22 +254,26 @@ Theorem 2.82). For `φ.rOut < 2 ^ N * φ.rIn` and any real smoothness `β`, the 
 independently of `p₁, p₂, r, q`. -/
 def paraproductLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn) :
     Lp ℂ p₁ (volume : Measure E) →L[ℂ] BesovSpace F φ β p₂ q →L[ℂ] BesovSpace F φ β r q :=
-  mkContinuousOfHasSum₂ (paraproductLpTerm (r := r) N)
-    (paraproductLpTerm_add_left N) (paraproductLpTerm_smul_left N)
-    (paraproductLpTerm_add_right N) (paraproductLpTerm_smul_right N)
-    (paraproductLpTerm_hasSum hN)
+  mkContinuousOfHasSum₂
+    (fun j ↦ (paraproductNegTerm (φ := φ) (F := F) (α := 0) (β := β)
+      (p₁ := p₁) (p₂ := p₂) (q₁ := ∞) (q₂ := q) (r := r) N j).comp
+      (ofLpCLM ℂ φ p₁).toLinearMap)
+    (paraproductLp_hasSum hN)
 
 /-- The tempered distribution of `paraproductLpCLM r hN f v` is the sum of the series
 `∑ⱼ S_{j - N} f · Δⱼ v`. -/
 theorem hasSum_paraproductLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn)
     (f : Lp ℂ p₁ (volume : Measure E)) (v : BesovSpace F φ β p₂ q) :
     HasSum (fun j ↦ (((ofLpCLM ℂ φ p₁ f).lowPass (j - N) • v.block j :
-      Lp F r (volume : Measure E)) : 𝓢'(E, F))) (paraproductLpCLM r hN f v).toDistr :=
-  hasSum_mkContinuousOfHasSum₂ (X := Lp ℂ p₁ (volume : Measure E)) (Y := BesovSpace F φ β p₂ q)
-    (r := r) (q := q) (γ := β) (paraproductLpTerm (r := r) N)
-    (paraproductLpTerm_add_left N) (paraproductLpTerm_smul_left N)
-    (paraproductLpTerm_add_right N) (paraproductLpTerm_smul_right N)
-    (paraproductLpTerm_hasSum hN) f v
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) (paraproductLpCLM r hN f v).toDistr := by
+  rw [paraproductLpCLM]
+  simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, paraproductNegTerm_apply] using
+    hasSum_mkContinuousOfHasSum₂ (X := Lp ℂ p₁ (volume : Measure E))
+      (Y := BesovSpace F φ β p₂ q) (r := r) (q := q) (γ := β)
+      (fun j ↦ (paraproductNegTerm (φ := φ) (F := F) (α := 0) (β := β)
+        (p₁ := p₁) (p₂ := p₂) (q₁ := ∞) (q₂ := q) (r := r) N j).comp
+        (ofLpCLM ℂ φ p₁).toLinearMap)
+      (paraproductLp_hasSum hN) f v
 
 /-- When `f ∈ L^{p₁}` represents `u ∈ B^α_{p₁,q₁}`, `paraproductLpCLM r hN f v` sums
 `S_{j - N} u · Δⱼ v`. -/
@@ -291,50 +293,24 @@ theorem exists_norm_paraproductLpCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (β : �
       [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r],
       ‖paraproductLpCLM (F := F) (β := β) (p₁ := p₁) (p₂ := p₂) (q := q) r hN‖ ≤ C :=
   ⟨_, (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.1,
-    fun {_ _ _ _} _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.1⟩
+    fun {_ _ _ _} _ _ _ _ _ ↦ by
+      rw [paraproductLpCLM]
+      exact norm_mkContinuousOfHasSum₂_le _ _
+        (exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN).choose_spec.1⟩
 
-private def paraproductRightLpTerm (N : ℕ) (j : ℕ) (u : BesovSpace ℂ φ α p₁ q)
-    (g : Lp F p₂ (volume : Measure E)) : Lp F r (volume : Measure E) :=
-  u.block j • (ofLpCLM F φ p₂ g).lowPass (j - N)
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductRightLpTerm_add_left (N j : ℕ) (u₁ u₂ : BesovSpace ℂ φ α p₁ q)
-    (g : Lp F p₂ (volume : Measure E)) :
-    paraproductRightLpTerm (r := r) N j (u₁ + u₂) g =
-      paraproductRightLpTerm (r := r) N j u₁ g + paraproductRightLpTerm (r := r) N j u₂ g := by
-  simp [paraproductRightLpTerm, block_add, Lp.smul_add]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductRightLpTerm_smul_left (N j : ℕ) (c : ℂ)
-    (u : BesovSpace ℂ φ α p₁ q) (g : Lp F p₂ (volume : Measure E)) :
-    paraproductRightLpTerm (r := r) N j (c • u) g =
-      c • paraproductRightLpTerm (r := r) N j u g := by
-  simp [paraproductRightLpTerm, block_smul, Lp.smul_assoc]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductRightLpTerm_add_right (N j : ℕ) (u : BesovSpace ℂ φ α p₁ q)
-    (g₁ g₂ : Lp F p₂ (volume : Measure E)) :
-    paraproductRightLpTerm (r := r) N j u (g₁ + g₂) =
-      paraproductRightLpTerm (r := r) N j u g₁ + paraproductRightLpTerm (r := r) N j u g₂ := by
-  simp [paraproductRightLpTerm, Lp.add_smul]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] in
-private theorem paraproductRightLpTerm_smul_right (N j : ℕ) (c : ℂ)
-    (u : BesovSpace ℂ φ α p₁ q) (g : Lp F p₂ (volume : Measure E)) :
-    paraproductRightLpTerm (r := r) N j u (c • g) =
-      c • paraproductRightLpTerm (r := r) N j u g := by
-  simp [paraproductRightLpTerm, ← Lp.smul_comm]
-
-private theorem paraproductRightLpTerm_hasSum (hN : φ.rOut < 2 ^ N * φ.rIn)
+private theorem paraproductRightLp_hasSum (hN : φ.rOut < 2 ^ N * φ.rIn)
     (u : BesovSpace ℂ φ α p₁ q) (g : Lp F p₂ (volume : Measure E)) :
     ∃ w : BesovSpace F φ α r q,
-      HasSum (fun j ↦ ((paraproductRightLpTerm (r := r) N j u g : Lp F r (volume : Measure E)) :
-        𝓢'(E, F))) w.toDistr ∧
+      HasSum (fun j ↦ ((((paraproductRightNegTerm (φ := φ) (F := F) (α := α) (β := 0)
+        (p₁ := p₁) (p₂ := p₂) (q₁ := q) (q₂ := ∞) (r := r) N j).compl₂
+        (ofLpCLM F φ p₂).toLinearMap u g : Lp F r (volume : Measure E)) : 𝓢'(E, F))))
+        w.toDistr ∧
       ‖w‖ ≤ (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose *
-        ‖u‖ * ‖g‖ :=
-  (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.2
-    u (ofLpCLM F φ p₂ g) (toDistr_ofLpCLM g)
+        ‖u‖ * ‖g‖ := by
+  simpa only [LinearMap.compl₂_apply, ContinuousLinearMap.coe_coe,
+    paraproductRightNegTerm_apply] using
+    (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.2
+      u (ofLpCLM F φ p₂ g) (toDistr_ofLpCLM g)
 
 variable (r) in
 /-- **Bony's right paraproduct with an `L^{p₂}` low-frequency factor** (Bahouri–Chemin–Danchin,
@@ -344,22 +320,27 @@ Theorem 2.82). For `φ.rOut < 2 ^ N * φ.rIn` and any real smoothness `α`, the 
 independently of `p₁, p₂, r, q`. -/
 def paraproductRightLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn) :
     BesovSpace ℂ φ α p₁ q →L[ℂ] Lp F p₂ (volume : Measure E) →L[ℂ] BesovSpace F φ α r q :=
-  mkContinuousOfHasSum₂ (paraproductRightLpTerm (r := r) N)
-    (paraproductRightLpTerm_add_left N) (paraproductRightLpTerm_smul_left N)
-    (paraproductRightLpTerm_add_right N) (paraproductRightLpTerm_smul_right N)
-    (paraproductRightLpTerm_hasSum hN)
+  mkContinuousOfHasSum₂
+    (fun j ↦ (paraproductRightNegTerm (φ := φ) (F := F) (α := α) (β := 0)
+      (p₁ := p₁) (p₂ := p₂) (q₁ := q) (q₂ := ∞) (r := r) N j).compl₂
+      (ofLpCLM F φ p₂).toLinearMap)
+    (paraproductRightLp_hasSum hN)
 
 /-- The tempered distribution of `paraproductRightLpCLM r hN u g` is the sum of the series
 `∑ⱼ Δⱼ u · S_{j - N} g`. -/
 theorem hasSum_paraproductRightLpCLM (hN : φ.rOut < 2 ^ N * φ.rIn)
     (u : BesovSpace ℂ φ α p₁ q) (g : Lp F p₂ (volume : Measure E)) :
     HasSum (fun j ↦ ((u.block j • (ofLpCLM F φ p₂ g).lowPass (j - N) :
-      Lp F r (volume : Measure E)) : 𝓢'(E, F))) (paraproductRightLpCLM r hN u g).toDistr :=
-  hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q) (Y := Lp F p₂ (volume : Measure E))
-    (r := r) (q := q) (γ := α) (paraproductRightLpTerm (r := r) N)
-    (paraproductRightLpTerm_add_left N) (paraproductRightLpTerm_smul_left N)
-    (paraproductRightLpTerm_add_right N) (paraproductRightLpTerm_smul_right N)
-    (paraproductRightLpTerm_hasSum hN) u g
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) (paraproductRightLpCLM r hN u g).toDistr := by
+  rw [paraproductRightLpCLM]
+  simpa only [LinearMap.compl₂_apply, ContinuousLinearMap.coe_coe,
+    paraproductRightNegTerm_apply] using
+    hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q)
+      (Y := Lp F p₂ (volume : Measure E)) (r := r) (q := q) (γ := α)
+      (fun j ↦ (paraproductRightNegTerm (φ := φ) (F := F) (α := α) (β := 0)
+        (p₁ := p₁) (p₂ := p₂) (q₁ := q) (q₂ := ∞) (r := r) N j).compl₂
+        (ofLpCLM F φ p₂).toLinearMap)
+      (paraproductRightLp_hasSum hN) u g
 
 /-- When `g ∈ L^{p₂}` represents `v ∈ B^β_{p₂,q₂}`, `paraproductRightLpCLM r hN u g` sums
 `Δⱼ u · S_{j - N} v`. -/
@@ -377,8 +358,10 @@ theorem exists_norm_paraproductRightLpCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (α
       [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r],
       ‖paraproductRightLpCLM (F := F) (α := α) (p₁ := p₁) (p₂ := p₂) (q := q) r hN‖ ≤ C :=
   ⟨_, (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.1,
-    fun {_ _ _ _} _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.1⟩
+    fun {_ _ _ _} _ _ _ _ _ ↦ by
+      rw [paraproductRightLpCLM]
+      exact norm_mkContinuousOfHasSum₂_le _ _
+        (exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN).choose_spec.1⟩
 
 /-- For scalar-valued factors (`F = ℂ`), the right paraproduct `T_g u` coincides with the left
 paraproduct `T_g u` defined by `paraproductLpCLM`. -/
@@ -421,65 +404,15 @@ private theorem exists_paraproductNeg (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α 
     calc C₀ * (‖a‖ * ‖v‖) ≤ C₀ * (((2 : ℝ) ^ (-α) - 1)⁻¹ * ‖u‖ * ‖v‖) := by gcongr
       _ = _ := by ring⟩
 
-variable (φ) in
-/-- **The paraproduct estimate for a low-frequency factor of negative regularity**
-(Bahouri–Chemin–Danchin, Theorem 2.82). Let `α < 0` and `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
-depending only on `φ`, `N`, `α` and `β`, with the following property for all exponents
-`1 ≤ p₁, p₂, r, q, q₁ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and `v ∈ B^β_{p₂,q}`,
-then the paraproduct `T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` converges in the tempered distributions to an
-element of `B^{α+β}_{r,q}` of norm at most `C ‖u‖ ‖v‖`. -/
-theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_neg {α : ℝ} (hα : α < 0) (β : ℝ)
-    {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₁ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
-      [Fact (1 ≤ q)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q₁)
-      (v : BesovSpace F φ β p₂ q), ∃ w : BesovSpace F φ (α + β) r q,
-        HasSum (fun j ↦ ((u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) :
-          𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  obtain ⟨C, hC, hneg⟩ := exists_paraproductNeg (F := F) hN hα β
-  refine ⟨C, hC, fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
-  set u' : BesovSpace ℂ φ α p₁ ∞ := inclusion ℂ φ p₁ le_rfl le_top u
-  obtain ⟨w, hw, hwn⟩ := hneg (r := r) (q := q) u' v
-  have hlow (j : ℕ) : u'.lowPass (j - N) = u.lowPass (j - N) :=
-    lowPass_eq_of_toDistr_eq (toDistr_inclusion le_rfl le_top u) _
-  exact ⟨w, by simpa only [hlow] using hw, hwn.trans (by gcongr; exact norm_inclusion_le _ _ u)⟩
-
-private def paraproductNegTerm (N j : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) : Lp F r (volume : Measure E) :=
-  u.lowPass (j - N) • v.block j
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductNegTerm_add_left (N j : ℕ) (u₁ u₂ : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) :
-    paraproductNegTerm (r := r) N j (u₁ + u₂) v =
-      paraproductNegTerm (r := r) N j u₁ v + paraproductNegTerm (r := r) N j u₂ v := by
-  simp [paraproductNegTerm, Lp.smul_add]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductNegTerm_smul_left (N j : ℕ) (c : ℂ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) :
-    paraproductNegTerm (r := r) N j (c • u) v = c • paraproductNegTerm (r := r) N j u v := by
-  simp [paraproductNegTerm, Lp.smul_assoc]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductNegTerm_add_right (N j : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v₁ v₂ : BesovSpace F φ β p₂ q₂) :
-    paraproductNegTerm (r := r) N j u (v₁ + v₂) =
-      paraproductNegTerm (r := r) N j u v₁ + paraproductNegTerm (r := r) N j u v₂ := by
-  simp [paraproductNegTerm, block_add, Lp.add_smul]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductNegTerm_smul_right (N j : ℕ) (c : ℂ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) :
-    paraproductNegTerm (r := r) N j u (c • v) = c • paraproductNegTerm (r := r) N j u v := by
-  simp [paraproductNegTerm, block_smul, ← Lp.smul_comm]
-
 private theorem paraproductNegTerm_hasSum (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α < 0)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
     ∃ w : BesovSpace F φ (α + β) r q,
-      HasSum (fun j ↦ ((paraproductNegTerm (r := r) N j u v : Lp F r (volume : Measure E)) :
-        𝓢'(E, F))) w.toDistr ∧
-      ‖w‖ ≤ (exists_paraproductNeg (F := F) hN hα β).choose * ‖u‖ * ‖v‖ :=
-  (exists_paraproductNeg (F := F) hN hα β).choose_spec.2 u v
+      HasSum (fun j ↦ ((paraproductNegTerm (φ := φ) (F := F) (α := α) (β := β)
+        (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) (r := r) N j u v :
+        Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+      ‖w‖ ≤ (exists_paraproductNeg (F := F) hN hα β).choose * ‖u‖ * ‖v‖ := by
+  simpa only [paraproductNegTerm_apply] using
+    (exists_paraproductNeg (F := F) hN hα β).choose_spec.2 u v
 
 variable (r q) in
 /-- **Bony's paraproduct at negative regularity** (Bahouri–Chemin–Danchin, Theorem 2.82). For
@@ -489,22 +422,19 @@ the series `T_u v = ∑ⱼ S_{j - N} u · Δⱼ v` defines a continuous bilinear
 `p₁, p₂, r, q₁, q₂, q`. -/
 def paraproductNegCLM (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α < 0) :
     BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ (α + β) r q :=
-  mkContinuousOfHasSum₂ (paraproductNegTerm (r := r) N)
-    (paraproductNegTerm_add_left N) (paraproductNegTerm_smul_left N)
-    (paraproductNegTerm_add_right N) (paraproductNegTerm_smul_right N)
-    (paraproductNegTerm_hasSum hN hα)
+  mkContinuousOfHasSum₂ (paraproductNegTerm N) (paraproductNegTerm_hasSum hN hα)
 
 /-- The tempered distribution of `paraproductNegCLM r q hN hα u v` is the sum of the series
 `∑ⱼ S_{j - N} u · Δⱼ v`. -/
 theorem hasSum_paraproductNegCLM (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α < 0)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
     HasSum (fun j ↦ ((u.lowPass (j - N) • v.block j :
-      Lp F r (volume : Measure E)) : 𝓢'(E, F))) (paraproductNegCLM r q hN hα u v).toDistr :=
-  hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q₁) (Y := BesovSpace F φ β p₂ q₂)
-    (r := r) (q := q) (γ := α + β) (paraproductNegTerm (r := r) N)
-    (paraproductNegTerm_add_left N) (paraproductNegTerm_smul_left N)
-    (paraproductNegTerm_add_right N) (paraproductNegTerm_smul_right N)
-    (paraproductNegTerm_hasSum hN hα) u v
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) (paraproductNegCLM r q hN hα u v).toDistr := by
+  rw [paraproductNegCLM]
+  simpa only [paraproductNegTerm_apply] using
+    hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q₁)
+      (Y := BesovSpace F φ β p₂ q₂) (r := r) (q := q) (γ := α + β)
+      (paraproductNegTerm N) (paraproductNegTerm_hasSum hN hα) u v
 
 /-- **Uniform operator norm bound for `paraproductNegCLM`.** The operator norm is bounded by a
 constant depending only on `E`, `F`, `φ`, `N`, `α` and `β`, independently of
@@ -516,8 +446,10 @@ theorem exists_norm_paraproductNegCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : 
       ‖paraproductNegCLM (F := F) (α := α) (β := β)
         (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) r q hN hα‖ ≤ C :=
   ⟨_, (exists_paraproductNeg (F := F) hN hα β).choose_spec.1,
-    fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_paraproductNeg (F := F) hN hα β).choose_spec.1⟩
+    fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ by
+      rw [paraproductNegCLM]
+      exact norm_mkContinuousOfHasSum₂_le _ _
+        (exists_paraproductNeg (F := F) hN hα β).choose_spec.1⟩
 
 /-- When `u ∈ B^α_{p₁,q₁}` (`α < 0`) also lies in `L^{p₁}` as `f`, `paraproductNegCLM` and
 `paraproductLpCLM` define the same tempered distribution. -/
@@ -552,70 +484,15 @@ private theorem exists_paraproductRightNeg (hN : φ.rOut < 2 ^ N * φ.rIn) (α :
     calc C₀ * (‖u‖ * ‖b‖) ≤ C₀ * (‖u‖ * ((2 ^ (-β) - 1)⁻¹ * ‖v‖)) := by gcongr
       _ = _ := by ring⟩
 
-variable (φ) in
-/-- **The paraproduct estimate for a low-frequency factor of negative regularity**, for the
-paraproduct `T_v u = ∑ⱼ Δⱼ u · S_{j-N} v` whose low-frequency factor is vector-valued
-(Bahouri–Chemin–Danchin, Theorem 2.82). Let `β < 0` and `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
-depending only on `φ`, `N`, `α` and `β`, with the following property for all exponents
-`1 ≤ p₁, p₂, r, q, q₂ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q}` and `v ∈ B^β_{p₂,q₂}`,
-then `T_v u` converges in the tempered distributions to an element of `B^{α+β}_{r,q}` of norm at
-most `C ‖u‖ ‖v‖`. -/
-theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (α : ℝ) {β : ℝ} (hβ : β < 0)
-    {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
-      [Fact (1 ≤ q)] [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q)
-      (v : BesovSpace F φ β p₂ q₂), ∃ w : BesovSpace F φ (α + β) r q,
-        HasSum (fun j ↦ ((u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) :
-          𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  obtain ⟨C, hC, hneg⟩ := exists_paraproductRightNeg (F := F) hN α hβ
-  refine ⟨C, hC, fun {p₁ p₂ r q q₂} _ _ _ _ _ _ u v ↦ ?_⟩
-  set v' : BesovSpace F φ β p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
-  obtain ⟨w, hw, hwn⟩ := hneg (r := r) (q := q) u v'
-  have hlow (j : ℕ) : v'.lowPass (j - N) = v.lowPass (j - N) :=
-    lowPass_eq_of_toDistr_eq (toDistr_inclusion le_rfl le_top v) _
-  exact ⟨w, by simpa only [hlow] using hw, hwn.trans (by gcongr; exact norm_inclusion_le _ _ v)⟩
-
-private def paraproductRightNegTerm (N j : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) : Lp F r (volume : Measure E) :=
-  u.block j • v.lowPass (j - N)
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductRightNegTerm_add_left (N j : ℕ) (u₁ u₂ : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) :
-    paraproductRightNegTerm (r := r) N j (u₁ + u₂) v =
-      paraproductRightNegTerm (r := r) N j u₁ v +
-        paraproductRightNegTerm (r := r) N j u₂ v := by
-  simp [paraproductRightNegTerm, block_add, Lp.smul_add]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductRightNegTerm_smul_left (N j : ℕ) (c : ℂ)
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    paraproductRightNegTerm (r := r) N j (c • u) v =
-      c • paraproductRightNegTerm (r := r) N j u v := by
-  simp [paraproductRightNegTerm, block_smul, Lp.smul_assoc]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductRightNegTerm_add_right (N j : ℕ) (u : BesovSpace ℂ φ α p₁ q₁)
-    (v₁ v₂ : BesovSpace F φ β p₂ q₂) :
-    paraproductRightNegTerm (r := r) N j u (v₁ + v₂) =
-      paraproductRightNegTerm (r := r) N j u v₁ +
-        paraproductRightNegTerm (r := r) N j u v₂ := by
-  simp [paraproductRightNegTerm, Lp.add_smul]
-
-omit [Fact (1 ≤ r)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] in
-private theorem paraproductRightNegTerm_smul_right (N j : ℕ) (c : ℂ)
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    paraproductRightNegTerm (r := r) N j u (c • v) =
-      c • paraproductRightNegTerm (r := r) N j u v := by
-  simp [paraproductRightNegTerm, ← Lp.smul_comm]
-
 private theorem paraproductRightNegTerm_hasSum (hN : φ.rOut < 2 ^ N * φ.rIn) (hβ : β < 0)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
     ∃ w : BesovSpace F φ (α + β) r q,
-      HasSum (fun j ↦ ((paraproductRightNegTerm (r := r) N j u v : Lp F r (volume : Measure E)) :
-        𝓢'(E, F))) w.toDistr ∧
-      ‖w‖ ≤ (exists_paraproductRightNeg (F := F) hN α hβ).choose * ‖u‖ * ‖v‖ :=
-  (exists_paraproductRightNeg (F := F) hN α hβ).choose_spec.2 u v
+      HasSum (fun j ↦ ((paraproductRightNegTerm (φ := φ) (F := F) (α := α) (β := β)
+        (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) (r := r) N j u v :
+        Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+      ‖w‖ ≤ (exists_paraproductRightNeg (F := F) hN α hβ).choose * ‖u‖ * ‖v‖ := by
+  simpa only [paraproductRightNegTerm_apply] using
+    (exists_paraproductRightNeg (F := F) hN α hβ).choose_spec.2 u v
 
 variable (r q) in
 /-- **Bony's right paraproduct at negative regularity** (Bahouri–Chemin–Danchin, Theorem 2.82). For
@@ -625,10 +502,7 @@ the series `T_v u = ∑ⱼ Δⱼ u · S_{j - N} v` defines a continuous bilinear
 `p₁, p₂, r, q₁, q₂, q`. -/
 def paraproductRightNegCLM (hN : φ.rOut < 2 ^ N * φ.rIn) (hβ : β < 0) :
     BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ (α + β) r q :=
-  mkContinuousOfHasSum₂ (paraproductRightNegTerm (r := r) N)
-    (paraproductRightNegTerm_add_left N) (paraproductRightNegTerm_smul_left N)
-    (paraproductRightNegTerm_add_right N) (paraproductRightNegTerm_smul_right N)
-    (paraproductRightNegTerm_hasSum hN hβ)
+  mkContinuousOfHasSum₂ (paraproductRightNegTerm N) (paraproductRightNegTerm_hasSum hN hβ)
 
 /-- The tempered distribution of `paraproductRightNegCLM r q hN hβ u v` is the sum of the series
 `∑ⱼ Δⱼ u · S_{j - N} v`. -/
@@ -636,12 +510,12 @@ theorem hasSum_paraproductRightNegCLM (hN : φ.rOut < 2 ^ N * φ.rIn) (hβ : β 
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
     HasSum (fun j ↦ ((u.block j • v.lowPass (j - N) :
       Lp F r (volume : Measure E)) : 𝓢'(E, F)))
-      (paraproductRightNegCLM r q hN hβ u v).toDistr :=
-  hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q₁) (Y := BesovSpace F φ β p₂ q₂)
-    (r := r) (q := q) (γ := α + β) (paraproductRightNegTerm (r := r) N)
-    (paraproductRightNegTerm_add_left N) (paraproductRightNegTerm_smul_left N)
-    (paraproductRightNegTerm_add_right N) (paraproductRightNegTerm_smul_right N)
-    (paraproductRightNegTerm_hasSum hN hβ) u v
+      (paraproductRightNegCLM r q hN hβ u v).toDistr := by
+  rw [paraproductRightNegCLM]
+  simpa only [paraproductRightNegTerm_apply] using
+    hasSum_mkContinuousOfHasSum₂ (X := BesovSpace ℂ φ α p₁ q₁)
+      (Y := BesovSpace F φ β p₂ q₂) (r := r) (q := q) (γ := α + β)
+      (paraproductRightNegTerm N) (paraproductRightNegTerm_hasSum hN hβ) u v
 
 /-- **Uniform operator norm bound for `paraproductRightNegCLM`.** -/
 theorem exists_norm_paraproductRightNegCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (α : ℝ) (hβ : β < 0) :
@@ -651,8 +525,10 @@ theorem exists_norm_paraproductRightNegCLM_le (hN : φ.rOut < 2 ^ N * φ.rIn) (�
       ‖paraproductRightNegCLM (F := F) (α := α) (β := β)
         (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂) r q hN hβ‖ ≤ C :=
   ⟨_, (exists_paraproductRightNeg (F := F) hN α hβ).choose_spec.1,
-    fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
-      (exists_paraproductRightNeg (F := F) hN α hβ).choose_spec.1⟩
+    fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ by
+      rw [paraproductRightNegCLM]
+      exact norm_mkContinuousOfHasSum₂_le _ _
+        (exists_paraproductRightNeg (F := F) hN α hβ).choose_spec.1⟩
 
 /-- When `v ∈ B^β_{p₂,q₂}` (`β < 0`) also lies in `L^{p₂}` as `g`, `paraproductRightNegCLM` and
 `paraproductRightLpCLM` define the same tempered distribution. -/

@@ -26,8 +26,9 @@ itself is bounded uniformly in `m` when `u` is an `Lᵖ` function (in particular
 ## Main declarations
 
 * `TauCeti.BesovSpace.lowPass`: the low-frequency cut-off `S_m u = ∑_{k < m} Δₖ u` as an `Lᵖ`
-  function; `TauCeti.BesovSpace.coe_lowPass_succ` identifies `S_{m+1}` with the Fourier
-  multiplier by `φ (2^{-m} ·)`.
+  function (with linear-map form `TauCeti.BesovSpace.lowPassₗ`);
+  `TauCeti.BesovSpace.coe_lowPass_succ` identifies `S_{m+1}` with the Fourier multiplier by
+  `φ (2^{-m} ·)`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_succ`: `S_{m+1} u` has spectrum in the ball of
   radius `2^m φ.rOut`.
 * `TauCeti.BesovSpace.exists_littlewoodPaleyBlock_lowPass_eq_zero`: the blocks of `S_m u` vanish
@@ -111,6 +112,17 @@ theorem lowPass_neg (u : BesovSpace F φ s p q) (m : ℕ) : (-u).lowPass m = -u.
 theorem lowPass_sub (u v : BesovSpace F φ s p q) (m : ℕ) :
     (u - v).lowPass m = u.lowPass m - v.lowPass m := by
   simp [lowPass_eq_sum]
+
+variable (F φ s p q) in
+/-- The low-frequency cut-off `u ↦ S_m u` as a `ℂ`-linear map `B^s_{p,q} →ₗ[ℂ] Lᵖ`. -/
+def lowPassₗ (m : ℕ) : BesovSpace F φ s p q →ₗ[ℂ] Lp F p (volume : Measure E) where
+  toFun u := u.lowPass m
+  map_add' u v := lowPass_add u v m
+  map_smul' c u := lowPass_smul c u m
+
+@[simp]
+theorem lowPassₗ_apply (u : BesovSpace F φ s p q) (m : ℕ) :
+    lowPassₗ F φ s p q m u = u.lowPass m := by simp [lowPassₗ]
 
 /-- The `Lᵖ` function `u.lowPass m` is the sum `∑_{k < m} Δₖ u` of the Littlewood–Paley blocks of
 the tempered distribution of `u`. -/

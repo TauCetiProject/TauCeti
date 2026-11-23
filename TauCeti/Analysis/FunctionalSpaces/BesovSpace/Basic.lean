@@ -51,9 +51,10 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`. The weighted blocks
   form a linear isometry `TauCeti.BesovSpace.weightedBlocksₗᵢ` into `ℓ^q(ℕ, Lᵖ)`.
-* `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
-  `TauCeti.BesovSpace.norm_eq_tsum_rpow` and `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and
-  `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
+* `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function (with linear-map form
+  `TauCeti.BesovSpace.blockₗ`), with `TauCeti.BesovSpace.norm_eq_tsum_rpow` and
+  `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`)
+  expressing the norm through the blocks, and the
   single-block bounds `TauCeti.BesovSpace.rpow_mul_norm_block_le` and
   `TauCeti.BesovSpace.norm_block_le`, and the block-norm sum at negative regularity
   `TauCeti.BesovSpace.sum_norm_block_le_of_neg`; conversely
@@ -567,6 +568,17 @@ theorem block_sub (u v : BesovSpace F φ s p q) (j : ℕ) :
 theorem block_smul (c : ℂ) (u : BesovSpace F φ s p q) (j : ℕ) :
     (c • u).block j = c • u.block j := by
   rw [block, block, weightedBlocks_smul, lp.coeFn_smul, Pi.smul_apply, smul_comm]
+
+variable (F φ s p q) in
+/-- The `j`-th Littlewood–Paley block `u ↦ Δⱼ u` as a `ℂ`-linear map `B^s_{p,q} →ₗ[ℂ] Lᵖ`. -/
+def blockₗ (j : ℕ) : BesovSpace F φ s p q →ₗ[ℂ] Lp F p (volume : Measure E) where
+  toFun u := u.block j
+  map_add' u v := block_add u v j
+  map_smul' c u := block_smul c u j
+
+@[simp]
+theorem blockₗ_apply (u : BesovSpace F φ s p q) (j : ℕ) :
+    blockₗ F φ s p q j u = u.block j := by simp [blockₗ]
 
 /-- Elements of two Besov spaces with the same tempered distribution have the same blocks. -/
 theorem block_eq_of_toDistr_eq {s' : ℝ} {q' : ℝ≥0∞} {u : BesovSpace F φ s p q}
@@ -1297,6 +1309,10 @@ def ofLpCLM : Lp F p (volume : Measure E) →L[ℂ] BesovSpace F φ 0 p ∞ :=
     obtain ⟨C, -, hC⟩ := exists_norm_ofLp_le (F := F) (φ := φ)
     exact ⟨C, fun f ↦ hC f⟩
 
+/-- Unfolding `TauCeti.BesovSpace.ofLpCLM`. -/
+theorem ofLpCLM_apply (f : Lp F p (volume : Measure E)) :
+    ofLpCLM F φ p f = (Lp.memBesov f φ).toBesovSpace := by simp [ofLpCLM]
+
 @[simp] theorem toDistr_ofLpCLM (f : Lp F p (volume : Measure E)) :
     (ofLpCLM F φ p f).toDistr = f := by simp [ofLpCLM]
 
@@ -1305,8 +1321,9 @@ variable (F φ) in
 `E`, `F` and `φ`, such that `‖ofLpCLM F φ p f‖ ≤ C ‖f‖_p` for every `1 ≤ p ≤ ∞` and `f ∈ Lᵖ`. -/
 theorem exists_norm_ofLpCLM_le :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p (volume : Measure E)),
-      ‖ofLpCLM F φ p f‖ ≤ C * ‖f‖ :=
-  exists_norm_ofLp_le
+      ‖ofLpCLM F φ p f‖ ≤ C * ‖f‖ := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_ofLp_le (F := F) (φ := φ)
+  exact ⟨C, hC0, fun {p} _ f ↦ by rw [ofLpCLM_apply]; exact hC f⟩
 
 end OfLp
 
@@ -1314,11 +1331,7 @@ section BilinearSeries
 
 variable {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
   [NormedAddCommGroup Y] [NormedSpace ℂ Y] {γ : ℝ} {r : ℝ≥0∞} [Fact (1 ≤ r)] [Fact (1 ≤ q)]
-  (term : ℕ → X → Y → Lp F r (volume : Measure E))
-  (hadd₁ : ∀ j x₁ x₂ y, term j (x₁ + x₂) y = term j x₁ y + term j x₂ y)
-  (hsmul₁ : ∀ j (c : ℂ) x y, term j (c • x) y = c • term j x y)
-  (hadd₂ : ∀ j x y₁ y₂, term j x (y₁ + y₂) = term j x y₁ + term j x y₂)
-  (hsmul₂ : ∀ j (c : ℂ) x y, term j x (c • y) = c • term j x y)
+  (term : ℕ → X →ₗ[ℂ] Y →ₗ[ℂ] Lp F r (volume : Measure E))
   {C : ℝ} (hC : ∀ x y, ∃ w : BesovSpace F φ γ r q,
     HasSum (fun j ↦ (term j x y : 𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖x‖ * ‖y‖)
 
@@ -1327,16 +1340,16 @@ bilinear norm bound as a continuous bilinear map into `B^γ_{r,q}`. -/
 def mkContinuousOfHasSum₂ : X →L[ℂ] Y →L[ℂ] BesovSpace F φ γ r q :=
   (LinearMap.mk₂ ℂ (fun x y ↦ (hC x y).choose)
     (fun x₁ x₂ y ↦ ext <| (hC (x₁ + x₂) y).choose_spec.1.unique <| by
-      simpa only [hadd₁, Lp.toTemperedDistribution_add, toDistr_add] using
+      simpa only [map_add, LinearMap.add_apply, Lp.toTemperedDistribution_add, toDistr_add] using
         (hC x₁ y).choose_spec.1.add (hC x₂ y).choose_spec.1)
     (fun c x y ↦ ext <| (hC (c • x) y).choose_spec.1.unique <| by
-      simpa only [hsmul₁, Lp.toTemperedDistribution_smul, toDistr_smul] using
-        (hC x y).choose_spec.1.const_smul c)
+      simpa only [map_smul, LinearMap.smul_apply, Lp.toTemperedDistribution_smul,
+        toDistr_smul] using (hC x y).choose_spec.1.const_smul c)
     (fun x y₁ y₂ ↦ ext <| (hC x (y₁ + y₂)).choose_spec.1.unique <| by
-      simpa only [hadd₂, Lp.toTemperedDistribution_add, toDistr_add] using
+      simpa only [map_add, Lp.toTemperedDistribution_add, toDistr_add] using
         (hC x y₁).choose_spec.1.add (hC x y₂).choose_spec.1)
     (fun c x y ↦ ext <| (hC x (c • y)).choose_spec.1.unique <| by
-      simpa only [hsmul₂, Lp.toTemperedDistribution_smul, toDistr_smul] using
+      simpa only [map_smul, Lp.toTemperedDistribution_smul, toDistr_smul] using
         (hC x y).choose_spec.1.const_smul c)).mkContinuous₂ C
     fun x y ↦ (hC x y).choose_spec.2
 
@@ -1344,17 +1357,17 @@ def mkContinuousOfHasSum₂ : X →L[ℂ] Y →L[ℂ] BesovSpace F φ γ r q :=
 the sum of the series `∑' j, (term j x y : 𝓢'(E, F))`. -/
 theorem hasSum_mkContinuousOfHasSum₂ (x : X) (y : Y) :
     HasSum (fun j ↦ (term j x y : 𝓢'(E, F)))
-      (mkContinuousOfHasSum₂ term hadd₁ hsmul₁ hadd₂ hsmul₂ hC x y).toDistr :=
+      (mkContinuousOfHasSum₂ term hC x y).toDistr :=
   (hC x y).choose_spec.1
 
 /-- Pointwise norm bound for `mkContinuousOfHasSum₂`. -/
 theorem norm_mkContinuousOfHasSum₂_apply_le (x : X) (y : Y) :
-    ‖mkContinuousOfHasSum₂ term hadd₁ hsmul₁ hadd₂ hsmul₂ hC x y‖ ≤ C * ‖x‖ * ‖y‖ :=
+    ‖mkContinuousOfHasSum₂ term hC x y‖ ≤ C * ‖x‖ * ‖y‖ :=
   (hC x y).choose_spec.2
 
 /-- Operator-norm bound for `mkContinuousOfHasSum₂`. -/
 theorem norm_mkContinuousOfHasSum₂_le (hC0 : 0 ≤ C) :
-    ‖mkContinuousOfHasSum₂ term hadd₁ hsmul₁ hadd₂ hsmul₂ hC‖ ≤ C :=
+    ‖mkContinuousOfHasSum₂ term hC‖ ≤ C :=
   LinearMap.mkContinuous₂_norm_le _ hC0 _
 
 end BilinearSeries
