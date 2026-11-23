@@ -69,8 +69,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   alone.
 * `Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints`: a `ℂ`-linear map from a space with an
   involutive conjugation to one with an arbitrary conjugate-linear map intertwines the two exactly
-  when it carries the real points of the first into those of the second; the reverse direction is
-  where the spanning above is used.
+  when it carries the real points of the first into those of the second, so commuting with the
+  two conjugations may be checked on real points.
 * `TauCeti.finrank_realPoints`: the real points of a conjugation have `Module.finrank` over `ℝ`
   equal to `Module.finrank ℂ V`.  If `V` is infinite-dimensional, both sides are `0`, so this says
   nothing about the cardinal `Module.rank`.
@@ -82,10 +82,11 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `LinearMap.liftBaseChange_complex_injective_of_conj`: more generally, an injective real-linear
   map whose values a conjugate-linear map fixes induces an injective map on the complexification,
   for any real structure compatible with the complex one.
-* `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
-  conjugation of a complexification and its real points.
-* `TauCeti.realPointsEquiv_tmulConj`: the canonical real-descent equivalence identifies tensor
-  conjugation with `K`.
+* `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul`, `TauCeti.tmulConj_eq_self_iff` and
+  `TauCeti.tmulConj_eq_self_iff_imaginaryPart_eq_zero`: the conjugation of a complexification and
+  its real points, as the image of `W` and as the vectors with vanishing imaginary part.
+* `TauCeti.realPointsEquiv_tmulConj` and `TauCeti.conjugationOfComplexification_realPointsEquiv`:
+  the canonical real-descent equivalence identifies tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
 * `LinearEquiv.conjugationOfComplexification_apply_apply`: the transported conjugation sends
@@ -256,11 +257,12 @@ theorem span_realPoints_eq_top (hK : Function.Involutive K) :
   exact Submodule.add_mem _ (Submodule.subset_span (conjRealPart_mem hK v))
     (Submodule.smul_mem _ _ (Submodule.subset_span (conjImaginaryPart_mem hK v)))
 
-/-- **A `ℂ`-linear map out of a space with an involutive conjugation `K` intertwines `K` with an
-arbitrary conjugate-linear map `K'` exactly when it carries the real points of `K` into those of
-`K'`.**  For the reverse direction both sides are conjugate-linear and agree on the real points of
-`K`, which span `V` over `ℂ`; this is where `K` must be involutive, while `K'` need not be.  The
-forward direction needs no involutivity at all: after rewriting by `TauCeti.coe_realPoints` it is
+/-- **Preservation of real points detects intertwiners.**  For an involutive conjugation `K` of
+`V` and an arbitrary conjugate-linear map `K'` of `V'`, a `ℂ`-linear map `A : V →ₗ[ℂ] V'` satisfies
+`K' ∘ₛₗ A = A ∘ₛₗ K` exactly when it carries the real points of `K` into those of `K'`.  Only the
+source conjugation is assumed involutive.  To prove that `A` commutes with the two conjugations,
+apply `.mpr` and check that `A` sends each real point of `K` to a real point of `K'`.  When `K` is
+not involutive, the forward direction still holds: rewrite by `TauCeti.coe_realPoints` and use
 Mathlib's `Function.Semiconj.mapsTo_fixedPoints`. -/
 theorem _root_.Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints {V' : Type*}
     [AddCommGroup V'] [Module ℂ V'] {K' : V' →ₛₗ[starRingEnd ℂ] V'} (hK : Function.Involutive K)
@@ -270,6 +272,8 @@ theorem _root_.Function.Involutive.comp_eq_comp_iff_mapsTo_realPoints {V' : Type
   · rw [coe_realPoints, coe_realPoints]
     exact Function.Semiconj.mapsTo_fixedPoints fun v ↦ by
       simpa only [LinearMap.comp_apply] using (LinearMap.congr_fun h v).symm
+  -- both sides are conjugate-linear and agree on the real points of `K`, which span `V` over `ℂ`
+  -- because `K` is involutive
   refine LinearMap.ext_on (span_realPoints_eq_top hK) fun v hv ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, mem_realPoints.mp (hA hv),
     mem_realPoints.mp hv]
@@ -550,22 +554,31 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
     (one_tmul_realPart_add_I_tmul_imaginaryPart W (tmulConj W u)).symm
 
 variable (W) in
+/-- The conjugation of a complexification fixes exactly the vectors with vanishing imaginary part,
+like complex conjugation on `ℂ` (`Complex.conj_eq_iff_im`).  It is the simp normal form of
+`tmulConj W u = u`, stated on that equation rather than on `u ∈ realPoints (tmulConj W)` because
+`TauCeti.mem_realPoints` is the simp normal form of the latter.  It is a pre-simp lemma (`simp↓`),
+so it fires before `simp` rewrites `u`; otherwise `TauCeti.tmulConj_baseChange` would first move the
+conjugation inside a base change `u`, and this lemma would no longer match. -/
+@[simp↓]
+theorem tmulConj_eq_self_iff_imaginaryPart_eq_zero (u : ℂ ⊗[ℝ] W) :
+    tmulConj W u = u ↔ imaginaryPart W u = 0 := by
+  -- conjugation keeps the real part and negates the imaginary part
+  rw [complexification_ext_iff, realPart_tmulConj, imaginaryPart_tmulConj, neg_eq_iff_add_eq_zero,
+    ← two_smul ℝ, smul_eq_zero]
+  simp
+
+variable (W) in
 /-- The vectors the conjugation of a complexification fixes are exactly the image of `W`, that is,
-the elements `1 ⊗ₜ w`.  Stated on `tmulConj W u = u` rather than on `u ∈ realPoints (tmulConj W)`
-because `TauCeti.mem_realPoints` is the simp normal form of the latter. -/
-@[simp]
+the elements `1 ⊗ₜ w`.  `simp` rewrites `tmulConj W u = u` by the coordinate test
+`TauCeti.tmulConj_eq_self_iff_imaginaryPart_eq_zero` instead; rewrite by this lemma to obtain the
+real vector. -/
 theorem tmulConj_eq_self_iff (u : ℂ ⊗[ℝ] W) :
     tmulConj W u = u ↔ ∃ w : W, u = 1 ⊗ₜ[ℝ] w := by
-  refine ⟨fun hu ↦ ⟨realPart W u, ?_⟩, ?_⟩
-  · -- conjugation negates the imaginary part, so a fixed vector has imaginary part `0`
-    have him : imaginaryPart W u = 0 := by
-      have h := congrArg (imaginaryPart W) hu
-      rw [imaginaryPart_tmulConj, neg_eq_iff_add_eq_zero, ← two_smul ℝ] at h
-      -- `(2 : ℝ) • x = 0` forces `x = 0`: `smul_eq_zero` and `2 ≠ 0`.
-      simpa using h
-    exact complexification_ext (by simp) (by simp [him])
-  · rintro ⟨w, rfl⟩
-    rw [tmulConj_tmul, map_one]
+  rw [tmulConj_eq_self_iff_imaginaryPart_eq_zero]
+  refine ⟨fun hu ↦ ⟨realPart W u, complexification_ext (by simp) (by simp [hu])⟩, ?_⟩
+  rintro ⟨w, rfl⟩
+  simp
 
 variable {W' : Type*} [AddCommGroup W'] [Module ℝ W']
 
@@ -597,7 +610,8 @@ real-descent equivalence identifies `TauCeti.tmulConj` on `ℂ ⊗[ℝ] realPoin
 uses it to turn tensor conjugation under `TauCeti.realPointsEquiv` into an application of `K`.  It
 is a pre-simp lemma (`simp↓`), so it fires before `simp` rewrites the argument `x`; otherwise
 `TauCeti.tmulConj_baseChange` would first move the conjugation inside a base change `x`, and this
-lemma would no longer match. -/
+lemma would no longer match.  On a double conjugation it leaves `K (K (realPointsEquiv hK x))`,
+which `TauCeti.map_map_realPointsEquiv` cancels. -/
 @[simp↓]
 theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
     (x : ℂ ⊗[ℝ] realPoints K) :
@@ -609,6 +623,15 @@ theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
         w.property
   simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe] using (LinearMap.congr_fun h x).symm
 
+/-- `K` cancels against itself on the image of the real-descent equivalence.  `simp` cannot use
+`hK` by itself, but here it reads `hK` off `TauCeti.realPointsEquiv hK`, so it cancels the two
+applications of `K` that `TauCeti.realPointsEquiv_tmulConj` leaves on a double tensor
+conjugation. -/
+@[simp]
+theorem map_map_realPointsEquiv (hK : Function.Involutive K) (x : ℂ ⊗[ℝ] realPoints K) :
+    K (K (realPointsEquiv hK x)) = realPointsEquiv hK x :=
+  hK _
+
 end TauCeti
 
 namespace LinearEquiv
@@ -618,8 +641,9 @@ variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module 
 
 open TauCeti
 
-/-- Transport the existing tensor conjugation through a complexification equivalence, by
-Mathlib's `LinearEquiv.arrowCongrAddEquiv`. The result uses the native semilinear-map carrier. -/
+/-- The conjugation of `V` transported from the tensor conjugation `TauCeti.tmulConj` through a
+complexification equivalence `e : ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`: it sends `v` to `e (tmulConj W (e.symm v))`
+(`LinearEquiv.conjugationOfComplexification_apply`), so `e (c ⊗ₜ w)` goes to `e (conj c ⊗ₜ w)`. -/
 noncomputable def conjugationOfComplexification : V →ₛₗ[starRingEnd ℂ] V :=
   e.arrowCongrAddEquiv e (tmulConj W)
 
@@ -683,3 +707,16 @@ theorem conjugationOfComplexification_natural {W' V' : Type*} [AddCommGroup W'] 
   simpa only [LinearMap.comp_apply] using LinearMap.congr_fun h v
 
 end LinearEquiv
+
+namespace TauCeti
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] {K : V →ₛₗ[starRingEnd ℂ] V}
+
+/-- Transporting the tensor conjugation through the canonical real-descent equivalence gives back
+`K`.  As a simp lemma it turns the transported conjugation into `K`. -/
+@[simp]
+theorem conjugationOfComplexification_realPointsEquiv (hK : Function.Involutive K) :
+    (realPointsEquiv hK).conjugationOfComplexification = K :=
+  ((realPointsEquiv hK).conjugationOfComplexification_unique K fun w ↦ by simp).symm
+
+end TauCeti
