@@ -32,7 +32,7 @@ The image contains every matrix unit of the tableau basis:
   elements `L_i`, with eigenvalues the additive contents `[content i]_Q`. A standard tableau is
   determined by the contents of its labels (`TauCeti.StandardYoungTableau.labelContent_injective`),
   and contents of two cells of `μ` differ by less than `n`, so the eigenvalues separate the
-  tableaux; Lagrange interpolation in the `L_i` (`Subalgebra.single_one_mem_of_separates_points`)
+  tableaux; Lagrange interpolation in the `L_i` (`Subalgebra.single_one_mem_of_separatesPoints`)
   then gives the projection onto each line `K v_U`;
 * when the labels `k` and `k + 1` of `U` lie neither next to each other in a row nor in a column,
   the generator `T_k` has a nonzero coefficient from `v_U` to the vector of the exchanged tableau,
@@ -128,7 +128,7 @@ private theorem single_self_mem_seminormalMatrices (U : StandardYoungTableau μ)
     refine ⟨additiveJucysMurphy q i, LinearMap.ext fun ψ => funext fun V => ?_⟩
     rw [seminormalRep_additiveJucysMurphy_apply, toLinAlgEquiv'_apply, diagonalAlgHom_apply,
       mulVec_diagonal]
-  have hsep : ∀ V W, V ≠ W → ∃ f ∈ S, f V ≠ f W := by
+  have hsep : (S : Set (StandardYoungTableau μ → K)).SeparatesPoints := by
     intro V W hVW
     by_contra! h
     refine hVW (StandardYoungTableau.labelContent_injective μ (funext fun i => ?_))
@@ -138,7 +138,7 @@ private theorem single_self_mem_seminormalMatrices (U : StandardYoungTableau μ)
     exact YoungDiagram.abs_cellContent_sub_lt_card
       ((YoungDiagram.mem_cells _).mp (V.toTableau.symm i).property)
       ((YoungDiagram.mem_cells _).mp (W.toTableau.symm i).property)
-  have hmem := Subalgebra.single_one_mem_of_separates_points hsep U
+  have hmem := Subalgebra.single_one_mem_of_separatesPoints hsep U
   rw [hS, Subalgebra.mem_comap, diagonalAlgHom_apply, diagonal_single] at hmem
   exact hmem
 
