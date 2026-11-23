@@ -100,7 +100,7 @@ theorem basedClass_of_not_isBased {n : ℕ} {c : SingularCube X n} (h : ¬ c.IsB
 /-- The class of a generalized loop, read as a singular cube, is its homotopy class. -/
 @[simp]
 theorem basedClass_coe {n : ℕ} (p : Ω^ (Fin n) X x) : basedClass x (p : SingularCube X n) = ⟦p⟧ :=
-  basedClass_of_isBased (isBased_iff_mem_genLoop.2 p.2)
+  basedClass_of_isBased (isBased_iff_mem_genLoop.2 p.property)
 
 /-- The constant cube at `x` has the class of the constant loop. -/
 @[simp]
@@ -145,7 +145,7 @@ private lemma continuous_dblSub : Continuous dblSub := by unfold dblSub; fun_pro
   norm_num [dblSub, Set.projIcc_of_right_le]
 
 private lemma coe_dbl_of_le {t : I} (h : (t : ℝ) ≤ 1 / 2) : (dbl t : ℝ) = 2 * t := by
-  rw [dbl, Set.projIcc_of_mem _ ⟨by linarith [t.2.1], by linarith⟩]
+  rw [dbl, Set.projIcc_of_mem _ ⟨by linarith [t.property.1], by linarith⟩]
 
 private lemma dbl_of_lt {t : I} (h : 1 / 2 < (t : ℝ)) : dbl t = 1 := by
   rw [dbl, Set.projIcc_of_right_le _ (by linarith)]; rfl
@@ -155,7 +155,7 @@ private lemma dblSub_of_le {t : I} (h : (t : ℝ) ≤ 1 / 2) : dblSub t = 0 := b
 
 private lemma coe_dblSub_of_lt {t : I} (h : 1 / 2 < (t : ℝ)) :
     (dblSub t : ℝ) = 2 * t - 1 := by
-  rw [dblSub, Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.2.2]⟩]
+  rw [dblSub, Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.property.2]⟩]
 
 @[simp] private lemma max_one (t : I) : max t 1 = 1 := max_eq_right unitInterval.le_one'
 
@@ -319,7 +319,7 @@ private lemma FacesBased.comp_capMap (hc : FacesBased x c) (k : Fin m) :
   · subst hjb
     rcases ht with rfl | rfl
     · rw [face_succ_zero_comp_capMap]; exact hc _ _ (.inl rfl)
-    · rw [face_succ_one_comp_capMap hc]; exact GenLoop.const.2
+    · rw [face_succ_one_comp_capMap hc]; exact GenLoop.const.property
   obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq (Ne.symm hjb)
   rw [face_comp_capMap_of_ne hc k hl hja ht]
   exact Subtype.property _
@@ -430,7 +430,7 @@ private lemma sum_faceTerm_eq_zero_aux (k : ℕ) (c : SingularCube X (n + 3)) (h
   | succ k ih =>
     by_cases hk : k < n + 2
     swap
-    · exact ih c hc fun j hj ↦ absurd j.2 (by omega)
+    · exact ih c hc fun j hj ↦ absurd j.isLt (by omega)
     let K : Fin (n + 2) := ⟨k, hk⟩
     -- Cap the face `K.succ = 1`, swap the two faces in the coordinate `K.succ`, and cap again.
     have hc₁ := hc.comp_capMap K
@@ -456,7 +456,7 @@ and the alternating sum of their classes vanishes in `π_{n+2}(X, x)`. -/
 private lemma sum_faceTerm_eq_zero {c : SingularCube X (n + 3)} (hc : c.IsBased (n + 2) x) :
     ∑ j, faceTerm x c j = 0 :=
   sum_faceTerm_eq_zero_aux (n + 2) c (fun j _ ht ↦ isBased_iff_mem_genLoop.1 (hc.face j ht))
-    fun j hj ↦ absurd j.2 (by omega)
+    fun j hj ↦ absurd j.isLt (by omega)
 
 end FaceSum
 

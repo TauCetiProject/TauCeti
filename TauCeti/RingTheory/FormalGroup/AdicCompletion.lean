@@ -161,23 +161,23 @@ theorem limit_ofCompletion (F : FormalGroup (AdicCompletion I R)) [F.IsComm] :
 commutative laws over the quotient rings. -/
 def completionEquiv (I : Ideal R) :
     {F : FormalGroup (AdicCompletion I R) // F.IsComm} ≃ FormalGroupAdicSystem I where
-  toFun F := have := F.2; ofCompletion I F.1
+  toFun F := have := F.property; ofCompletion I F.val
   invFun F := ⟨F.limit, inferInstance⟩
   left_inv F := by
-    have := F.2
-    exact Subtype.ext (limit_ofCompletion F.1)
+    have := F.property
+    exact Subtype.ext (limit_ofCompletion F.val)
   right_inv := ofCompletion_limit
 
 /-- The equivalence to systems reduces coefficients at each power. -/
 @[simp]
 theorem formalGroup_completionEquiv (I : Ideal R)
     (F : {F : FormalGroup (AdicCompletion I R) // F.IsComm}) (n : ℕ) :
-    (completionEquiv I F).formalGroup n = F.1.map (AdicCompletion.evalₐ I n).toRingHom := (rfl)
+    (completionEquiv I F).formalGroup n = F.val.map (AdicCompletion.evalₐ I n).toRingHom := (rfl)
 
 /-- The inverse of the equivalence is the inverse-limit law. -/
 @[simp]
 theorem completionEquiv_symm_coe (F : FormalGroupAdicSystem I) :
-    ((completionEquiv I).symm F).1 = F.limit := (rfl)
+    ((completionEquiv I).symm F).val = F.limit := (rfl)
 
 section BaseChange
 
@@ -293,12 +293,12 @@ theorem existsUnique_realization (F : FormalGroupAdicSystem I) :
 of commutative quotient laws. -/
 def completeEquiv (I : Ideal R) [IsAdicComplete I R] :
     {F : FormalGroup R // F.IsComm} ≃ FormalGroupAdicSystem I where
-  toFun F := have := F.2; ofCompletion I
-    (F.1.map (algebraMap R (AdicCompletion I R)))
+  toFun F := have := F.property; ofCompletion I
+    (F.val.map (algebraMap R (AdicCompletion I R)))
   invFun F := ⟨F.realize, inferInstance⟩
   left_inv F := Subtype.ext (FormalGroup.ext_adic (I := I) fun n ↦ by
     rw [map_realize, formalGroup_ofCompletion, FormalGroup.map_comp]
-    exact congrArg F.1.map (RingHom.ext fun x ↦ AdicCompletion.evalₐ_of I n x))
+    exact congrArg F.val.map (RingHom.ext fun x ↦ AdicCompletion.evalₐ_of I n x))
   right_inv F := by
     apply ext
     intro n
@@ -313,13 +313,13 @@ def completeEquiv (I : Ideal R) [IsAdicComplete I R] :
 @[simp]
 theorem formalGroup_completeEquiv (I : Ideal R) [IsAdicComplete I R]
     (F : {F : FormalGroup R // F.IsComm}) (n : ℕ) :
-    (completeEquiv I F).formalGroup n = F.1.map (Ideal.Quotient.mk (I ^ n)) := by
+    (completeEquiv I F).formalGroup n = F.val.map (Ideal.Quotient.mk (I ^ n)) := by
   simp [completeEquiv, FormalGroup.map_comp]
 
 /-- The inverse complete-ring equivalence realizes the compatible system. -/
 @[simp]
 theorem completeEquiv_symm_coe (F : FormalGroupAdicSystem I) :
-    ((completeEquiv I).symm F).1 = F.realize := (rfl)
+    ((completeEquiv I).symm F).val = F.realize := (rfl)
 
 end Complete
 

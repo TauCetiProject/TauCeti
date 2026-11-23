@@ -435,7 +435,7 @@ private lemma kernelLift_d_eq (i j k : ℤ) :
 /-- The cokernel of the inclusion of the boundaries into the cocycles is the cohomology. -/
 private noncomputable def cokernelBoundariesToCyclesIso (i j k : ℤ) (hij : i + 1 = j)
     (hjk : j + 1 = k) : cokernel (boundariesToCycles K i j k) ≅ K.homology j :=
-  (cokernelEpiComp (Abelian.factorThruImage (K.d i j)) (boundariesToCycles K i j k)).symm ≪≫
+  (cokernelEpiComp (boundariesToCycles K i j k) (Abelian.factorThruImage (K.d i j))).symm ≪≫
     cokernelIsoOfEq (kernelLift_d_eq K i j k).symm ≪≫
     (K.sc' i j k).homologyIsoCokernelLift.symm ≪≫
     (K.homologyIsoSc' i j k ((ComplexShape.up ℤ).prev_eq' hij)

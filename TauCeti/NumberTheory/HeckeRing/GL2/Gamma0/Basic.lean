@@ -102,7 +102,7 @@ lemma Gamma0Image_le_Delta0 : (Gamma0Image N).toSubmonoid ≤ Delta0 N := by
 entry divisible by `N` and upper-left entry a unit because `ad ≡ 1`. -/
 lemma mapGL_mem_Delta0 (γ : Gamma0 N) :
     (mapGL ℚ (γ : SL(2, ℤ)) : GL (Fin 2) ℚ) ∈ Delta0 N :=
-  Gamma0Image_le_Delta0 N ((mem_Gamma0Image_iff N).mpr ⟨(γ : SL(2, ℤ)), γ.2, rfl⟩)
+  Gamma0Image_le_Delta0 N ((mem_Gamma0Image_iff N).mpr ⟨(γ : SL(2, ℤ)), γ.property, rfl⟩)
 
 /-- **`H·{±I} ≤ Δ₀(N)`** for any `H ≤ Γ₀(N)`, transported to the images in `GL₂(ℚ)`. Adjoining
 the centre costs nothing on the `Δ₀(N)` side, because `Γ₀(N)` already contains `-I` and so
@@ -126,7 +126,7 @@ needs `N` to be nonzero. -/
 lemma out_mem_glpos_of_delta0 {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℚ)}
     (D : HeckeCoset (Delta0 N) Γ₁ Γ₂) :
     (D.out : GL (Fin 2) ℚ) ∈ Matrix.GLPos (Fin 2) ℚ :=
-  posDetInt_le_glpos 2 (Delta0_le_posDetInt N D.out.2)
+  posDetInt_le_glpos 2 (Delta0_le_posDetInt N D.out.property)
 
 variable [NeZero N]
 
