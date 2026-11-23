@@ -18,9 +18,6 @@ representation hypothesis on the density.
 
 ## Main declarations
 
-* `ContinuousLinearMap.iteratedFDeriv_bilin_cauchyFueterKernel`: away from the pole `w`, the
-  `m`-th derivative of `p ↦ B (cauchyFueterKernel w p) c` is the `m`-th pole derivative of
-  `cauchyFueterKernel w` postcomposed with `B.flip c`.
 * `ContinuousLinearMap.hasFTaylorSeriesUpToOn_integral_bilin_cauchyFueterKernel`,
   `ContinuousLinearMap.contDiffOn_integral_bilin_cauchyFueterKernel`,
   `ContinuousLinearMap.contDiffAt_integral_bilin_cauchyFueterKernel`,
@@ -55,10 +52,6 @@ private theorem cauchyFueterKernel_sub_zero (w y : ℍ) :
     cauchyFueterKernel (w - y) 0 = cauchyFueterKernel w y := by
   simp [cauchyFueterKernel_eq]
 
-private theorem contDiffAt_cauchyFueterKernel_zero :
-    ∀ x ≠ (0 : ℍ), ContDiffAt ℝ ∞ (fun w ↦ cauchyFueterKernel w 0) x :=
-  fun _ hx ↦ contDiffAt_cauchyFueterKernel hx
-
 private theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_zero_le (k : ℕ) {ρ : ℝ}
     (hρ : 0 < ρ) :
     ∃ C : ℝ, ∀ x : ℍ, ρ ≤ ‖x‖ →
@@ -69,16 +62,6 @@ private theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_zero_le (k : ℕ) 
   refine (h k le_rfl x 0 hne).trans ?_
   rw [sub_zero]
   exact div_le_div_of_nonneg_left hC.le (by positivity) (pow_le_pow_left₀ hρ.le hx _)
-
-/-- Away from the pole `w`, the `m`-th iterated Fréchet derivative of
-`p ↦ B (cauchyFueterKernel w p) c` is the `m`-th pole derivative of `cauchyFueterKernel w`
-postcomposed with `B.flip c`. -/
-theorem _root_.ContinuousLinearMap.iteratedFDeriv_bilin_cauchyFueterKernel
-    (B : ℍ →L[ℝ] G →L[ℝ] E) {w q : ℍ} (hne : w ≠ q) (c : G) (m : ℕ) :
-    iteratedFDeriv ℝ m (fun p ↦ B (cauchyFueterKernel w p) c) q =
-      (B.flip c).compContinuousMultilinearMap (iteratedFDeriv ℝ m (cauchyFueterKernel w) q) := by
-  simpa only [cauchyFueterKernel_sub_zero, ← iteratedFDeriv_cauchyFueterKernel_right] using
-    iteratedFDeriv_bilin_kernel_sub B contDiffAt_cauchyFueterKernel_zero hne c m
 
 /-- On `Metric.ball q₀ δ`, the integrated spatial jets form a `C^∞` Taylor series for a separated
 bilinear Cauchy–Fueter integral `y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ`. -/
@@ -91,7 +74,7 @@ theorem _root_.ContinuousLinearMap.hasFTaylorSeriesUpToOn_integral_bilin_cauchyF
       (fun y m ↦ ∫ z, iteratedFDeriv ℝ m (fun p ↦ B (cauchyFueterKernel (φ z) p) (w z)) y ∂μ)
       (ball q₀ δ) := by
   simpa only [cauchyFueterKernel_sub_zero] using
-    hasFTaylorSeriesUpToOn_integral_bilin_kernel_sub B contDiffAt_cauchyFueterKernel_zero
+    hasFTaylorSeriesUpToOn_integral_bilin_kernel_sub B (fun _ hx ↦ contDiffAt_cauchyFueterKernel hx)
       (fun k {_} hρ ↦ exists_norm_iteratedFDeriv_cauchyFueterKernel_zero_le k hρ) hφ hw hδ
 
 /-- Smoothness on `Metric.ball q₀ δ` of `y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ`. -/
@@ -124,7 +107,7 @@ theorem _root_.ContinuousLinearMap.iteratedFDeriv_integral_bilin_cauchyFueterKer
     iteratedFDeriv ℝ m (fun y ↦ ∫ z, B (cauchyFueterKernel (φ z) y) (w z) ∂μ) q =
       ∫ z, iteratedFDeriv ℝ m (fun y ↦ B (cauchyFueterKernel (φ z) y) (w z)) q ∂μ := by
   simpa only [cauchyFueterKernel_sub_zero] using
-    iteratedFDeriv_integral_bilin_kernel_sub B contDiffAt_cauchyFueterKernel_zero
+    iteratedFDeriv_integral_bilin_kernel_sub B (fun _ hx ↦ contDiffAt_cauchyFueterKernel hx)
       (fun k {_} hρ ↦ exists_norm_iteratedFDeriv_cauchyFueterKernel_zero_le k hρ) hφ hw hδ m hq
 
 end BilinearKernelPotentials
