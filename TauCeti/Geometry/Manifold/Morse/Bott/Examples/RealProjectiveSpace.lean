@@ -263,19 +263,23 @@ noncomputable def projectiveHyperplaneEmbedding :
       (ℙ ℝ (Fin (N + 2) → ℝ)) :=
   .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ injective_hyperplaneCoord (by simp))
 
+private theorem coe_projectiveHyperplaneEmbedding :
+    ⇑(projectiveHyperplaneEmbedding N) = map hyperplaneCoord injective_hyperplaneCoord :=
+  SmoothEmbedding.coe_ofIsSmoothEmbedding _ _
+
 /-- The hyperplane embedding in homogeneous coordinates: `[v] ↦ [v : 0]`. -/
 @[simp]
 theorem projectiveHyperplaneEmbedding_mk (v : Fin (N + 1) → ℝ) (hv : v ≠ 0) :
     projectiveHyperplaneEmbedding N (mk ℝ v hv) =
       mk ℝ (Fin.snoc v 0) (Fin.snoc_ne_zero_iff.2 (.inl hv)) := by
-  rw [projectiveHyperplaneEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply, map_mk]
+  rw [coe_projectiveHyperplaneEmbedding, map_mk]
   simp only [hyperplaneCoord, Function.ExtendByZero.linearMap_castSucc_apply]
 
 /-- The image of the hyperplane embedding is the hyperplane `{v_{N+1} = 0}`, the complement of the
 affine open where the last homogeneous coordinate is nonzero. -/
 theorem range_projectiveHyperplaneEmbedding :
     range (projectiveHyperplaneEmbedding N) = (affineOpen (Fin.last (N + 1)))ᶜ := by
-  rw [projectiveHyperplaneEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding,
+  rw [coe_projectiveHyperplaneEmbedding,
     range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction _ injective_hyperplaneCoord
       (fun v _ ↦ hyperplaneCoord_apply_of_ne v) ncard_weight_eq_one,
     ← projectiveHyperplaneMomentFunction_def, criticalPoints_projectiveHyperplaneMomentFunction]
@@ -337,12 +341,16 @@ noncomputable def projectiveMinimumEmbedding :
       (ℙ ℝ (Fin (N + 2) → ℝ)) :=
   .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ injective_minimumCoord (by simp))
 
+private theorem coe_projectiveMinimumEmbedding :
+    ⇑(projectiveMinimumEmbedding N) = map minimumCoord injective_minimumCoord :=
+  SmoothEmbedding.coe_ofIsSmoothEmbedding _ _
+
 /-- The point embedding sends the point of `ℝℙ⁰` to the minimum `[e_{N+1}]`. -/
 @[simp]
 theorem projectiveMinimumEmbedding_apply (x : ℙ ℝ (Fin 1 → ℝ)) :
     projectiveMinimumEmbedding N x = mk ℝ (Pi.single (Fin.last (N + 1)) 1) (by simp) := by
   induction x using Projectivization.ind with | h v hv =>
-  rw [projectiveMinimumEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply, map_mk,
+  rw [coe_projectiveMinimumEmbedding, map_mk,
     mk_eq_mk_iff' ℝ _ _ _ (by simp)]
   exact ⟨v 0, (minimumCoord_apply v).symm⟩
 
@@ -394,9 +402,11 @@ theorem isMorseBottFamily_projectiveHyperplaneMomentFunction :
       exacts [minimumCoord_apply_of_ne v hj, hyperplaneCoord_apply_of_ne v hj])
     (by rintro (_ | _); exacts [ncard_weight_eq_zero, ncard_weight_eq_one])
     (by
-      rintro (_ | _)
-      exacts [(SmoothEmbedding.coe_ofIsSmoothEmbedding _ _ : ⇑(projectiveMinimumEmbedding N) = _),
-        (SmoothEmbedding.coe_ofIsSmoothEmbedding _ _ : ⇑(projectiveHyperplaneEmbedding N) = _)])
+      -- After unfolding the `Bool` matches, each goal is the coercion lemma of its embedding up to
+      -- the type index `cond b N 0`, which reduces to `N` or `0` definitionally.
+      rintro (_ | _) <;> simp only [projectiveHyperplaneCriticalComponent_true,
+        projectiveHyperplaneCriticalComponent_false, componentCoord]
+      exacts [coe_projectiveMinimumEmbedding, coe_projectiveHyperplaneEmbedding])
 
 end Components
 

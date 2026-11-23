@@ -31,7 +31,7 @@ variable {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Zero (α i)]
 theorem snoc_eq_zero_iff {v : ∀ i : Fin n, α i.castSucc} {x : α (last n)} :
     snoc v x = 0 ↔ v = 0 ∧ x = 0 := by
   rw [← snoc_init_self (0 : ∀ i, α i), snoc_inj]
-  rfl
+  simp [init_def, Pi.zero_def]
 
 /-- Appending `x` to `v` gives a nonzero tuple if and only if `v` or `x` is nonzero. -/
 theorem snoc_ne_zero_iff {v : ∀ i : Fin n, α i.castSucc} {x : α (last n)} :
