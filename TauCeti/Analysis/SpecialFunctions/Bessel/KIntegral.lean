@@ -244,7 +244,9 @@ private lemma tendsto_mellinInv_Gamma_mul_Gamma_add {p x : ℝ} (hp0 : 0 < p) (h
       rw [← integral_univ_inv_one_add_sq, ← integral_const_mul]
       exact integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ norm_nonneg _)
         (integrable_inv_one_add_sq.const_mul M)
-        (Eventually.of_forall fun t ↦ norm_Gamma_mul_Gamma_add_le hδ0 hp0 hδp N t)
+        (Eventually.of_forall fun t ↦ by
+          simpa using norm_Gamma_mul_Gamma_add_le_of_re_eq_sub_natCast hδ0 hp0 hδp N
+            (s := ((δ - N : ℝ) : ℂ) + t * I) (by simp))
     have hfac : (1 : ℝ) ≤ N ! := by exact_mod_cast Nat.one_le_of_lt (Nat.factorial_pos N)
     calc ‖mellinInv (δ - N) (fun z ↦ Gamma z * Gamma (z + p)) x‖
         ≤ x ^ (-(δ - N)) / (2 * π) * (M * π) :=
