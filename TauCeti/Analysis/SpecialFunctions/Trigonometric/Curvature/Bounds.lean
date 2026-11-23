@@ -23,8 +23,9 @@ The linear-profile comparison bounds the model cotangent by the reciprocal radiu
 one third of curvature times radius, for nonpositive curvature and nonnegative radius.
 It is strict for negative curvature and positive radius. These are contributions per
 transverse direction: multiplying by `n - 1` gives the full distance-support trace
-comparison, which is strict only when `n > 1`. For any signed radius, equality in the
-linear-profile comparison occurs exactly when curvature or radius vanishes.
+comparison, which is strict only when `n > 1`. For nonpositive curvature and any signed
+radius, the model cotangent equals the linear-profile expression exactly when curvature
+or radius vanishes.
 
 The elementary hyperbolic estimate follows from `1 + 2x ≤ exp (2x)`.
 
@@ -106,8 +107,8 @@ theorem curvatureCotangent_le_inv_sub_mul_div_three {κ r : ℝ} (hκ : κ ≤ 0
   · exact (curvatureCotangent_lt_inv_sub_mul_div_three hκ hr).le
   · simp
 
-/-- Equality in the nonpositive-curvature linear-profile bound occurs exactly at zero
-curvature or zero radius, for any signed radius. -/
+/-- For nonpositive curvature and any signed radius, the model cotangent equals the
+linear-profile expression exactly when curvature or radius vanishes. -/
 @[simp] theorem curvatureCotangent_eq_inv_sub_mul_div_three_iff {κ r : ℝ}
     (hκ : κ ≤ 0) :
     curvatureCotangent κ r = r⁻¹ - κ * r / 3 ↔ κ = 0 ∨ r = 0 := by
