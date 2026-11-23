@@ -14,8 +14,9 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 
 Consider a derivation `D` of a Clifford algebra that maps the generators into the generators,
 `D (ι Q m) = ι Q (A m)` for an endomorphism `A` of `M`. When `2` is invertible, such an `A` is
-necessarily skew-adjoint for the polar form of `Q`; conversely, the
-commutator with the quadratic lift of a skew-adjoint endomorphism is such a derivation
+necessarily skew-adjoint for the polar form of `Q`. Conversely, for a nondegenerate quadratic
+form on a finite-dimensional vector space over a field in which `2` is invertible, every
+skew-adjoint endomorphism arises this way, as the commutator with its quadratic lift
 (`CliffordAlgebra.soEquivQuadratic_lie_ι`).
 
 This file proves that Mathlib's change of form `CliffordAlgebra.changeForm` intertwines these
