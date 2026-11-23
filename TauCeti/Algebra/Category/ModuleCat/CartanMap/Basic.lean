@@ -17,10 +17,12 @@ public import TauCeti.Algebra.Module.Submodule.Finite
 /-!
 # The Cartan map of a ring
 
-For a ring `R`, the finitely generated `R`-modules and the finitely generated projective
-`R`-modules are two full subcategories of `ModuleCat R`, each extension closed for the canonical
-exact structure of the abelian category `ModuleCat R`. This file equips them with the induced
-exact structures and constructs the homomorphism of exact Grothendieck groups
+For a ring `R`, the finitely generated `R`-modules (`ModuleCat.isFG R` from Mathlib) and the
+finitely generated projective `R`-modules (`TauCeti.finiteProjectiveModules R` from
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic`) are two full subcategories of
+`ModuleCat R`, each extension closed for the canonical exact structure of the abelian category
+`ModuleCat R`. This file equips them with the induced exact structures and constructs the
+homomorphism of exact Grothendieck groups
 
 ```text
 c_R : K₀(proj R) ⟶ G₀(mod R)
@@ -53,7 +55,6 @@ Artinian ring, in the indecomposable-projective and simple bases.
 
 ## Main definitions
 
-* `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
   `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
   the modules admitting finite resolutions by finitely generated projectives, by the canonical

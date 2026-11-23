@@ -63,20 +63,21 @@ noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
     ((finitePresentationEquivalenceMod R).functor ⋙ (isFinitelyPresentedFunctor _).ι) ⋙
         (evaluation _ _).obj (op (finiteProjectiveModulesRegular R)) ≅
       (finitePresentationModules R).ι ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} :=
-  let eR : (finiteProjectiveModulesRegular R).obj ≅ ModuleCat.of R R :=
-    eqToIso (finiteProjectiveModulesRegular_obj R)
   Functor.isoWhiskerRight (finitePresentationEquivalenceModCompιIso R) _ ≪≫
     NatIso.ofComponents (fun M ↦
-      (({ toFun := fun g ↦ eR.inv ≫ g
-          invFun := fun g ↦ eR.hom ≫ g
-          left_inv := fun g ↦ by simp
-          right_inv := fun g ↦ by simp
-          map_add' := fun _ _ ↦ by simp } :
-          ((finiteProjectiveModulesRegular R).obj ⟶ M.obj) ≃+
-            (ModuleCat.of R R ⟶ M.obj)).trans
-        (ModuleCat.homAddEquiv.trans
+      (ModuleCat.homAddEquiv.trans
+        (((finiteProjectiveModulesRegularLinearEquiv R).arrowCongrAddEquiv (.refl R M.obj)).trans
           (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv)).toAddCommGrpIso) fun {M N} f ↦ by
       ext (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj)
-      rfl
+      -- Unfold `toAddCommGrpIso` and `restrictedPreadditiveYoneda`; both sides evaluate to
+      -- `f.hom (g.hom ((finiteProjectiveModulesRegularLinearEquiv R).symm 1))`.
+      change
+        LinearMap.ringLmapEquivSelf R ℕ N.obj
+          ((finiteProjectiveModulesRegularLinearEquiv R).arrowCongrAddEquiv (.refl R N.obj)
+            (ModuleCat.homAddEquiv (g ≫ f.hom))) =
+        f.hom (LinearMap.ringLmapEquivSelf R ℕ M.obj
+          ((finiteProjectiveModulesRegularLinearEquiv R).arrowCongrAddEquiv (.refl R M.obj)
+            (ModuleCat.homAddEquiv g)))
+      simp
 
 end TauCeti

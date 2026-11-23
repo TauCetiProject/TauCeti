@@ -163,14 +163,11 @@ objects of `C` are precisely `add P`. -/
 theorem isProgenerator_iff_isProjective_eq_additiveClosure [EnoughProjectives C] {P : C} :
     IsProgenerator P ↔ isProjective C = additiveClosure P := by
   refine ⟨IsProgenerator.isProjective_eq_additiveClosure, fun h ↦ ?_⟩
-  have hP : Projective P := by
-    change isProjective C P
-    rw [h]
-    exact additiveClosure_self P
+  have hP : Projective P := (h ▸ additiveClosure_self P : isProjective C P)
   refine isProgenerator_iff_exists_additiveClosure.mpr ⟨hP, fun X ↦ ?_⟩
-  refine ⟨Projective.over X, Projective.π X, ?_, inferInstance⟩
-  rw [← h]
-  exact (inferInstance : Projective (Projective.over X))
+  exact ⟨Projective.over X, Projective.π X,
+    (h.symm ▸ (inferInstance : Projective (Projective.over X)) : additiveClosure P _),
+    inferInstance⟩
 
 /-- A projective object admitting a progenerator as a retract is itself a progenerator. -/
 theorem _root_.CategoryTheory.Retract.isProgenerator {P P' : C} (h : Retract P P')

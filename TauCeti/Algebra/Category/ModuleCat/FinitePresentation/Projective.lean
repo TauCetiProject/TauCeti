@@ -39,12 +39,12 @@ theorem projective_finitePresentationModules_iff
     (P : (finitePresentationModules R).FullSubcategory) :
     Projective P ↔ Module.Projective R P.obj :=
   (finitePresentationModules R).projective_iff_moduleProjective
-    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv P
+    (finitePresentationModulesRegularLinearEquiv R) P
 
 /-- The regular module `R` is a projective object of
 `(finitePresentationModules R).FullSubcategory`. -/
 instance : Projective (finitePresentationModulesRegular R) :=
   (projective_finitePresentationModules_iff R _).mpr (Module.Projective.of_equiv
-    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv.symm)
+    (finitePresentationModulesRegularLinearEquiv R).symm)
 
 end TauCeti

@@ -30,6 +30,8 @@ into `ModuleCat R` preserves epimorphisms, and the regular module `R` lies in th
   `ModuleCat R`.
 * `TauCeti.finitePresentationModulesRegular`: the regular module `R`, as an object of
   `(finitePresentationModules R).FullSubcategory`.
+* `TauCeti.finitePresentationModulesRegularLinearEquiv`: the canonical linear equivalence between
+  `TauCeti.finitePresentationModulesRegular R` and `R`.
 
 ## Main results
 
@@ -178,9 +180,16 @@ def finitePresentationModulesRegular : (finitePresentationModules R).FullSubcate
   ⟨ModuleCat.of R R, finitePresentationModules_iff.mpr
     (inferInstanceAs (Module.FinitePresentation R R))⟩
 
+/-- The underlying module of `TauCeti.finitePresentationModulesRegular R` is `R`. -/
 @[simp]
 theorem finitePresentationModulesRegular_obj :
     (finitePresentationModulesRegular R).obj = ModuleCat.of R R :=
   (rfl)
+
+/-- The canonical `R`-linear equivalence between `TauCeti.finitePresentationModulesRegular R` and
+`R`. -/
+noncomputable def finitePresentationModulesRegularLinearEquiv :
+    (finitePresentationModulesRegular R).obj ≃ₗ[R] R :=
+  (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv
 
 end TauCeti

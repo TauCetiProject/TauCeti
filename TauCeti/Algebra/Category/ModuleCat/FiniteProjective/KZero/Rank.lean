@@ -79,10 +79,10 @@ theorem zsmul_of_finiteProjectiveModulesRegular_injective [InvariantBasisNumber 
   rw [zmultiplesHom_apply, sub_smul, sub_eq_zero, natCast_zsmul, natCast_zsmul,
     ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin n → A),
       finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _)
-      (eqToIso (finiteProjectiveModulesRegular_obj A)).toLinearEquiv,
+      (finiteProjectiveModulesRegularLinearEquiv A),
     ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin m → A),
       finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _)
-      (eqToIso (finiteProjectiveModulesRegular_obj A)).toLinearEquiv,
+      (finiteProjectiveModulesRegularLinearEquiv A),
     SplitK0.of_eq_of_iff_stableEquivalent, stableEquivalent_iff] at hz
   obtain ⟨k, ⟨e⟩⟩ := hz
   have := eq_of_fin_equiv A <| (LinearEquiv.piFinAppend A A n k).trans <|
@@ -108,9 +108,9 @@ theorem exists_zsmul_eq_of_isStablyFree
     Fintype.card (Module.Free.ChooseBasisIndex A N), ?_⟩
   rw [sub_smul, natCast_zsmul, natCast_zsmul,
     ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := PN) eP
-      (eqToIso (finiteProjectiveModulesRegular_obj A)).toLinearEquiv,
+      (finiteProjectiveModulesRegularLinearEquiv A),
     ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := N') eN
-      (eqToIso (finiteProjectiveModulesRegular_obj A)).toLinearEquiv,
+      (finiteProjectiveModulesRegularLinearEquiv A),
     hPN, add_sub_cancel_right]
 
 /-- If every finitely generated projective `A`-module is stably free, every class in the split
@@ -157,8 +157,7 @@ the class of a free module to its rank. -/
 theorem rankEquiv_of [StrongRankCondition A] (P : (finiteProjectiveModules A).FullSubcategory)
     [Module.Free A P.obj] : rankEquiv A h (SplitK0.of.{u} P) = finrank A P.obj := by
   rw [SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := finiteProjectiveModulesRegular A)
-    (Module.finBasis A P.obj).equivFun
-    (eqToIso (finiteProjectiveModulesRegular_obj A)).toLinearEquiv,
+    (Module.finBasis A P.obj).equivFun (finiteProjectiveModulesRegularLinearEquiv A),
     ← natCast_zsmul, rankEquiv_zsmul_of_finiteProjectiveModulesRegular]
 
 end FiniteProjectiveModules

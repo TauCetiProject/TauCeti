@@ -25,6 +25,8 @@ zero, binary products), and the regular module `TauCeti.finiteProjectiveModulesR
   objects of `ModuleCat R`.
 * `TauCeti.finiteProjectiveModulesRegular`: the regular module `R`, as a finitely generated
   projective `R`-module.
+* `TauCeti.finiteProjectiveModulesRegularLinearEquiv`: the canonical linear equivalence between
+  `TauCeti.finiteProjectiveModulesRegular R` and `R`.
 
 ## Main results
 
@@ -130,5 +132,11 @@ def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory
 theorem finiteProjectiveModulesRegular_obj :
     (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
   (rfl)
+
+/-- The canonical `R`-linear equivalence between `TauCeti.finiteProjectiveModulesRegular R` and
+`R`. -/
+noncomputable def finiteProjectiveModulesRegularLinearEquiv :
+    (finiteProjectiveModulesRegular R).obj ≃ₗ[R] R :=
+  (eqToIso (finiteProjectiveModulesRegular_obj R)).toLinearEquiv
 
 end TauCeti

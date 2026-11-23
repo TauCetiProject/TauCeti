@@ -43,14 +43,13 @@ theorem isProgenerator_finitePresentationModules_iff
     IsProgenerator P ↔ Module.Projective R P.obj ∧ TauCeti.Module.IsGenerator R P.obj :=
   (finitePresentationModules R).isProgenerator_iff_moduleProjective_and_isGenerator
     (finitePresentationModules_le_finiteModules R)
-    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv P
+    (finitePresentationModulesRegularLinearEquiv R) P
 
 /-- Over any ring `R`, the regular module `R` is a progenerator of the category of finitely
 presented `R`-modules. -/
 theorem isProgenerator_finitePresentationModulesRegular :
     IsProgenerator (finitePresentationModulesRegular R) :=
-  let e : (finitePresentationModulesRegular R).obj ≃ₗ[R] R :=
-    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv
+  let e := finitePresentationModulesRegularLinearEquiv R
   (isProgenerator_finitePresentationModules_iff R _).mpr
     ⟨Module.Projective.of_equiv e.symm, TauCeti.Module.IsGenerator.of_linearEquiv e⟩
 
