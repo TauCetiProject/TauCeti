@@ -139,6 +139,7 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
 
 /-- A centered symmetric Beta variable of positive shape `a` has second moment
 `1 / (2 * a + 1)`. -/
+@[simp]
 theorem integral_sq_map_centered_betaMeasure (ha : 0 < a) :
     ∫ x, x ^ 2 ∂((betaMeasure a a).map (fun t ↦ -1 + 2 * t)) = 1 / (2 * a + 1) := by
   have h := integral_id_betaMeasure (by norm_num : (0 : ℝ) < 1 / 2) ha
