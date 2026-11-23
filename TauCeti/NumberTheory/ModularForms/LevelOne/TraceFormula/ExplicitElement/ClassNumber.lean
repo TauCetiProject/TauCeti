@@ -49,8 +49,9 @@ fixes the first line of each of the four sums of eq. (15). So it changes the wei
 where one of the second-line inequalities `c < a`, `b < d ≤ 0`, `a ≤ 0` and `d ≤ 0` changes, that is
 at the matrices with `a = c`, `b = d`, `d = 0` or `a = 0`. For `n > 0` these are parametrised by the
 factorisations `n = u v` into positive integers, and their changes cancel under `(u, v) ↦ (v, u)`.
-This gives the first result; the sum over the matrices of trace `t` and determinant `n` therefore
-depends only on `D = 4 n - t²`.
+This gives the first result. For `D = 4 n - t² > 0` every fibre of discriminant `-D` has positive
+determinant, so every translation step applies and the sum over the matrices of trace `t` and
+determinant `n` depends only on `D`.
 
 If `t ≤ 0` and `t² - 4 n ≥ 0`, translating upwards decreases `n` until `n ≤ 0`, where every weight
 vanishes because every matrix of nonzero weight has positive determinant.

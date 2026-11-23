@@ -253,15 +253,15 @@ square, the weights of the integral matrices of trace `t` and determinant `n` su
 theorem finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (hD : 4 * n ≤ t ^ 2)
     (h : ¬IsSquare (t ^ 2 - 4 * n)) :
     ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
-  -- the discriminant is positive, since `0 = 0 * 0` is a square
-  replace hD : 0 < t ^ 2 - 4 * n :=
-    lt_of_le_of_ne (by linarith) fun h0 ↦ h ⟨0, by linarith⟩
   rcases le_or_gt n 0 with hn | hn
   · exact finsum_weight_traceDetFiber_eq_zero_of_det_nonpos hn
   rcases le_or_gt t 0 with ht | ht
-  · exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht (by linarith)
-  obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD
-  rw [e, finsum_weight_traceDetFiber_of_le hn' h' (hD' ▸ hD)]
+  · exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht hD
+  -- the discriminant is positive, since `0` is a square
+  have hD₀ : 0 < t ^ 2 - 4 * n :=
+    lt_of_le_of_ne (sub_nonneg.mpr hD) fun e ↦ h (e ▸ IsSquare.zero)
+  obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD₀
+  rw [e, finsum_weight_traceDetFiber_of_le hn' h' (hD' ▸ hD₀)]
   split_ifs with ht'
   · subst ht'
     exact absurd ⟨n' - 1, by linear_combination -hD'⟩ h

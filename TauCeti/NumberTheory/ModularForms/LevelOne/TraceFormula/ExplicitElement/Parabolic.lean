@@ -10,15 +10,16 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitEl
 /-!
 # The repeated-root trace fibres of Popa–Zagier's element
 
-For a nonzero integer `a`, the sum of Popa–Zagier's integer weights on the matrices of
-trace `2a` and determinant `a²` is `2` if `a > 0` and `0` if `a < 0`.
-These are the discriminant-zero fibres, containing both scalar and nonscalar parabolic
-matrices. The result evaluates the boundary contribution in the ambient binary-form trace;
-it does not assert that individual nonscalar matrices have weight zero.
+For an integer `a`, the sum of Popa–Zagier's integer weights on the matrices of
+trace `2a` and determinant `a²` is `2` if `a > 0` and `0` if `a ≤ 0`.
+These are all the discriminant-zero fibres; for `a ≠ 0` they contain both scalar and nonscalar
+parabolic matrices. The result evaluates the boundary contribution in the ambient binary-form
+trace; it does not assert that individual nonscalar matrices have weight zero.
 
 The asymmetry in the sign of the trace comes from the choice of representatives in the
-explicit element. Together, the two fibres have weight `2`, corresponding to coefficient
-`1/6` before the passage from the ambient trace to the cusp-form trace.
+explicit element. For `a ≠ 0`, the two fibres of traces `±2a` together have weight `2`,
+corresponding to coefficient `1/6` before the passage from the ambient trace to the cusp-form
+trace.
 
 ## References
 
