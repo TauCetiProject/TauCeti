@@ -44,7 +44,7 @@ No eigenbasis of the normal Hessian is chosen, so no smoothly varying eigenvecto
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
-* `exists_contMDiffOn_range_eq_relativeSpectralSubspace_Iio`: in each normal-bundle
+* `exists_contMDiffOn_relativeNegativeSpectralProjection`: in each normal-bundle
   trivialization, the projections onto the negative normal spaces of a Morse–Bott submanifold
   relative to a `C^k` fibre metric form a `C^k` family, of rank the Morse index; their ranges and
   kernels are the negative and positive relative spectral subspaces.
@@ -94,7 +94,7 @@ kernel are the negative and positive relative spectral subspaces of `N s` with r
 They are orthogonal for both `G s` and `N s`, with `N s` negative definite on the range and
 positive definite on the kernel. The rank of `p s` is the Morse index of `f` at `i s`, and its
 nullity is the Morse index of `-f`. -/
-theorem exists_contMDiffOn_range_eq_relativeSpectralSubspace_Iio {k : ℕ∞ω}
+theorem exists_contMDiffOn_relativeNegativeSpectralProjection {k : ℕ∞ω}
     [IsManifold I (k + 2) M] (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
@@ -179,6 +179,21 @@ theorem exists_contMDiffOn_range_eq_relativeSpectralSubspace_Iio {k : ℕ∞ω}
   · rw [hker, LinearMap.BilinForm.finrank_relativeSpectralSubspace_Ioi hGs hGp hQs,
       QuadraticMap.Equivalent.sigPos_eq ⟨L⟩, h.sigPos_normalHessian hn s]
 
+omit [FiniteDimensional ℝ E'] [IsManifold J 1 S] [FiniteDimensional ℝ P] in
+/-- A linear map into a normal space that carries the range and kernel of an idempotent `p` into
+the negative and positive normal spaces for `g` intertwines `p` with the projection onto the
+negative normal space along the positive one. -/
+private theorem apply_eq_negativeNormalProjection_of_isIdempotentElem [IsManifold I 2 M]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    {s : S} {p : P →ₗ[ℝ] P} (hp : IsIdempotentElem p) (L : P →ₗ[ℝ] i.NormalSpace s hn)
+    (hrange : ∀ x ∈ LinearMap.range p, L x ∈ h.negativeNormalSpace hn g s)
+    (hker : ∀ x ∈ LinearMap.ker p, L x ∈ h.positiveNormalSpace hn g s) (u : P) :
+    L (p u) = h.negativeNormalProjection hn g s (L u) := by
+  have hφ := Submodule.projection_map_apply_of_mem (LinearMap.IsIdempotentElem.isCompl hp)
+    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s) L.toAddMonoidHom hrange hker u
+  rw [← h.negativeNormalProjection_def hn g s, ← LinearMap.IsIdempotentElem.eq_projection hp] at hφ
+  exact hφ.symm
+
 /-- **The projections onto the negative normal spaces are `C^k` in a normal-bundle
 trivialization.** Let `i` be a nondegenerate critical submanifold of `f`, with `f` of class
 `C^{k+2}` along it and `k ≤ n`, and let `g` be a fibre metric on its normal spaces, read in the
@@ -188,7 +203,7 @@ a `C^k` family `p` of projections of `P` whose ranges and kernels read, through 
 and positive normal spaces for `g`, and which reads the projection of the normal spaces onto the
 negative normal spaces for `g` along the positive normal spaces for `g`. The rank of `p s` is the
 Morse index of `f` at `i s`, and its nullity is the Morse index of `-f`. This identifies the family
-of `exists_contMDiffOn_range_eq_relativeSpectralSubspace_Iio` for the fibre metric `g`. -/
+of `exists_contMDiffOn_relativeNegativeSpectralProjection` for the fibre metric `g`. -/
 theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I (k + 2) M]
     (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
     (hk : k ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -219,7 +234,7 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
   have hGpos (s : S) (hs : s ∈ V) (u : P) (hu : u ≠ 0) : 0 < G s u u := by
     rw [hGg s hs, ← Trivialization.linearEquivAt_symm_apply (R := ℝ) e s hs.2]
     exact g.pos s _ ((map_ne_zero_iff _ (e.linearEquivAt ℝ s hs.2).symm.injective).2 hu)
-  obtain ⟨p, hp, hprop⟩ := h.exists_contMDiffOn_range_eq_relativeSpectralSubspace_Iio hn
+  obtain ⟨p, hp, hprop⟩ := h.exists_contMDiffOn_relativeNegativeSpectralProjection hn
     hk hf hdim s₀ (hG.mono inter_subset_left) hGsymm hGpos
   rw [inter_assoc, inter_self] at hp hprop
   refine ⟨p, hp, fun s hs ↦ ?_⟩
@@ -240,17 +255,11 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
     rw [IsCriticalSubmanifold.positiveNormalSpace_def, ← hL,
       ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hker]
   refine ⟨hidem, hneg, hpos, hrank, hnull, fun u ↦ ?_⟩
-  -- The inverse trivialization carries the range and kernel of `p s` onto the two normal spaces,
-  -- so it carries `p s`, the projection onto its range along its kernel, to the normal projection.
-  have hidem' := ContinuousLinearMap.IsIdempotentElem.toLinearMap hidem
-  have hφ := Submodule.projection_map_apply_of_mem (LinearMap.IsIdempotentElem.isCompl hidem')
-    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s) (e.symmₗ ℝ s).toAddMonoidHom
+  rw [← e.symmₗ_apply (R := ℝ) hs.2, ← e.symmₗ_apply (R := ℝ) hs.2]
+  exact h.apply_eq_negativeNormalProjection_of_isIdempotentElem hn g
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hidem) (e.symmₗ ℝ s)
     (fun x hx ↦ hneg ▸ Submodule.mem_map_of_mem hx) (fun x hx ↦ hpos ▸ Submodule.mem_map_of_mem hx)
     u
-  rw [← h.negativeNormalProjection_def hn g s,
-    ← LinearMap.IsIdempotentElem.eq_projection hidem'] at hφ
-  rw [← e.symmₗ_apply (R := ℝ) hs.2, ← e.symmₗ_apply (R := ℝ) hs.2]
-  exact hφ.symm
 
 end NormedSpace
 
@@ -308,18 +317,14 @@ theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManif
     (ContinuousLinearMap.isIdempotentElem_negativeSpectralProjection (q := Q) hG)
   have hrange := ContinuousLinearMap.range_negativeSpectralProjection hG hQsymm
   have hker := ContinuousLinearMap.ker_negativeSpectralProjection hG hQsymm hQinj
-  have hφ := Submodule.projection_map_apply_of_mem (LinearMap.IsIdempotentElem.isCompl hidem)
-    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s) L.symm.toAddMonoidHom
+  rw [← hL, ← hL]
+  exact h.apply_eq_negativeNormalProjection_of_isIdempotentElem hn g hidem L.symm.toLinearMap
     (fun x hx ↦ by
       rw [IsCriticalSubmanifold.negativeNormalSpace_def, ← hmap]
       exact Submodule.mem_map_of_mem (hrange ▸ hx))
     (fun x hx ↦ by
       rw [IsCriticalSubmanifold.positiveNormalSpace_def, ← hmap]
       exact Submodule.mem_map_of_mem (hker ▸ hx)) u
-  rw [← h.negativeNormalProjection_def hn g s,
-    ← LinearMap.IsIdempotentElem.eq_projection hidem] at hφ
-  rw [← hL, ← hL]
-  exact hφ.symm
 
 end InnerProductSpace
 

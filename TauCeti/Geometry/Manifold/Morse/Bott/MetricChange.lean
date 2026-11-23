@@ -95,9 +95,8 @@ negative normal space for `g'` along the positive normal space for `g'`. -/
 theorem normalMetricChange_apply_of_mem_negativeNormalSpace {s : S} {v : i.NormalSpace s hn}
     (hv : v ∈ h.negativeNormalSpace hn g s) :
     h.normalMetricChange hn g g' s v = h.negativeNormalProjection hn g' s v := by
-  refine (Submodule.splittingEquiv_apply_of_mem_left _ _ _ _ hv).trans ?_
-  exact (h.negativeNormalProjection_apply_eq_of_mem_of_sub_mem hn g'
-    (Submodule.projection_apply_mem _ v) (Submodule.sub_projection_mem _ v)).symm
+  simpa only [normalMetricChange, negativeNormalProjection_def] using
+    Submodule.splittingEquiv_apply_of_mem_left _ _ _ _ hv
 
 /-- On the positive normal space for `g`, the change of fibre metric is the projection onto the
 positive normal space for `g'` along the negative normal space for `g'`. -/

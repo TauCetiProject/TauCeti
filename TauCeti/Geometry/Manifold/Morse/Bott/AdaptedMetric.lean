@@ -370,25 +370,6 @@ theorem toRiemannianMetric_contMDiffAdaptedMetric (h : i.IsNondegenerateCritical
       h.adaptedMetric hn g.toRiemannianMetric :=
   (rfl)
 
-/-- The inner product of the `C^k` adapted metric is that of the adapted metric. -/
-@[simp]
-theorem contMDiffAdaptedMetric_inner (h : i.IsNondegenerateCriticalSubmanifold f)
-    (hk : k + 1 ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
-    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
-    (g : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
-      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
-      letI := i.normalSpaceFiberBundle hn hdim
-      letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
-    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
-    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
-    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
-    letI := i.normalSpaceFiberBundle hn hdim
-    letI := i.normalSpaceVectorBundle hn hdim
-    (h.contMDiffAdaptedMetric hn hk hf hdim g).inner =
-      (h.adaptedMetric hn g.toRiemannianMetric).inner :=
-  (rfl)
-
 end Smooth
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
