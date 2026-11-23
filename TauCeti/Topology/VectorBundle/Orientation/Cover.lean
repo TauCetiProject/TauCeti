@@ -239,6 +239,9 @@ theorem proj_comp_deck :
   funext proj_deck
 
 /-- The deck involution, restricted to the fibre over `b`, negates the orientation. -/
+-- Not `@[simp]`, nor `fiberEquiv_fiberMap_deck` below: the left-hand side restricts the deck
+-- involution as a `ContinuousMap`, the form `IsCoveringMap.fiberMap_monodromy` consumes, and `simp`
+-- rewrites that coercion to the `Homeomorph` one, so `simpNF` rejects the annotation.
 theorem fiberMap_deck_mk {b : B} (o : Orientation ℝ (E b) ι) :
     Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
         C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
@@ -251,9 +254,8 @@ theorem fiberEquiv_fiberMap_deck {b : B}
     fiberEquiv F E ι b (Function.fiberMap ⇑(deck (F := F) (E := E) (ι := ι) :
         C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι))
       proj_comp_deck b p) = -fiberEquiv F E ι b p := by
-  obtain ⟨⟨b', o⟩, h⟩ := p
-  obtain rfl : b' = b := h
-  rw [fiberMap_deck_mk, fiberEquiv_mk, fiberEquiv_mk]
+  obtain ⟨o, rfl⟩ := (fiberEquiv F E ι b).symm.surjective p
+  rw [fiberEquiv_symm_apply, fiberMap_deck_mk, fiberEquiv_mk, fiberEquiv_mk]
 
 /-- The deck involution reverses the orientation of each point. -/
 @[simp]
