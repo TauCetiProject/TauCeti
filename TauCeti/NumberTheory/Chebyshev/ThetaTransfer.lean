@@ -41,7 +41,7 @@ on the pieces of a partition turn it into increments of `x ↦ Li x - x / log x`
   form between two points `x₀, x > 1`.
 * `Chebyshev.abs_primeCounting_sub_logIntegral_sub_div_log_le`: the combined-endpoint transfer,
   which keeps `π(x) - Li x` together with its boundary term `(θ(x) - x) / log x`.
-* `Chebyshev.abs_primeCounting_sub_logIntegral_sub_theta_sub_id_div_log_le_const`: the
+* `Chebyshev.abs_primeCounting_sub_logIntegral_sub_div_log_le_const`: the
   combined-endpoint transfer with the remainder integral evaluated for constant relative error.
 * `Chebyshev.abs_primeCounting_sub_logIntegral_le_combined`,
   `Chebyshev.abs_primeCounting_sub_logIntegral_le`: two-sided bounds for `|π(x) - Li x|`,
@@ -146,7 +146,7 @@ theorem abs_primeCounting_sub_logIntegral_sub_div_log_le {ε : ℝ → ℝ} {x�
 
 /-- For a constant relative `θ`-error, the combined-endpoint transfer has an explicit remainder:
 `ε` times the increment of `t ↦ Li t - t / log t`. -/
-theorem abs_primeCounting_sub_logIntegral_sub_theta_sub_id_div_log_le_const {ε x₀ x : ℝ}
+theorem abs_primeCounting_sub_logIntegral_sub_div_log_le_const {ε x₀ x : ℝ}
     (hx₀ : 1 < x₀) (hx₀x : x₀ ≤ x) (h : ∀ t ∈ Icc x₀ x, |θ t - t| ≤ t * ε) :
     |(π ⌊x⌋₊ : ℝ) - logIntegral x - (θ x - x) / Real.log x| ≤
       |(π ⌊x₀⌋₊ : ℝ) - logIntegral x₀ - (θ x₀ - x₀) / Real.log x₀| +
