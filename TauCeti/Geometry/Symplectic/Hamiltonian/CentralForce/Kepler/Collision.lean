@@ -104,40 +104,6 @@ private theorem contMDiff_hamiltonianVectorField_kepler :
   isNondegenerate_puncturedPhaseSpace.contMDiff_hamiltonianVectorField (n := 1) (by simp)
     contMDiff_centralForceHamiltonian_kepler_comp_subtypeVal
 
-/-- **Conservation of the length of the Runge–Lenz vector.** For `m ≠ 0`, the length `‖A‖` of
-the Runge–Lenz vector is constant along an integral curve of the Kepler Hamiltonian vector field
-on a preconnected set of times avoiding the collision set. -/
-theorem norm_rungeLenz_eq_of_hasDerivAt_kepler (hm : m ≠ 0) {s : Set ℝ} (hs : IsPreconnected s)
-    {γ : ℝ → V × V} (hγ : ∀ t ∈ s, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
-      (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t)) t)
-    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    ‖rungeLenz m κ (γ t)‖ = ‖rungeLenz m κ (γ t₀)‖ := by
-  -- `‖A‖² = (m κ)² + 2 m H ℓ²`, and both `H` and `ℓ²` are conserved.
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_rungeLenz_sq hm κ (hq t ht),
-    norm_rungeLenz_sq hm κ (hq t₀ ht₀),
-    centralForceHamiltonian_eq_of_hasDerivAt hs hγ hq (fun u hu ↦
-      (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq u hu))).differentiableAt) ht₀ ht,
-    sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht]
-
-/-- **The perihelion bound along a Kepler motion.** For `m ≠ 0`, along an integral curve of the
-Kepler Hamiltonian vector field on a preconnected set `s` of times avoiding the collision set, the
-distance to the centre at every time `t ∈ s` is at least `ℓ² / (m κ + ‖A‖)`, computed from the
-squared angular momentum `ℓ²` and the Runge–Lenz vector `A` at any time `τ ∈ s`. -/
-theorem sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler (hm : m ≠ 0) {s : Set ℝ}
-    (hs : IsPreconnected s) {γ : ℝ → V × V}
-    (hγ : ∀ t ∈ s, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
-      (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t)) t)
-    (hq : ∀ t ∈ s, (γ t).1 ≠ 0) {τ t : ℝ} (hτ : τ ∈ s) (ht : t ∈ s) :
-    (‖(γ τ).1‖ ^ 2 * ‖(γ τ).2‖ ^ 2 - ⟪(γ τ).1, (γ τ).2⟫_ℝ ^ 2) /
-        (m * κ + ‖rungeLenz m κ (γ τ)‖) ≤ ‖(γ t).1‖ := by
-  have h := sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz m κ (γ t)
-  rw [sq_sub_inner_sq_eq_of_hasDerivAt hs hγ hτ ht,
-    norm_rungeLenz_eq_of_hasDerivAt_kepler hm hs hγ hq hτ ht] at h
-  rcases le_or_gt (m * κ + ‖rungeLenz m κ (γ τ)‖) 0 with hD | hD
-  · exact (div_nonpos_of_nonneg_of_nonpos (sq_sub_inner_sq_nonneg (γ τ)) hD).trans
-      (norm_nonneg _)
-  · rwa [div_le_iff₀ hD]
-
 /-- **Nonradial Kepler motions stay away from the collision set with bounded momentum.** Let `η`
 be an integral curve of the Kepler Hamiltonian vector field on a preconnected set `J` of times
 containing `0`, avoiding the collision set, with nonzero angular momentum at time `0`. Then on `J`
