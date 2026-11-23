@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Neighborhood
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Union
 public import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
 /-!
 # Local homology of a compact subset of a manifold
@@ -36,6 +37,8 @@ vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
   restriction to every point of `A` vanishes is zero.
 * `TauCeti.localHomology_ext_of_isCompact`: two classes of `Hₙ(M, M ∖ A)` with the same
   restrictions to the points of `A` are equal.
+* `TauCeti.localHomology_ext_of_isOpenEmbedding`: the same along a closed set with compact
+  preimage in the image of an open embedding of `M`.
 * `TauCeti.exists_localHomologyRestriction_eq_of_isCompact` and
   `TauCeti.existsUnique_localHomologyRestriction_eq_of_isCompact`: a family of local classes at
   the points of `A` that is locally the family of restrictions of a single class is the family of
@@ -306,6 +309,31 @@ theorem localHomology_ext_of_isCompact (hn : finrank ℝ E = n) (hA : IsCompact 
     α = β :=
   sub_eq_zero.1 (eq_zero_of_forall_localHomologyRestriction_eq_zero N hn hA _ fun x hx ↦ by
     rw [map_sub, h x hx, sub_self])
+
+/-- **Uniqueness of local homology classes along a compact set in an open embedded manifold.** Let
+`ι : M → X` be an open embedding into a `T₁` space and `T ⊆ ι(M)` a closed set with compact
+preimage. Two classes of `Hₙ(X, X ∖ T)` with the same restrictions to `Hₙ(X, X ∖ {ι x})` for every
+point `ι x` of `T` are equal: excision along `ι` reduces this to
+`TauCeti.localHomology_ext_of_isCompact` in `M`. -/
+theorem localHomology_ext_of_isOpenEmbedding {X : Type w} [TopologicalSpace X] [T1Space X]
+    {ι : M → X} (hn : finrank ℝ E = n) (hι : IsOpenEmbedding ι) {T : Set X} (hT : IsClosed T)
+    (hTι : T ⊆ range ι) (hK : IsCompact (ι ⁻¹' T)) {α β : (localHomology N T n : ModuleCat.{w} Λ)}
+    (h : ∀ x (hx : ι x ∈ T), localHomologyRestriction N (singleton_subset_iff.2 hx) n α =
+      localHomologyRestriction N (singleton_subset_iff.2 hx) n β) :
+    α = β := by
+  have := isIso_localHomologyMap N ⟨ι, hι.continuous⟩ hι rfl hT hTι n
+  set a := localHomologyMap N ⟨ι, hι.continuous⟩ (subset_refl (ι ⁻¹' T)) n
+  -- The local images of the preimage of a class under the excision isomorphism `a`.
+  have hloc (δ : (localHomology N T n : ModuleCat.{w} Λ)) (x : M) (hx : x ∈ ι ⁻¹' T) :
+      (localHomologyIsoOfIsOpenEmbedding N hι x n).hom
+          (localHomologyRestriction N (singleton_subset_iff.2 hx) n (inv a δ)) =
+        localHomologyRestriction N (singleton_subset_iff.2 (mem_preimage.1 hx)) n δ := by
+    rw [← localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι (subset_refl _) hx,
+      ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id, ModuleCat.id_apply]
+  have key : inv a α = inv a β := localHomology_ext_of_isCompact N hn hK fun x hx ↦
+    ConcreteCategory.injective_of_mono_of_preservesPullback
+      (localHomologyIsoOfIsOpenEmbedding N hι x n).hom (by rw [hloc _ _ hx, hloc _ _ hx, h x hx])
+  simpa using congrArg a key
 
 /-- A class of `Hₙ(M, M ∖ S)` restricting to `α x` at every point `x` of `S`. -/
 private def Glues (α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ)) (S : Set M) : Prop :=

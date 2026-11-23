@@ -37,8 +37,6 @@ Borel--Cantelli lemma is established in
 
 ## Main results
 
-* `memLp_integral_pow_spectralMeasure_wignerMatrix`: the `k`-th empirical spectral moment of
-  `Hₙ₊₁` lies in `Lᵖ` under `L^(p * k)` corner entries.
 * `abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le` and
   `variance_integral_pow_spectralMeasure_wignerMatrix_le`: quantitative `O((n + 1)⁻²)` covariance
   and variance bounds for empirical spectral moments of all orders under corner-local hypotheses.
@@ -74,60 +72,49 @@ namespace TauCeti.Probability
 section CornerHelpers
 
 open Classical in
-private theorem wignerMatrix_piecewise_eq {Ω : Type*} (ξ : StrictUpper → Ω → ℂ)
-    (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
-    wignerMatrix ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0)
-      ({i : ℕ | i < n}.piecewise η 0) n ω = wignerMatrix ξ η n ω :=
-  wignerMatrix_congr ω
-    (fun _ hij ↦ congrFun (Set.piecewise_eq_of_mem _ ξ 0 hij) ω)
-    (fun _ hi ↦ congrFun (Set.piecewise_eq_of_mem _ η 0 hi) ω)
-
-open Classical in
-private theorem iIndepFun_piecewise {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+private theorem iIndepFun_ite_lt {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {n : ℕ}
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P) :
     iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
-      Sum.elim ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0)
-        (fun i ω ↦ ({i : ℕ | i < n}.piecewise η 0 i ω : ℂ)) idx) P := by
+      Sum.elim (fun ij ↦ if ij.val.2 < n then ξ ij else 0)
+        (fun i ω ↦ ((if i < n then η i else 0) ω : ℂ)) idx) P := by
   have := hindep.isProbabilityMeasure
   let s : Set (StrictUpper ⊕ ℕ) := {idx | Sum.elim (fun ij ↦ ij.val.2 < n) (fun i ↦ i < n) idx}
   refine ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside (s := s) ?_ ?_
   · refine (hindep.precomp (Equiv.subtypeSum (p := fun idx ↦ idx ∈ s)).injective).congr
       fun ⟨idx, hidx⟩ ↦ .of_forall fun ω ↦ ?_
-    rcases idx with ij | i
-    · change ξ ij ω = ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0 ij ω : ℂ)
-      rw [Set.piecewise_eq_of_mem _ ξ 0 hidx]
-    · change (η i ω : ℂ) = ({i : ℕ | i < n}.piecewise η 0 i ω : ℂ)
-      rw [Set.piecewise_eq_of_mem _ η 0 hidx]
+    rcases idx with ij | i <;> simp only [s, Set.mem_ofPred_eq, Sum.elim_inl, Sum.elim_inr] at hidx
+    · change ξ ij ω = (if ij.val.2 < n then ξ ij else 0) ω
+      simp [hidx]
+    · change (η i ω : ℂ) = ((if i < n then η i else 0) ω : ℂ)
+      simp [hidx]
   · intro idx hnot
     refine ⟨0, .of_forall fun ω ↦ ?_⟩
-    rcases idx with ij | i
-    · change ({ij : StrictUpper | ij.val.2 < n}.piecewise ξ 0 ij ω : ℂ) = 0
-      rw [Set.piecewise_eq_of_notMem _ ξ 0 hnot]; rfl
-    · change ({i : ℕ | i < n}.piecewise η 0 i ω : ℂ) = 0
-      rw [Set.piecewise_eq_of_notMem _ η 0 hnot]; simp
+    rcases idx with ij | i <;> simp only [s, Set.mem_ofPred_eq, Sum.elim_inl, Sum.elim_inr] at hnot
+    · change (if ij.val.2 < n then ξ ij else 0) ω = 0
+      simp [hnot]
+    · change ((if i < n then η i else 0) ω : ℂ) = 0
+      simp [hnot]
 
-private theorem piecewise_zero_memLp_moment {ι Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] (s : Set ι) [∀ i, Decidable (i ∈ s)]
+private theorem ite_zero_memLp_moment {ι Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (p : ι → Prop) [DecidablePred p]
     {f : ι → Ω → E} {k : ℕ} {B : ℝ}
     (h0B : ∫ _ω : Ω, (0 : ℝ) ^ k ∂P ≤ B)
-    (hf : ∀ i ∈ s, ∫ ω, f i ω ∂P = 0 ∧ MemLp (f i) (k : ℕ) P ∧ ∫ ω, ‖f i ω‖ ^ k ∂P ≤ B) :
-    (∀ i, ∫ ω, s.piecewise f 0 i ω ∂P = 0) ∧
-      (∀ i, MemLp (s.piecewise f 0 i) (k : ℕ) P) ∧
-      (∀ i, ∫ ω, ‖s.piecewise f 0 i ω‖ ^ k ∂P ≤ B) := by
-  let T : Set (Ω → E) :=
-    {g | ∫ ω, g ω ∂P = 0 ∧ MemLp g (k : ℕ) P ∧ ∫ ω, ‖g ω‖ ^ k ∂P ≤ B}
-  have hmem : s.piecewise f 0 ∈ Set.univ.pi (fun _ : ι ↦ T) := by
-    rw [← Set.piecewise_same (s := s) (f := fun _ : ι ↦ T), Set.pi_piecewise]
-    refine ⟨fun i ⟨_, hi⟩ ↦ ?_, fun i ⟨_, hi⟩ ↦ ?_⟩ <;> dsimp [T]
-    · rw [Set.piecewise_eq_of_mem _ f 0 hi]
+    (hf : ∀ i, p i → ∫ ω, f i ω ∂P = 0 ∧ MemLp (f i) (k : ℕ) P ∧ ∫ ω, ‖f i ω‖ ^ k ∂P ≤ B) :
+    (∀ i, ∫ ω, (if p i then f i else 0) ω ∂P = 0) ∧
+      (∀ i, MemLp (if p i then f i else 0) (k : ℕ) P) ∧
+      (∀ i, ∫ ω, ‖(if p i then f i else 0) ω‖ ^ k ∂P ≤ B) := by
+  have h (i : ι) : ∫ ω, (if p i then f i else 0) ω ∂P = 0 ∧
+      MemLp (if p i then f i else 0) (k : ℕ) P ∧
+      ∫ ω, ‖(if p i then f i else 0) ω‖ ^ k ∂P ≤ B := by
+    by_cases hi : p i
+    · simp only [hi, ↓reduceIte]
       exact hf i hi
-    · rw [Set.piecewise_eq_of_notMem _ f 0 hi]
-      exact ⟨by simp, MemLp.zero, by simpa using h0B⟩
-  exact ⟨fun i ↦ (hmem i trivial).1, fun i ↦ (hmem i trivial).2.1,
-    fun i ↦ (hmem i trivial).2.2⟩
+    · simp only [hi, ↓reduceIte, Pi.zero_apply, integral_zero, MemLp.zero, norm_zero, true_and]
+      exact h0B
+  exact ⟨fun i ↦ (h i).1, fun i ↦ (h i).2.1, fun i ↦ (h i).2.2⟩
 
 end CornerHelpers
 
@@ -135,17 +122,6 @@ section FixedSpace
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
-
-/-- If the entries in the `(n + 1) × (n + 1)` corner of the Wigner array lie in `L^(p * k)` on a
-finite measure space, the `k`-th empirical spectral moment of `Hₙ₊₁` lies in `Lᵖ` for every
-`p : ℝ≥0∞`, `k`, and `n`, without independence or centering. -/
-theorem memLp_integral_pow_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {p : ℝ≥0∞} {k n : ℕ}
-    (hξp : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) (p * k) P)
-    (hηp : ∀ i < n + 1, MemLp (η i) (p * k) P) :
-    MemLp (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) p P := by
-  simp_rw [Matrix.integral_pow_spectralMeasure, Fintype.card_fin]
-  exact (memLp_trace_pow_wignerMatrix (n := n + 1) hξp hηp).re.const_mul _
 
 private theorem abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le_global
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
@@ -221,15 +197,15 @@ theorem abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le
     rcases eq_or_ne (k₁ + k₂) 0 with hk | hk
     · simpa [hk] using hη 0 (Nat.zero_lt_succ n)
     · simpa [zero_pow hk] using hB
-  have ⟨hξzero', hξp', hξ'⟩ := piecewise_zero_memLp_moment {ij : StrictUpper | ij.val.2 < n + 1} h0B
+  have ⟨hξzero', hξp', hξ'⟩ := ite_zero_memLp_moment (fun ij : StrictUpper ↦ ij.val.2 < n + 1) h0B
     fun ij hij ↦ ⟨hξzero ij hij, hξp ij hij, hξ ij hij⟩
-  have ⟨hηzero', hηp', hη'⟩ := piecewise_zero_memLp_moment {i : ℕ | i < n + 1} h0B
+  have ⟨hηzero', hηp', hη'⟩ := ite_zero_memLp_moment (fun i : ℕ ↦ i < n + 1) h0B
     fun i hi ↦ ⟨hηzero i hi, hηp i hi, hη i hi⟩
   have hcov := abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le_global
-    (ξ := {ij : StrictUpper | ij.val.2 < n + 1}.piecewise ξ 0)
-    (η := {i : ℕ | i < n + 1}.piecewise η 0) (k₁ := k₁) (k₂ := k₂) (B := B)
-    (iIndepFun_piecewise hindep) hξzero' hηzero' hξp' hηp' hξ' hη' n
-  simp_rw [wignerMatrix_piecewise_eq] at hcov
+    (ξ := fun ij ↦ if ij.val.2 < n + 1 then ξ ij else 0)
+    (η := fun i ↦ if i < n + 1 then η i else 0) (k₁ := k₁) (k₂ := k₂) (B := B)
+    (iIndepFun_ite_lt hindep) hξzero' hηzero' hξp' hηp' hξ' hη' n
+  simp only [wignerMatrix_ite_lt] at hcov
   exact hcov
 
 /-- **Empirical spectral moment variance bound (AGZ Lemma 2.1.7).** Under corner-local
@@ -251,9 +227,9 @@ theorem variance_integral_pow_spectralMeasure_wignerMatrix_le
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] ≤
       2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2 := by
   have := hindep.isProbabilityMeasure
-  have hm := (memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp)).aemeasurable
+  have hm := (memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+    (fun ij hij ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij hij)
+    (fun i hi ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i hi)).aemeasurable
   have h2k : k + k = 2 * k := (two_mul k).symm
   have hdiv : (k + k) / 2 = k := by omega
   have hcov := abs_covariance_integral_pow_spectralMeasure_wignerMatrix_le
@@ -286,9 +262,9 @@ theorem measure_integral_pow_spectralMeasure_wignerMatrix_sub_mean_ge
         (wignerMatrix_isHermitian ξ η ω' (n + 1)) : Measure ℝ)) ∂P|} ≤
       ENNReal.ofReal ((2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
   have := hindep.isProbabilityMeasure
-  have hmem := memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp)
-    (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp)
+  have hmem := memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+    (fun ij hij ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij hij)
+    (fun i hi ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i hi)
   have hvar := variance_integral_pow_spectralMeasure_wignerMatrix_le
     hindep hξzero hηzero hξp hηp hξ hη
   exact (meas_ge_le_variance_div_sq hmem hε).trans
