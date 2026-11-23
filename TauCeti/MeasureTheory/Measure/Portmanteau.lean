@@ -311,18 +311,14 @@ private theorem integral_bounds_mul_sum_measureReal_gt
   have hg_anti : AntitoneOn g (Set.Icc 0 (0 + k)) :=
     fun _ _ _ _ hst ↦ measureReal_mono fun _ hx ↦ hst.trans_lt hx
   have hint : (∫ x, f x ∂ν) / a = ∫ t in (0 : ℝ)..0 + k, g t := by
-    rw [← integral_div, ((f.integrable ν).div_const a).integral_eq_integral_meas_lt
-      (ae_of_all _ fun x ↦ div_nonneg (hf x) ha.le)]
+    rw [← integral_div, ((f.integrable ν).div_const a).integral_eq_integral_Ioc_meas_le
+      (ae_of_all _ fun x ↦ div_nonneg (hf x) ha.le)
+      (ae_of_all _ fun x ↦ (div_le_iff₀ ha).2 (hka x))]
     rw [zero_add, intervalIntegral.integral_of_le (Nat.cast_nonneg k)]
-    rw [← setIntegral_eq_of_subset_of_ae_sdiff_eq_zero nullMeasurableSet_Ioi
-      Set.Ioc_subset_Ioi_self]
-    refine Eventually.of_forall fun t ht ↦ ?_
-    have hkt : (k : ℝ) < t := by
-      simp only [Set.mem_sdiff, Set.mem_Ioi, Set.mem_Ioc, not_and, not_le] at ht
-      exact ht.2 ht.1
-    have hempty : {x | t < f x / a} = ∅ := Set.eq_empty_iff_forall_notMem.2 fun x hx ↦
-      not_lt_of_ge ((div_le_iff₀ ha).2 (hka x)) (hkt.trans (Set.mem_ofPred_eq.mp hx))
-    simp [g, hempty]
+    refine integral_congr_ae ?_
+    filter_upwards [meas_le_ae_eq_meas_lt ν (volume.restrict (Set.Ioc (0 : ℝ) k))
+      (fun x ↦ f x / a)] with t ht
+    simpa only [measureReal_def, g] using congrArg ENNReal.toReal ht
   have hle_sum : (∫ x, f x ∂ν) / a ≤ ∑ j ∈ Finset.range k, g j := by
     simpa only [zero_add] using hint.trans_le hg_anti.integral_le_sum
   have hsum_le : ∑ j ∈ Finset.range k, g j ≤ 1 + (∫ x, f x ∂ν) / a := by

@@ -183,15 +183,12 @@ theorem isContiguous_const_of_absolutelyContinuous {Ω₀ : Type*} [MeasurableSp
     (l : Filter ι) {P₀ Q₀ : Measure Ω₀} [IsFiniteMeasure P₀] [IsFiniteMeasure Q₀]
     (h : Q₀ ≪ P₀) : IsContiguous l (fun _ ↦ P₀) (fun _ ↦ Q₀) := by
   intro A _ hP
-  have hP' : Tendsto (fun i ↦ P₀ (A i)) l (𝓝 0) := by
-    have := ENNReal.tendsto_ofReal hP
-    simpa only [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top P₀ _),
-      ENNReal.ofReal_zero] using this
+  have hP' : Tendsto (fun i ↦ P₀ (A i)) l (𝓝 0) :=
+    (ENNReal.tendsto_toReal_zero_iff (fun _ ↦ measure_ne_top P₀ _)).1 hP
   have hQ' := tendsto_setLIntegral_zero (μ := P₀) (f := Q₀.rnDeriv P₀)
     (Measure.lintegral_rnDeriv_lt_top Q₀ P₀).ne hP'
   simp_rw [Measure.setLIntegral_rnDeriv h] at hQ'
-  simpa only [measureReal_def, Function.comp_def, ENNReal.toReal_zero] using
-    (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hQ'
+  exact (ENNReal.tendsto_toReal_zero_iff (fun _ ↦ measure_ne_top Q₀ _)).2 hQ'
 
 end Basic
 
