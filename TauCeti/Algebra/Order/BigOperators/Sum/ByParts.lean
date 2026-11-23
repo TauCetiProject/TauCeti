@@ -9,11 +9,7 @@ public import Mathlib.Algebra.BigOperators.Module
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Algebra.Order.Module.Defs
 import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Chebyshev
-import Mathlib.Algebra.Order.Interval.Finset.SuccPred
-import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Order.SuccPred.Archimedean
 
 /-!
 # Comparing weighted sums through their partial sums

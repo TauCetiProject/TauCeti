@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
-import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Real-cutoff Cesàro means

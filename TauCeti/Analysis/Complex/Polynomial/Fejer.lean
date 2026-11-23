@@ -9,11 +9,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.NumberTheory.Harmonic.Defs
 public import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Algebra.Polynomial.BigOperators
-import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
-import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.DirichletSineSum
 
@@ -250,8 +247,9 @@ theorem norm_fejerPoly_le_of_norm_le_one (m : ℕ) {w : ℂ} (hw : ‖w‖ ≤ 1
       push_cast
       ring
     rw [harg, norm_exp_ofReal_mul_I]
-  rw [fejerPoly_exp_mul_I, norm_mul, norm_mul, norm_mul, norm_neg,
-    Complex.norm_ofNat, norm_I, mul_one, hexp, mul_one, norm_real, Real.norm_eq_abs]
+  rw [fejerPoly_exp_mul_I]
+  simp only [norm_mul, norm_neg, Complex.norm_ofNat, norm_I, mul_one, hexp, norm_real,
+    Real.norm_eq_abs]
   gcongr
   exact abs_sum_Icc_sin_div_le m θ
 

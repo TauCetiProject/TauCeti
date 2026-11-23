@@ -170,7 +170,7 @@ theorem abs_sum_Icc_sin_div_le (m : ℕ) (θ : ℝ) :
         -(∑ j ∈ Icc 1 m, sin (j * (-θ')) / j) := by
       rw [← sum_neg_distrib]
       refine sum_congr rfl fun j _ ↦ ?_
-      rw [mul_neg, sin_neg, neg_div, neg_neg]
+      simp [mul_neg, sin_neg, neg_div]
     rw [hneg_sum, abs_neg]
     exact abs_sum_Icc_sin_div_le_of_pos_of_le_pi m (neg_pos.mpr hneg)
       ((abs_of_neg hneg) ▸ habs)

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Analysis.Complex.Polynomial.Fejer
 import TauCeti.Analysis.SpecificLimits.Normed

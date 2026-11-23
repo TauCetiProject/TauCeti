@@ -29,8 +29,6 @@ theorem sum_range_add_one_LSeries_term_one (a : ℕ → ℂ) (N : ℕ) :
     ∑ n ∈ Finset.range (N + 1), LSeries.term a 1 n = ∑ n ∈ Finset.Icc 1 N, a n / (n : ℂ) := by
   rw [Finset.sum_range_eq_add_Ico _ N.succ_pos, LSeries.term_zero, zero_add,
     Nat.succ_eq_add_one, Finset.Ico_add_one_right_eq_Icc]
-  refine Finset.sum_congr rfl fun n hn ↦ ?_
-  rw [LSeries.term_of_ne_zero (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1),
-    Complex.cpow_one]
+  simp only [LSeries.term_of_ne_zero' (s := 1) one_ne_zero, Complex.cpow_one]
 
 end TauCeti.LSeries

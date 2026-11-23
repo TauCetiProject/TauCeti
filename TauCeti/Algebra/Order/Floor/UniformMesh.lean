@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.Basic
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -57,6 +56,6 @@ theorem floor_div_eq_of_mem_Ioo {K : Type*} [DivisionSemiring K] [LinearOrder K]
   have h1 : (n : K) < t / h := (lt_div_iff₀ hh).mpr ht.1
   have h2 : t / h < (n : K) + 1 :=
     (div_lt_iff₀ hh).mpr (by simpa only [Nat.cast_add, Nat.cast_one] using ht.2)
-  exact (Nat.floor_eq_iff ((Nat.cast_nonneg n).trans h1.le)).mpr ⟨h1.le, h2⟩
+  exact Nat.floor_eq_on_Ico n (t / h) ⟨h1.le, h2⟩
 
 end TauCeti
