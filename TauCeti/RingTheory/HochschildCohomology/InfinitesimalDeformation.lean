@@ -179,7 +179,7 @@ end Deformation
 
 section Bilinear
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+variable {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
 
 /-- A `2`-cochain vanishes when its first argument is `0`. -/
 private theorem apply_vecCons_zero_left (φ : (Fin 2 → A) →ₘₗ[R] A) (b : A) : φ ![0, b] = 0 :=
@@ -223,18 +223,21 @@ private theorem apply_vecCons_smul_right (φ : (Fin 2 → A) →ₘₗ[R] A) (c 
 
 /-- `0` is absorbing on the left for the deformed multiplication. -/
 @[simp]
-theorem zero_infinitesimalDeformationMul (φ : (Fin 2 → A) →ₘₗ[R] A) (y : A × A) :
+theorem zero_infinitesimalDeformationMul {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
+    (φ : (Fin 2 → A) →ₘₗ[R] A) (y : A × A) :
     infinitesimalDeformationMul φ 0 y = 0 :=
   Prod.ext (by simp) (by simp [apply_vecCons_zero_left])
 
 /-- `0` is absorbing on the right for the deformed multiplication. -/
 @[simp]
-theorem infinitesimalDeformationMul_zero (φ : (Fin 2 → A) →ₘₗ[R] A) (x : A × A) :
+theorem infinitesimalDeformationMul_zero {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
+    (φ : (Fin 2 → A) →ₘₗ[R] A) (x : A × A) :
     infinitesimalDeformationMul φ x 0 = 0 :=
   Prod.ext (by simp) (by simp [apply_vecCons_zero_right])
 
 /-- The deformed multiplication is additive in its first argument. -/
-theorem add_infinitesimalDeformationMul (φ : (Fin 2 → A) →ₘₗ[R] A) (x x' y : A × A) :
+theorem add_infinitesimalDeformationMul [Mul A] [RightDistribClass A] (φ : (Fin 2 → A) →ₘₗ[R] A)
+    (x x' y : A × A) :
     infinitesimalDeformationMul φ (x + x') y =
       infinitesimalDeformationMul φ x y + infinitesimalDeformationMul φ x' y := by
   refine Prod.ext (by simp [add_mul]) ?_
@@ -243,7 +246,8 @@ theorem add_infinitesimalDeformationMul (φ : (Fin 2 → A) →ₘₗ[R] A) (x x
   abel
 
 /-- The deformed multiplication is additive in its second argument. -/
-theorem infinitesimalDeformationMul_add (φ : (Fin 2 → A) →ₘₗ[R] A) (x y y' : A × A) :
+theorem infinitesimalDeformationMul_add [Mul A] [LeftDistribClass A] (φ : (Fin 2 → A) →ₘₗ[R] A)
+    (x y y' : A × A) :
     infinitesimalDeformationMul φ x (y + y') =
       infinitesimalDeformationMul φ x y + infinitesimalDeformationMul φ x y' := by
   refine Prod.ext (by simp [mul_add]) ?_
@@ -252,20 +256,64 @@ theorem infinitesimalDeformationMul_add (φ : (Fin 2 → A) →ₘₗ[R] A) (x y
   abel
 
 /-- The deformed multiplication is `R`-linear in its first argument. -/
-theorem smul_infinitesimalDeformationMul [IsScalarTower R A A] (φ : (Fin 2 → A) →ₘₗ[R] A)
+theorem smul_infinitesimalDeformationMul [Mul A] [IsScalarTower R A A] (φ : (Fin 2 → A) →ₘₗ[R] A)
     (c : R) (x y : A × A) :
     infinitesimalDeformationMul φ (c • x) y = c • infinitesimalDeformationMul φ x y :=
   Prod.ext (by simp [smul_mul_assoc])
     (by simp [smul_mul_assoc, apply_vecCons_smul_left, smul_add])
 
 /-- The deformed multiplication is `R`-linear in its second argument. -/
-theorem infinitesimalDeformationMul_smul [SMulCommClass R A A] (φ : (Fin 2 → A) →ₘₗ[R] A)
+theorem infinitesimalDeformationMul_smul [Mul A] [SMulCommClass R A A] (φ : (Fin 2 → A) →ₘₗ[R] A)
     (c : R) (x y : A × A) :
     infinitesimalDeformationMul φ x (c • y) = c • infinitesimalDeformationMul φ x y :=
   Prod.ext (by simp [mul_smul_comm])
     (by simp [mul_smul_comm, apply_vecCons_smul_right, smul_add])
 
 end Bilinear
+
+section Unit
+
+variable {R A : Type*} [Semiring R] [NonAssocRing A] [Module R A]
+
+/-- For an infinitesimal deformation `φ`, `φ(1, a) = φ(1, 1) a`: compare the `ε`-components of
+`((1, 0)(1, 0))(a, 0)` and `(1, 0)((1, 0)(a, 0))`. -/
+private theorem apply_one_left {φ : (Fin 2 → A) →ₘₗ[R] A} (hφ : IsInfinitesimalDeformation φ)
+    (a : A) : φ ![1, a] = φ ![1, 1] * a := by
+  have h := congrArg Prod.snd (hφ (1, 0) (1, 0) (a, 0))
+  simp only [infinitesimalDeformationMul_snd, infinitesimalDeformationMul_fst, mul_zero,
+    zero_mul, add_zero, zero_add, one_mul] at h
+  simpa using h.symm
+
+/-- For an infinitesimal deformation `φ`, `φ(a, 1) = a φ(1, 1)`: compare the `ε`-components of
+`((a, 0)(1, 0))(1, 0)` and `(a, 0)((1, 0)(1, 0))`. -/
+private theorem apply_one_right {φ : (Fin 2 → A) →ₘₗ[R] A} (hφ : IsInfinitesimalDeformation φ)
+    (a : A) : φ ![a, 1] = a * φ ![1, 1] := by
+  have h := congrArg Prod.snd (hφ (a, 0) (1, 0) (1, 0))
+  simp only [infinitesimalDeformationMul_snd, infinitesimalDeformationMul_fst, mul_zero,
+    add_zero, zero_add, mul_one] at h
+  simpa using h
+
+/-- For an infinitesimal deformation `φ`, the element `1 - ε φ(1, 1)` is a left unit for the
+deformed multiplication. -/
+@[simp]
+theorem infinitesimalDeformationMul_one_sub_left {φ : (Fin 2 → A) →ₘₗ[R] A}
+    (hφ : IsInfinitesimalDeformation φ) (x : A × A) :
+    infinitesimalDeformationMul φ (1, -φ ![1, 1]) x = x := by
+  refine Prod.ext (one_mul _) ?_
+  rw [infinitesimalDeformationMul_snd, apply_one_left hφ x.1, neg_mul, one_mul,
+    neg_add_cancel_right]
+
+/-- For an infinitesimal deformation `φ`, the element `1 - ε φ(1, 1)` is a right unit for the
+deformed multiplication. -/
+@[simp]
+theorem infinitesimalDeformationMul_one_sub_right {φ : (Fin 2 → A) →ₘₗ[R] A}
+    (hφ : IsInfinitesimalDeformation φ) (x : A × A) :
+    infinitesimalDeformationMul φ x (1, -φ ![1, 1]) = x := by
+  refine Prod.ext (mul_one _) ?_
+  rw [infinitesimalDeformationMul_snd, apply_one_right hφ x.1, mul_neg, mul_one]
+  abel
+
+end Unit
 
 section Cocycle
 
@@ -304,34 +352,6 @@ theorem isInfinitesimalDeformation_iff_mem_hochschildBimoduleCocycles
     simp only [infinitesimalDeformationMul_snd, infinitesimalDeformationMul_fst]
     rw [← sub_eq_zero, ← neg_eq_zero, ← h₃]
     noncomm_ring
-
-/-- For an infinitesimal deformation `φ`, the element `1 - ε φ(1, 1)` is a left unit for the
-deformed multiplication. -/
-theorem infinitesimalDeformationMul_one_sub_left {φ : (Fin 2 → A) →ₘₗ[R] A}
-    (hφ : IsInfinitesimalDeformation φ) (x : A × A) :
-    infinitesimalDeformationMul φ (1, -φ ![1, 1]) x = x := by
-  have h := (mem_cocycles_two_iff φ).1
-    (isInfinitesimalDeformation_iff_mem_hochschildBimoduleCocycles.1 hφ) 1 1 x.1
-  simp only [one_mul, mul_one, sub_self, zero_add] at h
-  refine Prod.ext (one_mul _) ?_
-  simp only [infinitesimalDeformationMul_snd, one_mul, neg_mul]
-  rw [sub_eq_zero] at h
-  rw [h]
-  abel
-
-/-- For an infinitesimal deformation `φ`, the element `1 - ε φ(1, 1)` is a right unit for the
-deformed multiplication. -/
-theorem infinitesimalDeformationMul_one_sub_right {φ : (Fin 2 → A) →ₘₗ[R] A}
-    (hφ : IsInfinitesimalDeformation φ) (x : A × A) :
-    infinitesimalDeformationMul φ x (1, -φ ![1, 1]) = x := by
-  have h := (mem_cocycles_two_iff φ).1
-    (isInfinitesimalDeformation_iff_mem_hochschildBimoduleCocycles.1 hφ) x.1 1 1
-  simp only [mul_one, sub_add_cancel] at h
-  refine Prod.ext (mul_one _) ?_
-  simp only [infinitesimalDeformationMul_snd, mul_one, mul_neg]
-  rw [sub_eq_zero] at h
-  rw [h]
-  abel
 
 end Cocycle
 
@@ -400,6 +420,25 @@ theorem isInfinitesimalEquivalence_iff {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
   · refine ⟨fun x ↦ by rw [hFg], fun a ↦ by rw [hFg, map_zero, add_zero], fun x y ↦ ?_⟩
     simp only [hFg]
     exact (map_mul_iff φ ψ g).2 hg x y
+
+/-- **Inverse of an infinitesimal equivalence.** An infinitesimal equivalence `F` from `μ + εφ`
+to `μ + εψ` has a two-sided inverse which is an infinitesimal equivalence from `μ + εψ` to
+`μ + εφ`: if `F` is the shear `a + εb ↦ a + ε(b + g a)`, its inverse is the shear for `-g`. -/
+theorem IsInfinitesimalEquivalence.exists_inverse {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
+    {F : A × A →ₗ[R] A × A} (hF : IsInfinitesimalEquivalence φ ψ F) :
+    ∃ G : A × A →ₗ[R] A × A, IsInfinitesimalEquivalence ψ φ G ∧ G ∘ₗ F = LinearMap.id ∧
+      F ∘ₗ G = LinearMap.id := by
+  obtain ⟨g, hFg, hg⟩ := isInfinitesimalEquivalence_iff.1 hF
+  refine ⟨LinearMap.id - LinearMap.inr R A A ∘ₗ g ∘ₗ LinearMap.fst R A A,
+    isInfinitesimalEquivalence_iff.2 ⟨-g, fun x ↦ by simp [Prod.ext_iff, sub_eq_add_neg], ?_⟩,
+    LinearMap.ext fun x ↦ ?_, LinearMap.ext fun x ↦ ?_⟩
+  · have hneg : MultilinearMap.ofSubsingleton (RingHom.id R) A A (0 : Fin 1) (-g) =
+        -MultilinearMap.ofSubsingleton (RingHom.id R) A A (0 : Fin 1) g := by
+      ext
+      simp
+    rw [hneg, map_neg, ← hg, neg_sub]
+  · simp [hFg]
+  · simp [hFg]
 
 /-- **Equivalent infinitesimal deformations differ by a coboundary**: two Hochschild
 `2`-cochains are infinitesimally equivalent exactly when their difference is a Hochschild
