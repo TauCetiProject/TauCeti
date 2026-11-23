@@ -41,11 +41,8 @@ noncomputable def alternatingProductMap :
     apply TensorProduct.ext'
     intro X Y
     simp only [Representation.tprod_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
-      TensorProduct.lift.tmul]
+      TensorProduct.lift.tmul, LieHom.coe_toLinearMap, LieAlgebra.ad_apply]
     apply Subtype.ext
-    -- `LieAlgebra.ad` is the bracket, so `lift` on a pure tensor is definitionally `⁅·, ·⁆`.
-    change ⁅adjointRep K n g X, adjointRep K n g Y⁆.val =
-      (adjointRep K n g ⁅X, Y⁆).val
     simp only [LieAlgebra.SpecialLinear.sl_bracket, coe_adjointRep_apply]
     rw [SpecialLinearGroup.conj_eq_units_smul, SpecialLinearGroup.conj_eq_units_smul,
       SpecialLinearGroup.conj_eq_units_smul, smul_sub, smul_mul', smul_mul']
@@ -66,10 +63,9 @@ theorem alternatingProductMap_comm
       -(alternatingProductMap K n).toLinearMap := by
     apply TensorProduct.ext'
     intro X Y
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.comm_tmul]
-    -- `toLinearMap` is `TensorProduct.lift` of the bracket, and `lift.tmul` is `rfl`,
-    -- so after `comm_tmul` there is no `lift` to rewrite.
-    change ⁅Y, X⁆ = -⁅X, Y⁆
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.comm_tmul,
+      LinearMap.neg_apply, Representation.IntertwiningMap.toLinearMap_apply,
+      alternatingProductMap_tmul]
     exact (lie_skew Y X).symm
   exact LinearMap.congr_fun h T
 
