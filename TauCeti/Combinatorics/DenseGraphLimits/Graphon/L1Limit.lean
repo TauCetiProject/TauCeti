@@ -113,9 +113,7 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
       _ =ᵐ[μ.prod μ] fLim := hfLimAE_coe
   have hdist (n : ℕ) : eLpNorm (f n - fun z : Ω × Ω ↦ Wlim z.1 z.2) 1 (μ.prod μ) =
       eLpNorm (f n - fLim) 1 (μ.prod μ) :=
-    eLpNorm_congr_ae <| by
-      filter_upwards [hWlimAE] with z hz
-      simp only [Pi.sub_apply, hz]
+    eLpNorm_congr_ae (EventuallyEq.rfl.sub hWlimAE)
   exact ⟨Wlim, fun N n hn ↦ (hdist n).trans_le (hrate N n hn),
     hLp.congr fun n ↦ (hdist n).symm⟩
 
@@ -147,8 +145,8 @@ theorem exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound
       ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
       1 (μ.prod μ)).toReal)
     (fun n ↦ cutDist_nonneg (W n) Wlim) ?_ ?_⟩
-  · exact (ENNReal.ofReal_le_ofReal (cutDist_le_eLpNorm_one_toReal (W n) Wlim)).trans
-      (ENNReal.ofReal_toReal_le.trans (hrate N n hn))
+  · exact (ENNReal.ofReal_le_of_le_toReal (cutDist_le_eLpNorm_one_toReal (W n) Wlim)).trans
+      (hrate N n hn)
   · intro n
     exact cutDist_le_eLpNorm_one_toReal (W n) Wlim
   · exact (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hLp
