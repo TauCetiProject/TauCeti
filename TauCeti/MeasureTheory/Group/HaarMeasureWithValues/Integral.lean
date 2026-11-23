@@ -37,7 +37,8 @@ by indicators, with overlaps allowed (`TauCeti.HaarMeasureWithValues.integral_eq
 * `TauCeti.HaarMeasureWithValues.integral_compactOpenIndicator`: `∫ 1_K • m dμ = μ(K) • m`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_sum_indicator`: the integral of a finite sum of
   indicators `∑ 1_{K_i} • m_i`, with overlaps allowed, is `∑ μ(K_i) • m_i`.
-* `TauCeti.HaarMeasureWithValues.integral_map`: naturality under `A`-linear maps `M → N`.
+* `TauCeti.HaarMeasureWithValues.integral_locallyConstant_map`: naturality under `A`-linear maps
+  `M → N`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum_of_discrete`: on a finite discrete group,
   `∫ f dμ = μ({1}) • ∑_g f(g)`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum`: for a compact open subgroup `U` and a
@@ -224,6 +225,12 @@ theorem integral_eq_sum (f : compactlySupported A G M) {ι : Type*} {s : Finset 
     μ.integral f = ∑ i ∈ s, μ (K i) • v i :=
   integralAux_eq_sum μ (mem_compactlySupported.1 f.property) hK hv hKf
 
+/-- The integral against the zero Haar measure vanishes. -/
+@[simp]
+theorem zero_integral (f : compactlySupported A G M) :
+    (0 : HaarMeasureWithValues A G).integral f = 0 := by
+  simp [integral, integralAux, zero_apply]
+
 /-- The integral of the indicator `1_K • m` of a compact open set is `μ(K) • m`. -/
 @[simp]
 theorem integral_compactOpenIndicator [T2Space G] (K : CompactOpens G) (m : M) :
@@ -248,7 +255,7 @@ theorem integral_eq_sum_indicator [T2Space G] (f : compactlySupported A G M) {ι
   exact Finset.sum_congr rfl fun i _ ↦ integral_compactOpenIndicator μ (K i) (m i)
 
 /-- **Naturality.** Integration commutes with `A`-linear maps `φ : M → N`. -/
-theorem integral_map {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
+theorem integral_locallyConstant_map {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
     (f : compactlySupported A G M) :
     μ.integral ⟨(f : LocallyConstant G M).map φ, mem_compactlySupported.2
       ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩ = φ (μ.integral f) := by
@@ -298,6 +305,7 @@ theorem integral_eq_smul_sum_of_discrete [DiscreteTopology G] [Fintype G]
     exact CompactOpens.ext (by simp [K, CompactOpens.coe_smul])
   rw [integral_eq_sum μ f (s := Finset.univ) (K := K) (v := fun g ↦ (f : LocallyConstant G M) g)
       (fun g _ g' _ hgg' ↦ Set.disjoint_singleton.2 hgg')
+      -- Membership in the compact open set `K g` is membership in `{g}`.
       (fun g _ x hx ↦ by rw [show x = g from hx]) fun x _ ↦ ⟨x, Finset.mem_univ x, rfl⟩,
     Finset.smul_sum]
   exact Finset.sum_congr rfl fun g _ ↦ by rw [hK]
