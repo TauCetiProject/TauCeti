@@ -63,6 +63,9 @@ intersection over the finite simple subextensions of their open fixing subgroups
 unchanged by cutting `E` down to its part inside `separableClosure K M`, because every element of
 `E` has a `q`-th power iterate there. The second is why a Galois correspondence over an
 inseparable extension can only be indexed by the intermediate fields of the separable closure.
+Closedness of fixing subgroups also means that a subgroup and its closure
+cut out the same field, so over a Galois `M / K` the fixers of the field fixed by `H` are exactly
+the closure of `H`.
 
 ## Main results
 
@@ -73,6 +76,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
+* `IntermediateField.fixedField_topologicalClosure` and
+  `IntermediateField.fixingSubgroup_fixedField_eq_topologicalClosure`: a subgroup and its Krull
+  closure have the same fixed field, whose fixers are that closure when `M / K` is Galois
 * `IntermediateField.fixingSubgroup_inf_separableClosure`
 * `IntermediateField.fixedField_fixingSubgroup`: the correspondence over an intermediate field
   with Galois extension above it, without a Galois assumption on the original base
@@ -311,6 +317,24 @@ theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     adjoin.finiteDimensional
       (isAlgebraic_iff.mp (Algebra.IsAlgebraic.isAlgebraic (R := K) x)).isIntegral
   exact fixingSubgroup_isClosed _
+
+/-- **A subgroup and its closure have the same fixed field** for the Krull topology: over an
+algebraic `M / K` the fixing subgroup of `fixedField H` is closed and contains `H`, hence contains
+its closure. -/
+theorem fixedField_topologicalClosure [Algebra.IsAlgebraic K M] (H : Subgroup (M ≃ₐ[K] M)) :
+    fixedField H.topologicalClosure = fixedField H :=
+  le_antisymm (fixedField_antitone H.le_topologicalClosure)
+    ((le_fixedField_iff_le_fixingSubgroup _ _).2 (H.topologicalClosure_minimal
+      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
+      (fixingSubgroup_isClosed_of_isAlgebraic _)))
+
+/-- **The automorphisms fixing the fixed field of `H` form the closure of `H`.** For a Galois
+extension `M / K`, possibly infinite, this is the Galois correspondence applied to the closed
+subgroup `H.topologicalClosure`, which has the same fixed field as `H`. -/
+theorem fixingSubgroup_fixedField_eq_topologicalClosure [IsGalois K M]
+    (H : Subgroup (M ≃ₐ[K] M)) : (fixedField H).fixingSubgroup = H.topologicalClosure := by
+  rw [← fixedField_topologicalClosure]
+  exact InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩
 
 /-- **A fixing subgroup sees only the separable closure.** For an intermediate field `E` algebraic
 over `K` a `K`-automorphism of `M` fixing `E ⊓ separableClosure K M` pointwise already fixes `E`

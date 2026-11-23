@@ -28,8 +28,9 @@ over `ℂ_p` has points of type (4).
 
 Because `PadicAlgCl p` and `ℂ_[p]` are algebraically closed nontrivially normed fields, their
 positive norms are dense in `(0, ∞)`, making both fields densely normed. The file also compares the
-valuation with the norm, records `‖p‖ = p⁻¹ < 1` and the residue characteristic, and provides the
-integral coefficient inclusion and topological nilpotence of `ζ - 1` for `p`-th roots of unity.
+valuation with the norm, records `‖p‖ = p⁻¹ < 1` (also `‖p‖ < 1` in `PadicAlgCl p`) and the
+residue characteristic, and provides the integral coefficient inclusion and topological
+nilpotence of `ζ - 1` for `p`-th roots of unity.
 
 ## Main results
 
@@ -41,7 +42,8 @@ integral coefficient inclusion and topological nilpotence of `ζ - 1` for `p`-th
 * `PadicComplex.isTopologicallyNilpotent_sub_one`: `ζ - 1` is topologically nilpotent
   if `ζ ^ p = 1`.
 * `PadicComplex.norm_p`: `‖p‖ = p⁻¹` in `ℂ_[p]`.
-* `PadicComplex.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]`.
+* `PadicComplex.norm_p_lt_one`, `PadicAlgCl.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]` and in
+  `PadicAlgCl p`.
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
 * `PadicComplex.separableSpace`: `ℂ_[p]` is a separable space.
 * `PadicComplex.denselyNormedField`, `PadicAlgCl.denselyNormedField`: `ℂ_[p]` and `PadicAlgCl p`
@@ -163,6 +165,11 @@ end PadicComplex
 namespace PadicAlgCl
 
 variable (p : ℕ) [Fact p.Prime]
+
+/-- `‖p‖ < 1` in `PadicAlgCl p`. -/
+theorem norm_p_lt_one : ‖(p : PadicAlgCl p)‖ < 1 := by
+  rw [← PadicComplex.norm_extends, PadicComplex.coe_natCast]
+  exact PadicComplex.norm_p_lt_one p
 
 /-- **`PadicAlgCl p` is densely normed**: as an algebraically closed nontrivially normed field, its
 positive norms are dense in `(0, ∞)`. -/
