@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
@@ -60,8 +61,9 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
-* `DifferentiableAt.hasFDerivAt_slice_fst`: the derivative of a slice `y ↦ g (y, t)` of a map
-  differentiable at the point `(y, t)`.
+* `DifferentiableAt.hasFDerivAt_slice_fst`, `DifferentiableAt.hasFDerivAt_slice_snd`: the
+  derivatives of the slices `y ↦ g (y, t)` and `t ↦ g (y, t)` of a map differentiable at the point
+  `(y, t)`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.differentiableAt_comp_snd_iff` and `TauCeti.fderiv_comp_snd`: a function of the
@@ -78,11 +80,15 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
+* `TauCeti.hasDerivAt_fst_slice_left`, `TauCeti.hasDerivAt_snd_slice_left`: the same for the two
+  components of a map into a product.
 * `TauCeti.norm_deriv_slice_right_le`: the partial derivative in a scalar second variable has
   norm at most that of the derivative.
 * `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
   of a `C¹` map is continuous along every vertical segment inside its open domain.
 * `TauCeti.continuous_fderiv_apply_slice_right`: for a `C¹` map, `t ↦ df(a, t) v` is continuous.
+* `TauCeti.continuous_fderiv_slice_right`: the derivative of the second-variable slices of a `C¹`
+  function of two variables is continuous in both variables.
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `HasFDerivAt.comp_graph`, `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph
@@ -332,6 +338,20 @@ theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (
     HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s :=
   hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
 
+/-- Where `v = (v₁, v₂)` is differentiable, the partial derivative of `v₁` in the first variable is
+the first component of the derivative of `v` applied to `(1, 0)`. -/
+theorem hasDerivAt_fst_slice_left {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {v : 𝕜 × F → G × H} {s : 𝕜} {b : F} (hv : DifferentiableAt 𝕜 v (s, b)) :
+    HasDerivAt (fun s ↦ (v (s, b)).1) (fderiv 𝕜 v (s, b) (1, 0)).1 s :=
+  (ContinuousLinearMap.fst 𝕜 G H).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_slice_left hv)
+
+/-- Where `v = (v₁, v₂)` is differentiable, the partial derivative of `v₂` in the first variable is
+the second component of the derivative of `v` applied to `(1, 0)`. -/
+theorem hasDerivAt_snd_slice_left {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {v : 𝕜 × F → G × H} {s : 𝕜} {b : F} (hv : DifferentiableAt 𝕜 v (s, b)) :
+    HasDerivAt (fun s ↦ (v (s, b)).2) (fderiv 𝕜 v (s, b) (1, 0)).2 s :=
+  (ContinuousLinearMap.snd 𝕜 G H).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_slice_left hv)
+
 /-- Where `u` is differentiable, its derivative applied to `(1, 0)` is its partial derivative in
 the first variable. -/
 theorem fderiv_apply_mk_one_zero {z : 𝕜 × F} (hu : DifferentiableAt 𝕜 u z) :
@@ -381,6 +401,14 @@ theorem continuous_fderiv_apply_slice_right {f : E × F → G} (hf : ContDiff �
     (v : E × F) : Continuous fun t ↦ fderiv 𝕜 f (a, t) v :=
   ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).comp
     (Continuous.prodMk_right a)
+
+/-- The derivative `fderiv 𝕜 (f a) y` of the second-variable slices of a `C¹` function of `(a, y)`
+is continuous in `(a, y)`. -/
+theorem continuous_fderiv_slice_right {f : E → F → G}
+    (hf : ContDiff 𝕜 1 fun p : E × F ↦ f p.1 p.2) :
+    Continuous fun p : E × F ↦ fderiv 𝕜 (f p.1) p.2 :=
+  (ContDiff.fderiv (f := fun (q : E × F) y ↦ f q.1 y)
+    (hf.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
@@ -515,7 +543,7 @@ theorem norm_fderiv_mul_fst_le {E : Type*} [NormedAddCommGroup E] [NormedSpace �
 
 end TauCeti
 
-section SliceFst
+section Slice
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -530,6 +558,14 @@ theorem DifferentiableAt.hasFDerivAt_slice_fst {g : E × H → G} {p : E × H}
   simpa [Function.comp_def] using
     hg.hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)
 
-end SliceFst
+/-- The derivative of a slice `t ↦ g (p.1, t)` of a map on a product that is differentiable at `p`,
+in the second variable. -/
+theorem DifferentiableAt.hasFDerivAt_slice_snd {g : E × H → G} {p : E × H}
+    (hg : DifferentiableAt 𝕜 g p) :
+    HasFDerivAt (fun t ↦ g (p.1, t)) ((fderiv 𝕜 g p).comp (ContinuousLinearMap.inr 𝕜 E H)) p.2 := by
+  simpa [Function.comp_def] using
+    hg.hasFDerivAt.comp p.2 (hasFDerivAt_prodMk_right p.1 p.2)
+
+end Slice
 
 end
