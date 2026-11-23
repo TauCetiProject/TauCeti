@@ -36,10 +36,10 @@ The operators of order `0` are the maps linear over the smooth functions. Every 
 a family of fibrewise linear maps `ϕ x : V x → W x` whose map of total spaces is smooth, acts on
 sections by `s ↦ (x ↦ ϕ x (s x))` (`ContMDiffSection.mapLinearMap`) as an operator of order `0`.
 Conversely, when `V` has finite rank, every operator of order `0` is of this form: it is pointwise,
-because a section vanishing at `x` lies in `I_x Γ(V)`, and the resulting family of fibre maps is
-smooth because it sends smooth sections to smooth sections
-(`TauCeti.Manifold.contMDiff_hom_iff`). This is the tensor characterization lemma, the algebraic
-description of bundle homomorphisms used for the zeroth-order terms of differential operators.
+with fibre maps `TauCeti.smoothSectionFiberMap`, and this family of fibre maps is smooth because it
+sends smooth sections to smooth sections (`TauCeti.Manifold.contMDiff_hom_iff`). This is the tensor
+characterization lemma, the algebraic description of bundle homomorphisms used for the zeroth-order
+terms of differential operators.
 
 ## Main results
 
@@ -157,24 +157,14 @@ theorem mem_differentialOperators_zero_iff_exists_eq_mapLinearMap
         (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace F' W))),
         P = ContMDiffSection.mapLinearMap ϕ hϕ := by
   refine ⟨fun hP ↦ ?_, fun ⟨ϕ, hϕ, h⟩ ↦ h ▸ mapLinearMap_mem_differentialOperators_zero ϕ hϕ⟩
-  -- `P` is linear over the smooth functions, hence pointwise: it maps `I_x Γ(V)`, the sections
-  -- vanishing at `x`, into `I_x Γ(W)`.
+  -- `P` is linear over the smooth functions, hence pointwise, with fibre maps
+  -- `smoothSectionFiberMap x P'`.
   let P' : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯ :=
     { toFun := P
       map_add' := P.map_add
       map_smul' := mem_differentialOperators_zero_iff.1 hP }
-  have hpt {x : M} {s : Cₛ^∞⟮I; F, V⟯} (hs : s x = 0) : P s x = 0 :=
-    apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top <| Submodule.smul_top_le_comap_smul_top _ P'
-      (mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero hs)
-  -- The fibre map at `x` evaluates `P` on any section through the given vector.
-  choose lift hlift using fun x : M ↦
-    (ContMDiffSection.evalLinearMap I F ∞ V x).exists_rightInverse_of_surjective
-      (LinearMap.range_eq_top.2 (ContMDiffSection.evalLinearMap_surjective ∞ x))
-  have hlift' (x : M) (v : V x) : lift x v x = v := by
-    simpa using congr($(hlift x) v)
-  let ϕ (x : M) : V x →ₗ[ℝ] W x := ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ P ∘ₗ lift x
-  have hϕ (s : Cₛ^∞⟮I; F, V⟯) (x : M) : ϕ x (s x) = P s x := by
-    simpa [ϕ, sub_eq_zero] using hpt (x := x) (s := lift x (s x) - s) (by simp [hlift'])
+  let ϕ (x : M) : V x →ₗ[ℝ] W x := smoothSectionFiberMap x P'
+  have hϕ (s : Cₛ^∞⟮I; F, V⟯) (x : M) : ϕ x (s x) = P s x := smoothSectionFiberMap_apply x P' s
   -- The same fibre maps as continuous linear maps, through the finite-dimensional model fibre.
   let A (x : M) : V x →L[ℝ] W x :=
     let e := (trivializationAt F V x).continuousLinearEquivAt ℝ x
