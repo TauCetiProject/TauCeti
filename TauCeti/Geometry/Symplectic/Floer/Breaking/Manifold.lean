@@ -28,7 +28,8 @@ for the cylindrical perturbation `K = H_t dt`, with almost complex structures `J
 spaces `T_{u_k z} M`. Along a long neck of a sequence of Floer cylinders or pairs of pants that
 breaks, the energy over translated windows `[a + s_k, b + s_k] × [0, 1]` tends to zero. This file
 proves, for a manifold target, that every limit of the translates `(s, t) ↦ u_k(s + s_k, t)` along
-such windows is a stationary cylinder `(s, t) ↦ x(t)` over a Hamiltonian orbit `x`
+such windows is a stationary strip `(s, t) ↦ x(t)` over a Hamiltonian orbit segment
+`x` on `[0, 1]`
 (`IsNondegenerate.exists_hasMFDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`, in the
 namespace `TauCeti.SmoothTwoForm`).
 For a single solution of finite energy and `s_k → ∞` this is the breaking off of an orbit at an
@@ -65,37 +66,44 @@ loops satisfy `u_k(s, 0) = u_k(s, 1)`, the relation passes to `v`
 (`TauCeti.apply_eq_apply_of_tendstoLocallyUniformlyOn_comp_add`), and injectivity of `e` on `K`
 then gives `x(0) = x(1)`.
 
-## Limits of the translates of a single solution with `C¹` convergence
+## Limits of the translates of a single solution, with derivatives converging in the tangent bundle
 
-The second part of the file works without the map `e`, for the translates of a single solution
-with `C¹` convergence. Let `u` solve the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0`
-for `K = H_t dt` on a part `D` of the strip `ℝ × [0, 1]`, with almost complex structures `J_t(x)` on
-`T_x M` independent of `s`, as on a cylindrical end, and let `u` have finite energy over `D`. Let
-`s_k` be translation parameters with `|s_k| → ∞` such that every window
-`[a + s_k, b + s_k] × [0, 1]` eventually lies in `D`. Suppose that the translates
-`z ↦ u(z + (s_k, 0))` converge in `C¹` on the strip to a `C¹` map `v`: at every point of the strip
-their derivatives converge in the tangent bundle to the derivative of `v`. Then:
+The second part of the file works without the map `e`, for the translates of a single solution.
+Let `H` be jointly `C¹`, and let `u` be `C¹` on an open set `U` containing a part `D` of the strip
+`ℝ × [0, 1]`. Let `u` solve the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` for
+`K = H_t dt` on `D`, with almost complex structures `J_t(x)` on `T_x M` independent of `s`, as on a
+cylindrical end, and let `u` have finite energy over `D`. Let `s_k` be translation parameters with
+`|s_k| → ∞` such that every window `[a + s_k, b + s_k] × [0, 1]` eventually lies in `D`. Suppose
+that at every point of the strip the derivatives of the translates `z ↦ u(z + (s_k, 0))` converge
+in the tangent bundle to the derivative of a map `v`. This is pointwise convergence of tangent
+vectors, not `C¹` convergence in a norm. Then:
 
-* the energy densities of the translates converge pointwise to that of `v`, so by Fatou's lemma
-  `v` has zero energy over the strip, the energy of `u` over the translated windows tending to
-  zero (`SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add`);
-* `v` solves the Floer equation on the strip, for the same structures `J_t`
+* the integral over the strip of the positive part of the energy density of `v`, taken through
+  `ENNReal.ofReal`, vanishes
+  (`SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add`); this uses
+  neither the Floer equation nor taming, so it does not by itself say that the signed density
+  vanishes;
+* for `J` continuous in tangent coordinates, the perturbed derivative `dv - X_K(v)` is complex
+  linear for `J_t` at every point of the strip, so `v` solves the Floer equation at the points
+  where it is differentiable
   (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add`);
-* hence, for structures tamed by `ω` along `v`, `v` does not depend on `s`
-  (`SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`), by the characterization of
-  stationary Floer cylinders by their zero energy
+* if moreover `v` is `C¹` and the structures `J_t` are tamed by `ω` along `v`, then `v` does not
+  depend on `s` (`SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`), by the
+  characterization of stationary Floer cylinders by their zero energy
   (`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`);
-* `x(t) = v(0, t)` is an orbit segment of the Hamiltonian vector field, `x'(t) = X_{H_t}(x(t))` for
-  `t ∈ [0, 1]` (`SmoothTwoForm.IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add`), and the
-  perturbed derivative `dv - X_K(v)` vanishes on the strip, so `v` is the stationary Floer cylinder
-  over `x` (`SmoothTwoForm.IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add`).
+* in that case `x(t) = v(0, t)` is an orbit segment of the Hamiltonian vector field,
+  `x'(t) = X_{H_t}(x(t))` for `t ∈ [0, 1]`
+  (`SmoothTwoForm.IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add`), and the perturbed
+  derivative `dv - X_K(v)` vanishes on the strip, so `v` is the stationary strip `(s, t) ↦ x(t)`
+  over this orbit segment
+  (`SmoothTwoForm.IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add`). No
+  periodicity `x(0) = x(1)` is asserted.
 
 On a manifold the energy density `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t})` is intrinsic, but there is
-no norm of the derivative without a choice of metric; the convergence of the derivatives is
-therefore convergence in the tangent bundle, and the structures `J_t` enter through their
-continuity in tangent coordinates (`ContinuousLinearMap.inCoordinates`). Unlike the first part,
-this needs no compact set of values and no map `e`, and it identifies the limit itself as a Floer
-cylinder of zero energy.
+no norm of the derivative without a choice of metric; the derivatives are therefore compared in the
+tangent bundle, and the structures `J_t` enter through their continuity in tangent coordinates
+(`ContinuousLinearMap.inCoordinates`). Unlike the first part, this needs no compact set of values
+and no map `e`, and it describes the limit `v` itself rather than its image under `e`.
 
 ## References
 
@@ -351,9 +359,8 @@ private theorem IsNondegenerate.continuous_hamiltonianVectorField_zero (hω : ω
       (uncurry fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) := contMDiff_const
   exact (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) hK).continuous
 
-/-- The energy of the limit of the translates over a rectangle `[a, b] × [0, 1]` vanishes, by
-Fatou's lemma: the energy densities of the translates converge pointwise to that of `v`, and the
-energy of `u` over the translated windows `[a + s_k, b + s_k] × [0, 1]` tends to zero. -/
+/-- The integral of the positive part of the energy density of the limit `v` of the translates
+over a rectangle `[a, b] × [0, 1]` vanishes. -/
 private theorem setLIntegral_Icc_prod_floerEnergyDensity_eq_zero (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
@@ -427,8 +434,9 @@ containing `D`, with finite energy over `D` for the cylindrical perturbation `K 
 is jointly `C¹`. Let `|s_k| → ∞`, with every window `[a + s_k, b + s_k] × [0, 1]` eventually in
 `D`, and suppose that at every point of the strip `ℝ × [0, 1]` the derivatives of the translates
 `w ↦ u (w + (s_k, 0))` converge in the tangent bundle to the derivative of a map `v`. Then the
-energy of `v` over the strip vanishes. No Floer equation is needed: the energy densities converge
-pointwise, and the energy of `u` over the translated windows tends to zero. -/
+integral over the strip of the positive part of the energy density of `v`, taken through
+`ENNReal.ofReal`, vanishes. Neither the Floer equation nor taming is assumed, so this does not by
+itself say that the signed density vanishes. -/
 theorem lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)
@@ -447,13 +455,15 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add (hω : 
     setLIntegral_Icc_prod_floerEnergyDensity_eq_zero hω hH hU hu hDU hfin hs hW hdu _ _).le)
     zero_le
 
-/-- **The limit of translated Floer cylinders is a Floer cylinder.** Let `u` solve the Floer
-equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on `D`, for the cylindrical perturbation
+/-- **The limit of translated Floer cylinders satisfies the Floer equation.** Let `u` solve the
+Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on `D`, for the cylindrical perturbation
 `K = H_t dt` with `H` jointly `C¹` and structures `J_t` independent of `s`. Suppose that at every
 point `z` of the strip `ℝ × [0, 1]` the translates `z + (s_k, 0)` eventually lie in `D`, the
 derivatives of the translates `w ↦ u (w + (s_k, 0))` converge in the tangent bundle to the
 derivative of a map `v`, and that `J` is continuous at `(z.2, v z)` in the tangent coordinates at
-`v z`. Then `v` solves the Floer equation on the strip. -/
+`v z`. Then the perturbed derivative `dv - X_K(v)` is complex linear for `J_t` at every point of
+the strip, so `v` solves the Floer equation at the points of the strip where it is
+differentiable. -/
 theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hfloer : ∀ z ∈ D, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
@@ -586,9 +596,10 @@ theorem IsNondegenerate.hasMFDerivAt_of_tendsto_mfderiv_comp_add (hω : ω.IsNon
     (hω.mfderiv_eq_of_tendsto_mfderiv_comp_add hH hU hu hDU hfloer hfin hs hW hv hdu hJ hJt
       (z := (0, t)) ⟨mem_univ _, ht⟩).2] at h
 
-/-- **The limit of translated Floer cylinders is a stationary Floer cylinder.** Under the
-hypotheses of `TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`, the
-perturbed derivative `dv - X_K(v)` of the limit vanishes on the strip `ℝ × [0, 1]`. -/
+/-- **The limit of translated Floer cylinders is a stationary strip.** Under the hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.eq_of_tendsto_mfderiv_comp_add`, the perturbed derivative
+`dv - X_K(v)` of the limit vanishes on the strip `ℝ × [0, 1]`, so `v` is the stationary strip over
+the Hamiltonian orbit segment `t ↦ v (0, t)`. No periodicity `v (0, 0) = v (0, 1)` is asserted. -/
 theorem IsNondegenerate.perturbedMFDeriv_eq_zero_of_tendsto_mfderiv_comp_add
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hU : IsOpen U)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hDU : D ⊆ U)

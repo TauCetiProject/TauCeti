@@ -15,17 +15,19 @@ Let maps `u i` into a manifold `M` solve the Floer equation `(du - X_K)^{0,1} = 
 `z i → z₀`, for a domain-dependent almost complex structure `J(z, x)` on `T_x M`. If their
 derivatives converge in the tangent bundle to the derivative of a map `v`, the Hamiltonian vector
 fields of `K` are continuous into the tangent bundle, and `J` is continuous in tangent coordinates,
-then `v` solves the Floer equation at `z₀`. On a manifold there is no norm on the derivatives
-without a choice of metric, so convergence is convergence in the tangent bundle, and the passage to
-the limit is read in a trivialization of the tangent bundle at the limit point.
+then the perturbed derivative `dv(z₀) - X_K(v z₀)` is complex linear for `J(z₀, v z₀)`; when `v` is
+differentiable at `z₀`, this says that `v` solves the Floer equation there. On a manifold there is
+no norm on the derivatives without a choice of metric, so convergence is convergence in the tangent
+bundle, and the passage to the limit is read in a trivialization of the tangent bundle at the limit
+point.
 
 ## Main results
 
 * `TauCeti.isComplexLinearMap_of_tendsto_tangentBundle`: tangent-bundle limits of complex-linear
   maps are complex linear, for structures continuous in tangent coordinates.
-* `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto`: a map whose derivative is the
-  limit in the tangent bundle of derivatives of Floer solutions is a Floer solution, for
-  structures continuous in tangent coordinates.
+* `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto`: if the derivative of a map is
+  the limit in the tangent bundle of derivatives of Floer solutions, its perturbed derivative is
+  complex linear, for structures continuous in tangent coordinates.
 -/
 
 public section
@@ -87,12 +89,13 @@ theorem _root_.TauCeti.isComplexLinearMap_of_tendsto_tangentBundle [FiniteDimens
       ContinuousLinearMap.comp_apply, Bundle.Trivialization.symmL_continuousLinearMapAt _ hb, hi]
     rfl
 
-/-- **Limits of Floer solutions are Floer solutions.** Let maps `u i` solve the Floer equation
-`(du - X_K)^{0,1} = 0` at points `z i → z₀`, for a domain-dependent structure `J(z, x)` on
+/-- **Limits of Floer solutions satisfy the Floer equation.** Let maps `u i` solve the Floer
+equation `(du - X_K)^{0,1} = 0` at points `z i → z₀`, for a domain-dependent structure `J(z, x)` on
 `T_x M`, and let their derivatives at `z i` converge in the tangent bundle to the derivative of a
 map `v` at `z₀`. If the Hamiltonian vector fields of `K` are continuous at `(z₀, v z₀)` as maps
 into the tangent bundle, and `J` is continuous at `(z₀, v z₀)` in the tangent coordinates at
-`v z₀`, then `v` solves the Floer equation at `z₀`. -/
+`v z₀`, then the perturbed derivative `dv(z₀) - X_K(v z₀)` is complex linear for `J(z₀, v z₀)`; when
+`v` is differentiable at `z₀`, this says that `v` solves the Floer equation there. -/
 theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto (ω : SmoothTwoForm I M)
     [FiniteDimensional ℝ E] {Ks Kt : ℝ × ℝ → M → ℝ} {ι : Type*} {l : Filter ι} [l.NeBot]
     {u : ι → ℝ × ℝ → M} {z : ι → ℝ × ℝ} {z₀ : ℝ × ℝ} {v : ℝ × ℝ → M}
