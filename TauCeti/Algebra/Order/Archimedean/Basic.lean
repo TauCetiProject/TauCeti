@@ -24,6 +24,10 @@ stays below `1`. Moser's iteration uses it to pick the exponents `p₀ χ^k` alo
 Hölder inequality is iterated. It also records that an additive endomorphism of `ℝ` preserving
 positivity is linear.
 
+Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
+an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
+a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
+
 ## Main results
 
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
@@ -33,6 +37,8 @@ positivity is linear.
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `AddMonoidHom.real_eq_mul_one`: an additive map `ℝ →+ ℝ` sending positive reals to positive
   reals is linear (`f r = r * f 1`).
+* `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
+  `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
 -/
 
 public section
@@ -75,6 +81,20 @@ theorem exists_nat_ge_and_div_le {δ : K} (hδ : 0 < δ) (n₀ : ℕ) :
         one_div_le_one_div_of_le (Nat.cast_pos.2 hNpos) (le_add_of_nonneg_right zero_le_one)
     _ ≤ 2 * ((n₀ + 1 : ℕ) : K) / N := by gcongr; norm_cast; omega
     _ ≤ δ := h2.le
+
+section Field
+
+variable {L : Type*} [Field L] [LinearOrder L] [IsStrictOrderedRing L] [Archimedean L]
+
+/-- A dyadic scale `2ᵏ` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`, for `ρ, n > 0`. -/
+theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0 < n) :
+    ∃ k : ℤ, 4 * 2 ^ k * n ≤ ρ ∧ ρ / 4 < 2 * 2 ^ k * n := by
+  obtain ⟨k, hk1, hk2⟩ := exists_mem_Ico_zpow (x := ρ / (4 * n)) (by positivity) one_lt_two
+  rw [le_div_iff₀ (by positivity)] at hk1
+  rw [div_lt_iff₀ (by positivity), zpow_add_one₀ two_ne_zero] at hk2
+  exact ⟨k, by linarith, by linarith⟩
+
+end Field
 
 end TauCeti
 

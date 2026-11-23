@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Module.PseudoCoherent.ChainComplex
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
+
 /-!
 # Pseudo-coherent modules on a scheme
 
@@ -38,6 +40,9 @@ sheaves on `Spec R`.
 
 * `AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution.of_quasiIso_map`: exact functors
   carry resolutions to finite free resolutions when they send the terms to finite free modules.
+* `AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution.restrict_of_comp`: finite free
+  resolutions along an open immersion restrict along open immersions factoring through it; in
+  particular (`restrict_of_le`) finite free resolutions on an open restrict to smaller opens.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_iff_exists_isOpenImmersion`: the local
   resolutions may be taken on arbitrary open immersions into `X`.
 * `AlgebraicGeometry.Scheme.Modules.IsPseudoCoherent.restrict`: pseudo-coherence is preserved by
@@ -46,6 +51,8 @@ sheaves on `Spec R`.
   local on `X`.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_free`: free modules of finite rank are
   pseudo-coherent.
+* `AlgebraicGeometry.Scheme.Modules.IsPseudoCoherent.of_isFiniteLocallyFree`: locally free
+  modules of finite type are pseudo-coherent.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_tilde`: the sheaf `M~` on `Spec R`
   associated with a pseudo-coherent `R`-module `M` is pseudo-coherent.
 * `AlgebraicGeometry.Scheme.Modules.hasFiniteFreeResolution_of_isPseudoCoherentOver_moduleSpecΓ`:
@@ -131,6 +138,21 @@ theorem restrict (h : F.HasFiniteFreeResolution) (f : Y ⟶ X) [IsOpenImmersion 
   obtain ⟨ι, hι, ⟨e⟩⟩ := hP n
   exact ⟨ι, hι, ⟨(restrictFunctor f).mapIso e ≪≫ restrictFreeIso f ι⟩⟩
 
+/-- A finite free resolution of the restriction of `F` along an open immersion `k` gives one of
+its restriction along every open immersion `k'` that factors as `f ≫ k` through an open
+immersion `f`. -/
+theorem restrict_of_comp {Z : Scheme.{u}} {k : Y ⟶ X} {k' : Z ⟶ X} [IsOpenImmersion k]
+    [IsOpenImmersion k'] (h : (F.restrict k).HasFiniteFreeResolution) (f : Z ⟶ Y)
+    [IsOpenImmersion f] (hfk : f ≫ k = k') : (F.restrict k').HasFiniteFreeResolution :=
+  (h.restrict f).of_iso
+    (((restrictFunctorComp f k).app F).symm ≪≫ (restrictFunctorCongr hfk).app F)
+
+/-- A finite free resolution on an open `V` restricts to a finite free resolution on every
+smaller open `W`. -/
+theorem restrict_of_le {V W : X.Opens} (h : (F.restrict V.ι).HasFiniteFreeResolution)
+    (hWV : W ≤ V) : (F.restrict W.ι).HasFiniteFreeResolution :=
+  h.restrict_of_comp (X.homOfLE hWV) (X.homOfLE_ι hWV)
+
 end HasFiniteFreeResolution
 
 /-- A free module of finite rank has a finite free resolution, concentrated in degree zero. -/
@@ -160,9 +182,7 @@ theorem isPseudoCoherent_iff_exists_isOpenImmersion :
     exact ⟨U, U.ι, inferInstance, by rwa [Scheme.Opens.opensRange_ι], hU⟩
   · obtain ⟨V, g, _, hx, hg⟩ := h x
     -- Transport the resolution along the isomorphism of `V` with the open image of `g`.
-    exact ⟨g.opensRange, hx, (hg.restrict g.isoOpensRange.inv).of_iso
-      (((restrictFunctorComp g.isoOpensRange.inv g).app F).symm ≪≫
-        (restrictFunctorCongr g.isoOpensRange_inv_comp).app F)⟩
+    exact ⟨g.opensRange, hx, hg.restrict_of_comp g.isoOpensRange.inv g.isoOpensRange_inv_comp⟩
 
 namespace IsPseudoCoherent
 
@@ -176,10 +196,8 @@ theorem restrict (h : F.IsPseudoCoherent) (f : Y ⟶ X) [IsOpenImmersion f] :
   intro y
   obtain ⟨U, hU, hres⟩ := h (f y)
   -- Both restrictions of `F` to `f ⁻¹ᵁ U` factor through `U`, along `f ∣_ U`.
-  exact ⟨f ⁻¹ᵁ U, hU, (hres.restrict (f ∣_ U)).of_iso
-    (((restrictFunctorComp (f ∣_ U) U.ι).app F).symm ≪≫
-      (restrictFunctorCongr (morphismRestrict_ι f U)).app F ≪≫
-      (restrictFunctorComp (f ⁻¹ᵁ U).ι f).app F)⟩
+  exact ⟨f ⁻¹ᵁ U, hU, (hres.restrict_of_comp (f ∣_ U) (morphismRestrict_ι f U)).of_iso
+    ((restrictFunctorComp (f ⁻¹ᵁ U).ι f).app F)⟩
 
 end IsPseudoCoherent
 
@@ -208,6 +226,21 @@ theorem isPseudoCoherent_free (ι : Type u) [Finite ι] :
 /-- A zero module is pseudo-coherent. -/
 theorem IsPseudoCoherent.of_isZero (hF : IsZero F) : F.IsPseudoCoherent :=
   (HasFiniteFreeResolution.of_isZero hF).isPseudoCoherent
+
+/-- Every locally free `𝒪_X`-module of finite type is pseudo-coherent. -/
+theorem IsPseudoCoherent.of_isFiniteLocallyFree (F : X.Modules) [F.IsLocallyFree]
+    [F.IsFiniteType] : F.IsPseudoCoherent := by
+  obtain ⟨q, hq, hq'⟩ :=
+    SheafOfModules.IsLocallyFree.exists_isLocallyFreeData_isFiniteType (R := X.sheaf) F
+  refine isPseudoCoherent_iff.mpr fun x ↦ ?_
+  have hx : x ∈ ⨆ i, q.X i := by
+    rw [((Opens.coversTop_iff _ q.X).mp q.coversTop).iSup_eq_top]
+    trivial
+  obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp hx
+  have := hq.isIso i
+  have : Finite (q.generators i).I := (hq'.isFiniteType i).finite
+  exact ⟨q.X i, hxi, (hasFiniteFreeResolution_free (q.generators i).I).of_iso
+    (restrictIsoFreeOfOverIsoFree F (q.X i) (asIso (q.generators i).π).symm).symm⟩
 
 section Tilde
 

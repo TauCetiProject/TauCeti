@@ -28,8 +28,8 @@ operators. In particular `f(T)` commutes with every endomorphism commuting with 
 No continuity of `f` is required, and the construction works uniformly over `RCLike` scalars by
 finite sums, without any `C⋆`-algebra structure. It agrees with Mathlib's continuous functional
 calculus of the corresponding bounded operator: see
-`LinearMap.IsSymmetric.toContinuousLinearMap_cfc`. A function that is nonnegative at the
-eigenvalues of `T` gives a positive operator; applied to `Real.sqrt` on a positive operator, this
+`LinearMap.IsSymmetric.toContinuousLinearMap_cfc`. The operator `f(T)` is positive exactly when
+`f` is nonnegative at the eigenvalues of `T`; applied to `Real.sqrt` on a positive operator, this
 yields the positive square root `LinearMap.IsPositive.sqrt`.
 
 The name follows `Matrix.IsHermitian.cfc`, Mathlib's eigenbasis construction of the functional
@@ -43,10 +43,11 @@ calculus of a Hermitian matrix.
   the eigenvectors of `T` with eigenvalue `λ`.
 * `LinearMap.IsSymmetric.cfc_eq_sum`: the spectral sum formula over any ordered eigenbasis.
 * `LinearMap.IsSymmetric.isSymmetric_cfc`, `LinearMap.IsSymmetric.cfc_congr`,
-  `LinearMap.IsSymmetric.cfc_id`, `LinearMap.IsSymmetric.cfc_mul`,
-  `LinearMap.IsSymmetric.cfc_comp`: the algebraic laws of the calculus.
-* `LinearMap.IsSymmetric.isPositive_cfc`: `f(T)` is positive when `f` is nonnegative at the
-  eigenvalues of `T`.
+  `LinearMap.IsSymmetric.cfc_id`, `LinearMap.IsSymmetric.cfc_add`,
+  `LinearMap.IsSymmetric.cfc_mul`, `LinearMap.IsSymmetric.cfc_comp`: the algebraic laws of the
+  calculus.
+* `LinearMap.IsSymmetric.isPositive_cfc_iff`: `f(T)` is positive if and only if `f` is
+  nonnegative at the eigenvalues of `T`.
 * `LinearMap.IsSymmetric.comp_cfc_eq_cfc_comp` and `LinearMap.IsSymmetric.commute_cfc`:
   intertwiners of symmetric operators intertwine their functional calculi; in particular the
   commutant of `T` commutes with `f(T)`.
@@ -185,16 +186,13 @@ theorem cfc_one (hT : T.IsSymmetric) : hT.cfc 1 = 1 :=
 /-- The functional calculus is additive in the function. -/
 theorem cfc_add (hT : T.IsSymmetric) (f g : ℝ → ℝ) : hT.cfc (f + g) = hT.cfc f + hT.cfc g :=
   ((hT.eq_cfc_iff _).mpr fun _ _ hx ↦ by
-    rw [LinearMap.add_apply, hT.cfc_apply_of_apply_eq_smul f hx,
-      hT.cfc_apply_of_apply_eq_smul g hx, Pi.add_apply, RCLike.ofReal_add, add_smul]).symm
+    simp [hT.cfc_apply_of_apply_eq_smul _ hx, add_smul]).symm
 
 /-- **Product law.** The functional calculus is multiplicative in the function:
 `(fg)(T) = f(T)g(T)`. -/
 theorem cfc_mul (hT : T.IsSymmetric) (f g : ℝ → ℝ) : hT.cfc (f * g) = hT.cfc f * hT.cfc g :=
   ((hT.eq_cfc_iff _).mpr fun _ _ hx ↦ by
-    rw [mul_apply_eq_comp, hT.cfc_apply_of_apply_eq_smul g hx, map_smul,
-      hT.cfc_apply_of_apply_eq_smul f hx, smul_smul, Pi.mul_apply, RCLike.ofReal_mul,
-      mul_comm]).symm
+    simp [hT.cfc_apply_of_apply_eq_smul _ hx, smul_smul, mul_comm]).symm
 
 /-- Composition of functions corresponds to iterating the functional calculus:
 `(g ∘ f)(T) = g(f(T))`. -/
@@ -254,9 +252,15 @@ theorem norm_cfc_apply_sq_add_norm_cfc_apply_sq (hT : T.IsSymmetric) {f g : ℝ 
   simp only [hsq, ← map_add, ← inner_add_right, ← LinearMap.add_apply, h1, one_apply_eq_self,
     @norm_sq_eq_re_inner 𝕜 _ _ _ _ x]
 
-/-- **Positivity.** If `f` is nonnegative at every eigenvalue of `T`, then `f(T)` is positive. -/
-theorem isPositive_cfc (hT : T.IsSymmetric) {f : ℝ → ℝ}
-    (hf : ∀ μ : ℝ, HasEigenvalue T (μ : 𝕜) → 0 ≤ f μ) : (hT.cfc f).IsPositive := by
+/-- **Positivity.** `f(T)` is positive if and only if `f` is nonnegative at every eigenvalue
+of `T`. -/
+theorem isPositive_cfc_iff (hT : T.IsSymmetric) {f : ℝ → ℝ} :
+    (hT.cfc f).IsPositive ↔ ∀ μ : ℝ, HasEigenvalue T (μ : 𝕜) → 0 ≤ f μ := by
+  refine ⟨fun hf μ hμ ↦ ?_, fun hf ↦ ?_⟩
+  · -- A nonzero eigenvector `x` of `T` for `μ` witnesses `f μ` as an eigenvalue of `f(T)`.
+    obtain ⟨x, hx, hx0⟩ := hμ.exists_hasEigenvector
+    exact eigenvalue_nonneg_of_nonneg (hasEigenvalue_of_hasEigenvector ⟨mem_eigenspace_iff.mpr
+      (hT.cfc_apply_of_apply_eq_smul f (mem_eigenspace_iff.mp hx)), hx0⟩) hf.re_inner_nonneg_right
   -- `f(T) = R * R` for the symmetric operator `R = (√f)(T)`.
   have hR : hT.cfc f = hT.cfc (fun μ ↦ √(f μ)) * hT.cfc (fun μ ↦ √(f μ)) := by
     rw [← cfc_mul]

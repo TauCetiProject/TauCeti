@@ -103,7 +103,7 @@ theorem isPseudoholomorphic_coe_ofBorderedHolomorphic :
       ((↑) : ClosedUpperHalfPlane → ℂ) := by
   refine isPseudoholomorphic_iff.2 fun z ↦ ?_
   refine isPseudoholomorphicAt_of_hasMFDerivAt (u' := ContinuousLinearMap.id ℝ ℂ)
-    ⟨continuous_subtype_val.continuousAt, ?_⟩ fun w ↦
+    ⟨continuous_subtypeVal.continuousAt, ?_⟩ fun w ↦
       (ofBorderedHolomorphic_apply z w).trans (ofComplexManifold_apply (E := ℂ) (z : ℂ) w).symm
   -- In the self charts, the inclusion reads as the identity on the closed upper half-plane.
   refine (hasFDerivWithinAt_id (𝕜 := ℝ) _ _).congr (fun w hw ↦ ?_) ?_

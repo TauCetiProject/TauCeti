@@ -105,7 +105,7 @@ theorem fullCycleType_galActionHom_restrict_eq_factorDegrees (hf : f.Monic)
   refine FiniteField.fullCycleType_eq_map_natDegree_normalizedFactors (𝓞 M ⧸ Q) hsq _ fun z => ?_
   obtain ⟨x, rfl⟩ := e.surjective z
   have hx : IsIntegral ℤ (x : M) := ⟨f, hf, by
-    have h := aeval_eq_zero_of_mem_rootSet x.2
+    have h := aeval_eq_zero_of_mem_rootSet x.property
     rwa [aeval_def, eval₂_map,
       RingHom.ext_int ((algebraMap ℚ M).comp (Int.castRingHom ℚ)) (algebraMap ℤ M)] at h⟩
   obtain ⟨y, hy⟩ : ∃ y : 𝓞 M, algebraMap (𝓞 M) M y = x :=

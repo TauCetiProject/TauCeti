@@ -25,7 +25,12 @@ In a star ring, taking adjoints shows that an element anticommuting with a self-
 adjoint anticommuting with `γ`, as needed for gradings. Similarly, taking stars transposes
 one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x` for self-adjoint
 `x`, and `q * u = 0` becomes `star u * q = 0`. For a self-adjoint `p`, the
-element `2 p - 1` is again self-adjoint.
+element `2 p - 1` is again self-adjoint, and its commutator `ξ p - p ξ` with a skew-adjoint `ξ`
+is self-adjoint. For a self-adjoint `x` in an additive group with a star-additive involution,
+`Fact (IsSelfAdjoint (-x))` is packaged from `Fact (IsSelfAdjoint x)`.
+
+Preservation of self-adjoint squares by an additive homomorphism also implies preservation
+of anticommutators on the self-adjoint part when the codomain has cancellative addition.
 
 For a real-linear functional `t : E →ₗ[ℝ] ℝ`, precomposing with `selfAdjointPart ℝ` yields its
 star-symmetrization `x ↦ (t x + t (star x)) / 2`, which preserves cyclicity and strict positivity on
@@ -45,6 +50,12 @@ star-symmetrization `x ↦ (t x + t (star x)) / 2`, which preserves cyclicity an
 * `LinearMap.comp_selfAdjointPart_apply`, `LinearMap.comp_selfAdjointPart_star`,
   `LinearMap.comp_selfAdjointPart_cyclic`, `LinearMap.comp_selfAdjointPart_mul_star_pos`:
   evaluation, star-invariance, cyclicity, and positivity of star-symmetrized real linear maps.
+* `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
+  `ξ` with a self-adjoint `H` is self-adjoint.
+* `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
+* `TauCeti.isSelfAdjoint_neg_fact`: packages `Fact (IsSelfAdjoint (-x))` from
+  `Fact (IsSelfAdjoint x)`.
+* `AddMonoidHom.map_mul_add_mul_of_isSelfAdjoint`: polarization of the self-adjoint square law.
 -/
 
 public section
@@ -143,3 +154,50 @@ theorem comp_selfAdjointPart_mul_star_pos {E : Type*} [NonUnitalNonAssocRing E] 
   have h := hpos x hx; simp only [comp_selfAdjointPart_apply, star_mul, star_star]; linarith
 
 end LinearMap
+
+/-- The commutator `ξ H - H ξ` of a skew-adjoint `ξ` with a self-adjoint `H` is self-adjoint. -/
+theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
+    {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
+  simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]
+
+/-- Two self-adjoint elements agreeing in range with an element `e` are equal.
+For idempotents in a ring, the equations express equality of their principal right ideals. -/
+theorem IsSelfAdjoint.eq_of_mul_eq_right {A : Type*} [Semigroup A] [StarMul A] {e p q : A}
+    (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q)
+    (hep : e * p = p) (hpe : p * e = e) (heq : e * q = q) (hqe : q * e = e) :
+    p = q := by
+  have hpq : p * q = q := by rw [← heq, ← mul_assoc, hpe, heq]
+  have hqp : q * p = p := by rw [← hep, ← mul_assoc, hqe, hep]
+  have hpq' : q * p = q := by
+    simpa only [star_mul, hp.star_eq, hq.star_eq] using congrArg star hpq
+  exact hqp.symm.trans hpq'
+
+namespace TauCeti
+
+/-- Package `IsSelfAdjoint (-x)` as a `Fact` from `Fact (IsSelfAdjoint x)`. Kept as a theorem
+rather than a global instance (for use via `have` or `attribute [local instance]`) so
+`Fact (IsSelfAdjoint ?x)` cannot loop on `-?y`. -/
+theorem isSelfAdjoint_neg_fact {R : Type*} [AddGroup R] [StarAddMonoid R] (x : R)
+    [h : Fact (IsSelfAdjoint x)] : Fact (IsSelfAdjoint (-x)) :=
+  ⟨h.out.neg⟩
+
+end TauCeti
+
+namespace AddMonoidHom
+
+/-- An additive homomorphism preserving self-adjoint squares preserves anticommutators of
+self-adjoint elements when addition in the codomain is cancellative. -/
+theorem map_mul_add_mul_of_isSelfAdjoint
+    {A B : Type*} [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
+    [NonUnitalNonAssocSemiring B] [IsCancelAdd B] (f : A →+ B)
+    (hf : ∀ x, IsSelfAdjoint x → f (x * x) = f x * f x)
+    {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) :
+    f (x * y + y * x) = f x * f y + f y * f x := by
+  have h := hf (x + y) (hx.add hy)
+  simp only [add_mul, mul_add, map_add, hf x hx, hf y hy] at h
+  rw [map_add]
+  -- Collect the two common square terms on the left before cancelling them.
+  apply add_left_cancel (a := f x * f x + f y * f y)
+  convert h using 1 <;> ac_rfl
+
+end AddMonoidHom
