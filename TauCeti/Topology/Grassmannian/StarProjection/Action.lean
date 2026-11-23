@@ -7,15 +7,20 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Topology.Algebra.Module.Trace
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
+import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Symmetries of the projection-form Grassmannian
 
-This file collects the symmetry and coordinate statements about the Grassmannian
-`G(E, k) = Euclidean.grassmannian E k` of a real inner product space, in its projection form,
-that the Varifolds roadmap (`TauCetiRoadmap/Varifolds/README.md`, 1.1) records next to its
-definition.
+This file collects symmetry, continuity and coordinate statements about the Grassmannian
+`G(E, k) = Euclidean.grassmannian E k` of a real inner product space, in its projection form.
+They are what a theory of varifolds, measures on `E × G(E, k)`, needs from `G(E, k)`: the
+orthogonal group moves varifolds by acting on both factors, the tangential trace `tr (P ∘ A)` is
+the integrand of the first variation, so its continuity makes the first variation a continuous
+functional of the varifold, and orthonormal coordinates may be changed without changing the
+topology of `G(E, k)`.
 
 * The orthogonal group of `E`, as the unitary group `unitary (E →L[ℝ] E)`, acts on `G(E, k)` by
   `u • P = u P u*`, and the action is jointly continuous
@@ -23,12 +28,12 @@ definition.
   `Euclidean.grassmannian.instContinuousSMulUnitary`). The plane of `u • P` is `u (range P)`.
 * For an endomorphism `A` of `E`, the tangential trace `P ↦ tr (P ∘ A)` is
   continuous on `G(E, k)` (`Euclidean.grassmannian.continuous_trace_comp`).
-* For `1 ≤ k ≤ dim F`, a subspace `S` of `F` contains the plane of every point of `G(F, k)` only
-  when `S = F` (`Euclidean.grassmannian.forall_range_le_iff_eq_top`). For a linear isometry
-  `U : E → F`, the points of `G(F, k)` whose plane lies in `range U` are therefore all of
-  `G(F, k)` exactly when `U` is surjective
-  (`LinearIsometry.forall_range_le_range_iff_surjective`). For `k = 0` this fails: `G(F, 0)` is
-  `{0}`, whose plane lies in every subspace.
+* For `1 ≤ k ≤ rank F` (the rank may be infinite), a subspace `S` of `F` contains the plane of
+  every point of `G(F, k)` only when `S = F`
+  (`Euclidean.grassmannian.forall_range_le_iff_eq_top`). For a linear isometry `U : E → F`, the
+  points of `G(F, k)` whose plane lies in `range U` are therefore all of `G(F, k)` exactly when
+  `U` is surjective (`LinearIsometry.forall_range_le_range_iff_surjective`). For `k = 0` this
+  fails: `G(F, 0)` is `{0}`, whose plane lies in every subspace.
 * Changing the coordinates `e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N)` to `O ∘ e`, for an orthogonal
   map `O` of `EuclideanSpace ℝ (Fin N)`, precomposes the comparison homeomorphism
   `Euclidean.grassmannian.finiteGrassmannianHomeomorph` with `S ↦ O⁻¹(S)`
@@ -88,16 +93,16 @@ theorem range_coe_smul (u : unitary (E →L[ℝ] E)) (P : grassmannian E k) :
   rw [coe_smul, ← Unitary.conjStarAlgAut_apply (S := ℝ),
     ← Unitary.conjStarAlgEquiv_unitaryLinearIsometryEquiv,
     LinearIsometryEquiv.range_conjStarAlgEquiv]
-  rfl
+  exact congrArg (Submodule.map · _) <| LinearMap.ext fun x ↦
+    DFunLike.congr_fun (Unitary.coe_linearIsometryEquiv_apply u) x
 
 /-- The orthogonal group of `E` acts continuously on `G(E, k)`: the conjugation
 `(u, P) ↦ u P u*` is jointly continuous. -/
 instance instContinuousSMulUnitary :
     ContinuousSMul (unitary (E →L[ℝ] E)) (grassmannian E k) where
   continuous_smul := by
-    refine Continuous.subtype_mk ?_ _
-    change Continuous fun p : unitary (E →L[ℝ] E) × grassmannian E k ↦
-      (p.1 : E →L[ℝ] E) * p.2 * star (p.1 : E →L[ℝ] E)
+    refine continuous_induced_rng.2 ?_
+    simp only [Function.comp_def, coe_smul]
     fun_prop
 
 end Unitary
@@ -111,51 +116,25 @@ theorem continuous_trace_comp [CompleteSpace E] (A : E →L[ℝ] E) :
   by_cases hE : FiniteDimensional ℝ E
   · exact ((TauCeti.traceCLM ℝ E).continuous.comp
       (continuous_subtypeVal.clm_comp continuous_const)).congr fun _ ↦ TauCeti.traceCLM_apply _
-  · have h : LinearMap.trace ℝ E = 0 := by
-      rw [LinearMap.trace, dite_eq_right]
-      rintro ⟨s, ⟨b⟩⟩
-      exact hE (Module.Finite.of_basis b)
-    simpa only [h, LinearMap.zero_apply] using continuous_const
+  · simpa only [TauCeti.LinearMap.trace_eq_zero_of_not_finite hE, LinearMap.zero_apply] using
+      continuous_const
 
 section RangeLe
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
-/-- In a finite-dimensional space, a nonzero vector `v` lies in a `k`-dimensional subspace for
-each `1 ≤ k ≤ dim F`. -/
-private theorem exists_finrank_eq_and_mem [FiniteDimensional ℝ F] {v : F} (hv : v ≠ 0) (hk : k ≠ 0)
-    (hkF : k ≤ finrank ℝ F) : ∃ S : Submodule ℝ F, finrank ℝ S = k ∧ v ∈ S := by
-  set W := (ℝ ∙ v)ᗮ
-  have hW : finrank ℝ W + 1 = finrank ℝ F := by
-    rw [← (ℝ ∙ v).finrank_add_finrank_orthogonal, finrank_span_singleton hv, add_comm]
-  have hle : k - 1 ≤ finrank ℝ W := by omega
-  let b := Module.finBasis ℝ W
-  let f : Fin (k - 1) → F := fun i ↦ b (Fin.castLE hle i)
-  have hf : LinearIndependent ℝ f :=
-    (b.linearIndependent.comp _ (Fin.castLE_injective hle)).map' W.subtype W.ker_subtype
-  set T := Submodule.span ℝ (Set.range f)
-  have hT : finrank ℝ T = k - 1 := by
-    rw [finrank_span_eq_card hf, Fintype.card_fin]
-  have hTW : T ≤ W := Submodule.span_le.2 <| Set.range_subset_iff.2 fun i ↦ (b _).property
-  have hinf : (ℝ ∙ v) ⊓ T = ⊥ :=
-    eq_bot_iff.2 <| (inf_le_inf_left _ hTW).trans (ℝ ∙ v).inf_orthogonal_eq_bot.le
-  refine ⟨(ℝ ∙ v) ⊔ T, ?_, Submodule.mem_sup_left (Submodule.mem_span_singleton_self v)⟩
-  have h := Submodule.finrank_sup_add_finrank_inf_eq (ℝ ∙ v) T
-  rw [hinf, finrank_bot, finrank_span_singleton hv, hT] at h
-  omega
-
-/-- For `1 ≤ k ≤ dim F`, a subspace `S` of `F` contains the plane of every point of `G(F, k)`
-only when `S` is all of `F`. -/
+/-- For `1 ≤ k ≤ rank F`, a subspace `S` of `F` contains the plane of every point of `G(F, k)`
+only when `S` is all of `F`. The rank of `F` may be infinite. -/
 theorem forall_range_le_iff_eq_top [CompleteSpace F] {S : Submodule ℝ F} (hk : k ≠ 0)
-    (hkF : k ≤ finrank ℝ F) :
+    (hkF : (k : Cardinal) ≤ Module.rank ℝ F) :
     (∀ Q : grassmannian F k, (Q : F →L[ℝ] F).range ≤ S) ↔ S = ⊤ := by
   refine ⟨fun h ↦ ?_, fun h _ ↦ h ▸ le_top⟩
-  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
   by_contra hS
   obtain ⟨v, -, hvS⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.2 hS)
   have hv : v ≠ 0 := fun hv ↦ hvS (hv ▸ S.zero_mem)
-  obtain ⟨T, hT, hvT⟩ := exists_finrank_eq_and_mem hv hk hkF
-  refine hvS <| h ⟨T.starProjection, starProjection_mem hT⟩ ?_
+  obtain ⟨T, hvT, hT⟩ := Submodule.exists_mem_rank_eq hv hk hkF
+  have : FiniteDimensional ℝ T := Module.finite_of_rank_eq_nat hT
+  refine hvS <| h ⟨T.starProjection, starProjection_mem (finrank_eq_of_rank_eq hT)⟩ ?_
   rwa [Submodule.range_starProjection]
 
 end RangeLe
@@ -176,8 +155,7 @@ theorem toEuclidean_finiteGrassmannianHomeomorph_trans_symm
       ((finiteGrassmannianHomeomorph k e).symm P).toEuclidean.map
         (O.toLinearEquiv : EuclideanSpace ℝ (Fin N) →ₗ[ℝ] EuclideanSpace ℝ (Fin N)) := by
   rw [toEuclidean_finiteGrassmannianHomeomorph_symm, toEuclidean_finiteGrassmannianHomeomorph_symm,
-    ← Submodule.map_comp]
-  rfl
+    ← Submodule.map_comp, LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.coe_trans]
 
 /-- Changing the coordinates `e` to `O ∘ e`, for a linear isometry `O` of
 `EuclideanSpace ℝ (Fin N)`, precomposes `finiteGrassmannianHomeomorph k e` with `S ↦ O⁻¹(S)`,
@@ -190,15 +168,10 @@ theorem finiteGrassmannianHomeomorph_trans_apply (e : E ≃ₗᵢ[ℝ] Euclidean
       (O.symm.toLinearEquiv : EuclideanSpace ℝ (Fin N) →ₗ[ℝ] EuclideanSpace ℝ (Fin N))) :
     finiteGrassmannianHomeomorph k (e.trans O) S = finiteGrassmannianHomeomorph k e T := by
   set X := finiteGrassmannianHomeomorph k (e.trans O) S
-  have hS : S.toEuclidean =
-      (X : E →L[ℝ] E).range.map ((e.trans O).toLinearEquiv : E →ₗ[ℝ] EuclideanSpace ℝ (Fin N)) := by
-    rw [← toEuclidean_finiteGrassmannianHomeomorph_symm, Homeomorph.symm_apply_apply]
   rw [← (finiteGrassmannianHomeomorph k e).apply_symm_apply X]
   refine congrArg _ (finiteGrassmannian.toEuclidean_injective ?_)
-  rw [h, hS, toEuclidean_finiteGrassmannianHomeomorph_symm, ← Submodule.map_comp]
-  congr 1
-  ext x
-  simp
+  rw [eq_comm, h, LinearIsometryEquiv.toLinearEquiv_symm, Submodule.map_symm_eq_iff,
+    ← toEuclidean_finiteGrassmannianHomeomorph_trans_symm, Homeomorph.symm_apply_apply]
 
 end ChangeOfCoordinates
 
@@ -213,13 +186,13 @@ open Euclidean
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F] {k : ℕ}
 
-/-- For `1 ≤ k ≤ dim F` and a linear isometry `U : E → F`, the plane of every point of
-`G(F, k)` lies in `range U` exactly when `U` is surjective. -/
+/-- For `1 ≤ k ≤ rank F` and a linear isometry `U : E → F`, the plane of every point of
+`G(F, k)` lies in `range U` exactly when `U` is surjective. The rank of `F` may be infinite. -/
 theorem forall_range_le_range_iff_surjective (U : E →ₗᵢ[ℝ] F) (hk : k ≠ 0)
-    (hkF : k ≤ finrank ℝ F) :
+    (hkF : (k : Cardinal) ≤ Module.rank ℝ F) :
     (∀ Q : grassmannian F k, (Q : F →L[ℝ] F).range ≤ LinearMap.range U.toLinearMap) ↔
       Function.Surjective U := by
-  rw [grassmannian.forall_range_le_iff_eq_top hk hkF, LinearMap.range_eq_top]
-  rfl
+  rw [grassmannian.forall_range_le_iff_eq_top hk hkF, LinearMap.range_eq_top,
+    LinearIsometry.coe_toLinearMap]
 
 end LinearIsometry

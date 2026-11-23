@@ -22,7 +22,8 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 codimension (the rank of the quotient) of a preimage is at most that of the submodule, and the
 codimension of an intersection is at most the sum of the codimensions. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
-of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
+of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, a nonzero
+vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
 finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`.
@@ -163,6 +164,27 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
   refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
     span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
+
+/-- A nonzero vector `v` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`: the
+span of `v` and `k - 1` linearly independent vectors of a complement of `𝕜 ∙ v`. The rank of `E`
+may be an infinite cardinal. -/
+theorem exists_mem_rank_eq {v : E} (hv : v ≠ 0) {k : ℕ} (hk : k ≠ 0)
+    (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
+    ∃ N : Submodule 𝕜 E, v ∈ N ∧ Module.rank 𝕜 N = k := by
+  have hv1 : Module.rank 𝕜 (𝕜 ∙ v) = 1 := by
+    rw [← Module.finrank_eq_rank, finrank_span_singleton hv, Nat.cast_one]
+  obtain ⟨C, hC⟩ := (𝕜 ∙ v).exists_isCompl
+  have hE : Module.rank 𝕜 C + 1 = Module.rank 𝕜 E := by
+    rw [← (quotientEquivOfIsCompl _ _ hC).rank_eq, ← hv1, rank_quotient_add_rank]
+  obtain ⟨N, hNC, hN⟩ := exists_le_rank_eq (M := C) (k := k - 1) <| by
+    rw [← Cardinal.add_one_le_add_one_iff, hE]
+    exact le_of_eq_of_le (by norm_cast; omega) hkE
+  refine ⟨(𝕜 ∙ v) ⊔ N, mem_sup_left (mem_span_singleton_self v), ?_⟩
+  have h := rank_sup_add_rank_inf_eq (𝕜 ∙ v) N
+  rw [(hC.disjoint.mono_right hNC).eq_bot, rank_bot, add_zero, hv1, hN] at h
+  rw [h]
+  norm_cast
+  omega
 
 /-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
 `dim G + 1`, `T` and the kernel of a surjection `π` span the space, and some `v ∈ T` with
