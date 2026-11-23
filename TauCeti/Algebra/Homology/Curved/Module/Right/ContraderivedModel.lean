@@ -99,6 +99,17 @@ def CountableProjectiveCondition : Prop :=
       GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
     (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d
 
+variable (𝒜) in
+/-- Positselski's countable-product projective-dimension condition `(**)` holds if and only if
+there exists a uniform bound `d : ℕ` on the projective dimension of every countable product of
+projective graded right `A`-modules. -/
+theorem countableProjectiveCondition_iff :
+    CountableProjectiveCondition 𝒜 ↔
+      ∃ d : ℕ, ∀ (P : ULift.{u} ℕ →
+          GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
+        (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d :=
+  Iff.rfl
+
 private theorem exists_gradedProjective_contraacyclic_cone_of_bound (d : ℕ)
     (hprod : ∀ (P : ULift.{u} ℕ →
         GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
@@ -145,7 +156,7 @@ theorem exists_gradedProjective_contraacyclic_cone (hprod : CountableProjectiveC
         ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M),
       Projective (toGradedModuleCat Q) ∧
         contraacyclic R h (DGHomotopyCategory.of R (cone f)) := by
-  obtain ⟨d, hd⟩ := hprod
+  obtain ⟨d, hd⟩ := (countableProjectiveCondition_iff 𝒜).1 hprod
   exact exists_gradedProjective_contraacyclic_cone_of_bound d hd M
 
 /-! ### The graded-projective model of `D_ctr` -/

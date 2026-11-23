@@ -38,6 +38,9 @@ countable products and kernels of epimorphisms.
   projection `Tot^Π(r) →ₗ[Aᵐᵒᵖ] P_n`.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.prodTotalToGradedIso`: the graded isomorphism
   identifying `toGradedModuleCat r.prodTotal` with the degreewise graded product `∏ₙ P_n[n]`.
+* `TauCeti.CurvedDGRightModuleCat.LeftResolution.prodTotalGradedLift`: the universal lift of a
+  family of graded maps into the shifted resolution terms `P_n[n]` to
+  `toGradedModuleCat r.prodTotal`.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.prodTotalToPiIso`: the categorical product
   isomorphism `toGradedModuleCat r.prodTotal ≅ ∏ᶜ (fun n ↦ toGradedModuleCat ((r.term n)[n]))`.
 * `TauCeti.CurvedDGRightModuleCat.LeftResolution.prodTotalAug`: the closed augmentation morphism
@@ -267,6 +270,39 @@ theorem prodTotalToGradedIso_inv_apply (n : ℕ)
     forgetDifferentialProductIso_inv_hom, LinearMap.id_apply, prodTotalProj_eq_val]
   rfl
 
+/-- Lift a family of graded right-linear maps into the shifted resolution terms `(r.term n)[n]`
+to a graded right-linear map into `toGradedModuleCat r.prodTotal`. -/
+noncomputable def prodTotalGradedLift
+    {N : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
+    (f : ∀ n : ℕ, N ⟶ toGradedModuleCat ((r.term n).shift (n : ℤ))) :
+    N ⟶ toGradedModuleCat r.prodTotal :=
+  GradedModuleCat.productLift
+      (fun n : ULift.{u} ℕ ↦ toGradedModuleCat ((r.term n.down).shift (n.down : ℤ)))
+      (fun n ↦ f n.down) ≫
+    r.prodTotalToGradedIso.inv
+
+/-- On elements, the `n`-th coordinate of `prodTotalGradedLift f` is given by `f n`. -/
+@[simp]
+theorem prodTotalProj_prodTotalGradedLift_apply
+    {N : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
+    (f : ∀ n : ℕ, N ⟶ toGradedModuleCat ((r.term n).shift (n : ℤ)))
+    (n : ℕ) (x : N) :
+    r.prodTotalProj n ((r.prodTotalGradedLift f).hom x) = (f n).hom x := by
+  rw [prodTotalGradedLift, GradedModuleCat.hom_comp, LinearMap.comp_apply,
+    prodTotalToGradedIso_inv_apply, GradedModuleCat.productLift_apply]
+
+/-- Composing `prodTotalGradedLift f` with `prodTotalToGradedIso.hom` recovers
+`GradedModuleCat.productLift`. -/
+@[reassoc (attr := simp)]
+theorem prodTotalGradedLift_comp_prodTotalToGradedIso_hom
+    {N : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
+    (f : ∀ n : ℕ, N ⟶ toGradedModuleCat ((r.term n).shift (n : ℤ))) :
+    r.prodTotalGradedLift f ≫ r.prodTotalToGradedIso.hom =
+      GradedModuleCat.productLift
+        (fun n : ULift.{u} ℕ ↦ toGradedModuleCat ((r.term n.down).shift (n.down : ℤ)))
+        (fun n ↦ f n.down) := by
+  rw [prodTotalGradedLift, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
 /-- The underlying graded right module of `r.prodTotal` is isomorphic to the categorical product
 `∏ᶜ (fun n : ULift ℕ ↦ toGradedModuleCat ((r.term n.down)[n.down]))`. -/
 noncomputable def prodTotalToPiIso :
@@ -337,6 +373,24 @@ theorem closedHom_prodTotalAug_apply (y : r.prodTotal) :
     closedHom r.prodTotalAug y =
       closedHom r.syzygyZeroIso.hom (closedHom (r.π 0) (r.prodTotalProj 0 y)) := by
   simp [prodTotalAug, closedHom_prodTotalAugZero_apply]
+
+/-- The closed augmentation `r.prodTotal ⟶ M` is surjective on elements. -/
+theorem surjective_prodTotalAug : Function.Surjective (closedHom r.prodTotalAug) := by
+  intro m
+  obtain ⟨x, hx⟩ := r.surjective_aug m
+  let incl₀ : toGradedModuleCat (r.term 0) ⟶ toGradedModuleCat r.prodTotal :=
+    r.prodTotalGradedLift fun n ↦
+      match n with
+      | 0 => (forgetDifferential (h := h)).map (closedShiftZeroIso (r.term 0)).inv
+      | _ + 1 => 0
+  refine ⟨incl₀.hom x, ?_⟩
+  rw [closedHom_prodTotalAug_apply, prodTotalProj_prodTotalGradedLift_apply]
+  simpa [closedHom_closedShiftZeroIso_inv] using hx
+
+/-- The closed augmentation `r.prodTotal ⟶ M` of a left resolution is an epimorphism. -/
+instance epi_prodTotalAug : Epi r.prodTotalAug :=
+  (forgetDifferential (h := h)).epi_of_epi_map
+    ((GradedModuleCat.epi_iff_surjective _).2 r.surjective_prodTotalAug)
 
 /-! ### Truncation tower and contraacyclicity of `cone prodTotalAug` -/
 
