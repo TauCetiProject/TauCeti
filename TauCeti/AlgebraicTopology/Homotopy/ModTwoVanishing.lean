@@ -55,8 +55,7 @@ homotopy group at a time, along the Whitehead tower.
   `Z⟨m + 2⟩ → Z` is a `K(π_{m+2}(Z), m + 1)` space
   (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Since `π_{m+2}(Z)` is uniquely
   two-divisible, `Z⟨m + 2⟩ → Z` induces isomorphisms on mod-two homology in **every** degree `q`
-  (`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`, via
-  `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`). Hence vanishing of
+  (`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`), so vanishing of
   `H_q(Z; 𝔽₂)` passes to `Z⟨m + 2⟩` for any individual degree `q`
   (`TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`).
 * **The induction.** The shared Whitehead-tower driver
@@ -71,9 +70,6 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
 
 ## Main results
 
-* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`: if `(Z, z)` is Hausdorff,
-  `(m + 1)`-connected, and has vanishing mod-two homology in degrees `m + 2` and `m + 3`, then
-  `nConnectedCoverProj (m + 2) Z z` induces isomorphisms on mod-two homology in all degrees.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le`,
   `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le`: if
   `(Y, y)` is path-connected with trivial `π₁(Y, y)` and has vanishing mod-two homology in degrees
@@ -111,36 +107,6 @@ universe u
 namespace TauCeti
 
 variable {k : Type u} [CommRing k]
-
-section OneStep
-
-variable {Z : TopCat.{u}} [T2Space Z] {z : Z} {m : ℕ}
-
-/-- **One-step connected-cover mod-two homology isomorphism.** Let `(Z, z)` be a Hausdorff,
-`(m + 1)`-connected space whose mod-two homology vanishes in degrees `m + 2` and `m + 3`, with
-coefficients in a ring `k ≃+* ZMod 2`. Then the projection `Z⟨m + 2⟩ ⟶ Z` of the
-`(m + 2)`-connected cover induces an isomorphism on `k`-homology in every degree `q`. -/
-theorem isIso_singularHomologyMap_nConnectedCoverProj_mod_two (e : k ≃+* ZMod 2)
-    (hZ : ∀ j < m + 2, Subsingleton (π_ j Z z))
-    (hm₂ : IsZero (((singularChains k).obj Z).homology (m + 2)))
-    (hm₃ : IsZero (((singularChains k).obj Z).homology (m + 3))) (q : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) q).obj
-      (ModuleCat.of k k)).map (nConnectedCoverProj (m + 2) Z z)) :=
-  have : PathConnectedSpace Z :=
-    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).2 (hZ 0 (Nat.zero_lt_succ _))
-  have : IsSemisimpleRing k := e.symm.isSemisimpleRing
-  have hk : (2 : k) = 0 := e.injective (by rw [map_ofNat, map_zero]; decide)
-  have hdiv : IsUniquelyTwoDivisible (Additive (π_ (m + 2) Z z)) :=
-    isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two e hZ
-      (ModuleCat.isZero_iff_subsingleton.1 hm₂) (ModuleCat.isZero_iff_subsingleton.1 hm₃)
-  isIso_singularHomologyMap_nConnectedCoverProj_of_fiber k Z z m (fun j _ hj ↦ hZ j hj)
-    (fun hX ↦ IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible k hk
-      hdiv (hX.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm))
-    q
-
-end OneStep
-
-section WhiteheadTower
 
 /-- **Mod-two vanishing of higher homotopy groups from bounded-degree homology** (Serre). Let
 `(Y, y)` be a path-connected topological space with trivial fundamental group `π₁(Y, y)` and let
@@ -200,10 +166,9 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two 
     (hY : ∀ i, IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (i + 1)).obj
       (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of Y)))
     (y : Y) (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology ULift.ringEquiv
-    (fun i ↦ ModuleCat.isZero_iff_subsingleton.1
-      (((TopCat.of Y).isZero_singularHomology_modTwo_iff_of_ringEquiv ULift.ringEquiv _).1
-        (hY i))) y n
+  isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le
+    (HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.2 inferInstance)
+    fun q _ ↦ hY (q + 1)
 
 /-- **Mod-two vanishing for a path component.** If the fundamental group of `Y` at `y` is trivial
 and the path component of `y` has the mod-two homology of a point, with coefficients in a ring `k`
@@ -218,7 +183,5 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pa
   (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology e hY
     (pathComponentSelf y) n).of_addEquiv
       (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive
-
-end WhiteheadTower
 
 end TauCeti
