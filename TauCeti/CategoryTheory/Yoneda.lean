@@ -46,7 +46,7 @@ public section
 
 open CategoryTheory
 
-universe w v u
+universe w w' v u
 
 namespace TauCeti.CategoryTheory
 
@@ -111,7 +111,7 @@ theorem homEquiv_uniqueUpToIso_hom {Y' : C} (R' : F.RepresentableBy Y') :
 
 /-- Postcomposition with a morphism `s : Y ⟶ Y'` between representing objects, read through the
 representations `R` of `F` and `R'` of `G`, commutes with the maps of `F` and `G`. -/
-theorem homEquiv_homEquiv_symm_comp_naturality {G : Cᵒᵖ ⥤ Type w} {Y' : C}
+theorem homEquiv_homEquiv_symm_comp_naturality {G : Cᵒᵖ ⥤ Type w'} {Y' : C}
     (R' : G.RepresentableBy Y') (s : Y ⟶ Y') {X X' : C} (f : X ⟶ X') (x : F.obj (op X')) :
     R'.homEquiv (R.homEquiv.symm (F.map f.op x) ≫ s) =
       G.map f.op (R'.homEquiv (R.homEquiv.symm x ≫ s)) := by
