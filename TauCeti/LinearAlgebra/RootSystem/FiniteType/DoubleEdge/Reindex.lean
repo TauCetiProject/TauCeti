@@ -100,16 +100,20 @@ private theorem exists_equiv_doubleEdgeCartanMatrix_of_succ
           doubleEdgeCartanMatrix ((k u : ℕ) + 1) (n - ((k u : ℕ) + 1)) (e i) (e j) := by
   let p := (k u : ℕ) + 1
   let q := n - p
+  -- Cutting immediately after `u` leaves two nonempty intervals, since `v` is its successor.
   have hp : 0 < p := by simp [p]
   have hpq : p + q = n := Nat.add_sub_of_le (by simp only [p]; omega)
   have hq : 0 < q := by simp only [q]; omega
   let e : B ≃ Fin p ⊕ Fin q := k.trans (finSumFinRevEquiv p q n hpq).symm
   have hge (i : B) : finSumFinRevEquiv p q n hpq (e i) = k i := by simp [e]
+  -- The two endpoints of the cut become the last vertices of the two model chains.
   have heu : e u = Sum.inl ⟨p - 1, by omega⟩ :=
     (finSumFinRevEquiv p q n hpq).injective (by rw [hge]; apply Fin.ext; simp [p])
   have hev : e v = Sum.inr ⟨q - 1, by omega⟩ :=
     (finSumFinRevEquiv p q n hpq).injective (by rw [hge]; apply Fin.ext; simp [p, q]; omega)
   refine ⟨hq, e, fun i j ↦ ?_⟩
+  -- Read both matrices along the same path. Equality, the exceptional oriented edge, and
+  -- adjacency are all reflected by `e`; the generalized Cartan axioms then determine the entry.
   rw [doubleEdgeCartanMatrix_apply_eq_path p q n hp hq hpq, ← hev, ← heu]
   have hrev : (e i = e v ∧ e j = e u) ↔ (i = v ∧ j = u) :=
     and_congr e.injective.eq_iff e.injective.eq_iff
@@ -151,16 +155,16 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
   · obtain ⟨hq, e, he⟩ :=
       exists_equiv_doubleEdgeCartanMatrix_of_succ h k hk horder hvu hsimple
     exact ⟨(k u : ℕ) + 1, n - ((k u : ℕ) + 1), Nat.succ_pos _, hq, e, he⟩
-  · let k' : B ≃ Fin n := k.trans ⟨Fin.rev, Fin.rev, Fin.rev_rev, Fin.rev_rev⟩
+  · let k' : B ≃ Fin n := k.trans Fin.revPerm
     have hk' (i j : B) : (diagramGraph A).Adj i j ↔
         (k' i : ℕ) + 1 = (k' j : ℕ) ∨ (k' j : ℕ) + 1 = (k' i : ℕ) := by
       rw [hk i j]
-      simp only [k', Equiv.trans_apply, Equiv.coe_fn_mk, Fin.val_rev]
+      simp only [k', Equiv.trans_apply, Fin.revPerm_apply, Fin.val_rev]
       have := (k i).isLt
       have := (k j).isLt
       omega
     have horder' : (k' u : ℕ) + 1 = (k' v : ℕ) := by
-      simp only [k', Equiv.trans_apply, Equiv.coe_fn_mk, Fin.val_rev]
+      simp only [k', Equiv.trans_apply, Fin.revPerm_apply, Fin.val_rev]
       have := (k u).isLt
       have := (k v).isLt
       omega

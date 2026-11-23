@@ -36,8 +36,9 @@ of the transpose (simplicity as a root of the characteristic polynomial, and the
 
 ## Main definitions
 
-* `Matrix.offDiagNeg`: the real matrix obtained from an integer matrix `A` by zeroing the diagonal
-  and negating the off-diagonal entries (representing `2 - A` when `A` has diagonal entries `2`).
+* `Matrix.offDiagNeg`: the matrix over a ring `R` obtained from an integer matrix `A` by zeroing
+  the diagonal and negating the off-diagonal entries (representing `2 • 1 - A` when `A` has
+  diagonal entries `2`).
 
 ## Main results
 
@@ -54,9 +55,9 @@ of the transpose (simplicity as a root of the characteristic polynomial, and the
   characteristic polynomial.
 * `Matrix.IsIrreducible.mulVec_eq_smul_of_smul_le_mulVec`: if `r y ≤ A y`, then `A y = r y`.
 * `Matrix.map_intCast_eq_two_smul_one_sub` and `Matrix.isIrreducible_offDiagNeg`: decomposition
-  `A = 2 • 1 - A.offDiagNeg` for integer matrices with diagonal `2`, and irreducibility of
-  `A.offDiagNeg` for indecomposable matrices with nonpositive off-diagonal entries on at least two
-  indices.
+  `A = 2 • 1 - A.offDiagNeg` over any ring for integer matrices with diagonal `2`, and
+  irreducibility of `A.offDiagNeg` over any strict ordered ring for indecomposable matrices with
+  nonpositive off-diagonal entries on at least two indices.
 
 ## References
 
@@ -311,29 +312,31 @@ end Real
 
 section OffDiagNeg
 
-/-- The real matrix obtained from an integer matrix `A` by setting the diagonal to `0` and negating
-the off-diagonal entries (representing `2 • 1 - A` when `A` has diagonal entries `2`). -/
-noncomputable def offDiagNeg {n : Type*} [DecidableEq n] (A : Matrix n n ℤ) : Matrix n n ℝ :=
-  of fun i j ↦ if i = j then 0 else -(A i j : ℝ)
+/-- The matrix over a ring `R` obtained from an integer matrix `A` by setting the diagonal to `0`
+and negating the off-diagonal entries (representing `2 • 1 - A` when `A` has diagonal entries
+`2`). -/
+def offDiagNeg {n R : Type*} [DecidableEq n] [Ring R] (A : Matrix n n ℤ) : Matrix n n R :=
+  of fun i j ↦ if i = j then 0 else -(A i j : R)
 
-theorem offDiagNeg_apply {n : Type*} [DecidableEq n] (A : Matrix n n ℤ) (i j : n) :
-    A.offDiagNeg i j = if i = j then 0 else -(A i j : ℝ) :=
+theorem offDiagNeg_apply {n R : Type*} [DecidableEq n] [Ring R] (A : Matrix n n ℤ) (i j : n) :
+    (A.offDiagNeg : Matrix n n R) i j = if i = j then 0 else -(A i j : R) :=
   (rfl)
 
 @[simp]
-theorem offDiagNeg_apply_self {n : Type*} [DecidableEq n] (A : Matrix n n ℤ) (i : n) :
-    A.offDiagNeg i i = 0 := by
+theorem offDiagNeg_apply_self {n R : Type*} [DecidableEq n] [Ring R] (A : Matrix n n ℤ) (i : n) :
+    (A.offDiagNeg : Matrix n n R) i i = 0 := by
   simp [offDiagNeg_apply]
 
 @[simp]
-theorem offDiagNeg_apply_of_ne {n : Type*} [DecidableEq n] (A : Matrix n n ℤ) {i j : n}
-    (hij : i ≠ j) : A.offDiagNeg i j = -(A i j : ℝ) := by
+theorem offDiagNeg_apply_of_ne {n R : Type*} [DecidableEq n] [Ring R] (A : Matrix n n ℤ)
+    {i j : n} (hij : i ≠ j) : (A.offDiagNeg : Matrix n n R) i j = -(A i j : R) := by
   simp [offDiagNeg_apply, hij]
 
-/-- An integer matrix with diagonal entries `2` splits over `ℝ` as `2 • 1 - A.offDiagNeg`. -/
-theorem map_intCast_eq_two_smul_one_sub {n : Type*} [DecidableEq n] {A : Matrix n n ℤ}
-    (hdiag : ∀ i, A i i = 2) :
-    A.map (Int.cast : ℤ → ℝ) = (2 : ℝ) • (1 : Matrix n n ℝ) - A.offDiagNeg := by
+/-- An integer matrix with diagonal entries `2` splits over any ring `R` as
+`2 • 1 - A.offDiagNeg`. -/
+theorem map_intCast_eq_two_smul_one_sub {n R : Type*} [DecidableEq n] [Ring R]
+    {A : Matrix n n ℤ} (hdiag : ∀ i, A i i = 2) :
+    A.map (Int.cast : ℤ → R) = (2 : R) • (1 : Matrix n n R) - A.offDiagNeg := by
   ext i j
   by_cases hij : i = j
   · subst hij
@@ -341,18 +344,21 @@ theorem map_intCast_eq_two_smul_one_sub {n : Type*} [DecidableEq n] {A : Matrix 
   · simp [hij]
 
 /-- For an indecomposable integer matrix on at least two indices with nonpositive off-diagonal
-entries, the real off-diagonal negation `A.offDiagNeg` is irreducible. -/
-theorem isIrreducible_offDiagNeg {n : Type*} [Finite n] [DecidableEq n] [Nontrivial n]
-    {A : Matrix n n ℤ} (hle : ∀ i j, i ≠ j → A i j ≤ 0) (hA : A.IsIndecomposable) :
-    A.offDiagNeg.IsIrreducible := by
-  have hnonneg (i j : n) : 0 ≤ A.offDiagNeg i j := by
+entries, the off-diagonal negation `A.offDiagNeg` over any strict ordered ring `R` is
+irreducible. -/
+theorem isIrreducible_offDiagNeg {n R : Type*} [Finite n] [DecidableEq n] [Nontrivial n]
+    [Ring R] [LinearOrder R] [IsStrictOrderedRing R] {A : Matrix n n ℤ}
+    (hle : ∀ i j, i ≠ j → A i j ≤ 0) (hA : A.IsIndecomposable) :
+    (A.offDiagNeg : Matrix n n R).IsIrreducible := by
+  have hnonneg (i j : n) : 0 ≤ (A.offDiagNeg : Matrix n n R) i j := by
     by_cases hij : i = j
     · subst hij; simp
     · simp [hij, hle i j hij]
   refine (isIrreducible_iff_forall_transGen hnonneg).2 ?_
   -- The nonzero entries of `A` connect all indices; off the diagonal they are positive entries
   -- of `A.offDiagNeg`, and the diagonal steps can be dropped.
-  have hrefl (i j : n) : Relation.ReflTransGen (fun i j ↦ 0 < A.offDiagNeg i j) i j := by
+  have hrefl (i j : n) :
+      Relation.ReflTransGen (fun i j ↦ 0 < (A.offDiagNeg : Matrix n n R) i j) i j := by
     induction (isIndecomposable_iff_reflTransGen A).1 hA i j with
     | refl => exact .refl
     | @tail k l _ hkl ih =>
@@ -361,7 +367,7 @@ theorem isIrreducible_offDiagNeg {n : Type*} [Finite n] [DecidableEq n] [Nontriv
       · refine ih.tail ?_
         simpa [hkl'] using lt_of_le_of_ne (hle k l hkl') hkl
   have htrans {i j : n} (hij : i ≠ j) :
-      Relation.TransGen (fun i j ↦ 0 < A.offDiagNeg i j) i j := by
+      Relation.TransGen (fun i j ↦ 0 < (A.offDiagNeg : Matrix n n R) i j) i j := by
     rcases (hrefl i j).cases_head with rfl | ⟨k, hik, hkj⟩
     · exact absurd rfl hij
     · exact Relation.TransGen.head' hik hkj

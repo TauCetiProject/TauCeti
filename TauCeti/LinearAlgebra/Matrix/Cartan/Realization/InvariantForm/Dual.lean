@@ -150,10 +150,8 @@ theorem dualForm_root_root (i j : I) :
   exact_mod_cast (A.symmetrizedMatrix_apply i j).symm
 
 /-- The squared norm of the `i`-th simple root is `2 * d i`. -/
-@[simp high]
 theorem dualForm_root_self (i : I) :
-    B.dualForm hB (R.root i) (R.root i) = 2 * A.symmetrizer i := by
-  simp [A.isGeneralizedCartan.diag, mul_comm]
+    B.dualForm hB (R.root i) (R.root i) = 2 * A.symmetrizer i := by simp [mul_comm]
 
 /-- Every simple root is non-isotropic under `B.dualForm hB`. -/
 theorem dualForm_root_self_ne_zero (i : I) :
@@ -205,7 +203,7 @@ theorem dualForm_eq_of_mem_rootLattice_right {B₁ B₂ : InvariantForm A R}
 /-- `B.dualForm hB` is invariant under the simple reflection `μ ↦ μ - μ(hᵢ) • αᵢ`
 (`Module.reflection`). -/
 theorem isOrthogonal_dualForm_reflection (i : I)
-    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp [A.isGeneralizedCartan.diag]) :
+    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
     (B.dualForm hB).IsOrthogonal (Module.reflection h) := by
   intro μ ν
   have h' : R.root i (R.coroot i) = 2 := h
@@ -216,12 +214,11 @@ theorem isOrthogonal_dualForm_reflection (i : I)
 /-- The simple reflection on `Dual K H` bundled as an isometric equivalence of `B.dualForm hB`. -/
 noncomputable def dualReflectionIsometryEquiv (i : I) :
     (B.dualForm hB).IsometryEquiv (B.dualForm hB) :=
-  { Module.reflection (f := Dual.eval K H (R.coroot i)) (x := R.root i)
-      (by simp [A.isGeneralizedCartan.diag]) with
+  { Module.reflection (f := Dual.eval K H (R.coroot i)) (x := R.root i) (by simp) with
     map_app' := B.isOrthogonal_dualForm_reflection hB i }
 
 theorem dualReflectionIsometryEquiv_toLinearEquiv (i : I)
-    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp [A.isGeneralizedCartan.diag]) :
+    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
     (B.dualReflectionIsometryEquiv hB i).toLinearEquiv = Module.reflection h :=
   (rfl)
 
@@ -233,7 +230,7 @@ theorem dualReflectionIsometryEquiv_apply (i : I) (μ : Dual K H) :
 /-- Metric formula for the simple reflection on `Dual K H`:
 `sᵢ(μ) = μ - (2 (μ, αᵢ) / (αᵢ, αᵢ)) • αᵢ`. -/
 theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H)
-    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp [A.isGeneralizedCartan.diag]) :
+    (h : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
     Module.reflection h μ =
       μ - (2 * B.dualForm hB μ (R.root i) / B.dualForm hB (R.root i) (R.root i)) • R.root i := by
   have hd : (2 : K) * A.symmetrizer i ≠ 0 :=
@@ -245,8 +242,8 @@ theorem reflection_dual_apply_eq_sub_dualForm (i : I) (μ : Dual K H)
 /-- `B.form.toDual hB` intertwines the simple reflection on `H` with the simple reflection on
 `Dual K H`. -/
 theorem toDual_reflection (i : I) (x : H)
-    (h₁ : R.root i (R.coroot i) = 2 := by simp [A.isGeneralizedCartan.diag])
-    (h₂ : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp [A.isGeneralizedCartan.diag]) :
+    (h₁ : R.root i (R.coroot i) = 2 := by simp)
+    (h₂ : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp) :
     B.form.toDual hB (Module.reflection h₁ x) =
       Module.reflection h₂ (B.form.toDual hB x) := by
   rw [Module.reflection_apply, Module.reflection_apply, Dual.eval_apply,

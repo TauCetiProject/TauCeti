@@ -91,6 +91,11 @@ namespace SymmetrizableDatum
 
 variable {I J K I' I'' : Type*} (A : SymmetrizableDatum I)
 
+/-- The diagonal entries of the Cartan matrix are `2`. -/
+@[simp]
+theorem cartan_apply_self (i : I) : A.cartan i i = 2 :=
+  A.isGeneralizedCartan.diag i
+
 /-- The symmetrizer is nonzero. -/
 @[simp]
 theorem symmetrizer_ne_zero (i : I) : A.symmetrizer i ≠ 0 :=
@@ -114,10 +119,9 @@ theorem symmetrizedMatrix_apply (i j : I) :
   (rfl)
 
 /-- The diagonal entries of the symmetrized matrix are `2 * d i`. -/
-@[simp high]
 theorem symmetrizedMatrix_apply_self (i : I) :
     A.symmetrizedMatrix i i = 2 * A.symmetrizer i := by
-  rw [symmetrizedMatrix_apply, A.isGeneralizedCartan.diag, mul_comm]
+  rw [symmetrizedMatrix_apply, A.cartan_apply_self, mul_comm]
 
 /-- The symmetrized matrix is symmetric. -/
 theorem isSymm_symmetrizedMatrix : A.symmetrizedMatrix.IsSymm :=
