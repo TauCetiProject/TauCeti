@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
-import TauCeti.Algebra.Homology.HomotopyEquiv
+import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # The smoothing theorem for open pairs
@@ -433,11 +433,8 @@ inverse of `smoothSingularRelativeCohomologyIso`. -/
 theorem homologyMap_smoothSingularPairCochainHomotopyEquiv_inv (U : Opens M) (n : ℕ) :
     HomologicalComplex.homologyMap (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv n =
       (smoothSingularRelativeCohomologyIso I R k Y U n).inv := by
-  rw [← cancel_mono (smoothSingularRelativeCohomologyIso I R k Y U n).hom, Iso.inv_hom_id,
-    smoothSingularRelativeCohomologyIso_hom, ← smoothSingularPairCochainHomotopyEquiv_hom,
-    ← HomologicalComplex.homologyMap_comp,
-    (smoothSingularPairCochainHomotopyEquiv I R k Y U).homotopyInvHomId.homologyMap_eq,
-    HomologicalComplex.homologyMap_id]
+  simp only [HomotopyEquiv.homologyMap_inv, smoothSingularPairCochainHomotopyEquiv_hom,
+    smoothSingularRelativeCohomologyIso, asIso_inv]
 
 /-- The map from relative to absolute cohomology commutes with the smoothing isomorphisms: a
 relative singular cocycle of `(M, U)` restricts to the same smooth cochain of `M`, whether it is

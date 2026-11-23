@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.Algebra.Homology.LinearYoneda
 
+import TauCeti.Algebra.Homology.Homotopy
+
 /-!
 # Chain maps from K-projective complexes
 
@@ -74,9 +76,7 @@ inverse of the map induced by `φ`. -/
 theorem _root_.HomotopyEquiv.homologyMap_ofQuasiIsoOfProjective_inv (φ : K ⟶ L) [QuasiIso φ]
     (n : ℕ) :
     homologyMap (HomotopyEquiv.ofQuasiIsoOfProjective φ).inv n = (asIso (homologyMap φ n)).inv := by
-  have h := (HomotopyEquiv.ofQuasiIsoOfProjective φ).homotopyInvHomId.homologyMap_eq n
-  rw [homologyMap_comp, HomotopyEquiv.ofQuasiIsoOfProjective_hom, homologyMap_id] at h
-  rw [← cancel_mono (homologyMap φ n), h, asIso_inv, IsIso.inv_hom_id]
+  simp only [HomotopyEquiv.homologyMap_inv, HomotopyEquiv.ofQuasiIsoOfProjective_hom, asIso_inv]
 
 /-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects induces a
 cochain homotopy equivalence `Hom(L, Y) ⟶ Hom(K, Y)` by precomposition, for every object `Y`. -/

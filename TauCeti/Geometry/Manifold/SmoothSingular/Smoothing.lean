@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
-import TauCeti.Algebra.Homology.HomotopyEquiv
+import TauCeti.Algebra.Homology.Homotopy
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
@@ -458,11 +458,8 @@ inverse of `smoothSingularCohomologyIso`. -/
 theorem homologyMap_smoothSingularCochainHomotopyEquiv_inv (n : ℕ) :
     HomologicalComplex.homologyMap (smoothSingularCochainHomotopyEquiv I M R k Y).inv n =
       (smoothSingularCohomologyIso I M R k Y n).inv := by
-  rw [← cancel_mono (smoothSingularCohomologyIso I M R k Y n).hom, Iso.inv_hom_id,
-    smoothSingularCohomologyIso_hom, ← smoothSingularCochainHomotopyEquiv_hom,
-    ← HomologicalComplex.homologyMap_comp,
-    (smoothSingularCochainHomotopyEquiv I M R k Y).homotopyInvHomId.homologyMap_eq,
-    HomologicalComplex.homologyMap_id]
+  simp only [HomotopyEquiv.homologyMap_inv, smoothSingularCochainHomotopyEquiv_hom,
+    smoothSingularCohomologyIso, asIso_inv]
 
 variable {I M J N} in
 /-- `smoothSingularCohomologyIso` is contravariantly natural with respect to smooth maps. -/
