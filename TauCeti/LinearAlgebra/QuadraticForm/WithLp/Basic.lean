@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Lp.WithLp
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
@@ -16,9 +15,10 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 When `Q` on `WithLp p (M₁ × M₂)` decomposes as `Q x = Q₁ x.1 + Q₂ x.2`, `WithLp.linearEquiv`
 identifies `Q` with `Q₁.prod Q₂`, and the structural equivalences of binary `WithLp` products
 (swap, associator, and projection away from a subsingleton summand) are quadratic isometries. No
-metric assumption is needed for the isometries or for their scalar-extension compatibility laws
-with `QuadraticMap.IsometryEquiv.uniqueProd`, `prodUnique`, `prodComm`, and `prodAssoc`. For
-`p = 2`, the `L²` norm formula gives `Q x = -‖x‖ ^ 2` from the factors' formulas.
+metric or seminorm assumption is needed for the isometries or for their scalar-extension
+compatibility laws with `QuadraticMap.IsometryEquiv.uniqueProd`, `prodUnique`, `prodComm`, and
+`prodAssoc`. For the `L²` negative-norm-squared formula, see
+`TauCeti/LinearAlgebra/QuadraticForm/WithLp/L2.lean`.
 
 ## Main definitions
 
@@ -40,8 +40,6 @@ with `QuadraticMap.IsometryEquiv.uniqueProd`, `prodUnique`, `prodComm`, and `pro
   `QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange`, and
   `QuadraticMap.IsometryEquiv.withLpProdAssoc_toIsometry_baseChange`: compatibility of the
   structural `WithLp` isometries with `baseChange` and `baseChangeProd`.
-* `QuadraticForm.withLpProd_eq_neg_norm_sq`: `L²` negative-norm-squared formula on
-  `WithLp 2 (V × W)`.
 -/
 
 public section
@@ -302,25 +300,3 @@ theorem withLpProdAssoc_toIsometry_baseChange
 end BaseChange
 
 end QuadraticMap.IsometryEquiv
-
-namespace QuadraticForm
-
-section L2
-
-/-- If `Q` on `WithLp 2 (V × W)` decomposes as `Q (v, w) = Q₁ v + Q₂ w` with `Q₁ v = -‖v‖ ^ 2`
-and `Q₂ w = -‖w‖ ^ 2`, then `Q x = -‖x‖ ^ 2`. -/
-theorem withLpProd_eq_neg_norm_sq
-    {V W : Type*} [SeminormedAddCommGroup V] [Module ℝ V]
-    [SeminormedAddCommGroup W] [Module ℝ W]
-    {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
-    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-    (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
-    (x : WithLp 2 (V × W)) : Q x = -‖x‖ ^ 2 := by
-  rw [hQ x, hQ₁, hQ₂, WithLp.prod_norm_sq_eq_of_L2]
-  dsimp only [WithLp.fst, WithLp.snd]
-  ring
-
-end L2
-
-end QuadraticForm
-

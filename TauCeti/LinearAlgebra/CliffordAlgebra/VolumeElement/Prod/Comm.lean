@@ -71,8 +71,7 @@ theorem koszulComm_complexProdTensor
         (K z) := by
   intro K
   rw [complexProdTensor_eq_comp, complexProdTensor_eq_comp, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, equivOfIsometry_apply,
-    equivOfIsometry_apply, ← AlgHom.comp_apply (map _), map_comp_map,
+    AlgHom.comp_apply, ← AlgHom.comp_apply (map _), map_comp_map,
     QuadraticMap.IsometryEquiv.withLpProdComm_toIsometry_baseChange, ← map_comp_map,
     AlgHom.comp_apply]
   exact AlgHom.koszulComm_cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
@@ -139,7 +138,8 @@ theorem koszulComm_complexProdTensor_complexVolume_map
       (WithLp.linearEquiv 2 ℝ (W × V)).symm = o_WV := by
     rw [← ho_WV, ← ho_VW,
       Orientation.map_withLpProdComm_prod_of_even o₁ o₂ Fact.out Fact.out (hn.mul_right m),
-      Orientation.reindex_finCongr_symm_reindex_finCongr]
+      Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl, Orientation.reindex_refl,
+      Equiv.refl_apply]
   exact koszulComm_complexProdTensor_complexVolume hQ_VW hQ_WV o₁ o₂ hQ₁ hn hQ₂ hm ρ₁ ρ₂
     o_VW o_WV ho_VW ho_WV' z
 

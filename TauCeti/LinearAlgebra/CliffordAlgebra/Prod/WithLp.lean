@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
-public import TauCeti.LinearAlgebra.QuadraticForm.WithLp
+public import TauCeti.LinearAlgebra.QuadraticForm.WithLp.Basic
 
 /-!
 # Graded tensor decomposition of Clifford algebras on `WithLp` products

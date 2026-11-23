@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Bijective
+import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 
 /-!
 # Half-spin decomposition of graded Clifford tensor products

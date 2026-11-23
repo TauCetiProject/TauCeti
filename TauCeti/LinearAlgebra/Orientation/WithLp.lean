@@ -49,7 +49,8 @@ theorem map_withLpProdComm_prod (o₁ : Orientation R E (Fin m)) (o₂ : Orienta
         ((o₂.prod o₁ hn hm).map (Fin (n + m)) (WithLp.linearEquiv p R (F × E)).symm) := by
   have heq : (WithLp.linearEquiv p R (E × F)).symm.trans
         ((LinearEquiv.prodComm R E F).withLpCongr p) =
-      (LinearEquiv.prodComm R E F).trans (WithLp.linearEquiv p R (F × E)).symm := by ext; rfl
+      (LinearEquiv.prodComm R E F).trans (WithLp.linearEquiv p R (F × E)).symm := by
+    ext x; simp
   rw [← Orientation.map_trans, heq, Orientation.map_trans,
     Orientation.map_prodComm_prod o₁ o₂ hm hn, Orientation.map_units_smul, Orientation.map_reindex]
 

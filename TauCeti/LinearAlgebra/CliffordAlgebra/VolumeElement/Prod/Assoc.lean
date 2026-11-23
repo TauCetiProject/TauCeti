@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
 public import TauCeti.LinearAlgebra.Orientation.WithLp
+public import TauCeti.LinearAlgebra.QuadraticForm.WithLp.L2
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Assoc
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Map
 
@@ -97,9 +98,6 @@ private theorem complexProdTensor_assoc_left
   set ρ₁₂_std := AlgHom.cliffordProdTensor ρ₁ γ₁
     (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂
   set e₁₂ := ((QuadraticMap.IsometryEquiv.withLpProd hQ₁₂).baseChangeProd ℂ).toIsometry
-  have heq₁₂ :
-      (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ₁₂).baseChangeProd ℂ)).toAlgHom =
-        map e₁₂ := rfl
   have hγ₁₂_sq := tensorProduct_map_complexVolume_mul_self o₁ o₂ hQ₁ hQ₂ ρ₁ ρ₂
   have hγ₁₂_anti := AlgHom.map_mul_cliffordProdTensor_ι ρ₁ γ₁
     (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂ γ₂
@@ -109,12 +107,10 @@ private theorem complexProdTensor_assoc_left
     hγ₁₂_sq hγ₁₂_anti ρ₃ e₁₂ (QuadraticMap.Isometry.id (Q₃.baseChange ℂ))
   simp only [CliffordAlgebra.map_id, AlgHom.comp_id] at hcomp
   have hL := complexProdTensor_eq_comp hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂
-  rw [heq₁₂] at hL
-  rw [complexProdTensor_eq_comp, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+  rw [complexProdTensor_eq_comp, AlgHom.comp_apply,
     AlgHom.cliffordProdTensor_congr (hγ' := hγ₁₂_sq)
-      (hγ'ρ := fun v ↦ by simpa [γ₁, γ₂] using hγ₁₂_anti (e₁₂ v)) hL hvol rfl,
-    ← AlgHom.congr_fun hcomp _, AlgHom.comp_apply, equivOfIsometry_apply,
-    ← AlgHom.comp_apply (map _), map_comp_map]
+      (hγ'ρ := fun v ↦ by simpa [γ₁, γ₂, e₁₂] using hγ₁₂_anti (e₁₂ v)) hL hvol rfl,
+    ← AlgHom.congr_fun hcomp _, AlgHom.comp_apply, ← AlgHom.comp_apply (map _), map_comp_map]
 
 omit [Fact (finrank ℝ (WithLp 2 (U × V)) = k + n)] in
 private theorem complexProdTensor_assoc_right (x : CliffordAlgebra (Q_R.baseChange ℂ)) :
@@ -131,19 +127,14 @@ private theorem complexProdTensor_assoc_right (x : CliffordAlgebra (Q_R.baseChan
   set ρ₂₃_std := AlgHom.cliffordProdTensor ρ₂ γ₂
     (map_complexVolume_mul_self o₂ hQ₂ ρ₂) (map_complexVolume_mul_map_ι o₂ hn ρ₂) ρ₃
   set e₂₃ := ((QuadraticMap.IsometryEquiv.withLpProd hQ₂₃).baseChangeProd ℂ).toIsometry
-  have heq₂₃ :
-      (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProd hQ₂₃).baseChangeProd ℂ)).toAlgHom =
-        map e₂₃ := rfl
   have hcomp := AlgHom.cliffordProdTensor_comp_prodMap ρ₁ γ₁ (map_complexVolume_mul_self o₁ hQ₁ ρ₁)
     (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂₃_std (QuadraticMap.Isometry.id (Q₁.baseChange ℂ)) e₂₃
   simp only [CliffordAlgebra.map_id, AlgHom.comp_id] at hcomp
   have hR := complexProdTensor_eq_comp hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃
-  rw [heq₂₃] at hR
-  rw [complexProdTensor_eq_comp, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+  rw [complexProdTensor_eq_comp, AlgHom.comp_apply,
     AlgHom.cliffordProdTensor_congr (hγ' := map_complexVolume_mul_self o₁ hQ₁ ρ₁)
       (hγ'ρ := map_complexVolume_mul_map_ι o₁ hk ρ₁) rfl rfl hR,
-    ← AlgHom.congr_fun hcomp _, AlgHom.comp_apply, equivOfIsometry_apply,
-    ← AlgHom.comp_apply (map _), map_comp_map]
+    ← AlgHom.congr_fun hcomp _, AlgHom.comp_apply, ← AlgHom.comp_apply (map _), map_comp_map]
 
 /-- **Associativity of `complexProdTensor` (algebra-map form).** Conjugating the left-associated
 action on `(E ⊗ F) ⊗ G` by `TensorProduct.assoc ℂ E F G` gives the right-associated action on
@@ -228,7 +219,8 @@ theorem assoc_complexProdTensor_complexVolume
     have hassoc := Orientation.map_withLpProdAssoc_prod (p := 2) o₁ o₂ o₃
       (Fact.out : finrank ℝ U = k) (Fact.out : finrank ℝ V = n) (Fact.out : finrank ℝ W = m)
     simp only [ho₁₂, ho₂₃] at hassoc
-    rw [← ho_R, ← ho_L, hassoc, Orientation.reindex_finCongr_symm_reindex_finCongr]
+    rw [← ho_R, ← ho_L, hassoc, Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
+      Orientation.reindex_refl, Equiv.refl_apply]
   rw [complexProdTensor_complexVolume_of_map_prod hQ_L o₁₂
       (QuadraticForm.withLpProd_eq_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn) _ ρ₃ o₃ o_L hm hQ₃ ho_L,
     complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn hQ₂ ho₁₂,

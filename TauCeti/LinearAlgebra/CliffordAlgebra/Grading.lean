@@ -142,13 +142,15 @@ theorem evenOddProdEquiv_apply (x : evenOdd Q 0 × evenOdd Q 1) :
 @[simp]
 theorem evenOddProdEquiv_symm_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
     (evenOddProdEquiv Q).symm x = (⟨x, hx⟩, 0) :=
-  (evenOddProdEquiv Q).symm_apply_eq.mpr (by simp)
+  Submodule.prodEquivOfIsCompl_symm_apply_left (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q)
+    ⟨x, hx⟩
 
 /-- An odd element maps under `(evenOddProdEquiv Q).symm` to `(0, ⟨x, hx⟩)`. -/
 @[simp]
 theorem evenOddProdEquiv_symm_of_mem_odd {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
     (evenOddProdEquiv Q).symm x = (0, ⟨x, hx⟩) :=
-  (evenOddProdEquiv Q).symm_apply_eq.mpr (by simp)
+  Submodule.prodEquivOfIsCompl_symm_apply_right (evenOdd Q 0) (evenOdd Q 1) (evenOdd_isCompl Q)
+    ⟨x, hx⟩
 
 /-! ### The graded pieces as eigenspaces of the grade involution -/
 

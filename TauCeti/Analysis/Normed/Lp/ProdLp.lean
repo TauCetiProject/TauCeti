@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Analysis.Normed.Lp.WithLp
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -80,6 +81,8 @@ linear maps is identified with the product of their sources.
   inclusions of the factors are contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
+* `LinearIsometryEquiv.toLinearEquiv_withLpProdAssoc` — the underlying linear equivalence of
+  `LinearIsometryEquiv.withLpProdAssoc` is `LinearEquiv.withLpProdAssoc`.
 -/
 
 public section
@@ -604,3 +607,17 @@ theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Ty
     (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
 
 end WithLp
+
+namespace LinearIsometryEquiv
+
+/-- The underlying linear equivalence of `LinearIsometryEquiv.withLpProdAssoc` is the algebraic
+associator `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdAssoc (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β γ : Type*) [Semiring 𝕜]
+    [SeminormedAddCommGroup α] [Module 𝕜 α] [SeminormedAddCommGroup β] [Module 𝕜 β]
+    [SeminormedAddCommGroup γ] [Module 𝕜 γ] :
+    (withLpProdAssoc p 𝕜 α β γ).toLinearEquiv = LinearEquiv.withLpProdAssoc p 𝕜 α β γ := by
+  ext x
+  simp
+
+end LinearIsometryEquiv

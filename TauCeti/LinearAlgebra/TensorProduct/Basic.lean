@@ -43,7 +43,8 @@ pure tensors over a finite spanning family of the right factor.
   reassociation.
 * `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
   functional which splits on products splits the contraction accordingly.
-* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.lid_lTensor_apply` and `LinearMap.rid_rTensor_apply`: naturality of the left and
+  right tensor unitors.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 * `TensorProduct.map_neg_left` and `TensorProduct.map_neg_right`: negating either argument of
@@ -279,6 +280,14 @@ theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C
         smul_mul_smul_comm]
 
 end
+
+/-- The left tensor unitor is natural with respect to a linear map in its right factor. -/
+@[simp]
+theorem lid_lTensor_apply (f : M →ₗ[R] N) (t : R ⊗[R] M) :
+    TensorProduct.lid R N (lTensor R f t) = f (TensorProduct.lid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]

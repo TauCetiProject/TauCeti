@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
@@ -20,9 +21,11 @@ Let `V` and `W` be real inner product spaces with `V` oriented of even dimension
 Clifford modules over `Q₁`, `Q₂`. Reversing `o₁` negates `Γ_V`, replacing `c(0, w) = Γ_V ⊗ c_W(w)`
 by `-Γ_V ⊗ c_W(w)` (equivalently twisting `ρ₂` by `CliffordAlgebra.involute`). For `W` of even
 dimension `m`, `1 ⊗ Γ_W` intertwines the two graded tensor products (and conjugates them when
-`Q₂ w = -‖w‖²`). This file also upgrades the product-volume formulas of
-`VolumeElement/Prod/Basic.lean` to the frame-free product orientation `Orientation.prod o₁ o₂` for
-all orientations (including `-positiveOrientation` in dimension zero).
+`Q₂ w = -‖w‖²`). This file also computes the normalized volume element of `V ⊕ W` on `E ⊗ F`
+first for concatenated orthonormal frames (`CliffordAlgebra.complexProdTensor_complexVolume` and
+`CliffordAlgebra.complexProdTensor_complexVolume_of_odd`), and then upgrades those formulas to the
+frame-free product orientation `Orientation.prod o₁ o₂` for all orientations (including
+`-positiveOrientation` in dimension zero).
 
 ## Main results
 
@@ -34,6 +37,8 @@ all orientations (including `-positiveOrientation` in dimension zero).
   tensor products for `o₁` and `-o₁`.
 * `CliffordAlgebra.complexProdTensor_neg_orientation`: the graded tensor product for `-o₁` is the
   conjugate of that for `o₁` by `1 ⊗ Γ_W`.
+* `CliffordAlgebra.complexProdTensor_complexVolume` and
+  `CliffordAlgebra.complexProdTensor_complexVolume_of_odd`: ordered-frame product-volume formulas.
 * `CliffordAlgebra.complexProdTensor_complexVolume_of_map_prod` and
   `CliffordAlgebra.complexProdTensor_complexVolume_of_odd_of_map_prod`: frame-free product-volume
   formulas for `(o₁.prod o₂).map _ (WithLp.linearEquiv 2 ℝ (V × W)).symm`.
@@ -112,10 +117,112 @@ theorem complexProdTensor_neg_orientation (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (map_complexVolume_mul_map_ι o₂ hm ρ₂) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
     (by rw [complexVolume_neg_orientation, map_neg]) _
 
-/-! ### Frame-free product orientations -/
+/-! ### Ordered-frame product volume formulas -/
 
 variable [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
   (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
+
+include hQ₁ in
+private theorem map_complexVolume_pow_of_even {k : ℕ} (hk : Even k) :
+    ρ₁ (complexVolume Q₁ o₁) ^ k = 1 := by
+  obtain ⟨j, rfl⟩ := hk
+  rw [← two_mul, pow_mul, sq, map_complexVolume_mul_self o₁ hQ₁ ρ₁, one_pow]
+
+omit [Fact (finrank ℝ W = m)] in
+/-- The ordered frame product of `V ⊕ W` acts by `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`. -/
+private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis (Fin n) ℝ V)
+    (hQb₁ : (QuadraticMap.associated Q₁).IsOrthoᵢ b₁.toBasis) (b₂ : OrthonormalBasis (Fin m) ℝ W)
+    (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
+    (ho : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation = o) :
+    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
+      Complex.I ^ ((n + m + 1) / 2) • TensorProduct.map
+        (ρ₁ (((List.finRange n).map b₁).map fun v ↦ ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)).prod *
+          ρ₁ (complexVolume Q₁ o₁) ^ m)
+        (ρ₂ (((List.finRange m).map b₂).map fun w ↦ ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)).prod) := by
+  have hl : (List.finRange (n + m)).map ((b₁.prod b₂).reindex finSumFinEquiv) =
+      ((List.finRange n).map fun i ↦ WithLp.toLp 2 (b₁ i, 0)) ++
+        (List.finRange m).map fun j ↦ WithLp.toLp 2 (0, b₂ j) := by
+    rw [← List.ofFn_eq_map, List.ofFn_add, ← List.ofFn_eq_map, ← List.ofFn_eq_map]
+    congr 2 <;> ext i
+    · have hcast : Fin.castLE (Nat.le_add_right n m) i = Fin.castAdd m i := by ext; simp
+      simp [OrthonormalBasis.reindex_apply, hcast]
+    · simp [OrthonormalBasis.reindex_apply]
+  have h₁ : map ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ).toIsometry
+      ((((List.finRange n).map fun i ↦ WithLp.toLp 2 (b₁ i, 0)).map
+        fun v ↦ ι (Q.baseChange ℂ) (1 ⊗ₜ v)).prod) =
+        map (QuadraticMap.Isometry.inl (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))
+          (((List.finRange n).map b₁).map fun v ↦ ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)).prod := by
+    simp [QuadraticMap.IsometryEquiv.baseChangeProd_tmul, map_list_prod, List.map_map,
+      Function.comp_def]
+  have h₂ : map ((QuadraticMap.IsometryEquiv.withLpProd hQ).baseChangeProd ℂ).toIsometry
+      ((((List.finRange m).map fun j ↦ WithLp.toLp 2 (0, b₂ j)).map
+        fun v ↦ ι (Q.baseChange ℂ) (1 ⊗ₜ v)).prod) =
+        map (QuadraticMap.Isometry.inr (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))
+          ((((List.finRange m).map b₂).map ((1 : ℂ) ⊗ₜ[ℝ] ·)).map
+            (ι (Q₂.baseChange ℂ))).prod := by
+    simp [QuadraticMap.IsometryEquiv.baseChangeProd_tmul, map_list_prod, List.map_map,
+      Function.comp_def]
+  have hQb :
+      (QuadraticMap.associated Q).IsOrthoᵢ ((b₁.prod b₂).reindex finSumFinEquiv).toBasis := by
+    have h := OrthonormalBasis.isOrthoᵢ_associated_prod hQ hQb₁ hQb₂
+    rw [LinearMap.isOrthoᵢ_def] at h ⊢
+    intro i j hij
+    simpa [OrthonormalBasis.reindex_apply] using h _ _ (finSumFinEquiv.symm.injective.ne hij)
+  -- Split the frame product of `V ⊕ W` into its `V` block and its `W` block.
+  rw [complexVolume_eq o _ ho hQb, hl, List.map_append, List.prod_append]
+  -- Move each block into its summand, where the two Clifford algebras act.
+  rw [map_smul, complexProdTensor_eq_comp, AlgHom.comp_apply, map_mul, map_mul, h₁, h₂]
+  simp only [AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
+    LinearMap.rTensor, ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
+  simp [List.map_map, Function.comp_def]
+
+include hQ₁ in
+/-- The normalized volume element of `V ⊕ W` acts by `Γ_V ^ (m + 1) ⊗ Γ_W`. -/
+private theorem complexProdTensor_complexVolume_eq_map_pow (b₁ : OrthonormalBasis (Fin n) ℝ V)
+    (hb₁ : b₁.toBasis.orientation = o₁) (b₂ : OrthonormalBasis (Fin m) ℝ W)
+    (hb₂ : b₂.toBasis.orientation = o₂) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
+    (ho : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation = o) :
+    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
+      TensorProduct.map (ρ₁ (complexVolume Q₁ o₁) ^ (m + 1)) (ρ₂ (complexVolume Q₂ o₂)) := by
+  have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
+  rw [complexProdTensor_complexVolume_eq_map hQ o₁ hQ₁ hn ρ₁ ρ₂ o b₁ hQb₁ b₂ hQb₂ ho, pow_succ']
+  -- Only the first factor `Γ_V` of `Γ_V ^ (m + 1) = Γ_V * Γ_V ^ m` is expanded in the frame.
+  generalize ρ₁ (complexVolume Q₁ o₁) ^ m = g
+  rw [complexVolume_eq o₁ b₁ hb₁ hQb₁, complexVolume_eq o₂ b₂ hb₂ hQb₂]
+  simp only [map_smul, smul_mul_assoc, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
+    smul_smul, ← pow_add]
+  congr 2
+  obtain ⟨j, hj⟩ := hn
+  omega
+
+/-- **Volume elements of `V ⊕ W` compare as a tensor product**: for `V` and `W` of even dimension
+with `Q₁ v = -‖v‖²`, and `V ⊕ W` oriented by the concatenation `(e₁, …, eₙ, f₁, …, fₘ)` of a
+positively oriented orthonormal frame of `V` and a positively oriented orthonormal frame of `W`
+orthogonal for `Q₂`, the normalized volume element of `V ⊕ W` acts on the graded tensor product
+`E ⊗ F` by `Γ_V ⊗ Γ_W`. When also `Q₂ w = -‖w‖²`, so that `Γ_W` is the chirality of `W`, this says
+the chirality of `V ⊕ W` is the tensor grading. -/
+theorem complexProdTensor_complexVolume (hm : Even m) (b₁ : OrthonormalBasis (Fin n) ℝ V)
+    (hb₁ : b₁.toBasis.orientation = o₁) (b₂ : OrthonormalBasis (Fin m) ℝ W)
+    (hb₂ : b₂.toBasis.orientation = o₂) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
+    (ho : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation = o) :
+    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
+      TensorProduct.map (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂)) := by
+  rw [complexProdTensor_complexVolume_eq_map_pow hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o b₁ hb₁ b₂ hb₂ hQb₂ ho,
+    pow_succ, map_complexVolume_pow_of_even o₁ hQ₁ ρ₁ hm, one_mul]
+
+/-- **For odd `W` the volume element of `V ⊕ W` acts through `W` alone**: for `V` of even and `W`
+of odd dimension, with `Q₁ v = -‖v‖²` and the ordered product orientation, the normalized volume
+element of `V ⊕ W` acts on the graded tensor product `E ⊗ F` by `1 ⊗ ω_W`. -/
+theorem complexProdTensor_complexVolume_of_odd (hm : Odd m) (b₁ : OrthonormalBasis (Fin n) ℝ V)
+    (hb₁ : b₁.toBasis.orientation = o₁) (b₂ : OrthonormalBasis (Fin m) ℝ W)
+    (hb₂ : b₂.toBasis.orientation = o₂) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
+    (ho : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation = o) :
+    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
+      (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
+  rw [complexProdTensor_complexVolume_eq_map_pow hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o b₁ hb₁ b₂ hb₂ hQb₂ ho,
+    map_complexVolume_pow_of_even o₁ hQ₁ ρ₁ hm.add_one, LinearMap.lTensor, Module.End.one_eq_id]
+
+/-! ### Frame-free product orientations -/
 
 /-- Reduction of frame-free product-volume formulas from arbitrary orientations `(o₁, o₂)` to
 the standard-basis orientations `(b₁.toBasis.orientation, b₂.toBasis.orientation)` via
