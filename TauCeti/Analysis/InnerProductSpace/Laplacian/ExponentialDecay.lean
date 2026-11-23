@@ -9,8 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Laplacian.PlaneWave
 import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
@@ -68,7 +68,7 @@ and a subsolution at the points of the open ball where `u > 0`, as for positive 
 
 with a constant `N` depending only on the space and `κ`, not on `c`, `R` or `u`. Here the barrier
 is a sum `∑_θ cosh (c ⟪θ, y - x⟫)` of plane waves along finitely many unit vectors `θ`, an
-eigenfunction of `Δ` with eigenvalue `c²` (`TauCeti.laplacian_comp_inner_sub`). The directions
+eigenfunction of `Δ` with eigenvalue `c²` (`TauCeti.laplacian_cosh_inner_sub`). The directions
 are chosen so that every unit vector `v` has `⟪θ, v⟫ ≥ κ` for one of them, so on the boundary
 sphere one plane wave is at least `exp (κ c R) / 2`, while at the centre the barrier is the number
 of plane waves. Where `u > 0`, `V u ≤ Δ u` with `V ≥ c²` already gives `c² u ≤ Δ u`, so these
@@ -359,6 +359,10 @@ private theorem laplacian_cosh_barrier_le {a k : ℝ} (ha : 0 < a) (hk : 0 ≤ k
           k * Sh / (2 * S) * (2 * n) := by ring
     _ ≤ (k ^ 2 + n * k / a) * C := by linarith
 
+/-- `exp t ≤ 2 cosh t`: the lower bound for the `cosh` barriers on the boundary of a ball. -/
+private theorem exp_le_two_mul_cosh (t : ℝ) : Real.exp t ≤ 2 * Real.cosh t := by
+  linarith [Real.cosh_add_sinh t, Real.sinh_lt_cosh t]
+
 section Interior
 
 variable [Nontrivial E]
@@ -453,9 +457,8 @@ theorem le_two_mul_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {z : E} {R c k 
   -- Bound the ratio of the barrier values by `cosh x ≤ exp x` for `x ≥ 0` and `exp y ≤ 2 cosh y`.
   have h₁ : Real.cosh (k * a) ≤ Real.exp (k * a) := by
     linarith [Real.exp_sub_cosh (k * a), Real.sinh_nonneg_iff.mpr (by positivity : 0 ≤ k * a)]
-  have h₂ : Real.exp (k * R) ≤ 2 * Real.cosh (k * √(R ^ 2 + a ^ 2)) := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_le_exp.mpr hRa, Real.exp_pos (-(k * √(R ^ 2 + a ^ 2)))]
+  have h₂ : Real.exp (k * R) ≤ 2 * Real.cosh (k * √(R ^ 2 + a ^ 2)) :=
+    (Real.exp_le_exp.mpr hRa).trans (exp_le_two_mul_cosh _)
   have hratio : Real.cosh (k * a) / Real.cosh (k * √(R ^ 2 + a ^ 2)) ≤
       2 * Real.exp (-(k * (R - a))) := by
     rw [div_le_iff₀ (Real.cosh_pos _), show -(k * (R - a)) = k * a - k * R by ring, Real.exp_sub]
@@ -516,13 +519,6 @@ end Interior
 
 section PlaneWaveBarrier
 
-/-- The plane wave `cosh (c ⟪θ, z - x⟫)` along a unit vector `θ` is an eigenfunction of `Δ` with
-eigenvalue `c²`. -/
-private theorem laplacian_cosh_mul_inner_sub (c : ℝ) {θ : E} (hθ : ‖θ‖ = 1) (x y : E) :
-    Δ (fun z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) y = c ^ 2 * Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
-  rw [laplacian_comp_inner_sub (Real.cosh <| c * ·), deriv_deriv_comp_mul_left, Real.deriv_cosh,
-    Real.deriv_sinh, hθ, one_pow, one_smul, smul_eq_mul]
-
 omit [FiniteDimensional ℝ E] in
 /-- The plane wave `cosh (c ⟪θ, z - x⟫)` is `C²`. -/
 private theorem contDiff_cosh_mul_inner_sub (c : ℝ) (θ x : E) :
@@ -539,7 +535,10 @@ private theorem laplacian_sum_cosh_mul_inner_sub {S : Finset E} (hS : ∀ θ ∈
       c ^ 2 * ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
   rw [laplacian_fun_sum (f := fun θ z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) fun θ _ ↦
     (contDiff_cosh_mul_inner_sub c θ x).contDiffAt, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun θ hθ ↦ laplacian_cosh_mul_inner_sub c (hS θ hθ) x y
+  refine Finset.sum_congr rfl fun θ hθ ↦ ?_
+  -- `c ⟪θ, z - x⟫ = ⟪c • θ, z - x⟫`, and `‖c • θ‖² = c²` for a unit vector `θ`.
+  simp_rw [← real_inner_smul_left]
+  simp [laplacian_cosh_inner_sub, norm_smul, hS θ hθ]
 
 omit [FiniteDimensional ℝ E] in
 /-- On the sphere `‖y - x‖ = R`, the sum of the plane waves `cosh (c ⟪θ, y - x⟫)` over directions
@@ -549,17 +548,15 @@ private theorem exp_div_two_le_sum_cosh_mul_inner_sub {S : Finset E} {κ : ℝ}
     (hc : 0 ≤ c) (hy : y ∈ sphere x R) :
     Real.exp (κ * c * R) / 2 ≤ ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
   have hyR : ‖y - x‖ = R := by simpa [dist_eq_norm] using hy
-  obtain ⟨θ, hθS, hθ⟩ := hS (R⁻¹ • (y - x)) (by
-    rw [norm_smul, hyR, norm_inv, Real.norm_eq_abs, abs_of_pos hR, inv_mul_cancel₀ hR.ne'])
+  have hne : y - x ≠ 0 := norm_ne_zero_iff.1 (hyR ▸ hR.ne')
+  obtain ⟨θ, hθS, hθ⟩ := hS (R⁻¹ • (y - x)) (hyR ▸ norm_smul_inv_norm hne)
   rw [real_inner_smul_right, le_inv_mul_iff₀ hR] at hθ
   -- The plane wave along `θ` alone is at least `exp (κ c R) / 2`.
   have h1 : κ * c * R ≤ c * ⟪θ, y - x⟫_ℝ := by
     linarith [mul_le_mul_of_nonneg_left hθ hc]
-  have h2 : Real.exp (c * ⟪θ, y - x⟫_ℝ) / 2 ≤ Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
-    rw [Real.cosh_eq]
-    linarith [Real.exp_pos (-(c * ⟪θ, y - x⟫_ℝ))]
-  exact ((div_le_div_of_nonneg_right (Real.exp_le_exp.2 h1) zero_le_two).trans h2).trans
-    (Finset.single_le_sum (f := fun θ ↦ Real.cosh (c * ⟪θ, y - x⟫_ℝ))
+  have h2 : Real.exp (κ * c * R) / 2 ≤ Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
+    linarith [(Real.exp_le_exp.2 h1).trans (exp_le_two_mul_cosh _)]
+  exact h2.trans (Finset.single_le_sum (f := fun θ ↦ Real.cosh (c * ⟪θ, y - x⟫_ℝ))
       (fun θ _ ↦ (Real.cosh_pos _).le) hθS)
 
 variable [Nontrivial E]

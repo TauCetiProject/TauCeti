@@ -17,7 +17,6 @@ import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
@@ -47,16 +46,8 @@ A change of variables `f` in a Fourier integral produces the phases `y ↦ ⟪f 
 derivative in a direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`, and their derivatives of order at least one
 are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
 
-## Plane waves
-
-A plane wave `z ↦ g ⟪θ, z⟫` along a vector `θ` is constant on the hyperplanes orthogonal to `θ`.
-Its derivative at `y` is `v ↦ ⟪θ, v⟫ • g' ⟪θ, y⟫`, for every `g`: when `θ ≠ 0`, the map
-`z ↦ ⟪θ, z⟫` has a continuous linear right inverse, so the plane wave is differentiable at `y`
-exactly when `g` is differentiable at `⟪θ, y⟫`.
-
 ## Main results
 
-* `TauCeti.fderiv_comp_inner`: the derivative of a plane wave `z ↦ g ⟪θ, z⟫`.
 * `TauCeti.fderiv_inner_sub_inner_apply`: the derivative of `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` in the
   direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`.
 * `TauCeti.norm_iteratedFDeriv_succ_inner_sub_inner_le`: the bound on the derivatives of order at
@@ -132,33 +123,6 @@ theorem OpenPartialHomeomorph.hasFDerivAt_univBall {r : ℝ} (hr : 0 < r) (c x :
   · rw [smul_sub, smul_smul, smul_smul, div_eq_mul_inv, div_eq_mul_inv, inv_pow]
 
 end UnitBall
-
-section PlaneWave
-
-namespace TauCeti
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
-
-/-- The derivative of a plane wave `z ↦ g ⟪θ, z⟫` is `v ↦ ⟪θ, v⟫ • g' ⟪θ, y⟫`, with no
-differentiability hypothesis on `g`. -/
-theorem fderiv_comp_inner (g : ℝ → F) (θ y : E) :
-    fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) y = (innerSL ℝ θ).smulRight (deriv g ⟪θ, y⟫_ℝ) := by
-  rcases eq_or_ne θ 0 with rfl | hθ
-  · ext v
-    simp
-  -- `t ↦ t • θ / ‖θ‖²` is a continuous linear right inverse of `z ↦ ⟪θ, z⟫`.
-  have hs : Function.RightInverse (ContinuousLinearMap.toSpanSingleton ℝ ((‖θ‖ ^ 2)⁻¹ • θ))
-      (innerSL ℝ θ) := fun t ↦ by
-    simp [hθ]
-  have h := (innerSL ℝ θ).fderiv_comp_right_of_rightInverse _ hs g y
-  simp only [Function.comp_def, coe_innerSL_apply] at h
-  ext v
-  simp [h, fderiv_eq_smul_deriv]
-
-end TauCeti
-
-end PlaneWave
 
 section Phase
 

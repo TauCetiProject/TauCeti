@@ -13,10 +13,8 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
@@ -61,8 +59,7 @@ the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
 `ContDiffAt.laplacian_comp` for a real function of a scalar function and its instance
-`ContDiffAt.laplacian_log` for the logarithm of a nonvanishing function, the plane-wave rules
-`laplacian_comp_inner` and `laplacian_comp_inner_sub`, the companion rule
+`ContDiffAt.laplacian_log` for the logarithm of a nonvanishing function, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, the commutation
 `ContDiffAt.laplacian_fderiv` of the Laplacian with the derivative and its iterate
 `ContDiff.laplacian_iteratedFDeriv`, and the locality
@@ -119,8 +116,6 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   function `s`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
-* `TauCeti.laplacian_comp_inner`: the Laplacian of a plane wave `z ↦ g ⟪θ, z⟫` is `‖θ‖² g''`;
-  `TauCeti.laplacian_comp_inner_sub` is its shifted form `z ↦ g ⟪θ, z - x⟫`.
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
@@ -704,38 +699,6 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
-
-/-- **The Laplacian of a plane wave.** For a vector `θ` and a function `g : ℝ → F`, the function
-`z ↦ g ⟪θ, z⟫`, constant on the hyperplanes orthogonal to `θ`, has Laplacian `‖θ‖² g'' (⟪θ, y⟫)`
-at `y`. For instance `cosh (c ⟪θ, z⟫)` with `‖θ‖ = 1` is an eigenfunction of `Δ` with eigenvalue
-`c²`. -/
-theorem laplacian_comp_inner (g : ℝ → F) (θ y : E) :
-    Δ (fun z ↦ g ⟪θ, z⟫_ℝ) y = ‖θ‖ ^ 2 • deriv (deriv g) ⟪θ, y⟫_ℝ := by
-  rcases eq_or_ne θ 0 with rfl | hθ
-  · simp
-  set Ψ := ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F (innerSL ℝ θ)
-  have hD : fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) = fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ) := by
-    funext z
-    rw [fderiv_comp_inner, ContinuousLinearMap.smulRightL_apply_apply]
-  -- `Ψ` has the left inverse given by evaluation at `θ / ‖θ‖²`, so it commutes with `fderiv`.
-  have hΨ : Function.LeftInverse (ContinuousLinearMap.apply ℝ F ((‖θ‖ ^ 2)⁻¹ • θ)) Ψ :=
-    fun a ↦ by simp [Ψ, hθ]
-  have hD2 := Ψ.fderiv_comp_left_of_leftInverse _ hΨ (fun z ↦ deriv g ⟪θ, z⟫_ℝ) y
-  rw [Function.comp_def] at hD2
-  rw [laplacian_eq_traceL, traceL_apply, hD, hD2, fderiv_comp_inner]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    innerSL_apply_apply, Ψ, ContinuousLinearMap.smulRightL_apply_apply,
-    smul_smul, ← Finset.sum_smul]
-  rw [← (stdOrthonormalBasis ℝ E).sum_sq_inner_left θ]
-  simp_rw [sq]
-
-/-- **The Laplacian of a shifted plane wave.** For vectors `θ` and `x` and a function
-`g : ℝ → F`, the function `z ↦ g ⟪θ, z - x⟫` has Laplacian `‖θ‖² g'' (⟪θ, y - x⟫)` at `y`. -/
-theorem laplacian_comp_inner_sub (g : ℝ → F) (θ x y : E) :
-    Δ (fun z ↦ g ⟪θ, z - x⟫_ℝ) y = ‖θ‖ ^ 2 • deriv (deriv g) ⟪θ, y - x⟫_ℝ := by
-  have h := congrFun (laplacian_comp_add_right (fun z ↦ g ⟪θ, z⟫_ℝ) (-x)) y
-  simp only [← sub_eq_add_neg] at h
-  rw [h, laplacian_comp_inner]
 
 open Gradient in
 /-- **The Laplacian of a logarithm.** For a scalar function `s` twice differentiable at `x` with
