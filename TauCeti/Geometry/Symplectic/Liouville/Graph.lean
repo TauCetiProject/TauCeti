@@ -249,7 +249,7 @@ end Flow
 field of `α`, `ι_Z dα = α`, then the Liouville graph `s ↦ φ_{log f(s)}(ι s)` pulls `α` back to
 `f ι^* α` at every point `s` where `ι` and `f` are differentiable and `f s > 0`: the flow rescales
 the primitive by `e^{log f} = f`, and the primitive vanishes on its Liouville field. -/
-theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.tangent 2 (T% Z))
+theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.tangent 1 (T% Z))
     (hc : IsCompleteVectorField Z) {α : SmoothForm I M ℝ 1}
     (hZα : (mextDeriv α.val).interior Z = α.val) {s : S} (hι : MDifferentiableAt J I ι s)
     (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hfs : 0 < f s) :
@@ -267,7 +267,7 @@ theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.ta
   -- Differentiate the graph, then use that `α` is linear and vanishes on `Z`.
   simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
-    mfderiv_liouvilleGraph_apply (hZ.of_le one_le_two) hc hι hf hfs.ne']
+    mfderiv_liouvilleGraph_apply hZ hc hι hf hfs.ne']
   rw [liouvilleGraph_apply, hs, Real.exp_log hfs, ContinuousAlternatingMap.vecCons_add,
     ContinuousAlternatingMap.vecCons_smul, RoughForm.apply_eq_zero_of_interior_eq hZα, smul_zero,
     zero_add]
