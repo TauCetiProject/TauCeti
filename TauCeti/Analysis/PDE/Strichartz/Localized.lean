@@ -8,11 +8,13 @@ module
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Lebesgue.SlidingWindow
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Time pairings localized to a dyadic time separation
@@ -135,7 +137,8 @@ theorem lintegral_setLIntegral_sub_preimage_enorm_inner_adjoint_le {U : ℝ → 
           exact ENNReal.ofReal_le_ofReal hsep
   set c := A * ENNReal.ofReal ρ ^ (-γ)
   have hm : AEMeasurable fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s) * b t :=
-    (measurable_setLIntegral_sub_preimage hW ha).aemeasurable.mul hb
+    (measurable_setLIntegral_of_measurableSet ((measurable_snd.sub measurable_fst) hW)
+      ha).aemeasurable.mul hb
   calc ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, ‖⟪((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
       ≤ ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, c * a s * b t :=
         lintegral_mono fun t ↦ setLIntegral_mono' (measurable_sub_const t hW) (hpt t)
@@ -207,17 +210,6 @@ theorem enorm_integral_inner_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp
   · rw [← integral_inner_left hi]
     exact eNorm_integral_le_lintegral_eNorm _
   · simp [integral_undef hi]
-
-/-- The time exponents of the energy corner: for Hölder conjugate `p` and `q > 2`,
-`1 / p = 1 - 1 / q` and `p ≤ 2`. -/
-private theorem holderConjugate_inv_eq_and_le_two {p q : ℝ≥0} (hq : 2 < q)
-    (hpq : p.HolderConjugate q) : (p : ℝ)⁻¹ = 1 - (q : ℝ)⁻¹ ∧ (p : ℝ≥0∞) ≤ 2 := by
-  have h := hpq.coe.inv_add_inv_eq_one
-  refine ⟨by linarith, ?_⟩
-  have hp0 : (0 : ℝ) < p := hpq.coe.pos
-  have hq2 : (q : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ (by norm_num) (by exact_mod_cast hq.le)
-  have : (p : ℝ) ≤ 2 := (inv_le_inv₀ (by norm_num : (0 : ℝ) < 2) hp0).1 (by linarith)
-  exact_mod_cast this
 
 /-- **The dual estimate on a set of times.** If the dual estimate
 `‖∫ U(s)* F(s) ds‖ ≤ K ‖F‖_{L^p L^r}` holds with a time exponent `p ≤ 2`, then restricting `F` to a
@@ -316,7 +308,8 @@ theorem enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p a : ℝ≥0�
   -- The `L²` norms of `b` over the windows, and their measurability.
   set φ := fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, b s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ)
   have hφ : Measurable φ :=
-    (measurable_setLIntegral_sub_preimage hW (hb.pow_const _)).pow_const _
+    (measurable_setLIntegral_of_measurableSet ((measurable_snd.sub measurable_fst) hW)
+      (hb.pow_const _)).pow_const _
   set c := K * volume W ^ (p.toReal⁻¹ - 2⁻¹)
   -- On each window, the dual estimate and Hölder's inequality in time.
   have hwin (t : ℝ) : ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ ≤ c * φ t := by
@@ -376,7 +369,10 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
             eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 * eLpNorm (fun t ↦ ‖G t‖ₑ) 2 := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := 𝕜) (H := H) (E := E) (μ := μ)
     (r := r) (r' := r') hq hpq
-  obtain ⟨hpinv, hp2⟩ := holderConjugate_inv_eq_and_le_two hq hpq
+  have hpinv : (p : ℝ)⁻¹ = 1 - (q : ℝ)⁻¹ := hpq.coe.symm.one_sub_inv.symm
+  have := hpq.symm.coe_ennreal
+  have hp2 : (p : ℝ≥0∞) ≤ 2 :=
+    ENNReal.HolderConjugate.le_two (p := (q : ℝ≥0∞)) (by exact_mod_cast hq.le)
   refine ⟨C, fun U A B hB hU W hW F G hF hG ↦ ?_⟩
   have h := enorm_integral_inner_setIntegral_sub_preimage_adjoint_le hp2 hB (hC U A hU) hW hF hG
   rw [ENNReal.coe_toReal, hpinv] at h

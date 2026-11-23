@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Lower integrals over sliding windows
@@ -44,7 +45,6 @@ time-localized pairings arise.
 * `MeasureTheory.lintegral_setLIntegral_sub_preimage`: the sliding-window identity.
 * `MeasureTheory.setLIntegral_sub_preimage_eq_lconvolution`: the window integral as a
   convolution.
-* `MeasureTheory.measurable_setLIntegral_sub_preimage`: the window integrals are measurable.
 * `MeasureTheory.lintegral_rpow_setLIntegral_sub_preimage_mul_le`: the square-function bound.
 * `MeasureTheory.lintegral_setLIntegral_sub_preimage_mul_le`: the bound for the window kernel.
 -/
@@ -64,37 +64,24 @@ variable {G : Type*} [MeasurableSpace G] [AddCommGroup G] [MeasurableAdd₂ G] [
 theorem lintegral_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → ℝ≥0∞}
     (hf : AEMeasurable f μ) :
     ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ ∂μ = μ W * ∫⁻ s, f s ∂μ := by
-  set g := hf.mk f
-  have hg : Measurable g := hf.measurable_mk
-  -- Replace `f` by its measurable modification `g` inside every window.
-  have hfg (t : G) : ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ =
-      ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, g s ∂μ :=
-    lintegral_congr_ae (ae_restrict_of_ae hf.ae_eq_mk)
   have hS : MeasurableSet {p : G × G | p.2 - p.1 ∈ W} :=
     (measurable_snd.sub measurable_fst) hW
-  have hind (t s : G) : ((fun s ↦ s - t) ⁻¹' W).indicator g s =
-      {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s) :=
-    indicator_eq_indicator (by simp only [mem_preimage, mem_ofPred_eq]) rfl
-  have hmeas : Measurable (uncurry fun t s ↦
-      {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s)) :=
-    (hg.comp measurable_snd).indicator hS
   calc ∫⁻ t, ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ ∂μ
-      = ∫⁻ t, ∫⁻ s, {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s) ∂μ ∂μ := by
+      = ∫⁻ t, ∫⁻ s, {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ f p.2) (t, s) ∂μ ∂μ := by
         refine lintegral_congr fun t ↦ ?_
-        rw [hfg, ← lintegral_indicator (measurable_sub_const t hW)]
-        exact lintegral_congr fun s ↦ hind t s
-    _ = ∫⁻ s, ∫⁻ t, {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s) ∂μ ∂μ :=
-        lintegral_lintegral_swap hmeas.aemeasurable
-    _ = ∫⁻ s, μ W * g s ∂μ := by
+        rw [← lintegral_indicator (measurable_sub_const t hW)]
+        rfl
+    _ = ∫⁻ s, ∫⁻ t, {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ f p.2) (t, s) ∂μ ∂μ :=
+        lintegral_lintegral_swap (hf.comp_snd.indicator hS)
+    _ = ∫⁻ s, μ W * f s ∂μ := by
         refine lintegral_congr fun s ↦ ?_
-        have h : (fun t ↦ {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s)) =
-            ((fun t ↦ s - t) ⁻¹' W).indicator fun _ ↦ g s :=
+        have h : (fun t ↦ {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ f p.2) (t, s)) =
+            ((fun t ↦ s - t) ⁻¹' W).indicator fun _ ↦ f s :=
           funext fun t ↦ indicator_eq_indicator (by simp only [mem_preimage, mem_ofPred_eq]) rfl
         have hmp : μ ((fun t ↦ s - t) ⁻¹' W) = μ W :=
           (μ.measurePreserving_sub_left s).measure_preimage (hW.nullMeasurableSet (μ := μ))
         rw [h, lintegral_indicator_const (measurable_const_sub s hW), hmp, mul_comm]
-    _ = μ W * ∫⁻ s, f s ∂μ := by
-        rw [lintegral_const_mul _ hg, lintegral_congr_ae hf.ae_eq_mk.symm]
+    _ = μ W * ∫⁻ s, f s ∂μ := lintegral_const_mul'' _ hf
 
 omit [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant] in
 /-- The integral of `f` over the window `{s | s - t ∈ W}` is the convolution of `f` with the
@@ -104,21 +91,8 @@ theorem setLIntegral_sub_preimage_eq_lconvolution (hW : MeasurableSet W) (f : G 
   rw [lconvolution_def, ← lintegral_indicator (measurable_sub_const t hW)]
   refine lintegral_congr fun s ↦ ?_
   have h : -s + t ∈ -W ↔ s ∈ (fun s ↦ s - t) ⁻¹' W := by simp [neg_add_eq_sub]
-  by_cases hs : s ∈ (fun s ↦ s - t) ⁻¹' W
-  · rw [indicator_of_mem hs, indicator_of_mem (h.2 hs), mul_one]
-  · rw [indicator_of_notMem hs, indicator_of_notMem (mt h.1 hs), mul_zero]
-
-omit [μ.IsAddLeftInvariant] [μ.IsNegInvariant] in
-/-- The integrals of `f` over the windows `{s | s - t ∈ W}` depend measurably on `t`. -/
-theorem measurable_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → ℝ≥0∞}
-    (hf : AEMeasurable f μ) :
-    Measurable fun t ↦ ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ := by
-  -- Replace `f` by its measurable modification inside every window.
-  have h (t : G) : ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ =
-      ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, hf.mk f s ∂μ :=
-    lintegral_congr_ae (ae_restrict_of_ae hf.ae_eq_mk)
-  simp_rw [h, setLIntegral_sub_preimage_eq_lconvolution hW]
-  exact measurable_lconvolution μ hf.measurable_mk (measurable_const.indicator hW.neg)
+  rw [indicator_eq_indicator (g := fun _ ↦ (1 : ℝ≥0∞)) h rfl, ← indicator_mul_right]
+  simp only [mul_one]
 
 /-- **The square-function bound over sliding windows.** The `L²` norms of `f` over the windows
 `{s | s - t ∈ W}`, integrated against `g`, are at most `(μ W)^{1/2} ‖f‖₂ ‖g‖₂`. -/
@@ -127,7 +101,9 @@ theorem lintegral_rpow_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {
     ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ) * g t ∂μ ≤
       μ W ^ (2⁻¹ : ℝ) * eLpNorm f 2 μ * eLpNorm g 2 μ := by
   set φ := fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ)
-  have hφ : Measurable φ := (measurable_setLIntegral_sub_preimage hW (hf.pow_const _)).pow_const _
+  have hφ : Measurable φ :=
+    (TauCeti.measurable_setLIntegral_of_measurableSet ((measurable_snd.sub measurable_fst) hW)
+      (hf.pow_const _)).pow_const _
   have h2 : (2 : ℝ).HolderConjugate 2 := Real.HolderConjugate.two_two
   have hφ2 : ∫⁻ t, φ t ^ (2 : ℝ) ∂μ = μ W * ∫⁻ s, f s ^ (2 : ℝ) ∂μ := by
     simp only [φ, ENNReal.rpow_inv_rpow (two_ne_zero : (2 : ℝ) ≠ 0)]
