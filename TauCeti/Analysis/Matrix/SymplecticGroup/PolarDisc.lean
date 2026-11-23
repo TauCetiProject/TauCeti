@@ -296,11 +296,11 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 omit [Unique ι] in
 /-- **The polar parametrization is smooth.** The map `((a, b), z) ↦ exp [[a, b], [b, -a]] *
-realify (z)` from the plane and the complex numbers to the `2 × 2` real matrices is smooth. Its
-first argument is the plane point `(a, b)`, not the disc coordinate: precomposed with the
-diffeomorphism `TauCeti.unitBallDiffeomorph` of the open disc onto the plane in the first factor
-and restricted to the unit circle in the second, it is the inverse of
-`TauCeti.GLSymplectic.polarDiscHomeomorph`
+realify (z)`, with scalar blocks, from the plane and the complex numbers to the real
+`(ι ⊕ ι) × (ι ⊕ ι)` matrices is smooth. Its first argument is the plane point `(a, b)`, not the
+disc coordinate: when `ι` is a singleton (`[Unique ι]`), precomposed with the diffeomorphism
+`TauCeti.unitBallDiffeomorph` of the open disc onto the plane in the first factor and restricted
+to the unit circle in the second, it is the inverse of `TauCeti.GLSymplectic.polarDiscHomeomorph`
 (`TauCeti.GLSymplectic.val_polarDiscHomeomorph_symm_apply`). -/
 theorem contDiff_exp_spSymmMatrix_mul_realify {k : ℕ∞ω} :
     ContDiff ℝ k fun p : EuclideanSpace ℝ (Fin 2) × ℂ ↦
