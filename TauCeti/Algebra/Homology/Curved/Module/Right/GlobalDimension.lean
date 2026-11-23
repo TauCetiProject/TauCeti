@@ -119,17 +119,12 @@ private theorem hasContractibleResolution_of_contraacyclic_of_hasProjectiveDimen
       exact projective_iff_hasProjectiveDimensionLT_one.mpr hM
     exact isZero_of_contraacyclic_of_gradedProjective hMc hMp
   | m + 1, M, hMc, hM => by
-    obtain ⟨Q, g, hg, hQproj, hQ0⟩ := exists_epi_contractible_gradedProjective (R := R) M
-    let K := kernelObj g
-    have hS : (ShortComplex.mk (kernelι g) g (kernelι_comp g)).ShortExact :=
-      shortExact_kernelι g
-    have hKdim : HasProjectiveDimensionLT (toGradedModuleCat K) (m + 1) :=
-      ((hS.map_of_exact (forgetDifferential (h := h))).hasProjectiveDimensionLT_X₃_iff
-        m hQproj).mp hM
+    obtain ⟨K, Q, f, g, hfg, hS, hQ0, hKdim⟩ :=
+      exists_shortExact_contractible_of_hasProjectiveDimensionLT (R := R) M hM
     have hKc : contraacyclic R h (DGHomotopyCategory.of R K) :=
       prop_X₁_of_shortExact (contraacyclic R h) (totalizations_le_contraacyclic R h) hS
         ((contraacyclic R h).prop_of_isZero hQ0) hMc
-    exact ⟨K, Q, kernelι g, g, kernelι_comp g, hS, hQ0,
+    exact ⟨K, Q, f, g, hfg, hS, hQ0,
       hasContractibleResolution_of_contraacyclic_of_hasProjectiveDimensionLT_succ m K hKc hKdim⟩
 
 private theorem hasContractibleResolution_directSum {J : Type u} :

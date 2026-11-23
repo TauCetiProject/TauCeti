@@ -55,6 +55,8 @@ is at most `2 b`.
 * `ENNReal.inv_add_inv_lt_one_of_two_lt`: `p⁻¹ + q⁻¹ < 1` for `p > 2` and `q ≥ 2`.
 * `ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one`: constructing a finite `p > c` with
   `p⁻¹ + q⁻¹ < 1` from `c < ∞` and `1 < q`.
+* `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
+  `L^(p * c)` is `p`, for `c` finite and nonzero.
 -/
 
 public section
@@ -297,5 +299,12 @@ theorem exists_gt_ne_top_and_inv_add_inv_lt_one {c q : ℝ≥0∞} (hc : c ≠ �
       _ < (1 - q⁻¹) + q⁻¹ :=
         ENNReal.add_lt_add_right (ne_top_of_lt (hq_inv_lt.trans one_lt_top)) hlt
       _ = 1 := tsub_add_cancel_of_le hq_inv_lt.le
+
+/-- **Equal Hölder exponents.** For `c` finite and nonzero, `c` reciprocal exponents
+`(p * c)⁻¹` add up to the reciprocal exponent `p⁻¹`. -/
+theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞) (p : ℝ≥0∞) :
+    (c * (p * c)⁻¹)⁻¹ = p := by
+  rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
+    inv_inv]
 
 end ENNReal

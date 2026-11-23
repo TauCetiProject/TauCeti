@@ -15,8 +15,9 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 This file collects consequences of the change-of-variables theory of
 `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables` used to straighten a curved boundary: restricting
 a pair of mutually inverse changes of variables to the two sides of a boundary, `Lᵖ` bounds for
-precomposition with a change of variables, and the resulting bounds for the value, weak gradient
-and weak Hessian of `u ∘ Φ`.
+precomposition with a change of variables, the resulting bounds for the value, weak gradient
+and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity of `u ∘ Φ` back to
+`u`.
 
 ## Main declarations
 
@@ -36,6 +37,8 @@ and weak Hessian of `u ∘ Φ`.
   `Lᵖ` bounds for the value and the weak gradient of `u ∘ Φ`.
 * `TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`: the pointwise bound
   `‖D²(u ∘ Φ)‖ ≤ L² ‖D²u(Φ ·)‖ + L ‖∇u(Φ ·)‖` for the weak Hessian.
+* `TauCeti.Wkp.exists_value_eq_value_restrictL_of_w1pCompL`: if `u ∘ Φ` is `W^{k,p}` near a
+  point, then so is `u` near its image.
 -/
 
 public section
@@ -224,5 +227,29 @@ theorem norm_iteratedGradient_compL_le_ae (h : IsChangeOfVariables 2 U V Φ L c)
         exact h.norm_fderiv_fderiv_le (k := 0) x hxU
       _ = L * ‖G‖ := mul_comm _ _
   linarith
+
+/-- **Pushing `W^{k,p}` forward along a change of variables.** Let `Φ` be a change of variables
+from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order `k` from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with
+`Φ ∘ Ψ = id` on `Ω ∩ V`. If `u ∘ Φ` is the value of an element of `W^{k,p}(Ω' ∩ V'')`, then `u` is
+the value of an element of `W^{k,p}(Ω ∩ V)`. -/
+theorem exists_value_eq_value_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E} {Ψ : E → E}
+    {L' c' : ℝ} (hp : p ≠ ⊤) (hD : D ≤ Omega) (hVD : Omega ⊓ V ≤ D)
+    (hΦ : IsChangeOfVariables 1 Ω' D Φ L c)
+    (hΨ : IsChangeOfVariables k (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
+    (hΦΨ : RightInvOn Ψ Φ (Omega ⊓ V : Opens E)) {u : W1p mu Omega p}
+    {w : Wkp mu (Ω' ⊓ V'') p k}
+    (hw : value k w =
+      W1p.value (W1p.restrictL inf_le_left (hΦ.w1pCompL hp (W1p.restrictL hD u)))) :
+    ∃ w' : Wkp mu (Omega ⊓ V) p k, value k w' = W1p.value (W1p.restrictL inf_le_left u) := by
+  refine ⟨compL hΨ w, Lp.ext ?_⟩
+  have hΩ'V : ((Ω' ⊓ V'' : Opens E) : Set E) ⊆ Ω' := fun x hx => hx.1
+  filter_upwards [value_compL_ae hΨ w,
+    hΨ.ae_comp (W1p.value_restrictL_ae (mu := mu) (p := p) inf_le_left _),
+    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V
+      (hΦ.value_w1pCompL_ae hp (W1p.restrictL hD u))),
+    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
+    W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
+    ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
+  rw [h1, hw, h2, h3, hΦΨ hx, h4, h5]
 
 end TauCeti.Wkp

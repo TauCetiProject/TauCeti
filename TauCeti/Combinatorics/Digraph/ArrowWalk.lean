@@ -262,9 +262,7 @@ theorem isStronglyConnected_symmetrify_adjHom_iff :
     @Quiver.IsStronglyConnected (Quiver.Symmetrify V)
         (@Quiver.symmetrifyQuiver V ⟨D.AdjHom⟩) ↔
       D.toSimpleGraphInclusive.Preconnected := by
-  rw [Quiver.isStronglyConnected_iff]
-  refine forall_congr' fun v ↦ forall_congr' fun w ↦ ?_
-  rw [@TauCeti.Quiver.nonempty_path_symmetrify_iff_reachable V ⟨D.AdjHom⟩ v w,
+  rw [@TauCeti.Quiver.isStronglyConnected_symmetrify_iff_preconnected V ⟨D.AdjHom⟩,
     underlyingGraph_adjHom]
 
 /-- Two vertices lie in the same weakly connected component of the adjacency arrow family exactly
