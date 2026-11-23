@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Index
 import Mathlib.Tactic.Group
 import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.GroupTheory.DoubleCoset.Map
 
 /-!
 # Double-coset covers certified by generator transitions
@@ -18,16 +19,18 @@ cover the actual ambient group. Here coverage follows from an identity cell and 
 under generators and their inverses. Transitions are checked on `h * w` for `h ∈ H`, so a
 transition proof may use subgroup normal forms instead of listing all ambient elements.
 The counting map allows any chosen representatives of `H ⧸ (w H w⁻¹).subgroupOf H`.
-When the representatives `xᵢ ∈ P` of `T \ P / Q` meet each double coset exactly once, the map
-`(i, t) ↦ t xᵢ` from the cosets of `T ∩ xᵢQxᵢ⁻¹` in `T` to `P ⧸ Q` is a bijection
-(`Subgroup.bijective_sigma_quotient_mul_of_existsUnique_doubleCoset`); the chosen
-representatives of the double coset quotient `T \ P / Q` are such a family
-(`Subgroup.existsUnique_mem_doubleCoset_out`).
 
 The resulting index bound is the sum of these intersection indices. Neither the ambient
 group nor the subgroup is assumed finite, and double-coset representatives may repeat.
 Applied to a presented group, the transition equations must hold in that presented group;
 checking them only in a finite image does not certify an upper bound.
+
+An exact count needs representatives without repeats. When the representatives `xᵢ ∈ P` of
+`T \ P / Q` meet each double coset exactly once, the map `(i, t) ↦ t xᵢ` from the cosets of
+`T ∩ xᵢQxᵢ⁻¹` in `T` to `P ⧸ (Q ∩ P)` is a bijection
+(`Subgroup.bijective_sigma_quotient_mul_of_existsUnique_doubleCoset`); the chosen
+representatives of the double coset quotient `T \ P / Q` are such a family
+(`Subgroup.existsUnique_mem_doubleCoset_out`).
 
 ## References
 
@@ -120,21 +123,6 @@ theorem bijective_sigma_quotient_mul_of_existsUnique_doubleCoset {T Q P : Subgro
     simp only [coe_mul, InvMemClass.coe_inv, mul_inv_rev, hy]
     convert Q.mul_mem hj hq using 1
     group
-
-/-- For `T ≤ P` and `x, y ∈ P`, the double coset `T x Q` of `G` contains `y` exactly when the
-double coset `(T ∩ P) x (Q ∩ P)` of `P` does. -/
-theorem mem_doubleCoset_subgroupOf_iff {T Q P : Subgroup G} (hTP : T ≤ P) {x y : P} :
-    y ∈ DoubleCoset.doubleCoset x (T.subgroupOf P) (Q.subgroupOf P) ↔
-      (y : G) ∈ DoubleCoset.doubleCoset (x : G) T Q := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1 h
-    exact DoubleCoset.mem_doubleCoset.2 ⟨t, ht, k, hk, congrArg Subtype.val he⟩
-  · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1 h
-    have hkP : k ∈ P := by
-      rw [show k = (x : G)⁻¹ * t⁻¹ * y by rw [he]; group]
-      exact P.mul_mem (P.mul_mem (P.inv_mem x.property) (P.inv_mem (hTP ht))) y.property
-    exact DoubleCoset.mem_doubleCoset.2 ⟨⟨t, hTP ht⟩, by simpa [mem_subgroupOf] using ht,
-      ⟨k, hkP⟩, by simpa [mem_subgroupOf] using hk, Subtype.ext he⟩
 
 /-- For `T ≤ P`, the chosen representatives of the double cosets `T \ P / Q` meet each double
 coset `T y Q` with `y ∈ P` exactly once, as required by
