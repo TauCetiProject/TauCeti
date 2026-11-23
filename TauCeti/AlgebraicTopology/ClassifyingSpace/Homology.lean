@@ -26,12 +26,11 @@ singular chains are a free resolution of `k` over `k[G]` whose coinvariants are 
 chains of `classifyingSpace G` (`IsQuotientCoveringMap.singularHomologyIsoGroupHomology`). No
 hypothesis on `G` is needed.
 
-The identification is natural in the group. The geometric chain identification commutes with
-every group homomorphism (`MonoidHom.classifyingSpaceSingularChainsCoinvariants_naturality`), and
-on homology, for every `φ : G →* H`, the map `Hₙ(BG; k) ⟶ Hₙ(BH; k)` induced by the strictly
-functorial map `MonoidHom.classifyingSpaceMap φ` is Mathlib's change-of-group map
-`groupHomology.map φ` (`MonoidHom.classifyingSpaceSingularHomologyIsoGroupHomology_hom_naturality`).
-No hypothesis on `φ` is needed.
+The identification is natural in the group: on homology, for every `φ : G →* H`, the map
+`Hₙ(BG; k) ⟶ Hₙ(BH; k)` induced by the strictly functorial map `MonoidHom.classifyingSpaceMap φ` is
+Mathlib's change-of-group map `groupHomology.map φ`
+(`MonoidHom.classifyingSpaceSingularHomologyIsoGroupHomology_hom_naturality`). No hypothesis on `φ`
+is needed.
 
 ## Main definitions
 
@@ -82,27 +81,6 @@ open TauCeti
 universe u
 
 variable {G H : Type u} [Group G] [Group H]
-
-/-- **The geometric chain comparison for Milnor classifying spaces is natural in the group.**
-Applying a group homomorphism to the labels in the universal space before passing to
-coinvariant chains agrees with pushing chains forward along its map of classifying spaces. -/
-@[reassoc]
-theorem classifyingSpaceSingularChainsCoinvariants_naturality (φ : G →* H)
-    (k : Type u) [CommRing k] :
-    singularChainsCoinvariantsMap k (TopCat.ofHom φ.universalGSpaceMap)
-        (fun g x ↦ φ.universalGSpaceMap_smul g x) ≫
-        (IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso
-          (p := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
-          (isQuotientCoveringMap_classifyingSpaceProj H) k).hom =
-      (IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso
-          (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
-          (isQuotientCoveringMap_classifyingSpaceProj G) k).hom ≫
-        (singularChains k).map (TopCat.ofHom φ.classifyingSpaceMap) := by
-  exact IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso_naturality
-    (isQuotientCoveringMap_classifyingSpaceProj G) k
-      (isQuotientCoveringMap_classifyingSpaceProj H) _
-      (fun g x ↦ φ.universalGSpaceMap_smul g x) _
-      (ConcreteCategory.hom_ext _ _ fun x ↦ (φ.classifyingSpaceMap_proj x))
 
 /-- **The singular homology of the classifying space is naturally group homology.** For every
 group homomorphism `φ : G →* H`, the identifications `Hₙ(BG; k) ≅ Hₙ(G, k)` and

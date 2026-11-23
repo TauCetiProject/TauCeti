@@ -34,6 +34,8 @@ and the SAGBI criterion for presentations.
 * `MonomialOrder.isSAGBIBasis_iff_exists_mem_closure`: over a field, `B ⊆ A` is a SAGBI basis of
   `A` if and only if the leading exponent of every nonzero element of `A` is the leading exponent
   of a nonzero product of elements of `B`.
+* `MonomialOrder.exists_finite_isSAGBIBasis_iff_fg`: over a field, `A` has a finite SAGBI basis
+  if and only if its monoid of leading exponents is finitely generated.
 
 Bounded subduction representations and the fact that a SAGBI basis generates its algebra are
 proved in `TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction`.
@@ -325,7 +327,7 @@ theorem range_mapDomainAlgHom_leadingExponents :
     | single a c =>
       rw [AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidAlgebra.mapDomain_single,
         single_eq_monomial]
-      exact monomial_mem_initialAlgebra_iff.2 (.inl a.2)
+      exact monomial_mem_initialAlgebra_iff.2 (.inl a.property)
   refine le_antisymm ?_ (Algebra.adjoin_le ?_)
   · rintro _ ⟨x, rfl⟩
     exact h x
@@ -378,6 +380,31 @@ theorem isSAGBIBasis_iff_exists_mem_closure :
     m.IsSAGBIBasis B A ↔ B ⊆ A ∧
       ∀ f ∈ A, f ≠ 0 → ∃ g ∈ Submonoid.closure B, g ≠ 0 ∧ m.degree g = m.degree f := by
   simp only [isSAGBIBasis_iff_degree_mem_closure, mem_closure_image_degree_iff]
+
+/-- Over a field, a subalgebra has a finite SAGBI basis if and only if its monoid of leading
+exponents is finitely generated. -/
+theorem exists_finite_isSAGBIBasis_iff_fg :
+    (∃ B : Set (MvPolynomial σ k), B.Finite ∧ m.IsSAGBIBasis B A) ↔
+      (m.leadingExponents A).FG := by
+  rw [AddSubmonoid.fg_iff]
+  constructor
+  · rintro ⟨B, hBfin, hB⟩
+    refine ⟨m.degree '' (B \ {0}), le_antisymm ?_ ?_, (hBfin.subset Set.sdiff_subset).image _⟩
+    · rw [AddSubmonoid.closure_le]
+      rintro _ ⟨b, ⟨hb, hb0⟩, rfl⟩
+      exact degree_mem_leadingExponents (hB.subset hb) hb0
+    · rintro _ ⟨f, hf, hf0, rfl⟩
+      exact (isSAGBIBasis_iff_degree_mem_closure.1 hB).2 f hf hf0
+  · rintro ⟨S, hS, hSfin⟩
+    have hex (a : σ →₀ ℕ) (ha : a ∈ S) : ∃ f ∈ A, f ≠ 0 ∧ m.degree f = a := by
+      rw [← mem_leadingExponents_iff, ← hS]
+      exact AddSubmonoid.subset_closure ha
+    choose! f hfA hf0 hfa using hex
+    refine ⟨f '' S, hSfin.image f, isSAGBIBasis_iff_degree_mem_closure.2 ⟨?_, fun g hg hg0 ↦ ?_⟩⟩
+    · rintro _ ⟨a, ha, rfl⟩
+      exact hfA a ha
+    · refine AddSubmonoid.closure_mono ?_ (hS ▸ degree_mem_leadingExponents hg hg0)
+      exact fun a ha ↦ ⟨f a, ⟨⟨a, ha, rfl⟩, hf0 a ha⟩, hfa a ha⟩
 
 end Field
 

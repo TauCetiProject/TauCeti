@@ -37,7 +37,7 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (1 + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
 
 local instance smoothBoundaryIsManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞
-    ((𝓡∂ (1 + 1)).boundary M) := isManifold_boundary M (by simp)
+    ((𝓡∂ (1 + 1)).boundary M) := isManifold_boundary M
 
 local instance smoothBoundarySigmaCompactSpace : SigmaCompactSpace ((𝓡∂ (1 + 1)).boundary M) :=
   ((𝓡∂ (1 + 1)).isClosed_boundary (by simp : (∞ : ℕ∞ω) ≠ 0)).sigmaCompactSpace
@@ -81,7 +81,7 @@ theorem exists_boundary_chart_circulation
   let g : (𝓡∂ (1 + 1)).boundary M → ℂ := fun x ↦ f x
   have hinc : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
       (Subtype.val : (𝓡∂ (1 + 1)).boundary M → M) :=
-    (isSmoothEmbedding_subtypeVal_boundary M (by simp : (∞ : ℕ∞ω) ≠ 0)).contMDiff
+    (isSmoothEmbedding_subtypeVal_boundary (k := ∞) M).contMDiff
       |>.mdifferentiable (by simp)
   have hg : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) g := hf.comp hinc
   have he : boundaryRestriction φ =

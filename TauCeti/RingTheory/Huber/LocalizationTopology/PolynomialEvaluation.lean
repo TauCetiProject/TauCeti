@@ -149,7 +149,7 @@ theorem exists_aeval_eq_of_mem_locIdealImage (n : ℕ) {x : S}
           rw [map_add, ha, hb]; push_cast; ring⟩
       smul_mem' := by
         rintro c a ⟨qa, hqa, ha⟩
-        obtain ⟨qc, hqc⟩ := exists_aeval_eq_of_mem_locSubring P T s S c.2
+        obtain ⟨qc, hqc⟩ := exists_aeval_eq_of_mem_locSubring P T s S c.property
         refine ⟨qc * qa, Ideal.mul_mem_left _ _ hqa, ?_⟩
         rw [map_mul, hqc, ha, smul_eq_mul]
         norm_cast } with _
@@ -291,7 +291,7 @@ theorem continuous_polyEvalHom {k : ℕ} (t : Fin k → A)
         ∈ weightedNhd (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight
           (P.idealImage n) :=
     ((isOpen_weightedNhd (k := k) isWeightFamily_one_weight
-      (P.isOpen_idealImage n)).preimage continuous_subtype_val).mem_nhds
+      (P.isOpen_idealImage n)).preimage continuous_subtypeVal).mem_nhds
       (by simp)
   filter_upwards [hnhd] with x hx
   obtain ⟨p, rfl⟩ : ∃ p, weightedPolynomialsEquiv isWeightFamily_one_weight p = x :=

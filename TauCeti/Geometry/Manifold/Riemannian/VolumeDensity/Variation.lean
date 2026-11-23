@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.Deriv.Matrix
 
