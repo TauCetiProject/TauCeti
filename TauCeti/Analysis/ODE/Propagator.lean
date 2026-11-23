@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousSubstitution.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The propagator of a linear equation with an integrable coefficient
@@ -442,12 +443,10 @@ private theorem propagator_sub_propagator_eq_picard {P' : ℝ → E →L[𝕜] E
   simp only [ContinuousLinearMap.mul_apply', ← ContinuousLinearMap.mul_def]
   noncomm_ring
 
-/-- **Continuous dependence on the coefficient.** For coefficients `P` and `P'` on `[a, b]` and
+/-- **Continuous dependence on the coefficient.** For `P` and `P'` integrable on `[a, b]` and
 `s, t ∈ [a, b]`,
 `‖N_{P'}(t, s) - N_P(t, s)‖ ≤ ‖P' - P‖₁ exp (‖P'‖₁ + ‖P‖₁)`, all `L¹` norms over the interval
-between `s` and `t`. The difference `D(r) = N_{P'}(r, s) - N_P(r, s)` solves
-`D(r) = ∫ u in s..r, (P u ∘L D u + (P' u - P u) ∘L N_{P'}(u, s))`, to which the a priori bound
-`TauCeti.norm_le_mul_exp_of_forall_mem_Icc_eq_picard` applies. -/
+between `s` and `t`. -/
 theorem norm_propagator_sub_propagator_le {P' : ℝ → E →L[𝕜] E} (hP : IntegrableOn P (Icc a b))
     (hP' : IntegrableOn P' (Icc a b)) (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
     ‖propagator P' t s - propagator P t s‖ ≤
@@ -459,6 +458,7 @@ theorem norm_propagator_sub_propagator_le {P' : ℝ → E →L[𝕜] E} (hP : In
   -- The inhomogeneous term `(P' - P) N_{P'}` and its pointwise bound.
   have hF : IntegrableOn (fun u ↦ (P' u - P u) ∘L propagator P' u s) (Icc a b) := by
     simpa [ContinuousLinearMap.mul_def] using (hP'.sub hP).mul_continuousOn hN' isCompact_Icc
+  -- Apply the a priori bound to the integral equation of `N_{P'}(·, s) - N_P(·, s)`.
   have hD := propagator_sub_propagator_eq_picard hP hP' hs
   have key := norm_le_mul_exp_of_forall_mem_Icc_eq_picard hs (integrableOn_mul hP) hF
     (hN'.sub hN) hD ht
@@ -491,17 +491,6 @@ theorem norm_propagator_sub_propagator_le {P' : ℝ → E →L[𝕜] E} (hP : In
   exact mul_le_mul hFle (exp_le_exp.2 hMle) (exp_pos _).le
     (mul_nonneg (abs_nonneg _) (exp_pos _).le)
 
-/-- For a nonnegative `g` integrable on `[a, b]` and `s, t ∈ [a, b]`,
-`|∫ u in s..t, g u| ≤ ∫ u in a..b, g u`. -/
-private theorem abs_integral_le_integral_of_mem_Icc {g : ℝ → ℝ} (hg₀ : ∀ u, 0 ≤ g u)
-    (hg : IntegrableOn g (Icc a b)) (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
-    |∫ u in s..t, g u| ≤ ∫ u in a..b, g u := by
-  have hab : a ≤ b := hs.1.trans hs.2
-  rw [← abs_of_nonneg (integral_nonneg hab fun u _ ↦ hg₀ u)]
-  exact abs_integral_mono_interval (uIoc_subset_uIoc_of_uIcc_subset_uIcc
-    (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc ht))) (ae_of_all _ hg₀)
-    ((intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 hg)
-
 /-- **Convergence of propagators under `L¹` convergence of coefficients.** If `P_n → P` in
 `L¹([a, b])`, then `N_{P_n} → N_P` uniformly on `[a, b]²` in the operator norm. -/
 theorem tendstoUniformlyOn_propagator {ι : Type*} {l : Filter ι} {Q : ι → ℝ → E →L[𝕜] E}
@@ -517,11 +506,16 @@ theorem tendstoUniformlyOn_propagator {ι : Type*} {l : Filter ι} {Q : ι → �
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
   filter_upwards [hQ, hg.eventually (gt_mem_nhds hε)] with n hQn hn p hp
-  have hn₀ : 0 ≤ ∫ u in a..b, ‖Q n u - P u‖ :=
-    integral_nonneg (hp.1.1.trans hp.1.2) fun _ _ ↦ norm_nonneg _
-  have hd := abs_integral_le_integral_of_mem_Icc (fun u ↦ norm_nonneg (Q n u - P u))
-    (hQn.sub hP).norm hp.2 hp.1
-  have hI := abs_integral_le_integral_of_mem_Icc (fun u ↦ norm_nonneg (P u)) hP.norm hp.2 hp.1
+  have hab : a ≤ b := hp.1.1.trans hp.1.2
+  have hn₀ : 0 ≤ ∫ u in a..b, ‖Q n u - P u‖ := integral_nonneg hab fun _ _ ↦ norm_nonneg _
+  -- `L¹` norms over the interval between `p.2` and `p.1` are at most those over `[a, b]`.
+  have hle {R : ℝ → E →L[𝕜] E} (hR : IntegrableOn R (Icc a b)) :
+      |∫ u in p.2..p.1, ‖R u‖| ≤ ∫ u in a..b, ‖R u‖ := by
+    simpa [integral_of_le hab, integral_Ioc_eq_integral_Ioo] using
+      intervalIntegral.norm_integral_le_setIntegral_norm (f := fun u ↦ ‖R u‖)
+        ((hR.mono_set Ioo_subset_Icc_self).norm) hp.2 hp.1
+  have hd := hle (hQn.sub hP)
+  have hI := hle hP
   have hsub : uIcc p.2 p.1 ⊆ Icc a b := uIcc_subset_Icc hp.2 hp.1
   have hQI : |∫ u in p.2..p.1, ‖Q n u‖| ≤ (∫ u in a..b, ‖Q n u - P u‖) + I := by
     have hi₁ := IntegrableOn.intervalIntegrable ((hQn.sub hP).mono_set hsub).norm
