@@ -40,9 +40,9 @@ theorem mem_map_iff_mem_of_ker_subset {f : A →+* B} {P : Subsemiring A}
 end Subsemiring
 
 
-namespace SubsemiringClass
+namespace NonUnitalSubsemiringClass
 
-variable {R S ι : Type*} [Semiring R] [SetLike S R] [SubsemiringClass S R]
+variable {R S ι : Type*} [Semiring R] [SetLike S R] [NonUnitalSubsemiringClass S R]
 
 /-- A certificate `∑ aᵢ uᵢ = 1`, with `uᵢ` and `f aᵢ` in `H`, implies `f ∈ H`.
 The individual `aᵢ` need not belong to `H`. -/
@@ -64,4 +64,4 @@ theorem mem_of_sum_mul_eq_one_left (H : S) (s : Finset ι) (u a : ι → R) {f :
     rw [mul_assoc]
     exact mul_mem (hu i hi) (hf i hi)
 
-end SubsemiringClass
+end NonUnitalSubsemiringClass

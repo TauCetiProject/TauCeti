@@ -44,11 +44,16 @@ theorem mem_iff_exists_mem_denIdeal (S : Submonoid R) (A : Subalgebra R K)
     have hvK : ((v : A) : K) = algebraMap R K s := by
       simpa only [Subalgebra.coe_algebraMap] using
         congrArg (fun y : A ↦ (y : K)) hv
-    have he : x = (((v⁻¹ : Aˣ) : A) : K) * algebraMap R K r := by
-      rw [← hr, ← hvK, ← mul_assoc, ← Subalgebra.coe_mul, Units.inv_mul, Subalgebra.coe_one,
-        one_mul]
+    let u : Kˣ := Units.map (A.val : A →* K) v
+    have hu : (u : K) = algebraMap R K s := by
+      simpa only [u, Units.coe_map, AlgHom.coe_toMonoidHom, Subalgebra.val_apply] using hvK
+    have he : x = (↑u⁻¹ : K) * algebraMap R K r := by
+      rw [← hr, ← hu]
+      exact (Units.inv_mul_cancel_left u x).symm
     rw [he]
-    exact A.mul_mem (v⁻¹).val.property (A.algebraMap_mem r)
+    exact A.mul_mem (by
+      simpa only [u, Units.coe_map_inv, AlgHom.coe_toMonoidHom, Subalgebra.val_apply] using
+        (v⁻¹).val.property) (A.algebraMap_mem r)
 
 end TauCeti.Localization.subalgebra
 

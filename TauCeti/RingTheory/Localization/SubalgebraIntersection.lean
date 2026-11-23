@@ -45,7 +45,10 @@ theorem iInf_subalgebra_powers_eq_bot_of_span_range_eq_top {ι : Type*} (a : ι 
     (Algebra.mem_iInf.mp hx i)
   obtain ⟨n, hn⟩ : ∃ n : ℕ, a i ^ n ∈ Algebra.denIdeal K x := by
     simpa only [Submonoid.mem_powers_iff, exists_exists_eq_and] using hi
-  exact ⟨n, by rwa [Algebra.denIdeal_def, Submodule.mem_colon_singleton] at hn⟩
+  obtain ⟨r, hr⟩ := (Algebra.mem_denIdeal_iff K).mp hn
+  refine ⟨n, ?_⟩
+  rw [Algebra.smul_def, Submodule.mem_one]
+  exact ⟨r, hr.symm⟩
 
 /-- Two embedded principal localizations at coprime elements intersect in the coefficient
 image. -/
