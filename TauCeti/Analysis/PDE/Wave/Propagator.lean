@@ -306,20 +306,18 @@ theorem waveSinPropagator_zero : waveSinPropagator (E := E) F 0 = 0 := by
 
 /-- `cos(tD)` has operator norm at most `1`. -/
 theorem norm_waveCosPropagator_le (t : ℝ) : ‖waveCosPropagator (E := E) F t‖ ≤ 1 :=
-  Lp.norm_fourierMultiplierCLM_toLp_le _ zero_le_one
-    (Eventually.of_forall (norm_waveCosSymbol_le t))
+  Lp.norm_fourierMultiplierCLM_toLp_le _ (Eventually.of_forall (norm_waveCosSymbol_le t))
 
 /-- `D⁻¹ sin(tD)` has operator norm at most `|t|`. -/
 theorem norm_waveSinPropagator_le (t : ℝ) : ‖waveSinPropagator (E := E) F t‖ ≤ |t| :=
-  Lp.norm_fourierMultiplierCLM_toLp_le _ (abs_nonneg t)
-    (Eventually.of_forall (norm_waveSinSymbol_le t))
+  Lp.norm_fourierMultiplierCLM_toLp_le _ (Eventually.of_forall (norm_waveSinSymbol_le t))
 
 /-- `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm. -/
 theorem norm_waveSinPropagator_sub_le (s t : ℝ) :
     ‖waveSinPropagator (E := E) F s - waveSinPropagator F t‖ ≤ |s - t| := by
   rw [waveSinPropagator_def, waveSinPropagator_def, ← Lp.fourierMultiplierCLM_sub,
     ← MemLp.toLp_sub]
-  exact Lp.norm_fourierMultiplierCLM_toLp_le _ (abs_nonneg _)
+  exact Lp.norm_fourierMultiplierCLM_toLp_le _
     (Eventually.of_forall (norm_waveSinSymbol_sub_le s t))
 
 /-- `(t, g) ↦ D⁻¹ sin(tD) g` is jointly continuous. -/
