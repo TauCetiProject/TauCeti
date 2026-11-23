@@ -19,10 +19,15 @@ Separatedness and properness descend along surjective, flat, quasi-compact morph
 The instances here allow the generic `MorphismProperty` descent API to recover these properties
 from a base change over any base scheme.
 
-Separatedness descends by applying closed-immersion descent to the diagonal, using
-`MorphismProperty.DescendsAlong` for diagonal properties.
-Properness then follows by combining descent of separatedness, universal closedness and local
-finite type. Universal closedness already implies quasi-compactness.
+Separatedness uses Tau Ceti's
+`IsClosedImmersion.descendsAlong_surjective_inf_flat_inf_quasiCompact` from
+`TauCeti.AlgebraicGeometry.Descent.MorphismProperty`, together with Mathlib's diagonal descent
+instance from `Mathlib.CategoryTheory.MorphismProperty.Descent`.
+Properness combines descent of separatedness, universal closedness and local finite type using
+Mathlib's `MorphismProperty.DescendsAlong.inf`. The latter two descent instances come from
+`Mathlib.AlgebraicGeometry.Morphisms.FlatDescent` and
+`Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent`, respectively. Universal closedness already
+implies quasi-compactness.
 
 ## References
 
