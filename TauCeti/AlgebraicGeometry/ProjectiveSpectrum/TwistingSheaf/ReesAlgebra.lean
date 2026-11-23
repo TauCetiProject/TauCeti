@@ -58,10 +58,12 @@ theorem smul_toTwistingSheaf_monomialDegreeOne_eq {a b : R} (ha : a ∈ I) (hb :
       ((Proj.toSpecCoeff (grade I)).appTop ((Scheme.ΓSpecIso (.of R)).inv a)) •
         Proj.toTwistingSheaf (grade I) rfl ⊤
           ⟨monomialDegreeOne hb, monomialDegreeOne_mem_grade hb⟩ := by
-  ext x
-  simp only [Proj.twistingSheaf.smul_apply, Proj.toTwistingSheaf_apply_apply,
-    Proj.val_toSpecCoeff_appTop_apply (grade I), Localization.mk_mul, mul_one,
-    algebraMap_mul_monomialDegreeOne_eq ha hb]
+  rw [Proj.toSpecCoeff_appTop_smul_toTwistingSheaf,
+    Proj.toSpecCoeff_appTop_smul_toTwistingSheaf]
+  congr 1
+  exact Subtype.ext <| by
+    simpa only [Submodule.coe_smul, Algebra.smul_def] using
+      algebraMap_mul_monomialDegreeOne_eq ha hb
 
 /-- The nonvanishing locus of the degree-one Rees section `a t` of `𝒪(1)` on `Proj R[It]` is the
 standard open `D₊(a t)`. -/

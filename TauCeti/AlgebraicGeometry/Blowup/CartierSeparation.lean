@@ -26,7 +26,7 @@ Because `F` is always an effective Cartier divisor on `Bl_{D₁ ⊔ D₂} X`, th
 (`blowupSupResidualRight`) are defined for arbitrary ideal sheaves `D₁` and `D₂` and satisfy:
 
 * `F * D'₁ = D₁.comap p` and `F * D'₂ = D₂.comap p` (`p* Dᵢ = F + D'ᵢ`),
-* `K ≤ D'ᵢ ↔ K * F ≤ p* Dᵢ` (`le_blowupSupResidualLeft_iff`, `le_blowupSupResidualRight_iff`),
+* `K ≤ D'ᵢ ↔ K * F ≤ p* Dᵢ` (via `Scheme.IdealSheafData.le_colon_iff`),
 * `D'₁ ⊔ D'₂ = ⊤`, equivalently `Disjoint D'₁.support D'₂.support`,
 * `D₁.comap p * D'₂ = D₂.comap p * D'₁` (`p* D₁ + D'₂ = p* D₂ + D'₁`).
 
@@ -46,9 +46,6 @@ open `U` where `D₁(U) = (x₁)` and `D₂(U) = (x₂)`, the residual ideals on
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_blowupToBase_sup_mul_blowupSupResidualLeft`,
   `AlgebraicGeometry.Scheme.IdealSheafData.comap_blowupToBase_sup_mul_blowupSupResidualRight`:
   `F * D'ᵢ = p* Dᵢ`.
-* `AlgebraicGeometry.Scheme.IdealSheafData.le_blowupSupResidualLeft_iff`,
-  `AlgebraicGeometry.Scheme.IdealSheafData.le_blowupSupResidualRight_iff`: universal property
-  `K ≤ D'ᵢ ↔ K * F ≤ p* Dᵢ`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.blowupSupResidualLeft_sup_right`,
   `AlgebraicGeometry.Scheme.IdealSheafData.disjoint_support_blowupSupResidual`: `D'₁ ⊔ D'₂ = ⊤`
   and `D'₁`, `D'₂` have disjoint supports.
@@ -57,6 +54,11 @@ open `U` where `D₁(U) = (x₁)` and `D₂(U) = (x₂)`, the residual ideals on
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.blowupSupResidualLeft`,
   `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.blowupSupResidualRight`:
   the residual ideal sheaves of effective Cartier divisors are effective Cartier.
+* Affine blowup chart equations in `AlgebraicGeometry.Scheme.IdealSheafData` for the residual
+  ideal sheaves: `comap_affineBlowupι_blowupChart_blowupSupResidualLeft_eq_top`,
+  `comap_affineBlowupι_blowupChart_blowupSupResidualRight_eq_top`,
+  `comap_affineBlowupι_blowupChart_blowupSupResidualLeft`, and
+  `comap_affineBlowupι_blowupChart_blowupSupResidualRight`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isProper_blowupToBase_sup`,
   `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.isIso_blowupToBase_sup_of_le`:
   properness of `Bl_{D₁ ⊔ D₂} X ⟶ X` and triviality when `D₂ ≤ D₁`.
@@ -124,22 +126,6 @@ theorem blowupSupResidualRight_def (D₁ D₂ : X.IdealSheafData) :
     D₁.blowupSupResidualRight D₂ =
       (D₂.comap (D₁ ⊔ D₂).blowupToBase).colon ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase) :=
   (rfl)
-
-/-- **Universal property of `blowupSupResidualLeft`.** An ideal sheaf `K` on `Bl_{D₁ ⊔ D₂} X` is
-contained in `D'₁` exactly when `K * F ≤ p* D₁`. -/
-theorem le_blowupSupResidualLeft_iff (D₁ D₂ : X.IdealSheafData)
-    (K : (D₁ ⊔ D₂).blowup.IdealSheafData) :
-    K ≤ D₁.blowupSupResidualLeft D₂ ↔
-      K * (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase ≤ D₁.comap (D₁ ⊔ D₂).blowupToBase :=
-  le_colon_iff
-
-/-- **Universal property of `blowupSupResidualRight`.** An ideal sheaf `K` on `Bl_{D₁ ⊔ D₂} X` is
-contained in `D'₂` exactly when `K * F ≤ p* D₂`. -/
-theorem le_blowupSupResidualRight_iff (D₁ D₂ : X.IdealSheafData)
-    (K : (D₁ ⊔ D₂).blowup.IdealSheafData) :
-    K ≤ D₁.blowupSupResidualRight D₂ ↔
-      K * (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase ≤ D₂.comap (D₁ ⊔ D₂).blowupToBase :=
-  le_colon_iff
 
 /-- **Left factorization `p* D₁ = F + D'₁`.** On `Bl_{D₁ ⊔ D₂} X`, the product of the exceptional
 ideal `F` with the left residual ideal `D'₁` is the pulled-back ideal `p* D₁`. -/
@@ -263,42 +249,62 @@ theorem blowupSupResidualLeft_of_le {D₁ D₂ : X.IdealSheafData}
   exact (comap_colon D₁ D₂ hD₂ h (D₁ ⊔ D₂).blowupToBase
     (hsup ▸ (D₁ ⊔ D₂).isEffectiveCartier_comap_blowupToBase)).symm
 
-/-- For identical ideal sheaves `D`, the left residual ideal on `Bl_{D ⊔ D} X` is `⊤`. -/
-@[simp]
-theorem blowupSupResidualLeft_self (D : X.IdealSheafData) : D.blowupSupResidualLeft D = ⊤ :=
-  blowupSupResidualLeft_eq_top_of_le le_rfl
+/-! ### Affine blowup chart equations -/
 
-/-- For identical ideal sheaves `D`, the right residual ideal on `Bl_{D ⊔ D} X` is `⊤`. -/
-@[simp]
-theorem blowupSupResidualRight_self (D : X.IdealSheafData) : D.blowupSupResidualRight D = ⊤ :=
-  blowupSupResidualRight_eq_top_of_le le_rfl
+/-- On the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/a]` over an affine open `U` where
+`a ∈ D₁(U)`, the left residual ideal `D'₁ = (p* D₁ : F)` pulls back to the unit ideal sheaf `⊤`. -/
+theorem comap_affineBlowupι_blowupChart_blowupSupResidualLeft_eq_top (D₁ D₂ : X.IdealSheafData)
+    {U : X.Opens} (hU : IsAffineOpen U) {a : Γ(X, U)} (S : Type u) [CommRing S]
+    [Algebra Γ(X, U) S] [IsLocalization.Away a S] (ha : a ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩)
+    (ha₁ : a ∈ D₁.ideal ⟨U, hU⟩) :
+    (D₁.blowupSupResidualLeft D₂).comap (affineBlowupι S ha ≫ (D₁ ⊔ D₂).blowupChart hU) = ⊤ :=
+  comap_affineBlowupι_blowupChart_colon_eq_top (D₁ ⊔ D₂) D₁ hU S ha ha₁
 
-/-- When `D₁ = ⊤`, the left residual ideal is `⊤`. -/
-@[simp]
-theorem blowupSupResidualLeft_top_left (D₂ : X.IdealSheafData) :
-    (⊤ : X.IdealSheafData).blowupSupResidualLeft D₂ = ⊤ :=
-  blowupSupResidualLeft_eq_top_of_le le_top
+/-- On the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/a]` over an affine open `U` where
+`a ∈ D₂(U)`, the right residual ideal `D'₂ = (p* D₂ : F)` pulls back to the unit ideal sheaf
+`⊤`. -/
+theorem comap_affineBlowupι_blowupChart_blowupSupResidualRight_eq_top (D₁ D₂ : X.IdealSheafData)
+    {U : X.Opens} (hU : IsAffineOpen U) {a : Γ(X, U)} (S : Type u) [CommRing S]
+    [Algebra Γ(X, U) S] [IsLocalization.Away a S] (ha : a ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩)
+    (ha₂ : a ∈ D₂.ideal ⟨U, hU⟩) :
+    (D₁.blowupSupResidualRight D₂).comap (affineBlowupι S ha ≫ (D₁ ⊔ D₂).blowupChart hU) = ⊤ :=
+  comap_affineBlowupι_blowupChart_colon_eq_top (D₁ ⊔ D₂) D₂ hU S ha ha₂
 
-/-- When `D₁ = ⊤`, the right residual ideal is the pullback of `D₂`. -/
-@[simp]
-theorem blowupSupResidualRight_top_left (D₂ : X.IdealSheafData) :
-    (⊤ : X.IdealSheafData).blowupSupResidualRight D₂ =
-      D₂.comap ((⊤ : X.IdealSheafData) ⊔ D₂).blowupToBase := by
-  simpa only [colon_top] using
-    blowupSupResidualRight_of_le (isEffectiveCartier_top X).locallyPrincipal le_top
+/-- On the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/a]` over an affine open `U` where
+`D₁(U) = (b)` and `a ∈ (D₁ ⊔ D₂)(U)` (for instance on the `x₂`-chart when `D₂(U) = (x₂)`), the
+left residual ideal `D'₁ = (p* D₁ : F)` pulls back to the principal ideal generated by `b / a`. -/
+theorem comap_affineBlowupι_blowupChart_blowupSupResidualLeft (D₁ D₂ : X.IdealSheafData)
+    {U : X.Opens} (hU : IsAffineOpen U) {a b : Γ(X, U)} (S : Type u) [CommRing S]
+    [Algebra Γ(X, U) S] [IsLocalization.Away a S] (ha : a ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩)
+    (hD₁ : D₁.ideal ⟨U, hU⟩ = Ideal.span {b}) :
+    (D₁.blowupSupResidualLeft D₂).comap (affineBlowupι S ha ≫ (D₁ ⊔ D₂).blowupChart hU) =
+      ofIdealTop (Ideal.span
+        {(Scheme.ΓSpecIso
+            (.of (((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup a S))).inv
+          (⟨TauCeti.Localization.divBy (S := S) b a,
+            Ideal.divBy_mem_affineBlowup
+              (le_sup_left (a := D₁.ideal ⟨U, hU⟩) (b := D₂.ideal ⟨U, hU⟩)
+                (hD₁ ▸ Ideal.subset_span rfl))⟩ :
+            ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup a S)}) :=
+  comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₁ hU le_sup_left S ha hD₁
 
-/-- When `D₂ = ⊤`, the left residual ideal is the pullback of `D₁`. -/
-@[simp]
-theorem blowupSupResidualLeft_top_right (D₁ : X.IdealSheafData) :
-    D₁.blowupSupResidualLeft ⊤ = D₁.comap (D₁ ⊔ ⊤).blowupToBase := by
-  simpa only [colon_top] using
-    blowupSupResidualLeft_of_le (isEffectiveCartier_top X).locallyPrincipal le_top
-
-/-- When `D₂ = ⊤`, the right residual ideal is `⊤`. -/
-@[simp]
-theorem blowupSupResidualRight_top_right (D₁ : X.IdealSheafData) :
-    D₁.blowupSupResidualRight ⊤ = ⊤ :=
-  blowupSupResidualRight_eq_top_of_le le_top
+/-- On the affine chart `Spec Γ(X, U)[(D₁ ⊔ D₂)(U)/a]` over an affine open `U` where
+`D₂(U) = (b)` and `a ∈ (D₁ ⊔ D₂)(U)` (for instance on the `x₁`-chart when `D₁(U) = (x₁)`), the
+right residual ideal `D'₂ = (p* D₂ : F)` pulls back to the principal ideal generated by `b / a`. -/
+theorem comap_affineBlowupι_blowupChart_blowupSupResidualRight (D₁ D₂ : X.IdealSheafData)
+    {U : X.Opens} (hU : IsAffineOpen U) {a b : Γ(X, U)} (S : Type u) [CommRing S]
+    [Algebra Γ(X, U) S] [IsLocalization.Away a S] (ha : a ∈ (D₁ ⊔ D₂).ideal ⟨U, hU⟩)
+    (hD₂ : D₂.ideal ⟨U, hU⟩ = Ideal.span {b}) :
+    (D₁.blowupSupResidualRight D₂).comap (affineBlowupι S ha ≫ (D₁ ⊔ D₂).blowupChart hU) =
+      ofIdealTop (Ideal.span
+        {(Scheme.ΓSpecIso
+            (.of (((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup a S))).inv
+          (⟨TauCeti.Localization.divBy (S := S) b a,
+            Ideal.divBy_mem_affineBlowup
+              (le_sup_right (a := D₁.ideal ⟨U, hU⟩) (b := D₂.ideal ⟨U, hU⟩)
+                (hD₂ ▸ Ideal.subset_span rfl))⟩ :
+            ((D₁ ⊔ D₂).ideal ⟨U, hU⟩).affineBlowup a S)}) :=
+  comap_affineBlowupι_blowupChart_colon (D₁ ⊔ D₂) D₂ hU le_sup_right S ha hD₂
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

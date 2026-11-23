@@ -500,6 +500,18 @@ theorem mul_toTwistingSheaf {m : ℤ} {i j : ℕ} (hi : (i : ℤ) = m) (hj : (j 
           (by push_cast; omega) U ⟨r * r', SetLike.mul_mem_graded r.property r'.property⟩ :=
   twistingSheaf.ext fun _ ↦ (Localization.mk_mul ..).trans (congrArg _ (Subtype.ext (mul_one 1)))
 
+/-- Scalar multiplication by the pullback of `c : R` along `Proj.toSpecCoeff 𝒜` on
+`toTwistingSheaf` agrees with `toTwistingSheaf` of `c • r`. -/
+theorem toSpecCoeff_appTop_smul_toTwistingSheaf {R A : Type u} [CommRing R] [CommRing A]
+    [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] {n : ℤ} {j : ℕ} (h : (j : ℤ) = n)
+    (c : R) (r : 𝒜 j) :
+    ((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv c)) • toTwistingSheaf 𝒜 h ⊤ r =
+      toTwistingSheaf 𝒜 h ⊤ (c • r) := by
+  refine twistingSheaf.ext fun x ↦ ?_
+  rw [twistingSheaf.smul_apply, toTwistingSheaf_apply_apply, toTwistingSheaf_apply_apply,
+    val_toSpecCoeff_appTop_apply, Localization.mk_mul, one_mul, Submodule.coe_smul,
+    Algebra.smul_def]
+
 variable (𝒜) in
 /-- Over every open `U`, the sections of the structure sheaf of `Proj` are the sections of
 `𝒪(0)`: the inclusions `A_{(x)} → A_x` identify the local fractions of degree `0` in the
