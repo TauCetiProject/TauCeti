@@ -184,10 +184,9 @@ theorem coe_diffeomorphSphere_apply (n : ℕ∞ω) (θ : AddCircle p) :
 theorem coe_diffeomorphSphere_mk (n : ℕ∞ω) (t : ℝ) :
     (diffeomorphSphere p n t : EuclideanSpace ℝ (Fin 2)) =
       !₂[Real.cos (2 * π / p * t), Real.sin (2 * π / p * t)] := by
-  rw [coe_diffeomorphSphere_apply, toCircle_apply_mk, Circle.coe_exp]
-  ext i
-  rw [Complex.orthonormalBasisOneI_repr_apply, Complex.exp_ofReal_mul_I_re,
-    Complex.exp_ofReal_mul_I_im]
+  rw [coe_diffeomorphSphere_apply, toCircle_apply_mk,
+    ← TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply,
+    TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp]
 
 /-- The diffeomorphism `diffeomorphSphere p n` carries the reflection `θ ↦ -θ` of `AddCircle p`
 to the reflection `(x, y) ↦ (x, -y)` of the unit circle of `ℝ²`, the restriction of the diagonal
