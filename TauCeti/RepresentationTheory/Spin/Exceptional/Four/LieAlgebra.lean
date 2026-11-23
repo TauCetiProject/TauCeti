@@ -322,6 +322,28 @@ theorem typeDHalfSpinLieEquivSlProdSl_apply_eq_evenCliffordEquivProdEnd_trans_to
 
 /-! ### The half-spin modules as standard modules -/
 
+omit [Invertible (2 : K)] in
+/-- Taking coordinates in a basis `B` of `M` is an equivalence of Lie modules from `M`, acted on
+through `ρ`, to `μ → K`, acted on through the trace-zero matrices `g`, whenever `g x` is the matrix
+of `ρ x` in `B`. -/
+private noncomputable def lieModuleEquivOfToMatrix {L M μ : Type*} [LieRing L] [LieAlgebra K L]
+    [AddCommGroup M] [Module K M] [Fintype μ] [DecidableEq μ] (ρ : L →ₗ⁅K⁆ Module.End K M)
+    (g : L →ₗ⁅K⁆ SpecialLinear.sl μ K) (B : Basis μ K M)
+    (hg : ∀ x, (g x : Matrix μ μ K) = LinearMap.toMatrix B B (ρ x)) :
+    letI : LieRingModule L M := LieRingModule.compLieHom _ ρ
+    letI : LieRingModule L (μ → K) :=
+      LieRingModule.compLieHom _ ((SpecialLinear.sl μ K).incl.comp g)
+    M ≃ₗ⁅K, L⁆ (μ → K) :=
+  letI : LieRingModule L M := LieRingModule.compLieHom _ ρ
+  letI : LieRingModule L (μ → K) :=
+    LieRingModule.compLieHom _ ((SpecialLinear.sl μ K).incl.comp g)
+  { B.equivFun with
+    map_lie' := fun {x s} ↦ by
+      simp only [LieRingModule.compLieHom_apply, LieHom.coe_comp, Function.comp_apply,
+        LieSubalgebra.coe_incl, Matrix.lie_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
+        LinearMap.coe_toAddHom, LinearEquiv.coe_coe, hg, Basis.equivFun_apply,
+        LinearMap.toMatrix_mulVec_repr] }
+
 /-- **`S⁺` is the standard module of the first factor `sl₂`.** Make `S⁺` a module over `so₄`
 through its half-spin action, and `κ → K` through the first component of
 `typeDHalfSpinLieEquivSlProdSl` followed by the matrix action. Then taking coordinates in `B` is
@@ -339,18 +361,9 @@ noncomputable def typeDSpinPlusLieModuleEquivStd (hι : Fintype.card ι = 2)
       LieModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
         ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
     spinPlus Q P ≃ₗ⁅K, LieAlgebra.Orthogonal.typeD ι K⁆ (κ → K) :=
-  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
-    LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
-  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ → K) :=
-    LieRingModule.compLieHom _ ((SpecialLinear.sl κ K).incl.comp
-      ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
-  { B.equivFun with
-    map_lie' := fun {x s} ↦ by
-      simp only [LieRingModule.compLieHom_apply, LieHom.coe_comp, Function.comp_apply,
-        LieEquiv.coe_toLieHom, LieHom.coe_fst, LieSubalgebra.coe_incl, Matrix.lie_apply,
-        Module.End.lie_apply, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-        coe_typeDHalfSpinLieEquivSlProdSl_apply_fst, Basis.equivFun_apply,
-        LinearMap.toMatrix_mulVec_repr] }
+  lieModuleEquivOfToMatrix (P.typeDSpinPlusLieRep b hline)
+    ((LieHom.fst K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom) B
+    (P.coe_typeDHalfSpinLieEquivSlProdSl_apply_fst b hline hι B B')
 
 /-- The Lie module equivalence `typeDSpinPlusLieModuleEquivStd` takes coordinates in `B`. -/
 @[simp]
@@ -404,18 +417,9 @@ noncomputable def typeDSpinMinusLieModuleEquivStd (hι : Fintype.card ι = 2)
       LieModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
         ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
     spinMinus Q P ≃ₗ⁅K, LieAlgebra.Orthogonal.typeD ι K⁆ (κ' → K) :=
-  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
-    LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
-  letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (κ' → K) :=
-    LieRingModule.compLieHom _ ((SpecialLinear.sl κ' K).incl.comp
-      ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom))
-  { B'.equivFun with
-    map_lie' := fun {x s} ↦ by
-      simp only [LieRingModule.compLieHom_apply, LieHom.coe_comp, Function.comp_apply,
-        LieEquiv.coe_toLieHom, LieHom.coe_snd, LieSubalgebra.coe_incl, Matrix.lie_apply,
-        Module.End.lie_apply, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-        coe_typeDHalfSpinLieEquivSlProdSl_apply_snd, Basis.equivFun_apply,
-        LinearMap.toMatrix_mulVec_repr] }
+  lieModuleEquivOfToMatrix (P.typeDSpinMinusLieRep b hline)
+    ((LieHom.snd K _ _).comp (P.typeDHalfSpinLieEquivSlProdSl b hline hι B B').toLieHom) B'
+    (P.coe_typeDHalfSpinLieEquivSlProdSl_apply_snd b hline hι B B')
 
 /-- The Lie module equivalence `typeDSpinMinusLieModuleEquivStd` takes coordinates in `B'`. -/
 @[simp]
