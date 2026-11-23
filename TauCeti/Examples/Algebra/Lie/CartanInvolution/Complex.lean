@@ -30,13 +30,13 @@ namespace TauCeti
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- Minus the conjugate transpose of a trace-zero matrix has trace zero. -/
-theorem neg_conjTranspose_mem_sl (X : SpecialLinear.sl (Fin 2) ℂ) :
+private theorem neg_conjTranspose_mem_sl (X : SpecialLinear.sl (Fin 2) ℂ) :
     -(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ ∈ SpecialLinear.sl (Fin 2) ℂ := by
   have h : (X : Matrix (Fin 2) (Fin 2) ℂ).trace = 0 := LinearMap.mem_ker.1 X.property
   exact LinearMap.mem_ker.2 (by simp [trace_conjTranspose, h])
 
 /-- The involution `X ↦ -X*` of `𝔰𝔩₂(ℂ)`, as an automorphism of real Lie algebras. -/
-@[expose] noncomputable def slFinTwoNegConjTranspose :
+noncomputable def slFinTwoNegConjTranspose :
     SpecialLinear.sl (Fin 2) ℂ ≃ₗ⁅ℝ⁆ SpecialLinear.sl (Fin 2) ℂ where
   toFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ, neg_conjTranspose_mem_sl X⟩
   invFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ, neg_conjTranspose_mem_sl X⟩
@@ -46,20 +46,22 @@ theorem neg_conjTranspose_mem_sl (X : SpecialLinear.sl (Fin 2) ℂ) :
   left_inv X := Subtype.ext (by simp)
   right_inv X := Subtype.ext (by simp)
 
+/-- `slFinTwoNegConjTranspose` sends `X` to `-X*`. -/
+@[simp]
 theorem coe_slFinTwoNegConjTranspose_apply (X : SpecialLinear.sl (Fin 2) ℂ) :
     (slFinTwoNegConjTranspose X : Matrix (Fin 2) (Fin 2) ℂ) = -(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ :=
-  rfl
+  (rfl)
 
 /-- `X ↦ -X*` is conjugate-linear. -/
 theorem slFinTwoNegConjTranspose_smul (c : ℂ) (X : SpecialLinear.sl (Fin 2) ℂ) :
     slFinTwoNegConjTranspose (c • X) = (starRingEnd ℂ) c • slFinTwoNegConjTranspose X :=
-  Subtype.ext (by simp [coe_slFinTwoNegConjTranspose_apply, conjTranspose_smul])
+  Subtype.ext (by simp [conjTranspose_smul])
 
 /-- `X ↦ -X*` is a Cartan involution of `𝔰𝔩₂(ℂ)` viewed as a real Lie algebra. -/
 theorem isCartanInvolution_slFinTwoNegConjTranspose :
     slFinTwoNegConjTranspose.IsCartanInvolution := by
   refine LieEquiv.isCartanInvolution_of_re_killingForm_neg
-    (fun X ↦ Subtype.ext (by simp [coe_slFinTwoNegConjTranspose_apply])) fun X hX ↦ ?_
+    (fun X ↦ Subtype.ext (by simp)) fun X hX ↦ ?_
   have hX' : (X : Matrix (Fin 2) (Fin 2) ℂ) ≠ 0 := fun h ↦ hX (Subtype.ext h)
   have hpos : 0 < ((X : Matrix (Fin 2) (Fin 2) ℂ) * (X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ).trace :=
     (posSemidef_self_mul_conjTranspose _).trace_nonneg.lt_of_ne
