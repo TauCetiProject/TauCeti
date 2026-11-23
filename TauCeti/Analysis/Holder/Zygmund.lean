@@ -329,7 +329,7 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_add_add_sub_tw
       (φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ j) hf hmi
       (integrable_kernel_smul_sub hκi f.continuous (f.norm_coe_le_norm ·) x)
   have hnorm : ‖g‖ ≤ H * (((2 : ℝ) ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C) := by
-    refine Lp.norm_top_le_of_ae_bound (by positivity) ?_
+    refine Lp.norm_le_of_ae_bound_top (by positivity) ?_
     filter_upwards [hconv] with x hx
     rw [hx]
     exact (hpt x).trans (by gcongr)
@@ -359,7 +359,7 @@ private theorem toLpTop_eq_toDistr_of_tendsto {s : ℝ} {q : ℝ≥0∞} {u : Be
       (𝓝 (toLpTop volume ℂ f)) := by
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) hε
-    refine Lp.norm_top_le_of_ae_bound ((norm_nonneg _).trans (htail N 0)) ?_
+    refine Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans (htail N 0)) ?_
     filter_upwards [Lp.coeFn_sub (∑ j ∈ Finset.range N, u.block j) (toLpTop volume ℂ f),
       Lp.coeFn_finsetSum (Finset.range N) u.block, coeFn_toLpTop (𝕜 := ℂ) volume f,
       ae_all_iff.2 hG] with x h₁ h₂ h₃ h₄
