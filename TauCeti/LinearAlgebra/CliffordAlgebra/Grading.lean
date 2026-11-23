@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.Tactic.LinearCombination
-import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # Reading the `ℤ/2`-grading: base cases, exterior bases, and ordered products
@@ -59,8 +58,6 @@ belongs to the grading API independently of any spin representation.
   with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
-* `CliffordAlgebra.mul_mul_inv_mem_evenOdd`: conjugation by an even unit preserves every graded
-  piece, since the inverse of an even unit is even (`Units.val_inv_mem_graded`).
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -170,19 +167,6 @@ theorem involute_eq_neg_iff {x : CliffordAlgebra Q} : involute x = -x ↔ x ∈ 
   simpa [(isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2] using ho
 
 end Involute
-
-/-! ### Conjugation by an even unit -/
-
-/-- Conjugation by a unit whose value lies in the even part of the Clifford algebra preserves every
-graded piece. -/
-theorem mul_mul_inv_mem_evenOdd {x : (CliffordAlgebra Q)ˣ}
-    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q 0) {k : ZMod 2} {y : CliffordAlgebra Q}
-    (hy : y ∈ evenOdd Q k) : (x : CliffordAlgebra Q) * y * ↑x⁻¹ ∈ evenOdd Q k := by
-  have h : (x : CliffordAlgebra Q) * y ∈ evenOdd Q k := by
-    simpa using SetLike.mul_mem_graded hx hy
-  -- The inverse of an even unit is even: `Units.val_inv_mem_graded` gives degree `-0`.
-  have hxi : (↑x⁻¹ : CliffordAlgebra Q) ∈ evenOdd Q 0 := by simpa using x.val_inv_mem_graded hx
-  simpa using SetLike.mul_mem_graded h hxi
 
 end CliffordAlgebra
 

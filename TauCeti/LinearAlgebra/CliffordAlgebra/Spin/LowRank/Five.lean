@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
--- Private: the conjugation lemma for units, the Clifford-group characterization of the Lipschitz
--- group, the reversal calculus on odd elements in dimension five, the volume element, the
--- orthogonal basis, the vanishing of central vectors and the dichotomy for a vector plus a central
--- element are used only inside the proofs.
+-- Private: the conjugation lemma for units, conjugation by homogeneous units, the Clifford-group
+-- characterization of the Lipschitz group, the reversal calculus on odd elements in dimension five,
+-- the volume element, the orthogonal basis, the vanishing of central vectors and the dichotomy for
+-- a vector plus a central element are used only inside the proofs.
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Five
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # The Spin group in dimensions one to five
@@ -96,7 +97,7 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
   intro x hx
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
   rw [involute_eq_of_mem_even (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)]
-  have hodd := mul_mul_inv_mem_evenOdd (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)
+  have hodd := Units.val_mul_mul_inv_mem_graded _ (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)
     (ι_mem_evenOdd_one Q m)
   have hrev := reverse_mul_mul_inv_eq_self (evenUnitaryGroup.reverse_mul_self Q ⟨x, hx⟩)
     (reverse_ι m)
