@@ -284,9 +284,7 @@ variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
 variable [FiniteDimensional k S]
 variable {N : Type*} [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
-variable [IsSimpleModule A N]
 
-omit [IsSimpleModule A N] in
 /-- **Schur's lemma over an algebraically closed field, in dimensions.**  Between equivalent
 finite-dimensional simple modules the hom space is a line: every map is a scalar multiple of a
 fixed isomorphism. -/

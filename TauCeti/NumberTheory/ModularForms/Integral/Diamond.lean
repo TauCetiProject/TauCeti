@@ -177,7 +177,7 @@ elements of `R`. -/
 private noncomputable def truncCoeffs :
     diamondIntegral R N k →ₗ[ℤ] Fin (sturmLength ((Gamma1 N).map (mapGL ℝ)) k) → R where
   toFun f i := ⟨CuspForm.qExpansionCoeffₗ one_pos (one_mem_strictPeriods_Gamma1_map N) k i f,
-    by simpa using qExpansion_coeff_mem_of_mem_diamondIntegral f.2 i⟩
+    by simpa using qExpansion_coeff_mem_of_mem_diamondIntegral f.property i⟩
   map_add' f g := by
     ext i
     simp only [Submodule.coe_add, map_add, Pi.add_apply, Subring.coe_add]

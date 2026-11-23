@@ -37,11 +37,13 @@ public section
 
 open CategoryTheory
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
-variable {K L : Type u} [Field K] [Field L] [Algebra K L]
+section
+
+variable {K : Type u} {L : Type w} [Field K] [Field L] [Algebra K L]
 variable {G : Type v} [Group G] {S : Subgroup G} [S.FiniteIndex]
 
 /-- Changing the coefficients of a linear character and inducing it gives the image of its
@@ -59,6 +61,28 @@ theorem character_indFDRep_ofLinearCharacter_map (ψ : S →* Kˣ) :
     simp
   rw [hχ]
   exact Subgroup.indClassFun_comp S (algebraMap K L).toAddMonoidHom _
+
+/-- Every induced linear character over an extension is the image of a virtual character over
+any base field containing the requisite primitive root. This is the coefficient input to the
+field-of-definition form of Brauer induction, and is valid in every characteristic. -/
+theorem exists_virtualCharacter_indFDRep_of_isPrimitiveRoot
+    {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
+    (hG : Monoid.exponent G ∣ n) (χ : S →* Lˣ) :
+    ∃ f ∈ virtualCharacters K G,
+      (indFDRep (FDRep.ofLinearCharacter χ)).character = algebraMap K L ∘ f := by
+  have hS : Monoid.exponent S ∣ n :=
+    (Monoid.exponent_dvd_of_monoidHom S.subtype S.subtype_injective).trans hG
+  obtain ⟨ψ, hψ, -⟩ := χ.existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot hζ hS
+  refine ⟨(indFDRep (FDRep.ofLinearCharacter ψ)).character,
+    character_mem_virtualCharacters _, ?_⟩
+  rw [← hψ, character_indFDRep_ofLinearCharacter_map]
+
+end
+
+section
+
+variable {K L : Type u} [Field K] [Field L] [Algebra K L]
+variable {G : Type v} [Group G] {S : Subgroup G} [S.FiniteIndex]
 
 /-- In characteristic zero, extending scalars after inducing a linear character gives the
 representation induced from the extended linear character. -/
@@ -86,21 +110,6 @@ theorem exists_nonempty_iso_baseChange_indFDRep_of_isPrimitiveRoot [CharZero K] 
   rw [← hψ]
   exact ⟨ψ, nonempty_iso_baseChange_indFDRep_ofLinearCharacter ψ⟩
 
-/-- Every induced linear character over an extension is the image of a virtual character over
-any base field containing the requisite primitive root. This is the coefficient input to the
-field-of-definition form of Brauer induction, and is valid in every characteristic. -/
-theorem exists_virtualCharacter_indFDRep_of_isPrimitiveRoot
-    {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n)
-    (hG : Monoid.exponent G ∣ n) (χ : S →* Lˣ) :
-    ∃ f ∈ virtualCharacters K G,
-      (indFDRep (FDRep.ofLinearCharacter χ)).character = algebraMap K L ∘ f := by
-  have hS : Monoid.exponent S ∣ n :=
-    (Monoid.exponent_dvd_of_monoidHom S.subtype S.subtype_injective).trans hG
-  obtain ⟨ψ, hψ, -⟩ := χ.existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot hζ hS
-  refine ⟨(indFDRep (FDRep.ofLinearCharacter ψ)).character,
-    character_mem_virtualCharacters _, ?_⟩
-  rw [← hψ, character_indFDRep_ofLinearCharacter_map]
-
 /-- The exponent cyclotomic field realizes every representation induced from a linear character
 of a subgroup of `G`. In particular the ambient extension can be the complex numbers. -/
 theorem exists_nonempty_iso_baseChange_indFDRep_of_isCyclotomicExtension [Finite G]
@@ -111,5 +120,7 @@ theorem exists_nonempty_iso_baseChange_indFDRep_of_isCyclotomicExtension [Finite
   have : CharZero K := algebraRat.charZero K
   exists_nonempty_iso_baseChange_indFDRep_of_isPrimitiveRoot
     (IsCyclotomicExtension.zeta_spec (Monoid.exponent G) ℚ K) (dvd_refl _) χ
+
+end
 
 end TauCeti

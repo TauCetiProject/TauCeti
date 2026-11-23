@@ -61,6 +61,6 @@ theorem IsHurewiczFibration.exists_lift_of_ndrPair (hp : IsHurewiczFibration.{w}
       · simpa [hkA t ⟨x, hx⟩] using hg t ⟨x, hx⟩
   refine ⟨G, hG, fun x ↦ ?_, fun t a ↦ ?_⟩
   · simpa [hk₀] using hGJ ⟨(0, x), zero_mem_cylinderExtensionDomain x⟩
-  · simpa [hkA] using hGJ ⟨(t, a), mem_cylinderExtensionDomain_of_mem a.2⟩
+  · simpa [hkA] using hGJ ⟨(t, a), mem_cylinderExtensionDomain_of_mem a.property⟩
 
 end TauCeti

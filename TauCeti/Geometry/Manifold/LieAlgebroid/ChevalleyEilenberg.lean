@@ -579,12 +579,13 @@ def tangentCochainEquivSmoothForm (k : ℕ) :
   map_smul' _ _ := SmoothForm.toContMDiffSection_injective (by simp)
 
 @[simp] theorem tangentCochainEquivSmoothForm_apply {k : ℕ}
-    (φ : (tangent I M).Cochain k) (x : M) : (tangentCochainEquivSmoothForm I M k φ).1 x = φ x := by
+    (φ : (tangent I M).Cochain k) (x : M) :
+    (tangentCochainEquivSmoothForm I M k φ).val x = φ x := by
   rw [← SmoothForm.toContMDiffSection_apply]
   exact congrArg (· x) (SmoothForm.toContMDiffSection_ofContMDiffSection φ)
 
 @[simp] theorem tangentCochainEquivSmoothForm_symm_apply {k : ℕ}
-    (ψ : SmoothForm I M ℝ k) (x : M) : (tangentCochainEquivSmoothForm I M k).symm ψ x = ψ.1 x :=
+    (ψ : SmoothForm I M ℝ k) (x : M) : (tangentCochainEquivSmoothForm I M k).symm ψ x = ψ.val x :=
   SmoothForm.toContMDiffSection_apply ψ x
 
 private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochain (m + 1))
@@ -657,7 +658,7 @@ theorem tangent_extDeriv_apply (k : ℕ) (φ : (tangent I M).Cochain k) (x : M) 
       mextDerivₗ I k (tangentCochainEquivSmoothForm I M k φ) := by
   refine SmoothForm.toContMDiffSection_injective ?_
   ext x w
-  have hη : (tangentCochainEquivSmoothForm I M k φ).1 = fun y ↦ φ y :=
+  have hη : (tangentCochainEquivSmoothForm I M k φ).val = fun y ↦ φ y :=
     funext (tangentCochainEquivSmoothForm_apply φ)
   simp only [SmoothForm.toContMDiffSection_apply, tangentCochainEquivSmoothForm_apply,
     mextDerivₗ_apply, hη]

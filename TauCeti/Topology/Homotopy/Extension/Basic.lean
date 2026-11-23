@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Topology.Homotopy.Trans
 
 /-!
 # The homotopy extension property
@@ -45,6 +46,7 @@ with that property to one that extends homotopies with values in a space in any 
   homeomorphism, inside one universe and, for a closed subset, across universes.
 * `TauCeti.HasHomotopyExtensionProperty.image_of_isEmbedding`: cofibrations compose, the image of
   a subset with the property under an embedding whose image has the property has it too.
+* `TauCeti.HasHomotopyExtensionProperty.sigma`: disjoint unions of cofibrations are cofibrations.
 * `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
   homotopy which retraces it at the points of a subset with the homotopy extension property can
   be replaced by a homotopy relative to that subset.
@@ -117,7 +119,7 @@ theorem hasHomotopyExtensionProperty_iff :
 /-- The empty subset has the homotopy extension property: a homotopy out of `∅` imposes nothing,
 and the constant homotopy extends the initial map. -/
 theorem hasHomotopyExtensionProperty_empty : HasHomotopyExtensionProperty (∅ : Set X) :=
-  fun f _ _ ↦ ⟨f.comp ContinuousMap.snd, fun _ ↦ rfl, fun _ a ↦ a.2.elim⟩
+  fun f _ _ ↦ ⟨f.comp ContinuousMap.snd, fun _ ↦ rfl, fun _ a ↦ a.property.elim⟩
 
 /-- The defining consequence of the homotopy extension property: a homotopy out of `A` whose
 initial map extends to `X` extends to a homotopy out of `X`. -/
@@ -148,9 +150,9 @@ theorem exists_homotopy_extension_of_retraction {Y : Type v} [TopologicalSpace Y
     refine ContinuousOn.union_of_isClosed ?_ ?_ (hA.preimage (by fun_prop))
       ((isClosed_singleton (x := (0 : I))).preimage (by fun_prop))
     · refine continuousOn_iff_continuous_domRestrict.2 <| (H.continuous.comp
-        (f := fun p : {p : I × X | (r p).2 ∈ A} => ((r p).1, (⟨(r p).2, p.2⟩ : A)))
+        (f := fun p : {p : I × X | (r p).2 ∈ A} => ((r p).1, (⟨(r p).2, p.property⟩ : A)))
         (by fun_prop)).congr fun p => ?_
-      have hp : (r p).2 ∈ A := p.2
+      have hp : (r p).2 ∈ A := p.property
       simp [g, hp]
     · refine (f.continuous.comp r.continuous.snd).continuousOn.congr fun p hp => ?_
       have hp : (r p).1 = 0 := hp
@@ -159,7 +161,7 @@ theorem exists_homotopy_extension_of_retraction {Y : Type v} [TopologicalSpace Y
       · exact dite_eq_right h
   refine ⟨⟨g, hg⟩, fun x => ?_, fun t a => ?_⟩
   · by_cases h : x ∈ A <;> simp [g, hr' _ (zero_mem_cylinderExtensionDomain x), h, hH]
-  · simp [g, hr' _ (mem_cylinderExtensionDomain_of_mem a.2)]
+  · simp [g, hr' _ (mem_cylinderExtensionDomain_of_mem a.property)]
 
 /-- A closed subset onto whose cylinder extension domain the cylinder retracts has the homotopy
 extension property. -/
@@ -195,10 +197,10 @@ theorem HasHomotopyExtensionProperty.exists_retraction (h : HasHomotopyExtension
   obtain ⟨G, hG₀, hG₁⟩ :=
     h (Y := cylinderExtensionDomain A)
       ⟨fun x => ⟨((0 : I), x), zero_mem_cylinderExtensionDomain x⟩, by fun_prop⟩
-      ⟨fun q => ⟨(q.1, (q.2 : X)), mem_cylinderExtensionDomain_of_mem q.2.2⟩, by fun_prop⟩
+      ⟨fun q => ⟨(q.1, (q.2 : X)), mem_cylinderExtensionDomain_of_mem q.2.property⟩, by fun_prop⟩
       (fun _ => rfl)
-  refine ⟨⟨fun p => (G p : I × X), continuous_subtype_val.comp G.continuous⟩,
-    fun p => (G p).2, ?_⟩
+  refine ⟨⟨fun p => (G p : I × X), continuous_subtypeVal.comp G.continuous⟩,
+    fun p => (G p).property, ?_⟩
   rintro ⟨t, x⟩ (h0 | hx)
   · obtain rfl : t = 0 := h0
     exact congrArg Subtype.val (hG₀ x)
@@ -259,11 +261,11 @@ theorem HasHomotopyExtensionProperty.image {X' : Type u} [TopologicalSpace X']
   intro Y _ f H hH
   obtain ⟨G, hG₀, hG₁⟩ :=
     h (f.comp ⟨e, e.continuous⟩)
-      (H.comp ⟨fun q => (q.1, ⟨e q.2, mem_image_of_mem e q.2.2⟩), by fun_prop⟩)
-      fun a => hH ⟨e a, mem_image_of_mem e a.2⟩
+      (H.comp ⟨fun q => (q.1, ⟨e q.2, mem_image_of_mem e q.2.property⟩), by fun_prop⟩)
+      fun a => hH ⟨e a, mem_image_of_mem e a.property⟩
   refine ⟨G.comp ⟨fun q => (q.1, e.symm q.2), by fun_prop⟩, fun x' => ?_, fun t b => ?_⟩
   · simpa using hG₀ (e.symm x')
-  · obtain ⟨a, ha, hae⟩ := b.2
+  · obtain ⟨a, ha, hae⟩ := b.property
     have hsymm : e.symm (b : X') = a := by rw [← hae, e.symm_apply_apply]
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, hsymm]
     rw [hG₁ t ⟨a, ha⟩]
@@ -299,8 +301,8 @@ theorem HasHomotopyExtensionProperty.image_of_isEmbedding {X' : Type u} [Topolog
     HasHomotopyExtensionProperty (j '' A) := by
   intro Y _ f H hH
   obtain ⟨G, hG₀, hG⟩ := h (f.comp ⟨j, hj.continuous⟩)
-    (H.comp ⟨fun q ↦ (q.1, ⟨j q.2, mem_image_of_mem j q.2.2⟩), by fun_prop⟩)
-    fun a ↦ hH ⟨j a, mem_image_of_mem j a.2⟩
+    (H.comp ⟨fun q ↦ (q.1, ⟨j q.2, mem_image_of_mem j q.2.property⟩), by fun_prop⟩)
+    fun a ↦ hH ⟨j a, mem_image_of_mem j a.property⟩
   obtain ⟨G', hG'₀, hG'⟩ := hj' f
     (G.comp ⟨fun q ↦ (q.1, hj.toHomeomorph.symm q.2), by fun_prop⟩) fun y ↦ by
       obtain ⟨_, x, rfl⟩ := y
@@ -310,44 +312,26 @@ theorem HasHomotopyExtensionProperty.image_of_isEmbedding {X' : Type u} [Topolog
   rw [hG' t ⟨j a, mem_range_self a⟩]
   simp [hG t ⟨a, ha⟩]
 
-/-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
-`[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
-private noncomputable def tent (t : I) : I :=
-  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.2.1]) (by linarith [t.2.2]),
-    min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h => by linarith) fun h => by linarith⟩
-
-private lemma continuous_tent : Continuous tent := by
-  unfold tent
-  fun_prop
-
-private lemma tent_zero : tent 0 = 0 := by
-  ext
-  simp [tent]
-
-private lemma tent_one : tent 1 = 0 := by
-  ext
-  norm_num [tent]
+/-- **Disjoint unions of cofibrations are cofibrations.** If `A i` has the homotopy extension
+property in `X i` for every `i`, then `Set.univ.sigma A`, the union of the copies of the `A i`, has
+the homotopy extension property in the disjoint union `Σ i, X i`: a homotopy extension problem
+splits into one on each summand, and the solutions glue because the summands are open. -/
+theorem HasHomotopyExtensionProperty.sigma {ι : Type u} {X : ι → Type u}
+    [∀ i, TopologicalSpace (X i)] {A : ∀ i, Set (X i)}
+    (h : ∀ i, HasHomotopyExtensionProperty (A i)) :
+    HasHomotopyExtensionProperty (univ.sigma A) := by
+  intro Y _ f H hH
+  choose G hG₀ hG using fun i ↦ h i (f.comp (ContinuousMap.sigmaMk i))
+    (H.comp ⟨fun q ↦ (q.1, ⟨⟨i, q.2⟩, mem_univ i, q.2.property⟩), by fun_prop⟩)
+    fun a ↦ hH ⟨⟨i, a⟩, mem_univ i, a.property⟩
+  -- Glue the extensions over the summands of `I × Σ i, X i ≃ₜ Σ i, X i × I`.
+  refine ⟨(ContinuousMap.sigma fun i ↦ (G i).comp ⟨Prod.swap, continuous_swap⟩).comp
+    ⟨fun q ↦ Homeomorph.sigmaProdDistrib (q.2, q.1), by fun_prop⟩, fun ⟨i, x⟩ ↦ hG₀ i x,
+    fun t ⟨⟨i, x⟩, hx⟩ ↦ hG i t ⟨x, hx.2⟩⟩
 
 section Retracing
 
 variable {Y : Type u} [TopologicalSpace Y] {f₀ f₁ f₂ : C(X, Y)}
-
-/-- At a point where the homotopy `G` runs backwards along `F`, the concatenation `F.trans G`
-is `F` reparametrised by the tent map. -/
-private lemma trans_apply_of_retracing (F : f₀.Homotopy f₁) (G : f₁.Homotopy f₂) {x : X}
-    (hG : ∀ t, G (t, x) = F (σ t, x)) (t : I) :
-    F.trans G (t, x) = F (tent t, x) := by
-  rw [ContinuousMap.Homotopy.trans_apply]
-  split_ifs with ht
-  · congr 2
-    ext
-    simp [tent, min_eq_left (by linarith : (2 : ℝ) * t ≤ 2 - 2 * t)]
-  · rw [hG]
-    congr 2
-    ext
-    simp only [tent, coe_symm_eq]
-    rw [min_eq_right (by linarith)]
-    ring
 
 /-- **A homotopy which retraces itself on `A` can be made stationary on `A`.** Let `F` be a
 homotopy from `f₀` to `f₁`, and `G` a homotopy from `f₁` to `f₂` which, at every point of a subset
@@ -363,21 +347,18 @@ theorem HasHomotopyExtensionProperty.homotopicRel_of_retracing
   obtain ⟨E, hE₀, hE₁⟩ := hA.exists_extension
     (ContinuousMap.curry ⟨fun p : X × I => F.trans G (p.2, p.1), by fun_prop⟩)
     (ContinuousMap.curry ⟨fun p : (I × A) × I =>
-      F (projIcc 0 1 zero_le_one ((tent p.2 : ℝ) - p.1.1), p.1.2), by
-        have := continuous_tent
-        fun_prop⟩)
+      F (projIcc 0 1 zero_le_one ((tent p.2 : ℝ) - p.1.1), p.1.2), by fun_prop⟩)
     fun a => ContinuousMap.ext fun t => by
-      simp [trans_apply_of_retracing F G (hG · a a.2)]
+      simp only [ContinuousMap.curry_apply, ContinuousMap.coe_mk, Icc.coe_zero, sub_zero,
+        projIcc_val, F.trans_apply_of_retracing G (hG · a a.property)]
   -- Read the extended contraction off along the path `s ↦ (tent s, s)` in the square.
   refine ⟨{ toFun := fun p => E (tent p.1, p.2) p.1
-            continuous_toFun := by
-              have := continuous_tent
-              fun_prop
+            continuous_toFun := by fun_prop
             map_zero_left := fun x => ?_
             map_one_left := fun x => ?_
             prop' := fun s x hx => ?_ }⟩
-  · simp [tent_zero, hE₀]
-  · simp [tent_one, hE₀]
+  · simp [hE₀]
+  · simp [hE₀]
   · simp [hE₁ _ ⟨x, hx⟩]
 
 end Retracing
@@ -415,7 +396,7 @@ theorem HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl
     fun a => ContinuousMap.ext fun t => by
       have : max (t : ℝ) (min (2 * (t : ℝ)) 1 - 0) = min (2 * (t : ℝ)) 1 := by
         rw [sub_zero]
-        exact max_eq_right (le_min (by linarith [t.2.1]) t.2.2)
+        exact max_eq_right (le_min (by linarith [t.property.1]) t.property.2)
       simp only [ContinuousMap.curry_apply, ContinuousMap.coe_mk, Icc.coe_zero, this, hF']
   -- Read the extension off along the path `s ↦ (min s (1 - s), s)` in the square, which starts
   -- and ends on the undeformed paths.
@@ -431,8 +412,8 @@ theorem HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl
   -- `max t (min (2 t) 1 - min t (1 - t)) = t`.
   have key : projIcc 0 1 zero_le_one (max (t : ℝ) (min (2 * (t : ℝ)) 1 -
       (projIcc 0 1 zero_le_one (min (t : ℝ) (1 - t)) : ℝ))) = t := by
-    have ht := t.2.1
-    have ht' := t.2.2
+    have ht := t.property.1
+    have ht' := t.property.2
     ext
     simp only [coe_projIcc, min_def, max_def]
     split_ifs <;> linarith

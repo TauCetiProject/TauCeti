@@ -161,9 +161,9 @@ theorem coordinateChangeLift_mem_iff {ι : Type*} [AddCommMonoid ι] (ℬ : ι �
     [SetLike.GradedMonoid ℬ] (e : ℕ →+ ι)
     (p : {F : FormalGroup A // F.IsComm} × (FormalCoordinate.linearCoeff (R := A)).ker) :
     (∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → coordinateChangeLift p x ∈ ℬ (e n)) ↔
-      (∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d p.1.1.toPowerSeries ∈
+      (∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d p.1.val.toPowerSeries ∈
         ℬ (e (2 * (d.degree - 1)))) ∧
-      ∀ i : ℕ+, PowerSeries.coeff (i + 1) p.2.1.toPowerSeries ∈ ℬ (e (2 * (i : ℕ))) := by
+      ∀ i : ℕ+, PowerSeries.coeff (i + 1) p.2.val.toPowerSeries ∈ ℬ (e (2 * (i : ℕ))) := by
   rw [coordinateGrading_map_mem_iff ℬ e]
   simp only [coordinateChangeLift_C, coordinateChangeLift_X, lift_mem_iff e p.1]
 
@@ -171,18 +171,18 @@ theorem coordinateChangeLift_mem_iff {ι : Type*} [AddCommMonoid ι] (ℬ : ι �
 commutative graded formal group laws equipped with strict graded coordinates. -/
 def gradedCoordinateChangeLift :
     {p : {F : FormalGroup A // F.IsComm} × (FormalCoordinate.linearCoeff (R := A)).ker //
-      (∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d p.1.1.toPowerSeries ∈
+      (∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d p.1.val.toPowerSeries ∈
         𝒜 (2 * (d.degree - 1))) ∧
-      ∀ i : ℕ+, PowerSeries.coeff (i + 1) p.2.1.toPowerSeries ∈ 𝒜 (2 * (i : ℕ))} ≃
+      ∀ i : ℕ+, PowerSeries.coeff (i + 1) p.2.val.toPowerSeries ∈ 𝒜 (2 * (i : ℕ))} ≃
       (coordinateGrading →+*ᵍ 𝒜) where
   toFun p :=
-    { toRingHom := coordinateChangeLift p.1
-      map_mem := fun hx ↦ (coordinateChangeLift_mem_iff 𝒜 (.id ℕ) p.1).mpr p.2 hx }
+    { toRingHom := coordinateChangeLift p.val
+      map_mem := fun hx ↦ (coordinateChangeLift_mem_iff 𝒜 (.id ℕ) p.val).mpr p.property hx }
   invFun f := ⟨coordinateChangeLift.symm f.toRingHom,
     (coordinateChangeLift_mem_iff 𝒜 (.id ℕ) _).mp (by
       rw [Equiv.apply_symm_apply]
       exact fun _ _ hx ↦ f.map_mem hx)⟩
-  left_inv p := Subtype.ext (coordinateChangeLift.left_inv p.1)
+  left_inv p := Subtype.ext (coordinateChangeLift.left_inv p.val)
   right_inv f := GradedRingHom.ext fun x ↦
     DFunLike.congr_fun (coordinateChangeLift.right_inv f.toRingHom) x
 
@@ -190,17 +190,17 @@ def gradedCoordinateChangeLift :
 @[simp]
 theorem toRingHom_gradedCoordinateChangeLift
     (p : {p : {F : FormalGroup A // F.IsComm} × (FormalCoordinate.linearCoeff (R := A)).ker //
-      (∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d p.1.1.toPowerSeries ∈
+      (∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d p.1.val.toPowerSeries ∈
         𝒜 (2 * (d.degree - 1))) ∧
-      ∀ i : ℕ+, PowerSeries.coeff (i + 1) p.2.1.toPowerSeries ∈ 𝒜 (2 * (i : ℕ))}) :
-    (gradedCoordinateChangeLift p).toRingHom = coordinateChangeLift p.1 :=
+      ∀ i : ℕ+, PowerSeries.coeff (i + 1) p.2.val.toPowerSeries ∈ 𝒜 (2 * (i : ℕ))}) :
+    (gradedCoordinateChangeLift p).toRingHom = coordinateChangeLift p.val :=
   (rfl)
 
 /-- The graded representing equivalence recovers the same underlying law and coordinate as the
 ungraded equivalence. -/
 @[simp]
 theorem coe_gradedCoordinateChangeLift_symm (f : coordinateGrading →+*ᵍ 𝒜) :
-    (gradedCoordinateChangeLift.symm f).1 = coordinateChangeLift.symm f.toRingHom :=
+    (gradedCoordinateChangeLift.symm f).val = coordinateChangeLift.symm f.toRingHom :=
   (rfl)
 
 end UniversalProperty
