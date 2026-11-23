@@ -49,7 +49,9 @@ open scoped TensorProduct
 
 namespace TauCeti.DeligneTorus
 
-variable {H : _root_.CommHopfAlgCat.{0} ℚ} (M : Type*) [AddCommGroup M] [Module ℚ M]
+section Representation
+
+variable {H : _root_.CommHopfAlgCat.{0} ℚ} (M : Type*) [AddCommMonoid M] [Module ℚ M]
   [Comodule ℚ H M]
 
 /-- **The real representation of `S` defined by `h`**: the real extension `ℝ ⊗[ℚ] M` of a
@@ -69,7 +71,10 @@ theorem realComodule_def (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.
       Comodule.Corestrict h.hom.toCoalgHom :=
   (rfl)
 
-variable {M}
+end Representation
+
+variable {H : _root_.CommHopfAlgCat.{0} ℚ} {M : Type*} [AddCommGroup M] [Module ℚ M]
+  [Comodule ℚ H M]
 
 /-- **`MT(h)` stabilizes `W` exactly when `W_ℝ` is stable under `S`.** The stabilizer in `G` of a
 rational subspace `W ≤ M` contains the Mumford–Tate group of `h` exactly when `ℝ ⊗[ℚ] W` is a
@@ -86,7 +91,8 @@ theorem stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff
   have _ : IsScalarTower ℚ ℝ S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   rw [le_mumfordTateHopfIdeal_iff, baseChangeHopfIdeal_toIdeal, Ideal.map_le_iff_le_comap,
     realComodule, Submodule.stabilizerHopfIdeal_corestrict_eq_bot_iff,
-    Submodule.stabilizerHopfIdeal_baseChange_le_ker_iff]
+    Submodule.stabilizerHopfIdeal_baseChange_le_ker_iff, ← AlgHom.comap_ker]
+  -- the kernels of `h` and of its restriction of scalars to `ℚ` are the same ideal
   rfl
 
 /-- **The sub-Hodge structures are the subspaces stable under the Mumford–Tate group.** The
@@ -101,6 +107,6 @@ theorem stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff_eq_iSup_hodgeComponent
         ⨆ pq : ℤ × ℤ, (W.baseChange ℝ).baseChange ℂ ⊓ hodgeComponent (ℝ ⊗[ℚ] M) pq.1 pq.2 := by
   let _ := realComodule M h
   rw [stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff,
-    stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent]
+    Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent]
 
 end TauCeti.DeligneTorus

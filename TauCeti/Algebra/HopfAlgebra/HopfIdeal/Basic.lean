@@ -259,6 +259,10 @@ instance : OrderBot (HopfIdeal R H) where
     rw [hx]
     exact zero_mem I
 
+/-- A Hopf ideal is zero exactly when its underlying ideal is contained in the zero ideal. -/
+theorem toIdeal_le_bot_iff {I : HopfIdeal R H} : I.toIdeal ≤ ⊥ ↔ I = ⊥ := by
+  rw [← bot_toIdeal (R := R), toIdeal_le_toIdeal, le_bot_iff]
+
 /-- The sum of two Hopf ideals is a Hopf ideal. -/
 instance instMax : Max (HopfIdeal R H) where
   max I J :=
