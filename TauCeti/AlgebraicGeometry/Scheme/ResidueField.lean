@@ -14,6 +14,15 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 The values of the coordinate ring generate the residue field at each point of an
 affine scheme. Consequently, algebra generators on an affine scheme give field
 generators on residue fields, also after restricting the source to a subscheme.
+
+## Main results
+
+* `Spec.closure_range_Γevaluation_eq_top`: affine coordinate values generate the
+  residue field.
+* `Hom.Γevaluation_naturality_of_Spec`: affine coordinate values commute with the
+  induced maps on residue fields.
+* `Hom.adjoin_residueField_eq_top_of_isIso_residueFieldMap`: algebra generators give
+  residue-field generators when the source morphism induces a residue-field isomorphism.
 -/
 
 public section
@@ -47,6 +56,16 @@ theorem Spec.closure_range_Γevaluation_eq_top (R : CommRingCat.{u}) (x : Spec R
 
 namespace Hom
 
+/-- Affine coordinate values commute with the induced maps on residue fields. -/
+theorem Γevaluation_naturality_of_Spec {R S : CommRingCat.{u}} {Y : Scheme.{u}}
+    (g : Y ⟶ Spec S) (φ : R ⟶ S) {h : Y ⟶ Spec R}
+    (hg : g ≫ Spec.map φ = h) (y : Y) :
+    φ ≫ (ΓSpecIso S).inv ≫ (Spec S).Γevaluation (g y) ≫ g.residueFieldMap y =
+      (ΓSpecIso R).inv ≫ (Spec R).Γevaluation (h y) ≫
+        h.residueFieldMap y := by
+  simp only [ΓSpecIso_inv_naturality_assoc,
+    ← Scheme.Hom.comp_appTop_assoc, hg, Scheme.Γevaluation_naturality]
+
 /-- The values of algebra generators of `B` over `A` generate the residue field at `y` over
 that at its image in `Spec A`, provided `g : Y ⟶ Spec B` identifies the residue fields at
 `y` and `g y`. This applies, for example, if `g` is an open immersion. -/
@@ -65,19 +84,19 @@ theorem adjoin_residueField_eq_top_of_isIso_residueFieldMap {A B : Type u}
     (ΓSpecIso (.of B)).inv ≫ (Spec (.of B)).Γevaluation (g y) ≫ g.residueFieldMap y
   have hvalue : CommRingCat.ofHom (algebraMap A B) ≫ sourceValue =
       baseValue ≫ h.residueFieldMap y := by
-    simp only [baseValue, sourceValue, ΓSpecIso_inv_naturality_assoc, Category.assoc,
-      ← Scheme.Hom.comp_appTop_assoc, hg, Scheme.Γevaluation_naturality]
+    exact g.Γevaluation_naturality_of_Spec (CommRingCat.ofHom (algebraMap A B)) hg y
+  let : Algebra A ((Spec (.of A)).residueField (h y)) := baseValue.hom.toAlgebra
+  let : Algebra A (Y.residueField y) := (baseValue ≫ h.residueFieldMap y).hom.toAlgebra
+  have : IsScalarTower A ((Spec (.of A)).residueField (h y)) (Y.residueField y) :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  let sourceAlgHom : B →ₐ[A] Y.residueField y :=
+    ⟨sourceValue.hom, ConcreteCategory.congr_hom hvalue⟩
   let F := IntermediateField.adjoin ((Spec (.of A)).residueField (h y)) (sourceValue '' s)
+  have hle : Algebra.adjoin A s ≤ (F.toSubalgebra.restrictScalars A).comap sourceAlgHom :=
+    Algebra.adjoin_le fun z hz ↦ IntermediateField.subset_adjoin _ _ ⟨z, hz, rfl⟩
   have hrange : Set.range sourceValue ⊆ F := by
     rintro _ ⟨z, rfl⟩
-    have hz : z ∈ Algebra.adjoin A s := hs.symm ▸ Algebra.mem_top
-    induction hz using Algebra.adjoin_induction with
-    | mem z hz => exact IntermediateField.subset_adjoin _ _ ⟨z, hz, rfl⟩
-    | algebraMap r =>
-      have hr := ConcreteCategory.congr_hom hvalue r
-      exact hr ▸ F.algebraMap_mem (baseValue r)
-    | add x z _ _ hx hz => exact (map_add sourceValue.hom x z).symm ▸ F.add_mem hx hz
-    | mul x z _ _ hx hz => exact (map_mul sourceValue.hom x z).symm ▸ F.mul_mem hx hz
+    exact hle (hs.ge Algebra.mem_top)
   have hclosure : Subfield.closure (Set.range sourceValue) = ⊤ := by
     have hsurj := (ConcreteCategory.bijective_of_isIso (g.residueFieldMap y)).surjective
     dsimp only [sourceValue]
