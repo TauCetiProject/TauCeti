@@ -14,6 +14,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.RieszPotential.Bounded
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -53,8 +54,7 @@ mean of `u` over a ball containing both points gives the Hölder estimate.
   two points, for `u` that is `C¹` on the ball of radius `‖x - y‖` about their midpoint.
 * `TauCeti.dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt`: the same as a real-valued bound,
   given a bound `N` on that `Lᵖ` norm, with the factor `2 ^ (1 - n / p)` in the constant.
-* `TauCeti.edist_le_of_contDiffOn_cthickening_of_finrank_lt`,
-  `TauCeti.dist_le_of_contDiffOn_cthickening_of_finrank_lt`: Morrey's inequality between a point
+* `TauCeti.edist_le_of_contDiffOn_cthickening_of_finrank_lt`: Morrey's inequality between a point
   `x` of a set `S` and a point `y` with `2 ‖x - y‖ ≤ δ`, for `u` that is `C¹` on the closed
   `δ`-thickening of `S`, in terms of the `Lᵖ` norm of the derivative on that thickening.
 * `TauCeti.enorm_sub_le_of_contDiff_of_finrank_lt`: Morrey's inequality on the whole space.
@@ -300,16 +300,6 @@ theorem dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt [CompleteSpace F] {x y
   congr 1
   ring
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If `x ∈ S` and `2 ‖x - y‖ ≤ δ`, the ball of radius `‖x - y‖` about the midpoint of `x` and `y`
-lies in the closed `δ`-thickening of `S`. -/
-private theorem ball_midpoint_subset_cthickening {S : Set E} {δ : ℝ} {y : E} (hx : x ∈ S)
-    (hxy : 2 * dist x y ≤ δ) : ball (midpoint ℝ x y) ‖x - y‖ ⊆ cthickening δ S :=
-  (ball_subset_ball' le_rfl).trans <| ball_subset_closedBall.trans <|
-    (closedBall_subset_cthickening hx _).trans <| cthickening_mono (by
-      rw [dist_midpoint_left, ← dist_eq_norm, Real.norm_ofNat]
-      linarith [dist_nonneg (x := x) (y := y)]) S
-
 /-- **Morrey's inequality near a set.** If `u` is `C¹` on the closed `δ`-thickening of a set `S`,
 `p` exceeds the dimension `n` of the space, `x ∈ S` and `2 ‖x - y‖ ≤ δ`, then `edist (u x) (u y)`
 is at most `2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * 2 ^ (1 - n / p) * edist x y ^ (1 - n / p)`
@@ -335,23 +325,6 @@ theorem edist_le_of_contDiffOn_cthickening_of_finrank_lt [CompleteSpace F] {S : 
     ← ENNReal.ofReal_rpow_of_nonneg dist_nonneg hα, ← edist_dist]
   gcongr
   rwa [dist_eq_norm]
-
-/-- **Morrey's inequality near a set, real form.** If `u` is `C¹` on the closed `δ`-thickening of
-a set `S`, `p` exceeds the dimension `n` of the space, `x ∈ S`, `2 ‖x - y‖ ≤ δ`, and the `Lᵖ` norm
-of the derivative of `u` on that thickening is at most `N`, then `dist (u x) (u y)` is at most
-`2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * 2 ^ (1 - n / p) * N * dist x y ^ (1 - n / p)`, where
-`ω = μ(B(0, 1))` and `K = n ω (p - 1) / (p - n)`. -/
-theorem dist_le_of_contDiffOn_cthickening_of_finrank_lt [CompleteSpace F] {S : Set E} {δ : ℝ}
-    {y : E} {N : ℝ≥0} (hu : ContDiffOn ℝ 1 u (cthickening δ S)) (hp : (finrank ℝ E : ℝ≥0) < p)
-    (hx : x ∈ S) (hxy : 2 * dist x y ≤ δ)
-    (hN : eLpNorm (fderiv ℝ u) p (μ.restrict (cthickening δ S)) ≤ N) :
-    dist (u x) (u y) ≤
-      2 ^ (finrank ℝ E + 1) / (finrank ℝ E * μ.real (ball 0 1)) *
-        (finrank ℝ E * μ.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
-          2 ^ (1 - finrank ℝ E / (p : ℝ)) * N * dist x y ^ (1 - finrank ℝ E / (p : ℝ)) :=
-  have hball := ball_midpoint_subset_cthickening hx hxy
-  dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := μ) (hu.mono hball) hp
-    ((eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)).trans hN)
 
 /-- **Morrey's inequality, Hölder form.** If `u` is `C¹` on the whole space, `p` exceeds the
 dimension `n` of the space, and the derivative of `u` lies in `Lᵖ`, then `u` is Hölder continuous

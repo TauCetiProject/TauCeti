@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
-import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -19,7 +17,7 @@ Let `2 < p < ∞` and let `U ⊆ ℂ` be open. For a map `u` smooth on `U` with 
 Hilbert space, the interior Calderón–Zygmund estimate
 (`TauCeti.exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`) bounds the `Lᵖ` norm
 of the derivative of `u` on a compact subset of `U` by the `Lᵖ(U)` norms of `\bar∂u` and `u`, and
-Morrey's inequality (`TauCeti.edist_le_of_contDiffOn_cthickening_of_finrank_lt`) turns an
+Morrey's inequality (`TauCeti.exists_edist_le_of_contDiffOn_cthickening_of_two_lt`) turns an
 `Lᵖ` bound on the derivative, `p > 2`, into a Hölder bound of exponent `1 - 2 / p`. Together they
 give a local Hölder estimate controlled by `\bar∂u` and `u` alone
 (`TauCeti.exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`): for `K ⊆ U` compact there are
@@ -92,34 +90,23 @@ theorem exists_edist_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm {p : ℝ≥0} (hp
   have hp₁ : (1 : ℝ≥0∞) < p := by exact_mod_cast one_lt_two.trans hp
   obtain ⟨C₁, hC₁⟩ := exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm (F := F)
     hp₁ ENNReal.coe_ne_top hU hK.cthickening hδ₀U
-  have hfin : (Module.finrank ℝ ℂ : ℝ≥0) < p := by
-    rwa [Complex.finrank_real_complex, Nat.cast_ofNat]
-  set M : ℝ := 2 ^ (Module.finrank ℝ ℂ + 1) /
-      (Module.finrank ℝ ℂ * volume.real (ball (0 : ℂ) 1)) *
-      (Module.finrank ℝ ℂ * volume.real (ball (0 : ℂ) 1) * (p - 1) /
-        (p - Module.finrank ℝ ℂ)) ^ (1 - 1 / (p : ℝ)) * 2 ^ (1 - Module.finrank ℝ ℂ / (p : ℝ))
-  have hα : ((1 - 2 / p : ℝ≥0) : ℝ) = 1 - (Module.finrank ℝ ℂ : ℝ) / (p : ℝ) := by
-    rw [Complex.finrank_real_complex, NNReal.coe_sub ((div_le_one₀ (zero_lt_two.trans hp)).2
-      hp.le), NNReal.coe_div]
-    norm_num
-  refine ⟨M.toNNReal * C₁, (δ₀ / 2).toNNReal, by simpa using hδ₀, fun u hu x hx y hxy ↦ ?_⟩
+  obtain ⟨M, hM⟩ := exists_edist_le_of_contDiffOn_cthickening_of_two_lt (F := F) hp
+  refine ⟨M * C₁, (δ₀ / 2).toNNReal, by simpa using hδ₀, fun u hu x hx y hxy ↦ ?_⟩
   have hxy' : 2 * dist x y ≤ δ₀ := by
     rw [Real.coe_toNNReal _ (half_pos hδ₀).le] at hxy
     linarith
   -- Morrey's inequality on the `δ₀`-thickening of `K`, then the interior estimate there.
   calc edist (u x) (u y)
-    _ ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
-          eLpNorm (fderiv ℝ u) p (volume.restrict (cthickening δ₀ K)) := by
-      rw [hα]
-      exact edist_le_of_contDiffOn_cthickening_of_finrank_lt
-        ((hu.mono hδ₀U).of_le (by exact_mod_cast le_top)) hfin hx hxy'
-    _ ≤ ENNReal.ofReal M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
+    _ ≤ M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
+          eLpNorm (fderiv ℝ u) p (volume.restrict (cthickening δ₀ K)) :=
+      hM ((hu.mono hδ₀U).of_le (by exact_mod_cast le_top)) hx hxy'
+    _ ≤ M * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
           (C₁ * (eLpNorm (fun z ↦ conjWirtingerDeriv u z 1) p (volume.restrict U) +
             eLpNorm u p (volume.restrict U))) := by
       gcongr
       exact hC₁ u hu
     _ = _ := by
-      rw [ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
+      rw [ENNReal.coe_mul]
       ring
 
 /-- **A common Hölder constant on compact sets.** Let `2 < p < ∞` and let `U ⊆ ℂ` be open. Let
