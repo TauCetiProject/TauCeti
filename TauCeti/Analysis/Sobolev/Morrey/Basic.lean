@@ -16,7 +16,6 @@ import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Integral.RieszPotential.Bounded
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
@@ -53,10 +52,9 @@ inequality, bounds `u` itself by its `W^{1,p}` norm.
   mean of `u` over a subset of a star-convex domain, bounded by `‖Du‖_{Lᵖ}`.
 * `TauCeti.enorm_sub_setAverage_le_of_convex_of_finrank_lt`: the same on a bounded convex domain.
 * `TauCeti.exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv`: the value of a `C¹` function at a
-  point about which its open domain is star-convex is bounded by its `W^{1,p}` norm, with a
-  constant depending only on a lower bound for the measure of the domain near that point.
-* `TauCeti.eLpNorm_sub_add_eLpNorm_fderiv_sub_le`: the triangle inequality for the `W^{1,p}`
-  seminorm `‖u‖_{Lᵖ(Ω)} + ‖Du‖_{Lᵖ(Ω)}` of differentiable functions.
+  point about which its open domain is star-convex is bounded by its `W^{1,p}` norm. For a fixed
+  space, Haar measure, exponent and radius `r`, the constant is uniform over all domains whose
+  intersection with the ball of radius `r` about that point has measure at least a given `m`.
 * `TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`: Morrey's inequality on a ball.
 * `TauCeti.enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt`: Morrey's inequality between
   two points, for `u` that is `C¹` on the ball of radius `‖x - y‖` about their midpoint.
@@ -161,6 +159,20 @@ theorem enorm_sub_setAverage_le_of_convex_of_finrank_lt [CompleteSpace F] (hΩ :
   enorm_sub_setAverage_le_of_starConvex_of_finrank_lt hΩ hu (hΩc.starConvex hx)
     (fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)) hS hS₀ hp
 
+/-- The Morrey potential estimate for the mean
+(`TauCeti.enorm_sub_setAverage_le_of_starConvex_of_finrank_lt`) with its coefficient separated
+into a finite factor `A`, depending only on `n`, `p`, `μ` and `D`, and the inverse measure of the
+set `S` of the mean. -/
+private theorem exists_enorm_sub_setAverage_le_mul_inv [CompleteSpace F]
+    (hp : (finrank ℝ E : ℝ≥0) < p) (D : ℝ) :
+    ∃ A : ℝ≥0∞, A ≠ ∞ ∧ ∀ (Ω S : Set E) (u : E → F) (x : E), IsOpen Ω → ContDiffOn ℝ 1 u Ω →
+      StarConvex ℝ x Ω → Ω ⊆ closedBall x D → S ⊆ Ω → μ S ≠ 0 →
+      ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ A * (μ S)⁻¹ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω) :=
+  ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top,
+    fun _ _ _ _ hΩ hu hx hD hS hS₀ =>
+      (enorm_sub_setAverage_le_of_starConvex_of_finrank_lt hΩ hu hx hD hS hS₀ hp).trans_eq (by
+        rw [div_eq_mul_inv, mul_right_comm (ENNReal.ofReal _)])⟩
+
 /-- **Morrey's supremum bound.** Let `p ≥ 1` exceed the dimension `n` of the space, and let
 `r : ℝ` and `m ≠ 0`. There is a constant `C`, depending only on `n`, `p`, `μ`, `r` and `m`, such
 that `‖u x‖ ≤ C (‖u‖_{Lᵖ(Ω)} + ‖Du‖_{Lᵖ(Ω)})` whenever `u` is `C¹` on an open set `Ω` that is
@@ -169,20 +181,17 @@ star-convex about `x` and `m ≤ μ (Ω ∩ ball x r)`.
 So on a convex open set all of whose intersections with balls of radius `r` about its points have
 measure at least `m`, the supremum of a `C¹` function is bounded by its `W^{1,p}` norm, with a
 constant that does not depend on the size of the set. Long rectangles of fixed width are such
-sets (`TauCeti.one_le_volume_Ioo_prod_Ioo_inter_ball`). -/
+sets (`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`). -/
 theorem exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 1 ≤ p)
     (hp : (finrank ℝ E : ℝ≥0) < p) (r : ℝ) {m : ℝ≥0∞} (hm : m ≠ 0) :
     ∃ C : ℝ≥0, ∀ (Ω : Set E) (u : E → F) (x : E), IsOpen Ω → StarConvex ℝ x Ω →
       ContDiffOn ℝ 1 u Ω → m ≤ μ (Ω ∩ ball x r) →
       ‖u x‖ₑ ≤ C * (eLpNorm u p (μ.restrict Ω) + eLpNorm (fderiv ℝ u) p (μ.restrict Ω)) := by
-  set n := finrank ℝ E
-  set A : ℝ≥0∞ := ENNReal.ofReal (r ^ n / n) * ENNReal.ofReal
-    ((n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) * r ^ (1 - n / (p : ℝ)))
+  obtain ⟨A, hA, hAu⟩ := exists_enorm_sub_setAverage_le_mul_inv (μ := μ) (F := F) hp r
   set C₀ : ℝ≥0∞ := A * m⁻¹ + m ^ (-(p : ℝ)⁻¹)
   have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp1
   have hC₀ : C₀ ≠ ∞ := by
-    refine ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      ENNReal.ofReal_ne_top) (ENNReal.inv_ne_top.2 hm), fun h => ?_⟩
+    refine ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top hA (ENNReal.inv_ne_top.2 hm), fun h => ?_⟩
     rcases ENNReal.rpow_eq_top_iff.1 h with h | h
     · exact hm h.1
     · linarith [h.2, inv_pos.2 hp0]
@@ -196,9 +205,9 @@ theorem exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 
     exact hS₀ (by simp [Ω', ball_eq_empty.2 h])
   have hmono : μ.restrict Ω' ≤ μ.restrict Ω := Measure.restrict_mono inter_subset_left le_rfl
   -- The deviation of `u x` from the mean of `u` over `Ω'`, by the Morrey potential estimate.
-  have h₁ := enorm_sub_setAverage_le_of_starConvex_of_finrank_lt (hΩ.inter isOpen_ball)
-    (hu.mono inter_subset_left) (hΩx.inter ((convex_ball x r).starConvex (mem_ball_self hr)))
-    (fun _ hy => ball_subset_closedBall hy.2) subset_rfl hS₀ hp
+  have h₁ := hAu Ω' Ω' u x (hΩ.inter isOpen_ball) (hu.mono inter_subset_left)
+    (hΩx.inter ((convex_ball x r).starConvex (mem_ball_self hr)))
+    (fun _ hy => ball_subset_closedBall hy.2) subset_rfl hS₀
   -- The mean itself, by Hölder's inequality.
   have h₂ := enorm_setAverage_le (f := u) (mu := μ) (s := Ω') (p := p) (by exact_mod_cast hp1)
     ENNReal.coe_ne_top
@@ -212,37 +221,13 @@ theorem exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 
     _ ≤ A * m⁻¹ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω) +
         m ^ (-(p : ℝ)⁻¹) * eLpNorm u p (μ.restrict Ω) := by
       gcongr
-      · refine h₁.trans ?_
-        calc _ = A * (μ Ω')⁻¹ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω') := by
-              simp only [A, div_eq_mul_inv]
-              ring
-          _ ≤ _ := by gcongr
+      · exact h₁.trans (by gcongr)
       · exact h₂.trans (by gcongr)
     _ ≤ C₀ * eLpNorm (fderiv ℝ u) p (μ.restrict Ω) + C₀ * eLpNorm u p (μ.restrict Ω) := by
       gcongr
       · exact le_self_add
       · exact le_add_self
     _ = C₀ * (eLpNorm u p (μ.restrict Ω) + eLpNorm (fderiv ℝ u) p (μ.restrict Ω)) := by ring
-
-omit [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The `W^{1,p}` seminorm `‖u‖_{Lᵖ(Ω)} + ‖Du‖_{Lᵖ(Ω)}` of a difference of maps that are
-differentiable on an open set `Ω` is at most the sum of their seminorms. -/
-theorem eLpNorm_sub_add_eLpNorm_fderiv_sub_le [OpensMeasurableSpace E] {ν : Measure E}
-    {q : ℝ≥0∞} (hq : 1 ≤ q) (hΩ : IsOpen Ω) {u₁ u₂ : E → F} (hu₁ : DifferentiableOn ℝ u₁ Ω)
-    (hu₂ : DifferentiableOn ℝ u₂ Ω) :
-    eLpNorm (u₁ - u₂) q (ν.restrict Ω) + eLpNorm (fderiv ℝ (u₁ - u₂)) q (ν.restrict Ω) ≤
-      eLpNorm u₁ q (ν.restrict Ω) + eLpNorm (fderiv ℝ u₁) q (ν.restrict Ω) +
-        (eLpNorm u₂ q (ν.restrict Ω) + eLpNorm (fderiv ℝ u₂) q (ν.restrict Ω)) := by
-  have hfd : fderiv ℝ (u₁ - u₂) =ᵐ[ν.restrict Ω] fderiv ℝ u₁ - fderiv ℝ u₂ :=
-    ae_restrict_of_forall_mem hΩ.measurableSet fun y hy => fderiv_sub
-      (hu₁.differentiableAt (hΩ.mem_nhds hy)) (hu₂.differentiableAt (hΩ.mem_nhds hy))
-  calc _ ≤ eLpNorm u₁ q (ν.restrict Ω) + eLpNorm u₂ q (ν.restrict Ω) +
-        (eLpNorm (fderiv ℝ u₁) q (ν.restrict Ω) + eLpNorm (fderiv ℝ u₂) q (ν.restrict Ω)) := by
-        gcongr
-        · exact eLpNorm_sub_le hq
-        · rw [eLpNorm_congr_ae hfd]
-          exact eLpNorm_sub_le hq
-    _ = _ := by ring
 
 /-- **Morrey's inequality on a ball.** If `u` is `C¹` on `ball z r` and `p` exceeds the dimension
 `n` of the space, then for all `x, y` in the ball, `‖u x - u y‖` is at most

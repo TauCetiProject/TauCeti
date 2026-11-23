@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.QuadraticEstimate
-public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.MeasureTheory.Group.Measure
 import TauCeti.Analysis.Sobolev.Morrey.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.FDeriv
 
 /-!
 # The quadratic estimate for the Floer operator in `W^{1,p}` on convex domains
@@ -31,7 +29,7 @@ of period one in `t`
 (`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_jet`).
 This file proves it for increments without periodicity, over a convex open set `Ω` of the domain
 `ℝ × ℝ`. As there, the coefficients `J`, `Ks`, `Kt` are pulled back along a parameter map
-`φ : ℝ × ℝ → P`, they are jointly `C²`, `C³` and `C³`, and the graph of `(φ, w)` over `Ω` lies in a
+`φ : ℝ × ℝ → P`, they are jointly `C²`, `C³` and `C³`, and the image of `(φ, w)` over `Ω` lies in a
 compact set `K`.
 
 For `p > 2`, Morrey's supremum bound (`TauCeti.exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv`)
@@ -43,12 +41,14 @@ gives, for `‖ξ₁‖_{1,p}, ‖ξ₂‖_{1,p} ≤ δ` and slice defect `‖�
 (`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_of_convex`).
 Its case `ξ₂ = 0` is `‖F(w + ξ) - F(w) - D_w ξ‖_{Lᵖ(Ω)} ≤ C (1 + B) ‖ξ‖_{1,p}²`.
 
-The constants do not depend on the size of `Ω`: they only depend on `p` and on a radius `r` and a
-measure `m > 0` with `m ≤ |Ω ∩ B(z, r)|` for every `z ∈ Ω`. The rectangles `(a, b) × (c, d)` with
-sides of length at least one satisfy this with `r = m = 1`
-(`TauCeti.one_le_volume_Ioo_prod_Ioo_inter_ball`), so the estimate is uniform over the long necks
-`(-R, R) × (0, 1)` of glued Floer solutions, with the coefficients `t`-dependent through
-`φ z = z.2` as on cylindrical ends.
+For fixed `ω`, coefficients `J`, `Ks`, `Kt` and compact set `K`, the constants `δ` and `C` do not
+depend on the size of `Ω`: besides those data they only depend on `p` and on a radius `r` and a
+measure `m > 0` with `m ≤ |Ω ∩ B(z, r)|` for every `z ∈ Ω`. The whole factor `C (1 + B)` is
+uniform once the slice defect bound `B` is. The rectangles `(a, b) × (c, d)` with sides of length
+at least one satisfy this with `r = m = 1`
+(`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`), so the estimate is uniform over
+the long necks `(-R, R) × (0, 1)` of glued Floer solutions, with the coefficients `t`-dependent
+through `φ z = z.2` as on cylindrical ends.
 
 The increments are `C¹` on `Ω`. No Sobolev completion is constructed here.
 
@@ -103,10 +103,11 @@ private theorem mul_add_div_two_mul_add_one_le (a δ₁ : ℝ≥0) :
 
 /-- **The quadratic estimate for the Floer operator in `W^{1,p}`.** Let `J` be jointly `C²` and
 the Hamiltonians `Ks`, `Kt` jointly `C³` in the parameter and the target point, let `K` be a
-compact set of pairs `(p, y)`, let `p > 2`, and let `r : ℝ` and `m ≠ 0`. There are `δ > 0` and `C`
-such that the following holds for every convex open set `Ω` of the domain with
-`m ≤ |Ω ∩ B(z, r)|` for all `z ∈ Ω`, and every parameter map `φ` measurable on `Ω`. Write
-`‖ξ‖_{1,p} = ‖ξ‖_{Lᵖ(Ω)} + ‖Dξ‖_{Lᵖ(Ω)}`. Let `w` be differentiable on `Ω`, with graph
+compact set of pairs `(a, y)` of a parameter and a target point, let `p > 2`, and let `r : ℝ` and
+`m ≠ 0`. There are `δ > 0` and `C` such that the following holds for every convex open set `Ω` of
+the domain with `m ≤ |Ω ∩ B(z, r)|` for all `z ∈ Ω`, and every parameter map `φ` that is almost
+everywhere strongly measurable for the Lebesgue measure restricted to `Ω`. Write
+`‖ξ‖_{1,p} = ‖ξ‖_{Lᵖ(Ω)} + ‖Dξ‖_{Lᵖ(Ω)}`. Let `w` be differentiable on `Ω`, with
 `(φ z, w z) ∈ K` and slice defect `‖∂t w - X_Kt(w)‖ ≤ B` over `Ω`, and let `ξ₁`, `ξ₂` be `C¹` on
 `Ω` with `‖ξ₁‖_{1,p}, ‖ξ₂‖_{1,p} ≤ δ`. Then the Floer operator with coefficients `J (φ z)`,
 `Ks (φ z)`, `Kt (φ z)` satisfies
@@ -155,8 +156,9 @@ theorem
   have hd₁ := hξ₁.differentiableOn one_ne_zero
   have hd₂ := hξ₂.differentiableOn one_ne_zero
   -- The `W^{1,p}` norm of the difference is finite.
-  have hSle : S ≤ S₁ + S₂ :=
-    eLpNorm_sub_add_eLpNorm_fderiv_sub_le (by exact_mod_cast hp1) hΩ hd₁ hd₂
+  have hSle : S ≤ S₁ + S₂ := eLpNorm_sub_add_eLpNorm_fderiv_sub_le (by exact_mod_cast hp1)
+    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => hd₁.differentiableAt (hΩ.mem_nhds hz))
+    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => hd₂.differentiableAt (hΩ.mem_nhds hz))
   have hS₁₂ : S₁ + S₂ ≠ ∞ := ENNReal.add_ne_top.2
     ⟨ne_top_of_le_ne_top ENNReal.coe_ne_top hS₁, ne_top_of_le_ne_top ENNReal.coe_ne_top hS₂⟩
   have hS : S ≠ ∞ := (hSle.trans_lt hS₁₂.lt_top).ne
@@ -187,23 +189,21 @@ theorem
     (fun z hz => by exact_mod_cast eNorm_le_coe.1 (hB z hz))
   rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ha, hb, ENNReal.ofReal_add zero_le_one B.coe_nonneg,
     ENNReal.ofReal_one, ENNReal.ofReal_coe_nnreal] at h
-  -- The slice derivatives are bounded by the full derivatives.
-  have hDi (L : ℝ × ℝ →L[ℝ] V) : ‖L stdComplexLineImag‖ ≤ ‖L‖ :=
-    (L.le_opNorm _).trans_eq (by simp [stdComplexLineImag_eq])
-  have hm₁ : AEStronglyMeasurable (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag) μ :=
-    ((hξ₁.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).aestronglyMeasurable hΩ.measurableSet
-  have hm₂ : AEStronglyMeasurable (fun z ↦ fderiv ℝ ξ₂ z stdComplexLineImag) μ :=
-    ((hξ₂.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
-      continuousOn_const).aestronglyMeasurable hΩ.measurableSet
+  -- The slice derivative along the unit vector `stdComplexLineImag` is bounded in `Lᵖ` by the
+  -- full derivative.
+  have hslice {ξ : ℝ × ℝ → V} (hξ : ContDiffOn ℝ 1 ξ Ω) :
+      eLpNorm (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) p μ ≤ eLpNorm (fderiv ℝ ξ) p μ :=
+    eLpNorm_mono (((hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
+      continuousOn_const).aestronglyMeasurable hΩ.measurableSet) fun z =>
+      ((fderiv ℝ ξ z).le_opNorm _).trans_eq (by simp [stdComplexLineImag_eq])
   have hd : eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag) p μ ≤ S₁ + S₂ :=
-    (eLpNorm_mono hm₁ fun z => hDi _).trans ((le_add_self : _ ≤ S₁).trans le_self_add)
+    (hslice hξ₁).trans ((le_add_self : _ ≤ S₁).trans le_self_add)
   have hd' : eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag -
       fderiv ℝ ξ₂ z stdComplexLineImag) p μ ≤ S := by
-    refine (eLpNorm_mono_ae (hm₁.sub hm₂)
-      (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => ?_)).trans le_add_self
+    refine (eLpNorm_congr_ae (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz => ?_)).trans_le
+      ((hslice hξ).trans le_add_self)
     rw [fderiv_sub (hd₁.differentiableAt (hΩ.mem_nhds hz)) (hd₂.differentiableAt (hΩ.mem_nhds hz))]
-    exact hDi (fderiv ℝ ξ₁ z - fderiv ℝ ξ₂ z)
+    rfl
   refine (h.trans (mul_le_mul_right (quadratic_terms_le le_self_add hd hd') _)).trans_eq ?_
   push_cast
   ring
