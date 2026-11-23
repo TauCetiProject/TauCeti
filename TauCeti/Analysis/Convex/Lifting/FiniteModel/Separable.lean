@@ -161,6 +161,16 @@ theorem separableLift_row_budget (d : FiniteModel n m l r)
       ∑ j, weight i j * height z j := by
   simp [separableLift, sum_append_zero_left_mul_fst]
 
+/-- With no components, every added budget row of `separableLift` reads `0 ≤ 0`. -/
+theorem separableLift_row_budget_fin_zero (d : FiniteModel n m l r)
+    (component : Fin 0 → Point n m → ℝ) (weight : Fin l → Fin 0 → ℝ) (i : Fin l)
+    (z : Point (n + 0) m) :
+    (∑ a, (d.separableLift component weight).A (i.natAdd r) a * z.1 a) +
+        (∑ s, (d.separableLift component weight).B (i.natAdd r) s * z.2 s) = 0 ∧
+      (d.separableLift component weight).rhs (i.natAdd r) = 0 := by
+  rw [separableLift_row_budget, separableLift_rhs_budget]
+  simp
+
 /-- The affine rows of `separableLift` consist precisely of the original affine rows on
 `project z` together with the weighted height budget inequalities
 `∑ j, weight i j * height z j ≤ 0`. -/
@@ -182,6 +192,13 @@ theorem separableLift_nonlinear_rows_iff (d : FiniteModel n m l r)
     (∀ j, (d.separableLift component weight).g j z ≤ 0) ↔
       ∀ j, component j (project z) ≤ height z j :=
   forall_congr' fun _ => sub_nonpos
+
+/-- With no components, a residual decomposed as a weighted sum of components vanishes. -/
+theorem g_eq_zero_of_eq_sum_fin_zero {d : FiniteModel n m l r}
+    {component : Fin 0 → Point n m → ℝ} {weight : Fin l → Fin 0 → ℝ}
+    (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) (i : Fin l) (x : Point n m) :
+    d.g i x = 0 := by
+  simp [hg]
 
 /-- Under the separable decomposition `hg`, the parameterized feasible set `d.feasibleWith D P`
 coincides with `originalSet` on base domain `d.affineFeasibleWith D P`, with inner map
@@ -227,6 +244,17 @@ theorem insertHeight_component_mem_separableLift_feasibleWith (d : FiniteModel n
   rw [feasibleWith_eq_originalSet d D P component weight hg] at hx
   simpa only [mem_preimage, pointEquiv_apply, project_insertHeight, height_insertHeight] using
     graph_mem_liftedSet (mapsTo_univ _ _) hx
+
+/-- Inserting the actual component values lifts any `feasibleOn D` point of `d` into
+`separableLift`, without needing nonnegativity of `weight`. -/
+theorem insertHeight_component_mem_separableLift_feasibleOn (d : FiniteModel n m l r)
+    (D : Set (Point n m)) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
+    (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x)
+    {x : Point n m} (hx : x ∈ d.feasibleOn D) :
+    insertHeight x (fun j => component j x) ∈
+      (d.separableLift component weight).feasibleOn (project ⁻¹' D) := by
+  simp only [feasibleOn_eq_feasibleWith, separableLift_lo, separableLift_hi] at hx ⊢
+  exact insertHeight_component_mem_separableLift_feasibleWith d D component weight hg hx
 
 /-- Exact projection for separable-height lifting under nonnegative weights and any integer-block
 predicate `P`. -/

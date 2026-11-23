@@ -44,6 +44,9 @@ structure.
   and sequential colimits in `C` are exact and commute with tensoring on the right and `C` admits a
   functorial flat epimorphic cover `(E, p)`, `CochainComplex.KFlat.localizerMorphism C` is a left
   derivability structure.
+* `CochainComplex.exists_quasiIso_isKFlat_of_hasLeftResolutions`: when the K-flat localizer
+  morphism has left resolutions, every cochain complex receives a quasi-isomorphism from a K-flat
+  complex.
 
 ## References
 
@@ -216,5 +219,14 @@ theorem isLeftDerivabilityStructure_localizerMorphism :
 end DerivabilityStructure
 
 end KFlat
+
+variable {C} in
+/-- If the K-flat localizer morphism has left resolutions, every cochain complex receives a
+quasi-isomorphism from a K-flat complex. -/
+theorem exists_quasiIso_isKFlat_of_hasLeftResolutions
+    [(KFlat.localizerMorphism C).HasLeftResolutions] (K : CochainComplex C ℤ) :
+    ∃ (P : CochainComplex C ℤ) (π : P ⟶ K), QuasiIso π ∧ P.IsKFlat := by
+  obtain ⟨@⟨X₁, π, hπ⟩⟩ := ‹(KFlat.localizerMorphism C).HasLeftResolutions› K
+  exact ⟨X₁.obj, π, (mem_quasiIso_iff π).1 hπ, X₁.property⟩
 
 end CochainComplex

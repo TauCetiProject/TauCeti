@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -37,13 +37,13 @@ of a Hausdorff σ-compact manifold (`LinearMap.IsFormalTranspose.unique`), and
 `LinearMap.formalTranspose` picks it.
 
 Differential operators are taken in Grothendieck's sense (`TauCeti.differentialOperators`):
-operators all of whose `(m + 1)`-fold commutators with multiplication operators vanish. On a
-boundaryless manifold they are local and do not enlarge supports, which makes formal transposes of
-differential operators reverse compositions. Multiplication operators are their own transposes, so
+operators all of whose `(m + 1)`-fold commutators with multiplication operators vanish. They are
+local and do not enlarge supports, which makes formal transposes of differential operators reverse
+compositions. Multiplication operators are their own transposes, so
 the transpose of a commutator `[D, a]` is `-[D', a]`; hence the `m`-fold commutators of a transpose
 `D'` are `(-1) ^ m` times those of `D`, and a formal transpose of a differential operator of order
-at most `m` that is a differential operator has order at most `m` and principal symbol
-`ξ ↦ (-1) ^ m σ(ξ)`.
+at most `m` that is a differential operator has order at most `m`, and on a boundaryless manifold
+its principal symbol is `ξ ↦ (-1) ^ m σ(ξ)`.
 
 On a finite-dimensional real vector space `E` with an additive Haar measure, every differential
 operator `D` of order at most `m` has a formal transpose of order at most `m`, the same for every
@@ -70,11 +70,10 @@ compositions.
 * `LinearMap.IsFormalTranspose.withDensity`: if `D'` is a transpose of `D` with respect to `μ`,
   `ρ ≥ 0` is smooth and `ρ D'' g = D' (ρ g)` for all `g`, then `D''` is a transpose of `D` with
   respect to the weighted measure `ρ μ` (for `ρ > 0`, `D'' g = ρ⁻¹ D' (ρ g)`).
-* `LinearMap.IsFormalTranspose.mem_differentialOperators`: on a boundaryless manifold, a formal
-  transpose of a differential operator of order at most `m` that is a differential operator has
-  order at most `m`.
-* `LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq`: its principal symbol is `(-1) ^ m` times
-  that of the operator.
+* `LinearMap.IsFormalTranspose.mem_differentialOperators`: a formal transpose of a differential
+  operator of order at most `m` that is a differential operator has order at most `m`.
+* `LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq`: on a boundaryless manifold, its principal
+  symbol is `(-1) ^ m` times that of the operator.
 * `LinearMap.IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul`,
   `LinearMap.IsFormalTranspose.mem_differentialOperators_two_mul_of_self`: if `(-1) ^ m D` is a
   formal transpose of an operator `D` of order at most `m + 1`, then `D` has order at most `m`; in
@@ -430,11 +429,11 @@ theorem formalTranspose_mulLeft [FiniteDimensional ℝ E] [IsManifold I ∞ M] [
     (mulLeft ℝ c).formalTranspose μ = mulLeft ℝ c :=
   (isFormalTranspose_mulLeft c).formalTranspose_eq
 
-/-! ### Differential operators on a boundaryless manifold -/
+/-! ### Differential operators -/
 
 section DifferentialOperator
 
-variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
   [OpensMeasurableSpace M] [IsFiniteMeasureOnCompacts μ]
 
 /-- **The transpose of a commutator.** If `D'` is a formal transpose of `D`, both differential
@@ -533,9 +532,10 @@ theorem IsFormalTranspose.mem_differentialOperators_two_mul_of_self {k : ℕ}
     D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (2 * k) :=
   IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul (by simpa using h) hD
 
-/-- **The principal symbol of a formal transpose.** If `D'` is a formal transpose of `D`, both
-differential operators of order at most `m`, then `σ(D')(ξ) = (-1) ^ m σ(D)(ξ)`. -/
-theorem IsFormalTranspose.smoothPrincipalSymbol_eq {m : ℕ}
+/-- **The principal symbol of a formal transpose.** On a boundaryless manifold, if `D'` is a formal
+transpose of `D`, both differential operators of order at most `m`, then
+`σ(D')(ξ) = (-1) ^ m σ(D)(ξ)`. -/
+theorem IsFormalTranspose.smoothPrincipalSymbol_eq [BoundarylessManifold I M] {m : ℕ}
     {D D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m}
     (h : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).IsFormalTranspose D' μ) {x : M}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :

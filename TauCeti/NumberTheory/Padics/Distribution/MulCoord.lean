@@ -189,23 +189,23 @@ in the re-expansion of `f` is `D` (resp. `Y`, or `0` when `j = 0`), then that of
 `(a + pʰ b) D + p^(h+1) Y`. -/
 private theorem hasSum_choose_smul_mulCoord (c : AnalyticStage p h E) (a : ZMod (p ^ h))
     (b : ℤ_[p]) (j : ℕ) {D Y : E}
-    (hD : HasSum (fun k ↦ transitionScalar b j k • c (a, k)) D)
-    (hY : HasSum (fun k ↦ (if j = 0 then 0 else transitionScalar b (j - 1) k) • c (a, k)) Y) :
-    HasSum (fun k ↦ transitionScalar b j k • mulCoord S c (a, k))
+    (hD : HasSum (fun k ↦ reexpandScalar b p k j • c (a, k)) D)
+    (hY : HasSum (fun k ↦ (if j = 0 then 0 else reexpandScalar b p k (j - 1)) • c (a, k)) Y) :
+    HasSum (fun k ↦ reexpandScalar b p k j • mulCoord S c (a, k))
       (((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * b) • D + (p : ℤ_[p]) ^ (h + 1) • Y) := by
-  -- Split the terms of positive degree by Pascal's rule `transitionScalar_succ_succ`.
-  have hsucc : HasSum (fun k ↦ transitionScalar b j (k + 1) • mulCoord S c (a, k + 1)) _ :=
+  -- Split the terms of positive degree by Pascal's rule `reexpandScalar_succ_succ`.
+  have hsucc : HasSum (fun k ↦ reexpandScalar b p (k + 1) j • mulCoord S c (a, k + 1)) _ :=
     ((((hasSum_nat_add_iff' 1).mpr hD).const_smul (a.val : ℤ_[p])).add
       (hD.const_smul ((p : ℤ_[p]) ^ h * b))).add (hY.const_smul ((p : ℤ_[p]) ^ (h + 1)))
       |>.congr_fun fun k ↦ by
       rw [mulCoord_apply_succ]
       rcases j with _ | j
-      · simp only [transitionScalar_zero_left, ↓reduceIte, pow_succ]
+      · simp only [reexpandScalar_zero_right, ↓reduceIte, pow_succ]
         module
-      · simp only [transitionScalar_succ_succ, Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
+      · simp only [reexpandScalar_succ_succ, Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
         module
   have hsum := (hasSum_nat_add_iff
-    (f := fun k ↦ transitionScalar b j k • mulCoord S c (a, k)) 1).mp hsucc
+    (f := fun k ↦ reexpandScalar b p k j • mulCoord S c (a, k)) 1).mp hsucc
   simp only [Finset.range_one, Finset.sum_singleton, mulCoord_apply_zero] at hsum
   convert hsum using 1
   module

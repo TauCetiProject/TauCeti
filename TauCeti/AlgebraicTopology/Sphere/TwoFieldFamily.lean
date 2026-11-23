@@ -81,6 +81,10 @@ itself lies on its equator, and its sphere is constant (`TauCeti.twoFieldSphereF
 * `TauCeti.mappingSpaceEval_comp_twoFieldSphereFamily`: `σ` lies over the sphere.
 * `TauCeti.twoFieldEquatorsFiberHomeomorph`: the fibre `Σₓ` is an equator of the unit sphere of
   `(u x)⊥`.
+* `TauCeti.twoFieldEquatorsProj`, `TauCeti.orthogonalSphereIsoTwoFieldEquatorsPreimage`,
+  `TauCeti.finrank_orthogonal_span_twoField`: the projection `Σ → Sⁿ` in `TopCat`, whose fibre
+  over `x` is the unit sphere of the orthogonal complement of `v x` in `(u x)⊥`, a sphere of
+  dimension `n - 2`.
 * `TauCeti.twoFieldSphereFamilyFiber`: the restriction `Σₓ → Map_*(S², Sⁿ)` of `σ` to a fibre.
 
 ## References
@@ -230,6 +234,89 @@ theorem coe_twoFieldEquatorsFiberHomeomorph_symm_apply
     ((((twoFieldEquatorsFiberHomeomorph huv).symm xq : sphere (0 : (ℝ ∙ u x)ᗮ) 1) :
         (ℝ ∙ u x)ᗮ) : E) = xq.val.val.2 :=
   (rfl)
+
+variable (u v) in
+/-- The projection `(x, q) ↦ x` of the space of equators, as a morphism of `TopCat`. -/
+def twoFieldEquatorsProj :
+    _root_.TopCat.of (twoFieldEquators u v) ⟶ _root_.TopCat.of (sphere (0 : E) 1) :=
+  _root_.TopCat.ofHom (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v)))
+
+/-- The projection `TauCeti.twoFieldEquatorsProj` is the first projection `(x, q) ↦ x`. -/
+@[simp]
+theorem hom_twoFieldEquatorsProj :
+    (twoFieldEquatorsProj u v).hom =
+      ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v)) :=
+  (rfl)
+
+variable (x) in
+/-- The fibre `{(x', q) ∈ Σ | x' = x}` of the space of equators over `x` is the preimage of `x`
+under the projection `TauCeti.twoFieldEquatorsProj`: the two subspaces have the same points. -/
+def twoFieldEquatorsFiberHomeomorphPreimage :
+    {xq : twoFieldEquators u v // xq.val.1 = x} ≃ₜ (twoFieldEquatorsProj u v ⁻¹' {x} : Set _) where
+  toFun xq := ⟨xq.val, xq.property⟩
+  invFun xq := ⟨xq.val, xq.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The homeomorphism `TauCeti.twoFieldEquatorsFiberHomeomorphPreimage` keeps the point of the
+space of equators. -/
+@[simp]
+theorem coe_twoFieldEquatorsFiberHomeomorphPreimage_apply
+    (xq : {xq : twoFieldEquators u v // xq.val.1 = x}) :
+    (twoFieldEquatorsFiberHomeomorphPreimage x xq : twoFieldEquators u v) = xq.val :=
+  (rfl)
+
+/-- The inverse of `TauCeti.twoFieldEquatorsFiberHomeomorphPreimage` keeps the point of the space
+of equators. -/
+@[simp]
+theorem coe_twoFieldEquatorsFiberHomeomorphPreimage_symm_apply
+    (xq : (twoFieldEquatorsProj u v ⁻¹' {x} : Set _)) :
+    ((twoFieldEquatorsFiberHomeomorphPreimage x).symm xq : twoFieldEquators u v) = xq.val :=
+  (rfl)
+
+/-- **The fibre of the projection of the space of equators is a sphere.** When `v x` is
+orthogonal to `u x`, the preimage of `x` under `TauCeti.twoFieldEquatorsProj` is homeomorphic to
+the unit sphere of the orthogonal complement of `v x` in `(u x)⊥`. -/
+def orthogonalSphereIsoTwoFieldEquatorsPreimage :
+    _root_.TopCat.of (sphere (0 : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      huv⟩ : (ℝ ∙ u x)ᗮ))ᗮ) 1) ≅ _root_.TopCat.of (twoFieldEquatorsProj u v ⁻¹' {x} : Set _) :=
+  _root_.TopCat.isoOfHomeo ((orthogonalSphereHomeomorphEquator _).trans
+    ((twoFieldEquatorsFiberHomeomorph huv).trans (twoFieldEquatorsFiberHomeomorphPreimage x)))
+
+/-- The isomorphism `TauCeti.orthogonalSphereIsoTwoFieldEquatorsPreimage` sends `q` to `(x, q)`. -/
+@[simp]
+theorem coe_orthogonalSphereIsoTwoFieldEquatorsPreimage_hom_apply
+    (q : sphere (0 : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+      (ℝ ∙ u x)ᗮ))ᗮ) 1) :
+    (((orthogonalSphereIsoTwoFieldEquatorsPreimage huv).hom q : twoFieldEquators u v) :
+        sphere (0 : E) 1 × sphere (0 : E) 1) =
+      (x, (orthogonalSphereToEquator (u x)
+        (orthogonalSphereToEquator _ q : sphere (0 : (ℝ ∙ u x)ᗮ) 1) : sphere (0 : E) 1)) :=
+  (coe_twoFieldEquatorsFiberHomeomorph_apply huv (orthogonalSphereHomeomorphEquator _ q)).trans
+    (by rw [orthogonalSphereHomeomorphEquator_apply])
+
+/-- The inverse of `TauCeti.orthogonalSphereIsoTwoFieldEquatorsPreimage` sends `(x, q)` to `q`. -/
+@[simp]
+theorem coe_orthogonalSphereIsoTwoFieldEquatorsPreimage_inv_apply
+    (xq : (twoFieldEquatorsProj u v ⁻¹' {x} : Set _)) :
+    (((((orthogonalSphereIsoTwoFieldEquatorsPreimage huv).inv xq :
+      sphere (0 : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+        (ℝ ∙ u x)ᗮ))ᗮ) 1) : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+          (ℝ ∙ u x)ᗮ))ᗮ) : (ℝ ∙ u x)ᗮ) : E) = (xq : twoFieldEquators u v).val.2 :=
+  (congrArg Subtype.val (coe_orthogonalSphereHomeomorphEquator_symm_apply _ _)).trans
+    (coe_twoFieldEquatorsFiberHomeomorph_symm_apply huv _)
+
+/-- The fibre of the space of equators of `Sⁿ` is a sphere of dimension `n - 2`: when `u x` and
+`v x` are nonzero and orthogonal in a space of dimension `n + 2`, the orthogonal complement of
+`v x` in `(u x)⊥` has dimension `n`. -/
+theorem finrank_orthogonal_span_twoField {n : ℕ} (hE : Module.finrank ℝ E = n + 2)
+    (hu₀ : u x ≠ 0) (hv₀ : v x ≠ 0) :
+    Module.finrank ℝ (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+      (ℝ ∙ u x)ᗮ))ᗮ = n := by
+  have : Fact (Module.finrank ℝ E = n + 1 + 1) := ⟨hE⟩
+  have : Fact (Module.finrank ℝ (ℝ ∙ u x)ᗮ = n + 1) :=
+    ⟨Submodule.finrank_orthogonal_span_singleton hu₀⟩
+  exact Submodule.finrank_orthogonal_span_singleton fun h0 ↦ hv₀ (congrArg Subtype.val h0)
 
 end Fiber
 

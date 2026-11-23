@@ -73,7 +73,8 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) (t : Fin n → (Pair.powerBounded ℚ
   have hStdS := (IsLocallyHuberStandard.spa P S.plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem hP (hS.isSheaf P hP)).of_isOpenImmersion
     (ofPairIsoOfPresentation S hS P hP).hom
-  exact .of_comp (hsec.symm ▸ .id hStdS) hπ.locallyOfFiniteType
+  exact LocallyOfFinitePresentation.of_comp (hsec.symm ▸ LocallyOfFinitePresentation.id hStdS)
+    ((AdicSpace.locallyOfFiniteType_iff _).mpr hπ.locallyOfFiniteType)
 
 /-- Analytic-locus upgrade for morphisms locally of finite type into a locally noetherian target. -/
 example {X Y : AdicSpace.{u}} {f : X ⟶ Y} (hf : LocallyOfFiniteType f)

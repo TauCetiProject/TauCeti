@@ -72,7 +72,7 @@ theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_i
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP ⟶ Y.obj),
       PreAdicSpace.IsOpenImmersion k → IsNoetherianRing A) :
     LocallyOfFinitePresentation f ↔ LocallyOfFiniteType f := by
-  refine ⟨LocallyOfFinitePresentation.locallyOfFiniteType,
+  refine ⟨fun hf ↦ (locallyOfFiniteType_iff f).mpr hf.locallyOfFiniteType,
     fun hf ↦ (locallyOfFinitePresentation_iff f).mpr fun x ↦ ?_⟩
   obtain ⟨V, hV, hfxV⟩ := isLocallyHuberStandard_iff.mp hY (f.hom.base x)
   obtain ⟨A, _, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ :=
