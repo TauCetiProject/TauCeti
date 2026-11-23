@@ -399,15 +399,6 @@ theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R
   rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
   ring
 
-/-- A rising factorial evaluated at `x` commutes with every `y` that commutes with `x`. -/
-private lemma commute_ascPochhammer_eval [Semiring R] {x y : R} (h : Commute x y) (m : ℕ) :
-    Commute ((ascPochhammer R m).eval x) y := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [ascPochhammer_succ_eval]
-    exact ih.mul_left (h.add_left (Nat.cast_commute m y))
-
 /-- The sums `Sₙ = ∑_{k<n} (a + k + 1)_{n−k−1} zᵏ` satisfy `S_{n+1} = (a + n) Sₙ + zⁿ`. -/
 theorem sum_range_succ_ascPochhammer_mul_pow [Semiring R] (a z : R) (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (ascPochhammer R (n + 1 - k - 1)).eval (a + k + 1) * z ^ k =
@@ -429,8 +420,8 @@ theorem sum_range_succ_ascPochhammer_mul_pow [Semiring R] (a z : R) (n : ℕ) :
     rw [← hsum, add_assoc, add_assoc, add_assoc]
   -- The factor `a + n` commutes with the rising factorial at `a + k + 1`.
   have hc : Commute ((ascPochhammer R (n - k - 1)).eval (a + k + 1)) (a + n) := by
-    rw [← hfac]
-    exact commute_ascPochhammer_eval ((Commute.refl _).add_right (Nat.cast_commute _ _).symm) _
+    rw [← hfac, ← ascPochhammer_smeval_eq_eval]
+    exact smeval_commute_left ℕ _ ((Commute.refl _).add_right (Nat.cast_commute _ _).symm)
   rw [hlen, ascPochhammer_succ_eval, hfac, hc.eq, mul_assoc]
 
 /-- The reindexing behind downward recurrences: `(a − n + k + 1)_{n−k−1}` is `f (n − 1 − k)`
