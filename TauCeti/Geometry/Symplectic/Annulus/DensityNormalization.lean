@@ -173,18 +173,28 @@ theorem stripColumnMean_periodic (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x
   integral_congr fun y hy ↦ hper x y (by rwa [uIcc_of_le zero_le_one] at hy)
 
 /-- The column means only read `ρ` on the strip. -/
-private theorem stripColumnMean_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
+theorem stripColumnMean_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
     stripColumnMean ρ' = stripColumnMean ρ :=
   funext fun x ↦ integral_congr fun y hy ↦
     h ⟨mem_univ _, by rwa [uIcc_of_le zero_le_one] at hy⟩
 
+/-- The annulus area only reads `ρ` on the strip. -/
+theorem annulusArea_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
+    annulusArea ρ' = annulusArea ρ := by
+  simp only [annulusArea_def, stripColumnMean_congr h]
+
+/-- The area fractions only read `ρ` on the strip. -/
+theorem stripAreaFraction_congr {ρ' : ℝ × ℝ → ℝ} (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
+    stripAreaFraction ρ' = stripAreaFraction ρ :=
+  funext fun x ↦ by simp only [stripAreaFraction_def, annulusArea_congr h, stripColumnMean_congr h]
+
 /-- On the strip, the density normalization only reads `ρ` there. -/
-private theorem stripDensityNormalization_congr {ρ' : ℝ × ℝ → ℝ}
+theorem stripDensityNormalization_congr {ρ' : ℝ × ℝ → ℝ}
     (h : EqOn ρ' ρ (univ ×ˢ Icc 0 1)) :
     EqOn (stripDensityNormalization ρ') (stripDensityNormalization ρ) (univ ×ˢ Icc 0 1) := by
   have hcm := stripColumnMean_congr h
   refine fun p hp ↦ Prod.ext ?_ ?_
-  · simp only [stripDensityNormalization_fst, stripAreaFraction_def, annulusArea_def, hcm]
+  · simp only [stripDensityNormalization_fst, stripAreaFraction_congr h]
   · simp only [stripDensityNormalization_snd, hcm]
     exact congrArg _ (integral_congr fun y hy ↦ h ⟨mem_univ _,
       Icc_subset_Icc_right hp.2.2 (by rwa [uIcc_of_le hp.2.1] at hy)⟩)
