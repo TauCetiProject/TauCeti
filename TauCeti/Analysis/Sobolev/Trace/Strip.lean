@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.Trace.Hyperplane
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 /-!
 # Boundary energy estimates on infinite strips
@@ -70,8 +72,7 @@ private theorem norm_sq_boundary_le_integral_line_energy
   let C := 2 / (b - a) + 1
   let energy := fun x : WithLp 2 (ℝ × E) ↦ C * ‖u x‖ ^ 2 + ‖fderiv ℝ u x‖ ^ 2
   have hpath : ContDiff ℝ 1 (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-    ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
-      (contDiff_id.prodMk contDiff_const)
+    WithLp.contDiff_toLp.comp (contDiff_id.prodMk contDiff_const)
   have hg : ∀ t ∈ Icc a b,
       ContDiffAt ℝ 1 (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) t := fun t ht ↦
     (hu _ (by simpa only [WithLp.ofLp_toLp] using ht)).comp t hpath.contDiffAt
@@ -85,13 +86,9 @@ private theorem norm_sq_boundary_le_integral_line_energy
       one_ne_zero).comp hpath.continuous.continuousAt).norm.pow 2 |>.continuousWithinAt
   have hderiv (t : ℝ) (ht : t ∈ Icc a b) :
       deriv (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) t =
-      fderiv ℝ u (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E))) := by
-    have hp : HasDerivAt (fun s : ℝ ↦ WithLp.toLp 2 (s, y))
-        (WithLp.toLp 2 (1, (0 : E))) t :=
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
-        ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
-    exact (((hu _ (by simpa only [WithLp.ofLp_toLp] using ht)).differentiableAt
-      one_ne_zero).hasFDerivAt.comp_hasDerivAt t hp).deriv
+      fderiv ℝ u (WithLp.toLp 2 (t, y)) (WithLp.toLp 2 (1, (0 : E))) :=
+    (hasDerivAt_comp_toLp_fst ((hu _ (by simpa only [WithLp.ofLp_toLp] using ht)).differentiableAt
+      one_ne_zero)).deriv
   have hmono : (∫ t in a..b, C * ‖u (WithLp.toLp 2 (t, y))‖ ^ 2 +
       ‖deriv (fun s : ℝ ↦ u (WithLp.toLp 2 (s, y))) t‖ ^ 2) ≤
       ∫ t in a..b, energy (WithLp.toLp 2 (t, y)) :=
