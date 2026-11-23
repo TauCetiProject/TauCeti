@@ -5,27 +5,32 @@ Authors: Arend Mellendijk, OpenAI Codex
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Data.Nat.Totient
 public import Mathlib.NumberTheory.SelbergSieve
 public import TauCeti.NumberTheory.ArithmeticFunction.EulerProduct
-public import Mathlib.NumberTheory.Harmonic.Bounds
-public import TauCeti.NumberTheory.SelbergSieve.UpperBound
+
+import Mathlib.Tactic.FieldSimp
+import TauCeti.Data.Nat.Totient
 
 /-!
 # Lower bounds for finite Selberg normalizers
 
-The density and harmonic comparisons hold at every real cutoff. The logarithmic comparisons
-assume a nonnegative inclusive cutoff, or a positive strict cutoff for the diagonal mass.
+The density and harmonic comparisons hold at every real cutoff. The logarithmic comparison
+`BoundingSieve.log_le_sum_selbergTerms` is a corollary of the coprime diagonal bound in
+`TauCeti.NumberTheory.SelbergSieve.CoprimeDiagonal`.
 The finite-prime argument is adapted from Arend Mellendijk's PNT+ Selberg bounds.
 
 ## Main results
 
 * `BoundingSieve.selbergTerms_le_of_prime_le` compares supported coefficients when the prime
   densities increase.
+* `BoundingSieve.inv_totient_le_selbergTerms`: a supported coefficient is at least `1 / φ(d)`
+  when the densities of the primes of `d` are at least their reciprocals.
 * `BoundingSieve.sum_nu_le_sum_selbergTerms` bounds the density sum for completely multiplicative
   densities, at every real cutoff.
-* `BoundingSieve.sum_inv_le_sum_selbergTerms` and `BoundingSieve.log_le_sum_selbergTerms` use only
-  reciprocal lower bounds on the relevant prime densities.
-* `BoundingSieve.log_le_diagonalMass` is the strict-cutoff form: `log z ≤ G(z)`.
+* `BoundingSieve.sum_inv_le_sum_selbergTerms` uses only reciprocal lower bounds on the relevant
+  prime densities.
 
 ## References
 
@@ -195,6 +200,18 @@ theorem selbergTerms_le_of_prime_le (s t : BoundingSieve) (d : ℕ)
       (sub_pos.mpr (nu_bounds_of_mem_primeFactors s hs hp).2)
       (sub_le_sub_left (hnu p hp) 1)
 
+/-- On a sieve-supported index `d` whose primes have densities at least their reciprocals,
+`1 / φ(d) ≤ selbergTerms d`. -/
+theorem inv_totient_le_selbergTerms (s : BoundingSieve) {d : ℕ} (hd : d ∣ s.prodPrimes)
+    (hnu : ∀ p ∈ d.primeFactors, (p : ℝ)⁻¹ ≤ s.nu p) :
+    (φ d : ℝ)⁻¹ ≤ s.selbergTerms d := by
+  have hd0 := (s.squarefree_of_dvd_prodPrimes hd).ne_zero
+  have ht : (reciprocalDensity s).selbergTerms d = (φ d : ℝ)⁻¹ := by
+    simp only [selbergTerms_apply, reciprocalDensity_nu_apply,
+      TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient hd0]
+    field_simp
+  exact ht ▸ selbergTerms_le_of_prime_le s _ d hd (fun p _ ↦ by simp) (by simpa using hnu)
+
 /-- Prime densities at least `1 / p` give a harmonic lower bound for the normalizer.
 Only prime values at or below the cutoff matter; no complete multiplicativity is assumed. -/
 theorem sum_inv_le_sum_selbergTerms (s : BoundingSieve) (z : ℝ)
@@ -227,37 +244,5 @@ theorem sum_inv_le_sum_selbergTerms (s : BoundingSieve) (z : ℝ)
         have hpd : (p : ℝ) ≤ d := by exact_mod_cast Nat.le_of_mem_primeFactors hp
         exact hpd.trans hdz
       · rfl
-
-/-- The finite Selberg normalizer is at least the logarithm of any nonnegative cutoff
-whose primes are in the sieve and have density at least the reciprocal prime. -/
-theorem log_le_sum_selbergTerms (s : BoundingSieve) (z : ℝ) (hz : 0 ≤ z)
-    (hP : ∀ p : ℕ, p.Prime → (p : ℝ) ≤ z → p ∣ s.prodPrimes)
-    (hnu : ∀ p : ℕ, p.Prime → (p : ℝ) ≤ z → (p : ℝ)⁻¹ ≤ s.nu p) :
-    Real.log z ≤
-      ∑ d ∈ s.prodPrimes.divisors, if (d : ℝ) ≤ z then s.selbergTerms d else 0 := by
-  refine (log_le_harmonic_floor z hz).trans ?_
-  simpa only [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast] using
-    sum_inv_le_sum_selbergTerms s z hP hnu
-
-/-- The strict-cutoff Selberg diagonal mass `G(z)` is at least `log z` for every positive
-cutoff whose primes `p < z` are in the sieve and have density at least `1 / p`. -/
-theorem log_le_diagonalMass (s : BoundingSieve) {z : ℝ} (hz : 0 < z)
-    (hP : ∀ p : ℕ, p.Prime → (p : ℝ) < z → p ∣ s.prodPrimes)
-    (hnu : ∀ p : ℕ, p.Prime → (p : ℝ) < z → (p : ℝ)⁻¹ ≤ s.nu p) :
-    Real.log z ≤ s.diagonalMass z := by
-  have hlt (p : ℕ) (hp : (p : ℝ) ≤ ((⌈z⌉₊ - 1 : ℕ) : ℝ)) : (p : ℝ) < z := by
-    have := Nat.ceil_pos.mpr hz
-    exact Nat.lt_ceil.mp (by have := Nat.cast_le.mp hp; omega)
-  have hsum := sum_inv_le_sum_selbergTerms s ((⌈z⌉₊ - 1 : ℕ) : ℝ)
-    (fun p hp hpz ↦ hP p hp (hlt p hpz)) (fun p hp hpz ↦ hnu p hp (hlt p hpz))
-  rw [Nat.floor_natCast] at hsum
-  have hharm := log_add_one_le_harmonic (⌈z⌉₊ - 1)
-  rw [Nat.sub_add_cancel (Nat.ceil_pos.mpr hz), harmonic_eq_sum_Icc] at hharm
-  push_cast at hharm
-  calc Real.log z ≤ Real.log ⌈z⌉₊ := Real.log_le_log hz (Nat.le_ceil z)
-    _ ≤ _ := hharm.trans hsum
-    _ = s.diagonalMass z := by
-      rw [diagonalMass_eq_truncatedSelbergSum, truncatedSelbergSum_def,
-        Nat.cast_sub (Nat.ceil_pos.mpr hz), Nat.cast_one]
 
 end BoundingSieve

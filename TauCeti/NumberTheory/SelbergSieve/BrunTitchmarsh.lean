@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 import TauCeti.NumberTheory.PrimeCounting
-import TauCeti.NumberTheory.SelbergSieve.Bounds
+import TauCeti.NumberTheory.SelbergSieve.CoprimeDiagonal
 import TauCeti.NumberTheory.SelbergSieve.PrimeInterval
 
 /-!
@@ -105,7 +105,9 @@ theorem primeCounting_floor_add_sub_le_div_log_add (x y : ℝ) {z : ℝ} (hy : 0
   set s := BoundingSieve.primeInterval x' y z
   have hlog : 0 < Real.log z := Real.log_pos hz
   have hG : Real.log z ≤ s.diagonalMass z := by
-    refine s.log_le_diagonalMass (by linarith) (fun p hp hpz ↦ ?_) (fun p _ _ ↦ ?_)
+    have h := s.totient_div_mul_log_le_diagonalMass 1 (z := z) (by linarith)
+      (fun p hp hpz _ ↦ ?_) (fun p _ _ _ ↦ ?_)
+    · rwa [Nat.totient_one, Nat.cast_one, div_one, one_mul] at h
     · rw [BoundingSieve.primeInterval_prodPrimes, hp.dvd_primorial_iff]
       exact Nat.le_floor hpz.le
     · rw [BoundingSieve.primeInterval_nu_apply]
