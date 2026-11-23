@@ -116,8 +116,8 @@ theorem awayProdPrimesUnitsMulEquiv_symm_map {J : Type*} (S : Type*) [CommSemiri
   simp
 
 @[simp]
-theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} [DecidableEq J] (S : Type*)
-    [CommSemiring S] [Algebra (_root_.MvPolynomial σ R) S] (s : Finset J)
+theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {J : Type*} (S : Type*)
+    [CommSemiring S] [Algebra (_root_.MvPolynomial σ R) S] (s : Finset J) [DecidableEq ↥s]
     {p : J → _root_.MvPolynomial σ R} (hp : ∀ j ∈ s, Prime (p j))
     (hs : (s : Set J).Pairwise fun i j ↦ ¬Associated (p i) (p j))
     [IsLocalization.Away (∏ j ∈ s, p j) S] (j : s) :

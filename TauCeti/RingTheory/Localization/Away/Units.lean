@@ -95,26 +95,6 @@ theorem awayUnitOfDvd_mul {x a b : R} (ha : a ∣ x) (hb : b ∣ x) (hab : a * b
   Submonoid.LocalizationMap.AwayMap.unitOfDvd_mul
     (IsLocalization.toLocalizationMap (.powers x) S) ha hb hab
 
-/-- Two `awayUnitOfDvd` constructions for the same divisor agree even when formed with different
-localization targets `x₁` and `x₂`. -/
-theorem awayUnitOfDvd_eq_of_eq {x₁ x₂ y : R} (h₁ : y ∣ x₁) (h₂ : y ∣ x₂)
-    [IsLocalization.Away x₁ S] [IsLocalization.Away x₂ S] :
-    awayUnitOfDvd S h₁ = awayUnitOfDvd S h₂ :=
-  Submonoid.LocalizationMap.AwayMap.unitOfDvd_eq_of_eq
-    (IsLocalization.toLocalizationMap (.powers x₁) S)
-    (IsLocalization.toLocalizationMap (.powers x₂) S) rfl h₁ h₂
-
-/-- A product of natural powers of `awayUnitOfDvd` over `s` evaluates in `S` to the image of
-`∏ i ∈ s, p i ^ k i`. -/
-theorem coe_prod_awayUnitOfDvd_zpow_natCast {ι : Type*} (s : Finset ι) (p : ι → R) (k : ι → ℕ)
-    [IsLocalization.Away (∏ i ∈ s, p i) S] :
-    ((∏ i : s,
-        awayUnitOfDvd S (Finset.dvd_prod_of_mem p i.property) ^ (k i.val : ℤ) :
-        Sˣ) : S) =
-      algebraMap R S (∏ i ∈ s, p i ^ k i) :=
-  Submonoid.LocalizationMap.AwayMap.coe_prod_unitOfDvd_zpow_natCast s p
-    (IsLocalization.toLocalizationMap (.powers (∏ i ∈ s, p i)) S) k
-
 end Semiring
 
 end TauCeti.Localization
@@ -183,9 +163,9 @@ theorem awayProdPrimesUnitsMulEquiv_symm_map {ι R : Type*} (S : Type*) [CommSem
     (IsLocalization.toLocalizationMap (.powers (∏ i ∈ s, p i)) S) u
 
 @[simp]
-theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {ι R : Type*} [DecidableEq ι] (S : Type*)
+theorem awayProdPrimesUnitsMulEquiv_symm_awayUnitOfDvd {ι R : Type*} (S : Type*)
     [CommSemiring R] [IsCancelMulZero R] [CommSemiring S] [Algebra R S] (s : Finset ι)
-    {p : ι → R} (hp : ∀ i ∈ s, Prime (p i))
+    [DecidableEq ↥s] {p : ι → R} (hp : ∀ i ∈ s, Prime (p i))
     (hs : (s : Set ι).Pairwise fun i j ↦ ¬Associated (p i) (p j))
     [IsLocalization.Away (∏ i ∈ s, p i) S] (i : s) :
     (awayProdPrimesUnitsMulEquiv S s hp hs).symm

@@ -85,14 +85,14 @@ section Inverse
 variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike σ A]
   [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
 
-/-- In a ring graded by an additive group, the inverse of a homogeneous unit of degree `d` is
+/-- In a semiring graded by an additive group, the inverse of a homogeneous unit of degree `d` is
 homogeneous of degree `-d`. -/
 theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d) :=
   TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hu u.isRegular.left
     (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
 
-/-- In a ring graded by an additive group, an integer power of a homogeneous unit of degree `d`
+/-- In a semiring graded by an additive group, an integer power of a homogeneous unit of degree `d`
 is homogeneous of degree `m • d`. -/
 theorem Units.val_zpow_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) (m : ℤ) :
     ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) :=
@@ -188,6 +188,14 @@ theorem ShiftClassGroup.equivZMod_mk {A σ : Type*} [Monoid A] [SetLike σ A] {�
     ShiftClassGroup.equivZMod h c = c := by
   rw [ShiftClassGroup.equivZMod, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk,
     Int.quotientZMultiplesEquivZMod_mk]
+
+/-- The inverse of `ShiftClassGroup.equivZMod` sends an integer cast `(c : ZMod e.natAbs)` to the
+shift class `(c : ShiftClassGroup 𝒜)`. -/
+@[simp]
+theorem ShiftClassGroup.equivZMod_symm_intCast {A σ : Type*} [Monoid A] [SetLike σ A]
+    {𝒜 : ℤ → σ} {e : ℤ} (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) (c : ℤ) :
+    (ShiftClassGroup.equivZMod h).symm (c : ZMod e.natAbs) = (c : ShiftClassGroup 𝒜) := by
+  rw [AddEquiv.symm_apply_eq, ShiftClassGroup.equivZMod_mk]
 
 section Shift
 

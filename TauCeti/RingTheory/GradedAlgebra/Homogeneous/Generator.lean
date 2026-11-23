@@ -48,9 +48,11 @@ graded isomorphism.
 * `TauCeti.GradedAlgebra.shiftClass_eq_iff`: two compatible `ℤ`-gradings of `A` on a preconnected
   spectrum are graded-isomorphic if and only if they have the same `shiftClass` in
   `ShiftClassGroup 𝒜`.
-* `TauCeti.GradedAlgebra.exists_shift_grading`: for every `d : ℤ`, the translated grading
-  `n ↦ 𝒜 (n + d)` admits a direct-sum decomposition and compatible `𝒜`-scalar action with
-  `shiftClass` equal to `(d : ShiftClassGroup 𝒜)`.
+* `TauCeti.GradedAlgebra.gradedSMul_shift`: shifting the degree of a compatible module grading
+  preserves compatibility with the scalar grading.
+* `TauCeti.GradedAlgebra.shiftClass_shift`: for every `d : ℤ`, the translated grading
+  `fun n ↦ 𝒜 (n + d)` equipped with `DirectSum.Decomposition.compEquiv` and `gradedSMul_shift`
+  has `shiftClass` equal to `(d : ShiftClassGroup 𝒜)`.
 -/
 
 public section
@@ -58,6 +60,18 @@ public section
 open DirectSum LaurentPolynomial
 
 namespace TauCeti.GradedAlgebra
+
+section Shift
+
+/-- Shifting the degree of a compatible module grading by `d : ι` preserves compatibility with
+the scalar grading `𝒜`. -/
+theorem gradedSMul_shift {ι A M σA σM : Type*} [AddSemigroup ι] [SMul A M] [SetLike σA A]
+    [SetLike σM M] (𝒜 : ι → σA) (ℳ : ι → σM) [SetLike.GradedSMul 𝒜 ℳ] (d : ι) :
+    SetLike.GradedSMul 𝒜 (fun n ↦ ℳ (n + d)) :=
+  ⟨fun _ _ _ _ ha hb ↦ by
+    simpa only [vadd_eq_add, add_assoc] using SetLike.GradedSMul.smul_mem (B := ℳ) ha hb⟩
+
+end Shift
 
 section Semiring
 
@@ -165,67 +179,17 @@ theorem shiftClass_eq_iff :
   rw [hN, shiftClass_eq_mk_iff]
   exact φN.exists_forall_iff_of_forall_iff hφN
 
-omit [PreconnectedSpace (PrimeSpectrum A)] in
-private theorem exists_shift_decomposition (𝒜 : ℤ → σ) (d : ℤ) [Dec : Decomposition 𝒜] :
-    Nonempty (Decomposition (fun n ↦ 𝒜 (n + d))) := by
-  let toShift : (⨁ i, 𝒜 i) →+ ⨁ n, 𝒜 (n + d) :=
-    DirectSum.toAddMonoid fun i ↦
-      (DirectSum.of (fun n ↦ 𝒜 (n + d)) (i - d)).comp
-        { toFun := fun x ↦ ⟨(x : A), by simp [sub_add_cancel]⟩
-          map_zero' := rfl
-          map_add' := fun _ _ ↦ rfl }
-  let fromShift : (⨁ n, 𝒜 (n + d)) →+ ⨁ i, 𝒜 i :=
-    DirectSum.toAddMonoid fun n ↦
-      (DirectSum.of (fun i ↦ 𝒜 i) (n + d)).comp
-        { toFun := fun x ↦ ⟨(x : A), x.property⟩
-          map_zero' := rfl
-          map_add' := fun _ _ ↦ rfl }
-  have hcoe : ∀ x, DirectSum.coeAddMonoidHom (fun n ↦ 𝒜 (n + d)) (toShift x) =
-      DirectSum.coeAddMonoidHom 𝒜 x := fun x ↦ by
-    induction x using DirectSum.induction_on with
-    | zero => simp
-    | of i x => simp [toShift]
-    | add x y hx hy => simp [hx, hy]
-  have hcoe_from : ∀ y, DirectSum.coeAddMonoidHom (fun n ↦ 𝒜 (n + d)) y =
-      DirectSum.coeAddMonoidHom 𝒜 (fromShift y) := fun y ↦ by
-    induction y using DirectSum.induction_on with
-    | zero => simp
-    | of n y => simp [fromShift]
-    | add x y hx hy => simp [hx, hy]
-  have hof {m n : ℤ} (hm : m = n) (z : 𝒜 (m + d)) (y : 𝒜 (n + d)) (hz : (z : A) = y) :
-      DirectSum.of (fun n ↦ 𝒜 (n + d)) m z = DirectSum.of (fun n ↦ 𝒜 (n + d)) n y := by
-    subst hm
-    exact congrArg (DirectSum.of (fun n ↦ 𝒜 (n + d)) m) (Subtype.ext hz)
-  have hright : ∀ y, toShift (fromShift y) = y := fun y ↦ by
-    induction y using DirectSum.induction_on with
-    | zero => simp
-    | of n y =>
-      simp only [toShift, fromShift, toAddMonoid_of, AddMonoidHom.coe_comp,
-        AddMonoidHom.coe_mk, ZeroHom.coe_mk, Function.comp_apply]
-      exact hof (add_sub_cancel_right n d) _ y rfl
-    | add x y hx hy => simp [hx, hy]
-  exact ⟨{
-    decompose' := fun a ↦ toShift (decompose 𝒜 a)
-    left_inv := fun a ↦ by dsimp only; rw [hcoe]; exact Decomposition.left_inv (ℳ := 𝒜) a
-    right_inv := fun y ↦ by
-      dsimp only
-      rw [hcoe_from, show decompose 𝒜 (DirectSum.coeAddMonoidHom 𝒜 (fromShift y)) = fromShift y
-        from Decomposition.right_inv (ℳ := 𝒜) (fromShift y), hright] }⟩
-
-/-- For every `d : ℤ`, the translated grading `n ↦ 𝒜 (n + d)` admits a direct-sum decomposition
-and compatible graded `𝒜`-scalar action whose shift class is `(d : ShiftClassGroup 𝒜)`. -/
-theorem exists_shift_grading (d : ℤ) :
-    ∃ (hdec : Decomposition (fun n ↦ 𝒜 (n + d)))
-      (hsmul : SetLike.GradedSMul 𝒜 (fun n ↦ 𝒜 (n + d))),
-      letI := hdec
-      letI := hsmul
-      shiftClass 𝒜 (fun n ↦ 𝒜 (n + d)) = (d : ShiftClassGroup 𝒜) := by
-  obtain ⟨hdec⟩ := exists_shift_decomposition 𝒜 d
-  have hsmul : SetLike.GradedSMul 𝒜 (fun n ↦ 𝒜 (n + d)) :=
-    ⟨fun i j _ _ ha hb ↦ by simpa [add_assoc] using SetLike.mul_mem_graded ha hb⟩
-  refine ⟨hdec, hsmul, ?_⟩
-  let _ := hdec
-  let _ := hsmul
+/-- For every `d : ℤ`, the translated grading `fun n ↦ 𝒜 (n + d)` equipped with
+`DirectSum.Decomposition.compEquiv 𝒜 (Equiv.addRight d)` and `gradedSMul_shift 𝒜 𝒜 d` has shift
+class `(d : ShiftClassGroup 𝒜)`. -/
+theorem shiftClass_shift (d : ℤ) :
+    let _ : Decomposition (fun n ↦ 𝒜 (n + d)) :=
+      DirectSum.Decomposition.compEquiv 𝒜 (Equiv.addRight d)
+    have _ := gradedSMul_shift 𝒜 𝒜 d
+    shiftClass 𝒜 (fun n ↦ 𝒜 (n + d)) = (d : ShiftClassGroup 𝒜) := by
+  let _ : Decomposition (fun n ↦ 𝒜 (n + d)) :=
+    DirectSum.Decomposition.compEquiv 𝒜 (Equiv.addRight d)
+  have _ := gradedSMul_shift 𝒜 𝒜 d
   exact (shiftClass_eq_mk_iff 𝒜 (fun n ↦ 𝒜 (n + d))).mpr
     ⟨LinearEquiv.refl A A, fun _ _ ↦ Iff.rfl⟩
 

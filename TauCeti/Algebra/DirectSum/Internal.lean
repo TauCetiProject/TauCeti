@@ -41,9 +41,9 @@ agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
 `Finsupp.addHom_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
-`DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
-`DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule to a natural-number-indexed
-internal decomposition.
+`DirectSum.IsInternal.comp_equiv` and `DirectSum.Decomposition.compEquiv` reindex one along an
+equivalence of the index types, and `DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule
+to a natural-number-indexed internal decomposition.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements,
@@ -441,13 +441,63 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
   simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
 
-/-- An internal direct sum of submodules can be reindexed along an equivalence of the index
-types. -/
-theorem comp_equiv {R M κ κ' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [DecidableEq κ] [DecidableEq κ'] {A : κ' → Submodule R M} (hA : IsInternal A)
+end DirectSum.IsInternal
+
+namespace DirectSum
+
+/-- Reindexing an internal direct sum along an equivalence of index types commutes with the
+canonical recomposition map `DirectSum.coeAddMonoidHom`. -/
+@[simp]
+theorem coeAddMonoidHom_equivCongrLeft {M S κ κ' : Type*} [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
+    (A : κ' → S) (e : κ ≃ κ') (x : ⨁ k, A k) :
+    DirectSum.coeAddMonoidHom (A ∘ e) (equivCongrLeft e.symm x) =
+      DirectSum.coeAddMonoidHom A x := by
+  have h :
+      (DirectSum.coeAddMonoidHom (A ∘ e)).comp (equivCongrLeft e.symm).toAddMonoidHom =
+        DirectSum.coeAddMonoidHom A := by
+    refine DirectSum.addHom_ext fun k y ↦ ?_
+    obtain ⟨i, rfl⟩ := e.surjective k
+    have heq : equivCongrLeft e.symm (of (fun k ↦ A k) (e i) y) =
+        of (fun i ↦ (A ∘ e) i) i y := by
+      ext j
+      rw [equivCongrLeft_apply]
+      by_cases hij : i = j
+      · subst hij; simp
+      · simp [of_apply, hij, e.apply_eq_iff_eq]
+    rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, heq,
+      DirectSum.coeAddMonoidHom_of, DirectSum.coeAddMonoidHom_of]
+  exact DFunLike.congr_fun h x
+
+end DirectSum
+
+namespace DirectSum.IsInternal
+
+/-- An internal direct sum can be reindexed along an equivalence of the index types. -/
+theorem comp_equiv {M S κ κ' : Type*} [AddCommMonoid M] [SetLike S M] [AddSubmonoidClass S M]
+    [DecidableEq κ] [DecidableEq κ'] {A : κ' → S} (hA : IsInternal A)
     (e : κ ≃ κ') : IsInternal (A ∘ e) := by
-  convert hA.iSup_fiber e.symm with k
-  simp [Equiv.symm_apply_eq]
+  have hcomp : DirectSum.coeAddMonoidHom (A ∘ e) ∘ equivCongrLeft e.symm =
+      DirectSum.coeAddMonoidHom A :=
+    funext (coeAddMonoidHom_equivCongrLeft A e)
+  have hA' : Function.Bijective (DirectSum.coeAddMonoidHom A) := hA
+  rw [← hcomp] at hA'
+  exact (Function.Bijective.of_comp_iff _ (equivCongrLeft e.symm).bijective).mp hA'
+
+end DirectSum.IsInternal
+
+namespace DirectSum
+
+/-- Transport a `DirectSum.Decomposition` along an equivalence of the index types. -/
+@[instance_reducible]
+noncomputable def Decomposition.compEquiv {M S κ κ' : Type*} [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
+    (A : κ' → S) [Decomposition A] (e : κ ≃ κ') : Decomposition (A ∘ e) :=
+  ((Decomposition.isInternal A).comp_equiv e).chooseDecomposition
+
+end DirectSum
+
+namespace DirectSum.IsInternal
 
 /-- Transporting an internal direct sum of submodules along a linear equivalence gives an internal
 direct sum. -/

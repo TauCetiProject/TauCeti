@@ -179,4 +179,13 @@ theorem shiftClassGroupAwayGradingWeightedEquiv_mk (w : σ → ℤ) {f : MvPolyn
     shiftClassGroupAwayGradingWeightedEquiv w hf hprime c = c :=
   ShiftClassGroup.equivZMod_mk _ c
 
+/-- The inverse of `shiftClassGroupAwayGradingWeightedEquiv` sends an integer cast
+`(c : ZMod e.natAbs)` to the shift class `(c : ShiftClassGroup _)`. -/
+@[simp]
+theorem shiftClassGroupAwayGradingWeightedEquiv_symm_intCast (w : σ → ℤ) {f : MvPolynomial σ R}
+    {e : ℤ} (hf : f ∈ weightedHomogeneousSubmodule R w e) (hprime : Prime f) (c : ℤ) :
+    (shiftClassGroupAwayGradingWeightedEquiv w hf hprime).symm (c : ZMod e.natAbs) =
+      (c : ShiftClassGroup (GradedAlgebra.awayGrading (weightedHomogeneousSubmodule R w) hf)) :=
+  ShiftClassGroup.equivZMod_symm_intCast _ c
+
 end TauCeti

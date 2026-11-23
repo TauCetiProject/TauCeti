@@ -14,7 +14,7 @@ import Mathlib.RingTheory.Multiplicity
 
 In a cancellative commutative monoid with zero, Mathlib's `dvd_prime_pow` characterizes the
 divisors of `p ^ n` for a prime element `p` without assuming unique factorization, and Tau Ceti's
-`Prime.exists_associated_pow_mul_of_dvd_pow_mul` (in `TauCeti.Algebra.GroupWithZero.Associated`)
+`Prime.exists_eq_pow_mul_of_dvd_pow_mul` (in `TauCeti.Algebra.GroupWithZero.Associated`)
 extends that characterization to divisors of `p ^ n * a`.
 
 This file extends that characterization to finite products of prime elements and their powers:
@@ -57,7 +57,7 @@ theorem dvd_prod_pow_primes_iff (s : Finset ι) {p : ι → M₀} (hp : ∀ i �
     have hpa : Prime (p a) := hp a (mem_insert_self a s)
     have hps : ∀ i ∈ s, Prime (p i) := fun i hi ↦ hp i (mem_insert_of_mem hi)
     rw [prod_insert ha] at hx
-    obtain ⟨j, hj, y, hy, hxy⟩ := hpa.exists_associated_pow_mul_of_dvd_pow_mul hx
+    obtain ⟨j, hj, y, hy, rfl⟩ := hpa.exists_eq_pow_mul_of_dvd_pow_mul hx
     obtain ⟨m, hm, hym⟩ := ih hps hy
     refine ⟨Function.update m a j, fun i hi ↦ ?_, ?_⟩
     · rcases mem_insert.mp hi with rfl | his
@@ -65,7 +65,7 @@ theorem dvd_prod_pow_primes_iff (s : Finset ι) {p : ι → M₀} (hp : ∀ i �
       · simpa [ne_of_mem_of_not_mem his ha] using hm i his
     · rw [prod_insert ha, Function.update_self,
         prod_congr rfl fun i hi ↦ by rw [Function.update_of_ne (ne_of_mem_of_not_mem hi ha)]]
-      exact hxy.trans (hym.mul_left (p a ^ j))
+      exact hym.mul_left (p a ^ j)
 
 /-- In a cancellative commutative monoid with zero, an element divides `(∏ i ∈ s, p i) ^ k` for
 prime elements `p i` (`i ∈ s`) if and only if it is associated to `∏ i ∈ s, p i ^ m i` with
