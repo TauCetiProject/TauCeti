@@ -83,8 +83,9 @@ derivatives `∂_{bᵢ} f` along an orthonormal basis are bounded `C^{k-1,α}` f
   whose derivatives through order `k` are bounded by `C ‖u‖` and whose `k`-th derivative is
   `α`-Hölder with constant `C ‖u‖`.
 * `TauCeti.BesovSpace.toCkHolderSpace`: the inclusion `𝒞^{k+α} → C_b^{k,α}` as a continuous
-  linear map, characterised by `TauCeti.BesovSpace.toCkHolderSpace_eq_iff` and
-  `TauCeti.BesovSpace.toLpTop_toCkHolderSpace`.
+  linear map, characterised by `TauCeti.BesovSpace.toCkHolderSpace_eq_iff`,
+  `TauCeti.BesovSpace.toLpTop_toCkHolderSpace` and
+  `TauCeti.BesovSpace.coe_toCkHolderSpace_eq_of_toDistr_eq`.
 * `TauCeti.BesovSpace.exists_toLpTop_eq_and_norm_le_and_holderWith`: the case `k = 0`, every
   `u ∈ 𝒞^α` is a bounded continuous `α`-Hölder function.
 * `TauCeti.BesovSpace.toHolderSpace`: the inclusion `𝒞^α → C^{0,α}` as a continuous linear map
@@ -708,20 +709,26 @@ theorem toCkHolderSpace_eq_iff (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
   rw [toCkHolderSpace_apply, coe_ckHolderRepr, repr_eq φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1) h,
     CkHolderSpace.coe_toBoundedContinuousFunction]
 
+/-- Any bounded continuous function whose tempered distribution equals `u` has the same underlying
+function as `toCkHolderSpace F φ k hα0 hα1 u`. -/
+theorem coe_toCkHolderSpace_eq_of_toDistr_eq {k : ℕ} (hα0 : 0 < α) (hα1 : α < 1)
+    {u : BesovSpace F φ (k + α) ∞ ∞} {f : E →ᵇ F}
+    (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
+    ⇑(toCkHolderSpace F φ k hα0 hα1 u) = ⇑f := by
+  rw [← CkHolderSpace.coe_toBoundedContinuousFunction,
+    toBoundedContinuousFunction_toCkHolderSpace,
+    repr_eq φ (fun v ↦ (ckRepr_spec φ k hα0 hα1 v).1) hf]
+
 /-- The order-zero `CkHolderSpace` representative of `u ∈ 𝒞^α` (viewed in `𝒞^{0+α}`) has the same
 underlying function as `toHolderSpace F φ hα0 hα1 u`. -/
 theorem coe_toCkHolderSpace_zero_inclusion (hα0 : 0 < α) (hα1 : α < 1)
     (u : BesovSpace F φ α ∞ ∞) :
     ⇑(toCkHolderSpace F φ 0 hα0 hα1 (inclusion F φ ∞ (by simp) le_rfl u)) =
-      ⇑(toHolderSpace F φ hα0 hα1 u) := by
-  have hfg :
-      (toCkHolderSpace F φ 0 hα0 hα1
-        (inclusion F φ ∞ (by simp) le_rfl u)).toBoundedContinuousFunction =
-      (toHolderSpace F φ hα0 hα1 u).toBoundedContinuousFunction :=
-    toTemperedDistribution_toLpTop_injective (μ := volume) <| by simp
-  ext x
-  simpa only [CkHolderSpace.coe_toBoundedContinuousFunction,
-    HolderSpace.toBoundedContinuousFunction_apply] using DFunLike.congr_fun hfg x
+      ⇑(toHolderSpace F φ hα0 hα1 u) :=
+  (coe_toCkHolderSpace_eq_of_toDistr_eq φ hα0 hα1
+    ((toLpTop_toHolderSpace φ hα0 hα1 u).trans
+      (toDistr_inclusion (by simp) le_rfl u).symm)).trans
+    (funext (HolderSpace.toBoundedContinuousFunction_apply _))
 
 /-! ### The converse inclusion `C_b^{k,α} ⊆ 𝒞^{k+α}` -/
 

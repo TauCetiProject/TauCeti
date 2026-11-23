@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Geometry.Manifold.SmoothApprox
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Schwartz functions in `L^∞` and uniform approximation
@@ -27,12 +26,14 @@ Schwartz functions exactly when it vanishes at infinity along `cocompact E`
 (`BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`): uniform limits of
 Schwartz functions vanish at infinity, and conversely cutting off a function vanishing at infinity
 by a smooth bump and taking a support-preserving smooth approximation produces a Schwartz uniform
-approximant.
+approximant (`Continuous.exists_schwartzMap_norm_sub_le`).
 
 ## Main declarations
 
 * `SchwartzMap.toLp_top_eq_toLpTop`: `g.toLp ∞ μ` agrees with
   `BoundedContinuousFunction.toLpTop μ 𝕜 g.toBoundedContinuousFunction`.
+* `Continuous.exists_schwartzMap_norm_sub_le`: a continuous function vanishing at infinity can be
+  uniformly approximated by Schwartz functions.
 * `BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`: a bounded continuous
   function lies in the `L^∞(μ)` closure of the Schwartz functions iff it vanishes at infinity.
 
@@ -64,6 +65,44 @@ theorem toLp_top_eq_toLpTop {μ : Measure E} [μ.HasTemperateGrowth] (g : 𝓢(E
     (BoundedContinuousFunction.coeFn_toLpTop (𝕜 := 𝕜) μ g.toBoundedContinuousFunction).symm
 
 end SchwartzMap
+
+/-- **Uniform approximation of `C₀` functions by Schwartz functions.** Any continuous function
+vanishing at infinity along `cocompact E` can be uniformly approximated by Schwartz functions. -/
+theorem Continuous.exists_schwartzMap_norm_sub_le {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F}
+    (hfc : Continuous f) (hf : Tendsto f (cocompact E) (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : 𝓢(E, F), ∀ x, ‖f x - g x‖ ≤ ε := by
+  -- Outside a compact set `K`, `‖f x‖ < ε / 2`.
+  obtain ⟨K, hK, hKε⟩ := hasBasis_cocompact.mem_iff.1
+    (Metric.tendsto_nhds.1 hf (ε / 2) (by positivity))
+  obtain ⟨χ, hχ_smooth, hχ_range, hχ_one, hχ_supp, -⟩ :=
+    hK.exists_contDiff_cutoff isOpen_univ (Set.subset_univ K)
+  set fcut : E → F := fun x ↦ χ x • f x
+  have hfcut_cont : Continuous fcut := hχ_smooth.continuous.smul hfc
+  have hfcut_supp : HasCompactSupport fcut := hχ_supp.smul_right
+  have hfcut_dist : ∀ x, ‖f x - fcut x‖ ≤ ε / 2 := fun x ↦ by
+    by_cases hx : x ∈ K
+    · have h1 : χ x = 1 := interior_subset (hχ_one hx)
+      simp only [fcut, h1, one_smul, sub_self, norm_zero]
+      positivity
+    · have hfx : ‖f x‖ < ε / 2 := by simpa [dist_zero_right] using hKε hx
+      have hχx : χ x ∈ Set.Icc (0 : ℝ) 1 := hχ_range ⟨x, rfl⟩
+      have hsub : f x - fcut x = (1 - χ x) • f x := by simp only [fcut, sub_smul, one_smul]
+      rw [hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 hχx.2)]
+      exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [hχx.1])).trans hfx.le
+  -- Smoothly approximate `fcut` within `ε / 2` while preserving compact support.
+  obtain ⟨g₀, hg₀_smooth, hg₀_approx, hg₀_supp⟩ := hfcut_cont.exists_contDiff_approx ⊤
+    (ε := fun _ ↦ ε / 2) continuous_const fun _ ↦ by positivity
+  refine ⟨(hfcut_supp.mono hg₀_supp).toSchwartzMap hg₀_smooth, fun x ↦ ?_⟩
+  have hg : ((hfcut_supp.mono hg₀_supp).toSchwartzMap hg₀_smooth) x = g₀ x :=
+    HasCompactSupport.toSchwartzMap_toFun _ _ x
+  calc ‖f x - ((hfcut_supp.mono hg₀_supp).toSchwartzMap hg₀_smooth) x‖
+      ≤ ‖f x - fcut x‖ + ‖fcut x - g₀ x‖ := by
+        rw [hg]
+        exact norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ = ‖f x - fcut x‖ + dist (g₀ x) (fcut x) := by rw [dist_comm, dist_eq_norm]
+    _ ≤ ε / 2 + ε / 2 := add_le_add (hfcut_dist x) (hg₀_approx x).le
+    _ = ε := add_halves ε
 
 namespace BoundedContinuousFunction
 
@@ -101,39 +140,10 @@ theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff {μ : Measure E}
     exact zero_at_infty h
   · intro hf
     refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    -- Outside a compact set `K`, `‖f x‖ < ε / 3`.
-    obtain ⟨K, hK, hKε⟩ := hasBasis_cocompact.mem_iff.1
-      (Metric.tendsto_nhds.1 hf (ε / 3) (by positivity))
-    obtain ⟨χ, hχ_smooth, hχ_range, hχ_one, hχ_supp, -⟩ :=
-      hK.exists_contDiff_cutoff isOpen_univ (Set.subset_univ K)
-    set fcut : E → F := fun x ↦ χ x • f x
-    have hfcut_cont : Continuous fcut := hχ_smooth.continuous.smul f.continuous
-    have hfcut_supp : HasCompactSupport fcut := hχ_supp.smul_right
-    have hfcut_dist : ∀ x, ‖f x - fcut x‖ ≤ ε / 3 := fun x ↦ by
-      by_cases hx : x ∈ K
-      · have h1 : χ x = 1 := interior_subset (hχ_one hx)
-        simp only [fcut, h1, one_smul, sub_self, norm_zero]
-        positivity
-      · have hfx : ‖f x‖ < ε / 3 := by simpa [dist_zero_right] using hKε hx
-        have hχx : χ x ∈ Set.Icc (0 : ℝ) 1 := hχ_range ⟨x, rfl⟩
-        have hsub : f x - fcut x = (1 - χ x) • f x := by simp only [fcut, sub_smul, one_smul]
-        rw [hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 hχx.2)]
-        exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [hχx.1])).trans hfx.le
-    -- Smoothly approximate `fcut` within `ε / 3` while preserving compact support.
-    obtain ⟨g₀, hg₀_smooth, hg₀_approx, hg₀_supp⟩ := hfcut_cont.exists_contDiff_approx ⊤
-      (ε := fun _ ↦ ε / 3) continuous_const fun _ ↦ by positivity
-    set g : 𝓢(E, F) := (hfcut_supp.mono hg₀_supp).toSchwartzMap hg₀_smooth
-    have hg : ⇑g = g₀ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+    obtain ⟨g, hpt⟩ := f.continuous.exists_schwartzMap_norm_sub_le hf (half_pos hε)
     refine ⟨g.toLp ∞ μ, ⟨g, rfl⟩, ?_⟩
-    have hpt : ∀ x, ‖f x - g x‖ ≤ 2 * ε / 3 := fun x ↦ by
-      calc ‖f x - g x‖ ≤ ‖f x - fcut x‖ + ‖fcut x - g x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-        _ = ‖f x - fcut x‖ + dist (g x) (fcut x) := by rw [dist_comm, dist_eq_norm]
-        _ ≤ ε / 3 + ε / 3 := by
-            rw [hg]
-            exact add_le_add (hfcut_dist x) (hg₀_approx x).le
-        _ = 2 * ε / 3 := by ring
     rw [dist_eq_norm]
-    refine (Lp.norm_le_of_ae_bound_top (C := 2 * ε / 3) (by positivity) ?_).trans_lt (by linarith)
+    refine (Lp.norm_le_of_ae_bound_top (C := ε / 2) (by positivity) ?_).trans_lt (half_lt_self hε)
     filter_upwards [Lp.coeFn_sub (toLpTop μ 𝕜 f) (g.toLp ∞ μ),
       coeFn_toLpTop (𝕜 := 𝕜) μ f, g.coeFn_toLp ∞ μ] with x hsub hf' hg'
     rw [hsub, Pi.sub_apply, hf', hg']

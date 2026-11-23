@@ -160,6 +160,9 @@ blocks `Δⱼ u`.
   (`TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le`), in particular the
   partial sums `∑_{j ≤ N} Δⱼ`
   (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
+* `TemperedDistribution.littlewoodPaleyBlockLp` and
+  `TemperedDistribution.toTemperedDistribution_littlewoodPaleyBlockLp`: the blocks as bounded
+  operators on `Lᵖ`, `1 ≤ p ≤ ∞`.
 * `TemperedDistribution.littlewoodPaleyBlock_mem_closure_range_schwartz_toLp`: the blocks preserve
   the `Lᵖ` closure of the Schwartz functions.
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
@@ -1015,6 +1018,36 @@ theorem exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (L 
             (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
 
+variable (F) in
+/-- The `j`-th Littlewood–Paley block as a bounded operator on `Lᵖ`, for `1 ≤ p ≤ ∞`. -/
+noncomputable def littlewoodPaleyBlockLp [CompleteSpace F] (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ) :
+    Lp F p (volume : Measure E) →L[ℂ] Lp F p (volume : Measure E) :=
+  let hC := (exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ).choose_spec
+  let i : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
+    (Lp.toTemperedDistributionCLM F volume p).toLinearMap
+  let B : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
+    (littlewoodPaleyBlock F φ j).toLinearMap ∘ₗ i
+  have hmem : ∀ u, B u ∈ LinearMap.range i :=
+    fun u ↦ let ⟨g, hg, _⟩ := hC j u; ⟨g, hg.symm⟩
+  let T₀ := LinearMap.codRestrictOfInjective B i Lp.toTemperedDistribution_injective hmem
+  T₀.mkContinuous (exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ).choose fun u ↦ by
+    obtain ⟨g, hg, hgn⟩ := hC j u
+    have hT₀ : (T₀ u : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) :=
+      LinearMap.codRestrictOfInjective_comp_apply B i Lp.toTemperedDistribution_injective hmem u
+    have hug : T₀ u = g := Lp.toTemperedDistribution_injective (hT₀.trans hg)
+    simpa only [hug] using hgn
+
+/-- The tempered distribution of `littlewoodPaleyBlockLp F φ p j u` is
+`littlewoodPaleyBlock F φ j (u : 𝓢'(E, F))`. -/
+@[simp]
+theorem toTemperedDistribution_littlewoodPaleyBlockLp [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (j : ℕ) (u : Lp F p (volume : Measure E)) :
+    (littlewoodPaleyBlockLp F φ p j u : 𝓢'(E, F)) =
+      littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) := by
+  dsimp only [littlewoodPaleyBlockLp]
+  exact LinearMap.codRestrictOfInjective_comp_apply _
+    (Lp.toTemperedDistributionCLM F volume p).toLinearMap Lp.toTemperedDistribution_injective _ u
+
 /-- **Littlewood–Paley blocks preserve the `Lᵖ` closure of Schwartz functions.** If `f ∈ Lᵖ` lies in
 the `Lᵖ` closure of the Schwartz functions and its block `Δⱼ f` is represented by `v ∈ Lᵖ`, then
 `v` also lies in the `Lᵖ` closure of the Schwartz functions. -/
@@ -1024,34 +1057,17 @@ theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp [CompleteSpace F]
     {v : Lp F p (volume : Measure E)}
     (hv : littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = v) :
     v ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p) := by
-  obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  set i : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
-    (Lp.toTemperedDistributionCLM F volume p).toLinearMap
-  have hi : Function.Injective i := Lp.toTemperedDistribution_injective
-  set B : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
-    (littlewoodPaleyBlock F φ j).toLinearMap ∘ₗ i
-  have hmem : ∀ u, B u ∈ LinearMap.range i := fun u ↦ let ⟨g, hg, _⟩ := hC j u; ⟨g, hg.symm⟩
-  set T₀ : Lp F p (volume : Measure E) →ₗ[ℂ] Lp F p (volume : Measure E) :=
-    LinearMap.codRestrictOfInjective B i hi hmem
-  have hT₀ (u : Lp F p (volume : Measure E)) :
-      (T₀ u : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) :=
-    LinearMap.codRestrictOfInjective_comp_apply B i hi hmem u
-  let T : Lp F p (volume : Measure E) →L[ℂ] Lp F p (volume : Measure E) :=
-    T₀.mkContinuous C fun u ↦ by
-      obtain ⟨g, hg, hgn⟩ := hC j u
-      have hug : T₀ u = g := Lp.toTemperedDistribution_injective ((hT₀ u).trans hg)
-      simpa only [hug] using hgn
-  have hT (u : Lp F p (volume : Measure E)) :
-      (T u : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) := hT₀ u
-  have hvT : v = T f := Lp.toTemperedDistribution_injective (hv.symm.trans (hT f).symm)
+  have hvT : v = littlewoodPaleyBlockLp F φ p j f :=
+    Lp.toTemperedDistribution_injective
+      (hv.symm.trans (toTemperedDistribution_littlewoodPaleyBlockLp φ j f).symm)
   rw [hvT]
-  refine map_mem_closure T.continuous hf fun _ ⟨g, hg⟩ ↦ ?_
+  refine map_mem_closure (littlewoodPaleyBlockLp F φ p j).continuous hf fun _ ⟨g, hg⟩ ↦ ?_
   refine ⟨SchwartzMap.fourierMultiplierCLM F
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g,
     Lp.toTemperedDistribution_injective ?_⟩
   dsimp only
-  rw [← hg, Lp.toTemperedDistribution_toLp_eq, hT, Lp.toTemperedDistribution_toLp_eq,
-    littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
+  rw [← hg, toTemperedDistribution_littlewoodPaleyBlockLp, Lp.toTemperedDistribution_toLp_eq,
+    Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
 
 /-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every
 `1 ≤ p ≤ ∞`, every `R ≠ 0` and every `f ∈ Lᵖ`, the truncation `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 f)` is a

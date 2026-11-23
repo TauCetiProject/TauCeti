@@ -233,7 +233,7 @@ theorem iteratedLineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {k
     have hfg : f = g := by
       ext x
       simpa only [iteratedFDeriv_zero_apply] using (hg x).symm
-    simp [hfg]
+    rw [LineDeriv.iteratedLineDerivOp_fin_zero, hfg]
   | succ k ih =>
     obtain ⟨C, hC⟩ := hbdd k (Nat.lt_succ_self k)
     have hcont : Continuous fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v) :=
@@ -259,6 +259,7 @@ theorem iteratedLineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {k
     rw [LineDeriv.iteratedLineDerivOp_succ_left, hih]
     refine lineDerivOp_toLpTop_eq (fun x ↦ (hdiff x).differentiableAt) (v 0) fun x ↦ ?_
     rw [hg x, (hdiff x).fderiv]
-    simp [Fin.cons_self_tail]
+    simp only [ContinuousLinearMap.comp_apply, ContinuousMultilinearMap.apply_apply,
+      ContinuousMultilinearMap.curryLeft_apply, Fin.cons_self_tail]
 
 end BoundedContinuousFunction

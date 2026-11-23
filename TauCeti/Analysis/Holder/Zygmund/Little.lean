@@ -163,12 +163,12 @@ theorem tendsto_rpow_mul_norm_block_ofHolderSpace (hα1 : α < 1) {f : HolderSpa
   have hg : MemLittleHolder α (_root_.iteratedFDeriv ℝ 0 g) := by
     rw [memLittleHolder_iteratedFDeriv_zero_iff, CkHolderSpace.coe_equivHolderSpace_symm]
     exact HolderSpace.mem_littleHolder_iff.1 hf
+  have hfg : f.toBoundedContinuousFunction = g.toBoundedContinuousFunction := by
+    ext x
+    rw [HolderSpace.toBoundedContinuousFunction_apply,
+      CkHolderSpace.coe_toBoundedContinuousFunction, CkHolderSpace.coe_equivHolderSpace_symm]
   have hblock (j : ℕ) : (ofHolderSpace F φ α f).block j = (ofCkHolderSpace F φ 0 α g).block j :=
-    block_eq_of_toDistr_eq (by
-      rw [toDistr_ofHolderSpace, toDistr_ofCkHolderSpace]
-      congr 2
-      ext x
-      simp [g]) j
+    block_eq_of_toDistr_eq (by rw [toDistr_ofHolderSpace, toDistr_ofCkHolderSpace, hfg]) j
   simpa only [Nat.cast_zero, zero_add, hblock] using
     tendsto_rpow_mul_norm_block_ofCkHolderSpace φ hα1 hg
 
@@ -210,15 +210,11 @@ theorem memLittleHolder_iteratedFDeriv_toCkHolderSpace (k : ℕ) (hα0 : 0 < α)
     exact_mod_cast (by linarith : (α : ℝ) < ((α : ℝ) + 1) / 2)
   have hmemβ := memBesov_toDistr_partialSumCLM (k + β) ∞ N u
   set v' : BesovSpace F φ (k + β) ∞ ∞ := hmemβ.toBesovSpace
-  have hfg : (toCkHolderSpace F φ k hα0 hα1
-        (partialSumCLM F φ (k + α) ∞ ∞ N u)).toBoundedContinuousFunction =
-      (toCkHolderSpace F φ k hβ0 hβ1 v').toBoundedContinuousFunction :=
-    toTemperedDistribution_toLpTop_injective (μ := volume) <| by
-      simp [v']
   have hfun : ⇑(toCkHolderSpace F φ k hα0 hα1 (partialSumCLM F φ (k + α) ∞ ∞ N u)) =
-      ⇑(toCkHolderSpace F φ k hβ0 hβ1 v') := by
-    ext x
-    simpa only [CkHolderSpace.coe_toBoundedContinuousFunction] using DFunLike.congr_fun hfg x
+      ⇑(toCkHolderSpace F φ k hβ0 hβ1 v') :=
+    (coe_toCkHolderSpace_eq_of_toDistr_eq φ hα0 hα1
+      ((toLpTop_toCkHolderSpace φ k hβ0 hβ1 v').trans hmemβ.toDistr_toBesovSpace)).trans
+      (CkHolderSpace.coe_toBoundedContinuousFunction _)
   have hLH : MemLittleHolder α
       (iteratedFDeriv ℝ k (toCkHolderSpace F φ k hα0 hα1
         (partialSumCLM F φ (k + α) ∞ ∞ N u))) := by
@@ -248,10 +244,9 @@ theorem memLittleHolder_iff_tendsto_rpow_mul_norm_block (hα0 : 0 < α) (hα1 : 
     (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
     MemLittleHolder α f ↔ Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := by
   set u0 : BesovSpace F φ ((0 : ℕ) + α) ∞ ∞ := inclusion F φ ∞ (by simp) le_rfl u
-  have huf : (toCkHolderSpace F φ 0 hα0 hα1 u0).toBoundedContinuousFunction = f :=
-    toTemperedDistribution_toLpTop_injective (μ := volume) <| by simp [u0, hf]
-  have hcoe : ⇑(toCkHolderSpace F φ 0 hα0 hα1 u0) = ⇑f := by
-    rw [← CkHolderSpace.coe_toBoundedContinuousFunction, huf]
+  have hcoe : ⇑(toCkHolderSpace F φ 0 hα0 hα1 u0) = ⇑f :=
+    coe_toCkHolderSpace_eq_of_toDistr_eq φ hα0 hα1
+      (hf.trans (toDistr_inclusion (by rw [Nat.cast_zero, zero_add]) le_rfl u).symm)
   simpa only [u0, Nat.cast_zero, zero_add, block_inclusion, hcoe,
     memLittleHolder_iteratedFDeriv_zero_iff] using
     (tendsto_rpow_mul_norm_block_iff_memLittleHolder φ 0 hα0 hα1 (u := u0)).symm
