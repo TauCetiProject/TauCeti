@@ -51,7 +51,9 @@ near the support.
   of the support in `Ω`.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
-* `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_cutoffCLM_subset`,
+* `Distribution.dsupport_comp_smulLeftCLM_subset`,
+  `Distribution.dsupport_comp_smulLeftCLMOfContDiffOn_subset`,
+  `Distribution.dsupport_comp_cutoffCLM_subset`,
   `Distribution.dsupport_comp_monoCLM_subset`,
   `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`,
   `Distribution.exists_eventually_eq_one_nhdsSet_dsupport_iff`,
@@ -288,6 +290,25 @@ theorem dsupport_comp_smulLeftCLM_subset {g : E → ℝ} (hg : ContDiff ℝ n g)
     exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
       (((TestFunction.tsupport_smulLeftCLM_subset hg φ).trans inter_subset_right).trans hφ),
       hs, hxs⟩
+
+/-- The support of `T ∘ (g ·)`, for a function `g` that is `C^n` on `Ω` only, lies both in the
+support of `g` and in the support of `T`. -/
+theorem dsupport_comp_smulLeftCLMOfContDiffOn_subset [FiniteDimensional ℝ E] {g : E → ℝ}
+    (hg : ContDiffOn ℝ n g Ω) :
+    dsupport (T ∘ TestFunction.smulLeftCLMOfContDiffOn hg) ⊆ tsupport g ∩ dsupport T := by
+  refine subset_inter (compl_subset_compl.1 fun x hx ↦ ?_) (compl_subset_compl.1 fun x hx ↦ ?_)
+  · -- Off the support of `g`, every product `g • φ` vanishes identically.
+    refine (notMem_dsupport_iff x).2
+      ⟨(tsupport g)ᶜ, fun φ hφ ↦ ?_, (isClosed_tsupport g).isOpen_compl, hx⟩
+    have hgφ : TestFunction.smulLeftCLMOfContDiffOn hg φ = 0 := TestFunction.ext fun y ↦ by
+      by_cases hy : y ∈ tsupport φ
+      · simp [image_eq_zero_of_notMem_tsupport (hφ hy)]
+      · simp [image_eq_zero_of_notMem_tsupport hy]
+    simp [hgφ]
+  · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
+    exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
+      (((TestFunction.tsupport_smulLeftCLMOfContDiffOn_subset hg φ).trans
+        inter_subset_right).trans hφ), hs, hxs⟩
 
 /-- The support of `T ∘ (χ ·)`, where multiplication by `χ` sends tests on `Ω'` to tests on `Ω`
 (`TestFunction.cutoffCLM`), lies both in the support of `χ` and in the support of `T`. For a test
