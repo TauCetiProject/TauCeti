@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import TauCeti.Analysis.Contour.Cauchy.Circle
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
@@ -21,8 +20,7 @@ derivative, integrating around the circle also expresses the Laurent coefficient
 terms of those of `f` (`circleLaurentCoeff_deriv_of_differentiableAt`, `circleLaurentCoeff_deriv`).
 
 The construction uses Mathlib's Cauchy-Goursat theorem for annuli,
-`Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable`, together with the
-two-circle Cauchy formula from `TauCeti.Analysis.Contour.Cauchy.Circle`.
+`Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable`.
 
 For the classical Cauchy and Laurent formulas, see John B. Conway,
 *Functions of One Complex Variable I*, Chapters IV (Complex Integration) and V (Singularities).

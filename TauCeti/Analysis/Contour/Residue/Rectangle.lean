@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Contour.Curve.Rectangle
 public import TauCeti.Analysis.Contour.Residue.Basic
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Contour.Cauchy.Rectangle
 import TauCeti.Analysis.Contour.Residue.Theorem
 import TauCeti.Topology.MetricSpace.SeparatedBalls

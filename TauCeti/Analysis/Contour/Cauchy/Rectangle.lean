@@ -46,6 +46,8 @@ this on `[-X, σ₂] ×ℂ [Im w, t₂]` with Cauchy's theorem on `[Re w, σ₂]
   `TauCeti.Contour.rectangle_boundary_integral_eq_sum_circleIntegral`.
 * `TauCeti.Contour.vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral`: finite-cutoff
   L-shaped contour shift from `Re s = σ₂` to a left vertical edge at `Re s = σ₁`.
+* `TauCeti.Contour.tendsto_intervalIntegral_vertical_atBot`: vanishing of vertical connector
+  integrals as `Re s → -∞` under uniform decay.
 * `TauCeti.Contour.vertical_integral_eq_lShaped_add_sum_circleIntegral`: shifting a vertical
   segment integral to an L-shaped contour running to `Re s = -∞` plus circle integrals around
   isolated singularities in the upper half-strip.
@@ -221,12 +223,14 @@ theorem integral_rectPolygon_eq_sum_circleIntegral
       ContinuousOn (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)
         (Cycle.trace (rectPolygon z₀ w₀).contourCycle) := by
     rw [htrace]
-    exact fun ρ hρ z hz ↦
-      ((differentiableAt_circleIntegral_sub_inv_smul_left
-        ((hfc_r ρ hρ).circleIntegrable hr.le) fun hsp ↦
-          hfr_out z hz ρ hρ
-            (sphere_subset_closedBall (abs_of_pos hr ▸ hsp))).const_smul
-        _).continuousAt.continuousWithinAt
+    refine fun ρ hρ z hz ↦ ?_
+    have hdiff : DifferentiableAt ℂ
+        (fun s ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z := by
+      simpa using differentiableAt_sum_exteriorCauchy hr le_rfl
+        (fun ρ' hρ' ↦ (hP_int ρ' hρ').trans interior_subset) hdisj hc
+        (Finset.singleton_subset_iff.2 hρ)
+        fun ρ' hρ' ↦ (Finset.mem_singleton.1 hρ').symm ▸ hfr_out z hz ρ hρ
+    exact hdiff.continuousAt.continuousWithinAt
   have hsplit : Cycle.integral g (rectPolygon z₀ w₀).contourCycle =
       Cycle.integral f (rectPolygon z₀ w₀).contourCycle -
         ∑ ρ ∈ P, Cycle.integral (fun z ↦ (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w)
@@ -280,6 +284,26 @@ theorem rectangle_boundary_integral_eq_sum_circleIntegral
 end CircleSum
 
 section LShaped
+
+/-- If `f s → 0` as `Re s → -∞` uniformly for `Im s ∈ [a, b]` (`a ≤ b`), then the vertical
+connector integral `∫ y in a..b, f (σ + y * I)` tends to `0` as `σ → -∞`. -/
+theorem tendsto_intervalIntegral_vertical_atBot {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : ℂ → E} {a b : ℝ} (hab : a ≤ b)
+    (hdecay : Tendsto f (comap Complex.re atBot ⊓ 𝓟 {s : ℂ | a ≤ s.im ∧ s.im ≤ b}) (𝓝 0)) :
+    Tendsto (fun σ : ℝ ↦ ∫ y : ℝ in a..b, f ((σ : ℂ) + y * I)) atBot (𝓝 0) := by
+  have hmap : Tendsto (fun q : ℝ × ℝ ↦ (q.1 : ℂ) + q.2 * I)
+      (atBot ×ˢ 𝓟 (uIcc a b))
+      (comap Complex.re atBot ⊓ 𝓟 {s : ℂ | a ≤ s.im ∧ s.im ≤ b}) := by
+    refine tendsto_inf.2 ⟨?_, ?_⟩
+    · rw [tendsto_comap_iff]
+      simpa [Function.comp_def] using (tendsto_fst : Tendsto Prod.fst (atBot ×ˢ 𝓟 (uIcc a b)) atBot)
+    · rw [tendsto_principal, Filter.eventually_prod_iff]
+      refine ⟨fun _ ↦ True, .of_forall fun _ ↦ trivial, fun y ↦ y ∈ uIcc a b,
+        eventually_principal.2 fun _ h ↦ h, fun {_} _ {_} hy ↦ ?_⟩
+      rw [uIcc_of_le hab] at hy
+      simpa using hy
+  exact TendstoUniformlyOn.tendsto_intervalIntegral_nhds_zero
+    (tendsto_prod_principal_iff.mp (hdecay.comp hmap))
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
@@ -394,6 +418,7 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
       (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) + I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
         (∫ x in Iic w.re, f (x + w.im * I)) + (∫ x in Iic σ₂, f (x + t₂ * I)) +
         ∑ ρ ∈ P, ∮ z in C(ρ, r), f z := by
+  -- Eventual identity: apply the finite-cutoff L-shaped shift on `[-X, σ₂]` for large `X`.
   have hev : ∀ᶠ X : ℝ in atTop,
       I • (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) =
         (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) + I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
@@ -414,6 +439,7 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
     exact vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral hr (by linarith) hw ht₁ ht₂
       hPX hdisj (hc.mono (sdiff_subset_sdiff_left fun _ h ↦ h.2))
       (hd.mono (sdiff_subset_sdiff_left (interior_mono fun _ h ↦ h.2)))
+  -- Limits as `X → ∞`: improper horizontal ray integrals converge, vertical connector vanishes.
   have h1 : Tendsto (fun X : ℝ ↦ ∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) atTop
       (𝓝 (∫ x in Iic w.re, f (x + w.im * I))) :=
     intervalIntegral_tendsto_integral_Iic w.re hw_int tendsto_neg_atTop_atBot
@@ -421,24 +447,9 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
       (𝓝 (∫ x in Iic σ₂, f (x + t₂ * I))) :=
     intervalIntegral_tendsto_integral_Iic σ₂ ht₂_int tendsto_neg_atTop_atBot
   have h3 : Tendsto (fun X : ℝ ↦ I • ∫ y : ℝ in w.im..t₂, f ((-X : ℝ) + y * I)) atTop (𝓝 0) := by
-    have hmap : Tendsto (fun q : ℝ × ℝ ↦ ((-q.1 : ℝ) + q.2 * I))
-        (atTop ×ˢ 𝓟 (uIcc w.im t₂))
-        (comap Complex.re atBot ⊓ 𝓟 {s : ℂ | w.im ≤ s.im ∧ s.im ≤ t₂}) := by
-      refine tendsto_inf.2 ⟨?_, ?_⟩
-      · rw [tendsto_comap_iff]
-        have hfst : Tendsto (Prod.fst : ℝ × ℝ → ℝ) (atTop ×ˢ 𝓟 (uIcc w.im t₂)) atTop :=
-          tendsto_fst
-        simpa [Function.comp_def] using tendsto_neg_atTop_atBot.comp hfst
-      · rw [tendsto_principal, Filter.eventually_prod_iff]
-        refine ⟨fun _ ↦ True, .of_forall fun _ ↦ trivial, fun y ↦ y ∈ uIcc w.im t₂,
-          eventually_principal.2 fun _ h ↦ h, fun {_} _ {_} hy ↦ ?_⟩
-        rw [uIcc_of_le ht₂] at hy
-        simpa using hy
-    have hprod : Tendsto (fun q : ℝ × ℝ ↦ f ((-q.1 : ℝ) + q.2 * I))
-        (atTop ×ˢ 𝓟 (uIcc w.im t₂)) (𝓝 0) := hdecay.comp hmap
-    have h0 : Tendsto (fun X : ℝ ↦ ∫ y : ℝ in w.im..t₂, f ((-X : ℝ) + y * I)) atTop (𝓝 0) :=
-      TendstoUniformlyOn.tendsto_intervalIntegral_nhds_zero (tendsto_prod_principal_iff.mp hprod)
-    simpa only [smul_zero] using h0.const_smul I
+    simpa only [Function.comp_def, smul_zero] using
+      ((tendsto_intervalIntegral_vertical_atBot ht₂ hdecay).comp
+        tendsto_neg_atTop_atBot).const_smul I
   have hrhs : Tendsto (fun X : ℝ ↦
         (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) + I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
           (∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) + (∫ x : ℝ in (-X)..σ₂, f (x + t₂ * I)) +
@@ -449,6 +460,7 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
           ∑ ρ ∈ P, ∮ z in C(ρ, r), f z)) := by
     simpa only [add_zero] using
       ((((tendsto_const_nhds.sub h1).add h2).add h3).add tendsto_const_nhds)
+  -- Uniqueness of limits equates the constant LHS with the limit of the truncated RHS.
   exact tendsto_nhds_unique (tendsto_const_nhds.congr' hev) hrhs
 
 end LShaped

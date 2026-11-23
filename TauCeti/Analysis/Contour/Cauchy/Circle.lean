@@ -155,9 +155,7 @@ theorem hasDerivAt_circleIntegral_sub_inv_smul_left {f : ℂ → E} {c z : ℂ} 
   simp only [circleIntegral]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
   congr 2
-  rw [← neg_sub z (circleMap c r θ), show (-2 : ℤ) = -(2 : ℕ) by rfl, zpow_neg, zpow_neg,
-    zpow_natCast, neg_sq]
-  norm_cast
+  rw [← neg_sub z (circleMap c r θ), zpow_neg, zpow_neg, zpow_two, zpow_two, neg_mul_neg]
 
 omit [CompleteSpace E] in
 /-- The exterior Cauchy integral `s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w` is complex
