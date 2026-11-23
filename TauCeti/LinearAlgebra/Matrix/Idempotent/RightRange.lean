@@ -14,7 +14,7 @@ Let `R` be a semiring. A matrix `M : Matrix m n R` acts on column vectors `n →
 `v ↦ M *ᵥ v`, which is linear for the right `R`-module structure (`Module Rᵐᵒᵖ`), given by
 `M.mulVecBilin R Rᵐᵒᵖ`. Transferring across `Matrix.rangeVecMulLinearTransposeMapOpEquiv`, this
 file proves projectivity of the column range of an idempotent matrix
-(`IsIdempotentElem.mulVecBilin`, `IsIdempotentElem.mem_range_mulVecBilin_iff`,
+(`IsIdempotentElem.mem_range_mulVecBilin_iff`,
 `IsIdempotentElem.projective_range_mulVecBilin`, `IsIdempotentElem.eq_sum_smul_col`) and the
 projective presentation `Module.Finite.exists_linearEquiv_range_mulVecBilin`.
 
@@ -33,17 +33,10 @@ section ColumnRange
 
 variable {R : Type*} [Semiring R] {ι : Type*} [Fintype ι]
 
-/-- Left multiplication of column vectors by an idempotent matrix is an idempotent `Rᵐᵒᵖ`-linear
-endomorphism. -/
-theorem IsIdempotentElem.mulVecBilin {e : Matrix ι ι R} (he : IsIdempotentElem e) :
-    IsIdempotentElem (e.mulVecBilin R Rᵐᵒᵖ) := by
-  ext v : 1
-  simp [mul_apply_eq_comp, Matrix.mulVec_mulVec, he.eq]
-
 /-- The column range of an idempotent matrix `e` consists of the column vectors fixed by `e`. -/
 theorem IsIdempotentElem.mem_range_mulVecBilin_iff {e : Matrix ι ι R} (he : IsIdempotentElem e)
     {v : ι → R} : v ∈ range (e.mulVecBilin R Rᵐᵒᵖ) ↔ e *ᵥ v = v :=
-  he.mulVecBilin.mem_range_iff
+  (he.mulVecBilin R Rᵐᵒᵖ).mem_range_iff
 
 /-- The column range of an idempotent matrix over `R` is a projective right `R`-module. -/
 theorem IsIdempotentElem.projective_range_mulVecBilin {e : Matrix ι ι R}

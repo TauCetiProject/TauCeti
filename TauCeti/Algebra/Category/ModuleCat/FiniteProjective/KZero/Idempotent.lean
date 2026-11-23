@@ -36,7 +36,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory CategoryTheory.Limits LinearMap Matrix MulOpposite _root_.Algebra
+open CategoryTheory CategoryTheory.Limits _root_.LinearMap Matrix MulOpposite _root_.Algebra
 
 namespace TauCeti
 
