@@ -43,6 +43,8 @@ of the retractions needs to be linear over the loops at `c`.
 
 * `TauCeti.tensorPathChainConcat`: the composite change of basepoint
   `(M ⊗ C_*(P_{a→b} B)) ⊗ C_*(P_{b→c} B) ⟶ M ⊗ C_*(P_{a→c} B)`.
+* `TauCeti.tensorPathChainConcatNatTrans`: the composite change of basepoint, as a natural
+  transformation from changing along `a → b` and then `b → c` to changing along `a → c`.
 
 ## Main results
 
@@ -85,16 +87,8 @@ theorem pathChainToLoopChain_trans_pathChainConcat (γ : MoorePathBetween B a b)
     pathChainToLoopChain R (γ.trans δ)
         (pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) x y)) =
       pathChainToLoopChain R γ (op (pathChainToLoopChain R δ y) • x) := by
-  -- The loops at `b` act from behind by the pairing induced by the action.
-  have hact (α : loopChainAlgebra B b R) :
-      cubicalChainModuleEquiv _ _ R (op α • x) =
-        cubicalChainSumPairing R (actMap (MoorePathBetween B a b) (MooreLoopSpace B b))
-          (cubicalChainModuleEquiv _ _ R x) α := by
-    have h := op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing (R := R)
-      ((cubicalChainModuleEquiv (MooreLoopSpace B b) (MooreLoopSpace B b) R).symm α) x
-    rw [LinearEquiv.apply_symm_apply] at h
-    rw [h, cubicalChainModuleEquiv_cubicalChainPairing, LinearEquiv.apply_symm_apply]
-  rw [pathChainToLoopChain_apply, pathChainToLoopChain_apply, pathChainToLoopChain_apply, hact,
+  rw [pathChainToLoopChain_apply, pathChainToLoopChain_apply, pathChainToLoopChain_apply,
+    cubicalChainModuleEquiv_op_smul,
     pathChainConcat_tmul, cubicalChainModuleEquiv_cubicalChainPairing,
     cubicalChainSumMap_cubicalChainSumPairing
       (g := (MoorePathBetween.loopAppendHomotopyEquiv γ).symm.toFun),
@@ -259,5 +253,35 @@ theorem isQuasiIso_tensorPathChainConcat (h : Nonempty (MoorePathBetween B a b))
         differential_tensorPathChainPoint]
 
 end CompositeChange
+
+section Naturality
+
+attribute [local instance 100] BalancedTensorProduct.rightModule
+  BalancedTensorProduct.rightIsScalarTower
+
+variable {a : B}
+
+variable (B R)
+
+/-- **The composite change of basepoint as a natural transformation**: changing the basepoint of
+DG local systems along the paths from `a` to `b` and then along the paths from `b` to `c` maps to
+changing it along the paths from `a` to `c`, by `(m ⊗ σ) ⊗ τ ↦ m ⊗ (σ ⋆ τ)`. -/
+def tensorPathChainConcatNatTrans (a b c : B) :
+    tensorBimoduleFunctor.{w, max u w, max u w, max u w v, max u w}.flip.obj
+          (pathChainBimodule B a b R) ⋙
+        tensorBimoduleFunctor.flip.obj (pathChainBimodule B b c R) ⟶
+      tensorBimoduleFunctor.flip.obj (pathChainBimodule B a c R) where
+  app M := tensorPathChainConcat M b c
+  naturality _ _ f := tensorPathChainConcat_naturality _ f b c
+
+/-- The components of `TauCeti.tensorPathChainConcatNatTrans` are
+`TauCeti.tensorPathChainConcat`. -/
+@[simp]
+theorem tensorPathChainConcatNatTrans_app (a b c : B)
+    (M : DGRightModuleCat.{w, max u w, max u w v} (loopChain_isDGAlgebra B a R)) :
+    (tensorPathChainConcatNatTrans.{u, w, v} B R a b c).app M = tensorPathChainConcat M b c :=
+  (rfl)
+
+end Naturality
 
 end TauCeti

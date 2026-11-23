@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Attainment of finite-dimensional approximation numbers

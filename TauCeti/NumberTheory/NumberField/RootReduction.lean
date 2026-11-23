@@ -63,7 +63,7 @@ theorem exists_multiset_map_algebraMap_eq_roots (hf : f.Monic)
       rw [← aeval_def, ← aeval_map_algebraMap (A := ℚ), algebraMap_int_eq, ← eval_map_algebraMap]
       exact (mem_roots'.mp hx).2⟩
   obtain ⟨t, ht⟩ : ∃ t : Multiset (𝓞 M), t.map (algebraMap (𝓞 M) M) = fM.roots :=
-    ⟨fM.roots.attach.map fun x => IsIntegralClosure.mk' (𝓞 M) x.1 (hint x.1 x.2), by
+    ⟨fM.roots.attach.map fun x => IsIntegralClosure.mk' (𝓞 M) x.val (hint x.val x.property), by
       simp [Multiset.map_map, IsIntegralClosure.algebraMap_mk']⟩
   refine ⟨t, ht, ?_⟩
   refine Polynomial.map_injective _ (FaithfulSMul.algebraMap_injective (𝓞 M) M) ?_
@@ -105,12 +105,13 @@ theorem splits_and_exists_rootSet_equiv_of_separable_map (hf : f.Monic)
   -- Reduction of a root, as a map of root sets.
   let red (x : (f.map (Int.castRingHom ℚ)).rootSet M) :
       (f.map (Int.castRingHom R)).rootSet k :=
-    ⟨ρ ((hmem x).mp x.2).choose,
-      (hmemk _).mpr (Multiset.mem_map_of_mem _ ((hmem x).mp x.2).choose_spec.1)⟩
+    ⟨ρ ((hmem x).mp x.property).choose,
+      (hmemk _).mpr (Multiset.mem_map_of_mem _ ((hmem x).mp x.property).choose_spec.1)⟩
   have hred (x : (f.map (Int.castRingHom ℚ)).rootSet M) (y : 𝓞 M)
       (hy : algebraMap (𝓞 M) M y = x) : (red x : k) = ρ y := by
-    obtain rfl : ((hmem x).mp x.2).choose = y :=
-      FaithfulSMul.algebraMap_injective (𝓞 M) M (((hmem x).mp x.2).choose_spec.2.trans hy.symm)
+    obtain rfl : ((hmem x).mp x.property).choose = y :=
+      FaithfulSMul.algebraMap_injective (𝓞 M) M (((hmem x).mp x.property).choose_spec.2.trans
+          hy.symm)
     rfl
   have hbij : Function.Bijective red := by
     refine ⟨fun ⟨x, hx⟩ ⟨y, hy⟩ hxy => ?_, fun z => ?_⟩
@@ -119,7 +120,7 @@ theorem splits_and_exists_rootSet_equiv_of_separable_map (hf : f.Monic)
       rw [Subtype.ext_iff, hred _ a rfl, hred _ b rfl] at hxy
       obtain rfl := Multiset.inj_on_of_nodup_map hnodup a ha b hb hxy
       rfl
-    · obtain ⟨a, ha, hz⟩ := Multiset.mem_map.mp ((hmemk z).mp z.2)
+    · obtain ⟨a, ha, hz⟩ := Multiset.mem_map.mp ((hmemk z).mp z.property)
       refine ⟨⟨_, (hmem _).mpr ⟨a, ha, rfl⟩⟩, Subtype.ext ?_⟩
       rw [hred _ a rfl, hz]
   refine ⟨hk ▸ Splits.multisetProd fun g hg => ?_, Equiv.ofBijective red hbij, hred⟩

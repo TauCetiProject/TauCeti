@@ -242,8 +242,8 @@ private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) 
     -- open half-lines `Ioi 0` and `Iio 0`
     have hne {a b : ℝ} (hab : 0 < a * b) : (1 - t) * a + t * b ≠ 0 := by
       rcases mul_pos_iff.1 hab with ⟨ha, hb⟩ | ⟨ha, hb⟩
-      · exact (convex_Ioi 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne'
-      · exact (convex_Iio 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne
+      · exact (convex_Ioi 0 ha hb (sub_nonneg.2 t.property.2) t.property.1 (sub_add_cancel 1 _)).ne'
+      · exact (convex_Iio 0 ha hb (sub_nonneg.2 t.property.2) t.property.1 (sub_add_cancel 1 _)).ne
     ⟨fun h ↦ hne h₀ (by exact_mod_cast h), fun h ↦ hne h₁ (by
       have : ((1 - t) * a + t * b : ℝ) = 1 := by exact_mod_cast h
       linear_combination this)⟩⟩
@@ -332,7 +332,7 @@ private theorem mk_γ1 : Path.Homotopic.Quotient.mk γ1 =
 
 private theorem range_αPlus_subset : range αPlus ⊆ {z | 0 ≤ (z : ℂ).im} := by
   rintro _ ⟨t, rfl⟩
-  simpa using mul_nonneg t.2.1 (by positivity : (0 : ℝ) ≤ √35 / 2)
+  simpa using mul_nonneg t.property.1 (by positivity : (0 : ℝ) ≤ √35 / 2)
 
 /-- A subpath of a path whose imaginary part is `r * sin (a + 2 * π * u)` stays in the region
 where the imaginary part satisfies `P`, as soon as `r * sin θ` does on the corresponding interval

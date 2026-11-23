@@ -115,7 +115,8 @@ private theorem unitsToIdeles_comp_semilocalUnitsToCoind :
   refine (semilocalUnitsToCoind_apply v w (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ)
     ((unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a)) g).trans ?_
   rw [coe_unitsToIdeles_idelesToSemilocalUnits_hom_apply,
-    Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, map_one, one_mul]
+    Algebra.TensorProduct.baseChangeAutHom_tmul,
+    HeightOneSpectrum.adicCompletionSemilocalEquiv_tmul, map_one, one_mul]
   rw [Representation.IntertwiningMap.coe_toLinearMap]
   refine Eq.trans ?_ ((congrArg (fun z ↦ Units.val (Additive.toMul z : (w.adicCompletion L)ˣ))
     (Rep.resCoindToHom_hom_apply_coe _ _ _ (unitsToDecompositionUnits v w) a g)).trans <|

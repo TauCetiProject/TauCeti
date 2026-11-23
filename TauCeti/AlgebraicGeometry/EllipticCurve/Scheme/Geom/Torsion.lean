@@ -307,6 +307,18 @@ theorem torsionMap_torsionι : torsionMap n hg h0 ≫ (E.torsionι n).left = (E'
 theorem torsionMap_hom : torsionMap n hg h0 ≫ (E.torsion n).X.hom = (E'.torsion n).X.hom ≫ f :=
   IsPullback.lift_snd _ _ _ _
 
+open MonoidalCategory in
+/-- The morphism `E'[n] ⟶ E[n]` carries the zero section of `E'[n]` to that of `E[n]`. -/
+@[reassoc (attr := simp)]
+theorem one_left_torsionMap :
+    (1 : 𝟙_ (Over S') ⟶ (E'.torsion n).X).left ≫ torsionMap n hg h0 =
+      f ≫ (1 : 𝟙_ (Over S) ⟶ (E.torsion n).X).left := by
+  refine (E.isPullback_torsion n).hom_ext ?_ (by simp)
+  have h := congrArg CommaMorphism.left (MonObj.one_comp (X := 𝟙_ (Over S')) (E'.torsionι n))
+  have h' := congrArg CommaMorphism.left (MonObj.one_comp (X := 𝟙_ (Over S)) (E.torsionι n))
+  simp only [Over.comp_left, hom_one_left] at h h'
+  simp [reassoc_of% h, h', h0]
+
 /-- **The `n`-torsion commutes with base change.** For a morphism `g : E' ⟶ E` of elliptic curves
 lying over `f : S' ⟶ S`, forming a pullback square with the structure morphisms and carrying the
 zero section of `E'` to that of `E`, the square formed by the induced morphism `E'[n] ⟶ E[n]`, the
@@ -383,7 +395,7 @@ theorem existsUnique_comp_torsionPointHom {Z : Over S}
     (φ : Multiplicative (ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X, ∀ a, x ≫ E.torsionPointHom N a = φ a := by
   let e := zmodMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).2⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).val, by rw [zpow_natCast]; exact (e φ).property⟩
   refine ⟨P, fun a ↦ ?_, fun x hx ↦ torsion_hom_ext ?_⟩
   · -- write `a = a₁`, so that `φ a = φ 1 ^ a₁`
     obtain ⟨a₁, rfl⟩ : ∃ a₁ : ZMod N, Multiplicative.ofAdd a₁ = a := ⟨a.toAdd, rfl⟩
@@ -441,8 +453,8 @@ theorem existsUnique_comp_torsionPairHom {Z : Over S}
     (φ : Multiplicative (ZMod N × ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X ⊗ (E.torsion N).X, ∀ a, x ≫ E.torsionPairHom N a = φ a := by
   let e := zmodProdMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.2⟩
-  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.2⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.property⟩
+  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.property⟩
   refine ⟨lift P Q, fun a ↦ ?_, fun x hx ↦ ?_⟩
   · -- write `a = (a₁, a₂)`, so that `φ a = φ (1, 0) ^ a₁ * φ (0, 1) ^ a₂`
     obtain ⟨⟨a₁, a₂⟩, rfl⟩ : ∃ p : ZMod N × ZMod N, Multiplicative.ofAdd p = a := ⟨a.toAdd, rfl⟩

@@ -28,10 +28,11 @@ uniform in the cell datum.
 This file defines cellular bases and develops the cell-by-cell linear algebra underlying cell
 modules and their forms:
 
-* `A(<μ)` is a two-sided ideal of `A`, stable under the anti-involution;
+* `A(<μ)` and `A(≤μ)` are two-sided ideals of `A`, stable under the anti-involution;
 * the coefficients `r_a(u, s)` form an algebra homomorphism `A → Matrix (M μ) (M μ) R`, the
   matrix of the action of `A` on the cell module `W(μ)`, the free `R`-module on `M μ` with basis
-  vector `C μ s` acted on by `a • C μ s = ∑ u, r_a(u, s) • C μ u`; it kills `A(<μ)`;
+  vector `C μ s` acted on by `a • C μ s = ∑ u, r_a(u, s) • C μ u`; it kills `A(<μ)` (and `A(≤ν)`
+  whenever `¬ μ ≤ ν`);
 * the **Gram matrix** `φ_μ` of the cell `μ`, determined by
   `C μ s t * C μ u v ≡ φ_μ(t, u) • C μ s v` modulo `A(<μ)`, is symmetric, and it is invariant
   in the sense that `ρ(a*)ᵀ φ_μ = φ_μ ρ(a)`, where `ρ` is the cell representation. This is the
@@ -42,15 +43,18 @@ modules and their forms:
 
 * `TauCeti.CellularBasis R A M`: a cellular basis of the `R`-algebra `A` with cells
   `μ : Λ` and index sets `M μ`.
-* `TauCeti.CellularBasis.lowerSpan c μ`: the span `A(<μ)` of the basis vectors in lower cells.
+* `TauCeti.CellularBasis.lowerSpan c μ`: the span `A(<μ)` of the basis vectors in strictly lower
+  cells.
+* `TauCeti.CellularBasis.leSpan c μ`: the span `A(≤μ)` of the basis vectors in cells `ν ≤ μ`.
 * `TauCeti.CellularBasis.cellRep c μ`: the cell representation of `A` on the cell `μ`.
 * `TauCeti.CellularBasis.gramMatrix c μ`: the Gram matrix of the bilinear form of the cell `μ`.
 * `TauCeti.CellularBasis.map`: transport a cellular basis along an `R`-algebra isomorphism.
 
 ## Main results
 
-* `TauCeti.CellularBasis.mul_mem_lowerSpan`, `TauCeti.CellularBasis.mem_lowerSpan_mul`:
-  `A(<μ)` is a two-sided ideal.
+* `TauCeti.CellularBasis.mul_mem_lowerSpan`, `TauCeti.CellularBasis.mem_lowerSpan_mul`,
+  `TauCeti.CellularBasis.mul_mem_leSpan`, `TauCeti.CellularBasis.mem_leSpan_mul`:
+  `A(<μ)` and `A(≤μ)` are two-sided ideals.
 * `TauCeti.CellularBasis.mul_basis_sub_sum_mem`, `TauCeti.CellularBasis.basis_mul_sub_sum_mem`:
   the cellular axiom and its right-handed form, with coefficients given by `cellRep`.
 * `TauCeti.CellularBasis.basis_mul_basis_sub_mem`: `C μ s t * C μ u v ≡ φ_μ(t, u) • C μ s v`.
@@ -135,22 +139,51 @@ noncomputable def lowerSpan (μ : Λ) : Submodule R A :=
 /-- `A(<μ)` is the span of the basis vectors `C ν s t` with `ν < μ`. -/
 theorem lowerSpan_def (μ : Λ) : c.lowerSpan μ = span R (c.basis '' {i | i.1 < μ}) := (rfl)
 
+/-- The span `A(≤μ)` of the cellular basis vectors in the cells `ν ≤ μ`. -/
+noncomputable def leSpan (μ : Λ) : Submodule R A :=
+  span R (c.basis '' {i | i.1 ≤ μ})
+
+/-- `A(≤μ)` is the span of the basis vectors `C ν s t` with `ν ≤ μ`. -/
+theorem leSpan_def (μ : Λ) : c.leSpan μ = span R (c.basis '' {i | i.1 ≤ μ}) := (rfl)
+
 /-- An element lies in `A(<μ)` exactly when its coordinates outside the cells strictly below
 `μ` vanish. -/
 theorem mem_lowerSpan_iff {μ : Λ} {x : A} :
-    x ∈ c.lowerSpan μ ↔ ∀ i : Σ μ, M μ × M μ, ¬ i.1 < μ → c.basis.repr x i = 0 := by
-  rw [lowerSpan_def, c.basis.mem_span_image]
-  exact ⟨fun h i hi => by_contra fun hx => hi (h (Finsupp.mem_support_iff.2 hx)),
-    fun h i hi => by_contra fun hx => Finsupp.mem_support_iff.1 hi (h i hx)⟩
+    x ∈ c.lowerSpan μ ↔ ∀ i : Σ μ, M μ × M μ, ¬ i.1 < μ → c.basis.repr x i = 0 :=
+  c.basis.mem_span_image.trans Finsupp.support_subset_iff
+
+/-- An element lies in `A(≤μ)` exactly when its coordinates outside `{ν | ν ≤ μ}` vanish. -/
+theorem mem_leSpan_iff {μ : Λ} {x : A} :
+    x ∈ c.leSpan μ ↔ ∀ i : Σ μ, M μ × M μ, ¬ i.1 ≤ μ → c.basis.repr x i = 0 :=
+  c.basis.mem_span_image.trans Finsupp.support_subset_iff
 
 /-- The basis vectors of a cell `ν < μ` lie in `A(<μ)`. -/
 theorem basis_mem_lowerSpan {ν μ : Λ} (h : ν < μ) (s t : M ν) :
     c.basis ⟨ν, s, t⟩ ∈ c.lowerSpan μ :=
   subset_span ⟨_, h, rfl⟩
 
+/-- The basis vectors of a cell `ν ≤ μ` lie in `A(≤μ)`. -/
+theorem basis_mem_leSpan {ν μ : Λ} (h : ν ≤ μ) (s t : M ν) :
+    c.basis ⟨ν, s, t⟩ ∈ c.leSpan μ :=
+  subset_span ⟨_, h, rfl⟩
+
+/-- The basis vectors of the cell `μ` itself lie in `A(≤μ)`. -/
+theorem basis_self_mem_leSpan (μ : Λ) (s t : M μ) :
+    c.basis ⟨μ, s, t⟩ ∈ c.leSpan μ :=
+  c.basis_mem_leSpan le_rfl s t
+
+/-- The strict lower span `A(<μ)` is contained in `A(≤μ)`. -/
+theorem lowerSpan_le_leSpan (μ : Λ) : c.lowerSpan μ ≤ c.leSpan μ := by
+  rw [lowerSpan_def, leSpan_def]
+  exact span_mono <| Set.image_mono fun _ hi ↦ le_of_lt hi
+
 /-- `A(<μ)` grows with `μ`. -/
 theorem lowerSpan_mono : Monotone c.lowerSpan := fun _ _ h =>
   span_mono <| Set.image_mono fun _ hi => lt_of_lt_of_le hi h
+
+/-- `A(≤μ)` grows with `μ`. -/
+theorem leSpan_mono : Monotone c.leSpan := fun _ _ h ↦
+  span_mono <| Set.image_mono fun _ hi ↦ le_trans hi h
 
 /-- Two elements congruent modulo `A(<μ)` have the same coordinates in the cell `μ`. -/
 theorem repr_eq_of_sub_mem_lowerSpan {μ : Λ} {x y : A} (h : x - y ∈ c.lowerSpan μ)
@@ -181,19 +214,33 @@ private theorem mul_basis_sub_sum_mem' (a : A) (μ : Λ) (s t : M μ) :
   simp only [key]
   exact hr t
 
-/-- `A(<μ)` is a left ideal. -/
-theorem mul_mem_lowerSpan (a : A) {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) :
-    a * x ∈ c.lowerSpan μ := by
+private theorem mul_mem_span_basis_of_lower {P : Λ → Prop}
+    (hP : ∀ ⦃ν τ⦄, ν < τ → P τ → P ν) (a : A) {x : A}
+    (hx : x ∈ span R (c.basis '' {i | P i.1})) :
+    a * x ∈ span R (c.basis '' {i | P i.1}) := by
   induction hx using Submodule.span_induction with
   | mem y hy =>
-    obtain ⟨⟨ν, s, t⟩, hν : ν < μ, rfl⟩ := hy
-    have h := add_mem (c.lowerSpan_mono hν.le (c.mul_basis_sub_sum_mem' a ν s t))
-      (sum_mem (t := Finset.univ) fun u _ =>
-        smul_mem _ (c.basis.repr (a * c.basis ⟨ν, s, s⟩) ⟨ν, u, s⟩) (c.basis_mem_lowerSpan hν u t))
+    obtain ⟨⟨ν, s, t⟩, hν : P ν, rfl⟩ := hy
+    have hlow : c.lowerSpan ν ≤ span R (c.basis '' {i | P i.1}) :=
+      span_mono <| Set.image_mono fun _ hi ↦ hP hi hν
+    have h := add_mem (hlow (c.mul_basis_sub_sum_mem' a ν s t))
+      (sum_mem (t := Finset.univ) fun u _ ↦
+        smul_mem _ (c.basis.repr (a * c.basis ⟨ν, s, s⟩) ⟨ν, u, s⟩)
+          (subset_span ⟨⟨ν, u, t⟩, hν, rfl⟩))
     rwa [sub_add_cancel] at h
   | zero => simp
   | add x y _ _ hx hy => rw [mul_add]; exact add_mem hx hy
   | smul r x _ hx => rw [mul_smul_comm]; exact smul_mem _ r hx
+
+/-- `A(<μ)` is a left ideal. -/
+theorem mul_mem_lowerSpan (a : A) {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) :
+    a * x ∈ c.lowerSpan μ :=
+  c.mul_mem_span_basis_of_lower (fun _ _ h₁ h₂ ↦ lt_trans h₁ h₂) a hx
+
+/-- `A(≤μ)` is a left ideal. -/
+theorem mul_mem_leSpan (a : A) {μ : Λ} {x : A} (hx : x ∈ c.leSpan μ) :
+    a * x ∈ c.leSpan μ :=
+  c.mul_mem_span_basis_of_lower (fun _ _ h₁ h₂ ↦ le_trans h₁.le h₂) a hx
 
 /-- The anti-involution of a cellular basis squares to the identity. -/
 @[simp]
@@ -204,16 +251,27 @@ theorem unop_antiInvolution_unop_antiInvolution (a : A) :
   have : f ∘ₗ f = LinearMap.id := c.basis.ext fun ⟨μ, s, t⟩ => by simp [f]
   exact LinearMap.congr_fun this a
 
-/-- The anti-involution preserves `A(<μ)`. -/
-theorem unop_antiInvolution_mem_lowerSpan {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) :
-    (c.antiInvolution x).unop ∈ c.lowerSpan μ := by
+private theorem unop_antiInvolution_mem_span_basis (P : Λ → Prop) {x : A}
+    (hx : x ∈ span R (c.basis '' {i | P i.1})) :
+    (c.antiInvolution x).unop ∈ span R (c.basis '' {i | P i.1}) := by
   induction hx using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨⟨ν, s, t⟩, hν, rfl⟩ := hy
-    simpa using c.basis_mem_lowerSpan hν t s
+    rw [c.unop_antiInvolution_basis]
+    exact subset_span ⟨⟨ν, t, s⟩, hν, rfl⟩
   | zero => simp
   | add x y _ _ hx hy => simpa using add_mem hx hy
   | smul r x _ hx => simpa using smul_mem _ r hx
+
+/-- The anti-involution preserves `A(<μ)`. -/
+theorem unop_antiInvolution_mem_lowerSpan {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) :
+    (c.antiInvolution x).unop ∈ c.lowerSpan μ :=
+  c.unop_antiInvolution_mem_span_basis (· < μ) hx
+
+/-- The anti-involution preserves `A(≤μ)`. -/
+theorem unop_antiInvolution_mem_leSpan {μ : Λ} {x : A} (hx : x ∈ c.leSpan μ) :
+    (c.antiInvolution x).unop ∈ c.leSpan μ :=
+  c.unop_antiInvolution_mem_span_basis (· ≤ μ) hx
 
 /-- `A(<μ)` is a right ideal. -/
 theorem mem_lowerSpan_mul (a : A) {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) :
@@ -221,16 +279,15 @@ theorem mem_lowerSpan_mul (a : A) {μ : Λ} {x : A} (hx : x ∈ c.lowerSpan μ) 
   simpa using c.unop_antiInvolution_mem_lowerSpan
     (c.mul_mem_lowerSpan (c.antiInvolution a).unop (c.unop_antiInvolution_mem_lowerSpan hx))
 
+/-- `A(≤μ)` is a right ideal. -/
+theorem mem_leSpan_mul (a : A) {μ : Λ} {x : A} (hx : x ∈ c.leSpan μ) :
+    x * a ∈ c.leSpan μ := by
+  simpa using c.unop_antiInvolution_mem_leSpan
+    (c.mul_mem_leSpan (c.antiInvolution a).unop (c.unop_antiInvolution_mem_leSpan hx))
+
 section Map
 
 variable {B C : Type*} [Ring B] [Algebra R B] [Ring C] [Algebra R C]
-
-private theorem span_basis_map_image_lt (e : A ≃ₐ[R] B) (μ : Λ) :
-    span R (c.basis.map e.toLinearEquiv '' {i | i.1 < μ}) =
-      (c.lowerSpan μ).map e.toLinearMap := by
-  rw [lowerSpan_def, Submodule.map_span, ← Set.image_comp]
-  exact congrArg (span R) (congrArg (· '' _)
-    (funext fun i ↦ c.basis.map_apply e.toLinearEquiv i))
 
 /-- Transport a cellular basis along an `R`-algebra equivalence `e : A ≃ₐ[R] B`. -/
 noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
@@ -240,12 +297,10 @@ noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
   exists_mul_basis b μ s := by
     obtain ⟨r, hr⟩ := c.exists_mul_basis (e.symm b) μ s
     refine ⟨r, fun t ↦ ?_⟩
-    rw [c.span_basis_map_image_lt e μ]
-    have hmem : e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩ ∈ c.lowerSpan μ := by
-      rw [lowerSpan_def]
-      exact hr t
-    refine ⟨e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩, hmem, ?_⟩
-    simp [map_sub, map_mul, map_sum, map_smul]
+    have hmem : e (e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩) ∈
+        (span R (c.basis '' {i | i.1 < μ})).map e.toLinearMap :=
+      Submodule.mem_map_of_mem (hr t)
+    simpa [Submodule.map_span, Set.image_image, Basis.coe_map] using hmem
 
 /-- The cellular basis transported along `e` applies `e` to each basis vector. -/
 @[simp]
@@ -281,13 +336,25 @@ theorem unop_antiInvolution_map (e : A ≃ₐ[R] B) (b : B) :
 /-- Lower cell spans push forward under `e`. -/
 theorem lowerSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
     (c.map e).lowerSpan μ = (c.lowerSpan μ).map e.toLinearMap := by
-  rw [lowerSpan_def, map, c.span_basis_map_image_lt]
+  simp [lowerSpan_def, map, Submodule.map_span, Set.image_image, Basis.coe_map]
 
 /-- Membership in `(c.map e).lowerSpan μ` pulls back via `e.symm`. -/
 @[simp]
 theorem mem_lowerSpan_map_iff (e : A ≃ₐ[R] B) {μ : Λ} {b : B} :
     b ∈ (c.map e).lowerSpan μ ↔ e.symm b ∈ c.lowerSpan μ := by
   rw [mem_lowerSpan_iff, mem_lowerSpan_iff]
+  simp
+
+/-- Inclusive cell spans push forward under `e`. -/
+theorem leSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
+    (c.map e).leSpan μ = (c.leSpan μ).map e.toLinearMap := by
+  simp [leSpan_def, map, Submodule.map_span, Set.image_image, Basis.coe_map]
+
+/-- Membership in `(c.map e).leSpan μ` pulls back via `e.symm`. -/
+@[simp]
+theorem mem_leSpan_map_iff (e : A ≃ₐ[R] B) {μ : Λ} {b : B} :
+    b ∈ (c.map e).leSpan μ ↔ e.symm b ∈ c.leSpan μ := by
+  rw [mem_leSpan_iff, mem_leSpan_iff]
   simp
 
 end Map
@@ -354,6 +421,12 @@ theorem cellRep_eq_zero_of_mem_lowerSpan {μ : Λ} {x : A} (hx : x ∈ c.lowerSp
     c.cellRep μ x = 0 := by
   ext u s
   exact c.mem_lowerSpan_iff.1 (c.mem_lowerSpan_mul _ hx) _ (lt_irrefl μ)
+
+/-- The cell representation of the cell `μ` kills `A(≤ν)` whenever `¬ μ ≤ ν`. -/
+theorem cellRep_eq_zero_of_mem_leSpan {ν μ : Λ} (h : ¬ μ ≤ ν) {x : A} (hx : x ∈ c.leSpan ν) :
+    c.cellRep μ x = 0 := by
+  ext u s
+  exact c.mem_leSpan_iff.1 (c.mem_leSpan_mul _ hx) ⟨μ, u, s⟩ h
 
 /-- Elements congruent modulo `A(<μ)` have the same cell representation on `μ`. -/
 theorem cellRep_eq_of_sub_mem_lowerSpan {μ : Λ} {x y : A} (h : x - y ∈ c.lowerSpan μ) :

@@ -119,10 +119,10 @@ theorem valueGroup_valuation_eq_top :
   obtain ⟨a, b, hab⟩ := exists_valuation_posSubmonoid_div_valuation_posSubmonoid_eq γ
   have ha0 : valuation K a ≠ 0 := by
     rw [ne_eq, valuation_eq_zero_iff, not_vle]
-    exact (posSubmonoid_def _).1 a.2
+    exact (posSubmonoid_def _).1 a.property
   have hb0 : valuation K b ≠ 0 := by
     rw [ne_eq, valuation_eq_zero_iff, not_vle]
-    exact (posSubmonoid_def _).1 b.2
+    exact (posSubmonoid_def _).1 b.property
   have hγ : γ = Units.mk0 (valuation K a) ha0 * (Units.mk0 (valuation K b) hb0)⁻¹ := by
     ext
     simp [div_eq_mul_inv, ← hab]

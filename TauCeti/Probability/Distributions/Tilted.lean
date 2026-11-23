@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Tilted
 import TauCeti.MeasureTheory.Measure.Tilted
 import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Gamma.Basic
+import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
@@ -77,11 +78,9 @@ theorem gaussianReal_tilted_mul (m : ℝ) (v : ℝ≥0) (t : ℝ) :
     (gaussianReal m v).tilted (t * ·) = gaussianReal (m + v * t) v := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  have hZ : ∫ x, exp (t * x) ∂gaussianReal m v = exp (m * t + v * t ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := m) (v := v)) t
   rw [gaussianReal_of_var_ne_zero _ hv, gaussianReal_of_var_ne_zero _ hv,
     tilted_withDensity (measurable_gaussianPDF _ _).aemeasurable (by fun_prop),
-    ← gaussianReal_of_var_ne_zero _ hv, hZ]
+    ← gaussianReal_of_var_ne_zero _ hv, integral_exp_mul_gaussianReal]
   congr with x
   rw [gaussianPDF, gaussianPDF, ← ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _),
     gaussianPDFReal_mul_exp_div_mgf]
@@ -92,10 +91,8 @@ moment-generating function `exp (m t + v t² / 2)` times the mass of `s` under t
 theorem setIntegral_exp_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (t : ℝ) (s : Set ℝ) :
     ∫ x in s, exp (t * x) ∂gaussianReal m v =
       exp (m * t + v * t ^ 2 / 2) * (gaussianReal (m + v * t) v).real s := by
-  have hZ : ∫ x, exp (t * x) ∂gaussianReal m v = exp (m * t + v * t ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := m) (v := v)) t
   have h := setIntegral_tilted (μ := gaussianReal m v) (t * ·) (fun _ => (1 : ℝ)) s
-  rw [gaussianReal_tilted_mul, hZ, setIntegral_const] at h
+  rw [gaussianReal_tilted_mul, integral_exp_mul_gaussianReal, setIntegral_const] at h
   simp only [smul_eq_mul, mul_one, integral_div] at h
   rw [h]
   field_simp
@@ -133,7 +130,7 @@ theorem poissonMeasure_tilted_mul (r : ℝ≥0) (t : ℝ) :
   rw [tilted_singleton, hZ, poissonMeasure_singleton, poissonMeasure_singleton,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
-  rw [NNReal.coe_mul, Real.coe_toNNReal _ (exp_pos t).le, mul_pow, ← exp_nat_mul]
+  rw [NNReal.coe_mul, Real.coe_toNNReal _ (exp_pos t).le, mul_pow, ← exp_natCast_mul]
   rw [show -(r * exp t : ℝ) = -r - r * (exp t - 1) by ring, exp_sub, mul_comm (n : ℝ) t]
   field_simp
 
@@ -145,9 +142,9 @@ theorem binomial_tilted_mul (n : ℕ) (p : I) (t : ℝ) {q : I}
     (hq : (q : ℝ) = p * exp t / (1 - p + p * exp t)) :
     (binomial n p).tilted (fun k ↦ t * k) = binomial n q := by
   have hD : 0 < 1 - (p : ℝ) + p * exp t := by
-    rcases p.2.1.eq_or_lt with hp | hp
+    rcases p.property.1.eq_or_lt with hp | hp
     · simp [← hp]
-    · linarith [p.2.2, mul_pos hp (exp_pos t)]
+    · linarith [p.property.2, mul_pos hp (exp_pos t)]
   have hZ : ∫ k, exp (t * k) ∂binomial n p = (1 - p + p * exp t) ^ n := by
     simp [← pgf_binomial, pgf_exp, mgf]
   have hq' : 1 - (q : ℝ) = (1 - p) / (1 - p + p * exp t) := by
@@ -160,7 +157,7 @@ theorem binomial_tilted_mul (n : ℕ) (p : I) (t : ℝ) {q : I}
   congr 1
   rcases lt_or_ge n k with hk | hk
   · simp [Nat.choose_eq_zero_of_lt hk]
-  rw [hq', hq, div_pow, div_pow, mul_comm t, exp_nat_mul,
+  rw [hq', hq, div_pow, div_pow, mul_comm t, exp_natCast_mul,
     show n = k + (n - k) by omega, pow_add, Nat.add_sub_cancel_left]
   field_simp
   ring

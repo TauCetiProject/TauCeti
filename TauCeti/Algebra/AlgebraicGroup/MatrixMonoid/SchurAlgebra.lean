@@ -112,8 +112,8 @@ private theorem toMatrix_injective : Function.Injective (toMatrix R ι) := by
   apply WithConv.ext
   apply (homogeneousSubcoalgebraBasis R ι 1).ext
   intro s
-  obtain ⟨⟨i, j⟩, hs⟩ : ∃ ij, Finsupp.single ij 1 = s.1 := by
-    exact (Set.ext_iff.mp Finsupp.range_single_one s.1).mpr s.2
+  obtain ⟨⟨i, j⟩, hs⟩ : ∃ ij, Finsupp.single ij 1 = s.val := by
+    exact (Set.ext_iff.mp Finsupp.range_single_one s.val).mpr s.property
   have hb : homogeneousSubcoalgebraBasis R ι 1 s = homogeneousEntry R ι i j := by
     apply Subtype.ext
     simp [← hs, ← MvPolynomial.X_pow_eq_monomial]
