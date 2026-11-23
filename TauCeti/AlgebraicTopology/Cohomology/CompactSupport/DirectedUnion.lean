@@ -33,6 +33,8 @@ of a manifold.
 ## Main definitions and results
 
 * `TopCat.compactSupportCohomologyOpens`: the functor `V ↦ Hⁿ_c(V)` on the open subsets of `X`.
+* `TopCat.compactSupportCohomologyExtend_toTopCat_map_comp`: for opens `V ≤ W`, extending a class
+  from `V` to `X` is extending it to `W` and then to `X`.
 * `TopCat.compactSupportCohomologyOpensCocone`: its cocone to `Hⁿ_c(X)`, by extension.
 * `TopCat.exists_compactSupportCohomologyExtend_eq_of_iSup_eq_top` and
   `TopCat.exists_compactSupportCohomologyExtend_map_eq_zero_of_iSup_eq_top`: the description of the
@@ -79,6 +81,16 @@ def compactSupportCohomologyOpens (n : ℕ) : Opens X ⥤ ModuleCat.{v} k where
       (compactSupportCohomologyExtend_comp (isOpenEmbedding_toTopCat_map h₁)
         (isOpenEmbedding_toTopCat_map h₂) n _)
 
+/-- Extending a class from `V` to `X` is extending it to `W` and then to `X`, for opens `V ≤ W`. -/
+@[reassoc, elementwise]
+lemma compactSupportCohomologyExtend_toTopCat_map_comp {V W : Opens X} (h : V ⟶ W) (n : ℕ) :
+    compactSupportCohomologyExtend (R := R) (k := k) (M := M) (isOpenEmbedding_toTopCat_map h) n ≫
+        compactSupportCohomologyExtend W.isOpenEmbedding n =
+      compactSupportCohomologyExtend V.isOpenEmbedding n :=
+  (compactSupportCohomologyExtend_comp (isOpenEmbedding_toTopCat_map h) W.isOpenEmbedding n
+    (W.isOpenEmbedding.comp (isOpenEmbedding_toTopCat_map h))).symm.trans
+    (compactSupportCohomologyExtend_congr (toTopCat_map_comp_inclusion' h) _ _ n)
+
 variable (R k M X) in
 /-- The cocone of the extensions `Hⁿ_c(V) ⟶ Hⁿ_c(X)` along the inclusions of the open subsets
 `V` of a Hausdorff space `X`. -/
@@ -89,11 +101,8 @@ def compactSupportCohomologyOpensCocone (n : ℕ) : Cocone (compactSupportCohomo
   pt := X.compactSupportCohomology R k M n
   ι :=
     { app V := compactSupportCohomologyExtend V.isOpenEmbedding n
-      naturality _ W h :=
-        ((compactSupportCohomologyExtend_comp (isOpenEmbedding_toTopCat_map h) W.isOpenEmbedding n
-          (W.isOpenEmbedding.comp (isOpenEmbedding_toTopCat_map h))).symm.trans
-          (compactSupportCohomologyExtend_congr (toTopCat_map_comp_inclusion' h) _ _ n)).trans
-          (Category.comp_id _).symm }
+      naturality _ _ h :=
+        (compactSupportCohomologyExtend_toTopCat_map_comp h n).trans (Category.comp_id _).symm }
 
 /-! ### Directed unions -/
 

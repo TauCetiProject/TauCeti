@@ -82,6 +82,11 @@ theorem geodesicCurvature_def (γ : ℝ → M) (n : ∀ r, TangentSpace I (γ r)
       ⟪acceleration (leviCivitaConnection I M) γ t, n t⟫_ℝ / ‖curveVelocity I γ t‖ ^ 2 :=
   (rfl)
 
+/-- Geodesic curvature depends only on the normal at the current parameter. -/
+theorem geodesicCurvature_congr_normal {n₁ n₂ : ∀ r, TangentSpace I (γ r)}
+    (hn : n₁ t = n₂ t) : geodesicCurvature γ n₁ t = geodesicCurvature γ n₂ t := by
+  rw [geodesicCurvature_def, geodesicCurvature_def, hn]
+
 /-- Reversing the normal field reverses the sign of the geodesic curvature. -/
 @[to_fun (attr := simp) geodesicCurvature_fun_neg]
 theorem geodesicCurvature_neg (γ : ℝ → M) (n : ∀ r, TangentSpace I (γ r)) (t : ℝ) :
@@ -109,7 +114,7 @@ at `t` and `n` a differentiable field along `γ` that is orthogonal to the veloc
 unit-speed curve this is `⟪D_t n, γ'⟫ = -k_g`. -/
 theorem inner_alongCurve_curveVelocity_eq_neg_geodesicCurvature_mul
     (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t)
-    (hn : DifferentiableAt ℝ (sectionCoord (F := E) γ n (γ t)) t)
+    (hn : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ n (γ t)) t)
     (hnγ : ∀ᶠ r in 𝓝 t, ⟪n r, curveVelocity I γ r⟫_ℝ = 0) :
     ⟪alongCurve (leviCivitaConnection I M) γ n t, curveVelocity I γ t⟫_ℝ =
       -(geodesicCurvature γ n t * ‖curveVelocity I γ t‖ ^ 2) := by
@@ -152,7 +157,7 @@ field along it which, near `t`, has unit length and is orthogonal to the velocit
 theorem alongCurve_eq_neg_geodesicCurvature_smul_curveVelocity
     (hdim : Module.finrank ℝ (TangentSpace I (γ t)) = 2)
     (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) (hγ₀ : curveVelocity I γ t ≠ 0)
-    (hn : DifferentiableAt ℝ (sectionCoord (F := E) γ n (γ t)) t)
+    (hn : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ n (γ t)) t)
     (hn₁ : ∀ᶠ r in 𝓝 t, ‖n r‖ = 1)
     (hnγ : ∀ᶠ r in 𝓝 t, ⟪n r, curveVelocity I γ r⟫_ℝ = 0) :
     alongCurve (leviCivitaConnection I M) γ n t =

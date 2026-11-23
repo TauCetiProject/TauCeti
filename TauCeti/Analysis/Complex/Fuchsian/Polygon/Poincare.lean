@@ -62,7 +62,7 @@ conditions hold for every locally finite fundamental polygon
 public section
 
 open Matrix.ProjectiveSpecialLinearGroup MeasureTheory Set UpperHalfPlane
-open scoped MatrixGroups Pointwise Real
+open scoped Real
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 

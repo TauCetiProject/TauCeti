@@ -145,7 +145,7 @@ theorem isHolomorphicSection_iff {U : Opens (TopCat.of ℂ)} {f : U → E} :
 /-- Being holomorphic is stable under restriction to a smaller open set. -/
 theorem IsHolomorphicSection.mono {U V : Opens (TopCat.of ℂ)} (h : U ≤ V) {f : V → E}
     (hf : IsHolomorphicSection f) :
-    IsHolomorphicSection fun x : U => f ⟨x.1, IsConcreteLE.le_iff.mp h x.2⟩ := by
+    IsHolomorphicSection fun x : U => f ⟨x.val, IsConcreteLE.le_iff.mp h x.property⟩ := by
   obtain ⟨g, hg, hfg⟩ := hf
   exact ⟨g, hg.mono (SetLike.coe_subset_coe.mpr h), fun x => hfg _⟩
 
@@ -190,19 +190,19 @@ variable {U V : Opens (TopCat.of ℂ)} {g g' : ℂ → E} {x z : ℂ}
 /-- The function on `ℂ` underlying a section of `TauCeti.holomorphicPresheaf`, extended by zero
 outside its domain. -/
 noncomputable def sectionFun (s : (holomorphicPresheaf E).obj (op U)) : ℂ → E :=
-  Function.extend Subtype.val s.1 fun _ => 0
+  Function.extend Subtype.val s.val fun _ => 0
 
 /-- On its own domain, the function underlying a section is the section. -/
 @[simp]
 theorem sectionFun_coe (s : (holomorphicPresheaf E).obj (op U)) (y : U) :
-    sectionFun s y = s.1 y :=
+    sectionFun s y = s.val y :=
   Subtype.val_injective.extend_apply _ _ _
 
 /-- The function underlying a holomorphic section is analytic on a neighbourhood of every point of
 its domain. -/
 theorem analyticOnNhd_sectionFun (s : (holomorphicPresheaf E).obj (op U)) :
     AnalyticOnNhd ℂ (sectionFun s) U := by
-  obtain ⟨g, hg, hfg⟩ := s.2
+  obtain ⟨g, hg, hfg⟩ := s.property
   intro z hz
   refine (hg z hz).congr (Filter.eventuallyEq_of_mem (U.isOpen.mem_nhds hz) fun y hy => ?_)
   rw [sectionFun_coe s ⟨y, hy⟩]
@@ -210,7 +210,8 @@ theorem analyticOnNhd_sectionFun (s : (holomorphicPresheaf E).obj (op U)) :
 
 /-- Restricting a section along an inclusion of open sets restricts its underlying function. -/
 private theorem map_val_apply (i : U ⟶ V) (s : (holomorphicPresheaf E).obj (op V)) (y : U) :
-    ((holomorphicPresheaf E).map i.op s).1 y = s.1 ⟨y.1, IsConcreteLE.le_iff.mp i.le y.2⟩ := rfl
+    ((holomorphicPresheaf E).map i.op s).val y = s.val ⟨y.val,
+        IsConcreteLE.le_iff.mp i.le y.property⟩ := rfl
 
 /-- A function analytic on a neighbourhood of every point of `U`, read as a section over `U`. -/
 def toSection (U : Opens (TopCat.of ℂ)) (g : ℂ → E) (hg : AnalyticOnNhd ℂ g U) :
@@ -237,7 +238,7 @@ theorem germ_eq_iff (hxU : x ∈ U) (hxV : x ∈ V) (s : (holomorphicPresheaf E)
     refine Filter.eventuallyEq_of_mem (W.isOpen.mem_nhds hxW) fun y hy => ?_
     have hyU : y ∈ U := IsConcreteLE.le_iff.mp iU.le hy
     have hyV : y ∈ V := IsConcreteLE.le_iff.mp iV.le hy
-    have key := congrArg (fun r : (holomorphicPresheaf E).obj (op W) => r.1 ⟨y, hy⟩) hmap
+    have key := congrArg (fun r : (holomorphicPresheaf E).obj (op W) => r.val ⟨y, hy⟩) hmap
     rw [sectionFun_coe s ⟨y, hyU⟩, sectionFun_coe t ⟨y, hyV⟩]
     exact key
   · intro h
@@ -246,9 +247,9 @@ theorem germ_eq_iff (hxU : x ∈ U) (hxV : x ∈ V) (s : (holomorphicPresheaf E)
       (⟨⟨hxW₀, hxU⟩, hxV⟩ : x ∈ W₀ ∩ (U : Set ℂ) ∩ (V : Set ℂ))
       (homOfLE (inf_le_left.trans inf_le_right)) (homOfLE inf_le_right) ?_
     refine Subtype.ext (funext fun y => ?_)
-    have hy : (y : ℂ) ∈ W₀ ∩ (U : Set ℂ) ∩ (V : Set ℂ) := y.2
-    rw [map_val_apply, map_val_apply, ← sectionFun_coe s ⟨y.1, hy.1.2⟩,
-      ← sectionFun_coe t ⟨y.1, hy.2⟩]
+    have hy : (y : ℂ) ∈ W₀ ∩ (U : Set ℂ) ∩ (V : Set ℂ) := y.property
+    rw [map_val_apply, map_val_apply, ← sectionFun_coe s ⟨y.val, hy.1.2⟩,
+      ← sectionFun_coe t ⟨y.val, hy.2⟩]
     exact hW₀sub hy.1.1
 
 variable [CompleteSpace E]
@@ -340,9 +341,9 @@ theorem germPoint_eq_germSection (hg : AnalyticOnNhd ℂ g U) (y : U) :
     germPoint g y =
       TopCat.Presheaf.EtaleSpace.germSection (holomorphicPresheaf E) U (toSection U g hg) y := by
   have hgerm : germAt g (y : ℂ) =
-      (holomorphicPresheaf E).germ U (y : ℂ) y.2 (toSection U g hg) :=
-    germAt_eq_germ_of_eventuallyEq y.2 _
-      (Filter.eventuallyEq_of_mem (U.isOpen.mem_nhds y.2) (sectionFun_toSection hg))
+      (holomorphicPresheaf E).germ U (y : ℂ) y.property (toSection U g hg) :=
+    germAt_eq_germ_of_eventuallyEq y.property _
+      (Filter.eventuallyEq_of_mem (U.isOpen.mem_nhds y.property) (sectionFun_toSection hg))
   rw [TopCat.Presheaf.EtaleSpace.germSection_apply, germPoint, hgerm]
 
 /-- **The germ map of a holomorphic function is a continuous section of the étalé projection.**

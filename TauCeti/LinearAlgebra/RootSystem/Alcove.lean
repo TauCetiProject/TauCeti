@@ -417,7 +417,7 @@ lemma exists_mem_fundamentalAlcove_root'_eq_height_div [Finite ι] [Nonempty ι]
   rintro (_ | i)
   · rw [Base.affineSimpleRoot_none, hx₀', sub_pos, div_lt_one hD]
     linarith
-  · rw [Base.affineSimpleRoot_some, hx₀', Base.height_one_of_mem_support i.2]
+  · rw [Base.affineSimpleRoot_some, hx₀', Base.height_one_of_mem_support i.property]
     simpa using hD
 
 /-- Over a linearly ordered field the fundamental alcove is nonempty: it contains the point at which

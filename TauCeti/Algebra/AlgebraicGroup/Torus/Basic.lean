@@ -37,6 +37,7 @@ distinguishes tori from general groups of multiplicative type.
   the base ring to the coordinate ring of a finite-rank split torus.
 * `TauCeti.torusCommHopfAlgProperty`: finite-type coordinate Hopf algebras that become a
   finite-rank split torus over `AlgebraicClosure k`.
+* `TauCeti.splitTorusCommHopfAlgProperty.baseChange`: scalar extension preserves split tori.
 * `TauCeti.splitTorusCommHopfAlgProperty.torus`: every split torus is a torus.
 * `TauCeti.torusCommHopfAlgProperty.multiplicativeType`: every torus is of multiplicative type.
 * `TauCeti.torusCommHopfAlgProperty.isCocomm`: the coordinate Hopf algebra of a torus is
@@ -151,19 +152,25 @@ closure. -/
 abbrev TorusCommHopfAlgCat (k : Type u) [Field k] : Type _ :=
   (torusCommHopfAlgProperty k).FullSubcategory
 
+/-- A split torus remains split after extending scalars. -/
+theorem splitTorusCommHopfAlgProperty.baseChange
+    {k : Type u} [CommRing k] (K : Type u) [CommRing K] [Algebra k K]
+    {H : FiniteTypeCommHopfAlgCat.{u, u} k} (hH : splitTorusCommHopfAlgProperty k H) :
+    splitTorusCommHopfAlgProperty K (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) := by
+  rw [splitTorusCommHopfAlgProperty_iff] at hH ⊢
+  obtain ⟨n, ⟨i⟩⟩ := hH
+  exact ⟨n, ⟨(DiagonalizableGroup.baseChangeCoordinateRingIso k K
+    (SplitTorus.characterGroup (ULift.{u} (Fin n)))).symm ≪≫
+      (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := K)).mapIso i⟩⟩
+
 /-- Every split torus is a torus. -/
 @[grind →]
 theorem splitTorusCommHopfAlgProperty.torus
     (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : splitTorusCommHopfAlgProperty k H) :
     torusCommHopfAlgProperty k H := by
-  rw [splitTorusCommHopfAlgProperty_iff] at hH
-  rw [torusCommHopfAlgProperty_iff]
-  obtain ⟨n, ⟨i⟩⟩ := hH
-  exact ⟨n, ⟨
-    (DiagonalizableGroup.baseChangeCoordinateRingIso k (AlgebraicClosure k)
-      (SplitTorus.characterGroup (ULift.{u} (Fin n)))).symm ≪≫
-    (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := AlgebraicClosure k)).mapIso i⟩⟩
+  rw [torusCommHopfAlgProperty_iff, ← splitTorusCommHopfAlgProperty_iff]
+  exact hH.baseChange (AlgebraicClosure k)
 
 /-- Every torus is a group of multiplicative type. -/
 @[grind →]
