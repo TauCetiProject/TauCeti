@@ -25,12 +25,10 @@ recorded by `TauCeti.weightedSquareIntegrableSolutions A w`. Its limits are `A±
 weights move the limiting spectra. For symmetric limits, `D_A` is Fredholm on the weighted spaces
 exactly when neither `δ±` is an eigenvalue of `A±`, and its index is then the number of
 eigenvalues of `A⁻` below `δ⁻` minus the number of eigenvalues of `A⁺` below `δ⁺`, counted with
-multiplicity
-(`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`
-in `TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing`). A weight can therefore make `D_A` Fredholm when a limit is degenerate, as for
-Morse–Bott trajectories: for `A = 0` and a weight with `δ⁻ < 0 < δ⁺`, the index is `-dim E`.
-Weights below the spectral gaps do not change the solutions; that case is
-`TauCeti.squareIntegrableSolutions_sub_smul_id`.
+multiplicity (see `TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing`). A weight can therefore
+make `D_A` Fredholm when a limit is degenerate, as for Morse–Bott trajectories: for `A = 0` and
+a weight with `δ⁻ < 0 < δ⁺`, the index is `-dim E`. Weights below the spectral gaps do not change
+the solutions; that case is `TauCeti.squareIntegrableSolutions_sub_smul_id`.
 
 ## Main declarations
 
