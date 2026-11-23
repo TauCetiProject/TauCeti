@@ -57,6 +57,8 @@ there.
 
 ## Main declarations
 
+* `TauCeti.centralForceHamiltonian_smul`: isometries fixing the origin, such as rotations,
+  preserve every central-force Hamiltonian.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
@@ -110,6 +112,16 @@ theorem continuousAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {x : V 
     (hU : ContinuousAt U ‖x.1‖) : ContinuousAt (centralForceHamiltonian m U) x :=
   ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
     (hU.comp (f := fun y : V × V ↦ ‖y.1‖) continuous_fst.norm.continuousAt)
+
+/-- Acting on positions and momenta alike by an isometry of `V` fixing the origin, such as a
+rotation, preserves every central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)`. -/
+@[simp]
+theorem centralForceHamiltonian_smul {M : Type*} [SMulZeroClass M V] [IsIsometricSMul M V]
+    (m : ℝ) (U : ℝ → ℝ) (g : M) (x : V × V) :
+    centralForceHamiltonian m U (g • x) = centralForceHamiltonian m U x := by
+  obtain ⟨q, p⟩ := x
+  simp only [Prod.smul_mk, centralForceHamiltonian_apply,
+    (isometry_smul V g).norm_map_of_map_zero (smul_zero g)]
 
 /-- The derivative of the Kepler potential `-κ / r` at a nonzero radius is `κ / r²`. -/
 theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
@@ -183,6 +195,14 @@ theorem contDiffAt_rungeLenz (m κ : ℝ) {n : WithTop ℕ∞} {x : V × V} (hq 
     ((contDiffAt_fst.inner ℝ contDiffAt_snd).smul contDiffAt_snd) |>.sub
       ((contDiffAt_const.div ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
         (norm_ne_zero_iff.2 hq)).smul contDiffAt_fst)
+
+/-- Away from the collision set, a central-force Hamiltonian is `C^n` at `(q, p)` when the
+potential `U` is `C^n` at `‖q‖`. -/
+theorem contDiffAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞} {x : V × V}
+    (hU : ContDiffAt ℝ n U ‖x.1‖) (hq : x.1 ≠ 0) :
+    ContDiffAt ℝ n (centralForceHamiltonian m U) x :=
+  ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add
+    (hU.comp (f := fun y : V × V ↦ ‖y.1‖) x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst))
 
 /-- Away from the collision set, the partial gradients of the component `⟪A, e⟫` of the
 Runge–Lenz vector are
