@@ -52,17 +52,17 @@ theorem map_inertiaDeg_eq_fullCycleType_of_mem_frobeniusPrimeSet
     (E : IntermediateField K L) {𝔭 : HeightOneSpectrum (𝓞 K)} {σ : L ≃ₐ[K] L}
     (h𝔭 : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) :
     (Finset.univ : Finset (𝔭.asIdeal.primesOver (𝓞 E))).val.map
-        (fun P => P.1.inertiaDeg (𝓞 K)) =
+        (fun P => P.val.inertiaDeg (𝓞 K)) =
       (toPerm σ : Equiv.Perm ((L ≃ₐ[K] L) ⧸ E.fixingSubgroup)).fullCycleType := by
   obtain ⟨Q, hQ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk h𝔭
-  have : Algebra.IsUnramifiedAt (𝓞 K) Q.1 := isUnramifiedAt_of_mem_frobeniusPrimeSet h𝔭 Q.1
+  have : Algebra.IsUnramifiedAt (𝓞 K) Q.val := isUnramifiedAt_of_mem_frobeniusPrimeSet h𝔭 Q.val
   -- Transport the whole residue-degree multiset along the Galois correspondence, preserving
   -- the dependent prime carrier and its finite enumeration together.
   have hE := congrArg (fun F : IntermediateField K L =>
     (Finset.univ : Finset (𝔭.asIdeal.primesOver (𝓞 F))).val.map
-      (fun P => P.1.inertiaDeg (𝓞 K))) (IsGalois.fixedField_fixingSubgroup E)
+      (fun P => P.val.inertiaDeg (𝓞 K))) (IsGalois.fixedField_fixingSubgroup E)
   exact hE.symm.trans
-    (Ideal.fullCycleType_toPerm_quotient_eq_map_inertiaDeg 𝔭.asIdeal Q.1 E.fixingSubgroup hQ).symm
+    (Ideal.fullCycleType_toPerm_quotient_eq_map_inertiaDeg 𝔭.asIdeal Q.val E.fixingSubgroup hQ).symm
 
 open scoped Classical in
 /-- Outside ramification in the Galois extension, a splitting-type condition is exactly
@@ -71,7 +71,7 @@ theorem setOf_map_inertiaDeg_eq_sdiff_ramifiedPrimes
     (E : IntermediateField K L) (μ : Multiset ℕ) :
     {𝔭 : HeightOneSpectrum (𝓞 K) |
       (Finset.univ : Finset (𝔭.asIdeal.primesOver (𝓞 E))).val.map
-        (fun P => P.1.inertiaDeg (𝓞 K)) = μ} \ (ramifiedPrimes K L : Set _) =
+        (fun P => P.val.inertiaDeg (𝓞 K)) = μ} \ (ramifiedPrimes K L : Set _) =
       ⋃ C ∈ Finset.univ.filter (fun C : ConjClasses (L ≃ₐ[K] L) =>
         (toPerm C.out : Equiv.Perm ((L ≃ₐ[K] L) ⧸ E.fixingSubgroup)).fullCycleType = μ),
           frobeniusPrimeSet K L C := by
@@ -101,7 +101,7 @@ theorem hasDirichletDensity_setOf_map_inertiaDeg_eq
     NumberField.Set.HasDirichletDensity
       {𝔭 : HeightOneSpectrum (𝓞 K) |
         (Finset.univ : Finset (𝔭.asIdeal.primesOver (𝓞 E))).val.map
-          (fun P => P.1.inertiaDeg (𝓞 K)) = μ}
+          (fun P => P.val.inertiaDeg (𝓞 K)) = μ}
       (∑ C ∈ Finset.univ.filter (fun C : ConjClasses (L ≃ₐ[K] L) =>
         (toPerm C.out : Equiv.Perm ((L ≃ₐ[K] L) ⧸ E.fixingSubgroup)).fullCycleType = μ),
           (Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by

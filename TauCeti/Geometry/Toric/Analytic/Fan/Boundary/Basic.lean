@@ -128,7 +128,7 @@ theorem iUnion_analyticBoundaryComponent (hPhi0 : Nonempty Phi.cones) :
   obtain ⟨sigma, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x
   rw [Set.mem_iUnion, Set.mem_compl_iff,
     Phi.analyticDenseTorus_eq_analyticConeOrbit_bot hPhi sigma]
-  let botCone : Phi.cones := ⟨⊥, Phi.bot_mem sigma.2⟩
+  let botCone : Phi.cones := ⟨⊥, Phi.bot_mem sigma.property⟩
   constructor
   · rintro ⟨rho, hrho⟩ hdense
     have hrhoLe := (Phi.mem_analyticBoundaryComponent_iff hPhi hx).1 hrho
@@ -137,12 +137,12 @@ theorem iUnion_analyticBoundaryComponent (hPhi0 : Nonempty Phi.cones) :
     have hrhoBot : rho.toCone ≤ botCone := hsigma ▸ hrhoLe
     have hbot : botCone ≤ rho.toCone := by
       -- Unwrap the inherited order on the fan's subtype of cones.
-      change (⊥ : PointedCone ℝ V) ≤ rho.toCone.1
+      change (⊥ : PointedCone ℝ V) ≤ rho.toCone.val
       exact bot_le
     apply rho.toCone_ne_bot
     exact congrArg Subtype.val (hrhoBot.antisymm hbot)
   · intro hdense
-    have hsigma : sigma.1 ≠ ⊥ := by
+    have hsigma : sigma.val ≠ ⊥ := by
       intro hsigma
       apply hdense
       have hsigmaBot : sigma = botCone := Subtype.ext hsigma

@@ -90,7 +90,7 @@ variable {β γ δ : FramedMarkovBraid}
 
 /-- Framed Markov equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence FramedMarkovEquiv :=
-  Relation.EqvGen.is_equivalence _
+  Relation.EqvGen.equivalence _
 
 /-- Every framed braid presentation is equivalent to itself. -/
 @[refl] theorem refl (β : FramedMarkovBraid) : FramedMarkovEquiv β β :=

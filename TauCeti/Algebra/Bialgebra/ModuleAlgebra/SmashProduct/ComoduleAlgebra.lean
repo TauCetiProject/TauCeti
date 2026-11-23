@@ -243,7 +243,7 @@ theorem includeACoinvariantsEquiv_symm_apply
   apply μ.includeA_injective
   have hx : (x : μ.SmashProduct) ∈ μ.includeA.range := by
     rw [← μ.coinvariants_eq_includeA_range]
-    exact x.2
+    exact x.property
   rw [AlgHom.mem_range] at hx
   obtain ⟨a, ha⟩ := hx
   have hsymm : μ.includeA (μ.includeACoinvariantsEquiv.symm x) = (x : μ.SmashProduct) := by

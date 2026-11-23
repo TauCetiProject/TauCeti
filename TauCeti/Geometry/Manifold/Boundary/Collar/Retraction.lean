@@ -41,8 +41,9 @@ variable {M N : Type*} [TopologicalSpace M] [TopologicalSpace N] {f : N → M}
 /-- Scaling the depth of a point of `N × [0, 1)` by a time `s ∈ [0, 1]`:
 `(s, (x, t)) ↦ (x, s t)`. -/
 private def scaleDepth : C(unitInterval × (N × Ico (0 : ℝ) 1), N × Ico (0 : ℝ) 1) :=
-  ⟨fun q ↦ (q.2.1, ⟨q.1 * q.2.2, mul_nonneg q.1.2.1 q.2.2.2.1,
-    (mul_le_of_le_one_left q.2.2.2.1 q.1.2.2).trans_lt q.2.2.2.2⟩), by fun_prop⟩
+  ⟨fun q ↦ (q.2.1, ⟨q.1 * q.2.2, mul_nonneg q.1.property.1 q.2.2.property.1,
+    (mul_le_of_le_one_left q.2.2.property.1 q.1.property.2).trans_lt q.2.2.property.2⟩),
+        by fun_prop⟩
 
 variable (h : IsCollar f c)
 include h

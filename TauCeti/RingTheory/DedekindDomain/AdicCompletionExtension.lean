@@ -405,7 +405,7 @@ lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
 lemma adicCompletionExtension_mem_adicCompletionIntegers (x : v.adicCompletionIntegers K) :
     adicCompletionExtension K L v w (x : v.adicCompletion K) ∈ w.adicCompletionIntegers L := by
   rw [mem_adicCompletionIntegers, valued_adicCompletionExtension]
-  exact pow_le_one' ((mem_adicCompletionIntegers ..).mp x.2) _
+  exact pow_le_one' ((mem_adicCompletionIntegers ..).mp x.property) _
 
 /-- The restriction of `adicCompletionExtension` to the rings of integers. -/
 noncomputable def adicCompletionIntegersExtension :

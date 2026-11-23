@@ -254,8 +254,8 @@ theorem CompatibleActionData.ext {μ : LeftModuleAlgebra R H A} {M : Type x}
 private noncomputable def ofSmashModule [AddCommMonoid M] [Module R M]
     (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ }) :
     CompatibleActionData μ M :=
-  let _ : Module μ.SmashProduct M := m.1
-  let _ : IsScalarTower R μ.SmashProduct M := m.2
+  let _ : Module μ.SmashProduct M := m.val
+  let _ : IsScalarTower R μ.SmashProduct M := m.property
   let mA := moduleA μ M
   let tA := isScalarTower_moduleA μ M
   let mH := moduleH μ M
@@ -324,33 +324,33 @@ noncomputable def moduleEquiv [AddCommMonoid M] [Module R M] :
 @[simp]
 theorem moduleEquiv_apply_moduleA [AddCommMonoid M] [Module R M]
     (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ }) :
-    (moduleEquiv μ M m).moduleA = let _ := m.1; moduleA μ M :=
+    (moduleEquiv μ M m).moduleA = let _ := m.val; moduleA μ M :=
   (rfl)
 
 @[simp]
 theorem moduleEquiv_apply_moduleH [AddCommMonoid M] [Module R M]
     (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ }) :
-    (moduleEquiv μ M m).moduleH = let _ := m.1; moduleH μ M :=
+    (moduleEquiv μ M m).moduleH = let _ := m.val; moduleH μ M :=
   (rfl)
 
 @[simp]
 theorem moduleEquiv_apply_moduleA_smul [AddCommMonoid M] [Module R M]
     (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ })
     (a : A) (x : M) :
-    (let _ := (moduleEquiv μ M m).moduleA; a • x) = (let _ := m.1; μ.includeA a • x) :=
+    (let _ := (moduleEquiv μ M m).moduleA; a • x) = (let _ := m.val; μ.includeA a • x) :=
   (rfl)
 
 @[simp]
 theorem moduleEquiv_apply_moduleH_smul [AddCommMonoid M] [Module R M]
     (m : { m : Module μ.SmashProduct M // @IsScalarTower R μ.SmashProduct M _ m.toSMul _ })
     (h : H) (x : M) :
-    (let _ := (moduleEquiv μ M m).moduleH; h • x) = (let _ := m.1; μ.includeH h • x) :=
+    (let _ := (moduleEquiv μ M m).moduleH; h • x) = (let _ := m.val; μ.includeH h • x) :=
   (rfl)
 
 @[simp]
 theorem moduleEquiv_symm_apply_val [AddCommMonoid M] [Module R M]
     (d : CompatibleActionData μ M) :
-    ((moduleEquiv μ M).symm d).1 =
+    ((moduleEquiv μ M).symm d).val =
       let _ := d.moduleA
       let _ := d.towerA
       let _ := d.moduleH
@@ -362,7 +362,7 @@ theorem moduleEquiv_symm_apply_val [AddCommMonoid M] [Module R M]
 @[simp]
 theorem moduleEquiv_symm_apply_smul [AddCommMonoid M] [Module R M]
     (d : CompatibleActionData μ M) (z : μ.SmashProduct) (x : M) :
-    (let _ := ((moduleEquiv μ M).symm d).1; z • x) =
+    (let _ := ((moduleEquiv μ M).symm d).val; z • x) =
       let _ := d.moduleA
       let _ := d.towerA
       let _ := d.moduleH
@@ -373,7 +373,7 @@ theorem moduleEquiv_symm_apply_smul [AddCommMonoid M] [Module R M]
 
 theorem moduleEquiv_symm_apply_smash_smul [AddCommMonoid M] [Module R M]
     (d : CompatibleActionData μ M) (a : A) (h : H) (x : M) :
-    (let _ := ((moduleEquiv μ M).symm d).1; μ.smash a h • x) =
+    (let _ := ((moduleEquiv μ M).symm d).val; μ.smash a h • x) =
       (let _ := d.moduleA; let _ := d.moduleH; a • (h • x)) := by
   simp
 
@@ -431,7 +431,7 @@ def linearMapEquiv [Module R N] [IsScalarTower R A N] [SMulCommClass R H N]
     (M →ₗ[μ.SmashProduct] N) ≃ₗ[R] equivariantLinearMaps R H A M N where
   toFun f := ⟨restrictScalarsLinearMapA f,
     (mem_equivariantLinearMaps _).2 (map_smulH_of_smashLinear f)⟩
-  invFun f := mkLinearMap f.1 ((mem_equivariantLinearMaps _).1 f.2)
+  invFun f := mkLinearMap f.val ((mem_equivariantLinearMaps _).1 f.property)
   left_inv _ := LinearMap.ext fun _ => rfl
   right_inv _ := Subtype.ext <| LinearMap.ext fun _ => rfl
   map_add' _ _ := Subtype.ext <| LinearMap.ext fun _ => rfl

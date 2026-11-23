@@ -241,7 +241,7 @@ theorem galoisEquivalenceAlternatingPairingEquiv_apply_coe
     (e : {e : G.X ⊗ G.X ⟶ M.X // IsBilinear e ∧ IsAlternating e}) :
     (galoisEquivalenceAlternatingPairingEquiv K Ω G M e : _ ⟶ _) =
       Functor.LaxMonoidal.μ (galoisEquivalence K Ω).functor G.X G.X ≫
-        (galoisEquivalence K Ω).functor.map e.1 := by
+        (galoisEquivalence K Ω).functor.map e.val := by
   simp [galoisEquivalenceAlternatingPairingEquiv]
 
 open TauCeti.CategoryTheory in
@@ -256,7 +256,7 @@ theorem galoisEquivalenceAlternatingPairingEquiv_symm_apply_coe
           (galoisEquivalence K Ω).functor.obj M.X // IsBilinear e ∧ IsAlternating e}) :
     ((galoisEquivalenceAlternatingPairingEquiv K Ω G M).symm e : G.X ⊗ G.X ⟶ M.X) =
       (galoisEquivalence K Ω).fullyFaithfulFunctor.preimage
-        (Functor.OplaxMonoidal.δ (galoisEquivalence K Ω).functor G.X G.X ≫ e.1) := by
+        (Functor.OplaxMonoidal.δ (galoisEquivalence K Ω).functor G.X G.X ≫ e.val) := by
   simp [galoisEquivalenceAlternatingPairingEquiv]
 
 end FiniteEtaleScheme

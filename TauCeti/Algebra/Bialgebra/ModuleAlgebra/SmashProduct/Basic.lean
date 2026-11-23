@@ -590,24 +590,24 @@ noncomputable def liftEquiv :
     (μ.SmashProduct →ₐ[R] C) ≃
       { p : (A →ₐ[R] C) × (H →ₐ[R] C) // μ.SmashCompatible p.1 p.2 } where
   toFun F := ⟨(F.comp μ.includeA, F.comp μ.includeH), smashCompatible_comp F⟩
-  invFun p := lift p.1.1 p.1.2 p.2
+  invFun p := lift p.val.1 p.val.2 p.property
   left_inv _ := by ext <;> simp
   right_inv p := Subtype.ext <| Prod.ext (lift_comp_includeA ..) (lift_comp_includeH ..)
 
 @[simp]
 theorem liftEquiv_apply_fst (F : μ.SmashProduct →ₐ[R] C) :
-    ((liftEquiv μ C F).1).1 = F.comp μ.includeA :=
+    ((liftEquiv μ C F).val).1 = F.comp μ.includeA :=
   (rfl)
 
 @[simp]
 theorem liftEquiv_apply_snd (F : μ.SmashProduct →ₐ[R] C) :
-    ((liftEquiv μ C F).1).2 = F.comp μ.includeH :=
+    ((liftEquiv μ C F).val).2 = F.comp μ.includeH :=
   (rfl)
 
 @[simp]
 theorem liftEquiv_symm_apply
     (p : { p : (A →ₐ[R] C) × (H →ₐ[R] C) // μ.SmashCompatible p.1 p.2 }) :
-    (liftEquiv μ C).symm p = lift p.1.1 p.1.2 p.2 :=
+    (liftEquiv μ C).symm p = lift p.val.1 p.val.2 p.property :=
   (rfl)
 
 end Lift

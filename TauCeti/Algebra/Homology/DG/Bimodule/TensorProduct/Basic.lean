@@ -126,7 +126,7 @@ theorem differential_smul_left (hM : IsDGBimodule hA hB ℳ dM)
     induction m using Decomposition.inductionOn ℳ with
     | zero => simp
     | add x y hx hy => simp only [add_tmul, smul_add, map_add, hx, hy]; abel
-    | @homogeneous q m => exact differential_smul_tmul_left hM hN ha m.2 n
+    | @homogeneous q m => exact differential_smul_tmul_left hM hN ha m.property n
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]; abel
 
 private theorem differential_smul_tmul_right (hM : IsDGRightModule hB ℳ dM)
