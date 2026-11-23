@@ -348,6 +348,18 @@ theorem mem_maximalIdeal_iff_ord_pos (v : _root_.Valuation F ℤᵐ⁰)
     ← WithZero.exp_zero, WithZero.exp_lt_exp]
   omega
 
+/-- A unit `u` of the valuation ring with `0 < ord_v (u - 1)` has residue one. -/
+theorem unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos (v : _root_.Valuation F ℤᵐ⁰)
+    (u : v.valuationSubring.unitGroup) (h : 0 < ord v (((u : Fˣ) : F) - 1)) :
+    v.valuationSubring.unitGroupToResidueFieldUnits u = 1 := by
+  have hne : ((u : Fˣ) : F) - 1 ≠ 0 := fun h0 => by simp [h0, ord_zero] at h
+  have hmem : ((u : Fˣ) : F) - 1 ∈ v.valuationSubring :=
+    (mem_valuationSubring_iff_ord_nonneg v).2 h.le
+  rw [← MonoidHom.mem_ker, ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap,
+    Subgroup.coe_subtype, ValuationSubring.mem_principalUnitGroup_iff]
+  exact (v.valuationSubring.valuation_lt_one_iff ⟨_, hmem⟩).1
+    ((mem_maximalIdeal_iff_ord_pos v (f := ⟨_, hmem⟩) hne).2 h)
+
 end Field
 
 end Valuation

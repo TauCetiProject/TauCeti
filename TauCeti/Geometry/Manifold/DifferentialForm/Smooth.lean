@@ -801,6 +801,15 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
 
 end Evaluation
 
+/-- Evaluating a degree-two form at two equal points agrees after identifying their tangent spaces
+by `tangentSpaceCast`. -/
+theorem eval₂_tangentSpaceCast (φ : SmoothForm I M F 2) {x y : M} (h : x = y)
+    (v w : TangentSpace I x) :
+    φ.eval₂ y (tangentSpaceCast I x y v) (tangentSpaceCast I x y w) = φ.eval₂ x v w := by
+  subst h
+  -- `tangentSpaceCast I x x` is the identity of the model fibre.
+  rfl
+
 /-- The algebraic bilinear form represented by the value of a real degree-two smooth form.
 
 This generalizes `SmoothTwoForm.bilinFormAt` from
