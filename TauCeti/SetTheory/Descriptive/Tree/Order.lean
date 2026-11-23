@@ -27,6 +27,7 @@ prefix order of the tree of its paths from the least element.
 ## Main results
 
 * `TauCeti.IsTreeOrder.of_relIso`: being a tree order is transported along relation isomorphisms.
+* `TauCeti.IsTreeOrder.wellFounded`: the strict order of a tree order is well-founded.
 * `TauCeti.isTreeOrder_of_injective`: the order pulled back from `ℕ` along an injection is a tree
   order.
 * `TauCeti.isTreeOrder_isPrefix`, `TauCeti.IsTreeOrder.exists_relIso_tree`: tree orders are the
@@ -70,6 +71,15 @@ theorem IsTreeOrder.of_relIso {r : V → V → Prop} {s : W → W → Prop} (e :
     exact (h.finite_setOf _).image e
   · rw [hdown]
     exact (h.isChain_setOf _).image e
+
+/-- The strict order of a tree order is well-founded: a strict predecessor has strictly fewer
+predecessors. -/
+theorem IsTreeOrder.wellFounded {r : V → V → Prop} (h : IsTreeOrder r) :
+    WellFounded fun x y => r x y ∧ ¬ r y x := by
+  have := h.isPartialOrder
+  refine Subrelation.wf (fun {x y} hxy => ?_) (measure fun x => {y | r y x}.ncard).wf
+  exact ncard_lt_ncard ⟨fun z hz => trans_of r hz hxy.1, fun hs => hxy.2 (hs (refl_of r y))⟩
+    (h.finite_setOf y)
 
 /-- The order pulled back from `ℕ` along an injection, from a nonempty type, is a tree order: a
 well-order of type at most `ω`. -/
@@ -159,7 +169,7 @@ private theorem path_of_not_nonempty {x : V} (hx : ¬ (Iio x).Nonempty) : path h
 
 include h in
 private theorem wellFounded_lt : WellFounded (fun x y : V => x < y) :=
-  Subrelation.wf (fun hxy => height_lt h hxy) (measure height).wf
+  Subrelation.wf (fun hxy => lt_iff_le_not_ge.1 hxy) h.wellFounded
 
 private theorem mem_path {y z : V} : z ∈ path h y ↔ (Iio z).Nonempty ∧ z ≤ y := by
   induction y using (wellFounded_lt h).induction with
@@ -217,6 +227,8 @@ theorem IsTreeOrder.exists_relIso_tree {r : V → V → Prop} (h : IsTreeOrder r
   let _ : PartialOrder V :=
     { le := r, le_refl := refl_of r, le_trans := fun _ _ _ => trans_of r,
       le_antisymm := fun _ _ => antisymm_of r }
+  -- The `≤` of this local partial order unfolds to `r`, so `h` is a tree order for `≤`, and
+  -- `path_prefix_path h'` below states `path h' x <+: path h' y ↔ r x y`.
   have h' : IsTreeOrder fun x y : V => x ≤ y := h
   have hinj : Function.Injective (path h') := fun x y hxy =>
     le_antisymm ((path_prefix_path h').1 (hxy ▸ List.prefix_refl _))

@@ -22,8 +22,8 @@ linear orders and trees are Borel complete:
   closed.
 * `treeClass`, the codes of trees: partial orders with a least element in which every principal
   down-set `{y | y ≤ x}` is a finite chain (`TauCeti.IsTreeOrder`). Finiteness of down-sets is a
-  countable union over finite bounds, so on a countable carrier the class is Borel. It is not
-  closed: the codes of the well-orders `n < n - 1 < ⋯ < 0 < n + 1 < n + 2 < ⋯` of type `ω`
+  countable union over finite bounds, so on a countable carrier the class is Borel. On `ℕ` it is
+  not closed: the codes of the well-orders `n < n - 1 < ⋯ < 0 < n + 1 < n + 2 < ⋯` of type `ω`
   converge to the code of `(ℕ, ≥)`, which has no least element.
 
 Both classes are isomorphism invariant. Coded trees and trees of finite sequences in the sense
@@ -39,6 +39,8 @@ tree of finite sequences of natural numbers, relabelled along a bijection with `
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.codeRel_ofRel`, `TauCeti.RelationalConfiguration.ofRel_codeRel`:
+  `ofRel` and `codeRel leSymb` are inverse bijections between relations and codes.
 * `TauCeti.RelationalConfiguration.mem_linearOrderClass`: a code lies in `linearOrderClass`
   exactly when its relation is a linear order.
 * `TauCeti.RelationalConfiguration.isClosed_linearOrderClass`,
@@ -82,13 +84,8 @@ def linearOrderClass : Set (RelationalConfiguration Language.order V) :=
 /-- A configuration is a coded linear order exactly when its relation is a linear order. -/
 @[simp]
 theorem mem_linearOrderClass {c : RelationalConfiguration Language.order V} :
-    c ∈ linearOrderClass ↔ IsLinearOrder V (codeRel leSymb c) := by
-  simp only [linearOrderClass, mem_modelsOfTheory, linearOrderTheory, partialOrderTheory,
-    preorderTheory, Theory.model_insert_iff, Theory.model_singleton_iff, Relations.realize_total,
-    Relations.realize_antisymmetric, Relations.realize_reflexive, Relations.realize_transitive,
-    relMap_toStructure_iff_codeRel]
-  exact ⟨fun ⟨_, _, _, _⟩ => { }, fun _ => ⟨inferInstance, inferInstance, inferInstance,
-    inferInstance⟩⟩
+    c ∈ linearOrderClass ↔ IsLinearOrder V (codeRel leSymb c) :=
+  mem_modelsOfTheory_linearOrderTheory
 
 /-- The coded linear orders form a closed class. -/
 theorem isClosed_linearOrderClass : IsClosed (linearOrderClass (V := V)) :=
@@ -104,6 +101,12 @@ theorem isomorphismInvariant_linearOrderClass :
     IsomorphismInvariant (linearOrderClass (V := V)) :=
   isomorphismInvariant_modelsOfTheory _
 
+/-- `orderStructure` reads `leSymb` as `≤`. -/
+private theorem relMap_leSymb_orderStructure [LE V] (x : Fin 2 → V) :
+    @Structure.RelMap Language.order V (orderStructure V) 2 leSymb x ↔ x 0 ≤ x 1 :=
+  -- `orderStructure` is defined by matching on the symbol, with `x 0 ≤ x 1` for `leSymb`.
+  Iff.rfl
+
 /-- The code of a relation `r` on `V` in `Language.order`: the configuration whose relation for
 `leSymb` is `r`, that is, the code of `V` with the structure `orderStructure` reading `r` as
 `≤`. -/
@@ -114,8 +117,12 @@ noncomputable def ofRel (r : V → V → Prop) : RelationalConfiguration Languag
 @[simp]
 theorem codeRel_ofRel (r : V → V → Prop) : codeRel leSymb (ofRel r) = r := by
   ext x y
-  let : Language.order.Structure V := @orderStructure V ⟨r⟩
-  exact codeRel_ofStructure leSymb x y
+  let _ : LE V := ⟨r⟩
+  let _ : Language.order.Structure V := orderStructure V
+  rw [ofRel, codeRel_ofStructure, relMap_leSymb_orderStructure, Matrix.cons_val_zero,
+    Matrix.cons_val_one]
+  -- The `LE` instance `⟨r⟩` reads `x ≤ y` as `r x y`.
+  rfl
 
 open Classical in
 /-- The code of a relation `r` makes the atom `leSymb(v 0, v 1)` true exactly when
@@ -123,13 +130,39 @@ open Classical in
 @[simp]
 theorem eval_ofRel (r : V → V → Prop) (v : Fin 2 → V) :
     (ofRel r).eval (atom leSymb v) = decide (r (v 0) (v 1)) := by
-  let : Language.order.Structure V := @orderStructure V ⟨r⟩
-  exact eval_ofStructure leSymb v
+  let _ : LE V := ⟨r⟩
+  let _ : Language.order.Structure V := orderStructure V
+  rw [ofRel, eval_ofStructure, relMap_leSymb_orderStructure]
+  -- The `LE` instance `⟨r⟩` reads `v 0 ≤ v 1` as `r (v 0) (v 1)`.
+  rfl
+
+/-- Every code is the code of its own relation. -/
+@[simp]
+theorem ofRel_codeRel (c : RelationalConfiguration Language.order V) :
+    ofRel (codeRel leSymb c) = c := by
+  classical
+  refine ext fun a => ?_
+  induction a using Atom.induction_atom with | @h k R v => ?_
+  obtain rfl : k = 2 := by cases R; rfl
+  rw [order.relation_eq_leSymb R, eval_ofRel, codeRel_iff, Bool.decide_eq_true]
+  congr
+  ext i
+  fin_cases i <;> rfl
+
+/-- Distinct relations have distinct codes. -/
+theorem ofRel_injective : Function.Injective (ofRel (V := V)) := fun r s h => by
+  rw [← codeRel_ofRel r, h, codeRel_ofRel]
+
+/-- Two relations have the same code exactly when they are equal. -/
+@[simp]
+theorem ofRel_inj {r s : V → V → Prop} : ofRel r = ofRel s ↔ r = s :=
+  ofRel_injective.eq_iff
 
 /-- The code of an ordered type reads `leSymb` as its order. -/
 @[simp]
 theorem codeRel_leSymb_ofStructure_orderStructure [LE V] :
     codeRel leSymb (@ofStructure Language.order V (orderStructure V)) = (· ≤ ·) :=
+  -- `orderStructure V` is `@orderStructure V ⟨(· ≤ ·)⟩` by structure eta for `LE V`.
   codeRel_ofRel _
 
 /-- The code of a linearly ordered type is a coded linear order. -/
@@ -151,16 +184,6 @@ theorem mem_treeClass {c : RelationalConfiguration Language.order V} :
     c ∈ treeClass ↔ IsTreeOrder (codeRel leSymb c) :=
   Iff.rfl
 
-/-- A configuration models `Language.order.partialOrderTheory` exactly when its relation is a
-partial order. -/
-theorem mem_modelsOfTheory_partialOrderTheory {c : RelationalConfiguration Language.order V} :
-    c ∈ modelsOfTheory Language.order.partialOrderTheory ↔
-      IsPartialOrder V (codeRel leSymb c) := by
-  simp only [mem_modelsOfTheory, partialOrderTheory, preorderTheory, Theory.model_insert_iff,
-    Theory.model_singleton_iff, Relations.realize_antisymmetric, Relations.realize_reflexive,
-    Relations.realize_transitive, relMap_toStructure_iff_codeRel]
-  exact ⟨fun ⟨_, _, _⟩ => { }, fun _ => ⟨inferInstance, inferInstance, inferInstance⟩⟩
-
 /-- The coded trees are the models of `Language.order.partialOrderTheory` with a least element in
 which every principal down-set is a finite chain. -/
 theorem mem_treeClass_iff_mem_modelsOfTheory_and {c : RelationalConfiguration Language.order V} :
@@ -181,18 +204,9 @@ theorem ofStructure_mem_treeClass [Nonempty V] [LinearOrder V] {f : V → ℕ}
   simp only [hf.le_iff_le] at h
   exact h
 
-/-- Relabelling by a permutation preserves being a coded tree. -/
-theorem perm_smul_mem_treeClass_iff {σ : Equiv.Perm V}
-    {c : RelationalConfiguration Language.order V} :
-    σ • c ∈ treeClass ↔ c ∈ treeClass := by
-  let e : codeRel leSymb c ≃r codeRel leSymb (σ • c) := ⟨σ, by simp⟩
-  exact ⟨fun h => h.of_relIso e.symm, fun h => h.of_relIso e⟩
-
 /-- The coded trees form an isomorphism-invariant class. -/
-theorem isomorphismInvariant_treeClass : IsomorphismInvariant (treeClass (V := V)) := by
-  refine isomorphismInvariant_iff.2 fun c d hcd hc => ?_
-  obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 hcd
-  exact perm_smul_mem_treeClass_iff.2 hc
+theorem isomorphismInvariant_treeClass : IsomorphismInvariant (treeClass (V := V)) :=
+  isomorphismInvariant_setOf_codeRel leSymb fun e h => h.of_relIso e
 
 /-- On a countable carrier the coded trees form a Borel class: finiteness of a down-set is a
 countable union over finite sets bounding it. -/
