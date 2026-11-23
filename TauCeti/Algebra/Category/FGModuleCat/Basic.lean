@@ -234,6 +234,7 @@ instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
 variable {R} in
 /-- **Testing on a cyclic submodule**: a morphism out of `X` composes to zero with the inclusion of
 the cyclic submodule `R ∙ x` exactly when it kills `x`. -/
+@[simp]
 theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff {X Y : FGModuleCat.{v} R}
     (x : X.obj) (f : X ⟶ Y) :
     (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) ≫ f =

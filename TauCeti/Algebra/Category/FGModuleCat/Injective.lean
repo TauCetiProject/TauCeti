@@ -21,8 +21,6 @@ Noetherian ring the converse holds by Baer's criterion, since the ideals are fin
 
 ## Main results
 
-* `FGModuleCat.forget₂_preservesMonomorphisms`: the inclusion of finitely generated modules into
-  all modules preserves monomorphisms.
 * `FGModuleCat.injective_of_moduleInjective`: an injective module that is finitely generated is an
   injective object of `FGModuleCat R`.
 * `FGModuleCat.moduleInjective_of_injective`: over a left Noetherian ring, an injective object of
@@ -39,16 +37,10 @@ universe u v
 
 variable {R : Type u} [Ring R]
 
-/-- The inclusion of finitely generated modules into all modules preserves monomorphisms: a
-monomorphism of finitely generated modules is an injective linear map. -/
-instance forget₂_preservesMonomorphisms :
-    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms where
-  preserves f _ := (ModuleCat.mono_iff_injective _).2 (FGModuleCat.injective_of_mono f)
-
 /-- A finitely generated injective module is an injective object of `FGModuleCat R`. -/
 theorem injective_of_moduleInjective (X : FGModuleCat.{v} R)
     [Module.Injective R X] : Injective X :=
-  (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).injective_of_map_injective
+  (ModuleCat.isFG.{v} R).ι.injective_of_map_injective
     ((Module.injective_iff_injective_object R X).mp inferInstance)
 
 /-- **Baer's criterion in `FGModuleCat R`.** Over a left Noetherian ring, an injective object among

@@ -385,6 +385,15 @@ theorem equivLinearMapDualRegularOp_mapOp {N' : Type*} [AddCommGroup N'] [Module
   ext x a
   simp
 
+/-- **Naturality of the inverse Hom-tensor adjunction for right modules**: precomposition with
+`g : N → N'` corresponds to dualizing `g`. -/
+@[simp]
+theorem equivLinearMapDualRegularOp_symm_comp {N' : Type*} [AddCommGroup N'] [Module R N']
+    [Module Aᵐᵒᵖ N'] [IsScalarTower R Aᵐᵒᵖ N'] (h : N' →ₗ[Aᵐᵒᵖ] MatlisDual R E A)
+    (g : N →ₗ[Aᵐᵒᵖ] N') :
+    equivLinearMapDualRegularOp.symm (h ∘ₗ g) = mapOp g (equivLinearMapDualRegularOp.symm h) := by
+  rw [LinearEquiv.symm_apply_eq, equivLinearMapDualRegularOp_mapOp, LinearEquiv.apply_symm_apply]
+
 end Op
 
 end Regular
