@@ -76,6 +76,8 @@ the half-wave phases are with `k = 1`, the propagator intertwines the normalized
 * `TauCeti.phasePropagator_dilateLp`: for a phase positively homogeneous of degree `k`, the
   scaling law `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`, and
   `TauCeti.eLpNorm_phasePropagator_dilateLp`, its effect on the `Lʳ` norms at a fixed time.
+* `TauCeti.eLpNorm_eLpNorm_phasePropagator_dilateLp`: its effect on the mixed norms
+  `L^q_t L^r_x`, multiplication by `l ^ (n/r - n/2 + k/q)`.
 
 ## References
 
@@ -632,6 +634,30 @@ theorem eLpNorm_phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, �
       ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
         eLpNorm (phasePropagator F ω (t / l ^ k) f) r volume := by
   rw [phasePropagator_dilateLp hω, eLpNorm_dilateLp, ENNReal.toReal_ofNat]
+
+/-- **Scaling of the mixed norms of a homogeneous phase propagator.** If the phase `ω` is
+positively homogeneous of degree `k`, then for `q ≠ 0`, dilating the datum by `l` multiplies the
+mixed norm `‖exp(itω(D)) f‖_{L^q_t L^r_x}`, `t ∈ ℝ`, by `l ^ (n/r - n/2 + k/q)`, where `n / r`
+and `k / q` are `n / r.toReal` and `k / q.toReal`, which are `0` for an infinite exponent. -/
+theorem eLpNorm_eLpNorm_phasePropagator_dilateLp
+    (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {l : ℝ} (hl : 0 < l)
+    (f : Lp F 2 (volume : Measure E)) {q : ℝ≥0∞} (hq : q ≠ 0) (r : ℝ≥0∞) :
+    eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume) q
+        volume =
+      ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + k / q.toReal)) *
+        eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t f) r volume) q volume := by
+  have h : (fun t ↦ eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume) =
+      fun t ↦ ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (phasePropagator F ω ((l ^ k)⁻¹ • t) f) r volume := by
+    funext t
+    rw [eLpNorm_phasePropagator_dilateLp hω hl, smul_eq_mul, inv_mul_eq_div]
+  rw [h, eLpNorm_const_mul_ennreal_of_pos (pos_iff_ne_zero.2 hq),
+    eLpNorm_comp_inv_smul (volume : Measure ℝ)
+      (fun s ↦ eLpNorm (phasePropagator F ω s f) r volume) (pow_ne_zero k hl.ne'),
+    finrank_self, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), abs_of_pos (pow_pos hl k),
+    ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
+  congr 3
+  ring
 
 end Dilation
 

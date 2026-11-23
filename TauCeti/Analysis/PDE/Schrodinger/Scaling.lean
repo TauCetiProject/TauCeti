@@ -82,24 +82,15 @@ theorem eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l) (t : ℝ)
 
 /-- **Scaling of the Strichartz norms.** For `q ≠ 0`, dilating the datum by `λ` multiplies the
 mixed norm `‖S(t) f‖_{L^q_t L^r_x}`, `t ∈ ℝ`, by `λ ^ (n/r - n/2 + 2/q)`, where `n / r` and `2 / q`
-are `n / r.toReal` and `2 / q.toReal`, which are `0` for an infinite exponent. -/
+are `n / r.toReal` and `2 / q.toReal`, which are `0` for an infinite exponent. This is the case
+`k = 2` of `TauCeti.eLpNorm_eLpNorm_phasePropagator_dilateLp`. -/
 theorem eLpNorm_eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l)
     (f : Lp F 2 (volume : Measure E)) {q : ℝ≥0∞} (hq : q ≠ 0) (r : ℝ≥0∞) :
     eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator F t (dilateLp volume ℝ 2 l hl f)) r volume) q
         volume =
       ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + 2 / q.toReal)) *
         eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator F t f) r volume) q volume := by
-  have h : (fun t ↦ eLpNorm (schrodingerPropagator F t (dilateLp volume ℝ 2 l hl f)) r volume) =
-      fun t ↦ ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
-        eLpNorm (schrodingerPropagator F ((l ^ 2)⁻¹ • t) f) r volume := by
-    funext t
-    rw [eLpNorm_schrodingerPropagator_dilateLp hl, smul_eq_mul, inv_mul_eq_div]
-  rw [h, eLpNorm_const_mul_ennreal_of_pos (pos_iff_ne_zero.2 hq),
-    eLpNorm_comp_inv_smul (volume : Measure ℝ)
-      (fun s ↦ eLpNorm (schrodingerPropagator F s f) r volume) (pow_ne_zero 2 hl.ne'),
-    finrank_self, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), abs_of_pos (pow_pos hl 2),
-    ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
-  congr 3
-  ring
+  simpa only [Nat.cast_ofNat] using eLpNorm_eLpNorm_phasePropagator_dilateLp (k := 2)
+    (fun c _ ξ ↦ laplacianSymbol_smul c ξ) hl f hq r
 
 end TauCeti
