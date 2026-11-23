@@ -48,6 +48,8 @@ topology for the subspace topology (`LinearMap.isStrictMap_of_isModuleTopology_r
 
 Restriction of scalars along a finite algebra carrying the module topology preserves the
 module topology (`IsModuleTopology.restrictScalars`). No finiteness of the module is needed.
+Over finite index types, matrices with entries in a module with the module topology carry the
+module topology (`IsModuleTopology.instMatrix`).
 
 A family `f : X → (M →ₗ[R] N)` of linear maps out of a finite module `M` with its module topology,
 into a topological module `N`, is jointly continuous on `X × M` exactly when each orbit map
@@ -101,6 +103,13 @@ theorem restrictScalars (R S M : Type*) [CommRing R] [Ring S] [Algebra R S]
   -- The source keeps its given topology; only the target has the `R`-module topology.
   exact @IsModuleTopology.continuous_of_linearMap S _ _ M _ _ τM hM
     M _ _ τ (ModuleTopology.continuousAdd R M) this (LinearMap.id : M →ₗ[S] M)
+
+/-- Matrices with entries in a module with the module topology carry the module topology: the
+topology on `Matrix m n A` is the product topology on `m → n → A`. -/
+instance instMatrix {R A m n : Type*} [Semiring R] [TopologicalSpace R] [AddCommMonoid A]
+    [Module R A] [TopologicalSpace A] [IsModuleTopology R A] [Finite m] [Finite n] :
+    IsModuleTopology R (Matrix m n A) :=
+  inferInstanceAs (IsModuleTopology R (m → n → A))
 
 section JointContinuity
 
