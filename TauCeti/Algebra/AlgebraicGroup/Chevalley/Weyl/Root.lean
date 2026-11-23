@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
+public import TauCeti.LinearAlgebra.RootSystem.LongestElement
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -135,5 +138,26 @@ theorem map_iSup_rootSubgroupPoints_conj (g : D.weylSubgroup K)
       ⨆ γ ∈ (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) '' S,
         (D.rootSubgroupPoints γ K).range := by
   simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj, iSup_image]
+
+section
+
+attribute [local instance] isReduced_simplyConnectedRootDatum
+
+/-- Conjugating the positive unipotent subgroup by any Weyl lift of the longest element gives the
+negative unipotent subgroup. -/
+theorem map_positivePoints_conj_of_weylProjection_eq_longestElement (n₀ : D.weylSubgroup K)
+    (hn₀ : D.weylProjection K n₀ =
+      longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
+    (D.positivePoints K).map (MulAut.conj (n₀ : D.points K)).toMonoidHom =
+      D.negativePoints K := by
+  have hneg : negRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) =
+      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    ext γ
+    simp only [mem_negRoots, RootPairing.Base.isPos_iff, height_rationalBase]
+  rw [D.positivePoints_eq_iSup K, D.negativePoints_eq_iSup K, D.map_iSup_rootSubgroupPoints_conj,
+    hn₀, t.posRoots_rationalRootSystem ht,
+    image_weylGroupToPerm_longestElement_posRoots, hneg]
+
+end
 
 end TauCeti.DynkinType.ChevalleyDatum
