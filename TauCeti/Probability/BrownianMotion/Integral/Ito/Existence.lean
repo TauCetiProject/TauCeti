@@ -64,7 +64,12 @@ namespace IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W H K I J : ℝ≥0 → Ω → ℝ}
 
-private theorem isItoIntegral_of_localized_stages
+/-- **Itô integral criterion from localized `L²` stages.** If an almost surely continuous process
+`X` stopped along a localizing sequence `τ` is indistinguishable at each stage `k` from a process
+`U k` representing `hW.l2Integral t ((hHstage k).toPredictableLp t)`, and each `Hstage k` agrees
+with `H` on `[0, t]` whenever `t < τ k ω`, then `IsItoIntegral ℱ P W H X`. Combining this
+criterion with `isItoIntegral_unique` establishes independence of the chosen localizer. -/
+theorem isItoIntegral_of_localized_stages
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : IsStronglyPredictable ℱ H)
     {X : ℝ≥0 → Ω → ℝ} (hX_cont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
     {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)

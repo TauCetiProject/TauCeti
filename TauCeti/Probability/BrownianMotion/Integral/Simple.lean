@@ -20,9 +20,10 @@ values or be bounded. Both results only require square integrability of the actu
 predictable time-product integrand, so they also cover empty intervals and intervals beyond
 the horizon without moment assumptions on their unused heights.
 
-These identities connect completion in predictable L² with elementary stochastic integrals,
-and translate ambient time-product `L²` errors against simple holdings into sample-space `L²`
-errors against `l2Integral` or any almost-everywhere representative
+These identities connect completion in predictable L² with elementary stochastic integrals
+(including `TauCeti.BrownianIntegrable.simpleHolding` for square-integrable left-measurable
+holdings), and translate ambient time-product `L²` errors against simple holdings into sample-space
+`L²` errors against `l2Integral` or any almost-everywhere representative
 (`eLpNorm_simpleGains_sub_l2Integral`, `eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`,
 `tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`).
 They concern terminal L² values and almost-everywhere equality at each fixed observation time,
@@ -40,6 +41,19 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Set Filter
 open scoped NNReal ENNReal Topology
+
+/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
+`BrownianIntegrable`. -/
+theorem _root_.TauCeti.BrownianIntegrable.simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω} [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
+    {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
+    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
+    TauCeti.BrownianIntegrable ℱ P (TauCeti.Finance.simpleHolding τ n a) :=
+  ⟨TauCeti.Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
+    simpa only [NNReal.comap_volume_restrict_Ioc, TauCeti.Probability.timeMeasure_def] using
+      (ℱ.memLp_predictableMeasure_iff P
+        (TauCeti.Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+        (TauCeti.Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 

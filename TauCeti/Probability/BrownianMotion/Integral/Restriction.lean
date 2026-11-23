@@ -122,7 +122,9 @@ theorem l2Integral_eq_add_l2Integral_sub (hW : IsFilteredPreBrownianReal ℱ W P
   rw [map_sub, hW.l2Integral_predictableMeasureExtendLp hST]
   exact (add_sub_cancel _ _).symm
 
-private theorem l2Integral_indicator_Ioc_prod_univ_eq_sub
+/-- For `s ≤ t`, the completed Brownian integral of a `BrownianIntegrable` integrand restricted
+to `(s, t] × univ` equals the difference of the terminal integrals at `t` and `s` in `Lp ℝ 2 P`. -/
+theorem l2Integral_indicator_Ioc_prod_univ_eq_sub
     (hW : IsFilteredPreBrownianReal ℱ W P)
     {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t : ℝ≥0} (hst : s ≤ t) :
     letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure

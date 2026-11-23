@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.Predictable.Measure
 import TauCeti.Analysis.Normed.Group.Real
@@ -24,8 +23,7 @@ lower-integral energy used in predictable approximation and localization. In par
 no divergent Bochner integral is interpreted as zero energy. Left-measurable heights
 in `Lᵖ` also give an elementary holding in the predictable `Lᵖ` space on each finite
 horizon (`memLp_simpleHolding_predictableMeasure`); this membership result does not require the
-grid to be monotone. In particular, square-integrable left-measurable heights give a
-`TauCeti.BrownianIntegrable` holding (`TauCeti.BrownianIntegrable.simpleHolding`).
+grid to be monotone.
 
 ## References
 
@@ -115,17 +113,5 @@ theorem memLp_simpleHolding_predictableMeasure {τ : ℕ → ℝ≥0} {mΩ : Mea
     memLp_finsetSum (range n) fun i hi ↦
       ℱ.memLp_indicator_Ioc_predictableMeasure T (τ i) (τ (i + 1))
         (ha i (mem_range.mp hi)) (haLp i (mem_range.mp hi))
-
-/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
-`BrownianIntegrable`. -/
-theorem _root_.TauCeti.BrownianIntegrable.simpleHolding {mΩ : MeasurableSpace Ω}
-    {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω} [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
-    {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    BrownianIntegrable ℱ P (simpleHolding τ n a) :=
-  ⟨isStronglyPredictable_simpleHolding ha, fun T ↦ by
-    simpa only [NNReal.comap_volume_restrict_Ioc, TauCeti.Probability.timeMeasure_def] using
-      (ℱ.memLp_predictableMeasure_iff P (isStronglyPredictable_simpleHolding ha) T 2).mp
-        (memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
 
 end TauCeti.Finance
