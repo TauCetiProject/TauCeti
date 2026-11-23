@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
+import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 import TauCeti.Geometry.Manifold.IntegralCurve.BoundedSpeed
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
@@ -244,11 +245,7 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
   have : Nonempty M := ⟨x⟩
-  -- Each point `y` has the compact neighbourhood `f⁻¹ [f y - 1, f y + 1]`.
-  have : WeaklyLocallyCompactSpace M := ⟨fun y ↦ ⟨_, hfp.isCompact_preimage isCompact_Icc,
-    hfp.continuous.continuousAt.preimage_mem_nhds
-      (Icc_mem_nhds (sub_one_lt (f y)) (lt_add_one (f y)))⟩⟩
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+  have : FiniteDimensional ℝ E := hfp.finiteDimensional_of_manifold I
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
   refine maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo hv fun T ↦ ?_
