@@ -313,27 +313,69 @@ end Edge
 
 /-! ## Invariance under the generators -/
 
-private theorem raising_derivation_apply : ∀ (i : Fin 4) (c a b : Fin 24),
-    (if d4TripledWeight (d4TripledReflection i a) i = -1 then
+/-- The entrywise derivation equation for the raising (`s = -1`) or lowering (`s = 1`) matrix of
+the simple root `i`, in the form required by `edge_derivation`. -/
+private def DerivationApply (s : ℤ) (i : Fin 4) : Prop :=
+  ∀ c a b : Fin 24,
+    (if d4TripledWeight (d4TripledReflection i a) i = s then
         trialityProductMatrix c (d4TripledReflection i a) b else 0) =
-      (if d4TripledWeight b i = -1 then
+      (if d4TripledWeight b i = s then
           trialityProductMatrix c a (d4TripledReflection i b) else 0) +
-        if d4TripledWeight c i = -1 then
-          trialityProductMatrix (d4TripledReflection i c) a b else 0 := by
-  simp only [trialityProductMatrix_apply, symmetricTrialityCoefficient,
+        if d4TripledWeight c i = s then
+          trialityProductMatrix (d4TripledReflection i c) a b else 0
+
+/-! Each derivation equation is checked by a separate kernel computation for each simple root: a
+single check over all `4 * 24 ^ 3` cases needs more memory than a CI runner provides. -/
+
+private theorem derivationApply_neg_one_zero : DerivationApply (-1) 0 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
     blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
 
-private theorem lowering_derivation_apply : ∀ (i : Fin 4) (c a b : Fin 24),
-    (if d4TripledWeight (d4TripledReflection i a) i = 1 then
-        trialityProductMatrix c (d4TripledReflection i a) b else 0) =
-      (if d4TripledWeight b i = 1 then
-          trialityProductMatrix c a (d4TripledReflection i b) else 0) +
-        if d4TripledWeight c i = 1 then
-          trialityProductMatrix (d4TripledReflection i c) a b else 0 := by
-  simp only [trialityProductMatrix_apply, symmetricTrialityCoefficient,
+private theorem derivationApply_neg_one_one : DerivationApply (-1) 1 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
     blockTrialityCoefficient, trialityCoefficient_apply]
   decide +kernel
+
+private theorem derivationApply_neg_one_two : DerivationApply (-1) 2 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
+  decide +kernel
+
+private theorem derivationApply_neg_one_three : DerivationApply (-1) 3 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
+  decide +kernel
+
+private theorem derivationApply_one_zero : DerivationApply 1 0 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
+  decide +kernel
+
+private theorem derivationApply_one_one : DerivationApply 1 1 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
+  decide +kernel
+
+private theorem derivationApply_one_two : DerivationApply 1 2 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
+  decide +kernel
+
+private theorem derivationApply_one_three : DerivationApply 1 3 := by
+  simp only [DerivationApply, trialityProductMatrix_apply, symmetricTrialityCoefficient,
+    blockTrialityCoefficient, trialityCoefficient_apply]
+  decide +kernel
+
+private theorem raising_derivation_apply (i : Fin 4) : DerivationApply (-1) i := by
+  fin_cases i
+  exacts [derivationApply_neg_one_zero, derivationApply_neg_one_one,
+    derivationApply_neg_one_two, derivationApply_neg_one_three]
+
+private theorem lowering_derivation_apply (i : Fin 4) : DerivationApply 1 i := by
+  fin_cases i
+  exacts [derivationApply_one_zero, derivationApply_one_one,
+    derivationApply_one_two, derivationApply_one_three]
 
 private theorem raising_secondOrder_apply : ∀ (i : Fin 4) (c a b : Fin 24),
     d4TripledWeight b i = -1 → d4TripledWeight c i = -1 →
