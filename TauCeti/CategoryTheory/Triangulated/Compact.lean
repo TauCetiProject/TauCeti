@@ -17,13 +17,13 @@ import TauCeti.Algebra.DirectSum.Exact
 
 In a pretriangulated category `T` (with morphisms in `Type v`), the property
 `TauCeti.compactForCoproducts T` of objects compact for coproducts is closed under extensions in
-distinguished triangles (`TauCeti.IsCompactForCoproducts.of_distTriang`, via the five lemma) and
+distinguished triangles (`TauCeti.IsCompactForCoproducts.of_distTriang₃`, via the five lemma) and
 hence forms a triangulated subcategory (`(TauCeti.compactForCoproducts T).IsTriangulated`).
 
 ## Main results
 
-* `TauCeti.IsCompactForCoproducts.of_distTriang`, `TauCeti.IsCompactForCoproducts.of_distTriang₁`,
-  `TauCeti.IsCompactForCoproducts.of_distTriang₂`
+* `TauCeti.IsCompactForCoproducts.of_distTriang₁`, `TauCeti.IsCompactForCoproducts.of_distTriang₂`,
+  `TauCeti.IsCompactForCoproducts.of_distTriang₃`
 * `(TauCeti.compactForCoproducts T).IsTriangulated`
 -/
 
@@ -44,7 +44,7 @@ variable {T : Type u} [Category.{v} T] [Preadditive T] [HasZeroObject T] [HasShi
 
 /-- If the first two objects of a distinguished triangle are compact for coproducts, then so is the
 third object. -/
-theorem IsCompactForCoproducts.of_distTriang {t : Triangle T} (ht : t ∈ distTriang T)
+theorem IsCompactForCoproducts.of_distTriang₃ {t : Triangle T} (ht : t ∈ distTriang T)
     (h₁ : IsCompactForCoproducts t.obj₁) (h₂ : IsCompactForCoproducts t.obj₂) :
     IsCompactForCoproducts t.obj₃ := by
   rw [isCompactForCoproducts_iff]
@@ -92,14 +92,15 @@ is the second object. -/
 theorem IsCompactForCoproducts.of_distTriang₂ {t : Triangle T} (ht : t ∈ distTriang T)
     (h₁ : IsCompactForCoproducts t.obj₁) (h₃ : IsCompactForCoproducts t.obj₃) :
     IsCompactForCoproducts t.obj₂ :=
-  (h₃.shift (-1 : ℤ)).of_distTriang (inv_rot_of_distTriang _ ht) h₁
+  (h₃.shift (-1 : ℤ)).of_distTriang₃ (inv_rot_of_distTriang _ ht) h₁
 
 /-- If the second and third objects of a distinguished triangle are compact for coproducts, then so
 is the first object. -/
 theorem IsCompactForCoproducts.of_distTriang₁ {t : Triangle T} (ht : t ∈ distTriang T)
     (h₂ : IsCompactForCoproducts t.obj₂) (h₃ : IsCompactForCoproducts t.obj₃) :
     IsCompactForCoproducts t.obj₁ :=
-  (isCompactForCoproducts_shift_iff t.obj₁ (1 : ℤ)).1 (h₂.of_distTriang (rot_of_distTriang _ ht) h₃)
+  (isCompactForCoproducts_shift_iff t.obj₁ (1 : ℤ)).1
+    (h₂.of_distTriang₃ (rot_of_distTriang _ ht) h₃)
 
 instance : (compactForCoproducts T).IsTriangulated where
   exists_zero := ⟨0, isZero_zero T, (compactForCoproducts_iff _).2 isCompactForCoproducts_zero⟩

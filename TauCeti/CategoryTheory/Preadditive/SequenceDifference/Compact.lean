@@ -15,23 +15,18 @@ public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 This module links `CategoryTheory.Functor.sequenceDifference` with objects `A` whose corepresented
 functor `preadditiveCoyoneda.obj (op A)` preserves countable (or `X.obj`-shaped) coproducts.
 
-* `TauCeti.compactSeqDirectSumEquiv`: identifies `⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)`
-  additively with `A ⟶ ∐ X.obj`, intertwining `ModuleCat.telescopeDiff` with postcomposition by
-  `X.sequenceDifference` (`TauCeti.compactSeqDirectSumEquiv_telescopeDiff`).
-* `TauCeti.injective_comp_sequenceDifference`,
-  `TauCeti.injective_comp_shift_sequenceDifference`: postcomposition with `X.sequenceDifference`
-  and `(X.sequenceDifference)⟦(1 : ℤ)⟧'` is injective on morphisms out of `A`.
-
-## Main definitions
-
-* `TauCeti.compactSeqDirectSumEquiv`
+* `TauCeti.coprodComparisonAddEquiv_telescopeDiff`: `TauCeti.coprodComparisonAddEquiv A X.obj`
+  intertwines `ModuleCat.telescopeDiff` with postcomposition by `X.sequenceDifference`.
+* `CategoryTheory.Functor.injective_comp_sequenceDifference`,
+  `CategoryTheory.Functor.injective_comp_shift_sequenceDifference`: postcomposition with
+  `X.sequenceDifference` and `(X.sequenceDifference)⟦(1 : ℤ)⟧'` is injective on morphisms out of
+  `A`.
 
 ## Main results
 
-* `TauCeti.compactSeqDirectSumEquiv_of`, `TauCeti.compactSeqDirectSumEquiv_lof`,
-  `TauCeti.compactSeqDirectSumEquiv_telescopeDiff`
-* `TauCeti.injective_comp_sequenceDifference`,
-  `TauCeti.injective_comp_shift_sequenceDifference`
+* `TauCeti.coprodComparisonAddEquiv_telescopeDiff`
+* `CategoryTheory.Functor.injective_comp_sequenceDifference`,
+  `CategoryTheory.Functor.injective_comp_shift_sequenceDifference`
 -/
 
 public section
@@ -43,59 +38,49 @@ open scoped DirectSum
 
 universe v u
 
-namespace TauCeti
-
 section SequenceDifferenceCompact
 
 variable {T : Type u} [Category.{v} T] [Preadditive T]
 
-/-- For `A` such that `Hom(A, -)` preserves `∐ X.obj`, the composite additive equivalence
-identifying the telescope domain `⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)` with
-`A ⟶ ∐ X.obj`. -/
-def compactSeqDirectSumEquiv (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
-    [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))] :
-    (⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) ≃+ (A ⟶ ∐ X.obj) :=
-  AddEquiv.ofBijective (coprodComparisonAddHom A X.obj)
-    ((preservesColimit_discrete_preadditiveCoyoneda_iff A X.obj).1 inferInstance)
+namespace TauCeti
 
-theorem compactSeqDirectSumEquiv_of (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
-    [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))]
-    (n : ℕ) (g : ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) :
-    compactSeqDirectSumEquiv A X
-        (DirectSum.of (fun k ↦ ↑((X ⋙ preadditiveCoyonedaObj A).obj k)) n g) =
-      (g : A ⟶ X.obj n) ≫ Sigma.ι X.obj n :=
-  coprodComparisonAddHom_of A X.obj n g
-
-theorem compactSeqDirectSumEquiv_lof (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
-    [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))]
-    (n : ℕ) (g : ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) :
-    compactSeqDirectSumEquiv A X
-        (DirectSum.lof (End A)ᵐᵒᵖ ℕ (fun k ↦ ↑((X ⋙ preadditiveCoyonedaObj A).obj k)) n g) =
-      (g : A ⟶ X.obj n) ≫ Sigma.ι X.obj n := by
-  rw [DirectSum.lof_eq_of, compactSeqDirectSumEquiv_of]
-
-/-- Under `compactSeqDirectSumEquiv A X`, `ModuleCat.telescopeDiff` on
+/-- Under `coprodComparisonAddEquiv A X.obj`, `ModuleCat.telescopeDiff` on
 `X ⋙ preadditiveCoyonedaObj A` corresponds to postcomposition with `X.sequenceDifference`. -/
-theorem compactSeqDirectSumEquiv_telescopeDiff (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
+theorem coprodComparisonAddEquiv_telescopeDiff (A : T) (X : ℕ ⥤ T) [HasCoproduct X.obj]
     [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))]
-    (a : ⨁ n, ↑((X ⋙ preadditiveCoyonedaObj A).obj n)) :
-    compactSeqDirectSumEquiv A X (ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A) a) =
-      compactSeqDirectSumEquiv A X a ≫ X.sequenceDifference := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of n g =>
-    let g' : A ⟶ X.obj n := g
-    have hsub : (g' ≫ Sigma.ι X.obj n) ≫ X.sequenceDifference =
-        g' ≫ Sigma.ι X.obj n -
-          (g' ≫ X.map (homOfLE (n.le_add_right 1))) ≫ Sigma.ι X.obj (n + 1) := by
-      rw [Category.assoc, X.ι_sequenceDifference, Preadditive.comp_sub, Category.assoc]
-    rw [← DirectSum.lof_eq_of (End A)ᵐᵒᵖ, ModuleCat.telescopeDiff_lof, map_sub]
-    refine (congrArg₂ (· - ·) (compactSeqDirectSumEquiv_lof A X n g)
-      (compactSeqDirectSumEquiv_lof A X (n + 1) _)).trans ?_
-    exact hsub.symm.trans (congrArg (· ≫ X.sequenceDifference)
-      (compactSeqDirectSumEquiv_of A X n g).symm)
-  | add a b ha hb =>
-    rw [map_add, map_add, map_add, Preadditive.add_comp, ha, hb]
+    (a : ⨁ n, (A ⟶ X.obj n)) :
+    coprodComparisonAddEquiv A X.obj (ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A) a) =
+      coprodComparisonAddEquiv A X.obj a ≫ X.sequenceDifference := by
+  -- Wrap `ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A)` at `⨁ n, (A ⟶ X.obj n)` so
+  -- `DirectSum.induction_on` sees the same `AddCommMonoid` instance as `coprodComparisonAddEquiv`.
+  let D : (⨁ n, (A ⟶ X.obj n)) →+ (⨁ n, (A ⟶ X.obj n)) :=
+    { toFun := ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A)
+      map_zero' := (ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A)).map_zero
+      map_add' := (ModuleCat.telescopeDiff (X ⋙ preadditiveCoyonedaObj A)).map_add }
+  have h : coprodComparisonAddEquiv A X.obj (D a) =
+      coprodComparisonAddEquiv A X.obj a ≫ X.sequenceDifference := by
+    induction a using DirectSum.induction_on with
+    | zero => simp
+    | of n g =>
+      have hD : D (DirectSum.of (fun k ↦ A ⟶ X.obj k) n g) =
+          DirectSum.of (fun k ↦ A ⟶ X.obj k) n g -
+            DirectSum.of (fun k ↦ A ⟶ X.obj k) (n + 1)
+              (g ≫ X.map (homOfLE (n.le_add_right 1))) := by
+        have hlof := ModuleCat.telescopeDiff_lof (X ⋙ preadditiveCoyonedaObj A) n g
+        simp only [DirectSum.lof_eq_of] at hlof
+        exact hlof
+      have hsub : (g ≫ Sigma.ι X.obj n) ≫ X.sequenceDifference =
+          g ≫ Sigma.ι X.obj n -
+            (g ≫ X.map (homOfLE (n.le_add_right 1))) ≫ Sigma.ι X.obj (n + 1) := by
+        rw [Category.assoc, X.ι_sequenceDifference, Preadditive.comp_sub, Category.assoc]
+      rw [hD, map_sub, coprodComparisonAddEquiv_of, coprodComparisonAddEquiv_of]
+      exact hsub.symm
+    | add a b ha hb => simp [map_add, ha, hb, Preadditive.add_comp]
+  exact h
+
+end TauCeti
+
+namespace CategoryTheory.Functor
 
 /-- If `Hom(A, -)` preserves `∐ X.obj`, then postcomposition with `X.sequenceDifference` is
 injective on `A ⟶ ∐ X.obj`. -/
@@ -103,12 +88,13 @@ theorem injective_comp_sequenceDifference {A : T} (X : ℕ ⥤ T) [HasCoproduct 
     [PreservesColimit (Discrete.functor X.obj) (preadditiveCoyoneda.obj (op A))] :
     Function.Injective (fun g : A ⟶ ∐ X.obj ↦ g ≫ X.sequenceDifference) := fun g₁ g₂ hg ↦ by
   dsimp only at hg
-  obtain ⟨a₁, rfl⟩ := (compactSeqDirectSumEquiv A X).surjective g₁
-  obtain ⟨a₂, rfl⟩ := (compactSeqDirectSumEquiv A X).surjective g₂
-  rw [← compactSeqDirectSumEquiv_telescopeDiff, ← compactSeqDirectSumEquiv_telescopeDiff] at hg
-  exact congrArg (compactSeqDirectSumEquiv A X) <|
+  obtain ⟨a₁, rfl⟩ := (TauCeti.coprodComparisonAddEquiv A X.obj).surjective g₁
+  obtain ⟨a₂, rfl⟩ := (TauCeti.coprodComparisonAddEquiv A X.obj).surjective g₂
+  rw [← TauCeti.coprodComparisonAddEquiv_telescopeDiff,
+    ← TauCeti.coprodComparisonAddEquiv_telescopeDiff] at hg
+  exact congrArg (TauCeti.coprodComparisonAddEquiv A X.obj) <|
     ModuleCat.telescopeDiff_injective (X ⋙ preadditiveCoyonedaObj A)
-      ((compactSeqDirectSumEquiv A X).injective hg)
+      ((TauCeti.coprodComparisonAddEquiv A X.obj).injective hg)
 
 section Shift
 
@@ -122,7 +108,7 @@ theorem injective_comp_shift_sequenceDifference {A : T} (X : ℕ ⥤ T) [HasCopr
     Function.Injective (fun g : A ⟶ (∐ X.obj)⟦(1 : ℤ)⟧ ↦
       g ≫ (X.sequenceDifference)⟦(1 : ℤ)⟧') := fun g₁ g₂ hg ↦ by
   dsimp only at hg
-  have := preservesColimitsOfShape_preadditiveCoyoneda_shift (Discrete ℕ) A (-1 : ℤ)
+  have := TauCeti.preservesColimitsOfShape_preadditiveCoyoneda_shift (Discrete ℕ) A (-1 : ℤ)
   let ε := (shiftFunctorCompIsoId T (1 : ℤ) (-1 : ℤ) (add_neg_cancel 1)).hom
   have hnat : ((X.sequenceDifference)⟦(1 : ℤ)⟧')⟦(-1 : ℤ)⟧' ≫ ε.app (∐ X.obj) =
       ε.app (∐ X.obj) ≫ X.sequenceDifference := ε.naturality _
@@ -131,10 +117,10 @@ theorem injective_comp_shift_sequenceDifference {A : T} (X : ℕ ⥤ T) [HasCopr
     rw [Category.assoc, ← hnat, ← Functor.map_comp_assoc, hg, Functor.map_comp_assoc, hnat,
       ← Category.assoc]
   exact (shiftFunctor T (-1 : ℤ)).map_injective
-    ((cancel_mono (ε.app (∐ X.obj))).1 (injective_comp_sequenceDifference X h1))
+    ((cancel_mono (ε.app (∐ X.obj))).1 (X.injective_comp_sequenceDifference h1))
 
 end Shift
 
-end SequenceDifferenceCompact
+end CategoryTheory.Functor
 
-end TauCeti
+end SequenceDifferenceCompact

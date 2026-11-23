@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Category.ModuleCat.Products
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 
+import TauCeti.CategoryTheory.ConcreteCategory.Basic
+
 /-!
 # Sequence–difference maps and `ModuleCat`-valued contravariant functors
 
@@ -25,7 +27,6 @@ with `ModuleTower.shift` on `X.op ⋙ F` (respectively `(X ⋙ shiftFunctor T (1
 
 ## Main results
 
-* `CategoryTheory.Functor.map_op_comp_apply`
 * `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_of_isColimit`,
   `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_sequenceDifference`,
   `CategoryTheory.Functor.cofanOpToPiLinearEquiv_map_shift_sequenceDifference`
@@ -40,19 +41,6 @@ open CategoryTheory CategoryTheory.Limits Opposite TauCeti
 universe uR s v u
 
 namespace CategoryTheory.Functor
-
-section ConcreteApply
-
-/-- Evaluating `F.map (f ≫ g).op` on `u` for a contravariant functor `F : Tᵒᵖ ⥤ D` into a concrete
-category equals `F.map f.op (F.map g.op u)`. -/
-theorem map_op_comp_apply {T : Type*} [Category T] {D : Type*} [Category D]
-    {FD : D → D → Type*} {CD : D → Type*} [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)]
-    [ConcreteCategory D FD] (F : Tᵒᵖ ⥤ D) {X Y Z : T} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (u : CD (F.obj (op Z))) :
-    F.map (f ≫ g).op u = F.map f.op (F.map g.op u) := by
-  rw [op_comp, F.map_comp, CategoryTheory.comp_apply]
-
-end ConcreteApply
 
 section ModuleCatSequenceDifference
 

@@ -38,17 +38,16 @@ namespace AddCommGrpCat
 variable {J : Type w} (f : J → AddCommGrpCat.{max w u}) [DecidableEq J]
 
 /-- The coproduct cofan on a family of abelian groups given by their external direct sum. -/
+@[expose]
 def coproductCocone : Cofan f :=
   Cofan.mk (of (⨁ j, f j)) fun j ↦ ofHom (DirectSum.of (fun j ↦ f j) j)
 
 @[simp]
-theorem coproductCocone_pt : (coproductCocone f).pt = of (⨁ j, f j) := by rfl
+theorem coproductCocone_pt : (coproductCocone f).pt = of (⨁ j, f j) := (rfl)
 
 @[simp]
 theorem coproductCocone_inj (j : J) :
-    (coproductCocone f).inj j ≫ eqToHom (coproductCocone_pt f) =
-      ofHom (DirectSum.of (fun j ↦ f j) j) := by
-  simp [coproductCocone]
+    (coproductCocone f).inj j = ofHom (DirectSum.of (fun j ↦ f j) j) := (rfl)
 
 /-- The external direct sum, with its canonical summand inclusions `DirectSum.of`, is a coproduct
 in `AddCommGrpCat`. -/
@@ -61,41 +60,35 @@ noncomputable def coproductCoconeIsColimit : IsColimit (coproductCocone f) :=
   IsColimit.ofIsoColimit ((IsColimit.precomposeInvEquiv iso _).symm hcM) <|
     Cocone.ext (Iso.refl _) fun ⟨j⟩ ↦ by
       ext x
-      change DirectSum.lof ℤ J (fun j ↦ f j) j x = DirectSum.of (fun j ↦ f j) j x
+      simp only [iso, F, Functor.mapCocone_ι_app, Cocone.precompose_obj_ι, NatTrans.comp_app,
+        Discrete.natIso_inv_app, Iso.refl_hom, Category.comp_id, ModuleCat.coproductCocone,
+        Cofan.mk_ι_app, coproductCocone]
       exact DirectSum.lof_eq_of ℤ J (fun j ↦ f j) j x
 
 @[simp]
 theorem coproductCoconeIsColimit_desc (s : Cofan f) :
-    eqToHom (coproductCocone_pt f).symm ≫ (coproductCoconeIsColimit f).desc s =
+    (coproductCoconeIsColimit f).desc s =
       ofHom (DirectSum.toAddMonoid fun j ↦ (s.ι.app ⟨j⟩).hom) := by
   refine hom_ext <| DirectSum.addHom_ext fun j x ↦ ?_
   have hfac := congrArg (fun φ : f j ⟶ s.pt ↦ φ x) ((coproductCoconeIsColimit f).fac s ⟨j⟩)
-  have hinj : (coproductCocone f).inj j =
-      ofHom (DirectSum.of (fun j ↦ f j) j) ≫ eqToHom (coproductCocone_pt f).symm := by
-    rw [← coproductCocone_inj f j, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
-  rw [Cofan.inj] at hinj
-  simpa [hinj, DirectSum.toAddMonoid_of] using hfac
+  simpa only [hom_comp, AddMonoidHom.coe_comp, Function.comp_apply, coproductCocone,
+    Cofan.mk_ι_app, hom_ofHom, DirectSum.toAddMonoid_of] using hfac
 
 variable [HasCoproduct f]
 
 /-- The categorical coproduct of a family of abelian groups is isomorphic to their external direct
 sum. -/
 noncomputable def coprodIsoDirectSum : ∐ f ≅ of (⨁ j, f j) :=
-  colimit.isoColimitCocone ⟨_, coproductCoconeIsColimit f⟩ ≪≫ eqToIso (coproductCocone_pt f)
+  colimit.isoColimitCocone ⟨_, coproductCoconeIsColimit f⟩
 
 @[reassoc (attr := simp), elementwise (attr := simp)]
 theorem ι_coprodIsoDirectSum_hom (j : J) :
-    Sigma.ι f j ≫ (coprodIsoDirectSum f).hom = ofHom (DirectSum.of (fun j ↦ f j) j) := by
-  simp only [coprodIsoDirectSum, Iso.trans_hom, eqToIso.hom,
-    colimit.isoColimitCocone_ι_hom_assoc]
-  exact coproductCocone_inj f j
+    Sigma.ι f j ≫ (coprodIsoDirectSum f).hom = ofHom (DirectSum.of (fun j ↦ f j) j) :=
+  colimit.isoColimitCocone_ι_hom ⟨_, coproductCoconeIsColimit f⟩ ⟨j⟩
 
 @[reassoc (attr := simp), elementwise (attr := simp)]
 theorem of_coprodIsoDirectSum_inv (j : J) :
-    ofHom (DirectSum.of (fun j ↦ f j) j) ≫ (coprodIsoDirectSum f).inv = Sigma.ι f j := by
-  rw [← coproductCocone_inj f j, Category.assoc]
-  simp only [coprodIsoDirectSum, Iso.trans_inv, eqToIso.inv, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp]
-  exact (coproductCoconeIsColimit f).comp_coconePointUniqueUpToIso_hom (colimit.isColimit _) ⟨j⟩
+    ofHom (DirectSum.of (fun j ↦ f j) j) ≫ (coprodIsoDirectSum f).inv = Sigma.ι f j :=
+  (coproductCoconeIsColimit f).comp_coconePointUniqueUpToIso_hom (colimit.isColimit _) ⟨j⟩
 
 end AddCommGrpCat

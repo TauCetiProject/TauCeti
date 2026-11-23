@@ -11,6 +11,7 @@ public import TauCeti.CategoryTheory.Triangulated.HomotopyColimit
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import Mathlib.CategoryTheory.Triangulated.Opposite.Pretriangulated
 import TauCeti.Algebra.Category.Grp.Products
+import TauCeti.CategoryTheory.ConcreteCategory.Basic
 
 /-!
 # Cellular approximation in pretriangulated categories with coproducts
@@ -19,14 +20,13 @@ For a `Type v`-indexed family `G : I → T` of objects compact for coproducts
 (`TauCeti.IsCompactForCoproducts`) and a contravariant homological functor
 `E : Tᵒᵖ ⥤ AddCommGrpCat.{v}` sending `Type v`-indexed coproducts to products, we construct a
 cellular approximation `R` in `TauCeti.InCellClosure G` with a cohomology class `x : E.obj (op R)`
-inducing bijections `(G i ⟶ R) ≃ E.obj (op (G i))` (`TauCeti.cellularApproximation`).
-Specializing to `preadditiveYoneda.obj Y` yields `TauCeti.cellularApproximation_obj`, without
-requiring `IsTriangulated T`.
+inducing bijections `(G i ⟶ R) ≃ E.obj (op (G i))`
+(`TauCeti.exists_inCellClosure_bijective_map_op`). Specializing to `preadditiveYoneda.obj Y` yields
+`TauCeti.exists_inCellClosure_bijective_comp`, without requiring `IsTriangulated T`.
 
 ## Main results
 
-* `TauCeti.cellularApproximation`, `TauCeti.cellularApproximation_obj`,
-  `TauCeti.cellularApproximation_of_subsingleton`
+* `TauCeti.exists_inCellClosure_bijective_map_op`, `TauCeti.exists_inCellClosure_bijective_comp`
 
 ## References
 
@@ -100,7 +100,7 @@ private def approxStep (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHo
   let δ : nextObj ⟶ (∐ g)⟦(1 : ℤ)⟧ := htri.choose_spec.choose_spec.choose
   have ht : Triangle.mk k j δ ∈ distTriang T := htri.choose_spec.choose_spec.choose_spec
   have hcell : InCellClosure G nextObj :=
-    InCellClosure.of_distTriang ht
+    InCellClosure.of_distTriang₃ ht
       (InCellClosure.coproduct g fun p ↦ InCellClosure.generator G p.1) s.cell
   have hk0 : E.map k.op s.pt = 0 := by
     have := hE K
@@ -128,7 +128,7 @@ spectra*, Chapter II, Proposition 5.14): for any small family `G : I → T` of c
 any contravariant homological functor `E : Tᵒᵖ ⥤ AddCommGrpCat.{v}` sending `Type v`-indexed
 coproducts to products, there exist `R` in the cellular closure of `G` and `x : E.obj (op R)` such
 that evaluation `f ↦ E.map f.op x` is bijective on `G i ⟶ R` for every `i`. -/
-theorem cellularApproximation (G : I → T) (hG : ∀ i, IsCompactForCoproducts (G i))
+theorem exists_inCellClosure_bijective_map_op (G : I → T) (hG : ∀ i, IsCompactForCoproducts (G i))
     (E : Tᵒᵖ ⥤ AddCommGrpCat.{v}) [E.IsHomological]
     (hE : ∀ J : Type v, PreservesLimitsOfShape (Discrete J) E) :
     ∃ R : T, InCellClosure G R ∧ ∃ x : E.obj (op R),
@@ -167,20 +167,11 @@ theorem cellularApproximation (G : I → T) (hG : ∀ i, IsCompactForCoproducts 
 /-- **Cellular approximation of an object:** for a small family `G` of compact objects and any
 object `Y : T`, there exist an object `R` in `InCellClosure G` and a morphism `u : R ⟶ Y` inducing
 bijections `(G i ⟶ R) → (G i ⟶ Y)` by postcomposition for every `i`. -/
-theorem cellularApproximation_obj (G : I → T) (hG : ∀ i, IsCompactForCoproducts (G i)) (Y : T) :
+theorem exists_inCellClosure_bijective_comp (G : I → T) (hG : ∀ i, IsCompactForCoproducts (G i))
+    (Y : T) :
     ∃ R : T, InCellClosure G R ∧ ∃ u : R ⟶ Y,
       ∀ i, Function.Bijective (fun f : G i ⟶ R ↦ f ≫ u) :=
-  cellularApproximation G hG (preadditiveYoneda.obj Y) fun _ ↦ inferInstance
-
-/-- For a subsingleton (for instance zero) contravariant functor, the zero object and its zero
-class provide a cellular approximation directly without compactness or exactness hypotheses. -/
-theorem cellularApproximation_of_subsingleton (G : I → T) (E : Tᵒᵖ ⥤ AddCommGrpCat.{v})
-    [∀ X, Subsingleton (E.obj X)] :
-    InCellClosure G (0 : T) ∧
-      ∀ i, Function.Bijective (fun f : G i ⟶ (0 : T) ↦ E.map f.op (0 : E.obj (op 0))) := by
-  refine ⟨InCellClosure.zero G, fun i ↦ ?_⟩
-  have : Subsingleton (G i ⟶ (0 : T)) := ⟨fun f g ↦ (isZero_zero T).eq_of_tgt f g⟩
-  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun y ↦ ⟨0, Subsingleton.elim _ y⟩⟩
+  exists_inCellClosure_bijective_map_op G hG (preadditiveYoneda.obj Y) fun _ ↦ inferInstance
 
 end CellularApproximation
 

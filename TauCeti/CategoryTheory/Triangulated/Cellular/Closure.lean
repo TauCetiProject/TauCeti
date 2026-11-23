@@ -9,6 +9,9 @@ public import Mathlib.CategoryTheory.Triangulated.HomologicalFunctor
 public import TauCeti.CategoryTheory.Preadditive.SequenceDifference.Basic
 public import TauCeti.CategoryTheory.Triangulated.LocalizingClosure
 
+import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
+import Mathlib.CategoryTheory.Triangulated.Yoneda
+
 /-!
 # Cellular closure in pretriangulated categories with coproducts
 
@@ -24,10 +27,11 @@ We establish:
    (`InCellClosure.of_milnorTriangle`).
 2. Characterization of the empty-family closure (`inCellClosure_empty_iff`) and containment in the
    localizing closure (`inCellClosure_le_localizingClosure`).
-3. Negative-shift obstructions (`hom_shift_eq_zero_of_inCellClosure`,
-   `not_inCellClosure_shift_neg_one_of_hom`,
-   `CategoryTheory.Functor.isZero_obj_shift_of_inCellClosure`,
-   `CategoryTheory.Functor.not_inCellClosure_shift_neg_one`).
+3. Negative-shift obstructions (`CategoryTheory.Functor.isZero_obj_shift_of_inCellClosure`,
+   `CategoryTheory.Functor.isZero_obj_op_shift_of_inCellClosure`,
+   `CategoryTheory.Functor.not_inCellClosure_shift_neg_one`,
+   `hom_shift_eq_zero_of_inCellClosure`,
+   `not_inCellClosure_shift_neg_one_of_hom`).
 
 ## Main definitions
 
@@ -38,9 +42,10 @@ We establish:
 * `TauCeti.InCellClosure.induction_on`, `TauCeti.InCellClosure.shift_nat`,
   `TauCeti.InCellClosure.of_milnorTriangle`, `TauCeti.inCellClosure_empty_iff`,
   `TauCeti.inCellClosure_le_localizingClosure`
-* `TauCeti.hom_shift_eq_zero_of_inCellClosure`,
-  `CategoryTheory.Functor.isZero_obj_shift_of_inCellClosure`,
-  `CategoryTheory.Functor.not_inCellClosure_shift_neg_one`
+* `CategoryTheory.Functor.isZero_obj_shift_of_inCellClosure`,
+  `CategoryTheory.Functor.isZero_obj_op_shift_of_inCellClosure`,
+  `CategoryTheory.Functor.not_inCellClosure_shift_neg_one`,
+  `TauCeti.hom_shift_eq_zero_of_inCellClosure`
 
 ## References
 
@@ -115,7 +120,7 @@ theorem InCellClosure.zero (G : I → T) : InCellClosure G (0 : T) :=
 
 /-- `InCellClosure G` is closed under taking the third object (cone) of a distinguished triangle
 whose first two objects lie in `InCellClosure G`. -/
-theorem InCellClosure.of_distTriang {t : Triangle T} (ht : t ∈ distTriang T)
+theorem InCellClosure.of_distTriang₃ {t : Triangle T} (ht : t ∈ distTriang T)
     (h₁ : InCellClosure G t.obj₁) (h₂ : InCellClosure G t.obj₂) : InCellClosure G t.obj₃ :=
   fun P hgen hiso hcop htri ↦ htri t ht (h₁ P hgen hiso hcop htri) (h₂ P hgen hiso hcop htri)
 
@@ -123,7 +128,7 @@ theorem InCellClosure.of_distTriang {t : Triangle T} (ht : t ∈ distTriang T)
 `R ⟶ 0`). -/
 theorem InCellClosure.shift_one {R : T} (hR : InCellClosure G R) :
     InCellClosure G (R⟦(1 : ℤ)⟧) :=
-  InCellClosure.of_distTriang (contractible_distinguished₂ R) hR (InCellClosure.zero G)
+  InCellClosure.of_distTriang₃ (contractible_distinguished₂ R) hR (InCellClosure.zero G)
 
 /-- `InCellClosure G` is closed under nonnegative integer shifts `⟦(n : ℤ)⟧`. -/
 theorem InCellClosure.shift_nat {R : T} (hR : InCellClosure G R) :
@@ -139,7 +144,7 @@ theorem InCellClosure.of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M 
     (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
     (hX : ∀ n, InCellClosure G (X.obj n)) : InCellClosure G M := by
   have hS : InCellClosure G (∐ X.obj) := InCellClosure.coproduct_of_small X.obj hX
-  exact InCellClosure.of_distTriang ht hS hS
+  exact InCellClosure.of_distTriang₃ ht hS hS
 
 /-- Monotonicity of `InCellClosure` up to isomorphism of generators. -/
 theorem InCellClosure.mono {I' : Type v} {G' : I' → T}
@@ -149,7 +154,7 @@ theorem InCellClosure.mono {I' : Type v} {G' : I' → T}
     (fun i ↦ let ⟨j, ⟨e⟩⟩ := h i; (InCellClosure.generator G' j).of_iso e.symm)
     (fun e hA ↦ hA.of_iso e)
     (fun _ f hf ↦ InCellClosure.coproduct f hf)
-    (fun _ ht h₁ h₂ ↦ InCellClosure.of_distTriang ht h₁ h₂)
+    (fun _ ht h₁ h₂ ↦ InCellClosure.of_distTriang₃ ht h₁ h₂)
 
 /-- Inclusion of generator ranges implies inclusion of cellular closures. -/
 theorem InCellClosure.of_range_subset {I' : Type v} {G' : I' → T}
@@ -182,39 +187,6 @@ theorem inCellClosure_le_localizingClosure (G : I → T) :
     (fun e hA ↦ ObjectProperty.prop_of_iso _ e hA)
     (fun _ f hf ↦ ObjectProperty.prop_colimit _ (Discrete.functor f) fun ⟨j⟩ ↦ hf j)
     (fun t ht h₁ h₂ ↦ ObjectProperty.ext_of_isTriangulatedClosed₃ _ t ht h₁ h₂)
-
-/-- If every morphism from `(G i)⟦k⟧` to `W` vanishes for all `k > n`, then the same holds for
-every object `R` in `InCellClosure G`. -/
-theorem hom_shift_eq_zero_of_inCellClosure (W : T) (n : ℤ)
-    (hG : ∀ i, ∀ k : ℤ, n < k → ∀ g : (G i)⟦k⟧ ⟶ W, g = 0) {R : T}
-    (hR : InCellClosure G R) : ∀ k : ℤ, n < k → ∀ g : R⟦k⟧ ⟶ W, g = 0 := by
-  refine hR.induction_on (P := fun A ↦ ∀ k : ℤ, n < k → ∀ g : A⟦k⟧ ⟶ W, g = 0) hG ?_ ?_ ?_
-  · intro A B e hA k hk g
-    exact (cancel_epi (e.hom⟦k⟧')).1 (by rw [comp_zero]; exact hA k hk (e.hom⟦k⟧' ≫ g))
-  · intro J f hf k hk g
-    refine (isColimitOfPreserves (shiftFunctor T k) (coproductIsCoproduct f)).hom_ext fun ⟨j⟩ ↦ ?_
-    dsimp only [Functor.mapCocone_ι_app, Cofan.mk_ι_app]
-    rw [comp_zero]; exact hf j k hk ((Sigma.ι f j)⟦k⟧' ≫ g)
-  · intro t ht h₁ h₂ k hk g
-    let ts := (CategoryTheory.shiftFunctor (Triangle T) k).obj t
-    have hts : ts ∈ distTriang T := t.shift_distinguished ht k
-    obtain ⟨h, rfl⟩ := ts.yoneda_exact₃ hts g (h₂ k hk (ts.mor₂ ≫ g))
-    let e : t.obj₁⟦k + 1⟧ ≅ (t.obj₁⟦k⟧)⟦(1 : ℤ)⟧ := (shiftFunctorAdd T k 1).app t.obj₁
-    let h' : (t.obj₁⟦k⟧)⟦(1 : ℤ)⟧ ⟶ W := h
-    have hh : e.hom ≫ h' = 0 := h₁ (k + 1) (by omega) (e.hom ≫ h')
-    have hh0 : h' = 0 := (cancel_epi e.hom).1 (hh.trans comp_zero.symm)
-    exact (congrArg (ts.mor₃ ≫ ·) hh0).trans comp_zero
-
-/-- If `X` is nonzero and `Hom(X⟦k⟧, X) = 0` for all `k > 0`, then the negative shift
-`X⟦-1⟧` does not belong to the cellular closure of `{X}`. -/
-theorem not_inCellClosure_shift_neg_one_of_hom {X : T} (hX : ¬ IsZero X)
-    (hpos : ∀ k : ℤ, 0 < k → ∀ g : X⟦k⟧ ⟶ X, g = 0) :
-    ¬ InCellClosure (fun _ : PUnit.{v + 1} ↦ X) (X⟦(-1 : ℤ)⟧) := by
-  intro hmem
-  let e : (X⟦(-1 : ℤ)⟧)⟦(1 : ℤ)⟧ ≅ X := (shiftEquiv T (1 : ℤ)).counitIso.app X
-  have he : e.hom = 0 :=
-    hom_shift_eq_zero_of_inCellClosure X 0 (fun _ ↦ hpos) hmem 1 zero_lt_one e.hom
-  exact hX ((IsZero.iff_id_eq_zero X).2 (by rw [← e.inv_hom_id, he, comp_zero]))
 
 end CellClosure
 
@@ -251,6 +223,34 @@ theorem isZero_obj_shift_of_inCellClosure {A : Type*} [Category A] [Abelian A] (
     have hZ₂ : IsZero (H.obj (t.obj₂⟦k⟧)) := h₂ k hk
     exact (H.map_distinguished_exact _ hrot).isZero_of_both_isZero hZ₂ hZ₁
 
+open CategoryTheory.Pretriangulated.Opposite in
+/-- If a contravariant homological functor `E : Tᵒᵖ ⥤ A` sending `Type v`-indexed coproducts to
+products vanishes on `(G i)⟦k⟧` for all `k > n`, then `E.obj (op (R⟦k⟧))` vanishes for every
+`R` in `TauCeti.InCellClosure G` and all `k > n`. -/
+theorem isZero_obj_op_shift_of_inCellClosure {A : Type*} [Category A] [Abelian A] (E : Tᵒᵖ ⥤ A)
+    [E.IsHomological] (hE : ∀ J : Type v, PreservesLimitsOfShape (Discrete J) E) (n : ℤ)
+    (hG : ∀ i, ∀ k : ℤ, n < k → IsZero (E.obj (op ((G i)⟦k⟧)))) {R : T}
+    (hR : TauCeti.InCellClosure G R) : ∀ k : ℤ, n < k → IsZero (E.obj (op (R⟦k⟧))) := by
+  refine hR.induction_on (P := fun B ↦ ∀ k : ℤ, n < k → IsZero (E.obj (op (B⟦k⟧)))) hG ?_ ?_ ?_
+  · intro B₁ B₂ e hB k hk
+    exact (hB k hk).of_iso (E.mapIso ((shiftFunctor T k).mapIso e).op)
+  · intro J f hf k hk
+    have := hE J
+    have : PreservesLimitsOfShape (Discrete J)ᵒᵖ E :=
+      preservesLimitsOfShape_of_equiv (Discrete.opposite J).symm E
+    have hl :
+        IsLimit (E.mapCone ((shiftFunctor T k).mapCocone (Cofan.mk (∐ f) (Sigma.ι f))).op) :=
+      isLimitOfPreserves E
+        (isColimitOfPreserves (shiftFunctor T k) (coproductIsCoproduct f)).op
+    exact hl.isZero_pt ((Functor.isZero_iff _).2 fun j ↦ hf j.unop.as k hk)
+  · intro t ht h₁ h₂ k hk
+    let ts := (CategoryTheory.shiftFunctor (Triangle T) k).obj t
+    have hrot : ts.rotate ∈ distTriang T := rot_of_distTriang _ (t.shift_distinguished ht k)
+    have hZ₁ : IsZero (E.obj (op ((t.obj₁⟦k⟧)⟦(1 : ℤ)⟧))) :=
+      (h₁ (k + 1) (by omega)).of_iso (E.mapIso ((shiftFunctorAdd T k 1).app t.obj₁).op)
+    have hZ₂ : IsZero (E.obj (op (t.obj₂⟦k⟧))) := h₂ k hk
+    exact (E.map_distinguished_op_exact _ hrot).isZero_of_both_isZero hZ₁ hZ₂
+
 /-- If a coproduct-preserving homological functor `H : T ⥤ A` is nonzero on `X` and vanishes on
 `X⟦k⟧` for all `k > 0`, then `X⟦-1⟧` does not lie in the cellular closure of `{X}`. -/
 theorem not_inCellClosure_shift_neg_one {X : T} {A : Type*} [Category A] [Abelian A] (H : T ⥤ A)
@@ -265,3 +265,40 @@ theorem not_inCellClosure_shift_neg_one {X : T} {A : Type*} [Category A] [Abelia
 end
 
 end CategoryTheory.Functor
+
+namespace TauCeti
+
+section CellClosure
+
+variable {T : Type u} [Category.{v} T] [Preadditive T] [HasZeroObject T] [HasShift T ℤ]
+  [∀ n : ℤ, (shiftFunctor T n).Additive] [Pretriangulated T] [HasCoproducts.{v} T]
+  {I : Type v} {G : I → T}
+
+/-- If every morphism from `(G i)⟦k⟧` to `W` vanishes for all `k > n`, then the same holds for
+every object `R` in `InCellClosure G`. -/
+theorem hom_shift_eq_zero_of_inCellClosure (W : T) (n : ℤ)
+    (hG : ∀ i, ∀ k : ℤ, n < k → ∀ g : (G i)⟦k⟧ ⟶ W, g = 0) {R : T}
+    (hR : InCellClosure G R) : ∀ k : ℤ, n < k → ∀ g : R⟦k⟧ ⟶ W, g = 0 := by
+  have hZ := (preadditiveYoneda.obj W).isZero_obj_op_shift_of_inCellClosure
+    (fun _ ↦ inferInstance) n
+    (fun i k hk ↦ (IsZero.iff_id_eq_zero _).2 (AddCommGrpCat.ext fun g ↦ hG i k hk g)) hR
+  intro k hk g
+  have h := ConcreteCategory.congr_hom ((hZ k hk).eq_of_tgt (𝟙 _) 0) g
+  simp only [preadditiveYoneda, preadditiveYonedaObj, Functor.comp_obj, ModuleCat.forget₂_obj,
+    AddCommGrpCat.hom_id] at h
+  exact h
+
+/-- If `X` is nonzero and `Hom(X⟦k⟧, X) = 0` for all `k > 0`, then the negative shift
+`X⟦-1⟧` does not belong to the cellular closure of `{X}`. -/
+theorem not_inCellClosure_shift_neg_one_of_hom {X : T} (hX : ¬ IsZero X)
+    (hpos : ∀ k : ℤ, 0 < k → ∀ g : X⟦k⟧ ⟶ X, g = 0) :
+    ¬ InCellClosure (fun _ : PUnit.{v + 1} ↦ X) (X⟦(-1 : ℤ)⟧) := by
+  intro hmem
+  let e : (X⟦(-1 : ℤ)⟧)⟦(1 : ℤ)⟧ ≅ X := (shiftEquiv T (1 : ℤ)).counitIso.app X
+  have he : e.hom = 0 :=
+    hom_shift_eq_zero_of_inCellClosure X 0 (fun _ ↦ hpos) hmem 1 zero_lt_one e.hom
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by rw [← e.inv_hom_id, he, comp_zero]))
+
+end CellClosure
+
+end TauCeti

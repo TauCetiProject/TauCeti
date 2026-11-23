@@ -142,6 +142,12 @@ lemma sequenceDifference_desc_ι_app (c : Cocone X) :
   ext n
   simp [ι_sequenceDifference_assoc, c.w]
 
+private lemma coneOfTowerDifference_unop_ι_app {A : Tᵒᵖ}
+    (ι : A ⟶ ∏ᶜ fun n : ℕ ↦ op (X.obj n)) (w : ι ≫ X.op.towerDifference = 0) (n : ℕ) :
+    (X.op.coneOfTowerDifference ι w).unop.ι.app n =
+      eqToHom (congrArg X.obj (unop_op n).symm) ≫ (ι ≫ Pi.π _ n).unop := by
+  simp [Cone.unop_ι]
+
 variable {X} in
 /-- A cokernel of the sequence–difference map is a colimit of the sequence: the colimit of a
 sequence is the quotient of `∐ X.obj` by the image of `1 - s`. -/
@@ -154,22 +160,16 @@ def isColimitCoconeOfSequenceDifference {c : CokernelCofork X.sequenceDifference
   let ιOp := c.π.op ≫ (opCoproductIsoProduct X.obj).hom
   have hιOp : ιOp ≫ X.op.towerDifference = 0 :=
     X.towerDifference_eq_zero_of_sequenceDifference_comp_eq_zero c.condition
-  let kf : KernelFork (X.op.towerDifference : (∏ᶜ fun n : ℕ ↦ op (X.obj n)) ⟶ _) :=
-    KernelFork.ofι ιOp hιOp
-  have hfork : IsLimit kf :=
-    IsKernel.ofIso _ hforkOp kf (opCoproductIsoProduct X.obj) (opCoproductIsoProduct X.obj)
-      (Iso.refl _) (by simp [sequenceDifference_op, Category.assoc]) (by simp [kf, ιOp])
+  have hfork : IsLimit (KernelFork.ofι ιOp hιOp) :=
+    IsKernel.ofIso _ hforkOp (KernelFork.ofι ιOp hιOp) (opCoproductIsoProduct X.obj)
+      (opCoproductIsoProduct X.obj) (Iso.refl _) (by simp [sequenceDifference_op, Category.assoc])
+      (by simp [ιOp])
   exact IsColimit.ofIsoColimit (isLimitConeOfTowerDifference hfork).unop
     (Cocone.ext (Iso.refl _) fun n ↦ by
-      have hcomp : ((coneOfTowerDifference kf.ι kf.condition).unop.ι.app n ≫
-          (Iso.refl _).hom).op = (Sigma.ι X.obj n ≫ c.π).op := by
-        erw [Category.comp_id]
-        change (coneOfTowerDifference kf.ι kf.condition).π.app (op n) =
-          (Sigma.ι X.obj n ≫ c.π).op
-        rw [coneOfTowerDifference_π_app]
-        dsimp only [kf, ιOp, Fork.ι_ofι, unop_op, Functor.op_obj]
-        rw [Category.assoc, opCoproductIsoProduct_hom_comp_π (Z := X.obj), ← op_comp]
-      exact Quiver.Hom.op_inj hcomp)
+      rw [coneOfTowerDifference_unop_ι_app, eqToHom_refl, Category.id_comp]
+      dsimp only [Cone.unop, coconeOfSequenceDifference]
+      rw [Iso.refl_hom, Category.comp_id]
+      exact Quiver.Hom.op_inj (by simp [ιOp, opCoproductIsoProduct_hom_comp_π]))
 
 variable {X} in
 /-- A colimit of a sequence is a cokernel of its sequence–difference map, through the morphism

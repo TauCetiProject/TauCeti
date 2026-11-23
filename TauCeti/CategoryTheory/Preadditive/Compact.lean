@@ -24,13 +24,14 @@ An object `G` of a preadditive category `T` (with morphisms in `Type v`) is *com
 coproducts* (`TauCeti.IsCompactForCoproducts G`) if `preadditiveCoyoneda.obj (op G)` preserves
 `Type v`-indexed coproducts, equivalently (`TauCeti.isCompactForCoproducts_iff`) if
 `TauCeti.coprodComparisonAddHom G f : (⨁ j, (G ⟶ f j)) →+ (G ⟶ ∐ f)` is bijective, yielding
-`TauCeti.IsCompactForCoproducts.homCoprodEquiv`. The `ObjectProperty` of compact objects is
-`TauCeti.compactForCoproducts T`.
+`TauCeti.coprodComparisonAddEquiv` (and `TauCeti.IsCompactForCoproducts.homCoprodEquiv` for
+compact `G`). The `ObjectProperty` of compact objects is `TauCeti.compactForCoproducts T`.
 
 ## Main definitions
 
 * `TauCeti.IsCompactForCoproducts`, `TauCeti.compactForCoproducts`,
-  `TauCeti.coprodComparisonAddHom`, `TauCeti.IsCompactForCoproducts.homCoprodEquiv`
+  `TauCeti.coprodComparisonAddHom`, `TauCeti.coprodComparisonAddEquiv`,
+  `TauCeti.IsCompactForCoproducts.homCoprodEquiv`
 
 ## Main results
 
@@ -231,6 +232,38 @@ theorem IsCompactForCoproducts.bijective_coprodComparisonAddHom {G : T}
   have := hG.preservesColimitsOfShape J
   (preservesColimit_discrete_preadditiveCoyoneda_iff G f).1 inferInstance
 
+/-- When `Hom(G, -)` preserves `∐ f`, the direct-sum comparison map `coprodComparisonAddHom G f`
+promotes to an additive equivalence `(⨁ j, (G ⟶ f j)) ≃+ (G ⟶ ∐ f)` sending the `j`-th summand
+inclusion to postcomposition with `Sigma.ι f j`. -/
+noncomputable def coprodComparisonAddEquiv (G : T) {J : Type w} [DecidableEq J] [Small.{v} J]
+    (f : J → T) [HasCoproduct f]
+    [PreservesColimit (Discrete.functor f) (preadditiveCoyoneda.obj (op G))] :
+    (⨁ j, (G ⟶ f j)) ≃+ (G ⟶ ∐ f) :=
+  AddEquiv.ofBijective (coprodComparisonAddHom G f)
+    ((preservesColimit_discrete_preadditiveCoyoneda_iff G f).1 inferInstance)
+
+@[simp]
+theorem coprodComparisonAddEquiv_apply (G : T) {J : Type w} [DecidableEq J] [Small.{v} J]
+    (f : J → T) [HasCoproduct f]
+    [PreservesColimit (Discrete.functor f) (preadditiveCoyoneda.obj (op G))]
+    (a : ⨁ j, (G ⟶ f j)) :
+    coprodComparisonAddEquiv G f a = coprodComparisonAddHom G f a := (rfl)
+
+theorem coprodComparisonAddEquiv_of (G : T) {J : Type w} [DecidableEq J] [Small.{v} J]
+    (f : J → T) [HasCoproduct f]
+    [PreservesColimit (Discrete.functor f) (preadditiveCoyoneda.obj (op G))]
+    (j : J) (g : G ⟶ f j) :
+    coprodComparisonAddEquiv G f (DirectSum.of (fun j ↦ G ⟶ f j) j g) = g ≫ Sigma.ι f j :=
+  coprodComparisonAddHom_of G f j g
+
+@[simp]
+theorem coprodComparisonAddEquiv_symm_comp_ι (G : T) {J : Type w} [DecidableEq J] [Small.{v} J]
+    (f : J → T) [HasCoproduct f]
+    [PreservesColimit (Discrete.functor f) (preadditiveCoyoneda.obj (op G))]
+    (j : J) (g : G ⟶ f j) :
+    (coprodComparisonAddEquiv G f).symm (g ≫ Sigma.ι f j) = DirectSum.of (fun j ↦ G ⟶ f j) j g :=
+  (coprodComparisonAddEquiv G f).injective (by simp)
+
 /-- Compactness identifies morphisms from `G` into a `v`-small coproduct `∐ f` with the external
 direct sum of the component homomorphism groups `G ⟶ f j`, sending the `j`-th summand inclusion
 to postcomposition with `Sigma.ι f j`. -/
@@ -238,7 +271,8 @@ noncomputable def IsCompactForCoproducts.homCoprodEquiv {G : T}
     (hG : IsCompactForCoproducts G) {J : Type w} [DecidableEq J] [Small.{v} J]
     (f : J → T) [HasCoproduct f] :
     (⨁ j, (G ⟶ f j)) ≃+ (G ⟶ ∐ f) :=
-  AddEquiv.ofBijective (coprodComparisonAddHom G f) (hG.bijective_coprodComparisonAddHom f)
+  have := hG.preservesColimitsOfShape J
+  coprodComparisonAddEquiv G f
 
 @[simp]
 theorem IsCompactForCoproducts.homCoprodEquiv_apply {G : T}
