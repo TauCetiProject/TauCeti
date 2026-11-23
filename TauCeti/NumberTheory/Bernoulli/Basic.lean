@@ -8,10 +8,11 @@ module
 public import Mathlib.NumberTheory.Bernoulli
 
 /-!
-# Evaluations of Bernoulli numbers
+# Evaluation of `bernoulli 12`
 
 Mathlib records `bernoulli 0` through `bernoulli 6` in `Mathlib.NumberTheory.Bernoulli`. This file
-supplies explicit rational evaluations beyond `bernoulli 6` needed downstream.
+evaluates `B₁₂ = -691 / 2730`, which is used to compute the positive-degree `q`-expansion
+coefficients of the normalised weight-`12` Eisenstein series `E₁₂`.
 
 ## Main results
 
