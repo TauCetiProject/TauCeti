@@ -817,14 +817,14 @@ private theorem exists_logGap_sSup_eq_zero {n : ℕ} (hn : 1 ≤ n) :
   -- the nested compact sets `{b ∈ [a₁, a₂] | γ*(b, y) ≤ 0}` for `s₀ ≤ y < x*`
   let K : Ico s₀ xs → Set ℝ := fun y =>
     Icc a₁ a₂ ∩ (fun b : ℝ => (tricomiIncompleteGamma b (y : ℝ)).re) ⁻¹' Iic 0
-  have hy0 : ∀ y : Ico s₀ xs, 0 < (y : ℝ) := fun y => hs₀.trans_le y.2.1
+  have hy0 : ∀ y : Ico s₀ xs, 0 < (y : ℝ) := fun y => hs₀.trans_le y.property.1
   have hKcl : ∀ y, IsClosed (K y) := fun y =>
     isClosed_Icc.inter (isClosed_Iic.preimage (continuous_re_tricomi_left _))
   have hKne : ∀ y, (K y).Nonempty := by
     intro y
-    obtain ⟨s, ⟨-, b, hb, hDb⟩, hys⟩ := exists_lt_of_lt_csSup ⟨s₀, hmem₀⟩ y.2.2
+    obtain ⟨s, ⟨-, b, hb, hDb⟩, hys⟩ := exists_lt_of_lt_csSup ⟨s₀, hmem₀⟩ y.property.2
     have hDy := (logGap_le_logGap (hy0 y) hys.le b).trans_lt hDb
-    exact ⟨b, hC b hb ((logGap_le_logGap hs₀ y.2.1 b).trans hDy.le),
+    exact ⟨b, hC b hb ((logGap_le_logGap hs₀ y.property.1 b).trans hDy.le),
       ((re_tricomi_neg_iff (hy0 y) hb).2 hDy).le⟩
   have hKdir : Directed (· ⊇ ·) K := by
     intro i j
