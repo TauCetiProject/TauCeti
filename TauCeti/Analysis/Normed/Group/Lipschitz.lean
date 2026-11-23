@@ -10,14 +10,17 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Continuity
 
 /-!
-# Limits of translates of uniformly Lipschitz maps
+# Lipschitz maps into seminormed groups
 
-For uniformly `K`-Lipschitz maps `u i` on a seminormed group, pointwise limits of the translates
-`z ↦ u i (z + σ i)` and `z ↦ u i (z + σ' i)` are translates of each other when `σ' i - σ i`
-converges.
+A `K`-Lipschitz map `f` into a seminormed group satisfies `‖f y‖ ≤ ‖f x‖ + K * dist y x`
+(`LipschitzWith.norm_le_norm_add_mul_dist`). For uniformly `K`-Lipschitz maps `u i` on a
+seminormed group, pointwise limits of the translates `z ↦ u i (z + σ i)` and `z ↦ u i (z + σ' i)`
+are translates of each other when `σ' i - σ i` converges.
 
 ## Main results
 
+* `LipschitzWith.norm_le_norm_add_mul_dist`: the norm of a Lipschitz map grows at most linearly
+  with the distance from a base point.
 * `TauCeti.apply_eq_apply_add_of_tendsto_sub`: limits of translates of uniformly Lipschitz maps
   along shifts with convergent difference are translates of each other.
 * `TauCeti.apply_eq_apply_add_prodMk_zero_of_tendsto_sub`: the same for maps on a product
@@ -28,6 +31,15 @@ public section
 
 open Filter Topology
 open scoped NNReal
+
+/-- The norm of a `K`-Lipschitz map into a seminormed group grows at most linearly:
+`‖f y‖ ≤ ‖f x‖ + K * dist y x`. -/
+theorem LipschitzWith.norm_le_norm_add_mul_dist {α E : Type*} [PseudoMetricSpace α]
+    [SeminormedAddCommGroup E] {K : ℝ≥0} {f : α → E} (hf : LipschitzWith K f) (x y : α) :
+    ‖f y‖ ≤ ‖f x‖ + K * dist y x := by
+  refine (norm_le_norm_add_norm_sub' (f y) (f x)).trans (add_le_add_right ?_ _)
+  rw [← dist_eq_norm]
+  exact hf.dist_le_mul y x
 
 namespace TauCeti
 

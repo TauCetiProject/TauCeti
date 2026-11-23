@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Order.Floor
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Analysis.ODE.Gronwall.Integrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -47,19 +48,24 @@ that is `x = ODE.picard F t₀ x₀ x` on `[a, b]`, for `x` continuous on `[a, b
 * `TauCeti.dist_le_mul_exp_of_forall_mem_Icc_eq_picard`: solutions from two initial values stay
   within `‖x₀ - y₀‖ exp |∫ s in t₀..t, L s|` of each other.
 
-The linear case `F t x = M t x + G t` is `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard`
-in `TauCeti/Analysis/ODE/Caratheodory.lean`, with `L = ‖M‖`.
+The linear case `F t x = M t x + G t`, with `L = ‖M‖`, is
+`TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard` in `TauCeti/Analysis/ODE/Caratheodory.lean`,
+which is derived from the results here.
 
 ## Implementation notes
 
-As in the linear case, some iterate of the Picard map on `C([a, b], E)` is a contraction: its
-`n`-th iterate moves two curves at time `t` at most `|∫ s in t₀..t, L s| ^ n / n!` times their
-distance apart. The bounds follow from Grönwall's inequality with an integrable kernel, applied
-on either side of `t₀`.
+Some iterate of the Picard map on `C([a, b], E)` is a contraction: its `n`-th iterate moves two
+curves at time `t` at most `|∫ s in t₀..t, L s| ^ n / n!` times their distance apart. The factorial
+comes from `IntervalIntegrable.abs_integral_mul_abs_pow_integral`. The bounds follow from
+Grönwall's inequality with an integrable kernel on either side of `t₀`
+(`TauCeti.le_mul_exp_abs_integral_of_le_add_abs_integral_mul`).
 
 ## References
 
 * E. A. Coddington, N. Levinson, *Theory of Ordinary Differential Equations*, Chapter 2, §1.
+* Mathlib's `Mathlib/Analysis/ODE/PicardLindelof.lean` (Yury Kudryashov, Winston Yin). The
+  existence and uniqueness proofs here follow its argument that some iterate of the Picard map is
+  a contraction.
 -/
 
 public section
@@ -85,10 +91,7 @@ theorem integrableOn_apply_of_integrableOn_apply
     IntegrableOn (fun t ↦ F t x) (Icc a b) := by
   refine Integrable.mono' (hF₀.norm.add (hL.mul_const (dist x x₀))) (hF x) ?_
   filter_upwards [hLip] with t ht
-  calc ‖F t x‖ ≤ ‖F t x₀‖ + ‖F t x - F t x₀‖ := norm_le_norm_add_norm_sub' _ _
-    _ ≤ ‖F t x₀‖ + L t * dist x x₀ := by
-      rw [← dist_eq_norm]
-      exact add_le_add le_rfl (ht.dist_le_mul x x₀)
+  exact ht.norm_le_norm_add_mul_dist x₀ x
 
 omit [NormedSpace ℝ E] in
 /-- **Integrability along a curve.** If every section `t ↦ F t x` is integrable on `[a, b]` and
@@ -105,77 +108,11 @@ theorem integrableOn_apply_of_lipschitzWith (hF : ∀ x, IntegrableOn (fun t ↦
       (fun y ↦ (hF y).aestronglyMeasurable) (hLip.mono fun _ ht ↦ ht.continuous.continuousAt)
   refine Integrable.mono' ((hF 0).norm.add (hL.mul_const C)) hmeas ?_
   filter_upwards [hLip, ae_restrict_mem measurableSet_Icc] with s hs hsI
-  calc ‖F s (x s)‖ ≤ ‖F s 0‖ + ‖F s (x s) - F s 0‖ := norm_le_norm_add_norm_sub' _ _
-    _ ≤ ‖F s 0‖ + L s * C := by
-      rw [← dist_eq_norm]
-      refine add_le_add le_rfl ((hs.dist_le_mul _ _).trans ?_)
-      rw [dist_zero_right]
-      exact mul_le_mul_of_nonneg_left (hC s hsI) (L s).coe_nonneg
+  refine (hs.norm_le_norm_add_mul_dist 0 (x s)).trans (add_le_add_right ?_ _)
+  rw [dist_zero_right]
+  exact mul_le_mul_of_nonneg_left (hC s hsI) (L s).coe_nonneg
 
 namespace CaratheodoryNonlinear
-
-/-- The integral of `L` between two points of `[a, b]` is at most its integral over `[a, b]`. -/
-private theorem abs_integral_le (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b)) {c d : ℝ}
-    (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
-    |∫ s in c..d, (L s : ℝ)| ≤ ∫ s in a..b, (L s : ℝ) := by
-  rw [abs_integral_eq_abs_integral_uIoc, abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc
-    fun s _ ↦ (L s).coe_nonneg), integral_of_le (hc.1.trans hc.2)]
-  have hsub : uIoc c d ⊆ Ioc a b := fun x hx ↦
-    ⟨(le_min hc.1 hd.1).trans_lt hx.1, hx.2.trans (max_le hc.2 hd.2)⟩
-  exact setIntegral_mono_set (IntegrableOn.mono_set hL Ioc_subset_Icc_self)
-    (ae_of_all _ fun s ↦ (L s).coe_nonneg) hsub.eventuallySubset
-
-/-- With `Λ s = ∫ r in t₀..s, L r`, the integral of `L |Λ| ^ n` from `t₀` to `t` is
-`|Λ t| ^ (n + 1) / (n + 1)`, in either order of `t₀` and `t`. -/
-private theorem abs_integral_mul_abs_pow {t : ℝ}
-    (hL : IntervalIntegrable (fun s ↦ (L s : ℝ)) volume t₀ t) (n : ℕ) :
-    |∫ s in t₀..t, (L s : ℝ) * |∫ r in t₀..s, (L r : ℝ)| ^ n| =
-      |∫ s in t₀..t, (L s : ℝ)| ^ (n + 1) / (n + 1) := by
-  set Λ : ℝ → ℝ := fun s ↦ ∫ r in t₀..s, (L r : ℝ)
-  -- `Λ` has a constant sign `σ` between `t₀` and `t`.
-  obtain ⟨σ, hσ, hΛ⟩ : ∃ σ : ℝ, |σ| = 1 ∧ ∀ s ∈ uIcc t₀ t, |Λ s| = σ * Λ s := by
-    rcases le_total t₀ t with h | h
-    · refine ⟨1, abs_one, fun s hs ↦ ?_⟩
-      rw [uIcc_of_le h] at hs
-      rw [one_mul, abs_of_nonneg (integral_nonneg hs.1 fun s _ ↦ (L s).coe_nonneg)]
-    · refine ⟨-1, by simp, fun s hs ↦ ?_⟩
-      rw [uIcc_of_ge h] at hs
-      rw [neg_one_mul, abs_of_nonpos]
-      simp only [Λ]
-      rw [integral_symm, neg_nonpos]
-      exact integral_nonneg hs.2 fun s _ ↦ (L s).coe_nonneg
-  have h : ∫ s in t₀..t, (L s : ℝ) * |Λ s| ^ n =
-      σ ^ n * ∫ s in t₀..t, (L s : ℝ) * Λ s ^ n := by
-    rw [← intervalIntegral.integral_const_mul]
-    refine integral_congr fun s hs ↦ ?_
-    simp only [hΛ s hs, mul_pow]
-    ring
-  rw [h, hL.integral_mul_pow_integral]
-  simp [abs_mul, abs_div, abs_pow, hσ, abs_of_pos (by positivity : (0 : ℝ) < n + 1)]
-
-/-- **Grönwall's inequality on either side of `t₀`.** A continuous nonnegative `u` with
-`u s ≤ α + |∫ r in t₀..s, L r * u r|` between `t₀` and `t` satisfies
-`u t ≤ α exp |∫ r in t₀..t, L r|`. -/
-private theorem le_mul_exp_abs_integral {t α : ℝ} {u : ℝ → ℝ}
-    (hL : IntegrableOn (fun s ↦ (L s : ℝ)) (uIcc t₀ t)) (hu : ContinuousOn u (uIcc t₀ t))
-    (hu₀ : ∀ s ∈ uIcc t₀ t, 0 ≤ u s)
-    (h : ∀ s ∈ uIcc t₀ t, u s ≤ α + |∫ r in t₀..s, (L r : ℝ) * u r|) :
-    u t ≤ α * exp |∫ r in t₀..t, (L r : ℝ)| := by
-  rcases le_total t₀ t with hle | hle
-  · rw [uIcc_of_le hle] at hL hu hu₀ h
-    rw [abs_of_nonneg (integral_nonneg hle fun s _ ↦ (L s).coe_nonneg)]
-    refine le_mul_exp_integral_of_le_add_integral_mul hL (ae_of_all _ fun s ↦ (L s).coe_nonneg)
-      (hL.mul_continuousOn hu isCompact_Icc) (fun s hs ↦ ?_) t ⟨hle, le_rfl⟩
-    rw [← abs_of_nonneg (integral_nonneg hs.1 fun r hr ↦
-      mul_nonneg (L r).coe_nonneg (hu₀ r ⟨hr.1, hr.2.trans hs.2⟩))]
-    exact h s hs
-  · rw [uIcc_of_ge hle] at hL hu hu₀ h
-    rw [integral_symm, abs_neg, abs_of_nonneg (integral_nonneg hle fun s _ ↦ (L s).coe_nonneg)]
-    refine le_mul_exp_integral_of_le_add_integral_mul_rev hL (ae_of_all _ fun s ↦ (L s).coe_nonneg)
-      (hL.mul_continuousOn hu isCompact_Icc) (fun s hs ↦ ?_) t ⟨le_rfl, hle⟩
-    rw [← abs_of_nonneg (integral_nonneg hs.2 fun r hr ↦
-      mul_nonneg (L r).coe_nonneg (hu₀ r ⟨hs.1.trans hr.1, hr.2⟩)), ← abs_neg, ← integral_symm]
-    exact h s hs
 
 variable (ht₀ : t₀ ∈ Icc a b) (hF : ∀ x, IntegrableOn (fun t ↦ F t x) (Icc a b))
   (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
@@ -236,15 +173,16 @@ private theorem dist_iterate_next_apply_le (n : ℕ) (y z : C(Icc a b, E)) (t : 
             ext s
             ring
           rw [this, intervalIntegral.integral_const_mul, abs_mul, abs_of_nonneg (by positivity),
-            abs_integral_mul_abs_pow hLt, Nat.factorial_succ]
+            hLt.abs_integral_mul_abs_pow_integral (ae_of_all _ fun s ↦ (L s).coe_nonneg),
+            Nat.factorial_succ]
           push_cast
           field_simp
 
 /-- Some iterate of the Picard map is a contraction. -/
 private theorem exists_contractingWith_iterate_next :
     ∃ (n : ℕ) (C : ℝ≥0), ContractingWith C (next ht₀ hF hL hLip x₀)^[n] := by
-  set K := ∫ s in a..b, (L s : ℝ)
-  have hK₀ : 0 ≤ K := (abs_nonneg _).trans (abs_integral_le hL ht₀ ht₀)
+  have hab := ht₀.1.trans ht₀.2
+  set K := |∫ s in a..b, (L s : ℝ)|
   obtain ⟨n, hn⟩ := FloorSemiring.tendsto_pow_div_factorial_atTop K
     |>.eventually (gt_mem_nhds zero_lt_one) |>.exists
   refine ⟨n, (K ^ n / n !).toNNReal, Real.toNNReal_lt_one.2 hn,
@@ -253,7 +191,10 @@ private theorem exists_contractingWith_iterate_next :
   intro t
   refine (dist_iterate_next_apply_le ht₀ hF hL hLip n y z t).trans ?_
   gcongr
-  exact abs_integral_le hL ht₀ t.property
+  refine abs_integral_mono_interval ?_ (ae_of_all _ fun s ↦ (L s).coe_nonneg)
+    ((intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 hL)
+  exact uIoc_subset_uIoc_of_uIcc_subset_uIcc (by
+    simpa [uIcc_of_le hab] using uIcc_subset_Icc ht₀ t.property)
 
 /-- A curve continuous on `[a, b]` solving the integral equation there restricts to a fixed point of
 the Picard map. -/
@@ -356,8 +297,10 @@ theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a 
     (h : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) {t : ℝ} (ht : t ∈ Icc a b) :
     ‖x t - x₀‖ ≤ |∫ s in t₀..t, m s| * exp |∫ s in t₀..t, (L s : ℝ)| := by
   have hsub : uIcc t₀ t ⊆ Icc a b := uIcc_subset_Icc ht₀ ht
-  refine le_mul_exp_abs_integral (u := fun s ↦ ‖x s - x₀‖) (hL.mono_set hsub)
-    ((hx.mono hsub).sub continuousOn_const).norm (fun _ _ ↦ norm_nonneg _) fun s hs ↦ ?_
+  refine le_mul_exp_abs_integral_of_le_add_abs_integral_mul (u := fun s ↦ ‖x s - x₀‖)
+    (hL.mono_set hsub) (ae_of_all _ fun s ↦ (L s).coe_nonneg)
+    ((hL.mono_set hsub).mul_continuousOn ((hx.mono hsub).sub continuousOn_const).norm
+      isCompact_uIcc) (fun _ _ ↦ norm_nonneg _) fun s hs ↦ ?_
   have hs' : s ∈ Icc a b := hsub hs
   have hsub' : uIcc t₀ s ⊆ Icc a b := uIcc_subset_Icc ht₀ hs'
   have hmi : IntervalIntegrable m volume t₀ s := (hm.mono_set hsub').intervalIntegrable
@@ -369,22 +312,16 @@ theorem norm_sub_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a 
     have hm₀ : ∀ᵐ r ∂volume.restrict (uIoc t₀ t), 0 ≤ m r :=
       (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans hsub) hFm).mono
         fun _ hr ↦ (norm_nonneg _).trans hr
-    rw [abs_integral_eq_abs_integral_uIoc, abs_integral_eq_abs_integral_uIoc,
-      abs_of_nonneg (setIntegral_nonneg_of_ae_restrict
-        (ae_restrict_of_ae_restrict_of_subset
-          (uIoc_subset_uIoc_of_uIcc_subset_uIcc (uIcc_subset_uIcc_left hs)) hm₀)),
-      abs_of_nonneg (setIntegral_nonneg_of_ae_restrict hm₀)]
-    exact setIntegral_mono_set ((hm.mono_set hsub).mono_set uIoc_subset_uIcc) hm₀
-      (uIoc_subset_uIoc_of_uIcc_subset_uIcc (uIcc_subset_uIcc_left hs)).eventuallySubset
+    exact abs_integral_mono_interval
+      (uIoc_subset_uIoc_of_uIcc_subset_uIcc (uIcc_subset_uIcc_left hs)) hm₀
+      (hm.mono_set hsub).intervalIntegrable
   rw [h s hs', ODE.picard_apply, add_sub_cancel_left]
   calc ‖∫ r in t₀..s, F r (x r)‖ ≤ |∫ r in t₀..s, (m r + (L r : ℝ) * ‖x r - x₀‖)| := by
         refine norm_integral_le_abs_of_norm_le ?_ (hmi.add hLu)
         filter_upwards [ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans hsub')
           (hFm.and hLip)] with r ⟨hr, hrL⟩
-        calc ‖F r (x r)‖ ≤ ‖F r x₀‖ + ‖F r (x r) - F r x₀‖ := norm_le_norm_add_norm_sub' _ _
-          _ ≤ m r + (L r : ℝ) * ‖x r - x₀‖ := by
-            rw [← dist_eq_norm, ← dist_eq_norm]
-            exact add_le_add hr (hrL.dist_le_mul _ _)
+        rw [← dist_eq_norm]
+        exact (hrL.norm_le_norm_add_mul_dist x₀ (x r)).trans (add_le_add hr le_rfl)
     _ ≤ |∫ r in t₀..s, m r| + |∫ r in t₀..s, (L r : ℝ) * ‖x r - x₀‖| := by
         rw [integral_add hmi hLu]
         exact abs_add_le _ _
@@ -401,8 +338,10 @@ theorem dist_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b) {
     dist (x t) (y t) ≤ dist x₀ y₀ * exp |∫ s in t₀..t, (L s : ℝ)| := by
   have hsub : uIcc t₀ t ⊆ Icc a b := uIcc_subset_Icc ht₀ ht
   rw [dist_eq_norm, dist_eq_norm]
-  refine le_mul_exp_abs_integral (u := fun s ↦ ‖x s - y s‖) (hL.mono_set hsub)
-    ((hx.mono hsub).sub (hy.mono hsub)).norm (fun _ _ ↦ norm_nonneg _) fun s hs ↦ ?_
+  refine le_mul_exp_abs_integral_of_le_add_abs_integral_mul (u := fun s ↦ ‖x s - y s‖)
+    (hL.mono_set hsub) (ae_of_all _ fun s ↦ (L s).coe_nonneg)
+    ((hL.mono_set hsub).mul_continuousOn ((hx.mono hsub).sub (hy.mono hsub)).norm
+      isCompact_uIcc) (fun _ _ ↦ norm_nonneg _) fun s hs ↦ ?_
   have hs' : s ∈ Icc a b := hsub hs
   have hsub' : uIcc t₀ s ⊆ Icc a b := uIcc_subset_Icc ht₀ hs'
   have hint {z : ℝ → E} (hz : ContinuousOn z (Icc a b)) :
