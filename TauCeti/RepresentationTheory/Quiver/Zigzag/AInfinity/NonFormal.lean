@@ -175,11 +175,8 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (fun r hr1 hr2 ↦ zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by omega) (by omega)) hF hrot hrel
   rw [zigzagWordPairing_obstruction (by omega : 1 ≤ 2 * m) a c hc] at hy
-  have he := even_iff_exists_two_mul.2 ⟨y, hy⟩
-  rcases Int.units_eq_one_or (∏ i : Fin (2 * m + 2), ((2 * m + 1 - i : ℕ) : ℤ).negOnePow)
-    with hs | hs <;>
-    exact hodd (by simpa only [hs, Units.val_one, Units.val_neg, Int.cast_one, Int.cast_neg,
-      one_mul, neg_one_mul, even_neg] using he)
+  exact hodd (even_iff_two_dvd.2
+    (((Units.isUnit _).map (Int.castRingHom k)).dvd_mul_left.1 ⟨y, hy⟩))
 
 /-- **Even-arity non-formality from an anticyclic functional with non-even pairing.** Let `β`
 satisfy the signless relations and let `f` be anticyclic on the `β e`. When
@@ -305,6 +302,23 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal
 
 /-! ### Four-valent vertices -/
 
+/-- Specialization of `TauCeti.not_isFormal_of_isUnit_zigzagBacktrackPairing` to a quartic loop
+deformation. -/
+private theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
+    [Nontrivial k] [Fintype G.Dart]
+    {c : (Fin 4 → G.Dart) →₀ k} {hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd}
+    {a : Matrix G.Dart G.Dart k} (ha : a.IsSymm)
+    (hhead : ∀ d e, d.snd ≠ e.snd → a d e = 0) (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm)
+    (hu : IsUnit (zigzagBacktrackPairing hns a
+      ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩))) :
+    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
+  not_isFormal_of_isUnit_zigzagBacktrackPairing
+    (isMinimal_zigzagLoopAInfinityAlgebra c hc)
+    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
+    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
+    (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide))
+    ha hhead hbal hu
+
 /-- **A non-formal quartic deformation of a zigzag algebra**, over every nontrivial commutative
 ring. Let `δ 0, …, δ 3` be four distinct darts with a common head `v`, for instance the darts into
 `v` from four distinct neighbours. The loop deformation whose quartic operation is the loop
@@ -320,11 +334,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_single [Nontrivial k]
   have := Fintype.ofFinite V
   obtain ⟨a, ha, hhead, hbal, h1⟩ := exists_zigzagBacktrackPairing_obstruction_single_eq_one
     (k := k) (hns := hns) hδ hv
-  exact not_isFormal_of_isUnit_zigzagBacktrackPairing
-    (isMinimal_zigzagLoopAInfinityAlgebra _ _)
-    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _)
-    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two _ _)
-    (zigzagLoopAInfinityAlgebra_m_eq_zero _ _ (by decide) (by decide))
+  exact not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
     ha hhead hbal (h1.symm ▸ isUnit_one)
 
 /-- **The zigzag algebra of a graph with a vertex of valency at least four is not intrinsically
@@ -392,11 +402,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk [Nontrivial k]
   have := Fintype.ofFinite V
   obtain ⟨a, ha, hhead, hbal, h1⟩ := exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk
     (k := k) (hns := hns) hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef'
-  exact not_isFormal_of_isUnit_zigzagBacktrackPairing
-    (isMinimal_zigzagLoopAInfinityAlgebra _ _)
-    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _)
-    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two _ _)
-    (zigzagLoopAInfinityAlgebra_m_eq_zero _ _ (by decide) (by decide))
+  exact not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
     ha hhead hbal (h1.symm ▸ isUnit_one)
 
 /-- **The zigzag algebra of a graph with two branch vertices joined by a suitable walk is not

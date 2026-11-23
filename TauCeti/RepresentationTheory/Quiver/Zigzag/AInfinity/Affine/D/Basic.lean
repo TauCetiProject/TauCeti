@@ -159,10 +159,13 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
     [Nontrivial k] {V : Type u} {G : SimpleGraph V} [Finite V]
     {hns : ∀ i : V, ∃ j, G.Adj i j} {n : ℕ} (hn : 4 ≤ n)
     (hG : (AffineDynkinType.D n).graph.IsContained G) :
-    ∃ (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : (AffineDynkinType.D n).graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineDWalk hn t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineDWalk_fst_eq_snd hn i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk hn f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk hn f⟩
 
 /-- **The strict zigzag algebra of a graph containing an affine `Dₙ` is not intrinsically formal**
 for `n ≥ 4`, over every nontrivial commutative ring. -/
@@ -171,7 +174,7 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D
     {hns : ∀ i : V, ∃ j, G.Adj i j} {n : ℕ} (hn : 4 ≤ n)
     (hG : (AffineDynkinType.D n).graph.IsContained G) :
     ¬(zigzagStrictAInfinityAlgebra k hns).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D (k := k) (hns := hns) hn hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
@@ -200,7 +203,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D [Nontrivial k]
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained (AffineDynkinType.valid_D.2 hn) hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
+  obtain ⟨_, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hn hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 

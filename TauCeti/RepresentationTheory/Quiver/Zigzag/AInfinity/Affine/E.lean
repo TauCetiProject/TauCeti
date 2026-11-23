@@ -188,26 +188,32 @@ nontrivial `ℚ`-algebra: the loop deformation supported on the image of the clo
 backtracks through the nodes `1`, `1` and `3` at the trivalent node `0` is not formal. -/
 theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
     [Nontrivial k] [Algebra ℚ k] (hG : AffineDynkinType.E6.graph.IsContained G) :
-    ∃ (c : (Fin 6 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : AffineDynkinType.E6.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE6Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk f⟩
 
 /-- **Graphs containing an affine `E₆` admit a non-formal sextic loop deformation** whenever
 `(2 : k)` is not a unit (in particular in characteristic `2` or over `ℤ`). -/
 theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6_of_not_isUnit_two
     (h2 : ¬IsUnit (2 : k)) (hG : AffineDynkinType.E6.graph.IsContained G) :
-    ∃ (c : (Fin 6 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : AffineDynkinType.E6.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE6Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk_of_not_isUnit_two h2 f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk_of_not_isUnit_two h2 f⟩
 
 /-- **The strict zigzag algebra of a graph containing an affine `E₆` is not intrinsically formal**,
 over every nontrivial `ℚ`-algebra. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E6
     [Nontrivial k] [Algebra ℚ k] (hG : AffineDynkinType.E6.graph.IsContained G) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6 (k := k) (hns := hns) hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
@@ -216,7 +222,7 @@ whenever `(2 : k)` is not a unit. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E6_of_not_isUnit_two
     (h2 : ¬IsUnit (2 : k)) (hG : AffineDynkinType.E6.graph.IsContained G) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6_of_not_isUnit_two
       (k := k) (hns := hns) h2 hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
@@ -242,7 +248,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6 [Nontrivial k] 
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E6 hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
+  obtain ⟨_, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
@@ -260,7 +266,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6_of_not_isUnit_t
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E6 hG
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6_of_not_isUnit_two
       (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) h2 hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
@@ -358,26 +364,32 @@ nontrivial `ℚ`-algebra: the loop deformation supported on the image of the clo
 backtracks through the nodes `2`, `2`, `2` and `5` at the trivalent node `0` is not formal. -/
 theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
     [Nontrivial k] [Algebra ℚ k] (hG : AffineDynkinType.E7.graph.IsContained G) :
-    ∃ (c : (Fin 8 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : AffineDynkinType.E7.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE7Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk f⟩
 
 /-- **Graphs containing an affine `E₇` admit a non-formal octic loop deformation** whenever
 `(2 : k)` is not a unit. -/
 theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7_of_not_isUnit_two
     (h2 : ¬IsUnit (2 : k)) (hG : AffineDynkinType.E7.graph.IsContained G) :
-    ∃ (c : (Fin 8 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : AffineDynkinType.E7.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE7Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk_of_not_isUnit_two h2 f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk_of_not_isUnit_two h2 f⟩
 
 /-- **The strict zigzag algebra of a graph containing an affine `E₇` is not intrinsically formal**,
 over every nontrivial `ℚ`-algebra. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E7
     [Nontrivial k] [Algebra ℚ k] (hG : AffineDynkinType.E7.graph.IsContained G) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7 (k := k) (hns := hns) hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
@@ -386,7 +398,7 @@ whenever `(2 : k)` is not a unit. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E7_of_not_isUnit_two
     (h2 : ¬IsUnit (2 : k)) (hG : AffineDynkinType.E7.graph.IsContained G) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7_of_not_isUnit_two
       (k := k) (hns := hns) h2 hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
@@ -412,7 +424,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7 [Nontrivial k] 
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E7 hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
+  obtain ⟨_, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
@@ -430,7 +442,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7_of_not_isUnit_t
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E7 hG
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7_of_not_isUnit_two
       (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) h2 hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
@@ -537,26 +549,32 @@ backtracks through the nodes `1`, `2`, `4`, `4`, `4` and `2` at the trivalent no
 formal. -/
 theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
     [Nontrivial k] [Algebra ℚ k] (hG : AffineDynkinType.E8.graph.IsContained G) :
-    ∃ (c : (Fin 12 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : AffineDynkinType.E8.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE8Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk f⟩
 
 /-- **Graphs containing an affine `E₈` admit a non-formal dodecic loop deformation** whenever
 `(2 : k)` is not a unit. -/
 theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8_of_not_isUnit_two
     (h2 : ¬IsUnit (2 : k)) (hG : AffineDynkinType.E8.graph.IsContained G) :
-    ∃ (c : (Fin 12 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+    ∃ f : AffineDynkinType.E8.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE8Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i)) (1 : k))).IsFormal := by
   obtain ⟨f⟩ := hG
-  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk_of_not_isUnit_two h2 f⟩
+  exact ⟨f, not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk_of_not_isUnit_two h2 f⟩
 
 /-- **The strict zigzag algebra of a graph containing an affine `E₈` is not intrinsically formal**,
 over every nontrivial `ℚ`-algebra. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E8
     [Nontrivial k] [Algebra ℚ k] (hG : AffineDynkinType.E8.graph.IsContained G) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8 (k := k) (hns := hns) hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
@@ -565,7 +583,7 @@ whenever `(2 : k)` is not a unit. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E8_of_not_isUnit_two
     (h2 : ¬IsUnit (2 : k)) (hG : AffineDynkinType.E8.graph.IsContained G) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8_of_not_isUnit_two
       (k := k) (hns := hns) h2 hG
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
@@ -591,7 +609,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8 [Nontrivial k] 
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E8 hG
-  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
+  obtain ⟨_, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
 
@@ -609,7 +627,7 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8_of_not_isUnit_t
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
   have : Nontrivial V :=
     AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E8 hG
-  obtain ⟨_, _, hnf⟩ :=
+  obtain ⟨_, hnf⟩ :=
     exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8_of_not_isUnit_two
       (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) h2 hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf

@@ -152,38 +152,38 @@ private theorem dartMatrix_extendByZero_mapDart (f : H.Copy G) (β : W → W →
       Matrix.single (f d.snd) (f d.fst) 1 ⊗ₖ β d.fst d.snd := by
   simp [dartMatrix, d.adj]
 
-/-- Extending a bipartition of `H` by `1` outside a copy `f : H.Copy G` produces a linear functional
-anticyclic on the block matrices of `f.extendByZero β`, evaluating to
-`±tr(β (w 0) ⋯ β (w (n + 1)))` on the single walk `f.mapDart ∘ w`. -/
+/-- Extending a bipartition of `H` by `1` outside a copy `f : H.Copy G` and normalizing the sign
+at `(w 0).snd` produces a linear functional anticyclic on the block matrices of `f.extendByZero β`,
+evaluating to `tr(β (w 0) ⋯ β (w (n + 1)))` on the single walk `f.mapDart ∘ w`, together with the
+block signless relations. -/
 private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj]
     (f : H.Copy G) (hH : H.IsBipartite)
-    (β : W → W → Matrix m m k) {n : ℕ} {w : Fin (n + 2) → H.Dart}
-    (hw : ∀ i, (w i).fst = (w (i + 1)).snd) :
+    (β : W → W → Matrix m m k) (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
+    {n : ℕ} {w : Fin (n + 2) → H.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd) :
     ∃ F : Matrix (V × m) (V × m) k →ₗ[k] k,
+      (∀ v : V, ∑ d : G.Dart with d.snd = v,
+        dartMatrix (f.extendByZero β) d * dartMatrix (f.extendByZero β) d.symm = 0) ∧
       (∀ (e : G.Dart) (Y : Matrix (V × m) (V × m) k),
         F (Y * dartMatrix (f.extendByZero β) e) = -F (dartMatrix (f.extendByZero β) e * Y)) ∧
-      ((∑ w' : Fin (n + 2) → G.Dart,
-          F (List.ofFn fun t ↦ dartMatrix (f.extendByZero β) (w' t)).prod *
-            Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k) w') =
-        trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod ∨
       (∑ w' : Fin (n + 2) → G.Dart,
           F (List.ofFn fun t ↦ dartMatrix (f.extendByZero β) (w' t)).prod *
             Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k) w') =
-        -trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod) := by
+        trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod := by
   classical
   obtain ⟨C⟩ := hH
-  let s : W → k := fun x ↦ if C x = 0 then 1 else -1
+  let s : W → k := fun x ↦ if C x = C (w 0).snd then 1 else -1
   have hs (x y : W) (h : H.Adj x y) : s x = -s y := by
     have hC := C.valid h
-    have h01 : ∀ a b : Fin 2, a ≠ b → a = 0 ∨ b = 0 := by decide
-    rcases h01 _ _ hC with h0 | h0
-    · have hCy : C y ≠ 0 := h0 ▸ hC.symm
+    have h01 : ∀ a b c : Fin 2, a ≠ b → a = c ∨ b = c := by decide
+    rcases h01 _ _ (C (w 0).snd) hC with h0 | h0
+    · have hCy : C y ≠ C (w 0).snd := h0 ▸ hC.symm
       simp [s, h0, hCy]
-    · have hCx : C x ≠ 0 := h0 ▸ hC
+    · have hCx : C x ≠ C (w 0).snd := h0 ▸ hC
       simp [s, h0, hCx]
   let ε : V → k := Function.extend f s 1
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
   refine ⟨traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1),
+    sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ),
     fun e Y ↦ trace_twist_mul_dartMatrix _ ε (fun d hd ↦ ?_) e Y, ?_⟩
   · by_cases h₁ : d.fst ∈ Set.range f
     swap
@@ -212,10 +212,7 @@ private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj]
       have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by rw [hw, Fin.last_add_one]
       simp [hlast, ← mul_kronecker_mul, trace_kronecker]
     rw [hsum, hεf]
-    simp only [s]
-    split_ifs
-    · exact Or.inl (one_mul _)
-    · exact Or.inr (neg_one_mul _)
+    simp [s]
 
 end Blocks
 
@@ -259,14 +256,9 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
             ⟨n + 2, by omega⟩ := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨F, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
-    hn (dartMatrix (f.extendByZero β))
-    (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
-    F hanti _ _ ?_
-  rcases heval with h | h <;> rw [h]
-  · exact htr
-  · exact neg_ne_zero.mpr htr
+  obtain ⟨F, hrel, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hβ hw
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
+    hn (dartMatrix (f.extendByZero β)) hrel F hanti _ _ (heval ▸ htr)
 
 omit [DecidableRel H.Adj] in
 /-- **Higher Hochschild classes from an integer matrix representation of a bipartite
@@ -337,14 +329,9 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_trace
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨F, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
-  refine not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even hr
-    (dartMatrix (f.extendByZero β))
-    (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
-    F hanti _ _ ?_
-  rcases heval with h | h <;> rw [h]
-  · exact htr
-  · rwa [even_neg]
+  obtain ⟨F, hrel, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hβ hw
+  exact not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even hr
+    (dartMatrix (f.extendByZero β)) hrel F hanti _ _ (heval ▸ htr)
 
 omit [DecidableRel H.Adj] in
 /-- **Even-arity non-formality from an integer matrix representation when `2` is not a unit.** -/
@@ -375,14 +362,9 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace [Nontrivial
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨F, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
-  refine not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
-    (dartMatrix (f.extendByZero β))
-    (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
-    F hanti _ _ ?_
-  rcases heval with h | h <;> rw [h]
-  · exact htr
-  · exact htr.neg
+  obtain ⟨F, hrel, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hβ hw
+  exact not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
+    (dartMatrix (f.extendByZero β)) hrel F hanti _ _ (heval ▸ htr)
 
 omit [DecidableRel H.Adj] in
 /-- **Quartic non-formality from an integer matrix representation, over any nontrivial commutative
