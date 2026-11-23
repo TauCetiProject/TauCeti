@@ -570,12 +570,6 @@ theorem continuous_gaugeTransform {u : ℂ → Circle} (hu : ContDiff ℝ 1 (fun
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) : Continuous (gaugeTransform u x) :=
   (contDiff_gaugeTransform (n := 0) (by rwa [zero_add]) (contDiff_zero.2 hx)).continuous
 
-/-- Smooth framed gauges preserve `C^n` regularity of fields for `n ≤ ∞`. -/
-theorem contDiff_framedGaugeGroup_smul {n : ℕ∞} (u : framedGaugeGroup)
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
-    ContDiff ℝ n (u • x) :=
-  contDiff_gaugeTransform (((mem_framedGaugeGroup _).1 u.property).1.of_le (mod_cast le_top)) hx
-
 /-- The logarithmic derivative of a `C²` circle-valued gauge is closed. -/
 theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z) (a b : ℂ) :
@@ -666,14 +660,6 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
     (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
     equation (gaugeTransform u x) z = 0 ↔ equation x z = 0 := by
   rw [equation_gaugeTransform hu hx, circle_rotate_tail_eq_zero_iff]
-
-/-- Smooth framed gauges preserve the vortex equations in both directions. -/
-theorem equation_framedGaugeGroup_smul_eq_zero_iff (u : framedGaugeGroup)
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hx : DifferentiableAt ℝ x z) :
-    equation (u • x) z = 0 ↔ equation x z = 0 :=
-  equation_gaugeTransform_eq_zero_iff
-    ((((mem_framedGaugeGroup _).1 u.property).1.of_le (by simp)).contDiffAt)
-    fun _ ↦ ((contDiffAt_piLp_apply 2 (n := 1)).differentiableAt one_ne_zero).comp z hx
 
 /-- The section transforms by the charge-one representation, not its square. -/
 @[simp]
@@ -837,13 +823,6 @@ theorem tendsto_sectionValue_gaugeTransform {u : ℂ → Circle}
     have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtypeVal
     simpa only [Function.comp_def, Circle.coe_one] using (hc.tendsto 1).comp hu
   simpa only [sectionValue_gaugeTransform, mul_assoc, one_mul] using huc.mul hx
-
-/-- Smooth framed gauges preserve the end framing `α · phase → 1`. -/
-theorem tendsto_sectionValue_framedGaugeGroup_smul (u : framedGaugeGroup)
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {phase : ℂ → ℂ}
-    (hx : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1)) :
-    Tendsto (fun z ↦ sectionValue (u • x) z * phase z) (cocompact ℂ) (𝓝 1) :=
-  tendsto_sectionValue_gaugeTransform ((mem_framedGaugeGroup _).1 u.property).2 hx
 
 /-- The phase gauges already used in the deformation complex have logarithmic derivative
 `df`, independently of the choice of real lift. -/
