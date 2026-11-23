@@ -607,14 +607,11 @@ private theorem quotientKer_of_isQuotientMapping
   let K := RingHom.ker π.toRingHom
   let φ := Pair.Hom.quotientLift K π le_rfl
   let ψ := hq.quotientKerInverse
-  have hψφ (x) : ψ.toRingHom (φ.toRingHom x) = x := by
-    have h := congrArg Pair.Hom.toRingHom hq.quotientKerInverse_comp_quotientLift
-    rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h; exact DFunLike.congr_fun h x
-  have hφψ (x) : φ.toRingHom (ψ.toRingHom x) = x := by
-    have h := congrArg Pair.Hom.toRingHom hq.quotientLift_comp_quotientKerInverse
-    rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h; exact DFunLike.congr_fun h x
   let e : (A₁ ⧸ K) ≃+* A₂ :=
-    { φ.toRingHom with invFun := ψ.toRingHom, left_inv := hψφ, right_inv := hφψ }
+    { φ.toRingHom with
+      invFun := ψ.toRingHom
+      left_inv := hq.quotientKerInverse_toRingHom_quotientLift
+      right_inv := hq.quotientLift_toRingHom_quotientKerInverse }
   let _ : UniformSpace (A₁ ⧸ K) := IsTopologicalAddGroup.rightUniformSpace (A₁ ⧸ K)
   have _ : IsUniformAddGroup (A₁ ⧸ K) := isUniformAddGroup_of_addCommGroup
   let ue : (A₁ ⧸ K) ≃ᵤ A₂ :=
@@ -622,7 +619,8 @@ private theorem quotientKer_of_isQuotientMapping
       uniformContinuous_addMonoidHom_of_continuous ψ.continuous_toRingHom⟩
   have hplus : (S₁.quotient K).plus.map (e : _ →+* _) = S₂.plus := Subring.ext fun b ↦
     ⟨by rintro ⟨x, hx, rfl⟩; exact φ.map_mem_plus x hx,
-      fun hb ↦ ⟨ψ.toRingHom b, ψ.map_mem_plus b hb, hφψ b⟩⟩
+      fun hb ↦ ⟨ψ.toRingHom b, ψ.map_mem_plus b hb,
+        hq.quotientLift_toRingHom_quotientKerInverse b⟩⟩
   have hSK := (isSheafyForEveryPresentation_iff_of_ringEquiv e φ.continuous_toRingHom
     ψ.continuous_toRingHom hplus).mpr hS₂
   refine ⟨hSK,

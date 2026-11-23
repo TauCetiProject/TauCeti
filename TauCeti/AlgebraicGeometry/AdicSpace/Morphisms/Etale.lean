@@ -530,6 +530,16 @@ private theorem liftToRestrict_uniq {W Z : PreAdicSpace.{u}} (m : W ⟶ Z) {O : 
     g = liftToRestrict m hm :=
   PreAdicSpace.IsOpenImmersion.lift_uniq _ _ _ g hg
 
+private theorem liftToRestrict_comp_liftRestrict {W Z : PreAdicSpace.{u}} (m : W ⟶ Z)
+    {O O' : Opens Z} (hOO' : O ≤ O') (hm : Set.range m.base ⊆ (O : Set Z))
+    (hm' : Set.range m.base ⊆ (O' : Set Z)) :
+    liftToRestrict m hm ≫ Hom.liftRestrict (𝟙 Z) hOO' = liftToRestrict m hm' :=
+  liftToRestrict_uniq _ _ _
+    ((Category.assoc _ _ _).trans
+      ((congrArg (liftToRestrict m hm ≫ ·)
+        ((Hom.liftRestrict_ofRestrict (𝟙 Z) hOO').trans (Category.comp_id _))).trans
+        (liftToRestrict_ofRestrict m hm)))
+
 private instance isOpenImmersion_liftToRestrict {W Z : PreAdicSpace.{u}} (m : W ⟶ Z)
     {O : Opens Z} (hm : Set.range m.base ⊆ (O : Set Z)) [PreAdicSpace.IsOpenImmersion m] :
     PreAdicSpace.IsOpenImmersion (liftToRestrict m hm) :=
@@ -694,25 +704,9 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
           (hπK_lift (sq.le.trans inf_le_right) ht₂ hg₂_ι).symm))
   refine ⟨(ofPair sq.square.pair sq.square.isSheafy).obj,
     liftToRestrict sq.square.targetMap.hom ht, inferInstance, hp_mem, ?_⟩
-  have hj₁ : liftToRestrict sq.square.targetMap.hom ht ≫
-        Hom.liftRestrict (𝟙 Z.obj) (inf_le_left : O₁₂ ≤ O₁) =
-      liftToRestrict sq.square.targetMap.hom ht₁ :=
-    liftToRestrict_uniq _ ht₁ _
-      ((Category.assoc _ _ _).trans
-        ((congrArg (liftToRestrict sq.square.targetMap.hom ht ≫ ·)
-          ((Hom.liftRestrict_ofRestrict (𝟙 Z.obj) (inf_le_left : O₁₂ ≤ O₁)).trans
-            (Category.comp_id _))).trans
-          (liftToRestrict_ofRestrict sq.square.targetMap.hom ht)))
-  have hj₂ : liftToRestrict sq.square.targetMap.hom ht ≫
-        Hom.liftRestrict (𝟙 Z.obj) (inf_le_right : O₁₂ ≤ O₂) =
-      liftToRestrict sq.square.targetMap.hom ht₂ :=
-    liftToRestrict_uniq _ ht₂ _
-      ((Category.assoc _ _ _).trans
-        ((congrArg (liftToRestrict sq.square.targetMap.hom ht ≫ ·)
-          ((Hom.liftRestrict_ofRestrict (𝟙 Z.obj) (inf_le_right : O₁₂ ≤ O₂)).trans
-            (Category.comp_id _))).trans
-          (liftToRestrict_ofRestrict sq.square.targetMap.hom ht)))
-  rw [← Category.assoc, ← Category.assoc, hj₁, hj₂]
+  rw [← Category.assoc, ← Category.assoc,
+    liftToRestrict_comp_liftRestrict _ (inf_le_left : O₁₂ ≤ O₁) ht ht₁,
+    liftToRestrict_comp_liftRestrict _ (inf_le_right : O₁₂ ≤ O₂) ht ht₂]
   simpa only [ObjectProperty.homMk_hom] using congrArg InducedCategory.Hom.hom hm_eq
 
 end SqZeroLift
