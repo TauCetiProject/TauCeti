@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.RelativeGluing
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Grassmannian.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+public import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!
 # The Grassmannian of a quasi-coherent sheaf over an arbitrary base
@@ -38,7 +39,6 @@ over arbitrary `X`-schemes are not treated here.
 
 * `AlgebraicGeometry.Scheme.Modules.grassmannianChartMap E k h`: for affine opens `V ≤ U`, the
   morphism `G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` over the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)`.
-* `AlgebraicGeometry.Scheme.Modules.grassmannianGluingData E k`: the relative gluing datum.
 * `AlgebraicGeometry.Scheme.Modules.grassmannian E k`: the relative Grassmannian.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianToBase E k`: its structure morphism to `X`.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianι E k U`: the inclusion of `G(k, Γ(E, U))` as the
@@ -50,7 +50,8 @@ over arbitrary `X`-schemes are not treated here.
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Modules.isPullback_grassmannianChartMap`: for affine opens `V ≤ U`,
-  `G(k, Γ(E, V))` is the part of `G(k, Γ(E, U))` over `V`.
+  `G(k, Γ(E, V))` is the part of `G(k, Γ(E, U))` over `V`; in particular `grassmannianChartMap`
+  is an open immersion.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianChartMap_comp`: the comparison morphisms compose.
 * `AlgebraicGeometry.Scheme.Modules.isPullback_grassmannianι_fromSpec`: over an affine open `U`,
   the relative Grassmannian is `G(k, Γ(E, U))` over `Spec Γ(X, U)`.
@@ -129,6 +130,14 @@ theorem isPullback_grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.v
     rw [algebraMap_restrictionAlgebra, CommRingCat.ofHom_hom]
   rw [grassmannianChartMap_eq, ← hres]
   exact IsBaseChange.isPullback_grassmannianSchemeHom _ k
+
+/-- For affine opens `V ≤ U`, the comparison morphism `G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` is an open
+immersion, as the base change of the open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
+instance {U V : X.affineOpens} (h : V.val ≤ U.val) :
+    IsOpenImmersion (grassmannianChartMap E k h) :=
+  haveI := U.property.isOpenImmersion_SpecMap_presheaf_map V.property (homOfLE h).op
+  MorphismProperty.of_isPullback (P := @IsOpenImmersion)
+    (isPullback_grassmannianChartMap E k h).flip inferInstance
 
 /-- **The comparison morphisms compose.** For affine opens `W ≤ V ≤ U`, the morphisms
 `G(k, Γ(E, W)) ⟶ G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` compose to the morphism for `W ≤ U`. -/
@@ -213,10 +222,10 @@ private lemma grassmannianChartMap_toSpec_isoSpec_inv {U V : X.affineOpens} (h :
   rw [grassmannianChartMap_toSpec_assoc,
     IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv U.property V.property h, Category.assoc]
 
-/-- The **relative gluing datum of the Grassmannian**: the Grassmannians `G(k, Γ(E, U))` over the
-affine opens `U ≅ Spec Γ(X, U)` of `X`, with the comparison morphisms for `V ≤ U`, which identify
-`G(k, Γ(E, V))` with the part of `G(k, Γ(E, U))` over `V`. -/
-noncomputable def grassmannianGluingData : X.directedAffineCover.RelativeGluingData where
+-- The relative gluing datum of the Grassmannian: the Grassmannians `G(k, Γ(E, U))` over the
+-- affine opens `U ≅ Spec Γ(X, U)` of `X`, with the comparison morphisms for `V ≤ U`, which identify
+-- `G(k, Γ(E, V))` with the part of `G(k, Γ(E, U))` over `V`.
+private noncomputable def grassmannianGluingData : X.directedAffineCover.RelativeGluingData where
   functor := grassmannianFunctor E k
   natTrans :=
     { app (U : X.affineOpens) :=
