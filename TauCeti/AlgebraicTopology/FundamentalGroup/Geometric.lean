@@ -65,19 +65,6 @@ variable {X : Type*} [TopologicalSpace X] {x₀ : X}
 abbrev mk (p : Path x₀ x₀) : GeometricFundamentalGroup X x₀ :=
   op (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p))
 
-/-- The class of a loop, read in Mathlib's fundamental group. -/
-@[simp]
-theorem unop_mk (p : Path x₀ x₀) :
-    (mk p).unop = FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p) :=
-  (rfl)
-
-/-- The class of a loop, read as a homotopy class of paths, is the class of the loop. This is the
-round trip `FundamentalGroup.toPath ∘ FundamentalGroup.fromPath`, which is the identity because
-`FundamentalGroup.fromPath` builds the structure whose field `FundamentalGroup.toPath` reads. -/
-theorem toPath_unop_mk (p : Path x₀ x₀) :
-    (mk p).unop.toPath = Path.Homotopic.Quotient.mk p :=
-  (rfl)
-
 /-- Multiplication in the geometric fundamental group is first-traverse concatenation. -/
 @[simp]
 theorem mk_trans (p q : Path x₀ x₀) : mk (p.trans q) = mk p * mk q :=
