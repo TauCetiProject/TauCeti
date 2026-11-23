@@ -164,13 +164,14 @@ private theorem rpowLieEquiv_comm_trans {ι : Type*} (B : Basis ι ℝ L)
 private theorem logLieDerivation_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
     {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
-    (hlam : ∀ i, 0 < lam i)
     (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i) (y : L) :
-    logLieDerivation B hlam hB (θ y) = -θ (logLieDerivation B hlam hB y) := by
+    logLieDerivation B hB (θ y) = -θ (logLieDerivation B hB y) := by
+  have hne : ∀ i, lam i ≠ 0 := fun i hi ↦
+    B.ne_zero i (((θ.trans θ').trans (θ.trans θ')).injective (by simpa [hi] using hB i))
   have h := B.diagEnd_comp_eq_comp_diagEnd
     (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
     (φ := (θ : L →ₗ[ℝ] L)) hB (·⁻¹) Real.log (fun r ↦ -Real.log r)
-    (fun i ↦ trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i))
+    (fun i ↦ trans_sq_apply_involutive hθ hθ' (hne i) (hB i))
     fun i ↦ Real.log_inv (lam i)
   rw [B.diagEnd_neg, LinearMap.comp_neg] at h
   simpa only [logLieDerivation_apply, LinearMap.comp_apply, LinearMap.neg_apply,
@@ -205,7 +206,7 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
   obtain ⟨B, lam, hlam_pos, hB_eig⟩ := exists_pos_eigenbasis_trans_sq hθ hθ'
   let Ppow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L := rpowLieEquiv B hlam_pos hB_eig s
-  let D : LieDerivation ℝ L L := logLieDerivation B hlam_pos hB_eig
+  let D : LieDerivation ℝ L L := logLieDerivation B hB_eig
   have hθ_Ppow (s : ℝ) (y : L) : Ppow s (θ y) = θ (Ppow (-s) y) :=
     rpowLieEquiv_apply_involutive B hθ.involutive hθ'.involutive hlam_pos hB_eig s y
   have hω_Ppow (s : ℝ) (y : L) : ω (Ppow s y) = Ppow s (ω y) :=
@@ -226,13 +227,15 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     have hω_eq : ω y = Ppow 1 (ω.symm y) := by
       rw [rpowLieEquiv_one]
       simp [ω]
+    have hω_symm : ω.symm y = θ (θ' y) := by
+      rw [LieEquiv.symm_apply_eq]
+      simp [ω, hθ.involutive _, hθ'.involutive _]
     calc
       θ' (θ'' y) = θ' (Ppow (1 / 2) (θ y)) := by rw [hθ''_apply]
       _ = Ppow (-(1 / 2)) (θ' (θ y)) := hθ'_Ppow (1 / 2) (θ y)
       _ = Ppow (-(1 / 2)) (Ppow 1 (ω.symm y)) := by rw [← trans_apply θ θ' y, hω_eq]
       _ = Ppow (1 / 2) (ω.symm y) := by dsimp only [Ppow]; rw [rpowLieEquiv_add]; norm_num
-      _ = Ppow (1 / 2) (θ (θ' y)) := by
-          simp only [ω, LieEquiv.symm_trans, hθ.symm_eq, hθ'.symm_eq, LieEquiv.trans_apply]
+      _ = Ppow (1 / 2) (θ (θ' y)) := by rw [hω_symm]
       _ = θ'' (θ' y) := (hθ''_apply (θ' y)).symm
   have hθ'_eq_θ'' : θ' = θ'' :=
     hθ'.eq_of_commute (hθ.conj φ) hcomm_θ'

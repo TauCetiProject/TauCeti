@@ -11,28 +11,28 @@ public import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 import Mathlib.LinearAlgebra.Basis.Bilinear
 
 /-!
-# Real powers and logarithms of positively diagonalizable Lie automorphisms
+# Real powers and logarithms of diagonalizable Lie automorphisms
 
-Let `P : L ≃ₗ⁅ℝ⁆ L` be a Lie algebra automorphism diagonalized by a basis `B` with strictly
-positive eigenvalues `lam : ι → ℝ`. Scaling the `i`-th basis vector by `lam i ^ s` defines a
-one-parameter family of Lie automorphisms `P ^ s` (`LieEquiv.rpowLieEquiv`), and scaling it by
-`Real.log (lam i)` defines a Lie derivation `log P` (`LieEquiv.logLieDerivation`). The Leibniz
-rule and bracket preservation follow directly from the multiplicative property of eigenvalues on
-brackets `[B i, B j]` via bilinear basis extensionality (`LinearMap.ext_basis`). On any
-`μ`-eigenvector of `s • log P`, the power `P ^ s` acts as `Real.exp μ`
-(`LieEquiv.rpowLieEquiv_apply_of_log_eq_smul`).
+Let `P : L ≃ₗ⁅ℝ⁆ L` be a Lie algebra automorphism diagonalized by a basis `B` with eigenvalues
+`lam : ι → ℝ` (automatically nonzero since `P` is injective). Scaling the `i`-th basis vector by
+`Real.log (lam i)` defines a Lie derivation `log P` (`LieEquiv.logLieDerivation`). When all
+eigenvalues are strictly positive, scaling the `i`-th basis vector by `lam i ^ s` defines a
+one-parameter family of Lie automorphisms `P ^ s` (`LieEquiv.rpowLieEquiv`). The Leibniz rule and
+bracket preservation follow directly from the multiplicative property of eigenvalues on brackets
+`[B i, B j]` via bilinear basis extensionality (`LinearMap.ext_basis`). On any `μ`-eigenvector of
+`s • log P`, the power `P ^ s` acts as `Real.exp μ` (`LieEquiv.rpowLieEquiv_apply_of_log_eq_smul`).
 
 ## Main definitions
 
 * `LieEquiv.rpowLieEquiv`: real power `P ^ s` of a positively diagonalizable Lie automorphism as
   a Lie algebra automorphism.
-* `LieEquiv.logLieDerivation`: logarithmic derivation `log P` of a positively diagonalizable Lie
+* `LieEquiv.logLieDerivation`: logarithmic derivation `log P` of a real diagonalizable Lie
   automorphism.
 
 ## Main results
 
-* `LieEquiv.diagEnd_rpow_comp`, `LieEquiv.diagEnd_rpow_map_lie`: composition law and bracket
-  preservation for diagonal real powers.
+* `Module.Basis.diagEnd_rpow_comp`: composition law for diagonal real powers on a real module.
+* `LieEquiv.diagEnd_rpow_map_lie`: bracket preservation for diagonal real powers.
 * `LieEquiv.rpowLieEquiv_apply`, `LieEquiv.rpowLieEquiv_symm_apply`, `LieEquiv.rpowLieEquiv_one`,
   `LieEquiv.rpowLieEquiv_add`: evaluation and group-homomorphism properties of `s ↦ P ^ s`.
 * `LieEquiv.diagEnd_log_leibniz`: the diagonal logarithm satisfies the Leibniz rule.
@@ -44,11 +44,29 @@ public section
 
 open LieAlgebra Module
 
+section DiagonalRpow
+
+variable {ι V : Type*} [AddCommMonoid V] [Module ℝ V]
+
+/-- Composing diagonal real powers `lam ^ s` and `lam ^ t` yields `lam ^ (s + t)`. -/
+theorem _root_.Module.Basis.diagEnd_rpow_comp (B : Basis ι ℝ V) {lam : ι → ℝ}
+    (hlam : ∀ i, 0 < lam i) (s t : ℝ) :
+    (B.diagEnd (fun i ↦ lam i ^ s)).comp (B.diagEnd (fun i ↦ lam i ^ t)) =
+      B.diagEnd (fun i ↦ lam i ^ (s + t)) := by
+  rw [B.diagEnd_comp]
+  congr 1
+  ext i
+  rw [← Real.rpow_add (hlam i)]
+
+end DiagonalRpow
+
 namespace LieEquiv
 
 section Diagonal
 
 variable {ι R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The bracket of two eigenvectors of a Lie automorphism is an eigenvector with the product
 eigenvalue. -/
@@ -56,6 +74,16 @@ private theorem apply_lie_basis_of_apply_basis (B : Basis ι R L) {lam : ι → 
     (hB : ∀ i, P (B i) = lam i • B i) (i j : ι) :
     P ⁅B i, B j⁆ = (lam i * lam j) • ⁅B i, B j⁆ := by
   rw [P.map_lie, hB i, hB j, smul_lie, lie_smul, smul_smul]
+
+/-- Bracket-specific bilinear basis extensionality against a sum of two bracket terms. -/
+private theorem ext_basis_lie (B : Basis ι R L) (D₁ D₂ D₃ D₄ D₅ : Module.End R L)
+    (h : ∀ i j, D₁ ⁅B i, B j⁆ = ⁅D₂ (B i), D₃ (B j)⁆ + ⁅D₄ (B i), D₅ (B j)⁆) (x y : L) :
+    D₁ ⁅x, y⁆ = ⁅D₂ x, D₃ y⁆ + ⁅D₄ x, D₅ y⁆ := by
+  let adL : L →ₗ[R] L →ₗ[R] L := (LieAlgebra.ad R L : L →ₗ⁅R⁆ Module.End R L).toLinearMap
+  have hbilin : adL.compr₂ D₁ = adL.compl₁₂ D₂ D₃ + adL.compl₁₂ D₄ D₅ := by
+    refine LinearMap.ext_basis B B fun i j ↦ ?_
+    simpa [adL] using h i j
+  simpa [adL] using LinearMap.congr_fun₂ hbilin x y
 
 end Diagonal
 
@@ -65,15 +93,12 @@ variable {ι L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- Composing diagonal real powers `lam ^ s` and `lam ^ t` yields `lam ^ (s + t)`. -/
-theorem diagEnd_rpow_comp (B : Basis ι ℝ L) {lam : ι → ℝ}
-    (hlam : ∀ i, 0 < lam i) (s t : ℝ) :
-    (B.diagEnd (fun i ↦ lam i ^ s)).comp (B.diagEnd (fun i ↦ lam i ^ t)) =
-      B.diagEnd (fun i ↦ lam i ^ (s + t)) := by
-  rw [B.diagEnd_comp]
-  congr 1
-  ext i
-  rw [← Real.rpow_add (hlam i)]
+/-- Evaluating `B.diagEnd (g ∘ lam)` on a bracket of basis eigenvectors of `P`. -/
+private theorem diagEnd_comp_lie_basis (B : Basis ι ℝ L) {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L}
+    (hB : ∀ i, P (B i) = lam i • B i) (g : ℝ → ℝ) (i j : ι) :
+    B.diagEnd (fun k ↦ g (lam k)) ⁅B i, B j⁆ = g (lam i * lam j) • ⁅B i, B j⁆ :=
+  B.diagEnd_comp_apply_of_eigenvector (f := (P : L →ₗ[ℝ] L)) hB g
+    (apply_lie_basis_of_apply_basis B hB i j)
 
 /-- Diagonal real powers of a positively diagonalizable Lie automorphism preserve the bracket. -/
 theorem diagEnd_rpow_map_lie (B : Basis ι ℝ L)
@@ -81,18 +106,12 @@ theorem diagEnd_rpow_map_lie (B : Basis ι ℝ L)
     (hB : ∀ i, P (B i) = lam i • B i) (s : ℝ) (x y : L) :
     B.diagEnd (fun i ↦ lam i ^ s) ⁅x, y⁆ =
       ⁅B.diagEnd (fun i ↦ lam i ^ s) x, B.diagEnd (fun i ↦ lam i ^ s) y⁆ := by
-  let ds := B.diagEnd (fun k ↦ lam k ^ s)
-  let adL : L →ₗ[ℝ] L →ₗ[ℝ] L := (LieAlgebra.ad ℝ L : L →ₗ⁅ℝ⁆ Module.End ℝ L).toLinearMap
-  have hbilin : adL.compr₂ ds = adL.compl₁₂ ds ds := by
-    refine LinearMap.ext_basis B B fun i j ↦ ?_
-    simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, ad_apply,
-      adL, ds]
-    rw [B.diagEnd_comp_apply_of_eigenvector (f := (P : L →ₗ[ℝ] L)) hB (· ^ s)
-        (apply_lie_basis_of_apply_basis B hB i j),
-      B.diagEnd_apply_self, B.diagEnd_apply_self, smul_lie, lie_smul, smul_smul,
-      Real.mul_rpow (hlam i).le (hlam j).le]
-  simpa only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, ad_apply,
-    adL, ds] using LinearMap.congr_fun₂ hbilin x y
+  have h := ext_basis_lie B (B.diagEnd (fun i ↦ lam i ^ s))
+    (B.diagEnd (fun i ↦ lam i ^ s)) (B.diagEnd (fun i ↦ lam i ^ s)) 0 0 (fun i j ↦ by
+      rw [diagEnd_comp_lie_basis B hB (· ^ s), B.diagEnd_apply_self, B.diagEnd_apply_self,
+        LinearMap.zero_apply, LinearMap.zero_apply, lie_zero, add_zero, smul_lie, lie_smul,
+        smul_smul, Real.mul_rpow (hlam i).le (hlam j).le]) x y
+  simpa using h
 
 /-- Real power `P ^ s` of a positively diagonalizable Lie automorphism as a Lie automorphism. -/
 noncomputable def rpowLieEquiv (B : Basis ι ℝ L)
@@ -101,12 +120,12 @@ noncomputable def rpowLieEquiv (B : Basis ι ℝ L)
   __ := B.diagEnd (fun i ↦ lam i ^ s)
   invFun := B.diagEnd (fun i ↦ lam i ^ (-s))
   left_inv y := by
-    have h := LinearMap.congr_fun (diagEnd_rpow_comp B hlam (-s) s) y
+    have h := LinearMap.congr_fun (B.diagEnd_rpow_comp hlam (-s) s) y
     have hone : (fun i : ι ↦ lam i ^ (-s + s)) = 1 := by ext i; simp
     simpa only [LinearMap.toFun_eq_coe, LinearMap.comp_apply, hone, B.diagEnd_one,
       LinearMap.id_apply] using h
   right_inv y := by
-    have h := LinearMap.congr_fun (diagEnd_rpow_comp B hlam s (-s)) y
+    have h := LinearMap.congr_fun (B.diagEnd_rpow_comp hlam s (-s)) y
     have hone : (fun i : ι ↦ lam i ^ (s + -s)) = 1 := by ext i; simp
     simpa only [LinearMap.toFun_eq_coe, LinearMap.comp_apply, hone, B.diagEnd_one,
       LinearMap.id_apply] using h
@@ -141,50 +160,42 @@ theorem rpowLieEquiv_add (B : Basis ι ℝ L)
     (hB : ∀ i, P (B i) = lam i • B i) (s t : ℝ) (y : L) :
     rpowLieEquiv B hlam hB s (rpowLieEquiv B hlam hB t y) =
       rpowLieEquiv B hlam hB (s + t) y :=
-  LinearMap.congr_fun (diagEnd_rpow_comp B hlam s t) y
+  LinearMap.congr_fun (B.diagEnd_rpow_comp hlam s t) y
 
-/-- The diagonal logarithm of a positively diagonalizable Lie automorphism satisfies the Leibniz
+/-- The diagonal logarithm of a real diagonalizable Lie automorphism satisfies the Leibniz
 rule. -/
 theorem diagEnd_log_leibniz (B : Basis ι ℝ L)
-    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
-    (hB : ∀ i, P (B i) = lam i • B i) (x y : L) :
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hB : ∀ i, P (B i) = lam i • B i) (x y : L) :
     B.diagEnd (fun i ↦ Real.log (lam i)) ⁅x, y⁆ =
       ⁅x, B.diagEnd (fun i ↦ Real.log (lam i)) y⁆ -
         ⁅y, B.diagEnd (fun i ↦ Real.log (lam i)) x⁆ := by
-  let D := B.diagEnd (fun k ↦ Real.log (lam k))
-  let adL : L →ₗ[ℝ] L →ₗ[ℝ] L := (LieAlgebra.ad ℝ L : L →ₗ⁅ℝ⁆ Module.End ℝ L).toLinearMap
-  have hbilin : adL.compr₂ D = adL.compl₁₂ LinearMap.id D + adL.compl₁₂ D LinearMap.id := by
-    refine LinearMap.ext_basis B B fun i j ↦ ?_
-    simp only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
-      LinearMap.id_apply, LieHom.coe_toLinearMap, ad_apply, adL, D]
-    rw [B.diagEnd_comp_apply_of_eigenvector (f := (P : L →ₗ[ℝ] L)) hB Real.log
-        (apply_lie_basis_of_apply_basis B hB i j),
-      B.diagEnd_apply_self, B.diagEnd_apply_self,
-      Real.log_mul (hlam i).ne' (hlam j).ne', add_smul, lie_smul, smul_lie, add_comm]
-  have h := LinearMap.congr_fun₂ hbilin x y
-  simp only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
-    LinearMap.id_apply, LieHom.coe_toLinearMap, ad_apply, adL, D] at h
-  rw [h, ← lie_skew y (D x), sub_neg_eq_add]
+  have hne : ∀ k, lam k ≠ 0 := fun k hk ↦
+    B.ne_zero k (P.injective (by simpa [hk] using hB k))
+  have h := ext_basis_lie B (B.diagEnd (fun k ↦ Real.log (lam k)))
+    LinearMap.id (B.diagEnd (fun k ↦ Real.log (lam k)))
+    (B.diagEnd (fun k ↦ Real.log (lam k))) LinearMap.id (fun i j ↦ by
+      rw [diagEnd_comp_lie_basis B hB Real.log, B.diagEnd_apply_self, B.diagEnd_apply_self,
+        LinearMap.id_apply, LinearMap.id_apply, Real.log_mul (hne i) (hne j), add_smul, lie_smul,
+        smul_lie, add_comm]) x y
+  rw [h, LinearMap.id_apply, LinearMap.id_apply, sub_eq_add_neg, lie_skew]
 
-/-- Logarithmic derivation `log P` of a positively diagonalizable Lie automorphism. -/
+/-- Logarithmic derivation `log P` of a real diagonalizable Lie automorphism. -/
 noncomputable def logLieDerivation (B : Basis ι ℝ L)
-    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
-    (hB : ∀ i, P (B i) = lam i • B i) : LieDerivation ℝ L L where
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hB : ∀ i, P (B i) = lam i • B i) : LieDerivation ℝ L L where
   toLinearMap := B.diagEnd (fun i ↦ Real.log (lam i))
-  leibniz' := diagEnd_log_leibniz B hlam hB
+  leibniz' := diagEnd_log_leibniz B hB
 
 /-- Evaluating `logLieDerivation` gives the diagonal logarithm endomorphism. -/
 theorem logLieDerivation_apply (B : Basis ι ℝ L)
-    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
-    (hB : ∀ i, P (B i) = lam i • B i) (y : L) :
-    logLieDerivation B hlam hB y = B.diagEnd (fun i ↦ Real.log (lam i)) y := by
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hB : ∀ i, P (B i) = lam i • B i) (y : L) :
+    logLieDerivation B hB y = B.diagEnd (fun i ↦ Real.log (lam i)) y := by
   rfl
 
 /-- On any `μ`-eigenvector of `s • log P`, the power `P ^ s` acts by `Real.exp μ`. -/
 theorem rpowLieEquiv_apply_of_log_eq_smul (B : Basis ι ℝ L)
     {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
     (hB : ∀ i, P (B i) = lam i • B i) {s μ : ℝ} {y : L}
-    (hy : s • logLieDerivation B hlam hB y = μ • y) :
+    (hy : s • logLieDerivation B hB y = μ • y) :
     rpowLieEquiv B hlam hB s y = Real.exp μ • y := by
   have hlin : B.diagEnd (fun i ↦ s * Real.log (lam i)) y = μ • y := by
     have heq : B.diagEnd (fun i ↦ s * Real.log (lam i)) =

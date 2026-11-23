@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.Symplectic.Cartan
+public import TauCeti.Algebra.Lie.Symplectic.Cartan.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Cartan
 public import TauCeti.Analysis.Matrix.Normed

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
-public import TauCeti.Algebra.Lie.Symplectic.Cartan
+public import TauCeti.Algebra.Lie.Symplectic.Cartan.Basic
 import TauCeti.Algebra.Lie.Symplectic.Killing
 
 /-!

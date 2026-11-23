@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Reductive.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 import Mathlib.Algebra.Lie.Prod
-import Mathlib.LinearAlgebra.Projection
+import TauCeti.Algebra.Lie.Prod
 
 /-!
 # Reductive Cartan involutions and extensions
@@ -150,29 +150,6 @@ theorem IsReductiveCartanInvolution.isKilling_derivedSeries {θ : L ≃ₗ⁅R�
     IsKilling R (derivedSeries R L 1) :=
   hθ.derivedSeries_isCartanInvolution.isKilling
 
-/-- Addition identifies `L` with the direct product `Z × S` when `Z ≤ center R L` and `S` are
-complementary ideals. -/
-private noncomputable def idealProdEquivOfIsCompl {Z S : LieIdeal R L}
-    (hZ : Z ≤ center R L) (hc : IsCompl Z S) :
-    (↥Z × ↥S) ≃ₗ⁅R⁆ L where
-  __ := Submodule.prodEquivOfIsCompl Z.toSubmodule S.toSubmodule
-    (LieSubmodule.isCompl_toSubmodule.mpr hc)
-  map_lie' {x y} := by
-    have hx₁ : ∀ w : L, ⁅(x.1 : L), w⁆ = 0 := fun w ↦ by
-      rw [← lie_skew, (LieModule.mem_maxTrivSubmodule R L L (x.1 : L)).mp (hZ x.1.property) w,
-        neg_zero]
-    have hy₁ : ∀ w : L, ⁅w, (y.1 : L)⁆ = 0 :=
-      (LieModule.mem_maxTrivSubmodule R L L (y.1 : L)).mp (hZ y.1.property)
-    have hz : ⁅x.1, y.1⁆ = 0 := Subtype.ext (hx₁ y.1)
-    simp [lie_add, add_lie, hx₁, hy₁, hz]
-
-omit [PartialOrder R] in
-private theorem idealProdEquivOfIsCompl_apply {Z S : LieIdeal R L}
-    (hZ : Z ≤ center R L) (hc : IsCompl Z S) (p : ↥Z × ↥S) :
-    idealProdEquivOfIsCompl hZ hc p = (p.1 : L) + p.2 :=
-  Submodule.coe_prodEquivOfIsCompl' Z.toSubmodule S.toSubmodule
-    (LieSubmodule.isCompl_toSubmodule.mpr hc) p
-
 /-- When `L` splits as the direct sum of its centre and derived ideal, combining a linear
 involution `θZ` of the centre with a Cartan involution `θD` of the derived ideal produces a
 reductive Cartan involution of `L`. -/
@@ -183,7 +160,9 @@ theorem exists_isReductiveCartanInvolution_extend
     ∃ θ : L ≃ₗ⁅R⁆ L, θ.IsReductiveCartanInvolution ∧
       (∀ z : center R L, θ z = θZ z) ∧ ∀ d : derivedSeries R L 1, θ d = θD d := by
   let e : (↥(center R L) × ↥(derivedSeries R L 1)) ≃ₗ⁅R⁆ L :=
-    idealProdEquivOfIsCompl (le_rfl : center R L ≤ center R L) hc
+    TauCeti.idealProdEquivOfIsCompl hc
+  have he (z : center R L) (d : derivedSeries R L 1) : e (z, d) = (z : L) + d :=
+    TauCeti.idealProdEquivOfIsCompl_apply hc (z, d)
   have hz_lie (z₁ z₂ : center R L) : ⁅z₁, z₂⁆ = 0 :=
     Subtype.ext ((LieModule.mem_maxTrivSubmodule R L L z₂).mp z₂.property z₁)
   let θZ_lie : ↥(center R L) ≃ₗ⁅R⁆ ↥(center R L) :=
@@ -191,22 +170,17 @@ theorem exists_isReductiveCartanInvolution_extend
       map_lie' := fun {z₁ z₂} ↦ by rw [hz_lie z₁ z₂, hz_lie]; exact map_zero θZ }
   let θprod : (↥(center R L) × ↥(derivedSeries R L 1)) ≃ₗ⁅R⁆
       (↥(center R L) × ↥(derivedSeries R L 1)) :=
-    { __ := θZ_lie.toLieHom.prodMap θD.toLieHom
-      invFun := θZ_lie.symm.toLieHom.prodMap θD.symm.toLieHom
-      left_inv := fun ⟨z, d⟩ ↦ by simp
-      right_inv := fun ⟨z, d⟩ ↦ by simp }
+    { __ := θZ.prodCongr θD.toLinearEquiv
+      map_lie' := fun {p q} ↦ Prod.ext (θZ_lie.map_lie p.1 q.1) (θD.map_lie p.2 q.2) }
   let θ : L ≃ₗ⁅R⁆ L := (e.symm.trans θprod).trans e
   have hθ_apply (z : center R L) (d : derivedSeries R L 1) :
       θ ((z : L) + d) = (θZ z : L) + θD d := by
     have hp : θprod (z, d) = (θZ z, θD d) := rfl
-    rw [← show e (z, d) = (z : L) + d from idealProdEquivOfIsCompl_apply _ _ _,
-      ← show e (θZ z, θD d) = (θZ z : L) + θD d from idealProdEquivOfIsCompl_apply _ _ _]
+    rw [← he z d, ← he (θZ z) (θD d)]
     simp [θ, hp]
   have hinv : Function.Involutive θ := fun x ↦ by
     obtain ⟨⟨z, d⟩, rfl⟩ := e.surjective x
-    change θ (θ (e (z, d))) = e (z, d)
-    dsimp only [e]
-    rw [idealProdEquivOfIsCompl_apply, hθ_apply, hθ_apply, hθZ, hθD.involutive]
+    rw [coe_toLieHom, he z d, hθ_apply, hθ_apply, hθZ, hθD.involutive]
   have hres : θ.restrictDerivedSeries 1 = θD := LieEquiv.ext fun d ↦ Subtype.ext <| by
     simpa [coe_restrictDerivedSeries] using hθ_apply 0 d
   refine ⟨θ, ⟨hinv, ?_⟩, fun z ↦ by simpa using hθ_apply z 0, fun d ↦ by simpa using hθ_apply 0 d⟩
