@@ -194,7 +194,7 @@ above by the norm itself. -/
 theorem isBoundedWrt_norm_iff {α : MulRingSeminorm A} :
     (RingHom.id A).IsBoundedWrt norm α ↔ ∀ x, α x ≤ ‖x‖ :=
   ⟨fun h x ↦ (⟨α, h⟩ : GelfandSpectrum A).apply_le_norm x,
-    fun h ↦ ⟨1, zero_lt_one, fun x ↦ by simpa only [RingHom.id_apply, one_mul] using h x⟩⟩
+    fun h ↦ (ofLeNorm α h).bound⟩
 
 /-- Every point of `GelfandSpectrum A` is `1`-Lipschitz on `A`: `|α x - α y| ≤ ‖x - y‖`. -/
 theorem abs_apply_sub_le_norm_sub (α : GelfandSpectrum A) (x y : A) :

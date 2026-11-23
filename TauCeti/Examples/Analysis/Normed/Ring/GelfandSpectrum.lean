@@ -193,35 +193,52 @@ end TrivSqZeroExt
 
 section MaxDualNumber
 
+private noncomputable def maxDualNumberInlHom (K : Type*) [NormedCommRing K]
+    [IsUltrametricDist K] : K →+* MaxDualNumber K :=
+  MaxDualNumber.ofDualNumber.toRingHom.comp (TrivSqZeroExt.inlHom K K)
+
+private noncomputable def maxDualNumberFstHom (K : Type*) [NormedCommRing K]
+    [IsUltrametricDist K] : MaxDualNumber K →+* K :=
+  (TrivSqZeroExt.fstHom ℕ K K).toRingHom.comp MaxDualNumber.ofDualNumber.symm.toRingHom
+
+private theorem maxDualNumber_inl_isBounded (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
+    (maxDualNumberInlHom K).IsBounded :=
+  ⟨1, zero_lt_one, fun x ↦ by simp [maxDualNumberInlHom]⟩
+
+private theorem maxDualNumber_fst_isBounded (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
+    (maxDualNumberFstHom K).IsBounded :=
+  ⟨1, zero_lt_one, fun y ↦ by
+    obtain ⟨z, rfl⟩ := MaxDualNumber.ofDualNumber.surjective y
+    simp only [maxDualNumberFstHom, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe, TrivSqZeroExt.fstHom_apply, RingEquiv.toRingHom_eq_coe,
+      RingEquiv.symm_apply_apply, MaxDualNumber.norm_ofDualNumber, one_mul]
+    exact le_max_left _ _⟩
+
+private theorem maxDualNumber_fst_inl (K : Type*) [NormedCommRing K] [IsUltrametricDist K]
+    (x : K) :
+    maxDualNumberFstHom K (maxDualNumberInlHom K x) = x := by
+  simp [maxDualNumberFstHom, maxDualNumberInlHom]
+
+private theorem maxDualNumber_sub_inl_fst_isNilpotent (K : Type*) [NormedCommRing K]
+    [IsUltrametricDist K] (y : MaxDualNumber K) :
+    IsNilpotent (y - maxDualNumberInlHom K (maxDualNumberFstHom K y)) := by
+  have hnil := (sub_inlHom_fstHom_isNilpotent K K (MaxDualNumber.ofDualNumber.symm y)).map
+    MaxDualNumber.ofDualNumber.toRingHom
+  simpa only [map_sub, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.apply_symm_apply, maxDualNumberInlHom, maxDualNumberFstHom,
+    RingHom.comp_apply] using hnil
+
 /-- Projection to the first component gives a homeomorphism between the Gel'fand spectrum of
 `MaxDualNumber K` (with the ultrametric maximum norm) and `GelfandSpectrum K`. -/
 noncomputable def maxDualNumberHomeomorph (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
     GelfandSpectrum (MaxDualNumber K) ≃ₜ GelfandSpectrum K :=
   retractHomeomorph
-    (MaxDualNumber.ofDualNumber.toRingHom.comp (TrivSqZeroExt.inlHom K K))
-    ⟨1, zero_lt_one, fun x ↦ by
-      simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-        TrivSqZeroExt.inlHom_apply, MaxDualNumber.norm_ofDualNumber, TrivSqZeroExt.fst_inl,
-        TrivSqZeroExt.snd_inl, norm_zero, one_mul]
-      exact max_eq_left (norm_nonneg x) |>.le⟩
-    ((TrivSqZeroExt.fstHom ℕ K K).toRingHom.comp MaxDualNumber.ofDualNumber.symm.toRingHom)
-    ⟨1, zero_lt_one, fun y ↦ by
-      rw [one_mul]
-      have hy : y = MaxDualNumber.ofDualNumber (MaxDualNumber.ofDualNumber.symm y) := by simp
-      conv_rhs => rw [hy, MaxDualNumber.norm_ofDualNumber]
-      exact le_max_left _ _⟩
-    (fun x ↦ by simp)
-    (fun y ↦ ⟨2, by
-      apply MaxDualNumber.ofDualNumber.symm.injective
-      rw [map_zero, map_pow]
-      set z : DualNumber K := MaxDualNumber.ofDualNumber.symm y
-      have hz : MaxDualNumber.ofDualNumber.symm
-          (y - (MaxDualNumber.ofDualNumber.toRingHom.comp (TrivSqZeroExt.inlHom K K))
-            (((TrivSqZeroExt.fstHom ℕ K K).toRingHom.comp
-              MaxDualNumber.ofDualNumber.symm.toRingHom) y)) =
-          TrivSqZeroExt.inr z.snd := by
-        ext <;> simp [z]
-      rw [hz, sq, TrivSqZeroExt.inr_mul_inr]⟩)
+    (maxDualNumberInlHom K)
+    (maxDualNumber_inl_isBounded K)
+    (maxDualNumberFstHom K)
+    (maxDualNumber_fst_isBounded K)
+    (maxDualNumber_fst_inl K)
+    (maxDualNumber_sub_inl_fst_isNilpotent K)
 
 /-- `maxDualNumberHomeomorph K` evaluates a spectrum point on `MaxDualNumber K` along the scalar
 inclusion. -/
@@ -229,8 +246,9 @@ inclusion. -/
 theorem maxDualNumberHomeomorph_apply {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
     (β : GelfandSpectrum (MaxDualNumber K)) (r : K) :
     maxDualNumberHomeomorph K β r = β (MaxDualNumber.ofDualNumber (TrivSqZeroExt.inl r)) := by
-  simp only [maxDualNumberHomeomorph, retractHomeomorph_apply, RingHom.comp_apply,
-    RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, TrivSqZeroExt.inlHom_apply]
+  simp only [maxDualNumberHomeomorph, retractHomeomorph_apply, maxDualNumberInlHom,
+    RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    TrivSqZeroExt.inlHom_apply]
 
 /-- `(maxDualNumberHomeomorph K).symm` pulls a spectrum point on `K` back along the first
 coefficient projection. -/
@@ -238,8 +256,8 @@ coefficient projection. -/
 theorem maxDualNumberHomeomorph_symm_apply {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
     (α : GelfandSpectrum K) (y : MaxDualNumber K) :
     (maxDualNumberHomeomorph K).symm α y = α (MaxDualNumber.ofDualNumber.symm y).fst := by
-  simp only [maxDualNumberHomeomorph, retractHomeomorph_symm_apply, RingHom.comp_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
+  simp only [maxDualNumberHomeomorph, retractHomeomorph_symm_apply, maxDualNumberFstHom,
+    RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
     RingEquiv.toRingHom_eq_coe]
 
 /-- Over an ultrametric normed field `K`, the ultrametric dual numbers `MaxDualNumber K` have a
