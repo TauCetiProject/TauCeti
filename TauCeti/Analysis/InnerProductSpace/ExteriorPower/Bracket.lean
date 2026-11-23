@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 Let `V` be a finite-dimensional real inner product space. Each two-vector `X ∈ ⋀² V` acts on `V`
 by the skew endomorphism `A_X = twoVectorContraction X`, `u ↦ u ⌟ X`; on a pure wedge
-`A_(a ∧ b) u = ⟪a, u⟫ b - ⟪b, u⟫ a` (`TauCeti.twoVectorContraction_ιMulti_two_apply`). The map
+`A_(a ∧ b) u = ⟪u, a⟫ b - ⟪u, b⟫ a` (`TauCeti.twoVectorContraction_ιMulti`). The map
 `X ↦ A_X` is injective (`TauCeti.twoVectorContraction_injective`), and it carries the inner
 product of `⋀² V` to the scalar product `-½ tr (A B)` used by Böhm and Wilking
 (`TauCeti.trace_twoVectorContraction_mul_twoVectorContraction`). This is the

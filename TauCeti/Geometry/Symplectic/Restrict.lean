@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.Prod.Basic
@@ -32,6 +33,9 @@ A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant su
   spans a subspace disjoint from its symplectic complement.
 * `TauCeti.SymplecticForm.isSymplectomorphism_prodEquivOfIsCompl`: the equivalence associated to
   `V = L ⊕ L^ω` is a symplectomorphism from the product of the restricted forms to `ω`.
+* `TauCeti.SymplecticForm.restrict_mem_skewAdjointLieSubalgebra`: an element of `sp(V, ω)`
+  preserving such a subspace restricts to an element of the symplectic Lie algebra of the
+  restricted form.
 * `TauCeti.SymplecticForm.Compatible.restrict`: compatibility passes to these restrictions.
 -/
 
@@ -62,6 +66,17 @@ lemma restrict_apply (ω : SymplecticForm V) (L : Submodule ℝ V)
     (h : (ω.toBilinForm.restrict L).Nondegenerate) (v w : L) :
     ω.restrict L h v w = ω (v : V) (w : V) :=
   rfl
+
+/-- The restriction of `A ∈ sp(V, ω)` to a subspace `L` that it preserves, and on which `ω` stays
+nondegenerate, lies in the symplectic Lie algebra of the restricted form. -/
+theorem restrict_mem_skewAdjointLieSubalgebra {ω : SymplecticForm V} {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {L : Submodule ℝ V}
+    (hL : (ω.toBilinForm.restrict L).Nondegenerate) (hAL : Set.MapsTo A L L) :
+    A.restrict hAL ∈ skewAdjointLieSubalgebra (ω.restrict L hL).toBilinForm :=
+  -- Both the restricted form and the restricted endomorphism evaluate on `L` as on `V`
+  -- (`SymplecticForm.restrict_apply`, `LinearMap.restrict_apply`), definitionally.
+  (LinearMap.mem_skewAdjointSubmodule _).2 fun u w ↦
+    (LinearMap.mem_skewAdjointSubmodule A).1 hA u w
 
 /-- The symplectic complement of a subspace complementary to it also carries a nondegenerate
 restriction of `ω`: a vector of `L^ω` orthogonal to `L^ω` is orthogonal to `L` as well, hence to

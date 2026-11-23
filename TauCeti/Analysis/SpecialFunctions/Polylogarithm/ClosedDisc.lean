@@ -42,7 +42,8 @@ logarithmic singularity of `Liₙ`.
   `Metric.closedBall 0 1` for `2 ≤ n`.
 * `TauCeti.Polylog.hasSum_polylog_of_norm_le_one` and
   `TauCeti.Polylog.hasSum_norm_polylog_of_norm_le_one`: the disc series converges, absolutely,
-  to `polylog n z` for `‖z‖ ≤ 1`.
+  to `polylog n z` for `‖z‖ ≤ 1`; `TauCeti.Polylog.polylog_eq_tsum_of_norm_le_one` is its `tsum`
+  form.
 * `TauCeti.Polylog.tendstoUniformlyOn_polylog_closedBall_one`: its partial sums converge
   uniformly on `Metric.closedBall 0 1`.
 * `TauCeti.Polylog.polylog_one_eq_riemannZeta` and `TauCeti.Polylog.polylog_two_one`:
@@ -132,6 +133,12 @@ theorem hasSum_polylog_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : �
   have hz' : z ∈ closedBall (0 : ℂ) 1 := mem_closedBall_zero_iff.mpr hz
   rw [heq hz']
   exact (Summable.of_norm_bounded hsum fun k ↦ norm_pow_div_le_norm_inv hz _ _).hasSum
+
+/-- For every integer weight `n ≥ 2`, on the closed unit disc `‖z‖ ≤ 1`, `polylog n z` equals the
+sum of its power series. -/
+theorem polylog_eq_tsum_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    polylog n z = ∑' k : ℕ, z ^ (k + 1) / (k + 1 : ℂ) ^ n :=
+  (hasSum_polylog_of_norm_le_one hn hz).tsum_eq.symm
 
 /-- For every integer weight `n ≥ 2`, the polylogarithm disc series converges absolutely on the
 closed unit disc `‖z‖ ≤ 1`, and the sum of the norms of its terms equals `(polylog n ‖z‖).re`. -/

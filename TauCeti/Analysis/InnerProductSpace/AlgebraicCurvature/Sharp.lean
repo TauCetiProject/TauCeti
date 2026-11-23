@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
-public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Bracket
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.LinearAlgebra.ExteriorPower.Basic

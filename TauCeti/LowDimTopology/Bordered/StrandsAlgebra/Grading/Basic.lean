@@ -394,7 +394,7 @@ theorem mul_lambda_zpow (g : StrandGradingGroup α) (n : ℤ) :
 
 /-- `λ` is central. -/
 theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center _ :=
-  FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨_, rfl⟩
+  (FactorSet.range_inl_le_center_iff _).2 trivialMulDistribMulAction_smul ⟨_, rfl⟩
 
 /-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
 the elements `(j, β)` with boundary of total sum zero and `j ≡ ε(β) (mod 1)`, where `ε(β)` is a
