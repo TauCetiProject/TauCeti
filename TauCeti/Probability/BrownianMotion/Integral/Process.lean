@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Simple
+public import TauCeti.Probability.BrownianMotion.Martingale
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -13,10 +15,11 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.BrownianMotion.Integral.Square
-import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.ContinuousLimit
+import TauCeti.Probability.Process.ElementaryDensity
 import TauCeti.Probability.Process.TimeIntegral
 
 /-!
@@ -26,9 +29,9 @@ For a filtration-relative Brownian motion `W` and an integrand `H` in
 `TauCeti.BrownianIntegrable ℱ P H`, the finite-horizon terminal maps
 `IsFilteredPreBrownianReal.l2Integral` assemble into a time-indexed stochastic integral process.
 
-First, using `eLpNorm_l2Integral_toPredictableLp_sub_of_le` and
-`norm_l2Integral_toPredictableLp_sub_sq_of_le` from
-`TauCeti.Probability.BrownianMotion.Integral.Restriction`, the process
+First, conditional expectation of a terminal Brownian integral at an earlier deterministic time
+is the integral of the restricted integrand (`condExp_l2Integral`), so the terminal L² maps
+determine a square-integrable martingale (`exists_martingale_l2Integral`), and
 `t ↦ hW.l2Integral t (hH.toPredictableLp t)` is `L²`-continuous in time
 (`continuous_l2Integral_toPredictableLp`).
 
@@ -361,5 +364,81 @@ theorem exists_continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       ((Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun m ↦ hmem m t) _ (hIlim t).1).mpr (hIlim t).2)
       (htend t)
   exact (hIlim t).1.coeFn_toLp.symm.trans (heq_lp ▸ EventuallyEq.rfl)
+
+/-- Conditioning a terminal integral on an earlier date gives the integral of its restriction.
+The restricted input may be any L² class agreeing with the original input on the shorter
+horizon; no choice of representatives or usual conditions on the filtration is needed. -/
+theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {S T : ℝ≥0} (hST : S ≤ T) (f : Lp ℝ 2 (ℱ.predictableMeasure P T))
+    (g : Lp ℝ 2 (ℱ.predictableMeasure P S))
+    (hfg : g =ᵐ[ℱ.predictableMeasure P S] f) :
+    P[hW.l2Integral T f | ℱ S] =ᵐ[P] hW.l2Integral S g := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  -- Restriction and conditional expectation are continuous linear maps on L² classes.
+  let R : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ]
+      Lp ℝ 2 (ℱ.predictableMeasure P S) :=
+    ℱ.predictableMeasureRestrictLp P ℝ hST
+  let C : Lp ℝ 2 P →L[ℝ] Lp ℝ 2 P :=
+    (lpMeas ℝ ℝ (ℱ S) 2 P).subtypeL.comp (condExpL2 ℝ ℝ (ℱ.le S))
+  have hC (u : Lp ℝ 2 P) : C u =ᵐ[P] P[u | ℱ S] := by
+    simpa only [C, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      Lp.toLp_coeFn] using (Lp.memLp u).condExpL2_ae_eq_condExp (𝕜 := ℝ) (ℱ.le S)
+  -- It suffices to compare these maps on the dense predictable rectangles.
+  have hmaps : C.comp (hW.l2Integral T).toContinuousLinearMap =
+      (hW.l2Integral S).toContinuousLinearMap.comp R := by
+    apply ContinuousLinearMap.ext_indicatorConstLp_Ioc_prod_predictableMeasure T
+    intro s t hst ht A hA
+    let u := indicatorConstLp (μ := ℱ.predictableMeasure P T) 2
+      (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) (1 : ℝ)
+    have hRu : R u = indicatorConstLp (μ := ℱ.predictableMeasure P S) 2
+        (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) 1 := by
+      exact ℱ.predictableMeasureRestrictLp_indicatorConstLp P (𝕜 := ℝ) hST _ 1
+    dsimp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap]
+    rw [hRu]
+    apply Lp.ext
+    refine (hC (hW.l2Integral T u)).trans ?_
+    have hterminal := hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod_of_le hst.le ht hA 1
+    have hshort := hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod S s t hA 1
+    simp only [← Pi.sub_apply, ← Set.indicator_mul_left, one_mul] at hterminal hshort
+    exact (condExp_congr_ae hterminal).trans
+      ((hW.martingale.condExp_indicator_sub hst.le hA S).trans hshort.symm)
+  have hg : R f = g :=
+    Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := ℝ) hST f).trans hfg.symm)
+  exact (hC (hW.l2Integral T f)).symm.trans
+    (by simpa only [ContinuousLinearMap.comp_apply,
+      LinearIsometry.coe_toContinuousLinearMap, hg] using
+        Lp.ext_iff.mp (congrArg (fun J : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ]
+          Lp ℝ 2 P ↦ J f) hmaps))
+
+/-- A terminal L² Brownian integral is a.e. strongly measurable at its terminal date. -/
+theorem aestronglyMeasurable_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
+    AEStronglyMeasurable[ℱ T] (hW.l2Integral T f) P :=
+  ⟨P[hW.l2Integral T f | ℱ T], stronglyMeasurable_condExp,
+    (hW.condExp_l2Integral le_rfl f f .rfl).symm⟩
+
+/-- Predictable L² inputs on every finite horizon determine a square-integrable martingale
+on the raw filtration. The chosen values agree with the terminal integral classes at each
+fixed time; this asserts neither path continuity nor indistinguishability of arbitrary
+representatives of those classes. Literal predictability of `H` is unnecessary: membership
+in predictable L² already supplies the required a.e. measurable classes. -/
+theorem exists_martingale_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 × Ω → ℝ} (hH : ∀ t, MemLp H 2 (ℱ.predictableMeasure P t)) :
+    ∃ I : ℝ≥0 → Ω → ℝ, Martingale I ℱ P ∧
+      (∀ t, I t =ᵐ[P] hW.l2Integral t ((hH t).toLp H)) ∧
+      ∀ t, MemLp (I t) 2 P := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  let J (t : ℝ≥0) := hW.l2Integral t ((hH t).toLp H)
+  let I (t : ℝ≥0) := P[J t | ℱ t]
+  have hI (t : ℝ≥0) : I t =ᵐ[P] J t :=
+    hW.condExp_l2Integral le_rfl _ _ Filter.EventuallyEq.rfl
+  have hrestrict {s t : ℝ≥0} (hst : s ≤ t) :
+      (hH s).toLp H =ᵐ[ℱ.predictableMeasure P s] (hH t).toLp H :=
+    (hH s).coeFn_toLp.trans (((hH t).coeFn_toLp.filter_mono
+      (ae_mono (ℱ.predictableMeasure_mono P hst))).symm)
+  refine ⟨I, ⟨fun _ ↦ stronglyMeasurable_condExp, fun s t hst ↦ ?_⟩, hI, ?_⟩
+  · exact (condExp_congr_ae (hI t)).trans
+      ((hW.condExp_l2Integral hst _ _ (hrestrict hst)).trans (hI s).symm)
+  · exact fun t ↦ (Lp.memLp (J t)).ae_eq (hI t).symm
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
