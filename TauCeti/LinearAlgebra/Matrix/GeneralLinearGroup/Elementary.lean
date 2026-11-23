@@ -465,8 +465,8 @@ noncomputable def GeneralLinearGroup.schurComplement (M : GL (m ⊕ k) A)
         ((M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ -
           (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ * (↑h₁₁.unit⁻¹ : Matrix m m A) *
             (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) := by
-    rw [show (U : Matrix (m ⊕ k) (m ⊕ k) A) = (lowerBlockGL c : Matrix (m ⊕ k) (m ⊕ k) A) * M from
-      Units.val_mul _ _, coe_lowerBlockGL]
+    dsimp only [U]
+    rw [Units.val_mul, coe_lowerBlockGL]
     conv_lhs => rw [← fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) A)]
     simp [c, fromBlocks_multiply, Matrix.mul_assoc, sub_eq_add_neg, add_comm]
   U.toBlocks₂₂OfZero₂₁ (by rw [hU, toBlocks_fromBlocks₁₁]; exact h₁₁)

@@ -109,14 +109,14 @@ private theorem diagGL_mulSingle_last_commutatorElement_mem (k : ℕ) (u v : Dˣ
       elementarySubgroup (Fin (k + 2)) D := by
     rw [← eqv.map_reindexGL_elementarySubgroup]; exact ⟨_, hmem₁, rfl⟩
   convert hmem₂ using 1
-  rw [show ⁅u₁, v₁⁆ = diagGL (fun _ ↦ ⁅u, v⁆) from (map_commutatorElement diagGL _ _).symm,
-    ← map_one diagGL, ← map_one diagGL, fromBlocksGL_diagGL, fromBlocksGL_diagGL,
-    Equiv.reindexGL_diagGL]
+  dsimp only [u₁, v₁]
+  rw [← map_commutatorElement diagGL, ← map_one diagGL, ← map_one diagGL,
+    fromBlocksGL_diagGL, fromBlocksGL_diagGL, Equiv.reindexGL_diagGL]
   congr 1
   ext a
   obtain ⟨a, rfl⟩ := eqv.surjective a
   rcases a with (a | a) | a
-  · fin_cases a; simp [← heqv_inl]
+  · fin_cases a; simp [← heqv_inl, commutatorElement_def]
   · simp [← heqv_inl, eqv.apply_eq_iff_eq]
   · simp [← heqv_inl, eqv.apply_eq_iff_eq]
 
@@ -163,20 +163,26 @@ private def schurBlock {m : ℕ} (A : Matrix (Fin (m + 1)) (Fin (m + 1)) D) (p :
   fun r s ↦ A (p.succAbove r) s.succ - A (p.succAbove r) 0 * (A p 0)⁻¹ * A p s.succ
 
 /-- The upper-left `1 × 1` block of
+`(finOneSumEquiv m).symm.reindexGL D (permutationGL p.cycleRange * A)` is the `1 × 1` scalar
+matrix of `A p 0`. -/
+private theorem toBlocks₁₁_reindex_cycleRange {m : ℕ} (A : GL (Fin (m + 1)) D)
+    (p : Fin (m + 1)) (hp : A p 0 ≠ 0) :
+    ((finOneSumEquiv m).symm.reindexGL D (permutationGL p.cycleRange * A) :
+      Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁ =
+      ((GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp) : GL (Fin 1) D) :
+        Matrix (Fin 1) (Fin 1) D) := by
+  ext i j; fin_cases i; fin_cases j
+  simp [Matrix.toBlocks₁₁, Equiv.Perm.inv_def]
+
+/-- The upper-left `1 × 1` block of
 `(finOneSumEquiv m).symm.reindexGL D (permutationGL p.cycleRange * A)` is a unit when
 `A p 0 ≠ 0`. -/
 private theorem isUnit_toBlocks₁₁_reindex_cycleRange {m : ℕ} (A : GL (Fin (m + 1)) D)
     (p : Fin (m + 1)) (hp : A p 0 ≠ 0) :
     IsUnit (((finOneSumEquiv m).symm.reindexGL D (permutationGL p.cycleRange * A) :
-      Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁) := by
-  have hB_11 :
-      ((finOneSumEquiv m).symm.reindexGL D (permutationGL p.cycleRange * A) :
-        Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁ =
-      ((GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp) : GL (Fin 1) D) :
-        Matrix (Fin 1) (Fin 1) D) := by
-    ext i j; fin_cases i; fin_cases j
-    simp [Matrix.toBlocks₁₁, Equiv.Perm.inv_def]
-  exact hB_11 ▸ (GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp)).isUnit
+      Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁) :=
+  (toBlocks₁₁_reindex_cycleRange A p hp) ▸
+    (GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp)).isUnit
 
 /-- The Schur complement `schurBlock A p` packaged as an element of `GL (Fin m) D`. -/
 private def schurGL {m : ℕ} (A : GL (Fin (m + 1)) D) (p : Fin (m + 1)) (hp : A p 0 ≠ 0) :
@@ -187,18 +193,13 @@ private def schurGL {m : ℕ} (A : GL (Fin (m + 1)) D) (p : Fin (m + 1)) (hp : A
 @[simp]
 private theorem coe_schurGL {m : ℕ} (A : GL (Fin (m + 1)) D) (p : Fin (m + 1)) (hp : A p 0 ≠ 0) :
     (schurGL A p hp : Matrix (Fin m) (Fin m) D) = schurBlock A p := by
-  let B : GL (Fin 1 ⊕ Fin m) D :=
-    (finOneSumEquiv m).symm.reindexGL D (permutationGL p.cycleRange * A)
-  let u₀ : GL (Fin 1) D := GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp)
-  have hB_11 : (B : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁ =
-      (u₀ : Matrix (Fin 1) (Fin 1) D) := by
-    ext i j; fin_cases i; fin_cases j
-    simp [B, u₀, Matrix.toBlocks₁₁, Equiv.Perm.inv_def]
-  have hunit : (isUnit_toBlocks₁₁_reindex_cycleRange A p hp).unit = u₀ :=
-    Units.ext ((isUnit_toBlocks₁₁_reindex_cycleRange A p hp).unit_spec.trans hB_11)
-  have hu₀_inv : (↑u₀⁻¹ : Matrix (Fin 1) (Fin 1) D) = Matrix.scalar (Fin 1) (A p 0)⁻¹ := by
-    rw [show u₀⁻¹ = GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp)⁻¹ from
-      (map_inv (GeneralLinearGroup.scalar (Fin 1)) _).symm, GeneralLinearGroup.coe_scalar]
+  have hunit : (isUnit_toBlocks₁₁_reindex_cycleRange A p hp).unit =
+      GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp) :=
+    Units.ext ((isUnit_toBlocks₁₁_reindex_cycleRange A p hp).unit_spec.trans
+      (toBlocks₁₁_reindex_cycleRange A p hp))
+  have hu₀_inv : (↑(GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp))⁻¹ :
+      Matrix (Fin 1) (Fin 1) D) = Matrix.scalar (Fin 1) (A p 0)⁻¹ := by
+    rw [← map_inv (GeneralLinearGroup.scalar (Fin 1)), GeneralLinearGroup.coe_scalar]
     simp
   rw [schurGL, GeneralLinearGroup.coe_schurComplement, hunit, hu₀_inv]
   ext r s
