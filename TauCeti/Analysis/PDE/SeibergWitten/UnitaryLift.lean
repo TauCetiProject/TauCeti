@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
@@ -78,7 +78,7 @@ negative half-spinors with determinant its determinant character
 
 On the positive half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u`
 (`TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`). With the formula
-for `c(v) c(w) u` in `TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine`
+for `c(v) c(w) u` in `TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line`
 (`TauCeti.SeibergWitten.ι_apply_ι_apply_of_bivectorExterior_apply`), this is the
 splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` as representations of `U(V, J)`.
 

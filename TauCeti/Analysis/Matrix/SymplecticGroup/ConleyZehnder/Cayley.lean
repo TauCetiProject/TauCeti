@@ -69,13 +69,11 @@ private theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n
     diagonalStraightening n * graphFrame A =
       (1 + Complex.I • (symplecticCayley A).map ((↑) : ℝ → ℂ)) *
         ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) := by
-  have hmul : ((symplecticCayley A * (1 + A)).map ((↑) : ℝ → ℂ)) =
-      (symplecticCayley A).map (↑) * (1 + A).map (↑) := Matrix.map_mul (f := Complex.ofRealHom)
   have hsmul : ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) =
       ((√2 : ℝ) : ℂ)⁻¹ • (1 + A).map ((↑) : ℝ → ℂ) := by
     ext i j
     simp [mul_add]
-  rw [diagonalStraightening_mul_graphFrame, ← symplecticCayley_mul_one_add h, hmul, hsmul,
+  rw [diagonalStraightening_mul_graphFrame, ← symplecticCayley_mul_one_add h, map_ofReal_mul, hsmul,
     Matrix.mul_smul, Matrix.add_mul, Matrix.one_mul, Matrix.smul_mul]
 
 namespace GLSymplectic
@@ -97,7 +95,7 @@ theorem coe_souriau_graphUnitaryFrame_eq_cayley {A : GLSymplectic n ℝ}
   refine souriau_eq_cayley_of_coe_eq_mul hC (M := (√2 : ℝ)⁻¹ • (1 + M) * N) ?_
   rw [coe_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h, Matrix.mul_assoc]
   exact congrArg ((1 + Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ)) * ·)
-    (Matrix.map_mul (f := Complex.ofRealHom)).symm
+    (map_ofReal_mul _ _).symm
 
 /-- **The Conley–Zehnder index away from `-1`.** For a path `γ` of symplectic matrices none of
 which has the eigenvalue `-1`, the Conley–Zehnder index is minus half the change of the signature
