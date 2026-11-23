@@ -159,67 +159,10 @@ end ModelWithCorners
 
 namespace TauCeti
 
-section Split
-
-variable {n k : ℕ} (Z : Finset (Fin n)) (hZ : Z.card = k)
-
-/-- An enumeration of the coordinates outside `Z`. -/
-private def outEquiv : {i // i ∉ Z} ≃ Fin (n - k) :=
-  Fintype.equivFinOfCardEq (by simp [hZ])
-
-/-- An enumeration of the coordinates in `Z`. -/
-private def inEquiv : {i // ¬i ∉ Z} ≃ Fin k :=
-  Fintype.equivFinOfCardEq (by simp [hZ])
-
-/-- The splitting of `ℝⁿ` into the coordinates outside a set `Z` of `k` coordinates and those in
-`Z`, each enumerated by a `Fin`. -/
-private def splitEquiv :
-    EuclideanSpace ℝ (Fin n) ≃L[ℝ] EuclideanSpace ℝ (Fin (n - k)) × EuclideanSpace ℝ (Fin k) :=
-  (EuclideanSpace.sumComplEquivProd ℝ (· ∉ Z)).trans <|
-    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (outEquiv Z hZ)).toContinuousLinearEquiv.prodCongr
-      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (inEquiv Z hZ)).toContinuousLinearEquiv
-
-variable {Z hZ}
-
-private theorem forall_fst_splitEquiv_iff (P : ℝ → Prop) (x : EuclideanSpace ℝ (Fin n)) :
-    (∀ j, P ((splitEquiv Z hZ x).1 j)) ↔ ∀ i ∉ Z, P (x i) := by
-  simp only [splitEquiv, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.prodCongr_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.piLpCongrLeft_apply,
-    Equiv.piCongrLeft'_apply, EuclideanSpace.sumComplEquivProd_apply_fst]
-  exact ⟨fun h i hi ↦ by simpa using h (outEquiv Z hZ ⟨i, hi⟩),
-    fun h j ↦ h _ ((outEquiv Z hZ).symm j).prop⟩
-
-private theorem forall_snd_splitEquiv_iff (P : ℝ → Prop) (x : EuclideanSpace ℝ (Fin n)) :
-    (∀ j, P ((splitEquiv Z hZ x).2 j)) ↔ ∀ i ∈ Z, P (x i) := by
-  simp only [splitEquiv, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.prodCongr_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.piLpCongrLeft_apply,
-    Equiv.piCongrLeft'_apply, EuclideanSpace.sumComplEquivProd_apply_snd]
-  exact ⟨fun h i hi ↦ by simpa using h (inEquiv Z hZ ⟨i, not_not.2 hi⟩),
-    fun h j ↦ h _ (not_not.1 ((inEquiv Z hZ).symm j).prop)⟩
-
-/-- A vector vanishing on `Z` is recovered from its coordinates outside `Z`. -/
-private theorem splitEquiv_symm_fst {x : EuclideanSpace ℝ (Fin n)} (hx : ∀ i ∈ Z, x i = 0) :
-    (splitEquiv Z hZ).symm ((splitEquiv Z hZ x).1, 0) = x := by
-  have h2 : (splitEquiv Z hZ x).2 = 0 := by
-    ext j
-    exact (forall_snd_splitEquiv_iff (· = 0) x).2 hx j
-  rw [← h2, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- Inserting a vector `w` of `ℝⁿ⁻ᵏ` outside `Z` gives a vector vanishing on `Z`. -/
-private theorem splitEquiv_symm_apply_of_mem (w : EuclideanSpace ℝ (Fin (n - k))) {i : Fin n}
-    (hi : i ∈ Z) : (splitEquiv Z hZ).symm (w, 0) i = 0 :=
-  (forall_snd_splitEquiv_iff (hZ := hZ) (· = 0) _).1
-    (by simp) i hi
-
-/-- A property holds for every coordinate of `w` exactly when it holds for every coordinate
-outside `Z` of its insertion. -/
-private theorem forall_splitEquiv_symm_iff (P : ℝ → Prop) (w : EuclideanSpace ℝ (Fin (n - k))) :
-    (∀ i ∉ Z, P ((splitEquiv Z hZ).symm (w, 0) i)) ↔ ∀ j, P (w j) := by
-  rw [← forall_fst_splitEquiv_iff (hZ := hZ), ContinuousLinearEquiv.apply_symm_apply]
-
-end Split
-
 section Quadrant
+
+open EuclideanSpace (finsetComplEquivProd finsetComplEquivProd_symm_fst_zero
+  finsetComplEquivProd_symm_zero_apply_of_mem forall_finsetComplEquivProd_symm_zero_iff)
 
 variable {n k : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
 
@@ -257,28 +200,28 @@ variable (k) in
 coordinates vanishing at `x` and read it in the quadrant. -/
 private def stratumParam (x : M) (hx : #(zeroCoords n x) = k)
     (w : EuclideanSpace ℝ (Fin (n - k))) : EuclideanQuadrant n :=
-  (𝓡c n).symm ((splitEquiv (zeroCoords n x) hx).symm (w, 0))
+  (𝓡c n).symm ((finsetComplEquivProd ℝ (zeroCoords n x) hx).symm (w, 0))
 
 /-- The coordinates of a point of the quadrant outside those vanishing at `x`. -/
 private def stratumProj (x : M) (hx : #(zeroCoords n x) = k) (h : EuclideanQuadrant n) :
     EuclideanSpace ℝ (Fin (n - k)) :=
-  (splitEquiv (zeroCoords n x) hx ((𝓡c n) h)).1
+  (finsetComplEquivProd ℝ (zeroCoords n x) hx ((𝓡c n) h)).1
 
 private theorem stratumParam_eq_of_nonneg {x : M} {hx : #(zeroCoords n x) = k}
     {w : EuclideanSpace ℝ (Fin (n - k))} (hw : ∀ j, 0 ≤ w j) :
-    (𝓡c n) (stratumParam k x hx w) = (splitEquiv (zeroCoords n x) hx).symm (w, 0) := by
+    (𝓡c n) (stratumParam k x hx w) = (finsetComplEquivProd ℝ (zeroCoords n x) hx).symm (w, 0) := by
   refine (𝓡c n).right_inv ?_
   rw [range_modelWithCornersEuclideanQuadrant]
   intro i
   by_cases hi : i ∈ zeroCoords n x
-  · rw [splitEquiv_symm_apply_of_mem w hi]
-  · exact (forall_splitEquiv_symm_iff (0 ≤ ·) w).2 hw i hi
+  · rw [finsetComplEquivProd_symm_zero_apply_of_mem w hi]
+  · exact (forall_finsetComplEquivProd_symm_zero_iff (0 ≤ ·) w).2 hw i hi
 
 private theorem stratumParam_apply_of_mem {x : M} {hx : #(zeroCoords n x) = k}
     (w : EuclideanSpace ℝ (Fin (n - k))) {i : Fin n} (hi : i ∈ zeroCoords n x) :
     (stratumParam k x hx w).val i = 0 := by
   simp [stratumParam, modelWithCornersEuclideanQuadrant_symm_apply,
-    splitEquiv_symm_apply_of_mem w hi]
+    finsetComplEquivProd_symm_zero_apply_of_mem w hi]
 
 private theorem coe_stratumAmbientChart (x : M) :
     ⇑(stratumAmbientChart n x) = chartAt (EuclideanQuadrant n) x :=
@@ -305,7 +248,7 @@ private theorem pos_of_mem_target {x : M} {hx : #(zeroCoords n x) = k}
     {w : EuclideanSpace ℝ (Fin (n - k))}
     (hw : stratumParam k x hx w ∈ (stratumAmbientChart n x).target) : ∀ j, 0 < w j := by
   obtain ⟨h₁, h₂⟩ := mem_stratumAmbientChart_target.1 hw
-  refine (forall_splitEquiv_symm_iff (hZ := hx) (0 < ·) w).1 fun i hi ↦ ?_
+  refine (forall_finsetComplEquivProd_symm_zero_iff (hZ := hx) (0 < ·) w).1 fun i hi ↦ ?_
   have h := h₂.2 i hi
   rw [(chartAt (EuclideanQuadrant n) x).right_inv h₁] at h
   simpa [stratumParam, modelWithCornersEuclideanQuadrant_symm_apply] using h
@@ -319,11 +262,12 @@ private theorem stratumProj_stratumParam {x : M} {hx : #(zeroCoords n x) = k}
 
 private theorem continuous_stratumParam (x : M) (hx : #(zeroCoords n x) = k) :
     Continuous (stratumParam k x hx) :=
-  (𝓡c n).continuous_symm.comp ((splitEquiv _ _).symm.continuous.comp (Continuous.prodMk_left 0))
+  (𝓡c n).continuous_symm.comp
+    ((finsetComplEquivProd ℝ _ _).symm.continuous.comp (Continuous.prodMk_left 0))
 
 private theorem continuous_stratumProj (x : M) (hx : #(zeroCoords n x) = k) :
     Continuous (stratumProj x hx) :=
-  continuous_fst.comp ((splitEquiv _ _).continuous.comp (𝓡c n).continuous)
+  continuous_fst.comp ((finsetComplEquivProd ℝ _ _).continuous.comp (𝓡c n).continuous)
 
 private theorem leftInvOn_stratumProj_stratumParam (x : M) (hx : #(zeroCoords n x) = k) :
     LeftInvOn (stratumProj x hx) (stratumParam k x hx)
@@ -372,7 +316,7 @@ private theorem stratumParam_stratumProj {x : M} {hx : #(zeroCoords n x) = k} {y
   rw [stratumAmbientChart_source] at hy
   have hZ := (depth_eq_iff hy).1 (hyk.trans (hx.symm.trans (card_zeroCoords x)))
   rw [coe_stratumAmbientChart, stratumParam, stratumProj,
-    splitEquiv_symm_fst (by simpa using hZ), ModelWithCorners.left_inv]
+    finsetComplEquivProd_symm_fst_zero (by simpa using hZ), ModelWithCorners.left_inv]
 
 private theorem card_zeroCoords_eq (p : (𝓡c n).depthStratum M k) : #(zeroCoords n p.val) = k :=
   (card_zeroCoords p.val).trans p.prop
@@ -423,7 +367,7 @@ private theorem stratumParam_mem_target_of_mem {p : (𝓡c n).depthStratum M k}
     {w : EuclideanSpace ℝ (Fin (n - k))} (hw : w ∈ (stratumChart p).target) :
     stratumParam k p.val (card_zeroCoords_eq p) w ∈ (chartAt (EuclideanQuadrant n) p.val).target ∧
       (𝓡c n) (stratumParam k p.val (card_zeroCoords_eq p) w) =
-        (splitEquiv (zeroCoords n p.val) (card_zeroCoords_eq p)).symm (w, 0) := by
+        (finsetComplEquivProd ℝ (zeroCoords n p.val) (card_zeroCoords_eq p)).symm (w, 0) := by
   rw [stratumChart_target, mem_preimage] at hw
   exact ⟨(mem_stratumAmbientChart_target.1 hw).1,
     stratumParam_eq_of_nonneg fun j ↦ (pos_of_mem_target hw j).le⟩
@@ -440,9 +384,9 @@ private theorem contDiffOn_stratumChart_symm_trans {r : WithTop ℕ∞} [IsManif
   rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hg
   -- The ambient transition map, read between the two coordinate splittings.
   set A := (ContinuousLinearMap.fst ℝ _ _).comp
-    (splitEquiv (zeroCoords n q.val) (card_zeroCoords_eq q) :
+    (finsetComplEquivProd ℝ (zeroCoords n q.val) (card_zeroCoords_eq q) :
       EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin (n - k)) × EuclideanSpace ℝ (Fin k))
-  set B := ((splitEquiv (zeroCoords n p.val) (card_zeroCoords_eq p)).symm :
+  set B := ((finsetComplEquivProd ℝ (zeroCoords n p.val) (card_zeroCoords_eq p)).symm :
       EuclideanSpace ℝ (Fin (n - k)) × EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin n)).comp
     (ContinuousLinearMap.inl ℝ _ _)
   refine ContDiffOn.congr (f := A ∘
@@ -509,7 +453,7 @@ theorem isImmersion_subtypeVal_depthStratum {r : WithTop ℕ∞} [IsManifold (�
   apply Manifold.IsImmersionOfComplement.isImmersion (F := EuclideanSpace ℝ (Fin k))
   intro p
   apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt continuous_subtypeVal.continuousAt
-    (splitEquiv (zeroCoords n p.val) (card_zeroCoords_eq p)).symm (chartAt _ p)
+    (finsetComplEquivProd ℝ (zeroCoords n p.val) (card_zeroCoords_eq p)).symm (chartAt _ p)
     (chartAt (EuclideanQuadrant n) p.val) (mem_chart_source _ p) (mem_chart_source _ p.val)
     (IsManifold.chart_mem_maximalAtlas p) (IsManifold.chart_mem_maximalAtlas p.val)
   intro w hw
