@@ -56,7 +56,13 @@ and sends `γ₂` to `γ₂ + γ_J`, so in the transported basis `(γ_J, γ₂)`
 Consequently every closed continuous section, one with `b(2π) = b(0)`, is a multiple of `γ_J` on
 the upper half-circle (`TauCeti.exists_forall_eq_zsmul_of_mem_closure_sphericalPendulumPeriod`),
 and no two closed continuous sections span the period lattice at any time of the upper
-half-circle (`TauCeti.closure_pair_ne_closure_sphericalPendulumPeriod`). The period lattices
+half-circle (`TauCeti.closure_pair_ne_closure_sphericalPendulumPeriod`). On both half-circles the
+energy component of a continuous section is `m T` for the one integer `m`
+(`TauCeti.exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod`), so on the stabilizers a
+closed continuous section has zero energy component at every time off the axis, and two closed
+continuous sections span the stabilizer at no such time
+(`TauCeti.apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum`,
+`TauCeti.closure_pair_ne_hamiltonianFlowStabilizer_sphericalPendulum`). The period lattices
 along the loop thus admit no continuous basis. This is Duistermaat's obstruction to global
 action–angle coordinates around `(1, 0)`, which would supply such a basis.
 
@@ -72,6 +78,11 @@ action–angle coordinates around `(1, 0)`, which would supply such a basis.
   sections through `γ_J` close up, and continuous sections through `γ₂` gain `γ_J`.
 * `TauCeti.closure_pair_ne_closure_sphericalPendulumPeriod`: closed continuous sections never span
   the period lattice on the upper half-circle.
+* `TauCeti.exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod`,
+  `TauCeti.exists_eq_add_zsmul_of_mem_hamiltonianFlowStabilizer_sphericalPendulum`: the energy
+  component of a continuous section is `m T` on both half-circles, and the section gains `m γ_J`.
+* `TauCeti.closure_pair_ne_hamiltonianFlowStabilizer_sphericalPendulum`: closed continuous
+  sections of the stabilizers never span the stabilizer at any time off the axis.
 
 ## References
 
@@ -113,9 +124,7 @@ private theorem exists_forall_eq_of_isPreconnected {s : Set ℝ} (hs : IsPreconn
   have hT : ContinuousOn T s := continuousOn_sphericalPendulumPeriod.comp hγc.continuousOn hγ
   have hΘ : ContinuousOn Θ s :=
     continuousOn_sphericalPendulumRotationAngle.comp hγc.continuousOn hγ
-  have hTpos : ∀ t ∈ s, 0 < T t := fun t ht ↦ by
-    obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 (hγ t ht)
-    exact sphericalPendulumPeriod_pos hj hz hV
+  have hTpos : ∀ t ∈ s, 0 < T t := fun t ht ↦ sphericalPendulumPeriod_pos_of_mem (hγ t ht)
   have hb₀ : ContinuousOn (fun t ↦ b t 0) s := (continuous_apply 0).comp_continuousOn hb
   have hb₁ : ContinuousOn (fun t ↦ b t 1) s := (continuous_apply 1).comp_continuousOn hb
   choose! M N hMN using fun t ht ↦ AddSubgroup.mem_closure_pair.1 (hbΛ t ht)
@@ -314,8 +323,7 @@ theorem exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_hamiltonianFlo
       b (2 * π) = b 0 + m • ![0, 2 * π] :=
   exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ
     hb fun t ht hs ↦ by
-      obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 (hγ t hs)
-      rw [← hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure hj hz hV
+      rw [← hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem (hγ t hs)
         (hx t ht hs)]
       exact hbΛ t ht hs
 
@@ -427,6 +435,136 @@ theorem closure_pair_ne_closure_sphericalPendulumPeriod (hr : 0 < r)
     add_zero] at h₀
   exact ((two_mul_pi_div_sqrt_le_sphericalPendulumPeriod_of_mem_Ioo hr hγ ht).trans_lt'
     (by positivity)).ne' h₀.symm
+
+/-- **The energy component of a continuous section along the whole loop.** Let
+`γ(t) = (1 + r cos t, r sin t)`, with `r > 0`, be the counterclockwise circle about the
+focus–focus value `(1, 0)`, running above the curve of relative equilibria off the axis `j = 0`,
+and let `v` be continuous on `[0, 2π]` with `v(t)` in the lattice spanned by `(T(γ(t)), -Θ(γ(t)))`
+and `(0, 2π)` whenever `sin t ≠ 0`. Then for one integer `m` the energy component of `v(t)` is
+`m T(γ(t))` at all these times, on both half-circles, and after one turn
+`v(2π) = v(0) + m (0, 2π)`. -/
+theorem exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
+    {v : ℝ → Fin 2 → ℝ} (hv : ContinuousOn v (Icc 0 (2 * π)))
+    (hvΛ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 → v t ∈ AddSubgroup.closure
+      {![sphericalPendulumPeriod (1 + r * cos t) (r * sin t),
+        -sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)], ![0, 2 * π]}) :
+    ∃ m : ℤ, (∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+        v t 0 = m * sphericalPendulumPeriod (1 + r * cos t) (r * sin t)) ∧
+      v (2 * π) = v 0 + m • ![0, 2 * π] := by
+  have hpi : 0 < π := pi_pos
+  have hIcc₂ : Ioo π (2 * π) ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨by linarith [ht.1], ht.2.le⟩
+  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦
+    (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2).ne
+  obtain ⟨m, n₁, h₁, h2π⟩ :=
+    exists_forall_eq_and_apply_two_mul_pi_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ
+      hv hvΛ
+  -- On the lower half-circle the `γ₂`-coordinate is the same `m`.
+  obtain ⟨m₂, n₂, h₂⟩ := exists_forall_eq_of_isPreconnected isPreconnected_Ioo
+    (nonempty_Ioo.2 (by linarith)) (fun t ht ↦ hγ t (hsin₂ t ht)) (hv.mono hIcc₂)
+    fun t ht ↦ hvΛ t (hIcc₂ ht) (hsin₂ t ht)
+  obtain ⟨rfl, -⟩ := eq_and_apply_two_mul_pi_zero_eq hr hγ hv h₁ h₂
+  refine ⟨m, fun t ht hs ↦ ?_, h2π⟩
+  rcases lt_trichotomy t π with htπ | rfl | htπ
+  · simp [h₁ t ⟨ht.1.lt_of_ne (by rintro rfl; simp at hs), htπ⟩]
+  · simp at hs
+  · simp [h₂ t ⟨htπ, ht.2.lt_of_ne (by rintro rfl; simp at hs)⟩]
+
+/-- **The energy component along the whole loop, on the stabilizers.** Let
+`γ(t) = (1 + r cos t, r sin t)`, with `r > 0`, be the counterclockwise circle about the
+focus–focus value `(1, 0)`, running above the curve of relative equilibria off the axis `j = 0`,
+let `x(t)` be a point of the fibre `F⁻¹(γ(t))` for every `t` with `sin t ≠ 0`, and let `v` be
+continuous on `[0, 2π]` with `v(t)` in the period lattice, the stabilizer of `x(t)` under the flow
+action of `F`, at all these times. Then for one integer `m`, the `γ₂`-coordinate of `v`, the
+energy component of `v(t)` is `m T(γ(t))`, and after one turn `v(2π) = v(0) + m (0, 2π)`. -/
+theorem exists_eq_add_zsmul_of_mem_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
+    {x : ℝ → sphericalPendulumPhaseSpace}
+    (hx : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      sphericalPendulumEnergyMomentum (x t) = (1 + r * cos t, r * sin t))
+    {v : ℝ → Fin 2 → ℝ} (hv : ContinuousOn v (Icc 0 (2 * π)))
+    (hvΛ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      v t ∈ isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec (x t)) :
+    ∃ m : ℤ, (∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+        v t 0 = m * sphericalPendulumPeriod (1 + r * cos t) (r * sin t)) ∧
+      v (2 * π) = v 0 + m • ![0, 2 * π] :=
+  exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod hr hγ hv fun t ht hs ↦ by
+    rw [← hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem (hγ t hs)
+      (hx t ht hs)]
+    exact hvΛ t ht hs
+
+/-- **Sections of the period lattice returning after one turn.** Along the circle
+`γ(t) = (1 + r cos t, r sin t)`, `r > 0`, about the focus–focus value `(1, 0)`, running above the
+curve of relative equilibria off the axis, a continuous section `v` of the period lattice with
+`v(2π) = v(0)` has zero energy component at every time off the axis: by the monodromy
+`TauCeti.exists_eq_add_zsmul_of_mem_hamiltonianFlowStabilizer_sphericalPendulum` its
+`γ₂`-coordinate vanishes. -/
+theorem apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
+    {x : ℝ → sphericalPendulumPhaseSpace}
+    (hx : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      sphericalPendulumEnergyMomentum (x t) = (1 + r * cos t, r * sin t))
+    {v : ℝ → Fin 2 → ℝ} (hv : ContinuousOn v (Icc 0 (2 * π)))
+    (hvΛ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      v t ∈ isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec (x t))
+    (hper : v (2 * π) = v 0) {t : ℝ} (ht : t ∈ Icc 0 (2 * π)) (hs : sin t ≠ 0) : v t 0 = 0 := by
+  obtain ⟨m, hm, hv2π⟩ :=
+    exists_eq_add_zsmul_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγ hx hv hvΛ
+  have hm0 : m = 0 := by simpa [pi_ne_zero] using congrFun (hper.symm.trans hv2π) 1
+  simpa [hm0] using hm t ht hs
+
+/-- **The period lattice has no continuous basis around the focus–focus value.** Along the circle
+`γ(t) = (1 + r cos t, r sin t)`, `r > 0`, about the focus–focus value `(1, 0)`, running above the
+curve of relative equilibria off the axis, two continuous sections `v`, `w` of the period lattice
+that return to their initial values after one turn do not span the period lattice at any time off
+the axis: both have zero energy component
+(`TauCeti.apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum`), while the
+period lattice contains `γ₂ = (T, -Θ)` with `T > 0`. -/
+theorem closure_pair_ne_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
+    {x : ℝ → sphericalPendulumPhaseSpace}
+    (hx : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      sphericalPendulumEnergyMomentum (x t) = (1 + r * cos t, r * sin t))
+    {v w : ℝ → Fin 2 → ℝ} (hv : ContinuousOn v (Icc 0 (2 * π)))
+    (hw : ContinuousOn w (Icc 0 (2 * π)))
+    (hvΛ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      v t ∈ isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec (x t))
+    (hwΛ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      w t ∈ isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec (x t))
+    (hvper : v (2 * π) = v 0) (hwper : w (2 * π) = w 0) {t : ℝ} (ht : t ∈ Icc 0 (2 * π))
+    (hs : sin t ≠ 0) :
+    AddSubgroup.closure {v t, w t} ≠
+      isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowStabilizer
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.contMDiff
+        isIntegrableSystem_sphericalPendulumEnergyMomentumVec.poissonBracket_eq_zero
+        isCompleteVectorField_hamiltonianVectorField_sphericalPendulumEnergyMomentumVec (x t) := by
+  intro h
+  have hγ₂ : ![sphericalPendulumPeriod (1 + r * cos t) (r * sin t),
+      -sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)] ∈
+      AddSubgroup.closure {v t, w t} := by
+    rw [h, hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure_of_mem (hγ t hs)
+      (hx t ht hs)]
+    exact AddSubgroup.subset_closure (mem_insert _ _)
+  obtain ⟨a, b, hab⟩ := AddSubgroup.mem_closure_pair.1 hγ₂
+  have hv0 :=
+    apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγ hx hv hvΛ hvper ht
+      hs
+  have hw0 :=
+    apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγ hx hw hwΛ hwper ht
+      hs
+  exact (sphericalPendulumPeriod_pos_of_mem (hγ t hs)).ne (by simpa [hv0, hw0] using congrFun hab 0)
 
 end Monodromy
 
