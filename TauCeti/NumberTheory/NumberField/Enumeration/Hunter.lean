@@ -40,7 +40,8 @@ The proof works in the lattice `𝓞 K / ℤ`, of rank `n - 1`. The quadratic fo
 `t2Vector K 1`, so it vanishes on `ℤ` and descends to `𝓞 K / ℤ`. Complete `1` to a `ℤ`-basis
 `(1, c₁, …, c_{n-1})` of `𝓞 K` (possible since `𝓞 K ∩ ℚ = ℤ` makes `𝓞 K / ℤ` torsion-free).
 The Gram matrix `A` of `Q` in the `cᵢ` is the Schur complement of the corner `n` in the `T₂` Gram
-matrix of the basis, so `n · det A = |discr K|` (`Matrix.det_gram_sumElim_unit`), and `A` is
+matrix of the basis, so `n · det A = |discr K|`
+(`Matrix.det_gram_sumElim_eq_mul_det_gram_starProjection`), and `A` is
 positive definite. Admissibility gives `x ≠ 0` with `Q(∑ xᵢ cᵢ) ≤ Γ (|discr K| / n) ^ (1/(n-1))`.
 Finally `θ ↦ ±θ + k` with `k ∈ ℤ` changes `Tr θ` to `±Tr θ + n k` and leaves `Q` unchanged, which
 puts the trace in `[0, n/2]`.
@@ -234,8 +235,13 @@ private theorem det_gram_projT2 {e : Basis (Unit ⊕ Fin (finrank ℚ K - 1)) �
     rcases i with _ | j
     · simp [he]
     · rfl
-  rw [hfam, det_gram_sumElim_unit, real_inner_self_eq_norm_sq, norm_t2Vector_one_sq] at hdet
-  simp only [inner_t2Vector_one, ← projT2_apply] at hdet
+  have hspan : Submodule.span ℝ (Set.range fun _ : Unit ↦ t2Vector K 1) = ℝ ∙ t2Vector K 1 := by
+    rw [Set.range_const]
+  rw [hfam, det_gram_sumElim_eq_mul_det_gram_starProjection _ _ hspan, det_unique, gram_apply,
+    real_inner_self_eq_norm_sq, norm_t2Vector_one_sq] at hdet
+  simp only [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
+    norm_t2Vector_one_sq, inner_t2Vector_one, RCLike.ofReal_real_eq_id, id_eq,
+    ← projT2_apply] at hdet
   rw [eq_div_iff hn, mul_comm, hdet]
 
 /-- **The trace reduction.** Replacing `θ₀` by `±θ₀ + k` with `k ∈ ℤ` puts its trace in `[0, n/2]`,

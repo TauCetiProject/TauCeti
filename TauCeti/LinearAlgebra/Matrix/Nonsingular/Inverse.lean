@@ -17,12 +17,14 @@ Applying a ring homomorphism `f : R →+* S` entrywise commutes with taking the 
 matrix, provided `f` is a local homomorphism (`Matrix.map_nonsing_inv`). The inverse
 `A⁻¹ = Ring.inverse (det A) • adjugate A` is built from the determinant and the adjugate, which
 commute with every ring homomorphism (`RingHom.map_det`, `RingHom.map_adjugate`), and a local
-homomorphism commutes with `Ring.inverse` (`map_ringInverse`).
+homomorphism commutes with `Ring.inverse` (`map_ringInverse`). For the same reason a local
+homomorphism preserves and reflects invertibility of square matrices (`Matrix.isUnit_map_iff`).
 
 Locality is needed: `ℤ →+* ℚ` is not local, and the `1 × 1` matrix `2` over `ℤ` has inverse `0`,
 while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a field to a nontrivial
 ring is local, so the statement applies, for instance, to the casts `ℚ → ℝ` and `ℝ → ℂ`: an
-inverse computed over `ℚ` is the inverse over `ℝ`.
+inverse computed over `ℚ` is the inverse over `ℝ`. Consequently the entrywise map `f.mapMatrix` of
+a local homomorphism is again local (`Matrix.isLocalHom_mapMatrix`).
 
 `Matrix.inv_submatrix_mul_row_eq_single` normalizes the rows of a matrix whose columns off a pivot
 set vanish to coordinate vectors, by the inverse of its pivot submatrix.
@@ -61,6 +63,22 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   rw [inv_def, inv_def, ← hdet, ← hadj, ← map_ringInverse f]
   ext i j
   simp
+
+/-- A local ring homomorphism applied entrywise preserves and reflects invertibility of a square
+matrix. Every ring homomorphism from a field to a nontrivial ring is local, so this covers the
+casts `ℚ → ℝ` and `ℝ → ℂ`. -/
+@[simp]
+theorem isUnit_map_iff (f : F) [IsLocalHom f] (A : Matrix n n R) :
+    IsUnit (A.map f) ↔ IsUnit A := by
+  have hdet : f A.det = (A.map f).det := RingHom.map_det (f : R →+* S) A
+  rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det, ← hdet, _root_.isUnit_map_iff]
+
+omit [FunLike F R S] [RingHomClass F R S] in
+/-- A local ring homomorphism stays local when applied entrywise to square matrices
+(`Matrix.isUnit_map_iff`). -/
+instance isLocalHom_mapMatrix (f : R →+* S) [IsLocalHom f] :
+    IsLocalHom (f.mapMatrix : Matrix n n R →+* Matrix n n S) where
+  map_nonunit M hM := (isUnit_map_iff f M).mp hM
 
 /-- Scaling a square matrix by a scalar in a semifield scales its nonsingular inverse by the
 inverse scalar (including when the scalar is zero or the matrix is singular). -/

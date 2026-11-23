@@ -5,78 +5,73 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 public import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
 
 /-!
-# The Gram determinant after projecting away from one vector
+# Gram determinants of a family completed by a second family
 
-Let `u` be a vector and `v` a finite family in an inner product space over `𝕜` (`ℝ` or `ℂ`).
-Replacing each `v j` by `v j - (⟪u, v j⟫ / ⟪u, u⟫) • u`, its component orthogonal to `u`, is a
-unitriangular change of the family `(u, v)`, and the new family has block-diagonal Gram matrix.
-Hence the Gram determinant of `(u, v)` is `⟪u, u⟫` times the Gram determinant of the projected
-family (`Matrix.det_gram_sumElim_unit`). This is the Schur complement of the corner entry
-`⟪u, u⟫` of the Gram matrix of `(u, v)`.
+Let `u` be a finite family spanning a subspace `W` of an inner product space, and let `v` be a
+second finite family. The Gram determinant of the concatenated family `(u, v)` is the Gram
+determinant of `u` times the Gram determinant of the projections of the `v j` to `Wᗮ`
+(`Matrix.det_gram_sumElim_eq_mul_det_gram_starProjection`). Subtracting from each `v j` its
+component in `W`, a combination of the `u i`, is a block unitriangular change of family, and the
+resulting family is the orthogonal concatenation of `u` and the projected family, whose Gram matrix
+is block diagonal.
 
-For the lattice `ℤ ⊕ L` spanned by `u` and `v`, the projected family spans the orthogonal
-projection of the lattice away from `u`, so this identity computes the determinant of a projected
-lattice; Hunter's theorem on number fields applies it with `u` the image of `1`.
+This is the Gram-matrix form of the statement that the volume of a parallelepiped is the volume of
+a face times the height over it. Applied to a lattice basis whose first vectors span a subspace
+`W`, it computes the covolume of the projection of the lattice to `Wᗮ`. No independence or
+finite-dimensionality hypothesis is needed, and either family may be empty.
 
-No hypothesis on `u` is needed: if `⟪u, u⟫ = 0` both sides vanish.
+## Main results
+
+* `Matrix.det_gram_sumElim_eq_mul_det_gram_starProjection`: if `span (range u) = W`, then
+  `det (gram (Sum.elim u v)) = det (gram u) * det (gram (fun j ↦ Wᗮ.starProjection (v j)))`.
 
 ## References
 
-* R. A. Horn and C. R. Johnson, *Matrix Analysis*, second edition, §0.8.5 (Schur complements).
+* T. Horesh and Y. Karasik, *Equidistribution of primitive lattices in ℝⁿ*, Q. J. Math. 74
+  (2023), 1253–1294, Proposition B.4, p. 1290.
 -/
 
 public section
 
+open Submodule
 open scoped InnerProductSpace
 
 namespace Matrix
 
-variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 E ι κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
-/-- The component `v - (⟪u, v⟫ / ⟪u, u⟫) • u` of `v` orthogonal to `u` is orthogonal to `u`; this
-holds also when `⟪u, u⟫ = 0`, since then `⟪u, v⟫ = 0` as well. -/
-theorem inner_sub_inner_div_inner_self_smul_eq_zero (u v : E) :
-    ⟪u, v - (⟪u, v⟫_𝕜 / ⟪u, u⟫_𝕜) • u⟫_𝕜 = 0 := by
-  by_cases hu : ⟪u, u⟫_𝕜 = 0
-  · have hnorm : ‖u‖ = 0 := by
-      rw [inner_self_eq_norm_sq_to_K] at hu
-      exact_mod_cast pow_eq_zero_iff (two_ne_zero) |>.mp hu
-    have huv : ⟪u, v⟫_𝕜 = 0 :=
-      norm_le_zero_iff.mp ((norm_inner_le_norm u v).trans (by simp [hnorm]))
-    simp [huv]
-  · rw [inner_sub_right, inner_smul_right, div_mul_cancel₀ _ hu, sub_self]
-
-variable [Fintype ι] [DecidableEq ι]
-
-/-- **The Gram determinant after projecting away from a vector.** The Gram determinant of the
-family `(u, v)` is `⟪u, u⟫` times the Gram determinant of the components
-`v j - (⟪u, v j⟫ / ⟪u, u⟫) • u` of the `v j` orthogonal to `u`. -/
-theorem det_gram_sumElim_unit (u : E) (v : ι → E) :
-    (gram 𝕜 (Sum.elim (fun _ : Unit ↦ u) v)).det =
-      ⟪u, u⟫_𝕜 * (gram 𝕜 fun j ↦ v j - (⟪u, v j⟫_𝕜 / ⟪u, u⟫_𝕜) • u).det := by
-  set w : ι → E := fun j ↦ v j - (⟪u, v j⟫_𝕜 / ⟪u, u⟫_𝕜) • u with hw
-  -- The family `(u, w)` is a unitriangular change of the family `(u, v)`.
-  let U : Matrix (Unit ⊕ ι) (Unit ⊕ ι) 𝕜 :=
-    fromBlocks 1 0 (of fun j _ ↦ -(⟪u, v j⟫_𝕜 / ⟪u, u⟫_𝕜)) 1
-  have hU : U.det = 1 := by simp [U]
-  have hfam : (fun k ↦ ∑ l, U k l • Sum.elim (fun _ : Unit ↦ u) v l) =
-      Sum.elim (fun _ : Unit ↦ u) w := by
-    funext k
-    rcases k with _ | j
-    · simp [U, Fintype.sum_sum_type]
-    · have h1 : ∑ i, (1 : Matrix ι ι 𝕜) j i • v i = v j := by
-        rw [Finset.sum_eq_single j (fun i _ hij ↦ by rw [one_apply_ne' hij, zero_smul])
-          (by simp), one_apply_eq, one_smul]
-      simp [U, Fintype.sum_sum_type, h1, hw, sub_eq_add_neg, add_comm]
-  -- The Gram matrix of `(u, w)` is block diagonal.
-  have hB : (of fun (_ : Unit) j ↦ ⟪u, w j⟫_𝕜) = 0 := by
-    ext _ j
-    exact inner_sub_inner_div_inner_self_smul_eq_zero u (v j)
-  rw [← det_gram_sum_smul_of_det_eq_one hU, hfam, gram_sumElim, hB, conjTranspose_zero,
-    det_fromBlocks_zero₂₁, det_unique, gram_apply]
+/-- **The Gram determinant of a completed family.** If a finite family `u` spans `W`, then the Gram
+determinant of the concatenation of `u` and `v` is the Gram determinant of `u` times the Gram
+determinant of the orthogonal projections of the `v j` to `Wᗮ`. -/
+theorem det_gram_sumElim_eq_mul_det_gram_starProjection (u : ι → E) (v : κ → E)
+    {W : Submodule 𝕜 E} [W.HasOrthogonalProjection] (hu : span 𝕜 (Set.range u) = W) :
+    (gram 𝕜 (Sum.elim u v)).det =
+      (gram 𝕜 u).det * (gram 𝕜 fun j ↦ Wᗮ.starProjection (v j)).det := by
+  -- The component of each `v j` in `W` is a combination `∑ i, a j i • u i`.
+  have hmem (j : κ) : W.starProjection (v j) ∈ span 𝕜 (Set.range u) :=
+    hu ▸ W.starProjection_apply_mem (v j)
+  choose a ha using fun j ↦ (mem_span_range_iff_exists_fun 𝕜).1 (hmem j)
+  -- Subtracting these components is a block unitriangular change of family.
+  have hchange : Sum.elim u v = fun x ↦
+      ∑ y, fromBlocks (1 : Matrix ι ι 𝕜) 0 (of a) 1 x y •
+        Sum.elim u (fun j ↦ Wᗮ.starProjection (v j)) y := by
+    ext (i | j)
+    · simp [Fintype.sum_sum_type, Matrix.one_apply]
+    · simp [Fintype.sum_sum_type, Matrix.one_apply, ha]
+  have hdet : (fromBlocks (1 : Matrix ι ι 𝕜) 0 (of a) 1).det = 1 := by
+    simp
+  -- The changed family is an orthogonal concatenation, with block diagonal Gram matrix.
+  have horth : (of fun i j ↦ ⟪u i, Wᗮ.starProjection (v j)⟫_𝕜) = 0 := by
+    ext i j
+    exact inner_right_of_mem_orthogonal (hu ▸ subset_span ⟨i, rfl⟩)
+      (Wᗮ.starProjection_apply_mem (v j))
+  rw [hchange, det_gram_sum_smul_of_det_eq_one hdet, gram_sumElim, horth, conjTranspose_zero,
+    det_fromBlocks_zero₂₁]
 
 end Matrix

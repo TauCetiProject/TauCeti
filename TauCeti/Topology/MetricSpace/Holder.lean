@@ -107,6 +107,7 @@ positive exponent, is equicontinuous on that set
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.congr`: Hölder continuity on a set transfers to a function agreeing there.
+* `HolderOnWith.prodMk`: a pair of Hölder functions with a common exponent is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
 * `HolderWith.norm_add_add_sub_two_nsmul_le`: the second differences of an `r`-Hölder function
@@ -451,6 +452,17 @@ theorem HolderOnWith.congr {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSp
   rw [← h hx, ← h hy]
   exact hf x hx y hy
 
+/-- Two functions that are Hölder on `s` with a common exponent give a pair that is Hölder on `s`
+with that exponent, with the larger of the two constants: the extended distance on a product is
+the maximum of the distances of the components. -/
+theorem HolderOnWith.prodMk {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {C D r : ℝ≥0} {f : X → Y} {g : X → Z} {s : Set X}
+    (hf : HolderOnWith C r f s) (hg : HolderOnWith D r g s) :
+    HolderOnWith (max C D) r (fun x => (f x, g x)) s := fun x hx y hy => by
+  rw [Prod.edist_eq]
+  exact max_le ((hf x hx y hy).trans (by gcongr; exact le_max_left C D))
+    ((hg x hx y hy).trans (by gcongr; exact le_max_right C D))
+
 /-- The sum of two functions that are Hölder on `s` with a common exponent is Hölder on `s`, with
 the sum of the constants. Compare Mathlib's `HolderWith.add`. -/
 theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
@@ -459,6 +471,14 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A finite sum of functions that are Hölder on `t` with a common exponent is Hölder on `t`, with
+the sum of the constants. Compare `HolderWith.sum`. -/
+theorem HolderOnWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {s : Finset ι} {C : ι → ℝ≥0} {r : ℝ≥0} {f : ι → X → Y} {t : Set X}
+    (hf : ∀ i ∈ s, HolderOnWith (C i) r (f i) t) :
+    HolderOnWith (∑ i ∈ s, C i) r (fun x => ∑ i ∈ s, f i x) t :=
+  HolderWith.restrict_iff.1 (HolderWith.sum fun i hi => (hf i hi).holderWith)
 
 /-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
 constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/

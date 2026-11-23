@@ -482,6 +482,17 @@ theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContD
   ext v
   simp
 
+/-- **Naturality of the covariant derivative.** The covariant derivative of the pulled-back pair
+`(f^* b, α ∘ f)` at `y` is the covariant derivative of `(b, α)` at `f y` composed with the
+derivative of `f`. -/
+theorem covariantDeriv_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
+    (hf : DifferentiableAt ℝ f y) :
+    covariantDeriv (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (covariantDeriv b α (f y)).comp (fderiv ℝ f y) := by
+  ext v
+  rw [covariantDeriv_apply, fderiv_comp y hα hf]
+  simp [Function.comp_def]
+
 /-- **The covariant derivative under an affine dilation.** Pulling a pair `(b, α)` back along
 `z ↦ x₀ + c • z`, which turns the connection form into `z ↦ c • b (x₀ + c • z)`, multiplies the
 covariant derivative by `c`. No differentiability is needed. -/
@@ -806,6 +817,18 @@ theorem covariantDBar_eq_zero_iff (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     linear_combination (-2 * I) * hv + covariantDeriv b α x (J v) * I_sq
   · simp only [covariantDBar_apply, h v, zero_apply]
     linear_combination covariantDeriv b α x v * I_sq / 2
+
+/-- **Naturality of `∂bar_a α`.** If the derivative of `f` at `y` intertwines a structure `J'` on
+`F` with `J`, then `∂bar_a α` of the pulled-back pair `(f^* b, α ∘ f)` at `y` is `∂bar_a α` of
+`(b, α)` at `f y` composed with the derivative of `f`. -/
+theorem covariantDBar_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] (J' : AlmostComplexStructure F) {f : F → E} {y : F}
+    (hα : DifferentiableAt ℝ α (f y)) (hf : DifferentiableAt ℝ f y)
+    (hJ : ∀ v, fderiv ℝ f y (J' v) = J (fderiv ℝ f y v)) :
+    covariantDBar J' (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (covariantDBar J b α (f y)).comp (fderiv ℝ f y) := by
+  ext v
+  simp [covariantDeriv_comp hα hf, hJ]
 
 /-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
 `∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
