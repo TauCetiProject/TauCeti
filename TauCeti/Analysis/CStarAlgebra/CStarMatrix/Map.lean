@@ -28,7 +28,8 @@ This file provides entrywise functoriality (`map_zero`, `map_one`, `map_algebraM
   `CStarMatrix.ofMatrix_symm_reindexₗ`, `CStarMatrix.ofMatrix_symm_reindexₐ`,
   `CStarMatrix.reindexₗ_mul`, `CStarMatrix.reindexₗ_self_eq_reindexₐ`,
   `CStarMatrix.isStarProjection_reindexₐ_iff`, `CStarMatrix.permMatrix`,
-  `CStarMatrix.permMatrix_conj_eq_reindexₐ`, `CStarMatrix.singleNonUnitalStarAlgHom`.
+  `CStarMatrix.conjTranspose_permMatrix_mul_mul_permMatrix_eq_reindexₐ`,
+  `CStarMatrix.singleNonUnitalStarAlgHom`.
 
 ## References
 
@@ -46,7 +47,9 @@ variable {k l m n o p R A B C F : Type*}
 @[simp] theorem ofMatrix_symm_map (M : CStarMatrix m n A) (f : A → B) :
     ofMatrix.symm (M.map f) = (ofMatrix.symm M).map f := (rfl)
 @[simp] theorem map_zero [Zero A] [Zero B] {f : A → B} (hf : f 0 = 0) :
-    (0 : CStarMatrix m n A).map f = 0 := by ext; simp [hf]
+    (0 : CStarMatrix m n A).map f = 0 :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_map, ofMatrix_symm_zero, Matrix.map_zero f hf]
 @[simp] protected theorem map_one [DecidableEq n] [Zero A] [One A] [Zero B] [One B]
     {f : A → B} (h₀ : f 0 = 0) (h₁ : f 1 = 1) : (1 : CStarMatrix n n A).map f = 1 :=
   ofMatrix.symm.injective <| by
@@ -54,28 +57,52 @@ variable {k l m n o p R A B C F : Type*}
 @[simp] theorem map_algebraMap [Fintype n] [DecidableEq n] [CommSemiring R] [Semiring A]
     [Semiring B] [Algebra R A] [Algebra R B] (r : R) {f : A → B} (hf : f 0 = 0)
     (hf₂ : f (algebraMap R A r) = algebraMap R B r) :
-    (algebraMap R (CStarMatrix n n A) r).map f = algebraMap R (CStarMatrix n n B) r := by
-  ext i j
-  by_cases h : i = j <;> simp [map_apply, algebraMap_apply, h, hf, hf₂]
+    (algebraMap R (CStarMatrix n n A) r).map f = algebraMap R (CStarMatrix n n B) r :=
+  ofMatrix.symm.injective <| by
+    have hA : ofMatrix.symm (algebraMap R (CStarMatrix n n A) r) = algebraMap R (Matrix n n A) r :=
+      Matrix.ext fun _ _ => by
+        simp [algebraMap_apply, Matrix.algebraMap_eq_diagonal, Matrix.diagonal_apply]
+    have hB : ofMatrix.symm (algebraMap R (CStarMatrix n n B) r) = algebraMap R (Matrix n n B) r :=
+      Matrix.ext fun _ _ => by
+        simp [algebraMap_apply, Matrix.algebraMap_eq_diagonal, Matrix.diagonal_apply]
+    simpa only [ofMatrix_symm_map, hA, hB] using Matrix.map_algebraMap r f hf hf₂
 theorem map_add [AddZeroClass A] [AddZeroClass B] [FunLike F A B] [AddMonoidHomClass F A B]
-    (φ : F) (M N : CStarMatrix m n A) : (M + N).map φ = M.map φ + N.map φ := by ext; simp
+    (φ : F) (M N : CStarMatrix m n A) : (M + N).map φ = M.map φ + N.map φ :=
+  ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_map, ofMatrix_symm_add] using
+      Matrix.map_add φ (_root_.map_add φ) _ _
 section
 variable [AddGroup A] [SubtractionMonoid B] [FunLike F A B] [AddMonoidHomClass F A B] (φ : F)
   (M N : CStarMatrix m n A)
-protected theorem map_neg : (-M).map φ = -(M.map φ) := by ext; simp
-protected theorem map_sub : (M - N).map φ = M.map φ - N.map φ := by ext; simp
+protected theorem map_neg : (-M).map φ = -(M.map φ) :=
+  ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_map, ofMatrix_symm_neg] using
+      Matrix.map_neg φ (_root_.map_neg φ) _
+protected theorem map_sub : (M - N).map φ = M.map φ - N.map φ :=
+  ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_map, ofMatrix_symm_sub] using
+      Matrix.map_sub φ (_root_.map_sub φ) _ _
 end
 protected theorem map_smul [SMul R A] [SMul R B] [FunLike F A B] [MulActionHomClass F R A B]
-    (φ : F) (r : R) (M : CStarMatrix m n A) : (r • M).map φ = r • M.map φ := by ext; simp
+    (φ : F) (r : R) (M : CStarMatrix m n A) : (r • M).map φ = r • M.map φ :=
+  ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_map, ofMatrix_symm_smul] using
+      Matrix.map_smul φ r (_root_.map_smul φ r) _
 /-- Mapping entries by a non-unital ring homomorphism commutes with rectangular multiplication. -/
 theorem map_mul [Fintype m] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
     [FunLike F A B] [NonUnitalRingHomClass F A B] (φ : F) (M : CStarMatrix l m A)
-    (N : CStarMatrix m n A) : (M * N).map φ = M.map φ * N.map φ := by ext; simp [mul_apply, map_sum]
+    (N : CStarMatrix m n A) : (M * N).map φ = M.map φ * N.map φ :=
+  ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_map, ofMatrix_symm_mul] using
+      Matrix.map_mul (L := ofMatrix.symm M) (M := ofMatrix.symm N) (f := φ)
 section
 variable [Star A] [Star B] [FunLike F A B] [StarHomClass F A B] (φ : F)
 /-- Mapping entries by a `⋆`-homomorphism commutes with `conjTranspose`. -/
 theorem map_conjTranspose (M : CStarMatrix m n A) :
-    M.conjTranspose.map φ = (M.map φ).conjTranspose := by ext; simp [map_star]
+    M.conjTranspose.map φ = (M.map φ).conjTranspose :=
+  ofMatrix.symm.injective <| by
+    simpa only [ofMatrix_symm_map, ofMatrix_symm_conjTranspose] using
+      Matrix.conjTranspose_map φ (map_star φ)
 /-- Mapping entries of a square matrix by a `⋆`-homomorphism commutes with `star`. -/
 protected theorem map_star (M : CStarMatrix n n A) : (star M).map φ = star (M.map φ) :=
   map_conjTranspose φ M
@@ -182,9 +209,10 @@ theorem permMatrix_mul_conjTranspose_self [Fintype n] [DecidableEq m] [Decidable
     (e : n ≃ n) : permMatrix A e ∈ unitary (CStarMatrix n n A) := by
   rw [Unitary.mem_iff, star_eq_conjTranspose, conjTranspose_permMatrix_mul_self,
     permMatrix_mul_conjTranspose_self, and_self]
-/-- Conjugating `M` by `permMatrix A e` computes `reindexₐ R A e M`. -/
-theorem permMatrix_conj_eq_reindexₐ [Fintype m] [Fintype n] [DecidableEq n]
-    [Semiring R] [NonAssocSemiring A] [Module R A] [StarRing A] (e : m ≃ n)
+/-- Conjugating `M` by `(permMatrix A e).conjTranspose` on the left and `permMatrix A e` on the
+right computes `reindexₐ R A e M`. -/
+theorem conjTranspose_permMatrix_mul_mul_permMatrix_eq_reindexₐ [Fintype m] [Fintype n]
+    [DecidableEq n] [Semiring R] [NonAssocSemiring A] [Module R A] [StarRing A] (e : m ≃ n)
     (M : CStarMatrix m m A) :
     (permMatrix A e).conjTranspose * M * permMatrix A e = reindexₐ R A e M := by
   classical
@@ -200,7 +228,8 @@ theorem permMatrix_mul_conjTranspose_eq_reindexₐ [Fintype m] [Fintype n] [Deci
     (N : CStarMatrix n n A) :
     permMatrix A e * N * (permMatrix A e).conjTranspose = reindexₐ R A e.symm N := by
   classical
-  simpa [conjTranspose_permMatrix] using permMatrix_conj_eq_reindexₐ (R := R) e.symm N
+  simpa [conjTranspose_permMatrix] using
+    conjTranspose_permMatrix_mul_mul_permMatrix_eq_reindexₐ (R := R) e.symm N
 end Permutation
 section
 variable [Fintype n] [DecidableEq n] [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]

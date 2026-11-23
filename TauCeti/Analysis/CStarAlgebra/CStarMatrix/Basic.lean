@@ -393,13 +393,21 @@ theorem conjTranspose_injective [InvolutiveStar A] :
     M.conjTranspose = 0 ↔ M = 0 := by
   rw [← conjTranspose_zero, conjTranspose_inj]
 @[simp] theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
-    (M + N).conjTranspose = M.conjTranspose + N.conjTranspose := by ext; simp
+    (M + N).conjTranspose = M.conjTranspose + N.conjTranspose :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_add, Matrix.conjTranspose_add]
 @[simp] theorem conjTranspose_sub [AddGroup A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
-    (M - N).conjTranspose = M.conjTranspose - N.conjTranspose := by ext; simp
+    (M - N).conjTranspose = M.conjTranspose - N.conjTranspose :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_sub, Matrix.conjTranspose_sub]
 @[simp] theorem conjTranspose_neg [AddGroup A] [StarAddMonoid A] (M : CStarMatrix m n A) :
-    (-M).conjTranspose = -M.conjTranspose := by ext; simp
+    (-M).conjTranspose = -M.conjTranspose :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_neg, Matrix.conjTranspose_neg]
 @[simp] theorem conjTranspose_smul [Star R] [Star A] [SMul R A] [StarModule R A] (r : R)
-    (M : CStarMatrix m n A) : (r • M).conjTranspose = star r • M.conjTranspose := by ext; simp
+    (M : CStarMatrix m n A) : (r • M).conjTranspose = star r • M.conjTranspose :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_smul, Matrix.conjTranspose_smul]
 @[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
     (1 : CStarMatrix n n A).conjTranspose = 1 :=
   ofMatrix.symm.injective (by

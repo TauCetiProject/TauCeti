@@ -107,13 +107,20 @@ variable [NonUnitalRing R] [StarRing R] [IsProperStar R] {u : R}
 /-- In a star ring with proper star, `u` is a partial isometry if `star u * u` is idempotent. -/
 theorem IsPartialIsometry.of_isIdempotentElem_star_mul_self (h : IsIdempotentElem (star u * u)) :
     IsPartialIsometry u := by
-  rw [isPartialIsometry_iff, ← sub_eq_zero, ← star_mul_self_eq_zero]
-  have h1 : star (u * star u * u) = star u * u * star u := by
-    rw [star_mul, star_mul, star_star, mul_assoc]
-  have h4 : star u * (u * star u * u) = star u * u := by simpa only [mul_assoc] using h.eq
-  have h2 : (star u * u * star u) * (u * star u * u) = star u * u := by rw [mul_assoc, h4, h.eq]
-  have h3 : (star u * u * star u) * u = star u * u := by rw [mul_assoc, h.eq]
-  rw [star_sub, h1, sub_mul, mul_sub, mul_sub, h2, h3, h4, sub_self]
+  let d : R := u * star u * u - u
+  have hud : star u * d = 0 := by
+    calc
+      star u * d = star u * u * (star u * u) - star u * u := by
+        simp only [d, mul_sub, mul_assoc]
+      _ = 0 := by rw [h.eq, sub_self]
+  have hd : star d * d = 0 := by
+    calc
+      star d * d = (star u * u * star u - star u) * d := by
+        simp only [d, star_sub, star_mul, star_star, mul_assoc]
+      _ = star u * u * (star u * d) - star u * d := by rw [sub_mul, mul_assoc]
+      _ = 0 := by rw [hud, mul_zero, sub_self]
+  rw [isPartialIsometry_iff, ← sub_eq_zero]
+  exact star_mul_self_eq_zero.mp hd
 /-- In a star ring with proper star, `u` is a partial isometry if `u * star u` is idempotent. -/
 theorem IsPartialIsometry.of_isIdempotentElem_mul_star_self (h : IsIdempotentElem (u * star u)) :
     IsPartialIsometry u := by
