@@ -79,20 +79,16 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
   -- Antisymmetry and cocycle identity `c i j + c j k = c i k` on triple overlaps.
   have hcoc : ∀ i j k, ∀ x ∈ V i ∩ V j ∩ V k,
       c i j (x : ℂ) + (1 : ℝ) • c j k (x : ℂ) = c i k (x : ℂ) := fun i j k x hx ↦ by
-    have hii : (3 : ℂ) • c i i (x : ℂ) = 0 := by
-      have h3 : (3 : ℂ) • c i i (x : ℂ) = c i i (x : ℂ) + c i i (x : ℂ) + c i i (x : ℂ) := by
-        module
-      rw [h3, hcycle i i i x ⟨⟨hx.1.1, hx.1.1⟩, hx.1.1⟩]
-    have hci : c i i (x : ℂ) = 0 := (smul_eq_zero.1 hii).resolve_left (by norm_num)
-    have hki : c i k (x : ℂ) + c k i (x : ℂ) = 0 := by
-      simpa [hci] using hcycle i k i x ⟨⟨hx.1.1, hx.2⟩, hx.1.1⟩
+    have hii := hcycle i i i x ⟨⟨hx.1.1, hx.1.1⟩, hx.1.1⟩
+    have hki := hcycle i k i x ⟨⟨hx.1.1, hx.2⟩, hx.1.1⟩
     have hijk := hcycle i j k x hx
+    have hci : c i i (x : ℂ) = 0 := by
+      have : (3 : ℂ) • c i i (x : ℂ) = 0 := by
+        calc (3 : ℂ) • c i i (x : ℂ) = c i i (x : ℂ) + c i i (x : ℂ) + c i i (x : ℂ) := by module
+          _ = 0 := hii
+      simpa [smul_eq_zero] using this
     rw [one_smul]
-    exact eq_of_sub_eq_zero (by
-      calc c i j (x : ℂ) + c j k (x : ℂ) - c i k (x : ℂ)
-          = (c i j (x : ℂ) + c j k (x : ℂ) + c k i (x : ℂ)) -
-              (c i k (x : ℂ) + c k i (x : ℂ)) := by abel
-        _ = 0 := by rw [hijk, hki, sub_self])
+    grind
   -- Smoothness of the cocycle on `V i ∩ V j` and smooth Čech splitting on `Ω`.
   have hξ (i j : ι) :
       ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (fun x : Ω ↦ c i j (x : ℂ)) (V i ∩ V j) :=

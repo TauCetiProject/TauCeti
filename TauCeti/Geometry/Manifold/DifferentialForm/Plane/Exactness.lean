@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.Opens
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 
 /-!
 # Banach-valued two-form exactness on open subsets of `ℂ`
@@ -71,10 +70,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_add_eq_zero {U : Opens �
             (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
               SmoothForm.complexDzBar.val)) = 0 := by
-  let f' : ℂ → W := Subtype.val.extend f 0
-  have hf'_eq (z : U) : f' z = f z := Subtype.val_injective.extend_apply f 0 z
-  have hf' : ContDiffOn ℝ n f' (U : Set ℂ) :=
-    contMDiffOn_iff_contDiffOn.1 (ContMDiffMap.contMDiffOn_extend U ⟨f, hf⟩ 0)
+  obtain ⟨f', hf', hf'_eq⟩ := hf.exists_contDiffOn_extend
   obtain ⟨g', hg', hsol⟩ :=
     U.isOpen.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv hm hmn hf'
   let g : U → W := g' ∘ Subtype.val
@@ -82,21 +78,11 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_add_eq_zero {U : Opens �
   refine ⟨g, hg, ?_⟩
   apply planarTwoFormCoeff_injective
   funext z
-  have hg1 : IsSmoothForm 𝓘(ℝ, ℂ) 1
-      (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
-        (RoughForm.ofFunction 𝓘(ℝ, ℂ) g)
-        (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val)) :=
-    (isSmoothForm_ofFunction_iff.2 (hg.of_le (mod_cast hm))).wedgeWith _
-      ((SmoothForm.complexDz.isSmoothForm.mpullback
-        (contMDiff_subtypeVal (n := ∞))).of_le (by simp))
-  have hf1 : IsSmoothForm 𝓘(ℝ, ℂ) 1
-      (RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
-        (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
-        (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.val)) :=
-    (isSmoothForm_ofFunction_iff.2
-        (hf.of_le (mod_cast (hm.trans (le_self_add.trans hmn))))).wedgeWith _
-      ((SmoothForm.complexDzBar.isSmoothForm.mpullback
-        (contMDiff_subtypeVal (n := ∞))).of_le (by simp))
+  have hg1 : IsSmoothForm 𝓘(ℝ, ℂ) 1 _ :=
+    isSmoothForm_wedgeWith_ofFunction_mpullback_complexDz (hg.of_le (by exact_mod_cast hm))
+  have hf1 : IsSmoothForm 𝓘(ℝ, ℂ) 1 _ :=
+    isSmoothForm_wedgeWith_ofFunction_mpullback_complexDzBar
+      (hf.of_le (by exact_mod_cast hm.trans (le_self_add.trans hmn)))
   have hgd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) g z :=
     (hg z).mdifferentiableAt (by exact_mod_cast (zero_lt_one.trans_le hm).ne')
   have hfd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) f z :=
@@ -124,10 +110,7 @@ theorem exists_contMDiff_mextDeriv_wedgeWith_complexDz_eq {U : Opens ℂ} {W : T
     (contMDiff_iff_contDiff.2
       (((2 * Complex.I)⁻¹ • ContinuousLinearMap.id ℂ W).restrictScalars ℝ).contDiff).comp
       hη.contMDiff_planarTwoFormCoeff
-  let h' : ℂ → W := Subtype.val.extend h 0
-  have hh'_eq (z : U) : h' z = h z := Subtype.val_injective.extend_apply h 0 z
-  have hh' : ContDiffOn ℝ n h' (U : Set ℂ) :=
-    contMDiffOn_iff_contDiffOn.1 (ContMDiffMap.contMDiffOn_extend U ⟨h, hh⟩ 0)
+  obtain ⟨h', hh', hh'_eq⟩ := hh.exists_contDiffOn_extend
   obtain ⟨g', hg', hsol⟩ :=
     U.isOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hn hh'
   let g : U → W := g' ∘ Subtype.val
@@ -153,15 +136,12 @@ theorem exists_isSmoothForm_mextDeriv_eq_of_opens_complex {U : Opens ℂ} {F : T
   obtain ⟨g, hg, hdg⟩ :=
     exists_contMDiff_mextDeriv_wedgeWith_complexDz_eq (W := Complexification F) hn
       (hη.mapCoeff (Complexification.ofRealLI F).toContinuousLinearMap)
-  set dz := mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val
   let βℂ : RoughForm 𝓘(ℝ, ℂ) U (Complexification F) 1 :=
     RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ).flip
-      (RoughForm.ofFunction 𝓘(ℝ, ℂ) g) dz
-  have hβℂ : IsSmoothForm 𝓘(ℝ, ℂ) n βℂ := by
-    have hdz : IsSmoothForm 𝓘(ℝ, ℂ) n dz :=
-      (SmoothForm.complexDz.isSmoothForm.mpullback
-        (contMDiff_subtypeVal (n := ∞))).of_le (by simp)
-    exact (isSmoothForm_ofFunction_iff.2 hg).wedgeWith _ hdz
+      (RoughForm.ofFunction 𝓘(ℝ, ℂ) g)
+      (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val)
+  have hβℂ : IsSmoothForm 𝓘(ℝ, ℂ) n βℂ :=
+    isSmoothForm_wedgeWith_ofFunction_mpullback_complexDz hg
   refine ⟨RoughForm.mapCoeff (Complexification.reCLM F) βℂ, hβℂ.mapCoeff _, ?_⟩
   rw [mextDeriv_mapCoeff _ (hβℂ.of_le (by exact_mod_cast hn)), hdg]
   simp

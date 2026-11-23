@@ -59,6 +59,12 @@ def complexDzBar : SmoothForm 𝓘(ℝ, ℂ) ℂ ℂ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℂ (0 : Fin 1)
     (Complex.conjCLE : ℂ →L[ℝ] ℂ))
 
+/-- `dbar z` is a constant form, so the lemmas about `TauCeti.SmoothForm.const` apply to it. -/
+theorem complexDzBar_eq_const :
+    complexDzBar =
+      const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℂ (0 : Fin 1)
+        (Complex.conjCLE : ℂ →L[ℝ] ℂ)) := (rfl)
+
 @[simp]
 theorem complexDz_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
     complexDz.val z v = NormedSpace.fromTangentSpace z (v 0) := by
@@ -112,9 +118,19 @@ theorem smul_complexDz_add_smul_complexDzBar_eq_smul_complexDz_iff (z a b c : �
 def complexDx : SmoothForm 𝓘(ℝ, ℂ) ℂ ℝ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.reCLM)
 
+/-- `dx` is a constant form, so the lemmas about `TauCeti.SmoothForm.const` apply to it. -/
+theorem complexDx_eq_const :
+    complexDx =
+      const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.reCLM) := (rfl)
+
 /-- The real-valued coordinate one-form `dy = d(Im)` on the real manifold `ℂ`. -/
 def complexDy : SmoothForm 𝓘(ℝ, ℂ) ℂ ℝ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.imCLM)
+
+/-- `dy` is a constant form, so the lemmas about `TauCeti.SmoothForm.const` apply to it. -/
+theorem complexDy_eq_const :
+    complexDy =
+      const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.imCLM) := (rfl)
 
 @[simp]
 theorem complexDx_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
