@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Comultiplication
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Contraction
@@ -13,14 +12,9 @@ public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.FiniteStability
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Descent
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Comap
-import Mathlib.FieldTheory.Galois.Basic
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.Coalgebra.GroupLike.ScalarAut
 import TauCeti.Algebra.TensorProduct.CommonOverfield
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
-import TauCeti.RingTheory.Idempotents.Connected.Component
-import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
 /-!
 # The geometric identity component under automorphisms and connected groups
@@ -37,7 +31,7 @@ the inputs of its Galois descent to `k`:
 Over a perfect field `k`, Galois descent along `AlgebraicClosure k / k` then defines the identity
 component over `k`. As an application, the smallest closed `k`-subgroup of `G` through whose base
 change to `K` a family of homomorphisms from geometrically connected groups factors is
-geometrically connected.
+geometrically connected, provided this subgroup is of finite type.
 
 ## Main declarations
 
@@ -45,11 +39,12 @@ geometrically connected.
   component of a base-changed affine group is stable under `Aut(L / k)` acting on the scalar
   factor.
 * `TauCeti.CommHopfAlgCat.apply_one_tmul_eq_zero_of_mem_identityComponentHopfIdeal`: a
-  homomorphism from a geometrically connected group kills the functions defined over `k` that lie
-  in the geometric identity component.
+  homomorphism from a geometrically connected group kills the functions over `k` whose scalar
+  extensions belong to the ideal cutting out the geometric identity component.
 * `TauCeti.CommHopfAlgCat.geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal`:
   the smallest closed subgroup over a perfect field through whose base change a family of
-  homomorphisms from geometrically connected groups factors is geometrically connected.
+  homomorphisms from geometrically connected groups factors is geometrically connected, when it is
+  of finite type.
 
 ## References
 

@@ -28,7 +28,8 @@ ideals it needs no argument that the kernel of `H → ℝ ⊗[ℚ] H → O(S)` i
 ## Main declarations
 
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal h`: the Hopf ideal of `H` cutting out `MT(h)`, the
-  contraction of the common kernel of `h` (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_def`).
+  Hopf-ideal contraction of the largest Hopf ideal contained in the kernel of the coordinate map
+  of `h` (`TauCeti.DeligneTorus.mumfordTateHopfIdeal_def`).
 * `TauCeti.DeligneTorus.le_mumfordTateHopfIdeal_iff`: **minimality**; `MT(h)` is contained in
   the closed `ℚ`-subgroup cut out by `I` exactly when `h` kills `I_ℝ`.
 * `TauCeti.DeligneTorus.mumfordTateLift`,

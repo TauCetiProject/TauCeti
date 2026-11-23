@@ -16,10 +16,12 @@ import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Connec
 Let `G` be an affine group over `ℚ` and `h : S → G_ℝ` a homomorphism from the Deligne torus. Its
 Mumford–Tate group `MT(h)` (`TauCeti.DeligneTorus.mumfordTateHopfIdeal`) is the smallest closed
 `ℚ`-subgroup of `G` through whose real extension `h` factors. This file proves that `MT(h)` is
-geometrically connected; no polarization is assumed. For `G = GL(V)` this is the connectedness of
-the Mumford–Tate group of a rational Hodge structure.
+geometrically connected when `MT(h)` (not necessarily `G`) is of finite type; no polarization is
+assumed. For `G = GL(V)` this is the connectedness of the Mumford–Tate group of a rational Hodge
+structure.
 
-Since `MT(h)` is the contraction of the kernel of `h`, this is the case of a single homomorphism
+Since `MT(h)` is cut out by the Hopf-ideal contraction of the largest Hopf ideal contained in the
+kernel of the coordinate map of `h`, this is the case of a single homomorphism
 from the geometrically connected group `S` of
 `TauCeti.CommHopfAlgCat.geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal`,
 which descends the identity component of `MT(h)_{ℚ^alg}` to `ℚ` and shows by minimality that it
@@ -28,7 +30,7 @@ is all of `MT(h)`.
 ## Main declarations
 
 * `TauCeti.DeligneTorus.geometricallyConnected_quotient_mumfordTateHopfIdeal`: the Mumford–Tate
-  group is geometrically connected.
+  group is geometrically connected, when it is of finite type.
 
 ## References
 
