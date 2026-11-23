@@ -595,14 +595,14 @@ private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFami
   -- On `G`, `p(A)² = r(A) + s(A) f(A)` acts as `r(A)`, since `f(A)` kills `G`.
   have hsq {p r s : ℝ[X]} (hp : p * p = r + s * ffPoly a b) {v : V} (hv : v ∈ G) :
       aeval A p (aeval A p v) = aeval A r v := by
-    rw [← mul_apply_eq_comp, ← map_mul, hp, map_add, map_mul, LinearMap.add_apply,
-      mul_apply_eq_comp,
-      (h.isSemisimple_hamiltonianEnd hP).aeval_apply_eq_zero_of_mem_maxGenEigenspace hv, map_zero,
-      add_zero]
+    have hf : aeval A (ffPoly a b) v = 0 :=
+      (h.isSemisimple_hamiltonianEnd hP).aeval_apply_eq_zero_of_mem_maxGenEigenspace hv
+    simpa [hf] using LinearMap.congr_fun (congrArg (aeval A) hp) v
   -- The forms on `G` whose Hamiltonian endomorphisms are the restrictions of `p₁(A)`, `p₂(A)`.
   have hmem (p : ℝ[X]) (hp : p.comp (-X) = -p) :
       (aeval A p).restrict (hmaps p) ∈ skewAdjointLieSubalgebra ω'.toBilinForm :=
-    restrict_mem_skewAdjointLieSubalgebra (ω.aeval_mem_skewAdjointLieSubalgebra hA hp) _ _
+    restrict_mem_skewAdjointLieSubalgebra ((LinearMap.mem_skewAdjointSubmodule _).2 <|
+      ((LinearMap.mem_skewAdjointSubmodule A).1 hA).aeval_of_comp_neg_X_eq_neg hp) _ _
   have hAP (p : ℝ[X]) (hp : p.comp (-X) = -p) :
       ω'.hamiltonianEnd (ω'.hamiltonianEndEquiv.symm ⟨_, hmem p hp⟩) =
         (aeval A p).restrict (hmaps p) := by
