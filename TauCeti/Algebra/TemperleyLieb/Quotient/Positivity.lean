@@ -31,23 +31,12 @@ noncomputable section
 open scoped ComplexOrder
 namespace TauCeti.TemperleyLieb
 section WalkPositiveTrace
-variable {V : Type*} {r : V → ℂ}
-/-- For self-adjoint complex weights `r`, the squared ratio `(r v / r u) ^ 2` is nonnegative. -/
-theorem div_sq_nonneg_of_isSelfAdjoint (hrs : ∀ v, IsSelfAdjoint (r v)) (v u : V) :
-    0 ≤ (r v / r u) ^ 2 := by
-  have hsa : star (r v / r u) = r v / r u := by rw [star_div₀, (hrs v).star_eq, (hrs u).star_eq]
-  simpa only [hsa, sq] using star_mul_self_nonneg (r v / r u)
-/-- For nonzero self-adjoint complex weights `r`, `(r v / r u) ^ 2` is strictly positive. -/
-theorem div_sq_pos_of_isSelfAdjoint (hr : ∀ v, r v ≠ 0) (hrs : ∀ v, IsSelfAdjoint (r v))
-    (v u : V) : 0 < (r v / r u) ^ 2 :=
-  lt_of_le_of_ne (div_sq_nonneg_of_isSelfAdjoint hrs v u)
-    (pow_ne_zero 2 (div_ne_zero (hr v) (hr u))).symm
-variable {G : SimpleGraph V} [DecidableEq V] [G.LocallyFinite] {v₀ : V}
+variable {V : Type*} {r : V → ℂ} {G : SimpleGraph V} [DecidableEq V] [G.LocallyFinite] {v₀ : V}
 /-- For self-adjoint `r : V → ℂ`, `walkTrace` is positive semidefinite on `PathAlgebra ℂ G v₀ n`. -/
 theorem walkTrace_star_mul_self_nonneg (hrs : ∀ v, IsSelfAdjoint (r v)) {n : ℕ}
     (X : PathAlgebra ℂ G v₀ n) : 0 ≤ walkTrace G v₀ r (star X * X) := by
   rw [walkTrace_apply]
-  exact Finset.sum_nonneg fun v _ ↦ mul_nonneg (div_sq_nonneg_of_isSelfAdjoint hrs v.val v₀) <| by
+  exact Finset.sum_nonneg fun v _ ↦ mul_nonneg ((hrs v.val).div (hrs v₀)).sq_nonneg <| by
     rw [Pi.mul_apply, Pi.star_apply, Matrix.star_eq_conjTranspose]
     exact (Matrix.posSemidef_conjTranspose_mul_self (X v)).trace_nonneg
 /-- For nonzero self-adjoint `r : V → ℂ`, `walkTrace` is faithful on `PathAlgebra ℂ G v₀ n`. -/
@@ -57,11 +46,11 @@ theorem walkTrace_star_mul_self_nonneg (hrs : ∀ v, IsSelfAdjoint (r v)) {n : �
   refine ⟨fun h ↦ funext fun v ↦ ?_, fun h ↦ by simp [h]⟩
   rw [walkTrace_apply] at h
   have h0 := (Finset.sum_eq_zero_iff_of_nonneg fun w _ ↦ mul_nonneg
-    (div_sq_nonneg_of_isSelfAdjoint hrs w.val v₀) <| by
+    ((hrs w.val).div (hrs v₀)).sq_nonneg <| by
       simpa [Matrix.star_eq_conjTranspose] using
         (Matrix.posSemidef_conjTranspose_mul_self (X w)).trace_nonneg).1 h v (Finset.mem_univ v)
   simpa [Matrix.star_eq_conjTranspose, Matrix.trace_conjTranspose_mul_self_eq_zero_iff,
-    (div_sq_pos_of_isSelfAdjoint hr hrs v.val v₀).ne'] using h0
+    pow_ne_zero 2 (div_ne_zero (hr v.val) (hr v₀))] using h0
 variable (G v₀) in
 /-- `walkTrace` bundled as a `StarPositiveFunctional` for self-adjoint weights `r`. -/
 def walkPositiveTrace (hrs : ∀ v, IsSelfAdjoint (r v)) (n : ℕ) :
@@ -190,12 +179,6 @@ theorem discretePathWeight_ne_zero {m : ℕ} (t : Fin (m - 1)) : discretePathWei
 /-- Every vertex weight `discretePathWeight m t` is real (self-adjoint). -/
 theorem isSelfAdjoint_discretePathWeight (m : ℕ) (t : Fin (m - 1)) :
     IsSelfAdjoint (discretePathWeight m t) := Complex.conj_ofReal _
-private theorem sum_neighborFinset_hasse_qInt (δ : ℝ) :
-    ∀ v : ℕ, ∑ u ∈ (hasse ℕ).neighborFinset v, qInt ℝ δ (u + 1) = δ * qInt ℝ δ (v + 1)
-  | 0 => by simp [qInt_two]
-  | k + 1 => by
-    rw [neighborFinset_hasse_nat_succ, Finset.sum_pair (by omega), qInt_add_two (R := ℝ) δ (k + 1)]
-    ring
 /-- `discretePathWeight m ^ 2` is a `2 cos (π / m)`-eigenvector of `pathGraph (m - 1)`. -/
 theorem sum_neighborFinset_discretePathWeight_sq {m : ℕ} (v : Fin (m - 1)) :
     ∑ u ∈ (pathGraph (m - 1)).neighborFinset v, discretePathWeight m u ^ 2 =

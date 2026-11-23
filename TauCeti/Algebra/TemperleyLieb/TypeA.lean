@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.PathModel
+public import TauCeti.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.QuantumGroups.QuantumInteger.Real
-public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 import TauCeti.Combinatorics.SimpleGraph.PathGraph
 
@@ -38,8 +38,9 @@ Together with `TauCeti.TemperleyLieb.IsPathEigenvectorUpTo.map`, these lemmas in
 * `TauCeti.TemperleyLieb.sum_neighborFinset_pathGraph_qInt_eq`,
   `TauCeti.TemperleyLieb.sum_neighborFinset_pathGraph_qInt_of_lt`,
   `TauCeti.TemperleyLieb.sum_neighborFinset_pathGraph_qInt_of_eq_zero`,
-  `TauCeti.TemperleyLieb.sum_neighborFinset_pathGraph_qInt`: quantum-integer neighbour sums on
-  `SimpleGraph.pathGraph (k + 1)`.
+  `TauCeti.TemperleyLieb.sum_neighborFinset_pathGraph_qInt`,
+  `TauCeti.TemperleyLieb.sum_neighborFinset_hasse_qInt`: quantum-integer neighbour sums on
+  `SimpleGraph.pathGraph (k + 1)` and `SimpleGraph.hasse ℕ`.
 * `TauCeti.TemperleyLieb.isPathEigenvectorUpTo_pathGraph_of_sq_eq_qInt`,
   `TauCeti.TemperleyLieb.isPathEigenvectorUpTo_pathGraph_of_qInt_eq_zero`: bounded-depth and
   vanishing-boundary `IsPathEigenvectorUpTo` criteria over any commutative ring.
@@ -112,6 +113,16 @@ theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1))
     ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (u + 1) =
       2 * cos (π / (k + 2 : ℕ)) * qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (v + 1) :=
   sum_neighborFinset_pathGraph_qInt_of_eq_zero (qInt_two_mul_cos_pi_div_eq_zero (by omega)) v
+
+/-- Over any commutative ring `R` and loop value `δ : R`, the quantum integers `[u + 1]` on the
+vertices `u` of `SimpleGraph.hasse ℕ` (`A_∞`) form an eigenvector of its adjacency matrix with
+eigenvalue `δ`. -/
+theorem sum_neighborFinset_hasse_qInt {R : Type*} [CommRing R] (δ : R) :
+    ∀ v : ℕ, ∑ u ∈ (hasse ℕ).neighborFinset v, qInt R δ (u + 1) = δ * qInt R δ (v + 1)
+  | 0 => by simp [qInt_two]
+  | k + 1 => by
+    rw [neighborFinset_hasse_nat_succ, Finset.sum_pair (by omega), qInt_add_two (R := R) δ (k + 1)]
+    ring
 
 /-- Over any commutative ring `R`, vertex weights `r` on `SimpleGraph.pathGraph (k + 1)` with
 `r t ^ 2 = [t + 1]` satisfy the bounded-depth eigenvector equation from base vertex `0` up to any
