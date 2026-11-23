@@ -105,8 +105,8 @@ theorem LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt {E : Type*}
   set B : ℝ≥0 := C * a + ‖v y‖₊ + 1
   have hB : (0 : ℝ) < B := by positivity
   have hbound (z : E) (hz : z ∈ closedBall y a) : ‖v z‖ ≤ B := by
-    have h := (hC.norm_sub_le (hball hz) (hball (mem_closedBall_self a.2))).trans
-      (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hz) C.2)
+    have h := (hC.norm_sub_le (hball hz) (hball (mem_closedBall_self a.property))).trans
+      (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hz) C.property)
     calc ‖v z‖ ≤ ‖v z - v y‖ + ‖v y‖ := norm_le_norm_sub_add _ _
       _ ≤ B := by
         simp only [B, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_one, coe_nnNorm]

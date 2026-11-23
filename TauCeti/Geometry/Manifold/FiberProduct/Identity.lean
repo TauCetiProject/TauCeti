@@ -70,7 +70,7 @@ noncomputable def transverseFiberProductIdRightDiffeomorph (hn : 1 ≤ n)
   have hemb := isSmoothEmbedding_coe_transverseFiberProduct hn hf (contMDiff_id (I := J))
     (fun p _ ↦ transverse_id_right f p)
   refine
-    { toFun := fun p ↦ p.1.1
+    { toFun := fun p ↦ p.val.1
       invFun := fun x ↦ ⟨(x, f x), rfl⟩
       left_inv := ?_
       right_inv := fun _ ↦ rfl
@@ -78,14 +78,14 @@ noncomputable def transverseFiberProductIdRightDiffeomorph (hn : 1 ≤ n)
       contMDiff_invFun := ?_ }
   · intro p
     apply Subtype.ext
-    exact Prod.ext rfl p.2
+    exact Prod.ext rfl p.property
   · exact hemb.contMDiff_iff_comp.2 (contMDiff_id.prodMk hf)
 
 /-- The identity-base-change comparison is the first projection. -/
 @[simp]
 theorem transverseFiberProductIdRightDiffeomorph_apply (hn : 1 ≤ n)
     (hf : ContMDiff I J n f) (p : {p : X × N // f p.1 = id p.2}) :
-    transverseFiberProductIdRightDiffeomorph hn hf p = p.1.1 :=
+    transverseFiberProductIdRightDiffeomorph hn hf p = p.val.1 :=
   (rfl)
 
 /-- The inverse identity-base-change comparison is the graph map. -/
@@ -110,7 +110,7 @@ noncomputable def transverseFiberProductIdLeftDiffeomorph (hn : 1 ≤ n)
   have hemb := isSmoothEmbedding_coe_transverseFiberProduct hn (contMDiff_id (I := J)) hf
     (fun p _ ↦ transverse_id_left f p)
   refine
-    { toFun := fun p ↦ p.1.2
+    { toFun := fun p ↦ p.val.2
       invFun := fun x ↦ ⟨(f x, x), rfl⟩
       left_inv := ?_
       right_inv := fun _ ↦ rfl
@@ -118,14 +118,14 @@ noncomputable def transverseFiberProductIdLeftDiffeomorph (hn : 1 ≤ n)
       contMDiff_invFun := ?_ }
   · intro p
     apply Subtype.ext
-    exact Prod.ext p.2.symm rfl
+    exact Prod.ext p.property.symm rfl
   · exact hemb.contMDiff_iff_comp.2 (hf.prodMk contMDiff_id)
 
 /-- The comparison with the identity in the first factor is the second projection. -/
 @[simp]
 theorem transverseFiberProductIdLeftDiffeomorph_apply (hn : 1 ≤ n)
     (hf : ContMDiff I J n f) (p : {p : N × X // id p.1 = f p.2}) :
-    transverseFiberProductIdLeftDiffeomorph hn hf p = p.1.2 :=
+    transverseFiberProductIdLeftDiffeomorph hn hf p = p.val.2 :=
   (rfl)
 
 /-- The inverse comparison with the identity in the first factor inserts the value of `f`. -/

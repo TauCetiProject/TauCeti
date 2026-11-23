@@ -63,10 +63,10 @@ theorem contMDiffSMul_complexTorus_analyticRealization (n : ℕ∞ω) :
   let _ := Φ.analyticChartedSpace hΦ
   refine ⟨fun p ↦ ?_⟩
   obtain ⟨σ, x, hx⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ p.2
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
   let g := (analyticChartGenerators Φ σ).2
   let _ := affinePointTopology g
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
@@ -76,7 +76,7 @@ theorem contMDiffSMul_complexTorus_analyticRealization (n : ℕ∞ω) :
   -- On the image of the chart, the action is the affine action conjugated by the chart inclusion.
   have hsmul : ContMDiff (𝓘(ℂ, ι → ℂ).prod 𝓘(ℂ, (Fin _ → ℂ) × (Fin l → ℂ)))
       𝓘(ℂ, (Fin _ → ℂ) × (Fin l → ℂ)) n
-      fun q : ComplexTorus N × AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) ↦
+      fun q : ComplexTorus N × AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) ↦
         q.1 • q.2 :=
     (contMDiffSMul_complexTorus_coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g e
       n).contMDiff_smul

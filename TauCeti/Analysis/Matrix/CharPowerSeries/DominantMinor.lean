@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
+public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.RingTheory.Valuation.NormNormalization
 
 /-!
 # Exact coefficients of the principal-minor series from a dominant minor
@@ -34,8 +38,15 @@ hypothesis is needed for the minors to be summable at all. For a row-compact ope
 `C₀(ℕ, K)` the decay follows from the normalisation of the leading minors; see
 `TauCeti.Analysis.Normed.Operator.Nonarchimedean.DominantMinor`.
 
-In valuation terms, with `‖x‖ = b ^ (-v x)`, the conclusion reads `v (cₙ) = ∑ i < n, v (d i)`,
-so the exact coefficient valuations are read off from the increasing sequence `v (d i)`.
+In valuation terms, with `‖x‖ = b ^ (-v x)` for a real additive valuation `v` and a base
+`b > 1`, the conclusion reads `v (cₙ) = ∑ i < n, v (d i)`
+(`Matrix.addValuation_charCoeff_eq_sum_of_norm_principalMinor_eq_one`). The valuations `v (d i)`
+increase strictly, so these partial sums are already convex: when every leading minor is
+normalised, the Newton polygon of `det (1 - T A)` is `n ↦ ∑ i < n, v (d i)`
+(`Matrix.newtonPolygon_charPowerSeries_eq_sum_of_norm_principalMinor_eq_one`). Its slopes are the
+valuations `v (d i)`, each with multiplicity one: the multiplicity of `σ` is the number of indices
+`i` with `v (d i) = σ`
+(`Matrix.newtonSlopeMultiplicity_charPowerSeries_eq_ncard_of_norm_principalMinor_eq_one`).
 
 ## References
 
@@ -62,7 +73,7 @@ theorem norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one [CompleteSpace K]
     (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor (range n)‖ = 1) :
     ‖A.charCoeff n‖ = ∏ i ∈ range n, ‖d i‖ := by
   -- Strictly decreasing nonnegative norms are positive.
-  have hpos (i : ℕ) : 0 < ‖d i‖ := (norm_nonneg _).trans_lt (hdec i.lt_succ_self)
+  have hpos (i : ℕ) : 0 < ‖d i‖ := norm_pos_iff.2 (TauCeti.ne_zero_of_strictAnti_norm hdec i)
   rcases n with _ | n
   · simp
   let f : {s : Finset ℕ // #s = n + 1} → K := fun s ↦ A.principalMinor s
@@ -78,7 +89,7 @@ theorem norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one [CompleteSpace K]
     refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC₀ fun s ↦ ?_
     split_ifs with h
     · simpa using hC₀
-    · exact norm_principalMinor_le_prod_range_mul hdec.antitone hA s.2
+    · exact norm_principalMinor_le_prod_range_mul hdec.antitone hA s.property
         fun h' ↦ h (Subtype.ext h')
   have hlt : C < ∏ i ∈ range (n + 1), ‖d i‖ := by
     rw [prod_range_succ]
@@ -88,5 +99,88 @@ theorem norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one [CompleteSpace K]
   rw [← hdom] at hlt
   rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (hrest.trans_lt hlt).ne',
     max_eq_left (hrest.trans hlt.le)]
+
+section Valuation
+
+variable (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+  (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
+
+include hb hv
+
+/-- **Exact coefficient valuations from a dominant minor.** Under the hypotheses of
+`Matrix.norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one`, if the norm is recovered from a
+real additive valuation `v` by `‖x‖ = b ^ (-v x)`, the `n`-th coefficient of `det (1 - T A)` has
+valuation `∑ i ∈ range n, v (d i)`. -/
+theorem addValuation_charCoeff_eq_sum_of_norm_principalMinor_eq_one [CompleteSpace K]
+    (hdec : StrictAnti fun i ↦ ‖d i‖) (hd₀ : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0))
+    (hA : ∀ i j, ‖A i j‖ ≤ ‖d i‖) {n : ℕ}
+    (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor (range n)‖ = 1) :
+    v (A.charCoeff n) = ∑ i ∈ range n, v (d i) := by
+  have hprod : ∏ i ∈ range n, d i ≠ 0 :=
+    prod_ne_zero_iff.2 fun i _ ↦ TauCeti.ne_zero_of_strictAnti_norm hdec i
+  -- The coefficient has the norm of the product `∏ i ∈ range n, d i`, hence its valuation.
+  have hc : ‖A.charCoeff n‖ = b ^ (-(v (∏ i ∈ range n, d i)).untop₀) := by
+    rw [norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one hdec hd₀ hA hminor, ← norm_prod,
+      hv _ hprod]
+  rw [(v.norm_eq_rpow_iff hb hv).1 hc, neg_neg, WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.2 hprod),
+    AddValuation.map_prod]
+
+omit [IsUltrametricDist K] in
+/-- If the norms of `d` decrease strictly, the partial sums of the valuations `v (d i)` are the
+heights of the infinite slope data starting at the origin with slopes `v (d i)`. -/
+private theorem exists_infiniteSlopeData_heights_eq_sum (hdec : StrictAnti fun i ↦ ‖d i‖) :
+    ∃ D : TauCeti.InfiniteSlopeData ℝ, (∀ i, D.slope i = (v (d i)).untop₀) ∧
+      D.heights = fun n ↦ ∑ i ∈ range n, v (d i) := by
+  have hd := TauCeti.ne_zero_of_strictAnti_norm hdec
+  -- Strictly decreasing norms `b ^ (-v (d i))` mean strictly increasing valuations.
+  have hmono : Monotone fun i ↦ (v (d i)).untop₀ := by
+    refine StrictMono.monotone fun i j hij ↦ ?_
+    have h : ‖d j‖ < ‖d i‖ := hdec hij
+    rw [hv _ (hd i), hv _ (hd j), Real.rpow_lt_rpow_left_iff hb] at h
+    exact neg_lt_neg_iff.1 h
+  refine ⟨⟨0, 0, fun i ↦ (v (d i)).untop₀, hmono⟩, fun _ ↦ rfl, funext fun n ↦ ?_⟩
+  rw [TauCeti.InfiniteSlopeData.heights_def]
+  simp only [zero_le, ite_true, Nat.sub_zero, zero_add, WithTop.coe_sum]
+  exact sum_congr rfl fun i _ ↦ WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.2 (hd i))
+
+/-- **Exact Newton polygon from dominant minors.** Let `‖A i j‖ ≤ ‖d i‖`, where the norms of `d`
+decrease strictly and tend to zero, and let every leading principal minor of the normalised
+matrix `(d i)⁻¹ * A i j` have norm one. If the norm is recovered from a real additive valuation
+`v` by `‖x‖ = b ^ (-v x)`, the Newton polygon of `det (1 - T A)` is `n ↦ ∑ i ∈ range n, v (d i)`. -/
+theorem newtonPolygon_charPowerSeries_eq_sum_of_norm_principalMinor_eq_one [CompleteSpace K]
+    (hdec : StrictAnti fun i ↦ ‖d i‖) (hd₀ : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0))
+    (hA : ∀ i j, ‖A i j‖ ≤ ‖d i‖)
+    (hminor : ∀ n, ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor (range n)‖ = 1) :
+    A.charPowerSeries.newtonPolygon v = fun n ↦ ∑ i ∈ range n, v (d i) := by
+  obtain ⟨D, -, hD⟩ := exists_infiniteSlopeData_heights_eq_sum v hb hv hdec
+  -- The coefficient heights are the partial sums, which are already convex.
+  have hcoeff : (fun n ↦ v (PowerSeries.coeff n A.charPowerSeries)) = D.heights := by
+    rw [hD]
+    funext n
+    rw [coeff_charPowerSeries,
+      addValuation_charCoeff_eq_sum_of_norm_principalMinor_eq_one v hb hv hdec hd₀ hA (hminor n)]
+  rw [PowerSeries.newtonPolygon_def, hcoeff, D.isConvexSeq_heights.lowerConvexEnvelope_eq, hD]
+
+/-- **Exact slopes from dominant minors.** Under the hypotheses of
+`Matrix.newtonPolygon_charPowerSeries_eq_sum_of_norm_principalMinor_eq_one`, the multiplicity of
+a slope `σ` in the Newton polygon of `det (1 - T A)` is the number of indices `i` with
+`v (d i) = σ`. As the valuations `v (d i)` increase strictly, each of them is a slope of
+multiplicity one, and no other real number is a slope. -/
+theorem newtonSlopeMultiplicity_charPowerSeries_eq_ncard_of_norm_principalMinor_eq_one
+    [CompleteSpace K] (hdec : StrictAnti fun i ↦ ‖d i‖)
+    (hd₀ : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) (hA : ∀ i j, ‖A i j‖ ≤ ‖d i‖)
+    (hminor : ∀ n, ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor (range n)‖ = 1) (σ : ℝ) :
+    A.charPowerSeries.newtonSlopeMultiplicity v σ = {i | v (d i) = σ}.ncard := by
+  obtain ⟨D, hslope, hD⟩ := exists_infiniteSlopeData_heights_eq_sum v hb hv hdec
+  rw [PowerSeries.newtonSlopeMultiplicity_eq_ncard_of_heights_eq (hD.trans
+    (newtonPolygon_charPowerSeries_eq_sum_of_norm_principalMinor_eq_one v hb hv hdec hd₀ hA
+      hminor).symm)]
+  congr 1
+  ext i
+  have hd : v (d i) ≠ ⊤ := v.ne_top_iff.2 (TauCeti.ne_zero_of_strictAnti_norm hdec i)
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, hslope, ← WithTop.coe_eq_coe,
+    WithTop.coe_untop₀_of_ne_top hd]
+
+end Valuation
 
 end Matrix
