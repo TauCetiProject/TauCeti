@@ -20,7 +20,7 @@ import TauCeti.Topology.Order.Interval
 Let `σ` be a smooth two-form on a finite-dimensional boundaryless manifold `M`, with the
 conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`.
 
-If `σ` is closed, the flow `ψ` of a complete `C²` vector field `X` with closed contraction
+If `σ` is closed, the flow `ψ` of a complete `C¹` vector field `X` with closed contraction
 `ι_X σ` preserves it, `ψₜ^* σ = σ`, because Cartan's formula gives `L_X σ = d(ι_X σ) = 0`
 (`TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`). In particular
 Hamiltonian flows are symplectic, since `d(ι_{X_f} σ) = d(df) = 0`
@@ -185,23 +185,23 @@ theorem IsNondegenerate.apply_globalFlow_hamiltonianVectorField (h : σ.IsNondeg
 variable [I.Boundaryless]
 
 /-- **Hamiltonian flows are symplectic.** For a closed two-form `σ`, the flow `ψ` of a complete
-`C²` Hamiltonian vector field of a `C²` function satisfies `ψₜ^* σ = σ` for every time `t`, since
+`C¹` Hamiltonian vector field of a `C²` function satisfies `ψₜ^* σ = σ` for every time `t`, since
 `ι_X σ = df` is closed. No nondegeneracy is needed. -/
 theorem IsHamiltonianVectorField.mpullback_globalFlow (hX : σ.IsHamiltonianVectorField f X)
     (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f) (hc : IsCompleteVectorField X)
-    (hv : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) (t : ℝ) :
-    TauCeti.mpullback I I (globalFlow X (hv.of_le one_le_two) hc t) σ.val = σ.val :=
+    (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) (t : ℝ) :
+    TauCeti.mpullback I I (globalFlow X hv hc t) σ.val = σ.val :=
   TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero hc hv hσ
     (by rw [isHamiltonianVectorField_iff_interior_eq.1 hX, mextDeriv_mextDeriv_ofFunction hf]) t
 
 omit [BoundarylessManifold I M] in
-/-- **Local Hamiltonian flows are symplectic.** For a closed two-form `σ` and a `C²` Hamiltonian
+/-- **Local Hamiltonian flows are symplectic.** For a closed two-form `σ` and a `C¹` Hamiltonian
 vector field `X` of a `C²` function, the time-`t` map of the maximal flow `φ` of `X` satisfies
 `(φₜ^* σ)ₓ = σₓ` wherever the flow through `x` is defined at time `t`. Neither completeness nor
 nondegeneracy is needed. -/
 theorem IsHamiltonianVectorField.mpullback_flowOf_apply (hX : σ.IsHamiltonianVectorField f X)
     (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hv : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain X) :
     TauCeti.mpullback I I (flowOf X t) σ.val x = σ.val x :=
   TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hv hσ
@@ -328,7 +328,7 @@ theorem mfderiv_flowOf_apply_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 
       SmoothBundleForm.eval₂ σ (φ x) (D u) (D v) = SmoothBundleForm.eval₂ σ x u v := by
     rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, ← mpullback_apply_pair,
       (hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField f).mpullback_flowOf_apply
-        hσ.isClosed (hf.of_le (by norm_num)) hv hx]
+        hσ.isClosed (hf.of_le (by norm_num)) hv1 hx]
   -- It preserves `g` near `x`, so `dg_{φₛ x} ∘ D = dg_x`.
   have hgφ : g ∘ φ =ᶠ[𝓝 x] g := by
     filter_upwards [((isOpen_flowDomain hv1).preimage

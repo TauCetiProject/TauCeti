@@ -347,16 +347,16 @@ private theorem tendsto_radialRetraction_sub_radialRetraction (v : E) {hi : ℕ 
     rw [min_eq_right hle, toReal_eNorm] at h
     exact h
   have hupper : Tendsto (fun N ↦ TauCeti.radialRetraction (hi N).toNNReal v) atTop (𝓝 v) := by
-    have h := hmin.radialRetraction (Eventually.of_forall fun _ ↦ ENNReal.toReal_nonneg)
+    have h := hmin.radialRetraction (.inr (norm_nonneg v))
       (tendsto_const_nhds (x := v))
     rw [TauCeti.radialRetraction_of_norm_le le_rfl] at h
     refine h.congr fun N ↦ ?_
     rw [ENNReal.toReal_min (hfin N) eNorm_ne_top, toReal_eNorm, TauCeti.radialRetraction_min_norm,
       ENNReal.coe_toNNReal_eq_toReal]
   have hlower : Tendsto (fun N ↦ TauCeti.radialRetraction (lo N) v) atTop (𝓝 0) := by
-    have h := hlo.radialRetraction (Eventually.of_forall fun N ↦ NNReal.coe_nonneg _)
+    have h := hlo.radialRetraction (.inr le_rfl)
       (tendsto_const_nhds (x := v))
-    simpa [TauCeti.radialRetraction_def] using h
+    simpa using h
   simpa using hupper.sub hlower
 
 /-- **The dyadic layers of an `Lᵖ` function sum to it**, `1 ≤ p < ∞`. -/
