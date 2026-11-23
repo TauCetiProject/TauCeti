@@ -41,8 +41,9 @@ continuous linear maps into any Hausdorff topological module, the bound
 also the limit of the Riemann sums. Continuous linear functionals separate the points of a
 Hausdorff locally convex space, so the integral is characterised as the unique vector `v` with
 `ℓ v = ∫ x, ℓ (f x) ∂μ` for every continuous linear functional `ℓ`. This transfers change of
-variables along measure-preserving maps from the scalar case, and with it invariance under
-translation for invariant measures on compact groups.
+variables along measure-preserving maps from the scalar case, and with it invariance of the
+integral against an invariant measure under translation and inversion, for instance on a compact
+group.
 
 ## Main definitions
 
@@ -61,8 +62,8 @@ translation for invariant measures on compact groups.
 * `MeasureTheory.MeasurePreserving.compactIntegral_comp`: change of variables along a continuous
   measure-preserving map.
 * `ContinuousMap.compactIntegral_comp_mulLeft`, `ContinuousMap.compactIntegral_comp_mulRight`,
-  `ContinuousMap.compactIntegral_comp_inv`: invariance under translation and inversion on a
-  compact group.
+  `ContinuousMap.compactIntegral_comp_inv`: invariance under translation and inversion, for
+  instance on a compact group.
 
 ## References
 
@@ -224,6 +225,16 @@ end Riemann
 
 variable [TopologicalSpace K] [TopologicalSpace E]
 
+omit [MeasurableSpace K] in
+/-- The gauge of a continuous map `f` for a neighbourhood `V` of `0`: the points where `f` differs
+from its value at `x` by an element of `V` form a neighbourhood of `x`. -/
+private theorem setOf_sub_mem_nhds {F : Type*} [AddGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] (f : C(K, F)) {V : Set F} (hV : V ∈ 𝓝 0) (x : K) :
+    {z | f z - f x ∈ V} ∈ 𝓝 x := by
+  have : Tendsto (fun z ↦ f z - f x) (𝓝 x) (𝓝 0) := by
+    simpa using (f.continuous.tendsto x).sub_const (f x)
+  exact this hV
+
 /-- The integral of a continuous map `f` from a compact space into a complete Hausdorff locally
 convex real space, against a finite measure `μ`: the limit of the Riemann sums
 `∑ i, μ (A i) • f (x i)` over finite measurable partitions `(A i)` of `K` with tags `x i`, as the
@@ -283,11 +294,8 @@ private theorem tendsto_riemannSum_integral (f : C(K, F)) :
     Tendsto (riemannSum μ f) (fineFilter K) (𝓝 (∫ x, f x ∂μ)) := by
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   have hδ : 0 < ε / (μ.real univ + 1) := div_pos hε (by positivity)
-  have hU (x : K) : {z | f z - f x ∈ Metric.ball 0 (ε / (μ.real univ + 1))} ∈ 𝓝 x := by
-    have : Tendsto (fun z ↦ f z - f x) (𝓝 x) (𝓝 0) := by
-      simpa using (f.continuous.tendsto x).sub_const (f x)
-    exact this (Metric.ball_mem_nhds 0 hδ)
-  filter_upwards [isFine_mem_fineFilter hU] with P hP
+  filter_upwards [isFine_mem_fineFilter (f.setOf_sub_mem_nhds (Metric.ball_mem_nhds 0 hδ))]
+    with P hP
   rw [dist_comm, dist_eq_norm]
   calc ‖∫ x, f x ∂μ - riemannSum μ f P‖ ≤ ε / (μ.real univ + 1) * μ.real univ :=
         norm_integral_sub_riemannSum_le f hP
@@ -322,10 +330,7 @@ private theorem cauchy_map_riemannSum (f : C(K, E)) :
   have hsub : Tendsto (fun p : E × E ↦ p.1 - p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
     simpa [nhds_prod_eq] using (continuous_sub (G := E)).tendsto ((0 : E), (0 : E))
   obtain ⟨V, hV, hVC⟩ := mem_prod_self_iff.1 (hsub hC0)
-  have hU (x : K) : {z | f z - f x ∈ V} ∈ 𝓝 x := by
-    have : Tendsto (fun z ↦ f z - f x) (𝓝 x) (𝓝 0) := by
-      simpa using (f.continuous.tendsto x).sub_const (f x)
-    exact this hV
+  have hU := f.setOf_sub_mem_nhds hV
   refine mem_map.2 <| mem_of_superset
     (prod_mem_prod (isFine_mem_fineFilter hU) (isFine_mem_fineFilter hU)) fun PQ hPQ ↦ ?_
   have hd := hCW <| riemannSum_sub_riemannSum_mem (μ := μ) hCc (mem_of_mem_nhds hC0)
@@ -429,26 +434,27 @@ theorem _root_.MeasureTheory.MeasurePreserving.compactIntegral_comp {K' : Type*}
 
 section Group
 
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [MeasurableSpace G] [OpensMeasurableSpace G] {ν : Measure G} [IsFiniteMeasure ν]
+variable {G : Type*} [TopologicalSpace G] [CompactSpace G] [MeasurableSpace G]
+  [OpensMeasurableSpace G] {ν : Measure G} [IsFiniteMeasure ν]
 
 /-- The integral against a left-invariant measure is unchanged by left translation. -/
 @[simp]
-theorem compactIntegral_comp_mulLeft [MeasurableMul G] [ν.IsMulLeftInvariant]
-    (f : C(G, E)) (g : G) :
+theorem compactIntegral_comp_mulLeft [Mul G] [SeparatelyContinuousMul G] [MeasurableMul G]
+    [ν.IsMulLeftInvariant] (f : C(G, E)) (g : G) :
     (f.comp (ContinuousMap.mulLeft g)).compactIntegral ν = f.compactIntegral ν :=
   (measurePreserving_mul_left ν g).compactIntegral_comp f
 
 /-- The integral against a right-invariant measure is unchanged by right translation. -/
 @[simp]
-theorem compactIntegral_comp_mulRight [MeasurableMul G] [ν.IsMulRightInvariant]
-    (f : C(G, E)) (g : G) :
+theorem compactIntegral_comp_mulRight [Mul G] [SeparatelyContinuousMul G] [MeasurableMul G]
+    [ν.IsMulRightInvariant] (f : C(G, E)) (g : G) :
     (f.comp (ContinuousMap.mulRight g)).compactIntegral ν = f.compactIntegral ν :=
   (measurePreserving_mul_right ν g).compactIntegral_comp f
 
 /-- The integral against an inversion-invariant measure is unchanged by inversion. -/
 @[simp]
-theorem compactIntegral_comp_inv [MeasurableInv G] [ν.IsInvInvariant] (f : C(G, E)) :
+theorem compactIntegral_comp_inv [InvolutiveInv G] [ContinuousInv G] [MeasurableInv G]
+    [ν.IsInvInvariant] (f : C(G, E)) :
     (f.comp (Homeomorph.inv G : C(G, G))).compactIntegral ν = f.compactIntegral ν :=
   (Measure.measurePreserving_inv ν).compactIntegral_comp f
 
