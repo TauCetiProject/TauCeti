@@ -134,6 +134,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport`: the same after multiplying by
+  the square of a continuous real weight.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
@@ -542,6 +544,15 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
     (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
+/-- A continuous real weight squared, times the squared norm of a continuous compactly supported
+function, is integrable for any measure finite on compact sets. The weight need not be compactly
+supported. -/
+theorem Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport {F : Type*}
+    [SeminormedAddCommGroup F] {f : X → ℝ} {g : X → F} (hf : Continuous f) (hg : Continuous g)
+    (hcg : HasCompactSupport g) : Integrable (fun x ↦ f x ^ 2 * ‖g x‖ ^ 2) μ :=
+  ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
+    (hcg.mono fun x hx hzero ↦ hx (by simp [hzero]))
 
 /-- The product of a continuous compactly supported function `f`, whose support lies in a set
 `U`, with a function `g` continuous on `U` is integrable, for any measure finite on compact sets.
