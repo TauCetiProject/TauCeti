@@ -130,7 +130,7 @@ theorem isCompact_support_freeConv (μ ν : Measure ℝ) : IsCompact (μ.freeCon
 
 /-- `μ.freeConv ν` is a probability measure iff both `μ` and `ν` are compactly supported probability
 measures. -/
-theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
+@[simp] theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
     IsProbabilityMeasure (μ.freeConv ν) ↔
       μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure :=
   ⟨fun hp => by by_contra h; exact not_isProbabilityMeasure_zero (freeConv_eq_zero_of_not h ▸ hp),
@@ -138,7 +138,7 @@ theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
 
 /-- `μ.freeConv ν` equals `0` iff at least one of `μ` or `ν` is not a compactly supported
 probability measure. -/
-theorem freeConv_eq_zero_iff {μ ν : Measure ℝ} :
+@[simp] theorem freeConv_eq_zero_iff {μ ν : Measure ℝ} :
     μ.freeConv ν = 0 ↔ ¬μ.IsCompactProbabilityMeasure ∨ ¬ν.IsCompactProbabilityMeasure := by
   have h : μ.freeConv ν = 0 ↔ ¬IsProbabilityMeasure (μ.freeConv ν) :=
     ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),

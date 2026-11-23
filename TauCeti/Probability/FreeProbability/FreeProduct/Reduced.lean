@@ -74,6 +74,10 @@ instance : CompleteSpace (HilbertSpace φ hφ) :=
 def hilbertClassMap : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ] HilbertSpace φ hφ :=
   (freeProductPositiveFunctional φ hφ).hilbertClassMap
 
+/-- Algebra classes are dense in `HilbertSpace φ hφ`. -/
+theorem denseRange_hilbertClassMap : DenseRange (hilbertClassMap φ hφ) :=
+  (freeProductPositiveFunctional φ hφ).denseRange_hilbertClassMap
+
 /-- The GNS inner product on algebra classes in `HilbertSpace φ hφ`. -/
 @[simp]
 theorem inner_hilbertClassMap (a b : LinearAlgebra.FreeProduct ℂ A) :

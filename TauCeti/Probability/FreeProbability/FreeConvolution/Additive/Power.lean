@@ -90,7 +90,7 @@ instance isZeroOrProbabilityMeasure_fold_freeConv (μ : ι → Measure ℝ) :
 
 /-- Folding `freeConv` with base `Measure.dirac 0` yields a probability measure iff every indexed
 measure in `s` is a compactly supported probability measure (including when `s = ∅`). -/
-theorem isProbabilityMeasure_fold_freeConv_iff :
+@[simp] theorem isProbabilityMeasure_fold_freeConv_iff :
     IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) ↔
       ∀ i ∈ s, (μ i).IsCompactProbabilityMeasure := by
   classical
@@ -104,7 +104,7 @@ theorem isProbabilityMeasure_fold_freeConv_iff :
 
 /-- Folding `freeConv` with base `Measure.dirac 0` yields `0` iff some indexed measure in `s` is
 not a compactly supported probability measure. -/
-theorem fold_freeConv_eq_zero_iff :
+@[simp] theorem fold_freeConv_eq_zero_iff :
     s.fold freeConv (Measure.dirac 0) μ = 0 ↔
       ∃ i ∈ s, ¬(μ i).IsCompactProbabilityMeasure := by
   have h : s.fold freeConv (Measure.dirac 0) μ = 0 ↔
@@ -314,7 +314,7 @@ def freeConvolutionPower (μ : Measure ℝ) : ℕ → Measure ℝ
     μ.freeConvolutionPower 0 = Measure.dirac 0 := by rfl
 
 /-- Right recursion `μ^{⊞ (n + 1)} = μ^{⊞ n} ⊞ μ` for free convolution powers. -/
-@[simp] theorem freeConvolutionPower_succ (μ : Measure ℝ) (n : ℕ) :
+theorem freeConvolutionPower_succ (μ : Measure ℝ) (n : ℕ) :
     μ.freeConvolutionPower (n + 1) = (μ.freeConvolutionPower n).freeConv μ := by rfl
 
 /-- Every free convolution power is either `0` or a probability measure (hence finite). -/
@@ -346,7 +346,7 @@ theorem isProbabilityMeasure_freeConvolutionPower {μ : Measure ℝ} [IsProbabil
 
 /-- `μ.freeConvolutionPower n` is a probability measure iff `n = 0` or `μ` is a compactly supported
 probability measure. -/
-theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : ℕ} :
+@[simp] theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : ℕ} :
     IsProbabilityMeasure (μ.freeConvolutionPower n) ↔
       n = 0 ∨ μ.IsCompactProbabilityMeasure := by
   rcases eq_or_ne n 0 with rfl | hn
@@ -359,7 +359,7 @@ theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : �
 
 /-- `μ.freeConvolutionPower n` equals `0` iff `n ≠ 0` and `μ` is not a compactly supported
 probability measure. -/
-theorem freeConvolutionPower_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
+@[simp] theorem freeConvolutionPower_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
     μ.freeConvolutionPower n = 0 ↔ n ≠ 0 ∧ ¬μ.IsCompactProbabilityMeasure := by
   have h : μ.freeConvolutionPower n = 0 ↔ ¬IsProbabilityMeasure (μ.freeConvolutionPower n) :=
     ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
@@ -367,7 +367,7 @@ theorem freeConvolutionPower_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
   rwa [isProbabilityMeasure_freeConvolutionPower_iff, not_or] at h
 
 /-- The first free convolution power of a compactly supported probability measure is itself. -/
-theorem freeConvolutionPower_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
+@[simp] theorem freeConvolutionPower_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) : μ.freeConvolutionPower 1 = μ := dirac_zero_freeConv hμ
 
 /-- Free convolution powers turn addition of exponents into `freeConv`, unconditionally for all
