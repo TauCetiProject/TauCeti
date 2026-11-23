@@ -39,7 +39,7 @@ The index type may live in a smaller universe than the rings, as in
   `F.obj i₀`-algebra isomorphism.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory CategoryTheory.Limits
 
@@ -79,7 +79,7 @@ def tailTransition (i j : Set.Ici i₀) (h : i ≤ j) : F.obj i →ₐ[F.obj i�
 @[simp]
 theorem tailTransition_apply (i j : Set.Ici i₀) (h : i ≤ j) (x : F.obj i) :
     F.tailTransition i₀ i j h x = (F.map (homOfLE h)).hom x :=
-  rfl
+  (rfl)
 
 /-- The maps of `F` between the stages above `i₀` form a directed system. -/
 instance instDirectedSystemTailTransition :
@@ -99,7 +99,7 @@ noncomputable def tailToColimit (i : Set.Ici i₀) : F.obj i →ₐ[F.obj i₀] 
 @[simp]
 theorem tailToColimit_apply (i : Set.Ici i₀) (x : F.obj i) :
     F.tailToColimit i₀ i x = (colimit.ι F i).hom x :=
-  rfl
+  (rfl)
 
 variable [IsDirectedOrder (Set.Ici i₀)]
 
@@ -115,7 +115,7 @@ noncomputable def directLimitTailToColimit :
 @[simp]
 theorem directLimitTailToColimit_mk (i : Set.Ici i₀) (x : F.obj i) :
     F.directLimitTailToColimit i₀ ⟦⟨i, x⟩⟧ = (colimit.ι F i).hom x :=
-  rfl
+  (rfl)
 
 theorem directLimitTailToColimit_of (i : Set.Ici i₀) (x : F.obj i) :
     F.directLimitTailToColimit i₀ (DirectLimit.Algebra.of _ (F.tailTransition i₀) i x) =
@@ -167,6 +167,11 @@ theorem directLimitTailAlgEquivColimit_of (i : Set.Ici i₀) (x : F.obj i) :
     F.directLimitTailAlgEquivColimit i₀ (DirectLimit.Algebra.of _ (F.tailTransition i₀) i x) =
       (colimit.ι F i).hom x :=
   (AlgEquiv.ofBijective_apply ..).trans (directLimitTailToColimit_of ..)
+
+@[simp]
+theorem directLimitTailAlgEquivColimit_symm_apply (i : Set.Ici i₀) (x : F.obj i) :
+    (F.directLimitTailAlgEquivColimit i₀).symm ((colimit.ι F i).hom x) = ⟦⟨i, x⟩⟧ :=
+  (AlgEquiv.symm_apply_eq _).mpr (directLimitTailAlgEquivColimit_mk ..).symm
 
 end Colimit
 
