@@ -20,6 +20,8 @@ be compared with one about an initial segment of `ℕ` without passing through l
 
 It also records that the cardinality of a nonempty `Fin n`, cast into a group with zero, is a unit
 as soon as `n` is invertible whenever it is nonzero (`TauCeti.isUnit_card_fin`).
+The nonzero cast condition for the cardinality follows from that for `n`
+(`TauCeti.neZero_card_fin`).
 -/
 
 public section
@@ -44,5 +46,11 @@ theorem isUnit_card_fin {K : Type*} [GroupWithZero K] [NatCast K] {n : ℕ}
   fun h => by
   rw [Fintype.card_fin, isUnit_iff_ne_zero]
   exact hn (Fin.pos_iff_nonempty.mpr h).ne'
+
+/-- A nonzero cast of `n` gives a nonzero cast of the cardinality of `Fin n`. -/
+theorem neZero_card_fin (K : Type*) [NatCast K] [Zero K] (n : ℕ) [NeZero (n : K)] :
+    NeZero (Fintype.card (Fin n) : K) := by
+  rw [Fintype.card_fin]
+  infer_instance
 
 end TauCeti

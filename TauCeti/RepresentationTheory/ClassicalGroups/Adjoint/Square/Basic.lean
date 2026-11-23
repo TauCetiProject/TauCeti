@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.LinearAlgebra.Matrix.TracelessAnticommutator
+import TauCeti.Data.Fintype.Fin
 
 /-!
 # The traceless symmetric product on the adjoint representation of SLₙ
@@ -30,18 +31,19 @@ open Matrix
 
 variable {K : Type*} [Field K] {n : ℕ}
 
+attribute [local instance] TauCeti.neZero_card_fin
+
 /-- The symmetric product as a bilinear map on Mathlib's actual trace-zero Lie algebra. -/
 def symmetricProduct [NeZero (n : K)] :
     LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]
       LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]
-        LieAlgebra.SpecialLinear.sl (Fin n) K := by
-  haveI : NeZero (Fintype.card (Fin n) : K) := by simpa using ‹NeZero (n : K)›
-  refine LinearMap.mk₂ K (fun X Y => ⟨tracelessAnticommutator X.val Y.val,
-    trace_tracelessAnticommutator X.val Y.val⟩) ?_ ?_ ?_ ?_
-  · exact fun X Y Z => Subtype.ext (tracelessAnticommutator_add_left X.val Y.val Z.val)
-  · exact fun a X Y => Subtype.ext (tracelessAnticommutator_smul_left a X.val Y.val)
-  · exact fun X Y Z => Subtype.ext (tracelessAnticommutator_add_right X.val Y.val Z.val)
-  · exact fun a X Y => Subtype.ext (tracelessAnticommutator_smul_right a X.val Y.val)
+        LieAlgebra.SpecialLinear.sl (Fin n) K :=
+  LinearMap.mk₂ K (fun X Y => ⟨tracelessAnticommutator X.val Y.val,
+    trace_tracelessAnticommutator X.val Y.val⟩)
+    (fun X Y Z => Subtype.ext (tracelessAnticommutator_add_left X.val Y.val Z.val))
+    (fun a X Y => Subtype.ext (tracelessAnticommutator_smul_left a X.val Y.val))
+    (fun X Y Z => Subtype.ext (tracelessAnticommutator_add_right X.val Y.val Z.val))
+    (fun a X Y => Subtype.ext (tracelessAnticommutator_smul_right a X.val Y.val))
 
 /-- The bilinear map has the advertised matrix formula. -/
 @[simp]

@@ -16,6 +16,7 @@ public import Mathlib.RepresentationTheory.Subrepresentation
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Data.Fintype.Fin
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
@@ -48,7 +49,7 @@ variable (K : Type*) [CommRing K] (n : ℕ)
 def matrixAdjointRep :
     Representation K (SpecialLinearGroup (Fin n) K) (Matrix (Fin n) (Fin n) K) :=
   ((Matrix.toLin' : Matrix (Fin n) (Fin n) K ≃ₗ[K]
-    Module.End K (Fin n → K)).symm.conjRingEquiv).toMonoidHom.comp
+    Module.End K (Fin n → K)).symm.conjRingEquiv).toMulEquiv.toMonoidHom.comp
       (Representation.linHom (stdSLRep K n) (stdSLRep K n))
 
 /-- The transported action is conjugation by the determinant-one matrix. -/
@@ -59,14 +60,14 @@ theorem matrixAdjointRep_apply (g : SpecialLinearGroup (Fin n) K)
       (g : Matrix (Fin n) (Fin n) K) * X * (g⁻¹ : SpecialLinearGroup (Fin n) K) := by
   apply (Matrix.toLin' : Matrix (Fin n) (Fin n) K ≃ₗ[K]
     Module.End K (Fin n → K)).injective
-  -- Unfold the transport through `Matrix.toLin'` and `Representation.linHom`.
-  -- After `toLin'` is applied, both sides are the same composite endomorphism;
-  -- the transport itself has no separate rewrite.
-  change Matrix.toLin' (Matrix.toLin'.symm
-    ((Representation.linHom (stdSLRep K n) (stdSLRep K n)) g (Matrix.toLin' X))) = _
-  rw [LinearEquiv.apply_symm_apply, Representation.linHom_apply,
-    Matrix.toLin'_mul, Matrix.toLin'_mul]
-  simp only [stdSLRep_apply, Matrix.toLin'_apply', LinearMap.comp_assoc]
+  apply LinearMap.ext
+  intro v
+  simp only [matrixAdjointRep, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv,
+    LinearEquiv.conjRingEquiv_apply_apply,
+    LinearEquiv.symm_symm, LinearEquiv.apply_symm_apply, Representation.linHom_apply,
+    stdSLRep_apply, Matrix.toLin'_apply', LinearMap.comp_apply, Matrix.mulVecLin_apply,
+    Matrix.mulVec_mulVec, Matrix.mul_assoc]
 
 /-- Conjugation preserves the trace-zero submodule. -/
 def tracelessSubrep : Subrepresentation (matrixAdjointRep K n) where
@@ -126,11 +127,12 @@ section
 
 variable (K : Type*) [Field K] (n : ℕ)
 
+attribute [local instance] TauCeti.neZero_card_fin
+
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
-    (adjointRep K n).Equiv (adjointRep K n).dual := by
-  haveI : NeZero (Fintype.card (Fin n) : K) := ⟨by simpa using NeZero.ne (n : K)⟩
-  exact (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K (Fin n))
+    (adjointRep K n).Equiv (adjointRep K n).dual :=
+  (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K (Fin n))
 
 /-- Evaluation of the equivariant self-duality is the trace of the matrix product. -/
 @[simp] theorem traceDualEquiv_apply [NeZero (n : K)]
