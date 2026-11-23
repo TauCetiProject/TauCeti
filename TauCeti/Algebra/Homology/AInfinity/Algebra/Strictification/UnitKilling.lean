@@ -48,13 +48,25 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 
 /-! ### The position-by-position unit-killing cochain -/
 
+private noncomputable def unitKillingDuplicateMultilinear (𝒜 : AInfinityAlgebra R A) (e : A)
+    (m : ℕ) (j : Fin (m + 2)) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) A :=
+  ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
+    (PiTensorProduct.tprod R)).curryMid j.succ e
+
+private theorem unitKillingDuplicateMultilinear_update (𝒜 : AInfinityAlgebra R A) (e : A)
+    (m : ℕ) (j : Fin (m + 2)) (v : Fin (m + 2) → A) :
+    unitKillingDuplicateMultilinear 𝒜 e m j (Function.update v j e) =
+      𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R (duplicateAt e j v))) := by
+  simp only [unitKillingDuplicateMultilinear, duplicateAt_def, MultilinearMap.curryMid_apply_apply,
+    LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+
 private noncomputable def unitKillingMultilinear (𝒜 : AInfinityAlgebra R A) (e : A)
     (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) A :=
-  -((((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
-      (PiTensorProduct.tprod R)).curryMid j.succ e).compLinearMap fun r : Fin (m + 2) ↦
-        if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1
-        else if r = j then LinearMap.toSpanSingleton R A e ∘ₗ π else LinearMap.id)
+  -((unitKillingDuplicateMultilinear 𝒜 e m j).compLinearMap fun r : Fin (m + 2) ↦
+    if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1
+    else if r = j then LinearMap.toSpanSingleton R A e ∘ₗ π else LinearMap.id)
 
 /-- The degree-zero suspended cochain in arity `m + 2` that eliminates `e` at slot `j`. -/
 private noncomputable def unitKillingCochain (𝒜 : AInfinityAlgebra R A) (e : A)
@@ -85,8 +97,6 @@ private theorem unitKillingCochain_of_tprod (𝒜 : AInfinityAlgebra R A) (e : A
       -(π (z j) • 𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R
           (duplicateAt e j fun r ↦ if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r)
             else z r)))) := by
-  let N := ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
-    (PiTensorProduct.tprod R)).curryMid j.succ e
   let v : Fin (m + 2) → A := fun r ↦
     if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r
   have harg : (fun r : Fin (m + 2) ↦ (if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1
@@ -97,9 +107,8 @@ private theorem unitKillingCochain_of_tprod (𝒜 : AInfinityAlgebra R A) (e : A
     · simp only [Function.update_of_ne hr, hr, ite_false, v]; split_ifs <;> rfl
   rw [unitKillingCochain, LinearMap.comp_apply, component_of, PiTensorProduct.lift.tprod,
     unitKillingMultilinear, neg_apply, MultilinearMap.compLinearMap_apply, harg,
-    N.map_update_smul, RingHom.id_apply]
-  simp only [N, duplicateAt_def, MultilinearMap.curryMid_apply_apply,
-    LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, v]
+    (unitKillingDuplicateMultilinear 𝒜 e m j).map_update_smul, RingHom.id_apply,
+    unitKillingDuplicateMultilinear_update]
 
 private theorem unitKillingCochain_of_tprod_of_homogeneous (𝒜 : AInfinityAlgebra R A) (e : A)
     (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) {z : Fin (m + 2) → A} {𝒟 : Fin (m + 2) → ℤ}
@@ -107,8 +116,6 @@ private theorem unitKillingCochain_of_tprod_of_homogeneous (𝒜 : AInfinityAlge
     unitKillingCochain 𝒜 e π m j (of R A ⟨m + 2, by omega⟩ (PiTensorProduct.tprod R z)) =
       -(negOnePowCast R (prefixSum j.val 𝒟) • π (z j) • 𝒜.taylor (of R A ⟨m + 3, by omega⟩
         (PiTensorProduct.tprod R (duplicateAt e j z)))) := by
-  let N := ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
-    (PiTensorProduct.tprod R)).curryMid j.succ e
   let s : Finset (Fin (m + 2)) := Finset.univ.filter fun r ↦ r.val < j.val
   have harg : Function.update (fun r : Fin (m + 2) ↦
       if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r) j e =
@@ -121,18 +128,13 @@ private theorem unitKillingCochain_of_tprod_of_homogeneous (𝒜 : AInfinityAlge
       rw [(𝒜.grading.shift 1).koszulTwist_one_apply_of_mem (hz r hr), negOnePowCast_eq_intCast]
     · simp [s, Finset.piecewise]
     · simp [s, Finset.piecewise, Function.update_of_ne hgt.ne', lt_asymm hgt]
-  have hN := N.map_piecewise_smul (fun r ↦ negOnePowCast R (𝒟 r)) (Function.update z j e) s
+  have hN := (unitKillingDuplicateMultilinear 𝒜 e m j).map_piecewise_smul
+    (fun r ↦ negOnePowCast R (𝒟 r)) (Function.update z j e) s
   rw [← harg] at hN
   dsimp only [s] at hN
-  simp only [RingHom.id_apply, ← negOnePowCast_sum, ← prefixSum_def] at hN
-  have hN' : 𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R
-      (duplicateAt e j fun r ↦
-        if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r))) =
-      negOnePowCast R (prefixSum j.val 𝒟) •
-        𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R (duplicateAt e j z))) := by
-    simpa only [N, duplicateAt_def, MultilinearMap.curryMid_apply_apply,
-      LinearMap.compMultilinearMap_apply, LinearMap.comp_apply] using hN
-  rw [unitKillingCochain_of_tprod, hN', smul_comm]
+  simp only [RingHom.id_apply, ← negOnePowCast_sum, ← prefixSum_def,
+    unitKillingDuplicateMultilinear_update] at hN
+  rw [unitKillingCochain_of_tprod, hN, smul_comm]
 
 private theorem isHomogeneous_unitKillingCochain (𝒜 : AInfinityAlgebra R A) {e : A}
     (he : e ∈ 𝒜.grading.piece 0) {π : Module.Dual R A} (hπ : π ∈ 𝒜.grading.dualPiece 0) (m : ℕ)

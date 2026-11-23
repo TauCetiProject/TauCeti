@@ -129,6 +129,29 @@ theorem cohomologyClass_eq (h : 𝒜.CohomologicalUnit e) (h' : 𝒜.Cohomologic
     𝒜.cohomologyClass h.cycle = 𝒜.cohomologyClass h'.cycle :=
   (𝒜.cohomologyClass_eq_iff _ _).mpr (h.sub_mem_boundaries h')
 
+/-- A degree-zero cycle whose cohomology class is a two-sided unit for `cohomologyMul` is a
+cohomological unit. -/
+theorem of_cohomologyMul (hdeg : e ∈ 𝒜.grading.piece 0) (hcyc : e ∈ 𝒜.cycles)
+    (hl : ∀ c : 𝒜.Cohomology, 𝒜.cohomologyMul (𝒜.cohomologyClass hcyc) c = c)
+    (hr : ∀ c : 𝒜.Cohomology, 𝒜.cohomologyMul c (𝒜.cohomologyClass hcyc) = c) :
+    𝒜.CohomologicalUnit e where
+  degree_zero := hdeg
+  cycle := hcyc
+  left_unit x hx := (𝒜.cohomologyClass_eq_iff (𝒜.m_two_mem_cycles hcyc hx) hx).mp <| by
+    rw [← 𝒜.cohomologyMul_cohomologyClass hcyc hx, hl]
+  right_unit x hx := (𝒜.cohomologyClass_eq_iff (𝒜.m_two_mem_cycles hx hcyc) hx).mp <| by
+    rw [← 𝒜.cohomologyMul_cohomologyClass hx hcyc, hr]
+
+/-- A degree-zero cycle with the same cohomology class as a cohomological unit is itself a
+cohomological unit. -/
+theorem of_cohomologyClass_eq (h : 𝒜.CohomologicalUnit e)
+    (hdeg : e' ∈ 𝒜.grading.piece 0) (hcyc : e' ∈ 𝒜.cycles)
+    (heq : 𝒜.cohomologyClass hcyc = 𝒜.cohomologyClass h.cycle) :
+    𝒜.CohomologicalUnit e' :=
+  of_cohomologyMul hdeg hcyc
+    (fun c ↦ by rw [heq, h.cohomologyMul_cohomologyClass_left])
+    (fun c ↦ by rw [heq, h.cohomologyMul_cohomologyClass_right])
+
 end CohomologicalUnit
 
 namespace StrictUnit
@@ -245,38 +268,29 @@ private theorem cohomologyMap_cohomologyMul (f : AInfinityHom 𝒜 ℬ) (a b : �
 
 /-- The linear part of an `A∞` quasi-isomorphism preserves cohomological-unit representatives. -/
 theorem IsQuasiIso.cohomologicalUnit {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) {e : A}
-    (he : 𝒜.CohomologicalUnit e) : ℬ.CohomologicalUnit (f.linearPart e) where
-  degree_zero := f.linearPart_mem he.degree_zero
-  cycle := f.linearPart_mem_cycles he.cycle
-  left_unit y hy := by
-    obtain ⟨c, hc⟩ := ((isQuasiIso_def f).mp hf).2 (ℬ.cohomologyClass hy)
-    refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles (f.linearPart_mem_cycles he.cycle) hy)
-      hy).mp ?_
-    rw [← ℬ.cohomologyMul_cohomologyClass (f.linearPart_mem_cycles he.cycle) hy,
-      ← f.cohomologyMap_cohomologyClass he.cycle, ← hc, ← cohomologyMap_cohomologyMul,
-      he.cohomologyMul_cohomologyClass_left]
-  right_unit y hy := by
-    obtain ⟨c, hc⟩ := ((isQuasiIso_def f).mp hf).2 (ℬ.cohomologyClass hy)
-    refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles hy (f.linearPart_mem_cycles he.cycle))
-      hy).mp ?_
-    rw [← ℬ.cohomologyMul_cohomologyClass hy (f.linearPart_mem_cycles he.cycle),
-      ← f.cohomologyMap_cohomologyClass he.cycle, ← hc, ← cohomologyMap_cohomologyMul,
-      he.cohomologyMul_cohomologyClass_right]
+    (he : 𝒜.CohomologicalUnit e) : ℬ.CohomologicalUnit (f.linearPart e) :=
+  AInfinityAlgebra.CohomologicalUnit.of_cohomologyMul (f.linearPart_mem he.degree_zero)
+    (f.linearPart_mem_cycles he.cycle)
+    (fun c ↦ by
+      obtain ⟨c', rfl⟩ := ((isQuasiIso_def f).mp hf).2 c
+      rw [← f.cohomologyMap_cohomologyClass he.cycle, ← cohomologyMap_cohomologyMul,
+        he.cohomologyMul_cohomologyClass_left])
+    (fun c ↦ by
+      obtain ⟨c', rfl⟩ := ((isQuasiIso_def f).mp hf).2 c
+      rw [← f.cohomologyMap_cohomologyClass he.cycle, ← cohomologyMap_cohomologyMul,
+        he.cohomologyMul_cohomologyClass_right])
 
 /-- Along an `A∞` quasi-isomorphism, a degree-zero cycle `e` is a cohomological unit iff
 `f.linearPart e` is a cohomological unit. -/
 theorem IsQuasiIso.cohomologicalUnit_iff {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) {e : A}
     (hdeg : e ∈ 𝒜.grading.piece 0) (hcyc : e ∈ 𝒜.cycles) :
     ℬ.CohomologicalUnit (f.linearPart e) ↔ 𝒜.CohomologicalUnit e := by
-  have hbij := (isQuasiIso_def f).mp hf
-  refine ⟨fun he' ↦ ⟨hdeg, hcyc, fun x hx ↦ ?_, fun x hx ↦ ?_⟩, hf.cohomologicalUnit⟩
-  · refine (𝒜.cohomologyClass_eq_iff (𝒜.m_two_mem_cycles hcyc hx) hx).mp (hbij.1 ?_)
-    rw [← 𝒜.cohomologyMul_cohomologyClass hcyc hx, cohomologyMap_cohomologyMul,
-      f.cohomologyMap_cohomologyClass hcyc, f.cohomologyMap_cohomologyClass hx,
+  have hinj := ((isQuasiIso_def f).mp hf).1
+  refine ⟨fun he' ↦ AInfinityAlgebra.CohomologicalUnit.of_cohomologyMul hdeg hcyc
+    (fun c ↦ hinj ?_) (fun c ↦ hinj ?_), hf.cohomologicalUnit⟩
+  · rw [cohomologyMap_cohomologyMul, f.cohomologyMap_cohomologyClass hcyc,
       he'.cohomologyMul_cohomologyClass_left]
-  · refine (𝒜.cohomologyClass_eq_iff (𝒜.m_two_mem_cycles hx hcyc) hx).mp (hbij.1 ?_)
-    rw [← 𝒜.cohomologyMul_cohomologyClass hx hcyc, cohomologyMap_cohomologyMul,
-      f.cohomologyMap_cohomologyClass hx, f.cohomologyMap_cohomologyClass hcyc,
+  · rw [cohomologyMap_cohomologyMul, f.cohomologyMap_cohomologyClass hcyc,
       he'.cohomologyMul_cohomologyClass_right]
 
 /-- Cohomological unitality is invariant under `A∞` quasi-isomorphism over any commutative ring. -/
@@ -291,12 +305,8 @@ theorem IsQuasiIso.cohomologicallyUnital_iff {f : AInfinityHom 𝒜 ℬ} (hf : f
   have hclass : ℬ.cohomologyClass hfcyc = ℬ.cohomologyClass he'.cycle := by
     rw [← f.cohomologyMap_cohomologyClass hecyc, heq]
     exact NonUnitalAlgHom.congr_fun hf.cohomologyMap_comp_cohomologyMapInv _
-  refine ⟨e, (hf.cohomologicalUnit_iff hedeg hecyc).mp
-    ⟨f.linearPart_mem hedeg, hfcyc, fun y hy ↦ ?_, fun y hy ↦ ?_⟩⟩
-  · refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles hfcyc hy) hy).mp ?_
-    rw [← ℬ.cohomologyMul_cohomologyClass hfcyc hy, hclass, he'.cohomologyMul_cohomologyClass_left]
-  · refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles hy hfcyc) hy).mp ?_
-    rw [← ℬ.cohomologyMul_cohomologyClass hy hfcyc, hclass, he'.cohomologyMul_cohomologyClass_right]
+  exact ⟨e, (hf.cohomologicalUnit_iff hedeg hecyc).mp
+    (he'.of_cohomologyClass_eq (f.linearPart_mem hedeg) hfcyc hclass)⟩
 
 end AInfinityHom
 

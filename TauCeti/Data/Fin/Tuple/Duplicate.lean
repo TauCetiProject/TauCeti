@@ -122,15 +122,12 @@ prefix sum of `z` by `a` when `z j = a`. -/
 theorem prefixSum_duplicateAt_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a : M}
     {z : Fin L → M} (hzj : z j = a) {q : ℕ} (hq₁ : j.val ≤ q) (hq₂ : q ≤ L) :
     prefixSum (q + 1) (duplicateAt a j z) = prefixSum q z + a := by
-  revert hq₂
   induction q, hq₁ using Nat.le_induction with
   | base =>
-    intro _
     rw [prefixSum_succ (by omega), prefixSum_duplicateAt_le a j z le_rfl]
     have hj_cast : (⟨j.val, by omega⟩ : Fin (L + 1)) = j.castSucc := Fin.ext (by simp)
     rw [hj_cast, duplicateAt_castSucc]
   | succ q hjq ih =>
-    intro hq₂
     rw [prefixSum_succ (by omega), ih (by omega), prefixSum_succ (by omega)]
     rcases eq_or_lt_of_le hjq with rfl | hlt
     · rw [Fin.eta, hzj]
