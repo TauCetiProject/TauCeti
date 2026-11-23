@@ -11,7 +11,7 @@ import TauCeti.Probability.RandomMatrix.Wigner.SemicircleLaw
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
-import TauCeti.Analysis.Matrix.SpectralMeasure.Extremes
+import TauCeti.Analysis.Matrix.SpectralMeasure.ExtremeEigenvalues
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Normed.Group.Basic
 
@@ -69,9 +69,11 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
         (fun _ _ ↦ 0) (n + 1) ω ^ (2 * k n)).trace).re ∂P) ≤
         C * (n + 1 : ℝ) ^ d * t ^ (2 * k n))) :
     ∀ᵐ ω ∂P,
-      Tendsto (fun n : ℕ ↦ (wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ ⊥)
+      Tendsto (fun n : ℕ ↦
+          (wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ ⟨0, Fintype.card_pos⟩)
         atTop (𝓝 (2 * Real.sqrt v)) ∧
-      Tendsto (fun n : ℕ ↦ (wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ ⊤)
+      Tendsto (fun n : ℕ ↦ (wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀
+          ⟨Fintype.card (Fin (n + 1)) - 1, Nat.sub_one_lt Fintype.card_ne_zero⟩)
         atTop (𝓝 (-(2 * Real.sqrt v))) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let B (n : ℕ) (ω : Ω) :=
@@ -106,8 +108,8 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
   have hdiag := ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
   filter_upwards [hnorm, happrox, hweak, hdiag] with ω hn hdiff hw hdω
   -- The norm bounds pass from the truncations to the zero-diagonal corners.
-  obtain ⟨hmax, hmin⟩ := hw.eigenvalues₀_bot_and_top_of_eventually_l2_opNorm_lt
-    (hA := fun n ↦ hZ n ω) (by simp [support_semicircleReal]) (by simp [support_semicircleReal])
+  obtain ⟨hmax, hmin⟩ := tendsto_eigenvalues₀_zero_and_card_sub_one_of_eventually_l2_opNorm_lt
+    (hA := fun n ↦ hZ n ω) hw (by simp [support_semicircleReal]) (by simp [support_semicircleReal])
     (hdiff.eventually_norm_lt_of_eventually_norm_lt hn)
   -- The diagonal perturbation has vanishing operator norm.
   exact ⟨hmax.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero

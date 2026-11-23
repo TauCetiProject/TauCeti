@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Probability.UniformOn
-import Mathlib.MeasureTheory.Measure.Portmanteau
 
 /-!
 # Empirical measures of finite families and sequences
@@ -26,9 +25,6 @@ There is one construction, not three: the probability measures are *defined* fro
 measure, and the sequence form as a specialization, so they can never drift apart.
 
 The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
-A measurable set has positive empirical mass exactly when it contains a sample point, so under
-weak convergence of empirical measures an open set of positive limiting mass eventually contains
-a sample point.
 Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
 so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
 empirical measures of its pieces weighted by their sizes. The finite-population form is used by
@@ -99,11 +95,6 @@ theorem empiricalFiniteMeasure_apply {x : κ → α} {s : Set α} (hs : Measurab
   rw [empiricalFiniteMeasure_toMeasure]
   simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
     smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
-
-/-- A measurable set has positive empirical mass exactly when it contains a sample point. -/
-theorem empiricalFiniteMeasure_apply_pos_iff {x : κ → α} {s : Set α} (hs : MeasurableSet s) :
-    0 < (empiricalFiniteMeasure x : Measure α) s ↔ ∃ i, x i ∈ s := by
-  simp [pos_iff_ne_zero, Measure.dirac_apply' _ hs]
 
 /-- A nonempty family has an empirical probability measure. -/
 instance isProbabilityMeasure_empiricalFiniteMeasure [Nonempty κ] (x : κ → α) :
@@ -267,12 +258,13 @@ theorem empiricalMeasureOfFintype_apply {x : κ → α} {s : Set α} (hs : Measu
   rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype, empiricalFiniteMeasure_apply hs]
 
-/-- A measurable set has positive mass under a finite empirical population exactly when it
-contains a sample point. -/
-theorem empiricalMeasureOfFintype_apply_pos_iff {x : κ → α} {s : Set α} (hs : MeasurableSet s) :
+/-- A finite empirical population charges a set exactly when some member of the population lies
+in it. The set need not be measurable. -/
+theorem empiricalMeasureOfFintype_pos_iff [MeasurableSingletonClass α] {x : κ → α}
+    {s : Set α} :
     0 < (empiricalMeasureOfFintype x : Measure α) s ↔ ∃ i, x i ∈ s := by
-  rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
-    toFiniteMeasure_empiricalMeasureOfFintype, empiricalFiniteMeasure_apply_pos_iff hs]
+  simp [empiricalMeasureOfFintype_toMeasure, Measure.dirac_apply, pos_iff_ne_zero,
+    Finset.sum_eq_zero_iff]
 
 /-- Two nonempty finite populations with the same values, counted with multiplicity, have the
 same empirical measure. -/
@@ -356,21 +348,6 @@ theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasura
   refine (ProbabilityMeasure.toFiniteMeasure_isEmbedding α).continuous_iff.mpr ?_
   simpa only [Function.comp_def, toFiniteMeasure_empiricalMeasureOfFintype] using
     continuous_empiricalFiniteMeasure
-
-open Filter in
-open scoped Topology in
-/-- If empirical probability measures converge weakly, an open set with positive limiting
-mass contains a sample point eventually. The finite, nonempty sample type may vary. -/
-theorem _root_.Filter.Tendsto.eventually_exists_mem_of_empiricalMeasureOfFintype
-    {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, Nonempty (m i)]
-    [TopologicalSpace α] [OpensMeasurableSpace α] [HasOuterApproxClosed α]
-    {x : (i : ι) → m i → α} {l : Filter ι} {μ : ProbabilityMeasure α}
-    (h : Tendsto (fun i ↦ empiricalMeasureOfFintype (x i)) l (𝓝 μ))
-    {U : Set α} (hU : IsOpen U) (hpos : 0 < (μ : Measure α) U) :
-    ∀ᶠ i in l, ∃ j, x i j ∈ U := by
-  have hlim := ProbabilityMeasure.le_liminf_measure_open_of_tendsto h hU
-  filter_upwards [eventually_lt_of_lt_liminf (hpos.trans_le hlim)] with i hi
-  exact (empiricalMeasureOfFintype_apply_pos_iff hU.measurableSet).1 hi
 
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
