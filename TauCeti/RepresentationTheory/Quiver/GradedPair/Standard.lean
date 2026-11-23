@@ -103,6 +103,13 @@ theorem standardBasis_apply (x : StandardIndex m) :
     standardBasis m x = Pi.single (standardIndexEquiv m x) 1 := by
   simp [standardBasis]
 
+/-- The coefficient of a vector at a valid label in `standardBasis m` is its coordinate at the
+label's coordinate. -/
+@[simp]
+theorem standardBasis_repr_apply (v : (standardSpace m).Carrier) (x : StandardIndex m) :
+    (standardBasis m).repr v x = v (standardIndexEquiv m x) := by
+  simp [standardBasis]
+
 /-- The basis vector of a valid label lies in the grade of the label's degree. -/
 theorem standardBasis_mem_grade (x : StandardIndex m) :
     standardBasis m x ∈ (standardSpace m).grade x.2 := by
@@ -215,7 +222,8 @@ theorem grade_standardSpace (a : ℤ) :
     rw [Set.mem_ofPred_eq, degree_standardSpace_standardIndexEquiv] at hk
     refine Submodule.subset_span ⟨x.1, ?_⟩
     dsimp only
-    rw [← hk, ← standardBasis_eq_standardVector, standardBasis_apply, Pi.basisFun_apply]
+    rw [← hk, ← standardBasis_eq_standardVector, standardBasis, Basis.reindex_apply,
+      Equiv.symm_symm]
   · rintro _ ⟨i, rfl⟩
     exact standardVector_mem_grade i a
 
@@ -227,6 +235,11 @@ private noncomputable def standardOperator (m : Multisegment) (d : StepDirection
     Module.End ℂ (standardSpace m).Carrier :=
   (standardBasis m).constr ℂ fun x ↦ standardVector m x.1 (x.2 + d.step)
 
+private theorem standardOperator_standardBasis (m : Multisegment) (d : StepDirection)
+    (x : StandardIndex m) :
+    standardOperator m d (standardBasis m x) = standardVector m x.1 (x.2 + d.step) :=
+  (standardBasis m).constr_basis ℂ _ x
+
 private theorem isHomogeneous_standardOperator (m : Multisegment) (d : StepDirection) :
     LinearMap.IsHomogeneous (standardOperator m d) (standardSpace m).grade
       (standardSpace m).grade d.step := by
@@ -237,7 +250,7 @@ private theorem isHomogeneous_standardOperator (m : Multisegment) (d : StepDirec
   rintro _ ⟨i, rfl⟩
   dsimp only
   by_cases h : a ∈ occurrenceInterval m i
-  · rw [standardVector_of_mem h, standardOperator, Basis.constr_basis]
+  · rw [standardVector_of_mem h, standardOperator_standardBasis]
     exact standardVector_mem_grade i _
   · rw [standardVector_of_notMem h, map_zero]
     exact zero_mem _
@@ -255,10 +268,11 @@ standard vector of `(i, a + d.step)`, which is zero when this step leaves the in
 @[simp]
 theorem standardPair_operator_standardBasis (d : StepDirection) (x : StandardIndex m) :
     (standardPair m d).operator (standardBasis m x) = standardVector m x.1 (x.2 + d.step) :=
-  (standardBasis m).constr_basis ℂ _ x
+  standardOperator_standardBasis m d x
 
 /-- On a valid label the standard operator in direction `d` moves the standard vector one step in
 direction `d`; the result is zero when this step leaves the interval. -/
+@[simp]
 theorem standardPair_operator_standardVector (d : StepDirection) {i : Fin m.card} {a : ℤ}
     (h : a ∈ occurrenceInterval m i) :
     (standardPair m d).operator (standardVector m i a) = standardVector m i (a + d.step) := by
@@ -285,6 +299,7 @@ theorem standardPair_down_operator_standardVector_fst (i : Fin m.card) :
 /-- On a valid label the `k`-th power of the standard operator in direction `d` moves the
 standard vector `k` steps in direction `d`. Since intervals are convex, the result is zero
 exactly when the endpoint `a + k * d.step` lies outside the interval. -/
+@[simp]
 theorem standardPair_operator_pow_standardVector (d : StepDirection) {i : Fin m.card} {a : ℤ}
     (h : a ∈ occurrenceInterval m i) (k : ℕ) :
     ((standardPair m d).operator ^ k) (standardVector m i a) =
