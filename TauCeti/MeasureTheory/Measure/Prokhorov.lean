@@ -170,33 +170,32 @@ lemma exists_subseq_tendsto_integral_of_isTightMeasureSet [PseudoMetrizableSpace
     dsimp only [τ]
     rw [FiniteMeasure.toMeasure_map, FiniteMeasure.toMeasure_comap, hρ, map_comap_subtypeVal hT,
       Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.2 (hTS _ (hψS n)))]
-  have hτ_mass : range τ ⊆ {ν | ν.mass ≤ C} := by
-    rintro - ⟨n, rfl⟩
-    rw [mem_ofPred_eq]
-    refine (FiniteMeasure.mass_comap_le _ (ρ n)).trans ?_
-    rw [← ENNReal.coe_le_coe, FiniteMeasure.ennreal_mass, hρ]
-    exact hmass _ (hψS n)
-  have hτTight : IsTightMeasureSet {(ν : Measure T) | ν ∈ range τ} := by
-    refine isTightMeasureSet_iff_exists_isCompact_measure_compl_le.2 fun ε hε => ?_
-    obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt hε.ne'
-    refine ⟨(↑) ⁻¹' K j, IsInducing.subtypeVal.isCompact_preimage' (hKc j)
-      (by rw [Subtype.range_coe]; exact subset_iUnion K j), ?_⟩
-    rintro - ⟨-, ⟨n, rfl⟩, rfl⟩
-    rw [← preimage_compl, ← Measure.map_apply measurable_subtypeVal
-      (hKc j).isClosed.measurableSet.compl, ← FiniteMeasure.toMeasure_map, hτ n]
-    exact (hKS j _ (hψS n)).trans hj.le
   -- Prokhorov compactness in the first countable space `FiniteMeasure T` gives a subsequence of
-  -- `τ` converging to some `ν`.
-  obtain ⟨ν, hν, φ, hφ, hlim⟩ :=
-    (isCompact_closure_of_isTightMeasureSet_of_mass_le hτTight hτ_mass).tendsto_subseq
-      fun n => subset_closure ⟨n, rfl⟩
+  -- `τ` converging to some `ν`, using the explicit restricted tail bounds directly.
+  have hu : Tendsto (fun j : ℕ => (1 : ℝ≥0) / (j + 1)) atTop (𝓝 0) := by
+    rw [← NNReal.tendsto_coe]
+    simpa using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
+  have hKT (j : ℕ) : IsCompact (((↑) : T → α) ⁻¹' K (j + 1)) :=
+    IsInducing.subtypeVal.isCompact_preimage' (hKc (j + 1))
+      (by rw [Subtype.range_coe]; exact subset_iUnion K (j + 1))
+  have hτ_mem (n : ℕ) : τ n ∈ {ν : FiniteMeasure T |
+      ν.mass ≤ C ∧ ∀ j, ν (((↑) : T → α) ⁻¹' K (j + 1))ᶜ ≤ 1 / (j + 1)} := by
+    refine ⟨(FiniteMeasure.mass_comap_le _ (ρ n)).trans ?_, fun j => ?_⟩
+    · rw [← ENNReal.coe_le_coe, FiniteMeasure.ennreal_mass, hρ]
+      exact hmass _ (hψS n)
+    · rw [← ENNReal.coe_le_coe, FiniteMeasure.ennreal_coeFn_eq_coeFn_toMeasure, ← preimage_compl,
+        ← Measure.map_apply measurable_subtypeVal (hKc (j + 1)).isClosed.measurableSet.compl,
+        ← FiniteMeasure.toMeasure_map, hτ n, one_div, ENNReal.coe_inv (by positivity)]
+      simpa using hKS (j + 1) _ (hψS n)
+  obtain ⟨ν, ⟨hνC, -⟩, φ, hφ, hlim⟩ :=
+    (isCompact_setOfPred_finiteMeasure_mass_le_compl_isCompact_le (E := T) C hu hKT
+      (.inl inferInstance)).tendsto_subseq hτ_mem
   -- Push the limit forward to `α`.
   have hmap := FiniteMeasure.tendsto_map_of_tendsto_of_continuous _ _ hlim continuous_subtypeVal
   refine ⟨ν.map Subtype.val, ψ ∘ φ, inferInstance, hψ.comp hφ, fun k => hψS (φ k), ?_,
     fun g => ?_⟩
   · rw [← FiniteMeasure.ennreal_mass, ENNReal.coe_le_coe]
-    exact (FiniteMeasure.mass_map_le measurable_subtypeVal.aemeasurable).trans <|
-      closure_minimal hτ_mass (isClosed_le FiniteMeasure.continuous_mass continuous_const) hν
+    exact (FiniteMeasure.mass_map_le measurable_subtypeVal.aemeasurable).trans hνC
   · simpa only [Function.comp_apply, hτ] using
       FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hmap g
 

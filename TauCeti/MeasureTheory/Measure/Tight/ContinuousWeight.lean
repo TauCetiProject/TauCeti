@@ -7,10 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.MeasureTheory.Measure.WithDensity
-public import Mathlib.Topology.Compactness.SigmaCompact
-import Mathlib.Analysis.Normed.Group.FunctionSeries
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 import Mathlib.Topology.UrysohnsLemma
 
 /-!

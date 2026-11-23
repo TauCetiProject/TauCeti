@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.Topology.PartitionOfUnity.Approximation
-import Mathlib.Topology.UrysohnsLemma
 
 /-!
 # Integrals of compactly supported functions: cutoffs and finite-rank approximation
