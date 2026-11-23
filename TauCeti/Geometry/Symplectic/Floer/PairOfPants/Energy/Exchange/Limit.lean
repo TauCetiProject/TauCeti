@@ -116,28 +116,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 variable [IsManifold I ⊤ M]
 
-/-- The integrated curvature of the member `c ∈ [0, 1]` of the family over `S` is at most
-`B₀ + B₁ + B_∞` in absolute value, when `|H_q| ≤ B_q`. -/
-private theorem abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le
-    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
-    (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → M) :
-    |∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
-      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
-  rw [← Real.norm_eq_abs]
-  refine (norm_integral_le_lintegral_norm _).trans ?_
-  calc _ ≤ (∑ q, ENNReal.ofReal (B q)).toReal := by
-        refine ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun _ _ ↦ ENNReal.ofReal_ne_top)
-          ((setLIntegral_le_lintegral _ _).trans ?_)
-        simpa only [ofReal_norm] using
-          lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u
-    _ = ∑ q, B q := by
-        rw [ENNReal.toReal_sum fun _ _ ↦ ENNReal.ofReal_ne_top]
-        exact Finset.sum_congr rfl fun q _ ↦ ENNReal.toReal_ofReal (hB₀ q)
-
 /-- **The curvature of the input-exchange family is integrable, for a manifold target.** Along a
 map `u` which is continuous on `S`, the curvature of the member `c ∈ [0, 1]` of the family of
 period-one `C¹` Hamiltonians on a manifold with a two-form is integrable over `S`. -/
@@ -291,7 +269,8 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_exchangePerturbation_le
   linarith [neg_abs_le (∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)), abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u]
+      z (u z)), abs_setIntegral_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u
+      thricePuncturedSphereReal]
 
 /-- **Finite energy along the input-exchange family, for a manifold target.** Under the
 hypotheses of `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_exchangePerturbation_eq`,
