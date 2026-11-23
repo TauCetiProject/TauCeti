@@ -71,38 +71,15 @@ theorem pathFromChain_isDGLeftModule :
 
 variable {B b H R}
 
-variable (H R) in
-/-- The point chain of the constant path at `b`, in the chains on the based path space. -/
-noncomputable def reflPathChain : cubicalChainModule (MoorePathFrom B b) H R :=
-  cubicalChainModuleLof (MoorePathFrom B b) H R 0
-    (NormalizedCubicalChain.ofCube (MoorePathFrom B b) R
-      (SingularCube.point (MoorePathFrom.refl B b)))
-
-theorem reflPathChain_def :
-    reflPathChain H R = cubicalChainModuleLof (MoorePathFrom B b) H R 0
-      (NormalizedCubicalChain.ofCube (MoorePathFrom B b) R
-        (SingularCube.point (MoorePathFrom.refl B b))) :=
-  (rfl)
-
-/-- The point chain of the constant path has degree zero. -/
-theorem reflPathChain_mem :
-    reflPathChain H R ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R 0 := by
-  simpa [reflPathChain_def] using cubicalChainModuleLof_mem (G := H)
-    (NormalizedCubicalChain.ofCube (MoorePathFrom B b) R
-      (SingularCube.point (MoorePathFrom.refl B b)))
-
-/-- The point chain of the constant path is a cycle. -/
+/-- The point chain of a Moore loop `γ` acts on the point chain of a path `p` from `b` as the point
+chain of the concatenation `γ • p`. -/
 @[simp]
-theorem cubicalChainModuleDifferential_reflPathChain :
-    cubicalChainModuleDifferential (MoorePathFrom B b) H R (reflPathChain H R) = 0 :=
-  cubicalChainModuleDifferential_lof_zero _
-
-/-- The point chain of the constant path has augmentation one. -/
-@[simp]
-theorem cubicalChainModuleAugmentation_reflPathChain :
-    cubicalChainModuleAugmentation (MoorePathFrom B b) H R (reflPathChain H R) = 1 := by
-  rw [reflPathChain_def, cubicalChainModuleAugmentation_lof_zero,
-    NormalizedCubicalChain.augment_ofCube]
+theorem loopPointChain_smul_cubicalChainModulePoint (γ : MooreLoopSpace B b)
+    (p : MoorePathFrom B b) :
+    loopPointChain R γ • cubicalChainModulePoint (MoorePathFrom B b) H R p =
+      cubicalChainModulePoint (MoorePathFrom B b) H R (γ • p) := by
+  rw [loopPointChain_def]
+  exact point_smul_cubicalChainModulePoint γ p
 
 /-- **The augmentation of the chains on the based path space is linear over the augmentation of
 the loop algebra**: `ε (a · m) = ε(a) ε(m)`. -/

@@ -58,8 +58,6 @@ so it also applies to the chains of a space with a left action alone.
 * `TauCeti.cubicalChainModuleAugmentation_smul`: `ε (a · m) = ε(a) ε(m)` for a left action.
 * `TauCeti.cubicalChainModuleAugmentation_surjective`: `ε` is onto when `Y` has a point.
 * `TauCeti.point_smul_cubicalChainModulePoint`: for a left action, `[g] · [y] = [g • y]`.
-* `TauCeti.cubicalChainModuleCone_mem`: `K` lowers the cohomological degree by one.
-* `TauCeti.cubicalChainModuleAugmentation_cone`: `ε (K m) = 0`.
 * `TauCeti.cubicalChainModuleDifferential_cone_add_cone_differential`:
   `d (K m) + K (d m) = ε(m) • [v] - m`.
 * `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`: `d (K [y]) = [v] - [y]`.
@@ -246,26 +244,6 @@ theorem cubicalChainModuleCone_lof (H : (ContinuousMap.const Y v).Homotopy (Cont
     cubicalChainModuleCone (G := G) R H (cubicalChainModuleLof Y G R n c) =
       cubicalChainModuleLof Y G R (n + 1) (cone R H n c) :=
   cubicalChainModuleDesc_lof _ c
-
-/-- The contracting homotopy raises the dimension by one, so it lowers the cohomological degree by
-one. -/
-theorem cubicalChainModuleCone_mem
-    (H : (ContinuousMap.const Y v).Homotopy (ContinuousMap.id Y)) {i : ℤ}
-    {m : cubicalChainModule Y G R} (hm : m ∈ cubicalChainModuleGrading Y G R i) :
-    cubicalChainModuleCone R H m ∈ cubicalChainModuleGrading Y G R (i - 1) := by
-  rcases mem_cubicalChainModuleGrading_iff.1 hm with rfl | ⟨n, c, hn, rfl⟩
-  · simp
-  · rw [cubicalChainModuleCone_lof, show i - 1 = -((n + 1 : ℕ) : ℤ) by push_cast; omega]
-    exact cubicalChainModuleLof_mem _
-
-/-- The contracting homotopy raises the dimension, so its values have augmentation zero. -/
-@[simp]
-theorem cubicalChainModuleAugmentation_cone
-    (H : (ContinuousMap.const Y v).Homotopy (ContinuousMap.id Y)) (m : cubicalChainModule Y G R) :
-    cubicalChainModuleAugmentation Y G R (cubicalChainModuleCone R H m) = 0 := by
-  induction m using cubicalChainModule.induction_on with
-  | add m m' hm hm' => rw [map_add, map_add, hm, hm', add_zero]
-  | lof n c => rw [cubicalChainModuleCone_lof, cubicalChainModuleAugmentation_lof_succ]
 
 /-- **The cone is a contracting homotopy of the augmented module**:
 `d (K m) + K (d m) = ε(m) • [v] - m`, where `[v]` is the `0`-chain of the point `v`. -/
