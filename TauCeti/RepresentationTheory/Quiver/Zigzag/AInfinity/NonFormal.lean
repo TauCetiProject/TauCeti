@@ -194,8 +194,8 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even
     ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
   not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul hm
     (List.apply_prod_ofFn_snoc β f hf)
-    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
-      (hβ v) p u)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero β f _ id
+      SimpleGraph.Dart.symm (hβ v) p u)
     c hc hodd
 
 /-- **Quartic non-formality from a linear pairing, over any nontrivial commutative ring.** If `𝒜`
@@ -282,8 +282,8 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide))
     (List.apply_prod_ofFn_snoc β f hf)
-    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
-      (hβ v) p u)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero β f _ id
+      SimpleGraph.Dart.symm (hβ v) p u)
     (by
       rw [zigzagWordPairing_obstruction (by decide : 1 ≤ 2) _ c hc]
       exact ((Units.isUnit _).map (Int.castRingHom k)).mul hu)

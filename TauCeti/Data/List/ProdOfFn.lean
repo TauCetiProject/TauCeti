@@ -22,7 +22,7 @@ word `u` of length `n` by inserting two consecutive letters `d, e` at the positi
 `β d * β e` passes to the products of all words carrying the letters `d, e` in a fixed position:
 in particular, any sum `∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0` in a semiring annihilates the induced sum
 after inserting `g₁ i` and `g₂ i` into any word and applying an additive homomorphism
-(`List.sum_apply_prod_ofFn_insertNth_insertNth`).
+(`List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero`).
 Similarly, moving the first letter of a word to the end corresponds to moving its factor from the
 left to the right (`List.apply_prod_ofFn_snoc`).
 
@@ -73,7 +73,7 @@ theorem exists_prod_ofFn_insertNth_insertNth {D M : Type*} [Monoid M] (β : D �
 /-- Summing an additive homomorphism of the word product obtained by inserting consecutive letters
 `g₁ i` and `g₂ i` at positions `p` and `p + 1` vanishes whenever `∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0`.
 -/
-theorem sum_apply_prod_ofFn_insertNth_insertNth {D ι B C F : Type*} [Semiring B]
+theorem sum_apply_prod_ofFn_insertNth_insertNth_eq_zero {D ι B C F : Type*} [Semiring B]
     [AddCommMonoid C] [FunLike F B C] [AddMonoidHomClass F B C]
     (β : D → B) (f : F) (s : Finset ι) (g₁ g₂ : ι → D)
     (hβ : ∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0) {n : ℕ} (p : Fin (n + 1)) (u : Fin n → D) :

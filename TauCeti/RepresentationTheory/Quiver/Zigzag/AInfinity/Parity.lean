@@ -118,7 +118,7 @@ private theorem even_zigzagTrace_mul_self_apply_subword
       (ψ (subword k (fun t ↦ 𝔞 (w t)) p d) * ψ (subword k (fun t ↦ 𝔞 (w t)) p d))) :=
   even_zigzagTrace_mul_self k G hns fun i ↦
     zigzagBasis_coord_vertex_eq_zero_of_mem_zigzagIntegerGrade k G hns i one_ne_zero
-      (zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one hψ
+      (apply_subword_mem_zigzagIntegerGrade_one hψ
         (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) p d)
 
 /-- For a homogeneous cochain `ψ` of suspended degree zero, the trace of the binary Taylor
@@ -138,7 +138,7 @@ private theorem zigzagTrace_taylor_of_tprod_two_apply_subword
     (𝒵).grading.koszulTwist_one_apply_of_mem (e := 1)
       (by
         rw [zigzagStrictAInfinityAlgebra_grading_piece]
-        exact zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one hψ
+        exact apply_subword_mem_zigzagIntegerGrade_one hψ
           (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) p₁ d₁)]
   simp
 
@@ -209,19 +209,16 @@ private theorem sum_word_cut_sub_eq_neg_one_pow_mul {m : ℕ}
           ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d))) := by
   have hsub : 2 * m + 2 - (2 * m + 2 - d) = d := by omega
   let rFin : Fin (2 * m + 2) := ⟨d, hdN⟩
-  let σ : (Fin (2 * m + 2) → G.Dart) ≃ (Fin (2 * m + 2) → G.Dart) :=
-    { toFun := fun w ↦ w ∘ finCycle rFin
-      invFun := fun w ↦ w ∘ (finCycle rFin).symm
-      left_inv := fun w ↦ funext fun i ↦ by simp
-      right_inv := fun w ↦ funext fun i ↦ by simp }
+  let σ := Equiv.arrowCongr (finCycle rFin).symm (Equiv.refl G.Dart)
   rw [hsub, Finset.mul_sum, ← Equiv.sum_comp σ]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   have hw : a (σ w) = (-1 : k) ^ d * a w :=
     apply_comp_finCycle_of_anticyclic hrot rFin w
+  have hσ : σ w = w ∘ finCycle rFin := rfl
   obtain ⟨hs0, hs1⟩ := subword_comp_finCycle (k := k) w rFin
-  dsimp only [rFin] at hs0 hs1 ⊢
-  dsimp only [σ, Function.comp_apply]
-  rw [hw, hs0, hs1, zigzagTrace_mul_comm]
+  rw [hw, hσ]
+  dsimp only [rFin, Function.comp_apply] at hs0 hs1 ⊢
+  rw [hs0, hs1, zigzagTrace_mul_comm]
   ring
 
 /-- At the midpoint cut `d = m + 1` of a word of length `2 * m + 2`, shifting by `m + 1` steps is
@@ -324,8 +321,8 @@ theorem exists_zigzagWordPairing_obstruction_eq_two_mul_of_anticyclic_of_isForma
       (𝒜.obstruction 𝒵 ⟨2 * m + 2, by omega⟩) = 2 * y :=
   exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal h𝒜 hG h₂ hlow hF
     (List.apply_prod_ofFn_snoc β f hf)
-    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
-      (hβ v) p u)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero β f _ id
+      SimpleGraph.Dart.symm (hβ v) p u)
 
 end WordParity
 

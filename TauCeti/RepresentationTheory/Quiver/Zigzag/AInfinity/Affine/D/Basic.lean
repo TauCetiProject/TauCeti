@@ -92,21 +92,6 @@ def affineDWalk {n : ℕ} (hn : 4 ≤ n) : Fin 4 → (AffineDynkinType.D n).grap
     (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
   ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩]
 
-/-- Unfolding `affineDWalk` as the four-dart backtrack walk `1 → 0 → 1 → (n - 1) → 1` at node
-`1`. -/
-theorem affineDWalk_def {n : ℕ} (hn : 4 ≤ n) :
-    affineDWalk hn =
-      ![⟨(⟨n - 1, by simp⟩, ⟨1, by simp; omega⟩),
-          ((AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)).symm⟩,
-        ⟨(⟨1, by simp; omega⟩, ⟨n - 1, by simp⟩),
-          (AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)⟩,
-        ⟨(⟨0, by simp⟩, ⟨1, by simp; omega⟩),
-          ((AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)).symm⟩,
-        ⟨(⟨1, by simp; omega⟩, ⟨0, by simp⟩),
-          (AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)⟩] := by
-  funext i
-  fin_cases i <;> rfl
-
 /-- Consecutive darts of `affineDWalk` are cyclically composable in product order. -/
 theorem affineDWalk_fst_eq_snd {n : ℕ} (hn : 4 ≤ n) (i : Fin 4) :
     (affineDWalk hn i).fst = (affineDWalk hn (i + 1)).snd := by

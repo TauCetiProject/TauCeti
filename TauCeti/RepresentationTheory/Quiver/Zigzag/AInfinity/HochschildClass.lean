@@ -246,7 +246,7 @@ private theorem taylor_of_tprod_two (x : Fin 2 → nonisolatedZigzagQuotient k G
 
 /-- A homogeneous cochain `φ` of suspended degree zero maps any subword of elements of path length
 one into path length one. -/
-theorem zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one
+theorem apply_subword_mem_zigzagIntegerGrade_one
     {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0)
@@ -290,7 +290,7 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
     exact hx i
   -- `φ` sends a word of `n + 1` letters of path length one to path length one.
   have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 :=
-    zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one hφ hx 0 (n + 1)
+    apply_subword_mem_zigzagIntegerGrade_one hφ hx 0 (n + 1)
   rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
     LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
     gradedCoderiv_of_tprod_of_homogeneous _ _ _ _ x _ hx',

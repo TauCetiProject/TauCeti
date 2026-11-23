@@ -305,8 +305,8 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
       ((𝒵).hochschildDifferential 0 φ) = 0 :=
   zigzagWordPairing_hochschildDifferential_eq_zero
     (List.apply_prod_ofFn_snoc β f hf)
-    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
-      (hβ v) p u)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero β f _ id
+      SimpleGraph.Dart.symm (hβ v) p u)
     hφ
 
 /-- **Higher loop operations detected by an anticyclic functional are not coboundaries.** Let `β`

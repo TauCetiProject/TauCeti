@@ -120,17 +120,6 @@ def affineE6Walk : Fin 6 → AffineDynkinType.E6.graph.Dart :=
     ⟨(3, 0), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
     ⟨(0, 3), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩]
 
-/-- Unfolding `affineE6Walk` as the six-dart backtrack walk through `1`, `1` and `3` at `0`. -/
-theorem affineE6Walk_def :
-    affineE6Walk =
-      ![⟨(1, 0), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
-        ⟨(0, 1), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
-        ⟨(1, 0), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
-        ⟨(0, 1), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
-        ⟨(3, 0), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩,
-        ⟨(0, 3), (AffineDynkinType.graph_E6_adj _ _).2 (by decide)⟩] := by
-  rw [affineE6Walk]
-
 /-- Consecutive darts of `affineE6Walk` are cyclically composable in product order. -/
 theorem affineE6Walk_fst_eq_snd (i : Fin 6) :
     (affineE6Walk i).fst = (affineE6Walk (i + 1)).snd := by
@@ -292,20 +281,6 @@ def affineE7Walk : Fin 8 → AffineDynkinType.E7.graph.Dart :=
     ⟨(0, 2), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
     ⟨(5, 0), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
     ⟨(0, 5), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩]
-
-/-- Unfolding `affineE7Walk` as the eight-dart backtrack walk through `2`, `2`, `2` and `5` at
-`0`. -/
-theorem affineE7Walk_def :
-    affineE7Walk =
-      ![⟨(2, 0), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(0, 2), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(2, 0), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(0, 2), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(2, 0), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(0, 2), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(5, 0), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩,
-        ⟨(0, 5), (AffineDynkinType.graph_E7_adj _ _).2 (by decide)⟩] := by
-  rw [affineE7Walk]
 
 /-- Consecutive darts of `affineE7Walk` are cyclically composable in product order. -/
 theorem affineE7Walk_fst_eq_snd (i : Fin 8) :
@@ -472,24 +447,6 @@ def affineE8Walk : Fin 12 → AffineDynkinType.E8.graph.Dart :=
     ⟨(0, 4), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
     ⟨(2, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
     ⟨(0, 2), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩]
-
-/-- Unfolding `affineE8Walk` as the twelve-dart backtrack walk through `1`, `2`, `4`, `4`, `4` and
-`2` at `0`. -/
-theorem affineE8Walk_def :
-    affineE8Walk =
-      ![⟨(1, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(0, 1), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(2, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(0, 2), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(4, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(0, 4), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(4, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(0, 4), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(4, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(0, 4), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(2, 0), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩,
-        ⟨(0, 2), (AffineDynkinType.graph_E8_adj _ _).2 (by decide)⟩] := by
-  rw [affineE8Walk]
 
 /-- Consecutive darts of `affineE8Walk` are cyclically composable in product order. -/
 theorem affineE8Walk_fst_eq_snd (i : Fin 12) :
