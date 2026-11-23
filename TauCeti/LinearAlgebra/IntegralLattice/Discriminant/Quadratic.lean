@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+
 /-!
 # Discriminant quadratic modules of even integral lattices
 
@@ -280,13 +282,10 @@ theorem discriminantQuadraticIsometry_refl (L : IntegralLattice V) [L.IsNondegen
     (Isometry.refl L).discriminantQuadraticIsometry hL =
       QuadraticMap.IsometryEquiv.refl (L.discriminantQuadraticModule hL).quadratic := by
   refine DFunLike.ext _ _ fun x ↦ ?_
-  have hrefl :
-      QuadraticMap.IsometryEquiv.refl (L.discriminantQuadraticModule hL).quadratic x = x := by
-    rw [← FiniteQuadraticModule.Isometry.ofEq_rfl, FiniteQuadraticModule.Isometry.ofEq_apply,
-      cast_eq]
+  rw [QuadraticMap.IsometryEquiv.refl_apply]
   refine (discriminantQuadraticIsometry_apply (Isometry.refl L) hL x).trans ?_
   rw [discriminantGroupEquiv_refl]
-  exact (LinearEquiv.refl_apply (R := ℤ) (M := L.DiscriminantGroup) x).trans hrefl.symm
+  exact LinearEquiv.refl_apply (R := ℤ) (M := L.DiscriminantGroup) x
 
 /-- Passing to the inverse lattice isometry passes to the inverse discriminant quadratic
 isometry. -/
