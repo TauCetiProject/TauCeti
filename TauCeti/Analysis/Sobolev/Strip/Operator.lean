@@ -119,15 +119,9 @@ private theorem sq_norm_jetLp_le_setIntegral {ξ : S} (hξ : ContDiff ℝ 1 (ξ 
     {R : ℝ} (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0) :
     ‖jetLp S ξ‖ ^ 2 ≤ ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1,
       (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 + ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 +
-        ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) := by
-  have := hξ.continuous_fderiv (by norm_num)
-  have := hξ.continuous
-  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  rw [sq_norm_jetLp, integral_strip_eq_setIntegral_of_jet_eq_zero hR fun z hz ↦ by simp [hz]]
-  refine setIntegral_mono_on ?_ ?_ (measurableSet_Icc.prod measurableSet_Icc)
-    fun z _ ↦ sq_norm_jet_le _ z
-  · exact ((continuous_jet hξ).norm.pow 2).continuousOn.integrableOn_compact hK
-  · exact ContinuousOn.integrableOn_compact hK (Continuous.continuousOn (by fun_prop))
+        ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) :=
+  (sq_norm_jetLp_le_integral ξ hξ).trans_eq (integral_strip_eq_setIntegral_of_jet_eq_zero hR
+    fun _ ↦ norm_partialDeriv_sq_add_norm_sq_eq_zero_of_jet_eq_zero)
 
 /-- **The pointwise step of Peetre's argument.** Let `ξ` be a `C¹` element of a space `S` of
 sections with square integrable jets, vanishing for `|s| ≥ R`, and suppose that the first-order
@@ -174,8 +168,7 @@ theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
     ‖restrictValue T (jetLp S ξ)‖ ≤
       √(max C' 0) * ‖jetOperator stripMeasure M (jetLp S ξ)‖ := by
-  have hint := integrable_of_jet_eq_zero hR (hξ.norm.pow 2)
-    fun z h ↦ by rw [jet_apply, Prod.mk_eq_zero] at h; simp [h.1]
+  have hint := integrable_norm_sq_of_continuous hξ hR
   have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
       ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
     setIntegral_mono_set hint (Eventually.of_forall fun z ↦ by positivity)

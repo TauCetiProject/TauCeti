@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Toric.Delzant.Prod
-public import TauCeti.Geometry.Toric.Delzant.Quotient.Manifold
+public import TauCeti.Geometry.Toric.Delzant.Quotient.Symplectic
 
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
@@ -44,6 +45,14 @@ intervals.
   `TauCeti.Toric.IsDelzant.delzantQuotientProdDiffeomorph`). For the quotients, smoothness of a
   map and of its inverse is read off the projections from the levels, which are surjective
   submersions.
+* **The symplectic forms.** The standard symplectic form of `ℂ^(ι ⊕ ι')` is the sum of the
+  standard forms of `ℂ^ι` and `ℂ^ι'` under the splitting
+  (`TauCeti.Toric.stdSymplecticForm_sumCoordEquiv`). So the diffeomorphism of the levels pulls the
+  product of the restricted forms back to the restricted form
+  (`TauCeti.Toric.IsDelzant.mpullback_delzantLevelProdDiffeomorph_prod`), and the diffeomorphism
+  of the quotients pulls the product form `ω_Δ ⊕ ω_Δ'` back to the reduced form `ω_(Δ × Δ')`
+  (`TauCeti.Toric.IsDelzant.mpullback_delzantQuotientProdDiffeomorph_prod`): the Delzant quotient
+  of a product is the symplectic product of the Delzant quotients.
 
 ## Main definitions
 
@@ -61,6 +70,8 @@ intervals.
 * `TauCeti.Toric.DelzantQuotient.reducedMomentMap_eq_coprod`,
   `TauCeti.Toric.DelzantQuotient.reducedMomentMap_prodHomeomorph_symm`: the reduced moment map of
   the product is the product of the reduced moment maps.
+* `TauCeti.Toric.IsDelzant.mpullback_delzantQuotientProdDiffeomorph_prod`: the identification
+  `M_(Δ × Δ') ≃ M_Δ × M_Δ'` is a symplectomorphism for the reduced forms and the product form.
 
 ## References
 
@@ -161,6 +172,41 @@ theorem sumCoordEquiv_torusRotation (θ : ι ⊕ ι' → AddCircle (2 * π))
       (torusRotation (θ ∘ .inl) (sumCoordEquiv ι ι' x).1,
         torusRotation (θ ∘ .inr) (sumCoordEquiv ι ι' x).2) := by
   ext j <;> simp [torusRotation_apply_fst, torusRotation_apply_snd]
+
+/-- **The standard symplectic form splits along `ι ⊕ ι'`.** The standard symplectic form of
+`ℂ^(ι ⊕ ι')` is the sum of the standard symplectic forms of `ℂ^ι` and `ℂ^ι'` on the two parts of
+the splitting of the coordinates. -/
+theorem stdSymplecticForm_sumCoordEquiv
+    (x y : EuclideanSpace ℝ (ι ⊕ ι') × EuclideanSpace ℝ (ι ⊕ ι')) :
+    stdSymplecticForm x y =
+      stdSymplecticForm (sumCoordEquiv ι ι' x).1 (sumCoordEquiv ι ι' y).1 +
+        stdSymplecticForm (sumCoordEquiv ι ι' x).2 (sumCoordEquiv ι ι' y).2 := by
+  simp only [stdSymplecticForm_apply, PiLp.inner_apply, Fintype.sum_sum_type,
+    sumCoordEquiv_apply_fst_fst, sumCoordEquiv_apply_fst_snd, sumCoordEquiv_apply_snd_fst,
+    sumCoordEquiv_apply_snd_snd]
+  ring
+
+/-- The standard symplectic form of `ℂ^(ι ⊕ ι')`, as a constant two-form, is the sum of the
+pullbacks of the standard forms of `ℂ^ι` and `ℂ^ι'` along the two parts of the splitting of the
+coordinates. -/
+private theorem mpullback_fst_sumCoordEquiv_add_mpullback_snd_sumCoordEquiv :
+    SmoothForm.mpullback
+        ((ContinuousLinearMap.fst ℝ _ _).comp (sumCoordEquiv ι ι').toContinuousLinearMap)
+        ((ContinuousLinearMap.fst ℝ _ _).comp
+          (sumCoordEquiv ι ι').toContinuousLinearMap).contDiff.contMDiff
+        (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth +
+      SmoothForm.mpullback
+          ((ContinuousLinearMap.snd ℝ _ _).comp (sumCoordEquiv ι ι').toContinuousLinearMap)
+          ((ContinuousLinearMap.snd ℝ _ _).comp
+            (sumCoordEquiv ι ι').toContinuousLinearMap).contDiff.contMDiff
+          (stdSymplecticForm (V := EuclideanSpace ℝ ι')).constSmooth =
+      (stdSymplecticForm (V := EuclideanSpace ℝ (ι ⊕ ι'))).constSmooth := by
+  refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
+  rw [SmoothBundleForm.eval₂_add, SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback,
+    SymplecticForm.eval₂_constSmooth_mfderiv_eq, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
+    SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, mvfderiv_eq_fderiv,
+    ContinuousLinearMap.fderiv, ContinuousLinearMap.fderiv]
+  exact (stdSymplecticForm_sumCoordEquiv _ _).symm
 
 /-! ### The level of a product -/
 
@@ -488,6 +534,132 @@ theorem coe_delzantQuotientProdDiffeomorph_symm :
     ⇑(hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi').symm =
       (DelzantQuotient.prodHomeomorph i i' u u' c c').symm :=
   (rfl)
+
+/-! ### The symplectic forms -/
+
+/-- **The level of a product carries the product of the restricted forms.** The diffeomorphism
+`delzantLevelProdDiffeomorph` of the level of the product presentation onto the product of the
+levels pulls the product of the restrictions of the standard symplectic forms of `ℂ^ι` and `ℂ^ι'`
+back to the restriction of the standard symplectic form of `ℂ^(ι ⊕ ι')`. -/
+theorem mpullback_delzantLevelProdDiffeomorph_prod :
+    letI := hΔ.delzantLevelChartedSpace hi
+    letI := hΔ'.delzantLevelChartedSpace hi'
+    letI := (hΔ.prod hi.injective hi'.injective hΔ').delzantLevelChartedSpace (hi.prod hi')
+    haveI := hΔ.isManifold_delzantLevel hi ∞
+    haveI := hΔ'.isManifold_delzantLevel hi' ∞
+    haveI := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantLevel (hi.prod hi') ∞
+    SmoothForm.mpullback (hΔ.delzantLevelProdDiffeomorph hΔ' hi hi')
+        (hΔ.delzantLevelProdDiffeomorph hΔ' hi hi').contMDiff
+        (SmoothTwoForm.prod
+          (SmoothForm.mpullback
+            ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+            (hΔ.contMDiff_coe_delzantLevel hi) stdSymplecticForm.constSmooth)
+          (SmoothForm.mpullback
+            ((↑) : delzantLevel i' u' c' → EuclideanSpace ℝ ι' × EuclideanSpace ℝ ι')
+            (hΔ'.contMDiff_coe_delzantLevel hi') stdSymplecticForm.constSmooth)) =
+      SmoothForm.mpullback
+        ((↑) : delzantLevel (i.prodMap i') (prodNormal u u') (Sum.elim c c') →
+          EuclideanSpace ℝ (ι ⊕ ι') × EuclideanSpace ℝ (ι ⊕ ι'))
+        ((hΔ.prod hi.injective hi'.injective hΔ').contMDiff_coe_delzantLevel (hi.prod hi'))
+        stdSymplecticForm.constSmooth := by
+  let _ := hΔ.delzantLevelChartedSpace hi
+  let _ := hΔ'.delzantLevelChartedSpace hi'
+  let _ := (hΔ.prod hi.injective hi'.injective hΔ').delzantLevelChartedSpace (hi.prod hi')
+  have := hΔ.isManifold_delzantLevel hi ∞
+  have := hΔ'.isManifold_delzantLevel hi' ∞
+  have := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantLevel (hi.prod hi') ∞
+  have hcoe := (hΔ.prod hi.injective hi'.injective hΔ').contMDiff_coe_delzantLevel (hi.prod hi')
+    (m := ∞)
+  -- Each part of the level of the product, read in `ℂ^ι` or `ℂ^ι'`, is the corresponding part of
+  -- the splitting of the coordinates of `ℂ^(ι ⊕ ι')`.
+  rw [SmoothTwoForm.prod_def, map_add, SmoothForm.mpullback_mpullback _ Prod.fst,
+    SmoothForm.mpullback_mpullback _ Prod.snd,
+    SmoothForm.mpullback_mpullback_of_comp_eq
+      (g := ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))
+      (contMDiff_fst.comp (hΔ.delzantLevelProdDiffeomorph hΔ' hi hi').contMDiff)
+      (hΔ.contMDiff_coe_delzantLevel hi) hcoe
+      ((ContinuousLinearMap.fst ℝ _ _).comp
+        (sumCoordEquiv ι ι').toContinuousLinearMap).contDiff.contMDiff
+      (funext fun x ↦ coe_delzantLevelProdHomeomorph_fst x),
+    SmoothForm.mpullback_mpullback_of_comp_eq
+      (g := ((↑) : delzantLevel i' u' c' → EuclideanSpace ℝ ι' × EuclideanSpace ℝ ι'))
+      (contMDiff_snd.comp (hΔ.delzantLevelProdDiffeomorph hΔ' hi hi').contMDiff)
+      (hΔ'.contMDiff_coe_delzantLevel hi') hcoe
+      ((ContinuousLinearMap.snd ℝ _ _).comp
+        (sumCoordEquiv ι ι').toContinuousLinearMap).contDiff.contMDiff
+      (funext fun x ↦ coe_delzantLevelProdHomeomorph_snd x),
+    ← map_add, mpullback_fst_sumCoordEquiv_add_mpullback_snd_sumCoordEquiv]
+
+/-- **The Delzant quotient of a product is the symplectic product of the Delzant quotients.** The
+diffeomorphism `M_(Δ × Δ') ≃ M_Δ × M_Δ'` of `delzantQuotientProdDiffeomorph` pulls the product
+form `ω_Δ ⊕ ω_Δ'` of the symplectic forms of the two Delzant quotients back to the symplectic form
+`ω_(Δ × Δ')` of the Delzant quotient of the product presentation. -/
+theorem mpullback_delzantQuotientProdDiffeomorph_prod :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := hΔ'.delzantQuotientChartedSpace hi'
+    letI := (hΔ.prod hi.injective hi'.injective hΔ').delzantQuotientChartedSpace (hi.prod hi')
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := hΔ'.isManifold_delzantQuotient hi'
+    haveI := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantQuotient (hi.prod hi')
+    SmoothForm.mpullback (hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi')
+        (hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi').contMDiff
+        (SmoothTwoForm.prod (hΔ.delzantQuotientSymplecticForm hi)
+          (hΔ'.delzantQuotientSymplecticForm hi')) =
+      (hΔ.prod hi.injective hi'.injective hΔ').delzantQuotientSymplecticForm (hi.prod hi') := by
+  let _ := hΔ.delzantLevelChartedSpace hi
+  let _ := hΔ'.delzantLevelChartedSpace hi'
+  let _ := (hΔ.prod hi.injective hi'.injective hΔ').delzantLevelChartedSpace (hi.prod hi')
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  let _ := hΔ'.delzantQuotientChartedSpace hi'
+  let _ := (hΔ.prod hi.injective hi'.injective hΔ').delzantQuotientChartedSpace (hi.prod hi')
+  have := hΔ.isManifold_delzantLevel hi ∞
+  have := hΔ'.isManifold_delzantLevel hi' ∞
+  have := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantLevel (hi.prod hi') ∞
+  have := hΔ.isManifold_delzantQuotient hi
+  have := hΔ'.isManifold_delzantQuotient hi'
+  have := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantQuotient (hi.prod hi')
+  -- Both forms are determined by their pullbacks to the level of the product, where the
+  -- projection followed by the product diffeomorphism is the product of the projections composed
+  -- with the identification of the levels.
+  rw [(hΔ.prod hi.injective hi'.injective hΔ').eq_delzantQuotientSymplecticForm_iff (hi.prod hi'),
+    SmoothForm.mpullback_mpullback_of_comp_eq
+      ((hΔ.prod hi.injective hi'.injective hΔ').isSubmersion_delzantQuotientMk
+        (hi.prod hi')).contMDiff
+      (hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi').contMDiff
+      (hΔ.delzantLevelProdDiffeomorph hΔ' hi hi').contMDiff
+      ((hΔ.isSubmersion_delzantQuotientMk hi).contMDiff.prodMap
+        (hΔ'.isSubmersion_delzantQuotientMk hi').contMDiff)
+      (funext fun x ↦ DelzantQuotient.prodHomeomorph_mk x),
+    SmoothTwoForm.mpullback_prodMap_prod (hΔ.isSubmersion_delzantQuotientMk hi).contMDiff
+      (hΔ'.isSubmersion_delzantQuotientMk hi').contMDiff,
+    hΔ.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi,
+    hΔ'.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi',
+    hΔ.mpullback_delzantLevelProdDiffeomorph_prod hΔ' hi hi']
+
+/-- The inverse diffeomorphism `M_Δ × M_Δ' ≃ M_(Δ × Δ')` pulls the symplectic form of the Delzant
+quotient of the product presentation back to the product form `ω_Δ ⊕ ω_Δ'`. -/
+theorem mpullback_delzantQuotientProdDiffeomorph_symm_delzantQuotientSymplecticForm :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    letI := hΔ'.delzantQuotientChartedSpace hi'
+    letI := (hΔ.prod hi.injective hi'.injective hΔ').delzantQuotientChartedSpace (hi.prod hi')
+    haveI := hΔ.isManifold_delzantQuotient hi
+    haveI := hΔ'.isManifold_delzantQuotient hi'
+    haveI := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantQuotient (hi.prod hi')
+    SmoothForm.mpullback (hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi').symm
+        (hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi').symm.contMDiff
+        ((hΔ.prod hi.injective hi'.injective hΔ').delzantQuotientSymplecticForm (hi.prod hi')) =
+      SmoothTwoForm.prod (hΔ.delzantQuotientSymplecticForm hi)
+        (hΔ'.delzantQuotientSymplecticForm hi') := by
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  let _ := hΔ'.delzantQuotientChartedSpace hi'
+  let _ := (hΔ.prod hi.injective hi'.injective hΔ').delzantQuotientChartedSpace (hi.prod hi')
+  have := hΔ.isManifold_delzantQuotient hi
+  have := hΔ'.isManifold_delzantQuotient hi'
+  have := (hΔ.prod hi.injective hi'.injective hΔ').isManifold_delzantQuotient (hi.prod hi')
+  rw [← hΔ.mpullback_delzantQuotientProdDiffeomorph_prod hΔ' hi hi',
+    SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_id contMDiff_id
+      (funext (hΔ.delzantQuotientProdDiffeomorph hΔ' hi hi').apply_symm_apply),
+    SmoothForm.mpullback_id, LinearMap.id_apply, LinearMap.id_apply]
 
 end IsDelzant
 
