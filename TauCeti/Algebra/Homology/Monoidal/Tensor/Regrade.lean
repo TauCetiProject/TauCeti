@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.Preadditive
 public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
 public import TauCeti.Algebra.Homology.Monoidal.Summand
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
 import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -36,6 +37,18 @@ cohomological sign `(-1)^a`. For the pair-of-pants product `CF_i ⊗ CF_j → CF
 complexes of a symplectic manifold of dimension `2n` this is the passage to the degree-zero
 product on `C^k = CF_(n-k)`, with `n₁ = n₂ = n₀ = n`.
 
+Over a braided coefficient category the comparison also relates the two interchanges of factors
+(`HomologicalComplex.tensorBraiding`): that of `K ⊗ L`, with the Koszul sign `(-1)^(p q)` of the
+chain degrees, and that of the tensor product of the regradings, with the Koszul sign `(-1)^(a b)`
+of the cochain degrees `a = n₁ - p`, `b = n₂ - q`. The two agree up to the global sign
+`(-1)^(n₁ n₂)` (`ChainComplex.regradeTensorHom_comp_restrictionMap_tensorBraiding`), since
+`a b + n₂ (n₁ - a) ≡ p q + n₁ q + n₁ n₂` modulo `2`. Consequently a chain-level product on `K`
+which is graded commutative up to a sign `ε` for the raw degrees regrades to a degree-zero product
+which is graded commutative up to `(-1)^n ε` for the cochain degrees
+(`ChainComplex.tensorBraiding_hom_comp_regradeTensorHom_comp_restrictionMap`). This is the
+conversion of the input-exchange sign of the pair-of-pants product between the raw grading of
+Floer complexes and the cohomological grading in which graded commutativity reads `(-1)^(a b)`.
+
 ## Main definitions
 
 * `ChainComplex.regradeTensorSummand`: the component of the comparison on one summand.
@@ -55,6 +68,13 @@ product on `C^k = CF_(n-k)`, with `n₁ = n₂ = n₀ = n`.
   of chain and cochain complexes, after identifying the regradings by `(n₁ + n₂) + n₃` and
   `n₁ + (n₂ + n₃)` through `ChainComplex.regradeIsoOfEq`. On the summand `K_p ⊗ L_q ⊗ M_r` both
   composites carry the sign `(-1)^(n₁ q + n₁ r + n₂ r)`, so no correcting sign is needed.
+* `ChainComplex.regradeTensorHom_comp_restrictionMap_tensorBraiding`,
+  `ChainComplex.regradeTensorHom_comp_restrictionMap_tensorBraiding_self`: the comparison
+  intertwines the interchanges of factors of the raw and of the regraded complexes up to the sign
+  `(-1)^(n₁ n₂)`, which is `(-1)^n` for `n₁ = n₂ = n`.
+* `ChainComplex.tensorBraiding_hom_comp_regradeTensorHom_comp_restrictionMap`: a product which is
+  graded commutative up to `ε` for the raw degrees regrades to one which is graded commutative up
+  to `(-1)^n ε` for the cochain degrees.
 
 The tensor product of the regradings exists whenever `K ⊗ L` does, since their summands agree;
 this is an instance. The tensor signs on `ComplexShape.down ℤ` that define `K ⊗ L` are
@@ -326,6 +346,109 @@ lemma regradeTensorIso_inv_naturality {K₂ L₂ : ChainComplex C ℤ} [K₂.Has
   rw [← cancel_epi (regradeTensorIso n₁ n₂ K L).hom, Iso.hom_inv_id_assoc, regradeTensorIso_hom,
     ← regradeTensorHom_naturality_assoc, ← regradeTensorIso_hom, Iso.hom_inv_id,
     Category.comp_id]
+
+section Braiding
+
+variable [BraidedCategory C] [L.HasTensor K]
+
+/-- The interchange of `K ⊗ L` on the image of the summand `K_(n₁ - a) ⊗ L_(n₂ - b)` of the
+tensor product of the regradings, written on plain summands: the sign `(-1)^(n₁ (n₂ - b))` of the
+comparison and the Koszul sign `(-1)^((n₁ - a) (n₂ - b))` of the chain degrees give the Koszul sign
+`(-1)^(a b)` of the cochain degrees, the sign `(-1)^(n₂ (n₁ - a))` of the comparison for `L ⊗ K`,
+and the global sign `(-1)^(n₁ n₂)`. -/
+private lemma regradeTensorSummand_comp_tensorBraiding_hom_f (a b k : ℤ) (h : a + b = k) :
+    ((n₁ * (n₂ - b)).negOnePow • ιTensorObj K L (n₁ - a) (n₂ - b) (n₁ + n₂ - k) (by omega)) ≫
+        (tensorBraiding K L).hom.f (n₁ + n₂ - k) =
+      (n₁ * n₂).negOnePow • ((a * b).negOnePow • ((β_ (K.X (n₁ - a)) (L.X (n₂ - b))).hom ≫
+          ((n₂ * (n₁ - a)).negOnePow • ιTensorObj L K (n₂ - b) (n₁ - a) (n₂ + n₁ - k)
+            (by omega)) ≫
+            eqToHom (congrArg (tensorObj L K).X (show n₂ + n₁ - k = n₁ + n₂ - k by ring)))) := by
+  -- Shifting the total degree of a summand inclusion of `L ⊗ K` along `n₂ + n₁ - k = n₁ + n₂ - k`.
+  have hι : ∀ {j j' : ℤ} (hj : j = j') (h' : n₂ - b + (n₁ - a) = j),
+      ιTensorObj L K (n₂ - b) (n₁ - a) j h' ≫ eqToHom (congrArg (tensorObj L K).X hj) =
+        ιTensorObj L K (n₂ - b) (n₁ - a) j' (h'.trans hj) := by
+    rintro _ _ rfl _
+    simp
+  rw [Linear.units_smul_comp, ιTensorObj_tensorBraiding_hom_f, Linear.units_smul_comp,
+    hι (show n₂ + n₁ - k = n₁ + n₂ - k by ring), Linear.comp_units_smul,
+    smul_smul, smul_smul, smul_smul, ComplexShape.σ_down_ℤ, ← Int.negOnePow_add,
+    ← Int.negOnePow_add, ← Int.negOnePow_add]
+  congr 1
+  rw [Int.negOnePow_eq_iff]
+  exact ⟨-(n₁ * b), by ring⟩
+
+/-- **The regrading of tensor products and the interchange of factors.** Interchanging the factors
+of the tensor product of the regradings of `K` by `n₁` and of `L` by `n₂`, with the Koszul sign
+`(-1)^(a b)` of their cochain degrees, and comparing with the regrading of `L ⊗ K`, agrees up to
+the global sign `(-1)^(n₁ n₂)` with comparing with the regrading of `K ⊗ L` and interchanging the
+factors there, with the Koszul sign `(-1)^(p q)` of the chain degrees. The equality of the
+regradings of `L ⊗ K` by `n₂ + n₁` and by `n₁ + n₂` is the `eqToHom`.
+
+On the summand `K_p ⊗ L_q`, with cochain degrees `a = n₁ - p` and `b = n₂ - q`, the two composites
+carry the signs `(-1)^(a b + n₂ (n₁ - a))` and `(-1)^(n₁ q + p q)`, whose exponents differ by
+`n₁ n₂` modulo `2`. Thus a chain-level product on raw complexes which is graded commutative with
+the Koszul sign of the raw degrees becomes, after the cohomological regrading, graded commutative
+with the Koszul sign of the cochain degrees twisted by `(-1)^(n₁ n₂)`
+(`ChainComplex.tensorBraiding_hom_comp_regradeTensorHom_comp_restrictionMap`). -/
+theorem regradeTensorHom_comp_restrictionMap_tensorBraiding :
+    regradeTensorHom n₁ n₂ K L ≫
+        restrictionMap (tensorBraiding K L).hom (embeddingUpIntDownIntSub (n₁ + n₂)) =
+      (n₁ * n₂).negOnePow •
+        ((tensorBraiding (K.restriction (embeddingUpIntDownIntSub n₁))
+            (L.restriction (embeddingUpIntDownIntSub n₂))).hom ≫
+          regradeTensorHom n₂ n₁ L K ≫
+            eqToHom (congrArg (fun n ↦ (tensorObj L K).restriction (embeddingUpIntDownIntSub n))
+              (add_comm n₂ n₁))) := by
+  ext k a b h
+  replace h : a + b = k := h
+  simp only [comp_f, ι_regradeTensorHom_f_assoc, restrictionMap_f,
+    HomologicalComplex.units_smul_f_apply, Linear.comp_units_smul, eqToHom_f,
+    ιTensorObj_tensorBraiding_hom_f_assoc, regradeTensorSummand_def, Linear.units_smul_comp,
+    ι_regradeTensorHom_f_assoc, Category.assoc]
+  -- The summands, inclusions and components of the regraded complexes are those of `K`, `L`,
+  -- `K ⊗ L` and `L ⊗ K` by definition of `HomologicalComplex.restriction`, so the identity
+  -- between plain summands closes the goal.
+  exact regradeTensorSummand_comp_tensorBraiding_hom_f n₁ n₂ K L a b k h
+
+/-- **Regrading both factors by the same integer and the interchange of factors.** For the
+regradings of `K` and `L` by the same `n₁`, as for the product `CF_i ⊗ CF_j → CF_(i+j-n)` on Floer
+complexes of a symplectic manifold of dimension `2n` with `n₁ = n`, the interchange of the regraded
+factors and the interchange of the raw factors agree up to the sign `(-1)^n₁`
+(`ChainComplex.regradeTensorHom_comp_restrictionMap_tensorBraiding`). -/
+theorem regradeTensorHom_comp_restrictionMap_tensorBraiding_self :
+    regradeTensorHom n₁ n₁ K L ≫
+        restrictionMap (tensorBraiding K L).hom (embeddingUpIntDownIntSub (n₁ + n₁)) =
+      n₁.negOnePow • ((tensorBraiding (K.restriction (embeddingUpIntDownIntSub n₁))
+          (L.restriction (embeddingUpIntDownIntSub n₁))).hom ≫ regradeTensorHom n₁ n₁ L K) := by
+  simpa only [eqToHom_refl, Category.comp_id, Int.negOnePow_mul_self] using
+    regradeTensorHom_comp_restrictionMap_tensorBraiding n₁ n₁ K L
+
+/-- **Graded commutativity of a regraded product.** Let `m : K ⊗ K ⟶ M` be a chain-level product
+which commutes with the interchange of its inputs up to a sign `ε`, and regrade `K` by `n₁` and
+`K ⊗ K` by `n₁ + n₁`, so that `m` becomes the degree-zero product
+`regradeTensorHom n₁ n₁ K K ≫ restrictionMap m _` on the cochain complex `K^k = K_(n₁-k)`. This
+product commutes with the interchange of its regraded inputs, which carries the Koszul sign of the
+cochain degrees, up to the sign `(-1)^n₁ ε`. -/
+theorem tensorBraiding_hom_comp_regradeTensorHom_comp_restrictionMap [K.HasTensor K]
+    {M : ChainComplex C ℤ} (m : tensorObj K K ⟶ M) (ε : ℤˣ)
+    (hm : (tensorBraiding K K).hom ≫ m = ε • m) :
+    (tensorBraiding (K.restriction (embeddingUpIntDownIntSub n₁))
+          (K.restriction (embeddingUpIntDownIntSub n₁))).hom ≫
+        regradeTensorHom n₁ n₁ K K ≫ restrictionMap m (embeddingUpIntDownIntSub (n₁ + n₁)) =
+      (n₁.negOnePow * ε) •
+        (regradeTensorHom n₁ n₁ K K ≫ restrictionMap m (embeddingUpIntDownIntSub (n₁ + n₁))) := by
+  have hself := regradeTensorHom_comp_restrictionMap_tensorBraiding_self n₁ K K
+  have hm' : restrictionMap (tensorBraiding K K).hom (embeddingUpIntDownIntSub (n₁ + n₁)) ≫
+      restrictionMap m (embeddingUpIntDownIntSub (n₁ + n₁)) =
+        ε • restrictionMap m (embeddingUpIntDownIntSub (n₁ + n₁)) := by
+    rw [← restrictionMap_comp, hm]
+    ext k
+    simp [restrictionMap_f]
+  rw [← Category.assoc, ← smul_left_cancel_iff n₁.negOnePow, ← Linear.units_smul_comp, ← hself,
+    Category.assoc, hm', Linear.comp_units_smul, smul_smul, ← mul_assoc, Int.units_mul_self,
+    one_mul]
+
+end Braiding
 
 end ChainComplex
 

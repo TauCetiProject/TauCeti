@@ -153,6 +153,17 @@ theorem eq_mk_of_proj_eq {b : B} (p : OrthonormalFrameBundle 𝕜 F E V) (h : p.
   cases h
   rfl
 
+/-- Two orthonormal frames of a bundle modelled on `EuclideanSpace 𝕜 (Fin n)` are equal when they
+send every coordinate vector to the same point of the total space. -/
+theorem ext_totalSpaceMk {n : ℕ} {q q' : OrthonormalFrameBundle 𝕜 F E (EuclideanSpace 𝕜 (Fin n))}
+    (h : ∀ v : Fin n → 𝕜, TotalSpace.mk' F q.proj (q.frame (WithLp.toLp 2 v)) =
+      TotalSpace.mk' F q'.proj (q'.frame (WithLp.toLp 2 v))) : q = q' := by
+  obtain ⟨b, φ⟩ := q
+  obtain ⟨b', ψ⟩ := q'
+  obtain rfl : b = b' := congrArg TotalSpace.proj (h 0)
+  refine mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
+  simpa using TotalSpace.mk_inj.1 (h (WithLp.ofLp w))
+
 section Action
 
 variable [CompleteSpace V]
@@ -500,10 +511,12 @@ theorem baseSet_orthonormalFrameBundle :
       Trivialization _ (proj : OrthonormalFrameBundle 𝕜 F E V → B)).baseSet = e.baseSet :=
   (rfl)
 
-private theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
+/-- The inverse of the trivialization carries `(y, g)` to the frame `orthonormalFrameAt` at `y`
+acted on by `g`, for every `y`. -/
+theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
     (e.orthonormalFrameBundle c b).toOpenPartialHomeomorph.symm q =
       op q.2 • (⟨q.1, orthonormalFrameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
-  rfl
+  (rfl)
 
 private theorem orthonormalFrameBundle_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
     e.orthonormalFrameBundle c b p =

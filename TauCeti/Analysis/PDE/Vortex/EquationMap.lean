@@ -75,7 +75,10 @@ are the complexified coordinates of the variation, elements of Mathlib's Bessel-
   are exactly the vortices, is `TauCeti.Vortex.realSobolevEquation` in
   `TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart`.
 
-No Fredholm property, slice or quotient is constructed here.
+The gauge-fixed operator `L_x` on the Sobolev scale and the Coulomb slice are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.LocalModuli`, and the Fredholm property of `L_x` there
+and the Coulomb slice chart modelled on `ℝ^(2m)` in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.SliceChart`.
 
 ## References
 

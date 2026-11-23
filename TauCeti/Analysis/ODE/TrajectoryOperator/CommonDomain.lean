@@ -226,6 +226,19 @@ theorem domainTrajectoryOperator_apply_ae (ι A : D →L[ℝ] H)
   exact (familyDomainTrajectoryOperator_apply_ae ι _ u).trans
     (EventuallyEq.rfl.add (toLp_const_apply_ae A _))
 
+/-- The operators of a coefficient `A` and of a constant `A₀` differ along a path `u` by
+`(A(s) - A₀) u(s)`, almost everywhere. -/
+theorem familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae (ι : D →L[ℝ] H)
+    (A : Lp (D →L[ℝ] H) ∞ μΩ) (A₀ : D →L[ℝ] H) (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
+    ⇑(familyDomainTrajectoryOperator ι A u - domainTrajectoryOperator ι A₀ u) =ᵐ[μΩ]
+      fun s ↦ (A s - A₀) (prev (ι.compLpL p μΩ) u s) := by
+  rw [← familyDomainTrajectoryOperator_toLp_const, ← sub_apply,
+    familyDomainTrajectoryOperator_sub, ContinuousLinearMap.comp_apply, prevL_apply]
+  filter_upwards [Lp.operatorMultiplication_ae (A - (memLp_top_const (μ := μΩ) A₀).toLp _)
+      (prev (ι.compLpL p μΩ) u), Lp.coeFn_sub A ((memLp_top_const (μ := μΩ) A₀).toLp _),
+    (memLp_top_const (μ := μΩ) A₀).coeFn_toLp] with s hM hsub hc
+  rw [hM, hsub, Pi.sub_apply, hc]
+
 /-- The operator norm of `domainTrajectoryOperator ι A` is at most `1 + ‖A‖`. -/
 theorem norm_domainTrajectoryOperator_le (ι A : D →L[ℝ] H) :
     ‖domainTrajectoryOperator (mu := mu) (Omega := Omega) (p := p) ι A‖ ≤ 1 + ‖A‖ := by
