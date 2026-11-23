@@ -27,10 +27,9 @@ the pullback of `InvertibleSheaf.tensorProductObjIso L K`; on the target, the tr
 `InvertibleSheaf.pullback_obj_obj` on both factors and the inverse of `tensorProductObjIso`. The
 comparison `δ` is the field `Functor.OplaxMonoidal.δ` of Mathlib's oplax monoidal functors, for
 Tau Ceti's oplax monoidal structure `Scheme.Modules.pullbackOplaxMonoidal` on module pullback; it
-is invertible because line bundles are quasicoherent
-(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
-groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`, and an
-isomorphism of schemes induces an equivalence of categories of line bundles
+is invertible for arbitrary module sheaves (`Scheme.Modules.isIso_pullback_δ`). So pullback is a
+homomorphism of Picard groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor
+`T ↦ Pic(X_T)`, and an isomorphism of schemes induces an equivalence of categories of line bundles
 (`InvertibleSheaf.pullbackEquiv`) and a group isomorphism of Picard groups
 (`LineBundleClass.pullbackEquiv`).
 

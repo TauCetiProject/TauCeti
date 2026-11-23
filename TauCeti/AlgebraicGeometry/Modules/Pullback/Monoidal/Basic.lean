@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 
@@ -50,10 +51,10 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 open _root_.AlgebraicGeometry.Scheme.Modules
 
-/-- Pulling back a tensor product with a fixed quasicoherent left factor commutes with tensoring
-by its pullback, naturally in the other, arbitrary sheaf of modules. -/
+/-- Pulling back a tensor product with a fixed left factor commutes with tensoring
+by its pullback, naturally in the other sheaf of modules. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso
-    (M : Y.Modules) [M.IsQuasicoherent] :
+    (M : Y.Modules) :
     tensorLeft M ⋙ pullback f ≅ pullback f ⋙ tensorLeft ((pullback f).obj M) := by
   have : IsIso ((pullback f).oplaxCommTensorLeft M) := by
     rw [NatTrans.isIso_iff_isIso_app]
@@ -65,14 +66,14 @@ def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso
 /-- The left tensor comparison is the canonical oplax tensor map of pullback. -/
 @[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso_hom_app
-    (M N : Y.Modules) [M.IsQuasicoherent] :
+    (M N : Y.Modules) :
     (pullbackTensorLeftIso f M).hom.app N = δ (pullback f) M N :=
   Functor.oplaxCommTensorLeft_app _ _ _
 
-/-- Pulling back a tensor product with a fixed quasicoherent right factor commutes with tensoring
-by its pullback, naturally in the other, arbitrary sheaf of modules. -/
+/-- Pulling back a tensor product with a fixed right factor commutes with tensoring
+by its pullback, naturally in the other sheaf of modules. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorRightIso
-    (N : Y.Modules) [N.IsQuasicoherent] :
+    (N : Y.Modules) :
     tensorRight N ⋙ pullback f ≅ pullback f ⋙ tensorRight ((pullback f).obj N) := by
   have : IsIso ((pullback f).oplaxCommTensorRight N) := by
     rw [NatTrans.isIso_iff_isIso_app]
@@ -84,7 +85,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorRightIso
 /-- The right tensor comparison is the canonical oplax tensor map of pullback. -/
 @[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorRightIso_hom_app
-    (M N : Y.Modules) [N.IsQuasicoherent] :
+    (M N : Y.Modules) :
     (pullbackTensorRightIso f N).hom.app M = δ (pullback f) M N :=
   Functor.oplaxCommTensorRight_app _ _ _
 
@@ -100,9 +101,6 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesMonoidal :
     infer_instance
   have (E F : QuasicoherentSheaf Y) : IsIso (δ (I ⋙ pullback f) E F) := by
     rw [Functor.OplaxMonoidal.comp_δ]
-    have : E.obj.IsQuasicoherent := E.property
-    have : IsIso (δ (pullback f) (I.obj E) (I.obj F)) :=
-      isIso_pullback_δ_of_isQuasicoherent f E.obj F.obj
     infer_instance
   exact Functor.Monoidal.ofOplaxMonoidal (I ⋙ pullback f)
 
@@ -130,10 +128,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_η :
 @[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_μ
     (E F : QuasicoherentSheaf Y) :
-    haveI := @isIso_pullback_δ_of_isQuasicoherent _ _ f E.obj F.obj E.property
+    haveI := isIso_pullback_δ f E.obj F.obj
     μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) E F =
       inv (δ (pullback f) E.obj F.obj) :=
-  haveI := @isIso_pullback_δ_of_isQuasicoherent _ _ f E.obj F.obj E.property
+  haveI := isIso_pullback_δ f E.obj F.obj
   IsIso.eq_inv_of_hom_inv_id ((congrArg (· ≫ _) (pullbackToModules_δ f E F).symm).trans
     (Functor.Monoidal.δ_μ _ E F))
 

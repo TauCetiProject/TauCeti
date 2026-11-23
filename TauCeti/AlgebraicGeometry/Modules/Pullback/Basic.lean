@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Stalk
 
 /-!
 # Pullback and restriction of modules on schemes
@@ -73,6 +74,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pushforward_ε` and
   `AlgebraicGeometry.Scheme.Modules.pullback_η`, and the tensor map of pullback by
   `AlgebraicGeometry.Scheme.Modules.pullback_δ`;
+* `AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ`: pullback preserves tensor products of
+  arbitrary module sheaves;
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
@@ -468,6 +471,11 @@ lemma pullback_δ (M N : Y.Modules) :
           Functor.LaxMonoidal.μ (pushforward f) _ _) :=
   Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
 
+/-- Pullback of arbitrary module sheaves along a scheme morphism preserves tensor products. -/
+instance isIso_pullback_δ (M N : Y.Modules) :
+    IsIso (Functor.OplaxMonoidal.δ (pullback f) M N) :=
+  SheafOfModules.isIso_pullback_δ f.toRingCatSheafHom M N
+
 /-- The canonical tensor comparison of module pullback respects symmetry, without any
 flatness, finiteness or quasi-coherence hypothesis. -/
 @[reassoc]
@@ -524,15 +532,12 @@ lemma _root_.TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ (M N : Z.Mod
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) := by
   rw [pullback_comp_δ, Iso.hom_inv_id_app_assoc]
 
-/-- When the tensor comparisons are invertible, the inverse tensor comparisons of `f^*` and
-`g^*` composed with the composition isomorphism give the inverse tensor comparison of
+/-- The inverse tensor comparisons of `f^*` and `g^*` composed with the composition isomorphism
+give the inverse tensor comparison of
 `(f ≫ g)^*`. This is `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ` read through
 inverses. -/
 @[reassoc]
-lemma inv_δ_comp_pullbackComp_hom_app (M N : Z.Modules)
-    [IsIso (Functor.OplaxMonoidal.δ (pullback f) ((pullback g).obj M) ((pullback g).obj N))]
-    [IsIso (Functor.OplaxMonoidal.δ (pullback g) M N)]
-    [IsIso (Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N)] :
+lemma inv_δ_comp_pullbackComp_hom_app (M N : Z.Modules) :
     inv (Functor.OplaxMonoidal.δ (pullback f) ((pullback g).obj M) ((pullback g).obj N)) ≫
         (pullback f).map (inv (Functor.OplaxMonoidal.δ (pullback g) M N)) ≫
           (pullbackComp f g).hom.app (M ⊗ N) =

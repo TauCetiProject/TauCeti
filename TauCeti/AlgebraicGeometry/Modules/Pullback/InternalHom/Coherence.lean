@@ -14,7 +14,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 
 The canonical internal-Hom comparison respects the identity and composition isomorphisms
 of module pullback. These equations allow base change of internal Hom to be iterated without
-choosing new comparison maps. The source is quasicoherent and the target is arbitrary; these
+choosing new comparison maps. Both source and target are arbitrary module sheaves; these
 coherence equations assume neither flatness nor invertibility of the internal-Hom comparison.
 
 If the comparison along `f` is invertible, the composition criterion identifies invertibility
@@ -57,7 +57,7 @@ variable {X Y Z : Scheme.{u}}
 /-- The internal-Hom comparison along the identity is the internal-Hom map induced by the
 canonical identity isomorphism of module pullback. -/
 @[reassoc (attr := simp)]
-theorem pullbackIhomComparison_id (M N : X.Modules) [M.IsQuasicoherent] :
+theorem pullbackIhomComparison_id (M N : X.Modules) :
     (pullbackIhomComparison M (𝟙 X)).app N ≫
         (ihom ((Scheme.Modules.pullback (𝟙 X)).obj M)).map
           ((Scheme.Modules.pullbackId X).hom.app N) =
@@ -81,7 +81,7 @@ theorem pullbackIhomComparison_id (M N : X.Modules) [M.IsQuasicoherent] :
 using the canonical composition isomorphism on its source, target, and argument. -/
 @[reassoc]
 theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
-    (M N : Z.Modules) [M.IsQuasicoherent] :
+    (M N : Z.Modules) :
     (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app N) ≫
         (pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
           ((Scheme.Modules.pullback g).obj N) ≫
@@ -123,7 +123,7 @@ theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
 then invertibility along `f ≫ g` is equivalent to invertibility of the pullback along `f`
 of the comparison along `g`. This allows invertibility to be checked on open covers. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_comp_iff
-    (f : X ⟶ Y) (g : Y ⟶ Z) (M N : Z.Modules) [M.IsQuasicoherent]
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M N : Z.Modules)
     [IsIso ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
       ((Scheme.Modules.pullback g).obj N))] :
     IsIso ((pullbackIhomComparison M (f ≫ g)).app N) ↔
@@ -143,7 +143,7 @@ composites: along `f ≫ g` it is the pullback along `f` of the map along `g` fo
 along `f`, through the composition isomorphism of pullback. -/
 @[reassoc]
 theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
-    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsQuasicoherent] :
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) :
     (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
         (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app (𝟙_ Z.Modules) ≫
           (ihom ((Scheme.Modules.pullback g).obj M)).map
@@ -177,7 +177,7 @@ the functional on `(f ≫ g)^* M^∨` obtained from a functional `ψ` on `f^* (g
 the section of `f^* g^* M` of `ψ`, through `f^* g^* M ≅ (f ≫ g)^* M`. -/
 theorem
     _root_.AlgebraicGeometry.Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp
-    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsQuasicoherent] [M.IsLocallyFree]
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsLocallyFree]
     [M.IsFiniteType]
     [IsIso ((pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
       (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
@@ -212,8 +212,7 @@ theorem
 /-- The base-change map of linear functionals is unchanged, up to the canonical identifications,
 when the scheme morphism is replaced by an equal one. -/
 @[reassoc]
-theorem pullbackIhomComparison_app_unit_congr {f f' : X ⟶ Y} (h : f = f') (M : Y.Modules)
-    [M.IsQuasicoherent] :
+theorem pullbackIhomComparison_app_unit_congr {f f' : X ⟶ Y} (h : f = f') (M : Y.Modules) :
     (pullbackIhomComparison M f').app (𝟙_ Y.Modules) ≫
         (ihom ((Scheme.Modules.pullback f').obj M)).map
           (Scheme.Modules.pullbackObjUnitIso f').hom ≫
@@ -231,7 +230,7 @@ base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` followed by ev
 section `𝒪_X ≅ f^* 𝒪_Y ⟶ f^* M`. -/
 @[reassoc]
 theorem _root_.AlgebraicGeometry.Scheme.Hom.pullback_map_evaluation_comp_pullbackObjUnitIso_hom
-    (f : X ⟶ Y) (M : Y.Modules) [M.IsQuasicoherent] (s : 𝟙_ Y.Modules ⟶ M) :
+    (f : X ⟶ Y) (M : Y.Modules) (s : 𝟙_ Y.Modules ⟶ M) :
     (Scheme.Modules.pullback f).map ((λ_ _).inv ≫ s ▷ (ihom M).obj (𝟙_ Y.Modules) ≫
         (ihom.ev M).app (𝟙_ Y.Modules)) ≫ (Scheme.Modules.pullbackObjUnitIso f).hom =
       (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫

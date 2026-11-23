@@ -31,8 +31,7 @@ comparisons with the restrictions of the canonical comparison.
 
 The kernel comparison uses
 `CategoryTheory.Functor.ihomComparison_isIso_of_cokernel_of_naturality`.
-Here the canonical comparison uses the oplax tensor comparison of pullback: pullback on all
-module sheaves is not assumed to be lax monoidal.
+The canonical internal-Hom comparison uses the oplax tensor comparison of module pullback.
 
 ## Main declarations
 
@@ -65,7 +64,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f]
 /-- A finite global presentation of the source makes the canonical internal-Hom comparison
 invertible under flat pullback into a quasicoherent target, without assuming the base affine. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation
-    (M N : Y.Modules) [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (M N : Y.Modules) [N.IsQuasicoherent]
     (P : M.Presentation) [P.IsFinite] :
     IsIso ((pullbackIhomComparison M f).app N) := by
   let F := Scheme.Modules.pullback f
@@ -103,9 +102,7 @@ sheaf into a quasicoherent sheaf. The source scheme is arbitrary. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine
     [IsAffine Y]
     (M N : Y.Modules) [M.IsFinitePresentation] [N.IsQuasicoherent] :
-    letI := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
     IsIso ((pullbackIhomComparison M f).app N) := by
-  let := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
   obtain ⟨P, hP⟩ := Scheme.Modules.exists_isFinite_presentation_of_isAffine M
   have : P.IsFinite := hP
   exact f.isIso_pullbackIhomComparison_app_of_presentation M N P
@@ -114,9 +111,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_
 quasicoherent module sheaf. Neither scheme needs to be affine or Noetherian. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app
     (M N : Y.Modules) [M.IsFinitePresentation] [N.IsQuasicoherent] :
-    letI := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
     IsIso ((pullbackIhomComparison M f).app N) := by
-  let := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
   refine (Scheme.Modules.isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr
       fun V ↦ ?_

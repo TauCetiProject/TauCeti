@@ -58,7 +58,7 @@ maps of the pullback along a composite are the composites of the comparison maps
 * `SheafOfModules.pushforwardLaxMonoidal` and `SheafOfModules.pushforwardLaxBraided`, with
   `SheafOfModules.pushforward_ε` and `SheafOfModules.pushforward_μ`;
 * `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η`,
-  `SheafOfModules.pullback_δ`, and its section formula `SheafOfModules.pullback_δ_unit_tensor`;
+  `SheafOfModules.pullback_δ`, and its section formula `SheafOfModules.pullback_δ_app_unit_tmul`;
 * `SheafOfModules.forget_μ_comp_map_pushforward_μ`: the tensor map of the pushforward on underlying
   presheaves;
 * `SheafOfModules.pushforward_μ_app_tmul`: on sections, the tensor map of the pushforward sends
@@ -424,7 +424,7 @@ lemma pullback_δ (M N : SheafOfModules.{u} (ringCatSheaf S)) :
 
 /-- On sections over an object of an arbitrary site, the tensor comparison of pullback sends
 an adjunction-unit image of a pure tensor to the tensor of its adjunction-unit images. -/
-lemma pullback_δ_unit_tensor (M N : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
+lemma pullback_δ_app_unit_tmul (M N : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
     (m : M.val.obj U) (n : N.val.obj U) :
     (Functor.OplaxMonoidal.δ (pullback φ) M N).val.app (F.op.obj U)
       (((pullbackPushforwardAdjunction φ).unit.app (M ⊗ N)).val.app U

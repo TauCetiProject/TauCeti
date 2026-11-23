@@ -8,16 +8,16 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 
 /-!
-# Pullback of internal Hom from a quasicoherent sheaf
+# Pullback of internal Hom
 
-For a quasicoherent sheaf `M` and an arbitrary sheaf of modules `F` on `Y`, construct the
-canonical comparison `f* 𝓗om(M, F) ⟶ 𝓗om(f* M, f* F)` for every scheme morphism `f : X ⟶ Y`.
-It is invertible whenever `M` has a quasicoherent left dual. In particular, this applies to
-finite locally free sources, without flatness of `f` or finiteness of the target.
+For arbitrary sheaves of modules `M` and `F` on `Y`, construct the canonical comparison
+`f* 𝓗om(M, F) ⟶ 𝓗om(f* M, f* F)` for every scheme morphism `f : X ⟶ Y`.
+It is invertible whenever `M` is quasicoherent and has a quasicoherent left dual. In particular,
+this applies to finite locally free sources, without flatness of `f` or finiteness of the target.
 
 The comparison is the mate of the inverse tensor comparison with left factor `M`.
 It is characterized by evaluation, is natural in every target sheaf of modules, and is
-natural in the quasicoherent source.
+natural in the source.
 Use `TauCeti.AlgebraicGeometry.pullbackIhomComparison M f` for the comparison.
 Invertibility follows by identifying internal Hom with tensoring by the dual, and using the
 tensor comparison with that quasicoherent dual as left factor. The proof uses
@@ -42,9 +42,9 @@ universe u
 
 noncomputable section
 
-variable {X Y : Scheme.{u}} (M : Y.Modules) [M.IsQuasicoherent] (f : X ⟶ Y)
+variable {X Y : Scheme.{u}} (M : Y.Modules) (f : X ⟶ Y)
 
-/-- The canonical base-change comparison for internal Hom from a quasicoherent sheaf.
+/-- The canonical base-change comparison for internal Hom from an arbitrary module sheaf.
 It is natural in arbitrary target sheaves of modules. -/
 def pullbackIhomComparison :
     ihom M ⋙ Scheme.Modules.pullback f ⟶
@@ -91,11 +91,11 @@ theorem pullbackIhomComparison_app_eq_curry (F : Y.Modules) :
   exact (curry_uncurry _).symm.trans
     (congrArg curry (whiskerLeft_pullbackIhomComparison_app_comp_ev M f F))
 
-/-- The base-change comparison is natural in the quasicoherent source: precomposition with
+/-- The base-change comparison is natural in the source: precomposition with
 `g : M₁ ⟶ M₂` corresponds to precomposition with its pullback. -/
 @[reassoc]
 theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modules}
-    [M₁.IsQuasicoherent] [M₂.IsQuasicoherent] (g : M₁ ⟶ M₂) (F : Y.Modules) :
+    (g : M₁ ⟶ M₂) (F : Y.Modules) :
     (Scheme.Modules.pullback f).map ((pre g).app F) ≫ (pullbackIhomComparison M₁ f).app F =
       (pullbackIhomComparison M₂ f).app F ≫
         (pre ((Scheme.Modules.pullback f).map g)).app ((Scheme.Modules.pullback f).obj F) := by
@@ -113,7 +113,7 @@ theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modu
 /-- If the evaluation `f* M ⊗ f* D ⟶ 𝟙` of the pulled-back exact pairing is the transported
 evaluation `M ⊗ D ⟶ 𝟙`, then the comparison `f* 𝓗om(M, -) ≅ 𝓗om(f* M, f* -)` built from `D`
 is compatible with evaluation. -/
-private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules) [D.IsQuasicoherent]
+private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules)
     [ExactPairing D M]
     [ExactPairing ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M)]
     (he : ε_ ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M) =
@@ -151,7 +151,7 @@ private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules) [D.IsQuasicohere
 
 /-- The canonical internal-Hom base-change comparison is invertible for every scheme morphism
 when its quasicoherent source has a quasicoherent left dual, without any condition on the target. -/
-theorem isIso_pullbackIhomComparison_of_exactPairing
+theorem isIso_pullbackIhomComparison_of_exactPairing [M.IsQuasicoherent]
     (D : Y.Modules) [D.IsQuasicoherent] [ExactPairing D M] :
     IsIso (pullbackIhomComparison M f) := by
   let QD : QuasicoherentSheaf Y := ⟨D, inferInstance⟩

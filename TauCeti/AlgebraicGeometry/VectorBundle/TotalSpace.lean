@@ -361,8 +361,8 @@ private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePu
 to `f^* M`: a functional on `(q ≫ f)^* M^∨` obtained from a functional `ψ` on `q^* M'^∨`
 corresponds to the section of `q^* M'` of `ψ`, through `q^* f^* M ≅ (q ≫ f)^* M`. -/
 private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q : T ⟶ Y)
-    (M : X.Modules) [M.IsQuasicoherent] [M.IsLocallyFree] [M.IsFiniteType]
-    (M' : Y.Modules) [M'.IsQuasicoherent] [M'.IsLocallyFree] [M'.IsFiniteType]
+    (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType]
+    (M' : Y.Modules) [M'.IsLocallyFree] [M'.IsFiniteType]
     (h : M' = (Scheme.Modules.pullback f).obj M)
     [IsIso ((pullbackIhomComparison M (q ≫ f)).app (𝟙_ X.Modules) ≫
       (ihom ((Scheme.Modules.pullback (q ≫ f)).obj M)).map

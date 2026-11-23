@@ -10,8 +10,9 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
 /-!
 # Pullback and global sections of internal Homs
 
-The internal-Hom pullback comparison takes the section of a module map to the section of its
-pullback. Equivalently, uncurrying a pulled-back section gives the pulled-back map.
+For arbitrary module sheaves, the internal-Hom pullback comparison takes the section of a
+module map to the section of its pullback. Equivalently, uncurrying a pulled-back section gives
+the pulled-back map.
 -/
 
 public section
@@ -27,7 +28,7 @@ universe u
 /-- Pulling back a section of an internal Hom and then evaluating is the pullback of its
 uncurried map. -/
 theorem pullback_map_uncurry' {X Y : Scheme.{u}} (f : X ⟶ Y)
-    {M N : Y.Modules} [M.IsQuasicoherent] (s : 𝟙_ Y.Modules ⟶ (ihom M).obj N) :
+    {M N : Y.Modules} (s : 𝟙_ Y.Modules ⟶ (ihom M).obj N) :
     (pullback f).map (uncurry' s) =
       uncurry' ((pullbackObjUnitIso f).inv ≫ (pullback f).map s ≫
         (TauCeti.AlgebraicGeometry.pullbackIhomComparison M f).app N) := by

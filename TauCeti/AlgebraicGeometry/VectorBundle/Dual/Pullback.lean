@@ -153,7 +153,7 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
     -- The comparison along `f` is taken at the sheaf underlying `(pullback g).obj E`. Transport it
     -- to the module pullback of `E.obj`: the two agree by `pullback_obj_obj`, but `pullback` is not
     -- exposed, so the equality cannot be used definitionally here.
-    have hM (M : Y.Modules) [M.IsQuasicoherent] (e : M = (Scheme.Modules.pullback g).obj E.obj)
+    have hM (M : Y.Modules) (e : M = (Scheme.Modules.pullback g).obj E.obj)
         {T : X.Modules}
         (p : (Scheme.Modules.pullback f).obj
           ((ihom ((Scheme.Modules.pullback g).obj E.obj)).obj (𝟙_ Y.Modules)) =

@@ -106,7 +106,7 @@ private lemma pullback_δ_stalk_germ (y : Y) (a : ↑(TopCat.Presheaf.stalk 𝒪
       ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf 𝒪X)) M N).app
         (op U) (m ⊗ₜ[𝒪X.obj.obj (op U)] n)))
   refine (congrArg (fun t ↦ a • β t) hd).trans ?_
-  erw [_root_.SheafOfModules.pullback_δ_unit_tensor φ M N (op U) m n]
+  erw [_root_.SheafOfModules.pullback_δ_app_unit_tmul φ M N (op U) m n]
   exact congrArg (a • ·) (tensorStalkEquivMonoidal_germ 𝒪Y
     ((_root_.SheafOfModules.pullback φ).obj M)
     ((_root_.SheafOfModules.pullback φ).obj N) y ((Opens.map f).obj U) hy
@@ -147,7 +147,7 @@ private lemma pullbackTensorStalk_germ (y : Y) (a : ↑(TopCat.Presheaf.stalk �
       TopCat.Presheaf.germ (M ⊗ N).val.presheaf U (f y) hy
         ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf 𝒪X)) M N).app
           (op U) (m ⊗ₜ[𝒪X.obj.obj (op U)] n)) :=
-    α.symm_apply_eq.mpr (tensorStalkEquivMonoidal_germ 𝒪X M N (f y) U hy m n).symm
+    tensorStalkEquivMonoidal_symm_tmul_germ 𝒪X M N (f y) U hy m n
   rw [hα]
   refine (congrArg d (pullbackStalkEquiv_tmul_germ φ (M ⊗ N) y a U hy
     ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf 𝒪X)) M N).app
@@ -157,14 +157,10 @@ private lemma pullbackTensorStalk_germ (y : Y) (a : ↑(TopCat.Presheaf.stalk �
   refine (pullback_δ_stalk_germ φ M N y a U hy m n).trans ?_
   dsimp only [b, c]
   rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
-  refine Eq.trans ?_ (TensorProduct.congr_tmul (pullbackStalkEquiv φ M y)
-    (pullbackStalkEquiv φ N y)
-    (a ⊗ₜ TopCat.Presheaf.germ M.val.presheaf U (f y) hy m)
-    (1 ⊗ₜ TopCat.Presheaf.germ N.val.presheaf U (f y) hy n)).symm
-  refine Eq.trans ?_ (congrArg₂ (TensorProduct.tmul (↑(TopCat.Presheaf.stalk 𝒪Y.obj y)))
-    (pullbackStalkEquiv_tmul_germ φ M y a U hy m)
-    (pullbackStalkEquiv_tmul_germ φ N y 1 U hy n)).symm
+  erw [TensorProduct.congr_tmul, pullbackStalkEquiv_tmul_germ, pullbackStalkEquiv_tmul_germ]
+  -- The scalar actions use the same stalk modules after unfolding the pullback section types.
   rw [one_smul, TensorProduct.smul_tmul']
+  rfl
 
 /-- On stalks, the tensor comparison for pullback acts by distributing scalar extension
 over the tensor product, using the canonical pullback and tensor stalk equivalences. -/
@@ -179,6 +175,7 @@ theorem _root_.SheafOfModules.pullback_δ_stalk (y : Y) :
           (tensorStalkEquivMonoidal 𝒪Y ((_root_.SheafOfModules.pullback φ).obj M)
             ((_root_.SheafOfModules.pullback φ).obj N) y).symm).toLinearMap := by
   let := stalkAlgebra φ y
+  -- Fold the canonical equivalence composites into the source and target used in the germ proof.
   change (PresheafOfModules.stalkMapCommRing (S := 𝒪Y.obj) y
     (Functor.OplaxMonoidal.δ (_root_.SheafOfModules.pullback φ) M N).val).comp
       (pullbackTensorStalkSource φ M N y).toLinearMap =
@@ -250,19 +247,22 @@ section Coherence
 open _root_.SheafOfModules
 open Functor.OplaxMonoidal Functor.LaxMonoidal
 
-/-- The canonical comparison from identity pullback to the identity functor is monoidal. -/
-theorem isMonoidal_pullbackId_hom
-    (R : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}) :
-    let b := @pullbackBraided X X R R (𝟙 X) (𝟙 (ringCatSheaf R))
-      (Functor.isRightAdjoint_of_iso (pushforwardId (ringCatSheaf R)).symm)
-    @NatTrans.IsMonoidal _ _ _ _ _ _ _ _ (pullbackId.{u} (ringCatSheaf R)).hom
-      b.toMonoidal.toLaxMonoidal Functor.LaxMonoidal.id := by
-  dsimp only
-  let F := pullback.{u} (F := 𝟭 (Opens X)) (R := ringCatSheaf R) (𝟙 (ringCatSheaf R))
-  let b : F.Braided := @pullbackBraided X X R R (𝟙 X) (𝟙 (ringCatSheaf R))
+-- The canonical comparisons use identity and composite site functors as instance heads.
+/-- Identity pullback has the braided structure of pullback along the identity map of spaces. -/
+instance (priority := 100) _root_.SheafOfModules.pullbackIdBraided
+    {A : Type u} [TopologicalSpace A]
+    (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
+    (pullback.{u} (F := 𝟭 (Opens A)) (S := ringCatSheaf R) (R := ringCatSheaf R)
+      (𝟙 (ringCatSheaf R))).Braided :=
+  @pullbackBraided (TopCat.of A) (TopCat.of A) R R (𝟙 _) (𝟙 (ringCatSheaf R))
     (Functor.isRightAdjoint_of_iso (pushforwardId (ringCatSheaf R)).symm)
-  refine @NatTrans.IsMonoidal.of_oplax _ _ _ _ _ _ F (𝟭 _)
-    b.toMonoidal inferInstance (pullbackId.{u} (ringCatSheaf R)).hom ?_ ?_
+
+/-- The canonical comparison from identity pullback to the identity functor is monoidal. -/
+instance isMonoidal_pullbackId_hom
+    {A : Type u} [TopologicalSpace A]
+    (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
+    NatTrans.IsMonoidal (pullbackId.{u} (ringCatSheaf R)).hom := by
+  refine NatTrans.IsMonoidal.of_oplax (pullbackId.{u} (ringCatSheaf R)).hom ?_ ?_
   · rw [Functor.OplaxMonoidal.id_η, Category.comp_id]
     exact (pullback_id_η R).symm
   · intro M N
@@ -275,26 +275,21 @@ variable {Z : TopCat.{u}} {𝒪Z : Sheaf (Opens.grothendieckTopology Z) CommRing
     ((Opens.map g).sheafPushforwardContinuous RingCat.{u} _ _).obj (ringCatSheaf 𝒪Z))
   [(pushforward.{u} ψ).IsRightAdjoint]
 
-/-- The canonical comparison from iterated pullback to pullback along the composite is
-monoidal. -/
-theorem isMonoidal_pullbackComp_hom :
-    let θ := φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ
-    let := (pullbackBraided φ).toMonoidal
-    let := (pullbackBraided ψ).toMonoidal
-    let b := @pullbackBraided X Z 𝒪X 𝒪Z (g ≫ f) θ
-      (Functor.isRightAdjoint_of_iso (pushforwardComp.{u} φ ψ))
-    @NatTrans.IsMonoidal _ _ _ _ _ _ _ _ (pullbackComp.{u} φ ψ).hom
-      (Functor.LaxMonoidal.comp (pullback.{u} φ) (pullback.{u} ψ))
-      b.toMonoidal.toLaxMonoidal := by
-  dsimp only
-  let G := pullback.{u} (F := Opens.map f ⋙ Opens.map g) (R := ringCatSheaf 𝒪Z)
-    (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)
-  let b : G.Braided := @pullbackBraided X Z 𝒪X 𝒪Z (g ≫ f)
+/-- Pullback along the composite site functor has the braided structure of pullback
+along the composite map of spaces. -/
+instance (priority := 100) _root_.SheafOfModules.pullbackCompBraided :
+    (pullback.{u} (F := Opens.map f ⋙ Opens.map g) (R := ringCatSheaf 𝒪Z)
+      (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)).Braided :=
+  @pullbackBraided X Z 𝒪X 𝒪Z (g ≫ f)
     (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)
     (Functor.isRightAdjoint_of_iso (pushforwardComp.{u} φ ψ))
-  let := (pullbackBraided φ).toMonoidal
-  let := (pullbackBraided ψ).toMonoidal
-  let : G.Monoidal := b.toMonoidal
+
+/-- The canonical comparison from iterated pullback to pullback along the composite is
+monoidal. -/
+instance isMonoidal_pullbackComp_hom :
+    NatTrans.IsMonoidal (pullbackComp.{u} φ ψ).hom := by
+  let G := pullback.{u} (F := Opens.map f ⋙ Opens.map g) (R := ringCatSheaf 𝒪Z)
+    (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)
   let e := pullbackComp.{u} φ ψ
   have hη : e.hom.app (𝟙_ _) ≫ η G = η (pullback.{u} φ ⋙ pullback.{u} ψ) := by
     dsimp only [G]

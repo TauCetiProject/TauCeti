@@ -69,7 +69,7 @@ lemma δ_app_pullbackSections_μ (N : X.Modules) (x : Γ(M, U)) (y : Γ(N, U)) :
           (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N (x ⊗ₜ y))) =
       Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor (g ⁻¹ᵁ U)) _ _
         (pullbackSections g M U x ⊗ₜ pullbackSections g N U y) := by
-  exact SheafOfModules.pullback_δ_unit_tensor g.toRingCatSheafHom M N (op U) x y
+  exact SheafOfModules.pullback_δ_app_unit_tmul g.toRingCatSheafHom M N (op U) x y
 /-- The identification `g^* 𝒪_X ≅ 𝒪_Y` sends the pullback of a function `r` on `U` to the
 function `g^♯ r` on `g⁻¹ U`. -/
 lemma pullbackObjUnitIso_hom_app_pullbackSections_ε (r : Γ(X, U)) :

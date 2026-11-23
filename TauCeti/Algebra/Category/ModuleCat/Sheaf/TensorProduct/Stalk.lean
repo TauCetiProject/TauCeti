@@ -28,6 +28,7 @@ of the defining isomorphism `tensorProductIso`.
 * `SheafOfModules.tensorStalkEquiv`: the same comparison as a linear equivalence;
 * `SheafOfModules.tensorStalkEquivMonoidal`: the equivalence for the monoidal tensor `M ⊗ N`;
 * `SheafOfModules.tensorStalkEquivMonoidal_germ`: its value on germs of pure tensors;
+* `SheafOfModules.tensorStalkEquivMonoidal_symm_tmul_germ`: its inverse on tensors of germs;
 * `SheafOfModules.tensorStalkEquiv_naturality`: compatibility with morphisms in both factors;
 * `SheafOfModules.tensorStalkEquiv_symm_tmul_germ`: its inverse on tensors of germs;
 * `SheafOfModules.tensorStalkComparison_apply`: its description as the composite above;
@@ -289,8 +290,7 @@ theorem tensorStalkEquivMonoidal_germ (U : Opens X) (hx : x ∈ U)
           (M.tensorUnderlyingIso N ≪≫ (tensorProductIso R M N).symm).hom =
         (_root_.SheafOfModules.forget (ringCatSheaf R)).map (tensorProductIso R M N).inv := by
       rw [← Functor.map_comp]
-      simp
-      rfl
+      simp only [Iso.trans_hom, Iso.symm_hom, Iso.inv_hom_id_assoc]
     exact (congrArg (· ≫ _) (forget_μ (R := R) M N)).trans
       ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) he))
   -- The monoidal tensor and the sheafified sectionwise tensor have different presentations.
@@ -309,12 +309,26 @@ theorem tensorStalkEquivMonoidal_germ (U : Opens X) (hx : x ∈ U)
   have hunit : (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) =
       (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
         (M.val ⊗ N.val) := by
-    apply (PresheafOfModules.toPresheaf _).map_injective
-    exact (toPresheaf_map_sheafificationForgetAdjunction_unit_app R (M.val ⊗ N.val)).trans
-      (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app _ _).symm
+    unfold sheafificationForgetAdjunction
+    rfl
   rw [hunit]
   dsimp only [_root_.SheafOfModules.forget_obj, Functor.id_obj]
   exact tensorStalkComparison_germ_unit_tmul R M N x U hx m n
+
+/-- The inverse monoidal tensor stalk equivalence sends a tensor of germs to the germ of the
+image of the pure tensor under the tensor comparison of the inclusion into presheaves. -/
+@[simp]
+theorem tensorStalkEquivMonoidal_symm_tmul_germ (U : Opens X) (hx : x ∈ U)
+    (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
+    dsimp% only [PresheafOfModules.presheaf_obj_coe, Functor.id_obj, Functor.comp_obj]
+    ((tensorStalkEquivMonoidal R M N x).symm
+        (TopCat.Presheaf.germ M.val.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R.obj x)]
+          TopCat.Presheaf.germ N.val.presheaf U x hx n) =
+      TopCat.Presheaf.germ (M ⊗ N).val.presheaf U x hx
+        ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
+          (op U) (m ⊗ₜ[R.obj.obj (op U)] n))) := by
+  apply (tensorStalkEquivMonoidal R M N x).symm_apply_eq.mpr
+  exact (tensorStalkEquivMonoidal_germ R M N x U hx m n).symm
 
 end SheafOfModules
 
