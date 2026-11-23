@@ -494,6 +494,21 @@ def fixedIntegerHiveEquivLRTableauShape (hlam : lam.IsPolynomial) (hμ : μ.IsPo
       (DominantWeight.colLen_zero_shape_le γ)
       (DominantWeight.colLen_zero_shape_le μ)).apply_symm_apply T
 
+/-- The hive of a Littlewood–Richardson tableau `T` under `fixedIntegerHiveEquivLRTableauShape`
+takes the value `λ₀ + ⋯ + λⱼ₋₁` plus the number of letters below `i` in the first `j` rows of
+`T` at the point `(i, j)` of the product chart. -/
+@[simp]
+theorem fixedIntegerHiveEquivLRTableauShape_symm_apply_ofChart (hlam : lam.IsPolynomial)
+    (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) (T : LRTableau lam.shape γ.shape μ.shape)
+    {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveEquivLRTableauShape hlam hμ hγ).symm T).val
+        (Vertex.ofChart n i j hij hj) =
+      prefixSum j lam.val + ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) := by
+  change ((fixedIntegerHiveEquivLRTableau (DominantWeight.colLen_zero_shape_le lam)
+    (DominantWeight.colLen_zero_shape_le γ) (DominantWeight.colLen_zero_shape_le μ)).symm T).val
+      (Vertex.ofChart n i j hij hj) = _
+  rw [fixedIntegerHiveEquivLRTableau_symm_apply_ofChart, weightOfShape_shape hlam]
+
 /-- The tableau of a hive `h` under `fixedIntegerHiveEquivLRTableauShape` has row counts given by
 the differences of `h.val.toGTPattern` for `r < n`. -/
 theorem natCast_rowCount_fixedIntegerHiveEquivLRTableauShape (hlam : lam.IsPolynomial)
@@ -514,6 +529,30 @@ def fixedIntegerHiveEquivLRTableauShift {a b : ℤ} (hlam : (lam.shift a).IsPoly
       LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape :=
   (fixedIntegerHiveShiftEquiv lam μ γ a b).trans
     (fixedIntegerHiveEquivLRTableauShape hlam hμ hγ)
+
+/-- The hive of a shifted Littlewood–Richardson tableau `T` under
+`fixedIntegerHiveEquivLRTableauShift` takes the value `λ₀ + ⋯ + λⱼ₋₁` plus the number of letters
+below `i` in the first `j` rows of `T` minus `i * b` at `(i, j)` of the product chart (the
+shifted polynomial reconstruction minus the affine correction `j * a + i * b`). -/
+@[simp]
+theorem fixedIntegerHiveEquivLRTableauShift_symm_apply_ofChart {a b : ℤ}
+    (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
+    (hγ : (γ.shift (a + b)).IsPolynomial)
+    (T : LRTableau (lam.shift a).shape (γ.shift (a + b)).shape (μ.shift b).shape)
+    {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveEquivLRTableauShift hlam hμ hγ).symm T).val
+        (Vertex.ofChart n i j hij hj) =
+      prefixSum j lam.val + ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) -
+        (i : ℤ) * b := by
+  have hpref : prefixSum j (lam.shift a).val = prefixSum j lam.val + (j : ℤ) * a := by
+    rw [prefixSum_eq_sum_castLE hj, prefixSum_eq_sum_castLE hj]
+    simp [DominantWeight.shift_apply, sum_add_distrib]
+  have hsub : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
+  simp only [fixedIntegerHiveEquivLRTableauShift, Equiv.symm_trans_apply,
+    fixedIntegerHiveShiftEquiv_symm_apply_coe, Pi.sub_apply,
+    fixedIntegerHiveEquivLRTableauShape_symm_apply_ofChart, affine_apply, Vertex.ofChart_y,
+    Vertex.ofChart_z, nsmul_eq_mul, hpref, hsub]
+  ring
 
 /-- The tableau of a hive `h` under `fixedIntegerHiveEquivLRTableauShift` has row counts given by
 the differences of `h.val.toGTPattern.shift b` for `r < n`. -/
@@ -716,8 +755,27 @@ def fixedIntegerHiveEquivLRTableauDetShift
       (congrArg (fun m => (γ.shift m).shape) (neg_add lam.detShift μ.detShift).symm)
       μ.shape_shift_neg_detShift)
 
+/-- The hive of a determinant-shifted Littlewood–Richardson tableau `T` under
+`fixedIntegerHiveEquivLRTableauDetShift` takes the value `λ₀ + ⋯ + λⱼ₋₁` plus the number of
+letters below `i` in the first `j` rows of `T` plus `i * μ.detShift` at `(i, j)` of the product
+chart. -/
+@[simp]
+theorem fixedIntegerHiveEquivLRTableauDetShift_symm_apply_ofChart
+    (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
+    (T : LRTableau lam.detShiftShape (γ.shift (-(lam.detShift + μ.detShift))).shape
+      μ.detShiftShape)
+    {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveEquivLRTableauDetShift hshift).symm T).val
+        (Vertex.ofChart n i j hij hj) =
+      prefixSum j lam.val + ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) +
+        (i : ℤ) * μ.detShift := by
+  simp only [fixedIntegerHiveEquivLRTableauDetShift, Equiv.symm_trans_apply,
+    LRTableau.congr_symm, fixedIntegerHiveEquivLRTableauShift_symm_apply_ofChart,
+    LRTableau.rowCount_congr, mul_neg, sub_neg_eq_add]
+
 /-- Every cell entry of `fixedIntegerHiveEquivLRTableauDetShift hshift h` agrees with the shifted
 tableau under `fixedIntegerHiveEquivLRTableauShift` with no shape-cast overhead. -/
+@[simp]
 theorem fixedIntegerHiveEquivLRTableauDetShift_apply_entry
     (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
     (h : FixedIntegerHive (productBoundary lam μ γ)) (i j : ℕ) :
@@ -730,6 +788,7 @@ theorem fixedIntegerHiveEquivLRTableauDetShift_apply_entry
 
 /-- The row counts of `fixedIntegerHiveEquivLRTableauDetShift hshift h` agree with those of the
 shifted tableau under `fixedIntegerHiveEquivLRTableauShift`. -/
+@[simp]
 theorem rowCount_fixedIntegerHiveEquivLRTableauDetShift
     (hshift : lam.detShift + μ.detShift ≤ γ.detShift)
     (h : FixedIntegerHive (productBoundary lam μ γ)) (i k : ℕ) :

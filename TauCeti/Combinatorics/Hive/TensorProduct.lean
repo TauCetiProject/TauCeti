@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson

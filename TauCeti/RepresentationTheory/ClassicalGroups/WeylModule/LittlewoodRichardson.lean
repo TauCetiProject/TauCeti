@@ -13,7 +13,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Laurent
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 public import TauCeti.RepresentationTheory.Rep.DirectSum.Character
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
-import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
 import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 
 /-!
