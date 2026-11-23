@@ -20,7 +20,7 @@ import TauCeti.RingTheory.Perfect.Projective.Basic
 
 Let `R` be a perfect ring of characteristic `p`, let `W_n(R)` be its ring of truncated Witt vectors
 of length `n`, and let `a ≥ 1`. The Witt vector Frobenius `φ` of `W_n(R)` raises each Witt
-coordinate to the `p`-th power (`TruncatedWittVector.map (frobenius R p)`), and `φ^a` raises each
+coordinate to the `p`-th power (`TruncatedWittVector.map n (frobenius R p)`), and `φ^a` raises each
 coordinate to the `p ^ a`-th power. Since `R` is perfect, `φ^a` is an automorphism, so a
 `φ^a`-module structure on a `W_n(R)`-module `M`, that is, an isomorphism
 `W_n(R) ⊗_{W_n(R), φ^a} M ≅ M`, is the same as an additive automorphism `F` of `M` with
@@ -70,7 +70,7 @@ attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEqu
 private theorem projective_quotient_smul_top [NeZero n]
     [FinitePresentation (TruncatedWittVector p n R) M] {a : ℕ} (ha : a ≠ 0) (F : M ≃+ M)
     (hF : ∀ (c : TruncatedWittVector p n R) (x : M),
-      F (c • x) = TruncatedWittVector.map (iterateFrobenius R p a) c • F x) :
+      F (c • x) = TruncatedWittVector.map n (iterateFrobenius R p a) c • F x) :
     Projective (TruncatedWittVector p n R ⧸ Ideal.span {(p : TruncatedWittVector p n R)})
       (M ⧸ Ideal.span {(p : TruncatedWittVector p n R)} •
         (⊤ : Submodule (TruncatedWittVector p n R) M)) := by
@@ -82,10 +82,10 @@ private theorem projective_quotient_smul_top [NeZero n]
     .of_equiv ((TensorProduct.quotTensorEquivQuotSMul M I).extendScalarsOfSurjective
       Ideal.Quotient.mk_surjective)
   -- The reduction of `F`.
-  let σ : A ≃+* A := mapEquiv (iterateFrobeniusEquiv R p a)
+  let σ : A ≃+* A := mapEquiv n (iterateFrobeniusEquiv R p a)
   have hφ : (iterateFrobeniusEquiv R p a : R →+* R) = iterateFrobenius R p a :=
     RingHom.ext fun r ↦ by rw [RingEquiv.coe_toRingHom, coe_iterateFrobeniusEquiv]
-  have hσ (c : A) : σ c = TruncatedWittVector.map (iterateFrobenius R p a) c := by
+  have hσ (c : A) : σ c = TruncatedWittVector.map n (iterateFrobenius R p a) c := by
     rw [mapEquiv_apply, hφ]
   let Fσ : M ≃ₛₗ[(σ : A →+* A)] M :=
     { F with map_smul' := fun c x ↦ by simpa [hσ] using hF c x }
@@ -106,7 +106,7 @@ private theorem projective_quotient_smul_top [NeZero n]
   -- `φ^a(c)` is congruent to `c ^ p ^ a` modulo `p`.
   have hc : iterateFrobenius (A ⧸ I) p a (Ideal.Quotient.mk I c) = Ideal.Quotient.mk I (σ c) := by
     apply e.injective
-    simp [iterateFrobenius_def, he, hσ]
+    simp [iterateFrobenius_def, he, hσ, constantCoeff_map]
   -- The reduction of `F` acts on representatives (`Submodule.Quotient.equiv_apply`).
   have hmk (y : M) : (Submodule.Quotient.equiv _ _ Fσ hI).toAddEquiv (Submodule.Quotient.mk y) =
       Submodule.Quotient.mk (F y) := by
@@ -121,7 +121,7 @@ theorem projective_of_flat_of_addEquiv_map_iterateFrobenius
     [FinitePresentation (TruncatedWittVector p n R) M] [Module (ZMod (p ^ n)) M]
     [Flat (ZMod (p ^ n)) M] {a : ℕ} (ha : a ≠ 0) (F : M ≃+ M)
     (hF : ∀ (c : TruncatedWittVector p n R) (x : M),
-      F (c • x) = TruncatedWittVector.map (iterateFrobenius R p a) c • F x) :
+      F (c • x) = TruncatedWittVector.map n (iterateFrobenius R p a) c • F x) :
     Projective (TruncatedWittVector p n R) M := by
   rcases n.eq_zero_or_pos with rfl | hn
   · have : Subsingleton (TruncatedWittVector p 0 R) := ⟨fun x y ↦ ext fun i ↦ i.elim0⟩

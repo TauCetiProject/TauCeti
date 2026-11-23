@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
@@ -95,8 +94,6 @@ def areaDiscChart (a : ℝ) :
     rw [OpenPartialHomeomorph.trans_source, affineChart_source]
     exact inter_subset_left
   contMDiffOn_invFun := by
-    have hc : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ((⊤ : ℕ∞) : WithTop ℕ∞) ((↑) : ℂ → OnePoint ℂ) := by
-      simpa using ((contMDiff_coe (𝕜 := ℂ)).restrictScalars ℝ).of_le le_top
     have hs : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ((⊤ : ℕ∞) : WithTop ℕ∞)
         (OpenPartialHomeomorph.univBall (0 : ℂ) √(a / Real.pi)).symm
         (OpenPartialHomeomorph.univBall (0 : ℂ) √(a / Real.pi)).target := by
@@ -111,7 +108,7 @@ def areaDiscChart (a : ℝ) :
           (OpenPartialHomeomorph.univBall (0 : ℂ) √(a / Real.pi)).target := by
       rw [OpenPartialHomeomorph.trans_target]
       exact inter_subset_left
-    refine (hc.comp_contMDiffOn (hs.mono hsub)).congr fun y _ ↦ ?_
+    refine (contMDiff_coe_real.comp_contMDiffOn (hs.mono hsub)).congr fun y _ ↦ ?_
     simp [affineChart_symm_apply]
 
 /-- The disc chart is the radial map `OpenPartialHomeomorph.univBall 0 √(a / π)` read in the

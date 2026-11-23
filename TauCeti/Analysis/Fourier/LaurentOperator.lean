@@ -78,7 +78,7 @@ theorem inner_fourierBasis_multiplicationOperator_fourierLp (b : Lp ℂ 2 (haarA
     (m n : ℤ) :
     ⟪fourierBasis (T := T) m, Lp.multiplicationOperator (fourierLp (T := T) ∞ n) b⟫_ℂ =
       fourierCoeff b (m - n) := by
-  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply,
+  rw [inner_fourierBasis_left, Lp.multiplicationOperator_apply,
     fourierCoeff_fourierLp_smul]
 
 /-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`, sends

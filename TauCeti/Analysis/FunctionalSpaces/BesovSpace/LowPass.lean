@@ -75,6 +75,16 @@ theorem lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     u.lowPass (m + 1) = u.lowPass m + u.block m := by
   simp [lowPass_eq_sum, Finset.sum_range_succ]
 
+/-- **The low-frequency cut-offs of a single block.** If every block of `u` other than `Δₘ u`
+vanishes, then `S_n u = Δₘ u` for `n > m` and `S_n u = 0` for `n ≤ m`. -/
+theorem lowPass_eq_ite_of_block_eq_zero {u : BesovSpace F φ s p q} {m : ℕ}
+    (hu : ∀ k, k ≠ m → u.block k = 0) (n : ℕ) :
+    u.lowPass n = if m < n then u.block m else 0 := by
+  rw [lowPass_eq_sum]
+  split_ifs with hmn
+  · exact Finset.sum_eq_single_of_mem m (Finset.mem_range.2 hmn) fun k _ hk ↦ hu k hk
+  · exact Finset.sum_eq_zero fun k hk ↦ hu k (by rw [Finset.mem_range] at hk; omega)
+
 @[simp]
 theorem lowPass_zero (m : ℕ) : (0 : BesovSpace F φ s p q).lowPass m = 0 := by
   simp [lowPass_eq_sum]

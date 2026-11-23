@@ -35,6 +35,56 @@ public section
 
 noncomputable section
 
+open scoped Matrix.Norms.L2Operator
+
+namespace Matrix
+
+variable {𝕜 n : Type*} [Fintype n] [DecidableEq n]
+
+section
+
+variable [CommRing 𝕜]
+
+/-- The resolvent of the principal submatrix obtained by deleting row and column `i`.
+The inverse is totalized: the result is zero if the shifted minor has nonunit determinant. -/
+def minorResolvent (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
+    Matrix {j // j ≠ i} {j // j ≠ i} 𝕜 :=
+  (A.submatrix (↑) (↑) - z • 1)⁻¹
+
+/-- The minor resolvent is the totalized inverse of the shifted principal submatrix,
+which is zero when its determinant is not a unit. -/
+theorem minorResolvent_def (A : Matrix n n 𝕜) (i : n) (z : 𝕜) :
+    A.minorResolvent i z = (A.submatrix (↑) (↑) - z • 1)⁻¹ := by rw [minorResolvent]
+
+/-- If the shifted principal submatrix has unit determinant, it times its minor resolvent is
+the identity. -/
+theorem submatrix_sub_smul_one_mul_minorResolvent (A : Matrix n n 𝕜) (i : n) {z : 𝕜}
+    (h : IsUnit (A.submatrix ((↑) : {j // j ≠ i} → n) (↑) - z • 1).det) :
+    (A.submatrix (↑) (↑) - z • 1) * A.minorResolvent i z = 1 := by
+  rw [minorResolvent_def]
+  exact mul_nonsing_inv _ h
+
+/-- If the shifted principal submatrix has unit determinant, its minor resolvent times it is
+the identity. -/
+theorem minorResolvent_mul_submatrix_sub_smul_one (A : Matrix n n 𝕜) (i : n) {z : 𝕜}
+    (h : IsUnit (A.submatrix ((↑) : {j // j ≠ i} → n) (↑) - z • 1).det) :
+    A.minorResolvent i z * (A.submatrix (↑) (↑) - z • 1) = 1 := by
+  rw [minorResolvent_def]
+  exact nonsing_inv_mul _ h
+
+/-- The totalized minor resolvent is zero if the shifted principal submatrix has nonunit
+determinant. -/
+@[simp]
+theorem minorResolvent_eq_zero_of_not_isUnit_det (A : Matrix n n 𝕜) (i : n) {z : 𝕜}
+    (h : ¬IsUnit (A.submatrix ((↑) : {j // j ≠ i} → n) (↑) - z • 1).det) :
+    A.minorResolvent i z = 0 := by
+  rw [minorResolvent_def]
+  exact nonsing_inv_apply_not_isUnit _ h
+
+end
+
+end Matrix
+
 namespace Matrix.IsHermitian
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
@@ -42,14 +92,36 @@ variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
 include hA
 
+/-- At a nonreal parameter, the shifted Hermitian principal submatrix times its resolvent
+is the identity. -/
+@[simp]
+theorem submatrix_sub_smul_one_mul_minorResolvent {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
+    (A.submatrix (↑) (↑) - z • 1) * A.minorResolvent i z = 1 :=
+  Matrix.submatrix_sub_smul_one_mul_minorResolvent A i ((isUnit_iff_isUnit_det _).mp
+    ((hA.submatrix (Subtype.val : {j // j ≠ i} → n)).isUnit_sub_smul_one_of_im_ne_zero hz))
+
+/-- At a nonreal parameter, the Hermitian minor resolvent times the shifted principal submatrix
+is the identity. -/
+@[simp]
+theorem minorResolvent_mul_submatrix_sub_smul_one {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
+    A.minorResolvent i z * (A.submatrix (↑) (↑) - z • 1) = 1 :=
+  Matrix.minorResolvent_mul_submatrix_sub_smul_one A i ((isUnit_iff_isUnit_det _).mp
+    ((hA.submatrix (Subtype.val : {j // j ≠ i} → n)).isUnit_sub_smul_one_of_im_ne_zero hz))
+
+/-- The Euclidean operator norm of a Hermitian principal-minor resolvent is at most
+the reciprocal of the absolute imaginary part of the nonreal parameter. -/
+theorem l2_opNorm_minorResolvent_le {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
+    ‖A.minorResolvent i z‖ ≤ |RCLike.im z|⁻¹ := by
+  rw [minorResolvent_def]
+  exact (hA.submatrix (Subtype.val : {j // j ≠ i} → n)).l2_opNorm_inv_sub_smul_one_le hz
+
 /-- **Leave-one-out formula.** The reciprocal of a diagonal entry of the resolvent of a Hermitian
 matrix at a non-real point is the diagonal entry of `A - z • 1` minus the quadratic form of the
 resolvent of the principal submatrix away from `i` in the `i`-th column. -/
 theorem inv_inv_sub_smul_one_apply_self {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
     ((A - z • 1)⁻¹ i i)⁻¹ =
       A i i - z - star (fun a : {a // a ≠ i} ↦ A a i) ⬝ᵥ
-        (((A.submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) - z • 1)⁻¹ *ᵥ
-          fun a : {a // a ≠ i} ↦ A a i) := by
+        (A.minorResolvent i z *ᵥ fun a : {a // a ≠ i} ↦ A a i) := by
   have hB : (A.submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜).IsHermitian :=
     hA.submatrix _
   have hsub : ((A - z • 1).submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) =
@@ -66,7 +138,7 @@ theorem inv_inv_sub_smul_one_apply_self {z : 𝕜} (hz : RCLike.im z ≠ 0) (i :
   have hcol : (fun a : {a // a ≠ i} ↦ (A - z • 1) a i) = fun a : {a // a ≠ i} ↦ A a i := by
     ext a
     simp [a.property]
-  rw [hrow, hcol]
+  rw [hrow, hcol, minorResolvent_def]
   simp
 
 /-- **Leave-one-out formula.** The diagonal entry `R(z) i i` of the resolvent of a Hermitian matrix
@@ -74,8 +146,7 @@ at a non-real point equals `(A i i - z - aᵢᴴ (A⁽ⁱ⁾ - z • 1)⁻¹ a�
 theorem inv_sub_smul_one_apply_self_eq {z : 𝕜} (hz : RCLike.im z ≠ 0) (i : n) :
     (A - z • 1)⁻¹ i i =
       (A i i - z - star (fun a : {a // a ≠ i} ↦ A a i) ⬝ᵥ
-        (((A.submatrix (↑) (↑) : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜) - z • 1)⁻¹ *ᵥ
-          fun a : {a // a ≠ i} ↦ A a i))⁻¹ := by
+        (A.minorResolvent i z *ᵥ fun a : {a // a ≠ i} ↦ A a i))⁻¹ := by
   rw [← hA.inv_inv_sub_smul_one_apply_self hz i, inv_inv]
 
 end Matrix.IsHermitian
