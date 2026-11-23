@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.SouthPole
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.AreaDisc
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
@@ -27,7 +28,10 @@ the disc onto the Riemann sphere minus `∞` and pulls `a • ω_FS` back to `dx
 `z` to `(2 Re z, 2 Im z, 1 - |z|²) / (1 + |z|²)`. The latter pulls `σ` back to `4π ω_FS`
 (`OnePoint.mpullback_diffeomorphSphere_sphereVolumeForm`; the sign is `+` because the frame
 `(0, 0, 1), (1, 0, 0), (0, 1, 0)` is positively oriented), so the composite pulls `(a / 4π) σ` back
-to `dx ∧ dy` (`TauCeti.eval₂_mfderiv_discToSphere`).
+to `dx ∧ dy` (`TauCeti.eval₂_mfderiv_discToSphere`). The south pole `TauCeti.sphereSouthPole` and
+the equatorial isometry `TauCeti.complexIsometryOrthogonalSphereSouthPole` that set up
+`OnePoint.diffeomorphSphere` here come from
+`TauCeti.Analysis.InnerProductSpace.Euclidean.SouthPole`.
 
 This is the sphere factor of the compactification in the proof of Gromov's nonsqueezing theorem:
 a ball embedded symplectically in the cylinder `{z ∈ ℂⁿ | |z₀| < R}` is moved into
@@ -36,9 +40,6 @@ into `S²(a)`; the disc of radius `√(a / π) > R` contains it.
 
 ## Main definitions
 
-* `TauCeti.sphereSouthPole`: the south pole `(0, 0, -1)` of `S²`.
-* `TauCeti.complexIsometryOrthogonalSphereSouthPole`: the isometry `z ↦ (Re z, Im z, 0)` of `ℂ`
-  onto the equatorial plane.
 * `TauCeti.discToSphere`: the equal-area embedding of the disc of area `a` into `S²(a)`.
 
 ## Main results
@@ -71,46 +72,7 @@ local notation "S²" => sphere (0 : ℝ³) 1
 
 namespace TauCeti
 
-/-! ### The south pole and the equatorial plane -/
-
-/-- The south pole `(0, 0, -1)` of the unit sphere of `ℝ³`. -/
-def sphereSouthPole : S² :=
-  ⟨WithLp.toLp 2 ![0, 0, -1], by
-    rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Real.sqrt_eq_one]
-    simp [Fin.sum_univ_three]⟩
-
-/-- The south pole of `S²` is the vector `(0, 0, -1)` of `ℝ³`. -/
-@[simp]
-theorem coe_sphereSouthPole : (sphereSouthPole : ℝ³) = WithLp.toLp 2 ![0, 0, -1] :=
-  (rfl)
-
-/-- The linear isometry `z ↦ (Re z, Im z, 0)` of `ℂ` into the plane orthogonal to the south
-pole. -/
-private def complexIsometryOrthogonalSphereSouthPoleAux :
-    ℂ →ₗᵢ[ℝ] (ℝ ∙ (sphereSouthPole : ℝ³))ᗮ where
-  toFun z := ⟨WithLp.toLp 2 ![z.re, z.im, 0], by
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_right,
-      EuclideanSpace.inner_eq_star_dotProduct]
-    simp [dotProduct, Fin.sum_univ_three]⟩
-  map_add' z w := by ext i; fin_cases i <;> simp
-  map_smul' c z := by ext i; fin_cases i <;> simp
-  norm_map' z := by
-    change ‖(WithLp.toLp 2 ![z.re, z.im, 0] : ℝ³)‖ = ‖z‖
-    rw [EuclideanSpace.norm_eq, Complex.norm_def, Complex.normSq_apply]
-    simp [Fin.sum_univ_three, sq]
-
-/-- The isometry `z ↦ (Re z, Im z, 0)` of `ℂ` onto the equatorial plane of `S²`, the plane
-orthogonal to the south pole. -/
-def complexIsometryOrthogonalSphereSouthPole : ℂ ≃ₗᵢ[ℝ] (ℝ ∙ (sphereSouthPole : ℝ³))ᗮ :=
-  complexIsometryOrthogonalSphereSouthPoleAux.toLinearIsometryEquiv <| by
-    rw [Complex.finrank_real_complex, Submodule.finrank_orthogonal_span_singleton (n := 2)
-      (ne_zero_of_mem_unit_sphere sphereSouthPole)]
-
-/-- The isometry onto the equatorial plane is `z ↦ (Re z, Im z, 0)`. -/
-@[simp]
-theorem coe_complexIsometryOrthogonalSphereSouthPole_apply (z : ℂ) :
-    (complexIsometryOrthogonalSphereSouthPole z : ℝ³) = WithLp.toLp 2 ![z.re, z.im, 0] :=
-  (rfl)
+/-! ### The orientation of the south-pole frame -/
 
 /-- The frame `(-v, ι 1, ι i)`, for the south pole `v` and the isometry `ι` onto the equatorial
 plane, is positively oriented: the frame `(v, ι 1, ι i)` has volume `-1`. -/
