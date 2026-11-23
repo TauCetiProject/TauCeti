@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Convolution
 public import TauCeti.NumberTheory.Padics.Distribution.MulCoord
 import Mathlib.Algebra.Polynomial.Identities
+import TauCeti.Algebra.Module.NatInt
 
 /-!
 # The derivative of locally analytic functions and the transpose derivative of distributions
@@ -86,12 +87,6 @@ open scoped ZeroAtInfty
 namespace TauCeti
 
 variable {p : ℕ}
-
-/-- Multiplication by `pⁿ` is the same through `ℤ_p` and through any semiring `𝕜` acting on `E`. -/
-private theorem natCast_pow_smul_eq [Fact p.Prime] {E : Type*} [AddCommMonoid E] [Module ℤ_[p] E]
-    (𝕜 : Type*) [Semiring 𝕜] [Module 𝕜 E] (n : ℕ) (v : E) :
-    (p : ℤ_[p]) ^ n • v = ((p : 𝕜) ^ n) • v := by
-  rw [← Nat.cast_pow, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul]
 
 namespace AnalyticStage
 
@@ -299,7 +294,7 @@ theorem transition_derivative (c : AnalyticStage p h E) :
     transition 𝕜 (derivative 𝕜 c) = derivative 𝕜 (transition 𝕜 c) := by
   have hp : (p : 𝕜) ≠ 0 := NeZero.ne _
   rw [derivative_def, derivative_def, map_smul, discDerivative_transition,
-    ← pow_one (p : ℤ_[p]), natCast_pow_smul_eq 𝕜, smul_smul]
+    ← pow_one (p : ℤ_[p]), natCast_pow_smul_eq ℤ_[p] 𝕜, smul_smul]
   congr 1
   rw [pow_succ, pow_one, mul_inv, mul_assoc, inv_mul_cancel₀ hp, mul_one]
 
@@ -317,8 +312,8 @@ omit [CompleteSpace E] in
 theorem derivative_mulCoord (c : AnalyticStage p h E) :
     derivative 𝕜 (mulCoord 𝕜 c) = c + mulCoord 𝕜 (derivative 𝕜 c) := by
   have hp : ((p : 𝕜) ^ h) ≠ 0 := pow_ne_zero h (NeZero.ne _)
-  rw [derivative_def, derivative_def, discDerivative_mulCoord, natCast_pow_smul_eq 𝕜, smul_add,
-    inv_smul_smul₀ hp, map_smul]
+  rw [derivative_def, derivative_def, discDerivative_mulCoord, natCast_pow_smul_eq ℤ_[p] 𝕜,
+    smul_add, inv_smul_smul₀ hp, map_smul]
 
 end Derivative
 
@@ -388,7 +383,7 @@ theorem exists_norm_eval_sub_sub_smul_eval_derivative_le (f : LocallyAnalytic p 
     linear_combination -hd
   -- The scalar `d pʰ` acting on `p⁻ʰ v` is `d` acting on `v`.
   have hsmul (v : E) : (d * (p : ℤ_[p]) ^ h) • (((p : 𝕜) ^ h)⁻¹ • v) = d • v := by
-    rw [mul_smul, natCast_pow_smul_eq 𝕜, smul_inv_smul₀ hp𝕜]
+    rw [mul_smul, natCast_pow_smul_eq ℤ_[p] 𝕜, smul_inv_smul₀ hp𝕜]
   rw [← hd, hsmul, hy]
   refine (norm_eval_add_sub_sub_smul_eval_discDerivative_le 𝕜 c a w d).trans_eq ?_
   rw [norm_mul, mul_pow]
