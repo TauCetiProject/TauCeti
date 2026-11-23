@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
+public import TauCeti.Data.Finset.Finsupp
 public import TauCeti.RingTheory.GradedAlgebra.Basic
-import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # Finite generation of graded subalgebras with ideal contraction
@@ -41,12 +41,16 @@ itself a finite module over the base semiring.
 * `TauCeti.GradedAlgebra.exists_finset_adjoin_eq_top_and_mem_grade_ne_zero`: a finite-type
   semiring graded algebra is generated over its degree-zero part by finitely many homogeneous
   elements of nonzero degree.
+* `TauCeti.GradedAlgebra.span_weightedAntidiag_eq_gradedPiece`: explicit spanning set of monomials
+  of weighted degree `n` for each graded piece.
 * `TauCeti.GradedAlgebra.moduleFinite_gradedPiece_of_finiteType`: every graded piece of a
   finite-type `ℕ`-graded algebra with finite degree-zero part is finite over the base.
 * `TauCeti.GradedAlgebra.finiteType_gradeZero_left`: a graded algebra of finite type over `R` is
   of finite type over its degree-zero part.
 * `TauCeti.GradedAlgebra.finiteType_gradeZero`: the degree-zero part of a graded algebra of finite
   type over `R` is of finite type over `R`.
+* `TauCeti.GradedAlgebra.moduleFinite_gradeZero_of_mem_bot`: if the degree-zero part consists of
+  scalars from `R`, it is a finite `R`-module.
 
 ## References
 
@@ -150,7 +154,7 @@ theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (�
 /-- For an `ℕ`-graded commutative algebra generated over `ℬ 0` by a finite set `s` of
 positive-degree homogeneous elements with degrees `m : s → ℕ+`, the `n`-th graded piece `ℬ n`
 equals the `ℬ 0`-span of the monomials of weighted degree `n` in `s`. -/
-private theorem span_weightedAntidiag_eq_gradedPiece {A B : Type*} [CommSemiring A] [CommSemiring B]
+theorem span_weightedAntidiag_eq_gradedPiece {A B : Type*} [CommSemiring A] [CommSemiring B]
     [DecidableEq B] [Algebra A B] (ℬ : ℕ → Submodule A B) [GradedAlgebra ℬ] {s : Finset B}
     (hs : Algebra.adjoin (ℬ 0) (s : Set B) = ⊤) (m : s → ℕ+) (hm : ∀ y : s, (y : B) ∈ ℬ (m y))
     (n : ℕ) :
@@ -245,5 +249,16 @@ instance finiteType_gradeZero [AddCommMonoid ι] [PartialOrder ι] [CanonicallyO
     (GradedRing.projZeroRingHom'_surjective 𝒜)
 
 end GradeZero
+
+/-- If the degree-zero part of a graded algebra consists only of scalars from `R`, then it is a
+finite `R`-module. -/
+theorem moduleFinite_gradeZero_of_mem_bot {R A ι : Type*} [Zero ι] [CommSemiring R] [Semiring A]
+    [Algebra R A] (𝒜 : ι → Submodule R A) [SetLike.GradedOne 𝒜]
+    (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) : Module.Finite R (𝒜 0) := by
+  refine Module.Finite.of_surjective
+    ((Algebra.linearMap R A).codRestrict (𝒜 0) fun r ↦ SetLike.algebraMap_mem_graded 𝒜 r) ?_
+  rintro ⟨x, hx⟩
+  obtain ⟨r, rfl⟩ := Algebra.mem_bot.mp (h𝒜 x hx)
+  exact ⟨r, rfl⟩
 
 end TauCeti.GradedAlgebra

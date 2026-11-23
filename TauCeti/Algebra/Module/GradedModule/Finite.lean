@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Artinian.Ring
+public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import TauCeti.RingTheory.Artinian.FiniteLength
+import TauCeti.RingTheory.GradedAlgebra.FiniteType
 import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
@@ -28,8 +30,9 @@ generated `ℤ`-graded `B`-module (allowing generators of negative degree).
 * If every `ℬ i` is a finite `A`-module, then every `ℳ d` is a finite `A`-module
   (`TauCeti.GradedModule.moduleFinite_piece`), without any Noetherian hypothesis on `A`: each `ℳ d`
   is the finite sum of the images of `ℬ (d - deg g)` under right-multiplication by finitely many
-  homogeneous generators `g`. Over an Artinian ring `A`, every piece `ℳ d` therefore has finite
-  `A`-length (`TauCeti.GradedModule.length_piece_ne_top`).
+  homogeneous generators `g`. Combining this with finite piece size of finite-type `ℕ`-graded
+  algebras yields `TauCeti.GradedModule.gradedPiecesFinite`. Over an Artinian ring `A`, every
+  piece `ℳ d` therefore has finite `A`-length (`TauCeti.GradedModule.length_piece_ne_top`).
 
 ## Main results
 
@@ -42,6 +45,9 @@ generated `ℤ`-graded `B`-module (allowing generators of negative degree).
   an `ℕ`-graded semiring vanishes below some degree `d₀`.
 * `TauCeti.GradedModule.moduleFinite_piece`: every graded piece of a finitely generated `ℤ`-graded
   module over an `ℕ`-graded semiring with finite pieces is finite over the base.
+* `TauCeti.GradedModule.gradedPiecesFinite`: every graded piece of a finitely generated `ℤ`-graded
+  module over a finite-type `ℕ`-graded algebra with finite degree-zero part is finite over the
+  base, and the pieces vanish below some degree.
 * `TauCeti.GradedModule.moduleFinite_piece_mvPolynomial`: specialization to modules over
   `MvPolynomial σ A` with `σ` finite.
 * `TauCeti.GradedModule.exists_degree_ge_le_span_piece`: for a finitely generated `ℤ`-graded
@@ -182,6 +188,20 @@ theorem moduleFinite_piece {A B M : Type*} [Semiring A] [Semiring B] [Module A B
       · rw [decompose_smul_eq_zero_of_lt ℬ ℳ hgraded (by omega) (c p) (hGmem p.val p.property)]
         exact U.zero_mem
   exact Module.Finite.of_fg (hU_eq ▸ hU_fg)
+
+/-- **Graded piece finiteness.** Every graded piece of a finitely generated `ℤ`-graded module over
+a finite-type `ℕ`-graded algebra with finite degree-zero part is a finite `A`-module, and the
+pieces vanish below some degree `d₀`. -/
+theorem gradedPiecesFinite {A B M : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B]
+    (ℬ : ℕ → Submodule A B) [GradedAlgebra ℬ] [Algebra.FiniteType (ℬ 0) B]
+    [Module.Finite A (ℬ 0)] [AddCommMonoid M] [Module A M] [Module B M]
+    [IsScalarTower A B M] [Module.Finite B M] (ℳ : ℤ → Submodule A M)
+    [DirectSum.Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (b : B), b ∈ ℬ i → ∀ m ∈ ℳ j, b • m ∈ ℳ (j + i)) :
+    (∀ d, Module.Finite A (ℳ d)) ∧ ∃ d₀ : ℤ, ∀ d < d₀, ℳ d = ⊥ :=
+  ⟨moduleFinite_piece ℬ (TauCeti.GradedAlgebra.moduleFinite_gradedPiece_of_finiteType ℬ) ℳ
+      hgraded,
+    exists_forall_lt_piece_eq_bot ℬ ℳ hgraded⟩
 
 /-- Every graded piece of a finitely generated `ℤ`-graded module over `MvPolynomial σ A` (with
 finitely many variables `σ`) is a finite `A`-module. -/
