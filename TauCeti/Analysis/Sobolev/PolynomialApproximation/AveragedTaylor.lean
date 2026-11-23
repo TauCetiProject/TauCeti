@@ -93,8 +93,9 @@ does not reproduce `x ↦ (x i) ^ 2`, whereas `averagedTaylorPolynomial_toLp_eq_
   `TauCeti.averagedTaylorPolynomial_restrict_eq_integral_taylorPolynomial`,
   `TauCeti.averagedTaylorPolynomialLp_eq_integral_taylorPolynomial`,
   `TauCeti.averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial`: for an additive
-  Haar measure `μ`, a `C^m` compactly supported cutoff `φ`, and a representative `u` that is
-  `C^m` on `tsupport φ`, `Q^m f (x) = ∫ y, T^m_y u (x) * φ y ∂μ`.
+  Haar measure `μ`, a `C^m` compactly supported cutoff `φ` (with `tsupport φ ⊆ B` on
+  `μ.restrict B` and `tsupport φ ⊆ Ω` on `μ.restrict Ω` for the two restricted identities), and a
+  representative `u` that is `C^m` on `tsupport φ`, `Q^m f (x) = ∫ y, T^m_y u (x) * φ y ∂μ`.
 * `TauCeti.averagedTaylorPolynomial_toLp_eq_self`,
   `TauCeti.averagedTaylorPolynomialLp_toLp_eq_self`: for an additive Haar measure `μ` and a `C^m`
   compactly supported cutoff `φ` with `∫ y, φ y ∂μ = 1` supported in the integration domain
@@ -144,19 +145,6 @@ private theorem contDiff_kernelTestTerm {φ : EuclideanSpace ℝ ι → ℝ} {n 
   unfold kernelTestTerm
   exact (contDiff_prod fun l _ ↦
     contDiff_const.sub (EuclideanSpace.proj (𝕜 := ℝ) (I l)).contDiff).mul hφ
-
-omit [Fintype ι] in
-private theorem tsupport_kernelTestTerm_subset (φ : EuclideanSpace ℝ ι → ℝ)
-    (x : EuclideanSpace ℝ ι) {j : ℕ} (I : Fin j → ι) :
-    tsupport (kernelTestTerm φ x I) ⊆ tsupport φ := by
-  unfold kernelTestTerm
-  exact tsupport_mul_subset_right
-
-omit [Fintype ι] in
-private theorem hasCompactSupport_kernelTestTerm {φ : EuclideanSpace ℝ ι → ℝ}
-    (hsupp : HasCompactSupport φ) (x : EuclideanSpace ℝ ι) {j : ℕ} (I : Fin j → ι) :
-    HasCompactSupport (kernelTestTerm φ x I) :=
-  hsupp.of_isClosed_subset (isClosed_tsupport _) (tsupport_kernelTestTerm_subset φ x I)
 
 /-- Order-`j` weighted summand of `averagedTaylorKernel`:
 `((-1) ^ j / j!) * ∑ I : Fin j → ι, D_{e_{I 0}, …, e_{I (j - 1)}}`
@@ -229,11 +217,10 @@ theorem tsupport_averagedTaylorKernel_subset (φ : EuclideanSpace ℝ ι → ℝ
   refine closure_minimal (fun y hy ↦ by_contra fun hyφ ↦ Function.mem_support.mp hy ?_)
     (isClosed_tsupport φ)
   rw [averagedTaylorKernel_def]
-  unfold averagedTaylorKernelTerm
+  unfold averagedTaylorKernelTerm kernelTestTerm
   exact Finset.sum_eq_zero fun j _ ↦ mul_eq_zero_of_right _ (Finset.sum_eq_zero fun I _ ↦
     image_eq_zero_of_notMem_tsupport fun h ↦
-      hyφ ((tsupport_iteratedFDerivAlong_subset _ _).trans
-        (tsupport_kernelTestTerm_subset φ x I) h))
+      hyφ ((tsupport_iteratedFDerivAlong_subset _ _).trans tsupport_mul_subset_right h))
 
 /-- Compact support of `φ` passes to `y ↦ averagedTaylorKernel φ m x y` for every `x`. -/
 theorem hasCompactSupport_averagedTaylorKernel {φ : EuclideanSpace ℝ ι → ℝ}
@@ -499,12 +486,15 @@ private theorem integrable_mul_iteratedFDerivAlong_kernelTestTerm
     (I : Fin j → ι) :
     Integrable
       (fun y ↦ u y * iteratedFDerivAlong ℝ (coordDirections I) (kernelTestTerm φ x I) y) μ := by
+  unfold kernelTestTerm
+  have hcont : ContDiff ℝ m (fun z ↦ (∏ l : Fin j, (x (I l) - z (I l))) * φ z) :=
+    contDiff_kernelTestTerm hφ x I
   simpa only [smul_eq_mul] using
-    ((contDiff_kernelTestTerm hφ x I).iteratedFDerivAlong (m := 0) (coordDirections I)
+    (hcont.iteratedFDerivAlong (m := 0) (coordDirections I)
       (by rw [length_coordDirections, zero_add]; exact_mod_cast hj)).continuous
       |>.integrable_smul_of_continuousOn
-      ((hasCompactSupport_kernelTestTerm hsupp x I).iteratedFDerivAlong _)
-      ((tsupport_iteratedFDerivAlong_subset _ _).trans (tsupport_kernelTestTerm_subset φ x I))
+      (hsupp.mul_left.iteratedFDerivAlong _)
+      ((tsupport_iteratedFDerivAlong_subset _ _).trans tsupport_mul_subset_right)
       fun y hy ↦ (hu y hy).continuousAt.continuousWithinAt
 
 private theorem integrable_iteratedFDeriv_mul_kernelTestTerm
@@ -515,13 +505,14 @@ private theorem integrable_iteratedFDeriv_mul_kernelTestTerm
     Integrable (fun y ↦
       iteratedFDeriv ℝ j u y (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) *
         kernelTestTerm φ x I y) μ := by
+  unfold kernelTestTerm
   have ha : ContinuousOn (fun y ↦
       iteratedFDeriv ℝ j u y (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l))) (tsupport φ) :=
     fun y hy ↦ ((continuous_eval_const _).continuousAt.comp
       ((hu y hy).continuousAt_iteratedFDeriv (by exact_mod_cast hj))).continuousWithinAt
-  simpa only [smul_eq_mul] using
+  simpa only [smul_eq_mul, kernelTestTerm] using
     (contDiff_kernelTestTerm hφ x I).continuous.integrable_smul_of_continuousOn
-      (hasCompactSupport_kernelTestTerm hsupp x I) (tsupport_kernelTestTerm_subset φ x I) ha
+      hsupp.mul_left tsupport_mul_subset_right ha
 
 /-- Single-`(j, I)` integration-by-parts identity moving `coordDirections I` from
 `kernelTestTerm φ x I` onto `u` and identifying the reversed directional derivative with
@@ -536,25 +527,28 @@ private theorem averagedTaylor_ibp_term
     (j.factorial : ℝ)⁻¹ * ∫ y,
       iteratedFDeriv ℝ j u y (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) *
         kernelTestTerm φ x I y ∂μ := by
+  unfold kernelTestTerm
   set b := EuclideanSpace.basisFun ι ℝ
   have hibp := integral_mul_iteratedFDerivAlong_eq (μ := μ) (coordDirections I)
-    (f := u) (g := kernelTestTerm φ x I)
+    (f := u) (g := fun z ↦ (∏ l : Fin j, (x (I l) - z (I l))) * φ z)
     (fun y hy ↦ by
       rw [length_coordDirections]
-      exact (hu y (tsupport_kernelTestTerm_subset φ x I hy)).of_le (by exact_mod_cast hj))
+      exact (hu y (tsupport_mul_subset_right hy)).of_le (by exact_mod_cast hj))
     ((contDiff_kernelTestTerm hφ x I).of_le
       (by rw [length_coordDirections]; exact_mod_cast hj))
-    (hasCompactSupport_kernelTestTerm hsupp x I)
+    hsupp.mul_left
   rw [length_coordDirections] at hibp
   have hpt : (fun y ↦
-      iteratedFDerivAlong ℝ (coordDirections I).reverse u y * kernelTestTerm φ x I y) =
-      fun y ↦ iteratedFDeriv ℝ j u y (fun l ↦ b (I l)) * kernelTestTerm φ x I y := by
+      iteratedFDerivAlong ℝ (coordDirections I).reverse u y *
+        ((∏ l : Fin j, (x (I l) - y (I l))) * φ y)) =
+      fun y ↦ iteratedFDeriv ℝ j u y (fun l ↦ b (I l)) *
+        ((∏ l : Fin j, (x (I l) - y (I l))) * φ y) := by
     ext y; by_cases hy : y ∈ tsupport φ
     · have huy : ContDiffAt ℝ j u y := (hu y hy).of_le (by exact_mod_cast hj)
       rw [(List.reverse_perm (coordDirections I)).iteratedFDerivAlong_eq_of_contDiffAt huy
           (by simp [List.length_reverse, length_coordDirections])]
       simp only [coordDirections, huy.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl, b]
-    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (tsupport_kernelTestTerm_subset φ x I h)]
+    · simp [image_eq_zero_of_notMem_tsupport hy]
   rw [hibp, hpt, ← mul_assoc, div_mul_eq_mul_div, ← mul_pow]; norm_num
 
 /-- Expanding `∫ y, u y * averagedTaylorKernel φ m x y ∂μ` into its finite `(j, I)` sum of
