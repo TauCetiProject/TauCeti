@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
@@ -40,6 +41,8 @@ exact form of the bounded-overlap count.
 * `TauCeti.lintegral_eLpNorm_restrict_ball_rpow`: its form for `Lᵖ` seminorms.
 * `TauCeti.eLpNorm_le_of_ae_eLpNorm_restrict_ball_le`: local estimates on balls of one radius give
   a global estimate.
+* `TauCeti.lintegral_rpow_le_of_forall_setLAverage_rpow_le`: the same for local reverse Hölder
+  inequalities, whose right-hand side is a power of a mean rather than a mean.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: the same for local estimates by two
   functions on concentric balls of radii `r` and `2 r`, with the explicit constant `2 ^ (d + 1)`.
 -/
@@ -49,7 +52,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Metric Module
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -135,6 +138,75 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le (hp0 : p ≠ 0) (hp : p ≠ �
     _ = (μ (ball (0 : E) R) / μ (ball (0 : E) r)) ^ p.toReal⁻¹ * eLpNorm h p μ := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hq.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hq.ne', ENNReal.rpow_one]
+
+/-- **Global estimates from local reverse Hölder inequalities on balls of one radius.** Let
+`0 < t ≤ p` and `0 < r`, and let `g`, `k` be nonnegative functions such that at every centre `y`
+
+`⨍_{B(y, r/2)} g^p ≤ C ((⨍_{B(y, r)} g^t)^(p/t) + ⨍_{B(y, r)} k^p)`.
+
+Then `∫ g^p ≤ C (μ (B(0, r))^(1 - p/t) (∫ g^t)^(p/t) + ∫ k^p)`. This turns the local higher
+integrability given by Gehring's lemma into a global estimate. -/
+theorem lintegral_rpow_le_of_forall_setLAverage_rpow_le {g k : E → ℝ≥0∞} (hg : AEMeasurable g μ)
+    (hk : AEMeasurable k μ) {t p r : ℝ} (ht : 0 < t) (htp : t ≤ p) (hr : 0 < r) {C : ℝ≥0}
+    (hloc : ∀ y, ⨍⁻ x in ball y (r / 2), g x ^ p ∂μ ≤
+      C * ((⨍⁻ x in ball y r, g x ^ t ∂μ) ^ (p / t) + ⨍⁻ x in ball y r, k x ^ p ∂μ)) :
+    ∫⁻ x, g x ^ p ∂μ ≤
+      C * ((μ (ball (0 : E) r))⁻¹ ^ (p / t - 1) * (∫⁻ x, g x ^ t ∂μ) ^ (p / t) +
+        ∫⁻ x, k x ^ p ∂μ) := by
+  set m := μ (ball (0 : E) (r / 2))
+  set M := μ (ball (0 : E) r)
+  set G := ∫⁻ x, g x ^ t ∂μ
+  set e := p / t - 1 with he_def
+  have he : 0 ≤ e := by rw [he_def, sub_nonneg, le_div_iff₀ ht]; linarith
+  have hpt : p / t = e + 1 := by rw [he_def]; ring
+  have hmtop : m ≠ ∞ := measure_ball_lt_top.ne
+  have hMM : M * M⁻¹ = 1 := ENNReal.mul_inv_cancel (measure_ball_pos μ 0 hr).ne'
+    measure_ball_lt_top.ne
+  -- On each ball, write the means as integrals and split `(⨍ g^t)^(p/t)` as
+  -- `(⨍ g^t)^e · ⨍ g^t`, the first factor bounded through `G`. What remains is linear in `g^t`
+  -- and in `k^p`, so it integrates over the centres.
+  have hloc' : ∀ y, ∫⁻ x in ball y (r / 2), g x ^ p ∂μ ≤
+      m * C * ∫⁻ x in ball y r, ((M⁻¹ * G) ^ e * M⁻¹ * g x ^ t + M⁻¹ * k x ^ p) ∂μ := fun y => by
+    have hA : ∫⁻ x in ball y r, g x ^ t ∂μ ≤ G := setLIntegral_le_lintegral _ _
+    have hmy : μ (ball y (r / 2)) = m := Measure.addHaar_ball_center _ _ _
+    have hMy : μ (ball y r) = M := Measure.addHaar_ball_center _ _ _
+    calc ∫⁻ x in ball y (r / 2), g x ^ p ∂μ = m * ⨍⁻ x in ball y (r / 2), g x ^ p ∂μ := by
+          rw [← hmy, measure_mul_setLAverage _ measure_ball_lt_top.ne]
+      _ ≤ m * (C * ((⨍⁻ x in ball y r, g x ^ t ∂μ) ^ (p / t) + ⨍⁻ x in ball y r, k x ^ p ∂μ)) :=
+          mul_le_mul_of_nonneg_left (hloc y) zero_le
+      _ = m * C * ((M⁻¹ * ∫⁻ x in ball y r, g x ^ t ∂μ) ^ e *
+            (M⁻¹ * ∫⁻ x in ball y r, g x ^ t ∂μ) + M⁻¹ * ∫⁻ x in ball y r, k x ^ p ∂μ) := by
+          rw [setLAverage_eq, setLAverage_eq, hMy, hpt,
+            ENNReal.rpow_add_of_nonneg _ _ he zero_le_one, ENNReal.rpow_one,
+            ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul, mul_assoc]
+      _ ≤ m * C * ((M⁻¹ * G) ^ e * (M⁻¹ * ∫⁻ x in ball y r, g x ^ t ∂μ) +
+            M⁻¹ * ∫⁻ x in ball y r, k x ^ p ∂μ) := by gcongr
+      _ = m * C * ∫⁻ x in ball y r, ((M⁻¹ * G) ^ e * M⁻¹ * g x ^ t + M⁻¹ * k x ^ p) ∂μ := by
+          rw [lintegral_add_left' (((hg.pow_const _).const_mul _).restrict),
+            lintegral_const_mul'' _ (hg.pow_const _).restrict,
+            lintegral_const_mul'' _ (hk.pow_const _).restrict, mul_assoc _ M⁻¹]
+  -- Integrate over all centres `y` and cancel `m`.
+  have hint : ∫⁻ x, ((M⁻¹ * G) ^ e * M⁻¹ * g x ^ t + M⁻¹ * k x ^ p) ∂μ =
+      (M⁻¹ * G) ^ e * M⁻¹ * G + M⁻¹ * ∫⁻ x, k x ^ p ∂μ := by
+    rw [lintegral_add_left' ((hg.pow_const _).const_mul _),
+      lintegral_const_mul'' _ (hg.pow_const _), lintegral_const_mul'' _ (hk.pow_const _)]
+  have key : m * ∫⁻ x, g x ^ p ∂μ ≤ m * (C * ((M⁻¹ * G) ^ e * G + ∫⁻ x, k x ^ p ∂μ)) :=
+    calc m * ∫⁻ x, g x ^ p ∂μ = ∫⁻ y, ∫⁻ x in ball y (r / 2), g x ^ p ∂μ ∂μ :=
+          (lintegral_setLIntegral_ball (hg.pow_const _) _).symm
+      _ ≤ ∫⁻ y, m * C * ∫⁻ x in ball y r,
+            ((M⁻¹ * G) ^ e * M⁻¹ * g x ^ t + M⁻¹ * k x ^ p) ∂μ ∂μ := lintegral_mono hloc'
+      _ = m * C * ((M⁻¹ * G) ^ e * G * (M * M⁻¹) + (M * M⁻¹) * ∫⁻ x, k x ^ p ∂μ) := by
+          rw [lintegral_const_mul' _ _ (ENNReal.mul_ne_top hmtop ENNReal.coe_ne_top),
+            lintegral_setLIntegral_ball (G := fun x =>
+              (M⁻¹ * G) ^ e * M⁻¹ * g x ^ t + M⁻¹ * k x ^ p)
+              (((hg.pow_const _).const_mul _).add ((hk.pow_const _).const_mul _)), hint]
+          ring
+      _ = m * (C * ((M⁻¹ * G) ^ e * G + ∫⁻ x, k x ^ p ∂μ)) := by rw [hMM]; ring
+  calc ∫⁻ x, g x ^ p ∂μ ≤ C * ((M⁻¹ * G) ^ e * G + ∫⁻ x, k x ^ p ∂μ) :=
+        (ENNReal.mul_le_mul_iff_right (measure_ball_pos μ 0 (by positivity)).ne' hmtop).1 key
+    _ = C * (M⁻¹ ^ e * G ^ (p / t) + ∫⁻ x, k x ^ p ∂μ) := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ he, hpt, ENNReal.rpow_add_of_nonneg _ _ he zero_le_one,
+          ENNReal.rpow_one, mul_assoc]
 
 section FiniteDimensional
 

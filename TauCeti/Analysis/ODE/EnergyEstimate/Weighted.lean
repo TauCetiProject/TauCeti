@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.ODE.Gronwall
@@ -92,8 +93,7 @@ private theorem squareIntegrableSolutions_sub_smul_id_and_neg_adjoint (hA : Cont
   set C : ℝ → E →L[ℝ] E := fun s ↦ -ContinuousLinearMap.adjoint (A s)
   set C' : ℝ → E →L[ℝ] E := fun s ↦ -ContinuousLinearMap.adjoint (A s) + w' s • I
   have hB : Continuous B := hA.sub (hw'.smul continuous_const)
-  have hC : Continuous C :=
-    ((ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous.comp hA).neg
+  have hC : Continuous C := hA.clm_adjoint.neg
   have hC' : Continuous C' := hC.add (hw'.smul continuous_const)
   have hBbot : Tendsto B atBot (𝓝 (Aminus - δminus • I)) := hbot.sub (hw'bot.smul_const I)
   have hBtop : Tendsto B atTop (𝓝 (Aplus - δplus • I)) := htop.sub (hw'top.smul_const I)
@@ -217,8 +217,7 @@ theorem exists_forall_norm_le_mul_exp_neg (hA : Continuous A)
   -- The weighted solution is bounded, since `B` is.
   obtain ⟨K, hK⟩ := exists_forall_norm_le_of_tendsto hB (hbot.sub (hw'bot.smul_const I))
     (htop.sub (hw'top.smul_const I))
-  have hK₀ : 0 ≤ K := (norm_nonneg _).trans (hK 0)
-  have hbound := norm_sq_le_exp_mul_integral_norm_sq hK₀ hu
+  have hbound := norm_sq_le_exp_mul_integral_norm_sq hu
     (fun s ↦ by
       rw [norm_neg]
       exact ((B s).le_opNorm (u s)).trans (by gcongr; exact hK s)) hu2

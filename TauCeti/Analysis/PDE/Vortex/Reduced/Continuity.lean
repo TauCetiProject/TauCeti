@@ -95,6 +95,9 @@ not treated here.
   `TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`: under the hypotheses of
   `TauCeti.Vortex.tendsto_reducedMinimizer`, the smooth reduced solutions and their derivatives
   converge uniformly on the plane.
+* `TauCeti.Vortex.exists_abs_reducedSolution_le`,
+  `TauCeti.Vortex.exists_norm_fderiv_reducedSolution_le`: the smooth reduced solution and its
+  derivative are bounded on the plane.
 * `TauCeti.Vortex.continuous_ofFun_reducedSolution`,
   `TauCeti.Vortex.continuous_ofFun_fderiv_reducedSolution`: the smooth reduced solutions and their
   derivatives are continuous, for the topology of uniform convergence on the plane, on families of
@@ -347,31 +350,11 @@ private theorem sobolevReducedFunctional_eq_realFunctional {P : Polynomial ℂ}
   rw [potential_def] at hu
   rw [sobolevReducedFunctional_eq_coe hu, realFunctional_def, potential_def, linearCoeff_def]
 
-/-- Where `u ≤ M`, the potential is at most `2 exp (2M) u²`. -/
-private theorem potential_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2} {M : ℝ}
-    (hM : 0 ≤ M) {z : ℂ} (hz : W1p.value u z ≤ M) :
-    potential P u z ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-  have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
-    (div_le_one (by positivity)).2 (by linarith)
-  rw [potential_def]
-  calc _ ≤ 1 * (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
-        mul_le_mul_of_nonneg_right h1 (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-    _ ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-      rw [one_mul]; exact Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM hz
-
 /-- A function of `H¹(ℂ)` bounded above has integrable potential. -/
 private theorem integrable_potential {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
     {M : ℝ} (hM : 0 ≤ M) (hu : ∀ᵐ z, W1p.value u z ≤ M) : Integrable (potential P u) := by
-  have hnonneg (z : ℂ) : 0 ≤ potential P u z := by
-    rw [potential_def]
-    exact norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u) z
-  refine Integrable.mono' (((W1p.memLp_value u).integrable_sq).const_mul (2 * Real.exp (2 * M)))
-    (by
-      rw [potential_def]
-      exact aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u) ?_
-  filter_upwards [hu] with z hz
-  rw [Real.norm_of_nonneg (hnonneg z)]
-  exact potential_le hM hz
+  rw [potential_def]
+  exact integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
 
 /-- If the weights `h` of `P` and `Q` differ by at most `ε`, then for `u ≤ M` the potentials
 differ by at most `2 ε exp (2M) ‖u‖₂²`. -/
@@ -833,8 +816,38 @@ private theorem laplacian_reducedSolution_bounds {P : Polynomial ℂ} (hm : 0 < 
   have he0 := mul_nonneg (Real.exp_pos (2 * reducedSolution P z)).le h0
   constructor <;> linarith [hG z]
 
-/-- The `L²` distance of two reduced solutions is at most the `H¹` distance of the minimizers. -/
-private theorem integral_sub_sq_le_norm_sub_sq {P Q : Polynomial ℂ} (hP : 0 < P.natDegree)
+/-- The reduced solution is bounded, since it is continuous and vanishes at infinity. -/
+theorem exists_abs_reducedSolution_le (P : Polynomial ℂ) :
+    ∃ B, ∀ z, |reducedSolution P z| ≤ B := by
+  let f : ZeroAtInftyContinuousMap ℂ ℝ :=
+    ⟨⟨reducedSolution P, (contDiff_reducedSolution P).continuous⟩,
+      tendsto_reducedSolution_cocompact P⟩
+  exact ⟨‖f.toBCF‖, fun z ↦ f.toBCF.norm_coe_le_norm z⟩
+
+/-- The derivative of the reduced solution is bounded, by the interior gradient estimate. -/
+theorem exists_norm_fderiv_reducedSolution_le (P : Polynomial ℂ) :
+    ∃ D, ∀ z, ‖fderiv ℝ (reducedSolution P) z‖ ≤ D := by
+  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
+  · exact ⟨0, fun z ↦ by simp [reducedSolution_eq_zero_of_natDegree_eq_zero hm]⟩
+  obtain ⟨B, hB⟩ := exists_abs_reducedSolution_le P
+  obtain ⟨G, hG⟩ := P.exists_forall_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_le
+  have hG' (z : ℂ) : 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ 2 * G := by
+    rw [mul_div_assoc]
+    exact mul_le_mul_of_nonneg_left (hG z) zero_le_two
+  have hG0 : 0 ≤ G := le_trans (by positivity) (hG 0)
+  have hK (y : ℂ) : |Δ (reducedSolution P) y| ≤ Real.exp (2 * B) / 8 + 2 * G + 1 / 8 := by
+    obtain ⟨h₁, h₂⟩ := laplacian_reducedSolution_bounds hm hB hG' y
+    rw [abs_le]
+    constructor <;> linarith [Real.exp_pos (2 * B)]
+  refine ⟨8 * B / 1 + 340 * (Real.exp (2 * B) / 8 + 2 * G + 1 / 8) * 1, fun z ↦ ?_⟩
+  exact norm_fderiv_le_of_abs_le_of_abs_laplacian_le
+    (fun y _ ↦ ((contDiff_reducedSolution P).of_le (by simp)).contDiffAt) one_pos
+    (fun y _ ↦ hB y) fun y _ ↦ hK y
+
+/-- **The `L²` distance of two reduced solutions** is at most the `H¹` distance of the
+minimizers of Taubes's functional: for polynomials `P` and `Q` of positive degree,
+`∫ (w_P - w_Q)² ≤ ‖reducedMinimizer P - reducedMinimizer Q‖²`. -/
+theorem integral_reducedSolution_sub_sq_le_norm_sub_sq {P Q : Polynomial ℂ} (hP : 0 < P.natDegree)
     (hQ : 0 < Q.natDegree) :
     ∫ z, (reducedSolution P z - reducedSolution Q z) ^ 2 ≤
       ‖reducedMinimizer P - reducedMinimizer Q‖ ^ 2 := by
@@ -866,7 +879,7 @@ private theorem exists_eventually_abs_laplacian_sub_le_and_tendsto_integral_sq {
   have hconv := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_reducedMinimizer hQ hdeg hcoeff)
   have hint : ∀ᶠ i in l, ∫ z, (reducedSolution (P i) z - reducedSolution Q z) ^ 2 ≤
       ‖reducedMinimizer (P i) - reducedMinimizer Q‖ ^ 2 :=
-    hev.mono fun i hi ↦ integral_sub_sq_le_norm_sub_sq hi.natDegree_pos hQ
+    hev.mono fun i hi ↦ integral_reducedSolution_sub_sq_le_norm_sub_sq hi.natDegree_pos hQ
   refine ⟨?_, squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun z ↦ sq_nonneg _)
     hint (by simpa using hconv.pow 2)⟩
   -- Uniform sup bounds: the minimizers of `P i` are eventually `L²`-close to that of `Q`.
