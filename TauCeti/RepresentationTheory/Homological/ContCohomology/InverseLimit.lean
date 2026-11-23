@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Limits
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 
 /-!
 # Continuous cochains into inverse limits
