@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Escape
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Minimization
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.MFDeriv.Inner
 
@@ -40,8 +41,9 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 * `edist_riemannianExp_eq`: `exp_p` preserves the distance from the centre of a normal ball, and
   `dist_riemannianExp_eq` its version for an ordinary metric. The `_of_mem_ball` variants use only
   open-ball containment.
-* `pathELength_riemannianExp_smul_eq_edist`: the radial geodesic segment realizes the distance
-  between its endpoints.
+* `pathELength_riemannianExp_smul_eq_edist` and
+  `pathELength_riemannianExp_smul_riemannianLog_of_mem_ball`: the radial geodesic segment realizes
+  the distance between its endpoints.
 * `edist_eq_enorm_riemannianLog` and `dist_eq_norm_riemannianLog`: the distance from `p` is the
   norm of the logarithm, for extended and ordinary metrics. Their `_of_mem_ball` variants
   require only open-ball containment.
@@ -58,6 +60,11 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
   `mgradient_toReal_edist_sq`, `mvfderiv_dist_sq_apply`, and `mgradient_dist_sq`: the differential
   and gradient of the squared distance at a point `q` in a normal ball about `p` are expressed via
   the reversed logarithm `-2 • log_q p`.
+* `contMDiffOn_dist` and `contMDiffAt_dist`: the distance is smooth off the centre.
+* `mvfderiv_dist_sq_riemannianExp`: the squared-distance differential is dual to twice the
+  radial velocity.
+* `mgradient_dist_riemannianExp`: the distance gradient is the unit radial velocity.
+* `norm_mgradient_dist`: the distance gradient has unit norm off the centre.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
 
@@ -65,6 +72,7 @@ In the namespace `TauCeti.Manifold`:
 
 * `contMDiffAt_dist_sq_self`: squared distance is smooth at the centre.
 * `mvfderiv_dist_sq_self` and `mgradient_dist_sq_self`: its differential and gradient vanish there.
+* `mgradient_dist_self`: the distance gradient vanishes at the centre.
 * `exists_dist_riemannianExp_eq_dist_sub`: a sufficiently small geodesic sphere about `x` has a
   point whose distance to any `q` decreases by the radius.
 
@@ -80,13 +88,13 @@ In the namespace `TauCeti.Manifold`:
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §3, Proposition 3.6 and its
   corollary, and Ch. 7, §2, the proof of Theorem 2.8.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 6, Proposition 6.11 and
-  Corollary 6.13.
+  Corollary 6.13, and the Gauss-lemma distance-gradient formula in Chapter 6.
 -/
 
 public section
 
-open Bundle Manifold Metric Set
-open scoped ContDiff ENNReal Manifold Topology
+open Bundle Filter Manifold Metric Set
+open scoped ContDiff ENNReal InnerProductSpace Manifold Topology
 
 noncomputable section
 
@@ -265,6 +273,17 @@ theorem pathELength_riemannianExp_smul_eq_edist_of_mem_ball
       edist p (riemannianExp I M p v) := by
   rw [pathELength_riemannianExp_smul_zero_one h (hU hv),
     h.edist_riemannianExp_eq_of_mem_ball hU hv]
+
+/-- On an open normal ball, the radial geodesic segment `t ↦ exp_p (t • log_p q)` realizes the
+distance from `p` to `q`. -/
+theorem pathELength_riemannianExp_smul_riemannianLog_of_mem_ball
+    (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U)
+    (hq : q ∈ riemannianExp I M p '' Metric.ball 0 r) :
+    pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • riemannianLog I M p U q)) 0 1 =
+      edist p q := by
+  obtain ⟨v, hv, rfl⟩ := hq
+  rw [h.riemannianLog_riemannianExp (hU hv),
+    h.pathELength_riemannianExp_smul_eq_edist_of_mem_ball hU hv]
 
 /-- On a normal ball the distance from the centre is the norm of the Riemannian logarithm. -/
 theorem edist_eq_enorm_riemannianLog (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U)
@@ -555,6 +574,142 @@ theorem IsNormalDomain.dist_riemannianExp_eq_of_mem_ball (h : IsNormalDomain I M
     (hU : Metric.ball 0 r ⊆ U) (hv : v ∈ Metric.ball 0 r) :
     dist p (riemannianExp I M p v) = ‖v‖ := by
   rw [dist_edist, h.edist_riemannianExp_eq_of_mem_ball hU hv, toReal_eNorm]
+
+/-- The gradient of the distance from `p` vanishes at `p`: the distance is not differentiable
+there unless the tangent space at `p` is trivial. -/
+@[simp] theorem mgradient_dist_self (p : M) : mgradient I (fun x ↦ dist p x) p = 0 := by
+  by_contra hne
+  have hd : MDifferentiableAt I 𝓘(ℝ) (fun x ↦ dist p x) p := by
+    by_contra hnd
+    exact hne (mgradient_eq_zero_iff.2
+      (by simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hnd]))
+  set w := mgradient I (fun x ↦ dist p x) p
+  obtain ⟨r, hr, h⟩ := exists_isNormalDomain_ball (I := I) p
+  have hw : 0 < ‖w‖ := norm_pos_iff.2 hne
+  have habs : (fun t : ℝ ↦ dist p (riemannianExp I M p (t • w))) =ᶠ[𝓝 0]
+      fun t ↦ |t| * ‖w‖ := by
+    have hmem : ∀ᶠ t : ℝ in 𝓝 0, t • w ∈ Metric.ball 0 r :=
+      ((continuous_id.smul continuous_const).tendsto' 0 0 (zero_smul ℝ w)).eventually
+        (isOpen_ball.mem_nhds (mem_ball_self hr))
+    filter_upwards [hmem] with t ht
+    rw [h.dist_riemannianExp_eq_of_mem_ball subset_rfl ht, norm_smul, Real.norm_eq_abs]
+  have hcomp : DifferentiableAt ℝ (fun t : ℝ ↦ dist p (riemannianExp I M p (t • w))) 0 := by
+    have hexp := (contMDiffAt_riemannianExp_smul_zero p w).mdifferentiableAt (by simp)
+    have hd' : MDifferentiableAt I 𝓘(ℝ) (fun x ↦ dist p x)
+        (riemannianExp I M p ((0 : ℝ) • w)) := by
+      rwa [zero_smul, riemannianExp_zero]
+    exact mdifferentiableAt_iff_differentiableAt.1 (hd'.comp 0 hexp)
+  have hmul : DifferentiableAt ℝ (fun t : ℝ ↦ |t| * ‖w‖ * ‖w‖⁻¹) 0 :=
+    (habs.differentiableAt_iff.1 hcomp).mul_const _
+  simp only [mul_assoc, mul_inv_cancel₀ hw.ne', mul_one] at hmul
+  exact not_differentiableAt_abs_zero hmul
+
+namespace IsNormalDomain
+
+/-- The distance from the centre is smooth on the punctured metric normal ball. -/
+theorem contMDiffOn_dist (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) :
+    ContMDiffOn I 𝓘(ℝ) ∞ (fun x ↦ dist p x) (Metric.ball p r \ {p}) := by
+  intro q hq
+  have hq' : q ∈ riemannianExp I M p '' U := by
+    apply image_mono hU
+    rw [h.image_riemannianExp_ball_eq_ball hU]
+    exact hq.1
+  have hlog := h.contMDiffOn_riemannianLog.contMDiffAt (h.isOpen_image.mem_nhds hq')
+  have hzero : riemannianLog I M p U q ≠ 0 := by
+    apply norm_ne_zero_iff.1
+    rw [← h.dist_eq_norm_riemannianLog_of_mem_ball hU hq.1]
+    exact dist_ne_zero.2 (Ne.symm hq.2)
+  apply ContMDiffAt.contMDiffWithinAt
+  apply ((contDiffAt_norm ℝ hzero).contMDiffAt.comp q hlog).congr_of_eventuallyEq
+  filter_upwards [isOpen_ball.mem_nhds hq.1] with x hx
+  exact h.dist_eq_norm_riemannianLog_of_mem_ball hU hx
+
+/-- The distance from the centre is smooth at each noncentral point of a metric normal ball. -/
+theorem contMDiffAt_dist (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U)
+    (hq : q ∈ Metric.ball p r) (hne : q ≠ p) :
+    ContMDiffAt I 𝓘(ℝ) ∞ (fun x ↦ dist p x) q :=
+  (h.contMDiffOn_dist hU).contMDiffAt
+    ((isOpen_ball.sdiff isClosed_singleton).mem_nhds ⟨hq, hne⟩)
+
+/-- The differential of the squared distance from the centre of a metric normal ball at
+`exp_p v` is dual to twice the radial velocity `d(exp_p)_v v`. -/
+theorem mvfderiv_dist_sq_riemannianExp (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) {v : TangentSpace I p} (hv : v ∈ Metric.ball 0 r)
+    (w : TangentSpace I (riemannianExp I M p v)) :
+    mvfderiv I (fun x ↦ dist p x ^ 2) (riemannianExp I M p v) w =
+      2 * ⟪mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v, w⟫_ℝ := by
+  have hvU := hU hv
+  have hq : riemannianExp I M p v ∈ Metric.ball p r :=
+    h.image_riemannianExp_ball_eq_ball hU ▸ mem_image_of_mem _ hv
+  have heq : (fun x ↦ dist p x ^ 2) =ᶠ[𝓝 (riemannianExp I M p v)]
+      (fun x ↦ ‖riemannianLog I M p U x‖ ^ 2) := by
+    filter_upwards [isOpen_ball.mem_nhds hq] with x hx
+    rw [h.dist_eq_norm_riemannianLog_of_mem_ball hU hx]
+  rw [heq.mvfderiv_eq]
+  have hi := DFunLike.congr_fun (h.mfderiv_riemannianExp_comp_mfderiv_riemannianLog hvU) w
+  have hg := inner_mfderiv_riemannianExp_radial (I := I) (M := M) (p := p) (v := v)
+    (h.subset_expDomain hvU)
+    (w := mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U)
+      (riemannianExp I M p v) w)
+  -- The model-space tangent at `v` is definitionally `TangentSpace I p`; `change` exposes
+  -- this identification so rewriting can match the applied derivative in the Gauss lemma.
+  change mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v
+    (mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U)
+      (riemannianExp I M p v) w) = w at hi
+  rw [hi] at hg
+  rw [mvfderiv_norm_sq_comp (h.mdifferentiableAt_riemannianLog (mem_image_of_mem _ hvU)),
+    h.riemannianLog_riemannianExp hvU]
+  simp only [two_smul, hg, two_mul]
+  -- Evaluation of the sum and composition of dual maps is definitional, as is the
+  -- identification of `mvfderiv` into the model space with the applied `mfderiv`.
+  rfl
+
+/-- The gradient of the distance from the centre of a metric normal ball at `exp_p v` is the
+unit radial velocity `‖v‖⁻¹ • d(exp_p)_v v`. For `v = 0` both sides vanish. -/
+theorem mgradient_dist_riemannianExp (h : IsNormalDomain I M p U)
+    (hU : Metric.ball 0 r ⊆ U) {v : TangentSpace I p} (hv : v ∈ Metric.ball 0 r) :
+    mgradient I (fun x ↦ dist p x) (riemannianExp I M p v) =
+      ‖v‖⁻¹ • mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · rw [norm_zero, inv_zero, zero_smul]
+    -- Generalize the base point to transport the dependent tangent space of `mgradient`.
+    generalize hq : riemannianExp I M p 0 = q
+    rw [riemannianExp_zero] at hq
+    subst hq
+    exact mgradient_dist_self p
+  have hq : riemannianExp I M p v ∈ Metric.ball p r :=
+    h.image_riemannianExp_ball_eq_ball hU ▸ mem_image_of_mem _ hv
+  have hne : riemannianExp I M p v ≠ p := by
+    simpa only [riemannianExp_zero] using (h.injOn.ne_iff (hU hv) h.zero_mem).2 hv0
+  have hd := (h.contMDiffAt_dist hU hq hne).mdifferentiableAt (by simp)
+  symm
+  apply eq_mgradient_iff.2
+  intro w
+  have hm := DFunLike.congr_fun (mvfderiv_mul hd hd) w
+  have hs := h.mvfderiv_dist_sq_riemannianExp hU hv w
+  simp_rw [pow_two] at hs
+  simp only [Pi.mul_def] at hm
+  rw [hm, h.dist_riemannianExp_eq_of_mem_ball hU hv] at hs
+  simp only [add_apply, smul_apply, smul_eq_mul] at hs
+  rw [real_inner_smul_left]
+  apply mul_left_cancel₀ (norm_ne_zero_iff.2 hv0)
+  rw [← mul_assoc, mul_inv_cancel₀ (norm_ne_zero_iff.2 hv0), one_mul]
+  linarith
+
+/-- The gradient of the distance from the centre of a metric normal ball has unit norm away
+from the centre. -/
+theorem norm_mgradient_dist (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U)
+    (hq : q ∈ Metric.ball p r) (hne : q ≠ p) :
+    ‖mgradient I (fun x ↦ dist p x) q‖ = 1 := by
+  rw [← h.image_riemannianExp_ball_eq_ball hU] at hq
+  obtain ⟨v, hv, rfl⟩ := hq
+  have hv0 : v ≠ 0 := (h.injOn.ne_iff (hU hv) h.zero_mem).1 (by
+    simpa only [riemannianExp_zero] using hne)
+  rw [h.mgradient_dist_riemannianExp hU hv, norm_smul,
+    norm_mfderiv_riemannianExp_radial (h.subset_expDomain (hU hv)), norm_inv, norm_norm,
+    inv_mul_cancel₀ (norm_ne_zero_iff.2 hv0)]
+
+end IsNormalDomain
 
 /-- **The nearest point of a small geodesic sphere.**  About every point `x` there is a radius
 `ε > 0` such that, for every `0 ≤ δ < ε` with `δ ≤ dist x q`, some tangent vector `w` of norm `δ`

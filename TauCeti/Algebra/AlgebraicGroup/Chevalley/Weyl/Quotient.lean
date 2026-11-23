@@ -157,7 +157,7 @@ private theorem quotientSection_simple (hs : t ≠ .G2) (i : Fin t.rank) :
     (t.simplyConnectedBase ht)).lift_apply_simple (D.simpleClass_liftable A hs)
       (t.simpleSupportEquivSimplyConnectedBase ht i)
   simpa only [quotientSection, weylCoxeterSystem_simple,
-    coe_simpleSupportEquivSimplyConnectedBase, Equiv.symm_apply_apply] using h
+    coe_simpleSupportEquivSimplyConnectedBase_apply, Equiv.symm_apply_apply] using h
 
 private theorem closure_weylSubgroup_generators :
     Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
@@ -217,7 +217,7 @@ private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
     intro a
     obtain ⟨i, rfl⟩ := (t.simpleSupportEquivSimplyConnectedBase ht).surjective a
     simp only [MonoidHom.comp_apply, MonoidHom.id_apply, weylCoxeterSystem_simple,
-      coe_simpleSupportEquivSimplyConnectedBase, D.quotientSection_simple,
+      coe_simpleSupportEquivSimplyConnectedBase_apply, D.quotientSection_simple,
       simpleClass, p, QuotientGroup.lift_mk']
     rw [simpleLift, D.weylSubgroupMap_weylElement, D.weylProjection_weylElement]
   exact Function.LeftInverse.injective (g := p) fun w => by

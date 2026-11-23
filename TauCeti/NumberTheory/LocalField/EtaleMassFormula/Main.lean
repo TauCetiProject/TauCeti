@@ -41,11 +41,15 @@ classes of étale `K`-algebras.
   `k` into at most `m` parts.
 * `TauCeti.tsum_etaleDiscriminantExponent_eq`: the same formula written directly over a family of
   representatives of the `K`-isomorphism classes of étale `K`-algebras of degree `n`.
+* `TauCeti.etaleMass_two` and `TauCeti.etaleMass_three`: `M_2(K) = 1 + q⁻¹` and
+  `M_3(K) = 1 + q⁻¹ + q⁻²`, even in equal characteristic where there are infinitely many
+  isomorphism classes of extensions.
 
 ## References
 
 * M. Bhargava, *Mass formulae for extensions of local fields, and conjectures on the density of
   number field discriminants*, IMRN **2007**, rnm052, Thm. 1.1, Props. 2.1–2.3, §8.
+* K. S. Kedlaya, *Mass formulas for local Galois representations*, IMRN **2007**, rnm021.
 -/
 
 public section
@@ -618,5 +622,25 @@ theorem tsum_etaleDiscriminantExponent_eq (n : ℕ) {ι : Type*} (A : ι → Typ
             Multiset.card π.parts ≤ n - k).card : ℝ≥0∞) /
           (Nat.card 𝓀[K] : ℝ≥0∞) ^ k :=
   (tsum_etaleDiscriminantExponent K n A hdeg hinj hsurj).trans (etaleMass_eq K n)
+
+/-! ### Small-degree evaluations -/
+
+variable (K) in
+/-- In degree `2`, `M_2(K) = 1 + q⁻¹`. -/
+theorem etaleMass_two :
+    etaleMass K 2 = 1 + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) := by
+  classical
+  rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+  simp [Finset.univ_unique]
+
+variable (K) in
+/-- In degree `3`, `M_3(K) = 1 + q⁻¹ + q⁻²`. -/
+theorem etaleMass_three :
+    etaleMass K 3 =
+      1 + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) + 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ 2 := by
+  classical
+  rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+    Finset.sum_range_one]
+  simp [Finset.univ_unique, Nat.Partition.card_parts_le_one_iff, Finset.filter_eq']
 
 end TauCeti

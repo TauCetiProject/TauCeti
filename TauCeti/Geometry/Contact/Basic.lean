@@ -57,6 +57,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
   and elementwise statements of the contact condition.
 * `TauCeti.SmoothForm.isContactForm_iff_of_eq_smul`,
   `TauCeti.SmoothForm.kerDistribution_of_eq_smul`: rescaling by a nowhere vanishing function.
+* `TauCeti.SmoothForm.apply_eq_smul_of_kerDistribution_le`: a one-form whose kernel at a point
+  contains that of another is proportional to it there.
 * `TauCeti.SmoothForm.isContactForm_smul_iff`, `TauCeti.SmoothForm.isContactForm_neg_iff`:
   rescaling by a nonzero constant.
 * `TauCeti.SmoothForm.IsContactForm.odd_finrank`: contact manifolds are odd-dimensional.
@@ -115,6 +117,13 @@ theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
   ext v
   rw [mem_kerDistribution, LinearMap.mem_ker, degreeOneEquiv_coe_apply]
 
+/-- Two tangent vectors are congruent modulo `ker α_x` exactly when `α` takes the same value on
+them. -/
+theorem sub_mem_kerDistribution_iff {α : SmoothForm I M ℝ 1} {x : M} {v w : TangentSpace I x} :
+    v - w ∈ α.kerDistribution x ↔ α.val x ![v] = α.val x ![w] := by
+  rw [kerDistribution_def, LinearMap.sub_mem_ker_iff, degreeOneEquiv_coe_apply,
+    degreeOneEquiv_coe_apply]
+
 /-- A real one-form `α` is a **contact form** when, at every point `x`, the covector `α_x` is
 nonzero and `dα_x` restricts to a nondegenerate bilinear form on `ker α_x`. -/
 def IsContactForm (α : SmoothForm I M ℝ 1) : Prop :=
@@ -165,6 +174,23 @@ theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ
   ext x v
   rw [mem_kerDistribution, mem_kerDistribution, hβ, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul, mul_eq_zero, or_iff_right (hf₀ x)]
+
+/-- Conversely, if the kernel of `α` at `x` lies in that of `β`, then `β` is proportional to `α`
+there: if `α_x(v) = 1`, then `β_x = β_x(v) α_x`. -/
+theorem apply_eq_smul_of_kerDistribution_le {α β : SmoothForm I M ℝ 1} {x : M}
+    {v : TangentSpace I x} (hker : α.kerDistribution x ≤ β.kerDistribution x)
+    (hv : α.val x ![v] = 1) : β.val x = β.val x ![v] • α.val x := by
+  ext w
+  obtain ⟨u, rfl⟩ : ∃ u, w = ![u] := ⟨w 0, by
+    rw [Matrix.vec_single_eq_const]
+    exact funext fun i ↦ congrArg w (Subsingleton.elim i 0)⟩
+  -- `u - α(u) v` lies in `ker α ⊆ ker β`.
+  have hmem : u - α.val x ![u] • v ∈ β.kerDistribution x := hker <| by
+    rw [kerDistribution_def, LinearMap.mem_ker, map_sub, map_smul, degreeOneEquiv_coe_apply,
+      degreeOneEquiv_coe_apply, hv, smul_eq_mul, mul_one, sub_self]
+  rw [kerDistribution_def, LinearMap.mem_ker, map_sub, map_smul, degreeOneEquiv_coe_apply,
+    degreeOneEquiv_coe_apply, smul_eq_mul, sub_eq_zero] at hmem
+  rw [ContinuousAlternatingMap.smul_apply, hmem, smul_eq_mul, mul_comm]
 
 /-- **Rescaling of contact forms.** If `β = f α` for a nowhere vanishing `C¹` function `f`, then
 `β` is a contact form exactly when `α` is. -/

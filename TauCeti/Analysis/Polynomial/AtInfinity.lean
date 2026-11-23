@@ -41,6 +41,8 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   nonconstant.
 * `Polynomial.exists_forall_le_norm_eval`: a nonconstant polynomial has modulus at least `c`
   outside a closed ball, for every `c`.
+* `Polynomial.isBigO_cobounded_eval_norm_pow_of_natDegree_le`: a polynomial of degree at most `n`
+  is `O(‖z‖ ^ n)` at infinity.
 * `Polynomial.exists_norm_eval_le_mul_one_add_norm_eval`: a polynomial of degree at most that of
   `Q` is bounded by a multiple of `1 + ‖Q‖` everywhere.
 * `Polynomial.exists_tendsto_eventually_forall_norm_eval_le`: polynomials of degree at most
@@ -49,9 +51,13 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
 * `Polynomial.exists_tendsto_eventually_abs_norm_eval_sub_le`: if the coefficients of `P i`
   converge to those of a nonconstant `Q`, with eventually `deg P i ≤ deg Q`, then
   `|‖P i‖ - ‖Q‖| ≤ δ (1 + ‖Q‖)` and `|‖P i'‖ - ‖Q'‖| ≤ δ (1 + ‖Q'‖)` everywhere, with `δ → 0`.
+* `Polynomial.exists_tendsto_eventually_norm_eval_sub_le`: if the coefficients of `P i` converge
+  to those of `Q`, with eventually `deg P i ≤ deg Q`, then `‖P i - Q‖ ≤ δ (1 + ‖Q‖)` and
+  `‖P i' - Q'‖ ≤ δ (1 + ‖Q‖)` everywhere, with `δ → 0`.
 
-These four hold over normed rings `R` with multiplicative norm; the last three assume `R` proper,
-and the last two also nontrivial; the last assumes characteristic zero as well.
+These six hold over normed rings `R` with multiplicative norm; the last four assume `R` proper,
+and the last three also nontrivial; `Polynomial.exists_tendsto_eventually_abs_norm_eval_sub_le`
+assumes characteristic zero as well.
 -/
 
 public section
@@ -263,6 +269,15 @@ theorem exists_forall_le_norm_eval {P : Polynomial R} (hP : 0 < P.natDegree) (c 
       tendsto_norm_cobounded_atTop).eventually_ge_atTop c)
   exact ⟨r, hr⟩
 
+/-- A polynomial of degree at most `n` is `O(‖z‖ ^ n)` at infinity. -/
+theorem isBigO_cobounded_eval_norm_pow_of_natDegree_le {Q : Polynomial R} {n : ℕ}
+    (hQ : Q.natDegree ≤ n) : Q.eval =O[Bornology.cobounded R] fun z ↦ ‖z‖ ^ n := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact (isBigO_zero _ _).congr_left fun z ↦ Subsingleton.elim _ _
+  have := NormMulClass.toNormOneClass (α := R)
+  simpa only [norm_pow] using
+    ((isBigO_cobounded_pow_natDegree Q).trans (isBigO_pow_pow_cobounded_of_le hQ)).norm_right
+
 variable [ProperSpace R]
 
 /-- A polynomial `A` of degree at most that of `Q` is bounded by a multiple of `1 + ‖Q‖`
@@ -346,6 +361,52 @@ theorem exists_tendsto_eventually_abs_norm_eval_sub_le [Nontrivial R] [CharZero 
       ‖(P i).derivative.eval z - Q.derivative.eval z‖ ≤ δ₂ i * (1 + ‖Q.derivative.eval z‖)) ?_)⟩
   · exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (hδ₂0 i)) (by positivity)
   · exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_left (hδ₁0 i)) (by positivity)
+
+/-- If the coefficients of the polynomials `P i` converge to those of `Q`, and eventually
+`deg P i ≤ deg Q`, then for some nonnegative `δ i → 0`, eventually `‖P i - Q‖ ≤ δ i (1 + ‖Q‖)`
+and `‖P i' - Q'‖ ≤ δ i (1 + ‖Q‖)` everywhere. -/
+theorem exists_tendsto_eventually_norm_eval_sub_le [Nontrivial R] {ι : Type*} {l : Filter ι}
+    {P : ι → Polynomial R} {Q : Polynomial R} (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    ∃ δ : ι → ℝ, (∀ i, 0 ≤ δ i) ∧ Tendsto δ l (𝓝 0) ∧ ∀ᶠ i in l, ∀ z,
+      ‖(P i).eval z - Q.eval z‖ ≤ δ i * (1 + ‖Q.eval z‖) ∧
+      ‖(P i).derivative.eval z - Q.derivative.eval z‖ ≤ δ i * (1 + ‖Q.eval z‖) := by
+  classical
+  -- Compare with `Q` itself, or with the constant `1` when `Q = 0`.
+  set S : Polynomial R := if Q = 0 then 1 else Q
+  have hS : ((Q.natDegree : ℕ) : WithBot ℕ) ≤ S.degree := by
+    by_cases hQ : Q = 0
+    · simp [S, hQ]
+    · simp [S, hQ, degree_eq_natDegree hQ]
+  have hSQ (z : R) : 1 + ‖S.eval z‖ ≤ 2 * (1 + ‖Q.eval z‖) := by
+    by_cases hQ : Q = 0
+    · have := (NormMulClass.toNormOneClass (α := R)).norm_one
+      simp only [S, hQ, ↓reduceIte, eval_one, eval_zero, norm_zero, this]
+      norm_num
+    · simp only [S, hQ, ↓reduceIte]
+      linarith [norm_nonneg (Q.eval z)]
+  have hsub : ∀ᶠ i in l, (P i - Q).natDegree ≤ Q.natDegree :=
+    hdeg.mono fun i hi ↦ (natDegree_sub_le _ _).trans (max_le hi le_rfl)
+  have hc (k : ℕ) : Tendsto (fun i ↦ (P i - Q).coeff k) l (𝓝 0) := by
+    simpa using (hcoeff k).sub_const (Q.coeff k)
+  obtain ⟨δ₁, hδ₁0, hδ₁, hev₁⟩ := exists_tendsto_eventually_forall_norm_eval_le hS hsub hc
+  obtain ⟨δ₂, hδ₂0, hδ₂, hev₂⟩ := exists_tendsto_eventually_forall_norm_eval_le
+    (A := fun i ↦ derivative (P i - Q)) hS
+    (hsub.mono fun i hi ↦ (natDegree_derivative_le _).trans (by omega))
+    fun k ↦ by simpa [coeff_derivative, sub_mul] using (hc (k + 1)).mul_const ((k : R) + 1)
+  refine ⟨fun i ↦ 2 * (δ₁ i + δ₂ i), fun i ↦ by linarith [hδ₁0 i, hδ₂0 i], by
+    simpa using (hδ₁.add hδ₂).const_mul 2, ?_⟩
+  filter_upwards [hev₁, hev₂] with i h₁ h₂ z
+  have hQ0 : 0 ≤ 1 + ‖Q.eval z‖ := by positivity
+  have hb₁ := mul_le_mul_of_nonneg_left (hSQ z) (hδ₁0 i)
+  have hb₂ := mul_le_mul_of_nonneg_left (hSQ z) (hδ₂0 i)
+  have hp₁ := mul_nonneg (hδ₁0 i) hQ0
+  have hp₂ := mul_nonneg (hδ₂0 i) hQ0
+  have e₁ := h₁ z
+  have e₂ := h₂ z
+  rw [eval_sub] at e₁
+  rw [derivative_sub, eval_sub] at e₂
+  constructor <;> linarith
 
 end NormedRing
 

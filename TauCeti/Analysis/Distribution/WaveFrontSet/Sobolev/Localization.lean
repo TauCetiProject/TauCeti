@@ -314,9 +314,7 @@ theorem IsMicrolocallySobolevAt.exists_nhds_cone {s : ℝ} {T : 𝓓'(Ω, ℂ)} 
 theorem IsMicrolocallySobolevAt.add {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (hS : S.IsMicrolocallySobolevAt s x ξ) (hT : T.IsMicrolocallySobolevAt s x ξ) :
     (S + T).IsMicrolocallySobolevAt s x ξ := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 hS
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  have hx : x ∈ Ω := hS.mem
   obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hLS⟩ := hS.exists_nhds_cone
   obtain ⟨V, hV, Γ', hΓ', hξ', hcone', hLT⟩ := hT.exists_nhds_cone
   -- A cutoff supported in `U ∩ V` serves for both distributions, on the cone `Γ ∩ Γ'`.

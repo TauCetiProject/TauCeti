@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
 # The Green operator of a self-adjoint operator with compact resolvent

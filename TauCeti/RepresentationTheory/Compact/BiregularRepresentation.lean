@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
+public import TauCeti.RepresentationTheory.Continuous.RightRegular
 import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 
 /-!
 # The biregular representation of a compact group on `L²(G)`
 
 A compact group `G` acts on `L²(G)` from both sides, by `TauCeti.leftRegularLp` and
-`TauCeti.rightRegularLp`. The two actions commute, and this file bundles them into the **biregular
-representation** of `G × G`,
+`(haarProb G).rightRegular 𝕜 𝕜 2` (`MeasureTheory.Measure.rightRegular`). The two actions commute,
+and this file bundles them into the **biregular representation** of `G × G`,
 
 `((g, h) · f) x = f (g⁻¹ * x * h)`.
 
@@ -62,7 +63,7 @@ variable (𝕜 G) in
 
 The two factors are ordered so that restricting along `g ↦ (g, 1)` gives
 `TauCeti.leftRegularLp`, while restricting along `h ↦ (1, h)` gives
-`TauCeti.rightRegularLp`. -/
+`(haarProb G).rightRegular 𝕜 𝕜 2`. -/
 noncomputable def biRegularLp : ContRepresentation 𝕜 (G × G) (Lp 𝕜 2 (haarProb G)) :=
   .ofMonoidHom
     { toFun p := (Lp.compMeasurePreservingₗᵢ 𝕜 (fun x => p.1⁻¹ * x * p.2)
@@ -122,8 +123,8 @@ theorem biRegularLp_apply_mk_one (g : G) (f : Lp 𝕜 2 (haarProb G)) :
 /-- The second factor of the biregular representation is the right regular representation. -/
 @[simp]
 theorem biRegularLp_apply_one_mk (h : G) (f : Lp 𝕜 2 (haarProb G)) :
-    biRegularLp 𝕜 G (1, h) f = rightRegularLp 𝕜 G h f := by
-  rw [biRegularLp_apply, rightRegularLp_apply]
+    biRegularLp 𝕜 G (1, h) f = (haarProb G).rightRegular 𝕜 𝕜 2 h f := by
+  rw [biRegularLp_apply, (haarProb G).rightRegular_apply]
   congr
   funext x
   simp
@@ -131,25 +132,25 @@ theorem biRegularLp_apply_one_mk (h : G) (f : Lp 𝕜 2 (haarProb G)) :
 /-- The biregular action is left translation after right translation. -/
 theorem biRegularLp_apply_eq_left_right (p : G × G) (f : Lp 𝕜 2 (haarProb G)) :
     biRegularLp 𝕜 G p f =
-      leftRegularLp 𝕜 G p.1 (rightRegularLp 𝕜 G p.2 f) := by
+      leftRegularLp 𝕜 G p.1 ((haarProb G).rightRegular 𝕜 𝕜 2 p.2 f) := by
   calc
     biRegularLp 𝕜 G p f = biRegularLp 𝕜 G ((p.1, 1) * (1, p.2)) f := by simp
     _ = biRegularLp 𝕜 G (p.1, 1) (biRegularLp 𝕜 G (1, p.2) f) := by
       rw [map_mul]
       rfl
-    _ = leftRegularLp 𝕜 G p.1 (rightRegularLp 𝕜 G p.2 f) := by simp
+    _ = leftRegularLp 𝕜 G p.1 ((haarProb G).rightRegular 𝕜 𝕜 2 p.2 f) := by simp
 
 /-- The biregular action is also right translation after left translation; in particular, its two
 factors commute. -/
 theorem biRegularLp_apply_eq_right_left (p : G × G) (f : Lp 𝕜 2 (haarProb G)) :
     biRegularLp 𝕜 G p f =
-      rightRegularLp 𝕜 G p.2 (leftRegularLp 𝕜 G p.1 f) := by
+      (haarProb G).rightRegular 𝕜 𝕜 2 p.2 (leftRegularLp 𝕜 G p.1 f) := by
   calc
     biRegularLp 𝕜 G p f = biRegularLp 𝕜 G ((1, p.2) * (p.1, 1)) f := by simp
     _ = biRegularLp 𝕜 G (1, p.2) (biRegularLp 𝕜 G (p.1, 1) f) := by
       rw [map_mul]
       rfl
-    _ = rightRegularLp 𝕜 G p.2 (leftRegularLp 𝕜 G p.1 f) := by simp
+    _ = (haarProb G).rightRegular 𝕜 𝕜 2 p.2 (leftRegularLp 𝕜 G p.1 f) := by simp
 
 variable (𝕜 G) in
 /-- **The biregular representation is unitary**, because every bi-translation preserves normalized

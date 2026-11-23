@@ -87,8 +87,7 @@ variable (f : AInfinityHom AA BB)
 degree `p` between the restricted modules. -/
 private theorem cofreeLift_taylor_comp_mem {p : ℤ} (φ : homCochains MM NN p) :
     (Comodule.Hom.cofreeLift (C := TensorWords R A)
-      (((TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+      ((Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
           (φ : (M ⊗[R] TensorWords R B) →ₗ[R] N ⊗[R] TensorWords R B)) ∘ₗ
         f.coaugmentedBarMap.lTensor M)).toLinearMap ∈
       homCochains (MM.restrictScalars f) (NN.restrictScalars f) p := by
@@ -116,22 +115,20 @@ noncomputable def restrictScalars (p : ℤ) :
 theorem coe_restrictScalars {p : ℤ} (φ : homCochains MM NN p) :
     (restrictScalars f p φ : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) =
       (Comodule.Hom.cofreeLift (C := TensorWords R A)
-        (((TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+        ((Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
             (φ : (M ⊗[R] TensorWords R B) →ₗ[R] N ⊗[R] TensorWords R B)) ∘ₗ
           f.coaugmentedBarMap.lTensor M)).toLinearMap :=
   (rfl)
 
 /-- The Taylor map of a restricted cochain is the Taylor map of the cochain after `id ⊗ F`. -/
 theorem taylor_restrictScalars {p : ℤ} (φ : homCochains MM NN p) :
-    (TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
+    Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ
           (restrictScalars f p φ : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) =
-      ((TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+      (Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
           (φ : (M ⊗[R] TensorWords R B) →ₗ[R] N ⊗[R] TensorWords R B)) ∘ₗ
         f.coaugmentedBarMap.lTensor M := by
-  rw [coe_restrictScalars, Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift]
+  rw [coe_restrictScalars]
+  exact Comodule.Hom.cofreeCounit_comp_cofreeLift _
 
 /-- **A restricted cochain is intertwined with the original cochain** by the maps `id ⊗ F` of
 cofree bar comodules. -/
@@ -152,7 +149,7 @@ theorem eq_restrictScalars_iff {p : ℤ} (φ : homCochains MM NN p)
         (φ : (M ⊗[R] TensorWords R B) →ₗ[R] N ⊗[R] TensorWords R B) ∘ₗ
           f.coaugmentedBarMap.lTensor M := by
   refine ⟨fun h ↦ h ▸ lTensor_coaugmentedBarMap_comp_restrictScalars f φ, fun h ↦ ext_taylor ?_⟩
-  rw [taylor_restrictScalars, ← rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap f, h]
+  rw [taylor_restrictScalars, ← cofreeCounit_comp_lTensor_coaugmentedBarMap f, h]
   simp only [LinearMap.comp_assoc]
 
 /-- **Restriction of cochains commutes with the differentials** of the morphism complexes. -/

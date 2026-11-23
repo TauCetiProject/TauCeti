@@ -77,6 +77,19 @@ theorem ideal_one_pow_le (k : ℕ) : F.ideal 1 ^ k ≤ F.ideal k := by
     intro x hx y hy
     simpa only [Nat.add_comm 1 k] using F.mul_mem hx (ih hy)
 
+variable {F} in
+/-- For a separated filtration, `⋂ₙ Fⁿ = 0`, every nonzero element has an exact order: it lies
+in `Fⁿ` but not in `Fⁿ⁺¹` for some `n`. -/
+theorem exists_mem_notMem_succ (hF : ∀ x, (∀ n, x ∈ F.ideal n) → x = 0) {x : A} (hx : x ≠ 0) :
+    ∃ n, x ∈ F.ideal n ∧ x ∉ F.ideal (n + 1) := by
+  classical
+  have h : ∃ k, x ∉ F.ideal k := by
+    by_contra! h
+    exact hx (hF x h)
+  obtain ⟨n, hn⟩ : ∃ n, Nat.find h = n + 1 :=
+    Nat.exists_eq_succ_of_ne_zero fun h0 => Nat.find_spec h (h0 ▸ by simp)
+  exact ⟨n, by_contra fun hxn => Nat.find_min h (by omega) hxn, hn ▸ Nat.find_spec h⟩
+
 /-- The decreasing family, viewed with increasing order-dual indices. -/
 def orderDual : ℕᵒᵈ → Ideal A := fun k => F.ideal k.ofDual
 

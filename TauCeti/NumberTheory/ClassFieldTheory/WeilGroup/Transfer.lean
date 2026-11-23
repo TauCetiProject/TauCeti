@@ -70,10 +70,13 @@ universe u v
 
 variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-  (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L] (ι : L →ₐ[K] SeparableClosure K)
 
-variable {K L} in
+section Transfer
+
+variable (L : Type v) [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra K L] [ValuativeExtension K L] (ι : L →ₐ[K] SeparableClosure K)
+
+variable {K L} [FiniteDimensional K L] in
 /-- **The Weil group of `L` inside that of `K`.** An element of `G_L` lies in the local Weil group
 of `L` exactly when its image in `G_K` lies in the local Weil group of `K`. -/
 @[simp]
@@ -88,9 +91,10 @@ theorem absoluteGaloisGroupExtend_mem_localWeilGroup_iff {τ : Field.absoluteGal
 
 /-! ### The Weil transfer -/
 
-/-- **The Weil transfer** `W_L →* W_K` along a finite extension `L/K` embedded by `ι`: the
+/-- **The Weil transfer** `W_L →* W_K` along a compatible extension `L/K` embedded by `ι`: the
 restriction of the embedding `G_L →* G_K` of absolute Galois groups to the Weil groups. -/
 def weilTransfer : WeilGroup L →* WeilGroup K :=
+  haveI : FiniteDimensional K L := finite_of_valuativeExtension K L
   (weilGroupEquivLocalWeilGroup K).symm.toMonoidHom.comp
     (((absoluteGaloisGroupExtend K L ι).comp (weilToAbsolute L)).codRestrict (localWeilGroup K)
       fun w ↦ (absoluteGaloisGroupExtend_mem_localWeilGroup_iff ι).2
@@ -98,6 +102,7 @@ def weilTransfer : WeilGroup L →* WeilGroup K :=
 
 variable {K L}
 
+variable [FiniteDimensional K L] in
 /-- **The characterization of the Weil transfer**: in `G_K`, the Weil transfer of `w ∈ W_L` is the
 image of `w ∈ G_L` under the embedding of absolute Galois groups. -/
 @[simp]
@@ -111,10 +116,12 @@ theorem weilToAbsolute_weilTransfer (w : WeilGroup L) :
 @[simp]
 theorem weilDegree_weilTransfer (w : WeilGroup L) :
     weilDegree K (weilTransfer K L ι w) = weilDegree L w ^ inertiaDegree K L := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
   rw [weilDegree_eq_iff, weilToAbsolute_weilTransfer, toAdd_pow, nsmul_eq_mul]
   exact (restrictMaximalUnramifiedHom_absoluteGaloisGroupExtend_eq_zpow_iff ι _ _).2
     (restrictMaximalUnramifiedHom_weilToAbsolute w)
 
+variable [FiniteDimensional K L] in
 /-- An element of inertia of `L` maps to inertia of `K` under the Weil transfer. -/
 @[simp]
 theorem weilTransfer_inertiaToWeil (σ : inertiaSubgroup L) :
@@ -126,13 +133,15 @@ theorem weilTransfer_inertiaToWeil (σ : inertiaSubgroup L) :
 variable (K L)
 
 /-- **The Weil transfer is injective.** -/
-theorem injective_weilTransfer : Function.Injective (weilTransfer K L ι) := fun _ _ h ↦
-  injective_weilToAbsolute L <| injective_absoluteGaloisGroupExtend K L ι <| by
+theorem injective_weilTransfer : Function.Injective (weilTransfer K L ι) := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
+  exact fun _ _ h ↦ injective_weilToAbsolute L <| injective_absoluteGaloisGroupExtend K L ι <| by
     simpa using congrArg (weilToAbsolute K) h
 
 /-- **The Weil transfer is continuous** for the Weil topologies. -/
 @[fun_prop]
 theorem continuous_weilTransfer : Continuous (weilTransfer K L ι) := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
   refine (isEmbedding_weilToAbsolute_prod_weilDegree K).continuous_iff.2 ?_
   have h : (weilToAbsolute K).prod (weilDegree K) ∘ weilTransfer K L ι =
       fun w ↦ (absoluteGaloisGroupExtend K L ι (weilToAbsolute L w),
@@ -142,6 +151,7 @@ theorem continuous_weilTransfer : Continuous (weilTransfer K L ι) := by
   exact ((continuous_absoluteGaloisGroupExtend K L ι).comp (continuous_weilToAbsolute L)).prodMk
     ((continuous_weilDegree L).pow _)
 
+variable [FiniteDimensional K L] in
 /-- **The image of the Weil transfer** consists of the elements of `W_K` lying in `G_L`. -/
 theorem range_weilTransfer :
     (weilTransfer K L ι).range =
@@ -159,6 +169,7 @@ theorem range_weilTransfer :
 /-- **The image of the Weil transfer is open** in `W_K`. -/
 theorem isOpen_range_weilTransfer :
     IsOpen ((weilTransfer K L ι).range : Set (WeilGroup K)) := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
   rw [range_weilTransfer]
   exact (isOpen_range_absoluteGaloisGroupExtend K L ι).preimage (continuous_weilToAbsolute K)
 
@@ -166,27 +177,26 @@ theorem isOpen_range_weilTransfer :
 `G_K`, since `W_K` is dense in `G_K`. -/
 theorem index_range_weilTransfer :
     (weilTransfer K L ι).range.index = Module.finrank K L := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
   rw [range_weilTransfer,
     Subgroup.index_comap_of_denseRange (denseRange_weilToAbsolute K)
       (isOpen_range_absoluteGaloisGroupExtend K L ι),
     index_range_absoluteGaloisGroupExtend]
 
+end Transfer
+
 /-! ### The Weil restriction -/
 
 section Restrict
 
-variable [Normal K L]
+variable (L : Type v) [Field L] [Algebra K L] (ι : L →ₐ[K] SeparableClosure K) [Normal K L]
 
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
-  [FiniteDimensional K L] in
-/-- **The Weil restriction** `W_K →* Gal(L/K)` for a finite normal extension `L/K` embedded by
-`ι`: an element of the Weil group of `K` acts on the image of `ι`, and so on `L`. -/
+/-- **The Weil restriction** `W_K →* Gal(L/K)` for a normal extension `L/K` embedded by `ι`: an
+element of the Weil group of `K` acts on the image of `ι`, and so on `L`. -/
 def weilRestrict : WeilGroup K →* Gal(L/K) :=
   ι.restrictNormalHom.comp
     ((absoluteGaloisGroupRestrictEquiv K).toMulEquiv.toMonoidHom.comp (weilToAbsolute K))
 
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
-  [FiniteDimensional K L] in
 variable {K L} in
 /-- The Weil restriction of `w` is the restriction along `ι` of the automorphism `w` of `Kˢ`. -/
 @[simp]
@@ -195,8 +205,6 @@ theorem weilRestrict_apply (w : WeilGroup K) :
       ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K (weilToAbsolute K w)) :=
   (rfl)
 
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
-  [FiniteDimensional K L] in
 variable {K L} in
 /-- **The characterization of the Weil restriction**: `weilRestrict K L ι w` is the automorphism of
 `L` through which `w` acts on `ι(L)`. -/
@@ -204,8 +212,7 @@ theorem weilRestrict_commutes (w : WeilGroup K) (x : L) :
     ι (weilRestrict K L ι w x) = absoluteGaloisGroupRestrictEquiv K (weilToAbsolute K w) (ι x) := by
   rw [weilRestrict_apply, AlgHom.restrictNormalHom_commutes]
 
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [ValuativeExtension K L] in
+variable [FiniteDimensional K L] in
 /-- **The Weil restriction is surjective**, since `W_K` is dense in `G_K` and the fibres of
 restriction `G_K → Gal(L/K)` are cosets of the open subgroup `galoisSubgroup K L ι`. -/
 theorem surjective_weilRestrict : Function.Surjective (weilRestrict K L ι) := fun g ↦ by
@@ -228,8 +235,10 @@ theorem surjective_weilRestrict : Function.Surjective (weilRestrict K L ι) := f
 
 /-- **Exactness of `1 → W_L → W_K → Gal(L/K) → 1` in the middle**: the image of the Weil
 transfer is the kernel of the Weil restriction. -/
-theorem range_weilTransfer_eq_ker_weilRestrict :
+theorem range_weilTransfer_eq_ker_weilRestrict [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension K L] :
     (weilTransfer K L ι).range = (weilRestrict K L ι).ker := by
+  have : FiniteDimensional K L := finite_of_valuativeExtension K L
   ext w
   rw [iff_comm, range_weilTransfer, Subgroup.mem_comap, mem_range_absoluteGaloisGroupExtend_iff,
     ← OpenSubgroup.mem_toSubgroup, galoisSubgroup_toSubgroup, ← AlgHom.ker_restrictNormalHom,

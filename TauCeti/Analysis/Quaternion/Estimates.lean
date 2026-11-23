@@ -426,8 +426,7 @@ theorem iteratedFDeriv_left_cauchyFueter_affine
       (fun _ ↦ continuousOn_const.mul
         (hc.comp (by fun_prop) fun _ hu ↦ mem_image_of_mem _ (mem_image_of_mem _ hu)))
       hx₀ m fun x hvx ↦ by
-        have hrep := left_cauchyFueter_affine hL hc
-          (fun u hu _ ↦ leftFueterOn_iff.mp hf _ (mem_image_of_mem _ (mem_image_of_mem _ hu))) hvx
+        have hrep := left_cauchyFueter_affine hL hc (hf.mono sdiff_subset) hvx
         rw [hrep]
         simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
           ContinuousLinearMap.mul_apply', mul_assoc, ContinuousLinearEquiv.coe_coe]
@@ -456,8 +455,7 @@ theorem iteratedFDeriv_right_cauchyFueter_affine
       (fun _ ↦ (hc.comp (by fun_prop) fun _ hu ↦
         mem_image_of_mem _ (mem_image_of_mem _ hu)).mul continuousOn_const)
       hx₀ m fun x hvx ↦ by
-        have hrep := right_cauchyFueter_affine hL hc
-          (fun u hu _ ↦ rightFueterOn_iff.mp hf _ (mem_image_of_mem _ (mem_image_of_mem _ hu))) hvx
+        have hrep := right_cauchyFueter_affine hL hc (hf.mono sdiff_subset) hvx
         rw [hrep]
         simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
           ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',

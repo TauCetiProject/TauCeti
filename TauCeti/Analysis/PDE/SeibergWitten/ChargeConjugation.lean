@@ -100,6 +100,8 @@ namespace TauCeti.SeibergWitten
 open InnerProductSpace ContinuousLinearMap
 open scoped ComplexConjugate InnerProductSpace
 
+section QuadraticEnd
+
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [NormedAddCommGroup F]
   [InnerProductSpace ℂ F]
 
@@ -143,6 +145,8 @@ theorem map_quadraticEnd_apply_eq_neg (hj : ∀ ψ, j (j ψ) = -ψ) (h₂ : Modu
     (ψ v : E) : j (quadraticEnd ψ v) = -quadraticEnd ψ (j v) := by
   rw [map_quadraticEnd_apply, quadraticEnd_map hj h₂, neg_apply]
 
+end QuadraticEnd
+
 /-! ### Conjugate-linear Clifford intertwiners -/
 
 section Clifford
@@ -157,10 +161,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℂ W']
   (ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W')
   (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+  [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
 
 attribute [local instance] finiteDimensional_of_finrank_four
-
-variable [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
 
 /-- **Charge conjugation anticommutes with the Clifford map**: `C(iα) (j ψ) = -j (C(iα) ψ)` on
 positive half-spinors, since `j` commutes with `c₂(α)` and conjugates the scalar `i`. -/

@@ -55,6 +55,9 @@ Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
   characterizations of ellipticity by inverse symbols.
 * `TauCeti.Symbol.IsEllipticAbove.comp`, `TauCeti.Symbol.IsUniformlyEllipticAbove.comp`: pointwise
   products of elliptic symbols are elliptic.
+* `TauCeti.Symbol.HasCompactSpatialSupport.isCompact_closure_of_comp_eq_id`: a symbol with
+  compact spatial support has a left inverse at large frequencies only at a relatively compact
+  set of positions.
 
 ## References
 
@@ -331,6 +334,25 @@ theorem exists_isUniformlyEllipticAbove_iff [CompleteSpace V] {a : Symbol n V W 
     hu.mono (by rw [abs_of_pos (by positivity)]; linarith [le_abs_self R])
   exact ⟨_, hau.cutoffInverse default _ _ _ hu'.exists_norm_inverse_le, _,
     ha.cutoffInverse_comp_eq_id⟩
+
+/-- A symbol with compact spatial support has a left inverse at large frequencies only at a
+relatively compact set of positions: if `e(x, ξ) ∘ a(x, ξ) = 1` at all frequencies `‖ξ‖ ≥ R` and
+all positions `x ∈ U`, and `V` is nontrivial, then `U` has compact closure. -/
+theorem HasCompactSpatialSupport.isCompact_closure_of_comp_eq_id [Nontrivial V]
+    {a : Symbol n V W m} {e : Symbol n W V m'} (ha : a.HasCompactSpatialSupport)
+    {U : Set (CoordinateSpace n)}
+    (he : ∀ x ∈ U, ∀ ξ, R ≤ ‖ξ‖ → e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V) :
+    IsCompact (closure U) := by
+  obtain ⟨K, hK, haK⟩ := hasCompactSpatialSupport_iff.1 ha
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact subsingleton_of_subsingleton.isCompact
+  -- At a position `x ∉ K`, `a(x, ξ) = 0` cannot have a left inverse.
+  refine hK.closure_of_subset fun x hx ↦ by_contra fun hxK ↦ ?_
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have h := he x hx (max R 0 • EuclideanSpace.single ⟨0, hn⟩ 1) (by
+    simp [norm_smul, abs_of_nonneg (le_max_right R 0)])
+  rw [haK x hxK, ContinuousLinearMap.comp_zero] at h
+  exact hv (by simpa using (congrArg (fun T : V →L[ℂ] V ↦ T v) h).symm)
 
 /-- The Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s` above every radius: its
 inverse is the Bessel weight of order `-s`. -/

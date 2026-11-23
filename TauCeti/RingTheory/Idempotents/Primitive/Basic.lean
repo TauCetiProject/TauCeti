@@ -36,6 +36,11 @@ indecomposability of the left ideal it generates.
 
 * `TauCeti.isPrimitiveIdempotent_iff_eq_zero_or_eq`: primitivity read in the corner ring, as the
   statement that `0` and `e` are the only idempotents `f` with `ef = fe = f`.
+* `TauCeti.IsPrimitiveIdempotent.mul_eq_zero_or_eq_of_commute`: for `e` primitive and `f` an
+  idempotent commuting with it, `e * f` is `0` or `e`; hence commuting primitive idempotents with
+  nonzero product are equal (`TauCeti.IsPrimitiveIdempotent.eq_of_commute_of_mul_ne_zero`).
+* `TauCeti.isPrimitiveIdempotent_map_iff_of_bijOn`: along a ring homomorphism out of a commutative
+  ring that is bijective on idempotents, an idempotent is primitive exactly when its image is.
 * `TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`: **an idempotent is primitive exactly
   when the left ideal it generates is an indecomposable module.** Both directions run along one
   dictionary: an idempotent of the corner ring acts on `Ae` by right multiplication, and every
@@ -210,6 +215,49 @@ theorem isPrimitiveIdempotent_iff_eq_zero_or_eq :
       ∀ f : A, IsIdempotentElem f → e * f = f → f * e = f → f = 0 ∨ f = e :=
   ⟨fun h ↦ ⟨h.isIdempotentElem, h.ne_zero, fun _ hf hef hfe ↦ h.eq_zero_or_eq hf hef hfe⟩,
     fun ⟨he, h0, h⟩ ↦ isPrimitiveIdempotent_of_eq_zero_or_eq he h0 h⟩
+
+/-- **A primitive idempotent absorbs or annihilates a commuting idempotent.** If `f` is an
+idempotent commuting with the primitive idempotent `e`, then `e * f` is an idempotent of the
+corner ring `eAe`, hence `0` or `e`. -/
+theorem IsPrimitiveIdempotent.mul_eq_zero_or_eq_of_commute (he : IsPrimitiveIdempotent e) {f : A}
+    (hf : IsIdempotentElem f) (hef : Commute e f) : e * f = 0 ∨ e * f = e :=
+  he.eq_zero_or_eq (.mul_of_commute hef he.isIdempotentElem hf)
+    (by rw [← mul_assoc, he.isIdempotentElem.eq])
+    (by rw [mul_assoc, ← hef.eq, ← mul_assoc, he.isIdempotentElem.eq])
+
+/-- **Commuting primitive idempotents with nonzero product are equal**: the product is `e` by
+primitivity of `e` and `f` by primitivity of `f`. -/
+theorem IsPrimitiveIdempotent.eq_of_commute_of_mul_ne_zero (he : IsPrimitiveIdempotent e) {f : A}
+    (hf : IsPrimitiveIdempotent f) (hef : Commute e f) (h : e * f ≠ 0) : e = f := by
+  have h₁ : e * f = e := (he.mul_eq_zero_or_eq_of_commute hf.isIdempotentElem hef).resolve_left h
+  have h₂ : f * e = f :=
+    (hf.mul_eq_zero_or_eq_of_commute he.isIdempotentElem hef.symm).resolve_left
+      (by rwa [← hef.eq])
+  rw [← h₁, hef.eq, h₂]
+
+/-- **Primitivity along a bijection on idempotents.** Let `f : S →+* T` be a ring homomorphism out
+of a commutative ring which restricts to a bijection from the idempotents of `S` onto those of `T`,
+such as the reduction of a ring modulo an ideal along which it is Henselian. Then an idempotent of
+`S` is primitive exactly when its image is: an idempotent of the corner ring of `f e` is the image
+of an idempotent `u`, and `e * u` is an idempotent of the corner ring of `e` with the same image. -/
+theorem isPrimitiveIdempotent_map_iff_of_bijOn {S : Type*} [CommRing S] (f : S →+* A)
+    (hf : Set.BijOn f {e | IsIdempotentElem e} {t | IsIdempotentElem t}) {e : S}
+    (he : IsIdempotentElem e) : IsPrimitiveIdempotent (f e) ↔ IsPrimitiveIdempotent e := by
+  have hinj {u : S} (hu : IsIdempotentElem u) {v : S} (hv : IsIdempotentElem v) (h : f u = f v) :
+      u = v :=
+    hf.injOn hu hv h
+  refine ⟨fun h ↦ isPrimitiveIdempotent_of_eq_zero_or_eq he (fun h0 ↦ h.ne_zero (by
+    rw [h0, map_zero])) fun u hu heu _ ↦ ?_, fun h ↦ isPrimitiveIdempotent_of_eq_zero_or_eq
+    (he.map f) (fun h0 ↦ h.ne_zero (hinj he .zero (by rw [h0, map_zero]))) fun t ht hft _ ↦ ?_⟩
+  · refine (h.eq_zero_or_eq (hu.map f) (by rw [← map_mul, heu])
+      (by rw [← map_mul, mul_comm, heu])).imp (fun h0 ↦ hinj hu .zero ?_) (hinj hu he)
+    rw [h0, map_zero]
+  · obtain ⟨u, hu, rfl⟩ := hf.surjOn ht
+    have hfeu : f (e * u) = f u := by rw [map_mul, hft]
+    refine (h.eq_zero_or_eq (he.mul hu) (by rw [← mul_assoc, he.eq])
+      (by rw [mul_comm, ← mul_assoc, he.eq])).imp (fun h0 ↦ ?_) fun h1 ↦ ?_
+    · rw [← hfeu, h0, map_zero]
+    · rw [← hfeu, h1]
 
 /-- **A primitive idempotent generates an indecomposable left ideal.** An idempotent endomorphism
 `f` of `Ae` is right multiplication by `u = f e`, which is an idempotent of the corner ring `eAe`;

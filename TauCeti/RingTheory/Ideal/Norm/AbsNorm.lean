@@ -5,18 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.RingTheory.Norm.Congruence
 
 /-!
-# The absolute ideal norm under a ring isomorphism, and congruences of norms
+# The absolute ideal norm under ring isomorphisms, prime factorizations, and congruences
 
 Identifying two rings along an isomorphism identifies their ideals, and the absolute norm is
 insensitive to that identification. In a Dedekind domain with finite quotients, the absolute
 norm of a nonzero ideal stays nonzero when cast into characteristic zero. A proper ideal
-contains no natural number prime to its absolute norm. Over `ℤ` itself, the absolute norm of
-the ideal `(n)` is `|n|`.
+contains no natural number prime to its absolute norm, and for any nonzero ideal of a Dedekind
+domain its absolute norm factors as the product over all height-one primes of the residue
+cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute norm of the ideal
+`(n)` is `|n|`.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -32,6 +36,8 @@ have nonnegative product generate principal ideals with congruent absolute norms
   of a height-one prime, stays nonzero when cast into characteristic zero.
 * `Ideal.natCast_notMem_of_coprime_absNorm`: a natural number prime to the absolute norm of a
   proper ideal does not lie in it.
+* `Ideal.finprod_pow_count_eq_absNorm`: for a nonzero ideal `J` of a Dedekind domain `R`, the
+  absolute norm equals `∏ᶠ v, (#(R ⧸ v)) ^ count v J`.
 * `Int.absNorm_span_singleton`, `Int.absNorm_le_natAbs_of_dvd_span_singleton`: the absolute norm
   of the ideal `(n)` of `ℤ` is `|n|`, and that of an ideal dividing `(n)`, for `n ≠ 0`, is at most
   `|n|`.
@@ -90,6 +96,21 @@ theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : �
   obtain ⟨u, v, huv⟩ := (Nat.isCoprime_iff_coprime.mpr ha).map (Int.castRingHom R)
   rw [eq_top_iff_one, ← huv]
   simpa using I.add_mem (I.mul_mem_left u h) (I.mul_mem_left v (absNorm_mem I))
+
+open _root_.IsDedekindDomain in
+/-- **Prime-factorization formula for the absolute norm of a nonzero ideal.** -/
+theorem finprod_pow_count_eq_absNorm {J : Ideal R} (hJ : J ≠ ⊥) :
+    (∏ᶠ v : HeightOneSpectrum R,
+        Nat.card (R ⧸ v.asIdeal) ^ (Associates.mk v.asIdeal).count (Associates.mk J).factors) =
+      Ideal.absNorm J := by
+  have hJ0 : J ≠ 0 := by rwa [Ideal.zero_eq_bot]
+  have hfact := congrArg Ideal.absNorm.toMonoidHom
+    (Ideal.finprod_heightOneSpectrum_factorization hJ0)
+  rw [MonoidHom.map_finprod _ (Ideal.hasFiniteMulSupport hJ0)] at hfact
+  refine Eq.trans ?_ hfact
+  refine finprod_congr fun v ↦ ?_
+  simp [IsDedekindDomain.HeightOneSpectrum.maxPowDividing, Ideal.absNorm_of_ne_bot v.ne_bot,
+    Submodule.cardQuot_apply]
 
 end Ideal
 
