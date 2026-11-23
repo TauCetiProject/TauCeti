@@ -190,8 +190,8 @@ private theorem bijective_realCliffordSpinBlockHom_rangeRestrict_comp_inl :
     Function.Bijective ((realCliffordSpinBlockHom p 1).rangeRestrict.comp (MonoidHom.inl _ _)) := by
   have hQ := (nondegenerate_realCliffordForm 1 0).ne_zero
   refine ⟨(injective_iff_map_eq_one _).mpr fun x hx ↦ ?_, ?_⟩
-  · rw [MonoidHom.comp_apply, MonoidHom.inl_apply, Subtype.ext_iff, MonoidHom.coe_rangeRestrict,
-      OneMemClass.coe_one, ← MonoidHom.mem_ker, mem_ker_realCliffordSpinBlockHom_iff] at hx
+  · rw [← MonoidHom.mem_ker, ← MonoidHom.comap_ker, MonoidHom.ker_rangeRestrict,
+      Subgroup.mem_comap, MonoidHom.inl_apply, mem_ker_realCliffordSpinBlockHom_iff] at hx
     rcases hx with hx | hx
     · exact congrArg Prod.fst hx
     · exact absurd (congrArg Prod.snd hx).symm (spinGroup.negOne_ne_one _ hQ)

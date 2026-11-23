@@ -238,7 +238,6 @@ theorem realCliffordSpinOneOneEquiv_symm_snd_eq_one_of_isCompact
     rw [h]
     exact (hC.image hf).image continuous_toAdd
   have hmem := (Subgroup.mem_toAddSubgroup' _ (f x).toAdd).mpr (Subgroup.mem_map_of_mem f hx)
-  rw [AddSubgroup.eq_bot_of_isCompact hH, AddSubgroup.mem_bot] at hmem
-  exact hmem
+  rwa [AddSubgroup.eq_bot_of_isCompact hH, AddSubgroup.mem_bot, toAdd_eq_zero] at hmem
 
 end CliffordAlgebra
