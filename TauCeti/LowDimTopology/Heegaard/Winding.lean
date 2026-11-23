@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Heegaard.StrongAdmissibility
-import TauCeti.Algebra.Order.Field.IntLattice
+import TauCeti.Analysis.Normed.Group.LatticeBound
 
 /-!
 # Admissibility by winding: the uniform coefficient estimate
@@ -24,14 +24,16 @@ the homology of the surface, so it is a multiple of the whole surface and vanish
 basepoint. For large `N` the wound multiplicities then exceed any prescribed additive
 functional, such as half the Maslov index, `⟨c₁(s), H(P)⟩ / 2`.
 
-This file proves that estimate, uniformly in `P` and with a single `N₀` for all `N ≥ N₀`, and
-deduces weak and strong admissibility of every region system in which such winding regions
+That estimate holds uniformly in `P`, with a single `N₀` for all `N ≥ N₀`
+(`AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul`), and this file deduces weak and
+strong admissibility of every region system in which such winding regions
 appear. Checking the elements of a basis of the periodic domains would not suffice: the
 estimate has to hold for every lattice element, including those with arbitrarily large
 coefficients. The uniformity comes from bounding every additive functional on the lattice by
-the `ℓ¹`-norm `∑ i, |aᵢ(P)|` of the detecting coordinates
-(`AddMonoidHom.exists_abs_le_mul_sum_abs`): at a coordinate `i` where `|aᵢ(P)|` is largest,
-the term `N |aᵢ(P)|` dominates all the others once `N` exceeds a constant independent of `P`.
+the sup norm of the detecting coordinates `aᵢ(P)`
+(`AddMonoidHom.exists_norm_le_mul_norm_of_injective`): at a coordinate `i` where `|aᵢ(P)|` is
+largest, the term `N |aᵢ(P)|` dominates all the others once `N` exceeds a constant independent of
+`P`.
 
 The lattice `L` stands for the periodic domains of the original diagram, transported to the
 wound diagram `H` by an additive map `e : L →+ (Region → ℤ)` onto the periodic domains of `H`.
@@ -41,11 +43,15 @@ transport as hypotheses: constructing the wound diagrams of an actual Heegaard d
 identifying the Maslov index of transported periodic domains with the Chern class pairing, are
 separate geometric steps.
 
+The criteria of `TauCeti.LowDimTopology.Heegaard.PeriodicNorm` start instead from regions whose
+multiplicities dominate a norm of the periodic domains of one fixed region system, with a
+threshold depending on that system. Here the winding regions are hypotheses about the transport
+`e`, so one `N₀`, depending only on `L`, the `aᵢ`, `p_i`, `q_i` and the Maslov functional, serves
+every wound region system; and the weak admissibility at a generator needs the `aᵢ` to detect only
+the periodic domains of Maslov index zero.
+
 ## Main results
 
-* `AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul`: the uniform estimate. For every
-  additive functional `c` there is `N₀` such that for `N ≥ N₀` every nonzero `P` has an index
-  `i` with `c P < p_i(P) + N aᵢ(P)` or `c P < q_i(P) - N aᵢ(P)`.
 * `TauCeti.HeegaardRegionSystem.exists_forall_weaklyAdmissible_of_winding`: sufficiently wound
   diagrams are weakly admissible.
 * `TauCeti.HeegaardRegionSystem.exists_forall_weaklyAdmissibleAt_of_winding`: sufficiently wound
@@ -78,9 +84,9 @@ omit [Finite ι] in
 private theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
     {e : L →+ (Region → ℤ)} {N : ℕ}
     (hp : ∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P)
-    (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) {P : L} {t : ℚ}
-    (h : ∃ i, t < ((p i P + N * a i P : ℤ) : ℚ) ∨ t < ((q i P - N * a i P : ℤ) : ℚ)) :
-    ∃ r, t < (e P r : ℚ) := by
+    (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) {P : L} {t : ℝ}
+    (h : ∃ i, t < ((p i P + N * a i P : ℤ) : ℝ) ∨ t < ((q i P - N * a i P : ℤ) : ℝ)) :
+    ∃ r, t < (e P r : ℝ) := by
   obtain ⟨i, h | h⟩ := h
   · obtain ⟨r, hr⟩ := hp i
     exact ⟨r, by rwa [hr]⟩
@@ -94,8 +100,8 @@ private theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L
     {e : L →+ (Region → ℤ)} {N : ℕ}
     (hp : ∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P)
     (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P)
-    (hest : ∀ P, P ≠ 0 → ∃ i, (0 : L →+ ℚ) P < ((p i P + N * a i P : ℤ) : ℚ) ∨
-      (0 : L →+ ℚ) P < ((q i P - N * a i P : ℤ) : ℚ))
+    (hest : ∀ P, P ≠ 0 → ∃ i, (0 : L →+ ℝ) P < ((p i P + N * a i P : ℤ) : ℝ) ∨
+      (0 : L →+ ℝ) P < ((q i P - N * a i P : ℤ) : ℝ))
     {P : L} (hP : P ≠ 0) : (∃ r, 0 < e P r) ∧ ∃ r, e P r < 0 := by
   obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hest P hP)
   obtain ⟨s, hs⟩ := exists_lt_of_winding hp hq (hest (-P) (neg_ne_zero.mpr hP))
@@ -113,7 +119,7 @@ theorem exists_forall_weaklyAdmissible_of_winding {a : ι → L →+ ℤ}
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → H.WeaklyAdmissible := by
   obtain ⟨N₀, hN₀⟩ :=
-    AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q (0 : L →+ ℚ)
+    AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q (0 : L →+ ℝ)
   refine ⟨N₀, fun N hN n Point Region Basepoint H e he hp hq =>
     weaklyAdmissible_iff.mpr fun D hD hD₀ => ?_⟩
   obtain ⟨P, rfl⟩ := he D hD
@@ -143,7 +149,7 @@ theorem exists_forall_weaklyAdmissibleAt_of_winding (c : L →+ ℚ) {a : ι →
     (a := fun i => (a i).comp incl)
     (fun P hP => Subtype.ext (ha P P.property (by simpa [incl] using hP)))
     (fun i => (p i).comp incl) (fun i => (q i).comp incl)
-    (0 : c.ker →+ ℚ)
+    (0 : c.ker →+ ℝ)
   refine ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
     weaklyAdmissibleAt_def.mpr fun D hD hD0 hD₀ => ?_⟩
   obtain ⟨P, rfl⟩ := he D hD
@@ -169,7 +175,7 @@ theorem exists_forall_stronglyAdmissible_of_winding (c : L →+ ℚ) {a : ι →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → H.StronglyAdmissible χ x := by
   obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q
-    ((AddMonoidHom.mulLeft (2⁻¹ : ℚ)).comp c)
+    ((Rat.castHom ℝ).toAddMonoidHom.comp ((AddMonoidHom.mulLeft (2⁻¹ : ℚ)).comp c))
   refine ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
     stronglyAdmissible_iff.mpr fun D hD hD₀ _ => ?_⟩
   obtain ⟨P, rfl⟩ := he D hD
@@ -177,7 +183,9 @@ theorem exists_forall_stronglyAdmissible_of_winding (c : L →+ ℚ) {a : ι →
   obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hN₀ N hN P hP)
   refine ⟨r, ?_⟩
   rw [hc, div_eq_inv_mul]
-  simpa using hr
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulLeft,
+    RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, Rat.coe_castHom] at hr
+  exact_mod_cast hr
 
 end HeegaardRegionSystem
 
