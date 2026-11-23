@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.UniformOn
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # The equipartition of the unit interval into `m` cells
@@ -56,18 +57,12 @@ top cell `[(m-1)/m, 1] = Set.Ici ((m-1)/m)`.
   of `x` tends to `x` as `m → ∞`;
 * `TauCeti.unitInterval.measurePreserving_cellFin` — the cell index carries `volume` to the uniform
   measure on `Fin m`;
-* `TauCeti.unitInterval.integral_pi_comp_cellIdx_eq_inv_smul_sum` — a function of the cell indices
-  of finitely many independent uniform points integrates to the average of its values over
-  `V → Fin m`.
+* `TauCeti.unitInterval.integral_pi_comp_cellFin_eq_inv_smul_sum` — a function of the cells of
+  finitely many independent uniform points, with values in a complete real normed space, integrates
+  to the average of its values over `V → Fin m`.
 
 The file also records `TauCeti.intervalIntegral_eq_integral_unitInterval`: an interval integral
 over `[0, 1]` is the integral over the unit interval `I` with its volume measure.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md` — the `(I, volume)` carrier on which
-  `finiteGraphGraphon` (Layer 1/7) and the Layer-2 step graphons are built. Nothing here mentions
-  graphons.
 -/
 
 public section
@@ -101,30 +96,25 @@ theorem cellIdx_lt (hm : 0 < m) (x : I) : cellIdx m x < m :=
 @[simp]
 theorem cellIdx_eq_iff_of_succ_lt (hi : i + 1 < m) (x : I) :
     cellIdx m x = i ↔ (i : ℝ) / m ≤ (x : ℝ) ∧ (x : ℝ) < ((i : ℝ) + 1) / m := by
-  have hm0 : 0 < m := by omega
-  have hmR : (0 : ℝ) < m := by exact_mod_cast hm0
-  have h0 : (0 : ℝ) ≤ (m : ℝ) * (x : ℝ) := mul_nonneg hmR.le x.property.1
+  have hmR : (0 : ℝ) < m := by exact_mod_cast (by omega : 0 < m)
+  have h : i < m - 1 := by omega
+  -- below the top cell the clipping is inactive
   have hmin : cellIdx m x = i ↔ ⌊(m : ℝ) * (x : ℝ)⌋₊ = i := by
-    simp only [cellIdx]
-    omega
-  rw [hmin, Nat.floor_eq_iff h0, div_le_iff₀ hmR, lt_div_iff₀ hmR]
-  constructor
-  · rintro ⟨h1, h2⟩
-    exact ⟨by linarith, by linarith⟩
-  · rintro ⟨h1, h2⟩
-    exact ⟨by linarith, by linarith⟩
+    simp +contextual [cellIdx, min_eq_iff, h.le, h.ne']
+  rw [hmin, Nat.floor_eq_iff (mul_nonneg hmR.le x.property.1), div_le_iff₀ hmR, lt_div_iff₀ hmR]
+  simp only [mul_comm]
 
 /-- The top cell is closed at `1`: `cellIdx m x = m - 1` exactly when
-`(m - 1) / m ≤ x`. -/
+`(m - 1) / m ≤ x`. At `m = 0` both sides hold, through the junk values `0 - 1 = 0` and `0 / 0 = 0`.
+-/
 @[simp]
-theorem cellIdx_eq_sub_one_iff (hm : 0 < m) (x : I) :
+theorem cellIdx_eq_sub_one_iff (x : I) :
     cellIdx m x = m - 1 ↔ ((m - 1 : ℕ) : ℝ) / m ≤ (x : ℝ) := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simpa [cellIdx] using x.property.1
   have hmR : (0 : ℝ) < m := by exact_mod_cast hm
-  have h0 : (0 : ℝ) ≤ (m : ℝ) * (x : ℝ) := mul_nonneg hmR.le x.property.1
-  have hmin : cellIdx m x = m - 1 ↔ m - 1 ≤ ⌊(m : ℝ) * (x : ℝ)⌋₊ := by
-    simp only [cellIdx]
-    omega
-  rw [hmin, Nat.le_floor_iff h0, div_le_iff₀ hmR]
+  rw [cellIdx, min_eq_right_iff, Nat.le_floor_iff (mul_nonneg hmR.le x.property.1),
+    div_le_iff₀ hmR]
   simp only [mul_comm]
 
 /-- The cell index depends measurably on the point. -/
@@ -165,8 +155,8 @@ theorem volume_preimage_cellIdx (hi : i < m) :
       have hset : cellIdx m ⁻¹' {i} = Ici (⟨(i : ℝ) / m, hα⟩ : I) := by
         ext x
         simp only [mem_preimage, mem_singleton_iff, mem_Ici, ← Subtype.coe_le_coe]
-        have hi_top : i = m - 1 := by omega
-        simpa [hi_top] using cellIdx_eq_sub_one_iff hm0 x
+        obtain rfl : i = m - 1 := by omega
+        exact cellIdx_eq_sub_one_iff x
       rw [hset, _root_.unitInterval.volume_Ici]
       congr 1
       have : (i : ℝ) + 1 = m := by exact_mod_cast heq
@@ -211,7 +201,7 @@ theorem le_cellIdx_add_one_div (hm : 0 < m) (x : I) :
   · rw [cellIdx, min_eq_left h]
     linarith [Nat.lt_floor_add_one ((m : ℝ) * (x : ℝ))]
   · rw [cellIdx, min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
-    nlinarith [x.property.2]
+    exact mul_le_of_le_one_left hmR.le x.property.2
 
 /-- As the number of cells grows, the left endpoints of the cells containing `x` converge to
 `x`. -/
@@ -277,64 +267,29 @@ theorem volume_real_preimage_cellFin [NeZero m] (C : Finset (Fin m)) :
 variable {V E : Type*} [Fintype V] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 open scoped Classical in
-/-- **The cells cut the cube into products of fibres, exactly one of which holds a given point.**
-Evaluating a function on the cell indices of `x` is the same as summing its indicator contributions
-over the products `univ.pi fun v => cellIdx m ⁻¹' {ψ v}` indexed by all `#V`-tuples of cells.
+/-- **Independent uniform points, read through their cells.** For `m ≠ 0` and a function `f` on
+the tuples of cells `V → Fin m` with values in a complete real normed space, the integral of
+`f (fun v => cellFin m (x v))` over `#V` independent uniform points of `[0, 1]` is the average of
+`f` over all `#V`-tuples of cells.
 
-Nothing measure-theoretic is involved: the boxes are just preimages of the cell map, and `E` needs
-only the additive structure that `Set.indicator` and the sum require. -/
-private theorem pi_comp_cellIdx_eq_sum_indicator {V E : Type*} [Fintype V] [AddCommMonoid E]
-    (hm : 0 < m)
-    (f : (V → ℕ) → E) (x : V → I) :
-    f (fun v => cellIdx m (x v))
-      = ∑ ψ : V → Fin m, (univ.pi fun v => cellIdx m ⁻¹' {((ψ v : ℕ))}).indicator
-          (fun _ => f fun v => (ψ v : ℕ)) x := by
-  set ψ₀ : V → Fin m := fun v => ⟨cellIdx m (x v), cellIdx_lt hm (x v)⟩ with hψ₀
-  -- membership in the box of `ψ` pins `ψ` down to `ψ₀`, so the sum is an equality test on the
-  -- index and `Finset.sum_ite_eq` collapses it
-  have hψ : ∀ ψ : V → Fin m,
-      x ∈ (univ.pi fun v => cellIdx m ⁻¹' {((ψ v : ℕ))}) ↔ ψ₀ = ψ := by
-    intro ψ
-    simp [hψ₀, Set.mem_pi, funext_iff, Fin.ext_iff, eq_comm]
-  simp [Set.indicator_apply, hψ, hψ₀]
-
-open scoped Classical in
-/-- **Independent uniform points, read through their cells.** The integral of a function of the
-cell indices of `#V` independent uniform points on `[0, 1]` is the average of that function over
-all `#V`-tuples of cells.
-
-This is the transfer that turns an integral over the continuous carrier `(I, volume)` into a finite
-sum, and it is where the equal volume of the cells is consumed. The integrand's argument is
-`ℕ`-valued, so no `0 < m` hypothesis is hidden in a `Fin m`-valued cell map; the sum on the right
-ranges over `V → Fin m`, which is where the finiteness lives. -/
-theorem integral_pi_comp_cellIdx_eq_inv_smul_sum (hm : 0 < m) (f : (V → ℕ) → E) :
-    ∫ x : V → I, f (fun v => cellIdx m (x v)) ∂(Measure.pi fun _ : V => (volume : Measure I))
-      = ((m : ℝ) ^ Fintype.card V)⁻¹ • ∑ ψ : V → Fin m, f fun v => (ψ v : ℕ) := by
-  classical
-  have hboxMeas : ∀ ψ : V → Fin m,
-      MeasurableSet (univ.pi fun v => cellIdx m ⁻¹' {((ψ v : ℕ))}) := fun ψ =>
-    MeasurableSet.univ_pi fun v => measurableSet_preimage_cellIdx m _
-  have hboxVol : ∀ ψ : V → Fin m,
-      (Measure.pi fun _ : V => (volume : Measure I))
-          (univ.pi fun v => cellIdx m ⁻¹' {((ψ v : ℕ))})
-        = ((m : ℝ≥0∞)⁻¹) ^ Fintype.card V := by
-    intro ψ
-    rw [Measure.pi_pi]
-    simp [volume_preimage_cellIdx (ψ _).isLt, Finset.prod_const]
-  calc ∫ x : V → I, f (fun v => cellIdx m (x v)) ∂(Measure.pi fun _ : V => (volume : Measure I))
-      = ∑ ψ : V → Fin m,
-          ∫ x : V → I, (univ.pi fun v => cellIdx m ⁻¹' {((ψ v : ℕ))}).indicator
-              (fun _ => f fun v => (ψ v : ℕ)) x
-            ∂(Measure.pi fun _ : V => (volume : Measure I)) := by
-        rw [← integral_finsetSum _ fun ψ _ => (integrable_const _).indicator (hboxMeas ψ)]
-        exact integral_congr_ae
-          (Filter.Eventually.of_forall (pi_comp_cellIdx_eq_sum_indicator hm f))
-    _ = ∑ ψ : V → Fin m, ((m : ℝ)⁻¹) ^ Fintype.card V • f fun v => (ψ v : ℕ) := by
-        refine Finset.sum_congr rfl fun ψ _ => ?_
-        rw [integral_indicator_const _ (hboxMeas ψ), measureReal_def, hboxVol ψ]
-        simp [ENNReal.toReal_pow]
-    _ = ((m : ℝ) ^ Fintype.card V)⁻¹ • ∑ ψ : V → Fin m, f fun v => (ψ v : ℕ) := by
-        rw [← Finset.smul_sum, inv_pow]
+This turns an integral over a finite power of `(I, volume)` into a finite sum. The coordinatewise
+cell map is measure preserving onto the product of the uniform measures on `Fin m`, by Mathlib's
+`MeasureTheory.measurePreserving_pi` applied to `measurePreserving_cellFin`. A function `g` of the
+`ℕ`-valued indices `cellIdx m (x v)` is covered by taking `f ψ = g fun v => ψ v`, since
+`coe_cellFin` rewrites `(cellFin m x : ℕ)` to `cellIdx m x`. -/
+theorem integral_pi_comp_cellFin_eq_inv_smul_sum [NeZero m] (f : (V → Fin m) → E) :
+    ∫ x : V → I, f (fun v => cellFin m (x v)) ∂(Measure.pi fun _ : V => (volume : Measure I))
+      = ((m : ℝ) ^ Fintype.card V)⁻¹ • ∑ ψ : V → Fin m, f ψ := by
+  -- the cells of independent uniform points are independent uniform cells
+  have hmp := measurePreserving_pi (fun _ : V => (volume : Measure I))
+    (fun _ => ProbabilityTheory.uniformOn (univ : Set (Fin m))) fun _ => measurePreserving_cellFin
+  calc ∫ x : V → I, f (fun v => cellFin m (x v)) ∂(Measure.pi fun _ : V => (volume : Measure I))
+      = ∫ ψ : V → Fin m, f ψ ∂(Measure.pi fun _ => ProbabilityTheory.uniformOn univ) :=
+        hmp.hasLaw.integral_comp (f := f) .of_discrete
+    _ = ((m : ℝ) ^ Fintype.card V)⁻¹ • ∑ ψ : V → Fin m, f ψ := by
+        -- the product of uniform measures is the uniform measure on the cube of cells
+        rw [← ProbabilityTheory.uniformOn_pi, Set.pi_univ, Probability.integral_uniformOn_univ]
+        simp
 
 end unitInterval
 
