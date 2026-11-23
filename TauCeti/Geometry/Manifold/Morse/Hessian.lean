@@ -202,6 +202,16 @@ theorem criticalHessian_modelSpace {g : E → ℝ} {v : E} :
   -- The two sides differ only in reading `E` as the tangent space `TangentSpace 𝓘(ℝ, E) v`.
   rfl
 
+/-- On a normed space with its self-model, the quadratic form of the critical Hessian is the
+Hessian quadratic form. -/
+theorem toQuadraticMap_toBilinForm_criticalHessian_modelSpace {g : E → ℝ} {v : E} :
+    (criticalHessian 𝓘(ℝ, E) g v).toBilinForm.toQuadraticMap = hessianQuadraticForm g v := by
+  rw [toQuadraticMap_toBilinForm_criticalHessian]
+  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
+    Function.comp_id, id_eq]
+  -- The two sides differ only in reading `E` as the tangent space `TangentSpace 𝓘(ℝ, E) v`.
+  rfl
+
 /-- At a nondegenerate critical point the critical Hessian is invertible as a map to the dual of
 the tangent space. -/
 theorem IsManifoldNondegenerateCriticalPoint.isInvertible_criticalHessian
