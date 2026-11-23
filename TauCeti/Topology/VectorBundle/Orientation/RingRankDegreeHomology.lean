@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
-import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 import TauCeti.Topology.Homotopy.Covering
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
@@ -186,6 +185,15 @@ private def twistedFiberClass (W : Set B) {b : B} (hb : b ∈ W) :
       (fiberClassOver K ω W hb (modelFiberOrientation ω b)) ∘ₗ
     (signLocalSystemFiberEquiv (R := K) hι (modelFiberOrientation ω b)).toLinearMap)
 
+/-- `twistedFiberClass` evaluates `f` at the model orientation of `E_b`. -/
+private theorem twistedFiberClass_apply_model (W : Set B) {b : B} (hb : b ∈ W)
+    (f : (signLocalSystem F E K hι).obj (FundamentalGroupoid.mk b)) :
+    twistedFiberClass K hι ω W hb f =
+      signLocalSystemFiberEquiv hι (modelFiberOrientation ω b) f •
+        fiberClassOver K ω W hb (modelFiberOrientation ω b) :=
+  (ModuleCat.ofHom_apply _ f).trans
+    ((LinearMap.comp_apply _ _ f).trans (LinearMap.toSpanSingleton_apply K _ _ _))
+
 /-- `twistedFiberClass` evaluates `f` at any orientation `o` of `E_b`. -/
 private theorem twistedFiberClass_apply (W : Set B) {b : B} (hb : b ∈ W)
     (o : Orientation ℝ (E b) ι) (f : (signLocalSystem F E K hι).obj (FundamentalGroupoid.mk b)) :
@@ -195,10 +203,10 @@ private theorem twistedFiberClass_apply (W : Set B) {b : B} (hb : b ∈ W)
   -- or exchanged by the deck involution.
   rcases eq_or_eq_deck hι (p := ⟨b, modelFiberOrientation ω b⟩) (q := ⟨b, o⟩) rfl with h | h
   · obtain rfl := mk_eq_mk_iff.1 h
-    rfl
+    exact twistedFiberClass_apply_model hι ω W hb f
   · obtain rfl := mk_eq_mk_iff.1 (h.trans (deck_apply _))
     rw [signLocalSystemFiberEquiv_neg, fiberClassOver_neg hι, neg_smul_neg]
-    rfl
+    exact twistedFiberClass_apply_model hι ω W hb f
 
 /-- The value of `twistedFiberClass` on `f`, computed at any point `q` of the orientation double
 cover over `b`. -/
