@@ -176,10 +176,18 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} {E : B → Type*}
 variable (H S) in
 /-- `S` is locally trivial with fibre `H`, equivariantly: every point lies in the base set of a
 trivialization of `S` turning the action of `H` into right multiplication. -/
-@[expose] def IsLocallyTrivialReduction : Prop :=
+def IsLocallyTrivialReduction : Prop :=
   ∀ x : B, ∃ t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
     x ∈ t.baseSet ∧ ∀ (g : H) (p : S), (p : OrthonormalFrameBundle ℝ F E V).proj ∈ t.baseSet →
       t (op g • p) = ((t p).1, (t p).2 * g)
+
+/-- Unfolds `IsLocallyTrivialReduction`: every point lies in the base set of an equivariant
+trivialization of `S`. -/
+theorem isLocallyTrivialReduction_iff : IsLocallyTrivialReduction H S ↔
+    ∀ x : B, ∃ t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
+      x ∈ t.baseSet ∧ ∀ (g : H) (p : S), (p : OrthonormalFrameBundle ℝ F E V).proj ∈ t.baseSet →
+        t (op g • p) = ((t p).1, (t p).2 * g) :=
+  Iff.rfl
 
 variable (hS : IsLocallyTrivialReduction H S)
 
@@ -187,10 +195,12 @@ variable (hS : IsLocallyTrivialReduction H S)
 reduction. -/
 def IsLocallyTrivialReduction.atlas :
     MapFiber.Atlas H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj) :=
-  ⟨fun x ↦ (hS x).choose, fun x ↦ (hS x).choose_spec.1⟩
+  ⟨fun x ↦ (isLocallyTrivialReduction_iff.1 hS x).choose,
+    fun x ↦ (isLocallyTrivialReduction_iff.1 hS x).choose_spec.1⟩
 
 /-- The trivialization of the atlas at `x` is the chosen equivariant trivialization at `x`. -/
-theorem IsLocallyTrivialReduction.atlas_trivAt (x : B) : hS.atlas.trivAt x = (hS x).choose :=
+theorem IsLocallyTrivialReduction.atlas_trivAt (x : B) :
+    hS.atlas.trivAt x = (isLocallyTrivialReduction_iff.1 hS x).choose :=
   (rfl)
 
 /-- **A locally trivial reduction of the orthonormal frame bundle is a fibre bundle** with fibre
@@ -214,7 +224,7 @@ theorem principalBundle_reductionFiber :
     letI := reductionFiberBundle hS
     PrincipalBundle H (ReductionFiber S) :=
   hS.atlas.principalBundleOfHomeomorph _ _ _ (fun _ _ _ ↦ rfl)
-    fun x p hp g ↦ congrArg Prod.snd ((hS x).choose_spec.2 g p hp)
+    fun x p hp g ↦ congrArg Prod.snd ((isLocallyTrivialReduction_iff.1 hS x).choose_spec.2 g p hp)
 
 end Bundle
 
