@@ -52,7 +52,8 @@ with the torus sum, which vanishes at `t = 0`, needs `t ≠ 0`.
   parameters may be permuted) and `isIntegral_katzExpSum`.
 * `TauCeti.Hypergeometric.katzSum`, with `katzSum_zero` and `isIntegral_katzSum`.
 * `TauCeti.Hypergeometric.hypergeometricSum`, with `hypergeometricSum_eq_sum` (Definition 1.1 of
-  Beukers–Cohen–Mellit), `katzSum_eq_neg_mul_hypergeometricSum` and `hypergeometricSum_zero`.
+  Beukers–Cohen–Mellit), `prod_gaussSum_mul_prod_gaussSum_ne_zero` (the normalizing product is
+  nonzero), `katzSum_eq_neg_mul_hypergeometricSum` and `hypergeometricSum_zero`.
 * `TauCeti.Hypergeometric.katzExpSum_eq`: Beukers–Cohen–Mellit Proposition 3.1.
 
 ## References
@@ -128,9 +129,9 @@ theorem hypergeometricSum_eq_sum (ω : MulChar F ℂ) (ψ : AddChar F ℂ) (a b 
   ring
 
 /-- With `ψ` primitive, the normalizing product `∏ᵢ g(aᵢ) g(-bᵢ)` of `hypergeometricSum` is
-nonzero. -/
-private theorem normalizer_ne_zero (ω : MulChar F ℂ) {ψ : AddChar F ℂ} (hψ : ψ.IsPrimitive)
-    (a b : Multiset ℤ) :
+nonzero, since every Gauss sum `g(n)`, `g(0) = -1` included, is. -/
+theorem prod_gaussSum_mul_prod_gaussSum_ne_zero (ω : MulChar F ℂ) {ψ : AddChar F ℂ}
+    (hψ : ψ.IsPrimitive) (a b : Multiset ℤ) :
     (a.map fun aᵢ ↦ gaussSum (ω ^ aᵢ) ψ).prod * (b.map fun bᵢ ↦ gaussSum (ω ^ (-bᵢ)) ψ).prod ≠
       0 := by
   have h : (Fintype.card F : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_pos.ne'
@@ -144,7 +145,7 @@ theorem katzSum_eq_neg_mul_hypergeometricSum (ω : MulChar F ℂ) {ψ : AddChar 
     katzSum ω ψ a b t = -((a.map fun aᵢ ↦ gaussSum (ω ^ aᵢ) ψ).prod *
       (b.map fun bᵢ ↦ gaussSum (ω ^ (-bᵢ)) ψ).prod) * hypergeometricSum ω ψ a b t := by
   rw [hypergeometricSum_def, ← mul_assoc, neg_mul_neg,
-    mul_inv_cancel₀ (normalizer_ne_zero ω hψ a b), one_mul]
+    mul_inv_cancel₀ (prod_gaussSum_mul_prod_gaussSum_ne_zero ω hψ a b), one_mul]
 
 /-- At `t = 0` only the term `m = 0` of `S_q` survives:
 `S_q(a, b | 0) = (q - 1)⁻¹ ∏ᵢ g(aᵢ) g(-bᵢ)`. -/
@@ -163,7 +164,8 @@ parameters. -/
 theorem hypergeometricSum_zero (ω : MulChar F ℂ) {ψ : AddChar F ℂ} (hψ : ψ.IsPrimitive)
     (a b : Multiset ℤ) : hypergeometricSum ω ψ a b 0 = (1 - (Fintype.card F : ℂ))⁻¹ := by
   -- cancel the normalizing product from `S_q(a, b | 0) = -(∏ᵢ g(aᵢ) g(-bᵢ)) H_q(a, b | 0)`
-  refine mul_left_cancel₀ (neg_ne_zero.mpr (normalizer_ne_zero ω hψ a b)) ?_
+  refine mul_left_cancel₀
+    (neg_ne_zero.mpr (prod_gaussSum_mul_prod_gaussSum_ne_zero ω hψ a b)) ?_
   rw [← katzSum_eq_neg_mul_hypergeometricSum ω hψ, katzSum_zero, cast_card_sub_one,
     ← neg_sub (Fintype.card F : ℂ), inv_neg]
   ring
@@ -190,14 +192,6 @@ theorem katzExpSum_def (ω : MulChar F ℂ) (ψ : AddChar F ℂ) (a : ι → ℤ
       else 0 :=
   (rfl)
 
-omit [DecidableEq F] [Fintype F] [Fintype ι] [DecidableEq ι] [DecidableEq κ] in
-/-- A product of character values `∏ⱼ χⱼ(yⱼ)` vanishes when `∏ⱼ yⱼ = 0`: some `yⱼ` is then `0`,
-where every character vanishes. -/
-private theorem prod_apply_eq_zero_of_prod_eq_zero (χ : κ → MulChar F ℂ) {y : κ → F}
-    (hy : ∏ j, y j = 0) : ∏ j, χ j (y j) = 0 := by
-  obtain ⟨j, -, hj⟩ := prod_eq_zero_iff.mp hy
-  exact prod_eq_zero (mem_univ j) (by rw [hj, MulChar.map_zero])
-
 /-- Katz's exponential sum vanishes at `t = 0`: there `∏ⱼ yⱼ = 0`, and a character factor
 vanishes at the zero coordinate. -/
 @[simp]
@@ -206,7 +200,7 @@ theorem katzExpSum_zero (ω : MulChar F ℂ) (ψ : AddChar F ℂ) (a : ι → �
   refine Fintype.sum_eq_zero _ fun x ↦ Fintype.sum_eq_zero _ fun y ↦ ?_
   rw [zero_mul, ite_eq_right_iff]
   intro h
-  rw [prod_apply_eq_zero_of_prod_eq_zero _ h.symm, mul_zero, mul_zero]
+  rw [MulChar.prod_apply_eq_zero_of_prod_eq_zero _ h.symm, mul_zero, mul_zero]
 
 /-- Katz's exponential sum does not depend on the indexing of the parameters. -/
 theorem katzExpSum_comp_equiv {ι' κ' : Type*} [Fintype ι'] [Fintype κ'] [DecidableEq ι']
@@ -239,7 +233,8 @@ private theorem ite_eq_sum_range {ω : MulChar F ℂ} (hω : orderOf ω = Fintyp
         (ω ^ m) t * (∏ i, (ω ^ m) (x i)) * (∏ j, (ω ^ m)⁻¹ (y j)) *
           (c * ((∏ i, (ω ^ a i) (x i)) * ∏ j, (ω ^ (-b j)) (y j))) := by
   by_cases hy : ∏ j, y j = 0
-  · simp only [prod_apply_eq_zero_of_prod_eq_zero _ hy, mul_zero, ite_self, sum_const_zero]
+  · simp only [MulChar.prod_apply_eq_zero_of_prod_eq_zero _ hy, mul_zero, ite_self,
+      sum_const_zero]
   have key (m : ℕ) : (ω ^ m) t * (∏ i, (ω ^ m) (x i)) * (∏ j, (ω ^ m)⁻¹ (y j)) =
       (ω ^ m) (t * (∏ i, x i) * (∏ j, y j)⁻¹) := by
     rw [← map_prod, ← map_prod, MulChar.inv_apply', map_mul, map_mul]

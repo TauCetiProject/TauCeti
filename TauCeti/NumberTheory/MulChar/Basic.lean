@@ -58,6 +58,9 @@ integer power of its value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponen
 
 On a monoid with finitely many units, every value of a character is an algebraic integer
 (`MulChar.isIntegral_apply`): `0` at nonunits and a root of unity at units.
+
+On a monoid with zero without zero divisors, a product of character values `∏ⱼ χⱼ(yⱼ)` vanishes
+when `∏ⱼ yⱼ = 0` (`MulChar.prod_apply_eq_zero_of_prod_eq_zero`).
 -/
 
 public section
@@ -217,6 +220,14 @@ theorem isIntegral_apply {M R : Type*} [CommMonoid M] [Finite Mˣ] [CommRing R]
     simpa using χ.toUnitHom.isIntegral_coe_apply u
   · rw [map_nonunit χ hx]
     exact isIntegral_zero
+
+/-- A product of character values `∏ⱼ χⱼ(yⱼ)` vanishes when `∏ⱼ yⱼ = 0`: in a monoid with zero
+without zero divisors some `yⱼ` is then `0`, where every character vanishes. -/
+theorem prod_apply_eq_zero_of_prod_eq_zero {M R ι : Type*} [CommMonoidWithZero M] [Nontrivial M]
+    [NoZeroDivisors M] [CommMonoidWithZero R] {s : Finset ι} (χ : ι → MulChar M R) {y : ι → M}
+    (hy : ∏ j ∈ s, y j = 0) : ∏ j ∈ s, χ j (y j) = 0 := by
+  obtain ⟨j, hj, hj0⟩ := Finset.prod_eq_zero_iff.mp hy
+  exact Finset.prod_eq_zero hj (by rw [hj0, MulChar.map_zero])
 
 section Transport
 
