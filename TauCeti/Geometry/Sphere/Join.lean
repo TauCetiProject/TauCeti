@@ -77,7 +77,7 @@ private theorem mem_sphere_toLp_sqrt_smul (x : sphere (0 : E) 1) (y : sphere (0 
       sphere (0 : WithLp 2 (E × F)) 1 := by
   have h := prod_norm_sq_eq_of_L2 (toLp 2 (√(1 - (t : ℝ)) • (x : E), √(t : ℝ) • (y : F)))
   simp only [toLp_fst, toLp_snd, norm_smul, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-    norm_eq_of_mem_sphere, mul_one, Real.sq_sqrt (sub_nonneg.2 t.2.2), Real.sq_sqrt t.2.1,
+    norm_eq_of_mem_sphere, mul_one, Real.sq_sqrt (sub_nonneg.2 t.prop.2), Real.sq_sqrt t.prop.1,
     sub_add_cancel] at h
   rw [mem_sphere_zero_iff_norm]
   exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
@@ -115,12 +115,12 @@ theorem injective_sphereJoinMap : Function.Injective (sphereJoinMap (E := E) (F 
     have h' := congrArg norm hy
     simp only [norm_smul, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
       norm_eq_of_mem_sphere, mul_one] at h'
-    exact Subtype.ext ((Real.sqrt_inj t.2.1 t'.2.1).1 h')
+    exact Subtype.ext ((Real.sqrt_inj t.prop.1 t'.prop.1).1 h')
   subst htt'
   refine Join.mk_eq_mk_iff.2 ⟨rfl, fun ht ↦ Subtype.ext ?_, fun ht ↦ Subtype.ext ?_⟩
-  · have hlt : (t : ℝ) < 1 := lt_of_le_of_ne t.2.2 fun h ↦ ht (Subtype.ext h)
+  · have hlt : (t : ℝ) < 1 := lt_of_le_of_ne t.prop.2 fun h ↦ ht (Subtype.ext h)
     exact smul_right_injective E (Real.sqrt_ne_zero'.2 (sub_pos.2 hlt)) hx
-  · have hlt : 0 < (t : ℝ) := lt_of_le_of_ne t.2.1 fun h ↦ ht (Subtype.ext h.symm)
+  · have hlt : 0 < (t : ℝ) := lt_of_le_of_ne t.prop.1 fun h ↦ ht (Subtype.ext h.symm)
     exact smul_right_injective F (Real.sqrt_ne_zero'.2 hlt) hy
 
 /-- For nontrivial `E` and `F`, the map from the join of the unit spheres to the unit sphere of

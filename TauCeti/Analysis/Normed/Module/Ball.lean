@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Analysis.Normed.Module.RCLike.Basic
 import Mathlib.Tactic.Module
 import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.Topology.Instances.Nat
