@@ -132,7 +132,7 @@ the loop, oriented by `dt` followed by `ds`. -/
 theorem homologyPeriodHom_fluxForm_loopClass (σ : closedForms J M 2)
     (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.val) {c : ℝ → M}
     (hc : ContMDiff 𝓘(ℝ) J 1 c) {x : M} {γ : Path x x} (hγ : ∀ t : unitInterval, γ t = c t) :
-    homologyPeriodHom (Φ.fluxForm σ.val).val (H₁AddEquivHomology (.of M) (loopClass (X
+    homologyPeriodHom (Φ.fluxForm σ.val).val (H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X
         := .of M) γ)) =
       -rectangleIntegral σ.val.val (fun p ↦ Φ (projIcc 0 1 zero_le_one p.2, c p.1)) (0, 0) (1, 1)
           := by

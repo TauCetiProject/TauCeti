@@ -123,10 +123,8 @@ theorem exists_smul_eq_of_under_eq [Finite G] [Algebra.IsInvariant A B G] (R R' 
   refine Algebra.IsInvariant.exists_smul_of_under_eq (FixedPoints.subring B G) B G R R' ?_
   ext d
   obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) d.val d.property
-  have := congr(a ∈ $h)
-  rw [under_def, under_def, mem_comap, mem_comap, ha] at this
-  rw [under_def, under_def, mem_comap, mem_comap]
-  exact this.to_iff
+  simpa only [under_def, mem_comap, ha, Algebra.algebraMap_ofSubsemiring_apply] using
+    congr(a ∈ $h).to_iff
 
 section Fibres
 
@@ -221,15 +219,12 @@ theorem pow_card_mem_map_under {J : Ideal B} (hJ : ∀ g : G, ∀ b ∈ J, g •
   -- hence the coefficients of `charpoly G b - X ^ #G` lie in `J`, and they are invariant.
   have hr (i : ℕ) : (MulSemiringAction.charpoly G b - X ^ Nat.card G).coeff i ∈
       (J.under A).map (algebraMap A B) := by
-    obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) _ fun g ↦ by
-      rw [← AddMonoidAlgebra.coeff_smul_apply g (MulSemiringAction.charpoly G b - X ^ Nat.card G),
+    refine Algebra.IsInvariant.mem_map_under (G := G) (fun g ↦ ?_) ?_
+    · rw [← AddMonoidAlgebra.coeff_smul_apply g (MulSemiringAction.charpoly G b - X ^ Nat.card G),
         smul_sub, MulSemiringAction.smul_charpoly, smul_pow', smul_X]
-    have hJi : (MulSemiringAction.charpoly G b - X ^ Nat.card G).coeff i ∈ J := by
-      rw [← Quotient.eq_zero_iff_mem, ← coeff_map]
+    · rw [← Quotient.eq_zero_iff_mem, ← coeff_map]
       simp [MulSemiringAction.charpoly_eq, Polynomial.map_prod,
         Quotient.eq_zero_iff_mem.2 (hJ _ _ hb), Nat.card_eq_fintype_card]
-    rw [← ha] at hJi ⊢
-    exact mem_map_of_mem _ ((mem_under A J).2 hJi)
   have h : b ^ Nat.card G = -(MulSemiringAction.charpoly G b - X ^ Nat.card G).eval b := by
     rw [eval_sub, MulSemiringAction.eval_charpoly, eval_pow, eval_X, zero_sub, neg_neg]
   rw [h, eval_eq_sum, Polynomial.sum_def]
@@ -361,7 +356,7 @@ theorem smul_sum_smul {G M : Type*} [Group G] [Fintype G] [AddCommMonoid M]
 /-- **The trace criterion for the invariant ring.** If some element `c` of `B` has trace
 `∑ g, g • c = 1` under a finite group `G` and every trace `∑ g, g • b` lies in the image of `A`,
 then `A` is the invariant ring: a fixed element `b` is the trace of `c * b`. -/
-theorem Algebra.IsInvariant.of_sum_smul_eq_one {A B G : Type*} [CommSemiring A] [CommSemiring B]
+theorem Algebra.IsInvariant.of_sum_smul_eq_one {A B G : Type*} [CommSemiring A] [Semiring B]
     [Algebra A B] [Group G] [Fintype G] [MulSemiringAction G B] {c : B}
     (hc : ∑ g : G, g • c = 1) (htr : ∀ b : B, ∑ g : G, g • b ∈ Set.range (algebraMap A B)) :
     _root_.Algebra.IsInvariant A B G := by
@@ -378,8 +373,8 @@ theorem Algebra.smulCommClass_ker {G G' B B' : Type*} [Group G] [Group G'] [Comm
     (hπ : ∀ (g : G') (b : B), g • algebraMap B B' b = algebraMap B B' (π g • b)) :
     SMulCommClass π.ker B B' :=
   ⟨fun k b y ↦ by
-    rw [Subgroup.smul_def, Subgroup.smul_def, Algebra.smul_def, Algebra.smul_def, smul_mul', hπ,
-      (MonoidHom.mem_ker.mp k.property), one_smul]⟩
+    simp only [Subgroup.smul_def, Algebra.smul_def, smul_mul', hπ, MonoidHom.mem_ker.mp k.property,
+      one_smul]⟩
 
 end TauCeti
 
@@ -451,7 +446,7 @@ theorem eval_smul_charpoly_dvd_sub_smul [IsDomain B] {A : Type*} [CommSemiring A
 
 section TraceCoord
 
-variable {R A G : Type*} [CommSemiring R] [CommRing A] [Algebra R A] [Group G]
+variable {R A G : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Group G]
   [MulSemiringAction G A] [SMulCommClass G R A] [Algebra.IsInvariant R A G]
 
 variable (G) in
@@ -596,7 +591,6 @@ nonidentity group elements. Repeated orbit values are allowed. -/
 theorem eval_derivative_charpoly (a : A) :
     (MulSemiringAction.charpoly G a).derivative.eval a =
       ∏ g ∈ Finset.univ.erase (1 : G), (a - g • a) := by
-  classical
   have hprod : MulSemiringAction.charpoly G a = (X - C a) *
       ∏ g ∈ Finset.univ.erase (1 : G), (X - C (g • a)) := by
     simpa only [MulSemiringAction.charpoly_eq, one_smul] using

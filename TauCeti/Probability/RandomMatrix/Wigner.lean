@@ -8,13 +8,13 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Wigner matrices
@@ -41,7 +41,8 @@ and resolvent methods:
   the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`),
   independence restricts to the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`), and the law
   of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`). For zero
-  diagonal, deleting any index gives a minor independent of the removed off-diagonal column
+  diagonal and jointly independent, a.e.-measurable upper entries in the finite corner, deleting
+  any index gives a minor independent of the removed off-diagonal column
   (`indepFun_submatrix_wignerMatrix_zero_column`);
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
   independent whenever the corner upper entries are (`iIndepFun_wignerMatrix_apply_of_ne`,
@@ -102,6 +103,28 @@ def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
 @[simp]
 theorem wignerUpperIndex_val {n : ℕ} (u : StrictUpperFin n) :
     (wignerUpperIndex u).val = (u.val.1.val, u.val.2.val) :=
+  (rfl)
+
+/-- The upper positions of a finite matrix of size `n` are the upper positions of the infinite
+array whose column label is below `n`. -/
+def wignerCornerUpperEquiv (n : ℕ) : StrictUpperFin n ≃ {ij : StrictUpper // ij.val.2 < n} where
+  toFun u := ⟨wignerUpperIndex u, u.val.2.isLt⟩
+  invFun ij := ⟨(⟨ij.val.val.1, ij.val.property.trans ij.property⟩, ⟨ij.val.val.2, ij.property⟩),
+    ij.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Forgetting the corner bound of a finite upper position gives its infinite-array position. -/
+@[simp]
+theorem coe_wignerCornerUpperEquiv_apply {n : ℕ} (u : StrictUpperFin n) :
+    (wignerCornerUpperEquiv n u : StrictUpper) = wignerUpperIndex u :=
+  (rfl)
+
+/-- The finite position of an upper corner position has the same infinite-array position. -/
+@[simp]
+theorem wignerUpperIndex_wignerCornerUpperEquiv_symm_apply {n : ℕ}
+    (ij : {ij : StrictUpper // ij.val.2 < n}) :
+    wignerUpperIndex ((wignerCornerUpperEquiv n).symm ij) = ij.val :=
   (rfl)
 
 /-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/
@@ -257,6 +280,12 @@ theorem wignerMatrix_apply_of_gt {i j : Fin n} (h : j.val < i.val) :
 theorem wignerMatrix_apply_self (i : Fin n) :
     wignerMatrix ξ η n ω i i = (Real.sqrt n : ℂ)⁻¹ * η i.val ω := by
   simp [wignerMatrix]
+
+/-- With zero diagonal coordinates, the Wigner matrix has zero diagonal. -/
+@[simp]
+theorem diag_wignerMatrix_zero : (wignerMatrix ξ (fun _ _ ↦ 0) n ω).diag = 0 := by
+  ext i
+  simp
 
 /-- A Wigner matrix is its zero-diagonal version plus the original real diagonal divided by
 the square root of the dimension. -/
@@ -494,59 +523,73 @@ theorem indepFun_submatrix_castSucc_wignerMatrix (hξ : ∀ ij, AEMeasurable (ξ
       (submatrix_castLE_wignerMatrix (ξ := ξ) (η := η) ω (Nat.le_succ n))
   · rfl
 
-/-- For a zero-diagonal Wigner matrix with independent upper entries, every principal
-minor obtained by deleting an index is independent of the removed off-diagonal column. -/
-theorem indepFun_submatrix_wignerMatrix_zero_column (hind : iIndepFun ξ P)
-    (hm : ∀ ij, AEMeasurable (ξ ij) P) {n : ℕ} (i : Fin n) :
+private noncomputable def wignerUpperSubsetCoordinates {n : ℕ}
+    (s : Finset (StrictUpperFin n)) (x : s → ℂ) :
+    (k : WignerCoordinateIndex n) → WignerCoordinateType k
+  | .inl u => Function.extend Subtype.val x (fun _ ↦ 0) u
+  | .inr _ => 0
+
+private theorem measurable_wignerUpperSubsetCoordinates {n : ℕ} (s : Finset (StrictUpperFin n)) :
+    Measurable (wignerUpperSubsetCoordinates s) := by
+  refine measurable_pi_iff.mpr fun k ↦ ?_
+  cases k with
+  | inl u =>
+    exact (measurable_pi_apply u).comp (MeasureTheory.measurable_extend Subtype.val (fun _ ↦ 0))
+  | inr i => exact measurable_const
+
+omit [MeasurableSpace Ω] in
+private theorem wignerMatrixOfCoordinates_upperSubset_apply {n : ℕ}
+    (s : Finset (StrictUpperFin n)) (ω : Ω) (j k : Fin n)
+    (hjk : ∀ h : j.val < k.val, (⟨(j, k), h⟩ : StrictUpperFin n) ∈ s)
+    (hkj : ∀ h : k.val < j.val, (⟨(k, j), h⟩ : StrictUpperFin n) ∈ s) :
+    wignerMatrixOfCoordinates
+        (wignerUpperSubsetCoordinates s (fun a ↦ ξ (wignerUpperIndex a.val) ω)) j k =
+      wignerMatrix ξ (fun _ _ ↦ 0) n ω j k := by
+  rw [wignerMatrix_eq_wignerMatrixOfCoordinates]
+  simp only [wignerMatrixOfCoordinates_apply]
+  have hext (u : StrictUpperFin n) (hu : u ∈ s) :
+      Function.extend Subtype.val (fun a : s ↦ ξ (wignerUpperIndex a.val) ω)
+        (fun _ ↦ 0) u = ξ (wignerUpperIndex u) ω :=
+    Subtype.val_injective.extend_apply _ _ ⟨u, hu⟩
+  rcases lt_trichotomy j.val k.val with hlt | heq | hgt
+  · simp only [dite_eq_left hlt, wignerUpperSubsetCoordinates, wignerCoordinates_inl,
+      hext _ (hjk hlt)]
+  · simp [heq, wignerUpperSubsetCoordinates]
+  · simp only [dite_eq_right hgt.not_gt, dite_eq_left hgt, wignerUpperSubsetCoordinates,
+      wignerCoordinates_inl, hext _ (hkj hgt)]
+
+/-- For a zero-diagonal Wigner matrix with jointly independent, a.e.-measurable upper entries
+in the finite corner, every principal minor obtained by deleting an index is independent
+of the removed off-diagonal column. -/
+theorem indepFun_submatrix_wignerMatrix_zero_column {n : ℕ}
+    (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P) (i : Fin n) :
     IndepFun (fun ω ↦ ((wignerMatrix ξ (fun _ _ ↦ 0) n ω).submatrix (↑) (↑) :
       Matrix {j // j ≠ i} {j // j ≠ i} ℂ))
       (fun ω (j : {j // j ≠ i}) ↦ wignerMatrix ξ (fun _ _ ↦ 0) n ω j i) P := by
   classical
-  let S := (Finset.univ : Finset (StrictUpperFin n)).image wignerUpperIndex
-  let T := S.filter (fun ij ↦ ij.val.1 = i.val ∨ ij.val.2 = i.val)
-  let U := S \ T
-  let extend (V : Finset StrictUpper) (x : V → ℂ) :=
-    Function.extend (Subtype.val : V → StrictUpper) x (fun _ ↦ (0 : ℂ))
-  let W (V : Finset StrictUpper) :=
-    wignerMatrix (fun ij x ↦ extend V x ij) (fun _ _ ↦ 0) n
-  have hW (V : Finset StrictUpper) : Measurable (W V) :=
-    measurable_wignerMatrix (ξ := fun ij x ↦ extend V x ij) (η := fun _ _ ↦ 0)
-      (fun ij _ ↦ (measurable_pi_apply ij).comp (MeasureTheory.measurable_extend
-        (Subtype.val : V → StrictUpper) (fun _ ↦ (0 : ℂ))))
-      (fun _ _ ↦ measurable_const)
-  have hu : Disjoint U T := Finset.sdiff_disjoint
-  have h := (hind.indepFun_finset₀ U T hu hm).comp
-    (φ := fun x ↦ ((W U x).submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ))
-    (ψ := fun x (j : {j // j ≠ i}) ↦ W T x j i)
-    (.of_eval_matrix _ fun _ _ ↦ (hW U).eval_matrix)
-    (measurable_pi_iff.mpr fun _ ↦ (hW T).eval_matrix)
-  have hs {j k : Fin n} (hjk : j.val < k.val) :
-      (⟨(j.val, k.val), hjk⟩ : StrictUpper) ∈ S :=
-    Finset.mem_image.mpr ⟨⟨(j, k), hjk⟩, Finset.mem_univ _, Subtype.ext (wignerUpperIndex_val _)⟩
+  let T : Finset (StrictUpperFin n) := Finset.univ.filter (fun u ↦ u.val.1 = i ∨ u.val.2 = i)
+  let U : Finset (StrictUpperFin n) := Finset.univ \ T
+  have hi := hind.precomp (wignerCornerUpperEquiv n).injective
+  let M (s : Finset (StrictUpperFin n)) :=
+    wignerMatrixOfCoordinates ∘ wignerUpperSubsetCoordinates s
+  have hM (s : Finset (StrictUpperFin n)) : Measurable (M s) :=
+    measurable_wignerMatrixOfCoordinates.comp (measurable_wignerUpperSubsetCoordinates s)
+  have h := (hi.indepFun_finset₀ U T Finset.sdiff_disjoint
+    (fun u ↦ hm (wignerUpperIndex u) u.val.2.isLt)).comp
+    (φ := fun x ↦ ((M U x).submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ))
+    (ψ := fun x (j : {j // j ≠ i}) ↦ M T x j i)
+    (.of_eval_matrix _ fun _ _ ↦ (hM U).eval_matrix)
+    (measurable_pi_iff.mpr fun _ ↦ (hM T).eval_matrix)
+  have hu {j k : Fin n} (hj : j ≠ i) (hk : k ≠ i) (hjk : j.val < k.val) :
+      (⟨(j, k), hjk⟩ : StrictUpperFin n) ∈ U := by
+    simp [U, T, hj, hk]
   refine h.congr (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
-  · apply Matrix.ext
-    intro j k
-    simp only [Function.comp_apply, Matrix.submatrix_apply, W, extend]
-    have hj := Fin.val_ne_of_ne j.property
-    have hk := Fin.val_ne_of_ne k.property
-    rcases lt_trichotomy j.val.val k.val.val with hlt | heq | hgt
-    · have hmem : (⟨(j.val.val, k.val.val), hlt⟩ : StrictUpper) ∈ U :=
-        Finset.mem_sdiff.mpr ⟨hs hlt, by simp [T, hj, hk]⟩
-      simp only [wignerMatrix_apply_of_lt _ _ _ hlt, Function.extend_val_apply hmem]
-    · obtain rfl : j = k := Subtype.ext (Fin.ext heq)
-      simp
-    · have hmem : (⟨(k.val.val, j.val.val), hgt⟩ : StrictUpper) ∈ U :=
-        Finset.mem_sdiff.mpr ⟨hs hgt, by simp [T, hj, hk]⟩
-      simp only [wignerMatrix_apply_of_gt _ _ _ hgt, Function.extend_val_apply hmem]
+  · exact Matrix.ext fun j k ↦ wignerMatrixOfCoordinates_upperSubset_apply U ω j.val k.val
+      (hu j.property k.property) (hu k.property j.property)
   · funext j
-    simp only [Function.comp_apply, W, extend]
-    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne j.property) with hlt | hgt
-    · have hmem : (⟨(j.val.val, i.val), hlt⟩ : StrictUpper) ∈ T :=
-        Finset.mem_filter.mpr ⟨hs hlt, Or.inr rfl⟩
-      simp only [wignerMatrix_apply_of_lt _ _ _ hlt, Function.extend_val_apply hmem]
-    · have hmem : (⟨(i.val, j.val.val), hgt⟩ : StrictUpper) ∈ T :=
-        Finset.mem_filter.mpr ⟨hs hgt, Or.inl rfl⟩
-      simp only [wignerMatrix_apply_of_gt _ _ _ hgt, Function.extend_val_apply hmem]
+    exact wignerMatrixOfCoordinates_upperSubset_apply T ω j.val i
+      (fun h ↦ by simp [T]) (fun h ↦ by simp [T])
 
 /-- The law of a Wigner matrix with independent entries depends only on the laws of the
 entries: two arrays of independent entries with identically distributed coordinates give
@@ -621,6 +664,15 @@ theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v :
   (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
     (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
 
+/-- If the upper entries in the corner are jointly independent, the entries of each column
+outside its diagonal are jointly independent. -/
+theorem iIndepFun_wignerMatrix_offDiag_column {n : ℕ} (i : Fin n)
+    (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P) :
+    iIndepFun (fun (j : {j // j ≠ i}) ω ↦ wignerMatrix ξ η n ω j i) P :=
+  iIndepFun_wignerMatrix_apply_of_ne Subtype.val (fun _ ↦ i) Subtype.property
+    (fun j _ h ↦ Subtype.ext (((Sym2.eq_iff.mp h).resolve_right
+      fun he ↦ j.property he.1).1)) hind
+
 end IndependentEdges
 
 section Entries
@@ -673,15 +725,10 @@ cardinality `k`, is integrable when the corner entries of size `n` lie in `Lᵏ`
 theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι] {n : ℕ}
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (Fintype.card ι) P)
     (hη : ∀ i < n, MemLp (η i) (Fintype.card ι) P) (u v : ι → Fin n) :
-    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P := by
-  cases isEmpty_or_nonempty ι
-  · simp
-  have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp [Fintype.card_ne_zero]
-  have h := MemLp.fun_prod (s := Finset.univ) (p := fun _ ↦ (Fintype.card ι : ℝ≥0∞))
-    fun s _ ↦ memLp_wignerMatrix_apply hξ hη (u s) (v s)
-  rwa [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
-    ENNReal.mul_inv_cancel hcard (ENNReal.natCast_ne_top _), inv_one, memLp_one_iff_integrable]
-    at h
+    Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P :=
+  integrable_fun_prod_of_memLp_card fun s _ ↦ by
+    rw [Finset.card_univ]
+    exact memLp_wignerMatrix_apply hξ hη (u s) (v s)
 
 end Entries
 
@@ -691,6 +738,16 @@ variable {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 variable [MeasurableSpace Ω] {P : Measure Ω}
 
+/-- The Bochner integral of the squared norm of an off-diagonal entry is the common upper-entry
+squared-norm integral divided by the dimension. For square-integrable entries these are second
+absolute moments. -/
+theorem integral_norm_wignerMatrix_apply_sq_of_ne {s : ℝ} {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
+    {i j : Fin n} (hij : i ≠ j) :
+    ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
+  simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul]
+  rw [hξ _ (max_lt i.isLt j.isLt)]
+
 private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) (hη : ∀ i, ∫ ω, η i ω ^ 2 ∂P = σ2) {n : ℕ}
     (i j : Fin n) :
@@ -698,8 +755,8 @@ private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
   by_cases hij : i = j
   · subst j
     simp only [norm_wignerMatrix_apply_self_sq, integral_const_mul, hη, ↓reduceIte]
-  · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul,
-      hξ, hij, ↓reduceIte]
+  · simpa only [ite_eq_right hij] using
+      integral_norm_wignerMatrix_apply_sq_of_ne (η := η) (fun ij _ ↦ hξ ij) hij
 
 private theorem integrable_norm_wignerMatrix_apply_sq
     (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hη : ∀ i, Integrable (fun ω ↦ η i ω ^ 2) P)

@@ -300,22 +300,10 @@ theorem discriminantQuadraticIsometry_piCongr_glueWordIsometry (hv : ∀ i, (t i
     ((Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ).symm.trans
         (Isometry.pi f)).discriminantQuadraticIsometry (isEven_pi_rootLattice t ht)
         (glueWordIsometry t ht hv w) =
-      glueWordIsometry s hs hvs fun k ↦ g k (w (σ k)) := by
-  obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ).surjective w
-  have hσ := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
-    (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry t ht hv σ v)
-  have hpi := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
-    (discriminantQuadraticIsometry_pi_glueWordIsometry (fun k ↦ t (σ k))
-      (fun k ↦ ht (σ k)) (fun k ↦ hv (σ k)) hvs f g h v)
-  -- Undo the reindexing to reach the word `v` of `k ↦ t (σ k)`, then act componentwise by `f`.
-  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-  rw [Isometry.discriminantGroupEquiv_trans]
-  refine (LinearEquiv.trans_apply ..).trans ?_
-  have hsymm := (DFunLike.congr_fun (Isometry.discriminantGroupEquiv_symm
-    (Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ)) _).trans
-    ((congrArg _ hσ.symm).trans (LinearEquiv.symm_apply_apply _ _))
-  refine (congrArg _ hsymm).trans (hpi.trans (congrArg _ (funext fun k ↦ ?_)))
-  rw [Equiv.piCongrLeft_apply_apply]
+      glueWordIsometry s hs hvs fun k ↦ g k (w (σ k)) :=
+  discriminantQuadraticIsometry_piCongrLeft_symm_trans_pi_discriminantQuadraticIsometryPiOfIsometry
+    (fun i ↦ (t i).rootLattice (ht i)) (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i))
+    (fun k ↦ (s k).glueAlphabetIsometry (hvs k) (hs k)) σ f g h w
 
 section SignedPermutation
 
@@ -378,11 +366,8 @@ theorem piGlueAlphabetCongr_apply (w : ∀ i, (t i).glueAlphabet (ht i)) (k : κ
     piGlueAlphabetCongr t ht σ h w k =
       FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr (h k) (ht (σ k)) (hs k))
         (w (σ k)) := by
-  conv_rhs => rw [← (QuadraticMap.IsometryEquiv.piCongrLeft
-    (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic) σ).apply_symm_apply w]
-  rw [QuadraticMap.IsometryEquiv.piCongrLeft_apply_apply]
-  -- `QuadraticMap.IsometryEquiv.pi` acts coordinatewise by definition.
-  rfl
+  rw [piGlueAlphabetCongr, QuadraticMap.IsometryEquiv.trans_apply,
+    QuadraticMap.IsometryEquiv.pi_apply, QuadraticMap.IsometryEquiv.piCongrLeft_symm_apply]
 
 /-- Reindexing glue words along the identity equivalence is the identity. -/
 @[simp]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
 public import TauCeti.Algebra.Homology.SpectralObject.Basic
+public import TauCeti.Algebra.Homology.SpectralObject.Naturality
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Page
@@ -36,7 +37,11 @@ the induced morphism of quotients (`CochainComplex.toSpectralSequencePageX_natur
 dually through the embeddings (`CochainComplex.fromSpectralSequencePageX_naturality`). On the
 abutment, identified with the cohomology of the filtered complex by `filtrationAbutmentIso`, the
 morphism of spectral objects is the map in cohomology of the morphism of complexes
-(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`).
+(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`),
+and on the pieces of the image filtrations it is the map `H^n(F_q) ⟶ H^n(G_q)`
+(`CochainComplex.toFiltrationAbutmentFiltration_naturality`). For finite filtrations, the morphism
+of spectral sequences induced by a morphism of filtrations is the induced map on the graded pieces
+of the abutments (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality`).
 
 A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
 spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
@@ -68,6 +73,9 @@ cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the f
 * `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`:
   on the abutment, the morphism of spectral objects is the map in cohomology of the morphism of
   complexes.
+* `CochainComplex.toFiltrationAbutmentFiltration_naturality`,
+  `CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality`: naturality of
+  the filtration of the abutment and of strong convergence for finite filtrations.
 -/
 
 public section
@@ -310,5 +318,52 @@ lemma fromSpectralSequencePageX_naturality (α : F ⟶ G) (r : ℤ) (hr : 2 ≤ 
   simp only [Category.assoc]
 
 end Page
+
+section ConvergenceNaturality
+
+variable {K L : CochainComplex C ℤ} {F : ℤ → Subobject K} {hF : Monotone F}
+  {G : ℤ → Subobject L} {hG : Monotone G}
+
+/-- **The filtration of the abutment is natural.** Let `f : K ⟶ L` send each piece `F_q` into
+`G_q`. The epimorphisms `toFiltrationAbutmentFiltration` from `H^n(F_q)` and `H^n(G_q)` onto the
+`q`th pieces of the filtrations of the abutments intertwine the map `H^n(F_q) ⟶ H^n(G_q)` induced
+by the restriction of `f` with the map induced by `f` on these pieces. -/
+@[reassoc]
+lemma toFiltrationAbutmentFiltration_naturality (f : K ⟶ L)
+    (hf : ∀ q, (G q).Factors ((F q).arrow ≫ f)) (q n : ℤ) :
+    HomologicalComplex.homologyMap ((G q).factorThru _ (hf q)) n ≫
+        toFiltrationAbutmentFiltration G hG q n =
+      toFiltrationAbutmentFiltration F hF q n ≫
+        opcyclesMapOfHom (spectralObjectMap (filtrationFunctorMap hF hG f hf))
+          (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (le_top : (q : EInt) ≤ ⊤)) n := by
+  rw [← cancel_mono ((spectralObject (filtrationFunctor G hG)).abutmentFiltrationι q n ≫
+    (filtrationAbutmentIso G hG n).hom)]
+  simp only [Category.assoc, toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom,
+    abutmentFiltrationι_naturality_assoc,
+    spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom,
+    toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom_assoc,
+    ← HomologicalComplex.homologyMap_comp, Subobject.factorThru_arrow]
+
+/-- **Strong convergence for finite filtrations is natural.** Let `α` be a morphism between the
+functors of increasing filtrations `F` of `K` and `G` of `L` with `F_a = G_a = ⊥` and
+`F_b = G_b = ⊤`. Through `filtrationSpectralSequencePageXIsoGradedOfFinite`, the morphism of
+spectral sequences induced by `α` is, on the object at `(p, q)` of every page `r ≥ 2` with
+`q - r + 2 ≤ a` and `b ≤ q + r - 1`, the map induced by `α` on the graded pieces
+`F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtrations of the abutments. -/
+@[reassoc]
+lemma filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) {a b : ℤ} (hFa : F a = ⊥)
+    (hGa : G a = ⊥) (hFb : F b = ⊤) (hGb : G b = ⊤) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (hra : pq.2 - r + 2 ≤ a) (hrb : b ≤ pq.2 + r - 1) :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq ≫
+        (filtrationSpectralSequencePageXIsoGradedOfFinite G hG hGa hGb r hr pq hra hrb).hom =
+      (filtrationSpectralSequencePageXIsoGradedOfFinite F hF hFa hFb r hr pq hra hrb).hom ≫
+        abutmentGradedMap (spectralObjectMap α) pq.2 (pq.1 + pq.2) := by
+  simp only [filtrationSpectralSequencePageXIsoGradedOfFinite_hom,
+    filtrationSpectralSequencePageXIsoEInftyOfFinite_hom, spectralSequenceMap_hom,
+    spectralSequencePageMap_f]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
+
+end ConvergenceNaturality
 
 end CochainComplex
