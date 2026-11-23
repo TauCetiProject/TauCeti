@@ -14,15 +14,17 @@ import TauCeti.NumberTheory.JacobiSum.Basic
 Let `F` be a finite field of odd characteristic with quadratic character `χ`. For `a ≠ 0`, the
 value `u = a t²` has `1 + χ(a u)` preimages `t`, by Mathlib's `quadraticChar_card_sqrts`. Hence a
 sum over `t` of a function of `a t²` is a sum over `u` weighted by `1 + χ(a u)`. Similarly the
-quadratic character sums to zero against any nonzero dilation, and the quadratic Jacobi sum
-`∑ᵤ χ(u (c - u))` is evaluated through `MulChar.sum_mul_apply_neg_eq_ite` at `c = 0`, and through
-`MulChar.sum_mul_apply_sub_eq_mul_jacobiSum` and Mathlib's `jacobiSum_nontrivial_inv` otherwise.
+quadratic character sums to zero against any nonzero dilation. With `q = #F`, the quadratic
+Jacobi sum `∑ᵤ χ(u (c - u))` is `χ(-1) (q - 1)` at `c = 0` (through
+`MulChar.sum_mul_apply_neg_eq_ite`) and `-χ(-1)` otherwise (through
+`MulChar.sum_mul_apply_sub_eq_mul_jacobiSum` and Mathlib's `jacobiSum_nontrivial_inv`).
 
 ## Main results
 
 * `TauCeti.sum_comp_mul_sq`: `∑ₜ g(a t²) = ∑ᵤ (1 + χ(a u)) • g(u)` for `a ≠ 0`.
 * `TauCeti.sum_quadraticChar_mul`: `∑ᵤ χ(a u) = 0`.
-* `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))`.
+* `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))` is
+  `χ(-1) (q - 1)` at `c = 0` and `-χ(-1)` otherwise.
 -/
 
 public section
