@@ -234,10 +234,10 @@ def relativeDiffCongrContinuousMulEquivOfImageEq (e : M ≃ₘ^n⟮I, J⟯ N)
     fixingSubgroup (I := I) (n := n) s ≃ₜ* fixingSubgroup (I := J) (n := n) t where
   toMulEquiv := relativeDiffCongrOfImageEq e hst
   continuous_toFun :=
-    ((continuous_diffCongr e).comp continuous_subtype_val).subtype_mk _
+    ((continuous_diffCongr e).comp continuous_subtypeVal).subtype_mk _
   continuous_invFun := by
     apply Continuous.subtype_mk
-    exact ((continuous_diffCongr e.symm).comp continuous_subtype_val).congr fun ψ ↦
+    exact ((continuous_diffCongr e.symm).comp continuous_subtypeVal).congr fun ψ ↦
       (relativeDiffCongrOfImageEq_symm_apply e hst ψ).symm
 
 /-- Conjugation gives a homeomorphic group isomorphism between the weak-Whitney spaces fixing `s`

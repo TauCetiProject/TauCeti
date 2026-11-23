@@ -43,8 +43,8 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'} (Φ : Fan i) (Ψ : Fan i')
   (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular) (m : IntegralCharacter (N × N'))
-  (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.1)
-  (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.1)
+  (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.val)
+  (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.val)
 
 /-- Under the canonical product homeomorphism, the character function of a character of the
 product lattice is the product of the character functions of its restrictions to the two

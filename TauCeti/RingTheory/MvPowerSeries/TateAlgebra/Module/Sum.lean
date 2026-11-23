@@ -39,19 +39,20 @@ open Filter _root_.MvPowerSeries
 open scoped Topology
 
 variable {σ τ E R : Type*} [SeminormedAddCommGroup E] {c : σ → ℝ} {d : τ → ℝ}
-  [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)]
+  [∀ i, Fact (0 < c i)]
 
 namespace IsRestrictedFamily.Gauss
 
 /-- A slice of a jointly restricted family, with the exponents in `σ` fixed. -/
 def sumSlice (a : Gauss (Sum.elim c d) E) (s : σ →₀ ℕ) : Gauss d E :=
   ofAddSubgroup ⟨fun t ↦ a (s.sumElim t),
-    mem_addSubgroup.mpr ((mem_addSubgroup.mp a.toAddSubgroup.2).comp_sumElim s)⟩
+    mem_addSubgroup.mpr ((mem_addSubgroup.mp a.toAddSubgroup.property).comp_sumElim s)⟩
 
-omit [∀ j, Fact (0 < d j)] in
 @[simp]
 theorem sumSlice_apply (a : Gauss (Sum.elim c d) E) (s : σ →₀ ℕ) (t : τ →₀ ℕ) :
     sumSlice a s t = a (s.sumElim t) := (rfl)
+
+variable [∀ j, Fact (0 < d j)]
 
 /-- The Gauss norms of the slices of a jointly restricted family themselves decay with the
 outer weights. Merely knowing that every slice is restricted would not suffice. -/
@@ -64,7 +65,7 @@ theorem isRestrictedFamily_sumSlice (a : Gauss (Sum.elim c d) E) :
   -- Project the finite set of coefficients reaching ε/2 onto the outer exponent set.
   have hbad : {k | ε / 2 ≤ ‖a k‖ * k.prod (Sum.elim c d · ^ ·)}.Finite := by
     simpa [eventually_cofinite, not_lt] using
-      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.2)).eventually
+      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)).eventually
         (gt_mem_nhds (half_pos hε))
   rw [eventually_cofinite]
   refine (hbad.image fun k ↦ k.comapDomain Sum.inl Sum.inl_injective.injOn).subset fun s hs ↦ ?_
@@ -91,12 +92,12 @@ theorem isRestrictedFamily_flatten (a : Gauss c (Gauss d E)) :
   -- those slices has only finitely many coefficients reaching its rescaled threshold.
   have houter : {s | ε ≤ ‖a s‖ * s.prod (c · ^ ·)}.Finite := by
     simpa [eventually_cofinite, not_lt] using
-      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.2)).eventually
+      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)).eventually
         (gt_mem_nhds hε)
   have hinner (s : σ →₀ ℕ) : {t | ε / s.prod (c · ^ ·) ≤
       ‖a s t‖ * t.prod (d · ^ ·)}.Finite := by
     simpa [eventually_cofinite, not_lt] using
-      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp (a s).toAddSubgroup.2)).eventually
+      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp (a s).toAddSubgroup.property)).eventually
         (gt_mem_nhds (div_pos hε (prod_pow_pos s)))
   rw [eventually_cofinite]
   refine (houter.biUnion fun s _ ↦ (hinner s).image s.sumElim).subset fun k hk ↦ ?_

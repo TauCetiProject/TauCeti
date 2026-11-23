@@ -56,9 +56,9 @@ namespace TauCeti
 
 open LieAlgebra TauCeti.Algebra TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable {K : Type} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
   (b : (IsKilling.rootSystem H).Base)
@@ -86,7 +86,7 @@ noncomputable def harishChandraLinearIso : Subalgebra.center K (U L) ≃ₐ[K] l
     ((hcProjectionLinear b).codRestrict (linearInvariants H)
       (hcProjectionLinear_mem_linearInvariants b))
     ⟨fun _ _ h ↦ hcProjectionLinear_injective b (congrArg Subtype.val h),
-      fun q ↦ (exists_hcProjectionLinear_eq b q.2).imp fun _ hz ↦ Subtype.ext hz⟩
+      fun q ↦ (exists_hcProjectionLinear_eq b q.property).imp fun _ hz ↦ Subtype.ext hz⟩
 
 /-- The linear Harish-Chandra isomorphism is the linear Harish-Chandra projection. -/
 @[simp]
@@ -107,7 +107,7 @@ noncomputable def harishChandraIso : Subalgebra.center K (U L) ≃ₐ[K] dotInva
   AlgEquiv.ofBijective
     ((hcProjection b).codRestrict (dotInvariants b) hcProjection_mem_dotInvariants)
     ⟨fun _ _ h ↦ hcProjection_injective b (congrArg Subtype.val h),
-      fun p ↦ (exists_hcProjection_eq b p.2).imp fun _ hz ↦ Subtype.ext hz⟩
+      fun p ↦ (exists_hcProjection_eq b p.property).imp fun _ hz ↦ Subtype.ext hz⟩
 
 /-- The Harish-Chandra isomorphism is the Harish-Chandra projection. -/
 @[simp]

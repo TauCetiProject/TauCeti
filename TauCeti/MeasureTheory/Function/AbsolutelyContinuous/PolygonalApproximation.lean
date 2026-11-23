@@ -36,8 +36,7 @@ namespace AbsolutelyContinuousOnInterval
 
 variable [CompleteSpace E] {a b : ℝ}
 
-private theorem integral_intervalStep_eq {δ : ℝ} (hδ : 0 < δ)
-    (g : ℝ → E) (c : E) (i : ℕ) {t : ℝ}
+private theorem integral_intervalStep_eq {δ : ℝ} (g : ℝ → E) (c : E) (i : ℕ) {t : ℝ}
     (ht : t ∈ Icc (a + i * δ) (a + (i + 1) * δ)) :
     (∫ v in (a + i * δ)..t, intervalStep a δ g v + c) =
       (t - (a + i * δ)) • (g (a + i * δ) + c) := by
@@ -47,7 +46,7 @@ private theorem integral_intervalStep_eq {δ : ℝ} (hδ : 0 < δ)
   rw [uIoc_of_le ht.1] at hmem
   have hv' : v ∈ Ico (a + i * δ) (a + (i + 1) * δ) :=
     ⟨hmem.1.le, lt_of_le_of_ne (hmem.2.trans ht.2) hv⟩
-  rw [intervalStep_eq hδ g i hv']
+  rw [intervalStep_eq g i hv']
 
 private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
     (g : ℝ →ᵇ E) (x c : E) :
@@ -81,7 +80,7 @@ private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
     have h := intervalIntegral.integral_interval_sub_left
       (hint.mono_set (uIcc_subset_uIcc (left_mem_uIcc) hu'))
       (hint.mono_set (uIcc_subset_uIcc (left_mem_uIcc) hleft))
-    have hc := integral_intervalStep_eq hδ g c i.val
+    have hc := integral_intervalStep_eq g c i.val
       (by simpa only [s, Fin.val_castSucc, Fin.val_succ, Nat.cast_add, Nat.cast_one] using hu)
     dsimp only [s, Fin.val_castSucc] at h ⊢
     rw [hc] at h
@@ -111,7 +110,7 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
   have hγi' : IntegrableOn (deriv γ) (Ioc a b) := by
     simpa only [uIoc_of_le hab.le] using hγi.def'
   -- Approximate the velocity by a step function on a uniform subdivision.
-  obtain ⟨N, hN, g, hg⟩ := hγi'.exists_intervalStep_integral_norm_sub_le hab hε
+  obtain ⟨N, hN, g, hg⟩ := hγi'.exists_intervalStep_integral_norm_sub_le hε
   let δ := (b - a) / N
   let s := intervalStep a δ g
   have hsi' : IntegrableOn s (Ioc a b) := integrableOn_intervalStep a b δ g

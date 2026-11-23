@@ -59,7 +59,7 @@ example : ((parallel.deleteEdges deleted).internalEdges
     ({source, sink} : Finset V(parallel))).card = 1 := by
   classical
   rw [card_internalEdges_deleteEdges]
-  have h : (parallel.internalEdges {source, sink}).filter (fun e ↦ e.1 ∉ deleted) =
+  have h : (parallel.internalEdges {source, sink}).filter (fun e ↦ e.val ∉ deleted) =
       {⟨0, by simp [parallel]⟩} := by
     ext e
     simp [mem_internalEdges, parallel, source, sink, deleted, Subtype.ext_iff]
@@ -77,12 +77,12 @@ example : ((parallel.deleteEdges deleted).internalEdges
 example : ((loops.deleteEdges deleted).internalEdges ({base} : Finset V(loops))).card = 1 ∧
     ((loops.deleteEdges deleted).incidentEdges ({base} : Finset V(loops))).card = 1 := by
   classical
-  have hi : (loops.internalEdges {base}).filter (fun e ↦ e.1 ∉ deleted) =
+  have hi : (loops.internalEdges {base}).filter (fun e ↦ e.val ∉ deleted) =
       {⟨0, by simp [loops]⟩} := by
     ext e
     simp [mem_internalEdges, loops, base, deleted, Subtype.ext_iff]
     omega
-  have hj : (loops.incidentEdges {base}).filter (fun e ↦ e.1 ∉ deleted) =
+  have hj : (loops.incidentEdges {base}).filter (fun e ↦ e.val ∉ deleted) =
       {⟨0, by simp [loops]⟩} := by
     ext e
     simp [mem_incidentEdges, loops, base, deleted, Graph.Inc, Subtype.ext_iff]

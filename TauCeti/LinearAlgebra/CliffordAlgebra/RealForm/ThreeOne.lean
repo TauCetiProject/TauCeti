@@ -96,9 +96,9 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
     -- Restate subtype membership through the Hermitian predicate proved above.
     change IsSelfAdjoint (realCliffordThreeOneVectorMatrix v)
     exact (realCliffordThreeOneVectorMatrix_isHermitian v).isSelfAdjoint⟩
-  invFun A := ![-(A.1 0 1).im, -(A.1 0 1).re,
-    ((A.1 0 0).re - (A.1 1 1).re) / 2,
-    ((A.1 0 0).re + (A.1 1 1).re) / 2]
+  invFun A := ![-(A.val 0 1).im, -(A.val 0 1).re,
+    ((A.val 0 0).re - (A.val 1 1).re) / 2,
+    ((A.val 0 0).re + (A.val 1 1).re) / 2]
   map_add' v w := by
     apply Subtype.ext
     ext i j
@@ -113,14 +113,14 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
     funext i
     fin_cases i <;> simp [realCliffordThreeOneVectorMatrix]
   right_inv A := by
-    have h00 := Matrix.IsHermitian.apply A.2 0 0
-    have h01 := Matrix.IsHermitian.apply A.2 1 0
-    have h11 := Matrix.IsHermitian.apply A.2 1 1
-    have h00im : (A.1 0 0).im = 0 := by
+    have h00 := Matrix.IsHermitian.apply A.property 0 0
+    have h01 := Matrix.IsHermitian.apply A.property 1 0
+    have h11 := Matrix.IsHermitian.apply A.property 1 1
+    have h00im : (A.val 0 0).im = 0 := by
       have h := congrArg Complex.im h00
       simp at h
       linarith
-    have h11im : (A.1 1 1).im = 0 := by
+    have h11im : (A.val 1 1).im = 0 := by
       have h := congrArg Complex.im h11
       simp at h
       linarith
@@ -133,7 +133,7 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
       · simp [realCliffordThreeOneVectorMatrix, h00im]
     · apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
     · -- Expose the matrix entry before using Hermitian symmetry across the diagonal.
-      change realCliffordThreeOneVectorMatrix _ 1 0 = A.1 1 0
+      change realCliffordThreeOneVectorMatrix _ 1 0 = A.val 1 0
       rw [← h01]
       apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
     · apply Complex.ext
@@ -154,9 +154,9 @@ theorem coe_realCliffordThreeOneVectorEquivHermitian_apply (v : Fin 4 → ℝ) :
 theorem realCliffordThreeOneVectorEquivHermitian_symm_apply
     (A : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ)) :
     realCliffordThreeOneVectorEquivHermitian.symm A =
-      ![-(A.1 0 1).im, -(A.1 0 1).re,
-        ((A.1 0 0).re - (A.1 1 1).re) / 2,
-        ((A.1 0 0).re + (A.1 1 1).re) / 2] := by
+      ![-(A.val 0 1).im, -(A.val 0 1).re,
+        ((A.val 0 0).re - (A.val 1 1).re) / 2,
+        ((A.val 0 0).re + (A.val 1 1).re) / 2] := by
   funext i
   fin_cases i <;> rfl
 

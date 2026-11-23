@@ -96,17 +96,15 @@ variable [Preorder ι]
 the degree `n` component of `toStrictMonoCechComplex`. -/
 private def toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     (∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) ⟶
-      ∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))) :=
+      ∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j))) :=
   Pi.map' Subtype.val fun _ ↦ 𝟙 _
 
 /-- `toStrictMonoCechX` is split surjective, as the reindexing of a product along the injection
 `Subtype.val` (`isSplitEpi_piMap'`): a cochain on the strictly increasing tuples extends by zero. -/
 private lemma isSplitEpi_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     IsSplitEpi (toStrictMonoCechX U P n) :=
-  have : Mono (TypeCat.ofHom (Subtype.val : {a : Fin (n + 1) → ι // StrictMono a} → _)) :=
-    (mono_iff_injective _).2 Subtype.val_injective
-  isSplitEpi_piMap' (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))))
-    (TypeCat.ofHom Subtype.val)
+  isSplitEpi_piMap' (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) Subtype.val
+    Subtype.val_injective
 
 /-- The differential of the Čech complex, with source and target the products which define its
 terms. -/
@@ -120,21 +118,21 @@ Its factor indexed by a strictly increasing tuple `k` is the alternating sum, ov
 of `k`, of the factor indexed by `k ∘ m.succAbove`, restricted along the projection
 `U (k 0) × ⋯ × U (k (n + 1)) ⟶ ∏ⱼ U (k (m.succAbove j))` (`strictMonoCechComplexD_π`). -/
 private def strictMonoCechComplexD (P : Cᵒᵖ ⥤ A) (n : ℕ) :
-    (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j)))) ⟶
-      ∏ᶜ fun a : {a : Fin (n + 2) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))) :=
+    (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j)))) ⟶
+      ∏ᶜ fun a : {a : Fin (n + 2) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j))) :=
   Pi.lift fun k ↦ ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
-    (Pi.π _ (⟨k.1 ∘ m.succAbove, k.2.comp (Fin.strictMono_succAbove m)⟩ :
+    (Pi.π _ (⟨k.val ∘ m.succAbove, k.property.comp (Fin.strictMono_succAbove m)⟩ :
         {a : Fin (n + 1) → ι // StrictMono a}) ≫
-      P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k.1 j)) (m.succAbove x)).op)
+      P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k.val j)) (m.succAbove x)).op)
 
 /-- The factor indexed by `k` of the differential of the ordered Čech complex. -/
 @[reassoc]
 private lemma strictMonoCechComplexD_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
     (k : {a : Fin (n + 2) → ι // StrictMono a}) :
     strictMonoCechComplexD U P n ≫ Pi.π _ k = ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
-      (Pi.π _ (⟨k.1 ∘ m.succAbove, k.2.comp (Fin.strictMono_succAbove m)⟩ :
+      (Pi.π _ (⟨k.val ∘ m.succAbove, k.property.comp (Fin.strictMono_succAbove m)⟩ :
           {a : Fin (n + 1) → ι // StrictMono a}) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k.1 j)) (m.succAbove x)).op) :=
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k.val j)) (m.succAbove x)).op) :=
   Pi.lift_comp_π _ _
 
 /-- Restriction to the strictly increasing tuples commutes with the differentials. -/
@@ -146,7 +144,7 @@ private lemma toStrictMonoCechX_comp_strictMonoCechComplexD (P : Cᵒᵖ ⥤ A) 
   simp only [toStrictMonoCechX, Category.assoc, Pi.map'_comp_π, Category.comp_id,
     strictMonoCechComplexD_π, Preadditive.comp_sum, Preadditive.comp_zsmul, Pi.map'_comp_π_assoc,
     Category.id_comp]
-  exact (cechComplexFunctor_obj_d_comp_π U P n k.1).symm
+  exact (cechComplexFunctor_obj_d_comp_π U P n k.val).symm
 
 /-- The differential of the ordered Čech complex squares to zero. -/
 private lemma strictMonoCechComplexD_comp_strictMonoCechComplexD (P : Cᵒᵖ ⥤ A) (n : ℕ) :
@@ -161,9 +159,9 @@ private lemma strictMonoCechComplexD_comp_strictMonoCechComplexD (P : Cᵒᵖ �
 the ordered Čech complexes. -/
 private lemma pi_map_comp_strictMonoCechComplexD {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
     Limits.Pi.map (fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦
-        α.app (op (∏ᶜ fun j ↦ U (a.1 j)))) ≫ strictMonoCechComplexD U Q n =
+        α.app (op (∏ᶜ fun j ↦ U (a.val j)))) ≫ strictMonoCechComplexD U Q n =
       strictMonoCechComplexD U P n ≫ Limits.Pi.map fun a : {a : Fin (n + 2) → ι // StrictMono a} ↦
-        α.app (op (∏ᶜ fun j ↦ U (a.1 j))) := by
+        α.app (op (∏ᶜ fun j ↦ U (a.val j))) := by
   refine Pi.hom_ext _ _ fun k ↦ ?_
   simp only [Category.assoc, strictMonoCechComplexD_π, Preadditive.comp_sum, Pi.map_π,
     strictMonoCechComplexD_π_assoc, Preadditive.sum_comp, Preadditive.comp_zsmul,
@@ -182,11 +180,11 @@ alternating differential (`strictMonoCechComplexFunctor_obj_d_comp_π`). A morph
 acts factorwise (`strictMonoCechComplexFunctor_map_f_π`). -/
 def strictMonoCechComplexFunctor : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ where
   obj P := CochainComplex.of
-    (fun n ↦ ∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))))
+    (fun n ↦ ∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j))))
     (strictMonoCechComplexD U P) (strictMonoCechComplexD_comp_strictMonoCechComplexD U P)
   map α := CochainComplex.ofHom
     (fun n ↦ Limits.Pi.map fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦
-      α.app (op (∏ᶜ fun j ↦ U (a.1 j))))
+      α.app (op (∏ᶜ fun j ↦ U (a.val j))))
     fun n ↦ by
       simp only [CochainComplex.of_d]
       exact pi_map_comp_strictMonoCechComplexD U α n
@@ -200,13 +198,13 @@ def strictMonoCechComplexFunctor : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ wher
 /-- The projection of the degree `n` term of the ordered Čech complex `Čₒ(U, P)` onto the factor
 `P(U (a 0) × ⋯ × U (a n))` of a strictly increasing tuple `a`. -/
 def strictMonoCechComplexπ (P : Cᵒᵖ ⥤ A) {n : ℕ} (a : {a : Fin (n + 1) → ι // StrictMono a}) :
-    ((strictMonoCechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))) :=
+    ((strictMonoCechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (a.val j))) :=
   Pi.π _ a
 
 /-- The morphism into the degree `n` term of the ordered Čech complex `Čₒ(U, P)` with the given
 factors. -/
 def strictMonoCechComplexLift (P : Cᵒᵖ ⥤ A) {n : ℕ} {W : A}
-    (f : ∀ a : {a : Fin (n + 1) → ι // StrictMono a}, W ⟶ P.obj (op (∏ᶜ fun j ↦ U (a.1 j)))) :
+    (f : ∀ a : {a : Fin (n + 1) → ι // StrictMono a}, W ⟶ P.obj (op (∏ᶜ fun j ↦ U (a.val j)))) :
     W ⟶ ((strictMonoCechComplexFunctor U).obj P).X n :=
   Pi.lift f
 
@@ -214,7 +212,7 @@ def strictMonoCechComplexLift (P : Cᵒᵖ ⥤ A) {n : ℕ} {W : A}
 tuple `a`. -/
 @[reassoc (attr := simp)]
 theorem strictMonoCechComplexLift_π (P : Cᵒᵖ ⥤ A) {n : ℕ} {W : A}
-    (f : ∀ a : {a : Fin (n + 1) → ι // StrictMono a}, W ⟶ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))))
+    (f : ∀ a : {a : Fin (n + 1) → ι // StrictMono a}, W ⟶ P.obj (op (∏ᶜ fun j ↦ U (a.val j))))
     (a : {a : Fin (n + 1) → ι // StrictMono a}) :
     strictMonoCechComplexLift U P f ≫ strictMonoCechComplexπ U P a = f a :=
   Pi.lift_comp_π f a
@@ -234,6 +232,15 @@ theorem strictMonoCechComplexFunctor_obj_X_hom_ext (P : Cᵒᵖ ⥤ A) {n : ℕ}
     (h : ∀ a, f ≫ strictMonoCechComplexπ U P a = g ≫ strictMonoCechComplexπ U P a) : f = g :=
   Pi.hom_ext _ _ h
 
+/-- In a thin category, restricting the factors of an ordered Čech cochain at two equal strictly
+increasing tuples along any maps gives the same result. -/
+theorem strictMonoCechComplexπ_comp_map_eq [Quiver.IsThin C] (P : Cᵒᵖ ⥤ A) {n : ℕ} {W : C}
+    {a a' : {a : Fin (n + 1) → ι // StrictMono a}} (h : a = a')
+    (f : W ⟶ ∏ᶜ fun j ↦ U (a.val j)) (g : W ⟶ ∏ᶜ fun j ↦ U (a'.val j)) :
+    strictMonoCechComplexπ U P a ≫ P.map f.op = strictMonoCechComplexπ U P a' ≫ P.map g.op := by
+  subst h
+  rw [Subsingleton.elim f g]
+
 private lemma strictMonoCechComplexFunctor_obj_d (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     ((strictMonoCechComplexFunctor U).obj P).d n (n + 1) = strictMonoCechComplexD U P n := by
   dsimp only [strictMonoCechComplexFunctor]
@@ -250,9 +257,9 @@ theorem strictMonoCechComplexFunctor_obj_d_comp_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
     ((strictMonoCechComplexFunctor U).obj P).d n (n + 1) ≫ strictMonoCechComplexπ U P k =
       ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
         (strictMonoCechComplexπ U P
-            (⟨k.1 ∘ m.succAbove, k.2.comp (Fin.strictMono_succAbove m)⟩ :
+            (⟨k.val ∘ m.succAbove, k.property.comp (Fin.strictMono_succAbove m)⟩ :
               {a : Fin (n + 1) → ι // StrictMono a}) ≫
-          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k.1 j)) (m.succAbove x)).op) := by
+          P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k.val j)) (m.succAbove x)).op) := by
   rw [strictMonoCechComplexFunctor_obj_d]
   exact strictMonoCechComplexD_π U P n k
 
@@ -263,7 +270,7 @@ of `((strictMonoCechComplexFunctor U).map α).f n` indexed by `a` is the compone
 theorem strictMonoCechComplexFunctor_map_f_π {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
     (a : {a : Fin (n + 1) → ι // StrictMono a}) :
     ((strictMonoCechComplexFunctor U).map α).f n ≫ strictMonoCechComplexπ U Q a =
-      strictMonoCechComplexπ U P a ≫ α.app (op (∏ᶜ fun j ↦ U (a.1 j))) := by
+      strictMonoCechComplexπ U P a ≫ α.app (op (∏ᶜ fun j ↦ U (a.val j))) := by
   dsimp only [strictMonoCechComplexFunctor, strictMonoCechComplexπ]
   exact Pi.map_π _ a
 
@@ -274,7 +281,7 @@ theorem isZero_strictMonoCechComplexFunctor_obj_X [Finite ι] {n : ℕ} (hn : Na
     (P : Cᵒᵖ ⥤ A) : IsZero (((strictMonoCechComplexFunctor U).obj P).X n) := by
   rw [IsZero.iff_id_eq_zero]
   ext a
-  have := Nat.card_le_card_of_injective a.1 a.2.injective
+  have := Nat.card_le_card_of_injective a.val a.property.injective
   rw [Nat.card_fin] at this
   omega
 
@@ -290,7 +297,7 @@ private def toStrictMonoCechComplexApp (P : Cᵒᵖ ⥤ A) :
 @[reassoc]
 private lemma toStrictMonoCechComplexApp_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
     (a : {a : Fin (n + 1) → ι // StrictMono a}) :
-    (toStrictMonoCechComplexApp U P).f n ≫ strictMonoCechComplexπ U P a = Pi.π _ a.1 :=
+    (toStrictMonoCechComplexApp U P).f n ≫ strictMonoCechComplexπ U P a = Pi.π _ a.val :=
   -- the component `(toStrictMonoCechComplexApp U P).f n` is by definition the `Pi.map'`
   -- `toStrictMonoCechX U P n`, and `strictMonoCechComplexπ U P a` is `Pi.π _ a`
   (Pi.map'_comp_π _ _ a).trans (Category.comp_id _)
@@ -306,14 +313,14 @@ def toStrictMonoCechComplex : cechComplexFunctor U ⟶ strictMonoCechComplexFunc
     -- both sides are the projection onto the factor of `a`, followed by the component of `α`
     simp only [HomologicalComplex.comp_f, Category.assoc, toStrictMonoCechComplexApp_f_π,
       strictMonoCechComplexFunctor_map_f_π, toStrictMonoCechComplexApp_f_π_assoc]
-    exact cechComplexFunctor_map_f_π U P α n a.1
+    exact cechComplexFunctor_map_f_π U P α n a.val
 
 /-- The factor of `toStrictMonoCechComplex` indexed by a strictly increasing tuple `a` is the
 projection of the Čech complex onto the factor indexed by `a`. -/
 @[simp, reassoc]
 theorem toStrictMonoCechComplex_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
     (a : {a : Fin (n + 1) → ι // StrictMono a}) :
-    ((toStrictMonoCechComplex U).app P).f n ≫ strictMonoCechComplexπ U P a = Pi.π _ a.1 :=
+    ((toStrictMonoCechComplex U).app P).f n ≫ strictMonoCechComplexπ U P a = Pi.π _ a.val :=
   toStrictMonoCechComplexApp_f_π U P n a
 
 /-- Restriction to the strictly increasing tuples is split surjective in every degree: a cochain on
@@ -346,7 +353,7 @@ along the projection `∏_{i ∈ s} U i ⟶ ∏_{i ∈ t} U i` (`presheafCechFun
 abbrev presheafCechFunctor (P : Cᵒᵖ ⥤ A) : (Finset ι)ᵒᵖ ⥤ Aᵒᵖ where
   obj s := op (P.obj (op (∏ᶜ fun i : s.unop ↦ U i)))
   map {s t} f := (P.map (Pi.lift fun i : t.unop ↦
-    Pi.π (fun i : s.unop ↦ U i) ⟨i.1, leOfHom f.unop i.2⟩).op).op
+    Pi.π (fun i : s.unop ↦ U i) ⟨i.val, leOfHom f.unop i.property⟩).op).op
   map_id s := Quiver.Hom.unop_inj <| by simp
   map_comp f g := Quiver.Hom.unop_inj <| by
     simp only [unop_comp, Quiver.Hom.unop_op]
@@ -362,25 +369,29 @@ of `n + 1` indices, the factor of `s` being reached through its increasing enume
 `Set.powersetCard.ofFinEmbEquiv` and `OrderEmbedding.equivSubtypeStrictMono`, and
 `∏_{i ∈ s} U i` is reindexed along the increasing enumeration of `s` by `Pi.reindex`. -/
 private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
-    (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))))
+    (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j))))
     fun s : {s : Finset ι // #s = n + 1} ↦
-      Pi.π _ (⟨s.1.orderEmbOfFin s.2, (s.1.orderEmbOfFin s.2).strictMono⟩ :
+      Pi.π _ (⟨s.val.orderEmbOfFin s.property, (s.val.orderEmbOfFin s.property).strictMono⟩ :
         {a : Fin (n + 1) → ι // StrictMono a}) ≫
       P.map (Pi.lift fun j ↦
-        Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op) :=
+        Pi.π (fun i : s.val ↦ U i) ⟨s.val.orderEmbOfFin s.property j, orderEmbOfFin_mem _ _ j⟩).op)
+            :=
   (productIsProduct _).ofIsoLimit <| Iso.symm <| Fan.ext (Pi.whiskerEquiv
     (((Equiv.subtypeEquivRight fun _ ↦ Set.powersetCard.mem_iff.symm).trans
       Set.powersetCard.ofFinEmbEquiv.symm).trans OrderEmbedding.equivSubtypeStrictMono)
-    fun s ↦ P.mapIso (Pi.reindex (s.1.orderIsoOfFin s.2).toEquiv fun i : s.1 ↦ U i).symm.op).symm
+    fun s ↦ P.mapIso (Pi.reindex (s.val.orderIsoOfFin s.property).toEquiv fun i : s.val ↦ U
+        i).symm.op).symm
       fun s ↦ by
-        have h : Pi.lift (f := fun j ↦ U (s.1.orderEmbOfFin s.2 j)) (fun j ↦
-              Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩) =
-            (Pi.reindex (s.1.orderIsoOfFin s.2).toEquiv fun i : s.1 ↦ U i).inv :=
+        have h : Pi.lift (f := fun j ↦ U (s.val.orderEmbOfFin s.property j)) (fun j ↦
+              Pi.π (fun i : s.val ↦ U i) ⟨s.val.orderEmbOfFin s.property j,
+                  orderEmbOfFin_mem _ _ j⟩) =
+            (Pi.reindex (s.val.orderIsoOfFin s.property).toEquiv fun i : s.val ↦ U i).inv :=
           Pi.hom_ext _ _ fun j ↦ by
             rw [Pi.lift_comp_π]
             -- the factor `⟨s.orderEmbOfFin h j, _⟩` is `(s.orderIsoOfFin h).toEquiv j`, as
             -- `Finset.coe_orderIsoOfFin_apply` holds by definition
-            exact (Pi.reindex_inv_π (s.1.orderIsoOfFin s.2).toEquiv (fun i : s.1 ↦ U i) j).symm
+            exact (Pi.reindex_inv_π (s.val.orderIsoOfFin s.property).toEquiv
+                (fun i : s.val ↦ U i) j).symm
         rw [fan_mk_proj, fan_mk_proj, Iso.symm_hom, h]
         dsimp only [Pi.whiskerEquiv]
         rw [Pi.map'_comp_π, Functor.mapIso_hom, Iso.op_hom, Iso.symm_hom]
@@ -390,7 +401,7 @@ private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
 
 /-- The degree `n` component of `strictMonoCechComplexIso`. -/
 private def strictMonoCechXIso (n : ℕ) :
-    (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j)))) ≅
+    (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j)))) ≅
       unop ((presheafCechFunctor U P).orderedCechComplex.X n) :=
   (((presheafCechFunctor U P).isColimitOrderedCechComplexCofan n).coconePointUniqueUpToIso
     (Fan.IsLimit.op (isLimitFan U P n))).unop
@@ -399,10 +410,11 @@ private def strictMonoCechXIso (n : ℕ) :
 private lemma orderedCechComplexι_strictMonoCechXIso_hom_op (n : ℕ)
     (s : {s : Finset ι // #s = n + 1}) :
     (presheafCechFunctor U P).orderedCechComplexι s ≫ (strictMonoCechXIso U P n).hom.op =
-      (Pi.π _ (⟨s.1.orderEmbOfFin s.2, (s.1.orderEmbOfFin s.2).strictMono⟩ :
+      (Pi.π _ (⟨s.val.orderEmbOfFin s.property, (s.val.orderEmbOfFin s.property).strictMono⟩ :
           {a : Fin (n + 1) → ι // StrictMono a}) ≫
         P.map (Pi.lift fun j ↦
-          Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op).op :=
+          Pi.π (fun i : s.val ↦ U i) ⟨s.val.orderEmbOfFin s.property j,
+              orderEmbOfFin_mem _ _ j⟩).op).op :=
   ((presheafCechFunctor U P).isColimitOrderedCechComplexCofan n).comp_coconePointUniqueUpToIso_hom
     _ ⟨s⟩
 
@@ -410,13 +422,13 @@ omit [Preadditive A] in
 /-- Restricting the factor of a strictly increasing tuple `b` along a map determined by its
 factors depends only on `b`. -/
 private lemma pi_π_comp_map_congr (s : Finset ι) {k : ℕ} {b b' : {a : Fin k → ι // StrictMono a}}
-    (h : b = b') (hb : ∀ j, b.1 j ∈ s) (f : (∏ᶜ fun i : s ↦ U i) ⟶ ∏ᶜ fun j ↦ U (b.1 j))
-    (f' : (∏ᶜ fun i : s ↦ U i) ⟶ ∏ᶜ fun j ↦ U (b'.1 j))
-    (hf : ∀ j, f ≫ Pi.π _ j = Pi.π (fun i : s ↦ U i) ⟨b.1 j, hb j⟩)
-    (hf' : ∀ j, f' ≫ Pi.π _ j = Pi.π (fun i : s ↦ U i) ⟨b'.1 j, h ▸ hb j⟩) :
-    Pi.π (fun a : {a : Fin k → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j)))) b ≫
+    (h : b = b') (hb : ∀ j, b.val j ∈ s) (f : (∏ᶜ fun i : s ↦ U i) ⟶ ∏ᶜ fun j ↦ U (b.val j))
+    (f' : (∏ᶜ fun i : s ↦ U i) ⟶ ∏ᶜ fun j ↦ U (b'.val j))
+    (hf : ∀ j, f ≫ Pi.π _ j = Pi.π (fun i : s ↦ U i) ⟨b.val j, hb j⟩)
+    (hf' : ∀ j, f' ≫ Pi.π _ j = Pi.π (fun i : s ↦ U i) ⟨b'.val j, h ▸ hb j⟩) :
+    Pi.π (fun a : {a : Fin k → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j)))) b ≫
         P.map f.op =
-      Pi.π (fun a : {a : Fin k → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j)))) b' ≫
+      Pi.π (fun a : {a : Fin k → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.val j)))) b' ≫
         P.map f'.op := by
   subst h
   rw [Pi.hom_ext f f' fun j ↦ (hf j).trans (hf' j).symm]
@@ -435,20 +447,20 @@ private lemma strictMonoCechXIso_hom_comp_d (n : ℕ) :
     CategoryTheory.op_sum]
   -- match the summand of `s.orderIsoOfFin h m`, the `m`-th smallest element of `s`, with the
   -- coface `m`
-  refine (Fintype.sum_equiv (s.1.orderIsoOfFin s.2).toEquiv _ _ fun m ↦ ?_).symm
+  refine (Fintype.sum_equiv (s.val.orderIsoOfFin s.property).toEquiv _ _ fun m ↦ ?_).symm
   simp only [Preadditive.zsmul_comp, CategoryTheory.op_zsmul, Category.assoc]
-  have hc : #{j ∈ s.1 | j < (s.1.orderIsoOfFin s.2 m : ι)} = m := by
+  have hc : #{j ∈ s.val | j < (s.val.orderIsoOfFin s.property m : ι)} = m := by
     rw [coe_orderIsoOfFin_apply]
     exact card_filter_lt_orderEmbOfFin _ _ m
   rw [orderedCechComplexι_strictMonoCechXIso_hom_op, OrderIso.coe_toEquiv, hc]
   simp only [← op_comp, Category.assoc, ← P.map_comp]
   congr 2
-  have hm (x : Fin (n + 1)) : s.1.orderEmbOfFin s.2 (m.succAbove x) ∈
-      s.1.erase (s.1.orderIsoOfFin s.2 m) :=
-    mem_erase.2 ⟨fun h ↦ m.succAbove_ne x ((s.1.orderEmbOfFin s.2).injective h),
+  have hm (x : Fin (n + 1)) : s.val.orderEmbOfFin s.property (m.succAbove x) ∈
+      s.val.erase (s.val.orderIsoOfFin s.property m) :=
+    mem_erase.2 ⟨fun h ↦ m.succAbove_ne x ((s.val.orderEmbOfFin s.property).injective h),
       orderEmbOfFin_mem _ _ _⟩
-  refine pi_π_comp_map_congr U P s.1 (Subtype.ext (orderEmbOfFin_unique _ hm
-    ((s.1.orderEmbOfFin s.2).strictMono.comp (Fin.strictMono_succAbove m)))) (fun x ↦
+  refine pi_π_comp_map_congr U P s.val (Subtype.ext (orderEmbOfFin_unique _ hm
+    ((s.val.orderEmbOfFin s.property).strictMono.comp (Fin.strictMono_succAbove m)))) (fun x ↦
       orderEmbOfFin_mem _ _ _) _ _ (fun x ↦ by simp) fun j ↦ by
     simp only [Category.assoc, Pi.lift_comp_π]
 
@@ -473,10 +485,12 @@ theorem strictMonoCechComplexIso_hom_f_comp_unop_orderedCechComplexι (n : ℕ)
     (s : {s : Finset ι // #s = n + 1}) :
     (strictMonoCechComplexIso U P).hom.f n ≫
         ((presheafCechFunctor U P).orderedCechComplexι s).unop =
-      strictMonoCechComplexπ U P (⟨s.1.orderEmbOfFin s.2, (s.1.orderEmbOfFin s.2).strictMono⟩ :
+      strictMonoCechComplexπ U P (⟨s.val.orderEmbOfFin s.property,
+          (s.val.orderEmbOfFin s.property).strictMono⟩ :
           {a : Fin (n + 1) → ι // StrictMono a}) ≫
         P.map (Pi.lift fun j ↦
-          Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op := by
+          Pi.π (fun i : s.val ↦ U i) ⟨s.val.orderEmbOfFin s.property j, orderEmbOfFin_mem _ _ j⟩).op
+              := by
   dsimp only [strictMonoCechComplexIso, HomologicalComplex.Hom.isoOfComponents_hom_f]
   -- `strictMonoCechComplexπ U P a` is `Pi.π _ a` by definition
   exact Quiver.Hom.op_inj (orderedCechComplexι_strictMonoCechXIso_hom_op U P n s)

@@ -38,6 +38,8 @@ group of every codimension-one point of `Spec Sym(V*)`, so the residual quotient
 
 ## Main results
 
+* `Representation.map_fixedSubmodule_conj`: `ρ h` carries the fixed space of `g` onto that of
+  `h * g * h⁻¹`.
 * `Representation.finrank_quotient_fixedSubmodule_conj`: conjugation preserves the codimension
   of the fixed space.
 * `Representation.fixedSubmodule_inv`: an element and its inverse have the same fixed space.
@@ -68,16 +70,18 @@ namespace Representation
 variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
 variable (ρ : Representation K G V)
 
-/-- Conjugating `g` by `h` does not change the codimension of its fixed space: `ρ h` carries the
-fixed space of `g` onto the fixed space of `h * g * h⁻¹`. -/
+/-- `ρ h` carries the fixed space of `g` onto the fixed space of `h * g * h⁻¹`. -/
+theorem map_fixedSubmodule_conj (h g : G) :
+    (ρ g).fixedSubmodule.map (ρ h) = (ρ (h * g * h⁻¹)).fixedSubmodule :=
+  (LinearMap.GeneralLinearGroup.generalLinearEquiv K V (ρ.asGroupHom h)).map_fixedSubmodule <| by
+    simp [asGroupHom_apply, ← Module.End.mul_eq_comp, ← map_mul]
+
+/-- Conjugating `g` by `h` does not change the codimension of its fixed space. -/
 theorem finrank_quotient_fixedSubmodule_conj (h g : G) :
     Module.finrank K (V ⧸ (ρ (h * g * h⁻¹)).fixedSubmodule) =
-      Module.finrank K (V ⧸ (ρ g).fixedSubmodule) := by
-  let e := LinearMap.GeneralLinearGroup.generalLinearEquiv K V (ρ.asGroupHom h)
-  have hmap : (ρ g).fixedSubmodule.map (e : V →ₗ[K] V) = (ρ (h * g * h⁻¹)).fixedSubmodule :=
-    e.map_fixedSubmodule <| by
-      simp [e, asGroupHom_apply, ← Module.End.mul_eq_comp, ← map_mul]
-  exact (Submodule.Quotient.equiv _ _ e hmap).finrank_eq.symm
+      Module.finrank K (V ⧸ (ρ g).fixedSubmodule) :=
+  (Submodule.Quotient.equiv _ _ (LinearMap.GeneralLinearGroup.generalLinearEquiv K V
+    (ρ.asGroupHom h)) (ρ.map_fixedSubmodule_conj h g)).finrank_eq.symm
 
 /-- An element and its inverse have the same fixed space, so the inverse of a pseudoreflection is
 a pseudoreflection. -/

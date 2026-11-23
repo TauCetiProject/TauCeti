@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 
 /-!
@@ -157,6 +157,13 @@ image. This is a length-exchanging compatibility, not a Cartan automorphism. -/
     f4SpecialIsogenyIndex (f4ReflectionIndex j k) =
       f4ReflectionIndex (f4SpecialIsogenyIndex j) (f4SpecialIsogenyIndex k) := by
   decide +revert
+
+/-- The special root permutation commutes with passing to the opposite root. -/
+theorem f4SpecialIsogenyIndexEquiv_f4OppositeRootIndex (α : Fin 48) :
+    f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex α) =
+      f4OppositeRootIndex (f4SpecialIsogenyIndexEquiv α) := by
+  simp only [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm,
+    f4SpecialIsogenyIndexEquiv_apply, f4SpecialIsogenyIndex_f4ReflectionIndex]
 
 /-! ## Action on the pinned root datum -/
 
