@@ -16,8 +16,9 @@ Over a possibly noncommutative ring `A`, the signed Weyl word
 matrix of the transposition of `i` and `j` with one row negated
 (`TauCeti.transvectionWeylElement_eq_diagGL_mul_permutationGL`), and the product of two such words
 can cancel the signs: the permutation matrix of the three-cycle `(i j) (i k)` is `nᵢⱼ nₖᵢ`
-(`TauCeti.permutationGL_swap_mul_swap_same`). Since the three-cycles generate the alternating
-group, **every even permutation matrix is elementary**, over every ring.
+(`TauCeti.permutationGL_swap_mul_swap_same_eq_transvectionWeylElement_mul`). Since the
+three-cycles generate the alternating group, **every even permutation matrix is elementary**, over
+every ring.
 
 The parity condition cannot be dropped in general: over a commutative ring the determinant of the
 permutation matrix of `σ` is the sign of `σ`, and elementary matrices have determinant one, so
@@ -75,11 +76,11 @@ theorem permutationGL_mem_elementarySubgroup {σ : Perm n} (hσ : σ ∈ alterna
   refine (Subgroup.closure_le ((elementarySubgroup n A).comap permutationGL)).2 ?_ hσ
   intro g hg
   -- A three-cycle `g` moving `a` is `(g a, a) (g a, g (g a))`.
-  obtain ⟨a, ha⟩ := Finset.nonempty_iff_ne_empty.2 (mt Perm.support_eq_empty_iff.1 hg.ne_one)
+  obtain ⟨a, ha⟩ := Finset.ne_empty_iff_nonempty.1 (mt Perm.support_eq_empty_iff.1 hg.ne_one)
   have hga : g a ≠ a := Perm.mem_support.1 ha
   have hgga : g a ≠ g (g a) := fun h ↦ hga (g.injective h).symm
-  rw [SetLike.mem_coe, Subgroup.mem_comap, hg.eq_swap_mul_swap_iff_mem_support.2 ha, swap_comm a,
-    permutationGL_swap_mul_swap_same hga hgga]
+  rw [SetLike.mem_coe, Subgroup.mem_comap, hg.eq_swap_mul_swap_iff_mem_support.2 ha,
+    Equiv.swap_comm a, permutationGL_swap_mul_swap_same_eq_transvectionWeylElement_mul hga hgga]
   exact mul_mem (transvectionWeylElement_mem_elementarySubgroup hga)
     (transvectionWeylElement_mem_elementarySubgroup hgga.symm)
 

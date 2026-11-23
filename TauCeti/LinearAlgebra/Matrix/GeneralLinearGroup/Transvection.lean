@@ -95,8 +95,8 @@ elementary matrices against the diagonal torus.
   `-1` in positions `i` and `j`, which in size two is `-1`.
 * `TauCeti.transvectionWeylElement_eq_diagGL_mul_permutationGL`: it is the permutation matrix of
   the transposition of `i` and `j` with its `j`-th row negated.
-* `TauCeti.permutationGL_swap_mul_swap_same`: the permutation matrix of the three-cycle
-  `(i j) (i k)` is `nᵢⱼ nₖᵢ`.
+* `TauCeti.permutationGL_swap_mul_swap_same_eq_transvectionWeylElement_mul`: the permutation
+  matrix of the three-cycle `(i j) (i k)` is `nᵢⱼ nₖᵢ`.
 * `TauCeti.transvectionWeylElement_inv`: the representative for the opposite root is the inverse.
 * `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_self` and
   `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_symm`: the reflection exchanges
@@ -375,7 +375,8 @@ theorem transvectionWeylElement_eq_diagGL_mul_permutationGL (hij : i ≠ j) :
 
 /-- The permutation matrix of the three-cycle `(i j) (i k)` is the product of the two signed Weyl
 words `nᵢⱼ nₖᵢ`: their signs cancel. -/
-theorem permutationGL_swap_mul_swap_same (hij : i ≠ j) (hik : i ≠ k) :
+theorem permutationGL_swap_mul_swap_same_eq_transvectionWeylElement_mul (hij : i ≠ j)
+    (hik : i ≠ k) :
     permutationGL (k := A) (Equiv.swap i j * Equiv.swap i k) =
       transvectionWeylElement hij * transvectionWeylElement hik.symm := by
   ext a b
