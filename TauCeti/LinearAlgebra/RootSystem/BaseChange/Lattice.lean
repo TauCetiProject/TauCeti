@@ -134,13 +134,6 @@ variable {ι R S M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [FaithfulS
   [AddCommGroup M] [Module S M] [Module R M] [IsScalarTower R S M]
   [AddCommGroup N] [Module S N] [Module R N] [IsScalarTower R S N]
 
-private theorem algebraMap_restrictScalarsRange₂_apply {X₀ : Submodule R M} {Y₀ : Submodule R N}
-    {B : M →ₗ[S] N →ₗ[S] S} {hB : ∀ x : X₀, ∀ y : Y₀, B (X₀.subtype x) (Y₀.subtype y) ∈
-      LinearMap.range (Algebra.linearMap R S)} (x : X₀) (y : Y₀) :
-    algebraMap R S (LinearMap.restrictScalarsRange₂ X₀.subtype Y₀.subtype (Algebra.linearMap R S)
-      (FaithfulSMul.algebraMap_injective R S) B hB x y) = B x y :=
-  LinearMap.restrictScalarsRange₂_apply _ _ _ _ B hB x y
-
 /-- **`(X₀, Y₀)` is a pair of dual `R`-lattices for `P`** when `X₀` contains all roots of `P`,
 `Y₀` contains all coroots of `P`, the ambient pairing takes values in `algebraMap R S` on
 `X₀ × Y₀`, and the restricted `R`-bilinear map on `X₀ × Y₀` is a perfect `R`-pairing. -/
@@ -179,9 +172,9 @@ theorem flip : P.flip.IsDualLatticePair Y₀ X₀ where
   pairing_mem_range y hy x hx := hXY.pairing_mem_range x hx y hy
   isPerfPair := by
     convert hXY.isPerfPair.flip; ext y x; apply FaithfulSMul.algebraMap_injective R S
-    rw [LinearMap.flip_apply]
-    exact (algebraMap_restrictScalarsRange₂_apply (hB := _) y x).trans
-      (algebraMap_restrictScalarsRange₂_apply (hB := _) x y).symm
+    rw [LinearMap.flip_apply, ← Algebra.linearMap_apply, ← Algebra.linearMap_apply]
+    exact (LinearMap.restrictScalarsRange₂_apply _ _ _ _ _ _ y x).trans
+      (LinearMap.restrictScalarsRange₂_apply _ _ _ _ _ _ x y).symm
 
 /-- **Restriction of a root pairing to dual `R`-sublattices `(X₀, Y₀)`.** Generalizes Mathlib's
 `RootPairing.restrictScalars'` (`Mathlib/LinearAlgebra/RootSystem/BaseChange.lean`) from subfields
@@ -190,8 +183,9 @@ noncomputable def restrict : RootPairing ι R X₀ Y₀ :=
   let B := LinearMap.restrictScalarsRange₂ X₀.subtype Y₀.subtype (Algebra.linearMap R S)
     (FaithfulSMul.algebraMap_injective R S) P.toLinearMap
     fun x y ↦ hXY.pairing_mem_range x x.property y y.property
-  have hB (x : X₀) (y : Y₀) : algebraMap R S (B x y) = P.toLinearMap x y :=
-    algebraMap_restrictScalarsRange₂_apply x y
+  have hB (x : X₀) (y : Y₀) : algebraMap R S (B x y) = P.toLinearMap x y := by
+    rw [← Algebra.linearMap_apply]
+    exact LinearMap.restrictScalarsRange₂_apply _ _ _ _ _ _ x y
   { toLinearMap := B
     isPerfPair_toLinearMap := hXY.isPerfPair
     root := ⟨fun i ↦ ⟨P.root i, hXY.root_mem i⟩,
@@ -216,8 +210,9 @@ noncomputable def restrict : RootPairing ι R X₀ Y₀ :=
 
 /-- The restricted pairing agrees with the ambient pairing after `algebraMap R S`. -/
 @[simp] theorem algebraMap_restrict_toLinearMap (x : X₀) (y : Y₀) :
-    algebraMap R S (hXY.restrict.toLinearMap x y) = P.toLinearMap x y :=
-  algebraMap_restrictScalarsRange₂_apply x y
+    algebraMap R S (hXY.restrict.toLinearMap x y) = P.toLinearMap x y := by
+  rw [← Algebra.linearMap_apply]
+  exact LinearMap.restrictScalarsRange₂_apply _ _ _ _ _ _ x y
 
 /-- The root-coroot pairings of `hXY.restrict` map to those of `P` under `algebraMap R S`. -/
 @[simp] theorem algebraMap_restrict_pairing (i j : ι) :
@@ -565,7 +560,9 @@ theorem isDualLatticePair_range_mk_one :
   refine LinearMap.IsPerfPair.congr (p := D.toLinearMap)
     (TensorProduct.unitTmulEquiv R S X).symm (TensorProduct.unitTmulEquiv R S Y).symm _ ?_
   ext x y; apply FaithfulSMul.algebraMap_injective R S
-  simp [algebraMap_restrictScalarsRange₂_apply]
+  simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm,
+    ← Algebra.linearMap_apply]
+  exact (LinearMap.restrictScalarsRange₂_apply _ _ _ _ _ _ _ _).trans (by simp)
 
 /-- **A root pairing `D` with finite free coweight module is canonically equivalent to the
 restriction of `D.baseChange S` to the unit-tensor lattices `1 ⊗ X` and `1 ⊗ Y`.** -/

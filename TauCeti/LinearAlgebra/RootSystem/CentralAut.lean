@@ -88,14 +88,6 @@ noncomputable def Equiv.ofFixRootCoroot : P.Aut :=
       P.flip.toPerfPair ≪≫ₗ e.dualMap ≪≫ₗ P.flip.toPerfPair.symm :=
   LinearEquiv.toLinearMap_injective rfl
 
-/-- The coweight equivalence of `Equiv.ofFixRootCoroot` is the adjoint of `e` with respect to
-`P.toLinearMap`.
-
-Not a `simp` lemma: `simp` derives this from `RootPairing.Equiv.ofFixRootCoroot_coweightEquiv`. -/
-theorem Equiv.toLinearMap_ofFixRootCoroot_coweightEquiv (x : M) (y : N) :
-    P.toLinearMap x ((Equiv.ofFixRootCoroot P e hroot hcoroot).coweightEquiv y) =
-      P.toLinearMap (e x) y := by simp
-
 /-- `Equiv.ofFixRootCoroot` acts trivially on the root indices. -/
 @[simp] theorem Equiv.ofFixRootCoroot_indexEquiv :
     (Equiv.ofFixRootCoroot P e hroot hcoroot).indexEquiv = _root_.Equiv.refl ι := (rfl)
@@ -134,12 +126,5 @@ noncomputable def autMulEquivOfIsEmpty [IsEmpty ι] : P.Aut ≃* (M ≃ₗ[R] M)
 /-- The inverse of `autMulEquivOfIsEmpty` lifts `e : M ≃ₗ[R] M` via `Equiv.ofFixRootCoroot`. -/
 @[simp] theorem autMulEquivOfIsEmpty_symm_apply [IsEmpty ι] (e : M ≃ₗ[R] M) :
     P.autMulEquivOfIsEmpty.symm e = Equiv.ofFixRootCoroot P e isEmptyElim isEmptyElim := (rfl)
-
-/-- The inverse of `autMulEquivOfIsEmpty` lifts `e : M ≃ₗ[R] M` with weight equivalence `e`.
-
-Not a `simp` lemma: `simp` derives this from `RootPairing.autMulEquivOfIsEmpty_symm_apply` and
-`RootPairing.Equiv.ofFixRootCoroot_weightEquiv`. -/
-theorem autMulEquivOfIsEmpty_symm_apply_weightEquiv [IsEmpty ι] (e : M ≃ₗ[R] M) :
-    (P.autMulEquivOfIsEmpty.symm e).weightEquiv = e := by simp
 
 end RootPairing

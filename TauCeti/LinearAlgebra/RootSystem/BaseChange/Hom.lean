@@ -137,11 +137,6 @@ theorem baseChange_coweightEquiv_symm (e : P.Equiv Q) :
     (e.baseChange S).coweightEquiv.symm = e.coweightEquiv.symm.baseChange R S N N₂ := by
   rw [baseChange_coweightEquiv, LinearEquiv.baseChange_symm]
 
-/-- Scalar extension leaves the root-index bijection of an equivalence unchanged.
-
-Not a `simp` lemma: `simp` derives this from `baseChange_toHom` and `Hom.baseChange_indexEquiv`. -/
-theorem baseChange_indexEquiv (e : P.Equiv Q) : (e.baseChange S).indexEquiv = e.indexEquiv := (rfl)
-
 omit [Free R N₂] [Module.Finite R N₂] in
 variable (P) in
 /-- Scalar extension preserves the identity equivalence. -/
@@ -257,15 +252,6 @@ noncomputable def weylGroupBaseChangeMulEquiv : P.weylGroup ≃* (P.baseChange S
     (P.weylGroupBaseChangeMulEquiv S).symm (weylGroup.ofIdx (P.baseChange S) i) =
       weylGroup.ofIdx P i := by
   rw [← P.weylGroupBaseChangeMulEquiv_ofIdx S i, MulEquiv.symm_apply_apply]
-
-/-- Scalar extension preserves the root-index permutation of every Weyl-group element.
-
-Not a `simp` lemma: `RootPairing.weylGroupToPerm` is an `abbrev` for
-`(Equiv.indexHom _).domRestrict _.weylGroup`, so `simp` rewrites the left-hand side via
-`MonoidHom.domRestrict_apply` and `RootPairing.Equiv.indexHom_apply`. -/
-theorem weylGroupToPerm_weylGroupBaseChangeMulEquiv (w : P.weylGroup) :
-    (P.baseChange S).weylGroupToPerm (P.weylGroupBaseChangeMulEquiv S w) =
-      P.weylGroupToPerm w := by simp [weylGroupToPerm]
 
 end AutBaseChange
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Base
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Lattice
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
+import TauCeti.GroupTheory.Complement.SemidirectProduct
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
@@ -158,27 +159,32 @@ include hX hY in
 based lattice-preserving automorphisms `↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)`** when `Y₀` is finite
 free over `R` and `X₀.subtype`, `Y₀.subtype` satisfy `IsBaseChange S`. -/
 noncomputable def basedAutMulEquiv (b : P.Base) :
-    (hXY.restrictBase b).basedAut ≃* ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) where
-  toFun u := ⟨(hXY.extendAutHom hX hY u : P.Aut),
-    (hXY.extendAutHom_mem_basedAut_iff hX hY b).mpr u.property,
-    (hXY.extendAutHom hX hY u).property⟩
-  invFun g := ⟨hXY.restrictAutHom ⟨g.val, g.property.right⟩,
-    (hXY.restrictAutHom_mem_basedAut_iff b).mpr g.property.left⟩
-  left_inv u := Subtype.ext (hXY.restrictAutHom_extendAutHom hX hY u)
-  right_inv g := Subtype.ext <| congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
-    (hXY.extendAutHom_restrictAutHom hX hY ⟨g.val, g.property.right⟩)
-  map_mul' u v := Subtype.ext <| congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
-    (map_mul (hXY.extendAutHom hX hY) u.val v.val)
+    (hXY.restrictBase b).basedAut ≃* ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) :=
+  let hmap : (hXY.restrictBase b).basedAut.map (hXY.autMulEquiv hX hY).toMonoidHom =
+      (b.basedAut ⊓ P.latticeAut X₀ Y₀).subgroupOf (P.latticeAut X₀ Y₀) := by
+    ext g
+    simp only [Subgroup.mem_map, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      IsDualLatticePair.autMulEquiv_apply, Subgroup.mem_subgroupOf, Subgroup.mem_inf,
+      g.property, and_true]
+    refine ⟨?_, fun hg ↦ ⟨hXY.restrictAutHom g, (hXY.restrictAutHom_mem_basedAut_iff b).mpr hg,
+      hXY.extendAutHom_restrictAutHom hX hY g⟩⟩
+    rintro ⟨u, hu, rfl⟩
+    exact (hXY.extendAutHom_mem_basedAut_iff hX hY b).mpr hu
+  ((hXY.autMulEquiv hX hY).subgroupMap (hXY.restrictBase b).basedAut).trans
+    ((MulEquiv.subgroupCongr hmap).trans (Subgroup.subgroupOfEquivOfLe inf_le_right))
 
 /-- Coercing `hXY.basedAutMulEquiv hX hY b u` to `P.Aut` applies `hXY.extendAutHom hX hY`. -/
 @[simp] theorem coe_basedAutMulEquiv_apply (b : P.Base) (u : (hXY.restrictBase b).basedAut) :
-    (hXY.basedAutMulEquiv hX hY b u : P.Aut) = hXY.extendAutHom hX hY u := (rfl)
+    (hXY.basedAutMulEquiv hX hY b u : P.Aut) = hXY.extendAutHom hX hY u :=
+  congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
+    ((MulEquiv.coe_subgroupMap_apply _ _ u).trans (hXY.autMulEquiv_apply hX hY u))
 
 /-- Coercing `(hXY.basedAutMulEquiv hX hY b).symm g` applies `hXY.restrictAutHom`. -/
 @[simp] theorem coe_basedAutMulEquiv_symm_apply (b : P.Base)
     (g : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)) :
     ((hXY.basedAutMulEquiv hX hY b).symm g : hXY.restrict.Aut) =
-      hXY.restrictAutHom ⟨g.val, g.property.right⟩ := (rfl)
+      hXY.restrictAutHom ⟨g.val, g.property.right⟩ :=
+  hXY.autMulEquiv_symm_apply hX hY ⟨g.val, g.property.right⟩
 
 /-- Extending `hXY.restrictBase b` to `S` and transporting along `hXY.baseChangeEquiv hX hY`
 recovers `b`. -/
@@ -230,21 +236,12 @@ section WeylLeLatticeAut
 variable (b : P.Base) {X₀ : Submodule R M} {Y₀ : Submodule R N}
   (hW : P.weylGroup ≤ P.latticeAut X₀ Y₀)
 
+private theorem isLocalComplement_weylGroup_basedAut (b : P.Base)
+    {X₀ : Submodule R M} {Y₀ : Submodule R N} (hW : P.weylGroup ≤ P.latticeAut X₀ Y₀) :
+    P.weylGroup.IsLocalComplement (b.basedAut ⊓ P.latticeAut X₀ Y₀) (P.latticeAut X₀ Y₀) :=
+  (Subgroup.isLocalComplement_top_iff.mpr b.isComplement'_weylGroup_basedAut).restrict hW le_top
+
 include hW
-
-/-- The Weyl factor of any automorphism preserves `(X₀, Y₀)` whenever
-`P.weylGroup ≤ P.latticeAut X₀ Y₀`. -/
-theorem semidirectProductMulEquiv_symm_left_mem_latticeAut (g : P.Aut) :
-    ((b.semidirectProductMulEquiv.symm g).left : P.Aut) ∈ P.latticeAut X₀ Y₀ :=
-  hW (b.semidirectProductMulEquiv.symm g).left.property
-
-/-- The based factor of a lattice-preserving automorphism preserves `(X₀, Y₀)` whenever
-`P.weylGroup ≤ P.latticeAut X₀ Y₀`. -/
-theorem semidirectProductMulEquiv_symm_right_mem_latticeAut {g : P.Aut}
-    (hg : g ∈ P.latticeAut X₀ Y₀) :
-    ((b.semidirectProductMulEquiv.symm g).right : P.Aut) ∈ P.latticeAut X₀ Y₀ :=
-  (b.coe_semidirectProductMulEquiv_symm_right g).symm ▸
-    mul_mem (inv_mem (b.semidirectProductMulEquiv_symm_left_mem_latticeAut hW g)) hg
 
 /-- **The Weyl group complements the based automorphisms inside `P.latticeAut X₀ Y₀`** whenever
 `P.weylGroup ≤ P.latticeAut X₀ Y₀` (in particular for every dual lattice pair via
@@ -252,12 +249,9 @@ theorem semidirectProductMulEquiv_symm_right_mem_latticeAut {g : P.Aut}
 theorem isComplement'_weylGroup_basedAut_subgroupOf :
     (P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀)).IsComplement'
       (b.basedAut.subgroupOf (P.latticeAut X₀ Y₀)) := by
-  refine Subgroup.isComplement'_of_disjoint_and_mul_eq_univ (Subgroup.disjoint_def.mpr fun hw hb ↦
-    Subtype.ext <| Subgroup.disjoint_def.mp b.isComplement'_weylGroup_basedAut.disjoint hw hb) ?_
-  refine Set.eq_univ_of_forall fun g ↦ let s := b.semidirectProductMulEquiv.symm (g : P.Aut); ?_
-  exact Set.mem_mul.mpr ⟨⟨s.left, b.semidirectProductMulEquiv_symm_left_mem_latticeAut hW g⟩,
-    s.left.property, ⟨s.right, b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.property⟩,
-    s.right.property, Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))⟩
+  have hsub : (b.basedAut ⊓ P.latticeAut X₀ Y₀).subgroupOf (P.latticeAut X₀ Y₀) =
+      b.basedAut.subgroupOf (P.latticeAut X₀ Y₀) := by ext x; simp
+  exact hsub ▸ (b.isLocalComplement_weylGroup_basedAut hW).isComplement'_subgroupOf
 
 /-- **Restricted semidirect product decomposition of `P.latticeAut X₀ Y₀`**: for a finite
 reduced crystallographic pairing over a characteristic-zero domain and any submodule pair
@@ -266,33 +260,50 @@ reduced crystallographic pairing over a characteristic-zero domain and any submo
 `P.weylGroup` by `↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)`. -/
 noncomputable def latticeAutSemidirectProductMulEquiv :
     P.weylGroup ⋊[b.conjWeylGroupLatticeAut X₀ Y₀]
-      ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀ where
-  toFun x := ⟨(x.left : P.Aut) * x.right, mul_mem (hW x.left.property) x.right.property.right⟩
-  invFun g := let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
-    ⟨s.left, ⟨s.right, s.right.property,
-      b.semidirectProductMulEquiv_symm_right_mem_latticeAut hW g.property⟩⟩
-  left_inv x := by
-    have h := b.semidirectProductMulEquiv_symm_mul x.left ⟨x.right, x.right.property.left⟩
-    exact SemidirectProduct.ext (congrArg (fun z ↦ z.left) h)
-      (Subtype.ext <| congrArg (fun z ↦ (z.right : P.Aut)) h)
-  right_inv g := Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))
-  map_mul' _ _ := Subtype.ext <| by
-    simp only [SemidirectProduct.mul_left, SemidirectProduct.mul_right, Subgroup.coe_mul,
-      coe_conjWeylGroupLatticeAut_apply, mul_assoc, inv_mul_cancel_left]
+      ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀ :=
+  (SemidirectProduct.congr (MulEquiv.refl P.weylGroup) (MulEquiv.refl _) fun _ ↦
+      MulEquiv.ext fun _ ↦ Subtype.ext (by simp)).trans
+    (b.isLocalComplement_weylGroup_basedAut hW).semidirectProductMulEquiv
 
 /-- Coercing `b.latticeAutSemidirectProductMulEquiv hW x` to `P.Aut` multiplies its factors. -/
 @[simp] theorem coe_latticeAutSemidirectProductMulEquiv_apply (x) :
-    (b.latticeAutSemidirectProductMulEquiv hW x : P.Aut) = (x.left : P.Aut) * x.right := (rfl)
+    (b.latticeAutSemidirectProductMulEquiv hW x : P.Aut) = (x.left : P.Aut) * x.right := by
+  simp [latticeAutSemidirectProductMulEquiv]
+
+private theorem map_latticeAutSemidirectProductMulEquiv_symm (g : P.latticeAut X₀ Y₀) :
+    SemidirectProduct.map (MonoidHom.id P.weylGroup) (Subgroup.inclusion inf_le_left)
+      (fun _ ↦ MonoidHom.ext fun _ ↦ Subtype.ext (by simp))
+      ((b.latticeAutSemidirectProductMulEquiv hW).symm g) =
+      b.semidirectProductMulEquiv.symm (g : P.Aut) := by
+  let hTop := Subgroup.isLocalComplement_top_iff.mpr b.isComplement'_weylGroup_basedAut
+  have hcomp := DFunLike.congr_fun
+    (hTop.map_comp_semidirectProductMulEquiv_restrict_symm hW le_top) g
+  have htop : hTop.semidirectProductMulEquiv.symm ⟨(g : P.Aut), trivial⟩ =
+      SemidirectProduct.congr (MulEquiv.refl P.weylGroup) (MulEquiv.refl b.basedAut)
+        (fun _ ↦ MulEquiv.ext fun _ ↦ Subtype.ext (by simp))
+        (b.semidirectProductMulEquiv.symm (g : P.Aut)) := by
+    apply hTop.semidirectProductMulEquiv.injective
+    apply Subtype.ext
+    simp [b.semidirectProductMulEquiv_symm_left_mul_right]
+  have heq := hcomp.trans htop
+  exact SemidirectProduct.ext
+    (by simpa [latticeAutSemidirectProductMulEquiv, isLocalComplement_weylGroup_basedAut, hTop]
+      using congrArg SemidirectProduct.left heq)
+    (by simpa [latticeAutSemidirectProductMulEquiv, isLocalComplement_weylGroup_basedAut, hTop]
+      using congrArg SemidirectProduct.right heq)
 
 /-- The Weyl factor of `g : P.latticeAut X₀ Y₀` agrees with its Weyl factor in `P.Aut`. -/
 @[simp] theorem latticeAutSemidirectProductMulEquiv_symm_left (g : P.latticeAut X₀ Y₀) :
     ((b.latticeAutSemidirectProductMulEquiv hW).symm g).left =
-      (b.semidirectProductMulEquiv.symm (g : P.Aut)).left := (rfl)
+      (b.semidirectProductMulEquiv.symm (g : P.Aut)).left :=
+  congrArg SemidirectProduct.left (b.map_latticeAutSemidirectProductMulEquiv_symm hW g)
 
 /-- The based factor of `g : P.latticeAut X₀ Y₀` coerces to its based factor in `P.Aut`. -/
 @[simp] theorem coe_latticeAutSemidirectProductMulEquiv_symm_right (g : P.latticeAut X₀ Y₀) :
     (((b.latticeAutSemidirectProductMulEquiv hW).symm g).right : P.Aut) =
-      ((b.semidirectProductMulEquiv.symm (g : P.Aut)).right : P.Aut) := (rfl)
+      ((b.semidirectProductMulEquiv.symm (g : P.Aut)).right : P.Aut) :=
+  congrArg (fun z : P.weylGroup ⋊[b.conjWeylGroup] b.basedAut ↦ (z.right : P.Aut))
+    (b.map_latticeAutSemidirectProductMulEquiv_symm hW g)
 
 end WeylLeLatticeAut
 

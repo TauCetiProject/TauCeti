@@ -28,9 +28,10 @@ finite crystallographic root pairings over characteristic-zero fields
 
 * `RootPairing.instIsBalancedOfIsCrystallographic`: finite crystallographic pairings over
   characteristic-zero fields are balanced.
-* `RootPairing.isCompl_rootSpan_iInf_ker_coroot'`, `RootPairing.coroot'_coe_rootSpanProj`,
-  `RootPairing.coe_rootSpanProj_smul`, and `RootPairing.restrictScalars'_coroot'_rootSpanProj`:
-  complementarity, coroot preservation, and `P.Aut`-equivariance of `rootSpanProj`.
+* `RootPairing.isCompl_rootSpan_iInf_ker_coroot'`,
+  `RootPairing.toLinearMap_coe_rootSpanProj_coroot`, `RootPairing.coe_rootSpanProj_smul`, and
+  `RootPairing.restrictScalars'_coroot'_rootSpanProj`: complementarity, coroot preservation, and
+  `P.Aut`-equivariance of `rootSpanProj`.
 
 ## References
 
@@ -92,12 +93,6 @@ coroot. -/
       (Submodule.sub_projection_mem P.isCompl_rootSpan_iInf_ker_coroot' x) i)
   rwa [map_sub, sub_eq_zero, eq_comm] at hi
 
--- Not `@[simp]`: `coroot'` is an `abbrev` for `toLinearMap.flip (coroot i)`, so
--- `toLinearMap_coe_rootSpanProj_coroot` is the `simp`-normal form.
-/-- Projecting to `P.rootSpan R` along the common coroot kernel preserves every `P.coroot' i`. -/
-theorem coroot'_coe_rootSpanProj (i : ι) (x : M) :
-    P.coroot' i (P.rootSpanProj x : M) = P.coroot' i x := P.toLinearMap_coe_rootSpanProj_coroot x i
-
 /-- `P.rootSpanProj` is equivariant for the weight action of `P.Aut`. -/
 theorem coe_rootSpanProj_smul (g : P.Aut) (x : M) :
     (P.rootSpanProj (g • x) : M) = g • (P.rootSpanProj x : M) := by
@@ -109,8 +104,10 @@ theorem coe_rootSpanProj_smul (g : P.Aut) (x : M) :
   refine sub_eq_zero.mp <| Submodule.disjoint_def.mp P.isCompl_rootSpan_iInf_ker_coroot'.disjoint _
     (sub_mem (P.rootSpanProj (g • x)).property (hle (P.rootSpanProj x).property)) ?_
   exact (Submodule.mem_iInf _).mpr fun i ↦ LinearMap.mem_ker.mpr <| by
-    rw [map_sub, P.coroot'_coe_rootSpanProj, coroot'_smul, coroot'_smul,
-      P.coroot'_coe_rootSpanProj, sub_self]
+    rw [map_sub, coroot', LinearMap.flip_apply, P.toLinearMap_coe_rootSpanProj_coroot]
+    change P.coroot' i (g • x) - P.coroot' i (g • (P.rootSpanProj x : M)) = 0
+    rw [coroot'_smul, coroot'_smul]
+    exact sub_eq_zero.mpr (P.toLinearMap_coe_rootSpanProj_coroot x _).symm
 
 end Balanced
 
@@ -122,6 +119,6 @@ theorem restrictScalars'_coroot'_rootSpanProj {ι K M N : Type*} [Field K] [AddC
   have h := P.restrictScalars_toLinearMap_apply_apply K (P.rootSpanProj x)
     ((P.restrictScalars' K).coroot i)
   rw [Algebra.algebraMap_self, RingHom.id_apply, P.restrictScalars_coe_coroot] at h
-  exact h.trans (P.coroot'_coe_rootSpanProj i x)
+  exact h.trans (P.toLinearMap_coe_rootSpanProj_coroot x i)
 
 end RootPairing
