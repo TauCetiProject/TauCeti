@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.HochschildCohomology.Coboundary
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+import Mathlib.Tactic.FinCases
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
@@ -54,6 +55,8 @@ coboundaries the inner derivations `a ↦ a m - m a`.
 * `TauCeti.mem_hochschildBimoduleCocycles_zero_iff`: the degree-zero cocycles are the central
   elements.
 * `TauCeti.mem_hochschildBimoduleCocycles_one_iff`: the degree-one cocycles are the derivations.
+* `TauCeti.mem_hochschildBimoduleCocycles_two_iff`: the degree-two cocycle condition
+  `a ψ(b, c) - ψ(ab, c) + ψ(a, bc) - ψ(a, b) c = 0`.
 * `TauCeti.mem_hochschildBimoduleCoboundaries_one_iff`,
   `TauCeti.hochschildBimoduleCohomology.mk_one_eq_zero_iff`: a degree-one cochain is a coboundary
   exactly when it is an inner derivation.
@@ -175,6 +178,21 @@ theorem mem_hochschildBimoduleCoboundaries_one_iff
     rw [hochschildBimoduleCoboundary_constOfIsEmpty]
     have ha : (fun _ : Fin 1 ↦ a 0) = a := funext fun i ↦ congrArg a (Subsingleton.elim 0 i)
     simpa only [ha] using (hm (a 0)).symm
+
+variable {R A M} in
+/-- A degree-two cochain is a cocycle exactly when
+`a • ψ(b, c) - ψ(a b, c) + ψ(a, b c) - ψ(a, b) • c = 0` for all `a b c`. -/
+theorem mem_hochschildBimoduleCocycles_two_iff (ψ : (Fin 2 → A) →ₘₗ[R] M) :
+    ψ ∈ hochschildBimoduleCocycles R A M 2 ↔
+      ∀ a b c : A, a • ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - op c • ψ ![a, b] = 0 := by
+  rw [mem_hochschildBimoduleCocycles_iff]
+  refine ⟨fun h a b c ↦ ?_, fun h ↦ ?_⟩
+  · rw [← hochschildBimoduleCoboundary_two_apply, h, zero_apply]
+  · ext v
+    have hv : v = ![v 0, v 1, v 2] := by
+      ext i
+      fin_cases i <;> rfl
+    rw [hv, hochschildBimoduleCoboundary_two_apply, h, zero_apply]
 
 end Cocycles
 

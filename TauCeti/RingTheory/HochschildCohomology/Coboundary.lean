@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.CyclicCohomology.Cochain
 public import TauCeti.RingTheory.Derivation.Bimodule
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.AlternatingSum
+import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -55,6 +56,7 @@ the cochains with coefficients in the dual bimodule, see
   `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`.
 * `TauCeti.hochschildBimoduleCoboundary_hochschildBimoduleCoboundary`: `δ (δ ψ) = 0`.
 * `TauCeti.hochschildBimoduleCoboundary_apply_eq_add_sum_add`: the explicit formula for `δ`.
+* `TauCeti.hochschildBimoduleCoboundary_two_apply`: the coboundary of a degree-two cochain.
 * `TauCeti.hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff`: the degree-zero cocycles
   are the central elements.
 * `TauCeti.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff`: the degree-one cocycles
@@ -410,6 +412,23 @@ theorem BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero
     hochschildBimoduleCoboundary R A M 1
         (MultilinearMap.ofSubsingleton (RingHom.id R) A M 0 D) = 0 :=
   (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff _).2 D.leibniz
+
+/-- The coboundary of a degree-two cochain `ψ`:
+`(δψ)(a, b, c) = a • ψ(b, c) - ψ(a b, c) + ψ(a, b c) - ψ(a, b) • c`. -/
+theorem hochschildBimoduleCoboundary_two_apply (ψ : (Fin 2 → A) →ₘₗ[R] M) (a b c : A) :
+    hochschildBimoduleCoboundary R A M 2 ψ ![a, b, c] =
+      a • ψ ![b, c] - ψ ![a * b, c] + ψ ![a, b * c] - op c • ψ ![a, b] := by
+  have h₀ : Fin.contractNth 0 (· * ·) ![a, b, c] = ![a * b, c] := by
+    ext i
+    fin_cases i <;> rfl
+  have h₁ : Fin.contractNth 1 (· * ·) ![a, b, c] = ![a, b * c] := by
+    ext i
+    fin_cases i <;> rfl
+  have h₂ : Fin.init ![a, b, c] = ![a, b] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_two]
+  simp [h₀, h₁, h₂, sub_eq_add_neg, add_assoc]
 
 end Coboundary
 
