@@ -97,12 +97,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### The end in real coordinates -/
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The loops of `u ∘ ψ` are periodic. -/
-private theorem periodic_comp_realChart_cylindricalEndLift (p : PSSPlane) (u : ℝ × ℝ → V)
-    (s : ℝ) : Periodic (fun t ↦ (u ∘ realChart p.cylindricalEndLift) (s, t)) 1 := fun t ↦ by
-  simp only [comp_apply, realChart_cylindricalEndLift_add_one]
-
 /-- **The half-cylinder at the end of a PSS plane.** Let `𝔎` be a perturbation that is `H(t) dt`
 on the part `ε s ≥ T₀` of the end. If `u` is `Cⁿ`, `n ≠ 0`, on a part `‖w‖ > r` of the plane,
 with image in `K`, solving the Floer equation for `𝔎` there for structures `J(z)` bounded by `c`
@@ -150,14 +144,15 @@ private theorem exists_halfCylinder_comp_realChart_cylindricalEndLift
   refine ⟨a, (hu.mono hsub).comp (contDiff_realChart p.contDiff_cylindricalEndLift).contDiffOn
       fun z hz ↦ p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz,
     fun z hz ↦ huK _ (hmem hz), fun z hz ↦ hJc _ (hmem hz), fun z hz ↦ hJM _ (hmem hz),
-    fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift hKH hH hHd
-      (ha.trans hz.le) (hdiff hz) (hfloer _ (hmem hz)),
+    fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift hKH hH
+      (ha.trans hz.le) (hdiff hz) (hHd _ _) (hfloer _ (hmem hz)),
     fun P hP hPa ↦ ?_⟩
-  exact ((setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le hKH hH hHd hP
+  exact ((setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le hKH hH hP
     (fun s hs ↦ ha.trans (hPa s hs).le)
     (U := {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖})
     (fun ζ hζ ↦ p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (hPa _ hζ.1))
-    fun ζ hζ ↦ hdiff (hPa _ hζ.1)).trans_lt ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne
+    (fun ζ hζ ↦ hdiff (hPa _ hζ.1)) fun _ _ ↦ hHd _ _).trans_lt
+      ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne
 
 /-- **The energy on part of the end of the positive plane.** For `a ≥ 2`, if `u` is differentiable
 on the part `‖w‖ > exp (2πa)` of the positive plane, then the energy of `u ∘ φ` for the cylindrical
@@ -183,10 +178,10 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset
         ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
     exp_lt_norm_realChart_positive (hst hz).1
   rw [setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq (T₀ := 2)
-    (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH hHd hs
+    (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH hs
     (fun ζ hζ ↦ by simpa using ha.trans (hst hζ).1.le) (fun ζ hζ ↦ (hst hζ).2)
-    fun ζ hζ ↦ hu.differentiableAt <|
-      (isOpen_lt continuous_const (by fun_prop)).mem_nhds (hnorm hζ)]
+    (fun ζ hζ ↦ hu.differentiableAt <|
+      (isOpen_lt continuous_const (by fun_prop)).mem_nhds (hnorm hζ)) fun _ _ ↦ hHd _ _]
   refine lintegral_mono_set ?_
   rintro _ ⟨ζ, hζ, rfl⟩
   exact hnorm hζ

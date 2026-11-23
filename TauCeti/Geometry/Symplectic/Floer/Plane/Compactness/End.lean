@@ -162,10 +162,10 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
     obtain ⟨h₁, -⟩ := hΩT z hz
     have h := isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift (T₀ := 2)
       (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH
-      (fun t ↦ ((hHs.differentiable (by norm_num)).comp
-        (differentiable_const t |>.prodMk differentiable_id)))
       (by simpa using (le_max_right _ _).trans (mem_Ioi.1 h₁).le)
-      (hu.differentiable (by norm_num) _) (hfl (e (z + (R, 0))))
+      (hu.differentiable (by norm_num) _)
+      (((hHs.differentiable (by norm_num)).comp
+        (differentiable_const _ |>.prodMk differentiable_id)) _) (hfl (e (z + (R, 0))))
     rw [hJ _ _ _ ((le_max_left _ _).trans (mem_Ioi.1 h₁).le)] at h
     have heq := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) (u ∘ e) (R, 0) z
     simp only [Prod.snd_add, add_zero, comp_apply] at heq

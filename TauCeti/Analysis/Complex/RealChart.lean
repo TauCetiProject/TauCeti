@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
@@ -34,7 +35,9 @@ is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
-of its image (`TauCeti.Complex.image_realChart_preimage`).
+of its image (`TauCeti.Complex.image_realChart_preimage`). In real coordinates, every part
+`‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a` as large as desired
+(`TauCeti.exists_le_exp_lt_norm_subset`).
 -/
 
 public section
@@ -180,3 +183,17 @@ theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
     Complex.equivRealProdCLM.image_eq_preimage_symm]
 
 end TauCeti.Complex
+
+namespace TauCeti
+
+/-- In the real coordinates of `ℂ`, every part `‖w‖ > r` of the plane contains a part
+`‖w‖ > exp (2πa)` with `a ≥ T₀`. -/
+theorem exists_le_exp_lt_norm_subset (T₀ r : ℝ) :
+    ∃ a : ℝ, T₀ ≤ a ∧
+      {z : ℝ × ℝ | Real.exp (2 * Real.pi * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+        {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
+  have h := Real.tendsto_exp_atTop.comp (Filter.tendsto_id.const_mul_atTop Real.two_pi_pos)
+  obtain ⟨a, ha, hr⟩ := ((Filter.eventually_ge_atTop T₀).and (h.eventually_ge_atTop r)).exists
+  exact ⟨a, ha, fun _ hz ↦ hr.trans_lt hz⟩
+
+end TauCeti

@@ -138,19 +138,6 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- In the real coordinates of `ℂ`, every part `‖w‖ > r` of the plane contains a part
-`‖w‖ > exp (2πa)` with `a ≥ T₀`. -/
-theorem exists_le_exp_lt_norm_subset (T₀ r : ℝ) :
-    ∃ a : ℝ, T₀ ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
-      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
-  refine ⟨max T₀ (max 0 r), le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
-  have h₀ : 0 ≤ max T₀ (max 0 r) := (le_max_left 0 r).trans (le_max_right _ _)
-  have hr : r ≤ max T₀ (max 0 r) := (le_max_right 0 r).trans (le_max_right _ _)
-  have h₁ := Real.add_one_le_exp (2 * π * max T₀ (max 0 r))
-  have h₂ : 0 ≤ (2 * π - 1) * max T₀ (max 0 r) :=
-    mul_nonneg (by linarith [Real.two_le_pi]) h₀
-  linarith
-
 namespace Floer.PSSPlane
 
 /-! ### The end lift in real coordinates -/
@@ -251,6 +238,11 @@ theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
   rw [realChart_apply, realChart_apply, Complex.equivRealProdCLM_symm_apply,
     Complex.equivRealProdCLM_symm_apply]
   exact congrArg _ (p.periodic_cylindricalEndLift s t)
+
+/-- The loops of a map composed with the end lift in real coordinates have period one. -/
+theorem periodic_comp_realChart_cylindricalEndLift {X : Type*} (p : PSSPlane) (u : ℝ × ℝ → X)
+    (s : ℝ) : Periodic (fun t ↦ (u ∘ realChart p.cylindricalEndLift) (s, t)) 1 := fun t ↦ by
+  simp only [comp_apply, realChart_cylindricalEndLift_add_one]
 
 /-- **The end coordinates of a point of the end.** A point `w` of the plane with
 `|w| > exp (2π T)` is the image under the end lift of a point `ζ` with `ε s > T` and angular
@@ -1267,13 +1259,13 @@ theorem setIntegral_hamiltonianCurvature_pssPlanePerturbation_closedBall (ω : S
 variable {ω : SymplecticForm V} {u : ℝ × ℝ → V} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
 
 omit [FiniteDimensional ℝ V] in
-/-- On the part `ε s ≥ T₀` of the end, where `𝔎` is `H(t) dt`, the perturbation is
-differentiable in the target point. -/
+/-- On the part `ε s ≥ T₀` of the end, where `𝔎` is `H(t) dt`, the perturbation at the image of
+`(s, t)` is differentiable in the target point wherever `H(t)` is. -/
 private theorem differentiableAt_perturbation_realChart
     (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
       𝔎 w x = H (p.endCoord w).im x • p.endAngularForm w)
-    (hHd : ∀ t, Differentiable ℝ (H t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ p.endSign * ζ.1) (v : ℂ)
-    (y : V) :
+    (hH : Periodic H 1) {ζ : ℝ × ℝ} (hζ : T₀ ≤ p.endSign * ζ.1) {y : V}
+    (hHd : DifferentiableAt ℝ (H ζ.2) y) (v : ℂ) :
     DifferentiableAt ℝ
       (fun x ↦ 𝔎 (Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)) x v) y := by
   rw [TauCeti.Complex.equivRealProdCLM_symm_realChart]
@@ -1281,8 +1273,9 @@ private theorem differentiableAt_perturbation_realChart
       (p.endCoord (p.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ))).re := by
     rw [re_endCoord_cylindricalEndLift]
     simpa using hζ
-  simp_rw [hKH _ _ (p.cylindricalEndLift_ne_zero _) hre, smul_apply, smul_eq_mul]
-  exact ((hHd _) y).mul_const _
+  simp_rw [hKH _ _ (p.cylindricalEndLift_ne_zero _) hre, smul_apply, smul_eq_mul,
+    p.apply_im_endCoord_cylindricalEndLift hH, Complex.equivRealProdCLM_symm_apply_im]
+  exact hHd.mul_const _
 
 /-- On the part `ε s ≥ T₀` of the end, the perturbed derivative of a map `v` for the cylindrical
 datum `H(t) dt` is its perturbed derivative for the pullback of `𝔎` along the end lift. -/
@@ -1311,14 +1304,15 @@ private theorem perturbedFDeriv_comp_realChart_eq
 /-- **The end of a PSS plane solves the Floer equation of a cylinder.** Let `𝔎` be a perturbation
 that is `H(t) dt` on the part `ε s ≥ T₀` of the end of a PSS plane, and let `u` solve the Floer
 equation `(du - X_𝔎)^{0,1} = 0` for the almost complex structure `J` at the image `ψ(ζ)` of a point
-`ζ` with `ε s ≥ T₀` under the end lift `ψ` in real coordinates. Then `u ∘ ψ` solves the Floer
-equation `∂_s v + J (∂_t v - X_{H_t}(v)) = 0` of a cylinder at `ζ`. -/
+`ζ = (s, t)` with `ε s ≥ T₀` under the end lift `ψ` in real coordinates, where `H(t)` is
+differentiable at `u(ψ(ζ))`. Then `u ∘ ψ` solves the Floer equation
+`∂_s v + J (∂_t v - X_{H_t}(v)) = 0` of a cylinder at `ζ`. -/
 theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift
     (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
       𝔎 w x = H (p.endCoord w).im x • p.endAngularForm w)
-    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {J : AlmostComplexStructure V}
-    {ζ : ℝ × ℝ} (hζ : T₀ ≤ p.endSign * ζ.1)
+    (hH : Periodic H 1) {J : AlmostComplexStructure V} {ζ : ℝ × ℝ} (hζ : T₀ ≤ p.endSign * ζ.1)
     (hu : DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ))
+    (hHd : DifferentiableAt ℝ (H ζ.2) (u (realChart p.cylindricalEndLift ζ)))
     (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u
@@ -1331,22 +1325,23 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift
     (Ks := fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I)
     ((contDiff_realChart (p.contDiff_cylindricalEndLift (n := 1))).differentiable one_ne_zero ζ)
-    hu (differentiableAt_perturbation_realChart hKH hHd hζ 1 _)
-    (differentiableAt_perturbation_realChart hKH hHd hζ Complex.I _)
+    hu (differentiableAt_perturbation_realChart hKH hH hζ hHd 1)
+    (differentiableAt_perturbation_realChart hKH hH hζ hHd Complex.I)
     (isComplexLinearMap_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)) hfloer
 
 /-- **The energy of a part of the end of a PSS plane.** Let `𝔎` be a perturbation that is
 `H(t) dt` on the part `ε s ≥ T₀` of the end of a PSS plane, and let `s` be a measurable set of
 points with `ε s ≥ T₀` and angular coordinate in `[t₀, t₀ + 1)`. If `u` is differentiable on the
-image of `s` under the end lift `ψ` in real coordinates, then the energy of `u ∘ ψ` for the
-cylindrical datum `H(t) dt` over `s` is the energy of `u` over `ψ(s)`. -/
+image of `s` under the end lift `ψ` in real coordinates, and `H(t)` is differentiable at `u(ψ(ζ))`
+for every `ζ = (s', t)` in `s`, then the energy of `u ∘ ψ` for the cylindrical datum `H(t) dt` over
+`s` is the energy of `u` over `ψ(s)`. -/
 theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq
     (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
       𝔎 w x = H (p.endCoord w).im x • p.endAngularForm w)
-    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {s : Set (ℝ × ℝ)}
-    (hs : MeasurableSet s) (hsT : ∀ ζ ∈ s, T₀ ≤ p.endSign * ζ.1) {t₀ : ℝ}
-    (hst : ∀ ζ ∈ s, ζ.2 ∈ Ico t₀ (t₀ + 1))
-    (hu : ∀ ζ ∈ s, DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ)) :
+    (hH : Periodic H 1) {s : Set (ℝ × ℝ)} (hs : MeasurableSet s)
+    (hsT : ∀ ζ ∈ s, T₀ ≤ p.endSign * ζ.1) {t₀ : ℝ} (hst : ∀ ζ ∈ s, ζ.2 ∈ Ico t₀ (t₀ + 1))
+    (hu : ∀ ζ ∈ s, DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ))
+    (hHd : ∀ ζ ∈ s, DifferentiableAt ℝ (H ζ.2) (u (realChart p.cylindricalEndLift ζ))) :
     ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
         (u ∘ realChart p.cylindricalEndLift) z) =
       ∫⁻ z in realChart p.cylindricalEndLift '' s, ENNReal.ofReal (ω.floerEnergyDensity
@@ -1356,7 +1351,7 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq
     (contDiff_realChart (p.contDiff_cylindricalEndLift (n := 1))).differentiable one_ne_zero
   have hinj : InjOn (realChart p.cylindricalEndLift) s :=
     (p.injOn_realChart_cylindricalEndLift t₀).mono fun ζ hζ ↦
-      show ζ ∈ univ ×ˢ Ico t₀ (t₀ + 1) from ⟨mem_univ _, hst ζ hζ⟩
+      by simpa only [mem_prod, mem_univ, true_and] using hst ζ hζ
   -- On `s` the energy density is the Jacobian times the energy density of `u`.
   have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
       (u ∘ realChart p.cylindricalEndLift) ζ =
@@ -1370,24 +1365,26 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq
     exact ω.floerEnergyDensity_perturbationPullback
       (Ks := fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
       (Kt := fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I)
-      (hψ ζ) (hu ζ hζ) (differentiableAt_perturbation_realChart hKH hHd (hsT ζ hζ) 1 _)
-      (differentiableAt_perturbation_realChart hKH hHd (hsT ζ hζ) Complex.I _)
+      (hψ ζ) (hu ζ hζ)
+      (differentiableAt_perturbation_realChart hKH hH (hsT ζ hζ) (hHd ζ hζ) _)
+      (differentiableAt_perturbation_realChart hKH hH (hsT ζ hζ) (hHd ζ hζ) _)
   exact (lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs hinj
     (fun ζ _ ↦ hψ ζ) hdens).symm
 
 /-- **The energy of the end of a PSS plane.** Let `𝔎` be a perturbation that is `H(t) dt` on the
 part `ε s ≥ T₀` of the end of a PSS plane, and let `P` be a measurable set of longitudinal
 coordinates with `ε s ≥ T₀` on `P`. If `u` is differentiable on the image of the band
-`P × [0, 1]` under the end lift `ψ` in real coordinates, and `U` contains that image, then the
-energy of `u ∘ ψ` for the cylindrical datum `H(t) dt` over `P × [0, 1]` is at most the energy of
-`u` over `U`. -/
+`P × [0, 1]` under the end lift `ψ` in real coordinates, `H(t)` is differentiable at `u(ψ(ζ))`
+for every `ζ = (s, t)` in the band, and `U` contains its image, then the energy of `u ∘ ψ` for the
+cylindrical datum `H(t) dt` over `P × [0, 1]` is at most the energy of `u` over `U`. -/
 theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le
     (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
       𝔎 w x = H (p.endCoord w).im x • p.endAngularForm w)
-    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {P : Set ℝ}
-    (hP : MeasurableSet P) (hPT : ∀ s ∈ P, T₀ ≤ p.endSign * s) {U : Set (ℝ × ℝ)}
-    (hU : ∀ ζ ∈ P ×ˢ Icc 0 1, realChart p.cylindricalEndLift ζ ∈ U)
-    (hu : ∀ ζ ∈ P ×ˢ Icc 0 1, DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ)) :
+    (hH : Periodic H 1) {P : Set ℝ} (hP : MeasurableSet P) (hPT : ∀ s ∈ P, T₀ ≤ p.endSign * s)
+    {U : Set (ℝ × ℝ)} (hU : ∀ ζ ∈ P ×ˢ Icc 0 1, realChart p.cylindricalEndLift ζ ∈ U)
+    (hu : ∀ ζ ∈ P ×ˢ Icc 0 1, DifferentiableAt ℝ u (realChart p.cylindricalEndLift ζ))
+    (hHd : ∀ ζ ∈ P ×ˢ Icc 0 1,
+      DifferentiableAt ℝ (H ζ.2) (u (realChart p.cylindricalEndLift ζ))) :
     ∫⁻ z in P ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
         (u ∘ realChart p.cylindricalEndLift) z) ≤
       ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity
@@ -1398,8 +1395,9 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
   rw [setLIntegral_congr hae, setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq
-    hKH hH hHd (hP.prod measurableSet_Ico) (fun ζ hζ ↦ hPT ζ.1 hζ.1) (t₀ := 0)
-    (fun ζ hζ ↦ by simpa using hζ.2) fun ζ hζ ↦ hu ζ ⟨hζ.1, Ico_subset_Icc_self hζ.2⟩]
+    hKH hH (hP.prod measurableSet_Ico) (fun ζ hζ ↦ hPT ζ.1 hζ.1) (t₀ := 0)
+    (fun ζ hζ ↦ by simpa using hζ.2) (fun ζ hζ ↦ hu ζ ⟨hζ.1, Ico_subset_Icc_self hζ.2⟩)
+    fun ζ hζ ↦ hHd ζ ⟨hζ.1, Ico_subset_Icc_self hζ.2⟩]
   refine lintegral_mono_set ?_
   rintro _ ⟨ζ, hζ, rfl⟩
   exact hU ζ ⟨hζ.1, Ico_subset_Icc_self hζ.2⟩
