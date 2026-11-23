@@ -79,12 +79,6 @@ private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L
 
 section TerminalDataCLE
 
-private theorem realSecondOrderCoeff_ellipticity {α : ℝ≥0} {t₀ t₁ : ℝ}
-    {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} {δ : ℝ} (ha : ∀ p, δ ≤ a p)
-    (p : slab (E := ℝ) t₀ t₁) :
-    δ ≤ realSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
-  (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p
-
 /-- **The weighted log-spot terminal-data isomorphism.** For `0 < α < 1`, `t₀ < t₁`, and parabolic
 Hölder coefficients `a, r` on `ℝ × [t₀, t₁]` where `a` has a uniform positive lower bound
 `a ≥ δ > 0`, the map `u ↦ (P u, u(·, t₁))` of `weightedLogSpotPricingOperatorL` as an isomorphism
@@ -118,6 +112,14 @@ theorem weightedLogSpotTerminalDataCLE_apply (u : ParabolicC2HolderSpace α ℝ 
   rw [weightedLogSpotPricingOperatorL_def]
   exact realTerminalDataCLE_apply u
 
+/-- The underlying continuous linear map of `weightedLogSpotTerminalDataCLE` is the product of
+`weightedLogSpotPricingOperatorL` and the terminal spatial trace. -/
+theorem weightedLogSpotTerminalDataCLE_toContinuousLinearMap :
+    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).toContinuousLinearMap =
+      (weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
+        (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩) :=
+  ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]
+
 /-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, `t₀ < t₁`, and
 bounded parabolic Hölder coefficients `a, r ∈ C_b^{α,α/2}(ℝ × [t₀, t₁])` with `a ≥ lam > 0`, the
 terminal-data map `u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator `P` is an
@@ -128,12 +130,9 @@ theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : �
     (r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
     (ha : ∀ p, lam ≤ a p) :
     ((weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
-      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
-  have heq : (weightedLogSpotPricingOperatorL (ht := ht) hα₁.le a r).prod
-        (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩) =
-      (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩).toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]
-  exact heq ▸ ContinuousLinearMap.isInvertible_equiv
+      (spatialTraceL ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible :=
+  (weightedLogSpotTerminalDataCLE_toContinuousLinearMap (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
+    (a := a) (r := r) (ha := ⟨lam, hlam, ha⟩)).symm ▸ ContinuousLinearMap.isInvertible_equiv
 
 /-- The solution of the weighted log-spot terminal-value problem with forcing `f` and terminal
 datum `g` has backward pricing residual `f`. -/

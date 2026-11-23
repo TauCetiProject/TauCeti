@@ -35,9 +35,10 @@ Specialized to market volatility `σ(s, t)` and a time-only `(α / 2)`-Hölder s
   on `slab t₀ t₁`, with quantitative norm bounds exported by
   `TauCeti.Finance.norm_logSpotHalfVarianceHolder_le` and
   `TauCeti.Finance.norm_shortRateHolder_le`.
-* `TauCeti.Finance.pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder` transports
-  pointwise vanishing of the weighted residual for those market coefficient fields to the
-  closed-slab spot pricing equation (with `derivWithin`) on `(0, ∞) × [t₀, t₁]`.
+* `TauCeti.Finance.pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder` (in
+  `TauCeti.Probability.Finance.Pricing.Operator`) transports pointwise vanishing of the weighted
+  residual for those market coefficient fields to the closed-slab spot pricing equation (with
+  `derivWithin`) on `(0, ∞) × [t₀, t₁]`.
 * `TauCeti.Finance.eq_weightedLogSpotPrice_of_pde_eq_zero_of_terminal_eq` (in
   `TauCeti.Probability.Finance.Pricing.Comparison.WeightedLogSpot`) proves that every competitor
   jointly continuous on the closed positive-spot slab `(0, ∞) × [t₀, t₁]` with linear growth
@@ -104,30 +105,7 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
       ha).bijective.existsUnique (0, g))
   rw [ContinuousLinearMap.prod_apply, Prod.mk.injEq, spatialTraceL_apply]
   exact and_congr (pde_weightedLogSpotPrice_eq_zero_iff hα₁.le a r v)
-    (weightedLogSpotPrice_terminal_iff v hg)
-
-/-- For the market coefficient fields `logSpotHalfVarianceHolder` and `shortRateHolder`, vanishing
-of the weighted pricing residual at `(log s, t)` on the closed slab `(0, ∞) × [t₀, t₁]` implies
-the closed-slab spot pricing equation (with within-slab `derivWithin`, one-sided at the endpoints
-`t₀` and `t₁`) at `(s, t)`. -/
-theorem pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder
-    (hα₀ : 0 < α) (hα₁ : α ≤ 1)
-    {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {M H_r : ℝ≥0}
-    (hσ_bdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
-    (hσ_hol : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
-      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
-    (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
-    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) (t : Icc t₀ t₁)
-    (hPu : weightedLogSpotPricingOperatorL hα₁
-        (logSpotHalfVarianceHolder hα₀ σ hσ_bdd hσ_hol) (shortRateHolder hα₀ r hr_hol) u
-        (slabMk (log s) t) = 0) :
-    derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
-        σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-        r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
-          weightedLogSpotPrice u s t) = 0 := by
-  have hW := pde_weightedLogSpotPrice_eq_zero hα₁ u hs t (a₀ := σ s t ^ 2 / 2) (r₀ := r t) hPu
-    (by simp [exp_log hs]) (by simp)
-  rwa [div_mul_eq_mul_div] at hW
+    (weightedLogSpotPrice_slice_iff v ⟨t₁, right_mem_Icc.2 ht.le⟩ hg)
 
 /-- **Existence, linear-growth bounds, and uniqueness for the self-financing pricing PDE.**
 Let `0 < α < 1`, `t₀ < t₁`, `0 < δ`, let `σ(s, t)` satisfy `δ ≤ σ(s, t)²` and `|σ(e^y, t)| ≤ M`
@@ -211,7 +189,8 @@ theorem exists_weightedLogSpotPrice_pde_and_unique
             weightedLogSpotPrice u s t) = 0 :=
     fun s hs t ht' ↦ pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder hα₀ hα₁.le
       hσ_bdd hσ_hol hr_hol u hs ⟨t, ht'⟩ (by rw [hPu, HolderSpace.zero_apply])
-  refine ⟨u, hPu, htr, fun s hs ↦ weightedLogSpotPrice_terminal u huterm hs,
+  refine ⟨u, hPu, htr,
+    fun s hs ↦ weightedLogSpotPrice_slice u ⟨t₁, right_mem_Icc.2 ht.le⟩ huterm hs,
     (continuousOn_weightedLogSpotPrice u).mono (prod_mono_right (subset_univ _)),
     continuousOn_deriv_weightedLogSpotPrice_spot u,
     continuousOn_deriv_deriv_weightedLogSpotPrice_spot u,
@@ -224,7 +203,10 @@ theorem exists_weightedLogSpotPrice_pde_and_unique
         hpde_closed s hs t (Ioo_subset_Icc_self ht')⟩,
     fun C A hCc hCg hCcd hCd hCpde hCt ↦ ?_⟩
   exact eq_weightedLogSpotPrice_of_pde_eq_zero_of_terminal_eq hα₁.le
+    (a₀ := fun s t ↦ σ s t ^ 2 / 2) (r₀ := fun _ t ↦ r t)
+    (fun _ _ _ _ ↦ by positivity)
     (fun s hs t ht' ↦ by simp [a, exp_log hs]) (fun s _ t ht' ↦ by simp [rH])
-    u hPu huterm hCc hCg hCcd hCd hCpde hCt
+    u hPu huterm hCc hCg hCcd hCd
+    (fun s hs t ht' ↦ by simpa only [div_mul_eq_mul_div] using hCpde hs ht') hCt
 
 end TauCeti.Finance

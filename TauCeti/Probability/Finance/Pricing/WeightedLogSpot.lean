@@ -306,30 +306,27 @@ theorem differentiableAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace �
     DifferentiableAt ℝ (weightedLogSpotPrice u s) t :=
   (hasDerivAt_weightedLogSpotPrice_time u s ht').differentiableAt
 
-/-- Terminal data in weighted log-spot coordinates become the specified payoff. -/
-theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab)
-    {h : ℝ → ℝ}
-    (hu : ∀ y, u (slabMk y ⟨b, right_mem_Icc.mpr hab.le⟩) = h (exp y) / (1 + exp y))
-    {s : ℝ} (hs : 0 < s) : weightedLogSpotPrice u s b = h s := by
-  rw [weightedLogSpotPrice_of_mem u s ⟨b, right_mem_Icc.mpr hab.le⟩, hu, exp_log hs]
+/-- Slice data in weighted log-spot coordinates become the specified profile on `(0, ∞)`. -/
+theorem weightedLogSpotPrice_slice (u : ParabolicC2HolderSpace α ℝ ℝ hab) (t : Icc a b)
+    {h : ℝ → ℝ} (hu : ∀ y, u (slabMk y t) = h (exp y) / (1 + exp y))
+    {s : ℝ} (hs : 0 < s) : weightedLogSpotPrice u s t = h s := by
+  rw [weightedLogSpotPrice_of_mem u s t, hu, exp_log hs]
   exact mul_div_cancel₀ _ (by positivity)
 
-/-- The reconstructed price attains the payoff `h` at maturity `b` on `(0, ∞)` if and only if
-the terminal trace of `u` equals the weighted log-spot profile `g` satisfying
+/-- The reconstructed price equals `h` at time `t ∈ [a, b]` on `(0, ∞)` if and only if the
+spatial trace of `u` at `t` equals the weighted log-spot profile `g` satisfying
 `g y = h (exp y) / (1 + exp y)`. -/
-theorem weightedLogSpotPrice_terminal_iff (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+theorem weightedLogSpotPrice_slice_iff (u : ParabolicC2HolderSpace α ℝ ℝ hab) (t : Icc a b)
     {h : ℝ → ℝ} {g : CkHolderSpace 2 α ℝ ℝ} (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
-    (∀ s, 0 < s → weightedLogSpotPrice u s b = h s) ↔
-      u.spatialTrace ⟨b, right_mem_Icc.mpr hab.le⟩ = g := by
+    (∀ s, 0 < s → weightedLogSpotPrice u s t = h s) ↔ u.spatialTrace t = g := by
   constructor
   · intro hv
     ext y
-    have hy := (weightedLogSpotPrice_of_mem u (exp y) ⟨b, right_mem_Icc.mpr hab.le⟩).symm.trans
-      (hv (exp y) (exp_pos y))
+    have hy := (weightedLogSpotPrice_of_mem u (exp y) t).symm.trans (hv (exp y) (exp_pos y))
     rw [log_exp] at hy
     rw [spatialTrace_apply, hg, ← hy, mul_div_cancel_left₀ _ (by positivity)]
   · intro hv s hs
-    exact weightedLogSpotPrice_terminal u (fun y ↦ by rw [← spatialTrace_apply, hv, hg]) hs
+    exact weightedLogSpotPrice_slice u t (fun y ↦ by rw [← spatialTrace_apply, hv, hg]) hs
 
 /-- The financial pricing operator is the bounded weighted log-spot operator multiplied by
 `1+s`. Time differentiation is within the closed slab, so the identity uses the recorded
@@ -344,28 +341,12 @@ theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
         (r + a₀ * ((s - 1) / (s + 1))) *
           spatialFDerivL u (slabMk (log s) t) 1 -
         r / (1 + s) * u (slabMk (log s) t)) := by
-  have hC := contDiffOn_weightedLogSpotPrice u t
-  have hCs := hC.contDiffAt (Ioi_mem_nhds hs)
-  -- Freeze time: the existing identity supplies the spatial operator without imposing
-  -- ordinary time differentiability on the clamped extension at the slab endpoints.
-  have h := pde_comp_exp_div_one_add_exp
-    (C := fun x _ => weightedLogSpotPrice u x t) (y := log s) (t := (t : ℝ)) a₀ r
-    (by
-      rw [exp_log hs]
-      filter_upwards [Ioi_mem_nhds hs] with x hx
-      exact (hC.contDiffAt (Ioi_mem_nhds hx)).differentiableAt two_ne_zero)
-    (by
-      rw [exp_log hs]
-      exact (hCs.derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero)
-  simp_rw [weightedLogSpotPrice_exp_div, timeExtension_of_mem] at h
-  have hv : deriv (fun y => u (slabMk y t)) =
-      fun y => spatialFDerivL u (slabMk y t) 1 :=
-    funext (u.deriv_spatialSlice t)
-  rw [hv, u.deriv_spatialFDerivL_apply] at h
-  simp only [deriv_const, zero_add, exp_log hs] at h
-  rw [derivWithin_weightedLogSpotPrice_time]
-  have hw : (1 + s) ≠ 0 := by positivity
-  rw [eq_div_iff hw] at h
-  linear_combination -h
+  rw [derivWithin_weightedLogSpotPrice_time, deriv_weightedLogSpotPrice_spot u hs t,
+    deriv_deriv_weightedLogSpotPrice_spot u hs t, weightedLogSpotPrice_of_mem]
+  have hs0 : s ≠ 0 := hs.ne'
+  have hs1 : 1 + s ≠ 0 := by positivity
+  have hs2 : s + 1 ≠ 0 := by positivity
+  field_simp
+  ring
 
 end TauCeti.Finance

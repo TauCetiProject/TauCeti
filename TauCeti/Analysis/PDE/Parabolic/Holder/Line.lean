@@ -328,6 +328,14 @@ theorem realTerminalDataCLE_symm_apply_slabMk_right
       (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 x := by
   rw [← spatialTrace_apply, spatialTrace_realTerminalDataCLE_symm_apply]
 
+/-- The underlying continuous linear map of `realTerminalDataCLE` is the product of the backward
+parabolic operator on the line and the terminal spatial trace. -/
+theorem realTerminalDataCLE_toContinuousLinearMap :
+    (realTerminalDataCLE hα₀ hα₁ ht A B C hA).toContinuousLinearMap =
+      (backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
+        (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩) :=
+  ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]
+
 end RealTerminalDataCLE
 
 /-- **The terminal-value problem on the line is well posed.** For `0 < α < 1`, a slab
@@ -342,12 +350,9 @@ theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ 
     (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ)) {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
     ((backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
-      (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
-  have heq : (backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
-        (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩) =
-      (realTerminalDataCLE hα₀ hα₁ ht A B C ⟨lam, hlam, hA⟩).toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]
-  exact heq ▸ ContinuousLinearMap.isInvertible_equiv
+      (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible :=
+  (realTerminalDataCLE_toContinuousLinearMap (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
+    (hA := ⟨lam, hlam, hA⟩)).symm ▸ ContinuousLinearMap.isInvertible_equiv
 
 /-- Conjugacy between the line solution operator and the `ℝ¹` Euclidean solution operator. -/
 private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)

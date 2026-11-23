@@ -29,11 +29,14 @@ drift of the log-spot) and potential `-r`. These coefficients are bounded whenev
 are. Whole-space parabolic Schauder existence theory applies to it under further hypotheses that
 this file does not impose: uniform ellipticity (`σ²` bounded below by a positive constant) and
 coefficient regularity (such as parabolic Hölder continuity). By contrast, comparison-based
-uniqueness holds for bounded, possibly degenerate coefficients (`a ≥ 0`) without uniform
-ellipticity or coefficient regularity. The identities proved here need none of these: they are
-pointwise, assume only local differentiability of the price, and hold for arbitrary real `a` and
-`r` (including `a = 0`), which may be the values `σ(s, t)² / 2` and `r(t)` of a local
-half-variance and a time-dependent rate at the point under consideration.
+uniqueness holds in the linear-growth spot class—equivalently, for bounded weighted log-spot
+profiles `u / (1 + e^y)`—for bounded, possibly degenerate coefficients (`a ≥ 0`) without uniform
+ellipticity or coefficient regularity (`TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`). The
+identities proved here need none of these: they are pointwise, require differentiability of the
+first spatial derivative at the point (together with local first-order differentiability near the
+point for `TauCeti.Finance.pde_comp_exp_div_one_add_exp`), and hold for arbitrary real `a` and `r`
+(including `a = 0`), which may be the values `σ(s, t)² / 2` and `r(t)` of a local half-variance and
+a time-dependent rate at the point under consideration.
 
 Both directions of the change of variables are stated: `TauCeti.Finance.pde_comp_log` transports a
 function of the log-spot to a function of the spot, and `TauCeti.Finance.pde_comp_exp` a function
@@ -74,10 +77,11 @@ namespace TauCeti.Finance
 variable {s y : ℝ}
 
 /-- **The pricing equation in log-spot coordinates.** For `C(s, t) = u(log s, t)` at a spot
-`s ≠ 0`, the pricing operator `C_t + a s² C_ss + r (s C_s - C)` equals the log-spot operator
-`u_t + a u_yy + (r - a) u_y - r u` at `y = log s`. The half-variance `a` (for instance `σ² / 2`)
-and the rate `r` are arbitrary reals, so they may be the values of a local half-variance and a
-time-dependent rate at `(s, t)`. -/
+`s ≠ 0` such that the first `y`-derivative `deriv (fun y => u y t)` is differentiable at `log s`
+(second spatial differentiability), the pricing operator `C_t + a s² C_ss + r (s C_s - C)` equals
+the log-spot operator `u_t + a u_yy + (r - a) u_y - r u` at `y = log s`. The half-variance `a`
+(for instance `σ² / 2`) and the rate `r` are arbitrary reals, so they may be the values of a local
+half-variance and a time-dependent rate at `(s, t)`. -/
 theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
     (hu' : DifferentiableAt ℝ (deriv fun y => u y t) (log s)) (hs : s ≠ 0) :
     deriv (fun t' => u (log s) t') t +
@@ -89,11 +93,13 @@ theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
   have h₂ := sq_mul_deriv_deriv_comp_log (v := fun y => u y t) hu' hs
   linear_combination a * h₂ + r * h₁
 
-/-- **The pricing equation in log-spot coordinates.** For a function `C(s, t)` of the spot and
-`u(y, t) = C(e^y, t)`, the log-spot operator `u_t + a u_yy + (r - a) u_y - r u` at `y` equals the
-pricing operator `C_t + a s² C_ss + r (s C_s - C)` at the spot `s = e^y`. The half-variance `a`
-(for instance `σ² / 2`) and the rate `r` are arbitrary reals, so they may be the values of a local
-half-variance and a time-dependent rate at `(e^y, t)`. -/
+/-- **The pricing equation in log-spot coordinates.** For a function `C(s, t)` of the spot whose
+first spot derivative `deriv (fun x => C x t)` is differentiable at `e^y` (second spatial
+differentiability) and `u(y, t) = C(e^y, t)`, the log-spot operator
+`u_t + a u_yy + (r - a) u_y - r u` at `y` equals the pricing operator
+`C_t + a s² C_ss + r (s C_s - C)` at the spot `s = e^y`. The half-variance `a` (for instance
+`σ² / 2`) and the rate `r` are arbitrary reals, so they may be the values of a local half-variance
+and a time-dependent rate at `(e^y, t)`. -/
 theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
     (hC' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y)) :
     deriv (fun t' => C (exp y) t') t + a * deriv (deriv fun y => C (exp y) t) y +

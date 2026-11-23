@@ -15,11 +15,11 @@ import TauCeti.Probability.Finance.Pricing.LogSpot
 /-!
 # Comparison and uniqueness for the pricing equation
 
-For a stock with local volatility `σ(s, t)` and a bond with short rate `r(t)`, the price `C(s, t)`
-of a claim on the stock, as a function of the spot `s > 0` and calendar time `t ∈ [t₀, t₁]`,
-solves the pricing equation
+For a stock with half-variance `a(s, t)` (such as `σ(s, t)² / 2`) and short rate `r(s, t)`, the
+price `C(s, t)` of a claim on the stock, as a function of the spot `s > 0` and calendar time
+`t ∈ [t₀, t₁]`, solves the pricing equation
 
-`C_t + σ² s² / 2 C_ss + r (s C_s - C) = 0`,
+`C_t + a s² C_ss + r (s C_s - C) = 0`,
 
 with the payoff as terminal value at `t = t₁`. This file proves the comparison principle for this
 equation in the class of prices of **linear growth** in the spot: if `C₁` and `C₂` are classical
@@ -30,15 +30,16 @@ by its terminal value (`TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`). Calls, pu
 itself have linear growth, so this is the uniqueness class in which prices of such claims are
 characterised by their payoffs.
 
-The volatility and the rate need only be bounded on `(t₀, t₁)`: no regularity, no positive lower
-bound on `σ` (the equation may degenerate) and no sign of `r` is assumed. The solutions are
-required to be continuous on `s > 0`, `t₀ ≤ t ≤ t₁`, twice continuously differentiable in `s` and
-differentiable in `t` for `t₀ < t < t₁`; nothing is required at `s = 0`.
+The coefficients `a` and `r` need only satisfy `0 ≤ a s t ≤ Λ` and `|r s t| ≤ R` on `(t₀, t₁)`:
+no regularity, no positive lower bound on `a` (the equation may degenerate) and no sign of `r` is
+assumed. The solutions are required to be jointly continuous on `(0, ∞) × [t₀, t₁]`, twice
+continuously differentiable in `s` and differentiable in `t` for `t₀ < t < t₁`; nothing is
+required at `s = 0`.
 
 ## The argument
 
 The equation degenerates at `s = 0` and its coefficients grow with `s`. In the log-spot variable
-`y = log s` it becomes `u_t + a u_yy + (r - a) u_y - r u = 0` with `a = σ² / 2`
+`y = log s` it becomes `u_t + a u_yy + (r - a) u_y - r u = 0`
 (`TauCeti.Finance.pde_comp_exp`), and the linear-growth class becomes the class of `u` with
 `u / (1 + e^y)` bounded. Dividing by the weight `1 + e^y`, whose logarithmic derivative is the
 sigmoid `p = e^y / (1 + e^y)`, the function `w = u / (1 + e^y)` solves
@@ -72,7 +73,7 @@ open Real Filter Topology Set
 
 namespace TauCeti.Finance
 
-variable {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {C₁ C₂ : ℝ → ℝ → ℝ} {t₀ t₁ Λ R A : ℝ}
+variable {a r : ℝ → ℝ → ℝ} {C₁ C₂ : ℝ → ℝ → ℝ} {t₀ t₁ Λ R A : ℝ}
 
 private theorem sub_mem_Ioo_iff {t₀ t₁ τ : ℝ} :
     t₁ - τ ∈ Ioo t₀ t₁ ↔ τ ∈ Ioo 0 (t₁ - t₀) := by
@@ -111,39 +112,42 @@ private theorem differentiableAt_reversed_div_one_add_exp {C : ℝ → ℝ → �
   ((hdiff (exp_pos y) (sub_mem_Ioo_iff.2 hτ)).comp τ
     ((differentiableAt_const t₁).sub differentiableAt_id)).div_const _
 
-/-- The first-order coefficient `r + σ² / 2 · (e^y - 1) / (e^y + 1)` in weighted log-spot
+/-- The first-order coefficient `r + a · (e^y - 1) / (e^y + 1)` in weighted log-spot
 coordinates grows at most linearly. -/
 private theorem abs_rate_add_mul_le
-    (hσ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → σ s t ^ 2 ≤ Λ)
-    (hr : ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r t| ≤ R) {τ : ℝ} (hτ : τ ∈ Ioo 0 (t₁ - t₀)) (y : ℝ) :
-    |r (t₁ - τ) + σ (exp y) (t₁ - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1))| ≤
-      (|R| + |Λ| / 2) * (1 + |y|) := by
+    (ha₀ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → 0 ≤ a s t)
+    (ha : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → a s t ≤ Λ)
+    (hr : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r s t| ≤ R)
+    {τ : ℝ} (hτ : τ ∈ Ioo 0 (t₁ - t₀)) (y : ℝ) :
+    |r (exp y) (t₁ - τ) + a (exp y) (t₁ - τ) * ((exp y - 1) / (exp y + 1))| ≤
+      (|R| + |Λ|) * (1 + |y|) := by
   have hq : |(exp y - 1) / (exp y + 1)| ≤ 1 := by
     rw [abs_div, abs_of_pos (by positivity : 0 < exp y + 1), div_le_one (by positivity), abs_le]
     constructor <;> linarith [exp_pos y]
   have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := sub_mem_Ioo_iff.2 hτ
-  have h1 := (hσ (exp_pos y) hτ').trans (le_abs_self Λ)
-  have h2 := (hr hτ').trans (le_abs_self R)
-  have h3 : 0 ≤ σ (exp y) (t₁ - τ) ^ 2 / 2 := by positivity
-  calc |r (t₁ - τ) + σ (exp y) (t₁ - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1))|
-      ≤ |r (t₁ - τ)| + σ (exp y) (t₁ - τ) ^ 2 / 2 * 1 := by
+  have h1 := (ha (exp_pos y) hτ').trans (le_abs_self Λ)
+  have h2 := (hr (exp_pos y) hτ').trans (le_abs_self R)
+  have h3 := ha₀ (exp_pos y) hτ'
+  calc |r (exp y) (t₁ - τ) + a (exp y) (t₁ - τ) * ((exp y - 1) / (exp y + 1))|
+      ≤ |r (exp y) (t₁ - τ)| + a (exp y) (t₁ - τ) * 1 := by
         refine (abs_add_le _ _).trans (add_le_add le_rfl ?_)
         rw [abs_mul, abs_of_nonneg h3]
         exact mul_le_mul_of_nonneg_left hq h3
-    _ ≤ (|R| + |Λ| / 2) * 1 := by linarith
-    _ ≤ (|R| + |Λ| / 2) * (1 + |y|) := by
-        nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ |R| + |Λ| / 2) (abs_nonneg y)]
+    _ ≤ (|R| + |Λ|) * 1 := by linarith
+    _ ≤ (|R| + |Λ|) * (1 + |y|) := by
+        nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ |R| + |Λ|) (abs_nonneg y)]
 
-/-- **The comparison principle for the pricing equation.** Let the volatility `σ(s, t)` and the
-rate `r(t)` be bounded for `t₀ < t < t₁`, by `σ² ≤ Λ` and `|r| ≤ R`. Let `C₁` and `C₂` be
-continuous on `s > 0`, `t₀ ≤ t ≤ t₁`, twice continuously differentiable in the spot and
+/-- **The comparison principle for the pricing equation.** Let `a(s, t)` and `r(s, t)` be bounded
+for `s > 0` and `t₀ < t < t₁`, with `0 ≤ a s t ≤ Λ` and `|r s t| ≤ R`. Let `C₁` and `C₂` be
+jointly continuous on `(0, ∞) × [t₀, t₁]`, twice continuously differentiable in the spot and
 differentiable in time for `s > 0`, `t₀ < t < t₁`, with `C₁ - C₂ ≤ A (1 + s)`. If the pricing
-operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` of `C₂` is at most that of `C₁` for
+operator `C_t + a s² C_ss + r (s C_s - C)` of `C₂` is at most that of `C₁` for
 `t₀ < t < t₁`, and `C₁(s, t₁) ≤ C₂(s, t₁)` for every spot `s > 0`, then `C₁ ≤ C₂` for `s > 0` and
 `t₀ ≤ t ≤ t₁`. -/
 theorem le_of_pde_le_of_terminal_le
-    (hσ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → σ s t ^ 2 ≤ Λ)
-    (hr : ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r t| ≤ R)
+    (ha₀ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → 0 ≤ a s t)
+    (ha : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → a s t ≤ Λ)
+    (hr : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r s t| ≤ R)
     (hC₁ : ContinuousOn (Function.uncurry C₁) (Ioi 0 ×ˢ Icc t₀ t₁))
     (hC₂ : ContinuousOn (Function.uncurry C₂) (Ioi 0 ×ˢ Icc t₀ t₁))
     (hgrowth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C₁ s t - C₂ s t ≤ A * (1 + s))
@@ -152,34 +156,35 @@ theorem le_of_pde_le_of_terminal_le
     (hdiff₁ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun u ↦ C₁ s u) t)
     (hdiff₂ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun u ↦ C₂ s u) t)
     (hpde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
-      deriv (fun u ↦ C₂ s u) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C₂ x t) s +
-          r t * (s * deriv (fun x ↦ C₂ x t) s - C₂ s t) ≤
-        deriv (fun u ↦ C₁ s u) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C₁ x t) s +
-          r t * (s * deriv (fun x ↦ C₁ x t) s - C₁ s t))
+      deriv (fun u ↦ C₂ s u) t + a s t * s ^ 2 * deriv (deriv fun x ↦ C₂ x t) s +
+          r s t * (s * deriv (fun x ↦ C₂ x t) s - C₂ s t) ≤
+        deriv (fun u ↦ C₁ s u) t + a s t * s ^ 2 * deriv (deriv fun x ↦ C₁ x t) s +
+          r s t * (s * deriv (fun x ↦ C₁ x t) s - C₁ s t))
     (hterminal : ∀ ⦃s⦄, 0 < s → C₁ s t₁ ≤ C₂ s t₁) :
     ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C₁ s t ≤ C₂ s t := by
   have hψ (y : ℝ) : 0 < 1 + exp y := add_pos one_pos (exp_pos y)
   -- Apply the comparison principle on the whole line to `v₁` and `v₂`. The coefficients
-  -- `a = σ² / 2`, `b = r + a (e^y - 1) / (e^y + 1)` and `c = -r / (1 + e^y)` are bounded by
-  -- `|Λ| / 2`, `|R| + |Λ| / 2` and `|R|`; `v₁ - v₂ ≤ A` by the growth bound; and the operators
+  -- `a`, `b = r + a (e^y - 1) / (e^y + 1)` and `c = -r / (1 + e^y)` are bounded by
+  -- `|Λ|`, `|R| + |Λ|` and `|R|`; `v₁ - v₂ ≤ A` by the growth bound; and the operators
   -- compare by `pde_comp_exp_div_one_add_exp`.
   have h := PDE.le_of_deriv_sub_mul_deriv_deriv_add_mul_deriv_add_mul_le_of_le_initial
     (T := t₁ - t₀)
-    (a := fun τ y ↦ σ (exp y) (t₁ - τ) ^ 2 / 2)
-    (b := fun τ y ↦ r (t₁ - τ) + σ (exp y) (t₁ - τ) ^ 2 / 2 * ((exp y - 1) / (exp y + 1)))
-    (c := fun τ y ↦ -r (t₁ - τ) / (1 + exp y))
+    (a := fun τ y ↦ a (exp y) (t₁ - τ))
+    (b := fun τ y ↦ r (exp y) (t₁ - τ) + a (exp y) (t₁ - τ) * ((exp y - 1) / (exp y + 1)))
+    (c := fun τ y ↦ -r (exp y) (t₁ - τ) / (1 + exp y))
     (u := fun τ y ↦ C₁ (exp y) (t₁ - τ) / (1 + exp y))
     (v := fun τ y ↦ C₂ (exp y) (t₁ - τ) / (1 + exp y))
-    (Lam := |Λ| / 2) (β := |R| + |Λ| / 2) (γ := |R|)
-    (fun τ _ y ↦ by positivity)
+    (Lam := |Λ|) (β := |R| + |Λ|) (γ := |R|)
+    (fun τ hτ y ↦ ha₀ (exp_pos y) (sub_mem_Ioo_iff.2 hτ))
     (fun τ hτ y ↦ by
       have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := sub_mem_Ioo_iff.2 hτ
-      have h1 := (hσ (exp_pos y) hτ').trans (le_abs_self Λ)
+      have h1 := (ha (exp_pos y) hτ').trans (le_abs_self Λ)
       nlinarith [abs_nonneg Λ, sq_nonneg y])
-    (fun τ hτ y ↦ abs_rate_add_mul_le hσ hr hτ y)
+    (fun τ hτ y ↦ abs_rate_add_mul_le ha₀ ha hr hτ y)
     (fun τ hτ y ↦ by
       have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := sub_mem_Ioo_iff.2 hτ
-      have h1 := (neg_le_abs (r (t₁ - τ))).trans ((hr hτ').trans (le_abs_self R))
+      have h1 := (neg_le_abs (r (exp y) (t₁ - τ))).trans
+        ((hr (exp_pos y) hτ').trans (le_abs_self R))
       rw [div_le_iff₀ (hψ y)]
       nlinarith [mul_nonneg (abs_nonneg R) (exp_pos y).le])
     (continuousOn_reversed_div_one_add_exp hC₁) (continuousOn_reversed_div_one_add_exp hC₂)
@@ -199,11 +204,11 @@ theorem le_of_pde_le_of_terminal_le
         deriv_comp_const_sub (f := fun t ↦ C₂ (exp y) t / (1 + exp y))]
       have hτ' : t₁ - τ ∈ Ioo t₀ t₁ := sub_mem_Ioo_iff.2 hτ
       have hc₁ := hcd₁ (exp_pos y) hτ'
-      have h₁ := pde_comp_exp_div_one_add_exp (σ (exp y) (t₁ - τ) ^ 2 / 2) (r (t₁ - τ))
+      have h₁ := pde_comp_exp_div_one_add_exp (a (exp y) (t₁ - τ)) (r (exp y) (t₁ - τ))
         (hc₁.eventually_differentiableAt (by norm_num))
         hc₁.differentiableAt_deriv_two
       have hc₂ := hcd₂ (exp_pos y) hτ'
-      have h₂ := pde_comp_exp_div_one_add_exp (σ (exp y) (t₁ - τ) ^ 2 / 2) (r (t₁ - τ))
+      have h₂ := pde_comp_exp_div_one_add_exp (a (exp y) (t₁ - τ)) (r (exp y) (t₁ - τ))
         (hc₂.eventually_differentiableAt (by norm_num))
         hc₂.differentiableAt_deriv_two
       have h := div_le_div_of_nonneg_right
@@ -219,17 +224,18 @@ theorem le_of_pde_le_of_terminal_le
   simp only [exp_log hs, sub_sub_cancel] at hle
   exact (div_le_div_iff_of_pos_right (by linarith)).mp hle
 
-/-- **Uniqueness for the pricing equation in the linear-growth class.** Let the volatility
-`σ(s, t)` and the rate `r(t)` be bounded for `t₀ < t < t₁`, by `σ² ≤ Λ` and `|r| ≤ R`. Two
-functions `C₁` and `C₂` that are continuous on `s > 0`, `t₀ ≤ t ≤ t₁`, twice continuously
+/-- **Uniqueness for the pricing equation in the linear-growth class.** Let `a(s, t)` and
+`r(s, t)` be bounded for `s > 0` and `t₀ < t < t₁`, with `0 ≤ a s t ≤ Λ` and `|r s t| ≤ R`. Two
+functions `C₁` and `C₂` that are jointly continuous on `(0, ∞) × [t₀, t₁]`, twice continuously
 differentiable in the spot and differentiable in time for `s > 0`, `t₀ < t < t₁`, with
-`|C₁ - C₂| ≤ A (1 + s)`, the same pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` for
+`|C₁ - C₂| ≤ A (1 + s)`, the same pricing operator `C_t + a s² C_ss + r (s C_s - C)` for
 `t₀ < t < t₁` and the same terminal value at `t = t₁`, agree for `s > 0` and `t₀ ≤ t ≤ t₁`. In
-particular a classical solution of the pricing equation `C_t + σ² s² / 2 C_ss + r (s C_s - C) = 0`
+particular a classical solution of the pricing equation `C_t + a s² C_ss + r (s C_s - C) = 0`
 with `|C(s, t)| ≤ A (1 + s)` is determined by its terminal value. -/
 theorem eq_of_pde_eq_of_terminal_eq
-    (hσ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → σ s t ^ 2 ≤ Λ)
-    (hr : ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r t| ≤ R)
+    (ha₀ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → 0 ≤ a s t)
+    (ha : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → a s t ≤ Λ)
+    (hr : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → |r s t| ≤ R)
     (hC₁ : ContinuousOn (Function.uncurry C₁) (Ioi 0 ×ˢ Icc t₀ t₁))
     (hC₂ : ContinuousOn (Function.uncurry C₂) (Ioi 0 ×ˢ Icc t₀ t₁))
     (hgrowth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C₁ s t - C₂ s t| ≤ A * (1 + s))
@@ -238,18 +244,18 @@ theorem eq_of_pde_eq_of_terminal_eq
     (hdiff₁ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun u ↦ C₁ s u) t)
     (hdiff₂ : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun u ↦ C₂ s u) t)
     (hpde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
-      deriv (fun u ↦ C₁ s u) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C₁ x t) s +
-          r t * (s * deriv (fun x ↦ C₁ x t) s - C₁ s t) =
-        deriv (fun u ↦ C₂ s u) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C₂ x t) s +
-          r t * (s * deriv (fun x ↦ C₂ x t) s - C₂ s t))
+      deriv (fun u ↦ C₁ s u) t + a s t * s ^ 2 * deriv (deriv fun x ↦ C₁ x t) s +
+          r s t * (s * deriv (fun x ↦ C₁ x t) s - C₁ s t) =
+        deriv (fun u ↦ C₂ s u) t + a s t * s ^ 2 * deriv (deriv fun x ↦ C₂ x t) s +
+          r s t * (s * deriv (fun x ↦ C₂ x t) s - C₂ s t))
     (hterminal : ∀ ⦃s⦄, 0 < s → C₁ s t₁ = C₂ s t₁) :
     ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C₁ s t = C₂ s t := by
   intro s hs t ht
   exact le_antisymm
-    (le_of_pde_le_of_terminal_le hσ hr hC₁ hC₂
+    (le_of_pde_le_of_terminal_le ha₀ ha hr hC₁ hC₂
       (fun s hs t ht ↦ (le_abs_self _).trans (hgrowth hs ht)) hcd₁ hcd₂ hdiff₁ hdiff₂
       (fun s hs t ht ↦ (hpde hs ht).ge) (fun s hs ↦ (hterminal hs).le) hs ht)
-    (le_of_pde_le_of_terminal_le hσ hr hC₂ hC₁
+    (le_of_pde_le_of_terminal_le ha₀ ha hr hC₂ hC₁
       (fun s hs t ht ↦ (le_abs_self _).trans (abs_sub_comm (C₁ s t) _ ▸ hgrowth hs ht))
       hcd₂ hcd₁ hdiff₂ hdiff₁
       (fun s hs t ht ↦ (hpde hs ht).le) (fun s hs ↦ (hterminal hs).ge) hs ht)

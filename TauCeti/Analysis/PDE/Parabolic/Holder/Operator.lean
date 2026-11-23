@@ -666,6 +666,12 @@ theorem realSecondOrderCoeff_apply_mul (a : HolderSpace α (slab (E := ℝ) t₀
     realSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) = a p := by
   simp
 
+/-- Uniform positivity of `a` gives uniform ellipticity of `realSecondOrderCoeff a`. -/
+theorem realSecondOrderCoeff_ellipticity {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} {δ : ℝ}
+    (ha : ∀ p, δ ≤ a p) (p : slab (E := ℝ) t₀ t₁) :
+    δ ≤ realSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
+  (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p
+
 /-- `realSecondOrderCoeff` is linear with respect to subtraction of scalar coefficients. -/
 @[simp]
 theorem realSecondOrderCoeff_sub (a a' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
