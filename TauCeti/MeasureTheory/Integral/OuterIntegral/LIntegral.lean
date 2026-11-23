@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 
+import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 
@@ -89,6 +90,11 @@ theorem le_outerLIntegral {μ : Measure α} {f : α → ℝ≥0∞} {c : ℝ≥0
     (h : ∀ g, Measurable g → f ≤ g → c ≤ ∫⁻ ω, g ω ∂μ) :
     c ≤ outerLIntegral μ f :=
   le_iInf fun g ↦ le_iInf fun hg ↦ le_iInf fun hfg ↦ h g hg hfg
+
+/-- Universal lower-bound characterization for `outerLIntegral`. -/
+theorem le_outerLIntegral_iff {μ : Measure α} {f : α → ℝ≥0∞} {c : ℝ≥0∞} :
+    c ≤ outerLIntegral μ f ↔ ∀ g, Measurable g → f ≤ g → c ≤ ∫⁻ ω, g ω ∂μ :=
+  ⟨fun h _ hg hfg ↦ h.trans (outerLIntegral_le_lintegral hg hfg), le_outerLIntegral⟩
 
 /-- The lower Lebesgue integral is always bounded above by `outerLIntegral`. -/
 theorem lintegral_le_outerLIntegral (μ : Measure α) (f : α → ℝ≥0∞) :
@@ -223,6 +229,15 @@ theorem exists_measurable_ge_outerLIntegral_eq_of_lt_top {μ : Measure α} {f : 
   exact ⟨g, hg_meas, hfg, hg_eq, fun h hh hfh ↦
     ae_le_of_lintegral_eq_outerLIntegral hg_meas.aemeasurable (ae_of_all _ hfg) hg_eq hfin hh hfh⟩
 
+/-- `outerLIntegral μ f` is finite if and only if `f` admits a measurable pointwise majorant
+with finite lower Lebesgue integral. -/
+theorem outerLIntegral_lt_top_iff {μ : Measure α} {f : α → ℝ≥0∞} :
+    outerLIntegral μ f < ⊤ ↔ ∃ g, Measurable g ∧ f ≤ g ∧ ∫⁻ ω, g ω ∂μ < ⊤ := by
+  refine ⟨fun hfin ↦ ?_, fun ⟨g, hg, hfg, hg_fin⟩ ↦
+    (outerLIntegral_le_lintegral hg hfg).trans_lt hg_fin⟩
+  obtain ⟨g, hg, hfg, heq, _⟩ := exists_measurable_ge_outerLIntegral_eq_of_lt_top hfin
+  exact ⟨g, hg, hfg, heq.symm ▸ hfin⟩
+
 /-- Every function `f : α → ℝ≥0∞` admits a measurable majorant `g ≥ f` whose lower integral equals
 `outerLIntegral μ f`. -/
 theorem exists_measurable_ge_outerLIntegral_eq (μ : Measure α) (f : α → ℝ≥0∞) :
@@ -325,12 +340,10 @@ theorem outerLIntegral_tsum_le {ι : Type*} [Countable ι] (μ : Measure α) (f 
     outerLIntegral μ (fun ω ↦ ∑' i, f i ω) ≤ ∑' i, outerLIntegral μ (f i) := by
   classical
   choose g hg_meas hfg hg_eq using fun i ↦ exists_measurable_ge_outerLIntegral_eq μ (f i)
-  have htsum_meas : Measurable fun ω ↦ ∑' i, g i ω := by
-    simp_rw [tsum_eq_iSup_sum]
-    exact Measurable.iSup fun s ↦ Finset.measurable_sum s fun i _ ↦ hg_meas i
   calc outerLIntegral μ (fun ω ↦ ∑' i, f i ω)
       ≤ ∫⁻ ω, ∑' i, g i ω ∂μ :=
-        outerLIntegral_le_lintegral htsum_meas fun ω ↦ tsum_le_tsum fun i ↦ hfg i ω
+        outerLIntegral_le_lintegral (Measurable.tsum hg_meas)
+          fun ω ↦ tsum_le_tsum fun i ↦ hfg i ω
     _ = ∑' i, ∫⁻ ω, g i ω ∂μ := lintegral_tsum fun i ↦ (hg_meas i).aemeasurable
     _ = ∑' i, outerLIntegral μ (f i) := by simp_rw [hg_eq]
 
@@ -388,34 +401,14 @@ theorem outerLIntegral_iSup (μ : Measure α) {f : ℕ → α → ℝ≥0∞} (h
     lt_of_le_of_lt (le_iSup (fun k ↦ outerLIntegral μ (f k)) n) (lt_top_iff_ne_top.mpr hfin)
   choose g hg_meas hfg hg_eq hg_min using fun n ↦
     exists_measurable_ge_outerLIntegral_eq_of_lt_top (hfn_fin n)
-  let h : ℕ → α → ℝ≥0∞ := Nat.rec (g 0) fun n acc ω ↦ max (acc ω) (g (n + 1) ω)
-  have hh_meas : ∀ n, Measurable (h n) := fun n ↦ by
-    induction n with
-    | zero => exact hg_meas 0
-    | succ n ih => exact ih.max (hg_meas (n + 1))
-  have hh_mono : Monotone h := monotone_nat_of_le_succ fun n ω ↦ le_max_left _ _
-  have hgh : ∀ n, g n ≤ h n := fun n ↦ by
-    cases n with
-    | zero => exact le_rfl
-    | succ n => exact fun ω ↦ le_max_right _ _
-  have hh_ae : ∀ n, h n =ᵐ[μ] g n := fun n ↦ by
-    induction n with
-    | zero => exact EventuallyEq.rfl
-    | succ n ih =>
-      have hle : g n ≤ᵐ[μ] g (n + 1) :=
-        hg_min n (g (n + 1)) (hg_meas (n + 1)).aemeasurable
-          (ae_of_all _ fun ω ↦ (hf (Nat.le_succ n) ω).trans (hfg (n + 1) ω))
-      exact (ih.and hle).mono fun ω ⟨h1, h2⟩ ↦ by
-        simp only [h, h1]
-        exact max_eq_right h2
+  have hg_ae : ∀ n, g n ≤ᵐ[μ] g (n + 1) := fun n ↦
+    hg_min n (g (n + 1)) (hg_meas (n + 1)).aemeasurable
+      (ae_of_all _ fun ω ↦ (hf (Nat.le_succ n) ω).trans (hfg (n + 1) ω))
   calc outerLIntegral μ (fun ω ↦ ⨆ n, f n ω)
-      ≤ ∫⁻ ω, ⨆ n, h n ω ∂μ :=
-        outerLIntegral_le_lintegral (Measurable.iSup hh_meas) fun ω ↦
-          iSup_mono fun n ↦ (hfg n ω).trans (hgh n ω)
-    _ = ⨆ n, ∫⁻ ω, h n ω ∂μ := lintegral_iSup hh_meas hh_mono
-    _ = ⨆ n, outerLIntegral μ (f n) := by
-        refine iSup_congr fun n ↦ ?_
-        rw [lintegral_congr_ae (hh_ae n), hg_eq n]
+      ≤ ∫⁻ ω, ⨆ n, g n ω ∂μ :=
+        outerLIntegral_le_lintegral (Measurable.iSup hg_meas) fun ω ↦ iSup_mono fun n ↦ hfg n ω
+    _ = ⨆ n, ∫⁻ ω, g n ω ∂μ := lintegral_iSup_ae hg_meas hg_ae
+    _ = ⨆ n, outerLIntegral μ (f n) := iSup_congr hg_eq
 
 /-- **Fatou's lemma for `outerLIntegral`.** -/
 theorem outerLIntegral_liminf_le (μ : Measure α) (f : ℕ → α → ℝ≥0∞) :
