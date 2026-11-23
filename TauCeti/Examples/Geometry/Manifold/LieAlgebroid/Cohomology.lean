@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.LieAlgebroid.Cohomology
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Manifold.VectorField.Real
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Extension
 import TauCeti.Geometry.Manifold.VectorField.Derivation
 
@@ -32,8 +33,6 @@ namespace TauCeti.LieAlgebroid
 local notation "VFℝ" => Cₛ^∞⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯
 local notation "C∞ℝ" => C^∞⟮𝓘(ℝ, ℝ), ℝ; ℝ⟯
 
-@[simp] private theorem contMDiffMap_id_apply (x : ℝ) : (ContMDiffMap.id : C∞ℝ) x = x := rfl
-
 private theorem tangent_real_bracket_eq (u v : VFℝ) :
     (tangent 𝓘(ℝ, ℝ) ℝ).bracket u v = (realFieldCoord u * lineDerivation ℝ 1 (realFieldCoord v) -
       realFieldCoord v * lineDerivation ℝ 1 (realFieldCoord u)) • constVectorFieldSection ∞ 1 := by
@@ -54,7 +53,7 @@ def scaledTangentReal : LieAlgebroid 𝓘(ℝ, ℝ) ℝ (TangentSpace 𝓘(ℝ, 
   bracket_smul_apply u v f x := by
     simp only [LinearMap.mk₂_apply, ContMDiffSection.smul_apply,
       (tangent 𝓘(ℝ, ℝ) ℝ).bracket_smul_apply, tangent_anchor_apply, FunLike.coe_smul,
-      Pi.smul_apply, map_smul, contMDiffMap_id_apply]; module
+      Pi.smul_apply, map_smul, ContMDiffMap.id_apply]; module
 
 @[simp] theorem scaledTangentReal_anchor_apply (x : ℝ) (v : TangentSpace 𝓘(ℝ, ℝ) x) :
     scaledTangentReal.anchor x v = x • v := by simp [scaledTangentReal, ContMDiffSection.smul_apply]
@@ -74,7 +73,7 @@ theorem scaledTangentReal_extDeriv_zero_apply (f : C∞ℝ) (x : ℝ) :
 theorem scaledTangentReal_extDeriv_zero_id (x : ℝ) :
     (scaledTangentReal.extDeriv 0 (scaledTangentReal.cochainZeroEquiv.symm ContMDiffMap.id)) x
         ![constVectorFieldSection ∞ (1 : ℝ) x] = x := by
-  rw [scaledTangentReal_extDeriv_zero_apply, show (⇑(ContMDiffMap.id : C∞ℝ)) = id from rfl]; simp
+  rw [scaledTangentReal_extDeriv_zero_apply, ContMDiffMap.coe_id]; simp
 /-- Degree-zero cocycles of `scaledTangentReal` on `ℝ` are precisely the constant functions. -/
 theorem scaledTangentReal_extDeriv_zero_eq_zero_iff (η : scaledTangentReal.Cochain 0) :
     scaledTangentReal.extDeriv 0 η = 0 ↔

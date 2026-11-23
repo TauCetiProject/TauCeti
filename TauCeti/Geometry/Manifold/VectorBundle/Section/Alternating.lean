@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 
 /-!
-# Exterior algebra of alternating bundle sections
+# Interior products and evaluation of alternating bundle sections
 
 Sections of the continuous-alternating-map bundle `x ↦ W x [⋀^Fin k]→L[𝕜] V x` on an arbitrary
 vector bundle `W` carry `ContMDiffSection.interior`, `ContMDiffSection.toAlternatingMap`, and the
@@ -56,6 +56,7 @@ theorem interior_eq_curryLeftTopological {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[𝕜] V x⟯) (x : M)
     (v : Fin k → W x) : interior s φ x v = φ x (Matrix.vecCons (s x) v) := by
   rw [interior_eq_curryLeftTopological, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+/-- The interior product squares to zero: `ι_s (ι_s φ) = 0`. -/
 @[simp] theorem interior_self {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 2)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 2)]→L[𝕜] V x⟯) :
     interior s (interior s φ) = 0 := by ext x v; simp [interior_eq_curryLeftTopological]

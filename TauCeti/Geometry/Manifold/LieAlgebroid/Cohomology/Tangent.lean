@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
-# Comparison of Lie algebroid and de Rham cohomology on the tangent bundle
+# Lie algebroid and de Rham differentials on the tangent bundle
 
 Smooth differential `k`-forms on a finite-dimensional real manifold `M` identify `ℝ`-linearly with
 degree-`k` Chevalley–Eilenberg cochains of the tangent Lie algebroid `LieAlgebroid.tangent I M` via
@@ -68,7 +68,9 @@ theorem tangent_extDeriv_toContMDiffSection [T2Space M] {k : ℕ} (φ : SmoothFo
       ← Finset.sum_neg_distrib]
     refine congr_arg₂ (· + ·) (Finset.sum_congr rfl fun i _ ↦ ?_)
       (Finset.sum_congr rfl fun i _ ↦ ?_)
-    · rw [anchorDeriv_apply, tangent_anchor_apply]; congr 3; ext y; simp [Fin.removeNth]; rfl
+    · rw [anchorDeriv_apply, tangent_anchor_apply]; congr 3; ext y
+      simp only [ContMDiffSection.scalarAlternatingEquiv_apply, SmoothForm.toContMDiffSection_apply]
+      exact congrArg _ (funext fun r ↦ by simp [Fin.removeNth])
     · rw [← Finset.sum_neg_distrib]; refine Finset.sum_congr rfl fun j _ ↦ ?_
       rw [φ.toContMDiffSection_apply x, tangent_bracket_apply, pow_succ, mul_neg, mul_one, neg_smul]
 

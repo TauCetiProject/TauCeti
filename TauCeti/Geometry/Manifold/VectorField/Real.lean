@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorField.Constant
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -50,10 +51,25 @@ theorem mlieBracket_realField_apply {n : ℕ∞ω}
     VectorField.mlieBracket 𝓘(ℝ, ℝ) u v x = (realFieldCoord u x * fderiv ℝ (realFieldCoord v) x 1 -
       realFieldCoord v x * fderiv ℝ (realFieldCoord u) x 1) •
         constVectorFieldSection n (1 : ℝ) x := by
-  rw [VectorField.mlieBracket_eq_lieBracket]; apply (NormedSpace.fromTangentSpace x).injective
+  have hcoe (w : Cₛ^n⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯) :
+      (realFieldCoord w : ℝ → ℝ) = ⇑w :=
+    funext fun y ↦ (realFieldCoord_apply w y).trans (NormedSpace.fromTangentSpace_apply y (w y))
+  have hmlie : NormedSpace.fromTangentSpace x (VectorField.mlieBracket 𝓘(ℝ, ℝ) u v x) =
+      fderiv ℝ (realFieldCoord v) x (realFieldCoord u x) -
+        fderiv ℝ (realFieldCoord u) x (realFieldCoord v x) := by
+    calc NormedSpace.fromTangentSpace x (VectorField.mlieBracket 𝓘(ℝ, ℝ) u v x)
+        = VectorField.lieBracket ℝ (⇑u) (⇑v) x :=
+          (NormedSpace.fromTangentSpace_apply x _).trans
+            (congrFun VectorField.mlieBracket_eq_lieBracket x)
+      _ = fderiv ℝ (⇑v) x (u x) - fderiv ℝ (⇑u) x (v x) :=
+          congrFun VectorField.lieBracket_eq x
+      _ = fderiv ℝ (realFieldCoord v) x (realFieldCoord u x) -
+            fderiv ℝ (realFieldCoord u) x (realFieldCoord v x) := by
+          rw [← hcoe u, ← hcoe v]
+  apply (NormedSpace.fromTangentSpace x).injective
+  rw [hmlie]
   simp only [map_smul, constVectorFieldSection_apply, ContinuousLinearEquiv.apply_symm_apply,
-    smul_eq_mul, mul_one]; change fderiv ℝ (realFieldCoord v) x (realFieldCoord u x) -
-    fderiv ℝ (realFieldCoord u) x (realFieldCoord v x) = _
+    smul_eq_mul, mul_one]
   rw [← mul_one (realFieldCoord u x), ← mul_one (realFieldCoord v x), ← smul_eq_mul _ 1,
     ← smul_eq_mul _ 1, map_smul, map_smul]; simp only [smul_eq_mul, mul_one]
 end TauCeti

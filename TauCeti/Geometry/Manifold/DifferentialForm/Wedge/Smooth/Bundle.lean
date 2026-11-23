@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap.Wedge
-import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Wedge
 
 /-!
 # Smooth paired wedges with bundle coefficients
@@ -21,8 +20,7 @@ value bundles needs a global trivialization or a norm on its individual fibres.
 
 `ContMDiffWithinAt.bundleWedgeWith_form` gives the relative regularity statement, including
 boundary and corner points. `SmoothBundleForm.wedgeWith` packages the smooth product as a
-bilinear map. In bundle coordinates the product is the continuous trilinear paired wedge on
-the model fibres, applied to the coordinates of the pairing and of the two forms.
+bilinear map.
 
 The wedge normalization and bundle-valued construction follow John M. Lee,
 *Introduction to Smooth Manifolds*, second edition, Chapter 14, and the paired-wedge design
@@ -53,24 +51,6 @@ variable {E H M F₁ F₂ F₃ : Type*}
   [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle ℝ F₃ V₃]
   [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
   [IsManifold I 1 M] {k l : ℕ} {n : WithTop ℕ∞} {s : Set M} {x : M}
-
-/-- In valid coefficient trivializations, coordinates of a bundle wedge are the paired wedge
-of the coordinates, with the pairing itself also expressed in coordinates. -/
-theorem inCoordinates_bundleWedgeWith
-    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
-    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
-    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) (x₀ y : M)
-    (h₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet)
-    (h₂ : y ∈ (trivializationAt F₂ V₂ x₀).baseSet)
-    (h₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
-    ContinuousAlternatingMap.inCoordinates E F₃ x₀ y x₀ y (bundleWedgeWith μ hμ φ ψ y) =
-      ContinuousAlternatingMap.pairedWedgeCLM
-        (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
-          (fun z ↦ V₂ z →L[ℝ] V₃ z) x₀ y x₀ y (μ y))
-        (ContinuousAlternatingMap.inCoordinates E F₁ x₀ y x₀ y (φ y))
-        (ContinuousAlternatingMap.inCoordinates E F₂ x₀ y x₀ y (ψ y)) := by
-  rw [bundleWedgeWith_apply']
-  exact inCoordinates_pairedWedge (μ y) (hμ y) (φ y) (ψ y) h₁ h₂ h₃
 
 variable [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
   [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]

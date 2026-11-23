@@ -212,12 +212,12 @@ theorem MultilinearMap.contMDiffSection_eval_congr
   intro q; induction q using Finset.induction_on with
   | empty => simp
   | @insert j q hj ih =>
-    let u : ι → Cₛ^∞⟮I; FW, W⟯ := fun i ↦ if i ∈ q then s' i else s i
+    set u : ι → Cₛ^∞⟮I; FW, W⟯ := fun i ↦ if i ∈ q then s' i else s i with hu
     have hu_self : Function.update u j (s j) = u :=
       Function.update_eq_self_iff.mpr (by simp [u, hj])
     have hins : (fun i ↦ if i ∈ insert j q then s' i else s i) = Function.update u j (s' j) := by
       ext i; by_cases hij : i = j <;> simp [u, hij]
-    change Φ u x = Φ s x at ih; rw [hins, ← ih]; conv_rhs => rw [← hu_self]
+    rw [hins, ← ih]; conv_rhs => rw [← hu_self]
     let Ψ : (Π y : M, W y) → V x := fun t ↦
       if ht : CMDiff ∞ (T% t) then Φ (Function.update u j ⟨t, ht⟩) x else 0
     have hΨ (t : Cₛ^∞⟮I; FW, W⟯) : Φ (Function.update u j t) x = Ψ ⇑t := by cases t; simp [Ψ, *]
@@ -229,7 +229,8 @@ theorem MultilinearMap.contMDiffSection_eval_congr
     · simp only [Ψ, ht, hf.smul_section ht, ↓reduceDIte]; let F : C^∞⟮I, M; ℝ⟯ := ⟨f, hf⟩
       have hft : (⟨f • t, hf.smul_section ht⟩ : Cₛ^∞⟮I; FW, W⟯) = F • ⟨t, ht⟩ :=
         ContMDiffSection.ext fun y ↦ (ContMDiffSection.smul_apply F ⟨t, ht⟩ y).symm
-      rw [hft, Φ.map_update_smul, RingHom.id_apply, ContMDiffSection.smul_apply]; rfl
+      rw [hft, Φ.map_update_smul, RingHom.id_apply, ContMDiffSection.smul_apply,
+        ContMDiffMap.coeFn_mk]
 
 /-- A `C^∞(M, ℝ)`-multilinear alternating map on `Γ(W)` depends at `x` only on the values of its
 input sections at `x`. -/

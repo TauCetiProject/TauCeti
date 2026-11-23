@@ -96,7 +96,7 @@ def ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
     · subst hi; have hupd (x : M) : Function.update v 0 x = Matrix.vecCons x (Fin.tail v) :=
         funext fun j ↦ Fin.cases (by simp) (fun _ ↦ by simp [Fin.tail]) j
       rw [hupd, hupd]; exact hf a m (Fin.tail v)
-    · let u₁ := Function.update v i (a • m); let u₂ := Function.update v i m
+    · set u₁ := Function.update v i (a • m); set u₂ := Function.update v i m
       have hswap : f (u₁ ∘ Equiv.swap 0 i) = a • f (u₂ ∘ Equiv.swap 0 i) := by
         have hu₁ :
             u₁ ∘ Equiv.swap 0 i = Matrix.vecCons (a • m) (Fin.tail (u₂ ∘ Equiv.swap 0 i)) := by
@@ -111,7 +111,7 @@ def ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
       have h₁ : f (u₁ ∘ Equiv.swap 0 i) + f u₁ = 0 := f.map_swap_add u₁ (Ne.symm hi)
       have h₂ : f (u₁ ∘ Equiv.swap 0 i) + a • f u₂ = 0 := by
         rw [hswap, ← smul_add, f.map_swap_add u₂ (Ne.symm hi), smul_zero]
-      rw [← zero_add (f u₁), ← h₂, add_right_comm _ (a • f u₂), h₁, zero_add]; rfl
+      rw [← zero_add (f u₁), ← h₂, add_right_comm _ (a • f u₂), h₁, zero_add, RingHom.id_apply]
   map_eq_zero_of_eq' := f.map_eq_zero_of_eq
 
 @[simp] theorem coe_ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)

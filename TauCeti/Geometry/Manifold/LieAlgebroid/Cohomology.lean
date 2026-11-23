@@ -55,6 +55,13 @@ def cochainZeroEquiv (A : LieAlgebroid I F V) : A.Cochain 0 ≃ₗ[C^∞⟮I, M;
     A.cochainZeroEquiv η x = η x 0 := by simp [cochainZeroEquiv]
 @[simp] theorem cochainZeroEquiv_symm_apply (A : LieAlgebroid I F V) (f : C^∞⟮I, M; ℝ⟯) (x : M)
     (v : Fin 0 → V x) : A.cochainZeroEquiv.symm f x v = f x := by simp [cochainZeroEquiv]
+
+/-- Express the scalar-section evaluation of a degree-`0` cochain in terms of
+`A.cochainZeroEquiv`. -/
+theorem trivialEquiv_alternatingIsEmptyEquiv (A : LieAlgebroid I F V) (η : A.Cochain 0) :
+    ContMDiffSection.trivialEquiv (ContMDiffSection.alternatingIsEmptyEquiv η) =
+      A.cochainZeroEquiv η :=
+  by rw [cochainZeroEquiv, LinearEquiv.trans_apply]
 end Cochain
 
 section Complex
@@ -224,6 +231,7 @@ theorem cochainComplex_d_apply (k : ℕ) (η : A.cochainComplex.X k) :
 /-- The degree-`k` Lie algebroid cohomology `H^k(A)` as an `ℝ`-module. -/
 abbrev cohomology (k : ℕ) : ModuleCat ℝ := A.cochainComplex.homology k
 
+/-- Cartan's magic formula in degree zero: `ι_a (d_A η) = L_a η`. -/
 @[simp] theorem interior_extDeriv_zero (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain 0) :
     interior a (A.extDeriv 0 η) = A.lieDeriv a η :=
   (A.cochainAlternatingEquiv 0).injective (by simp)
@@ -240,8 +248,9 @@ theorem extDeriv_one_apply_sections (α : A.Cochain 1) (a b : Cₛ^∞⟮I; F, V
   have hb : (![b x] : Fin 1 → V x) = fun i ↦ (![b] i) x := funext fun i ↦ by fin_cases i; rfl
   have hco : A.cochainZeroEquiv (interior a α) = scalarAlternatingEquiv α ![a] := by
     ext y; simpa using congr_arg (α y) (funext fun i ↦ by fin_cases i; rfl)
-  change (A.extDeriv 1 α) x (Matrix.vecCons (a x) ![b x]) = _
-  rw [← ContMDiffSection.interior_apply a, A.interior_extDeriv_succ, ContMDiffSection.coe_sub,
+  -- `![a x, b x]` is `Matrix.vecCons (a x) ![b x]` by definition of the vector-cons notation.
+  have hvec : (![a x, b x] : Fin 2 → V x) = Matrix.vecCons (a x) ![b x] := rfl
+  rw [hvec, ← ContMDiffSection.interior_apply a, A.interior_extDeriv_succ, ContMDiffSection.coe_sub,
     Pi.sub_apply, ContinuousAlternatingMap.sub_apply, hb, A.lieDeriv_apply_sections a α ![b] x,
     ← hb, A.extDeriv_zero_apply_section, Fin.sum_univ_one, hco]
   rw [show (fun j : Fin 1 ↦ Function.update ![b] 0 (A.bracket a (![b] 0)) j x) =

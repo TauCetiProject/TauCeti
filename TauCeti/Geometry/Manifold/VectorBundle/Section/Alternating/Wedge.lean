@@ -21,10 +21,11 @@ interior-antiderivation laws. Regularity of unbundled paired wedges lives in
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., GTM 218, Springer (2013), Chs. 12, 14.
-* The paired-wedge coordinate and regularity design follows
-  `TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle` (`inCoordinates_bundleWedgeWith`,
-  `ContMDiffWithinAt.bundleWedgeWith_form`), built on `ContinuousAlternatingMap.pairedWedge` /
-  `ContinuousAlternatingMap.pairedWedgeCLM` and Yury Kudryashov's `DeRhamCohomology` project.
+* The paired-wedge coordinate and regularity design is built on
+  `ContinuousAlternatingMap.pairedWedge` / `ContinuousAlternatingMap.pairedWedgeCLM`,
+  `TauCeti.inCoordinates_pairedWedge`, and Yury Kudryashov's `DeRhamCohomology` project
+  (`TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle` specializes these results to
+  bundle-valued differential forms).
 -/
 
 public section
