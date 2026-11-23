@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Basic facts about bounded operators
@@ -59,10 +60,11 @@ it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
 surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
-same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
+same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`). Conversely, an
+invertible operator `A : E →L F` satisfies `‖x‖ ≤ ‖A.inverse‖ ‖A x‖`
+(`ContinuousLinearMap.IsInvertible.norm_le_norm_inverse_mul_norm`); an invertible
 operator `A` on a normed space cancels against its inverse
-(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
-and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
+(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`),
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
@@ -407,6 +409,13 @@ theorem norm_inverse_apply_le_of_forall_norm_le {F : Type*} [NormedAddCommGroup 
   simpa [(isInvertible_of_surjective_of_forall_norm_le hL hC).self_apply_inverse]
     using hC (L.inverse y)
 
+/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse,
+`‖x‖ ≤ ‖A⁻¹‖ ‖A x‖`. -/
+theorem IsInvertible.norm_le_norm_inverse_mul_norm {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {A : E →L[𝕜] F} (hA : A.IsInvertible) (x : E) :
+    ‖x‖ ≤ ‖A.inverse‖ * ‖A x‖ := by
+  simpa [hA.inverse_apply_self] using A.inverse.le_opNorm (A x)
+
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]
 theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
@@ -418,13 +427,6 @@ theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
 theorem apply_ringInverse_apply {A : E →L[𝕜] E} (hA : IsUnit A) (y : E) :
     A (Ring.inverse A y) = y := by
   rw [← mul_apply_eq_comp, Ring.mul_inverse_cancel A hA, one_apply_eq_self]
-
-/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse. -/
-theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
-    ‖x‖ ≤ ‖Ring.inverse A‖ * ‖A x‖ := by
-  calc
-    ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
-    _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
 
 /-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
 `Ring.inverse A = 0` and the bound is trivial. -/
@@ -649,8 +651,10 @@ theorem exists_norm_clm_apply_le_and_norm_le_of_isUnit {S : Set α} (hS : IsComp
       _ ≤ max 1 (max A B) * ‖v‖ := by
         gcongr
         exact (hA x hx).trans ((le_max_left _ _).trans (le_max_right _ _))
-  · calc ‖v‖ ≤ ‖Ring.inverse (Φ x)‖ * ‖Φ x v‖ :=
-          ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply (hΦS x hx) v
+  · have hΦx := ContinuousLinearMap.isInvertible_iff_isUnit.mpr (hΦS x hx)
+    calc ‖v‖ ≤ ‖Ring.inverse (Φ x)‖ * ‖Φ x v‖ := by
+          simpa only [ContinuousLinearMap.ringInverse_eq_inverse] using
+            hΦx.norm_le_norm_inverse_mul_norm v
       _ ≤ max 1 (max A B) * ‖Φ x v‖ := by
         gcongr
         exact (hB x hx).trans ((le_max_right _ _).trans (le_max_right _ _))

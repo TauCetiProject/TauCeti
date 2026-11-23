@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Family
 public import TauCeti.Analysis.Sobolev.GraphStep.AubinLions
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
@@ -218,14 +219,14 @@ variable {B Bbot Btop : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H} {AL : Lp (D �
 /-- **The estimate on a window.** Let `A(s)` differ from an invertible `ι`-symmetric `B` by at most
 `c ‖ι x‖` on the window `(-b, b)`, with `c ≥ 0`. A path `w = φ u`, for a weight `|φ| ≤ 1` vanishing
 off the window, satisfies `‖w‖ ≤ M (‖D_A w‖ + c ‖ι ∘ u‖_{L²((-b, b), H)})` with
-`M = √(1 + ‖B⁻¹‖²)`. -/
+`M = max ‖B⁻¹‖ 1`. -/
 private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ)
     (hB : B.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hc₀ : 0 ≤ c) {b : ℝ}
     (hc : ∀ᵐ s ∂volume, s ∈ Ioo (-b) b → ∀ x, ‖(A s - B) x‖ ≤ c * ‖ι x‖) {φ : ℝ → ℝ}
     (hφ : ∀ s, |φ s| ≤ 1) (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0)
     {u w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)}
     (hw : ∀ᵐ s ∂volume, prev _ w s = φ s • prev _ u s) :
-    ‖w‖ ≤ √(1 + ‖B.inverse‖ ^ 2) * (‖familyDomainTrajectoryOperator ι AL w‖ +
+    ‖w‖ ≤ max ‖B.inverse‖ 1 * (‖familyDomainTrajectoryOperator ι AL w‖ +
       c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖) := by
   -- `D_A w - D_B w = (A - B) w` is bounded by `c ‖ι ∘ u‖` on the window and vanishes off it.
   have hdiff : ‖familyDomainTrajectoryOperator ι AL w - domainTrajectoryOperator ι B w‖ ≤
@@ -241,7 +242,8 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
         exact mul_nonneg hc₀ (norm_nonneg _)
     · filter_upwards [hm, hw] with s h₁ h₂ hsW
       rw [h₁, h₂, hφ₀ s hsW, zero_smul, map_zero]
-  refine (norm_le_sqrt_one_add_sq_mul_norm_domainTrajectoryOperator hSymm hB w).trans ?_
+  refine (norm_le_max_mul_norm_domainTrajectoryOperator hSymm hB.norm_le_norm_inverse_mul_norm
+    w).trans ?_
   gcongr
   have := norm_sub_norm_le (domainTrajectoryOperator ι B w) (familyDomainTrajectoryOperator ι AL w)
   rw [norm_sub_rev] at this
@@ -297,7 +299,7 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
     (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
     ‖u‖ ≤ (max Ctop 0 + max Cbot 0) * (‖familyDomainTrajectoryOperator ι AL u‖ + L *
         ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u‖) +
-      √(1 + ‖B.inverse‖ ^ 2) * (3 * ‖familyDomainTrajectoryOperator ι AL u‖ + (2 * L + c) *
+      max ‖B.inverse‖ 1 * (3 * ‖familyDomainTrajectoryOperator ι AL u‖ + (2 * L + c) *
         ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u‖) := by
   set R := ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u‖
   set N := ‖familyDomainTrajectoryOperator ι AL u‖
@@ -342,7 +344,7 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
   have htri : ‖u‖ ≤ ‖wbot‖ + ‖u - wbot - wtop‖ + ‖wtop‖ := by
     calc ‖u‖ = ‖wbot + (u - wbot - wtop) + wtop‖ := by congr 1; abel
       _ ≤ _ := (norm_add_le _ _).trans (add_le_add (norm_add_le _ _) le_rfl)
-  have hM := mul_le_mul_of_nonneg_left hD₀ (Real.sqrt_nonneg (1 + ‖B.inverse‖ ^ 2))
+  have hM := mul_le_mul_of_nonneg_left hD₀ (zero_le_one.trans (le_max_right ‖B.inverse‖ 1))
   linarith [hwtop, hwbot, hw₀, hM, htri]
 
 /-- **The semi-Fredholm estimate for the trajectory operator over a common domain.** Let `A(s)`
@@ -377,14 +379,14 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_r
     filter_upwards [hc] with s hs hsW x
     exact (hs hsW x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
   set K := max Ctop 0 + max Cbot 0
-  set M := √(1 + ‖Btop.inverse‖ ^ 2)
+  set M := max ‖Btop.inverse‖ 1
   refine ⟨K * (1 + L) + M * (3 + 2 * L + max c 0), a + 2, fun u ↦ ?_⟩
   have h := norm_le_of_end_estimates hSymmtop hBtop hAL (le_max_right c 0) hc' hCtop hCbot
     ((le_max_left _ _).trans (le_max_left _ _)) ((le_max_right _ _).trans (le_max_left _ _))
     hsum hβp hβm hβ₀ hβ u
   -- Every coefficient is at most the constant, since all the terms are nonnegative.
   have hK : 0 ≤ K := add_nonneg (le_max_right _ _) (le_max_right _ _)
-  have hM : 0 ≤ M := Real.sqrt_nonneg _
+  have hM : 0 ≤ M := by positivity
   have hN := norm_nonneg (familyDomainTrajectoryOperator ι AL u)
   have hR := norm_nonneg
     (restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-(a + 2)) (a + 2), isOpen_Ioo⟩) le_top u)
