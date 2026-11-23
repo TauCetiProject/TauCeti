@@ -5,64 +5,90 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Range
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
-public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
-public import TauCeti.Topology.Category.TopCat.Subspace
+
+import TauCeti.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.Algebra.Homology.Homotopy
 
 /-!
-# Relative smooth singular chains
+# The smoothing theorem for open pairs
 
-Let `X` be a Hausdorff `σ`-compact smooth manifold over a finite-dimensional real model with
-corners `I`, and let `W ⊆ X` be open. This file compares the smooth singular chains of `X` relative
-to those with image in `W` with the singular chains of `X` relative to those with image in `W`.
+Let `U` be an open subset of a smooth manifold `M`. A smooth singular simplex of `M` with image in
+`U` is a smooth singular simplex of `U`
+(`TauCeti.smoothSingularSubcomplex_preimage_subtypeVal`), so the inclusion of `U` induces a
+monomorphism from the smooth singular simplicial set of `U` to that of `M`. This is the *smooth
+singular pair* `TauCeti.smoothSingularPair I U` of `(M, U)`. Its relative chains are the smooth
+singular chains of `M` modulo those of `U`, and its relative homology is the smooth relative
+homology of `(M, U)`: a smooth relative cycle is a smooth chain of `M` whose boundary is a smooth
+chain of `U`.
 
-Both sides are pairs of simplicial sets (`SSetPair`):
+The inclusions of smooth singular simplices into singular simplices of `U` and of `M` form a map
+of pairs `TauCeti.smoothSingularPairι I U` from the smooth singular pair to the singular pair of
+the topological pair `(M, U)`. When `M` is a Hausdorff `σ`-compact manifold modelled on a
+finite-dimensional real model with corners, the smoothing theorem
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens`) applies to `U` and to `M`,
+and the five lemma for pairs (`SSetPair.quasiIso_chainComplexMap`) turns it into the **relative
+smoothing theorem**: the map of relative chain complexes is a quasi-isomorphism
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularPairι`). Hence smooth relative homology is
+relative singular homology (`TauCeti.smoothSingularRelativeHomologyIso`). The identification is
+natural in smooth maps of pairs, compatible with the maps from absolute to relative homology and
+with the connecting maps of the two long exact sequences. In particular, a smooth relative cycle
+whose relative singular class vanishes is, up to a smooth chain of `U`, the boundary of a smooth
+chain of `M`.
 
-* `TauCeti.singularPairIn X W` is the singular simplicial set of `X` together with its subcomplex
-  `TopCat.smallSingularSubcomplex` of the simplices with image in `W`;
-* `TauCeti.smoothPairIn I X W` is the smooth singular subcomplex
-  `TauCeti.smoothSingularSubcomplex I X` together with its intersection with that subcomplex;
-* `TauCeti.smoothPairToSingular I X W` is the inclusion of the first pair into the second.
+When the coefficient object is projective, all relative chain groups are projective, so the
+quasi-isomorphism is a chain homotopy equivalence
+(`TauCeti.smoothSingularPairChainHomotopyEquiv`) whose homotopy inverse is natural up to chain
+homotopy, and applying `Hom(-, Y)` gives the dual cochain homotopy equivalence
+(`TauCeti.smoothSingularPairCochainHomotopyEquiv`), the dual statement for relative cochains
+(`TauCeti.quasiIso_cochainComplexMap_smoothSingularPairι`) and an isomorphism from relative
+singular cohomology to smooth relative cohomology (`TauCeti.smoothSingularRelativeCohomologyIso`).
+It is again natural in smooth maps of pairs and
+compatible with the maps from relative to absolute cohomology and with the connecting maps.
 
-Their relative chain complexes (`SSetPair.chainComplex`) are `C^∞(X) / C^∞(W)` and `C(X) / C(W)`.
-The main theorem, `TauCeti.quasiIso_smoothPairToSingular`, says that the inclusion is a
-quasi-isomorphism on relative chains, with coefficients in any abelian category in which countable
-coproducts are exact. By the five lemma for pairs (`SSetPair.quasiIso_chainComplexMap`) it reduces
-to the absolute smoothing theorem (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι`)
-on `X` and on the open subset `W`: a singular simplex of `X` with image in `W` is a singular simplex
-of `W` (`TopCat.range_toSSet_map_subtypeVal`), and it is smooth in `X` exactly when it is smooth in
-`W` (`TauCeti.range_smoothSingularSubcomplex_ι_comp_subtypeVal`).
+This is the comparison through which integrals of differential forms over smooth relative cycles,
+such as a positively oriented simplex around the support of a top form, can be compared with
+relative singular homology classes, such as fundamental classes along compact subsets.
 
-For projective coefficients, for instance `ℝ`, every term of both relative chain complexes is
-projective, so the comparison upgrades to a chain homotopy equivalence
-(`TauCeti.smoothPairChainHomotopyEquiv`), and dually restriction of relative singular cochains to
-relative smooth cochains is a quasi-isomorphism
-(`TauCeti.quasiIso_cochainComplexMap_smoothPairToSingular`). The pair `singularPairIn X W` is
-isomorphic to the singular pair `TopPair.toSSetPair.obj (TopPair.ofSubset W)` of the topological
-pair `(X, W)` (`TauCeti.singularPairInIso`), so the relative singular cochains of `(X, W)`
-(`TopPair.singularCochainComplex`) restrict quasi-isomorphically to the relative smooth cochains
-(`TauCeti.quasiIso_cochainComplexMap_smoothPairToSingular_comp_singularPairInIso_inv`).
+## Main definitions
 
-Both pairs are functorial in maps of pairs (`TauCeti.singularPairInMap` for continuous maps,
-`TauCeti.smoothPairInMap` for smooth maps; see `TauCeti.singularPairInMap_comp` and
-`TauCeti.smoothPairInMap_comp`), and the inclusion of the smooth pair into the singular pair is
-natural in smooth maps of pairs (`TauCeti.smoothPairInMap_comp_smoothPairToSingular`); enlargement
-of `W` is the case of the identity map.
+* `TauCeti.smoothSingularPair I U`: the pair of smooth singular simplicial sets of `(M, U)`.
+* `TauCeti.smoothSingularPairι I U`: its inclusion into the singular pair of `(M, U)`.
+* `TauCeti.smoothSingularPairMap hf hUV`: the map of smooth singular pairs induced by a smooth map
+  of pairs.
+* `TauCeti.smoothSingularRelativeHomologyIso I R U n`: smooth relative homology is relative
+  singular homology.
+* `TauCeti.smoothSingularPairChainHomotopyEquiv I R U`: the relative smoothing chain homotopy
+  equivalence for projective coefficients.
+* `TauCeti.smoothSingularPairCochainHomotopyEquiv I R k Y U`: the dual relative smoothing cochain
+  homotopy equivalence.
+* `TauCeti.smoothSingularRelativeCohomologyIso I R k Y U n`: relative singular cohomology is smooth
+  relative cohomology.
 
-These relative chains are the domain of relative integration of differential forms over smooth
-simplices, which compares the relative de Rham complex of an open pair with relative singular
-cohomology.
+## Main results
+
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularPairι`: the relative smoothing theorem.
+* `TauCeti.smoothSingularRelativeHomologyIso_hom_naturality`: naturality in smooth maps of pairs.
+* `TauCeti.homologyπ_comp_smoothSingularRelativeHomologyIso_hom`: compatibility with the maps from
+  absolute to relative homology.
+* `TauCeti.smoothSingularRelativeHomologyIso_hom_comp_singularHomologyδ`: compatibility with the
+  connecting maps.
+* `TauCeti.smoothSingularPairChainHomotopyEquivInvNaturality`,
+  `TauCeti.smoothSingularPairCochainHomotopyEquivInvNaturality`: the relative smoothing homotopy
+  inverses are natural up to chain homotopy.
+* `TauCeti.quasiIso_cochainComplexMap_smoothSingularPairι`: the relative smoothing theorem for
+  cochains.
+* `TauCeti.smoothSingularRelativeCohomologyIso_hom_naturality`,
+  `TauCeti.smoothSingularRelativeCohomologyIso_inv_naturality`,
+  `TauCeti.singularCohomologyπ_comp_smoothSingularCohomologyIso_hom` and
+  `TauCeti.singularCohomologyδ_comp_smoothSingularRelativeCohomologyIso_hom`: naturality of the
+  cohomology isomorphism and its compatibility with the long exact sequences.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 18, Theorem 18.7 (the absolute
-  smoothing theorem).
-* S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapters I–III (relative
-  chains and the five lemma).
+  smoothing theorem, from which the relative one follows by the five lemma).
 -/
 
 public section
@@ -76,328 +102,484 @@ universe u v w
 
 namespace TauCeti
 
-section Defs
+/-! ### The smooth singular pair of an open subset -/
 
-variable (X : Type u) [TopologicalSpace X] (W : Set X)
-
-/-- The singular simplicial set of `X` together with its subcomplex of the simplices with image in
-`W`. Its relative chain complex is `C(X) / C(W)`. -/
-abbrev singularPairIn : SSetPair.{u} :=
-  ((TopCat.of X).smallSingularSubcomplex fun _ : Unit ↦ W).pair
-
-/-- The pair `singularPairIn X W` is the singular pair of the topological pair `(X, W)`: a singular
-simplex of `W` is a singular simplex of `X` with image in `W`. -/
-def singularPairInIso :
-    TopPair.toSSetPair.obj (TopPair.ofSubset (X := TopCat.of X) W) ≅ singularPairIn X W :=
-  MorphismProperty.Arrow.isoMk (TopCat.singularSubspaceIso (X := TopCat.of X) W) (Iso.refl _) (by
-    rw [TopCat.singularSubspaceIso_hom]
-    exact (TopCat.toSmallSingularSubcomplex_ι _ _).trans (Category.comp_id _).symm)
-
-/-- On the subspaces, `singularPairInIso` is `TopCat.singularSubspaceIso`. -/
-@[simp]
-theorem singularPairInIso_hom_left :
-    (singularPairInIso X W).hom.left = (TopCat.singularSubspaceIso (X := TopCat.of X) W).hom := by
-  rw [singularPairInIso]
-  rfl
-
-/-- On the ambient simplicial sets, `singularPairInIso` is the identity. -/
-@[simp]
-theorem singularPairInIso_hom_right : (singularPairInIso X W).hom.right = 𝟙 _ := by
-  rw [singularPairInIso]
-  rfl
-
-/-- On the subspaces, the inverse of `singularPairInIso` is the inverse of
-`TopCat.singularSubspaceIso`. -/
-@[simp]
-theorem singularPairInIso_inv_left :
-    (singularPairInIso X W).inv.left = (TopCat.singularSubspaceIso (X := TopCat.of X) W).inv := by
-  rw [singularPairInIso]
-  rfl
-
-/-- On the ambient simplicial sets, the inverse of `singularPairInIso` is the identity. -/
-@[simp]
-theorem singularPairInIso_inv_right : (singularPairInIso X W).inv.right = 𝟙 _ := by
-  rw [singularPairInIso]
-  rfl
-
-end Defs
-
-section SmoothDefs
+section Pair
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  (I : ModelWithCorners ℝ E H) (X : Type u) [TopologicalSpace X] [ChartedSpace H X] (W : Set X)
-
-/-- The smooth singular subcomplex of `X` together with its subcomplex of the smooth simplices with
-image in `W`. Its relative chain complex is `C^∞(X) / C^∞(W)`. -/
-abbrev smoothPairIn : SSetPair.{u} :=
-  SSetPair.of (SSet.Subcomplex.homOfLE (inf_le_left : smoothSingularSubcomplex I X ⊓
-    (TopCat.of X).smallSingularSubcomplex (fun _ : Unit ↦ W) ≤ smoothSingularSubcomplex I X))
-
-/-- The inclusion of the smooth pair `smoothPairIn I X W` into the singular pair
-`singularPairIn X W`. -/
-def smoothPairToSingular : smoothPairIn I X W ⟶ singularPairIn X W :=
-  SSetPair.homMk (SSet.Subcomplex.homOfLE inf_le_right) (smoothSingularSubcomplex I X).ι (by rfl)
-
-/-- On the subspaces, `smoothPairToSingular` is the inclusion of the smooth simplices with image in
-`W` into all simplices with image in `W`. -/
-@[simp]
-theorem smoothPairToSingular_left :
-    (smoothPairToSingular I X W).left = SSet.Subcomplex.homOfLE inf_le_right :=
-  (rfl)
-
-/-- On the ambient simplicial sets, `smoothPairToSingular` is the inclusion of the smooth singular
-subcomplex. -/
-@[simp]
-theorem smoothPairToSingular_right :
-    (smoothPairToSingular I X W).right = (smoothSingularSubcomplex I X).ι :=
-  (rfl)
-
-end SmoothDefs
-
-section Naturality
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {X : Type u} [TopologicalSpace X] [ChartedSpace H X]
+  (I : ModelWithCorners ℝ E H) {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} {Y : Type u} [TopologicalSpace Y] [ChartedSpace H' Y]
-  {W : Set X} {W' : Set Y}
+  {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- The map of singular pairs induced by a continuous map `φ : X → Y` carrying `W` into `W'`. -/
-def singularPairInMap (φ : C(X, Y)) (hφ : Set.MapsTo φ W W') :
-    singularPairIn X W ⟶ singularPairIn Y W' :=
+/-- The smooth singular pair `(M, U)` of an open subset `U` of `M`: the inclusion of the smooth
+singular simplicial set of `U` into that of `M` induced by the inclusion of `U`. Its relative
+chains are the smooth singular chains of `M` modulo those of `U`. -/
+@[expose] def smoothSingularPair (U : Opens M) : SSetPair.{u} :=
+  SSetPair.of (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+
+@[simp]
+theorem smoothSingularPair_left (U : Opens M) :
+    (smoothSingularPair I U).left = (smoothSingularSubcomplex I U : SSet) :=
+  rfl
+
+@[simp]
+theorem smoothSingularPair_right (U : Opens M) :
+    (smoothSingularPair I U).right = (smoothSingularSubcomplex I M : SSet) :=
+  rfl
+
+@[simp]
+theorem smoothSingularPair_hom (U : Opens M) :
+    (smoothSingularPair I U).hom =
+      smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)) :=
+  rfl
+
+/-- The inclusion of the smooth singular pair of `(M, U)` into the singular pair of the
+topological pair `(M, U)`: on both members it is the inclusion of smooth singular simplices into
+singular simplices. -/
+def smoothSingularPairι (U : Opens M) :
+    smoothSingularPair I U ⟶ TopPair.toSSetPair.obj (TopPair.ofSubset (U : Set (TopCat.of M))) :=
+  SSetPair.homMk (smoothSingularSubcomplex I U).ι (smoothSingularSubcomplex I M).ι
+    (by
+      rw [TopPair.toSSetPair_obj_hom, TopPair.ofSubset_map]
+      exact (smoothSingularSubcomplexMap_subtypeVal_ι U).symm)
+
+@[simp]
+theorem smoothSingularPairι_left (U : Opens M) :
+    (smoothSingularPairι I U).left = (smoothSingularSubcomplex I U).ι :=
+  (rfl)
+
+@[simp]
+theorem smoothSingularPairι_right (U : Opens M) :
+    (smoothSingularPairι I U).right = (smoothSingularSubcomplex I M).ι :=
+  (rfl)
+
+variable {I}
+
+/-- The map of smooth singular pairs `(M, U) ⟶ (N, V)` induced by a smooth map `f : M → N`
+carrying `U` into `V`. On the smooth singular simplices of `U` it is induced by the restriction
+`U → V` of `f`, which is smooth because the charts of `U` and `V` are restrictions of those of
+`M` and `N`. -/
+def smoothSingularPairMap {f : M → N} (hf : ContMDiff I J ∞ f) {U : Opens M} {V : Opens N}
+    (hUV : Set.MapsTo f U V) : smoothSingularPair I U ⟶ smoothSingularPair J V :=
   SSetPair.homMk
-    (TopCat.smallSingularSubcomplexMap _ _ (TopCat.ofHom φ) id fun _ ↦ hφ)
-    (TopCat.toSSet.map (TopCat.ofHom φ))
-    (TopCat.smallSingularSubcomplexMap_ι _ _ _ _ _)
+    (smoothSingularSubcomplexMap (hUV.restrict f U V)
+      ((ContMDiff.subtypeVal_comp_iff V _).1 (hf.comp contMDiff_subtypeVal)))
+    (smoothSingularSubcomplexMap f hf)
+    -- Both composites are induced by `x ↦ f x` on `U`.
+    ((smoothSingularSubcomplexMap_comp contMDiff_subtypeVal _).symm.trans
+      (smoothSingularSubcomplexMap_comp hf contMDiff_subtypeVal))
 
-/-- On the ambient simplicial sets, `singularPairInMap` is the map of singular simplicial sets. -/
-@[simp]
-theorem singularPairInMap_right (φ : C(X, Y)) (hφ : Set.MapsTo φ W W') :
-    (singularPairInMap φ hφ).right = TopCat.toSSet.map (TopCat.ofHom φ) :=
-  (rfl)
-
-/-- On the subspaces, `singularPairInMap` is the map of small singular subcomplexes. -/
-@[simp]
-theorem singularPairInMap_left (φ : C(X, Y)) (hφ : Set.MapsTo φ W W') :
-    (singularPairInMap φ hφ).left =
-      TopCat.smallSingularSubcomplexMap _ _ (TopCat.ofHom φ) id fun _ ↦ hφ :=
-  (rfl)
-
-/-- The identity map induces the identity of singular pairs. -/
-@[simp]
-theorem singularPairInMap_id :
-    singularPairInMap (ContinuousMap.id X) (Set.mapsTo_id W) = 𝟙 (singularPairIn X W) := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · exact TopCat.smallSingularSubcomplexMap_id _
-  · exact TopCat.toSSet.map_id _
-
-/-- The map of singular pairs induced by a composite is the composite of the induced maps. -/
-theorem singularPairInMap_comp {Z : Type u} [TopologicalSpace Z] {W'' : Set Z} (φ : C(X, Y))
-    (ψ : C(Y, Z)) (hφ : Set.MapsTo φ W W') (hψ : Set.MapsTo ψ W' W'') :
-    singularPairInMap (ψ.comp φ) (hψ.comp hφ) =
-      singularPairInMap φ hφ ≫ singularPairInMap ψ hψ := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · exact TopCat.smallSingularSubcomplexMap_comp _ _ _ (TopCat.ofHom φ) (TopCat.ofHom ψ) id id
-      (fun _ ↦ hφ) (fun _ ↦ hψ)
-  · exact TopCat.toSSet.map_comp _ _
-
-/-- `singularPairInIso` is natural in maps of pairs: it carries the map of singular pairs of
-topological pairs induced by `φ` to `singularPairInMap φ hφ`. -/
+/-- On the smooth singular simplices of `U`, the map of smooth singular pairs induced by `f` is the
+restriction of the map of singular simplicial sets induced by the restriction `U → V` of `f`. -/
 @[reassoc]
-theorem singularPairInIso_hom_naturality (φ : C(X, Y)) (hφ : Set.MapsTo φ W W') :
-    TopPair.toSSetPair.map (TopPair.ofSubsetMap (TopCat.ofHom φ) hφ) ≫
-        (singularPairInIso Y W').hom =
-      (singularPairInIso X W).hom ≫ singularPairInMap φ hφ := by
-  have hright : (TopPair.toSSetPair.map (TopPair.ofSubsetMap (TopCat.ofHom φ) hφ) ≫
-        (singularPairInIso Y W').hom).right =
-      ((singularPairInIso X W).hom ≫ singularPairInMap φ hφ).right := by
-    simp only [MorphismProperty.Comma.comp_hom, Comma.comp_right, TopPair.toSSetPair_map_right,
-      singularPairInIso_hom_right, singularPairInMap_right, TopPair.ofSubsetMap_fst]
-    -- The identities live on the pair components `(singularPairIn _ _).right`, which `simp` does
-    -- not identify with the objects of the composites, so `comp_id`/`id_comp` are applied by term.
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
-  -- A map of pairs is determined by its ambient component, since the structure map of the target
-  -- pair is a monomorphism.
-  refine MorphismProperty.Arrow.Hom.ext ((cancel_mono (singularPairIn Y W').hom).1 ?_) hright
-  have hw {P Q : SSetPair.{u}} (f : P ⟶ Q) : f.left ≫ Q.hom = P.hom ≫ f.right := f.w
-  rw [hw, hw, hright]
+theorem smoothSingularPairMap_left_comp_ι {f : M → N} (hf : ContMDiff I J ∞ f) {U : Opens M}
+    {V : Opens N} (hUV : Set.MapsTo f U V) :
+    (smoothSingularPairMap hf hUV).left ≫ (smoothSingularSubcomplex J V).ι =
+      (smoothSingularSubcomplex I U).ι ≫
+        TopCat.toSSet.map (TopCat.ofHom ⟨hUV.restrict f U V, hf.continuous.restrict hUV⟩) :=
+  smoothSingularSubcomplexMap_ι _
 
-variable (W W') in
-/-- A smooth map carries smooth simplices with image in `W` to smooth simplices with image in `W'`
-when it carries `W` into `W'`. -/
-theorem smoothSingularSubcomplex_inf_smallSingularSubcomplex_le_preimage {φ : X → Y}
-    (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo φ W W') :
-    smoothSingularSubcomplex I X ⊓ (TopCat.of X).smallSingularSubcomplex (fun _ : Unit ↦ W) ≤
-      (smoothSingularSubcomplex J Y ⊓
-        (TopCat.of Y).smallSingularSubcomplex (fun _ : Unit ↦ W')).preimage
-        (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) := by
-  have h : (TopCat.of X).smallSingularSubcomplex (fun _ : Unit ↦ W) ≤
-      ((TopCat.of Y).smallSingularSubcomplex (fun _ : Unit ↦ W')).preimage
-        (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) := by
-    rw [TopCat.preimage_smallSingularSubcomplex]
-    exact TopCat.smallSingularSubcomplex_mono _ fun _ _ hx ↦ hW hx
-  exact fun n σ hσ ↦ ⟨smoothSingularSubcomplex_le_preimage hφ n hσ.1, h n hσ.2⟩
-
-/-- The map of smooth pairs induced by a smooth map `φ : X → Y` carrying `W` into `W'`. -/
-def smoothPairInMap {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo φ W W') :
-    smoothPairIn I X W ⟶ smoothPairIn J Y W' :=
-  SSetPair.homMk
-    (SSet.Subcomplex.lift
-      (SSet.Subcomplex.ι _ ≫ TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) (by
-        rw [← SSet.Subcomplex.image_eq_range, SSet.Subcomplex.image_le_iff]
-        exact smoothSingularSubcomplex_inf_smallSingularSubcomplex_le_preimage W W' hφ hW))
-    (smoothSingularSubcomplexMap φ hφ)
-    ((cancel_mono (smoothSingularSubcomplex J Y).ι).1 (by
-      -- `SSetPair.of` is built with the semireducible `MorphismProperty.Arrow.mk`, so the
-      -- objects of these composites are the pair components rather than the subcomplexes, and
-      -- `simp` cannot match the subcomplex lemmas. `change` restates the goal with the
-      -- subcomplexes as objects.
-      change (_ ≫ SSet.Subcomplex.homOfLE inf_le_left) ≫ _ =
-        (SSet.Subcomplex.homOfLE inf_le_left ≫ _) ≫ _
-      simp [smoothSingularSubcomplexMap_ι]))
-
-/-- On the subspaces, `smoothPairInMap` is the restriction of the map of singular simplicial
-sets. -/
-@[simp, reassoc]
-theorem smoothPairInMap_left_ι {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo φ W W') :
-    (smoothPairInMap hφ hW).left ≫ (smoothSingularSubcomplex J Y ⊓
-        (TopCat.of Y).smallSingularSubcomplex (fun _ : Unit ↦ W')).ι =
-      (smoothSingularSubcomplex I X ⊓ (TopCat.of X).smallSingularSubcomplex (fun _ : Unit ↦ W)).ι ≫
-        TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩) :=
+@[simp]
+theorem smoothSingularPairMap_left {f : M → N} (hf : ContMDiff I J ∞ f) {U : Opens M}
+    {V : Opens N} (hUV : Set.MapsTo f U V) :
+    (smoothSingularPairMap hf hUV).left =
+      smoothSingularSubcomplexMap (M := U) (N := V) (hUV.restrict f U V)
+        ((ContMDiff.subtypeVal_comp_iff V _).1 (hf.comp contMDiff_subtypeVal)) :=
   (rfl)
 
-/-- On the ambient simplicial sets, `smoothPairInMap` is the map of smooth singular subcomplexes. -/
 @[simp]
-theorem smoothPairInMap_right {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo φ W W') :
-    (smoothPairInMap hφ hW).right = smoothSingularSubcomplexMap φ hφ :=
+theorem smoothSingularPairMap_right {f : M → N} (hf : ContMDiff I J ∞ f) {U : Opens M}
+    {V : Opens N} (hUV : Set.MapsTo f U V) :
+    (smoothSingularPairMap hf hUV).right = smoothSingularSubcomplexMap f hf :=
   (rfl)
 
-variable (I W) in
-/-- The identity map induces the identity of smooth pairs. -/
+/-- The identity of `M` induces the identity of the smooth singular pair `(M, U)`. -/
 @[simp]
-theorem smoothPairInMap_id :
-    smoothPairInMap (J := I) (φ := id) contMDiff_id (Set.mapsTo_id W) = 𝟙 (smoothPairIn I X W) := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ smoothSingularSubcomplexMap_id
-  -- Both sides send a smooth simplex with image in `W` to the same underlying singular simplex.
-  ext n σ
-  rfl
+theorem smoothSingularPairMap_id (U : Opens M) :
+    smoothSingularPairMap (I := I) (J := I) contMDiff_id (Set.mapsTo_id (U : Set M)) = 𝟙 _ :=
+  MorphismProperty.Arrow.Hom.ext smoothSingularSubcomplexMap_id smoothSingularSubcomplexMap_id
 
-/-- The map of smooth pairs induced by a composite is the composite of the induced maps. -/
-theorem smoothPairInMap_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
-    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {Z : Type u} [TopologicalSpace Z]
-    [ChartedSpace H'' Z] {W'' : Set Z} {φ : X → Y} {ψ : Y → Z} (hφ : ContMDiff I J ∞ φ)
-    (hψ : ContMDiff J K ∞ ψ) (hW : Set.MapsTo φ W W') (hW' : Set.MapsTo ψ W' W'') :
-    smoothPairInMap (hψ.comp hφ) (hW'.comp hW) =
-      smoothPairInMap hφ hW ≫ smoothPairInMap hψ hW' := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ (smoothSingularSubcomplexMap_comp hψ hφ)
-  -- Both sides postcompose the underlying singular simplex with `ψ ∘ φ`.
-  ext n σ
-  rfl
+/-- The map of smooth singular pairs induced by a composite of smooth maps of pairs is the
+composite of the induced maps. -/
+theorem smoothSingularPairMap_comp {E'' H'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type u}
+    [TopologicalSpace P] [ChartedSpace H'' P] {f : M → N} {g : N → P} (hf : ContMDiff I J ∞ f)
+    (hg : ContMDiff J K ∞ g) {U : Opens M} {V : Opens N} {W : Opens P}
+    (hUV : Set.MapsTo f U V) (hVW : Set.MapsTo g V W) :
+    smoothSingularPairMap (hg.comp hf) (hVW.comp hUV) =
+      smoothSingularPairMap hf hUV ≫ smoothSingularPairMap hg hVW :=
+  MorphismProperty.Arrow.Hom.ext
+    (smoothSingularSubcomplexMap_comp (M := U) (N := V) (P := W) (φ := hUV.restrict f U V)
+      (ψ := hVW.restrict g V W) _ _)
+    (smoothSingularSubcomplexMap_comp hg hf)
 
-/-- The inclusion of smooth pairs into singular pairs is natural in smooth maps of pairs. -/
-@[reassoc (attr := simp)]
-theorem smoothPairInMap_comp_smoothPairToSingular {φ : X → Y} (hφ : ContMDiff I J ∞ φ)
-    (hW : Set.MapsTo φ W W') :
-    smoothPairInMap hφ hW ≫ smoothPairToSingular J Y W' =
-      smoothPairToSingular I X W ≫ singularPairInMap ⟨φ, hφ.continuous⟩ hW := by
-  have hright : (smoothPairInMap hφ hW ≫ smoothPairToSingular J Y W').right =
-      (smoothPairToSingular I X W ≫ singularPairInMap ⟨φ, hφ.continuous⟩ hW).right :=
-    smoothSingularSubcomplexMap_ι hφ
-  -- A map of pairs is determined by its ambient component, since the structure map of the target
-  -- pair is a monomorphism.
-  refine MorphismProperty.Arrow.Hom.ext ((cancel_mono (singularPairIn Y W').hom).1 ?_) hright
-  have hw {P Q : SSetPair.{u}} (f : P ⟶ Q) : f.left ≫ Q.hom = P.hom ≫ f.right := f.w
-  rw [hw, hw, hright]
+/-- The inclusion of smooth singular pairs into singular pairs is natural in smooth maps of
+pairs. -/
+@[reassoc]
+theorem smoothSingularPairMap_comp_smoothSingularPairι {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    smoothSingularPairMap hf hUV ≫ smoothSingularPairι J V =
+      smoothSingularPairι I U ≫
+        TopPair.toSSetPair.map (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) :=
+  MorphismProperty.Arrow.Hom.ext
+    ((smoothSingularPairMap_left_comp_ι hf hUV).trans
+      (congrArg ((smoothSingularSubcomplex I U).ι ≫ TopCat.toSSet.map ·)
+        (by
+          ext x
+          exact (TopPair.ofSubsetMap_snd_apply (TopCat.ofHom ⟨f, hf.continuous⟩) hUV x).symm)))
+    ((smoothSingularSubcomplexMap_ι hf).trans
+      (congrArg ((smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map ·)
+        (TopPair.ofSubsetMap_fst _ hUV).symm))
 
-end Naturality
+end Pair
+
+/-! ### The relative smoothing theorem -/
 
 section QuasiIso
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  (X : Type u) [TopologicalSpace X] [ChartedSpace H X]
-  [T2Space X] [SigmaCompactSpace X] [IsManifold I ∞ X] (W : Opens X)
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
   {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C]
   [HasExactColimitsOfShape (Discrete ℕ) C] (R : C)
 
-/-- On the subspaces, the inclusion of smooth singular simplices with image in an open set `W` into
-all singular simplices with image in `W` is a quasi-isomorphism: these are the smooth and the
-singular simplices of the manifold `W`. -/
-instance quasiIso_chainComplexMap_smoothPairToSingular_left :
-    QuasiIso (SSet.chainComplexMap (smoothPairToSingular I X W).left R) := by
-  exact (SSet.quasiIso_chainComplexMap_iff_homOfLE_of_range_eq R (smoothSingularSubcomplex I W).ι
-    (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set X)))) inf_le_right
-    ((range_smoothSingularSubcomplex_ι_comp_subtypeVal W).trans
-      (congrArg _ (TopCat.range_toSSet_map_subtypeVal (X := TopCat.of X) _)))
-    (TopCat.range_toSSet_map_subtypeVal (X := TopCat.of X) _)).1
-    (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens (I := I) R W)
+/-- **The relative smoothing theorem.** For an open subset `U` of a Hausdorff `σ`-compact smooth
+manifold `M` modelled on a finite-dimensional real model with corners, the inclusion of the smooth
+relative singular chains of `(M, U)` into its relative singular chains, with coefficients in `R`,
+is a quasi-isomorphism whenever countable coproducts are exact in `C`. -/
+instance quasiIso_chainComplexMap_smoothSingularPairι (U : Opens M) :
+    QuasiIso (SSetPair.chainComplexMap (smoothSingularPairι I U) R) := by
+  have : QuasiIso (SSet.chainComplexMap (smoothSingularPairι I U).left R) :=
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens R U
+  have : QuasiIso (SSet.chainComplexMap (smoothSingularPairι I U).right R) :=
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι R
+  exact SSetPair.quasiIso_chainComplexMap _ R
 
-/-- On the ambient simplicial sets, the inclusion of smooth singular simplices of `X` is a
-quasi-isomorphism, by the smoothing theorem. -/
-instance quasiIso_chainComplexMap_smoothPairToSingular_right :
-    QuasiIso (SSet.chainComplexMap (smoothPairToSingular I X W).right R) := by
-  rw [smoothPairToSingular_right]
-  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι R
+/-- **Smooth relative homology is relative singular homology.** The inclusion of smooth singular
+simplices induces an isomorphism from the smooth relative homology of `(M, U)` to its relative
+singular homology, in every degree. -/
+def smoothSingularRelativeHomologyIso (U : Opens M) (n : ℕ) :
+    (smoothSingularPair I U).homology R n ≅
+      (TopPair.ofSubset (U : Set (TopCat.of M))).singularHomology R n :=
+  asIso (SSetPair.homologyMap (smoothSingularPairι I U) R n)
 
-/-- **The relative smoothing theorem.** For an open subset `W` of a Hausdorff `σ`-compact smooth
-manifold `X` over a finite-dimensional real model with corners, the inclusion of the smooth singular
-chains of `X` relative to those with image in `W` into the singular chains of `X` relative to those
-with image in `W` is a quasi-isomorphism, with coefficients in any abelian category in which
-countable coproducts are exact. -/
-instance quasiIso_smoothPairToSingular :
-    QuasiIso (SSetPair.chainComplexMap (smoothPairToSingular I X W) R) :=
-  SSetPair.quasiIso_chainComplexMap _ R
+@[simp]
+theorem smoothSingularRelativeHomologyIso_hom (U : Opens M) (n : ℕ) :
+    (smoothSingularRelativeHomologyIso I R U n).hom =
+      SSetPair.homologyMap (smoothSingularPairι I U) R n :=
+  (rfl)
 
-/-- The inclusion of relative smooth singular chains induces an isomorphism on relative homology. -/
-instance isIso_homologyMap_smoothPairToSingular (n : ℕ) :
-    IsIso (SSetPair.homologyMap (smoothPairToSingular I X W) R n) :=
-  SSetPair.isIso_homologyMap_of_quasiIso _ R n
+/-- The map from absolute to relative homology commutes with the smoothing isomorphisms: a smooth
+cycle of `M` has the same relative class, read in smooth or in singular relative homology. -/
+@[reassoc]
+theorem homologyπ_comp_smoothSingularRelativeHomologyIso_hom (U : Opens M) (n : ℕ) :
+    (smoothSingularPair I U).homologyπ R n ≫ (smoothSingularRelativeHomologyIso I R U n).hom =
+      (smoothSingularHomologyIso I M R n).hom ≫
+        (TopPair.ofSubset (U : Set (TopCat.of M))).singularHomologyπ R n := by
+  rw [smoothSingularRelativeHomologyIso_hom, smoothSingularHomologyIso_hom,
+    ← SSetPair.homologyπ_naturality, smoothSingularPairι_right]
+  -- `TopPair.singularHomologyπ` abbreviates `SSetPair.homologyπ` of the singular pair, whose
+  -- ambient member is `TopCat.toSSet.obj (TopCat.of M)` by definition (`toSSetPair_obj_right`), so
+  -- the two sides differ only in how that codomain of `SSet.homologyMap` is written.
+  rfl
+
+/-- The smoothing isomorphisms commute with the connecting maps of the long exact sequences of the
+smooth and the singular pair: the boundary of a smooth relative cycle of `(M, U)` is a smooth cycle
+of `U`, whose singular class is the singular connecting map of its relative class. -/
+@[reassoc]
+theorem smoothSingularRelativeHomologyIso_hom_comp_singularHomologyδ (U : Opens M) (n m : ℕ)
+    (h : m + 1 = n := by lia) :
+    (smoothSingularRelativeHomologyIso I R U n).hom ≫
+        (TopPair.ofSubset (U : Set (TopCat.of M))).singularHomologyδ R n m h =
+      (smoothSingularPair I U).homologyδ R n m h ≫
+        SSet.homologyMap (smoothSingularSubcomplex I U).ι R m := by
+  rw [smoothSingularRelativeHomologyIso_hom, ← SSetPair.homologyδ_naturality _ R n m h,
+    smoothSingularPairι_left]
+  -- `TopPair.singularHomologyδ` abbreviates `SSetPair.homologyδ` of the singular pair, whose
+  -- subspace member is `TopCat.toSSet.obj U` by definition (`toSSetPair_obj_left`), so the two
+  -- sides differ only in how that codomain of `SSet.homologyMap` is written.
+  rfl
+
+variable {I} {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
+  [T2Space N] [SigmaCompactSpace N] [IsManifold J ∞ N]
+
+/-- `smoothSingularRelativeHomologyIso` is natural in smooth maps of pairs. -/
+@[reassoc]
+theorem smoothSingularRelativeHomologyIso_hom_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) (n : ℕ) :
+    (smoothSingularRelativeHomologyIso I R U n).hom ≫
+        TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) R n =
+      SSetPair.homologyMap (smoothSingularPairMap hf hUV) R n ≫
+        (smoothSingularRelativeHomologyIso J R V n).hom := by
+  rw [smoothSingularRelativeHomologyIso_hom, smoothSingularRelativeHomologyIso_hom,
+    TopPair.singularHomologyMap, ← SSetPair.homologyMap_comp, ← SSetPair.homologyMap_comp,
+    smoothSingularPairMap_comp_smoothSingularPairι]
+
+/-- The inverse of `smoothSingularRelativeHomologyIso` is natural in smooth maps of pairs. -/
+@[reassoc]
+theorem smoothSingularRelativeHomologyIso_inv_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) (n : ℕ) :
+    (smoothSingularRelativeHomologyIso I R U n).inv ≫
+        SSetPair.homologyMap (smoothSingularPairMap hf hUV) R n =
+      TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) R n ≫
+        (smoothSingularRelativeHomologyIso J R V n).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
+    smoothSingularRelativeHomologyIso_hom_naturality R hf hUV]
+
+end QuasiIso
+
+/-! ### Chain homotopy equivalence and relative cohomology -/
 
 section Projective
 
-variable [Projective R]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+  {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C]
+  [HasExactColimitsOfShape (Discrete ℕ) C] (R : C) [Projective R]
 
-/-- **The relative smoothing theorem, chain homotopy equivalence form.** For projective
-coefficients `R`, for instance `ℝ` or `ℤ`, every term of both relative chain complexes is
-projective, so the inclusion of relative smooth singular chains into relative singular chains is a
-chain homotopy equivalence. -/
-def smoothPairChainHomotopyEquiv :
-    HomotopyEquiv ((smoothPairIn I X W).chainComplex R) ((singularPairIn X W).chainComplex R) :=
-  let h := (ChainComplex.quasiIso_iff_of_projective
-    (SSetPair.chainComplexMap (smoothPairToSingular I X W) R)).1 inferInstance
-  h.choose.copy (Homotopy.ofEq h.choose_spec)
+/-- **The relative smoothing theorem (chain homotopy equivalence form).** When `R` is projective,
+the relative chain groups of both pairs are projective, so the inclusion of smooth relative
+singular chains of `(M, U)` into relative singular chains is a chain homotopy equivalence. -/
+def smoothSingularPairChainHomotopyEquiv (U : Opens M) :
+    HomotopyEquiv ((smoothSingularPair I U).chainComplex R)
+      ((TopPair.ofSubset (U : Set (TopCat.of M))).singularChainComplex R) :=
+  .ofQuasiIsoOfProjective (SSetPair.chainComplexMap (smoothSingularPairι I U) R)
 
-/-- The forward map of `smoothPairChainHomotopyEquiv` is the relative chain map of the inclusion of
-pairs. -/
 @[simp]
-theorem smoothPairChainHomotopyEquiv_hom :
-    (smoothPairChainHomotopyEquiv I X W R).hom =
-      SSetPair.chainComplexMap (smoothPairToSingular I X W) R := by
-  rw [smoothPairChainHomotopyEquiv, HomotopyEquiv.copy_hom]
+theorem smoothSingularPairChainHomotopyEquiv_hom (U : Opens M) :
+    (smoothSingularPairChainHomotopyEquiv I R U).hom =
+      SSetPair.chainComplexMap (smoothSingularPairι I U) R := by
+  rw [smoothSingularPairChainHomotopyEquiv, HomotopyEquiv.ofQuasiIsoOfProjective_hom]
+
+/-- The map induced on homology by the inverse of `smoothSingularPairChainHomotopyEquiv` is the
+inverse of `smoothSingularRelativeHomologyIso`. -/
+@[simp]
+theorem homologyMap_smoothSingularPairChainHomotopyEquiv_inv (U : Opens M) (n : ℕ) :
+    HomologicalComplex.homologyMap (smoothSingularPairChainHomotopyEquiv I R U).inv n =
+      (smoothSingularRelativeHomologyIso I R U n).inv := by
+  rw [smoothSingularPairChainHomotopyEquiv, HomotopyEquiv.homologyMap_ofQuasiIsoOfProjective_inv,
+    smoothSingularRelativeHomologyIso]
 
 variable (k : Type*) [Ring k] [Linear k C] (Y : C)
 
-/-- For projective coefficients, restriction of relative singular cochains to relative smooth
-singular cochains is a quasi-isomorphism. -/
-instance quasiIso_cochainComplexMap_smoothPairToSingular :
-    QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y)
-      (smoothPairToSingular I X W)) :=
+/-- **The relative smoothing theorem for cochains.** When `R` is projective, restricting relative
+singular cochains of `(M, U)` with values in `Y` to smooth relative chains is a quasi-isomorphism.
+-/
+instance quasiIso_cochainComplexMap_smoothSingularPairι (U : Opens M) :
+    QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) :=
   ChainComplex.quasiIso_linearYonedaFunctor_map_of_projective _ k Y
 
-/-- For projective coefficients, restriction from the relative singular cochains of the topological
-pair `(X, W)` (`TopPair.singularCochainComplex`) to the relative smooth singular cochains is a
-quasi-isomorphism. -/
-instance quasiIso_cochainComplexMap_smoothPairToSingular_comp_singularPairInIso_inv :
-    QuasiIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y)
-      (smoothPairToSingular I X W ≫ (singularPairInIso X (W : Set X)).inv)) := by
-  have : IsIso (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y)
-      (singularPairInIso X (W : Set X)).inv) :=
-    Functor.map_isIso _ _
-  rw [SSetPair.cochainComplexMap_comp]
-  infer_instance
+/-- **The dual relative smoothing cochain homotopy equivalence.** Applying `Hom(-, Y)` to
+`smoothSingularPairChainHomotopyEquiv` yields a cochain homotopy equivalence from the relative
+singular cochain complex of `(M, U)` to its smooth relative cochain complex. -/
+def smoothSingularPairCochainHomotopyEquiv (U : Opens M) :
+    HomotopyEquiv ((TopPair.ofSubset (U : Set (TopCat.of M))).singularCochainComplex R k Y)
+      (((smoothSingularPair I U).chainComplex R).linearYonedaObj k Y) :=
+  (smoothSingularPairChainHomotopyEquiv I R U).linearYonedaFunctorMap k Y
+
+/-- The forward map of `smoothSingularPairCochainHomotopyEquiv` is restriction of relative
+singular cochains to smooth relative chains. -/
+@[simp]
+theorem smoothSingularPairCochainHomotopyEquiv_hom (U : Opens M) :
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U).hom =
+      SSetPair.cochainComplexMap (smoothSingularPairι I U) := by
+  rw [smoothSingularPairCochainHomotopyEquiv, HomotopyEquiv.linearYonedaFunctorMap_hom,
+    smoothSingularPairChainHomotopyEquiv_hom]
+
+/-- The inverse map of `smoothSingularPairCochainHomotopyEquiv` is precomposition with the inverse
+of `smoothSingularPairChainHomotopyEquiv`. -/
+theorem smoothSingularPairCochainHomotopyEquiv_inv (U : Opens M) :
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv =
+      (ChainComplex.linearYonedaFunctor k Y).map
+        (smoothSingularPairChainHomotopyEquiv I R U).inv.op := by
+  rw [smoothSingularPairCochainHomotopyEquiv, HomotopyEquiv.linearYonedaFunctorMap_inv]
+
+/-- **Relative singular cohomology is smooth relative cohomology.** When `R` is projective,
+restriction to smooth simplices induces an isomorphism from the relative singular cohomology of
+`(M, U)` with values in `Y` to its smooth relative cohomology, in every degree. -/
+def smoothSingularRelativeCohomologyIso (U : Opens M) (n : ℕ) :
+    (TopPair.ofSubset (U : Set (TopCat.of M))).singularCohomology R k Y n ≅
+      (((smoothSingularPair I U).chainComplex R).linearYonedaObj k Y).homology n :=
+  asIso (HomologicalComplex.homologyMap
+    (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) n)
+
+@[simp]
+theorem smoothSingularRelativeCohomologyIso_hom (U : Opens M) (n : ℕ) :
+    (smoothSingularRelativeCohomologyIso I R k Y U n).hom =
+      HomologicalComplex.homologyMap
+        (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) n :=
+  (rfl)
+
+/-- Restricting the image of a smooth relative cohomology class under the inverse of
+`smoothSingularRelativeCohomologyIso` back to smooth relative chains recovers the class. -/
+@[simp]
+theorem homologyMap_cochainComplexMap_smoothSingularRelativeCohomologyIso_inv_apply (U : Opens M)
+    (n : ℕ) (x : (((smoothSingularPair I U).chainComplex R).linearYonedaObj k Y).homology n) :
+    HomologicalComplex.homologyMap
+        (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularPairι I U)) n
+        ((smoothSingularRelativeCohomologyIso I R k Y U n).inv x) = x := by
+  rw [← smoothSingularRelativeCohomologyIso_hom, Iso.inv_hom_id_apply]
+
+/-- The map induced on cohomology by the inverse of `smoothSingularPairCochainHomotopyEquiv` is the
+inverse of `smoothSingularRelativeCohomologyIso`. -/
+@[simp]
+theorem homologyMap_smoothSingularPairCochainHomotopyEquiv_inv (U : Opens M) (n : ℕ) :
+    HomologicalComplex.homologyMap (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv n =
+      (smoothSingularRelativeCohomologyIso I R k Y U n).inv := by
+  simp only [HomotopyEquiv.homologyMap_inv, smoothSingularPairCochainHomotopyEquiv_hom,
+    smoothSingularRelativeCohomologyIso, asIso_inv]
+
+/-- The map from relative to absolute cohomology commutes with the smoothing isomorphisms: a
+relative singular cocycle of `(M, U)` restricts to the same smooth cochain of `M`, whether it is
+first restricted to smooth relative chains or first regarded as a cochain of `M`. -/
+@[reassoc]
+theorem singularCohomologyπ_comp_smoothSingularCohomologyIso_hom (U : Opens M) (n : ℕ) :
+    (TopPair.ofSubset (U : Set (TopCat.of M))).singularCohomologyπ R k Y n ≫
+        (smoothSingularCohomologyIso I M R k Y n).hom =
+      (smoothSingularRelativeCohomologyIso I R k Y U n).hom ≫
+        HomologicalComplex.homologyMap (SSetPair.cochainComplexπ R k Y (smoothSingularPair I U))
+          n := by
+  have h := congrArg (HomologicalComplex.homologyMap · n)
+    (SSetPair.cochainComplexπ_naturality R k Y (smoothSingularPairι I U))
+  rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp,
+    smoothSingularPairι_right] at h
+  rw [smoothSingularCohomologyIso_hom, smoothSingularRelativeCohomologyIso_hom]
+  -- `singularCohomologyπ` is by definition the cohomology map of `SSetPair.cochainComplexπ` of the
+  -- singular pair, whose ambient member is the singular simplicial set of `M`
+  -- (`TopPair.toSSetPair_obj_right`).
+  exact h
+
+/-- The smoothing isomorphisms commute with the connecting maps of the long exact cohomology
+sequences of the singular and the smooth pair: the relative singular class of the coboundary of a
+singular cochain of `U` restricts to the smooth connecting map of its restriction to smooth chains
+of `U`. -/
+@[reassoc]
+theorem singularCohomologyδ_comp_smoothSingularRelativeCohomologyIso_hom (U : Opens M) (n m : ℕ)
+    (h : n + 1 = m := by lia) :
+    (TopPair.ofSubset (U : Set (TopCat.of M))).singularCohomologyδ R k Y n m h ≫
+        (smoothSingularRelativeCohomologyIso I R k Y U m).hom =
+      HomologicalComplex.homologyMap
+          (SSet.cochainComplexMap (R := R) (k := k) (M := Y) (smoothSingularSubcomplex I U).ι) n ≫
+        (ChainComplex.shortExact_map_linearYonedaFunctor k Y
+          ((smoothSingularPair I U).shortExact_chainComplexShortComplex R)).δ n m (by simpa) := by
+  have h := HomologicalComplex.HomologySequence.δ_naturality
+    (S₁ := (TopPair.ofSubset (U : Set (TopCat.of M))).singularCochainComplexShortComplex R k Y)
+    (S₂ := ((smoothSingularPair I U).chainComplexShortComplex R).op.map
+      (ChainComplex.linearYonedaFunctor k Y))
+    ((ChainComplex.linearYonedaFunctor k Y).mapShortComplex.map
+      (ShortComplex.opMap (SSetPair.chainComplexShortComplexMap (smoothSingularPairι I U) R)))
+    ((TopPair.ofSubset (U : Set (TopCat.of M))).shortExact_singularCochainComplexShortComplex R k Y)
+    (ChainComplex.shortExact_map_linearYonedaFunctor k Y
+      ((smoothSingularPair I U).shortExact_chainComplexShortComplex R)) n m (by simpa)
+  rw [Functor.mapShortComplex_map_τ₁, ShortComplex.opMap_τ₁,
+    SSetPair.chainComplexShortComplexMap_τ₃, Functor.mapShortComplex_map_τ₃,
+    ShortComplex.opMap_τ₃, SSetPair.chainComplexShortComplexMap_τ₁, smoothSingularPairι_left] at h
+  -- Both cochain sequences are by definition `Hom(-, Y)` of the chain sequences of the pairs
+  -- (`TopPair.singularCochainComplexShortComplex_eq_map`), whose members are the singular
+  -- simplicial sets of `U` and `M` (`TopPair.toSSetPair_obj_left`, `TopPair.toSSetPair_obj_right`).
+  exact h
+
+variable {I} {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
+  [T2Space N] [SigmaCompactSpace N] [IsManifold J ∞ N]
+
+/-- The forward map of `smoothSingularPairChainHomotopyEquiv` commutes strictly with the chain maps
+induced by a smooth map of pairs. -/
+@[reassoc]
+theorem smoothSingularPairChainHomotopyEquiv_hom_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    (smoothSingularPairChainHomotopyEquiv I R U).hom ≫
+        TopPair.singularChainComplexMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) R =
+      SSetPair.chainComplexMap (smoothSingularPairMap hf hUV) R ≫
+        (smoothSingularPairChainHomotopyEquiv J R V).hom := by
+  rw [smoothSingularPairChainHomotopyEquiv_hom, smoothSingularPairChainHomotopyEquiv_hom,
+    TopPair.singularChainComplexMap, ← Functor.map_comp, ← Functor.map_comp,
+    smoothSingularPairMap_comp_smoothSingularPairι]
+
+/-- **Naturality up to chain homotopy of the relative smoothing inverse.** For a smooth map of
+pairs `f : (M, U) → (N, V)`, composing the relative smoothing homotopy inverse on `(M, U)` with the
+smooth pushforward along `f` is chain homotopic to pushing forward relative singular chains along
+`f` and then applying the relative smoothing homotopy inverse on `(N, V)`. -/
+def smoothSingularPairChainHomotopyEquivInvNaturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    Homotopy
+      ((smoothSingularPairChainHomotopyEquiv I R U).inv ≫
+        SSetPair.chainComplexMap (smoothSingularPairMap hf hUV) R)
+      (TopPair.singularChainComplexMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) R ≫
+        (smoothSingularPairChainHomotopyEquiv J R V).inv) :=
+  (smoothSingularPairChainHomotopyEquiv I R U).invNaturality
+    (smoothSingularPairChainHomotopyEquiv J R V)
+    (smoothSingularPairChainHomotopyEquiv_hom_naturality R hf hUV)
+
+/-- The forward map of `smoothSingularPairCochainHomotopyEquiv` commutes strictly with the cochain
+maps induced by a smooth map of pairs. -/
+@[reassoc]
+theorem smoothSingularPairCochainHomotopyEquiv_hom_naturality {f : M → N}
+    (hf : ContMDiff I J ∞ f) {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    TopPair.singularCochainComplexMap (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) ≫
+        (smoothSingularPairCochainHomotopyEquiv I R k Y U).hom =
+      (smoothSingularPairCochainHomotopyEquiv J R k Y V).hom ≫
+        SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV) := by
+  rw [smoothSingularPairCochainHomotopyEquiv_hom, smoothSingularPairCochainHomotopyEquiv_hom,
+    TopPair.singularCochainComplexMap_eq, ← SSetPair.cochainComplexMap_comp,
+    ← SSetPair.cochainComplexMap_comp, smoothSingularPairMap_comp_smoothSingularPairι]
+
+/-- **Naturality up to cochain homotopy of the dual relative smoothing inverse.** For a smooth map
+of pairs `f : (M, U) → (N, V)`, pulling back smooth relative cochains along `f` and extending to
+relative singular cochains on `(M, U)` is cochain homotopic to extending on `(N, V)` first and then
+pulling back relative singular cochains along `f`. -/
+def smoothSingularPairCochainHomotopyEquivInvNaturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) :
+    Homotopy
+      (SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV) ≫
+        (smoothSingularPairCochainHomotopyEquiv I R k Y U).inv)
+      ((smoothSingularPairCochainHomotopyEquiv J R k Y V).inv ≫
+        TopPair.singularCochainComplexMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV)) :=
+  ((smoothSingularPairCochainHomotopyEquiv J R k Y V).invNaturality
+    (smoothSingularPairCochainHomotopyEquiv I R k Y U)
+    (smoothSingularPairCochainHomotopyEquiv_hom_naturality R k Y hf hUV).symm).symm
+
+/-- `smoothSingularRelativeCohomologyIso` is natural in smooth maps of pairs. -/
+@[reassoc]
+theorem smoothSingularRelativeCohomologyIso_hom_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) (n : ℕ) :
+    TopPair.singularCohomologyMap (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) n ≫
+        (smoothSingularRelativeCohomologyIso I R k Y U n).hom =
+      (smoothSingularRelativeCohomologyIso J R k Y V n).hom ≫
+        HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV))
+          n := by
+  have h := congrArg (fun g ↦
+    HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k) (M := Y) g) n)
+    (smoothSingularPairMap_comp_smoothSingularPairι hf hUV)
+  rw [SSetPair.cochainComplexMap_comp, SSetPair.cochainComplexMap_comp,
+    HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp] at h
+  rw [smoothSingularRelativeCohomologyIso_hom, smoothSingularRelativeCohomologyIso_hom,
+    TopPair.singularCohomologyMap_eq]
+  exact h.symm
+
+/-- The inverse of `smoothSingularRelativeCohomologyIso` is natural in smooth maps of pairs. -/
+@[reassoc]
+theorem smoothSingularRelativeCohomologyIso_inv_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    {U : Opens M} {V : Opens N} (hUV : Set.MapsTo f U V) (n : ℕ) :
+    HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (smoothSingularPairMap hf hUV)) n ≫
+        (smoothSingularRelativeCohomologyIso I R k Y U n).inv =
+      (smoothSingularRelativeCohomologyIso J R k Y V n).inv ≫
+        TopPair.singularCohomologyMap
+          (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV) n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    smoothSingularRelativeCohomologyIso_hom_naturality R k Y hf hUV]
 
 end Projective
-
-end QuasiIso
 
 end TauCeti

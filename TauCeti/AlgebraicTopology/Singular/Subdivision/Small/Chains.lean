@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Endomorphism
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Subcomplex
 public import TauCeti.AlgebraicTopology.Singular.Subspace
-public import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # Singular chains subordinate to an open cover
@@ -33,10 +32,6 @@ small-chain equivalence and prove excision.
   the small subcomplex of the preimage family.
 * `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
   family maps into the small subcomplex.
-* `TopCat.range_toSSet_map_subtypeVal`: the singular simplices coming from a subspace `S` form the
-  small subcomplex of the one-member family `S`.
-* `TopCat.singularSubspaceIso`: the singular simplicial set of a subspace `S` is isomorphic to that
-  subcomplex.
 * `TopCat.chainComplexMap_f_toSmallSingularSubcomplex_ι`: the inclusion law for subordinate chains.
 * `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a chain map vanishing on the
   singular chains of each member of the family vanishes on the small chains.
@@ -168,44 +163,6 @@ lemma toSmallSingularSubcomplex_app_coe {S : Set X} {i : ι} (h : S ⊆ U i) {n 
     dsimp% ((toSmallSingularSubcomplex U h).app n σ).val =
       (toSSet.map (ofHom (ContinuousMap.subtypeVal S))).app n σ :=
   SSet.Subcomplex.lift_app_coe _ _ _
-
-/-- The singular simplices of `X` coming from a subspace `S` are exactly the simplices with image in
-`S`, that is, the small singular subcomplex of the one-member family `S`. -/
-lemma range_toSSet_map_subtypeVal (S : Set X) :
-    SSet.Subcomplex.range (toSSet.map (ofHom (ContinuousMap.subtypeVal S))) =
-      X.smallSingularSubcomplex fun _ : Unit ↦ S := by
-  ext n σ
-  rw [mem_range_toSSet_subtypeVal_iff, mem_smallSingularSubcomplex_iff, exists_const]
-
-/-- The singular simplicial set of a subspace `S` is isomorphic, through
-`toSmallSingularSubcomplex`, to the subcomplex of singular simplices of `X` with image in `S`. -/
-def singularSubspaceIso (S : Set X) :
-    toSSet.obj (of S) ≅ (X.smallSingularSubcomplex fun _ : Unit ↦ S : SSet) :=
-  have : IsIso (toSmallSingularSubcomplex (fun _ : Unit ↦ S) (i := ()) subset_rfl) := by
-    -- `toSmallSingularSubcomplex` is the isomorphism onto the range of the subspace inclusion,
-    -- followed by the identification of that range with the small subcomplex.
-    rw [show toSmallSingularSubcomplex (fun _ : Unit ↦ S) (i := ()) subset_rfl =
-        SSet.Subcomplex.toRange (toSSet.map (ofHom (ContinuousMap.subtypeVal S))) ≫
-          (SSet.Subcomplex.eqToIso (range_toSSet_map_subtypeVal S)).hom by
-      rw [← cancel_mono (X.smallSingularSubcomplex _).ι]
-      simp [SSet.Subcomplex.eqToIso]]
-    infer_instance
-  asIso (toSmallSingularSubcomplex (fun _ : Unit ↦ S) (i := ()) subset_rfl)
-
-/-- The forward map of `singularSubspaceIso` is `toSmallSingularSubcomplex`. -/
-@[simp]
-lemma singularSubspaceIso_hom (S : Set X) :
-    (singularSubspaceIso S).hom =
-      toSmallSingularSubcomplex (fun _ : Unit ↦ S) (i := ()) subset_rfl := by
-  simp only [singularSubspaceIso, asIso_hom]
-
-/-- The inverse of `singularSubspaceIso`, followed by the subspace inclusion, is the inclusion of
-the subcomplex of singular simplices with image in `S`. -/
-@[reassoc (attr := simp)]
-lemma singularSubspaceIso_inv_comp_toSSet_map_subtypeVal (S : Set X) :
-    (singularSubspaceIso S).inv ≫ toSSet.map (ofHom (ContinuousMap.subtypeVal S)) =
-      (X.smallSingularSubcomplex fun _ : Unit ↦ S).ι := by
-  rw [Iso.inv_comp_eq, singularSubspaceIso_hom, toSmallSingularSubcomplex_ι]
 
 variable {μ : Type*} {Z : TopCat.{w}} (W : μ → Set Z)
 

@@ -35,8 +35,8 @@ constant
 `C (R^(1 - (n + 1)/q - β) ‖f‖_{L^q(U ∩ H)} + R^(-(n + 1)/2 - β) ‖∇w‖_{L²(U)})`,
 
 and `∇w` agrees with `∇u` almost everywhere on `U ∩ H`
-(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae`). The set `S` may meet the hyperplane,
-so this is a boundary estimate, not an interior one.
+(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae_of_value_ae_eq_zero`). The set `S` may
+meet the hyperplane, so this is a boundary estimate, not an interior one.
 
 ## The argument
 
@@ -94,8 +94,9 @@ Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a
 `C (R^(1 - (n + 1)/q - β) ‖f‖_{L^q(U ∩ H)} + R^(-(n + 1)/2 - β) ‖∇w‖_{L²(U)})`.
 
 The gradient `∇w` agrees with `∇u` almost everywhere on `U ∩ H`
-(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae`), and `S` may meet the hyperplane: this
-is the `C^{1,β}` estimate up to the flat part of the boundary of `U ∩ H`, on which `u` vanishes.
+(`TauCeti.W1p.gradient_sub_compHyperplaneReflectionL_ae_of_value_ae_eq_zero`), and `S` may meet
+the hyperplane: this is the `C^{1,β}` estimate up to the flat part of the boundary of `U ∩ H`, on
+which `u` vanishes.
 -/
 theorem
     exists_holderOnWith_preciseRepresentative_gradient_sub_compHyperplaneReflectionL_of_holderOnWith
