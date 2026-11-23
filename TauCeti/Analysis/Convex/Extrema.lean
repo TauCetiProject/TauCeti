@@ -43,9 +43,11 @@ open Filter
 
 open scoped Topology
 
-variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E] [IsTopologicalAddGroup E]
-  [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β] [IsOrderedAddMonoid β]
-  [Module ℝ β] [IsOrderedModule ℝ β] {s : Set E} {u g : E → β} {x : E}
+section
+
+variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E]
+  [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β]
+  [IsOrderedAddMonoid β] [Module ℝ β] [IsOrderedModule ℝ β] {s : Set E} {u : E → β} {x : E}
 
 /-- **Local supporting hyperplanes of a convex function are global.** If `u` is convex on `s`,
 `x ∈ s`, and the affine function `x' ↦ u x + ℓ (x' - x)` lies below `u` at the points of `s`
@@ -58,7 +60,12 @@ theorem ConvexOn.add_le_of_eventually_add_le (hu : ConvexOn ℝ s u) (hx : x ∈
   simp_rw [key] at h ⊢
   exact IsMinOn.of_isLocalMinOn_of_convexOn hx h (hu.sub (ℓ.concaveOn hu.1))
 
-variable [TopologicalSpace β] [ContinuousAdd β] [ContinuousSMul ℝ β] [ClosedIicTopology β]
+end
+
+variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E] [ContinuousAdd E]
+  [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β] [IsOrderedAddMonoid β]
+  [Module ℝ β] [IsOrderedModule ℝ β] [TopologicalSpace β] [ContinuousAdd β]
+  [ContinuousSMul ℝ β] [ClosedIicTopology β] {s : Set E} {u g : E → β} {x : E}
 
 /-- **A differentiable function touching a convex function from below supports it.** If `u` is
 convex on `s`, `x ∈ s`, `u - g` has a local minimum at `x` relative to `s`, and `g` has

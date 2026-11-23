@@ -21,9 +21,9 @@ maxima `∑ j, (H j).sup' (hne j) (f j)` equals the maximum of the mixed-choice 
 `∑ j, f j (choice j)` over all selections `choice ∈ Fintype.piFinset H`. Consequently, bounding
 the sum of componentwise maxima by `b` is equivalent to bounding every mixed-choice sum by `b`.
 
-The conditional-supremum variant allows an arbitrary nonempty common index type in any
-conditionally complete ordered additive commutative group, provided every component family is
-bounded above.
+The conditional-supremum variant allows an arbitrary nonempty common index type when the codomain is
+a conditionally complete lattice with an additive commutative group structure and order-preserving
+addition, provided every component family is bounded above.
 
 ## Main results
 

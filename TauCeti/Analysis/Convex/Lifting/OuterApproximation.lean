@@ -353,15 +353,15 @@ end Algebraic
 
 section Analytic
 
-variable {X : Type*} [AddCommGroup X] [TopologicalSpace X] [Module ℝ X]
-  [IsTopologicalAddGroup X] [ContinuousSMul ℝ X] {ι κ : Type*}
+variable {X : Type*} [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] [ContinuousSMul ℝ X]
+  {ι κ : Type*}
 
 /-- Exact component row for a continuous affine component: if coordinate `j` of `g` agrees with a
 continuous affine map `f` near `a` and at `x`, and `g` has actual Fréchet derivative `Dg` at `a`,
 then `componentRow g a Dg x j = g x j`. -/
-theorem componentRow_eq_of_eventuallyEq_continuousAffineMap {g : X → ι → ℝ} {a x : X}
-    {Dg : X →L[ℝ] (ι → ℝ)} {j : ι} (f : X →ᴬ[ℝ] ℝ) (hg : HasFDerivAt g Dg a)
-    (hnhds : (fun z => g z j) =ᶠ[𝓝 a] f) (hx : g x j = f x) :
+theorem componentRow_eq_of_eventuallyEq_continuousAffineMap [IsTopologicalAddGroup X]
+    {g : X → ι → ℝ} {a x : X} {Dg : X →L[ℝ] (ι → ℝ)} {j : ι} (f : X →ᴬ[ℝ] ℝ)
+    (hg : HasFDerivAt g Dg a) (hnhds : (fun z => g z j) =ᶠ[𝓝 a] f) (hx : g x j = f x) :
     componentRow g a Dg x j = g x j := by
   have heq : (ContinuousLinearMap.proj (R := ℝ) j).comp Dg = f.contLinear :=
     (hg.proj j).unique (f.hasFDerivAt_tvs.congr_of_eventuallyEq hnhds)
@@ -373,6 +373,8 @@ theorem componentRow_eq_of_eventuallyEq_continuousAffineMap {g : X → ι → �
     simpa only [vsub_eq_sub] using f.contLinear_apply_vsub x a
   rw [componentRow_apply, hDg, ha, hsub, hx]
   ring
+
+variable [ContinuousAdd X]
 
 /-- Inner component convex support: if `g · j` is convex on `D` and `g` has Fréchet derivative
 `Dg` at `a ∈ D`, then `componentRow g a Dg x j ≤ g x j` for every `x ∈ D`. -/

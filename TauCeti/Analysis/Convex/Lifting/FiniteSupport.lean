@@ -50,9 +50,11 @@ sum of coordinate projections `∑ j, ContinuousLinearMap.proj j` and free heigh
 algebraically with the projection `Prod.fst '' independentRows`
 (`TauCeti.directOA_sum_eq_fst_image_independentRows`), and for a nonempty finite anchor set
 `TauCeti.sharedOA` coincides with `TauCeti.sharedRows` (`TauCeti.sharedOA_sum_eq_sharedRows`). For
-any nonempty anchor family (finite or infinite), the projection of `TauCeti.sharedOA` is
-characterized by membership in `D` together with every mixed-choice sum of component rows across
-anchors being at most `b` (`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A
+the sum outer function `y ↦ ∑ j, y j` with outer linear maps `∑ j, ContinuousLinearMap.proj j`,
+free height domain `E = Set.univ`, and any nonempty anchor family (finite or infinite), the
+projection of `TauCeti.sharedOA` is characterized by membership in `D` together with every
+mixed-choice sum of component rows across anchors being at most `b`
+(`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A
 concrete two-anchor squared-component witness (`TauCeti.exists_strict_sharedOA_ssubset_directOA`)
 shows that both inclusions `{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA ⊂ directOA` can be
 strict.
