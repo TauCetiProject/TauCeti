@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
-import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 
 /-!
@@ -172,6 +171,19 @@ private theorem coverFiberClass_mk_neg {b : B} (o : Orientation ℝ (E b) ι) :
     coverFiberClass K ω ⟨b, -o⟩ = -coverFiberClass K ω ⟨b, o⟩ := by
   rw [coverFiberClass, coverFiberClass, orientedFiberGenerator_neg ω hι, map_neg]
 
+omit [FiniteDimensional ℝ F] in
+include hι in
+/-- Any two orientations of a fibre are equal or opposite. -/
+private theorem eq_or_eq_neg_of_fiber {b : B} (o o' : Orientation ℝ (E b) ι) :
+    o = o' ∨ o = -o' := by
+  set e := trivializationAt F E b
+  have he := mem_baseSet_trivializationAt F E b
+  rcases (e.mapOrientation ι he o).eq_or_eq_neg_of_card_eq_finrank (e.mapOrientation ι he o') hι
+    with h | h
+  · exact .inl ((e.mapOrientation ι he).injective h)
+  · exact .inr ((e.mapOrientation ι he).injective
+      (h.trans (Trivialization.mapOrientation_neg e he o').symm))
+
 /-- The orientation of the fibre over `b` that the preferred trivialization at `b` reads as the
 model orientation `ω`. -/
 private def modelFiberOrientation (b : B) : Orientation ℝ (E b) ι :=
@@ -209,15 +221,9 @@ private theorem twistedFiberClass_apply {b : B}
   obtain ⟨⟨b', o⟩, hq⟩ := q
   obtain rfl : b' = b := Set.mem_singleton_iff.1 hq
   rw [← signLocalSystemFiberEquiv_apply, twistedFiberClass_apply_eq_smul]
-  set e := trivializationAt F E b'
-  rcases (e.mapOrientation ι (mem_baseSet_trivializationAt F E b') o).eq_or_eq_neg ω
-      (Nat.card_eq_fintype_card.trans hι) with h | h
-  · obtain rfl : o = modelFiberOrientation ω b' := (Equiv.eq_symm_apply _).2 h
-    rfl
-  · obtain rfl : o = -modelFiberOrientation ω b' := by
-      apply (e.mapOrientation ι (mem_baseSet_trivializationAt F E b')).injective
-      rw [h, Trivialization.mapOrientation_neg, modelFiberOrientation, Equiv.apply_symm_apply]
-    rw [signLocalSystemFiberEquiv_neg, coverFiberClass_mk_neg hι, neg_smul_neg]
+  rcases eq_or_eq_neg_of_fiber hι o (modelFiberOrientation ω b') with rfl | rfl
+  · rfl
+  · rw [signLocalSystemFiberEquiv_neg, coverFiberClass_mk_neg hι, neg_smul_neg]
 
 variable (K) in
 /-- The fibre classes form a cocone over the orientation local system: transport along a path
@@ -284,17 +290,11 @@ private theorem isTwistedThomPairOverDesc_of_forall {W : Set B}
         (signFiberOne hι (o b hb))) :
     IsTwistedThomPairOverDesc K hι ω W φ := by
   intro b hb o'
-  set e := trivializationAt F E b
-  have he := mem_baseSet_trivializationAt F E b
-  rcases (e.mapOrientation ι he o').eq_or_eq_neg (e.mapOrientation ι he (o b hb))
-      (Nat.card_eq_fintype_card.trans hι) with h' | h'
-  · rw [(e.mapOrientation ι he).injective h']
-    exact h b hb
-  · have ho' : o' = -o b hb := (e.mapOrientation ι he).injective
-      (h'.trans (Trivialization.mapOrientation_neg e he (o b hb)).symm)
-    have h1 : signFiberOne (K := K) hι (-o b hb) = -signFiberOne hι (o b hb) := by
+  rcases eq_or_eq_neg_of_fiber hι o' (o b hb) with rfl | rfl
+  · exact h b hb
+  · have h1 : signFiberOne (K := K) hι (-o b hb) = -signFiberOne hι (o b hb) := by
       simpa using congr($(signLocalSystemFiberEquiv_neg_symm (R := K) hι (o b hb)) 1)
-    rw [ho', orientedFiberGenerator_neg ω hι, map_neg, map_neg, h b hb, h1, map_neg]
+    rw [orientedFiberGenerator_neg ω hι, map_neg, map_neg, h b hb, h1, map_neg]
 
 include hι in
 /-- **Over a trivializing set**, the comparison map exists: a trivialization identifies
