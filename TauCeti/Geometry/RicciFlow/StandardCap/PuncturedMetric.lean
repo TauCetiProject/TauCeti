@@ -52,11 +52,22 @@ def puncturedMetric :
         TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :=
   (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
     standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
-      (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+      (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
       (fun r ↦ (hf.apply_pos r.property).ne')
       ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top)
 
 variable {V}
+
+/-- The punctured metric is the warped product of the radial half-line with the round sphere,
+with warping function `f`. -/
+theorem puncturedMetric_def :
+    hf.puncturedMetric (n := n) V =
+      (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
+        standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
+        (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
+        (fun r ↦ (hf.apply_pos r.property).ne')
+        ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top) :=
+  (rfl)
 
 /-- The punctured metric is the orthogonal sum of the radial metric and the
 round sphere metric multiplied by `f(r)²`. -/
@@ -82,7 +93,7 @@ theorem scalarCurvature_puncturedMetric
         2 * n * deriv (deriv f) p.1 / f p.1 := by
   rw [puncturedMetric]
   exact scalarCurvature_warpedProdTangentSpace_real_sphere standardCapRadialDomain
-    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
     (fun r ↦ (hf.apply_pos r.property).ne') p
 
 /-- The punctured standard cap has nonnegative scalar curvature in every
@@ -130,24 +141,17 @@ theorem exists_scalarCurvature_puncturedMetric_eq_round :
     ∃ r₀ > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
       (p.1 : ℝ) < r₀ →
       (hf.puncturedMetric (n := n) V).scalarCurvature p = (n : ℝ) * (n + 1) / 4 := by
-  obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin
+  obtain ⟨r₀, hr₀, h⟩ :=
+    hf.exists_eq_two_mul_sin_and_deriv_eq_cos_and_deriv_deriv_eq_neg_sin_div_two
   refine ⟨r₀, hr₀, fun p hp ↦ ?_⟩
-  have heq : f =ᶠ[𝓝 (p.1 : ℝ)] fun s ↦ 2 * sin (s / 2) := by
-    filter_upwards [Ioo_mem_nhds p.1.property hp] with s hs using h s ⟨hs.1.le, hs.2⟩
-  have hd : deriv f =ᶠ[𝓝 (p.1 : ℝ)] fun s ↦ cos (s / 2) := by
-    filter_upwards [heq.deriv] with s hs
-    rw [hs, (((hasDerivAt_id' s).div_const 2).sin.const_mul 2).deriv]
-    ring
-  have hdd : deriv (deriv f) (p.1 : ℝ) = -sin ((p.1 : ℝ) / 2) / 2 := by
-    rw [hd.deriv_eq, (((hasDerivAt_id' (p.1 : ℝ)).div_const 2).cos).deriv]
-    ring
+  obtain ⟨h₀, h₁, h₂⟩ := h p.1 ⟨p.1.property.le, hp⟩
   have hsin : sin ((p.1 : ℝ) / 2) ≠ 0 := by
     have := hf.apply_pos p.1.property
-    rw [heq.eq_of_nhds] at this
+    rw [h₀] at this
     exact ne_of_gt (by linarith)
   have htrig : 1 - cos ((p.1 : ℝ) / 2) ^ 2 = sin ((p.1 : ℝ) / 2) ^ 2 := by
     nlinarith [sin_sq_add_cos_sq ((p.1 : ℝ) / 2)]
-  rw [hf.scalarCurvature_puncturedMetric, heq.eq_of_nhds, hd.eq_of_nhds, hdd, htrig]
+  rw [hf.scalarCurvature_puncturedMetric, h₀, h₁, h₂, htrig]
   field_simp
   ring
 

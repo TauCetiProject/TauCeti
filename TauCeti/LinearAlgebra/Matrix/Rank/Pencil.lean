@@ -50,13 +50,14 @@ open Module Polynomial
 
 namespace Matrix
 
-variable {m n K : Type*} [Finite m] [Fintype n] [Field K]
+variable {m n K : Type*} [Finite m] [Finite n] [Field K]
 
 /-- **Rank bounds along a matrix pencil.** If `rank (A + t • B) ≤ p` for infinitely many scalars
 `t`, then it holds for every `t`: each `(p + 1) × (p + 1)` minor of `A + t • B` is a polynomial
 in `t` with infinitely many roots, hence zero. -/
 theorem rank_add_smul_le_of_infinite {A B : Matrix m n K} {p : ℕ}
     (h : {t : K | (A + t • B).rank ≤ p}.Infinite) (t : K) : (A + t • B).rank ≤ p := by
+  have := Fintype.ofFinite n
   rw [rank_le_iff_forall_det_submatrix_eq_zero]
   intro r c
   -- The minor at `(r, c)` as a polynomial in the parameter.

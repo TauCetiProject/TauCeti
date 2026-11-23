@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Weak continuity of beta laws
@@ -35,12 +35,13 @@ namespace TauCeti.Probability
 theorem continuous_betaMeasure :
     Continuous (Y := ProbabilityMeasure ℝ) (fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
       (⟨betaMeasure p.1 p.2,
-        isProbabilityMeasureBeta (mem_Ioi.mp p.1.2) (mem_Ioi.mp p.2.2)⟩ :
+        isProbabilityMeasureBeta (mem_Ioi.mp p.1.property) (mem_Ioi.mp p.2.property)⟩ :
           ProbabilityMeasure ℝ)) := by
   apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
   intro f
   simp only [ProbabilityMeasure.coe_mk,
-    fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ integral_betaMeasure_eq_one_div_beta_smul p.1.2 p.2.2 f,
+    fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ integral_betaMeasure_eq_one_div_beta_smul p.1.property
+        p.2.property f,
     smul_eq_mul]
   exact continuous_one_div_beta.mul (f.continuous_integral_rpow_mul_one_sub_rpow_mul)
 

@@ -99,7 +99,7 @@ private noncomputable def multiplicityTensorMap {W W' : FDRep k (inertia A)}
         erw [LinearMap.comp_apply, cliffordTensorRepresentation_projection_tmul,
           BalancedTensorProduct.map_tmul, LinearMap.comp_apply, BalancedTensorProduct.map_tmul,
           cliffordTensorRepresentation_projection_tmul]
-        exact congrArg (fun g => BalancedTensorProduct.tmul k (End A) (N := V) g (p.1.2 x))
+        exact congrArg (fun g => BalancedTensorProduct.tmul k (End A) (N := V) g (p.val.2 x))
           (multiplicityMap_operator A s hs h (QuotientGroup.mk p) f) }
 
 private theorem multiplicityTensorMap_tmul {W W' : FDRep k (inertia A)}
