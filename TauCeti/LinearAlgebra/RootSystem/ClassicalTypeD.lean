@@ -214,7 +214,7 @@ private noncomputable def typeDRawRootEquiv (n : ℕ) : TypeDRawIndex n ≃ Type
 instance instFiniteTypeDRoot (n : ℕ) : Finite (TypeDRoot n) :=
   .of_equiv _ (typeDRawRootEquiv n)
 
-/-- There are no roots of type `D₁`: no integral vector of length one has squared length two. -/
+/-- There are no roots of type `D₁`: no vector of `ℤ¹` has squared length two. -/
 instance instIsEmptyTypeDRootOne : IsEmpty (TypeDRoot 1) :=
   have : IsEmpty (TypeDPair 1) := ⟨fun p => p.property (Subsingleton.elim _ _)⟩
   (typeDRawRootEquiv 1).symm.isEmpty

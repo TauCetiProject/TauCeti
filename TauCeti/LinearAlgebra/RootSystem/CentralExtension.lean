@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.PerfectPairing.Prod
 
 /-!
 # Extending a root datum by a central rank-one torus
@@ -83,37 +83,15 @@ theorem extendPairing_apply (x : M × ℤ) (y : N × ℤ) :
     extendPairing p x y = p x.1 y.1 + x.2 * y.2 :=
   (rfl)
 
-/-- Multiplication identifies `ℤ` with its dual. -/
-private theorem bijective_mul : Bijective (LinearMap.mul ℤ ℤ) := by
-  refine ⟨fun a b h => by simpa using LinearMap.congr_fun h 1, fun f => ⟨f 1, ?_⟩⟩
-  ext
-  simp
-
-/-- Curried, the extended pairing is the product of the two curried pairings followed by the
-identification of a product of duals with the dual of the product. -/
-private theorem extendPairing_eq_comp :
-    extendPairing p =
-      (Module.dualProdDualEquivDual ℤ N ℤ).toLinearMap ∘ₗ p.prodMap (LinearMap.mul ℤ ℤ) := by
-  ext <;> simp
-
-omit p in
-/-- The extended pairing of a perfect pairing identifies `M × ℤ` with the dual of `N × ℤ`. -/
-private theorem bijective_extendPairing {M' N' : Type*} [AddCommGroup M'] [AddCommGroup N']
-    (q : M' →ₗ[ℤ] N' →ₗ[ℤ] ℤ) [q.IsPerfPair] : Bijective (extendPairing q) := by
-  rw [extendPairing_eq_comp, LinearMap.coe_comp, LinearMap.coe_prodMap]
-  exact (LinearEquiv.bijective _).comp
-    ((LinearMap.IsPerfPair.bijective_left q).prodMap bijective_mul)
-
 /-- The flip of the extended pairing is the extended pairing of the flip. -/
 @[simp]
 theorem flip_extendPairing : (extendPairing p).flip = extendPairing p.flip := by
   ext <;> simp [mul_comm]
 
 /-- The extended pairing is perfect when `p` is. -/
-instance [p.IsPerfPair] : (extendPairing p).IsPerfPair := by
-  refine ⟨bijective_extendPairing p, ?_⟩
-  rw [flip_extendPairing]
-  exact bijective_extendPairing p.flip
+instance [p.IsPerfPair] : (extendPairing p).IsPerfPair :=
+  inferInstanceAs (p.compl₁₂ (LinearMap.fst ℤ M ℤ) (LinearMap.fst ℤ N ℤ) +
+    (LinearMap.mul ℤ ℤ).compl₁₂ (LinearMap.snd ℤ M ℤ) (LinearMap.snd ℤ N ℤ)).IsPerfPair
 
 end Pairing
 
