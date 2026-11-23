@@ -291,7 +291,7 @@ theorem IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy
 
 /-- Clipping a grid at `t` and discarding the intervals starting after `t` turns the
 elementary energy into the lower square energy of the holding on `(0,t]`. -/
-theorem ofReal_elementaryEnergy_min_ite (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0)
+private theorem ofReal_elementaryEnergy_min_ite (hτ : MonotoneOn τ (Iic n)) (t : ℝ≥0)
     (ω : Ω) :
     ENNReal.ofReal (elementaryEnergy (fun i ↦ min (τ i) t)
         (fun i ↦ if τ i ≤ t then a i else 0) n ω) =
@@ -485,5 +485,53 @@ theorem IsFilteredPreBrownianReal.tendsto_measure_exists_abs_simpleGains_gt_of_e
   exact tendsto_measure_of_le_ofReal_div_sq_add
     (fun δ hδ ↦ tendsto_measure_lt_of_tendstoInMeasure henergy hδ) fun δ hδ k ↦
       hW.measure_exists_abs_simpleGains_gt_le hcont (hgrid k) (hheight k) hε hδ.le
+
+/-- **Finite-horizon uniform elementary energy estimate.** Large gains at any observation time
+up to `T` require large lower square energy on `(0, T]`, or a fluctuation of outer probability
+at most `δ / ε²`. Heights need only be known at the left endpoints of their intervals, and the
+grid may extend beyond `T`. -/
+theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_gt_le
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (T : ℝ≥0)
+    {ε δ : ℝ} (hε : 0 < ε) :
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ n a W t ω|} ≤
+      ENNReal.ofReal (δ / ε ^ 2) + P {ω | ENNReal.ofReal δ <
+        ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+  classical
+  wlog hδ : 0 ≤ δ generalizing δ
+  · have h0 := this (δ := 0) le_rfl
+    rw [zero_div, ENNReal.ofReal_zero, zero_add] at h0
+    rw [ENNReal.ofReal_of_nonpos (not_le.mp hδ).le]
+    exact h0.trans le_add_self
+  let τ' (i : ℕ) := min (τ i) T
+  let a' (i : ℕ) := if τ i ≤ T then a i else 0
+  have hτ' : MonotoneOn τ' (Iic n) := fun i hi j hj hij ↦ min_le_min_right T (hτ hi hj hij)
+  have ha' : ∀ i < n, StronglyMeasurable[ℱ (τ' i)] (a' i) :=
+    fun i hi ↦ Finance.stronglyMeasurable_ite_le_min ha T hi
+  have hgain (t : ℝ≥0) (ht : t ≤ T) (ω : Ω) :
+      Finance.simpleGains τ' n a' W t ω = Finance.simpleGains τ n a W t ω := by
+    simp only [Finance.simpleGains_eq_sum_ite_le hτ', Finance.simpleGains_eq_sum_ite_le hτ]
+    refine sum_congr rfl fun i hi ↦ ?_
+    have hmin (u : ℝ≥0) : min (min u T) t = min u t := by rw [min_assoc, min_eq_right ht]
+    dsimp only [τ', a']
+    rw [hmin, hmin]
+    by_cases hit : τ i ≤ t
+    · simp [hit, hit.trans ht]
+    · have hti : t ≤ τ i := (not_le.1 hit).le
+      have hin : i < n := mem_range.1 hi
+      have hti1 : t ≤ τ (i + 1) := hti.trans (hτ hin.le hin (Nat.le_succ i))
+      simp [hit, min_eq_right hti, min_eq_right hti1]
+  calc
+    P {ω | ∃ t ≤ T, ε < |Finance.simpleGains τ n a W t ω|}
+        ≤ P {ω | ∃ t, ε < |Finance.simpleGains τ' n a' W t ω|} :=
+      measure_mono fun ω ⟨t, ht, hlt⟩ ↦ ⟨t, by simpa only [hgain t ht ω] using hlt⟩
+    _ ≤ ENNReal.ofReal (δ / ε ^ 2) + P {ω | δ < elementaryEnergy τ' a' n ω} :=
+      hW.measure_exists_abs_simpleGains_gt_le hcont hτ' ha' hε hδ
+    _ ≤ _ := add_le_add le_rfl (measure_mono fun ω hω ↦ by
+      simp only [mem_ofPred_eq] at hω ⊢
+      rw [← ofReal_elementaryEnergy_min_ite hτ T ω]
+      exact (ENNReal.ofReal_lt_ofReal_iff (hδ.trans_lt hω)).2 hω)
 
 end TauCeti.Probability

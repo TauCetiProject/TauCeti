@@ -22,7 +22,8 @@ import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file identifies
 `TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
 (`ae_eq_l2Integral`) and deduces zero expectation (`integral_eq_zero`), covariance
-(`integral_mul`), increment Itô isometry (`integral_sub_sq_of_memLp`), finite-horizon `L²(P)`
+(`integral_mul`), increment square integrability (`memLp_sub`) and increment Itô isometry
+(`integral_sub_sq_of_memLp`), finite-horizon `L²(P)`
 continuity (`continuous_toLp`), and for deterministic `L²` integrands identification with
 `wienerIntegral` (`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
 
@@ -121,6 +122,33 @@ theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     hKp.coeFn_toLp.mono fun _ h₂ h₁ ↦ by simp [h₁, h₂, Function.uncurry, mul_comm]).trans
     (ℱ.integral_predictableMeasure P (hI.isStronglyPredictable.mul hJ.isStronglyPredictable) t)
 
+private theorem isItoIntegral_ite_lt_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0}
+    (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ Set.univ))) :
+    IsItoIntegral ℱ P W (fun u ω ↦ if s < u then H u ω else 0)
+        (fun u ω ↦ I u ω - I (min s u) ω) ∧
+      MemLp (Function.uncurry (fun u ω ↦ if s < u then H u ω else 0)) 2
+        ((timeMeasure t).prod P) := by
+  have hcut : IsItoIntegral ℱ P W (fun u ω ↦ if s < u then H u ω else 0)
+      (fun u ω ↦ I u ω - I (min s u) ω) := by
+    simpa only [one_mul] using hI.ite_lt_mul hW s (ξ := fun _ ↦ 1) stronglyMeasurable_const
+  refine ⟨hcut, ((memLp_indicator_iff_restrict
+      (measurableSet_Ioc.prod MeasurableSet.univ).nullMeasurableSet).2 hH).ae_eq ?_⟩
+  filter_upwards [Measure.quasiMeasurePreserving_fst.tendsto_ae (ae_mem_Ioc_timeMeasure t)]
+    with p hp
+  by_cases hs : s < p.1
+  · simp [Function.uncurry, hs, hp.2]
+  · simp [Function.uncurry, hs]
+
+/-- For `s ≤ t`, if `H` has finite expected square energy on `(s, t]`, then the increment
+`I t - I s` is square integrable. -/
+theorem memLp_sub (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t)
+    (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ Set.univ))) :
+    MemLp (I t - I s) 2 P := by
+  obtain ⟨hcut, hH_mem⟩ := isItoIntegral_ite_lt_memLp hW hI hH
+  simpa only [min_eq_left hst, Pi.sub_def] using hcut.memLp hW hH_mem
+
 /-- **Itô's increment `L²` isometry.** For `s ≤ t`, the expected squared increment
 `E[(I_t - I_s)²]` equals the expected square energy of `H` over `(s, t] × Ω`. -/
 theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -128,18 +156,7 @@ theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ Set.univ))) :
     ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
       ∫ p in Ioc s t ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
-  have hcut : IsItoIntegral ℱ P W (fun u ω ↦ if s < u then H u ω else 0)
-      (fun u ω ↦ I u ω - I (min s u) ω) := by
-    simpa only [one_mul] using hI.ite_lt_mul hW s (ξ := fun _ ↦ 1) stronglyMeasurable_const
-  have hH_mem : MemLp (Function.uncurry (fun u ω ↦ if s < u then H u ω else 0)) 2
-      ((timeMeasure t).prod P) := by
-    refine ((memLp_indicator_iff_restrict
-      (measurableSet_Ioc.prod MeasurableSet.univ).nullMeasurableSet).2 hH).ae_eq ?_
-    filter_upwards [Measure.quasiMeasurePreserving_fst.tendsto_ae (ae_mem_Ioc_timeMeasure t)]
-      with p hp
-    by_cases hs : s < p.1
-    · simp [Function.uncurry, hs, hp.2]
-    · simp [Function.uncurry, hs]
+  obtain ⟨hcut, hH_mem⟩ := isItoIntegral_ite_lt_memLp hW hI hH
   have hsq := hcut.integral_sq hW hH_mem
   simp only [min_eq_left hst] at hsq
   rw [hsq, ← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]

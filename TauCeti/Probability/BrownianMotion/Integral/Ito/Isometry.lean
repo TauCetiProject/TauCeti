@@ -309,7 +309,7 @@ private theorem measure_exists_le_norm_simpleGains_sub_simpleGains_lt
     (hτ₁ : MonotoneOn τ₁ (Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Iic n₂))
     (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
     (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j))
-    {ε γ : ℝ} (hε : 0 < ε) (hγ : 0 ≤ γ) :
+    {ε γ : ℝ} (hε : 0 < ε) :
     P {ω | ∃ t ≤ T, ε < ‖Finance.simpleGains τ₁ n₁ a₁ W t ω -
         Finance.simpleGains τ₂ n₂ a₂ W t ω‖} ≤
       ENNReal.ofReal (γ / ε ^ 2) + P {ω | ENNReal.ofReal γ <
@@ -317,43 +317,18 @@ private theorem measure_exists_le_norm_simpleGains_sub_simpleGains_lt
           Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
   obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgains⟩ :=
     Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ₁ hτ₂ ha₁ ha₂
-  let ρ' (j : ℕ) := min (ρ j) T
-  let c' (j : ℕ) := if ρ j ≤ T then c j else 0
-  have hρ' : MonotoneOn ρ' (Iic N) :=
-    fun j hj k hk hjk ↦ min_le_min_right T (hρ.monotoneOn hj hk hjk)
-  have hc' : ∀ j < N, StronglyMeasurable[ℱ (ρ' j)] (c' j) :=
-    fun j hj ↦ Finance.stronglyMeasurable_ite_le_min hc T hj
-  have hgain_eq (t : ℝ≥0) (ht : t ≤ T) (ω : Ω) :
-      Finance.simpleGains ρ' N c' W t ω =
-        Finance.simpleGains τ₁ n₁ a₁ W t ω - Finance.simpleGains τ₂ n₂ a₂ W t ω := by
-    rw [← hgains W t ω, Finance.simpleGains_eq_sum_ite_le hρ',
-      Finance.simpleGains_eq_sum_ite_le hρ.monotoneOn]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    have hmin (u : ℝ≥0) : min (min u T) t = min u t := by rw [min_assoc, min_eq_right ht]
-    dsimp only [ρ', c']
-    rw [hmin, hmin]
-    by_cases hjt : ρ j ≤ t
-    · simp [hjt, hjt.trans ht]
-    · have htj : t ≤ ρ j := (not_le.1 hjt).le
-      have hjN : j < N := Finset.mem_range.1 hj
-      have htj1 : t ≤ ρ (j + 1) := htj.trans (hρ.monotoneOn hjN.le hjN (Nat.le_succ j))
-      simp [hjt, min_eq_right htj, min_eq_right htj1]
-  have henergy_eq (ω : Ω) : ENNReal.ofReal (elementaryEnergy ρ' c' N ω) =
-      ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
-        Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T := by
-    rw [ofReal_elementaryEnergy_min_ite hρ.monotoneOn T ω]
-    exact lintegral_congr fun s ↦ by rw [hhold s ω]
   calc
     P {ω | ∃ t ≤ T, ε < ‖Finance.simpleGains τ₁ n₁ a₁ W t ω -
           Finance.simpleGains τ₂ n₂ a₂ W t ω‖}
-        ≤ P {ω | ∃ t, ε < |Finance.simpleGains ρ' N c' W t ω|} :=
-      measure_mono fun ω ⟨t, ht, hlt⟩ ↦ ⟨t, by simpa only [hgain_eq t ht ω, Real.norm_eq_abs]⟩
-    _ ≤ ENNReal.ofReal (γ / ε ^ 2) + P {ω | γ < elementaryEnergy ρ' c' N ω} :=
-      hW.measure_exists_abs_simpleGains_gt_le hWc hρ' hc' hε hγ
-    _ ≤ _ := add_le_add le_rfl (measure_mono fun ω (hω : γ < _) ↦ by
-      simp only [mem_ofPred_eq] at hω ⊢
-      rw [← henergy_eq ω]
-      exact (ENNReal.ofReal_lt_ofReal_iff (hγ.trans_lt hω)).2 hω)
+        = P {ω | ∃ t ≤ T, ε < |Finance.simpleGains ρ N c W t ω|} := by
+      simp only [hgains, Real.norm_eq_abs]
+    _ ≤ ENNReal.ofReal (γ / ε ^ 2) + P {ω | ENNReal.ofReal γ <
+          ∫⁻ s, ‖Finance.simpleHolding ρ N c s ω‖ₑ ^ 2 ∂timeMeasure T} :=
+      hW.measure_exists_le_abs_simpleGains_gt_le hWc hρ.monotoneOn hc T hε
+    _ = ENNReal.ofReal (γ / ε ^ 2) + P {ω | ENNReal.ofReal γ <
+          ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω -
+            Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
+      simp_rw [hhold]
 
 /-- **Finite-horizon uniform convergence of elementary gains in outer probability.** Against an
 almost surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple
@@ -381,8 +356,8 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
     have hlim : Tendsto (fun p : ℕ × ℕ ↦ P {ω | ∃ t ≤ T, (2⁻¹ ^ m : ℝ) <
         ‖G₂ p.1 t ω - G₂ p.2 t ω‖}) (atTop ×ˢ atTop) (𝓝 0) := by
       refine tendsto_measure_of_le_ofReal_div_sq_add (ε := (2⁻¹ ^ m : ℝ)) (fun δ hδ ↦ ?_)
-        fun δ hδ p ↦ measure_exists_le_norm_simpleGains_sub_simpleGains_lt hW hWc
-          (hτ₂ p.1) (hτ₂ p.2) (ha₂ p.1) (ha₂ p.2) (by positivity) hδ.le
+        fun δ _ p ↦ measure_exists_le_norm_simpleGains_sub_simpleGains_lt hW hWc
+          (hτ₂ p.1) (hτ₂ p.2) (ha₂ p.1) (ha₂ p.2) (by positivity)
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
         (tendsto_measure_lintegral_enorm_sub_sq (l := atTop ×ˢ atTop)
           (f := fun p ↦ K₂ p.1) (g := fun p ↦ K₂ p.2) (h := fun _ ↦ H)
@@ -589,7 +564,7 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
     rw [hquot, ENNReal.ofReal_div_of_pos (by norm_num), ENNReal.ofReal_toReal hc'top]
     norm_num
   have hG_diff := (measure_exists_le_norm_simpleGains_sub_simpleGains_lt hW hWc (hτ i)
-    (hτ₂ (k m)) (ha i) (ha₂ (k m)) hε₂ hγ.le).trans
+    (hτ₂ (k m)) (ha i) (ha₂ (k m)) hε₂).trans
     (add_le_add hofReal_le ((measure_mono henergy_set).trans (measure_union_le _ _)))
   have hc4_sum : c' / 4 + c' / 4 + c' / 4 + c' / 4 = c' := by
     calc
