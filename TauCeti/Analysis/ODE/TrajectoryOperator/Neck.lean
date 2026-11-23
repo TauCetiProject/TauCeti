@@ -56,8 +56,8 @@ equation has a nonzero square-integrable solution. More precisely `F_R` grows li
 The inverse of `D_R` is explicit. Since `F_R(s) = exp s * cosh (s - R) / cosh (s + R)` and the
 second factor lies between `exp (-2 |R|)` and `exp (2 |R|)`, the solution grows at rate `1` up to
 a factor: `F_R(s) ≤ exp (4 |R|) exp (-(t - s)) F_R(t)` for all `s` and `t`. So the Green integral
-of `TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen` applies: for a finite-dimensional real
-normed space `E` and `1 ≤ p < ∞`, `D_R` is a bijection from `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)` with
+of `TauCeti.Analysis.ODE.TrajectoryOperator.ScalarGreen` applies: for a real Banach space `E`
+and `1 ≤ p < ∞`, `D_R` is a bijection from `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)` with
 `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`, and its inverse sends every `f ∈ Lᵖ(ℝ, E)` to
 
 `u(s) = -F_R(s) ∫_{t > s} f(t) / F_R(t) dt`.
@@ -69,8 +69,7 @@ satisfies `D_R ξ_R = -exp (s - R) / (cosh (s - R) cosh (s + R))`, and pointwise
 
 The operator is written in the convention `D_A u = u' + A u` of
 `TauCeti.WeakDerivStep.trajectoryOperator`, with the coefficient `A(s) = -a_R(s) • id` acting on
-a real Banach (for the kernel and the lower bound on the inverse) or finite-dimensional normed
-(for the inverse itself) space `E`. The scalar example is `E = ℝ`; `E = ℂ` is its
+a real Banach space `E`. The scalar example is `E = ℝ`; `E = ℂ` is its
 complexification, the zero Fourier mode of the cylinder operator `∂ₛ + i ∂ₜ - a_R(s)`. The other
 Fourier modes `d/ds - (a_R + 2πk)`, `k ≠ 0`, are invertible with inverse of norm at most `1` for
 every `R ≥ 0` (`TauCeti.Analysis.ODE.TrajectoryOperator.FourierMode`, which applies because
@@ -694,8 +693,8 @@ theorem exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le (R : ℝ) {e : F
 /-- **The inverse of the glued operator has norm at least `exp (2 R) / 2`.** If
 `‖u‖ ≤ C ‖D_R u‖` for every `u ∈ W^{1,2}(ℝ, F)`, with `F ≠ 0`, then `C ≥ exp (2 R) / 2`. So the
 bounded inverse of `D_R` (which exists by
-`TauCeti.WeakDerivStep.bijective_trajectoryOperator_neg_neckCoeff_smul_id` when `F` is a
-finite-dimensional normed space) blows up exponentially in the length of the neck. Its values
+`TauCeti.WeakDerivStep.bijective_trajectoryOperator_neg_neckCoeff_smul_id` when `1 ≤ p < ∞`)
+blows up exponentially in the length of the neck. Its values
 satisfy the `Lᵖ` bound `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}` by
 `TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id`, and
 `TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth` turns this into the
@@ -726,13 +725,13 @@ theorem exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff
 
 end Banach
 
-section FiniteDimensional
+section Inverse
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The `Lᵖ` value bound for the inverse of the glued operator.** On a finite-dimensional real
-normed space `E` and for `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
+/-- **The `Lᵖ` value bound for the inverse of the glued operator.** On a real Banach space `E`
+and for `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
 `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖u' - a_R u‖_{Lᵖ}`. This bounds only the `Lᵖ` norm of `u`, not its
 graph norm; `TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth` gives the
 graph-norm bound `‖u‖ ≤ (1 + (1 + ‖AL‖) * 2 exp (4 |R|)) ‖u' - a_R u‖_{Lᵖ}`. Together with the
@@ -750,10 +749,9 @@ theorem norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
     (hasDerivAt_neckSolution R) (neckSolution_pos R) (neckSolution_growth R) one_pos hAL
     (continuous_neckCoeff R) hp u
 
-/-- **The glued operator is bijective.** On a finite-dimensional real normed space `E` and for
-`1 ≤ p < ∞`, the trajectory operator `D_R u = u' - a_R u` is a bijection from `W^{1,p}(ℝ, E)`
-onto `Lᵖ(ℝ, E)`: the kernel of `d/ds + tanh` has cancelled against the cokernel of
-`d/ds - tanh`. -/
+/-- **The glued operator is bijective.** On a real Banach space `E` and for `1 ≤ p < ∞`, the
+trajectory operator `D_R u = u' - a_R u` is a bijection from `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)`:
+the kernel of `d/ds + tanh` has cancelled against the cokernel of `d/ds - tanh`. -/
 theorem bijective_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
@@ -762,8 +760,8 @@ theorem bijective_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠
   bijective_trajectoryOperator_of_scalarGrowth (hasDerivAt_neckSolution R) (neckSolution_pos R)
     (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R) hp
 
-/-- **The glued operator is surjective.** On a finite-dimensional real normed space `E` and for
-`1 ≤ p < ∞`, the trajectory operator `D_R u = u' - a_R u` maps `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)`:
+/-- **The glued operator is surjective.** On a real Banach space `E` and for `1 ≤ p < ∞`, the
+trajectory operator `D_R u = u' - a_R u` maps `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)`:
 the cokernel of `d/ds - tanh` has cancelled against the kernel of `d/ds + tanh`. -/
 theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
@@ -772,8 +770,8 @@ theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞
     (trajectoryOperator (p := p) AL).range = ⊤ :=
   LinearMap.range_eq_top.2 (bijective_trajectoryOperator_neg_neckCoeff_smul_id R hp AL hAL).2
 
-/-- **The inverse of the glued operator, explicitly.** On a finite-dimensional real normed
-space `E` and for `1 ≤ p < ∞`, if `u ∈ W^{1,p}(ℝ, E)` solves `u' - a_R u = f`, for any
+/-- **The inverse of the glued operator, explicitly.** On a real Banach space `E` and
+for `1 ≤ p < ∞`, if `u ∈ W^{1,p}(ℝ, E)` solves `u' - a_R u = f`, for any
 representative `f` of an element of `Lᵖ(ℝ, E)`, then
 
 `u(s) = -F_R(s) ∫_{t > s} f(t) / F_R(t) dt`
@@ -793,7 +791,7 @@ theorem prev_ae_eq_scalarGreenIntegral_neckSolution_of_trajectoryOperator_ae_eq 
   prev_ae_eq_scalarGreenIntegral_of_trajectoryOperator_ae_eq (hasDerivAt_neckSolution R)
     (neckSolution_pos R) (neckSolution_growth R) one_pos hAL (continuous_neckCoeff R) hp hu
 
-end FiniteDimensional
+end Inverse
 
 section InnerProduct
 

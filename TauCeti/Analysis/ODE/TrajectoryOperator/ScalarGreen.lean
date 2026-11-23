@@ -26,8 +26,8 @@ because `b` is essentially bounded) through the Green integral
 `G f (s) = -g s ∫_{t > s} f t / g t dt` of `TauCeti.Analysis.ODE.GreenIntegral.Scalar`.
 
 On every real Banach space `E` and for every `1 ≤ p ≤ ∞` the operator is injective: a solution of
-`u' = b u` is a multiple of `g`, and `g` is not in `Lᵖ`. For a finite-dimensional real normed
-space `E` and `1 ≤ p < ∞`, it satisfies `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - b u‖_{Lᵖ}`, is bijective, and
+`u' = b u` is a multiple of `g`, and `g` is not in `Lᵖ`. For `1 ≤ p < ∞`, it moreover
+satisfies `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - b u‖_{Lᵖ}`, is bijective, and
 its inverse is the Green integral: `u = G (u' - b u)` almost everywhere for every
 `u ∈ W^{1,p}(ℝ, E)`. A typical coefficient is `b → 1` at both ends, as for the operator on a neck
 glued from `d/ds + tanh` and `d/ds - tanh` (`TauCeti.Analysis.ODE.TrajectoryOperator.Neck`).
@@ -38,11 +38,11 @@ glued from `d/ds + tanh` and `d/ds - tanh` (`TauCeti.Analysis.ODE.TrajectoryOper
   on `W^{1,p}(ℝ, E)` for every real Banach space `E` and every `1 ≤ p ≤ ∞`.
 * `TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth` and
   `TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth`: the a priori
-  estimates for `d/ds - b` on `W^{1,p}(ℝ, E)`, for finite-dimensional `E`.
+  estimates for `d/ds - b` on `W^{1,p}(ℝ, E)`, for `1 ≤ p < ∞`.
 * `TauCeti.WeakDerivStep.bijective_trajectoryOperator_of_scalarGrowth`: `d/ds - b` is bijective,
-  for finite-dimensional `E`.
+  for `1 ≤ p < ∞`.
 * `TauCeti.WeakDerivStep.prev_ae_eq_scalarGreenIntegral_of_trajectoryOperator_ae_eq`: its inverse
-  is the Green integral on all of `Lᵖ(ℝ, E)`, for finite-dimensional `E`.
+  is the Green integral on all of `Lᵖ(ℝ, E)`, for `1 ≤ p < ∞`.
 
 ## References
 
@@ -137,9 +137,9 @@ theorem injective_trajectoryOperator_of_scalarGrowth [CompleteSpace E] (hb : Con
     (by rw [hprev, norm_zero, zero_mul])
   rwa [hu0, norm_zero, mul_zero] at h
 
-variable [FiniteDimensional ℝ E]
+variable [CompleteSpace E]
 
-/-- **The a priori estimate for `d/ds - b`.** Let `E` be a finite-dimensional real normed space,
+/-- **The a priori estimate for `d/ds - b`.** Let `E` be a real Banach space,
 let `b` be continuous and essentially bounded, so that `-b(s) • id` has an `L∞` class `AL`, and let
 `g` be a positive solution of `v' = b v` with `g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and
 `α > 0`. Then for `1 ≤ p < ∞` every `u ∈ W^{1,p}(ℝ, E)` satisfies
@@ -169,8 +169,8 @@ theorem norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth (hb : Continuou
   rwa [hG, ← hf] at key
 
 /-- **The graph-norm estimate for `d/ds - b`.** Under the hypotheses of
-`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth`, including that
-`E` is finite-dimensional, every `u ∈ W^{1,p}(ℝ, E)` satisfies
+`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth`, every
+`u ∈ W^{1,p}(ℝ, E)` satisfies
 `‖u‖ ≤ (1 + (1 + ‖AL‖) 2 K / α) ‖u' - b u‖_{Lᵖ}`, where `AL` is the `L∞` class of `-b(s) • id`. -/
 theorem norm_le_mul_norm_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : p ≠ ∞)
     (u : WeakDerivStep volume ⊤ p
@@ -180,9 +180,8 @@ theorem norm_le_mul_norm_trajectoryOperator_of_scalarGrowth (hb : Continuous b) 
     (norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb hp u)
 
 /-- **`d/ds - b` is surjective.** Under the hypotheses of
-`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth`, including that
-`E` is finite-dimensional, the equation `u' - b u = f` has a solution `u ∈ W^{1,p}(ℝ, E)` for
-every `f ∈ Lᵖ(ℝ, E)`. -/
+`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth`, the equation
+`u' - b u = f` has a solution `u ∈ W^{1,p}(ℝ, E)` for every `f ∈ Lᵖ(ℝ, E)`. -/
 theorem surjective_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : p ≠ ∞) :
     Function.Surjective (trajectoryOperator (p := p) AL) :=
   surjective_trajectoryOperator_of_forall_norm_le hp
@@ -190,7 +189,7 @@ theorem surjective_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : 
       (exists_prev_ae_eq_scalarGreenIntegral_and_trajectoryOperator_ae_eq hg hpos hK hα hAL
         hf.continuous hfc).imp fun _ h ↦ h.2
 
-/-- **`d/ds - b` is bijective.** Let `E` be a finite-dimensional real normed space, let `b` be
+/-- **`d/ds - b` is bijective.** Let `E` be a real Banach space, let `b` be
 continuous and essentially bounded, so that `-b(s) • id` has an `L∞` class `AL`, and let `g` be a
 positive solution of `v' = b v` with `g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and `α > 0`. Then
 for `1 ≤ p < ∞` the trajectory operator `u ↦ u' - b u` with coefficient `AL` is a bijection from
@@ -201,8 +200,8 @@ theorem bijective_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : p
     surjective_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb hp⟩
 
 /-- **The inverse of `d/ds - b` is the Green integral.** Under the hypotheses of
-`TauCeti.WeakDerivStep.bijective_trajectoryOperator_of_scalarGrowth`, including that `E` is
-finite-dimensional, if `u ∈ W^{1,p}(ℝ, E)` solves `u' - b u = f`, then
+`TauCeti.WeakDerivStep.bijective_trajectoryOperator_of_scalarGrowth`, if `u ∈ W^{1,p}(ℝ, E)`
+solves `u' - b u = f`, then
 `u s = -g s ∫_{t > s} f t / g t dt` for almost every `s`. The forcing term `f` is any
 representative of an element of `Lᵖ(ℝ, E)`: the formula holds for continuous compactly supported
 `f` by construction, and extends to all of `Lᵖ` by density, since both sides are bounded in `f`. -/
