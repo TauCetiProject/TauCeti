@@ -49,8 +49,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   than `δ` in each entry, every family with entries in `[-R, R]`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
-* `TauCeti.exists_pos_lt_abs_add_natCast`: any element avoiding `-ℕ` stays a positive distance
-  away from all `-n` (`n : ℕ`).
+* `TauCeti.exists_pos_le_abs_add_natCast`, `TauCeti.exists_pos_lt_abs_add_natCast`: any element
+  avoiding `-ℕ` stays a positive distance away from all `-n` (`n : ℕ`).
 -/
 
 public section
@@ -113,7 +113,7 @@ theorem mem_Ico_ceil_neg_iff_mem_Ioo {R : Type*} [Ring R] [LinearOrder R] [IsStr
 
 /-- In a linearly ordered ring with a natural floor, any element `x` avoiding the nonpositive
 integers `-ℕ` stays at a positive uniform distance `ε > 0` from all `-n` (`n : ℕ`). -/
-private lemma exists_pos_le_abs_add_natCast {R : Type*} [Ring R] [LinearOrder R]
+theorem exists_pos_le_abs_add_natCast {R : Type*} [Ring R] [LinearOrder R]
     [IsStrictOrderedRing R] [FloorSemiring R] {x : R} (hx : ∀ n : ℕ, x ≠ -n) :
     ∃ ε : R, 0 < ε ∧ ∀ n : ℕ, ε ≤ |x + n| := by
   rcases lt_or_ge 0 x with hx0 | hx0
