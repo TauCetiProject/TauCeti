@@ -65,6 +65,8 @@ singular chains that underlies the de Rham homomorphism to singular cohomology.
 * `TauCeti.SmoothSimplex.integral_add`, `TauCeti.SmoothSimplex.integral_neg`,
   `TauCeti.SmoothSimplex.integral_sub`, `TauCeti.SmoothSimplex.integral_smul`,
   `TauCeti.SmoothSimplex.integral_sum`: linearity.
+* `TauCeti.SmoothSimplex.integral_const`: forms of positive degree integrate to zero over constant
+  simplices.
 * `TauCeti.SmoothSimplex.integral_map`, `TauCeti.SmoothSimplex.integral_δ`,
   `TauCeti.SmoothSimplex.integral_map_eq_zero_of_lt`, `TauCeti.SmoothSimplex.integral_σ`:
   simplicial operators and degeneracy vanishing.
@@ -190,6 +192,18 @@ theorem integral_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [
 theorem integral_neg (σ : SmoothSimplex I M p) (φ : RoughForm I M F p) :
     σ.integral (-φ) = -σ.integral φ := by
   simpa only [neg_one_smul] using σ.integral_smul (-1 : ℝ) φ
+
+/-- A form of positive degree integrates to zero over a constant smooth simplex, whose derivative
+vanishes. -/
+@[simp]
+theorem integral_const (x₀ : M) (φ : RoughForm I M F (p + 1)) :
+    (const (I := I) x₀).integral φ = 0 := by
+  rw [(const x₀).integral_eq_setIntegral_mpullback φ (g := fun _ ↦ x₀)
+    (fun y ↦ (toContinuousMap_const_apply x₀ y).symm) fun _ _ ↦ mdifferentiableAt_const]
+  refine setIntegral_eq_zero_of_forall_eq_zero fun y _ ↦ ?_
+  refine (mpullback_apply (fun _ ↦ x₀) φ y _).trans ((φ x₀).map_coord_zero 0 ?_)
+  rw [mfderiv_const (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1)))) (I' := I)]
+  exact zero_apply _
 
 variable [IsManifold I 1 M]
 

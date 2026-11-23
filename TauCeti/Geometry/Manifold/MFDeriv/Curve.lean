@@ -87,7 +87,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
-  reparametrizations.
+  reparametrizations. `MDifferentiableAt.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero` is the
+  velocity of a family `f : F → M → N` along a curve of parameters at a fixed point.
 * `Filter.EventuallyEq.curveVelocity_eq`: the velocity of a curve depends only on its germ.
 * `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
@@ -108,7 +109,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   along a horizontal line exactly when its derivative in the first coordinate direction vanishes
   there.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
-  the components of a curve in a product move with the components of its velocity.
+  the components of a curve in a product move with the components of its velocity, and
+  `HasMFDerivAt.prodMk_curve` and `HasMFDerivWithinAt.prodMk_curve` are the converse.
 * `HasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp` and
   `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
   its value has the coordinate expression of its velocity as velocity.
@@ -318,6 +320,29 @@ theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
   simpa only [curveVelocityWithin_univ, curveVelocity_eq_deriv, hg.deriv] using
     curveVelocityWithin_map hf uniqueDiffWithinAt_univ
       hg.differentiableAt.mdifferentiableAt.mdifferentiableWithinAt
+
+/-- **The velocity of a family along a curve of parameters.** If `g` is a curve through a normed
+space of parameters with velocity `w`, and the uncurried family `(q, y) ↦ f q y` is differentiable
+at `(g t, y)`, then the velocity of `s ↦ f (g s) y` is the differential of the uncurried family
+applied to `(w, 0)`. -/
+theorem curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    {f : F → M → N} {g : 𝕜 → F} {w : F} {y : M}
+    (hf : MDifferentiableAt (𝓘(𝕜, F).prod I) I' (Function.uncurry f) (g t, y))
+    (hg : HasDerivAt g w t) :
+    curveVelocity I' (fun s ↦ f (g s) y) t =
+      mfderiv (𝓘(𝕜, F).prod I) I' (Function.uncurry f) (g t, y) (w, 0) := by
+  have hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (𝓘(𝕜, F).prod I) (fun s ↦ (g s, y)) t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((w, (0 : E)) : TangentSpace (𝓘(𝕜, F).prod I) (g t, y))) :=
+    -- Both derivatives are determined by their value at `1`, which agree up to `1 • 0 = 0`.
+    ((hasMFDerivAt_iff_hasFDerivAt.2 hg.hasFDerivAt).prodMk (hasMFDerivAt_const y t)).congr_mfderiv
+      (ContinuousLinearMap.ext_ring (Prod.ext rfl (smul_zero _).symm))
+  have h := curveVelocityWithin_map (s := Set.univ) hf uniqueDiffWithinAt_univ
+    hc.mdifferentiableAt.mdifferentiableWithinAt
+  rw [curveVelocityWithin_eq_of_hasMFDerivWithinAt hc.hasMFDerivWithinAt
+    uniqueDiffWithinAt_univ, curveVelocityWithin_univ] at h
+  exact h
 
 end MDifferentiableAt
 
@@ -1090,6 +1115,26 @@ theorem snd_curve
     HasMFDerivAt 𝓘(𝕜, 𝕜) I' (Prod.snd ∘ c) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2) :=
   -- Both derivatives send `r` to `r • v.2`, read in `E'`.
   ((hasMFDerivAt_snd (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+/-- A curve in a product whose components move with the two components of `v` within `s` moves
+with velocity `v` within `s`. -/
+theorem _root_.HasMFDerivWithinAt.prodMk_curve {f : 𝕜 → M} {g : 𝕜 → M'} {s : Set 𝕜}
+    {v : TangentSpace (I.prod I') (f t, g t)}
+    (hf : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I f s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.1))
+    (hg : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I' g s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2)) :
+    HasMFDerivWithinAt 𝓘(𝕜, 𝕜) (I.prod I') (fun u ↦ (f u, g u)) s t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v) :=
+  -- Both derivatives send `r` to `r • v`, read componentwise in `E × E'`.
+  (hf.prodMk hg).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+/-- A curve in a product whose components move with the two components of `v` moves with
+velocity `v`. -/
+theorem prodMk_curve {f : 𝕜 → M} {g : 𝕜 → M'} {v : TangentSpace (I.prod I') (f t, g t)}
+    (hf : HasMFDerivAt 𝓘(𝕜, 𝕜) I f t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.1))
+    (hg : HasMFDerivAt 𝓘(𝕜, 𝕜) I' g t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) (I.prod I') (fun s ↦ (f s, g s)) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v) :=
+  -- Both derivatives send `r` to `r • v`, read componentwise in `E × E'`.
+  (hf.prodMk hg).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 end Prod
 

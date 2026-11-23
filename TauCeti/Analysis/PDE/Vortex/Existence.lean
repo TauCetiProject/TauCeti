@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Asymptotics
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.EulerLagrange
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
 public import TauCeti.Analysis.PDE.Vortex.Regularity

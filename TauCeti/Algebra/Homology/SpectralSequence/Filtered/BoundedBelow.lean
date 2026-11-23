@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
 public import TauCeti.Algebra.Homology.SpectralObject.Image
+public import TauCeti.CategoryTheory.Thin
 
 /-!
 # Convergence for filtrations bounded below
@@ -29,7 +30,10 @@ This is an analogue of the `E∞` part of Weibel's Classical Convergence Theorem
 (page `r + 1` being the homology of page `r`), in the form needed when the filtration is not
 finite. From page `r` to page `r + 1`, `spectralSequencePageXToPageX` is that map of the
 spectral sequence (`TauCeti.Algebra.Homology.SpectralObject.PageHomology`), so the graded piece
-is the direct limit of the pages along the spectral sequence's own maps.
+is the direct limit of the pages along the spectral sequence's own maps. The maps onto the graded
+pieces are natural in morphisms of filtrations: they intertwine the induced morphism of spectral
+sequences with the induced map on the graded pieces
+(`CochainComplex.filtrationSpectralSequencePageXToGraded_naturality`).
 Convergence to `H^n(K)` needs in addition hypotheses in degree `n`, which this file does not
 assume: if every element of `K^n` lies in some `F_i`, the filtration of `H^n(K)` is exhaustive
 (`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), and if some stage vanishes in
@@ -57,6 +61,8 @@ filtrations.
 
 ## Main results
 
+* `CochainComplex.mem_range_filtrationFunctor_map_f_iff`: an element of the piece `G_b` of the
+  functor of a filtration comes from `G_a` exactly when its image in `K` lies in `F_a`.
 * `CochainComplex.exists_spectralSequencePageXToPageX_eq_zero`: for a functor `G` exhaustive in
   degree `n - 1`, an element of a page vanishing in `E∞` vanishes on some later page.
 * `CochainComplex.spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded`: the maps
@@ -65,6 +71,8 @@ filtrations.
   Classical Convergence Theorem** for filtrations bounded below and exhaustive: the kernel of the
   map onto the graded piece consists of the elements vanishing on some later page under
   `spectralSequencePageXToPageX`.
+* `CochainComplex.filtrationSpectralSequencePageXToGraded_naturality`: the maps onto the graded
+  pieces are natural.
 
 ## References
 
@@ -89,13 +97,6 @@ section Functor
 variable (G : EInt ⥤ CochainComplex (ModuleCat.{v} R) ℤ)
   [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)]
 
-omit [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)] in
-/-- The transition maps of `G` compose. -/
-private lemma map_comp_eq {a b c : EInt} (hab : a ≤ b) (hbc : b ≤ c) (hac : a ≤ c) :
-    G.map (homOfLE hab) ≫ G.map (homOfLE hbc) = G.map (homOfLE hac) := by
-  rw [← G.map_comp]
-  rfl
-
 /-- The map `H^n(q ≤ a) ⟶ H^n(q ≤ b)` of the spectral object of `G`, read through
 `spectralObjectHIsoCokernel`, is the map in cohomology of `G_a / G_q ⟶ G_b / G_q`. -/
 @[elementwise]
@@ -105,7 +106,7 @@ private lemma H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom {q a b 
         (spectralObjectHIsoCokernel G (homOfLE (hqa.trans hab)) n).hom =
       (spectralObjectHIsoCokernel G (homOfLE hqa) n).hom ≫ HomologicalComplex.homologyMap
         (cokernel.map _ _ (𝟙 _) (G.map (homOfLE hab))
-          (by rw [Category.id_comp, map_comp_eq])) n := by
+          (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n := by
   rw [spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom]
   simp [twoδ₂Toδ₁']
 
@@ -118,24 +119,25 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
     (y : (cokernel (G.map (homOfLE (show (q : EInt) ≤ j by simpa using hqj)))).homology n)
     (hy : HomologicalComplex.homologyMap (cokernel.map _
       (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤))) (𝟙 _)
-      (G.map (homOfLE (le_top : (j : EInt) ≤ ⊤))) (by rw [Category.id_comp, map_comp_eq])) n y =
-        0) :
+      (G.map (homOfLE (le_top : (j : EInt) ≤ ⊤)))
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n y = 0) :
     ∃ (j' : ℤ) (hjj' : j ≤ j'), HomologicalComplex.homologyMap (cokernel.map _
       (G.map (homOfLE (show (q : EInt) ≤ j' by simp; lia))) (𝟙 _)
       (G.map (homOfLE (show (j : EInt) ≤ j' by simpa using hjj')))
-      (by rw [Category.id_comp, map_comp_eq])) n y = 0 := by
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n y = 0 := by
   -- The quotients `G_a / G_q` form a directed family of subcomplexes of `G_⊤ / G_q`.
   let L (a : {a : ℤ // q ≤ a}) : CochainComplex (ModuleCat.{v} R) ℤ :=
     cokernel (G.map (homOfLE (show (q : EInt) ≤ a.val by simpa using a.property)))
   let φ (a : {a : ℤ // q ≤ a}) :
       L a ⟶ cokernel (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤))) :=
-    cokernel.map _ _ (𝟙 _) (G.map (homOfLE le_top)) (by rw [Category.id_comp, map_comp_eq])
+    cokernel.map _ _ (𝟙 _) (G.map (homOfLE le_top))
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)
   have hφ (a : {a : ℤ // q ≤ a}) : Mono (φ a) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by
-      rw [Category.id_comp, map_comp_eq]⟩)
+      rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map⟩)
   let ψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.val) : L ⟨j, hqj⟩ ⟶ L a :=
     cokernel.map _ _ (𝟙 _) (G.map (homOfLE (show (j : EInt) ≤ a.val by simpa using ha)))
-      (by rw [Category.id_comp, map_comp_eq])
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)
   have hψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.val) : ψ a ha ≫ φ a = φ ⟨j, hqj⟩ := by
     apply coequalizer.hom_ext
     simp only [ψ, φ, cokernel.π_desc, cokernel.π_desc_assoc, Category.assoc, ← G.map_comp_assoc]
@@ -152,7 +154,8 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
         simp))).f (n - 1) w), ?_⟩
     simp only [φ, ← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f, Category.assoc,
       cokernel.π_desc]
-    rw [← Category.assoc, map_comp_eq]
+    rw [← Category.assoc, ← G.map_comp]
+    rfl
   obtain ⟨a, ha, hya⟩ := HomologicalComplex.exists_homologyMap_eq_zero_of_injective n φ
     (fun a ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) (m := n - 1) (by simp)
     (i := ⟨j, hqj⟩) (P := fun a ↦ j ≤ a.val) ψ hψ hcover _ hy
@@ -236,20 +239,34 @@ section Filtration
 
 variable {K : CochainComplex (ModuleCat.{v} R) ℤ} (F : ℤ → Subobject K) (hF : Monotone F)
 
+/-- An element of the piece `G_b` of the functor of a filtration comes from the piece `G_a`,
+`a ≤ b`, exactly when its image in `K` lies in the subcomplex `F_a`. -/
+lemma mem_range_filtrationFunctor_map_f_iff {a : ℤ} {b : EInt} (hab : (a : EInt) ≤ b) {m : ℤ}
+    (y : ((filtrationFunctor F hF).obj b).X m) :
+    y ∈ LinearMap.range (((filtrationFunctor F hF).map (homOfLE hab)).f m).hom ↔
+      (filtrationFunctorArrow F hF b).f m y ∈ LinearMap.range ((F a).arrow.f m).hom := by
+  constructor
+  · rintro ⟨z, rfl⟩
+    refine ⟨(eqToHom (filtrationFunctor_obj_coe F hF a)).f m z, ?_⟩
+    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f,
+      ← HomologicalComplex.comp_f, filtrationFunctor_map_comp_arrow, filtrationFunctorArrow_coe]
+  · rintro ⟨u, hu⟩
+    refine ⟨(eqToHom (filtrationFunctor_obj_coe F hF a).symm).f m u,
+      (ModuleCat.mono_iff_injective ((filtrationFunctorArrow F hF b).f m)).1 inferInstance ?_⟩
+    -- Both sides are the image of `u` in `K`, through `F_a ⟶ G_a ⟶ G_b ⟶ K`.
+    rw [← hu, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+      ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
+      filtrationFunctor_map_comp_arrow, eqToHom_comp_filtrationFunctorArrow]
+
 /-- An exhaustive filtration gives an exhaustive functor: every element of `K = G_⊤` in degree
 `m` comes from some `G_i = F_i`. -/
-private lemma exists_filtrationFunctor_map_f_eq {m : ℤ}
+lemma exists_filtrationFunctor_map_f_eq {m : ℤ}
     (hex : ∀ x : K.X m, ∃ i, x ∈ LinearMap.range ((F i).arrow.f m).hom)
     (x : ((filtrationFunctor F hF).obj ⊤).X m) :
     ∃ (i : ℤ) (y : ((filtrationFunctor F hF).obj i).X m),
-      ((filtrationFunctor F hF).map (homOfLE (le_top : (i : EInt) ≤ ⊤))).f m y = x := by
-  obtain ⟨i, y, hy⟩ := hex ((filtrationFunctorArrow F hF ⊤).f m x)
-  refine ⟨i, (eqToHom (filtrationFunctor_obj_coe F hF i).symm).f m y,
-    (ModuleCat.mono_iff_injective ((filtrationFunctorArrow F hF ⊤).f m)).1 inferInstance ?_⟩
-  -- Both sides are the image of `y` in `K`, through `F_i ⟶ G_i ⟶ G_⊤ ⟶ K`.
-  rw [← hy, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
-    filtrationFunctor_map_comp_arrow, eqToHom_comp_filtrationFunctorArrow]
+      ((filtrationFunctor F hF).map (homOfLE (le_top : (i : EInt) ≤ ⊤))).f m y = x :=
+  let ⟨i, hi⟩ := hex ((filtrationFunctorArrow F hF ⊤).f m x)
+  ⟨i, (mem_range_filtrationFunctor_map_f_iff F hF le_top x).2 hi⟩
 
 /-- **The page objects map onto the graded pieces of the abutment.** Let `pq = (p, q)` and
 `n = p + q`, and suppose that the stage `F_s` vanishes in degree `n + 1`. On every page `r ≥ 2`
@@ -296,6 +313,27 @@ lemma spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded (r r'
     filtrationSpectralSequencePageXToGraded F hF r hr pq hs hrs := by
   rw [filtrationSpectralSequencePageXToGraded_def, filtrationSpectralSequencePageXToGraded_def,
     spectralSequencePageXToPageX_spectralSequencePageXToEInfty_assoc]
+
+/-- **The maps onto the graded pieces are natural.** Let `α` be a morphism between the functors of
+increasing filtrations `F` of `K` and `G` of `L` whose stages `F_s` and `G_s` vanish in degree
+`p + q + 1`. On every page `r ≥ 2` with `q - r + 2 ≤ s`, the epimorphisms
+`filtrationSpectralSequencePageXToGraded` from the objects at `(p, q)` onto the graded pieces
+`F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtrations of the abutments intertwine the morphism of
+spectral sequences induced by `α` with the map it induces on these graded pieces. -/
+@[reassoc]
+lemma filtrationSpectralSequencePageXToGraded_naturality {L : CochainComplex (ModuleCat.{v} R) ℤ}
+    (G : ℤ → Subobject L) (hG : Monotone G) (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG)
+    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) {s : ℤ}
+    (hFs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
+    (hGs : IsZero ((G s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
+    (hrs : pq.2 - r + 2 ≤ s) :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq ≫
+        filtrationSpectralSequencePageXToGraded G hG r hr pq hGs hrs =
+      filtrationSpectralSequencePageXToGraded F hF r hr pq hFs hrs ≫
+        abutmentGradedMap (spectralObjectMap α) pq.2 (pq.1 + pq.2) := by
+  simp only [filtrationSpectralSequencePageXToGraded_def, spectralSequenceMap_hom,
+    spectralSequencePageMap_f]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
 
 /-- **An analogue of Weibel's Classical Convergence Theorem for filtrations bounded below**, for
 the canonical maps `spectralSequencePageXToPageX` between pages. Let `pq = (p, q)` and

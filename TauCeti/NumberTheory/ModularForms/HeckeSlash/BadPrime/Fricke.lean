@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.BadPrime.Basic
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.ModularForms.Fricke.CharacterSpace
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # `U_p 𝒲_N U_p` when the nebentypus is not defined modulo `N / p`
@@ -62,18 +63,22 @@ variable {N p : ℕ} {k : ℤ}
 
 /-- The matrix `!![1, b; c M, c M b + 1] = !![1, 0; c M, 1] * !![1, b; 0, 1]` of `SL(2, ℤ)`. -/
 private def lowerShear (M : ℕ) (c b : ℤ) : SL(2, ℤ) :=
-  ⟨!![1, b; c * M, c * M * b + 1], by rw [Matrix.det_fin_two_of]; ring⟩
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (c * M) *
+    Matrix.SpecialLinearGroup.transvection (zero_ne_one : (0 : Fin 2) ≠ 1) b
 
 /-- The entries of `lowerShear M c b`. -/
 private lemma coe_lowerShear (M : ℕ) (c b : ℤ) :
-    (lowerShear M c b : Matrix (Fin 2) (Fin 2) ℤ) = !![1, b; c * M, c * M * b + 1] := (rfl)
+    (lowerShear M c b : Matrix (Fin 2) (Fin 2) ℤ) = !![1, b; c * M, c * M * b + 1] := by
+  simp [lowerShear]
 
 /-- The lower-left entry of `lowerShear M c b` is `c M`. -/
-private lemma lowerShear_one_zero (M : ℕ) (c b : ℤ) : lowerShear M c b 1 0 = c * M := (rfl)
+private lemma lowerShear_one_zero (M : ℕ) (c b : ℤ) : lowerShear M c b 1 0 = c * M := by
+  simp [coe_lowerShear]
 
 /-- The lower-right entry of `lowerShear M c b` is `c M b + 1`. -/
 private lemma lowerShear_one_one (M : ℕ) (c b : ℤ) :
-    lowerShear M c b 1 1 = c * M * b + 1 := (rfl)
+    lowerShear M c b 1 1 = c * M * b + 1 := by
+  simp [coe_lowerShear]
 
 /-- The slash by `lowerShear M c b` depends only on `c` and `b` modulo `p`, where `M = N / p`. -/
 private lemma slash_lowerShear_congr {G : ℍ → ℂ} {ψ : (ZMod N)ˣ →* ℂˣ}

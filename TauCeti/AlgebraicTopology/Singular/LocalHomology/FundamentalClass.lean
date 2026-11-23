@@ -231,22 +231,10 @@ theorem eq_localHomologyMap_fundamentalClassOn {S : Set M} (hS : IsCompact S) {T
         (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom (o x).val) :
     γ = localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨ι, hι.continuous⟩ h.subset n
       (o.fundamentalClassOn hn hS) := by
-  have := isIso_localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    ⟨ι, hι.continuous⟩ hι h hT hTι n
-  set a := localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    ⟨ι, hι.continuous⟩ h.subset n
-  -- The preimage of `γ` under the excision isomorphism `a` restricts to the local orientation at
-  -- every point of `S`.
-  suffices hδ : inv a γ = o.fundamentalClassOn hn hS by
-    rw [← hδ, ← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
-  refine o.eq_fundamentalClassOn hn hS fun x hx ↦
-    ConcreteCategory.injective_of_mono_of_preservesPullback
-      (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom ?_
-  have hxT : ι x ∈ T := h.symm.subset hx
-  rw [← ConcreteCategory.comp_apply,
-    ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι h.subset hxT,
-    ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id,
-    ModuleCat.id_apply, hγ x hxT]
+  subst h
+  refine localHomology_ext_of_isOpenEmbedding _ hn hι hT hTι hS fun x hx ↦ ?_
+  rw [hγ x hx, localHomologyMap_comp_localHomologyRestriction_singleton_apply _ hι _ hx,
+    o.localHomologyRestriction_fundamentalClassOn hn hS hx]
 
 open Topology
 
@@ -624,6 +612,14 @@ theorem fundamentalClassEquiv_apply (c : ℤ) :
     o.fundamentalClassEquiv hn c = c • o.fundamentalClass hn :=
   int_smul_eq_zsmul _ c _
 
+include o hn in
+/-- The top homology `Hₙ(M; ℤ)` of a compact connected oriented manifold is nontrivial, being
+isomorphic to `ℤ` through the fundamental class. -/
+theorem nontrivial_singularHomology :
+    Nontrivial ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ) :=
+  (o.fundamentalClassEquiv hn).symm.toEquiv.nontrivial
+
 /-- On a compact connected oriented manifold, every class of `Hₙ(M; ℤ)` is an integer multiple of
 the fundamental class. -/
 theorem exists_eq_zsmul_fundamentalClass
@@ -801,11 +797,7 @@ theorem isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top {M : 
     [TopologicalSpace M] {x : M} {d : ℕ}
     {z : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) d} :
     IsLocalOrientation x d z ↔ ℤ ∙ (TopPair.uliftIntSingularHomologyIso _ d).hom z = ⊤ := by
-  rw [ModuleCat.span_singleton_apply_eq_top_iff, Submodule.span_singleton_eq_top_iff,
-    isLocalOrientation_iff]
-  -- `IsLocalOrientation` uses the `ℤ`-action of the additive group, `span` the module action.
-  exact forall_congr' fun _ ↦ exists_congr fun c ↦
-    Eq.congr_left (int_smul_eq_zsmul _ c _).symm
+  rw [ModuleCat.span_singleton_apply_eq_top_iff, isLocalOrientation_iff_span_eq_top]
 
 /-- A class of `Hₙ(M, M ∖ S; ULift ℤ)` restricting to a local orientation at `x ∈ S` restricts,
 read with coefficients `ℤ`, to a generator of `Hₙ(M, M ∖ {x}; ℤ)`, since the change of
