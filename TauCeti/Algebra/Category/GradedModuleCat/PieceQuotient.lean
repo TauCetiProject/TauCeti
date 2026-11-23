@@ -21,6 +21,8 @@ with respect to morphisms in `GradedModuleCat 𝒜` via `Submodule.mapQ`.
 ## Main definitions
 
 * `TauCeti.GradedModuleCat.pieceSubmodule`: the homogeneous piece `Mₚ` as an `A₀`-submodule of `M`.
+* `TauCeti.GradedModuleCat.pieceSubmoduleEquiv`: `k`-linear identification of `pieceSubmodule M p`
+  with `M.grading.piece p`.
 * `TauCeti.GradedModuleCat.positiveSubmodule`: the positive-degree action `A₊ M` as an
   `A₀`-submodule of `M`.
 * `TauCeti.GradedModuleCat.PieceQuotient`: the degree-`p` quotient `(M / A₊ M)ₚ` as an
@@ -47,7 +49,6 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
 /-- The homogeneous piece `Mₚ`, as a module over the degree-zero subalgebra. -/
-@[expose]
 def pieceSubmodule (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
     Submodule (SetLike.GradeZero.subalgebra 𝒜) M where
   __ := M.grading.piece p
@@ -62,8 +63,32 @@ theorem mem_pieceSubmodule {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
     x ∈ pieceSubmodule M p ↔ x ∈ M.grading.piece p :=
   Iff.rfl
 
+/-- Viewing `pieceSubmodule M p` over `k` recovers the degree-`p` piece `M.grading.piece p`. -/
+def pieceSubmoduleEquiv (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
+    pieceSubmodule M p ≃ₗ[k] M.grading.piece p where
+  toFun x := ⟨x.val, mem_pieceSubmodule.mp x.property⟩
+  invFun x := ⟨x.val, mem_pieceSubmodule.mpr x.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- Applying `pieceSubmoduleEquiv` extracts the element of `M.grading.piece p`. -/
+@[simp]
+theorem pieceSubmoduleEquiv_apply (M : GradedModuleCat.{v} 𝒜) (p : ℤ)
+    (x : pieceSubmodule M p) :
+    pieceSubmoduleEquiv M p x = ⟨x.val, mem_pieceSubmodule.mp x.property⟩ := by
+  rfl
+
+/-- Applying `(pieceSubmoduleEquiv M p).symm` packages an element of `M.grading.piece p` as a
+term of `pieceSubmodule M p`. -/
+@[simp]
+theorem pieceSubmoduleEquiv_symm_apply (M : GradedModuleCat.{v} 𝒜) (p : ℤ)
+    (x : M.grading.piece p) :
+    (pieceSubmoduleEquiv M p).symm x = ⟨x.val, mem_pieceSubmodule.mpr x.property⟩ := by
+  rfl
+
 /-- The positive-degree action `A₊ M`, as a module over the degree-zero subalgebra. -/
-@[expose]
 def positiveSubmodule (M : GradedModuleCat.{v} 𝒜) :
     Submodule (SetLike.GradeZero.subalgebra 𝒜) M where
   __ := (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)
@@ -132,7 +157,8 @@ def pieceQuotientHom {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ) :
 theorem pieceQuotientHom_apply {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ)
     (x : pieceSubmodule M p) :
     pieceQuotientHom f p (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨f.hom x.val, map_mem f x.property⟩ :=
+      Submodule.Quotient.mk
+        ⟨f.hom x.val, mem_pieceSubmodule.mpr (map_mem f (mem_pieceSubmodule.mp x.property))⟩ :=
   Submodule.mapQ_apply _ _ _ _
 
 /-- `pieceQuotientHom` sends the identity morphism to the identity linear map. -/

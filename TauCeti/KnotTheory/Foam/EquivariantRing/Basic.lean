@@ -129,7 +129,11 @@ theorem X_mem_grading (N : ℕ) (i : Fin N) :
 /-- `EquivariantRing N` vanishes in strictly negative degrees. -/
 theorem grading_eq_bot_of_lt_zero (N : ℕ) {d : ℤ} (hd : d < 0) : grading N d = ⊥ := by
   rw [grading_def]
-  exact weightedHomogeneousSubmodule_eq_bot_of_lt_zero ℤ (weight_nonneg N) hd
+  exact MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero ℤ (weight_nonneg N) hd
+
+/-- `EquivariantRing N` vanishes in all strictly negative degrees. -/
+theorem grading_neg_eq_bot (N : ℕ) (d : ℤ) (hd : d < 0) : grading N d = ⊥ :=
+  grading_eq_bot_of_lt_zero N hd
 
 private theorem weight_eq_two_mul (N : ℕ) (c : Fin N →₀ ℕ) :
     Finsupp.weight (weight N) c =
@@ -141,8 +145,9 @@ private theorem weight_eq_two_mul (N : ℕ) (c : Fin N →₀ ℕ) :
   have hcomp : weight N = f ∘ (fun i : Fin N ↦ (i : ℕ) + 1) := by
     ext i
     simp [f, weight_apply]
-  rw [hcomp, Finsupp.weight_comp_eq_apply_linearCombination]
-  rfl
+  rw [hcomp, Finsupp.weight_comp_eq_apply_linearCombination, Finsupp.linearCombination_apply,
+    Finsupp.weight_apply]
+  simp [f, smul_eq_mul]
 
 /-- Every monomial exponent vector `c : Fin N →₀ ℕ` has even quantum weight in `EquivariantRing N`.
 -/
@@ -162,7 +167,12 @@ theorem grading_eq_bot_of_odd (N : ℕ) {d : ℤ} (hd : Odd d) : grading N d = �
 theorem grading_zero_eq_range (N : ℕ) :
     grading N 0 = LinearMap.range (Algebra.linearMap ℤ (EquivariantRing N)) := by
   rw [grading_def]
-  exact weightedHomogeneousSubmodule_zero_eq_range ℤ (weight_pos N)
+  exact MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range ℤ (weight_pos N)
+
+/-- Every degree-zero element of `EquivariantRing N` lies in the image of `ℤ`. -/
+theorem mem_range_of_mem_grading_zero (N : ℕ) (a : EquivariantRing N) (ha : a ∈ grading N 0) :
+    a ∈ LinearMap.range (Algebra.linearMap ℤ (EquivariantRing N)) :=
+  grading_zero_eq_range N ▸ ha
 
 /-- Membership in `grading N (2 * m)` (`m : ℕ`) is equivalent to `ℕ`-weighted homogeneity of weight
 `m` for the standard elementary-symmetric weights `i ↦ i + 1`. -/

@@ -78,6 +78,8 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 consists of the elements of `I` of degree `p` in `A`. -/
 abbrev ofIdeal (I : Ideal A) (hI : I.IsHomogeneous 𝒜) : GradedModuleCat.{uA} 𝒜 :=
   (regular (𝒜 := 𝒜)).submoduleObj I fun p x hx ↦ by
+    -- `(regular (𝒜 := 𝒜)).grading` is definitionally `InternalGrading.ofDecomposition 𝒜`;
+    -- `change` aligns the `Decomposition` instance on `.piece` before rewriting.
     change (DirectSum.decompose (InternalGrading.ofDecomposition 𝒜).piece x p : A) ∈ I
     rw [InternalGrading.coe_decompose_ofDecomposition_piece_apply]
     exact hI p hx

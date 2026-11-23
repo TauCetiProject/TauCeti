@@ -61,8 +61,7 @@ theorem exists_homogeneous_splitting_of_idempotent (N : ℕ) {I : Type*} [Finite
       (∀ (q : ℤ) (v : I → EquivariantRing N),
         (∀ j, v j ∈ grading N (q - s j)) → ∀ i, π v i ∈ grading N (q - d i)) :=
   exists_homogeneous_splitting_of_idempotent_of_connected
-    (𝒜 := grading N) (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
-    (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s p hp hhom
+    (𝒜 := grading N) (grading_neg_eq_bot N) (mem_range_of_mem_grading_zero N) s p hp hhom
 
 end EquivariantRing
 
@@ -84,7 +83,7 @@ theorem exists_homogeneous_basis_range_idempotent (N m : ℕ) (s : Fin m → ℤ
       ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) :=
   exists_homogeneous_basis_range_idempotent_of_connected
     (𝒜 := EquivariantRing.grading N)
-    (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
-    (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha) s p hp hhom
+    (EquivariantRing.grading_neg_eq_bot N)
+    (EquivariantRing.mem_range_of_mem_grading_zero N) s p hp hhom
 
 end TauCeti

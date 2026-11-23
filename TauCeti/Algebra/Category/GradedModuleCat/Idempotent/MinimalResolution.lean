@@ -289,13 +289,14 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
   choose y hy using fun p (S : s p) => Submodule.Quotient.mk_surjective _ (q p S)
   let m : (Σ p, s p) → M := fun j => ((f j.1 j.2 • y j.1 j.2 : pieceSubmodule M j.1) : M)
   have hmq (p : ℤ) (S : s p) : pieceQuotientMap M p (m ⟨p, S⟩) = q p S := by
-    rw [pieceQuotientMap_of_mem (f p S • y p S).property]
+    rw [pieceQuotientMap_of_mem (mem_pieceSubmodule.mp (f p S • y p S).property)]
     simp only [Subtype.coe_eta, Submodule.Quotient.mk_smul, hy, hfq]
   have hmq_ne {p p' : ℤ} (S : s p') (h : p' ≠ p) : pieceQuotientMap M p (m ⟨p', S⟩) = 0 :=
-    pieceQuotientMap_of_mem_ne (f p' S • y p' S).property h
+    pieceQuotientMap_of_mem_ne (mem_pieceSubmodule.mp (f p' S • y p' S).property) h
   refine ⟨Σ p, s p, fun j => (f j.1 j.2 : A), fun j => j.1, m,
     fun j => (hf j.1 j.2).map (SetLike.GradeZero.subalgebra 𝒜).val, fun j => (f j.1 j.2).property,
-    fun j => (f j.1 j.2 • y j.1 j.2).property, fun j => ?_, fun ⟨p, S⟩ h => hq0 p S ?_, ?_, ?_⟩
+    fun j => mem_pieceSubmodule.mp (f j.1 j.2 • y j.1 j.2).property, fun j => ?_,
+    fun ⟨p, S⟩ h => hq0 p S ?_, ?_, ?_⟩
   · simp only [m, ← Subalgebra.smul_def, ← Submodule.coe_smul, smul_smul, (hf j.1 j.2).eq]
   · rw [← hmq, h, map_zero]
   · -- Independence: project to the degree-`p` piece of `M / A₊ M`, where the summands are

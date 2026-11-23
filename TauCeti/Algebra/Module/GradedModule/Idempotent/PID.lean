@@ -139,6 +139,6 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
       ← GradedModuleCat.coe_rangeEquivRangeObj_apply s p hhom (equivRange.symm (b i)),
       equivRange.apply_symm_apply]
   exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s (d i) _).mp
-    (hval ▸ (InternalGrading.mem_submodule_piece _ _ _).mp (hb i))
+    (hval ▸ (GradedModuleCat.mem_rangeObjOfPiEnd_piece_iff s p hhom).mp (hb i))
 
 end TauCeti

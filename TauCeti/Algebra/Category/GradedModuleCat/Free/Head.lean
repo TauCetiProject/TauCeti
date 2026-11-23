@@ -126,8 +126,7 @@ omit [FaithfulSMul k A] in
 private def freeHeadLift {I : Type uI} (s : I → ℤ) (q : ℤ) [Fintype {j : I // s j = q}] :
     ({j : I // s j = q} → k) →ₗ[k] (free 𝒜 s).grading.piece q :=
   Fintype.linearCombination k fun j : {j : I // s j = q} ↦
-    ⟨freeGenerator (𝒜 := 𝒜) (d := s) j.val, by
-      simpa [j.property] using freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) j.val⟩
+    ⟨freeGenerator (𝒜 := 𝒜) (d := s) j.val, freeGenerator_mem_free_piece_of_eq j.property⟩
 
 private theorem freeHeadCoord_freeHeadLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
@@ -165,17 +164,16 @@ def freePieceQuotientEquiv (hneg : ∀ i < 0, 𝒜 i = ⊥)
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}] :
     PieceQuotient (free 𝒜 s) q ≃ₗ[k] ({j : I // s j = q} → k) :=
   let P := (positiveSubmodule (free 𝒜 s)).comap (pieceSubmodule (free 𝒜 s) q).subtype
-  let ePiece : pieceSubmodule (free 𝒜 s) q ≃ₗ[k] (free 𝒜 s).grading.piece q :=
-    { toFun := fun x ↦ ⟨x.val, x.property⟩
-      invFun := fun x ↦ ⟨x.val, x.property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
+  let ePiece := pieceSubmoduleEquiv (free 𝒜 s) q
   let f : pieceSubmodule (free 𝒜 s) q →ₗ[k] ({j : I // s j = q} → k) :=
     (freeHeadCoord hneg hzero s q).comp ePiece.toLinearMap
-  have hker : P.restrictScalars k = LinearMap.ker f :=
-    Submodule.ext fun x ↦ (freeHeadCoord_eq_zero_iff hneg hzero s q ⟨x.val, x.property⟩).symm
+  have hker : P.restrictScalars k = LinearMap.ker f := by
+    ext x
+    rw [Submodule.restrictScalars_mem, LinearMap.mem_ker, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, freeHeadCoord_eq_zero_iff]
+    dsimp only [P, ePiece]
+    rw [Submodule.mem_comap, Submodule.coe_subtype, mem_positiveSubmodule,
+      pieceSubmoduleEquiv_apply]
   have hsurj : Function.Surjective f :=
     (freeHeadCoord_surjective hneg hzero s q).comp ePiece.surjective
   (Submodule.Quotient.restrictScalarsEquiv k P).symm.trans
@@ -188,9 +186,11 @@ theorem freePieceQuotientEquiv_mk (hneg : ∀ i < 0, 𝒜 i = ⊥)
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}]
     (x : pieceSubmodule (free 𝒜 s) q) :
     freePieceQuotientEquiv hneg hzero s q (Submodule.Quotient.mk x) =
-      freeHeadCoord hneg hzero s q ⟨x.val, x.property⟩ := by
-  simp [freePieceQuotientEquiv]
-  rfl
+      freeHeadCoord hneg hzero s q ⟨x.val, mem_pieceSubmodule.mp x.property⟩ := by
+  rw [freePieceQuotientEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, pieceSubmoduleEquiv_apply]
 
 /-- Applying `(freePieceQuotientEquiv hneg hzero s q).symm` to `Pi.single u c` gives the
 `c`-multiple of the quotient class of the `u`-th free generator. -/
@@ -199,20 +199,15 @@ theorem freePieceQuotientEquiv_symm_single (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}]
     [DecidableEq {j : I // s j = q}] (u : {j : I // s j = q}) (c : k) :
-  -- `freeGenerator_mem_free_piece` proves membership in degree `s u.val`; `Eq.mp` transports
-  -- this proof along `u.property : s u.val = q` to match `pieceSubmodule (free 𝒜 s) q`.
-  (freePieceQuotientEquiv hneg hzero s q).symm (Pi.single u c) =
+    (freePieceQuotientEquiv hneg hzero s q).symm (Pi.single u c) =
       c • Submodule.Quotient.mk
-        (⟨freeGenerator u.val, mem_pieceSubmodule.mpr <|
-          Eq.mp (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 s).grading.piece p) u.property)
-            (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) u.val)⟩ :
+        (⟨freeGenerator u.val,
+            mem_pieceSubmodule.mpr (freeGenerator_mem_free_piece_of_eq u.property)⟩ :
           pieceSubmodule (free 𝒜 s) q) := by
   cases nonempty_fintype {j : I // s j = q}
   rw [LinearEquiv.symm_apply_eq, map_smul, freePieceQuotientEquiv_mk]
   have hsingle : freeHeadLift (𝒜 := 𝒜) s q (Pi.single u c) =
-      c • ⟨freeGenerator u.val,
-        Eq.mp (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 s).grading.piece p) u.property)
-          (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) u.val)⟩ :=
+      c • ⟨freeGenerator u.val, freeGenerator_mem_free_piece_of_eq u.property⟩ :=
     Fintype.linearCombination_apply_single k _ u c
   have hcoord := freeHeadCoord_freeHeadLift hneg hzero s q (Pi.single u c)
   rw [hsingle, map_smul] at hcoord

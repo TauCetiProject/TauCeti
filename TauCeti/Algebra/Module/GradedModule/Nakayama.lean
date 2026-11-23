@@ -24,9 +24,8 @@ projective resolutions: maps to modules annihilated by `A₊` see precisely this
 Neither projectivity nor semisimplicity is needed for the generation criterion. Boundedness below
 is essential; no finite-generation hypothesis is required when a lower bound is supplied.
 
-The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
-scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
-and `y` of degree `p - i`.
+The homogeneity and degree-zero stability of `A₊ M` come from
+`TauCeti.Algebra.Module.GradedModule.PositiveAction`.
 
 ## References
 

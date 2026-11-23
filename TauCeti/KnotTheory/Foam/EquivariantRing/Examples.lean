@@ -56,8 +56,8 @@ theorem id_shift_three_degree (N : ℕ) :
   obtain ⟨n, b, d, hb⟩ := exists_homogeneous_basis_range_idempotent N 1 (fun _ ↦ 3) LinearMap.id
     (LinearMap.comp_id _) (fun _ _ hv j ↦ hv j)
   refine ⟨n, b, d, hb, GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
-    (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
-    (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha)
+    (EquivariantRing.grading_neg_eq_bot N)
+    (EquivariantRing.mem_range_of_mem_grading_zero N)
     (fun _ ↦ 3) 0 (w := fun _ ↦ 1) (fun v ↦ funext fun j ↦ ?_) rfl hw b d hb⟩
   rw [Fin.eq_zero j]
   simp
@@ -87,8 +87,8 @@ theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
     (idempotent_of_apply_eq_smul 0 (fun _ ↦ rfl) rfl)
     (InternalGrading.homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
   exact ⟨n, basis, d, hb, GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
-    (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
-    (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha)
+    (EquivariantRing.grading_neg_eq_bot N)
+    (EquivariantRing.mem_range_of_mem_grading_zero N)
     ![a, b] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
 /-- Off-diagonal projection `p(x, y) = (x, e₁ x)` on shifts `![2, 0]` for `N + 1 ≥ 1`: `p` is
@@ -120,8 +120,8 @@ theorem e1_offDiag_degree (N : ℕ) :
     (InternalGrading.homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
   exact ⟨hp, n, basis, d, hb,
     GradedModuleCat.multiset_map_eq_singleton_of_homogeneous_basis_range
-      (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero (N + 1) hm)
-      (fun _ ha ↦ EquivariantRing.grading_zero_eq_range (N + 1) ▸ ha)
+      (EquivariantRing.grading_neg_eq_bot (N + 1))
+      (EquivariantRing.mem_range_of_mem_grading_zero (N + 1))
       ![2, 0] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
 end TauCeti.EquivariantRing.Examples

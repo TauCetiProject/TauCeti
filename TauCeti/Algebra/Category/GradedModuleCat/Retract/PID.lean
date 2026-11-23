@@ -158,7 +158,7 @@ private theorem surjective_freeLift_of_retractHeadBasis (hneg : ∀ i < 0, 𝒜 
     have hmk0 : (Submodule.Quotient.mk
         (⟨m, mem_pieceSubmodule.mpr hm⟩ : pieceSubmodule M q) : PieceQuotient M q) = 0 :=
       Subsingleton.elim _ _
-    exact Submodule.mem_sup_right <| Submodule.mem_comap.mp <|
+    exact Submodule.mem_sup_right <| mem_positiveSubmodule.mp <| Submodule.mem_comap.mp <|
       (Submodule.Quotient.mk_eq_zero
         ((positiveSubmodule M).comap (pieceSubmodule M q).subtype)).mp hmk0
 
@@ -212,12 +212,8 @@ private theorem freeLift_pieceQuotient_comp_equivFun
     have h2 : (g' u.val).val = (liftGen q' (e_q u)).val :=
       congrArg (fun idx : Σ p : S, Fin (nq p) ↦ (liftGen idx.fst idx.snd).val) hev
     exact h1.trans h2
-  -- Transporting `freeGenerator u.val ∈ piece (d' u.val)` along `u.property : d' u.val = q'.val`
-  -- leaves the underlying element unchanged, so `Subtype.ext hgen` identifies the wrapped pieces.
   have hsub : (⟨Φ.hom (freeGenerator u.val),
-      map_mem Φ (Eq.mp
-        (congrArg (fun p ↦ freeGenerator u.val ∈ (free 𝒜 d').grading.piece p) u.property)
-        (freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := d') u.val))⟩ :
+      mem_pieceSubmodule.mpr (map_mem Φ (freeGenerator_mem_free_piece_of_eq u.property))⟩ :
       pieceSubmodule M q'.val) =
       ⟨(liftGen q' (e_q u)).val, mem_pieceSubmodule.mpr (liftGen q' (e_q u)).property⟩ :=
     Subtype.ext hgen
@@ -262,7 +258,8 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
       (Submodule.Quotient.mk (⟨z, mem_pieceSubmodule.mpr hz_piece⟩ :
         pieceSubmodule (free 𝒜 d') q)) = 0 := by
     rw [pieceQuotientHom_apply]
-    have h0 : (⟨Φ.hom z, map_mem Φ hz_piece⟩ : pieceSubmodule M q) = 0 := Subtype.ext hz_ker
+    have h0 : (⟨Φ.hom z, mem_pieceSubmodule.mpr (map_mem Φ hz_piece)⟩ :
+        pieceSubmodule M q) = 0 := Subtype.ext hz_ker
     rw [h0, Submodule.Quotient.mk_zero]
   have hL_zero : ((bq q').equivFun.toLinearMap.comp
       (((pieceQuotientHom Φ q).restrictScalars k).comp
@@ -311,7 +308,7 @@ theorem exists_iso_free_of_retract (hneg : ∀ i < 0, 𝒜 i = ⊥)
     let y := (Submodule.Quotient.mk_surjective _ (bq q t)).choose
     ⟨y.val, mem_pieceSubmodule.mp y.property⟩
   have hliftGen : ∀ (q : S) (t : Fin (nq q)),
-      (Submodule.Quotient.mk ⟨(liftGen q t).val, (liftGen q t).property⟩ :
+      (Submodule.Quotient.mk ⟨(liftGen q t).val, mem_pieceSubmodule.mpr (liftGen q t).property⟩ :
         PieceQuotient M q.val) = bq q t :=
     fun q t ↦ (Submodule.Quotient.mk_surjective _ (bq q t)).choose_spec
   let n : ℕ := Fintype.card (Σ q : S, Fin (nq q))

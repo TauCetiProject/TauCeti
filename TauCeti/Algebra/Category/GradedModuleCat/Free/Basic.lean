@@ -111,6 +111,11 @@ theorem freeGenerator_mem_free_piece (i : I) : freeGenerator (𝒜 := 𝒜) (d :
   exact InternalGrading.lof_mem_directSumPiece _ (d i) i
     ⟨1, by simpa using SetLike.one_mem_graded 𝒜⟩
 
+/-- The basis vector indexed by `i` has internal degree `q` whenever `d i = q`. -/
+theorem freeGenerator_mem_free_piece_of_eq {q : ℤ} {i : I} (h : d i = q) :
+    freeGenerator (𝒜 := 𝒜) (d := d) i ∈ (free 𝒜 d).grading.piece q :=
+  h ▸ freeGenerator_mem_free_piece i
+
 /-- Extend a family of homogeneous elements to a morphism out of the graded free module. -/
 def freeLift {M : GradedModuleCat.{max uA uI} 𝒜} (x : ∀ i, M.grading.piece (d i)) :
     free 𝒜 d ⟶ M := by

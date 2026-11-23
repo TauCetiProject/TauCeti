@@ -93,6 +93,16 @@ noncomputable def rangeObjOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
   let p' := freeEndOfPiEnd s p hhom
   (free 𝒜 s).submoduleObj (LinearMap.range p'.hom) p'.isHomogeneous.isHomogeneous_range
 
+/-- An element of `rangeObjOfPiEnd s p hhom` has degree `q` exactly when it has degree `q` in
+`free 𝒜 s`. -/
+theorem mem_rangeObjOfPiEnd_piece_iff {I : Type uI} [Fintype I] (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j))
+    {q : ℤ} {x : rangeObjOfPiEnd s p hhom} :
+    x ∈ (rangeObjOfPiEnd s p hhom).grading.piece q ↔
+      x.val ∈ (free 𝒜 s).grading.piece q :=
+  InternalGrading.mem_submodule_piece _ _ _
+
 /-- `A`-linear identification `LinearMap.range p ≃ₗ[A] rangeObjOfPiEnd s p hhom`. -/
 noncomputable def rangeEquivRangeObj {I : Type uI} [Fintype I] (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A))

@@ -44,11 +44,11 @@ noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I �
   { i := ofHom (LinearMap.range p'.hom).subtype
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
         rw [add_zero]
-        exact (InternalGrading.mem_submodule_piece _ _ _).mp hx)
+        exact (mem_rangeObjOfPiEnd_piece_iff s p hhom).mp hx)
     r := ofHom p'.hom.rangeRestrict
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
         rw [add_zero]
-        exact (InternalGrading.mem_submodule_piece _ _ _).mpr (map_mem p' hx))
+        exact (mem_rangeObjOfPiEnd_piece_iff s p hhom).mpr (map_mem p' hx))
     retract := hom_ext <| LinearMap.ext fun z ↦
       Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.property) }
 

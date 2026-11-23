@@ -71,7 +71,7 @@ theorem multiset_map_eq_of_homogeneous_basis_range
       (∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) →
         (free 𝒜 (d ∘ ULift.down) ≅ rangeObjOfPiEnd s p hhom) :=
     fun b d hb ↦ ((b.reindex Equiv.ulift.symm).map equivRange).isoGradedFree fun i ↦
-      (InternalGrading.mem_submodule_piece _ _ _).mpr <| by
+      (mem_rangeObjOfPiEnd_piece_iff s p hhom).mpr <| by
         have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).val =
             (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (b i.down).val := by
           rw [Module.Basis.map_apply, Module.Basis.reindex_apply]
