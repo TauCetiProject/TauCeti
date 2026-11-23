@@ -124,7 +124,8 @@ obtained by replacing one coordinate. The coordinate arguments are adapted from
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
 `Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
 The identity operator `1` has operator norm at most one on every seminormed space
-(`ContinuousLinearMap.norm_one_le`).
+(`ContinuousLinearMap.norm_one_le`), and the affine map `z ↦ A z + v` given by a continuous
+semilinear map `A` is `‖A‖₊`-Lipschitz (`ContinuousLinearMap.lipschitzWith_add_const`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -236,6 +237,14 @@ noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
   .ofSeparation fun f ↦ f.opNorm_zero_iff'.mp
 
 end Semilinear
+
+/-- The affine map `z ↦ A z + v` given by a continuous semilinear map `A` between seminormed spaces
+is Lipschitz with constant `‖A‖₊`. -/
+theorem lipschitzWith_add_const {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+    (A : E →SL[σ] F) (v : F) : LipschitzWith ‖A‖₊ fun z ↦ A z + v := by
+  simpa using A.lipschitzWith.add (LipschitzWith.const v)
 
 /-- Right scalar multiplication `r ↦ r • e` by `e : E` under a bounded scalar action of a
 seminormed ring `R` is uniformly bounded. -/

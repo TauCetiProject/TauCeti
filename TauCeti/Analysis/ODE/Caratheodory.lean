@@ -11,6 +11,7 @@ import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.ODE.Gronwall.Integrable
 import TauCeti.Analysis.ODE.NonlinearCaratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -104,11 +105,17 @@ theorem intervalIntegrable_clm_apply_add (hab : a ≤ b) (hM : IntegrableOn M (I
     IntervalIntegrable (fun s ↦ M s (x s) + F s) volume a b :=
   (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 (integrableOn_Icc_clm_apply_add hM hF hx)
 
-/-- The affine vector field `z ↦ A z + v`, for a continuous linear map `A`, is Lipschitz with
-constant `‖A‖₊`. -/
-theorem lipschitzWith_clm_apply_add {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (A : E →L[ℝ] G) (v : G) : LipschitzWith ‖A‖₊ fun z ↦ A z + v := by
-  simpa using A.lipschitzWith.add (LipschitzWith.const v)
+/-- The linear vector field `(t, z) ↦ M t z + F t` satisfies the hypotheses of the nonlinear
+Carathéodory theorem `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith`, with
+the Lipschitz constant `‖M t‖₊`. -/
+private theorem integrableOn_and_lipschitzWith_clm_apply_add (hM : IntegrableOn M (Icc a b))
+    (hF : IntegrableOn F (Icc a b)) :
+    (∀ x, IntegrableOn (fun t ↦ M t x + F t) (Icc a b)) ∧
+      IntegrableOn (fun t ↦ ((‖M t‖₊ : ℝ≥0) : ℝ)) (Icc a b) ∧
+      ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzWith ‖M t‖₊ fun z ↦ M t z + F t :=
+  ⟨fun _ ↦ integrableOn_Icc_clm_apply_add hM hF continuousOn_const,
+    by simp only [coe_nnNorm]; exact hM.norm,
+    ae_of_all _ fun t ↦ (M t).lipschitzWith_add_const (F t)⟩
 
 /-- **Carathéodory's existence theorem for linear equations with integrable coefficients.** Let
 `M : ℝ → E →L[ℝ] E` and `F : ℝ → E` be integrable on `[a, b]` and let `t₀ ∈ [a, b]`. Then the
@@ -120,9 +127,8 @@ theorem exists_continuousOn_forall_mem_Icc_eq_picard [CompleteSpace E]
     (x₀ : E) :
     ∃ x : ℝ → E, ContinuousOn x (Icc a b) ∧
       ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x t :=
-  exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith
-    (L := fun t ↦ ‖M t‖₊) (fun _ ↦ integrableOn_Icc_clm_apply_add hM hF continuousOn_const)
-    hM.norm (ae_of_all _ fun t ↦ lipschitzWith_clm_apply_add (M t) (F t)) ht₀ x₀
+  have ⟨hG, hL, hLip⟩ := integrableOn_and_lipschitzWith_clm_apply_add hM hF
+  exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL hLip ht₀ x₀
 
 /-- **Uniqueness for linear equations with integrable coefficients.** Let `M : ℝ → E →L[ℝ] E` and
 `F : ℝ → E` be integrable on `[a, b]` and let `t₀ ∈ [a, b]`. Two curves continuous on `[a, b]`
@@ -133,9 +139,8 @@ theorem eqOn_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b)
     (h₁ : ∀ t ∈ Icc a b, x₁ t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x₁ t)
     (h₂ : ∀ t ∈ Icc a b, x₂ t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x₂ t) :
     EqOn x₁ x₂ (Icc a b) :=
-  eqOn_of_forall_mem_Icc_eq_picard_of_lipschitzWith
-    (L := fun t ↦ ‖M t‖₊) (fun _ ↦ integrableOn_Icc_clm_apply_add hM hF continuousOn_const)
-    hM.norm (ae_of_all _ fun t ↦ lipschitzWith_clm_apply_add (M t) (F t)) ht₀ hx₁ hx₂ h₁ h₂
+  have ⟨hG, hL, hLip⟩ := integrableOn_and_lipschitzWith_clm_apply_add hM hF
+  eqOn_of_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL hLip ht₀ hx₁ hx₂ h₁ h₂
 
 /-- A solution of the linear integral equation `x t = x₀ + ∫ s in t₀..t, (M s (x s) + F s)` on
 `[a, b]`, with `M` and `F` integrable on `[a, b]`, is absolutely continuous on `[a, b]`. -/
@@ -144,9 +149,8 @@ theorem absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard (ht₀ : t₀
     (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x t) :
     AbsolutelyContinuousOnInterval x a b :=
-  absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard_of_lipschitzWith
-    (L := fun t ↦ ‖M t‖₊) (fun _ ↦ integrableOn_Icc_clm_apply_add hM hF continuousOn_const)
-    hM.norm (ae_of_all _ fun t ↦ lipschitzWith_clm_apply_add (M t) (F t)) ht₀ hx h
+  have ⟨hG, hL, hLip⟩ := integrableOn_and_lipschitzWith_clm_apply_add hM hF
+  absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL hLip ht₀ hx h
 
 /-- A solution of the linear integral equation `x t = x₀ + ∫ s in t₀..t, (M s (x s) + F s)` on
 `[a, b]`, with `M` and `F` integrable on `[a, b]`, has derivative `M t (x t) + F t` at almost
@@ -156,9 +160,8 @@ theorem ae_hasDerivAt_of_forall_mem_Icc_eq_picard [CompleteSpace E] (ht₀ : t�
     (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x t) :
     ∀ᵐ t, t ∈ Ioo a b → HasDerivAt x (M t (x t) + F t) t :=
-  ae_hasDerivAt_of_forall_mem_Icc_eq_picard_of_lipschitzWith
-    (L := fun t ↦ ‖M t‖₊) (fun _ ↦ integrableOn_Icc_clm_apply_add hM hF continuousOn_const)
-    hM.norm (ae_of_all _ fun t ↦ lipschitzWith_clm_apply_add (M t) (F t)) ht₀ hx h
+  have ⟨hG, hL, hLip⟩ := integrableOn_and_lipschitzWith_clm_apply_add hM hF
+  ae_hasDerivAt_of_forall_mem_Icc_eq_picard_of_lipschitzWith hG hL hLip ht₀ hx h
 
 /-- **Absolutely continuous solutions.** Let `M : ℝ → E →L[ℝ] E` and `F : ℝ → E` be integrable on
 `[a, b]` and let `t₀ ∈ [a, b]`. A curve `x` absolutely continuous on `[a, b]` with `x t₀ = x₀` and

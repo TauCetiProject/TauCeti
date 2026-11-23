@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Analysis.ODE.Gronwall.Integrable
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import TauCeti.MeasureTheory.Function.L1Space.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
@@ -31,11 +31,6 @@ that is `x = ODE.picard F t₀ x₀ x` on `[a, b]`, for `x` continuous on `[a, b
 
 ## Main results
 
-* `TauCeti.integrableOn_apply_of_lipschitzWith`: along every curve continuous on `[a, b]` the
-  composite `s ↦ F s (x s)` is integrable on `[a, b]`; its measurability is Tau Ceti's
-  `MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuousAt`.
-* `TauCeti.integrableOn_apply_of_integrableOn_apply`: integrability of one section `t ↦ F t x₀`
-  gives integrability of every section.
 * `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard_of_lipschitzWith`: the integral equation
   has a solution continuous on `[a, b]`.
 * `TauCeti.eqOn_of_forall_mem_Icc_eq_picard_of_lipschitzWith`: two such solutions agree on
@@ -53,6 +48,11 @@ The linear case `F t x = M t x + G t`, with `L = ‖M‖`, is
 which is derived from the results here.
 
 ## Implementation notes
+
+Along every curve continuous on `[a, b]` the composite `s ↦ F s (x s)` is integrable on `[a, b]`
+(`TauCeti.integrableOn_apply_of_lipschitzWith`, in
+`TauCeti/MeasureTheory/Function/L1Space/Caratheodory.lean`, which also shows that integrability of
+one section `t ↦ F t x₀` gives integrability of every section).
 
 Some iterate of the Picard map on `C([a, b], E)` is a contraction: its `n`-th iterate moves two
 curves at time `t` at most `|∫ s in t₀..t, L s| ^ n / n!` times their distance apart. The factorial
@@ -78,40 +78,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {F : ℝ → E → E} {L : ℝ → ℝ≥0}
   {a b t₀ : ℝ} {x₀ : E}
 
-omit [NormedSpace ℝ E] in
-/-- **Integrability of the sections.** If `t ↦ F t x` is almost everywhere strongly measurable on
-`[a, b]` for every `x`, one section `t ↦ F t x₀` is integrable there, and `F t` is Lipschitz with
-an integrable constant `L t` for almost every `t ∈ [a, b]`, then every section is integrable on
-`[a, b]`. -/
-theorem integrableOn_apply_of_integrableOn_apply
-    (hF : ∀ x, AEStronglyMeasurable (fun t ↦ F t x) (volume.restrict (Icc a b)))
-    (hF₀ : IntegrableOn (fun t ↦ F t x₀) (Icc a b))
-    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
-    (hLip : ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzWith (L t) (F t)) (x : E) :
-    IntegrableOn (fun t ↦ F t x) (Icc a b) := by
-  refine Integrable.mono' (hF₀.norm.add (hL.mul_const (dist x x₀))) (hF x) ?_
-  filter_upwards [hLip] with t ht
-  exact ht.norm_le_norm_add_mul_dist x₀ x
-
-omit [NormedSpace ℝ E] in
-/-- **Integrability along a curve.** If every section `t ↦ F t x` is integrable on `[a, b]` and
-`F t` is Lipschitz with an integrable constant `L t` for almost every `t ∈ [a, b]`, then
-`s ↦ F s (x s)` is integrable on `[a, b]` for every curve `x` continuous on `[a, b]`. -/
-theorem integrableOn_apply_of_lipschitzWith (hF : ∀ x, IntegrableOn (fun t ↦ F t x) (Icc a b))
-    (hL : IntegrableOn (fun t ↦ (L t : ℝ)) (Icc a b))
-    (hLip : ∀ᵐ t ∂volume.restrict (Icc a b), LipschitzWith (L t) (F t)) {x : ℝ → E}
-    (hx : ContinuousOn x (Icc a b)) :
-    IntegrableOn (fun s ↦ F s (x s)) (Icc a b) := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hx
-  have hmeas : AEStronglyMeasurable (fun s ↦ F s (x s)) (volume.restrict (Icc a b)) :=
-    (hx.aestronglyMeasurable measurableSet_Icc).apply_of_forall_of_continuousAt
-      (fun y ↦ (hF y).aestronglyMeasurable) (hLip.mono fun _ ht ↦ ht.continuous.continuousAt)
-  refine Integrable.mono' ((hF 0).norm.add (hL.mul_const C)) hmeas ?_
-  filter_upwards [hLip, ae_restrict_mem measurableSet_Icc] with s hs hsI
-  refine (hs.norm_le_norm_add_mul_dist 0 (x s)).trans (add_le_add_right ?_ _)
-  rw [dist_zero_right]
-  exact mul_le_mul_of_nonneg_left (hC s hsI) (L s).coe_nonneg
-
 namespace CaratheodoryNonlinear
 
 variable (ht₀ : t₀ ∈ Icc a b) (hF : ∀ x, IntegrableOn (fun t ↦ F t x) (Icc a b))
@@ -123,10 +89,9 @@ private noncomputable def next (x₀ : E) (y : C(Icc a b, E)) : C(Icc a b, E) wh
   toFun t := ODE.picard F t₀ x₀ (IccExtend (ht₀.1.trans ht₀.2) y) t
   continuous_toFun := by
     have hab := ht₀.1.trans ht₀.2
-    have hI : IntervalIntegrable (fun s ↦ F s (IccExtend hab y s)) volume a b :=
-      (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-        (integrableOn_apply_of_lipschitzWith hF hL hLip y.continuous.Icc_extend'.continuousOn)
-    have h := continuousOn_primitive_interval' hI (by rwa [uIcc_of_le hab])
+    have h := continuousOn_primitive_interval'
+      (intervalIntegrable_apply_of_lipschitzWith hab hF hL hLip (x := IccExtend hab y)
+        y.continuous.Icc_extend'.continuousOn) (by rwa [uIcc_of_le hab])
     rw [uIcc_of_le hab] at h
     exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
 
@@ -258,9 +223,7 @@ theorem absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard_of_lipschitzW
     (h : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) :
     AbsolutelyContinuousOnInterval x a b := by
   have hab := ht₀.1.trans ht₀.2
-  have hI : IntervalIntegrable (fun s ↦ F s (x s)) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-      (integrableOn_apply_of_lipschitzWith hF hL hLip hx)
+  have hI := intervalIntegrable_apply_of_lipschitzWith hab hF hL hLip hx
   refine ((LipschitzWith.const x₀).lipschitzOnWith.absolutelyContinuousOnInterval.add
     (hI.absolutelyContinuousOnInterval_intervalIntegral' (by rwa [uIcc_of_le hab]))).congr
     fun t ht ↦ ?_
@@ -276,9 +239,7 @@ theorem ae_hasDerivAt_of_forall_mem_Icc_eq_picard_of_lipschitzWith [CompleteSpac
     (h : ∀ t ∈ Icc a b, x t = ODE.picard F t₀ x₀ x t) :
     ∀ᵐ t, t ∈ Ioo a b → HasDerivAt x (F t (x t)) t := by
   have hab := ht₀.1.trans ht₀.2
-  have hI : IntervalIntegrable (fun s ↦ F s (x s)) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-      (integrableOn_apply_of_lipschitzWith hF hL hLip hx)
+  have hI := intervalIntegrable_apply_of_lipschitzWith hab hF hL hLip hx
   filter_upwards [hI.ae_hasDerivAt_integral] with t hd ht
   rw [uIcc_of_le hab] at hd
   refine ((hd (Ioo_subset_Icc_self ht) t₀ ht₀).const_add x₀).congr_of_eventuallyEq ?_
