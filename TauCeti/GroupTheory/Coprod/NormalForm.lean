@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coprod.Basic
-import Mathlib.Algebra.Group.ULift
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 
 /-!
 # Uniqueness of reduced words in a free product

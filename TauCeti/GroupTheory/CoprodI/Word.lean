@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.CoprodI
-public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Reduced words in a free product: functorial images and word length
@@ -23,7 +22,7 @@ We also record basic length and power properties of reduced words (`Word` and `N
 left-multiplying a reduced word whose leading letter lies in `M i` by an element of `M i` does not
 increase its word length, inverting a nonempty reduced word in a free product of groups preserves
 its word length, and concatenating a nonempty reduced word whose endpoints lie in distinct factors
-with itself gives all of its positive powers as reduced words, so its product has infinite order.
+with itself gives all of its positive powers as reduced words.
 
 ## Main definitions
 
@@ -42,9 +41,7 @@ with itself gives all of its positive powers as reduced words, so its product ha
   increase word length when the first letter lies in the same factor.
 * `Monoid.CoprodI.NeWord.length_toList_inv`: inverting a nonempty reduced word preserves its length.
 * `Monoid.CoprodI.NeWord.powSucc_zero`, `Monoid.CoprodI.NeWord.powSucc_succ`,
-  `Monoid.CoprodI.NeWord.powSucc_prod`, `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`:
-  defining equations and product of `u.powSucc`, and infinite order of a nonempty reduced word
-  with distinct endpoint indices.
+  `Monoid.CoprodI.NeWord.powSucc_prod`: defining equations and product of `u.powSucc`.
 * `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
   injective homomorphism of free products.
 -/
@@ -175,19 +172,6 @@ theorem powSucc_prod {i j : ι} (u : NeWord M i j) (hji : j ≠ i) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih => rw [powSucc_succ, append_prod, ih, ← pow_succ']
-
-/-- A nonempty reduced word whose first and last letters lie in distinct factors represents an
-element of infinite order in `CoprodI M`. -/
-theorem not_isOfFinOrder_prod_of_ne {i j : ι} (u : NeWord M i j) (hij : i ≠ j) :
-    ¬IsOfFinOrder u.prod := by
-  rw [isOfFinOrder_iff_pow_eq_one]
-  rintro ⟨n, hn, hpow⟩
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  have hprod : (u.powSucc hij.symm k).toWord.prod = (Word.empty : Word M).prod := by
-    rw [← NeWord.prod, powSucc_prod, hpow, Word.prod_empty]
-  have hempty : (u.powSucc hij.symm k).toWord = Word.empty :=
-    Word.prod_injective hprod
-  exact (u.powSucc hij.symm k).toList_ne_nil (congrArg Word.toList hempty)
 
 end Monoid
 

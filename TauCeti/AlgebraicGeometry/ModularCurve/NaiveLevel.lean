@@ -424,6 +424,29 @@ theorem gammaOneNaiveEquiv_map_torsionι {X Y : EllObj B} (φ : X ⟶ Y)
         ((gammaOneNaiveEquiv Y α).val ≫ Y.curve.torsionι N) := by
   simp
 
+private def prodTorsionEquiv (G : Type*) [CommMonoid G] (N : ℕ) :
+    {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2} ≃
+      {x : G // x ^ N = 1} × {x : G // x ^ N = 1} where
+  toFun p := (⟨p.val.1, p.property.1⟩, ⟨p.val.2, p.property.2.1⟩)
+  invFun p := ⟨(p.1.val, p.2.val), p.1.property, p.2.property, Commute.all _ _⟩
+  left_inv _ := Subtype.ext rfl
+  right_inv _ := rfl
+
+@[simp]
+private theorem coe_prodTorsionEquiv_apply_fst {G : Type*} [CommMonoid G] {N : ℕ}
+    (p : {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2}) :
+    ((prodTorsionEquiv G N p).1 : G) = p.val.1 := rfl
+
+@[simp]
+private theorem coe_prodTorsionEquiv_apply_snd {G : Type*} [CommMonoid G] {N : ℕ}
+    (p : {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2}) :
+    ((prodTorsionEquiv G N p).2 : G) = p.val.2 := rfl
+
+@[simp]
+private theorem coe_prodTorsionEquiv_symm_apply {G : Type*} [CommMonoid G] {N : ℕ}
+    (p : {x : G // x ^ N = 1} × {x : G // x ^ N = 1}) :
+    ((prodTorsionEquiv G N).symm p : G × G) = (p.1.val, p.2.val) := rfl
+
 /-- **Naive `[Γ(N)]`-structures are pairs of points of `E[N]`.** For `N ≠ 0`, a naive
 `[Γ(N)]`-structure `φ` on `(E/S)` is determined by the pair `(P, Q) = (φ (1, 0), φ (0, 1))` of
 `S`-points of `E[N]`, and the pairs arising this way are those none of whose combinations `aP + bQ`
@@ -436,7 +459,8 @@ noncomputable def gammaNaiveEquiv (X : EllObj B) :
           (𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X) //
         ∀ a b : ZMod N, (a, b) ≠ 0 → ∀ s, ((PQ.1 ≫ X.curve.torsionι N) ^ a.val *
           (PQ.2 ≫ X.curve.torsionι N) ^ b.val).left s ≠ X.curve.zero s} :=
-  (naiveLevelEquiv X).trans <| ((zmodProdMonoidHomEquiv N _).trans <|
+  (naiveLevelEquiv X).trans <| (((zmodProdMonoidHomEquiv N _).trans
+    (prodTorsionEquiv _ N)).trans <|
     ((Equiv.subtypeEquivRight fun _ ↦ by rw [zpow_natCast]).trans
       (X.curve.torsionPointsEquiv N _)).prodCongr
     ((Equiv.subtypeEquivRight fun _ ↦ by rw [zpow_natCast]).trans

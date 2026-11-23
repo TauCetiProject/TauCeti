@@ -424,8 +424,10 @@ sending `(a, b)` to `aP + bQ`, where `P` and `Q` are the two projections
 noncomputable def torsionPairHom : Multiplicative (ZMod N × ZMod N) →*
     ((E.torsion N).X ⊗ (E.torsion N).X ⟶ Over.mk E.structureMap) :=
   (zmodProdMonoidHomEquiv N _).symm
-    (⟨fst _ _ ≫ E.torsionι N, by rw [← zpow_natCast, comp_torsionι_zpow]⟩,
-      ⟨snd _ _ ≫ E.torsionι N, by rw [← zpow_natCast, comp_torsionι_zpow]⟩)
+    ⟨(fst _ _ ≫ E.torsionι N, snd _ _ ≫ E.torsionι N),
+      by rw [← zpow_natCast, comp_torsionι_zpow],
+      by rw [← zpow_natCast, comp_torsionι_zpow],
+      Commute.all _ _⟩
 
 /-- The universal pair of points of `E[N]` sends `(a, b)` to `aP + bQ`. -/
 @[simp]
@@ -456,8 +458,8 @@ theorem existsUnique_comp_torsionPairHom {Z : Over S}
     (φ : Multiplicative (ZMod N × ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X ⊗ (E.torsion N).X, ∀ a, x ≫ E.torsionPairHom N a = φ a := by
   let e := zmodProdMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.property⟩
-  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.property⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).val.1, by rw [zpow_natCast]; exact (e φ).property.1⟩
+  let Q := E.torsionPointsEquiv N Z ⟨(e φ).val.2, by rw [zpow_natCast]; exact (e φ).property.2.1⟩
   refine ⟨lift P Q, fun a ↦ ?_, fun x hx ↦ ?_⟩
   · -- write `a = (a₁, a₂)`, so that `φ a = φ (1, 0) ^ a₁ * φ (0, 1) ^ a₂`
     obtain ⟨⟨a₁, a₂⟩, rfl⟩ : ∃ p : ZMod N × ZMod N, Multiplicative.ofAdd p = a := ⟨a.toAdd, rfl⟩

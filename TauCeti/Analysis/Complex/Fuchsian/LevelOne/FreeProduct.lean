@@ -10,12 +10,14 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.Index
+public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Conj
+import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.GroupTheory.Coprod.Conj
 import TauCeti.GroupTheory.Coprod.Torsion
-import TauCeti.GroupTheory.CoprodI
 import TauCeti.GroupTheory.Index.Torsion
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
 
@@ -48,8 +50,10 @@ the algebraic structure of finite-order elements and characters of `PSL(2, ℤ)`
 
 * `TauCeti.ModularGroup.psl2zEquivCoprod`:
   `PSL(2, ℤ) ≃* Monoid.Coprod (Multiplicative (ZMod 2)) (Multiplicative (ZMod 3))`.
-* `TauCeti.ModularGroup.psl2zEquivCoprodI`:
-  `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))`.
+* `TauCeti.ModularGroup.psl2zEquivCoprodI`,
+  `TauCeti.ModularGroup.finTwoEquivCoprod_psl2zEquivCoprodI`:
+  `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))`, and
+  its comparison with `psl2zEquivCoprod`.
 * `TauCeti.ModularGroup.isOfFinOrder_iff`, `TauCeti.ModularGroup.isOfFinOrder_iff_coe_U`:
   classification of torsion elements up to conjugacy.
 * `TauCeti.ModularGroup.not_isConj_coe_S_coe_R`, `TauCeti.ModularGroup.not_isConj_coe_R_coe_R_sq`,
@@ -60,7 +64,6 @@ the algebraic structure of finite-order elements and characters of `PSL(2, ℤ)`
 * `Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z`,
   `Subgroup.six_dvd_index_of_isMulTorsionFree_psl2z`: `6 ∣ Γ.index` for torsion-free `Γ`.
 * `TauCeti.ModularGroup.psl2zAbelianizationAddEquiv`,
-  `TauCeti.ModularGroup.psl2zAbelianizationMulEquiv`,
   `TauCeti.ModularGroup.index_commutator_psl2z`: abelianization `≃ ZMod 6` and commutator index `6`.
 
 ## References
@@ -158,6 +161,15 @@ def psl2zEquivCoprodI :
     (Monoid.CoprodI.finTwoEquivCoprod
       fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
 
+/-- Applying `Monoid.CoprodI.finTwoEquivCoprod` to `psl2zEquivCoprodI g` yields
+`psl2zEquivCoprod g`. -/
+@[simp]
+theorem finTwoEquivCoprod_psl2zEquivCoprodI (g : PSL(2, ℤ)) :
+    Monoid.CoprodI.finTwoEquivCoprod
+        (fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (psl2zEquivCoprodI g) =
+      psl2zEquivCoprod g :=
+  (Monoid.CoprodI.finTwoEquivCoprod _).apply_symm_apply _
+
 /-- `psl2zEquivCoprodI` maps `S` to the generator of the factor at `0 : Fin 2`. -/
 @[simp]
 theorem psl2zEquivCoprodI_coe_S :
@@ -199,7 +211,11 @@ theorem psl2zEquivCoprodI_symm_of_zero_ofAdd_intCast (k : ℤ) :
     psl2zEquivCoprodI.symm
         (Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd (k : ZMod (psl2zCoprodOrder 0)))) =
       (S : PSL(2, ℤ)) ^ k := by
-  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, psl2zEquivCoprodI_symm_of_zero_ofAdd_one]
+  simpa [psl2zEquivCoprodI_symm_of_zero_ofAdd_one] using
+    zmodMonoidHom_map_ofAdd_intCast
+      (psl2zEquivCoprodI.symm.toMonoidHom.comp
+        (Monoid.CoprodI.of (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i)))
+          (i := (0 : Fin 2)))) k
 
 /-- The inverse of `psl2zEquivCoprodI` maps `ofAdd (k : ZMod (psl2zCoprodOrder 1))` at `1 : Fin 2`
 to `R ^ k`. -/
@@ -208,7 +224,11 @@ theorem psl2zEquivCoprodI_symm_of_one_ofAdd_intCast (k : ℤ) :
     psl2zEquivCoprodI.symm
         (Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd (k : ZMod (psl2zCoprodOrder 1)))) =
       (R : PSL(2, ℤ)) ^ k := by
-  rw [← zsmul_one k, ofAdd_zsmul, map_zpow, map_zpow, psl2zEquivCoprodI_symm_of_one_ofAdd_one]
+  simpa [psl2zEquivCoprodI_symm_of_one_ofAdd_one] using
+    zmodMonoidHom_map_ofAdd_intCast
+      (psl2zEquivCoprodI.symm.toMonoidHom.comp
+        (Monoid.CoprodI.of (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i)))
+          (i := (1 : Fin 2)))) k
 
 /-! ### Conjugacy classes and orders of torsion elements in `PSL(2, ℤ)` -/
 
@@ -284,7 +304,7 @@ theorem isOfFinOrder_iff {g : PSL(2, ℤ)} :
     · exact h.symm.isOfFinOrder isOfFinOrder_coe_R_sq
 
 /-- Conjugacy to `R` or `R²` in `PSL(2, ℤ)` is equivalent to conjugacy to `U` or `U²`. -/
-theorem isConj_coe_R_or_sq_iff_coe_U {g : PSL(2, ℤ)} :
+theorem isConj_coe_R_or_sq_iff_coe_U_or_sq {g : PSL(2, ℤ)} :
     (IsConj g (R : PSL(2, ℤ)) ∨ IsConj g ((R : PSL(2, ℤ)) ^ 2)) ↔
       (IsConj g (U : PSL(2, ℤ)) ∨ IsConj g ((U : PSL(2, ℤ)) ^ 2)) := by
   constructor
@@ -301,7 +321,7 @@ theorem isOfFinOrder_iff_coe_U {g : PSL(2, ℤ)} :
     IsOfFinOrder g ↔
       g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (U : PSL(2, ℤ)) ∨
         IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [isOfFinOrder_iff, isConj_coe_R_or_sq_iff_coe_U]
+  rw [isOfFinOrder_iff, isConj_coe_R_or_sq_iff_coe_U_or_sq]
 
 /-- Every element of finite order in `PSL(2, ℤ)` has order `1`, `2`, or `3`. -/
 theorem orderOf_eq_one_or_two_or_three_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
@@ -344,7 +364,7 @@ theorem orderOf_eq_three_iff {g : PSL(2, ℤ)} :
 /-- Elements of order `3` in `PSL(2, ℤ)` form the two conjugacy classes of `U` and `U²`. -/
 theorem orderOf_eq_three_iff_coe_U {g : PSL(2, ℤ)} :
     orderOf g = 3 ↔ IsConj g (U : PSL(2, ℤ)) ∨ IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [orderOf_eq_three_iff, isConj_coe_R_or_sq_iff_coe_U]
+  rw [orderOf_eq_three_iff, isConj_coe_R_or_sq_iff_coe_U_or_sq]
 
 /-! ### Subgroup index divisibility for torsion-free subgroups -/
 
@@ -419,55 +439,22 @@ theorem psl2zAbelianizationAddEquiv_symm_one :
   apply psl2zAbelianizationAddEquiv.injective
   rw [AddEquiv.apply_symm_apply, psl2zAbelianizationAddEquiv_coe_T]
 
-/-- **Multiplicative abelianization of `PSL(2, ℤ)`.** Identifies `Group.Abelianization PSL(2, ℤ)`
-with `Multiplicative (ZMod 6)`, sending `Group.Abelianization.of (T : PSL(2, ℤ))` to
-`Multiplicative.ofAdd 1`. -/
-def psl2zAbelianizationMulEquiv :
-    Group.Abelianization PSL(2, ℤ) ≃* Multiplicative (ZMod 6) :=
-  psl2zAbelianizationAddEquiv.toMultiplicative
-
-/-- `psl2zAbelianizationMulEquiv` sends the class of `S` to `ofAdd 3`. -/
-@[simp]
-theorem psl2zAbelianizationMulEquiv_coe_S :
-    psl2zAbelianizationMulEquiv (.of (S : PSL(2, ℤ))) = .ofAdd 3 :=
-  congrArg Multiplicative.ofAdd psl2zAbelianizationAddEquiv_coe_S
-
-/-- `psl2zAbelianizationMulEquiv` sends the class of `R` to `ofAdd 4`. -/
-@[simp]
-theorem psl2zAbelianizationMulEquiv_coe_R :
-    psl2zAbelianizationMulEquiv (.of (R : PSL(2, ℤ))) = .ofAdd 4 :=
-  congrArg Multiplicative.ofAdd psl2zAbelianizationAddEquiv_coe_R
-
-/-- `psl2zAbelianizationMulEquiv` sends the class of `T` to `ofAdd 1`. -/
-@[simp]
-theorem psl2zAbelianizationMulEquiv_coe_T :
-    psl2zAbelianizationMulEquiv (.of (T : PSL(2, ℤ))) = .ofAdd 1 :=
-  congrArg Multiplicative.ofAdd psl2zAbelianizationAddEquiv_coe_T
-
-/-- `psl2zAbelianizationMulEquiv` sends the class of `U` to `ofAdd 2`. -/
-@[simp]
-theorem psl2zAbelianizationMulEquiv_coe_U :
-    psl2zAbelianizationMulEquiv (.of (U : PSL(2, ℤ))) = .ofAdd 2 :=
-  congrArg Multiplicative.ofAdd psl2zAbelianizationAddEquiv_coe_U
-
-/-- The inverse of `psl2zAbelianizationMulEquiv` maps `ofAdd 1` to the class of `T`. -/
-@[simp]
-theorem psl2zAbelianizationMulEquiv_symm_ofAdd_one :
-    psl2zAbelianizationMulEquiv.symm (.ofAdd 1) = .of (T : PSL(2, ℤ)) := by
-  apply psl2zAbelianizationMulEquiv.injective
-  rw [MulEquiv.apply_symm_apply, psl2zAbelianizationMulEquiv_coe_T]
-
 /-- The abelianization of `PSL(2, ℤ)` has cardinality `6`. -/
 @[simp]
 theorem natCard_abelianization_psl2z :
     Nat.card (Group.Abelianization PSL(2, ℤ)) = 6 := by
-  rw [Nat.card_congr psl2zAbelianizationMulEquiv.toEquiv, Nat.card_congr Multiplicative.toAdd,
-    Nat.card_zmod]
+  rw [Nat.card_congr psl2zAbelianizationAddEquiv.toMultiplicativeRight.toEquiv,
+    Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 
 /-- The commutator subgroup `[PSL(2, ℤ), PSL(2, ℤ)]` has index `6` in `PSL(2, ℤ)`. -/
 @[simp]
 theorem index_commutator_psl2z :
-    (commutator PSL(2, ℤ)).index = 6 :=
-  natCard_abelianization_psl2z
+    (commutator PSL(2, ℤ)).index = 6 := by
+  rw [Subgroup.index_eq_card,
+    Nat.card_congr
+      ((QuotientGroup.quotientMulEquivOfEq (Group.Abelianization.ker_of PSL(2, ℤ)).symm).trans
+        (QuotientGroup.quotientKerEquivOfSurjective _
+          (Group.Abelianization.surjective_of PSL(2, ℤ)))).toEquiv,
+    natCard_abelianization_psl2z]
 
 end TauCeti.ModularGroup

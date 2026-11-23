@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.StarRose
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
-public import TauCeti.GroupTheory.CoprodI
+public import TauCeti.GroupTheory.CoprodI.Basic
 
 /-!
 # The graph of groups of a free product

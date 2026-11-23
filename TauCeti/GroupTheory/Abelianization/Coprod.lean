@@ -20,8 +20,7 @@ coincide with binary direct products `Group.Abelianization G × Group.Abelianiza
 
 * `Group.Abelianization.coprodMulEquiv`: the canonical isomorphism
   `Group.Abelianization (Monoid.Coprod G H) ≃* Group.Abelianization G × Group.Abelianization H`.
-* `Group.Abelianization.coprodMulEquiv_of`, `Group.Abelianization.coprodMulEquiv_of_inl`,
-  `Group.Abelianization.coprodMulEquiv_of_inr`,
+* `Group.Abelianization.coprodMulEquiv_of`,
   `Group.Abelianization.coprodMulEquiv_symm_apply`: evaluation of `coprodMulEquiv` and its inverse
   on classes of elements.
 -/
@@ -52,16 +51,6 @@ theorem coprodMulEquiv_of (w : Monoid.Coprod G H) :
     coprodMulEquiv (of w) = (of (Monoid.Coprod.fst w), of (Monoid.Coprod.snd w)) :=
   (rfl)
 
-/-- `coprodMulEquiv` sends the class of `inl g` to `(of g, 1)`. -/
-theorem coprodMulEquiv_of_inl (g : G) :
-    coprodMulEquiv (of (Monoid.Coprod.inl g : Monoid.Coprod G H)) = (of g, 1) := by
-  simp
-
-/-- `coprodMulEquiv` sends the class of `inr h` to `(1, of h)`. -/
-theorem coprodMulEquiv_of_inr (h : H) :
-    coprodMulEquiv (of (Monoid.Coprod.inr h : Monoid.Coprod G H)) = (1, of h) := by
-  simp
-
 /-- The inverse of `coprodMulEquiv` multiplies the induced embeddings of the two coordinates. -/
 @[simp]
 theorem coprodMulEquiv_symm_apply (p : Group.Abelianization G × Group.Abelianization H) :
@@ -69,11 +58,5 @@ theorem coprodMulEquiv_symm_apply (p : Group.Abelianization G × Group.Abelianiz
       map (Monoid.Coprod.inl : G →* Monoid.Coprod G H) p.1 *
         map (Monoid.Coprod.inr : H →* Monoid.Coprod G H) p.2 :=
   (rfl)
-
-/-- The inverse of `coprodMulEquiv` sends `(of g, of h)` to the class of `inl g * inr h`. -/
-theorem coprodMulEquiv_symm_of (g : G) (h : H) :
-    coprodMulEquiv.symm (of g, of h) =
-      of (Monoid.Coprod.inl g * Monoid.Coprod.inr h) := by
-  simp
 
 end Group.Abelianization

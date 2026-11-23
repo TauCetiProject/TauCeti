@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coprod.Basic
-import Mathlib.Algebra.Group.ULift
 import Mathlib.Algebra.Ring.Int.Defs
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 import TauCeti.GroupTheory.CoprodI.Word
 
 /-!

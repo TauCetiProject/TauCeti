@@ -7,10 +7,9 @@ module
 
 public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.OrderOfElement
-import Mathlib.Algebra.Group.ULift
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Algebra.Group.Equiv.Pow
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 import TauCeti.GroupTheory.CoprodI.Torsion
 
 /-!

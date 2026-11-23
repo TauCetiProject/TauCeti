@@ -57,20 +57,17 @@ def equivCoprod (a b : ℕ) :
     TriangleGroup a b 0 ≃* Monoid.Coprod (Multiplicative (ZMod a)) (Multiplicative (ZMod b)) :=
   MonoidHom.toMulEquiv
     (lift (.inl (.ofAdd 1)) (.inr (.ofAdd 1)) (.inr (.ofAdd 1) * .inl (.ofAdd 1))⁻¹
-      (by rw [← map_pow, ofAdd_one_pow_self, map_one])
-      (by rw [← map_pow, ofAdd_one_pow_self, map_one])
+      (by rw [← map_pow, ofAdd_one_pow_modulus_eq_one, map_one])
+      (by rw [← map_pow, ofAdd_one_pow_modulus_eq_one, map_one])
       (pow_zero _)
       (by rw [mul_assoc, inv_mul_cancel]))
-    (Monoid.Coprod.lift (zmodMulLift (x a b 0) (x_pow a b 0))
-      (zmodMulLift (y a b 0) (y_pow a b 0)))
+    (Monoid.Coprod.lift
+      ((zmodMonoidHomEquiv a _).symm ⟨x a b 0, x_pow a b 0⟩)
+      ((zmodMonoidHomEquiv b _).symm ⟨y a b 0, y_pow a b 0⟩))
     (by ext <;> simp)
     (Monoid.Coprod.hom_ext
-      (MonoidHom.ext fun u => by
-        obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (Multiplicative.mem_zpowers_ofAdd_one u)
-        simp)
-      (MonoidHom.ext fun v => by
-        obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (Multiplicative.mem_zpowers_ofAdd_one v)
-        simp))
+      (TauCeti.zmodMonoidHom_ext (by simp))
+      (TauCeti.zmodMonoidHom_ext (by simp)))
 
 /-- `equivCoprod` maps the first generator `x a b 0` to `inl (ofAdd 1)`. -/
 @[simp]
@@ -106,13 +103,15 @@ theorem equivCoprod_symm_inr_ofAdd_one (a b : ℕ) :
 @[simp]
 theorem equivCoprod_symm_inl_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
-  rw [← zsmul_one (k : ℤ), ofAdd_zsmul, map_zpow, map_zpow, equivCoprod_symm_inl_ofAdd_one]
+  simpa using
+    zmodMonoidHom_map_ofAdd_intCast ((equivCoprod a b).symm.toMonoidHom.comp Monoid.Coprod.inl) k
 
 /-- The inverse of `equivCoprod` sends `inr (ofAdd k)` to `y a b 0 ^ k`. -/
 @[simp]
 theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
-  rw [← zsmul_one (k : ℤ), ofAdd_zsmul, map_zpow, map_zpow, equivCoprod_symm_inr_ofAdd_one]
+  simpa using
+    zmodMonoidHom_map_ofAdd_intCast ((equivCoprod a b).symm.toMonoidHom.comp Monoid.Coprod.inr) k
 
 /-- The first generator `x a b 0` of `Δ(a, b, 0)` has order `a` (for `a = 0`, infinite order). -/
 @[simp]

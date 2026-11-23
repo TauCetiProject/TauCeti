@@ -20,6 +20,8 @@ nontrivial elements from distinct factors has infinite order.
 
 ## Main results
 
+* `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`: a nonempty reduced word with distinct
+  endpoint indices has infinite order.
 * `Monoid.CoprodI.isOfFinOrder_of_iff`, `Monoid.CoprodI.orderOf_of`: the canonical embedding
   `of : M i →* CoprodI M` preserves and reflects finite order and element orders.
 * `Monoid.CoprodI.not_isOfFinOrder_of_mul_of`: in `CoprodI M`, `of x * of y` for nontrivial
@@ -53,6 +55,19 @@ section Monoid
 
 variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
 
+/-- A nonempty reduced word whose first and last letters lie in distinct factors represents an
+element of infinite order in `CoprodI M`. -/
+theorem NeWord.not_isOfFinOrder_prod_of_ne {i j : ι} (u : NeWord M i j) (hij : i ≠ j) :
+    ¬IsOfFinOrder u.prod := by
+  rw [isOfFinOrder_iff_pow_eq_one]
+  rintro ⟨n, hn, hpow⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  have hprod : (u.powSucc hij.symm k).toWord.prod = (Word.empty : Word M).prod := by
+    rw [← NeWord.prod, NeWord.powSucc_prod, hpow, Word.prod_empty]
+  have hempty : (u.powSucc hij.symm k).toWord = Word.empty :=
+    Word.prod_injective hprod
+  exact (u.powSucc hij.symm k).toList_ne_nil (congrArg Word.toList hempty)
+
 /-- An element of `M i` has finite order in `CoprodI M` if and only if it has finite order in
 `M i`. -/
 @[simp]
@@ -82,6 +97,20 @@ section Group
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
 
+private theorem fstIdx_toWord {i j : ι} (u : NeWord G i j) :
+    u.toWord.fstIdx = some i := by
+  simp [Word.fstIdx, NeWord.toWord]
+
+private theorem lastIdx_toWord {i j : ι} (u : NeWord G i j) :
+    u.toWord.toList.getLast?.map Sigma.fst = some j := by
+  simp [NeWord.toWord]
+
+private theorem getLast?_map_fst_cons_of_ne_empty {i : ι} (a : G i) {v : Word G}
+    (hfv : v.fstIdx ≠ some i) (ha1 : a ≠ 1) (hv : v ≠ Word.empty) :
+    (Word.cons a v hfv ha1).toList.getLast?.map Sigma.fst =
+      v.toList.getLast?.map Sigma.fst := by
+  rw [Word.cons_toList, List.getLast?_cons_of_ne_nil (fun h => hv (Word.ext h))]
+
 /-- Cyclic reduction step: if a reduced word `Word.cons a v hfv ha1` with `v` nonempty represents an
 element of finite order, its first and last letters lie in the same factor `G i`, so conjugating by
 `(of a)⁻¹` and inverting yields a strictly shorter reduced word `w'`. -/
@@ -99,24 +128,21 @@ private theorem exists_word_length_lt_of_cons
     by_contra hne
     exact u.not_isOfFinOrder_prod_of_ne hne (by rwa [NeWord.prod, hu])
   subst hij
-  have hi₀ : i = i₀ := by
-    have hhead := congrArg Word.fstIdx hu
-    simpa [Word.fstIdx, w, NeWord.toWord] using hhead.symm
+  have hi₀ : i = i₀ :=
+    Option.some.inj ((Word.fstIdx_cons a v hfv ha1).symm.trans
+      ((congrArg Word.fstIdx hu).symm.trans (fstIdx_toWord u)))
   subst i₀
   obtain ⟨k, j, q, hq⟩ := NeWord.of_word v hv
-  have hv_nil : v.toList ≠ [] := fun h => hv (Word.ext h)
   have hj : j = i := by
-    have hlast_u : w.toList.getLast? = some ⟨i, u.last⟩ := by
-      rw [← hu, NeWord.toWord, NeWord.toList_getLast?]
-    have hlast_q : v.toList.getLast? = some ⟨j, q.last⟩ := by
-      rw [← hq, NeWord.toWord, NeWord.toList_getLast?]
-    dsimp only [w, Word.cons] at hlast_u
-    rw [List.getLast?_cons_of_ne_nil hv_nil, hlast_q] at hlast_u
-    exact (Sigma.mk.inj (Option.some.inj hlast_u)).1
+    have h₁ := lastIdx_toWord q
+    have h₂ := lastIdx_toWord u
+    rw [hq] at h₁
+    rw [hu, getLast?_map_fst_cons_of_ne_empty a hfv ha1 hv, h₁] at h₂
+    exact Option.some.inj h₂
   subst j
   let z : Word G := q.inv.toWord
   let w' : Word G := of a⁻¹ • z
-  have hz_fst : z.fstIdx = some i := by simp [z, Word.fstIdx, NeWord.toWord]
+  have hz_fst : z.fstIdx = some i := fstIdx_toWord q.inv
   have hw'_len : w'.toList.length < w.toList.length := by
     have hle : w'.toList.length ≤ z.toList.length :=
       Word.length_toList_of_smul_le_of_fstIdx_eq a⁻¹ hz_fst

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.Data.ZMod.QuotientGroup
+import TauCeti.Algebra.Group.Submonoid.Torsion
 import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
@@ -24,22 +26,10 @@ order of every torsion element of `G` divides `H.index`.
   `g : G` and `k ∈ K`, then `Nat.card K ∣ H.index`.
 * `Subgroup.orderOf_dvd_index_of_forall_isOfFinOrder_eq_one`: if `H` has no nontrivial torsion
   elements, then `orderOf x ∣ H.index` for every torsion element `x : G`.
-* `Submonoid.eq_one_of_isOfFinOrder_mem`: a torsion-free submonoid contains no nontrivial ambient
-  element of finite order.
 * `Subgroup.orderOf_dvd_index_of_isMulTorsionFree`: typeclass form for `[IsMulTorsionFree H]`.
 -/
 
 public section
-
-namespace Submonoid
-
-/-- If `H : Submonoid G` is torsion-free, every element of `H` that has finite order in `G` is
-`1`. -/
-theorem eq_one_of_isOfFinOrder_mem {G : Type*} [Monoid G] (H : Submonoid G) [IsMulTorsionFree H]
-    {x : G} (hx : x ∈ H) (hfin : IsOfFinOrder x) : x = 1 :=
-  congrArg Subtype.val (Submonoid.isOfFinOrder_coe.mp hfin : IsOfFinOrder (⟨x, hx⟩ : H)).eq_one'
-
-end Submonoid
 
 namespace Subgroup
 
@@ -53,12 +43,15 @@ theorem natCard_dvd_index_of_forall_conj_mem_eq_one (H K : Subgroup G)
   have hcanc : IsCancelSMul K (G ⧸ H) :=
     { right_cancel' := fun k₁ k₂ q hq => by
         obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+        rw [Subgroup.smul_def, Subgroup.smul_def, MulAction.Quotient.smul_mk,
+          MulAction.Quotient.smul_mk, smul_eq_mul, smul_eq_mul] at hq
         have hmem : ((k₁ : G) * g)⁻¹ * ((k₂ : G) * g) ∈ H :=
           QuotientGroup.eq.mp hq
         rw [mul_inv_rev, mul_assoc, ← mul_assoc (k₁ : G)⁻¹] at hmem
         have hk : ((k₁⁻¹ * k₂ : K) : G) = 1 :=
           h g _ (k₁⁻¹ * k₂).property (by simpa [mul_assoc] using hmem)
         exact inv_mul_eq_one.mp (Subtype.ext hk) }
+  rw [Subgroup.index_eq_card]
   exact MulAction.natCard_dvd_natCard_of_isCancelSMul (G := K) (X := G ⧸ H)
 
 /-- If `H ≤ G` contains no nontrivial element of finite order, then the order of every element of
@@ -72,9 +65,7 @@ theorem orderOf_dvd_index_of_forall_isOfFinOrder_eq_one (H : Subgroup G)
       have hconj : IsConj k (g⁻¹ * k * g) := isConj_iff.mpr ⟨g⁻¹, by simp⟩
       have hconj_one : g⁻¹ * k * g = 1 := hH _ hmem (hconj.isOfFinOrder hk_fin)
       exact isConj_one_left.mp (hconj_one ▸ hconj)
-  have hcard : Nat.card (zpowers x) = orderOf x :=
-    (Nat.card_congr (finEquivZPowers hx).symm).trans (Nat.card_fin (orderOf x))
-  rwa [hcard] at hdvd
+  simpa only [Nat.card_zpowers] using hdvd
 
 /-- If `H ≤ G` is torsion-free, then the order of every element of finite order in `G` divides
 `H.index`. -/

@@ -81,13 +81,6 @@ theorem of_cast {i j : ι} (h : i = j) (x : M i) :
   subst h
   rfl
 
-/-- Reindexing an element of `M i` via `MulEquiv.cast h` does not change its image under
-`Monoid.CoprodI.of`. -/
-theorem of_mulEquivCast {i j : ι} (h : i = j) (x : M i) :
-    of (M := M) (i := j) (MulEquiv.cast h x) = of (M := M) (i := i) x := by
-  subst h
-  rfl
-
 end Monoid.CoprodI
 
 namespace MulEquiv
@@ -138,14 +131,6 @@ theorem coprodICongrLeft_symm_apply_of {ι κ : Type*} (M : κ → Type*) [∀ k
       CoprodI.of (M := fun i => M (e i)) (i := e.symm k)
         (MulEquiv.cast (e.apply_symm_apply k).symm m) :=
   CoprodI.lift_of _ _
-
-/-- Evaluating the inverse of `coprodICongrLeft M e` on `CoprodI.of (i := e i) m` recovers
-`CoprodI.of m` at index `i`. -/
-theorem coprodICongrLeft_symm_apply_of_apply {ι κ : Type*} (M : κ → Type*) [∀ k, Monoid (M k)]
-    (e : ι ≃ κ) {i : ι} (m : M (e i)) :
-    (coprodICongrLeft M e).symm (CoprodI.of (i := e i) m) =
-      CoprodI.of (M := fun i => M (e i)) m := by
-  simp
 
 variable (M) [Unique ι]
 
@@ -388,11 +373,6 @@ theorem lift_comp_finTwoEquivCoprod_symm :
     (lift f).comp ((finTwoEquivCoprod M).symm : Coprod (M 0) (M 1) →* CoprodI M) =
       Coprod.lift (f 0) (f 1) := by
   ext <;> simp
-
-@[simp]
-theorem lift_finTwoEquivCoprod_symm (x : Coprod (M 0) (M 1)) :
-    lift f ((finTwoEquivCoprod M).symm x) = Coprod.lift (f 0) (f 1) x :=
-  DFunLike.congr_fun (lift_comp_finTwoEquivCoprod_symm f) x
 
 end FinTwo
 

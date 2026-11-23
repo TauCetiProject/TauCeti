@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.FiniteAbelian.TorsionFree
 public import TauCeti.GroupTheory.FreeGroup.TwoGenerator
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 import TauCeti.GroupTheory.CoprodI.Word
 import TauCeti.GroupTheory.Subgroup.Centralizer
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import TauCeti.GroupTheory.Coprod.Commute
-public import TauCeti.GroupTheory.CoprodI
+public import TauCeti.GroupTheory.CoprodI.Basic
 
 /-!
 # Freely indecomposable groups and Grushko decompositions

@@ -17,7 +17,7 @@ import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
