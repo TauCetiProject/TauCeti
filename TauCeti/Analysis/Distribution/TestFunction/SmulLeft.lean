@@ -22,8 +22,8 @@ acts on test `k`-forms by the wedge product `ω ↦ α ∧ ω`, with values in t
 Both are continuous linear maps for the LF topology, built from Mathlib's
 `TestFunction.bilinLeftCLM`. They do not enlarge supports and commute with extension of test
 functions to a larger open set. In a finite-dimensional space, multiplication by a function that
-is smooth on `Ω` only, with no condition off `Ω`, is also a continuous linear map: on the tests
-supported in a compact `K ⊆ Ω` it is multiplication by a globally smooth function equal to it near
+is `C^n` on `Ω` only, with no condition off `Ω`, is also a continuous linear map: on the tests
+supported in a compact `K ⊆ Ω` it is multiplication by a globally `C^n` function equal to it near
 `K`.
 
 The exterior derivative satisfies the Leibniz rule `d (f ω) = df ∧ ω + f dω` on test forms.
@@ -40,7 +40,7 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
 * `TestFunction.smulLeftCLMOfContDiffOn`: multiplication `φ ↦ g φ` of test functions on `Ω` by a
-  function smooth on `Ω` only.
+  function `C^n` on `Ω` only.
 * `TestFunction.norm_iteratedFDeriv_smulLeftCLM_le`: the Leibniz bound for `a Ψ` when the
   derivatives of `a` are only controlled on a set containing the support of `Ψ`.
 * `TestFunction.exists_mul_eq_of_forall_ne_zero`: a test function divided by a smooth function
@@ -209,10 +209,10 @@ open Set
 
 variable [FiniteDimensional ℝ E] {f g : E → ℝ}
 
-/-- **Multiplication by a function smooth on `Ω`**, `φ ↦ g φ`, as a continuous linear map on the
-`C^n` test functions on `Ω`. Nothing is required of `g` off `Ω`; when `g` is smooth on all of `E`
+/-- **Multiplication by a function `C^n` on `Ω`**, `φ ↦ g φ`, as a continuous linear map on the
+`C^n` test functions on `Ω`. Nothing is required of `g` off `Ω`; when `g` is `C^n` on all of `E`
 this is `TestFunction.smulLeftCLM` (`TestFunction.smulLeftCLMOfContDiffOn_eq_smulLeftCLM`). On the
-tests supported in a compact `K ⊆ Ω` it is multiplication by a globally smooth function that agrees
+tests supported in a compact `K ⊆ Ω` it is multiplication by a globally `C^n` function that agrees
 with `g` near `K`. -/
 noncomputable def smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) :
     𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
@@ -234,25 +234,25 @@ theorem smulLeftCLMOfContDiffOn_apply (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n
     smulLeftCLMOfContDiffOn hg φ x = g x • φ x := by
   rw [smulLeftCLMOfContDiffOn, limitCLM_apply, (exists_coe_eq_smul_of_contDiffOn hg φ).choose_spec]
 
-/-- A multiple of a test function by a function smooth on `Ω`, as a function, is the pointwise
+/-- A multiple of a test function by a function `C^n` on `Ω`, as a function, is the pointwise
 product. -/
 theorem coe_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(Ω, F)) :
     (smulLeftCLMOfContDiffOn hg φ : E → F) = g • ⇑φ :=
   funext (smulLeftCLMOfContDiffOn_apply hg φ)
 
-/-- Multiplying by a function smooth on `Ω` does not enlarge the support of a test function. -/
+/-- Multiplying by a function `C^n` on `Ω` does not enlarge the support of a test function. -/
 theorem tsupport_smulLeftCLMOfContDiffOn_subset (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(Ω, F)) :
     tsupport (smulLeftCLMOfContDiffOn hg φ : E → F) ⊆ tsupport g ∩ tsupport φ := by
   rw [coe_smulLeftCLMOfContDiffOn]
   exact subset_inter (tsupport_smul_subset_left g φ) (tsupport_smul_subset_right g φ)
 
-/-- For a function smooth on all of `E`, multiplication by it is `TestFunction.smulLeftCLM`. -/
+/-- For a function `C^n` on all of `E`, multiplication by it is `TestFunction.smulLeftCLM`. -/
 theorem smulLeftCLMOfContDiffOn_eq_smulLeftCLM (hg : ContDiff ℝ n g) :
     (smulLeftCLMOfContDiffOn hg.contDiffOn : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = smulLeftCLM hg := by
   ext φ x
   simp
 
-/-- Multiplying by two functions smooth on `Ω` in turn is multiplying by their product. -/
+/-- Multiplying by two functions `C^n` on `Ω` in turn is multiplying by their product. -/
 @[simp]
 theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hf : ContDiffOn ℝ n f Ω)
     (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(Ω, F)) :
@@ -261,7 +261,7 @@ theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hf : ContDiffOn ℝ n f
   ext x
   simp [smul_smul]
 
-/-- Multiplication by a function smooth on `Ω` commutes with extending test functions from
+/-- Multiplication by a function `C^n` on `Ω` commutes with extending test functions from
 `Ω' ≤ Ω` to `Ω`. -/
 theorem smulLeftCLMOfContDiffOn_monoCLM (hg : ContDiffOn ℝ n g Ω) (h : Ω' ≤ Ω)
     (φ : 𝓓^{n}(Ω', F)) :

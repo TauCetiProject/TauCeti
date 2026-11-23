@@ -32,9 +32,6 @@ records the source, target, forward map and inverse map of Mathlib's composition
 * `PartialDiffeomorph.ofLE`: a `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`.
 * `ContinuousLinearEquiv.toPartialDiffeomorph`: a continuous linear equivalence as a `C^n` partial
   diffeomorphism defined everywhere, for any `n`.
-* `PartialDiffeomorph.left_inv`, `PartialDiffeomorph.right_inv`: a partial diffeomorphism and its
-  inverse undo each other on the source and on the target.
-* `PartialDiffeomorph.symm_symm`: the inverse of the inverse is the partial diffeomorphism.
 * `ContinuousLinearEquiv.toPartialDiffeomorphProd`: a continuous linear equivalence onto a product
   `F × G` as a `C^n` partial diffeomorphism onto the product manifold, modelled on
   `𝓘(𝕜, F).prod 𝓘(𝕜, G)`.
@@ -97,25 +94,6 @@ def ofLE (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorp
 @[simp]
 theorem ofLE_toPartialEquiv (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) :
     (Φ.ofLE hmn).toPartialEquiv = Φ.toPartialEquiv :=
-  (rfl)
-
-/-- The inverse of a partial diffeomorphism undoes it on its source. This restates the inherited
-`PartialEquiv.left_inv` in terms of the coercions of `Φ` and `Φ.symm`, as
-`OpenPartialHomeomorph.left_inv` does. -/
-theorem left_inv (Φ : PartialDiffeomorph I J M N n) {x : M} (hx : x ∈ Φ.source) :
-    Φ.symm (Φ x) = x :=
-  Φ.toPartialEquiv.left_inv hx
-
-/-- A partial diffeomorphism undoes its inverse on its target. This restates the inherited
-`PartialEquiv.right_inv` in terms of the coercions of `Φ` and `Φ.symm`, as
-`OpenPartialHomeomorph.right_inv` does. -/
-theorem right_inv (Φ : PartialDiffeomorph I J M N n) {y : N} (hy : y ∈ Φ.target) :
-    Φ (Φ.symm y) = y :=
-  Φ.toPartialEquiv.right_inv hy
-
-/-- The inverse of the inverse of a partial diffeomorphism is the partial diffeomorphism. -/
-@[simp, mfld_simps]
-theorem symm_symm (Φ : PartialDiffeomorph I J M N n) : Φ.symm.symm = Φ :=
   (rfl)
 
 section Trans

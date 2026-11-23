@@ -225,9 +225,9 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
     lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, F)) x w = lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, F)) x v := by
   rw [← lineDerivOp_apply, ← lineDerivOp_apply, lineDerivOp_comm]
 
-/-! ### Multiplication by a function smooth on `Ω` -/
+/-! ### Multiplication by a function `C^n` on `Ω` -/
 
-/-- **A test function times a function smooth on `Ω` is a test function.** If `g` is `C^n` on
+/-- **A test function times a function `C^n` on `Ω` is a test function.** If `g` is `C^n` on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓^{n}(Ω, F)`, then `x ↦ g x • φ x` is again a `C^n` test
 function on `Ω`: it is `C^n` on `Ω` and vanishes on the open complement of `tsupport φ`, and these
 two open sets cover `E`. -/
