@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Maps.Strict.Group
 public import TauCeti.GroupTheory.Amenable.Discrete
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
 # Quotients and images of amenable groups
@@ -80,15 +79,8 @@ theorem Amenable.range [Amenable G] (φ : G →ₜ* H) : Amenable φ.range :=
 /-- If `φ : G →* H` is continuous and the quotient `G ⧸ φ.ker` is amenable, then the range of `φ`
 is amenable for the subspace topology. -/
 theorem Amenable.range_of_quotient_ker {φ : G →* H} (hφ : Continuous φ) [Amenable (G ⧸ φ.ker)] :
-    Amenable φ.range := by
-  -- `rangeKerLift φ` is defined as the lift of `φ.rangeRestrict` through the quotient map, so its
-  -- composite with the quotient map is the corestriction of `φ` to its range.
-  have h (g : G) : QuotientGroup.rangeKerLift φ g = φ.rangeRestrict g :=
-    QuotientGroup.lift_mk _ _ _
-  have hc : Continuous (QuotientGroup.rangeKerLift φ) := by
-    rw [(QuotientGroup.isQuotientMap_mk φ.ker).continuous_iff]
-    exact (hφ.subtype_mk _).congr fun g => (h g).symm
-  exact .of_denseRange ⟨QuotientGroup.rangeKerLift φ, hc⟩
+    Amenable φ.range :=
+  .of_denseRange ⟨QuotientGroup.rangeKerLift φ, QuotientGroup.continuous_rangeKerLift hφ⟩
     (QuotientGroup.rangeKerLift_surjective φ).denseRange
 
 /-- For a strict homomorphism `φ : G →* H`, the quotient `G ⧸ φ.ker` with the quotient topology is

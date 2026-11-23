@@ -49,8 +49,8 @@ mean `m.prod n` of `TauCeti.GroupTheory.Amenable.Prod`.
   section of `φ` is left invariant when `φ.ker ≤ ψ.range`.
 * `TauCeti.Amenable.of_ker_le_range`: if `φ.ker ≤ ψ.range` and `K`, `Q` are amenable discrete
   groups, then `G` is amenable for every group topology.
-* `TauCeti.amenable_iff_ker_of_surjective`: a discrete group with a surjective homomorphism
-  `φ` onto a discrete group `Q` is amenable exactly when `φ.ker` and `Q` are.
+* `TauCeti.amenable_iff_ker_and_codomain_of_surjective`: a discrete group with a surjective
+  homomorphism `φ` onto a discrete group `Q` is amenable exactly when `φ.ker` and `Q` are.
 * `TauCeti.amenable_iff_subgroup_quotient`: a discrete group with a normal subgroup `N` is
   amenable exactly when `N` and `G ⧸ N` are.
 * `TauCeti.Amenable.semidirectProduct`: a semidirect product of amenable discrete groups is
@@ -205,7 +205,7 @@ theorem Amenable.of_ker_le_range {G K Q : Type*} [Group G] [TopologicalSpace G]
 
 /-- A discrete group `G` with a surjective homomorphism `φ` onto a discrete group `Q` is amenable
 exactly when the kernel of `φ` and `Q` are amenable. -/
-theorem amenable_iff_ker_of_surjective {G Q : Type*} [Group G] [TopologicalSpace G]
+theorem amenable_iff_ker_and_codomain_of_surjective {G Q : Type*} [Group G] [TopologicalSpace G]
     [DiscreteTopology G] [Group Q] [TopologicalSpace Q] [DiscreteTopology Q] {φ : G →* Q}
     (hφ : Function.Surjective φ) : Amenable G ↔ Amenable φ.ker ∧ Amenable Q :=
   ⟨fun _ => ⟨inferInstance, .of_surjective φ hφ⟩,
