@@ -11,12 +11,13 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 /-!
 # Inner-product half-spaces
 
-A translation orthogonal to the normal vector preserves a strict half-space. The ball of radius
-`r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and more generally a
-closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
-(`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
-`c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); for `ν ≠ 0`, an open ball
-`ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫`
+A translation orthogonal to the normal vector preserves a strict half-space, and the open and
+closed half-spaces are convex (`TauCeti.convex_of_halfSpace`, `TauCeti.convex_setOf_le_inner`).
+The ball of radius `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`, and
+more generally a closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever
+`⟪w, ν⟫ + r * ‖ν‖ < c` (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}`
+whenever `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`); for `ν ≠ 0`, an
+open ball `ball w r` lies in `{y | c < ⟪y, ν⟫}` already when `c + r * ‖ν‖ ≤ ⟪w, ν⟫`
 (`TauCeti.ball_subset_setOf_lt_inner`). For `ν ≠ 0` and `x` in the closed half-space
 `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about `x + (ρ / ‖ν‖) ν` lies in the open
 half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`). For `ν ≠ 0`, the
@@ -47,6 +48,11 @@ theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProduct
   obtain rfl : s = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hΩ
   simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using
     convex_halfSpace_gt ((innerₗ E).flip ν).isLinear c
+
+/-- The closed half-space `{x | c ≤ ⟪x, ν⟫}` is convex. -/
+theorem convex_setOf_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (ν : E) (c : ℝ) : Convex ℝ {x : E | c ≤ ⟪x, ν⟫_ℝ} :=
+  convex_halfSpace_ge ⟨fun x y => inner_add_left x y ν, fun a x => real_inner_smul_left x ν a⟩ c
 
 /-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
 theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]

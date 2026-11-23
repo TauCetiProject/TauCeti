@@ -22,10 +22,13 @@ compact set the uniform bounds are automatic for a positive exponent
 If one argument vanishes off a set `s`, the other need only be Hölder and bounded on `s`
 (`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
 multiplication): this is how a cutoff extends a function given on `s` to the whole space, and how
-freezing a coefficient on the support of a localized function is estimated.
+freezing a coefficient on the support of a localized function is estimated. The relative form
+`HolderOnWith.smul_of_eq_zero` extends it from `s` to a larger set `t` instead.
 
 A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
-the operator norm (`ContinuousLinearMap.holderWith_comp`).
+the operator norm (`ContinuousLinearMap.holderWith_comp`). Evaluating a Hölder family of
+continuous linear maps at a vector of norm at most one keeps the Hölder constant
+(`HolderOnWith.clm_apply_of_norm_le_one`).
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
 most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
@@ -179,3 +182,30 @@ theorem norm_smulRight_sub_le {ι Y : Type*} [Fintype ι] {E : ι → Type*}
   exact mul_le_mul_of_nonneg_left (hg.dist_le x y) (norm_nonneg _)
 
 end HolderWith
+
+namespace HolderOnWith
+
+variable {𝕜 X F G : Type*} [NontriviallyNormedField 𝕜] [PseudoEMetricSpace X]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The form of `HolderWith.smul_of_eq_zero` relative to a set `t`: a scalar factor that is Hölder
+and bounded on `t` and vanishes at the points of `t` outside `s` turns a function that is Hölder
+and bounded only on `s` into a function that is Hölder on `t`. -/
+theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G} {s t : Set X}
+    (hc : HolderOnWith Kc α c t) (hf : HolderOnWith Kf α f s) (hcnorm : ∀ x ∈ t, ‖c x‖ ≤ Mc)
+    (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hc0 : ∀ x ∈ t, x ∉ s → c x = 0) :
+    HolderOnWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) t :=
+  HolderWith.restrict_iff.1 <| HolderWith.smul_of_eq_zero (X := t) (c := fun x ↦ c x)
+    (f := fun x ↦ f x) (s := {x : t | (x : X) ∈ s}) hc.holderWith (fun x hx y hy ↦ hf x hx y hy)
+    (fun x ↦ hcnorm x x.property) (fun x hx ↦ hfnorm x hx) (fun x hx ↦ hc0 x x.property hx)
+
+/-- Evaluating a family of continuous linear maps, Hölder on `s`, at a vector of norm at most `1`
+keeps the Hölder constant. -/
+theorem clm_apply_of_norm_le_one [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {C α : ℝ≥0}
+    {f : X → F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) {v : F} (hv : ‖v‖ ≤ 1) :
+    HolderOnWith C α (fun x ↦ f x v) s := fun x hx y hy ↦ by
+  refine le_trans ?_ (hf x hx y hy)
+  rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← sub_apply]
+  exact ENNReal.ofReal_le_ofReal ((f x - f y).unit_le_opNorm _ hv)
+
+end HolderOnWith

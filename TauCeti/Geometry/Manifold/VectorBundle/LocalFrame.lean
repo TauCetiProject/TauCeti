@@ -32,6 +32,8 @@ out of a finite-dimensional space is recovered from its values on a basis by
 `ContMDiffCovariantDerivativeOn` asks for smoothness of the hom-bundle section `∇σ`, while the
 constructions of connections produce smoothness of the vector fields `∇_X σ` one direction `X` at
 a time.
+Applied twice, the same criterion tests a section of the bundle of bilinear forms on pairs of
+frame vectors, as for a fibre metric or a fibrewise symplectic form.
 
 Finally, in a bundle with model fibre `𝕜`, over the base set of a trivialization any two vectors
 `v ≠ 0` and `w` of a fibre satisfy `w = c • v` for the ratio `c` of their coordinates in the
@@ -60,6 +62,8 @@ trivialization.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
   maps, possibly along a base map, is `C^n` once its evaluations on a local frame of the source
   bundle are.
+* `TauCeti.Manifold.contMDiffOn_bilinear_of_localFrame`: a section of the bundle of bilinear forms
+  is `C^n` once its evaluations on pairs of local-frame vectors are.
 * `Bundle.Trivialization.span_range_localFrame_map`: the image of a local frame under a linear
   map spans the range of that map at every point of the base set.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
@@ -289,6 +293,31 @@ theorem contMDiffOn_hom_of_localFrame {f : N → M} {u : Set N} (hf : ContMDiffO
   intro y _
   refine ContinuousLinearMap.coe_injective (b.ext fun j ↦ ?_)
   simp [Basis.coord_apply, Finsupp.single_apply]
+
+/-- **A bilinear-form section is tested on pairs of local-frame vectors.** A family of continuous
+bilinear forms `A y` on the fibres of `V` is a `C^n` section of the bundle of bilinear forms on a
+subset `u` of `e.baseSet` as soon as each evaluation `A y (e.localFrame b i y) (e.localFrame b j y)`
+on two local-frame vectors is `C^n` on `u`. -/
+theorem contMDiffOn_bilinear_of_localFrame {u : Set M} (hu : u ⊆ e.baseSet)
+    {A : Π y : M, V y →L[𝕜] V y →L[𝕜] 𝕜}
+    (hA : ∀ i j : ι, ContMDiffOn I 𝓘(𝕜) n
+      (fun y ↦ A y (e.localFrame b i y) (e.localFrame b j y)) u) :
+    ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] 𝕜)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] 𝕜)
+        (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] 𝕜) y (A y)) u := by
+  let e𝕜 := Trivial.trivialization M 𝕜
+  have : MemTrivializationAtlas e𝕜 := ⟨rfl⟩
+  -- Test the outer and then the inner linear maps on the local frame.
+  apply contMDiffOn_hom_of_localFrame (V' := fun y ↦ V y →L[𝕜] 𝕜)
+    (e' := e.continuousLinearMap (RingHom.id 𝕜) e𝕜) b (f := id) contMDiffOn_id
+    (fun y hy ↦ ⟨hu hy, hu hy, mem_univ _⟩)
+  intro i
+  apply contMDiffOn_hom_of_localFrame (V' := Trivial M 𝕜) (e' := e𝕜) b (f := id) contMDiffOn_id
+    (fun y hy ↦ ⟨hu hy, mem_univ _⟩)
+  intro j y hy
+  rw [Bundle.contMDiffWithinAt_totalSpace_iff]
+  refine ⟨contMDiffWithinAt_id, ?_⟩
+  simpa [Trivial.fiberBundle_trivializationAt'] using hA i j y hy
 
 end Hom
 
