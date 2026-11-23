@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Hypersurface
 
+import TauCeti.RingTheory.Localization.Away.Basic
+
 /-!
 # The coordinate ring of the circle
 
@@ -40,6 +42,7 @@ criterion for plane curves (`MvPolynomial.isDedekindDomain_quotient_span_singlet
 * `TauCeti.CircleRing k`: the coordinate ring `k[x, y] ⧸ (x² + y² - 1)`.
 * `TauCeti.CircleRing.x`, `TauCeti.CircleRing.y`: the two coordinate functions.
 * `TauCeti.CircleRing.lift`: the `k`-algebra map sending `x, y` to a point `(a, b)` of the circle.
+* `TauCeti.CircleRing.map`: base change of `CircleRing` along a ring homomorphism.
 * `TauCeti.CircleRing.stereographicEquiv`: the chart `1 + εx ≠ 0` is `k[t, (1 + t²)⁻¹]`.
 * `TauCeti.CircleRing.chartToOverlap`: the canonical map from a chart `1 + εx ≠ 0` to the overlap
   `y ≠ 0`.
@@ -51,7 +54,8 @@ criterion for plane curves (`MvPolynomial.isDedekindDomain_quotient_span_singlet
 * `TauCeti.CircleRing.isCoprime_one_add_x_one_sub_x`: the two charts cover the circle.
 * `TauCeti.CircleRing.instIsDedekindDomain`: over a field in which `2 ≠ 0`, `CircleRing k` is a
   Dedekind domain.
-* `TauCeti.CircleRing.stereographic_overlap_of_sq_eq_one`,
+* `TauCeti.CircleRing.stereographic_overlap_coord_of_sq_eq_one`,
+  `TauCeti.CircleRing.stereographic_overlap_of_sq_eq_one`,
   `TauCeti.CircleRing.stereographic_overlap`: on the overlap `y ≠ 0`, the stereographic
   coordinates at `ε` and `-ε` (in particular `t₊` and `t₋`) satisfy `t_ε · t_{-ε} = 1`.
 
@@ -172,6 +176,36 @@ theorem algHom_ext {f g : CircleRing k →ₐ[k] S} (hx : f x = g x) (hy : f y =
     fin_cases i
     exacts [hx, hy]
 
+section Map
+
+variable {k' S' : Type*} [CommRing k'] [CommRing S']
+
+/-- Base change of the circle coordinate ring along a ring homomorphism `f : k' →+* S'`. -/
+noncomputable def map (f : k' →+* S') : CircleRing k' →+* CircleRing S' :=
+  letI : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
+  (lift (x : CircleRing S') y x_sq_add_y_sq).toRingHom
+
+/-- Base change on `CircleRing` preserves `x`. -/
+@[simp]
+theorem map_x (f : k' →+* S') : map f (x : CircleRing k') = x := by
+  let _ : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
+  exact lift_x ..
+
+/-- Base change on `CircleRing` preserves `y`. -/
+@[simp]
+theorem map_y (f : k' →+* S') : map f (y : CircleRing k') = y := by
+  let _ : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
+  exact lift_y ..
+
+/-- Base change on `CircleRing` acts on scalars via `f`. -/
+@[simp]
+theorem map_algebraMap (f : k' →+* S') (a : k') :
+    map f (algebraMap k' (CircleRing k') a) = algebraMap S' (CircleRing S') (f a) := by
+  let _ : Algebra k' (CircleRing S') := RingHom.toAlgebra ((algebraMap S' (CircleRing S')).comp f)
+  exact (lift (x : CircleRing S') y x_sq_add_y_sq).commutes a
+
+end Map
+
 /-- **The two charts cover the circle**: when `2` is invertible, `1 + x` and `1 - x` generate
 the unit ideal, their sum being `2`. -/
 theorem isCoprime_one_add_x_one_sub_x (h2 : IsUnit (2 : k)) :
@@ -224,13 +258,6 @@ private theorem algebraMap_sq_eq_one {S : Type*} [CommRing S] [Algebra k S] (hε
 private theorem isUnit_two_mul {S : Type*} [CommRing S] [Algebra k S] (h2 : IsUnit (2 : k))
     {a b : S} (h : a * b = 1) : IsUnit (2 * b) :=
   .mul (map_ofNat (algebraMap k S) 2 ▸ h2.map _) (.of_mul_eq_one_right _ h)
-
-/-- A ring homomorphism out of `Localization.Away r` sends `invSelf r` and `algebraMap R _ r` to
-elements with product `1`. -/
-private theorem map_invSelf_mul_map {R S : Type*} {r : R} {F : Type*} [CommRing R] [CommRing S]
-    [FunLike F (Localization.Away r) S] [RingHomClass F (Localization.Away r) S] (f : F) :
-    f (invSelf r) * f (algebraMap R _ r) = 1 := by
-  rw [← map_mul, mul_comm, mul_invSelf, map_one]
 
 /-! The identities behind the two charts, for elements `E`, `T`, `w` (on the `t` side) and
 `E`, `a`, `b`, `v`, `w` (on the `x, y` side) of a commutative ring. They are applied with `E` the
@@ -427,14 +454,13 @@ theorem chartToOverlap_algebraMap (hε : ε ^ 2 = 1) (a : CircleRing k) :
     chartToOverlap hε (algebraMap (CircleRing k) _ a) = algebraMap (CircleRing k) _ a := by
   simp [chartToOverlap]
 
-/-- **Overlap compatibility of the stereographic charts.** On `k[x, y, y⁻¹]`, the stereographic
-coordinates `t_ε = y / (1 + εx)` and `t_{-ε} = y / (1 - εx)` for `ε² = 1` are mutually inverse:
-`t_ε · t_{-ε} = 1`. -/
-theorem stereographic_overlap_of_sq_eq_one (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
-    chartToOverlap hε ((stereographicEquiv hε h2).symm (algebraMap k[X] _ X)) *
+/-- **Overlap compatibility of the explicit stereographic coordinates.** On `k[x, y, y⁻¹]`, the
+localized coordinates `y / (1 + εx)` and `y / (1 - εx)` for `ε² = 1` are mutually inverse,
+without assuming `2` is a unit. -/
+theorem stereographic_overlap_coord_of_sq_eq_one (hε : ε ^ 2 = 1) :
+    chartToOverlap hε (algebraMap (CircleRing k) _ y * invSelf (1 + ε • x : CircleRing k)) *
       chartToOverlap ((neg_sq ε).trans hε)
-        ((stereographicEquiv ((neg_sq ε).trans hε) h2).symm (algebraMap k[X] _ X)) = 1 := by
-  rw [stereographicEquiv_symm_algebraMap_X, stereographicEquiv_symm_algebraMap_X]
+        (algebraMap (CircleRing k) _ y * invSelf (1 + (-ε) • x : CircleRing k)) = 1 := by
   set s₁ : CircleRing k := 1 + ε • x
   set s₂ : CircleRing k := 1 + (-ε) • x
   have hneg : (-ε) ^ 2 = 1 := (neg_sq ε).trans hε
@@ -463,6 +489,16 @@ theorem stereographic_overlap_of_sq_eq_one (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : 
           rw [← map_pow, hs₁₂]
           ring
     _ = 1 := by rw [h₁, h₂', mul_one]
+
+/-- **Overlap compatibility of the stereographic charts.** On `k[x, y, y⁻¹]`, the stereographic
+coordinates `t_ε = y / (1 + εx)` and `t_{-ε} = y / (1 - εx)` for `ε² = 1` are mutually inverse:
+`t_ε · t_{-ε} = 1`. -/
+theorem stereographic_overlap_of_sq_eq_one (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
+    chartToOverlap hε ((stereographicEquiv hε h2).symm (algebraMap k[X] _ X)) *
+      chartToOverlap ((neg_sq ε).trans hε)
+        ((stereographicEquiv ((neg_sq ε).trans hε) h2).symm (algebraMap k[X] _ X)) = 1 := by
+  rw [stereographicEquiv_symm_algebraMap_X, stereographicEquiv_symm_algebraMap_X]
+  exact stereographic_overlap_coord_of_sq_eq_one hε
 
 /-- **Overlap compatibility of the stereographic charts.** On `k[x, y, y⁻¹]`, the two
 stereographic coordinates `t₊ = y / (1 + x)` and `t₋ = y / (1 - x)` are mutually inverse:

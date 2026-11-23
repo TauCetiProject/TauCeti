@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+import TauCeti.Topology.Homotopy.Path
 public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
@@ -106,7 +107,8 @@ theorem _root_.IsCoveringMap.eq_of_map_homotopic_refl (hp : IsCoveringMap p) {e�
   have hrefl : hp.liftPath (Path.refl (p e₀)).toContinuousMap e₀ rfl =
       ContinuousMap.const _ e₀ :=
     hp.liftPath_const rfl
-  have key := hp.liftPath_apply_one_eq_of_homotopicRel hγ e₀ δ.source rfl
+  have key := hp.liftPath_apply_one_eq_of_homotopicRel
+    (Path.homotopic_iff_homotopicRel.mp hγ) e₀ δ.source rfl
   rw [hδ, hrefl] at key
   simpa using key.symm
 

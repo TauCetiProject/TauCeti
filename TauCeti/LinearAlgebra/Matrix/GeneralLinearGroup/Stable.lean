@@ -9,6 +9,8 @@ public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.DirectLimit
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+
 /-!
 # The stable general linear group and algebraic `K₁`
 
@@ -685,8 +687,10 @@ theorem stabilizeSL_map {R S : Type*} [CommRing R] [CommRing S] {m n : ℕ} (h :
     (f : R →+* S) (g : SpecialLinearGroup (Fin m) R) :
     stabilizeSL h (SpecialLinearGroup.map f g) =
       SpecialLinearGroup.map f (stabilizeSL h g) := by
-  ext i j
-  simp [coe_stabilizeSL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
+  apply SpecialLinearGroup.toGL_injective
+  rw [toGL_stabilizeSL, SpecialLinearGroup.toGL_map, SpecialLinearGroup.toGL_map,
+    toGL_stabilizeSL]
+  exact stabilizeGL_map h f (SpecialLinearGroup.toGL g)
 
 namespace AlgebraicK1
 

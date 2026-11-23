@@ -19,6 +19,7 @@ import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 import TauCeti.Topology.Homotopy.Covering
 import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Nontriviality of `SK₁` for the algebraic circle
@@ -52,6 +53,8 @@ homotopy lifting. Base change along `k →+* ℝ` then propagates nonvanishing f
 * `TauCeti.circleRotation_mul_transpose`: `circleRotation k` is algebraically orthogonal.
 * `TauCeti.circleRotation_mk_mem_specialAlgebraicK1`: the class of `circleRotation k` lies in
   `SK₁(CircleRing k)`.
+* `TauCeti.map_circleRotation`, `TauCeti.map_toGL_circleRotation`: base change on `CircleRing`
+  preserves `circleRotation`.
 * `TauCeti.circleRotation_not_mem_elementarySubgroup`: no stabilization of `circleRotation k` is
   elementary when `k` admits `k →+* ℝ`.
 * `TauCeti.circle_rotation_not_stably_elementary`: the class of `circleRotation k` in
@@ -308,9 +311,7 @@ private theorem realCliffordSpinProjectionZero_spinRotationPath_eq (N : ℕ) (hN
   refine (Pi.basisFun ℝ (Fin N)).ext fun j ↦ ?_
   simp only [LinearEquiv.coe_toLinearMap, Pi.basisFun_apply]
   rw [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
-    CliffordAlgebra.realCliffordSpinProjectionZero_apply,
-    CliffordAlgebra.realCliffordSpinDoubleCoverZero_rightHom,
-    CliffordAlgebra.coe_spinToSpecialOrthogonal_apply,
+    CliffordAlgebra.coe_realCliffordSpinProjectionZero_apply,
     spinRotationPathE10,
     CliffordAlgebra.spinRotationPath_apply,
     CliffordAlgebra.spinRotation_eq_spinCircle]
@@ -411,7 +412,8 @@ private theorem circleRotation_not_mem_elementarySubgroup_real (N : ℕ) (hN : 2
     exact (realCliffordSpinProjectionZero_spinRotationPath_eq N hN u).symm
   rw [hsrc, hdst] at hloopSO
   -- Covering homotopy lifting forces `1 = -1` in `Spin(N)`, a contradiction.
-  have hneq := IsCoveringMap.eq_of_map_homotopic_refl hp γSpin hp1 hloopSO.symm
+  have hneq := IsCoveringMap.eq_of_map_homotopic_refl hp γSpin hp1
+    (Path.homotopic_iff_homotopicRel.mpr hloopSO.symm)
   exact CliffordAlgebra.spinGroup.negOne_ne_one (realCliffordForm N 0)
     (nondegenerate_realCliffordForm N 0).ne_zero hneq.symm
 
@@ -421,20 +423,21 @@ private theorem circle_rotation_not_stably_elementary_real :
   rintro ⟨N, hN, hmem⟩
   exact circleRotation_not_mem_elementarySubgroup_real N hN hmem
 
-private def circleRingMap {k : Type*} [CommRing k] (f : k →+* ℝ) :
-    CircleRing k →+* CircleRing ℝ :=
-  letI : Algebra k (CircleRing ℝ) := RingHom.toAlgebra ((algebraMap ℝ (CircleRing ℝ)).comp f)
-  (CircleRing.lift (CircleRing.x : CircleRing ℝ) CircleRing.y CircleRing.x_sq_add_y_sq).toRingHom
-
-private theorem map_toGL_circleRotation {k : Type*} [CommRing k] (f : k →+* ℝ) :
-    Units.map ((circleRingMap f).mapMatrix (m := Fin 2)).toMonoidHom
-        (SpecialLinearGroup.toGL (circleRotation k)) =
-      SpecialLinearGroup.toGL (circleRotation ℝ) := by
-  let _ : Algebra k (CircleRing ℝ) := RingHom.toAlgebra ((algebraMap ℝ (CircleRing ℝ)).comp f)
-  have hx : circleRingMap f CircleRing.x = CircleRing.x := CircleRing.lift_x ..
-  have hy : circleRingMap f CircleRing.y = CircleRing.y := CircleRing.lift_y ..
+/-- Base change along `f : k →+* S` carries `circleRotation k` to `circleRotation S`. -/
+@[simp]
+theorem map_circleRotation {k S : Type*} [CommRing k] [CommRing S] (f : k →+* S) :
+    SpecialLinearGroup.map (CircleRing.map f) (circleRotation k) = circleRotation S := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [hx, hy]
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- Base change along `f : k →+* S` carries `toGL (circleRotation k)` to
+`toGL (circleRotation S)`. -/
+theorem map_toGL_circleRotation {k S : Type*} [CommRing k] [CommRing S] (f : k →+* S) :
+    Units.map ((CircleRing.map f).mapMatrix (m := Fin 2)).toMonoidHom
+        (SpecialLinearGroup.toGL (circleRotation k)) =
+      SpecialLinearGroup.toGL (circleRotation S) :=
+  (SpecialLinearGroup.toGL_map (CircleRing.map f) (circleRotation k)).symm.trans
+    (congrArg SpecialLinearGroup.toGL (map_circleRotation f))
 
 /-- **The circle rotation has nontrivial class in algebraic `K₁`**: for any commutative ring
 `k` admitting a ring homomorphism `k →+* ℝ` (such as `ℤ`, `ℚ`, or `ℝ`), `circleRotation k`
@@ -443,7 +446,7 @@ theorem circle_rotation_not_stably_elementary {k : Type*} [CommRing k] (f : k �
     AlgebraicK1.mk (CircleRing k) 2 (SpecialLinearGroup.toGL (circleRotation k)) ≠ 1 := by
   intro h
   apply circle_rotation_not_stably_elementary_real
-  have hmap := congrArg (AlgebraicK1.map (circleRingMap f)) h
+  have hmap := congrArg (AlgebraicK1.map (CircleRing.map f)) h
   rw [AlgebraicK1.map_mk, map_one, map_toGL_circleRotation f] at hmap
   exact hmap
 

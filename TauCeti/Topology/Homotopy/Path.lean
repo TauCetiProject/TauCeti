@@ -687,6 +687,12 @@ theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
     exact p.source.symm
   · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.property.2]⟩).symm
 
+/-- Two paths are homotopic as paths if and only if their underlying continuous maps are
+homotopic relative to the endpoints `{0, 1}`. -/
+theorem homotopic_iff_homotopicRel {x₀ x₁ : X} {p₀ p₁ : Path x₀ x₁} :
+    p₀.Homotopic p₁ ↔ p₀.toContinuousMap.HomotopicRel p₁.toContinuousMap {0, 1} := by
+  rw [Path.Homotopic, ContinuousMap.HomotopicRel]
+
 namespace Homotopic.Quotient
 
 /-- Reversing a path-homotopy class twice recovers the original class. -/
