@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.OnePoint.RoundSphere
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Sphere
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.UnitTangent
 public import TauCeti.Geometry.Manifold.Diffeomorph.Tangent
@@ -36,7 +35,8 @@ round sphere, in the sense that `σ ∘ g = Q ∘ σ`, its tangent map preserves
 bundle and rotates every frame by `Q`, so it acts on `SO(3)` by left multiplication by `Q`
 (`OnePoint.unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap`). For the north pole
 `(0, 0, 1)` and the isometry `z ↦ (Re z, -Im z, 0)` (`OnePoint.sphereCoordsIsometry`), `σ` is the
-Pauli model `OnePoint.homeomorphSphere` of the Riemann sphere, which intertwines the Möbius action
+Pauli model `OnePoint.homeomorphSphere` of the Riemann sphere
+(`OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`), which intertwines the Möbius action
 of `U ∈ SU(2)` with the rotation `SU2.toSO3 U`. Hence the tangent action of `U` on the round unit
 tangent bundle is left multiplication by `SU2.toSO3 U` on `SO(3)`
 (`OnePoint.unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap_toPSL_smul`). Since the double
@@ -52,8 +52,6 @@ vectors (`OnePoint.existsUnique_tangentMap_smul_eq`).
   bundle of the Riemann sphere for its round metric with that of the round sphere `S²`.
 * `OnePoint.unitTangentHomeomorphSpecialOrthogonalGroup v ι`: the unit tangent bundle of the
   Riemann sphere for its round metric is homeomorphic to `SO(3)`.
-* `OnePoint.sphereCoordsIsometry`: the isometry `z ↦ (Re z, -Im z, 0)` of `ℂ` onto the plane
-  orthogonal to the north pole, for which `σ` is the Pauli model.
 
 ## Main results
 
@@ -69,8 +67,6 @@ vectors (`OnePoint.existsUnique_tangentMap_smul_eq`).
   `OnePoint.unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap`: a map acting on the round
   sphere by a rotation `Q` preserves the round unit tangent bundle and acts on `SO(3)` by left
   multiplication by `Q`.
-* `OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`: for the north pole and
-  `sphereCoordsIsometry`, `σ` is the Pauli model `homeomorphSphere`.
 * `OnePoint.unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap_toPSL_smul`: the tangent action
   of `U ∈ SU(2)` is left multiplication by `SU2.toSO3 U`.
 * `OnePoint.existsUnique_tangentMap_smul_eq`: `PSU(2)` acts simply transitively on the round unit
@@ -307,12 +303,12 @@ theorem unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap
     unitTangentHomeomorphSpecialOrthogonalGroup v ι
         ⟨tangentMap 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) g p,
           tangentMap_mem_roundUnitTangentBundle v ι
-            (mem_specialOrthogonalGroup_iff.1 Q.2).1 hσ hg p.2⟩ =
+            (mem_specialOrthogonalGroup_iff.1 Q.property).1 hσ hg p.property⟩ =
       Q * unitTangentHomeomorphSpecialOrthogonalGroup v ι p := by
   obtain ⟨⟨x, a⟩, hp⟩ := p
   ext1
   rw [coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply, Submonoid.coe_mul,
-    coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply, ← ofFrame_mulVec_mulVec Q.2]
+    coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply, ← ofFrame_mulVec_mulVec Q.property]
   simp only [tangentMap_proj, tangentMap_snd]
   rw [hσ]
   exact congrArg _ (ofLp_mvfderiv_mfderiv_diffeomorphSphere_mfderiv v ι hg hσ a)
@@ -324,70 +320,6 @@ end Naturality
 section Pauli
 
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact
-
-/-- The linear isometry `z ↦ (Re z, -Im z, 0)` of `ℂ` into `ℝ³`. -/
-private def sphereCoordsPlane : ℂ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 3) where
-  toFun z := toLp 2 ![z.re, -z.im, 0]
-  map_add' z w := by
-    ext i
-    fin_cases i <;> simp [add_comm]
-  map_smul' c z := by
-    ext i
-    fin_cases i <;> simp
-  norm_map' z := by
-    rw [EuclideanSpace.norm_eq, Fin.sum_univ_three, Complex.norm_eq_sqrt_sq_add_sq]
-    simp
-
-private theorem sphereCoordsPlane_apply (z : ℂ) :
-    sphereCoordsPlane z = toLp 2 ![z.re, -z.im, 0] :=
-  (rfl)
-
-/-- The image of `z ↦ (Re z, -Im z, 0)` is the plane orthogonal to the north pole
-`sphereCoords ∞ = (0, 0, 1)`. -/
-private theorem range_sphereCoordsPlane :
-    LinearMap.range sphereCoordsPlane.toLinearMap =
-      (ℝ ∙ (homeomorphSphere ∞ : EuclideanSpace ℝ (Fin 3)))ᗮ := by
-  ext w
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_homeomorphSphere,
-    sphereCoords_infty, EuclideanSpace.inner_eq_star_dotProduct]
-  simp only [LinearMap.mem_range, LinearIsometry.coe_toLinearMap, star_trivial, dotProduct,
-    Fin.sum_univ_three]
-  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.head_cons, Matrix.tail_cons, mul_zero, zero_add, mul_one]
-  refine ⟨?_, fun hw ↦ ⟨⟨w 0, -w 1⟩, ?_⟩⟩
-  · rintro ⟨z, rfl⟩
-    simp [sphereCoordsPlane_apply]
-  · ext i
-    fin_cases i <;> simp [sphereCoordsPlane_apply, hw]
-
-/-- The linear isometry `z ↦ (Re z, -Im z, 0)` of `ℂ` onto the plane orthogonal to the north pole
-`sphereCoords ∞ = (0, 0, 1)` of the unit sphere of `ℝ³`. For this choice the stereographic
-diffeomorphism `diffeomorphSphere` from `∞ ↦ (0, 0, 1)` is the Pauli model `sphereCoords` of the
-Riemann sphere (`OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`). -/
-def sphereCoordsIsometry : ℂ ≃ₗᵢ[ℝ] (ℝ ∙ (homeomorphSphere ∞ : EuclideanSpace ℝ (Fin 3)))ᗮ :=
-  sphereCoordsPlane.equivRange.trans (LinearIsometryEquiv.ofEq _ _ range_sphereCoordsPlane)
-
-@[simp]
-theorem coe_sphereCoordsIsometry_apply (z : ℂ) :
-    (sphereCoordsIsometry z : EuclideanSpace ℝ (Fin 3)) = toLp 2 ![z.re, -z.im, 0] :=
-  (rfl)
-
-/-- **The Pauli model is the stereographic diffeomorphism.** For the north pole `(0, 0, 1)` and the
-isometry `z ↦ (Re z, -Im z, 0)`, the diffeomorphism `diffeomorphSphere` from the Riemann sphere
-onto the unit sphere of `ℝ³` is the homeomorphism `homeomorphSphere` given by `sphereCoords`. In
-particular `homeomorphSphere` is an analytic diffeomorphism. -/
-@[simp]
-theorem diffeomorphSphere_sphereCoordsIsometry_apply (x : OnePoint ℂ) :
-    diffeomorphSphere (homeomorphSphere ∞) sphereCoordsIsometry x = homeomorphSphere x := by
-  induction x using OnePoint.rec with
-  | infty => exact diffeomorphSphere_infty _ _
-  | coe z =>
-    ext1
-    rw [coe_diffeomorphSphere_coe, coe_sphereCoordsIsometry_apply, coe_homeomorphSphere,
-      coe_homeomorphSphere, sphereCoords_coe, sphereCoords_infty]
-    have hz : ‖z‖ ^ 2 = Complex.normSq z := Complex.sq_norm z
-    ext i
-    fin_cases i <;> simp [hz]
 
 /-- The Möbius transformation of an element of `SU(2)` is differentiable on the Riemann sphere,
 regarded as a real surface. -/
@@ -413,7 +345,8 @@ tangent vectors. -/
 theorem tangentMap_toPSL_smul_mem_roundUnitTangentBundle (U : specialUnitaryGroup (Fin 2) ℂ)
     {p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ)} (hp : p ∈ roundUnitTangentBundle) :
     tangentMap 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (specialUnitaryGroup.toPSL U • ·) p ∈ roundUnitTangentBundle :=
-  tangentMap_mem_roundUnitTangentBundle _ _ (mem_specialOrthogonalGroup_iff.1 (SU2.toSO3 U).2).1
+  tangentMap_mem_roundUnitTangentBundle _ _
+    (mem_specialOrthogonalGroup_iff.1 (SU2.toSO3 U).property).1
     (ofLp_diffeomorphSphere_toPSL_smul U) (mdifferentiable_toPSL_smul U _) hp
 
 /-- **The unit tangent bundle of the Riemann sphere is `SO(3)`, equivariantly.** For the Pauli
@@ -425,7 +358,7 @@ theorem unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap_toPSL_smul
     (U : specialUnitaryGroup (Fin 2) ℂ) (p : roundUnitTangentBundle) :
     unitTangentHomeomorphSpecialOrthogonalGroup (homeomorphSphere ∞) sphereCoordsIsometry
         ⟨tangentMap 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (specialUnitaryGroup.toPSL U • ·) p,
-          tangentMap_toPSL_smul_mem_roundUnitTangentBundle U p.2⟩ =
+          tangentMap_toPSL_smul_mem_roundUnitTangentBundle U p.property⟩ =
       SU2.toSO3 U *
         unitTangentHomeomorphSpecialOrthogonalGroup (homeomorphSphere ∞) sphereCoordsIsometry p :=
   unitTangentHomeomorphSpecialOrthogonalGroup_tangentMap _ _ _
@@ -449,10 +382,7 @@ theorem existsUnique_tangentMap_smul_eq (p q : roundUnitTangentBundle) :
   refine ⟨specialUnitaryGroup.toPSL U, ⟨⟨U, rfl⟩, (key U).2 hU⟩, ?_⟩
   rintro _ ⟨⟨V, rfl⟩, hV⟩
   -- Two elements of `SU(2)` with the same rotation differ by an element of the common kernel.
-  have h : SU2.toSO3 V = SU2.toSO3 U := ((key V).1 hV).trans hU.symm
-  rw [← mul_inv_eq_one, ← map_inv, ← map_mul, ← MonoidHom.mem_ker, SU2.ker_toPSL_eq_ker_toSO3,
-    MonoidHom.mem_ker, map_mul, map_inv, mul_inv_eq_one]
-  exact h
+  exact SU2.toPSL_eq_toPSL_iff.2 (((key V).1 hV).trans hU.symm)
 
 end Pauli
 
