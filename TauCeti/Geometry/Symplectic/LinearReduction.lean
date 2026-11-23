@@ -7,8 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
+public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
+import TauCeti.Geometry.Symplectic.Invariants
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Linear symplectic reduction
@@ -68,6 +71,9 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
 * `TauCeti.SymplecticForm.subsingleton_reducedSpace_iff`,
   `TauCeti.SymplecticForm.isSymplectomorphism_quotEquivOfEqBot`: the reduced space is trivial
   exactly for isotropic `U`, and is `U` itself with the restricted form for symplectic `U`.
+* `TauCeti.SymplecticForm.exists_equivariant_section_reducedSpace`: for a semisimple symplectic
+  representation, the quotient map of an invariant subspace onto its reduced space has an
+  equivariant linear section.
 * `TauCeti.SymplecticForm.IsIsotropic.reduction_map`,
   `TauCeti.SymplecticForm.IsLagrangian.reduction_map`: reduction of isotropic and Lagrangian
   subspaces.
@@ -408,6 +414,45 @@ theorem isSymplectomorphism_reducedSpaceRepresentation {G : Type*} [Group G]
     IsSymplectomorphism (ω.reduction U) (ω.reduction U)
       (ω.reducedSpaceRepresentation ρ hρ U hU g) :=
   isSymplectomorphism_reducedSpaceCongr _ (hρ g) _
+
+/-- For a semisimple representation by symplectomorphisms, the quotient map of an invariant
+subspace `U` onto its reduced space has an equivariant linear section, whose image is an invariant
+complement of the radical `U ∩ U^ω` in `U`. -/
+theorem exists_equivariant_section_reducedSpace {G : Type*} [Group G] {ρ : G →* V ≃ₗ[ℝ] V}
+    [Representation.IsSemisimpleRepresentation
+      (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp ρ)]
+    (hρ : ∀ g, IsSymplectomorphism ω ω (ρ g)) {U : Submodule ℝ V}
+    (hU : ∀ g, ∀ u ∈ U, ρ g u ∈ U) :
+    ∃ s : ω.ReducedSpace U →ₗ[ℝ] U, (∀ v, Submodule.Quotient.mk (s v) = v) ∧
+      ∀ g v, (s (ω.reducedSpaceRepresentation ρ hρ U hU g v) : V) = ρ g (s v) := by
+  -- An invariant complement `C` of the radical `U ∩ U^ω` in `V`.
+  obtain ⟨C, hC⟩ := exists_isCompl
+    (⟨U ⊓ ω.orthogonal U, fun g x hx ↦ ⟨hU g x hx.1, apply_mem_orthogonal
+      (ρ := LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp ρ)
+      (fun g u v ↦ (hρ g).apply u v) hU g hx.2⟩⟩ :
+      Subrepresentation (LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp ρ))
+  -- Its trace on `U` is a complement of the kernel of `ω|_U`.
+  have hpq : IsCompl (LinearMap.ker (ω.toBilinForm.restrict U))
+      (C.toSubmodule.comap U.subtype) := by
+    convert Submodule.isCompl_comap_subtype_of_isCompl_of_le
+      (Subrepresentation.isCompl_toSubmodule.2 hC) (inf_le_left : U ⊓ ω.orthogonal U ≤ U) using 1
+    ext u
+    rw [mem_ker_restrict_iff]
+    simp
+  let e := Submodule.quotientEquivOfIsCompl _ _ hpq
+  refine ⟨Submodule.subtype _ ∘ₗ e.toLinearMap,
+    fun v ↦ Submodule.mk_quotientEquivOfIsCompl_apply hpq v, fun g v ↦ ?_⟩
+  -- `ρ g (s v)` lies in the complement and has class `g • v`, so it is `s (g • v)`.
+  let y : C.toSubmodule.comap U.subtype :=
+    ⟨⟨ρ g (e v), hU g _ (e v : U).2⟩, C.apply_mem_toSubmodule g (e v).2⟩
+  have hv : ω.reducedSpaceRepresentation ρ hρ U hU g v = Submodule.Quotient.mk (y : U) := by
+    conv_lhs => rw [← Submodule.mk_quotientEquivOfIsCompl_apply hpq v]
+    rw [reducedSpaceRepresentation_apply_mk]
+  have hy : e (ω.reducedSpaceRepresentation ρ hρ U hU g v) = y := by
+    rw [hv]
+    exact Submodule.quotientEquivOfIsCompl_apply_mk_right hpq y
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hy]
+  simp [y]
 
 end Functoriality
 

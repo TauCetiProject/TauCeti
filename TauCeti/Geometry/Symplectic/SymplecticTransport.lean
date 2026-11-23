@@ -133,6 +133,12 @@ lemma IsSymplectomorphism.apply {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism �
     ω₂ (e v) (e w) = ω₁ v w :=
   h v w
 
+/-- Apply a symplectomorphism hypothesis to two vectors, with the forms written through
+`toBilinForm`. Rewriting with `IsSymplectomorphism.apply` does not match this form of the goal. -/
+lemma IsSymplectomorphism.toBilinForm_apply {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e)
+    (v w : V) : ω₂.toBilinForm (e v) (e w) = ω₁.toBilinForm v w :=
+  h.apply v w
+
 /-- A linear equivalence is a symplectomorphism exactly when `ω₂` is the transport of `ω₁`
 along that equivalence. -/
 lemma isSymplectomorphism_iff_transport_eq {e : V ≃ₗ[ℝ] W} :
