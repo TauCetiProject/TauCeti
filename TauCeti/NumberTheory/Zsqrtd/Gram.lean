@@ -34,10 +34,10 @@ and its squared Euclidean norm equals `∑ k, (‖embPos d (v k)‖ ^ 2 + ‖emb
 * `Zsqrtd.famToLp_eq_weightedToLp`, `Zsqrtd.famToLp_apply`: explicit factorization through
   `TauCeti.weightedToLp`.
 * `Zsqrtd.famToLp_ofLp_zero`, `Zsqrtd.famToLp_ofLp_one`: coordinate evaluations.
-* `Zsqrtd.famToLp_sum_zsmul`: compatibility with `ℤ`-linear combinations.
 * `Zsqrtd.inner_famToLp`, `Zsqrtd.norm_sq_famToLp`: inner product and squared norm formulas.
-* `Zsqrtd.intGram`, `Zsqrtd.map_intGram_eq_gram`, `Zsqrtd.intCast_det_intGram`: integer Gram
-  matrix of a finite family in `(ℤ√d) ^ κ` and its agreement with `Matrix.gram ℝ`.
+* `Zsqrtd.intGram`, `Zsqrtd.mul_dvd_intGram`, `Zsqrtd.map_intGram_eq_gram`,
+  `Zsqrtd.intCast_det_intGram`: integer Gram matrix of a finite family in `(ℤ√d) ^ κ`, entry
+  divisibility from pointwise scalar divisors, and agreement with `Matrix.gram ℝ`.
 -/
 
 public section
@@ -144,12 +144,6 @@ theorem famToLp_ofLp_one (d : ℤ) {κ : Type*} (v : κ → ℤ√d) (k : κ) :
     (famToLp d κ v).ofLp (k, 1) = Real.sqrt (2 * d.natAbs) * (v k).im := by
   simp [famToLp_apply]
 
-/-- Compatibility of `Zsqrtd.famToLp` with finite `ℤ`-linear combinations. -/
-theorem famToLp_sum_zsmul (d : ℤ) {κ ι : Type*} (s : Finset ι) (c : ι → ℤ)
-    (v : ι → κ → ℤ√d) :
-    famToLp d κ (∑ i ∈ s, c i • v i) = ∑ i ∈ s, (c i : ℝ) • famToLp d κ (v i) := by
-  simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul]
-
 /-- Inner product of two `ℤ√d`-tuple realizations in terms of coordinates. -/
 theorem inner_famToLp (d : ℤ) {κ : Type*} [Fintype κ] (v w : κ → ℤ√d) :
     ⟪famToLp d κ v, famToLp d κ w⟫_ℝ =
@@ -185,6 +179,18 @@ theorem intGram_apply (d : ℤ) {κ ι : Type*} [Fintype κ] (v : ι → κ → 
     intGram d v i j =
       ∑ k : κ, 2 * ((v i k).re * (v j k).re + (d.natAbs : ℤ) * (v i k).im * (v j k).im) := by
   rfl
+
+/-- If integers `m` and `n` divide every entry of `v i` and `v j` in `ℤ√d`, respectively, then
+`m * n` divides the `(i, j)` entry of `Zsqrtd.intGram d v`. -/
+theorem mul_dvd_intGram (d : ℤ) {κ ι : Type*} [Fintype κ] {v : ι → κ → ℤ√d} {i j : ι}
+    {m n : ℤ} (hm : ∀ k, (m : ℤ√d) ∣ v i k) (hn : ∀ k, (n : ℤ√d) ∣ v j k) :
+    m * n ∣ intGram d v i j := by
+  rw [intGram_apply]
+  refine Finset.dvd_sum fun k _ ↦ dvd_mul_of_dvd_right ?_ 2
+  obtain ⟨hm_re, hm_im⟩ := (Zsqrtd.intCast_dvd m (v i k)).mp (hm k)
+  obtain ⟨hn_re, hn_im⟩ := (Zsqrtd.intCast_dvd n (v j k)).mp (hn k)
+  exact dvd_add (mul_dvd_mul hm_re hn_re)
+    (mul_dvd_mul (dvd_mul_of_dvd_right hm_im _) hn_im)
 
 /-- Coercing `Zsqrtd.intGram d v` to `ℝ` produces the Euclidean Gram matrix of `famToLp d κ ∘ v`. -/
 theorem map_intGram_eq_gram (d : ℤ) {κ ι : Type*} [Fintype κ] (v : ι → κ → ℤ√d) :

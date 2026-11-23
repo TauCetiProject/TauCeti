@@ -93,19 +93,6 @@ private noncomputable def baseVec (d : ℤ) (N R S : ℕ) (i : Fin R × Fin S) :
     EuclideanSpace ℝ ((Fin N × Fin N × Fin N) × Fin 2) :=
   Zsqrtd.famToLp d _ (baseFam d N R S i)
 
-/-- Evaluation of the `j`-th outer derivative of the bivariate monomial `a * z' ^ s * z ^ r` over
-any commutative ring. -/
-private theorem eval_iterate_derivative_map_monomial_monomial {A : Type*} [CommRing A]
-    (a : A) (r s j : ℕ) (z z' : A) :
-    (Polynomial.derivative^[j]
-      ((Polynomial.monomial r (Polynomial.monomial s a)).map
-        (Polynomial.evalRingHom z'))).eval z =
-      a * z' ^ s * (r.descFactorial j : A) * z ^ (r - j) := by
-  simp only [← C_mul_X_pow_eq_monomial, Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow,
-    Polynomial.map_X, coe_evalRingHom, iterate_derivative_C_mul, iterate_derivative_X_pow_eq_C_mul,
-    eval_mul, eval_C, eval_pow, eval_X, C_eq_natCast, eval_natCast]
-  ring
-
 private theorem jetEval_basePoly_eq (d : ℤ) (N : ℕ) {R S : ℕ} (i : Fin R × Fin S)
     (k : Fin N × Fin N × Fin N) :
     baseFam d N R S i k =
@@ -547,7 +534,8 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
       funext k
       simp only [shiftFam, shiftPoly_eq_sum_basePoly d hp i, U, baseFam, jetEval_sum,
         Finset.sum_apply, Pi.smul_apply]
-    rw [hfam, Zsqrtd.famToLp_sum_zsmul]
+    rw [hfam]
+    simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul]
     rfl
   have hdetU : (U.map (Int.castRingHom ℝ)).det = 1 := by
     rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_shiftMatrix_eq_one hp, map_one]
@@ -578,41 +566,22 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
       C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * (X ^ p + C (p : ℤ√d) * A) ^ h := by
     rw [hf, taylor_mul, taylor_mul, taylor_C, taylor_X_pow, taylor_pow, hA,
       add_comm (C (p : ℤ√d) * A) (X ^ p)]
-  rw [htf, (Commute.all (X ^ p : (ℤ√d)[X]) (C (p : ℤ√d) * A)).add_pow h, Finset.mul_sum,
-    finsetSum_coeff, Finset.mul_sum]
-  refine Finset.dvd_sum fun m hm ↦ ?_
-  have hm_le : m ≤ h := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  set B := C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * A ^ (h - m) *
-    (h.choose m : (ℤ√d)[X])
-  have hterm : C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) *
-        ((X ^ p) ^ m * (C (p : ℤ√d) * A) ^ (h - m) * (h.choose m : (ℤ√d)[X])) =
-      C ((p : ℤ√d) ^ (h - m)) * (B * X ^ (p * m)) := by
-    rw [mul_pow, ← C_pow, ← pow_mul]; dsimp only [B]; ring
-  rw [hterm, coeff_C_mul, mul_left_comm]
-  conv_lhs => rw [← Nat.sub_add_cancel hm_le, pow_add]
-  exact mul_dvd_mul_left _ (pow_dvd_factorial_mul_coeff_mul_X_pow hp.pos m j B)
+  rw [htf]
+  exact pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul hp.pos h j
+    (C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h)) A
 
 /-- **Fact 3: `p`-adic divisibility of `G.det`** at inert primes. -/
 private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime)
     (hjac : jacobiSym d p = -1) (N R S : ℕ) :
     ((p : ℤ) ^ (2 * ∑ i : Fin R × Fin S, shiftExp p S i)) ∣
       (Zsqrtd.intGram d (baseFam d N R S)).det := by
-  have hdvd_entry (i j : Fin R × Fin S) :
-      ((p : ℤ) ^ shiftExp p S i * (p : ℤ) ^ shiftExp p S j) ∣
-        Zsqrtd.intGram d (shiftFam d p N R S) i j := by
-    rw [Zsqrtd.intGram_apply]
-    refine Finset.dvd_sum fun k _ ↦ dvd_mul_of_dvd_right ?_ 2
-    obtain ⟨⟨a₁, ha₁⟩, ⟨b₁, hb₁⟩⟩ := (Zsqrtd.intCast_dvd ((p : ℤ) ^ shiftExp p S i) _).mp
-      (by simpa using pow_dvd_shiftFam hp hjac N R S i k)
-    obtain ⟨⟨a₂, ha₂⟩, ⟨b₂, hb₂⟩⟩ := (Zsqrtd.intCast_dvd ((p : ℤ) ^ shiftExp p S j) _).mp
-      (by simpa using pow_dvd_shiftFam hp hjac N R S j k)
-    refine ⟨a₁ * a₂ + (d.natAbs : ℤ) * b₁ * b₂, ?_⟩
-    rw [ha₁, hb₁, ha₂, hb₂]
-    ring
   rw [← det_intGram_shiftFam_eq d hp.pos]
   simpa [Finset.prod_pow_eq_pow_sum, ← pow_add, ← two_mul] using
     Matrix.prod_mul_prod_dvd_det_of_dvd (Zsqrtd.intGram d (shiftFam d p N R S))
-      (fun i ↦ (p : ℤ) ^ shiftExp p S i) (fun j ↦ (p : ℤ) ^ shiftExp p S j) hdvd_entry
+      (fun i ↦ (p : ℤ) ^ shiftExp p S i) (fun j ↦ (p : ℤ) ^ shiftExp p S j)
+      fun i j ↦ Zsqrtd.mul_dvd_intGram d
+        (fun k ↦ by simpa using pow_dvd_shiftFam hp hjac N R S i k)
+        (fun k ↦ by simpa using pow_dvd_shiftFam hp hjac N R S j k)
 
 end InertPrimeSum
 

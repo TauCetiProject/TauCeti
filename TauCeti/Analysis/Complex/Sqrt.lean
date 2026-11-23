@@ -17,8 +17,9 @@ exactly on the slit plane. These facts control the branches in algebraic transfo
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane and the splitting `√(r z) = √r √z`
 for real `r ≥ 0`, records that the real square root of a nonnegative real, cast to `ℂ`, squares
-back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`.
+back to it, gives the sign-branch formulas `Complex.sqrt_ratCast_of_nonneg` and
+`Complex.sqrt_ratCast_of_nonpos` for rational inputs, and packages the principal square root of a
+nonzero complex number as a unit, `Complex.sqrtUnit`.
 -/
 
 public section
@@ -131,5 +132,25 @@ theorem norm_sqrt (z : ℂ) : ‖sqrt z‖ = Real.sqrt ‖z‖ := by
 /-- The norm of the principal square root of an integer `d` is `Real.sqrt d.natAbs`. -/
 theorem norm_sqrt_intCast (d : ℤ) : ‖sqrt (d : ℂ)‖ = Real.sqrt d.natAbs := by
   rw [norm_sqrt, Complex.norm_intCast, Nat.cast_natAbs, Int.cast_abs]
+
+/-- The principal square root of a nonnegative rational cast `(r : ℂ)` is `(√(r : ℝ) : ℂ)`. -/
+theorem sqrt_ratCast_of_nonneg {r : ℚ} (hr : 0 ≤ r) :
+    sqrt (r : ℂ) = (√(r : ℝ) : ℂ) := by
+  open scoped ComplexOrder in
+  have hc : (0 : ℂ) ≤ (r : ℂ) := by
+    rw [← ofReal_ratCast]
+    exact zero_le_real.mpr (by exact_mod_cast hr)
+  rw [sqrt_of_nonneg hc, ratCast_re]
+
+/-- The principal square root of a nonpositive rational cast `(r : ℂ)` is
+`(√(-(r : ℝ)) : ℂ) * I`. -/
+theorem sqrt_ratCast_of_nonpos {r : ℚ} (hr : r ≤ 0) :
+    sqrt (r : ℂ) = (√(-(r : ℝ)) : ℂ) * I := by
+  open scoped ComplexOrder in
+  have hc : (0 : ℂ) ≤ -(r : ℂ) := by
+    rw [← ofReal_ratCast, ← ofReal_neg]
+    exact zero_le_real.mpr (by exact_mod_cast neg_nonneg.mpr hr)
+  rw [← neg_neg (r : ℂ), sqrt_neg_of_nonneg hc, sqrt_of_nonneg hc,
+    neg_re, ratCast_re, mul_comm]
 
 end Complex

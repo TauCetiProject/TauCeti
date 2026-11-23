@@ -62,12 +62,12 @@ noncomputable def embNeg (d : ℤ) : ℤ√d →+* ℂ :=
 /-- Value of `Zsqrtd.embPos d` on an element `u : ℤ√d`. -/
 theorem embPos_apply (d : ℤ) (u : ℤ√d) :
     embPos d u = (u.re : ℂ) + (u.im : ℂ) * Complex.sqrt d := by
-  rfl
+  rw [embPos, Zsqrtd.lift_apply_apply]
 
 /-- Value of `Zsqrtd.embNeg d` on an element `u : ℤ√d`. -/
 theorem embNeg_apply (d : ℤ) (u : ℤ√d) :
     embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-Complex.sqrt d) := by
-  rfl
+  rw [embNeg, Zsqrtd.lift_apply_apply]
 
 /-- `Zsqrtd.embPos d` sends the generator `Zsqrtd.sqrtd` to `Complex.sqrt d`. -/
 @[simp]

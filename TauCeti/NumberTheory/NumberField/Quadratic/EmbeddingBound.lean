@@ -64,23 +64,6 @@ open Complex ComplexConjugate NumberField
 
 namespace QuadraticAlgebra
 
-private theorem sqrt_ratCast_of_nonneg {r : ℚ} (hr : 0 ≤ r) :
-    Complex.sqrt (r : ℂ) = (√(r : ℝ) : ℂ) := by
-  open scoped ComplexOrder in
-  have hc : (0 : ℂ) ≤ (r : ℂ) := by
-    rw [← Complex.ofReal_ratCast]
-    exact Complex.zero_le_real.mpr (by exact_mod_cast hr)
-  rw [Complex.sqrt_of_nonneg hc, Complex.ratCast_re]
-
-private theorem sqrt_ratCast_of_nonpos {r : ℚ} (hr : r ≤ 0) :
-    Complex.sqrt (r : ℂ) = (√(-(r : ℝ)) : ℂ) * I := by
-  open scoped ComplexOrder in
-  have hc : (0 : ℂ) ≤ -(r : ℂ) := by
-    rw [← Complex.ofReal_ratCast, ← Complex.ofReal_neg]
-    exact Complex.zero_le_real.mpr (by exact_mod_cast neg_nonneg.mpr hr)
-  rw [← neg_neg (r : ℂ), Complex.sqrt_neg_of_nonneg hc, Complex.sqrt_of_nonneg hc,
-    Complex.neg_re, Complex.ratCast_re, mul_comm]
-
 variable (r : ℚ)
 
 /-- The `ℚ`-algebra map `σ₊ : QuadraticAlgebra ℚ r 0 → ℂ` sending `ω` to `Complex.sqrt (r : ℂ)`.
@@ -268,22 +251,23 @@ theorem sqrtEmbedding_ne_negSqrtEmbedding (hr : r ≠ 0) :
 /-- For `r ≤ 0`, `σ₊` is the distinguished algebra map `complexEmbedding`. -/
 theorem sqrtEmbedding_eq_complexEmbedding (hr : r ≤ 0) :
     sqrtEmbedding r = complexEmbedding hr :=
-  algHom_ext (by simp [sqrt_ratCast_of_nonpos hr])
+  algHom_ext (by simp [Complex.sqrt_ratCast_of_nonpos hr])
 
 /-- For `r ≤ 0`, `σ₋` is the complex conjugate of `σ₊`. -/
 theorem negSqrtEmbedding_apply_eq_conj (hr : r ≤ 0) (z : QuadraticAlgebra ℚ r 0) :
     negSqrtEmbedding r z = conj (sqrtEmbedding r z) := by
-  simp [sqrtEmbedding_apply, negSqrtEmbedding_apply, sqrt_ratCast_of_nonpos hr, sub_eq_add_neg]
+  simp [sqrtEmbedding_apply, negSqrtEmbedding_apply, Complex.sqrt_ratCast_of_nonpos hr,
+    sub_eq_add_neg]
 
 /-- For `r ≥ 0`, `σ₊` takes real values. -/
 @[simp] theorem im_sqrtEmbedding (hr : 0 ≤ r) (z : QuadraticAlgebra ℚ r 0) :
     (sqrtEmbedding r z).im = 0 := by
-  simp [sqrtEmbedding_apply, sqrt_ratCast_of_nonneg hr]
+  simp [sqrtEmbedding_apply, Complex.sqrt_ratCast_of_nonneg hr]
 
 /-- For `r ≥ 0`, `σ₋` takes real values. -/
 @[simp] theorem im_negSqrtEmbedding (hr : 0 ≤ r) (z : QuadraticAlgebra ℚ r 0) :
     (negSqrtEmbedding r z).im = 0 := by
-  simp [negSqrtEmbedding_apply, sqrt_ratCast_of_nonneg hr]
+  simp [negSqrtEmbedding_apply, Complex.sqrt_ratCast_of_nonneg hr]
 
 /-- For a nonsquare `r > 0`, `σ₊` is a real embedding of the field `ℚ(√r)`. -/
 theorem isReal_sqrtEmbedding [Fact (¬ IsSquare r)] (hr : 0 ≤ r) :
