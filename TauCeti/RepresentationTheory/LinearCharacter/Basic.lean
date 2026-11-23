@@ -178,8 +178,8 @@ theorem stabilizer_ofLinearCharacter_one (χ : G →* kˣ) :
 
 /-- The kernel of a linear character `χ` fixes every vector of its representation. -/
 theorem ker_le_stabilizer_ofLinearCharacter (χ : G →* kˣ) (x : k) :
-    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := fun g hg ↦ by
-  simp [mem_stabilizer, MonoidHom.mem_ker.1 hg]
+    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := by
+  simpa using (ofLinearCharacter χ).le_stabilizer_smul x 1
 
 end Stabilizer
 

@@ -68,9 +68,10 @@ representation need neither.
   some `g`, then `G` acting on `V` through `χ` has no nonzero invariant vector.
 * `Representation.ker_inf_stabilizer_le_stabilizer_charTwist`: the kernel of `χ` meets the
   stabilizer of `v` for `ρ` inside the stabilizer of `v` for the twist.
-* `Representation.charTwist_comp_subtype_of_le_ker` and
-  `Representation.invariants_charTwist_comp_subtype`: on a subgroup inside the kernel of `χ`, the
-  twist restricts to `ρ`, so it has the same invariants.
+* `Representation.charTwist_comp`: restricting a twist along a homomorphism `f` twists the
+  restriction by `χ.comp f`.
+* `Representation.charTwist_comp_subtype_of_le_ker`: on a subgroup inside the kernel of `χ`, the
+  twist restricts to `ρ`.
 * `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
   algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
@@ -124,6 +125,12 @@ theorem charTwist_charTwist (χ ψ : G →* kˣ) (ρ : Representation k G V) :
     charTwist χ (charTwist ψ ρ) = charTwist (χ * ψ) ρ :=
   MonoidHom.ext fun g => LinearMap.ext fun v => by
     simp [mul_smul]
+
+/-- Restricting a twist along a monoid homomorphism `f` gives the twist of the restriction by
+`χ.comp f`. -/
+theorem charTwist_comp {H : Type*} [Monoid H] (χ : G →* kˣ) (ρ : Representation k G V)
+    (f : H →* G) : (charTwist χ ρ).comp f = charTwist (χ.comp f) (ρ.comp f) :=
+  MonoidHom.ext fun _ => by simp
 
 /-- Twisting the trivial representation of the coefficient line by `χ` gives the one-dimensional
 representation of `χ`.  So the one-dimensional representations are the twists of the trivial one,
@@ -310,10 +317,11 @@ theorem ker_inf_stabilizer_le_stabilizer_charTwist (v : V) :
   simp [mem_stabilizer, hg.1, hg.2]
 
 /-- On a subgroup inside the kernel of `χ`, the twist by `χ` restricts to `ρ`. -/
+@[simp]
 theorem charTwist_comp_subtype_of_le_ker {U : Subgroup G} (hU : U ≤ χ.ker) :
     (charTwist χ ρ).comp U.subtype = ρ.comp U.subtype := by
-  ext g v
-  simp [MonoidHom.mem_ker.1 (hU g.property)]
+  have hχU : χ.comp U.subtype = 1 := MonoidHom.ext fun g ↦ MonoidHom.mem_ker.1 (hU g.property)
+  rw [charTwist_comp, hχU, charTwist_one]
 
 end Group
 
@@ -331,12 +339,6 @@ theorem invariants_charTwist_trivial_eq_bot {g : G} (hg : IsSMulRegular V ((χ g
   refine eq_bot_iff.2 fun v hv ↦ (Submodule.mem_bot k).2 <| hg ?_
   have hv' : (χ g : k) • v = v := by simpa [charTwist_apply_apply] using hv g
   simp only [smul_zero, sub_smul, one_smul, hv', sub_self]
-
-/-- On a subgroup inside the kernel of `χ`, twisting by `χ` does not change the invariants. -/
-theorem invariants_charTwist_comp_subtype (ρ : Representation k G V) {U : Subgroup G}
-    (hU : U ≤ χ.ker) :
-    invariants ((charTwist χ ρ).comp U.subtype) = invariants (ρ.comp U.subtype) := by
-  rw [charTwist_comp_subtype_of_le_ker χ ρ hU]
 
 end Invariants
 
