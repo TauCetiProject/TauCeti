@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The lower-rank subgroup `Spinᶜ(n) ⊆ Spinᶜ(n + 1)`
 
 Write `Spinᶜ(n)` for `spinCGroup` of the standard positive-definite form on `ℝⁿ`, `n ≥ 1`
-(`CliffordAlgebra.realCliffordSpinCGroup`). Appending a last coordinate `0` is a quadratic isometry
-`ℝⁿ → ℝⁿ⁺¹` (`CliffordAlgebra.realCliffordSpinInclusionIsometry`), and it induces the injective
-homomorphism `[s, z] ↦ [s, z]` from `Spinᶜ(n)` to `Spinᶜ(n + 1)`
+(`CliffordAlgebra.realCliffordSpinCGroupZero`). Appending a last coordinate `0` is a quadratic
+isometry `ℝⁿ → ℝⁿ⁺¹` (`CliffordAlgebra.realCliffordSpinInclusionIsometry`), and it induces the
+injective homomorphism `[s, z] ↦ [s, z]` from `Spinᶜ(n)` to `Spinᶜ(n + 1)`
 (`CliffordAlgebra.realCliffordSpinCInclusion`). Its rotation acts on `ℝⁿ ⊕ ℝ` as the rotation of
 the source on the first summand and as the identity on the last coordinate
 (`CliffordAlgebra.toSpecialOrthogonal_realCliffordSpinCInclusion_snoc`).
@@ -32,7 +32,6 @@ structure on `E'`.
 
 ## Main definitions
 
-* `CliffordAlgebra.realCliffordSpinCGroup n`: the group `Spinᶜ(n)`.
 * `CliffordAlgebra.realCliffordSpinCInclusion n`: the inclusion `Spinᶜ(n) → Spinᶜ(n + 1)`.
 * `CliffordAlgebra.realCliffordSpinCLastStabilizer n`: the subgroup of `Spinᶜ(n + 1)` whose
   rotations fix the last coordinate vector.
@@ -63,16 +62,19 @@ namespace CliffordAlgebra
 
 open TauCeti TauCeti.QuadraticMap
 
-/-- **The group `Spinᶜ(n)`** of the standard positive-definite form on `ℝⁿ`, for `n ≥ 1`. -/
-abbrev realCliffordSpinCGroup (n : ℕ) [NeZero n] : Type :=
-  spinCGroup (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero
-
 variable (n : ℕ) [NeZero n]
 
 /-- **The inclusion `Spinᶜ(n) → Spinᶜ(n + 1)`**, `[s, z] ↦ [s, z]`, induced by the quadratic
 isometry `ℝⁿ → ℝⁿ⁺¹` appending a last coordinate `0`. -/
-def realCliffordSpinCInclusion : realCliffordSpinCGroup n →* realCliffordSpinCGroup (n + 1) :=
+def realCliffordSpinCInclusion :
+    realCliffordSpinCGroupZero n →* realCliffordSpinCGroupZero (n + 1) :=
   (realCliffordSpinInclusionIsometry n).spinCGroupMap _ _
+
+/-- The inclusion `Spinᶜ(n) → Spinᶜ(n + 1)` is the map induced by its defining quadratic
+isometry. -/
+theorem realCliffordSpinCInclusion_eq_spinCGroupMap :
+    realCliffordSpinCInclusion n = (realCliffordSpinInclusionIsometry n).spinCGroupMap _ _ :=
+  (rfl)
 
 /-- The inclusion sends `[s, z]` to `[s, z]`, with `s` included by
 `CliffordAlgebra.realCliffordSpinInclusion`. -/
@@ -80,7 +82,7 @@ def realCliffordSpinCInclusion : realCliffordSpinCGroup n →* realCliffordSpinC
 theorem realCliffordSpinCInclusion_mk (p : realCliffordSpinGroupZero n × Circle) :
     realCliffordSpinCInclusion n (spinCGroup.mk _ _ p) =
       spinCGroup.mk _ _ (realCliffordSpinInclusion n p.1, p.2) := by
-  rw [realCliffordSpinCInclusion, Isometry.spinCGroupMap_mk,
+  rw [realCliffordSpinCInclusion_eq_spinCGroupMap, Isometry.spinCGroupMap_mk,
     realCliffordSpinInclusion_eq_spinGroupMap]
 
 /-- The inclusion sends the Spin element `[s, 1]` to `[s, 1]`. -/
@@ -98,13 +100,13 @@ theorem realCliffordSpinCInclusion_ofCircle (z : Circle) :
 
 /-- The inclusion preserves the determinant character. -/
 @[simp]
-theorem det_realCliffordSpinCInclusion (x : realCliffordSpinCGroup n) :
+theorem det_realCliffordSpinCInclusion (x : realCliffordSpinCGroupZero n) :
     spinCGroup.det _ _ (realCliffordSpinCInclusion n x) = spinCGroup.det _ _ x :=
   Isometry.det_spinCGroupMap _ _ _ x
 
 /-- The rotation of an included element fixes the last coordinate vector. -/
 @[simp]
-theorem toSpecialOrthogonal_realCliffordSpinCInclusion_last (x : realCliffordSpinCGroup n) :
+theorem toSpecialOrthogonal_realCliffordSpinCInclusion_last (x : realCliffordSpinCGroupZero n) :
     (spinCGroup.toSpecialOrthogonal _ _ (realCliffordSpinCInclusion n x) :
         (Fin (n + 1) → ℝ) ≃ₗ[ℝ] (Fin (n + 1) → ℝ)) (Pi.single (Fin.last n) 1) =
       Pi.single (Fin.last n) 1 := by
@@ -115,7 +117,7 @@ theorem toSpecialOrthogonal_realCliffordSpinCInclusion_last (x : realCliffordSpi
 /-- **The rotation of an included element** acts on `(v, r) ∈ ℝⁿ ⊕ ℝ` as the rotation of the
 source on `v`, fixing the last coordinate `r`. -/
 @[simp]
-theorem toSpecialOrthogonal_realCliffordSpinCInclusion_snoc (x : realCliffordSpinCGroup n)
+theorem toSpecialOrthogonal_realCliffordSpinCInclusion_snoc (x : realCliffordSpinCGroupZero n)
     (v : Fin n → ℝ) (r : ℝ) :
     (spinCGroup.toSpecialOrthogonal _ _ (realCliffordSpinCInclusion n x) :
         (Fin (n + 1) → ℝ) ≃ₗ[ℝ] (Fin (n + 1) → ℝ)) (Fin.snoc v r) =
@@ -128,7 +130,7 @@ theorem toSpecialOrthogonal_realCliffordSpinCInclusion_snoc (x : realCliffordSpi
     · simp
     · simp
   rw [hsplit, hsplit, map_add, map_smul, toSpecialOrthogonal_realCliffordSpinCInclusion_last,
-    realCliffordSpinCInclusion, Isometry.toSpecialOrthogonal_spinCGroupMap_apply]
+    realCliffordSpinCInclusion_eq_spinCGroupMap, Isometry.toSpecialOrthogonal_spinCGroupMap_apply]
 
 /-- **The inclusion `Spinᶜ(n) → Spinᶜ(n + 1)` is injective.** -/
 theorem realCliffordSpinCInclusion_injective :
@@ -150,7 +152,7 @@ theorem realCliffordSpinCInclusion_injective :
 
 /-- **The last-vector stabilizer in `Spinᶜ(n + 1)`**: the elements whose rotation fixes the last
 coordinate vector. -/
-def realCliffordSpinCLastStabilizer : Subgroup (realCliffordSpinCGroup (n + 1)) :=
+def realCliffordSpinCLastStabilizer : Subgroup (realCliffordSpinCGroupZero (n + 1)) :=
   Subgroup.comap ((specialOrthogonalGroup (realCliffordForm (n + 1) 0)).subtype.comp
       (spinCGroup.toSpecialOrthogonal _ _))
     (MulAction.stabilizer ((Fin (n + 1) → ℝ) ≃ₗ[ℝ] (Fin (n + 1) → ℝ))
@@ -161,7 +163,7 @@ variable {n} in
 /-- An element lies in the last-vector stabilizer exactly when its rotation fixes the last
 coordinate vector. -/
 @[simp]
-theorem mem_realCliffordSpinCLastStabilizer_iff {x : realCliffordSpinCGroup (n + 1)} :
+theorem mem_realCliffordSpinCLastStabilizer_iff {x : realCliffordSpinCGroupZero (n + 1)} :
     x ∈ realCliffordSpinCLastStabilizer n ↔
       (spinCGroup.toSpecialOrthogonal _ _ x : (Fin (n + 1) → ℝ) ≃ₗ[ℝ] (Fin (n + 1) → ℝ))
         (Pi.single (Fin.last n) 1) = Pi.single (Fin.last n) 1 :=
@@ -184,30 +186,30 @@ theorem range_realCliffordSpinCInclusion :
   rw [realCliffordSpinCInclusion_mk, ← coe_realCliffordSpinStabilizerInclusion_apply, ht]
 
 /-- An included element lies in the last-vector stabilizer. -/
-theorem realCliffordSpinCInclusion_mem_lastStabilizer (x : realCliffordSpinCGroup n) :
+theorem realCliffordSpinCInclusion_mem_lastStabilizer (x : realCliffordSpinCGroupZero n) :
     realCliffordSpinCInclusion n x ∈ realCliffordSpinCLastStabilizer n :=
   toSpecialOrthogonal_realCliffordSpinCInclusion_last n x
 
 /-- **`Spinᶜ(n)` is isomorphic to the last-vector stabilizer in `Spinᶜ(n + 1)`**, through the
 inclusion `Spinᶜ(n) → Spinᶜ(n + 1)`. -/
 def realCliffordSpinCEquivLastStabilizer :
-    realCliffordSpinCGroup n ≃* realCliffordSpinCLastStabilizer n :=
-  MulEquiv.ofBijective ((realCliffordSpinCInclusion n).codRestrict _
-      (realCliffordSpinCInclusion_mem_lastStabilizer n))
-    (show Function.Bijective _ from
-      ⟨(MonoidHom.injective_codRestrict _ _ _).2 (realCliffordSpinCInclusion_injective n),
-      fun y ↦ by
-        obtain ⟨x, hx⟩ := MonoidHom.mem_range.1
-          ((range_realCliffordSpinCInclusion n).symm ▸ y.property :
-            (y : realCliffordSpinCGroup (n + 1)) ∈ (realCliffordSpinCInclusion n).range)
-        exact ⟨x, Subtype.ext hx⟩⟩)
+    realCliffordSpinCGroupZero n ≃* realCliffordSpinCLastStabilizer n :=
+  (MonoidHom.ofInjective (realCliffordSpinCInclusion_injective n)).trans
+    (MulEquiv.subgroupCongr (range_realCliffordSpinCInclusion n))
 
 /-- The stabilizer isomorphism is the inclusion `Spinᶜ(n) → Spinᶜ(n + 1)`. -/
 @[simp]
-theorem coe_realCliffordSpinCEquivLastStabilizer_apply (x : realCliffordSpinCGroup n) :
-    (realCliffordSpinCEquivLastStabilizer n x : realCliffordSpinCGroup (n + 1)) =
-      realCliffordSpinCInclusion n x := by
-  rw [realCliffordSpinCEquivLastStabilizer, MulEquiv.ofBijective_apply,
-    MonoidHom.codRestrict_apply]
+theorem coe_realCliffordSpinCEquivLastStabilizer_apply (x : realCliffordSpinCGroupZero n) :
+    (realCliffordSpinCEquivLastStabilizer n x : realCliffordSpinCGroupZero (n + 1)) =
+      realCliffordSpinCInclusion n x :=
+  (rfl)
+
+/-- The inverse stabilizer isomorphism sends an included element back to its source. -/
+@[simp]
+theorem realCliffordSpinCEquivLastStabilizer_symm_apply_inclusion
+    (x : realCliffordSpinCGroupZero n) :
+    (realCliffordSpinCEquivLastStabilizer n).symm
+      ⟨realCliffordSpinCInclusion n x, realCliffordSpinCInclusion_mem_lastStabilizer n x⟩ = x :=
+  (realCliffordSpinCEquivLastStabilizer n).symm_apply_eq.2 (Subtype.ext (rfl))
 
 end CliffordAlgebra

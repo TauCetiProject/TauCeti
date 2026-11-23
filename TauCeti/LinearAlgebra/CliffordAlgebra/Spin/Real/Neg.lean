@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # Real Spin groups in the Clifford algebra of the negated signature
