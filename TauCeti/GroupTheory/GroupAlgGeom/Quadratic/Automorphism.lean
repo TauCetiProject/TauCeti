@@ -48,22 +48,6 @@ namespace TauCeti.GroupAlgGeom.Quadratic
 
 variable {G X Y : Type*} [Group G]
 
-/-! ### Words in which a variable does not occur -/
-
-section Avoiding
-
-variable [DecidableEq X] {x : X}
-
-/-- A variable is avoided by the left side of a standard quadratic equation if and only if it is
-outside `S.vars`. -/
-@[simp]
-theorem Standard.toWord_mem_avoiding_iff {S : Standard G X} :
-    S.toWord ∈ GX.avoiding x ↔ x ∉ S.vars := by
-  rw [GX.mem_avoiding_iff_occurrences_eq_zero, ← not_iff_not, not_not,
-    S.mem_vars_iff_occurrences_toWord_ne_zero]
-
-end Avoiding
-
 /-! ### Occurrences under the elementary automorphisms -/
 
 section Elementary

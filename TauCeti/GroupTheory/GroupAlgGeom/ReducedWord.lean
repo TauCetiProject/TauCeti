@@ -90,7 +90,7 @@ directly for words in letters.
   `G` of reduced words.
 * `TauCeti.GroupAlgGeom.GX.le_occurrences`,
   `TauCeti.GroupAlgGeom.GX.exists_occurrences_add_occurrences_eq_add_two_mul`,
-* `TauCeti.GroupAlgGeom.GX.occurrences_map_le`,
+  `TauCeti.GroupAlgGeom.GX.occurrences_map_le`,
   `TauCeti.GroupAlgGeom.GX.occurrences_map_eq_zero`,
   `TauCeti.GroupAlgGeom.GX.mem_avoiding_iff_occurrences_eq_zero`: the extremal characterization,
   pair cancellation, homomorphism bounds, and `GX.avoiding` characterization for variable
@@ -371,6 +371,15 @@ theorem isReduced_append {l₁ l₂ : List (G ⊕ X × Bool)} :
 theorem IsReduced.infix {l₁ l₂ : List (G ⊕ X × Bool)} (h : IsReduced l₂) (h' : l₁ <:+: l₂) :
     IsReduced l₁ :=
   ⟨fun g hg => h.1 g (h'.subset hg), h.2.infix h'⟩
+
+/-- A reduced word consisting of a sequence of coefficients between two mutually inverse variable
+letters contains a single coefficient. -/
+theorem IsReduced.exists_eq_singleton_of_inr_map_inl {z : X} {b : Bool} {L : List G}
+    (h : IsReduced (.inr (z, b) :: (L.map Sum.inl ++ [.inr (z, !b)]))) : ∃ c : G, L = [c] := by
+  rcases L with _ | ⟨c, _ | ⟨c', L'⟩⟩
+  · simp at h
+  · exact ⟨c, rfl⟩
+  · simp at h
 
 /-- A word in variable letters is reduced exactly when it is a reduced word of the free group
 `F(X)`. -/
@@ -847,6 +856,37 @@ theorem isCyclicallyReduced_append_comm {l₁ l₂ : List (G ⊕ X × Bool)} :
     intro l₂ h
     simpa using ih (l₂ ++ [a]) (by simpa using h.append_singleton)
 
+/-- A word is cyclically reduced if and only if it is reduced and, whenever it has at least two
+letters, its last and first letters do not combine. -/
+theorem isCyclicallyReduced_iff_head?_getLast? {l : List (G ⊕ X × Bool)} :
+    IsCyclicallyReduced l ↔
+      IsReduced l ∧ (2 ≤ l.length → ∀ a ∈ l.getLast?, ∀ b ∈ l.head?, ¬Combines a b) := by
+  induction l using List.bidirectionalRec with
+  | nil => simp
+  | singleton a => simp
+  | cons_append b m a =>
+    rw [isCyclicallyReduced_cons_append, List.getLast?_cons, List.getLast?_concat, List.head?_cons]
+    simp
+
+private theorem head?_flatten_of_ne_nil {α : Type*} {L : List (List α)}
+    (hne : ∀ l ∈ L, l ≠ []) :
+    L.flatten.head? = L.head?.bind List.head? := by
+  cases L with
+  | nil => rfl
+  | cons l L =>
+    rw [List.flatten_cons, List.head?_append_of_ne_nil _ (hne l List.mem_cons_self)]
+    rfl
+
+private theorem getLast?_flatten_of_ne_nil {α : Type*} {L : List (List α)}
+    (hne : ∀ l ∈ L, l ≠ []) :
+    L.flatten.getLast? = L.getLast?.bind List.getLast? := by
+  induction L using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton L l _ =>
+    rw [List.flatten_append, List.flatten_singleton,
+      List.getLast?_append_of_ne_nil _ (hne l (by simp)), List.getLast?_concat]
+    rfl
+
 /-- A flatten of nonempty words is cyclically reduced if and only if each word is reduced,
 consecutive words do not combine across boundaries, and when the flattened word has at least two
 letters, the last letter of the last word and the first letter of the first word do not combine. -/
@@ -858,49 +898,12 @@ theorem isCyclicallyReduced_flatten_iff {blocks : List (List (G ⊕ X × Bool))}
       (2 ≤ blocks.flatten.length →
         ∀ l₁ ∈ blocks.getLast?, ∀ l₂ ∈ blocks.head?,
           ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) := by
-  refine ⟨fun h => ?_, fun ⟨hred, hchain, hwrap⟩ => ?_⟩
-  · obtain ⟨hred, hchain⟩ := (isReduced_flatten_iff hne).1 h.isReduced
-    refine ⟨hred, hchain, fun hlen l₁ hl₁ l₂ hl₂ a ha b hb => ?_⟩
-    have hb_ne : blocks ≠ [] := by rintro rfl; simp at hl₁
-    have hfl : blocks.flatten ≠ [] :=
-      List.flatten_ne_nil_iff.2 ⟨l₂, List.mem_of_head? hl₂, hne _ (List.mem_of_head? hl₂)⟩
-    have hhead_ne : blocks.head hb_ne ≠ [] := hne _ (List.head_mem hb_ne)
-    have hlast_ne : blocks.getLast hb_ne ≠ [] := hne _ (List.getLast_mem hb_ne)
-    obtain rfl : l₁ = blocks.getLast hb_ne := by
-      simpa [List.getLast?_eq_some_getLast hb_ne] using hl₁.symm
-    obtain rfl : l₂ = blocks.head hb_ne := by
-      simpa [List.head?_eq_some_head hb_ne] using hl₂.symm
-    obtain rfl : a = blocks.flatten.getLast hfl := by
-      rw [List.getLast_flatten_eq_getLast_getLast hfl hlast_ne,
-        ← Option.some_inj, ← List.getLast?_eq_some_getLast hlast_ne]
-      exact ha.symm
-    obtain rfl : b = blocks.flatten.head hfl := by
-      rw [List.head_flatten_eq_head_head hfl hhead_ne,
-        ← Option.some_inj, ← List.head?_eq_some_head hhead_ne]
-      exact hb.symm
-    obtain ⟨fst, t, hft⟩ := List.exists_cons_of_ne_nil hfl
-    have ht_ne : t ≠ [] := by
-      intro ht
-      simp [hft, ht] at hlen
-    rw [← List.dropLast_append_getLast ht_ne] at hft
-    have hnc := (isCyclicallyReduced_iff.1 h).2 fst (t.getLast ht_ne) t.dropLast hft
-    simpa [hft] using hnc
-  · refine isCyclicallyReduced_iff.2
-      ⟨(isReduced_flatten_iff hne).2 ⟨hred, hchain⟩, fun a b m hm => ?_⟩
-    have hfl : blocks.flatten ≠ [] := by simp [hm]
-    have hb_ne : blocks ≠ [] := fun h => by simp [h] at hfl
-    have hhead_ne : blocks.head hb_ne ≠ [] := hne _ (List.head_mem hb_ne)
-    have hlast_ne : blocks.getLast hb_ne ≠ [] := hne _ (List.getLast_mem hb_ne)
-    have ha : a ∈ (blocks.head hb_ne).head? := by
-      rw [List.head?_eq_some_head hhead_ne, Option.mem_def,
-        ← List.head_flatten_eq_head_head hfl hhead_ne]
-      simp [hm]
-    have hb : b ∈ (blocks.getLast hb_ne).getLast? := by
-      rw [List.getLast?_eq_some_getLast hlast_ne, Option.mem_def,
-        ← List.getLast_flatten_eq_getLast_getLast hfl hlast_ne]
-      simp [hm]
-    exact hwrap (by simp [hm]) _ (List.getLast?_eq_some_getLast hb_ne)
-      _ (List.head?_eq_some_head hb_ne) b hb a ha
+  rw [isCyclicallyReduced_iff_head?_getLast?, isReduced_flatten_iff hne,
+    head?_flatten_of_ne_nil hne, getLast?_flatten_of_ne_nil hne, and_assoc]
+  refine and_congr_right fun _ => and_congr_right fun _ => ?_
+  simp only [Option.mem_bind_iff]
+  exact ⟨fun h hlen l₁ hl₁ l₂ hl₂ a ha b hb => h hlen a ⟨l₁, hl₁, ha⟩ b ⟨l₂, hl₂, hb⟩,
+    fun h hlen a ⟨l₁, hl₁, ha⟩ b ⟨l₂, hl₂, hb⟩ => h hlen l₁ hl₁ l₂ hl₂ a ha b hb⟩
 
 /-- Appending a reduced letter `a` to a flatten of nonempty reduced words whose boundaries do not
 combine, and such that `a` combines with neither the last letter of the last block nor the first
@@ -1064,11 +1067,19 @@ theorem IsCyclicallyReduced.countVar_eq_zero_of_eq_conj_inl {l : List (G ⊕ X �
         congr 1
         simpa only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton,
           letter_inl, prod_map_letter_invRev] using hprod
-      rcases hqp : q ++ [.inr (y, b)] with _ | ⟨a, r⟩
-      · simp at hqp
-      rw [hqp, invRev_cons] at hm_eq
-      have hnc := (isCyclicallyReduced_iff.1 hl).2 a (Sum.map (·⁻¹) (fun s => (s.1, !s.2)) a)
-        (r ++ [.inl c] ++ invRev r) (by simpa [invRev_def, List.append_assoc] using hm_eq)
+      set p' := q ++ [.inr (y, b)]
+      have hp'_ne : p' ≠ [] := by simp [p']
+      let a := p'.head hp'_ne
+      have ha_head : a ∈ l.head? := by
+        rw [hm_eq, List.append_assoc, List.head?_append_of_ne_nil _ hp'_ne,
+          List.head?_eq_some_head hp'_ne]
+        rfl
+      have ha_last : Sum.map (·⁻¹) (fun s => (s.1, !s.2)) a ∈ l.getLast? := by
+        rw [hm_eq, List.getLast?_append_of_ne_nil _ (by simp [p']), invRev_def,
+          List.getLast?_reverse, List.head?_map, List.head?_eq_some_head hp'_ne]
+        rfl
+      have hnc := (isCyclicallyReduced_iff_head?_getLast?.1 hl).2
+        (by rw [hm_eq]; simp [p']; omega) _ ha_last _ ha_head
       rcases a with _ | ⟨_, _⟩ <;> simp at hnc
 
 end CyclicReduction
@@ -1142,11 +1153,6 @@ theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 := 
 @[simp]
 theorem occurrences_one (x : X) : occurrences x (1 : GX G X) = 0 := by
   simpa using occurrences_inl (G := G) x 1
-
-/-- The coefficients are the elements of `G[X]` in which no variable occurs. -/
-theorem mem_range_inl_iff_forall_occurrences_eq_zero {w : GX G X} :
-    w ∈ Set.range (inl : G →* GX G X) ↔ ∀ x, occurrences x w = 0 :=
-  mem_range_inl_iff
 
 @[simp]
 theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w := by
@@ -1276,15 +1282,17 @@ noncomputable def occVars (w : GX G X) : Finset X :=
   ext y; rcases eq_or_ne x y with rfl | h <;> [simp; simp [h, h.symm]]
 
 /-- Every variable occurring in a product `u * v` occurs in `u` or in `v`. -/
-theorem occVars_mul_subset [DecidableEq X] (u v : GX G X) :
-    occVars (u * v) ⊆ occVars u ∪ occVars v := fun x hx => by
-  rw [Finset.mem_union, mem_occVars_iff, mem_occVars_iff]
-  have hle := occurrences_mul_le x u v; have hx0 := mem_occVars_iff.1 hx; omega
+theorem occVars_mul_subset (u v : GX G X) :
+    (occVars (u * v) : Set X) ⊆ (occVars u : Set X) ∪ (occVars v : Set X) := fun x hx => by
+  have hle := occurrences_mul_le x u v
+  simp only [Set.mem_union, Finset.mem_coe, mem_occVars_iff] at hx ⊢
+  omega
 
 /-- No variable occurs in `w` if and only if `w` is a coefficient. -/
 theorem occVars_eq_empty_iff {w : GX G X} :
     occVars w = ∅ ↔ w ∈ Set.range (inl : G →* GX G X) := by
-  rw [Finset.eq_empty_iff_forall_notMem, mem_range_inl_iff_forall_occurrences_eq_zero]; simp
+  rw [mem_range_inl_iff]
+  simp [Finset.eq_empty_iff_forall_notMem, occurrences_eq_countVar_reducedWord]
 
 /-- Only finitely many variables occur in any word of `G[X]`. -/
 theorem finite_setOf_occurrences_ne_zero (w : GX G X) : {x | occurrences x w ≠ 0}.Finite :=

@@ -179,9 +179,7 @@ theorem mem_varSubgroup_iff_occVars_subset :
     | mem u hu => rcases hu with ⟨g, rfl⟩ | ⟨y, hy, rfl⟩ <;> simp_all
     | one => simp at hx
     | mul u v _ _ hu hv =>
-      classical
-      exact (Finset.mem_union.1 (occVars_mul_subset u v (Finset.mem_coe.1 hx))).elim
-        (fun h => hu h) (fun h => hv h)
+      exact (occVars_mul_subset u v hx).elim (fun h => hu h) (fun h => hv h)
     | inv u _ hu => exact hu (by simpa using hx)
   · rw [← prod_reducedWord w]
     refine list_prod_mem <| List.forall_mem_map.2 fun a ha => ?_

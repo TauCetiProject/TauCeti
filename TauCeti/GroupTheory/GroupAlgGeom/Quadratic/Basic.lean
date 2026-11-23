@@ -317,6 +317,27 @@ theorem occVars_conjWord [DecidableEq G] (p : X × G) :
       GX.occurrences_eq_countVar_reducedWord, conjWord_def, GX.reducedWord_inv_mul_inl_mul hp]
     by_cases hv : p.1 = v <;> simp [hv, Ne.symm]
 
+/-- A commutator atom `commWord p` avoids a variable `v` when neither `p.1` nor `p.2` is `v`. -/
+theorem commWord_mem_avoiding [DecidableEq X] {p : X × X} {v : X}
+    (h₁ : p.1 ≠ v) (h₂ : p.2 ≠ v) : commWord (G := G) p ∈ GX.avoiding v := by
+  have ha : (inr (FreeGroup.of p.1) : GX G X) ∈ GX.avoiding v := GX.inr_of_mem_avoiding h₁
+  have hb : (inr (FreeGroup.of p.2) : GX G X) ∈ GX.avoiding v := GX.inr_of_mem_avoiding h₂
+  rw [commWord_def, commutatorElement_def, inv_inv, inv_inv]
+  exact mul_mem (mul_mem (mul_mem (inv_mem ha) (inv_mem hb)) ha) hb
+
+/-- A square atom `sqWord x` avoids a variable `v` when `x ≠ v`. -/
+theorem sqWord_mem_avoiding [DecidableEq X] {x v : X} (hx : x ≠ v) :
+    sqWord (G := G) x ∈ GX.avoiding v := by
+  rw [sqWord_def]
+  exact pow_mem (GX.inr_of_mem_avoiding hx) 2
+
+/-- A conjugate atom `conjWord p` avoids a variable `v` when `p.1 ≠ v`. -/
+theorem conjWord_mem_avoiding [DecidableEq X] {p : X × G} {v : X} (hp : p.1 ≠ v) :
+    conjWord p ∈ GX.avoiding v := by
+  rw [conjWord_def]
+  exact mul_mem (mul_mem (inv_mem (GX.inr_of_mem_avoiding hp)) (GX.inl_mem_avoiding _ _))
+    (GX.inr_of_mem_avoiding hp)
+
 end Atoms
 
 /-! ### Standard quadratic equations -/
@@ -754,18 +775,17 @@ private theorem AtomSpec.mem_head? {a : AtomSpec G X} {l : G ⊕ X × Bool}
   cases a <;> simp_all [AtomSpec.letters, commLetters, sqLetters, conjLetters, AtomSpec.headVar]
 
 omit [Group G] in
-private theorem AtomSpec.getLast?_eq (a : AtomSpec G X) :
-    a.letters.getLast? = some (.inr (a.lastVar, true)) := by
-  cases a <;> simp [AtomSpec.letters, commLetters, sqLetters, conjLetters, AtomSpec.lastVar]
+private theorem AtomSpec.mem_getLast? {a : AtomSpec G X} {l : G ⊕ X × Bool}
+    (hl : l ∈ a.letters.getLast?) : l = .inr (a.lastVar, true) := by
+  cases a <;> simp_all [AtomSpec.letters, commLetters, sqLetters, conjLetters, AtomSpec.lastVar]
 
 omit [Group G] in
 private theorem AtomSpec.not_combines_of_ne {a₁ a₂ : AtomSpec G X}
     (hne : a₁.lastVar ≠ a₂.headVar) :
     ∀ x ∈ a₁.letters.getLast?, ∀ y ∈ a₂.letters.head?, ¬GX.Combines x y := by
   intro x hx y hy
-  rw [a₁.getLast?_eq, Option.mem_def, Option.some.injEq] at hx
-  obtain ⟨b, hb⟩ := a₂.mem_head? hy
-  subst hx hb
+  obtain rfl := a₁.mem_getLast? hx
+  obtain ⟨b, rfl⟩ := a₂.mem_head? hy
   simp [hne]
 
 omit [Group G] in
@@ -773,10 +793,9 @@ private theorem AtomSpec.not_combines_sq (a₁ : AtomSpec G X) (x : X) :
     ∀ u ∈ a₁.letters.getLast?, ∀ v ∈ (AtomSpec.sq x : AtomSpec G X).letters.head?,
       ¬GX.Combines u v := by
   intro u hu v hv
-  rw [a₁.getLast?_eq, Option.mem_def, Option.some.injEq] at hu
-  simp only [AtomSpec.letters, sqLetters, List.head?_cons, Option.mem_def,
-    Option.some.injEq] at hv
-  subst hu hv
+  obtain rfl := a₁.mem_getLast? hu
+  simp only [AtomSpec.letters, sqLetters, List.head?_cons, Option.mem_def, Option.some.injEq] at hv
+  subst hv
   simp
 
 omit [Group G] in
@@ -790,8 +809,7 @@ omit [Group G] in
 private theorem AtomSpec.not_combines_getLast_inl (a : AtomSpec G X) (d : G) :
     ∀ c ∈ a.letters.getLast?, ¬GX.Combines c (.inl d) := by
   intro c hc
-  rw [a.getLast?_eq, Option.mem_def, Option.some.injEq] at hc
-  subst hc
+  obtain rfl := a.mem_getLast? hc
   simp
 
 private def wordLetters : Standard G X → List (G ⊕ X × Bool)
@@ -1016,6 +1034,14 @@ theorem coe_occVars_toWord (S : Standard G X) : (GX.occVars S.toWord : Set X) = 
 @[simp] theorem occurrences_toWord_eq_two_iff {S : Standard G X} {x : X} :
     GX.occurrences x S.toWord = 2 ↔ x ∈ S.vars :=
   ⟨fun h => mem_vars_iff_occurrences_toWord_ne_zero.2 (by omega), occurrences_toWord_of_mem_vars⟩
+
+/-- A variable is avoided by the left side of a standard quadratic equation if and only if it is
+outside `S.vars`. -/
+@[simp]
+theorem toWord_mem_avoiding_iff [DecidableEq X] {S : Standard G X} {x : X} :
+    S.toWord ∈ GX.avoiding x ↔ x ∉ S.vars := by
+  rw [GX.mem_avoiding_iff_occurrences_eq_zero, ← not_iff_not, not_not,
+    S.mem_vars_iff_occurrences_toWord_ne_zero]
 
 /-- Every standard quadratic equation involves at least one variable. -/
 theorem vars_nonempty (S : Standard G X) : S.vars.Nonempty := by

@@ -57,9 +57,7 @@ theorem length_pairAdjacent : ∀ (l : List α), (pairAdjacent l).length = l.len
 /-- Flattening a list of pairs `C` into `[p.1, p.2]` produces a list of length `2 * C.length`. -/
 theorem length_flatMap_pair (C : List (α × α)) :
     (C.flatMap fun p => [p.1, p.2]).length = 2 * C.length := by
-  induction C with
-  | nil => simp
-  | cons p C ih => simp [ih, Nat.mul_succ]
+  simp [List.length_flatMap, List.map_const', Nat.mul_comm]
 
 /-- The entries at indices `2 * i` and `2 * i + 1` of `C.flatMap fun p => [p.1, p.2]` are the two
 components of `C[i]`. -/

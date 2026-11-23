@@ -47,12 +47,8 @@ The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.V_image_singleton_eq_of_conj`: conjugation after a map preserves the
   algebraic set of a single equation.
-* `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`,
-  `TauCeti.GroupAlgGeom.mem_V_iff_of_V_image_eq`,
-  `TauCeti.GroupAlgGeom.mem_V_singleton_iff_of_conj_gHom`: membership in the solutions of the
-  image of a system under a `G`-isomorphism, of any system with the same solutions as the image
-  under a `G`-homomorphism, and of a single equation under a `G`-homomorphism followed by
-  conjugation.
+* `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
+  system under a `G`-isomorphism.
 * `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`,
   `TauCeti.GroupAlgGeom.Rad_of_V_image_eq`: a `G`-isomorphism carries the radical of a system to
   the radical of its image and of any system with the same solutions.
@@ -465,21 +461,6 @@ theorem V_image_singleton_eq_of_conj (φ : GX G X → GX G Y) {w : GX G X} {u w'
     (hw' : u * φ w * u⁻¹ = w') :
     V ι (φ '' {w}) = V ι {w'} := by
   rw [Set.image_singleton, ← hw', V_singleton_conj]
-
-/-- When `V ι (σ '' S) = V ι T` for a `G`-homomorphism `σ : G[X] →* G[Y]`, a point solves `T`
-if and only if the tuple of its values at the words `σ x` solves `S`. -/
-theorem mem_V_iff_of_V_image_eq (σ : GHom (inl : G →* GX G X) (inl : G →* GX G Y))
-    {S : Set (GX G X)} {T : Set (GX G Y)} (hV : V ι (σ '' S) = V ι T) (v : Y → H) :
-    v ∈ V ι T ↔ wordMap ι (fun x => σ (inr (FreeGroup.of x))) v ∈ V ι S := by
-  rw [← hV]
-  simpa using (Set.ext_iff.1 (preimage_wordMap_V_eq_V_image ι σ S) v).symm
-
-/-- When `u * σ w * u⁻¹ = w'` for a `G`-homomorphism `σ : G[X] →* G[Y]`, a point solves `w' = 1`
-if and only if the tuple of its values at the words `σ x` solves `w = 1`. -/
-theorem mem_V_singleton_iff_of_conj_gHom (σ : GHom (inl : G →* GX G X) (inl : G →* GX G Y))
-    {w : GX G X} {u w' : GX G Y} (hw' : u * σ w * u⁻¹ = w') (v : Y → H) :
-    v ∈ V ι {w'} ↔ wordMap ι (fun x => σ (inr (FreeGroup.of x))) v ∈ V ι {w} :=
-  mem_V_iff_of_V_image_eq ι σ (V_image_singleton_eq_of_conj ι σ hw') v
 
 end GHomVImageEq
 

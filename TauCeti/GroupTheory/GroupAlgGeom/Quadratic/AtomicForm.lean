@@ -128,30 +128,6 @@ end DropTrivial
 
 end AtomicForm
 
-section Avoiding
-
-variable [Group G] [DecidableEq X]
-
-theorem commWord_mem_avoiding {p : X × X} {v : X}
-    (h₁ : p.1 ≠ v) (h₂ : p.2 ≠ v) : commWord (G := G) p ∈ GX.avoiding v := by
-  have ha : (inr (FreeGroup.of p.1) : GX G X) ∈ GX.avoiding v := GX.inr_of_mem_avoiding h₁
-  have hb : (inr (FreeGroup.of p.2) : GX G X) ∈ GX.avoiding v := GX.inr_of_mem_avoiding h₂
-  rw [commWord_def, commutatorElement_def, inv_inv, inv_inv]
-  exact mul_mem (mul_mem (mul_mem (inv_mem ha) (inv_mem hb)) ha) hb
-
-theorem sqWord_mem_avoiding {x v : X} (hx : x ≠ v) :
-    sqWord (G := G) x ∈ GX.avoiding v := by
-  rw [sqWord_def]
-  exact pow_mem (GX.inr_of_mem_avoiding hx) 2
-
-theorem conjWord_mem_avoiding {p : X × G} {v : X} (hp : p.1 ≠ v) :
-    conjWord p ∈ GX.avoiding v := by
-  rw [conjWord_def]
-  exact mul_mem (mul_mem (inv_mem (GX.inr_of_mem_avoiding hp)) (GX.inl_mem_avoiding _ _))
-    (GX.inr_of_mem_avoiding hp)
-
-end Avoiding
-
 namespace AtomicForm
 
 variable [Group G]
@@ -161,9 +137,6 @@ def commsProd (P : AtomicForm G X) : GX G X :=
   (P.comms.map commWord).prod
 
 theorem commsProd_def (P : AtomicForm G X) : P.commsProd = (P.comms.map commWord).prod := (rfl)
-
-theorem commsProd_mk (C : List (X × X)) (S : List X) (Z : List (X × G)) (d : G) :
-    (⟨C, S, Z, d⟩ : AtomicForm G X).commsProd = (C.map commWord).prod := (rfl)
 
 @[simp]
 theorem commsProd_nil (S : List X) (Z : List (X × G)) (d : G) :
@@ -175,22 +148,11 @@ theorem commsProd_cons (P : AtomicForm G X) (p : X × X) :
     ({ P with comms := p :: P.comms } : AtomicForm G X).commsProd = commWord p * P.commsProd := by
   simp [commsProd_def]
 
-@[simp]
-theorem commsProd_with_squares (P : AtomicForm G X) (S : List X) :
-    ({ P with squares := S } : AtomicForm G X).commsProd = P.commsProd := (rfl)
-
-@[simp]
-theorem commsProd_with_conjs (P : AtomicForm G X) (Z : List (X × G)) :
-    ({ P with conjs := Z } : AtomicForm G X).commsProd = P.commsProd := (rfl)
-
 /-- The product `∏ sₖ²` of the square atoms of `P`. -/
 def squaresProd (P : AtomicForm G X) : GX G X :=
   (P.squares.map sqWord).prod
 
 theorem squaresProd_def (P : AtomicForm G X) : P.squaresProd = (P.squares.map sqWord).prod := (rfl)
-
-theorem squaresProd_mk (C : List (X × X)) (S : List X) (Z : List (X × G)) (d : G) :
-    (⟨C, S, Z, d⟩ : AtomicForm G X).squaresProd = (S.map sqWord).prod := (rfl)
 
 @[simp]
 theorem squaresProd_nil (C : List (X × X)) (Z : List (X × G)) (d : G) :
@@ -203,22 +165,11 @@ theorem squaresProd_cons (P : AtomicForm G X) (s : X) :
       sqWord s * P.squaresProd := by
   simp [squaresProd_def]
 
-@[simp]
-theorem squaresProd_with_comms (P : AtomicForm G X) (C : List (X × X)) :
-    ({ P with comms := C } : AtomicForm G X).squaresProd = P.squaresProd := (rfl)
-
-@[simp]
-theorem squaresProd_with_conjs (P : AtomicForm G X) (Z : List (X × G)) :
-    ({ P with conjs := Z } : AtomicForm G X).squaresProd = P.squaresProd := (rfl)
-
 /-- The product `∏ zⱼ⁻¹ cⱼ zⱼ` of the conjugate atoms of `P`. -/
 def conjsProd (P : AtomicForm G X) : GX G X :=
   (P.conjs.map conjWord).prod
 
 theorem conjsProd_def (P : AtomicForm G X) : P.conjsProd = (P.conjs.map conjWord).prod := (rfl)
-
-theorem conjsProd_mk (C : List (X × X)) (S : List X) (Z : List (X × G)) (d : G) :
-    (⟨C, S, Z, d⟩ : AtomicForm G X).conjsProd = (Z.map conjWord).prod := (rfl)
 
 @[simp]
 theorem conjsProd_nil (C : List (X × X)) (S : List X) (d : G) :
@@ -231,14 +182,6 @@ theorem conjsProd_cons (P : AtomicForm G X) (p : X × G) :
       conjWord p * P.conjsProd := by
   simp [conjsProd_def]
 
-@[simp]
-theorem conjsProd_with_comms (P : AtomicForm G X) (C : List (X × X)) :
-    ({ P with comms := C } : AtomicForm G X).conjsProd = P.conjsProd := (rfl)
-
-@[simp]
-theorem conjsProd_with_squares (P : AtomicForm G X) (S : List X) :
-    ({ P with squares := S } : AtomicForm G X).conjsProd = P.conjsProd := (rfl)
-
 /-- The word `∏ [xᵢ, yᵢ] · ∏ sₖ² · ∏ zⱼ⁻¹ cⱼ zⱼ · d` of `G[X]`, with `[x, y] = x⁻¹ y⁻¹ x y`. -/
 def toWord (P : AtomicForm G X) : GX G X :=
   P.commsProd * P.squaresProd * P.conjsProd * inl P.const
@@ -248,18 +191,18 @@ theorem toWord_def (P : AtomicForm G X) :
 
 @[simp]
 theorem toWord_dropTrivial (P : AtomicForm G X) : P.dropTrivial.toWord = P.toWord := by
-  obtain ⟨C, S, Z, d⟩ := P
+  classical
   simp only [toWord_def, commsProd_def, squaresProd_def, conjsProd_def, dropTrivial]
   congr 2
-  -- the deleted conjugates `z⁻¹ * inl 1 * z` are trivial
-  induction Z with
-  | nil => rfl
-  | cons p Z ih =>
+  have hpred : (fun p : X × G => decide (p.2 ≠ 1)) =
+      (fun w : GX G X => w != 1) ∘ conjWord := by
+    ext p
     by_cases hp : p.2 = 1
-    · rw [List.filter_cons_of_neg (by simpa using hp), ih]
-      simp [conjWord_def, hp]
-    · rw [List.filter_cons_of_pos (by simpa using hp)]
-      simp only [List.map_cons, List.prod_cons, ih]
+    · simp [hp, conjWord_def]
+    · simp only [Function.comp_apply, hp, ne_eq, not_false_eq_true, decide_true]
+      exact (bne_iff_ne.2 fun h => hp <| Monoid.Coprod.inl_injective
+        (by simpa [conjWord_def, mul_eq_one_iff_eq_inv] using h : inl p.2 = inl 1)).symm
+  simpa only [hpred, ← List.filter_map] using List.prod_filter_bne_one (P.conjs.map conjWord)
 
 /-- A variable outside the commutator pairs of `P` does not occur in the commutator product of
 `P`. -/
@@ -288,20 +231,13 @@ theorem conjsProd_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X}
   rcases List.mem_map.1 hr with ⟨p, hp, rfl⟩
   exact conjWord_mem_avoiding (by rintro rfl; exact hx (List.mem_map.2 ⟨p, hp, rfl⟩))
 
-/-- A variable outside `P.vars` is avoided by each of the three atom products `P.commsProd`,
-`P.squaresProd`, and `P.conjsProd`. -/
-theorem commsProd_squaresProd_conjsProd_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X}
-    (hx : x ∉ P.vars) :
-    P.commsProd ∈ GX.avoiding x ∧ P.squaresProd ∈ GX.avoiding x ∧ P.conjsProd ∈ GX.avoiding x := by
-  simp only [vars_def, List.mem_append, not_or] at hx
-  exact ⟨commsProd_mem_avoiding hx.1.1, squaresProd_mem_avoiding hx.1.2,
-    conjsProd_mem_avoiding hx.2⟩
-
 /-- A variable which is not a variable of a word in atomic form does not occur in it. -/
 theorem toWord_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
     P.toWord ∈ GX.avoiding x := by
-  obtain ⟨hC, hSq, hCj⟩ := P.commsProd_squaresProd_conjsProd_mem_avoiding hx
-  exact mul_mem (mul_mem (mul_mem hC hSq) hCj) (GX.inl_mem_avoiding _ _)
+  simp only [vars_def, List.mem_append, not_or] at hx
+  exact mul_mem (mul_mem (mul_mem (commsProd_mem_avoiding hx.1.1)
+    (squaresProd_mem_avoiding hx.1.2)) (conjsProd_mem_avoiding hx.2))
+    (GX.inl_mem_avoiding _ _)
 
 private theorem apply_toWord_eq_conj (P : AtomicForm G X) (hc : P.const = 1)
     {f : MulAut (GX G X)} {t : GX G X} (hf : ∀ g, f (inl g) = inl g)
@@ -456,12 +392,12 @@ theorem exists_mem_elementaryAut_conj_toWord_concat
     (List.disjoint_of_nodup_append h.of_append_left) rfl _ hzy
   have e : (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).toWord =
       (⟨C, S, Z, 1⟩ : AtomicForm G X).toWord * conjWord (z, c) := by
-    simp [toWord_def, commsProd_mk, squaresProd_mk, conjsProd_mk, mul_assoc]
+    simp [toWord_def, commsProd_def, squaresProd_def, conjsProd_def, mul_assoc]
   refine ⟨f, hf, ?_, fun a ha =>
     hfw a fun v hv => GX.mem_avoiding_iff_occurrences_eq_zero.2 (ha v (hsub.subset hv))⟩
   rw [e, map_mul, hfP, hfw _ fun y hy => conjWord_mem_avoiding (p := (z, c))
     (fun (hzy' : z = y) => List.disjoint_of_nodup_append h (hzy' ▸ hy) (.head _))]
-  simp [toWord_def, commsProd_mk, squaresProd_mk, conjsProd_mk, conjWord_def, mul_assoc]
+  simp [toWord_def, commsProd_def, squaresProd_def, conjsProd_def, conjWord_def, mul_assoc]
 
 /-! ### Atomic forms that are standard quadratic words -/
 
