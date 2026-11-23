@@ -27,8 +27,9 @@ ordered bases, these are the matrices that preserve the unordered pair of coordi
 `𝔽_ℓ` these are the levels of the modular curves `X_s(ℓ)` and `X_s⁺(ℓ)`.
 
 The split Cartan subgroup has index `2` in the monomial subgroup over every nontrivial
-commutative ring (`TauCeti.GL2SplitCartanNormalizer.relIndex_diagonalTorus`). When `R` has a
-unit other than `1`, the monomial subgroup is the normalizer of the split Cartan subgroup
+commutative ring (`TauCeti.GL2SplitCartanNormalizer.relIndex_diagonalTorus`). When `R` has no
+zero divisors (`IsCancelMulZero R`) and a unit other than `1`, the monomial subgroup is the
+normalizer of the split Cartan subgroup
 (`TauCeti.GL2SplitCartanNormalizer.eq_normalizer`). Over `𝔽₂` this fails: there the split Cartan
 subgroup is trivial, so its normalizer is all of `GL₂(𝔽₂)`, of order `6`
 (`TauCeti.normalizer_diagonalTorus_eq_top`), while the monomial subgroup has order `2` and index
@@ -50,8 +51,8 @@ Over a finite field with `q` elements, `|C_s| = (q - 1)²` (`TauCeti.natCard_dia
 * `TauCeti.neg_one_mem_diagonalTorus`, `TauCeti.map_det_diagonalTorus`: the diagonal torus
   contains `-1` and maps onto the units under the determinant.
 * `TauCeti.GL2SplitCartanNormalizer.relIndex_diagonalTorus`: `[C_s⁺ : C_s] = 2`.
-* `TauCeti.GL2SplitCartanNormalizer.eq_normalizer`: if `R` has a unit other than `1`, the
-  monomial subgroup is the normalizer of the split Cartan subgroup.
+* `TauCeti.GL2SplitCartanNormalizer.eq_normalizer`: if `R` has no zero divisors and a unit other
+  than `1`, the monomial subgroup is the normalizer of the split Cartan subgroup.
 * `TauCeti.index_diagonalTorus_two`, `TauCeti.GL2SplitCartanNormalizer.natCard`,
   `TauCeti.GL2SplitCartanNormalizer.two_mul_index`: orders and indices over a finite field.
 * `TauCeti.GL2SplitCartanNormalizer.map_det`: the determinant maps `C_s⁺` onto the units.
@@ -125,8 +126,8 @@ variable (R)
 
 /-- **The monomial subgroup** `C_s⁺` of `GL₂(R)`: the invertible matrices that are diagonal or
 antidiagonal, which preserve the unordered pair of coordinate lines. It is the normalizer of the
-split Cartan subgroup `TauCeti.diagonalTorus R 2` when `R` has a unit other than `1`
-(`TauCeti.GL2SplitCartanNormalizer.eq_normalizer`), but not over `𝔽₂`. -/
+split Cartan subgroup `TauCeti.diagonalTorus R 2` when `R` has no zero divisors and a unit other
+than `1` (`TauCeti.GL2SplitCartanNormalizer.eq_normalizer`), but not over `𝔽₂`. -/
 def GL2SplitCartanNormalizer : Subgroup (GL (Fin 2) R) where
   carrier := {g | ((g : Matrix (Fin 2) (Fin 2) R) 0 1 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0)
     ∨ ((g : Matrix (Fin 2) (Fin 2) R) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 1 = 0)}
@@ -192,8 +193,9 @@ theorem le_normalizer :
   refine fun g hg ↦ Subgroup.mem_normalizer_iff.mpr fun h ↦ ⟨mul_mul_inv_mem hg, fun hh ↦ ?_⟩
   simpa [mul_assoc] using mul_mul_inv_mem (inv_mem hg) hh
 
-/-- **The monomial subgroup is the normalizer of the split Cartan subgroup** when `R` has a unit
-other than `1`, for instance over `𝔽_ℓ` for an odd prime `ℓ`. Over `𝔽₂` the normalizer is all of
+/-- **The monomial subgroup is the normalizer of the split Cartan subgroup** when `R` has no zero
+divisors (`IsCancelMulZero R`) and a unit other than `1`, for instance over `𝔽_ℓ` for an odd prime
+`ℓ`. Over `𝔽₂` the normalizer is all of
 `GL₂(𝔽₂)` (`TauCeti.normalizer_diagonalTorus_eq_top`). -/
 theorem eq_normalizer [IsCancelMulZero R] [Nontrivial Rˣ] :
     GL2SplitCartanNormalizer R = Subgroup.normalizer (diagonalTorus R 2 : Set (GL (Fin 2) R)) := by

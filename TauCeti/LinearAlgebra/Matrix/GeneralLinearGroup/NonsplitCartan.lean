@@ -31,13 +31,14 @@ For an odd prime `ℓ` and a nonsquare `ε ∈ 𝔽_ℓ` the choice `t = 0`, `n 
 `C_ns(ℓ) = {!![a, ε b; b, a]}`; over `𝔽₂` the choice `t = n = 1` gives the cyclic subgroup of
 order `3` of `GL₂(𝔽₂)`. These are the levels of the modular curves `X_ns(ℓ)` and `X_ns⁺(ℓ)`.
 
-Over a field, the subgroup is `{a + b α : (a, b) ≠ (0, 0)}`, so over a finite field with `q`
-elements it has `q² - 1` elements and index `q (q - 1)`. When moreover `X² - t X - n` is
-separable, that is `t ≠ 0` or `2 ≠ 0`, the Cartan subgroup has index `2` in its normalizer: an
+Over a field `F` in which `X² - t X - n` has no root, the subgroup is
+`{a + b α : (a, b) ≠ (0, 0)}`, so over a finite field with `q` elements it has `q² - 1` elements
+and index `q (q - 1)`. When this irreducible quadratic is moreover separable, that is `t ≠ 0` or
+`2 ≠ 0`, the Cartan subgroup has index `2` in its normalizer: an
 element `g` of the normalizer sends `α` to a root of `X² - t X - n` in `F[α]`, which is `α` or its
 conjugate `t - α`. In the first case `g` commutes with `α` and lies in the Cartan subgroup; in the
 second, so does `σ g`, where `σ = !![1, t; 0, -1]` is the matrix of the conjugation `α ↦ t - α`.
-Over a finite field separability is automatic.
+Over a finite field an irreducible quadratic is automatically separable.
 
 `TauCeti.GL2NonSplitTorus F E` is the same construction for an abstract quadratic extension `E/F`
 with a chosen basis, hence conjugate to this subgroup when `E ≅ F[α]`; the explicit entries here
@@ -51,12 +52,12 @@ are those of the standard level `C_ns(ℓ)`, and they also make sense over `ℤ 
 ## Main results
 
 * `TauCeti.GL2NonsplitCartan.natCard`, `TauCeti.GL2NonsplitCartan.index_eq`: `|C_ns| = q² - 1` and
-  `[GL₂(𝔽_q) : C_ns] = q (q - 1)`.
+  `[GL₂(𝔽_q) : C_ns] = q (q - 1)` when `X² - t X - n` has no root in `𝔽_q`.
 * `TauCeti.GL2NonsplitCartan.relIndex_normalizer`: `[C_ns⁺ : C_ns] = 2` when `X² - t X - n` is
   irreducible and separable.
 * `TauCeti.GL2NonsplitCartanNormalizer.natCard`,
   `TauCeti.GL2NonsplitCartanNormalizer.two_mul_index`: `|C_ns⁺| = 2 (q² - 1)` and
-  `2 [GL₂(𝔽_q) : C_ns⁺] = q (q - 1)`.
+  `2 [GL₂(𝔽_q) : C_ns⁺] = q (q - 1)` when `X² - t X - n` has no root in `𝔽_q`.
 
 ## References
 
