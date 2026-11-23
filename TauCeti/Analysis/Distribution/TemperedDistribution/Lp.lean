@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.Continuous
 
 /-!
@@ -257,8 +258,7 @@ theorem exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le {μ : Measure E
       (Lp.norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
     exact Lp.norm_le_of_ae_bound_top hG0 (hmem.coeFn_toLp.mp (hG.mono fun x hx hx' ↦ hx' ▸ hx))
   · refine ⟨0, ?_, by simpa using mul_nonneg hG0 (norm_nonneg u)⟩
-    ext φ
-    simp [SchwartzMap.smulLeftCLM, hg]
+    simp [TemperedDistribution.smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg]
 
 /-- The tempered distribution of an `Lᵖ` function `w` is the product of the tempered distribution
 of an `L^q` function `u` with a function `g` of temperate growth exactly when `w = g • u` almost

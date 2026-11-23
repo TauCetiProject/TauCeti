@@ -28,11 +28,16 @@ functions whose derivatives up to order `⌈|s|⌉` are bounded, such as constan
 of transition matrices of vector bundles, are allowed. If `g` does not have temperate growth,
 multiplication by `g` is the junk value `0`.
 
-The matrix-valued version follows: for finite-dimensional complex Hilbert spaces `F` and `G` and
-`A : E → (F →L[ℂ] G)` of temperate growth with bounded derivatives of order at most `⌈|s|⌉`,
-multiplication `u ↦ (x ↦ A x (u x))` extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
-These are the estimates that make localization by cutoff functions and changes of frame bounded
-on the Sobolev scale of a vector bundle.
+The matrix-valued versions follow for finite-dimensional complex Hilbert spaces `F` and `G`. For
+`A : E → (F →L[ℂ] G)` of temperate growth with bounded derivatives of order at most `⌈|s|⌉`, the
+pointwise multiplication `u ↦ (x ↦ A x (u x))` of Schwartz functions extends to a bounded operator
+`H^s(E, F) → H^s(E, G)` (`SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`). On tempered
+distributions, for `A : E → (F →L[ℂ] G)` of class `C^{⌈|s|⌉}` with bounded derivatives of order at
+most `⌈|s|⌉`, `TemperedDistribution.mulLeftCLM A` preserves `H^s`
+(`TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`); this is
+multiplication by `A` when `A` has temperate growth, and a junk value otherwise (see
+`TemperedDistribution.mulLeftCLM`). These are the estimates that make localization by cutoff
+functions and changes of frame bounded on the Sobolev scale of a vector bundle.
 
 ## The argument
 
@@ -54,11 +59,12 @@ on the Sobolev scale of a vector bundle.
   `H^s(E, F) → H^s(E, F)`, for every real `s`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: if `f ∈ H^s`
   then `g f ∈ H^s`, for every real `s`.
-* `SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`: multiplication by a matrix-valued `A`
-  extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
-* `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: if `f ∈ H^s`
-  then `A f ∈ H^s`, for every real `s`, with `TemperedDistribution.mulLeftCLM` the multiplication
-  of tempered distributions by `A`.
+* `SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`: multiplication by a matrix-valued `A` of
+  temperate growth with bounded derivatives extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
+* `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for `A` of class
+  `C^{⌈|s|⌉}` with bounded derivatives up to order `⌈|s|⌉`, if `f ∈ H^s` then
+  `TemperedDistribution.mulLeftCLM A f ∈ H^s`, for every real `s` (multiplication by `A` when `A`
+  has temperate growth, and a junk value otherwise).
 
 ## References
 
@@ -199,7 +205,9 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil {s : ℝ} {g : 
 /-- **Matrix multipliers with bounded derivatives preserve `H^s`, for every real `s`.** Let `F`
 and `G` be finite-dimensional and let `A : E → (F →L[ℂ] G)` be `⌈|s|⌉` times continuously
 differentiable, with bounded iterated derivatives of order at most `⌈|s|⌉`. Then
-`A f ∈ H^s(E, G)` for every tempered distribution `f ∈ H^s(E, F)`. -/
+`mulLeftCLM A f ∈ H^s(E, G)` for every tempered distribution `f ∈ H^s(E, F)`. This is
+multiplication by `A` when `A` has temperate growth; otherwise `mulLeftCLM A` is a junk value (see
+`TemperedDistribution.mulLeftCLM`). -/
 theorem MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil [FiniteDimensional ℂ F]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] [FiniteDimensional ℂ G]
     {s : ℝ} {A : E → F →L[ℂ] G} (hA : ContDiff ℝ ⌈|s|⌉₊ A)

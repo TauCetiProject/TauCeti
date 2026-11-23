@@ -19,13 +19,13 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 /-!
 # Multiplication by functions with bounded derivatives on `H^{k,p}(ℝⁿ)`
 
-Let `g` be a scalar function of temperate growth whose iterated derivatives of order at most `|k|`
-are bounded. For `1 < p < ∞`, multiplication by `g` maps the Bessel-potential space `H^{k,p}` of
-integer order `k`, positive or negative, into itself: if a tempered distribution `f` lies in
-`H^{k,p}`, then so does `g f`. For `k ≥ 0` this is
-`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`, and for negative orders
-`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg`. Here `g f` is
-Mathlib's `TemperedDistribution.smulLeftCLM`.
+Let `g` be a scalar function whose iterated derivatives of order at most `|k|` are bounded. For
+`1 < p < ∞`, multiplication by `g` maps the Bessel-potential space `H^{k,p}` of integer order `k`,
+positive or negative, into itself: if a tempered distribution `f` lies in `H^{k,p}`, then so does
+`g f`. For `k ≥ 0` this is `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`,
+and for negative orders `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg`.
+Here `g f` is Mathlib's `TemperedDistribution.smulLeftCLM`; if `g` does not have temperate growth,
+`g f` is the junk value `0`.
 
 Unlike multiplication by Schwartz functions, the multiplier need not decay. Typical examples are
 smooth functions which outside a ball agree with a winding phase `(z / |z|) ^ m` or with a
@@ -37,10 +37,12 @@ derivatives, such as the coefficients of a differential operator.
 Matrix-valued multipliers `A : E → (F →L[ℂ] G)` between finite-dimensional spaces, such as the
 changes of frame of a vector bundle read in a chart, act on tempered distributions by
 `TemperedDistribution.mulLeftCLM A`, which is `∑ᵢ bᵢ (gᵢ f)` for the coordinates `gᵢ` of `A` in a
-basis `(bᵢ)` of `F →L[ℂ] G`. The coordinates inherit the derivative bounds of `A`, so the scalar
-results give `A f ∈ H^{k,p}(E, G)` for `f ∈ H^{k,p}(E, F)`. The closed graph theorem turns this
-into a bounded operator `H^{k,p}(E, F) → H^{k,p}(E, G)`, and pointwise inverse frame changes give
-mutually inverse operators, hence an isomorphism `H^{k,p}(E, F) ≃L[ℂ] H^{k,p}(E, G)`.
+basis `(bᵢ)` of `F →L[ℂ] G` (a junk value when `A` does not have temperate growth, since coordinates
+without temperate growth contribute `0`). For `A` of class `C^{|k|}` with bounded derivatives up to
+order `|k|`, the coordinates inherit the derivative bounds of `A`, so the scalar results give
+`A f ∈ H^{k,p}(E, G)` for `f ∈ H^{k,p}(E, F)`. The closed graph theorem turns this into a bounded
+operator `H^{k,p}(E, F) → H^{k,p}(E, G)`, and pointwise inverse frame changes of temperate growth
+give mutually inverse operators, hence an isomorphism `H^{k,p}(E, F) ≃L[ℂ] H^{k,p}(E, G)`.
 
 Both scalar results are proved by induction on `k`, starting from `H^{0,p} = Lᵖ`, which a
 bounded `g` multiplies into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`). Going
@@ -67,13 +69,15 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a 
   combined, for `H^{k,p}` with `k ∈ ℤ` and bounded derivatives up to order `|k|`.
 * `TemperedDistribution.MemSobolev.mulLeftCLM_of_forall_smulLeftCLM`: a matrix-valued multiplier
   `A` preserves `H^{s,p}` if each scalar multiplier `ℓ ∘ A` does.
-* `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_intCast`: a
-  matrix-valued `A` of class `C^{|k|}` with bounded derivatives up to order `|k|` maps
-  `H^{k,p}(E, F)` into `H^{k,p}(E, G)`, for `k ∈ ℤ` and `1 < p < ∞`.
-* `BesselPotentialSpace.mulLeftCLM`: multiplication by `A` as a bounded operator
-  `H^{k,p}(E, F) →L[ℂ] H^{k,p}(E, G)`.
-* `BesselPotentialSpace.mulLeftEquiv`: for pointwise inverse `A` and `B` with bounded
-  derivatives, the isomorphism `H^{k,p}(E, F) ≃L[ℂ] H^{k,p}(E, G)`.
+* `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_intCast`: for a
+  matrix-valued `A` of class `C^{|k|}` with bounded derivatives up to order `|k|`,
+  `TemperedDistribution.mulLeftCLM A` maps `H^{k,p}(E, F)` into `H^{k,p}(E, G)`, for `k ∈ ℤ` and
+  `1 < p < ∞` (multiplication by `A` when `A` has temperate growth, and a junk value otherwise).
+* `BesselPotentialSpace.mulLeftCLM`: `TemperedDistribution.mulLeftCLM A` as a bounded operator
+  `H^{k,p}(E, F) →L[ℂ] H^{k,p}(E, G)` (multiplication by `A` when `A` has temperate growth, and a
+  junk value otherwise).
+* `BesselPotentialSpace.mulLeftEquiv`: for pointwise inverse `A` and `B` of temperate growth with
+  bounded derivatives, the isomorphism `H^{k,p}(E, F) ≃L[ℂ] H^{k,p}(E, G)`.
 
 ## References
 
@@ -211,7 +215,9 @@ variable [FiniteDimensional ℂ F] {G : Type*} [NormedAddCommGroup G] [NormedSpa
 /-- **Matrix multipliers with bounded derivatives act on `H^{k,p}` for every integer `k`.** Let
 `1 < p < ∞`, let `F` and `G` be finite-dimensional, and let `A : E → (F →L[ℂ] G)` be `|k|` times
 continuously differentiable, with bounded iterated derivatives of order at most `|k|`. Then
-`A f ∈ H^{k,p}(E, G)` for every `f ∈ H^{k,p}(E, F)`. -/
+`mulLeftCLM A f ∈ H^{k,p}(E, G)` for every `f ∈ H^{k,p}(E, F)`. This is multiplication by `A` when
+`A` has temperate growth; otherwise `mulLeftCLM A` is a junk value (see
+`TemperedDistribution.mulLeftCLM`). -/
 theorem MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_intCast (hp : 1 < p) (hp_top : p ≠ ∞)
     {k : ℤ} {A : E → F →L[ℂ] G} (hA : ContDiff ℝ k.natAbs A)
     (hbd : ∀ n ≤ k.natAbs, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) {f : 𝓢'(E, F)}
@@ -237,9 +243,10 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
 
 /-- **Multiplication by a matrix-valued function with bounded derivatives**, as a bounded operator
 `H^{k,p}(E, F) → H^{k,p}(E, G)` for an integer `k`, `1 < p < ∞` and `A` of class `C^{|k|}` whose
-iterated derivatives of order at most `|k|` are bounded. On the underlying tempered
-distributions it is `TemperedDistribution.mulLeftCLM A`
-(`BesselPotentialSpace.toDistr_mulLeftCLM`). -/
+iterated derivatives of order at most `|k|` are bounded. On the underlying tempered distributions it
+is `TemperedDistribution.mulLeftCLM A` (`BesselPotentialSpace.toDistr_mulLeftCLM`), which is
+multiplication by `A` when `A` has temperate growth and a junk value otherwise (see
+`TemperedDistribution.mulLeftCLM`). -/
 noncomputable def mulLeftCLM [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
     [FiniteDimensional ℂ G] (hp : 1 < p) (hp_top : p ≠ ∞) {A : E → F →L[ℂ] G}
     (hA : ContDiff ℝ k.natAbs A) (hbd : ∀ n ≤ k.natAbs, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) :
