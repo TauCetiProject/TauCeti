@@ -50,6 +50,9 @@ transposition in order. Counting the inversions of the order-reversing permutati
   group element is the number of inversions of its permutation.
 * `RootPairing.isPos_weylGroupToPerm_iff_typeAWeylGroupEquiv`: the image of a simple root is
   positive exactly when the permutation preserves the order of the two corresponding letters.
+* `RootPairing.bruhatLE_typeAWeylGroupEquiv_iff`,
+  `RootPairing.bruhatLE_typeAWeylGroupEquiv_symm_iff`: the marked isomorphism preserves and
+  reflects the Bruhat order.
 * `RootPairing.nonempty_weylGroup_mulEquiv_perm_of_typeA`: **the Weyl group of a root pairing with
   a base of Cartan type `Aₙ` is isomorphic to the symmetric group on `n + 1` letters.**
 * `RootPairing.card_weylGroup_of_hasCartanType_A`: its order is `(n + 1)!`.
@@ -178,6 +181,24 @@ theorem isPos_weylGroupToPerm_iff_typeAWeylGroupEquiv (w : P.weylGroup) (i : b.s
   have hs : BraidGroup.strand (n := n + 1) (e i) = (e i).castSucc := Fin.ext (by simp)
   have hs' : BraidGroup.strandSucc (n := n + 1) (e i) = (e i).succ := Fin.ext (by simp)
   rw [hs, hs', le_iff_lt_or_eq, or_iff_left hne.symm]
+
+/-- **The marked isomorphism identifies the Bruhat order on the Weyl group with the Bruhat order
+on permutations.** -/
+@[simp]
+theorem bruhatLE_typeAWeylGroupEquiv_iff {u w : P.weylGroup} :
+    (permCoxeterSystem (n + 1)).BruhatLE
+      (P.typeAWeylGroupEquiv b e he u) (P.typeAWeylGroupEquiv b e he w) ↔
+      (weylCoxeterSystem P b).BruhatLE u w := by
+  rw [coe_typeAWeylGroupEquiv, CoxeterSystem.bruhatLE_parabolicHom_iff]
+
+/-- The inverse of the marked isomorphism preserves and reflects the Bruhat order. -/
+@[simp]
+theorem bruhatLE_typeAWeylGroupEquiv_symm_iff {u w : Equiv.Perm (Fin (n + 1))} :
+    (weylCoxeterSystem P b).BruhatLE
+      ((P.typeAWeylGroupEquiv b e he).symm u) ((P.typeAWeylGroupEquiv b e he).symm w) ↔
+      (permCoxeterSystem (n + 1)).BruhatLE u w := by
+  rw [← P.bruhatLE_typeAWeylGroupEquiv_iff b e he, MulEquiv.apply_symm_apply,
+    MulEquiv.apply_symm_apply]
 
 /-- **The Weyl group of type `Aₙ` is the symmetric group on `n + 1` letters**, for a finite
 reduced crystallographic root pairing over a commutative domain of characteristic zero with a base

@@ -112,12 +112,12 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_sublevel_component_homeomorp
   have hxS : x ∈ S := ⟨hxU, hxB⟩
   let V : Set B := Subtype.val ⁻¹' U
   have hV : IsClopen V := by
-    refine ⟨?_, hU.preimage continuous_subtype_val⟩
+    refine ⟨?_, hU.preimage continuous_subtypeVal⟩
     have hv : V = Subtype.val ⁻¹' S := by
       ext y
       exact ⟨fun hy ↦ ⟨hy, y.property⟩, And.left⟩
     rw [hv]
-    exact hSc.isClosed.preimage continuous_subtype_val
+    exact hSc.isClosed.preimage continuous_subtypeVal
   have hCV : connectedComponent (⟨x, hxB⟩ : B) ⊆ V :=
     isPreconnected_connectedComponent.subset_isClopen hV ⟨⟨x, hxB⟩, mem_connectedComponent, hxU⟩
   have hset : connectedComponentIn B x = S := by
@@ -177,7 +177,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBa
     ((hf.self_of_nhds).of_le (by norm_cast)) hlocal
   obtain ⟨U, hU, hxU, R, hR, he⟩ := h.exists_local_sublevel_homeomorph_closedBall hf hidx
   obtain ⟨ε, hε, hεU⟩ := exists_pos_sublevel_subset_of_unique_min hcompact hcont
-    ha hmin hU hxU
+    ha hmin (hU.mem_nhds hxU)
   refine ⟨min R (Real.sqrt ε), lt_min hR (Real.sqrt_pos.mpr hε), fun r hr hrR ↦ ?_⟩
   have hrR' : r < R := lt_of_lt_of_le hrR (min_le_left _ _)
   have hrε : r ^ 2 ≤ ε := by

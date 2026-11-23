@@ -150,7 +150,7 @@ zero, exactness means that the form is zero. -/
 theorem mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero [PreconnectedSpace M]
     (o : Manifold.Orientation I M (Fin n)) {φ : SmoothForm I M ℝ n}
     (hφ : φ ∈ compactlySupportedForms I M n) :
-    φ ∈ exactCompactlySupportedForms I M n ↔ integralTopForm o φ.1 = 0 := by
+    φ ∈ exactCompactlySupportedForms I M n ↔ integralTopForm o φ.val = 0 := by
   refine ⟨integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o, fun h ↦ ?_⟩
   let ψ : compactlySupportedClosedForms I M n :=
     ⟨φ, (mem_compactlySupportedClosedForms I).mpr

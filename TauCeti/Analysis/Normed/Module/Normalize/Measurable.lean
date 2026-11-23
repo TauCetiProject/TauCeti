@@ -44,7 +44,7 @@ theorem measurable_sphereDirection (e : sphere (0 : E) 1) : Measurable (sphereDi
     split_ifs with hx
     · simp [hx]
     · exact coe_sphereDirection_of_ne_zero e hx
-  rw [← (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).measurable_comp_iff, h]
+  rw [← (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).measurable_comp_iff, h]
   exact Measurable.ite (measurableSet_singleton 0) measurable_const measurable_normalize
 
 end TauCeti

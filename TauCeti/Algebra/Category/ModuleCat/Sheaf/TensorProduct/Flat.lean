@@ -31,8 +31,10 @@ Hence the sheafification of a sectionwise flat presheaf of modules is flat
 in particular that of a projective presheaf of modules
 (`PresheafOfModules.preservesFiniteLimits_tensorLeft_sheafification_obj_of_projective`).
 
-Applied to the free presheaf of modules on a representable presheaf, which is sectionwise free,
-this shows that the free module sheaf `SheafOfModules.freeYonedaFunctor R U` on an object `U` of
+Applied to the free presheaf of modules on a presheaf of sets, which is sectionwise free, this
+shows that its sheafification is flat
+(`PresheafOfModules.preservesFiniteLimits_tensorLeft_sheafification_free_obj`). In particular the
+free module sheaf `SheafOfModules.freeYonedaFunctor R U` on an object `U` of
 the site, the extension by zero `j_{U!} R|_U` of the structure sheaf, is flat
 (`SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj`). Together with the
 fact that these sheaves form a separating family (`SheafOfModules.isSeparating_freeYonedaFunctor`),
@@ -122,16 +124,28 @@ instance preservesFiniteLimits_tensorLeft_sheafification_obj_of_projective
 
 end PresheafOfModules
 
+namespace PresheafOfModules
+
+/-- The sheafification of the free presheaf of modules on a presheaf of sets is a flat sheaf of
+modules: tensoring with it is exact. -/
+instance preservesFiniteLimits_tensorLeft_sheafification_free_obj (F : Cᵒᵖ ⥤ Type u) :
+    PreservesFiniteLimits (tensorLeft ((sheafification.{u} (𝟙 (ringCatSheaf R).obj)).obj
+      ((free (ringCatSheaf R).obj).obj F))) := by
+  -- the free presheaf of modules `freeObj F` is sectionwise free over the rings of sections of
+  -- `R`; it is read over `R.obj ⋙ forget₂ _ _`, the underlying presheaf of rings of
+  -- `ringCatSheaf R` by definition.
+  rw [free_obj]
+  exact PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
+    (freeObj F)
+
+end PresheafOfModules
+
 namespace SheafOfModules
 
 /-- The free module sheaf on an object `U` of the site is flat: tensoring with it is exact. -/
 instance preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (U : C) :
     PreservesFiniteLimits (tensorLeft ((freeYonedaFunctor (ringCatSheaf R)).obj U)) := by
-  -- `freeYonedaFunctor` sheafifies the free presheaf of modules `freeObj (yoneda.obj U)`, which
-  -- is sectionwise free over the rings of sections of `R`; it is read over `R.obj ⋙ forget₂ _ _`,
-  -- the underlying presheaf of rings of `ringCatSheaf R` by definition.
-  rw [freeYonedaFunctor_obj, PresheafOfModules.free_obj]
-  exact PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
-    (PresheafOfModules.freeObj (yoneda.obj U))
+  rw [freeYonedaFunctor_obj]
+  infer_instance
 
 end SheafOfModules

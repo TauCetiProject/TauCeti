@@ -59,21 +59,23 @@ theorem IsPLWithinAt.of_local_left_inverse (hP : IsConvexPolyhedron P)
   obtain ⟨T, hTfin, hTnhds, hT⟩ := hf.exists_simplex_cover hP hO
   choose hind hsub A hA using hT
   have : Finite T := hTfin.to_subtype
-  have hgf' {s : T} {z : E} (hz : z ∈ convexHull ℝ (s.1 : Set E)) : g (f z) = z :=
-    hOsub ⟨(hsub s.1 s.2 hz).2, (hsub s.1 s.2 hz).1⟩
+  have hgf' {s : T} {z : E} (hz : z ∈ convexHull ℝ (s.val : Set E)) : g (f z) = z :=
+    hOsub ⟨(hsub s.val s.property hz).2, (hsub s.val s.property hz).1⟩
   -- `f` is affine and injective on each simplex, so it keeps its vertices affinely independent.
-  have hindT (s : T) : AffineIndependent ℝ ((↑) : (A s.1 s.2 '' (s.1 : Set E)) → F) := by
-    have hinj : InjOn (A s.1 s.2) (convexHull ℝ (range ((↑) : (s.1 : Set E) → E))) := by
+  have hindT (s : T) : AffineIndependent ℝ ((↑) : (A s.val s.property '' (s.val : Set E)) → F) := by
+    have hinj : InjOn (A s.val s.property)
+        (convexHull ℝ (range ((↑) : ((s.val : Set E)) → E))) := by
       rw [Subtype.range_coe]
       intro z hz w hw hzw
-      rw [← hgf' hz, ← hgf' hw, hA s.1 s.2 hz, hA s.1 s.2 hw, hzw]
-    have hrange : range ((A s.1 s.2).toAffineMap ∘ ((↑) : (s.1 : Set E) → E)) =
-        A s.1 s.2 '' (s.1 : Set E) := by
+      rw [← hgf' hz, ← hgf' hw, hA s.val s.property hz, hA s.val s.property hw, hzw]
+    have hrange : range ((A s.val s.property).toAffineMap ∘ ((↑) : ((s.val : Set E)) → E)) =
+        A s.val s.property '' (s.val : Set E) := by
       rw [range_comp, Subtype.range_coe, ContinuousAffineMap.coe_toAffineMap]
-    exact ((hind s.1 s.2).map_of_injOn_convexHull (A s.1 s.2).toAffineMap hinj).range.mono
+    exact ((hind s.val s.property).map_of_injOn_convexHull (A s.val s.property).toAffineMap
+        hinj).range.mono
       hrange.ge
-  have hpiece := isPiecewiseAffineOn_inverse_of_finite_simplex_cover (fun s : T => (s.1 : Set E))
-    (fun s => A s.1 s.2) (fun s => hA s.1 s.2) hindT fun z hz => by
+  have hpiece := isPiecewiseAffineOn_inverse_of_finite_simplex_cover (fun s : T => (s.val : Set E))
+    (fun s => A s.val s.property) (fun s => hA s.val s.property) hindT fun z hz => by
       obtain ⟨s, hs⟩ := mem_iUnion.1 hz
       exact hgf' hs
   rw [← biUnion_eq_iUnion T fun s _ => convexHull ℝ (s : Set E)] at hpiece

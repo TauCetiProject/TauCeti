@@ -71,7 +71,7 @@ private def code (t : ℕ → Set X) (n : ℕ) (x : X) : Fin n → Bool :=
 
 private theorem code_eq_code_of_le {t : ℕ → Set X} {m n : ℕ} (hmn : m ≤ n) {x x' : X}
     (h : code t n x = code t n x') : code t m x = code t m x' :=
-  funext fun k ↦ by simpa [code] using congrFun h ⟨k, k.2.trans_le hmn⟩
+  funext fun k ↦ by simpa [code] using congrFun h ⟨k, k.isLt.trans_le hmn⟩
 
 private theorem measurable_code [MeasurableSpace X] {t : ℕ → Set X}
     (ht : ∀ k, MeasurableSet (t k)) (n : ℕ) : Measurable (code t n) :=
@@ -204,14 +204,14 @@ private theorem IsCoupling.measure_piece_add_tsum_le (hπ : IsCoupling π μ ν)
   have hm := measurableSet_piece (c := c) (ε := ε) htX htY
   have hd := pairwise_disjoint_piece (c := c) (tX := tX) (tY := tY) (ε := ε)
   have hdJ : Disjoint (piece c tX tY ε i) (⋃ j : J, piece c tX tY ε j) :=
-    disjoint_iUnion_right.2 fun j : J ↦ hd fun h ↦ j.2.1.ne (congrArg Sigma.fst h)
+    disjoint_iUnion_right.2 fun j : J ↦ hd fun h ↦ j.property.1.ne (congrArg Sigma.fst h)
   calc _ = π (piece c tX tY ε i ∪ ⋃ j : J, piece c tX tY ε j) := by
         rw [measure_union hdJ (MeasurableSet.iUnion fun j ↦ hm j),
           measure_iUnion (f := fun j : J ↦ piece c tX tY ε j)
             (fun j k hjk ↦ hd (Subtype.coe_injective.ne hjk)) fun j ↦ hm j]
     _ ≤ π ((code tX i.1 ⁻¹' {i.2}) ×ˢ univ) :=
         measure_mono (union_subset inter_subset_left (iUnion_subset fun j : J ↦
-          inter_subset_left.trans (prod_mono j.2.2 subset_rfl)))
+          inter_subset_left.trans (prod_mono j.property.2 subset_rfl)))
     _ = μ (code tX i.1 ⁻¹' {i.2}) :=
         hπ.measure_prod_univ (measurable_code htX i.1 (measurableSet_singleton i.2))
 

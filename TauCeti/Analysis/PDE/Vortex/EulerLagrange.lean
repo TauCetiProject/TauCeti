@@ -23,10 +23,10 @@ is a weak solution of the reduced vortex equation `Δu = (exp (2u) h - 1) / 8 + 
 for every compactly supported `C¹` function `φ`.
 
 The potential `h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)` is integrable
-(`TauCeti.Vortex.integrable_potential`). Hence `h exp (2u)` is integrable on every set
-of finite measure (`TauCeti.Vortex.integrableOn_mul_exp`): it differs from the integrable
-potential by `h (1 + 2u)`, and `h ≤ 1`. For a direction `v ∈ H¹(ℂ)` whose value is
-bounded and vanishes outside a set of finite measure, the expansion
+(`TauCeti.Vortex.integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul`). Hence
+`h exp (2u)` is integrable on every set of finite measure (`TauCeti.Vortex.integrableOn_mul_exp`):
+it differs from the integrable potential by `h (1 + 2u)`, and `h ≤ 1`. For a direction
+`v ∈ H¹(ℂ)` whose value is bounded and vanishes outside a set of finite measure, the expansion
 `φ(s + r) = φ(s) + φ'(s) r + exp (2s) φ(r)` of Taubes's potential `φ` and the bound
 `φ(r) ≤ r² / 4` for `|r| ≤ 1 / 2` then give
 
@@ -68,7 +68,8 @@ variable {P : Polynomial ℂ}
 
 /-- **Local integrability of `h exp (2u)`.** For `u ∈ H¹(ℂ)`, `h exp (2u)`, with
 `h = ‖P‖² / (1 + ‖P‖²)`, is integrable on every set of finite measure, because Taubes's functional
-is finite at `u`: its potential is integrable (`TauCeti.Vortex.integrable_potential`). -/
+is finite at `u`: its potential is integrable
+(`TauCeti.Vortex.integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul`). -/
 theorem integrableOn_mul_exp (u : W1p (volume : Measure ℂ) ⊤ 2) {K : Set ℂ}
     (hK : volume K ≠ ∞) :
     IntegrableOn (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -85,7 +86,8 @@ theorem integrableOn_mul_exp (u : W1p (volume : Measure ℂ) ⊤ 2) {K : Set ℂ
         rw [Real.norm_eq_abs, ← backgroundWeight_def (P.eval ·),
           abs_of_nonneg (backgroundWeight_nonneg _ z)]
         exact (backgroundWeight_lt_one _ z).le)
-  refine ((integrable_potential P u).integrableOn.add hlin).congr (ae_of_all _ fun z ↦ ?_)
+  refine ((integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul P u).integrableOn.add
+    hlin).congr (ae_of_all _ fun z ↦ ?_)
   simp only [Pi.add_apply]
   ring
 
@@ -219,7 +221,7 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
     fun t htM ↦ ?_⟩
   have hua := W1p.memLp_value u
   have hva := W1p.memLp_value v
-  have hpot := integrable_potential P u
+  have hpot := integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul P u
   have hc := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
   have hca : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z := hc.integrable_mul hua

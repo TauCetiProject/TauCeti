@@ -110,8 +110,7 @@ noncomputable def extQuotientSMulTopEquivDual (he : CompleteOrthogonalIdempotent
       (ModuleCat.of A ((Ideal.span {e j} : Ideal A) ⧸
         Ring.jacobson A • (⊤ : Submodule A (Ideal.span {e j} : Ideal A)))) 1 ≃ₗ[k]
       Module.Dual k (radicalLayerCorner k (Ring.jacobson A) (e j) (e i)) := by
-  have hjJ : e j ∉ Ring.jacobson A := fun h ↦
-    hj ((he.idem j).eq_zero_of_mem_jacobson_bot (Ideal.jacobson_bot (R := A) ▸ h))
+  have hjJ : e j ∉ Ring.jacobson A := fun h ↦ hj ((he.idem j).eq_zero_of_mem_jacobson h)
   have := (he.idem i).projective_span_singleton
   have := he.isSimpleModule_quotient_smul_top hquot j hjJ
   let P := ModuleCat.of A (Ideal.span {e i} : Ideal A)

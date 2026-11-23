@@ -158,7 +158,7 @@ Tschirnhaus transform. -/
 theorem tschirnhausActionHom_apply_rootMap (f T : F[X]) (g : f.Gal)
     (x : f.rootSet f.SplittingField) :
     tschirnhausActionHom f T g (tschirnhausRootMap f T x) =
-      tschirnhausRootMap f T ⟨g (x : f.SplittingField), rootSet_mapsTo g.toAlgHom x.2⟩ := by
+      tschirnhausRootMap f T ⟨g (x : f.SplittingField), rootSet_mapsTo g.toAlgHom x.property⟩ := by
   apply Subtype.ext
   rw [coe_tschirnhausActionHom_apply, coe_tschirnhausRootMap,
     coe_tschirnhausRootMap, aeval_algHom_apply]
