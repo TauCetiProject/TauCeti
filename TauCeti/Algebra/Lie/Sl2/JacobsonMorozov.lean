@@ -262,12 +262,12 @@ theorem exists_mem_intLieAlgebra_smul_eq_of_e_mem_orbit (t : IsSl2Triple h e f) 
   -- `g` carries the first triple to a triple sharing its nilpositive element with the second,
   -- and Kostant's conjugacy theorem conjugates that triple to the second one by `φ`
   obtain ⟨φ, hφ, hφe, hφh, hφf⟩ :=
-    exists_lieEquiv_apply_eq (K := K) (t.smul_of_mem_intLieAlgebra g.2) t'
+    exists_lieEquiv_apply_eq (K := K) (t.smul_of_mem_intLieAlgebra g.property) t'
   have hk (x : L) : (generalLinearEquiv K L).symm φ.toLinearEquiv • x = φ x := by
     rw [Units.smul_def, Module.End.smul_def, ← coeFn_generalLinearEquiv,
       MulEquiv.apply_symm_apply, LieEquiv.coe_toLinearEquiv]
   refine ⟨(generalLinearEquiv K L).symm φ.toLinearEquiv * g,
-    mul_mem (map_expAdSubgroup_le_intLieAlgebra (K := K) _ ⟨_, hφ, rfl⟩) g.2, ?_⟩
+    mul_mem (map_expAdSubgroup_le_intLieAlgebra (K := K) _ ⟨_, hφ, rfl⟩) g.property, ?_⟩
   simp only [mul_smul, hk]
   exact ⟨hφh, hφe, hφf⟩
 
