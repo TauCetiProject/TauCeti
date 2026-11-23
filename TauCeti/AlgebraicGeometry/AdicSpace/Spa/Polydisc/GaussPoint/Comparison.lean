@@ -11,14 +11,16 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Unit
 /-!
 # Comparison of the one-variable and multivariate unit Gauss points
 
-In dimension `1`, the multivariate unit Gauss point `TauCeti.ValuationSpectrum.unitGaussPoint 1 K`
-of `closedPolydisc 1 K` agrees with the one-variable Gauss point `gaussPoint zero_lt_one le_rfl`
-at radius `1` from `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Basic`.
+In dimension `1` over a nontrivially normed ultrametric field `K`, the multivariate unit Gauss
+point `TauCeti.ValuationSpectrum.unitGaussPoint 1 K` of `closedPolydisc 1 K` agrees with the
+one-variable Gauss point `gaussPoint zero_lt_one le_rfl` at radius `1` from
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Basic`.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.unitGaussPoint_one_eq_gaussPoint`: in dimension `1`,
-  `unitGaussPoint 1 K` agrees with `gaussPoint zero_lt_one le_rfl`.
+* `TauCeti.ValuationSpectrum.unitGaussPoint_one_eq_gaussPoint`: over a nontrivially normed
+  ultrametric field `K`, in dimension `1`, `unitGaussPoint 1 K` agrees with
+  `gaussPoint zero_lt_one le_rfl`.
 -/
 
 public section
@@ -28,8 +30,8 @@ namespace TauCeti.ValuationSpectrum
 open TauCeti.Huber
 open scoped NNReal
 
-/-- **In dimension `1`, `unitGaussPoint 1 K` coincides with the one-variable Gauss point at radius
-`1`.** -/
+/-- **Over a nontrivially normed ultrametric field `K`, in dimension `1`, `unitGaussPoint 1 K`
+coincides with the one-variable Gauss point at radius `1`.** -/
 theorem unitGaussPoint_one_eq_gaussPoint {K : Type*} [NontriviallyNormedField K]
     [IsUltrametricDist K] :
     unitGaussPoint 1 K = gaussPoint (K := K) zero_lt_one le_rfl := by

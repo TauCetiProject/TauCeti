@@ -106,9 +106,9 @@ section EvaluationPerturbation
 
 variable [CompleteSpace S]
 
-/-- **Ultrametric perturbation bound for Huber evaluation.** If `a` and `b` satisfy
-`‖a i‖ ≤ 1`, `‖b i‖ ≤ 1`, and `‖a i - b i‖ ≤ δ` for every `i`, then
-`‖f(a) - f(b)‖ ≤ δ * C * ‖f‖`. -/
+/-- **Ultrametric perturbation bound for Huber evaluation.** If `φ` is continuous at `0` and
+satisfies `‖φ r‖ ≤ C * ‖r‖`, and `a`, `b` satisfy `‖a i‖ ≤ 1`, `‖b i‖ ≤ 1`, and `‖a i - b i‖ ≤ δ`
+for every `i` with `0 ≤ δ`, then `‖f(a) - f(b)‖ ≤ δ * C * ‖f‖`. -/
 theorem norm_weightedEvalHom_sub_le
     (hφc : ContinuousAt φ 0) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
     {a b : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1)
@@ -122,28 +122,8 @@ theorem norm_weightedEvalHom_sub_le
       δ * C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
   rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha ha_bd f,
     weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ hb hb_bd f]
-  have heq (x : Fin k → S) (hx : ∀ i, ‖x i‖ ≤ 1) :
-      φ.restrictedEval₂OfBound x hφ hx (restrictedMvPowerSeriesGaussEquiv f) =
-        MvPowerSeries.restrictedEval₂ (RingHom.id S) x (fun _ ↦ le_rfl) hx
-          (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)) := by
-    simp only [RingHom.restrictedEval₂OfBound_apply, MvPowerSeries.restrictedEval₂_apply,
-      weightedEval_def, weightedEvalTerm_def, TauCeti.MvPowerSeries.coe_restrictedMap,
-      MvPowerSeries.coeff_map, RingHom.id_apply]
-  rw [heq a ha, heq b hb]
-  have hsub := MvPowerSeries.norm_restrictedEval₂_sub_le (RingHom.id S) (fun _ ↦ le_rfl) ha hb hδ
-    (fun i ↦ by simpa using hab i)
-    (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f))
-  have hmap : ‖TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)‖ ≤
-      C * ‖restrictedMvPowerSeriesGaussEquiv f‖ :=
-    TauCeti.MvPowerSeries.norm_restrictedMap_le φ hφ _
-  calc ‖MvPowerSeries.restrictedEval₂ (RingHom.id S) a (fun _ ↦ le_rfl) ha
-          (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)) -
-        MvPowerSeries.restrictedEval₂ (RingHom.id S) b (fun _ ↦ le_rfl) hb
-          (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f))‖
-      ≤ δ * ‖TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)‖ :=
-        hsub
-    _ ≤ δ * (C * ‖restrictedMvPowerSeriesGaussEquiv f‖) := mul_le_mul_of_nonneg_left hmap hδ
-    _ = δ * C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by ring
+  exact RingHom.norm_restrictedEval₂OfBound_sub_le φ hφ ha hb hδ
+    (fun i ↦ by simpa only [mul_one] using hab i) _
 
 end EvaluationPerturbation
 
