@@ -8,8 +8,6 @@ module
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 public import TauCeti.RingTheory.StrictHenselization.FinitePresentation
 import Mathlib.RingTheory.Finiteness.FinitePresentationLocal
-import Mathlib.RingTheory.TensorProduct.Pi
-import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # Products of standard tame covers over a strict henselization
@@ -27,7 +25,7 @@ structure of a tamely ramified cover is first determined over the strict henseli
 local ring at a point of the divisor; this result spreads the conclusion to an étale
 neighbourhood of that point. The decomposition over `algebra R Ω` is an isomorphism with the base
 change of the finitely presented `R`-algebra `∏ R[x]/(x^(e i) − a)`, which descends to a pointed
-étale neighbourhood (`TauCeti.StrictHenselization.exists_neighbourhood_algEquiv_tensorProduct`).
+étale neighbourhood (`AlgEquiv.exists_neighbourhood_tensorProduct`).
 Each exponent is a unit at the point, so it becomes a unit after inverting it in a further
 neighbourhood.
 
@@ -45,7 +43,6 @@ neighbourhood.
 
 public section
 
-open Polynomial
 open scoped TensorProduct
 
 universe u
@@ -53,16 +50,6 @@ universe u
 namespace TauCeti.StrictHenselization
 
 variable {R Ω : Type u} [CommRing R] [CommRing Ω] [Algebra R Ω]
-
-/-- The base change of a finite product of standard covers along `R → A` is the product of the
-standard covers over `A`. -/
-private noncomputable def tensorPiStandardTameCoverAlgEquiv {ι : Type} [Fintype ι]
-    [DecidableEq ι] (A : Type u) [CommRing A] [Algebra R A] (a : R) (e : ι → ℕ) :
-    A ⊗[R] (∀ i, standardTameCover R a (e i)) ≃ₐ[A]
-      ∀ i, standardTameCover A (algebraMap R A a) (e i) :=
-  (Algebra.TensorProduct.piRight R A A _).trans <| AlgEquiv.piCongrRight fun i ↦
-    (AdjoinRoot.algebraTensorAlgEquiv A (X ^ e i - C a)).trans
-      (AdjoinRoot.mapAlgEquiv AlgEquiv.refl _ _ (.of_eq (by simp)))
 
 /-- If the base change of a finitely presented `R`-algebra `S` to the colimit `algebra R Ω` of
 the pointed étale neighbourhoods of `R → Ω` is a finite product of standard tamely ramified covers
@@ -77,9 +64,9 @@ theorem exists_neighbourhood_isFiniteProductOfStandardTameCovers {S : Type u} [C
   classical
   obtain ⟨ι, _, e, he, heu, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff _).mp h
   -- Descend the decomposition, an isomorphism with a base change of `∏ R[x]/(x^(e i) − a)`.
-  obtain ⟨B₁, σ₁, -⟩ := exists_neighbourhood_algEquiv_tensorProduct
+  obtain ⟨B₁, σ₁, -⟩ := AlgEquiv.exists_neighbourhood_tensorProduct
     (T := ∀ i, standardTameCover R a (e i))
-    (σ.trans (tensorPiStandardTameCoverAlgEquiv (algebra R Ω) a e).symm)
+    (σ.trans (standardTameCoverPiBaseChangeAlgEquiv (algebra R Ω) a e).symm)
   -- The product `N` of the exponents is a unit at the point, so it is inverted in a refinement.
   let N : R := ∏ i, (e i : R)
   have hunit : IsUnit (algebraMap R (algebra R Ω) N) := by simp [N, heu]
@@ -98,6 +85,6 @@ theorem exists_neighbourhood_isFiniteProductOfStandardTameCovers {S : Type u} [C
   · exact (Algebra.TensorProduct.cancelBaseChange R B₁.obj.left _ B₂.obj.left S).symm.trans
       <| (Algebra.TensorProduct.congr AlgEquiv.refl σ₁).trans
       <| (Algebra.TensorProduct.cancelBaseChange R B₁.obj.left _ B₂.obj.left _).trans
-      <| tensorPiStandardTameCoverAlgEquiv B₂.obj.left a e
+      <| standardTameCoverPiBaseChangeAlgEquiv B₂.obj.left a e
 
 end TauCeti.StrictHenselization

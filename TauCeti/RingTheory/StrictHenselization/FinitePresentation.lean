@@ -14,14 +14,14 @@ public import TauCeti.RingTheory.StrictHenselization.Algebra
 The colimit `algebra R Ω` of the pointed étale neighbourhoods of `R → Ω` is a small filtered
 colimit of `R`-algebras. So an isomorphism between the base changes to `algebra R Ω` of two
 finitely presented `R`-algebras `S` and `T` is already defined over some pointed étale
-neighbourhood (`TauCeti.CommAlgCat.exists_algEquiv_tensorProduct_of_isColimit`). For a local
+neighbourhood (`CategoryTheory.Limits.IsColimit.exists_algEquiv_tensorProduct`). For a local
 ring `R` and a separable closure `Ω` of its residue field, this is the step that spreads a
 decomposition over the strict henselization `R^{sh}` to an étale neighbourhood of the closed
 point.
 
 ## Main results
 
-* `TauCeti.StrictHenselization.exists_neighbourhood_algEquiv_tensorProduct`: an
+* `AlgEquiv.exists_neighbourhood_tensorProduct`: an
   `algebra R Ω`-algebra isomorphism `algebra R Ω ⊗[R] S ≃ algebra R Ω ⊗[R] T` is the base change
   of an isomorphism over a pointed étale neighbourhood.
 
@@ -46,7 +46,7 @@ variable {R Ω : Type u} [CommRing R] [CommRing Ω] [Algebra R Ω]
 /-- An `algebra R Ω`-algebra isomorphism `algebra R Ω ⊗[R] S ≃ algebra R Ω ⊗[R] T` between base
 changes of finitely presented `R`-algebras is the base change of a `B`-algebra isomorphism
 `B ⊗[R] S ≃ B ⊗[R] T` over some pointed étale neighbourhood `B`: the two agree on `S`. -/
-theorem exists_neighbourhood_algEquiv_tensorProduct {S T : Type u} [CommRing S] [Algebra R S]
+theorem _root_.AlgEquiv.exists_neighbourhood_tensorProduct {S T : Type u} [CommRing S] [Algebra R S]
     [Algebra.FinitePresentation R S] [CommRing T] [Algebra R T] [Algebra.FinitePresentation R T]
     (e : algebra R Ω ⊗[R] S ≃ₐ[algebra R Ω] algebra R Ω ⊗[R] T) :
     ∃ (B : Neighbourhood R Ω) (e' : B.obj.left ⊗[R] S ≃ₐ[B.obj.left] B.obj.left ⊗[R] T),
@@ -57,9 +57,10 @@ theorem exists_neighbourhood_algEquiv_tensorProduct {S T : Type u} [CommRing S] 
   -- The small-model colimit cocone, with apex `algebra R Ω`.
   let c := (colimit.cocone (diagram R Ω)).extend (algebraIsoColimitDiagram R Ω).inv
   have hc : IsColimit c := (colimit.isColimit _).extendIso _
-  obtain ⟨j, e', he'⟩ := TauCeti.CommAlgCat.exists_algEquiv_tensorProduct_of_isColimit hc e
+  obtain ⟨j, e', he'⟩ := hc.exists_algEquiv_tensorProduct e
   refine ⟨(equivSmallModel.{u} (Neighbourhood R Ω)).inverse.obj j, e', fun s ↦ ?_⟩
+  -- The leg of `c` at `j` is the colimit leg followed by the comparison with `algebra R Ω`.
   rw [← he' s, ← algebraIsoColimitDiagram_inv_comp_ι]
-  simp [c]
+  rfl
 
 end TauCeti.StrictHenselization
