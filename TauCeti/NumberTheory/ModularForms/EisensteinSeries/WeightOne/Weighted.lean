@@ -657,13 +657,9 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     simp only [hm.ne', ↓reduceIte]
     simpa [cotRow, sub_add_add_cancel] using h₁.add h₂
 
-/-- `cot (π / 2) = 0`, in the form `cot (π * (1 / 2))`. -/
-private lemma cot_pi_mul_one_div_two : cot ((π : ℂ) * (1 / 2)) = 0 := by
-  rw [Complex.cot_eq_cos_div_sin, ← div_eq_mul_one_div, Complex.cos_pi_div_two, zero_div]
-
-/-- `cot (π / 2) = 0`, in the form `cot (π * 2⁻¹)`. -/
+/-- `cot (π / 2) = 0`, in the form `cot (π * 2⁻¹)` produced by `simp`. -/
 private lemma cot_pi_mul_inv_two : cot ((π : ℂ) * 2⁻¹) = 0 := by
-  rw [← one_div, cot_pi_mul_one_div_two]
+  rw [← div_eq_mul_inv, Complex.cot_pi_div_two]
 
 /-- The constant term of the corrected division value of `a`: `π cot (π a₁ / N)` if `a₀ = 0`, and
 `π i (2 a₀ / N - 1)` otherwise, `a₀, a₁` being the least nonnegative representatives. -/
@@ -694,8 +690,8 @@ private lemma tendsto_zetaValue_lift_atImInfty (a : Fin 2 → ZMod N) :
     · by_cases hb₀ : (a 0).val = 0
       · simp [zetaValueLimit, hb₀, cot_pi_mul_inv_two]
       · simp only [zetaValueLimit, hb₀]
-        simp only [Nat.cast_one, Nat.cast_ofNat, cot_pi_mul_one_div_two, ↓reduceIte, one_ne_zero,
-          mul_zero]
+        simp only [Nat.cast_one, Nat.cast_ofNat, one_div, cot_pi_mul_inv_two, ↓reduceIte,
+          one_ne_zero, mul_zero]
         ring
     · simp [hm]
   rw [hfun]
