@@ -130,10 +130,12 @@ theorem finrank_range_ad_sl_add_sum_sq_conjugate_parts_le
         LinearMap.range (ad K (Matrix n n K) (x : Matrix n n K)) := by
     rw [← LinearMap.range_comp, ← LieSubalgebra.ad_comp_incl_eq]
     exact LinearMap.range_comp_le_range _ _
+  have hincl : ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K) =
+      (SpecialLinear.sl n K).toSubmodule.subtype :=
+    LinearMap.ext fun y => by
+      rw [LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, Submodule.subtype_apply]
   have hmono := Submodule.finrank_mono hle
-  change finrank K ((LinearMap.range (ad K (SpecialLinear.sl n K) x)).map
-    (SpecialLinear.sl n K).toSubmodule.subtype) ≤ _ at hmono
-  rw [Submodule.finrank_map_subtype_eq] at hmono
+  rw [hincl, Submodule.finrank_map_subtype_eq] at hmono
   exact (Nat.add_le_add_right hmono _).trans
     ((x : Matrix n n K).finrank_range_ad_add_sum_sq_conjugate_parts hx).le
 
