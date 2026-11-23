@@ -66,8 +66,8 @@ and `e^T - 1`.
   derivative by `P(T)` recovers the ordinary derivative.
 * `FormalGroup.invariantDerivation_log`: the invariant derivative of `log_F` is `1`.
 * `FormalGroup.map_invariantDerivation`: the invariant derivation commutes with coefficient maps.
-* `FormalGroup.map_invariantDifferential`: the invariant differential commutes with
-  coefficient maps.
+* `FormalGroup.map_invariantDifferential` and `FormalGroup.coeff_invariantDifferential_map`:
+  the invariant differential and its coefficients commute with coefficient maps.
 * `FormalGroup.natCast_mul_coeff_log_mem_range`: each logarithm coefficient becomes integral
   after multiplication by its degree.
 * `FormalGroup.subst_toPowerSeries_eq_add_of_derivative_eq`: over a ring without additive
@@ -228,6 +228,13 @@ theorem map_invariantDifferential {S : Type*} [CommRing S] (f : R →+* S) :
   rw [map_mul, map_one, hD] at hleft
   exact left_inv_eq_right_inv hleft
     (by simpa [mul_comm] using (F.map f).invariantDifferential_mul_subst_pderiv)
+
+/-- The coefficients of the invariant differential commute with change of coefficients. -/
+@[simp]
+theorem coeff_invariantDifferential_map {S : Type*} [CommRing S] (f : R →+* S) (k : ℕ) :
+    PowerSeries.coeff k (F.map f).invariantDifferential =
+      f (PowerSeries.coeff k F.invariantDifferential) := by
+  rw [← F.map_invariantDifferential f, PowerSeries.coeff_map]
 
 /-- Multiplying the invariant derivative by the invariant differential's coefficient
 recovers the ordinary derivative. -/

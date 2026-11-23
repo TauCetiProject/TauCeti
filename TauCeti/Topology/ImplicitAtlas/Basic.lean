@@ -33,9 +33,10 @@ It is the input from which virtual fundamental cycles are built. Its data are:
 The axioms say that the footprint maps form a cocycle compatible with the Kuranishi maps, that
 `ψ_IJ` identifies `Z_IJ / Γ_(J \ I)` with its open image `U_IJ ⊆ X_I`, that the images satisfy
 `U_IJ₁ ∩ U_IJ₂ = U_I(J₁ ∪ J₂)` and `ψ_IJ⁻¹(U_IK) = U_JK ∩ Z_IJ`, that `Γ_(J \ I)` acts freely
-over the regular locus, that over the regular locus `s_(J \ I)` is locally a product projection
-`ℝ^(d + m_I) × E_(J \ I) → E_(J \ I)` with `m_I = ∑_(α ∈ I) dim E_α`, and that the regular
-*footprints* `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. The images `U_IJ` are not separate data:
+over the regular locus, that over the regular locus the extra obstruction `s_(J \ I)`
+(`TauCeti.kuranishiSdiff`) is locally a product projection `ℝ^(d + m_I) × E_(J \ I) → E_(J \ I)`
+with `m_I = ∑_(α ∈ I) dim E_α`, and that the regular *footprints* `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)`
+cover `X`. The images `U_IJ` are not separate data:
 the quotient axiom makes `ψ_IJ` surjective onto `U_IJ`, so here `U_IJ` is the range of `ψ_IJ`.
 The regular locus is part of the data; outside it the thickening need not be a manifold and the
 action need not be free.
@@ -116,6 +117,28 @@ theorem mem_kuranishiZeroSet_self {T : Finset A → Type*} {E : A → Type*} [�
     (s : ∀ (J : Finset A) (α : J), T J → E α) {I : Finset A} (x : T I) :
     x ∈ kuranishiZeroSet s I I :=
   mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.property).elim
+
+/-- The extra obstruction `s_(J \ I) : X_J → E_(J \ I) = ∏_(α ∈ J \ I) E_α` of a family of
+Kuranishi maps `s J α : X_J → E_α`: the components of `s_J` indexed by `J \ I`. Its zero set is
+`Z_IJ` (`TauCeti.kuranishiSdiff_eq_zero_iff`). -/
+def kuranishiSdiff [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
+    (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) (y : T J) :
+    (α : ↥(J \ I)) → E α :=
+  fun α ↦ s J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
+
+@[simp]
+theorem kuranishiSdiff_apply [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
+    (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) (y : T J) (α : ↥(J \ I)) :
+    kuranishiSdiff s I J y α = s J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y := by
+  simp only [kuranishiSdiff]
+
+/-- The zero set of the extra obstruction `s_(J \ I)` is `Z_IJ`. -/
+theorem kuranishiSdiff_eq_zero_iff [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
+    [∀ α, Zero (E α)] {s : ∀ (J : Finset A) (α : J), T J → E α} {I J : Finset A} {y : T J} :
+    kuranishiSdiff s I J y = 0 ↔ y ∈ kuranishiZeroSet s I J := by
+  simp only [funext_iff, kuranishiSdiff_apply, Pi.zero_apply, mem_kuranishiZeroSet]
+  exact ⟨fun h α hα ↦ h ⟨α.val, Finset.mem_sdiff.2 ⟨α.property, hα⟩⟩,
+    fun h α ↦ h _ (Finset.mem_sdiff.1 α.property).2⟩
 
 /-- The data and axioms of an implicit atlas (`TauCeti.ImplicitAtlas`) other than its local
 product model over the regular locus, which is the only axiom involving the virtual dimension.
@@ -211,8 +234,7 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
     footprintMap h x ∈ regLocus I → ∃ n : ℕ,
       (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
       ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
-        x.val ∈ e.source ∧ ∀ y ∈ e.source,
-          (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
+        x.val ∈ e.source ∧ ∀ y ∈ e.source, (e y).2 = kuranishiSdiff kuranishi I J y
 
 namespace ImplicitAtlas
 

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -72,6 +73,8 @@ low-frequency blocks sum in `L^∞`
   function.
 * `TemperedDistribution.MemHomogeneousBesov.mono_exponent`: the Bernstein embedding
   `\dot B^s_{p,q} ⊆ \dot B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r`.
+* `TemperedDistribution.MemBesov.memHomogeneousBesov`: the inclusion
+  `B^s_{p,q} ⊆ \dot B^s_{p,q}` for `s > 0` and `q ≠ 0`.
 * `TemperedDistribution.MemHomogeneousBesov.exists_tendsto_sum_homogeneousLittlewoodPaleyBlock`:
   the reconstruction modulo distributions with spectrum at the origin, for `s < n / p`, or
   `s = n / p` and `q ≤ 1`.
@@ -252,6 +255,55 @@ theorem MemHomogeneousBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fa
     _ = C * (2 ^ (s * j) * ‖f j‖) := by
         rw [← Real.rpow_sub_mul_mul_rpow_mul two_pos s a j]
         ring
+
+/-- **Inhomogeneous Besov spaces of positive order are homogeneous Besov spaces.** For `s > 0` and
+`q ≠ 0`, `B^s_{p,q} ⊆ \dot B^s_{p,q}`. The blocks `Pⱼ`, `j ≥ 1`, are the inhomogeneous blocks
+`Δⱼ`, and the blocks `Pⱼ`, `j ≤ 0`, of `u` are blocks of the `Lᵖ` function `∑_{k ≤ N} Δₖ u`, so
+they are bounded in `Lᵖ` and their weights `2^{js}` decay geometrically as `j → -∞`. -/
+theorem MemBesov.memHomogeneousBesov {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (hs : 0 < s)
+    (hq : q ≠ 0) : u.MemHomogeneousBesov φ s p q := by
+  obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
+  obtain ⟨B, G, hG⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos hf
+  -- The blocks of `u`: inhomogeneous blocks for `j ≥ 1`, the bounded `G j` for `j ≤ 0`.
+  refine memHomogeneousBesov_iff.2 ⟨fun j ↦ if 1 ≤ j then f j.toNat else G j, fun j ↦ ?_, ?_⟩
+  · dsimp only
+    split_ifs with hj
+    · rw [← hf, ← homogeneousLittlewoodPaleyBlock_natCast φ (by omega), Int.toNat_of_nonneg
+        (by omega)]
+    · exact (hG j (by omega)).1
+  -- Dominate the weighted blocks by the reindexed inhomogeneous ones plus a geometric tail.
+  have h₁ : Memℓp ({j : ℤ | 1 ≤ j}.indicator
+      ((fun k : ℕ ↦ (2 : ℝ) ^ (s * k) * ‖f k‖) ∘ Int.toNat)) q :=
+    hmem.indicator_comp fun a ha b hb h ↦ by
+      simp only [Set.mem_ofPred_eq] at ha hb
+      omega
+  have hr : (0 : ℝ) ≤ 2 ^ (-s) := by positivity
+  have hr1 : (2 : ℝ) ^ (-s) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hs)
+  have h₂ : Memℓp ({j : ℤ | j ≤ 0}.indicator
+      ((fun i : ℕ ↦ B * ((2 : ℝ) ^ (-s)) ^ i) ∘ fun j ↦ (-j).toNat)) q :=
+    (Memℓp.of_norm_le_geometric hr hr1 (C := |B|) (fun i ↦ by
+      rw [norm_mul, Real.norm_eq_abs, norm_pow, Real.norm_of_nonneg hr]) hq).indicator_comp
+      fun a ha b hb h ↦ by
+      simp only [Set.mem_ofPred_eq] at ha hb h
+      omega
+  refine (h₁.add h₂).mono fun j ↦ ?_
+  simp only [Pi.add_apply, Set.indicator, Set.mem_ofPred_eq, Function.comp_apply]
+  rw [Real.norm_of_nonneg (by positivity)]
+  split_ifs with hj hj' hj'
+  · omega
+  · have hcast : ((j.toNat : ℕ) : ℝ) = j := by exact_mod_cast Int.toNat_of_nonneg (by omega)
+    rw [hcast, add_zero]
+  · rw [zero_add]
+    -- For `j ≤ 0`, `2^{js} = (2^{-s})^{-j}`.
+    have hpow : (2 : ℝ) ^ (s * j) = ((2 : ℝ) ^ (-s)) ^ (-j).toNat := by
+      have hcast : (((-j).toNat : ℕ) : ℝ) = -j := by
+        exact_mod_cast Int.toNat_of_nonneg (by omega)
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, hcast]
+      ring_nf
+    rw [hpow, mul_comm B]
+    gcongr
+    exact (hG j hj').2
+  · omega
 
 /-- **The blocks of another bump function.** If the homogeneous blocks `Pₖ u` built from `φ` are
 `Lᵖ` functions `fₖ`, then the homogeneous blocks `P'ⱼ u` built from `φ'` are `Lᵖ` functions `f'ⱼ`,
