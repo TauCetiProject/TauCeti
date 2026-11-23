@@ -872,6 +872,13 @@ theorem altAt_apply_eval₂ (φ : SmoothForm I M F 2) (x : M) (v : Fin 2 → E) 
   simp only [altAt, SmoothBundleForm.eval₂]
   rfl
 
+/-- Every tangent space is the model space, so a degree-two form can be evaluated on the same pair
+of vectors at two base points; the values agree when the base points are equal. -/
+theorem eval₂_congr_basePoint (φ : SmoothForm I M F 2) {x y : M} (h : x = y) (v w : E) :
+    φ.eval₂ x v w = φ.eval₂ y v w := by
+  subst h
+  rfl
+
 end SectionView
 
 end SmoothForm

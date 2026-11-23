@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.Topology.Homotopy.Lifting.Basic
 import TauCeti.Topology.Path.Map
+import TauCeti.Topology.PathComponent
 
 /-!
 # Monodromy on the path components of the fibres of a map that lifts homotopies of paths
@@ -49,7 +50,10 @@ For a fibration this action is the low end of the exact homotopy sequence
   (`TauCeti.HasHomotopyLiftingProperty.stabilizer_fiberMonodromy_eq_range`);
 * hence the components of `F` that meet the path component of `e` in `E` are in bijection with
   `π₁(B, b) ⧸ p_*π₁(E, e)`
-  (`TauCeti.HasHomotopyLiftingProperty.fiberMonodromyOrbitEquivQuotientRange`).
+  (`TauCeti.HasHomotopyLiftingProperty.fiberMonodromyOrbitEquivQuotientRange`);
+* over a path-connected base, the orbits of `π₁(B, b)` on `π₀(F)` are in bijection with the path
+  components of `E`
+  (`TauCeti.HasHomotopyLiftingProperty.orbitRelQuotientEquivZerothHomotopy`).
 
 For a Serre fibration the boundary map `π₁(B, b) → π₀(F, e)` of the exact sequence is the orbit
 map of the component of `e` (`TauCeti.TopCat.fibrationBoundary_eq_fiberMonodromy`, in
@@ -69,6 +73,8 @@ points of the fibre.
   path components of the fibre over `b`.
 * `TauCeti.HasHomotopyLiftingProperty.fiberMonodromyOrbitEquivQuotientRange`: the orbit of the
   component of `e` as the cosets of the image of `π₁(E, e)`.
+* `TauCeti.HasHomotopyLiftingProperty.orbitRelQuotientEquivZerothHomotopy`: over a
+  path-connected base, the orbits of `π₁(B, b)` on `π₀(F)` as the path components of `E`.
 
 ## Main results
 
@@ -336,7 +342,7 @@ theorem fiberMonodromy_eq_mk_iff (hp : HasHomotopyLiftingProperty p I) {x y : B}
     have hΓy : p (Γ 1) = y := (congrFun hΓ 1).trans γ.target
     rw [fiberMonodromy_mk hp γ hΓ hz (w := ⟨Γ 1, hΓy⟩) rfl] at hγ
     -- Follow the lift of `γ` by a path to `w` in the fibre over `y`.
-    obtain ⟨α⟩ := (Quotient.exact hγ : Joined (⟨Γ 1, hΓy⟩ : p ⁻¹' {y}) w)
+    obtain ⟨α⟩ := ZerothHomotopy.mk_eq_mk_iff.1 hγ
     let δ : Path (z : E) w := (Path.mk Γ hz rfl).trans (α.map continuous_subtypeVal)
     have hδ : (δ.map p.continuous).cast z.property.symm w.property.symm = γ.trans (Path.refl y) :=
       Path.ext (Path.comp_trans_eq_of_comp_eq hΓ (funext fun t ↦ (α t).property))
@@ -420,6 +426,45 @@ theorem coe_fiberMonodromyOrbitEquivQuotientRange_symm_apply
     (hp : HasHomotopyLiftingProperty p I) {b : B} (e : p ⁻¹' {b}) (γ : FundamentalGroup B b) :
     ((fiberMonodromyOrbitEquivQuotientRange hp e).symm γ : ZerothHomotopy (p ⁻¹' {b})) =
       fiberMonodromy hp γ.asHom (.mk e) :=
+  (rfl)
+
+/-- **The path components of the total space are the orbits of monodromy.** Over a
+path-connected base, the inclusion of the fibre over `b` induces a bijection from the orbits of
+`π₁(B, b)` on the path components of the fibre to the path components of `E`. -/
+def orbitRelQuotientEquivZerothHomotopy (hp : HasHomotopyLiftingProperty p I)
+    [PathConnectedSpace B] (b : B) :
+    letI := fiberMonodromyMulAction hp b
+    MulAction.orbitRel.Quotient (FundamentalGroup B b) (ZerothHomotopy (p ⁻¹' {b})) ≃
+      ZerothHomotopy E :=
+  letI := fiberMonodromyMulAction hp b
+  Equiv.ofBijective
+    (Quotient.lift
+      (ZerothHomotopy.lift (fun x : p ⁻¹' {b} ↦ ZerothHomotopy.mk (x : E))
+        fun _ _ γ ↦ ZerothHomotopy.sound (γ.map continuous_subtypeVal))
+      fun a a' h ↦ by
+        induction a with | mk x =>
+        induction a' with | mk y =>
+        exact ZerothHomotopy.mk_eq_mk_iff.2
+          ((mem_orbit_fiberMonodromy_iff hp y x).1 (MulAction.orbitRel_apply.1 h)).symm)
+    ⟨fun q q' h ↦ by
+      induction q using Quotient.ind with | _ a =>
+      induction q' using Quotient.ind with | _ a' =>
+      induction a with | mk x =>
+      induction a' with | mk y =>
+      exact Quotient.sound (MulAction.orbitRel_apply.2
+        ((mem_orbit_fiberMonodromy_iff hp y x).2 (ZerothHomotopy.mk_eq_mk_iff.1 h).symm)),
+    fun c ↦ by
+      induction c with | mk y =>
+      obtain ⟨x, hx⟩ := hp.exists_joined b y
+      exact ⟨Quotient.mk _ (ZerothHomotopy.mk x), ZerothHomotopy.mk_eq_mk_iff.2 hx⟩⟩
+
+@[simp]
+theorem orbitRelQuotientEquivZerothHomotopy_mk (hp : HasHomotopyLiftingProperty p I)
+    [PathConnectedSpace B] {b : B} (x : p ⁻¹' {b}) :
+    letI := fiberMonodromyMulAction hp b
+    orbitRelQuotientEquivZerothHomotopy hp b
+        (Quotient.mk (MulAction.orbitRel _ _) (ZerothHomotopy.mk x)) =
+      ZerothHomotopy.mk (x : E) :=
   (rfl)
 
 end TauCeti.HasHomotopyLiftingProperty
