@@ -30,8 +30,8 @@ of noncrossing partitions is computed.
 
 ## Main results
 
-* `IncidenceAlgebra.map_mu` — an additive map `f` with `f 1 = 1` satisfies
-  `f (μ(a, b)) = μ(a, b)`.
+* `IncidenceAlgebra.map_mu` — an additive map `f : 𝕜 → 𝕝` with `f 1 = 1` satisfies
+  `f (μ_𝕜(a, b)) = μ_𝕝(a, b)`.
 * `IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul` — `∑_{y ≤ x} ∑_{z ≤ y} μ(z, y) g z = g x`.
 * `IncidenceAlgebra.sum_filter_sup_eq_mu_eq_zero` — *Weisner's theorem*: for `¬a ≤ c`,
   `∑_{x ∈ [c, d], x ⊔ a = d} μ(c, x) = 0`.
@@ -64,7 +64,8 @@ theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b :
     rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab, neg_inj]
     refine (sum_equiv e.toEquiv (fun x => by simp) fun x hx => ?_).symm
     obtain ⟨hax, hxb⟩ := mem_Ico.1 hx
-    exact (ih _ (hn ▸ card_Icc_lt_card_Icc_right (hax.trans hxb.le) le_rfl hxb) x rfl).symm
+    simpa only [OrderIso.coe_toEquiv] using
+      (ih _ (hn ▸ card_Icc_lt_card_Icc_right (hax.trans hxb.le) le_rfl hxb) x rfl).symm
 
 end OrderIso
 
