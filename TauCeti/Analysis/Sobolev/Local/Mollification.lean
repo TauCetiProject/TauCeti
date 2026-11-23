@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Inner
 public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
@@ -63,40 +62,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpa
   [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
   {Ω : Opens ℂ} {p : ℝ≥0∞}
 
-/-- Pairing a mollified cut-off field `(φ n).normed volume ⋆ (W'.indicator U)` against
-`(α : ℂ → ℝ) • g` (`tsupport α ⊆ W'`, `g ∈ L^{r'}_loc(Ω)`) through a continuous bilinear map `B`
-converges to the pairing of `U`, including the `r = ∞`, `r' = 1` endpoint. -/
-private theorem tendsto_integral_smul_bilin_normed_convolution_indicator
-    (B : F →L[ℝ] G →L[ℝ] H) {r r' : ℝ≥0∞} [r.HolderConjugate r']
-    {φ : ℕ → ContDiffBump (0 : ℂ)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
-    {W' : Set ℂ} {U : ℂ → F} (hU : MemLp (W'.indicator U) r volume)
-    (α : 𝓓(Ω, ℝ)) (hαW' : tsupport (α : ℂ → ℝ) ⊆ W')
-    {g : ℂ → G} (hg : MemLpLoc r' Ω g) :
-    Tendsto (fun n => ∫ z, (α : ℂ → ℝ) z •
-        B (((φ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
-          (W'.indicator U)) z) (g z))
-      atTop (𝓝 (∫ z, (α : ℂ → ℝ) z • B (U z) (g z))) := by
-  have hαg_on := memLpLoc_iff.1 (hg.continuousOn_smul α.contDiff.continuous.continuousOn) _
-    α.tsupport_subset α.hasCompactSupport.isCompact
-  have hind : (fun z => (α : ℂ → ℝ) z • g z) =
-      (tsupport (α : ℂ → ℝ)).indicator (fun z => (α : ℂ → ℝ) z • g z) :=
-    (Set.indicator_eq_self.2
-      ((Function.support_smul_subset_left (α : ℂ → ℝ) g).trans (subset_tsupport _))).symm
-  have hαg : MemLp (fun z => (α : ℂ → ℝ) z • g z) r' volume := by
-    rw [hind]
-    exact (memLp_indicator_iff_restrict
-      (isClosed_tsupport (α : ℂ → ℝ)).measurableSet.nullMeasurableSet).2 hαg_on
-  have hB (x : ℝ) (y : G) (u : F) : B.flip (x • y) u = x • B u y := by
-    simp [map_smul]
-  refine (B.flip.tendsto_integral_bilin_normed_convolution hφ hαg hU).congr
-    (fun n => integral_congr_ae (.of_forall fun z => hB _ _ _)) |>.trans_eq
-    (congrArg 𝓝 (integral_congr_ae (.of_forall fun z => ?_)))
-  dsimp only
-  rw [hB]
-  by_cases hz : z ∈ tsupport (α : ℂ → ℝ)
-  · simp only [indicator_of_mem (hαW' hz)]
-  · simp only [image_eq_zero_of_notMem_tsupport hz, zero_smul]
-
 /-- Local mollification of a bounded map `f ∈ L^∞_loc(Ω; F)` with weak derivative
 `Df ∈ Lᵖ_loc(Ω; ℂ →L[ℝ] F)` (`1 ≤ p ≤ ∞`) near a compact subset `K ⊆ Ω`: produces `C^∞` maps
 `fn n : ℂ → F` such that, for every scalar test function `α ∈ 𝓓(Ω, ℝ)` with `tsupport α ⊆ K`, the
@@ -132,17 +97,21 @@ theorem exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn
     (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
       ((hU_mem p).locallyIntegrable hp1)
   refine ⟨fn, hfn_smooth, fun α hαK {g} hg =>
-      tendsto_integral_smul_bilin_normed_convolution_indicator B hφ (hU_mem ∞) α
+      B.tendsto_integral_smul_bilin_normed_convolution_indicator hφ (hU_mem ∞)
+        α.contDiff.continuous α.hasCompactSupport
         ((hαK.trans hKW).trans (subset_closure.trans hWW'))
-        ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hg),
+        (memLpLoc_iff.1 ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 hg) _
+          α.tsupport_subset α.hasCompactSupport.isCompact),
     fun u α hαK {g} hg => ?_⟩
   have : p.HolderConjugate p.conjExponent := .conjExponent hp1
   have hU'u : MemLp ((W' : Set ℂ).indicator fun z => Df z u) p volume :=
     (memLp_indicator_iff_restrict hW'm).2
       ((hDfp.clm_comp (ContinuousLinearMap.apply ℝ F u)).memLp_restrict_of_isCompact_closure
         hW'c hW'Ω)
-  refine (tendsto_integral_smul_bilin_normed_convolution_indicator B hφ hU'u α
-    ((hαK.trans hKW).trans (subset_closure.trans hWW')) hg).congr fun n =>
+  refine (B.tendsto_integral_smul_bilin_normed_convolution_indicator hφ hU'u
+    α.contDiff.continuous α.hasCompactSupport
+    ((hαK.trans hKW).trans (subset_closure.trans hWW'))
+    (memLpLoc_iff.1 hg _ α.tsupport_subset α.hasCompactSupport.isCompact)).congr fun n =>
       integral_congr_ae (.of_forall fun z => ?_)
   by_cases hz : z ∈ tsupport (α : ℂ → ℝ)
   · have hDfu := (hDf.mono (subset_closure.trans hW'Ω)).hasWeakLineDerivOn u
@@ -160,59 +129,6 @@ section AdjointAndCommutator
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   {Ω : Opens ℂ} {p q : ℝ≥0∞} {J : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
-
-private noncomputable def adjointApplyCLM (v : V) : (V →L[ℝ] V) →L[ℝ] V :=
-  (ContinuousLinearMap.apply ℝ V v).comp
-    ((ContinuousLinearMap.adjoint : (V →L[ℝ] V) ≃ₗᵢ⋆[ℝ] (V →L[ℝ] V)).toContinuousLinearEquiv
-      |> ContinuousLinearEquiv.toContinuousLinearMap)
-
-/-- For a `C^∞` operator field `F : ℂ → V →L[ℝ] V`, a scalar test function `α ∈ 𝓓(Ω, ℝ)` and
-`v : V`, the vector test function `z ↦ α z • F(z)* v`. -/
-private noncomputable def smulAdjointTestFunction {F : ℂ → V →L[ℝ] V} (hF : ContDiff ℝ ∞ F)
-    (α : 𝓓(Ω, ℝ)) (v : V) : 𝓓(Ω, V) :=
-  TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ)
-    ((adjointApplyCLM v).contDiff.comp hF) α
-
-@[simp]
-private theorem inner_smulAdjointTestFunction_apply {F : ℂ → V →L[ℝ] V} (hF : ContDiff ℝ ∞ F)
-    (α : 𝓓(Ω, ℝ)) (v : V) (z : ℂ) (y : V) :
-    ⟪(smulAdjointTestFunction hF α v : ℂ → V) z, y⟫_ℝ = (α : ℂ → ℝ) z * ⟪v, F z y⟫_ℝ := by
-  simp [smulAdjointTestFunction, adjointApplyCLM, inner_smul_left,
-    ContinuousLinearMap.adjoint_inner_left]
-
-/-- Expanding the directional derivative of `smulAdjointTestFunction hF α v` against a locally `L^q`
-field `w` splits into the `∂_u α` and `∂_u F` terms. -/
-private theorem integral_inner_fderiv_smul_adjoint_eq (hq1 : 1 ≤ q)
-    {F : ℂ → V →L[ℝ] V} (hF : ContDiff ℝ ∞ F) (α : 𝓓(Ω, ℝ)) (v : V) (u : ℂ) {w : ℂ → V}
-    (hw : MemLpLoc q Ω w) :
-    ∫ z, ⟪fderiv ℝ (smulAdjointTestFunction hF α v : ℂ → V) z u, w z⟫_ℝ =
-      (∫ z, (∂_{u} α : 𝓓(Ω, ℝ)) z * ⟪v, F z (w z)⟫_ℝ) +
-        ∫ z, (α : ℂ → ℝ) z * ⟪v, fderiv ℝ F z u (w z)⟫_ℝ := by
-  let adjV : (V →L[ℝ] V) →L[ℝ] V := adjointApplyCLM v
-  have hloc := Ω.isOpen.isLocallyClosed
-  have htop_q : (⊤ : ℝ≥0∞)⁻¹ + q⁻¹ ≤ 1 := by simpa using ENNReal.inv_le_one.2 hq1
-  let αu : 𝓓(Ω, ℝ) := ∂_{u} α
-  have hi1 := αu.integrable_mul_inner
-    ((hF.continuous.continuousOn.memLpLoc (p := ⊤)).locallyIntegrableOn_clm_apply hw htop_q hloc) v
-  have hF1 : ContDiff ℝ 1 F := hF.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))
-  have hDF_c : Continuous fun z => fderiv ℝ F z u :=
-    (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u).continuous.comp (hF1.continuous_fderiv one_ne_zero)
-  have hi2 := α.integrable_mul_inner
-    ((hDF_c.continuousOn.memLpLoc (p := ⊤)).locallyIntegrableOn_clm_apply hw htop_q hloc) v
-  have hcoe : (smulAdjointTestFunction hF α v : ℂ → V) = (α : ℂ → ℝ) • (adjV ∘ F) := by
-    ext z; simp [smulAdjointTestFunction, adjV]
-  rw [← integral_add hi1 hi2]
-  refine integral_congr_ae (.of_forall fun z => ?_)
-  have h1 := (α.contDiff.differentiable (by simp) z).hasFDerivAt
-  have h2 := adjV.hasFDerivAt.comp z ((hF.differentiable (by simp) z).hasFDerivAt)
-  dsimp only
-  rw [hcoe, (h1.smul h2).fderiv]
-  simp only [αu, TestFunction.lineDerivOp_apply_eq_fderiv α u z, adjV, adjointApplyCLM,
-    add_apply, ContinuousLinearMap.smulRight_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.apply_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousLinearEquiv.coe_coe, Function.comp_apply, inner_add_left, inner_smul_left,
-    RCLike.conj_to_real, ContinuousLinearMap.adjoint_inner_left]
-  ring
 
 variable [FiniteDimensional ℝ V]
 
@@ -242,7 +158,7 @@ theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < 
   obtain ⟨Jn, hJn_smooth, hlim_J, hlim_DJ⟩ :=
     exists_contDiff_tendsto_integral_smul_bilin_of_hasWeakFDerivOn B hp1.le (hJ.memLpLoc_top hp)
       hDJ (hJ.memLpLoc_of_hasWeakFDerivOn hDJ) α.hasCompactSupport.isCompact α.tsupport_subset
-  refine ⟨fun n => smulAdjointTestFunction (hJn_smooth n) α v,
+  refine ⟨fun n => TestFunction.smulAdjointTestFunction (hJn_smooth n) α v,
     fun u {w} hw => ?_, fun {w} hw => ?_⟩
   · have h1 := hlim_J (∂_{u} α) (α.tsupport_lineDerivOp_subset u)
       (hw.locallyIntegrableOn hq1 Ω.isOpen.isLocallyClosed)
@@ -250,7 +166,8 @@ theorem exists_testFunction_tendsto_integral_inner_of_hasWeakFDerivOn (hp : 2 < 
     simpa only [B, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.compL_apply, innerSL_apply_apply, smul_eq_mul] using
       (h1.add h2).congr fun n =>
-        (integral_inner_fderiv_smul_adjoint_eq hq1 (hJn_smooth n) α v u hw).symm
+        (TestFunction.integral_inner_fderiv_smul_adjoint_eq (hJn_smooth n) α v u
+          (hw.locallyIntegrableOn hq1 Ω.isOpen.isLocallyClosed)).symm
   · simpa only [B, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.compL_apply, innerSL_apply_apply, smul_eq_mul] using
       (hlim_J α Subset.rfl hw).congr fun n =>

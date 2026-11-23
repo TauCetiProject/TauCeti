@@ -186,34 +186,6 @@ theorem MemWkpLoc.bilin [FiniteDimensional ℝ F] [CompleteSpace H] (B : F →L[
   let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le.trans hqp⟩
   exact hf.bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_of_holderTriple hp le_rfl) hg
 
-omit [FiniteDimensional ℝ G] in
-/-- Smooth-factor weak Leibniz identity for a continuous bilinear map against a test function,
-derived from `TauCeti.HasWeakLineDerivOn.contDiff_bilin`. -/
-private theorem integral_lineDeriv_smul_bilin_of_contDiff [FiniteDimensional ℝ F] [CompleteSpace H]
-    (B : F →L[ℝ] G →L[ℝ] H) {g g' : ℂ → G} {u : ℂ} (hg : HasWeakLineDerivOn volume Ω g g' u)
-    {F_sm : ℂ → F} (hF : ContDiff ℝ ∞ F_sm) (ψ : 𝓓(Ω, ℝ)) :
-    (∫ z, (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (F_sm z) (g z)) +
-        (∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) =
-      -∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (g' z) := by
-  have hDFu_c : Continuous fun z => fderiv ℝ F_sm z u :=
-    (ContinuousLinearMap.apply ℝ F u).continuous.comp
-      ((hF.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))).continuous_fderiv one_ne_zero)
-  have h1 : Integrable (fun z => (ψ : ℂ → ℝ) z • B (F_sm z) (g' z)) volume :=
-    ψ.integrable_smul <| hg.locallyIntegrableOn_deriv.continuousOn_clm_apply
-      Ω.isOpen.isLocallyClosed (B.continuous.comp hF.continuous).continuousOn
-  have h2 : Integrable (fun z => (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z)) volume :=
-    ψ.integrable_smul <| hg.locallyIntegrableOn.continuousOn_clm_apply
-      Ω.isOpen.isLocallyClosed (B.continuous.comp hDFu_c).continuousOn
-  have hibp := (hg.contDiff_bilin B hF).integral_lineDeriv_smul_eq_neg_integral_smul ψ
-  have hsplit : ∫ z, (ψ : ℂ → ℝ) z • (B (F_sm z) (g' z) + B (fderiv ℝ F_sm z u) (g z)) =
-      (∫ z, (ψ : ℂ → ℝ) z • B (F_sm z) (g' z)) +
-        ∫ z, (ψ : ℂ → ℝ) z • B (fderiv ℝ F_sm z u) (g z) := by
-    rw [← integral_add h1 h2]
-    exact integral_congr_ae (.of_forall fun z => smul_add _ _ _)
-  simp only [← TestFunction.lineDerivOp_apply] at hibp
-  rw [hsplit] at hibp
-  exact eq_neg_of_add_eq_zero_left (by rw [hibp]; abel)
-
 /-- **The weak Leibniz rule for mixed-exponent local Sobolev maps.** For `2 < p ≤ ∞` and
 `1 ≤ q ≤ ∞`, if `f ∈ W^{1,p}_loc(Ω; F)` has weak derivative `Df` and `g ∈ W^{1,q}_loc(Ω; G)` has
 weak derivative `Dg` with `F` and `G` finite-dimensional and `H` complete, then for any continuous
@@ -265,7 +237,7 @@ theorem HasWeakFDerivOn.bilin [FiniteDimensional ℝ F] [CompleteSpace H]
     ((hlim_f (∂_{u} ψ) (ψ.tsupport_lineDerivOp_subset u) hDgu.locallyIntegrableOn).add
       (hlim_Df u ψ Subset.rfl hgp'))
     ((hlim_f ψ Subset.rfl hDgu.locallyIntegrableOn_deriv).neg.congr fun n =>
-      (integral_lineDeriv_smul_bilin_of_contDiff B hDgu (hfn n) ψ).symm)
+      (hDgu.integral_lineDeriv_smul_bilin_of_contDiff B (hfn n) ψ).symm)
   have hψu : (fun z => lineDeriv ℝ (ψ : ℂ → ℝ) z u • B (f z) (g z)) =
       fun z => (∂_{u} ψ : 𝓓(Ω, ℝ)) z • B (f z) (g z) :=
     funext fun z => by rw [TestFunction.lineDerivOp_apply]

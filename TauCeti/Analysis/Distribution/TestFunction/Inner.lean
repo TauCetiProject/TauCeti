@@ -13,9 +13,11 @@ public import Mathlib.Analysis.Normed.Affine.MazurUlam
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Inner-product pairings and Riesz transport on test functions
@@ -25,8 +27,10 @@ function `φ ∈ 𝓓(Ω, V)` pairs with a field `w : E → V` through the inner
 `∫ ⟪φ, w⟫` are the natural way to test a vector-valued equation. This file records that these
 pairings, and those with the coordinate derivatives of `φ`, are integrable for locally integrable
 `w`, splits pairings against `WithLp 2 (V₁ × V₂)`-valued test functions into their factor
-projections, and proves the fundamental lemma of the calculus of variations in this form: a locally
-integrable field is determined almost everywhere on `Ω` by its pairings with `𝓓(Ω, V)`.
+projections, builds adjoint-weighted vector test functions `α • F(·)* v` for smooth operator
+fields `F` along with their value and derivative pairings, and proves the fundamental lemma of
+the calculus of variations in this form: a locally integrable field is determined almost everywhere
+on `Ω` by its pairings with `𝓓(Ω, V)`.
 
 For real or complex Hilbert coefficients, `TestFunction.rieszEquiv` is a real continuous
 linear equivalence to dual-valued tests, conjugating the coefficient scalar action. The original
@@ -48,6 +52,9 @@ completeness of the coefficient space.
   `TestFunction.integral_inner_fderiv_postcomp_prodL2`: splitting integrals of `WithLp 2`
   product test functions (and their directional derivatives) against pairs of locally integrable
   fields into the two factor pairings.
+* `TestFunction.smulAdjointTestFunction`, `TestFunction.inner_smulAdjointTestFunction_apply`,
+  `TestFunction.integral_inner_fderiv_smul_adjoint_eq`: adjoint-weighted vector test functions
+  `x ↦ α x • F(x)* v` for a smooth operator field `F`, with their value and derivative pairings.
 * `TauCeti.ae_eq_of_forall_integral_inner_eq`: two locally integrable fields with the same
   pairings against every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on `Ω`. The target `V` need only
   be complete; the proof tests against `ψ • c` for scalar test functions `ψ` and a constant
@@ -179,6 +186,78 @@ theorem integral_inner_fderiv_postcomp_prodL2 {f : E → V₁} {g : E → V₂}
   simp
 
 end ProdL2
+
+section Adjoint
+
+open LineDeriv
+
+private noncomputable def adjointApplyCLM {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [CompleteSpace V] (v : V) : (V →L[ℝ] V) →L[ℝ] V :=
+  (ContinuousLinearMap.apply ℝ V v).comp
+    ((ContinuousLinearMap.adjoint : (V →L[ℝ] V) ≃ₗᵢ⋆[ℝ] (V →L[ℝ] V)).toContinuousLinearEquiv
+      |> ContinuousLinearEquiv.toContinuousLinearMap)
+
+omit [MeasurableSpace E] [OpensMeasurableSpace E] in
+/-- For a `C^∞` operator field `F : E → V →L[ℝ] V`, a scalar test function `α ∈ 𝓓(Ω, ℝ)` and
+`v : V`, the vector test function `x ↦ α x • F(x)* v`. -/
+noncomputable def smulAdjointTestFunction [CompleteSpace V] {F : E → V →L[ℝ] V}
+    (hF : ContDiff ℝ ∞ F) (α : 𝓓(Ω, ℝ)) (v : V) : 𝓓(Ω, V) :=
+  TestFunction.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ)
+    ((adjointApplyCLM v).contDiff.comp hF) α
+
+omit [MeasurableSpace E] [OpensMeasurableSpace E] in
+/-- Pairing `smulAdjointTestFunction hF α v` pointwise against `y : V` equals
+`α x * ⟪v, F x y⟫_ℝ`. -/
+@[simp]
+theorem inner_smulAdjointTestFunction_apply [CompleteSpace V] {F : E → V →L[ℝ] V}
+    (hF : ContDiff ℝ ∞ F) (α : 𝓓(Ω, ℝ)) (v : V) (x : E) (y : V) :
+    ⟪(smulAdjointTestFunction hF α v : E → V) x, y⟫_ℝ = (α : E → ℝ) x * ⟪v, F x y⟫_ℝ := by
+  simp [smulAdjointTestFunction, adjointApplyCLM, inner_smul_left,
+    ContinuousLinearMap.adjoint_inner_left]
+
+/-- Expanding the directional derivative of `smulAdjointTestFunction hF α v` against a locally
+integrable field `w` splits into the `∂_u α` and `∂_u F` terms. -/
+theorem integral_inner_fderiv_smul_adjoint_eq [CompleteSpace V] {F : E → V →L[ℝ] V}
+    (hF : ContDiff ℝ ∞ F) (α : 𝓓(Ω, ℝ)) (v : V) (u : E) {w : E → V}
+    (hw : LocallyIntegrableOn w Ω μ) :
+    ∫ x, ⟪fderiv ℝ (smulAdjointTestFunction hF α v : E → V) x u, w x⟫_ℝ ∂μ =
+      (∫ x, (∂_{u} α : 𝓓(Ω, ℝ)) x * ⟪v, F x (w x)⟫_ℝ ∂μ) +
+        ∫ x, (α : E → ℝ) x * ⟪v, fderiv ℝ F x u (w x)⟫_ℝ ∂μ := by
+  let adjV : (V →L[ℝ] V) →L[ℝ] V := adjointApplyCLM v
+  let αu : 𝓓(Ω, ℝ) := ∂_{u} α
+  have hint {G : E → V →L[ℝ] V} (hG : Continuous G) (β : 𝓓(Ω, ℝ)) :
+      Integrable (fun x => (β : E → ℝ) x * ⟪v, G x (w x)⟫_ℝ) μ := by
+    have hg : Integrable (fun x => ⟪(β : E → ℝ) x • adjV (G x), w x⟫_ℝ) μ :=
+      hw.integrable_inner_left_of_hasCompactSupport
+        (β.contDiff.continuous.smul (adjV.continuous.comp hG))
+        β.hasCompactSupport.smul_right
+        ((tsupport_smul_subset_left (β : E → ℝ) (adjV ∘ G)).trans β.tsupport_subset)
+    simpa only [adjV, adjointApplyCLM, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.apply_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      ContinuousLinearEquiv.coe_coe, inner_smul_left, RCLike.conj_to_real,
+      ContinuousLinearMap.adjoint_inner_left] using hg
+  have hi1 := hint hF.continuous αu
+  have hF1 : ContDiff ℝ 1 F := hF.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))
+  have hDF_c : Continuous fun x => fderiv ℝ F x u :=
+    (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) u).continuous.comp (hF1.continuous_fderiv one_ne_zero)
+  have hi2 := hint hDF_c α
+  have hcoe : (smulAdjointTestFunction hF α v : E → V) = (α : E → ℝ) • (adjV ∘ F) := by
+    ext x; simp [smulAdjointTestFunction, adjV]
+  rw [← integral_add hi1 hi2]
+  refine integral_congr_ae (.of_forall fun x => ?_)
+  have h1 := (α.contDiff.differentiable (by simp) x).hasFDerivAt
+  have h2 := adjV.hasFDerivAt.comp x ((hF.differentiable (by simp) x).hasFDerivAt)
+  dsimp only
+  rw [hcoe, (h1.smul h2).fderiv]
+  simp only [αu, TestFunction.lineDerivOp_apply_eq_fderiv α u x, adjV, adjointApplyCLM,
+    add_apply, ContinuousLinearMap.smulRight_apply,
+    smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.apply_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearEquiv.coe_coe, Function.comp_apply, inner_add_left, inner_smul_left,
+    RCLike.conj_to_real, ContinuousLinearMap.adjoint_inner_left]
+  ring
+
+end Adjoint
 
 end TestFunction
 

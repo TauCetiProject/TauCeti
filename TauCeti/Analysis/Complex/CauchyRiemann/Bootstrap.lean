@@ -35,10 +35,10 @@ Sobolev coefficients (`TauCeti.memWkpLoc_of_ae_cauchyRiemann`, with `S = 0`) upg
 `W^{m+1,p}_loc(Ω)`.
 
 At `ℓ = 0`, `u ∈ W^{1,p}_loc` is already part of the hypothesis `IsWeakCauchyRiemannOn` (including
-`p = ∞`). For Sobolev membership `u ∈ W^{ℓ+1,p}_loc` at `ℓ ≥ 1`, the hypothesis `p ≠ ⊤` is sharp
-for local `C^ℓ` data (`TauCeti.IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn`): in
-`TauCeti.Analysis.Complex.CauchyRiemann.LogLog.Sobolev`, the graph of
-`f(z) = z² log log (1 / ‖z‖)` (`TauCeti.isWeakCauchyRiemannOn_graph_logLogExample`) solves the
+`p = ∞`). For Sobolev membership `u ∈ W^{ℓ+1,p}_loc`
+(`TauCeti.IsWeakCauchyRiemannOn.memWkpLoc_of_contDiffOn`), the finite-exponent hypothesis `p ≠ ⊤`
+is already sharp at `ℓ = 1`: in `TauCeti.Analysis.Complex.CauchyRiemann.LogLog.Sobolev`, the graph
+of `f(z) = z² log log (1 / ‖z‖)` (`TauCeti.isWeakCauchyRiemannOn_graph_logLogExample`) solves the
 homogeneous equation on the unit disc for a `C¹` almost complex structure with `p = ∞`, yet fails
 to belong to `W^{2,∞}_loc` on any neighbourhood of `0`
 (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`). For `C^n` regularity (`n : ℕ∞`), the

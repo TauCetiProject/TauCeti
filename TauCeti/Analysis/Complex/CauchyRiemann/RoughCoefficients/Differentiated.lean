@@ -22,7 +22,7 @@ the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves a system of the same shape,
 
 with `J₂ = diag(J, J)` and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`. The classical computation for
 `C²` maps is `TauCeti.crOperator_differentiated_system`. This file proves the strong form for
-Sobolev data: for `p > 2`, `1 < q ≤ p`, `J, S ∈ W^{1,p}_loc`, `ξ ∈ W^{2,q}_loc` and
+Sobolev data: for `2 < p < ∞`, `1 < q ≤ p`, `J, S ∈ W^{1,p}_loc`, `ξ ∈ W^{2,q}_loc` and
 `η ∈ W^{1,q}_loc` with `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on an open `Ω`, the pair `Ξ`
 is in `W^{1,q}_loc` and every weak derivative of `Ξ` satisfies the differentiated system almost
 everywhere on `Ω`. The products `J ∂_t ξ` and `S ξ` are differentiated by the weak Leibniz rule
@@ -32,8 +32,9 @@ order `k ≥ 2` of the induction.
 
 The coefficients of the new system inherit the regularity the induction needs: `J₂` has the
 regularity of `J`, and `S₂` is in `W^{k,p}_loc` as soon as `S ∈ W^{k,p}_loc` and
-`J ∈ W^{k+1,p}_loc`. The right side is locally `L^q` for `1 ≤ q ≤ p`, and for `1 < q ≤ p` it lies
-in `W^{k,q}_loc` whenever `DS ∈ W^{k,p}_loc`, `Dη ∈ W^{k,q}_loc`, and `ξ ∈ W^{k+1,q}_loc` by the
+`J ∈ W^{k+1,p}_loc`. For `2 < p < ∞`, the order-zero bound places the right side in `L^q_loc` for
+`1 ≤ q ≤ p` whenever `S ∈ W^{1,p}_loc` and `ξ, η ∈ W^{1,q}_loc`, and for `1 < q ≤ p` it lies in
+`W^{k,q}_loc` whenever `DS ∈ W^{k,p}_loc`, `Dη ∈ W^{k,q}_loc`, and `ξ ∈ W^{k+1,q}_loc` by the
 higher-order mixed-exponent product rule (`TauCeti.MemWkpLoc.clm_apply_succ`).
 
 ## Main declarations

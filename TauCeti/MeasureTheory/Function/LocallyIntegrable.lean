@@ -125,7 +125,9 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrable on `s`.
 * `MeasureTheory.locallyIntegrableOn_finsetSum`: finite sums preserve local integrability on a
   set.
-* `MeasureTheory.LocallyIntegrableOn.prodMk`, `MeasureTheory.locallyIntegrableOn_prodLp_iff`:
+* `MeasureTheory.LocallyIntegrableOn.prodMk`, `MeasureTheory.locallyIntegrableOn_prod_iff`,
+  `MeasureTheory.LocallyIntegrableOn.fst`, `MeasureTheory.LocallyIntegrableOn.snd`,
+  `MeasureTheory.LocallyIntegrableOn.of_fst_of_snd`, `MeasureTheory.locallyIntegrableOn_prodLp_iff`:
   componentwise local integrability for Cartesian and `WithLp` products.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
   integrability.
@@ -224,6 +226,43 @@ theorem LocallyIntegrableOn.prodMk {f : X → E} {g : X → F}
   obtain ⟨V, hV, hgV⟩ := hg x hx
   exact ⟨U ∩ V, Filter.inter_mem hU hV,
     (hfU.mono_set inter_subset_left).prodMk (hgV.mono_set inter_subset_right)⟩
+
+/-- A map into `E × F` is locally integrable on `s` if and only if both of its components are
+locally integrable on `s`, the local counterpart of `MeasureTheory.integrable_prod`. -/
+theorem locallyIntegrableOn_prod_iff {f : X → E × F} :
+    LocallyIntegrableOn f s μ ↔
+      LocallyIntegrableOn (fun x => (f x).1) s μ ∧
+        LocallyIntegrableOn (fun x => (f x).2) s μ := by
+  refine ⟨fun hf => ⟨fun x hx => ?_, fun x hx => ?_⟩, fun ⟨hf₁, hf₂⟩ => ?_⟩
+  · obtain ⟨U, hU, hfU⟩ := hf x hx
+    exact ⟨U, hU, Integrable.mono hfU
+      (continuous_fst.comp_aestronglyMeasurable hfU.aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun y => norm_fst_le (f y))⟩
+  · obtain ⟨U, hU, hfU⟩ := hf x hx
+    exact ⟨U, hU, Integrable.mono hfU
+      (continuous_snd.comp_aestronglyMeasurable hfU.aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun y => norm_snd_le (f y))⟩
+  · simpa using hf₁.prodMk hf₂
+
+/-- The first component of a product map locally integrable on `s` is locally integrable on
+`s`, the local counterpart of `MeasureTheory.Integrable.fst`. -/
+theorem LocallyIntegrableOn.fst {f : X → E × F} (hf : LocallyIntegrableOn f s μ) :
+    LocallyIntegrableOn (fun x => (f x).1) s μ :=
+  (locallyIntegrableOn_prod_iff.1 hf).1
+
+/-- The second component of a product map locally integrable on `s` is locally integrable on
+`s`, the local counterpart of `MeasureTheory.Integrable.snd`. -/
+theorem LocallyIntegrableOn.snd {f : X → E × F} (hf : LocallyIntegrableOn f s μ) :
+    LocallyIntegrableOn (fun x => (f x).2) s μ :=
+  (locallyIntegrableOn_prod_iff.1 hf).2
+
+/-- A product map whose two components are locally integrable on `s` is locally integrable on
+`s`. -/
+theorem LocallyIntegrableOn.of_fst_of_snd {f : X → E × F}
+    (h : LocallyIntegrableOn (fun x => (f x).1) s μ ∧
+      LocallyIntegrableOn (fun x => (f x).2) s μ) :
+    LocallyIntegrableOn f s μ :=
+  locallyIntegrableOn_prod_iff.2 h
 
 variable {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : X → WithLp q (E × F)}
 

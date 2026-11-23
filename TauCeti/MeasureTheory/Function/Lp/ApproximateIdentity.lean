@@ -70,6 +70,9 @@ the set where convergence is measured.
   operators.
 * `ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top`: weak-star convergence
   for bounded fields tested against integrable fields through a continuous bilinear map.
+* `ContinuousLinearMap.tendsto_integral_smul_bilin_normed_convolution_indicator`: localized
+  bilinear pairing limit for a cut-off field tested against a locally `Lᵠ` field weighted by a
+  continuous compactly supported scalar cutoff (including the weak-star endpoint).
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub_restrict`: finite-`Lᵖ` convergence on a set
   from `Lᵖ` integrability on a positive thickening.
 * `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
@@ -281,6 +284,51 @@ theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution
       ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu :=
     hpair _ _ (normedBumpLp_ae_eq_convolution hp (phi i) hf)
   simpa only [Function.comp_def, hpairphi, hpair _ _ hf.coeFn_toLp] using hlim
+
+omit [Fact (1 ≤ p)] in
+/-- Pairing a mollified cut-off field `(phi i).normed mu ⋆ W'.indicator f` against `χ • g`
+(where `χ` is continuous and compactly supported with `tsupport χ ⊆ W'` and `g ∈ L^q(tsupport χ)`)
+through a continuous bilinear map `B` converges to the pairing of `f`, including the `p = ∞`,
+`q = 1` weak-star endpoint. -/
+theorem _root_.ContinuousLinearMap.tendsto_integral_smul_bilin_normed_convolution_indicator
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [CompleteSpace F]
+    (B : F →L[ℝ] G →L[ℝ] H) {q : ℝ≥0∞} [p.HolderConjugate q]
+    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0))
+    {W' : Set E} {f : E → F} (hf : MemLp (W'.indicator f) p mu)
+    {χ : E → ℝ} (hχ : Continuous χ) (hχc : HasCompactSupport χ)
+    (hχW' : tsupport χ ⊆ W')
+    {g : E → G} (hg : MemLp g q (mu.restrict (tsupport χ))) :
+    Tendsto (fun i ↦ ∫ x, χ x • B (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu]
+        (W'.indicator f)) x) (g x) ∂mu)
+      l (nhds (∫ x, χ x • B (f x) (g x) ∂mu)) := by
+  have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
+  obtain ⟨C, hC⟩ := hχc.isCompact.exists_bound_of_continuousOn hχ.continuousOn
+  have hχg_res : MemLp (fun x ↦ χ x • g x) q (mu.restrict (tsupport χ)) := by
+    refine (hg.const_smul C).mono (hχ.aestronglyMeasurable.smul hg.aestronglyMeasurable)
+      (ae_restrict_of_forall_mem hcl.measurableSet fun x hx ↦ ?_)
+    calc
+      ‖χ x • g x‖ = ‖χ x‖ * ‖g x‖ := norm_smul _ _
+      _ ≤ C * ‖g x‖ := mul_le_mul_of_nonneg_right (hC x hx) (norm_nonneg _)
+      _ ≤ ‖C‖ * ‖g x‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)
+      _ = ‖C • g x‖ := (norm_smul C (g x)).symm
+  have hind : (fun x ↦ χ x • g x) = (tsupport χ).indicator (fun x ↦ χ x • g x) :=
+    (Set.indicator_eq_self.2
+      ((Function.support_smul_subset_left χ g).trans (subset_tsupport χ))).symm
+  have hχg : MemLp (fun x ↦ χ x • g x) q mu := by
+    rw [hind]
+    exact (memLp_indicator_iff_restrict hcl.measurableSet.nullMeasurableSet).2 hχg_res
+  have hB (r : ℝ) (y : G) (u : F) : B.flip (r • y) u = r • B u y := by
+    simp [map_smul]
+  refine (B.flip.tendsto_integral_bilin_normed_convolution hphi hχg hf).congr
+    (fun i ↦ integral_congr_ae (.of_forall fun x ↦ hB _ _ _)) |>.trans_eq
+    (congrArg nhds (integral_congr_ae (.of_forall fun x ↦ ?_)))
+  dsimp only
+  rw [hB]
+  by_cases hx : x ∈ tsupport χ
+  · simp only [indicator_of_mem (hχW' hx)]
+  · simp only [image_eq_zero_of_notMem_tsupport hx, zero_smul]
 
 omit [Fact (1 ≤ p)] in
 /-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` scalar coefficient converges

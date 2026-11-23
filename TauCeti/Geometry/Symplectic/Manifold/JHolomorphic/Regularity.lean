@@ -26,8 +26,8 @@ two steps:
 
 1. For curves from `(ℂ, SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ)` into `M'`, composing
    `u` with an extended chart `φ := extChartAt I' (u z₀)` yields a `C¹` map `φ ∘ u` satisfying the
-   varying-structure normed-space Cauchy–Riemann equation for `J.inChart (u z₀)` on `φ.target`,
-   which bootstraps to `C^∞`.
+   varying-structure normed-space Cauchy–Riemann equation on `s ∩ u ⁻¹' φ.source` for the chart
+   coefficient `J.inChart (u z₀)` (smooth on `φ.target`), which bootstraps to `C^∞`.
 2. For an isothermal chart `e : OpenPartialHomeomorph M ℂ` of `(M, j)`
    (`SmoothAlmostComplexStructure.exists_isIsothermalChart`), the inverse `e.symm` is `C¹` and
    pseudoholomorphic from `ℂ`, hence `C^∞` by step 1. Applying

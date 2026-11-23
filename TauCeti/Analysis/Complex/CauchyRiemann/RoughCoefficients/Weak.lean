@@ -314,6 +314,14 @@ theorem IsSobolevCRCoefficients.memWkpLoc_coeff (hc : IsSobolevCRCoefficients p 
   memWkpLoc_succ_iff_of_isOpen.2
     ⟨hc.memLpLoc_coeff, DJ, hc.hasWeakFDerivOn, memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩
 
+omit [CompleteSpace V] in
+/-- Construct Sobolev Cauchy–Riemann coefficients from `J ∈ W^{1,p}_loc(Ω)` with weak derivative
+`DJ` and a locally `Lᵖ` zeroth-order coefficient `S`. -/
+theorem IsSobolevCRCoefficients.of_memWkpLoc (hJ : MemWkpLoc p Ω 1 J)
+    (hDJ : HasWeakFDerivOn volume Ω J DJ) (hS : MemLpLoc p Ω S) :
+    IsSobolevCRCoefficients p Ω J DJ S :=
+  ⟨hDJ, hJ.memLpLoc, hJ.memLpLoc_of_hasWeakFDerivOn hDJ, hS⟩
+
 /-- Shared core of Green's formula for `crFormalAdjoint`: once `ξ` is in `Lʳ_loc` with
 `1/p + 1/r ≤ 1`, `J (Dξ I)` is locally integrable, and `J ξ` integrates by parts in direction `I`,
 the weak pairing `∫ ⟪D* φ, ξ⟫` equals `∫ ⟪φ, Dξ 1 + J (Dξ I) + S ξ⟫`. -/

@@ -83,9 +83,10 @@ explicit, non-asymptotic formula is the point.
   rule with the roles exchanged, for a weakly differentiable scalar `a` and a smooth
   vector-valued `g`: `D(a g) = a Dg + Da ⊗ g`.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_bilin`, `TauCeti.HasWeakLineDerivOn.contDiff_bilin`,
+  `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_bilin_of_contDiff`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_bilin`, and `TauCeti.HasWeakFDerivOn.contDiff_bilin`: the
   bilinear rule for a smooth finite-dimensional factor `f` and a weakly differentiable `g`:
-  `D(B(f, g)) = B(Df, g) + B(f, Dg)`.
+  `D(B(f, g)) = B(Df, g) + B(f, Dg)`, together with its scalar-test integration-by-parts form.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
@@ -287,6 +288,54 @@ theorem HasWeakLineDerivOn.contDiff_bilin {G H : Type*} [NormedAddCommGroup G] [
     HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
       (fun x => B (f x) (g' x) + B (fderiv ℝ f x v) (g x)) v :=
   hg.contDiffOn_bilin B hf.contDiffOn
+
+section
+
+open LineDeriv
+
+/-- Smooth-factor weak Leibniz identity for a continuous bilinear map against a scalar test
+function, derived from `TauCeti.HasWeakLineDerivOn.contDiff_bilin`. -/
+theorem HasWeakLineDerivOn.integral_lineDeriv_smul_bilin_of_contDiff {G H : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    [CompleteSpace H] [FiniteDimensional ℝ F]
+    (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g g' : E → G}
+    (hg : HasWeakLineDerivOn μ Ω g g' v) (hf : ContDiff ℝ ∞ f) (ψ : 𝓓(Ω, ℝ)) :
+    (∫ x, (∂_{v} ψ : 𝓓(Ω, ℝ)) x • B (f x) (g x) ∂μ) +
+        (∫ x, (ψ : E → ℝ) x • B (fderiv ℝ f x v) (g x) ∂μ) =
+      -∫ x, (ψ : E → ℝ) x • B (f x) (g' x) ∂μ := by
+  let b := Module.finBasis ℝ F
+  let ℓ : Fin (Module.finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
+  have hB_loc {ϕ : E → F} (hϕ : Continuous ϕ) {G' : E → G}
+      (hG' : ∀ i, LocallyIntegrableOn (fun x => B (b i) (G' x)) Ω μ) :
+      LocallyIntegrableOn (fun x => B (ϕ x) (G' x)) Ω μ := by
+    have hrep : (fun x => B (ϕ x) (G' x)) =
+        fun x => ∑ i, ℓ i (ϕ x) • B (b i) (G' x) := by
+      ext x
+      have hx : ∑ i, ℓ i (ϕ x) • b i = ϕ x := by simp [ℓ]
+      conv_lhs => rw [← hx, map_sum, sum_apply]
+      simp [map_smul]
+    rw [hrep]
+    exact locallyIntegrableOn_finsetSum Finset.univ fun i _ =>
+      (hG' i).continuousOn_smul_of_isOpen Ω.isOpen ((ℓ i).continuous.comp hϕ).continuousOn
+  have hDfv_c : Continuous fun x => fderiv ℝ f x v :=
+    (ContinuousLinearMap.apply ℝ F v).continuous.comp
+      ((hf.of_le (WithTop.coe_le_coe.2 (le_top : (1 : ℕ∞) ≤ ⊤))).continuous_fderiv one_ne_zero)
+  have h1 : Integrable (fun x => (ψ : E → ℝ) x • B (f x) (g' x)) μ :=
+    ψ.integrable_smul <| hB_loc hf.continuous fun i =>
+      (hg.clm_comp (B (b i))).locallyIntegrableOn_deriv
+  have h2 : Integrable (fun x => (ψ : E → ℝ) x • B (fderiv ℝ f x v) (g x)) μ :=
+    ψ.integrable_smul <| hB_loc hDfv_c fun i => (hg.clm_comp (B (b i))).locallyIntegrableOn
+  have hibp := (hg.contDiff_bilin B hf).integral_lineDeriv_smul_eq_neg_integral_smul ψ
+  have hsplit : ∫ x, (ψ : E → ℝ) x • (B (f x) (g' x) + B (fderiv ℝ f x v) (g x)) ∂μ =
+      (∫ x, (ψ : E → ℝ) x • B (f x) (g' x) ∂μ) +
+        ∫ x, (ψ : E → ℝ) x • B (fderiv ℝ f x v) (g x) ∂μ := by
+    rw [← integral_add h1 h2]
+    exact integral_congr_ae (.of_forall fun x => smul_add _ _ _)
+  simp only [← TestFunction.lineDerivOp_apply] at hibp
+  rw [hsplit] at hibp
+  exact eq_neg_of_add_eq_zero_left (by rw [hibp]; abel)
+
+end
 
 /-- **The bilinear Leibniz rule with a smooth factor, local Fréchet form**:
 `D(B(f, g)) = B(Df, g) + B(f, Dg)` on `Ω` for `f` smooth on `Ω` with finite-dimensional codomain
