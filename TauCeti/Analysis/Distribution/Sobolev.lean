@@ -45,6 +45,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_eq_of_toDistr_eq`: the element of
+  `H^{s,p}` defined by the tempered distribution of `v ∈ H^{s,p}` is `v`.
 * `TemperedDistribution.MemSobolev.toBesselPotentialSpace_add`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_neg`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sub`,
@@ -60,6 +62,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_smul`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
   element of `H^{s,p}` defined by such a function depends linearly on it.
+* `TemperedDistribution.besselPotential_fourierMultiplierCLM`: Fourier multipliers of temperate
+  growth commute with the Bessel potentials.
 * `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
@@ -148,6 +152,16 @@ theorem besselPotential_eq_id_of_subsingleton [Subsingleton E] (s : ℝ) :
   rw [besselPotential, show (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 from
     funext fun x ↦ by simp [Subsingleton.elim x 0], fourierMultiplierCLM_const, one_smul]
 
+/-- Fourier multipliers whose symbols have temperate growth commute with the Bessel potentials. -/
+theorem besselPotential_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (s : ℝ)
+    (f : 𝓢'(E, F)) :
+    besselPotential E F s (fourierMultiplierCLM F g f) =
+      fourierMultiplierCLM F g (besselPotential E F s f) := by
+  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  simp only [besselPotential]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hw,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply hw hg, mul_comm]
+
 variable [CompleteSpace F]
 
 /-- A finite sum of tempered distributions in `H^{s,p}` lies in `H^{s,p}`. -/
@@ -163,6 +177,13 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
     (hf : MemSobolev s p f) : MemSobolev s p (c • f) := by
   rw [← smul_one_smul ℂ c f]
   exact hf.smul _
+
+/-- The element of `H^{s,p}` defined by `f` is `v` whenever `f` is the tempered distribution
+of `v`. -/
+theorem MemSobolev.toBesselPotentialSpace_eq_of_toDistr_eq {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {v : BesselPotentialSpace E F s p}
+    (h : f = v.toDistr) : hf.toBesselPotentialSpace = v :=
+  BesselPotentialSpace.ext (by rw [toBesselPotentialSpace_toDistr, h])
 
 /-- The element of `H^{s,p}` defined by a sum is the sum of the elements defined by the
 summands. -/

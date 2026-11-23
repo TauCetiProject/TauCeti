@@ -38,8 +38,9 @@ tempered distribution
 (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply`).
 
 Two orders `s₀ ≠ s₁` cannot be handled this way, since `J^{s₀}` and `J^{s₁}` do not agree on the
-intersection; that case is the theorem of Bergh–Löfström, Theorem 6.4.5 (7), and needs `Lᵖ` bounds
-for Bessel potentials of imaginary order.
+intersection; that case, Bergh–Löfström, Theorem 6.4.5 (7), is
+`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`, proved with the
+`Lᵖ` bounds for Bessel potentials of imaginary order and with equivalent rather than equal norms.
 
 ## Main declarations
 

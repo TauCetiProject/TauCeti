@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Module.ProdUnitsHomeomorph
 public import TauCeti.Topology.Compactification.OnePoint.Collapse
 public import TauCeti.Topology.Compactification.OnePoint.Sphere
 public import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # The Pontryagin–Thom collapse of a framed tube
@@ -39,6 +40,11 @@ The collapse is unchanged up to homotopy under isotopy of the tube and homotopy 
   (`TauCeti.IsFramedTube.comp_prodUnitsHomeomorph`), and homotopic changes of framing give
   homotopic collapses (`TauCeti.pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopic`).
 
+These homotopies are relative to the points that no tube of the family meets, which stay at `∞`
+throughout (`TauCeti.pontryaginThomCollapseMap_homotopicRel`,
+`TauCeti.pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopicRel`). So for a base point
+of `M` outside the tubes they are based homotopies, with `∞` as the base point of `OnePoint V`.
+
 For `V = ℝᵏ`, composing with a homeomorphism `OnePoint ℝᵏ ≃ₜ Sᵏ` sending `∞` to a basepoint `s₀`
 gives the collapse onto the sphere, `TauCeti.pontryaginThomSphereMap`, which sends the complement
 of the tube to `s₀`.
@@ -51,6 +57,8 @@ of the tube to `s₀`.
 * `TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
   is a local homeomorphism where the normal coordinate of the map is.
 * `TauCeti.pontryaginThomCollapseMap`: the collapse as a continuous map.
+* `TauCeti.pontryaginThomCollapseMap_homotopicRel`: isotopic tubes have collapses homotopic
+  relative to the points outside every tube of the isotopy.
 * `TauCeti.pontryaginThomCollapseMap_homotopic`: isotopic tubes have homotopic collapses.
 * `TauCeti.pontryaginThomSphereMap`: the collapse onto the sphere `Sᵏ`.
 
@@ -171,6 +179,38 @@ theorem coe_pontryaginThomCollapseMap [CompactSpace S] [T2Space M] (hτ : IsOpen
     ⇑(pontryaginThomCollapseMap hτ) = pontryaginThomCollapse τ :=
   (rfl)
 
+/-- **Isotopic tubes have homotopic collapses, relative to the points no tube meets.** Let
+`τ : [0, 1] × (S × V) → M` be a family of tubes whose total map `(t, p) ↦ (t, τ (t, p))` is an open
+embedding, with compact `S` and Hausdorff `M`. Then the Pontryagin–Thom collapses of its ends
+`τ₀ = τ (0, ·)` and `τ₁ = τ (1, ·)` are homotopic relative to the complement of the image of `τ`:
+a point that no tube of the family meets stays at `∞` throughout. In particular, a base point of
+`M` outside every tube of the family gives a based homotopy. -/
+theorem pontryaginThomCollapseMap_homotopicRel [CompactSpace S] [T2Space M] {τ₀ τ₁ : S × V → M}
+    (h₀ : IsOpenEmbedding τ₀) (h₁ : IsOpenEmbedding τ₁) {τ : unitInterval × (S × V) → M}
+    (hτ : IsOpenEmbedding fun q : unitInterval × (S × V) ↦ (q.1, τ q))
+    (hτ₀ : ∀ p, τ (0, p) = τ₀ p) (hτ₁ : ∀ p, τ (1, p) = τ₁ p) :
+    (pontryaginThomCollapseMap h₀).HomotopicRel (pontryaginThomCollapseMap h₁) (range τ)ᶜ := by
+  refine ⟨{ toFun := fun p ↦ pontryaginThomCollapse (fun q ↦ τ (p.1, q)) p.2
+            continuous_toFun := by
+              unfold pontryaginThomCollapse
+              exact continuous_onePointCollapse_slice (g := fun q ↦ q.2.2) hτ
+                (isProperMap_snd_of_compactSpace.comp
+                  (isProperMap_snd_of_compactSpace (X := unitInterval)))
+            map_zero_left := fun m ↦ ?_
+            map_one_left := fun m ↦ ?_
+            prop' := fun t m hm ↦ ?_ }⟩
+  · simp only [coe_pontryaginThomCollapseMap]
+    congr 1
+    exact funext hτ₀
+  · simp only [coe_pontryaginThomCollapseMap]
+    congr 1
+    exact funext hτ₁
+  · -- Outside the image of `τ`, both the collapse of `τ t` and that of `τ₀ = τ 0` are `∞`.
+    have hm' (q : unitInterval × (S × V)) : τ q ≠ m := fun hq ↦ hm ⟨q, hq⟩
+    simp only [ContinuousMap.coe_mk, coe_pontryaginThomCollapseMap]
+    rw [pontryaginThomCollapse_of_notMem_range fun ⟨p, hp⟩ ↦ hm' _ hp,
+      pontryaginThomCollapse_of_notMem_range fun ⟨p, hp⟩ ↦ hm' (0, p) ((hτ₀ p).trans hp)]
+
 /-- **Isotopic tubes have homotopic collapses.** Let `τ : [0, 1] × (S × V) → M` be a family of
 tubes whose total map `(t, p) ↦ (t, τ (t, p))` is an open embedding, with compact `S` and
 Hausdorff `M`. Then the Pontryagin–Thom collapses of its ends `τ₀ = τ (0, ·)` and
@@ -179,21 +219,8 @@ theorem pontryaginThomCollapseMap_homotopic [CompactSpace S] [T2Space M] {τ₀ 
     (h₀ : IsOpenEmbedding τ₀) (h₁ : IsOpenEmbedding τ₁) {τ : unitInterval × (S × V) → M}
     (hτ : IsOpenEmbedding fun q : unitInterval × (S × V) ↦ (q.1, τ q))
     (hτ₀ : ∀ p, τ (0, p) = τ₀ p) (hτ₁ : ∀ p, τ (1, p) = τ₁ p) :
-    (pontryaginThomCollapseMap h₀).Homotopic (pontryaginThomCollapseMap h₁) := by
-  refine ⟨{ toFun := fun p ↦ pontryaginThomCollapse (fun q ↦ τ (p.1, q)) p.2
-            continuous_toFun := by
-              unfold pontryaginThomCollapse
-              exact continuous_onePointCollapse_slice (g := fun q ↦ q.2.2) hτ
-                (isProperMap_snd_of_compactSpace.comp
-                  (isProperMap_snd_of_compactSpace (X := unitInterval)))
-            map_zero_left := fun m ↦ ?_
-            map_one_left := fun m ↦ ?_ }⟩
-  · simp only [coe_pontryaginThomCollapseMap]
-    congr 1
-    exact funext hτ₀
-  · simp only [coe_pontryaginThomCollapseMap]
-    congr 1
-    exact funext hτ₁
+    (pontryaginThomCollapseMap h₀).Homotopic (pontryaginThomCollapseMap h₁) :=
+  (pontryaginThomCollapseMap_homotopicRel h₀ h₁ hτ hτ₀ hτ₁).homotopic
 
 end Collapse
 
@@ -219,6 +246,30 @@ theorem pontryaginThomCollapse_comp_prodUnitsHomeomorph_apply (hτ : Injective �
     ((↑(A x)⁻¹ : V →L[𝕜] V) v)
   simpa [← mul_apply_eq_comp] using h
 
+/-- **Homotopic framings give homotopic collapses, relative to the complement of the tube.** For
+a continuous family `A : [0, 1] × S → GL(V)` of linear automorphisms, the Pontryagin–Thom
+collapses of the tubes `(x, v) ↦ τ (x, A (0, x) v)` and `(x, v) ↦ τ (x, A (1, x) v)` are
+homotopic relative to the complement of the image of `τ`. -/
+theorem pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopicRel [CompactSpace S]
+    [T2Space M] (hτ : IsOpenEmbedding τ) {A : unitInterval × S → (V →L[𝕜] V)ˣ}
+    (hA : Continuous A) :
+    (pontryaginThomCollapseMap (hτ.comp (prodUnitsHomeomorph (fun x ↦ A (0, x))
+        (hA.comp (Continuous.prodMk_right 0))).isOpenEmbedding)).HomotopicRel
+      (pontryaginThomCollapseMap (hτ.comp (prodUnitsHomeomorph (fun x ↦ A (1, x))
+        (hA.comp (Continuous.prodMk_right 1))).isOpenEmbedding)) (range τ)ᶜ := by
+  -- The total map of the family of reframed tubes is `id × τ` after a homeomorphism of
+  -- `[0, 1] × (S × V)` that applies `A` fibrewise.
+  let Φ : unitInterval × (S × V) ≃ₜ unitInterval × (S × V) :=
+    ((Homeomorph.prodAssoc unitInterval S V).symm.trans (prodUnitsHomeomorph A hA)).trans
+      (Homeomorph.prodAssoc unitInterval S V)
+  refine (pontryaginThomCollapseMap_homotopicRel _ _
+    (τ := fun q ↦ τ (q.2.1, (A (q.1, q.2.1) : V →L[𝕜] V) q.2.2)) ?_ (fun _ ↦ by simp)
+    fun _ ↦ by simp).mono (compl_subset_compl.2 (range_subset_iff.2 fun _ ↦ mem_range_self _))
+  convert (IsOpenEmbedding.id.prodMap hτ).comp Φ.isOpenEmbedding using 1
+  -- `Homeomorph.prodAssoc` has no `apply` simp lemmas; after the reframing is rewritten, the
+  -- reassociations are the identity on underlying triples.
+  ext ⟨t, x, v⟩ <;> simp [Φ, Homeomorph.trans_apply] <;> rfl
+
 /-- **Homotopic framings give homotopic collapses.** For a continuous family
 `A : [0, 1] × S → GL(V)` of linear automorphisms, the Pontryagin–Thom collapses of the tubes
 `(x, v) ↦ τ (x, A (0, x) v)` and `(x, v) ↦ τ (x, A (1, x) v)` are homotopic. -/
@@ -227,19 +278,8 @@ theorem pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopic [CompactSpa
     (pontryaginThomCollapseMap (hτ.comp (prodUnitsHomeomorph (fun x ↦ A (0, x))
         (hA.comp (Continuous.prodMk_right 0))).isOpenEmbedding)).Homotopic
       (pontryaginThomCollapseMap (hτ.comp (prodUnitsHomeomorph (fun x ↦ A (1, x))
-        (hA.comp (Continuous.prodMk_right 1))).isOpenEmbedding)) := by
-  -- The total map of the family of reframed tubes is `id × τ` after a homeomorphism of
-  -- `[0, 1] × (S × V)` that applies `A` fibrewise.
-  let Φ : unitInterval × (S × V) ≃ₜ unitInterval × (S × V) :=
-    ((Homeomorph.prodAssoc unitInterval S V).symm.trans (prodUnitsHomeomorph A hA)).trans
-      (Homeomorph.prodAssoc unitInterval S V)
-  refine pontryaginThomCollapseMap_homotopic _ _
-    (τ := fun q ↦ τ (q.2.1, (A (q.1, q.2.1) : V →L[𝕜] V) q.2.2)) ?_ (fun _ ↦ by simp)
-    fun _ ↦ by simp
-  convert (IsOpenEmbedding.id.prodMap hτ).comp Φ.isOpenEmbedding using 1
-  -- `Homeomorph.prodAssoc` has no `apply` simp lemmas; after the reframing is rewritten, the
-  -- reassociations are the identity on underlying triples.
-  ext ⟨t, x, v⟩ <;> simp [Φ, Homeomorph.trans_apply] <;> rfl
+        (hA.comp (Continuous.prodMk_right 1))).isOpenEmbedding)) :=
+  (pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopicRel hτ hA).homotopic
 
 /-- For `V = ℝᵏ`, the Pontryagin–Thom collapse onto the sphere `Sᵏ ⊆ ℝᵏ⁺¹`: the collapse followed
 by a homeomorphism `OnePoint ℝᵏ ≃ₜ Sᵏ` sending `∞` to the basepoint `s₀`. -/
@@ -258,6 +298,16 @@ theorem coe_pontryaginThomSphereMap {k : ℕ} [CompactSpace S] [T2Space M]
     ⇑(pontryaginThomSphereMap hτ s₀) = onePointHomeomorphSphere k s₀ ∘ pontryaginThomCollapse τ :=
   (rfl)
 
+/-- The collapse onto the sphere is the Pontryagin–Thom collapse followed by the homeomorphism
+`OnePoint ℝᵏ ≃ₜ Sᵏ`, as continuous maps. -/
+theorem pontryaginThomSphereMap_eq_comp {k : ℕ} [CompactSpace S] [T2Space M]
+    {τ : S × (Fin k → ℝ) → M} (hτ : IsOpenEmbedding τ)
+    (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
+    pontryaginThomSphereMap hτ s₀ =
+      (onePointHomeomorphSphere k s₀ : C(OnePoint (Fin k → ℝ), _)).comp
+        (pontryaginThomCollapseMap hτ) :=
+  (rfl)
+
 @[simp]
 theorem pontryaginThomSphereMap_apply {k : ℕ} [CompactSpace S] [T2Space M]
     {τ : S × (Fin k → ℝ) → M} (hτ : IsOpenEmbedding τ)
@@ -273,15 +323,17 @@ theorem pontryaginThomSphereMap_of_notMem_range {k : ℕ} [CompactSpace S] [T2Sp
     pontryaginThomSphereMap hτ s₀ m = s₀ := by
   simp [pontryaginThomSphereMap, pontryaginThomCollapse_of_notMem_range hm]
 
-/-- Isotopic tubes have homotopic collapses onto the sphere. -/
-theorem pontryaginThomSphereMap_homotopic {k : ℕ} [CompactSpace S] [T2Space M]
+/-- Isotopic tubes have homotopic collapses onto the sphere, relative to the points no tube of the
+isotopy meets: these stay at the basepoint `s₀` throughout. -/
+theorem pontryaginThomSphereMap_homotopicRel {k : ℕ} [CompactSpace S] [T2Space M]
     {τ₀ τ₁ : S × (Fin k → ℝ) → M} (h₀ : IsOpenEmbedding τ₀) (h₁ : IsOpenEmbedding τ₁)
     {τ : unitInterval × (S × (Fin k → ℝ)) → M}
     (hτ : IsOpenEmbedding fun q : unitInterval × (S × (Fin k → ℝ)) ↦ (q.1, τ q))
     (hτ₀ : ∀ p, τ (0, p) = τ₀ p) (hτ₁ : ∀ p, τ (1, p) = τ₁ p)
     (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
-    (pontryaginThomSphereMap h₀ s₀).Homotopic (pontryaginThomSphereMap h₁ s₀) :=
-  (ContinuousMap.Homotopic.refl _).comp (pontryaginThomCollapseMap_homotopic h₀ h₁ hτ hτ₀ hτ₁)
+    (pontryaginThomSphereMap h₀ s₀).HomotopicRel (pontryaginThomSphereMap h₁ s₀) (range τ)ᶜ := by
+  rw [pontryaginThomSphereMap_eq_comp, pontryaginThomSphereMap_eq_comp]
+  exact (pontryaginThomCollapseMap_homotopicRel h₀ h₁ hτ hτ₀ hτ₁).comp_continuousMap _
 
 end Framing
 
