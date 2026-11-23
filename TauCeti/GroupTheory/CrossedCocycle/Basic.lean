@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupExtension.Basic
+public import Mathlib.Algebra.Group.Action.End
 
 /-!
 # Crossed cocycles and their gauge action
@@ -20,17 +20,21 @@ on crossed cocycles, and an `α`-equivariant homomorphism of coefficient groups 
 cocycles to crossed cocycles compatibly with gauge. For trivial `α` crossed cocycles are exactly
 the homomorphisms `Γ →* H`.
 
-When `Γ` is a group, a crossed cocycle is the same thing as a splitting `γ ↦ (c γ, γ)` of the
-semidirect product extension `H → H ⋊[α] Γ → Γ`, with inverse the first coordinate; gauge by `h`
-becomes conjugation of the splitting by `SemidirectProduct.inl h`, so gauge orbits are the
-`H`-conjugacy classes of splittings. This is the form in which a Langlands parameter with values
-in an L-group `H^∨ ⋊ Γ` is a crossed cocycle with values in the dual group `H^∨`.
-
 No topology is involved: the coefficient groups that occur are the groups of points `H^∨(B)` of a
 group scheme on arbitrary coefficient algebras `B`, and the action is part of the data of the
-semidirect product, so it is given as a homomorphism to `MulAut H`. For topological `Γ` and `H`,
-continuous crossed cocycles with gauge are compared with `TauCeti.NonabelianH1` in
-`TauCeti/GroupTheory/CrossedCocycle/NonabelianH1.lean`.
+semidirect product, so it is given as a homomorphism to `MulAut H`.
+
+Related files:
+
+* `TauCeti/GroupTheory/CrossedCocycle/Splitting.lean` identifies crossed cocycles for `β ∘ η`,
+  where `η : Γ →* Q` and `β : Q →* MulAut H`, with the homomorphisms `Γ →* H ⋊[β] Q` lifting `η`,
+  and, for `η` the identity of a group, with the splittings of the semidirect product. This is the
+  underlying algebraic correspondence by which a Langlands parameter `Γ →* H^∨ ⋊ Γ` projecting to
+  the identity of `Γ` is a crossed cocycle with values in the dual group `H^∨`.
+* `TauCeti/GroupTheory/CrossedCocycle/NonabelianH1.lean` identifies the continuous crossed
+  cocycles, for topological groups and an action `α` agreeing with a `MulDistribMulAction`, with
+  the cocycles of `TauCeti.NonabelianH1`. When `Γ` is discrete every crossed cocycle is
+  continuous, so all crossed cocycles are cocycles of `TauCeti.NonabelianH1`.
 
 ## Main definitions
 
@@ -39,16 +43,13 @@ continuous crossed cocycles with gauge are compared with `TauCeti.NonabelianH1` 
 * `TauCeti.CrossedCocycle.map`: change of coefficients along an equivariant homomorphism.
 * `TauCeti.CrossedCocycle.equivMonoidHom`: for the trivial action, crossed cocycles are
   homomorphisms.
-* `TauCeti.CrossedCocycle.toSplitting`: the splitting `γ ↦ (c γ, γ)` of `H ⋊[α] Γ`, and
-  `TauCeti.CrossedCocycle.splittingEquiv`, the equivalence it defines.
+* `TauCeti.CrossedCocycle.conjInv`: the crossed cocycle `γ ↦ γ⁻¹` for conjugation.
 
 ## Main results
 
 * `TauCeti.CrossedCocycle.map_smul`: change of coefficients commutes with gauge.
-* `TauCeti.CrossedCocycle.toSplitting_smul`: gauge by `h` conjugates the splitting by
-  `SemidirectProduct.inl h`.
-* `TauCeti.CrossedCocycle.isConj_toSplitting_iff`: two splittings are conjugate exactly when the
-  crossed cocycles are gauge equivalent.
+* `TauCeti.CrossedCocycle.map_id` and `TauCeti.CrossedCocycle.map_map`: change of coefficients
+  is functorial.
 
 ## References
 
@@ -60,8 +61,6 @@ continuous crossed cocycles with gauge are compared with `TauCeti.NonabelianH1` 
 public section
 
 namespace TauCeti
-
-open SemidirectProduct
 
 variable {Γ H : Type*} [Monoid Γ] [Group H]
 
@@ -107,10 +106,8 @@ theorem apply_one (c : CrossedCocycle α) : c 1 = 1 := by
 @[simp]
 theorem apply_inv {Γ : Type*} [Group Γ] {α : Γ →* MulAut H} (c : CrossedCocycle α) (γ : Γ) :
     c γ⁻¹ = α γ⁻¹ (c γ)⁻¹ := by
-  have h := c.apply_mul γ⁻¹ γ
-  rw [inv_mul_cancel, apply_one, eq_comm, mul_eq_one_iff_eq_inv] at h
-  rw [h]
-  exact (map_inv (α γ⁻¹) (c γ)).symm
+  refine (mul_eq_one_iff_eq_inv.mp ?_).trans (map_inv (α γ⁻¹) (c γ)).symm
+  simpa using (c.apply_mul γ⁻¹ γ).symm
 
 /-- The unit crossed cocycle `γ ↦ 1`. -/
 instance : One (CrossedCocycle α) :=
@@ -164,14 +161,17 @@ theorem map_apply (f : H →* H') (hf : ∀ γ x, f (α γ x) = α' γ (f x)) (c
     (γ : Γ) : c.map f hf γ = f (c γ) :=
   (rfl)
 
+/-- Change of coefficients along the identity does nothing. -/
 @[simp]
 theorem map_id (c : CrossedCocycle α) : c.map (MonoidHom.id H) (fun _ _ ↦ rfl) = c :=
-  (rfl)
+  ext fun _ ↦ by simp
 
+/-- Successive changes of coefficients agree with the change along the composite. -/
+@[simp]
 theorem map_map (f : H →* H') (hf : ∀ γ x, f (α γ x) = α' γ (f x)) (g : H' →* H'')
     (hg : ∀ γ x, g (α' γ x) = α'' γ (g x)) (c : CrossedCocycle α) :
     (c.map f hf).map g hg = c.map (g.comp f) (fun γ x ↦ by simp [hf, hg]) :=
-  (rfl)
+  ext fun _ ↦ by simp
 
 @[simp]
 theorem map_one (f : H →* H') (hf : ∀ γ x, f (α γ x) = α' γ (f x)) :
@@ -193,10 +193,10 @@ def equivMonoidHom : CrossedCocycle (1 : Γ →* MulAut H) ≃ (Γ →* H) where
   toFun c :=
     { toFun := c
       map_one' := c.apply_one
-      map_mul' γ δ := by simpa using c.apply_mul γ δ }
-  invFun f := ⟨f, fun γ δ ↦ by simp⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+      map_mul' γ δ := by rw [c.apply_mul, MonoidHom.one_apply, MulAut.one_apply] }
+  invFun f := ⟨f, fun γ δ ↦ by rw [map_mul, MonoidHom.one_apply, MulAut.one_apply]⟩
+  left_inv c := ext fun _ ↦ by simp only [coe_mk, MonoidHom.coe_mk, OneHom.coe_mk]
+  right_inv f := MonoidHom.ext fun _ ↦ by simp only [coe_mk, MonoidHom.coe_mk, OneHom.coe_mk]
 
 @[simp]
 theorem equivMonoidHom_apply (c : CrossedCocycle (1 : Γ →* MulAut H)) (γ : Γ) :
@@ -207,86 +207,16 @@ theorem equivMonoidHom_apply (c : CrossedCocycle (1 : Γ →* MulAut H)) (γ : �
 theorem equivMonoidHom_symm_apply (f : Γ →* H) (γ : Γ) : equivMonoidHom.symm f γ = f γ :=
   (rfl)
 
-/-! ### Splittings of the semidirect product -/
+/-! ### The conjugation action -/
 
-section Splitting
+/-- A group acting on itself by conjugation has the crossed cocycle `γ ↦ γ⁻¹`. -/
+def conjInv (G : Type*) [Group G] : CrossedCocycle (MulAut.conj : G →* MulAut G) where
+  toFun γ := γ⁻¹
+  map_mul' γ δ := by simp [mul_assoc]
 
-variable {Γ : Type*} [Group Γ] {α : Γ →* MulAut H}
-
-/-- The splitting `γ ↦ (c γ, γ)` of the semidirect product extension `H → H ⋊[α] Γ → Γ`
-attached to a crossed cocycle `c`. -/
-def toSplitting (c : CrossedCocycle α) : (toGroupExtension α).Splitting where
-  toFun γ := ⟨c γ, γ⟩
-  map_one' := by ext <;> simp
-  map_mul' γ δ := by ext <;> simp [c.apply_mul]
-  rightInverse_rightHom _ := rfl
-
-theorem toSplitting_apply (c : CrossedCocycle α) (γ : Γ) : c.toSplitting γ = ⟨c γ, γ⟩ :=
+@[simp]
+theorem conjInv_apply {G : Type*} [Group G] (γ : G) : conjInv G γ = γ⁻¹ :=
   (rfl)
-
-@[simp]
-theorem left_toSplitting (c : CrossedCocycle α) (γ : Γ) : (c.toSplitting γ).left = c γ :=
-  (rfl)
-
-/-- The unit crossed cocycle gives the canonical splitting `SemidirectProduct.inr`. -/
-@[simp]
-theorem toSplitting_one : (1 : CrossedCocycle α).toSplitting = inr_splitting α :=
-  -- Mathlib states no evaluation lemma for `inr_splitting`, whose values are `inr γ = (1, γ)`.
-  DFunLike.ext _ _ fun _ ↦ rfl
-
-/-- Gauge by `h` conjugates the splitting by `SemidirectProduct.inl h`. -/
-theorem toSplitting_smul (h : H) (c : CrossedCocycle α) (γ : Γ) :
-    (h • c).toSplitting γ = inl h * c.toSplitting γ * (inl h)⁻¹ := by
-  ext <;> simp [mul_assoc, right_splitting]
-
-/-- The crossed cocycle given by the first coordinate of a splitting of `H ⋊[α] Γ`. -/
-def ofSplitting (s : (toGroupExtension α).Splitting) : CrossedCocycle α where
-  toFun γ := (s γ).left
-  map_mul' γ δ := by
-    rw [map_mul, mul_left, right_splitting]
-
-@[simp]
-theorem ofSplitting_apply (s : (toGroupExtension α).Splitting) (γ : Γ) :
-    ofSplitting s γ = (s γ).left :=
-  (rfl)
-
-/-- Crossed cocycles are equivalent to splittings of the semidirect product extension, by
-`c ↦ (γ ↦ (c γ, γ))` with inverse the first coordinate. -/
-def splittingEquiv : CrossedCocycle α ≃ (toGroupExtension α).Splitting where
-  toFun := toSplitting
-  invFun := ofSplitting
-  left_inv _ := rfl
-  right_inv s := DFunLike.ext _ _ fun γ ↦ by
-    ext
-    · rfl
-    · exact (right_splitting s γ).symm
-
-@[simp]
-theorem splittingEquiv_apply (c : CrossedCocycle α) : splittingEquiv c = c.toSplitting :=
-  (rfl)
-
-@[simp]
-theorem splittingEquiv_symm_apply (s : (toGroupExtension α).Splitting) :
-    splittingEquiv.symm s = ofSplitting s :=
-  (rfl)
-
-theorem toSplitting_injective : Function.Injective (toSplitting (α := α)) :=
-  splittingEquiv.injective
-
-@[simp]
-theorem toSplitting_inj {c c' : CrossedCocycle α} : c.toSplitting = c'.toSplitting ↔ c = c' :=
-  toSplitting_injective.eq_iff
-
-/-- The splittings of two crossed cocycles are `H`-conjugate exactly when the crossed cocycles
-are gauge equivalent. -/
-theorem isConj_toSplitting_iff {c c' : CrossedCocycle α} :
-    (toGroupExtension α).IsConj c.toSplitting c'.toSplitting ↔ ∃ h : H, h • c' = c := by
-  simp only [GroupExtension.IsConj, toGroupExtension_inl, ← toSplitting_smul]
-  refine exists_congr fun h ↦ ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
-  · exact (toSplitting_injective (DFunLike.ext' hc)).symm
-  · rw [← hc]
-
-end Splitting
 
 end CrossedCocycle
 

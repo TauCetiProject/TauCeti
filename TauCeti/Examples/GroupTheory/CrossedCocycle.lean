@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.CrossedCocycle.Basic
+public import TauCeti.GroupTheory.CrossedCocycle.Splitting
 public import Mathlib.Algebra.Field.Rat
 public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.GroupTheory.Perm.Fin
@@ -22,9 +22,9 @@ splitting `γ ↦ (c γ, γ)` of the semidirect product.
   conventions `h⁻¹ * c γ * α γ h` or `h * c γ * α γ h` would give `1/4` or `1`.
 * For the same action, the inverse of the splitting value `(4, 1)` is `(4, -1)`, whereas for the
   trivial action the inverse of `(4, 1)` is `(1/4, -1)`: the action enters the first coordinate.
-* A group acting on itself by conjugation has the crossed cocycle `γ ↦ γ⁻¹`, which is not a
-  homomorphism for the symmetric group `S₃`; so crossed cocycles of a nontrivial action are not in
-  general homomorphisms.
+* A group acting on itself by conjugation has the crossed cocycle `γ ↦ γ⁻¹`
+  (`TauCeti.CrossedCocycle.conjInv`), which is not a homomorphism for the symmetric group `S₃`;
+  so crossed cocycles of a nontrivial action are not in general homomorphisms.
 -/
 
 public section
@@ -58,7 +58,7 @@ theorem inv_toSplitting_gauge_two :
   · simp only [inv_left, left_toSplitting, right_splitting, CrossedCocycle.smul_apply,
       CrossedCocycle.one_apply]
     simp [inversion, two]
-  · simp [right_splitting]
+  · simp
 
 /-- For the trivial action, the inverse of the splitting value `(4, 1)` is `(1/4, -1)`. -/
 theorem inv_toSplitting_trivial :
@@ -67,20 +67,16 @@ theorem inv_toSplitting_trivial :
       ⟨(two * two)⁻¹, ofAdd (-1)⟩ := by
   ext
   · simp
-  · simp [right_splitting]
-
-/-- A group acting on itself by conjugation has the crossed cocycle `γ ↦ γ⁻¹`. -/
-def invCocycle (G : Type*) [Group G] : TauCeti.CrossedCocycle (MulAut.conj : G →* MulAut G) where
-  toFun γ := γ⁻¹
-  map_mul' γ δ := by simp [mul_assoc]
+  · simp
 
 /-- The crossed cocycle `γ ↦ γ⁻¹` of `S₃` for the conjugation action is not a homomorphism. -/
-theorem not_forall_invCocycle_mul :
+theorem not_forall_conjInv_mul :
     ¬ ∀ γ δ : Equiv.Perm (Fin 3),
-      invCocycle (Equiv.Perm (Fin 3)) (γ * δ) =
-        invCocycle (Equiv.Perm (Fin 3)) γ * invCocycle (Equiv.Perm (Fin 3)) δ := by
+      conjInv (Equiv.Perm (Fin 3)) (γ * δ) =
+        conjInv (Equiv.Perm (Fin 3)) γ * conjInv (Equiv.Perm (Fin 3)) δ := by
   intro h
   have := h (Equiv.swap 0 1) (Equiv.swap 1 2)
+  rw [conjInv_apply, conjInv_apply, conjInv_apply] at this
   revert this
   decide
 

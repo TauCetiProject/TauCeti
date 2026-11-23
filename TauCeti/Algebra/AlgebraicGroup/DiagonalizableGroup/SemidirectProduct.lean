@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Semidirect
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.OneCocycle
-public import TauCeti.GroupTheory.CrossedCocycle.Basic
-public import Mathlib.GroupTheory.GroupExtension.Defs
+public import TauCeti.GroupTheory.CrossedCocycle.Splitting
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 import TauCeti.Algebra.Coalgebra.Convolution
 
@@ -143,7 +142,7 @@ variable (A) in
 theorem coe_pointSplitting (hb : IsRegularCocycle₁ b) :
     ⇑(hb.pointSplitting A) = pointSection V A b :=
   funext fun g ↦ SemidirectProduct.ext
-    (Multiplicative.toAdd.injective (by simp [pointSplitting])) (by simp [right_splitting])
+    (Multiplicative.toAdd.injective (by simp [pointSplitting])) (by simp)
 
 /-- **Splittings by regular cocycles are conjugate to the standard splitting.** On the points
 over every commutative `R`-algebra `A`, the splitting defined by a regular cocycle `b` is the
