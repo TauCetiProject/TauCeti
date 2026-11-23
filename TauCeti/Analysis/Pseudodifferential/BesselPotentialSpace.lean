@@ -22,6 +22,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
@@ -345,7 +346,8 @@ private theorem exists_eLpNorm_fourierInv_shiftedMultiplier_le_mul [NeZero n] {p
     calc _ ≤ S * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) * ρ := hS k hk η ζ
       _ ≤ S * (‖ζ‖ ^ k)⁻¹ * ρ := by
           gcongr
-          exact one_add_norm_sq_rpow_neg_le_inv_norm_pow hζ k
+          simpa [add_comm] using
+            norm_sq_add_rpow_div_two_le zero_le_one hζ (neg_nonpos.2 (Nat.cast_nonneg k))
       _ = _ := by ring
   have hgrowth : (shiftedMultiplier b η).HasTemperateGrowth :=
     Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow (m := 0)

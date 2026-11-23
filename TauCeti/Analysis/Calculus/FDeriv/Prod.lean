@@ -71,6 +71,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
+  second coordinate, with no differentiability assumption.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
 * `HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd`: the map `p ↦ u₁ p.1 - u₂ p.2` of two scalar
@@ -99,6 +101,10 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   `‖Df‖ max 1 ‖Du‖`.
 * `TauCeti.exists_bound_norm_fderiv_comp_graph`: along maps with values in a compact set and
   uniformly bounded derivatives, the derivatives of `x ↦ f (x, uᵢ x)` are uniformly bounded.
+* `TauCeti.fderiv_lineMap_apply`, `TauCeti.fderiv_lineMap_apply_zero_one`,
+  `TauCeti.norm_fderiv_lineMap_comp_inl_le`: the derivative of the straight-line homotopy
+  `(x, t) ↦ AffineMap.lineMap (f x) (g x) t`, its time derivative `g x - f x`, and the bound of its
+  spatial derivative by common bounds for `Df` and `Dg`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
@@ -192,6 +198,15 @@ differentiability is needed: otherwise the derivative is zero. -/
 theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+
+/-- A map `w ↦ (c, g w)` with a constant first coordinate has the derivative of `g` in the second
+coordinate, with no differentiability assumption. -/
+theorem fderiv_const_prodMk (c : F) (g : E → G) (x : E) :
+    fderiv 𝕜 (fun w ↦ (c, g w)) x = (ContinuousLinearMap.inr 𝕜 F G).comp (fderiv 𝕜 g x) := by
+  have h : (fun w ↦ (c, g w)) = fun w ↦ (c, 0) + (ContinuousLinearMap.inr 𝕜 F G ∘ g) w := by
+    ext w <;> simp
+  rw [h, fderiv_const_add, (ContinuousLinearMap.inr 𝕜 F G).fderiv_comp_left_of_leftInverse
+    (ContinuousLinearMap.snd 𝕜 F G) (fun _ ↦ rfl)]
 
 /-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
 `z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
@@ -540,6 +555,56 @@ theorem norm_fderiv_mul_fst_le {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       (norm_nonneg _) hM
     rw [← norm_deriv_eq_norm_fderiv]
     exact hA'
+
+section LineMap
+
+/-! ### The straight-line homotopy between two maps -/
+
+/-- The derivative of the straight-line homotopy `(x, t) ↦ AffineMap.lineMap (f x) (g x) t` from
+`f` to `g` at `(x, t)`, applied to `(v, s)`: its spatial part interpolates between `Df x v` and
+`Dg x v`, and its time part is `s • (g x - f x)`. -/
+theorem fderiv_lineMap_apply {f g : E → F} {x : E} (hf : DifferentiableAt 𝕜 f x)
+    (hg : DifferentiableAt 𝕜 g x) (t : 𝕜) (v : E) (s : 𝕜) :
+    fderiv 𝕜 (fun p : E × 𝕜 ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) (x, t) (v, s) =
+      fderiv 𝕜 f x v + t • (fderiv 𝕜 g x v - fderiv 𝕜 f x v) + s • (g x - f x) := by
+  have hfun : (fun p : E × 𝕜 ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) =
+      fun p ↦ f p.1 + p.2 • (g p.1 - f p.1) :=
+    funext fun p ↦ by rw [AffineMap.lineMap_apply_module', add_comm]
+  have hfst : HasFDerivAt (Prod.fst : E × 𝕜 → E) (ContinuousLinearMap.fst 𝕜 E 𝕜) (x, t) :=
+    hasFDerivAt_fst
+  have hf' := hf.hasFDerivAt.comp (x, t) hfst
+  have hg' := hg.hasFDerivAt.comp (x, t) hfst
+  have h : HasFDerivAt (fun p : E × 𝕜 ↦ f p.1 + p.2 • (g p.1 - f p.1)) _ (x, t) :=
+    hf'.add (hasFDerivAt_snd.smul (hg'.sub hf'))
+  rw [hfun, h.fderiv]
+  simp [add_assoc]
+
+/-- The time derivative of the straight-line homotopy from `f` to `g` at `(x, t)` is
+`g x - f x`. -/
+theorem fderiv_lineMap_apply_zero_one {f g : E → F} {x : E} (hf : DifferentiableAt 𝕜 f x)
+    (hg : DifferentiableAt 𝕜 g x) (t : 𝕜) :
+    fderiv 𝕜 (fun p : E × 𝕜 ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) (x, t) (0, 1) =
+      g x - f x := by
+  simp [fderiv_lineMap_apply hf hg]
+
+/-- For `t ∈ [0, 1]`, the spatial derivative of the straight-line homotopy from `f` to `g` at
+`(x, t)` is a convex combination of `Df x` and `Dg x`, so its norm is at most any common bound for
+their norms. -/
+theorem norm_fderiv_lineMap_comp_inl_le {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f g : E → F} {x : E} (hf : DifferentiableAt ℝ f x)
+    (hg : DifferentiableAt ℝ g x) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) {L : ℝ}
+    (hfL : ‖fderiv ℝ f x‖ ≤ L) (hgL : ‖fderiv ℝ g x‖ ≤ L) :
+    ‖(fderiv ℝ (fun p : E × ℝ ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) (x, t)).comp
+      (.inl ℝ E ℝ)‖ ≤ L := by
+  have h : (fderiv ℝ (fun p : E × ℝ ↦ AffineMap.lineMap (f p.1) (g p.1) p.2) (x, t)).comp
+      (.inl ℝ E ℝ) = fderiv ℝ f x + t • (fderiv ℝ g x - fderiv ℝ f x) := by
+    ext v
+    simp [fderiv_lineMap_apply hf hg]
+  rw [h, ← mem_closedBall_zero_iff]
+  exact (convex_closedBall (0 : E →L[ℝ] F) L).add_smul_sub_mem
+    (mem_closedBall_zero_iff.2 hfL) (mem_closedBall_zero_iff.2 hgL) ht
+
+end LineMap
 
 end TauCeti
 

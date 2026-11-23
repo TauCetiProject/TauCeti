@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Covering.Quotient
 import TauCeti.Topology.Covering.Proper
@@ -71,6 +72,11 @@ Neither normality nor a separation axiom is needed.
   map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
+* `IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.ne_self_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul`: for a quotient cover by `ℤˣ`, the
+  involution `e ↦ -1 • e` lies over the base, fixes no point, and exchanges the two points of each
+  fibre.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
   discrete additive subgroup is a quotient covering map.
 
@@ -331,6 +337,38 @@ theorem _root_.IsQuotientCoveringMap.of_smul_eq {G' : Type*} [Group G'] [MulActi
     refine ⟨U, hU, fun g' hg' ↦ ?_⟩
     simp only [he'] at hg'
     simpa using hdisj (e.symm g') hg'
+
+/-! ### Quotient covers by `ℤˣ` -/
+
+section Units
+
+variable [MulAction ℤˣ E] (hq : IsQuotientCoveringMap q ℤˣ) {σ : E → E}
+  (hσ : ∀ e, σ e = (-1 : ℤˣ) • e)
+
+include hq hσ
+
+/-- The involution `e ↦ -1 • e` of a quotient cover by `ℤˣ` lies over the base. -/
+theorem _root_.IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul : q ∘ σ = q :=
+  funext fun e ↦ (congrArg q (hσ e)).trans (hq.map_smul _)
+
+/-- The involution `e ↦ -1 • e` of a quotient cover by `ℤˣ` fixes no point, the action being
+free. -/
+theorem _root_.IsQuotientCoveringMap.ne_self_of_forall_eq_neg_one_smul (e : E) : σ e ≠ e := by
+  have := hq.isCancelSMul
+  rw [hσ]
+  intro h
+  exact absurd (IsCancelSMul.right_cancel _ _ e (h.trans (one_smul ℤˣ e).symm)) (by decide)
+
+/-- Two points of a quotient cover by `ℤˣ` with the same image are equal or exchanged by
+`e ↦ -1 • e`. -/
+theorem _root_.IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul (e e' : E)
+    (h : q e' = q e) : e' = e ∨ e' = σ e := by
+  obtain ⟨u, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 h
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · exact .inl (one_smul ℤˣ e)
+  · exact .inr (hσ e).symm
+
+end Units
 
 end TauCeti
 
