@@ -64,8 +64,7 @@ than to `K`.
   currents, with the central term written as a residue.
 * `TauCeti.CurrentAlgebra.envelopingι_single_tmul_mul_sub_mul`: the commutator relations of the
   modes `x ⊗ tᵐ`.
-* `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul`,
-  `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul`,
+* `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul`,
   `TauCeti.CurrentAlgebra.sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul`: signed sums of
   mode commutators `[x_j, y_{n-j}]` between `0` and `k`.
 * `TauCeti.CurrentAlgebra.envelopingAction_mul_sub_mul`: the commutator relations for the action
@@ -180,38 +179,6 @@ private theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (w : �
   simp only [hj, Finset.sum_sub_distrib, ← Finset.sum_smul]
   rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul]
 
-/-- The signed sum of `(b + d * j) • [x_j, y_{n-j}]` between `0` and `k` evaluates to
-`(b * k + d * (k * (k - 1) / 2)) • ⁅x, y⁆_n` minus
-`(b * (k * (k - 1) / 2) + d * (k * (k - 1) * (2 * k - 1) / 6)) • (δ_{n, 0} a Φ(x, y))`. -/
-theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (x y : L) (b d k n : ℤ) :
-    ∑ j ∈ Finset.Ico 0 k, (b + d * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
-        ∑ j ∈ Finset.Ico k 0, (b + d * j) • (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
-      (b * k + d * (k * (k - 1) / 2)) • ι[⁅x, y⁆, n] -
-        (b * (k * (k - 1) / 2) + d * (k * (k - 1) * (2 * k - 1) / 6)) •
-          algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-  rw [sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (fun j ↦ b + d * j) x y k n]
-  have hmul (e : ℤ) (s : Finset ℤ) : ∑ j ∈ s, e * j = e * ∑ j ∈ s, j :=
-    (Finset.mul_sum s (fun j ↦ j) e).symm
-  have hmul_sq (e : ℤ) (s : Finset ℤ) : ∑ j ∈ s, e * j ^ 2 = e * ∑ j ∈ s, j ^ 2 :=
-    (Finset.mul_sum s (fun j ↦ j ^ 2) e).symm
-  have hlin := Int.eq_ediv_of_mul_eq_right two_ne_zero
-    (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)
-  have hcard : ∑ j ∈ Finset.Ico 0 k, (b + d * j) - ∑ j ∈ Finset.Ico k 0, (b + d * j) =
-      b * k + d * (k * (k - 1) / 2) := by
-    have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
-      simp only [Int.card_Ico]
-      omega
-    simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, hmul]
-    linear_combination b * hc + d * hlin
-  have hquad : ∑ j ∈ Finset.Ico 0 k, j * (b + d * j) - ∑ j ∈ Finset.Ico k 0, j * (b + d * j) =
-      b * (k * (k - 1) / 2) + d * (k * (k - 1) * (2 * k - 1) / 6) := by
-    have hsq := Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
-      (Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq k)
-    have hrw (j : ℤ) : j * (b + d * j) = b * j + d * j ^ 2 := by ring
-    simp only [hrw, Finset.sum_add_distrib, hmul, hmul_sq]
-    linear_combination b * hlin + d * hsq
-  rw [hcard, hquad]
-
 /-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
 `k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
 theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
@@ -219,9 +186,13 @@ theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
         ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
       (k : R) • ι[⁅x, y⁆, n] -
         algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
-  have h := sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs)
-    (a := a) x y 1 0 k n
-  simp only [one_mul, zero_mul, add_zero, one_smul] at h
+  have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
+    simp only [Int.card_Ico]
+    omega
+  have h := sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (Φ := Φ) (hΦ := hΦ)
+    (hΦs := hΦs) (a := a) (fun _ ↦ 1) x y k n
+  simp only [one_smul, Finset.sum_const, nsmul_eq_mul, mul_one, hc,
+    Int.eq_ediv_of_mul_eq_right two_ne_zero (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)] at h
   rw [h, Int.cast_smul_eq_zsmul]
   congr 1
   split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
