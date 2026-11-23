@@ -129,7 +129,7 @@ theorem isIntegrallyClosedIn_fixedField [IsGalois k L] {ρ : (L ≃ₐ[k] L) →
   -- That element of `L` is fixed by `Gal(L/k)`, hence lies in `k`.
   have hfix : ∀ σ : L ≃ₐ[k] L, σ a = a := fun σ ↦ (algebraMap L F).injective <| by
     rw [← hρ, ha]
-    exact (mem_fixedField_iff _ _).mp x.2 (ρ σ) ⟨σ, rfl⟩
+    exact (mem_fixedField_iff _ _).mp x.property (ρ σ) ⟨σ, rfl⟩
   obtain ⟨c, rfl⟩ := IntermediateField.mem_bot.mp ((InfiniteGalois.mem_bot_iff_fixed a).mpr hfix)
   exact ⟨c, Subtype.ext <| by simpa [← IsScalarTower.algebraMap_apply] using ha⟩
 
@@ -147,7 +147,7 @@ theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F
   refine ⟨?_, ?_⟩
   · have h := liftBaseChange_injective_of_invariant (L := L) (ρ := toRepresentation ρ)
       (f := (fixedField ρ.range).val.toLinearMap) Subtype.val_injective fun σ a x ↦ by
-        simp [apply_smul hρ, (mem_fixedField_iff _ _).mp x.2 (ρ σ) ⟨σ, rfl⟩]
+        simp [apply_smul hρ, (mem_fixedField_iff _ _).mp x.property (ρ σ) ⟨σ, rfl⟩]
     rwa [← AlgHom.liftEquiv_toLinearMap] at h
   · apply (LinearMap.range_eq_top (f := f.toLinearMap)).mp
     refine top_unique ?_
@@ -254,7 +254,7 @@ theorem baseChangeAction_fixedField {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
     baseChangeAction (liftEquiv_fixedField_bijective hρ) = ρ :=
   (eq_baseChangeAction (liftEquiv_fixedField_bijective hρ) hρ fun σ x ↦
-    (mem_fixedField_iff _ _).mp x.2 (ρ σ) ⟨σ, rfl⟩).symm
+    (mem_fixedField_iff _ _).mp x.property (ρ σ) ⟨σ, rfl⟩).symm
 
 end Form
 

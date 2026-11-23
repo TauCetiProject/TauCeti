@@ -43,6 +43,19 @@ the arbitrary-rank case, the **split torus** `T = D(Multiplicative (σ →₀ �
   between the genuine character lattice `X*(T) = σ →₀ ℤ` and cocharacter lattice
   `X_*(T) = Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)`. We prove perfectness only
   in finite rank, the case relevant to root data.
+* For a finite-rank split torus over a field `k`, the pairing agrees with the geometric
+  character–cocharacter pairing of `MultiplicativeTypeCommHopfAlgCat`:
+  `SplitTorus.toTorusCommHopfAlgCat` and `SplitTorus.toMultiplicativeTypeCommHopfAlgCat` bundle the
+  coordinate Hopf algebra of the standard split torus in `TorusCommHopfAlgCat k` and
+  `MultiplicativeTypeCommHopfAlgCat k` (the categories of torus and multiplicative-type coordinate
+  Hopf algebras), `SplitTorus.cocharacterLatticeEquiv` identifies its geometric cocharacter
+  lattice with the lattice of genuine cocharacters (through the coordinate form
+  `SplitTorus.cocharacterLatticeCoordEquiv`), and
+  `SplitTorus.characterCocharacterPairing_eq_latticePairing` compares the geometric pairing with
+  `latticePairing` along `SplitTorus.characterLatticeEquiv` and
+  `SplitTorus.cocharacterLatticeEquiv`. The absolute Galois group acts trivially on this
+  cocharacter lattice
+  (`SplitTorus.cocharacterGaloisRepresentation_apply_eq_self`).
 
 This extends the rank-`1` pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split
 torus.
@@ -65,6 +78,21 @@ torus.
 * `TauCeti.SplitTorus.latticePairing`: the same pairing between `X*(T)` and the genuine
   cocharacter lattice `Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)`, perfect in
   finite rank (`instLatticePairingIsPerfPair`).
+* `TauCeti.SplitTorus.toTorusCommHopfAlgCat`,
+  `TauCeti.SplitTorus.toMultiplicativeTypeCommHopfAlgCat`: the coordinate Hopf algebra of the
+  standard split torus, bundled in `TorusCommHopfAlgCat k`, respectively
+  `MultiplicativeTypeCommHopfAlgCat k`.
+* `TauCeti.SplitTorus.cocharacterLatticeCoordEquiv`, `TauCeti.SplitTorus.cocharacterLatticeEquiv`:
+  the geometric cocharacter lattice of the standard split torus in coordinates `σ → ℤ`, and as
+  the lattice of genuine cocharacters.
+* `TauCeti.SplitTorus.cocharAddEquiv_cocharacterLatticeEquiv_apply`: the coordinates of a
+  cocharacter under this identification are obtained by applying the functional to the standard
+  characters.
+* `TauCeti.SplitTorus.characterCocharacterPairing_eq_latticePairing`: the geometric
+  character–cocharacter pairing agrees with `latticePairing` along
+  `SplitTorus.characterLatticeEquiv` and `SplitTorus.cocharacterLatticeEquiv`.
+* `TauCeti.SplitTorus.cocharacterGaloisRepresentation_apply_eq_self`: the absolute Galois
+  group acts trivially on the cocharacter lattice of a standard split torus.
 
 ## References
 
@@ -167,6 +195,8 @@ pairing is the evaluation/dot product `⟨m, v⟩ = ∑ᵢ mᵢ vᵢ`, packaged 
 noncomputable def dotPairing : (σ →₀ ℤ) →ₗ[ℤ] (σ → ℤ) →ₗ[ℤ] ℤ :=
   (Finsupp.llift ℤ ℤ ℤ σ).toLinearMap.flip
 
+/-- The dot-product pairing of a finitely supported `m` with a function `v` is the finite sum
+`∑ᵢ mᵢ vᵢ` over the support of `m`. -/
 @[simp]
 theorem dotPairing_apply (m : σ →₀ ℤ) (v : σ → ℤ) :
     dotPairing m v = m.sum fun i c => c * v i := by
@@ -267,13 +297,16 @@ theorem eq_one_of_forall_pairing_eq_zero {ψ : Multiplicative (σ →₀ ℤ) �
   rw [toAdd_one]
   exact hj
 
-/-- The standard rank-`σ` split torus, regarded as an object of the category of tori. -/
+/-- The coordinate Hopf algebra of the standard rank-`σ` split torus, bundled in
+`TorusCommHopfAlgCat k`, the category of torus coordinate Hopf algebras. -/
 noncomputable abbrev toTorusCommHopfAlgCat
     (k : Type u) [Field k] (σ : Type u) [Finite σ] : TorusCommHopfAlgCat k :=
   ⟨DiagonalizableGroup.coordinateRing k (characterGroup σ),
     (splitTorus_coordinateRing k σ).torus k _⟩
 
-/-- The standard rank-`σ` split torus, regarded as a group of multiplicative type. -/
+/-- The coordinate Hopf algebra of the standard rank-`σ` split torus, bundled in
+`MultiplicativeTypeCommHopfAlgCat k`, the category of multiplicative-type coordinate Hopf
+algebras. -/
 noncomputable abbrev toMultiplicativeTypeCommHopfAlgCat
     (k : Type u) [Field k] (σ : Type u) [Finite σ] : MultiplicativeTypeCommHopfAlgCat k :=
   TorusCommHopfAlgCat.toMultiplicativeTypeCommHopfAlgCat (toTorusCommHopfAlgCat k σ)

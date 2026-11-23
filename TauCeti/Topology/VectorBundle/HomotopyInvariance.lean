@@ -302,9 +302,9 @@ and its inverse are continuous on total spaces. The model fibre `F` may be any B
 theorem exists_continuousLinearEquiv_cylinder [CompleteSpace F] :
     ∃ Φ : ∀ q : X × I, E (q.1, 0) ≃L[𝕜] E q,
       Continuous (fun v : TotalSpace F ((fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) ↦
-        TotalSpace.mk' F v.proj (Φ v.proj v.2)) ∧
+        TotalSpace.mk' F v.proj (Φ v.proj v.snd)) ∧
       Continuous (fun v : TotalSpace F E ↦ TotalSpace.mk' F
-        (E := (fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) v.proj ((Φ v.proj).symm v.2)) ∧
+        (E := (fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) v.proj ((Φ v.proj).symm v.snd)) ∧
       ∀ x, Φ (x, 0) = ContinuousLinearEquiv.refl 𝕜 (E (x, 0)) := by
   obtain ⟨Φ', hinv, hc, h0⟩ := exists_cylinderTransport (𝕜 := 𝕜) (F := F) (E := E)
   choose Φ hΦ using hinv
@@ -322,13 +322,13 @@ theorem exists_continuousLinearEquiv_cylinder [CompleteSpace F] :
   · exact ContinuousAt.clm_apply_of_inCoordinates
       (b₁ := fun v : TotalSpace F ((fun q : X × I ↦ (q.1, (0 : I))) *ᵖ E) ↦ (v.proj.1, (0 : I)))
       (b₂ := TotalSpace.proj) (ϕ := fun v ↦ (Φ v.proj : E (v.proj.1, 0) →L[𝕜] E v.proj))
-      (v := fun v ↦ v.2)
+      (v := fun v ↦ v.snd)
       ((hΦc v₀.proj).comp (Pullback.continuous_proj F E _).continuousAt)
       (Pullback.continuous_lift F E _).continuousAt (Pullback.continuous_proj F E _).continuousAt
   · simp only [Pullback.lift_mk]
     exact ContinuousAt.clm_apply_of_inCoordinates
       (b₁ := TotalSpace.proj) (b₂ := fun v : TotalSpace F E ↦ (v.proj.1, (0 : I)))
-      (ϕ := fun v ↦ ((Φ v.proj).symm : E v.proj →L[𝕜] E (v.proj.1, 0))) (v := fun v ↦ v.2)
+      (ϕ := fun v ↦ ((Φ v.proj).symm : E v.proj →L[𝕜] E (v.proj.1, 0))) (v := fun v ↦ v.snd)
       ((hΦi v₀.proj).comp (FiberBundle.continuous_proj F E).continuousAt) continuousAt_id
       ((continuous_fst.comp (FiberBundle.continuous_proj F E)).prodMk continuous_const).continuousAt
   · ext v
@@ -355,9 +355,9 @@ private theorem exists_continuousLinearEquiv_pullback_of_eq (G : C(X × I, Y)) {
     (h₀ : ∀ x, G (x, 0) = g₀ x) (h₁ : ∀ x, G (x, 1) = g₁ x) :
     ∃ Φ : ∀ x, E (g₀ x) ≃L[𝕜] E (g₁ x),
       Continuous (fun v : TotalSpace F (g₀ *ᵖ E) ↦
-        TotalSpace.mk' F (E := g₁ *ᵖ E) v.proj (Φ v.proj v.2)) ∧
+        TotalSpace.mk' F (E := g₁ *ᵖ E) v.proj (Φ v.proj v.snd)) ∧
       Continuous (fun v : TotalSpace F (g₁ *ᵖ E) ↦
-        TotalSpace.mk' F (E := g₀ *ᵖ E) v.proj ((Φ v.proj).symm v.2)) := by
+        TotalSpace.mk' F (E := g₀ *ᵖ E) v.proj ((Φ v.proj).symm v.snd)) := by
   obtain rfl : g₀ = fun x ↦ G (x, 0) := (funext h₀).symm
   obtain rfl : g₁ = fun x ↦ G (x, 1) := (funext h₁).symm
   obtain ⟨Φ, hΦ₁, hΦ₂, -⟩ :=
@@ -367,7 +367,7 @@ private theorem exists_continuousLinearEquiv_pullback_of_eq (G : C(X × I, Y)) {
   · -- Insert the fibre over `x` as the fibre over `(x, 1)` of the pulled-back cylinder.
     have hι : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 0)) *ᵖ E) ↦
         (TotalSpace.mk' F (E := (fun q : X × I ↦ (q.1, (0 : I))) *ᵖ ((G : X × I → Y) *ᵖ E))
-          (v.proj, 1) v.2) :=
+          (v.proj, 1) v.snd) :=
       Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
         Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
           Pullback.continuous_lift F E _⟩⟩
@@ -377,7 +377,7 @@ private theorem exists_continuousLinearEquiv_pullback_of_eq (G : C(X × I, Y)) {
     simp only [comp_def, Pullback.lift_mk] at h ⊢
     exact h
   · have hι : Continuous fun v : TotalSpace F ((fun x ↦ G (x, 1)) *ᵖ E) ↦
-        (TotalSpace.mk' F (E := (G : X × I → Y) *ᵖ E) (v.proj, 1) v.2) :=
+        (TotalSpace.mk' F (E := (G : X × I → Y) *ᵖ E) (v.proj, 1) v.snd) :=
       Pullback.continuous_iff.2 ⟨(Pullback.continuous_proj F E _).prodMk continuous_const,
         Pullback.continuous_lift F E _⟩
     have h := (Pullback.continuous_lift F E (G : X × I → Y)).comp
@@ -396,9 +396,9 @@ theorem _root_.ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback {f�
     (h : f₀.Homotopic f₁) :
     ∃ Φ : ∀ x, E (f₀ x) ≃L[𝕜] E (f₁ x),
       Continuous (fun v : TotalSpace F ((f₀ : X → Y) *ᵖ E) ↦
-        TotalSpace.mk' F (E := (f₁ : X → Y) *ᵖ E) v.proj (Φ v.proj v.2)) ∧
+        TotalSpace.mk' F (E := (f₁ : X → Y) *ᵖ E) v.proj (Φ v.proj v.snd)) ∧
       Continuous (fun v : TotalSpace F ((f₁ : X → Y) *ᵖ E) ↦
-        TotalSpace.mk' F (E := (f₀ : X → Y) *ᵖ E) v.proj ((Φ v.proj).symm v.2)) := by
+        TotalSpace.mk' F (E := (f₀ : X → Y) *ᵖ E) v.proj ((Φ v.proj).symm v.snd)) := by
   obtain ⟨H⟩ := h
   exact exists_continuousLinearEquiv_pullback_of_eq (H.toContinuousMap.comp .prodSwap)
     H.apply_zero H.apply_one

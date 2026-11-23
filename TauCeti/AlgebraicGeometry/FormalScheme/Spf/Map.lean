@@ -89,9 +89,9 @@ the preimage of `U` in `Spec (B ⧸ K)`, under the map induced by `B ⧸ K → A
 theorem map_quotientInclusion_comap_subset (hK : IsAdic K) (hL : IsAdic L)
     (hKL : K ≤ L.comap φ) (U : Opens (carrier B)) :
     ((Opens.map (quotientInclusion hL)).obj
-        ((Opens.map (TopCat.ofHom (comap φ hφ))).obj U)).1 ⊆
+        ((Opens.map (TopCat.ofHom (comap φ hφ))).obj U)).carrier ⊆
       PrimeSpectrum.comap (Ideal.quotientMap L φ hKL) ⁻¹'
-        ((Opens.map (quotientInclusion hK)).obj U).1 := by
+        ((Opens.map (quotientInclusion hK)).obj U).carrier := by
   intro q hq
   have hq' : comap φ hφ (quotientInclusion hL q) ∈ U := hq
   rw [comap_quotientInclusion φ hφ hK hL hKL] at hq'

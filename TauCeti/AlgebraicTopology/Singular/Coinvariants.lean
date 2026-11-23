@@ -142,9 +142,8 @@ def isColimitMapCoconeSingularHomology [Fintype G] [CategoryWithHomology C] (n :
     (HomologicalComplex.homologyFunctor C _ n) ?_ ?_
   -- The leg of `F.mapCocone hG.cocone` is `F.map p`, which is `p_*` by
   -- `singularChainComplexFunctor_obj_map` (`rfl`).
-  · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦ by
-      obtain ⟨e, he⟩ := hG.surjective b
-      rw [Nat.card_congr (hG.fiberEquivGroup ⟨e, he⟩), Nat.card_eq_fintype_card]
+  · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦
+      (hG.natCard_fiber b).trans Nat.card_eq_fintype_card
   -- `F` sends the action of `g` to `(g • ·)_*`.
   · simp only [Functor.comp_map, TopCat.actionFunctor_map]
     exact hG.chainComplexMap_comp_singularTransfer R

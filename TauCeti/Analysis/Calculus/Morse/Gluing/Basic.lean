@@ -35,12 +35,28 @@ the exit points `(r • g (r • w r), w r)` tend to `(0, y₀)`.
 This is the nonlinear form of the linear gluing statement
 `TauCeti.setOf_mem_splitPassage_source_eq_image`, which is the case of constant `g` and `k`.
 
+**Families of discs.** When the Morse indices of the three critical points of the broken
+trajectory are not consecutive, the trace of the unstable manifold of the starting critical point
+on the entrance face is no longer a single graph over the expanding factor, but a family of
+graphs `y ↦ (g p y, y)`; likewise the trace of the stable manifold of the final critical point on
+the exit face is a family of graphs `x ↦ (x, k p x)`. Here `p` ranges over pairs of a trajectory
+into the middle critical point and a trajectory out of it, with `g p` depending on the first and
+`k p` on the second. If the families are Lipschitz with uniform constants and depend continuously on
+`p`, the gluing parametrizations `w r p` of the pairs of discs `g p` and `k p` can be chosen to
+depend continuously on `(r, p)` jointly
+(`TauCeti.exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_image`): the
+gluing maps contract with a constant independent of `(r, p)`, so their fixed points move
+continuously with the maps.
+
 ## Main results
 
 * `TauCeti.exists_setOf_mem_splitPassage_source_graph_eq_image`: the points of the graph of `g` in
   the entrance face whose passage lies on the graph of `k` form the image of the gluing parameter
   interval under `r ↦ (g (r • w r), r • w r)`, for a map `w` Lipschitz on `[0, r₀]` with
   `w 0 = k 0` and `‖w r‖ = ε`.
+* `TauCeti.exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_image`: for
+  families of discs depending continuously on a parameter `p`, the same parametrizations, chosen
+  jointly continuous in the gluing parameter and in `p`.
 
 ## References
 
@@ -51,7 +67,7 @@ This is the nonlinear form of the linear gluing statement
 
 public section
 
-open Metric Set
+open Filter Metric Set Topology
 open scoped NNReal
 
 namespace TauCeti
@@ -169,7 +185,7 @@ private theorem lipschitzOnWith_gluing_fixedPt
     |>.dist_fixedPoint_fixedPoint_of_dist_le' ((mapsTo_gluing hgε hkε hr').restrict _ _ _)
       (x := ⟨w r, (hw r hr).1⟩) (y := ⟨w r', (hw r' hr').1⟩) (Subtype.ext (hw r hr).2)
       (Subtype.ext (hw r' hr').2) fun v ↦
-        dist_gluing_le_dist hg hgε hk hr₀ hr hr' (mem_closedBall_zero_iff.1 v.2)
+        dist_gluing_le_dist hg hgε hk hr₀ hr hr' (mem_closedBall_zero_iff.1 v.property)
   rw [Subtype.dist_eq, coe_mul_mul_toNNReal_sq (hr.1.trans hr.2), ← div_mul_eq_mul_div] at hle
   exact hle.trans (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) dist_nonneg)
 
@@ -299,5 +315,110 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
           mul_le_mul_of_nonneg_right hr.2 hε.le
       · rw [hpass]
         simpa using (hw r hr').2.symm
+
+
+/-! ### Families of discs -/
+
+/-- A fixed point `v` of the gluing map `F w = k (r • g (r • w))` in the closed ball of radius `ε`
+is within `dist (F v') v' / (1 - Kk * Kg * r₀ ^ 2)` of every `v'` of that ball, since `F` contracts
+the ball with constant `Kk * Kg * r₀ ^ 2`. -/
+private theorem dist_le_of_isFixedPt_gluing (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε) (hK : Kk * Kg * r₀ ^ 2 < 1) {r : ℝ}
+    (hr : r ∈ Icc 0 r₀) {v v' : Eᵤ} (hv : v ∈ closedBall 0 ε) (hv' : v' ∈ closedBall 0 ε)
+    (hfix : k (r • g (r • v)) = v) :
+    dist v v' ≤ dist (k (r • g (r • v'))) v' / (1 - Kk * Kg * r₀ ^ 2) := by
+  have h := (contractingWith_gluing hg hgε hk hK hr (mapsTo_gluing hgε hkε hr))
+    |>.dist_le_of_fixedPoint ⟨v', hv'⟩ (y := ⟨v, hv⟩) (Subtype.ext hfix)
+  rw [Subtype.dist_eq, Subtype.dist_eq, coe_mul_mul_toNNReal_sq (hr.1.trans hr.2)] at h
+  simpa only [dist_comm, MapsTo.val_restrict_apply] using h
+
+/-- For families of discs `g p` and `k p`, Lipschitz with uniform constants and continuous in the
+parameter `p ∈ S`, the value of the gluing map `w ↦ k p (r • g p (r • w))` at a fixed `v` depends
+continuously on the gluing parameter `r` and on `p` jointly. -/
+private theorem continuousOn_gluing_family {P : Type*} [TopologicalSpace P] {S : Set P}
+    {g : P → Eᵤ → Eₛ} {k : P → Eₛ → Eᵤ}
+    (hg : ∀ p ∈ S, LipschitzOnWith Kg (g p) (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ p ∈ S, ∀ y ∈ closedBall 0 (r₀ * ε), ‖g p y‖ = ε)
+    (hk : ∀ p ∈ S, LipschitzOnWith Kk (k p) (closedBall 0 (r₀ * ε)))
+    (hgc : ∀ y ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ g p y) S)
+    (hkc : ∀ x ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ k p x) S) {v : Eᵤ}
+    (hv : ‖v‖ ≤ ε) :
+    ContinuousOn (fun q : ℝ × P ↦ k q.2 (q.1 • g q.2 (q.1 • v))) (Icc 0 r₀ ×ˢ S) := by
+  -- Uniformly Lipschitz families that are continuous in the parameter are jointly continuous.
+  have hG : ContinuousOn (fun q : P × Eᵤ ↦ g q.1 q.2) (S ×ˢ closedBall 0 (r₀ * ε)) :=
+    continuousOn_prod_of_continuousOn_lipschitzOnWith' _ Kg hg hgc
+  have hH : ContinuousOn (fun q : P × Eₛ ↦ k q.1 q.2) (S ×ˢ closedBall 0 (r₀ * ε)) :=
+    continuousOn_prod_of_continuousOn_lipschitzOnWith' _ Kk hk hkc
+  have hin : ContinuousOn (fun q : ℝ × P ↦ g q.2 (q.1 • v)) (Icc 0 r₀ ×ˢ S) :=
+    hG.comp (continuousOn_snd.prodMk (continuousOn_fst.smul continuousOn_const))
+      fun q hq ↦ ⟨hq.2, smul_mem_closedBall_mul hq.1 hv⟩
+  exact hH.comp (continuousOn_snd.prodMk (continuousOn_fst.smul hin)) fun q hq ↦
+    ⟨hq.2, smul_mem_closedBall_mul hq.1 (hgε _ hq.2 _ (smul_mem_closedBall_mul hq.1 hv)).le⟩
+
+/-- **Gluing families of transverse discs through the split hyperbolic box.** Let
+`y ↦ (g p y, y)` and `x ↦ (x, k p x)`, for `p` in a set `S` of a topological space, be families of
+discs in the entrance and exit faces satisfying the hypotheses of
+`TauCeti.exists_setOf_mem_splitPassage_source_graph_eq_image` with uniform constants, and depending
+continuously on `p` at every point of their domains. Then the gluing parametrizations of that
+theorem can be chosen to depend continuously on the gluing parameter `r` and on `p` jointly: there
+is `w` with `(r, p) ↦ w r p` continuous on `[0, r₀] × S`, such that for each `p ∈ S` the map
+`r ↦ w r p` has all the properties of the parametrization of the single discs `g p` and `k p`.
+
+In the gluing of broken trajectories `p` ranges over pairs of a trajectory into the middle
+critical point and a trajectory out of it: the trace of the unstable manifold of the starting
+critical point on the entrance face is a family of graphs over the expanding factor, `g p`
+depending on the first trajectory, and likewise on the exit face, `k p` depending on the second.
+The points `(g p (r • w r p), r • w r p)` then sweep out all orbits running from the first family
+to the second, continuously in `(r, p)`. -/
+theorem exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_image
+    [CompleteSpace Eᵤ] {P : Type*} [TopologicalSpace P] {S : Set P}
+    {g : P → Eᵤ → Eₛ} {k : P → Eₛ → Eᵤ}
+    (hg : ∀ p ∈ S, LipschitzOnWith Kg (g p) (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ p ∈ S, ∀ y ∈ closedBall 0 (r₀ * ε), ‖g p y‖ = ε)
+    (hk : ∀ p ∈ S, LipschitzOnWith Kk (k p) (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ p ∈ S, ∀ x ∈ closedBall 0 (r₀ * ε), ‖k p x‖ = ε)
+    (hgc : ∀ y ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ g p y) S)
+    (hkc : ∀ x ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ k p x) S)
+    (hε : 0 < ε) (hr₀ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ w : ℝ → P → Eᵤ, ContinuousOn (fun q : ℝ × P ↦ w q.1 q.2) (Icc 0 r₀ ×ˢ S) ∧
+      ∀ p ∈ S, LipschitzOnWith (Kk * ((1 + Kg) * ε) / (1 - Kk * Kg * r₀ ^ 2)).toNNReal
+          (fun r ↦ w r p) (Icc 0 r₀) ∧ w 0 p = k p 0 ∧ (∀ r ∈ Icc 0 r₀, ‖w r p‖ = ε) ∧
+        (∀ r ∈ Icc 0 r₀, k p (r • g p (r • w r p)) = w r p) ∧
+        {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g p z.snd ∧
+            (splitPassage ε z).snd = k p (splitPassage ε z).fst} =
+          (fun r ↦ WithLp.toLp 2 (g p (r • w r p), r • w r p)) '' Ioc 0 r₀ := by
+  -- Choose the parametrization of each pair of discs separately.
+  have hex (p : P) : ∃ w : ℝ → Eᵤ, p ∈ S →
+      LipschitzOnWith (Kk * ((1 + Kg) * ε) / (1 - Kk * Kg * r₀ ^ 2)).toNNReal w (Icc 0 r₀) ∧
+        w 0 = k p 0 ∧ (∀ r ∈ Icc 0 r₀, ‖w r‖ = ε) ∧
+        (∀ r ∈ Icc 0 r₀, k p (r • g p (r • w r)) = w r) ∧
+        {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g p z.snd ∧
+            (splitPassage ε z).snd = k p (splitPassage ε z).fst} =
+          (fun r ↦ WithLp.toLp 2 (g p (r • w r), r • w r)) '' Ioc 0 r₀ := by
+    by_cases hp : p ∈ S
+    · obtain ⟨w, hw⟩ := exists_setOf_mem_splitPassage_source_graph_eq_image (hg p hp)
+        (hgε p hp) (hk p hp) (hkε p hp) hε hr₀ hK
+      exact ⟨w, fun _ ↦ hw⟩
+    · exact ⟨0, fun h ↦ absurd h hp⟩
+  choose w hw using hex
+  refine ⟨fun r p ↦ w p r, ?_, fun p hp ↦ hw p hp⟩
+  -- Joint continuity: the fixed point `w p r` is within a constant times
+  -- `dist (F_{r, p} v') v'` of the fixed point `v'` at `(r', p')`, and `F_{r, p} v' → v'`.
+  rintro ⟨r', p'⟩ ⟨hr', hp'⟩
+  obtain ⟨-, -, hnorm', hfix', -⟩ := hw p' hp'
+  have hv' : ‖w p' r'‖ ≤ ε := (hnorm' r' hr').le
+  have hF := (continuousOn_gluing_family hg hgε hk hgc hkc hv' (r', p') ⟨hr', hp'⟩).tendsto
+  simp only [hfix' r' hr'] at hF
+  have hlim : Tendsto (fun q : ℝ × P ↦ dist (k q.2 (q.1 • g q.2 (q.1 • w p' r'))) (w p' r') /
+      (1 - Kk * Kg * r₀ ^ 2)) (𝓝[Icc 0 r₀ ×ˢ S] (r', p')) (𝓝 0) := by
+    simpa using (tendsto_iff_dist_tendsto_zero.1 hF).div_const (1 - Kk * Kg * r₀ ^ 2)
+  refine tendsto_iff_dist_tendsto_zero.2
+    (squeeze_zero' (Eventually.of_forall fun _ ↦ dist_nonneg) ?_ hlim)
+  filter_upwards [self_mem_nhdsWithin] with q hq
+  obtain ⟨-, -, hnorm, hfix, -⟩ := hw q.2 hq.2
+  exact dist_le_of_isFixedPt_gluing (hg _ hq.2) (hgε _ hq.2) (hk _ hq.2) (hkε _ hq.2) hK hq.1
+    (mem_closedBall_zero_iff.2 (hnorm _ hq.1).le) (mem_closedBall_zero_iff.2 hv') (hfix _ hq.1)
 
 end TauCeti

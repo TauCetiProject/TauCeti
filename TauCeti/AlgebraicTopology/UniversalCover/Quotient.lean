@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
-import TauCeti.Topology.Homeomorph.Quotient
+import TauCeti.Topology.Algebra.GroupAction.Quotient
 
 /-!
 # The fundamental-group quotient of the universal cover
@@ -45,13 +45,8 @@ variable {X : Type*} [TopologicalSpace X] [PathConnectedSpace X] [LocallyPathCon
 base space.** The homeomorphism sends the orbit of a based path to its endpoint. -/
 noncomputable def orbitQuotientHomeomorph (x₀ : X) :
     MulAction.orbitRel.Quotient (FundamentalGroup X x₀) (UniversalCover x₀) ≃ₜ X :=
-  (Homeomorph.Quotient.congrRight
-      (r' := Setoid.ker (⟨proj, continuous_proj x₀⟩ : C(UniversalCover x₀, X))) fun e e' ↦ by
-      rw [MulAction.orbitRel_apply, Setoid.ker_def, ContinuousMap.coe_mk]
-      exact proj_eq_iff_mem_orbit.symm).trans
-    (Topology.IsQuotientMap.homeomorph (f := ⟨proj, continuous_proj x₀⟩) <| by
-      rw [ContinuousMap.coe_mk]
-      exact (isOpenMap_proj x₀).isQuotientMap (continuous_proj x₀) proj_surjective)
+  let hq := (isOpenMap_proj x₀).isQuotientMap (continuous_proj x₀) proj_surjective
+  hq.orbitRelQuotientHomeomorph (fun _ _ ↦ proj_eq_iff_mem_orbit)
 
 /-- On an orbit representative, the quotient homeomorphism is the endpoint projection. -/
 @[simp]
@@ -60,9 +55,8 @@ lemma orbitQuotientHomeomorph_mk (x₀ : X) (p : UniversalCover x₀) :
         (Quotient.mk'' p :
           MulAction.orbitRel.Quotient (FundamentalGroup X x₀) (UniversalCover x₀)) =
       proj p := by
-  rw [orbitQuotientHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.Quotient.congrRight_mk, Topology.IsQuotientMap.homeomorph_apply,
-    Setoid.kerLift_mk, ContinuousMap.coe_mk]
+  unfold orbitQuotientHomeomorph
+  exact Topology.IsQuotientMap.orbitRelQuotientHomeomorph_mk _ _ p
 
 /-- The inverse quotient homeomorphism sends an endpoint to the orbit of any lift with that
 endpoint. -/
@@ -71,7 +65,7 @@ lemma orbitQuotientHomeomorph_symm_apply_proj (x₀ : X) (p : UniversalCover x�
     (orbitQuotientHomeomorph x₀).symm (proj p) =
       (Quotient.mk'' p :
         MulAction.orbitRel.Quotient (FundamentalGroup X x₀) (UniversalCover x₀)) := by
-  apply (orbitQuotientHomeomorph x₀).injective
-  rw [Homeomorph.apply_symm_apply, orbitQuotientHomeomorph_mk]
+  unfold orbitQuotientHomeomorph
+  exact Topology.IsQuotientMap.orbitRelQuotientHomeomorph_symm_apply _ _ p
 
 end TauCeti.UniversalCover

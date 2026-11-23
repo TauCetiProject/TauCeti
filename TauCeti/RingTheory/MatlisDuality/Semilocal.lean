@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Algebra.Module.Injective.Envelope.Existence
+public import TauCeti.Algebra.Module.Injective.SelfInjective
+import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Matlis duality over a semilocal ring
@@ -32,9 +34,20 @@ at most one-dimensional over `R ⧸ 𝔪` because `J(R)` is a radical ideal.
 ## Main results
 
 * `Ideal.length_linearMap_quotient_jacobson_eq_one`: `Hom_R(R ⧸ 𝔪, R ⧸ J(R))` has length one.
+* `TauCeti.IsInjectiveEnvelope.length_quotient_linearMap_eq_one`: in an injective hull `E` of
+  `R ⧸ J(R)`, each `Hom_R(R ⧸ 𝔪, E)` has length one, the hypothesis of the general Matlis duality
+  of `TauCeti/RingTheory/MatlisDuality/Basic.lean`.
 * `TauCeti.IsInjectiveEnvelope.length_linearMap_quotient_jacobson` and
   `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_quotient_jacobson`: Matlis duality for modules of
   finite length over `R`.
+* `TauCeti.isInjectiveEnvelope_quotEquivOfEqBot_jacobson`: over a semisimple commutative ring,
+  for instance a field, `R` itself is the injective hull of `R ⧸ J(R)`, so that `E = R` satisfies
+  this hypothesis (`TauCeti.length_quotient_linearMap_self_eq_one`); such a ring is injective over
+  itself (`TauCeti.moduleInjective_self_of_isSemisimpleRing`, in
+  `TauCeti/Algebra/Module/Injective/SelfInjective.lean`).
+* `TauCeti.isFiniteLength_of_forall_isMaximal` and `TauCeti.finite_of_forall_isMaximal`: over a
+  commutative Artinian ring, an injective `E` with each `Hom_R(R ⧸ 𝔪, E)` of length one has finite
+  length.
 * `TauCeti.IsInjectiveEnvelope.isFiniteLength_quotient_jacobson` and
   `TauCeti.exists_isInjectiveEnvelope_quotient_jacobson`: over a commutative Artinian ring, every
   injective hull of `R ⧸ J(R)` has finite length, and one exists in the universe of `R`.
@@ -104,14 +117,14 @@ open LinearMap
 
 section Semilocal
 
-variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)]
-  {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
-  {f : R ⧸ Ring.jacobson R →ₗ[R] E}
+section Quotient
 
-omit [Small.{v} R] in
+variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)]
+  {E : Type v} [AddCommGroup E] [Module R E] {f : R ⧸ Ring.jacobson R →ₗ[R] E}
+
 /-- In an injective hull of `R ⧸ J(R)`, each simple module occurs once: `Hom_R(R ⧸ 𝔪, E)` has
 length one for every maximal ideal `𝔪`. -/
-private theorem IsInjectiveEnvelope.length_quotient_linearMap (hf : IsInjectiveEnvelope f)
+theorem IsInjectiveEnvelope.length_quotient_linearMap_eq_one (hf : IsInjectiveEnvelope f)
     (𝔪 : Ideal R) (h𝔪 : 𝔪.IsMaximal) : Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1 := by
   rw [← 𝔪.length_linearMap_quotient_jacobson_eq_one]
   -- Composing with `f` is bijective, as the range of a map out of `R ⧸ 𝔪` is simple or zero.
@@ -127,13 +140,19 @@ private theorem IsInjectiveEnvelope.length_quotient_linearMap (hf : IsInjectiveE
     LinearMap.ext fun z => ?_⟩
   simp [LinearEquiv.ofInjective_symm_apply]
 
+end Quotient
+
+variable {R : Type u} [CommRing R] [IsSemisimpleRing (R ⧸ Ring.jacobson R)]
+  {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
+  {f : R ⧸ Ring.jacobson R →ₗ[R] E}
+
 /-- **Matlis duality preserves length.** For an injective hull `E` of `R ⧸ J(R)`, where `R ⧸ J(R)`
 is a semisimple ring, `Hom_R(M, E)` has the same length as `M`, for every module `M`. -/
 theorem IsInjectiveEnvelope.length_linearMap_quotient_jacobson (hf : IsInjectiveEnvelope f)
     (M : Type w) [AddCommGroup M] [Module R M] :
     Module.length R (M →ₗ[R] E) = Module.length R M :=
   have := hf.moduleInjective
-  length_linearMap_of_forall_isMaximal hf.length_quotient_linearMap M
+  length_linearMap_of_forall_isMaximal hf.length_quotient_linearMap_eq_one M
 
 /-- **Matlis biduality over a semilocal ring.** For an injective hull `E` of `R ⧸ J(R)`, where
 `R ⧸ J(R)` is a semisimple ring, the evaluation map `M → Hom_R(Hom_R(M, E), E)` is bijective for
@@ -142,21 +161,64 @@ theorem IsInjectiveEnvelope.bijective_applyₗ_quotient_jacobson (hf : IsInjecti
     {M : Type w} [AddCommGroup M] [Module R M] (hM : IsFiniteLength R M) :
     Function.Bijective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) :=
   have := hf.moduleInjective
-  bijective_applyₗ_of_forall_isMaximal hf.length_quotient_linearMap hM
+  bijective_applyₗ_of_forall_isMaximal hf.length_quotient_linearMap_eq_one hM
 
 end Semilocal
+
+section Semisimple
+
+variable (R : Type u) [CommRing R] [IsSemisimpleRing R]
+
+/-- **Duality into the ring is Matlis duality over a semisimple ring.** For a semisimple
+commutative ring `R`, for instance a field, `J(R) = 0` and `R` is injective, so `R` itself is an
+injective hull of `R ⧸ J(R)`: the duality `Hom_R(-, R)` is the case `E = R` of Matlis duality. -/
+theorem isInjectiveEnvelope_quotEquivOfEqBot_jacobson :
+    IsInjectiveEnvelope (Submodule.quotEquivOfEqBot (Ring.jacobson R)
+      (IsSemisimpleModule.jacobson_eq_bot R R)).toLinearMap where
+  moduleInjective := Module.injective_of_isSemisimpleRing R R
+  injective := LinearEquiv.injective _
+  isEssential_range := by
+    rw [LinearEquiv.range]
+    exact isEssential_top
+
+/-- Over a semisimple commutative ring, for instance a field, `R` itself satisfies the hypothesis of
+Matlis duality: each `Hom_R(R ⧸ 𝔪, R)` has length one. -/
+theorem length_quotient_linearMap_self_eq_one (𝔪 : Ideal R) (h𝔪 : 𝔪.IsMaximal) :
+    Module.length R (R ⧸ 𝔪 →ₗ[R] R) = 1 :=
+  (isInjectiveEnvelope_quotEquivOfEqBot_jacobson R).length_quotient_linearMap_eq_one 𝔪 h𝔪
+
+end Semisimple
 
 section Artinian
 
 variable {R : Type u} [CommRing R] [IsArtinianRing R]
 
+/-- Over a commutative Artinian ring, an injective module `E` such that each `Hom_R(R ⧸ 𝔪, E)` has
+length one has finite length: it has the length of `Hom_R(R, E)`, which is the length of `R`. -/
+theorem isFiniteLength_of_forall_isMaximal {E : Type v} [AddCommGroup E] [Module R E]
+    [Module.Injective R E] [Small.{v} R]
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1) :
+    IsFiniteLength R E := by
+  rw [← Module.length_ne_top_iff, ← (LinearMap.ringLmapEquivSelf R R E).length_eq,
+    length_linearMap_of_forall_isMaximal hE, Module.length_ne_top_iff]
+  exact (isArtinianRing_iff_isFiniteLength (R := R)).mp ‹_›
+
+/-- Over a commutative Artinian ring, an injective module `E` such that each `Hom_R(R ⧸ 𝔪, E)` has
+length one is finitely generated. -/
+theorem finite_of_forall_isMaximal {E : Type v} [AddCommGroup E] [Module R E]
+    [Module.Injective R E] [Small.{v} R]
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1) :
+    Module.Finite R E :=
+  have := (isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_of_forall_isMaximal hE)).1
+  inferInstance
+
 /-- Over a commutative Artinian ring, every injective hull of `R ⧸ J(R)` has finite length. -/
 theorem IsInjectiveEnvelope.isFiniteLength_quotient_jacobson {E : Type v} [AddCommGroup E]
     [Module R E] [Small.{v} R] {f : R ⧸ Ring.jacobson R →ₗ[R] E} (hf : IsInjectiveEnvelope f) :
-    IsFiniteLength R E := by
-  rw [← Module.length_ne_top_iff, ← (LinearMap.ringLmapEquivSelf R R E).length_eq,
-    hf.length_linearMap_quotient_jacobson, Module.length_ne_top_iff]
-  exact (isArtinianRing_iff_isFiniteLength (R := R)).mp ‹_›
+    IsFiniteLength R E :=
+  have := hf.moduleInjective
+  isFiniteLength_of_forall_isMaximal hf.length_quotient_linearMap_eq_one
 
 variable (R) in
 /-- **The injective cogenerator of a commutative Artinian ring.** `R ⧸ J(R)` has an injective hull

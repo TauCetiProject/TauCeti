@@ -21,11 +21,6 @@ In a braided category, the signed interchange of the summands `Hₚ(K) ⊗ H_q(L
 isomorphism of the sources of the Künneth maps, so the Künneth map of `K` and `L` is an
 isomorphism exactly when that of `L` and `K` is
 (`TauCeti.NatChainComplex.isIso_homologyKunneth_comm`).
-In particular the Künneth theorem for a factor with zero differentials and flat terms holds with
-that factor on either side (`HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat_right`).
-With the factor on the right, it computes the homology of `K ⊗ Z(L)` for the complex of cycles
-`Z(L)`, as the Künneth short exact sequence requires
-(`HomologicalComplex.homologyKunnethShortComplex_shortExact`).
 
 ## Main results
 
@@ -33,8 +28,6 @@ With the factor on the right, it computes the homology of `K ⊗ Z(L)` for the c
   `TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`: interchange on
   tensor products of cycles and on cross products.
 * `TauCeti.NatChainComplex.isIso_homologyKunneth_comm`: symmetry of the Künneth theorem.
-* `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat_right`: the Künneth theorem when
-  the second complex of modules has zero differentials and flat terms.
 
 ## References
 
@@ -157,22 +150,3 @@ theorem isIso_homologyKunneth_comm :
 end Kunneth
 
 end TauCeti.NatChainComplex
-
-namespace HomologicalComplex
-
-universe u
-
-variable {R : Type u} [CommRing R] (K L : ChainComplex (ModuleCat.{u} R) ℕ)
-  [∀ q, Module.Flat R (L.X q)]
-
-/-- **The Künneth theorem when the second factor has zero differentials and flat terms**: if `L`
-is a complex of flat modules with zero differentials, so that `H_q(L) = L_q`, then for every
-complex `K` the Künneth map `⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an isomorphism.  This
-is `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat` with the factors interchanged.
--/
-theorem isIso_homologyKunneth_of_d_eq_zero_of_flat_right (hL : ∀ i j, L.d i j = 0) (n : ℕ) :
-    IsIso (homologyKunneth K L n) :=
-  (TauCeti.NatChainComplex.isIso_homologyKunneth_comm K L n).2
-    (isIso_homologyKunneth_of_d_eq_zero_of_flat L K hL n)
-
-end HomologicalComplex
