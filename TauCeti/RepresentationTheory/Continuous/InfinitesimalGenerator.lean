@@ -59,6 +59,8 @@ need not be comparable.
   field, and `A_X` is linear over it.
 * `ContRepresentation.isComplexLinear_lieOneParameterGroup`: over `ℂ`, the one-parameter groups
   are complex linear.
+* `ContRepresentation.lieGenerator_eq_restrictScalars_complexGenerator`: over `ℂ`, for any
+  compatible real structure, `A_X` is the restriction to `ℝ` of the complex generator.
 
 ## References
 
@@ -283,6 +285,20 @@ theorem isComplexLinear_lieOneParameterGroup (X : LeftInvariantDerivation I G) :
   (StronglyContinuousSemigroup.isComplexLinear_iff _).2 fun t z v ↦ by
     rw [StronglyContinuousGroup.toSemigroup_apply, lieOneParameterGroup_apply,
       lieOneParameterGroup_apply, map_smul]
+
+/-- **The complex generator of a complex representation.** For any real structure on `V`
+compatible with its complex structure, the infinitesimal generator `A_X` is the restriction to
+real scalars of the complex generator
+(`TauCeti.Semigroups.StronglyContinuousSemigroup.complexGenerator`) of the one-parameter group
+built from the real structure obtained by restricting the complex one; in particular the domain
+of `A_X` is its complex domain. -/
+theorem lieGenerator_eq_restrictScalars_complexGenerator [NormedSpace ℝ V] [IsScalarTower ℝ ℂ V]
+    (X : LeftInvariantDerivation I G) :
+    π.lieGenerator hπ X = (StronglyContinuousSemigroup.complexGenerator _
+      (π.isComplexLinear_lieOneParameterGroup hπ X)).restrictScalars ℝ := by
+  obtain rfl := (NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := V)).symm
+  rw [StronglyContinuousSemigroup.complexGenerator_restrictScalars, lieGenerator_def,
+    StronglyContinuousGroup.generator_def]
 
 end Complex
 
