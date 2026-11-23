@@ -56,7 +56,12 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a `C^N` symbol
   of order `m`, such as a bracket power, times a `C^N` cutoff `χ` localized where
   `1 + ‖x‖ ^ 2 ≍ R ^ 2` and adapted to the scale `R`: for `k ≤ N`, the product is
-  `O(R ^ m / R ^ k)` in its `k`-th derivative.
+  `O(R ^ m / R ^ k)` in its `k`-th derivative, with a constant proportional to the constant in
+  the symbol estimates.
+* `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow`: finitely many symbol
+  estimates hold with a common constant.
+* `TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow`: the constant of a symbol estimate
+  is nonnegative.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the derivative bounds for the
   bracket power `(1 + ‖c x‖ ^ 2) ^ r` of a rescaled argument.
 * `TauCeti.exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow`,
@@ -145,50 +150,53 @@ end ContinuousLinearMap
 
 namespace TauCeti
 
+/-- The constant `W` of a bound `‖f ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ r`, such as a symbol estimate, is
+nonnegative. -/
+theorem nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow {F : Type*} [SeminormedAddGroup F]
+    {f : E → F} {W r : ℝ}
+    (h : ∀ ξ, ‖f ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ r) : 0 ≤ W :=
+  nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (h 0)) (by positivity)
+
 section NormedSpace
 
 variable [NormedSpace ℝ E]
 
-/-- **Dyadic cutoffs of a symbol of order `m` are symbols at scale `R`.** Let `w` be a `C^N`
-function with the symbol estimates `‖D^i w ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for
-`i ≤ N`, and let `a > 0`, `b` and `B : ℕ → ℝ`. There is a constant `K ≥ 0` with the following
-property. Let `R > 0` and let `χ` be a `C^N` real function such that
-`a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ` and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`.
-Then
-`‖D^k (χ • w)‖ ≤ K R ^ m / R ^ k` for `k ≤ N`: on the support of `χ` the symbol `w` behaves like
-the constant `R ^ m`. -/
-theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : ContDiff ℝ N w)
-    {m : ℝ} (hwm : ∀ i ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
-    {a b : ℝ} (ha : 0 < a) (B : ℕ → ℝ) :
-    ∃ K, 0 ≤ K ∧ ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
+/-- **Dyadic cutoffs of a symbol of order `m` are symbols at scale `R`.** Let `a > 0`, `b` and
+`B : ℕ → ℝ`. There is a constant `K ≥ 0` with the following property. Let `w` be a `C^N` function
+with the symbol estimates `‖D^i w ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for `i ≤ N`,
+let `R > 0` and let `χ` be a `C^N` real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the
+support of `χ` and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`. Then
+`‖D^k (χ • w)‖ ≤ K W R ^ m / R ^ k` for `k ≤ N`: on the support of `χ` the symbol `w` behaves like
+the constant `R ^ m`. The constant `K` depends neither on `w` nor on `W`. -/
+theorem exists_norm_iteratedFDeriv_cutoff_smul_le (N : ℕ) (m : ℝ) {a b : ℝ} (ha : 0 < a)
+    (B : ℕ → ℝ) :
+    ∃ K, 0 ≤ K ∧ ∀ (w : E → G) (W : ℝ), ContDiff ℝ N w →
+      (∀ i ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
       (∀ ξ ∈ tsupport χ, a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) →
       (∀ k ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ B k / R ^ k) → ∀ k ≤ N, ∀ ξ,
-        ‖iteratedFDeriv ℝ k (fun ξ ↦ χ ξ • w ξ) ξ‖ ≤ K * R ^ m / R ^ k := by
-  choose! W hW using hwm
-  have hW0 {i : ℕ} (hi : i ≤ N) : 0 ≤ W i := by simpa using (norm_nonneg _).trans (hW i hi 0)
+        ‖iteratedFDeriv ℝ k (fun ξ ↦ χ ξ • w ξ) ξ‖ ≤ K * W * R ^ m / R ^ k := by
   set P : ℕ → ℝ := fun i ↦ max (a ^ ((m - i) / 2)) (b ^ ((m - i) / 2))
   have hP0 (i : ℕ) : 0 ≤ P i := le_max_of_le_left (by positivity)
   -- The Leibniz constant of order `k`, and their sum over `k ≤ N`.
   set S : ℕ → ℝ := fun k ↦
-    ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i))
-  have hS0 {k : ℕ} (hk : k ∈ Finset.range (N + 1)) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by
-    have := hW0 ((k.sub_le i).trans (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)))
-    have := hP0 (k - i); positivity
-  refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k hk ↦ hS0 hk,
-    fun R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
+    ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0 * P (k - i)
+  have hS0 (k : ℕ) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by have := hP0 (k - i); positivity
+  refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k _ ↦ hS0 k,
+    fun w W hw hW R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
+  have hW0 : 0 ≤ W := nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hW 0 (Nat.zero_le _))
   -- By the Leibniz rule, each term `D^i χ D^(k-i) w` is `O(R ^ (-i) R ^ (m - (k - i)))`, which is
   -- `O(R ^ m / R ^ k)`; it vanishes off the support of `χ`.
   have hterm (i : ℕ) (hi : i ∈ Finset.range (k + 1)) :
       (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ ξ‖ * ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤
-        (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i)) * (R ^ m / R ^ k) := by
+        (k.choose i : ℝ) * max (B i) 0 * P (k - i) * (W * R ^ m / R ^ k) := by
     have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
     have hkiN : k - i ≤ N := (k.sub_le i).trans hk
-    have := hW0 hkiN
     have := hP0 (k - i)
     by_cases hξ : ξ ∈ tsupport χ
-    · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤ W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
+    · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤ W * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
         (hW (k - i) hkiN ξ).trans (mul_le_mul_of_nonneg_left
-          (one_add_norm_sq_rpow_le_max_mul_rpow ha hR (hsupp ξ hξ) _) (hW0 hkiN))
+          (one_add_norm_sq_rpow_le_max_mul_rpow ha hR (hsupp ξ hξ) _) hW0)
       have hχi : ‖iteratedFDeriv ℝ i χ ξ‖ ≤ max (B i) 0 / R ^ i :=
         (hB i (hik.trans hk) ξ).trans (by gcongr; exact le_max_left _ _)
       have hpow : 1 / R ^ i * R ^ (m - (k - i : ℕ)) = R ^ m / R ^ k := by
@@ -196,20 +204,33 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
         field_simp
       calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ ξ‖ * ‖iteratedFDeriv ℝ (k - i) w ξ‖
           ≤ (k.choose i : ℝ) * (max (B i) 0 / R ^ i) *
-              (W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ)))) := by
+              (W * (P (k - i) * R ^ (m - (k - i : ℕ)))) := by
             gcongr
-        _ = (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i)) *
-              (1 / R ^ i * R ^ (m - (k - i : ℕ))) := by
+        _ = (k.choose i : ℝ) * max (B i) 0 * P (k - i) *
+              (W * (1 / R ^ i * R ^ (m - (k - i : ℕ)))) := by
             ring
-        _ = _ := by rw [hpow]
+        _ = _ := by rw [hpow, mul_div_assoc]
     · rw [image_eq_zero_of_notMem_tsupport (fun h ↦ hξ (tsupport_iteratedFDeriv_subset _ h)),
         norm_zero, mul_zero, zero_mul]
       positivity
   refine (norm_iteratedFDeriv_smul_le hχ hw ξ (by exact_mod_cast hk)).trans
     ((Finset.sum_le_sum hterm).trans ?_)
-  rw [← Finset.sum_mul, mul_div_assoc]
+  rw [← Finset.sum_mul, mul_div_assoc, mul_div_assoc, ← mul_assoc]
   gcongr
-  exact Finset.single_le_sum (fun k hk ↦ hS0 hk) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+  exact Finset.single_le_sum (fun k _ ↦ hS0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+
+/-- **A common constant in symbol estimates.** If the derivatives of `w` of order at most `N` have
+the symbol estimates `‖D^i w ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m`, then they have
+them with one constant `W` for all `i ≤ N`. -/
+theorem exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow {w : E → G} {m : ℝ}
+    {N : ℕ}
+    (hwm : ∀ i ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) :
+    ∃ W, ∀ i ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2) := by
+  choose! C hC using hwm
+  refine ⟨∑ i ∈ Finset.range (N + 1), max (C i) 0, fun i hi ξ ↦ (hC i hi ξ).trans ?_⟩
+  gcongr
+  exact (le_max_left _ _).trans (Finset.single_le_sum (f := fun i ↦ max (C i) 0)
+    (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (Nat.lt_succ_of_le hi)))
 
 /-- **Symbol estimates for products, uniformly in a parameter.** If the first `k` derivatives of
 two families of `C^k` functions with values in a normed algebra satisfy the symbol estimates

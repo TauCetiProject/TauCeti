@@ -63,6 +63,37 @@ theorem pathEquiv_symm_apply (e : N ≃ₙ N') {x y : V}
       (e.symm_vertexEquiv_apply_vertexEquiv x) (e.symm_vertexEquiv_apply_vertexEquiv y)
       (e.symm.mapPath p) := (rfl)
 
+/-- The equivalence of directed walks with their endpoints included. -/
+def totalPathEquiv (e : N ≃ₙ N') :
+    (Σ x y, ArrowWalk N.Hom x y) ≃ (Σ x y, ArrowWalk N'.Hom x y) :=
+  Equiv.sigmaCongr e.vertexEquiv fun x ↦ Equiv.sigmaCongr e.vertexEquiv (e.pathEquiv x)
+
+/-- Total walk transport relabels both endpoints and the walk. -/
+@[simp]
+theorem totalPathEquiv_apply (e : N ≃ₙ N') (p : Σ x y, ArrowWalk N.Hom x y) :
+    e.totalPathEquiv p = ⟨e.vertexEquiv p.1, e.vertexEquiv p.2.1, e.mapPath p.2.2⟩ :=
+  (rfl)
+
+/-- Inverting the network isomorphism inverts total walk transport. -/
+@[simp]
+theorem totalPathEquiv_symm (e : N ≃ₙ N') :
+    e.symm.totalPathEquiv = e.totalPathEquiv.symm := by
+  apply Equiv.ext
+  rintro ⟨x, y, p⟩
+  apply e.totalPathEquiv.injective
+  rw [Equiv.apply_symm_apply]
+  simp only [totalPathEquiv_apply]
+  have transport {x' y' : W} (hx : x' = x) (hy : y' = y)
+      (q : ArrowWalk N'.Hom x' y')
+      (hq : @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ hx hy q = p) :
+      (⟨x', y', q⟩ : Σ x y, ArrowWalk N'.Hom x y) = ⟨x, y, p⟩ := by
+    cases hx
+    cases hy
+    simpa only [Quiver.Path.cast_rfl_rfl] using
+      congrArg (fun q : ArrowWalk N'.Hom x y ↦
+        (⟨x, y, q⟩ : Σ x y, ArrowWalk N'.Hom x y)) hq
+  exact transport _ _ _ (e.mapPath_mapPath_symm p)
+
 /-- Walk transport maps the arrow sequence in order, retaining parallel arrows and repetitions. -/
 @[simp]
 theorem arrows_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :

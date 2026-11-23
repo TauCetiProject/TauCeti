@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Reducing
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
 # The spectral measure of a self-adjoint partial linear map
@@ -33,7 +36,12 @@ the continuous function `(1 - w) / ((z - i) - (z + i) w)` of `U`
 (`IsSelfAdjoint.resolvent_eq_cfc_cayley`), which is `(z - κ(w))⁻¹` away from `w = 1`. Its
 diagonal matrix elements are therefore the Cauchy–Stieltjes transforms of the diagonal measures of
 `P_A`: `⟪ξ, R(z) ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`. For nonreal `z` the resolvent is moreover the
-spectral integral of the bounded Borel symbol `s ↦ (z - s)⁻¹` itself.
+spectral integral of the bounded Borel symbol `s ↦ (z - s)⁻¹` itself. The resolvent formula
+characterizes `P_A`: by Stieltjes inversion a finite measure on `ℝ` is determined by its
+Cauchy–Stieltjes transform on the upper half-plane, so any projection-valued measure on `ℝ` whose
+diagonal measures represent the resolvent there is `P_A`. In particular, for a bounded
+self-adjoint operator `T`, viewed as an everywhere defined partial linear map, `P_T` is the
+spectral measure of `T` on its real spectrum, pushed forward to `ℝ` along the real part.
 
 The spectral projections commute with `U`, and so does every bounded Borel function of `P_A`.
 Hence these operators intertwine `A` with itself: they preserve the domain of `A`, commute with `A`
@@ -67,6 +75,10 @@ a resolvent point of the part of `A` in the spectral subspace, with resolvent of
 * `IsSelfAdjoint.integral_spectralPVM_eq_resolvent`,
   `IsSelfAdjoint.integral_spectralPVM_resolventSymbol`: for nonreal `z`,
   `∫ (z - s)⁻¹ dP_A(s) = R(z)`.
+* `IsSelfAdjoint.eq_spectralPVM_iff`: the resolvent formula on the upper half-plane characterizes
+  the spectral measure.
+* `IsSelfAdjoint.spectralPVM_toPMap_top`: for a bounded self-adjoint operator, the spectral measure
+  is the bounded spectral measure pushed forward along the real part.
 * `IsSelfAdjoint.intertwines_spectralPVM_integral`, `IsSelfAdjoint.intertwines_spectralPVM_proj`:
   bounded Borel functions of `P_A`, in particular spectral projections, preserve the domain of
   `A` and commute with `A` on it.
@@ -508,6 +520,50 @@ theorem _root_.IsSelfAdjoint.spectralPVM_proj_Ioi_eq_zero_iff (hA : IsSelfAdjoin
     ((A.spectralPVM hA).proj_iUnion_eq_zero _ _ hε)
   obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.mpr (Set.mem_Ioi.mp hs))
   exact Set.mem_iUnion.mpr ⟨n, Set.mem_Ici.mpr (by linarith)⟩
+
+/-- **Uniqueness of the spectral measure.** A projection-valued measure `P` on `ℝ` is the spectral
+measure of a self-adjoint partial linear map `A` iff its diagonal measures represent the
+resolvent of `A` on the upper half-plane: `⟪ξ, R(z) ξ⟫ = ∫ (z - s)⁻¹ dP_ξ(s)` whenever `0 < im z`.
+-/
+theorem _root_.IsSelfAdjoint.eq_spectralPVM_iff (hA : IsSelfAdjoint A)
+    (P : TauCeti.ProjValMeasure ℝ H) :
+    P = A.spectralPVM hA ↔
+      ∀ z : ℂ, 0 < z.im → ∀ ξ : H, ⟪ξ, A.resolvent z ξ⟫_ℂ = ∫ s : ℝ, (z - s)⁻¹ ∂P.diag ξ := by
+  -- A projection-valued measure is determined by its diagonal measures, and by Stieltjes inversion
+  -- a finite measure on `ℝ` by its Cauchy–Stieltjes transform on the upper half-plane.
+  refine ⟨?_, fun h => ProjValMeasure.ext_of_diag fun ξ =>
+    Measure.ext_of_resolventTransform fun z hz => ?_⟩
+  · rintro rfl z hz ξ
+    exact hA.inner_resolvent_apply_eq_integral (hA.mem_resolventSet_of_im_ne_zero hz.ne') ξ
+  -- Mathlib's resolvent transform has the kernel `(s - z)⁻¹ = -(z - s)⁻¹`.
+  have hkernel (μ : Measure ℝ) : resolventTransform μ z = -∫ s : ℝ, (z - s)⁻¹ ∂μ := by
+    rw [resolventTransform_apply, ← integral_neg]
+    congr 1 with s
+    rw [_root_.resolvent, Ring.inverse_eq_inv', ← inv_neg, neg_sub, Complex.coe_algebraMap]
+  rw [hkernel, hkernel, ← h z hz ξ, hA.inner_resolvent_apply_eq_integral
+    (hA.mem_resolventSet_of_im_ne_zero hz.ne') ξ]
+
+/-- **Compatibility with the bounded spectral measure.** For a bounded self-adjoint operator `T`,
+viewed as an everywhere defined partial linear map, the spectral measure is the spectral measure
+of `T` on its spectrum, which is real, pushed forward to `ℝ` along the real part. -/
+theorem _root_.IsSelfAdjoint.spectralPVM_toPMap_top {T : H →L[ℂ] H} (hT : IsSelfAdjoint T) :
+    haveI := hT.isStarNormal
+    ((T : H →ₗ[ℂ] H).toPMap ⊤).spectralPVM (isSelfAdjoint_toPMap_top hT) =
+      T.spectralPVM.map (fun w => (w : ℂ).re) (by fun_prop) := by
+  have := hT.isStarNormal
+  symm
+  refine ((isSelfAdjoint_toPMap_top hT).eq_spectralPVM_iff _).mpr fun z hz ξ => ?_
+  have hzT : z ∈ _root_.resolventSet ℂ T :=
+    Set.notMem_compl_iff.mp fun h => hz.ne' (hT.im_eq_zero_of_mem_spectrum h)
+  -- On the spectrum `w = re w`, so the symbol is `w ↦ (z - w)⁻¹`.
+  have hsymb : (fun w : _root_.spectrum ℂ T => (z - ((w : ℂ).re : ℂ))⁻¹) =
+      fun w : _root_.spectrum ℂ T => (z - (w : ℂ))⁻¹ := by
+    funext w
+    rw [← hT.mem_spectrum_eq_re w.property]
+  rw [ContinuousLinearMap.resolvent_toPMap_top T hzT, ProjValMeasure.map_diag,
+    integral_map (by fun_prop) (by fun_prop), ContinuousLinearMap.spectralPVM_diag, hsymb,
+    ContinuousLinearMap.integral_diagMeasure_eq_inner_cfc _ _ (fun w => (z - w)⁻¹)
+      (continuousOn_inv_sub_of_mem_resolventSet hzT), cfc_inv_sub_eq_resolvent hzT]
 
 /-! ### Spectral restrictions -/
 

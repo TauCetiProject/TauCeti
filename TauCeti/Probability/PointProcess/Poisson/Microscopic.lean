@@ -27,8 +27,8 @@ P(N h = 1) = r * h + o(h),       P(N h ≥ 2) = o(h).
 ```
 
 Both the Landau `=o[𝓝[>] 0]` formulation and the quotient `Tendsto` formulation are provided,
-together with their specializations to `countPathMeasure (N · ω)` for a natural-valued process `N`
-measurable at nonnegative rational times whose sample paths are monotone and right-continuous on
+together with their specializations to `countingPathMeasure (N · ω)` for a natural-valued process
+`N` measurable at nonnegative rational times whose sample paths are monotone and right-continuous on
 one event of full measure. Rate `r = 0` is included alongside `r > 0`. Path monotonicity and
 right-continuity are required only on one common event of full measure, without assuming
 measurability of that event; natural values automatically exclude explosion at finite times.
@@ -80,17 +80,17 @@ theorem ae_forall_pos_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
   exact (measure_mono hsubset).trans hIoc
 
 /-- Stationary increment laws and `P(N h - N 0 ≥ 2) = o(h)` imply that
-`countPathMeasure (N · ω)` has singleton mass at most one simultaneously at all positive times,
+`countingPathMeasure (N · ω)` has singleton mass at most one simultaneously at all positive times,
 whenever sample paths are monotone and right-continuous on one event of full measure. Neither
 independent increments nor coordinate measurability is assumed. -/
-theorem ae_forall_pos_countPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasure P]
+theorem ae_forall_pos_countingPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasure P]
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω))
     (hstat : ∀ s h, IdentDistrib (fun ω ↦ N (s + h) ω - N s ω)
       (fun ω ↦ N h ω - N 0 ω) P P)
     (hsmall : (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω - N 0 ω}) =o[𝓝[>] 0]
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
-    ∀ᵐ ω ∂P, ∀ t > (0 : ℝ≥0), countPathMeasure (N · ω) {t} ≤ 1 :=
-  ae_forall_pos_measure_singleton_le_one_of_small_time (ae_forall_countPathMeasure_Iic_eq hreg)
+    ∀ᵐ ω ∂P, ∀ t > (0 : ℝ≥0), countingPathMeasure (N · ω) {t} ≤ 1 :=
+  ae_forall_pos_measure_singleton_le_one_of_small_time (ae_forall_countingPathMeasure_Iic_eq hreg)
     hstat hsmall
 
 /-- If in addition `N 0 ≤ 1` almost surely, stationary increment laws and
@@ -113,18 +113,18 @@ theorem ae_forall_measure_singleton_le_one_of_small_time [IsFiniteMeasure P]
   · exact hpos t ht
 
 /-- If in addition `N 0 ≤ 1` almost surely, stationary increment laws and
-`P(N h - N 0 ≥ 2) = o(h)` make `countPathMeasure (N · ω)` simple at every time in `ℝ≥0`,
+`P(N h - N 0 ≥ 2) = o(h)` make `countingPathMeasure (N · ω)` simple at every time in `ℝ≥0`,
 including the origin. -/
-theorem ae_forall_countPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasure P]
+theorem ae_forall_countingPathMeasure_singleton_le_one_of_small_time [IsFiniteMeasure P]
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω))
     (h0 : ∀ᵐ ω ∂P, N 0 ω ≤ 1)
     (hstat : ∀ s h, IdentDistrib (fun ω ↦ N (s + h) ω - N s ω)
       (fun ω ↦ N h ω - N 0 ω) P P)
     (hsmall : (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω - N 0 ω}) =o[𝓝[>] 0]
       (fun h : ℝ≥0 ↦ (h : ℝ))) :
-    ∀ᵐ ω ∂P, ∀ t, countPathMeasure (N · ω) {t} ≤ 1 :=
+    ∀ᵐ ω ∂P, ∀ t, countingPathMeasure (N · ω) {t} ≤ 1 :=
   ae_forall_measure_singleton_le_one_of_small_time
-    (ae_forall_countPathMeasure_Iic_eq hreg) h0 hstat hsmall
+    (ae_forall_countingPathMeasure_Iic_eq hreg) h0 hstat hsmall
 
 /-! ### Microscopic characterizations of homogeneous temporal Poisson point processes -/
 
@@ -148,22 +148,22 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_stationary_small_time
       (fun s t hst ↦ ae_le_of_ae_measure_Iic_eq (hcount.mono fun _ h ↦ h s)
         (hcount.mono fun _ h ↦ h t) hst) r
 
-/-- **Microscopic characterization of `countPathMeasure` (quotient form).** For a natural-valued
+/-- **Microscopic characterization of `countingPathMeasure` (quotient form).** For a natural-valued
 process measurable at nonnegative rational times whose paths are monotone and right-continuous on
-one event of full measure, `countPathMeasure (N · ω)` is a rate-`r` Poisson random measure on `ℝ≥0`
-if and only if `N 0 = 0` almost surely, `N` has stationary independent increments, and
+one event of full measure, `countingPathMeasure (N · ω)` is a rate-`r` Poisson random measure on
+`ℝ≥0` if and only if `N 0 = 0` almost surely, `N` has stationary independent increments, and
 `P(N h = 1) / h → r` and `P(N h ≥ 2) / h → 0` as `h ↓ 0`. Both `r > 0` and `r = 0` are
 included. -/
-theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_stationary_small_time {r : ℝ≥0}
+theorem isPoissonRandomMeasure_countingPathMeasure_smul_nnvolume_iff_stationary_small_time {r : ℝ≥0}
     (hN : ∀ q : ℚ≥0, Measurable (N q))
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
-    IsPoissonRandomMeasure P (fun ω ↦ countPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
+    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
       (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
       (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
       Tendsto (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} / h) (𝓝[>] 0) (𝓝 (r : ℝ)) ∧
       Tendsto (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω} / h) (𝓝[>] 0) (𝓝 0) :=
   isPoissonRandomMeasure_smul_nnvolume_iff_stationary_small_time
-    (measurable_countPathMeasure_of_nnrat hN) (ae_forall_countPathMeasure_Iic_eq hreg)
+    (measurable_countingPathMeasure_of_nnrat hN) (ae_forall_countingPathMeasure_Iic_eq hreg)
 
 /-- **Microscopic characterization of homogeneous temporal Poisson point processes (`o(h)`
 form).** For a measurable random measure `M` on `ℝ≥0` represented almost surely by cumulative
@@ -186,21 +186,21 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO
       (fun s t hst ↦ ae_le_of_ae_measure_Iic_eq (hcount.mono fun _ h ↦ h s)
         (hcount.mono fun _ h ↦ h t) hst) r
 
-/-- **Microscopic characterization of `countPathMeasure` (`o(h)` form).** For a natural-valued
+/-- **Microscopic characterization of `countingPathMeasure` (`o(h)` form).** For a natural-valued
 process measurable at nonnegative rational times whose paths are monotone and right-continuous on
-one event of full measure, `countPathMeasure (N · ω)` is a rate-`r` Poisson random measure on `ℝ≥0`
-if and only if `N 0 = 0` almost surely, `N` has stationary independent increments,
+one event of full measure, `countingPathMeasure (N · ω)` is a rate-`r` Poisson random measure on
+`ℝ≥0` if and only if `N 0 = 0` almost surely, `N` has stationary independent increments,
 `P(N h = 1) - r * h = o(h)`, and `P(N h ≥ 2) = o(h)` as `h ↓ 0`. -/
-theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_stationary_isLittleO {r : ℝ≥0}
-    (hN : ∀ q : ℚ≥0, Measurable (N q))
+theorem isPoissonRandomMeasure_countingPathMeasure_smul_nnvolume_iff_stationary_isLittleO
+    {r : ℝ≥0} (hN : ∀ q : ℚ≥0, Measurable (N q))
     (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
-    IsPoissonRandomMeasure P (fun ω ↦ countPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
+    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
       (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
       (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
         (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
       (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) :=
   isPoissonRandomMeasure_smul_nnvolume_iff_stationary_isLittleO
-    (measurable_countPathMeasure_of_nnrat hN) (ae_forall_countPathMeasure_Iic_eq hreg)
+    (measurable_countingPathMeasure_of_nnrat hN) (ae_forall_countingPathMeasure_Iic_eq hreg)
 
 end TauCeti.Probability
