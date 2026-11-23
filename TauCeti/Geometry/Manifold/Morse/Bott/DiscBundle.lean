@@ -200,8 +200,7 @@ variable [FiniteDimensional ℝ E] (h : i.IsNondegenerateCriticalSubmanifold f)
 
 /-- The part of a normal vector in the negative normal space, along the positive one. -/
 private def negPart (s : S) : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn :=
-  (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
-    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
+  h.negativeNormalProjection hn g s
 
 /-- The part of a normal vector in the positive normal space, along the negative one. -/
 private def posPart (s : S) : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn :=
@@ -236,13 +235,14 @@ private theorem rescale_def (a b : ℝ) : h.rescale hn g a b x =
   rfl
 
 private theorem negPart_mem : h.negPart hn g s v ∈ h.negativeNormalSpace hn g s :=
-  Submodule.projection_apply_mem _ v
+  h.negativeNormalProjection_apply_mem hn g v
 
 private theorem posPart_mem : h.posPart hn g s v ∈ h.positiveNormalSpace hn g s :=
   Submodule.projection_apply_mem _ v
 
-private theorem negPart_add_posPart : h.negPart hn g s v + h.posPart hn g s v = v :=
-  Submodule.projection_add_projection_eq_self _ v
+private theorem negPart_add_posPart : h.negPart hn g s v + h.posPart hn g s v = v := by
+  rw [negPart, negativeNormalProjection_def]
+  exact Submodule.projection_add_projection_eq_self _ v
 
 private theorem posPart_eq_zero_iff : h.posPart hn g s v = 0 ↔ v ∈ h.negativeNormalSpace hn g s :=
   Submodule.projection_apply_eq_zero_iff _
@@ -296,9 +296,9 @@ private theorem negPart_smul_add_smul (a b : ℝ) :
     h.negPart hn g s (a • h.negPart hn g s v + b • h.posPart hn g s v) =
       a • h.negPart hn g s v := by
   have h₁ : h.negPart hn g s (h.negPart hn g s v) = h.negPart hn g s v :=
-    Submodule.projection_apply_of_mem_left _ (h.negPart_mem hn g v)
+    h.negativeNormalProjection_apply_of_mem hn g (h.negPart_mem hn g v)
   have h₂ : h.negPart hn g s (h.posPart hn g s v) = 0 :=
-    Submodule.projection_apply_of_mem_right _ (h.posPart_mem hn g v)
+    (h.negativeNormalProjection_apply_eq_zero_iff hn g).mpr (h.posPart_mem hn g v)
   rw [map_add, map_smul, map_smul, h₁, h₂, smul_zero, add_zero]
 
 private theorem posPart_smul_add_smul (a b : ℝ) :
