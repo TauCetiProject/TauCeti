@@ -89,7 +89,7 @@ example : ¬IsUnit (⟨1 - X, (isRestricted_one 1).sub (isRestricted_monomial 1 
     calc _ = ((u⁻¹ : (IsRestricted.subring (R := R) 1)ˣ) : PowerSeries R) * ((1 - X) * mk 1) := by
           rw [mul_comm (1 - X), h1, mul_one]
       _ = mk 1 := by rw [← mul_assoc, hinv, one_mul]
-  exact PowerSeries.not_isRestricted_mk_one (h2 ▸ (u⁻¹ : _).1.2)
+  exact PowerSeries.not_isRestricted_mk_one (h2 ▸ (u⁻¹ : _).val.property)
 
 end CommRing
 

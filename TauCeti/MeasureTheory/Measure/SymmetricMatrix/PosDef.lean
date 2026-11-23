@@ -72,7 +72,7 @@ theorem closure_posDefMatrix (p : ℕ) :
         (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef} := by
   refine Subset.antisymm
     (closure_minimal (fun _ hA ↦ hA.posSemidef)
-      (isClosed_setOfPred_posSemidef.preimage continuous_subtype_val)) ?_
+      (isClosed_setOfPred_posSemidef.preimage continuous_subtypeVal)) ?_
   intro A hA
   -- Add a positive multiple of the identity while staying in the symmetric subspace.
   let I : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=

@@ -83,8 +83,8 @@ private theorem exists_twoCover_mem_nhds (hCover : interior A ∪ interior B = u
   · exact ⟨false, mem_interior_iff_mem_nhds.1 hy⟩
 
 private def swapInter : C(↥(B ∩ A), ↥(A ∩ B)) where
-  toFun z := ⟨z.1, z.2.2, z.2.1⟩
-  continuous_toFun := continuous_subtype_val.subtype_mk fun z ↦ ⟨z.2.2, z.2.1⟩
+  toFun z := ⟨z.val, z.property.2, z.property.1⟩
+  continuous_toFun := continuous_subtypeVal.subtype_mk fun z ↦ ⟨z.property.2, z.property.1⟩
 
 variable {D : Type*} [Category D]
 
@@ -190,16 +190,16 @@ in `T`, a morphism of the fundamental groupoid of `T` from `z` to `r z`: the ide
 and the class of a chosen path in `T` otherwise. -/
 private def conn (r : X → X) (hrS : ∀ x ∈ S, r x = x) (T : Set X)
     (hT : ∀ x ∈ T, JoinedIn T x (r x)) (z : T) :
-    mk z ⟶ mk (⟨r z, (hT z z.2).target_mem⟩ : T) := by
+    mk z ⟶ mk (⟨r z, (hT z z.property).target_mem⟩ : T) := by
   classical
   exact if hz : (z : X) ∈ S then eqToHom (congrArg mk (Subtype.ext (hrS z hz).symm))
-    else Path.Homotopic.Quotient.mk (hT z z.2).joined_subtype.somePath
+    else Path.Homotopic.Quotient.mk (hT z z.property).joined_subtype.somePath
 
 /-- For `T ⊆ U`, the morphisms `conn` of `U`, replaced on the points of `T` by the images of the
 morphisms `conn` of `T`. -/
 private def connExt (r : X → X) (hrS : ∀ x ∈ S, r x = x) {T U : Set X} (hTU : T ⊆ U)
     (hT : ∀ x ∈ T, JoinedIn T x (r x)) (hU : ∀ x ∈ U, JoinedIn U x (r x)) (z : U) :
-    mk z ⟶ mk (⟨r z, (hU z z.2).target_mem⟩ : U) := by
+    mk z ⟶ mk (⟨r z, (hU z z.property).target_mem⟩ : U) := by
   classical
   exact if hz : (z : X) ∈ T then (map (ContinuousMap.inclusion hTU)).map (conn S r hrS T hT ⟨z, hz⟩)
     else conn S r hrS U hU z
@@ -228,9 +228,10 @@ private theorem connExt_of_mem_basepoints (r : X → X) (hrS : ∀ x ∈ S, r x 
 /-- Conjugation by morphisms `c z` from every point `z` of `U` to `r z ∈ S`, as a retraction of
 the fundamental groupoid of `U` onto its full subgroupoid on `S`. -/
 private def retractionOn (r : X → X) (hrS : ∀ x, r x ∈ S) (U : Set X) (hU : ∀ x ∈ U, r x ∈ U)
-    (c : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.2⟩ : U)) :
+    (c : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.property⟩ : U)) :
     FundamentalGroupoid U ⥤ FundamentalGroupoidOn (Subtype.val ⁻¹' S : Set U) :=
-  InducedCategory.retraction _ (fun z ↦ ⟨⟨r z.as, hU _ z.as.2⟩, hrS _⟩) fun z ↦ asIso (c z.as)
+  InducedCategory.retraction _ (fun z ↦ ⟨⟨r z.as, hU _ z.as.property⟩, hrS _⟩) fun z ↦ asIso
+      (c z.as)
 
 /-- Conjugation by morphisms `c x` from every point `x` of `X` to `r x ∈ S`, as a retraction of
 the fundamental groupoid of `X` onto its full subgroupoid on `S`. -/
@@ -241,7 +242,8 @@ private def retraction (r : X → X) (hrS : ∀ x, r x ∈ S) (c : ∀ x : X, mk
 /-- The retractions of `T ⊆ U` commute with the inclusions if their connecting morphisms do. -/
 private theorem map_inclusion_comp_retractionOn (r : X → X) (hrS : ∀ x, r x ∈ S) {T U : Set X}
     (hTU : T ⊆ U) (hT : ∀ x ∈ T, r x ∈ T) (hU : ∀ x ∈ U, r x ∈ U)
-    (cT : ∀ z : T, mk z ⟶ mk (⟨r z, hT z z.2⟩ : T)) (cU : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.2⟩ : U))
+    (cT : ∀ z : T, mk z ⟶ mk (⟨r z, hT z z.property⟩ : T)) (cU : ∀ z : U, mk z ⟶ mk (⟨r z,
+        hU z z.property⟩ : U))
     (hc : ∀ z : T, cU (ContinuousMap.inclusion hTU z) =
       (map (ContinuousMap.inclusion hTU)).map (cT z)) :
     map (ContinuousMap.inclusion hTU) ⋙ retractionOn S r hrS U hU cU =
@@ -262,7 +264,7 @@ private theorem map_inclusion_comp_retractionOn (r : X → X) (hrS : ∀ x, r x 
 /-- The retraction of `X` restricts to the retraction of `U` if their connecting morphisms
 agree. -/
 private theorem map_subtypeVal_comp_retraction (r : X → X) (hrS : ∀ x, r x ∈ S) {U : Set X}
-    (hU : ∀ x ∈ U, r x ∈ U) (cU : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.2⟩ : U))
+    (hU : ∀ x ∈ U, r x ∈ U) (cU : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.property⟩ : U))
     (c : ∀ x : X, mk x ⟶ mk (r x))
     (hc : ∀ z : U, c z = (map (ContinuousMap.subtypeVal U)).map (cU z)) :
     map (ContinuousMap.subtypeVal U) ⋙ retraction S r hrS c =
@@ -282,12 +284,12 @@ private theorem map_subtypeVal_comp_retraction (r : X → X) (hrS : ∀ x, r x �
 /-- The retraction of `U` restricts to the identity on the full subgroupoid on `S` if its
 connecting morphisms are identities on `S`. -/
 private theorem incl_comp_retractionOn (r : X → X) (hrS : ∀ x, r x ∈ S) (hrS' : ∀ x ∈ S, r x = x)
-    {U : Set X} (hU : ∀ x ∈ U, r x ∈ U) (cU : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.2⟩ : U))
+    {U : Set X} (hU : ∀ x ∈ U, r x ∈ U) (cU : ∀ z : U, mk z ⟶ mk (⟨r z, hU z z.property⟩ : U))
     (hc : ∀ (z : U) (hz : (z : X) ∈ S),
       cU z = eqToHom (congrArg mk (Subtype.ext (hrS' z hz).symm))) :
     FundamentalGroupoidOn.incl _ ⋙ retractionOn S r hrS U hU cU = 𝟭 _ :=
   InducedCategory.inducedFunctor_comp_retraction _ _ _
-    (fun s ↦ Subtype.ext (Subtype.ext (hrS' _ s.2))) fun s ↦ hc s.1 s.2
+    (fun s ↦ Subtype.ext (Subtype.ext (hrS' _ s.property))) fun s ↦ hc s.val s.property
 
 /-- The retraction of `X` restricts to the identity on the full subgroupoid on `S` if its
 connecting morphisms are identities on `S`. -/
@@ -295,8 +297,8 @@ private theorem incl_comp_retraction (r : X → X) (hrS : ∀ x, r x ∈ S) (hrS
     (c : ∀ x : X, mk x ⟶ mk (r x))
     (hc : ∀ (x : X) (hx : x ∈ S), c x = eqToHom (congrArg mk (hrS' x hx).symm)) :
     FundamentalGroupoidOn.incl S ⋙ retraction S r hrS c = 𝟭 _ :=
-  InducedCategory.inducedFunctor_comp_retraction _ _ _ (fun s ↦ Subtype.ext (hrS' _ s.2))
-    fun s ↦ hc s.1 s.2
+  InducedCategory.inducedFunctor_comp_retraction _ _ _ (fun s ↦ Subtype.ext (hrS' _ s.property))
+    fun s ↦ hc s.val s.property
 
 variable {S} (hSA : ∀ x ∈ A, ∃ y ∈ S, JoinedIn A x y) (hSB : ∀ x ∈ B, ∃ y ∈ S, JoinedIn B x y)
   (hSAB : ∀ x ∈ A ∩ B, ∃ y ∈ S, JoinedIn (A ∩ B) x y)
@@ -385,12 +387,12 @@ private theorem exists_retractions (hCover : interior A ∪ interior B = univ) :
     by_cases hzA : (z : X) ∈ A
     · -- On `A ∩ B`, both connecting morphisms are images of those of `A ∩ B`.
       refine (dite_eq_left hzA).trans <| (congrArg (map (ContinuousMap.subtypeVal A)).map
-        (connExt_of_mem S r hrS _ hjAB hjA ⟨z, hzA⟩ ⟨hzA, z.2⟩)).trans <|
+        (connExt_of_mem S r hrS _ hjAB hjA ⟨z, hzA⟩ ⟨hzA, z.property⟩)).trans <|
           (FundamentalGroupoid.map_comp_map _ _ _).symm.trans <|
             (FundamentalGroupoid.map_comp_map (ContinuousMap.subtypeVal B)
               (ContinuousMap.inclusion inter_subset_right) _).trans ?_
       exact congrArg (map (ContinuousMap.subtypeVal B)).map
-        (connExt_of_mem S r hrS _ hjAB hjB z ⟨hzA, z.2⟩).symm
+        (connExt_of_mem S r hrS _ hjAB hjB z ⟨hzA, z.property⟩).symm
     · exact dite_eq_right hzA
   have hrmem (x : X) : r x ∈ S := retr_mem hSA hSB hSAB hCover x
   have hmAB (x : X) (hx : x ∈ A ∩ B) : r x ∈ A ∩ B := (hjAB x hx).target_mem
@@ -399,10 +401,10 @@ private theorem exists_retractions (hCover : interior A ∪ interior B = univ) :
   refine ⟨retractionOn S r hrmem (A ∩ B) hmAB cAB, retractionOn S r hrmem A hmA cA,
     retractionOn S r hrmem B hmB cB, retraction S r hrmem c,
     map_inclusion_comp_retractionOn S r hrmem inter_subset_left hmAB hmA cAB cA fun z ↦
-      connExt_of_mem S r hrS _ hjAB hjA _ z.2,
+      connExt_of_mem S r hrS _ hjAB hjA _ z.property,
     map_inclusion_comp_retractionOn S r hrmem inter_subset_right hmAB hmB cAB cB fun z ↦
-      connExt_of_mem S r hrS _ hjAB hjB _ z.2,
-    map_subtypeVal_comp_retraction S r hrmem hmA cA c fun z ↦ dite_eq_left z.2,
+      connExt_of_mem S r hrS _ hjAB hjB _ z.property,
+    map_subtypeVal_comp_retraction S r hrmem hmA cA c fun z ↦ dite_eq_left z.property,
     map_subtypeVal_comp_retraction S r hrmem hmB cB c hcB,
     incl_comp_retractionOn S r hrmem hrS hmA cA fun z hz ↦
       connExt_of_mem_basepoints S r hrS _ hjAB hjA z hz,

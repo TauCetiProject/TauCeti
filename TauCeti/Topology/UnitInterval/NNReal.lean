@@ -10,9 +10,10 @@ public import Mathlib.Topology.UnitInterval
 /-!
 # The unit interval inside the nonnegative reals
 
-Two facts about `unitInterval.toNNReal : I → ℝ≥0`, the inclusion of the unit interval into the
-nonnegative reals: its values are at most one, and clamping a real `t` to the unit interval with
-`Set.projIcc` and reading it back in `ℝ≥0` gives `min t.toNNReal 1` (so `min t 1` for `t : ℝ≥0`).
+Facts about `unitInterval.toNNReal : I → ℝ≥0`, the inclusion of the unit interval into the
+nonnegative reals: its values are at most one, it sends the reversal `σ s` to `1 - s`, and
+clamping a real `t` to the unit interval with `Set.projIcc` and reading it back in `ℝ≥0` gives
+`min t.toNNReal 1` (so `min t 1` for `t : ℝ≥0`).
 They let paths parametrized by the unit interval be reparametrized by a nonnegative time, as in
 `TauCeti.Topology.PathSpace.Moore.Comparison.Basic`.
 -/
@@ -28,6 +29,10 @@ namespace unitInterval
 @[simp]
 theorem toNNReal_le_one (s : I) : toNNReal s ≤ 1 :=
   NNReal.coe_le_one.1 (le_one s)
+
+/-- The inclusion of the unit interval into `ℝ≥0` sends the reversal `σ s` to `1 - s`. -/
+theorem toNNReal_symm (s : I) : toNNReal (σ s) = 1 - toNNReal s :=
+  eq_tsub_of_add_eq (toNNReal_symm_add_toNNReal s)
 
 /-- Clamping a real `t` to the unit interval, read back in `ℝ≥0`, is `min t.toNNReal 1`. -/
 @[simp]

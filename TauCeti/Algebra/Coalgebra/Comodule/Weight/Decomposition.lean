@@ -37,6 +37,9 @@ weight `g`.
   group-like-spanned coalgebra the group-like weight spaces of a comodule are independent.
 * `TauCeti.Comodule.isInternal_groupLikeWeightSpace`: a comodule over a group-like-spanned
   coalgebra is the internal direct sum of its group-like weight spaces.
+* `TauCeti.Subcomodule.iSup_groupLikeWeightSpace_le_comap_span_groupLike`: over a field, the
+  group-like weight spaces of a subcomodule of the regular comodule lie in the span of the
+  group-like elements it contains.
 * `TauCeti.Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_finite_subcomodule`: conversely, a
   coalgebra over a field is spanned by its group-like elements once every finite-dimensional
   subcomodule of the regular comodule is spanned by its group-like weight spaces.
@@ -175,6 +178,35 @@ end Internal
 
 end TauCeti.Comodule
 
+namespace TauCeti.Subcomodule
+
+universe u v
+
+variable {k : Type u} {C : Type v} [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+
+/-- The group-like weight spaces of a subcomodule `N` of the regular comodule of a coalgebra over
+a field lie in the span of the group-like elements contained in `N`. A weight vector of the
+regular comodule is a scalar multiple of its weight, which lies in `N` unless the vector is
+zero. -/
+theorem iSup_groupLikeWeightSpace_le_comap_span_groupLike (N : Subcomodule k C C) :
+    (⨆ g : GroupLike k C, _root_.GroupLike.weightSpace (M := N) g) ≤
+      (Submodule.span k ((↑) '' {g : GroupLike k C | (g : C) ∈ N})).comap
+        N.subtype.toLinearMap := by
+  refine iSup_le fun g n hn ↦ ?_
+  have hw := N.subtype.map_mem_groupLikeWeightSpace hn
+  rw [_root_.GroupLike.mem_weightSpace, Comodule.instSelf_coact] at hw
+  obtain ⟨r, hr⟩ : ∃ r : k, N.subtype n = r • (g : C) :=
+    ⟨_, Coalgebra.eq_counit_smul_of_comul_eq_tmul hw⟩
+  rw [Submodule.mem_comap, Comodule.Hom.coe_toLinearMap, hr]
+  obtain rfl | hr0 := eq_or_ne r 0
+  · rw [zero_smul]
+    exact zero_mem _
+  · refine Submodule.smul_mem _ _ (Submodule.subset_span ⟨g, ?_, rfl⟩)
+    have h := N.toSubmodule.smul_mem r⁻¹ n.property
+    rwa [← Subcomodule.subtype_apply, hr, inv_smul_smul₀ hr0] at h
+
+end TauCeti.Subcomodule
+
 namespace TauCeti.Subcoalgebra
 
 universe u v
@@ -193,20 +225,10 @@ theorem groupLikeSetSpan_eq_top_of_forall_finite_subcomodule
   rw [groupLikeSetSpan_eq_top_iff_span_eq_top]
   refine eq_top_iff.mpr fun c _ ↦ ?_
   obtain ⟨N, hNfin, hN⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := C) c
-  -- A weight vector in the regular representation is a counit multiple of its character.
-  have hle : (⨆ g : GroupLike k C, _root_.GroupLike.weightSpace (M := N) g) ≤
-      (Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := C)))).comap
-        (N.subtype.toLinearMap) := by
-    refine iSup_le fun g n hn ↦ ?_
-    have hw := N.subtype.map_mem_groupLikeWeightSpace hn
-    rw [_root_.GroupLike.mem_weightSpace, Comodule.instSelf_coact] at hw
-    have hmem : N.subtype n ∈
-        Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := C))) := by
-      rw [Coalgebra.eq_counit_smul_of_comul_eq_tmul hw]
-      exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self g))
-    simpa only [Submodule.mem_comap, Comodule.Hom.coe_toLinearMap] using hmem
-  have hmem := hle (h N hNfin ▸ (Submodule.mem_top : (⟨c, hN⟩ : N) ∈ ⊤))
-  simpa only [Submodule.mem_comap, Subcomodule.subtype_toLinearMap,
-    SMulMemClass.subtype_apply] using hmem
+  -- The weight vectors of `N` lie in the span of the group-like elements of `N`.
+  have hmem := Subcomodule.iSup_groupLikeWeightSpace_le_comap_span_groupLike N
+    (h N hNfin ▸ (Submodule.mem_top : (⟨c, hN⟩ : N) ∈ ⊤))
+  rw [Submodule.mem_comap, Subcomodule.subtype_toLinearMap, SMulMemClass.subtype_apply] at hmem
+  exact Submodule.span_mono (Set.image_subset_range _ _) hmem
 
 end TauCeti.Subcoalgebra

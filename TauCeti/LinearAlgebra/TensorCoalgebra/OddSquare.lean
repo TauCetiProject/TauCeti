@@ -18,15 +18,15 @@ case `q = r = 1` is the one the `A∞` sign audit consumes.
 
 Homogeneity is genuinely needed: `TauCeti.ReducedTensorWords.IsGradedCoderivation G q` is the
 `q`-twisted co-Leibniz identity alone and does not by itself constrain degrees. The oddness comes
-from `TauCeti.LinearMap.IsHomogeneous.map_koszulTwist_comp`, which turns the usual calculation on
+from `LinearMap.IsHomogeneous.map_koszulTwist_comp`, which turns the usual calculation on
 a homogeneous word into an equality of endomorphisms.
 
 ## Main results
 
-* `TauCeti.LinearMap.IsHomogeneous.anticommute_map_koszulTwist`: a homogeneous endomorphism of
+* `LinearMap.IsHomogeneous.anticommute_map_koszulTwist`: a homogeneous endomorphism of
   reduced tensor words anticommutes with the letterwise Koszul involution as soon as the sign
   `(-1)^(q * r)` of its degree against the twist parameter is `-1`.
-* `TauCeti.LinearMap.IsHomogeneous.anticommute_map_koszulTwist_one`: the degree-one case, at twist
+* `LinearMap.IsHomogeneous.anticommute_map_koszulTwist_one`: the degree-one case, at twist
   parameter one.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self_of_isHomogeneous`:
   the square of such a homogeneous graded coderivation is an ordinary coderivation.
@@ -45,11 +45,9 @@ open scoped BigOperators DirectSum TensorProduct
 
 universe uR uM
 
-namespace TauCeti
-
 namespace LinearMap.IsHomogeneous
 
-open ReducedTensorWords
+open TauCeti TauCeti.ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 
@@ -83,6 +81,8 @@ theorem anticommute_map_koszulTwist_one {G : InternalGrading R M ℤ}
   hb.anticommute_map_koszulTwist (by norm_num)
 
 end LinearMap.IsHomogeneous
+
+namespace TauCeti
 
 namespace ReducedTensorWords.IsGradedCoderivation
 

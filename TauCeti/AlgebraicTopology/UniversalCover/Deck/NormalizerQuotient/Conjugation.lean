@@ -73,7 +73,7 @@ lemma normalizerQuotientConjEquiv_refl_mk_congr (H : Subgroup (deck p))
   -- the quotient congruence the remaining representative equality has to be exposed pointwise.
   change ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
     (fun e => by rfl : ∀ e, p ((Homeomorph.refl E) e) = p e)
-    (φ : deck p) : deck p).1 x) = (φ : deck p).1 x
+    (φ : deck p) : deck p).val x) = (φ : deck p).val x
   simp
 
 /-- The inverse deck normalizer-quotient conjugation equivalence is induced by inverse
@@ -126,9 +126,9 @@ lemma normalizerQuotientConjEquiv_trans_mk_congr {G : Type*} [TopologicalSpace G
   ext x
   -- The quotient and subgroup congruences reduce the remaining goal to pointwise equality of
   -- the two deck conjugation representatives, where `conjMulEquiv_trans` is definitional.
-  change (((conjMulEquiv k hqr) ((conjMulEquiv h hpq) (φ : deck p)) : deck r).1 x) =
+  change (((conjMulEquiv k hqr) ((conjMulEquiv h hpq) (φ : deck p)) : deck r).val x) =
     ((conjMulEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq])
-      (φ : deck p) : deck r).1 x)
+      (φ : deck p) : deck r).val x)
   simp [conjMulEquiv_apply_coe]
 
 /-- Inverse-conjugating a representative of the `h`-conjugated subgroup quotient gives the
@@ -161,7 +161,7 @@ lemma normalizerQuotientConjEquiv_mk_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) 
         (H.map ((conjMulEquiv h hpq : deck p ≃* deck q) : deck p →* deck q))
         ⟨conjMulEquiv h hpq (φ : deck p), by
           rw [← Subgroup.normalizerEquivMap_apply_coe H (conjMulEquiv h hpq) φ]
-          exact (Subgroup.normalizerEquivMap H (conjMulEquiv h hpq) φ).2⟩ := by
+          exact (Subgroup.normalizerEquivMap H (conjMulEquiv h hpq) φ).property⟩ := by
   exact Subgroup.normalizerQuotientEquivMap_mk_coe H (conjMulEquiv h hpq) φ
 
 /-- On representatives, inverse transport of the deck normalizer quotient applies inverse
@@ -176,7 +176,7 @@ lemma normalizerQuotientConjEquiv_symm_mk_coe (h : E ≃ₜ F) (hpq : ∀ e, q (
       Subgroup.normalizerQuotientMk H
         ⟨(conjMulEquiv h hpq).symm (ψ : deck q), by
           rw [← Subgroup.normalizerEquivMap_symm_apply_coe H (conjMulEquiv h hpq) ψ]
-          exact ((Subgroup.normalizerEquivMap H (conjMulEquiv h hpq)).symm ψ).2⟩ := by
+          exact ((Subgroup.normalizerEquivMap H (conjMulEquiv h hpq)).symm ψ).property⟩ := by
   rw [normalizerQuotientConjEquiv_symm_mk]
   rfl
 

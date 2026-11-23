@@ -111,7 +111,7 @@ theorem iCycles_homogeneousCocyclesMap2_apply (φ : H →ₜ* G) (f : M →+ N)
       (cocycleEquiv2 G M c) = cochainEquiv2 G M ⟨c.val, Z2_le_C2 G M c.property⟩ :=
     iCycles_cocycleEquiv2 G M c
   rw [hH, hG, cochainEquiv2_apply, cochainEquiv2_apply]
-  simp only [homogeneous2_apply, cocyclesMap2_coe, cochainsMap2_apply,
+  simp only [homogeneous2_apply, coe_cocyclesMap2, cochainsMap2_apply,
     MonoidHom.coe_ofClass, map_mul, map_inv, hf]
   -- The two sides differ only in the instance path of the action of `H`, on `N` and on the
   -- carrier of `ofDiscreteModule ℤ H N`, which is `N` by definition.
