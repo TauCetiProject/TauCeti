@@ -68,23 +68,12 @@ universe u v w x y z
 variable {V : Type u} {W : Type v}
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-/-- The product of the carriers of two integral lattices is a full lattice in the product space. -/
-private theorem isLattice_prod (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.carrier.prod M.carrier).IsLattice ℚ := by
-  constructor
-  · rw [← Module.Finite.iff_fg]
-    exact Module.Finite.equiv (Submodule.prodEquiv L.carrier M.carrier).symm
-  · rw [Submodule.prod_coe,
-      Submodule.span_prod_eq (R := ℚ) L.carrier.zero_mem M.carrier.zero_mem,
-      Submodule.IsLattice.span_eq_top, Submodule.IsLattice.span_eq_top,
-      Submodule.prod_top]
-
 /-- The orthogonal sum of two integral lattices: the product carrier with the block-diagonal
 product form. -/
 def orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) : IntegralLattice (V × W) where
   carrier := L.carrier.prod M.carrier
   form := L.form.prod M.form
-  isLattice := isLattice_prod L M
+  isFullLattice := inferInstance
   isSymm := LinearMap.BilinForm.isSymm_prod_iff.mpr ⟨L.isSymm, M.isSymm⟩
   le_dual := by
     intro p hp
@@ -114,14 +103,14 @@ def orthogonalSumCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W) :
 /-- The canonical inclusion of the first carrier into an orthogonal sum. -/
 def orthogonalSumInl (L : IntegralLattice V) (M : IntegralLattice W) :
     L →ₗ[ℤ] L.orthogonalSum M where
-  toFun a := ⟨(a, 0), Submodule.mem_prod.mpr ⟨a.2, M.carrier.zero_mem⟩⟩
+  toFun a := ⟨(a, 0), Submodule.mem_prod.mpr ⟨a.property, M.carrier.zero_mem⟩⟩
   map_add' := by intro a b; apply Subtype.ext; ext <;> simp
   map_smul' := by intro c a; apply Subtype.ext; ext <;> simp
 
 /-- The canonical inclusion of the second carrier into an orthogonal sum. -/
 def orthogonalSumInr (L : IntegralLattice V) (M : IntegralLattice W) :
     M →ₗ[ℤ] L.orthogonalSum M where
-  toFun b := ⟨(0, b), Submodule.mem_prod.mpr ⟨L.carrier.zero_mem, b.2⟩⟩
+  toFun b := ⟨(0, b), Submodule.mem_prod.mpr ⟨L.carrier.zero_mem, b.property⟩⟩
   map_add' := by intro a b; apply Subtype.ext; ext <;> simp
   map_smul' := by intro c a; apply Subtype.ext; ext <;> simp
 
@@ -191,14 +180,14 @@ theorem orthogonalSumSnd_inr (L : IntegralLattice V) (M : IntegralLattice W) (b 
 coordinate. -/
 @[simp]
 theorem coe_orthogonalSumCarrierEquiv_fst (L : IntegralLattice V) (M : IntegralLattice W)
-    (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).1 : V) = p.1.1 := by
+    (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).1 : V) = p.val.1 := by
   simp [orthogonalSumCarrierEquiv]
 
 /-- The second component of the carrier-product equivalence, read in the ambient space, is the
 second coordinate. -/
 @[simp]
 theorem coe_orthogonalSumCarrierEquiv_snd (L : IntegralLattice V) (M : IntegralLattice W)
-    (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).2 : W) = p.1.2 := by
+    (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).2 : W) = p.val.2 := by
   simp [orthogonalSumCarrierEquiv]
 
 /-- The inverse of the carrier-product equivalence, read in the ambient space. -/

@@ -39,12 +39,20 @@ is a cycle.
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
 * `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
   bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
+* `RowFiniteTwistingCocycle.d_m_eq_zero_of_eq_add_one` and
+  `RowFiniteTwistingCocycle.sum_subtype_m_mul_m_of_eq_add_two`: for a one-sided cocycle, the
+  entries between generators of adjacent indices are cycles of degree zero, and the twisting
+  equation at index difference two is a finite sum over the intermediate generators.
+* `RowFiniteTwistingCocycle.indexRowSupport`: the finite set of generators of a given index
+  occurring in the row of a generator.
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
 * `rowFiniteTwistedDifferential_mapDomain`: relabelling generators compatibly with the rows
   commutes with the differentials.
+* `rowFiniteTwistedDifferential_mem_supported`: the generators whose rows stay in a set of
+  generators span a differential submodule.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
@@ -249,6 +257,109 @@ theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
       omega)
     (InvImage.wf _ wellFounded_lt)
 
+omit [GradedAlgebra 𝒜] in
+/-- The twisting equation evaluated at a generator `z`: the differential of the entry `m x z` is
+the signed sum, over the row of `x`, of the products `m x y * m y z`. -/
+theorem twisting_apply (m : RowFiniteTwistingCocycle 𝒜 d P ind) (x z : P) :
+    d (m.m x z) = (m.m x).sum fun y a ↦ (ind x - ind y).negOnePow • (a * m.m y z) := by
+  simpa [Finsupp.sum_apply] using DFunLike.congr_fun (m.twisting x) z
+
+omit [GradedAlgebra 𝒜] in
+/-- The entries between generators whose indices differ by one have degree zero. -/
+theorem m_mem_zero_of_eq_add_one (m : RowFiniteTwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 1) : m.m x y ∈ 𝒜 0 := by
+  have h := m.mem_graded x y
+  rwa [show ind y - ind x + 1 = 0 by omega] at h
+
+omit [GradedAlgebra 𝒜] in
+/-- The entries between generators whose indices differ by two have degree `-1`. -/
+theorem m_mem_neg_one_of_eq_add_two (m : RowFiniteTwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 2) : m.m x y ∈ 𝒜 (-1) := by
+  have h := m.mem_graded x y
+  rwa [show ind y - ind x + 1 = -1 by omega] at h
+
+omit [GradedAlgebra 𝒜] in
+/-- For a one-sided cocycle, a product of two consecutive entries vanishes unless the middle
+generator has strictly intermediate index. -/
+theorem m_mul_m_eq_zero_of_not_lt_lt (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {x y z : P}
+    (h : ¬(ind z < ind y ∧ ind y < ind x)) : m.m x y * m.m y z = 0 := by
+  rcases le_or_gt (ind x) (ind y) with hxy | hxy
+  · rw [hm x y hxy, zero_mul]
+  · rw [hm y z (by omega), mul_zero]
+
+omit [GradedAlgebra 𝒜] in
+/-- For a one-sided cocycle, the entries between generators whose indices differ by one are
+cycles: no generator has an index strictly between theirs. -/
+theorem d_m_eq_zero_of_eq_add_one (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {x y : P} (hxy : ind x = ind y + 1) :
+    d (m.m x y) = 0 := by
+  rw [m.twisting_apply]
+  exact Finset.sum_eq_zero fun z _ ↦ by
+    dsimp only
+    rw [m.m_mul_m_eq_zero_of_not_lt_lt hm (by omega), smul_zero]
+
+omit [GradedAlgebra 𝒜] in
+/-- `m_mem_zero_of_eq_add_one` for generators given as elements of the subtypes of index `q + 1`
+and `q`. -/
+theorem m_mem_zero_of_subtype (m : RowFiniteTwistingCocycle 𝒜 d P ind) {q : ℤ}
+    (x : {x : P // ind x = q + 1}) (y : {y : P // ind y = q}) : m.m x y ∈ 𝒜 0 :=
+  m.m_mem_zero_of_eq_add_one (by rw [x.property, y.property])
+
+omit [GradedAlgebra 𝒜] in
+/-- `d_m_eq_zero_of_eq_add_one` for generators given as elements of the subtypes of index `q + 1`
+and `q`. -/
+theorem d_m_eq_zero_of_subtype (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {q : ℤ} (x : {x : P // ind x = q + 1})
+    (y : {y : P // ind y = q}) : d (m.m x y) = 0 :=
+  m.d_m_eq_zero_of_eq_add_one hm (by rw [x.property, y.property])
+
+omit [GradedAlgebra 𝒜] in
+/-- **The twisting equation at index difference two**, for a one-sided cocycle: between
+generators `x` and `z` whose indices differ by two, the sum of the products `m x y * m y z` over
+any finite set of generators `y` of the intermediate index containing those occurring in the row
+of `x` is minus the differential of `m x z`. -/
+theorem sum_subtype_m_mul_m_of_eq_add_two (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {x z : P} (q : ℤ) (hx : ind x = q + 1 + 1)
+    (hz : ind z = q) (T : Finset {y : P // ind y = q + 1}) (hT : ∀ y ∉ T, m.m x y = 0) :
+    ∑ y ∈ T, m.m x y * m.m y z = -d (m.m x z) := by
+  classical
+  set S := (m.m x).support.filter fun y ↦ ind y = q + 1
+  -- Both sums are the sum over the generators of index `q + 1` occurring in the row of `x`.
+  have hTS : ∑ y ∈ T, m.m x y * m.m y z = ∑ y ∈ S, m.m x y * m.m y z := by
+    have hmap := Finset.sum_map T (Function.Embedding.subtype fun y : P ↦ ind y = q + 1)
+      fun y ↦ m.m x y * m.m y z
+    simp only [Function.Embedding.coe_subtype] at hmap
+    rw [← hmap]
+    refine (Finset.sum_subset Finset.subset_union_left ?_).trans
+      (Finset.sum_subset Finset.subset_union_right ?_).symm
+    · intro y hy hyT
+      have hyS : y ∈ S := by simpa [hyT] using hy
+      have hy' : ind y = q + 1 := (Finset.mem_filter.1 hyS).2
+      rw [hT ⟨y, hy'⟩ fun h ↦ hyT (Finset.mem_map_of_mem _ h), zero_mul]
+    · intro y hy hyS
+      obtain ⟨y', -, rfl⟩ := Finset.mem_map.1 ((Finset.mem_union.1 hy).resolve_right hyS)
+      have hy : (y' : P) ∉ (m.m x).support := fun h ↦ hyS (Finset.mem_filter.2 ⟨h, y'.property⟩)
+      simp only [Function.Embedding.coe_subtype]
+      rw [Finsupp.notMem_support_iff.1 hy, zero_mul]
+  rw [hTS, m.twisting_apply, Finsupp.sum, Finset.sum_filter, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  split_ifs with hy
+  · rw [show ind x - ind y = 1 by omega]
+    simp
+  · rw [m.m_mul_m_eq_zero_of_not_lt_lt hm (by omega), smul_zero, neg_zero]
+
+/-- The finite set of generators `y` of index `q` occurring in the row of a generator `x`. -/
+noncomputable def indexRowSupport (m : RowFiniteTwistingCocycle 𝒜 d P ind) (q : ℤ) (x : P) :
+    Finset {y : P // ind y = q} :=
+  ((m.m x).subtypeDomain fun y ↦ ind y = q).support
+
+omit [GradedAlgebra 𝒜] in
+@[simp]
+theorem mem_indexRowSupport_iff (m : RowFiniteTwistingCocycle 𝒜 d P ind) {q : ℤ} {x : P}
+    {y : {y : P // ind y = q}} : y ∈ m.indexRowSupport q x ↔ m.m x y ≠ 0 := by
+  simp [indexRowSupport]
+
 end RowFiniteTwistingCocycle
 
 section SignedMap
@@ -303,8 +414,8 @@ theorem rowFiniteSignedMap_smul (h : P → M) {q : ℤ} {a : A}
     | zero => simp
     | @homogeneous p b =>
       rw [Finsupp.smul_single, smul_eq_mul,
-        rowFiniteSignedMap_single h x (SetLike.GradedMul.mul_mem ha b.2),
-        rowFiniteSignedMap_single h x b.2]
+        rowFiniteSignedMap_single h x (SetLike.GradedMul.mul_mem ha b.property),
+        rowFiniteSignedMap_single h x b.property]
       simp [Int.negOnePow_add, mul_smul, smul_comm a p.negOnePow]
     | add b c hb hc => simp only [Finsupp.single_add, smul_add, map_add, hb, hc]
 
@@ -356,8 +467,8 @@ theorem rowFiniteSignedMap_linearCombination {Q : Type uQ} (k : Q → M) (ν : P
     induction b using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | @homogeneous p b =>
-      rw [rowFiniteSignedMap_single _ x b.2, Finsupp.linearCombination_single,
-        rowFiniteSignedMap_smul k b.2]
+      rw [rowFiniteSignedMap_single _ x b.property, Finsupp.linearCombination_single,
+        rowFiniteSignedMap_smul k b.property]
     | add b c hb hc => simp only [Finsupp.single_add, map_add, hb, hc]
 
 end SignedMap
@@ -423,6 +534,19 @@ theorem rowFiniteTwistedDifferential_mapDomain {P' : Type uP'} (e : P → P') (m
   | single x c =>
     simp only [Finsupp.mapDomain_single, rowFiniteTwistedDifferential_single_koszulTwist, hm,
       Finsupp.mapDomain_add, Finsupp.mapDomain_smul]
+
+/-- **Generators whose rows stay in `s` span a differential submodule.** If the row of every
+generator of `s` only involves generators of `s`, then the twisted differential maps the vectors
+supported in `s` to vectors supported in `s`. -/
+theorem rowFiniteTwistedDifferential_mem_supported {m : P → P →₀ A} {s : Set P}
+    (hm : ∀ x ∈ s, m x ∈ Finsupp.supported A A s) {f : P →₀ A}
+    (hf : f ∈ Finsupp.supported A A s) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f ∈ Finsupp.supported A A s := by
+  rw [rowFiniteTwistedDifferential_apply]
+  refine Submodule.add_mem _ ?_
+    (Submodule.sum_mem _ fun x hx ↦ Submodule.smul_mem _ _ (hm x (hf hx)))
+  rw [Finsupp.mapRange.linearMap_apply, Finsupp.mem_supported]
+  exact (Finset.coe_subset.2 Finsupp.support_mapRange).trans ((Finsupp.mem_supported A f).1 hf)
 
 /-- The finite-support total grading is compatible with the pointwise left algebra action. -/
 instance instGradedSMulRowFiniteTotalGrading :
@@ -519,8 +643,9 @@ private theorem linearCombination_rowFiniteTwistedDifferential_single
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous q a =>
-    rw [rowFiniteTwistedDifferential_single m x a.2, map_add, Finsupp.linearCombination_single,
-      Finsupp.linearCombination_single, hM.leibniz a.2, ← hg]
+    rw [rowFiniteTwistedDifferential_single m x a.property, map_add,
+        Finsupp.linearCombination_single,
+      Finsupp.linearCombination_single, hM.leibniz a.property, ← hg]
     simp only [map_smul, LinearMap.map_smul_of_tower]
   | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]
 
@@ -572,11 +697,13 @@ private theorem linearCombination_single_eq_add_rowFiniteSignedMap
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous q a =>
-    rw [rowFiniteTwistedDifferential_single m x a.2, map_add,
-      rowFiniteSignedMap_single k x a.2, rowFiniteSignedMap_single k x (h.map_mem a.2),
+    rw [rowFiniteTwistedDifferential_single m x a.property, map_add,
+      rowFiniteSignedMap_single k x a.property, rowFiniteSignedMap_single k x
+          (h.map_mem a.property),
       LinearMap.map_smul_of_tower dM,
-      LinearMap.map_smul_of_tower (rowFiniteSignedMap (𝒜 := 𝒜) k), rowFiniteSignedMap_smul k a.2,
-      hM.leibniz a.2, Finsupp.linearCombination_single, hx]
+      LinearMap.map_smul_of_tower (rowFiniteSignedMap (𝒜 := 𝒜) k),
+          rowFiniteSignedMap_smul k a.property,
+      hM.leibniz a.property, Finsupp.linearCombination_single, hx]
     simp only [smul_add, smul_smul, Int.units_mul_self, one_smul, Int.negOnePow_succ,
       Units.neg_smul]
     abel
@@ -639,8 +766,9 @@ theorem rowFiniteSignedMap_eq_of_forall_mem_support (hM : IsDGLeftModule h ℳ d
   induction c using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous q a =>
-    rw [rowFiniteSignedMap_single θ x a.2, rowFiniteTwistedDifferential_single m x a.2,
-      Finsupp.linearCombination_single, hM.leibniz a.2, hθ x hx]
+    rw [rowFiniteSignedMap_single θ x a.property, rowFiniteTwistedDifferential_single m x
+        a.property,
+      Finsupp.linearCombination_single, hM.leibniz a.property, hθ x hx]
     simp only [map_add, LinearMap.map_smul_of_tower, map_smul, Finsupp.linearCombination_single,
       smul_sub]
     abel
@@ -727,10 +855,10 @@ theorem differential_sq_zero (f : P →₀ A) :
     | zero => simp
     | @homogeneous q a =>
       rw [← Finsupp.smul_single_one x (a : A),
-        rowFiniteTwistedDifferential_smul m.m h a.2, map_add,
-        rowFiniteTwistedDifferential_smul m.m h (h.map_mem a.2),
+        rowFiniteTwistedDifferential_smul m.m h a.property, map_add,
+        rowFiniteTwistedDifferential_smul m.m h (h.map_mem a.property),
         LinearMap.map_smul_of_tower,
-        rowFiniteTwistedDifferential_smul m.m h a.2,
+        rowFiniteTwistedDifferential_smul m.m h a.property,
         differential_single_one m h x, differential_row m x, h.sq_zero]
       simp [Int.negOnePow_succ, Units.neg_smul]
     | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb, add_zero]
@@ -765,9 +893,9 @@ theorem linearEquivFunOnFinite_rowFiniteTwistedDifferential (m : P → P →₀ 
     induction a using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | @homogeneous q a =>
-      rw [rowFiniteTwistedDifferential_single m x a.2,
+      rw [rowFiniteTwistedDifferential_single m x a.property,
         Finsupp.linearEquivFunOnFinite_single,
-        twistedDifferential_single (fun x y ↦ m x y) d x a.2]
+        twistedDifferential_single (fun x y ↦ m x y) d x a.property]
       ext y
       simp [Finsupp.single_apply, Pi.single_apply, MulOpposite.smul_eq_mul_unop, eq_comm]
     | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]

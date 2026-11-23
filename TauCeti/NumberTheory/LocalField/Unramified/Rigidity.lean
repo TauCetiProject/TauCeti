@@ -66,15 +66,17 @@ namespace TauCeti
 
 variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
   [ValuativeExtension K M] [IsUnramified K L]
 
+variable [Algebra.IsAlgebraic K L] in
 /-- **Embeddings of an unramified extension are determined by their residue maps, and every
 residue map lifts.** For `L/K` unramified, reduction is a bijection from the `K`-embeddings
 `L → M` to the `𝓀[K]`-embeddings `𝓀[L] → 𝓀[M]`. -/
 theorem IsUnramified.residueFieldHom_bijective :
     Function.Bijective (AlgHom.residueFieldHom : (L →ₐ[K] M) → 𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
   -- `L = K(ζ)` for a primitive `N`-th root of unity `ζ`, where `N = q ^ f - 1` is invertible in
   -- the integer rings.
   obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot_natCard_pow_inertiaDegree_sub_one K L
@@ -105,7 +107,7 @@ theorem IsUnramified.residueFieldHom_bijective :
   -- Lift the image under `φ` of the residue of `ζ` to an `N`-th root of unity `ξ` of `𝒪[M]`.
   have hφ : φ (residue 𝒪[L] z) ^ N = 1 := by rw [← map_pow, ← map_pow, hz.pow_eq_one, map_one,
     map_one]
-  obtain ⟨u, hu⟩ := rootsOfUnityResidue_surjective hNM (rootsOfUnity.mkOfPowEq _ hφ)
+  obtain ⟨u, hu⟩ := rootsOfUnityResidue_surjective (rootsOfUnity.mkOfPowEq _ hφ)
   have hres : residue 𝒪[M] ((u : 𝒪[M]ˣ) : 𝒪[M]) = φ (residue 𝒪[L] z) := by
     simpa using congrArg (fun v : rootsOfUnity N 𝓀[M] ↦ ((v : 𝓀[M]ˣ) : 𝓀[M])) hu
   -- The image under `φ` of the residue of `ζ` is a root of the reduction of the minimal
@@ -118,7 +120,7 @@ theorem IsUnramified.residueFieldHom_bijective :
   -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the residue of `ζ`.
   have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 := by
     have hgξ := aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
-      ((mem_rootsOfUnity' N _).1 u.2) hgφ
+      ((mem_rootsOfUnity' N _).1 u.property) hgφ
     rw [hpbgen, minpoly.isIntegrallyClosed_eq_field_fractions' K hζO,
       aeval_map_algebraMap, ← Algebra.algebraMap_ofSubsemiring_apply, aeval_algebraMap_apply,
       hgξ, map_zero]
@@ -136,7 +138,12 @@ variable (K L M) in
 residue fields is an equivalence between the `K`-embeddings `L → M` and the `𝓀[K]`-embeddings
 `𝓀[L] → 𝓀[M]`. -/
 def IsUnramified.residueFieldHomEquiv : (L →ₐ[K] M) ≃ (𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) :=
+  haveI : Module.Finite K L := finite_of_valuativeExtension K L
   Equiv.ofBijective _ IsUnramified.residueFieldHom_bijective
+
+section Algebraic
+
+variable [Algebra.IsAlgebraic K L]
 
 /-- The equivalence `IsUnramified.residueFieldHomEquiv` sends an embedding to the induced
 embedding of residue fields. -/
@@ -152,14 +159,14 @@ theorem IsUnramified.residueFieldHom_residueFieldHomEquiv_symm (φ : 𝓀[L] →
     ((IsUnramified.residueFieldHomEquiv K L M).symm φ).residueFieldHom = φ :=
   (IsUnramified.residueFieldHomEquiv K L M).apply_symm_apply φ
 
-variable [Module.Finite K M]
-
-/-- **Rigidity of unramified extensions.** Let `L/K` and `M/K` be finite unramified extensions.
-Every `𝓀[K]`-isomorphism `𝓀[L] ≃ 𝓀[M]` of residue fields lifts to a unique `K`-isomorphism
-`L ≃ M`. -/
+/-- **Rigidity of unramified extensions.** Let `L/K` and `M/K` be compatible unramified extensions
+of nonarchimedean local fields. Every `𝓀[K]`-isomorphism `𝓀[L] ≃ 𝓀[M]` of residue fields lifts to a
+unique `K`-isomorphism `L ≃ M`. -/
 theorem IsUnramified.existsUnique_algEquiv_residueFieldHom_eq [IsUnramified K M]
     (φ : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[M]) :
     ∃! e : L ≃ₐ[K] M, e.toAlgHom.residueFieldHom = φ.toAlgHom := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  have : Module.Finite K M := finite_of_valuativeExtension K M
   obtain ⟨ι, hι⟩ := IsUnramified.residueFieldHom_bijective.2 φ.toAlgHom
   -- `L` and `M` have the same degree over `K`, the degree of their residue fields.
   have hdeg : Module.finrank K L = Module.finrank K M := by
@@ -171,5 +178,7 @@ theorem IsUnramified.existsUnique_algEquiv_residueFieldHom_eq [IsUnramified K M]
   refine ⟨AlgEquiv.ofBijective ι hbij, hι, fun e he ↦ ?_⟩
   refine AlgEquiv.coe_toAlgHom_injective (IsUnramified.residueFieldHom_bijective.1 ?_)
   rw [he, AlgEquiv.toAlgHom_ofBijective, hι]
+
+end Algebraic
 
 end TauCeti

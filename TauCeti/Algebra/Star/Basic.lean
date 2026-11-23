@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
 
 /-!
-# Involution-closed absorption, proper-star annihilators, and scalar commutation
+# Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
 
 In any magma `A` with an antimultiplicative involution (`StarMul A`), a subset closed under `star`
 (`StarMemClass S A`) that absorbs multiplication by ambient elements on the left also absorbs
-multiplication on the right via `x * a = star (star a * star x)`. Similarly, in a star module over
-`R` with `StarMul A` and `IsScalarTower R A A`, applying `star` shows that scalars commute with
-left multiplication (`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
+multiplication on the right via `x * a = star (star a * star x)`, and the double commutant of
+such a subset is again closed under `star`. Similarly, in a star module over `R` with `StarMul A`
+and `IsScalarTower R A A`, applying `star` shows that scalars commute with left multiplication
+(`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
@@ -26,10 +28,19 @@ as the instances `FaithfulSMul Rᵐᵒᵖ R` and `FaithfulSMul R R` for the acti
 right and left multiplication, which is how nondegeneracy enters the theory of double
 centralizers.
 
+A star-linear (conjugate-linear) equivalence `V ≃ₗ⋆[S] W` is linear over any scalars `R` acting on
+`S` with trivial star (`LinearEquiv.restrictScalarsₛₗ`). For example, a conjugate-linear
+equivalence of complex vector spaces is real-linear.
+
 ## Main results
 
 * `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
   star-closed subsets.
+* `StarMemClass.star_mem_centralizer_centralizer`: the double commutant of a star-closed subset
+  is star-closed.
+* `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
+  antimultiplicative involution, a left (respectively, right) identity exists if and only if a
+  two-sided identity exists.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -38,6 +49,8 @@ centralizers.
 * `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
   tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
   there.
+* `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
+  on `S` with trivial star.
 -/
 
 public section
@@ -49,7 +62,37 @@ theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMu
     (hmul : ∀ a : A, ∀ x ∈ s, a * x ∈ s) (a : A) {x : A} (hx : x ∈ s) : x * a ∈ s := by
   simpa only [star_mul, star_star] using star_mem (hmul (star a) (star x) (star_mem hx))
 
+/-- The double commutant `s''` of a subset closed under the involution is closed under the
+involution. -/
+theorem StarMemClass.star_mem_centralizer_centralizer {S A : Type*} [Mul A] [StarMul A]
+    [SetLike S A] [StarMemClass S A] (s : S) {x : A}
+    (hx : x ∈ (s : Set A).centralizer.centralizer) :
+    star x ∈ (s : Set A).centralizer.centralizer :=
+  Set.star_mem_centralizer' (fun _ ha => Set.star_mem_centralizer' (fun _ => star_mem) ha) hx
+
 namespace TauCeti
+
+/-- In a magma with an antimultiplicative involution, a left identity exists if and only if a
+two-sided identity exists. -/
+theorem exists_left_identity_iff {A : Type*} [Mul A] [StarMul A] :
+    (∃ e : A, ∀ b : A, e * b = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).1⟩⟩
+  rintro ⟨e, hleft⟩
+  have hright (b : A) : b * star e = b := by
+    simpa only [star_mul, star_star] using congrArg star (hleft (star b))
+  have heStar : e = star e := (hright e).symm.trans (hleft (star e))
+  exact ⟨e, fun b ↦ ⟨hleft b, heStar ▸ hright b⟩⟩
+
+/-- In a magma with an antimultiplicative involution, a right identity exists if and only if a
+two-sided identity exists. -/
+theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
+    (∃ e : A, ∀ b : A, b * e = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  refine ⟨fun ⟨e, he⟩ ↦ ?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).2⟩⟩
+  obtain ⟨e', he'⟩ := (exists_left_identity_iff (A := Aᵐᵒᵖ)).mp
+    ⟨MulOpposite.op e, fun b ↦ MulOpposite.unop_injective (by simpa using he b.unop)⟩
+  exact ⟨e'.unop, fun b ↦
+    ⟨by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).2,
+      by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).1⟩⟩
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
@@ -102,3 +145,33 @@ theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x
   rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
 
 end TauCeti
+
+namespace LinearEquiv
+
+variable (R : Type*) {S V W : Type*} [Semiring R] [Star R] [TrivialStar R] [CommSemiring S]
+  [StarRing S] [SMul R S] [StarModule R S] [AddCommMonoid V] [Module R V] [Module S V]
+  [IsScalarTower R S V] [AddCommMonoid W] [Module R W] [Module S W] [IsScalarTower R S W]
+
+/-- A star-linear (conjugate-linear) equivalence over `S` is linear over any scalars `R` with
+trivial star that act on `S`, `V` and `W` through scalar towers `R → S`: the star of `S` fixes the
+images `r • 1` of these scalars. For example, a conjugate-linear equivalence of complex vector
+spaces is real-linear. -/
+def restrictScalarsₛₗ (f : V ≃ₗ⋆[S] W) : V ≃ₗ[R] W where
+  toFun := f
+  invFun := f.symm
+  map_add' := map_add f
+  -- `r • x = (r • 1 : S) • x`, and the star of `S` fixes `r • 1`.
+  map_smul' r x := by simpa [starRingEnd_apply] using f.map_smulₛₗ (r • (1 : S)) x
+  left_inv := f.left_inv
+  right_inv := f.right_inv
+
+@[simp]
+theorem coe_restrictScalarsₛₗ (f : V ≃ₗ⋆[S] W) : ⇑(f.restrictScalarsₛₗ R) = f :=
+  (rfl)
+
+@[simp]
+theorem restrictScalarsₛₗ_symm (f : V ≃ₗ⋆[S] W) :
+    (f.restrictScalarsₛₗ R).symm = f.symm.restrictScalarsₛₗ R :=
+  (rfl)
+
+end LinearEquiv

@@ -178,10 +178,10 @@ theorem divisorClass_pointDifference_translationHom_smul
   -- `Q` is the transport of the place of a point `R` of the model
   set R := (W.toAffine.pointEquivDegreeOnePlace).symm
     ⟨T Q, (Place.degree_equivOfRingEquiv _ _ _ Q).trans hQ⟩
-  have hR : (W.toAffine.pointEquivDegreeOnePlace R).1 = T Q := by
+  have hR : (W.toAffine.pointEquivDegreeOnePlace R).val = T Q := by
     rw [Equiv.apply_symm_apply]
   have hσ : T (h.translationHom hF hP c • Q) =
-      (W.toAffine.pointEquivDegreeOnePlace (R - Pt)).1 := by
+      (W.toAffine.pointEquivDegreeOnePlace (R - Pt)).val := by
     rw [translationHom_apply, Place.equivOfRingEquiv_autCongr_smul, ← hR]
     exact Affine.translation_smul_pointEquivDegreeOnePlace W.toAffine Pt R
   -- compare both sides in the class group of the model

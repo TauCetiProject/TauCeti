@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 `FormalGroup.zsmulSeries` extends the native natural-number multiplication series to all
 integers, using the group of substitutable power-series points. Negative indices use the
-formal inverse, not coefficientwise negation. Substitution into a point with nilpotent
-constant term computes integer multiplication on that point.
+formal inverse, not coefficientwise negation, and preserve the power-series order. Substitution
+into a point with nilpotent constant term computes integer multiplication on that point.
 
 The addition and composition identities hold without commutativity of the formal group.
 For a commutative formal group, integer multiplication is bundled as an endomorphism.
@@ -81,6 +81,16 @@ theorem coeff_one_zsmulSeries (n : ℤ) : PowerSeries.coeff 1 (F.zsmulSeries n) 
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · simp
   · simp [zsmulSeries_neg, PowerSeries.coeff_one_subst (F.constantCoeff_nsmulSeries k)]
+
+/-- Negating the index preserves the order of the integer multiplication series. -/
+@[simp]
+theorem order_zsmulSeries_neg (n : ℤ) :
+    (F.zsmulSeries (-n)).order = (F.zsmulSeries n).order := by
+  suffices h : ∀ m : ℤ, (F.zsmulSeries m).order ≤ (F.zsmulSeries (-m)).order from
+    le_antisymm ((h (-n)).trans_eq (by rw [neg_neg])) (h n)
+  intro m
+  rw [zsmulSeries_neg]
+  exact PowerSeries.le_order_subst_right' (F.constantCoeff_zsmulSeries m) F.constantCoeff_addInvX
 
 /-- Evaluating the integer multiplication series at a substitutable point computes its
 integer multiple, including points with nonzero nilpotent constant coefficient. -/
@@ -153,6 +163,18 @@ noncomputable def zsmulHom [F.IsComm] (n : ℤ) : TauCeti.FormalGroupHom F F whe
 theorem zsmulHom_toPowerSeries [F.IsComm] (n : ℤ) :
     (F.zsmulHom n).toPowerSeries = F.zsmulSeries n := (rfl)
 
+/-- Bundled integer multiplication extends `nsmulHom` on natural numbers. -/
+@[simp]
+theorem zsmulHom_natCast [F.IsComm] (n : ℕ) : F.zsmulHom n = F.nsmulHom n := by
+  ext : 1
+  simp
+
+/-- Bundled multiplication by `1` is the identity endomorphism. -/
+@[simp]
+theorem zsmulHom_one [F.IsComm] : F.zsmulHom 1 = TauCeti.FormalGroupHom.id F := by
+  ext : 1
+  simp
+
 /-- Integer multiplication commutes with base change as a bundled endomorphism. -/
 @[simp]
 theorem map_zsmulHom [F.IsComm] (f : R →+* S) (n : ℤ) :
@@ -195,6 +217,22 @@ theorem subst_zsmulSeries (f : FormalGroupHom F G) (n : ℤ) :
   simpa only [toAddMonoidHom_apply, applyPoint_val, ← G.subst_zsmulSeries,
     FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
     using congrArg Subtype.val (map_zsmul (f.toAddMonoidHom Unit) n F.tautologicalPoint)
+
+/-- **A nonzero homomorphism preserves the order of integer multiplication `[n]`.** Over an integral
+domain, if `f` is a nonzero homomorphism of formal group laws from `F` to `G`, then `[n]_F` and
+`[n]_G` have the same order, since `f ∘ [n]_F = [n]_G ∘ f` and orders multiply under
+substitution. -/
+theorem order_zsmulSeries_eq [NoZeroDivisors R] (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0)
+    (n : ℤ) :
+    (F.zsmulSeries n).order = (G.zsmulSeries n).order := by
+  have h := congrArg PowerSeries.order (f.subst_zsmulSeries n)
+  rw [PowerSeries.order_subst (F.constantCoeff_zsmulSeries n),
+    PowerSeries.order_subst f.zero_constantCoeff, mul_comm] at h
+  have h0 : f.toPowerSeries.order ≠ 0 :=
+    PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr f.zero_constantCoeff
+  have ht : f.toPowerSeries.order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr hf
+  exact le_antisymm ((ENat.mul_le_mul_left_iff h0 ht).mp h.le)
+    ((ENat.mul_le_mul_left_iff h0 ht).mp h.ge)
 
 end TauCeti.FormalGroupHom
 

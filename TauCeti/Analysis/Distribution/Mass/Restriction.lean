@@ -42,8 +42,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω Ω' : Opens E} {n : ℕ∞}
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  {T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ}
+variable [MeasurableSpace E] [BorelSpace E] {T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ}
 
 /-- The mass measure of an open restriction is the comap of the original mass measure along
 the inclusion of open domains. No finiteness near the frontier of `Ω'` is assumed. -/
@@ -55,7 +54,7 @@ theorem massMeasure_comp_monoCLM (hT : HasLocallyFiniteMass T) (h : Ω' ≤ Ω) 
   apply Measure.OuterRegular.ext_isOpen
   intro U hU
   obtain ⟨W, hW, rfl⟩ := isOpen_induced_iff.1 hU
-  rw [massMeasure_preimage_coe (hT.comp_monoCLM h) hW,
+  rw [massMeasure_preimage_coe hT.comp_monoCLM hW,
     hi.measurableEmbedding.comap_apply]
   have himage : Set.inclusion h '' ((↑) ⁻¹' W : Set Ω') =
       ((↑) ⁻¹' (W ∩ (Ω' : Set E)) : Set Ω) := by

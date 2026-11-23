@@ -90,11 +90,11 @@ theorem continuous_tameMonodromyRepresentation :
 
 /-- Wild inertia acts trivially in the tame monodromy representation. -/
 theorem tameMonodromyRepresentation_eq_one_of_mem_wildInertiaSubgroup
-    (σ : inertiaSubgroup K) (hσ : σ.1 ∈ wildInertiaSubgroup K) :
+    (σ : inertiaSubgroup K) (hσ : σ.val ∈ wildInertiaSubgroup K) :
     tameMonodromyRepresentation K hℓ e c σ = 1 := by
   apply LinearMap.ext
   rintro ⟨x, y⟩
-  simp [inertiaPadicTameCharacter_eq_one_of_mem_wildInertiaSubgroup σ.2 hσ]
+  simp [inertiaPadicTameCharacter_eq_one_of_mem_wildInertiaSubgroup σ.property hσ]
 
 /-- For nonzero monodromy parameter the fixed vectors are exactly those with second coordinate
 zero. -/

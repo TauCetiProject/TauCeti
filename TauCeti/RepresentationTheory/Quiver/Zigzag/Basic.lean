@@ -27,7 +27,11 @@ prefunctors.
 ## Main definitions
 
 * `TauCeti.DoubledQuiver`: the doubled quiver attached to a simple graph.
+* `TauCeti.DoubledQuiver.vertexFinset`: lift a finite set of graph vertices into the doubled
+  quiver.
 * `TauCeti.DoubledQuiver.totalArrowEquivDart`: its arrows are the graph's darts.
+* `TauCeti.DoubledQuiver.edge`: the underlying undirected edge in `Sym2 V` of a doubled-quiver
+  arrow.
 * `TauCeti.DoubledQuiver.map`: the prefunctor induced by a graph homomorphism.
 
 ## Main results
@@ -110,6 +114,39 @@ instance [Finite V] : Finite (DoubledQuiver G) :=
 
 instance [Fintype V] : Fintype (DoubledQuiver G) :=
   Fintype.ofEquiv V (vertexEquiv G)
+
+instance instDecidableEq [DecidableEq V] : DecidableEq (DoubledQuiver G) :=
+  inferInstanceAs (DecidableEq V)
+
+/-- Include a finite set of graph vertices into `DoubledQuiver G`. -/
+def vertexFinset (S : Finset V) : Finset (DoubledQuiver G) :=
+  S.map (vertexEquiv G).toEmbedding
+
+@[simp]
+theorem mem_vertexFinset_iff {S : Finset V} {i : DoubledQuiver G} :
+    i ∈ vertexFinset G S ↔ (vertexEquiv G).symm i ∈ S := by
+  rw [vertexFinset, Finset.mem_map_equiv]
+
+@[simp]
+theorem vertexFinset_empty : vertexFinset G (∅ : Finset V) = ∅ :=
+  Finset.map_empty _
+
+@[simp]
+theorem vertexFinset_univ [Fintype V] :
+    vertexFinset G (Finset.univ : Finset V) = Finset.univ :=
+  Finset.map_univ_of_surjective (vertexEquiv G).surjective
+
+/-- Mapping back along `(vertexEquiv G).symm` recovers the original finite set of graph vertices. -/
+@[simp]
+theorem map_symm_vertexFinset (S : Finset V) :
+    (vertexFinset G S).map (vertexEquiv G).symm.toEmbedding = S := by
+  simp [vertexFinset, Finset.map_map]
+
+/-- Vertex-set inclusion into `DoubledQuiver G` commutes with complementation. -/
+theorem vertexFinset_compl [Fintype V] [DecidableEq V] (S : Finset V) :
+    vertexFinset G Sᶜ = (vertexFinset G S)ᶜ := by
+  ext i
+  simp
 
 instance (i j : DoubledQuiver G) : Finite (i ⟶ j) := by
   -- Unfold the quiver hom type so `PLift`'s finite instance applies.
@@ -196,6 +233,68 @@ theorem reverseTotalArrow_reverseTotalArrow (e : TotalArrow G) :
     reverseTotalArrow G (reverseTotalArrow G e) = e := by
   obtain ⟨i, j, e⟩ := e
   simp [reverseTotalArrow]
+
+/-- The underlying undirected edge of an arrow in `DoubledQuiver G`, read off through
+`DoubledQuiver.totalArrowEquivDart`. -/
+def edge {i j : DoubledQuiver G} (e : i ⟶ j) : Sym2 V :=
+  (totalArrowEquivDart G ⟨i, j, e⟩).edge
+
+/-- The underlying undirected edge of `e : i ⟶ j` is the unordered pair of its graph endpoints. -/
+theorem edge_def {i j : DoubledQuiver G} (e : i ⟶ j) :
+    edge G e = s((vertexEquiv G).symm i, (vertexEquiv G).symm j) := by
+  rw [edge, totalArrowEquivDart_apply, SimpleGraph.Dart.edge_mk]
+
+/-- The arrow attached to an adjacency proof `h : G.Adj u v` lies over the unordered pair
+`s(u, v)`. -/
+@[simp]
+theorem edge_arrow {u v : V} (h : G.Adj u v) :
+    edge G (arrow G h) = s(u, v) := by
+  simp [edge_def]
+
+/-- Every arrow of `DoubledQuiver G` lies over an edge of `G`. -/
+@[simp]
+theorem edge_mem {i j : DoubledQuiver G} (e : i ⟶ j) :
+    edge G e ∈ G.edgeSet :=
+  (totalArrowEquivDart G ⟨i, j, e⟩).edge_mem
+
+/-- The underlying undirected edge of a doubled-quiver arrow is never diagonal. -/
+@[simp]
+theorem not_isDiag_edge {i j : DoubledQuiver G} (e : i ⟶ j) :
+    ¬(edge G e).IsDiag :=
+  G.not_isDiag_of_mem_edgeSet (edge_mem G e)
+
+/-- Reversing an arrow in `DoubledQuiver G` preserves its underlying undirected edge. -/
+@[simp]
+theorem edge_reverse {i j : DoubledQuiver G} (e : i ⟶ j) :
+    edge G (Quiver.reverse e) = edge G e := by
+  simp only [edge_def, Sym2.eq_swap]
+
+/-- Transporting the endpoints of an arrow along equalities does not change its underlying edge. -/
+@[simp]
+theorem edge_homOfEq {i j i' j' : DoubledQuiver G} (e : i ⟶ j) (hi : i = i') (hj : j = j') :
+    edge G (Quiver.homOfEq e hi hj) = edge G e := by
+  subst hi hj
+  rfl
+
+/-- Two total arrows of `DoubledQuiver G` have the same underlying undirected edge if and only if
+they are equal or reverses of one another. -/
+theorem edge_eq_iff (a b : TotalArrow G) :
+    edge G a.2.2 = edge G b.2.2 ↔ a = b ∨ a = reverseTotalArrow G b := by
+  rw [edge, edge, SimpleGraph.dart_edge_eq_iff, ← totalArrowEquivDart_reverse,
+    (totalArrowEquivDart G).injective.eq_iff, (totalArrowEquivDart G).injective.eq_iff]
+
+/-- At most one arrow leaving a vertex set `S` in `DoubledQuiver G` can lie over any undirected
+edge: the opposite arrow of that edge enters `S`. -/
+theorem edge_injOn_cut (S : Set (DoubledQuiver G)) :
+    Set.InjOn (fun a : TotalArrow G ↦ edge G a.2.2) {a | a.1 ∈ S ∧ a.2.1 ∉ S} := by
+  rintro ⟨i₁, j₁, e₁⟩ ⟨hi₁, _⟩ ⟨i₂, j₂, e₂⟩ ⟨_, hj₂⟩ hab
+  simp only [edge_def, Sym2.eq_iff] at hab
+  rcases hab with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
+  · obtain rfl : i₁ = i₂ := (vertexEquiv G).symm.injective h₁
+    obtain rfl : j₁ = j₂ := (vertexEquiv G).symm.injective h₂
+    simp [Subsingleton.elim e₁ e₂]
+  · obtain rfl : i₁ = j₂ := (vertexEquiv G).symm.injective h₁
+    exact absurd hi₁ hj₂
 
 /-- The arrows leaving a vertex are its neighbors in the graph. -/
 def starEquivNeighborSet (v : V) :

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finset.Card
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 
 /-!
 # Vertex and edge counts of trace words
@@ -20,7 +22,10 @@ traversed exactly twice and excludes loops.
 
 The underlying counting estimate is valid for arbitrary paths: the number of visited vertices
 is at most one plus the number of distinct nonloop edges. It does not require a graph structure,
-so diagonal matrix entries (loops) are not silently discarded.
+so diagonal matrix entries (loops) are not silently discarded. When a path attains this tree
+bound, any nonloop unordered edge induces a vertex parity coloring that flips exclusively across
+steps using that edge, and any cyclic word whose steps respect such a coloring traverses that
+edge an even number of times.
 
 ## References
 
@@ -87,9 +92,7 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
         exact mem_image.mpr ⟨i.val, mem_range.mpr (by omega), by simp [v]⟩
     have hnext (i : ℕ) :
         Fin.ofNat (k + 1) (i + 1) = finRotate (k + 1) (Fin.ofNat (k + 1) i) := by
-      rw [finRotate_apply]
-      apply Fin.ext
-      simp [Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+      simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
     have hedges :
         (((range (k + 1)).filter fun i => v i ≠ v (i + 1)).image fun i => s(v i, v (i + 1))) ⊆
           (({i | w i ≠ w (finRotate (k + 1) i)} : Finset (Fin (k + 1))).image
@@ -104,6 +107,78 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
     rw [hvertices] at h
     exact h.trans (Nat.add_le_add_right (card_le_card hedges) 1)
 
+/-- When an `n`-step path attains the tree bound (visiting one more vertex than its number of
+distinct nonloop edges), any nonloop unordered pair `e₀` induces a vertex labeling `c : α → ℕ`
+whose parity changes exclusively across steps with unordered edge `e₀`. -/
+theorem exists_mod_two_color_of_card_image_eq (w : ℕ → α) (n : ℕ) (e₀ : Sym2 α)
+    (he₀ : ¬ e₀.IsDiag)
+    (hv : #((range (n + 1)).image w) =
+      #(((range n).filter fun r => w r ≠ w (r + 1)).image fun r => s(w r, w (r + 1))) + 1) :
+    ∃ c : α → ℕ, ∀ r < n,
+      (c (w r) + c (w (r + 1))) % 2 = if s(w r, w (r + 1)) = e₀ then 1 else 0 := by
+  induction n with
+  | zero => exact ⟨fun _ => 0, by simp⟩
+  | succ n ih =>
+    set Vn := (range (n + 1)).image w
+    set Nn := ((range n).filter fun r => w r ≠ w (r + 1)).image fun r => s(w r, w (r + 1))
+    set Nn1 := ((range (n + 1)).filter fun r => w r ≠ w (r + 1)).image fun r => s(w r, w (r + 1))
+    have hle : #Vn ≤ #Nn + 1 := card_image_range_le_card_nonloop_edges_add_one w n
+    have hNsub : Nn ⊆ Nn1 := image_subset_image (filter_subset_filter _ (range_mono (by omega)))
+    have hNle : #Nn ≤ #Nn1 := card_le_card hNsub
+    have hVstep : (range (n + 2)).image w = insert (w (n + 1)) Vn := by simp [Vn, range_add_one]
+    by_cases hmem : w (n + 1) ∈ Vn
+    · -- Revisiting a vertex forces `Nn = Nn1`, so a nonloop last step repeats an earlier edge.
+      rw [hVstep, insert_eq_of_mem hmem] at hv
+      obtain ⟨c, hc⟩ := ih (by omega)
+      refine ⟨c, fun r hr => ?_⟩
+      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hr) with hlt | rfl
+      · exact hc r hlt
+      · by_cases hloop : w r = w (r + 1)
+        · have hne : s(w r, w (r + 1)) ≠ e₀ := fun h => he₀ (h ▸ Sym2.mk_isDiag_iff.mpr hloop)
+          rw [ite_eq_right hne, hloop]; omega
+        · have hin : s(w r, w (r + 1)) ∈ Nn := by
+            rw [eq_of_subset_of_card_le hNsub (by omega)]
+            exact mem_image.mpr ⟨r, mem_filter.mpr ⟨mem_range.mpr (by omega), hloop⟩, rfl⟩
+          obtain ⟨q, hqN, hqe⟩ := mem_image.mp hin
+          have hsum : c (w r) + c (w (r + 1)) = c (w q) + c (w (q + 1)) := by
+            rcases Sym2.eq_iff.mp hqe with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp [h1, h2, add_comm]
+          rw [hsum, ← hqe, hc q (mem_range.mp (mem_filter.mp hqN).1)]
+    · -- Discovering a fresh vertex adds one new nonloop edge; extend `c` at `w (n + 1)`.
+      have hnot_pre {m : ℕ} (hm : m ≤ n) : w m ≠ w (n + 1) := fun h =>
+        hmem (mem_image.mpr ⟨m, mem_range.mpr (by omega), h⟩)
+      have hnotN : s(w n, w (n + 1)) ∉ Nn := fun hin => by
+        obtain ⟨q, hqN, hqe⟩ := mem_image.mp hin
+        have hql : q < n := mem_range.mp (mem_filter.mp hqN).1
+        have hm : w (n + 1) ∈ s(w q, w (q + 1)) := by rw [hqe]; exact Sym2.mem_mk_right _ _
+        rcases Sym2.mem_iff.mp hm with h | h
+        · exact hnot_pre hql.le h.symm
+        · exact hnot_pre hql h.symm
+      rw [hVstep, card_insert_of_notMem hmem] at hv
+      have hNcard : #Nn1 = #Nn + 1 := by
+        simp [Nn, Nn1, range_add_one, filter_insert, hnot_pre le_rfl, hnotN]
+      obtain ⟨c, hc⟩ := ih (by omega)
+      refine ⟨Function.update c (w (n + 1))
+        (c (w n) + if s(w n, w (n + 1)) = e₀ then 1 else 0), fun r hr => ?_⟩
+      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hr) with hlt | rfl
+      · rw [Function.update_of_ne (hnot_pre hlt.le), Function.update_of_ne (hnot_pre hlt)]
+        exact hc r hlt
+      · simp only [Function.update_of_ne (hnot_pre le_rfl), Function.update_self]
+        split_ifs <;> omega
+
+/-- If a vertex labeling `c` changes parity across steps of a cyclic word `w` exclusively on
+unordered edge `e₀`, then `w` traverses `e₀` an even number of times. -/
+theorem card_filter_cyclic_edge_mod_two_eq_zero {k : ℕ} (w : Fin k → α) (c : α → ℕ)
+    (e₀ : Sym2 α)
+    (hc : ∀ i, (c (w i) + c (w (finRotate k i))) % 2 =
+      if s(w i, w (finRotate k i)) = e₀ then 1 else 0) :
+    #{i | s(w i, w (finRotate k i)) = e₀} % 2 = 0 := by
+  have h1 (i : Fin k) : (if s(w i, w (finRotate k i)) = e₀ then 1 else 0) =
+      (c (w i) + c (w (finRotate k i))) % 2 := (hc i).symm
+  rw [card_filter]
+  simp_rw [h1]
+  rw [← sum_nat_mod, sum_add_distrib, Equiv.sum_comp (finRotate k) (fun i => c (w i))]
+  omega
+
 private theorem two_le_card_cyclic_edge_fiber_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i)))
     (e : Sym2 α) (he : e ∈ univ.image fun i => s(w i, w (finRotate k i))) :
@@ -117,9 +192,7 @@ as steps. Loops count as edges. -/
 theorem two_mul_card_cyclic_edges_le_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
     2 * #(univ.image fun i => s(w i, w (finRotate k i))) ≤ k := by
-  simpa only [card_univ, Fintype.card_fin] using
-    mul_card_image_le_card (univ : Finset (Fin k)) 2
-      (two_le_card_cyclic_edge_fiber_of_no_singleton_edge w h)
+  simpa only [Fintype.card_fin] using two_mul_card_image_le_of_no_singleton_fiber h
 
 /-- A word of length `k` with no singleton edge visits at most `k / 2 + 1` vertices.
 Edges are unordered, and loops count as edges. -/

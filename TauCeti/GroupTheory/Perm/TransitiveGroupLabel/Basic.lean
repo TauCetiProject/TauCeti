@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.GroupAction.Primitive
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Reference transitive permutation groups in degree at most five
@@ -335,6 +336,14 @@ theorem isPretransitive_referenceSubgroup :
         exact isPretransitive_of_finRotate_mem (n := 5) (G := ⊤) (by simp)
   | _ + 6, j => j.elim0
 
+/-- **The degree divides the order of a reference subgroup.** The order of the reference subgroup
+`referenceSubgroup n j` of the label `nT(j + 1)` is divisible by `n`. -/
+theorem dvd_natCard_referenceSubgroup (n : ℕ) (j : TransitiveGroupIndex n) :
+    n ∣ Nat.card (referenceSubgroup n j) := by
+  have : NeZero n := ⟨(pos_of_transitiveGroupIndex j).ne'⟩
+  have := isPretransitive_referenceSubgroup n j
+  simpa using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup n j) (X := Fin n)
+
 /-- A reference subgroup carries its defining transitive-group label. -/
 @[simp]
 theorem transitiveGroupLabel_referenceSubgroup (n : ℕ) (j : TransitiveGroupIndex n) :
@@ -524,7 +533,7 @@ theorem transitiveGroupLabel_two_iff (j : TransitiveGroupIndex 2) (G : Subgroup 
   have htop : G = ⊤ := by
     refine eq_top_iff.mpr fun σ _ => ?_
     rcases hperm σ g hg1 with rfl | rfl
-    exacts [G.one_mem, g.2]
+    exacts [G.one_mem, g.property]
   rw [htop, referenceSubgroup_two]
   exact Subgroup.map_top_of_surjective _ (MulAut.conj 1).surjective
 
