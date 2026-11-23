@@ -50,10 +50,10 @@ lemma HasFiniteSupport.finite_mapObj {X : GradedObject I (ModuleCat.{w} R)}
     (j : J) : Module.Finite R (X.mapObj p j) :=
   TauCeti.ModuleCat.finite_coproduct_of_finite_support (X.mapObjFun p j) (by
     have hf := (hasFiniteSupport_iff_finite X).mp hX
-    refine (hf.preimage (f := fun i : p ⁻¹' {j} ↦ i.1)
+    refine (hf.preimage (f := fun i : p ⁻¹' {j} ↦ i.val)
       Subtype.val_injective.injOn).subset ?_
     intro i hi
-    exact (mem_support X i.1).mpr hi)
+    exact (mem_support X i.val).mpr hi)
 
 end Ring
 

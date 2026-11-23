@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Algebra.CharP.Quotient
+import TauCeti.Algebra.Group.AddChar.Basic
 
 /-!
 # Gauss sums over finite fields
@@ -49,6 +50,7 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
   `𝔽_p`.
 * `MulChar.gaussSum_ringHomComp`: `g(f ∘ χ, f ∘ ψ) = f (g(χ, ψ))` for a ring homomorphism `f` of
   the coefficients.
+* `MulChar.gaussSum_pow_eq_sum`: `g(χ, ψ) ^ k = ∑_{x : Fin k → R} χ (∏ xᵢ) ψ (∑ xᵢ)`.
 * `MulChar.gaussSum_pow_char_left`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
 
 ## References
@@ -138,6 +140,15 @@ theorem gaussSum_ringHomComp {R R' R'' : Type*} [CommRing R] [Fintype R] [CommRi
     [CommRing R''] (χ : MulChar R R') (ψ : AddChar R R') (f : R' →+* R'') :
     gaussSum (χ.ringHomComp f) (f.toMonoidHom.compAddChar ψ) = f (gaussSum χ ψ) := by
   simp [gaussSum, MonoidHom.coe_compAddChar]
+
+/-- The `k`-th power of a Gauss sum, expanded over `k`-tuples:
+`g(χ, ψ) ^ k = ∑_{x : Fin k → R} χ (x₁ ⋯ xₖ) ψ (x₁ + ⋯ + xₖ)`. -/
+theorem gaussSum_pow_eq_sum {R R' : Type*} [CommRing R] [Fintype R] [CommRing R']
+    (χ : MulChar R R') (ψ : AddChar R R') (k : ℕ) :
+    gaussSum χ ψ ^ k = ∑ x : Fin k → R, χ (∏ i, x i) * ψ (∑ i, x i) := by
+  rw [gaussSum, Fintype.sum_pow]
+  refine Fintype.sum_congr _ _ fun x ↦ ?_
+  rw [Finset.prod_mul_distrib, map_prod, AddChar.map_sum_eq_prod]
 
 variable {F : Type*} [Field F] [Fintype F]
 

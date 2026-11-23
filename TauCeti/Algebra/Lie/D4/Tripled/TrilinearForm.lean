@@ -60,7 +60,7 @@ def trialityCoefficient (a : Block 0) (b : Block 1) (c : Block 2) : ℤ :=
     ![6, -4, 0, 2, 0, -1, 0, 0],
     ![-5, 3, -2, 0, 1, 0, 0, 0]]
   let localIndex {j : Fin 3} (x : Block j) : Fin 8 :=
-    ⟨x.1.val % 8, Nat.mod_lt _ (by omega)⟩
+    ⟨x.val.val % 8, Nat.mod_lt _ (by omega)⟩
   let q := table (localIndex a) (localIndex b)
   if q.natAbs = (localIndex c).val + 1 then q.sign else 0
 
@@ -78,7 +78,7 @@ theorem trialityCoefficient_apply (a : Block 0) (b : Block 1) (c : Block 2) :
         ![6, -4, 0, 2, 0, -1, 0, 0],
         ![-5, 3, -2, 0, 1, 0, 0, 0]]
       let localIndex {j : Fin 3} (x : Block j) : Fin 8 :=
-        ⟨x.1.val % 8, Nat.mod_lt _ (by omega)⟩
+        ⟨x.val.val % 8, Nat.mod_lt _ (by omega)⟩
       let q := table (localIndex a) (localIndex b)
       if q.natAbs = (localIndex c).val + 1 then q.sign else 0 := by
   rfl

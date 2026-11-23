@@ -55,7 +55,7 @@ theorem washnitzer_proj : (washnitzer K n R hR).proj = AlgHom.id K _ := by
 theorem washnitzer_ofStage_mk (ρ : Set.Ioc (1 : ℝ) R)
     (f : IsRestricted.subring (R := K) (fun _ : Fin n ↦ (ρ : ℝ))) :
     (washnitzer K n R hR).ofStage ρ (Ideal.Quotient.mk _ f) =
-      washnitzerAlgebra.ofRestricted ρ.2.1 (fun _ ↦ le_rfl) f := by
+      washnitzerAlgebra.ofRestricted ρ.property.1 (fun _ ↦ le_rfl) f := by
   rw [ofStage_mk, washnitzer_proj, AlgHom.id_apply]
 
 /-- The map from every relation-free stage to `W_n` is continuous for the unit Gauss norm. -/
@@ -63,19 +63,19 @@ theorem continuous_washnitzer_ofStage (ρ : Set.Ioc (1 : ℝ) R) :
     @Continuous _ _ ((washnitzer K n R hR).stageTopology ρ) inferInstance
       ((washnitzer K n R hR).ofStage ρ) := by
   let P := washnitzer K n R hR
-  have : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.2.1⟩
+  have : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.property.1⟩
   apply (P.stageIdeal ρ).isQuotientMap_mkQ.continuous_iff.mpr
   have heq : P.ofStage ρ ∘ (P.stageIdeal ρ).mkQ =
-      fun f ↦ washnitzerAlgebra.ofRestricted ρ.2.1 (fun _ ↦ le_rfl) f := by
+      fun f ↦ washnitzerAlgebra.ofRestricted ρ.property.1 (fun _ ↦ le_rfl) f := by
     funext f
     exact washnitzer_ofStage_mk n R hR ρ f
   rw [heq]
   apply AddMonoidHomClass.continuous_of_bound
-    (washnitzerAlgebra.ofRestricted ρ.2.1 (fun _ : Fin n ↦ le_rfl)) 1
+    (washnitzerAlgebra.ofRestricted ρ.property.1 (fun _ : Fin n ↦ le_rfl)) 1
   intro f
   rw [one_mul, ← washnitzerAlgebra.norm_toTate]
   convert @TauCeti.MvPowerSeries.norm_restrictedRadiusHom_le (Fin n) K _ _
-    (fun _ ↦ 1) (fun _ ↦ (ρ : ℝ)) (fun _ ↦ zero_le_one) (fun _ ↦ ρ.2.1.le)
+    (fun _ ↦ 1) (fun _ ↦ (ρ : ℝ)) (fun _ ↦ zero_le_one) (fun _ ↦ ρ.property.1.le)
     (fun _ ↦ inferInstance) (fun _ ↦ inferInstance) f using 1
   exact congrArg norm (Subtype.ext (by simp))
 

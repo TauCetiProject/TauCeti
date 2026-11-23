@@ -235,7 +235,7 @@ private theorem det_hsymmInt_eq_of_colLen_le {N : ℕ} (μ : YoungDiagram) {r : 
   induction r, hr using Nat.le_induction with
   | base => rfl
   | succ r hr ih =>
-    rw [det_hsymmInt_succ μ (YoungDiagram.rowLen_eq_zero_of_colLen_le hr), ih]
+    rw [det_hsymmInt_succ μ (YoungDiagram.rowLen_eq_zero_iff.mpr hr), ih]
 
 /-- The Jacobi--Trudi identity for a shape with at most `N` rows, transported from `ℤ`. -/
 private theorem diagramSchurPoly_eq_det_of_colLen_le {N : ℕ} (μ : YoungDiagram)

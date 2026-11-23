@@ -378,13 +378,13 @@ series `E_k^(psi, phi, t)` over primitive, parity-compatible pairs whose induced
 def eisensteinSubspace (hk : 3 ≤ (k : ℤ)) :
     Submodule ℂ (modFormCharSpace (k : ℤ) chi) :=
   Submodule.span ℂ (Set.range fun a : {a : CharIndex N k // a.nebentypus = chi} ↦
-    a.1.inCharSpace hk a.2)
+    a.val.inCharSpace hk a.property)
 
 /-- The defining span of the Eisenstein subspace. -/
 theorem eisensteinSubspace_def (hk : 3 ≤ (k : ℤ)) :
     eisensteinSubspace chi hk =
       Submodule.span ℂ (Set.range fun a : {a : CharIndex N k // a.nebentypus = chi} ↦
-        a.1.inCharSpace hk a.2) :=
+        a.val.inCharSpace hk a.property) :=
   (rfl)
 
 /-- Every indexed series with induced nebentypus `chi` belongs to the Eisenstein subspace. -/
@@ -399,7 +399,7 @@ theorem mem_eisensteinSubspace_iff (hk : 3 ≤ (k : ℤ))
     (f : modFormCharSpace (k : ℤ) chi) :
     f ∈ eisensteinSubspace chi hk ↔
       ∃ c : {a : CharIndex N k // a.nebentypus = chi} →₀ ℂ,
-        c.sum (fun a z ↦ z • a.1.inCharSpace hk a.2) = f := by
+        c.sum (fun a z ↦ z • a.val.inCharSpace hk a.property) = f := by
   rw [eisensteinSubspace_def]
   exact Finsupp.mem_span_range_iff_exists_finsupp
 

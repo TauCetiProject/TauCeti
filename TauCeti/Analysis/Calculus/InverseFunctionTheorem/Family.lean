@@ -87,7 +87,7 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
       (hds₀.differentiableAt hn')
     have hcont : ContinuousAt ContinuousLinearMap.inverse (fderiv 𝕜 e₀ (e₀.symm y₀)) := by
       simpa using (contDiffAt_map_inverse (n := 0)
-        (ContinuousLinearEquiv.equivOfInverse' _ _ h₁ h₂)).continuousAt
+        (ContinuousLinearEquiv.ofContinuousLinearMap _ _ h₁ h₂)).continuousAt
     rw [← ContinuousLinearMap.inverse_eq h₁ h₂]
     refine (hcont.tendsto.comp ((he.tendsto_fderiv hn).comp hlim)).congr' ?_
     filter_upwards [hd] with p hp
