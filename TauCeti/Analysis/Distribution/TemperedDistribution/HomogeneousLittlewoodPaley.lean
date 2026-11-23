@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecificLimits.ZPow
 
@@ -73,8 +74,6 @@ inequalities on annuli apply.
   block lies in its dyadic annulus.
 * `TemperedDistribution.homogeneousLittlewoodPaleyBlock_eq_of_isVanishingOn_fourier_sub`: the
   blocks see a distribution only modulo distributions with spectrum at the origin.
-* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_volume_toTemperedDistribution`: the
-  blocks of the constant function `1` vanish.
 * `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero`: almost
   orthogonality, also between the blocks of two bump functions, and
   `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico`: the blocks of a second
@@ -216,20 +215,6 @@ theorem homogeneousLittlewoodPaleyBlock_eq_of_isVanishingOn_fourier_sub {u v : �
   rw [← sub_eq_zero, ← map_sub]
   exact homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero φ h j
 
-/-- **The blocks of a constant vanish.** Every homogeneous block of the constant function `1`,
-the tempered distribution `ψ ↦ ∫ ψ`, is zero: its Fourier transform is the Dirac mass at the
-origin. -/
-@[simp]
-theorem homogeneousLittlewoodPaleyBlock_volume_toTemperedDistribution (j : ℤ) :
-    homogeneousLittlewoodPaleyBlock ℂ φ j (volume.toTemperedDistribution : 𝓢'(E, ℂ)) = 0 := by
-  refine homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero φ
-    (fun ψ hψ ↦ ?_) j
-  -- `𝓕 1 ψ = ∫ 𝓕 ψ = 𝓕⁻ (𝓕 ψ) 0 = ψ 0`, by Fourier inversion.
-  have h0 : ψ 0 = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hψ h rfl
-  have hinv : (𝓕⁻ (𝓕 ψ) : 𝓢(E, ℂ)) 0 = ψ 0 := by rw [FourierTransform.fourierInv_fourier_eq]
-  rw [SchwartzMap.fourierInv_coe, Real.fourierInv_eq] at hinv
-  simpa [h0] using hinv
-
 /-- The composition of the homogeneous blocks of two bump functions is the Fourier multiplier by
 the product of the two cutoffs. -/
 theorem homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock
@@ -262,29 +247,23 @@ theorem exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump
       fourierMultiplierCLM_const, zero_smul]
 
 /-- **The low-frequency blocks see only the low frequencies.** If the cutoff `ψⱼ` is carried by
-the ball where `φ (2^{-N} ·) = 1`, that is `2^j φ.rOut ≤ 2^N φ.rIn`, then `Pⱼ` does not see the
-inhomogeneous blocks `Δₖ`, `k > N`: `Pⱼ (∑_{k ≤ N} Δₖ u) = Pⱼ u`. -/
+the ball where `φ (2^{-N} ·) = 1`, which is guaranteed by `2^j φ.rOut ≤ 2^N φ.rIn`, then `Pⱼ` does
+not see the inhomogeneous blocks `Δₖ`, `k > N`: `Pⱼ (∑_{k ≤ N} Δₖ u) = Pⱼ u`. -/
 theorem homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range {j : ℤ} {N : ℕ}
     (hjN : 2 ^ j * φ.rOut ≤ 2 ^ N * φ.rIn) (u : 𝓢'(E, F)) :
     homogeneousLittlewoodPaleyBlock F φ j
         (∑ k ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ k u) =
       homogeneousLittlewoodPaleyBlock F φ j u := by
-  have hc := (φ.lowPassSchwartz (pow_ne_zero N (two_ne_zero (α := ℝ)))).hasTemperateGrowth
-  rw [φ.coe_lowPassSchwartz] at hc
+  have hN : (0 : ℝ) < 2 ^ N := by positivity
   rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range,
     homogeneousLittlewoodPaleyBlock_apply, homogeneousLittlewoodPaleyBlock_apply,
-    fourierMultiplierCLM_fourierMultiplierCLM_apply hc
-      (φ.hasTemperateGrowth_ofReal_littlewoodPaley j)]
-  refine congrArg (fun g ↦ fourierMultiplierCLM F g u) (funext fun ξ ↦ ?_)
-  -- On the support of `ψⱼ`, `‖ξ‖ ≤ 2^j φ.rOut ≤ 2^N φ.rIn`, where `φ (2^{-N} ξ) = 1`.
-  by_cases hξ : φ.littlewoodPaley j ξ = 0
-  · simp only [Pi.mul_apply, hξ, Complex.ofReal_zero, mul_zero]
-  have hle : ‖ξ‖ ≤ 2 ^ N * φ.rIn :=
-    le_trans (not_le.1 (mt φ.littlewoodPaley_eq_zero_of_le_norm hξ)).le hjN
-  rw [Pi.mul_apply, φ.one_of_mem_closedBall, Complex.ofReal_one, one_mul]
-  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, norm_pow, Real.norm_two,
-    inv_mul_le_iff₀ (by positivity)]
-  exact hle
+    ← φ.coe_lowPassSchwartz hN.ne', fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (φ.lowPassSchwartz hN.ne').hasTemperateGrowth (φ.hasTemperateGrowth_ofReal_littlewoodPaley j),
+    mul_comm, φ.mul_lowPassSchwartz_of_support_subset hN]
+  -- On the support of `ψⱼ`, `‖ξ‖ ≤ 2^j φ.rOut ≤ 2^N φ.rIn`.
+  refine (subset_tsupport _).trans <| (tsupport_comp_subset Complex.ofReal_zero _).trans
+    fun ξ hξ ↦ mem_closedBall_zero_iff.2 ?_
+  exact (φ.tsupport_littlewoodPaley_subset j hξ).2.trans hjN
 
 /-! ### Reconstruction -/
 
@@ -483,7 +462,7 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos
     ∃ B : ℝ, ∃ G : ℤ → Lp F p (volume : Measure E), ∀ j ≤ 0,
       homogeneousLittlewoodPaleyBlock F φ j u = G j ∧ ‖G j‖ ≤ B := by
   obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   set S : Lp F p (volume : Measure E) := ∑ k ∈ Finset.range (N + 1), f k
   choose G hG hGC using fun j : ℤ ↦ hC (p := p) j S
   refine ⟨C * ‖S‖, G, fun j hj ↦ ⟨?_, hGC j⟩⟩
@@ -491,11 +470,9 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos
     calc (2 : ℝ) ^ j * φ.rOut ≤ 1 * φ.rOut :=
           mul_le_mul_of_nonneg_right (zpow_le_one_of_nonpos₀ (one_le_two (α := ℝ)) hj)
             φ.rOut_pos.le
-      _ ≤ 2 ^ N * φ.rIn := by rw [one_mul]; exact ((div_lt_iff₀ φ.rIn_pos).1 hN).le
-  rw [← homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range φ hjN, ← hG j]
-  congr 1
-  rw [Finset.sum_congr rfl fun k _ ↦ hf k]
-  exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
+      _ ≤ 2 ^ N * φ.rIn := by rw [one_mul]; exact hN.le
+  rw [← homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range φ hjN, ← hG j,
+    Lp.toTemperedDistribution_sum, Finset.sum_congr rfl fun k _ ↦ hf k]
 
 /-- **Low-pass truncations of `Lᵖ` functions are small in `L^∞`.** There is `C`, depending only on
 `φ` and `p`, such that for every `R > 0` and every `f ∈ Lᵖ`, the truncation
