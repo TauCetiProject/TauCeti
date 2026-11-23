@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Colex
-public import Mathlib.Computability.RE
 public import TauCeti.Computability.Enumeration.Stage
-public import TauCeti.Computability.Enumeration.Membership
+public import TauCeti.Computability.Partrec.FiniteSet
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -48,8 +46,6 @@ same stage.
   `Nat.Partrec.Code.primrec_domStage_apply` and `Nat.Partrec.Code.computable_domStage` specialize
   to a fixed code, and `Nat.Partrec.Code.primrecRel_mem_domStage_ofNat` indexes the codes by their
   numbers.
-* `TauCeti.Enumeration.computablePred_mem_of_computable_equivBitIndices`: membership in finite
-  stages with computable binary codes is computable.
 * `TauCeti.Enumeration.rePred_mem_stageLimit`: the limit of finite stages with computable
   membership is c.e.
 * `TauCeti.Enumeration.rePred_iff_exists_stages`: a predicate on `ℕ` is c.e. if and only if it is

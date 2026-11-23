@@ -7,7 +7,8 @@ module
 
 import TauCeti.Computability.Enumeration.Relative.Basic
 import TauCeti.Computability.Enumeration.Comparison
-import TauCeti.Computability.Enumeration.IndexClosure
+import TauCeti.Computability.SingleOracle.Domain
+import TauCeti.Computability.Partrec.Domain
 import TauCeti.Computability.Enumeration.Range
 import TauCeti.Computability.RE
 
@@ -15,9 +16,9 @@ import TauCeti.Computability.RE
 # Regression examples: relative enumerations, stage comparisons, and index closure
 
 These examples exercise `TauCeti.Computability.Enumeration.Relative.Basic`,
-`TauCeti.Computability.Enumeration.Comparison`, `TauCeti.Computability.Enumeration.IndexClosure`,
-`TauCeti.Computability.Enumeration.Range`, and `TauCeti.Computability.RE` from a downstream
-module, using public APIs only:
+`TauCeti.Computability.Enumeration.Comparison`, `TauCeti.Computability.SingleOracle.Domain`,
+`TauCeti.Computability.Partrec.Domain`, `TauCeti.Computability.Enumeration.Range`, and
+`TauCeti.Computability.RE` from a downstream module, using public APIs only:
 
 * the empty set is c.e. and admits a partial computable range presentation without any
   nonemptiness hypothesis;

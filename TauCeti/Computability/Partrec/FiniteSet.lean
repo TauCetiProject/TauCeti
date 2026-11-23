@@ -19,15 +19,15 @@ computable (or oracle-computable) in `(i, x)`.
 
 ## Main results
 
-* `TauCeti.Enumeration.computableIn_mem_of_computableIn_equivBitIndices`: membership in finite
-  sets with oracle-computable binary codes is oracle-computable.
-* `TauCeti.Enumeration.computablePred_mem_of_computable_equivBitIndices`: ordinary computable
-  specialization at the empty oracle.
+* `TauCeti.computableIn_mem_of_computableIn_equivBitIndices`: membership in finite sets with
+  oracle-computable binary codes is oracle-computable.
+* `TauCeti.computablePred_mem_of_computable_equivBitIndices`: ordinary computable specialization
+  at the empty oracle.
 -/
 
 public section
 
-namespace TauCeti.Enumeration
+namespace TauCeti
 
 /-- Membership in finite sets is oracle-computable, uniformly in the index and the element,
 when their binary finite-set codes are oracle-computable. -/
@@ -48,4 +48,4 @@ theorem computablePred_mem_of_computable_equivBitIndices {ι : Type*} [Primcodab
     (computableIn_mem_of_computableIn_equivBitIndices hA.computableIn)).computablePred.of_eq
     fun p => by simp
 
-end TauCeti.Enumeration
+end TauCeti

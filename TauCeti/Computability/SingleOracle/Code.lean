@@ -907,7 +907,7 @@ relative to the constant-zero oracle. -/
 @[simp]
 theorem eval_toPartrecCode_zero (c : Code) :
     c.toPartrecCode.eval = eval (((fun _ : ℕ => 0) : ℕ → ℕ) : ℕ →. ℕ) c :=
-  (eval_toPartrecCode (fun _ => rfl) c).symm
+  (eval_toPartrecCode (fun n => PFun.coe_val (fun _ : ℕ => 0) n) c).symm
 
 /-- One strong-recursion step for `toPartrecCode`, building the ordinary code of
 `ofNat Code L.length` from the table `L` of already-translated smaller codes. -/

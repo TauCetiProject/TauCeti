@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Hierarchy.One
-import TauCeti.Computability.Enumeration.IndexClosure
+import TauCeti.Computability.SingleOracle.Domain
 
 /-!
 # Semantic closure properties for relative Σ⁰₁ sets
 
-Using the uniform index compilers from `TauCeti.Computability.Enumeration.IndexClosure`, this file
+Using the uniform domain compilers from `TauCeti.Computability.SingleOracle.Domain`, this file
 establishes semantic closure of relativized c.e. (`Σ⁰₁`) sets on arbitrary primitive-codable
 types under ranges, partial images, and total images, together with the partial-range
 characterization `TauCeti.ArithmeticalHierarchy.isSigma_one_iff_exists_recursiveIn_ran`

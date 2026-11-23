@@ -22,8 +22,6 @@ domain-restricted identity maps.
 * `PFun.ran_res`: the range of `PFun.res h S` is `h '' S`.
 * `PFun.ran_comp`: the range of `g.comp f` is `g.image f.ran`.
 * `PFun.ran_map_const`: the range of `fun x => (f x).map fun _ => x` is `f.Dom`.
-* `PFun.ran_comp_map_const`: the range of `g.comp fun x => (f x).map fun _ => x` is
-  `g.image f.Dom`.
 -/
 
 public section
@@ -62,10 +60,5 @@ theorem ran_map_const {α : Type u} {β : Type v} (f : α →. β) :
     ext x y
     simp [mem_res, Part.mem_map_iff, mem_dom]
   rw [hres, ran_res, Set.image_id]
-
-/-- Composing `g` with the identity restricted to the domain of `f` has range `g.image f.Dom`. -/
-theorem ran_comp_map_const {α : Type u} {β : Type v} {γ : Type w} (g : α →. γ) (f : α →. β) :
-    PFun.ran (PFun.comp g fun x => (f x).map fun _ => x) = g.image f.Dom :=
-  (ran_comp g (fun x => (f x).map fun _ => x)).trans <| by rw [ran_map_const]
 
 end PFun

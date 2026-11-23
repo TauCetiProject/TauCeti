@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Computability.PartrecCode
 import TauCeti.Computability.SingleOracle.Code
+import TauCeti.Data.PFun.Basic
 
 /-!
 # Domain lemmas and direct combinators for ordinary program codes
@@ -126,18 +127,16 @@ theorem eval_restrictId (c : Code) (x : ℕ) :
 @[simp]
 theorem dom_eval_restrictId (c : Code) :
     (restrictId c).eval.Dom = c.eval.Dom := by
-  let O : ℕ →. ℕ := fun _ => Part.none
-  rw [← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode O (restrictId c),
-    toSingleOracleCode_restrictId, TauCeti.Oracle.Single.Code.dom_eval_restrictId,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  ext x
+  simp only [PFun.mem_dom, eval_restrictId, Part.mem_map_iff]
+  exact ⟨fun ⟨_, _, hx, _⟩ => ⟨_, hx⟩, fun ⟨y, hy⟩ => ⟨x, y, hy, rfl⟩⟩
 
 /-- The range of `restrictId c` is the domain of `c`. -/
 @[simp]
 theorem ran_eval_restrictId (c : Code) :
     (restrictId c).eval.ran = c.eval.Dom := by
-  let O : ℕ →. ℕ := fun _ => Part.none
-  rw [← TauCeti.Oracle.Single.Code.eval_toSingleOracleCode O (restrictId c),
-    toSingleOracleCode_restrictId, TauCeti.Oracle.Single.Code.ran_eval_restrictId,
-    TauCeti.Oracle.Single.Code.eval_toSingleOracleCode]
+  have hrestrict : (restrictId c).eval = fun x => (c.eval x).map fun _ => x :=
+    funext (eval_restrictId c)
+  rw [hrestrict, PFun.ran_map_const]
 
 end Nat.Partrec.Code

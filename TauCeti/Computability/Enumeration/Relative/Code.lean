@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Enumeration.Stage
+public import TauCeti.Computability.Enumeration.Code
 public import TauCeti.Computability.RecursiveIn
 public import TauCeti.Computability.SingleOracle.Stage
 
@@ -18,13 +18,15 @@ stage `s` under `TauCeti.Oracle.Single.Code.evalStage`. By Soare's stage bounds,
 below `s` and `c.domStage σ s = ∅` whenever `s ≤ encode c`.
 
 When `σ` fixes the answers of a set oracle `Z` (or a total oracle `O`), these stages start empty,
-increase with `s`, and have limit `(Code.eval Z.oracle c).Dom`. Their binary finite-set codes are
-primitive recursive uniformly in any primitive-recursive family of finite oracle answers (such as
-finite oracle strings or binary-coded finite sets), and uniformly `G`-computable in the family
-parameter, program, and stage for any `G`-computable family of optional oracle answers.
+increase with `s`, and have limit `(Code.eval Z.oracle c).Dom`, and for query-free programs
+`c.toSingleOracleCode` they agree in the limit with `Nat.Partrec.Code.domStage`. Their binary
+finite-set codes are primitive recursive uniformly in any primitive-recursive family of finite
+oracle answers (such as finite oracle strings or binary-coded finite sets), and uniformly
+`G`-computable in the family parameter, program, and stage for any `G`-computable family of
+optional oracle answers.
 
-Serialization, bridge lemmas to ordinary `Nat.Partrec.Code.domStage`, and `Σ⁰₁` stage
-characterizations live downstream in `TauCeti.Computability.Enumeration.Relative.Basic`.
+Serialization and `Σ⁰₁` stage characterizations live downstream in
+`TauCeti.Computability.Enumeration.Relative.Basic`.
 
 ## Main definitions
 
@@ -41,8 +43,9 @@ characterizations live downstream in `TauCeti.Computability.Enumeration.Relative
   `TauCeti.Oracle.Single.Code.domStage_eq_of_eqOn`,
   `TauCeti.Oracle.Single.Code.domStage_range_map_option`,
   `TauCeti.Oracle.Single.Code.domStage_range_map`,
-  `TauCeti.Oracle.Single.Code.stageLimit_domStage`: monotonicity, prefix agreement, and domain
-  limit.
+  `TauCeti.Oracle.Single.Code.stageLimit_domStage`,
+  `TauCeti.Oracle.Single.Code.stageLimit_domStage_toSingleOracleCode`: monotonicity, prefix
+  agreement, domain limit, and comparison with `Nat.Partrec.Code.domStage`.
 * `TauCeti.Oracle.Single.Code.primrecRel_mem_domStage`,
   `TauCeti.Oracle.Single.Code.primrec_domStage`,
   `TauCeti.Oracle.Single.Code.computableIn_domStage`,
@@ -120,13 +123,8 @@ theorem domStage_range_map_option (σ : ℕ → Option ℕ) (c : Code) (s : ℕ)
 theorem domStage_range_map (O : ℕ → ℕ) (c : Code) (s : ℕ) :
     c.domStage (fun z => ((List.range s).map O)[z]?) s =
       c.domStage (fun z => some (O z)) s := by
-  have h : (fun z : ℕ => ((List.range s).map O)[z]?) =
-      fun z => (((List.range s).map (some ∘ O))[z]?).bind id := by
-    funext z
-    rw [List.getElem?_map, List.getElem?_map, Option.bind_map]
-    exact Option.map_eq_bind
-  rw [h]
-  exact domStage_range_map_option (some ∘ O) c s
+  ext x
+  simp only [mem_domStage, evalStage_range_map]
 
 /-- When `σ` supplies exactly the values of the oracle `O`, the limit of `c.domStage σ` is the
 domain of `eval O c`. -/
@@ -154,6 +152,15 @@ theorem stageLimit_domStage_total (O : ℕ → ℕ) (c : Code) :
 theorem stageLimit_domStage_setAnswers (Z : Set ℕ) (c : Code) :
     stageLimit (c.domStage (setAnswers Z)) = (eval Z.oracle c).Dom :=
   stageLimit_domStage (by simp [eq_comm]) c
+
+/-- For a query-free program, the relative domain stages have the same limit as Mathlib's ordinary
+code domain stages, for every oracle answer table `σ`. -/
+theorem stageLimit_domStage_toSingleOracleCode (σ : ℕ → Option ℕ) (c : Nat.Partrec.Code) :
+    stageLimit (c.toSingleOracleCode.domStage σ) = stageLimit c.domStage := by
+  let O : ℕ →. ℕ := fun z => Part.ofOption (σ z)
+  rw [stageLimit_domStage (O := O) (by simp [O, Part.mem_ofOption]),
+    eval_toSingleOracleCode, Nat.Partrec.Code.stageLimit_domStage]
+  simp [PFun.Dom]
 
 section Effectivity
 
@@ -196,13 +203,20 @@ theorem computableIn_domStage {G : Set (ℕ →. ℕ)} {σ : α → ℕ → Opti
     (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × Code × ℕ =>
       Finset.equivBitIndices.symm (p.2.1.domStage (σ p.1) p.2.2) := by
-  have hp : ComputableIn G (fun p : α × Code × ℕ => (List.range p.2.2).map (σ p.1)) :=
-    hσ.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.snd.comp ComputableIn.snd))
   have hlookup : Primrec₂ fun (l : List (Option ℕ)) z => l[z]?.bind id :=
     (Primrec.option_bind₁ Primrec.id).comp Primrec.list_getElem?
-  exact RecursiveIn.of_eq ((primrec_domStage hlookup).computableIn.comp (hp.pair ComputableIn.snd))
-    fun p => congrArg (fun S => Part.some (Finset.equivBitIndices.symm S))
-      (domStage_range_map_option (σ p.1) p.2.1 p.2.2)
+  have hF : Primrec fun p : List (Option ℕ) × ℕ × Code =>
+      Finset.equivBitIndices.symm (p.2.2.domStage (fun z => p.1[z]?.bind id) p.2.1) :=
+    (primrec_domStage hlookup).comp <|
+      Primrec.fst.pair ((Primrec.snd.comp Primrec.snd).pair (Primrec.fst.comp Primrec.snd))
+  exact RecursiveIn.of_eq
+    ((hσ.computableIn_of_primrec_range_map_option
+      (F := fun τ s (c : Code) => Finset.equivBitIndices.symm (c.domStage τ s))
+      hF fun a s c =>
+        congrArg Finset.equivBitIndices.symm (domStage_range_map_option (σ a) c s)).comp <|
+      ComputableIn.fst.pair
+        ((ComputableIn.snd.comp ComputableIn.snd).pair (ComputableIn.fst.comp ComputableIn.snd)))
+    fun _ => rfl
 
 /-- For a total oracle `O`, binary finite-set codes of `O`-relative domain stages are computable in
 `O`, uniformly in the program and the stage. -/
@@ -210,7 +224,7 @@ theorem computableIn_domStage_total (O : ℕ → ℕ) :
     ComputableIn {(O : ℕ →. ℕ)} fun p : Code × ℕ =>
       Finset.equivBitIndices.symm (p.1.domStage (fun z => some (O z)) p.2) := by
   have hO : ComputableIn {(O : ℕ →. ℕ)} O :=
-    RecursiveIn.of_eq (RecursiveIn.oracle (O : ℕ →. ℕ) rfl) fun _ => rfl
+    RecursiveIn.of_eq (RecursiveIn.oracle (O : ℕ →. ℕ) rfl) fun n => (PFun.coe_val O n).symm
   have hO₂ : ComputableIn₂ {(O : ℕ →. ℕ)} (fun (_ : Unit) z => some (O z)) :=
     Primrec.option_some.computableIn.comp (hO.comp ComputableIn.snd)
   exact RecursiveIn.of_eq

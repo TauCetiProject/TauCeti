@@ -325,6 +325,22 @@ theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
   | zero => rfl
   | succ n ih => simp [List.range_succ, ih]
 
+/-- Lifting a primitive-recursive computation on `Option ℕ` prefix lists to any `O`-computable
+family `σ`, when at bound `k` the computation depends only on the prefix `(List.range k).map (σ a)`
+via list lookup. -/
+theorem computableIn_of_primrec_range_map_option {β γ : Type*} [Primcodable β] [Primcodable γ]
+    {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ O σ)
+    {F : (ℕ → Option ℕ) → ℕ → β → γ}
+    (hF : Primrec fun p : List (Option ℕ) × ℕ × β =>
+      F (fun z => p.1[z]?.bind id) p.2.1 p.2.2)
+    (hprefix : ∀ a k b,
+      F (fun z => (((List.range k).map (σ a))[z]?).bind id) k b = F (σ a) k b) :
+    ComputableIn O fun p : α × ℕ × β => F (σ p.1) p.2.1 p.2.2 := by
+  have hp : ComputableIn O fun p : α × ℕ × β => (List.range p.2.1).map (σ p.1) :=
+    hσ.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd))
+  exact RecursiveIn.of_eq (hF.computableIn.comp (hp.pair ComputableIn.snd))
+    fun p => congrArg Part.some (hprefix p.1 p.2.1 p.2.2)
+
 end ComputableIn₂
 
 namespace RecursiveIn

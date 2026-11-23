@@ -33,12 +33,12 @@ in `G`. With fuel `k`, the simulator needs only the first `k` answers. -/
 theorem computableIn_evaln_option {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × ℕ × Code × ℕ =>
       evaln (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
-  have hp : ComputableIn G fun p : α × ℕ × Code × ℕ => (List.range p.2.1).map (σ p.1) :=
-    hσ.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd))
   have hlookup : Primrec₂ fun (l : List (Option ℕ)) z => l[z]?.bind id :=
-    (Primrec.option_bind₁ Primrec.id).comp Primrec.list_getElem?
-  refine RecursiveIn.of_eq ((primrec_evaln hlookup).computableIn.comp (hp.pair ComputableIn.snd))
-    fun p => congrArg Part.some (evaln_range_map_option _ _ _ _)
+    (Primrec.option_bind Primrec.id Primrec₂.right).comp Primrec.list_getElem?
+  exact hσ.computableIn_of_primrec_range_map_option
+    (F := fun τ k (q : Code × ℕ) => evaln τ k q.1 q.2)
+    (primrec_evaln hlookup)
+    fun a k q => evaln_range_map_option (σ a) k q.1 q.2
 
 /-- Bounded evaluation against a uniformly oracle-computable family of total oracles is
 oracle-computable, uniformly in the family parameter, fuel, program and input. -/

@@ -8,7 +8,6 @@ module
 public import TauCeti.Computability.Enumeration.Stage
 public import TauCeti.Computability.RecursiveIn
 public import TauCeti.Data.Nat.BitIndices
-import Mathlib.Data.Set.Finite.Lattice
 import TauCeti.Computability.Primrec.Bitwise
 
 /-!
@@ -16,9 +15,9 @@ import TauCeti.Computability.Primrec.Bitwise
 
 To compare two finite-stage enumerations `A` and `B`, `TauCeti.Enumeration.stageCompare A B s`
 searches for the least stage `t` with `A s ⊆ B t`. Its actual domain is `{s | ∃ t, A s ⊆ B t}`,
-it is uniformly recursive in any oracle and stage parameters without totality or directedness
-premises, and when `B` is directed under inclusion its totality characterizes
-`stageLimit A ⊆ stageLimit B`.
+when `B` is directed under inclusion its totality characterizes `stageLimit A ⊆ stageLimit B`,
+and for `ℕ`-valued enumerations it is uniformly recursive in any oracle and stage parameters without
+totality or directedness premises.
 
 ## Main definitions
 
@@ -49,50 +48,49 @@ public section
 
 namespace TauCeti.Enumeration
 
+section Structural
+
+variable {ε : Type*} [DecidableEq ε]
+
 /-- Partial stage comparison: the least stage `t` at which `B t` contains every element of `A s`.
 Defined whenever such a stage exists, without requiring totality or directedness in the
 definition. -/
-def stageCompare (A B : ℕ → Finset ℕ) (s : ℕ) : Part ℕ :=
+def stageCompare (A B : ℕ → Finset ε) (s : ℕ) : Part ℕ :=
   Nat.rfind (PFun.lift fun t => decide (A s ⊆ B t))
 
 /-- Unfolding equation for `stageCompare` as least-stage search. -/
-theorem stageCompare_def (A B : ℕ → Finset ℕ) (s : ℕ) :
+theorem stageCompare_def (A B : ℕ → Finset ε) (s : ℕ) :
     stageCompare A B s = Nat.rfind (PFun.lift fun t => decide (A s ⊆ B t)) := by
   rw [stageCompare]
 
 /-- `stageCompare A B s` returns the least stage `t` with `A s ⊆ B t`. -/
 @[simp]
-theorem mem_stageCompare {A B : ℕ → Finset ℕ} {s t : ℕ} :
+theorem mem_stageCompare {A B : ℕ → Finset ε} {s t : ℕ} :
     t ∈ stageCompare A B s ↔ A s ⊆ B t ∧ ∀ t' < t, ¬ A s ⊆ B t' := by
   rw [stageCompare_def, Nat.mem_rfind]
   simp
 
 /-- Any value returned by `stageCompare A B s` is a stage at which `B` contains `A s`. -/
-theorem subset_of_mem_stageCompare {A B : ℕ → Finset ℕ} {s t : ℕ} (h : t ∈ stageCompare A B s) :
+theorem subset_of_mem_stageCompare {A B : ℕ → Finset ε} {s t : ℕ} (h : t ∈ stageCompare A B s) :
     A s ⊆ B t :=
   (mem_stageCompare.1 h).1
 
 /-- `stageCompare A B s` is defined exactly when some stage of `B` contains `A s`. -/
 @[simp]
-theorem stageCompare_dom {A B : ℕ → Finset ℕ} {s : ℕ} :
+theorem stageCompare_dom {A B : ℕ → Finset ε} {s : ℕ} :
     (stageCompare A B s).Dom ↔ ∃ t, A s ⊆ B t := by
   rw [stageCompare_def, Nat.rfind_dom]
   simp
 
 /-- If `B` is directed under inclusion and `stageLimit A ⊆ stageLimit B`, then `stageCompare A B`
 is total. -/
-theorem stageCompare_dom_of_stageLimit_subset {A B : ℕ → Finset ℕ} (hB : Directed (· ⊆ ·) B)
-    (hsub : stageLimit A ⊆ stageLimit B) (s : ℕ) : (stageCompare A B s).Dom := by
-  have hB' : Directed (· ⊆ ·) fun t => (B t : Set ℕ) := fun i j => by
-    obtain ⟨k, hik, hjk⟩ := hB i j
-    exact ⟨k, Finset.coe_subset.2 hik, Finset.coe_subset.2 hjk⟩
-  obtain ⟨t, ht⟩ := hB'.exists_mem_subset_of_finset_subset_biUnion (s := A s) fun x hx => by
-    rw [← stageLimit_eq_iUnion]
-    exact hsub (subset_stageLimit A s hx)
-  exact stageCompare_dom.2 ⟨t, Finset.coe_subset.1 ht⟩
+theorem stageCompare_dom_of_stageLimit_subset {A B : ℕ → Finset ε} (hB : Directed (· ⊆ ·) B)
+    (hsub : stageLimit A ⊆ stageLimit B) (s : ℕ) : (stageCompare A B s).Dom :=
+  stageCompare_dom.2 <|
+    exists_subset_stage_of_subset_stageLimit hB ((subset_stageLimit A s).trans hsub)
 
 /-- For directed `B`, inclusion of limiting sets is equivalent to totality of `stageCompare A B`. -/
-theorem stageLimit_subset_iff_forall_stageCompare_dom {A B : ℕ → Finset ℕ}
+theorem stageLimit_subset_iff_forall_stageCompare_dom {A B : ℕ → Finset ε}
     (hB : Directed (· ⊆ ·) B) :
     stageLimit A ⊆ stageLimit B ↔ ∀ s, (stageCompare A B s).Dom := by
   refine ⟨fun hsub s => stageCompare_dom_of_stageLimit_subset hB hsub s, fun hdom x hx => ?_⟩
@@ -102,12 +100,14 @@ theorem stageLimit_subset_iff_forall_stageCompare_dom {A B : ℕ → Finset ℕ}
 
 /-- For directed enumerations, equality of limiting sets is equivalent to totality of both
 directions of `stageCompare`. -/
-theorem stageLimit_eq_iff_forall_stageCompare_dom {A B : ℕ → Finset ℕ}
+theorem stageLimit_eq_iff_forall_stageCompare_dom {A B : ℕ → Finset ε}
     (hA : Directed (· ⊆ ·) A) (hB : Directed (· ⊆ ·) B) :
     stageLimit A = stageLimit B ↔
       (∀ s, (stageCompare A B s).Dom) ∧ (∀ s, (stageCompare B A s).Dom) := by
   rw [Set.Subset.antisymm_iff, stageLimit_subset_iff_forall_stageCompare_dom hB,
     stageLimit_subset_iff_forall_stageCompare_dom hA]
+
+end Structural
 
 /-- Stage comparison is recursive in `G`, uniformly in all parameters of the two enumerations. -/
 theorem recursiveIn_stageCompare {α : Type*} [Primcodable α] {G : Set (ℕ →. ℕ)}
