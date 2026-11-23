@@ -25,6 +25,8 @@ monic, also over `ℚ` by Gauss's lemma.
 
 ## Main results
 
+* `Polynomial.Monic.exists_pow_mul_not_dvd`: extracting the highest power of a monic
+  polynomial of positive degree dividing a monic polynomial over any semiring.
 * `Polynomial.Monic.monic_of_mem_normalizedFactors`: a normalized irreducible factor of a monic
   polynomial is monic.
 * `Polynomial.Monic.prod_toFinset_normalizedFactors_of_squarefree`: a squarefree monic
@@ -40,6 +42,26 @@ public section
 open UniqueFactorizationMonoid
 
 namespace Polynomial.Monic
+
+/-- Over any semiring, a monic polynomial `f` factors as `g ^ e * s` with `s` monic and not
+divisible by `g`, for any monic `g` of positive degree. -/
+theorem exists_pow_mul_not_dvd {R : Type*} [Semiring R] {g f : R[X]}
+    (hg : g.Monic) (hg_pos : 0 < g.natDegree) (hf : f.Monic) :
+    ∃ e : ℕ, ∃ s : R[X], s.Monic ∧ ¬ g ∣ s ∧ f = g ^ e * s := by
+  classical
+  induction hdeg : f.natDegree using Nat.strong_induction_on generalizing f with
+  | ind d ih =>
+    by_cases hdvd : g ∣ f
+    · obtain ⟨f₁, hf₁⟩ := hdvd
+      have hf₁_monic : f₁.Monic := Monic.of_mul_monic_left hg (hf₁ ▸ hf)
+      have hf₁_lt : f₁.natDegree < d := by
+        have hsum : f.natDegree = g.natDegree + f₁.natDegree := by
+          rw [hf₁, hg.natDegree_mul hf₁_monic]
+        lia
+      obtain ⟨e, s, hs_monic, hs_ndvd, hs_eq⟩ := ih f₁.natDegree hf₁_lt hf₁_monic rfl
+      refine ⟨e + 1, s, hs_monic, hs_ndvd, ?_⟩
+      rw [hf₁, hs_eq, pow_succ', mul_assoc]
+    · exact ⟨0, f, hf, hdvd, by simp⟩
 
 variable {R : Type*} [CommRing R] [IsDomain R] [NormalizationMonoid R]
   [UniqueFactorizationMonoid R[X]] {f : R[X]}

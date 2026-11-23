@@ -48,6 +48,8 @@ No signs appear anywhere: `B` is an endomorphism, so the two blocks are never re
   determinant, and then as a resultant.
 * `AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le` — the same resultant read at any degree bound
   for `p`, which `g` being monic makes independent of the bound.
+* `AdjoinRoot.norm_mk_one_add_sub_one_mem`, `AdjoinRoot.norm_mk_C` — the norm of `1 + h` modulo an
+  ideal containing the coefficients of `h`, and the norm of a constant `C a`.
 * `AdjoinRoot.norm_mk_eq_prod_eval` — when `g = ∏ i, (X - C rᵢ)` splits into linear factors,
   the norm of `mk g p` is the product `∏ i, p rᵢ` of the values of `p` at the roots.
 * `AdjoinRoot.norm_algebraMap_sub_root`, `AdjoinRoot.norm_mk_C_sub_X_add` — the two values that
@@ -315,6 +317,28 @@ theorem norm_mk_eq_resultant_of_natDegree_le (hg : g.Monic) {p : R[X]} {n : ℕ}
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hp
   rw [resultant_add_right_deg _ _ _ _ _ le_rfl, hg.coeff_natDegree, one_pow, one_mul,
     norm_mk_eq_resultant hg]
+
+/-- For monic `g : R[X]`, if every coefficient of `h` lies in an ideal `I`, then the norm of
+`AdjoinRoot.mk g (1 + h)` over `R` is congruent to `1` modulo `I`. -/
+theorem norm_mk_one_add_sub_one_mem {g h : R[X]} (hg : g.Monic) {I : Ideal R}
+    (hh : ∀ i, h.coeff i ∈ I) :
+    Algebra.norm R (mk g (1 + h)) - 1 ∈ I := by
+  set q := Ideal.Quotient.mk I
+  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, sub_eq_zero]
+  rcases subsingleton_or_nontrivial (R ⧸ I) with _ | _
+  · exact Subsingleton.elim _ _
+  have hmap : (1 + h).map q = 1 := by
+    ext i
+    simp [q, Ideal.Quotient.eq_zero_iff_mem.mpr (hh i)]
+  rw [norm_mk_eq_resultant hg, ← resultant_map_map, hmap, resultant_one_right,
+    ← hg.natDegree_map q, coeff_natDegree, (hg.map q).leadingCoeff, one_pow]
+
+/-- For monic `g : R[X]`, the norm of `AdjoinRoot.mk g (C a)` over `R` is `a ^ g.natDegree`. -/
+theorem norm_mk_C {g : R[X]} (hg : g.Monic) (a : R) :
+    Algebra.norm R (mk g (C a)) = a ^ g.natDegree := by
+  nontriviality R
+  rw [mk_C, ← algebraMap_eq, Algebra.norm_algebraMap_of_basis (powerBasis' hg).basis]
+  simp only [Fintype.card_fin, powerBasis'_dim]
 
 /-- **The norm on `AdjoinRoot g` for a split `g`.** If `g = ∏ i, (X - C (r i))` is a product of
 linear factors, then the norm of `AdjoinRoot.mk g p` is the product of the values of `p` at the

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.Polynomial.Resultant.Recognition
 
 /-!
@@ -16,15 +16,18 @@ import TauCeti.RingTheory.Polynomial.Resultant.Recognition
 
 Specialization of `Polynomial.resultantRecognition` to the `p`-adic integers `ℤ_[p]` with
 integer test polynomials `ψ : ℤ[X]`. Using `PadicInt.appr_spec`, the integers `ℤ` are
-`p`-adically dense in `ℤ_[p]`, and for nonzero `x : ℤ_[p]` the discrete-valuation-ring additive
-valuation `IsDiscreteValuationRing.addVal ℤ_[p] x` agrees with `x.valuation`.
+`p`-adically dense in `ℤ_[p]`, and `PadicInt.addVal_eq_coe_valuation` identifies
+`IsDiscreteValuationRing.addVal ℤ_[p] x` with `(x.valuation : ℕ∞)` for nonzero `x : ℤ_[p]`.
 
 ## Main results
 
-* `PadicInt.addVal_eq_coe_valuation`: for nonzero `x : ℤ_[p]`,
-  `IsDiscreteValuationRing.addVal ℤ_[p] x = (x.valuation : ℕ∞)`.
 * `PadicInt.resultantRecognition`: monic polynomials over `ℤ_[p]` are uniquely determined by the
   `p`-adic valuations of their nonzero resultants with monic integer polynomials.
+
+## References
+
+* J. S. Milne, *The Tate-Šafarevič group of a constant abelian variety*, Invent. Math. 6 (1968),
+  §1, p. 65 ([1968a](https://jmilne.org/math/articles/1968a.pdf)).
 -/
 
 public section
@@ -34,12 +37,6 @@ open Polynomial
 namespace PadicInt
 
 variable {p : ℕ} [Fact p.Prime]
-
-/-- For nonzero `x : ℤ_[p]`, the DVR additive valuation agrees with `PadicInt.valuation`. -/
-theorem addVal_eq_coe_valuation {x : ℤ_[p]} (hx : x ≠ 0) :
-    IsDiscreteValuationRing.addVal ℤ_[p] x = (x.valuation : ℕ∞) :=
-  IsDiscreteValuationRing.addVal_def x (unitCoeff hx) irreducible_p x.valuation
-    (unitCoeff_spec hx)
 
 /-- **Integer tests for a `p`-adic polynomial.** If monic polynomials `P, Q : ℤ_[p][X]` have equal
 `p`-adic valuations of their resultants with every monic `ψ : ℤ[X]` for which both resultants are

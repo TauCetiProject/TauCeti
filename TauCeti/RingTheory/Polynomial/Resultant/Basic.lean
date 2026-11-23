@@ -49,16 +49,23 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
+* `Polynomial.Monic.resultant_pow_mul_left`: multiplicativity of resultants in `f ^ e * g` with
+  `f` monic and `g` nonzero, at the actual degrees.
 * `Polynomial.resultant_prod_left_of_monic`: multiplicativity in a finite product of monic left
   arguments, at the actual degrees.
 * `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
   resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
+* `Polynomial.resultant_ne_zero_of_isCoprime_map`: nonvanishing of a resultant from coprimality
+  after a degree-preserving coefficient map to an integral domain.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
+* `Polynomial.resultant_sub_mem_of_coeff_sub_mem`,
+  `Polynomial.Monic.resultant_sub_mem_of_coeff_sub_mem`: congruence of resultants modulo an
+  arbitrary ideal.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
   at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
@@ -163,6 +170,20 @@ theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : �
     resultant_add_left_deg _ _ _ _ _ le_rfl]
   ring
 
+/-- Multiplicativity of resultants in a product `f ^ e * g` with `f` monic and `g` nonzero, taken
+at the actual degrees. -/
+theorem Monic.resultant_pow_mul_left {f g : R[X]} (hf : f.Monic) (hg : g ≠ 0) (e : ℕ)
+    (ψ : R[X]) :
+    (f ^ e * g).resultant ψ = f.resultant ψ ^ e * g.resultant ψ := by
+  have : Nontrivial R := nontrivial_of_ne g.leadingCoeff 0 (leadingCoeff_ne_zero.mpr hg)
+  have hfe : (f ^ e).Monic := hf.pow e
+  have hdeg : (f ^ e * g).natDegree = (f ^ e).natDegree + g.natDegree := hfe.natDegree_mul' hg
+  rw [hdeg, resultant_mul_left_of_natDegree_le le_rfl le_rfl le_rfl]
+  congr 1
+  refine resultant_pow_left _ _ _ _ ?_ le_rfl
+  rw [hf.leadingCoeff, one_pow]
+  exact one_ne_zero
+
 /-- `Res(∏ fᵢ, g) = ∏ Res(fᵢ, g)` for a finite product of monic polynomials, the resultants being
 taken at the actual degrees. -/
 theorem resultant_prod_left_of_monic {ι : Type*} (s : Finset ι) {f : ι → R[X]}
@@ -226,6 +247,16 @@ theorem resultant_map_of_natDegree_eq {S : Type*} [CommRing S] (φ : R →+* S) 
     (hf : (f.map φ).natDegree = f.natDegree) (hg : (g.map φ).natDegree = g.natDegree) :
     (f.map φ).resultant (g.map φ) = φ (f.resultant g) := by
   rw [hf, hg, resultant_map_map]
+
+/-- If the images of `f` and `g` under a degree-preserving coefficient map to an integral domain
+are coprime, then `f.resultant g ≠ 0`. -/
+theorem resultant_ne_zero_of_isCoprime_map {S : Type*} [CommRing S] [IsDomain S] (φ : R →+* S)
+    {f g : R[X]} (hf : (f.map φ).natDegree = f.natDegree)
+    (hg : (g.map φ).natDegree = g.natDegree) (hcop : IsCoprime (f.map φ) (g.map φ)) :
+    f.resultant g ≠ 0 := by
+  have hne : (f.map φ).resultant (g.map φ) ≠ 0 := resultant_ne_zero _ _ hcop
+  rw [resultant_map_of_natDegree_eq φ hf hg] at hne
+  exact fun h0 ↦ hne (by rw [h0, map_zero])
 
 /-- The resultant of the reversals is the resultant up to the sign of the permutation of the
 Sylvester matrix that the reversals induce. -/
@@ -322,5 +353,38 @@ theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
     split_ifs with h
     · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
     · rfl
+
+/-- **Resultant congruence modulo an arbitrary ideal.** If `ψ` and `g` have the same `natDegree`
+and agree coefficientwise up to `g.natDegree` modulo `I`, then `f.resultant ψ - f.resultant g`
+lies in `I` for every polynomial `f`. -/
+theorem resultant_sub_mem_of_coeff_sub_mem (f : R[X]) {g ψ : R[X]} {I : Ideal R}
+    (hdeg : ψ.natDegree = g.natDegree)
+    (hsub : ∀ i ≤ g.natDegree, (ψ - g).coeff i ∈ I) :
+    f.resultant ψ - f.resultant g ∈ I := by
+  set q := Ideal.Quotient.mk I
+  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero, ← resultant_map_map, ← hdeg,
+    ← resultant_map_map]
+  refine resultant_congr_of_coeff_eq (fun _ _ ↦ rfl) fun i hi ↦ ?_
+  simp only [coeff_map]
+  rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, ← coeff_sub]
+  exact hsub i (hdeg ▸ hi)
+
+/-- **Resultant congruence modulo an arbitrary ideal for a monic left argument.** If `f` is monic
+and every coefficient of `ψ - g` lies in `I`, then `f.resultant ψ - f.resultant g` lies in `I`,
+with no degree hypothesis on `ψ` and `g`. -/
+theorem Monic.resultant_sub_mem_of_coeff_sub_mem {f g ψ : R[X]} (hf : f.Monic)
+    {I : Ideal R} (hsub : ∀ i, (ψ - g).coeff i ∈ I) :
+    f.resultant ψ - f.resultant g ∈ I := by
+  set q := Ideal.Quotient.mk I
+  have hmap : ψ.map q = g.map q := by
+    ext i
+    rw [coeff_map, coeff_map, ← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, ← coeff_sub]
+    exact hsub i
+  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero]
+  rcases subsingleton_or_nontrivial (R ⧸ I) with _ | _
+  · exact Subsingleton.elim _ _
+  rw [← resultant_map_map, ← resultant_map_map, ← hf.natDegree_map q,
+    (hf.map q).resultant_of_le natDegree_map_le,
+    (hf.map q).resultant_of_le natDegree_map_le, hmap]
 
 end Polynomial
