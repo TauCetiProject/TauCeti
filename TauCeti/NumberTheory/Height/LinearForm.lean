@@ -195,15 +195,11 @@ theorem mulHeight₁_mul_div_sum_mul_le [Fintype ι] (a x : ι → K) (i j : ι)
   -- by at most `card ι` at archimedean places, and not at all at nonarchimedean places.
   let t : ι × ι → K := fun p ↦ a p.1 * x p.2
   let y : Option (ι × ι) → K := fun o ↦ o.elim (∑ k, a k * x k) t
-  have ht : t ≠ 0 := by
-    obtain ⟨k, hk⟩ := Function.ne_iff.mp ha
-    obtain ⟨l, hl⟩ := Function.ne_iff.mp hx
-    exact Function.ne_iff.mpr ⟨(k, l), mul_ne_zero hk hl⟩
   have hdiag (v : AbsoluteValue K ℝ) (k : ι) :
       v (a k * x k) ≤ ⨆ p, v (t p) :=
     Finite.le_ciSup (fun p ↦ v (t p)) (k, k)
   have hheight : mulHeight y ≤ (Fintype.card ι : ℝ) ^ totalWeight K * mulHeight t := by
-    refine (mulHeight_le_of_forall_iSup_le ht y hcard (p := 1) ?_ ?_).trans_eq
+    refine (mulHeight_le_of_forall_iSup_le t y hcard (p := 1) ?_ ?_).trans_eq
       (by rw [pow_one])
     · intro v _
       simp only [pow_one]

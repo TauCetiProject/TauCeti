@@ -35,7 +35,7 @@ Drinfeld isomorphisms, the twist is trivial.
 ## References
 
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
-  braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1, eq. (3)
+  braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1 and §2.3, eq. (3)
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §8.10
 -/
 

@@ -20,6 +20,7 @@ zero, so that a divisibility hypothesis can discharge a `NeZero` side condition 
 ## Main results
 
 * `NeZero.of_dvd`: a divisor of an element carrying `NeZero` carries `NeZero`.
+* `NeZero.of_not_dvd_right`: if `¬ p ∣ q`, then `q` carries `NeZero`.
 -/
 
 public section
@@ -33,5 +34,11 @@ and `dvd_of_mul_left_dvd` it discharges both side conditions carried by a hypoth
 `d * M ∣ N`. -/
 theorem of_dvd {α : Type*} [SemigroupWithZero α] {p q : α} [NeZero q] (h : p ∣ q) : NeZero p :=
   ⟨fun hp ↦ NeZero.ne q <| zero_dvd_iff.mp <| hp ▸ h⟩
+
+/-- **`NeZero` from non-divisibility.** Since every element divides `0`, if `¬ p ∣ q` in a
+semigroup with zero then `q` carries `NeZero`. The `_right` suffix distinguishes this from
+`NeZero.of_not_dvd`, which concludes `NeZero (n : R)` from `[CharP R p]` and `¬ p ∣ n`. -/
+theorem of_not_dvd_right {α : Type*} [SemigroupWithZero α] {p q : α} (h : ¬ p ∣ q) : NeZero q :=
+  ⟨fun hq ↦ h (hq ▸ dvd_zero p)⟩
 
 end NeZero

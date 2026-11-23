@@ -62,17 +62,17 @@ private def stabilizeCrossingEquiv : Fin (w.length + 1) ≃ Fin (w.stabilize ε)
   finCongr (length_stabilize w ε).symm
 
 private theorem val_stabilizeCrossingEquiv (j : Fin (w.length + 1)) :
-    (w.stabilizeCrossingEquiv ε j).1 = j.1 :=
+    (w.stabilizeCrossingEquiv ε j).val = j.val :=
   (rfl)
 
 private theorem getElem_stabilize_castSucc (j : Fin w.length) :
-    (w.stabilize ε)[(w.stabilizeCrossingEquiv ε j.castSucc).1] =
-      ((w[j.1].1.castSucc : Fin (n + 1)), w[j.1].2) := by
+    (w.stabilize ε)[(w.stabilizeCrossingEquiv ε j.castSucc).val] =
+      ((w[j.val].1.castSucc : Fin (n + 1)), w[j.val].2) := by
   simp only [val_stabilizeCrossingEquiv, Fin.val_castSucc, stabilize_def, strandIncl_def]
   rw [List.getElem_append_left (by simp), List.getElem_map]
 
 private theorem getElem_stabilize_last :
-    (w.stabilize ε)[(w.stabilizeCrossingEquiv ε (Fin.last _)).1] = (Fin.last n, ε) := by
+    (w.stabilize ε)[(w.stabilizeCrossingEquiv ε (Fin.last _)).val] = (Fin.last n, ε) := by
   simp only [val_stabilizeCrossingEquiv, Fin.val_last, stabilize_def, strandIncl_def]
   rw [List.getElem_append_right (by simp)]
   simp
@@ -450,7 +450,7 @@ private theorem kinkCode_orientation :
   simp only [kinkCode, OrientedPDCode.rotateCrossing_orientation]
 
 private theorem kinkCode_overPair_castSucc (j : Fin w.length) :
-    (w.kinkCode ε t).overPair j.castSucc = decide (w[j.1].2 = 1) := by
+    (w.kinkCode ε t).overPair j.castSucc = decide (w[j.val].2 = 1) := by
   have hne : j.castSucc ≠ Fin.last w.length := Fin.castSucc_ne_last j
   simp only [kinkCode, OrientedPDCode.toPDCode_rotateCrossing,
     PDCode.rotateCrossing_overPair_of_ne _ _ hne,

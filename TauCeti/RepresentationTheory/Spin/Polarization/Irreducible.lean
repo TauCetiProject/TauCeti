@@ -90,14 +90,14 @@ a surjective representation of the even subalgebra, generates the full endomorph
 private theorem adjoin_range_eq_top {L M : Type*} [LieRing L] [LieAlgebra K L]
     [AddCommGroup M] [Module K M] (e : L ≃ₗ⁅K⁆ quadraticLieSubalgebra Q)
     (F : even Q →ₐ[K] Module.End K M) (hF : Function.Surjective F) (f : L → Module.End K M)
-    (hf : ∀ x, f x = F ⟨e x, quadraticLieSubalgebra_le_even Q (e x).2⟩) :
+    (hf : ∀ x, f x = F ⟨e x, quadraticLieSubalgebra_le_even Q (e x).property⟩) :
     Algebra.adjoin K (Set.range f) = ⊤ := by
   have hrange : Set.range f =
       F '' (((↑) : even Q → CliffordAlgebra Q) ⁻¹' quadraticLieSubalgebra Q) := by
     ext g
     constructor
     · rintro ⟨x, rfl⟩
-      exact ⟨_, (e x).2, (hf x).symm⟩
+      exact ⟨_, (e x).property, (hf x).symm⟩
     · rintro ⟨y, hy, rfl⟩
       obtain ⟨x, hx⟩ := e.surjective ⟨y, hy⟩
       have hx' : ((e x : quadraticLieSubalgebra Q) : CliffordAlgebra Q) = y :=

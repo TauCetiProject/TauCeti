@@ -88,7 +88,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
   let _ (i : ℕ) := (N i).restrictDistribMulAction_continuousSMul (hN i)
   have hprim := fun i ↦ hM.to_addSubgroup (N i)
   let _ : Subsingleton (N 0) := by rw [h0]; infer_instance
-  have hzero := invariant_eq_zero_of_subsingleton I hExact (hprim 0)
+  have hzero := invariant_eq_zero_of_subsingleton I hExact (A := N 0)
   -- Each successive factor contributes the same value `I P hP`.
   have hind : ∀ i, i ≤ padicValNat p (Nat.card M) →
       I (N i) (hprim i) = i • I P hP := by
@@ -113,7 +113,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
       let e : Q ≃+ P := eQ.trans eP.symm
       have hQ : IsAddPGroup p Q := forall_exists_nsmul_eq_zero_of_addEquiv_zmod eQ
       have heq : I Q hQ = I P hP :=
-        invariant_eq_of_equiv I hExact hQ hP e
+        invariant_eq_of_equiv I hExact hQ e
           (by intro g y; rw [htriv, hPsmul])
       have hstep := hExact (hprim i) (hprim (i + 1)) hQ
         (AddSubgroup.inclusion (hmono (Nat.le_succ i)))
@@ -124,7 +124,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
         (by rw [AddSubgroup.inclusion_range, QuotientAddGroup.ker_mk'])
       rw [hprev, heq] at hstep
       simpa only [succ_nsmul] using hstep
-  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (hN _) (htop _ le_rfl)
-    (hprim _)).symm.trans (hind _ le_rfl)
+  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (htop _ le_rfl)).symm.trans
+    (hind _ le_rfl)
 
 end TauCeti

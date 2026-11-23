@@ -41,7 +41,7 @@ example (H : Colored3Graph Bool (Fin 3)) :
       exact Subtype.ext (funext fun i => by fin_cases i <;> simp [x₀, h0, h1, h2])
     · rintro rfl
       refine ⟨rfl, rfl, rfl, ?_, ?_, ?_⟩ <;> simp [S, x₀, PairColorSystem.colorOfPair_of_ne]
-  have htriple : Set.powersetCard.ofFinEmb 3 (Fin 3) ⟨x₀.1, x₀.2⟩ = ⟨univ, by simp⟩ :=
+  have htriple : Set.powersetCard.ofFinEmb 3 (Fin 3) ⟨x₀.val, x₀.property⟩ = ⟨univ, by simp⟩ :=
     Subtype.ext (by decide)
   rw [relativeDensity_def, hsupp, relDensityOn_def, filter_singleton, htriple]
   simp
