@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.CategoryTheory.EquivalenceRelation
 
@@ -27,6 +28,10 @@ equivalence relation is Mathlib's internal `CategoryTheory.IsEquivalenceRelation
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.Spaces.exists_openCover_coprod`: a morphism `T ⟶ A ⨿ B` factors
+  through `A` or through `B` on each member of an open cover of `T`.
+* `TauCeti.AlgebraicGeometry.Spaces.exists_lift_of_openCover`: for a jointly monic pair
+  `t, s : R ⟶ U`, a pair of morphisms `T ⟶ U` lifts to `R` once it lifts on an open cover of `T`.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.id`: the diagonal of `U` is an étale
   equivalence relation.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.of_isKernelPair`: the kernel pair of an étale
@@ -52,6 +57,30 @@ namespace TauCeti.AlgebraicGeometry.Spaces
 open _root_.AlgebraicGeometry TauCeti.CategoryTheory
 
 universe u
+
+/-- Every morphism `r : T ⟶ A ⨿ B` restricts, on the members of an open cover of `T`, to a
+morphism through `A` or through `B`. -/
+theorem exists_openCover_coprod {T A B : Scheme.{u}} (r : T ⟶ A ⨿ B) :
+    ∃ 𝒰 : T.OpenCover.{u}, ∀ i, (∃ a, 𝒰.f i ≫ r = a ≫ coprod.inl) ∨
+      ∃ b, 𝒰.f i ≫ r = b ≫ coprod.inr :=
+  ⟨(coprodOpenCover.{u, u} A B).pullback₁ r, fun i ↦ by
+    rcases i with ⟨⟩ | ⟨⟩
+    · exact .inl ⟨pullback.snd _ _, pullback.condition⟩
+    · exact .inr ⟨pullback.snd _ _, pullback.condition⟩⟩
+
+/-- For a jointly monic pair `t, s : R ⟶ U`, the pair `(a, c)` of morphisms `T ⟶ U` lifts to `R`
+as soon as it does on the members of an open cover of `T`. -/
+theorem exists_lift_of_openCover {T R U : Scheme.{u}} {t s : R ⟶ U} [JointlyMono₂ t s]
+    {a c : T ⟶ U} (𝒰 : T.OpenCover.{u})
+    (h : ∀ i, ∃ r : 𝒰.X i ⟶ R, r ≫ t = 𝒰.f i ≫ a ∧ r ≫ s = 𝒰.f i ≫ c) :
+    ∃ r : T ⟶ R, r ≫ t = a ∧ r ≫ s = c := by
+  choose r ht hs using h
+  have hr : ∀ i j, pullback.fst (𝒰.f i) (𝒰.f j) ≫ r i = pullback.snd _ _ ≫ r j := fun i j ↦
+    JointlyMono₂.right_cancellation (p₁ := t) (p₂ := s) _ _
+      (by simp [ht, pullback.condition_assoc])
+      (by simp [hs, pullback.condition_assoc])
+  exact ⟨𝒰.glueMorphisms r hr, 𝒰.hom_ext _ _ fun i ↦ by simp [ht],
+    𝒰.hom_ext _ _ fun i ↦ by simp [hs]⟩
 
 /-- A pair of morphisms of schemes `s t : R ⟶ U` is an *étale equivalence relation* on `U` if
 `(t, s) : R ⟶ U × U` is an equivalence relation and `s` and `t` are étale (Stacks, Definition
