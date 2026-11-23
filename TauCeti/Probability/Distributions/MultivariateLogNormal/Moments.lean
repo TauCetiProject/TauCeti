@@ -45,6 +45,21 @@ theorem map_inner_log_multivariateLogNormalMeasure (m q : EuclideanSpace ℝ ι)
     Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 
+/-- A linear combination of coordinate logarithms of a multivariate log-normal random vector
+has the corresponding scalar Gaussian law. -/
+theorem _root_.ProbabilityTheory.HasLaw.inner_log_multivariateLogNormalMeasure
+    {S : Matrix ι ι ℝ}
+    (hX : HasLaw X (multivariateLogNormalMeasure m S) P) (hS : S.PosSemidef)
+    (q : EuclideanSpace ℝ ι) :
+    HasLaw (fun ω ↦ ⟪q, WithLp.toLp 2 (fun i ↦ Real.log (X ω i))⟫)
+      (gaussianReal ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal) P :=
+  let hmap : HasLaw
+      (fun x : EuclideanSpace ℝ ι ↦ ⟪q, WithLp.toLp 2 (fun i ↦ Real.log (x i))⟫)
+      (gaussianReal ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal)
+      (multivariateLogNormalMeasure m S) :=
+    ⟨by fun_prop, map_inner_log_multivariateLogNormalMeasure m q hS⟩
+  hmap.fun_comp hX
+
 /-- A product of real powers of coordinates has a scalar log-normal law. Zero directional
 variance gives a Dirac law, so no nonsingularity assumption is needed. -/
 @[simp]
@@ -62,6 +77,20 @@ theorem map_prod_rpow_multivariateLogNormalMeasure (m q : EuclideanSpace ℝ ι)
   simp_rw [← Real.exp_mul]
   rw [← Real.exp_sum]
   simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+
+/-- A product of real powers of the coordinates of a multivariate log-normal random vector has
+the corresponding scalar log-normal law. -/
+theorem _root_.ProbabilityTheory.HasLaw.prod_rpow_multivariateLogNormalMeasure
+    {S : Matrix ι ι ℝ}
+    (hX : HasLaw X (multivariateLogNormalMeasure m S) P) (hS : S.PosSemidef)
+    (q : EuclideanSpace ℝ ι) :
+    HasLaw (fun ω ↦ ∏ i, (X ω i) ^ (q i))
+      (logNormalMeasure ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal) P :=
+  let hmap : HasLaw (fun x : EuclideanSpace ℝ ι ↦ ∏ i, (x i) ^ (q i))
+      (logNormalMeasure ⟪q, m⟫ (⟪q, S.toEuclideanLin q⟫).toNNReal)
+      (multivariateLogNormalMeasure m S) :=
+    ⟨by fun_prop, map_prod_rpow_multivariateLogNormalMeasure m q hS⟩
+  hmap.fun_comp hX
 
 /-- All mixed real powers are integrable, for every covariance parameter. -/
 theorem integrable_prod_rpow_multivariateLogNormalMeasure (m q : EuclideanSpace ℝ ι)
