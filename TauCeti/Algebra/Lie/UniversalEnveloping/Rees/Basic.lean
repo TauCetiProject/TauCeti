@@ -57,6 +57,21 @@ abbrev reesAlgebra : Subalgebra R U[X] :=
 noncomputable abbrev reesParameter : reesAlgebra R L :=
   coeffSubalgebra.X (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
 
+/-- The deformation parameter commutes with every element of the PBW Rees algebra. -/
+theorem commute_reesParameter (a : reesAlgebra R L) :
+    Commute (reesParameter R L) a :=
+  coeffSubalgebra.commute_X (pbwFiltration R L) (one_mem_pbwFiltration R L 1) a
+
+/-- Left multiplication by the deformation parameter is injective on the PBW Rees algebra. -/
+theorem reesParameter_mul_injective :
+    Function.Injective (fun a : reesAlgebra R L ↦ reesParameter R L * a) :=
+  coeffSubalgebra.X_mul_injective (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
+
+@[simp]
+theorem reesParameter_mul_left_inj {a b : reesAlgebra R L} :
+    reesParameter R L * a = reesParameter R L * b ↔ a = b :=
+  (reesParameter_mul_injective R L).eq_iff
+
 /-- The PBW Rees algebra is an algebra over the polynomial parameter ring. -/
 noncomputable instance : Algebra R[X] (reesAlgebra R L) :=
   coeffSubalgebra.algebra (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
@@ -211,7 +226,7 @@ theorem mem_center_reesAlgebra_iff {z : reesAlgebra R L} :
   refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute hb ?_).symm.eq
   rintro p (hp | ⟨x, rfl⟩)
   · obtain rfl := Set.mem_singleton_iff.mp hp
-    exact (coeffSubalgebra.commute_X _ _ z).symm
+    exact (commute_reesParameter R L z).symm
   · exact h x
 
 end Extensionality

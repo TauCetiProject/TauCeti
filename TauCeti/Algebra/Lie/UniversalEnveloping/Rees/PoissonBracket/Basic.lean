@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.ZeroFiber
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Basic

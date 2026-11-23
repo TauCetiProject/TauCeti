@@ -171,11 +171,10 @@ theorem reesSymbol_eq_zero_iff_exists_X_mul_eq (p : Rees f) :
   constructor
   · intro hp
     have hc := (reesSymbol_eq_zero_iff f p).mp hp
-    have hshift : ∀ n, (p : A[X]).coeff (n + 1) ∈ wordFiltration f n := fun n ↦ by
-      simpa only [wordFiltrationPrevious_succ] using hc (n + 1)
-    exact ⟨coeffSubalgebra.divX (wordFiltration f) p hshift,
-      coeffSubalgebra.X_mul_divX (wordFiltration f) (one_mem_wordFiltration f 1) p
-        (by simpa using hc 0) hshift⟩
+    exact (coeffSubalgebra.exists_X_mul_eq_iff (wordFiltration f)
+      (one_mem_wordFiltration f 1) p).mpr
+      ⟨by simpa using hc 0,
+       fun n ↦ by simpa only [wordFiltrationPrevious_succ] using hc (n + 1)⟩
   · rintro ⟨q, rfl⟩
     simp
 

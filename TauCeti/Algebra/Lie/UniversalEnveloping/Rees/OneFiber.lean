@@ -98,37 +98,35 @@ variable [LieRing N] [LieAlgebra R N]
 noncomputable def quotientReesParameterSubOneMap (f : L →ₗ⁅R⁆ M) :
     (reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) →ₐ[R]
       (reesAlgebra R M ⧸ Ideal.span {reesParameter R M - 1}) :=
-  Ideal.quotientMapₐ (Ideal.span {reesParameter R M - 1}) ((reesMap R f).restrictScalars R) <|
-    Ideal.span_le.mpr <| by
-      rintro p (rfl : p = reesParameter R L - 1)
-      simp
+  (Ideal.quotientEquivAlgOfEq R
+    (by rw [map_sub, coeffSubalgebra.algebraMap_X, map_one])).toAlgHom.comp <|
+    (reesQuotientMap R f (Polynomial.X - 1)).comp
+      (Ideal.quotientEquivAlgOfEq R
+        (by rw [map_sub, coeffSubalgebra.algebraMap_X, map_one] :
+          Ideal.span {reesParameter R L - 1} =
+            Ideal.span {algebraMap R[X] (reesAlgebra R L) (Polynomial.X - 1)})).toAlgHom
 
 @[simp]
 theorem quotientReesParameterSubOneMap_mk (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
     quotientReesParameterSubOneMap R f (Ideal.Quotient.mk _ p) =
-      Ideal.Quotient.mk _ (reesMap R f p) :=
-  (rfl)
+      Ideal.Quotient.mk _ (reesMap R f p) := by
+  simp [quotientReesParameterSubOneMap]
 
 @[simp]
 theorem quotientReesParameterSubOneMap_id :
     quotientReesParameterSubOneMap R (LieHom.id : L →ₗ⁅R⁆ L) =
       AlgHom.id R (reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) := by
   refine Ideal.Quotient.algHom_ext R ?_
-  rw [quotientReesParameterSubOneMap, Ideal.quotient_map_comp_mkₐ, AlgHom.id_comp]
-  simp [reesMap_id]
-  rfl
+  ext p
+  simp
 
 @[simp]
 theorem quotientReesParameterSubOneMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     quotientReesParameterSubOneMap R (g.comp f) =
       (quotientReesParameterSubOneMap R g).comp (quotientReesParameterSubOneMap R f) := by
   refine Ideal.Quotient.algHom_ext R ?_
-  simp only [quotientReesParameterSubOneMap]
-  rw [Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ,
-    ← AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc]
-  congr 1
   ext p
-  simp [reesMap_comp]
+  simp
 
 @[simp]
 theorem quotientReesParameterSubOneEquiv_map (f : L →ₗ⁅R⁆ M)

@@ -68,36 +68,33 @@ no freeness hypothesis on `L` or `M`. -/
 noncomputable def reesZeroFiberMap (f : L →ₗ⁅R⁆ M) :
     (reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) →ₐ[R]
       (reesAlgebra R M ⧸ Ideal.span {reesParameter R M}) :=
-  Ideal.quotientMapₐ (Ideal.span {reesParameter R M}) ((reesMap R f).restrictScalars R) <|
-    Ideal.span_le.mpr <| by
-      rintro p (rfl : p = reesParameter R L)
-      simp
+  (Ideal.quotientEquivAlgOfEq R (by rw [coeffSubalgebra.algebraMap_X])).toAlgHom.comp <|
+    (reesQuotientMap R f Polynomial.X).comp
+      (Ideal.quotientEquivAlgOfEq R
+        (by rw [coeffSubalgebra.algebraMap_X] :
+          Ideal.span {reesParameter R L} =
+            Ideal.span {algebraMap (Polynomial R) (reesAlgebra R L) Polynomial.X})).toAlgHom
 
 @[simp]
 theorem reesZeroFiberMap_mk (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
-    reesZeroFiberMap R f (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (reesMap R f p) :=
-  (rfl)
+    reesZeroFiberMap R f (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (reesMap R f p) := by
+  simp [reesZeroFiberMap]
 
 @[simp]
 theorem reesZeroFiberMap_id :
     reesZeroFiberMap R (LieHom.id : L →ₗ⁅R⁆ L) =
       AlgHom.id R (reesAlgebra R L ⧸ Ideal.span {reesParameter R L}) := by
   refine Ideal.Quotient.algHom_ext R ?_
-  rw [reesZeroFiberMap, Ideal.quotient_map_comp_mkₐ, AlgHom.id_comp]
-  simp [reesMap_id]
-  rfl
+  ext p
+  simp
 
 @[simp]
 theorem reesZeroFiberMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     reesZeroFiberMap R (g.comp f) =
       (reesZeroFiberMap R g).comp (reesZeroFiberMap R f) := by
   refine Ideal.Quotient.algHom_ext R ?_
-  simp only [reesZeroFiberMap]
-  rw [Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ,
-    ← AlgHom.comp_assoc, Ideal.quotient_map_comp_mkₐ, AlgHom.comp_assoc]
-  congr 1
   ext p
-  simp [reesMap_comp]
+  simp
 
 end ZeroFiberMap
 
@@ -161,7 +158,8 @@ theorem ker_reesSpecializationZero :
     simpa [wordReesEquiv_reesParameter, (coeffSubalgebra.commute_X _ _ q).eq] using hq
   · rintro ⟨q, rfl⟩
     refine ⟨wordReesEquiv R L q, ?_⟩
-    simp [wordReesEquiv_reesParameter, (coeffSubalgebra.commute_X _ _ _).eq]
+    rw [← (commute_reesParameter R L q).eq]
+    simp [wordReesEquiv_reesParameter]
 
 /-- An element of `reesAlgebra R L` specializes to `0` in `SymmetricAlgebra R L` if and only if it
 is divisible by `reesParameter R L`. -/
@@ -169,7 +167,7 @@ theorem reesSpecializationZero_eq_zero_iff_exists_reesParameter_mul (p : reesAlg
     reesSpecializationZero R L p = 0 ↔ ∃ q : reesAlgebra R L, reesParameter R L * q = p := by
   rw [← AlgHom.coe_toRingHom, ← RingHom.mem_ker, ker_reesSpecializationZero,
     Ideal.mem_span_singleton']
-  exact exists_congr fun q ↦ by rw [(coeffSubalgebra.commute_X _ _ q).eq]
+  exact exists_congr fun q ↦ by rw [(commute_reesParameter R L q).eq]
 
 /-- The PBW zero fibre is canonically the symmetric algebra, without a choice of basis. -/
 noncomputable def reesZeroFiberEquiv :

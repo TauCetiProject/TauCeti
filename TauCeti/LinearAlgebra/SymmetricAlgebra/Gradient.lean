@@ -41,6 +41,8 @@ linear map between finite free modules.
 
 * `Module.Basis.apply_symmetricGradient`: for every `η : Module.Dual R M`,
   `η (b.symmetricGradient p ξ) = SymmetricAlgebra.lift ξ (SymmetricAlgebra.pderiv η p)`.
+* `Module.Basis.apply_symmetricGradient_self_of_mem_homogeneousSubmodule`: Euler's identity
+  `ξ (b.symmetricGradient p ξ) = n • SymmetricAlgebra.lift ξ p` for homogeneous `p` of degree `n`.
 * `Module.Basis.symmetricGradient_eq`: independence of the chosen finite basis.
 * `Module.Basis.symmetricGradient_ι`, `Module.Basis.symmetricGradient_algebraMap`,
   `Module.Basis.symmetricGradient_mul`, `Module.Basis.symmetricGradient_pow`: generator, scalar,
@@ -91,6 +93,24 @@ theorem apply_symmetricGradient (b : Module.Basis ι R M) (p : SymmetricAlgebra 
   rw [LinearMap.map_smul, smul_eq_mul, map_mul, AlgHom.commutes, Algebra.algebraMap_self,
     RingHom.id_apply, ← SymmetricAlgebra.equivMvPolynomial_pderiv_coord,
     ← b.lift_apply_eq_eval_equivMvPolynomial, mul_comm]
+
+/-- **Euler's homogeneous identity for `symmetricGradient`.** Pairing the gradient at `ξ` of a
+homogeneous symmetric tensor of degree `n` with `ξ` itself recovers
+`n • SymmetricAlgebra.lift ξ p`. -/
+theorem apply_symmetricGradient_self_of_mem_homogeneousSubmodule (b : Module.Basis ι R M)
+    {n : ℕ} {p : SymmetricAlgebra R M}
+    (hp : p ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n) (ξ : Module.Dual R M) :
+    ξ (b.symmetricGradient p ξ) = n • SymmetricAlgebra.lift ξ p := by
+  rw [b.apply_symmetricGradient]
+  induction hp using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y _ _ _ ihx ihy => simp [ihx, ihy, smul_add]
+  | mem_mul m hm i x _ ih =>
+    obtain ⟨y, rfl⟩ := hm
+    simp only [Derivation.leibniz, smul_eq_mul, map_add, map_mul, SymmetricAlgebra.pderiv_ι,
+      SymmetricAlgebra.lift_ι_apply, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,
+      ih, nsmul_eq_mul, Nat.cast_succ]
+    ring
 
 /-- The `i`-th coordinate of `b.symmetricGradient p ξ` is the partial derivative along `b.coord i`
 evaluated at `ξ`. -/

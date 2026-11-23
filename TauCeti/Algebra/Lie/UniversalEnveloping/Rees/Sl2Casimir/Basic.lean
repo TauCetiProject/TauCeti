@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Basic
+public import TauCeti.Algebra.Lie.Sl2.Center
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.DividedCommutator.Basic
 import Mathlib.Tactic.NoncommRing
 
@@ -25,7 +25,8 @@ ring `R` without characteristic or nontriviality assumptions.
 
 For `L = LieAlgebra.SpecialLinear.sl (Fin 2) R`, the standard triple
 `(slFinTwoBasis R 2, slFinTwoBasis R 0, slFinTwoBasis R 1)` spans `sl (Fin 2) R`, so
-`reesSl2Casimir` belongs to `Subalgebra.center R (reesAlgebra R (SpecialLinear.sl (Fin 2) R))`.
+`reesSl2Casimir` belongs to `Subalgebra.center R (reesAlgebra R (SpecialLinear.sl (Fin 2) R))` and
+specializes at `t = 1` to `TauCeti.slTwoOmega R`.
 
 ## Main definitions
 
@@ -36,6 +37,8 @@ For `L = LieAlgebra.SpecialLinear.sl (Fin 2) R`, the standard triple
 
 ## Main results
 
+* `TauCeti.UniversalEnvelopingAlgebra.evalOne_reesSlFinTwoCasimir`: specialization at `t = 1`
+  recovers `TauCeti.slTwoOmega R`.
 * `TauCeti.UniversalEnvelopingAlgebra.commute_reesSl2Casimir_reesGenerator_e`,
   `commute_reesSl2Casimir_reesGenerator_f`, `commute_reesSl2Casimir_reesGenerator_h`: commutation
   of `reesSl2Casimir` with the Rees generators of any `sl₂` triple.
@@ -114,15 +117,11 @@ theorem commute_reesSl2Casimir_reesGenerator_e {R : Type u} {L : Type v} [CommRi
     have hsub := reesGenerator_mul_sub_mul R L h e
     rw [hhe, map_smul, h2e] at hsub
     exact eq_sub_of_add_eq' (sub_eq_iff_eq_add.mp hsub).symm
-  have h2 : reesDividedCommutator R L (2 : reesAlgebra R L) (reesGenerator R L e) = 0 :=
-    reesDividedCommutator_of_commute R L (Commute.ofNat_left 2 _)
-  have h4 : reesDividedCommutator R L (4 : reesAlgebra R L) (reesGenerator R L e) = 0 :=
-    reesDividedCommutator_of_commute R L (Commute.ofNat_left 4 _)
   rw [reesSl2Casimir, sq, map_add, LinearMap.add_apply, map_add, LinearMap.add_apply]
   repeat rw [reesDividedCommutator_mul_left]
   simp only [reesDividedCommutator_reesGenerator, reesDividedCommutator_reesParameter_left,
-    h2, h4, hhe, hfe, lie_self, map_zero, map_smul, map_neg, h2e, mul_zero, zero_mul,
-    add_zero, zero_add]
+    reesDividedCommutator_ofNat_left, hhe, hfe, lie_self, map_zero, map_smul, map_neg, h2e,
+    mul_zero, zero_mul, add_zero, zero_add]
   rw [mul_assoc 2 (reesGenerator R L e) (reesGenerator R L h), hcomm_he]
   noncomm_ring [neg_neg]
 
@@ -153,13 +152,12 @@ theorem commute_reesSl2Casimir_reesGenerator_h {R : Type u} {L : Type v} [CommRi
       (reesParameter R L * reesGenerator R L h) := by
     rw [hXh]
     exact (hce.mul_right hcf).sub_right (hcf.mul_right hce)
-  have hX := coeffSubalgebra.commute_X (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
   rw [Commute, SemiconjBy]
-  apply coeffSubalgebra.X_mul_injective (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
+  apply reesParameter_mul_injective R L
   calc
     reesParameter R L * (reesSl2Casimir R L h e f * reesGenerator R L h)
       = reesSl2Casimir R L h e f * (reesParameter R L * reesGenerator R L h) :=
-        (hX _).left_comm _
+        (commute_reesParameter R L _).left_comm _
     _ = (reesParameter R L * reesGenerator R L h) * reesSl2Casimir R L h e f := hcomm_Xh.eq
     _ = reesParameter R L * (reesGenerator R L h * reesSl2Casimir R L h e f) := mul_assoc _ _ _
 
@@ -176,6 +174,13 @@ noncomputable abbrev reesSlFinTwoCasimir :
     reesAlgebra R (SpecialLinear.sl (Fin 2) R) :=
   reesSl2Casimir R (SpecialLinear.sl (Fin 2) R)
     (TauCeti.slFinTwoBasis R 2) (TauCeti.slFinTwoBasis R 0) (TauCeti.slFinTwoBasis R 1)
+
+/-- Specializing `reesSlFinTwoCasimir R` at `t = 1` recovers `TauCeti.slTwoOmega R`. -/
+theorem evalOne_reesSlFinTwoCasimir :
+    coeffSubalgebra.evalOne (pbwFiltration R (SpecialLinear.sl (Fin 2) R))
+        (reesSlFinTwoCasimir R) =
+      TauCeti.slTwoOmega R := by
+  simp [TauCeti.slTwoOmega_def, sq, Algebra.smul_def, map_ofNat, mul_assoc]
 
 /-- **Centrality of the deformed `sl₂` Casimir element** in
 `reesAlgebra R (SpecialLinear.sl (Fin 2) R)`, over any commutative ring `R`. -/
