@@ -63,7 +63,7 @@ theorem continuous_marchenkoPastur :
     (fun n ↦ Eventually.of_forall fun y ↦ ?_) fun n ↦ ?_
   · rw [Measure.coe_toProbabilityMeasure]
     exact ae_iff.1 (ae_mem_Icc_zero_marchenkoPastur y₀)
-  · simpa using integrable_pow_marchenkoPastur y n
+  · simpa using integrable_pow_marchenkoPastur y (2 * n)
   · simpa using (continuous_integral_pow_marchenkoPastur n).continuousAt.tendsto
 
 /-- As the aspect ratio tends to `0`, `marchenkoPastur y` converges weakly to the point mass at
