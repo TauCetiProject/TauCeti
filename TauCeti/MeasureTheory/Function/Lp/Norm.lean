@@ -13,12 +13,19 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.Sets.Opens
 public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.MeasureTheory.Measure.Restrict
+import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -36,6 +43,8 @@ bounds.
   functions of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, `t > 0`, lies in `L^{p₀} × L^{p₁}`.
 * `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
   into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
+* `MeasureTheory.MemLp.monotoneOn_setIntegral_ball_inter_norm_sq`: for `g ∈ L²(U)`, the `L²` mass
+  of `g` on `ball z t ∩ H` is nondecreasing in the radius while the ball stays inside `U`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
   its integral.
 * `MeasureTheory.Lp.integral_norm_rpow_eq_norm_rpow`: for `0 < p < ∞`, the integral of the `p`-th
@@ -51,15 +60,32 @@ bounds.
   square-integrable function is the square root of the integral of its squared norm.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
   convergence of the integral of the squared norm.
+* `MeasureTheory.integral_norm_sq_le_three_mul`: `∫ ‖f₁ + f₂ + f₃‖² ≤ 3 (∫ ‖f₁‖² + ∫ ‖f₂‖² +
+  ∫ ‖f₃‖²)` for `f₁, f₂, f₃ ∈ L²`.
+* `MeasureTheory.integral_norm_sq_le_sq_mul_of_norm_le`: `‖f‖ ≤ c ‖g‖` almost everywhere gives
+  `∫ ‖f‖² ≤ c² ∫ ‖g‖²`, and `MeasureTheory.memLp_clm_apply_and_integral_norm_sq_le` is its instance
+  for operators bounded by `c` applied to `f`.
+* `MeasureTheory.tendsto_integral_norm_clm_apply_sub_sq`: a continuous linear map preserves
+  convergence in `L²`.
+* `MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`: `∫ ‖f n - g‖² → 0`
+  gives an almost everywhere convergent subsequence.
+* `MeasureTheory.ae_le_of_tendsto_integral_norm_sub_sq`: almost everywhere bounds
+  `φ x (f n x) ≤ c n`, for continuous `φ x`, pass to the limit in `L²`.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
   any representative.
+* `MeasureTheory.Lp.memLp_of_restrict_coe_opens_top` and
+  `MeasureTheory.Lp.norm_eq_lpNorm_of_restrict_coe_opens_top`: an element of `Lᵖ` over the whole
+  space, written as the top open set, is an `Lᵖ` function for the measure itself, with the same
+  norm.
 * `MeasureTheory.lpNorm_le_norm_of_ae_eq_of_le`: for `ν ≤ ν'`, the `Lᵖ(ν)` norm of a
   representative of an element of `Lᵖ(ν')` is at most its norm.
 * `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
   function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
   norm, for any measure.
+* `MeasureTheory.Lp.norm_toLp_memLp_top_const_le`: the `L∞` class of a constant `c` has norm at
+  most `‖c‖`.
 * `MeasureTheory.Lp.norm_le_norm_top_of_ae_eq_of_continuousAt`: when the measure is positive on
   open sets, a representative of an `L∞` class is bounded by its norm at every point where it is
   continuous.
@@ -94,6 +120,9 @@ bounds.
   bound has bounded range.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
+* `MeasureTheory.memLp_and_eLpNorm_le_of_norm_le_add`: a function vanishing off a measurable set
+  `s` and dominated there by `c₁ ‖g₁‖ + c₂ ‖g₂‖` with `g₁, g₂ ∈ Lʳ(s)` lies in `Lʳ`, with the
+  matching norm bound.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
@@ -300,6 +329,23 @@ theorem Lp.norm_eq_lpNorm_of_ae_eq {alpha F : Type*} [MeasurableSpace alpha]
     (h : f =ᵐ[ν] g) : ‖f‖ = lpNorm g p ν := by
   rw [← lpNorm_congr_ae h, Lp.norm_def, toReal_eLpNorm]
 
+/-- An element of `Lᵖ` over the whole space, written as the top open set, is an `Lᵖ` function for
+the measure itself. -/
+theorem Lp.memLp_of_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞}
+    (f : Lp F p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha))) :
+    MemLp f p ν :=
+  (congrArg (fun μ => MemLp f p μ) (Measure.restrict_coe_opens_top ν)).mp (Lp.memLp f)
+
+/-- The norm of an element of `Lᵖ` over the whole space, written as the top open set, is its `Lᵖ`
+norm for the measure itself. -/
+theorem Lp.norm_eq_lpNorm_of_restrict_coe_opens_top {alpha F : Type*} [MeasurableSpace alpha]
+    [TopologicalSpace alpha] [NormedAddCommGroup F] {ν : Measure alpha} {p : ℝ≥0∞}
+    (f : Lp F p (ν.restrict ((⊤ : TopologicalSpace.Opens alpha) : Set alpha))) :
+    ‖f‖ = lpNorm f p ν :=
+  (Lp.norm_eq_lpNorm_of_ae_eq EventuallyEq.rfl).trans
+    (congrArg (lpNorm f p) (Measure.restrict_coe_opens_top ν))
+
 /-- The `Lᵖ(ν)` norm of a function agreeing `ν`-almost everywhere with an element of `Lᵖ(ν')`, for
 `ν ≤ ν'`, is at most the norm of that element. -/
 theorem lpNorm_le_norm_of_ae_eq_of_le {alpha F : Type*} [MeasurableSpace alpha]
@@ -334,6 +380,14 @@ theorem Lp.norm_top_le_of_ae_bound {alpha F : Type*} [MeasurableSpace alpha]
     (h : ∀ᵐ x ∂m, ‖f x‖ ≤ c) : ‖f‖ ≤ c := by
   rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
   exact ENNReal.toReal_le_of_le_ofReal hc (eLpNormEssSup_le_of_ae_bound h)
+
+/-- The `L∞` class of the constant function `c` has norm at most `‖c‖`, whatever the measure. -/
+theorem Lp.norm_toLp_memLp_top_const_le {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} (c : F) :
+    ‖(memLp_top_const (μ := m) c).toLp _‖ ≤ ‖c‖ := by
+  refine Lp.norm_top_le_of_ae_bound (norm_nonneg c) ?_
+  filter_upwards [(memLp_top_const (μ := m) c).coeFn_toLp] with x hx
+  rw [hx]
 
 /-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
 `[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
@@ -434,6 +488,96 @@ theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
     rw [tendsto_iff_edist_tendsto_0]
     simpa only [Lp.edist_toLp_toLp] using ht
   simpa only [MemLp.norm_toLp_sq] using hLp.norm.pow 2
+
+/-- If `f = f₁ + f₂ + f₃` almost everywhere with `f₁, f₂, f₃ ∈ L²`, then
+`∫ ‖f‖² ≤ 3 (∫ ‖f₁‖² + ∫ ‖f₂‖² + ∫ ‖f₃‖²)`. -/
+theorem integral_norm_sq_le_three_mul {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {f f₁ f₂ f₃ : α → E} (h₁ : MemLp f₁ 2 μ) (h₂ : MemLp f₂ 2 μ)
+    (h₃ : MemLp f₃ 2 μ) (hf : ∀ᵐ x ∂μ, f x = f₁ x + f₂ x + f₃ x) :
+    ∫ x, ‖f x‖ ^ 2 ∂μ ≤
+      3 * (∫ x, ‖f₁ x‖ ^ 2 ∂μ + ∫ x, ‖f₂ x‖ ^ 2 ∂μ + ∫ x, ‖f₃ x‖ ^ 2 ∂μ) := by
+  have i₁ := (memLp_two_iff_integrable_sq_norm h₁.aestronglyMeasurable).1 h₁
+  have i₂ := (memLp_two_iff_integrable_sq_norm h₂.aestronglyMeasurable).1 h₂
+  have i₃ := (memLp_two_iff_integrable_sq_norm h₃.aestronglyMeasurable).1 h₃
+  have e : ∫ x, 3 * (‖f₁ x‖ ^ 2 + ‖f₂ x‖ ^ 2 + ‖f₃ x‖ ^ 2) ∂μ =
+      3 * (∫ x, ‖f₁ x‖ ^ 2 ∂μ + ∫ x, ‖f₂ x‖ ^ 2 ∂μ + ∫ x, ‖f₃ x‖ ^ 2 ∂μ) := by
+    have i₁₂ : Integrable (fun x ↦ ‖f₁ x‖ ^ 2 + ‖f₂ x‖ ^ 2) μ := i₁.add i₂
+    rw [integral_const_mul, integral_add i₁₂ i₃, integral_add i₁ i₂]
+  rw [← e]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ by positivity)
+    (((i₁.add i₂).add i₃).const_mul 3) ?_
+  filter_upwards [hf] with x hx
+  simpa only [hx] using TauCeti.norm_add_add_sq_le_three_mul (f₁ x) (f₂ x) (f₃ x)
+
+/-- If `‖f‖ ≤ c ‖g‖` almost everywhere with `f, g ∈ L²`, then `∫ ‖f‖² ≤ c² ∫ ‖g‖²`. -/
+theorem integral_norm_sq_le_sq_mul_of_norm_le {α E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedAddCommGroup F] {f : α → E} {g : α → F}
+    {c : ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) (hle : ∀ᵐ x ∂μ, ‖f x‖ ≤ c * ‖g x‖) :
+    ∫ x, ‖f x‖ ^ 2 ∂μ ≤ c ^ 2 * ∫ x, ‖g x‖ ^ 2 ∂μ := by
+  rw [← integral_const_mul]
+  refine integral_mono_ae ((memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).1 hf)
+    (((memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg).const_mul _) ?_
+  filter_upwards [hle] with x hx
+  rw [← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) hx 2
+
+/-- Applying continuous linear maps `B x` with `‖B x‖ ≤ c` almost everywhere to `f ∈ L²` gives
+`x ↦ B x (f x) ∈ L²`, with `∫ ‖B x (f x)‖² ≤ c² ∫ ‖f‖²`. -/
+theorem memLp_clm_apply_and_integral_norm_sq_le {α 𝕜 E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {B : α → E →L[𝕜] F} {f : α → E} {c : ℝ}
+    (hB : AEStronglyMeasurable B μ) (hc : ∀ᵐ x ∂μ, ‖B x‖ ≤ c) (hf : MemLp f 2 μ) :
+    MemLp (fun x ↦ B x (f x)) 2 μ ∧ ∫ x, ‖B x (f x)‖ ^ 2 ∂μ ≤ c ^ 2 * ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have hle : ∀ᵐ x ∂μ, ‖B x (f x)‖ ≤ c * ‖f x‖ := by
+    filter_upwards [hc] with x hx
+    exact ((B x).le_opNorm _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
+  have hm : MemLp (fun x ↦ B x (f x)) 2 μ :=
+    hf.of_le_mul ((isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := F)).continuous
+      |>.comp_aestronglyMeasurable (hB.prodMk hf.aestronglyMeasurable)) hle
+  exact ⟨hm, integral_norm_sq_le_sq_mul_of_norm_le hm hf hle⟩
+
+/-- **A continuous linear map preserves convergence in `L²`.** If `∫ ‖f n - g‖² → 0` for
+`f n, g ∈ L²`, then `∫ ‖T (f n) - T g‖² → 0`. -/
+theorem tendsto_integral_norm_clm_apply_sub_sq {α 𝕜 E F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) {f : ℕ → α → E} {g : α → E}
+    (hf : ∀ n, MemLp (f n) 2 μ) (hg : MemLp g 2 μ)
+    (h : Tendsto (fun n ↦ ∫ x, ‖f n x - g x‖ ^ 2 ∂μ) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, ‖T (f n x) - T (g x)‖ ^ 2 ∂μ) atTop (𝓝 0) := by
+  refine squeeze_zero (fun n ↦ integral_nonneg fun _ ↦ by positivity)
+    (fun n ↦ integral_norm_sq_le_sq_mul_of_norm_le
+      ((T.comp_memLp' (hf n)).sub (T.comp_memLp' hg)) ((hf n).sub hg)
+      (Eventually.of_forall fun x ↦ by rw [← map_sub]; exact T.le_opNorm _)) ?_
+  simpa using h.const_mul (‖T‖ ^ 2)
+
+/-- **Convergence in `L²` gives an almost everywhere convergent subsequence.** If
+`∫ ‖f n - g‖² → 0` for `f n, g ∈ L²`, then a subsequence of `f n` converges to `g` almost
+everywhere. -/
+theorem exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq {α E : Type*}
+    [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E] {f : ℕ → α → E} {g : α → E}
+    (hf : ∀ n, MemLp (f n) 2 μ)
+    (hg : MemLp g 2 μ) (h : Tendsto (fun n ↦ ∫ t, ‖f n t - g t‖ ^ 2 ∂μ) atTop (𝓝 0)) :
+    ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ t ∂μ, Tendsto (fun k ↦ f (ns k) t) atTop (𝓝 (g t)) := by
+  refine (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) two_ne_zero ?_).exists_seq_tendsto_ae
+  simp_rw [fun n ↦ ((hf n).sub hg).eLpNorm_two_eq_ofReal_sqrt_integral, Pi.sub_apply]
+  have := ((ENNReal.continuous_ofReal.comp Real.continuous_sqrt).tendsto 0).comp h
+  rw [Function.comp_apply, Real.sqrt_zero, ENNReal.ofReal_zero] at this
+  exact this
+
+/-- **Pointwise bounds pass to limits in `L²`.** If `∫ ‖f n - g‖² → 0` for `f n, g ∈ L²`, each
+`φ x` is continuous and `φ x (f n x) ≤ c n` almost everywhere with `c n → M`, then
+`φ x (g x) ≤ M` almost everywhere. -/
+theorem ae_le_of_tendsto_integral_norm_sub_sq {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {f : ℕ → α → E} {g : α → E} {φ : α → E → ℝ} {c : ℕ → ℝ} {M : ℝ}
+    (hf : ∀ n, MemLp (f n) 2 μ) (hg : MemLp g 2 μ)
+    (h : Tendsto (fun n ↦ ∫ t, ‖f n t - g t‖ ^ 2 ∂μ) atTop (𝓝 0)) (hφ : ∀ x, Continuous (φ x))
+    (hc : Tendsto c atTop (𝓝 M)) (hle : ∀ n, ∀ᵐ x ∂μ, φ x (f n x) ≤ c n) :
+    ∀ᵐ x ∂μ, φ x (g x) ≤ M := by
+  obtain ⟨ns, hns, hlim⟩ := exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq hf hg h
+  exact TauCeti.ae_le_of_tendsto_of_tendsto_of_frequently (F₂ := fun k _ ↦ c (ns k))
+    (G₂ := fun _ ↦ M) (hlim.mono fun x hx ↦ ((hφ x).tendsto (g x)).comp hx)
+    (Eventually.of_forall fun _ ↦ hc.comp hns.tendsto_atTop)
+    (Eventually.of_forall fun k ↦ hle (ns k)).frequently
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
@@ -559,6 +703,17 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset
     simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
   exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
 
+/-- For a function `g` in `L²(U)` and `ball z R ⊆ U`, the `L²` mass `∫_{B(z, t) ∩ H} ‖g‖²` is
+nondecreasing in the radius `t ≤ R`, for any set `H`. -/
+theorem MemLp.monotoneOn_setIntegral_ball_inter_norm_sq [PseudoMetricSpace X] {U H : Set X}
+    {z : X} {R : ℝ} (hg : MemLp g 2 (μ.restrict U)) (hball : Metric.ball z R ⊆ U) :
+    MonotoneOn (fun t => ∫ x in Metric.ball z t ∩ H, ‖g x‖ ^ 2 ∂μ) (Set.Iic R) :=
+  fun _ _ t ht hst => setIntegral_mono_set
+    ((hg.mono_measure (Measure.restrict_mono (Set.inter_subset_left.trans
+      ((Metric.ball_subset_ball ht).trans hball)) le_rfl)).integrable_norm_pow two_ne_zero)
+    (ae_of_all _ fun _ => by positivity)
+    (Set.inter_subset_inter_left _ (Metric.ball_subset_ball hst)).eventuallySubset
+
 /-- **Hölder's inequality for the `L²` mass on a subset.** For `2 ≤ q` and a function `g` in
 `L^q(t)`, the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure is at most
 `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`. -/
@@ -631,6 +786,35 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
   rw [← ENNReal.toReal_sum fun i _ => (hg i).eLpNorm_ne_top]
   exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun i _ => (hg i).eLpNorm_ne_top)
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
+
+/-- An `Lʳ` bound for a function vanishing off a measurable set `s`: if `‖f‖ ≤ c₁ ‖g₁‖ + c₂ ‖g₂‖`
+on `s` with `c₁, c₂ ≥ 0` and `g₁, g₂ ∈ Lʳ(s)`, then `f ∈ Lʳ` with
+`‖f‖_r ≤ c₁ ‖g₁‖_{r,s} + c₂ ‖g₂‖_{r,s}`. -/
+theorem memLp_and_eLpNorm_le_of_norm_le_add {G₁ G₂ : Type*} [NormedAddCommGroup G₁]
+    [NormedAddCommGroup G₂] (hs : MeasurableSet s) {r : ℝ≥0∞} (hr : 1 ≤ r) {f : X → F}
+    {g₁ : X → G₁} {g₂ : X → G₂} {c₁ c₂ : ℝ} (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
+    (hf : AEStronglyMeasurable f (μ.restrict s)) (hf0 : ∀ x ∉ s, f x = 0)
+    (hg₁ : MemLp g₁ r (μ.restrict s)) (hg₂ : MemLp g₂ r (μ.restrict s))
+    (hfg : ∀ x ∈ s, ‖f x‖ ≤ c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) :
+    MemLp f r μ ∧ eLpNorm f r μ ≤
+      ENNReal.ofReal c₁ * eLpNorm g₁ r (μ.restrict s) +
+        ENNReal.ofReal c₂ * eLpNorm g₂ r (μ.restrict s) := by
+  have hsupp : Function.support f ⊆ s := fun x hx => by_contra fun h => hx (hf0 x h)
+  have hg : MemLp (fun x => c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖) r (μ.restrict s) :=
+    (hg₁.norm.const_mul c₁).add (hg₂.norm.const_mul c₂)
+  have hle : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ ‖c₁ * ‖g₁ x‖ + c₂ * ‖g₂ x‖‖ :=
+    ae_restrict_of_forall_mem hs fun x hx => (hfg x hx).trans (Real.le_norm_self _)
+  have hfs : MemLp f r (μ.restrict s) := hg.of_le hf hle
+  refine ⟨by simpa only [Set.indicator_eq_self.2 hsupp] using
+    (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 hfs, ?_⟩
+  have hfm : AEStronglyMeasurable f μ := by
+    simpa only [Set.indicator_eq_self.2 hsupp] using
+      (aestronglyMeasurable_indicator_iff hs).2 hf
+  rw [← eLpNorm_restrict_eq_of_support_subset hfm hsupp]
+  exact TauCeti.eLpNorm_le_mul_add_mul_of_ae_norm_le hr hf hg₁.aestronglyMeasurable
+    hg₂.aestronglyMeasurable (A := c₁.toNNReal) (B := c₂.toNNReal)
+    (ae_restrict_of_forall_mem hs fun x hx => by
+      simpa only [Real.coe_toNNReal _ hc₁, Real.coe_toNNReal _ hc₂] using hfg x hx)
 
 end Restrict
 

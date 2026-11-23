@@ -39,8 +39,8 @@ symbol is the adjoint symbol `TauCeti.Symbol.adjoint`, by uniqueness of symbols
 ## The construction
 
 Cut `c` into the pieces `cⱼ(y, ξ) = χ(y - j) c(y, ξ)`, `j ∈ ℤⁿ`, by the integer translates of the
-bump `χ = TauCeti.latticeBump n` (`TauCeti.Symbol.isBallFamily_latticeBump_comp`). Each piece has
-compact spatial support, so it has the left symbol `bⱼ = cⱼ.ofRight`,
+bump `χ = TauCeti.latticeBump n` (`TauCeti.Symbol.isBallFamily_smulLeft_latticeBump`). Each piece
+has compact spatial support, so it has the left symbol `bⱼ = cⱼ.ofRight`,
 
 `bⱼ(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) 𝓕cⱼ(θ, ξ + 2πθ) dθ`,
 
@@ -368,13 +368,12 @@ omit [CompleteSpace V] [CompleteSpace W] in
 `χ(· - j) u`. -/
 private theorem quantizeRightUniformCLM_latticeBump_comp {c : Symbol n V W m} (hc : c.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (j : Fin n → ℤ) :
-    quantizeRightUniformCLM _ ((isBallFamily_latticeBump_comp hc).hasCompactSpatialSupport
+    quantizeRightUniformCLM _ ((isBallFamily_smulLeft_latticeBump hc).hasCompactSpatialSupport
       j).isUniform u =
       quantizeRightUniformCLM c hc (SchwartzMap.smulLeftCLM V
         (fun y ↦ latticeBump n (y - latticePoint j)) u) := by
   refine quantizeRightUniformCLM_eq_of_coefficient_apply_eq _ hc fun y ξ ↦ ?_
-  simp [coefficient_comp,
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
+  simp [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
     ContinuousLinearMap.map_smul_of_tower]
 
 /-- **The right quantization of a uniform symbol is a left quantization.** If `c` is a symbol of
@@ -386,8 +385,8 @@ compact spatial support is assumed. The symbol is unique
 theorem IsUniform.exists_quantizeRightUniformCLM_eq {c : Symbol n V W m} (hc : c.IsUniform) :
     ∃ (b : Symbol n V W m) (hb : b.IsUniform),
       quantizeRightUniformCLM c hc = quantizeUniformCLM b hb := by
-  have hfam := isBallFamily_latticeBump_comp hc
-  set F : (Fin n → ℤ) → Symbol n V W (0 + m) := fun j ↦
+  have hfam := isBallFamily_smulLeft_latticeBump hc
+  set F : (Fin n → ℤ) → Symbol n V W m := fun j ↦
     ofRight _ (hfam.hasCompactSpatialSupport j)
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
     ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
@@ -395,10 +394,9 @@ theorem IsUniform.exists_quantizeRightUniformCLM_eq {c : Symbol n V W m} (hc : c
     exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
     (hfam.exists_norm_mixedDeriv_ofRight_le)
-  have hord : 0 + m = m := zero_add m
-  refine ⟨Symbol.inclusion hord.le b, hb.inclusion hord.le, ?_⟩
+  refine ⟨b, hb, ?_⟩
   ext u x
-  rw [quantizeUniformCLM_apply, coefficient_inclusion]
+  rw [quantizeUniformCLM_apply]
   -- Both sides are the sum of the series `∑ⱼ Op(cⱼᵒ) u (x) = ∑ⱼ Op_R(c) (χ(· - j) u) (x)`.
   obtain ⟨C, -, hC⟩ := hfam.exists_norm_mixedDeriv_ofRight_le [] []
   simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hC

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.Fourier.FourierTransformDeriv
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Fourier.L2Multiplier
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -31,9 +33,14 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
 * `TauCeti.laplacianSymbol`: the symbol `-4π² ‖ξ‖²` of the Laplacian.
 * `SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol`: on Schwartz functions, `Δ` is the
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
+* `SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul`: pointwise on the Fourier side,
+  `𝓕 (Δ u) ξ = -4π² ‖ξ‖² 𝓕 u ξ` for Schwartz functions `u`.
 * `TauCeti.hasTemperateGrowth_laplacianSymbol`: it has temperate growth.
 * `TauCeti.sqrtNegLaplacianSymbol`: the symbol `2π ‖ξ‖` of `√(-Δ)`.
 * `TauCeti.sq_sqrtNegLaplacianSymbol`: its square is the symbol of `-Δ`.
+* `TauCeti.laplacian_fourier` and `TauCeti.laplacian_fourierInv`: the Laplacian of the Fourier
+  integral `𝓕 h`, or `𝓕⁻ h`, of a function `h` with integrable moments of order at most two is the
+  Fourier integral of `-4π² ‖ξ‖² h`. No smoothness of `h` is needed.
 * `MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff`: for `f, h ∈ L²`, the distributional
   Laplacian of `f` is `h` exactly when `𝓕 h = -4π² ‖ξ‖² • 𝓕 f` almost everywhere, for the
   Fourier transform on `L²`.
@@ -125,6 +132,61 @@ theorem _root_.SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol (f 
   rw [SchwartzMap.laplacian_eq_fourierMultiplierCLM, h,
     SchwartzMap.fourierMultiplierCLM_smul (Function.hasTemperateGrowth_norm_sq E),
     _root_.smul_apply]
+
+omit [CompleteSpace F] in
+/-- `𝓕 (Δ u) ξ = -4π² ‖ξ‖² 𝓕 u ξ` for Schwartz functions, with the symbol of the Laplacian. -/
+theorem _root_.SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul (u : 𝓢(E, F))
+    (ξ : E) : 𝓕 (Δ u) ξ = (laplacianSymbol ξ : ℂ) • 𝓕 u ξ := by
+  rw [SchwartzMap.fourier_laplacian_apply, ← Complex.coe_smul]
+  congr 1
+  push_cast [laplacianSymbol_apply]
+  ring
+
+omit [CompleteSpace F] in
+/-- **The Laplacian of a Fourier integral.** If `h` has integrable moments `‖ξ‖ⁿ ‖h ξ‖` of order
+`n ≤ 2`, then the Laplacian of `𝓕 h` is the Fourier integral of `-4π² ‖ξ‖² h`. -/
+theorem laplacian_fourier {h : E → F} (hh : ∀ n ≤ 2, Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖h ξ‖))
+    (hm : AEStronglyMeasurable h) :
+    Δ (𝓕 h) = 𝓕 (fun ξ ↦ (laplacianSymbol ξ : ℂ) • h ξ) := by
+  ext x
+  have hint : Integrable fun v ↦ 𝐞 (-inner ℝ v x) •
+      VectorFourier.fourierPowSMulRight (innerSL ℝ) h v 2 :=
+    (Real.fourierIntegral_convergent_iff x).2
+      (VectorFourier.integrable_fourierPowSMulRight (innerSL ℝ) (hh 2 le_rfl) hm)
+  rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_stdOrthonormalBasis,
+    Real.iteratedFDeriv_fourier (fun n hn ↦ hh n (by exact_mod_cast hn)) hm le_rfl]
+  simp only [Real.fourier_eq, ContinuousMultilinearMap.integral_apply hint]
+  rw [← integral_finsetSum _ fun i _ ↦ ?_]; swap
+  · exact (ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 ↦ E) F _).integrable_comp hint
+  congr 1 with v
+  -- The second derivative of `𝐞 (-⟪v, x⟫)` along `bᵢ` is `(-2πi ⟪v, bᵢ⟫)²` times it, and the
+  -- squares `⟪v, bᵢ⟫²` sum to `‖v‖²` over an orthonormal basis.
+  have hsum : ∑ i, innerSL ℝ v ((stdOrthonormalBasis ℝ E) i) *
+      innerSL ℝ v ((stdOrthonormalBasis ℝ E) i) = ‖v‖ ^ 2 := by
+    simp only [innerSL_apply_apply, ← sq, (stdOrthonormalBasis ℝ E).sum_sq_inner_left]
+  simp only [Circle.smul_def, smul_apply, VectorFourier.fourierPowSMulRight_apply,
+    Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+  rw [← Finset.smul_sum, ← Finset.smul_sum, ← Finset.sum_smul, hsum]
+  congr 1
+  rw [← Complex.coe_smul, smul_smul]
+  congr 1
+  -- The scalar identity `(-2πi)² ‖v‖² = -4π² ‖v‖²`.
+  push_cast [laplacianSymbol_apply]
+  linear_combination (4 * π ^ 2 * ‖v‖ ^ 2 : ℂ) * Complex.I_sq
+
+omit [CompleteSpace F] in
+/-- **The Laplacian of an inverse Fourier integral.** If `h` has integrable moments
+`‖ξ‖ⁿ ‖h ξ‖` of order `n ≤ 2`, then the Laplacian of `𝓕⁻ h` is the inverse Fourier integral of
+`-4π² ‖ξ‖² h`. -/
+theorem laplacian_fourierInv {h : E → F} (hh : ∀ n ≤ 2, Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖h ξ‖))
+    (hm : AEStronglyMeasurable h) :
+    Δ (𝓕⁻ h) = 𝓕⁻ (fun ξ ↦ (laplacianSymbol ξ : ℂ) • h ξ) := by
+  have hh' : ∀ n ≤ 2, Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖h (-ξ)‖) := fun n hn ↦ by
+    simpa using (hh n hn).comp_neg
+  rw [Real.fourierInv_eq_fourier_comp_neg,
+    laplacian_fourier hh' (hm.comp_measurePreserving (Measure.measurePreserving_neg volume)),
+    Real.fourierInv_eq_fourier_comp_neg]
+  simp [laplacianSymbol_apply]
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
