@@ -216,7 +216,7 @@ theorem integral_inner_fderiv_smul_adjoint_eq [CompleteSpace V] {F : E → V →
         ⟪(β : E → ℝ) x • ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v (G x), w x⟫_ℝ) μ :=
       hw.integrable_inner_left_of_hasCompactSupport
         (β.contDiff.continuous.smul
-          ((ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v).continuous.comp hG))
+          ((ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v).continuous.comp hG)).continuousOn
         β.hasCompactSupport.smul_right
         ((tsupport_smul_subset_left (β : E → ℝ)
           (ContinuousLinearMap.adjointApplyRealCLM (𝕜 := ℝ) v ∘ G)).trans β.tsupport_subset)
