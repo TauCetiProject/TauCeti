@@ -26,6 +26,11 @@ for `l ≥ 3` and `0 < k < l`.
   pairs `a_(l - k) = a_(-k) = 1 - a_k`, middle value `a_m = 1 / 2`, and separation of the scalar
   endpoints `k ∈ {1, l - 1}` (all of `l = 3`) from the `(0, 1)` interior cases `2 ≤ k ≤ l - 2` at
   `exp (± 2 π i / l)`.
+
+## References
+
+* H. Wenzl, *Hecke algebras of type A_n and subfactors*, Invent. Math. 92 (1988), 349–383,
+  §3, for the root-of-unity values `a_k(exp (± 2 π i / l))`.
 -/
 
 public section
@@ -41,8 +46,19 @@ section RootOfUnity
 open Complex
 open scoped Real
 
-private theorem two_mul_pi_div_mul_I (l : ℕ) : 2 * (π / (l : ℂ)) * I = 2 * π * I / l := by
+private theorem two_mul_pi_div_mul_I (l : ℕ) :
+    2 * ((π / l : ℝ) : ℂ) * I = 2 * π * I / l := by
+  push_cast
   ring
+
+private theorem wenzlParam_exp_ofReal_mul_I (k : ℤ) {θ : ℝ} (hθ : Real.cos θ ≠ 0)
+    (hk : Real.sin ((k : ℝ) * θ) ≠ 0) :
+    wenzlParam k (exp (2 * (θ : ℂ) * I)) =
+      ↑(Real.sin (((k : ℝ) + 1) * θ) / (2 * Real.cos θ * Real.sin ((k : ℝ) * θ))) := by
+  have h := wenzlParam_exp_mul_I k (θ := (θ : ℂ)) (by exact_mod_cast hθ) (by exact_mod_cast hk)
+  rw [h]
+  simp only [ofReal_div, ofReal_mul, ofReal_ofNat, ofReal_cos, ofReal_sin, ofReal_add,
+    ofReal_one, ofReal_intCast]
 
 private theorem isPrimitiveRoot_exp_two_pi_mul_I_div {l : ℕ} (hl : l ≠ 0) :
     IsPrimitiveRoot (exp (2 * π * I / l)) l :=
@@ -55,12 +71,9 @@ theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < 
       ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
   have hcos : 0 < Real.cos (π / l) := cos_pi_div_natCast_pos (by omega)
   have hsin : 0 < Real.sin (k * π / l) := sin_natCast_mul_pi_div_natCast_pos hk₀ hkl
-  have h := wenzlParam_exp_mul_I k (θ := π / l) (by exact_mod_cast hcos.ne')
-    (by rw [Int.cast_natCast, ← mul_div_assoc]; exact_mod_cast hsin.ne')
+  have h := wenzlParam_exp_ofReal_mul_I k hcos.ne' (by simpa [mul_div_assoc] using hsin.ne')
   rw [two_mul_pi_div_mul_I] at h
-  rw [h]
-  push_cast
-  ring_nf
+  simpa [mul_div_assoc] using h
 
 /-- The values at the conjugate roots of unity `Q = exp (-2 π i / l)` agree with those at
 `exp (2 π i / l)`. -/
@@ -76,15 +89,12 @@ theorem wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 
       ↑(Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
   have hcos : 0 < Real.cos (π / l) := cos_pi_div_natCast_pos (by omega)
   have hsin : 0 < Real.sin (k * π / l) := sin_natCast_mul_pi_div_natCast_pos hk₀ hkl
-  have h := wenzlParam_exp_mul_I (-(k : ℤ)) (θ := π / l) (by exact_mod_cast hcos.ne')
-    (by rw [Int.cast_neg, Int.cast_natCast, neg_mul, sin_neg, neg_ne_zero, ← mul_div_assoc]
-        exact_mod_cast hsin.ne')
+  have h := wenzlParam_exp_ofReal_mul_I (-(k : ℤ)) hcos.ne'
+    (by simpa [mul_div_assoc, Real.sin_neg] using hsin.ne')
   rw [two_mul_pi_div_mul_I] at h
-  simp only [Int.cast_neg, Int.cast_natCast, neg_add_eq_sub, ← neg_sub (k : ℂ) 1, neg_mul,
-    ← mul_div_assoc, neg_div, sin_neg] at h
   rw [h]
-  push_cast
-  field_simp
+  simp only [Int.cast_neg, Int.cast_natCast, neg_add_eq_sub, ← neg_sub (k : ℝ) 1, neg_mul,
+    mul_neg, Real.sin_neg, neg_div_neg_eq, mul_div_assoc]
 
 /-- The negative-index values at `Q = exp (-2 π i / l)` agree with those at `exp (2 π i / l)`. -/
 theorem wenzlParam_neg_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Order.Interval.Set.Basic
+import TauCeti.Algebra.Ring.Units
 import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -255,7 +256,10 @@ theorem wenzlParam_neg_two_sq (q : K) :
     wenzlParam (-2) (q ^ 2) = ((q + q⁻¹) ^ 2)⁻¹ := by
   rcases eq_or_ne q 0 with rfl | hq
   · simp [wenzlParam_neg_two]
-  rw [wenzlParam_neg_two, show q + q⁻¹ = (1 + q ^ 2) / q by field_simp; ring, div_pow, inv_div]
+  have hadd : q + q⁻¹ = (1 + q ^ 2) / q := by
+    rw [eq_div_iff hq, mul_comm]
+    simpa [Units.val_mk0] using (Units.mk0 q hq).val_mul_val_add_val_inv
+  rw [wenzlParam_neg_two, hadd, div_pow, inv_div]
 
 /-- **Factorization of the boundary defect `a_(-2)(Q) - η * (1 - η)`.** When `1 + Q ≠ 0`,
 `a_(-2)(Q) - η * (1 - η) = (η - 1 / (1 + Q)) * (η - Q / (1 + Q))`. -/

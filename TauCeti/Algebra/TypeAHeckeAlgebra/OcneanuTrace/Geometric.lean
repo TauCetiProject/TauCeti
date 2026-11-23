@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Basic
+import TauCeti.Algebra.Ring.Units
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
@@ -72,10 +72,7 @@ theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q +
       wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) *
         ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x := by
   -- `1 + q ^ 2 = q * s` is nonzero since `s` is a unit.
-  have hqs : 1 + (q : K) ^ 2 = q * s := by
-    rw [hs, Units.val_inv_eq_inv_val]
-    field_simp [q.ne_zero]
-    ring
+  have hqs : 1 + (q : K) ^ 2 = q * s := hs ▸ q.val_mul_val_add_val_inv.symm
   have hQ : 1 + (q : K) ^ 2 ≠ 0 := hqs ▸ mul_ne_zero q.ne_zero s.ne_zero
   exact (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
     (ocneanuTrace_param_geometric hQ hc) hx

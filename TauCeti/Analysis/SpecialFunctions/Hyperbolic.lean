@@ -423,15 +423,13 @@ theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
 
 /-- Quarter-period imaginary shift for `Complex.sinh`: `sinh (z + π * I / 2) = I * cosh z`. -/
 theorem sinh_add_pi_mul_I_div_two (z : ℂ) : sinh (z + π * I / 2) = I * cosh z := by
-  rw [← div_mul_eq_mul_div, sinh_add, cosh_mul_I, sinh_mul_I,
-    cos_pi_div_two, sin_pi_div_two]
-  ring
+  rw [mul_div_right_comm]
+  simp [sinh_add, cosh_mul_I, sinh_mul_I, mul_comm I]
 
 /-- Quarter-period imaginary shift for `Complex.cosh`: `cosh (z + π * I / 2) = I * sinh z`. -/
 theorem cosh_add_pi_mul_I_div_two (z : ℂ) : cosh (z + π * I / 2) = I * sinh z := by
-  rw [← div_mul_eq_mul_div, cosh_add, cosh_mul_I, sinh_mul_I,
-    cos_pi_div_two, sin_pi_div_two]
-  ring
+  rw [mul_div_right_comm]
+  simp [cosh_add, cosh_mul_I, sinh_mul_I, mul_comm I]
 
 /-- `cosh (z + π * I / 2)` is nonzero if and only if `sinh z` is nonzero. -/
 theorem cosh_add_pi_mul_I_div_two_ne_zero {z : ℂ} :

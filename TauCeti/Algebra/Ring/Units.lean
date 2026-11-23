@@ -27,6 +27,7 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.val_mul_val_add_val_inv`: for any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`.
 -/
 
 public section
@@ -49,6 +50,11 @@ theorem isUnit_one_add_mul_comm {a b : R} : IsUnit (1 + a * b) ↔ IsUnit (1 + b
 end TauCeti
 
 namespace Units
+
+/-- For any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`. -/
+theorem val_mul_val_add_val_inv {R : Type*} [Ring R] (q : Rˣ) :
+    (q : R) * ((q : R) + ↑q⁻¹) = 1 + (q : R) ^ 2 := by
+  rw [mul_add, q.mul_inv, sq, add_comm]
 
 variable {R : Type*} [Ring R] [NoZeroDivisors R]
 

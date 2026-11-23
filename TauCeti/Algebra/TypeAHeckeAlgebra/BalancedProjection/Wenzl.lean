@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
+import TauCeti.Algebra.Ring.Units
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -47,14 +48,9 @@ and `e i ↦ 1` in Wenzl's convention.
   `T i ↦ q - (q + q⁻¹) • e i` and `q • T i ↦ q ^ 2 - (1 + q ^ 2) • e i`.
 * `TauCeti.BalancedProjectionAlgebra.map_stage_wenzlHeckeEquiv`: the isomorphism preserves every
   finite stage.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.wenzlProjection_eq_one_sub_eigenprojection`,
-  `TauCeti.InfiniteTypeAHeckeAlgebra.isIdempotentElem_wenzlProjection`, and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.smul_T_eq_smul_one_sub_wenzlProjection_sub`: Wenzl's
-  projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` is `1 - P i`, is idempotent, and decomposes
-  `q • T i` into eigenvalues `q ^ 2` and `-1`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_wenzlHeckeEquiv_mul_e` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_wenzlProjection`: a Markov trace with
-  native projection parameter `η` has Wenzl projection parameter `1 - η`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_wenzlHeckeEquiv_mul_e`: transported along
+  `wenzlHeckeEquiv`, a Markov trace with parameter `z` multiplies by `(q - z) / (q + q⁻¹)` when a
+  new last projection is appended.
 
 ## References
 
@@ -70,38 +66,10 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] {τ : R} {q : Rˣ}
 
-namespace InfiniteTypeAHeckeAlgebra
-
-private theorem val_inv_mul_eq_add_inv (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) :
-    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
-  rw [Units.val_mul, hu]
-  linear_combination (q : R) * q.inv_mul
-
-private theorem smul_sub_T_eq_one_sub_smul_T_add {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1)
-    (i : ℕ) :
-    c • (algebraMap R _ (q : R) - T q i) = 1 - c • (T q i + algebraMap R _ ↑q⁻¹) := by
-  simp only [Algebra.algebraMap_eq_smul_one]
-  match_scalars
-  · linear_combination hc
-  · ring
-
-private theorem smul_sub_T_eq_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
-    {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1) (i : ℕ) :
-    c • (algebraMap R _ (q : R) - T q i) =
-      (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
-  have hqu : (u : R) = (q : R) * ((q : R) + ↑q⁻¹) := by
-    rw [← val_inv_mul_eq_add_inv u hu, Units.val_mul, ← mul_assoc, q.mul_inv, one_mul]
-  have hcoeff : c = (q : R) * ↑u⁻¹ := by
-    have hu' : (u : R) * ↑u⁻¹ = 1 := u.mul_inv
-    linear_combination -c * hu' + c * (↑u⁻¹ : R) * hqu + (↑u⁻¹ : R) * (q : R) * hc
-  rw [hcoeff, mul_comm (q : R), ← smul_smul, smul_sub]
-  simp [Algebra.algebraMap_eq_smul_one, smul_smul, sq]
-
-end InfiniteTypeAHeckeAlgebra
-
 namespace BalancedProjectionAlgebra
 
-open InfiniteTypeAHeckeAlgebra (T complementEquiv complementEquiv_T indexCharacter signCharacter)
+open InfiniteTypeAHeckeAlgebra (T complementEquiv complementEquiv_T indexCharacter signCharacter
+  wenzlProjection_eq_one_sub_eigenprojection)
 
 variable (q) in
 /-- **Wenzl's projection isomorphism** between the balanced projection algebra with parameter `τ`
@@ -139,15 +107,24 @@ to `1` minus its image under the native eigenprojection isomorphism `heckeEquiv`
 theorem wenzlHeckeEquiv_e_eq_one_sub_heckeEquiv_e (i : ℕ) :
     wenzlHeckeEquiv q hτ (e τ i) = 1 - heckeEquiv q hτ (e τ i) := by
   rw [wenzlHeckeEquiv_e, heckeEquiv_e]
-  exact InfiniteTypeAHeckeAlgebra.smul_sub_T_eq_one_sub_smul_T_add (by linear_combination hτ) i
+  simp only [Algebra.algebraMap_eq_smul_one]
+  match_scalars
+  · linear_combination hτ
+  · ring
 
 /-- **Wenzl's formula `e_i^W = (1 + Q)⁻¹ • (Q - g_i)`.** When `u = 1 + q ^ 2` is a unit, Wenzl's
 isomorphism sends `e i` to `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`. -/
 theorem wenzlHeckeEquiv_e_eq_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
     wenzlHeckeEquiv q hτ (e τ i) =
       (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
-  rw [wenzlHeckeEquiv_e]
-  exact InfiniteTypeAHeckeAlgebra.smul_sub_T_eq_wenzlProjection u hu (by linear_combination hτ) i
+  have hs : ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
+    rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
+  have hinv : (↑(q⁻¹ * u)⁻¹ : R) * ((q : R) + ↑q⁻¹) = 1 := by
+    rw [← hs, Units.inv_mul]
+  have hcoeff : τ * ((q : R) + ↑q⁻¹) = ↑(q⁻¹ * u)⁻¹ := by
+    linear_combination (↑(q⁻¹ * u)⁻¹ : R) * hτ - τ * ((q : R) + ↑q⁻¹) * hinv
+  rw [wenzlHeckeEquiv_e_eq_one_sub_heckeEquiv_e, heckeEquiv_e, hcoeff,
+    wenzlProjection_eq_one_sub_eigenprojection u hu]
 
 /-- The inverse of Wenzl's isomorphism sends `T i` to `q - (q + q⁻¹) • e i`. -/
 @[simp]
@@ -212,55 +189,11 @@ theorem signCharacter_wenzlHeckeEquiv (w : BalancedProjectionAlgebra R τ) :
 
 end BalancedProjectionAlgebra
 
-/-! ### Wenzl's projection and Markov trace parameters on the Hecke algebra -/
-
-namespace InfiniteTypeAHeckeAlgebra
-
-/-- **Comparison of Wenzl's projection with the native eigenprojection.** Let `u = 1 + q ^ 2` be a
-unit, so `q⁻¹ * u = q + q⁻¹`. Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` equals
-`1 - P i`, where `P i = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is the `q`-eigenprojection of `T i`. -/
-theorem wenzlProjection_eq_one_sub_eigenprojection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
-    (i : ℕ) :
-    (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
-      1 - (↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
-  have hs : (↑(q⁻¹ * u)⁻¹ : R) * ((q : R) + ↑q⁻¹) = 1 := by
-    rw [← val_inv_mul_eq_add_inv u hu, Units.inv_mul]
-  exact (smul_sub_T_eq_wenzlProjection u hu hs i).symm.trans
-    (smul_sub_T_eq_one_sub_smul_T_add hs i)
-
-/-- Wenzl's projection is the image of the native eigenprojection under `complementEquiv`. -/
-theorem wenzlProjection_eq_complementEquiv_eigenprojection (u : Rˣ)
-    (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
-    (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
-      complementEquiv q ((↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  rw [wenzlProjection_eq_one_sub_eigenprojection u hu,
-    complementEquiv_eigenprojection q (q⁻¹ * u) (val_inv_mul_eq_add_inv u hu)]
-
-/-- Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` is idempotent whenever `u = 1 + q ^ 2`
-is a unit. -/
-theorem isIdempotentElem_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
-    IsIdempotentElem ((↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i)) := by
-  rw [wenzlProjection_eq_one_sub_eigenprojection u hu]
-  exact (isIdempotentElem_eigenprojection (q⁻¹ * u) (val_inv_mul_eq_add_inv u hu) i).one_sub
-
-/-- **Eigenvalue decomposition of Wenzl's generator `g i = q • T i`.** With `e_i^W` Wenzl's
-projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`, `g i = q ^ 2 • (1 - e_i^W) - e_i^W`. -/
-theorem smul_T_eq_smul_one_sub_wenzlProjection_sub (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
-    (i : ℕ) :
-    (q : R) • T q i =
-      ((q : R) ^ 2) • (1 - (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i)) -
-        (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
-  have hu' : (↑u⁻¹ : R) * (1 + (q : R) ^ 2) = 1 := hu ▸ u.inv_mul
-  simp only [Algebra.algebraMap_eq_smul_one]
-  match_scalars
-  · linear_combination -(q : R) * hu'
-  · linear_combination (q : R) ^ 2 * hu'
-
-namespace IsMarkovTrace
+namespace InfiniteTypeAHeckeAlgebra.IsMarkovTrace
 
 open BalancedProjectionAlgebra
 
-variable {z η : R} {μ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+variable {z : R} {μ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
 
 /-- **The Wenzl projection parameter of a Hecke Markov trace.** Transported along
 `wenzlHeckeEquiv`, a Markov trace with parameter `z` multiplies by `(q - z) / (q + q⁻¹)` when a
@@ -275,21 +208,6 @@ theorem map_wenzlHeckeEquiv_mul_e (hμ : IsMarkovTrace z μ) (hτ : τ * ((q : R
   rw [hz] at h
   simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, ← wenzlHeckeEquiv_apply] using h
 
-/-- **Trace comparison `η_W = 1 - η`.** If `z = q * η - q⁻¹ * (1 - η)`, so that `η` is the native
-projection parameter of `μ`
-(`TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`), then appending Wenzl's
-projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T n)` to `x` in the stage on `n + 1` strands multiplies
-`μ x` by `1 - η`. -/
-theorem map_mul_wenzlProjection (hμ : IsMarkovTrace z μ) (u : Rˣ)
-    (hu : (u : R) = 1 + (q : R) ^ 2) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
-    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ InfiniteTypeAHeckeAlgebra.stage R q (n + 1)) :
-    μ (x * (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q n)) = (1 - η) * μ x := by
-  rw [wenzlProjection_eq_one_sub_eigenprojection u hu, mul_sub, mul_one, map_sub,
-    hμ.map_mul_eigenprojection (q⁻¹ * u) (val_inv_mul_eq_add_inv u hu) hz hx]
-  ring
-
-end IsMarkovTrace
-
-end InfiniteTypeAHeckeAlgebra
+end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
 
 end TauCeti

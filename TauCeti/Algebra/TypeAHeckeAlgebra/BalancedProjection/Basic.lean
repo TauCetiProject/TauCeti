@@ -86,10 +86,8 @@ no such change of generators, is not treated.
   correspond to `e i ↦ 1` and `e i ↦ 0`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_heckeEquiv_mul_e`: the projection parameter
   of a Hecke Markov trace.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.T_eq_smul_eigenprojection_sub_smul` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`: the eigenprojection
-  decomposition of a generator, and the projection parameter of a Markov trace in terms of the
-  eigenprojection.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.T_eq_smul_eigenprojection_sub_smul`: the eigenprojection
+  decomposition of a generator.
 
 ## References
 
@@ -645,21 +643,6 @@ theorem val_inv_unitT_eq_smul_eigenprojection_sub_smul (hs : (s : R) = q + ↑q�
   match_scalars
   · linear_combination -hs'
   · linear_combination -(↑q⁻¹ : R) * hs'
-
-variable {z η : R} {μ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
-
-/-- **The projection parameter of a Markov trace.** If `z = q * η - q⁻¹ * (1 - η)`, a Markov trace
-with parameter `z` multiplies by `η` when the eigenprojection of the generator `T n` adding the
-new last strand is appended. -/
-theorem IsMarkovTrace.map_mul_eigenprojection (hμ : IsMarkovTrace z μ)
-    (hs : (s : R) = q + ↑q⁻¹) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
-    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
-    μ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * μ x := by
-  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
-  rw [hs] at hs'
-  rw [mul_smul_comm, map_smul, mul_add, map_add, hμ.map_mul_T hx, ← Algebra.commutes,
-    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
-  linear_combination η * μ x * hs'
 
 end InfiniteTypeAHeckeAlgebra
 

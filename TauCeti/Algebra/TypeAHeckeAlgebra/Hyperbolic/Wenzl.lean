@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic

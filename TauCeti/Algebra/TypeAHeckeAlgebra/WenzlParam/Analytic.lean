@@ -32,6 +32,13 @@ hyperbolic exponential evaluations of `TauCeti.wenzlParam`. Complex root-of-unit
 * `TauCeti.tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atTop` and
   `TauCeti.tendsto_wenzlParam_neg_two_real_exp_neg_two_mul_atBot`: the scalar limits `0` of the
   real hyperbolic Jones parameter as `θ → ±∞`.
+
+## References
+
+* H. Wenzl, *Hecke algebras of type A_n and subfactors*, Invent. Math. 92 (1988), 349–383,
+  §3, for the trigonometric and hyperbolic evaluations of `a_k`.
+* V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*,
+  Ann. of Math. 126 (1987), 335–388, §11, for the Jones parameter `a_(-2) = (4 * cosh² θ)⁻¹`.
 -/
 
 public section
