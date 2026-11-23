@@ -18,7 +18,8 @@ boundary line `y = a`, `y = b` into itself, and twists positively: for every `x`
 coordinate `y ↦ F₁(x, y)` is strictly increasing (Katok–Hasselblatt, *Introduction to the Modern
 Theory of Dynamical Systems*, Section 9.2; Herman, *Sur les courbes invariantes par les
 difféomorphismes de l'anneau*, Chapitre I, 1.2, for the differentiable form). A *negative twist
-lift* is the same with strictly decreasing; it is described here through its inverse.
+lift* is the same with strictly decreasing; for `ℓ ≠ 0` it is described here through its
+inverse.
 
 ## Main definitions
 
@@ -34,18 +35,18 @@ lift* is the same with strictly decreasing; it is described here through its inv
   `TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_right`). The general facts about
   homeomorphisms of the strip commuting with the deck translation are in
   `TauCeti.Topology.Instances.AddCircle.Annulus`.
-* `TauCeti.IsTwistLift.strictAnti_fst_symm_apply`: the inverse of a positive twist lift twists
-  negatively, and `TauCeti.isTwistLift_symm_iff`: a homeomorphism is a negative twist lift exactly
-  when its inverse is a positive one.
+* `TauCeti.IsTwistLift.strictAnti_fst_symm_apply`: for `ℓ ≠ 0`, the inverse of a positive twist
+  lift twists negatively, and `TauCeti.isTwistLift_symm_iff`: for `ℓ ≠ 0`, a homeomorphism is a
+  negative twist lift exactly when its inverse is a positive one.
 * `TauCeti.IsTwistLift.trans_stripDeck`: composing with a deck translation keeps the twist property.
 
 ## Implementation notes
 
-The strip is `ℝ × Set.Icc a b`. The inverse of a positive twist lift twists negatively by a
-one-dimensional argument: the preimage of a vertical line under `F` meets every vertical at most
-once, so its first coordinate is injective and continuous in the height, hence strictly monotone;
-it decreases because, by the intermediate value theorem along a horizontal segment, its points
-above the boundary lie to the left of its foot.
+The strip is `ℝ × Set.Icc a b`. For `ℓ ≠ 0`, the inverse of a positive twist lift twists
+negatively by a one-dimensional argument: the preimage of a vertical line under `F` meets every
+vertical at most once, so its first coordinate is injective and continuous in the height, hence
+strictly monotone; it decreases because, by the intermediate value theorem along a horizontal
+segment, its points above the boundary lie to the left of its foot.
 -/
 
 public section
@@ -64,8 +65,8 @@ variable {a b : ℝ} {F : ℝ × Icc a b ≃ₜ ℝ × Icc a b}
 commuting with the deck translation `(x, y) ↦ (x + ℓ, y)`, mapping each boundary line `y = a`,
 `y = b` into itself, with `y ↦ F₁(x, y)` strictly increasing for every `x` (Katok–Hasselblatt,
 Section 9.2; Herman, Chapitre I, 1.2, for the differentiable form). A *negative* twist lift is a
-homeomorphism with the same properties except that `y ↦ F₁(x, y)` is strictly decreasing; these
-are the inverses of the positive ones (`TauCeti.isTwistLift_symm_iff`). -/
+homeomorphism with the same properties except that `y ↦ F₁(x, y)` is strictly decreasing; for
+`ℓ ≠ 0` these are the inverses of the positive ones (`TauCeti.isTwistLift_symm_iff`). -/
 structure IsTwistLift (ℓ : ℝ) {a b : ℝ} (F : ℝ × Icc a b ≃ₜ ℝ × Icc a b) : Prop where
   /-- `F` commutes with the deck translation `(x, y) ↦ (x + ℓ, y)`. -/
   apply_add_period : ∀ p : ℝ × Icc a b, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)
