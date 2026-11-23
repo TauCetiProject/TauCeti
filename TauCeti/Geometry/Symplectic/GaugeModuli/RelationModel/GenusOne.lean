@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.GaugeModuli.RelationModel.Basic
 public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
 import Mathlib.RingTheory.RootsOfUnity.Complex
-import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Analysis.Matrix.UnitaryGroup.ClockShift
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.RepresentationTheory.SU2.Adjoint
+import TauCeti.Topology.Algebra.GroupAction.Transitive
 
 /-!
 # Genus-one coprime `SU(r)` moduli and clock–shift normal form
@@ -126,25 +126,20 @@ theorem simplyConnectedSpace_relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ 
   have : Subsingleton (relationModuli r ζ 1) := h.2
   exact SimplyConnectedSpace.ofContractible _
 
-/-- At genus one, the `PSU(r)` orbit map `p ↦ p • x₀` on `relationSet r ζ 1` is bijective. -/
-private theorem bijective_psu_smul_genus_one {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
-    (x₀ : relationSet r ζ 1) :
-    Function.Bijective (fun p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range => p • x₀) := by
+/-- At genus one, the `PSU(r)` action on `relationSet r ζ 1` is pretransitive. -/
+private theorem isPretransitive_psu_relationSet_genus_one {r : ℕ} {ζ : ℂ}
+    (hζ : IsPrimitiveRoot ζ r) :
+    MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) := by
   have : MulAction.IsPretransitive (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
       (relationSet r ζ 1) :=
     (MulAction.pretransitive_iff_subsingleton_quotient _ _).mpr
       (relationModuli_genus_one r ζ hζ).2
-  have : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) := ⟨fun x y => by
-    obtain ⟨u, hu⟩ :=
-      MulAction.exists_smul_eq (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) x y
-    exact ⟨toPSL.rangeRestrict (ConjAct.ofConjAct u), by
-      simpa [toPSL_rangeRestrict_smul_relationSet] using hu⟩⟩
-  have : IsCancelSMul (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
-    isCancelSMul_iff_stabilizer_eq_bot.mpr (stabilizer_psu_relationSet_eq_bot hζ)
-  exact ⟨fun _ _ => IsCancelSMul.right_cancel _ _ x₀, MulAction.surjective_smul _ x₀⟩
+  refine ⟨fun x y => ?_⟩
+  obtain ⟨u, hu⟩ :=
+    MulAction.exists_smul_eq (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) x y
+  exact ⟨toPSL.rangeRestrict (ConjAct.ofConjAct u), by
+    simpa [toPSL_rangeRestrict_smul_relationSet] using hu⟩
 
 /-- **Genus-one orbit homeomorphism.** For a primitive `r`-th root of unity `ζ` and any basepoint
 `x₀ : relationSet r ζ 1`, the induced `PSU(r)` action induces a homeomorphism
@@ -153,12 +148,21 @@ noncomputable def psuOrbitHomeomorphGenusOne {r : ℕ} {ζ : ℂ} (hζ : IsPrimi
     (x₀ : relationSet r ζ 1) :
     (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range ≃ₜ relationSet r ζ 1 :=
+  letI : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
+    isPretransitive_psu_relationSet_genus_one hζ
   letI : CompactSpace (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range :=
     isCompact_iff_compactSpace.mp isCompact_range_toPSL
-  let f := Equiv.ofBijective (fun p => p • x₀) (bijective_psu_smul_genus_one hζ x₀)
-  ((continuous_id.smul continuous_const).congr fun p =>
-    (Equiv.ofBijective_apply _ _ p).symm).homeoOfEquivCompactToT2 (f := f)
+  let htriv : ∀ ⦃p q : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range⦄,
+      QuotientGroup.leftRel (MulAction.stabilizer _ x₀) p q → p = q := by
+    intro p q hpq
+    rw [QuotientGroup.leftRel_apply, stabilizer_psu_relationSet_eq_bot hζ x₀,
+      Subgroup.mem_bot, inv_mul_eq_one] at hpq
+    exact hpq
+  (Homeomorph.quotientTrivial (QuotientGroup.leftRel (MulAction.stabilizer _ x₀)) htriv).symm.trans
+    (TauCeti.quotientStabilizerHomeomorph _ x₀ (continuous_id.smul continuous_const))
 
 /-- The genus-one orbit homeomorphism evaluates to the `PSU(r)` action on `x₀`. -/
 @[simp]
@@ -167,12 +171,15 @@ theorem psuOrbitHomeomorphGenusOne_apply {r : ℕ} {ζ : ℂ} (hζ : IsPrimitive
     (p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range) :
     psuOrbitHomeomorphGenusOne hζ x₀ p = p • x₀ := by
-  have : CompactSpace (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+  let : MulAction.IsPretransitive (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ 1) :=
+    isPretransitive_psu_relationSet_genus_one hζ
+  let : CompactSpace (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range :=
     isCompact_iff_compactSpace.mp isCompact_range_toPSL
-  dsimp only [psuOrbitHomeomorphGenusOne]
-  rw [← Homeomorph.coe_toEquiv, Continuous.toEquiv_homeoOfEquivCompactToT2,
-    Equiv.ofBijective_apply]
+  dsimp only [psuOrbitHomeomorphGenusOne, Homeomorph.trans_apply,
+    Homeomorph.quotientTrivial_symm_apply]
+  exact TauCeti.quotientStabilizerHomeomorph_mk _ x₀ (continuous_id.smul continuous_const) p
 
 /-- For every positive genus `g ≥ 1` and primitive `r`-th root of unity `ζ`, the twisted relation
 set `relationSet r ζ g` is nonempty. -/

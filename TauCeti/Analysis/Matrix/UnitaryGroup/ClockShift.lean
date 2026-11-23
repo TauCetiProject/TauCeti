@@ -15,9 +15,9 @@ import Mathlib.LinearAlgebra.Determinant
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.Complex.Circle
-import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.Normal
 import TauCeti.Analysis.RCLike.Basic
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -222,9 +222,10 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
   have hunitary_dot {M : Matrix (Fin r) (Fin r) ℂ} (hM : M ∈ unitaryGroup (Fin r) ℂ)
       (x y : Fin r → ℂ) :
       dotProduct (star (M *ᵥ x)) (M *ᵥ y) = dotProduct (star x) y := by
-    have hinner := (mem_unitaryGroup_iff_inner_toEuclideanCLM.mp hM)
-      (WithLp.toLp 2 x) (WithLp.toLp 2 y)
-    simpa [toEuclideanCLM_apply, PiLp.inner_apply, dotProduct, mul_comm] using hinner
+    have h := Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec M 1 x y
+    simp only [Matrix.mul_one, ← Matrix.star_eq_conjTranspose, mem_unitaryGroup_iff'.mp hM,
+      one_mulVec] at h
+    exact h.symm
   have hv_orth {m₁ m₂ : ℕ} (hne : ζ ^ m₁ ≠ ζ ^ m₂) :
       dotProduct (star (vNat m₁)) (vNat m₂) = 0 := by
     have hdot := hunitary_dot A₁.property (vNat m₁) (vNat m₂)
