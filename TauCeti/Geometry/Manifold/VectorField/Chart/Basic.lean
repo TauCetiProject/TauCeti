@@ -14,10 +14,11 @@ import TauCeti.Geometry.Manifold.MFDeriv.Curve
 /-!
 # Vector fields read in a chart
 
-A vector field `w` on the model space `E` of a manifold `M`, read in the extended chart at a point
-`x` and extended by zero outside the chart domain, is a vector field `chartField x w` on `M`. It is
-smooth when `w` is smooth and supported in a compact subset of the chart target, and a straight
-segment in the chart along which `w` is constant is an integral curve of it.
+A vector field `w` on the model space `E` of a manifold `M`, read in the extended chart
+`e.extend I` of a chart `e` and extended by zero outside the chart domain, is a vector field
+`chartField e w` on `M`. It is smooth when `e` is in the maximal atlas and `w` is smooth and
+supported in a compact subset of the chart target, and for the chart at a point a straight segment
+in the chart along which `w` is constant is an integral curve of it.
 
 The basic case is a constant field `v` cut off by a bump function `ρ` in the chart at `x`: the
 field `bumpChartField x ρ v` is compactly supported, and near `x` its flow lines are the straight
@@ -26,9 +27,10 @@ Milnor's proof of the homogeneity lemma.
 
 ## Main declarations
 
-* `TauCeti.chartField`: a vector field on the model space, read in the extended chart at a point
-  and extended by zero; `TauCeti.contMDiff_chartField` shows it is smooth when the field is
-  supported in a compact subset of the chart target, and
+* `TauCeti.chartField`: a vector field on the model space, read in the extended chart of a chart
+  and extended by zero; `TauCeti.chartField_extend_symm` gives its values in the chart,
+  `TauCeti.contMDiff_chartField` shows it is smooth when the field is supported in a compact
+  subset of the chart target, and
   `TauCeti.isMIntegralCurveOn_chartField` that integral curves of the field in the chart target
   are carried by the inverse chart to integral curves of the chart field (by
   `TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp`), with
@@ -66,59 +68,64 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 section ChartField
 
-variable {x z : M} {w : (p : E) → TangentSpace 𝓘(ℝ, E) p}
+variable {e : OpenPartialHomeomorph M H} {x z : M} {w : (p : E) → TangentSpace 𝓘(ℝ, E) p}
 
-/-- A vector field `w` on the model space, read in the extended chart at `x` and extended by zero
-outside the chart domain. -/
-def chartField (x : M) (w : (p : E) → TangentSpace 𝓘(ℝ, E) p) (z : M) :
+/-- A vector field `w` on the model space, read in the extended chart `e.extend I` of a chart `e`
+and extended by zero outside the chart domain. -/
+def chartField (e : OpenPartialHomeomorph M H) (w : (p : E) → TangentSpace 𝓘(ℝ, E) p) (z : M) :
     TangentSpace I z :=
-  letI := Classical.dec (z ∈ (extChartAt I x).source)
-  if z ∈ (extChartAt I x).source then mpullback I 𝓘(ℝ, E) (extChartAt I x) w z else 0
+  letI := Classical.dec (z ∈ e.source)
+  if z ∈ e.source then mpullback I 𝓘(ℝ, E) (e.extend I) w z else 0
 
 /-- On the chart domain, the chart field is the pullback of `w` by the extended chart. -/
-theorem chartField_of_mem (hz : z ∈ (extChartAt I x).source) :
-    chartField (I := I) x w z = mpullback I 𝓘(ℝ, E) (extChartAt I x) w z := by
+theorem chartField_of_mem (hz : z ∈ e.source) :
+    chartField (I := I) e w z = mpullback I 𝓘(ℝ, E) (e.extend I) w z := by
   simp only [chartField, hz, ↓reduceIte]
 
 /-- Outside the chart domain, the chart field vanishes. -/
-theorem chartField_of_notMem (hz : z ∉ (extChartAt I x).source) :
-    chartField (I := I) x w z = 0 := by
+theorem chartField_of_notMem (hz : z ∉ e.source) :
+    chartField (I := I) e w z = 0 := by
   simp only [chartField, hz, ↓reduceIte]
 
 /-- If `w` vanishes outside `K`, the chart field vanishes outside the image of `K` under the
-inverse chart `(extChartAt I x).symm`. -/
+inverse extended chart `(e.extend I).symm`. -/
 theorem chartField_eq_zero {K : Set E}
-    (hwK : ∀ p ∉ K, w p = 0) (hz : z ∉ (extChartAt I x).symm '' K) :
-    chartField (I := I) x w z = 0 := by
-  by_cases hs : z ∈ (extChartAt I x).source
-  · have hK : extChartAt I x z ∉ K := fun h ↦ hz ⟨_, h, (extChartAt I x).left_inv hs⟩
+    (hwK : ∀ p ∉ K, w p = 0) (hz : z ∉ (e.extend I).symm '' K) :
+    chartField (I := I) e w z = 0 := by
+  by_cases hs : z ∈ e.source
+  · have hK : e.extend I z ∉ K := fun h ↦ hz ⟨_, h, e.extend_left_inv hs⟩
     rw [chartField_of_mem hs, mpullback_apply, hwK _ hK, map_zero]
   · exact chartField_of_notMem hs
 
-variable [IsManifold I 1 M]
+/-- At a point `p` of the target of the extended chart with `w p = d`, the chart field at
+`(e.extend I).symm p` is the image of `d` under the derivative of the inverse extended chart. -/
+theorem chartField_extend_symm (he : e ∈ IsManifold.maximalAtlas I 1 M) {p : E}
+    {d : TangentSpace 𝓘(ℝ, E) p} (hp : p ∈ (e.extend I).target) (hwp : w p = d) :
+    chartField (I := I) e w ((e.extend I).symm p) =
+      mfderivWithin 𝓘(ℝ, E) I (e.extend I).symm (range I) p d := by
+  have hs : (e.extend I).symm p ∈ e.source :=
+    e.extend_source (I := I) ▸ (e.extend I).map_target hp
+  rw [chartField_of_mem hs, mpullback_apply, (isInvertible_mfderiv_extend he hs).inverse_apply_eq]
+  have key : mfderiv I 𝓘(ℝ, E) (e.extend I) ((e.extend I).symm p)
+      (mfderivWithin 𝓘(ℝ, E) I (e.extend I).symm (range I) p d) = d :=
+    DFunLike.congr_fun (mfderiv_extend_comp_mfderivWithin_extend_symm he hp) d
+  exact ((congrArg (fun a ↦ (w a : E)) ((e.extend I).right_inv hp)).trans hwp).trans key.symm
 
-/-- At a point `p` of the chart target with `w p = d`, the chart field at `(extChartAt I x).symm p`
-is the image of `d` under the derivative of the inverse chart. -/
-theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E) p}
-    (hp : p ∈ (extChartAt I x).target) (hwp : w p = d) :
-    chartField (I := I) x w ((extChartAt I x).symm p) =
-      mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) p d := by
-  have hs := (extChartAt I x).map_target hp
-  rw [chartField_of_mem hs, mpullback_apply, (isInvertible_mfderiv_extChartAt hs).inverse_apply_eq]
-  have key : mfderiv I 𝓘(ℝ, E) (extChartAt I x) ((extChartAt I x).symm p)
-      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) p d) = d :=
-    DFunLike.congr_fun (mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm hp) d
-  exact ((congrArg (fun a ↦ (w a : E)) ((extChartAt I x).right_inv hp)).trans hwp).trans key.symm
+variable [IsManifold I 1 M]
 
 /-- The inverse chart carries an integral curve `γ` of `w` on `J` that stays in the chart target to
 an integral curve of the chart field of `w` on `J`. -/
 theorem isMIntegralCurveOn_chartField {γ : ℝ → E} {J : Set ℝ}
     (hJt : ∀ s ∈ J, γ s ∈ (extChartAt I x).target) (hγ : IsMIntegralCurveOn γ w J) :
-    IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (γ s)) (chartField (I := I) x w) J :=
+    IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (γ s)) (chartField (I := I) (chartAt H x) w)
+      J :=
   fun s hs ↦ by
   have hd : HasDerivWithinAt γ (w (γ s) : E) J s :=
     hasMFDerivWithinAt_iff_hasFDerivWithinAt.1 (hγ s hs)
-  rw [chartField_extChartAt_symm (hJt s hs) rfl]
+  have hval : chartField (I := I) (chartAt H x) w ((extChartAt I x).symm (γ s)) =
+      mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) (γ s) (w (γ s)) :=
+    chartField_extend_symm (IsManifold.chart_mem_maximalAtlas x) (hJt s hs) rfl
+  rw [hval]
   exact TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp (hJt s hs)
     (eventually_nhdsWithin_of_forall fun r hr ↦ extChartAt_target_subset_range x (hJt r hr)) hd
 
@@ -127,39 +134,41 @@ at the times `s ∈ J` at which it is in the chart target and `w` takes the valu
 theorem isMIntegralCurveOn_chartField_add_smul {c d : E} {J : Set ℝ}
     (hJt : ∀ s ∈ J, c + s • d ∈ (extChartAt I x).target)
     (hJw : ∀ s ∈ J, w (c + s • d) = d) :
-    IsMIntegralCurveOn (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) (chartField (I := I) x w)
-      J := by
+    IsMIntegralCurveOn (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d))
+      (chartField (I := I) (chartAt H x) w) J := by
   refine isMIntegralCurveOn_chartField hJt fun s hs ↦ ?_
   have hseg : HasDerivAt (fun r : ℝ ↦ c + r • d) d s := by
     simpa using ((hasDerivAt_id s).smul_const d).const_add c
   rw [hJw s hs]
   exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.2 hseg.hasDerivWithinAt.hasFDerivWithinAt
 
-/-- The chart field of a `C^m` vector field supported in a compact subset of the chart target is
-a `C^m` vector field on `M`, provided `M` is `C^(m + 1)`. -/
+/-- The chart field of a `C^m` vector field supported in a compact subset of the target of the
+extended chart of a chart `e` of the `C^n` maximal atlas is a `C^m` vector field on `M`, provided
+`m + 1 ≤ n`. -/
 theorem contMDiff_chartField [CompleteSpace E] [T2Space M] {n m : ℕ∞ω}
-    [IsManifold I n M] (hmn : m + 1 ≤ n)
+    (he : e ∈ IsManifold.maximalAtlas I n M) (hmn : m + 1 ≤ n)
     (hw : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent m (fun p ↦ (⟨p, w p⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    {K : Set E} (hK : IsCompact K) (hKt : K ⊆ (extChartAt I x).target) (hwK : ∀ p ∉ K, w p = 0) :
-    ContMDiff I I.tangent m (fun z ↦ (⟨z, chartField x w z⟩ : TangentBundle I M)) := by
+    {K : Set E} (hK : IsCompact K) (hKt : K ⊆ (e.extend I).target) (hwK : ∀ p ∉ K, w p = 0) :
+    ContMDiff I I.tangent m (fun z ↦ (⟨z, chartField e w z⟩ : TangentBundle I M)) := by
   intro z
-  by_cases hz : z ∈ (extChartAt I x).symm '' K
+  by_cases hz : z ∈ (e.extend I).symm '' K
   · -- Near the support, the chart field is the pullback of `w` by the chart.
     obtain ⟨p, hp, rfl⟩ := hz
-    have hs := (extChartAt I x).map_target (hKt hp)
-    refine (ContMDiffAt.mpullback_vectorField_preimage (hw _)
-      (contMDiffAt_extChartAt' (by rwa [← extChartAt_source (I := I)]))
-      (isInvertible_mfderiv_extChartAt hs) hmn).congr_of_eventuallyEq ?_
-    filter_upwards [extChartAt_source_mem_nhds' hs] with y hy
+    have hs : (e.extend I).symm p ∈ e.source :=
+      e.extend_source (I := I) ▸ (e.extend I).map_target (hKt hp)
+    refine (ContMDiffAt.mpullback_vectorField_preimage (hw _) (e.contMDiffAt_extend he hs)
+      (isInvertible_mfderiv_extend
+        (IsManifold.maximalAtlas_subset_of_le (le_add_self.trans hmn) he) hs)
+      hmn).congr_of_eventuallyEq ?_
+    filter_upwards [e.open_source.mem_nhds hs] with y hy
     rw [chartField_of_mem hy]
   · -- Away from the compact support, the chart field is the zero section.
-    have hL : IsClosed ((extChartAt I x).symm '' K) :=
-      (hK.image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hKt)).isClosed
+    have hL : IsClosed ((e.extend I).symm '' K) :=
+      (hK.image_of_continuousOn (e.continuousOn_extend_symm.mono hKt)).isClosed
     refine (Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _) z).congr_of_eventuallyEq ?_
     filter_upwards [hL.isOpen_compl.mem_nhds hz] with y hy
     rw [chartField_eq_zero hwK hy]
     rfl
-
 
 end ChartField
 
@@ -175,11 +184,12 @@ variable (x ρ) in
 /-- The constant vector field `v` on the model space, cut off by the bump function `ρ` and read in
 the chart at `x`. -/
 def bumpChartField (v : E) (z : M) : TangentSpace I z :=
-  chartField x (fun p : E ↦ ((ρ p : ℝ) • v : E)) z
+  chartField (chartAt H x) (fun p : E ↦ ((ρ p : ℝ) • v : E)) z
 
-/-- The cut-off field `bumpChartField x ρ v` is the chart field of `p ↦ ρ p • v`. -/
+/-- The cut-off field `bumpChartField x ρ v` is the chart field of `p ↦ ρ p • v` for the chart at
+`x`. -/
 theorem bumpChartField_def (v : E) (z : M) :
-    bumpChartField x ρ v z = chartField x (fun p : E ↦ ((ρ p : ℝ) • v : E)) z :=
+    bumpChartField x ρ v z = chartField (chartAt H x) (fun p : E ↦ ((ρ p : ℝ) • v : E)) z :=
   (rfl)
 
 variable (v : E)
@@ -204,7 +214,7 @@ the derivative of the inverse chart. -/
 theorem bumpChartField_extChartAt_symm {p : E} (hp : p ∈ (extChartAt I x).target) :
     bumpChartField x ρ v ((extChartAt I x).symm p) =
       mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) p ((ρ p : ℝ) • v) :=
-  chartField_extChartAt_symm hp rfl
+  chartField_extend_symm (IsManifold.chart_mem_maximalAtlas x) hp rfl
 
 /-- On the inner ball of `ρ`, where `ρ = 1`, the cut-off field `bumpChartField x ρ v` is the image
 of `v` under the derivative of the inverse chart. -/
@@ -226,8 +236,8 @@ theorem contMDiff_bumpChartField [T2Space M] {n : ℕ∞ω} {m : ℕ∞} [IsMani
   have hw : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent m
       (fun p ↦ (⟨p, ((ρ p : ℝ) • v : E)⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
     contMDiff_vectorSpace_iff_contDiff.2 (ρ.contDiff.smul contDiff_const)
-  exact contMDiff_chartField hmn hw (isCompact_closedBall _ _) hρ fun _ hp ↦
-    smul_eq_zero_of_notMem_closedBall v hp
+  exact contMDiff_chartField (IsManifold.chart_mem_maximalAtlas x) hmn hw
+    (isCompact_closedBall _ _) hρ fun _ hp ↦ smul_eq_zero_of_notMem_closedBall v hp
 
 /-- A straight segment `s ↦ c + s • v` in the chart, for times at which it stays in the inner ball
 of `ρ`, is an integral curve of the cut-off field `bumpChartField x ρ v`. -/

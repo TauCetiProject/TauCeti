@@ -11,7 +11,6 @@ import TauCeti.Geometry.Manifold.Flow.RestPoint
 import TauCeti.Geometry.Manifold.Flow.Straightening
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.LinearAlgebra.Eigenspace.Smul
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
 
 /-!
