@@ -500,14 +500,17 @@ noncomputable def stabilizerMulEquiv :
     MulAction.stabilizer (V ≃ₗ[K] V) (L : Set V) ≃* (L ≃ₗ[R] L) where
   toFun g := ((g : V ≃ₗ[K] V).restrictScalars R).ofSubmodules L L
     (SetLike.coe_injective (by
-      rw [Submodule.map_coe]
-      exact (Set.image_smul (a := (g : V ≃ₗ[K] V))).trans
-        (MulAction.mem_stabilizer_iff.mp g.property)))
+      -- The image of `L` under `g` is the pointwise translate `g • L`, which is `L`.
+      have h := MulAction.mem_stabilizer_iff.mp g.property
+      simp only [← Set.image_smul, LinearEquiv.smul_def] at h
+      simpa only [Submodule.map_coe, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply]
+        using h))
   invFun e := ⟨LinearEquiv.extendOfIsFullLattice (K := K) e, by
+    -- The extension maps `L` onto `L`, and its image of `L` is its pointwise translate of `L`.
     rw [MulAction.mem_stabilizer_iff, ← Set.image_smul]
-    have h := congrArg (fun N : Submodule R V => (N : Set V))
-      (LinearEquiv.extendOfIsFullLattice_map (K := K) e)
-    simpa using h⟩
+    have h := congrArg SetLike.coe (LinearEquiv.extendOfIsFullLattice_map (K := K) e)
+    simpa only [Submodule.map_coe, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
+      LinearEquiv.smul_def] using h⟩
   left_inv g := Subtype.ext (LinearEquiv.eq_extendOfIsFullLattice _ _ fun _ => rfl).symm
   right_inv e := LinearEquiv.ext fun x => Subtype.ext (LinearEquiv.extendOfIsFullLattice_apply e x)
   map_mul' _ _ := LinearEquiv.ext fun _ => rfl
