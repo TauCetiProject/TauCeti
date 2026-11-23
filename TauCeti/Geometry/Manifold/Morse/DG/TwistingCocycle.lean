@@ -18,8 +18,8 @@ one exists (`TauCeti.IsMorse.exists_countable_dense_forall_apply_notMem`). For c
 and `y`, the space of broken trajectories from `x` to `y` is the space of their records on the
 levels of `L` strictly between `f y` and `f x`
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords`). When `X` satisfies the
-Morse–Smale condition and `x ≠ y`, it is the compactified space of trajectories from `x` to `y`
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`).
+Morse–Smale condition, `L` is countable and `x ≠ y`, it is the compactified space of trajectories
+from `x` to `y` (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`).
 
 These spaces, indexed by the critical points, carry the structure on which twisting chain systems
 (`TauCeti.TwistingChainSystem`) and their Moore-loop cocycles
@@ -40,11 +40,12 @@ So every twisting chain system on the broken trajectory spaces, together with a 
 cubical chains `C^□_*(Ω_{y₀} Y)` on the Moore loops of `Y`
 (`TauCeti.TwistingChainSystem.morseTwistingCocycle`). Its entry at `(x, y)` is the push-forward of
 the chain of `(x, y)` along the evaluation of broken trajectories into Moore paths, followed by
-`θ`. When `X` satisfies the Morse–Smale condition, so that the broken trajectory spaces are the
-compactified trajectory spaces, the chain system is representing, its chains being fundamental
-chains relative to the boundary (`TauCeti.TwistingChainSystem.IsRepresenting`), and `θ` is the
-collapse of an embedded tree through the critical points, this is the Barraud–Cornea cocycle, which
-twists the Morse complex with coefficients in a DG local system.
+`θ`. When `X` satisfies the Morse–Smale condition and `L` is countable, so that the broken
+trajectory spaces between distinct critical points are the compactified trajectory spaces, the
+chain system is representing, its chains being fundamental chains relative to the boundary
+(`TauCeti.TwistingChainSystem.IsRepresenting`), and `θ` is the collapse of an embedded tree
+through the critical points, this is the Barraud–Cornea cocycle, which twists the Morse complex
+with coefficients in a DG local system.
 
 ## Main definitions
 
@@ -188,7 +189,9 @@ trajectory spaces.** Evaluate the broken trajectories from `x` to `y` into Moore
 (`TauCeti.IsAdaptedPseudoGradient.morseRecordsEval`), and map them to Moore loops at `y₀` along a
 map `θ : M → Y` sending every critical point to `y₀`. The push-forwards of the chains of `S` along
 these evaluations form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `X` satisfies the
-Morse–Smale condition, so that the broken trajectory spaces are the compactified trajectory spaces
+Morse–Smale condition and `L` is countable (for instance the set given by
+`TauCeti.IsMorse.exists_countable_dense_forall_apply_notMem`), so that the broken trajectory spaces
+between distinct critical points are the compactified trajectory spaces
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`), `S` is a
 representing chain system and `θ` is the collapse `M → M / T` of an embedded tree `T` through the
 critical points, or its composite with a homotopy inverse `M / T → M`, this is the Barraud–Cornea

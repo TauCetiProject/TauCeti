@@ -84,6 +84,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   recorded levels it is the recorded point.
 * `continuousOn_morseLevelPoint`: it depends continuously on the record and the level.
 * `continuous_morseLevelPoint`: for a fixed record, it depends continuously on the level.
+* `morseLevelPoint_eqOn_Icc`: records whose points agree on levels dense in an interval agree on
+  its closure.
 * `morseLevelPath_apply`, `length_morseLevelPath`, `source_morseLevelPath`,
   `target_morseLevelPath`: the Moore path of a record.
 * `morseLevelPoint_morseRecordConcat_of_le`, `morseLevelPoint_morseRecordConcat_of_ge`: the points
@@ -634,6 +636,21 @@ theorem continuous_morseLevelPoint (hf : IsMorse 𝓘(ℝ, E) f)
   (hX.continuousOn_morseLevelPoint hf hdense).comp_continuous
     (continuous_const.prodMk continuous_id) fun _ ↦ ⟨hw, mem_univ _⟩
 
+/-- **Recorded broken trajectories whose points agree on a set of levels dense in `Ioo a b` agree
+on `Icc a b`**, for records on levels dense between the levels of their ends: their points are
+continuous in the level. -/
+theorem morseLevelPoint_eqOn_Icc {ι' : Type*} {p' r' : M} {c' : ι' → ℝ} {w' : ι' → M}
+    (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Ioo (f r) (f p) ⊆ closure (range c))
+    (hdense' : Ioo (f r') (f p') ⊆ closure (range c'))
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c)
+    (hw' : w' ∈ hX.morseBrokenTrajectoryRecords p' r' c') {s : Set ℝ} {a b : ℝ} (hab : a < b)
+    (hs : Ioo a b ⊆ closure s)
+    (h : EqOn (hX.morseLevelPoint p r c w) (hX.morseLevelPoint p' r' c' w') s) :
+    EqOn (hX.morseLevelPoint p r c w) (hX.morseLevelPoint p' r' c' w') (Icc a b) :=
+  fun _ hx ↦ h.closure (hX.continuous_morseLevelPoint hf hdense hw)
+    (hX.continuous_morseLevelPoint hf hdense' hw')
+    (closure_minimal hs isClosed_closure (closure_Ioo hab.ne ▸ hx))
+
 end LevelPoint
 
 /-! ### The Moore path of a recorded broken trajectory -/
@@ -717,17 +734,12 @@ theorem morseLevelPoint_morseRecordConcat_of_le (hf : IsMorse 𝓘(ℝ, E) f) (h
   -- Both sides are continuous in the level, and on the levels of `L` between `f q` and `f p`,
   -- which are dense there, both are the recorded point of `w₁`.
   have hw := hX.morseRecordConcat_mem_morseBrokenTrajectoryRecords hq hw₁ hw₂
-  have hpq : Ioo (f q) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)) :=
-    subset_closure_range_subtypeVal_inter isOpen_Ioo fun x hx ↦
-      closure_mono (range_subset_iff.2 fun d ↦ d.property.1)
-        (hpr ⟨(hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₂).trans_lt hx.1, hx.2⟩)
-  refine EqOn.closure (s := L ∩ Ioo (f q) (f p)) (fun d hd ↦ ?_)
-    (hX.continuous_morseLevelPoint hf hpr hw) (hX.continuous_morseLevelPoint hf hpq hw₁)
-    (closure_minimal (Subtype.range_coe ▸ hpq) isClosed_closure
-      (closure_Ioo (ha.trans_lt hap).ne ▸ ⟨ha, hap.le⟩))
-  have hd' : d ∈ L ∩ Ioo (f r) (f p) :=
-    ⟨hd.1, (hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₂).trans_lt hd.2.1, hd.2.2⟩
-  exact ((hX.morseLevelPoint_apply_level hf hpr hw ⟨d, hd'⟩).trans
+  have hrq := hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₂
+  have hpq := subset_closure_range_subtypeVal_inter_of_subset isOpen_Ioo
+    (Ioo_subset_Ioo_left hrq) hpr
+  refine hX.morseLevelPoint_eqOn_Icc hf hpr hpq hw hw₁ (ha.trans_lt hap)
+    (Subtype.range_coe ▸ hpq) (fun d hd ↦ ?_) ⟨ha, hap.le⟩
+  exact ((hX.morseLevelPoint_apply_level hf hpr hw ⟨d, hd.1, hrq.trans_lt hd.2.1, hd.2.2⟩).trans
     (morseRecordConcat_apply_of_lt _ _ _ hd.2.1)).trans
       (hX.morseLevelPoint_apply_level hf hpq hw₁ ⟨d, hd⟩).symm
 
@@ -747,17 +759,12 @@ theorem morseLevelPoint_morseRecordConcat_of_ge (hf : IsMorse 𝓘(ℝ, E) f) (h
   · rw [hX.morseLevelPoint_of_le_apply hw har, hX.morseLevelPoint_of_le_apply hw₂ har]
   -- Both sides are continuous in the level, and on the levels of `L` between `f r` and `f q`,
   -- which are dense there, both are the recorded point of `w₂`.
-  have hqr : Ioo (f r) (f q) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ)) :=
-    subset_closure_range_subtypeVal_inter isOpen_Ioo fun x hx ↦
-      closure_mono (range_subset_iff.2 fun d ↦ d.property.1)
-        (hpr ⟨hx.1, hx.2.trans_le (hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₁)⟩)
-  refine EqOn.closure (s := L ∩ Ioo (f r) (f q)) (fun d hd ↦ ?_)
-    (hX.continuous_morseLevelPoint hf hpr hw) (hX.continuous_morseLevelPoint hf hqr hw₂)
-    (closure_minimal (Subtype.range_coe ▸ hqr) isClosed_closure
-      (closure_Ioo (hra.trans_le ha).ne ▸ ⟨hra.le, ha⟩))
-  have hd' : d ∈ L ∩ Ioo (f r) (f p) :=
-    ⟨hd.1, hd.2.1, hd.2.2.trans_le (hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₁)⟩
-  exact ((hX.morseLevelPoint_apply_level hf hpr hw ⟨d, hd'⟩).trans
+  have hqp := hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₁
+  have hqr := subset_closure_range_subtypeVal_inter_of_subset isOpen_Ioo
+    (Ioo_subset_Ioo_right hqp) hpr
+  refine hX.morseLevelPoint_eqOn_Icc hf hpr hqr hw hw₂ (hra.trans_le ha)
+    (Subtype.range_coe ▸ hqr) (fun d hd ↦ ?_) ⟨hra.le, ha⟩
+  exact ((hX.morseLevelPoint_apply_level hf hpr hw ⟨d, hd.1, hd.2.1, hd.2.2.trans_le hqp⟩).trans
     (morseRecordConcat_apply_of_gt _ _ _ hd.2.2)).trans
       (hX.morseLevelPoint_apply_level hf hqr hw₂ ⟨d, hd⟩).symm
 
