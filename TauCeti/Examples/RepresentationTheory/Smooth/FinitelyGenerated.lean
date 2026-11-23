@@ -12,7 +12,8 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 # Examples of finitely generated smooth representations
 
 The permutation representation `A[G ⧸ U]` on the cosets of any subgroup is finitely generated,
-for instance `ℚ[ℚ_[p] ⧸ ℤ_[p]]`, which is smooth but not admissible. The trivial rank-one
+for instance `ℚ[ℚ_[p] ⧸ ℤ_[p]]`, which is smooth but not admissible, and so are finite direct sums
+of these. The trivial rank-one
 representation is finitely generated, being the quotient of `A[G ⧸ G]`, while the trivial
 representation of the trivial group on `ℚ^(ℕ)` is not.
 -/
@@ -28,6 +29,11 @@ variable {A G : Type*} [CommSemiring A] [Group G]
 
 /-- A permutation representation on cosets, such as `ℚ[ℚ_[p] ⧸ ℤ_[p]]`, is finitely generated. -/
 example (U : Subgroup G) : Module.Finite A[G] (ofMulAction A G (G ⧸ U)).asModule :=
+  inferInstance
+
+/-- A finite direct sum `⊕_{i < n} A[G ⧸ U_i]` is finitely generated, by instance search. -/
+example {n : ℕ} (U : Fin n → Subgroup G) :
+    Module.Finite A[G] (directSum fun i ↦ ofMulAction A G (G ⧸ U i)).asModule :=
   inferInstance
 
 /-- The trivial rank-one representation is finitely generated: it is the quotient of

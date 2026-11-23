@@ -23,6 +23,8 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 
 * `MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
   coefficients.
+* `MonoidAlgebra.basis_constr_single`: the linear map out of `k[X]` extending `w : X → M` sends
+  `single x c` to `c • w x`.
 * `Module.Dual.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
   standard-basis dual equivalence are evaluations on basis vectors.
 * `MonoidAlgebra.span_single_one_eq_span_single_one_iff`: distinct basis vectors `single i 1`
@@ -36,6 +38,16 @@ public section
 theorem MonoidAlgebra.basis_repr {k : Type*} [Semiring k] {X : Type*} (v : MonoidAlgebra k X) :
     (MonoidAlgebra.basis X k).repr v = v.coeff :=
   rfl
+
+/-- The linear map out of `k[X]` extending `w : X → M` along the standard basis sends `single x c`
+to `c • w x`. -/
+@[simp]
+theorem MonoidAlgebra.basis_constr_single {k : Type*} [Semiring k] {X M : Type*}
+    [AddCommMonoid M] [Module k M] (S : Type*) [Semiring S] [Module S M] [SMulCommClass k S M]
+    (w : X → M) (x : X) (c : k) :
+    (MonoidAlgebra.basis X k).constr S w (MonoidAlgebra.single x c) = c • w x := by
+  rw [← mul_one c, ← MonoidAlgebra.smul_single', map_smul, ← MonoidAlgebra.basis_apply,
+    Module.Basis.constr_basis, mul_one]
 
 /-- The coefficients of the vector corresponding to a functional under the standard-basis
 identification `k[X] ≃ Hom_k(k[X], k)` are the values of the functional on the basis. -/
