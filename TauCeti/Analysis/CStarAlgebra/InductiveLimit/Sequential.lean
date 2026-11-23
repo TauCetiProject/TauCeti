@@ -211,11 +211,7 @@ private noncomputable def equivInductiveLimit (hι : IsSeqColimitCocone α ι) :
         ciInf_norm_seqTransHom_eq, hι.norm_eq_ciInf]
   have hsurj : Function.Surjective Φ := by
     rw [← Set.range_eq_univ, CStarInductiveLimit.range_lift, hι.dense_iUnion_range.closure_eq]
-  { Equiv.ofBijective Φ ⟨hiso.injective, hsurj⟩ with
-    map_mul' := map_mul Φ
-    map_add' := map_add Φ
-    map_smul' := map_smul Φ
-    map_star' := map_star Φ }
+  StarAlgEquiv.ofBijective Φ ⟨hiso.injective, hsurj⟩
 
 private theorem equivInductiveLimit_apply (hι : IsSeqColimitCocone α ι) (n : ℕ) (a : A n) :
     hι.equivInductiveLimit (CStarInductiveLimit.of A (fun _ _ h ↦ seqTransHom α h) n a) =
@@ -275,22 +271,6 @@ noncomputable def equiv {D : Type*} [NonUnitalCStarAlgebra D] {ι₂ : ∀ n, A 
     (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) : C ≃⋆ₐ[ℂ] D :=
   hι.equivInductiveLimit.symm.trans hι₂.equivInductiveLimit
 
-/-- The forward `⋆`-homomorphism underlying `hι.equiv hι₂` is `hι.lift ι₂ hι₂.comp_eq`. -/
-@[simp]
-theorem toNonUnitalStarAlgHom_equiv {D : Type*} [NonUnitalCStarAlgebra D]
-    {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) :
-    (hι.equiv hι₂).toNonUnitalStarAlgHom = hι.lift ι₂ hι₂.comp_eq := by
-  ext x
-  rfl
-
-/-- The inverse `⋆`-homomorphism underlying `(hι.equiv hι₂).symm` is `hι₂.lift ι hι.comp_eq`. -/
-@[simp]
-theorem toNonUnitalStarAlgHom_equiv_symm {D : Type*} [NonUnitalCStarAlgebra D]
-    {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) :
-    (hι.equiv hι₂).symm.toNonUnitalStarAlgHom = hι₂.lift ι hι.comp_eq := by
-  ext x
-  rfl
-
 /-- Applying the canonical comparison `⋆`-isomorphism `hι.equiv hι₂` to a stage image `ι n a`
 yields `ι₂ n a`. -/
 @[simp]
@@ -307,6 +287,22 @@ theorem equiv_symm_apply {D : Type*} [NonUnitalCStarAlgebra D] {ι₂ : ∀ n, A
     (hι.equiv hι₂).symm (ι₂ n a) = ι n a := by
   simp only [equiv, StarAlgEquiv.symm_trans_apply, StarAlgEquiv.symm_symm,
     hι₂.equivInductiveLimit_symm_apply, hι.equivInductiveLimit_apply]
+
+/-- The forward `⋆`-homomorphism underlying `hι.equiv hι₂` is `hι.lift ι₂ hι₂.comp_eq`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_equiv {D : Type*} [NonUnitalCStarAlgebra D]
+    {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) :
+    (hι.equiv hι₂).toNonUnitalStarAlgHom = hι.lift ι₂ hι₂.comp_eq :=
+  hι.hom_ext fun n a ↦ by
+    simp only [StarAlgEquiv.toNonUnitalStarAlgHom_apply, equiv_apply, lift_apply]
+
+/-- The inverse `⋆`-homomorphism underlying `(hι.equiv hι₂).symm` is `hι₂.lift ι hι.comp_eq`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_equiv_symm {D : Type*} [NonUnitalCStarAlgebra D]
+    {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) :
+    (hι.equiv hι₂).symm.toNonUnitalStarAlgHom = hι₂.lift ι hι.comp_eq :=
+  hι₂.hom_ext fun n a ↦ by
+    simp only [StarAlgEquiv.toNonUnitalStarAlgHom_apply, equiv_symm_apply, lift_apply]
 
 end IsSeqColimitCocone
 
