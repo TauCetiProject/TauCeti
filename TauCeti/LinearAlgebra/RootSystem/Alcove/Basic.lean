@@ -104,6 +104,10 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   `RootPairing.Base.closedAlcoveFace_nonempty_iff`: over a linearly ordered field (for a finite,
   reduced, irreducible, crystallographic pairing), an open or closed face indexed by `J` is
   nonempty if and only if `J ≠ univ`.
+* `RootPairing.Base.affineMarks_mul_affineSimpleRoot_eq_one` and
+  `RootPairing.Base.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_singleton`:
+  on the closed vertex face `b.closedAlcoveFace {k}ᶜ`, the null-root relation reduces to
+  `mₖ * aₖ(x) = 1`, giving `aₖ(x) = mₖ⁻¹` over a field.
 * `RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
   `RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`, and
   `RootPairing.Base.closedAlcoveFace_compl_singleton_some`: for a root system (`P.IsRootSystem`),
