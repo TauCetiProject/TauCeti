@@ -419,10 +419,15 @@ noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) :
         ((continuous_eval_const (⟨a, ball_subset_closedBall ha⟩ : closedBall c R)).comp
           (continuous_subtypeVal.comp continuous_fst)))
 
+private theorem dslope_eq_dslopeLinear {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
+    dslope ha f = dslopeLinear ha f :=
+  congrFun (ContinuousLinearMap.coeFn_ofIsClosedGraph _) f
+
 /-- Evaluating `dslope ha f` at `z : closedBall c R` returns `_root_.dslope (extend f) a z`. -/
 @[simp]
 theorem dslope_apply {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) (z : closedBall c R) :
-    (dslope ha f : C(closedBall c R, ℂ)) z = _root_.dslope (extend f) a z := (rfl)
+    (dslope ha f : C(closedBall c R, ℂ)) z = _root_.dslope (extend f) a z := by
+  rw [dslope_eq_dslopeLinear, dslopeLinear_apply]
 
 /-- On `closedBall c R`, the zero extension of `dslope ha f` agrees with
 `_root_.dslope (extend f) a`. -/
@@ -437,8 +442,9 @@ theorem extend_dslope {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) {z :
 @[simp]
 theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
     (coord c R - algebraMap ℂ (discAlgebra c R) a) * dslope ha f +
-      algebraMap ℂ (discAlgebra c R) (extend f a) = f :=
-  coord_sub_algebraMap_mul_dslopeLinear_add ha f
+      algebraMap ℂ (discAlgebra c R) (extend f a) = f := by
+  rw [dslope_eq_dslopeLinear]
+  exact coord_sub_algebraMap_mul_dslopeLinear_add ha f
 
 /-- Division with remainder by `coord c R - a` in `discAlgebra c R`:
 `(coord c R - a) * q + c₀ = f` holds if and only if `q = dslope ha f` and `c₀ = extend f a`. -/
@@ -446,10 +452,11 @@ theorem coord_sub_algebraMap_mul_add_eq_iff {a : ℂ} (ha : a ∈ ball c R)
     {f q : discAlgebra c R} {c₀ : ℂ} :
     (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
         algebraMap ℂ (discAlgebra c R) c₀ = f ↔
-      q = dslope ha f ∧ c₀ = extend f a :=
-  ⟨eq_dslopeLinear_and_eq_of_coord_sub_algebraMap_mul_add ha, by
+      q = dslope ha f ∧ c₀ = extend f a := by
+  rw [dslope_eq_dslopeLinear]
+  exact ⟨eq_dslopeLinear_and_eq_of_coord_sub_algebraMap_mul_add ha, by
     rintro ⟨rfl, rfl⟩
-    exact coord_sub_algebraMap_mul_dslope_add ha f⟩
+    exact coord_sub_algebraMap_mul_dslopeLinear_add ha f⟩
 
 /-- Construct an element of `discAlgebra c R` from an ambient function `g : ℂ → ℂ`, returning a
 default element `d` if `g` is not continuous on `closedBall c R` and holomorphic on `ball c R`. -/

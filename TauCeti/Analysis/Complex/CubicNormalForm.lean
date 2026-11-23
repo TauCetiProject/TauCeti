@@ -57,10 +57,11 @@ bijectively to the full root set `{u | u ^ 2 = ζ(α)}` (over `ℂ`, two distinc
 `ζ(α) ≠ 0` and one root when `ζ(α) = 0`).
 
 The existence of the cubic normal form requires only `∂p/∂t = ∂²p/∂t² = 0` and `∂³p/∂t³ ≠ 0`. For
-a one-dimensional complex parameter `α`, the mixed-derivative condition `∂²p/∂α∂t (α₀, t₀) ≠ 0` is
-equivalent to `ζ'(α₀) ≠ 0` (`TauCeti.CubicNormalForm.deriv_ne_zero_iff_deriv_deriv_ne_zero`), which
-governs whether `ζ` is a local coordinate in `α` so that the critical points coalesce at the generic
-square-root rate `√(α - α₀)`.
+a one-dimensional parameter `α` (over any nontrivially normed field of characteristic `≠ 3`), the
+mixed-derivative condition `∂²p/∂α∂t (α₀, t₀) ≠ 0` is equivalent to `ζ'(α₀) ≠ 0`
+(`TauCeti.CubicNormalForm.deriv_ne_zero_iff_deriv_deriv_ne_zero`), which governs whether `ζ` is a
+local coordinate in `α` so that the critical points coalesce at the generic square-root rate
+`√(α - α₀)`.
 
 ## Main results
 
@@ -633,17 +634,16 @@ theorem eventuallyEq_deriv_sq_sub_mul_deriv {X 𝕜 : Type*} [TopologicalSpace X
   exact deriv_eq_sq_sub_mul_deriv hqw
     (by simpa using (Continuous.prodMk_right q.1).continuousAt.eventually hqp)
 
-/-- Near `(α₀, t₀)`, if `(α, t) ↦ ∂w/∂t (α, t)` is continuous and nonzero at `(α₀, t₀)`, then
-critical points `∂p/∂t (α, t) = 0` of a cubic normal form `p = w ^ 3 / 3 - ζ * w + η` correspond
-to the square roots `w(α, t) ^ 2 = ζ(α)`. -/
+/-- Near `(α₀, t₀)`, if `∂w/∂t (α, t) ≠ 0` on a neighbourhood of `(α₀, t₀)`, then critical points
+`∂p/∂t (α, t) = 0` of a cubic normal form `p = w ^ 3 / 3 - ζ * w + η` correspond to the square
+roots `w(α, t) ^ 2 = ζ(α)`. -/
 theorem eventually_deriv_eq_zero_iff_sq_eq {X 𝕜 : Type*} [TopologicalSpace X]
     [NontriviallyNormedField 𝕜] [NeZero (3 : 𝕜)] {p w : X × 𝕜 → 𝕜} {ζ η : X → 𝕜}
     {α₀ : X} {t₀ : 𝕜}
-    (hw : ContinuousAt (fun q : X × 𝕜 => deriv (fun t => w (q.1, t)) q.2) (α₀, t₀))
-    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
+    (hdw : ∀ᶠ q in 𝓝 (α₀, t₀), deriv (fun t => w (q.1, t)) q.2 ≠ 0)
     (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
     ∀ᶠ q in 𝓝 (α₀, t₀), deriv (fun t => p (q.1, t)) q.2 = 0 ↔ w q ^ 2 = ζ q.1 := by
-  filter_upwards [hw.eventually_ne hdw, hpw.eventually_nhds] with q hq_ne hqp
+  filter_upwards [hdw, hpw.eventually_nhds] with q hq_ne hqp
   exact deriv_eq_zero_iff_sq_eq hq_ne
     (by simpa using (Continuous.prodMk_right q.1).continuousAt.eventually hqp)
 
@@ -669,41 +669,54 @@ theorem exists_bijOn_deriv_eq_zero_sq_eq {𝕜 E : Type*} [NontriviallyNormedFie
   have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
   have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible :=
     hw.differentiableAt.isInvertible_fderiv_comp_inr_iff.2 hdw
+  -- 1. Restrict the swapped implicit-function chart to the critical-root equivalence set `S`.
   set D := df.implicitFunctionDataOfProdDomain hinv
   set T : E × 𝕜 → 𝕜 := df.jointImplicitFunctionOfProdDomain hinv
   obtain ⟨S, hS_sub, hS_open, hS_mem⟩ := _root_.mem_nhds_iff.1
-    (eventually_deriv_eq_zero_iff_sq_eq hw.deriv_snd.continuousAt hdw hpw)
-  set e : OpenPartialHomeomorph (E × 𝕜) (E × 𝕜) :=
-    (D.toOpenPartialHomeomorph.transHomeomorph (Homeomorph.prodComm 𝕜 E)).restrOpen S hS_open
+    (eventually_deriv_eq_zero_iff_sq_eq (hw.deriv_snd.continuousAt.eventually_ne hdw) hpw)
+  set e₀ : OpenPartialHomeomorph (E × 𝕜) (E × 𝕜) :=
+    D.toOpenPartialHomeomorph.transHomeomorph (Homeomorph.prodComm 𝕜 E)
+  set e : OpenPartialHomeomorph (E × 𝕜) (E × 𝕜) := e₀.restrOpen S hS_open
+  -- 2. Establish explicit chart equations and transport `MapsTo` and `InvOn` from `e`.
   have he_coe : ⇑e = fun q : E × 𝕜 => (q.1, w q) := by
-    ext q <;> simp [e, D]
-  have he_symm {u : E × 𝕜} (hu : u ∈ e.target) : e.symm u = (u.1, T u) := by
-    simpa [e, T, D] using df.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain hinv hu.1
+    ext q <;> simp [e, OpenPartialHomeomorph.coe_restrOpen, e₀,
+      OpenPartialHomeomorph.transHomeomorph_apply, D]
+  have he_src : e.source = D.toOpenPartialHomeomorph.source ∩ S := by
+    rw [OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.transHomeomorph_source]
+  have he_tgt_sub : e.target ⊆ e₀.target :=
+    ((congrArg PartialEquiv.target (e₀.restrOpen_toPartialEquiv S hS_open)).trans
+      (PartialEquiv.restr_target _ _)).symm ▸ inter_subset_left
+  have he_symm : Set.EqOn e.symm (fun u : E × 𝕜 => (u.1, T u)) e.target := fun u hu => by
+    have hu₀ : u.swap ∈ D.toOpenPartialHomeomorph.target := by
+      simpa [e₀, OpenPartialHomeomorph.transHomeomorph_target] using he_tgt_sub hu
+    rw [OpenPartialHomeomorph.coe_restrOpen_symm, OpenPartialHomeomorph.transHomeomorph_symm_apply]
+    simpa [T, D] using df.toOpenPartialHomeomorph_symm_implicitFunctionDataOfProdDomain hinv hu₀
   have hpt_src : (α₀, t₀) ∈ e.source :=
-    ⟨by simpa [D] using D.pt_mem_toOpenPartialHomeomorph_source, hS_mem⟩
+    he_src ▸ ⟨by simpa [D] using D.pt_mem_toOpenPartialHomeomorph_source, hS_mem⟩
   have hU_mem : e.source ∈ 𝓝 (α₀, t₀) := e.open_source.mem_nhds hpt_src
   have hV_mem : e.target ∈ 𝓝 (α₀, w (α₀, t₀)) :=
     e.open_target.mem_nhds (by simpa [he_coe] using e.map_source hpt_src)
   have hU_maps : Set.MapsTo (fun q : E × 𝕜 => (q.1, w q)) e.source e.target := he_coe ▸ e.mapsTo
-  have hV_maps : Set.MapsTo (fun u : E × 𝕜 => (u.1, T u)) e.target e.source := fun u hu => by
-    dsimp only
-    rw [← he_symm hu]
-    exact e.mapsTo_symm hu
-  have he_coe_apply (q : E × 𝕜) : e q = (q.1, w q) := congrFun he_coe q
+  have hV_maps : Set.MapsTo (fun u : E × 𝕜 => (u.1, T u)) e.target e.source :=
+    he_symm.mapsTo_iff.1 e.mapsTo_symm
   have hinv_UV : Set.InvOn (fun u : E × 𝕜 => (u.1, T u)) (fun q : E × 𝕜 => (q.1, w q))
-      e.source e.target :=
-    ⟨fun q hq => by have h := e.left_inv hq; rwa [he_symm (e.mapsTo hq), he_coe_apply q] at h,
-     fun u hu => by have h := e.right_inv hu; rwa [he_coe_apply (e.symm u), he_symm hu] at h⟩
+      e.source e.target := by
+    have hleft : Set.LeftInvOn e.symm (fun q : E × 𝕜 => (q.1, w q)) e.source := by
+      simpa [he_coe] using e.leftInvOn
+    have hright : Set.RightInvOn e.symm (fun q : E × 𝕜 => (q.1, w q)) e.target := by
+      simpa [he_coe] using e.rightInvOn
+    exact ⟨hleft.congr_left hU_maps he_symm, hright.congr_left he_symm⟩
+  -- 3. Intersect the chart bijection with the critical-point and square-root loci.
   have hbij : Set.BijOn (fun q : E × 𝕜 => (q.1, w q))
       (e.source ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0})
       (e.target ∩ {u | u.2 ^ 2 = ζ u.1}) := by
     have h1 : Set.BijOn (fun q : E × 𝕜 => (q.1, w q)) e.source e.target := he_coe ▸ e.bijOn
     have h2 : Set.MapsTo (fun q : E × 𝕜 => (q.1, w q))
         (e.source ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) {u | u.2 ^ 2 = ζ u.1} :=
-      fun q ⟨hq_src, hq_crit⟩ => (hS_sub hq_src.2).1 hq_crit
+      fun q ⟨hq_src, hq_crit⟩ => (hS_sub (he_src ▸ hq_src).2).1 hq_crit
     have h3 : e.source ∩ (fun q : E × 𝕜 => (q.1, w q)) ⁻¹' {u | u.2 ^ 2 = ζ u.1} ⊆
         e.source ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0} :=
-      fun q ⟨hq_src, hq_sq⟩ => ⟨hq_src, (hS_sub hq_src.2).2 hq_sq⟩
+      fun q ⟨hq_src, hq_sq⟩ => ⟨hq_src, (hS_sub (he_src ▸ hq_src).2).2 hq_sq⟩
     have h := h1.inter_mapsTo h2 h3
     rwa [← inter_assoc, inter_self] at h
   exact ⟨T, e.source, hU_mem, e.target, hV_mem,
@@ -819,111 +832,125 @@ theorem deriv_deriv_deriv_eq_two_mul_deriv_pow_three {𝕜 : Type*} [Nontriviall
 
 /-- Along `t = t₀`, `∂p/∂t (α, t₀)` agrees near `α₀` with
 `(w(α, t₀) ^ 2 - ζ(α)) * ∂w/∂t (α, t₀)`. -/
-private theorem eventuallyEq_deriv_snd_slice {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ} {α₀ t₀ : ℂ}
-    (hwa : AnalyticAt ℂ w (α₀, t₀))
+private theorem eventuallyEq_deriv_snd_slice {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NeZero (3 : 𝕜)] {p w : 𝕜 × 𝕜 → 𝕜} {ζ η : 𝕜 → 𝕜} {α₀ t₀ : 𝕜}
+    (hw : ∀ᶠ α in 𝓝 α₀, DifferentiableAt 𝕜 (fun t => w (α, t)) t₀)
     (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
     (fun α => deriv (fun t => p (α, t)) t₀) =ᶠ[𝓝 α₀]
-      fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀ :=
-  (Continuous.prodMk_left t₀).continuousAt.eventually <|
-    eventuallyEq_deriv_sq_sub_mul_deriv
-      (hwa.eventually_analyticAt.mono fun _ h => h.curry_right.differentiableAt) hpw
+      fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀ := by
+  filter_upwards [hw, (Continuous.prodMk_left t₀).continuousAt.eventually hpw.eventually_nhds]
+    with α hwa hαp
+  exact deriv_eq_sq_sub_mul_deriv hwa
+    (by simpa using (Continuous.prodMk_right α).continuousAt.eventually hαp)
 
 /-- **Mixed-derivative `HasDerivAt` identity for the cubic normal form.** For any cubic normal
-form `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` where `w` is complex differentiable on
-a neighbourhood of `(α₀, t₀)`, with `ζ(α₀) = 0`, `w(α₀, t₀) = 0`, and `HasDerivAt ζ ζ' α₀`, the
-slice `α ↦ ∂p/∂t (α, t₀)` is differentiable at `α₀` with derivative `-ζ' * ∂w/∂t (α₀, t₀)`. -/
-theorem hasDerivAt_deriv_neg_mul_deriv {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ} {α₀ t₀ ζ' : ℂ}
+form `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` over a nontrivially normed field of
+characteristic `≠ 3`, where `t ↦ w(α, t)` is differentiable at `t₀` for `α` near `α₀`,
+`α ↦ w(α, t₀)` and `α ↦ ∂w/∂t (α, t₀)` are differentiable at `α₀`, `ζ(α₀) = 0`, `w(α₀, t₀) = 0`,
+and `HasDerivAt ζ ζ' α₀`, the slice `α ↦ ∂p/∂t (α, t₀)` is differentiable at `α₀` with
+derivative `-ζ' * ∂w/∂t (α₀, t₀)`. -/
+theorem hasDerivAt_deriv_neg_mul_deriv {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NeZero (3 : 𝕜)]
+    {p w : 𝕜 × 𝕜 → 𝕜} {ζ η : 𝕜 → 𝕜} {α₀ t₀ ζ' : 𝕜}
     (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0) (hζ : HasDerivAt ζ ζ' α₀)
-    (hw : ∀ᶠ q in 𝓝 (α₀, t₀), DifferentiableAt ℂ w q)
+    (hw : ∀ᶠ α in 𝓝 α₀, DifferentiableAt 𝕜 (fun t => w (α, t)) t₀)
+    (hw_fst : DifferentiableAt 𝕜 (fun α => w (α, t₀)) α₀)
+    (hdw_fst : DifferentiableAt 𝕜 (fun α => deriv (fun t => w (α, t)) t₀) α₀)
     (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
     HasDerivAt (fun α => deriv (fun t => p (α, t)) t₀)
       (-ζ' * deriv (fun t => w (α₀, t)) t₀) α₀ := by
-  have hwa : AnalyticAt ℂ w (α₀, t₀) :=
-    analyticAt_iff_eventually_differentiableAt_of_finiteDimensional.2 hw
-  have hg : AnalyticAt ℂ (fun α => deriv (fun t => w (α, t)) t₀) α₀ := hwa.deriv_snd.curry_left
   have hh' : HasDerivAt (fun α => w (α, t₀) ^ 2) 0 α₀ := by
-    simpa [Pi.pow_def, hw0] using hwa.curry_left.differentiableAt.hasDerivAt.pow 2
+    simpa [Pi.pow_def, hw0] using hw_fst.hasDerivAt.pow 2
   have hprod : HasDerivAt
       (fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀)
       (-ζ' * deriv (fun t => w (α₀, t)) t₀) α₀ := by
-    have h := (hh'.fun_sub hζ).fun_mul hg.differentiableAt.hasDerivAt
+    have h := (hh'.fun_sub hζ).fun_mul hdw_fst.hasDerivAt
     simpa [hw0, hζ0] using h
-  exact hprod.congr_of_eventuallyEq (eventuallyEq_deriv_snd_slice hwa hpw)
+  exact hprod.congr_of_eventuallyEq (eventuallyEq_deriv_snd_slice hw hpw)
 
 /-- Shared proof of the totalized mixed-derivative identity, requiring continuity of `ζ` only when
 `∂w/∂t (α₀, t₀) = 0`. -/
-private theorem deriv_deriv_eq_neg_deriv_mul_deriv_aux {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ}
-    {α₀ t₀ : ℂ} (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0)
+private theorem deriv_deriv_eq_neg_deriv_mul_deriv_aux {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NeZero (3 : 𝕜)] {p w : 𝕜 × 𝕜 → 𝕜} {ζ η : 𝕜 → 𝕜} {α₀ t₀ : 𝕜}
+    (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0)
     (hζ : deriv (fun t => w (α₀, t)) t₀ = 0 → ContinuousAt ζ α₀)
-    (hw : ∀ᶠ q in 𝓝 (α₀, t₀), DifferentiableAt ℂ w q)
+    (hw : ∀ᶠ α in 𝓝 α₀, DifferentiableAt 𝕜 (fun t => w (α, t)) t₀)
+    (hw_fst : DifferentiableAt 𝕜 (fun α => w (α, t₀)) α₀)
+    (hdw_fst : DifferentiableAt 𝕜 (fun α => deriv (fun t => w (α, t)) t₀) α₀)
     (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
     deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ =
       -deriv ζ α₀ * deriv (fun t => w (α₀, t)) t₀ := by
-  by_cases hζd : DifferentiableAt ℂ ζ α₀
-  · exact (hasDerivAt_deriv_neg_mul_deriv hζ0 hw0 hζd.hasDerivAt hw hpw).deriv
-  have hwa : AnalyticAt ℂ w (α₀, t₀) :=
-    analyticAt_iff_eventually_differentiableAt_of_finiteDimensional.2 hw
-  have hg : AnalyticAt ℂ (fun α => deriv (fun t => w (α, t)) t₀) α₀ := hwa.deriv_snd.curry_left
-  have hh : AnalyticAt ℂ (fun α => w (α, t₀) ^ 2) α₀ := hwa.curry_left.pow 2
-  rw [(eventuallyEq_deriv_snd_slice hwa hpw).deriv_eq]
+  by_cases hζd : DifferentiableAt 𝕜 ζ α₀
+  · exact (hasDerivAt_deriv_neg_mul_deriv hζ0 hw0 hζd.hasDerivAt hw hw_fst hdw_fst hpw).deriv
+  have hh : DifferentiableAt 𝕜 (fun α => w (α, t₀) ^ 2) α₀ := hw_fst.pow 2
+  rw [(eventuallyEq_deriv_snd_slice hw hpw).deriv_eq]
   by_cases hdw : deriv (fun t => w (α₀, t)) t₀ = 0
   · have hd0 : HasDerivAt
         (fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) 0 α₀ := by
-      have h := hg.differentiableAt.hasDerivAt.smul_of_eq_zero
-        (hh.continuousAt.sub (hζ hdw)) hdw
+      have h := hdw_fst.hasDerivAt.smul_of_eq_zero (hh.continuousAt.sub (hζ hdw)) hdw
       simpa [hw0, hζ0, mul_comm] using h
     rw [hd0.deriv, hdw, mul_zero]
-  · have hnot : ¬DifferentiableAt ℂ
+  · have hnot : ¬DifferentiableAt 𝕜
         (fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) α₀ := fun hfd => by
       have hζ_eq : ζ =ᶠ[𝓝 α₀] fun α =>
           w (α, t₀) ^ 2 - ((w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) /
             deriv (fun t => w (α, t)) t₀ :=
-        (hg.continuousAt.eventually_ne hdw).mono fun α hgα => by
+        (hdw_fst.continuousAt.eventually_ne hdw).mono fun α hgα => by
           dsimp only
           rw [mul_div_cancel_right₀ _ hgα, sub_sub_cancel]
-      exact hζd ((hh.differentiableAt.fun_sub
-        (hfd.div hg.differentiableAt hdw)).congr_of_eventuallyEq hζ_eq)
+      exact hζd ((hh.sub (hfd.div hdw_fst hdw)).congr_of_eventuallyEq hζ_eq)
     rw [deriv_zero_of_not_differentiableAt hnot, deriv_zero_of_not_differentiableAt hζd,
       neg_zero, zero_mul]
 
 /-- Mixed-derivative identity when `∂w/∂t (α₀, t₀) ≠ 0`, requiring no continuity hypothesis on
-`ζ`. -/
-theorem deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ}
-    {α₀ t₀ : ℂ} (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0)
-    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
-    (hw : ∀ᶠ q in 𝓝 (α₀, t₀), DifferentiableAt ℂ w q)
-    (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
-    deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ =
-      -deriv ζ α₀ * deriv (fun t => w (α₀, t)) t₀ :=
-  deriv_deriv_eq_neg_deriv_mul_deriv_aux hζ0 hw0 (fun h0 => absurd h0 hdw) hw hpw
-
-/-- **Totalized mixed-derivative identity for the cubic normal form.** For any cubic normal form
-`p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` where `w` is complex differentiable on a
-neighbourhood of `(α₀, t₀)`, with `ζ(α₀) = 0`, `w(α₀, t₀) = 0`, and `ζ` continuous at `α₀`, one
-has `∂²p/∂α∂t (α₀, t₀) = -ζ'(α₀) * ∂w/∂t (α₀, t₀)` as totalized `deriv` values: when `ζ` is not
-differentiable at `α₀` and `∂w/∂t (α₀, t₀) ≠ 0`, `α ↦ ∂p/∂t (α, t₀)` is also nondifferentiable
-at `α₀` so both sides vanish by Lean's zero-by-default `deriv` convention (whereas when
-`∂w/∂t (α₀, t₀) = 0`, `α ↦ ∂p/∂t (α, t₀)` is differentiable at `α₀` with derivative `0`). See
-`hasDerivAt_deriv_neg_mul_deriv` for the `HasDerivAt` form when `ζ` is differentiable. -/
-theorem deriv_deriv_eq_neg_deriv_mul_deriv {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ} {α₀ t₀ : ℂ}
-    (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0) (hζ : ContinuousAt ζ α₀)
-    (hw : ∀ᶠ q in 𝓝 (α₀, t₀), DifferentiableAt ℂ w q)
-    (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
-    deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ =
-      -deriv ζ α₀ * deriv (fun t => w (α₀, t)) t₀ :=
-  deriv_deriv_eq_neg_deriv_mul_deriv_aux hζ0 hw0 (fun _ => hζ) hw hpw
-
-/-- **Nondegeneracy criterion for square-root coalescence.** In any cubic normal form
-`p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` where `w` is complex differentiable on a
-neighbourhood of `(α₀, t₀)`, with `ζ(α₀) = 0`, `w(α₀, t₀) = 0`, and `∂w/∂t (α₀, t₀) ≠ 0`, one has
-`ζ'(α₀) ≠ 0` if and only if `∂²p/∂α∂t (α₀, t₀) ≠ 0`. -/
-theorem deriv_ne_zero_iff_deriv_deriv_ne_zero {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ} {α₀ t₀ : ℂ}
+`ζ`, over any nontrivially normed field of characteristic `≠ 3`. -/
+theorem deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NeZero (3 : 𝕜)] {p w : 𝕜 × 𝕜 → 𝕜} {ζ η : 𝕜 → 𝕜} {α₀ t₀ : 𝕜}
     (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0)
     (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
-    (hw : ∀ᶠ q in 𝓝 (α₀, t₀), DifferentiableAt ℂ w q)
+    (hw : ∀ᶠ α in 𝓝 α₀, DifferentiableAt 𝕜 (fun t => w (α, t)) t₀)
+    (hw_fst : DifferentiableAt 𝕜 (fun α => w (α, t₀)) α₀)
+    (hdw_fst : DifferentiableAt 𝕜 (fun α => deriv (fun t => w (α, t)) t₀) α₀)
+    (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
+    deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ =
+      -deriv ζ α₀ * deriv (fun t => w (α₀, t)) t₀ :=
+  deriv_deriv_eq_neg_deriv_mul_deriv_aux hζ0 hw0 (fun h0 => absurd h0 hdw) hw hw_fst hdw_fst hpw
+
+/-- **Totalized mixed-derivative identity for the cubic normal form.** For any cubic normal form
+`p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` over a nontrivially normed field of
+characteristic `≠ 3`, where `t ↦ w(α, t)` is differentiable at `t₀` for `α` near `α₀`,
+`α ↦ w(α, t₀)` and `α ↦ ∂w/∂t (α, t₀)` are differentiable at `α₀`, `ζ(α₀) = 0`, `w(α₀, t₀) = 0`,
+and `ζ` is continuous at `α₀`, one has `∂²p/∂α∂t (α₀, t₀) = -ζ'(α₀) * ∂w/∂t (α₀, t₀)` as totalized
+`deriv` values: when `ζ` is not differentiable at `α₀` and `∂w/∂t (α₀, t₀) ≠ 0`,
+`α ↦ ∂p/∂t (α, t₀)` is also nondifferentiable at `α₀` so both sides vanish by Lean's
+zero-by-default `deriv` convention (whereas when `∂w/∂t (α₀, t₀) = 0`, `α ↦ ∂p/∂t (α, t₀)` is
+differentiable at `α₀` with derivative `0`). See `hasDerivAt_deriv_neg_mul_deriv` for the
+`HasDerivAt` form when `ζ` is differentiable. -/
+theorem deriv_deriv_eq_neg_deriv_mul_deriv {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NeZero (3 : 𝕜)] {p w : 𝕜 × 𝕜 → 𝕜} {ζ η : 𝕜 → 𝕜} {α₀ t₀ : 𝕜}
+    (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0) (hζ : ContinuousAt ζ α₀)
+    (hw : ∀ᶠ α in 𝓝 α₀, DifferentiableAt 𝕜 (fun t => w (α, t)) t₀)
+    (hw_fst : DifferentiableAt 𝕜 (fun α => w (α, t₀)) α₀)
+    (hdw_fst : DifferentiableAt 𝕜 (fun α => deriv (fun t => w (α, t)) t₀) α₀)
+    (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
+    deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ =
+      -deriv ζ α₀ * deriv (fun t => w (α₀, t)) t₀ :=
+  deriv_deriv_eq_neg_deriv_mul_deriv_aux hζ0 hw0 (fun _ => hζ) hw hw_fst hdw_fst hpw
+
+/-- **Nondegeneracy criterion for square-root coalescence.** In any cubic normal form
+`p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` over a nontrivially normed field of
+characteristic `≠ 3`, where `t ↦ w(α, t)` is differentiable at `t₀` for `α` near `α₀`,
+`α ↦ w(α, t₀)` and `α ↦ ∂w/∂t (α, t₀)` are differentiable at `α₀`, `ζ(α₀) = 0`, `w(α₀, t₀) = 0`,
+and `∂w/∂t (α₀, t₀) ≠ 0`, one has `ζ'(α₀) ≠ 0` if and only if `∂²p/∂α∂t (α₀, t₀) ≠ 0`. -/
+theorem deriv_ne_zero_iff_deriv_deriv_ne_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NeZero (3 : 𝕜)] {p w : 𝕜 × 𝕜 → 𝕜} {ζ η : 𝕜 → 𝕜} {α₀ t₀ : 𝕜}
+    (hζ0 : ζ α₀ = 0) (hw0 : w (α₀, t₀) = 0)
+    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
+    (hw : ∀ᶠ α in 𝓝 α₀, DifferentiableAt 𝕜 (fun t => w (α, t)) t₀)
+    (hw_fst : DifferentiableAt 𝕜 (fun α => w (α, t₀)) α₀)
+    (hdw_fst : DifferentiableAt 𝕜 (fun α => deriv (fun t => w (α, t)) t₀) α₀)
     (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
     deriv ζ α₀ ≠ 0 ↔ deriv (fun α => deriv (fun t => p (α, t)) t₀) α₀ ≠ 0 := by
-  rw [deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero hζ0 hw0 hdw hw hpw,
+  rw [deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero hζ0 hw0 hdw hw hw_fst hdw_fst hpw,
     mul_ne_zero_iff, neg_ne_zero]
   exact ⟨fun hne => ⟨hne, hdw⟩, fun hne => hne.1⟩
 
@@ -939,21 +966,23 @@ example {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NeZero (3 : 𝕜)] (α t 
 
 -- The canonical Airy potential `p(α, t) = t ^ 3 / 3 - α * t` has nonvanishing mixed derivative
 -- `∂²p/∂α∂t (0, 0) = -1`.
-example : deriv (fun α : ℂ => deriv (fun t : ℂ => t ^ 3 / 3 - α * t) 0) 0 = -1 := by
+example {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NeZero (3 : 𝕜)] :
+    deriv (fun α : 𝕜 => deriv (fun t : 𝕜 => t ^ 3 / 3 - α * t) 0) 0 = -1 := by
   have h := CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv
-    (p := fun q : ℂ × ℂ => q.2 ^ 3 / 3 - q.1 * q.2) (w := Prod.snd) (ζ := id) (η := 0)
-    rfl rfl continuousAt_id (.of_forall fun _ => differentiableAt_snd)
-    (.of_forall fun _ => by simp)
+    (p := fun q : 𝕜 × 𝕜 => q.2 ^ 3 / 3 - q.1 * q.2) (w := Prod.snd) (ζ := id) (η := 0)
+    rfl rfl continuousAt_id (.of_forall fun _ => differentiableAt_id) (differentiableAt_const _)
+    (by simp [differentiableAt_const]) (.of_forall fun _ => by simp)
   simpa using h
 
 -- For `p(α, t) = t ^ 3 / 3 + α ^ 2 * t`, the mixed derivative `∂²p/∂α∂t` vanishes at `(0, 0)`,
 -- so any cubic normal form has `ζ'(0) = 0`.
-example : deriv (fun α : ℂ => deriv (fun t : ℂ => t ^ 3 / 3 + α ^ 2 * t) 0) 0 = 0 := by
+example {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NeZero (3 : 𝕜)] :
+    deriv (fun α : 𝕜 => deriv (fun t : 𝕜 => t ^ 3 / 3 + α ^ 2 * t) 0) 0 = 0 := by
   have h := CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv
-    (p := fun q : ℂ × ℂ => q.2 ^ 3 / 3 + q.1 ^ 2 * q.2) (w := Prod.snd)
+    (p := fun q : 𝕜 × 𝕜 => q.2 ^ 3 / 3 + q.1 ^ 2 * q.2) (w := Prod.snd)
     (ζ := fun α => -(α ^ 2)) (η := 0) (α₀ := 0) (t₀ := 0)
-    (by simp) rfl (by fun_prop) (.of_forall fun _ => differentiableAt_snd)
-    (.of_forall fun _ => by simp)
+    (by simp) rfl (by fun_prop) (.of_forall fun _ => differentiableAt_id)
+    (differentiableAt_const _) (by simp [differentiableAt_const]) (.of_forall fun _ => by simp)
   simpa using h
 
 -- For `p(α, t) = t ^ 3 / 3 + α ^ 2 * t`, the critical points are `t = ±i * α`, coalescing
@@ -964,7 +993,7 @@ example (α t : ℂ) :
   have h := CubicNormalForm.deriv_eq_zero_iff_sq_eq (u := id) (ζ := -(α ^ 2)) (c := 0)
     (g := fun s : ℂ => s ^ 3 / 3 + α ^ 2 * s) (t := t) (by simp)
     (.of_forall fun _ => by simp)
-  rw [h, id_eq, show -(α ^ 2) = (Complex.I * α) ^ 2 by rw [mul_pow, Complex.I_sq]; ring,
-    sq_eq_sq_iff_eq_or_eq_neg]
+  have hsq : -(α ^ 2) = (Complex.I * α) ^ 2 := by rw [mul_pow, Complex.I_sq]; ring
+  rw [h, id_eq, hsq, sq_eq_sq_iff_eq_or_eq_neg]
 
 end TauCeti

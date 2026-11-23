@@ -50,9 +50,9 @@ map of a holomorphic equation, see `TauCeti.Analysis.Complex.ImplicitFunction`.
   at `(u.1, f u)` is `(z, w) ↦ ∂₂f(u)⁻¹ (w - ∂₁f(u) z)`.
 * `HasStrictFDerivAt.contDiffAt_jointImplicitFunctionOfProdDomain` and
   `HasStrictFDerivAt.analyticAt_jointImplicitFunctionOfProdDomain`: `ψ` is as regular as `f`.
-* `AnalyticAt.eventually_mul_deriv_snd_eq`: pullback identity
+* `TauCeti.eventually_mul_deriv_snd_eq`: pullback identity
   `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)` for the transformed amplitude
-  `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` of a supplied analytic local inverse `T`.
+  `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` of a supplied local inverse `T`.
 * `AnalyticAt.exists_analyticAt_mul_deriv_eq`: for a scalar analytic coordinate `w : E × 𝕜 → 𝕜`
   with `∂w/∂t ≠ 0` and analytic amplitude `q`, constructs the analytic local inverse `T` and
   transformed amplitude `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` satisfying
@@ -284,28 +284,23 @@ end HasStrictFDerivAt
 
 end NontriviallyNormedField
 
-namespace AnalyticAt
+namespace TauCeti
 
-/-- **Pullback identity for a supplied analytic local inverse** (DLMF 2.4.20). If
-`w : E × 𝕜 → 𝕜` is analytic at `(α₀, t₀)` and `T : E × 𝕜 → 𝕜` is analytic at `(α₀, w (α₀, t₀))`
-with `T (α, w (α, t)) = t` near `(α₀, t₀)`, then for any amplitude `q : E × 𝕜 → 𝕜`, the
-transformed amplitude `f u = q (u.1, T u) * ∂T/∂u (u)` satisfies
+/-- **Pullback identity for a local inverse** (DLMF 2.4.20). If `w, T : E × 𝕜 → 𝕜` satisfy
+`T (α, w (α, t)) = t` near `(α₀, t₀)` and the vertical slices `t ↦ w (α, t)` (at `t`) and
+`s ↦ T (α, s)` (at `w (α, t)`) are differentiable for `(α, t)` near `(α₀, t₀)`, then for any
+amplitude `q : E × 𝕜 → 𝕜`, the transformed amplitude `f u = q (u.1, T u) * ∂T/∂u (u)` satisfies
 `f (α, w (α, t)) * ∂w/∂t (α, t) = q (α, t)` near `(α₀, t₀)`. -/
-theorem eventually_mul_deriv_snd_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+theorem eventually_mul_deriv_snd_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace E]
     {w T : E × 𝕜 → 𝕜} (q : E × 𝕜 → 𝕜) {α₀ : E} {t₀ : 𝕜}
-    (hw : AnalyticAt 𝕜 w (α₀, t₀)) (hT : AnalyticAt 𝕜 T (α₀, w (α₀, t₀)))
+    (hw : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun t => w (x.1, t)) x.2)
+    (hT : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun s => T (x.1, s)) (w x))
     (hT_left : ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2) :
     ∀ᶠ x in 𝓝 (α₀, t₀),
       (q (x.1, T (x.1, w x)) * deriv (fun s => T (x.1, s)) (w x)) *
         deriv (fun t => w (x.1, t)) x.2 = q x := by
-  have hpull : ContinuousAt (fun x : E × 𝕜 => (x.1, w x)) (α₀, t₀) :=
-    continuousAt_fst.prodMk hw.continuousAt
-  filter_upwards [hT_left.eventually_nhds, hw.eventually_analyticAt,
-    hpull.eventually hT.eventually_analyticAt] with x hx_nhds hwx hTx
+  filter_upwards [hT_left.eventually_nhds, hw, hT] with x hx_nhds hwt hTs
   have hx_eq : T (x.1, w x) = x.2 := hx_nhds.self_of_nhds
-  have hTs : DifferentiableAt 𝕜 (fun s => T (x.1, s)) (w x) := hTx.curry_right.differentiableAt
-  have hwt : DifferentiableAt 𝕜 (fun t => w (x.1, t)) x.2 := hwx.curry_right.differentiableAt
   have hchain := (hTs.hasDerivAt.comp x.2 hwt.hasDerivAt).deriv
   simp only [Function.comp_def] at hchain
   have hid : (fun t => T (x.1, w (x.1, t))) =ᶠ[𝓝 x.2] id :=
@@ -313,6 +308,10 @@ theorem eventually_mul_deriv_snd_eq {𝕜 E : Type*} [NontriviallyNormedField �
   have hjac : deriv (fun s => T (x.1, s)) (w x) * deriv (fun t => w (x.1, t)) x.2 = 1 := by
     rw [← hchain, hid.deriv_eq, deriv_id]
   rw [hx_eq, mul_assoc, hjac, mul_one]
+
+end TauCeti
+
+namespace AnalyticAt
 
 /-- **Analytic inverse coordinate and transformed amplitude** (DLMF 2.4.20). Given a coordinate
 `w : E × 𝕜 → 𝕜` analytic at `(α₀, t₀)` with `∂w/∂t (α₀, t₀) ≠ 0` and an amplitude `q : E × 𝕜 → 𝕜`
@@ -342,10 +341,15 @@ theorem exists_analyticAt_mul_deriv_eq {𝕜 E : Type*} [NontriviallyNormedField
   have hT0 : T (α₀, w (α₀, t₀)) = t₀ := df.jointImplicitFunctionOfProdDomain_apply_self hinv
   have hT_left : ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2 :=
     df.eventually_jointImplicitFunctionOfProdDomain_apply hinv
+  have hwt : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun t => w (x.1, t)) x.2 :=
+    hw.eventually_analyticAt.mono fun _ h => h.curry_right.differentiableAt
+  have hTs : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt 𝕜 (fun s => T (x.1, s)) (w x) :=
+    ((continuousAt_fst.prodMk hw.continuousAt).eventually hTa.eventually_analyticAt).mono
+      fun _ h => h.curry_right.differentiableAt
   exact ⟨T, fun u => q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2, hTa,
     (hq.comp_of_eq (analyticAt_fst.prod hTa) (by simp [hT0])).fun_mul hTa.deriv_snd, hT0,
     (df.eventually_apply_jointImplicitFunctionOfProdDomain hinv).mono fun _ hu => ⟨hu, rfl⟩,
-    hT_left.and (hw.eventually_mul_deriv_snd_eq q hTa hT_left)⟩
+    hT_left.and (TauCeti.eventually_mul_deriv_snd_eq q hwt hTs hT_left)⟩
 
 end AnalyticAt
 
