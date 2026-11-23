@@ -55,8 +55,6 @@ Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
   `tateSeriesPlus`.
 * `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: comparison with `S.polydiscPlus N`.
 * `TauCeti.Huber.exists_pow_smul_mem_tateSeriesPlus`: rescaling into an open subring by `ϖ ^ m`.
-* `TauCeti.Huber.weightedEvalHom_mem_plus_of_mem_tateSeriesPlus`: evaluating `tateSeriesPlus`
-  along a morphism into a complete Hausdorff Huber pair at elements of `U⁺` lands in `U⁺`.
 
 ## References
 
@@ -509,24 +507,6 @@ theorem map_symm_tateSeriesPlus_eq_polydiscPlus (N : ℕ) (S : Pair A)
   dsimp only [tateSeriesPlus]
   rw [← S.map_polydiscPlus_equiv N, Subring.map_map]
   ext x; simp
-
-/-- **Evaluation of `tateSeriesPlus` into a complete Hausdorff Huber pair:** if `z : (A, A⁺) →
-(U, U⁺)` is a morphism of Huber pairs into a complete Hausdorff Huber pair and `b : Fin M → U` has
-entries in `U⁺`, then `weightedEvalHom` carries `tateSeriesPlus M A Aplus.plus` into `U⁺`. -/
-theorem weightedEvalHom_mem_plus_of_mem_tateSeriesPlus
-    {Aplus : Pair A}
-    {U : Type*} [CommRing U] [UniformSpace U] [IsUniformAddGroup U] [IsTopologicalRing U]
-    [IsHuberRing U] [CompleteSpace U] [T2Space U]
-    (Uplus : Pair U) (z : Pair.Hom Aplus Uplus) {M : ℕ} {b : Fin M → U}
-    (hb_mem : ∀ i, b i ∈ Uplus.plus)
-    (hb : IsWeightBounded z.toRingHom (fun _ : Fin M ↦ ({1} : Set A)) b)
-    {f : tateSeries M A} (hf : f ∈ tateSeriesPlus M A Aplus.plus) :
-    weightedEvalHom isWeightFamily_one_weight z.continuous_toRingHom.continuousAt hb f ∈
-      Uplus.plus := by
-  have hclosed : IsClosed (Uplus.plus : Set U) :=
-    AddSubgroup.isClosed_of_isOpen Uplus.plus.toAddSubgroup Uplus.isRingOfIntegralElements.isOpen
-  rw [coe_weightedEvalHom]
-  exact weightedEval_mem hclosed (fun ν ↦ z.map_mem_plus _ (mem_tateSeriesPlus_iff.mp hf ν)) hb_mem
 
 end HuberPair
 

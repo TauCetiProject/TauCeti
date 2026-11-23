@@ -41,6 +41,8 @@ inverse stability and functoriality:
   quantitative error bound `u ≡ t mod ϖ ^ (e - k)` on `tateSeries N C`.
 * `TauCeti.Huber.exists_mul_jacobian_eq_pow_smul_of_dvd`: two-sided `ϖ ^ k`-scaled Jacobian inverse
   `M' ≡ M mod ϖ` at any perturbed point `u ≡ t mod ϖ ^ (k + 1)`.
+* `TauCeti.Huber.eq_of_zero_restrictedPowerSeries`: uniqueness of zeros in `t + ϖ ^ (k + 1) C₀^N`
+  without a residual hypothesis on `F(t)`.
 * `TauCeti.Huber.map_weightedEval_tateSeries` and `TauCeti.Huber.map_zero_restrictedPowerSeries`:
   compatibility of evaluation and Newton roots with continuous ring homomorphisms.
 
@@ -219,6 +221,36 @@ theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
     rw [← Matrix.mul_assoc, hleft, Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul,
       Matrix.mul_one])⟩
 
+/-- **Uniqueness of zeros in `t + ϖ ^ (k + 1) C₀^N`:** any two zeros `u, u' ∈ P.ringOfDefinition^N`
+of `F` congruent to `t` modulo `ϖ ^ (k + 1)` are equal, provided the Jacobian of `F` at `t` has an
+integral `ϖ ^ k`-scaled left inverse `M` (with no residual hypothesis on `F(t)` or refined
+error-bound hypothesis). -/
+theorem eq_of_zero_restrictedPowerSeries [T0Space C]
+    (P : PairOfDefinition C) (ϖ : P.ringOfDefinition) (hϖ : IsPseudoUniformizer (ϖ : C))
+    {N : ℕ} {F : Fin N → tateSeries N C}
+    (hF : ∀ i, F i ∈ tateSeriesPlus N C P.ringOfDefinition)
+    {t : Fin N → P.ringOfDefinition} {k : ℕ}
+    {M : Matrix (Fin N) (Fin N) P.ringOfDefinition}
+    (hJ : M.map Subtype.val *
+        Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+          (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) C))) =
+      (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C))
+    {u u' : Fin N → P.ringOfDefinition}
+    (hu : ∀ i, ϖ ^ (k + 1) ∣ u i - t i)
+    (hFu : ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C))
+      (F i : MvPowerSeries (Fin N) C) = 0)
+    (hu' : ∀ i, ϖ ^ (k + 1) ∣ u' i - t i)
+    (hFu' : ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u' l : C))
+      (F i : MvPowerSeries (Fin N) C) = 0) :
+    u = u' := by
+  obtain ⟨Mu, -, hMu, -⟩ := exists_mul_jacobian_eq_pow_smul_of_dvd P ϖ hϖ hF hJ hu
+  exact (existsUnique_weightedEval_eq_zero P hϖ
+    (fun i ↦ mem_weightedRestrictedSubring.mp (F i).2)
+    (fun i ↦ mem_tateSeriesPlus_iff.mp (hF i)) u hMu
+    (fun i ↦ by rw [hFu i]; exact ⟨0, P.ringOfDefinition.zero_mem, by simp⟩)).unique
+    ⟨fun _ ↦ by simp, hFu⟩
+    ⟨fun i ↦ by simpa only [sub_sub_sub_cancel_right] using dvd_sub (hu' i) (hu i), hFu'⟩
+
 end Newton
 
 section Functoriality
@@ -320,15 +352,7 @@ theorem map_zero_restrictedPowerSeries
         ← map_weightedEval_tateSeries P P' hφ hPφ t (tateSeries.pderiv j (F l)),
         tateSeries.coe_pderiv]
     · split_ifs <;> simp [ϖ']
-  obtain ⟨Mu', -, hMu', -⟩ :=
-    exists_mul_jacobian_eq_pow_smul_of_dvd P' ϖ' (hϖ.map hφ) hF' hJ' hu'_mod
-  exact (existsUnique_weightedEval_eq_zero P' (hϖ.map hφ)
-    (fun i ↦ mem_weightedRestrictedSubring.mp (tateSeries.mapRingHom hφ (F i)).2)
-    (fun i ↦ mem_tateSeriesPlus_iff.mp (hF' i)) u' hMu'
-    (fun i ↦ by rw [hu'_zero i]; exact ⟨0, P'.ringOfDefinition.zero_mem, by simp⟩)).unique
-    ⟨fun i ↦ by simpa only [sub_sub_sub_cancel_right] using dvd_sub (hv'_mod i) (hu'_mod i),
-      hv'_zero⟩
-    ⟨fun _ ↦ by simp, hu'_zero⟩
+  exact eq_of_zero_restrictedPowerSeries P' ϖ' (hϖ.map hφ) hF' hJ' hv'_mod hv'_zero hu'_mod hu'_zero
 
 end Functoriality
 
