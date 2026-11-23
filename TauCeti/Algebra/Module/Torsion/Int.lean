@@ -29,8 +29,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.isOfFinAddOrder_iff_exists_nonZeroDivisors`,
   `TauCeti.not_isOfFinAddOrder_iff_forall_nonZeroDivisors`: elementwise characterizations of
   finite and infinite additive order via `nonZeroDivisors ℤ`.
-* `Module.zero_mem_of_injective_of_isTorsion'`: if an `S`-torsion `ℤ`-module contains a copy of
-  `ℤ`, then `0 ∈ S`.
+* `AddMonoidHom.zero_mem_of_injective_of_isTorsion'`: if an `S`-torsion `ℤ`-module contains a
+  copy of `ℤ`, then `0 ∈ S`.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
@@ -121,7 +121,7 @@ theorem not_isOfFinAddOrder_iff_forall_nonZeroDivisors {M : Type*} [AddCommGroup
 
 end TauCeti
 
-namespace Module
+namespace AddMonoidHom
 
 /-- If an `S`-torsion `ℤ`-module admits an injective additive homomorphism from `ℤ`, then
 `0 ∈ S`. -/
@@ -135,4 +135,4 @@ theorem zero_mem_of_injective_of_isTorsion' {M : Type*} [AddCommGroup M]
     rw [hmap, ← Submonoid.smul_def, hs, map_zero]
   exact hs0 ▸ s.property
 
-end Module
+end AddMonoidHom

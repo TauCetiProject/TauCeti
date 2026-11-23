@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.SerreClass
 public import TauCeti.AlgebraicTopology.SerreClass.SubmonoidTorsion
 import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
 import TauCeti.AlgebraicTopology.Singular.Coefficients.FlatBaseChange
@@ -30,8 +31,9 @@ cases follow through the based path fibration
 (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne`).
 
 Combining this with flat base change to a localization of `ℤ` at `S` verifies Serre's `K(A, n)`
-property for `S`-torsion (`TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`) and for
-torsion abelian groups (`TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`).
+property for `S`-torsion (`TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`,
+`TauCeti.satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion`) and for torsion abelian groups
+(`TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`).
 
 These are the inputs on Eilenberg--Mac Lane spaces of Serre's theorem that a simply connected
 space with `S`-torsion homology has `S`-torsion homotopy groups.
@@ -46,8 +48,10 @@ space with `S`-torsion homology has `S`-torsion homotopy groups.
   `H_{i + 1}(K(A, n); R) = 0` for an `S`-torsion abelian group `A` and a localization `R` of `ℤ`
   at `S`.
 * `TauCeti.IsEilenbergMacLaneSpace.isTorsion'_singularHomology`,
-  `TauCeti.IsEilenbergMacLaneSpace.isSubmonoidTorsion_singularHomology`:
-  if `A` is `S`-torsion, then `H_{i + 1}(K(A, n); ℤ)` is `S`-torsion.
+  `TauCeti.IsEilenbergMacLaneSpace.isSubmonoidTorsion_singularHomology`,
+  `TauCeti.satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion`:
+  if `A` is `S`-torsion, then `H_{i + 1}(K(A, n); ℤ)` is `S`-torsion, verifying
+  `CategoryTheory.ObjectProperty.SatisfiesEilenbergMacLaneAxiom` for `S`-torsion.
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_rat`,
   `TauCeti.IsEilenbergMacLaneSpace.isAddTorsion_singularHomology`,
   `TauCeti.IsEilenbergMacLaneSpace.isTorsion_singularHomology`:
@@ -170,5 +174,19 @@ theorem isTorsion_singularHomology
     hX.isAddTorsion_singularHomology ((AddCommGrpCat.prop_isTorsion_iff A).1 hA) i
 
 end IsEilenbergMacLaneSpace
+
+/-- **Serre's axiom on Eilenberg--Mac Lane spaces for `S`-torsion.** For every submonoid `S` of
+`ℤ` and every degree `k`, the class of `S`-torsion `ℤ`-modules satisfies
+`CategoryTheory.ObjectProperty.SatisfiesEilenbergMacLaneAxiom`. -/
+theorem satisfiesEilenbergMacLaneAxiom_isSubmonoidTorsion (S : Submonoid ℤ) (k : ℕ) :
+    ((AddCommGrpCat.isSubmonoidTorsion S).inverseImage (CategoryTheory.forget₂ (ModuleCat.{0} ℤ)
+      AddCommGrpCat)).SatisfiesEilenbergMacLaneAxiom k := by
+  refine (CategoryTheory.ObjectProperty.satisfiesEilenbergMacLaneAxiom_iff _ k).2 fun G _ hG m ↦ ?_
+  refine ⟨_, le_rfl, inferInstance, inferInstance, inferInstance, fun Z _ z hZ q hq _ ↦ ?_⟩
+  obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
+  exact (AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).2 <| by
+    rw [singularHomologyFunctor_obj_obj]
+    exact (hZ.of_mulEquiv (MulEquiv.multiplicativeAdditive G).symm).isTorsion'_singularHomology
+      ((AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff S _).1 hG) q
 
 end TauCeti

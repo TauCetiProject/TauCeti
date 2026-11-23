@@ -78,8 +78,9 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
   containing a nonzerodivisor is a torsion module.
 * `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
   `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
-* `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`: elementwise characterizations of
-  `S`-torsion and its negation.
+* `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`, `Module.exists_forall_smul_ne_zero`:
+  elementwise characterizations of `S`-torsion, its negation, and extracting a witness from a
+  torsion implication.
 * `Module.isTorsion'_of_zero_mem`: every module is `S`-torsion when `0 ∈ S`.
 * `Submodule.isTorsion'_quotient_iff`: elementwise characterization of `S`-torsion quotients.
 -/
@@ -458,6 +459,19 @@ theorem isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul R M
 theorem not_isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul R M]
     {S : Submonoid R} : ¬ Module.IsTorsion' M S ↔ ∃ x : M, ∀ s ∈ S, s • x ≠ 0 := by
   simp [Module.isTorsion'_iff]
+
+/-- If `S`-torsion on a family `F` over all indices satisfying `p` implies `S`-torsion on `G`,
+then a failure of `S`-torsion on `G` produces an index `i` with `p i` and an element of `F i`
+annihilated by no scalar in `S`. -/
+theorem exists_forall_smul_ne_zero {ι R G : Type*} {F : ι → Type*} {p : ι → Prop}
+    [MulOneClass R] [AddCommMonoid G] [SMul R G]
+    [∀ i, AddCommMonoid (F i)] [∀ i, SMul R (F i)] {S : Submonoid R}
+    (himp : (∀ i, p i → IsTorsion' (F i) S) → IsTorsion' G S)
+    (hG : ¬ IsTorsion' G S) :
+    ∃ i, p i ∧ ∃ x : F i, ∀ s ∈ S, s • x ≠ 0 := by
+  obtain ⟨i, hi⟩ := Classical.not_forall.mp (mt himp hG)
+  rw [not_imp, not_isTorsion'_iff] at hi
+  exact ⟨i, hi.1, hi.2⟩
 
 /-- When `0 ∈ S`, every module is `S`-torsion. -/
 theorem isTorsion'_of_zero_mem {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]

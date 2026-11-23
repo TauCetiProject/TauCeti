@@ -29,6 +29,10 @@ Special cases include:
 
 * `AddCommGrpCat.isSubmonoidTorsion S`: the `S`-torsion abelian groups, as an object property of
   `AddCommGrpCat`, with its `IsSerreClass` instance.
+* `AddCommGrpCat.prop_inverseImage_isSubmonoidTorsion_iff`: a module lies in the `S`-torsion
+  class read in `ModuleCat R` exactly when its underlying group is `S`-torsion.
+* `AddCommGrpCat.isClosedUnderColimitsOfShape_discrete_inverseImage_isSubmonoidTorsion`: modules
+  whose underlying groups are `S`-torsion are closed under coproducts.
 
 ## References
 
@@ -115,5 +119,42 @@ lemma isSubmonoidTorsion_powers_iff_isKilledBySomePower_of_finite (d : ℕ) (M :
   refine ⟨fun hM ↦ ?_, isKilledBySomePower_le_isSubmonoidTorsion d M⟩
   obtain ⟨s, ⟨n, rfl⟩, hs⟩ := Module.IsTorsion'.exists_isTorsionBy_of_finite hM
   exact (prop_isKilledBySomePower_iff d M).2 ⟨n, fun x ↦ hs (x := x)⟩
+
+/-- A module lies in the `S`-torsion class read in `ModuleCat R` through the forgetful functor
+exactly when its underlying abelian group is `S`-torsion. -/
+lemma prop_inverseImage_isSubmonoidTorsion_iff (S : Submonoid ℤ) {R : Type u} [Ring R]
+    (M : ModuleCat.{u} R) :
+    (isSubmonoidTorsion S).inverseImage (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) M ↔
+      Module.IsTorsion' M S :=
+  Iff.rfl
+
+/-- **`S`-torsion is closed under direct sums.** A coproduct in `ModuleCat R` of modules whose
+underlying abelian groups are `S`-torsion is `S`-torsion: it is the direct sum, each element of
+which is a finite sum of elements of the summands. -/
+instance isClosedUnderColimitsOfShape_discrete_inverseImage_isSubmonoidTorsion (S : Submonoid ℤ)
+    (R : Type u) [Ring R] (J : Type u) :
+    ((isSubmonoidTorsion S).inverseImage (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}))
+      |>.IsClosedUnderColimitsOfShape (Discrete J) := by
+  classical
+  refine .mk' ?_
+  rintro _ ⟨F, hF⟩
+  have hc := (IsColimit.precomposeHomEquiv Discrete.natIsoFunctor _).symm
+    (ModuleCat.coproductCoconeIsColimit fun j ↦ F.obj ⟨j⟩)
+  suffices h : Module.IsTorsion' (DirectSum J fun j ↦ F.obj ⟨j⟩) S from
+    ObjectProperty.prop_of_iso _ ((colimit.isColimit F).coconePointUniqueUpToIso hc).symm h
+  intro x
+  induction x using DirectSum.induction_on with
+  | zero => exact ⟨1, one_smul _ _⟩
+  | of j a =>
+    obtain ⟨s, hs⟩ := @hF ⟨j⟩ a
+    refine ⟨s, ?_⟩
+    rw [Submonoid.smul_def, ← map_zsmul]
+    exact (congrArg (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j) hs).trans (map_zero _)
+  | add x y hx hy =>
+    obtain ⟨sx, hsx⟩ := hx
+    obtain ⟨sy, hsy⟩ := hy
+    refine ⟨sx * sy, ?_⟩
+    rw [smul_add, mul_smul sx sy y, hsy, smul_zero, add_zero, mul_comm sx sy, mul_smul sy sx x,
+      hsx, smul_zero]
 
 end AddCommGrpCat
