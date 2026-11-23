@@ -141,12 +141,9 @@ theorem exists_neg_nsmul_le_le_nsmul (hu : IsAddOrderUnit u) (g : G) :
   obtain ⟨m, hm⟩ := hu.exists_le_nsmul (-g)
   obtain ⟨n, hn⟩ := hu.exists_le_nsmul g
   refine ⟨max m n, ?_, hn.trans (nsmul_le_nsmul_left hu.nonneg (le_max_right m n))⟩
-  have hm' : -(m • u) ≤ g := by
-    simpa [← add_assoc] using add_le_add_left (add_le_add_right hm g) (-(m • u))
-  have hmax : -((max m n) • u) ≤ -(m • u) := by
-    have hle := nsmul_le_nsmul_left hu.nonneg (le_max_left m n)
-    simpa [← add_assoc] using
-      add_le_add_left (add_le_add_right hle (-(m • u))) (-((max m n) • u))
+  have hm' : -(m • u) ≤ g := neg_le.1 hm
+  have hmax : -((max m n) • u) ≤ -(m • u) :=
+    neg_le_neg_iff.2 (nsmul_le_nsmul_left hu.nonneg (le_max_left m n))
   exact hmax.trans hm'
 
 /-- Characterization of order units in a preordered abelian group via symmetric intervals. -/
@@ -226,7 +223,7 @@ theorem isAddOrderUnit_int_iff {u : ℤ} : IsAddOrderUnit u ↔ 0 < u := by
     have h1 : (1 : ℤ) ≤ u := by omega
     have hgu : g.natAbs • (1 : ℤ) ≤ g.natAbs • u := nsmul_le_nsmul_right h1 g.natAbs
     have hle : g ≤ g.natAbs • (1 : ℤ) := by
-      change g ≤ (g.natAbs : ℤ) * 1
+      simp
       omega
     exact hle.trans hgu
 
