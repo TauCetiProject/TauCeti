@@ -725,9 +725,8 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs : (s : PSL(2, ℝ)) = D.scaling
     exact_mod_cast h
   -- in the scaling coordinates `γ` is the affine map `x ↦ t₀₀ ^ 2 * x + t₀₀ * t₀₁`
   have hσ (x : ℍ) : ((D'.scaling • (γ : PSL(2, ℝ)) • x : ℍ) : ℂ) =
-      (t 0 0 : ℂ) ^ 2 * (D.scaling • x : ℍ) + t 0 0 * t 0 1 := by
-    rw [← coe_smul_of_apply_zero_one_eq_zero ht, ← UpperHalfPlane.pslMk_smul,
-      TauCeti.coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
+      (t 0 0 : ℂ) ^ 2 * (D.scaling • x : ℍ) + t 0 0 * t 0 1 :=
+    TauCeti.coe_scaling_smul_eq_affine_of_smul hs hs' hh hγ x
   -- hence the widths satisfy `w' = t₀₀ ^ 2 * w`
   have hw : D'.width = t 0 0 ^ 2 * D.width :=
     TauCeti.cuspDatum_width_eq_mul_of_smul hs hs' hh hγ

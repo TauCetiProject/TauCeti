@@ -300,7 +300,7 @@ formula double when `-I ∉ Γ`, and dividing by `2` there recovers the projecti
   k · [SL(2, ℤ) : ±Γ] / 12`.
 
 At level one this is the same weight: `weightedOrderOfVanishingOnOrbit_eq_two_mul_div` in
-`TauCeti/NumberTheory/ModularForms/Norm/Valence.lean`. -/
+`TauCeti/NumberTheory/ModularForms/Norm/Valence/Basic.lean`. -/
 noncomputable def weightedOrderOfVanishingOnSubgroupOrbit
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) : ℚ :=
@@ -353,15 +353,11 @@ where the order has none. -/
 lemma hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) :
     Function.HasFiniteSupport (weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f) := by
-  have hdef : weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f =
-      fun o ↦ 2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) / (cardStabilizerOnOrbit o : ℚ) :=
-    funext (weightedOrderOfVanishingOnSubgroupOrbit_def f)
-  have hcast : Function.support (fun o ↦ (orderOfVanishingOnSubgroupOrbit f o : ℚ)) ⊆
-      Function.support (orderOfVanishingOnSubgroupOrbit f) :=
-    fun _ ho ↦ by simpa only [Function.mem_support, ne_eq, Int.cast_eq_zero] using ho
-  rw [Function.HasFiniteSupport, hdef, Function.support_div]
-  exact ((hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).subset
-    ((Function.support_mul_subset_right _ _).trans hcast)).subset Set.inter_subset_left
+  change Function.HasFiniteSupport fun o ↦
+    weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f o
+  simpa only [weightedOrderOfVanishingOnSubgroupOrbit_def, div_eq_mul_inv] using
+    (((hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).of_eq_zero_iff fun _ ↦
+      Int.cast_eq_zero.symm).fun_mul_right _).fun_mul_left _
 
 end ModularForm
 

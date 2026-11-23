@@ -181,7 +181,8 @@ theorem natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty {Γ : Subgr
       simpa only [inv_inv] using
         (intCast_cuspTranslationOrbitWidth_mk_dvd_iff γ⁻¹ ((w₀ : ℤ) * m)).mp ⟨m, rfl⟩
     rw [← hm, zsmul_eq_mul, mul_comm, ← Int.cast_natCast, ← Int.cast_mul,
-      ← TauCeti.ModularGroup.mapGL_T_zpow_eq_upperRightHom, Subgroup.mem_conjAct_inv_smul_iff]
+      ← TauCeti.ModularGroup.mapGL_T_zpow_eq_upperRightHom, Subgroup.mem_conjAct_smul_iff,
+      inv_inv]
     simpa [map_mul, map_inv, mul_assoc] using
       Subgroup.mem_map_of_mem (Matrix.SpecialLinearGroup.mapGL ℝ) hm_mem
 

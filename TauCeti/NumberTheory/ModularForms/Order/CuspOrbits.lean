@@ -9,8 +9,8 @@ public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import TauCeti.NumberTheory.ModularForms.Cusps.Regularity
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Irregular
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
-import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Cusps.Width
 
 /-!
@@ -274,16 +274,21 @@ theorem _root_.ModularForm.mem_cuspFormSubmodule_iff_forall_orderAtCuspOrbit_pos
     f ∈ _root_.ModularForm.cuspFormSubmodule (Γ : Subgroup (GL (Fin 2) ℝ)) k ↔
       ∀ C : (Γ.map sl2zToPSL2R).CuspOrbit, 0 < orderAtCuspOrbit f C := by
   have hf' : (⇑f : ℍ → ℂ) ≠ 0 := FunLike.coe_zero_iff.not.mpr hf
-  rw [_root_.ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
-  have hiff (γ : SL(2, ℤ)) : _root_.ModularForm.constantTermAt γ f = 0 ↔
-      0 < orderAtCuspOrbit f (Γ.cuspOrbitOfSL2Z γ) := by
-    rw [_root_.ModularForm.constantTermAt_eq_valueAtInfty,
-      orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ,
-      ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
-    exact ⟨fun h ↦ _root_.ModularForm.isZeroAtImInfty_of_valueAtInfty_eq_zero _ h,
-      fun h ↦ h.valueAtInfty_eq_zero⟩
-  simp_rw [hiff]
-  exact ⟨fun h C ↦ let ⟨γ, hγ⟩ := Γ.cuspOrbitOfSL2Z_surjective C; hγ ▸ h γ, fun h γ ↦ h _⟩
+  rw [_root_.ModularForm.mem_cuspFormSubmodule_iff, _root_.ModularForm.isCuspForm_iff]
+  constructor
+  · intro hC C
+    obtain ⟨γ, rfl⟩ := Γ.cuspOrbitOfSL2Z_surjective C
+    rw [orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ]
+    have hcγ : IsCusp (mapGL ℝ γ • ∞) (Γ : Subgroup (GL (Fin 2) ℝ)) :=
+      (Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mpr <|
+        isCusp_SL2Z_iff'.mpr ⟨γ, rfl⟩
+    exact hC hcγ (mapGL ℝ γ) rfl
+  · intro h c hc
+    rw [OnePoint.isZeroAt_iff_forall_SL2Z
+      ((Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mp hc)]
+    intro γ _
+    rw [_root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    exact (orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ).mp (h _)
 
 /-- **Additivity on products at cusps (`ModularFormClass` form)**. -/
 theorem orderAtCuspOrbit_eq_add_of_coe_eq_mul [Γ.FiniteIndex]

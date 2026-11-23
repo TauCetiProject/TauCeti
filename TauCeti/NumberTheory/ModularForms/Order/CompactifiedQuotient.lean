@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Order.CuspOrbits
 public import TauCeti.NumberTheory.ModularForms.Order.EffectiveOrbits
+import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
@@ -173,11 +174,9 @@ theorem hasFiniteSupport_orderOnCompactifiedQuotient (f : F) :
 /-- Only finitely many points of the compactified quotient carry nonzero weighted order. -/
 theorem hasFiniteSupport_weightedOrderOnCompactifiedQuotient (f : F) :
     Function.HasFiniteSupport (weightedOrderOnCompactifiedQuotient (Γ := Γ) (k := k) f) := by
-  have hdef : weightedOrderOnCompactifiedQuotient (Γ := Γ) (k := k) f =
-      fun x ↦ orderOnCompactifiedQuotient f x / x.effectiveStabilizerOrder :=
-    funext (weightedOrderOnCompactifiedQuotient_def f)
-  rw [Function.HasFiniteSupport, hdef, Function.support_div]
-  exact (hasFiniteSupport_orderOnCompactifiedQuotient f).subset Set.inter_subset_left
+  change Function.HasFiniteSupport fun x ↦ weightedOrderOnCompactifiedQuotient (Γ := Γ) (k := k) f x
+  simpa only [weightedOrderOnCompactifiedQuotient_def, div_eq_mul_inv] using
+    (hasFiniteSupport_orderOnCompactifiedQuotient f).fun_mul_left _
 
 /-- Splitting the divisor sum over `(Γ.map sl2zToPSL2R).CompactifiedQuotient`. -/
 theorem finsum_weightedOrderOnCompactifiedQuotient_eq_add (f : F) :

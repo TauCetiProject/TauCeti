@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Projective
-public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
+public import TauCeti.NumberTheory.ModularForms.Norm.Valence.Full
 public import TauCeti.NumberTheory.ModularForms.Order.CompactifiedQuotient
-import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
 /-!
@@ -38,38 +37,6 @@ section CuspOrderComparison
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex] {k : ℤ}
 variable {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
-
-/-- The vanishing order at the cusp translation orbit of `γ⁻¹` is the `q`-expansion order of
-`f ∣[k] γ` at `strictWidthInfty` of `γ⁻¹ Γ γ`. -/
-theorem orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp (f : F) (γ : SL(2, ℤ)) :
-    orderAtCuspTranslationOrbit f
-        (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
-          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
-      qExpansionOrderAtCusp
-        (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).strictWidthInfty
-        (⇑f ∣[k] mapGL ℝ γ) := by
-  rw [orderAtCuspTranslationOrbit_mk, ← cuspTranslationOrbitWidth_mk,
-    natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty,
-    _root_.SlashInvariantForm.quotientFunc_mk, MonoidHom.coe_rangeRestrict,
-    map_inv (mapGL ℝ) γ, inv_inv]
-
-/-- Negating `γ⁻¹` preserves `orderAtCuspTranslationOrbit` (up to `(-1) ^ k`). -/
-theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
-    orderAtCuspTranslationOrbit f
-        (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (-γ⁻¹))⟧ :
-          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
-      orderAtCuspTranslationOrbit f ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ := by
-  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
-  let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
-  have hΓ : ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) = Γγ := by
-    rw [mapGL_neg, inv_neg, Subgroup.toConjAct_neg_smul]
-  rw [← inv_neg, orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp,
-    orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp, hΓ,
-    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (-γ), ← _root_.ModularForm.SL_slash, SL_slash_neg,
-    _root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL γ,
-    ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
-  exact TauCeti.qExpansionOrderAtCusp_smul (ModularFormClass.analyticAt_cuspFunction_zero fγ
-    Γγ.strictWidthInfty_pos Γγ.strictWidthInfty_mem_strictPeriods) (zpow_ne_zero k (by norm_num))
 
 /-- At a regular cusp, the translation orbit of `γ⁻¹` has the same order as the cusp orbit. -/
 theorem intCast_orderAtCuspTranslationOrbit_mk_inv_eq_orderAtCuspOrbit_of_isRegularCusp
@@ -225,8 +192,9 @@ orderOfVanishingOnEffectiveOrbit_eq_zero_of_weight_mul_index_withCenter_mul_card
 theorem twelve_mul_orderAtCuspOrbit_le_weight_mul_index_withCenter
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
     12 * orderAtCuspOrbit f C ≤ (k : ℚ) * Γ.withCenter.index := by
-  linarith [weightedOrderOnCompactifiedQuotient_ofCusp f C ▸
-    weightedOrderOnCompactifiedQuotient_le_weight_mul_index_withCenter_div_twelve f hf (.ofCusp C)]
+  simpa using (
+  twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_index_withCenter_mul_effectiveStabilizerOrder
+    f hf (.ofCusp C))
 
 /-- Since `orderAtCuspOrbit` lies in `(1/2)ℕ`, `k · [SL(2, ℤ) : ±Γ] < 6` forces cusp order `0`. -/
 theorem orderAtCuspOrbit_eq_zero_of_weight_mul_index_withCenter_lt_six (f : F)

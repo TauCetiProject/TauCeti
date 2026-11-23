@@ -7,8 +7,11 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
-public import TauCeti.NumberTheory.ModularForms.Norm.Valence
+public import TauCeti.NumberTheory.ModularForms.Order.AtCusp
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.GroupAction.Orbit.Period
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!
@@ -16,14 +19,11 @@ import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 For `𝒢 ≤ GL(2, ℝ)` of finite relative index in `𝒮ℒ`, the norm
 `ModularForm.norm 𝒮ℒ f = ∏_{q ∈ 𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ} f ∣[k] q⁻¹` of a weight-`k` form on `𝒢` is a
-level-one form, and `TauCeti/NumberTheory/ModularForms/Norm/Valence.lean` reads the level-one
-valence formula back along it as
-
-`Σ_{P ∈ 𝒢 \ ℍ} (2 / |Stab_𝒢 P|) · ord_P f + ord_∞(Nm f) = k · [SL(2, ℤ) : 𝒢] / 12`,
-
-whose cusp term is still one order at `∞`, taken on the norm. This file distributes that term
-over the cusps of `𝒢`, each read in its own width parameter, and so closes the general-level
-valence formula (`valence_formula_finiteIndex`).
+level-one form, whose order at `∞` forms the cusp term of the norm-intermediate general-level
+valence formula (`TauCeti/NumberTheory/ModularForms/Norm/Valence/Basic.lean`). This file
+distributes that cusp term over the cusp translation orbits of `𝒢`, each read in its own width
+parameter, and `TauCeti/NumberTheory/ModularForms/Norm/Valence/Full.lean` combines it with the
+interior push-forward into the full general-level valence formula (`valence_formula_finiteIndex`).
 
 ## Indexing the cusp translation orbits
 
@@ -33,9 +33,9 @@ element of the stabiliser `⟨T, -I⟩` of `∞` in `SL(2, ℤ)`. Here the cusp 
 orbits of `⟨T⟩` alone (`CuspTranslationOrbit`), so a classical cusp of `𝒢` corresponds to one
 cusp translation orbit or two, according as its `⟨T⟩`-orbit is stable under `-I` or not. That is
 the **full**-coset convention that
-`Norm/Valence.lean` already makes on the interior term — the weight there is read on the matrix
-stabiliser, and the norm's weight is `k · [SL(2, ℤ) : 𝒢]` for the full index — so both halves of
-the identity are read for the full coset space, which is what makes them match.
+`Norm/Valence/Basic.lean` already makes on the interior term — the weight there is read on the
+matrix stabiliser, and the norm's weight is `k · [SL(2, ℤ) : 𝒢]` for the full index — so both
+halves of the identity are read for the full coset space, which is what makes them match.
 
 The **width** of an orbit (`cuspTranslationOrbitWidth`) and its finiteness and index-sum
 properties live in `TauCeti/NumberTheory/ModularForms/Cusps/TranslationOrbit/Basic.lean`.
@@ -60,12 +60,11 @@ Nothing here divides by an order that could be `⊤`: each factor of a nonzero f
 
 * `TauCeti.ModularForm.orderAtCuspTranslationOrbit_mk`: the order at an orbit may be read at any
   representative coset, so the `Quotient.out` of the definition is only a spelling.
+* `TauCeti.ModularForm.orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp` and
+  `TauCeti.ModularForm.orderAtCuspTranslationOrbit_mk_neg_inv`: evaluation at an integral
+  representative `γ⁻¹` and sign invariance.
 * `TauCeti.ModularForm.qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit`: the cusp
   distribution — `ord_∞(Nm f) = Σ_c ord_c f`.
-* `TauCeti.ModularForm.valence_formula_finiteIndex`: **the valence formula at general level**,
-  with both halves distributed.
-* `TauCeti.ModularForm.twelve_mul_orderAtCuspTranslationOrbit_le_weight_mul_index`: the mass at
-  one cusp translation orbit is bounded by the total mass.
 
 ## References
 
@@ -76,7 +75,7 @@ public section
 
 open UpperHalfPlane Complex Function SlashInvariantForm MulAction Filter
 
-open scoped ModularForm Topology Filter Manifold MatrixGroups
+open scoped ModularForm Topology Filter Manifold MatrixGroups Pointwise
 
 namespace TauCeti
 
@@ -365,53 +364,46 @@ theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F
 end Order
 
 
-section ValenceFormula
+section IntegralRep
+
+open Matrix.SpecialLinearGroup
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
   [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
 
-/-- **The valence formula at general level**: for a nonzero weight-`k` form on a finite-index
-`Γ ≤ SL(2, ℤ)`, the interior orders — weighted by `2 / |Stab_Γ P|` — together with the orders
-indexed by the cusp translation orbits add up to `k · [SL(2, ℤ) : Γ] / 12`.
+/-- The vanishing order at the cusp translation orbit of `γ⁻¹` is the `q`-expansion order of
+`f ∣[k] γ` at `strictWidthInfty` of `γ⁻¹ Γ γ`. -/
+theorem orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp (f : F) (γ : SL(2, ℤ)) :
+    orderAtCuspTranslationOrbit f
+        (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ :
+          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
+      qExpansionOrderAtCusp
+        (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).strictWidthInfty
+        (⇑f ∣[k] mapGL ℝ γ) := by
+  rw [orderAtCuspTranslationOrbit_mk, ← cuspTranslationOrbitWidth_mk,
+    natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty,
+    _root_.SlashInvariantForm.quotientFunc_mk, MonoidHom.coe_rangeRestrict,
+    map_inv (mapGL ℝ) γ, inv_inv]
 
-This is `valence_formula_finiteIndex_norm` with its cusp term, an order at `∞` on the norm,
-distributed over the cusps of `Γ`. -/
-theorem valence_formula_finiteIndex (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
-    (∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
-          weightedOrderOfVanishingOnSubgroupOrbit f o) +
-        ∑ c : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ)),
-          (orderAtCuspTranslationOrbit f c : ℚ) =
-      (k : ℚ) * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) / 12 := by
-  rw [← valence_formula_finiteIndex_norm f hf,
-    qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit f]
-  push_cast
-  ring
+/-- Negating `γ⁻¹` preserves `orderAtCuspTranslationOrbit` (up to `(-1) ^ k`). -/
+theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
+    orderAtCuspTranslationOrbit f
+        (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (-γ⁻¹))⟧ :
+          CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
+      orderAtCuspTranslationOrbit f ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹)⟧ := by
+  set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
+  let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
+  have hΓ : ConjAct.toConjAct (mapGL ℝ (-γ))⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) = Γγ := by
+    rw [mapGL_neg, inv_neg, Subgroup.toConjAct_neg_smul]
+  rw [← inv_neg, orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp,
+    orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp, hΓ,
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (-γ), ← _root_.ModularForm.SL_slash, SL_slash_neg,
+    _root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL γ,
+    ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
+  exact TauCeti.qExpansionOrderAtCusp_smul (ModularFormClass.analyticAt_cuspFunction_zero fγ
+    Γγ.strictWidthInfty_pos Γγ.strictWidthInfty_mem_strictPeriods) (zpow_ne_zero k (by norm_num))
 
-/-- **The mass at one cusp is bounded by the total mass.** Every other term of the general-level
-valence formula is nonnegative, so `12 · ord_c f ≤ k · [SL(2, ℤ) : Γ]` for a nonzero form — the
-cusp counterpart of the interior bound
-`twentyFour_mul_orderOfVanishingOnSubgroupOrbit_le_weight_mul_index_mul_cardStabilizer`,
-with `12` in place of `24` because a cusp carries no stabiliser weight. -/
-theorem twelve_mul_orderAtCuspTranslationOrbit_le_weight_mul_index (f : F)
-    (hf : (⇑f : ℍ → ℂ) ≠ 0)
-    (c : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) :
-    12 * orderAtCuspTranslationOrbit f c ≤
-      k * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by
-  have hinterior : (0 : ℚ) ≤ ∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
-      weightedOrderOfVanishingOnSubgroupOrbit f o :=
-    finsum_nonneg (weightedOrderOfVanishingOnSubgroupOrbit_nonneg f)
-  have hsingle : (orderAtCuspTranslationOrbit f c : ℚ) ≤
-      ∑ c' : CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ)),
-        (orderAtCuspTranslationOrbit f c' : ℚ) :=
-    Finset.single_le_sum (f := fun c' ↦ (orderAtCuspTranslationOrbit f c' : ℚ))
-      (fun c' _ ↦ by exact_mod_cast orderAtCuspTranslationOrbit_nonneg f c')
-      (Finset.mem_univ c)
-  have htotal := valence_formula_finiteIndex f hf
-  have hq : (12 : ℚ) * (orderAtCuspTranslationOrbit f c : ℚ) ≤
-      (k : ℚ) * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) := by linarith
-  exact_mod_cast hq
-
-end ValenceFormula
+end IntegralRep
 
 end ModularForm
 

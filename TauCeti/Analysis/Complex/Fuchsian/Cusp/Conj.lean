@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 import Mathlib.Algebra.Group.Subgroup.Actions
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
 
 /-!
 # Cusps of conjugate Fuchsian groups
@@ -39,6 +40,8 @@ construction for `g⁻¹`, and an element of the normalizer of `Γ` acts on the 
 * `TauCeti.Subgroup.CuspDatum.horodisc_conj` and
   `TauCeti.Subgroup.CuspDatum.coordinate_conj_smul`: transport of horodiscs and of the
   q-coordinate.
+* `TauCeti.cuspDatum_width_eq_mul_of_smul`: cusp-width relation for two data linked by an
+  element of `Γ`.
 
 ## References
 
@@ -232,3 +235,28 @@ theorem coordinate_conj_smul (z : ℍ) : coordinate (D.conj h) (g • z) = coord
     _root_.Subgroup.CuspDatum.conj_width, mul_smul, inv_smul_smul]
 
 end TauCeti.Subgroup.CuspDatum
+
+namespace TauCeti
+
+open Matrix.ProjectiveSpecialLinearGroup
+
+/-- If `γ ∈ Γ` carries the cusp of `D` to that of `D'`, with lifts `s`, `s'`, `h` of
+`D.scaling`, `D'.scaling`, `γ`, then the widths satisfy
+`D'.width = (s' * h * s⁻¹) 0 0 ^ 2 * D.width`. -/
+theorem cuspDatum_width_eq_mul_of_smul {Γ : Subgroup PSL(2, ℝ)} {D D' : Γ.CuspDatum}
+    {s s' h : SL(2, ℝ)} {γ : Γ} (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) :
+    D'.width = (s' * h * s⁻¹) 0 0 ^ 2 * D.width := by
+  have hc : ConjAct.toConjAct (γ : PSL(2, ℝ)) • Γ = Γ :=
+    _root_.Subgroup.conjAct_pointwise_smul_eq_self (_root_.Subgroup.le_normalizer γ.property)
+  have hσ (z : ℍ) : (↑(D'.scaling • z) : ℂ) =
+      ↑((s' * h * s⁻¹) 0 0 ^ 2) * (↑((D.conj hc).scaling • z) : ℂ) +
+        ↑((s' * h * s⁻¹) 0 0 * (s' * h * s⁻¹) 0 1) := by
+    have haff := coe_scaling_smul_eq_affine_of_smul hs hs' hh hγ ((γ : PSL(2, ℝ))⁻¹ • z)
+    rw [smul_inv_smul] at haff
+    simpa [_root_.Subgroup.CuspDatum.conj_scaling, mul_smul] using haff
+  simpa [_root_.Subgroup.CuspDatum.conj_width] using
+    cuspDatum_width_eq_mul ((_root_.Subgroup.CuspDatum.conj_cusp D hc).trans hγ) hσ
+
+end TauCeti

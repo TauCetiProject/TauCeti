@@ -136,7 +136,7 @@ private lemma neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem (γ : SL(2, ℤ)) (j
     -(γ * ModularGroup.T ^ j * γ⁻¹) ∈ Γ ↔
       -Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) ∈
         ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) := by
-  rw [Subgroup.mem_conjAct_inv_smul_iff, ← ModularGroup.mapGL_T_zpow_eq_upperRightHom, mul_neg,
+  rw [Subgroup.mem_conjAct_smul_iff, inv_inv, ← ModularGroup.mapGL_T_zpow_eq_upperRightHom, mul_neg,
     neg_mul, ← map_inv, ← map_mul, ← map_mul, ← mapGL_neg,
     Subgroup.mem_map_iff_mem (mapGL_injective (S := ℝ))]
 

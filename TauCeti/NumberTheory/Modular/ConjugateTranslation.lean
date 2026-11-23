@@ -178,7 +178,8 @@ theorem exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_con
     (hw : mapGL ℝ s * _root_.Matrix.GeneralLinearGroup.upperRightHom w ∈
       ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ.map (mapGL ℝ)) :
     ∃ j : ℤ, w = j ∧ γ * (s * _root_.ModularGroup.T ^ j) * γ⁻¹ ∈ Γ := by
-  obtain ⟨g, hg, hg_eq⟩ := Subgroup.mem_map.mp (Subgroup.mem_conjAct_inv_smul_iff.mp hw)
+  rw [Subgroup.mem_conjAct_smul_iff, inv_inv] at hw
+  obtain ⟨g, hg, hg_eq⟩ := Subgroup.mem_map.mp hw
   set u : SL(2, ℤ) := s⁻¹ * (γ⁻¹ * g * γ) with hu_def
   have hconj : mapGL ℝ u = _root_.Matrix.GeneralLinearGroup.upperRightHom w := by
     rw [hu_def, map_mul, map_inv, map_mul, map_mul, map_inv, hg_eq]; group

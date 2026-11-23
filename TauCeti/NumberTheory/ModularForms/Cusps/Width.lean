@@ -47,7 +47,7 @@ private lemma cuspDatum_width_mem_periods {D : (Γ.map sl2zToPSL2R).CuspDatum} {
     Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff] at hconj
   have hmem : mapGL ℝ (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) (γ⁻¹ * g₀ * γ)) ∈
       ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) := by
-    rw [mapGL_map_intCast (R := ℝ) (S := ℝ), Subgroup.mem_conjAct_inv_smul_iff]
+    rw [mapGL_map_intCast (R := ℝ) (S := ℝ), Subgroup.mem_conjAct_smul_iff, inv_inv]
     simpa [map_mul, map_inv, mul_assoc] using Subgroup.mem_map_of_mem (mapGL ℝ) hg₀
   rw [Subgroup.periods, Subgroup.mem_strictPeriods_iff, Subgroup.mem_adjoinNegOne_iff]
   rcases hconj with h | h

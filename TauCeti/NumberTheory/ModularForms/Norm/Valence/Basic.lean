@@ -55,9 +55,9 @@ norm is not even well defined; the projective statement
 ## Implementation notes
 
 The **cusp** half — distributing `ord_∞(Nm f)` over the cusps of `Γ`, each read in its width
-parameter — is carried out in `Norm/Cusps.lean`, which combines it with the identity below into
-the full general-level valence formula `TauCeti.ModularForm.valence_formula_finiteIndex`. The
-norm is decomposed orbitwise by
+parameter — is carried out in `Norm/Cusps.lean`, and `Norm/Valence/Full.lean` combines it with
+the identity below into the full general-level valence formula
+`TauCeti.ModularForm.valence_formula_finiteIndex`. The norm is decomposed orbitwise by
 `TauCeti.ModularForm.slashInvariantForm_norm_apply_eq_prod_galoisProd`, and the resulting orders
 are summed in
 `TauCeti.ModularForm.qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit`.
@@ -212,8 +212,8 @@ indexed by the `Γ`-orbits, weighted as the level-one `1 / e_P` up to the factor
 is the **full** coset index, as it must be for odd weight with `-I ∉ Γ`.
 
 The cusp term is still read at level one, on the norm. Distributing it over the cusps of `Γ`,
-each weighted by its width, is the remaining step of the general-level formula; the norm's
-`q`-expansion order at `∞` is decomposed in `TauCeti.ModularForm.qExpansion_one_norm_order_eq`. -/
+each weighted by its width, is carried out in `Norm/Cusps.lean` and combined in
+`Norm/Valence/Full.lean`. -/
 theorem valence_formula_finiteIndex_norm [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,

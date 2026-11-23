@@ -41,8 +41,7 @@ subgroup is the conjugate by `g` of the stabilizer of `a`.
   unchanged by conjugation by an element of that subgroup.
 * `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
-* `Subgroup.mem_conjAct_smul_iff`, `Subgroup.mem_conjAct_inv_smul_iff`: membership in conjugates
-  `g H g⁻¹` and `g⁻¹ H g`.
+* `Subgroup.mem_conjAct_smul_iff`: membership in conjugates `g H g⁻¹`.
 * `Subgroup.toConjAct_neg_smul`: negating a conjugating element in a group with distributive
   negation leaves the conjugate subgroup unchanged.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
@@ -135,11 +134,6 @@ theorem mem_conjAct_smul_iff {G : Type*} [Group G] {H : Subgroup G} {g x : G} :
     x ∈ ConjAct.toConjAct g • H ↔ g⁻¹ * x * g ∈ H := by
   rw [mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul,
     inv_inv]
-
-/-- An element lies in the conjugate `g⁻¹ H g` iff conjugating it by `g` lands in `H`. -/
-theorem mem_conjAct_inv_smul_iff {G : Type*} [Group G] {H : Subgroup G} {g x : G} :
-    x ∈ ConjAct.toConjAct g⁻¹ • H ↔ g * x * g⁻¹ ∈ H := by
-  rw [mem_conjAct_smul_iff, inv_inv]
 
 /-- Negating a conjugating element in a group with distributive negation leaves the conjugate
 subgroup unchanged: `(-g) H (-g)⁻¹ = g H g⁻¹`. -/
