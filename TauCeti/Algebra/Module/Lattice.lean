@@ -559,12 +559,7 @@ theorem _root_.Module.Basis.map_stabilizerMulEquivGL_apply (b : Basis ι R L)
       LinearMap.toMatrix (b.extendOfIsFullLattice K) (b.extendOfIsFullLattice K)
         (g : V ≃ₗ[K] V) := by
   ext i j
-  rw [Matrix.map_apply, b.coe_stabilizerMulEquivGL_apply, LinearMap.toMatrix_apply,
-    LinearMap.toMatrix_apply, ← Basis.extendOfIsFullLattice_repr_coe K, LinearEquiv.coe_coe,
-    coe_stabilizerMulEquiv_apply, Basis.extendOfIsFullLattice_apply]
-  -- Both sides apply `g`, coerced to a function through the stabilizer subgroup and through
-  -- `V ≃ₗ[K] V` respectively.
-  rfl
+  simp [LinearMap.toMatrix_apply, ← Basis.extendOfIsFullLattice_repr_coe K]
 
 /-- The automorphism of `V` attached to `u ∈ GL ι R` is the linear map with matrix `u`, read in
 `K`, in the ambient basis extended from the lattice basis `b`. -/
