@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 public import TauCeti.Topology.VectorBundle.ZeroSection
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -155,18 +154,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
 
 /-! ### Changes of chart and frame -/
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-include hc hc' in
-/-- The chart transition `κ = c ∘ c'⁻¹` between smooth charts with smooth inverses is smooth on its
-source, and so is its inverse on its target. -/
-private theorem contDiffOn_transition (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source ∧
-      ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
-  refine ⟨OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs', ?_⟩
-  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-  exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
-
 /-- If every component in `(t, c)` is microlocally smooth at `(κ y, (Dκ⁻¹(κ y))ᵀ ξ)`, for the
 transition `κ = c ∘ c'⁻¹`, then every component in `(t', c')` is microlocally smooth at
 `(y, ξ)`. -/
@@ -178,24 +165,11 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_forall
       (((fderiv ℝ (c'.symm.trans c).symm (c'.symm.trans c y))†) ξ)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsMicrolocallySmoothAt y ξ := by
   obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
-  -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
-  obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
-    (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
-  let B : Opens E := ⟨W, hWo⟩
-  have hB : (B : Set E) ⊆ (c'.symm.trans c).source := subset_closure.trans hWs
-  have hBc : MapsTo (c'.symm.trans c) B (⟨c.target, c.open_target⟩ : Opens E) :=
-    fun z hz ↦ ((c'.symm.trans c).map_source (hB hz)).1
-  have hBt : B ≤ ⟨c'.target, c'.open_target⟩ := fun z hz ↦ (hB hz).1
-  -- Globally smooth coefficients agreeing with those of the change of chart and frame on `B`.
-  choose g hg _ _ _ hgf using fun j ↦
-    (contDiffOn_transitionCoeff (hct := hct) (hct' := hct') he he' hcs' v
-      j).exists_contDiff_eventuallyEq_on_isCompact hWc (c'.symm.trans c).open_source hWs
-  have hgB (j) (z) (hz : z ∈ B) := (hgf j z (subset_closure hz)).eq_of_nhds
-  rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt (singleton_subset_iff.1 hyW),
-    restrictCLM_chartComponent_eq_sum (hc := hc) (hct := hct) T v he he' hB hBc hg hgB]
-  exact IsMicrolocallySmoothAt.sum _ (singleton_subset_iff.1 hyW) fun j _ ↦
-    ((h _).compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc
-      (singleton_subset_iff.1 hyW)).smulLeftCLM (hg j)
+  obtain ⟨B, hB, hBc, g, hg, hyB, hS⟩ := exists_restrictCLM_chartComponent_eq_sum (hc := hc)
+    (hct := hct) (hc' := hc') (hct' := hct') hcs' he he' T v hy
+  rw [← isMicrolocallySmoothAt_restrictCLM_iff (fun z hz ↦ (hB hz).1) hyB, hS]
+  exact IsMicrolocallySmoothAt.sum _ hyB fun j _ ↦
+    ((h _).compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc hyB).smulLeftCLM (hg j)
 
 /-- **Independence of the chart and the frame.** Let `c` and `c'` be smooth charts with smooth
 inverses, with frames `t` and `t'` over their sources, and let `y = c' x` for a point `x` of both

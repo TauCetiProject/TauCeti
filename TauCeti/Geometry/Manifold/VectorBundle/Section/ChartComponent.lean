@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -28,13 +30,17 @@ This file computes how the components change with the chart and the frame. For t
 
 `S'_v = ∑ⱼ gⱼ κ^* S_{bⱼ}`, with `gⱼ = |det Dκ| · bⱼ*(G(c'⁻¹ ·) v)`,
 
-where `S_{bⱼ}` are the components in `(t, c)` along the standard basis `(bⱼ)` of `F`,
+where `S_{bⱼ}` are the components in `(t, c)` along the basis `(bⱼ) = Module.finBasis ℝ F`,
 `G = t ∘ t'⁻¹` is the change of frame and `κ^*` is the pullback of distributions
 (`Distribution.compCLMOfOpenPartialHomeomorph`)
-(`Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`). The coefficients `gⱼ` are smooth on
-the source of `κ` (`Bundle.Trivialization.contDiffOn_transitionCoeff`). Any local regularity
-property of distributions preserved by pullback, smooth multiples and finite sums, such as local
-Sobolev regularity or microlocal smoothness, is therefore independent of the chart and the frame.
+(`Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`). The transition `κ` is smooth with
+smooth inverse (`Bundle.Trivialization.contDiffOn_transition`), and the coefficients `gⱼ` are
+smooth on the source of `κ` (`Bundle.Trivialization.contDiffOn_transitionCoeff`), so near every
+point of the source of `κ` the formula holds with globally smooth coefficients
+(`Bundle.Trivialization.exists_restrictCLM_chartComponent_eq_sum`). Any property of distributions
+at a point that is preserved by pullback, smooth multiples and finite sums, such as local Sobolev
+regularity, is therefore independent of the chart and the frame. Microlocal smoothness transfers
+in the same way once covectors are transformed by the transpose of `Dκ`.
 
 ## The argument
 
@@ -50,7 +56,11 @@ which carries the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), giv
   `T` in a chart and a frame, as a complex distribution on the chart target.
 * `Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`: the change of chart and frame for the
   components.
-* `Bundle.Trivialization.contDiffOn_transitionCoeff`: the smoothness of its coefficients.
+* `Bundle.Trivialization.contDiffOn_transition`: the smoothness of the chart transition and its
+  inverse.
+* `Bundle.Trivialization.contDiffOn_transitionCoeff`: the smoothness of the coefficients.
+* `Bundle.Trivialization.exists_restrictCLM_chartComponent_eq_sum`: the change of chart and frame
+  near a point, with globally smooth coefficients.
 -/
 
 public section
@@ -165,11 +175,23 @@ variable {t' : Trivialization F (π F V)} [MemTrivializationAtlas t']
   {c' : OpenPartialHomeomorph M E}
   {hc' : ContMDiffOn I 𝓘(ℝ, E) ∞ c' c'.source} {hct' : c'.source ⊆ t'.baseSet}
 
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+include hc hc' in
+/-- The chart transition `κ = c ∘ c'⁻¹` between smooth charts with smooth inverses is smooth on its
+source, and so is its inverse on its target. -/
+theorem contDiffOn_transition (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
+    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
+    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source ∧
+      ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
+  refine ⟨OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs', ?_⟩
+  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
+  exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
+
 /-- **Change of chart and frame for test functions.** Let `φ` be a test function supported in an
 open set `B` of the source of the chart transition `κ = c ∘ c'⁻¹`, and `gⱼ` smooth functions equal
 on `B` to `|det Dκ| bⱼ*(G(c'⁻¹ ·) v)`, where `G = t ∘ t'⁻¹` is the change of frame and `(bⱼ)` the
-standard basis of `F`. Then the bundle test `φ • v` read in `(t', c')` is the sum of the bundle
-tests `(κ_* (gⱼ φ)) • bⱼ` read in `(t, c)`. -/
+basis `Module.finBasis ℝ F`. Then the bundle test `φ • v` read in `(t', c')` is the sum of the
+bundle tests `(κ_* (gⱼ φ)) • bⱼ` read in `(t, c)`. -/
 private theorem chartTestCLM_eq_sum_chartTestCLM (v : F)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
     (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
@@ -232,10 +254,11 @@ private theorem chartTestCLM_eq_sum_chartTestCLM (v : F)
       simp [TestFunction.pushforwardCLM_apply_of_notMem _ hκt]
     · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx]
 
-/-- **Change of chart and frame for the components.** Near a point of the source of the chart
-transition `κ = c ∘ c'⁻¹`, the component along `v` in `(t', c')` is `∑ⱼ gⱼ κ^* S_{bⱼ}`, where
-`S_{bⱼ}` are the components in `(t, c)` along the standard basis of `F` and `gⱼ` are the smooth
-coefficients of `chartTestCLM_eq_sum_chartTestCLM`. -/
+/-- **Change of chart and frame for the components.** Let `B` be an open set in the source of the
+chart transition `κ = c ∘ c'⁻¹`, and `gⱼ` smooth functions equal on `B` to
+`|det Dκ| · bⱼ*(G(c'⁻¹ ·) v)`, where `G = t ∘ t'⁻¹` is the change of frame and `(bⱼ)` the basis
+`Module.finBasis ℝ F`. Then on `B` the component along `v` in `(t', c')` is `∑ⱼ gⱼ κ^* S_{bⱼ}`,
+where `S_{bⱼ}` are the components in `(t, c)` and `κ^*` is the pullback of distributions. -/
 theorem restrictCLM_chartComponent_eq_sum (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
     (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
@@ -274,6 +297,35 @@ theorem contDiffOn_transitionCoeff
   have hcoord := (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j)).contDiff
     (n := (⊤ : ℕ∞))
   exact hdet.mul (hcoord.comp_contDiffOn (hG.clm_apply contDiffOn_const))
+
+/-- **Change of chart and frame near a point.** Every point `y` of the source of the chart
+transition `κ = c ∘ c'⁻¹` has an open neighbourhood `B` in the source of `κ` and smooth functions
+`gⱼ` on `E` such that on `B` the component along `v` in `(t', c')` is `∑ⱼ gⱼ κ^* S_{bⱼ}`, where
+`S_{bⱼ}` are the components in `(t, c)` along the basis `(bⱼ) = Module.finBasis ℝ F` and `κ^*` is
+the pullback of distributions. On `B`, `gⱼ = |det Dκ| · bⱼ*(G(c'⁻¹ ·) v)` for the change of frame
+`G = t ∘ t'⁻¹` (`Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`). -/
+theorem exists_restrictCLM_chartComponent_eq_sum
+    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
+    (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
+    (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) {y : E} (hy : y ∈ (c'.symm.trans c).source) :
+    ∃ (B : Opens E) (hB : (B : Set E) ⊆ (c'.symm.trans c).source)
+      (hBc : MapsTo (c'.symm.trans c) B (⟨c.target, c.open_target⟩ : Opens E))
+      (g : Fin (Module.finrank ℝ F) → E → ℝ) (hg : ∀ j, ContDiff ℝ ∞ (g j)), y ∈ B ∧
+      (restrictCLM (t'.chartComponent c' hc' hct' T v) : 𝓓'(B, ℂ)) =
+        ∑ j, smulLeftCLM (hg j) (compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc
+          (t.chartComponent c hc hct T (Module.finBasis ℝ F j))) := by
+  -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
+  obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
+    (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
+  have hB : W ⊆ (c'.symm.trans c).source := subset_closure.trans hWs
+  -- Globally smooth coefficients agreeing with those of the change of chart and frame on `B`.
+  choose g hg _ _ _ hgf using fun j ↦
+    (contDiffOn_transitionCoeff (hct := hct) (hct' := hct') he he' hcs' v
+      j).exists_contDiff_eventuallyEq_on_isCompact hWc (c'.symm.trans c).open_source hWs
+  exact ⟨⟨W, hWo⟩, hB, fun z hz ↦ ((c'.symm.trans c).map_source (hB hz)).1, g, hg,
+    singleton_subset_iff.1 hyW, restrictCLM_chartComponent_eq_sum T v he he' hB _ hg
+      fun j z hz ↦ (hgf j z (subset_closure hz)).eq_of_nhds⟩
 
 end Transition
 

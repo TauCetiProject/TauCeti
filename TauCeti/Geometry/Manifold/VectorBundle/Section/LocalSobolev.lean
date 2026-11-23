@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.ChangeOfVariables
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
 /-!
@@ -115,27 +113,10 @@ private theorem isLocallySobolevAt_chartComponent_of_forall
     {y : E} (hy : y ∈ (c'.symm.trans c).source)
     (h : ∀ w, (t.chartComponent c hc hct T w).IsLocallySobolevAt s (c'.symm.trans c y)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsLocallySobolevAt s y := by
-  have he := OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs'
-  have he' : ContDiffOn ℝ ∞ (c'.symm.trans c).symm (c'.symm.trans c).target := by
-    rw [← OpenPartialHomeomorph.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm]
-    exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
-  -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
-  obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
-    (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
-  let B : Opens E := ⟨W, hWo⟩
-  have hB : (B : Set E) ⊆ (c'.symm.trans c).source := subset_closure.trans hWs
-  have hBc : MapsTo (c'.symm.trans c) B (⟨c.target, c.open_target⟩ : Opens E) :=
-    fun z hz ↦ ((c'.symm.trans c).map_source (hB hz)).1
-  have hBt : B ≤ ⟨c'.target, c'.open_target⟩ := fun z hz ↦ (hB hz).1
-  have hyB : y ∈ B := singleton_subset_iff.1 hyW
-  -- Globally smooth coefficients agreeing with those of the change of chart and frame on `B`.
-  choose g hg _ _ _ hgf using fun j ↦
-    (contDiffOn_transitionCoeff (hct := hct) (hct' := hct') he he' hcs' v
-      j).exists_contDiff_eventuallyEq_on_isCompact hWc (c'.symm.trans c).open_source hWs
-  have hgB (j) (z) (hz : z ∈ B) := (hgf j z (subset_closure hz)).eq_of_nhds
-  rw [← isLocallySobolevAt_restrictCLM_iff hBt hyB,
-    restrictCLM_chartComponent_eq_sum (hc := hc) (hct := hct) T v he he' hB hBc hg hgB]
+  obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
+  obtain ⟨B, hB, hBc, g, hg, hyB, hS⟩ := exists_restrictCLM_chartComponent_eq_sum (hc := hc)
+    (hct := hct) (hc' := hc') (hct' := hct') hcs' he he' T v hy
+  rw [← isLocallySobolevAt_restrictCLM_iff (fun z hz ↦ (hB hz).1) hyB, hS]
   exact Distribution.IsLocallySobolevAt.sum hyB fun j _ ↦
     ((isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hyB).2 (h _)).smulLeftCLM (hg j)
 
