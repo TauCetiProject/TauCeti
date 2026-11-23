@@ -48,6 +48,10 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
   version), and they are the only such sequences
   (`TauCeti.ParameterSymbol.eq_expansionLeftInverseTerms_iff`,
   `TauCeti.ParameterSymbol.eq_expansionRightInverseTerms_iff`).
+* `TauCeti.ParameterSymbol.expansionLeftInverseTerms_eq_leftInverseTerms`,
+  `TauCeti.ParameterSymbol.expansionRightInverseTerms_eq_rightInverseTerms`: for the one-term
+  expansion `(a, 0, 0, …)` of a single symbol `a`, the formal inverses of the expansion are the
+  parametrices `leftInverseTerms` and `rightInverseTerms` of `a`.
 * `TauCeti.ParameterSymbol.isHomogeneous_expansionLeftInverseTerms`,
   `TauCeti.ParameterSymbol.isHomogeneous_expansionRightInverseTerms`: if each `aⱼ` is jointly
   homogeneous of degree `μ - j` under `(ξ, z) ↦ (t ξ, t² z)`
@@ -55,11 +59,16 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
   homogeneous of degree `-μ - k`. These are the jointly homogeneous terms of Seeley's resolvent
   symbol. The same holds for the composition terms
   (`TauCeti.ParameterSymbol.IsHomogeneous.sharpTerm`,
-  `TauCeti.ParameterSymbol.IsHomogeneous.sharpTerms`).
+  `TauCeti.ParameterSymbol.IsHomogeneous.sharpTerms`) and for the parametrix of a single
+  homogeneous symbol (`TauCeti.ParameterSymbol.isHomogeneous_leftInverseTerms`,
+  `TauCeti.ParameterSymbol.isHomogeneous_rightInverseTerms`).
 
 The definition and closed form of `TauCeti.ParameterSymbol.sharpTerm` follow
-`TauCeti.HomogeneousSymbol.sharpTerm` and `TauCeti.Symbol.sharpTerm`, and the parametrix
-recursions adapt `TauCeti.ClassicalSymbol.leftInverseTerms` and
+`TauCeti.HomogeneousSymbol.sharpTerm` and `TauCeti.Symbol.sharpTerm`, the formal composition
+of expansions `TauCeti.ParameterSymbol.sharpTerms` and its recursions
+`TauCeti.ParameterSymbol.coefficient_sharpTerms_succ` and
+`TauCeti.ParameterSymbol.coefficient_sharpTerms_succ'` follow `TauCeti.ClassicalSymbol.sharpTerms`,
+and the parametrix recursions adapt `TauCeti.ClassicalSymbol.leftInverseTerms` and
 `TauCeti.ClassicalSymbol.rightInverseTerms` to the parameter-dependent class.
 
 ## References
@@ -174,6 +183,14 @@ theorem coefficient_sharpTerm (b : ParameterSymbol n Λ W U m') (a : ParameterSy
 theorem sharpTerm_zero_right (b : ParameterSymbol n Λ W U m') (k : ℕ) :
     b.sharpTerm (0 : ParameterSymbol n Λ V W m) k = 0 := by
   induction k generalizing m' b with
+  | zero => exact ext_of_mem fun x ξ z _ => by simp
+  | succ k ih => simp [sharpTerm_succ, ih]
+
+/-- The composition terms vanish when the left factor is zero. -/
+@[simp]
+theorem sharpTerm_zero_left (a : ParameterSymbol n Λ V W m) (k : ℕ) :
+    (0 : ParameterSymbol n Λ W U m').sharpTerm a k = 0 := by
+  induction k generalizing m' m a with
   | zero => exact ext_of_mem fun x ξ z _ => by simp
   | succ k ih => simp [sharpTerm_succ, ih]
 
@@ -517,27 +534,6 @@ theorem eq_expansionLeftInverseTerms_iff {q : (i : ℕ) → ParameterSymbol n Λ
     refine Finset.sum_congr rfl fun i hi => ?_
     rw [ih i (by simpa using Finset.mem_range.1 hi)]
 
-/-- **Position-independent symbols.** If the expansion `a` consists of a single term independent of
-the position, such as the symbol `(s + ‖ξ‖²) - z` of `s - Δ - z`
-(`TauCeti.ParameterSymbol.spatialDeriv_shiftedLaplacian`), its formal left inverse is the
-pointwise inverse `a₀⁻¹`: all later terms vanish. -/
-theorem expansionLeftInverseTerms_succ_eq_zero (h₀ : ∀ v, (a 0).spatialDeriv v = 0)
-    (h₁ : ∀ j, a (j + 1) = 0) (k : ℕ) : expansionLeftInverseTerms a ha (k + 1) = 0 := by
-  refine ext_of_mem fun x ξ z _ => ?_
-  rw [coefficient_expansionLeftInverseTerms_succ, coefficient_zero, Pi.zero_apply]
-  -- Every term in the recursion vanishes: either `j ≥ 1`, so `aⱼ = 0`, or `j = 0`, so at least
-  -- one derivative falls on the position-independent `a₀`.
-  rw [Finset.sum_eq_zero fun i hi => Finset.sum_eq_zero fun j _ => ?_]
-  · simp
-  split_ifs with hij
-  · rcases j with _ | j
-    · obtain ⟨r, hr⟩ : ∃ r, k + 1 - (i + 0) = r + 1 :=
-        ⟨k - i, by have := Finset.mem_range.1 hi; omega⟩
-      rw [coefficient_sharpTerm_congr hr, sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero _ h₀,
-        coefficient_zero, Pi.zero_apply]
-    · rw [h₁ j, sharpTerm_zero_right, coefficient_zero, Pi.zero_apply]
-  · rfl
-
 /-- **Homogeneity of the formal left inverse.** If each term `aⱼ` is homogeneous of degree
 `μ - j` under `(ξ, z) ↦ (t ξ, t² z)`, the term `q_k` of the formal left inverse is homogeneous of
 degree `-μ - k`. For `a = ‖ξ‖² - z` these are the jointly homogeneous terms of the resolvent
@@ -673,6 +669,78 @@ theorem isHomogeneous_expansionRightInverseTerms {μ : ℝ}
     · exact isHomogeneous_zero
 
 end ExpansionParametrix
+
+/-! ### Single symbols as one-term expansions -/
+
+section OneTermExpansion
+
+variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m} (ha : a.IsElliptic)
+  {e : (j : ℕ) → ParameterSymbol n Λ V W (m - j)} (he : (e 0).IsElliptic)
+
+/-- **The parametrix of a single symbol.** For the one-term expansion `e = (a, 0, 0, …)` of a
+symbol `a` elliptic with parameter, the formal left inverse of the expansion is the left
+parametrix `TauCeti.ParameterSymbol.leftInverseTerms` of `a`. -/
+theorem expansionLeftInverseTerms_eq_leftInverseTerms (h₀ : (e 0).coefficient = a.coefficient)
+    (h₁ : ∀ j, e (j + 1) = 0) : expansionLeftInverseTerms e he = a.leftInverseTerms ha := by
+  refine ((eq_expansionLeftInverseTerms_iff e he).2 ⟨fun x ξ z hz => ?_, fun k => ?_⟩).symm
+  · simp [h₀, (ha.isInvertible x ξ z hz).inverse_comp_self]
+  refine ext_of_mem fun x ξ z hz => ?_
+  have h := sum_coefficient_sharpTerm_leftInverseTerms ha (k + 1) x ξ hz
+  rw [ite_eq_right k.succ_ne_zero] at h
+  rw [coefficient_sharpTerms, coefficient_zero, Pi.zero_apply]
+  refine (Finset.sum_congr rfl fun i hi => ?_).trans h
+  rw [Finset.sum_range_succ', Finset.sum_eq_zero fun j _ => by simp [h₁], zero_add,
+    ite_eq_left (by have := Finset.mem_range.1 hi; omega), coefficient_sharpTerm _ _ _ _ _ hz,
+    coefficient_sharpTerm _ _ _ _ _ hz, h₀, add_zero]
+
+/-- **The parametrix of a single symbol.** For the one-term expansion `e = (a, 0, 0, …)` of a
+symbol `a` elliptic with parameter, the formal right inverse of the expansion is the right
+parametrix `TauCeti.ParameterSymbol.rightInverseTerms` of `a`. -/
+theorem expansionRightInverseTerms_eq_rightInverseTerms (h₀ : (e 0).coefficient = a.coefficient)
+    (h₁ : ∀ j, e (j + 1) = 0) : expansionRightInverseTerms e he = a.rightInverseTerms ha := by
+  refine ((eq_expansionRightInverseTerms_iff e he).2 ⟨fun x ξ z hz => ?_, fun k => ?_⟩).symm
+  · simp [h₀, (ha.isInvertible x ξ z hz).self_comp_inverse]
+  refine ext_of_mem fun x ξ z hz => ?_
+  have h := sum_coefficient_sharpTerm_rightInverseTerms ha (k + 1) x ξ hz
+  rw [ite_eq_right k.succ_ne_zero] at h
+  rw [coefficient_sharpTerms, coefficient_zero, Pi.zero_apply, Finset.sum_range_succ',
+    Finset.sum_eq_zero fun i _ => Finset.sum_eq_zero fun j _ => by simp [h₁], zero_add]
+  refine (Finset.sum_congr rfl fun j hj => ?_).trans h
+  rw [ite_eq_left (by have := Finset.mem_range.1 hj; omega), coefficient_sharpTerm _ _ _ _ _ hz,
+    coefficient_sharpTerm _ _ _ _ _ hz, h₀, zero_add]
+
+omit [CompleteSpace V] in
+include ha in
+/-- A symbol of order `m` is the one-term expansion `(a, 0, 0, …)`, elliptic with parameter and
+homogeneous whenever `a` is. -/
+private theorem exists_oneTermExpansion :
+    ∃ (e : (j : ℕ) → ParameterSymbol n Λ V W (m - j)) (_ : (e 0).IsElliptic),
+      (e 0).coefficient = a.coefficient ∧ (∀ j, e (j + 1) = 0) ∧
+        ∀ μ, a.IsHomogeneous μ → ∀ j, (e j).IsHomogeneous (μ - j) := by
+  refine ⟨fun j => if h : j = 0 then inclusion (by simp [h]) a else 0,
+    ⟨fun x ξ z hz => by simpa using ha.isInvertible x ξ z hz,
+      fun K hK => by simpa using ha.exists_bound K hK⟩, by simp, by simp, fun μ hμ j => ?_⟩
+  rcases j with _ | j
+  · simpa using hμ.inclusion (m' := m - ((0 : ℕ) : ℝ)) (by simp)
+  · simpa using isHomogeneous_zero
+
+/-- **Homogeneity of the left parametrix.** If `a` is homogeneous of degree `μ` under
+`(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its left parametrix is homogeneous of degree `-μ - k`. -/
+theorem isHomogeneous_leftInverseTerms {μ : ℝ} (hμ : a.IsHomogeneous μ) (k : ℕ) :
+    (a.leftInverseTerms ha k).IsHomogeneous (-μ - k) := by
+  obtain ⟨e, he, h₀, h₁, hhom⟩ := exists_oneTermExpansion ha
+  rw [← expansionLeftInverseTerms_eq_leftInverseTerms ha he h₀ h₁]
+  exact isHomogeneous_expansionLeftInverseTerms e he (hhom μ hμ) k
+
+/-- **Homogeneity of the right parametrix.** If `a` is homogeneous of degree `μ` under
+`(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its right parametrix is homogeneous of degree `-μ - k`. -/
+theorem isHomogeneous_rightInverseTerms {μ : ℝ} (hμ : a.IsHomogeneous μ) (k : ℕ) :
+    (a.rightInverseTerms ha k).IsHomogeneous (-μ - k) := by
+  obtain ⟨e, he, h₀, h₁, hhom⟩ := exists_oneTermExpansion ha
+  rw [← expansionRightInverseTerms_eq_rightInverseTerms ha he h₀ h₁]
+  exact isHomogeneous_expansionRightInverseTerms e he (hhom μ hμ) k
+
+end OneTermExpansion
 
 end ParameterSymbol
 
