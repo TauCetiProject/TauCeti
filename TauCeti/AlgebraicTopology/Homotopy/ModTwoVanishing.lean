@@ -24,7 +24,7 @@ the homotopy group `π_{m+2}(Y, y)` is uniquely two-divisible — equivalently, 
 is a bijection, so `π_{m+2}(Y, y)` is a module over `ℤ[1/2]`
 (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le`) — and in
 particular `π_{m+2}(Y, y) ⊗_ℤ ℤ/2 = 0`
-(`TauCeti.subsingleton_homotopyGroup_tensorProduct_zmod_two_of_isZero_singularHomology_mod_two`).
+(`TauCeti.subsingleton_homotopyGroup_tensorProduct_zmod_two_of_subsingleton_singularHomology_le`).
 In particular, if `Y` is simply connected and has the mod-two homology of a point
 (`Hᵢ(Y; 𝔽₂) = 0` for all `i > 0`), every higher homotopy group `πᵢ(Y)` (`i ≥ 2`) is uniquely
 two-divisible (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`).
@@ -82,9 +82,8 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
   of `H_q(Z; 𝔽₂)` passes from `Z` to `nConnectedCover (m + 2) Z z`.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le`,
   `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two_le`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_int_zmod_two`, and
-  `isUniquelyTwoDivisible_homotopyGroup_of_simplyConnectedSpace_of_isZero_singularHomology_mod_two`
-  (in `TauCeti`): if `(Y, y)` is simply connected and has vanishing mod-two homology in degrees
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_int_zmod_two`: if
+  `(Y, y)` is path-connected with trivial `π₁(Y, y)` and has vanishing mod-two homology in degrees
   `2, …, m + 3`, then `π_{m+2}(Y, y)` is uniquely two-divisible.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`: the homotopy
   groups of a simply connected space with the mod-two homology of a point are uniquely
@@ -94,7 +93,7 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
   if the fundamental group of `Y` at `y` is trivial and the path component of `y` has the mod-two
   homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
-* `TauCeti.subsingleton_homotopyGroup_tensorProduct_zmod_two_of_isZero_singularHomology_mod_two`:
+* `TauCeti.subsingleton_homotopyGroup_tensorProduct_zmod_two_of_subsingleton_singularHomology_le`:
   consequently `π_{m+2}(Y, y) ⊗_ℤ (ZMod 2) = 0`.
 
 ## References
@@ -218,11 +217,11 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le
       rcases eq_or_ne j 0 with rfl | hj0
       · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
       · exact hX j hj0 hj
-    have := isIso_singularHomologyMap_nConnectedCoverProj_mod_two e hX'
-      (ModuleCat.isZero_iff_subsingleton.2 (hXk r (by omega)))
-      (ModuleCat.isZero_iff_subsingleton.2 (hXk (r + 1) (by omega))) (q + 2)
-    exact (subsingleton_singularChains_homology_iff_of_isIso k
-      (nConnectedCoverProj (r + 2) X x) (q + 2)).2 (hXk q hq)
+    exact ModuleCat.isZero_iff_subsingleton.1 <|
+      isZero_singularHomology_nConnectedCover_mod_two e hX'
+        (ModuleCat.isZero_iff_subsingleton.2 (hXk r (by omega)))
+        (ModuleCat.isZero_iff_subsingleton.2 (hXk (r + 1) (by omega)))
+        (ModuleCat.isZero_iff_subsingleton.2 (hXk q hq))
 
 /-- Bounded-degree mod-two vanishing with integer-module coefficients `ℤ/2` (lifted to the universe
 of `Y`). -/
@@ -250,30 +249,6 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_int_zmod
       rw [singularHomologyFunctor_obj_obj] at hq'
       exact ModuleCat.isZero_iff_subsingleton.1 hq'
 
-/-- `SimplyConnectedSpace` bounded-degree form of mod-two vanishing. -/
-theorem
-    isUniquelyTwoDivisible_homotopyGroup_of_simplyConnectedSpace_of_isZero_singularHomology_mod_two
-    (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] [SimplyConnectedSpace Y] (y : Y) {m : ℕ}
-    (hH : ∀ q ≤ m + 1, IsZero (((singularChains k).obj (TopCat.of Y)).homology (q + 2))) :
-    IsUniquelyTwoDivisible (Additive (π_ (m + 2) Y y)) :=
-  isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le e
-    (HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.2 inferInstance)
-    fun q hq ↦ ModuleCat.isZero_iff_subsingleton.1 (hH q hq)
-
-/-- The first possible homotopy group, in the form used by the induction: the homotopy group
-`πₙ₊₂` of an `(n + 1)`-connected space with the mod-two homology of a point is uniquely
-two-divisible. -/
-private theorem isUniquelyTwoDivisible_homotopyGroup_of_connected (e : k ≃+* ZMod 2)
-    {Z : Type u} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ)
-    (hZ : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z))
-    (hZ₂ : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Z)).homology (i + 1))) :
-    IsUniquelyTwoDivisible (Additive (π_ (n + 2) Z z)) := by
-  refine isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two e (fun j hj ↦ ?_)
-    (hZ₂ (n + 1)) (hZ₂ (n + 2))
-  rcases eq_or_ne j 0 with rfl | hj0
-  · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
-  · exact hZ j hj0 hj
-
 /-- **Mod-two vanishing** (Serre). The homotopy groups `πᵢ(Y)`, `i ≥ 2`, of a simply connected
 space `Y` with the mod-two homology of a point are uniquely two-divisible: multiplication by two
 is a bijection on each of them. The homology is taken with coefficients in the field `𝔽₂`, given
@@ -283,14 +258,9 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology (e
     {Y : Type u} [TopologicalSpace Y] [SimplyConnectedSpace Y]
     (hY : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
     (y : Y) (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  have : IsSemisimpleRing k := e.symm.isSemisimpleRing
-  have hk : (2 : k) = 0 := e.injective (by rw [map_ofNat, map_zero]; decide)
-  prop_homotopyGroup_of_subsingleton_singularHomology k
-    (fun G _ ↦ IsUniquelyTwoDivisible G) (fun e h ↦ h.of_addEquiv e)
-    (isUniquelyTwoDivisible_homotopyGroup_of_connected e)
-    (fun hA _ _ _ _ _ hX ↦
-      IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible k hk hA hX)
-    hY y n
+  isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le e
+    (HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.2 inferInstance)
+    fun q _ ↦ hY (q + 1)
 
 /-- **Mod-two vanishing with integer-module coefficients.** The homotopy groups `πᵢ(Y)`, `i ≥ 2`,
 of a simply connected space `Y` whose singular homology with coefficients in the integer module
@@ -320,15 +290,14 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pa
     (pathComponentSelf y) n).of_addEquiv
       (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive
 
-/-- **Vanishing of `π_{m+2}(Y, y) ⊗_ℤ (ZMod 2)` for a simply connected space with vanishing mod-two
-homology in degrees `2, …, m + 3`.** -/
-theorem subsingleton_homotopyGroup_tensorProduct_zmod_two_of_isZero_singularHomology_mod_two
+/-- **Vanishing of `π_{m+2}(Y, y) ⊗_ℤ (ZMod 2)`** for a path-connected space with trivial
+fundamental group `π₁(Y, y)` and vanishing mod-two homology in degrees `2, …, m + 3`. -/
+theorem subsingleton_homotopyGroup_tensorProduct_zmod_two_of_subsingleton_singularHomology_le
     (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] [PathConnectedSpace Y] {y : Y}
     (hπ₁ : Subsingleton (π_ 1 Y y)) {m : ℕ}
-    (hH : ∀ q ≤ m + 1, IsZero (((singularChains k).obj (TopCat.of Y)).homology (q + 2))) :
+    (hH : ∀ q ≤ m + 1, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (q + 2))) :
     Subsingleton (TensorProduct ℤ (Additive (π_ (m + 2) Y y)) (ZMod 2)) :=
-  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le e hπ₁
-    fun q hq ↦ ModuleCat.isZero_iff_subsingleton.1 (hH q hq))
+  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_le e hπ₁ hH)
     |>.subsingleton_tensorProduct_zmod_two
 
 end WhiteheadTower

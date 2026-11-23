@@ -85,32 +85,6 @@ def singularHomologyModTwoNatIso (M : Type u) [AddCommGroup M] [Module (ZMod 2) 
       (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
       (ModuleCat.of (ZMod 2) M) n).symm
 
-/-- The forward component at `X` of `TauCeti.singularHomologyModTwoNatIso` is the identification of
-`M` with the restriction of `M` over `ZMod 2`, followed by the inverse of the comparison of
-restricted mod-two homology with integral homology. -/
-theorem singularHomologyModTwoNatIso_hom_app (M : Type u) [AddCommGroup M] [Module (ZMod 2) M]
-    [IsScalarTower ℤ (ZMod 2) M] (n : ℕ) (X : TopCat.{u}) :
-    (singularHomologyModTwoNatIso M n).hom.app X =
-      ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
-          (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2) M).inv).app X ≫
-        (Functor.singularHomologyFunctorObjCompIso
-          (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
-          (ModuleCat.of (ZMod 2) M) n).inv.app X :=
-  (rfl)
-
-/-- The inverse component at `X` of `TauCeti.singularHomologyModTwoNatIso` is the comparison of
-restricted mod-two homology with integral homology, followed by the identification of the
-restriction of `M` over `ZMod 2` with `M`. -/
-theorem singularHomologyModTwoNatIso_inv_app (M : Type u) [AddCommGroup M] [Module (ZMod 2) M]
-    [IsScalarTower ℤ (ZMod 2) M] (n : ℕ) (X : TopCat.{u}) :
-    (singularHomologyModTwoNatIso M n).inv.app X =
-      (Functor.singularHomologyFunctorObjCompIso
-          (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
-          (ModuleCat.of (ZMod 2) M) n).hom.app X ≫
-        ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
-          (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2) M).hom).app X :=
-  (rfl)
-
 end TauCeti
 
 namespace TopCat

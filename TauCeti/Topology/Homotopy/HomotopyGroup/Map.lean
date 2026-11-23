@@ -13,12 +13,10 @@ public import TauCeti.Topology.Homotopy.GenLoop.Map
 Mathlib defines the quotient `HomotopyGroup N X x` of the generalized loop space, and this file
 supplies the map induced by a based continuous map (postcomposition of generalized loops, in
 `TauCeti.Topology.Homotopy.GenLoop.Map`) on homotopy classes: it respects identity and composition,
-handles constant maps and subsingleton targets, is a monoid homomorphism in positive dimensions
-(`HomotopyGroup.mapHom`), and upgrades to a multiplicative isomorphism when bijective
-(`ContinuousMap.homotopyGroupMulEquivOfBijective`). In dimension one it is Mathlib's induced map
-`FundamentalGroup.mapOfEq` of fundamental groups, read through
-`HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective exactly when the other
-is. Every homotopy group of a subsingleton space is itself a subsingleton
+handles constant maps and subsingleton targets, and is a monoid homomorphism in positive
+dimensions. In dimension one it is Mathlib's induced map `FundamentalGroup.mapOfEq` of fundamental
+groups, read through `HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective
+exactly when the other is. Every homotopy group of a subsingleton space is itself a subsingleton
 (`HomotopyGroup.subsingleton_of_subsingleton`).
 
 The covering-map isomorphisms on `π_n` for `n ≥ 2`
@@ -291,45 +289,3 @@ theorem bijective_map_iff_bijective_mapOfEq (f : C(X, Y)) (hf : f x = y) :
     Function.Bijective.of_comp_iff _ (Equiv.bijective _)]
 
 end HomotopyGroup
-
-namespace ContinuousMap
-
-variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
-
-/-- In positive dimensions, a based continuous map whose induced map on homotopy groups is
-bijective induces a multiplicative isomorphism of homotopy groups. -/
-noncomputable def homotopyGroupMulEquivOfBijective [DecidableEq N] [Nonempty N] (f : C(X, Y))
-    (hf : f x = y) (hbij : Function.Bijective (HomotopyGroup.map (N := N) f hf)) :
-    HomotopyGroup N X x ≃* HomotopyGroup N Y y :=
-  MulEquiv.ofBijective (HomotopyGroup.mapHom f hf) hbij
-
-@[simp]
-theorem homotopyGroupMulEquivOfBijective_apply [DecidableEq N] [Nonempty N] (f : C(X, Y))
-    (hf : f x = y) (hbij : Function.Bijective (HomotopyGroup.map (N := N) f hf))
-    (a : HomotopyGroup N X x) :
-    f.homotopyGroupMulEquivOfBijective hf hbij a = HomotopyGroup.map f hf a :=
-  HomotopyGroup.mapHom_apply f hf a
-
-/-- Identity law for `ContinuousMap.homotopyGroupMulEquivOfBijective`: the multiplicative
-isomorphism induced by the identity continuous map is `MulEquiv.refl`. -/
-@[simp]
-theorem homotopyGroupMulEquivOfBijective_id [DecidableEq N] [Nonempty N]
-    (hbij : Function.Bijective (HomotopyGroup.map (N := N) (ContinuousMap.id X) (x := x) rfl)) :
-    (ContinuousMap.id X).homotopyGroupMulEquivOfBijective rfl hbij =
-      MulEquiv.refl (HomotopyGroup N X x) :=
-  MulEquiv.ext fun a => HomotopyGroup.map_id_apply a
-
-/-- Composition law for `ContinuousMap.homotopyGroupMulEquivOfBijective`: the composite of the
-induced multiplicative isomorphisms is the isomorphism induced by the composite continuous map. -/
-@[simp]
-theorem homotopyGroupMulEquivOfBijective_trans [DecidableEq N] [Nonempty N] {Z : Type*}
-    [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
-    (hbij_f : Function.Bijective (HomotopyGroup.map (N := N) f hf))
-    (hbij_g : Function.Bijective (HomotopyGroup.map (N := N) g hg)) :
-    (f.homotopyGroupMulEquivOfBijective hf hbij_f).trans
-        (g.homotopyGroupMulEquivOfBijective hg hbij_g) =
-      (g.comp f).homotopyGroupMulEquivOfBijective (by simp [hf, hg])
-        (by rw [← HomotopyGroup.map_comp_map g hg f hf]; exact hbij_g.comp hbij_f) :=
-  MulEquiv.ext fun a => by simp
-
-end ContinuousMap

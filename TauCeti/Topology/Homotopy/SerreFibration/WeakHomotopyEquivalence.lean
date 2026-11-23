@@ -13,8 +13,6 @@ public import TauCeti.Topology.Homotopy.SerreFibration.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 
-import TauCeti.Topology.Homotopy.TopCat.Path
-
 /-!
 # Weak homotopy equivalences between Serre fibrations
 
@@ -61,11 +59,7 @@ A third is **base change to a weakly contractible space**. The inclusion of a fi
 fibration into its base change along a map `g : K ⟶ B` from a space whose homotopy groups vanish
 at `k` (`TopCat.Hom.pullbackFiberι`), is a weak homotopy equivalence
 (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`): it is the inclusion of a fibre of a
-Serre fibration over a base with no homotopy. Applying this to a path in `B` connects the fibres
-over any two joined points of `B` by a zigzag of weak homotopy equivalences
-(`TauCeti.TopCat.exists_weakHomotopyEquivalence_zigzag_fiber_of_joined`), showing in particular that
-path-connectedness of the fibre is constant on each path component of `B`
-(`TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`).
+Serre fibration over a base with no homotopy.
 
 ## Main results
 
@@ -83,10 +77,6 @@ path-connectedness of the fibre is constant on each path component of `B`
   over a weakly equivalent subspace.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`: the fibre inclusions into a base
   change of a Serre fibration to a weakly contractible space.
-* `TauCeti.TopCat.exists_weakHomotopyEquivalence_zigzag_fiber_of_joined`,
-  `TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`: fibres of a Serre fibration over joined
-  points are connected by a zigzag of weak homotopy equivalences and are simultaneously
-  path-connected.
 
 ## References
 
@@ -475,23 +465,5 @@ theorem isWeakHomotopyEquivalence_pullbackFiberι (hp : serreFibrations p) {K : 
     ((mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _))
   exact isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations
     (mem_serreFibrations_pullbackFst hp g) hK
-
-/-- **Fibres of a Serre fibration over joined points are connected by a zigzag of weak homotopy
-equivalences**, through the pullback of `p` along a path between them. -/
-theorem exists_weakHomotopyEquivalence_zigzag_fiber_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
-    (hb : Joined b₀ b₁) :
-    ∃ (P : TopCat.{u}) (f₀ : p.fiber b₀ ⟶ P) (f₁ : p.fiber b₁ ⟶ P),
-      f₀.hom.IsWeakHomotopyEquivalence ∧ f₁.hom.IsWeakHomotopyEquivalence :=
-  let γ := _root_.TopCat.pathEquiv.symm hb.somePath
-  ⟨_, p.pullbackFiberι γ.hom γ.hom₀, p.pullbackFiberι γ.hom γ.hom₁,
-    isWeakHomotopyEquivalence_pullbackFiberι hp γ.hom γ.hom₀ fun _ ↦ inferInstance,
-    isWeakHomotopyEquivalence_pullbackFiberι hp γ.hom γ.hom₁ fun _ ↦ inferInstance⟩
-
-/-- **Fibres of a Serre fibration over points in the same path component are simultaneously
-path-connected.** -/
-theorem pathConnectedSpace_fiber_iff_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
-    (hb : Joined b₀ b₁) : PathConnectedSpace (p.fiber b₀) ↔ PathConnectedSpace (p.fiber b₁) := by
-  obtain ⟨_, _, _, h₀, h₁⟩ := exists_weakHomotopyEquivalence_zigzag_fiber_of_joined hp hb
-  exact h₀.pathConnectedSpace_iff.trans h₁.pathConnectedSpace_iff.symm
 
 end TauCeti.TopCat
