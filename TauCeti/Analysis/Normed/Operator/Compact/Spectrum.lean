@@ -34,15 +34,15 @@ open Module Submodule
 
 namespace IsCompactOperator
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] {K : E →L[𝕜] E}
-
 open Polynomial in
-/-- For eigenvectors `v n` with distinct eigenvalues `μ n`, the kernels of the operators
+/-- For eigenvectors `v n` of a continuous linear endomorphism `K` of a `T1` topological vector
+space, with distinct eigenvalues `μ n`, the kernels of the operators
 `∏ i < n, (K - μ i • 1)` form a strictly increasing chain of closed subspaces, and
 `K - μ n • 1` carries the `(n + 1)`-st one into the `n`-th. -/
-private theorem exists_eigenvector_ker_chain (μ : ℕ → 𝕜) (hinj : Function.Injective μ)
-    (v : ℕ → E) (hv : ∀ n, Module.End.HasEigenvector (K : Module.End 𝕜 E) (μ n) (v n)) :
+private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousConstSMul 𝕜 E]
+    [T1Space E] {K : E →L[𝕜] E} (μ : ℕ → 𝕜) (hinj : Function.Injective μ) (v : ℕ → E)
+    (hv : ∀ n, Module.End.HasEigenvector (K : Module.End 𝕜 E) (μ n) (v n)) :
     ∃ V : ℕ → Submodule 𝕜 E, (∀ n, IsClosed (V n : Set E)) ∧ (∀ n, V n < V (n + 1)) ∧
       (∀ n x, x ∈ V (n + 1) → K x - μ n • x ∈ V n) := by
   have hvapply (n : ℕ) : K (v n) = μ n • v n := (hv n).apply_eq_smul
@@ -76,6 +76,9 @@ private theorem exists_eigenvector_ker_chain (μ : ℕ → 𝕜) (hinj : Functio
   · rw [hmem] at hx ⊢
     rwa [hP, _root_.mul_apply_eq_comp, _root_.sub_apply, _root_.smul_apply,
       one_apply_eq_self] at hx
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] {K : E →L[𝕜] E}
 
 /-- An injective sequence of eigenvalues bounded away from zero would yield a strictly
 increasing chain of closed subspaces that the compact operator steps down. -/
