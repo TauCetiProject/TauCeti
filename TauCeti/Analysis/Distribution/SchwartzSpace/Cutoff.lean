@@ -47,7 +47,8 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
   `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers.
 * `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
-  complex Schwartz function.
+  complex Schwartz function, and `ContDiffBump.mul_lowPassSchwartz_of_support_subset`: it fixes
+  every symbol supported in the closed ball of radius `R φ.rIn`.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 * `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
@@ -293,6 +294,18 @@ theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
     ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
   ext ξ
   simp
+
+/-- **The low-pass symbol fixes low-frequency symbols.** Multiplication by `φ (R⁻¹ ·)`, `R > 0`,
+fixes every function supported in the closed ball of radius `R φ.rIn`, where `φ (R⁻¹ ·) = 1`. -/
+theorem mul_lowPassSchwartz_of_support_subset {R : ℝ} (hR : 0 < R) {g : E → ℂ}
+    (hg : Function.support g ⊆ closedBall 0 (R * φ.rIn)) :
+    g * ⇑(φ.lowPassSchwartz hR.ne') = g := by
+  ext ξ
+  by_cases hξ : g ξ = 0
+  · simp [hξ]
+  rw [Pi.mul_apply, lowPassSchwartz_apply, φ.one_of_mem_closedBall, Complex.ofReal_one, mul_one]
+  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, inv_mul_le_iff₀ hR]
+  exact mem_closedBall_zero_iff.1 (hg hξ)
 
 end ContDiffBump
 

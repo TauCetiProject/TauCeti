@@ -74,7 +74,7 @@ theorem integral_comp_sub_eq_zero_of_odd (μ : Measure E) [IsGaussian μ]
     _ = ∫ x, f x ∂ν := by
       simpa only [ν, MeasurableEquiv.coe_addRight, sub_eq_add_neg] using
         (integral_map_equiv (μ := μ) (MeasurableEquiv.addRight (-μ[id])) f).symm
-    _ = 0 := integral_eq_zero_of_odd hf
+    _ = 0 := integral_eq_zero_of_odd (Filter.Eventually.of_forall hf)
 
 end ProbabilityTheory.IsGaussian
 
