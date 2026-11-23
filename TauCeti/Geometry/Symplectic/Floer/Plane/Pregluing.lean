@@ -22,10 +22,11 @@ are `(log ‖w‖ / 2π, arg w / 2π)`, the real and imaginary parts of the end 
 `TauCeti.Floer.PSSPlane.endCoord` of the positive plane, and `φ` recovers the point from them
 (`TauCeti.Floer.PSSPlane.realChart_positive_endCoord`).
 
-From `s = 2` on, a PSS plane solving the Floer equation is a Floer half-cylinder `U = u ∘ φ` for
-the cylindrical datum `H(t) dt`
-(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift`),
-converging to a one-periodic orbit `x` as `s → ∞`. The boundary of the one-dimensional moduli
+From `s = 2` on, a PSS plane solving the Floer equation is a Floer half-cylinder `U = u ∘ φ`, for
+the cylindrical datum `H(t) dt` on the positive plane and `-H(-t) dt` on the negative plane
+(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift`).
+The pre-gluing input assumes moreover that `U` converges to a one-periodic orbit `x` as `s → ∞`.
+The boundary of the one-dimensional moduli
 spaces of PSS planes, such as those whose count is the unit of the pair-of-pants product, consists
 of planes broken at their end: a plane `u` together with a Floer cylinder `v`, read in the same
 coordinates, whose loops converge to `x` as `s → -∞`. For the negative plane, whose end is an
