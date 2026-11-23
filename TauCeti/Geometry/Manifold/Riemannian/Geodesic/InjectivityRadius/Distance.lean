@@ -272,27 +272,38 @@ variable
 
 /-! ### Intrinsic `riemannianEDist` versions without `[IsRiemannianManifold I M]` -/
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] in
+/-- Transfers a goal depending on `riemannianEDist I` to the `EMetricSpace.ofRiemannianMetric`
+instance, installing `[IsContinuousRiemannianBundle ...]` and the equality
+`edist x y = riemannianEDist I x y`. -/
+private theorem with_ofRiemannianMetric {P : Prop}
+    (h : ∀ [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)],
+      letI : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
+      (∀ x y : M, edist x y = riemannianEDist I x y) → P) : P := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+    (V := fun x : M ↦ TangentSpace I x)
+  let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
+  exact h (IsRiemannianManifold.out (I := I))
+
 /-- **Intrinsic radial distance below `inj(p)`.** Requires no `IsRiemannianManifold` instance on
 `M`. -/
 theorem riemannianEDist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt {p : M}
     {v : TangentSpace I p} (hv : ‖v‖ₑ < injectivityRadiusAt I M p) :
     riemannianEDist I p (riemannianExp I M p v) = ‖v‖ₑ := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
+  refine with_ofRiemannianMetric (E := E) (I := I) (M := M) ?_
+  intro _ h_edist
   let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
-  rw [← IsRiemannianManifold.out (I := I)]
-  exact edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv
+  exact (h_edist _ _).symm.trans (edist_riemannianExp_eq_enorm_of_enorm_lt_injectivityRadiusAt hv)
 
 /-- Every point `q` with `riemannianEDist I p q < injectivityRadiusAt I M p` has a unique preimage
 under `exp_p` of extended norm strictly less than `inj(p)`. -/
 theorem existsUnique_riemannianExp_eq_of_riemannianEDist_lt_injectivityRadiusAt {p q : M}
     (hq : riemannianEDist I p q < injectivityRadiusAt I M p) :
     ∃! v : TangentSpace I p, ‖v‖ₑ < injectivityRadiusAt I M p ∧ riemannianExp I M p v = q := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
+  refine with_ofRiemannianMetric (E := E) (I := I) (M := M) ?_
+  intro _ h_edist
   let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
-  rw [← IsRiemannianManifold.out (I := I)] at hq
-  exact existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt hq
+  exact existsUnique_riemannianExp_eq_of_edist_lt_injectivityRadiusAt ((h_edist p q).symm ▸ hq)
 
 /-- **Unique minimizing geodesic below `inj(p)` (`riemannianEDist` form).** Applicable even when `M`
 carries a non-intrinsic ambient metric (such as the chordal metric on an embedded sphere). -/
@@ -304,10 +315,10 @@ theorem exists_isGeodesicCurveOn_Icc_and_unique_of_riemannianEDist_lt_injectivit
       ∀ γ : ℝ → M, IsGeodesicCurveOn I γ (Icc 0 1) → γ 0 = p → γ 1 = q →
         pathELength I γ 0 1 ≤ riemannianEDist I p q →
         EqOn γ (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc 0 1) := by
-  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
-    (V := fun x : M ↦ TangentSpace I x)
+  refine with_ofRiemannianMetric (E := E) (I := I) (M := M) ?_
+  intro _ h_edist
   let : EMetricSpace M := EMetricSpace.ofRiemannianMetric I M
-  simp_rw [← IsRiemannianManifold.out (I := I)] at hq ⊢
+  simp_rw [← h_edist p q] at hq ⊢
   exact exists_isGeodesicCurveOn_Icc_and_unique_of_edist_lt_injectivityRadiusAt hq
 
 /-- **Unique minimizing geodesic below `inj(M)` (`riemannianEDist` form).** -/

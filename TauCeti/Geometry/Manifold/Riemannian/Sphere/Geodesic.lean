@@ -9,8 +9,9 @@ public import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Immersion
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Immersion
 
 /-!
 # Great-circle geodesics of the round sphere
@@ -183,6 +184,25 @@ theorem riemannianExp_smul_eq_sphereGreatCircle (p q : sphere (0 : E) 1)
   simpa only [riemannianExp_def, Function.comp_apply, mul_one] using
     h.eq_maximalGeodesic_of_univ 1
 
+private theorem exists_sphereGreatCircle_isGeodesicCurveOnFrom {p : sphere (0 : E) 1}
+    {v : TangentSpace (𝓡 n) p} (hv : v ≠ 0) :
+    ∃ (q : sphere (0 : E) 1) (hpq : inner ℝ (p : E) (q : E) = 0),
+      (q : E) = ‖v‖⁻¹ • mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p v ∧
+      IsGeodesicCurveOnFrom (𝓡 n) (fun t ↦ sphereGreatCircle p q hpq (‖v‖ * t)) univ p v := by
+  have ha : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
+  let u : TangentSpace (𝓡 n) p := ‖v‖⁻¹ • v
+  have hu : ‖u‖ = 1 := by
+    dsimp only [u]
+    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ ha]
+  let q : sphere (0 : E) 1 :=
+    ⟨mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p u,
+      mem_sphere_zero_iff_norm.mpr (by rw [← norm_tangentSpace_sphere, hu])⟩
+  refine ⟨q, inner_coe_mvfderiv_subtypeVal_sphere p u, by simp [q, u], ?_⟩
+  have hgeo := (isGeodesicCurveOnFrom_sphereGreatCircle p q
+    (inner_coe_mvfderiv_subtypeVal_sphere p u) u rfl).comp_mul_left ‖v‖
+    uniqueDiffOn_univ (mapsTo_univ _ _) (mem_univ 0)
+  rwa [smul_inv_smul₀ ha v] at hgeo
+
 /-- The round-sphere exponential in ambient coordinates. At the zero tangent vector the
 totalized coefficient `sin ‖v‖ / ‖v‖` is zero, and the formula still gives the base point.
 This includes the zero-dimensional sphere. -/
@@ -194,22 +214,10 @@ This includes the zero-dimensional sphere. -/
   · subst v
     simp only [riemannianExp_zero, norm_zero, Real.cos_zero, Real.sin_zero, div_zero,
       one_smul, zero_smul, add_zero]
-  have ha : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
-  let u : TangentSpace (𝓡 n) p := ‖v‖⁻¹ • v
-  have hu : ‖u‖ = 1 := by
-    dsimp only [u]
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ ha]
-  let q : sphere (0 : E) 1 :=
-    ⟨mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p u,
-      mem_sphere_zero_iff_norm.mpr (by
-        rw [← norm_tangentSpace_sphere, hu])⟩
-  have hpq : inner ℝ (p : E) (q : E) = 0 :=
-    inner_coe_mvfderiv_subtypeVal_sphere p u
-  have hvu : ‖v‖ • u = v := smul_inv_smul₀ ha v
-  have h := congrArg Subtype.val
-    (riemannianExp_smul_eq_sphereGreatCircle p q hpq u rfl ‖v‖)
-  rw [hvu] at h
-  simpa only [coe_sphereGreatCircle, q, u, map_smul, smul_smul, div_eq_mul_inv] using h
+  obtain ⟨q, hpq, hq, hgeo⟩ := exists_sphereGreatCircle_isGeodesicCurveOnFrom hv
+  have h := congrArg Subtype.val (hgeo.eq_maximalGeodesic_of_univ 1)
+  simpa only [riemannianExp_def, coe_sphereGreatCircle, mul_one, hq, smul_smul,
+    div_eq_mul_inv] using h
 
 /-- A great circle reaches the antipodal point after an additional angle `π`. -/
 theorem antiperiodic_sphereGreatCircle (p q : sphere (0 : E) 1)
@@ -224,20 +232,8 @@ theorem antiperiodic_sphereGreatCircle (p q : sphere (0 : E) 1)
     geodesicInterval (𝓡 n) (sphere (0 : E) 1) p v = univ := by
   by_cases hv : v = 0
   · subst v; exact geodesicInterval_zero
-  have ha : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
-  let u : TangentSpace (𝓡 n) p := ‖v‖⁻¹ • v
-  have hu : ‖u‖ = 1 := by
-    dsimp only [u]; rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ ha]
-  let q : sphere (0 : E) 1 := ⟨mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p u,
-    mem_sphere_zero_iff_norm.mpr (by rw [← norm_tangentSpace_sphere, hu])⟩
-  have hgeo := (isGeodesicCurveOnFrom_sphereGreatCircle p q
-    (inner_coe_mvfderiv_subtypeVal_sphere p u) u rfl).comp_mul_left ‖v‖
-    uniqueDiffOn_univ (mapsTo_univ _ _) (mem_univ 0)
-  rw [smul_inv_smul₀ ha v] at hgeo
-  refine eq_univ_of_forall fun t ↦
-    (hgeo.mono (uniqueDiffOn_Ioo (-(|t| + 1)) (|t| + 1)) (subset_univ _)
-      ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩).subset_geodesicInterval
-      ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+  obtain ⟨_, _, _, hgeo⟩ := exists_sphereGreatCircle_isGeodesicCurveOnFrom hv
+  exact eq_univ_of_univ_subset (hgeo.subset_geodesicInterval_of_isPreconnected isPreconnected_univ)
 
 /-- The exponential map of the round unit sphere is defined on the whole tangent space at every
 point. Stated without requiring callers to synthesize `FiniteDimensional ℝ E` or

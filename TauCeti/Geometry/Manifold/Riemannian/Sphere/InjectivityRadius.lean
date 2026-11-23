@@ -8,9 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.InjectivityRadius.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate.ConstantCurvature
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Metric
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Geodesic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Radius
+import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Comparison
 
 /-!
 # The injectivity radius of the round sphere
@@ -68,45 +68,6 @@ theorem injectivityRadius_sphere_zero [Fact (finrank ℝ E = 0 + 1)] :
 
 /-! ### Normal tangent ball of radius `π` -/
 
-/-- For `‖v‖ < π` on the unit sphere, the model sine `curvatureSine (1 * ‖v‖ ^ 2) 1` is nonzero. -/
-private theorem curvatureSine_norm_sq_ne_zero_of_norm_lt_pi {p : sphere (0 : E) 1}
-    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) : curvatureSine (1 * ‖v‖ ^ 2) 1 ≠ 0 := by
-  rw [one_mul]; rcases eq_or_ne v 0 with rfl | hv0
-  · simp
-  · have hpos : 0 < ‖v‖ := norm_pos_iff.2 hv0
-    rw [curvatureSine_of_pos (sq_pos_of_pos hpos), Real.sqrt_sq hpos.le, mul_one]
-    exact div_ne_zero (Real.sin_pos_of_pos_of_lt_pi hpos hv).ne' hpos.ne'
-
-/-- The differential of `riemannianExp` at `p : Sⁿ` is injective at every `v` with `‖v‖ < π`. -/
-theorem injective_mfderiv_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 : E) 1}
-    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) :
-    Function.Injective (mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n)
-      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v) := by
-  have hker (w : TangentSpace (𝓡 n) p) (hLw : mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n)
-      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v w = 0) : w = 0 := by
-    have hinner := inner_mfderiv_riemannianExp_of_hasSectionalCurvatureAt
-      (I := 𝓡 n) (M := sphere (0 : E) 1) (p := p) (v := v) (κ := 1) (by simp)
-      (fun _ _ ↦ hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt _) w w
-    rw [hLw, inner_zero_left, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at hinner
-    have hcS : 0 < curvatureSine (1 * ‖v‖ ^ 2) 1 ^ 2 :=
-      sq_pos_of_ne_zero (curvatureSine_norm_sq_ne_zero_of_norm_lt_pi hv)
-    have hproj : (ℝ ∙ v).starProjection w = 0 := norm_eq_zero.1 <| sq_eq_zero_iff.1 <| by
-      nlinarith [sq_nonneg ‖w - (ℝ ∙ v).starProjection w‖]
-    rw [hproj, norm_zero, zero_pow two_ne_zero, zero_add, sub_zero] at hinner
-    exact norm_eq_zero.1 (sq_eq_zero_iff.1 ((mul_eq_zero.1 hinner.symm).resolve_left hcS.ne'))
-  exact fun w₁ w₂ heq ↦ sub_eq_zero.1 <| hker (w₁ - w₂) (by rw [map_sub, heq, sub_self])
-
-/-- `riemannianExp` at `p : Sⁿ` is a smooth local diffeomorphism at every `v` with `‖v‖ < π`. -/
-theorem isLocalDiffeomorphAt_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 : E) 1}
-    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n) ∞
-      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v :=
-  isLocalDiffeomorphAt_of_injective_mfderiv (s := expDomain (𝓡 n) (sphere (0 : E) 1) p)
-    (contMDiffOn_riemannianExp p) (isOpen_expDomain p) (by simp)
-    BoundarylessManifold.isInteriorPoint (by simp)
-    (injective_mfderiv_riemannianExp_sphere_of_norm_lt_pi hv)
-    (tangentSpaceCastModel (𝓡 n) p).toLinearEquiv.finrank_eq
-
 /-- `riemannianExp` at `p : Sⁿ` is injective on the open tangent ball of radius `π`. -/
 theorem injOn_riemannianExp_sphere_ball_pi (p : sphere (0 : E) 1) :
     InjOn (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) (Metric.ball 0 Real.pi) := by
@@ -125,15 +86,25 @@ theorem injOn_riemannianExp_sphere_ball_pi (p : sphere (0 : E) 1) :
 /-- For every `n : ℕ` and `p : Sⁿ`, the open tangent ball `Metric.ball 0 Real.pi` is a normal
 domain at `p`. -/
 theorem isNormalDomain_ball_sphere_pi (p : sphere (0 : E) 1) :
-    IsNormalDomain (𝓡 n) (sphere (0 : E) 1) p (Metric.ball 0 Real.pi) where
-  isOpen := Metric.isOpen_ball
-  zero_mem := Metric.mem_ball_self Real.pi_pos
-  starConvex :=
-    (convex_ball (0 : TangentSpace (𝓡 n) p) Real.pi).starConvex (Metric.mem_ball_self Real.pi_pos)
-  subset_expDomain := by simp
-  injOn := injOn_riemannianExp_sphere_ball_pi p
-  isLocalDiffeomorphOn := fun ⟨_, hv⟩ ↦
-    isLocalDiffeomorphAt_riemannianExp_sphere_of_norm_lt_pi (mem_ball_zero_iff.1 hv)
+    IsNormalDomain (𝓡 n) (sphere (0 : E) 1) p (Metric.ball 0 Real.pi) :=
+  isNormalDomain_ball_of_sectionalCurvature_le Real.pi_pos (fun _ ↦ by simp) (by simp)
+    (injOn_riemannianExp_sphere_ball_pi p) fun _ _ _ _ u huv ↦
+    (hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt _).sectionalCurvature_eq _ _
+      huv |>.le
+
+/-- The differential of `riemannianExp` at `p : Sⁿ` is injective at every `v` with `‖v‖ < π`. -/
+theorem injective_mfderiv_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 : E) 1}
+    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) :
+    Function.Injective (mfderiv 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n)
+      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v) :=
+  (isNormalDomain_ball_sphere_pi p).injective_mfderiv_riemannianExp (mem_ball_zero_iff.2 hv)
+
+/-- `riemannianExp` at `p : Sⁿ` is a smooth local diffeomorphism at every `v` with `‖v‖ < π`. -/
+theorem isLocalDiffeomorphAt_riemannianExp_sphere_of_norm_lt_pi {p : sphere (0 : E) 1}
+    {v : TangentSpace (𝓡 n) p} (hv : ‖v‖ < Real.pi) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace (𝓡 n) p) (𝓡 n) ∞
+      (riemannianExp (𝓡 n) (sphere (0 : E) 1) p) v :=
+  (isNormalDomain_ball_sphere_pi p).isLocalDiffeomorphOn ⟨v, mem_ball_zero_iff.2 hv⟩
 
 /-- At every point of `Sⁿ` (for all `n : ℕ`, including `n = 0`), the injectivity radius is at least
 `ENNReal.ofReal Real.pi`. -/
@@ -171,18 +142,22 @@ private theorem exists_norm_eq_pi_tangentSpace_sphere (hn : 1 ≤ n) (p : sphere
   have : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   simp [injectivityRadius_def, injectivityRadiusAt_sphere_of_one_le hn]
 
+private theorem sphereRoundMetricOfRadius_eq_rescale {r : ℝ} (hr : 0 < r) :
+    sphereRoundMetricOfRadius (E := E) (n := n) r hr =
+      ((sphereRoundMetric (E := E) (n := n)).ofLE le_top).rescale (fun _ ↦ r ^ 2)
+        contMDiff_const fun _ ↦ pow_pos hr 2 := by
+  ext _ _ _
+  simp [inner_tangentSpace_sphere]
+
 /-- **Pointwise injectivity radius of the round `n`-sphere of radius `r > 0` (`WithMetric` form,
 `1 ≤ n`).** -/
 @[simp] theorem injectivityRadiusAt_withMetric_sphereRoundMetricOfRadius (hn : 1 ≤ n) {r : ℝ}
     (hr : 0 < r) (p : sphere (0 : E) 1) :
     injectivityRadiusAt (𝓡 n) (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr))
         (WithMetric.toWithMetric _ p) = ENNReal.ofReal (r * Real.pi) := by
-  set g₀ := (sphereRoundMetric (E := E) (n := n)).ofLE le_top
-  rw [WithMetric.injectivityRadiusAt_congr _
-      (g₀.rescale (fun _ ↦ r ^ 2) contMDiff_const fun _ ↦ pow_pos hr 2)
-      (fun _ _ _ ↦ by simp [g₀]) p,
-    WithMetric.injectivityRadiusAt_rescale_const g₀ (pow_pos hr 2) p,
-    WithMetric.injectivityRadiusAt_toWithMetric g₀ (fun _ _ _ ↦ by simp [g₀]) p,
+  rw [sphereRoundMetricOfRadius_eq_rescale hr,
+    WithMetric.injectivityRadiusAt_rescale_const _ (pow_pos hr 2) p,
+    WithMetric.injectivityRadiusAt_toWithMetric _ (fun _ _ _ ↦ by simp) p,
     injectivityRadiusAt_sphere_of_one_le hn p, Real.sqrt_sq hr.le, ← ENNReal.ofReal_mul hr.le]
 
 /-- **Global injectivity radius of the round `n`-sphere of radius `r > 0` (`WithMetric` form,
@@ -191,12 +166,9 @@ private theorem exists_norm_eq_pi_tangentSpace_sphere (hn : 1 ≤ n) (p : sphere
     (hr : 0 < r) :
     injectivityRadius (𝓡 n) (WithMetric (sphereRoundMetricOfRadius (E := E) (n := n) r hr)) =
       ENNReal.ofReal (r * Real.pi) := by
-  set g₀ := (sphereRoundMetric (E := E) (n := n)).ofLE le_top
-  rw [WithMetric.injectivityRadius_congr _
-      (g₀.rescale (fun _ ↦ r ^ 2) contMDiff_const fun _ ↦ pow_pos hr 2)
-      (fun _ _ _ ↦ by simp [g₀]),
-    WithMetric.injectivityRadius_rescale_const g₀ (pow_pos hr 2),
-    WithMetric.injectivityRadius_eq g₀ (fun _ _ _ ↦ by simp [g₀]),
+  rw [sphereRoundMetricOfRadius_eq_rescale hr,
+    WithMetric.injectivityRadius_rescale_const _ (pow_pos hr 2),
+    WithMetric.injectivityRadius_eq _ (fun _ _ _ ↦ by simp),
     injectivityRadius_sphere_of_one_le hn, Real.sqrt_sq hr.le, ← ENNReal.ofReal_mul hr.le]
 
 /-- **Pointwise injectivity radius of the round `n`-sphere of radius `r > 0` (`letI` form,
