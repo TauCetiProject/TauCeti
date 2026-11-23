@@ -22,7 +22,13 @@ In the arithmetic applications `H = H¹(G_{K,Σ}, M)` and `Hloc v = H¹(K_v, M)`
 compact lattice or rational coefficients `M`, and `R` is the coefficient ring. Only the
 module-theoretic diagram enters here. The discrete Selmer structures of
 `TauCeti.ContCohomology.SelmerStructure` are an instance over `ℤ`
-(`TauCeti.ContCohomology.SelmerStructure.toSelmerData`).
+(`TauCeti.ContCohomology.SelmerStructure.toSelmerData`), and the Selmer structures on compact
+lattice and rational coefficients of `TauCeti.ContinuousCohomology.TopSelmerStructure` an
+instance over their coefficient ring
+(`TauCeti.ContinuousCohomology.TopSelmerStructure.toSelmerData`). A change of coefficients
+commuting with the localisations, such as `T → V → V/T`, carries Selmer modules into Selmer
+modules for the pushed-forward local conditions, and pulled-back local conditions cut out the
+preimage of the Selmer module.
 
 The local conditions can be modified on a set of places: relaxed (`L_v = Hloc v`) on `B` and
 strict (`L_v = 0`) on `A`. Mazur–Rubin's `F^b_a` is `(D.strict a).relax b`, and Rubin's `S^Σ`
@@ -54,6 +60,12 @@ localisations, so no restricted product is used.
   `TauCeti.SelmerData.selmerModule_strict_univ`, `TauCeti.SelmerData.selmerModule_of_isEmpty`:
   relaxing everywhere gives `H`, imposing strict conditions everywhere gives `⋂_v ker res_v`, and
   with no places the Selmer module is `H`.
+* `TauCeti.SelmerData.map_selmerModule_le`,
+  `TauCeti.SelmerData.selmerModule_withLocalConditions_comap`,
+  `TauCeti.SelmerData.map_selmerModule_le_withLocalConditions_map`: a change of coefficients
+  commuting with the localisations carries Selmer classes to Selmer classes; pulling the local
+  conditions back gives the preimage of the Selmer module, and pushing them forward gives a Selmer
+  module containing the image.
 
 ## References
 
@@ -243,6 +255,55 @@ theorem relax_empty : D.relax ∅ = D := by
 @[simp]
 theorem strict_empty : D.strict ∅ = D := by
   simp [strict, withLocalConditions]
+
+/-! ### Change of coefficients -/
+
+section Map
+
+variable {H' : Type*} [AddCommMonoid H'] [Module R H'] {Hloc' : ι → Type*}
+  [∀ v, AddCommMonoid (Hloc' v)] [∀ v, Module R (Hloc' v)] (D' : SelmerData R ι H' Hloc')
+  {g : H →ₗ[R] H'} {gloc : ∀ v, Hloc v →ₗ[R] Hloc' v}
+
+/-- **Selmer classes map to Selmer classes.** If a global map `g` and local maps `gloc v`
+commute with the localisations and carry each local condition of `D` into that of `D'`, then `g`
+carries the Selmer module of `D` into that of `D'`. -/
+theorem map_selmerModule_le
+    (hcomm : ∀ v, D'.localization v ∘ₗ g = gloc v ∘ₗ D.localization v)
+    (hL : ∀ v, (D.localCondition v).map (gloc v) ≤ D'.localCondition v) :
+    D.selmerModule.map g ≤ D'.selmerModule := by
+  rintro _ ⟨c, hc, rfl⟩
+  rw [SetLike.mem_coe, mem_selmerModule_iff] at hc
+  rw [mem_selmerModule_iff]
+  intro v
+  rw [← LinearMap.comp_apply, hcomm v, LinearMap.comp_apply]
+  exact hL v (Submodule.mem_map_of_mem (hc v))
+
+/-- **The pulled-back local conditions cut out the preimage of the Selmer module.** If a global
+map `g` and local maps `gloc v` commute with the localisations, then replacing the local
+conditions of `D` by the preimages `gloc v⁻¹(L'_v)` of those of `D'` gives the preimage under `g`
+of the Selmer module of `D'`. This is the propagation of local conditions to a source of
+coefficients, such as from `V` to a lattice `T`. -/
+theorem selmerModule_withLocalConditions_comap
+    (hcomm : ∀ v, D'.localization v ∘ₗ g = gloc v ∘ₗ D.localization v) :
+    (D.withLocalConditions fun v => (D'.localCondition v).comap (gloc v)).selmerModule =
+      D'.selmerModule.comap g := by
+  ext c
+  simp only [mem_selmerModule_iff, withLocalConditions_localization,
+    withLocalConditions_localCondition, Submodule.mem_comap]
+  refine forall_congr' fun v => ?_
+  rw [← LinearMap.comp_apply, ← hcomm v, LinearMap.comp_apply]
+
+/-- **Selmer classes map into the pushed-forward local conditions.** If a global map `g` and
+local maps `gloc v` commute with the localisations, then `g` carries the Selmer module of `D` into
+that of `D'` with its local conditions replaced by the images `gloc v (L_v)`. This is the
+propagation of local conditions to a target of coefficients, such as from `V` to `A = V/T`. -/
+theorem map_selmerModule_le_withLocalConditions_map
+    (hcomm : ∀ v, D'.localization v ∘ₗ g = gloc v ∘ₗ D.localization v) :
+    D.selmerModule.map g ≤
+      (D'.withLocalConditions fun v => (D.localCondition v).map (gloc v)).selmerModule :=
+  D.map_selmerModule_le _ hcomm fun _ => le_rfl
+
+end Map
 
 end SelmerData
 
