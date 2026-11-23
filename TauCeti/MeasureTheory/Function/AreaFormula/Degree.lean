@@ -205,9 +205,12 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     exact hy ⟨x, ⟨hx, hJx⟩, hxy⟩
   have hfib : ∀ y, (U : Set E) ∩ φ ⁻¹' {y} = Subtype.val '' (Subtype.val ∘ f ⁻¹' {y}) := by
     intro y
-    rw [preimage_congr (f := Subtype.val ∘ f) (g := φ ∘ Subtype.val) fun z ↦ (hφ z).symm,
-      preimage_comp]
-    exact (Subtype.image_preimage_coe (U : Set E) _).symm
+    ext w
+    constructor
+    · rintro ⟨hwU, hw⟩
+      exact ⟨⟨w, hwU⟩, (hφ ⟨w, hwU⟩).symm.trans hw, rfl⟩
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨z.property, (hφ z).trans hz⟩
   have hfin : ∀ᵐ y, ((U : Set E) ∩ φ ⁻¹' {y}).Finite := hsard.mono fun y hy ↦ by
     refine (IsCompact.finite_inter_preimage_of_hasFDerivAt ?_ (fun x hx ↦ hd x hx.1) fun x hx ↦
       ⟨_, ((fderiv ℝ φ x).toContinuousLinearEquivOfDetNeZero

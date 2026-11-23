@@ -461,15 +461,25 @@ theorem finite_setOf_apply_eq (f : C(U, E)) (hK : IsCompact {z | f z = z}) {φ :
     (hφ : ∀ z : U, φ z = f z) {f' : E → E →L[ℝ] E}
     (hd : ∀ x : U, f x = x → HasFDerivAt φ (f' x) x)
     (hdet : ∀ x : U, f x = x → (1 - f' x).det ≠ 0) : {z | f z = z}.Finite := by
-  -- The fixed points are the zeros of the displacement, which agrees on `U` with `z ↦ z - φ z`,
-  -- whose derivative `1 - f' x` is invertible at each of them.
-  have hfix (x : U) (hx : x ∈ f.displacement ⁻¹' {0}) : f x = x := by
-    rwa [preimage_displacement_zero] at hx
-  rw [← preimage_displacement_zero] at hK ⊢
-  exact hK.finite_of_hasFDerivWithinAt_subtype (f := fun z ↦ z - φ z) (f' := fun x ↦ 1 - f' x)
-    (fun z ↦ by simp [hφ])
-    (fun x hx ↦ ((hasFDerivAt_id (x : E)).sub (hd x (hfix x hx))).hasFDerivWithinAt) fun x hx ↦
-      ⟨_, ((1 - f' x).toContinuousLinearEquivOfDetNeZero (hdet x (hfix x hx))).antilipschitzWith⟩
+  -- In `E`, the fixed points are the zeros in `U` of `z ↦ z - φ z`, whose derivative `1 - f' x` is
+  -- invertible at each of them.
+  have hfix (w : E) (hw : w ∈ (U : Set E) ∩ (fun z ↦ z - φ z) ⁻¹' {0}) :
+      f ⟨w, hw.1⟩ = w :=
+    (hφ ⟨w, hw.1⟩).symm.trans (sub_eq_zero.1 hw.2).symm
+  have himage : Subtype.val '' {z | f z = z} = (U : Set E) ∩ (fun z ↦ z - φ z) ⁻¹' {0} := by
+    ext w
+    constructor
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨z.property, sub_eq_zero.2 ((hφ z).trans hz).symm⟩
+    · intro hw
+      exact ⟨⟨w, hw.1⟩, hfix w hw, rfl⟩
+  have hc : IsCompact ((U : Set E) ∩ (fun z ↦ z - φ z) ⁻¹' {0}) :=
+    himage ▸ hK.image continuous_subtypeVal
+  have hfin := hc.finite_inter_preimage_of_hasFDerivAt
+    (fun w hw ↦ (hasFDerivAt_id w).sub (hd _ (hfix w hw)))
+    fun w hw ↦ ⟨_, ((1 - f' w).toContinuousLinearEquivOfDetNeZero
+      (hdet _ (hfix w hw))).antilipschitzWith⟩
+  exact Finite.of_finite_image (himage ▸ hfin) Subtype.val_injective.injOn
 
 /-- **The fixed-point index counts nondegenerate fixed points with signs**: if `f : U → E` agrees
 on `U` with a map `φ : E → E`, the fixed set of `f` is finite, and at each fixed point `x` the map
