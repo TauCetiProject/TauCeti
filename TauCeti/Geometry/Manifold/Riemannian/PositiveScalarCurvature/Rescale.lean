@@ -50,7 +50,7 @@ theorem HasPositiveScalarCurvature.joinedIn_rescale_const (h : g.HasPositiveScal
     toFun := fun t ↦ g.rescale (fun _ ↦ Real.exp ((t : ℝ) * Real.log c)) contMDiff_const
       (fun _ ↦ Real.exp_pos _)
     continuous_toFun := continuous_rescale_const_chartCk k (fun _ ↦ Real.exp_pos _)
-      continuous_const (Real.continuous_exp.comp (continuous_subtype_val.mul_const _))
+      continuous_const (Real.continuous_exp.comp (continuous_subtypeVal.mul_const _))
     source' := by simp
     target' := by simp [Real.exp_log hc] }, fun t ↦ ?_⟩
   exact h.rescale_const (Real.exp_pos _)

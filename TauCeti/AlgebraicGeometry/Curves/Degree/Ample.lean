@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.SectionDegree
 public import TauCeti.AlgebraicGeometry.LineBundle.Trivial
 public import TauCeti.AlgebraicGeometry.Morphisms.Proper
+import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
 
 /-!
 # Ample line bundles have positive degree on integral proper curves

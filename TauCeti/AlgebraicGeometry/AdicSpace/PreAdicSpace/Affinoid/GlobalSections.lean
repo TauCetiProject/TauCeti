@@ -58,7 +58,7 @@ theorem continuous_presentationLimitAppTop
   rw [presentationLimitAppTop_def]
   exact ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
     TopCommRingCat.isCompleteSeparated.ι.map
-      (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).2
+      (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).property
 
 /-- Pullback on global sections carries the plus ring of the target pair into the integral
 sections of the source. No sheaf condition on either space is required. -/
@@ -66,7 +66,8 @@ theorem presentationLimitAppTop_mem_plus
     (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) {a : A} (ha : a ∈ Aplus) :
     presentationLimitAppTop P Aplus hAplus hP f a ∈ X.plusSubring ⊤ := by
   refine PreAdicSpace.mem_plusSubring_iff.mpr fun x _ ↦ ?_
-  have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).1).mp (f.base x : spa Aplus).2).2 a ha
+  have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).val).mp (f.base x : spa Aplus).property).2 a
+      ha
   rw [base_eq_comap_presentationLimitAppTop, comap_vle] at hx
   -- The source section ring is also the section ring of its ring-valued presheaf, but `rw`
   -- does not unfold the forgetful functor enough to identify the carrier of the inner comap.

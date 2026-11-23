@@ -158,7 +158,7 @@ theorem linearIndependent_cols (hH : H.IsHermiteNormalForm) : LinearIndependent 
 /-- A matrix in Hermite normal form has as many columns as its rank, the rank of its column
 lattice. -/
 theorem rank_eq (hH : H.IsHermiteNormalForm) : H.rank = k := by
-  rw [rank_eq_finrank_span_cols, finrank_span_eq_card hH.linearIndependent_cols, Fintype.card_fin]
+  rw [← finrank_span_range_col, finrank_span_eq_card hH.linearIndependent_cols, Fintype.card_fin]
 
 /-- A square matrix in Hermite normal form is in Hermite normal form with the identity as pivot
 rows. -/

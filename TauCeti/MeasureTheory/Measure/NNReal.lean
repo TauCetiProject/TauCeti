@@ -35,7 +35,7 @@ theorem nnvolume_def : nnvolume = (volume : Measure ℝ).comap ((↑) : ℝ≥0 
 /-- Half-line Lebesgue measure is real Lebesgue measure on the image, even for
 nonmeasurable sets. -/
 theorem nnvolume_apply (s : Set ℝ≥0) : nnvolume s = volume (((↑) : ℝ≥0 → ℝ) '' s) :=
-  (MeasurableEmbedding.subtype_coe measurableSet_Ici).comap_apply volume s
+  (MeasurableEmbedding.subtypeVal measurableSet_Ici).comap_apply volume s
 
 /-- Inclusion carries half-line Lebesgue measure to real Lebesgue measure restricted
 to the nonnegative half-line. -/

@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
-public import TauCeti.NumberTheory.LocalField.Uniformizer
-public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The global Artin symbol of a prime idele is arithmetic Frobenius
 
 Let `L/K` be a finite Galois extension of number fields and `v` a finite place of `K`. The
-**prime idele class** `primeIdeleClass K v ∈ C_K` is the class of the idele with a uniformizer of
-`K_v` at `v` and `1` at every other place. It is the idelic counterpart of the prime ideal `v`.
+**prime idele class** `primeIdeleClass K v ∈ C_K` is the class of the idele with a chosen
+uniformizer of `K_v` at `v` and `1` at every other place. It is the idelic counterpart of the prime
+ideal `v`.
 
 If `v` is unramified in `L` and `σ ∈ Gal(L/K)` is an arithmetic Frobenius at a prime `Q` of `L`
 above `v`, then the global Artin symbol of the class of the idele concentrated at `v` with
@@ -23,8 +22,9 @@ component `x ∈ K_vˣ` is the class of `σ` raised to the normalized valuation 
 (`globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt`). This combines the local–global
 compatibility `globalArtinMap_local` with the unramified local computation
 `localArtinAt_eq_of_isArithFrobAt`. In particular the Artin symbol of the prime idele class is
-the class of Frobenius, whichever uniformizer represents it
-(`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`).
+the class of Frobenius (`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`). Taking `x` to be any
+uniformizer of `K_v` in the formula above gives the same symbol, so the symbol does not depend on
+the choice of uniformizer (even though the idele class itself does).
 
 For `L/K` abelian, `Gal(L/K)` is its own abelianization, so this pins the Artin symbol down as an
 automorphism: an automorphism whose class is the Artin symbol of the class of the idele with any
@@ -47,7 +47,7 @@ homomorphism whose prime values are the global Artin symbols of the prime idele 
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.primeIdeleClass K v`: the idele class of a uniformizer at `v`.
+* `TauCeti.ClassFieldTheory.primeIdeleClass K v`: the idele class of a chosen uniformizer at `v`.
 
 ## Main results
 
@@ -59,7 +59,9 @@ homomorphism whose prime values are the global Artin symbols of the prime idele 
   abelian, an automorphism representing the Artin symbol of the class of the idele with any
   uniformizer at an unramified `v` and `1` elsewhere is an arithmetic Frobenius at every prime of
   `L` above `v`.
-* `TauCeti.ClassFieldTheory.globalArtinMap_isArithFrobAt`: the same for the prime idele class.
+* `TauCeti.ClassFieldTheory.globalArtinMap_isArithFrobAt` and
+  `TauCeti.ClassFieldTheory.ideleClassArtinMap_isArithFrobAt`: the same for the prime idele class
+  and for `ideleClassArtinMap`.
 * `TauCeti.ClassFieldTheory.addOrderOf_globalArtinMap_primeIdeleClass` and
   `globalArtinMap_primeIdeleClass_eq_zero_iff_inertiaDeg_eq_one`: for `L/K` abelian and `v`
   unramified, the Artin symbol of the prime idele class has order the residue degree, and is
@@ -76,7 +78,8 @@ homomorphism whose prime values are the global Artin symbols of the prime idele 
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §5 and §7 (the idelic and the
   ideal-theoretic Artin symbols).
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter V, §3 and Chapter VII.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter V, §3 and §5 (Proposition 5.2,
+  Theorem 5.3) and Chapter VII.
 -/
 
 public section
@@ -92,8 +95,10 @@ variable (K : Type) [Field K] [NumberField K]
 
 /-- **The prime idele class at a finite place** `v` of a number field `K`: the class in the idele
 class group of the idele whose component at `v` is a chosen uniformizer of `K_v` and whose other
-components are `1`. At a place unramified in a finite Galois extension its global Artin symbol does
-not depend on the choice (`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`). -/
+components are `1`. At a place unramified in a finite Galois extension its global Artin symbol is
+the class of Frobenius (`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`), and the same holds
+for the class of any uniformizer at `v` (`globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt`), so
+the symbol does not depend on the choice. -/
 def primeIdeleClass (v : HeightOneSpectrum (𝓞 K)) : IdeleClassGroup (𝓞 K) K :=
   IdeleClassGroup.ofAdicCompletion (𝓞 K) K v (exists_isUniformizer (v.adicCompletion K)).choose
 
@@ -122,8 +127,6 @@ theorem globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt {σ : Gal(L/K)}
   -- The prime `Q` is a finite place of `L` above `v`.
   let w : HeightOneSpectrum (𝓞 L) :=
     ⟨Q, inferInstance, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q⟩
-  have : w.asIdeal.LiesOver v.asIdeal := ‹Q.LiesOver v.asIdeal›
-  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := ‹Algebra.IsUnramifiedAt (𝓞 K) Q›
   rw [IdeleClassGroup.ofAdicCompletion_apply, globalArtinMap_local,
     localArtinAt_eq_of_isArithFrobAt v w hσ]
 
@@ -163,6 +166,15 @@ theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
     IsArithFrobAt (𝓞 K) σ Q := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   exact isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq L ι v Q hπ (h ▸ hσ)
+
+omit [IsGalois K L] in
+/-- **Arithmetic Frobenius normalization of `ideleClassArtinMap` at a prime.** For a finite abelian
+extension `L/K` of number fields and a finite place `v` of `K` unramified at a prime `Q` of `L`
+above it, `ideleClassArtinMap K L (primeIdeleClass K v)` is an arithmetic Frobenius at `Q`. -/
+theorem ideleClassArtinMap_isArithFrobAt [IsAbelianGalois K L] :
+    IsArithFrobAt (𝓞 K) (ideleClassArtinMap K L (primeIdeleClass K v)) Q :=
+  globalArtinMap_isArithFrobAt L IsSepClosed.lift v Q
+    (globalArtinMap_eq_ofMul_ideleClassArtinMap K L IsSepClosed.lift (primeIdeleClass K v))
 
 /-- **The order of the Artin symbol of a prime is its residue degree.** For a finite abelian
 extension `L/K` of number fields and a finite place `v` of `K` unramified at a prime `Q` of `L`
@@ -229,7 +241,7 @@ theorem globalArtinMap_ideal (v : HeightOneSpectrum (𝓞 K))
       .ofMul (Group.Abelianization.of
         (NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur I)) := by
   -- `I` is prime to `S` and has multiplicity one at `v`, so `v ∉ S`.
-  have hv : v ∉ S := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.2 hI
+  have hv : v ∉ S := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.property hI
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   have := hur v hv Q
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q

@@ -7,13 +7,13 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapEquiv
 -- Proof-only: `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
 -- Proof-only: `[n]` is `n • id`, it pulls `ω` back to `n ω`, and `deg (n • f) = n² deg f`
 -- (`MulByInt.Separability` re-exports `MulByInt.Hom`).
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
--- Proof-only: `E[n]` is finite for `n ≠ 0`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
+import TauCeti.GroupTheory.Index.NSmul
 
 /-!
 # The cokernel of an isogeny on real points
@@ -46,11 +46,12 @@ an isogeny invariant.
 
 ## Main results
 
-* `WeierstrassCurve.mul_index_range_nsmul_eq_natCard_torsionBy`:
-  `n · #(E(ℝ) ⧸ n E(ℝ)) = #E(ℝ)[n]` for `n ≠ 0`.
-* `TauCeti.Isogeny.Hom.degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual`:
-  the local cokernel/kernel ratios over `ℝ` of a nonzero morphism and of its dual multiply to the
-  inverse of its degree.
+* `WeierstrassCurve.mul_index_range_nsmul_eq_natCard_torsionBy` and
+  `WeierstrassCurve.mul_index_range_nsmul_eq_natCard_torsionBy_of_ringEquivReal`:
+  `n · #(E(F) ⧸ n E(F)) = #E(F)[n]` for `n ≠ 0` over `ℝ` and along `F ≃+* ℝ`.
+* `TauCeti.Isogeny.Hom.degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual`
+  and `..._of_ringEquivReal`: the local cokernel/kernel ratios of a nonzero morphism and of its dual
+  over `ℝ` (or along `F ≃+* ℝ`) multiply to the inverse of its degree.
 
 ## References
 
@@ -96,6 +97,19 @@ theorem mul_index_range_nsmul_eq_natCard_torsionBy (hn : n ≠ 0) :
     linear_combination h
   exact_mod_cast mul_right_cancel₀ W.realPeriod_pos.ne' h'
 
+/-- Along a ring isomorphism `e : F ≃+* ℝ`, `n · #(E(F) ⧸ n E(F)) = #E(F)[n]` for `n ≠ 0`. -/
+theorem mul_index_range_nsmul_eq_natCard_torsionBy_of_ringEquivReal {F : Type*} [Field F]
+    [DecidableEq F] (W : WeierstrassCurve F) [W.IsElliptic] (e : F ≃+* ℝ) {n : ℕ} (hn : n ≠ 0) :
+    n * (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.index =
+      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) := by
+  let _ : Algebra F ℝ := e.toRingHom.toAlgebra
+  let eqv : W.toAffine.Point ≃+ (W⁄ℝ).toAffine.Point :=
+    (Affine.Point.equivBaseChangeSelf W.toAffine).trans
+      (Affine.Point.mapEquiv W (AlgEquiv.ofRingEquiv (f := e) fun _ => rfl))
+  rw [eqv.index_range_nsmulAddMonoidHom n, (W⁄ℝ).mul_index_range_nsmul_eq_natCard_torsionBy hn,
+    ← TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy,
+    ← TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy, eqv.card_ker_nsmulAddMonoidHom]
+
 end WeierstrassCurve
 
 namespace TauCeti.Isogeny.Hom
@@ -111,18 +125,19 @@ inverse of its degree**: for a nonzero morphism `f` of degree `n` of elliptic cu
 all four orders being finite. -/
 theorem degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual (hf : f ≠ 0) :
     f.degree * (f.pointMapHom.range.index * f.dual.pointMapHom.range.index) =
-      Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker := by
-  have hn : f.degree ≠ 0 := f.degree_eq_zero_iff.not.mpr hf
-  have hidx := W₁.mul_index_range_nsmul_eq_natCard_torsionBy hn
-  have : Finite (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
-    W₁.finite_torsionBy (Int.natCast_ne_zero.mpr hn)
-  have hT : Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) ≠ 0 :=
-    Nat.card_pos.ne'
-  -- `z(f̂) · z(f) = z([n])`, and `z([n]) = 1 / n`
-  have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
-  rw [TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy] at h
-  refine Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hT) ?_
-  linear_combination f.degree * h.symm +
-    (Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker) * hidx
+      Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker :=
+  f.degree_mul_index_range_mul_dual_eq_card_ker_mul_dual_of_nsmul
+    hf (W₁.mul_index_range_nsmul_eq_natCard_torsionBy (f.degree_eq_zero_iff.not.mpr hf))
+
+/-- Along `e : F ≃+* ℝ`, the local cokernel/kernel ratios of a nonzero morphism `f` and of its
+dual `f̂` multiply to `(deg f)⁻¹`. -/
+theorem degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_of_ringEquivReal
+    {F : Type*} [Field F] [DecidableEq F] {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic]
+    [W₂.IsElliptic] (f : Hom W₁.toAffine W₂.toAffine) (e : F ≃+* ℝ) (hf : f ≠ 0) :
+    f.degree * (f.pointMapHom.range.index * f.dual.pointMapHom.range.index) =
+      Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker :=
+  f.degree_mul_index_range_mul_dual_eq_card_ker_mul_dual_of_nsmul
+    hf (W₁.mul_index_range_nsmul_eq_natCard_torsionBy_of_ringEquivReal e
+      (f.degree_eq_zero_iff.not.mpr hf))
 
 end TauCeti.Isogeny.Hom

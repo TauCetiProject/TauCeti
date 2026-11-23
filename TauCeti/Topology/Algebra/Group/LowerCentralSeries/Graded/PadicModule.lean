@@ -100,15 +100,16 @@ theorem IsProP.gradedMk_padicPow (hG : IsProP p G) {q n : ℕ}
     (x : pLowerCentralSeries q G n) (u : ℤ_[p]) :
     letI := hG.gradedPieceModule q n
     gradedMk q G n
-        ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries n) x.2 u⟩ =
+        ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries n) x.property u⟩ =
       u • gradedMk q G n x := by
   let R := pLowerCentralSeries q G n
   let N := (pLowerCentralSeries q G (n + 1)).subgroupOf R
   let hR : IsProP p R := hG.subgroup R
-  let xuR : R := ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries n) x.2 u⟩
+  let xuR : R := ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries n) x.property
+      u⟩
   have hpow : hR.padicPow x u = xuR := by
     apply Subtype.ext
-    exact hR.map_padicPow hG R.subtype continuous_subtype_val x u
+    exact hR.map_padicPow hG R.subtype continuous_subtypeVal x u
   let _ : Module ℤ_[p] (gradedPiece q G n) := hG.gradedPieceModule q n
   rw [gradedMk_def, gradedMk_def]
   -- Expose the subgroup quotient underlying the sealed graded class map.
@@ -151,7 +152,8 @@ theorem IsProP.mk_commutatorElement_padicPow_left (hG : IsProP p G) {q j k : ℕ
   have hcomm : Commute ((x : G) : G ⧸ N)
       ⁅((x : G) : G ⧸ N), ((y : G) : G ⧸ N)⁆ := by
     simpa only [← QuotientGroup.mk'_apply, map_commutatorElement] using
-      commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries x.2 y.2) (x : G)
+      commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries x.property
+          y.property) (x : G)
   -- Restate coercions as the quotient homomorphism so its map lemmas apply.
   change QuotientGroup.mk' N ⁅(x : G) ^ n, (y : G)⁆ =
     QuotientGroup.mk' N ⁅(x : G), (y : G)⁆ ^ n
@@ -184,7 +186,8 @@ theorem IsProP.mk_commutatorElement_padicPow_right (hG : IsProP p G) {q j k : �
   have hcomm : Commute ((y : G) : G ⧸ N)
       ⁅((x : G) : G ⧸ N), ((y : G) : G ⧸ N)⁆ := by
     simpa only [← QuotientGroup.mk'_apply, map_commutatorElement] using
-      commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries x.2 y.2) (y : G)
+      commute_mk_of_mem_pLowerCentralSeries (commutator_mem_pLowerCentralSeries x.property
+          y.property) (y : G)
   -- Restate coercions as the quotient homomorphism so its map lemmas apply.
   change QuotientGroup.mk' N ⁅(x : G), (y : G) ^ n⁆ =
     QuotientGroup.mk' N ⁅(x : G), (y : G)⁆ ^ n
@@ -197,11 +200,11 @@ theorem IsProP.gradedBracket_padicPow_left (hG : IsProP p G) {q j k : ℕ}
     (x : pLowerCentralSeries q G j) (y : pLowerCentralSeries q G k) (u : ℤ_[p]) :
     gradedBracket q G j k
         (gradedMk q G j
-          ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries j) x.2 u⟩)
+          ⟨hG.padicPow (x : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries j) x.property u⟩)
         (gradedMk q G k y) =
       gradedMk q G (j + k + 1)
         ⟨hG.padicPow ⁅(x : G), (y : G)⁆ u, hG.padicPow_mem (isClosed_pLowerCentralSeries _)
-          (commutator_mem_pLowerCentralSeries x.2 y.2) u⟩ := by
+          (commutator_mem_pLowerCentralSeries x.property y.property) u⟩ := by
   rw [gradedBracket_gradedMk, gradedMk_eq_gradedMk_iff]
   exact hG.mk_commutatorElement_padicPow_left x y u
 
@@ -211,10 +214,10 @@ theorem IsProP.gradedBracket_padicPow_right (hG : IsProP p G) {q j k : ℕ}
     (x : pLowerCentralSeries q G j) (y : pLowerCentralSeries q G k) (u : ℤ_[p]) :
     gradedBracket q G j k (gradedMk q G j x)
         (gradedMk q G k
-          ⟨hG.padicPow (y : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries k) y.2 u⟩) =
+          ⟨hG.padicPow (y : G) u, hG.padicPow_mem (isClosed_pLowerCentralSeries k) y.property u⟩) =
       gradedMk q G (j + k + 1)
         ⟨hG.padicPow ⁅(x : G), (y : G)⁆ u, hG.padicPow_mem (isClosed_pLowerCentralSeries _)
-          (commutator_mem_pLowerCentralSeries x.2 y.2) u⟩ := by
+          (commutator_mem_pLowerCentralSeries x.property y.property) u⟩ := by
   rw [gradedBracket_gradedMk, gradedMk_eq_gradedMk_iff]
   exact hG.mk_commutatorElement_padicPow_right x y u
 
@@ -232,7 +235,7 @@ theorem IsProP.gradedBracket_smul_left (hG : IsProP p G) {q j k : ℕ} (u : ℤ_
   obtain ⟨y, rfl⟩ := gradedMk_surjective k y
   rw [← hG.gradedMk_padicPow x u, hG.gradedBracket_padicPow_left x y u,
     gradedBracket_gradedMk]
-  exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.2 y.2⟩ u
+  exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.property y.property⟩ u
 
 /-- The graded bracket of a pro-`p` group is `ℤ_p`-linear in its second argument. -/
 theorem IsProP.gradedBracket_smul_right (hG : IsProP p G) {q j k : ℕ} (u : ℤ_[p])
@@ -248,7 +251,7 @@ theorem IsProP.gradedBracket_smul_right (hG : IsProP p G) {q j k : ℕ} (u : ℤ
   obtain ⟨y, rfl⟩ := gradedMk_surjective k y
   rw [← hG.gradedMk_padicPow y u, hG.gradedBracket_padicPow_right x y u,
     gradedBracket_gradedMk]
-  exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.2 y.2⟩ u
+  exact hG.gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries x.property y.property⟩ u
 
 /-- The graded map of a continuous homomorphism of pro-`p` groups is `ℤ_p`-linear on every graded
 piece, because continuous homomorphisms commute with `p`-adic powers. -/
@@ -283,7 +286,7 @@ theorem IsProP.gradedMk_commutatorElement_inv_conj_padicPow_inv (hG : IsProP p G
     gradedMk q G (0 + m + 1)
         ⟨⁅(c⁻¹ * hG.padicPow y u * c)⁻¹, ((x⁻¹ : pLowerCentralSeries q G m) : G)⁆,
           commutator_mem_pLowerCentralSeries
-            (mem_pLowerCentralSeries_zero q (c⁻¹ * hG.padicPow y u * c)⁻¹) x⁻¹.2⟩ =
+            (mem_pLowerCentralSeries_zero q (c⁻¹ * hG.padicPow y u * c)⁻¹) x⁻¹.property⟩ =
       u • gradedBracket q G 0 m (gradedMkZero q G y) (gradedMk q G m x) := by
   let _ : Module ℤ_[p] (gradedPiece q G 0) := hG.gradedPieceModule q 0
   let _ : Module ℤ_[p] (gradedPiece q G m) := hG.gradedPieceModule q m

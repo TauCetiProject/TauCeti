@@ -5,35 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 
 /-!
-# The `p`-adic exponential and logarithm in terms of the norm
+# The `p`-adic logarithm on deep discs in terms of the norm
 
-Mathlib's `NormedSpace.exp` and `NormedSpace.log` on `ℚ_[p]` are mutually inverse between the
-closed disc `‖x‖ ≤ p ^ (-i)` and the closed disc `‖u - 1‖ ≤ p ^ (-i)` about `1`, whenever the
-depth `i` satisfies `1 < (p - 1) * i`, that is, `i ≥ 1` for odd `p` and `i ≥ 2` for `p = 2`. On
-these discs both maps preserve the distance to the centre, and the logarithm turns products into
-sums.
+Mathlib's `NormedSpace.log` on `ℚ_[p]` turns products into sums on the closed disc
+`‖u - 1‖ ≤ p ^ (-i)` about `1`, whenever the depth `i` satisfies `1 < (p - 1) * i`, that is,
+`i ≥ 1` for odd `p` and `i ≥ 2` for `p = 2`.
 
-These are the results of `TauCeti.NumberTheory.LocalField.ExpLog` and
-`TauCeti.NumberTheory.LocalField.DeepUnits.Basic` for the local field `ℚ_[p]`, whose absolute
-ramification index is one, restated with Mathlib's `p`-adic norm instead of the valuation of the
-valuative relation and the unit filtration. They are the analytic input for the logarithm on the
+This is the homomorphism property of `TauCeti.NumberTheory.LocalField.DeepUnits.Basic` for the
+local field `ℚ_[p]`, whose absolute ramification index is one, restated with Mathlib's `p`-adic
+norm instead of the unit filtration. Together with the results of
+`TauCeti.NumberTheory.Padics.ExponentialDisc`, it is the analytic input for the logarithm on the
 principal units `1 + qℤ_p`, with `q = p` for odd `p` and `q = 4` for `p = 2`, in
-`TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm`.
+`TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm`. The norm and inverse identities of
+the exponential and logarithm on these discs are the cases of
+`TauCeti.norm_exp_sub_one_of_norm_lt`, `TauCeti.norm_log_of_norm_sub_one_lt`,
+`TauCeti.log_exp_of_norm_lt` and `TauCeti.exp_log_of_norm_sub_one_lt` given by
+`TauCeti.zpow_neg_lt_amiceRadius_zero`.
 
 ## Main results
 
 * `Padic.mem_unitFiltration_iff_norm_sub_one_le`: the unit filtration `U(ℚ_p,i)` is the disc
   `‖x - 1‖ ≤ p ^ (-i)`.
-* `Padic.norm_exp_sub_one`: `‖exp x - 1‖ = ‖x‖`.
-* `Padic.norm_log`: `‖log u‖ = ‖u - 1‖`.
-* `Padic.log_exp`, `Padic.exp_log`: the exponential and the logarithm are inverse.
 * `Padic.log_mul`: `log (u * w) = log u + log w`.
 
 ## References
@@ -58,16 +56,6 @@ private theorem ne_zero_of_one_lt_mul {i : ℕ} (hi : 1 < (p - 1) * i) : i ≠ 0
   rintro rfl
   simp at hi
 
-/-- An element of `ℚ_[p]` of norm at most `p ^ (-i)`, as an element of the ideal `𝓂 ^ i` of the
-ring of integers. -/
-private noncomputable def toMaximalIdealPow {i : ℕ} {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : (𝓂[ℚ_[p]] ^ i : Ideal 𝒪[ℚ_[p]]) :=
-  ⟨⟨x, by
-    rw [Valuation.mem_integer_iff, ← map_one (ValuativeRel.valuation ℚ_[p]),
-      valuation_le_valuation_iff_norm_le, norm_one]
-    exact hx.trans (zpow_le_one_of_nonpos₀ (by exact_mod_cast hp.out.one_lt.le) (by simp))⟩,
-    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr hx⟩
-
 /-- A unit of `ℚ_[p]` lies in the unit filtration `U(ℚ_p,i)`, `i ≥ 1`, exactly when
 `‖x - 1‖ ≤ p ^ (-i)`. -/
 theorem mem_unitFiltration_iff_norm_sub_one_le {i : ℕ} (hi : i ≠ 0) {x : ℚ_[p]ˣ} :
@@ -89,33 +77,6 @@ private theorem mk0_mem_unitFiltration {i : ℕ} (hi : 1 < (p - 1) * i) {x : ℚ
     Units.mk0 x (ne_zero_of_norm_sub_one_le (ne_zero_of_one_lt_mul hi) hx) ∈
       TauCeti.unitFiltration ℚ_[p] i :=
   (mem_unitFiltration_iff_norm_sub_one_le (ne_zero_of_one_lt_mul hi)).mpr hx
-
-/-- **The exponential preserves the norm on deep discs.** For `1 < (p - 1) * i` and
-`‖x‖ ≤ p ^ (-i)`, `‖exp x - 1‖ = ‖x‖`. -/
-theorem norm_exp_sub_one {i : ℕ} (hi : 1 < (p - 1) * i) {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : ‖exp x - 1‖ = ‖x‖ :=
-  valuation_eq_valuation_iff_norm_eq.mp
-    (TauCeti.valuation_exp_sub_one (absoluteRamificationIndex_lt hi) (toMaximalIdealPow hx))
-
-/-- **The logarithm preserves the norm on deep discs.** For `1 < (p - 1) * i` and
-`‖u - 1‖ ≤ p ^ (-i)`, `‖log u‖ = ‖u - 1‖`. -/
-theorem norm_log {i : ℕ} (hi : 1 < (p - 1) * i) {u : ℚ_[p]}
-    (hu : ‖u - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : ‖log u‖ = ‖u - 1‖ :=
-  valuation_eq_valuation_iff_norm_eq.mp
-    (TauCeti.valuation_log (absoluteRamificationIndex_lt hi) (mk0_mem_unitFiltration hi hu))
-
-/-- **The logarithm inverts the exponential on deep discs.** For `1 < (p - 1) * i` and
-`‖x‖ ≤ p ^ (-i)`, `log (exp x) = x`. -/
-theorem log_exp {i : ℕ} (hi : 1 < (p - 1) * i) {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : log (exp x) = x :=
-  TauCeti.log_exp_of_mem_maximalIdeal_pow (absoluteRamificationIndex_lt hi) (toMaximalIdealPow hx)
-
-/-- **The exponential inverts the logarithm on deep discs.** For `1 < (p - 1) * i` and
-`‖u - 1‖ ≤ p ^ (-i)`, `exp (log u) = u`. -/
-theorem exp_log {i : ℕ} (hi : 1 < (p - 1) * i) {u : ℚ_[p]}
-    (hu : ‖u - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : exp (log u) = u :=
-  TauCeti.exp_log_of_mem_unitFiltration (absoluteRamificationIndex_lt hi)
-    (mk0_mem_unitFiltration hi hu)
 
 /-- **The logarithm is a homomorphism on deep discs.** For `1 < (p - 1) * i`,
 `‖u - 1‖ ≤ p ^ (-i)` and `‖w - 1‖ ≤ p ^ (-i)`, `log (u * w) = log u + log w`. -/

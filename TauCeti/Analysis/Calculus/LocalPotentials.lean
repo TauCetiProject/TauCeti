@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Local potentials of continuous one-forms
@@ -42,6 +43,20 @@ def HasLocalPotentials (s : Set E) (φ : E → E →L[ℝ] F) : Prop :=
 theorem hasLocalPotentials_iff : HasLocalPotentials s φ ↔
     ∀ x ∈ s, ∃ r > 0, ball x r ⊆ s ∧ ∃ g : E → F,
       ContDiffOn ℝ 1 g (ball x r) ∧ ∀ y ∈ ball x r, HasFDerivAt g (φ y) y := Iff.rfl
+
+/-- Two potentials of the same field near `z` have the same increments near `z`. -/
+theorem eventually_sub_eq_sub_of_hasFDerivAt {g₁ g₂ : E → F} {z : E}
+    (h₁ : ∀ᶠ y in 𝓝 z, HasFDerivAt g₁ (φ y) y) (h₂ : ∀ᶠ y in 𝓝 z, HasFDerivAt g₂ (φ y) y) :
+    ∀ᶠ y in 𝓝 z, g₁ y - g₁ z = g₂ y - g₂ z := by
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp (h₁.and h₂)
+  have hd : ∀ w ∈ ball z r, HasFDerivAt (g₁ - g₂) 0 w := fun w hw ↦ by
+    simpa using (hball w hw).1.sub (hball w hw).2
+  filter_upwards [ball_mem_nhds z hr] with y hy
+  have := isOpen_ball.is_const_of_fderiv_eq_zero (convex_ball z r).isPreconnected
+    (fun w hw ↦ (hd w hw).differentiableAt.differentiableWithinAt)
+    (fun w hw ↦ (hd w hw).fderiv) hy (mem_ball_self hr)
+  rw [Pi.sub_apply, Pi.sub_apply] at this
+  rw [sub_eq_sub_iff_sub_eq_sub, this]
 
 /-- Every field has local potentials on the empty domain. -/
 @[simp]

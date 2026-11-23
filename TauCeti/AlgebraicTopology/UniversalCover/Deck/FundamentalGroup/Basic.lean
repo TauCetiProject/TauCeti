@@ -79,7 +79,7 @@ along the monodromy of `γ`. -/
 @[simp]
 lemma IsRegular.fundamentalGroupEquiv_unop_apply [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (hreg.fundamentalGroupEquiv hp e γ).unop.1 (e : E) = (hp.monodromy γ.toPath e : E) :=
+    (hreg.fundamentalGroupEquiv hp e γ).unop.val (e : E) = (hp.monodromy γ.toPath e : E) :=
   (hreg.isQuotientCoveringMap hp).unop_fundamentalGroupToMulOpposite_smul
 
 /-- Compatibility spelling of `fundamentalGroupEquiv_unop_apply` using the deck action. -/

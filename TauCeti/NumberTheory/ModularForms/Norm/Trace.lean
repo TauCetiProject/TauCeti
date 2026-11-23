@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 public import TauCeti.NumberTheory.ModularForms.GaloisProd
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Analytic properties of the translate package, and the norm decomposition at `∞`
@@ -200,7 +201,7 @@ private lemma prod_quotientFunc_one_vadd [DecidableEq (𝒮ℒ ⧸ (𝒢.subgrou
         (quotientFunc f q ∣[k] (t : GL (Fin 2) ℝ)) τ := by
       rw [ht_val, ← _root_.ModularForm.SL_slash, slash_T_zpow_apply]
       norm_num
-    rw [hslash, quotientFunc_smul f t.2]
+    rw [hslash, quotientFunc_smul f t.property]
   refine (Finset.prod_congr rfl fun q _ ↦ h_step q).trans <|
     Finset.prod_equiv (MulAction.toPerm t⁻¹)
       (fun q ↦ by simpa using (inv_smul_mem_tPowCosets_iff (𝒢 := 𝒢) q).symm.not)

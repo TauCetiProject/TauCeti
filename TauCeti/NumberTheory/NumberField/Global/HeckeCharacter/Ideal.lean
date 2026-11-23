@@ -282,7 +282,7 @@ theorem idealCharacter_apply_toPrincipalIdeal_eq_embeddingCharacter_inv (χ : He
     (x : Kˣ) (hx : IsCongrOne ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ x)
     (hpos : ∀ w : {w : InfinitePlace K // w.IsReal},
       χ.infinityType.realParity w ≠ (AlgebraicInfinityType.toContinuous n).realParity w →
-        0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
+        0 < InfinitePlace.embedding_of_isReal w.property (x : K)) :
     χ.idealCharacter ⟨toPrincipalIdeal (𝓞 K) K x, hx.toPrincipalIdeal_mem_idealsPrimeTo⟩ =
       (n.embeddingCharacter x)⁻¹ := by
   rw [idealCharacter_apply_toPrincipalIdeal χ x hx]
@@ -324,7 +324,7 @@ theorem IsAlgebraic.isAlgebraic_idealCharacter {χ : HeckeCharacter K} (hχ : χ
   have hpower : (χ.idealCharacter I : ℂ) ^ N = (n.embeddingCharacter x : ℂ)⁻¹ := by
     have h := congrArg (fun u : ℂˣ ↦ (u : ℂ))
       (χ.idealCharacter_apply_toPrincipalIdeal_eq_embeddingCharacter_inv n hn' x hxf
-        fun w _ ↦ isTotallyPositive_iff.mp hpos w.1 w.2)
+        fun w _ ↦ isTotallyPositive_iff.mp hpos w.val w.property)
     rw [← hI, map_pow] at h
     simpa only [Units.val_pow_eq_pow_val, Units.val_inv_eq_inv_val] using h
   -- The embedding monomial lies in the algebraic closure of the rationals.

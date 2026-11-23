@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Difference
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
+import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
 import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
