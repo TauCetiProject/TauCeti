@@ -10,8 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
-import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
-import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
+import TauCeti.Analysis.Pseudodifferential.Frequency.BesselConjugation
 
 /-!
 # Sobolev mapping of uniform symbols
@@ -48,9 +47,6 @@ and the outer factors are the isometries `H^s → L²` and `L² → H^{s - m}`.
 
 ## Main results
 
-* `TauCeti.Symbol.IsUniform.exists_besselMultiplier_comp_quantizeUniformCLM_eq`: conjugating
-  `Op(a)` by Bessel multipliers reduces its order to `0`, for complex normed fibres.
-
 * `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM_zero`: the Calderón–Vaillancourt
   theorem in the form `SchwartzMap.HasSobolevExtension` of an operator `L² → L²`.
 * `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`: the Sobolev mapping
@@ -86,39 +82,6 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
-
-/-! ### Conjugation by Bessel multipliers -/
-
-section Conjugation
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
-
-/-- **Conjugation by Bessel multipliers.** For a uniform symbol `a` of order `m` and every real
-`s` there is a uniform symbol `b` of order `0` with `J^{s - m} ∘ Op(a) = Op(b) ∘ J^s` on Schwartz
-space. -/
-theorem IsUniform.exists_besselMultiplier_comp_quantizeUniformCLM_eq {a : Symbol n V W m}
-    (ha : a.IsUniform) (s : ℝ) :
-    ∃ (b : Symbol n V W 0) (hb : b.IsUniform),
-      SchwartzMap.fourierMultiplierCLM W
-          (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ)) ∘L
-        quantizeUniformCLM a ha =
-      quantizeUniformCLM b hb ∘L SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) := by
-  -- `J^{s - m} ∘ Op(a) = Op(c)` for a uniform symbol `c` of order `s`.
-  obtain ⟨c, hc, hcomp⟩ :=
-    (isUniform_besselPotential (V := W) (n := n) (s - m)).exists_quantizeUniformCLM_comp ha
-  -- `Op(c) = Op(b) ∘ J^s` for `b = c ⟨ξ / 2π⟩ ^ (-s)`, of order `s + -s = 0`.
-  have hc' := hc.comp (isUniform_besselPotential (V := V) (n := n) (-s))
-  have h0 : s - m + m + -s ≤ 0 := by linarith
-  refine ⟨Symbol.inclusion h0 (c.comp (besselPotential (-s))), hc'.inclusion h0, ?_⟩
-  rw [← quantizeUniformCLM_besselPotential, hcomp, quantizeUniformCLM_inclusion hc' h0,
-    quantizeUniformCLM_comp_besselMultiplier]
-  exact quantizeUniformCLM_congr _ _ (by
-    rw [coefficient_comp_besselPotential_comp_besselPotential, neg_add_cancel,
-      coefficient_comp_besselPotential_zero])
-
-end Conjugation
 
 /-! ### Extension to Bessel-potential spaces -/
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Lp.CalderonZygmund
-import TauCeti.Analysis.Pseudodifferential.UniformSobolev
+import TauCeti.Analysis.Pseudodifferential.Frequency.BesselConjugation
 
 /-!
 # Uniform pseudodifferential operators on `H^{s,p}`
