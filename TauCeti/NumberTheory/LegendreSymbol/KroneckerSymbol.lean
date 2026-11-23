@@ -491,16 +491,20 @@ theorem kroneckerSym_mod_left (a : ℤ) {b : ℤ} (hb : Odd b) (hb₀ : 0 < b) :
     kroneckerSym a b = kroneckerSym (a % b) b :=
   kroneckerSym_mod_left' hb hb₀ (Int.emod_emod a b).symm
 
+/-- Convert the sign factor `(if a < 0 ∧ b < 0 then -1 else 1)` into a `negOnePow` exponent. -/
+private theorem neg_and_neg_ite_eq_negOnePow (a b : ℤ) :
+    (if a < 0 ∧ b < 0 then (-1 : ℤ) else 1) =
+      (((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0)).negOnePow : ℤ) := by
+  by_cases ha0 : a < 0 <;> by_cases hb0 : b < 0 <;> simp [ha0, hb0]
+
 /-- Express `(a / b)` for odd `b` as a single `(-1) ^ (⋯)` factor times `J(|a| | |b|)`. -/
 private theorem kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym (a : ℤ) {b : ℤ} (hb : Odd b) :
     kroneckerSym a b =
       ((((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0) +
           (if a < 0 then (1 : ℤ) else 0) * ((b.natAbs / 2 : ℕ) : ℤ)).negOnePow : ℤ)) *
         jacobiSym a.natAbs b.natAbs := by
-  have hs : (if a < 0 ∧ b < 0 then (-1 : ℤ) else 1) =
-      (((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0)).negOnePow : ℤ) := by
-    by_cases ha0 : a < 0 <;> by_cases hb0 : b < 0 <;> simp [ha0, hb0]
-  rw [kroneckerSym_of_odd a hb, hs, jacobiSym_int_eq_negOnePow_mul_natAbs a (Int.natAbs_odd.mpr hb),
+  rw [kroneckerSym_of_odd a hb, neg_and_neg_ite_eq_negOnePow,
+    jacobiSym_int_eq_negOnePow_mul_natAbs a (Int.natAbs_odd.mpr hb),
     ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add]
 
 /-- **Quadratic reciprocity for the Kronecker symbol**: for odd integers `a` and `b` of either
@@ -509,12 +513,10 @@ both `a < 0` and `b < 0` and `s = 1` otherwise. -/
 theorem kroneckerSym_quadratic_reciprocity {a b : ℤ} (ha : Odd a) (hb : Odd b) :
     kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) *
       ((((a - 1) / 2) * ((b - 1) / 2)).negOnePow : ℤ) * kroneckerSym b a := by
-  have hs : (if a < 0 ∧ b < 0 then (-1 : ℤ) else 1) =
-      (((if a < 0 then (1 : ℤ) else 0) * (if b < 0 then (1 : ℤ) else 0)).negOnePow : ℤ) := by
-    by_cases ha0 : a < 0 <;> by_cases hb0 : b < 0 <;> simp [ha0, hb0]
   rw [kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym a hb,
     kroneckerSym_of_odd_eq_negOnePow_mul_jacobiSym b ha,
-    jacobiSym.quadratic_reciprocity (Int.natAbs_odd.mpr ha) (Int.natAbs_odd.mpr hb), hs]
+    jacobiSym.quadratic_reciprocity (Int.natAbs_odd.mpr ha) (Int.natAbs_odd.mpr hb),
+    neg_and_neg_ite_eq_negOnePow]
   simp only [← Int.coe_negOnePow_natCast, Nat.cast_mul, ← mul_assoc, ← Units.val_mul,
     ← Int.negOnePow_add]
   congr 2

@@ -327,20 +327,20 @@ private theorem etaMultiplier_eq_iff_of_mul_T (γ : SL(2, ℤ)) (hc : γ 1 0 ≠
       (12 * (γ * T) 1 0) - dedekindSum ((γ * T) 1 1) ((γ * T) 1 0) - 1 / 4)) ↔
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  have hT : γ * T = γ * T ^ (1 : ℤ) := by simp
-  rw [hT, etaMultiplier_mul_T_zpow, mul_T_zpow_apply_apply_zero, mul_T_zpow_apply_apply_zero,
-    mul_T_zpow_apply_apply_one, dedekindSum_self_mul_add]
-  have hrhs : cexp (π * I * ((((γ 0 0 : ℂ) + ((γ 1 0 * 1 + γ 1 1 : ℤ) : ℂ)) / (12 * γ 1 0)) -
-      dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) =
-      cexp (π * I * (1 : ℤ) / 12) * cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
-        dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-    rw [← Complex.exp_add]
-    congr 1
+  have h00 : (γ * T) 0 0 = γ 0 0 := by rw [γ.coe_mul_T]; simp
+  have h10 : (γ * T) 1 0 = γ 1 0 := by rw [γ.coe_mul_T]; simp
+  have h11 : (γ * T) 1 1 = γ 1 0 + γ 1 1 := by rw [γ.coe_mul_T]; simp
+  rw [etaMultiplier_mul_T, h00, h10, h11, dedekindSum_self_add]
+  push_cast
+  have hexp :
+      π * I * (((γ 0 0 : ℂ) + ((γ 1 0 : ℂ) + γ 1 1)) / (12 * γ 1 0) -
+        dedekindSum (γ 1 1) (γ 1 0) - 1 / 4) =
+      π * I / 12 + π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
+        dedekindSum (γ 1 1) (γ 1 0) - 1 / 4) := by
     have hc'' : (γ 1 0 : ℂ) ≠ 0 := by exact_mod_cast hc
-    push_cast
     field_simp
     ring
-  rw [hrhs, mul_right_inj' (Complex.exp_ne_zero _)]
+  rw [hexp, Complex.exp_add, mul_right_inj' (Complex.exp_ne_zero _)]
 
 /-- The Dedekind-sum formula for `ε(γ)` passes from `γ S` to `γ` when `c, d > 0`: the inversion
 step contributes `e^{-π i / 4}`, and the change of the Dedekind sums from `s(-c, d)` to `s(d, c)`

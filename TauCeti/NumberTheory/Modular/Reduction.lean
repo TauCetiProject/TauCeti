@@ -105,11 +105,9 @@ theorem induction_on_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) {P : SL(2, ℤ
     have hd_lt : γ' 1 1 < γ 1 0 := hγ'_d ▸ Int.emod_lt_of_pos _ hc
     have hd_ne : γ' 1 1 ≠ 0 := by
       intro h0
-      have hdet := γ'.det_coe
-      rw [det_fin_two, h0, mul_zero, zero_sub, hγ'_c] at hdet
-      have hdvd : γ 1 0 ∣ 1 := ⟨-γ' 0 1, by linarith⟩
-      have := Int.le_of_dvd one_pos hdvd
-      omega
+      have hunit := (γ'.isCoprime_row 1).isUnit_of_dvd (h0 ▸ dvd_zero _)
+      have h1' : γ' 1 0 = 1 := (Int.isUnit_iff.mp hunit).resolve_right (by omega)
+      exact h1 (hγ'_c ▸ h1')
     have hd_pos : 0 < γ' 1 1 := lt_of_le_of_ne hd_nonneg hd_ne.symm
     have hS_c : (γ' * S) 1 0 = γ' 1 1 := TauCeti.ModularGroup.mul_S_apply_apply_zero γ' 1
     have hPS : P (γ' * S) := ih (γ' 1 1).toNat (by omega) (γ' * S) (by omega) (by rw [hS_c])
