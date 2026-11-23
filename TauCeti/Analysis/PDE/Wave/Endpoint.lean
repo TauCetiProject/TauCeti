@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 public import TauCeti.Analysis.PDE.Wave.Strichartz
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
@@ -27,18 +29,22 @@ with `C` independent of `j`, in its dual form
 (`TauCeti.exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le_of_endpoint`) and in
 weak form tested against `L²_t L^{r'}_x`
 (`TauCeti.exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le_of_endpoint`),
-and for the Littlewood–Paley blocks. The power of `2^j` is the one dictated by scaling, as at the
-non-endpoint pairs of `TauCeti.Analysis.PDE.Wave.Strichartz`. In dimension `3` the boundary pair
-with `q = 2` is `(2, ∞)`, which is excluded; there the time decay `|t|^(-1)` of the dispersive
-estimate is not integrable at infinity, and the argument below needs a decay rate above `1`.
+and for the Littlewood–Paley blocks, where it also holds in mixed norm
+(`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint`). The
+endpoint exponent satisfies `2 ≤ r < ∞` (`TauCeti.two_le_and_ne_top_of_waveEndpoint`). The power
+of `2^j` is the one dictated by scaling, as at the non-endpoint pairs of
+`TauCeti.Analysis.PDE.Wave.Strichartz`. In dimension `3` the boundary pair with `q = 2` is
+`(2, ∞)`, which is excluded; there the time decay `|t|^(-1)` of the dispersive estimate is not
+integrable at infinity, and the argument below needs a decay rate above `1`.
 
 ## The argument
 
-This is the endpoint theorem of Keel and Tao,
-`TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`, applied with the decay rate
-`σ = (n - 1) / 2 > 1` to the time-rescaled family `V(t) = W₊(μ t) Pⱼ` with `μ = 2^{2jγ}`. Its
-constant depends only on the constants of three bounds, and the rescaling makes all three
-independent of `j`:
+This is the endpoint theorem of Keel and Tao, applied with the decay rate `σ = (n - 1) / 2 > 1`
+to the time-rescaled family `V(t) = W₊(μ t) Pⱼ` with `μ = 2^{2jγ}`: the region estimate
+`TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds` on the whole plane
+bounds the pairings, and `TauCeti.enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le` turns
+that into the dual estimate. The constant depends only on the constants of three bounds, and the
+rescaling makes all three independent of `j`:
 
 * `‖V(t)‖ ≤ sup |ψ|`;
 * the time pairings `V(s) V(t)* = W₊(μ (s - t)) Pⱼ Pⱼ*` are bounded from `L¹` to `L^∞` by
@@ -222,6 +228,18 @@ private theorem toReal_inv_eq_of_endpoint {n : ℝ} (hn : 1 < n)
   field_simp
   linarith
 
+/-- The endpoint exponent `r = 2 (n - 1) / (n - 3)` of the wave equation in dimension `n > 3`,
+given by `1 + (n - 1) / r = (n - 1) / 2`, satisfies `2 ≤ r < ∞`. -/
+theorem two_le_and_ne_top_of_waveEndpoint {n : ℝ} (hn : 3 < n)
+    (hr : 1 + (n - 1) * (r⁻¹).toReal = (n - 1) / 2) : 2 ≤ r ∧ r ≠ (∞ : ℝ≥0∞) := by
+  refine ⟨ENNReal.two_le_of_toReal_inv_le (fun h ↦ ?_) ?_, fun h ↦ ?_⟩
+  · rw [h, ENNReal.inv_zero, ENNReal.toReal_top, mul_zero, add_zero] at hr
+    linarith
+  · rw [toReal_inv_eq_of_endpoint (by linarith) hr]
+    linarith [inv_pos.2 (show (0 : ℝ) < n - 1 by linarith)]
+  · rw [h, ENNReal.inv_top, ENNReal.toReal_zero, mul_zero, add_zero] at hr
+    linarith
+
 /-- The endpoint dual estimate for the rescaled family `V(t) = W₊(2^{jκ} t) Pⱼ`,
 `κ = (n + 1) / (n - 1)`, with a constant independent of `j`: the abstract endpoint theorem applies
 with constants that do not depend on `j`. -/
@@ -255,11 +273,11 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le_four hψ hψc hψ0 (by omega)
   obtain ⟨B, hB⟩ := hψ.continuous.bounded_above_of_compact_support hψc
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le_of_endpoint_of_four_thirds (𝕜 := ℂ)
-    (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E)) (σ := (n - 1) / 2)
-    (b := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹) (r' := r') (by linarith)
-    (by rw [hbinv]; ring) hr'inv A B.toNNReal K
-  refine ⟨C, fun j m hm F hF ↦ ?_⟩
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds
+    (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E))
+    (σ := (n - 1) / 2) (b := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹) (r' := r')
+    (by linarith) (by rw [hbinv]; ring) hr'inv A B.toNNReal K
+  refine ⟨NNReal.sqrt C, fun j m hm F hF ↦ ?_⟩
   have hV (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)) :
       ((halfWavePropagator ℂ (((2 : ℝ) ^ j) ^ ((n + 1) / (n - 1)) * t) ∘L
         Lp.fourierMultiplierCLM ℂ m)†) g = Lp.fourierMultiplierCLM ℂ (star m)
@@ -281,8 +299,14 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
       exact (Lp.fourierMultiplierCLM ℂ (star m)).continuous.comp_aestronglyMeasurable
         (aestronglyMeasurable_phasePropagator_apply _
           (continuous_const.mul continuous_id).neg.aestronglyMeasurable hG))
-    F hF
-  simpa only [hV] using h
+    Set.univ MeasurableSet.univ F F hF hF
+  simp only [hV, Measure.restrict_univ] at h
+  -- `TT*` turns the bound on the pairings over the whole plane into the dual estimate.
+  refine enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le (𝕜 := ℂ)
+    ((Lp.fourierMultiplierCLM ℂ (star m)).integrable_comp ?_) h
+  simp_rw [halfWavePropagator_def]
+  exact integrable_phasePropagator_apply _
+    (continuous_const.mul continuous_id).neg.aestronglyMeasurable hF
 
 /-! ### The endpoint estimates -/
 
@@ -438,5 +462,30 @@ theorem exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le_of_end
       (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0) hn hr
   refine ⟨C, fun j m hm f G hG ↦ ?_⟩
   simpa only [one_div] using hC j m (ae_eq_littlewoodPaley_zero_comp_smul hm) f G hG
+
+/-- **The endpoint Strichartz estimate for the frequency-localized wave equation** in mixed norm,
+for the Littlewood–Paley blocks. Let `E` have dimension `n ≥ 4`, let `Pⱼ` be the `L²` Fourier
+multiplier with the Littlewood–Paley symbol `ψⱼ` built from `φ`, and let `r` be the endpoint
+exponent, `1 + (n - 1) / r = (n - 1) / 2`. Put `γ = n / 2 - n / r - 1 / 2`. There is `C` such that
+for every `j ∈ ℤ` and every `f ∈ L²(E)`,
+
+`‖W₊(t) Pⱼ f‖_{L²_t L^r_x} ≤ C 2^{jγ} ‖f‖₂`. -/
+theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint
+    (hn : 3 < Module.finrank ℝ E)
+    (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f)) r
+            volume) 2 volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) * ‖f‖ₑ := by
+  obtain ⟨hr2, -⟩ := two_le_and_ne_top_of_waveEndpoint (by exact_mod_cast hn) hr
+  -- Test against `L^{r'}` with `r'` the Hölder conjugate of `r`.
+  have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
+  obtain ⟨C, hC⟩ := φ.exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le_of_endpoint
+    (r' := (1 - r⁻¹)⁻¹) hn hr
+  exact ⟨C, fun j m hm f ↦ (continuous_phasePropagator_apply _ _).aestronglyMeasurable
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := 2) (r' := (1 - r⁻¹)⁻¹)
+      ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ hC j m hm f G hG⟩
 
 end ContDiffBump
