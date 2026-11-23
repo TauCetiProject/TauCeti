@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
-import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.CliffordExteriorSquare
-import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
@@ -26,10 +24,10 @@ standard identification of `⋀² V` with the orthogonal Lie algebra `so(V)`. Th
 Lie bracket of `so(V)` on bivectors as a linear map `TauCeti.bivectorAd : ⋀² (⋀² V) → ⋀² V`,
 `X ∧ Y ↦ [X, Y]`, the map called `ad` by Böhm and Wilking, and computes its adjoint.
 
-The bracket is the commutator bracket of quadratic Clifford elements, transported to `⋀² V` by
-`CliffordAlgebra.bivectorLieEquiv` for the form `v ↦ -‖v‖² / 2`, whose polar form is `-⟪u, v⟫`.
-For this form the commutator action of the Clifford bivector of `X` on generators is exactly
-`A_X`, so the bracket is characterized by `A_[X, Y] = ⁅A_X, A_Y⁆`
+The bracket is the commutator of skew-adjoint endomorphisms, transported to `⋀² V` by the
+identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` for the inner product, which
+sends `X` to `-A_X` (`TauCeti.twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint`). So the
+bracket is characterized by `A_[X, Y] = ⁅A_X, A_Y⁆`
 (`TauCeti.twoVectorContraction_bivectorAd_ιMulti`), equivalently by
 `⟪[X, Y], u ∧ v⟫ = ⟪A_X u, A_Y v⟫ - ⟪A_Y u, A_X v⟫` (`TauCeti.inner_bivectorAd_ιMulti`).
 
@@ -65,78 +63,33 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-! ### The Clifford model of the bracket -/
-
-variable (V) in
-/-- The quadratic form `v ↦ -‖v‖² / 2`, with polar form `-⟪u, v⟫`. -/
-private def negHalfNormSq : QuadraticForm ℝ V :=
-  LinearMap.BilinMap.toQuadraticMap ((-(2 : ℝ)⁻¹) • innerₗ V)
-
-omit [FiniteDimensional ℝ V] in
-private theorem polar_negHalfNormSq (u v : V) :
-    QuadraticMap.polar (negHalfNormSq V) u v = -⟪u, v⟫ := by
-  rw [negHalfNormSq, LinearMap.BilinMap.polar_toQuadraticMap]
-  simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul, real_inner_comm u v]
-  ring
-
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- For the form `negHalfNormSq`, the commutator of the Clifford bivector of `X` with a generator
-is the generator of `A_X`. -/
-private theorem lie_bivectorExterior_ι (X : ⋀[ℝ]^2 V) (x : V) :
-    ⁅CliffordAlgebra.bivectorExterior (negHalfNormSq V) X, CliffordAlgebra.ι (negHalfNormSq V) x⁆ =
-      CliffordAlgebra.ι (negHalfNormSq V) (twoVectorContraction X x) := by
-  -- Both sides are linear in `X`, so it suffices to compare them on pure wedges.
-  have key : (LinearMap.mulRight ℝ (CliffordAlgebra.ι (negHalfNormSq V) x) -
-      LinearMap.mulLeft ℝ (CliffordAlgebra.ι (negHalfNormSq V) x)) ∘ₗ
-        CliffordAlgebra.bivectorExterior (negHalfNormSq V) =
-      CliffordAlgebra.ι (negHalfNormSq V) ∘ₗ LinearMap.applyₗ x ∘ₗ twoVectorContractionₗ V := by
-    refine linearMap_ext_ιMulti_two fun a b ↦ ?_
-    have h := CliffordAlgebra.bivector_lie_ι (negHalfNormSq V) a b x
-    rw [Ring.lie_def] at h
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.mulRight_apply,
-      LinearMap.mulLeft_apply, CliffordAlgebra.bivectorExterior_apply_ιMulti, h,
-      LinearMap.applyₗ_apply_apply, twoVectorContractionₗ_apply,
-      twoVectorContraction_ιMulti_two_apply, polar_negHalfNormSq]
-    congr 1
-    module
-  simpa only [Ring.lie_def, LinearMap.coe_comp, Function.comp_apply, LinearMap.sub_apply,
-    LinearMap.mulRight_apply, LinearMap.mulLeft_apply, LinearMap.applyₗ_apply_apply,
-    twoVectorContractionₗ_apply] using LinearMap.congr_fun key X
+variable (V) in
+/-- The identification of `⋀² V` with the skew-adjoint endomorphisms of `V`; it sends `X` to
+`-A_X`. -/
+private abbrev skewEquiv : ⋀[ℝ]^2 V ≃ₗ[ℝ] skewAdjointLieSubalgebra (innerₗ V) :=
+  LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+    (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)
 
-/-! ### The bracket -/
-
-/-- The bracket of `so(V)` on bivectors, transported from the Clifford commutator. -/
+/-- The bracket of `so(V)` on bivectors, transported from the commutator of skew-adjoint
+endomorphisms. -/
 private def bivectorBracket : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V :=
-  letI := CliffordAlgebra.bivectorLieRing (negHalfNormSq V)
-  letI := CliffordAlgebra.bivectorLieAlgebra (negHalfNormSq V)
-  (LieModule.toEnd ℝ (⋀[ℝ]^2 V) (⋀[ℝ]^2 V) : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V))
+  LinearMap.mk₂ ℝ (fun X Y ↦ -(skewEquiv V).symm ⁅skewEquiv V X, skewEquiv V Y⁆)
+    (fun _ _ _ ↦ by simp only [map_add, add_lie, neg_add])
+    (fun _ _ _ ↦ by simp only [map_smul, smul_lie, smul_neg])
+    (fun _ _ _ ↦ by simp only [map_add, lie_add, neg_add])
+    (fun _ _ _ ↦ by simp only [map_smul, lie_smul, smul_neg])
 
 private theorem twoVectorContraction_bivectorBracket (X Y : ⋀[ℝ]^2 V) :
     twoVectorContraction (bivectorBracket X Y) =
       ⁅twoVectorContraction X, twoVectorContraction Y⁆ := by
-  let := CliffordAlgebra.bivectorLieRing (negHalfNormSq V)
-  let := CliffordAlgebra.bivectorLieAlgebra (negHalfNormSq V)
-  ext x
-  apply CliffordAlgebra.ι_injective (negHalfNormSq V)
-  have hcoe (Z : ⋀[ℝ]^2 V) : ((CliffordAlgebra.bivectorLieEquiv (negHalfNormSq V) Z :
-      CliffordAlgebra.quadraticLieSubalgebra (negHalfNormSq V)) : CliffordAlgebra _) =
-      CliffordAlgebra.bivectorExterior (negHalfNormSq V) Z := by
-    simp
-  have hbr : CliffordAlgebra.bivectorExterior (negHalfNormSq V) (bivectorBracket X Y) =
-      ⁅CliffordAlgebra.bivectorExterior (negHalfNormSq V) X,
-        CliffordAlgebra.bivectorExterior (negHalfNormSq V) Y⁆ := by
-    rw [← hcoe, ← hcoe, ← hcoe, ← LieSubalgebra.coe_bracket, ← LieEquiv.map_lie, bivectorBracket,
-      LieHom.coe_toLinearMap, LieModule.toEnd_apply_apply]
-  rw [← lie_bivectorExterior_ι, hbr, lie_lie, lie_bivectorExterior_ι, lie_bivectorExterior_ι,
-    lie_bivectorExterior_ι, lie_bivectorExterior_ι, Ring.lie_def, LinearMap.sub_apply, map_sub,
-    mul_apply_eq_comp, mul_apply_eq_comp]
+  simp only [bivectorBracket, LinearMap.mk₂_apply, map_neg, LinearEquiv.apply_symm_apply,
+    twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint, NegMemClass.coe_neg, neg_neg,
+    LieSubalgebra.coe_bracket, neg_lie, lie_neg]
 
-omit [FiniteDimensional ℝ V] in
 private theorem isAlt_bivectorBracket : (bivectorBracket (V := V)).IsAlt := fun X ↦ by
-  let := CliffordAlgebra.bivectorLieRing (negHalfNormSq V)
-  let := CliffordAlgebra.bivectorLieAlgebra (negHalfNormSq V)
-  exact lie_self X
+  simp [bivectorBracket]
 
 /-- The bracket of the orthogonal Lie algebra `so(V)` on bivectors, as the linear map
 `⋀² (⋀² V) → ⋀² V`, `X ∧ Y ↦ [X, Y]`, called `ad` by Böhm and Wilking. Under the identification
@@ -147,7 +100,6 @@ def bivectorAd : ⋀[ℝ]^2 (⋀[ℝ]^2 V) →ₗ[ℝ] ⋀[ℝ]^2 V :=
   alternatingMapLinearEquiv
     (LinearMap.IsAlt.toAlternatingMap isAlt_bivectorBracket)
 
-omit [FiniteDimensional ℝ V] in
 private theorem bivectorAd_ιMulti (X Y : ⋀[ℝ]^2 V) :
     bivectorAd (ιMulti ℝ 2 ![X, Y]) = bivectorBracket X Y := by
   rw [bivectorAd, alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,

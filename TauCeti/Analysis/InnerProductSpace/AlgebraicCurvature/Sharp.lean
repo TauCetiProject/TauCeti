@@ -154,31 +154,6 @@ theorem inner_bivectorSharp_ιMulti {ι : Type*} [Fintype ι] (b : OrthonormalBa
 
 namespace FourTensor
 
-/-- The reaction bilinear map preserves bivector-symmetric four-tensors: if `r` and `s` are
-antisymmetric in each pair and symmetric under interchanging the pairs, so is `Q(r, s)`. -/
-theorem IsBivectorSymmetric.reactionBilinear {r s : FourTensor V} (hr : IsBivectorSymmetric r)
-    (hs : IsBivectorSymmetric s) : IsBivectorSymmetric (FourTensor.reactionBilinear V r s) := by
-  let b := stdOrthonormalBasis ℝ V
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
-    simp only [reactionBilinear_apply_orthonormalBasis b]
-  · simp only [hr.antisymm_first v u, hs.antisymm_first v u, neg_mul, Finset.sum_neg_distrib,
-      mul_comm (s _) (r _)]
-    ring
-  · simp only [hr.antisymm_first w z, hs.antisymm_first w z, mul_neg, Finset.sum_neg_distrib,
-      mul_comm (s _) (r _)]
-    ring
-  · simp only [hr.swap_pairs z _ u _, hs.swap_pairs w _ v _, hr.swap_pairs w _ v _,
-      hs.swap_pairs z _ u _, hr.swap_pairs z _ v _, hs.swap_pairs w _ u _, hr.swap_pairs w _ u _,
-      hs.swap_pairs z _ v _]
-    have hc (f : Fin (Module.finrank ℝ V) → Fin (Module.finrank ℝ V) → ℝ) :
-        ∑ p, ∑ q, f q p = ∑ p, ∑ q, f p q := Finset.sum_comm
-    rw [hc fun p q ↦ r ![u, b p, z, b q] * s ![v, b p, w, b q],
-      hc fun p q ↦ s ![u, b p, z, b q] * r ![v, b p, w, b q],
-      hc fun p q ↦ r ![v, b p, z, b q] * s ![u, b p, w, b q],
-      hc fun p q ↦ s ![v, b p, z, b q] * r ![u, b p, w, b q]]
-    simp only [mul_comm (s _) (r _)]
-    ring
-
 /-- **The product of two bivector operators in coordinates.** Let `R` and `S` be the bivector
 operators of a bivector-symmetric four-tensor `r` and of a four-tensor `s` antisymmetric in each
 pair. For every orthonormal basis `(eₚ)` of `V`,
