@@ -8,14 +8,12 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Probability.Distributions.Cauchy
-public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+public import TauCeti.Analysis.Complex.Pick.Herglotz
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
+import TauCeti.Analysis.PDE.GreenFunction.HalfPlane
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -34,20 +32,21 @@ The **Poisson integral** of `ν` is `P[ν](z) = ∫ P(z, x) dν(x)` and its **Sc
 
 `S[ν](z) = (1 / (π i)) ∫ (1 / (x - z) - x / (1 + x ^ 2)) dν(x)`.
 
-The Schwarz kernel is the Nevanlinna kernel `(1 + x z) / (x - z)` divided by `1 + x ^ 2`, hence
-bounded by a multiple of `1 / (1 + x ^ 2)`; its imaginary part is `π P(z, x)`. Differentiating under
-the integral sign, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore harmonic there.
+The Schwarz kernel is Tau Ceti's subtracted resolvent kernel `TauCeti.subtractedResolventKernel`,
+the Nevanlinna kernel `(1 + x z) / (x - z)` divided by `1 + x ^ 2`, hence bounded by a multiple of
+`1 / (1 + x ^ 2)`; its imaginary part is `π P(z, x)`. Integrating a locally dominated holomorphic
+kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore harmonic there.
 
 ## Main declarations
 
 * `TauCeti.upperHalfPlanePoissonKernel`: the Poisson kernel `P(z, x)`, with its explicit formula
   `TauCeti.upperHalfPlanePoissonKernel_eq`.
-* `TauCeti.upperHalfPlanePoissonKernel_eq_cauchyPDFReal`: `P(z, ·)` is the Cauchy density with
-  location `Re z` and scale `Im z`; hence `TauCeti.integral_upperHalfPlanePoissonKernel`,
-  `∫ P(z, x) dx = 1`.
+* `TauCeti.upperHalfPlanePoissonKernel_eq_cauchyPDFReal`: `P(z, ·)` is `cauchyPDFReal` with
+  location `Re z` and scale `Im z`, the Cauchy density when `Im z > 0` (for `Im z = 0` both vanish);
+  hence `TauCeti.integral_upperHalfPlanePoissonKernel`, `∫ P(z, x) dx = 1` on `ℂ₊`.
 * `TauCeti.upperHalfPlanePoissonKernel_le`: `P(z, x) ≤ C(z) / (1 + x ^ 2)`.
-* `TauCeti.poissonMeasure`, `TauCeti.IsPoissonFinite`: the measure `dx / (1 + x ^ 2)` and
-  Poisson-finite measures.
+* `TauCeti.poissonMeasure`, `TauCeti.IsPoissonFinite`: the measure `dx / (1 + x ^ 2)`, which is `π`
+  times the standard Cauchy distribution, and Poisson-finite measures.
 * `TauCeti.upperHalfPlanePoissonIntegral`, `TauCeti.upperHalfPlaneSchwarzIntegral`: the Poisson and
   Schwarz integrals of a measure on `ℝ`.
 * `TauCeti.upperHalfPlanePoissonLIntegral`: the extended Poisson integral in `[0, ∞]`, infinite on
@@ -55,6 +54,8 @@ the integral sign, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
 * `TauCeti.isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel`: `ν` is Poisson-finite
   exactly when `P(z, ·)` is `ν`-integrable.
+* `TauCeti.subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel`: the imaginary part
+  of the Schwarz kernel is `π P(z, x)`.
 * `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegral`: `S[ν]` is holomorphic on `ℂ₊`.
 * `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]` for Poisson-finite `ν`.
 * `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊` for
@@ -99,15 +100,9 @@ theorem upperHalfPlanePoissonKernel_def (z : ℂ) (x : ℝ) :
 half-plane. -/
 theorem upperHalfPlanePoissonKernel_eq (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x = z.im / (π * normSq ((x : ℂ) - z)) := by
-  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) = π := by
-    simp [Measure.real, Real.pi_pos.le]
-  rw [upperHalfPlanePoissonKernel_def, halfSpacePoissonKernel_eq_div,
-    LinearIsometryEquiv.inner_map_map, ← map_sub, LinearIsometryEquiv.norm_map, hvol,
-    normSq_eq_norm_sq]
   have hinner : ⟪(I : ℂ), z⟫_ℝ = z.im := by simp [Complex.inner]
-  rw [hinner]
-  push_cast
-  rw [mul_assoc (2 : ℝ), mul_div_mul_left _ _ two_ne_zero]
+  rw [upperHalfPlanePoissonKernel_def,
+    halfSpacePoissonKernel_orthonormalBasisOneI_repr ⟨I, norm_I⟩, hinner, normSq_eq_norm_sq]
 
 /-- The Poisson kernel is measurable in its boundary point. -/
 @[fun_prop]
@@ -136,8 +131,9 @@ theorem upperHalfPlanePoissonKernel_I (x : ℝ) :
   simp only [I_im, I_re, sub_zero, one_pow, one_div]
   ring
 
-/-- For a pole `z` in the closed upper half-plane, `P(z, ·)` is the density of the Cauchy
-distribution with location `Re z` and scale `Im z`. -/
+/-- For a pole `z` in the closed upper half-plane, `P(z, ·)` is `cauchyPDFReal` with location
+`Re z` and scale `Im z`. For `0 < Im z` this is the density of the Cauchy distribution; for
+`Im z = 0` both sides vanish. -/
 theorem upperHalfPlanePoissonKernel_eq_cauchyPDFReal {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
     upperHalfPlanePoissonKernel z x = ProbabilityTheory.cauchyPDFReal z.re z.im.toNNReal x := by
   rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub, ProbabilityTheory.cauchyPDFReal_def,
@@ -183,21 +179,33 @@ theorem upperHalfPlanePoissonKernel_le {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
 
 /-! ### Poisson-finite measures -/
 
-/-- The **Poisson measure** `Π = dx / (1 + x ^ 2)` on the real line. -/
+/-- The **Poisson measure** `Π = dx / (1 + x ^ 2)` on the real line, which is `π` times the standard
+Cauchy distribution (`TauCeti.poissonMeasure_eq_withDensity`). -/
 def poissonMeasure : Measure ℝ :=
-  volume.withDensity fun x ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹
+  ENNReal.ofReal π • ProbabilityTheory.cauchyMeasure 0 1
 
 /-- The defining formula of `TauCeti.poissonMeasure`. -/
 theorem poissonMeasure_def :
-    poissonMeasure = volume.withDensity fun x ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by
+    poissonMeasure = ENNReal.ofReal π • ProbabilityTheory.cauchyMeasure 0 1 := by
   rw [poissonMeasure]
+
+/-- The Poisson measure has density `1 / (1 + x ^ 2)` with respect to Lebesgue measure. -/
+theorem poissonMeasure_eq_withDensity :
+    poissonMeasure = volume.withDensity fun x ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by
+  rw [poissonMeasure_def, ProbabilityTheory.cauchyMeasure_of_scale_ne_zero _ one_ne_zero,
+    ← withDensity_smul _ (ProbabilityTheory.measurable_cauchyPDF _ _)]
+  congr 1
+  funext x
+  rw [Pi.smul_apply, smul_eq_mul, ProbabilityTheory.cauchyPDF_def,
+    ← ENNReal.ofReal_mul Real.pi_pos.le, ProbabilityTheory.cauchyPDFReal_def]
+  congr 1
+  field_simp
+  simp [add_comm]
 
 /-- The Poisson measure has total mass `π`. -/
 @[simp]
 theorem poissonMeasure_univ : poissonMeasure univ = ENNReal.ofReal π := by
-  rw [poissonMeasure_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-    ← ofReal_integral_eq_lintegral_ofReal integrable_inv_one_add_sq
-      (.of_forall fun x ↦ by positivity), integral_univ_inv_one_add_sq]
+  simp [poissonMeasure_def]
 
 /-- The Poisson measure is finite. -/
 instance instIsFiniteMeasurePoissonMeasure : IsFiniteMeasure poissonMeasure :=
@@ -328,118 +336,31 @@ theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoisson
 
 /-! ### The Schwarz integral -/
 
-/-- The **Schwarz kernel** `1 / (x - z) - x / (1 + x ^ 2)` of the upper half-plane. -/
-def upperHalfPlaneSchwarzKernel (z : ℂ) (x : ℝ) : ℂ :=
-  ((x : ℂ) - z)⁻¹ - ((x / (1 + x ^ 2) : ℝ) : ℂ)
-
-/-- The defining formula of `TauCeti.upperHalfPlaneSchwarzKernel`. -/
-theorem upperHalfPlaneSchwarzKernel_def (z : ℂ) (x : ℝ) :
-    upperHalfPlaneSchwarzKernel z x = ((x : ℂ) - z)⁻¹ - ((x / (1 + x ^ 2) : ℝ) : ℂ) := by
-  rw [upperHalfPlaneSchwarzKernel]
-
-/-- The Schwarz kernel is measurable in its boundary point. -/
-@[fun_prop]
-theorem measurable_upperHalfPlaneSchwarzKernel (z : ℂ) :
-    Measurable (upperHalfPlaneSchwarzKernel z) := by
-  simp_rw [funext (upperHalfPlaneSchwarzKernel_def z)]
-  fun_prop
-
-/-- Away from its pole, the Schwarz kernel is the Nevanlinna kernel `(1 + x z) / (x - z)` divided
-by `1 + x ^ 2`. -/
-theorem upperHalfPlaneSchwarzKernel_eq_nevanlinnaKernel_mul {z : ℂ} {x : ℝ} (h : (x : ℂ) ≠ z) :
-    upperHalfPlaneSchwarzKernel z x = nevanlinnaKernel z x * (((1 + x ^ 2)⁻¹ : ℝ) : ℂ) := by
-  have h' : (x : ℂ) - z ≠ 0 := sub_ne_zero.2 h
-  have h1 : (1 + (x : ℂ) ^ 2) ≠ 0 := by exact_mod_cast (by positivity : (1 + x ^ 2) ≠ 0)
-  rw [upperHalfPlaneSchwarzKernel_def, nevanlinnaKernel_def]
-  push_cast
-  field_simp
-  ring
-
-/-- The imaginary part of the Schwarz kernel is `π P(z, x)`. -/
-theorem im_upperHalfPlaneSchwarzKernel (z : ℂ) (x : ℝ) :
-    (upperHalfPlaneSchwarzKernel z x).im = π * upperHalfPlanePoissonKernel z x := by
-  rw [upperHalfPlaneSchwarzKernel_def, upperHalfPlanePoissonKernel_eq, sub_im, ofReal_im,
-    sub_zero, inv_im, sub_im, ofReal_im, zero_sub, neg_neg]
+/-- The imaginary part of the Schwarz kernel `TauCeti.subtractedResolventKernel` is `π P(z, x)`. -/
+theorem subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) :
+    (subtractedResolventKernel z x).im = π * upperHalfPlanePoissonKernel z x := by
+  rw [subtractedResolventKernel_im, upperHalfPlanePoissonKernel_eq]
   rcases eq_or_ne (normSq ((x : ℂ) - z)) 0 with h | h
   · simp [h]
   · field_simp
 
-/-- At the pole `i`, the Schwarz kernel is `i / (1 + x ^ 2)`. -/
-@[simp]
-theorem upperHalfPlaneSchwarzKernel_I (x : ℝ) :
-    upperHalfPlaneSchwarzKernel I x = (((1 + x ^ 2)⁻¹ : ℝ) : ℂ) * I := by
-  have h' : (x : ℂ) - I ≠ 0 := fun h ↦ by simpa using congrArg im h
-  have h3 : (x : ℂ) + I ≠ 0 := fun h ↦ by simpa using congrArg im h
-  have h1 : (1 + (x : ℂ) ^ 2) ≠ 0 := by exact_mod_cast (by positivity : (1 + x ^ 2) ≠ 0)
-  have h2 : (1 + (x : ℂ) ^ 2) = ((x : ℂ) - I) * ((x : ℂ) + I) := by
-    ring_nf
-    rw [I_sq]
-    ring
-  rw [upperHalfPlaneSchwarzKernel_def]
-  push_cast
-  rw [h2] at h1 ⊢
-  field_simp
-  ring
-
-/-- For a pole `z ∈ ℂ₊`, the Schwarz kernel is bounded by a multiple of `1 / (1 + x ^ 2)`. -/
-theorem norm_upperHalfPlaneSchwarzKernel_le {z : ℂ} (hz : 0 < z.im) (x : ℝ) :
-    ‖upperHalfPlaneSchwarzKernel z x‖ ≤
-      (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) * (1 + x ^ 2)⁻¹ := by
-  have hxz : (x : ℂ) ≠ z := fun h ↦ by
-    have := congrArg im h
-    simp only [ofReal_im] at this
-    linarith
-  rw [upperHalfPlaneSchwarzKernel_eq_nevanlinnaKernel_mul hxz, norm_mul, norm_real,
-    Real.norm_of_nonneg (by positivity)]
-  exact mul_le_mul_of_nonneg_right (norm_nevanlinnaKernel_le hz x) (by positivity)
-
-/-- Reflecting the pole in the real axis conjugates the Schwarz kernel. -/
-theorem upperHalfPlaneSchwarzKernel_conj (z : ℂ) (x : ℝ) :
-    upperHalfPlaneSchwarzKernel (conj z) x = conj (upperHalfPlaneSchwarzKernel z x) := by
-  simp only [upperHalfPlaneSchwarzKernel_def, map_sub, map_inv₀, conj_ofReal]
-
-/-- For a Poisson-finite measure and a pole off the real axis, the Schwarz kernel is integrable in
-the boundary point. -/
-theorem IsPoissonFinite.integrable_upperHalfPlaneSchwarzKernel {ν : Measure ℝ}
-    (hν : IsPoissonFinite ν) {z : ℂ} (hz : z.im ≠ 0) :
-    Integrable (upperHalfPlaneSchwarzKernel z) ν := by
-  rcases hz.lt_or_gt with hz | hz
-  · refine (((isPoissonFinite_iff ν).1 hν).const_mul
-      ((‖conj z + I‖ + ‖conj z - I‖) / (‖conj z + I‖ - ‖conj z - I‖))).mono' (by fun_prop)
-      (.of_forall fun x ↦ ?_)
-    have := norm_upperHalfPlaneSchwarzKernel_le (z := conj z) (by simpa using hz) x
-    rwa [upperHalfPlaneSchwarzKernel_conj, Complex.norm_conj] at this
-  · exact (((isPoissonFinite_iff ν).1 hν).const_mul _).mono' (by fun_prop)
-      (.of_forall (norm_upperHalfPlaneSchwarzKernel_le hz))
-
-/-- Off the real axis, a measure is Poisson-finite exactly when the Schwarz kernel is integrable
-against it. -/
-theorem isPoissonFinite_iff_integrable_upperHalfPlaneSchwarzKernel {ν : Measure ℝ} {z : ℂ}
-    (hz : z.im ≠ 0) : IsPoissonFinite ν ↔ Integrable (upperHalfPlaneSchwarzKernel z) ν := by
-  refine ⟨fun hν ↦ hν.integrable_upperHalfPlaneSchwarzKernel hz, fun h ↦ ?_⟩
-  refine (isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel hz).2
-    ((h.norm.const_mul π⁻¹).mono' (by fun_prop) (.of_forall fun x ↦ ?_))
-  have := abs_im_le_norm (upperHalfPlaneSchwarzKernel z x)
-  rw [im_upperHalfPlaneSchwarzKernel, abs_mul, abs_of_pos Real.pi_pos] at this
-  rw [Real.norm_eq_abs, inv_mul_eq_div, le_div_iff₀ Real.pi_pos]
-  linarith
-
 /-- The **Schwarz integral** `S[ν](z) = (1 / (π i)) ∫ (1 / (x - z) - x / (1 + x ^ 2)) dν(x)` of a
-measure `ν` on `ℝ`. -/
+measure `ν` on `ℝ`, the integral of the subtracted resolvent kernel
+`TauCeti.subtractedResolventKernel` divided by `π i`. -/
 def upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) (z : ℂ) : ℂ :=
-  ((π : ℂ) * I)⁻¹ * ∫ x, upperHalfPlaneSchwarzKernel z x ∂ν
+  ((π : ℂ) * I)⁻¹ * ∫ x, subtractedResolventKernel z x ∂ν
 
 /-- The defining formula of `TauCeti.upperHalfPlaneSchwarzIntegral`. -/
 theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
     upperHalfPlaneSchwarzIntegral ν z =
-      ((π : ℂ) * I)⁻¹ * ∫ x, upperHalfPlaneSchwarzKernel z x ∂ν := by
+      ((π : ℂ) * I)⁻¹ * ∫ x, subtractedResolventKernel z x ∂ν := by
   rw [upperHalfPlaneSchwarzIntegral]
 
 /-- At `z = i` the Schwarz integral is real: `S[ν](i) = (1 / π) ∫ dν / (1 + x ^ 2)`. -/
 @[simp]
 theorem upperHalfPlaneSchwarzIntegral_I (ν : Measure ℝ) :
     upperHalfPlaneSchwarzIntegral ν I = ((π⁻¹ * ∫ x, (1 + x ^ 2)⁻¹ ∂ν : ℝ) : ℂ) := by
-  simp_rw [upperHalfPlaneSchwarzIntegral_def, upperHalfPlaneSchwarzKernel_I, integral_mul_const,
+  simp_rw [upperHalfPlaneSchwarzIntegral_def, subtractedResolventKernel_I, integral_const_mul,
     integral_complex_ofReal]
   push_cast
   field_simp
@@ -449,14 +370,16 @@ Poisson-finite measure `ν`. -/
 theorem re_upperHalfPlaneSchwarzIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) (z : ℂ) :
     (upperHalfPlaneSchwarzIntegral ν z).re = upperHalfPlanePoissonIntegral ν z := by
   rw [upperHalfPlaneSchwarzIntegral_def, upperHalfPlanePoissonIntegral_def]
-  by_cases hK : Integrable (upperHalfPlaneSchwarzKernel z) ν
+  by_cases hK : Integrable (subtractedResolventKernel z) ν
   · have him := integral_im (𝕜 := ℂ) hK
-    simp only [RCLike.im_to_complex, im_upperHalfPlaneSchwarzKernel, integral_const_mul] at him
+    simp only [RCLike.im_to_complex,
+      subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel, integral_const_mul] at him
     rw [mul_inv, inv_I, ← ofReal_inv, mul_neg, neg_mul, neg_re, mul_assoc, re_ofReal_mul,
       I_mul_re, ← him, mul_neg, neg_neg, ← mul_assoc, inv_mul_cancel₀ Real.pi_ne_zero, one_mul]
   · have hz : z.im = 0 := by
       by_contra hz
-      exact hK (hν.integrable_upperHalfPlaneSchwarzKernel hz)
+      exact hK (integrable_subtractedResolventKernel
+        ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν) hz)
     rw [integral_undef hK, mul_zero, zero_re]
     simp [upperHalfPlanePoissonKernel_eq, hz]
 
@@ -468,56 +391,46 @@ theorem differentiableOn_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) :
   swap
   · refine (differentiableOn_const (0 : ℂ)).congr fun z hz ↦ ?_
     rw [upperHalfPlaneSchwarzIntegral_def, integral_undef fun h ↦ hν
-      ((isPoissonFinite_iff_integrable_upperHalfPlaneSchwarzKernel (ne_of_gt hz)).2 h), mul_zero]
-  intro z₀ hz₀
-  have hz₀' : 0 < z₀.im := hz₀
-  have hball : ball z₀ (z₀.im / 2) ∈ 𝓝 z₀ := ball_mem_nhds _ (by positivity)
-  -- Near the pole `z₀`, `‖x - z₀‖ ≤ 2 ‖x - w‖` for every real `x`.
-  have norm_sub_le_two_mul {w : ℂ} (hw : w ∈ ball z₀ (z₀.im / 2)) (x : ℝ) :
-      ‖(x : ℂ) - z₀‖ ≤ 2 * ‖(x : ℂ) - w‖ := by
-    refine norm_ofReal_sub_le_two_mul_norm_ofReal_sub ?_ x
-    rw [abs_of_pos hz₀']
-    exact (mem_ball_iff_norm.1 hw).le
-  have hne : ∀ w ∈ ball z₀ (z₀.im / 2), ∀ x : ℝ, (x : ℂ) - w ≠ 0 := fun w hw x h ↦ by
-    have := norm_sub_le_two_mul hw x
-    rw [h, norm_zero, mul_zero] at this
-    have him : z₀.im ≤ ‖(x : ℂ) - z₀‖ :=
-      (le_abs_self _).trans (by simpa using abs_im_le_norm ((x : ℂ) - z₀))
-    linarith
-  have hbound_int : Integrable (fun x : ℝ ↦ 4 * π / z₀.im * upperHalfPlanePoissonKernel z₀ x) ν :=
-    (hν.integrable_upperHalfPlanePoissonKernel z₀).const_mul _
-  have key := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := ν)
-    (F := upperHalfPlaneSchwarzKernel) (F' := fun w x ↦ (((x : ℂ) - w) ^ 2)⁻¹) hball
-    (.of_forall fun w ↦ (measurable_upperHalfPlaneSchwarzKernel w).aestronglyMeasurable)
-    (hν.integrable_upperHalfPlaneSchwarzKernel hz₀'.ne') (by fun_prop)
-    (.of_forall fun x w hw ↦ ?_) hbound_int (.of_forall fun x w hw ↦ ?_)
-  · exact ((key.2.const_mul _).differentiableAt.differentiableWithinAt :)
-  · have h2 := norm_sub_le_two_mul hw x
-    have hpos : 0 < ‖(x : ℂ) - z₀‖ := norm_pos_iff.2 (sub_ne_zero.2 fun h ↦ by
-      have := congrArg im h
-      simp only [ofReal_im] at this
-      linarith)
-    rw [upperHalfPlanePoissonKernel_eq, normSq_eq_norm_sq, norm_inv, norm_pow]
-    have hpos' : 0 < ‖(x : ℂ) - w‖ := by linarith
-    rw [inv_le_iff_one_le_mul₀ (by positivity)]
-    field_simp
-    nlinarith [mul_le_mul h2 h2 hpos.le (by positivity)]
-  · have hxw := hne w hw x
-    have := (((hasDerivAt_id w).const_sub (x : ℂ)).inv hxw).sub_const
-      (((x / (1 + x ^ 2) : ℝ) : ℂ))
-    convert this using 1
-    · funext v
-      simp [upperHalfPlaneSchwarzKernel_def]
-    · simp [div_eq_mul_inv]
+      ((isPoissonFinite_iff_lintegral_lt_top ν).2
+        ((integrable_subtractedResolventKernel_iff (ne_of_gt hz)).1 h)), mul_zero]
+  -- The Cayley factor of `norm_subtractedResolventKernel_le` is continuous on `ℂ₊`, hence locally
+  -- bounded, which gives a local integrable bound `(C + 1) / (1 + x ^ 2)`.
+  set c : ℂ → ℝ := fun w ↦ (‖w + I‖ + ‖w - I‖) / (‖w + I‖ - ‖w - I‖)
+  have hS := analyticOnNhd_integral_of_dominated (μ := ν) (F := subtractedResolventKernel)
+    UpperHalfPlane.isOpen_upperHalfPlaneSet
+    (fun w _ ↦ (measurable_subtractedResolventKernel w).aestronglyMeasurable) (fun z₀ hz₀ ↦ ?_)
+    (.of_forall fun x w hw ↦ ?_)
+  · exact fun z hz ↦ ((hS z hz).differentiableAt.const_mul _).differentiableWithinAt
+  · have hz₀' : 0 < z₀.im := hz₀
+    have hlt : ‖z₀ - I‖ < ‖z₀ + I‖ := by
+      refine lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) ?_
+      rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq]
+      simp only [normSq_apply, sub_re, sub_im, add_re, add_im, I_re, I_im]
+      nlinarith
+    have hc : ContinuousAt c z₀ :=
+      ((by fun_prop : Continuous fun w : ℂ ↦ ‖w + I‖ + ‖w - I‖).continuousAt).div
+        ((by fun_prop : Continuous fun w : ℂ ↦ ‖w + I‖ - ‖w - I‖).continuousAt)
+        (sub_ne_zero.2 hlt.ne')
+    refine ⟨{w | c w < c z₀ + 1} ∩ UpperHalfPlane.upperHalfPlaneSet,
+      inter_mem (hc.eventually (gt_mem_nhds (lt_add_one _)))
+        (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hz₀),
+      fun x ↦ (c z₀ + 1) * (1 + x ^ 2)⁻¹, ((isPoissonFinite_iff ν).1 hν).const_mul _,
+      .of_forall fun x w hw ↦ ?_⟩
+    exact (norm_subtractedResolventKernel_le hw.2 x).trans
+      (mul_le_mul_of_nonneg_right hw.1.le (by positivity))
+  · have hxw : (x : ℂ) - w ≠ 0 := ofReal_sub_ne_zero_of_im_ne_zero (ne_of_gt hw) x
+    simp_rw [subtractedResolventKernel_def]
+    exact ((((differentiableAt_const _).sub differentiableAt_id).inv hxw).sub_const
+      _).differentiableWithinAt
 
 /-- **The Poisson integral is harmonic** on the upper half-plane, for a Poisson-finite measure
 `ν`. -/
 theorem harmonicOnNhd_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) :
     HarmonicOnNhd (upperHalfPlanePoissonIntegral ν) UpperHalfPlane.upperHalfPlaneSet := by
   intro z hz
-  have hopen : IsOpen UpperHalfPlane.upperHalfPlaneSet := isOpen_lt continuous_const continuous_im
   have hS : AnalyticAt ℂ (upperHalfPlaneSchwarzIntegral ν) z :=
-    (differentiableOn_upperHalfPlaneSchwarzIntegral ν).analyticAt (hopen.mem_nhds hz)
+    (differentiableOn_upperHalfPlaneSchwarzIntegral ν).analyticAt
+      (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hz)
   have h : upperHalfPlanePoissonIntegral ν = fun w ↦ (upperHalfPlaneSchwarzIntegral ν w).re :=
     funext fun w ↦ (re_upperHalfPlaneSchwarzIntegral hν w).symm
   rw [h]

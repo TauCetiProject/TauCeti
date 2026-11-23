@@ -33,6 +33,8 @@ not proved here.
 ## Main declarations
 
 * `TauCeti.subtractedResolventKernel`: the kernel `(t - z)⁻¹ - t / (1 + t ^ 2)`.
+* `TauCeti.norm_subtractedResolventKernel_le`: on the upper half-plane the kernel is bounded by a
+  multiple of `(1 + t ^ 2)⁻¹`.
 * `MeasureTheory.Measure.integral_subtractedResolventKernel_withDensity`: under the density change
   `dν = (1 + t ^ 2) dρ` the subtracted resolvent kernel integrates to the Nevanlinna kernel.
 * `MeasureTheory.Measure.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
@@ -86,6 +88,20 @@ theorem nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel {z : ℂ} {
   rw [nevanlinnaKernel_def, subtractedResolventKernel_def]
   field_simp [one_add_ofReal_sq_ne_zero t]
   ring
+
+/-- At a point of the upper half-plane, the subtracted resolvent kernel is bounded by a multiple of
+`(1 + t ^ 2)⁻¹`, with the constant of `TauCeti.norm_nevanlinnaKernel_le`. -/
+theorem norm_subtractedResolventKernel_le {z : ℂ} (hz : 0 < z.im) (t : ℝ) :
+    ‖subtractedResolventKernel z t‖ ≤
+      (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) * (1 + t ^ 2)⁻¹ := by
+  have h := nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel
+    (ofReal_sub_ne_zero_of_im_ne_zero hz.ne' t)
+  have hcast : 1 + (t : ℂ) ^ 2 = ((1 + t ^ 2 : ℝ) : ℂ) := by push_cast; rfl
+  have hnorm : ‖nevanlinnaKernel z t‖ = (1 + t ^ 2) * ‖subtractedResolventKernel z t‖ := by
+    rw [h, hcast, norm_mul, norm_real, Real.norm_of_nonneg (by positivity)]
+  calc ‖subtractedResolventKernel z t‖ = ‖nevanlinnaKernel z t‖ * (1 + t ^ 2)⁻¹ := by
+        rw [hnorm, mul_comm, inv_mul_cancel_left₀ (by positivity)]
+    _ ≤ _ := mul_le_mul_of_nonneg_right (norm_nevanlinnaKernel_le hz t) (by positivity)
 
 /-- At `z = i` the subtracted resolvent kernel is `i / (1 + t ^ 2)`. -/
 @[simp]
