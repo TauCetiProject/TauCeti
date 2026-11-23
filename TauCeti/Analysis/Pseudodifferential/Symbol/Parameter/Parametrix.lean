@@ -52,16 +52,16 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
   `TauCeti.ParameterSymbol.expansionRightInverseTerms_eq_rightInverseTerms`: for the one-term
   expansion `(a, 0, 0, …)` of a single symbol `a`, the formal inverses of the expansion are the
   parametrices `leftInverseTerms` and `rightInverseTerms` of `a`.
-* `TauCeti.ParameterSymbol.isHomogeneous_expansionLeftInverseTerms`,
-  `TauCeti.ParameterSymbol.isHomogeneous_expansionRightInverseTerms`: if each `aⱼ` is jointly
+* `TauCeti.ParameterSymbol.isQuasiHomogeneous_expansionLeftInverseTerms`,
+  `TauCeti.ParameterSymbol.isQuasiHomogeneous_expansionRightInverseTerms`: if each `aⱼ` is jointly
   homogeneous of degree `μ - j` under `(ξ, z) ↦ (t ξ, t² z)`
-  (`TauCeti.ParameterSymbol.IsHomogeneous`), the `k`-th term of either formal inverse is
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneous`), the `k`-th term of either formal inverse is
   homogeneous of degree `-μ - k`. These are the jointly homogeneous terms of Seeley's resolvent
   symbol. The same holds for the composition terms
-  (`TauCeti.ParameterSymbol.IsHomogeneous.sharpTerm`,
-  `TauCeti.ParameterSymbol.IsHomogeneous.sharpTerms`) and for the parametrix of a single
-  homogeneous symbol (`TauCeti.ParameterSymbol.isHomogeneous_leftInverseTerms`,
-  `TauCeti.ParameterSymbol.isHomogeneous_rightInverseTerms`).
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.sharpTerm`,
+  `TauCeti.ParameterSymbol.IsQuasiHomogeneous.sharpTerms`) and for the parametrix of a single
+  homogeneous symbol (`TauCeti.ParameterSymbol.isQuasiHomogeneous_leftInverseTerms`,
+  `TauCeti.ParameterSymbol.isQuasiHomogeneous_rightInverseTerms`).
 
 The definition and closed form of `TauCeti.ParameterSymbol.sharpTerm` follow
 `TauCeti.HomogeneousSymbol.sharpTerm` and `TauCeti.Symbol.sharpTerm`, the formal composition
@@ -217,16 +217,17 @@ theorem coefficient_sharpTerm_eq_zero_of_coordinateDeriv_eq_zero {b : ParameterS
 /-- **Homogeneity of the composition terms.** If `b` and `a` are homogeneous of degrees `μ'` and
 `μ` under `(ξ, z) ↦ (t ξ, t² z)`, the term `sharpTerm b a k` is homogeneous of degree
 `μ' + μ - k`. -/
-theorem IsHomogeneous.sharpTerm {μ μ' : ℝ} {b : ParameterSymbol n Λ W U m'}
-    {a : ParameterSymbol n Λ V W m} (hb : b.IsHomogeneous μ') (ha : a.IsHomogeneous μ) (k : ℕ) :
-    (b.sharpTerm a k).IsHomogeneous (μ' + μ - k) := by
+theorem IsQuasiHomogeneous.sharpTerm {μ μ' : ℝ} {b : ParameterSymbol n Λ W U m'}
+    {a : ParameterSymbol n Λ V W m} (hb : b.IsQuasiHomogeneous μ') (ha : a.IsQuasiHomogeneous μ)
+    (k : ℕ) :
+    (b.sharpTerm a k).IsQuasiHomogeneous (μ' + μ - k) := by
   induction k generalizing m' μ' b μ a with
   | zero =>
     rw [sharpTerm_zero]
     exact ((hb.comp ha).inclusion _).congr_degree (by simp)
   | succ k ih =>
     rw [sharpTerm_succ]
-    refine (IsHomogeneous.sum fun j _ => ?_).smul _
+    refine (IsQuasiHomogeneous.sum fun j _ => ?_).smul _
     exact ((ih (hb.frequencyDeriv _) (ha.spatialDeriv _)).inclusion _).congr_degree
       (by push_cast; ring)
 
@@ -293,14 +294,14 @@ theorem coefficient_sharpTerms_succ' (k : ℕ) (x : (CoordinateSpace n × Coordi
 
 /-- **Homogeneity of the formal composition.** If `qᵢ` and `pⱼ` are homogeneous of degrees
 `μ' - i` and `μ - j`, the term `cₖ` of `sharpTerms q p` is homogeneous of degree `μ' + μ - k`. -/
-theorem IsHomogeneous.sharpTerms {μ μ' : ℝ} (hq : ∀ i, (q i).IsHomogeneous (μ' - i))
-    (hp : ∀ j, (p j).IsHomogeneous (μ - j)) (k : ℕ) :
-    (sharpTerms q p k).IsHomogeneous (μ' + μ - k) := by
-  refine IsHomogeneous.sum fun i _ => IsHomogeneous.sum fun j _ => ?_
+theorem IsQuasiHomogeneous.sharpTerms {μ μ' : ℝ} (hq : ∀ i, (q i).IsQuasiHomogeneous (μ' - i))
+    (hp : ∀ j, (p j).IsQuasiHomogeneous (μ - j)) (k : ℕ) :
+    (sharpTerms q p k).IsQuasiHomogeneous (μ' + μ - k) := by
+  refine IsQuasiHomogeneous.sum fun i _ => IsQuasiHomogeneous.sum fun j _ => ?_
   split_ifs with h
   · exact (((hq i).sharpTerm (hp j) _).inclusion _).congr_degree
       (by rw [Nat.cast_sub h]; push_cast; ring)
-  · exact isHomogeneous_zero
+  · exact isQuasiHomogeneous_zero
 
 end SharpTerms
 
@@ -538,9 +539,9 @@ theorem eq_expansionLeftInverseTerms_iff {q : (i : ℕ) → ParameterSymbol n Λ
 `μ - j` under `(ξ, z) ↦ (t ξ, t² z)`, the term `q_k` of the formal left inverse is homogeneous of
 degree `-μ - k`. For `a = ‖ξ‖² - z` these are the jointly homogeneous terms of the resolvent
 symbol. -/
-theorem isHomogeneous_expansionLeftInverseTerms {μ : ℝ}
-    (hhom : ∀ j, (a j).IsHomogeneous (μ - j)) (k : ℕ) :
-    (expansionLeftInverseTerms a ha k).IsHomogeneous (-μ - k) := by
+theorem isQuasiHomogeneous_expansionLeftInverseTerms {μ : ℝ}
+    (hhom : ∀ j, (a j).IsQuasiHomogeneous (μ - j)) (k : ℕ) :
+    (expansionLeftInverseTerms a ha k).IsQuasiHomogeneous (-μ - k) := by
   induction k using Nat.strong_induction_on with | _ k ih
   cases k with
   | zero =>
@@ -548,14 +549,14 @@ theorem isHomogeneous_expansionLeftInverseTerms {μ : ℝ}
     exact (((hhom 0).inverse ha).inclusion _).congr_degree (by simp)
   | succ k =>
     rw [expansionLeftInverseTerms]
-    refine IsHomogeneous.inclusion (IsHomogeneous.neg ?_) _
-    refine (IsHomogeneous.comp (μ' := -((k + 1 : ℕ) : ℝ))
-      (IsHomogeneous.sum fun i _ => IsHomogeneous.sum fun j _ => ?_)
+    refine IsQuasiHomogeneous.inclusion (IsQuasiHomogeneous.neg ?_) _
+    refine (IsQuasiHomogeneous.comp (μ' := -((k + 1 : ℕ) : ℝ))
+      (IsQuasiHomogeneous.sum fun i _ => IsQuasiHomogeneous.sum fun j _ => ?_)
       ((hhom 0).inverse ha)).congr_degree (by push_cast; ring)
     split_ifs with h
     · exact (((ih i (Finset.mem_range.1 i.property)).sharpTerm (hhom j) _).inclusion _).congr_degree
         (by rw [Nat.cast_sub h]; push_cast; ring)
-    · exact isHomogeneous_zero
+    · exact isQuasiHomogeneous_zero
 
 /-- The terms `q_k` of order `-m - k` of the formal right inverse of an expansion `a ∼ ∑ᵢ aᵢ`
 whose leading term is elliptic with parameter: `q₀ = a₀⁻¹` and, for `k ≥ 0`,
@@ -649,9 +650,9 @@ theorem eq_expansionRightInverseTerms_iff {q : (j : ℕ) → ParameterSymbol n �
 /-- **Homogeneity of the formal right inverse.** If each term `aᵢ` is homogeneous of degree
 `μ - i` under `(ξ, z) ↦ (t ξ, t² z)`, the term `q_k` of the formal right inverse is homogeneous of
 degree `-μ - k`. -/
-theorem isHomogeneous_expansionRightInverseTerms {μ : ℝ}
-    (hhom : ∀ i, (a i).IsHomogeneous (μ - i)) (k : ℕ) :
-    (expansionRightInverseTerms a ha k).IsHomogeneous (-μ - k) := by
+theorem isQuasiHomogeneous_expansionRightInverseTerms {μ : ℝ}
+    (hhom : ∀ i, (a i).IsQuasiHomogeneous (μ - i)) (k : ℕ) :
+    (expansionRightInverseTerms a ha k).IsQuasiHomogeneous (-μ - k) := by
   induction k using Nat.strong_induction_on with | _ k ih
   cases k with
   | zero =>
@@ -659,14 +660,14 @@ theorem isHomogeneous_expansionRightInverseTerms {μ : ℝ}
     exact (((hhom 0).inverse ha).inclusion _).congr_degree (by simp)
   | succ k =>
     rw [expansionRightInverseTerms]
-    refine IsHomogeneous.inclusion (IsHomogeneous.neg ?_) _
+    refine IsQuasiHomogeneous.inclusion (IsQuasiHomogeneous.neg ?_) _
     refine (((hhom 0).inverse ha).comp (μ := -((k + 1 : ℕ) : ℝ))
-      (IsHomogeneous.sum fun j _ => IsHomogeneous.sum fun i _ => ?_)).congr_degree
+      (IsQuasiHomogeneous.sum fun j _ => IsQuasiHomogeneous.sum fun i _ => ?_)).congr_degree
       (by push_cast; ring)
     split_ifs with h
     · exact (((hhom i).sharpTerm (ih j (Finset.mem_range.1 j.property)) _).inclusion _).congr_degree
         (by rw [Nat.cast_sub h]; push_cast; ring)
-    · exact isHomogeneous_zero
+    · exact isQuasiHomogeneous_zero
 
 end ExpansionParametrix
 
@@ -716,29 +717,29 @@ homogeneous whenever `a` is. -/
 private theorem exists_oneTermExpansion :
     ∃ (e : (j : ℕ) → ParameterSymbol n Λ V W (m - j)) (_ : (e 0).IsElliptic),
       (e 0).coefficient = a.coefficient ∧ (∀ j, e (j + 1) = 0) ∧
-        ∀ μ, a.IsHomogeneous μ → ∀ j, (e j).IsHomogeneous (μ - j) := by
+        ∀ μ, a.IsQuasiHomogeneous μ → ∀ j, (e j).IsQuasiHomogeneous (μ - j) := by
   refine ⟨fun j => if h : j = 0 then inclusion (by simp [h]) a else 0,
     ⟨fun x ξ z hz => by simpa using ha.isInvertible x ξ z hz,
       fun K hK => by simpa using ha.exists_bound K hK⟩, by simp, by simp, fun μ hμ j => ?_⟩
   rcases j with _ | j
   · simpa using hμ.inclusion (m' := m - ((0 : ℕ) : ℝ)) (by simp)
-  · simpa using isHomogeneous_zero
+  · simpa using isQuasiHomogeneous_zero
 
 /-- **Homogeneity of the left parametrix.** If `a` is homogeneous of degree `μ` under
 `(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its left parametrix is homogeneous of degree `-μ - k`. -/
-theorem isHomogeneous_leftInverseTerms {μ : ℝ} (hμ : a.IsHomogeneous μ) (k : ℕ) :
-    (a.leftInverseTerms ha k).IsHomogeneous (-μ - k) := by
+theorem isQuasiHomogeneous_leftInverseTerms {μ : ℝ} (hμ : a.IsQuasiHomogeneous μ) (k : ℕ) :
+    (a.leftInverseTerms ha k).IsQuasiHomogeneous (-μ - k) := by
   obtain ⟨e, he, h₀, h₁, hhom⟩ := exists_oneTermExpansion ha
   rw [← expansionLeftInverseTerms_eq_leftInverseTerms ha he h₀ h₁]
-  exact isHomogeneous_expansionLeftInverseTerms e he (hhom μ hμ) k
+  exact isQuasiHomogeneous_expansionLeftInverseTerms e he (hhom μ hμ) k
 
 /-- **Homogeneity of the right parametrix.** If `a` is homogeneous of degree `μ` under
 `(ξ, z) ↦ (t ξ, t² z)`, the term `bₖ` of its right parametrix is homogeneous of degree `-μ - k`. -/
-theorem isHomogeneous_rightInverseTerms {μ : ℝ} (hμ : a.IsHomogeneous μ) (k : ℕ) :
-    (a.rightInverseTerms ha k).IsHomogeneous (-μ - k) := by
+theorem isQuasiHomogeneous_rightInverseTerms {μ : ℝ} (hμ : a.IsQuasiHomogeneous μ) (k : ℕ) :
+    (a.rightInverseTerms ha k).IsQuasiHomogeneous (-μ - k) := by
   obtain ⟨e, he, h₀, h₁, hhom⟩ := exists_oneTermExpansion ha
   rw [← expansionRightInverseTerms_eq_rightInverseTerms ha he h₀ h₁]
-  exact isHomogeneous_expansionRightInverseTerms e he (hhom μ hμ) k
+  exact isQuasiHomogeneous_expansionRightInverseTerms e he (hhom μ hμ) k
 
 end OneTermExpansion
 

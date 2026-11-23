@@ -9,27 +9,28 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
-# Jointly homogeneous parameter-dependent symbols
+# Quasi-homogeneous parameter-dependent symbols
 
 The terms of Seeley's approximation of the resolvent `(A - z)⁻¹` of an elliptic differential
-operator `A` of order `2` are jointly homogeneous in the frequency and the spectral parameter under
-the dilations `(ξ, z) ↦ (t ξ, t² z)`: the principal resolvent symbol `(‖ξ‖² - z)⁻¹` of the
-Euclidean Laplacian is homogeneous of degree `-2`. This file records this homogeneity for
-strongly parameter-dependent symbols (`TauCeti.ParameterSymbol`) and its behaviour under the
-operations of the symbol calculus.
+operator `A` of order `2` are quasi-homogeneous, that is, jointly homogeneous in the frequency and
+the spectral parameter under the dilations `(ξ, z) ↦ (t ξ, t² z)`: the principal resolvent symbol
+`(‖ξ‖² - z)⁻¹` of the Euclidean Laplacian is quasi-homogeneous of degree `-2`. This file records
+this quasi-homogeneity for strongly parameter-dependent symbols (`TauCeti.ParameterSymbol`) and its
+behaviour under the operations of the symbol calculus.
 
-* `TauCeti.ParameterSymbol.IsHomogeneous a μ`: `a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)` for
-  `t > 0` whenever `z` and `t² z` lie in `Λ` (`TauCeti.ParameterSymbol.isHomogeneous_iff`).
-* It is preserved by sums, scalar multiples and the inclusions between orders, and pointwise
-  compositions add the degrees (`TauCeti.ParameterSymbol.IsHomogeneous.comp`). The inverse of a
-  parameter-elliptic symbol negates the degree (`TauCeti.ParameterSymbol.IsHomogeneous.inverse`).
-* A position derivative keeps the degree (`TauCeti.ParameterSymbol.IsHomogeneous.spatialDeriv`)
+* `TauCeti.ParameterSymbol.IsQuasiHomogeneous a μ`: `a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)` for
+  `t > 0` whenever `z` and `t² z` lie in `Λ` (`TauCeti.ParameterSymbol.isQuasiHomogeneous_iff`).
+* It is preserved by sums, differences, scalar multiples and the inclusions between orders, and
+  pointwise compositions add the degrees (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.comp`). The
+  inverse of a parameter-elliptic symbol negates the degree
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.inverse`).
+* A position derivative keeps the degree (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.spatialDeriv`)
   and a frequency derivative lowers it by one
-  (`TauCeti.ParameterSymbol.IsHomogeneous.frequencyDeriv`).
+  (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.frequencyDeriv`).
 * Examples: the quasi-homogeneous symbols `TauCeti.ParameterSymbol.ofQuasiHomogeneous`
-  (`TauCeti.ParameterSymbol.isHomogeneous_ofQuasiHomogeneous`), such as the spectral parameter
-  `z`, and the symbol `‖ξ‖² - z` of `-Δ - z`, of degree `2`
-  (`TauCeti.ParameterSymbol.isHomogeneous_shiftedLaplacian_zero`).
+  (`TauCeti.ParameterSymbol.isQuasiHomogeneous_ofQuasiHomogeneous`), such as the spectral
+  parameter `z`, and the symbol `‖ξ‖² - z` of `-Δ - z`, of degree `2`
+  (`TauCeti.ParameterSymbol.isQuasiHomogeneous_shiftedLaplacian_zero`).
 
 ## References
 
@@ -53,74 +54,79 @@ variable {n : ℕ} {Λ : TopologicalSpace.Opens ℂ} {V W U : Type*} [NormedAddC
   [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U]
   [NormedSpace ℂ U] {m m' : ℝ}
 
-/-- A parameter-dependent symbol is *homogeneous of degree `μ`* under the dilations
+/-- A parameter-dependent symbol is *quasi-homogeneous of degree `μ`* under the dilations
 `(ξ, z) ↦ (t ξ, t² z)` of the frequency and the spectral parameter if
 `a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)` for every `t > 0` such that both `z` and `t² z` lie in
-`Λ` (`TauCeti.ParameterSymbol.isHomogeneous_iff`). Since the coefficients are only defined on
+`Λ` (`TauCeti.ParameterSymbol.isQuasiHomogeneous_iff`). Since the coefficients are only defined on
 `Λ`, which need not be closed under these dilations, nothing is required otherwise. The resolvent
-symbol `(‖ξ‖² - z)⁻¹` is homogeneous of degree `-2`. -/
-def IsHomogeneous (a : ParameterSymbol n Λ V W m) (μ : ℝ) : Prop :=
+symbol `(‖ξ‖² - z)⁻¹` is quasi-homogeneous of degree `-2`. -/
+def IsQuasiHomogeneous (a : ParameterSymbol n Λ V W m) (μ : ℝ) : Prop :=
   ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ, p.2 ∈ Λ → ∀ t : ℝ, 0 < t →
     (parameterDilation n t p).2 ∈ Λ →
       a.coefficient (parameterDilation n t p) = t ^ μ • a.coefficient p
 
-theorem isHomogeneous_iff {a : ParameterSymbol n Λ V W m} {μ : ℝ} :
-    a.IsHomogeneous μ ↔ ∀ x ξ, ∀ z ∈ Λ, ∀ t : ℝ, 0 < t → (t ^ 2 : ℝ) • z ∈ Λ →
+theorem isQuasiHomogeneous_iff {a : ParameterSymbol n Λ V W m} {μ : ℝ} :
+    a.IsQuasiHomogeneous μ ↔ ∀ x ξ, ∀ z ∈ Λ, ∀ t : ℝ, 0 < t → (t ^ 2 : ℝ) • z ∈ Λ →
       a.coefficient ((x, t • ξ), (t ^ 2 : ℝ) • z) = t ^ μ • a.coefficient ((x, ξ), z) := by
-  simp only [IsHomogeneous, parameterDilation_apply, Prod.forall]
+  simp only [IsQuasiHomogeneous, parameterDilation_apply, Prod.forall]
 
 variable {μ μ' : ℝ}
 
-theorem IsHomogeneous.congr_degree {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
-    (h : μ = μ') : a.IsHomogeneous μ' :=
+theorem IsQuasiHomogeneous.congr_degree {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneous μ) (h : μ = μ') : a.IsQuasiHomogeneous μ' :=
   h ▸ ha
 
-theorem isHomogeneous_zero : (0 : ParameterSymbol n Λ V W m).IsHomogeneous μ :=
+theorem isQuasiHomogeneous_zero : (0 : ParameterSymbol n Λ V W m).IsQuasiHomogeneous μ :=
   fun _ _ _ _ _ => by simp
 
-theorem IsHomogeneous.add {a b : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
-    (hb : b.IsHomogeneous μ) : (a + b).IsHomogeneous μ := fun p hp t ht htp => by
+theorem IsQuasiHomogeneous.add {a b : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ)
+    (hb : b.IsQuasiHomogeneous μ) : (a + b).IsQuasiHomogeneous μ := fun p hp t ht htp => by
   rw [coefficient_add, Pi.add_apply, Pi.add_apply, ha p hp t ht htp, hb p hp t ht htp, smul_add]
 
-theorem IsHomogeneous.smul {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ) (c : ℂ) :
-    (c • a).IsHomogeneous μ := fun p hp t ht htp => by
+theorem IsQuasiHomogeneous.smul {a : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ)
+    (c : ℂ) : (c • a).IsQuasiHomogeneous μ := fun p hp t ht htp => by
   rw [coefficient_smul, Pi.smul_apply, Pi.smul_apply, ha p hp t ht htp, smul_comm]
 
-theorem IsHomogeneous.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ) :
-    (-a).IsHomogeneous μ := fun p hp t ht htp => by
+theorem IsQuasiHomogeneous.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ) :
+    (-a).IsQuasiHomogeneous μ := fun p hp t ht htp => by
   rw [coefficient_neg, Pi.neg_apply, Pi.neg_apply, ha p hp t ht htp, smul_neg]
 
-theorem IsHomogeneous.sum {ι : Type*} {s : Finset ι} {f : ι → ParameterSymbol n Λ V W m}
-    (hf : ∀ i ∈ s, (f i).IsHomogeneous μ) : (∑ i ∈ s, f i).IsHomogeneous μ :=
+theorem IsQuasiHomogeneous.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ)
+    (hb : b.IsQuasiHomogeneous μ) : (a - b).IsQuasiHomogeneous μ := fun p hp t ht htp => by
+  rw [coefficient_sub, Pi.sub_apply, Pi.sub_apply, ha p hp t ht htp, hb p hp t ht htp, smul_sub]
+
+theorem IsQuasiHomogeneous.sum {ι : Type*} {s : Finset ι} {f : ι → ParameterSymbol n Λ V W m}
+    (hf : ∀ i ∈ s, (f i).IsQuasiHomogeneous μ) : (∑ i ∈ s, f i).IsQuasiHomogeneous μ :=
   fun p hp t ht htp => by
     simp only [coefficient_sum, Finset.sum_apply, Finset.smul_sum]
     exact Finset.sum_congr rfl fun i hi => hf i hi p hp t ht htp
 
-theorem IsHomogeneous.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
-    (h : m ≤ m') : (inclusion h a).IsHomogeneous μ := by
-  simpa only [IsHomogeneous, coefficient_inclusion] using ha
+theorem IsQuasiHomogeneous.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsQuasiHomogeneous μ)
+    (h : m ≤ m') : (inclusion h a).IsQuasiHomogeneous μ := by
+  simpa only [IsQuasiHomogeneous, coefficient_inclusion] using ha
 
-/-- The pointwise composition of homogeneous symbols of degrees `μ'` and `μ` is homogeneous of
-degree `μ' + μ`. -/
-theorem IsHomogeneous.comp {b : ParameterSymbol n Λ W U m'} {a : ParameterSymbol n Λ V W m}
-    (hb : b.IsHomogeneous μ') (ha : a.IsHomogeneous μ) : (b.comp a).IsHomogeneous (μ' + μ) :=
+/-- The pointwise composition of quasi-homogeneous symbols of degrees `μ'` and `μ` is
+quasi-homogeneous of degree `μ' + μ`. -/
+theorem IsQuasiHomogeneous.comp {b : ParameterSymbol n Λ W U m'} {a : ParameterSymbol n Λ V W m}
+    (hb : b.IsQuasiHomogeneous μ') (ha : a.IsQuasiHomogeneous μ) :
+    (b.comp a).IsQuasiHomogeneous (μ' + μ) :=
   fun p hp t ht htp => by
     simp only [coefficient_comp, hb p hp t ht htp, ha p hp t ht htp,
       ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_smul,
       Real.rpow_add ht, mul_comm]
 
-/-- The pointwise inverse of a parameter-elliptic symbol homogeneous of degree `μ` is homogeneous
-of degree `-μ`. -/
-theorem IsHomogeneous.inverse [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
-    (ha : a.IsHomogeneous μ) (he : a.IsElliptic) : (a.inverse he).IsHomogeneous (-μ) :=
+/-- The pointwise inverse of a parameter-elliptic symbol quasi-homogeneous of degree `μ` is
+quasi-homogeneous of degree `-μ`. -/
+theorem IsQuasiHomogeneous.inverse [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneous μ) (he : a.IsElliptic) : (a.inverse he).IsQuasiHomogeneous (-μ) :=
   fun p hp t ht htp => by
     rw [coefficient_inverse, coefficient_inverse, ha p hp t ht htp,
       ContinuousLinearMap.inverse_smul_of_isScalarTower, Real.rpow_neg ht.le]
 
 /-- Differentiating the homogeneity relation: the derivative at the dilated point along the dilated
 direction is `t ^ μ` times the derivative. -/
-private theorem IsHomogeneous.fderiv_apply {a : ParameterSymbol n Λ V W m}
-    (ha : a.IsHomogeneous μ) {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ)
+private theorem IsQuasiHomogeneous.fderiv_apply {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneous μ) {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ)
     {t : ℝ} (ht : 0 < t) (htp : (parameterDilation n t p).2 ∈ Λ)
     (d : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     fderiv ℝ a.coefficient (parameterDilation n t p) (parameterDilation n t d) =
@@ -137,20 +143,23 @@ private theorem IsHomogeneous.fderiv_apply {a : ParameterSymbol n Λ V W m}
     fderiv_fun_const_smul (a.differentiableAt_coefficient hp)]
   rfl
 
-/-- A position derivative of a homogeneous symbol is homogeneous of the same degree. -/
-theorem IsHomogeneous.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
-    (v : CoordinateSpace n) : (a.spatialDeriv v).IsHomogeneous μ := by
-  refine isHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
+/-- A position derivative of a quasi-homogeneous symbol is quasi-homogeneous of the same
+degree. -/
+theorem IsQuasiHomogeneous.spatialDeriv {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneous μ) (v : CoordinateSpace n) :
+    (a.spatialDeriv v).IsQuasiHomogeneous μ := by
+  refine isQuasiHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
   have h := ha.fderiv_apply (p := ((x, ξ), z)) hz ht (by simpa using htz) ((v, 0), 0)
   simp only [parameterDilation_apply, smul_zero] at h
   rw [coefficient_spatialDeriv_eq_fderiv a v x _ htz, coefficient_spatialDeriv_eq_fderiv a v x ξ hz,
     h]
 
-/-- A frequency derivative of a homogeneous symbol of degree `μ` is homogeneous of degree
-`μ - 1`. -/
-theorem IsHomogeneous.frequencyDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
-    (w : CoordinateSpace n) : (a.frequencyDeriv w).IsHomogeneous (μ - 1) := by
-  refine isHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
+/-- A frequency derivative of a quasi-homogeneous symbol of degree `μ` is quasi-homogeneous of
+degree `μ - 1`. -/
+theorem IsQuasiHomogeneous.frequencyDeriv {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneous μ) (w : CoordinateSpace n) :
+    (a.frequencyDeriv w).IsQuasiHomogeneous (μ - 1) := by
+  refine isQuasiHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
   have h := ha.fderiv_apply (p := ((x, ξ), z)) hz ht (by simpa using htz) ((0, w), 0)
   have hd : (((0, t • w), (t ^ 2 : ℝ) • (0 : ℂ)) : (CoordinateSpace n × CoordinateSpace n) × ℂ) =
       t • ((0, w), 0) := by
@@ -162,27 +171,28 @@ theorem IsHomogeneous.frequencyDeriv {a : ParameterSymbol n Λ V W m} (ha : a.Is
   simp only
   rw [h, smul_smul, Real.rpow_sub_one ht.ne', mul_div_cancel₀ _ ht.ne']
 
-/-- A quasi-homogeneous function of degree `m` is a homogeneous symbol of degree `m`. -/
-theorem isHomogeneous_ofQuasiHomogeneous
+/-- A quasi-homogeneous function of degree `m` is a quasi-homogeneous symbol of degree `m`. -/
+theorem isQuasiHomogeneous_ofQuasiHomogeneous
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
     (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
-    (ofQuasiHomogeneous f hf hhom : ParameterSymbol n Λ V W m).IsHomogeneous m :=
-  isHomogeneous_iff.2 fun x ξ z hz t ht htz => by
+    (ofQuasiHomogeneous f hf hhom : ParameterSymbol n Λ V W m).IsQuasiHomogeneous m :=
+  isQuasiHomogeneous_iff.2 fun x ξ z hz t ht htz => by
     rw [coefficient_ofQuasiHomogeneous f hf hhom x _ htz,
       coefficient_ofQuasiHomogeneous f hf hhom x ξ hz, ← hhom t ht, parameterDilation_apply]
 
-/-- The spectral parameter is homogeneous of degree `2`. -/
-theorem isHomogeneous_spectralParameter :
-    (spectralParameter V : ParameterSymbol n Λ V V 2).IsHomogeneous 2 :=
-  isHomogeneous_iff.2 fun x ξ z hz t _ htz => by
+/-- The spectral parameter is quasi-homogeneous of degree `2`. -/
+theorem isQuasiHomogeneous_spectralParameter :
+    (spectralParameter V : ParameterSymbol n Λ V V 2).IsQuasiHomogeneous 2 :=
+  isQuasiHomogeneous_iff.2 fun x ξ z hz t _ htz => by
     rw [coefficient_spectralParameter x _ htz, coefficient_spectralParameter x ξ hz, ← smul_assoc,
       Real.rpow_two]
 
-/-- The symbol `‖ξ‖² - z` of `-Δ - z` is homogeneous of degree `2` under `(ξ, z) ↦ (t ξ, t² z)`;
-hence so is its inverse, the principal resolvent symbol `(‖ξ‖² - z)⁻¹`, of degree `-2`. -/
-theorem isHomogeneous_shiftedLaplacian_zero :
-    (shiftedLaplacian V 0 : ParameterSymbol n Λ V V 2).IsHomogeneous 2 := by
-  refine isHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
+/-- The symbol `‖ξ‖² - z` of `-Δ - z` is quasi-homogeneous of degree `2` under
+`(ξ, z) ↦ (t ξ, t² z)`; hence so is its inverse, the principal resolvent symbol `(‖ξ‖² - z)⁻¹`, of
+degree `-2`. -/
+theorem isQuasiHomogeneous_shiftedLaplacian_zero :
+    (shiftedLaplacian V 0 : ParameterSymbol n Λ V V 2).IsQuasiHomogeneous 2 := by
+  refine isQuasiHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
   rw [coefficient_shiftedLaplacian 0 x _ htz, coefficient_shiftedLaplacian 0 x ξ hz,
     ← smul_assoc]
   congr 1
