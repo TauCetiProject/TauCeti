@@ -25,8 +25,7 @@ public import Mathlib.Analysis.RCLike.Basic
   `RCLike.norm_le_abs_re_add_abs_im_add_of_mem_closedBall`, and
   `RCLike.mem_closedBall_of_abs_re_sub_add_abs_im_sub_le`: coordinate bounds on and membership
   in closed balls.
-* `RCLike.sub_eq_ofReal_re_sub_of_im_eq` and `RCLike.norm_sub_eq_abs_re_sub_of_im_eq`:
-  horizontal differences are real casts, with norm equal to `|re z - re w|`.
+* `RCLike.sub_eq_ofReal_re_sub_of_im_eq`: horizontal differences are real casts.
 * `RCLike.sum_mul_inv_le_sum_mul_re_sub_inv`: lower bound for weighted sums of
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
@@ -112,11 +111,6 @@ real parts. -/
 theorem sub_eq_ofReal_re_sub_of_im_eq {z w : K} (h : im z = im w) :
     z - w = ((re z - re w : ℝ) : K) :=
   RCLike.ext (by simp) (by simp [h])
-
-/-- The distance between two scalars with the same imaginary part equals `|re z - re w|`. -/
-theorem norm_sub_eq_abs_re_sub_of_im_eq {z w : K} (h : im z = im w) :
-    ‖z - w‖ = |re z - re w| := by
-  rw [sub_eq_ofReal_re_sub_of_im_eq h, norm_ofReal]
 
 /-- For nonnegative weights `w` on real points `ρ ∈ S` (`im ρ = 0`) satisfying
 `0 < σ - re ρ ≤ D`, the weighted reciprocal sum `∑ ρ ∈ S, w ρ * re (((σ : K) - ρ)⁻¹)` is at

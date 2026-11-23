@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds

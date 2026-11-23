@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
@@ -101,7 +100,7 @@ private theorem mem_closedBall_of_seven_div_eight_le_re {q : ℕ} [NeZero q]
     (hL0 : χ.LFunction ρ = 0) :
     ρ ∈ closedBall ((9 / 8 : ℝ) + ρ.im * I) ((1 / 2 : ℝ) / 2) := by
   have hlt1 : ρ.re < 1 := χ.re_lt_one_of_LFunction_eq_zero (.inr hχ) hL0
-  rw [mem_closedBall, dist_eq_norm, RCLike.norm_sub_eq_abs_re_sub_of_im_eq (by simp)]
+  rw [mem_closedBall, Complex.dist_of_im_eq (by simp), Real.dist_eq]
   simpa [abs_le] using ⟨by linarith, by linarith⟩
 
 private theorem exists_neg_re_logDeriv_sq_two_mul_le :
@@ -157,10 +156,11 @@ private theorem exists_not_pos_meromorphicOrderAt_of_sq_ne_one_or_im_ge :
         1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re →
         ¬ 0 < meromorphicOrderAt χ.LFunction ρ := by
   obtain ⟨A, hA, hret⟩ := TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le
-  obtain ⟨C₁, hC₁0, hpole0⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
-  obtain ⟨B₂, hB₂, hsq2⟩ := exists_neg_re_logDeriv_sq_two_mul_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
-  set M : ℝ := 3 * C₁ / Real.log 3 + 4 * A + B₂
+  obtain ⟨C₁, hC₁0, hpole0⟩ :=
+    TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul hlog3
+  obtain ⟨B₂, hB₂, hsq2⟩ := exists_neg_re_logDeriv_sq_two_mul_le
+  set M : ℝ := 3 * C₁ + 4 * A + B₂
   obtain ⟨c, hc0, -, hcutoff⟩ := TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv
     (cutoff := (1 / 32 : ℝ)) (L₀ := Real.log 3) (weight := (1 / 120 : ℝ)) (M := M)
     (by norm_num) hlog3 (by norm_num) (by positivity)
@@ -176,9 +176,9 @@ private theorem exists_not_pos_meromorphicOrderAt_of_sq_ne_one_or_im_ge :
   obtain ⟨hδ_32, hlt⟩ := hcutoff hδ0 hlog_ge (by linarith)
   set η : ℝ := 4 * δ
   set σ : ℝ := 1 + η
-  have hpole : -(logDeriv riemannZeta σ).re ≤ η⁻¹ + C₁ / Real.log 3 * L :=
-    le_trans (by simpa [σ] using hpole0 (η := η) (by positivity) (by linarith))
-      (add_le_add_right (TauCeti.le_div_mul_of_le hC₁0 hlog3 hlog_ge) _)
+  have hpole : -(logDeriv riemannZeta σ).re ≤ η⁻¹ + C₁ * L := by
+    rw [show (σ : ℂ) = 1 + (η : ℂ) by simp only [σ, ofReal_add, ofReal_one]]
+    exact hpole0 (by positivity) (by linarith) hlog_ge
   have hzero_γ : -(logDeriv χ.LFunction (σ + γ * I)).re + (5 * δ)⁻¹ ≤ A * L := by
     have hsub : σ - ρ.re = 5 * δ := by simp only [σ, η, δ]; ring
     simpa [hsub] using hret χ hχ (σ := σ) (by linarith) hL0
@@ -187,7 +187,7 @@ private theorem exists_not_pos_meromorphicOrderAt_of_sq_ne_one_or_im_ge :
   have hcomb : 1 / 120 * δ⁻¹ ≤ M * L := by
     have halg : 4 * (5 * δ)⁻¹ - 3 * η⁻¹ - (24 * δ)⁻¹ = 1 / 120 * δ⁻¹ := by
       simp only [η]; field_simp [hδ0.ne']; ring
-    have : M * L = 3 * (C₁ / Real.log 3 * L) + 4 * (A * L) + B₂ * L := by simp only [M]; ring
+    have : M * L = 3 * (C₁ * L) + 4 * (A * L) + B₂ * L := by simp only [M]; ring
     linarith
   exact hlt.not_ge hcomb
 
@@ -249,13 +249,14 @@ private theorem exists_sub_inv_mul_inv_le_of_neg_re_logDeriv_LFunction_add_le (A
       0 < δ → 0 < k → k * δ ≤ 1 → Real.log 3 ≤ L →
       -(logDeriv χ.LFunction (1 + k * δ : ℝ)).re + w * δ⁻¹ ≤ A * L →
       (w - k⁻¹) * δ⁻¹ ≤ M * L := by
-  obtain ⟨C₁, hC₁0, hpole0⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
-  refine ⟨C₁ / Real.log 3 + A, by positivity, fun {q} _ χ {δ k w L} hδ0 hk0 hk1 hlog_ge hL ↦ ?_⟩
+  obtain ⟨C₁, hC₁0, hpole0⟩ :=
+    TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul hlog3
+  refine ⟨C₁ + A, by positivity, fun {q} _ χ {δ k w L} hδ0 hk0 hk1 hlog_ge hL ↦ ?_⟩
   set σ : ℝ := 1 + k * δ
-  have hpole : -(logDeriv riemannZeta σ).re ≤ (k * δ)⁻¹ + C₁ / Real.log 3 * L :=
-    le_trans (by simpa [σ] using hpole0 (η := k * δ) (by positivity) hk1)
-      (add_le_add_right (TauCeti.le_div_mul_of_le hC₁0 hlog3 hlog_ge) _)
+  have hpole : -(logDeriv riemannZeta σ).re ≤ (k * δ)⁻¹ + C₁ * L := by
+    rw [show (σ : ℂ) = 1 + ((k * δ : ℝ) : ℂ) by simp only [σ, ofReal_add, ofReal_one]]
+    exact hpole0 (by positivity) hk1 hlog_ge
   have h1χ := χ.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos
     (s := σ) (by simp only [ofReal_re, σ]; linarith [mul_pos hk0 hδ0])
   simp only [ofReal_re] at h1χ

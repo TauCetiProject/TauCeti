@@ -478,7 +478,7 @@ theorem neg_re_logDeriv_add_sub_inv_le {σ₀ σ B : ℝ} {ρ : ℂ}
     -(logDeriv f ((σ : ℂ) + ρ.im * Complex.I)).re + (σ - ρ.re)⁻¹ ≤ B := by
   have hr : 0 ≤ r := (abs_nonneg _).trans hρ
   have hmem : ρ ∈ closedBall ((σ₀ : ℂ) + ρ.im * Complex.I) r := by
-    rw [mem_closedBall, dist_eq_norm, RCLike.norm_sub_eq_abs_re_sub_of_im_eq (by simp)]
+    rw [mem_closedBall, Complex.dist_of_im_eq (by simp), Real.dist_eq]
     simpa using hρ
   have hterm := hf.sub_inv_re_le_divisor_mul (z := (σ : ℂ) + ρ.im * Complex.I)
     (convex_closedBall _ _).isPreconnected ⟨_, mem_closedBall_self hr, hfz₀⟩
@@ -570,7 +570,7 @@ theorem exists_neg_re_logDeriv_add_sum_divisor_half_le_ofReal_add_mul_I
       simpa using RCLike.norm_le_abs_re_add_abs_im_add_of_mem_closedBall hwcb
     exact hM₀ w hw (by linarith [(abs_le.mp hre_diff).1]) hwn
   have hz : ‖((σ : ℂ) + t * Complex.I) - ((x₀ : ℂ) + t * Complex.I)‖ ≤ R / 4 := by
-    rw [RCLike.norm_sub_eq_abs_re_sub_of_im_eq (by simp)]
+    rw [← dist_eq_norm, Complex.dist_of_im_eq (by simp), Real.dist_eq]
     simpa [abs_le] using ⟨by linarith, by linarith⟩
   exact hLandau hf hb₀ hM hz hfz S (fun ρ hρ hρS hfρ ↦ by simpa using hre ρ hρ hρS hfρ) hK
 

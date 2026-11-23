@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Bounds
@@ -57,9 +56,10 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
       riemannZeta s ≠ 0 := by
   obtain ⟨A₁, hA₁, hfree⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_le
   obtain ⟨A₂, hA₂, hret⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le
-  obtain ⟨C₁, hC₁0, hpole0⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
-  set B : ℝ := 3 * C₁ / Real.log 3 + 4 * A₂ + 2 * A₁
+  obtain ⟨C₁, hC₁0, hpole0⟩ :=
+    TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul hlog3
+  set B : ℝ := 3 * C₁ + 4 * A₂ + 2 * A₁
   obtain ⟨c, hc0, -, hcutoff⟩ := TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv
     (cutoff := (1 / 32 : ℝ)) (L₀ := Real.log 3) (weight := (1 / 20 : ℝ)) (M := B)
     (by norm_num) hlog3 (by norm_num) (by positivity)
@@ -71,9 +71,9 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
     by_contra fun h ↦ riemannZeta_ne_zero_of_one_le_re (not_lt.mp h) hζ0
   obtain ⟨hδ_32, hlt⟩ := hcutoff hδ0 hlog_ge (by linarith)
   set σ : ℝ := 1 + 4 * δ
-  have hpole : -(logDeriv riemannZeta σ).re ≤ (4 * δ)⁻¹ + C₁ / Real.log 3 * L :=
-    le_trans (by simpa [σ] using hpole0 (η := 4 * δ) (by positivity) (by linarith))
-      (add_le_add_right (TauCeti.le_div_mul_of_le hC₁0 hlog3 hlog_ge) _)
+  have hpole : -(logDeriv riemannZeta σ).re ≤ (4 * δ)⁻¹ + C₁ * L := by
+    rw [show (σ : ℂ) = 1 + ((4 * δ : ℝ) : ℂ) by simp only [σ, ofReal_add, ofReal_one]]
+    exact hpole0 (by positivity) (by linarith) hlog_ge
   have hzero_t : -(logDeriv riemannZeta (σ + s.im * I)).re + (5 * δ)⁻¹ ≤ A₂ * L := by
     have hsub : σ - s.re = 5 * δ := by simp only [σ, δ]; ring
     simpa [hsub] using hret (σ := σ) (ρ := s) (by linarith) ht hζ0
@@ -93,7 +93,7 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
         (σ := σ) (by linarith) s.im
   have hcomb : 1 / 20 * δ⁻¹ ≤ B * L := by
     have halg : 4 * (5 * δ)⁻¹ - 3 * (4 * δ)⁻¹ = 1 / 20 * δ⁻¹ := by field_simp [hδ0.ne']; ring
-    have : B * L = 3 * (C₁ / Real.log 3 * L) + 4 * (A₂ * L) + 2 * A₁ * L := by simp [B]; ring
+    have : B * L = 3 * (C₁ * L) + 4 * (A₂ * L) + 2 * A₁ * L := by simp [B]; ring
     linarith
   exact hlt.not_ge hcomb
 

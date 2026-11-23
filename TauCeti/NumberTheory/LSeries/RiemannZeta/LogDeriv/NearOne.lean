@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.Algebra.Order.GroupWithZero.Basic
 
 /-!
 # The logarithmic derivative of the Riemann zeta function near `s = 1`
@@ -27,6 +28,7 @@ Its negative logarithmic derivative is continuous wherever `ζ` does not vanish,
 * `IsCompact.exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le`
 * `TauCeti.exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le`
 * `TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le`
+* `TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul`
 -/
 
 public section
@@ -91,5 +93,15 @@ theorem exists_neg_re_logDeriv_riemannZeta_one_add_le :
   have hre : ((η : ℂ)⁻¹).re = η⁻¹ := by rw [← ofReal_inv, ofReal_re]
   rw [sub_re, neg_re, hre] at hle
   linarith
+
+/-- **Scaled real-part pole bound for `-ζ′/ζ` on `(1, 2]`.** For any positive threshold `L₀ > 0`,
+there is a constant `C ≥ 0` such that `-(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C * L` for
+every `0 < η ≤ 1` and `L₀ ≤ L`. -/
+theorem exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul {L₀ : ℝ} (hL₀ : 0 < L₀) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ {η L : ℝ}, 0 < η → η ≤ 1 → L₀ ≤ L → -(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C * L := by
+  obtain ⟨C₀, hC₀, h⟩ := exists_neg_re_logDeriv_riemannZeta_one_add_le
+  exact ⟨C₀ / L₀, div_nonneg hC₀ hL₀.le, fun hη hη₁ hL ↦
+    (h hη hη₁).trans (add_le_add_right (TauCeti.le_div_mul_of_le hC₀ hL₀ hL) _)⟩
 
 end TauCeti
