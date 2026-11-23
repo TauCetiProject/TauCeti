@@ -11,7 +11,9 @@ public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.RingTheory.Finiteness.Prod
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.Tactic.Module
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # The complexification of a real vector space
@@ -42,10 +44,12 @@ for a real seminormed space `X`, and the complexification of bounded operators, 
   (`LinearMap.hasFiniteRange_complexify_iff`); it commutes with conjugation
   (`LinearMap.conj_complexify`).
 * `TauCeti.tensorEquivComplexification`: the algebraic isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] W_ℂ`, which
-  turns base change into complexification (`LinearMap.tensorEquivComplexification_baseChange`),
+  turns base change into complexification (`LinearMap.tensorEquivComplexification_baseChange`,
+  `LinearMap.arrowCongr_tensorEquivComplexification_baseChange`),
   so the real embedding is a base change (`TauCeti.Complexification.isBaseChange`).
 * `TauCeti.Complexification.linearMapEquiv`: the complexification of the real Hom space is the
-  complex Hom space between complexifications.
+  complex Hom space between complexifications, via the canonical map `LinearMap.tensorProduct`
+  (`TauCeti.Complexification.linearMapEquiv_tensorEquivComplexification`).
 * `TauCeti.Complexification.instFiniteComplex`, `TauCeti.Complexification.finrank_complex`: the
   complexification of a finite-dimensional real vector space is finite-dimensional over `ℂ`, of
   complex dimension the real dimension of the original space.
@@ -288,6 +292,16 @@ theorem tensorEquivComplexification_baseChange (T : X →ₗ[ℝ] Y) (u : ℂ �
       T.complexify (tensorEquivComplexification X u) := by
   simp [complexify]
 
+/-- `LinearMap.complexify` is `LinearMap.baseChange ℂ` transported along
+`TauCeti.tensorEquivComplexification`. -/
+@[simp]
+theorem arrowCongr_tensorEquivComplexification_baseChange (T : X →ₗ[ℝ] Y) :
+    (tensorEquivComplexification X).arrowCongr (tensorEquivComplexification Y) (T.baseChange ℂ) =
+      T.complexify :=
+  ext fun z ↦ by
+    rw [LinearEquiv.arrowCongr_apply, tensorEquivComplexification_baseChange,
+      LinearEquiv.apply_symm_apply]
+
 @[simp]
 theorem complexify_apply_re (T : X →ₗ[ℝ] Y) (z : Complexification X) :
     (T.complexify z).re = T z.re := by
@@ -297,6 +311,11 @@ theorem complexify_apply_re (T : X →ₗ[ℝ] Y) (z : Complexification X) :
 theorem complexify_apply_im (T : X →ₗ[ℝ] Y) (z : Complexification X) :
     (T.complexify z).im = T z.im := by
   simp [complexify]
+
+/-- `T_ℂ (x + i y) = T x + i T y`. -/
+theorem complexify_apply (T : X →ₗ[ℝ] Y) (z : Complexification X) :
+    T.complexify z = ⟨T z.re, T z.im⟩ := by
+  ext <;> simp
 
 @[simp]
 theorem complexify_ofReal (T : X →ₗ[ℝ] Y) (x : X) :
@@ -343,11 +362,10 @@ theorem complexify_comp {Z : Type*} [AddCommGroup Z] [Module ℝ Z] (T : Y →�
 @[simp]
 theorem injective_complexify_iff (T : X →ₗ[ℝ] Y) :
     Function.Injective T.complexify ↔ Function.Injective T := by
-  refine ⟨fun h x y hxy ↦ ?_, fun h z w hzw ↦ ?_⟩
-  · simpa using congrArg re (h (a₁ := ofReal x) (a₂ := ofReal y) (by simp [hxy]))
-  · ext
-    · exact h (by simpa using congrArg re hzw)
-    · exact h (by simpa using congrArg im hzw)
+  -- `T_ℂ` is `T.baseChange ℂ` up to equivalences, and `ℂ` is faithfully flat over `ℝ`.
+  rw [complexify, coe_comp, coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    EquivLike.comp_injective, EquivLike.injective_comp, baseChange_eq_lTensor,
+    Module.FaithfullyFlat.lTensor_injective_iff_injective]
 
 /-- Complexification preserves and reflects finite rank. -/
 @[simp]
@@ -387,23 +405,51 @@ namespace TauCeti.Complexification
 
 variable {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
 
+/-- Transported along `TauCeti.tensorEquivComplexification`, the canonical map
+`LinearMap.tensorProduct` sends `u` to `u.re_ℂ + i u.im_ℂ`. -/
+private theorem arrowCongr_tensorProduct_tensorEquivComplexification_symm
+    (u : Complexification (X →ₗ[ℝ] Y)) :
+    (tensorEquivComplexification X).arrowCongr (tensorEquivComplexification Y)
+        (LinearMap.tensorProduct ℝ ℂ X Y ((tensorEquivComplexification _).symm u)) =
+      u.re.complexify + Complex.I • u.im.complexify := by
+  -- On pure tensors, the canonical map is `LinearMap.tensorProduct_tmul`.
+  simp [-LinearMap.tensorProduct_apply]
+
 variable (X Y) in
 /-- Complexification of the real Hom space agrees with the complex Hom space between
-complexifications: `u` goes to `u.re_ℂ + i u.im_ℂ`, and `T` to the real and imaginary parts of its
-restriction to real vectors. -/
+complexifications: the canonical map `LinearMap.tensorProduct` from `ℂ ⊗[ℝ] (X →ₗ[ℝ] Y)` to
+`ℂ ⊗[ℝ] X →ₗ[ℂ] ℂ ⊗[ℝ] Y`, transported along `TauCeti.tensorEquivComplexification`, sends `u` to
+`u.re_ℂ + i u.im_ℂ`; the inverse takes `T` to the real and imaginary parts of its restriction to
+real vectors. -/
 def linearMapEquiv :
     Complexification (X →ₗ[ℝ] Y) ≃ₗ[ℂ] (Complexification X →ₗ[ℂ] Complexification Y) where
-  toFun u := u.re.complexify + Complex.I • u.im.complexify
+  __ := ((tensorEquivComplexification X).arrowCongr (tensorEquivComplexification Y)).toLinearMap ∘ₗ
+    LinearMap.tensorProduct ℝ ℂ X Y ∘ₗ (tensorEquivComplexification (X →ₗ[ℝ] Y)).symm.toLinearMap
   invFun T := ⟨reLm Y ∘ₗ T.restrictScalars ℝ ∘ₗ ofRealLm X,
     imLm Y ∘ₗ T.restrictScalars ℝ ∘ₗ ofRealLm X⟩
-  map_add' _ _ := by ext <;> simp <;> abel
-  map_smul' _ _ := by ext <;> simp [smul_add] <;> module
-  left_inv _ := by ext <;> simp
-  right_inv _ := ext_ofReal fun _ ↦ by ext <;> simp
+  left_inv u := by
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearMap.coe_comp,
+      Function.comp_apply, LinearEquiv.coe_coe,
+      arrowCongr_tensorProduct_tensorEquivComplexification_symm]
+    ext <;> simp
+  right_inv T := ext_ofReal fun _ ↦ by
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearMap.coe_comp,
+      Function.comp_apply, LinearEquiv.coe_coe,
+      arrowCongr_tensorProduct_tensorEquivComplexification_symm]
+    ext <;> simp
 
 /-- `u` extends to `u.re_ℂ + i u.im_ℂ`. -/
 theorem linearMapEquiv_apply (u : Complexification (X →ₗ[ℝ] Y)) :
-    linearMapEquiv X Y u = u.re.complexify + Complex.I • u.im.complexify := (rfl)
+    linearMapEquiv X Y u = u.re.complexify + Complex.I • u.im.complexify :=
+  arrowCongr_tensorProduct_tensorEquivComplexification_symm u
+
+/-- On tensors, `linearMapEquiv` is the canonical map `LinearMap.tensorProduct`, transported along
+`TauCeti.tensorEquivComplexification`. -/
+theorem linearMapEquiv_tensorEquivComplexification (u : ℂ ⊗[ℝ] (X →ₗ[ℝ] Y)) :
+    linearMapEquiv X Y (tensorEquivComplexification _ u) =
+      (tensorEquivComplexification X).arrowCongr (tensorEquivComplexification Y)
+        (LinearMap.tensorProduct ℝ ℂ X Y u) := by
+  simp [linearMapEquiv]
 
 /-- The inverse takes the real and imaginary parts of the restriction to real vectors. -/
 theorem linearMapEquiv_symm_apply (T : Complexification X →ₗ[ℂ] Complexification Y) :

@@ -340,6 +340,11 @@ theorem complexify_apply_im (T : X →L[ℝ] Y) (z : Complexification X) :
     (T.complexify z).im = T z.im := by
   simpa only [← coe_complexify, coe_coe] using (T : X →ₗ[ℝ] Y).complexify_apply_im z
 
+/-- `T_ℂ (x + i y) = T x + i T y`. -/
+theorem complexify_apply (T : X →L[ℝ] Y) (z : Complexification X) :
+    T.complexify z = ⟨T z.re, T z.im⟩ := by
+  simpa only [← coe_complexify, coe_coe] using (T : X →ₗ[ℝ] Y).complexify_apply z
+
 @[simp]
 theorem complexify_ofReal (T : X →L[ℝ] Y) (x : X) :
     T.complexify (ofReal x) = ofReal (T x) := by
@@ -565,20 +570,27 @@ def continuousLinearMapEquiv :
         rw [coe_homExtension, complexify_coeLM_homRestriction, LinearEquiv.apply_symm_apply] }
     2 2 homExtension_norm_le homRestriction_norm_le
 
+private theorem continuousLinearMapEquiv_apply_eq (u : Complexification (X →L[ℝ] Y)) :
+    continuousLinearMapEquiv X Y u = homExtension u := (rfl)
+
+private theorem continuousLinearMapEquiv_symm_apply_eq
+    (T : Complexification X →L[ℂ] Complexification Y) :
+    (continuousLinearMapEquiv X Y).symm T = homRestriction T := (rfl)
+
 /-- Forgetting continuity, `continuousLinearMapEquiv` is `linearMapEquiv` applied to the
 underlying linear maps of the two components. -/
 @[simp] theorem coe_continuousLinearMapEquiv_apply (u : Complexification (X →L[ℝ] Y)) :
     (continuousLinearMapEquiv X Y u : Complexification X →ₗ[ℂ] Complexification Y) =
-      linearMapEquiv X Y ((ContinuousLinearMap.coeLM ℝ).complexify u) :=
-  coe_homExtension u
+      linearMapEquiv X Y ((ContinuousLinearMap.coeLM ℝ).complexify u) := by
+  rw [continuousLinearMapEquiv_apply_eq, coe_homExtension]
 
 /-- Forgetting continuity, the inverse of `continuousLinearMapEquiv` is the inverse of
 `linearMapEquiv`, componentwise. -/
 @[simp] theorem complexify_coeLM_continuousLinearMapEquiv_symm_apply
     (T : Complexification X →L[ℂ] Complexification Y) :
     (ContinuousLinearMap.coeLM ℝ).complexify ((continuousLinearMapEquiv X Y).symm T) =
-      (linearMapEquiv X Y).symm T :=
-  complexify_coeLM_homRestriction T
+      (linearMapEquiv X Y).symm T := by
+  rw [continuousLinearMapEquiv_symm_apply_eq, complexify_coeLM_homRestriction]
 
 @[simp] theorem continuousLinearMapEquiv_apply_re (u : Complexification (X →L[ℝ] Y))
     (v : Complexification X) :
@@ -600,24 +612,25 @@ underlying linear maps of the two components. -/
 @[simp] theorem continuousLinearMapEquiv_symm_apply_re
     (T : Complexification X →L[ℂ] Complexification Y) (x : X) :
     ((continuousLinearMapEquiv X Y).symm T).re x = (T (ofReal x)).re := by
-  simpa [-complexify_coeLM_continuousLinearMapEquiv_symm_apply] using
-    congrArg (fun u ↦ u.re x) (complexify_coeLM_continuousLinearMapEquiv_symm_apply T)
+  rw [continuousLinearMapEquiv_symm_apply_eq, homRestriction_re_apply]
 
 /-- Imaginary coordinate of the inverse is restriction to included real vectors followed by Im. -/
 @[simp] theorem continuousLinearMapEquiv_symm_apply_im
     (T : Complexification X →L[ℂ] Complexification Y) (x : X) :
     ((continuousLinearMapEquiv X Y).symm T).im x = (T (ofReal x)).im := by
-  simpa [-complexify_coeLM_continuousLinearMapEquiv_symm_apply] using
-    congrArg (fun u ↦ u.im x) (complexify_coeLM_continuousLinearMapEquiv_symm_apply T)
+  rw [continuousLinearMapEquiv_symm_apply_eq, homRestriction_im_apply]
 
 /-- The model comparison increases norms by at most two. -/
 theorem norm_continuousLinearMapEquiv_apply_le (u : Complexification (X →L[ℝ] Y)) :
-    ‖continuousLinearMapEquiv X Y u‖ ≤ 2 * ‖u‖ := homExtension_norm_le u
+    ‖continuousLinearMapEquiv X Y u‖ ≤ 2 * ‖u‖ := by
+  rw [continuousLinearMapEquiv_apply_eq]
+  exact homExtension_norm_le u
 
 /-- The inverse comparison increases norms by at most two. -/
 theorem norm_continuousLinearMapEquiv_symm_apply_le
     (T : Complexification X →L[ℂ] Complexification Y) :
-    ‖(continuousLinearMapEquiv X Y).symm T‖ ≤ 2 * ‖T‖ :=
-  homRestriction_norm_le T
+    ‖(continuousLinearMapEquiv X Y).symm T‖ ≤ 2 * ‖T‖ := by
+  rw [continuousLinearMapEquiv_symm_apply_eq]
+  exact homRestriction_norm_le T
 
 end TauCeti.Complexification

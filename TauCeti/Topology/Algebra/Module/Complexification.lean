@@ -39,7 +39,11 @@ no norm, finite-dimensionality or completeness hypothesis on the source. For a f
 source with maximal totally real image, we also provide the continuous complex-linear equivalence
 `ContinuousLinearMap.complexificationEquivOfIsMaximalTotallyReal`.
 The intrinsic `TauCeti.homComplexificationLinearEquiv` compares complexification of real
-continuous Hom with complex Hom between complexifications, without bundle frames or norms.
+continuous Hom with complex Hom between complexifications, without bundle frames or norms; on
+underlying linear maps it is the canonical map `LinearMap.tensorProduct`
+(`TauCeti.coe_homComplexificationLinearEquiv_apply`), and transported along
+`TauCeti.tensorEquivComplexification` it is `TauCeti.Complexification.linearMapEquiv`
+(`TauCeti.arrowCongr_homComplexificationLinearEquiv_apply`).
 
 ## References
 
@@ -856,17 +860,6 @@ private def homComplexificationForward (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
     (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D) :=
   (realPart _ u).baseChangeComplex + Complex.I • (imaginaryPart _ u).baseChangeComplex
 
-private theorem homComplexificationForward_realPart (u : ℂ ⊗[ℝ] (W →L[ℝ] D))
-    (v : ℂ ⊗[ℝ] W) :
-    realPart D (homComplexificationForward u v) =
-      realPart _ u (realPart W v) - imaginaryPart _ u (imaginaryPart W v) := by
-  simp [homComplexificationForward, realPart_smul, sub_eq_add_neg]
-private theorem homComplexificationForward_imaginaryPart (u : ℂ ⊗[ℝ] (W →L[ℝ] D))
-    (v : ℂ ⊗[ℝ] W) :
-    imaginaryPart D (homComplexificationForward u v) =
-      imaginaryPart _ u (realPart W v) + realPart _ u (imaginaryPart W v) := by
-  simp [homComplexificationForward, imaginaryPart_smul, add_comm]
-
 private def homComplexificationRestriction
     (A : (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) : ℂ ⊗[ℝ] (W →L[ℝ] D) :=
   1 ⊗ₜ[ℝ] (realPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W)) +
@@ -875,14 +868,12 @@ private def homComplexificationRestriction
 
 /-- Forgetting continuity and transporting along `TauCeti.tensorEquivComplexification`, the
 forward comparison is `TauCeti.Complexification.linearMapEquiv`. -/
-private theorem coe_homComplexificationForward (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
-    (homComplexificationForward u : (ℂ ⊗[ℝ] W) →ₗ[ℂ] (ℂ ⊗[ℝ] D)) =
-      ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)).symm
-        (Complexification.linearMapEquiv W D ((ContinuousLinearMap.coeLM ℝ).complexify
-          (tensorEquivComplexification _ u))) := by
-  ext v
-  apply complexification_ext <;>
-    simp [homComplexificationForward_realPart, homComplexificationForward_imaginaryPart]
+private theorem arrowCongr_homComplexificationForward (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)
+        (homComplexificationForward u : (ℂ ⊗[ℝ] W) →ₗ[ℂ] (ℂ ⊗[ℝ] D)) =
+      Complexification.linearMapEquiv W D ((ContinuousLinearMap.coeLM ℝ).complexify
+        (tensorEquivComplexification _ u)) := by
+  simp [homComplexificationForward, Complexification.linearMapEquiv_apply]
 
 /-- Forgetting continuity and transporting along `TauCeti.tensorEquivComplexification`, the
 restriction is the inverse of `TauCeti.Complexification.linearMapEquiv`. -/
@@ -902,18 +893,21 @@ def homComplexificationLinearEquiv : (ℂ ⊗[ℝ] (W →L[ℝ] D)) ≃ₗ[ℂ]
     ((ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) where
   toFun := homComplexificationForward
   invFun := homComplexificationRestriction
-  map_add' u v := ContinuousLinearMap.coe_injective <| by
-    simp only [ContinuousLinearMap.toLinearMap_add, coe_homComplexificationForward, map_add]
-  map_smul' c u := ContinuousLinearMap.coe_injective <| by
-    simp only [ContinuousLinearMap.toLinearMap_smul, coe_homComplexificationForward, map_smul,
-      RingHom.id_apply]
+  map_add' u v := ContinuousLinearMap.coe_injective <| LinearEquiv.injective
+      ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)) <| by
+    simp only [ContinuousLinearMap.toLinearMap_add, map_add, arrowCongr_homComplexificationForward]
+  map_smul' c u := ContinuousLinearMap.coe_injective <| LinearEquiv.injective
+      ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)) <| by
+    simp only [ContinuousLinearMap.toLinearMap_smul, map_smul, RingHom.id_apply,
+      arrowCongr_homComplexificationForward]
   left_inv u := (((ContinuousLinearMap.coeLM ℝ).injective_complexify_iff.2
       ContinuousLinearMap.coe_injective).comp (tensorEquivComplexification _).injective) <| by
     simp only [Function.comp_apply, complexify_coeLM_homComplexificationRestriction,
-      coe_homComplexificationForward, LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply]
-  right_inv A := ContinuousLinearMap.coe_injective <| by
-    simp only [coe_homComplexificationForward, complexify_coeLM_homComplexificationRestriction,
-      LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply]
+      arrowCongr_homComplexificationForward, LinearEquiv.symm_apply_apply]
+  right_inv A := ContinuousLinearMap.coe_injective <| LinearEquiv.injective
+      ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)) <| by
+    simp only [arrowCongr_homComplexificationForward,
+      complexify_coeLM_homComplexificationRestriction, LinearEquiv.apply_symm_apply]
 
 /-- Application is the sum of the real scalar extension and i times the imaginary one. -/
 theorem homComplexificationLinearEquiv_apply (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
@@ -929,18 +923,59 @@ theorem homComplexificationLinearEquiv_symm_apply
         Complex.I ⊗ₜ[ℝ]
           (imaginaryPartCLM D).comp ((A.restrictScalars ℝ).comp (oneTmulCLM W)) := by rfl
 
+private theorem homComplexificationLinearEquiv_apply_eq (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    homComplexificationLinearEquiv u = homComplexificationForward u := (rfl)
+
+private theorem homComplexificationLinearEquiv_symm_apply_eq
+    (A : (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) :
+    homComplexificationLinearEquiv.symm A = homComplexificationRestriction A := (rfl)
+
+/-- Forgetting continuity and transporting along `TauCeti.tensorEquivComplexification`, the
+intrinsic Hom comparison is `TauCeti.Complexification.linearMapEquiv`. -/
+theorem arrowCongr_homComplexificationLinearEquiv_apply (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D)
+        (homComplexificationLinearEquiv u : (ℂ ⊗[ℝ] W) →ₗ[ℂ] (ℂ ⊗[ℝ] D)) =
+      Complexification.linearMapEquiv W D ((ContinuousLinearMap.coeLM ℝ).complexify
+        (tensorEquivComplexification _ u)) := by
+  rw [homComplexificationLinearEquiv_apply_eq, arrowCongr_homComplexificationForward]
+
+/-- Forgetting continuity and transporting along `TauCeti.tensorEquivComplexification`, the
+inverse of the intrinsic Hom comparison is the inverse of
+`TauCeti.Complexification.linearMapEquiv`. -/
+theorem complexify_coeLM_homComplexificationLinearEquiv_symm_apply
+    (A : (ℂ ⊗[ℝ] W) →L[ℂ] (ℂ ⊗[ℝ] D)) :
+    (ContinuousLinearMap.coeLM ℝ).complexify
+        (tensorEquivComplexification _ (homComplexificationLinearEquiv.symm A)) =
+      (Complexification.linearMapEquiv W D).symm
+        ((tensorEquivComplexification W).arrowCongr (tensorEquivComplexification D) A) := by
+  rw [homComplexificationLinearEquiv_symm_apply_eq,
+    complexify_coeLM_homComplexificationRestriction]
+
+/-- Forgetting continuity, the intrinsic Hom comparison is the canonical map
+`LinearMap.tensorProduct` on the underlying linear maps. -/
+theorem coe_homComplexificationLinearEquiv_apply (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (homComplexificationLinearEquiv u : (ℂ ⊗[ℝ] W) →ₗ[ℂ] (ℂ ⊗[ℝ] D)) =
+      LinearMap.tensorProduct ℝ ℂ W D ((ContinuousLinearMap.coeLM ℝ).baseChange ℂ u) :=
+  LinearEquiv.injective ((tensorEquivComplexification W).arrowCongr
+      (tensorEquivComplexification D)) <| by
+    rw [arrowCongr_homComplexificationLinearEquiv_apply,
+      ← LinearMap.tensorEquivComplexification_baseChange,
+      Complexification.linearMapEquiv_tensorEquivComplexification]
+
 /-- Real part of evaluation of the intrinsic Hom comparison. -/
 @[simp] theorem homComplexificationLinearEquiv_apply_realPart
     (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) (v : ℂ ⊗[ℝ] W) :
     realPart D (homComplexificationLinearEquiv u v) =
-      realPart _ u (realPart W v) - imaginaryPart _ u (imaginaryPart W v) :=
-  homComplexificationForward_realPart u v
+      realPart _ u (realPart W v) - imaginaryPart _ u (imaginaryPart W v) := by
+  simpa using congrArg (fun A ↦ (A (tensorEquivComplexification W v)).re)
+    (arrowCongr_homComplexificationLinearEquiv_apply u)
 /-- Imaginary part of evaluation of the intrinsic Hom comparison. -/
 @[simp] theorem homComplexificationLinearEquiv_apply_imaginaryPart
     (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) (v : ℂ ⊗[ℝ] W) :
     imaginaryPart D (homComplexificationLinearEquiv u v) =
-      imaginaryPart _ u (realPart W v) + realPart _ u (imaginaryPart W v) :=
-  homComplexificationForward_imaginaryPart u v
+      imaginaryPart _ u (realPart W v) + realPart _ u (imaginaryPart W v) := by
+  simpa using congrArg (fun A ↦ (A (tensorEquivComplexification W v)).im)
+    (arrowCongr_homComplexificationLinearEquiv_apply u)
 
 /-- Pure tensor evaluation of the intrinsic Hom comparison. -/
 @[simp] theorem homComplexificationLinearEquiv_tmul_apply_tmul
