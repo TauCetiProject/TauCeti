@@ -293,27 +293,6 @@ theorem val_cellActionUnit (g : G) {n : ℕ} (i : cell C n) :
   let := cellMulAction hcell n
   exact Representation.val_unitOfApplyBasisEqSmul _ _ _ _
 
-/-- Right inverse relation for `TauCeti.cellActionScale` under a group action. -/
-theorem cellActionScale_mul_inv (g : G) {n : ℕ} (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionScale C hcell R g i * cellActionScale C hcell R g⁻¹ (g • i) = 1 := by
-  let := cellMulAction hcell n
-  have h := (cellActionUnit C hcell R g i).mul_inv
-  rwa [val_cellActionUnit, cellActionUnit, Representation.val_inv_unitOfApplyBasisEqSmul] at h
-
-/-- Left inverse relation for `TauCeti.cellActionScale` under a group action. -/
-theorem cellActionScale_inv_mul (g : G) {n : ℕ} (i : cell C n) :
-    letI := cellMulAction hcell n
-    cellActionScale C hcell R g⁻¹ (g • i) * cellActionScale C hcell R g i = 1 := by
-  let := cellMulAction hcell n
-  have h := (cellActionUnit C hcell R g i).inv_mul
-  rwa [val_cellActionUnit, cellActionUnit, Representation.val_inv_unitOfApplyBasisEqSmul] at h
-
-/-- The local scalar `TauCeti.cellActionScale` is a unit in `R`. -/
-theorem isUnit_cellActionScale (g : G) {n : ℕ} (i : cell C n) :
-    IsUnit (cellActionScale C hcell R g i) :=
-  val_cellActionUnit C hcell R g i ▸ (cellActionUnit C hcell R g i).isUnit
-
 /-- The identity element acts with unit `1` on every cell. -/
 @[simp]
 theorem cellActionUnit_one {n : ℕ} (i : cell C n) :
