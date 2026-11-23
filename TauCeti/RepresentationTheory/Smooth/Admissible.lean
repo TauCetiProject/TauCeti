@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.RepresentationTheory.Smooth.Basic
 import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Admissible representations
@@ -86,8 +87,8 @@ theorem IsAdmissible.of_hasBasis [IsNoetherianRing A] [IsSmooth ρ] {ι : Type*}
   obtain ⟨i, hi, hsub⟩ := hU.mem_iff.1 (U'.mem_nhds_one)
   have := hfin i hi
   have hle : invariants (ρ.comp (U' : Subgroup G).subtype) ≤ invariants (ρ.comp (U i).subtype) :=
-    fun _ hv ↦ mem_invariants_comp_subtype_iff.2 fun _ hx ↦
-      mem_invariants_comp_subtype_iff.1 hv (hsub hx)
+    invariants_le_invariants_comp (ρ.comp (U' : Subgroup G).subtype)
+      (Subgroup.inclusion (show U i ≤ (U' : Subgroup G) from hsub))
   exact Module.Finite.of_injective (Submodule.inclusion hle) (Submodule.inclusion_injective _)
 
 /-- Admissibility passes back along an injective intertwining map over a noetherian ring; in
@@ -145,9 +146,9 @@ theorem IsAdmissible.comp [IsAdmissible ρ] {H : Type*} [Group H] [TopologicalSp
   have := IsAdmissible.finite_invariants (ρ := ρ) U' hU'
   have h : invariants ((ρ.comp φ).comp (U : Subgroup H).subtype) =
       invariants (ρ.comp (U' : Subgroup G).subtype) := by
-    ext v
-    rw [mem_invariants_comp_subtype_iff, mem_invariants_comp_subtype_iff, stabilizer_comp]
-    exact Subgroup.map_le_iff_le_comap.symm
+    rw [← invariants_comp_of_surjective (ρ.comp (U' : Subgroup G).subtype)
+      (φ.subgroupMap (U : Subgroup H)) (φ.subgroupMap_surjective _)]
+    rfl
   rw [h]
   infer_instance
 
@@ -196,16 +197,10 @@ admissible. -/
 instance IsAdmissible.of_subsingleton [Subsingleton V] : IsAdmissible ρ :=
   ⟨fun _ _ ↦ inferInstance⟩
 
-omit [TopologicalSpace G] in
-/-- Every vector of a trivial representation is invariant under every subgroup. -/
-private theorem invariants_comp_subtype_eq_top [ρ.IsTrivial] (U : Subgroup G) :
-    invariants (ρ.comp U.subtype) = ⊤ :=
-  eq_top_iff.2 fun v _ _ ↦ ρ.isTrivial_apply _ v
-
 /-- A trivial representation on a finitely generated module is admissible. -/
 instance IsAdmissible.of_isTrivial [ρ.IsTrivial] [Module.Finite A V] : IsAdmissible ρ :=
   ⟨fun U _ ↦ by
-    rw [Module.Finite.iff_fg, invariants_comp_subtype_eq_top]
+    rw [Module.Finite.iff_fg, invariants_eq_top]
     exact Module.finite_def.1 inferInstance⟩
 
 /-- For a group with a compact open subgroup, a trivial representation is admissible exactly when
@@ -216,7 +211,7 @@ theorem isAdmissible_iff_finite_of_isTrivial [ρ.IsTrivial]
   refine ⟨fun h ↦ ?_, fun _ ↦ inferInstance⟩
   obtain ⟨U, hU⟩ := hG
   have := h.finite_invariants U hU
-  rw [Module.Finite.iff_fg, invariants_comp_subtype_eq_top] at this
+  rw [Module.Finite.iff_fg, invariants_eq_top] at this
   exact Module.finite_def.2 this
 
 end Representation
