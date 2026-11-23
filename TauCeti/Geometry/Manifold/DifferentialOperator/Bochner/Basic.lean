@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
-import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
@@ -99,10 +98,7 @@ theorem eq_of_mul_roughLaplacian_add_mul_eq
   -- The connection forms agree: test against a function with a prescribed gradient at `x`.
   have hform (x : M) : cov (1 : M → ℝ) x = cov' (1 : M → ℝ) x := by
     ext w
-    obtain ⟨f, -, hfx⟩ := TauCeti.exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (innerSL ℝ w)
-    have hgrad : TauCeti.Manifold.mgradient I f x = w := by
-      refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
-      rw [hfx, innerSL_apply_apply]
+    obtain ⟨f, hgrad⟩ := TauCeti.Manifold.exists_contMDiffMap_mgradient_eq (I := I) x w
     have hf := h f x
     rw [roughLaplacian_eq_neg_laplaceBeltrami_sub_add cov f.contMDiff,
       roughLaplacian_eq_neg_laplaceBeltrami_sub_add cov' f.contMDiff, hgrad] at hf
