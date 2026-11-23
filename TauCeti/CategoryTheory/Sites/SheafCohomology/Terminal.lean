@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
+public import Mathlib.CategoryTheory.Sites.GlobalSections
 
 /-!
 # Sheaf cohomology at a terminal object
@@ -30,6 +31,8 @@ terminal-object comparison compatible with inverse image on sheaf cohomology.
   isomorphism in the coefficient sheaf;
 * `CategoryTheory.Sheaf.cohomologyPresheafObjIsoH`: its specialization
   `Hⁿ(T, F) ≅ Hⁿ(F)` at a terminal object `T`, as an isomorphism of abelian groups.
+
+Terminal-object comparisons identify the native section restriction and cohomology maps.
 -/
 
 public section
@@ -135,5 +138,95 @@ lemma cohomologyPresheafObjIsoH_hom_apply (F : Sheaf J AddCommGrpCat.{v}) (n : �
     (F.cohomologyPresheafObjIsoH n hT).hom x =
       (Abelian.Ext.mk₀ hT.freeYonedaSheafIsoConstant.inv).comp x (zero_add n) :=
   (rfl)
+
+end CategoryTheory.Sheaf
+
+/-! ### Terminal comparison and its actual global-sections component -/
+
+universe u' v'
+open TauCeti.CategoryTheory CategoryTheory.Abelian
+
+namespace CategoryTheory.Limits.IsTerminal
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  [HasSheafify J AddCommGrpCat.{v}]
+/-- The constant-sheaf adjunction is compatible with a map of terminal objects. -/
+lemma constantSheafAdj_homEquiv_terminal_restrict {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
+    (i : S ⟶ T) (A : AddCommGrpCat.{v}) (F : Sheaf J AddCommGrpCat.{v})
+    (f : (constantSheaf J AddCommGrpCat.{v}).obj A ⟶ F) :
+    (constantSheafAdj J AddCommGrpCat.{v} hT).homEquiv A F f ≫ F.obj.map i.op =
+      (constantSheafAdj J AddCommGrpCat.{v} hS).homEquiv A F f := by
+  let a := (sheafificationAdjunction J AddCommGrpCat.{v}).homEquiv
+    ((Functor.const Cᵒᵖ).obj A) F f
+  change a.app (Opposite.op T) ≫ F.obj.map i.op = a.app (Opposite.op S)
+  have h := a.naturality i.op
+  change 𝟙 A ≫ a.app (Opposite.op S) = a.app (Opposite.op T) ≫ F.obj.map i.op at h
+  rw [Category.id_comp] at h
+  exact h.symm
+
+variable {J} in
+/-- The free-Yoneda identifications at terminal objects commute with their unique maps. -/
+lemma freeYonedaSheafIsoConstant_naturality {S T : C} (hS : IsTerminal S)
+    (hT : IsTerminal T) (i : S ⟶ T) :
+    (freeYonedaSheafFunctor J).map i ≫ hT.freeYonedaSheafIsoConstant.hom =
+      hS.freeYonedaSheafIsoConstant.hom := by
+  let Z := (constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ))
+  have hTn := hT.freeYonedaSheafSectionsEquiv_inv_comp (J := J) Z
+    (hT.freeYonedaSheafIsoConstant.hom)
+  have hSn := hS.freeYonedaSheafSectionsEquiv_inv_comp (J := J) Z
+    (hS.freeYonedaSheafIsoConstant.hom)
+  rw [Iso.inv_hom_id] at hTn hSn
+  apply (freeYonedaSheafSectionsEquiv J S Z).injective
+  rw [freeYonedaSheafSectionsEquiv_naturality_left, ← hTn, ← hSn]
+  exact ConcreteCategory.congr_hom
+    (constantSheafAdj_homEquiv_terminal_restrict J hS hT i
+      (AddCommGrpCat.of (ULift ℤ)) Z (𝟙 Z)) (ULift.up (1 : ℤ))
+
+end CategoryTheory.Limits.IsTerminal
+
+namespace TauCeti.CategoryTheory
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  [HasSheafify J AddCommGrpCat.{v}]
+variable [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
+/-- Changing the terminal object transports cohomology by the actual restriction map. -/
+lemma cohomologyPresheafObjIsoH_terminal_change {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
+    (i : S ⟶ T) (F : Sheaf J AddCommGrpCat.{v}) (n : ℕ) (x : F.H' n T) :
+    (F.cohomologyPresheafObjIsoH n hS).inv ((F.cohomologyPresheafObjIsoH n hT).hom x) =
+      (F.cohomologyPresheaf n).map i.op x := by
+  let xE : Ext.{w} ((freeYonedaSheafFunctor J).obj T) F n := x
+  change (Ext.mk₀ hS.freeYonedaSheafIsoConstant.hom).comp
+      ((Ext.mk₀ hT.freeYonedaSheafIsoConstant.inv).comp xE (zero_add n)) (zero_add n) =
+    (Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp xE (zero_add n)
+  rw [← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀]
+  congr 1
+  rw [← hS.freeYonedaSheafIsoConstant_naturality (J := J) hT i, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
+end TauCeti.CategoryTheory
+namespace CategoryTheory.Sheaf
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  (A : Type u') [Category.{v'} A] [HasWeakSheafify J A] [HasTerminal C]
+/-- The global-sections identification is the native restriction to the terminal object. -/
+lemma ΓNatIsoSheafSections_hom_app_eq_ΓRes {T : C} (hT : IsTerminal T) (F : Sheaf J A) :
+    (Sheaf.ΓNatIsoSheafSections J A hT).hom.app F = F.ΓRes (op T) := by
+  have h := Adjunction.homEquiv_symm_rightAdjointUniq_hom_app
+    (constantSheafΓAdj J A) (constantSheafAdj J A hT) F
+  rw [Equiv.symm_apply_eq] at h
+  refine h.trans ?_
+  change (constantSheafAdj J A hT).homEquiv _ _ ((constantSheafΓAdj J A).counit.app F) =
+    (((sheafificationAdjunction J A).homEquiv _ _)
+      (((constantSheafΓAdj J A).homEquiv _ _).symm (𝟙 _))).app (op T)
+  rw [Adjunction.homEquiv_counit, CategoryTheory.Functor.map_id, Category.id_comp]
+  let a := ((sheafificationAdjunction J A).homEquiv _ _)
+    ((constantSheafΓAdj J A).counit.app F)
+  rw [constantSheafAdj, Adjunction.comp_homEquiv]
+  dsimp only [Equiv.trans_apply]
+  rw [Adjunction.homEquiv_unit]
+  change 𝟙 _ ≫ a.app (op T) = a.app (op T)
+  exact Category.id_comp _
+/-- Restriction to a terminal object is the canonical identification of global sections. -/
+lemma natTransΓRes_eq_ΓNatIsoSheafSections_hom {T : C} (hT : IsTerminal T) :
+    Sheaf.natTransΓRes J A (op T) = (Sheaf.ΓNatIsoSheafSections J A hT).hom := by
+  apply NatTrans.ext
+  funext F
+  exact (ΓNatIsoSheafSections_hom_app_eq_ΓRes J A hT F).symm
 
 end CategoryTheory.Sheaf

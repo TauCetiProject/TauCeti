@@ -43,6 +43,9 @@ right derived functors by one degree:
 
 These are the dimension-shifting steps of inductive arguments on vanishing derived functors,
 such as Leray's acyclicity theorem.
+
+The composition comparison is computed on arbitrary chosen resolutions by
+`Functor.rightDerivedCompIso_app_injectiveResolution`.
 -/
 
 public section
@@ -214,3 +217,224 @@ end Functor
 end DimensionShift
 
 end CategoryTheory
+
+/-! ### Chosen-resolution computation of the native composition comparison -/
+
+universe u' v' u₂ v₂ u₃ v₃
+
+namespace CategoryTheory.Functor
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasInjectiveResolutions C]
+  {D : Type u'} [Category.{v'} D] [Abelian D]
+  (H : C ⥤ D) [H.Additive] [H.PreservesInjectiveObjects] [H.PreservesHomology]
+
+private theorem injectiveComparison_arbitrary [HasInjectiveResolutions D] {X : C} (I :
+  InjectiveResolution X) :
+    H.injectiveResolutionsCompIso.hom.app X ≫ (H.mapInjectiveResolution I).iso.hom =
+      (H.mapHomotopyCategory (ComplexShape.up ℕ)).map I.iso.hom := by
+  rw [Functor.injectiveResolutionsCompIso_hom_app]
+  erw [← cancel_epi (H.mapInjectiveResolution (injectiveResolution X)).iso.hom,
+    Iso.hom_inv_id_assoc]
+  have t := InjectiveResolution.iso_hom_naturality (𝟙 (H.obj X))
+    (H.mapInjectiveResolution (injectiveResolution X)) (H.mapInjectiveResolution I)
+    ((H.mapHomologicalComplex _).map
+      (InjectiveResolution.homotopyEquiv (injectiveResolution X) I).hom) (by
+        rw [Functor.mapInjectiveResolution_ι_f_zero,
+          Functor.mapInjectiveResolution_ι_f_zero, Functor.mapHomologicalComplex_map_f,
+          ]
+        exact (H.map_comp _ _).symm.trans
+          ((congrArg H.map (InjectiveResolution.desc_commutes_zero (𝟙 X) I
+            (injectiveResolution X))).trans ((H.map_comp _ _).trans (by erw [H.map_id]; rfl))))
+  dsimp only [InjectiveResolution.iso, Functor.mapHomotopyCategory]
+  erw [Quotient.lift_map_functor_map]
+  erw [CategoryTheory.Functor.map_id, Category.id_comp] at t
+  exact t
+
+private theorem chosenResolutionComponent (F : C ⥤ D) [F.Additive]
+    {X : C} (I : InjectiveResolution X) (n : ℕ) :
+    I.isoRightDerivedObj F n =
+      (HomotopyCategory.homologyFunctor D (ComplexShape.up ℕ) n).mapIso
+        ((F.mapHomotopyCategory (ComplexShape.up ℕ)).mapIso I.iso) ≪≫
+      (HomotopyCategory.homologyFunctorFactors D (ComplexShape.up ℕ) n).app
+        ((F.mapHomologicalComplex _).obj I.cocomplex) := by
+  apply Iso.ext
+  change (HomotopyCategory.homologyFunctor D (ComplexShape.up ℕ) n).map
+      ((F.mapHomotopyCategory (ComplexShape.up ℕ)).map I.iso.hom ≫
+        (F.mapHomotopyCategoryFactors (ComplexShape.up ℕ)).hom.app I.cocomplex) ≫ _ = _
+  erw [CategoryTheory.Functor.mapHomotopyCategoryFactors_hom_app, Category.comp_id]
+  rfl
+
+section Component
+variable {C' : Type u₂} [Category.{v₂} C'] [Abelian C'] [HasInjectiveResolutions C']
+  {D' : Type u₃} [Category.{v₃} D'] [Abelian D']
+  (F : C ⥤ D) [F.Additive]
+  (G : D ⥤ D') [G.Additive] [G.PreservesHomology]
+  (H' : C ⥤ C') [H'.Additive] [H'.PreservesInjectiveObjects] [H'.PreservesHomology]
+  (F' : C' ⥤ D') [F'.Additive] (e : F ⋙ G ≅ H' ⋙ F')
+
+private def comparisonComplexIso (K : CochainComplex C ℕ) :
+    (G.mapHomologicalComplex _).obj ((F.mapHomologicalComplex _).obj K) ≅
+      (F'.mapHomologicalComplex _).obj ((H'.mapHomologicalComplex _).obj K) :=
+  (CategoryTheory.Functor.mapHomologicalComplexCompIso e _).app K ≪≫
+    ((CategoryTheory.Functor.mapHomologicalComplexCompIso (Iso.refl (H' ⋙ F')) _).app K).symm
+
+private noncomputable def comparisonHomotopyIso (n : ℕ) :
+    (F.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
+      HomotopyCategory.homologyFunctor D (ComplexShape.up ℕ) n) ⋙ G ≅
+      H'.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
+        F'.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
+          HomotopyCategory.homologyFunctor D' (ComplexShape.up ℕ) n :=
+  CategoryTheory.Functor.associator _ _ _ ≪≫
+    CategoryTheory.Functor.isoWhiskerLeft (F.mapHomotopyCategory _)
+      (G.mapHomotopyCategoryCompHomologyFunctorIso _ n).symm ≪≫
+    (CategoryTheory.Functor.associator _ _ _).symm ≪≫
+    CategoryTheory.Functor.isoWhiskerRight
+      (CategoryTheory.Functor.mapHomotopyCategoryCompIso e _ ≪≫
+        (CategoryTheory.Functor.mapHomotopyCategoryCompIso (Iso.refl (H' ⋙ F')) _).symm) _ ≪≫
+    CategoryTheory.Functor.associator _ _ _
+
+private theorem derivedComparison_homotopy_canonical (X : C) (n : ℕ) :
+    (CategoryTheory.Functor.rightDerivedCompIso F G H' F' e n).hom.app X =
+      (comparisonHomotopyIso F G H' F' e n).hom.app ((injectiveResolutions C).obj X) ≫
+        (F'.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
+          HomotopyCategory.homologyFunctor D' (ComplexShape.up ℕ) n).map
+            (H'.injectiveResolutionsCompIso.hom.app X) := by
+  dsimp [CategoryTheory.Functor.rightDerivedCompIso, comparisonHomotopyIso,
+    CategoryTheory.Functor.associator, CategoryTheory.Functor.rightDerived,
+    CategoryTheory.Functor.rightDerivedToHomotopyCategory]
+  simp only [Category.id_comp, Category.comp_id, Category.assoc]
+
+
+private theorem derivedComparison_homotopy_arbitrary {X : C} (I : InjectiveResolution X) (n : ℕ) :
+    (CategoryTheory.Functor.rightDerivedCompIso F G H' F' e n).hom.app X ≫
+        (F'.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
+          HomotopyCategory.homologyFunctor D' (ComplexShape.up ℕ) n).map
+            (H'.mapInjectiveResolution I).iso.hom =
+      G.map ((HomotopyCategory.homologyFunctor D (ComplexShape.up ℕ) n).map
+        ((F.mapHomotopyCategory (ComplexShape.up ℕ)).map I.iso.hom)) ≫
+      (comparisonHomotopyIso F G H' F' e n).hom.app
+        ((HomotopyCategory.quotient C (ComplexShape.up ℕ)).obj I.cocomplex) := by
+  let T := F'.mapHomotopyCategory (ComplexShape.up ℕ) ⋙
+    HomotopyCategory.homologyFunctor D' (ComplexShape.up ℕ) n
+  erw [derivedComparison_homotopy_canonical, Category.assoc, ← T.map_comp,
+    injectiveComparison_arbitrary]
+  exact ((comparisonHomotopyIso F G H' F' e n).hom.naturality I.iso.hom).symm
+
+
+private theorem homotopyHomology_component (K : CochainComplex D ℕ) (n : ℕ) :
+    (G.mapHomotopyCategoryCompHomologyFunctorIso (ComplexShape.up ℕ) n).app
+        ((HomotopyCategory.quotient D (ComplexShape.up ℕ)).obj K) =
+      (HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).app
+          ((G.mapHomologicalComplex _).obj K) ≪≫
+        (G.mapHomologicalComplexCompHomologyFunctorIso _ n).app K ≪≫
+        (G.mapIso ((HomotopyCategory.homologyFunctorFactors D
+          (ComplexShape.up ℕ) n).app K)).symm := by
+  apply Iso.ext
+  exact G.mapHomotopyCategoryCompHomologyFunctorIso_hom_app (ComplexShape.up ℕ) n K
+
+omit [HasInjectiveResolutions C]
+  [HasInjectiveResolutions C'] [H'.PreservesInjectiveObjects] [H'.PreservesHomology] in
+private theorem comparisonHomotopy_complex_component (K : CochainComplex C ℕ) (n : ℕ) :
+    (comparisonHomotopyIso F G H' F' e n).app
+        ((HomotopyCategory.quotient C (ComplexShape.up ℕ)).obj K) =
+      G.mapIso ((HomotopyCategory.homologyFunctorFactors D (ComplexShape.up ℕ) n).app
+          ((F.mapHomologicalComplex _).obj K)) ≪≫
+        ((G.mapHomologicalComplexCompHomologyFunctorIso _ n).app
+          ((F.mapHomologicalComplex _).obj K)).symm ≪≫
+        (HomologicalComplex.homologyFunctor D' (ComplexShape.up ℕ) n).mapIso
+          (comparisonComplexIso F G H' F' e K) ≪≫
+        ((HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).app
+          ((F'.mapHomologicalComplex _).obj ((H'.mapHomologicalComplex _).obj K))).symm := by
+  apply Iso.ext
+  dsimp only [comparisonHomotopyIso, comparisonComplexIso,
+    CategoryTheory.Functor.associator, CategoryTheory.Functor.isoWhiskerLeft,
+    CategoryTheory.Functor.isoWhiskerRight, CategoryTheory.Functor.whiskeringLeft,
+    CategoryTheory.Functor.whiskeringRight, CategoryTheory.Functor.whiskerLeft,
+    CategoryTheory.Functor.whiskerRight, Iso.app, Iso.trans, Iso.symm,
+    CategoryTheory.Functor.mapIso, NatTrans.comp_app]
+  simp only [Category.id_comp, Category.comp_id]
+  have hG := congrArg Iso.inv
+    (homotopyHomology_component G ((F.mapHomologicalComplex _).obj K) n)
+  simp only [Iso.app_inv, Iso.trans_inv, Iso.symm_inv, Iso.app_hom,
+    CategoryTheory.Functor.mapIso_hom, Category.assoc] at hG
+  erw [hG]
+  dsimp only [Functor.mapHomotopyCategoryCompIso, Quotient.natIsoLift]
+  simp only [Category.assoc]
+  exact congrArg (fun f ↦
+    G.map ((HomotopyCategory.homologyFunctorFactors D (ComplexShape.up ℕ) n).hom.app
+      ((F.mapHomologicalComplex _).obj K)) ≫
+    (G.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.app
+      ((F.mapHomologicalComplex _).obj K) ≫ f)
+    ((HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).inv.naturality
+      (comparisonComplexIso F G H' F' e K).hom).symm
+
+/-- Compute the native derived composition comparison using any injective resolution. -/
+theorem rightDerivedCompIso_app_injectiveResolution {X : C} (I : InjectiveResolution X) (n : ℕ) :
+    (CategoryTheory.Functor.rightDerivedCompIso F G H' F' e n).app X =
+      G.mapIso (I.isoRightDerivedObj F n) ≪≫
+        ((G.mapHomologicalComplexCompHomologyFunctorIso _ n).app
+          ((F.mapHomologicalComplex _).obj I.cocomplex)).symm ≪≫
+        (HomologicalComplex.homologyFunctor D' (ComplexShape.up ℕ) n).mapIso
+          ((Functor.mapHomologicalComplexCompIso e _).app I.cocomplex ≪≫
+            ((Functor.mapHomologicalComplexCompIso (Iso.refl (H' ⋙ F')) _).app I.cocomplex).symm) ≪≫
+        ((H'.mapInjectiveResolution I).isoRightDerivedObj F' n).symm := by
+  apply Iso.ext
+  apply (cancel_mono ((H'.mapInjectiveResolution I).isoRightDerivedObj F' n).hom).1
+  let fac := (HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).app
+    ((F'.mapHomologicalComplex _).obj ((H'.mapHomologicalComplex _).obj I.cocomplex))
+  have hI := congrArg Iso.hom (chosenResolutionComponent F I n)
+  have hJ := congrArg Iso.hom (chosenResolutionComponent F' (H'.mapInjectiveResolution I) n)
+  dsimp only [Iso.trans_hom, CategoryTheory.Functor.mapIso_hom] at hI hJ
+  have q := congrArg Iso.hom
+    (comparisonHomotopy_complex_component F G H' F' e I.cocomplex n)
+  have t := derivedComparison_homotopy_arbitrary F G H' F' e I n
+  have ht := congrArg (· ≫ fac.hom) t
+  dsimp only [Iso.app_hom, Iso.app_inv, Iso.trans_hom, Iso.symm_hom,
+    CategoryTheory.Functor.mapIso_hom] at q
+  dsimp only [CategoryTheory.Functor.rightDerived,
+    CategoryTheory.Functor.rightDerivedToHomotopyCategory,
+    CategoryTheory.Functor.mapInjectiveResolution] at ht ⊢
+  rw [q] at ht
+  change _ = (_ ≫ (G.map _ ≫ _ ≫ _ ≫ fac.inv)) ≫ fac.hom at ht
+  simp only [Category.assoc] at ht
+  erw [fac.inv_hom_id, Category.comp_id] at ht
+  let J := (H'.mapInjectiveResolution I).isoRightDerivedObj F' n
+  change (CategoryTheory.Functor.rightDerivedCompIso F G H' F' e n).hom.app X ≫ J.hom =
+    (G.map (I.isoRightDerivedObj F n).hom ≫
+      (G.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.app
+        ((F.mapHomologicalComplex _).obj I.cocomplex) ≫
+      (HomologicalComplex.homologyFunctor D' (ComplexShape.up ℕ) n).map
+        (comparisonComplexIso F G H' F' e I.cocomplex).hom ≫ J.inv) ≫ J.hom
+  dsimp only [J, CategoryTheory.Functor.mapInjectiveResolution]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  erw [hJ, hI, CategoryTheory.Functor.map_comp]
+  convert ht using 1
+  · rfl
+  · rfl
+  · exact heq_of_eq (Category.assoc _ _ _)
+
+/-- Exact precomposition acts by the comparison cochain map on any chosen resolution. -/
+theorem rightDerivedPrecompIso_app_hom (F'' : C' ⥤ D) [F''.Additive]
+    (e' : F ≅ H' ⋙ F'') {X : C} (I : InjectiveResolution X) (n : ℕ) :
+    ((Functor.rightUnitor (F.rightDerived n)).symm ≪≫
+      Functor.rightDerivedCompIso F (𝟭 D) H' F'' (Functor.rightUnitor F ≪≫ e') n).hom.app X ≫
+      ((H'.mapInjectiveResolution I).isoRightDerivedObj F'' n).hom =
+    (I.isoRightDerivedObj F n).hom ≫ HomologicalComplex.homologyMap
+      ((NatTrans.mapHomologicalComplex e'.hom _).app I.cocomplex ≫
+        (Functor.mapHomologicalComplexCompIso (Iso.refl (H' ⋙ F'')) _).inv.app I.cocomplex) n := by
+  dsimp only [Iso.trans_hom, NatTrans.comp_app, Functor.rightUnitor]
+  simp_rw [← Iso.app_hom]
+  erw [Functor.rightDerivedCompIso_app_injectiveResolution F (𝟭 D) H' F''
+    (Functor.rightUnitor F ≪≫ e') I n]
+  dsimp only [CategoryTheory.Functor.mapInjectiveResolution, Iso.app_hom,
+    Functor.rightUnitor]
+  simp only [Iso.trans_hom, Iso.symm_hom, CategoryTheory.Functor.mapIso_hom,
+    CategoryTheory.Functor.id_map, Category.assoc, Category.id_comp,
+    Iso.inv_hom_id, Category.comp_id]
+  dsimp only [Iso.app_inv]
+  erw [CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso_id_inv_app]
+  erw [← HomologicalComplex.homologyMap_comp]
+  congr 2
+  ext j
+  simp
+end Component
+end CategoryTheory.Functor

@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
+public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
@@ -64,6 +64,8 @@ degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
 (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
+
+The native functorial cycles comparisons commute with cycle inclusions and homology projections.
 -/
 
 public section
@@ -509,3 +511,84 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
   (rfl)
 
 end CategoryTheory.Functor
+
+/-! ### Cycles and homology under exact functors -/
+
+universe u₁ v₁ u₂ v₂ u₃ v₃
+
+namespace CategoryTheory.Functor
+variable {C : Type u} [Category.{v} C] [Abelian C]
+/-- For the identity functor, the homology comparison is the canonical identity map. -/
+theorem mapHomologicalComplexCompHomologyFunctorIso_id_inv_app (K : CochainComplex C ℕ) (n : ℕ) :
+    ((𝟭 C).mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℕ) n).inv.app K =
+      HomologicalComplex.homologyMap ((Functor.mapHomologicalComplexIdIso C
+        (ComplexShape.up ℕ)).inv.app K) n := by
+  let S := K.sc n
+  let φ := (HomologicalComplex.shortComplexFunctor C (ComplexShape.up ℕ) n).map
+    ((Functor.mapHomologicalComplexIdIso C (ComplexShape.up ℕ)).inv.app K)
+  let γ : ShortComplex.LeftHomologyMapData φ S.homologyData.left
+      (S.homologyData.left.map (𝟭 C)) :=
+    { φK := 𝟙 _, φH := 𝟙 _
+      commi := by simp [φ, S]
+      commf' := by simp [φ, S]
+      commπ := by simp [S] }
+  have hh : S.homologyData.left.homologyIso = Iso.refl S.homology := by
+    apply Iso.ext
+    change S.leftHomologyIso.inv ≫ S.leftHomologyIso.hom = 𝟙 _
+    exact S.leftHomologyIso.inv_hom_id
+  have h := γ.homologyMap_eq
+  rw [hh] at h
+  change ((S.homologyData.left.map (𝟭 C)).homologyIso).inv =
+    ShortComplex.homologyMap φ
+  dsimp only [Iso.refl_hom, γ] at h
+  erw [Category.id_comp, Category.id_comp] at h
+  exact h.symm
+
+end CategoryTheory.Functor
+
+namespace HomologicalComplex
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+  [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]
+  (G : C ⥤ D) [G.Additive] [G.PreservesHomology]
+  {ι : Type w} {c : ComplexShape ι} (K : HomologicalComplex C c) (i : ι)
+private lemma map_homologyπ_comp_inv :
+    G.map (K.homologyπ i) ≫ (G.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K =
+      ((K.sc i).mapCyclesIso G).inv ≫
+        ((G.mapHomologicalComplex c).obj K).homologyπ i := by
+  change G.map (K.sc i).homologyπ ≫ ((K.sc i).mapHomologyIso G).inv =
+    ((K.sc i).mapCyclesIso G).inv ≫ ((K.sc i).map G).homologyπ
+  apply (Iso.comp_inv_eq _).2
+  rw [Category.assoc, ShortComplex.homologyπ_comp_mapHomologyIso_hom,
+    Iso.inv_hom_id_assoc]
+
+variable {E : Type u₃} [Category.{v₃} E] [Preadditive E] [CategoryWithHomology E]
+  (H : E ⥤ D) [H.Additive] [H.PreservesHomology] (L : HomologicalComplex E c)
+  (φ : (G.mapHomologicalComplex c).obj K ⟶ (H.mapHomologicalComplex c).obj L)
+/-- The induced comparison of cycles commutes with their inclusions. -/
+lemma cyclesComparison_iCycles :
+    (((K.sc i).mapCyclesIso G).inv ≫ HomologicalComplex.cyclesMap φ i ≫
+        ((L.sc i).mapCyclesIso H).hom) ≫ H.map (L.iCycles i) =
+      G.map (K.iCycles i) ≫ φ.f i := by
+  simp only [Category.assoc]
+  erw [ShortComplex.mapCyclesIso_hom_iCycles]
+  change ((K.sc i).mapCyclesIso G).inv ≫ HomologicalComplex.cyclesMap φ i ≫
+    ((H.mapHomologicalComplex c).obj L).iCycles i = _
+  rw [HomologicalComplex.cyclesMap_i, ← Category.assoc]
+  erw [ShortComplex.mapCyclesIso_inv_comp_iCycles]
+  rfl
+/-- The induced comparison of cycles commutes with passage to homology classes. -/
+lemma cyclesComparison_homologyπ :
+    G.map (K.homologyπ i) ≫
+      ((G.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K ≫
+        HomologicalComplex.homologyMap φ i ≫
+          (H.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app L) =
+      (((K.sc i).mapCyclesIso G).inv ≫ HomologicalComplex.cyclesMap φ i ≫
+        ((L.sc i).mapCyclesIso H).hom) ≫ H.map (L.homologyπ i) := by
+  rw [← Category.assoc, map_homologyπ_comp_inv, Category.assoc,
+    HomologicalComplex.homologyπ_naturality_assoc]
+  simp only [Category.assoc]
+  rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
+  exact congrArg (fun f ↦ ((K.sc i).mapCyclesIso G).inv ≫
+    HomologicalComplex.cyclesMap φ i ≫ f)
+    ((L.sc i).homologyπ_comp_mapHomologyIso_hom H)
+end HomologicalComplex

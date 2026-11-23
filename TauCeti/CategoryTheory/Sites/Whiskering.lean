@@ -53,4 +53,13 @@ noncomputable def ΓCompIsoSheafComposeCompΓ : Γ J A ⋙ F ≅ sheafCompose J 
     NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ by simp) ≪≫
     Functor.isoWhiskerLeft (sheafCompose J F) (ΓNatIsoSheafSections J B hT).symm
 
+/-- The global-sections composition comparison acts via the terminal-section isomorphisms. -/
+lemma ΓCompIsoSheafComposeCompΓ_hom_app (G : Sheaf J A) :
+    (ΓCompIsoSheafComposeCompΓ J F hT).hom.app G =
+      F.map ((ΓNatIsoSheafSections J A hT).hom.app G) ≫
+        (ΓNatIsoSheafSections J B hT).inv.app ((sheafCompose J F).obj G) := by
+  change _ ≫ 𝟙 _ ≫ _ = _
+  rw [Category.id_comp]
+  rfl
+
 end CategoryTheory.Sheaf
