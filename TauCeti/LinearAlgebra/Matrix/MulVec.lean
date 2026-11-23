@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Algebra.Basic
 import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
@@ -131,11 +132,8 @@ theorem pow_mulVec_eq_pow_smul [DecidableEq n] {R S : Type*} [Semiring R] [Monoi
 theorem mulVec_pow_mulVec_of_mul_eq_smul_mul [DecidableEq n] {R : Type*} [CommSemiring R]
     {A B : Matrix n n R} {ζ μ : R} (h : A * B = ζ • (B * A)) {v : n → R} (hv : A *ᵥ v = μ • v)
     (m : ℕ) : A *ᵥ (B ^ m *ᵥ v) = (μ * ζ ^ m) • (B ^ m *ᵥ v) := by
-  induction m with
-  | zero => simpa using hv
-  | succ m ih =>
-    rw [pow_succ', ← mulVec_mulVec, mulVec_mulVec, h, smul_mulVec, ← mulVec_mulVec, ih,
-      mulVec_smul, smul_smul, pow_succ, mul_comm ζ, mul_assoc]
+  rw [mulVec_mulVec, TauCeti.mul_pow_of_mul_eq_smul_mul h m, smul_mulVec, ← mulVec_mulVec, hv,
+    mulVec_smul, smul_smul, mul_comm]
 
 /-- If a power `X ^ m` of a square matrix is the scalar matrix `c • 1`, every eigenvalue `ν` of
 `X` satisfies `ν ^ m = c`. -/
