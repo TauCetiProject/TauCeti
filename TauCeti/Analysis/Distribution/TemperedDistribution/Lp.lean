@@ -250,8 +250,7 @@ theorem exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le {μ : Measure E
   have hmem : MemLp g ⊤ μ := memLp_top_of_bound hmeas G (ae_of_all _ hG)
   refine ⟨hmem.toLp g • u, (Lp.toTemperedDistribution_smul_eq hg hmem u).symm,
     (Lp.norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
-  rw [Lp.norm_toLp g hmem, eLpNorm_exponent_top hmeas]
-  exact ENNReal.toReal_le_of_le_ofReal hG0 (eLpNormEssSup_le_of_ae_bound (ae_of_all _ hG))
+  exact Lp.norm_le_of_ae_bound_top hG0 (hmem.coeFn_toLp.mono fun x hx ↦ hx ▸ hG x)
 
 /-- The tempered distribution of an `Lᵖ` function `w` is the product of the tempered distribution
 of an `L^q` function `u` with a function `g` of temperate growth exactly when `w = g • u` almost
