@@ -507,8 +507,9 @@ theorem isArchimedeanOrderUnit : IsArchimedeanOrderUnit e where
     (he.norm_le_iff a (‖a‖ + 1) (by positivity)).mp (le_add_of_nonneg_right zero_le_one)⟩
   archimedean _ h := he.archimedean h
 
-/-- Norm bound along the unit line: `‖r • e‖ ≤ |r|` for any `IsOrderUnitNorm e`, without
-assuming `NormedSpace ℝ E`. -/
+/-- Norm bound along the unit line: `‖r • e‖ ≤ |r|` in an additively ordered real module
+(`SeminormedAddCommGroup E`, `Module ℝ E`, `Preorder E`, `IsOrderedAddMonoid E`) with an
+order-unit seminorm (`IsOrderUnitNorm e`), without assuming `NormedSpace ℝ E`. -/
 theorem norm_smul_self_le (r : ℝ) : ‖r • e‖ ≤ |r| := by
   have nonneg_case : ∀ {s : ℝ}, 0 ≤ s → ‖s • e‖ ≤ s := fun {s} hs =>
     (he.norm_le_iff (s • e) s hs).mpr ⟨by
@@ -706,9 +707,10 @@ theorem boundedContinuousFunction_one {K : Type*} [TopologicalSpace K] [Nonempty
     exact ⟨fun h => ⟨fun x => (h x).1, fun x => (h x).2⟩, fun ⟨h1, h2⟩ x => ⟨h1 x, h2 x⟩⟩
 
 /-- The self-adjoint part `selfAdjoint A` of a unital star-ordered normed algebra with
-`‖(1 : A)‖ = 1` (`NormOneClass A`) and isometric real continuous functional calculus (in
-particular, any nonzero unital C⋆-algebra equipped with its usual positive-cone order, supplied
-as `PartialOrder A` and `StarOrderedRing A`) is an order-unit space with unit `1`. -/
+`‖(1 : A)‖ = 1` (`NormOneClass A`), isometric real continuous functional calculus, and nonnegative
+real spectrum on nonnegative elements (`NonnegSpectrumClass ℝ A`) — in particular, any nonzero
+unital C⋆-algebra equipped with its usual positive-cone order, supplied as `PartialOrder A` and
+`StarOrderedRing A` — is an order-unit space with unit `1`. -/
 theorem selfAdjoint_one {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
     [StarModule ℝ A] [PartialOrder A] [StarOrderedRing A]
     [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [NonnegSpectrumClass ℝ A]

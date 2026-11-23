@@ -153,24 +153,25 @@ end PositiveCLMs
 
 section Functionals
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E] {e : E}
 
 /-- A monotone continuous real linear functional on an order-unit space has operator norm equal to
 its value at `e`. -/
 theorem opNorm_functional_eq_apply (he : IsOrderUnitNorm e) {φ : E →L[ℝ] ℝ} (hφ : Monotone φ) :
-    ‖φ‖ = φ e :=
-  ContinuousLinearMap.opNorm_eq_apply_of_monotone φ hφ he.le_norm_smul he.norm_e.le
+    ‖φ‖ = φ e := by
+  have h0 : 0 ≤ φ e := by simpa only [map_zero] using hφ he.nonneg
+  simpa [Real.norm_of_nonneg h0] using he.opNorm_eq_norm_apply IsOrderUnitNorm.real_one hφ
 
 /-- **Kadison's characterization of positivity:** a continuous real linear functional `φ` on an
 order-unit space is monotone if and only if `‖φ‖ = φ e`. -/
 theorem monotone_iff_opNorm_eq_apply [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e)
     {φ : E →L[ℝ] ℝ} : Monotone φ ↔ ‖φ‖ = φ e := by
-  refine ⟨he.opNorm_functional_eq_apply, fun hnorm => ?_⟩
-  rw [monotone_iff_map_nonneg]
-  intro a ha
-  refine LinearMap.apply_nonneg_of_abs_apply_le_mul_norm (u := e) φ.toLinearMap (fun g => ?_)
-    ((he.nonneg_iff_norm_sub_le a).mp ha)
-  simpa [← hnorm, Real.norm_eq_abs] using φ.le_opNorm g
+  refine ⟨he.opNorm_functional_eq_apply, fun hnorm a b hab => ?_⟩
+  have hnonneg : 0 ≤ φ (b - a) := by
+    refine LinearMap.apply_nonneg_of_abs_apply_le_mul_norm (u := e) φ.toLinearMap (fun g => ?_)
+      ((he.nonneg_iff_norm_sub_le (b - a)).mp (sub_nonneg.mpr hab))
+    simpa [← hnorm, Real.norm_eq_abs] using φ.le_opNorm g
+  simpa [map_sub, sub_nonneg] using hnonneg
 
 /-- A normalized continuous real linear functional (`φ e = 1`) on an order-unit space is monotone
 if and only if `‖φ‖ = 1`. -/
@@ -277,9 +278,9 @@ theorem statePullback_apply {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T
 /-- Pullback of states along a unital monotone continuous linear map is weak-star continuous. -/
 theorem continuous_statePullback {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monotone T)
     (hunit : T e = f) : Continuous (statePullback T hT hunit) := by
-  refine Continuous.subtype_mk ?_ _
-  refine WeakDual.continuous_of_continuous_eval fun a => ?_
-  simpa using continuous_eval_stateSpace (e := f) (T a)
+  refine continuous_induced_rng.mpr <| WeakDual.continuous_of_continuous_eval fun a => ?_
+  simpa only [Function.comp_apply, statePullback_apply] using
+    continuous_eval_stateSpace (e := f) (T a)
 
 /-- Pulling back along the identity map fixes every state. -/
 @[simp]
@@ -309,7 +310,7 @@ namespace IsOrderUnitNorm
 
 section Compactness
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E] {e : E}
 
 /-- Every state in `OrderUnit.stateSpace e` has strong-dual operator norm `1`. -/
 theorem opNorm_eq_one_of_mem_stateSpace (he : IsOrderUnitNorm e) {φ : WeakDual ℝ E}
@@ -349,7 +350,7 @@ end Compactness
 linear isometry `i : E →ₗᵢ[ℝ] F` into an order-unit space `(F, f)`. -/
 theorem exists_state_extension_linearIsometry {E F : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] [PartialOrder E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
-    [PartialOrder F] [IsOrderedAddMonoid F] {e : E} {f : F} (he : IsOrderUnitNorm e)
+    [Preorder F] [IsOrderedAddMonoid F] {e : E} {f : F} (he : IsOrderUnitNorm e)
     (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) {ψ : WeakDual ℝ E}
     (hψ : ψ ∈ OrderUnit.stateSpace e) :
     ∃ φ ∈ OrderUnit.stateSpace f, ∀ a : E, φ (i a) = ψ a := by

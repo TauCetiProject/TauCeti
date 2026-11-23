@@ -244,8 +244,8 @@ theorem le_iff (x y : OrderUnitCompletion he) :
     ext z
     simp [toCompletion_coe]
   rw [← himg, ← Homeomorph.image_closure,
-    ← (toCompletionₗᵢ he).toHomeomorph.injective.mem_set_image]
-  rfl
+    ← (toCompletionₗᵢ he).toHomeomorph.injective.mem_set_image,
+    LinearIsometryEquiv.coe_toHomeomorph, toCompletionₗᵢ_apply, toCompletion_sub]
 
 instance : IsOrderedAddMonoid (OrderUnitCompletion he) where
   add_le_add_left x y h z := by
