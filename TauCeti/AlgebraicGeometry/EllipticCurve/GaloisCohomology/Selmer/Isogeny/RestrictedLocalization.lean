@@ -44,6 +44,14 @@ variable {K : Type*} [Field K] [NumberField K]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
   (τ : ∀ v : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
 
+private theorem eventually_localization_mem_localKummerCondition
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    ∀ᶠ v in Filter.cofinite,
+      (φ.selmerStructure τ).localization v c ∈
+        (φ.baseChange v.Completion).localKummerCondition := by
+  simpa only [selmerStructure_localization] using
+    φ.eventually_kerRes_mem_localKummerCondition τ c
+
 /-- The diagonal localization of global kernel cohomology into the all-place restricted
 product relative to the local Kummer conditions. -/
 abbrev restrictedKerLocalization :
@@ -53,8 +61,7 @@ abbrev restrictedKerLocalization :
           ((φ.baseChange v.Completion).localKummerCondition : Set _)] :=
   addRationalDiagonal (φ.selmerStructure τ).localization
     (fun v ↦ (φ.baseChange v.Completion).localKummerCondition)
-    (by simpa only [selmerStructure_localization] using
-      φ.eventually_kerRes_mem_localKummerCondition τ)
+    (by exact eventually_localization_mem_localKummerCondition φ τ)
 
 /-- The Selmer group is the pullback, along restricted localization, of the subgroup satisfying
 the local Kummer condition at every place. -/
@@ -65,9 +72,9 @@ theorem selmerGroup_eq_comap_restrictedKerLocalization :
           (φ.restrictedKerLocalization τ) := by
   have hcond := funext (selmerStructure_localCondition φ τ)
   rw [selmerGroup_def, ← integralAddSubgroupOf_self]
-  simpa only [hcond] using
-    (φ.selmerStructure τ).selmerGroup_eq_comap_addRationalDiagonal _
-      (by simpa only [selmerStructure_localization] using
-        φ.eventually_kerRes_mem_localKummerCondition τ)
+  have h := (φ.selmerStructure τ).selmerGroup_eq_comap_addRationalDiagonal _
+    (eventually_localization_mem_localKummerCondition φ τ)
+  rw [hcond] at h
+  exact h
 
 end TauCeti.Isogeny

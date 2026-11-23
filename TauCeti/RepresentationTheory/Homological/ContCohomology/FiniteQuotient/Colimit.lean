@@ -535,8 +535,7 @@ theorem exists_openNormalSubgroup_explicitRes1_eq_zero
     ∃ U : OpenNormalSubgroup G, explicitRes1 G A U.toSubgroup x = 0 := by
   obtain ⟨U, y, hy⟩ := exists_explicitInfl1_eq x
   refine ⟨U, ?_⟩
-  change x ∈ (explicitRes1 G A U.toSubgroup).ker
-  rw [← explicitInfRes_exact]
+  rw [← AddMonoidHom.mem_ker, ← explicitInfRes_exact]
   exact ⟨y, hy⟩
 
 /-- The descent of a cocone to `H¹(G, M)`, as a bare function: a class is inflated from some

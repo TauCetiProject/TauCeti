@@ -181,7 +181,8 @@ theorem absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport
     absoluteGaloisGroupMap τ g ∈ E.fixingSubgroup := by
   obtain ⟨w, hw, τ', hτ⟩ := exists_algHom_adicCompletion_eq E v
     (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K)))
-  have := hw
+  -- Register the instance that `w` lies over `v` for the unramifiedness results below.
+  have hLiesOver : w.asIdeal.LiesOver v.asIdeal := hw
   have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal :=
     NumberField.isUnramifiedAway_ramifiedSupport v hv w.asIdeal
   have : IsUnramified (v.adicCompletion K) (w.adicCompletion E) :=

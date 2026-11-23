@@ -252,6 +252,7 @@ theorem eventually_kerRes_mem_localKummerCondition
       φ.kerRes (τ v) c ∈ (φ.baseChange v.Completion).localKummerCondition := by
   rw [Filter.eventually_cofinite]
   apply Set.finite_preimage_inl_and_inr.mp
+  -- At `Sum.inl v`, `Place.Completion` and its instances reduce to `v.adicCompletion K`.
   exact ⟨Filter.eventually_cofinite.mp
     (eventually_kerRes_mem_localKummerCondition_at_finitePlaces φ (fun v ↦ τ (Sum.inl v)) c),
     Set.toFinite _⟩
