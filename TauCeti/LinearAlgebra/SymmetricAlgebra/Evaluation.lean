@@ -23,7 +23,8 @@ infinite domain (`MvPolynomial.funext`).
 Far fewer linear forms suffice. Over any integral domain, two elements of `S(M)` agreeing at every
 linear form whose values on a basis lie in prescribed infinite sets are equal, since polynomials
 agreeing on a box with infinite sides are equal (`MvPolynomial.funext_set`). For a semisimple Lie
-algebra this is how polynomial functions on the weights are tested on the dominant integral
+algebra over a field of characteristic zero, where the natural numbers form an infinite set of
+scalars, this is how polynomial functions on the weights are tested on the dominant integral
 weights alone, whose values on the simple coroots are the natural numbers.
 
 The function is polynomial in the usual sense along every affine line of linear forms, over any
