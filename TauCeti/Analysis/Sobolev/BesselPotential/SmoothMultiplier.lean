@@ -57,9 +57,8 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a 
 
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`: an essentially bounded function
   multiplies `H^{0,p}` into itself, for every `1 ≤ p ≤ ∞`.
-* `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`: a function of temperate
-  growth with bounded derivatives up to order `k` multiplies `H^{k,p}` into itself, for
-  `1 < p < ∞`.
+* `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`: a function with bounded
+  derivatives up to order `k` multiplies `H^{k,p}` into itself, for `1 < p < ∞`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`: in particular a Schwartz function
   multiplies `H^{k,p}` into itself.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg`: the same for the
@@ -127,11 +126,10 @@ end Reduction
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-- **Multipliers with bounded derivatives act on `H^{k,p}`.** Let `1 < p < ∞` and let `g` be a
-function of temperate growth whose iterated derivatives of order at most `k` are bounded. Then
-`g f ∈ H^{k,p}` for every `f ∈ H^{k,p}`. -/
+function whose iterated derivatives of order at most `k` are bounded. Then `g f ∈ H^{k,p}` for
+every `f ∈ H^{k,p}`. If `g` does not have temperate growth, `g f` is the junk value `0`. -/
 theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : p ≠ ∞) {k : ℕ}
-    {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {f : 𝓢'(E, F)}
+    {g : E → ℂ} (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {f : 𝓢'(E, F)}
     (hf : MemSobolev k p f) : MemSobolev k p (smulLeftCLM F g f) := by
   induction k generalizing g f with
   | zero =>
@@ -140,29 +138,32 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : 
     exact hf.smulLeftCLM_of_norm_le (C := C) (.of_forall fun x ↦ by simpa using hC x)
   | succ k ih =>
     rw [Nat.cast_succ] at hf ⊢
+    by_cases hg : g.HasTemperateGrowth
+    swap
+    · rw [smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply]
+      exact mem_sobolevSubmodule.1 (sobolevSubmodule E F _ p).zero_mem
     have hf' := (memSobolev_natCast_add_one_iff hp hp_top).1 hf
     refine (memSobolev_natCast_add_one_iff hp hp_top).2 ⟨?_, fun v ↦ ?_⟩
     · obtain ⟨C, hC⟩ := hbd 0 (by omega)
       exact hf'.1.smulLeftCLM_of_norm_le (C := C) (.of_forall fun x ↦ by simpa using hC x)
     -- `∂_v (g f) = (∂_v g) f + g ∂_v f`, and `∂_v g` has bounded derivatives up to order `k`.
     rw [lineDerivOp_smulLeftCLM hg]
-    exact (ih (hg.fderiv_apply v) (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd v)
+    exact (ih (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd v)
       (hf.mono_of_one_lt hp hp_top (by linarith))).add
-      (ih hg (fun n hn ↦ hbd n (by omega)) (hf'.2 v))
+      (ih (fun n hn ↦ hbd n (by omega)) (hf'.2 v))
 
 /-- **Schwartz multipliers act on `H^{k,p}`.** For `1 < p < ∞`, multiplication by a Schwartz
 function maps `H^{k,p}` into itself. -/
 theorem MemSobolev.smulLeftCLM_schwartzMap (hp : 1 < p) (hp_top : p ≠ ∞) {k : ℕ} (ψ : 𝓢(E, ℂ))
     {f : 𝓢'(E, F)} (hf : MemSobolev k p f) : MemSobolev k p (smulLeftCLM F ψ f) :=
-  hf.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top ψ.hasTemperateGrowth
+  hf.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
     fun i _ ↦ ⟨_, ψ.norm_iteratedFDeriv_le_seminorm ℝ i⟩
 
 /-- **Multipliers with bounded derivatives act on `H^{-k,p}`.** Let `1 < p < ∞` and let `g` be a
-function of temperate growth whose iterated derivatives of order at most `k` are bounded. Then
-`g f ∈ H^{-k,p}` for every `f ∈ H^{-k,p}`. -/
+function whose iterated derivatives of order at most `k` are bounded. Then `g f ∈ H^{-k,p}` for
+every `f ∈ H^{-k,p}`. If `g` does not have temperate growth, `g f` is the junk value `0`. -/
 theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_top : p ≠ ∞)
-    {k : ℕ} {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {f : 𝓢'(E, F)}
+    {k : ℕ} {g : E → ℂ} (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {f : 𝓢'(E, F)}
     (hf : MemSobolev (-k) p f) : MemSobolev (-k) p (smulLeftCLM F g f) := by
   induction k generalizing g f with
   | zero =>
@@ -172,6 +173,10 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_to
   | succ k ih =>
     have hk : -((k + 1 : ℕ) : ℝ) = -k - 1 := by push_cast; ring
     rw [hk] at hf ⊢
+    by_cases hg : g.HasTemperateGrowth
+    swap
+    · rw [smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply]
+      exact mem_sobolevSubmodule.1 (sobolevSubmodule E F _ p).zero_mem
     -- Write `f = u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{-k,p}`. Then
     -- `g f = g u + ∑ᵢ (∂ᵢ (g wᵢ) - (∂ᵢ g) wᵢ)`, each of whose terms lies in `H^{-k-1,p}`.
     have hbd' : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C := fun n hn ↦ hbd n (by omega)
@@ -179,24 +184,24 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_to
       (memSobolev_sub_one_iff hp hp_top (stdOrthonormalBasis ℝ E)).1 hf
     refine (memSobolev_sub_one_iff hp hp_top (stdOrthonormalBasis ℝ E)).2
       ⟨smulLeftCLM F g u - ∑ i, smulLeftCLM F (fun x ↦ fderiv ℝ g x (stdOrthonormalBasis ℝ E i))
-        (w i), fun i ↦ smulLeftCLM F g (w i), ?_, fun i ↦ ih hg hbd' (hw i), ?_⟩
-    · exact (ih hg hbd' hu).sub (MemSobolev.sum fun i _ ↦ ih (hg.fderiv_apply _)
-        (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd _) (hw i))
+        (w i), fun i ↦ smulLeftCLM F g (w i), ?_, fun i ↦ ih hbd' (hw i), ?_⟩
+    · exact (ih hbd' hu).sub (MemSobolev.sum fun i _ ↦
+        ih (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd _) (hw i))
     · simp only [map_add, map_sum, lineDerivOp_smulLeftCLM hg]
       rw [Finset.sum_add_distrib]
       abel
 
 /-- **Multipliers with bounded derivatives act on `H^{k,p}` for every integer `k`.** Let
-`1 < p < ∞` and let `g` be a function of temperate growth whose iterated derivatives of order at
-most `|k|` are bounded. Then `g f ∈ H^{k,p}` for every `f ∈ H^{k,p}`. -/
+`1 < p < ∞` and let `g` be a function whose iterated derivatives of order at most `|k|` are
+bounded. Then `g f ∈ H^{k,p}` for every `f ∈ H^{k,p}`. If `g` does not have temperate growth,
+`g f` is the junk value `0`. -/
 theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast (hp : 1 < p) (hp_top : p ≠ ∞)
-    {k : ℤ} {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (hbd : ∀ n ≤ k.natAbs, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {f : 𝓢'(E, F)}
-    (hf : MemSobolev k p f) : MemSobolev k p (smulLeftCLM F g f) := by
+    {k : ℤ} {g : E → ℂ} (hbd : ∀ n ≤ k.natAbs, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
+    {f : 𝓢'(E, F)} (hf : MemSobolev k p f) : MemSobolev k p (smulLeftCLM F g f) := by
   obtain ⟨k, rfl | rfl⟩ := k.eq_nat_or_neg
-  · exact_mod_cast hf.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hg (by simpa using hbd)
+  · exact_mod_cast hf.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top (by simpa using hbd)
   · push_cast at hf ⊢
-    exact hf.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top hg (by simpa using hbd)
+    exact hf.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top (by simpa using hbd)
 
 section Matrix
 
@@ -214,7 +219,6 @@ theorem MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_intCast (hp : 1 < p) (hp
   -- Each scalar function `ℓ ∘ A` inherits the derivative bounds of `A`.
   MemSobolev.mulLeftCLM_of_forall_smulLeftCLM fun ℓ ↦
     hf.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top
-      (hA.continuousLinearMap_comp ℓ)
       (ℓ.exists_bound_iteratedFDeriv_comp_left (hA.1.of_le (mod_cast le_top)) hbd)
 
 end Matrix

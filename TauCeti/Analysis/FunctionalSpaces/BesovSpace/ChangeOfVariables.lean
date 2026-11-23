@@ -118,13 +118,15 @@ private theorem norm_iteratedFDeriv_repr_fderiv_comp_le {ι : Type*} [Fintype ι
   gcongr _ * ?_ * _
   exact mul_le_of_le_one_left hL0 hA
 
-/-- The pullback of an `Lᵖ` function, with the `p`-independent bound `J` for `J⁻¹ ≤ |det DΦ|`. -/
+/-- The pullback of an `Lᵖ` function, with the `p`-independent bound `max 1 J` for
+`J⁻¹ ≤ |det DΦ|`. -/
 private theorem exists_compCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E}
     (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth) {J : ℝ}
-    (hJ : 1 ≤ J) (hdet : ∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) (f : Lp F p (volume : Measure E)) :
-    ∃ v : Lp F p (volume : Measure E), compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)) = v ∧ ‖v‖ ≤ J * ‖f‖ := by
+    (hJ : 0 < J) (hdet : ∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) (f : Lp F p (volume : Measure E)) :
+    ∃ v : Lp F p (volume : Measure E), compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)) = v ∧
+      ‖v‖ ≤ max 1 J * ‖f‖ := by
   obtain ⟨v, hv, -, hvn⟩ := exists_compCLM_toTemperedDistribution_eq_and_norm_le volume hΦ hΨ
-    (inv_pos.2 (zero_lt_one.trans_le hJ)) hdet f
+    (inv_pos.2 hJ) hdet f
   refine ⟨v, hv, hvn.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
   rw [inv_inv]
   have hp : p.toReal⁻¹ ≤ 1 := by
@@ -132,7 +134,10 @@ private theorem exists_compCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] 
     · simp
     · exact inv_le_one_of_one_le₀ (by
         simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p))
-  simpa using Real.rpow_le_rpow_of_exponent_le hJ hp
+  -- `J ^ (1 / p) ≤ (max 1 J) ^ (1 / p) ≤ max 1 J`, as `1 / p ≤ 1`.
+  calc J ^ p.toReal⁻¹ ≤ max 1 J ^ p.toReal⁻¹ :=
+        Real.rpow_le_rpow hJ.le (le_max_right 1 J) (by positivity)
+    _ ≤ max 1 J := by simpa using Real.rpow_le_rpow_of_exponent_le (le_max_left 1 J) hp
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The coefficients `cᵢ` of `DΦ(x) w = ∑ᵢ cᵢ(x) bᵢ`, multiplied by a function `g` of temperate
@@ -183,7 +188,7 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
       ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
         (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
         (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
-        ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+        ∀ {g : E → ℂ} {G : ℝ},
         (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
         ∀ f : Lp F p (volume : Measure E),
         IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin M → E,
@@ -193,7 +198,7 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
       (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      ∀ {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M + 1, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
       ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin (M + 1) → E,
@@ -206,9 +211,13 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
   obtain ⟨K, hK, hKb⟩ := ih
   set d := Module.finrank ℝ E
   refine ⟨K * (1 + d * 2 ^ M * max L 0 * CB), by positivity,
-    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hg hgG R hR f hf m ↦ ?_⟩
+    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hgG R hR f hf m ↦ ?_⟩
   set w := m (Fin.last M)
   have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
+  obtain hg | hg := em' g.HasTemperateGrowth
+  · -- Without temperate growth, `g Φ^* f` is the junk value `0`.
+    exact ⟨0, by simp [smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg], by
+      rw [norm_zero]; positivity⟩
   -- The derivatives `∂_{bᵢ} f` are band-limited to the same ball.
   choose f' hf' hf'n using fun i ↦ hB hR f hf (b i)
   have hf'v (i) : IsVanishingOn (𝓕 (f' i : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
@@ -219,11 +228,11 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
     hΦL hg (fun n hn ↦ hgG n (by omega)) w i
   have hΦL' : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L :=
     fun n h₁ h₂ ↦ hΦL n h₁ (by omega)
-  obtain ⟨v₁, hv₁, hv₁n⟩ := hKb hΦ hΨ hdet hΦL' (hg.fderiv_apply w)
+  obtain ⟨v₁, hv₁, hv₁n⟩ := hKb hΦ hΨ hdet hΦL'
     (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
       rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) hR f hf
     (Fin.init m)
-  choose v₂ hv₂ hv₂n using fun i ↦ hKb hΦ hΨ hdet hΦL' (hcg i).1 (hcg i).2 hR (f' i)
+  choose v₂ hv₂ hv₂n using fun i ↦ hKb hΦ hΨ hdet hΦL' (hcg i).2 hR (f' i)
     (hf'v i) (Fin.init m)
   refine ⟨v₁ + ∑ i, v₂ i, ?_, ?_⟩
   · rw [LineDeriv.iteratedLineDerivOp_succ_right, lineDerivOp_smulLeftCLM_compCLM b hΦ hΨ hg,
@@ -256,16 +265,16 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_su
 
 /-- **Derivatives of a pulled-back band-limited function.** Let `M` be a natural number. There is
 `K`, depending only on `J`, `L` and `M`, with the following property. Let `J⁻¹ ≤ |det DΦ|`, let
-the derivatives of `Φ` of orders `1` to `M` be bounded by `L`, let `g` be a function of temperate
-growth whose derivatives of order at most `M` are bounded by `G`, and let `f ∈ Lᵖ` have Fourier
-transform vanishing outside the closed ball of radius `R > 0`. Then `∂_{m₁} ⋯ ∂_{m_M} (g Φ^* f)`
+the derivatives of `Φ` of orders `1` to `M` be bounded by `L`, let `g` be a function whose
+derivatives of order at most `M` are bounded by `G`, and let `f ∈ Lᵖ` have Fourier transform
+vanishing outside the closed ball of radius `R > 0`. Then `∂_{m₁} ⋯ ∂_{m_M} (g Φ^* f)`
 is an `Lᵖ` function of norm at most `K G (max 1 R) ^ M ‖m₁‖ ⋯ ‖m_M‖ ‖f‖_p`. -/
 private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J : ℝ} (hJ : 0 < J)
     (L : ℝ) (M : ℕ) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
       (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      ∀ {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
       ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin M → E,
@@ -275,10 +284,8 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
   induction M with
   | zero =>
     refine ⟨max 1 J, zero_le_one.trans (le_max_left 1 J),
-      fun {p} _ {Φ} hΦ hΨ hdet _ {g G} _ hgG R _ f _ m ↦ ?_⟩
-    -- For `J < 1` the determinant bound also holds with `1` in place of `J`.
-    obtain ⟨v, hv, hvn⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ (le_max_left 1 J)
-      (fun x ↦ (inv_anti₀ hJ (le_max_right 1 J)).trans (hdet x)) f
+      fun {p} _ {Φ} hΦ hΨ hdet _ {g G} hgG R _ f _ m ↦ ?_⟩
+    obtain ⟨v, hv, hvn⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ hJ hdet f
     obtain ⟨w, hw, hwn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
       (.of_forall (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2) v
     refine ⟨w, by rw [LineDeriv.iteratedLineDerivOp_fin_zero, hv, hw], ?_⟩
@@ -288,26 +295,23 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
   | succ M ih => exact exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_succ L ih
 
 /-- There is `K`, depending only on the bump `φ` and on `J`, such that for `J⁻¹ ≤ |det DΦ|`, a
-function `g` bounded by `G` and `f ∈ Lᵖ`, every block `Δⱼ (g Φ^* f)` is an `Lᵖ` function of norm at
-most `K G ‖f‖_p`. -/
+function `g` bounded by `G` almost everywhere and `f ∈ Lᵖ`, every block `Δⱼ (g Φ^* f)` is an `Lᵖ`
+function of norm at most `K G ‖f‖_p`. -/
 private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_norm_le
     (φ : ContDiffBump (0 : E)) {J : ℝ} (hJ : 0 < J) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
-      ∀ {g : E → ℂ} {G : ℝ}, (∀ x, ‖g x‖ ≤ G) →
+      ∀ {g : E → ℂ} {G : ℝ}, (∀ᵐ x, ‖g x‖ ≤ G) →
       ∀ (j : ℕ) (f : Lp F p (volume : Measure E)), ∃ v : Lp F p (volume : Measure E),
         littlewoodPaleyBlock F φ j (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = v ∧
         ‖v‖ ≤ K * G * ‖f‖ := by
   obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   refine ⟨max CΔ 0 * max 1 J, by positivity, fun {p} _ {Φ} hΦ hΨ hdet {g G} hgG j f ↦ ?_⟩
-  -- For `J < 1` the determinant bound also holds with `1` in place of `J`.
-  obtain ⟨u, hu, hun⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ (le_max_left 1 J)
-    (fun x ↦ (inv_anti₀ hJ (le_max_right 1 J)).trans (hdet x)) f
-  obtain ⟨h, hh, hhn⟩ :=
-    Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le (.of_forall hgG) u
+  obtain ⟨u, hu, hun⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ hJ hdet f
+  obtain ⟨h, hh, hhn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hgG u
   obtain ⟨w, hw, hwn⟩ := hΔ j h
   refine ⟨w, by rw [hu, hh, hw], ?_⟩
-  have hG : 0 ≤ G := (norm_nonneg _).trans (hgG 0)
+  have hG : 0 ≤ G := (norm_nonneg _).trans hgG.exists.choose_spec
   calc ‖w‖ ≤ max CΔ 0 * (G * (max 1 J * ‖f‖)) :=
         hwn.trans (mul_le_mul (le_max_left _ _) (hhn.trans (by gcongr)) (norm_nonneg _)
           (le_max_right _ _))
@@ -315,16 +319,16 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
 
 /-- **High output frequency, low input frequency.** Let `M` be a natural number. There is `K`,
 depending only on `φ`, `J`, `L` and `M`, with the following property. Let `J⁻¹ ≤ |det DΦ|` and let
-the derivatives of `Φ` of orders `1` to `M` be bounded by `L`. Let `g` be a function of temperate
-growth whose derivatives of order at most `M` are bounded by `G`, and let `f ∈ Lᵖ` have spectrum in
-the ball of radius `2^k φ.rOut`. Then for `j > k` the block `Δⱼ (g Φ^* f)` is an `Lᵖ` function of
+the derivatives of `Φ` of orders `1` to `M` be bounded by `L`. Let `g` be a function whose
+derivatives of order at most `M` are bounded by `G`, and let `f ∈ Lᵖ` have spectrum in the ball of
+radius `2^k φ.rOut`. Then for `j > k` the block `Δⱼ (g Φ^* f)` is an `Lᵖ` function of
 norm at most `K G (2^k / 2^j)^M ‖f‖_p`. -/
 private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_lt
     (φ : ContDiffBump (0 : E)) {J : ℝ} (hJ : 0 < J) (L : ℝ) (M : ℕ) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
       (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      ∀ {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {j k : ℕ}, k < j →
       ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 (2 ^ k * φ.rOut))ᶜ →
@@ -340,10 +344,10 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
   obtain ⟨K₀, -, h₀⟩ :=
     exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_norm_le (F := F) φ hJ
   refine ⟨C * CL * (2 * max 1 φ.rOut) ^ M, by positivity,
-    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hg hgG {j k} hkj f hf ↦ ?_⟩
+    fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hgG {j k} hkj f hf ↦ ?_⟩
   obtain ⟨j, rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  obtain ⟨w, hw, -⟩ := h₀ hΦ hΨ hdet hg₀ (j + 1) f
+  obtain ⟨w, hw, -⟩ := h₀ hΦ hΨ hdet (.of_forall hg₀) (j + 1) f
   refine ⟨w, hw, ?_⟩
   have hmax : max 1 (2 ^ k * φ.rOut) ≤ 2 ^ k * max 1 φ.rOut := by
     have h1 : (1 : ℝ) ≤ 2 ^ k := one_le_pow₀ one_le_two
@@ -353,7 +357,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
   have hR' : (0 : ℝ) < 2 ^ k * φ.rOut := by have := φ.rOut_pos; positivity
   refine (hblock j _ w hw (A := CL * G * (2 ^ k * max 1 φ.rOut) ^ M * ‖f‖)
     fun i ↦ ?_).trans_eq ?_
-  · obtain ⟨y, hy, hyn⟩ := hder hΦ hΨ hdet hΦL hg hgG hR' f hf (stdOrthonormalBasis ℝ E ∘ i)
+  · obtain ⟨y, hy, hyn⟩ := hder hΦ hΨ hdet hΦL hgG hR' f hf (stdOrthonormalBasis ℝ E ∘ i)
     refine ⟨y, hy, hyn.trans ?_⟩
     simp only [Function.comp_apply, OrthonormalBasis.norm_eq_one, Finset.prod_const_one, mul_one]
     gcongr
@@ -404,7 +408,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
         (hΨ : (Φ.symm : E → E).HasTemperateGrowth),
         (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
         (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
-        ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+        ∀ {g : E → ℂ} {G : ℝ},
         (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ (j : ℕ) {R : ℝ}, 0 < R →
         ∀ f : Lp F p (volume : Measure E),
         IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
@@ -415,7 +419,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth),
       (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
       (∀ n, 1 ≤ n → n ≤ M + 1 + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      ∀ {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M + 1, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ (j : ℕ) {R : ℝ}, 0 < R →
       ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
@@ -431,9 +435,13 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
   refine ⟨d * d * Crep * (CB * φ.rOut + 1) * K *
     (2 ^ (M + 1) * ((M + 1).factorial * max L 0 * max 1 L ^ (M + 1))), by
     have := φ.rOut_pos; positivity,
-    fun {p} _ {Φ} hΦ hΨ hΦL hΨL {g G} hg hgG j R hR f hf ↦ ?_⟩
-  rw [max_eq_left ((norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0))]
+    fun {p} _ {Φ} hΦ hΨ hΦL hΨL {g G} hgG j R hR f hf ↦ ?_⟩
   have hG : 0 ≤ G := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
+  obtain hg | hg := em' g.HasTemperateGrowth
+  · -- Without temperate growth, `g Φ^* f` is the junk value `0`.
+    exact ⟨0, by simp [smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg], by
+      have := φ.rOut_pos; rw [norm_zero]; positivity⟩
+  rw [max_eq_left ((norm_nonneg _).trans (hΦL 1 le_rfl (by omega) 0))]
   obtain ⟨h, hfh, hh⟩ := hrep hR f hf
   -- The coefficients `dᵢₗ` of `DΦ⁻¹(Φ x) bᵢ = ∑ₗ dᵢₗ(x) bₗ`, and the products `g dᵢₗ`.
   set c : Fin d → Fin d → E → ℂ := fun i l ↦
@@ -446,12 +454,12 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
   have hΨL' : ∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L :=
     fun n h₁ h₂ ↦ hΨL n h₁ (by omega)
   -- `Δⱼ (g dᵢₗ Φ^* hᵢ)` is band-limited to the ball of radius `2^j φ.rOut`.
-  choose y hy hyn using fun i l ↦ hKb hΦ hΨ hΦL' hΨL' (hc i l).1
+  choose y hy hyn using fun i l ↦ hKb hΦ hΨ hΦL' hΨL'
     (fun n hn ↦ (hc i l).2 n (by omega)) j hR (h i) (hh i).1
   have hR' : (0 : ℝ) < 2 ^ j * φ.rOut := by have := φ.rOut_pos; positivity
   choose y' hy' hy'n using fun i l ↦ hB hR' (y i l) (by
     rw [← hy i l]; exact isVanishingOn_fourier_littlewoodPaleyBlock φ j _) (b l)
-  choose z hz hzn using fun i l ↦ hKb hΦ hΨ hΦL' hΨL' ((hc i l).1.fderiv_apply (b l))
+  choose z hz hzn using fun i l ↦ hKb hΦ hΨ hΦL' hΨL'
     ((hc i l).1.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
       rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) (hc i l).2 (b l))
     j hR (h i) (hh i).1
@@ -492,8 +500,8 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
 /-- **Low output frequency, high input frequency.** Let `B` be a real number and `M` a natural
 number. There is `K`, depending only on `φ`, `L`, `B` and `M`, with the following property. Let the
 derivatives of `Φ` of orders `1` to `M` and those of `Φ⁻¹` of orders `1` to `M + 1` be bounded by
-`L`. Let `g` be a function of temperate growth whose derivatives of order at most `M` are bounded
-by `G`, and let `f ∈ Lᵖ` have spectrum in the annulus `R ≤ ‖ξ‖ ≤ B R`. Then every block
+`L`. Let `g` be a function whose derivatives of order at most `M` are bounded by `G`, and let
+`f ∈ Lᵖ` have spectrum in the annulus `R ≤ ‖ξ‖ ≤ B R`. Then every block
 `Δⱼ (g Φ^* f)` is an `Lᵖ` function of norm at most `K G (2^j / R)^M ‖f‖_p`. -/
 private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus
     (φ : ContDiffBump (0 : E)) (L B : ℝ) (M : ℕ) :
@@ -501,7 +509,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth),
       (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
       (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      ∀ {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ (j : ℕ) {R : ℝ}, 0 < R →
       ∀ f : Lp F p (volume : Measure E),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
@@ -514,12 +522,13 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
       (J := max 1 L ^ Module.finrank ℝ E) (by positivity)
   induction M with
   | zero =>
-    refine ⟨K₀, hK₀, fun {p} _ {Φ} hΦ hΨ _ hΨL {g G} _ hgG j R _ f _ ↦ ?_⟩
+    refine ⟨K₀, hK₀, fun {p} _ {Φ} hΦ hΨ _ hΨL {g G} hgG j R _ f _ ↦ ?_⟩
     -- The Jacobian is bounded below in terms of `DΦ⁻¹`.
     have hdet : ∀ x, (max 1 L ^ Module.finrank ℝ E)⁻¹ ≤ |(fderiv ℝ Φ x).det| :=
       Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
         (hΨ.1.differentiable (by simp)) fun y ↦ by simpa using hΨL 1 le_rfl le_rfl y
-    obtain ⟨w, hw, hwn⟩ := h₀ hΦ hΨ hdet (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2 j f
+    obtain ⟨w, hw, hwn⟩ :=
+      h₀ hΦ hΨ hdet (.of_forall (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2) j f
     exact ⟨w, hw, by simpa using hwn⟩
   | succ M ih =>
     exact exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus_succ φ L B ih
@@ -528,19 +537,19 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
 natural number. There is `K`, depending only on `φ`, `L` and `M`, with the following property. Let
 `Φ` be a bijection such that `Φ` and `Φ⁻¹` have temperate growth, the derivatives of `Φ` of orders
 `1` to `M` and those of `Φ⁻¹` of orders `1` to `M + 1` being bounded by `L`, and let `g` be a
-function of temperate growth whose derivatives of order at most `M` are bounded by `G`. Let
-`1 ≤ p ≤ ∞`, and let the block `Δₖ u` of a tempered distribution be an `Lᵖ` function `f`. Then for
-every `j` the block `Δⱼ (g Φ^* f)` is an `Lᵖ` function of norm at most
-`K G 2^{-M |j - k|} ‖f‖_p`. For `g = 1` this is the block estimate for the pullback
-(`TauCeti.exists_littlewoodPaleyBlock_compCLM_eq_and_norm_le`), and for `Φ = id` the one for
-multiplication (`TauCeti.exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le`). -/
+function whose derivatives of order at most `M` are bounded by `G`. Let `1 ≤ p ≤ ∞`, and let the
+block `Δₖ u` of a tempered distribution be an `Lᵖ` function `f`. Then for every `j` the block
+`Δⱼ (g Φ^* f)` is an `Lᵖ` function of norm at most `K G 2^{-M |j - k|} ‖f‖_p`. If `g` does not
+have temperate growth, `g Φ^* f` is the junk value `0`. For `g = 1` this is the block estimate
+for the pullback (`TauCeti.exists_littlewoodPaleyBlock_compCLM_eq_and_norm_le`), and for `Φ = id`
+the one for multiplication (`TauCeti.exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le`). -/
 theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : ContDiffBump (0 : E))
     (L : ℝ) (M : ℕ) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth),
       (∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
       (∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+      ∀ {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) →
       ∀ (j k : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
       littlewoodPaleyBlock F φ k u = f → ∃ v : Lp F p (volume : Measure E),
@@ -556,7 +565,7 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
     exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_norm_le (F := F) φ hJ
   have hrIn := φ.rIn_pos
   refine ⟨K₁ + K₂ * (2 / φ.rIn) ^ M + K₀, by positivity,
-    fun {p} _ {Φ} hΦ hΨ hΦL hΨL {g G} hg hgG j k u f hf ↦ ?_⟩
+    fun {p} _ {Φ} hΦ hΨ hΦL hΨL {g G} hgG j k u f hf ↦ ?_⟩
   -- The Jacobian is bounded below in terms of `DΦ⁻¹`.
   have hdet : ∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det| :=
     Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
@@ -564,10 +573,10 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
   obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
-    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg₀ k f)
-    (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f
+    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet (.of_forall hg₀) k f)
+    (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hgG hkj f
       (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ _ u))
-    (fun j k u f hf ↦ h₂ hΦ hΨ hΦL hΨL hg hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by
+    (fun j k u f hf ↦ h₂ hΦ hΨ hΦL hΨL hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by
       rw [φ.two_mul_rOut_div_rIn_mul, ← hf]
       simpa only [Set.compl_sdiff, Set.union_comm] using
         isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)) j k u f hf
@@ -592,7 +601,7 @@ theorem exists_littlewoodPaleyBlock_compCLM_eq_and_norm_le (φ : ContDiffBump (0
   -- Multiplication by the constant `1` is the identity.
   obtain ⟨K, hK, h⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (F := F) φ L M
   refine ⟨K, hK, fun {p} _ {Φ} hΦ hΨ hΦL hΨL j k u f hf ↦ ?_⟩
-  simpa only [smulLeftCLM_const, one_smul, mul_one] using h hΦ hΨ hΦL hΨL (.const 1)
+  simpa only [smulLeftCLM_const, one_smul, mul_one] using h hΦ hΨ hΦL hΨL
     (fun n _ x ↦ (norm_iteratedFDeriv_const_le n (1 : ℂ) x).trans_eq norm_one) j k u f hf
 
 /-! ### Pullback on Besov spaces -/

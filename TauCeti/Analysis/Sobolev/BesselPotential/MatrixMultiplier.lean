@@ -87,11 +87,11 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
 /-- Multiplication by a function with bounded derivatives up to order `k` is bounded on `H^k`, on
 Schwartz functions: it preserves `H^k`, so the closed graph theorem applies. -/
 private theorem hasSobolevExtension_smulLeftCLM_natCast (k : ℕ) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
     HasSobolevExtension (smulLeftCLM F g) k k := by
   have hmem (f : H^{(k : ℝ), 2}(E, F)) :
       MemSobolev (k : ℝ) 2 (TemperedDistribution.smulLeftCLM F g f.toDistr) :=
-    f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num) (by simp) hg hbd
+    f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num) (by simp) hbd
   let L : H^{(k : ℝ), 2}(E, F) →ₗ[ℂ] H^{(k : ℝ), 2}(E, F) :=
     { toFun f := (hmem f).toBesselPotentialSpace
       map_add' f f' := BesselPotentialSpace.ext (by simp)
@@ -112,8 +112,8 @@ private theorem hasSobolevExtension_smulLeftCLM_neg_natCast (k : ℕ) {g : E →
     HasSobolevExtension (smulLeftCLM F g) (-k) (-k) := by
   set g' : E → ℂ := fun x ↦ conj (g x)
   have hg' : g'.HasTemperateGrowth := Complex.conjCLE.hasTemperateGrowth.comp hg
-  refine (hasSobolevExtension_smulLeftCLM_natCast (F := F) k hg' fun n hn ↦ ?_).of_integral_inner_eq
-    fun u v ↦ ?_
+  refine (hasSobolevExtension_smulLeftCLM_natCast (F := F) (g := g') k fun n hn ↦ ?_)
+    |>.of_integral_inner_eq fun u v ↦ ?_
   · obtain ⟨C, hC⟩ := hbd n hn
     exact ⟨C, fun x ↦ (Complex.conjLIE.norm_iteratedFDeriv_comp_left g x n).trans_le (hC x)⟩
   -- Move the multiplier to the other side of the pairing.
@@ -129,7 +129,7 @@ private theorem hasSobolevExtension_smulLeftCLM_intCast (j : ℤ) {g : E → ℂ
     HasSobolevExtension (smulLeftCLM F g) j j := by
   obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg j
   · rw [Int.cast_natCast]
-    exact hasSobolevExtension_smulLeftCLM_natCast k hg (by simpa using hbd)
+    exact hasSobolevExtension_smulLeftCLM_natCast k (by simpa using hbd)
   · rw [Int.cast_neg, Int.cast_natCast]
     exact hasSobolevExtension_smulLeftCLM_neg_natCast k hg (by simpa using hbd)
 

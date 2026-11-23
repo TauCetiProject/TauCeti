@@ -243,8 +243,7 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : p �
       obtain ⟨A, -, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
       simp only [hAy]
       exact fun n hn ↦ ⟨_, hΦ.1.norm_iteratedFDeriv_clm_fderiv_apply_le (by simp) A hL v n hn⟩
-    exact MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
-      (hΦ.basis_repr_fderiv_apply b.toBasis v i) hc
+    exact MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hc
       (ih (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) (by simpa using hT'.2 (b i)))
 
 /-- **Pullback on `H^{-k,p}`.** Let `1 < p < ∞` and let `Φ` be a bijection such that `Φ` and
@@ -291,11 +290,11 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_top : 
           (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) (b i)) j : ℝ) : ℂ))
           (compCLM F Φ hΦ hΨ (w i)), ?_, fun j ↦ ?_, ?_⟩
     · exact (ih' hu).sub (MemSobolev.sum fun j _ ↦ MemSobolev.sum fun i _ ↦
-        MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top ((hct _ _).fderiv_apply _)
+        MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top
           ((hct _ _).1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) (hcb _ _) _)
           (ih' (hw i)))
     · exact MemSobolev.sum fun i _ ↦ MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top
-        (hct _ _) (fun n hn ↦ hcb _ _ n (by omega)) (ih' (hw i))
+        (fun n hn ↦ hcb _ _ n (by omega)) (ih' (hw i))
     · simp only [map_add, map_sum, compCLM_lineDerivOp_eq_sum_sub b.toBasis hΦ hΨ,
         OrthonormalBasis.coe_toBasis, LineDeriv.lineDerivOp_sum]
       conv_lhs => rw [Finset.sum_comm]
