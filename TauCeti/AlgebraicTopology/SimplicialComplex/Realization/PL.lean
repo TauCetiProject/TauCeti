@@ -27,44 +27,44 @@ variable {ι κ ν : Type*}
 
 /-- The ambient coordinate image of the weak polyhedron of `A`. -/
 abbrev realizedCoords (A : PreAbstractSimplicialComplex ι) : Set (ι → ℝ) :=
-  range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} =>
-    (x.1.1 : ι → ℝ)
+  range fun x : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ A} =>
+    (x.val.val : ι → ℝ)
 
 /-- `A` and `B` have homeomorphic weak polyhedra via some `e` such that `e` and `e.symm` extend to
 maps between their ambient coordinate spaces that are piecewise linear on the respective
 coordinate images. The complexes may have different vertex types. -/
 def PLHomeomorphic (A : PreAbstractSimplicialComplex ι)
     (B : PreAbstractSimplicialComplex κ) : Prop :=
-  ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.1.support ∈ B},
+  ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.val.support ∈ B},
     ∃ f : (ι → ℝ) → (κ → ℝ), ∃ g : (κ → ℝ) → (ι → ℝ),
       IsPLOn f (realizedCoords A) ∧
       IsPLOn g (realizedCoords B) ∧
-      (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-      (∀ y, g (y.1.1 : κ → ℝ) = (e.symm y).1.1)
+      (∀ x, f (x.val.val : ι → ℝ) = (e x).val.val) ∧
+      (∀ y, g (y.val.val : κ → ℝ) = (e.symm y).val.val)
 
 /-- The witness characterization of `PLHomeomorphic`. -/
 theorem plHomeomorphic_iff {A : PreAbstractSimplicialComplex ι}
     {B : PreAbstractSimplicialComplex κ} :
     PLHomeomorphic A B ↔
-      ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-          {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.1.support ∈ B},
+      ∃ e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ A} ≃ₜ
+          {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.val.support ∈ B},
         ∃ f : (ι → ℝ) → (κ → ℝ), ∃ g : (κ → ℝ) → (ι → ℝ),
           IsPLOn f (realizedCoords A) ∧
           IsPLOn g (realizedCoords B) ∧
-          (∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1) ∧
-          (∀ y, g (y.1.1 : κ → ℝ) = (e.symm y).1.1) := Iff.rfl
+          (∀ x, f (x.val.val : ι → ℝ) = (e x).val.val) ∧
+          (∀ y, g (y.val.val : κ → ℝ) = (e.symm y).val.val) := Iff.rfl
 
 /-- Construct a `PLHomeomorphic` witness from its homeomorphism and coordinate formulas. -/
 theorem PLHomeomorphic.intro {A : PreAbstractSimplicialComplex ι}
     {B : PreAbstractSimplicialComplex κ}
-    (e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ A} ≃ₜ
-      {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.1.support ∈ B})
+    (e : {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ A} ≃ₜ
+      {x : Realization (⊤ : AbstractSimplicialComplex κ) // x.val.support ∈ B})
     (f : (ι → ℝ) → (κ → ℝ)) (g : (κ → ℝ) → (ι → ℝ))
     (hf : IsPLOn f (realizedCoords A))
     (hg : IsPLOn g (realizedCoords B))
-    (he : ∀ x, f (x.1.1 : ι → ℝ) = (e x).1.1)
-    (heinv : ∀ y, g (y.1.1 : κ → ℝ) = (e.symm y).1.1) :
+    (he : ∀ x, f (x.val.val : ι → ℝ) = (e x).val.val)
+    (heinv : ∀ y, g (y.val.val : κ → ℝ) = (e.symm y).val.val) :
     PLHomeomorphic A B :=
   plHomeomorphic_iff.mpr ⟨e, f, g, hf, hg, he, heinv⟩
 

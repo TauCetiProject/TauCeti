@@ -76,7 +76,7 @@ theorem sum_fiber_apply_eq_algebraMap_trace [FiniteDimensional K M] [IsGalois K 
     rw [hf, h, AlgEquiv.one_apply]
   -- the kernel of `f` is `Gal(M/L)`, viewed inside `Gal(M/K)`
   let e : f.ker ≃ Gal(M/L) :=
-    { toFun t := AlgEquiv.ofRingEquiv (f := (t : Gal(M/K)).toRingEquiv) ((hker _).1 t.2)
+    { toFun t := AlgEquiv.ofRingEquiv (f := (t : Gal(M/K)).toRingEquiv) ((hker _).1 t.property)
       invFun τ := ⟨τ.restrictScalars K, (hker _).2 τ.commutes⟩
       left_inv _ := Subtype.ext <| AlgEquiv.ext fun _ ↦ rfl
       right_inv _ := AlgEquiv.ext fun _ ↦ rfl }

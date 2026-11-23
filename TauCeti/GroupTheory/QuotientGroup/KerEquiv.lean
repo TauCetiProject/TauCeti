@@ -35,6 +35,9 @@ Mathlib.
 * `TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk`: the isomorphism
   `G ⧸ φ.ker ≃* φ.range` sends the class of `g` to `φ g`; its additive counterpart is
   `TauCeti.QuotientAddGroup.quotientKerEquivRange_apply_mk`.
+* `TauCeti.QuotientGroup.quotientKerEquivRange_symm_apply`: the inverse sends `φ g` back to the
+  class of `g`; its additive counterpart is
+  `TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply`.
 
 The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
 and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
@@ -74,6 +77,15 @@ theorem quotientKerEquivOfSurjective_symm_apply (g : G) :
 theorem quotientKerEquivRange_apply_mk (g : G) :
     QuotientGroup.quotientKerEquivRange φ g = ⟨φ g, g, rfl⟩ :=
   rfl
+
+/-- The inverse of the first isomorphism theorem onto the range sends `φ g` to the class of
+`g`. -/
+@[to_additive (attr := simp) TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply
+  /-- The inverse of the first isomorphism theorem onto the range of an additive homomorphism
+  sends `φ g` to the class of `g`. -/]
+theorem quotientKerEquivRange_symm_apply (g : G) :
+    (QuotientGroup.quotientKerEquivRange φ).symm (φ.rangeRestrict g) = (g : G ⧸ φ.ker) :=
+  (MulEquiv.symm_apply_eq _).2 (quotientKerEquivRange_apply_mk φ g).symm
 
 end QuotientGroup
 

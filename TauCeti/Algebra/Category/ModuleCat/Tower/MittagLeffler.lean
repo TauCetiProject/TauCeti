@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
-public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.CategoryTheory.CofilteredSystem
 public import Mathlib.RingTheory.Artinian.Module
+
+import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Mittag-Leffler towers of modules
@@ -41,19 +42,19 @@ transitions reduce a family in `∏ₙ Aₙ`, modulo the image of the shift, to 
   `TauCeti.ModuleTower.isMittagLeffler_of_isArtinian`: towers with eventually surjective
   transitions, towers with surjective transitions, and towers of Artinian modules, are
   Mittag-Leffler.
+* `TauCeti.ModuleTower.exists_limπ_eq_of_forall_mem_range`: in a Mittag-Leffler tower, an element
+  of `Aₙ` in the image of every composite transition into `Aₙ` lifts to `lim A`.
 * `TauCeti.ModuleTower.shift_surjective_of_isMittagLeffler`,
   `TauCeti.ModuleTower.subsingleton_limOne_of_isMittagLeffler`: Mittag-Leffler towers have
   surjective shift map, hence vanishing `lim¹`.
 
 ## References
 
-* [Stacks: Algebra, Definition 10.86.1, Tag 0594](https://stacks.math.columbia.edu/tag/0594)
+* [Stacks: Algebra, Definition 10.86.1, Tag 0595](https://stacks.math.columbia.edu/tag/0595)
 * [Stacks: More on Algebra, Lemma 15.88.1, Tag 07KW](https://stacks.math.columbia.edu/tag/07KW)
 -/
 
 public section
-
-noncomputable section
 
 namespace TauCeti
 
@@ -130,6 +131,23 @@ theorem isMittagLeffler_of_isArtinian [∀ n, IsArtinian R (F.obj (op n))] : F.I
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le ((Nat.le_add_right n N).trans hk)
   exact (OrderDual.toDual_inj.1 (hN j (by omega))).symm
 
+/-- **Lifting along a Mittag-Leffler tower.** In a Mittag-Leffler tower, an element of `Aₙ` lying
+in the image of every composite transition `Aₖ → Aₙ` is the `n`th component of an element of
+`lim A`. -/
+theorem exists_limπ_eq_of_forall_mem_range (h : F.IsMittagLeffler) {n : ℕ} (x : F.obj (op n))
+    (hx : ∀ k (hnk : n ≤ k), x ∈ LinearMap.range (F.transitionOfLE hnk)) :
+    ∃ y : F.lim, F.limπ n y = x := by
+  -- `x` lies in the eventual range of the underlying functor to types, and elements of the
+  -- eventual ranges lift along the transitions through the eventual ranges.
+  refine F.exists_limπ_eq_of_forall_exists_transition_eq
+    (fun k y ↦ y ∈ (F ⋙ forget (ModuleCat R)).eventualRange (op k)) (fun k y hy ↦ ?_)
+    ((F ⋙ forget (ModuleCat R)).mem_eventualRange_iff.2 fun k f ↦ ?_)
+  · obtain ⟨y', hy', rfl⟩ :=
+      h.subset_image_eventualRange (F ⋙ forget (ModuleCat R)) (homOfLE (Nat.le_succ k)).op hy
+    exact ⟨y', hy', by simp⟩
+  · rw [range_forget_map]
+    exact hx k.unop (leOfHom f.unop)
+
 /-- Let `Bₙ ⊆ Aₙ` be submodules such that, for every `n`, some composite transition `Aₘ → Aₙ` has
 image in `Bₙ`. Then every family `(bₙ)` agrees with the image of some family under the shift
 map modulo the `Bₙ`. -/
@@ -153,15 +171,11 @@ private theorem exists_sub_shift_mem (B : ∀ n, Submodule R (F.obj (op n)))
     congr 1
     exact Finset.sum_congr rfl fun k hk ↦ (hg_succ (Finset.mem_Ico.1 hk).1).symm
   -- An increasing sequence of truncation points `Mₙ ≥ n + 1` with `Mₙ ≥ mₙ`.
-  let M (n : ℕ) : ℕ := n + 1 + (Finset.range (n + 1)).sup m
+  let M (n : ℕ) : ℕ := n + 1 + partialSups m n
   have hM_succ (n : ℕ) : n + 1 ≤ M n := Nat.le_add_right _ _
-  have hM_mono (n : ℕ) : M n ≤ M (n + 1) := by
-    have : (Finset.range (n + 1)).sup m ≤ (Finset.range (n + 1 + 1)).sup m :=
-      Finset.sup_mono (Finset.range_subset_range.2 (Nat.le_succ _))
-    simp only [M]
-    omega
-  have hM_ge (n : ℕ) : m n ≤ M n :=
-    (Finset.le_sup (Finset.self_mem_range_succ n)).trans (Nat.le_add_left _ _)
+  have hM_mono (n : ℕ) : M n ≤ M (n + 1) :=
+    Nat.add_le_add (Nat.le_succ _) ((partialSups m).monotone (Nat.le_succ n))
+  have hM_ge (n : ℕ) : m n ≤ M n := (le_partialSups m n).trans (Nat.le_add_left _ _)
   refine ⟨fun n ↦ s n (M n), fun n ↦ ?_⟩
   -- `bₙ - δ(y)ₙ = s n Mₙ₊₁ - s n Mₙ` is a sum of terms `φₙₖ(bₖ)` with `k ≥ Mₙ ≥ mₙ`.
   have hsum : b n - F.shift (fun n ↦ s n (M n)) n =

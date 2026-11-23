@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 
 /-!
 # Mollifying a distributional Cauchy–Riemann equation
@@ -44,17 +45,9 @@ theorem conjWirtingerDeriv_convolution_right_of_integral_eq
     (hx : ∀ y ∈ tsupport ρ, x - y ∈ Ω) :
     conjWirtingerDeriv (u ⋆[(lsmul ℝ ℝ).flip] ρ) x 1 =
       (f ⋆[(lsmul ℝ ℝ).flip] ρ) x := by
-  have hsmooth : ContDiff ℝ ∞ fun z ↦ ρ (x - z) := by fun_prop
-  have hcpt : HasCompactSupport fun z ↦ ρ (x - z) :=
-    hρc.comp_homeomorph (Homeomorph.subLeft x)
-  have hsupp : tsupport (fun z ↦ ρ (x - z)) ⊆ Ω := fun z hz ↦ by
-    simpa using hx _ (tsupport_comp_subset_preimage ρ (f := (x - ·)) (by fun_prop) hz)
-  have hline (z v : ℂ) : lineDeriv ℝ (fun t ↦ ρ (x - t)) z v =
-      -fderiv ℝ ρ (x - z) v := by
-    simpa [Function.comp_def] using ((hρ.differentiable (by simp) (x - z)).hasFDerivAt.comp z
-      ((hasFDerivAt_id z).const_sub x)).hasLineDerivAt v |>.lineDeriv
-  have hweak := h ⟨_, hsmooth, hcpt, hsupp⟩
-  simp only [TestFunction.coe_mk, hline, neg_smul, integral_neg, smul_neg] at hweak
+  have hweak := h (reflectTranslateTestFunction ρ x hρ hρc hx)
+  simp only [lineDeriv_reflectTranslateTestFunction, reflectTranslateTestFunction_apply, neg_smul,
+    integral_neg, smul_neg] at hweak
   have hd := hρc.hasFDerivAt_convolution_right (lsmul ℝ ℝ).flip hu (hρ.of_le (by simp)) x
   have hD (v : ℂ) : fderiv ℝ (u ⋆[(lsmul ℝ ℝ).flip] ρ) x v =
       ∫ z, fderiv ℝ ρ (x - z) v • u z := by

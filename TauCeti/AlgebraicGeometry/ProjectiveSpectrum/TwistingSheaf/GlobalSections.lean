@@ -106,7 +106,7 @@ takes the value `q / 1` at every point. -/
 private theorem exists_forall_apply_eq (b : Module.Basis κ R M) [Nontrivial κ] {n : ℤ}
     (i : κ) (s : Γ(Proj.twistingSheaf 𝒜 n, ⊤)) :
     ∃ (k j : ℕ) (_ : (j : ℤ) = k + n) (q : _root_.SymmetricAlgebra R M),
-      ι R M (b i) ^ k * q ∈ 𝒜 j ∧ ∀ y, s.1 y = Localization.mk q 1 := by
+      ι R M (b i) ^ k * q ∈ 𝒜 j ∧ ∀ y : (⊤ : (Proj 𝒜).Opens), s.val y = Localization.mk q 1 := by
   -- on each chart `D₊(Xₗ)`, the section is a fraction `r l / Xₗ ^ k l`
   choose k j h r hr H using fun l : κ ↦ Proj.twistingSheaf.exists_eq_const_basicOpen
     (ι_mem_homogeneousSubmodule R M (b l)) one_pos
@@ -122,13 +122,13 @@ private theorem exists_forall_apply_eq (b : Module.Basis κ R M) [Nontrivial κ]
       beta_reduce
       rw [← hrel, hq]; ring
   refine ⟨k i, j i, by simpa using h i, q, hq ▸ hr i, fun y ↦ ?_⟩
-  obtain ⟨l, hl⟩ : ∃ l, y.1 ∈ Proj.basicOpen 𝒜 (ι R M (b l)) := by
-    have hy : y.1 ∈ ⨆ l, Proj.basicOpen 𝒜 (ι R M (b l)) := by
+  obtain ⟨l, hl⟩ : ∃ l, y.val ∈ Proj.basicOpen 𝒜 (ι R M (b l)) := by
+    have hy : y.val ∈ ⨆ l, Proj.basicOpen 𝒜 (ι R M (b l)) := by
       rw [iSup_basicOpen_ι_eq_top R M b b.span_eq]
       trivial
     exact TopologicalSpace.Opens.mem_iSup.mp hy
   have e := Proj.twistingSheaf.res_apply (homOfLE (le_top (a := Proj.basicOpen 𝒜 (ι R M (b l))))) s
-    ⟨y.1, hl⟩
+    ⟨y.val, hl⟩
   rw [H l] at e
   refine e.symm.trans ((Proj.twistingSheaf.const_apply ..).trans
     (Localization.mk_eq_mk_iff.mpr (Localization.r_iff_exists.mpr ⟨1, ?_⟩)))
@@ -148,8 +148,7 @@ theorem twistingSheaf_top_eq_zero_of_neg {n : ℤ} (hn : n < 0) (b : Module.Basi
     rw [← DirectSum.decompose_of_mem_same 𝒜 hq,
       DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 hpow (by omega)]
   ext y
-  rw [hs, ((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
-  exact (Proj.twistingSheaf.zero_apply y).symm
+  simp [hs, ((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
 
 /-- **The global sections of `𝒪(j)` on projective space are the forms of degree `j`**: for
 `M` free of rank at least two, the map `r ↦ r / 1` from the homogeneous elements of degree `j` of
@@ -176,13 +175,13 @@ theorem bijective_toTwistingSheaf_top (j : ℕ) (b : Module.Basis κ R M) [Nontr
       rw [← DirectSum.decompose_of_mem_same 𝒜 hq,
         DirectSum.coe_decompose_mul_of_left_mem_of_le 𝒜 (hpow k) (by omega),
         show j' - k = j by omega]
-    refine ⟨⟨q, hqj ▸ (DirectSum.decompose 𝒜 q j).2⟩, Proj.twistingSheaf.ext fun y ↦ ?_⟩
+    refine ⟨⟨q, hqj ▸ (DirectSum.decompose 𝒜 q j).property⟩, Proj.twistingSheaf.ext fun y ↦ ?_⟩
     exact (Proj.toTwistingSheaf_apply_apply ..).trans (hs y).symm
 
 /-- The base ring acts on the global functions on `Proj (Sym M)` as constants: the image of `c`
 takes the value `c / 1` in the localization at every point. -/
 theorem val_baseRingToGlobalSections_apply (c : R) (x : (⊤ : (Proj 𝒜).Opens)) :
-    ((Scheme.Modules.baseRingToGlobalSections R (Proj 𝒜) c).1 x).val =
+    ((Scheme.Modules.baseRingToGlobalSections R (Proj 𝒜) c).val x).val =
       Localization.mk (algebraMap R (_root_.SymmetricAlgebra R M) c) 1 := by
   rw [Scheme.Modules.baseRingToGlobalSections_apply, over_eq_projToSpec, projToSpec_def,
     ← Proj.toSpecCoeff_def]

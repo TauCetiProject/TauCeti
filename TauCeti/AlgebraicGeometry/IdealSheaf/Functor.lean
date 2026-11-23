@@ -63,6 +63,11 @@ order and lattice operations through the functor's object presentation. -/
 instance (T : (Over S)ᵒᵖ) : CompleteLattice ((baseChangeIdealSheafFunctor f).obj T) :=
   inferInstanceAs (CompleteLattice (pullback T.unop.hom f).IdealSheafData)
 
+/-- Ideal-sheaf values of the base-change functor retain their native commutative semiring
+structure, with multiplication given by products of ideals. -/
+instance (T : (Over S)ᵒᵖ) : CommSemiring ((baseChangeIdealSheafFunctor f).obj T) :=
+  inferInstanceAs (CommSemiring (pullback T.unop.hom f).IdealSheafData)
+
 /-- `baseChangeIdealSheafFunctor f` acts by pullback of ideal sheaves along the induced morphism
 of base changes. -/
 @[simp]

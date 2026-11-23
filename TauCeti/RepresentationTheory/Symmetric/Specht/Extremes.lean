@@ -156,7 +156,7 @@ private theorem spechtSubrepresentation_toRepresentation_apply (t : YoungTableau
   have hx : (x : (permutationModule (R := ℚ) (shapePartition μ)).V) ∈ ℚ ∙ polytabloid (R := ℚ) t
     := by
     rw [← spechtSubrepresentation_toSubmodule_eq_span t h]
-    exact x.2
+    exact x.property
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
   refine Subtype.ext ?_
   rw [Subrepresentation.toRepresentation_apply, LinearMap.coe_restrict_apply, Submodule.coe_smul,

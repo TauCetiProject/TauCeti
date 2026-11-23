@@ -70,6 +70,6 @@ theorem measurable_inverseWishartMeasure_selfAdjoint :
     Measurable fun q : ℝ × selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       inverseWishartMeasure q.1 (q.2 : Matrix (Fin p) (Fin p) ℝ) :=
   measurable_inverseWishartMeasure.comp
-    (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
+    (measurable_fst.prodMk (measurable_subtypeVal.comp measurable_snd))
 
 end TauCeti.Probability
