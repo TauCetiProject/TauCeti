@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -32,15 +33,17 @@ The same kernel condition makes the zero section isolated among the critical poi
 (`TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`), since the derivative of `Df` at `(a, 0)`
 is injective on the fibre directions.
 
-The same estimate gives **Łojasiewicz's gradient inequality with exponent `1 / 2`** at a
-Morse–Bott point (`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`): near `(a, 0)`,
-`lam * |f z - f (a, 0)| ≤ ‖Df z‖ ^ 2` for some `lam > 0`. Both sides are comparable to `‖z.2‖ ^ 2`:
-the differential grows at least linearly with the distance `‖z.2‖` to the zero section, since its
-derivative is injective on the fibre directions, and at most linearly, since it is Lipschitz and
-vanishes on the zero section; integrating the upper bound along the fibre segments bounds
-`|f z - f (a, 0)|` by a multiple of `‖z.2‖ ^ 2` (`TauCeti.exists_abs_sub_le_mul_norm_snd_sq`).
-This is the estimate that controls the length of negative gradient trajectories approaching a
-Morse–Bott critical submanifold.
+Quantitatively, the differential grows linearly with the distance to the zero section: near
+`(a, 0)`, `‖Df(z)‖ ≥ c ‖z.2‖` for some `c > 0` (`TauCeti.exists_mul_norm_snd_le_norm_fderiv`). On
+the other hand, near a point of any critical zero section the critical value is constant along it,
+and the energy difference is quadratic in the distance to it,
+`|f z - f (a, 0)| ≤ C ‖z.2‖ ^ 2` (`TauCeti.exists_abs_sub_le_mul_norm_snd_sq`). Together these give
+the **Morse–Bott form of Łojasiewicz's gradient inequality** with exponent `1 / 2`,
+`lam * |f z - f (a, 0)| ≤ ‖Df(z)‖ ^ 2`
+(`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`). It is the input for the exponential
+convergence of gradient trajectories to points of a Morse–Bott critical submanifold, exactly as at
+a nondegenerate critical point, although near a Morse–Bott zero section the critical points need
+not be isolated.
 
 With the parametric Morse lemma this gives the **Morse–Bott lemma** in product coordinates
 (`TauCeti.exists_morseBott_chart_of_contDiffOn`): if `f` is `C^{n+2}` near `(a, 0)`, with
@@ -69,10 +72,12 @@ orthogonal to the fibre.
   Morse–Bott point of the zero section is invertible.
 * `TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`: near a Morse–Bott point of the zero
   section, the critical points are exactly the points of the zero section.
-* `TauCeti.exists_abs_sub_le_mul_norm_snd_sq`: near a critical zero section the energy difference
-  is at most quadratic in the fibre coordinate.
-* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`: the Łojasiewicz inequality with
-  exponent `1 / 2` at a Morse–Bott point of the zero section.
+* `TauCeti.exists_mul_norm_snd_le_norm_fderiv`: near a Morse–Bott point of the zero section, the
+  differential is bounded below by a multiple of the distance to the zero section.
+* `TauCeti.exists_abs_sub_le_mul_norm_snd_sq`: near a point of a critical zero section, the energy
+  difference is bounded by a multiple of the squared distance to it.
+* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`: the Morse–Bott form of
+  Łojasiewicz's gradient inequality.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
 * `TauCeti.exists_congruence_fderiv_fderiv_slice_right`: nearby vertical Hessians are congruent
   by a `C^n` family of invertible operators.
@@ -123,6 +128,36 @@ theorem isInvertible_fderiv_fderiv_slice_right_of_ker_le [FiniteDimensional ℝ 
   obtain ⟨u, hu⟩ := hker hmem
   simpa using (congrArg Prod.snd hu).symm
 
+/-- **The critical value is locally constant along a critical zero section.** If every point
+`(b, 0)` with `b` near `a` is a critical point of `f` at which `f` is differentiable, then
+`f (b, 0) = f (a, 0)` for every `b` near `a`. -/
+theorem eventually_apply_mk_zero_eq (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hdiff : ∀ᶠ b in 𝓝 a, DifferentiableAt ℝ f (b, 0)) :
+    ∀ᶠ b in 𝓝 a, f (b, 0) = f (a, 0) := by
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hcrit.and hdiff)
+  -- On the ball of radius `r`, the restriction `b ↦ f (b, 0)` has derivative zero.
+  have hd : ∀ b ∈ Metric.ball a r, HasFDerivAt (fun b ↦ f (b, 0)) 0 b := fun b hb ↦ by
+    have hd := (hball b hb).2.hasFDerivAt.comp b (hasFDerivAt_prodMk_left (𝕜 := ℝ) b (0 : F))
+    rwa [(hball b hb).1, ContinuousLinearMap.zero_comp] at hd
+  filter_upwards [Metric.ball_mem_nhds a hr] with b hb
+  exact (convex_ball a r).is_const_of_fderivWithin_eq_zero
+    (fun b hb ↦ (hd b hb).differentiableAt.differentiableWithinAt)
+    (fun b hb ↦ by rw [fderivWithin_of_isOpen Metric.isOpen_ball hb, (hd b hb).fderiv])
+    hb (Metric.mem_ball_self hr)
+
+/-- At a Morse–Bott point of a critical zero section, the differential of `f` has a strict
+derivative, the Hessian, which is injective on the fibre directions. -/
+private theorem hasStrictFDerivAt_fderiv_and_injective (hf : ContDiffAt ℝ 2 f (a, 0))
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    HasStrictFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) (a, 0)) (a, 0) ∧
+      Function.Injective (fderiv ℝ (fderiv ℝ f) (a, 0) ∘L ContinuousLinearMap.inr ℝ P F) := by
+  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
+  refine ⟨hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero,
+    (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_⟩
+  -- A fibre vector `(0, v)` in the kernel of the Hessian is a base direction, so `v = 0`.
+  obtain ⟨u, hu⟩ := hker (LinearMap.mem_ker.2 hv)
+  simpa using (congrArg Prod.snd hu).symm
+
 /-- **A Morse–Bott zero section is isolated among critical points.** If `f` is `C²` at `(a, 0)`,
 every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
 consists of base directions, then near `(a, 0)` the critical points of `f` are exactly the points
@@ -130,89 +165,90 @@ of the zero section. -/
 theorem eventually_fderiv_eq_zero_iff_snd_eq_zero [FiniteDimensional ℝ F]
     (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
-    ∀ᶠ z in 𝓝 (a, (0 : F)), fderiv ℝ f z = 0 ↔ z.2 = 0 := by
-  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
-  refine (hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
-    ).eventually_apply_eq_zero_iff_snd_eq_zero hcrit <|
-    (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
-  -- A fibre vector `(0, v)` in the kernel of the Hessian is a base direction, so `v = 0`.
-  obtain ⟨u, hu⟩ := hker (LinearMap.mem_ker.2 hv)
-  simpa using (congrArg Prod.snd hu).symm
+    ∀ᶠ z in 𝓝 (a, (0 : F)), fderiv ℝ f z = 0 ↔ z.2 = 0 :=
+  have h := hasStrictFDerivAt_fderiv_and_injective hf hker
+  h.1.eventually_apply_eq_zero_iff_snd_eq_zero hcrit h.2
 
-/-- **Near a critical zero section the energy difference is quadratic in the fibre coordinate.**
-If `f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then near
-`(a, 0)` the energy difference `|f z - f (a, 0)|` is at most a fixed multiple of `‖z.2‖ ^ 2`. -/
+/-- **Near a Morse–Bott zero section the differential grows linearly with the distance to it.**
+If `f` is `C²` at `(a, 0)`, every point `(b, 0)` with `b` near `a` is critical, and the kernel of
+the Hessian at `(a, 0)` consists of base directions, then near `(a, 0)` the differential of `f` at
+`z` has norm at least a fixed positive multiple of `‖z.2‖`. -/
+theorem exists_mul_norm_snd_le_norm_fderiv [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    ∃ c > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), c * ‖z.2‖ ≤ ‖fderiv ℝ f z‖ :=
+  have h := hasStrictFDerivAt_fderiv_and_injective hf hker
+  h.1.exists_mul_norm_snd_le_norm_apply hcrit h.2
+
+/-- **Near a critical zero section the energy difference is quadratic in the distance to it.** If
+`f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then near `(a, 0)`
+the difference `|f z - f (a, 0)|` is at most a fixed multiple of `‖z.2‖ ^ 2`. No nondegeneracy is
+needed. -/
 theorem exists_abs_sub_le_mul_norm_snd_sq (hf : ContDiffAt ℝ 2 f (a, 0))
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) :
     ∃ C > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), |f z - f (a, 0)| ≤ C * ‖z.2‖ ^ 2 := by
-  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
-  -- The differential is at most `K * ‖z.2‖`, being Lipschitz and zero on the zero section.
-  obtain ⟨K, s, hs, hK⟩ :=
-    (hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
-      ).exists_lipschitzOnWith
-  have hπ : Tendsto (fun z : P × F ↦ (z.1, (0 : F))) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
-  -- A point differs from its projection to the zero section by its fibre coordinate.
-  have hsub (z : P × F) : z - (z.1, 0) = (0, z.2) := by ext <;> simp
-  have hup : ∀ᶠ z in 𝓝 (a, (0 : F)), ‖fderiv ℝ f z‖ ≤ K * ‖z.2‖ := by
-    filter_upwards [hs, hπ.eventually hs, (continuous_fst.tendsto' _ _ rfl).eventually hcrit]
-      with z hzs hzs' hz0
-    have h := hK.norm_sub_le hzs hzs'
-    rwa [hz0, sub_zero, hsub, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _)] at h
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 ((hf.eventually (by simp)).and hup)
-  refine ⟨K + 1, by positivity, eventually_of_mem (ball_mem_nhds _ hr) fun z hz ↦ ?_⟩
-  -- Along a segment in the ball on which `‖w.2‖ ≤ ρ`, the differential is at most `K * ρ`.
-  have hvar {x y : P × F} {ρ : ℝ} (hx : x ∈ ball (a, (0 : F)) r) (hy : y ∈ ball (a, (0 : F)) r)
-      (hρ : ∀ w ∈ segment ℝ x y, ‖w.2‖ ≤ ρ) : ‖f y - f x‖ ≤ K * ρ * ‖y - x‖ :=
-    (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
-      (fun w hw ↦ ((hball w ((convex_ball _ _).segment_subset hx hy hw)).1).differentiableAt
-        (by simp))
-      (fun w hw ↦ ((hball w ((convex_ball _ _).segment_subset hx hy hw)).2).trans
-        (by gcongr; exact hρ w hw)) (left_mem_segment ℝ x y) (right_mem_segment ℝ x y)
-  have hz' : (z.1, (0 : F)) ∈ ball (a, (0 : F)) r := by
-    rw [mem_ball] at hz ⊢
-    refine lt_of_le_of_lt ?_ hz
-    rw [Prod.dist_eq, Prod.dist_eq, dist_self]
-    exact max_le_max le_rfl dist_nonneg
-  -- `f` is constant along the zero section, and varies by at most `K * ‖z.2‖ ^ 2` along the
-  -- fibre segment from `(z.1, 0)` to `z`.
-  have hconst : f (z.1, 0) = f (a, 0) := by
-    have h := hvar (mem_ball_self hr) hz' (ρ := 0) fun w ⟨α, β, _, _, _, hw⟩ ↦ by simp [← hw]
-    rwa [mul_zero, zero_mul, norm_le_zero_iff, sub_eq_zero] at h
-  have h := hvar hz' hz (ρ := ‖z.2‖) fun w ⟨α, β, hα, hβ, hαβ, hw⟩ ↦ by
-    rw [← hw, Prod.snd_add, Prod.smul_snd, Prod.smul_snd, smul_zero, zero_add, norm_smul,
-      Real.norm_of_nonneg hβ]
-    exact mul_le_of_le_one_left (norm_nonneg _) (by linarith)
-  rw [hsub, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _), mul_assoc, ← sq, hconst,
-    Real.norm_eq_abs] at h
-  exact h.trans (by gcongr; linarith)
+  -- The differential is `K`-Lipschitz on a neighbourhood `t` of `(a, 0)`.
+  obtain ⟨K, t, ht, hK⟩ := (hf.fderiv_right (m := 1) le_rfl).exists_lipschitzOnWith
+  have hdiff : ∀ᶠ z in 𝓝 (a, (0 : F)), DifferentiableAt ℝ f z := by
+    filter_upwards [hf.eventually (by simp)] with z hz
+    exact hz.differentiableAt (by simp)
+  -- Choose a radius `r` such that the ball of radius `r` around `(a, 0)` lies in `t`, `f` is
+  -- differentiable there, and over the ball of radius `r` around `a` the zero section is critical
+  -- with constant critical value.
+  obtain ⟨r₁, hr₁, hball₁⟩ :=
+    Metric.eventually_nhds_iff_ball.1 ((Filter.eventually_mem_set.2 ht).and hdiff)
+  have hdiff₀ : ∀ᶠ b in 𝓝 a, DifferentiableAt ℝ f (b, 0) :=
+    (continuous_id.prodMk continuous_const).continuousAt.eventually hdiff
+  obtain ⟨r₂, hr₂, hball₂⟩ :=
+    Metric.eventually_nhds_iff_ball.1 (hcrit.and (eventually_apply_mk_zero_eq hcrit hdiff₀))
+  set r := min r₁ r₂
+  have hr : 0 < r := lt_min hr₁ hr₂
+  refine ⟨K + 1, by positivity, Metric.eventually_nhds_iff_ball.2 ⟨r / 2, by positivity,
+    fun z hz ↦ ?_⟩⟩
+  have hz' : dist z.1 a < r / 2 ∧ ‖z.2‖ < r / 2 := by
+    simpa [Prod.dist_eq] using Metric.mem_ball.1 hz
+  -- On the closed ball of radius `‖z.2‖` around the projection `(z.1, 0)`, which lies in the
+  -- ball of radius `r`, the differential is at most `K ‖z.2‖`, since it vanishes at `(z.1, 0)`.
+  set x : P × F := (z.1, 0)
+  have hsub : Metric.closedBall x ‖z.2‖ ⊆ Metric.ball (a, (0 : F)) r := fun w hw ↦ by
+    have hx : dist x (a, 0) < r / 2 := by simpa [x, Prod.dist_eq] using hz'.1
+    calc dist w (a, 0) ≤ dist w x + dist x (a, 0) := dist_triangle _ _ _
+      _ < r / 2 + r / 2 := add_lt_add_of_le_of_lt ((Metric.mem_closedBall.1 hw).trans hz'.2.le) hx
+      _ = r := add_halves r
+  have hmem (w) (hw : w ∈ Metric.closedBall x ‖z.2‖) : w ∈ t ∧ DifferentiableAt ℝ f w :=
+    hball₁ _ (Metric.ball_subset_ball (min_le_left _ _) (hsub hw))
+  have hzr : z.1 ∈ Metric.ball a r := Metric.mem_ball.2 (hz'.1.trans (half_lt_self hr))
+  have hx0 : fderiv ℝ f x = 0 := (hball₂ z.1 (Metric.ball_subset_ball (min_le_right _ _) hzr)).1
+  have hxz : ‖z - x‖ = ‖z.2‖ := by simp [x, Prod.norm_def]
+  have hkey : ‖f z - f x‖ ≤ K * ‖z.2‖ * ‖z - x‖ := by
+    refine Convex.norm_image_sub_le_of_norm_fderiv_le (fun w hw ↦ (hmem w hw).2) (fun w hw ↦ ?_)
+      (convex_closedBall x ‖z.2‖) (Metric.mem_closedBall_self (norm_nonneg _)) ?_
+    · have hl := hK.dist_le_mul w (hmem w hw).1 x (hmem x (Metric.mem_closedBall_self
+        (norm_nonneg _))).1
+      rw [hx0, dist_zero_right] at hl
+      exact hl.trans (mul_le_mul_of_nonneg_left (Metric.mem_closedBall.1 hw) K.coe_nonneg)
+    · simp [Metric.mem_closedBall, dist_eq_norm, hxz]
+  rw [hxz, (hball₂ z.1 (Metric.ball_subset_ball (min_le_right _ _) hzr)).2] at hkey
+  calc |f z - f (a, 0)| = ‖f z - f (a, 0)‖ := (Real.norm_eq_abs _).symm
+    _ ≤ K * ‖z.2‖ * ‖z.2‖ := hkey
+    _ ≤ (K + 1) * ‖z.2‖ ^ 2 := by nlinarith [norm_nonneg z.2, K.coe_nonneg]
 
-/-- **Łojasiewicz's gradient inequality at a Morse–Bott point.** If `f` is `C²` at `(a, 0)`,
-every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
-consists of base directions, then near `(a, 0)` the energy difference `|f z - f (a, 0)|` is
-bounded by a multiple of `‖Df z‖ ^ 2`. This is the Łojasiewicz inequality with exponent `1 / 2`,
-holding on a whole neighbourhood of a piece of the critical zero section, along which `f` is
-constant. -/
+/-- **The Morse–Bott form of Łojasiewicz's gradient inequality.** If `f` is `C²` at `(a, 0)`, every
+point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)` consists of
+base directions, then near `(a, 0)` the absolute energy difference is bounded by a multiple of the
+squared norm of the differential: the Łojasiewicz inequality holds with exponent `1 / 2`, as at a
+nondegenerate critical point
+(`TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`), although the
+critical points near `(a, 0)` need not be isolated. -/
 theorem exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le [FiniteDimensional ℝ F]
     (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
     ∃ lam > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), lam * |f z - f (a, 0)| ≤ ‖fderiv ℝ f z‖ ^ 2 := by
-  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
-  -- The differential grows at least linearly with `‖z.2‖`: its derivative at `(a, 0)` is
-  -- injective on the fibre directions, since a fibre vector in the kernel is a base direction.
-  obtain ⟨c, hc, hlow⟩ :=
-    (hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
-      ).exists_mul_norm_snd_le_norm_apply hcrit <|
-    (injective_iff_map_eq_zero _).2 fun v hv ↦ by
-      obtain ⟨u, hu⟩ := hker (LinearMap.mem_ker.2 hv)
-      simpa using (congrArg Prod.snd hu).symm
-  -- The energy difference is at most quadratic in `‖z.2‖`.
-  obtain ⟨C, hC, hup⟩ := exists_abs_sub_le_mul_norm_snd_sq hf hcrit
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [hlow, hup] with z hz₁ hz₂
-  calc c ^ 2 / C * |f z - f (a, 0)| ≤ c ^ 2 / C * (C * ‖z.2‖ ^ 2) := by gcongr
-    _ = (c * ‖z.2‖) ^ 2 := by field_simp
-    _ ≤ ‖fderiv ℝ f z‖ ^ 2 := by gcongr
+  obtain ⟨c, hc, h1⟩ := exists_mul_norm_snd_le_norm_fderiv hf hcrit hker
+  obtain ⟨C, hC, h2⟩ := exists_abs_sub_le_mul_norm_snd_sq hf hcrit
+  exact exists_mul_le_sq_of_eventually_le_mul (g := fun z ↦ ‖z.2‖) (K := c⁻¹)
+    ⟨C⁻¹, by positivity, h2.mono fun _ hz ↦ by rwa [inv_mul_le_iff₀ hC]⟩
+    (.of_forall fun _ ↦ norm_nonneg _) (h1.mono fun _ hz ↦ by rwa [le_inv_mul_iff₀ hc])
 
 variable [FiniteDimensional ℝ P] [FiniteDimensional ℝ F] {W : Set (P × F)} {n : ℕ∞}
 
@@ -278,23 +314,16 @@ theorem exists_morseBott_chart_of_contDiffOn (hW : W ∈ 𝓝 (a, 0))
       ContinuousLinearMap.zero_comp]
   obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUV, -, hψfst, hψ0, hψsymm, hψ, hψinv, hψf⟩ :=
     exists_parametric_morse_chart_of_contDiffOn hW hf hcrit' hHa hn
-  -- Shrink the base to a ball on which the zero section is critical and the vertical Hessian
-  -- invertible; the critical value is constant on that ball.
+  -- Shrink the base to a ball on which the critical value is constant and the vertical Hessian
+  -- invertible.
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp
-    ((hU.eventually_mem haU).and ((hcrit.and hC2b).and hHb))
+    ((hU.eventually_mem haU).and ((eventually_apply_mk_zero_eq hcrit
+      (hC2b.mono fun b hb ↦ hb.differentiableAt (by norm_num))).and hHb))
   let ψ' := ψ.restrOpen (ball a r ×ˢ V) (isOpen_ball.prod hV)
   have hsource' : ψ'.source = ball a r ×ˢ V := by
     rw [OpenPartialHomeomorph.restrOpen_source, hsource, prod_inter_prod,
       inter_eq_right.mpr fun b hb ↦ (hball b hb).1, inter_self]
-  have hconst : ∀ b ∈ ball a r, f (b, 0) = f (a, 0) := by
-    have hdiff : ∀ b ∈ ball a r, HasFDerivAt (fun b ↦ f (b, 0)) 0 b := fun b hb ↦ by
-      have hd := ((hball b hb).2.1.2.differentiableAt (by norm_num)).hasFDerivAt.comp b
-        (hasFDerivAt_prodMk_left (𝕜 := ℝ) b (0 : F))
-      rwa [(hball b hb).2.1.1, ContinuousLinearMap.zero_comp] at hd
-    exact fun b hb ↦ (convex_ball a r).is_const_of_fderivWithin_eq_zero
-      (fun b hb ↦ (hdiff b hb).differentiableAt.differentiableWithinAt)
-      (fun b hb ↦ by rw [fderivWithin_of_isOpen isOpen_ball hb, (hdiff b hb).fderiv])
-      hb (mem_ball_self hr)
+  have hconst : ∀ b ∈ ball a r, f (b, 0) = f (a, 0) := fun b hb ↦ (hball b hb).2.1
   refine ⟨ψ', ball a r, V, isOpen_ball, hV, mem_ball_self hr, h0V, hsource',
     fun z hz ↦ hUV ⟨(hball z.1 hz.1).1, hz.2⟩, hψfst, hψ0, fun z hz ↦ hψsymm z hz.1,
     hψ.mono (by simp [ψ']), hψinv.mono fun z hz ↦ hz.1, hconst,

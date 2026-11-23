@@ -37,6 +37,9 @@ theorem). Those two facts are not proved here: only the inclusion of `N` in the 
   ideal form a Hopf subalgebra.
 * `TauCeti.CommHopfAlgCat.coinvariants`: the coordinate Hopf algebra of `G ⧸ N`.
 * `TauCeti.CommHopfAlgCat.coinvariantsι`: the coordinate map of the projection `G → G ⧸ N`.
+* `TauCeti.CommHopfAlgCat.coinvariants_eq_of_eq` and
+  `TauCeti.CommHopfAlgCat.eqToHom_comp_coinvariantsι`: transport of the coinvariants and their
+  coordinate inclusion along an equality of normal Hopf ideals.
 * `TauCeti.CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_le`: `N` lies in the kernel of the
   projection.
 * `TauCeti.CommHopfAlgCat.liftCoinvariants` and
@@ -130,11 +133,29 @@ noncomputable abbrev coinvariants (hI : I.IsNormal) : _root_.CommHopfAlgCat.{v} 
 noncomputable abbrev coinvariantsι (hI : I.IsNormal) : coinvariants hI ⟶ H :=
   hopfSubalgebraι hI.isHopfSubalgebra_coinvariants
 
+/-- Equal normal Hopf ideals have equal coinvariant coordinate Hopf algebras. -/
+theorem coinvariants_eq_of_eq {J : HopfIdeal R H}
+    [Module.Flat R J.coinvariants] [Module.Flat R (H ⧸ Subalgebra.toSubmodule J.coinvariants)]
+    (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
+    coinvariants hI = coinvariants hJ := by
+  subst hIJ
+  rfl
+
+/-- Transporting the coinvariants object along an equality of normal Hopf ideals commutes with the
+coordinate quotient inclusion. -/
+@[reassoc (attr := simp)]
+theorem eqToHom_comp_coinvariantsι {J : HopfIdeal R H}
+    [Module.Flat R J.coinvariants] [Module.Flat R (H ⧸ Subalgebra.toSubmodule J.coinvariants)]
+    (hI : I.IsNormal) (hJ : J.IsNormal) (hIJ : I = J) :
+    eqToHom (coinvariants_eq_of_eq hI hJ hIJ) ≫ coinvariantsι hJ = coinvariantsι hI := by
+  subst hIJ
+  simp
+
 /-- The normal subgroup `N` lies in the kernel of the projection `G → G ⧸ N`. -/
 theorem kernelHopfIdeal_coinvariantsι_le (hI : I.IsNormal) :
     kernelHopfIdeal (coinvariantsι hI) ≤ I :=
   (HopfIdeal.forall_hom_mem_coinvariants_iff _).mp fun x ↦
-    (hopfSubalgebraι_apply hI.isHopfSubalgebra_coinvariants x).symm ▸ x.2
+    (hopfSubalgebraι_apply hI.isHopfSubalgebra_coinvariants x).symm ▸ x.property
 
 /-- A homomorphism out of `G` whose kernel contains `N` factors through `G → G ⧸ N`: in
 coordinates, a morphism `f : K ⟶ H` whose kernel Hopf ideal is contained in `I` factors through

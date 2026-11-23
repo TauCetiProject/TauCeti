@@ -163,7 +163,7 @@ variable [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] [T2Space M] [
 /-- The times `t ≥ 0` for which the backward Liouville flow carries `x` into the Liouville domain
 form the closed half-line starting at their infimum. -/
 private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (x : M) (hT : 0 ≤ T) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (x : M) (hT : 0 ≤ T) :
     sInf {t : ℝ | 0 ≤ t ∧ flowOf Z (-t) x ∈ W} ≤ T ↔ flowOf Z (-T) x ∈ W := by
   obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   set S := {t : ℝ | 0 ≤ t ∧ flowOf Z (-t) x ∈ W}
@@ -194,19 +194,19 @@ private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
 /-- **The sublevel sets of the radial coordinate.** For `T ≥ 0`, `r(x) ≤ e^T` exactly when the
 backward Liouville flow `ψ_{-T}` carries `x` into the Liouville domain. -/
 theorem liouvilleRadialCoordinate_le_exp_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hT : 0 ≤ T) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hT : 0 ≤ T) :
     liouvilleRadialCoordinate Z W x ≤ Real.exp T ↔ flowOf Z (-T) x ∈ W := by
   rw [liouvilleRadialCoordinate, Real.exp_le_exp, h.sInf_le_iff hZ x hT]
 
 /-- The radial coordinate equals `1` exactly on the Liouville domain. -/
 theorem liouvilleRadialCoordinate_eq_one_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) : liouvilleRadialCoordinate Z W x = 1 ↔ x ∈ W := by
+    (hZ : RoughForm.interior Z ω.val = α.val) : liouvilleRadialCoordinate Z W x = 1 ↔ x ∈ W := by
   rw [← (one_le_liouvilleRadialCoordinate Z W x).ge_iff_eq', ← Real.exp_zero,
     h.liouvilleRadialCoordinate_le_exp_iff hZ le_rfl, neg_zero, flowOf_zero Z]
 
 /-- The radial coordinate is greater than `1` exactly outside the Liouville domain. -/
 theorem one_lt_liouvilleRadialCoordinate_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) : 1 < liouvilleRadialCoordinate Z W x ↔ x ∉ W := by
+    (hZ : RoughForm.interior Z ω.val = α.val) : 1 < liouvilleRadialCoordinate Z W x ↔ x ∉ W := by
   rw [← h.liouvilleRadialCoordinate_eq_one_iff hZ,
     (one_le_liouvilleRadialCoordinate Z W x).lt_iff_ne', ne_eq]
 
@@ -214,7 +214,7 @@ theorem one_lt_liouvilleRadialCoordinate_iff (h : IsLiouvilleCompletion ω α W)
 when the backward Liouville flow `ψ_{-T}` carries `x` into the interior of the Liouville
 domain. -/
 theorem liouvilleRadialCoordinate_lt_exp_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hT : 0 < T) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hT : 0 < T) :
     liouvilleRadialCoordinate Z W x < Real.exp T ↔ flowOf Z (-T) x ∈ interior W := by
   obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   have h1 := one_le_liouvilleRadialCoordinate Z W x
@@ -244,7 +244,7 @@ theorem liouvilleRadialCoordinate_lt_exp_iff (h : IsLiouvilleCompletion ω α W)
 /-- **The radial coordinate on a Liouville trajectory from the boundary.** If `y` lies on the
 boundary of the Liouville domain and `t ≥ 0`, then `r(ψ_t y) = e^t`. -/
 theorem liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hy : y ∈ frontier W) (ht : 0 ≤ t) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hy : y ∈ frontier W) (ht : 0 ≤ t) :
     liouvilleRadialCoordinate Z W (flowOf Z t y) = Real.exp t := by
   -- For `T ≥ 0`, `r(ψ_t y) ≤ e^T` exactly when `ψ_{t - T} y ∈ W`, that is when `t ≤ T`.
   have key : ∀ T, 0 ≤ T → (liouvilleRadialCoordinate Z W (flowOf Z t y) ≤ Real.exp T ↔ t ≤ T) :=
@@ -261,7 +261,7 @@ theorem liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
 /-- **The Liouville flow rescales the radial coordinate.** If `x` lies outside the interior of the
 Liouville domain and `t ≥ 0`, then `r(ψ_t x) = e^t r(x)`. -/
 theorem liouvilleRadialCoordinate_flowOf_of_notMem_interior (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W) (ht : 0 ≤ t) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ interior W) (ht : 0 ≤ t) :
     liouvilleRadialCoordinate Z W (flowOf Z t x) =
       Real.exp t * liouvilleRadialCoordinate Z W x := by
   obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
@@ -273,7 +273,7 @@ the interior of the Liouville domain and `0 ≤ log r(x) + t`, then `log r(ψ_t 
 Here `t` may be negative, as long as the trajectory through `x` does not enter the interior of the
 domain before time `t`: `log r` is the time coordinate of the cylindrical end. -/
 theorem log_liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ interior W)
     (ht : 0 ≤ Real.log (liouvilleRadialCoordinate Z W x) + t) :
     Real.log (liouvilleRadialCoordinate Z W (flowOf Z t x)) =
       Real.log (liouvilleRadialCoordinate Z W x) + t := by
@@ -285,7 +285,7 @@ theorem log_liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
 /-- The Liouville flow multiplies the radial coordinate by `e^t` between two points of the
 cylindrical end, also for negative times. -/
 theorem liouvilleRadialCoordinate_flowOf_of_notMem (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) (htx : flowOf Z t x ∉ W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) (htx : flowOf Z t x ∉ W) :
     liouvilleRadialCoordinate Z W (flowOf Z t x) =
       Real.exp t * liouvilleRadialCoordinate Z W x := by
   rcases le_or_gt 0 t with ht | ht
@@ -299,7 +299,7 @@ theorem liouvilleRadialCoordinate_flowOf_of_notMem (h : IsLiouvilleCompletion ω
 /-- The Liouville flow `ψ_t` keeps a point `x` of the cylindrical end outside the Liouville domain
 as long as `e^t r(x) > 1`, also for negative times. -/
 theorem flowOf_notMem_of_one_lt_exp_mul (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W)
     (htx : 1 < Real.exp t * liouvilleRadialCoordinate Z W x) : flowOf Z t x ∉ W := by
   intro hmem
   rcases le_or_gt 0 t with ht | ht
@@ -318,7 +318,7 @@ theorem flowOf_notMem_of_one_lt_exp_mul (h : IsLiouvilleCompletion ω α W)
 /-- **The boundary point of a Liouville trajectory.** If `x` lies outside the interior of the
 Liouville domain, then flowing `x` backwards for time `log r(x)` lands on the boundary. -/
 theorem flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ interior W) :
     flowOf Z (-Real.log (liouvilleRadialCoordinate Z W x)) x ∈ frontier W := by
   obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
   rwa [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp, h.flowOf_flowOf hZ,
@@ -327,7 +327,7 @@ theorem flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier (h : IsLiouvilleCo
 /-- For `c ≥ 1`, the sublevel set `{r ≤ c}` of the radial coordinate is the preimage of the
 Liouville domain under the backward Liouville flow for time `log c`. -/
 private theorem setOf_liouvilleRadialCoordinate_le_eq (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 ≤ c) :
+    (hZ : RoughForm.interior Z ω.val = α.val) {c : ℝ} (hc : 1 ≤ c) :
     {x | liouvilleRadialCoordinate Z W x ≤ c} = (flowOf Z (-Real.log c)) ⁻¹' W := by
   ext x
   rw [mem_preimage, ← h.liouvilleRadialCoordinate_le_exp_iff hZ (Real.log_nonneg hc),
@@ -336,7 +336,7 @@ private theorem setOf_liouvilleRadialCoordinate_le_eq (h : IsLiouvilleCompletion
 
 /-- The radial coordinate of a completion is continuous. -/
 theorem continuous_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) : Continuous (liouvilleRadialCoordinate Z W) := by
+    (hZ : RoughForm.interior Z ω.val = α.val) : Continuous (liouvilleRadialCoordinate Z W) := by
   obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   have hcont : ∀ T, Continuous (flowOf Z T) := fun T ↦ by
     simp only [funext (hψ T)]
@@ -369,14 +369,14 @@ theorem continuous_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
 of `W` under the Liouville flow for time `log c`, is a Liouville domain for the same form and
 primitive. -/
 theorem isLiouvilleDomain_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 ≤ c) :
+    (hZ : RoughForm.interior Z ω.val = α.val) {c : ℝ} (hc : 1 ≤ c) :
     IsLiouvilleDomain ω α {x | liouvilleRadialCoordinate Z W x ≤ c} := by
   rw [h.setOf_liouvilleRadialCoordinate_le_eq hZ hc]
   exact h.preimage_flowOf hZ (h.isCompleteVectorField hZ) _
 
 /-- The sublevel sets `{r ≤ c}` of the radial coordinate of a completion are compact. -/
 theorem isCompact_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (c : ℝ) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (c : ℝ) :
     IsCompact {x | liouvilleRadialCoordinate Z W x ≤ c} := by
   rcases lt_or_ge c 1 with hc | hc
   · have : {x | liouvilleRadialCoordinate Z W x ≤ c} = ∅ := eq_empty_of_forall_notMem
@@ -387,7 +387,7 @@ theorem isCompact_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion 
 /-- For `c > 1`, a Liouville domain lies in the interior of the truncation `{r ≤ c}` of its
 completion. -/
 theorem subset_interior_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 < c) :
+    (hZ : RoughForm.interior Z ω.val = α.val) {c : ℝ} (hc : 1 < c) :
     W ⊆ interior {x | liouvilleRadialCoordinate Z W x ≤ c} := fun x hx ↦
   interior_maximal (fun _ hy ↦ le_of_lt hy)
     (isOpen_lt (h.continuous_liouvilleRadialCoordinate hZ) continuous_const)
@@ -396,7 +396,7 @@ theorem subset_interior_setOf_liouvilleRadialCoordinate_le (h : IsLiouvilleCompl
 /-- **Linearity at infinity on a completion.** A function is linear at infinity with slope `a`
 exactly when it equals `a r + b` on the region `{r ≥ R}` where the radial coordinate is large. -/
 theorem isLinearAtInfinity_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
+    (hZ : RoughForm.interior Z ω.val = α.val) :
     IsLinearAtInfinity Z W F a ↔ ∃ R b : ℝ, ∀ x, R ≤ liouvilleRadialCoordinate Z W x →
       F x = a * liouvilleRadialCoordinate Z W x + b := by
   constructor
@@ -415,7 +415,7 @@ linear at infinity has only one slope. -/
 theorem IsLinearAtInfinity.unique [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] [T2Space M]
     [I.Boundaryless] {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1}
     (hF : IsLinearAtInfinity Z W F a) (hF' : IsLinearAtInfinity Z W F a')
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) (hW : W ≠ univ) :
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) (hW : W ≠ univ) :
     a = a' := by
   obtain ⟨R, b, hb⟩ := (h.isLinearAtInfinity_iff hZ).1 hF
   obtain ⟨R', b', hb'⟩ := (h.isLinearAtInfinity_iff hZ).1 hF'

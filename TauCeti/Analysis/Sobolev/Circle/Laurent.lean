@@ -171,7 +171,7 @@ theorem coe_indicatorProj (S : Set ℤ) (a : CircleSobolev s E) :
 @[simp]
 theorem indicatorProj_coe (S : Set ℤ) (a : supported s E S) :
     indicatorProj S (a : CircleSobolev s E) = a :=
-  Subtype.ext (indicator_eq_self_iff.2 a.2)
+  Subtype.ext (indicator_eq_self_iff.2 a.property)
 
 @[simp]
 theorem indicator_indicator (S S' : Set ℤ) (a : CircleSobolev s E) :

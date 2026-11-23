@@ -18,6 +18,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 -- `TauCeti.isNondegenerateCriticalPoint_comp_iff` and
 -- `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`.
 import TauCeti.Analysis.Calculus.FDeriv.Comp
+-- Private: the comparison of Łojasiewicz inequalities is used only inside the proof of
+-- `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`.
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 
 /-!
 # Nondegenerate critical points
@@ -92,8 +95,6 @@ the notion be read off in any chart.
   `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: near a
   nondegenerate critical point the differential is bounded below by a multiple of the distance,
   and the Morse form of Łojasiewicz's inequality holds.
-* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_comp`: the Łojasiewicz inequality with
-  exponent `1 / 2` is invariant under `C¹` changes of coordinates.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
@@ -197,6 +198,17 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
   refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.separatingLeft⟩,
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
   exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
+
+/-- **On a zero space every point is a nondegenerate critical point.** A function on a
+zero-dimensional space is constant, its differential vanishes and its second derivative is the
+unique map between two zero spaces, which is invertible. -/
+theorem isNondegenerateCriticalPoint_of_subsingleton [Subsingleton E] (f : E → ℝ) (x : E) :
+    IsNondegenerateCriticalPoint f x :=
+  ⟨(contDiffAt_const (c := f x)).congr_of_eventuallyEq
+      (Eventually.of_forall fun y ↦ congrArg f (Subsingleton.elim y x)),
+    Subsingleton.elim _ _,
+    by rw [Subsingleton.elim (fderiv ℝ (fderiv ℝ f) x) 0]
+       exact ContinuousLinearMap.isInvertible_zero_iff.2 ⟨inferInstance, inferInstance⟩⟩
 
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
@@ -473,46 +485,9 @@ theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
     ∃ lam > 0, ∀ᶠ y in 𝓝 x, lam * |f y - f x| ≤ ‖fderiv ℝ f y‖ ^ 2 := by
   obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_fderiv
   obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.fderiv_eq_zero
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [h1, h2] with y hy1 hy2
-  have h3 : (c * ‖y - x‖) ^ 2 ≤ ‖fderiv ℝ f y‖ ^ 2 :=
-    pow_le_pow_left₀ (by positivity) hy1 2
-  calc c ^ 2 / C * |f y - f x| ≤ c ^ 2 / C * (C * ‖y - x‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left hy2 (by positivity)
-    _ = (c * ‖y - x‖) ^ 2 := by field_simp
-    _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
-
-/-- **Łojasiewicz's inequality is invariant under `C¹` changes of coordinates.** Let `τ` be `C¹` at
-`z₀`, and let `σ` be continuous at `τ z₀`, with `σ (τ z₀) = z₀` and `τ (σ x) = x` near `τ z₀`, so
-that `σ` is a local inverse of `τ`. If `g` is differentiable near `τ z₀` and its pullback `g ∘ τ`
-satisfies `lam * |g (τ z) - g (τ z₀)| ≤ ‖D(g ∘ τ) z‖ ^ 2` near `z₀`, then `g` satisfies the
-Łojasiewicz inequality with exponent `1 / 2` near `τ z₀`: the differential of `g ∘ τ` at `σ x` is
-that of `g` at `x` composed with the locally bounded derivative of `τ`. -/
-theorem exists_mul_abs_sub_le_norm_fderiv_sq_of_comp {E₁ : Type*} [NormedAddCommGroup E₁]
-    [NormedSpace ℝ E₁] {g : E → ℝ} {τ : E₁ → E} {σ : E → E₁} {z₀ : E₁} {lam : ℝ}
-    (hlam : 0 < lam) (hτ : ContDiffAt ℝ 1 τ z₀) (hσ : ContinuousAt σ (τ z₀))
-    (hστ : σ (τ z₀) = z₀) (hτσ : ∀ᶠ x in 𝓝 (τ z₀), τ (σ x) = x)
-    (hg : ∀ᶠ x in 𝓝 (τ z₀), DifferentiableAt ℝ g x)
-    (hloj : ∀ᶠ z in 𝓝 z₀, lam * |g (τ z) - g (τ z₀)| ≤ ‖fderiv ℝ (g ∘ τ) z‖ ^ 2) :
-    ∃ lam' > 0, ∀ᶠ x in 𝓝 (τ z₀), lam' * |g x - g (τ z₀)| ≤ ‖fderiv ℝ g x‖ ^ 2 := by
-  set C := ‖fderiv ℝ τ z₀‖ + 1
-  have hC : 0 < C := by positivity
-  -- Near `z₀` the map `τ` is differentiable, with derivative of norm at most `C`.
-  have hbd : ∀ᶠ z in 𝓝 z₀, DifferentiableAt ℝ τ z ∧ ‖fderiv ℝ τ z‖ ≤ C :=
-    ((hτ.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt one_ne_zero).and <|
-      (((hτ.continuousAt_fderiv one_ne_zero).norm.eventually (gt_mem_nhds (lt_add_one _))).mono
-        fun _ hz ↦ hz.le)
-  have hσ' : Tendsto σ (𝓝 (τ z₀)) (𝓝 z₀) := by simpa only [ContinuousAt, hστ] using hσ
-  refine ⟨lam / C ^ 2, by positivity, ?_⟩
-  filter_upwards [hσ'.eventually (hloj.and hbd), hτσ, hg] with x ⟨hl, hdτ, hτC⟩ hx hgx
-  rw [hx] at hl
-  -- By the chain rule, `‖D(g ∘ τ) (σ x)‖ ≤ ‖Dg x‖ * C`.
-  have hchain : ‖fderiv ℝ (g ∘ τ) (σ x)‖ ≤ ‖fderiv ℝ g x‖ * C := by
-    rw [fderiv_comp (σ x) (hx.symm ▸ hgx) hdτ, hx]
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
-  calc lam / C ^ 2 * |g x - g (τ z₀)| = lam * |g x - g (τ z₀)| / C ^ 2 := by ring
-    _ ≤ (‖fderiv ℝ g x‖ * C) ^ 2 / C ^ 2 := by gcongr; exact hl.trans (by gcongr)
-    _ = ‖fderiv ℝ g x‖ ^ 2 := by field_simp
+  exact exists_mul_le_sq_of_eventually_le_mul (g := fun y ↦ ‖y - x‖) (K := c⁻¹)
+    ⟨C⁻¹, by positivity, h2.mono fun _ hy ↦ by rwa [inv_mul_le_iff₀ hC]⟩
+    (.of_forall fun _ ↦ norm_nonneg _) (h1.mono fun _ hy ↦ by rwa [le_inv_mul_iff₀ hc])
 
 end NormedSpace
 

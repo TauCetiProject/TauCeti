@@ -41,13 +41,13 @@ theorem stabilizer_generatingTriple_eq_centralizer_subgroupOf (g : P.GeneratingT
     MulAction.stabilizer (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) g =
       (Subgroup.centralizer (P.G : Set (Perm (Fin n)))).subgroupOf
         (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) := by
-  have h := g.1.stabilizer_normalizer_eq_centralizer_subgroupOf
-  rw [g.2.monodromyGroup_eq] at h
+  have h := g.val.stabilizer_normalizer_eq_centralizer_subgroupOf
+  rw [g.property.monodromyGroup_eq] at h
   rw [← h]
   ext τ
   simp only [MulAction.mem_stabilizer_iff]
   simpa only [GeneratingTriple.coe_smul, Subgroup.smul_def] using
-    (Subtype.ext_iff : τ • g = g ↔ (τ • g).1 = g.1)
+    (Subtype.ext_iff : τ • g = g ↔ (τ • g).val = g.val)
 
 /-- Orbit-stabilizer for a generating triple, with its stabilizer expressed as the
 centralizer of the reference monodromy group. -/

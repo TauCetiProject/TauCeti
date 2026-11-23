@@ -41,6 +41,9 @@ This is the algebraic normalisation used to study residue fields and morphisms o
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical` and
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical`: the same finiteness
   for dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
+* `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra`: `K`-algebra homomorphisms from
+  `K⟨X⟩†` into a dagger algebra are determined by the coordinate variables, with no continuity
+  assumed.
 
 ## References
 
@@ -57,7 +60,6 @@ public section
 
 namespace TauCeti.Dagger
 
-open _root_.MvPowerSeries
 open washnitzerAlgebra
 
 universe u v w
@@ -137,7 +139,6 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
   obtain ⟨n, g, _, hg, hfin⟩ := washnitzerAlgebra.exists_finite_injective hπ
   let : Algebra (W (Fin n)) A := g.toRingHom.toAlgebra
   have : Module.Finite (W (Fin n)) A := hfin
-  have : Algebra.IsIntegral (W (Fin n)) A := Algebra.IsIntegral.of_finite _ _
   have hf : IsField (W (Fin n)) := isField_of_isIntegral_of_isField hg hA
   have hn : n = 0 := by
     by_contra hn
@@ -155,8 +156,8 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
 a finite-variable Monsky–Washnitzer algebra is finite-dimensional over the coefficient field. -/
 theorem washnitzerAlgebra.finite_quotient_of_isMaximal {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
-    (hπ : π.Finite) (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) := by
-  exact finite_of_isField
+    (hπ : π.Finite) (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) :=
+  finite_of_isField
     ((AlgHom.Finite.of_surjective (Ideal.Quotient.mkₐ K m) Ideal.Quotient.mk_surjective).comp hπ)
     ((Ideal.Quotient.maximal_ideal_iff_isField_quotient m).mp ‹_›)
 
@@ -219,5 +220,16 @@ theorem finite_quotient_pow_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaxi
     exact finite_quotient_of_isMaximal_radical K _
 
 end IsDaggerAlgebra
+
+/-- **`K`-algebra homomorphisms from `W_σ` into a dagger algebra are determined by the
+variables**, with no continuity assumed. -/
+theorem washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra {σ : Type*} [Finite σ]
+    {R : Type*} [CommRing R] [Algebra K R] [IsDaggerAlgebra K R]
+    {φ ψ : W σ →ₐ[K] R} (h : ∀ i, φ (washnitzerAlgebra.X σ K i) = ψ (washnitzerAlgebra.X σ K i)) :
+    φ = ψ := by
+  have := IsDaggerAlgebra.isNoetherianRing (K := K) (A := R)
+  refine algHom_ext_of_forall_isMaximal_isIntegral (fun m _ ↦ ?_) h
+  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K m
+  exact Algebra.IsIntegral.of_finite K _
 
 end TauCeti.Dagger

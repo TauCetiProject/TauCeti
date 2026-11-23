@@ -20,9 +20,16 @@ derivatives is assumed.
 The proof moves both derivatives onto the test function and uses that directional derivatives of
 test functions commute (`TestFunction.lineDerivOp_comm`).
 
+For vector-valued test functions paired through an inner product, the same computation shows that
+the first weak derivatives of a single function already satisfy the symmetry of mixed partials in
+the sense of distributions: `∫ ⟪∂_w φ, ∂_v u⟫ = ∫ ⟪∂_v φ, ∂_w u⟫`, with no second weak derivative
+assumed.
+
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
+* `TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_comm`: the distributional symmetry of
+  mixed partials, tested against vector-valued test functions.
 -/
 
 public section
@@ -55,5 +62,27 @@ theorem HasWeakLineDerivOn.comm (h₁ : HasWeakLineDerivOn μ Ω u u₁ v)
     _ = ∫ x, lineDeriv ℝ (φ : E → ℝ) x w • u₁ x ∂μ := by
         simp only [TestFunction.lineDerivOp_apply]
     _ = -∫ x, (φ : E → ℝ) x • u₁₂ x ∂μ := h₁₂.integral_lineDeriv_smul_eq_neg_integral_smul φ
+
+section Inner
+
+open scoped InnerProductSpace
+
+variable [OpensMeasurableSpace E] {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] {f f₁ f₂ : E → V}
+
+/-- **Mixed partials of a weakly differentiable function are symmetric as distributions.** If `f`
+has weak derivatives `f₁ = ∂_v f` and `f₂ = ∂_w f` on `Ω`, then
+`∫ ⟪∂_w φ, f₁⟫ = ∫ ⟪∂_v φ, f₂⟫` for every `φ ∈ 𝓓(Ω, V)`: both sides are `-∫ ⟪∂_v ∂_w φ, f⟫`.
+No second weak derivative of `f` is assumed. -/
+theorem HasWeakLineDerivOn.integral_inner_lineDeriv_comm (h₁ : HasWeakLineDerivOn μ Ω f f₁ v)
+    (h₂ : HasWeakLineDerivOn μ Ω f f₂ w) (φ : 𝓓(Ω, V)) :
+    ∫ x, ⟪lineDeriv ℝ (φ : E → V) x w, f₁ x⟫_ℝ ∂μ =
+      ∫ x, ⟪lineDeriv ℝ (φ : E → V) x v, f₂ x⟫_ℝ ∂μ := by
+  have e₁ := h₁.integral_inner_lineDeriv_eq_neg (∂_{w} φ)
+  have e₂ := h₂.integral_inner_lineDeriv_eq_neg (∂_{v} φ)
+  simp only [TestFunction.lineDeriv_lineDerivOp_comm φ w v] at e₁
+  simpa only [TestFunction.lineDerivOp_apply, neg_inj] using e₁.symm.trans e₂
+
+end Inner
 
 end TauCeti

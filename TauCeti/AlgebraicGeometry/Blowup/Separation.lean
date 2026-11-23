@@ -91,7 +91,7 @@ theorem disjoint_closure_preimage_zeroLocus_sdiff_blowup (I J : Ideal R) :
       (hs ▸ (Ideal.subset_span (Set.mem_range_self a) : s a ∈ Ideal.span (Set.range s)))) := by
     rw [← Scheme.Hom.coe_opensRange]
     exact hxa
-  rcases a.2 with ha | ha
+  rcases a.property with ha | ha
   · exact Set.disjoint_left.mp
       (disjoint_chart_closure_preimage_zeroLocus_sdiff I (I ⊔ J) ha _) hrange hxI
   · exact Set.disjoint_left.mp
@@ -185,7 +185,7 @@ theorem exists_blowup_separating (U : X.Opens) [IsLocallyNoetherian X]
       U.ι '' (Z : Set U.toScheme) ⊆
         closure (U.ι '' (Z : Set U.toScheme)) \ (I ⊔ J).support := by
     rintro _ ⟨z, hz, rfl⟩
-    exact ⟨subset_closure ⟨z, hz, rfl⟩, Set.disjoint_left.mp hU z.2⟩
+    exact ⟨subset_closure ⟨z, hz, rfl⟩, Set.disjoint_left.mp hU z.property⟩
   refine ⟨I ⊔ J, (I ⊔ J).isProper_blowupToBase (fun V ↦ ?_), hU,
     (I ⊔ J).isIso_blowupToBase_restrict_of_disjoint_support hU, ?_⟩
   · have := IsLocallyNoetherian.component_noetherian V

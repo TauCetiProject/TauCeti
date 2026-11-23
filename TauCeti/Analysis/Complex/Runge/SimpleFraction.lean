@@ -65,7 +65,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
     simp [x, φ, ρ]
   have hx : spectrum ℂ (x : C(K, ℂ)) = K := by
     rw [ContinuousMap.spectrum_eq_range]
-    have hxmap : (x : C(K, ℂ)) = ⟨Subtype.val, continuous_subtype_val⟩ :=
+    have hxmap : (x : C(K, ℂ)) = ⟨Subtype.val, continuous_subtypeVal⟩ :=
       ContinuousMap.ext hxval
     rw [hxmap]
     exact Subtype.range_coe
@@ -86,13 +86,13 @@ theorem IsFilledIn.exists_differentiableOn_norm_inv_sub_lt (hfill : IsFilledIn K
       mul_inv_cancel₀ (sub_ne_zero.mpr fun h : b = (z : ℂ) ↦ hb (h ▸ hKΩ z.property))
   have hspec : a ∉ spectrum ℂ x := by
     intro haspec
-    have hbounded := Subalgebra.spectrum_isBounded_connectedComponentIn S x haspec
+    have hbounded := Subalgebra.isBounded_connectedComponentIn_spectrum_compl S x haspec
     rw [hx] at hbounded
     have hnot := (isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
       hK.isClosed hΩ hKΩ).mp hfill a ⟨mem_filledHull_iff.mpr hbounded, ha⟩
     obtain ⟨b, hb, hbΩ⟩ := Set.not_subset.mp hnot
     apply houtside b hbΩ
-    rw [Subalgebra.spectrum_sUnion_connectedComponentIn S x]
+    rw [Subalgebra.spectrum_eq_union_sUnion_connectedComponentIn S x]
     exact Or.inr <| mem_biUnion ⟨haspec, (by rwa [hx])⟩ <| by rwa [hx]
   have hu : IsUnit (x - algebraMap ℂ S a) := by
     have h := (spectrum.notMem_iff.mp hspec).neg
