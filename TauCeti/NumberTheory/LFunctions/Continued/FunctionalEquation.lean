@@ -49,14 +49,19 @@ private theorem gammaFactor_mul_continuedL_eq_of_completed {z : ℂ}
   rw [hexp, cpow_add _ _ (Nat.cast_ne_zero.mpr d.conductor.ne_zero)] at hc'
   linear_combination -hc + hfz + d.rootNumber * hc'
 
-/-- **The functional equation of the continued function, as germs.** With a meromorphic
-completion, `γ(z) L(z)` and `ε N^(1/2 - z) γ^∨(1 - z) L^∨(1 - z)` agree on a punctured
-neighbourhood of every point, poles included. -/
+/-- **The functional equation of the continued function, as germs.** The functions
+`γ(z) L(z)` and `ε N^(1/2 - z) γ^∨(1 - z) L^∨(1 - z)` agree on a punctured neighbourhood of every
+point, poles included. Without a meromorphic completion both continued functions vanish. -/
 theorem HasFunctionalEquation.gammaFactor_mul_continuedL_eventuallyEq
-    (hfe : d.HasFunctionalEquation) (hm : Meromorphic d.completed) (s : ℂ) :
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
     (fun z ↦ d.gammaFactor z * d.continuedL z) =ᶠ[𝓝[≠] s]
       fun z ↦ d.rootNumber * ((d.conductor : ℕ) : ℂ) ^ (1 / 2 - z) *
         d.dual.gammaFactor (1 - z) * d.dual.continuedL (1 - z) := by
+  by_cases hm : Meromorphic d.completed
+  swap
+  · have hm' : ¬ Meromorphic d.dual.completed := fun h ↦ hm <| by
+      simpa [dual_completed, Function.comp_def] using h.conj_conj
+    simp [continuedL_of_not_meromorphic hm, continuedL_of_not_meromorphic hm']
   have hm' : Meromorphic d.dual.completed := by
     rw [dual_completed]
     exact hm.conj_conj
