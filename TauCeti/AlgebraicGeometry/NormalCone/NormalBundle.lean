@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.NormalCone.NormalSheaf
-public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
+public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace.FunctorOfPoints
 
 /-!
 # The normal bundle as the total space of the dual of the conormal sheaf
@@ -19,7 +19,8 @@ sheaf of sections is the dual conormal sheaf `(I/I²)^∨`: it is the geometric 
 biduality `I/I² ≅ (I/I²)^∨∨` (`FiniteLocallyFreeSheaf.evalIso`). This is Fulton's normal bundle.
 
 Consequently, for a scheme `q : T ⟶ X` over `X`, morphisms `T ⟶ N_X Y` over `X` are the global
-sections of the pullback `q^* ((I/I²)^∨)` of the dual conormal sheaf (`normalSheafHomEquiv`).
+sections of the pullback `q^* ((I/I²)^∨)` of the dual conormal sheaf (`normalSheafHomEquiv`),
+naturally in `T` (`normalSheafHomEquiv_comp`).
 
 ## Main declarations
 
@@ -27,7 +28,8 @@ sections of the pullback `q^* ((I/I²)^∨)` of the dual conormal sheaf (`normal
   is the finite locally free sheaf `E`, the normal sheaf `Spec_X (Sym (I/I²))` is the total space
   of `E^∨`, as affine schemes over `X`.
 * `AlgebraicGeometry.Scheme.Hom.normalSheafHomEquiv`: points of the normal sheaf over `X` are
-  sections of the pullback of the dual conormal sheaf `E^∨`.
+  sections of the pullback of the dual conormal sheaf `E^∨`, naturally in the scheme over `X`
+  (`AlgebraicGeometry.Scheme.Hom.normalSheafHomEquiv_comp`).
 
 ## References
 
@@ -98,6 +100,35 @@ theorem normalSheafHomEquiv_symm_apply (E : FiniteLocallyFreeSheaf X)
     (i.normalSheafHomEquiv E e T).symm s = (totalSpaceHomEquiv (dual E) T).symm s ≫
       (MorphismProperty.Over.forget _ _ X).map (i.normalSheafOverIsoTotalSpaceScheme E e).inv := by
   simp [normalSheafHomEquiv]
+
+/-- **Naturality of the section correspondence in the scheme over `X`.** For a morphism
+`g : T' ⟶ T` over `X`, the section of the `T'`-point `g ≫ t` of the normal sheaf is the pullback
+along `g` of the section of `t`: the section `𝒪_{T'} ≅ g^* 𝒪_T ⟶ g^* q^* E^∨ ≅ q'^* E^∨`, through
+the identification of the pulled-back structure sheaf and the composition isomorphism of
+pullback. -/
+theorem normalSheafHomEquiv_comp (E : FiniteLocallyFreeSheaf X)
+    (e : (toQuasicoherent X).obj E ≅ i.conormal) {T' T : Over X} (g : T' ⟶ T)
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj i.normalSheafOver) :
+    i.normalSheafHomEquiv E e T' (g ≫ t) =
+      (Scheme.Modules.pullbackObjUnitIso g.left).inv ≫
+        (Scheme.Modules.pullback g.left).map (i.normalSheafHomEquiv E e T t) ≫
+          (Scheme.Modules.pullbackComp g.left T.hom).hom.app (dual E).obj ≫
+            (Scheme.Modules.pullbackCongr (Over.w g)).hom.app (dual E).obj := by
+  rw [normalSheafHomEquiv_apply, normalSheafHomEquiv_apply, Category.assoc,
+    totalSpaceHomEquiv_comp]
+
+/-- The point of the pulled-back section: precomposing the `T`-point of a section `s` of
+`q^* E^∨` with `g : T' ⟶ T` over `X` gives the `T'`-point of the section
+`𝒪_{T'} ≅ g^* 𝒪_T ⟶ g^* q^* E^∨ ≅ q'^* E^∨`. -/
+theorem comp_normalSheafHomEquiv_symm_apply (E : FiniteLocallyFreeSheaf X)
+    (e : (toQuasicoherent X).obj E ≅ i.conormal) {T' T : Over X} (g : T' ⟶ T)
+    (s : 𝟙_ T.left.Modules ⟶ (Scheme.Modules.pullback T.hom).obj (dual E).obj) :
+    g ≫ (i.normalSheafHomEquiv E e T).symm s =
+      (i.normalSheafHomEquiv E e T').symm ((Scheme.Modules.pullbackObjUnitIso g.left).inv ≫
+        (Scheme.Modules.pullback g.left).map s ≫
+          (Scheme.Modules.pullbackComp g.left T.hom).hom.app (dual E).obj ≫
+            (Scheme.Modules.pullbackCongr (Over.w g)).hom.app (dual E).obj) := by
+  rw [Equiv.eq_symm_apply, normalSheafHomEquiv_comp, Equiv.apply_symm_apply]
 
 end
 
