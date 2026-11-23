@@ -661,14 +661,15 @@ product of the point principal symbols. -/
 theorem pointPrincipalSymbol_comp [CharZero 𝕜] {m k : ℕ}
     (P : differentialOperators 𝕜 A A A m) (Q : differentialOperators 𝕜 A A A k) (v : V) :
     pointPrincipalSymbol φ e
-        ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A), comp_mem_differentialOperators P.2 Q.2⟩ v =
+        ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A),
+          comp_mem_differentialOperators P.property Q.property⟩ v =
       pointPrincipalSymbol φ e P v * pointPrincipalSymbol φ e Q v := by
   simp only [pointPrincipalSymbol_def, pointCommutatorSymbol_apply]
   generalize (cotangentLift e v : A) = a
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `a` is `(m + k).choose m` times the product of
   -- the commutators of `P` and `Q`, and `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
   have key : φ (commutatorSymbol 𝕜 A A A (m + k)
-      ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A), comp_mem_differentialOperators P.2 Q.2⟩
+      ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A), comp_mem_differentialOperators P.property Q.property⟩
       (fun _ ↦ a) 1) = (m + k).choose m * (φ (commutatorSymbol 𝕜 A A A m P (fun _ ↦ a) 1) *
         φ (commutatorSymbol 𝕜 A A A k Q (fun _ ↦ a) 1)) := by
     rw [commutatorSymbol_comp_const, LinearMap.smul_apply, map_nsmul, LinearMap.comp_apply,

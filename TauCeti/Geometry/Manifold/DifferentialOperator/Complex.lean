@@ -313,7 +313,7 @@ theorem complexSmoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     complexSmoothPrincipalSymbol I hx
         ⟨(P : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∘ₗ
             (Q : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯),
-          comp_mem_differentialOperators P.2 Q.2⟩ ξ =
+          comp_mem_differentialOperators P.property Q.property⟩ ξ =
       complexSmoothPrincipalSymbol I hx P ξ * complexSmoothPrincipalSymbol I hx Q ξ :=
   pointPrincipalSymbol_comp _ P Q ξ
 
