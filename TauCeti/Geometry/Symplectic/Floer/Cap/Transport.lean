@@ -28,8 +28,8 @@ not change the Hurewicz class of a sphere, so it does not change the class of th
 spherical period group `Γ` (`TauCeti.Floer.SphericalPeriodGroup.ofHomotopyGroup`). Hence
 transport descends to cap classes, the raw caps modulo spheres of zero symplectic area and zero
 first Chern number (`TauCeti.Floer.SphericalCapClass.transport`), where it is `Γ`-equivariant
-(`TauCeti.Floer.SphericalCapClass.transport_vadd`) and, for a contractible loop on a
-path-connected space, a bijection (`TauCeti.Floer.SphericalCapClass.transport_bijective`).
+(`TauCeti.Floer.SphericalCapClass.transport_vadd`, on a path-connected space) and a bijection
+(`TauCeti.Floer.SphericalCapClass.transport_bijective`).
 
 Transport is natural for gluing homotopies of loops
 (`TauCeti.Floer.SphericalCapClass.transport_glue`). Together with the equivariance of gluing along
@@ -44,13 +44,13 @@ A Floer cylinder, or an end of a pair of pants, is a homotopy of loops whose bas
 `ContinuousMap.HomotopyWith` `F` of maps `I → X` through loops, from a loop `γ₀` at `x` to a loop
 `γ₁` at `y`, whose seam `F.basepointPath` runs from `x` to `y`. Caps of `γ₀` lift along `F` to caps
 of `γ₁`: transport a cap along the seam, which gives a cap of `F.basepointPath.conjLoop γ₀`, then
-glue the based homotopy of loops `F.conjLoopHom` from this loop to `γ₁`. This is
-`TauCeti.Floer.RawCap.transportAlong F` on raw caps and
+glue backwards the based homotopy of loops `F.conjLoopHom` from this loop to `γ₁`, that is, glue
+`inv F.conjLoopHom`. This is `TauCeti.Floer.RawCap.transportAlong F` on raw caps and
 `TauCeti.Floer.SphericalCapClass.transportAlong F` on cap classes. On cap classes it commutes with
-recapping (`TauCeti.Floer.SphericalCapClass.transportAlong_vadd`) and, on a path-connected space,
-it is a bijection (`TauCeti.Floer.SphericalCapClass.transportAlong_bijective`): the cap classes
-lift uniquely along paths of loops. When the seam stays at `x`, transport along `F` is gluing the
-homotopy of loops `F.loopPath` backwards
+recapping on a path-connected space (`TauCeti.Floer.SphericalCapClass.transportAlong_vadd`), and
+it is a bijection from the cap classes of `γ₀` to those of `γ₁`
+(`TauCeti.Floer.SphericalCapClass.transportAlong_bijective`). When the seam stays at `x`, transport
+along `F` is gluing the homotopy of loops `F.loopPath` backwards
 (`TauCeti.Floer.SphericalCapClass.transportAlong_of_forall_eq`), so the constant homotopy
 transports every cap class to itself (`TauCeti.Floer.SphericalCapClass.transportAlong_refl`).
 Measured against a cap class `q₁` of the output, a cylinder `F` with input cap class `q₀` has the
@@ -70,15 +70,19 @@ class `q₁ -ᵥ transportAlong F q₀` in `Γ`.
 * `TauCeti.Floer.SphericalCapClass.transport_vadd`,
   `TauCeti.Floer.SphericalCapClass.transport_vsub_transport`: transport of cap classes commutes
   with recapping and preserves the classes by which cap classes differ.
-* `TauCeti.Floer.SphericalCapClass.transport_bijective`: for a contractible loop on a
-  path-connected space, transport is a bijection of cap classes.
-* `TauCeti.Floer.RawCap.transport_refl`: transport along a constant path only reparametrizes.
-* `TauCeti.Floer.SphericalCapClass.transportAlong_vadd`,
-  `TauCeti.Floer.SphericalCapClass.transportAlong_vsub_transportAlong`,
+* `TauCeti.Floer.RawCap.transport_bijective`, `TauCeti.Floer.SphericalCapClass.transport_bijective`:
+  transport is a bijection of raw caps and of cap classes.
+* `TauCeti.Floer.RawCap.transport_refl`, `TauCeti.Floer.SphericalCapClass.transport_refl`:
+  transport along a constant path only reparametrizes.
+* `TauCeti.Floer.SphericalCapClass.transportAlong_vsub_transportAlong`: transport along a free
+  homotopy of loops preserves the classes by which cap classes differ.
+* `TauCeti.Floer.SphericalCapClass.transportAlong_vadd`: on a path-connected space, transport
+  along a free homotopy of loops commutes with recapping.
+* `TauCeti.Floer.RawCap.transportAlong_bijective`,
   `TauCeti.Floer.SphericalCapClass.transportAlong_bijective`: transport along a free homotopy of
-  loops commutes with recapping and is a bijection of cap classes.
+  loops is a bijection of raw caps and of cap classes.
 * `TauCeti.Floer.SphericalCapClass.transportAlong_of_forall_eq`: along a homotopy of loops with
-  a fixed base point, transport is gluing.
+  a fixed base point, transport is gluing backwards.
 
 ## References
 
@@ -148,6 +152,28 @@ theorem transport_vsub_transport (p : Path x y) (D' D : RawCap γ) :
   conv_lhs => rw [← vsub_vadd (G := Additive (π_ 2 X x)) D' D, transport_vadd]
   exact vadd_vsub _ _
 
+/-- **Transport of raw caps is a bijection.** When `γ` is not contractible, neither is
+`p.conjLoop γ`, and both sets of raw caps are empty. -/
+theorem transport_bijective (p : Path x y) : Function.Bijective (transport (γ := γ) p) := by
+  refine ⟨fun D D' h => ?_, fun D' => ?_⟩
+  · have : Nonempty (RawCap γ) := ⟨D⟩
+    have : Nonempty (RawCap (p.conjLoop γ)) := ⟨transport p D⟩
+    rw [← vsub_eq_zero_iff_eq (G := Additive (π_ 2 X x)), ← toMul_eq_one,
+      ← (homotopyGroupMulEquivOfPath p).map_eq_one_iff, homotopyGroupMulEquivOfPath_apply,
+      ← ofMul_eq_zero, ← transport_vsub_transport, h, vsub_self]
+  · -- a cap of `p.conjLoop γ` shows that `γ` is null-homotopic
+    obtain ⟨D₀⟩ : Nonempty (RawCap γ) := RawCap.nonempty_iff.2 <|
+      Path.Homotopic.of_conj_nullhomotopic (α := p.symm) <| by
+        have hD := RawCap.nonempty_iff.1 ⟨D'⟩
+        rw [Path.conjLoop_apply] at hD
+        rw [Path.symm_symm]
+        exact (Path.Homotopic.trans_assoc _ _ _).trans hD
+    have : Nonempty (RawCap γ) := ⟨D₀⟩
+    have : Nonempty (RawCap (p.conjLoop γ)) := ⟨D'⟩
+    obtain ⟨a, ha⟩ := (homotopyGroupEquivOfPath p).surjective (D' -ᵥ transport p D₀).toMul
+    refine ⟨Additive.ofMul a +ᵥ D₀, ?_⟩
+    rw [transport_vadd, toMul_ofMul, ← homotopyGroupEquivOfPath_apply, ha, ofMul_toMul, vsub_vadd]
+
 
 /-- **Transport along the constant path** is gluing the reparametrization
 `Path.conjLoopReflPath γ` backwards: conjugating by a constant path only reparametrizes every loop
@@ -187,8 +213,9 @@ namespace RawCap
 
 /-- **Transport of a raw cap along a free homotopy of loops** `F` from `γ₀` to `γ₁`, a cylinder
 whose seam `F.basepointPath` runs from the base point of `γ₀` to that of `γ₁`: transport the disc
-along the seam, which gives a disc bounding `F.basepointPath.conjLoop γ₀`, then glue the based
-homotopy of loops `F.conjLoopHom` from this loop to `γ₁`. This is the lift of `F` to the caps:
+along the seam, which gives a disc bounding `F.basepointPath.conjLoop γ₀`, then glue backwards
+the based homotopy of loops `F.conjLoopHom` from this loop to `γ₁`, that is, precompose with
+`inv F.conjLoopHom`. This is the lift of `F` to the caps:
 following a cap of `γ₀` along the loops of `F` gives a cap of `γ₁`. -/
 def transportAlong (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) (D : RawCap γ₀) :
     RawCap γ₁ :=
@@ -216,6 +243,13 @@ theorem transportAlong_vsub_transportAlong
       Additive.ofMul (homotopyGroupTransport F.basepointPath (D' -ᵥ D).toMul) := by
   rw [transportAlong_def, transportAlong_def, comp_vsub_comp, transport_vsub_transport]
 
+/-- **Transport of raw caps along a free homotopy of loops is a bijection.** -/
+theorem transportAlong_bijective (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
+    Function.Bijective (transportAlong F) :=
+  .comp (f := transport F.basepointPath) (g := (inv F.conjLoopHom ≫ ·))
+    ⟨fun _ _ h => (cancel_epi _).1 h, fun D => ⟨F.conjLoopHom ≫ D, IsIso.inv_hom_id_assoc _ _⟩⟩
+    (transport_bijective F.basepointPath)
+
 /-- **Transport along a homotopy of loops with a fixed base point** is gluing the homotopy of
 loops `F.loopPath h` backwards, the gluing of `TauCeti.Floer.RawCap`. -/
 theorem transportAlong_of_forall_eq {γ₀ γ₁ : Ω X x}
@@ -223,9 +257,24 @@ theorem transportAlong_of_forall_eq {γ₀ γ₁ : Ω X x}
     (D : RawCap γ₀) :
     transportAlong F D =
       inv (FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (F.loopPath h))) ≫ D := by
-  rw [transportAlong_def, F.conjLoopHom_eq_eqToHom_comp h,
+  rw [transportAlong_def, F.conjLoopHom_of_forall_eq h,
     transport_eq_eqToHom_comp (F.basepointPath_eq_refl h), transport_refl]
   simp
+
+/-- **Transport along the constant homotopy of a loop** is the identity. -/
+@[simp]
+theorem transportAlong_refl {γ : Ω X x} (D : RawCap γ) :
+    transportAlong (HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
+      (γ.source.trans γ.target.symm)) D = D := by
+  have h : ∀ s, HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
+      (γ.source.trans γ.target.symm) (s, 0) = x := fun _ => γ.source
+  have hP : (HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
+      (γ.source.trans γ.target.symm)).loopPath h = Path.refl γ :=
+    Path.ext (funext fun _ => Path.ext (funext fun t => by simp))
+  have hid : FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (Path.refl γ)) =
+      𝟙 (⟨γ⟩ : FundamentalGroupoid (Ω X x)) :=
+    (FundamentalGroupoid.id_eq_path_refl _).symm
+  rw [transportAlong_of_forall_eq _ h, hP, hid, IsIso.inv_id, Category.id_comp]
 
 end RawCap
 
@@ -282,6 +331,29 @@ theorem transport_glue (p : Path x y) (u : (⟨γ₁⟩ : FundamentalGroupoid (�
     -- as in `RawCap.transport_comp`, the two sides differ only in how the objects are written
     rfl
 
+/-- **Transport of cap classes is a bijection.** When `γ` is not contractible, neither is
+`p.conjLoop γ`, and both sets of cap classes are empty. -/
+theorem transport_bijective (p : Path x y) :
+    Function.Bijective (transport (ω := ω) (c := c) (γ := γ) p) := by
+  refine ⟨fun q q' h => ?_, fun q' => ?_⟩
+  · induction q using induction_on with | h D =>
+    induction q' using induction_on with | h D' =>
+    rw [transport_mk, transport_mk, mk_eq_mk_iff, RawCap.transport_vsub_transport,
+      hurewiczIntHom_homotopyGroupTransport, ofMul_toMul] at h
+    exact mk_eq_mk_iff.2 h
+  · induction q' using induction_on with | h D' =>
+    obtain ⟨D, rfl⟩ := (RawCap.transport_bijective p).2 D'
+    exact ⟨mk ω c D, transport_mk p D⟩
+
+/-- **Transport along the constant path** is gluing the reparametrization
+`Path.conjLoopReflPath γ` backwards. -/
+theorem transport_refl (q : SphericalCapClass ω c γ) :
+    transport (Path.refl x) q =
+      glue (inv (FundamentalGroupoid.fromPath
+        (Path.Homotopic.Quotient.mk (Path.conjLoopReflPath γ)))) q := by
+  induction q using induction_on with
+  | h D => rw [transport_mk, glue_mk, RawCap.transport_refl]
+
 variable [PathConnectedSpace X]
 
 /-- **Transport of cap classes commutes with recapping.** -/
@@ -293,16 +365,6 @@ theorem transport_vadd (p : Path x y) (g : SphericalPeriodGroup ω c)
   | h D => rw [ofHomotopyGroup_vadd_mk, transport_mk, transport_mk, RawCap.transport_vadd,
       ← ofHomotopyGroup_vadd_mk, SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport,
       ofMul_toMul]
-
-/-- **Transport of the cap classes of a contractible loop on a path-connected space is a
-bijection.** -/
-theorem transport_bijective [Nonempty (RawCap γ)] (p : Path x y) :
-    Function.Bijective (transport (ω := ω) (c := c) (γ := γ) p) := by
-  have : Nonempty (RawCap (p.conjLoop γ)) := ⟨RawCap.transport p (Classical.arbitrary _)⟩
-  refine ⟨fun q q' h => ?_, fun q' => ?_⟩
-  · rw [← vsub_eq_zero_iff_eq, ← transport_vsub_transport p, h, vsub_self]
-  · obtain ⟨q₀⟩ : Nonempty (SphericalCapClass ω c γ) := inferInstance
-    exact ⟨(q' -ᵥ transport p q₀) +ᵥ q₀, by rw [transport_vadd, vsub_vadd]⟩
 
 end SphericalCapClass
 
@@ -322,12 +384,18 @@ variable {X : Type} [TopologicalSpace X] {x y : X} {γ₀ : Ω X x} {γ₁ : Ω 
 namespace SphericalCapClass
 
 /-- **Transport of cap classes along a free homotopy of loops** `F` from `γ₀` to `γ₁`: transport
-along the seam `F.basepointPath`, then glue the based homotopy of loops `F.conjLoopHom`. It is
+along the seam `F.basepointPath`, then glue backwards the based homotopy of loops
+`F.conjLoopHom`, that is, glue `inv F.conjLoopHom`. It is
 computed on representatives by `TauCeti.Floer.RawCap.transportAlong`
 (`TauCeti.Floer.SphericalCapClass.transportAlong_mk`). -/
 def transportAlong (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
     SphericalCapClass ω c γ₀ → SphericalCapClass ω c γ₁ :=
   glue (inv F.conjLoopHom) ∘ transport F.basepointPath
+
+theorem transportAlong_def (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1)
+    (q : SphericalCapClass ω c γ₀) :
+    transportAlong F q = glue (inv F.conjLoopHom) (transport F.basepointPath q) :=
+  (rfl)
 
 @[simp]
 theorem transportAlong_mk (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1)
@@ -358,14 +426,15 @@ theorem transportAlong_of_forall_eq {γ₀ γ₁ : Ω X x}
 theorem transportAlong_refl {γ : Ω X x} (q : SphericalCapClass ω c γ) :
     transportAlong (HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
       (γ.source.trans γ.target.symm)) q = q := by
-  have h : ∀ s, HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
-      (γ.source.trans γ.target.symm) (s, 0) = x := fun _ => γ.source
-  have hP : (HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
-      (γ.source.trans γ.target.symm)).loopPath h = Path.refl γ :=
-    Path.ext (funext fun _ => Path.ext (funext fun t => by simp))
-  rw [transportAlong_of_forall_eq _ h, hP, Path.Homotopic.Quotient.mk_refl]
-  exact (congrArg (glue · q) (IsIso.inv_id (X := (⟨γ⟩ : FundamentalGroupoid (Ω X x))))).trans
-    (glue_id q)
+  induction q using induction_on with
+  | h D => rw [transportAlong_mk, RawCap.transportAlong_refl]
+
+/-- **Transport of cap classes along a free homotopy of loops is a bijection** from the cap
+classes of `γ₀` to those of `γ₁`. When `γ₀` is not contractible, neither is `γ₁`, and both sets
+of cap classes are empty. -/
+theorem transportAlong_bijective (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
+    Function.Bijective (transportAlong (ω := ω) (c := c) F) :=
+  (glueEquiv (inv F.conjLoopHom)).bijective.comp (transport_bijective F.basepointPath)
 
 variable [PathConnectedSpace X]
 
@@ -375,25 +444,6 @@ theorem transportAlong_vadd (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g
     (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ₀) :
     transportAlong F (g +ᵥ q) = g +ᵥ transportAlong F q := by
   rw [transportAlong, Function.comp_apply, Function.comp_apply, transport_vadd, glue_vadd]
-
-/-- **Transport of cap classes along a free homotopy of loops is a bijection**: this is path
-lifting of the cap classes along paths of loops. When `γ₀` is not contractible, neither is `γ₁`,
-and both sets of cap classes are empty. -/
-theorem transportAlong_bijective (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1) :
-    Function.Bijective (transportAlong (ω := ω) (c := c) F) := by
-  by_cases h : Nonempty (RawCap γ₀)
-  · exact (glueEquiv (inv F.conjLoopHom)).bijective.comp (transport_bijective F.basepointPath)
-  have : IsEmpty (RawCap γ₀) := not_nonempty_iff.1 h
-  -- a cap of `γ₁` glued to `F.conjLoopHom` caps `F.basepointPath.conjLoop γ₀`, so `γ₀` would be
-  -- null-homotopic
-  have : IsEmpty (RawCap γ₁) := ⟨fun D => h <| RawCap.nonempty_iff.2 <|
-    Path.Homotopic.of_conj_nullhomotopic (α := F.basepointPath.symm) <| by
-      have hD := RawCap.nonempty_iff.1 ⟨F.conjLoopHom ≫ D⟩
-      rw [Path.conjLoop_apply] at hD
-      rw [Path.symm_symm]
-      exact (Path.Homotopic.trans_assoc _ _ _).trans hD⟩
-  exact ⟨fun q => isEmptyElim (induction_on (motive := fun _ => False) q isEmptyElim),
-    fun q => isEmptyElim (induction_on (motive := fun _ => False) q isEmptyElim)⟩
 
 end SphericalCapClass
 
