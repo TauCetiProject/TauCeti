@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Data.Finset.Sym
+public import Mathlib.Data.Set.Card
 public import TauCeti.Data.Sym.Crosses
 public import TauCeti.Order.Lattice.Submodular
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
@@ -22,7 +23,7 @@ support graph. Diagonal pairs never contribute to a cut and are ignored by the s
 
 * `TauCeti.pairCutCapacity`: the capacity of a cut for weights on unordered vertex pairs.
 * `TauCeti.capacitySupport`: the simple support graph of a pair-capacity function.
-* `SimpleGraph.unitPairCapacity`: capacity one on graph edges and zero elsewhere.
+* `SimpleGraph.unitCutCapacity`: the number of graph edges crossing a vertex cut.
 
 ## Main result
 
@@ -64,6 +65,17 @@ theorem pairCutCapacity_def [Fintype V] [AddCommMonoid K]
   intro p _
   by_cases hp : p.Crosses (S : Set V) <;> simp [hp]
 
+/-- The capacity of the empty cut is zero. -/
+@[simp]
+theorem pairCutCapacity_empty [Fintype V] [AddCommMonoid K] (c : Sym2 V → K) :
+    pairCutCapacity c ∅ = 0 := by
+  classical
+  rw [pairCutCapacity]
+  apply sum_eq_zero
+  intro p _
+  induction p using Sym2.inductionOn with
+  | _ x y => simp
+
 /-- Pair cut capacity is unchanged when the two sides of the cut are exchanged. -/
 @[simp]
 theorem pairCutCapacity_compl [Fintype V] [DecidableEq V] [AddCommMonoid K]
@@ -71,6 +83,13 @@ theorem pairCutCapacity_compl [Fintype V] [DecidableEq V] [AddCommMonoid K]
     pairCutCapacity c Sᶜ = pairCutCapacity c S := by
   classical
   simp only [pairCutCapacity, Finset.coe_compl, Sym2.crosses_compl]
+
+/-- The capacity of the universal cut is zero. -/
+@[simp]
+theorem pairCutCapacity_univ [Fintype V] [AddCommMonoid K] (c : Sym2 V → K) :
+    pairCutCapacity c univ = 0 := by
+  classical
+  rw [← compl_empty, pairCutCapacity_compl, pairCutCapacity_empty]
 
 /-- The cut function of weights nonnegative on pairs of distinct vertices is submodular.
 Diagonal weights are unrestricted. Together with `pairCutCapacity_compl`, this makes it a symmetric
@@ -160,45 +179,52 @@ end TauCeti
 
 namespace SimpleGraph
 
-variable {V : Type*} (G : SimpleGraph V)
+variable {V : Type*}
 
-open Classical in
-/-- The unit pair capacity of a simple graph: one on each edge and zero on every non-edge,
-including diagonal pairs. -/
-noncomputable def unitPairCapacity (e : Sym2 V) : ℕ :=
-  if e ∈ G.edgeSet then 1 else 0
+/-- The unit capacity of a vertex cut in a finite simple graph: the number of graph edges
+crossing the cut. -/
+noncomputable def unitCutCapacity (G : SimpleGraph V) [Finite G.edgeSet]
+    (S : Finset V) : ℕ :=
+  (Set.toFinite (G.edgeSet ∩ {e | e.Crosses (S : Set V)})).toFinset.card
 
+/-- Unit cut capacity is the number of actual simple-graph edges crossing the cut. -/
+theorem unitCutCapacity_eq_ncard (G : SimpleGraph V) [Finite G.edgeSet] (S : Finset V) :
+    G.unitCutCapacity S =
+      (G.edgeSet ∩ {e | e.Crosses (S : Set V)}).ncard := by
+  rw [unitCutCapacity]
+  exact (Set.ncard_eq_toFinset_card _ _).symm
+
+/-- The empty cut has unit capacity zero. -/
 @[simp]
-theorem unitPairCapacity_of_mem {e : Sym2 V} (he : e ∈ G.edgeSet) :
-    G.unitPairCapacity e = 1 := by
-  simp [unitPairCapacity, he]
+theorem unitCutCapacity_empty (G : SimpleGraph V) [Finite G.edgeSet] :
+    G.unitCutCapacity ∅ = 0 := by
+  rw [unitCutCapacity_eq_ncard, Set.ncard_eq_zero]
+  apply Set.eq_empty_iff_forall_notMem.mpr
+  rintro e ⟨-, he⟩
+  induction e using Sym2.inductionOn with
+  | _ x y => simp at he
 
-@[simp]
-theorem unitPairCapacity_of_not_mem {e : Sym2 V} (he : e ∉ G.edgeSet) :
-    G.unitPairCapacity e = 0 := by
-  simp [unitPairCapacity, he]
-
-@[simp]
-theorem unitPairCapacity_eq_one_iff {e : Sym2 V} :
-    G.unitPairCapacity e = 1 ↔ e ∈ G.edgeSet := by
-  classical
-  simp [unitPairCapacity]
-
-@[simp]
-theorem unitPairCapacity_eq_zero_iff {e : Sym2 V} :
-    G.unitPairCapacity e = 0 ↔ e ∉ G.edgeSet := by
-  classical
-  simp [unitPairCapacity]
-
-@[simp]
-theorem capacitySupport_unitPairCapacity :
-    TauCeti.capacitySupport G.unitPairCapacity = G := by
-  classical
-  ext x y
-  rw [TauCeti.capacitySupport_adj]
-  change (x ≠ y ∧ 0 < if G.Adj x y then 1 else 0) ↔ G.Adj x y
-  by_cases hxy : G.Adj x y
-  · simp [hxy, hxy.ne]
-  · simp [hxy]
+/-- A cut has unit capacity zero exactly when no graph edge joins a vertex in the cut to a
+vertex outside it. -/
+theorem unitCutCapacity_eq_zero_iff (G : SimpleGraph V) [Finite G.edgeSet] (S : Finset V) :
+    G.unitCutCapacity S = 0 ↔
+      ∀ {x : V}, x ∈ S → ∀ {y : V}, y ∉ S → ¬G.Adj x y := by
+  rw [unitCutCapacity_eq_ncard, Set.ncard_eq_zero]
+  constructor
+  · intro h x hx y hy hxy
+    have : s(x, y) ∈ G.edgeSet ∩ {e | e.Crosses (S : Set V)} := by
+      exact ⟨G.mem_edgeSet.mpr hxy, by simp [hx, hy]⟩
+    rw [h] at this
+    exact this
+  · intro h
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    rintro e ⟨heG, heS⟩
+    induction e using Sym2.inductionOn with
+    | _ x y =>
+      simp only [Set.mem_ofPred_eq] at heS
+      rw [Sym2.crosses_mk_iff] at heS
+      rcases heS with ⟨hx, hy⟩ | ⟨hy, hx⟩
+      · exact h hx hy (G.mem_edgeSet.mp heG)
+      · exact h hy hx (G.mem_edgeSet.mp heG).symm
 
 end SimpleGraph

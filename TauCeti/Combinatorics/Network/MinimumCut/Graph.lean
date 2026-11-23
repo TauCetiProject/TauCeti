@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Menger.CutValue
 public import TauCeti.Combinatorics.Network.MinimumCut.GomoryHu
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Cut trees for weighted multigraphs
@@ -25,7 +26,7 @@ tree joining vertices from different components.
 * `TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity`: pair capacities admit cut trees.
 * `Graph.exists_isCutTree_edgeCutCapacity`: finite weighted multigraphs admit cut trees.
 * `Graph.exists_isUnitCutTree`: finite multigraphs admit unit-capacity cut trees.
-* `IsFlowEquivalentTree.reachable_deleteEdges_iff_edgeReachability`: threshold components of a
+* `IsFlowEquivalentTree.reachable_deleteEdges_iff_isEdgeReachable`: threshold components of a
   unit flow-equivalent tree are the local edge-connectivity classes of the multigraph.
 * `IsFlowEquivalentTree.exists_edge_edgeConnectivity_eq_weight`: the global edge connectivity is
   the minimum tree-edge weight.
@@ -98,17 +99,14 @@ theorem exists_weight_eq_edgeReachability
   rw [G.edgeReachability_eq_pairMinimumValue hst, ← hwe]
 
 /-- Deleting the tree edges of weight below `k` leaves two actual vertices connected exactly when
-they are equal or their native local edge reachability is at least `k`. -/
-theorem reachable_deleteEdges_iff_edgeReachability
+they are natively `k`-edge-reachable. -/
+theorem reachable_deleteEdges_iff_isEdgeReachable
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) (k : ℕ) {s t : V(G)} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
-      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
-  rw [hT.reachable_deleteEdges_iff]
-  by_cases hst : s = t
-  · simp [hst]
-  · simp only [hst, false_or]
-    rw [G.edgeReachability_eq_pairMinimumValue hst]
-    exact_mod_cast Iff.rfl
+      G.IsEdgeReachable k s t := by
+  rw [hT.reachable_deleteEdges_iff_le_iInf_pairMinimumValue,
+    G.isEdgeReachable_iff_le_edgeReachability,
+    G.edgeReachability_eq_iInf_pairMinimumValue]
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 
@@ -152,16 +150,7 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
   refine ⟨u, v, huv, hmin, ?_⟩
   rw [G.edgeConnectivity_eq_iInf_edgeReachability, ← iInf_subtype'']
   simp_rw [← iInf_subtype'']
-  have hreach (s t : V(G)) :
-      G.edgeReachability s t =
-        ⨅ (_ : s ≠ t),
-          ((TauCeti.TerminalCut.pairMinimumValue
-            (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) s t : ℕ) : ℕ∞) := by
-    by_cases hst : s = t
-    · subst t
-      simp [G.edgeReachability_self s.property]
-    · simp [hst, G.edgeReachability_eq_pairMinimumValue hst]
-  simp_rw [hreach]
+  simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue]
   exact hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree

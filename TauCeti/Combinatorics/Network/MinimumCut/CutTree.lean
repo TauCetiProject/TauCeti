@@ -102,6 +102,19 @@ theorem reachable_deleteEdges_iff (hT : IsFlowEquivalentTree f T w) (k : K) {s t
     obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
     exact ⟨p.toDeleteEdges _ fun e he ↦ not_lt.mpr (hk.trans (hT.le_weight hp he))⟩
 
+/-- Deleting the edges below a natural threshold is governed by the pair minimum value extended
+to `ℕ∞`, with value `⊤` on the diagonal. -/
+theorem reachable_deleteEdges_iff_le_iInf_pairMinimumValue
+    {f : Finset V → ℕ} {T : SimpleGraph V} {w : Sym2 V → ℕ}
+    (hT : IsFlowEquivalentTree f T w) (k : ℕ) {s t : V} :
+    (T.deleteEdges {e | w e < k}).Reachable s t ↔
+      (k : ℕ∞) ≤ ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞) := by
+  rw [hT.reachable_deleteEdges_iff]
+  by_cases hst : s = t
+  · subst t
+    simp
+  · simp [hst]
+
 /-- Any set separating two vertices has value at least the weight of some tree edge. -/
 theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t : V}
     (hs : s ∈ S) (ht : t ∉ S) : ∃ e ∈ T.edgeSet, w e ≤ f S := by
@@ -110,20 +123,20 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
 
-/-- A minimum-weight edge of a flow-equivalent tree has weight at most every minimum cut value
-between distinct vertices. The witness includes its minimum-weight certificate. -/
-theorem exists_edge_weight_le_pairMinimumValue (hT : IsFlowEquivalentTree f T w)
-    [Nontrivial V] :
+/-- Some minimum-weight tree edge has weight at most every minimum cut value between distinct
+vertices. -/
+theorem exists_edge_weight_le_pairMinimumValue [Nontrivial V]
+    (hT : IsFlowEquivalentTree f T w) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
-      ∀ x y, x ≠ y → w s(u, v) ≤ pairMinimumValue f x y := by
+      ∀ s t, s ≠ t → w s(u, v) ≤ pairMinimumValue f s t := by
   have hTne : T ≠ ⊥ := by
     intro h
     rw [h] at hT
     exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
   obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
-  refine ⟨u, v, huv, hmin, fun x y hxy ↦ ?_⟩
-  obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path x y
-  obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
+  refine ⟨u, v, huv, hmin, fun s t hst ↦ ?_⟩
+  obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
+  obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
 
 /-- If the tree has at least two vertices, the least image of its pair minimum values under an

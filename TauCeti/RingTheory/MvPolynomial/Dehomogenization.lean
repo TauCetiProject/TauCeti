@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Dehomogenization and the affine gradient criterion
@@ -104,12 +105,12 @@ theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
 /-- Dehomogenization does not increase the total degree. -/
 theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
     (dehomogenize i p).totalDegree ≤ p.totalDegree := by
-  conv_lhs => rw [p.as_sum]
-  rw [map_sum]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
-  rw [dehomogenize_monomial]
-  refine (totalDegree_monomial_le _ _).trans (le_trans ?_ (le_totalDegree hs))
-  simp [Finsupp.sum_fintype, Fin.sum_univ_succAbove _ i]
+  rw [dehomogenize]
+  refine (totalDegree_aeval_le p fun j _ ↦ ?_).trans_eq (mul_one _)
+  refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j
+  · simp
+  · rw [Fin.insertNth_apply_succAbove]
+    exact totalDegree_X_le l
 
 /-- For a homogeneous `p` of degree `d` and an exponent `s` of total degree `d`, the coefficient
 of `p` at `s` is the coefficient of the affine equation at the restriction of `s` to the retained

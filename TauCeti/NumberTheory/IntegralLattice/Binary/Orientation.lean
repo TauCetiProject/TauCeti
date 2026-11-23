@@ -18,7 +18,8 @@ The basis matrix of an oriented integral change has determinant one. Its inverse
 binary norm form through the existing left `SL₂(ℤ)` action. Primitive normalization commutes
 with that action, so the proper class `binaryProperClass` depends only on the lattice and its
 fixed orientation. The characteristic lemma computes it using any carrier basis of that
-orientation.
+orientation. Conversely, every representative of the class, scaled by the content, is the norm
+form of a carrier basis of that orientation.
 
 Reversing the second basis vector realizes the determinant-minus-one substitution
 `(x, y) ↦ (x, -y)`. It negates the middle coefficient of both the norm form and its primitive
@@ -56,15 +57,21 @@ theorem binaryNormForm_eq_inv_smul (γ : SL(2, ℤ))
     ring
 
 /-- Every form properly equivalent to a norm form of `L` is again a norm form of `L`: for each
-`γ : SL(2, ℤ)` some carrier basis has norm form `γ • L.binaryNormForm b`. -/
+`γ : SL(2, ℤ)` some carrier basis with the orientation of `b` has norm form
+`γ • L.binaryNormForm b`. -/
 theorem exists_binaryNormForm_eq_smul (γ : SL(2, ℤ)) :
-    ∃ b' : Basis (Fin 2) ℤ L, L.binaryNormForm b' = γ • L.binaryNormForm b := by
+    ∃ b' : Basis (Fin 2) ℤ L,
+      b'.orientation = b.orientation ∧ L.binaryNormForm b' = γ • L.binaryNormForm b := by
   let e : L ≃ₗ[ℤ] L := Matrix.toLinearEquiv b ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
     (by rw [Matrix.SpecialLinearGroup.det_coe]; exact isUnit_one)
-  refine ⟨b.map e, ?_⟩
-  rw [L.binaryNormForm_eq_inv_smul b (b.map e) γ⁻¹ ?_, inv_inv]
-  ext i j
-  fin_cases i <;> simp [e, Basis.toMatrix_apply, Matrix.toLinearEquiv_apply, Matrix.toLin_self]
+  have hm : b.toMatrix (b.map e) = ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := by
+    ext i j
+    fin_cases i <;> simp [e, Basis.toMatrix_apply, Matrix.toLinearEquiv_apply, Matrix.toLin_self]
+  refine ⟨b.map e, ?_, ?_⟩
+  · rw [eq_comm, Basis.orientation_eq_iff_det_pos, Basis.det_apply, hm,
+      Matrix.SpecialLinearGroup.det_coe]
+    exact one_pos
+  · rw [L.binaryNormForm_eq_inv_smul b (b.map e) γ⁻¹ hm, inv_inv]
 
 /-- Bases with the same orientation give properly equivalent norm forms. -/
 theorem exists_binaryNormForm_eq_smul_of_orientation_eq (h : b.orientation = b'.orientation) :
@@ -107,6 +114,20 @@ theorem binaryProperClass_eq_mk (hV : Module.finrank ℚ V = 2)
     (L.finrank_carrier.trans hV)).adjustToOrientation o
   exact L.binaryProperClass_eq_of_orientation_eq b b₀
     (hb.trans (Basis.orientation_adjustToOrientation _ o).symm)
+
+/-- **Bases representing a proper class.** If the oriented proper class of `L` is the class of
+`f`, then some carrier basis of that orientation has norm form `c f`, where `c` is the content. -/
+theorem exists_binaryNormForm_eq_smul_of_binaryProperClass_eq (hV : Module.finrank ℚ V = 2)
+    (o : Orientation ℤ L (Fin 2)) {f : BinaryQuadraticForm ℤ}
+    (h : L.binaryProperClass hV o = Quotient.mk'' f) :
+    ∃ b : Basis (Fin 2) ℤ L,
+      b.orientation = o ∧ L.binaryNormForm b = (L.binaryContent hV : ℤ) • f := by
+  let b₀ := (Module.finBasisOfFinrankEq ℤ L (L.finrank_carrier.trans hV)).adjustToOrientation o
+  obtain ⟨γ, hγ⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp (Quotient.exact h))
+  obtain ⟨b, hbo, hb⟩ := L.exists_binaryNormForm_eq_smul b₀ γ⁻¹
+  refine ⟨b, hbo.trans (Basis.orientation_adjustToOrientation _ _), ?_⟩
+  rw [hb, ← (L.binaryNormForm b₀).content_smul_primPart, ← hγ, smul_comm, inv_smul_smul,
+    L.binaryContent_eq_content_binaryNormForm b₀ hV, Nat.cast_smul_eq_nsmul]
 
 /-- Reversing the second basis vector negates precisely the middle coefficient of the norm form. -/
 @[simp] theorem binaryNormForm_unitsSMul_neg :
