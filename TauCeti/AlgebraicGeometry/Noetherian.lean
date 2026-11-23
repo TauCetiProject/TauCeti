@@ -8,8 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
-public import TauCeti.Topology.Sober
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
+import TauCeti.Topology.Irreducible
 
 /-!
 # Noetherianity under finite-type morphisms and fibres
@@ -74,14 +74,16 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   · exact ⟨_, mem_connectedComponent, rfl⟩
   · exact isConnected_connectedComponent.image _ continuous_subtypeVal.continuousOn
 
-/-- In a locally Noetherian scheme, the irreducible component with generic point `x` has nonempty
-interior: an affine open neighbourhood of `x` is a Noetherian space. -/
-theorem nonempty_interior_closure_of_mem_genericPoints {X : Scheme.{u}} [IsLocallyNoetherian X]
-    {x : X} (hx : x ∈ genericPoints X) : (interior (closure {x})).Nonempty := by
+/-- Every irreducible component of a locally Noetherian scheme has nonempty interior: it meets an
+affine open, which is a Noetherian space and so has finitely many irreducible components. -/
+theorem nonempty_interior_of_mem_irreducibleComponents {X : Scheme.{u}} [IsLocallyNoetherian X]
+    {C : Set X} (hC : C ∈ irreducibleComponents X) : (interior C).Nonempty := by
+  obtain ⟨x, hx⟩ := hC.1.nonempty
   obtain ⟨W, hW, hxW, -⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := ⊤) trivial
   have : IsNoetherianRing Γ(X, W) := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
   have : TopologicalSpace.NoetherianSpace (W : Set X) := noetherianSpace_of_isAffineOpen W hW
-  exact W.isOpen.nonempty_interior_closure_of_mem_genericPoints hxW hx
+  exact W.isOpen.nonempty_interior_of_mem_irreducibleComponents
+    TopologicalSpace.NoetherianSpace.finite_irreducibleComponents hC ⟨x, hx, hxW⟩
 
 end TauCeti.AlgebraicGeometry
 

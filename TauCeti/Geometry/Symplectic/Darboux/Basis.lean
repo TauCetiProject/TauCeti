@@ -46,7 +46,12 @@ In a Darboux basis, pairing with the basis vectors reads off the coordinates of 
 Conversely, a family satisfying the Darboux relations has Gram matrix `Matrix.J` after
 relabelling (`TauCeti.SymplecticForm.apply_darbouxIndexEquiv_symm_eq_J_iff`), so it is linearly
 independent (`TauCeti.SymplecticForm.linearIndependent_of_apply_fst_snd`), and `finrank V` such
-vectors form a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_coe_eq`).
+vectors form a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_coe_eq`). In
+particular, pairs `(xᵢ, yᵢ)` with `ω(xᵢ, yᵢ) = 1` taken from pairwise `ω`-orthogonal subspaces
+form a Darboux basis when there are `dim V / 2` of them
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_of_forall_mem`), and more generally families of
+pairs satisfying the Darboux relations, taken from pairwise `ω`-orthogonal subspaces, assemble to
+a Darboux basis (`TauCeti.SymplecticForm.exists_isDarbouxBasis_of_blocks`).
 
 Darboux bases are carried to Darboux bases by linear symplectomorphisms
 (`TauCeti.SymplecticForm.IsDarbouxBasis.map`), and the concatenation of Darboux bases of `ω₁` and
@@ -237,6 +242,58 @@ theorem exists_isDarbouxBasis_coe_eq [FiniteDimensional ℝ V] (hn : finrank ℝ
   refine ⟨basisOfLinearIndependentOfCardEqFinrank' v hv hcard, ⟨?_, ?_, ?_⟩,
     coe_basisOfLinearIndependentOfCardEqFinrank' v hv hcard⟩ <;>
     simpa only [coe_basisOfLinearIndependentOfCardEqFinrank']
+
+/-- **Darboux bases from orthogonal blocks.** Let `G j` be pairwise `ω`-orthogonal subspaces, and
+for each `j` let `v j` be `m j` pairs of vectors of `G j` satisfying the Darboux relations. If
+`finrank ℝ V = n * 2` and `e` enumerates the pairs of all the blocks, these pairs form a Darboux
+basis of `V`, the `i`-th pair of the `j`-th block in position `e ⟨j, i⟩`. -/
+theorem exists_isDarbouxBasis_of_blocks [FiniteDimensional ℝ V] {κ : Type*} {m : κ → ℕ}
+    (e : (Σ j, Fin (m j)) ≃ Fin n) (hn : finrank ℝ V = n * 2) {G : κ → Submodule ℝ V}
+    (hG : Pairwise fun k l ↦ ∀ v ∈ G k, ∀ w ∈ G l, ω v w = 0) {v : ∀ j, Fin (m j) × Fin 2 → V}
+    (hv : ∀ j a, v j a ∈ G j) (h₁ : ∀ j i i', ω (v j (i, 0)) (v j (i', 0)) = 0)
+    (h₂ : ∀ j i i', ω (v j (i, 1)) (v j (i', 1)) = 0)
+    (h₃ : ∀ j i i', ω (v j (i, 0)) (v j (i', 1)) = if i = i' then 1 else 0) :
+    ∃ b : Basis (Fin n × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧
+      ∀ j i c, b (e ⟨j, i⟩, c) = v j (i, c) := by
+  let w : Fin n × Fin 2 → V := fun p ↦ v (e.symm p.1).1 ((e.symm p.1).2, p.2)
+  have hw (j : κ) (i : Fin (m j)) (c : Fin 2) : w (e ⟨j, i⟩, c) = v j (i, c) := by
+    simp only [w]
+    rw [Equiv.symm_apply_apply]
+  -- Within a block the relations hold by assumption; across blocks `ω` vanishes.
+  have hsame (c : Fin 2) (hc : ∀ j i i', ω (v j (i, c)) (v j (i', c)) = 0) (p p' : Fin n) :
+      ω (w (p, c)) (w (p', c)) = 0 := by
+    obtain ⟨⟨j, i⟩, rfl⟩ := e.surjective p
+    obtain ⟨⟨j', i'⟩, rfl⟩ := e.surjective p'
+    rw [hw, hw]
+    rcases eq_or_ne j j' with rfl | hjj'
+    · exact hc j i i'
+    · exact hG hjj' _ (hv _ _) _ (hv _ _)
+  obtain ⟨b, hb, hbw⟩ := exists_isDarbouxBasis_coe_eq hn (hsame 0 h₁) (hsame 1 h₂) fun p p' ↦ by
+    obtain ⟨⟨j, i⟩, rfl⟩ := e.surjective p
+    obtain ⟨⟨j', i'⟩, rfl⟩ := e.surjective p'
+    rw [hw, hw]
+    simp only [e.apply_eq_iff_eq]
+    rcases eq_or_ne j j' with rfl | hjj'
+    · simpa using h₃ j i i'
+    · simpa [hjj'] using hG hjj' _ (hv _ _) _ (hv _ _)
+  exact ⟨b, hb, fun j i c ↦ by rw [hbw, hw]⟩
+
+/-- **Darboux bases from orthogonal pairs.** Pairs `(xₖ, yₖ)` with `ω(xₖ, yₖ) = 1`, taken from
+pairwise `ω`-orthogonal subspaces `Gₖ`, form a Darboux basis `(x₁, y₁, …, xₙ, yₙ)` when
+`finrank ℝ V = n * 2`. This is `TauCeti.SymplecticForm.exists_isDarbouxBasis_of_blocks` with one
+pair in each block. -/
+theorem exists_isDarbouxBasis_of_forall_mem [FiniteDimensional ℝ V] (hn : finrank ℝ V = n * 2)
+    {G : Fin n → Submodule ℝ V} (hG : Pairwise fun k l ↦ ∀ v ∈ G k, ∀ w ∈ G l, ω v w = 0)
+    {x y : Fin n → V} (hx : ∀ k, x k ∈ G k) (hy : ∀ k, y k ∈ G k)
+    (hxy : ∀ k, ω (x k) (y k) = 1) :
+    ∃ b : Basis (Fin n × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧ (∀ k, b (k, 0) = x k) ∧
+      ∀ k, b (k, 1) = y k := by
+  obtain ⟨b, hb, hbv⟩ := exists_isDarbouxBasis_of_blocks (ω := ω) (m := fun _ ↦ 1)
+    ((Equiv.sigmaEquivProd _ _).trans (Equiv.prodUnique _ _)) hn hG
+    (v := fun k a ↦ ![x k, y k] a.2) (fun k a ↦ by fin_cases a <;> simp [hx, hy])
+    (fun _ _ _ ↦ ω.self_eq_zero _) (fun _ _ _ ↦ ω.self_eq_zero _)
+    (fun k i i' ↦ by simp [Subsingleton.elim i i', hxy])
+  exact ⟨b, hb, fun k ↦ by simpa using hbv k 0 0, fun k ↦ by simpa using hbv k 0 1⟩
 
 /-- **Darboux bases have unit relative determinant**: the change of basis between two Darboux
 bases of `(V, ω)` is a symplectic matrix, of determinant `1`. -/

@@ -19,6 +19,9 @@ Mathlib's `irreducibleComponent x` is a maximal irreducible set containing `x`. 
 an element `irreducibleComponentOf x` of `irreducibleComponents α`, giving a map from points to
 irreducible components. When every point lies on a unique irreducible component, as in a scheme
 whose stalks are integral domains, this map sends a point to the component containing it.
+
+An irreducible component has nonempty interior when there are only finitely many components, and
+more generally when it meets an open subset with finitely many components.
 -/
 
 public section
@@ -26,6 +29,34 @@ public section
 open Set
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The complement of a finite union of irreducible components is open. -/
+theorem Set.Finite.isOpen_compl_sUnion_of_subset_irreducibleComponents {s : Set (Set X)}
+    (hs : s.Finite) (h : s ⊆ irreducibleComponents X) : IsOpen (⋃₀ s)ᶜ :=
+  (hs.isClosed_sUnion fun C hC ↦ isClosed_of_mem_irreducibleComponents C (h hC)).isOpen_compl
+
+/-- Every irreducible component has nonempty interior when there are finitely many components. -/
+theorem Set.Finite.nonempty_interior_of_mem_irreducibleComponents
+    (hfin : (irreducibleComponents X).Finite) {C : Set X}
+    (hC : C ∈ irreducibleComponents X) : (interior C).Nonempty := by
+  let U := (⋃₀ (irreducibleComponents X \ {C}))ᶜ
+  have hU : closure U = C :=
+    closure_sUnion_irreducibleComponents_sdiff_singleton hfin C hC
+  have hU_open : IsOpen U :=
+    hfin.sdiff.isOpen_compl_sUnion_of_subset_irreducibleComponents sdiff_subset
+  have hU_nonempty : U.Nonempty := closure_nonempty_iff.mp (hU ▸ hC.1.nonempty)
+  exact hU_nonempty.mono (interior_maximal (subset_closure.trans_eq hU) hU_open)
+
+/-- An irreducible component meeting an open subset with finitely many irreducible components has
+nonempty interior. -/
+theorem IsOpen.nonempty_interior_of_mem_irreducibleComponents {U : Set X} (hU : IsOpen U)
+    (hfin : (irreducibleComponents U).Finite) {C : Set X} (hC : C ∈ irreducibleComponents X)
+    (hCU : (C ∩ U).Nonempty) : (interior C).Nonempty := by
+  have hC' := preimage_mem_irreducibleComponents hC hU.isOpenEmbedding_subtypeVal
+    (by rwa [Subtype.range_coe])
+  obtain ⟨y, hy⟩ := hfin.nonempty_interior_of_mem_irreducibleComponents hC'
+  exact ⟨y, interior_mono (image_preimage_subset _ C)
+    (hU.isOpenMap_subtypeVal.image_interior_subset _ (mem_image_of_mem _ hy))⟩
 
 /-- If `f` is a continuous surjection and the preimage of every irreducible component of `Y` is
 irreducible, then `Z ↦ f ⁻¹' Z` maps the irreducible components of `Y` bijectively onto those
