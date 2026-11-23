@@ -84,7 +84,8 @@ The same angle for an unbundled map `w : I → Circle` is `Circle.sweptAngle w`,
 * `Circle.angleChange_eq_add_of_halves`: it is the sum of the angles swept by the two halves of
   the path.
 * `Circle.sweptAngle`: the angle swept by a map `I → Circle`, `0` unless it is continuous, with
-  `Circle.sweptAngle_eq_sub`, `Circle.sweptAngle_mul` and `Circle.sweptAngle_comp_symm`.
+  `Circle.sweptAngle_eq_sub`, `Circle.sweptAngle_const`, `Circle.sweptAngle_mul` and
+  `Circle.sweptAngle_comp_symm`.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
@@ -351,6 +352,12 @@ theorem sweptAngle_of_continuous {w : I → Circle} (hw : Continuous w) :
 /-- A discontinuous map sweeps the angle `0` by convention. -/
 theorem sweptAngle_of_not_continuous {w : I → Circle} (hw : ¬Continuous w) : sweptAngle w = 0 :=
   dite_eq_right hw
+
+/-- A constant map sweeps no angle. -/
+@[simp]
+theorem sweptAngle_const (z : Circle) : sweptAngle (fun _ : I ↦ z) = 0 := by
+  rw [sweptAngle_of_continuous continuous_const]
+  exact angleChange_refl z
 
 /-- The angle swept by a continuous map is `θ 1 - θ 0` for every continuous lift `θ`. -/
 theorem sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) {θ : I → ℝ} (hθ : Continuous θ)

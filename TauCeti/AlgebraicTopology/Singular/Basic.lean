@@ -17,8 +17,9 @@ public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 # Singular chain complexes
 
 Facet restriction is `ContinuousMap.simplexFace`, composition with the facet inclusion
-`Convexity.StdSimplex.faceInclusion`; `TopCat.toSSetObjEquiv_symm_δ` identifies it with the actual
-simplicial face.
+`Convexity.StdSimplex.faceInclusion`, which is the map of the coface map `SimplexCategory.δ`
+(`Convexity.StdSimplex.map_δ_eq_faceInclusion`); `TopCat.toSSetObjEquiv_symm_δ` identifies it with
+the actual simplicial face.
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology of the singular
@@ -220,6 +221,16 @@ theorem homologyMap_comp_apply (f : C(X, Y)) (g : C(Y, Z)) {Λ : Type*} [Ring Λ
 
 end ContinuousMap
 
+namespace Convexity.StdSimplex
+
+/-- The map of standard simplices induced by the coface map `SimplexCategory.δ j` is the facet
+inclusion `Convexity.StdSimplex.faceInclusion j`. -/
+lemma map_δ_eq_faceInclusion {n : ℕ} (j : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))) :
+    StdSimplex.map (SimplexCategory.δ j) z = faceInclusion j z := by
+  rw [SimplexCategory.coe_δ, faceInclusion_apply]
+
+end Convexity.StdSimplex
+
 namespace TopCat
 
 /-- Singular-simplex identification carries the native simplicial face to facet restriction.
@@ -230,10 +241,9 @@ lemma toSSetObjEquiv_symm_δ {X : TopCat.{w}} {n : ℕ}
       (X.toSSetObjEquiv _).symm (s.simplexFace j) := by
   -- Native `δ` is the simplicial map of `SimplexCategory.δ`; naturality identifies its map.
   change (TopCat.toSSet.obj X).map (SimplexCategory.δ j).op _ = _
-  have h : s.simplexFace j = s.comp ⟨_, Convexity.StdSimplex.continuous_map ℝ j.succAbove⟩ :=
-    ContinuousMap.ext (s.simplexFace_apply j)
-  simpa only [h, SimplexCategory.coe_δ] using
-    (TopCat.toSSetObjEquiv_symm_naturality (SimplexCategory.δ j) s)
+  rw [TopCat.toSSetObjEquiv_symm_naturality]
+  exact congrArg _ <| ContinuousMap.ext fun z ↦
+    congrArg s (Convexity.StdSimplex.map_δ_eq_faceInclusion j z)
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   {R : C} {X : TopCat.{w}}

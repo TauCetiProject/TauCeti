@@ -368,6 +368,7 @@ private theorem vertexValue_eq_clutchingFunction {B : Type*} {s : B → X} (Φ :
     this _ hy _ _
   rintro z rfl A hm
   rw [← ContinuousLinearEquiv.normalizedDet_symm]
+  -- `(A.trans L).symm` is by definition `L.symm.trans A.symm`, and `L.symm` is `pointFrame F x`.
   rfl
 
 /-! ### The value on the triangulated cycle of a sphere -/
@@ -466,8 +467,7 @@ private theorem triangleAngle_const (x : X) :
         (ContinuousLinearEquiv.self_trans_symm (pointFrame F (E := E) x))).trans
         ContinuousLinearEquiv.normalizedDet_refl
     simp only [h1]
-    rw [sweptAngle_eq_sub continuous_const (θ := fun _ ↦ 0) continuous_const
-      fun _ ↦ Circle.exp_zero, sub_self]
+    exact Circle.sweptAngle_const 1
   simp only [triangleAngle, h, Fin.sum_univ_three]
   norm_num
 
@@ -485,12 +485,7 @@ private theorem clutchingCochain_squareChain {x : X} (p : Ω^ (Fin 2) X x) :
   rw [triangleAngle_comp _ hφ] at hm₁ hm₂
   rw [triangleAngle_const] at hm₀
   -- The diagonal faces of the two triangles of the square agree.
-  have hdiag : squareLowerTriangle.comp (faceInclusion 1) =
-      squareUpperTriangle.comp (faceInclusion 2) :=
-    ContinuousMap.ext fun z ↦ by
-      simpa only [ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply] using
-        squareLowerTriangle_map_succAbove_one z
-  rw [← hdiag,
+  rw [← squareLowerTriangle_comp_faceInclusion_one,
     edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceInclusion 0))
       (g := fun t ↦ ![σ t, 1]) squareUpperTriangle_faceInclusion_zero fun t ↦ ⟨1, Or.inr rfl⟩,
     edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceInclusion 1))

@@ -111,13 +111,16 @@ theorem squareUpperTriangle_apply_one (w : StdSimplex ℝ (Fin 3)) :
   StdSimplex.coe_weightsOneAddTwoI_apply w
 
 /-- The diagonal faces of the two triangles of the square agree: both are `z ↦ (z₁, z₁)`. -/
-theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2)) :
-    squareLowerTriangle (StdSimplex.map (Fin.succAbove 1) z) =
-      squareUpperTriangle (StdSimplex.map (Fin.succAbove 2) z) := by
+theorem squareLowerTriangle_comp_faceInclusion_one :
+    squareLowerTriangle.comp (StdSimplex.faceInclusion 1) =
+      squareUpperTriangle.comp (StdSimplex.faceInclusion 2) := by
+  ext1 z
   have h₁ : (StdSimplex.map (Fin.succAbove 1) z).weights 2 = z.weights 1 :=
     StdSimplex.weights_map_succAbove_of_eq (by decide) z
   have h₂ : (StdSimplex.map (Fin.succAbove 2) z).weights 1 = z.weights 1 :=
     StdSimplex.weights_map_succAbove_of_eq (by decide) z
+  rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply,
+    StdSimplex.faceInclusion_apply]
   funext j
   apply Subtype.ext
   fin_cases j <;>
@@ -240,10 +243,13 @@ theorem d_squareChain (p : Ω^ (Fin 2) X x) :
         ((p : C(I^(Fin 2), X)).comp squareLowerTriangle)) =
       (TopCat.toSSet.obj (TopCat.of X)).δ 2 (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm
         ((p : C(I^(Fin 2), X)).comp squareUpperTriangle)) :=
-    (TopCat.δ_toSSetObjEquiv_symm_eq _ 1 _ fun z ↦ congrArg p
-        (squareLowerTriangle_map_succAbove_one z)).trans
-      (TopCat.δ_toSSetObjEquiv_symm_eq _ 2 ((p : C(I^(Fin 2), X)).comp squareUpperTriangle |>.comp
-        ⟨StdSimplex.map (Fin.succAbove 2), StdSimplex.continuous_map ℝ _⟩) fun _ ↦ rfl).symm
+    (TopCat.δ_toSSetObjEquiv_symm_eq _ 1 ((p : C(I^(Fin 2), X)).comp squareUpperTriangle |>.comp
+        (StdSimplex.faceInclusion 2)) fun z ↦ by
+          simpa only [ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply] using
+            congrArg (p : C(I^(Fin 2), X))
+              (DFunLike.congr_fun squareLowerTriangle_comp_faceInclusion_one z)).trans
+      (TopCat.δ_toSSetObjEquiv_symm_eq _ 2 _ fun z ↦ by
+          simp only [ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply]).symm
   have hc (i : Fin 3) : (TopCat.toSSet.obj (TopCat.of X)).δ i
       (((TopCat.of X).toSSetObjEquiv (.op ⦋2⦌)).symm (ContinuousMap.const _ x)) = c :=
     TopCat.δ_toSSetObjEquiv_symm_eq _ i _ fun _ ↦ rfl
