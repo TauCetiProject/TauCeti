@@ -40,7 +40,10 @@ acceleration `u''`, whose distributional Laplacian at every time of `s` is the `
 
   `u(t) = cos((t - t₀)D) u(t₀) + D⁻¹ sin((t - t₀)D) u'(t₀) + ∫_{t₀}^t D⁻¹ sin((t - s)D) G(s) ds`.
 
-  Both directions of time are covered: `t` may lie before `t₀`.
+  Both directions of time are covered: `t` may lie before `t₀`. For the free equation and
+  `t₀ = 0`, the mixed norms `L^q(s; L^r_x)` of a solution are therefore at most those of
+  `cos(tD) u(0) + D⁻¹ sin(tD) u'(0)` over all times
+  (`TauCeti.IsWaveSolutionOn.eLpNorm_eLpNorm_restrict_le`).
 
 ## The arguments
 
@@ -356,5 +359,22 @@ theorem IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral
     (fun τ hτ ↦ ((hw τ (Ioo_subset_Icc_self hτ)).hasDerivAt
       (Icc_mem_nhds hτ.1 hτ.2)).hasDerivWithinAt) hint]
   simp
+
+/-- A strong solution `u` of the free wave equation on an order-connected set of times `s`
+containing `0` is `cos(tD) u(0) + D⁻¹ sin(tD) u'(0)` there, by Duhamel's formula. So its mixed
+norm `L^q(s; L^r_x)` is at most that of this free solution over all times. -/
+theorem IsWaveSolutionOn.eLpNorm_eLpNorm_restrict_le [s.OrdConnected]
+    (hu : IsWaveSolutionOn u u' u'' 0 s) (h0 : 0 ∈ s) {q r : ℝ≥0∞} :
+    eLpNorm (fun t ↦ eLpNorm (u t) r volume) q (volume.restrict s) ≤
+      eLpNorm (fun t ↦ eLpNorm (waveCosPropagator F t (u 0) + waveSinPropagator F t (u' 0)) r
+        volume) q volume := by
+  have hrep : ∀ᵐ t ∂volume.restrict s, eLpNorm (u t) r volume =
+      eLpNorm (waveCosPropagator F t (u 0) + waveSinPropagator F t (u' 0)) r volume :=
+    ae_restrict_of_forall_mem (Set.OrdConnected.measurableSet ‹_›) fun t ht ↦ by
+      rw [hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h0 ht
+        intervalIntegrable_const]
+      simp
+  rw [eLpNorm_congr_ae hrep]
+  exact eLpNorm_mono_measure _ Measure.restrict_le_self
 
 end TauCeti
