@@ -25,15 +25,19 @@ along `ℓ`, using the description of the closure order by polynomials vanishing
 or `ℓ` is needed.
 
 When `ψ` is surjective and `ℓ` is a linear equivalence, a section of `ψ` makes the inverse
-linear equivalence equivariant as well, and the two maps are inverse order isomorphisms
-(`TauCeti.Comodule.VectorOrbit.orderIsoOfSurjective`). This applies to isogenies in
-characteristic zero acting on their Lie algebras: they are surjective on rational points over
-algebraically closed fields, and their differential is a linear equivalence.
+linear equivalence equivariant as well, and the two maps are inverse bijections
+(`TauCeti.Comodule.VectorOrbit.equivOfSurjective`). Over an algebraically closed field they
+are inverse order isomorphisms (`TauCeti.Comodule.VectorOrbit.orderIsoOfSurjective`). This
+applies to isogenies in characteristic zero acting on their Lie algebras: they are surjective on
+rational points over algebraically closed fields, and their differential is a linear
+equivalence.
 
 ## Main declarations
 
 * `TauCeti.Comodule.VectorOrbit.map`: the map of rational orbits induced by an equivariant
   linear map.
+* `TauCeti.Comodule.VectorOrbit.equivOfSurjective`: an equivariant linear equivalence over a
+  surjection on rational points identifies the rational orbits.
 * `TauCeti.Comodule.VectorOrbit.monotone_map`: it is monotone for the closure order.
 * `TauCeti.Comodule.VectorOrbit.orderIsoOfSurjective`: an equivariant linear equivalence over
   a surjection on rational points identifies the rational orbits as ordered sets.
@@ -70,6 +74,51 @@ theorem map_mk (ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)) (ℓ
     map ψ ℓ hℓ (mk n) = mk (ℓ n) := by
   simp [map]
 
+/-- A linear equivalence equivariant along a surjection `ψ` on rational points has an inverse
+equivariant along any section of `ψ`. -/
+private theorem symm_apply_basePointsRepresentation
+    {ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)} (hψ : Function.Surjective ψ)
+    (e : N ≃ₗ[k] M)
+    (he : ∀ g n, e (basePointsRepresentation N g n) = basePointsRepresentation M (ψ g) (e n))
+    (g : WithConv (H →ₐ[k] k)) (m : M) :
+    e.symm (basePointsRepresentation M g m) =
+      basePointsRepresentation N (Function.surjInv hψ g) (e.symm m) := by
+  rw [e.symm_apply_eq, he, e.apply_symm_apply, Function.surjInv_eq hψ]
+
+/-- **Orbits along a surjection on rational points.** If `ψ : G'(k) → G(k)` is surjective and
+`e : N ≃ M` is equivariant along `ψ`, then `e` identifies the rational orbits of `G'` in `N`
+with those of `G` in `M`; the inverse is induced by `e.symm` along a section of `ψ`. -/
+noncomputable def equivOfSurjective {ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)}
+    (hψ : Function.Surjective ψ) (e : N ≃ₗ[k] M)
+    (he : ∀ g n, e (basePointsRepresentation N g n) = basePointsRepresentation M (ψ g) (e n)) :
+    VectorOrbit k K N ≃ VectorOrbit k H M where
+  toFun := map ψ e he
+  invFun := map (Function.surjInv hψ) e.symm (symm_apply_basePointsRepresentation hψ e he)
+  left_inv O := by
+    induction O using VectorOrbit.ind with | h n
+    simp
+  right_inv O := by
+    induction O using VectorOrbit.ind with | h m
+    simp
+
+/-- The equivalence sends the orbit of `n` to the orbit of `e n`. -/
+@[simp]
+theorem equivOfSurjective_mk {ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)}
+    (hψ : Function.Surjective ψ) (e : N ≃ₗ[k] M)
+    (he : ∀ g n, e (basePointsRepresentation N g n) = basePointsRepresentation M (ψ g) (e n))
+    (n : N) :
+    equivOfSurjective hψ e he (mk n) = mk (e n) := by
+  simp [equivOfSurjective]
+
+/-- The inverse equivalence sends the orbit of `m` to the orbit of `e.symm m`. -/
+@[simp]
+theorem equivOfSurjective_symm_mk {ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)}
+    (hψ : Function.Surjective ψ) (e : N ≃ₗ[k] M)
+    (he : ∀ g n, e (basePointsRepresentation N g n) = basePointsRepresentation M (ψ g) (e n))
+    (m : M) :
+    (equivOfSurjective hψ e he).symm (mk m) = mk (e.symm m) := by
+  simp [equivOfSurjective]
+
 end Map
 
 section ClosureOrder
@@ -95,30 +144,21 @@ theorem monotone_map (ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)
   rw [SymmetricAlgebra.lift_eval_map_dualMap, hℓ]
   exact hp (ψ g)
 
-/-- **Orbits along a surjection on rational points.** If `ψ : G'(k) → G(k)` is surjective and
-`e : N ≃ M` is equivariant along `ψ`, then `e` identifies the rational orbits of `G'` in `N`
-with those of `G` in `M`, as ordered sets for the closure order. -/
+/-- **Orbit closures along a surjection on rational points.** If `ψ : G'(k) → G(k)` is
+surjective and `e : N ≃ M` is equivariant along `ψ`, then `e` identifies the rational orbits of
+`G'` in `N` with those of `G` in `M`, as ordered sets for the closure order. -/
 noncomputable def orderIsoOfSurjective {ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)}
     (hψ : Function.Surjective ψ) (e : N ≃ₗ[k] M)
     (he : ∀ g n, e (basePointsRepresentation N g n) = basePointsRepresentation M (ψ g) (e n)) :
-    VectorOrbit k K N ≃o VectorOrbit k H M :=
-  have he' (g : WithConv (H →ₐ[k] k)) (m : M) :
-      e.symm (basePointsRepresentation M g m) =
-        basePointsRepresentation N (Function.surjInv hψ g) (e.symm m) := by
-    rw [e.symm_apply_eq, he, e.apply_symm_apply, Function.surjInv_eq hψ]
-  { toFun := map ψ e he
-    invFun := map (Function.surjInv hψ) e.symm he'
-    left_inv O := by
-      induction O using VectorOrbit.ind with | h n
-      simp
-    right_inv O := by
-      induction O using VectorOrbit.ind with | h m
-      simp
-    map_rel_iff' {O O'} := by
-      refine ⟨fun h ↦ ?_, fun h ↦ by simpa using monotone_map ψ (e : N →ₗ[k] M) he h⟩
-      induction O using VectorOrbit.ind with | h n
-      induction O' using VectorOrbit.ind with | h n'
-      simpa using monotone_map (Function.surjInv hψ) (e.symm : M →ₗ[k] N) he' h }
+    VectorOrbit k K N ≃o VectorOrbit k H M where
+  toEquiv := equivOfSurjective hψ e he
+  map_rel_iff' {O O'} := by
+    induction O using VectorOrbit.ind with | h n
+    induction O' using VectorOrbit.ind with | h n'
+    simp only [equivOfSurjective_mk]
+    refine ⟨fun h ↦ ?_, fun h ↦ by simpa using monotone_map ψ (e : N →ₗ[k] M) he h⟩
+    simpa using monotone_map (Function.surjInv hψ) (e.symm : M →ₗ[k] N)
+      (symm_apply_basePointsRepresentation hψ e he) h
 
 /-- The order isomorphism sends the orbit of `n` to the orbit of `e n`. -/
 @[simp]
