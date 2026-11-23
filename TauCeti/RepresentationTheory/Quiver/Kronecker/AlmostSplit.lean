@@ -336,61 +336,77 @@ theorem isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src
       rw [smul_eq_mul]
       field_simp
 
+/-- A split monomorphism out of the vertex simple `S₂` of the `A₂` quiver sends the generator
+outside the image of the arrow. -/
+private theorem notMem_range_of_isSplitMono_of_hom_simpleRep_tgt
+    {ψ : simpleRep k (Quiver.Kronecker A) tgt ⟶ Z} (hψ : IsSplitMono ψ) :
+    ψ.app tgt (simpleRepGenerator k tgt)
+      ∉ LinearMap.range (Z.map (arrowPath (default : A))).hom := by
+  obtain ⟨⟨r, hr⟩⟩ := hψ
+  rintro ⟨w, hw⟩
+  have hid : ψ.app tgt ≫ r.app tgt = 𝟙 ((simpleRep k (Quiver.Kronecker A) tgt).obj tgt) :=
+    (NatTrans.comp_app ψ r tgt).symm.trans
+      ((congrArg (fun e : simpleRep k (Quiver.Kronecker A) tgt ⟶
+        simpleRep k (Quiver.Kronecker A) tgt ↦ e.app tgt) hr).trans (NatTrans.id_app _ _))
+  have hnat : r.app tgt (Z.map (arrowPath (default : A)) w)
+      = (simpleRep k (Quiver.Kronecker A) tgt).map (arrowPath (default : A)) (r.app src w) :=
+    congr_hom_apply (r.naturality (arrowPath (default : A))) w
+  refine simpleRepGenerator_ne_zero (Q := Quiver.Kronecker A) k tgt ?_
+  refine (congr_hom_apply hid (simpleRepGenerator k tgt)).symm.trans ?_
+  refine ((congrArg (fun z ↦ r.app tgt z) hw).symm.trans hnat).trans ?_
+  exact (congrArg _ (eq_zero_of_isZero (isZero_simpleRep_obj src_ne_tgt) _)).trans (map_zero _)
+
+/-- A morphism out of the vertex simple `S₂` of the `A₂` quiver whose value on the generator lies
+outside the image of the arrow is a split monomorphism. -/
+private theorem isSplitMono_of_notMem_range_of_hom_simpleRep_tgt
+    {ψ : simpleRep k (Quiver.Kronecker A) tgt ⟶ Z}
+    (hv : ψ.app tgt (simpleRepGenerator k tgt)
+      ∉ LinearMap.range (Z.map (arrowPath (default : A))).hom) :
+    IsSplitMono ψ := by
+  obtain ⟨θ, hθ, hsub⟩ := Submodule.exists_le_ker_of_notMem hv
+  refine IsSplitMono.mk' ⟨kroneckerHom 0
+    (ModuleCat.ofHom ((simpleRepSelfEquiv k tgt).symm.toLinearMap ∘ₗ
+      ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ))) ?_, ?_⟩
+  · intro a
+    obtain rfl : a = default := Unique.eq_default a
+    refine Eq.trans ?_ zero_comp.symm
+    refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
+    have hker : θ (Z.map (arrowPath (default : A)) y) = 0 :=
+      hsub (LinearMap.mem_range_self _ y)
+    -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+    -- (see the note in
+    -- `isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src`).
+    change (simpleRepSelfEquiv k tgt).symm
+      ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ
+        (Z.map (arrowPath (default : A)) y)) = 0
+    rw [hker, smul_zero, map_zero]
+  · refine kroneckerRep_hom_ext ((isZero_simpleRep_obj src_ne_tgt).eq_of_src _ _) ?_
+    refine (NatTrans.comp_app _ _ _).trans (Eq.trans ?_ (NatTrans.id_app _ _).symm)
+    rw [kroneckerHom_app_tgt]
+    refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
+    obtain ⟨c, rfl⟩ := exists_eq_smul_simpleRepGenerator k y
+    have h1 : (ψ.app tgt) (c • simpleRepGenerator k tgt)
+        = c • (ψ.app tgt) (simpleRepGenerator k tgt) := map_smul _ _ _
+    -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
+    -- (see the note in
+    -- `isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src`).
+    change (simpleRepSelfEquiv k tgt).symm
+      ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ
+        (ψ.app tgt (c • simpleRepGenerator k tgt))) = c • simpleRepGenerator k tgt
+    refine (simpleRepSelfEquiv k tgt).injective ?_
+    rw [LinearEquiv.apply_symm_apply, map_smul, simpleRepSelfEquiv_apply_generator, h1, map_smul]
+    simp only [smul_eq_mul, mul_one]
+    field_simp
+
 /-- **A morphism out of the vertex simple `S₂` of the `A₂` quiver splits exactly when it misses the
 image of the arrow.** A retraction of such a morphism is a linear functional killing that image and
 not the image of the generator. -/
 theorem isSplitMono_iff_notMem_range_of_hom_simpleRep_tgt
     (ψ : simpleRep k (Quiver.Kronecker A) tgt ⟶ Z) :
     IsSplitMono ψ ↔ ψ.app tgt (simpleRepGenerator k tgt)
-      ∉ LinearMap.range (Z.map (arrowPath (default : A))).hom := by
-  constructor
-  · rintro ⟨⟨r, hr⟩⟩ ⟨w, hw⟩
-    have hid : ψ.app tgt ≫ r.app tgt = 𝟙 ((simpleRep k (Quiver.Kronecker A) tgt).obj tgt) :=
-      (NatTrans.comp_app ψ r tgt).symm.trans
-        ((congrArg (fun e : simpleRep k (Quiver.Kronecker A) tgt ⟶
-          simpleRep k (Quiver.Kronecker A) tgt ↦ e.app tgt) hr).trans (NatTrans.id_app _ _))
-    have hnat : r.app tgt (Z.map (arrowPath (default : A)) w)
-        = (simpleRep k (Quiver.Kronecker A) tgt).map (arrowPath (default : A)) (r.app src w) :=
-      congr_hom_apply (r.naturality (arrowPath (default : A))) w
-    refine simpleRepGenerator_ne_zero (Q := Quiver.Kronecker A) k tgt ?_
-    refine (congr_hom_apply hid (simpleRepGenerator k tgt)).symm.trans ?_
-    refine ((congrArg (fun z ↦ r.app tgt z) hw).symm.trans hnat).trans ?_
-    exact (congrArg _ (eq_zero_of_isZero (isZero_simpleRep_obj src_ne_tgt) _)).trans (map_zero _)
-  · intro hv
-    obtain ⟨θ, hθ, hsub⟩ := Submodule.exists_le_ker_of_notMem hv
-    refine IsSplitMono.mk' ⟨kroneckerHom 0
-      (ModuleCat.ofHom ((simpleRepSelfEquiv k tgt).symm.toLinearMap ∘ₗ
-        ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ))) ?_, ?_⟩
-    · intro a
-      obtain rfl : a = default := Unique.eq_default a
-      refine Eq.trans ?_ zero_comp.symm
-      refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
-      have hker : θ (Z.map (arrowPath (default : A)) y) = 0 :=
-        hsub (LinearMap.mem_range_self _ y)
-      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
-      -- (see the note in
-      -- `isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src`).
-      change (simpleRepSelfEquiv k tgt).symm
-        ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ
-          (Z.map (arrowPath (default : A)) y)) = 0
-      rw [hker, smul_zero, map_zero]
-    · refine kroneckerRep_hom_ext ((isZero_simpleRep_obj src_ne_tgt).eq_of_src _ _) ?_
-      refine (NatTrans.comp_app _ _ _).trans (Eq.trans ?_ (NatTrans.id_app _ _).symm)
-      rw [kroneckerHom_app_tgt]
-      refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
-      obtain ⟨c, rfl⟩ := exists_eq_smul_simpleRepGenerator k y
-      have h1 : (ψ.app tgt) (c • simpleRepGenerator k tgt)
-          = c • (ψ.app tgt) (simpleRepGenerator k tgt) := map_smul _ _ _
-      -- `change`: element-level form of a `ModuleCat` composite, out of reach of `rw`/`simp`
-      -- (see the note in
-      -- `isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src`).
-      change (simpleRepSelfEquiv k tgt).symm
-        ((θ (ψ.app tgt (simpleRepGenerator k tgt)))⁻¹ • θ
-          (ψ.app tgt (c • simpleRepGenerator k tgt))) = c • simpleRepGenerator k tgt
-      refine (simpleRepSelfEquiv k tgt).injective ?_
-      rw [LinearEquiv.apply_symm_apply, map_smul, simpleRepSelfEquiv_apply_generator, h1, map_smul]
-      simp only [smul_eq_mul, mul_one]
-      field_simp
+      ∉ LinearMap.range (Z.map (arrowPath (default : A))).hom :=
+  ⟨notMem_range_of_isSplitMono_of_hom_simpleRep_tgt,
+    isSplitMono_of_notMem_range_of_hom_simpleRep_tgt⟩
 
 /-! ### The sequence is almost split -/
 
@@ -552,6 +568,21 @@ instance epi_kroneckerARSequence_g : Epi (kroneckerARSequence k A).g := by
         rw [simpleRepSelfEquiv_kroneckerARSequence_g_app_src, LinearEquiv.apply_symm_apply])⟩
   exact congr_hom_apply h y
 
+/-- A morphism into the middle term of the Kronecker Auslander--Reiten sequence that is killed by
+the projection vanishes at the source vertex, because the projection is injective there. -/
+private theorem app_src_eq_zero_of_comp_g_eq_zero {W : QuiverRep k (Quiver.Kronecker A)}
+    (u : W ⟶ (kroneckerARSequence k A).X₂) (hu : u ≫ (kroneckerARSequence k A).g = 0)
+    (x : W.obj src) : u.app src x = 0 := by
+  have hc : u.app src ≫ (kroneckerARSequence k A).g.app src = 0 :=
+    (NatTrans.comp_app u _ src).symm.trans
+      ((congrArg (fun e : W ⟶ (kroneckerARSequence k A).X₃ ↦ e.app src) hu).trans
+        (NatTrans.app_zero _))
+  have h1 : (kroneckerARSequence k A).g.app src (u.app src x) = 0 := congr_hom_apply hc x
+  have h2 : kroneckerProjSrcEquiv k A (u.app src x) = 0 :=
+    (simpleRepSelfEquiv_kroneckerARSequence_g_app_src (u.app src x)).symm.trans
+      ((congrArg (⇑(simpleRepSelfEquiv k src)) h1).trans (map_zero _))
+  exact (kroneckerProjSrcEquiv k A).injective (h2.trans (map_zero _).symm)
+
 variable (k A) in
 /-- **The sequence `0 ⟶ S₂ ⟶ P₁ ⟶ S₁ ⟶ 0` of the `A₂` quiver is short exact.** Its first map is a
 kernel of its second: a morphism into `P₁` killed by `P₁ ↠ S₁` vanishes at the source, because the
@@ -560,17 +591,7 @@ theorem shortExact_kroneckerARSequence : (kroneckerARSequence k A).ShortExact wh
   exact := by
     refine ShortComplex.exact_of_f_is_kernel _ (KernelFork.IsLimit.ofι' _ _ ?_)
     intro W u hu
-    have husrc : ∀ x : W.obj src, u.app src x = 0 := by
-      intro x
-      have hc : u.app src ≫ (kroneckerARSequence k A).g.app src = 0 :=
-        (NatTrans.comp_app u _ src).symm.trans
-          ((congrArg (fun e : W ⟶ (kroneckerARSequence k A).X₃ ↦ e.app src) hu).trans
-            (NatTrans.app_zero _))
-      have h1 : (kroneckerARSequence k A).g.app src (u.app src x) = 0 := congr_hom_apply hc x
-      have h2 : kroneckerProjSrcEquiv k A (u.app src x) = 0 :=
-        (simpleRepSelfEquiv_kroneckerARSequence_g_app_src (u.app src x)).symm.trans
-          ((congrArg (⇑(simpleRepSelfEquiv k src)) h1).trans (map_zero _))
-      exact (kroneckerProjSrcEquiv k A).injective (h2.trans (map_zero _).symm)
+    have husrc := app_src_eq_zero_of_comp_g_eq_zero u hu
     refine ⟨kroneckerHom 0
       (ModuleCat.ofHom ((simpleRepSelfEquiv k tgt).symm.toLinearMap ∘ₗ
         (kroneckerProjTgtEquiv k A).toLinearMap ∘ₗ (u.app tgt).hom)) ?_, ?_⟩
