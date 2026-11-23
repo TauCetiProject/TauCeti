@@ -134,7 +134,8 @@ theorem aestronglyMeasurable_scalarGreenIntegral {g : ℝ → ℝ} {f : ℝ → 
   have hF : AEStronglyMeasurable (fun z : ℝ × ℝ ↦ (g z.2)⁻¹ • f z.2) (volume.prod volume) :=
     (hg.inv.aestronglyMeasurable.smul hf).comp_snd
   exact (hg.aestronglyMeasurable.smul (aestronglyMeasurable_setIntegral_of_measurableSet
-    (R := fun s t ↦ s < t) (measurableSet_lt measurable_fst measurable_snd) hF)).neg
+    (K := fun _ s ↦ (g s)⁻¹ • f s) hF (R := fun s t ↦ s < t)
+    (measurableSet_lt measurable_fst measurable_snd))).neg
 
 /-- **The Green integral recovers compactly supported paths.** If `g` is a positive solution of
 `v' = b v` for a continuous coefficient `b`, then every compactly supported `C¹` path `u` in a

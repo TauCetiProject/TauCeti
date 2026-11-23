@@ -21,9 +21,10 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.exists_ae_eq_const_of_ae_prod_eq`: if `f x = g y` for almost every `(x, y)` in a product
   of nonzero measures, then `f` and `g` are almost everywhere the same constant. This is the
   uniqueness of a function of the form `f(x) + g(y)` up to one additive constant.
-* `TauCeti.measurable_setLIntegral_of_measurableSet` and
-  `TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet` prove measurability of a set integral
-  (lower Lebesgue, respectively Bochner) whose truncating relation is jointly measurable.
+* `TauCeti.measurable_setLIntegral_of_measurableSet` proves measurability of a set integral whose
+  truncating relation is jointly measurable, and
+  `TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet` is its Bochner form for a jointly
+  measurable integrand, such as the retarded Duhamel integral `t ↦ ∫_{s < t} K t s ds`.
 * `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals over an
   arbitrary parameter measure with the corresponding integral over the sections of the truncating
   relation.
@@ -102,20 +103,20 @@ theorem measurable_setLIntegral_of_measurableSet [SFinite μ] {g : α → ℝ≥
   simp_rw [hind]
   exact ((hg.measurable_mk.comp measurable_snd).indicator hR).lintegral_prod_right'
 
-/-- The truncated integral `t ↦ ∫ x in {x | R t x}, F (t, x) ∂μ` of a jointly a.e.-strongly
-measurable integrand is a.e.-strongly measurable when the truncating relation is jointly
-measurable. -/
-theorem aestronglyMeasurable_setIntegral_of_measurableSet [SFinite μ] {F : γ × α → E}
-    {R : γ → α → Prop} (hR : MeasurableSet {z : γ × α | R z.1 z.2})
-    (hF : AEStronglyMeasurable F (κ.prod μ)) :
-    AEStronglyMeasurable (fun t => ∫ x in {x | R t x}, F (t, x) ∂μ) κ := by
-  have hind : (fun t => ∫ x in {x | R t x}, F (t, x) ∂μ) =
-      fun t => ∫ x, {z : γ × α | R z.1 z.2}.indicator F (t, x) ∂μ := by
-    funext t
-    rw [← integral_indicator (show MeasurableSet {x | R t x} from measurable_prodMk_left hR)]
-    rfl
-  rw [hind]
-  exact (hF.indicator hR).integral_prod_right'
+/-- The truncated integral `t ↦ ∫ x in {x | R t x}, K t x ∂μ` of an integrand that is almost
+everywhere strongly measurable for `κ.prod μ` is almost everywhere strongly measurable when the
+truncating relation is jointly measurable. With `R t s := s < t` this is the retarded integral
+`t ↦ ∫_{s < t} K t s ds`. Where the integral does not exist it takes the value `0`. -/
+theorem aestronglyMeasurable_setIntegral_of_measurableSet [SFinite μ] {K : γ → α → E}
+    (hK : AEStronglyMeasurable (Function.uncurry K) (κ.prod μ))
+    {R : γ → α → Prop} (hR : MeasurableSet {z : γ × α | R z.1 z.2}) :
+    AEStronglyMeasurable (fun t ↦ ∫ x in {x | R t x}, K t x ∂μ) κ := by
+  refine (hK.indicator hR).integral_prod_right'.congr (ae_of_all _ fun t ↦ ?_)
+  dsimp only
+  have hRt : MeasurableSet {x | R t x} := measurable_prodMk_left hR
+  rw [← integral_indicator hRt]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  by_cases h : R t x <;> simp [Set.indicator, h]
 
 /-- **Tonelli for a weighted integral of truncated integrals.** For a jointly measurable
 truncating relation `R` and a.e.-measurable integrand and weight, integrating first in `x` and then

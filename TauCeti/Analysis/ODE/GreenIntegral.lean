@@ -247,10 +247,13 @@ theorem aestronglyMeasurable_greenIntegral (hg : AEStronglyMeasurable g) :
       (volume.prod volume) :=
     (ContinuousLinearMap.id ℝ (X →L[ℝ] X)).aestronglyMeasurable_comp₂ hexp.aestronglyMeasurable
       (Q.continuous.comp_aestronglyMeasurable hg).comp_snd
-  have hP := TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ s ≤ t)
-    (measurableSet_le measurable_snd measurable_fst) (hF P)
-  have hQ := TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ t < s)
-    (measurableSet_lt measurable_fst measurable_snd) (hF (ContinuousLinearMap.id ℝ X - P))
+  have hP := TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet
+    (K := fun t s ↦ exp ((t - s) • A) (P (g s))) (hF P)
+    (measurableSet_le measurable_snd measurable_fst) (R := fun t s ↦ s ≤ t)
+  have hQ := TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet
+    (K := fun t s ↦ exp ((t - s) • A) ((ContinuousLinearMap.id ℝ X - P) (g s)))
+    (hF (ContinuousLinearMap.id ℝ X - P))
+    (measurableSet_lt measurable_fst measurable_snd) (R := fun t s ↦ t < s)
   simp only [sub_apply, ContinuousLinearMap.id_apply] at hQ
   exact hP.sub hQ
 
