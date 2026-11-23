@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.RingHom
 public import Mathlib.Algebra.Module.Torsion.Basic
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Scalar actions on modules killed by an ideal
@@ -29,8 +30,10 @@ by `RingHom.ker π`, then the scalar action of `A` descends to a `k`-module stru
 * `Module.IsTorsionBySet.smul_eq_smul_of_sub_mem`, `Module.IsTorsionBySet.smul_eq_smul_of_map_eq`:
   congruent scalars modulo `J` (or with equal image under `π`) act identically.
 * `Module.IsTorsionBySet.moduleOfSurjective`, `Module.IsTorsionBySet.moduleOfSurjective_smul`,
-  `Module.IsTorsionBySet.semilinearMapOfSurjective`: descent of scalar multiplication along a
-  surjective ring homomorphism `π : A →+* k` and the corresponding `π`-semilinear identity map.
+  `Module.IsTorsionBySet.semilinearMapOfSurjective`,
+  `Module.IsTorsionBySet.semilinearMapOfSurjective_bijective`: descent of scalar multiplication
+  along a surjective ring homomorphism `π : A →+* k` and the corresponding `π`-semilinear
+  bijective identity map.
 * `Ideal.isTorsionBySet_of_mul_eq_bot`: an ideal `I` with `J * I = ⊥` is annihilated by `J`.
 -/
 
@@ -78,13 +81,46 @@ theorem smul_eq_smul_of_map_eq {π : A →+* k} (hM : Module.IsTorsionBySet A M 
   hM.smul_eq_smul_of_sub_mem (by rw [SetLike.mem_coe, RingHom.mem_ker, map_sub, ha, sub_self]) x
 
 /-- Descent of scalar multiplication along a surjective ring homomorphism `π : A →+* k` for an
-`A`-module `M` annihilated by `RingHom.ker π`. -/
+`A`-module `M` annihilated by `RingHom.ker π`, obtained by transporting `hM.module` across
+`RingHom.quotientKerEquivOfSurjective`. -/
 @[instance_reducible]
 noncomputable def moduleOfSurjective {π : A →+* k}
     (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π) :
     Module k M :=
-  letI : SMul k M := ⟨fun c x ↦ Function.surjInv hπ c • x⟩
-  hπ.moduleLeft π fun _ x ↦ hM.smul_eq_smul_of_map_eq (Function.surjInv_eq hπ _) x
+  letI := hM.module
+  Module.compHom M (RingHom.quotientKerEquivOfSurjective hπ).symm.toRingHom
+
+/-- The identity on an `A`-module annihilated by `RingHom.ker π`, bundled as a `π`-semilinear map
+into the descended `k`-module `hM.moduleOfSurjective hπ` by transporting `hM.semilinearMap`. -/
+noncomputable def semilinearMapOfSurjective {π : A →+* k}
+    (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π) :
+    letI := hM.moduleOfSurjective hπ
+    M →ₛₗ[π] M :=
+  letI := hM.module
+  letI := hM.moduleOfSurjective hπ
+  let e := RingHom.quotientKerEquivOfSurjective hπ
+  have : RingHomCompTriple (Ideal.Quotient.mk (RingHom.ker π)) e.toRingHom π :=
+    ⟨RingHom.ext fun a ↦ RingHom.quotientKerEquivOfSurjective_apply_mk hπ a⟩
+  let id_e : M →ₛₗ[e.toRingHom] M :=
+    { toFun := id
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun r x ↦ by
+        change r • x = e.symm (e r) • x
+        rw [e.symm_apply_apply] }
+  id_e.comp hM.semilinearMap
+
+/-- Evaluating `semilinearMapOfSurjective` returns the input vector. -/
+@[simp]
+theorem semilinearMapOfSurjective_apply {π : A →+* k}
+    (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π) (x : M) :
+    hM.semilinearMapOfSurjective hπ x = x := (rfl)
+
+/-- `semilinearMapOfSurjective` is bijective. -/
+theorem semilinearMapOfSurjective_bijective {π : A →+* k}
+    (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π) :
+    Function.Bijective (hM.semilinearMapOfSurjective hπ) :=
+  ⟨fun x y h ↦ by simpa [semilinearMapOfSurjective_apply] using h,
+    fun y ↦ ⟨y, hM.semilinearMapOfSurjective_apply hπ y⟩⟩
 
 /-- In `hM.moduleOfSurjective hπ`, the descended scalar `π a` acts as `a`. -/
 @[simp]
@@ -92,27 +128,10 @@ theorem moduleOfSurjective_smul {π : A →+* k}
     (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π)
     (a : A) (x : M) :
     letI := hM.moduleOfSurjective hπ
-    π a • x = a • x :=
-  hM.smul_eq_smul_of_map_eq (Function.surjInv_eq hπ _) x
-
-/-- The identity on an `A`-module annihilated by `RingHom.ker π`, bundled as a `π`-semilinear map
-into the descended `k`-module `hM.moduleOfSurjective hπ`. -/
-@[expose]
-noncomputable def semilinearMapOfSurjective {π : A →+* k}
-    (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π) :
-    letI := hM.moduleOfSurjective hπ
-    M →ₛₗ[π] M :=
-  letI := hM.moduleOfSurjective hπ
-  { toFun := id
-    map_add' := fun _ _ ↦ rfl
-    map_smul' := fun a x ↦ (hM.moduleOfSurjective_smul hπ a x).symm }
-
-/-- Evaluating `semilinearMapOfSurjective` returns the input vector. -/
-@[simp]
-theorem semilinearMapOfSurjective_apply {π : A →+* k}
-    (hM : Module.IsTorsionBySet A M (RingHom.ker π)) (hπ : Function.Surjective π) (x : M) :
-    hM.semilinearMapOfSurjective hπ x = x := by
-  rfl
+    π a • x = a • x := by
+  let := hM.moduleOfSurjective hπ
+  simpa only [semilinearMapOfSurjective_apply] using
+    ((hM.semilinearMapOfSurjective hπ).map_smulₛₗ a x).symm
 
 end Surjective
 

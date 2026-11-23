@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Coboundary
 import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.PowerSeries.CoeffMulMem
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
 import TauCeti.RingTheory.MvPowerSeries.Derivative
@@ -29,7 +30,8 @@ invariant differential `ω = P(T) dT` (`P(T) = F_X(0, T)⁻¹`), and let `I ⊆ 
 
 ## Main definitions and results
 
-* `FormalGroup.deformationCocycle`, `FormalGroup.deformByCocycle`,
+* `FormalGroup.deformationCocycle`, `FormalGroup.deformationCocycle_def`,
+  `FormalGroup.deformByCocycle`, `FormalGroup.map_deformByCocycle`,
   `FormalGroup.map_deformByCocycle_eq`, `FormalGroup.deformationCocycleEquiv`: Lubin–Tate
   Lemma 1.2, identifying commutative formal group laws congruent to `F` modulo `I` with symmetric
   2-cocycles of `F` without constant term with coefficients in `I`, together with
@@ -37,7 +39,8 @@ invariant differential `ω = P(T) dT` (`P(T) = F_X(0, T)⁻¹`), and let `I ⊆ 
 * `FormalGroup.deformationCocycle_smul_eq_homDefect_𝔾ₐ`,
   `FormalGroup.exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ`: Lubin–Tate Lemma 1.1,
   characterising `I`-congruent coordinate equivalence via coboundaries `F.homDefect 𝔾ₐ g`.
-* `FormalGroup.lubinTateCocycle`, `FormalGroup.homogeneousComponent_lubinTateCocycle`,
+* `FormalGroup.lubinTateCocycle`, `FormalGroup.lubinTateIndex`,
+  `FormalGroup.homogeneousComponent_lubinTateCocycle`,
   `FormalGroup.IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_𝔾ₐ`:
   Lubin–Tate Lemma 1.3, constructing canonical symmetric 2-cocycles in degree `n + 1` via
   `DualNumber LazardRing` and establishing the Lubin–Tate cocycle basis decomposition.
@@ -63,22 +66,6 @@ section DeformationCocycle
 
 variable {A B : Type*} [CommRing A] [CommRing B]
 
-private noncomputable abbrev invInvariantDifferential (F : FormalGroup A) : PowerSeries A :=
-  subst ![(0 : PowerSeries A), PowerSeries.X] (pderiv 0 F.toPowerSeries)
-
-private theorem subst_invariantDifferential_mul_inv {σ : Type*} (F : FormalGroup A)
-    {x : MvPowerSeries σ A} (hx : PowerSeries.HasSubst x) :
-    PowerSeries.subst x F.invariantDifferential *
-      PowerSeries.subst x F.invInvariantDifferential = 1 := by
-  rw [← PowerSeries.subst_mul hx, F.invariantDifferential_mul_subst_pderiv,
-    ← PowerSeries.coe_substAlgHom hx, map_one]
-
-private theorem subst_invInvariantDifferential_mul {σ : Type*} (F : FormalGroup A)
-    {x : MvPowerSeries σ A} (hx : PowerSeries.HasSubst x) :
-    PowerSeries.subst x F.invInvariantDifferential *
-      PowerSeries.subst x F.invariantDifferential = 1 :=
-  (mul_comm _ _).trans (F.subst_invariantDifferential_mul_inv hx)
-
 /-- **The linearised deformation cocycle** of a pair of formal group laws `F, G` over `A`:
 `Φ(X, Y) = P(F(X, Y)) · (G(X, Y) - F(X, Y))`, where `ω = P(T) dT` is the normalised invariant
 differential of `F` (`FormalGroup.invariantDifferential`). When `G - F` has coefficients in a
@@ -86,6 +73,12 @@ square-zero ideal and `F, G` are commutative, `Φ` is a symmetric 2-cocycle of `
 noncomputable def deformationCocycle (F G : FormalGroup A) : MvPowerSeries (Fin 2) A :=
   PowerSeries.subst F.toPowerSeries F.invariantDifferential *
     (G.toPowerSeries - F.toPowerSeries)
+
+/-- Unfolding formula for `FormalGroup.deformationCocycle`. -/
+theorem deformationCocycle_def (F G : FormalGroup A) :
+    F.deformationCocycle G =
+      PowerSeries.subst F.toPowerSeries F.invariantDifferential *
+        (G.toPowerSeries - F.toPowerSeries) := (rfl)
 
 /-- The deformation cocycle of `F` with itself vanishes. -/
 @[simp]
@@ -119,9 +112,10 @@ theorem map_deformationCocycle (f : A →+* B) (F G : FormalGroup A) :
 /-- Recovering `G - F` from `F.deformationCocycle G` via `F_X(0, F(X, Y))`. -/
 private theorem sub_toPowerSeries_eq_mul_deformationCocycle (F G : FormalGroup A) :
     G.toPowerSeries - F.toPowerSeries =
-      PowerSeries.subst F.toPowerSeries F.invInvariantDifferential * F.deformationCocycle G := by
-  rw [deformationCocycle, ← mul_assoc,
-    F.subst_invInvariantDifferential_mul (.of_constantCoeff_zero F.zero_constantCoeff), one_mul]
+      PowerSeries.subst F.toPowerSeries F.derivZeroX * F.deformationCocycle G := by
+  rw [deformationCocycle, ← mul_assoc, mul_comm (PowerSeries.subst _ F.derivZeroX),
+    F.subst_invariantDifferential_mul_derivZeroX (.of_constantCoeff_zero F.zero_constantCoeff),
+    one_mul]
 
 /-- For a fixed base law `F`, `G ↦ F.deformationCocycle G` is injective over any commutative ring,
 since `P(F(X, Y))` is a unit in `A⟦X, Y⟧`. -/
@@ -228,7 +222,7 @@ private theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalG
 recovers the 2-cocycle defect `Φ(X₀, X₁) + Φ(F(X₀, X₁), X₂) - Φ(X₀, F(X₁, X₂)) - Φ(X₁, X₂)`. -/
 private theorem mul_assocDefect_add_eq_cocycle {I : Ideal A} (hI : I * I = ⊥)
     (F : FormalGroup A) [F.IsComm] {Φ : MvPowerSeries (Fin 2) A} (hΦI : ∀ d, coeff d Φ ∈ I) :
-    let Δ := PowerSeries.subst F.toPowerSeries F.invInvariantDifferential * Φ
+    let Δ := PowerSeries.subst F.toPowerSeries F.derivZeroX * Φ
     let S := F.toPowerSeries + Δ
     let F₀₁ := F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1]
     let F₁₂ := F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) A), X 2]
@@ -242,7 +236,7 @@ private theorem mul_assocDefect_add_eq_cocycle {I : Ideal A} (hI : I * I = ⊥)
   have haL := hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2)
   have haR := hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2))
   have hPΔ : PowerSeries.subst F.toPowerSeries F.invariantDifferential * Δ = Φ := by
-    dsimp only [Δ]; rw [← mul_assoc, F.subst_invariantDifferential_mul_inv hF, one_mul]
+    dsimp only [Δ]; rw [← mul_assoc, F.subst_invariantDifferential_mul_derivZeroX hF, one_mul]
   have hPΔ_sub {b : Fin 2 → MvPowerSeries (Fin 3) A} (hb : HasSubst b) :
       PowerSeries.subst (F.toPowerSeries.subst b) F.invariantDifferential * Δ.subst b =
         Φ.subst b := by
@@ -271,14 +265,14 @@ theorem isSymmetricCocycle_deformationCocycle (F G : FormalGroup A) [F.IsComm] [
       ← IsComm.comm (F := F), ← IsComm.comm (F := G)]
   subst_add_subst_eq := by
     have hG : G.toPowerSeries = F.toPowerSeries +
-        PowerSeries.subst F.toPowerSeries F.invInvariantDifferential * F.deformationCocycle G := by
+        PowerSeries.subst F.toPowerSeries F.derivZeroX * F.deformationCocycle G := by
       rw [← F.sub_toPowerSeries_eq_mul_deformationCocycle G, add_sub_cancel]
     have h := mul_assocDefect_add_eq_cocycle hI F (coeff_deformationCocycle_mem_iff.mpr hFG)
     dsimp only at h; rw [← hG, G.assoc, sub_self, mul_zero] at h; linear_combination -h
 
-private theorem two_le_order_invInvariantDifferential_mul (F : FormalGroup A)
+private theorem two_le_order_derivZeroX_mul (F : FormalGroup A)
     {Φ : MvPowerSeries (Fin 2) A} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) :
-    ((2 : ℕ) : ℕ∞) ≤ (PowerSeries.subst F.toPowerSeries F.invInvariantDifferential * Φ).order :=
+    ((2 : ℕ) : ℕ∞) ≤ (PowerSeries.subst F.toPowerSeries F.derivZeroX * Φ).order :=
   (_root_.zero_add _).symm.le.trans ((add_le_add zero_le (hΦ.two_le_order hΦ₀)).trans le_order_mul)
 
 /-- **Lubin–Tate, Lemma 1.2 (inverse construction).** Given a commutative formal group law `F` over
@@ -287,15 +281,14 @@ coefficients lie in `I`, `F(X, Y) + F_X(0, F(X, Y)) · Φ(X, Y)` is a formal gro
 noncomputable def deformByCocycle (F : FormalGroup A) [F.IsComm] {I : Ideal A} (hI : I * I = ⊥)
     {Φ : MvPowerSeries (Fin 2) A} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0)
     (hΦI : ∀ d, coeff d Φ ∈ I) : FormalGroup A where
-  toPowerSeries := F.toPowerSeries +
-    PowerSeries.subst F.toPowerSeries F.invInvariantDifferential * Φ
+  toPowerSeries := F.toPowerSeries + PowerSeries.subst F.toPowerSeries F.derivZeroX * Φ
   zero_constantCoeff := by simp [F.zero_constantCoeff, hΦ₀]
   lin_coeff_X := by
     rw [map_add, F.lin_coeff_X, coeff_of_lt_order (lt_of_lt_of_le (by simp)
-      (F.two_le_order_invInvariantDifferential_mul hΦ hΦ₀)), _root_.add_zero]
+      (F.two_le_order_derivZeroX_mul hΦ hΦ₀)), _root_.add_zero]
   lin_coeff_Y := by
     rw [map_add, F.lin_coeff_Y, coeff_of_lt_order (lt_of_lt_of_le (by simp)
-      (F.two_le_order_invInvariantDifferential_mul hΦ hΦ₀)), _root_.add_zero]
+      (F.two_le_order_derivZeroX_mul hΦ hΦ₀)), _root_.add_zero]
   assoc := by
     have h : _ = (0 : MvPowerSeries (Fin 3) A) :=
       (mul_assocDefect_add_eq_cocycle hI F hΦI).trans (by rw [hΦ.subst_add_subst_eq]; abel)
@@ -303,8 +296,9 @@ noncomputable def deformByCocycle (F : FormalGroup A) [F.IsComm] {I : Ideal A} (
       (PowerSeries.HasSubst.X (τ := Fin 3) (S := A) 0) (.X 1)) (.X 2)
     have hzero := congrArg (PowerSeries.subst (F.toPowerSeries.subst
       ![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) A), X 1], X 2])
-      F.invInvariantDifferential * ·) h
-    rw [mul_zero, ← mul_assoc, F.subst_invInvariantDifferential_mul hF3, one_mul] at hzero
+      F.derivZeroX * ·) h
+    rw [mul_zero, ← mul_assoc, mul_comm (PowerSeries.subst _ F.derivZeroX),
+      F.subst_invariantDifferential_mul_derivZeroX hF3, one_mul] at hzero
     exact sub_eq_zero.mp hzero
 
 /-- The underlying power series of `F.deformByCocycle hI hΦ hΦ₀ hΦI`. -/
@@ -313,9 +307,7 @@ theorem toPowerSeries_deformByCocycle (F : FormalGroup A) [F.IsComm] {I : Ideal 
     (hI : I * I = ⊥) {Φ : MvPowerSeries (Fin 2) A} (hΦ : F.IsSymmetricCocycle Φ)
     (hΦ₀ : constantCoeff Φ = 0) (hΦI : ∀ d, coeff d Φ ∈ I) :
     (F.deformByCocycle hI hΦ hΦ₀ hΦI).toPowerSeries =
-      F.toPowerSeries +
-        PowerSeries.subst F.toPowerSeries
-          (subst ![(0 : PowerSeries A), PowerSeries.X] (pderiv 0 F.toPowerSeries)) * Φ := (rfl)
+      F.toPowerSeries + PowerSeries.subst F.toPowerSeries F.derivZeroX * Φ := (rfl)
 
 /-- A formal group law constructed from a symmetric 2-cocycle is commutative. -/
 instance instIsCommDeformByCocycle (F : FormalGroup A) [F.IsComm] {I : Ideal A} (hI : I * I = ⊥)
@@ -333,7 +325,8 @@ theorem deformationCocycle_deformByCocycle (F : FormalGroup A) [F.IsComm] {I : I
     (hΦ₀ : constantCoeff Φ = 0) (hΦI : ∀ d, coeff d Φ ∈ I) :
     F.deformationCocycle (F.deformByCocycle hI hΦ hΦ₀ hΦI) = Φ := by
   rw [deformationCocycle, toPowerSeries_deformByCocycle, add_sub_cancel_left, ← mul_assoc,
-    F.subst_invariantDifferential_mul_inv (.of_constantCoeff_zero F.zero_constantCoeff), one_mul]
+    F.subst_invariantDifferential_mul_derivZeroX (.of_constantCoeff_zero F.zero_constantCoeff),
+    one_mul]
 
 /-- Deforming `F` by `F.deformationCocycle G` recovers `G`. -/
 theorem deformByCocycle_deformationCocycle (F G : FormalGroup A) [F.IsComm] [G.IsComm]
@@ -343,8 +336,23 @@ theorem deformByCocycle_deformationCocycle (F G : FormalGroup A) [F.IsComm] [G.I
       (F.constantCoeff_deformationCocycle G)
       (coeff_deformationCocycle_mem_iff.mpr hFG) = G := by
   ext d
-  rw [toPowerSeries_deformByCocycle, ← invInvariantDifferential,
-    ← F.sub_toPowerSeries_eq_mul_deformationCocycle G, add_sub_cancel]
+  rw [toPowerSeries_deformByCocycle, ← F.sub_toPowerSeries_eq_mul_deformationCocycle G,
+    add_sub_cancel]
+
+/-- Base change along `f : A →+* B` transports `F.deformByCocycle` to `(F.map f).deformByCocycle`
+for any square-zero ideal `J` containing `I.map f`. -/
+theorem map_deformByCocycle (F : FormalGroup A) [F.IsComm] {I : Ideal A} (hI : I * I = ⊥)
+    (f : A →+* B) {J : Ideal B} (hJ : J * J = ⊥) (hIJ : I.map f ≤ J)
+    {Φ : MvPowerSeries (Fin 2) A} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0)
+    (hΦI : ∀ d, coeff d Φ ∈ I) :
+    (F.deformByCocycle hI hΦ hΦ₀ hΦI).map f =
+      (F.map f).deformByCocycle hJ (hΦ.map f) (by simp [hΦ₀])
+        (fun d ↦ hIJ (Ideal.mem_map_of_mem f (hΦI d))) := by
+  ext d
+  rw [FormalGroup.map_toPowerSeries, toPowerSeries_deformByCocycle,
+    toPowerSeries_deformByCocycle, map_add, map_mul,
+    PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
+    F.map_derivZeroX, FormalGroup.map_toPowerSeries]
 
 /-- Base change along a homomorphism `f` vanishing on `I` sends `F.deformByCocycle hI hΦ hΦ₀ hΦI`
 to `F.map f`. -/
@@ -423,12 +431,8 @@ private theorem coeff_smul_sub_mem {I : Ideal A} (F : FormalGroup A) {φ : Forma
     (hφ : ∀ n, PowerSeries.coeff n (φ.toPowerSeries - PowerSeries.X) ∈ I)
     (d : Fin 2 →₀ ℕ) : coeff d ((φ • F).toPowerSeries - F.toPowerSeries) ∈ I := by
   set π := Ideal.Quotient.mk I
-  have hφ1 : FormalCoordinate.map π φ = 1 := by
-    ext n
-    rw [FormalCoordinate.toPowerSeries_map, FormalCoordinate.toPowerSeries_one,
-      ← PowerSeries.map_X π, PowerSeries.coeff_map, PowerSeries.coeff_map, ← sub_eq_zero,
-      ← map_sub, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
-    exact hφ n
+  have hφ1 : FormalCoordinate.map π φ = 1 :=
+    (FormalCoordinate.map_eq_one_iff π φ).mpr fun n ↦ by rw [Ideal.mk_ker]; exact hφ n
   rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, map_sub, ← FormalGroup.map_toPowerSeries,
     ← FormalGroup.map_toPowerSeries, map_smul, hφ1, one_smul, sub_self, map_zero]
 
@@ -498,16 +502,16 @@ theorem exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ
     PowerSeries.coeff_mul_mem_ideal_of_coeff_right_mem_ideal' hφI,
     F.deformationCocycle_smul_eq_homDefect_𝔾ₐ hI hφI⟩,
     fun ⟨g, hg₀, hgI, hcoc⟩ ↦ ?_⟩
-  set δ := F.invInvariantDifferential * g with hδ
+  set δ := F.derivZeroX * g with hδ
   have hδI := PowerSeries.coeff_mul_mem_ideal_of_coeff_right_mem_ideal'
-    (f := F.invInvariantDifferential) hgI
+    (f := F.derivZeroX) hgI
   have hnil : IsNilpotent (PowerSeries.coeff 1 δ) :=
     ⟨2, by rw [pow_two, ← Ideal.mem_bot, ← hI]; exact Ideal.mul_mem_mul (hδI 1) (hδI 1)⟩
   let φ : FormalCoordinate A :=
     ⟨PowerSeries.X + δ, by simp [δ, hg₀], by simpa using hnil.isUnit_one_add⟩
   have hφX : φ.toPowerSeries - PowerSeries.X = δ := by simp [φ]
   have hinv_mul : F.invariantDifferential * δ = g := by
-    rw [hδ, ← mul_assoc, F.invariantDifferential_mul_subst_pderiv, one_mul]
+    rw [hδ, ← mul_assoc, F.derivZeroX_def, F.invariantDifferential_mul_subst_pderiv, one_mul]
   refine ⟨φ, fun n ↦ hφX ▸ hδI n, ?_⟩
   rw [F.smul_eq_iff_deformationCocycle_eq_homDefect_𝔾ₐ G hI (fun n ↦ hφX ▸ hδI n), hφX, hinv_mul]
   exact hcoc
@@ -609,10 +613,10 @@ private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2
   have hdeg : d 0 + d 1 = d.degree := by simp [Finsupp.degree_eq_sum, Fin.sum_univ_two]
   have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by ext s; fin_cases s <;> simp
   rcases haxis with h0 | h1
-  · rw [hd_eq, h0, Finsupp.single_zero, _root_.zero_add, ← coeff_subst_zero_X,
-      formalGroup.zero_add PowerSeries.HasSubst.X', PowerSeries.coeff_X, ite_eq_right (by omega)]
-  · rw [hd_eq, h1, Finsupp.single_zero, _root_.add_zero, ← coeff_subst_X_zero,
-      formalGroup.add_zero PowerSeries.HasSubst.X', PowerSeries.coeff_X, ite_eq_right (by omega)]
+  · rw [hd_eq, h0, Finsupp.single_zero, _root_.zero_add, formalGroup.coeff_single_one,
+      ite_eq_right (by omega)]
+  · rw [hd_eq, h1, Finsupp.single_zero, _root_.add_zero, formalGroup.coeff_single_zero,
+      ite_eq_right (by omega)]
 
 private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (universalShiftSeries n) =
@@ -762,11 +766,26 @@ theorem map_lubinTateCocycle {R S : Type*} [CommRing R] [CommRing S] (f : R →+
   rw [lubinTateCocycle, lubinTateCocycle, ← RingHom.comp_apply, ← MvPowerSeries.map_comp,
     LazardRing.lift_map]
 
+/-- The positive integer `p ^ (j + 1) - 1`, indexing the degree-`p^(j + 1)` Lubin–Tate cocycle. -/
+def lubinTateIndex {p : ℕ} (hp : p.Prime) (j : ℕ) : ℕ+ :=
+  ⟨p ^ (j + 1) - 1, Nat.sub_pos_of_lt (Nat.one_lt_pow j.succ_ne_zero hp.one_lt)⟩
+
+/-- The underlying natural number of `FormalGroup.lubinTateIndex hp j` is `p ^ (j + 1) - 1`. -/
+theorem coe_lubinTateIndex {p : ℕ} (hp : p.Prime) (j : ℕ) :
+    (lubinTateIndex hp j : ℕ) = p ^ (j + 1) - 1 := (rfl)
+
+/-- Adding one to `FormalGroup.lubinTateIndex hp j` gives `p ^ (j + 1)`. -/
+@[simp]
+theorem coe_lubinTateIndex_add_one {p : ℕ} (hp : p.Prime) (j : ℕ) :
+    (lubinTateIndex hp j : ℕ) + 1 = p ^ (j + 1) :=
+  Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.pos)
+
 /-- **Canonical Lubin–Tate decomposition of symmetric 2-cocycles.** Let `p` be a prime with `p = 0`
 in `R`, and let `F` be a commutative formal group law over `R` whose `p`-series has order at least
 `pʰ` and a unit coefficient of `X^(pʰ)`. Then every symmetric 2-cocycle `Φ` of `F` without constant
 term decomposes as
-`∑ j : Fin (h - 1), c j • F.lubinTateCocycle ⟨p^(j + 1) - 1, _⟩ + F.homDefect 𝔾ₐ g`
+`∑ j : Fin (h - 1), c j • F.lubinTateCocycle (FormalGroup.lubinTateIndex hp j.val) +`
+`F.homDefect 𝔾ₐ g`
 for a *unique* tuple `c : Fin (h - 1) → R` and some power series `g` without constant term. -/
 theorem IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_𝔾ₐ
     {R : Type*} [CommRing R] {F : FormalGroup R} [F.IsComm] {p h : ℕ} (hp : p.Prime)
@@ -774,18 +793,12 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_
     (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
     {Φ : MvPowerSeries (Fin 2) R} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) :
     ∃! c : Fin (h - 1) → R, ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧
-      Φ = ∑ j : Fin (h - 1),
-        c j • F.lubinTateCocycle ⟨p ^ (j.val + 1) - 1,
-          Nat.sub_pos_of_lt (Nat.one_lt_pow j.val.succ_ne_zero hp.one_lt)⟩ +
-        F.homDefect 𝔾ₐ g := by
-  let idx (j : Fin (h - 1)) : ℕ+ :=
-    ⟨p ^ (j.val + 1) - 1, Nat.sub_pos_of_lt (Nat.one_lt_pow j.val.succ_ne_zero hp.one_lt)⟩
-  have hsub (j : Fin (h - 1)) : (idx j : ℕ) + 1 = p ^ (j.val + 1) :=
-    Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.pos)
-  exact hΦ.existsUnique_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv (u := fun _ ↦ 1)
+      Φ = ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp j.val) +
+        F.homDefect 𝔾ₐ g :=
+  hΦ.existsUnique_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv (u := fun _ ↦ 1)
     (fun j ↦ F.isSymmetricCocycle_lubinTateCocycle _)
-    (fun j ↦ by simpa [hsub j] using F.le_order_lubinTateCocycle (idx j))
-    (fun j ↦ by simpa [hsub j] using F.homogeneousComponent_lubinTateCocycle (idx j))
+    (fun j ↦ by simpa using F.le_order_lubinTateCocycle (lubinTateIndex hp j.val))
+    (fun j ↦ by simpa using F.homogeneousComponent_lubinTateCocycle (lubinTateIndex hp j.val))
     (fun _ ↦ isUnit_one) hΦ₀
 
 end LubinTateCocycle

@@ -438,6 +438,22 @@ theorem coeff_subst_X_one_X_zero (f : MvPowerSeries (Fin 2) O) (d : Fin 2 →₀
     fin_cases i <;> simp
   rw [hX, ← rename_eq_subst, ← coeff_embDomain_rename _ f, hd]
 
+/-- Base change of a two-entry substitution `f(x, y)` maps the entries `x` and `y` separately. -/
+theorem map_subst_finTwo {O' : Type*} [CommRing O'] (φ : O →+* O')
+    {x y : MvPowerSeries σ O} (hxy : HasSubst ![x, y]) (f : MvPowerSeries (Fin 2) O) :
+    (f.subst ![x, y]).map φ = (f.map φ).subst ![x.map φ, y.map φ] := by
+  rw [map_subst hxy]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
+/-- Base change commutes with swapping variables `![X 1, X 0]` in a two-variable series. -/
+theorem map_subst_X_one_X_zero {O' : Type*} [CommRing O'] (φ : O →+* O')
+    (f : MvPowerSeries (Fin 2) O) :
+    (f.subst ![(X 1 : MvPowerSeries (Fin 2) O), X 0]).map φ =
+      (f.map φ).subst ![(X 1 : MvPowerSeries (Fin 2) O'), X 0] := by
+  simpa only [map_X] using map_subst_finTwo φ .X_X f
+
 end FinTwo
 
 section FinThree

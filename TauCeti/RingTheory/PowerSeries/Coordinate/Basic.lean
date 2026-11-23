@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Opposite
 public import Mathlib.Data.PNat.Defs
+public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Basic
 import Mathlib.RingTheory.PowerSeries.Inverse
@@ -339,6 +340,13 @@ theorem map_substAlgEquiv (f : R →+* S) (φ : FormalCoordinate R) (p : R⟦X�
   -- `PowerSeries.map` is by definition `MvPowerSeries.map` over `Unit`, the form in which
   -- Mathlib states `PowerSeries.map_subst`
   exact map_subst φ.hasSubst p
+
+/-- Base change of a formal coordinate `φ` along `f : R →+* S` is `1` if and only if every
+coefficient of `φ - X` lies in `RingHom.ker f`. -/
+theorem map_eq_one_iff (f : R →+* S) (φ : FormalCoordinate R) :
+    map f φ = 1 ↔ ∀ n, coeff n (φ.toPowerSeries - X) ∈ RingHom.ker f := by
+  simp only [FormalCoordinate.ext_iff, PowerSeries.ext_iff, toPowerSeries_map, toPowerSeries_one,
+    coeff_map, RingHom.mem_ker, map_sub, sub_eq_zero, ← map_X f]
 
 end map
 

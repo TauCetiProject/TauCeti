@@ -132,43 +132,16 @@ theorem sub (hΦ : F.IsSymmetricCocycle Φ) (hΨ : F.IsSymmetricCocycle Ψ) :
     F.IsSymmetricCocycle (Φ - Ψ) := by
   simpa only [sub_eq_add_neg] using hΦ.add hΨ.neg
 
-private theorem map_subst_swap {S : Type*} [CommRing S] (φ : R →+* S)
-    (Φ : MvPowerSeries (Fin 2) R) :
-    (Φ.subst ![(X 1 : MvPowerSeries (Fin 2) R), X 0]).map φ = (Φ.map φ).subst ![X 1, X 0] := by
-  rw [map_subst .X_X]; congr 1; funext i; fin_cases i <;> simp
-
-private theorem map_subst_cocycle {S : Type*} [CommRing S] (F : FormalGroup R) (φ : R →+* S)
-    (Φ : MvPowerSeries (Fin 2) R) :
-    (Φ.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1] +
-        Φ.subst ![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2]).map φ =
-      (Φ.map φ).subst ![X 0, X 1] +
-        (Φ.map φ).subst ![(F.map φ).toPowerSeries.subst ![X 0, X 1], X 2] ∧
-    (Φ.subst ![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]] +
-        Φ.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]).map φ =
-      (Φ.map φ).subst ![X 0, (F.map φ).toPowerSeries.subst ![X 1, X 2]] +
-        (Φ.map φ).subst ![X 1, X 2] := by
-  have hX (a b : Fin 3) :
-      (fun i ↦ (MvPowerSeries.map φ) (![(X a : MvPowerSeries (Fin 3) R), X b] i)) = ![X a, X b] :=
-    by funext i; fin_cases i <;> simp
-  have hL : (fun i ↦ (MvPowerSeries.map φ)
-      (![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2] i)) =
-      ![(F.map φ).toPowerSeries.subst ![X 0, X 1], X 2] :=
-    funext <| Fin.forall_fin_two.mpr ⟨by simp [map_subst .X_X, hX 0 1], by simp⟩
-  have hR : (fun i ↦ (MvPowerSeries.map φ)
-      (![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]] i)) =
-      ![X 0, (F.map φ).toPowerSeries.subst ![X 1, X 2]] :=
-    funext <| Fin.forall_fin_two.mpr ⟨by simp, by simp [map_subst .X_X, hX 1 2]⟩
-  exact ⟨by rw [map_add, map_subst .X_X,
-      map_subst (.cons_subst_zero_left 0 1 2 F.zero_constantCoeff), hX 0 1, hL],
-    by rw [map_add, map_subst (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff), map_subst .X_X,
-      hR, hX 1 2]⟩
-
 /-- Base change preserves symmetric 2-cocycles. -/
 theorem map {S : Type*} [CommRing S] (hΦ : F.IsSymmetricCocycle Φ) (φ : R →+* S) :
     (F.map φ).IsSymmetricCocycle (Φ.map φ) where
-  subst_swap := by rw [← map_subst_swap, hΦ.subst_swap]
+  subst_swap := by rw [← map_subst_X_one_X_zero, hΦ.subst_swap]
   subst_add_subst_eq := by
-    rw [← (map_subst_cocycle F φ Φ).1, ← (map_subst_cocycle F φ Φ).2, hΦ.subst_add_subst_eq]
+    have h := congrArg (MvPowerSeries.map φ) hΦ.subst_add_subst_eq
+    simpa only [map_add, map_subst_finTwo φ .X_X,
+      map_subst_finTwo φ (.cons_subst_zero_left (0 : Fin 3) 1 2 F.zero_constantCoeff),
+      map_subst_finTwo φ (.cons_subst_zero_right (0 : Fin 3) 1 2 F.zero_constantCoeff),
+      map_X, ← FormalGroup.map_toPowerSeries] using h
 
 /-- If `r ↦ c * φ r` is injective, then `c • Φ.map φ` being a symmetric 2-cocycle of `F.map φ`
 implies that `Φ` is a symmetric 2-cocycle of `F`. -/
@@ -178,11 +151,14 @@ theorem of_smul_map_injective {S : Type*} [CommRing S] {φ : R →+* S} {c : S}
   have hinj {σ : Type} {U V : MvPowerSeries σ R} (heq : c • U.map φ = c • V.map φ) : U = V := by
     ext d; exact h (by simpa [coeff_smul, smul_eq_mul] using congrArg (coeff d) heq)
   refine ⟨hinj ?_, hinj ?_⟩
-  · rw [map_subst_swap, ← subst_smul .X_X, hΦ.subst_swap]
-  · rw [(map_subst_cocycle F φ Φ).1, (map_subst_cocycle F φ Φ).2, smul_add, smul_add,
-      ← subst_smul .X_X, ← subst_smul (.cons_subst_zero_left 0 1 2 (F.map φ).zero_constantCoeff),
-      ← subst_smul (.cons_subst_zero_right 0 1 2 (F.map φ).zero_constantCoeff),
-      ← subst_smul .X_X, hΦ.subst_add_subst_eq]
+  · rw [map_subst_X_one_X_zero, ← subst_smul .X_X, hΦ.subst_swap]
+  · simpa only [map_add, smul_add, map_subst_finTwo φ .X_X,
+      map_subst_finTwo φ (.cons_subst_zero_left (0 : Fin 3) 1 2 F.zero_constantCoeff),
+      map_subst_finTwo φ (.cons_subst_zero_right (0 : Fin 3) 1 2 F.zero_constantCoeff),
+      map_X, ← FormalGroup.map_toPowerSeries, ← subst_smul (.X_X (R := S)),
+      ← subst_smul (.cons_subst_zero_left (0 : Fin 3) 1 2 (F.map φ).zero_constantCoeff),
+      ← subst_smul (.cons_subst_zero_right (0 : Fin 3) 1 2 (F.map φ).zero_constantCoeff)] using
+      hΦ.subst_add_subst_eq
 
 /-- Setting `X = 0` in a symmetric 2-cocycle collapses it to its constant term:
 `Φ(0, T) = Φ(0, 0)`. -/

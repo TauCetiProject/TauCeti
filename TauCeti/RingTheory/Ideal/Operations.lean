@@ -30,6 +30,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   is a singleton.
 * `Ideal.exists_pow_le_pow` and `Ideal.exists_pow_le_trans`: power cofinality of left ideals
   passes to arbitrary powers and is transitive.
+* `Ideal.mul_self_eq_bot_of_le_of_mul_eq_bot`: an ideal contained in a left annihilator of itself
+  has square zero.
 * `Ideal.toAddSubgroup_mul_eq_closure_mul`: additive generators of a product of ideals.
 * `Ideal.smul_top_eq_top_of_surjective`: an ideal that expands the whole of a module expands the
   whole of the target of any surjective linear map out of it, for instance of every factor of a
@@ -125,6 +127,10 @@ unit ideal. -/
 theorem eq_one_of_mul_eq_one [I.IsTwoSided] (h : I * J = 1) : I = 1 := by
   rw [one_eq_top] at h ⊢
   exact eq_top_mono mul_le_left h
+
+/-- An ideal contained in a left annihilator of itself has square zero. -/
+theorem mul_self_eq_bot_of_le_of_mul_eq_bot (hle : I ≤ J) (h : J * I = ⊥) : I * I = ⊥ :=
+  eq_bot_iff.mpr (h ▸ Ideal.mul_mono_left hle)
 
 /-- Any left multiple of the `n`-th power of an element of an ideal lies in the `n`-th power of
 the ideal. -/

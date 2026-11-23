@@ -51,16 +51,7 @@ theorem finite_iff_of_surjective {A k M : Type*} [Ring A] [Ring k] [AddCommGroup
     Module.Finite A M ↔ Module.Finite k M :=
   letI := hM.moduleOfSurjective hπ
   have : RingHomSurjective π := ⟨hπ⟩
-  (hM.semilinearMapOfSurjective hπ).finite_iff_of_bijective Function.bijective_id
-
-/-- An `A`-module annihilated by `RingHom.ker π` for a surjective ring homomorphism `π : A →+* k`
-is finite over `k` whenever it is finite over `A`. -/
-theorem finite_of_surjective {A k M : Type*} [Ring A] [Ring k] [AddCommGroup M]
-    [Module A M] {π : A →+* k} (hM : Module.IsTorsionBySet A M (RingHom.ker π))
-    (hπ : Function.Surjective π) [Module.Finite A M] :
-    letI := hM.moduleOfSurjective hπ
-    Module.Finite k M :=
-  letI := hM.moduleOfSurjective hπ
-  Module.Finite.of_surjective (hM.semilinearMapOfSurjective hπ) Function.surjective_id
+  (hM.semilinearMapOfSurjective hπ).finite_iff_of_bijective
+    (hM.semilinearMapOfSurjective_bijective hπ)
 
 end Module.IsTorsionBySet

@@ -259,6 +259,19 @@ theorem basisComp_subst {τ : Type*} [CommRing A] [CommRing k] {π : A →+* k}
   rw [← coe_substAlgHom ha, map_sum]
   exact Finset.sum_congr rfl fun j _ ↦ map_smul (substAlgHom ha) (b j : A) _
 
+/-- A two-entry specialization of `basisComp_subst`, rewriting the substituted pair directly. -/
+theorem basisComp_subst_finTwo {τ A k ι : Type*} [CommRing A] [CommRing k] [Finite ι]
+    {π : A →+* k} (hπ : Function.Surjective π) {I : Ideal A} [Module k I]
+    (hsmul : ∀ (a : A) (y : I), ((π a • y : I) : A) = a * y.val)
+    (b : Module.Basis ι k I) {f : MvPowerSeries (Fin 2) A} (hf : ∀ d, coeff d f ∈ I)
+    {x y : MvPowerSeries τ A} (hxy : HasSubst ![x, y]) (i : ι) :
+    basisComp b (coeff_subst_mem_of_coeff_mem hxy hf) i =
+      (basisComp b hf i).subst ![x.map π, y.map π] := by
+  rw [basisComp_subst hπ hsmul b hf hxy i]
+  congr 2
+  funext s
+  fin_cases s <;> rfl
+
 end Basis
 
 section CommRing
