@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.MeanZero
+public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.Harmonic
 import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Regularity
@@ -27,9 +28,10 @@ every smooth function `f` with `∫ f dV = 0` has a smooth solution `u` with `�
 smooth `1`-form `a` on a closed four-manifold, this is the scalar equation `Δ⁺ξ = d*a / 2` of the
 global Coulomb gauge `d*(a - 2 dξ) = 0`.
 
-Restricting `-laplaceBeltramiLinearMap I M` to `meanZeroSmoothFunctions I M (riemannianVolume I M)`
-and using `LinearEquiv.ofBijective` gives the linear automorphism
-`TauCeti.Manifold.negLaplaceBeltramiEquiv`, whose inverse is the smooth Poisson solution operator.
+Restricting `-TauCeti.smoothLaplaceBeltrami I M` to
+`meanZeroSmoothFunctions I M (riemannianVolume I M)` and using `LinearEquiv.ofBijective` gives the
+linear automorphism `TauCeti.Manifold.negLaplaceBeltramiEquiv`, whose inverse is the smooth Poisson
+solution operator.
 
 ## Main definitions
 
@@ -104,21 +106,31 @@ theorem existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
     (fun x ↦ neg_inj.1 ((hu'eq x).trans (hueq x).symm)) (hu'0.trans hu0.symm)
 
 omit [PreconnectedSpace M] in
+private theorem smoothLaplaceBeltrami_mem_meanZeroSmoothFunctions (u : C^∞⟮I, M; ℝ⟯) :
+    smoothLaplaceBeltrami I M u ∈ meanZeroSmoothFunctions I M (riemannianVolume I M) := by
+  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+  rw [mem_meanZeroSmoothFunctions_iff]
+  simpa only [smoothLaplaceBeltrami_apply] using
+    integral_laplaceBeltrami_eq_zero (u.contMDiff.of_le (by simp))
+      (HasCompactSupport.of_compactSpace _)
+
+omit [PreconnectedSpace M] in
 variable (I M) in
-/-- The nonnegative Laplacian `-laplaceBeltramiLinearMap I M` restricted to mean-zero smooth
+/-- The nonnegative Laplacian `-smoothLaplaceBeltrami I M` restricted to mean-zero smooth
 functions. -/
 private def negLaplaceBeltramiMeanZero :
     meanZeroSmoothFunctions I M (riemannianVolume I M) →ₗ[ℝ]
       meanZeroSmoothFunctions I M (riemannianVolume I M) :=
-  -((laplaceBeltramiLinearMap I M).restrict fun u _ ↦
-    laplaceBeltramiLinearMap_mem_meanZeroSmoothFunctions u)
+  -((smoothLaplaceBeltrami I M).restrict fun u _ ↦
+    smoothLaplaceBeltrami_mem_meanZeroSmoothFunctions u)
 
 omit [PreconnectedSpace M] in
 private theorem negLaplaceBeltramiMeanZero_apply
     (u : meanZeroSmoothFunctions I M (riemannianVolume I M)) (x : M) :
     (negLaplaceBeltramiMeanZero I M u).val x = -laplaceBeltrami I u.val x := by
   simp only [negLaplaceBeltramiMeanZero, LinearMap.neg_apply, Submodule.coe_neg,
-    LinearMap.restrict_apply, ContMDiffMap.coe_neg, Pi.neg_apply, laplaceBeltramiLinearMap_apply]
+    LinearMap.restrict_apply, ContMDiffMap.coe_neg, Pi.neg_apply, smoothLaplaceBeltrami_apply]
 
 variable (I M) in
 /-- **The nonnegative Laplacian as a linear equivalence on mean-zero smooth functions.** On a
