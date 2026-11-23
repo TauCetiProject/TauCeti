@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.MellinTransform.Sawtooth
 import TauCeti.Analysis.MellinTransform.UpperTail
@@ -71,18 +73,16 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- `TauCeti.isBigO_bernoulliFun_one_fract` for the sawtooth viewed in `ℂ`, against `x ^ 0`, the
-form taken by `TauCeti.differentiableOn_integral_mul_cpow_of_isBigO`. -/
-private theorem isBigO_sawtooth :
-    (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ)) =O[atTop] fun x : ℝ ↦ x ^ (0 : ℝ) :=
-  (((isBigO_bernoulliFun_one_fract atTop).norm_left.congr_left fun _ ↦
-    (norm_real _).symm).of_norm_left).congr_right fun x ↦ (Real.rpow_zero x).symm
-
-/-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`. -/
-private noncomputable def zetaSawtooth (a : ℝ) (s : ℂ) : ℂ :=
-  ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) + (a : ℂ) ^ (1 - s) / (s - 1) +
-    bernoulliFun 1 (Int.fract a) * (a : ℂ) ^ (-s) -
+/-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`, without the polar term
+`a^(1-s)/(s - 1)`. For `a > 0` it is holomorphic on `0 < Re s`. -/
+private noncomputable def sawtoothReg (a : ℝ) (s : ℂ) : ℂ :=
+  ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) + bernoulliFun 1 (Int.fract a) * (a : ℂ) ^ (-s) -
     s * ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))
+
+/-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`: `sawtoothReg a s` plus the
+polar term `a^(1-s)/(s - 1)`. -/
+private noncomputable def zetaSawtooth (a : ℝ) (s : ℂ) : ℂ :=
+  sawtoothReg a s + (a : ℂ) ^ (1 - s) / (s - 1)
 
 /-- The first-order Euler–Maclaurin formula on `[a, b]` for `x ↦ x^(-s)` shows that the cut point
 does not matter. -/
@@ -121,7 +121,7 @@ private theorem zetaSawtooth_eq_of_le {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) {
   rw [hint, hpow] at hEM
   have h1s : (1 - s) = -(s - 1) := by ring
   have hs₁' : s - 1 ≠ 0 := sub_ne_zero.mpr hs₁
-  unfold zetaSawtooth
+  unfold zetaSawtooth sawtoothReg
   rw [hsum, hEM, ← hsplit, h1s, div_neg]
   field_simp
   ring
@@ -170,7 +170,8 @@ private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
     have h := ((hsum.add hpole).add hboundary).sub htail
     rw [add_zero, add_zero, sub_zero] at h
     refine h.congr fun N ↦ ?_
-    simp only [zetaSawtooth, Nat.floor_natCast]
+    simp only [zetaSawtooth, sawtoothReg, Nat.floor_natCast]
+    ring
   refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) hlim
   filter_upwards [eventually_ge_atTop 1] with N hN
   exact zetaSawtooth_eq_of_le one_pos (by exact_mod_cast hN) hs₀ hs₁
@@ -179,7 +180,7 @@ private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
 private theorem zetaSawtooth_one_eq (z : ℂ) :
     zetaSawtooth 1 z = 1 + 1 / (z - 1) - 1 / 2 -
       z * ∫ x in Set.Ioi (1 : ℝ), (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(z + 1)) := by
-  simp only [zetaSawtooth, Nat.floor_one, Finset.Icc_self, Finset.sum_singleton,
+  simp only [zetaSawtooth, sawtoothReg, Nat.floor_one, Finset.Icc_self, Finset.sum_singleton,
     Nat.cast_one, ofReal_one, one_cpow, Int.fract_one, bernoulliFun_one]
   push_cast
   ring
@@ -232,7 +233,8 @@ theorem riemannZeta_eq_sum_add_integral_sawtooth {a : ℝ} (ha : 0 < a) {s : ℂ
     rcases le_total a 1 with h | h
     · exact zetaSawtooth_eq_of_le ha h hs hs₁
     · exact (zetaSawtooth_eq_of_le one_pos h hs hs₁).symm
-  rw [← zetaSawtooth_one hs hs₁, ← h, zetaSawtooth]
+  rw [← zetaSawtooth_one hs hs₁, ← h, zetaSawtooth, sawtoothReg]
+  ring
 
 /-- The Euler–Maclaurin formula for `ζ(s)` cut at an integer `N ≥ 1`, where `B₁({N}) = -1/2`:
 `ζ(s) = ∑_{n ≤ N} n^(-s) + N^(1-s)/(s - 1) - N^(-s)/2 - s ∫_N^∞ B₁({x}) x^(-s-1) dx`
@@ -256,9 +258,18 @@ theorem riemannZeta_eq_sum_add_integral_sawtooth_natCast_add_half (N : ℕ) {s :
       ((N : ℂ) + 1 / 2) ^ (1 - s) / (s - 1) -
       s * ∫ x in Set.Ioi ((N : ℝ) + 1 / 2),
         (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)) := by
-  rw [riemannZeta_eq_sum_add_integral_sawtooth (a := (N : ℝ) + 1 / 2) (by positivity) hs hs₁,
-    natFloor_natCast_add_one_half, bernoulliFun_one_fract_natCast_add_one_half]
-  push_cast
+  rw [riemannZeta_eq_sum_add_integral_sawtooth (a := (N : ℝ) + 1 / 2) (by positivity) hs hs₁]
+  simp [bernoulliFun_one]
+
+/-- **The fractional-part formula for `riemannZeta₀`.** For every `s` with `Re s > 0`,
+`riemannZeta₀ s = 1 - s ∫_1^∞ {x} x^(-s-1) dx`, the integral converging absolutely. -/
+theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s =
+      1 - s * ∫ x in Set.Ioi (1 : ℝ), ((Int.fract x : ℝ) : ℂ) * (x : ℂ) ^ (-(s + 1)) := by
+  have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
+  rw [integral_fract_mul_cpow_eq_integral_sawtooth_add one_pos hs, ofReal_one, one_cpow,
+    riemannZeta₀_eq_one_half_sub_integral_sawtooth hs]
+  field_simp
   ring
 
 /-- The Euler–Maclaurin formula for `ζ(s)` cut at `1`, written with the fractional part:
@@ -267,34 +278,10 @@ converging absolutely. -/
 theorem riemannZeta_eq_one_add_inv_sub_integral_fract {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
     riemannZeta s = 1 + (s - 1)⁻¹ -
       s * ∫ x in Set.Ioi (1 : ℝ), ((Int.fract x : ℝ) : ℂ) * (x : ℂ) ^ (-(s + 1)) := by
-  have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
-  rw [integral_fract_mul_cpow_eq_integral_sawtooth_add one_pos hs, ofReal_one, one_cpow,
-    riemannZeta_eq_inv_sub_add hs₁, riemannZeta₀_eq_one_half_sub_integral_sawtooth hs]
-  field_simp
-  ring
-
-/-- **Fractional-part integral representation of `riemannZeta₀`.** For every `s` with `Re s > 0`,
-`riemannZeta₀ s = 1 - s * ∫_{t > 1} (t - ⌊t⌋₊) t^{-(s + 1)} dt`. -/
-theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
-    riemannZeta₀ s =
-      1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
-  have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
-  have hfract : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) =
-      ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) :=
-    setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ by
-      rw [Int.fract, natCast_floor_eq_intCast_floor (by linarith : (0 : ℝ) ≤ t)]
-  rw [hfract, integral_fract_mul_cpow_eq_integral_sawtooth_add one_pos hs, ofReal_one, one_cpow,
-    riemannZeta₀_eq_one_half_sub_integral_sawtooth hs]
-  field_simp
+  rw [riemannZeta_eq_inv_sub_add hs₁, riemannZeta₀_eq_one_sub_mul_integral hs]
   ring
 
 /-! ### The regularized formula and the Euler–Mascheroni constant -/
-
-/-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`, without the polar term
-`a^(1-s)/(s - 1)`. For `a > 0` it is holomorphic on `0 < Re s`. -/
-private noncomputable def sawtoothReg (a : ℝ) (s : ℂ) : ℂ :=
-  ∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℂ) ^ (-s) + bernoulliFun 1 (Int.fract a) * (a : ℂ) ^ (-s) -
-    s * ∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))
 
 /-- **The regularized Euler–Maclaurin formula.** For real `a > 0` and every `s` with `0 < Re s`,
 `riemannZeta₁ s = a^(1-s) + (s - 1) (∑_{1 ≤ n ≤ a} n^(-s) + B₁({a}) a^(-s) - s I)` with
@@ -311,7 +298,11 @@ theorem riemannZeta₁_eq_add_mul_sum_sawtooth {a : ℝ} (ha : 0 < a) {s : ℂ} 
   have h : riemannZeta₁ s = (s - 1) * riemannZeta s := by
     rw [riemannZeta_eq_inv_sub_mul hs₁]
     field_simp
-  rw [h, riemannZeta_eq_sum_add_integral_sawtooth ha hs hs₁]
+  have hζ : riemannZeta s = sawtoothReg a s + (a : ℂ) ^ (1 - s) / (s - 1) := by
+    rw [riemannZeta_eq_sum_add_integral_sawtooth ha hs hs₁, sawtoothReg]
+    ring
+  change _ = (a : ℂ) ^ (1 - s) + (s - 1) * sawtoothReg a s
+  rw [h, hζ]
   field_simp
   ring
 

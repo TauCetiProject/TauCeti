@@ -36,8 +36,6 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
   The finite sum is over the natural indices between the endpoint floors.
 * `TauCeti.abs_bernoulliFun_one_fract_le` and `TauCeti.isBigO_bernoulliFun_one_fract`: the sawtooth
   `B₁({x}) = {x} - 1/2` is bounded by `1/2`, hence `O(1)` along every filter.
-* `TauCeti.natFloor_natCast_add_one_half` and `TauCeti.bernoulliFun_one_fract_natCast_add_one_half`:
-  `⌊N + 1/2⌋₊ = N` and `B₁({N + 1/2}) = 0`, the normalizations at a half-integer cut point.
 * `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
@@ -103,16 +101,6 @@ theorem isBigO_bernoulliFun_one_fract (l : Filter ℝ) :
     (fun x ↦ bernoulliFun 1 (Int.fract x)) =O[l] fun _ ↦ (1 : ℝ) :=
   Asymptotics.IsBigO.of_bound (1 / 2) (Filter.Eventually.of_forall fun x ↦ by
     simpa only [Real.norm_eq_abs, norm_one, mul_one] using abs_bernoulliFun_one_fract_le x)
-
-/-- The natural floor of a half-integer: `⌊N + 1/2⌋₊ = N`. -/
-theorem natFloor_natCast_add_one_half (N : ℕ) : ⌊(N : ℝ) + 1 / 2⌋₊ = N :=
-  Nat.floor_eq_iff (by positivity) |>.mpr ⟨by linarith, by linarith⟩
-
-/-- The sawtooth vanishes at half-integers: `B₁({N + 1/2}) = 0`. -/
-theorem bernoulliFun_one_fract_natCast_add_one_half (N : ℕ) :
-    bernoulliFun 1 (Int.fract ((N : ℝ) + 1 / 2)) = 0 := by
-  rw [Int.fract_natCast_add, Int.fract_eq_self.mpr ⟨by norm_num, by norm_num⟩, bernoulliFun_one,
-    sub_self]
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)

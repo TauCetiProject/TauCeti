@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
-import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # The Mellin weight `η t^(-1-η)` on `(1, ∞)`
@@ -37,8 +36,6 @@ evaluate the majorants that occur.
 * `TauCeti.integrableOn_rpow_mul_log`, `TauCeti.integrableOn_rpow_mul_one_add_log_sq`:
   integrability of `t^(-1-η) log t` and `t^(-1-η) (1 + log t)²` on `(1, ∞)`, the latter via
   `TauCeti.one_add_log_sq_le`;
-* `TauCeti.integrableOn_rpow_mul_fract`: integrability of `t^p {t}` on `(a, ∞)` for `a > 0` and
-  `p < -1`;
 * `TauCeti.mellinWeightIntegral_log`: `η ∫_{t > 1} t^(-1-η) log t dt = η⁻¹`;
 * `TauCeti.mellinWeightIntegral_log_log_le`: Jensen's bound
   `η ∫_{t > 1} t^(-1-η) log log(3t) dt ≤ log(log 3 + η⁻¹)`;
@@ -184,16 +181,6 @@ theorem one_add_log_sq_le {η t : ℝ} (hη : 0 < η) (ht : 1 ≤ t) :
       push_cast
       rw [show η / 4 * 2 = η / 2 by ring]
       field_simp
-
-/-- The fractional part `{t} ∈ [0, 1)` weighted by `t^p` is integrable on `(a, ∞)` for `a > 0`
-and `p < -1`. -/
-theorem integrableOn_rpow_mul_fract {p a : ℝ} (hp : p < -1) (ha : 0 < a) :
-    IntegrableOn (fun t : ℝ ↦ t ^ p * Int.fract t) (Ioi a) := by
-  refine (integrableOn_Ioi_rpow_of_lt hp ha).mono'
-    ((measurable_id.pow_const _).mul measurable_fract).aestronglyMeasurable ?_
-  refine (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun t (ht : a < t) ↦ ?_)
-  rw [norm_mul, norm_of_nonneg (rpow_nonneg (by linarith) _), norm_of_nonneg (Int.fract_nonneg t)]
-  exact mul_le_of_le_one_right (rpow_nonneg (by linarith) _) (Int.fract_lt_one t).le
 
 /-- The majorant `t^(-1-η) (1 + log t)²` is integrable on `(1, ∞)` for `η > 0`. -/
 theorem integrableOn_rpow_mul_one_add_log_sq {η : ℝ} (hη : 0 < η) :

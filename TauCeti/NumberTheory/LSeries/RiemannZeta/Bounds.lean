@@ -8,8 +8,10 @@ module
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.Real.Pi.Bounds
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.MellinTransform.Sawtooth
-import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
+import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
@@ -98,10 +100,8 @@ theorem norm_riemannZeta_sub_sum_sawtooth_natCast_add_half_le (N : ℕ) {s : ℂ
     ‖riemannZeta s - (∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-s) +
       ((N : ℂ) + 1 / 2) ^ (1 - s) / (s - 1))‖ ≤
       ‖s‖ * ((N : ℝ) + 1 / 2) ^ (-s.re) / (2 * s.re) := by
-  have hcast : (((N : ℝ) + 1 / 2 : ℝ) : ℂ) = (N : ℂ) + 1 / 2 := by push_cast; ring
   have h := norm_riemannZeta_sub_sum_sawtooth_le (a := (N : ℝ) + 1 / 2) (by positivity) hs hs₁
-  rwa [natFloor_natCast_add_one_half, bernoulliFun_one_fract_natCast_add_one_half, ofReal_zero,
-    zero_mul, add_zero, hcast] at h
+  simpa [bernoulliFun_one] using h
 
 /-- On `Re s > 0`, including `s = 1`, `‖riemannZeta₀ s - 1/2‖ ≤ ‖s‖/(2 Re s)`, from the
 sawtooth formula `riemannZeta₀ s = 1/2 - s ∫_1^∞ B₁({x}) x^(-s-1) dx`. -/
@@ -125,8 +125,8 @@ theorem norm_riemannZeta_le_one_half_add_inv_add_div {z : ℂ} (hz : 0 < z.re) (
   have hhalf : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
   have hinv : ‖(z - 1)⁻¹‖ = 1 / ‖z - 1‖ := by rw [norm_inv, one_div]
   rw [hdecomp]
-  have htri1 := norm_add_le ((1 / 2 : ℂ) + (z - 1)⁻¹) (riemannZeta₀ z - 1 / 2)
-  have htri2 := norm_add_le (1 / 2 : ℂ) (z - 1)⁻¹
+  have htri : ‖(1 / 2 : ℂ) + (z - 1)⁻¹ + (riemannZeta₀ z - 1 / 2)‖ ≤
+      ‖(1 / 2 : ℂ)‖ + ‖(z - 1)⁻¹‖ + ‖riemannZeta₀ z - 1 / 2‖ := norm_add₃_le
   linarith [norm_riemannZeta₀_sub_one_half_le hz]
 
 /-- On the open right half-plane `Re s > 0`, `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`, a weakening of
@@ -205,9 +205,8 @@ theorem norm_riemannZeta_le_linear {t : ℝ} (ht : 2 ≤ |t|) {z : ℂ}
   have hnorm : ‖z‖ ≤ 5 / 2 + |t| := by
     have h32 : ‖(3 / 2 : ℂ)‖ = 3 / 2 := by norm_num
     have htI : ‖(t : ℂ) * I‖ = |t| := by simp [norm_real]
-    have htri1 := norm_add_le (w + 3 / 2) ((t : ℂ) * I)
-    have htri2 := norm_add_le w (3 / 2 : ℂ)
     rw [hzw]
+    have htri : ‖w + 3 / 2 + (t : ℂ) * I‖ ≤ ‖w‖ + ‖(3 / 2 : ℂ)‖ + ‖(t : ℂ) * I‖ := norm_add₃_le
     linarith
   linarith [norm_riemannZeta_le_three_halves_add_norm hz_re hpole]
 

@@ -23,6 +23,7 @@ function.
 
 ## Main results
 
+* `TauCeti.isBigO_sawtooth`: the sawtooth viewed in `ℂ` is `O(x ^ 0)` at infinity.
 * `TauCeti.integrableOn_sawtooth_mul_cpow`: the tail integral converges absolutely.
 * `TauCeti.norm_integral_sawtooth_mul_cpow_le`: its bound `a^(-σ)/(2σ)`.
 * `TauCeti.integral_fract_mul_cpow_eq_integral_sawtooth_add`:
@@ -39,6 +40,14 @@ namespace TauCeti
 private theorem norm_sawtooth_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
   rw [norm_real, Real.norm_eq_abs]
   exact abs_bernoulliFun_one_fract_le x
+
+/-- The sawtooth viewed in `ℂ` is `O(x ^ 0)` at infinity, the form of growth hypothesis taken by
+`TauCeti.differentiableOn_integral_mul_cpow_of_isBigO`; see `TauCeti.isBigO_bernoulliFun_one_fract`
+for the real sawtooth. -/
+theorem isBigO_sawtooth :
+    (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ)) =O[Filter.atTop] fun x : ℝ ↦ x ^ (0 : ℝ) :=
+  (((isBigO_bernoulliFun_one_fract Filter.atTop).norm_left.congr_left fun _ ↦
+    (norm_real _).symm).of_norm_left).congr_right fun x ↦ (Real.rpow_zero x).symm
 
 /-- The tail integral of the sawtooth `B₁({x}) = {x} - 1/2` against `x^(-s-1)` converges
 absolutely on `(a, ∞)` for `a > 0` and `0 < Re s`. -/
