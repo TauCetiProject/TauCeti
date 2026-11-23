@@ -103,6 +103,19 @@ theorem comp_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂
     (φ.comp ψ).comp θ = φ.comp (ψ.comp θ) := by
   ext <;> rfl
 
+private lemma invOfEquiv_word {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (φ : Hom S T) (eo : S.Obj ≃ T.Obj) (ho : ∀ a, eo a = φ.obj a)
+    {w₁ : FreeMonoidalCategory S.Obj} {w₂ : FreeMonoidalCategory T.Obj}
+    (hw : w₂ = projectObj (.of ∘ φ.obj) w₁) :
+    w₁ = projectObj (.of ∘ eo.symm) w₂ := by
+  calc w₁
+      = projectObj FreeMonoidalCategory.of w₁ := (projectObj_of w₁).symm
+    _ = projectObj ((.of ∘ eo.symm) ∘ φ.obj) w₁ :=
+        projectObj_congr (fun a ↦ congrArg FreeMonoidalCategory.of
+          ((eo.symm_apply_apply a).symm.trans (congrArg eo.symm (ho a)))) w₁
+    _ = projectObj (.of ∘ eo.symm) w₂ := by
+        rw [hw, projectObj_projectObj_of_comp]
+
 /-- Construct the inverse morphism of a tensor-signature morphism whose object and coupon maps are
 given by equivalences. -/
 def invOfEquiv {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}} (φ : Hom S T)
@@ -110,26 +123,10 @@ def invOfEquiv {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v�
     (ho : ∀ a, eo a = φ.obj a) (hc : ∀ g, ec g = φ.coupon g) : Hom T S where
   obj := eo.symm
   coupon := ec.symm
-  src_coupon h := by
-    have hφ : φ.coupon (ec.symm h) = h := (hc (ec.symm h)).symm.trans (ec.apply_symm_apply h)
-    calc S.src (ec.symm h)
-        = projectObj FreeMonoidalCategory.of (S.src (ec.symm h)) := (projectObj_of _).symm
-      _ = projectObj ((.of ∘ eo.symm) ∘ φ.obj) (S.src (ec.symm h)) :=
-          projectObj_congr (fun a ↦ congrArg FreeMonoidalCategory.of
-            ((eo.symm_apply_apply a).symm.trans (congrArg eo.symm (ho a)))) _
-      _ = projectObj (.of ∘ eo.symm) (T.src (φ.coupon (ec.symm h))) := by
-          rw [φ.src_coupon, projectObj_projectObj_of_comp]
-      _ = projectObj (.of ∘ eo.symm) (T.src h) := by rw [hφ]
-  tgt_coupon h := by
-    have hφ : φ.coupon (ec.symm h) = h := (hc (ec.symm h)).symm.trans (ec.apply_symm_apply h)
-    calc S.tgt (ec.symm h)
-        = projectObj FreeMonoidalCategory.of (S.tgt (ec.symm h)) := (projectObj_of _).symm
-      _ = projectObj ((.of ∘ eo.symm) ∘ φ.obj) (S.tgt (ec.symm h)) :=
-          projectObj_congr (fun a ↦ congrArg FreeMonoidalCategory.of
-            ((eo.symm_apply_apply a).symm.trans (congrArg eo.symm (ho a)))) _
-      _ = projectObj (.of ∘ eo.symm) (T.tgt (φ.coupon (ec.symm h))) := by
-          rw [φ.tgt_coupon, projectObj_projectObj_of_comp]
-      _ = projectObj (.of ∘ eo.symm) (T.tgt h) := by rw [hφ]
+  src_coupon h := invOfEquiv_word φ eo ho <| by
+    rw [← φ.src_coupon, ← hc (ec.symm h), ec.apply_symm_apply]
+  tgt_coupon h := invOfEquiv_word φ eo ho <| by
+    rw [← φ.tgt_coupon, ← hc (ec.symm h), ec.apply_symm_apply]
 
 @[simp]
 theorem invOfEquiv_obj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}} (φ : Hom S T)

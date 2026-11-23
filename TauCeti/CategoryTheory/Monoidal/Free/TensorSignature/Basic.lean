@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.CategoryTheory.Monoidal.Free.Basic
 public import TauCeti.CategoryTheory.Monoidal.Free.ProjectObj
+import TauCeti.CategoryTheory.NatIso
 
 /-!
 # The free monoidal category on a tensor signature
@@ -349,6 +350,11 @@ theorem homMk_ρ_inv (X : S.FreeMonoidal) :
 @[simp]
 theorem homMk_coupon (g : S.Coupon) :
     homMk (X := ⟨S.src g⟩) (Y := ⟨S.tgt g⟩) (Hom.coupon g) = coupon g := rfl
+
+/-- Every morphism in `S.FreeMonoidal` is represented by a formal morphism expression. -/
+theorem homMk_surjective {X Y : S.FreeMonoidal} :
+    Function.Surjective (homMk (X := X) (Y := Y)) :=
+  Quotient.exists_rep
 
 /-! ### Endpoint transport on raw formal morphisms -/
 
@@ -1085,9 +1091,8 @@ theorem monoidalNatIsoOfEqObj_inv_app (hobj : ∀ X, F.obj X = G.obj X)
     (hcoupon : ∀ g, F.map (coupon g) ≫ eqToHom (hobj ⟨S.tgt g⟩) =
       eqToHom (hobj ⟨S.src g⟩) ≫ G.map (coupon g))
     (X : S.FreeMonoidal) :
-    (monoidalNatIsoOfEqObj hobj hunit htensor hcoupon).inv.app X = eqToHom (hobj X).symm := by
-  rw [← cancel_epi ((monoidalNatIsoOfEqObj hobj hunit htensor hcoupon).hom.app X),
-    Iso.hom_inv_id_app, monoidalNatIsoOfEqObj_hom_app, eqToHom_trans, eqToHom_refl]
+    (monoidalNatIsoOfEqObj hobj hunit htensor hcoupon).inv.app X = eqToHom (hobj X).symm :=
+  NatIso.inv_app_eqToHom _ X (monoidalNatIsoOfEqObj_hom_app hobj hunit htensor hcoupon X)
 
 instance monoidalNatIsoOfEqObj_hom_isMonoidal (hobj : ∀ X, F.obj X = G.obj X)
     (hunit : Functor.OplaxMonoidal.η F ≫ Functor.LaxMonoidal.ε G = eqToHom (hobj (𝟙_ _)))

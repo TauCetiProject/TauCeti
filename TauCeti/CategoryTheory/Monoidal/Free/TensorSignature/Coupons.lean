@@ -192,32 +192,30 @@ theorem couponCount_rightUnitor_inv (X : S.FreeMonoidal) :
 @[simp]
 theorem couponCount_comp {X Y Z : S.FreeMonoidal} (f : X ⟶ Y) (g : Y ⟶ Z) :
     couponCount (f ≫ g) = couponCount f + couponCount g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rw [← homMk_comp, couponCount_homMk, Hom.coupons_comp, List.length_append]
-  rfl
+  obtain ⟨f, rfl⟩ := homMk_surjective f
+  obtain ⟨g, rfl⟩ := homMk_surjective g
+  rw [← homMk_comp, couponCount_homMk, couponCount_homMk, couponCount_homMk,
+    Hom.coupons_comp, List.length_append]
 
 @[simp]
 theorem couponCount_whiskerLeft (X : S.FreeMonoidal) {Y Z : S.FreeMonoidal} (f : Y ⟶ Z) :
     couponCount (X ◁ f) = couponCount f := by
-  induction f using Quotient.inductionOn
-  rw [← homMk_whiskerLeft, couponCount_homMk, Hom.coupons_whiskerLeft]
-  rfl
+  obtain ⟨f, rfl⟩ := homMk_surjective f
+  rw [← homMk_whiskerLeft, couponCount_homMk, couponCount_homMk, Hom.coupons_whiskerLeft]
 
 @[simp]
 theorem couponCount_whiskerRight {X Y : S.FreeMonoidal} (f : X ⟶ Y) (Z : S.FreeMonoidal) :
     couponCount (f ▷ Z) = couponCount f := by
-  induction f using Quotient.inductionOn
-  rw [← homMk_whiskerRight, couponCount_homMk, Hom.coupons_whiskerRight]
-  rfl
+  obtain ⟨f, rfl⟩ := homMk_surjective f
+  rw [← homMk_whiskerRight, couponCount_homMk, couponCount_homMk, Hom.coupons_whiskerRight]
 
 @[simp]
 theorem couponCount_tensorHom {W X Y Z : S.FreeMonoidal} (f : W ⟶ Y) (g : X ⟶ Z) :
     couponCount (f ⊗ₘ g) = couponCount f + couponCount g := by
-  induction f using Quotient.inductionOn
-  induction g using Quotient.inductionOn
-  rw [← homMk_tensor, couponCount_homMk, Hom.coupons_tensor, List.length_append]
-  rfl
+  obtain ⟨f, rfl⟩ := homMk_surjective f
+  obtain ⟨g, rfl⟩ := homMk_surjective g
+  rw [← homMk_tensor, couponCount_homMk, couponCount_homMk, couponCount_homMk,
+    Hom.coupons_tensor, List.length_append]
 
 /-- A coupon in `S.FreeMonoidal` is never equal to an object-equality transport `eqToHom`,
 in particular an endomorphism coupon is never equal to the identity morphism. -/

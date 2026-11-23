@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.CategoryTheory.NatIso
 
 /-!
@@ -18,6 +19,8 @@ parallel morphisms.
 
 * `CategoryTheory.NatIso.map_eq_iff`: for a natural isomorphism `e : F ≅ G`, `F.map f = F.map g`
   holds if and only if `G.map f = G.map g`.
+* `CategoryTheory.NatIso.inv_app_of_hom_app` and `CategoryTheory.NatIso.inv_app_eqToHom`: compute
+  the inverse component `e.inv.app X` from an identification of `e.hom.app X`.
 -/
 
 public section
@@ -32,5 +35,19 @@ theorem map_eq_iff {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category
     F.map f = F.map g ↔ G.map f = G.map g :=
   ⟨fun h ↦ by rw [← NatIso.naturality_1 e, ← NatIso.naturality_1 e, h],
    fun h ↦ by rw [← NatIso.naturality_2 e, ← NatIso.naturality_2 e, h]⟩
+
+/-- If the `hom` component of a natural isomorphism `e` at `X` equals `i.hom`, then its `inv`
+component at `X` equals `i.inv`. -/
+theorem inv_app_of_hom_app {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {F G : C ⥤ D} (e : F ≅ G) (X : C) (i : F.obj X ≅ G.obj X)
+    (h : e.hom.app X = i.hom) : e.inv.app X = i.inv :=
+  congrArg Iso.inv (Iso.ext h : e.app X = i)
+
+/-- If the `hom` component of a natural isomorphism `e` at `X` is `eqToHom h`, then its `inv`
+component at `X` is `eqToHom h.symm`. -/
+theorem inv_app_eqToHom {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {F G : C ⥤ D} (e : F ≅ G) (X : C) {h : F.obj X = G.obj X}
+    (he : e.hom.app X = eqToHom h) : e.inv.app X = eqToHom h.symm :=
+  (inv_app_of_hom_app e X (eqToIso h) he).trans (eqToIso.inv h)
 
 end CategoryTheory.NatIso

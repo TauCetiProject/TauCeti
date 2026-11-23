@@ -107,6 +107,25 @@ theorem projectObjIso_eqToIso (h : ∀ a, f a = g a) (X : FreeMonoidalCategory C
     rw [hX, hY]
     exact TauCeti.eqToIso_tensorIso_eqToIso (projectObj_congr h X) (projectObj_congr h Y)
 
+omit [MonoidalCategory D] in
+private lemma iso_eq_conj_eqToIso_of_heq {X₁ Y₁ X₂ Y₂ : D} {e₁ : X₁ ≅ Y₁} {e₂ : X₂ ≅ Y₂}
+    (hX : X₁ = X₂) (hY : Y₂ = Y₁) (he : HEq e₁ e₂) :
+    e₁ = eqToIso hX ≪≫ e₂ ≪≫ eqToIso hY := by
+  subst hX hY
+  cases he
+  simp
+
+omit [MonoidalCategory D] in
+private lemma iso_eq_conj_eqToIso_of_heq_comp {X₁ Y₁ X₂ Y₂ Z W : D}
+    {e₁ : X₁ ≅ Y₁} {e₂ : X₂ ≅ Y₂} {m : Z ⟶ W}
+    (hX : X₁ = X₂) (hY : Y₂ = Y₁) (hXZ : X₁ = Z) (hWY : W = Y₁)
+    (h₁ : e₁.hom = eqToHom hXZ ≫ m ≫ eqToHom hWY) (h₂ : HEq m e₂.hom) :
+    e₁ = eqToIso hX ≪≫ e₂ ≪≫ eqToIso hY := by
+  subst hX hY hXZ hWY
+  cases h₂
+  ext
+  simpa using h₁
+
 /-- Extending generator isomorphisms `e` along tensor words `h` and then over a word `X` agrees
 with evaluating `projectObjIso e` on the substituted word `projectObj h X`, up to
 `projectObj_projectObj`. -/
@@ -118,15 +137,20 @@ theorem projectObjIso_projectObj {C' : Type u''} {f g : C' → D} (e : ∀ b, f 
         eqToIso (projectObj_projectObj g h X) := by
   induction X with
   | of _ | unit =>
-    ext; simp only [Iso.trans_hom, eqToIso.hom]
-    exact ((Category.id_comp _).trans (Category.comp_id _)).symm.trans
-      (congrArg₂ (· ≫ ·) (eqToHom_refl _ _).symm (congrArg₂ (· ≫ ·) rfl (eqToHom_refl _ _).symm))
+    exact iso_eq_conj_eqToIso_of_heq
+      (projectObj_projectObj f h _).symm (projectObj_projectObj g h _) HEq.rfl
   | tensor X Y ihX ihY =>
-    ext; simp only [projectObjIso, ihX, ihY, Iso.trans_hom, eqToIso.hom, tensorIso_hom]
-    have htensor : (projectObjIso e (projectObj h (X.tensor Y))).hom =
-        (projectObjIso e (projectObj h X)).hom ⊗ₘ (projectObjIso e (projectObj h Y)).hom := rfl
-    simp only [htensor, ← MonoidalCategory.tensorHom_comp_tensorHom,
-      TauCeti.eqToHom_tensorHom_eqToHom]; rfl
+    refine iso_eq_conj_eqToIso_of_heq_comp
+      (m := (projectObjIso e (projectObj h X)).hom ⊗ₘ (projectObjIso e (projectObj h Y)).hom)
+      (projectObj_projectObj f h (X ⊗ Y)).symm (projectObj_projectObj g h (X ⊗ Y))
+      ((projectObj_tensorObj _ X Y).trans
+        (congrArg₂ (· ⊗ ·) (projectObj_projectObj f h X).symm (projectObj_projectObj f h Y).symm))
+      ((congrArg₂ (· ⊗ ·) (projectObj_projectObj g h X) (projectObj_projectObj g h Y)).trans
+        (projectObj_tensorObj _ X Y).symm)
+      ?_ HEq.rfl
+    dsimp only [projectObjIso]
+    rw [tensorIso_hom, ihX, ihY]
+    simp [eqToIso.hom, ← MonoidalCategory.tensorHom_comp_tensorHom]
 
 /-- Transporting `projectObjIso e` along an equality of tensor words `w = w'` conjugates its
 component by `eqToHom`. -/
