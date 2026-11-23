@@ -26,6 +26,9 @@ matrix `A` by `star (det A)` therefore keeps it unitary and makes its determinan
 `det A * star (det A) = 1`: this is `Matrix.UnitaryGroup.toSpecialUnitaryAt j A`, a special unitary
 matrix with the same columns as `A` away from `j`
 (`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`).
+
+`Matrix.star_mulVec_dotProduct_mulVec` records that left-multiplying by a unitary matrix preserves
+the Hermitian dot product `star x ⬝ᵥ y`.
 -/
 
 public section
@@ -78,6 +81,14 @@ theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [Decidabl
     [Semiring α] [StarRing α] {a : α} {i : n} :
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
+
+/-- Left-multiplication by a unitary matrix preserves the Hermitian dot product `star x ⬝ᵥ y`. -/
+theorem star_mulVec_dotProduct_mulVec {R n : Type*} [Semiring R] [StarRing R]
+    [Fintype n] [DecidableEq n] {M : Matrix n n R} (hM : M ∈ unitary (Matrix n n R))
+    (x y : n → R) :
+    star (M *ᵥ x) ⬝ᵥ (M *ᵥ y) = star x ⬝ᵥ y := by
+  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul,
+    (mem_unitary_iff_conjTranspose.mp hM).1, vecMul_one]
 
 namespace UnitaryGroup
 

@@ -59,12 +59,14 @@ coprime rank and degree*, §3).
   when `ζ` is a primitive `r`-th root of unity.
 * `TauCeti.GaugeModuli.relationSet_stabilizer_central`,
   `TauCeti.GaugeModuli.conjAct_smul_relationSet_eq_self_iff`,
-  `TauCeti.GaugeModuli.psu_smul_relationSet_eq_self_iff`, and
-  `TauCeti.GaugeModuli.stabilizer_psu_relationSet_eq_bot`: when `ζ` is a primitive `r`-th root of
+  `TauCeti.GaugeModuli.psu_smul_relationSet_eq_self_iff`,
+  `TauCeti.GaugeModuli.stabilizer_psu_relationSet_eq_bot`, and
+  `TauCeti.GaugeModuli.isCancelSMul_psu_relationSet`: when `ζ` is a primitive `r`-th root of
   unity, commuting elements of `SU(r)` are central (`relationSet_stabilizer_central`), every
   `SU(r)`-stabilizer equals the center `μ_r` (`conjAct_smul_relationSet_eq_self_iff`), and the
   induced `PSU(r)` action on `relationSet r ζ g` is free (`psu_smul_relationSet_eq_self_iff`,
-  `stabilizer_psu_relationSet_eq_bot`, hence faithful whenever `relationSet r ζ g` is nonempty).
+  `stabilizer_psu_relationSet_eq_bot`, `isCancelSMul_psu_relationSet`, hence faithful whenever
+  `relationSet r ζ g` is nonempty).
 * `TauCeti.GaugeModuli.isEmpty_relationModuli_zero`: the genus-zero moduli is empty for `r ≥ 2`
   and primitive `ζ`.
 * `TauCeti.GaugeModuli.relationModuli_rank_one` and
@@ -226,8 +228,9 @@ theorem conjAct_smul_eq_self_of_mem_center {r : ℕ} {ζ : ℂ} {g : ℕ}
     exact (Subgroup.mem_center_iff.mp hu a).symm
   exact Subtype.ext <| funext fun j => Prod.ext (hfix (x.val j).1) (hfix (x.val j).2)
 
-/-- The induced simultaneous conjugation action of `PSU(r)` on `relationSet r ζ g` (free under
-primitivity and faithful when `relationSet r ζ g` is nonempty). -/
+/-- The induced simultaneous conjugation action of `PSU(r)` on `relationSet r ζ g`. When `ζ` is a
+primitive `r`-th root of unity, the action is free (`isCancelSMul_psu_relationSet`), and when
+additionally `relationSet r ζ g` is nonempty, the action is faithful. -/
 noncomputable instance instMulActionPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     MulAction (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) :=
@@ -305,13 +308,14 @@ noncomputable def relationModuliEquivPSUOrbitQuotient (r : ℕ) (ζ : ℂ) (g : 
       MulAction.orbitRel.Quotient (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
         ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) :=
   Homeomorph.Quotient.congrRight fun _ _ => by
+    rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
+      MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
     constructor
     · rintro ⟨u, hu⟩
       exact ⟨toPSL.rangeRestrict (ConjAct.ofConjAct u), by
         simpa [toPSL_rangeRestrict_smul_relationSet] using hu⟩
     · rintro ⟨p, hp⟩
       obtain ⟨u, rfl⟩ := toPSL.rangeRestrict_surjective p
-      dsimp only at hp
       rw [toPSL_rangeRestrict_smul_relationSet] at hp
       exact ⟨ConjAct.toConjAct u, hp⟩
 
@@ -529,6 +533,13 @@ theorem stabilizer_psu_relationSet_eq_bot {r : ℕ} {ζ : ℂ}
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range x = ⊥ := by
   ext p
   simp [MulAction.mem_stabilizer_iff, psu_smul_relationSet_eq_self_iff hζ x p]
+
+/-- When `ζ` is a primitive `r`-th root of unity, the induced `PSU(r)` action on
+`relationSet r ζ g` is free (`IsCancelSMul`). -/
+theorem isCancelSMul_psu_relationSet {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) (g : ℕ) :
+    IsCancelSMul (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) :=
+  isCancelSMul_iff_stabilizer_eq_bot.mpr (stabilizer_psu_relationSet_eq_bot hζ)
 
 end IrreducibilityAndStabilizers
 

@@ -17,7 +17,6 @@ import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Matrix.Normal
 import TauCeti.Analysis.RCLike.Basic
-import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -188,6 +187,15 @@ theorem clockUnitary_shiftUnitary_phase_conj {r : ℕ} [NeZero r] {ζ : ℂ} (h�
   · simp only [P, Submonoid.coe_mul, star_mul, Matrix.mul_smul, Matrix.smul_mul]
     rw [hsplit, hSp, clockUnitary_pow_conj_shiftUnitary hζ q, smul_smul, mul_comm b (ζ ^ q)]
 
+/-- Left-multiplying a vector `w` by `star V` computes the Hermitian dot products with the columns
+of `V`. -/
+private theorem star_mulVec_apply_eq_dotProduct_col {n R : Type*} [Fintype n]
+    [NonUnitalNonAssocSemiring R] [Star R] (V : Matrix n n R) (w : n → R) (k : n) :
+    (star V *ᵥ w) k = dotProduct (star (V.col k)) w := by
+  rw [mulVec, dotProduct]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [star_apply, Pi.star_apply, col_apply]
+
 /-- Given `A₁ = diagonal d` and `B₁` in `U(r)` with `A₁ * B₁ = ζ • (B₁ * A₁)`, the orbit vectors
 `vNat m = B₁^m *ᵥ e₀` are unit eigenvectors of `A₁` with eigenvalues `ζ^m * d 0`, pairwise
 orthogonal for distinct `ζ`-powers, and form a unitary matrix `Vmat`. -/
@@ -219,16 +227,9 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
         simp only [vNat, pow_succ', mulVec_mulVec]
       rw [hstep, mulVec_mulVec, hrel, smul_mulVec, ← mulVec_mulVec, ih, mulVec_smul, smul_smul,
         ← mul_assoc, pow_succ']
-  have hunitary_dot {M : Matrix (Fin r) (Fin r) ℂ} (hM : M ∈ unitaryGroup (Fin r) ℂ)
-      (x y : Fin r → ℂ) :
-      dotProduct (star (M *ᵥ x)) (M *ᵥ y) = dotProduct (star x) y := by
-    have h := Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec M 1 x y
-    simp only [Matrix.mul_one, ← Matrix.star_eq_conjTranspose, mem_unitaryGroup_iff'.mp hM,
-      one_mulVec] at h
-    exact h.symm
   have hv_orth {m₁ m₂ : ℕ} (hne : ζ ^ m₁ ≠ ζ ^ m₂) :
       dotProduct (star (vNat m₁)) (vNat m₂) = 0 := by
-    have hdot := hunitary_dot A₁.property (vNat m₁) (vNat m₂)
+    have hdot := Matrix.star_mulVec_dotProduct_mulVec A₁.property (vNat m₁) (vNat m₂)
     rw [hv_eig m₁, hv_eig m₂, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
       smul_eq_mul, ← mul_assoc] at hdot
     have hcoeff : star (ζ ^ m₁ * d 0) * (ζ ^ m₂ * d 0) ≠ 1 := fun h1 => hne <| by
@@ -239,14 +240,15 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
     exact (mul_eq_zero.mp (by linear_combination hdot)).resolve_left (sub_ne_zero.mpr hcoeff)
   have hv_norm (m : ℕ) : dotProduct (star (vNat m)) (vNat m) = 1 := by
     simpa [vNat, dotProduct, Pi.single_apply] using
-      hunitary_dot (Submonoid.pow_mem _ B₁.property m) (Pi.single 0 1) (Pi.single 0 1)
+      Matrix.star_mulVec_dotProduct_mulVec (Submonoid.pow_mem _ B₁.property m)
+        (Pi.single 0 1) (Pi.single 0 1)
   have hVu : Vmat ∈ unitaryGroup (Fin r) ℂ := by
     rw [mem_unitaryGroup_iff']
     ext k l
     have hentry : (star Vmat * Vmat) k l = dotProduct (star (vNat k.val)) (vNat l.val) := by
-      rw [Matrix.mul_apply, dotProduct]
-      refine Finset.sum_congr rfl fun x _ => ?_
-      rw [star_apply, Pi.star_apply]
+      rw [← Matrix.col_apply (star Vmat * Vmat) l k, Matrix.col_mul_eq_mulVec_col,
+        star_mulVec_apply_eq_dotProduct_col]
+      rfl
     rw [hentry]
     by_cases hkl : k = l
     · subst hkl; simp [hv_norm]
@@ -264,11 +266,8 @@ private theorem eigenvectorOrbit_return {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : I
   let β : ℂ := dotProduct (star (vNat 0)) (vNat r)
   have hVr : star Vmat *ᵥ vNat r = β • Pi.single 0 1 := by
     ext k
-    have hL : (star Vmat *ᵥ vNat r) k = dotProduct (star (vNat k.val)) (vNat r) := by
-      rw [mulVec, dotProduct]
-      refine Finset.sum_congr rfl fun x _ => ?_
-      rw [star_apply, Pi.star_apply]
-    rw [hL, Pi.smul_apply, smul_eq_mul]
+    rw [star_mulVec_apply_eq_dotProduct_col, show Vmat.col k = vNat k.val from rfl,
+      Pi.smul_apply, smul_eq_mul]
     by_cases hk : k = 0
     · subst hk; simp [β]
     · have hne : ζ ^ k.val ≠ ζ ^ r := by
@@ -295,7 +294,7 @@ private theorem eigenvectorOrbit_return {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : I
     rw [Complex.norm_def, hns, Real.sqrt_one]
   exact ⟨⟨β, mem_sphere_zero_iff_norm.mpr hβnorm⟩, hv_r⟩
 
-/-- Entrywise check that rescaling the unitary orbit matrix `Vmat` by `diag(b⁻ᵏ)` intertwines
+/-- Column-wise check that rescaling the unitary orbit matrix `Vmat` by `diag(b⁻ᵏ)` intertwines
 `B₁` with `b • S₀` whenever `b^r = β` and `vNat r = β • vNat 0`. -/
 private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
     (B₁ : unitaryGroup (Fin r) ℂ) (b β : Circle) (hbpow : (b : ℂ) ^ r = β)
@@ -308,36 +307,27 @@ private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
     (B₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) =
       (W : Matrix (Fin r) (Fin r) ℂ) * ((b : ℂ) • (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ)) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
-  ext i k
-  have hW_entry (j k : Fin (m + 1)) :
-      (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) j k =
-        (((b⁻¹ : Circle) : ℂ) ^ k.val) * vNat k.val j := by
-    rw [← Matrix.col_apply (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) k j,
-      hW_col k, Pi.smul_apply, smul_eq_mul]
-  have hL : ((B₁ : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *
-      (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ)) i k =
-      ((B₁ : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *ᵥ
-        (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ).col k) i :=
-    (Matrix.col_apply _ k i).symm.trans (congrFun Matrix.col_mul_eq_mulVec_col i)
-  have hR : ((W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *
-      ((b : ℂ) • (shiftUnitary (m + 1) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ))) i k =
-      (b : ℂ) * (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) i (k + 1) := by
-    rw [Matrix.mul_smul, Matrix.smul_apply, smul_eq_mul]
-    congr 1
-    rw [shiftUnitary, coe_permutationUnitary, Equiv.Perm.permMatrix, PEquiv.mul_toMatrix_toPEquiv]
-    simp [Equiv.addRight_symm]
-  rw [hL, hW_col k, mulVec_smul, hv_step k.val, hR, hW_entry]
-  simp only [Pi.smul_apply, smul_eq_mul, Fin.val_add_one, Circle.coe_inv]
+  refine (Matrix.colEquiv (Fin (m + 1)) (Fin (m + 1)) ℂ).injective <| funext fun k => ?_
+  have hScol : (shiftUnitary (m + 1) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ).col k =
+      Pi.single (k + 1) 1 := by
+    ext i
+    simp [Matrix.col_apply, Pi.single_apply]
+  dsimp only [Matrix.coe_colEquiv]
+  rw [Matrix.col_mul_eq_mulVec_col, hW_col k, mulVec_smul, hv_step k.val,
+    Matrix.mul_smul, Matrix.col_smul, Pi.smul_apply, Matrix.col_mul_eq_mulVec_col, hScol,
+    Matrix.mulVec_single_one, hW_col (k + 1), smul_smul]
+  simp only [Fin.val_add_one, Circle.coe_inv]
   have hb0 : (b : ℂ) ≠ 0 := Circle.coe_ne_zero b
   split_ifs with hk
   · subst hk
-    have hv_r_i : vNat (m + 1) i = (β : ℂ) * vNat 0 i := congrFun hv_r i
     have hpow : (b : ℂ)⁻¹ ^ m * (b : ℂ) ^ m = 1 := by
       rw [← mul_pow, inv_mul_cancel₀ hb0, one_pow]
-    simp only [Fin.val_last, hv_r_i, pow_zero, ← hbpow, pow_succ]
-    linear_combination (b : ℂ) * vNat 0 i * hpow
+    rw [Fin.val_last, hv_r, smul_smul, pow_zero, mul_one, ← hbpow, pow_succ]
+    congr 1
+    linear_combination (b : ℂ) * hpow
   · rw [pow_succ']
-    linear_combination -((b : ℂ)⁻¹ ^ k.val * vNat (k.val + 1) i) * mul_inv_cancel₀ hb0
+    congr 1
+    linear_combination -((b : ℂ)⁻¹ ^ k.val) * mul_inv_cancel₀ hb0
 
 /-- Given unitary matrices `A₁ = diagonal d` and `B₁` with `A₁ * B₁ = ζ • (B₁ * A₁)`, there is a
 unitary matrix `W` simultaneously conjugating `(A₁, B₁)` to `(α • C₀, b • S₀)` for unit-modulus
@@ -365,24 +355,25 @@ private theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r]
     rw [diagonal_mem_unitary, Pi.mem_unitary_iff]
     exact fun k => Submonoid.pow_mem _ (b⁻¹).coe_mem_unitary k.val
   let W : unitaryGroup (Fin r) ℂ := ⟨Vmat, hVu⟩ * ⟨Dmat, hDu⟩
-  have hW_entry (i k : Fin r) : (W : Matrix (Fin r) (Fin r) ℂ) i k =
-      vNat k.val i * ((b⁻¹ : Circle) : ℂ) ^ k.val := by
-    dsimp only [W, Dmat]
-    rw [Submonoid.coe_mul, mul_diagonal]
   have hW_col (k : Fin r) :
       (W : Matrix (Fin r) (Fin r) ℂ).col k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val := by
     ext j
-    simp [Matrix.col_apply, hW_entry, mul_comm]
+    rw [Matrix.col_apply, show (W : Matrix (Fin r) (Fin r) ℂ) = Vmat * Dmat from rfl,
+      mul_diagonal, Pi.smul_apply, smul_eq_mul, mul_comm]
   have hAW : (A₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) =
       (W : Matrix (Fin r) (Fin r) ℂ) *
         ((α : ℂ) • (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ)) := by
-    ext i k
-    have hL : ((A₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ)) i k =
-        ((A₁ : Matrix (Fin r) (Fin r) ℂ) *ᵥ (W : Matrix (Fin r) (Fin r) ℂ).col k) i :=
-      (Matrix.col_apply _ k i).symm.trans (congrFun Matrix.col_mul_eq_mulVec_col i)
-    rw [hL, hW_col k, mulVec_smul, hv_eig k.val]
-    simp only [Pi.smul_apply, smul_eq_mul, coe_clockUnitary, Matrix.mul_smul, mul_diagonal,
-      Matrix.smul_apply, hW_entry, α]
+    refine (Matrix.colEquiv (Fin r) (Fin r) ℂ).injective <| funext fun k => ?_
+    have hCcol : (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ).col k =
+        (ζ ^ k.val) • Pi.single k 1 := by
+      ext i
+      by_cases hik : i = k <;> simp [Matrix.col_apply, hik]
+    dsimp only [Matrix.coe_colEquiv]
+    rw [Matrix.col_mul_eq_mulVec_col, hW_col k, mulVec_smul, hv_eig k.val, smul_smul,
+      Matrix.mul_smul, Matrix.col_smul, Pi.smul_apply, Matrix.col_mul_eq_mulVec_col, hCcol,
+      mulVec_smul, Matrix.mulVec_single_one, hW_col k, smul_smul, smul_smul]
+    congr 1
+    simp only [α]
     ring
   have hBW := shift_intertwine_of_orbit B₁ b β hbpow vNat
     (fun m => by simp only [vNat, pow_succ', mulVec_mulVec]) hv_r W hW_col
