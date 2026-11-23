@@ -49,6 +49,8 @@ A zero-centred enclosure does not certify vanishing: at `p = 3`, the enclosure `
 
 * `TauCeti.PadicEnclosure.ratCast_mem_closedBall_iff`: a rational `q` lies in the ball exactly
   when `q = c` or `N ≤ v_p(q - c)`.
+* `TauCeti.PadicEnclosure.zero_notMem_closedBall_iff`: `0` lies outside the ball exactly when
+  `v < N`.
 * `TauCeti.PadicEnclosure.zpow_neg_normalizedVal`: `p ^ (-v) = max (‖c‖, p ^ (-N))`.
 * `TauCeti.PadicEnclosure.normalizedResidue_lt`, `TauCeti.PadicEnclosure.coprime_normalizedResidue`:
   the residue lies in `[0, p ^ (N - v))` and is prime to `p` when `v < N`.
@@ -185,6 +187,14 @@ theorem normalizedVal_lt_prec_iff (E : PadicEnclosure p x) :
   by_cases h : E.center = 0
   · simp [h]
   · simp [E.normalizedVal_of_center_ne_zero h, h]
+
+/-- The point `0` lies outside the ball of an enclosure exactly when the valuation component of
+its record is smaller than the precision. -/
+theorem zero_notMem_closedBall_iff (E : PadicEnclosure p x) :
+    (0 : ℚ_[p]) ∉ Metric.closedBall (E.center : ℚ_[p]) ((p : ℝ) ^ (-E.prec)) ↔
+      E.normalizedVal < E.prec := by
+  rw [← Rat.cast_zero (α := ℚ_[p]), E.ratCast_mem_closedBall_iff, normalizedVal_lt_prec_iff,
+    zero_sub, padicValRat.neg, not_or, not_le, ne_comm]
 
 /-- Below the precision, the valuation component is the valuation of the centre. -/
 theorem normalizedVal_eq_padicValRat (E : PadicEnclosure p x)

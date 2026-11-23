@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Interval.Basic
-public import Mathlib.Analysis.Complex.Norm
-import TauCeti.Order.Interval.Basic
+public import Mathlib.Basic.Complex.Basic
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Rational enclosures of real and complex numbers
@@ -50,9 +50,12 @@ An enclosure of width zero, on the other hand, determines the enclosed number
   `max (|Re z - Re w|, |Im z - Im w|) ≤ width`; at absolute precision `n` the bound is `2⁻ⁿ`
   (`TauCeti.ComplexEnclosure.HasPrecision.max_abs_sub_le`).
 * `TauCeti.ComplexEnclosure.ratCast_add_ratCast_mul_I_mem_box_iff`: a point `a + b i` with
-  rational coordinates lies in the box exactly when `a` and `b` lie in the rational intervals.
+  rational coordinates lies in the box exactly when `a` and `b` lie in the rational intervals;
+  `TauCeti.ComplexEnclosure.zero_notMem_box_iff` is the case of the point `0`.
 * `TauCeti.ComplexEnclosure.normSq_le_normSqBound`:
   `|z|² ≤ max (l_R², u_R²) + max (l_I², u_I²)`.
+* `TauCeti.ComplexEnclosure.hasPrecision_ofReal_iff`: a real enclosure viewed as a complex one
+  keeps its absolute precision.
 
 ## References
 
@@ -97,7 +100,7 @@ theorem abs_sub_le_length (E : RealEnclosure t) {u : ℝ}
 of the interval. -/
 theorem abs_sub_ratCast_le_length (E : RealEnclosure t) {q : ℚ} (hq : q ∈ E.interval) :
     |t - q| ≤ E.interval.length :=
-  E.abs_sub_le_length ((NonemptyInterval.apply_mem_Icc_iff Rat.cast_strictMono).mpr hq)
+  E.abs_sub_le_length <| by rwa [← Set.mem_preimage, Rat.preimage_cast_Icc]
 
 /-- The enclosed number is within the width of the interval of its lower endpoint. -/
 theorem abs_sub_fst_le_length (E : RealEnclosure t) :
@@ -167,7 +170,7 @@ theorem HasPrecision.abs_sub_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecis
 number up to `2⁻ⁿ`. -/
 theorem HasPrecision.abs_sub_ratCast_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecision n)
     {q : ℚ} (hq : q ∈ E.interval) : |t - q| ≤ ((2 : ℝ) ^ n)⁻¹ :=
-  h.abs_sub_le ((NonemptyInterval.apply_mem_Icc_iff Rat.cast_strictMono).mpr hq)
+  h.abs_sub_le <| by rwa [← Set.mem_preimage, Rat.preimage_cast_Icc]
 
 /-- The degenerate enclosure of a rational number has every absolute precision. -/
 @[simp]
@@ -212,8 +215,17 @@ theorem self_mem_box (E : ComplexEnclosure z) : z ∈ E.box :=
 interval and `b` in the imaginary interval of the enclosure. -/
 theorem ratCast_add_ratCast_mul_I_mem_box_iff (E : ComplexEnclosure z) (a b : ℚ) :
     (a + b * I : ℂ) ∈ E.box ↔ a ∈ E.re.interval ∧ b ∈ E.im.interval := by
-  rw [box_def, mem_reProdIm, ← NonemptyInterval.apply_mem_Icc_iff (Rat.cast_strictMono (K := ℝ)),
-    ← NonemptyInterval.apply_mem_Icc_iff (Rat.cast_strictMono (K := ℝ))]
+  rw [box_def, mem_reProdIm]
+  simp only [add_re, add_im, ratCast_re, ratCast_im, mul_re, mul_im, I_re, I_im, mul_zero, mul_one,
+    sub_zero, add_zero, zero_add]
+  rw [← Set.mem_preimage, Rat.preimage_cast_Icc, ← Set.mem_preimage, Rat.preimage_cast_Icc,
+    ← NonemptyInterval.coe_def, ← NonemptyInterval.coe_def, SetLike.mem_coe, SetLike.mem_coe]
+
+/-- The point `0` lies outside the box exactly when `0` lies outside the real or the imaginary
+interval of the enclosure. -/
+theorem zero_notMem_box_iff (E : ComplexEnclosure z) :
+    (0 : ℂ) ∉ E.box ↔ (0 : ℚ) ∉ E.re.interval ∨ (0 : ℚ) ∉ E.im.interval := by
+  rw [← not_and_or, ← E.ratCast_add_ratCast_mul_I_mem_box_iff]
   simp
 
 /-- The coordinatewise error bound of a complex enclosure: the larger of the widths of its two
@@ -315,6 +327,12 @@ theorem ofReal_re_interval {t : ℝ} (E : RealEnclosure t) :
 theorem ofReal_im_interval {t : ℝ} (E : RealEnclosure t) :
     (ofReal E).im.interval = NonemptyInterval.pure 0 :=
   (rfl)
+
+/-- Passing a real enclosure to a complex one does not change its absolute precision. -/
+@[simp]
+theorem hasPrecision_ofReal_iff {t : ℝ} (E : RealEnclosure t) (n : ℕ) :
+    (ofReal E).HasPrecision n ↔ E.HasPrecision n := by
+  simp [hasPrecision_iff, RealEnclosure.hasPrecision_iff]
 
 /-- A complex enclosure whose imaginary interval is `[0, 0]` encloses a real number: `z` is the
 real number `Re z`, which is enclosed by the real interval of the enclosure. -/
