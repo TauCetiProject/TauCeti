@@ -61,8 +61,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / 2`.
 * `AddCircle.addOrderOf_period_div_of_ne_zero`: for a nonzero period and positive `n`, the class
   of `p / n` has additive order `n`.
-* `AddCircle.infinite_of_neZero`: the instance that `AddCircle p` is infinite for a nonzero
-  period in characteristic zero.
+* `AddCircle.infinite`: the instance that `AddCircle p` is infinite for every period in
+  characteristic zero.
 * `AddCircle.natCard_torsionBy`: for positive `n`, the `n`-torsion of `AddCircle p` has exactly `n`
   elements; for `n = 0` the statement holds only through the junk value `Nat.card = 0` of the
   infinite group.
@@ -371,14 +371,33 @@ theorem addOrderOf_period_div_of_ne_zero (hn : 0 < n) :
   have hdvd : (n : ℤ) ∣ m := ⟨k, by rw [mul_comm]; exact_mod_cast hkm⟩
   exact hmn.not_ge (Nat.le_of_dvd hm (Int.natCast_dvd_natCast.mp hdvd))
 
-/-- For a nonzero period in characteristic zero, `AddCircle p` is infinite: the classes of
-`p / (k + 1)` have pairwise distinct additive orders. -/
-instance infinite_of_neZero : Infinite (AddCircle p) :=
-  Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ by
+end ExactOrder
+
+section Infinite
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜)
+
+/-- In characteristic zero, `AddCircle p` is infinite for every period `p`. For `p ≠ 0` the
+classes of `p / (k + 1)` have pairwise distinct additive orders; `AddCircle 0` is a copy of `𝕜`,
+in which the natural numbers are distinct. -/
+instance infinite : Infinite (AddCircle p) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · refine Infinite.of_injective (fun k : ℕ ↦ ((k : 𝕜) : AddCircle (0 : 𝕜))) fun a b h ↦ ?_
+    obtain ⟨k, hk⟩ := coe_eq_coe_iff_exists_zsmul.1 h
+    rw [smul_zero, eq_comm, sub_eq_zero] at hk
+    exact_mod_cast hk
+  · have : NeZero p := ⟨hp⟩
+    refine Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ ?_
     have := congrArg addOrderOf h
     rw [addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _),
       addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _)] at this
     exact Nat.succ_injective this
+
+end Infinite
+
+section ExactOrder
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) [NeZero p] {m n : ℕ}
 
 /-- The `n`-torsion of `AddCircle p` has exactly `n` elements. For `n = 0` this is the junk value
 `Nat.card = 0` of the infinite group `AddCircle p`. -/

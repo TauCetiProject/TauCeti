@@ -220,7 +220,8 @@ map of the torus has `|2 - tr (Pⁿ)| = |det (1 - Pⁿ)|` fixed points: one for 
 theorem nat_card_fixedPoints_iterate_catMapUnit_smul (n : ℕ) :
     Nat.card (fixedPoints (fun x : Fin 2 → AddCircle p ↦ catMapUnit • x)^[n]) =
       (2 - (catMap ^ n).trace).natAbs := by
-  rw [smul_iterate, AddCircle.nat_card_fixedPoints_generalLinearGroup_smul,
+  rw [smul_iterate,
+    AddCircle.nat_card_fixedPoints_generalLinearGroup_smul p _ (Fact.out : 0 < p).ne',
     det_one_sub_coe_catMapUnit_pow]
 
 /-- **The signed fixed-point counts of the cat map.** The fixed points of the `n`-th iterate `φⁿ`

@@ -28,14 +28,19 @@ matrices act on these loops through `Matrix.mulVec` (`Matrix.smulVecHom_comp_tor
 the representatives used to compute the fundamental group and first homology of a torus
 naturally in the matrix.
 
-The covering map `(ι → ℝ) → (ι → AddCircle p)` intertwines `Matrix.smulVecHom A` with
-multiplication of real vectors by `A` (`Matrix.smulVecHom_coe_pi`). Consequently a square integer
-matrix `A` kills exactly `|det A|` points of the torus `ι → AddCircle p`, for `p ≠ 0`
-(`Matrix.natCard_ker_smulVecHom`): when `det A ≠ 0` the kernel is `A⁻¹ (p ℤⁱ) / p ℤⁱ`, isomorphic to
-`ℤⁱ / A ℤⁱ`, and when `det A = 0` it contains a circle and is infinite, `Nat.card` then taking the
-junk value `0`. For a `1 × 1` matrix `n` this is the count `AddCircle.natCard_torsionBy` of the
-`n`-torsion of the circle. Applied to `1 - A`, it counts the fixed points of the toral
-automorphism induced by `A` (`AddCircle.nat_card_fixedPoints_generalLinearGroup_smul`).
+The covering map `(ι → ℝ) → (ι → AddCircle p)` intertwines `Matrix.smulVecHom A` with multiplication
+of real vectors by `A` (`Matrix.smulVecHom_coe_pi`), so `[t]` lies in the kernel of
+`Matrix.smulVecHom A` exactly when `A t` has its coordinates in `pℤ`
+(`Matrix.coe_mem_ker_smulVecHom_iff`). Consequently, for `p ≠ 0`, the kernel of a square integer
+matrix `A` acting on the torus `ι → AddCircle p` has `Nat.card` equal to `|det A|`
+(`Matrix.natCard_ker_smulVecHom`). When `det A ≠ 0` the kernel is `A⁻¹ (p ℤⁱ) / p ℤⁱ`, a finite
+group with `|det A|` elements isomorphic to `ℤⁱ / A ℤⁱ` (`Matrix.quotientRangeEquivKerSmulVecHom`).
+When `det A = 0` it contains the image of a real line and is infinite, `Nat.card` then taking the
+junk value `0`; for every `p` the kernel is finite exactly when `det A ≠ 0`
+(`Matrix.finite_ker_smulVecHom_iff`). For a `1 × 1` matrix `n` the count is
+`AddCircle.natCard_torsionBy`, the number of points of the `n`-torsion of the circle. Applied to
+`1 - A`, it counts the fixed points of the toral automorphism induced by `A`
+(`AddCircle.nat_card_fixedPoints_generalLinearGroup_smul`).
 -/
 
 public section
@@ -67,19 +72,6 @@ namespace Matrix
 
 variable {ι κ : Type*} [Fintype ι] (A : Matrix κ ι ℤ) (p : ℝ)
 
-/-- An integer matrix sends the straight loop of `n` to the straight loop of `A *ᵥ n`. -/
-theorem smulVecHom_comp_torusLoop (n : ι → ℤ) :
-    (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, κ → AddCircle p)).comp
-        (TauCeti.torusLoop (fun _ ↦ p) n).toContinuousMap =
-      (TauCeti.torusLoop (fun _ ↦ p) (A *ᵥ n)).toContinuousMap := by
-  ext t k
-  simp only [ContinuousMap.comp_apply, Path.coe_toContinuousMap, TauCeti.torusLoop_apply,
-    mulVec, dotProduct]
-  have h : (t * (∑ i, A k i * n i) • p : ℝ) = ∑ i, A k i • (t * (n i • p) : ℝ) := by
-    simp only [Finset.sum_smul, Finset.mul_sum, mul_smul, mul_smul_comm]
-  rw [h, ← QuotientAddGroup.mk'_apply, map_sum]
-  simp
-
 /-- The covering map `(ι → ℝ) → (ι → AddCircle p)` intertwines the map of tori induced by an integer
 matrix `A` with multiplication of real vectors by `A`. -/
 theorem smulVecHom_coe_pi (t : ι → ℝ) :
@@ -89,33 +81,67 @@ theorem smulVecHom_coe_pi (t : ι → ℝ) :
   simp only [smulVecHom_apply, mulVec, dotProduct, map_apply, ← zsmul_eq_mul,
     QuotientAddGroup.mk_sum, AddCircle.coe_zsmul]
 
+/-- Casting to `ℝ` commutes with multiplying an integer vector by an integer matrix. -/
+private theorem map_intCast_mulVec (v : ι → ℤ) :
+    A.map ((↑) : ℤ → ℝ) *ᵥ (v · : ι → ℝ) = fun k ↦ ((A *ᵥ v) k : ℝ) :=
+  funext fun k ↦ (RingHom.map_mulVec (Int.castRingHom ℝ) A v k).symm
+
+/-- An integer matrix sends the straight loop of `n` to the straight loop of `A *ᵥ n`. -/
+theorem smulVecHom_comp_torusLoop (n : ι → ℤ) :
+    (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, κ → AddCircle p)).comp
+        (TauCeti.torusLoop (fun _ ↦ p) n).toContinuousMap =
+      (TauCeti.torusLoop (fun _ ↦ p) (A *ᵥ n)).toContinuousMap := by
+  ext t k
+  -- The straight loop of `n` at time `t` is the image of the real vector `(t p) n`.
+  have hn : TauCeti.torusLoop (fun _ ↦ p) n t =
+      fun i ↦ (((t * p : ℝ) • (n · : ι → ℝ)) i : AddCircle p) :=
+    funext fun i ↦ by
+      rw [TauCeti.torusLoop_apply, Pi.smul_apply, smul_eq_mul, zsmul_eq_mul, mul_comm (n i : ℝ),
+        mul_assoc]
+  rw [ContinuousMap.comp_apply, Path.coe_toContinuousMap, ContinuousMap.coe_ofClass, hn,
+    smulVecHom_coe_pi, Path.coe_toContinuousMap, TauCeti.torusLoop_apply, mulVec_smul]
+  dsimp only
+  rw [Pi.smul_apply, map_intCast_mulVec, smul_eq_mul, zsmul_eq_mul, mul_comm ((A *ᵥ n) k : ℝ),
+    mul_assoc]
+
+/-- A real vector vanishes coordinatewise in `AddCircle p` exactly when it is `p` times an integer
+vector. -/
+private theorem coe_pi_eq_zero_iff {s : κ → ℝ} :
+    (fun k ↦ (s k : AddCircle p)) = 0 ↔ ∃ v : κ → ℤ, s = p • (v · : κ → ℝ) := by
+  simp only [funext_iff, Pi.zero_apply, AddCircle.coe_eq_zero_iff, Pi.smul_apply, smul_eq_mul,
+    zsmul_eq_mul, mul_comm p]
+  exact ⟨fun h ↦ by choose v hv using h; exact ⟨v, fun k ↦ (hv k).symm⟩,
+    fun ⟨v, hv⟩ k ↦ ⟨v k, (hv k).symm⟩⟩
+
+omit [Fintype ι] in
+private theorem smul_intCast_eq (v : ι → ℤ) : p • (v · : ι → ℝ) = fun i ↦ (v i : ℝ) * p :=
+  funext fun _ ↦ mul_comm _ _
+
+/-- **Kernel of an integer matrix through the covering map.** A point `[t]` of the torus lies in the
+kernel of the map induced by an integer matrix `A` exactly when every coordinate of `A t` is an
+integer multiple of `p`. -/
+theorem coe_mem_ker_smulVecHom_iff (t : ι → ℝ) :
+    (fun i ↦ (t i : AddCircle p)) ∈ (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker ↔
+      ∃ v : κ → ℤ, A.map ((↑) : ℤ → ℝ) *ᵥ t = fun k ↦ (v k : ℝ) * p := by
+  rw [AddMonoidHom.mem_ker, ContinuousAddMonoidHom.coe_toAddMonoidHom, AddMonoidHom.coe_ofClass,
+    smulVecHom_coe_pi, coe_pi_eq_zero_iff]
+  simp only [smul_intCast_eq]
+
 end Matrix
 
 /-! ### The kernel of a square integer matrix -/
 
 namespace Matrix
 
-variable {ι : Type*} [Fintype ι] (p : ℝ)
+variable {ι : Type*} [Fintype ι] (p : ℝ) [DecidableEq ι]
 
-/-- A point `[t]` of the torus lies in the kernel of the map induced by an integer matrix `A`
-exactly when `A t` has integer multiples of `p` as coordinates. -/
-private theorem coe_mem_ker_smulVecHom_iff (A : Matrix ι ι ℤ) (t : ι → ℝ) :
-    (fun i ↦ (t i : AddCircle p)) ∈ (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker ↔
-      (fun k ↦ ((A.map ((↑) : ℤ → ℝ) *ᵥ t) k : AddCircle p)) = 0 := by
-  rw [AddMonoidHom.mem_ker, ContinuousAddMonoidHom.coe_toAddMonoidHom, AddMonoidHom.coe_ofClass,
-    smulVecHom_coe_pi]
-
-variable [DecidableEq ι] {B : Matrix ι ι ℝ}
-
-/-- A point of the torus killed by an invertible real matrix `B` lifts to `B⁻¹ (p n)` for an integer
-vector `n`. -/
-private theorem exists_eq_coe_inv_mulVec (hB : IsUnit B.det) {t : ι → ℝ}
-    (ht : (fun k ↦ ((B *ᵥ t) k : AddCircle p)) = 0) :
+/-- Let `B` be an invertible real matrix. A real vector `t` whose image `B t` has every coordinate
+in `pℤ` is `B⁻¹ (p n)` for an integer vector `n`. -/
+private theorem exists_eq_inv_mulVec {B : Matrix ι ι ℝ} (hB : IsUnit B.det) {t : ι → ℝ}
+    (ht : ∃ v : ι → ℤ, B *ᵥ t = fun k ↦ (v k : ℝ) * p) :
     ∃ n : ι → ℤ, t = B⁻¹ *ᵥ (p • (n · : ι → ℝ)) := by
-  choose n hn using fun k ↦ (AddCircle.coe_eq_zero_iff p).1 (congrFun ht k)
-  refine ⟨n, ?_⟩
-  have : B *ᵥ t = p • (n · : ι → ℝ) := funext fun k ↦ by simp [← hn k, zsmul_eq_mul, mul_comm]
-  rw [← this, mulVec_mulVec, nonsing_inv_mul _ hB, one_mulVec]
+  obtain ⟨n, hn⟩ := ht
+  exact ⟨n, by rw [smul_intCast_eq, ← hn, mulVec_mulVec, nonsing_inv_mul _ hB, one_mulVec]⟩
 
 /-- For an integer matrix `A` with nonzero determinant and `p ≠ 0`, the point `[A⁻¹ (p n)]` of the
 torus vanishes exactly when the integer vector `n` lies in the image of `A`. -/
@@ -124,94 +150,124 @@ private theorem coe_inv_mulVec_eq_zero_iff {A : Matrix ι ι ℤ}
     (fun i ↦ (((A.map ((↑) : ℤ → ℝ))⁻¹ *ᵥ (p • (n · : ι → ℝ))) i : AddCircle p)) = 0 ↔
       ∃ m, A *ᵥ m = n := by
   set B := A.map ((↑) : ℤ → ℝ)
-  have hcast (m : ι → ℤ) : B *ᵥ (m · : ι → ℝ) = fun x ↦ ((A *ᵥ m) x : ℝ) :=
-    funext fun x ↦ (RingHom.map_mulVec (Int.castRingHom ℝ) A m x).symm
+  have hcast (m : ι → ℤ) : B *ᵥ (m · : ι → ℝ) = fun x ↦ ((A *ᵥ m) x : ℝ) := map_intCast_mulVec A m
+  rw [coe_pi_eq_zero_iff]
   constructor
-  · intro h
-    choose m hm using fun i ↦ (AddCircle.coe_eq_zero_iff p).1 (congrFun h i)
-    have hv : B⁻¹ *ᵥ (p • (n · : ι → ℝ)) = p • (m · : ι → ℝ) :=
-      funext fun i ↦ by simp [← hm i, zsmul_eq_mul, mul_comm]
-    have hv' := congrArg (B *ᵥ ·) hv
-    simp only [mulVec_mulVec, mul_nonsing_inv _ hA, one_mulVec, mulVec_smul, hcast] at hv'
+  · rintro ⟨m, hm⟩
+    have hv := congrArg (B *ᵥ ·) hm
+    simp only [mulVec_mulVec, mul_nonsing_inv _ hA, one_mulVec, mulVec_smul, hcast] at hv
     exact ⟨m, funext fun k ↦ Int.cast_injective (α := ℝ)
-      (congrFun (smul_right_injective _ hp hv') k).symm⟩
+      (congrFun (smul_right_injective _ hp hv) k).symm⟩
   · rintro ⟨m, rfl⟩
-    ext i
-    rw [← hcast, ← mulVec_smul, mulVec_mulVec, nonsing_inv_mul _ hA, one_mulVec]
-    exact (AddCircle.coe_eq_zero_iff p).2 ⟨m i, by rw [zsmul_eq_mul, mul_comm]; rfl⟩
+    exact ⟨m, by rw [← hcast, ← mulVec_smul, mulVec_mulVec, nonsing_inv_mul _ hA, one_mulVec]⟩
+
+/-- The map `n ↦ [A⁻¹ (p n)]` from `ℤⁱ` to the torus `ι → AddCircle p`, for an integer matrix `A`.
+-/
+private def invMulVecHom (A : Matrix ι ι ℤ) : (ι → ℤ) →+ (ι → AddCircle p) :=
+  ((QuotientAddGroup.mk' (AddSubgroup.zmultiples p)).compLeft ι).comp <|
+    ((A.map ((↑) : ℤ → ℝ))⁻¹.mulVecLin ∘ₗ (p • LinearMap.id)).toAddMonoidHom.comp
+      ((Int.castAddHom ℝ).compLeft ι)
+
+private theorem invMulVecHom_apply (A : Matrix ι ι ℤ) (n : ι → ℤ) :
+    invMulVecHom p A n =
+      fun i ↦ (((A.map ((↑) : ℤ → ℝ))⁻¹ *ᵥ (p • (n · : ι → ℝ))) i : AddCircle p) :=
+  rfl
+
+/-- For `det A ≠ 0`, the map `n ↦ [A⁻¹ (p n)]` takes values in the kernel of the map of the torus
+induced by `A`. -/
+private theorem invMulVecHom_mem_ker {A : Matrix ι ι ℤ} (hA : IsUnit (A.map ((↑) : ℤ → ℝ)).det)
+    (n : ι → ℤ) : invMulVecHom p A n ∈ (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker := by
+  rw [invMulVecHom_apply, coe_mem_ker_smulVecHom_iff]
+  exact ⟨n, by rw [mulVec_mulVec, mul_nonsing_inv _ hA, one_mulVec, smul_intCast_eq]⟩
+
+private theorem isUnit_det_map_intCast {A : Matrix ι ι ℤ} (hA : A.det ≠ 0) :
+    IsUnit (A.map ((↑) : ℤ → ℝ)).det := by
+  rw [← Int.cast_det]
+  exact (Int.cast_ne_zero.2 hA).isUnit
+
+/-- **The kernel of an integer matrix acting on a torus.** For `p ≠ 0` and a square integer matrix
+`A` with `det A ≠ 0`, the map `n ↦ [A⁻¹ (p n)]` identifies `ℤⁱ / A ℤⁱ` with the kernel of the map
+of the torus `ι → AddCircle p` induced by `A` (`Matrix.coe_quotientRangeEquivKerSmulVecHom_mk`). -/
+def quotientRangeEquivKerSmulVecHom (A : Matrix ι ι ℤ) (hA : A.det ≠ 0) (hp : p ≠ 0) :
+    (ι → ℤ) ⧸ (LinearMap.range A.mulVecLin).toAddSubgroup ≃+
+      (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker :=
+  let ψ := (invMulVecHom p A).codRestrict _ (invMulVecHom_mem_ker p (isUnit_det_map_intCast hA))
+  have hψ : Function.Surjective ψ := by
+    rintro ⟨x, hx⟩
+    obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq x
+    obtain ⟨n, rfl⟩ := exists_eq_inv_mulVec p (isUnit_det_map_intCast hA)
+      ((coe_mem_ker_smulVecHom_iff A p t).1 hx)
+    exact ⟨n, rfl⟩
+  have hker : (LinearMap.range A.mulVecLin).toAddSubgroup = ψ.ker := by
+    ext n
+    rw [AddMonoidHom.ker_codRestrict, AddMonoidHom.mem_ker, invMulVecHom_apply,
+      coe_inv_mulVec_eq_zero_iff p (isUnit_det_map_intCast hA) hp, Submodule.mem_toAddSubgroup,
+      LinearMap.mem_range]
+    simp only [mulVecLin_apply]
+  (QuotientAddGroup.quotientAddEquivOfEq hker).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective ψ hψ)
+
+/-- The identification `ℤⁱ / A ℤⁱ ≃ ker A` sends the class of `n` to `[A⁻¹ (p n)]`. -/
+theorem coe_quotientRangeEquivKerSmulVecHom_mk (A : Matrix ι ι ℤ) (hA : A.det ≠ 0) (hp : p ≠ 0)
+    (n : ι → ℤ) :
+    (quotientRangeEquivKerSmulVecHom p A hA hp n : ι → AddCircle p) =
+      fun i ↦ (((A.map ((↑) : ℤ → ℝ))⁻¹ *ᵥ (p • (n · : ι → ℝ))) i : AddCircle p) := by
+  unfold quotientRangeEquivKerSmulVecHom
+  rfl
 
 /-- A square integer matrix `A` with `det A = 0` kills infinitely many points of the torus
-`ι → AddCircle p`: for an integer null vector `m` of `A`, the kernel contains the circle
-`t ↦ [t m]`. -/
+`ι → AddCircle p`: for a nonzero integer null vector `m` of `A`, the kernel contains the image of
+`t ↦ [t m]`, `t ∈ ℝ`, a circle for `p ≠ 0` and a line for `p = 0`. -/
 theorem infinite_ker_smulVecHom {A : Matrix ι ι ℤ} (hA : A.det = 0) :
     Infinite (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker := by
   obtain ⟨m, hm, hAm⟩ := exists_mulVec_eq_zero_iff.2 hA
   obtain ⟨i, hi⟩ := Function.ne_iff.1 hm
-  have hBm : A.map ((↑) : ℤ → ℝ) *ᵥ (m · : ι → ℝ) = 0 := funext fun k ↦
-    (RingHom.map_mulVec (Int.castRingHom ℝ) A m k).symm.trans (by simp [hAm])
+  have hBm : A.map ((↑) : ℤ → ℝ) *ᵥ (m · : ι → ℝ) = 0 := by
+    rw [map_intCast_mulVec, hAm]
+    exact funext fun _ ↦ Int.cast_zero
   have hmem (t : ℝ) : (fun j ↦ ((t * m j : ℝ) : AddCircle p)) ∈
       (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker := by
-    rw [coe_mem_ker_smulVecHom_iff,
-      show (fun j ↦ t * (m j : ℝ)) = t • (m · : ι → ℝ) from rfl, mulVec_smul, hBm]
-    simp only [smul_zero, Pi.zero_apply, QuotientAddGroup.mk_zero]
-    rfl
-  have : Infinite (AddCircle p) := by
-    rcases eq_or_ne p 0 with rfl | hp
-    · -- `AddCircle 0` is `ℝ`.
-      refine Infinite.of_injective (fun t : ℝ ↦ (t : AddCircle (0 : ℝ))) fun a b h ↦ ?_
-      obtain ⟨n, hn⟩ := (AddCircle.coe_eq_zero_iff (0 : ℝ)).1
-        (by rw [AddCircle.coe_sub, sub_eq_zero]; exact h : ((a - b : ℝ) : AddCircle (0 : ℝ)) = 0)
-      rw [smul_zero] at hn
-      linarith
-    · have : NeZero p := ⟨hp⟩
-      infer_instance
-  -- The `i`-th coordinate of the circle `t ↦ [t m]` covers the infinite group `AddCircle p`.
+    have ht : (fun j ↦ t * (m j : ℝ)) = t • (m · : ι → ℝ) :=
+      funext fun j ↦ by rw [Pi.smul_apply, smul_eq_mul]
+    rw [coe_mem_ker_smulVecHom_iff, ht, mulVec_smul, hBm, smul_zero]
+    exact ⟨0, funext fun k ↦ by rw [Pi.zero_apply, Pi.zero_apply, Int.cast_zero, zero_mul]⟩
+  -- The `i`-th coordinate of `t ↦ [t m]` covers the infinite group `AddCircle p`.
   refine Infinite.of_surjective (fun x ↦ x.val i) fun y ↦ ?_
   obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective y
   exact ⟨⟨_, hmem (s / m i)⟩, by simp [div_mul_cancel₀ s (Int.cast_ne_zero.2 hi)]⟩
 
-/-- **The kernel of an integer matrix acting on a torus.** For `p ≠ 0`, a square integer matrix `A`
-kills exactly `|det A|` points of the torus `ι → AddCircle p`. When `det A ≠ 0` the kernel is
-isomorphic to `ℤⁱ / A ℤⁱ`; when `det A = 0` it is infinite (`Matrix.infinite_ker_smulVecHom`) and
-`Nat.card` takes the junk value `0`. -/
+/-- **The number of points of the kernel of an integer matrix acting on a torus.** For `p ≠ 0`, the
+kernel of the map of the torus `ι → AddCircle p` induced by a square integer matrix `A` has
+`Nat.card` equal to `|det A|`. When `det A ≠ 0` it is a finite group with `|det A|` elements,
+isomorphic to `ℤⁱ / A ℤⁱ` (`Matrix.quotientRangeEquivKerSmulVecHom`); when `det A = 0` it is
+infinite (`Matrix.infinite_ker_smulVecHom`) and `Nat.card` takes the junk value `0`. -/
 theorem natCard_ker_smulVecHom (A : Matrix ι ι ℤ) (hp : p ≠ 0) :
     Nat.card (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker = A.det.natAbs := by
   by_cases hA : A.det = 0
   · have := infinite_ker_smulVecHom p hA
     rw [hA, Int.natAbs_zero, Nat.card_eq_zero_of_infinite]
-  set B : Matrix ι ι ℝ := A.map ((↑) : ℤ → ℝ) with hB
-  have hBu : IsUnit B.det := by
-    rw [hB, ← Int.cast_det]
-    exact (Int.cast_ne_zero.2 hA).isUnit
-  -- `n ↦ [B⁻¹ (p n)]` maps `ℤⁱ` onto the kernel, with kernel `A ℤⁱ`.
-  let ψ : (ι → ℤ) →+ (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker :=
-    { toFun n := ⟨fun i ↦ ((B⁻¹ *ᵥ (p • (n · : ι → ℝ))) i : AddCircle p), by
-        rw [coe_mem_ker_smulVecHom_iff, ← hB, mulVec_mulVec, mul_nonsing_inv _ hBu, one_mulVec]
-        exact funext fun k ↦
-          (AddCircle.coe_eq_zero_iff p).2 ⟨n k, by simp [zsmul_eq_mul, mul_comm]⟩⟩
-      map_zero' := by
-        ext i
-        simp only [Pi.zero_apply, Int.cast_zero, ← Pi.zero_def, smul_zero, mulVec_zero]
-        rfl
-      map_add' n m := by
-        ext i
-        simp only [Pi.add_apply, Int.cast_add]
-        rw [show (fun x ↦ (n x : ℝ) + m x) = (fun x ↦ (n x : ℝ)) + fun x ↦ (m x : ℝ) from rfl,
-          smul_add, mulVec_add]
-        rfl }
-  have hψ : Function.Surjective ψ := by
-    rintro ⟨x, hx⟩
-    choose t ht using fun i ↦ QuotientAddGroup.mk_surjective (x i)
-    obtain rfl : x = fun i ↦ (t i : AddCircle p) := funext fun i ↦ (ht i).symm
-    rw [coe_mem_ker_smulVecHom_iff] at hx
-    obtain ⟨n, rfl⟩ := exists_eq_coe_inv_mulVec p hBu hx
-    exact ⟨n, rfl⟩
-  have hker : ψ.ker = (LinearMap.range A.mulVecLin).toAddSubgroup := by
-    ext n
-    simpa [Subtype.ext_iff, ψ] using coe_inv_mulVec_eq_zero_iff p hBu hp n
-  rw [← Nat.card_congr (QuotientAddGroup.quotientKerEquivOfSurjective ψ hψ).toEquiv, hker,
-    ← AddSubgroup.index, LinearMap.index_range_eq_natAbs_det_toMatrix (Pi.basisFun ℤ ι)
-      (Pi.basisFun ℤ ι), LinearMap.toMatrix_eq_toMatrix', ← Matrix.toLin'_apply',
-    LinearMap.toMatrix'_toLin']
+  have hindex : (LinearMap.range A.mulVecLin).toAddSubgroup.index = A.det.natAbs := by
+    rw [← toLin'_apply', LinearMap.index_range_eq_natAbs_det_toMatrix (Pi.basisFun ℤ ι)
+      (Pi.basisFun ℤ ι), LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
+  rw [← Nat.card_congr (quotientRangeEquivKerSmulVecHom p A hA hp).toEquiv, ← AddSubgroup.index,
+    hindex]
+
+/-- A square integer matrix `A` kills finitely many points of the torus `ι → AddCircle p` exactly
+when `det A ≠ 0`. -/
+theorem finite_ker_smulVecHom_iff (A : Matrix ι ι ℤ) :
+    Finite (A.smulVecHom (AddCircle p)).toAddMonoidHom.ker ↔ A.det ≠ 0 := by
+  refine ⟨fun h hA ↦ not_finite_iff_infinite.2 (infinite_ker_smulVecHom p hA) h, fun hA ↦ ?_⟩
+  rcases eq_or_ne p 0 with rfl | hp
+  · -- For `p = 0` the torus is `ι → ℝ`, on which `A` is injective.
+    suffices Subsingleton (A.smulVecHom (AddCircle (0 : ℝ))).toAddMonoidHom.ker from inferInstance
+    refine subsingleton_of_forall_eq 0 fun ⟨x, hx⟩ ↦ ?_
+    obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq x
+    obtain ⟨n, rfl⟩ := exists_eq_inv_mulVec 0 (isUnit_det_map_intCast hA)
+      ((coe_mem_ker_smulVecHom_iff A 0 t).1 hx)
+    ext i
+    simp
+  · exact Nat.finite_of_card_ne_zero <| by
+      rw [natCard_ker_smulVecHom p A hp]
+      exact Int.natAbs_ne_zero.2 hA
 
 end Matrix
