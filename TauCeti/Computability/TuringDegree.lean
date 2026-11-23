@@ -66,10 +66,12 @@ functions; on sets, it is the degree of the computable sets.
   complement are Turing equivalent, and have the same degree.
 * `ManyOneEquiv.turingEquivalent_oracle`, `ManyOneEquiv.toAntisymmetrization_oracle_eq`:
   many-one equivalent sets are Turing equivalent, and have the same degree.
-* `Set.oracle_preimage_turingReducible`, `Set.oracle_preimage_turingEquivalent`,
-  `Set.oracle_image_turingEquivalent`, `Set.toAntisymmetrization_oracle_preimage_equiv`,
-  `Set.toAntisymmetrization_oracle_image_equiv`: computable changes of presentation preserve
-  the degree.
+* `Set.oracle_preimage_turingReducible`: the preimage of a set under a computable function
+  reduces to the set, so a computable preimage cannot raise the degree.
+* `Set.oracle_preimage_turingEquivalent`, `Set.oracle_image_turingEquivalent`,
+  `Set.toAntisymmetrization_oracle_preimage_equiv`, `Set.toAntisymmetrization_oracle_image_equiv`:
+  the preimage and the image of a set under a computable permutation of the naturals are Turing
+  equivalent to the set, and have its degree.
 * `Set.oracle_inter_pairColumn_turingEquivalent`,
   `Set.toAntisymmetrization_oracle_inter_pairColumn`: the part of a set in a column is Turing
   equivalent to the corresponding section, and has the same degree.
