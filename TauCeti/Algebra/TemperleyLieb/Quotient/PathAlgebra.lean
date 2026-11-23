@@ -55,18 +55,22 @@ theorem blockSingle_apply_of_ne {t s : G.walkEndpoints v₀ n} (hts : s ≠ t)
 theorem eq_sum_blockSingle (X : PathAlgebra K G v₀ n) :
     X = ∑ t : G.walkEndpoints v₀ n, ∑ p : G.EndpointWalk v₀ n t.val,
       ∑ q : G.EndpointWalk v₀ n t.val, X t p q • blockSingle t p q (1 : K) := by
-  ext s w z; simp only [Finset.sum_apply, Matrix.sum_apply, Pi.smul_apply, Matrix.smul_apply,
-    smul_eq_mul]
-  rw [Finset.sum_eq_single s (fun _ _ hts ↦ by simp [blockSingle_apply_of_ne hts.symm])
-    (fun hs ↦ (hs (Finset.mem_univ s)).elim)]
-  simp [Matrix.single_apply, mul_ite, ite_and]
+  conv_lhs => rw [← LinearMap.sum_single_apply _ X]
+  refine Finset.sum_congr rfl fun t _ ↦ ?_
+  conv_lhs => rw [Matrix.matrix_eq_sum_single (X t)]
+  simp only [blockSingle, ← LinearMap.single_apply (R := K)
+    (φ := fun t : G.walkEndpoints v₀ n ↦
+      Matrix (G.EndpointWalk v₀ n t.val) (G.EndpointWalk v₀ n t.val) K),
+    ← map_sum, ← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
 /-- The identity of `PathAlgebra K G v₀ n` is the sum of diagonal `blockSingle` matrix units. -/
 theorem one_eq_sum_blockSingle : (1 : PathAlgebra K G v₀ n) =
     ∑ s : G.walkEndpoints v₀ n, ∑ w : G.EndpointWalk v₀ n s.val, blockSingle s w w 1 := by
-  ext s p q; simp only [Pi.one_apply, Matrix.one_apply, Finset.sum_apply, Matrix.sum_apply]
-  rw [Finset.sum_eq_single s (fun _ _ hts ↦ by simp [blockSingle_apply_of_ne hts.symm])
-    (fun h ↦ (h (Finset.mem_univ _)).elim)]
-  simp [Matrix.single_apply, ite_and]
+  conv_lhs => rw [← LinearMap.sum_single_apply _ (1 : PathAlgebra K G v₀ n)]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [Pi.one_apply, ← Matrix.sum_single_one]
+  simp only [blockSingle, ← LinearMap.single_apply (R := ℕ)
+    (φ := fun t : G.walkEndpoints v₀ n ↦
+      Matrix (G.EndpointWalk v₀ n t.val) (G.EndpointWalk v₀ n t.val) K), map_sum]
 end Semiring
 section CommSemiring
 variable [CommSemiring K] {n : ℕ}
@@ -142,6 +146,15 @@ theorem walkExtend_apply_snoc (X : PathAlgebra K G v₀ n) {u₁ u₂ v : V}
     walkExtend G v₀ X ⟨v, hv⟩ (p.snoc h) (q.snoc h) =
       X ⟨u, (G.mem_walkEndpoints_iff v₀).2 ⟨p⟩⟩ p q := by
   rw [walkExtend_apply_snoc, dite_eq_left rfl, EndpointWalk.cast_rfl]
+/-- `walkExtend` is injective whenever every `n`-step reachable vertex has a neighbour. -/
+theorem walkExtend_injective
+    (hneigh : ∀ u ∈ G.walkEndpoints v₀ n, ∃ v, G.Adj u v) :
+    Function.Injective (walkExtend G v₀ (K := K) (n := n)) := by
+  intro X Y hXY; ext u p q
+  obtain ⟨v, huv⟩ := hneigh u.val u.property
+  have hv : v ∈ G.walkEndpoints v₀ (n + 1) := (G.mem_walkEndpoints_iff v₀).2 ⟨p.snoc huv⟩
+  have h := congrFun (congrFun (congrFun hXY ⟨v, hv⟩) (p.snoc huv)) (q.snoc huv)
+  simpa [walkExtend_apply_snoc_same] using h
 /-- Entries of `walkExtend` applied to a single matrix unit `blockSingle u p₁ p₂ c`. -/
 theorem walkExtend_blockSingle_apply (u : G.walkEndpoints v₀ n) (p₁ p₂ : G.EndpointWalk v₀ n u.val)
     (c : K) (s : G.walkEndpoints v₀ (n + 1)) (w y : G.EndpointWalk v₀ (n + 1) s.val) :

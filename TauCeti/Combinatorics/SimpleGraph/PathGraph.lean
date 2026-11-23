@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Hamiltonian
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+public import TauCeti.Combinatorics.SimpleGraph.EndpointWalk
 
 /-!
 # A finite tree of maximum degree two is a path graph
@@ -33,6 +34,7 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
 * `SimpleGraph.neighborFinset_pathGraph`, `SimpleGraph.prod_neighborFinset_pathGraph`,
   `SimpleGraph.sum_neighborFinset_pathGraph`: the neighbour finset of a vertex of `pathGraph n` and
   products or sums over it.
+* `SimpleGraph.card_endpointWalk_pathGraph_two`: enumeration of `n`-step walks on `pathGraph 2`.
 * `SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two
   is isomorphic to the path graph on its vertices.
 * `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
@@ -95,6 +97,16 @@ theorem prod_neighborFinset_pathGraph {M : Type*} [CommMonoid M] {n : ℕ} (f : 
   rw [neighborFinset_pathGraph, Finset.prod_union]
   · congr 1 <;> split_ifs <;> simp
   · split_ifs <;> simp [Fin.ext_iff]
+
+/-- On the two-vertex path `pathGraph 2`, there is one `n`-step walk from `0` to `v` iff
+`v.val = n % 2`. -/
+theorem card_endpointWalk_pathGraph_two (n : ℕ) (v : Fin 2) :
+    Fintype.card ((pathGraph 2).EndpointWalk 0 n v) = if v.val = n % 2 then 1 else 0 := by
+  induction n generalizing v with
+  | zero => rw [card_endpointWalk_zero]; fin_cases v <;> simp
+  | succ n ih =>
+    rw [card_endpointWalk_succ]; simp_rw [ih]; rw [sum_neighborFinset_pathGraph]
+    fin_cases v <;> simp <;> split_ifs <;> omega
 
 variable {V : Type*} {G : SimpleGraph V}
 

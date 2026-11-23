@@ -101,9 +101,11 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   nonnegativity of `tr n (x⋆ * x)` and of the signed form `(-1) ^ n * tr n (x⋆ * x)` at `δ = 0`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_traceRadical_iff_map_star_mul_self_eq_zero`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.norm_map_star_mul_sq_le`,
-  `TauCeti.TemperleyLieb.IsMarkovTrace.nullSubmodule_quotientStarPositiveFunctional`: trace-radical
-  null-space characterization, Cauchy–Schwarz, and faithfulness of the positive quotient trace at
-  admissible parameters.
+  `TauCeti.TemperleyLieb.IsMarkovTrace.nullSubmodule_quotientStarPositiveFunctional`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_forall_quotientStarPositiveFunctional_mul_eq`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.quotientStarPositiveFunctional_quotientStrandIncl`:
+  trace-radical null-space characterization, Cauchy–Schwarz, faithfulness, separation, and
+  strand-scaling of the positive quotient trace at admissible parameters.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_jonesLoopParameters_of_pullback`: **pullback
   admissibility criterion** for `δ > 0`.
 
@@ -591,6 +593,30 @@ theorem nullSubmodule_quotientStarPositiveFunctional (htr : IsMarkovTrace ℂ (�
     (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar] :
     (htr.quotientStarPositiveFunctional hδ n).nullSubmodule = ⊥ :=
   (htr.starPositiveFunctional hδ n).nullSubmodule_quotientTrace (htr.map_mul_comm n)
+
+/-- Separation principle for `quotientStarPositiveFunctional`: elements with equal pairings against
+all elements are equal. -/
+theorem eq_of_forall_quotientStarPositiveFunctional_mul_eq (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) {n : ℕ} [(htr.traceRadical n).IsStar]
+    {a b : htr.Quotient n}
+    (h : ∀ x, htr.quotientStarPositiveFunctional hδ n (x * a) =
+      htr.quotientStarPositiveFunctional hδ n (x * b)) :
+    a = b := by
+  have hmem : a - b ∈ (htr.quotientStarPositiveFunctional hδ n).nullSubmodule :=
+    ((htr.quotientStarPositiveFunctional hδ n).mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _)
+      |>.2 <| by rw [mul_sub, map_sub, h, sub_self]
+  rwa [htr.nullSubmodule_quotientStarPositiveFunctional hδ n, Submodule.mem_bot,
+    sub_eq_zero] at hmem
+
+/-- `quotientStrandIncl` scales the unnormalized `quotientStarPositiveFunctional` by `δ`. -/
+@[simp]
+theorem quotientStarPositiveFunctional_quotientStrandIncl (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : δ ∈ jonesLoopParameters) (n : ℕ) [(htr.traceRadical n).IsStar]
+    [(htr.traceRadical (n + 1)).IsStar] (x : htr.Quotient n) :
+    htr.quotientStarPositiveFunctional hδ (n + 1) (htr.quotientStrandIncl n x) =
+      (δ : ℂ) * htr.quotientStarPositiveFunctional hδ n x := by
+  rw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
+    htr.quotientTrace_quotientStrandIncl]
 
 /-- **Cauchy–Schwarz inequality** for a Markov trace at an admissible loop parameter. -/
 theorem norm_map_star_mul_sq_le (htr : IsMarkovTrace ℂ (δ : ℂ) tr)

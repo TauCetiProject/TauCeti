@@ -27,8 +27,4 @@ instance instCompletelyPositiveMapClass :
       Finset.mul_sum, Finset.sum_mul]
     rw [Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm, Finset.sum_comm]
     exact Finset.sum_nonneg fun l _ ↦ E.sum_star_mul_map_mul_nonneg Finset.univ (R l) x
-/-- Entrywise application of a C⋆-conditional expectation preserves `0 ≤ M` on `CStarMatrix`. -/
-theorem map_cstarMatrix_nonneg (E : CStarConditionalExpectation ι) {n : Type*} [Fintype n]
-    (M : CStarMatrix n n A) (hM : 0 ≤ M) : 0 ≤ M.map E :=
-  CompletelyPositiveMap.map_cstarMatrix_nonneg (E : A →CP B) M hM
 end TauCeti.CStarConditionalExpectation

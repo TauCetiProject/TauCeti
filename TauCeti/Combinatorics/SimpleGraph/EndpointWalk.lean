@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 public import Mathlib.Combinatorics.SimpleGraph.Finite
-public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.Combinatorics.SimpleGraph.WalkFrom
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 /-! # Walks of fixed length with prescribed start and endpoint
@@ -188,26 +187,16 @@ theorem sum_endpointWalk_succ (m : ℕ) (v : V) {M : Type*} [AddCommMonoid M]
     (F : G.EndpointWalk v₀ (m + 1) v → M) : ∑ w : G.EndpointWalk v₀ (m + 1) v, F w =
       ∑ u ∈ (G.neighborFinset v).attach, ∑ p : G.EndpointWalk v₀ m u.val,
         F (p.snoc ((G.mem_neighborFinset v u.val).1 u.property).symm) := by
-  rw [← (EndpointWalk.succEquiv G v₀ m v).symm.sum_comp, Fintype.sum_sigma]
-  exact Finset.sum_bij (fun u _ ↦ ⟨u.val, (G.mem_neighborFinset v u.val).2 u.property⟩)
-    (fun _ _ ↦ Finset.mem_attach _ _) (fun _ _ _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
-    (fun u _ ↦ ⟨⟨u.val, (G.mem_neighborFinset v u.val).1 u.property⟩, Finset.mem_univ _, rfl⟩)
-    fun _ _ ↦ rfl
+  rw [← (EndpointWalk.succEquiv G v₀ m v).symm.sum_comp, Fintype.sum_sigma,
+    ← Finset.univ_eq_attach]
+  exact Fintype.sum_equiv
+    (Equiv.subtypeEquivRight fun u ↦ (G.mem_neighborSet v u).trans (G.mem_neighborFinset v u).symm)
+    _ _ fun _ ↦ rfl
 /-- The number of `(m + 1)`-step walks to `v` is the sum over neighbours `u` of `m`-step walks. -/
 theorem card_endpointWalk_succ (m : ℕ) (v : V) : Fintype.card (G.EndpointWalk v₀ (m + 1) v) =
     ∑ u ∈ G.neighborFinset v, Fintype.card (G.EndpointWalk v₀ m u) := by
   simp_rw [Fintype.card_eq_sum_ones, G.sum_endpointWalk_succ v₀ m v]
   exact (G.neighborFinset v).sum_attach fun u ↦ ∑ _ : G.EndpointWalk v₀ m u, 1
-/-- On the two-vertex path `pathGraph 2`, there is one `n`-step walk from `0` to `v` iff
-`v.val = n % 2`. -/
-theorem card_endpointWalk_pathGraph_two (n : ℕ) (v : Fin 2) :
-    Fintype.card ((pathGraph 2).EndpointWalk 0 n v) = if v.val = n % 2 then 1 else 0 := by
-  induction n generalizing v with
-  | zero => rw [card_endpointWalk_zero]; fin_cases v <;> simp
-  | succ n ih =>
-    rw [card_endpointWalk_succ]; fin_cases v <;>
-      simp [(by decide : (pathGraph 2).neighborFinset 0 = {1}),
-        (by decide : (pathGraph 2).neighborFinset 1 = {0}), ih] <;> split_ifs <;> omega
 @[simp] theorem walkEndpoints_zero : G.walkEndpoints v₀ 0 = {v₀} := (rfl)
 theorem walkEndpoints_succ (m : ℕ) :
     G.walkEndpoints v₀ (m + 1) = (G.walkEndpoints v₀ m).biUnion fun u ↦ G.neighborFinset u := (rfl)

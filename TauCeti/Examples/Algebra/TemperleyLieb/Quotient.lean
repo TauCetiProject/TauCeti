@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.Algebra.TemperleyLieb.Quotient.Tower
+import TauCeti.Combinatorics.SimpleGraph.PathGraph
+import TauCeti.RingTheory.Idempotents.Jacobson
 /-! # Low-strand examples of positive Jones quotients and Markov formulas
 
 Concrete checks on positive Temperley–Lieb trace quotients `htr.Quotient n`, their path-algebra
@@ -31,13 +33,9 @@ theorem traceRadical_two_ne_jacobson_at_one {tr : ∀ n : ℕ, TemperleyLieb ℂ
   have hmem : jonesWenzl (1 : ℂ) 2 ∈ htr.traceRadical 2 :=
     (htr.jonesWenzl_mem_traceRadical_iff hunit).2 <| by
       have h := qInt_add_two (R := ℂ) (1 : ℂ) 1; rw [qInt_one, qInt_two] at h; linear_combination h
-  intro heq; rw [heq, ← Ideal.jacobson_bot] at hmem
-  obtain ⟨z, hz⟩ := Ideal.mem_jacobson_iff.mp hmem (-1)
-  have hmul := congrArg (· * jonesWenzl (1 : ℂ) 2)
-    (sub_eq_zero.mp ((Submodule.mem_bot (TemperleyLieb ℂ 1 2)).1 hz))
-  rw [one_mul, add_mul, mul_assoc, (isIdempotentElem_jonesWenzl hunit).eq, mul_neg, mul_one,
-    neg_mul, neg_add_cancel] at hmul
-  exact zero_ne_one (α := ℂ) (by simpa [← hmul] using aug_jonesWenzl (R := ℂ) (δ := 1) 2)
+  intro heq
+  have hzero := (isIdempotentElem_jonesWenzl hunit).mem_jacobson_iff.mp (heq ▸ hmem)
+  exact zero_ne_one (α := ℂ) (by simpa [hzero] using aug_jonesWenzl (R := ℂ) (δ := 1) 2)
 private theorem sqrt_two_eq_two_mul_cos : √2 = 2 * cos (π / (4 : ℕ)) := by
   rw [Nat.cast_ofNat, cos_pi_div_four]; ring
 private theorem finrank_pathAlgebra_pathGraph_three :
@@ -87,8 +85,10 @@ variable {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
 /-- Unnormalized and normalized Markov trace values of the first Jones projection `p_0`. -/
 theorem markov_check_one_unit :
-    htr.quotientStarPositiveFunctional hδ 2 (htr.jonesProjection 0) = 1 ∧
-      htr.normalizedQuotientTrace hδ 2 (htr.jonesProjection 0) = (δ : ℂ)⁻¹ ^ 2 := by
+    htr.quotientStarPositiveFunctional hδ 2
+        (htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 0) = 1 ∧
+      htr.normalizedQuotientTrace hδ 2
+        (htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 0) = (δ : ℂ)⁻¹ ^ 2 := by
   have h1 := htr.quotientStarPositiveFunctional_quotientStrandIncl_mul_jonesProjection hδ
     (1 : htr.Quotient 1)
   rw [map_one, one_mul, htr.quotientStarPositiveFunctional_one, pow_one,
@@ -98,9 +98,11 @@ theorem markov_check_one_unit :
 theorem markov_check_two_generator :
     let x : htr.Quotient 2 := Ideal.Quotient.mk (htr.traceRadical 2) (e (δ : ℂ) 0)
     htr.quotientStarPositiveFunctional hδ 3
-        (htr.quotientStrandIncl 2 x * htr.jonesProjection 1) = 1 ∧
-      htr.normalizedQuotientTrace hδ 3 (htr.quotientStrandIncl 2 x * htr.jonesProjection 1) =
-        (δ : ℂ)⁻¹ ^ 3 := by
+        (htr.quotientStrandIncl 2 x *
+          htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 1) = 1 ∧
+      htr.normalizedQuotientTrace hδ 3
+        (htr.quotientStrandIncl 2 x *
+          htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 1) = (δ : ℂ)⁻¹ ^ 3 := by
   intro x; have h1 := htr.quotientStarPositiveFunctional_quotientStrandIncl_mul_jonesProjection hδ x
   have he : tr 2 (e (δ : ℂ) 0) = (δ : ℂ) := by
     simpa [htr.map_one] using htr.map_strandIncl_mul_e_last 0 1

@@ -166,44 +166,6 @@ theorem finrank_quotient_eq_sum_card_sq (n : ℕ) : Module.finrank ℂ (htr.Quot
     |>.toAlgEquiv.toLinearEquiv.finrank_eq).trans (PathAlgebra.finrank ℂ G v₀ n)
 end GraphModel
 end IsMarkovTrace
-section Eigenvectors
-open Real SimpleGraph
-/-- Quantum-integer vertex weight `√[t + 1]` on `A_(m-1)` (`pathGraph (m - 1)`). -/
-def discretePathWeight (m : ℕ) (t : Fin (m - 1)) : ℂ :=
-  ((√(qInt ℝ (2 * cos (π / m)) (t.val + 1)) : ℝ) : ℂ)
-/-- Quantum-integer vertex weight `√[t + 1]` on `A_∞` (`hasse ℕ`). -/
-def genericPathWeight (δ : ℝ) (t : ℕ) : ℂ := ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ)
-/-- Every vertex weight `discretePathWeight m t` on `A_(m-1)` is nonzero. -/
-theorem discretePathWeight_ne_zero {m : ℕ} (t : Fin (m - 1)) : discretePathWeight m t ≠ 0 :=
-  Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (qInt_two_mul_cos_pi_div_pos (by omega) (by omega))).ne'
-/-- Every vertex weight `discretePathWeight m t` is real (self-adjoint). -/
-theorem isSelfAdjoint_discretePathWeight (m : ℕ) (t : Fin (m - 1)) :
-    IsSelfAdjoint (discretePathWeight m t) := Complex.conj_ofReal _
-/-- `discretePathWeight m ^ 2` is a `2 cos (π / m)`-eigenvector of `pathGraph (m - 1)`. -/
-theorem sum_neighborFinset_discretePathWeight_sq {m : ℕ} (v : Fin (m - 1)) :
-    ∑ u ∈ (pathGraph (m - 1)).neighborFinset v, discretePathWeight m u ^ 2 =
-      ((2 * cos (π / m) : ℝ) : ℂ) * discretePathWeight m v ^ 2 := by
-  obtain ⟨k, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by have := v.isLt; omega⟩
-  have hsq (t : Fin (k + 1)) : discretePathWeight (k + 2) t ^ 2 =
-      (qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t.val + 1) : ℂ) := by
-    rw [discretePathWeight, ← Complex.ofReal_pow,
-      Real.sq_sqrt (qInt_two_mul_cos_pi_div_pos (Nat.succ_pos _) (by omega)).le]
-  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_pathGraph_qInt (k := k) v
-/-- For `δ ≥ 2`, every vertex weight `genericPathWeight δ t` on `A_∞` is nonzero. -/
-theorem genericPathWeight_ne_zero {δ : ℝ} (hδ : 2 ≤ δ) (t : ℕ) : genericPathWeight δ t ≠ 0 :=
-  Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (qInt_pos_of_two_le hδ (Nat.succ_pos t))).ne'
-/-- Every vertex weight `genericPathWeight δ t` is real (self-adjoint). -/
-theorem isSelfAdjoint_genericPathWeight (δ : ℝ) (t : ℕ) :
-    IsSelfAdjoint (genericPathWeight δ t) := Complex.conj_ofReal _
-/-- For `δ ≥ 2`, `genericPathWeight δ ^ 2` is a `δ`-eigenvector of `hasse ℕ`. -/
-theorem sum_neighborFinset_genericPathWeight_sq {δ : ℝ} (hδ : 2 ≤ δ) (v : ℕ) :
-    ∑ u ∈ (hasse ℕ).neighborFinset v, genericPathWeight δ u ^ 2 =
-      (δ : ℂ) * genericPathWeight δ v ^ 2 := by
-  have hsq (t : ℕ) : genericPathWeight δ t ^ 2 = (qInt ℝ δ (t + 1) : ℂ) := by
-    rw [genericPathWeight, ← Complex.ofReal_pow,
-      Real.sq_sqrt (qInt_pos_of_two_le hδ (Nat.succ_pos t)).le]
-  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_hasse_qInt δ v
-end Eigenvectors
 namespace IsMarkovTrace
 section JonesQuotients
 open Real SimpleGraph
@@ -216,30 +178,23 @@ def discreteQuotientEquiv {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m))
     discretePathWeight_ne_zero (isSelfAdjoint_discretePathWeight m)
     (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v)
     Fin.val_injective rfl (fun h ↦ pathGraph_adj.1 h) n
+/-- Evaluating `discreteQuotientEquiv` on a quotient class computes `walkRep` on `A_(m-1)`. -/
+@[simp] theorem discreteQuotientEquiv_mk {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m))
+    {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
+    htr.discreteQuotientEquiv hm hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+      walkRep (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩
+        discretePathWeight_ne_zero
+        (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v) x := (rfl)
 /-- **Generic Jones quotient decomposition** for `δ ≥ 2` on `A_∞` (`hasse ℕ`). -/
 def genericQuotientEquiv (hδ : 2 ≤ δ) (n : ℕ) : htr.Quotient n ≃⋆ₐ[ℂ] PathAlgebra ℂ (hasse ℕ) 0 n :=
   htr.quotientPathAlgebraEquiv (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
     (isSelfAdjoint_genericPathWeight δ) (sum_neighborFinset_genericPathWeight_sq hδ)
     Function.injective_id rfl (fun h ↦ hasse_nat_adj.1 h) n
-variable (hδ : δ ∈ jonesLoopParameters)
-/-- Separation principle for `quotientStarPositiveFunctional`: elements with equal pairings against
-all elements are equal. -/
-theorem eq_of_forall_quotientStarPositiveFunctional_mul_eq {n : ℕ} {a b : htr.Quotient n}
-    (h : ∀ x, htr.quotientStarPositiveFunctional hδ n (x * a) =
-      htr.quotientStarPositiveFunctional hδ n (x * b)) :
-    a = b := by
-  have hmem : a - b ∈ (htr.quotientStarPositiveFunctional hδ n).nullSubmodule :=
-    ((htr.quotientStarPositiveFunctional hδ n).mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _)
-      |>.2 <| by rw [mul_sub, map_sub, h, sub_self]
-  rwa [htr.nullSubmodule_quotientStarPositiveFunctional hδ n, Submodule.mem_bot,
-    sub_eq_zero] at hmem
-include hδ in
-/-- For `δ ∈ jonesLoopParameters`, `htr.Quotient n` is finite-dimensional over `ℂ`. -/
-theorem finiteDimensional_quotient (n : ℕ) : FiniteDimensional ℂ (htr.Quotient n) := by
-  rcases mem_jonesLoopParameters.1 hδ with ⟨m, hm, hδm⟩ | h2
-  · exact (htr.discreteQuotientEquiv (by omega) hδm n).symm.toAlgEquiv.toLinearEquiv
-      |>.finiteDimensional
-  · exact (htr.genericQuotientEquiv h2 n).symm.toAlgEquiv.toLinearEquiv.finiteDimensional
+/-- Evaluating `genericQuotientEquiv` on a quotient class computes `walkRep` on `A_∞`. -/
+@[simp] theorem genericQuotientEquiv_mk (hδ : 2 ≤ δ) {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
+    htr.genericQuotientEquiv hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+      walkRep (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
+        (sum_neighborFinset_genericPathWeight_sq hδ) x := (rfl)
 end JonesQuotients
 end IsMarkovTrace
 /-- **Existence classification of positive semidefinite Markov traces over `ℂ`**: one exists iff
