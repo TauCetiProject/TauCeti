@@ -137,28 +137,15 @@ private theorem euclidean_model (hA : ContDiffOn ℝ 1 A Ω)
     ContDiffOn ℝ 1 (fun z ↦ e.arrowCongr e (A z)) Ω ∧
       (∀ z ∈ Ω, e.arrowCongr e (A z) ∘L e.arrowCongr e (A z) = -ContinuousLinearMap.id ℝ _) ∧
       ContDiffOn ℝ 1 (fun z ↦ e (u z)) Ω ∧
-      (∀ z ∈ Ω, fderiv ℝ (fun z ↦ e (u z)) z = (e : E →L[ℝ] _) ∘L fderiv ℝ u z) ∧
-      (∀ z ∈ Ω, fderiv ℝ (fun z ↦ e.arrowCongr e (A z)) z I =
-        e.arrowCongr e (fderiv ℝ A z I)) ∧
       ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e (u z)) z I =
         e.arrowCongr e (A z) (fderiv ℝ (fun z ↦ e (u z)) z 1) := by
-  have hfd : ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e (u z)) z = (e : E →L[ℝ] _) ∘L fderiv ℝ u z :=
-    fun z hz ↦ (e.hasFDerivAt.comp z ((hu.differentiableOn one_ne_zero).differentiableAt
-      (Ω.isOpen.mem_nhds hz)).hasFDerivAt).fderiv
-  have hfdA : ∀ z ∈ Ω, fderiv ℝ (fun z ↦ e.arrowCongr e (A z)) z I =
-      e.arrowCongr e (fderiv ℝ A z I) := fun z hz ↦ by
-    have h := ((e.arrowCongr e).hasFDerivAt.comp z ((hA.differentiableOn one_ne_zero
-      ).differentiableAt (Ω.isOpen.mem_nhds hz)).hasFDerivAt).fderiv
-    simp only [Function.comp_def] at h
-    rw [h, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-  refine ⟨(e.arrowCongr e).contDiff.comp_contDiffOn hA,
-    fun z hz ↦ ?_, e.contDiff.comp_contDiffOn hu, hfd, hfdA, fun z hz ↦ ?_⟩
-  · ext1 v
-    have h := congr($(hAA z hz) (e.symm v))
-    simp only [ContinuousLinearMap.comp_apply, neg_apply,
-      ContinuousLinearMap.id_apply] at h ⊢
-    simp [h]
-  · simp [hfd z hz, hCR z hz]
+  refine ⟨(e.arrowCongr e).contDiff.comp_contDiffOn hA, fun z hz ↦ ?_,
+    e.contDiff.comp_contDiffOn hu, fun z hz ↦ ?_⟩
+  · -- `e.arrowCongr e` is the algebra equivalence `e.conjContinuousAlgEquiv`
+    change e.conjContinuousAlgEquiv (A z) ∘L e.conjContinuousAlgEquiv (A z) = _
+    simpa [← ContinuousLinearMap.mul_def, ← ContinuousLinearMap.one_def] using
+      congr(e.conjContinuousAlgEquiv $(hAA z hz))
+  · simp [← Function.comp_def e u, e.comp_fderiv, hCR z hz]
 
 /-- **`W^{2,p}` regularity of `C¹` solutions for a `C¹` structure.** Let `u` be of class `C¹` on
 an open set `Ω` and solve `∂ₜu = A ∂ₛu` there, for a `C¹` field `A` of complex structures,
@@ -170,7 +157,7 @@ theorem memWkpLoc_two_of_contDiffOn_of_cauchyRiemann (hA : ContDiffOn ℝ 1 A Ω
     MemWkpLoc p Ω 2 u := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let e : E ≃L[ℝ] _ := toEuclidean
-  obtain ⟨hA', hAA', hu', -, -, hCR'⟩ := euclidean_model hA hAA hu hCR e
+  obtain ⟨hA', hAA', hu', hCR'⟩ := euclidean_model hA hAA hu hCR e
   lift p to ℝ≥0 using hp
   have h := (memWkpLoc_two_of_two_lt hA' hAA' hu' hCR' (p := max p 3)
     (lt_max_of_lt_right (by norm_num))).mono_exponent (q := p) (by exact_mod_cast le_max_left _ _)
@@ -186,18 +173,17 @@ theorem isWeakLinearCauchyRiemannOn_fderiv_I_of_contDiffOn_of_cauchyRiemann
     {p : ℝ≥0∞} (hp : p ≠ ⊤) :
     IsWeakLinearCauchyRiemannOn p Ω A (fun z ↦ fderiv ℝ A z I) (fun z ↦ fderiv ℝ u z I) := by
   let e : E ≃L[ℝ] _ := toEuclidean
-  obtain ⟨hA', hAA', hu', hfd, hfdA, hCR'⟩ := euclidean_model hA hAA hu hCR e
+  obtain ⟨hA', hAA', hu', hCR'⟩ := euclidean_model hA hAA hu hCR e
   lift p to ℝ≥0 using hp
   have h := ((isWeakLinearCauchyRiemannOn_of_two_lt hA' hAA' hu' hCR' (p := max p 3)
     (lt_max_of_lt_right (by norm_num))).mono_exponent (q := p)
     (by exact_mod_cast le_max_left _ _)).continuousLinearEquiv_comp e.symm
   -- read the transported equation back on `E`
-  refine (isWeakCauchyRiemannOn_congr (fun z hz ↦ ?_)).1
+  refine (isWeakCauchyRiemannOn_congr (fun z _ ↦ ?_)).1
     ((isWeakCauchyRiemannOn_congr_ae ?_ ?_).1 h)
-  · simp [hfd z hz]
+  · simp [← Function.comp_def e u, e.comp_fderiv]
   · exact Filter.Eventually.of_forall fun z ↦ (by ext1 v; simp)
-  · rw [Ω.isOpen.interior_eq]
-    refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall fun z hz ↦ ?_)
-    simp [hfdA z hz]
+  · refine Filter.Eventually.of_forall fun z ↦ ?_
+    simp [← Function.comp_def (e.arrowCongr e) A, (e.arrowCongr e).comp_fderiv]
 
 end TauCeti
