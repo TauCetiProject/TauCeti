@@ -349,6 +349,19 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
     algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     Algebra.algebraMap_self_apply]
 
+/-- **Elements of `R` congruent to `1` in the completion.** Let `a` be the image in `Kˣ` of an
+element `r` of `R`. The image of `a` in `K_v` lies in the step `U(K_v, n)` of the unit filtration
+exactly when `r ∉ v` and `r ≡ 1` modulo `v ^ n`. -/
+theorem unitsMap_algebraMap_mem_unitFiltration_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {a : Kˣ} {r : R}
+    (hr : algebraMap R K r = a) {n : ℕ} :
+    Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
+        TauCeti.unitFiltration (v.adicCompletion K) n ↔
+      r ∉ v.asIdeal ∧ r - 1 ∈ v.asIdeal ^ n := by
+  rw [mem_unitFiltration_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass, ← hr,
+    ← IsScalarTower.algebraMap_apply, notMem_asIdeal_iff_valued_algebraMap_eq_one (K := K),
+    mem_asIdeal_pow_iff_valued_algebraMap_le (K := K), map_sub (algebraMap R _), map_one]
+
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/
 theorem coe_normalizedValuation_unitsMap_algebraMap [Finite (R ⧸ v.asIdeal)] (a : Kˣ) :
