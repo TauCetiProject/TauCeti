@@ -44,16 +44,15 @@ theorem hasSubexponentialMGF_expMeasure {r : ℝ} (hr : 0 < r) :
   have : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
   have hmean : ∫ x : ℝ, x ∂expMeasure r = r⁻¹ := integral_id_expMeasure hr
   have hparam : 0 < 2 / r := div_pos (by norm_num) hr
-  refine ⟨hparam, (memLp_id_expMeasure hr).integrable (by norm_num), ?_, ?_⟩
+  refine ⟨hparam, (memLp_id_expMeasure hr).integrable (by norm_num), ?_, ?_⟩ <;>
+    rw [inv_div]
   · intro t ht
     rw [hmean]
     apply (integrable_exp_mul_centered_expMeasure_iff hr t).2
-    have ht' : |t| ≤ r / 2 := by simpa [div_eq_mul_inv] using ht
-    linarith [(abs_le.mp ht').2]
+    linarith [(abs_le.mp ht).2]
   · intro t ht
     rw [hmean]
-    have ht' : |t| ≤ r / 2 := by simpa [div_eq_mul_inv] using ht
-    refine (mgf_centered_expMeasure_le hr ht').trans (exp_le_exp.mpr ?_)
+    refine (mgf_centered_expMeasure_le hr ht).trans (exp_le_exp.mpr ?_)
     have : 0 ≤ (t / r) ^ 2 := sq_nonneg _
     have heq : (2 / r) ^ 2 * t ^ 2 = 4 * (t / r) ^ 2 := by ring
     rw [heq]

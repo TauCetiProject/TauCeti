@@ -336,11 +336,6 @@ theorem integrable_exp_mul_centered_expMeasure_iff (hr : 0 < r) (t : ℝ) :
   rw [hfun, integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _)),
     integrable_exp_mul_expMeasure_iff hr]
 
-/-- The centered exponential law has no finite exponential moment at its rate. -/
-theorem not_integrable_exp_mul_centered_expMeasure (hr : 0 < r) :
-    ¬ Integrable (fun x : ℝ => exp (r * (x - r⁻¹))) (expMeasure r) := by
-  exact (integrable_exp_mul_centered_expMeasure_iff hr r).not.mpr (lt_irrefl r)
-
 /-- The centered MGF of a positive-rate exponential law, on its integrability domain. -/
 @[simp]
 theorem mgf_centered_expMeasure (hr : 0 < r) (ht : t < r) :

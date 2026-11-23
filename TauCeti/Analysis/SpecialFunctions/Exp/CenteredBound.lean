@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 
 /-!
 # A centered exponential bound
@@ -24,19 +23,18 @@ theorem exp_neg_div_one_sub_le {t : ℝ} (ht : |t| ≤ 1 / 2) :
   have hpos : 0 < 1 - t := by
     have := (abs_le.mp ht).2
     linarith
-  have hcast : -Complex.log (1 - (t : ℂ)) - (t : ℂ) =
-      ((-log (1 - t) - t : ℝ) : ℂ) := by
-    rw [show (1 : ℂ) - (t : ℂ) = ((1 - t : ℝ) : ℂ) by push_cast; ring,
-      ← Complex.ofReal_log hpos.le]
-    push_cast
-    ring
-  have hlog := Complex.norm_neg_log_one_sub_sub_le (z := (t : ℂ))
-    (by simpa only [Complex.norm_real, Real.norm_eq_abs] using ht)
-  rw [hcast, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs]
-    at hlog
+  have hlog := log_le_sub_one_of_pos (inv_pos.mpr hpos)
+  rw [log_inv] at hlog
+  have hrem : -log (1 - t) - t ≤ t ^ 2 / (1 - t) := by
+    calc
+      _ ≤ (1 - t)⁻¹ - 1 - t := by linarith
+      _ = _ := by field_simp; ring
   have hbound : -t - log (1 - t) ≤ 2 * t ^ 2 := by
-    have := le_abs_self (-log (1 - t) - t)
-    nlinarith [sq_nonneg t]
+    have hsq : t ^ 2 / (1 - t) ≤ 2 * t ^ 2 := by
+      rw [div_le_iff₀ hpos]
+      have hhalf : 0 ≤ 1 - 2 * t := by linarith [(abs_le.mp ht).2]
+      nlinarith [mul_nonneg (sq_nonneg t) hhalf]
+    linarith
   calc
     exp (-t) / (1 - t) = exp (-t - log (1 - t)) := by
       rw [exp_sub, exp_log hpos]
