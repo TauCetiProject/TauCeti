@@ -417,7 +417,7 @@ theorem sum_range_succ_ascPochhammer_mul_pow [Semiring R] (a z : R) (n : ℕ) :
   have hsum : (k : R) + 1 + ((n - k - 1 : ℕ) : R) = n := by
     simpa only [Nat.cast_add, Nat.cast_one] using congrArg (Nat.cast : ℕ → R) hn
   have hfac : a + k + 1 + ((n - k - 1 : ℕ) : R) = a + n := by
-    rw [← hsum, add_assoc, add_assoc, add_assoc]
+    simpa only [add_assoc] using congrArg (fun x : R => a + x) hsum
   -- The factor `a + n` commutes with the rising factorial at `a + k + 1`.
   have hc : Commute ((ascPochhammer R (n - k - 1)).eval (a + k + 1)) (a + n) := by
     rw [← hfac, ← ascPochhammer_smeval_eq_eval]

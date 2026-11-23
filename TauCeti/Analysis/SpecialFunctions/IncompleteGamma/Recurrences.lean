@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -71,6 +72,7 @@ noncomputable section
 
 open Filter Finset MeasureTheory Set
 open scoped Topology
+open TauCeti (add_natCast_ne_neg_natCast)
 
 namespace Complex
 
