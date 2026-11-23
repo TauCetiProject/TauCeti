@@ -61,8 +61,6 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   `χ = 1`.
 * `Distribution.apply_eq_integral_of_cutoffTempered_apply_eq_integral`: if `χ T` is a function
   `g`, then `T` is `g` where `χ = 1`.
-* `Distribution.cutoffTempered_eq_of_apply_eq_integral`: if `T` is a function `f` on `U`, then
-  for a real test function `χ` supported in `U`, `χ T` is the function `χ f`.
 
 ## References
 
@@ -382,29 +380,6 @@ theorem apply_eq_integral_of_cutoffTempered_apply_eq_integral (T : 𝓓'(Ω, ℂ
   rw [h]
   congr 1 with y
   simp [toSchwartzMapCLM_apply, real_smul]
-
-/-- **The cut-off of a function is the product function.** If `T φ = ∫ φ • f` for every real test
-function `φ` supported in `U`, and `χ` is a real test function supported in `U`, then `χ T` is
-the tempered distribution `S` of the function `χ f`. -/
-theorem cutoffTempered_eq_of_apply_eq_integral [FiniteDimensional ℝ E] {T : 𝓓'(Ω, ℂ)}
-    {U : Set E} {f : E → ℂ} (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y ∂μ)
-    {χ : 𝓓(Ω, ℝ)} (hχU : tsupport χ ⊆ U) {S : 𝓢'(E, ℂ)}
-    (hS : ∀ ψ : 𝓢(E, ℂ), S ψ = ∫ y, ψ y • (χ y • f y) ∂μ) :
-    T.cutoffTempered (TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM χ) = S := by
-  refine (eq_cutoffTempered_of_forall T _ fun ψ ρ _ hρ ↦ ?_).symm
-  -- The complex test function `ρ = χ ψ` is real, so `T` pairs with it through its real part.
-  set ρ' := TestFunction.postcompCLM (𝕜 := ℝ) reCLM ρ
-  have hρ' (y : E) : ρ' y = χ y * ψ y := by simp [ρ', hρ]
-  have hre : TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ρ' = ρ := by
-    ext y
-    simp [ρ', hρ]
-  have hρU : tsupport ρ' ⊆ U := by
-    rw [show ⇑ρ' = fun y ↦ χ y * ψ y from funext hρ']
-    exact tsupport_mul_subset_left.trans hχU
-  rw [← hre, complexPairing_postcompCLM_ofRealCLM, hT _ hρU, hS]
-  congr 1 with y
-  simp [hρ', real_smul]
-  ring
 
 end Integral
 

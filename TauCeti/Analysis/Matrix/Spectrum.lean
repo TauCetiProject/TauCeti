@@ -77,7 +77,12 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
 * `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
 * `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
-  for an invertible `O` with `O⁻¹ = Oᵀ`.
+  for an invertible `O` with `O⁻¹ = Oᵀ`;
+* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` and
+  `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
+  `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
+  matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
+  matrix-indexed one.
 
 ## References
 
@@ -403,3 +408,29 @@ theorem exists_orthogonal_diagonal {X : Matrix ι ι ℝ} (hX : X.IsSymm) :
   simp [Unitary.conjStarAlgAut_apply, hstar]
 
 end Matrix.IsSymm
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜}
+
+/-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
+corresponding matrix-indexed eigenvalue. -/
+@[simp]
+theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) :
+    hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
+      hA.eigenvalues₀ i := by
+  simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
+
+/-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
+canonical finite equivalence. -/
+theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
+    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∀ k ≠ Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i, hA.eigenvalues k ≠
+      hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) := by
+  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  intro k hk
+  have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
+  simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+end Matrix.IsHermitian

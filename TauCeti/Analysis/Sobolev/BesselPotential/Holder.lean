@@ -259,7 +259,7 @@ theorem value_ae_eq_toCkHolderSpace (u : Wkp (volume : Measure E) ⊤ p m) :
       fun φ ↦ ?_
     rw [BesselPotentialSpace.toTemperedDistribution_inclusionLp,
       ← BesselPotentialSpace.toLpTop_toCkHolderSpace (hα0 := hα0) (hα1 := hα1) (h := h) v,
-      BoundedContinuousFunction.toTemperedDistribution_toLpTop_apply]
+      toTemperedDistribution_toLpTop_apply]
     simp [f]
   filter_upwards [hf, coeFn_inclusionLp_toBesselPotentialSpace hp hp_top m u] with x hx hu
   rw [toCkHolderSpace, ContinuousLinearMap.comp_apply, CkHolderSpace.compLeftL_apply,
