@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Curve.Concat
 import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
@@ -258,7 +259,8 @@ theorem isExactOn_of_forall_isNullHomologous {f : ℂ → ℂ} (hU : IsOpen U)
       IsNullHomologous γ a b U) :
     Complex.IsExactOn f U :=
   isExactOn_of_forall_closed_integral_eq_zero hU hf.continuousOn fun γ a b hγ hγU hclosed =>
-    homologyCauchyTheorem hU γ a b hγ (fun _ ht => hγU ht) hclosed hf (h γ a b hγ hγU hclosed)
+    homologyCauchyTheorem hU γ a b hγ.absolutelyContinuousOnInterval (fun _ ht => hγU ht) hclosed
+      hf (h γ a b hγ hγU hclosed)
 
 /-- **Holomorphic functions have primitives on a set without holes.** If `U` is open and every
 connected component of `ℂ \ U` is unbounded (`filledHull U ⊆ U`), then every function holomorphic
