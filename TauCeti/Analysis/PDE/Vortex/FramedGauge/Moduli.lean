@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Coupling
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.PDE.Vortex.Coupling
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
-import TauCeti.Analysis.SpecialFunctions.Exp.Shift
-import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Smooth framed vortices in the affine Sobolev field spaces
@@ -28,15 +26,13 @@ A smooth framed vortex need not itself lie in `A_m^k`: the phase of its section 
 winding phase `(z / |z|)^m` only like `1 / |z|`, which is not square integrable on the plane.
 A smooth framed gauge normalizes the phase, so that outside a compact set the section is `|α|`
 times the winding phase (`TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`). In the
-winding end trivialization such a vortex (assuming only `C²` section) tends to the vacuum together
-with all its derivatives, at every exponential rate `c < 1 / 2`
+winding end trivialization such a vortex tends to the vacuum together with all its derivatives,
+at every exponential rate `c < 1 / 2`
 (`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`). Outside the cutoff
 disc, `x - x_ref` is the rotation of the section part of that difference by the winding phase,
 which equals the reference section `x_ref` uses there and has bounded derivatives. Hence every
-derivative of `x - x_ref` decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`),
-upgrading to a global bound when `x` is `C^n`
-(`exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`). A smooth field with this decay lies
-in every `A_m^s`
+derivative of `x - x_ref` decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`). A
+smooth field with this decay lies in every `A_m^s`
 (`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`). One normalizing
 smooth framed gauge works simultaneously for all cutoffs `f` and all orders `s : ℝ`
 (`exists_framedGaugeGroup_smul_mem_framedFieldSpace`).
@@ -57,15 +53,13 @@ fields of `A_m^k` lies in `G_(k+1)`
 
 All in the namespace `TauCeti.Vortex`:
 
-* `isBigO_iteratedFDeriv_sub_referenceField`: for a vortex with `C²` section normalized at its end,
-  every derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
-* `exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`: when `x` is `C^n` with `C²` section,
-  `‖Dⁿ(x - x_ref)(z)‖ ≤ K exp (-c |z|)` globally on `ℂ`.
-* `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth end-normalized
-  vortex lies in `A_m^s` for every cutoff `f` and real order `s`.
+* `isBigO_iteratedFDeriv_sub_referenceField`: for a smooth vortex normalized at its end, every
+  derivative of `x - x_ref` is `O(exp (-c |z|))` for every `c < 1 / 2`.
+* `gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`: a smooth framed vortex
+  whose section is `|α|` times the winding phase near infinity lies in `A_m^s` for every `s`, with
+  this decay.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
-  framed gauge representative lying in `A_m^s` for every cutoff `f` and order `s`, with global
-  all-order exponential derivative decay.
+  framed gauge representative lying in `A_m^s` for every cutoff `f` and order `s`, with this decay.
 * `exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity`,
   `exists_contDiff_sobolevVortexDivisor_eq`: every `D ∈ Sym ℂ m` is the zero divisor of a smooth
   vortex in `⋂_s A_m^s` with all-order exponential decay.
@@ -89,30 +83,34 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Topology Asymptotics
+open Complex Filter Metric Topology Asymptotics
 open scoped ContDiff
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-! ### Exponential decay of all derivatives of `x - x_ref` -/
 
-/-- Build a globally smooth exterior surrogate `G` agreeing near infinity with
-`x - referenceField f m` whose iterated derivatives are `O(exp (-c |z|))` for every `c < 1 / 2`. -/
-private theorem exists_contDiff_isBigO_eventuallyEq_sub_referenceField (f : ContDiffBump (0 : ℝ))
-    (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
+/-- **Exponential decay of all derivatives of `x - x_ref`.** Let `x` be a plane vortex with smooth
+section and `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
+outside a compact set. Then for every order `n` and every rate `c < 1 / 2`, the `n`-th derivative
+of `x - x_ref` is `O(exp (-c |z|))` at infinity. This extends the first-order estimate
+`TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp` to every order. -/
+theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
+    (hp : ContDiff ℝ ∞ (fun z ↦ x z 2)) (hq : ContDiff ℝ ∞ (fun z ↦ x z 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    ∃ G : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ G ∧
-      (∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n G =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖))) ∧
-      ∀ᶠ z in cocompact ℂ, (x - referenceField f m) =ᶠ[𝓝 z] G := by
+    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
+    {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
+    iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(c * ‖z‖)) := by
   -- A smooth decaying `g` agreeing with the end trivialization minus the vacuum near infinity.
   obtain ⟨g, hg, hgdec, hgx⟩ :=
     exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
-  have hout : ∀ᶠ z in cocompact ℂ, ∀ᶠ w in 𝓝 z, f.rOut ≤ ‖w‖ ^ 2 :=
-    TauCeti.eventually_cocompact_nhds.2 <|
-      (((tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop).eventually_ge_atTop
-        f.rOut)
+  have hout : ∀ᶠ z in cocompact ℂ, ∀ᶠ w in 𝓝 z, f.rOut ≤ ‖w‖ ^ 2 := by
+    filter_upwards [((tendsto_pow_atTop two_ne_zero).comp
+      tendsto_norm_cocompact_atTop).eventually_gt_atTop f.rOut] with z hz
+    filter_upwards [(isOpen_lt continuous_const (continuous_norm.pow 2)).mem_nhds hz] with w hw
+    exact hw.le
   -- The linear maps `P` (connection coordinates), `Q` (section coordinates as a complex number)
   -- and `J` (a complex number as section coordinates) of `sub_referenceField_apply_eq`.
   set P : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
@@ -127,64 +125,34 @@ private theorem exists_contDiff_isBigO_eventuallyEq_sub_referenceField (f : Cont
   have hprod : ContDiff ℝ ∞ fun w ↦ referenceSection f m w * Q (g w) := hsR.mul hQg
   have hPg : ContDiff ℝ ∞ fun w ↦ P (g w) := P.contDiff.comp hg
   have hJ : ContDiff ℝ ∞ fun w ↦ J (referenceSection f m w * Q (g w)) := J.contDiff.comp hprod
-  -- The reference section has bounded derivatives.
-  have hsRb (i : ℕ) :
-      iteratedFDeriv ℝ i (referenceSection f m) =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := by
-    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceSection_le f m i
-    exact IsBigO.of_bound C (.of_forall fun z ↦ by simpa using hC z)
-  refine ⟨fun w ↦ P (g w) + J (referenceSection f m w * Q (g w)), hPg.add hJ, fun c hc n ↦ ?_, ?_⟩
-  · have hprodO : iteratedFDeriv ℝ n (fun w ↦ referenceSection f m w * Q (g w)) =O[cocompact ℂ]
-        fun z ↦ Real.exp (-(c * ‖z‖)) := by
-      simpa only [one_mul, ContinuousLinearMap.mul_apply'] using
-        (ContinuousLinearMap.mul ℝ ℂ).isBigO_iteratedFDeriv_of_bilinear
-        hsR hQg (n := n) (by exact_mod_cast le_top) (fun i _ ↦ hsRb i)
-        fun i _ ↦ Q.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc i)
-    refine ((P.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc n)).add
-      (J.isBigO_iteratedFDeriv_comp_left hprod (by exact_mod_cast le_top) hprodO)).congr_left
-      fun z ↦ (fun_iteratedFDeriv_add_apply (hPg.contDiffAt.of_le (by exact_mod_cast le_top))
-        (hJ.contDiffAt.of_le (by exact_mod_cast le_top))).symm
-  · filter_upwards [hgx, hout] with z hz hz'
+  -- Outside a compact set, `x - x_ref = P g + J (s Q g)` near every point.
+  have hfor : ∀ᶠ z in cocompact ℂ, (x - referenceField f m) =ᶠ[𝓝 z]
+      fun w ↦ P (g w) + J (referenceSection f m w * Q (g w)) := by
+    filter_upwards [hgx, hout] with z hz hz'
     filter_upwards [hz, hz'] with w hw hw'
     rw [sub_referenceField_apply_eq f hw' hw]
     generalize referenceSection f m w = σ
     generalize g w = v
     ext i
     fin_cases i <;> simp [P, Q, J, add_comm]
-
-/-- **Exponential decay of all derivatives of `x - x_ref`.** Let `x` be a plane vortex with `C²`
-section and `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
-outside a compact set. Then for every order `n` and every rate `c < 1 / 2`, the `n`-th derivative
-of `x - x_ref` is `O(exp (-c |z|))` at infinity. -/
-theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
-    (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
-    iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
+  -- The reference section has bounded derivatives.
+  have hsRb (i : ℕ) :
+      iteratedFDeriv ℝ i (referenceSection f m) =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := by
+    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceSection_le f m i
+    exact IsBigO.of_bound C (.of_forall fun z ↦ by simpa using hC z)
+  have hprodO : iteratedFDeriv ℝ n (fun w ↦ referenceSection f m w * Q (g w)) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨_, -, hG_dec, hG_ev⟩ :=
-    exists_contDiff_isBigO_eventuallyEq_sub_referenceField f hp hq hsol hlim hphase
-  exact (hG_dec c hc n).congr'
-    (hG_ev.mono fun _ hz ↦ (hz.iteratedFDeriv ℝ n).eq_of_nhds.symm) EventuallyEq.rfl
-
-/-- **Global exponential decay of the `n`-th derivative of an end-normalized vortex.** For a `C^n`
-plane vortex with `C²` section and `|α| → 1` at infinity whose section equals `|α|` times
-`windingPhase m` outside a compact set, the order-`n` iterated derivative of
-`x - referenceField f m` decays at every rate `c < 1 / 2`:
-`‖Dⁿ(x - referenceField f m)(z)‖ ≤ K exp (-c |z|)`. -/
-theorem exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp (f : ContDiffBump (0 : ℝ))
-    {n : ℕ} (hx : ContDiff ℝ n x)
-    (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    {c : ℝ} (hc : c < 1 / 2) :
-    ∃ K, ∀ z, ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) :=
-  exists_forall_norm_le_mul_exp_of_isBigO
-    ((hx.sub ((contDiff_referenceField f m).of_le (by simp))).continuous_iteratedFDeriv
-      le_rfl).norm
-    (isBigO_iteratedFDeriv_sub_referenceField f hp hq hsol hlim hphase hc n)
+    simpa only [one_mul, ContinuousLinearMap.mul_apply'] using
+      (ContinuousLinearMap.mul ℝ ℂ).isBigO_iteratedFDeriv_of_bilinear
+      hsR hQg (n := n) (by exact_mod_cast le_top) (fun i _ ↦ hsRb i)
+      fun i _ ↦ Q.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc i)
+  refine (((P.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc n)).add
+    (J.isBigO_iteratedFDeriv_comp_left hprod (by exact_mod_cast le_top) hprodO)).congr' ?_
+    EventuallyEq.rfl)
+  filter_upwards [hfor] with z hz
+  rw [← fun_iteratedFDeriv_add_apply (hPg.contDiffAt.of_le (by exact_mod_cast le_top))
+    (hJ.contDiffAt.of_le (by exact_mod_cast le_top))]
+  exact (hz.iteratedFDeriv ℝ n).eq_of_nhds.symm
 
 /-! ### Smooth framed vortices have representatives in `A_m^s` -/
 
@@ -210,17 +178,17 @@ theorem gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
     (tendsto_sectionValue_gaugeTransform hu1 hframe)
   have hdec := fun c (hc : c < 1 / 2) n ↦
-    isBigO_iteratedFDeriv_sub_referenceField f ((contDiff_euclidean.1 hy 2).of_le (by simp))
-      ((contDiff_euclidean.1 hy 3).of_le (by simp)) hsol' hlim hphase hc n
+    isBigO_iteratedFDeriv_sub_referenceField f (contDiff_euclidean.1 hy 2)
+      (contDiff_euclidean.1 hy 3) hsol' hlim hphase hc n
   exact ⟨mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
-    (by norm_num) (hdec _ (by norm_num)), hdec⟩
+    (by norm_num) (hdec (1 / 4) (by norm_num)), hdec⟩
 
 /-- **Smooth framed gauge representative in `A_m^s` with all-order exponential decay.** Every
 smooth plane vortex with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` has a smooth framed
 gauge transform `u • x` whose section is `|α|` times `windingPhase m` outside a compact set, which
 belongs to `framedFieldSpace f m s` for every cutoff `f` and real order `s`, and whose difference
-from `referenceField f m` has all iterated derivatives globally bounded by multiples of
-`exp (-c |z|)` for every `f` and every rate `c < 1 / 2`. -/
+from `referenceField f m` has all iterated derivatives `O(exp (-c |z|))` at infinity for every
+`f` and every rate `c < 1 / 2`. -/
 theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
@@ -228,21 +196,15 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace
       (∀ᶠ z in cocompact ℂ,
         sectionValue (u • x) z = ‖sectionValue (u • x) z‖ * windingPhase m z) ∧
       (∀ (f : ContDiffBump (0 : ℝ)) (s : ℝ), u • x ∈ framedFieldSpace f m s) ∧
-      ∀ (f : ContDiffBump (0 : ℝ)), ∀ c < 1 / 2, ∀ n : ℕ, ∃ K, ∀ z,
-        ‖iteratedFDeriv ℝ n (u • x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
+      ∀ (f : ContDiffBump (0 : ℝ)), ∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n (u • x - referenceField f m) =O[cocompact ℂ]
+          fun z ↦ Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
-  let x' : framedVortexSubMulAction 1 m :=
-    ⟨x, mem_framedVortexSubMulAction.2 ⟨hx, by simpa using hsol, hframe⟩⟩
-  obtain ⟨huc, hsol', hframe'⟩ := mem_framedVortexSubMulAction.1 (u • x').property
-  rw [SubMulAction.val_smul] at huc hsol' hframe'
-  have hp : ContDiff ℝ 2 fun z ↦ (u • x) z 2 := (contDiff_euclidean.1 huc 2).of_le (by simp)
-  have hq : ContDiff ℝ 2 fun z ↦ (u • x) z 3 := (contDiff_euclidean.1 huc 3).of_le (by simp)
-  refine ⟨u, hu, fun f ↦
-    (gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
+  exact ⟨u, hu,
+    fun f ↦ (gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
       hframe hu).1,
-    fun f c hc n ↦ exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp f (huc.of_le (by simp))
-      hp hq (by simpa using hsol')
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe') hu hc⟩
+    fun f ↦ (gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
+      hframe hu).2⟩
 
 /-- **Existence of smooth Sobolev framed vortices with prescribed zeros.** Every effective divisor
 `D ∈ Sym ℂ m` is the zero divisor of a smooth plane vortex `x` whose section equals `|α|` times
@@ -253,8 +215,9 @@ theorem exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity
     ∃ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x ∧ (∀ z, equation x z = 0) ∧
       (∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) ∧
       (∀ (f : ContDiffBump (0 : ℝ)) (s : ℝ), x ∈ framedFieldSpace f m s) ∧
-      (∀ (f : ContDiffBump (0 : ℝ)), ∀ c < 1 / 2, ∀ n : ℕ, ∃ K, ∀ z,
-        ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖))) ∧
+      (∀ (f : ContDiffBump (0 : ℝ)), ∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
+          fun z ↦ Real.exp (-(c * ‖z‖))) ∧
       IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   obtain ⟨y, hy, hsol, hfr, hD⟩ := exists_contDiff_equation_eq_zero_isZeroMultiplicity D
   let y' : framedVortexSubMulAction 1 m :=
@@ -283,11 +246,8 @@ theorem exists_contDiff_sobolevVortexDivisor_eq (D : Sym ℂ m) :
           =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
   obtain ⟨x, hx, hsol, -, hmem, hdec, hD⟩ :=
     exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity D
-  refine ⟨⟨⟨x, hmem f k⟩, mem_sobolevVortices.2 ⟨hx.of_le (by simp), hsol⟩⟩,
-    sobolevVortexDivisor_eq_iff.2 hD, hx, hmem f, fun c hc n ↦ ?_⟩
-  obtain ⟨K, hK⟩ := hdec f c hc n
-  exact IsBigO.of_bound K (.of_forall fun z ↦ by
-    simpa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hK z)
+  exact ⟨⟨⟨x, hmem f k⟩, mem_sobolevVortices.2 ⟨hx.of_le (by simp), hsol⟩⟩,
+    sobolevVortexDivisor_eq_iff.2 hD, hx, hmem f, hdec f⟩
 
 /-- **Existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
 repeated points included, is the divisor of a `C²` vortex of `A_m^k`. -/
