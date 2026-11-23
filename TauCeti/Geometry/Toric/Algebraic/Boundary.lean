@@ -300,6 +300,14 @@ theorem boundaryQuotientBasis_repr_quotientMap {S : Type*} [CommRing S] (φ : R 
   ext p
   simp
 
+/-- The coefficient change along the structure map of an `R`-algebra `S`, as an algebra map, is
+the ring-hom coefficient change `mapRingHom _ (algebraMap R S)`. -/
+private theorem mapAlgHom_ofId_apply {M : Type*} [AddMonoid M] (S : Type*) [CommRing S]
+    [Algebra R S] (f : AddMonoidAlgebra R M) :
+    mapAlgHom M (Algebra.ofId R S) f = mapRingHom M (algebraMap R S) f := by
+  ext
+  simp
+
 open TensorProduct in
 /-- The formation of the boundary commutes with base change: for every `R`-algebra `S`, the scalar
 extension `S ⊗[R] (A_R ⧸ (t))` of the boundary over `R` is the boundary `A_S ⧸ (t)` over `S`. -/
@@ -309,9 +317,8 @@ noncomputable def boundaryQuotientTensorEquiv (S : Type*) [CommRing S] [Algebra 
   (Algebra.TensorProduct.tensorQuotientEquiv S _ S _).trans <|
     Ideal.quotientEquivAlg _ _ (AddMonoidAlgebra.scalarTensorEquiv R S) <| by
       simp only [Ideal.map_span, Set.image_singleton, Algebra.TensorProduct.includeRight_apply,
-        RingHom.coe_coe, scalarTensorEquiv_tmul, one_smul]
-      rw [← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, AlgHom.toRingHom_eq_coe,
-        Algebra.toRingHom_ofId, mapRingHom_boundaryMonomial]
+        RingHom.coe_coe, scalarTensorEquiv_tmul, one_smul, mapAlgHom_ofId_apply,
+        mapRingHom_boundaryMonomial]
 
 open TensorProduct in
 /-- The base-change equivalence of boundaries sends `s ⊗ [f]` to the class of `s` times the image
@@ -323,8 +330,7 @@ theorem boundaryQuotientTensorEquiv_tmul (S : Type*) [CommRing S] [Algebra R S] 
       Ideal.Quotient.mk _ (s • mapRingHom _ (algebraMap R S) f) := by
   simp only [boundaryQuotientTensorEquiv, AlgEquiv.trans_apply,
     Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul, Ideal.quotientEquivAlg_mk,
-    AddMonoidAlgebra.scalarTensorEquiv_tmul]
-  rw [← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, AlgHom.toRingHom_eq_coe, Algebra.toRingHom_ofId]
+    AddMonoidAlgebra.scalarTensorEquiv_tmul, mapAlgHom_ofId_apply]
 
 end Quotient
 
