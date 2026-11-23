@@ -99,13 +99,13 @@ theorem continuous_proj_totalSpace_range (F' : Type*) (p : B → F →L[𝕜] F)
 /-- Two vectors of the total space of the ranges of a family of operators on `F` are equal when
 they have the same base point and the same value in `F`. -/
 theorem totalSpace_range_ext {F' : Type*} {p : B → F →L[𝕜] F}
-    {v w : TotalSpace F' fun x ↦ (p x).range} (h₁ : v.proj = w.proj) (h₂ : (v.2 : F) = w.2) :
+    {v w : TotalSpace F' fun x ↦ (p x).range} (h₁ : v.proj = w.proj) (h₂ : (v.snd : F) = w.snd) :
     v = w :=
   (isEmbedding_totalSpace_range F' p).injective (Prod.ext h₁ h₂)
 
 /-- The fibre norm is continuous on the total space of the ranges of a family of operators. -/
 theorem continuous_norm_totalSpace_range (F' : Type*) (p : B → F →L[𝕜] F) :
-    Continuous fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ ‖v.2‖ :=
+    Continuous fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ ‖v.snd‖ :=
   continuous_norm.comp (continuous_snd.comp (isEmbedding_totalSpace_range F' p).continuous)
 
 end Topology
