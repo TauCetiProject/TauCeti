@@ -117,6 +117,11 @@ private def morseFiberwiseBaseInv :
   ((sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)).symm : C(_, _)).comp
     ContinuousMap.snd
 
+private theorem morseFiberwiseBase_apply (x : {x | f x ≤ c - ε}) :
+    morseFiberwiseBase hε x =
+      (PUnit.unit, sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith) x) :=
+  rfl
+
 private theorem morseFiberwiseBaseInv_morseFiberwiseBase (p : PUnit.{u + 1})
     (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv hε (p, (morseFiberwiseBase hε x).2) = x :=
   Homeomorph.symm_apply_apply _ x
@@ -143,7 +148,7 @@ private theorem morseFiberwiseBaseInv_morseFiberwiseAttachingMap (i : ι) (p q :
     morseFiberwiseBaseInv hε (q, morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)) =
       (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s := by
   rw [morseFamilyAttachingMap_const_apply]
-  exact morseFiberwiseBaseInv_morseFiberwiseBase hε q _
+  exact Homeomorph.symm_apply_apply _ _
 
 /-- The map from the cell attachment of `φ` to the fiberwise cell attachment over a point. -/
 private def morseCellAttachmentToFiberwise :
@@ -155,9 +160,8 @@ private def morseCellAttachmentToFiberwise :
       fiberwiseCellAttachmentCell _ i) fun i ↦ by
     ext s
     refine ((fiberwiseCellAttachmentCell_diskBoundaryInclusion _ i PUnit.unit s).trans ?_).symm
-    rw [morseFamilyAttachingMap_const_apply]
-    -- `morseFiberwiseBase` sends `x` to `(PUnit.unit, x)`, with `x` viewed inside `M_{c+ε}`.
-    rfl
+    rw [morseFamilyAttachingMap_const_apply, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply, TopCat.ofHom_apply, morseFiberwiseBase_apply]
 
 /-- The map from the fiberwise cell attachment over a point to the cell attachment of `φ`. -/
 private def morseCellAttachmentOfFiberwise :
