@@ -26,7 +26,7 @@ with values in any topological space with a zero of extended norm `0`.
 The file also records that restricting a simple function to a measurable set agrees with
 `SimpleFunc.piecewise` (`MeasureTheory.SimpleFunc.restrict_eq_piecewise`), how products act on
 simple functions supported on a measurable set (extended by zero outside it,
-`MeasureTheory.SimpleFunc.piecewise_const_zero_mul_piecewise_const_zero`), how stars act on
+`MeasureTheory.SimpleFunc.piecewise_zero_mul_piecewise_zero`), how stars act on
 simple functions defined piecewise on a measurable set (`MeasureTheory.SimpleFunc.star_piecewise`),
 and how products and stars act on constant simple functions
 (`MeasureTheory.SimpleFunc.const_mul_const`, `MeasureTheory.SimpleFunc.star_const`).
@@ -121,10 +121,10 @@ theorem restrict_eq_piecewise [Zero β] (f : SimpleFunc α β) {s : Set α}
 
 /-- The product of a simple function `f` on a measurable set `A`, extended by zero, and a simple
 function `g` on a measurable set `B`, extended by zero, is `f * g` on `A ∩ B`, extended by zero. -/
-theorem piecewise_const_zero_mul_piecewise_const_zero [MulZeroClass β] (f g : SimpleFunc α β)
+theorem piecewise_zero_mul_piecewise_zero [MulZeroClass β] (f g : SimpleFunc α β)
     {A B : Set α} (hA : MeasurableSet A) (hB : MeasurableSet B) :
-    piecewise A hA f (const α 0) * piecewise B hB g (const α 0) =
-      piecewise (A ∩ B) (hA.inter hB) (f * g) (const α 0) := by
+    piecewise A hA f 0 * piecewise B hB g 0 =
+      piecewise (A ∩ B) (hA.inter hB) (f * g) 0 := by
   ext x
   by_cases hxA : x ∈ A <;> by_cases hxB : x ∈ B <;> simp [piecewise_apply, hxA, hxB]
 
