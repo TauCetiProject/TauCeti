@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
-import TauCeti.Probability.Martingale.Local.Version
+import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Indistinguishable
+import TauCeti.Probability.Process.LocalProperty
 import TauCeti.Probability.Process.Patching
 
 /-!

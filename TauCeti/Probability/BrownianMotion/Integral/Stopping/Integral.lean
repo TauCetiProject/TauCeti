@@ -10,6 +10,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Stopping.Basic
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.Martingale.ContinuousStopping
+import TauCeti.Probability.Process.StoppingApproximation
 
 /-!
 # Optional stopping for the predictable L² Brownian integral
@@ -26,7 +27,7 @@ stopped integrand into predictable rectangles via
 `coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub`, and passes to the `L²` limit on both sides
 using right-continuous martingale stopping
 (`Martingale.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime`) and `L²` time-product cutoff
-convergence (`TauCeti.BrownianIntegrable.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub`).
+convergence (`TauCeti.BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le`).
 
 ## References
 
@@ -135,7 +136,9 @@ theorem stoppedProcess_ae_eq_l2Integral
         hW.l2Integral T ((hH.ite_le hτ).toPredictableLp T) ω) 2 P) atTop (𝓝 0) := by
     simp_rw [fun k ↦ hW.eLpNorm_l2Integral_sub_l2Integral (hH.ite_le (hτ.dyadicCeilTime k))
       (hH.ite_le hτ) T]
-    exact hH.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub hτ T
+    exact hH.tendsto_eLpNorm_ite_le_sub_ite_le hτ.dyadicCeilTime
+      (.of_forall fun ω k ↦ TauCeti.le_dyadicCeilTime k (τ ω))
+      (.of_forall fun ω ↦ TauCeti.tendsto_dyadicCeilTime (τ ω)) T
   let target : Ω → ℝ := hW.l2Integral T ((hH.ite_le hτ).toPredictableLp T)
   have hzero : eLpNorm (stoppedProcess I τ T - target) 2 P = 0 := by
     refine le_antisymm (ge_of_tendsto (by simpa only [zero_add] using hlhs_lim.add hrhs_lim)

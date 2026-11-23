@@ -8,8 +8,7 @@ module
 public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
-public import TauCeti.Probability.Finance.SimpleStrategy.Basic
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
 /-!
 # Expected and pathwise square-energy domains
@@ -21,19 +20,17 @@ stochastic integration, not assertions that a stochastic integral has already be
 
 For s-finite `P`, the expected-energy domain embeds into the pathwise-energy domain by Tonelli
 and a countable cofinal family of horizons. Both are closed under addition, scaling and
-restriction to predictable sets, and every finite-grid elementary holding with square-integrable
-left-measurable heights belongs to the expected-energy domain
-(`TauCeti.BrownianIntegrable.simpleHolding`).
-The expected-energy domain is also closed under multiplication by predictable processes that are
-essentially bounded on each finite horizon.
+restriction to predictable sets. The expected-energy domain is also closed under multiplication
+by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
 
 Each `BrownianIntegrable` process embeds into `Lp ℝ 2 (ℱ.predictableMeasure P T)` via
-`TauCeti.BrownianIntegrable.toPredictableLp`, compatible with zero, addition, negation,
-subtraction, scaling, predictable-set and rectangle restriction (`toPredictableLp_indicator`,
-`toPredictableLp_indicator_Ioc_prod`), horizon restriction, and product-a.e. equality.
+`TauCeti.BrownianIntegrable.toPredictableLp`, compatible with zero, zero horizon
+(`toPredictableLp_apply_zero`), addition, negation, subtraction, scaling, predictable-set and
+rectangle restriction (`toPredictableLp_indicator`, `toPredictableLp_indicator_Ioc_prod`), horizon
+restriction, and product-a.e. equality.
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
@@ -326,18 +323,6 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
 
-/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
-`BrownianIntegrable`. -/
-theorem BrownianIntegrable.simpleHolding [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
-    {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
-  ⟨Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
-    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using
-      (ℱ.memLp_predictableMeasure_iff P
-        (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
-        (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
-
 namespace BrownianIntegrable
 
 /-- Finite-horizon membership in the trimmed predictable `L²` space. -/
@@ -366,6 +351,11 @@ theorem coeFn_toPredictableLp_prod (hH : BrownianIntegrable ℱ P H) (T : ℝ≥
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   exact (ℱ.ae_eq_predictableMeasure_iff P (Lp.stronglyMeasurable _).measurable
     hH.isStronglyPredictable.measurable T).mp (hH.coeFn_toPredictableLp T)
+
+/-- Embedding any `BrownianIntegrable` integrand at horizon zero yields `0`. -/
+@[simp] theorem toPredictableLp_apply_zero (hH : BrownianIntegrable ℱ P H) :
+    hH.toPredictableLp 0 = 0 :=
+  Lp.ext <| by simp [EventuallyEq, ℱ.predictableMeasure_zero P]
 
 /-- Embedding the zero integrand into `Lp ℝ 2 (ℱ.predictableMeasure P T)` yields `0`. -/
 @[simp] theorem toPredictableLp_zero (T : ℝ≥0) :

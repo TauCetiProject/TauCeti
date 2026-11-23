@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Elementary values of the completed Brownian integral
@@ -40,6 +41,19 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Set Filter
 open scoped NNReal ENNReal Topology
+
+/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
+`TauCeti.BrownianIntegrable`. -/
+theorem TauCeti.BrownianIntegrable.simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω} [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
+    {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
+    (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
+    TauCeti.BrownianIntegrable ℱ P (TauCeti.Finance.simpleHolding τ n a) :=
+  ⟨TauCeti.Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
+    simpa only [NNReal.comap_volume_restrict_Ioc, TauCeti.Probability.timeMeasure_def] using
+      (ℱ.memLp_predictableMeasure_iff P
+        (TauCeti.Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+        (TauCeti.Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Process.StochasticInterval
-public import TauCeti.Probability.Process.StoppingApproximation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
@@ -21,10 +20,9 @@ time, not stopped processes retaining their last value. Neither completeness nor
 the filtration is required.
 
 Along stopping times tending almost surely to infinity, or decreasing almost surely to a target
-stopping time `τ` (in particular along `TauCeti.dyadicCeilTime`), the cutoffs recover the
-integrand or its `τ`-cutoff in expected square-energy norm on every finite horizon
-(`BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le`,
-`BrownianIntegrable.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub`). These facts allow approximation and
+stopping time `τ`, the cutoffs recover the integrand or its `τ`-cutoff in expected square-energy
+norm on every finite horizon (`BrownianIntegrable.tendsto_eLpNorm_ite_le_sub`,
+`BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le`). These facts allow approximation and
 localization of stochastic-integral inputs. The pathwise-domain closure results impose no
 moment assumptions. No stochastic integral is constructed here.
 
@@ -173,19 +171,5 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub_ite_le
   · refine tendsto_const_nhds.congr' ?_
     filter_upwards [hωlim.eventually (isOpen_Iio.mem_nhds (not_le.mp hle'))] with n hn
     rw [ite_eq_right hle', ite_eq_right (not_le.mpr hn)]
-
-/-- Cutoffs along upward dyadic approximations converge to the cutoff at `τ` in
-`L²((timeMeasure T).prod P)` on every finite horizon. -/
-theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_dyadicCeilTime_sub
-    (hH : BrownianIntegrable ℱ P H) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
-    (T : ℝ≥0) :
-    Tendsto (fun k ↦ eLpNorm
-      (fun p : ℝ≥0 × Ω ↦
-        (if (p.1 : WithTop ℝ≥0) ≤ TauCeti.dyadicCeilTime k (τ p.2) then H p.1 p.2 else 0) -
-        (if (p.1 : WithTop ℝ≥0) ≤ τ p.2 then H p.1 p.2 else 0)) 2
-      ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) :=
-  hH.tendsto_eLpNorm_ite_le_sub_ite_le hτ.dyadicCeilTime
-    (.of_forall fun ω k ↦ TauCeti.le_dyadicCeilTime k (τ ω))
-    (.of_forall fun ω ↦ TauCeti.tendsto_dyadicCeilTime (τ ω)) T
 
 end TauCeti
