@@ -289,6 +289,7 @@ theorem pairingIn_opposition (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMu
 group `TauCeti.matrixSymmetryGroup`. -/
 theorem oppositionPerm_mem_matrixSymmetryGroup :
     oppositionPerm P b ∈ matrixSymmetryGroup b.cartanMatrix :=
-  mem_matrixSymmetryGroup_iff.mpr <| Matrix.ext fun i j ↦ cartanMatrix_oppositionPerm P b i j
+  mem_matrixSymmetryGroup_iff.mpr <| Matrix.ext fun i j ↦ by
+    simpa only [Matrix.submatrix_apply] using cartanMatrix_oppositionPerm P b i j
 
 end RootPairing

@@ -260,11 +260,8 @@ theorem oppositionAut_eq_one_iff :
 /-- **`-1` lies in the Weyl group exactly when it is the longest element.** -/
 theorem neg_mem_weylGroup_iff :
     Equiv.neg P ∈ P.weylGroup ↔ (longestElement P b : P.Aut) = Equiv.neg P := by
-  refine ⟨fun h ↦ (oppositionAut_eq_one_iff P b).mp ?_, fun h ↦ h ▸ (longestElement P b).property⟩
-  -- `δ = -w₀` is then a based automorphism in the Weyl group, so it is trivial.
-  have hW : oppositionAut P b ∈ P.weylGroup := mul_mem h (longestElement P b).property
-  exact Subgroup.disjoint_def.mp (Base.isComplement'_weylGroup_basedAut b).disjoint hW
-    (oppositionAut_mem_basedAut P b)
+  rw [← oppositionAut_eq_one_iff, eq_comm,
+    eq_oppositionAut_iff_neg_mul_mem_weylGroup P b (one_mem _), mul_one]
 
 /-- **The opposition automorphism is trivial exactly when `w₀` acts on weights by `-1`.** -/
 theorem oppositionAut_eq_one_iff_forall_longestElement_smul_eq_neg :
