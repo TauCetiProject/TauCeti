@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Operations
 
+import TauCeti.GroupTheory.GroupAction.Closure
+
 /-!
 # Transporting equalizers along isomorphisms, and invariants as an equalizer
 
@@ -21,8 +23,9 @@ The invariant subalgebra `FixedPoints.subalgebra R S G` of a monoid `G` acting o
 `R`-algebra endomorphisms is the equalizer of the diagonal map `S → (ι → S)` and
 `s ↦ (σ i • s)ᵢ`, for any family `σ : ι → G` whose maps `s ↦ σ i • s` generate the monoid of the
 maps `s ↦ g • s` with `g : G`, for instance a family generating `G` as a monoid
-(`TauCeti.FixedPoints.subalgebra_eq_equalizer`). Properties of equalizers therefore pass to
-invariant subalgebras.
+(`TauCeti.FixedPoints.subalgebra_eq_equalizer`, from the fixed-point criterion
+`TauCeti.forall_smul_eq_self_iff_of_closure_toEndHom_eq_top`). Properties of equalizers therefore
+pass to invariant subalgebras.
 
 For algebra maps `f g : A →ₐ[R] B` and an element `P : B`, the elements `x` of `A` with
 `P * g x = f x * P` form a subalgebra (`TauCeti.intertwiningSubalgebra`): `P` intertwines `g`
@@ -83,21 +86,8 @@ theorem subalgebra_eq_equalizer {R S : Type*} [CommSemiring R] [Semiring S] [Alg
   ext s
   simp only [FixedPoints.mem_subalgebra, AlgHom.mem_equalizer, funext_iff, AlgHom.pi_apply,
     AlgHom.id_apply, MulSemiringAction.toAlgHom_apply]
-  -- The stabilizer of `s` in the image of the action is a submonoid, so it is the whole image
-  -- once it contains the image of every `σ i`.
-  refine ⟨fun h i ↦ (h (σ i)).symm, fun h g ↦ ?_⟩
-  -- An element of `G` and its image in the image of the action move `s` alike: by definition,
-  -- `MulAction.toEndHom g` is the map `(g • ·)`.
-  have key (g : G) : (MulAction.toEndHom (M := G) (α := S)).mrangeRestrict g • s = g • s := by
-    rw [Submonoid.smul_def, MonoidHom.coe_mrangeRestrict, Function.End.smul_def]
-    rfl
-  have hs : Submonoid.closure
-      (Set.range ((MulAction.toEndHom (M := G) (α := S)).mrangeRestrict ∘ σ)) ≤
-        MulAction.stabilizerSubmonoid _ s :=
-    Submonoid.closure_le.2 <| Set.range_subset_iff.2 fun i ↦
-      MulAction.mem_stabilizerSubmonoid_iff.2 ((key (σ i)).trans (h i).symm)
-  rw [← key, ← MulAction.mem_stabilizerSubmonoid_iff]
-  exact hs (hσ ▸ Submonoid.mem_top _)
+  exact (forall_smul_eq_self_iff_of_closure_toEndHom_eq_top hσ).trans
+    (forall_congr' fun _ ↦ eq_comm)
 
 end TauCeti.FixedPoints
 
