@@ -80,7 +80,7 @@ theorem apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →
   have hlim : Tendsto (fun e => f.toGNS (a * e)) (CStarAlgebra.approximateUnit A) (𝓝 (f.toGNS a)) :=
     f.toGNS.continuous.tendsto a |>.comp (hl.tendsto_mul_left a)
   have hzero : (fun e => f.toGNS (a * e)) = 0 := funext fun e => by
-    simpa [toGNS_apply] using DFunLike.congr_fun ha (f.toGNS e)
+    rw [← f.gnsNonUnitalStarAlgHom_apply_toGNS, ha, zero_apply, Pi.zero_apply]
   rw [hzero] at hlim
   exact (f.toGNS_eq_zero_iff a).mp (tendsto_nhds_unique hlim tendsto_const_nhds)
 

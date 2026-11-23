@@ -207,7 +207,9 @@ theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) {z : ℂ}
       · exact absurd (isUnit_of_isUnit_mul_of_isUnit_mul h₁ h₂) hz
       · obtain ⟨φ, hφ, hφsx⟩ := exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self
           (y := star x) (by simpa [star_star] using h₂)
-        exact ⟨φ, hφ, star_eq_zero.1 ((map_star_of_mem_stateSpace hφ x).symm.trans hφsx)⟩
+        have hstar : φ (star x) = star (φ x) := by
+          simpa using map_star (StateSpace.toPositiveLinearMap ⟨φ, hφ⟩) x
+        exact ⟨φ, hφ, star_eq_zero.1 (hstar.symm.trans hφsx)⟩
     · exact exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self h₁
   refine ⟨φ, hφ, ?_⟩
   have hsub : z - φ b = 0 := by
@@ -269,8 +271,7 @@ instance [Nontrivial A] : Nonempty (stateSpace A) :=
 nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `‖φ a‖ = ‖a‖`. -/
 theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a : A}
     [IsStarNormal a] (ha : a ≠ 0) : ∃ φ ∈ stateSpace A, ‖φ a‖ = ‖a‖ := by
-  obtain ⟨z, hz, hz_norm⟩ :=
-    exists_eNorm_spectrum_eq_spectralRadius_of_nonempty (spectrum.nonempty (a : A⁺¹))
+  obtain ⟨z, hz, hz_norm⟩ := spectrum.exists_eNorm_eq_spectralRadius (a : A⁺¹)
   have hz_eq : ‖z‖ = ‖a‖ := by
     have hspec : (‖z‖₊ : ℝ≥0∞) = ‖(a : A⁺¹)‖₊ :=
       hz_norm.trans (IsStarNormal.spectralRadius_eq_nnNorm (a : A⁺¹))

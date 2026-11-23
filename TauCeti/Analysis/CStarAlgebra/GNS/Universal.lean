@@ -94,7 +94,7 @@ theorem gnsUniversalRepresentation_apply_apply (a : A)
     (φ : stateSpace A) :
     gnsUniversalRepresentation A a x φ =
       (StateSpace.toPositiveLinearMap φ).gnsNonUnitalStarAlgHom a (x φ) := by
-  simp [gnsUniversalRepresentation]
+  simp [gnsUniversalRepresentation_def]
 
 /-- Coordinate evaluation in state `φ` intertwines `gnsUniversalRepresentation A a` with the GNS
 representation of `φ`. -/
@@ -104,7 +104,7 @@ theorem evalCLM_comp_gnsUniversalRepresentation_apply (a : A) (φ : stateSpace A
         gnsUniversalRepresentation A a =
       (StateSpace.toPositiveLinearMap φ).gnsNonUnitalStarAlgHom a ∘L
         lp.evalCLM ℂ (fun ψ : stateSpace A => (StateSpace.toPositiveLinearMap ψ).GNS) 2 φ := by
-  simp [gnsUniversalRepresentation]
+  simp [gnsUniversalRepresentation_def]
 
 /-- On a single-state coordinate vector `lp.single 2 φ v`, the universal GNS representation acts in
 coordinate `φ` by the GNS representation of `φ`. -/
@@ -113,7 +113,7 @@ theorem gnsUniversalRepresentation_apply_single [DecidableEq (stateSpace A)] (a 
     (φ : stateSpace A) (v : (StateSpace.toPositiveLinearMap φ).GNS) :
     gnsUniversalRepresentation A a (lp.single 2 φ v) =
       lp.single 2 φ ((StateSpace.toPositiveLinearMap φ).gnsNonUnitalStarAlgHom a v) := by
-  simp [gnsUniversalRepresentation]
+  simp [gnsUniversalRepresentation_def]
 
 /-- The universal GNS representation is nondegenerate, even when `A` has no unit or is zero. -/
 @[simp]

@@ -36,8 +36,6 @@ For a functional `φ : WeakDual ℂ A` on a C⋆-algebra that is nonnegative on 
 this file records the norm facts about positive functionals in the form used on the weak-* dual.
 
 * `WeakDual.toPositiveLinearMap`: bundles `φ` as a positive linear map `A →ₚ[ℂ] ℂ`.
-* `WeakDual.map_star_of_map_nonneg` and `WeakDual.isSelfAdjoint_apply_of_map_nonneg`: `φ`
-  commutes with `star` and takes real values on self-adjoint elements.
 * `WeakDual.norm_apply_sq_le_mul_of_map_nonneg`: the Cauchy–Schwarz inequality
   `‖φ a‖ ^ 2 ≤ ‖φ‖ * ‖φ (star a * a)‖`.
 * `WeakDual.monotone_toStrongDual_of_map_nonneg`: `φ` is monotone.
@@ -132,18 +130,6 @@ theorem toPositiveLinearMap_inj {φ ψ : WeakDual ℂ A}
     φ.toPositiveLinearMap hφ = ψ.toPositiveLinearMap hψ ↔ φ = ψ :=
   ⟨fun h => DFunLike.ext _ _ fun a => by simpa using DFunLike.congr_fun h a,
     fun h => by subst h; rfl⟩
-
-/-- A functional on a C⋆-algebra that is nonnegative on nonnegative elements commutes with
-`star`. -/
-theorem map_star_of_map_nonneg (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) (a : A) :
-    φ (star a) = star (φ a) := by
-  simpa using map_star (φ.toPositiveLinearMap hφ) a
-
-/-- A functional on a C⋆-algebra that is nonnegative on nonnegative elements maps self-adjoint
-elements to self-adjoint (real) scalars. -/
-theorem isSelfAdjoint_apply_of_map_nonneg (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) {a : A}
-    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) := by
-  simpa using ha.map (φ.toPositiveLinearMap hφ)
 
 /-- Cauchy–Schwarz inequality for a positive functional in the weak-* dual:
 `‖φ a‖ ^ 2 ≤ ‖φ‖ * ‖φ (star a * a)‖`. -/

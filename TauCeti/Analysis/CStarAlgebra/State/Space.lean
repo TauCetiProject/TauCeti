@@ -114,15 +114,6 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
 
 variable [StarOrderedRing A]
 
-/-- A state commutes with `star`. -/
-theorem map_star_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : φ (star a) = star (φ a) :=
-  WeakDual.map_star_of_map_nonneg (fun _ => map_nonneg_of_mem_stateSpace hφ) a
-
-/-- A state maps self-adjoint elements to self-adjoint (real) scalars. -/
-theorem isSelfAdjoint_apply_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A}
-    (ha : IsSelfAdjoint a) : IsSelfAdjoint (φ a) :=
-  WeakDual.isSelfAdjoint_apply_of_map_nonneg (fun _ => map_nonneg_of_mem_stateSpace hφ) ha
-
 /-- Cauchy–Schwarz inequality for a state: `‖φ a‖ ^ 2 ≤ ‖φ (star a * a)‖`. -/
 theorem norm_apply_sq_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) :
     ‖φ a‖ ^ 2 ≤ ‖φ (star a * a)‖ := by
