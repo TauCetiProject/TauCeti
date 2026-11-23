@@ -47,8 +47,8 @@ noncomputable def isColimitCokernelCoforkOfTorsor
     simp [MonObj.mul_comp, hf']
   let lift := Cofork.IsColimit.desc'
     (isColimitCoforkOfEffectiveEpi q.hom.hom _ h.isLimit) f.hom.hom heq
-  let d : Q.X ⟶ T.X := lift.1
-  have hd : q.hom.hom ≫ d = f.hom.hom := lift.2
+  let d : Q.X ⟶ T.X := lift.val
+  have hd : q.hom.hom ≫ d = f.hom.hom := lift.property
   have : IsMonHom d :=
     { one_hom := by rw [← IsMonHom.one_hom q.hom.hom, Category.assoc, hd, IsMonHom.one_hom]
       mul_hom := by

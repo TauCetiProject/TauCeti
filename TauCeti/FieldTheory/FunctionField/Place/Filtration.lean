@@ -263,7 +263,7 @@ at `s = 0`, so those carry the nonvanishing hypothesis. -/
 noncomputable def filtrationResidue (hs : P.ord s = -a) :
     P.filtration a →ₗ[k] P.ResidueField where
   toFun z := IsScalarTower.toAlgHom k P.integers P.ResidueField
-    ⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.2⟩
+    ⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.property⟩
   map_add' z w := by
     rw [← map_add]
     exact congrArg _ (Subtype.ext (by push_cast; ring))
@@ -274,7 +274,8 @@ noncomputable def filtrationResidue (hs : P.ord s = -a) :
 @[simp]
 theorem filtrationResidue_apply (hs : P.ord s = -a) (z : P.filtration a) :
     filtrationResidue hs z =
-      IsLocalRing.residue P.integers ⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.2⟩ :=
+      IsLocalRing.residue P.integers ⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.property⟩
+          :=
   (rfl)
 
 /-- The evaluation `z ↦ (s · z)(P)` vanishes exactly on the next step of the filtration. -/
@@ -282,7 +283,7 @@ theorem filtrationResidue_eq_zero_iff (hs : P.ord s = -a) (hs0 : s ≠ 0) (z : P
     filtrationResidue hs z = 0 ↔ (z : F) ∈ P.filtration (a + 1) := by
   rw [filtrationResidue_apply]
   rcases eq_or_ne (z : F) 0 with hz0 | hz0
-  · have h0 : (⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.2⟩ : P.integers) = 0 :=
+  · have h0 : (⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.property⟩ : P.integers) = 0 :=
       Subtype.ext (by simp [hz0])
     rw [h0, map_zero, hz0]
     simp
@@ -310,7 +311,7 @@ theorem filtrationResidue_surjective (hs : P.ord s = -a) (hs0 : s ≠ 0) :
     · simp [hu0]
     · rw [P.mem_filtration_iff_le_ord (mul_ne_zero (inv_ne_zero hs0) hu0),
         P.ord_mul (inv_ne_zero hs0) hu0, P.ord_inv, hs]
-      have := P.mem_integers_iff_ord_nonneg.mp u.2
+      have := P.mem_integers_iff_ord_nonneg.mp u.property
       omega
   refine ⟨⟨s⁻¹ * (u : F), hu⟩, ?_⟩
   rw [filtrationResidue_apply]
@@ -330,7 +331,8 @@ noncomputable def filtrationQuotientEquivResidueField (hs : P.ord s = -a) (hs0 :
 theorem filtrationQuotientEquivResidueField_apply_mk (hs : P.ord s = -a) (hs0 : s ≠ 0)
     (z : P.filtration a) :
     filtrationQuotientEquivResidueField hs hs0 (Submodule.Quotient.mk z) =
-      IsLocalRing.residue P.integers ⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.2⟩ := by
+      IsLocalRing.residue P.integers ⟨s * (z : F), mul_mem_integers_of_mem_filtration hs z.property⟩
+          := by
   simp [filtrationQuotientEquivResidueField]
 
 end Residue

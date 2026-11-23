@@ -50,12 +50,12 @@ theorem mem_reindex_shorten_puncture_iff (C : AdditiveCode A ι) (s t : Set ι)
     obtain ⟨x, hx, hxz⟩ := mem_puncture.mp hz
     refine ⟨x, hx, fun i hi hit ↦ (hxz ⟨i, hi⟩).trans (hz0 ⟨i, hi⟩ hit), ?_⟩
     intro j
-    exact (hxz ⟨j, j.2.1⟩).trans (hzy ⟨⟨j, j.2.1⟩, j.2.2⟩)
+    exact (hxz ⟨j, j.property.1⟩).trans (hzy ⟨⟨j, j.property.1⟩, j.property.2⟩)
   · rintro ⟨x, hx, hx0, hxy⟩
     refine ⟨s.domRestrict x, mem_puncture.mpr ⟨x, hx, fun _ ↦ rfl⟩,
-      fun i hit ↦ hx0 i i.2 hit, ?_⟩
+      fun i hit ↦ hx0 i i.property hit, ?_⟩
     intro j
-    exact hxy ⟨j.1, j.1.2, j.2⟩
+    exact hxy ⟨j.val, j.val.property, j.property⟩
 
 /-- After shortening to `t` and puncturing to `s`, a word on `s ∩ t` has a lift in the original
 code which vanishes everywhere outside `t`. -/
@@ -70,10 +70,10 @@ theorem mem_reindex_puncture_shorten_iff (C : AdditiveCode A ι) (s t : Set ι)
   · rintro ⟨z, hz, hzy⟩
     obtain ⟨x, hx, hx0, hxz⟩ := mem_shorten.mp hz
     refine ⟨x, hx, hx0, fun j ↦ ?_⟩
-    exact (hxz ⟨j, j.2.2⟩).trans (hzy ⟨⟨j, j.2.2⟩, j.2.1⟩)
+    exact (hxz ⟨j, j.property.2⟩).trans (hzy ⟨⟨j, j.property.2⟩, j.property.1⟩)
   · rintro ⟨x, hx, hx0, hxy⟩
     refine ⟨t.domRestrict x, mem_shorten.mpr ⟨x, hx, hx0, fun _ ↦ rfl⟩, fun j ↦ ?_⟩
-    exact hxy ⟨j.1, j.2, j.1.2⟩
+    exact hxy ⟨j.val, j.property, j.val.property⟩
 
 /-- Puncturing after shortening imposes at least the conditions imposed in the opposite order.
 Both codes are transported to the retained coordinates `s ∩ t`. -/

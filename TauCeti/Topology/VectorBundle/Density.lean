@@ -44,7 +44,7 @@ open scoped Classical in
 /-- Evaluation in the frame of `e`, before the density total space receives its topology. -/
 def densityPretrivialization :
     Pretrivialization ℝ (π ℝ (fun x ↦ TauCeti.Density (V x) (Module.finrank ℝ F))) where
-  toFun p := ⟨p.proj, p.2 (fun i ↦ e.symm p.proj (Module.finBasis ℝ F i))⟩
+  toFun p := ⟨p.proj, p.snd (fun i ↦ e.symm p.proj (Module.finBasis ℝ F i))⟩
   invFun p := ⟨p.1, if hx : p.1 ∈ e.baseSet then
     ((Module.finBasis ℝ F).map (e.linearEquivAt ℝ p.1 hx).symm).density p.2 else 0⟩
   source := Bundle.TotalSpace.proj ⁻¹' e.baseSet
@@ -82,7 +82,7 @@ theorem densityPretrivialization_baseSet : e.densityPretrivialization.baseSet = 
 theorem densityPretrivialization_apply
     (p : TotalSpace ℝ (fun x ↦ TauCeti.Density (V x) (Module.finrank ℝ F))) :
     e.densityPretrivialization p =
-      (p.proj, p.2 (fun i ↦ e.symm p.proj (Module.finBasis ℝ F i))) := (rfl)
+      (p.proj, p.snd (fun i ↦ e.symm p.proj (Module.finBasis ℝ F i))) := (rfl)
 
 /-- The inverse chart constructs the density with the prescribed coefficient in its frame. -/
 theorem densityPretrivialization_symm_apply {x : B} (hx : x ∈ e.baseSet) (c : ℝ) :
@@ -214,7 +214,7 @@ theorem density_baseSet : e.density.baseSet = e.baseSet := (rfl)
 /-- The density chart reads the value on the inverse model frame. -/
 theorem density_apply
     (p : TotalSpace ℝ (fun x ↦ TauCeti.Density (V x) (Module.finrank ℝ F))) :
-    e.density p = (p.proj, p.2 (fun i ↦ e.symm p.proj (Module.finBasis ℝ F i))) :=
+    e.density p = (p.proj, p.snd (fun i ↦ e.symm p.proj (Module.finBasis ℝ F i))) :=
   e.densityPretrivialization_apply p
 
 /-- The inverse density chart has the prescribed coefficient on the inverse model frame. -/

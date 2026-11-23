@@ -169,3 +169,50 @@ theorem directLimitLeft_symm_comp_of (i : ι) :
   AlgHom.ext (directLimitLeft_symm_of M i)
 
 end TauCeti
+
+namespace AlgEquiv
+
+/-- After tensoring a directed colimit, every element has a representative at a stage,
+and a stage element mapping to zero becomes zero at a later stage. -/
+theorem exists_rep_and_eventually_zero_tensorProduct
+    {S J R : Type*} [CommSemiring S] [Preorder J] [Nonempty J] [IsDirectedOrder J]
+    {T : J → Type*} [∀ j, Semiring (T j)] [∀ j, Algebra S (T j)]
+    {f : ∀ i j, i ≤ j → T i →ₐ[S] T j} [DirectedSystem T (f · · ·)]
+    [Semiring R] [Algebra S R] (e : DirectLimit T f ≃ₐ[S] R)
+    (M : Type*) [Semiring M] [Algebra S M] :
+    (∀ x : R ⊗[S] M, ∃ j, ∃ z : T j ⊗[S] M,
+      Algebra.TensorProduct.map (e.toAlgHom.comp (DirectLimit.Algebra.of T f j))
+        (AlgHom.id S M) z = x) ∧
+    (∀ j (z : T j ⊗[S] M),
+      Algebra.TensorProduct.map (e.toAlgHom.comp (DirectLimit.Algebra.of T f j))
+        (AlgHom.id S M) z = 0 →
+      ∃ k, ∃ h : j ≤ k, Algebra.TensorProduct.rTensor M (f j k h) z = 0) := by
+  let ft : ∀ i j : J, i ≤ j → T i ⊗[S] M →ₐ[S] T j ⊗[S] M :=
+    fun i j h ↦ Algebra.TensorProduct.rTensor M (f i j h)
+  let E : DirectLimit (fun j ↦ T j ⊗[S] M) ft ≃ₐ[S] R ⊗[S] M :=
+    (TauCeti.directLimitLeft f M).symm.trans (Algebra.TensorProduct.congr e (AlgEquiv.refl))
+  have e_of (j : J) (z : T j ⊗[S] M) :
+      E (DirectLimit.Algebra.of (fun j ↦ T j ⊗[S] M) ft j z) =
+        Algebra.TensorProduct.map (e.toAlgHom.comp (DirectLimit.Algebra.of T f j))
+          (AlgHom.id S M) z := by
+    dsimp only [E, AlgEquiv.trans_apply, ft]
+    rw [TauCeti.directLimitLeft_symm_of, Algebra.TensorProduct.congr_apply]
+    exact congrArg (fun g : T j ⊗[S] M →ₐ[S] R ⊗[S] M ↦ g z)
+      (Algebra.TensorProduct.map_comp _ _ _ _).symm
+  constructor
+  · intro x
+    obtain ⟨j, z, hz⟩ := DirectLimit.exists_eq_mk _ (E.symm x)
+    refine ⟨j, z, ?_⟩
+    rw [← e_of]
+    -- Expose the DirectLimit quotient constructor in the representative equation.
+    change E ⟦⟨j, z⟩⟧ = x
+    rw [← hz, E.apply_symm_apply]
+  · intro j z hz
+    have eq : DirectLimit.Algebra.of (fun j ↦ T j ⊗[S] M) ft j z =
+        DirectLimit.Algebra.of (fun j ↦ T j ⊗[S] M) ft j 0 := by
+      apply E.injective
+      simpa only [e_of, map_zero] using hz
+    obtain ⟨k, hjk, _, hk⟩ := Quotient.exact eq
+    exact ⟨k, hjk, by simpa only [map_zero] using hk⟩
+
+end AlgEquiv

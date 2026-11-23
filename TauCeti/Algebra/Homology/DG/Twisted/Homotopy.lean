@@ -30,7 +30,8 @@ one of `TauCeti.Algebra.Homology.DG.Twisted.Complex`.
 ## Main definitions
 
 * `TauCeti.homotopyMap h ℳ`: the map `(P → M) →ₗ[R] (Q → M)` of a matrix `h`.
-* `TauCeti.ParametrizedCocycle ν₀ ν₁`: parametrized cocycles between continuation cocycles.
+* `TauCeti.ParametrizedCocycle ν₀ ν₁`: parametrized cocycles between continuation cocycles, and
+  `TauCeti.ParametrizedCocycle.ofEq`: the zero parametrized cocycle between equal ones.
 
 ## Main results
 
@@ -268,6 +269,18 @@ theorem ext {η₁ η₂ : ParametrizedCocycle ν₀ ν₁}
   obtain ⟨h₂, _, _⟩ := η₂
   obtain rfl : h₁ = h₂ := funext fun x ↦ funext fun y ↦ h x y
   rfl
+
+/-- The zero matrix is a parametrized cocycle between equal continuation cocycles. -/
+def ofEq (hν : ν₀ = ν₁) : ParametrizedCocycle ν₀ ν₁ where
+  h := 0
+  mem_graded _ _ := zero_mem _
+  parametrized x y := by
+    subst hν
+    simp
+
+@[simp]
+theorem ofEq_h (hν : ν₀ = ν₁) : (ofEq hν).h = 0 :=
+  (rfl)
 
 variable [GradedAlgebra 𝒜]
 

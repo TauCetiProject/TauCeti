@@ -157,8 +157,8 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
   let D : Finset ι := univ.filter fun i ↦ ∃ a, g i = Sum.inl a
   have hg_left {i : ι} (hi : i ∈ D) : ∃ a, g i = Sum.inl a :=
     (mem_filter.mp hi).2
-  let f : D → α := fun i ↦ Classical.choose (hg_left i.2)
-  have hgf (i : D) : g i = Sum.inl (f i) := Classical.choose_spec (hg_left i.2)
+  let f : D → α := fun i ↦ Classical.choose (hg_left i.property)
+  have hgf (i : D) : g i = Sum.inl (f i) := Classical.choose_spec (hg_left i.property)
   have hf : Injective f := by
     intro i j hij
     apply Subtype.ext
@@ -171,7 +171,7 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
   -- The omitted indices inject into the `d` dummy choices.
   have hcompl : #(univ \ D) ≤ d := by
     have hright (i : (univ \ D : Finset ι)) : ∃ b, g i = Sum.inr b := by
-      have hiD : (i : ι) ∉ D := (mem_sdiff.mp i.2).2
+      have hiD : (i : ι) ∉ D := (mem_sdiff.mp i.property).2
       cases hgi : g i with
       | inl a => exact False.elim (hiD (mem_filter.mpr ⟨mem_univ _, ⟨a, hgi⟩⟩))
       | inr b => exact ⟨b, rfl⟩

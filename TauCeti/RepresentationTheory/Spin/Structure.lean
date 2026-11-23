@@ -343,15 +343,15 @@ theorem evenSpinActionProd_surjective (hline : P.line = ⊥) :
     rw [hfdef]
     exact LinearMap.ofIsCompl_apply_right hc ⟨s, hs⟩
   obtain ⟨x, hx⟩ := exists_mem_even_spinAction_eq P hline f
-    (by rintro _ ⟨s, hs, rfl⟩; rw [hfplus s hs]; exact (g₁ ⟨s, hs⟩).2)
-    (by rintro _ ⟨s, hs, rfl⟩; rw [hfminus s hs]; exact (g₂ ⟨s, hs⟩).2)
+    (by rintro _ ⟨s, hs, rfl⟩; rw [hfplus s hs]; exact (g₁ ⟨s, hs⟩).property)
+    (by rintro _ ⟨s, hs, rfl⟩; rw [hfminus s hs]; exact (g₂ ⟨s, hs⟩).property)
   refine ⟨x, ?_⟩
   rw [evenSpinActionProd_apply, Prod.mk.injEq]
   constructor
   · refine LinearMap.ext fun s => Subtype.ext ?_
-    rw [coe_spinPlusAction_apply, hx, hfplus s s.2]
+    rw [coe_spinPlusAction_apply, hx, hfplus s s.property]
   · refine LinearMap.ext fun s => Subtype.ext ?_
-    rw [coe_spinMinusAction_apply, hx, hfminus s s.2]
+    rw [coe_spinMinusAction_apply, hx, hfminus s s.property]
 
 /-- The even Clifford action on `S⁺` is onto its full endomorphism algebra. -/
 theorem spinPlusAction_surjective (hline : P.line = ⊥) :
