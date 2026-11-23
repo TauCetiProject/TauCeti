@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Bigraded.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Grading.Complex
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Homology.Basic
 import TauCeti.LinearAlgebra.Dimension.DirectSum
 
@@ -87,6 +88,25 @@ theorem bigradedChainInclusion_bigradedChainProjection_mem_fullyBlockedBoundarie
     ⟨G.bigradedChainInclusion F (g + (1, 0)) (G.bigradedChainProjection F (g + (1, 0)) c), ?_⟩
   rw [fullyBlockedDifferential_bigradedChainInclusion_bigradedChainProjection,
     add_sub_cancel_right]
+
+/-- The constant coefficients of a chain of `GC⁻` of bidegree `g` form a chain of bidegree `g`:
+the constant coefficient at a state `x` is the coefficient of the monomial `V^0 x`, of bidegree
+the bidegree of `x`. -/
+theorem mapRange_constantCoeff_mem_range_bigradedChainInclusion {R : Type*} [CommSemiring R]
+    {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
+    c.mapRange MvPolynomial.constantCoeff (map_zero _) ∈
+      LinearMap.range (G.bigradedChainInclusion R g) := by
+  refine ⟨G.bigradedChainProjection R g (c.mapRange MvPolynomial.constantCoeff (map_zero _)), ?_⟩
+  ext x
+  rw [bigradedChainInclusion_apply]
+  split_ifs with hx
+  · rw [bigradedChainProjection_apply]
+  · rw [Finsupp.mapRange_apply, eq_comm]
+    by_contra h
+    refine hx ?_
+    rw [← G.monomialBidegree_zero]
+    rw [mem_bigradedChainMinusPiece] at hc
+    exact hc x 0 (by rwa [MvPolynomial.mem_support_iff, ← MvPolynomial.constantCoeff_eq])
 
 /-! ### The homogeneous projections of fully blocked homology -/
 
