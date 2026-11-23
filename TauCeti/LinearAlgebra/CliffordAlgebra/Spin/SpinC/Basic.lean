@@ -79,6 +79,8 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
   inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
+* `CliffordAlgebra.spinCGroup.chargeConj_eq_self_iff`: the fixed points of charge conjugation are
+  the elements with trivial determinant character.
 * `QuadraticMap.Isometry.spinCGroupMap_injective`: the induced map is injective when the induced
   Spin map is.
 * `QuadraticMap.Isometry.det_spinCGroupMap` and
@@ -490,6 +492,12 @@ structure of an almost Hermitian four-manifold, `L = K⁻¹` and this is the iso
 theorem chargeConj_mul_ofCircle (x : spinCGroup Q hQ) (z : Circle) :
     chargeConj Q hQ (x * ofCircle Q hQ z) = x * ofCircle Q hQ ((det Q hQ x)⁻¹ * z⁻¹) := by
   rw [map_mul, chargeConj_ofCircle, chargeConj_eq_mul_ofCircle_inv_det, map_mul, mul_assoc]
+
+/-- An element is fixed by charge conjugation exactly when its determinant character is trivial. -/
+theorem chargeConj_eq_self_iff {x : spinCGroup Q hQ} :
+    chargeConj Q hQ x = x ↔ det Q hQ x = 1 := by
+  rw [chargeConj_eq_mul_ofCircle_inv_det]
+  simp [map_eq_one_iff _ (ofCircle_injective Q hQ)]
 
 end spinCGroup
 
