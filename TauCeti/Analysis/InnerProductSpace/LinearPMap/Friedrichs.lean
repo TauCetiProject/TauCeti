@@ -288,8 +288,8 @@ theorem inner_toFriedrichsSpace (x y : S.domain) :
 /-- The squared form norm of a vector of the domain of `S`. -/
 theorem norm_toFriedrichsSpace_sq (x : S.domain) :
     ‖toFriedrichsSpace hS x‖ ^ 2 = RCLike.re ⟪S x, (x : E)⟫_𝕜 + (1 - γ) * ‖(x : E)‖ ^ 2 := by
-  rw [norm_sq_eq_re_inner (𝕜 := 𝕜), inner_toFriedrichsSpace, _root_.map_add,
-    RCLike.re_ofReal_mul, inner_self_eq_norm_sq]
+  rw [toFriedrichsSpace_apply, UniformSpace.Completion.norm_coe, norm_sq_eq_re_inner (𝕜 := 𝕜),
+    FriedrichsPre.re_inner_self]
 
 /-- The domain of `S` is dense in its form completion. -/
 theorem denseRange_toFriedrichsSpace : DenseRange (toFriedrichsSpace hS) :=
@@ -391,19 +391,23 @@ theorem friedrichsForm_toFriedrichsSpace_right (v : FriedrichsSpace S γ hS) (x 
   rw [friedrichsForm_eq_star, friedrichsForm_toFriedrichsSpace_left, RCLike.star_def,
     inner_conj_symm]
 
+/-- The diagonal of the closed form: `re q(u, u) = ‖u‖ ^ 2 + (γ - 1) ‖j u‖ ^ 2`. -/
+theorem re_friedrichsForm_self (u : FriedrichsSpace S γ hS) :
+    RCLike.re (friedrichsForm hS u u) = ‖u‖ ^ 2 + (γ - 1) * ‖friedrichsInclusion hS u‖ ^ 2 := by
+  rw [friedrichsForm, ContinuousLinearMap.re_shiftedForm_self, innerSL_apply_apply,
+    inner_self_eq_norm_sq]
+
 /-- The closed form of the Friedrichs extension is coercive after shifting by `1 - γ`. -/
 theorem one_mul_norm_sq_le_re_friedrichsForm_add (u : FriedrichsSpace S γ hS) :
     1 * ‖u‖ ^ 2 ≤
       RCLike.re (friedrichsForm hS u u) + (1 - γ) * ‖friedrichsInclusion hS u‖ ^ 2 := by
-  rw [friedrichsForm, ContinuousLinearMap.re_shiftedForm_self, innerSL_apply_apply,
-    inner_self_eq_norm_sq]
+  rw [re_friedrichsForm_self]
   linarith
 
 /-- The closed form of the Friedrichs extension is bounded below by `γ`. -/
 theorem mul_norm_sq_le_re_friedrichsForm (u : FriedrichsSpace S γ hS) :
     γ * ‖friedrichsInclusion hS u‖ ^ 2 ≤ RCLike.re (friedrichsForm hS u u) := by
-  rw [friedrichsForm, ContinuousLinearMap.re_shiftedForm_self, innerSL_apply_apply,
-    inner_self_eq_norm_sq]
+  rw [re_friedrichsForm_self]
   have h := norm_friedrichsInclusion_apply_le hS u
   have h0 := norm_nonneg (friedrichsInclusion hS u)
   nlinarith
