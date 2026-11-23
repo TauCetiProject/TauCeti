@@ -124,10 +124,20 @@ theorem restrictTotalDegree_eq_span (m : ℕ) :
 variable (σ R) in
 /-- The monomial basis of the polynomials of total degree at most `m`, indexed by exponents of
 degree at most `m`. -/
-@[expose] noncomputable def basisRestrictTotalDegree (m : ℕ) :
+noncomputable def basisRestrictTotalDegree (m : ℕ) :
     Module.Basis {s : σ →₀ ℕ // s.degree ≤ m} R (restrictTotalDegree σ R m) :=
   (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
     (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm)
+
+theorem basisRestrictTotalDegree_def (m : ℕ) :
+    basisRestrictTotalDegree σ R m =
+      (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
+        (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm) :=
+  (rfl)
+
+/-- The submodule of polynomials of total degree at most `m` is a free `R`-module. -/
+noncomputable instance (m : ℕ) : Module.Free R (restrictTotalDegree σ R m) :=
+  Module.Free.of_basis (basisRestrictTotalDegree σ R m)
 
 /-- The coordinate of a bounded-degree polynomial in the monomial basis is its coefficient. -/
 @[simp]
@@ -139,7 +149,7 @@ theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree �
 @[simp]
 theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
     (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.val 1 := by
-  rw [basisRestrictTotalDegree, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+  rw [basisRestrictTotalDegree_def, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
   -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
   -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
   exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
@@ -362,26 +372,25 @@ theorem hyperplaneSliceMap_surjective (j₀ : σ) (d : ℕ) :
 /-- Changing coefficients along a ring map preserves the total degree bound. -/
 theorem map_mem_restrictTotalDegree {S : Type*} [CommSemiring S] (φ : R →+* S)
     {m : ℕ} {p : MvPolynomial σ R} (hp : p ∈ restrictTotalDegree σ R m) :
-    map φ p ∈ restrictTotalDegree σ S m :=
-  (mem_restrictTotalDegree σ m _).2 <|
-    (Finset.sup_mono (support_map_subset φ p)).trans <|
-      (mem_restrictTotalDegree σ m p).1 hp
+    map φ p ∈ restrictTotalDegree σ S m := by
+  rw [restrictTotalDegree_eq_restrictSupport] at hp ⊢
+  exact map_mem_restrictSupport φ hp
 
 variable (σ) in
 /-- Changing the coefficients of polynomials of total degree at most `m` along a ring map
 `φ : R →+* S`, as a `φ`-semilinear map. -/
 noncomputable def mapRestrictTotalDegree {S : Type*} [CommSemiring S] (φ : R →+* S) (m : ℕ) :
-    restrictTotalDegree σ R m →ₛₗ[φ] restrictTotalDegree σ S m where
-  toFun p := ⟨map φ p, map_mem_restrictTotalDegree φ p.property⟩
-  map_add' p q := Subtype.ext (map_add (map φ) (p : MvPolynomial σ R) q)
-  map_smul' r p := Subtype.ext <| by simp [smul_eq_C_mul]
+    restrictTotalDegree σ R m →ₛₗ[φ] restrictTotalDegree σ S m :=
+  (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ S m).symm).toLinearMap.comp
+    ((mapRestrictSupport {s : σ →₀ ℕ | s.degree ≤ m} φ).comp
+      (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m)).toLinearMap)
 
 /-- The underlying polynomial of `mapRestrictTotalDegree σ φ m p` is `map φ p`. -/
 @[simp]
 theorem coe_mapRestrictTotalDegree_apply {S : Type*} [CommSemiring S] (φ : R →+* S) (m : ℕ)
     (p : restrictTotalDegree σ R m) :
-    (mapRestrictTotalDegree σ φ m p : MvPolynomial σ S) = map φ p :=
-  (rfl)
+    (mapRestrictTotalDegree σ φ m p : MvPolynomial σ S) = map φ p := by
+  simp [mapRestrictTotalDegree, coe_mapRestrictSupport_apply]
 
 /-- An element of `restrictTotalDegree σ R (d + 1)` lies in the kernel of `hyperplaneSliceMap j₀ d`
 if and only if `X j₀ ^ 2` divides it. -/
@@ -389,65 +398,30 @@ theorem mem_ker_hyperplaneSliceMap {j₀ : σ} {d : ℕ} {f : restrictTotalDegre
     f ∈ LinearMap.ker (hyperplaneSliceMap (R := R) j₀ d) ↔
       X j₀ ^ 2 ∣ (f : MvPolynomial σ R) := by
   classical
+  have hrange : Set.range (Subtype.val : {j : σ // j ≠ j₀} → σ) = {j₀}ᶜ := by
+    ext j
+    simp
+  have hX : killCompl (R := R) (Subtype.val_injective (p := (· ≠ j₀))) (X j₀) = 0 :=
+    killCompl_X_of_notMem_range Subtype.val_injective (by simp)
   simp only [LinearMap.mem_ker, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Subtype.ext_iff,
     hyperplaneSliceMap_fst_coe, hyperplaneSliceMap_snd_coe, Submodule.coe_zero]
   constructor
   · rintro ⟨h0, h1⟩
-    have hcoeff0 {m : σ →₀ ℕ} (hm : m j₀ = 0) (g : MvPolynomial σ R)
-        (hg : killCompl (Subtype.val_injective (p := (· ≠ j₀))) g = 0) : g.coeff m = 0 := by
-      let u : {j : σ // j ≠ j₀} →₀ ℕ := m.comapDomain Subtype.val Subtype.val_injective.injOn
-      have hu : u.mapDomain Subtype.val = m := by
-        ext i
-        by_cases hi : i = j₀
-        · subst hi
-          rw [hm]
-          exact Finsupp.mapDomain_of_notMem_range u _ fun ⟨j, hj⟩ ↦ j.property hj
-        · rw [show i = (⟨i, hi⟩ : {j : σ // j ≠ j₀}).val from rfl,
-            Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
-          exact Finsupp.comapDomain_apply _ _ _ _
-      simp [← hu, ← coeff_killCompl, hg]
-    have hge2 : ∀ m ∈ (f : MvPolynomial σ R).support, 2 ≤ m j₀ := by
-      intro m hm
-      by_contra! hlt
-      have hm0 : (f : MvPolynomial σ R).coeff m = 0 := by
-        have hlt' : m j₀ = 0 ∨ m j₀ = 1 := by omega
-        rcases hlt' with hm_eq | hm_eq
-        · exact hcoeff0 hm_eq f.val h0
-        · let m' : σ →₀ ℕ := m - Finsupp.single j₀ 1
-          have hm'0 : m' j₀ = 0 := by simp [m', hm_eq]
-          have hm'_add : m' + Finsupp.single j₀ 1 = m := by
-            ext i
-            by_cases hi : i = j₀
-            · subst hi; simp [m', hm_eq]
-            · simp [m', hi]
-          have hcm' := hcoeff0 hm'0 (pderiv j₀ f.val) h1
-          rw [coeff_pderiv, hm'_add, hm'0] at hcm'
-          simpa using hcm'
-      exact mem_support_iff.1 hm hm0
-    refine ⟨∑ m ∈ (f : MvPolynomial σ R).support,
-        monomial (m - Finsupp.single j₀ 2) ((f : MvPolynomial σ R).coeff m), ?_⟩
-    rw [Finset.mul_sum]
-    conv_lhs => rw [(f : MvPolynomial σ R).as_sum]
-    refine Finset.sum_congr rfl fun m hm ↦ ?_
-    have hadd : Finsupp.single j₀ 2 + (m - Finsupp.single j₀ 2) = m := by
-      ext i
-      by_cases hi : i = j₀
-      · subst hi
-        have := hge2 m hm
-        simp only [Finsupp.coe_add, Finsupp.coe_tsub, Pi.add_apply, Pi.sub_apply,
-          Finsupp.single_eq_same]
-        omega
-      · simp [hi]
-    rw [show (X j₀ : MvPolynomial σ R) ^ 2 = monomial (Finsupp.single j₀ 2) 1 from by
-      simp [X, monomial_pow], monomial_mul_monomial, one_mul, hadd]
-  · rintro ⟨q, hq⟩
-    have hX : killCompl (R := R) (Subtype.val_injective (p := (· ≠ j₀))) (X j₀) = 0 :=
-      killCompl_X_of_notMem_range Subtype.val_injective (by simp)
+    -- Vanishing on `X j₀ = 0` yields `f = X j₀ * q`; then vanishing of `∂_{j₀} f` on `X j₀ = 0`
+    -- reduces to `killCompl q = 0`, giving `X j₀ ∣ q`.
+    obtain ⟨q, hq⟩ := (killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange f.val).1 h0
+    have hpderiv : pderiv j₀ (f : MvPolynomial σ R) = X j₀ * pderiv j₀ q + q := by
+      rw [hq, Derivation.leibniz, pderiv_X_self, smul_eq_mul, smul_eq_mul, mul_one, add_comm]
+    rw [hpderiv, map_add, map_mul, hX, zero_mul, zero_add] at h1
+    obtain ⟨r, hr⟩ := (killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange q).1 h1
+    exact ⟨r, by rw [hq, hr, sq, mul_assoc]⟩
+  · rintro ⟨r, hr⟩
+    -- Both `f` and `∂_{j₀} f` are multiples of `X j₀`, so both vanish on `X j₀ = 0`.
     refine ⟨?_, ?_⟩
-    · rw [hq, map_mul, map_pow, hX, zero_pow two_ne_zero, zero_mul]
+    · rw [hr, map_mul, map_pow, hX, zero_pow two_ne_zero, zero_mul]
     · have hpderiv : pderiv j₀ (f : MvPolynomial σ R) =
-          X j₀ * (pderiv j₀ (X j₀ * q) + q) := by
-        rw [hq, sq, mul_assoc, Derivation.leibniz, pderiv_X_self]
+          X j₀ * (pderiv j₀ (X j₀ * r) + r) := by
+        rw [hr, sq, mul_assoc, Derivation.leibniz, pderiv_X_self]
         simp [mul_add]
       rw [hpderiv, map_mul, hX, zero_mul]
 

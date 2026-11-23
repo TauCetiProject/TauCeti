@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.Algebra.TrivSqZeroExt.Basic
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.MvPolynomial.Ideal.Taylor
 
@@ -112,27 +112,28 @@ variable {R : Type*} [CommSemiring R]
 `snd j`. -/
 noncomputable def jetEquivOption (R σ : Type*) [CommSemiring R] :
     TrivSqZeroExt R (σ → R) ≃ₗ[R] (Option σ → R) :=
-  (TrivSqZeroExt.linearEquivProd R (σ → R)).trans
+  (LinearEquiv.refl R (R × (σ → R)) :
+      TrivSqZeroExt R (σ → R) ≃ₗ[R] R × (σ → R)).trans
     (LinearEquiv.piOptionEquivProd R (M := fun _ : Option σ ↦ R)).symm
 
 /-- The `none` coordinate of `jetEquivOption` is the scalar part `fst`. -/
 @[simp]
 theorem jetEquivOption_apply_none (x : TrivSqZeroExt R (σ → R)) :
     jetEquivOption R σ x none = x.fst := by
-  simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
+  simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]; rfl
 
 /-- The `some j` coordinate of `jetEquivOption` is the `j`-th infinitesimal coordinate `snd j`. -/
 @[simp]
 theorem jetEquivOption_apply_some (x : TrivSqZeroExt R (σ → R)) (j : σ) :
     jetEquivOption R σ x (some j) = x.snd j := by
-  simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
+  simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]; rfl
 
 /-- The inverse of `jetEquivOption` sends an `Option σ`-indexed tuple `v` to
 `inl (v none) + inr (fun j ↦ v (some j))`. -/
 @[simp]
 theorem jetEquivOption_symm_apply (v : Option σ → R) :
     (jetEquivOption R σ).symm v = inl (v none) + inr fun j ↦ v (some j) := by
-  ext <;> simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]
+  ext <;> (simp [jetEquivOption, LinearEquiv.piOptionEquivProd, Equiv.piOptionEquivProd]; rfl)
 
 variable [DecidableEq σ]
 

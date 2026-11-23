@@ -281,7 +281,7 @@ theorem toMatrix_firstJetMap [Finite (ι × Option σ)] {d : ℕ}
       simp [show pderiv j (f : MvPolynomial σ R) =
           hasseDeriv (Finsupp.single j 1) (f : MvPolynomial σ R) from by
         simpa using (factorial_smul_hasseDeriv_single j 1 (f : MvPolynomial σ R)).symm]
-  rw [basisRestrictTotalDegree, LinearMap.toMatrix_map_left, hcur, firstJetMatrix]
+  rw [basisRestrictTotalDegree_def, LinearMap.toMatrix_map_left, hcur, firstJetMatrix]
   exact toMatrix_jetEval _ _ _
 
 /-- Reindexing points transforms the rows of `firstJetMatrix`. -/
@@ -323,6 +323,8 @@ theorem firstJetMatrix_mulVec [Fintype {s : σ →₀ ℕ // s.degree ≤ d}]
     LinearEquiv.coe_curry, Function.uncurry_curry, jetEval_eq_mulVec]
   rw [firstJetMatrix]
   congr 1
+  ext μ
+  simp
 
 /-- In monomial coordinates, `firstJetMap P d` equals multiplication by `firstJetMatrix P d`. -/
 theorem firstJetMatrix_mulVec_comp_equivFun [Fintype {s : σ →₀ ℕ // s.degree ≤ d}] :
@@ -409,8 +411,6 @@ theorem rank_firstJetMatrix_le [StrongRankCondition R] [Fintype σ] [Fintype ι]
       min ((d + Fintype.card σ).choose (Fintype.card σ))
         (Fintype.card ι * (Fintype.card σ + 1)) := by
   classical
-  have : Module.Finite R (restrictTotalDegree σ R d) :=
-    Module.Finite.of_basis (basisRestrictTotalDegree σ R d)
   rw [rank_firstJetMatrix_eq_finrank_range]
   refine le_min
     ((LinearMap.finrank_range_le _).trans_eq (TauCeti.finrank_restrictTotalDegree σ R d)) ?_
@@ -427,8 +427,6 @@ theorem WellPoised.card_mul_le [StrongRankCondition R] [Fintype σ] [Fintype ι]
     (h : WellPoised P d) :
     Fintype.card ι * (Fintype.card σ + 1) ≤ (d + Fintype.card σ).choose (Fintype.card σ) := by
   classical
-  have : Module.Finite R (restrictTotalDegree σ R d) :=
-    Module.Finite.of_basis (basisRestrictTotalDegree σ R d)
   have hle := LinearMap.finrank_le_finrank_of_surjective (wellPoised_iff.1 h)
   rw [TauCeti.finrank_restrictTotalDegree] at hle
   simpa [Module.finrank_pi_fintype, Fintype.card_option] using hle

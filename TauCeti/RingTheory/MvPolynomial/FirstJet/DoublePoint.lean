@@ -27,8 +27,9 @@ factor is the algebra of first jets `TrivSqZeroExt R (σ → R)` (`TauCeti.ker_j
 and gradients at the points. In particular, values and first derivatives can be prescribed
 independently by a single polynomial, and for `r` variables and `n` points over a commutative ring
 satisfying `StrongRankCondition`, the quotient has rank `n (r + 1)` (which over a field is the
-length of `n` double points in `r`-space). The product of square-zero algebras keeps the nilpotents:
-it is not the product of the residue rings.
+length of `n` double points in `r`-space). For nonempty `ι` and `σ` over a nontrivial ring `R`,
+the product of square-zero algebras keeps the nilpotents: the kernel of the projection to `∏ᵢ R`
+is the nonzero square-zero ideal `∏ᵢ (σ → R)`.
 
 ## Main definitions
 

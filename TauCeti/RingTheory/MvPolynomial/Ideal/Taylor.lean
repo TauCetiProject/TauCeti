@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.Algebra.MvPolynomial.Taylor
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Point evaluation ideals and the Taylor shift
@@ -39,11 +40,9 @@ variable {R : Type*} [CommSemiring R]
 the Taylor shift `taylor a`. -/
 theorem ker_eval_eq_comap_taylor (a : σ → R) :
     RingHom.ker (eval a) = (idealOfVars σ R).comap (taylor a).toRingHom := by
-  ext p
-  rw [RingHom.mem_ker, Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    ← pow_one (idealOfVars σ R), mem_pow_idealOfVars_iff', ← constantCoeff_taylor,
-    constantCoeff_eq]
-  simp [Finsupp.degree_eq_zero_iff]
+  rw [← ker_constantCoeff, RingHom.comap_ker]
+  congr 1
+  exact RingHom.ext fun p ↦ (constantCoeff_taylor a p).symm
 
 end CommSemiring
 

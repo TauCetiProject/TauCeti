@@ -39,15 +39,16 @@ This file establishes exact rank criteria and formulas for `TauCeti.firstJetMatr
    through `restrictTotalDegree σ' R (d + 1) × restrictTotalDegree σ' R d`, yielding the binomial
    upper bound `(d + 1 + (r - 1) choose (r - 1)) + (d + (r - 1) choose (r - 1))` over any
    commutative semiring satisfying `StrongRankCondition`
-   (`TauCeti.rank_firstJetMatrix_le_of_coord_eq_zero`), and over an integral domain splitting the
-   rank into the sum of the degree-`(d + 1)` first-jet rank and the degree-`d` value rank on the
-   hyperplane (`TauCeti.rank_firstJetMatrix_of_coord_eq_zero`). In two variables
-   (`Fintype.card σ = 2`), combining the two results gives the exact rank
-   `min (d + 2) (2 * Fintype.card ι) + min (d + 1) (Fintype.card ι)`
-   (`TauCeti.rank_firstJetMatrix_of_coord_eq_zero_of_card_eq_two`). In particular, two
-   distinct points on a line in `𝔸²` have degree-`2` rank `5 < 6`, and seven distinct collinear
-   rational points have degree-`5` rank `11 < 21`, demonstrating that the dimension inequality
-   alone does not imply well-poisedness.
+   (`TauCeti.rank_firstJetMatrix_le_of_coord_eq_zero`), and over a commutative ring satisfying
+   `HasRankNullity` and `StrongRankCondition` splitting the rank into the sum of the
+   degree-`(d + 1)` first-jet rank and the degree-`d` value rank on the hyperplane
+   (`TauCeti.rank_firstJetMatrix_of_coord_eq_zero`). In two variables (`Fintype.card σ = 2`) over
+   an integral domain, combining the two results gives the exact rank
+   `min (d + 2) (2 * Fintype.card ι) + min (d + 1) (Fintype.card ι)` for any finite injective
+   tuple `P` on `x_{j₀} = 0` (`TauCeti.rank_firstJetMatrix_of_coord_eq_zero_of_card_eq_two`). In
+   particular, two distinct points on the coordinate line `x₁ = 0` in `𝔸²` have degree-`2` rank
+   `5 < 6`, and seven distinct rational points on `x₁ = 0` have degree-`5` rank `11 < 21`,
+   demonstrating that the dimension inequality alone does not imply well-poisedness.
 
 ## Main definitions
 
@@ -66,10 +67,11 @@ This file establishes exact rank criteria and formulas for `TauCeti.firstJetMatr
 * `TauCeti.hyperplaneJetCodomainEquiv_comp_firstJetMap`: factorization of `firstJetMap P (d + 1)`
   through `MvPolynomial.hyperplaneSliceMap` for points on `x_{j₀} = 0`.
 * `TauCeti.rank_firstJetMatrix_of_coord_eq_zero`,
-  `TauCeti.rank_firstJetMatrix_le_of_coord_eq_zero`: coordinate-hyperplane rank splitting over an
-  integral domain and binomial upper bound over `StrongRankCondition` semirings.
-* `TauCeti.rank_firstJetMatrix_of_coord_eq_zero_of_card_eq_two`: exact first-jet rank of
-  distinct points on a coordinate line in two variables over an integral domain.
+  `TauCeti.rank_firstJetMatrix_le_of_coord_eq_zero`: coordinate-hyperplane rank splitting over
+  `HasRankNullity` and `StrongRankCondition` rings and binomial upper bound over
+  `StrongRankCondition` semirings.
+* `TauCeti.rank_firstJetMatrix_of_coord_eq_zero_of_card_eq_two`: exact first-jet rank of a
+  finite injective tuple of points on a coordinate line in two variables over an integral domain.
 
 ## References
 
@@ -317,60 +319,45 @@ theorem rank_firstJetMatrix_le_of_coord_eq_zero {σ ι R : Type*} [CommSemiring 
   let σ' := {j : σ // j ≠ j₀}
   have hcard : Fintype.card σ' = Fintype.card σ - 1 := by
     simp [σ', Fintype.card_subtype_compl]
-  have : Module.Finite R (restrictTotalDegree σ' R (d + 1)) :=
-    Module.Finite.of_basis (basisRestrictTotalDegree σ' R (d + 1))
-  have : Module.Finite R (restrictTotalDegree σ' R d) :=
-    Module.Finite.of_basis (basisRestrictTotalDegree σ' R d)
-  have : Module.Free R (restrictTotalDegree σ' R (d + 1)) :=
-    Module.Free.of_basis (basisRestrictTotalDegree σ' R (d + 1))
-  have : Module.Free R (restrictTotalDegree σ' R d) :=
-    Module.Free.of_basis (basisRestrictTotalDegree σ' R d)
   rw [rank_firstJetMatrix_eq_finrank_range_prodMap_of_coord_eq_zero j₀ hP]
   refine (LinearMap.finrank_range_le _).trans_eq ?_
   rw [Module.finrank_prod, TauCeti.finrank_restrictTotalDegree, TauCeti.finrank_restrictTotalDegree,
     hcard]
 
-variable {σ ι R : Type*} [CommRing R] [IsDomain R]
+section RankNullity
 
-/-- **Coordinate-hyperplane rank splitting.** Over an integral domain, when every point `P i` lies
-on the coordinate hyperplane `x_{j₀} = 0`, slicing along `x_{j₀} = 0` splits the first-jet range
-into the product of the degree-`(d + 1)` first-jet range and the degree-`d` value range on the
-hyperplane `x_{j₀} = 0`. -/
-theorem rank_firstJetMatrix_of_coord_eq_zero [Finite σ] {d : ℕ}
+/-- **Coordinate-hyperplane rank splitting.** Over a commutative ring satisfying `HasRankNullity`
+and `StrongRankCondition`, when every point `P i` lies on the coordinate hyperplane `x_{j₀} = 0`,
+slicing along `x_{j₀} = 0` splits the first-jet range into the product of the degree-`(d + 1)`
+first-jet range and the degree-`d` value range on the hyperplane `x_{j₀} = 0`. -/
+theorem rank_firstJetMatrix_of_coord_eq_zero {σ : Type u} {ι : Type v} {R : Type w} [CommRing R]
+    [HasRankNullity.{max u v w} R] [StrongRankCondition R] [Finite σ] {d : ℕ}
     {P : ι → σ → R} (j₀ : σ) (hP : ∀ i, P i j₀ = 0) :
     (firstJetMatrix P (d + 1)).rank =
       Module.finrank R
           (LinearMap.range (firstJetMap (fun i (l : {j : σ // j ≠ j₀}) ↦ P i l.val) (d + 1))) +
         Module.finrank R
           (LinearMap.range (firstJetValueMap (fun i (l : {j : σ // j ≠ j₀}) ↦ P i l.val) d)) := by
-  have := Fintype.ofFinite σ
   classical
   let σ' := {j : σ // j ≠ j₀}
   let P' : ι → σ' → R := fun i l ↦ P i l.val
-  have : Module.Finite R (restrictTotalDegree σ' R (d + 1)) :=
-    Module.Finite.of_basis (basisRestrictTotalDegree σ' R (d + 1))
-  have : Module.Finite R (restrictTotalDegree σ' R d) :=
-    Module.Finite.of_basis (basisRestrictTotalDegree σ' R d)
   let A := LinearMap.range (firstJetMap P' (d + 1))
   let B := LinearMap.range (firstJetValueMap P' d)
   have : Module.Finite R A := Module.Finite.range _
   have : Module.Finite R B := Module.Finite.range _
   have : Module.Finite R (↥A × ↥B) := Module.Finite.prod
-  let e : LinearMap.ker (LinearMap.fst R ↥A ↥B) ≃ₗ[R] ↥B :=
-    { toFun := fun x ↦ x.val.2
-      invFun := fun b ↦ ⟨(0, b), rfl⟩
-      left_inv := fun ⟨⟨a, b⟩, ha⟩ ↦ by
-        have ha0 : a = 0 := ha
-        subst ha0
-        rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
   have hsum := (LinearMap.fst R ↥A ↥B).finrank_range_add_finrank_ker
-  rw [LinearMap.range_eq_top.2 fun a ↦ ⟨(a, 0), rfl⟩, finrank_top, e.finrank_eq] at hsum
+  rw [LinearMap.range_eq_top.2 Prod.fst_surjective, finrank_top,
+    LinearMap.ker_fst, LinearMap.finrank_range_of_inj LinearMap.inr_injective] at hsum
   rw [rank_firstJetMatrix_eq_finrank_range_prodMap_of_coord_eq_zero j₀ hP,
     LinearMap.range_prodMap, (Submodule.prodEquiv _ _).finrank_eq]
   exact hsum.symm
+
+end RankNullity
+
+section IsDomain
+
+variable {σ ι R : Type*} [CommRing R] [IsDomain R]
 
 /-- **Exact rank of distinct points on a coordinate line in two variables.** Over an integral
 domain, for any injective finite family `P : ι → σ → R` in two variables (`Fintype.card σ = 2`)
@@ -397,12 +384,15 @@ theorem rank_firstJetMatrix_of_coord_eq_zero_of_card_eq_two [Fintype σ] [Fintyp
   rw [rank_firstJetMatrix_of_coord_eq_zero j₀ hcoord,
     finrank_range_firstJetMap_univariate hP', finrank_range_firstJetValueMap_univariate hP']
 
+end IsDomain
+
 end CoordinateHyperplane
 
 /-! ### Examples -/
 
-/-- Two distinct points `(0, 0)` and `(1, 0)` in `𝔸²` have degree-`2` first-jet rank `5` rather
-than `6` (the defective quadric case), and are therefore not well poised in degree `2`. -/
+/-- Two distinct points `(0, 0)` and `(1, 0)` on the coordinate line `x₁ = 0` in `𝔸²` have
+degree-`2` first-jet rank `5` rather than `6` (the defective quadric case), and are therefore not
+well poised in degree `2`. -/
 example :
     let P : Fin 2 → Fin 2 → ℚ := fun i ↦ ![(i : ℚ), 0]
     (firstJetMatrix P 2).rank = 5 ∧ ¬ WellPoised P 2 := by
@@ -418,9 +408,9 @@ example :
     simpa using (wellPoised_iff_rank).1 hw
   omega
 
-/-- Seven distinct collinear points `(i, 0) ∈ ℚ²` (`0 ≤ i ≤ 6`) have degree-`5` first-jet rank
-`11` rather than `21 = (5 + 2 choose 2)`, showing that the dimension count alone does not force
-well-poisedness. -/
+/-- Seven distinct points `(i, 0) ∈ ℚ²` (`0 ≤ i ≤ 6`) on the coordinate line `x₁ = 0` have
+degree-`5` first-jet rank `11` rather than `21 = (5 + 2 choose 2)`, showing that the dimension count
+alone does not force well-poisedness. -/
 example :
     let P : Fin 7 → Fin 2 → ℚ := fun i ↦ ![(i : ℚ), 0]
     (firstJetMatrix P 5).rank = 11 ∧ ¬ WellPoised P 5 := by

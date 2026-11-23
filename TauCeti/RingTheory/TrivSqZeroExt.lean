@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TrivSqZeroExt.Basic
+public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.KrullDimension.Basic
@@ -50,16 +50,17 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- The trivial square-zero extension by a finite module is a finite module. -/
 instance [Module.Finite R M] : Module.Finite R (TrivSqZeroExt R M) :=
-  Module.Finite.equiv (linearEquivProd R M).symm
+  inferInstanceAs (Module.Finite R (R × M))
 
 /-- The trivial square-zero extension by a free module is a free module. -/
 instance [Module.Free R M] : Module.Free R (TrivSqZeroExt R M) :=
-  Module.Free.of_equiv (linearEquivProd R M).symm
+  inferInstanceAs (Module.Free R (R × M))
 
 /-- The trivial square-zero extension by a free module of finite rank `n` has rank `n + 1`. -/
 theorem finrank_eq_finrank_add_one [StrongRankCondition R] [Module.Free R M] [Module.Finite R M] :
     Module.finrank R (TrivSqZeroExt R M) = Module.finrank R M + 1 := by
-  rw [(linearEquivProd R M).finrank_eq, Module.finrank_prod, Module.finrank_self, add_comm]
+  have e : TrivSqZeroExt R M ≃ₗ[R] R × M := LinearEquiv.refl R (R × M)
+  rw [e.finrank_eq, Module.finrank_prod, Module.finrank_self, add_comm]
 
 end Semiring
 

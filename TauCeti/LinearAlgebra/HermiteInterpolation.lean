@@ -697,63 +697,113 @@ section IsDomain
 
 variable [CommRing R] [IsDomain R] [Fintype ι] {a : ι → R}
 
+private noncomputable def hasseJetSubtypeEquiv (m : ι → ℕ) :
+    (∀ i, Fin (m i) → R) ≃ₗ[R] (∀ i : {i // m i ≠ 0}, Fin (m i.val) → R) where
+  toFun y i := y i.val
+  invFun z i := if hi : m i ≠ 0 then z ⟨i, hi⟩ else fun k => Fin.elim0 (k.cast (not_ne_iff.1 hi))
+  left_inv y := by
+    ext i k
+    have hi : m i ≠ 0 := by
+      have := k.isLt
+      omega
+    simp [hi]
+  right_inv z := by
+    ext i k
+    simp [i.property]
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+omit [IsDomain R] [Fintype ι] in
+private theorem hasseJetSubtypeEquiv_hasseJet (a : ι → R) (m : ι → ℕ) (f : R[X]) :
+    hasseJetSubtypeEquiv m (hasseJet a m f) =
+      hasseJet (fun i : {i // m i ≠ 0} => a i.val) (fun i => m i.val) f :=
+  rfl
+
+private theorem sum_nonzero_multiplicity (m : ι → ℕ) :
+    ∑ i : {i // m i ≠ 0}, m i.val = ∑ i, m i := by
+  classical
+  have h := Fintype.sum_subtype_add_sum_subtype (fun i => m i ≠ 0) m
+  have hzero : ∑ i : {x : ι // ¬ m x ≠ 0}, m i.val = 0 :=
+    Finset.sum_eq_zero fun i _ => not_ne_iff.1 i.property
+  rwa [hzero, add_zero] at h
+
+private theorem hasseJet_eq_zero_iff_nonzero (m : ι → ℕ) (ha : Set.InjOn a {i | m i ≠ 0})
+    (f : R[X]) :
+    hasseJet a m f = 0 ↔ (∏ i : {i // m i ≠ 0}, (X - C (a i.val)) ^ m i.val) ∣ f := by
+  have ha₀ : Injective (fun i : {i // m i ≠ 0} => a i.val) :=
+    fun i j hij => Subtype.ext (ha i.property j.property hij)
+  rw [← (hasseJetSubtypeEquiv m).map_eq_zero_iff, hasseJetSubtypeEquiv_hasseJet,
+    hasseJet_eq_zero_iff ha₀]
+
+private theorem hermiteJet_injective_of_injOn (m : ι → ℕ) (ha : Set.InjOn a {i | m i ≠ 0}) :
+    Injective (hermiteJet a m) := by
+  have ha₀ : Injective (fun i : {i // m i ≠ 0} => a i.val) :=
+    fun i j hij => Subtype.ext (ha i.property j.property hij)
+  let eDeg : degreeLT R (∑ i : {i // m i ≠ 0}, m i.val) ≃ₗ[R] degreeLT R (∑ i, m i) :=
+    LinearEquiv.ofEq _ _ (congrArg (degreeLT R) (sum_nonzero_multiplicity m))
+  have hcomp :
+      (hasseJetSubtypeEquiv m).toLinearMap ∘ₗ hermiteJet a m ∘ₗ eDeg.toLinearMap =
+        hermiteJet (fun i : {i // m i ≠ 0} => a i.val) (fun i => m i.val) := by
+    ext f i k
+    simp [hasseJetSubtypeEquiv, eDeg]
+  have hinj : Injective
+      ((hasseJetSubtypeEquiv m).toLinearMap ∘ₗ hermiteJet a m ∘ₗ eDeg.toLinearMap) := by
+    rw [hcomp]
+    exact hermiteJet_injective ha₀ _
+  intro x y h
+  have hxy : eDeg.symm x = eDeg.symm y := hinj (by simp [LinearMap.comp_apply, h])
+  simpa using congrArg eDeg hxy
+
+private theorem range_hasseJet_comp_degreeLT_eq_hermiteJet (m : ι → ℕ)
+    (ha : Set.InjOn a {i | m i ≠ 0}) {N : ℕ} (hge : ∑ i, m i ≤ N) :
+    LinearMap.range ((hasseJet a m).comp (degreeLT R N).subtype) =
+      LinearMap.range (hermiteJet a m) := by
+  classical
+  let ι₀ := {i : ι // m i ≠ 0}
+  let P : R[X] := ∏ i : ι₀, (X - C (a i.val)) ^ m i.val
+  have hP_monic : P.Monic := monic_prod_X_sub_C_pow univ (fun i : ι₀ => a i.val) (fun i => m i.val)
+  have hP_deg : P.natDegree = ∑ i, m i :=
+    (natDegree_prod_X_sub_C_pow univ (fun i : ι₀ => a i.val) (fun i => m i.val)).trans
+      (sum_nonzero_multiplicity m)
+  refine le_antisymm ?_ ?_
+  · -- Reduce modulo `P`: the remainder has degree below `∑ i, m i` and the same Hasse jets.
+    rintro _ ⟨f, rfl⟩
+    have hrem : (f : R[X]) %ₘ P ∈ degreeLT R (∑ i, m i) :=
+      hP_deg ▸ modByMonic_mem_degreeLT hP_monic (f : R[X])
+    refine ⟨⟨(f : R[X]) %ₘ P, hrem⟩, ?_⟩
+    rw [LinearMap.comp_apply, Submodule.coe_subtype, hermiteJet_apply]
+    have hdiff : hasseJet a m (P * ((f : R[X]) /ₘ P)) = 0 :=
+      (hasseJet_eq_zero_iff_nonzero m ha _).2 (dvd_mul_right _ _)
+    have hadd := congrArg (hasseJet a m) (modByMonic_add_div (f : R[X]) P)
+    simpa [map_add, hdiff] using hadd
+  · have hcomp : ((hasseJet a m).comp (degreeLT R N).subtype).comp
+        (Submodule.inclusion (degreeLT_mono hge)) = hermiteJet a m := by
+      ext f i r
+      simp
+    rw [← hcomp]
+    exact LinearMap.range_comp_le_range _ _
+
 /-- Over an integral domain, when nodes of nonzero multiplicity are pairwise distinct, the image of
 `hasseJet a m` on polynomials of degree below `N` has dimension `min N (∑ i, m i)`. -/
 theorem finrank_range_hermiteJet_degreeLT (m : ι → ℕ) (ha : Set.InjOn a {i | m i ≠ 0}) (N : ℕ) :
     Module.finrank R (LinearMap.range ((hasseJet a m).comp (degreeLT R N).subtype)) =
       min N (∑ i, m i) := by
   classical
-  let ι₀ := {i : ι // m i ≠ 0}
-  let a₀ : ι₀ → R := fun i ↦ a i.val
-  let m₀ : ι₀ → ℕ := fun i ↦ m i.val
-  have ha₀ : Injective a₀ := fun i j hij ↦ Subtype.ext (ha i.property j.property hij)
-  let P : R[X] := ∏ i : ι₀, (X - C (a₀ i)) ^ m₀ i
-  have hP_monic : P.Monic := monic_prod_X_sub_C_pow univ a₀ m₀
-  have hsum : ∑ i : ι₀, m₀ i = ∑ i : ι, m i := by
-    have h := Fintype.sum_subtype_add_sum_subtype (fun i ↦ m i ≠ 0) m
-    have hzero : ∑ i : {x : ι // ¬ m x ≠ 0}, m i.val = 0 :=
-      Finset.sum_eq_zero fun i _ ↦ not_ne_iff.1 i.property
-    rw [hzero, add_zero] at h
-    exact h
-  have hP_deg : P.natDegree = ∑ i, m i := (natDegree_prod_X_sub_C_pow univ a₀ m₀).trans hsum
-  have hvanish (f : R[X]) : hasseJet a m f = 0 ↔ P ∣ f := by
-    rw [← all_jets_vanish_iff_dvd ha₀ m₀ f]
-    simp only [funext_iff, hasseJet_apply]
-    refine ⟨fun h i k ↦ h i.val k, fun h i k ↦ ?_⟩
-    have hi : m i ≠ 0 := by have := k.isLt; omega
-    exact h ⟨i, hi⟩ k
-  have hinj_herm : Injective (hermiteJet a m) := by
-    refine (injective_iff_map_eq_zero _).2 fun f hf ↦ ?_
-    have hdvd : P ∣ (f : R[X]) := (hvanish f).1 hf
-    refine Subtype.ext (eq_zero_of_dvd_of_degree_lt hdvd ?_)
-    rw [degree_eq_natDegree hP_monic.ne_zero, hP_deg]
-    exact mem_degreeLT.1 f.property
   let L : degreeLT R N →ₗ[R] ∀ i, Fin (m i) → R := (hasseJet a m).comp (degreeLT R N).subtype
   rcases le_total N (∑ i, m i) with hle | hge
-  · have hcomp : L = (hermiteJet a m).comp (Submodule.inclusion (degreeLT_mono hle)) := by
+  · -- When `N ≤ ∑ i, m i`, `degreeLT R N` embeds into `degreeLT R (∑ i, m i)`, so `L` is
+    -- injective because `hermiteJet a m` is.
+    have hcomp : L = (hermiteJet a m).comp (Submodule.inclusion (degreeLT_mono hle)) := by
       ext f i r
       simp [L]
     have hinj : Injective L := by
       rw [hcomp]
-      exact hinj_herm.comp (Submodule.inclusion_injective _)
+      exact (hermiteJet_injective_of_injOn m ha).comp (Submodule.inclusion_injective _)
     rw [min_eq_left hle, LinearMap.finrank_range_of_inj hinj, Polynomial.finrank_degreeLT]
-  · have hrange : LinearMap.range L = LinearMap.range (hermiteJet a m) := by
-      refine le_antisymm ?_ ?_
-      · rintro _ ⟨f, rfl⟩
-        have hrem : (f : R[X]) %ₘ P ∈ degreeLT R (∑ i, m i) :=
-          hP_deg ▸ modByMonic_mem_degreeLT hP_monic (f : R[X])
-        refine ⟨⟨(f : R[X]) %ₘ P, hrem⟩, ?_⟩
-        change hasseJet a m ((f : R[X]) %ₘ P) = hasseJet a m (f : R[X])
-        have hdiff : hasseJet a m (P * ((f : R[X]) /ₘ P)) = 0 :=
-          (hvanish _).2 (dvd_mul_right _ _)
-        have hadd := congrArg (hasseJet a m) (modByMonic_add_div (f : R[X]) P)
-        simpa [map_add, hdiff] using hadd
-      · have hcomp : L.comp (Submodule.inclusion (degreeLT_mono hge)) = hermiteJet a m := by
-          ext f i r
-          simp [L]
-        rw [← hcomp]
-        exact LinearMap.range_comp_le_range _ _
-    rw [min_eq_right hge, hrange, LinearMap.finrank_range_of_inj hinj_herm,
+  · -- When `∑ i, m i ≤ N`, reducing modulo `∏_{m i ≠ 0} (X - aᵢ)^{mᵢ}` identifies the range of
+    -- `L` with the range of `hermiteJet a m`.
+    rw [min_eq_right hge, range_hasseJet_comp_degreeLT_eq_hermiteJet m ha hge,
+      LinearMap.finrank_range_of_inj (hermiteJet_injective_of_injOn m ha),
       Polynomial.finrank_degreeLT]
 
 end IsDomain
