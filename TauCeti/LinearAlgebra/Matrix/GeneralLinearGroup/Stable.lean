@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.IsPerfect
-public import TauCeti.Algebra.Colimit.DirectLimit
+public import TauCeti.Algebra.Colimit.Abelianization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
 /-!
@@ -21,10 +21,12 @@ subgroup** `E_∞(A)` is the union of the images of the elementary subgroups `E 
 The finite-size relations of `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary`
 become exact statements in the limit: `E_∞(A)` is a normal subgroup of `GL_∞(A)`, and it is the
 commutator subgroup of `GL_∞(A)`. Hence algebraic `K₁(A) = GL_∞(A) / E_∞(A)` is an abelian group,
-the abelianization of `GL_∞(A)`. Homomorphisms on invertible matrices which are compatible with
-stabilization and take values in an abelian group, such as Connes' odd pairing with cyclic
-cohomology, factor through it. A ring homomorphism, applied to the entries of invertible matrices,
-induces a homomorphism of algebraic `K₁`, functorially.
+the abelianization of `GL_∞(A)`. Since abelianization commutes with directed colimits, `K₁(A)` is
+also the direct limit of the abelianizations of the finite-rank groups `GL (Fin n) A`; the
+quotients `GL (Fin n) A / E n A` themselves need not be groups. Homomorphisms on invertible
+matrices which are compatible with stabilization and take values in an abelian group, such as
+Connes' odd pairing with cyclic cohomology, factor through it. A ring homomorphism, applied to
+the entries of invertible matrices, induces a homomorphism of algebraic `K₁`, functorially.
 
 At a finite size with two distinct indices, the invertible matrices commuting with every
 elementary matrix are the scalar matrices with central entry. A stabilization `u ⊕ 1` of
@@ -49,6 +51,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.AlgebraicK1.ofUnits`: the homomorphism `Aˣ →* K₁(A)`, `u ↦ [(u)]`.
 * `TauCeti.AlgebraicK1.quotientElementarySubgroupEquiv`: `GL_∞(A) / E_∞(A) ≃* K₁(A)`.
 * `TauCeti.AlgebraicK1.map`: the homomorphism `K₁(A) →* K₁(B)` induced by a ring homomorphism.
+* `TauCeti.AlgebraicK1.directLimitAbelianizationEquiv`: `K₁(A)` is the direct limit of the
+  abelianizations of the groups `GL (Fin n) A` along stabilization.
 
 ## Main results
 
@@ -64,6 +68,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
   and hence the center of `GL_∞(A)`, is trivial.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
+* `TauCeti.AlgebraicK1.mk_eq_one_iff_exists_mem_commutator`: the class of an invertible matrix
+  is trivial exactly when some stabilization of it is a product of commutators.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
   functoriality of algebraic `K₁`.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
@@ -594,6 +600,47 @@ def ofUnits : Aˣ →* AlgebraicK1 A :=
 /-- `ofUnits` sends a unit `u` to the class of the `1 × 1` matrix `(u)`. -/
 theorem ofUnits_apply (u : Aˣ) : ofUnits A u = mk A 1 (GeneralLinearGroup.scalar (Fin 1) u) :=
   (rfl)
+
+/-! ### `K₁` as a colimit of finite-rank abelianizations -/
+
+variable (A) in
+/-- **Algebraic `K₁` is the direct limit of the abelianizations of the `GL (Fin n) A`**, along the
+homomorphisms induced by stabilization, the class of the abelianization of `u : GL (Fin n) A`
+going to the class of `u` in `K₁(A)`.
+
+This is the comparison with finite rank through groups: the quotients of `GL (Fin n) A` by the
+elementary subgroups need not be groups, since `E n A` need not be normal in `GL (Fin n) A`. -/
+def directLimitAbelianizationEquiv :
+    DirectLimit (fun n : ℕ ↦ Group.Abelianization (GL (Fin n) A))
+        (fun _ _ h ↦ Group.Abelianization.map (stabilizeGL A h)) ≃* AlgebraicK1 A :=
+  (DirectLimit.abelianizationEquiv _ _).symm
+
+/-- The identification of the direct limit of the finite-rank abelianizations with `K₁(A)` sends
+the class of `x : Group.Abelianization (GL (Fin n) A)` to its image under the homomorphism
+induced by `AlgebraicK1.mk A n`. -/
+theorem directLimitAbelianizationEquiv_of (n : ℕ) (x : Group.Abelianization (GL (Fin n) A)) :
+    directLimitAbelianizationEquiv A (DirectLimit.Monoid.of _ _ n x) =
+      Group.Abelianization.lift (mk A n) x := by
+  rw [directLimitAbelianizationEquiv, DirectLimit.abelianizationEquiv_symm_of, mk,
+    Group.Abelianization.lift_of_comp]
+  -- `StableGeneralLinearGroup.of A n` is defined as the canonical map `DirectLimit.Monoid.of`.
+  rfl
+
+/-- The inverse of `directLimitAbelianizationEquiv` sends the class of `u : GL (Fin n) A` in
+`K₁(A)` to the class of the abelianization of `u` in the direct limit. -/
+@[simp]
+theorem directLimitAbelianizationEquiv_symm_mk (n : ℕ) (u : GL (Fin n) A) :
+    (directLimitAbelianizationEquiv A).symm (mk A n u) =
+      DirectLimit.Monoid.of _ _ n (Group.Abelianization.of u) := by
+  rw [MulEquiv.symm_apply_eq, directLimitAbelianizationEquiv_of,
+    Group.Abelianization.lift_apply_of]
+
+/-- The class of an invertible matrix in algebraic `K₁` is trivial exactly when some
+stabilization of the matrix is a product of commutators of invertible matrices. -/
+theorem mk_eq_one_iff_exists_mem_commutator {n : ℕ} {u : GL (Fin n) A} :
+    mk A n u = 1 ↔ ∃ k, ∃ h : n ≤ k, stabilizeGL A h u ∈ commutator (GL (Fin k) A) := by
+  rw [mk, MonoidHom.comp_apply, ← MonoidHom.mem_ker, Group.Abelianization.ker_of]
+  exact DirectLimit.Monoid.of_mem_commutator_iff
 
 end AlgebraicK1
 
