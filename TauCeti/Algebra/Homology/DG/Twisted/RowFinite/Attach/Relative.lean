@@ -38,10 +38,9 @@ commutes with the differentials and:
   boundary with target in the union.
 
 The absolute case, over the empty base with `N 0` acyclic, is
-`TauCeti.exists_semifreeModel_of_filtration` (`RowFinite/Attach/Filtration.lean`), built on the
-tower of attachments `TauCeti.RowFiniteAugmentedModule.tower`, which starts from the module with
-no generators. Here the stages instead start from the base model, and the base generators keep
-their prescribed rows `m₀`, which need not lower any stage.
+`TauCeti.exists_semifreeModel_of_filtration` (`RowFinite/Attach/Filtration.lean`), derived from
+this one. In general the base generators keep their prescribed rows `m₀`, which need not lower
+any stage.
 
 These elementwise statements do not require the `N n` to be stable under the differential. When
 they are, so that the `N n` and their union are subcomplexes, a relative cycle being a relative
