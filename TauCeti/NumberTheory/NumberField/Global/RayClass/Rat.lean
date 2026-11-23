@@ -115,6 +115,21 @@ theorem asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff {v : HeightOneSpectrum 
     (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans <|
       Ideal.isPrimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
 
+variable {n hn} in
+/-- For `k ≠ 0`, `Ideal.span {(k : 𝓞 ℚ)}` is prime to `(ratModulus n hn).support` if and only if
+`k` is a unit modulo `n`. -/
+theorem isPrimeTo_span_natCast_ratModulus_iff_isUnit {k : ℕ} (hk : k ≠ 0) :
+    (Ideal.span {(k : 𝓞 ℚ)}).IsPrimeTo (ratModulus n hn).support ↔ IsUnit (k : ZMod n) := by
+  have : NeZero n := ⟨hn⟩
+  have hI_ne : Ideal.span {(k : 𝓞 ℚ)} ≠ ⊥ :=
+    mt (fun h ↦ Ideal.span_singleton_eq_bot.mp h) (by exact_mod_cast hk)
+  rw [Ideal.isPrimeTo_iff]
+  simp only [Finset.mem_coe]
+  rw [← Modulus.isCoprimeTo_iff, Modulus.isCoprimeTo_iff_sup_eq_top, ratModulus_finitePart,
+    ← Ideal.isCoprime_iff_sup_eq, Ideal.isCoprime_span_singleton_iff,
+    NumberField.RingOfIntegers.isCoprime_natCast, ZMod.isUnit_iff_coprime]
+  simp [hI_ne]
+
 /-- **Reduction modulo the finite part of `ratModulus n hn` is reduction modulo `n`**, transported
 along `Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/
 noncomputable def ratModulusResidueEquiv : 𝓞 ℚ ⧸ (ratModulus n hn).finitePart ≃+* ZMod n :=
@@ -253,6 +268,20 @@ theorem dvd_ratModulus_absNorm (𝔪 : Modulus ℚ) :
     𝔪 ∣ ratModulus (Ideal.absNorm 𝔪.finitePart)
       (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot) :=
   dvd_ratModulus_iff.mpr dvd_rfl
+
+/-- Every modulus of `ℚ` has the same finite part as `ratModulus (Ideal.absNorm 𝔪.finitePart) _`. -/
+theorem finitePart_eq_ratModulus_absNorm (𝔪 : Modulus ℚ) :
+    𝔪.finitePart = (ratModulus (Ideal.absNorm 𝔪.finitePart)
+      (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)).finitePart :=
+  (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
+
+/-- For `k ≠ 0`, `Ideal.span {(k : 𝓞 ℚ)}` is prime to `𝔪.support` if and only if `k` is a unit
+modulo `Ideal.absNorm 𝔪.finitePart`. -/
+theorem isPrimeTo_span_natCast_iff_isUnit {𝔪 : Modulus ℚ} {k : ℕ} (hk : k ≠ 0) :
+    (Ideal.span {(k : 𝓞 ℚ)}).IsPrimeTo 𝔪.support ↔
+      IsUnit (k : ZMod (Ideal.absNorm 𝔪.finitePart)) := by
+  simp only [Modulus.support_eq_of_finitePart_eq (finitePart_eq_ratModulus_absNorm 𝔪)]
+  exact isPrimeTo_span_natCast_ratModulus_iff_isUnit hk
 
 /-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/
 theorem ratModulusEquivZMod_classMap {d : ℕ} {hd : d ≠ 0} (h : ratModulus d hd ∣ ratModulus n hn)
@@ -394,11 +423,10 @@ theorem ratFiniteModulusEquivZMod_idealClass (I : integralIdealsPrimeTo (ratFini
     {u : (ZMod n)ˣ} (hu : (u : ZMod n) = Ideal.absNorm (I : Ideal (𝓞 ℚ))) :
     ratFiniteModulusEquivZMod n hn (idealClass (ratFiniteModulus n hn) I) = u := by
   -- The two moduli have the same finite part, hence the same integral ideals prime to them.
-  have hI : (I : Ideal (𝓞 ℚ)) ∈ integralIdealsPrimeTo (ratModulus n hn) := by
-    have := Modulus.mem_integralIdealsPrimeTo.mp I.property
-    rw [Modulus.isCoprimeTo_iff_sup_eq_top, ratFiniteModulus_finitePart] at this
-    rwa [Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff_sup_eq_top,
-      ratModulus_finitePart]
+  have hI : (I : Ideal (𝓞 ℚ)) ∈ integralIdealsPrimeTo (ratModulus n hn) :=
+    Modulus.mem_integralIdealsPrimeTo.mpr
+      ((Modulus.isCoprimeTo_iff_of_finitePart_eq (by simp)).mp
+        (Modulus.mem_integralIdealsPrimeTo.mp I.property))
   have hincl : integralIdealsPrimeToInclusion ratFiniteModulus_dvd_ratModulus ⟨_, hI⟩ = I :=
     Subtype.ext (coe_integralIdealsPrimeToInclusion _ _)
   rw [← hincl, ← classMap_idealClass, ratFiniteModulusEquivZMod_classMap, ZMod.unitsMap_self]

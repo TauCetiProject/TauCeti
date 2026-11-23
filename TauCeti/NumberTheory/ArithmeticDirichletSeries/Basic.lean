@@ -9,7 +9,7 @@ public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
-import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # Arithmetic functions on nonzero ideals
@@ -143,16 +143,17 @@ the product of its values on the prime powers. -/
 theorem IsMultiplicative.map_prod_pow (hf : f.IsMultiplicative)
     (S : Finset (HeightOneSpectrum (𝓞 K))) (e : HeightOneSpectrum (𝓞 K) → ℕ)
     (A : (Ideal (𝓞 K))⁰) (hA : (A : Ideal (𝓞 K)) = ∏ P ∈ S, P.asIdeal ^ e P) :
-    f A = ∏ P ∈ S,
-      f ⟨P.asIdeal ^ e P, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero _ P.ne_bot)⟩ := by
+    f A = ∏ P ∈ S, f (P.primeIdealPow (e P)) := by
   -- The hypothesis is an equality of ideals; `Subtype.ext` turns it into one of nonzero ideals.
-  have hAeq : A = ∏ P ∈ S,
-      (⟨P.asIdeal ^ e P, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero _ P.ne_bot)⟩ :
-        (Ideal (𝓞 K))⁰) :=
-    Subtype.ext (by rw [hA, Submonoid.coe_finsetProd])
+  have hAeq : A = ∏ P ∈ S, P.primeIdealPow (e P) := by
+    refine Subtype.ext ?_
+    rw [hA, Submonoid.coe_finsetProd]
+    exact Finset.prod_congr rfl fun P _ ↦ (P.coe_primeIdealPow (e P)).symm
   rw [hAeq]
   -- Powers of distinct height-one primes are relatively prime.
   refine hf.map_prod _ S fun P _ Q _ hPQ ↦ ?_
+  dsimp only
+  rw [P.coe_primeIdealPow, Q.coe_primeIdealPow]
   exact ((Ideal.isPrimeTo_asIdeal_iff.mpr (by simpa using hPQ)).pow (e P)).isRelPrime
     (Ideal.isPrimeTo_compl_singleton_iff.mpr ⟨e Q, rfl⟩)
 

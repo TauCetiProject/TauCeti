@@ -70,10 +70,9 @@ Tauberian theorem needs to count prime ideals.
 * `TauCeti.exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub`: `-ζ_K'(s) / ζ_K(s) - 1 / (s - 1)`
   extends continuously from `Re s > 1` to `Re s ≥ 1`.
 * `TauCeti.tendsto_re_dedekindZeta_nhdsGT_one`: `(ζ_K σ).re → +∞` as real `σ → 1⁺`.
-* `TauCeti.tendsto_sub_one_mul_of_eqOn_dedekindZeta`: `(s - 1) * f s → dedekindZeta_residue K` as
-  `s → 1` along `𝓝[≠] 1` for any local continuation `f` of `ζ_K` differentiable near `1`.
-* `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq`: `3-4-1`
-  nonvanishing on `Re s = 1` away from `1 + (u / 2) * I` when `(χ ^ 2).val.IsNormTwistOnGood u`.
+* `TauCeti.tendsto_sub_one_mul_of_eventuallyEq_dedekindZeta`:
+  `(s - 1) * f s → dedekindZeta_residue K` as `s → 1` along `𝓝[≠] 1` for any local continuation
+  `f` of `ζ_K` differentiable on a punctured neighbourhood of `1`.
 
 ## References
 
@@ -313,37 +312,27 @@ theorem tendsto_re_dedekindZeta_nhdsGT_one :
   filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
   simp [inv_mul_cancel_left₀ (sub_ne_zero.mpr (ne_of_gt hσ))]
 
-/-- On a small punctured disc around `1`, `(s - 1) * f s` agrees with the regularized Dedekind
-zeta continuation `H s` whenever `f` is differentiable near `1` and agrees with `ζ_K` on the right
-side of a neighbourhood of `1`. -/
-private theorem eventuallyEq_sub_one_mul_of_eqOn_dedekindZeta {K : Type*} [Field K] [NumberField K]
-    {f H : ℂ → ℂ} (hH : DifferentiableOn ℂ H {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re})
-    (hHζ : ∀ s : ℂ, 1 < s.re → H s = (s - 1) * dedekindZeta K s)
-    (hf : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ f s)
-    (hfζ : f =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] dedekindZeta K) :
-    (fun s : ℂ ↦ (s - 1) * f s) =ᶠ[𝓝[≠] 1] H := by
-  obtain ⟨r₁, hr₁, hfr₁⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hf)
-  obtain ⟨r₂, hr₂, hfr₂⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hfζ)
-  set r : ℝ := min r₁ (min r₂ (1 / (Module.finrank ℚ K : ℝ)))
-  have hr : 0 < r :=
-    lt_min hr₁ (lt_min hr₂ (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos)))
+/-- Two functions differentiable on a punctured neighbourhood of `1` that agree on the
+`Re s > 1` side of a neighbourhood of `1` agree on a punctured neighbourhood of `1`. -/
+private theorem eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt {F H : ℂ → ℂ}
+    (hF : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ F s)
+    (hH : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ H s)
+    (hFH : F =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] H) :
+    F =ᶠ[𝓝[≠] 1] H := by
+  obtain ⟨r₁, hr₁, hFr₁⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hF)
+  obtain ⟨r₂, hr₂, hHr₂⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hH)
+  obtain ⟨r₃, hr₃, hFHr₃⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp hFH)
+  set r : ℝ := min r₁ (min r₂ r₃)
+  have hr : 0 < r := lt_min hr₁ (lt_min hr₂ hr₃)
   set V : Set ℂ := Metric.ball (1 : ℂ) r \ {1}
   have hVopen : IsOpen V := Metric.isOpen_ball.sdiff isClosed_singleton
-  have hVsub : V ⊆ {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := fun s hs ↦ by
-    have hdist : dist s 1 < 1 / (Module.finrank ℚ K : ℝ) :=
-      (Metric.mem_ball.mp hs.1).trans_le ((min_le_right _ _).trans (min_le_right _ _))
-    have hre : 1 - s.re ≤ dist s 1 := by
-      rw [Complex.dist_eq]
-      calc 1 - s.re = -(s - 1).re := by simp
-        _ ≤ |(s - 1).re| := neg_le_abs _
-        _ ≤ ‖s - 1‖ := Complex.abs_re_le_norm _
-    have hre' : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re := by linarith
-    simpa only [Set.mem_ofPred_eq] using hre'
-  have hFdiff : DifferentiableOn ℂ (fun s : ℂ ↦ (s - 1) * f s) V := fun s hs ↦
-    ((differentiableAt_id.sub_const 1).mul
-      (hfr₁ ((Metric.mem_ball.mp hs.1).trans_le (min_le_left _ _)) hs.2)).differentiableWithinAt
-  have hFV : AnalyticOnNhd ℂ (fun s : ℂ ↦ (s - 1) * f s) V := hFdiff.analyticOnNhd hVopen
-  have hHV : AnalyticOnNhd ℂ H V := (hH.mono hVsub).analyticOnNhd hVopen
+  have hFV : AnalyticOnNhd ℂ F V := DifferentiableOn.analyticOnNhd
+    (fun s hs ↦ (hFr₁ ((Metric.mem_ball.mp hs.1).trans_le (min_le_left _ _)) hs.2
+      ).differentiableWithinAt) hVopen
+  have hHV : AnalyticOnNhd ℂ H V := DifferentiableOn.analyticOnNhd
+    (fun s hs ↦ (hHr₂ ((Metric.mem_ball.mp hs.1).trans_le
+      ((min_le_right _ _).trans (min_le_left _ _))) hs.2
+      ).differentiableWithinAt) hVopen
   have hVconn : IsPreconnected V :=
     (isConnected_ball_sdiff_singleton (by rw [Complex.rank_real_complex]; norm_num)
       (1 : ℂ) hr).isPreconnected
@@ -354,24 +343,46 @@ private theorem eventuallyEq_sub_one_mul_of_eqOn_dedekindZeta {K : Type*} [Field
   have hz₀V : z₀ ∈ V :=
     ⟨Metric.mem_ball.mpr hz₀_ball,
       fun h ↦ by have := congrArg Complex.re h; simp [z₀] at this; linarith⟩
-  have hnhds : Metric.ball (1 : ℂ) r₂ ∩ {s : ℂ | 1 < s.re} ∈ 𝓝 z₀ :=
+  have hnhds : Metric.ball (1 : ℂ) r₃ ∩ {s : ℂ | 1 < s.re} ∈ 𝓝 z₀ :=
     (Metric.isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_re)).mem_nhds
-      ⟨Metric.mem_ball.mpr (hz₀_ball.trans_le ((min_le_right _ _).trans (min_le_left _ _))),
+      ⟨Metric.mem_ball.mpr (hz₀_ball.trans_le ((min_le_right _ _).trans (min_le_right _ _))),
         by simp [z₀, half_pos hr]⟩
-  have hfeq : (fun s : ℂ ↦ (s - 1) * f s) =ᶠ[𝓝 z₀] H :=
-    Filter.eventuallyEq_of_mem hnhds fun s hs ↦ by
-      rw [hfr₂ (Metric.mem_ball.mp hs.1) hs.2, hHζ s hs.2]
-  have hEqV : Set.EqOn (fun s : ℂ ↦ (s - 1) * f s) H V :=
-    hFV.eqOn_of_preconnected_of_eventuallyEq hHV hVconn hz₀V hfeq
+  have hEqV : Set.EqOn F H V :=
+    hFV.eqOn_of_preconnected_of_eventuallyEq hHV hVconn hz₀V
+      (Filter.eventuallyEq_of_mem hnhds fun s hs ↦ hFHr₃ (Metric.mem_ball.mp hs.1) hs.2)
   filter_upwards [inter_mem_nhdsWithin _ (Metric.ball_mem_nhds (1 : ℂ) hr)] with s hs
   exact hEqV ⟨hs.2, hs.1⟩
+
+/-- On a small punctured disc around `1`, `(s - 1) * f s` agrees with the regularized Dedekind
+zeta continuation `H s` whenever `f` is differentiable on a punctured neighbourhood of `1` and
+agrees with `ζ_K` on the right side of a neighbourhood of `1`. -/
+private theorem eventuallyEq_sub_one_mul_of_eventuallyEq_dedekindZeta {K : Type*} [Field K]
+    [NumberField K] {f H : ℂ → ℂ}
+    (hH : DifferentiableOn ℂ H {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re})
+    (hHζ : ∀ s : ℂ, 1 < s.re → H s = (s - 1) * dedekindZeta K s)
+    (hf : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ f s)
+    (hfζ : f =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] dedekindZeta K) :
+    (fun s : ℂ ↦ (s - 1) * f s) =ᶠ[𝓝[≠] 1] H := by
+  have hFdiff : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ (fun z : ℂ ↦ (z - 1) * f z) s := by
+    filter_upwards [hf] with s hs
+    exact (differentiableAt_id.sub_const 1).mul hs
+  have hHdiff : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ H s := by
+    have hmem : {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} ∈ 𝓝 (1 : ℂ) :=
+      (isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K (by simp))
+    filter_upwards [nhdsWithin_le_nhds hmem] with s hs
+    exact hH.differentiableAt ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
+  have hFH : (fun s : ℂ ↦ (s - 1) * f s) =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] H := by
+    filter_upwards [hfζ, self_mem_nhdsWithin] with s hfs hs
+    rw [hfs, hHζ s hs]
+  exact eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt hFdiff hHdiff hFH
 
 variable {K} in
 /-- **Any punctured-neighbourhood continuation of `ζ_K` has residue `dedekindZeta_residue K` at
 `1`.** If `f` is complex differentiable on a punctured neighbourhood of `1` and agrees with `ζ_K`
 on the `Re s > 1` side of a neighbourhood of `1`, then `(s - 1) * f s → dedekindZeta_residue K`
 along `𝓝[≠] 1`. -/
-theorem tendsto_sub_one_mul_of_eqOn_dedekindZeta {f : ℂ → ℂ}
+theorem tendsto_sub_one_mul_of_eventuallyEq_dedekindZeta {f : ℂ → ℂ}
     (hf : ∀ᶠ s in 𝓝[≠] (1 : ℂ), DifferentiableAt ℂ f s)
     (hfζ : f =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] dedekindZeta K) :
     Tendsto (fun s : ℂ ↦ (s - 1) * f s) (𝓝[≠] 1) (𝓝 (dedekindZeta_residue K : ℂ)) := by
@@ -382,39 +393,6 @@ theorem tendsto_sub_one_mul_of_eqOn_dedekindZeta {f : ℂ → ℂ}
   have hlim : Tendsto H (𝓝[≠] 1) (𝓝 (dedekindZeta_residue K : ℂ)) := by
     rw [← hH1]
     exact hHcont.tendsto.mono_left nhdsWithin_le_nhds
-  exact hlim.congr' (eventuallyEq_sub_one_mul_of_eqOn_dedekindZeta hH hHζ hf hfζ).symm
-
-variable {K} in
-/-- **The `3-4-1` nonvanishing criterion on `Re s = 1` away from `1 + (u / 2) * I`** for a
-unitary weight `χ` whose square is a purely imaginary norm twist `I ↦ N(I) ^ (u * I)` on its good
-ideals. -/
-theorem UnitaryIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
-    (χ : UnitaryIdealWeight K) {u : ℝ} (hχ₂ : (χ ^ 2).val.IsNormTwistOnGood u) {L : ℂ → ℂ}
-    {s : ℂ} (hs : s.re = 1) (hsu : s ≠ 1 + (u : ℂ) / 2 * Complex.I)
-    (hLs : DifferentiableAt ℂ L s)
-    (hLL : Set.EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re}) :
-    L s ≠ 0 := by
-  obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
-      (χ ^ 2).val.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
-    ⟨(χ ^ 2).val.finite_badPrimes.toFinset, (χ ^ 2).val.finite_badPrimes.coe_toFinset.symm⟩
-  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K S
-  set ρ : ℂ := dedekindZeta_residue K * ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ))
-  set w₀ : ℂ := 2 * s - 1 - (u : ℂ) * Complex.I
-  have hw₀ : w₀ - 1 ≠ 0 := fun h ↦ hsu (by linear_combination h / 2)
-  have hcont : ContinuousAt
-      (fun z : ℂ ↦ G (z - (u : ℂ) * Complex.I) + ρ / (z - (u : ℂ) * Complex.I - 1))
-      (2 * s - 1) := by
-    have hG₀ : ContinuousAt G w₀ :=
-      (hG.differentiableAt ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
-          (show 1 ≤ w₀.re by norm_num [w₀, hs])))).continuousAt
-    have hsub : ContinuousAt (fun z : ℂ ↦ z - (u : ℂ) * Complex.I) (2 * s - 1) :=
-      continuousAt_id.sub continuousAt_const
-    exact (hG₀.comp_of_eq hsub rfl).add
-      (continuousAt_const.div (hsub.sub continuousAt_const) hw₀)
-  refine χ.ne_zero_of_eqOn_LSeries hs hLs hLL hcont fun z hz ↦ ?_
-  have hz' : 1 < (z - (u : ℂ) * Complex.I).re := by simpa using hz
-  rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, hχ₂.LSeries_normCoeff hS, hGL _ hz',
-    sub_add_cancel]
+  exact hlim.congr' (eventuallyEq_sub_one_mul_of_eventuallyEq_dedekindZeta hH hHζ hf hfζ).symm
 
 end TauCeti

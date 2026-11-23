@@ -13,6 +13,7 @@ import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Nonvanishing
 import TauCeti.NumberTheory.LSeries.Landau
 import TauCeti.NumberTheory.LSeries.Twist
 import TauCeti.NumberTheory.NumberField.DedekindZeta
@@ -48,7 +49,7 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
    and `(Z σ * L (σ + (u / 2) * I)).re` does not tend to `+∞` as `σ → (1 / 2)⁺` (in particular
    when `Z` is continuous at `1 / 2` and `L` is continuous at `1 / 2 + (u / 2) * I`). Combining
    this with the Euler product on `Re s > 1` and the `3-4-1` criterion
-   (`TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq`) on
+   (`TauCeti.MultiplicativeIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq`) on
    `Re s = 1 \ {1 + (u / 2) * I}` yields `L s ≠ 0` and `meromorphicOrderAt L s = 0` throughout
    `Re s ≥ 1`.
 4. Over fields with `[K : ℚ] = 1`, `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub` already
@@ -56,10 +57,11 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
    continuing `L(χ, ·)` to `Re s > 1 / 2` and continuous at `1 / 2 + (u / 2) * I`.
    `TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation.Nonvanishing` instantiates `L` with
    `continuedLFunctionOfWeight` for weights with cancellation.
-5. Finally, the ideal Liouville weight `TauCeti.MultiplicativeIdealWeight.liouville K` satisfies
-   `λ_K ^ 2 = 1`, and its `L`-series `ζ_K(2s) / ζ_K(s)` continues holomorphically across `s = 1`
-   with a zero at `s = 1`. This counterexample shows that local analytic continuation across `s = 1`
-   alone cannot rule out `L 1 = 0`.
+
+For sharpness, see
+`TauCeti.MultiplicativeIdealWeight.exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero`
+in `TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Liouville`, which shows that local
+analytic continuation across `s = 1` alone does not rule out `L 1 = 0`.
 
 ## Main results
 
@@ -69,9 +71,8 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
   `tendsto_re_atTop_of_differentiableOn_eqOn_dedekindZeta_mul` (in
   `TauCeti.MultiplicativeIdealWeight`): Landau obstructions for holomorphic continuations of
   `ζ_K(s) L(χ, s)`.
-* `apply_one_ne_zero_of_eqOn_LSeries`, `apply_one_ne_zero_of_continuousAt_half`,
-  `apply_one_ne_zero_of_differentiableOn_re_gt`, `apply_one_ne_zero_of_differentiable`, and
-  `meromorphicOrderAt_one_eq_zero_of_eqOn_LSeries`: Landau nonvanishing at `s = 1` when
+* `apply_one_ne_zero_of_eqOn_LSeries`, `apply_one_ne_zero_of_continuousAt_half`, and
+  `apply_one_ne_zero_of_differentiableOn_re_gt`: Landau nonvanishing at `s = 1` when
   `(χ ^ 2).IsTrivialOnGood`.
 * `apply_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq` and
   `apply_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq_of_continuousAt`: Landau
@@ -80,10 +81,8 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
   `ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt`, and
   `meromorphicOrderAt_eq_zero_of_one_le_re_of_isNormTwistOnGood_sq`: full closed half-plane
   `Re s ≥ 1` nonvanishing under the continuation and boundary hypotheses.
-* `ne_zero_of_one_le_re_of_finrank_eq_one` and `apply_one_ne_zero_of_finrank_eq_one`:
-  degree-`1` specializations discharging the `ζ_K` continuation hypothesis `Z`.
-* `exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero`: sharpness test showing that
-  local continuation across `s = 1` alone does not rule out `L 1 = 0`.
+* `ne_zero_of_one_le_re_of_finrank_eq_one`: degree-`1` specialization discharging the `ζ_K`
+  continuation hypothesis `Z`.
 
 ## References
 
@@ -248,7 +247,7 @@ private theorem differentiableOn_update_mul_of_apply_one_eq_zero {Z L : ℂ → 
     filter_upwards [inter_mem_nhdsWithin _ (hU.mem_nhds h1U)] with s hs
     exact hZ.differentiableAt ((hU.sdiff isClosed_singleton).mem_nhds ⟨hs.2, hs.1⟩)
   have hZlim : Tendsto (fun s : ℂ ↦ (s - 1) * Z s) (𝓝[≠] 1) (𝓝 (dedekindZeta_residue K : ℂ)) :=
-    tendsto_sub_one_mul_of_eqOn_dedekindZeta hZdiff hZζ.eventuallyEq_nhdsWithin
+    tendsto_sub_one_mul_of_eventuallyEq_dedekindZeta hZdiff hZζ.eventuallyEq_nhdsWithin
   have hLlim : Tendsto (fun s : ℂ ↦ L s / (s - 1)) (𝓝[≠] 1) (𝓝 (deriv L 1)) := by
     have hslope :=
       hasDerivAt_iff_tendsto_slope.mp (hL.differentiableAt (hU.mem_nhds h1U)).hasDerivAt
@@ -344,33 +343,6 @@ theorem apply_one_ne_zero_of_differentiableOn_re_gt {χ : MultiplicativeIdealWei
       ((hopen.sdiff isClosed_singleton).mem_nhds ⟨hhalf_mem, hhalf_ne⟩)).continuousAt
     (hL.differentiableAt (hopen.mem_nhds hhalf_mem)).continuousAt
 
-/-- **Landau's nonvanishing theorem at `s = 1`, whole-plane form.** If `Z` is holomorphic away from
-`1` continuing `ζ_K` and `L` is entire continuing `L(χ, ·)`, then `L 1 ≠ 0`. -/
-theorem apply_one_ne_zero_of_differentiable {χ : MultiplicativeIdealWeight K}
-    (hχ : (χ ^ 2).IsTrivialOnGood) {Z L : ℂ → ℂ}
-    (hZ : DifferentiableOn ℂ Z {1}ᶜ) (hZζ : EqOn Z (dedekindZeta K) {s | 1 < s.re})
-    (hL : Differentiable ℂ L)
-    (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re}) :
-    L 1 ≠ 0 :=
-  apply_one_ne_zero_of_differentiableOn_re_gt hχ (σ₁ := 0) (by norm_num)
-    (hZ.mono fun _ hs ↦ hs.2) hZζ hL.differentiableOn hLL
-
-/-- **Meromorphic order at `s = 1`.** Under the hypotheses of `apply_one_ne_zero_of_eqOn_LSeries`,
-the continuation `L` has meromorphic order `0` at `s = 1`. -/
-theorem meromorphicOrderAt_one_eq_zero_of_eqOn_LSeries {χ : MultiplicativeIdealWeight K}
-    (hχ : (χ ^ 2).IsTrivialOnGood) {Z L : ℂ → ℂ}
-    (hZ : DifferentiableOn ℂ Z ({s | (1 / 2 : ℝ) < s.re} \ {1}))
-    (hZζ : EqOn Z (dedekindZeta K) {s | 1 < s.re})
-    (hL : DifferentiableOn ℂ L {s | (1 / 2 : ℝ) < s.re})
-    (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re})
-    (hnot : ¬ Tendsto (fun σ : ℝ ↦ (Z σ * L σ).re) (𝓝[>] (1 / 2 : ℝ)) atTop) :
-    meromorphicOrderAt L 1 = 0 := by
-  have hopen : IsOpen {s : ℂ | (1 / 2 : ℝ) < s.re} :=
-    isOpen_lt continuous_const Complex.continuous_re
-  have hana : AnalyticAt ℂ L 1 := hL.analyticAt (hopen.mem_nhds (by norm_num))
-  exact hana.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr
-    (apply_one_ne_zero_of_eqOn_LSeries hχ hZ hZζ hL hLL hnot)
-
 /-! ### Norm-twisted Landau nonvanishing at `s = 1 + (u / 2) * I` -/
 
 /-- **Landau's nonvanishing theorem at `s = 1 + (u / 2) * I`, sharp boundary form.** If
@@ -450,11 +422,8 @@ theorem ne_zero_of_one_le_re_of_isNormTwistOnGood_sq {χ : MultiplicativeIdealWe
       exact apply_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq hχ hZ hZζ hL hLL hnot
     · have hopen : IsOpen {z : ℂ | (1 / 2 : ℝ) < z.re} :=
         isOpen_lt continuous_const Complex.continuous_re
-      exact (unitaryOfIsNormTwistOnGoodSq hχ).ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
-        (by simpa [UnitaryIdealWeight.val_pow] using hχ) hseq.symm hsu
-        (hL.differentiableAt (hopen.mem_nhds (mem_half_lt_re_of_one_le_re hs)))
-        (by simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
-          val_unitaryOfIsNormTwistOnGoodSq] using hLL)
+      exact χ.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq hχ hseq.symm hsu
+        (hL.differentiableAt (hopen.mem_nhds (mem_half_lt_re_of_one_le_re hs))) hLL
 
 /-- **Full closed half-plane `Re s ≥ 1` nonvanishing for quadratic ideal weights** (`u = 0`): if
 `Z` continues `ζ_K` holomorphically to `{s | 1 / 2 < s.re} \ {1}`, `L` continues `L(χ, ·)`
@@ -536,67 +505,5 @@ theorem ne_zero_of_one_le_re_of_finrank_eq_one (hK : Module.finrank ℚ K = 1)
     simp only [Z, hGζ z hz, sub_add_cancel]
   exact ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt hχ hZ hZζ hL hLL hZhalf
     hLhalf hs
-
-/-- **Nonvanishing at `s = 1` when `[K : ℚ] = 1` and `(χ ^ 2).IsTrivialOnGood`.** As in
-`ne_zero_of_one_le_re_of_finrank_eq_one`, `[K : ℚ] = 1` discharges only the `ζ_K` continuation. -/
-theorem apply_one_ne_zero_of_finrank_eq_one (hK : Module.finrank ℚ K = 1)
-    {χ : MultiplicativeIdealWeight K} (hχ : (χ ^ 2).IsTrivialOnGood) {L : ℂ → ℂ}
-    (hL : DifferentiableOn ℂ L {s | (1 / 2 : ℝ) < s.re})
-    (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re})
-    (hLhalf : ContinuousAt L (1 / 2 : ℂ)) : L 1 ≠ 0 := by
-  simpa using ne_zero_of_one_le_re_of_finrank_eq_one hK
-    ((isNormTwistOnGood_zero_iff _).mpr hχ) hL hLL (by simpa using hLhalf) (s := 1) (by simp)
-
-/-! ### Sharpness test: local continuation across `s = 1` alone does not prevent `L 1 = 0` -/
-
-/-- **Counterexample to local continuation across `s = 1` alone.** For the ideal Liouville weight
-`λ_K = MultiplicativeIdealWeight.liouville K`, which satisfies `(λ_K ^ 2).IsTrivialOnGood`, the
-Dirichlet series `L(λ_K, s) = ζ_K(2s) / ζ_K(s)` continues holomorphically across `s = 1` to
-`Metric.ball 1 r ∪ {s | 1 < s.re}` and vanishes at `s = 1`. Thus local analytic continuation across
-`s = 1` alone cannot rule out `L 1 = 0`. -/
-theorem exists_differentiableOn_eqOn_LSeries_liouville_apply_one_eq_zero :
-    ∃ r > 0, ∃ L : ℂ → ℂ,
-      DifferentiableOn ℂ L (Metric.ball (1 : ℂ) r ∪ {s | 1 < s.re}) ∧
-      EqOn L (LSeries (normCoeff K (liouville K).toIdealArithmeticFunction)) {s | 1 < s.re} ∧
-      L 1 = 0 := by
-  obtain ⟨H, hHdiff, hHeq, _, hHne⟩ := exists_differentiableOn_eq_sub_one_mul_dedekindZeta K
-  set U : Set ℂ := {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re}
-  have hUopen : IsOpen U := isOpen_lt continuous_const Complex.continuous_re
-  have h1U : (1 : ℂ) ∈ U :=
-    setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K (by simp)
-  have hH1 : H 1 ≠ 0 := hHne 1 (by simp)
-  have hmem : U ∩ {s : ℂ | (1 / 2 : ℝ) < s.re} ∩ {s : ℂ | H s ≠ 0} ∈ 𝓝 (1 : ℂ) :=
-    Filter.inter_mem (Filter.inter_mem (hUopen.mem_nhds h1U)
-      ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds (by norm_num)))
-      ((hHdiff.differentiableAt (hUopen.mem_nhds h1U)).continuousAt.eventually_ne hH1)
-  obtain ⟨r, hr, hball⟩ := Metric.nhds_basis_ball.mem_iff.mp hmem
-  set L : ℂ → ℂ := fun s ↦ (s - 1) * dedekindZeta K (2 * s) / H s
-  refine ⟨r, hr, L, ?_, ?_, by simp [L]⟩
-  · intro s hs
-    have hsU : s ∈ U := hs.elim (fun h ↦ (hball h).1.1) fun h ↦
-      setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
-        (le_of_lt (by simpa only [mem_ofPred_eq] using h))
-    have hs2 : 1 < (2 * s).re := by
-      have hhalf : (1 / 2 : ℝ) < s.re :=
-        hs.elim (fun h ↦ (hball h).1.2) fun h ↦ mem_half_lt_re_of_one_le_re (le_of_lt h)
-      simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-      linarith
-    have hHs : H s ≠ 0 := hs.elim (fun h ↦ (hball h).2) fun h ↦
-      hHne s (le_of_lt (by simpa only [mem_ofPred_eq] using h))
-    have hζ2 : DifferentiableAt ℂ (fun z : ℂ ↦ dedekindZeta K (2 * z)) s :=
-      (analyticOnNhd_dedekindZeta K (2 * s) hs2).differentiableAt.comp s
-        (differentiableAt_id.const_mul 2)
-    exact (((differentiableAt_id.sub_const 1).mul hζ2).div
-      (hHdiff.differentiableAt (hUopen.mem_nhds hsU)) hHs).differentiableWithinAt
-  · intro s hs
-    have hne : s - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ by simp [h] at hs
-    have hζne : dedekindZeta K s ≠ 0 := dedekindZeta_ne_zero_of_one_lt_re hs
-    have hconv : dedekindZeta K (2 * s) = dedekindZeta K s *
-        LSeries (normCoeff K (liouville K).toIdealArithmeticFunction) s := by
-      rw [← LSeries_normCoeff_convolution_one_liouville,
-        LSeries_normCoeff_convolution_one_eq_dedekindZeta_mul hs
-          (LSeriesSummable_normCoeff_of_isTrivialOnGood_sq (isTrivialOnGood_liouville_sq K) hs)]
-    simp only [L, hHeq s hs, hconv]
-    field_simp [hne, hζne]
 
 end TauCeti.MultiplicativeIdealWeight

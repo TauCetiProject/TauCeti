@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
-import Mathlib.Analysis.Meromorphic.NormalForm
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
@@ -29,8 +27,9 @@ continuation when `χ ≠ 1`, and nonvanishing (meromorphic order `0`) on `Re s 
 
 ## Main results
 
-* `TauCeti.LFunctions.heckeLFunctionC_eq_LFunction_rat`: identification of `heckeLFunctionC χ`
-  with the meromorphic normal form of Mathlib's `DirichletCharacter.LFunction` for every `χ`.
+* `TauCeti.LFunctions.heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat`: identification of
+  `heckeLFunctionC χ` with the meromorphic normal form of Mathlib's `DirichletCharacter.LFunction`
+  for every `χ`.
 * `TauCeti.LFunctions.differentiable_heckeLFunctionC_rat`: entireness of `heckeLFunctionC χ` when
   `χ ≠ 1`.
 * `TauCeti.LFunctions.heckeLFunctionC_eq_LSeries_rat`: agreement with the defining `L`-series on
@@ -60,7 +59,8 @@ open GlobalNumberFields
 
 /-- **Over `ℚ`, the presented Hecke L-function of any ray class character is the meromorphic normal
 form of the corresponding Dirichlet L-function.** -/
-theorem heckeLFunctionC_eq_LFunction_rat {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪) :
+theorem heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat {𝔪 : Modulus ℚ}
+    (χ : RayClassCharacter 𝔪) :
     heckeLFunctionC χ =
       toMeromorphicNFOn
         (@DirichletCharacter.LFunction (Ideal.absNorm 𝔪.finitePart)
@@ -85,7 +85,7 @@ theorem differentiable_heckeLFunctionC_rat {𝔪 : Modulus ℚ} {χ : RayClassCh
   have hψ : χ.toDirichletCharacter ≠ 1 := RayClassCharacter.toDirichletCharacter_ne_one_iff.mpr hχ
   have hLdiff : Differentiable ℂ (DirichletCharacter.LFunction χ.toDirichletCharacter) :=
     DirichletCharacter.differentiable_LFunction hψ
-  rw [heckeLFunctionC_eq_LFunction_rat χ,
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_eq_self.mpr
       (Complex.analyticOnNhd_univ_iff_differentiable.mpr hLdiff).meromorphicNFOn]
   exact hLdiff
@@ -98,7 +98,7 @@ theorem heckeLFunctionC_eq_LSeries_rat {𝔪 : Modulus ℚ} (χ : RayClassCharac
       LSeries (normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s := by
   have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
     ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
-  rw [heckeLFunctionC_eq_LFunction_rat χ,
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
       (χ.toDirichletCharacter.analyticAt_LFunction (.inl fun h ↦ by simp [h] at hs)),
     lSeries_rayClassCharacter_rat_eq χ,
@@ -113,7 +113,7 @@ theorem heckeLFunctionC_ne_zero_of_one_le_re_rat {𝔪 : Modulus ℚ} {χ : RayC
     ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
   have hψs : χ.toDirichletCharacter ≠ 1 ∨ s ≠ 1 :=
     h.imp_left RayClassCharacter.toDirichletCharacter_ne_one_iff.mpr
-  rw [heckeLFunctionC_eq_LFunction_rat χ,
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
       (χ.toDirichletCharacter.analyticAt_LFunction hψs.symm)]
   exact DirichletCharacter.LFunction_ne_zero_of_one_le_re _ hψs hs
@@ -123,20 +123,8 @@ character `χ`, and any `s` with `1 ≤ s.re` such that `χ ≠ 1 ∨ s ≠ 1` (
 principal character `χ = 1` at `s = 1`), `meromorphicOrderAt (heckeLFunctionC χ) s = 0`. -/
 theorem meromorphicOrderAt_heckeLFunctionC_eq_zero_of_one_le_re_rat {𝔪 : Modulus ℚ}
     {χ : RayClassCharacter 𝔪} {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) (hs : 1 ≤ s.re) :
-    meromorphicOrderAt (heckeLFunctionC χ) s = 0 := by
-  have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
-    ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
-  have hψs : χ.toDirichletCharacter ≠ 1 ∨ s ≠ 1 :=
-    h.imp_left RayClassCharacter.toDirichletCharacter_ne_one_iff.mpr
-  have hanaψ : AnalyticAt ℂ (DirichletCharacter.LFunction χ.toDirichletCharacter) s :=
-    χ.toDirichletCharacter.analyticAt_LFunction hψs.symm
-  have hana : AnalyticAt ℂ (heckeLFunctionC χ) s := by
-    rw [heckeLFunctionC_eq_LFunction_rat χ]
-    refine hanaψ.congr ?_
-    filter_upwards [hanaψ.eventually_analyticAt] with z hz
-    exact (toMeromorphicNFOn_apply_of_analyticAt
-      χ.toDirichletCharacter.meromorphic_LFunction hz).symm
-  exact hana.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr
+    meromorphicOrderAt (heckeLFunctionC χ) s = 0 :=
+  ((meromorphicNFOn_heckeLFunctionC χ) (Set.mem_univ s)).meromorphicOrderAt_eq_zero_iff.mpr
     (heckeLFunctionC_ne_zero_of_one_le_re_rat h hs)
 
 end TauCeti.LFunctions

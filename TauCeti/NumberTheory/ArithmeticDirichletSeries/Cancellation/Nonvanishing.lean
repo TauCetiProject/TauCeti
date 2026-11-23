@@ -7,9 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Nonvanishing
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Landau
-import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
 # The continued L-function of a cancelling weight does not vanish on `Re s ≥ 1`
@@ -34,9 +34,10 @@ handled in two ways:
   finitely many Euler factors deleted. That translate is continuous away from its pole at
   `1 + u * I`, which leaves only the point `s = 1 + (u / 2) * I` uncovered.
 
-When `[K : ℚ] = 1`, `continuedLFunctionOfWeight χ` continues to `Re s > 0`, so Landau's theorem
+When `[K : ℚ] = 1` and `χ` has cancellation (`TauCeti.HasCancellation χ`),
+`continuedLFunctionOfWeight χ` continues to `Re s > 0`, so Landau's theorem
 (`TauCeti.NumberTheory.ArithmeticDirichletSeries.Landau`) closes the remaining point
-`1 + (u / 2) * I` unconditionally.
+`1 + (u / 2) * I` without any separate analytic continuation hypothesis.
 
 ## Main results
 
@@ -51,7 +52,9 @@ When `[K : ℚ] = 1`, `continuedLFunctionOfWeight χ` continues to `Re s > 0`, s
   weights whose square is trivial on its good ideals.
 * `TauCeti.continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one` and
   `TauCeti.continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq_of_finrank_eq_one`: full
-  `Re s ≥ 1` nonvanishing for `[K : ℚ] = 1`, closing the exceptional point via Landau's theorem.
+  `Re s ≥ 1` nonvanishing for `[K : ℚ] = 1` and weights with cancellation (`HasCancellation χ`),
+  closing the exceptional point via Landau's theorem without a separate analytic continuation
+  hypothesis.
 
 ## References
 
@@ -109,9 +112,10 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq {χ : Unitary
     continuedLFunctionOfWeight χ s ≠ 0 := by
   rcases hs.lt_or_eq with hs | hs
   · exact continuedLFunctionOfWeight_ne_zero_of_one_lt_re χ hs
-  exact χ.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq hχ₂ hs.symm hsu
-    (differentiableAt_continuedLFunctionOfWeight hχ hs.le)
-    fun z hz ↦ continuedLFunctionOfWeight_eq_LSeries χ hz
+  exact χ.val.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq hχ₂ hs.symm hsu
+    (differentiableAt_continuedLFunctionOfWeight hχ hs.le) fun z hz ↦ by
+      rw [continuedLFunctionOfWeight_eq_LSeries χ hz,
+        UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
 
 /-- **Nonvanishing when the square is trivial on its good ideals**, as for a quadratic character.
 If a unitary weight `χ` has cancellation and `χ ^ 2` takes the value `1` on its good ideals, the
@@ -122,9 +126,10 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq {χ : UnitaryId
   continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq hχ
     ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ₂) hs (by simpa using hs1)
 
-/-- **Unconditional nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when
-`[K : ℚ] = 1`.** For a degree-`1` field, cancellation continues `L(χ, ·)` holomorphically to
-`Re s > 0`, discharging both continuation hypotheses of Landau's theorem unconditionally. -/
+/-- **Nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when `[K : ℚ] = 1` and `χ` has
+cancellation.** For a degree-`1` field, `HasCancellation χ` already continues `L(χ, ·)`
+holomorphically to `Re s > 0`, discharging the continuation hypotheses of Landau's theorem without
+any separate analytic continuation assumption. -/
 theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq_one
     (hK : Module.finrank ℚ K = 1) {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
     {u : ℝ} (hχ₂ : (χ ^ 2).val.IsNormTwistOnGood u) {s : ℂ} (hs : 1 ≤ s.re) :
@@ -140,8 +145,9 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq_of_finrank_eq
         UnitaryIdealWeight.toIdealArithmeticFunction_eq_val])
     (hdiff.differentiableAt (hopen.mem_nhds (by norm_num))).continuousAt hs
 
-/-- **Unconditional nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when
-`[K : ℚ] = 1` and `(χ ^ 2).val.IsTrivialOnGood`.** -/
+/-- **Nonvanishing of `continuedLFunctionOfWeight` on `Re s ≥ 1` when `[K : ℚ] = 1`, `χ` has
+cancellation (`HasCancellation χ`), and `(χ ^ 2).val.IsTrivialOnGood`.** No separate analytic
+continuation hypothesis is needed. -/
 theorem continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq_of_finrank_eq_one
     (hK : Module.finrank ℚ K = 1) {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
     (hχ₂ : (χ ^ 2).val.IsTrivialOnGood) {s : ℂ} (hs : 1 ≤ s.re) :

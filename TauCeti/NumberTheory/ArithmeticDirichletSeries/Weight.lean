@@ -330,6 +330,11 @@ theorem isGood_one_iff {I : Ideal (𝓞 K)} :
     (1 : MultiplicativeIdealWeight K).IsGood I ↔ I ≠ ⊥ := by
   simp only [IsGood, badPrimes_one, Ideal.isPrimeTo_empty]
 
+@[simp]
+theorem isGood_pow_iff (χ : MultiplicativeIdealWeight K) {n : ℕ} (hn : n ≠ 0)
+    {I : Ideal (𝓞 K)} : (χ ^ n).IsGood I ↔ χ.IsGood I := by
+  simp only [IsGood, badPrimes_pow χ hn]
+
 open scoped Classical in
 /-- **Extension by zero of a character on `integralIdealsAway S`**: extend a homomorphism
 `f : integralIdealsAway S →* ℂˣ` by zero on all ideals not prime to `S`, producing a completely
@@ -722,21 +727,11 @@ theorem isTrivialOnGood_sq_iff {χ : MultiplicativeIdealWeight K} :
     (χ ^ 2).IsTrivialOnGood ↔ ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = 1 ∨ χ I = -1 := by
   constructor
   · intro h I hI
-    have hI2 : (χ ^ 2).IsGood I := by simpa [IsGood, badPrimes_pow _ two_ne_zero] using hI
-    have h1 : (χ ^ 2) I = 1 := h.apply_eq_one hI2
+    have h1 : (χ ^ 2) I = 1 := h.apply_eq_one ((isGood_pow_iff χ two_ne_zero).mpr hI)
     rwa [pow_apply _ two_ne_zero, sq_eq_one_iff] at h1
-  · intro h
-    have heq : χ ^ 2 = ofBadPrimes χ.badPrimes χ.finite_badPrimes := by
-      ext I
-      rw [pow_apply _ two_ne_zero, ofBadPrimes_apply]
-      by_cases hI : χ.IsGood I
-      · have hI' : I.IsPrimeTo χ.badPrimes := hI
-        rw [ite_eq_left hI', sq_eq_one_iff]
-        exact h I hI
-      · have hI' : ¬ I.IsPrimeTo χ.badPrimes := hI
-        rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, zero_pow two_ne_zero, ite_eq_right hI']
-    rw [heq]
-    exact isTrivialOnGood_ofBadPrimes χ.finite_badPrimes
+  · intro h I hI
+    rw [pow_apply _ two_ne_zero, sq_eq_one_iff]
+    exact h I ((isGood_pow_iff χ two_ne_zero).mp hI)
 
 /-- A weight has pointwise square trivial on its good ideals exactly when every good height-one
 prime takes value `1` or `-1`. -/

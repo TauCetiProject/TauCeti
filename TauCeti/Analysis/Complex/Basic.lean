@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Order
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -64,7 +65,8 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 (`Complex.dist_equivRealProdCLM_le`).
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
-(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`). On the nonnegative real ray, the
+`ComplexOrder` inequality `0 ≤ a ≤ b` implies `‖a‖ ≤ ‖b‖` (`Complex.norm_le_norm_of_nonneg_le`).
 -/
 
 public section
@@ -366,5 +368,17 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+section Order
+
+open scoped ComplexOrder
+
+/-- On the nonnegative real ray inside `ℂ`, `0 ≤ a ≤ b` implies `‖a‖ ≤ ‖b‖`. -/
+theorem norm_le_norm_of_nonneg_le {a b : ℂ} (ha : 0 ≤ a) (hab : a ≤ b) : ‖a‖ ≤ ‖b‖ := by
+  have hb : 0 ≤ b := ha.trans hab
+  rw [eq_coe_norm_of_nonneg ha, eq_coe_norm_of_nonneg hb] at hab
+  exact_mod_cast hab
+
+end Order
 
 end Complex

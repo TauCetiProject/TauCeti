@@ -18,7 +18,8 @@ nonzerodivisor if and only if `a` itself is: unlike a general product `a * b` (w
 
 * `TauCeti.pow_mem_nonZeroDivisorsLeft_iff`, `TauCeti.pow_mem_nonZeroDivisorsRight_iff`,
   `TauCeti.pow_mem_nonZeroDivisors_iff`: for `n ≠ 0`, `a ^ n` is a (left, right, or two-sided)
-  nonzerodivisor if and only if `a` is.
+  nonzerodivisor if and only if `a` is;
+* `TauCeti.instHasUniqueRootsNonZeroDivisors`: `HasUniqueRoots` passes to `M₀⁰`.
 -/
 
 public section
@@ -50,6 +51,12 @@ theorem pow_mem_nonZeroDivisorsRight_iff (hn : n ≠ 0) :
 theorem pow_mem_nonZeroDivisors_iff (hn : n ≠ 0) : a ^ n ∈ M₀⁰ ↔ a ∈ M₀⁰ := by
   rw [mem_nonZeroDivisors_iff', mem_nonZeroDivisors_iff', pow_mem_nonZeroDivisorsLeft_iff hn,
     pow_mem_nonZeroDivisorsRight_iff hn]
+
+/-- Unique roots pass from a monoid with zero `M₀` to its submonoid `M₀⁰` of nonzerodivisors. -/
+instance instHasUniqueRootsNonZeroDivisors [HasUniqueRoots M₀] : HasUniqueRoots M₀⁰ where
+  pow_left_injective _ hn _ _ h :=
+    Subtype.ext (HasUniqueRoots.pow_left_injective hn
+      (by simpa only [SubmonoidClass.coe_pow] using congrArg Subtype.val h))
 
 end TauCeti
 

@@ -7,10 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Liouville
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
-import Mathlib.Algebra.GroupWithZero.Torsion
 import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Multiplicative
 import TauCeti.NumberTheory.LSeries.Positivity
@@ -37,10 +36,10 @@ product `ζ_K(s) L(χ, s)`:
   convergence lies in `[1 / 2, 1]`, and on the real half-line of convergence
   `ζ_K(2σ) ≤ L(1 * χ, σ)`.
 
-Both endpoints of the abscissa interval `[1 / 2, 1]` are sharp: the trivial weight `1` attains `1`,
-and the ideal Liouville weight `TauCeti.MultiplicativeIdealWeight.liouville K` satisfies
-`(1 * λ_K)(A) = 1` on square ideals and `0` elsewhere, giving `L(1 * λ_K, s) = ζ_K(2s)` with exact
-abscissa `1 / 2`.
+Both endpoints of the abscissa interval `[1 / 2, 1]` are sharp: the trivial weight `1` attains `1`
+(`TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one`), and the ideal Liouville weight
+`TauCeti.MultiplicativeIdealWeight.liouville K` attains `1 / 2` (see
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Liouville.lean`).
 
 ## Main results
 
@@ -55,11 +54,7 @@ abscissa `1 / 2`.
   `TauCeti.dedekindZeta_two_mul_le_LSeries_convolution_one`: summability transfer, failure of
   absolute convergence on `Re s ≤ 1 / 2`, abscissa bounds in `[1 / 2, 1]`, and the real-line
   comparison with `ζ_K(2σ)`.
-* `TauCeti.normCoeff_convolution_one_liouville_sq`,
-  `TauCeti.normCoeff_convolution_one_liouville_of_notMem_range`,
-  `TauCeti.LSeries_normCoeff_convolution_one_liouville`,
-  `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_liouville`, and
-  `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one`: sharpness of both abscissa endpoints.
+* `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one`: sharpness of the upper endpoint `1`.
 
 ## References
 
@@ -83,7 +78,7 @@ variable {K : Type*} [Field K] [NumberField K]
 /-! ### Prime-power values and ideal-level positivity of `1 * χ` -/
 
 /-- Prime-power evaluation when `χ 𝔭 = -1`. -/
-private theorem convolution_one_primeIdealPow_of_apply_eq_neg_one
+theorem convolution_one_primeIdealPow_of_apply_eq_neg_one
     {χ : MultiplicativeIdealWeight K} {P : HeightOneSpectrum (𝓞 K)}
     (hP : χ P.asIdeal = -1) (n : ℕ) :
     IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction (P.primeIdealPow n) =
@@ -144,12 +139,7 @@ theorem convolution_one_nonneg {χ : MultiplicativeIdealWeight K}
     IdealArithmeticFunction.isMultiplicative_one.convolution
       χ.isMultiplicative_toIdealArithmeticFunction
   rw [hmul.map_prod_pow S e A hA]
-  refine Finset.prod_nonneg fun P _ ↦ ?_
-  have hP : (⟨P.asIdeal ^ e P, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero (e P) P.ne_bot)⟩ :
-      (Ideal (𝓞 K))⁰) = P.primeIdealPow (e P) :=
-    Subtype.ext (HeightOneSpectrum.coe_primeIdealPow P (e P)).symm
-  rw [hP]
-  exact convolution_one_primeIdealPow_nonneg hχ P (e P)
+  exact Finset.prod_nonneg fun P _ ↦ convolution_one_primeIdealPow_nonneg hχ P (e P)
 
 /-- **Square lower bound for `1 * χ`.** If `χ ^ 2` is trivial on its good ideals, then
 `1 ≤ (1 * χ)(A ^ 2)` for every nonzero integral ideal `A`. -/
@@ -166,48 +156,16 @@ theorem one_le_convolution_one_sq {χ : MultiplicativeIdealWeight K}
     IdealArithmeticFunction.isMultiplicative_one.convolution
       χ.isMultiplicative_toIdealArithmeticFunction
   rw [hmul.map_prod_pow S (fun P ↦ 2 * e P) (A ^ 2) hA2]
-  refine Finset.one_le_prod₀ fun P _ ↦ ?_
-  have hP : (⟨P.asIdeal ^ (2 * e P), mem_nonZeroDivisors_of_ne_zero
-      (pow_ne_zero (2 * e P) P.ne_bot)⟩ : (Ideal (𝓞 K))⁰) = P.primeIdealPow (2 * e P) :=
-    Subtype.ext (HeightOneSpectrum.coe_primeIdealPow P (2 * e P)).symm
-  rw [hP]
-  exact one_le_convolution_one_primeIdealPow_two_mul hχ P (e P)
+  exact Finset.one_le_prod₀ fun P _ ↦ one_le_convolution_one_primeIdealPow_two_mul hχ P (e P)
 
 /-! ### Norm-coefficient positivity and square comparison -/
-
-/-- Squaring is injective on nonzero integral ideals. -/
-private theorem sq_injective_nonZeroDivisors :
-    Function.Injective (fun A : (Ideal (𝓞 K))⁰ ↦ A ^ 2) := fun _ _ h ↦
-  Subtype.ext (pow_left_injective two_ne_zero
-    (by simpa [SubmonoidClass.coe_pow] using congrArg Subtype.val h))
-
-/-- A squared nonzero ideal lies in the norm-`m ^ 2` fibre iff the ideal lies in the norm-`m`
-fibre. -/
-private theorem sq_mem_normFiber_iff (A : (Ideal (𝓞 K))⁰) (m : ℕ) :
-    A ^ 2 ∈ normFiber K (m ^ 2) ↔ A ∈ normFiber K m := by
-  rw [mem_normFiber, mem_normFiber, SubmonoidClass.coe_pow, map_pow]
-  exact ⟨fun h ↦ Nat.pow_left_injective two_ne_zero h, fun h ↦ congrArg (· ^ 2) h⟩
-
-/-- The norm coefficients of the everywhere-one ideal function are nonnegative. -/
-private theorem normCoeff_one_nonneg :
-    0 ≤ (normCoeff K (1 : IdealArithmeticFunction K) : ℕ → ℂ) := fun n ↦ by
-  rw [Pi.zero_apply, normCoeff_eq_sum_normFiber]
-  exact Finset.sum_nonneg fun _ _ ↦ zero_le_one
-
-/-- Order between nonnegative complex numbers implies order between their norms. -/
-private theorem norm_le_norm_of_nonneg_le {a b : ℂ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a ≤ b) :
-    ‖a‖ ≤ ‖b‖ := by
-  rw [Complex.eq_coe_norm_of_nonneg ha, Complex.eq_coe_norm_of_nonneg hb] at hab
-  exact_mod_cast hab
 
 /-- The norm coefficients of `1 * χ` are nonnegative whenever `χ ^ 2` is trivial on its good
 ideals. -/
 theorem normCoeff_convolution_one_nonneg {χ : MultiplicativeIdealWeight K}
     (hχ : (χ ^ 2).IsTrivialOnGood) :
     0 ≤ (normCoeff K (IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction) : ℕ → ℂ) :=
-  fun n ↦ by
-    rw [Pi.zero_apply, normCoeff_eq_sum_normFiber]
-    exact Finset.sum_nonneg fun A _ ↦ convolution_one_nonneg hχ A
+  normCoeff_nonneg K (convolution_one_nonneg hχ)
 
 /-- **Norm-coefficient square comparison.** For every `m : ℕ`, the number of ideals of norm `m` is
 bounded above by the `(m ^ 2)`-th norm coefficient of `1 * χ`, because squaring injects the norm-`m`
@@ -221,7 +179,7 @@ theorem normCoeff_one_le_normCoeff_convolution_one_sq {χ : MultiplicativeIdealW
   have hsub : (normFiber K m).image (fun A : (Ideal (𝓞 K))⁰ ↦ A ^ 2) ⊆ normFiber K (m ^ 2) := by
     intro B hB
     obtain ⟨A, hA, rfl⟩ := Finset.mem_image.mp hB
-    exact (sq_mem_normFiber_iff A m).mpr hA
+    exact (sq_mem_normFiber_iff K A m).mpr hA
   calc
     ∑ A ∈ normFiber K m, (1 : IdealArithmeticFunction K) A
       ≤ ∑ A ∈ normFiber K m,
@@ -229,7 +187,7 @@ theorem normCoeff_one_le_normCoeff_convolution_one_sq {χ : MultiplicativeIdealW
         Finset.sum_le_sum fun A _ ↦ one_le_convolution_one_sq hχ A
     _ = ∑ B ∈ (normFiber K m).image (fun A : (Ideal (𝓞 K))⁰ ↦ A ^ 2),
           IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction B :=
-        (Finset.sum_image fun _ _ _ _ h ↦ sq_injective_nonZeroDivisors h).symm
+        (Finset.sum_image fun _ _ _ _ h ↦ pow_left_injective two_ne_zero h).symm
     _ ≤ ∑ B ∈ normFiber K (m ^ 2),
           IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction B :=
         Finset.sum_le_sum_of_subset_of_nonneg hsub fun B _ _ ↦ convolution_one_nonneg hχ B
@@ -262,8 +220,7 @@ private theorem norm_term_normCoeff_one_two_mul_le {χ : MultiplicativeIdealWeig
   rw [LSeries.term_of_ne_zero hm, LSeries.term_of_ne_zero hm2, norm_div, norm_div,
     natCast_sq_cpow]
   gcongr
-  exact norm_le_norm_of_nonneg_le (normCoeff_one_nonneg m)
-    (normCoeff_convolution_one_nonneg hχ (m ^ 2))
+  exact Complex.norm_le_norm_of_nonneg_le (normCoeff_one_nonneg K m)
     (normCoeff_one_le_normCoeff_convolution_one_sq hχ m)
 
 /-- **Summability transfer from `L(1 * χ, s)` to `ζ_K(2s)`.** If `χ ^ 2` is trivial on its good
@@ -318,149 +275,13 @@ theorem dedekindZeta_two_mul_le_LSeries_convolution_one {χ : MultiplicativeIdea
     simpa [Complex.ofReal_mul] using
       LSeriesSummable_normCoeff_one_two_mul_of_LSeriesSummable_normCoeff_convolution_one hχ hσ
   rw [dedekindZeta_eq_LSeries_normCoeff_one,
-    TauCeti.LSeries.LSeries_eq_ofReal_tsum_norm_of_nonneg (normCoeff_one_nonneg (K := K)) (2 * σ),
+    TauCeti.LSeries.LSeries_eq_ofReal_tsum_norm_of_nonneg (normCoeff_one_nonneg K) (2 * σ),
     TauCeti.LSeries.LSeries_eq_ofReal_tsum_norm_of_nonneg (normCoeff_convolution_one_nonneg hχ) σ,
     Complex.real_le_real]
   refine (summable_norm_iff.mpr h1_sum).tsum_le_tsum_of_inj (fun m : ℕ ↦ m ^ 2)
     (Nat.pow_left_injective two_ne_zero) (fun _ _ ↦ norm_nonneg _) (fun m ↦ ?_)
     (summable_norm_iff.mpr hσ)
   simpa [Complex.ofReal_mul] using norm_term_normCoeff_one_two_mul_le hχ σ m
-
-/-! ### Sharpness witnesses: the ideal Liouville weight and the trivial weight -/
-
-open Classical in
-/-- **Ideal convolution with the Liouville weight detects square ideals.** For every nonzero
-integral ideal `A`, `(1 * λ_K)(A)` equals `1` if `A` is the square of a nonzero ideal and `0`
-otherwise. -/
-theorem convolution_one_liouville_apply (A : (Ideal (𝓞 K))⁰) :
-    IdealArithmeticFunction.convolution 1
-        (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction A =
-      if ∃ B : (Ideal (𝓞 K))⁰, A = B ^ 2 then 1 else 0 := by
-  obtain ⟨S, e, hA⟩ := Ideal.exists_eq_prod_pow (mem_nonZeroDivisors_iff_ne_zero.mp A.property)
-  have hmul : (IdealArithmeticFunction.convolution 1
-      (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction).IsMultiplicative :=
-    IdealArithmeticFunction.isMultiplicative_one.convolution
-      (MultiplicativeIdealWeight.liouville K).isMultiplicative_toIdealArithmeticFunction
-  rw [hmul.map_prod_pow S e A hA]
-  have hprod :
-      ∏ P ∈ S, IdealArithmeticFunction.convolution 1
-          (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction
-          ⟨P.asIdeal ^ e P, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero (e P) P.ne_bot)⟩ =
-        ∏ P ∈ S, (if Even (e P) then (1 : ℂ) else 0) := by
-    refine Finset.prod_congr rfl fun P _ ↦ ?_
-    have hP : (⟨P.asIdeal ^ e P, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero (e P) P.ne_bot)⟩ :
-        (Ideal (𝓞 K))⁰) = P.primeIdealPow (e P) :=
-      Subtype.ext (HeightOneSpectrum.coe_primeIdealPow P (e P)).symm
-    rw [hP]
-    exact convolution_one_primeIdealPow_of_apply_eq_neg_one
-      (MultiplicativeIdealWeight.liouville_prime K P) (e P)
-  rw [hprod]
-  by_cases hall : ∀ P ∈ S, Even (e P)
-  · have hsq : ∃ B : (Ideal (𝓞 K))⁰, A = B ^ 2 := by
-      refine ⟨∏ P ∈ S, P.primeIdealPow (e P / 2), Subtype.ext ?_⟩
-      rw [hA, SubmonoidClass.coe_pow, Submonoid.coe_finsetProd, ← Finset.prod_pow]
-      refine Finset.prod_congr rfl fun P hP ↦ ?_
-      rw [HeightOneSpectrum.coe_primeIdealPow, ← pow_mul,
-        Nat.div_mul_cancel (even_iff_two_dvd.mp (hall P hP))]
-    rw [ite_eq_left hsq]
-    exact Finset.prod_eq_one fun P hP ↦ ite_eq_left (hall P hP)
-  · push Not at hall
-    obtain ⟨P, hPS, hPodd⟩ := hall
-    have hPne : ¬ Even (e P) := Nat.not_even_iff_odd.mpr hPodd
-    have hnsq : ¬ ∃ B : (Ideal (𝓞 K))⁰, A = B ^ 2 := by
-      rintro ⟨B, rfl⟩
-      exact hPne (Ideal.even_of_sq_eq_prod_pow
-        (by simpa [SubmonoidClass.coe_pow] using hA) hPS)
-    rw [ite_eq_right hnsq]
-    exact Finset.prod_eq_zero hPS (ite_eq_right hPne)
-
-open Classical in
-/-- At a square index `m ^ 2`, the norm coefficient of `1 * λ_K` equals `normCoeff K 1 m`. -/
-theorem normCoeff_convolution_one_liouville_sq (m : ℕ) :
-    normCoeff K (IdealArithmeticFunction.convolution 1
-        (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction) (m ^ 2) =
-      normCoeff K (1 : IdealArithmeticFunction K) m := by
-  rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
-  simp_rw [convolution_one_liouville_apply]
-  simp only [Finset.sum_boole, Pi.one_apply, Finset.sum_const, nsmul_eq_mul, mul_one]
-  congr 1
-  symm
-  refine Finset.card_bij (fun B _ ↦ B ^ 2) ?_ (fun _ _ _ _ h ↦ sq_injective_nonZeroDivisors h) ?_
-  · intro B hB
-    exact Finset.mem_filter.mpr ⟨(sq_mem_normFiber_iff B m).mpr hB, ⟨B, rfl⟩⟩
-  · intro A hA
-    obtain ⟨hAm, B, rfl⟩ := Finset.mem_filter.mp hA
-    exact ⟨B, (sq_mem_normFiber_iff B m).mp hAm, rfl⟩
-
-/-- Away from squares, the norm coefficients of `1 * λ_K` vanish. -/
-theorem normCoeff_convolution_one_liouville_of_notMem_range {n : ℕ}
-    (hn : n ∉ Set.range (fun m : ℕ ↦ m ^ 2)) :
-    normCoeff K (IdealArithmeticFunction.convolution 1
-        (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction) n = 0 := by
-  classical
-  rw [normCoeff_eq_sum_normFiber]
-  refine Finset.sum_eq_zero fun A hA ↦ ?_
-  rw [convolution_one_liouville_apply, ite_eq_right]
-  rintro ⟨B, rfl⟩
-  exact hn ⟨Ideal.absNorm (B : Ideal (𝓞 K)), by
-    rw [← (mem_normFiber K).mp hA, SubmonoidClass.coe_pow, map_pow]⟩
-
-/-- On a square index `m ^ 2`, the Dirichlet term of `1 * λ_K` at `s` equals the `m`-th term of
-`ζ_K` at `2s`. -/
-private theorem term_normCoeff_convolution_one_liouville_sq (s : ℂ) (m : ℕ) :
-    LSeries.term (normCoeff K (IdealArithmeticFunction.convolution 1
-      (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) s (m ^ 2) =
-      LSeries.term (normCoeff K (1 : IdealArithmeticFunction K)) (2 * s) m := by
-  rcases eq_or_ne m 0 with rfl | hm0
-  · simp
-  rw [LSeries.term_of_ne_zero (pow_ne_zero 2 hm0), LSeries.term_of_ne_zero hm0,
-    normCoeff_convolution_one_liouville_sq, natCast_sq_cpow]
-
-/-- Away from squares, the Dirichlet term of `1 * λ_K` vanishes. -/
-private theorem term_normCoeff_convolution_one_liouville_eq_zero_of_notMem_range (s : ℂ) {n : ℕ}
-    (hn : n ∉ Set.range (fun m : ℕ ↦ m ^ 2)) :
-    LSeries.term (normCoeff K (IdealArithmeticFunction.convolution 1
-      (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) s n = 0 := by
-  rcases eq_or_ne n 0 with rfl | hn0
-  · simp
-  rw [LSeries.term_of_ne_zero hn0, normCoeff_convolution_one_liouville_of_notMem_range hn, zero_div]
-
-/-- **Exact `L`-series identity for `1 * λ_K`.** For every `s : ℂ`,
-`L(1 * λ_K, s) = ζ_K(2s)`. -/
-theorem LSeries_normCoeff_convolution_one_liouville (s : ℂ) :
-    LSeries (normCoeff K (IdealArithmeticFunction.convolution 1
-      (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) s =
-      dedekindZeta K (2 * s) := by
-  rw [dedekindZeta_eq_LSeries_normCoeff_one, LSeries, LSeries,
-    ← tsum_congr (term_normCoeff_convolution_one_liouville_sq (K := K) s)]
-  refine (Function.Injective.tsum_eq (Nat.pow_left_injective two_ne_zero) ?_).symm
-  intro n hn
-  by_contra hnot
-  exact hn (term_normCoeff_convolution_one_liouville_eq_zero_of_notMem_range s hnot)
-
-/-- The Dirichlet series of `1 * λ_K` converges absolutely exactly on `Re s > 1 / 2`. -/
-theorem LSeriesSummable_normCoeff_convolution_one_liouville_iff {s : ℂ} :
-    LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1
-      (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) s ↔ 1 / 2 < s.re := by
-  rw [LSeriesSummable, ← (Nat.pow_left_injective two_ne_zero).summable_iff
-    (fun n hn ↦ term_normCoeff_convolution_one_liouville_eq_zero_of_notMem_range s hn)]
-  simp_rw [Function.comp_def, term_normCoeff_convolution_one_liouville_sq]
-  rw [← LSeriesSummable, LSeriesSummable_normCoeff_one_iff]
-  simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-  constructor <;> intro h <;> linarith
-
-/-- **Sharpness of the lower bound `1 / 2`.** The ideal Liouville weight satisfies
-`((liouville K) ^ 2).IsTrivialOnGood` and its convolution `1 * λ_K` has exact abscissa of absolute
-convergence `1 / 2`. -/
-theorem abscissaOfAbsConv_normCoeff_convolution_one_liouville :
-    LSeries.abscissaOfAbsConv (normCoeff K (IdealArithmeticFunction.convolution 1
-      (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) =
-        ((1 / 2 : ℝ) : EReal) := by
-  refine le_antisymm ?_
-    (half_le_abscissaOfAbsConv_normCoeff_convolution_one
-      (MultiplicativeIdealWeight.isTrivialOnGood_liouville_sq K))
-  exact LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun _ hy ↦
-    (LSeriesSummable_normCoeff_convolution_one_liouville_iff (K := K)).mpr (by simpa using hy)
 
 /-- **Sharpness of the upper bound `1`.** The trivial weight `1` satisfies `(1 ^ 2).IsTrivialOnGood`
 and its convolution `1 * 1` (the ideal divisor function) has exact abscissa of absolute convergence
@@ -478,8 +299,7 @@ theorem abscissaOfAbsConv_normCoeff_convolution_one_one :
   apply not_LSeriesSummable_normCoeff_one K
   rw [LSeriesSummable, ← summable_norm_iff] at hsum ⊢
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hsum
-  refine LSeries.norm_term_le 1 (norm_le_norm_of_nonneg_le (normCoeff_one_nonneg n)
-    (normCoeff_convolution_one_nonneg h1sq n) ?_)
+  refine LSeries.norm_term_le 1 (Complex.norm_le_norm_of_nonneg_le (normCoeff_one_nonneg K n) ?_)
   rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
   refine Finset.sum_le_sum fun A _ ↦ ?_
   rw [Pi.one_apply, MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
