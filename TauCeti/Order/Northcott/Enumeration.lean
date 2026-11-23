@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.OrderIsoNat
 public import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.Data.Set.Card
 
 /-!
 # Enumerating a family in nondecreasing order
@@ -29,9 +30,7 @@ with the finiteness of the multiplicities.
 The enumeration sorts `ι` lexicographically by the value of `f` and, among indices with equal
 values, by an arbitrary well-ordering of `ι`; each index is then sent to the number of indices
 below it (`ncardIioOrderEmbedding`), which is finite. For any linear order whose strict initial
-segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`, and
-for a strictly increasing tail after a finite prefix, the rank equals the prefix cardinality plus
-the tail index (`ncard_Iio_eq_ncard_add_of_strictMono`).
+segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`.
 -/
 
 public section
@@ -44,8 +43,9 @@ open Filter Set
 `a ↦ (Set.Iio a).ncard` is an order embedding into `ℕ`. -/
 noncomputable def ncardIioOrderEmbedding {α : Type*} [LinearOrder α]
     (hfin : ∀ a : α, (Set.Iio a).Finite) : α ↪o ℕ :=
-  OrderEmbedding.ofStrictMono (fun a ↦ (Set.Iio a).ncard) fun _ b hab ↦
-    ncard_lt_ncard ⟨fun _ hc ↦ hc.trans hab, fun hsub ↦ lt_irrefl _ (hsub hab)⟩ (hfin b)
+  OrderEmbedding.ofStrictMono (fun a ↦ (Set.Iio a).ncard) fun a b hab ↦ by
+    simpa [Set.Iio] using Set.ncard_sep_lt_lt_ncard_sep_lt (s := Set.univ) (f := id)
+      (Set.mem_univ a) hab (by simpa [Set.Iio] using hfin b)
 
 /-- Evaluation of `TauCeti.ncardIioOrderEmbedding`. -/
 @[simp]
@@ -53,27 +53,6 @@ theorem ncardIioOrderEmbedding_apply {α : Type*} [LinearOrder α]
     (hfin : ∀ a : α, (Set.Iio a).Finite) (a : α) :
     ncardIioOrderEmbedding hfin a = (Set.Iio a).ncard :=
   (rfl)
-
-/-- If `A : Set α` is a finite prefix strictly preceding a strictly increasing tail `z : ℕ → α`
-that together exhaust `α`, then `z n` has rank `(Set.Iio (z n)).ncard = A.ncard + n`. -/
-theorem ncard_Iio_eq_ncard_add_of_strictMono {α : Type*} [LinearOrder α]
-    {A : Set α} (hA : A.Finite) {z : ℕ → α} (hz : StrictMono z)
-    (hA_lt : ∀ a ∈ A, ∀ m, a < z m) (hexh : ∀ a : α, a ∈ A ∨ ∃ m, a = z m) (n : ℕ) :
-    (Set.Iio (z n)).ncard = A.ncard + n := by
-  have hIio : Set.Iio (z n) = A ∪ z '' (Finset.range n : Set ℕ) := by
-    ext a
-    constructor
-    · intro ha
-      rcases hexh a with haA | ⟨m, rfl⟩
-      · exact .inl haA
-      · exact .inr ⟨m, Finset.mem_coe.mpr (Finset.mem_range.mpr (hz.lt_iff_lt.mp ha)), rfl⟩
-    · rintro (haA | ⟨m, hm, rfl⟩)
-      · exact hA_lt a haA n
-      · exact hz (Finset.mem_range.mp (Finset.mem_coe.mp hm))
-  have hdisj : Disjoint A (z '' (Finset.range n : Set ℕ)) :=
-    Set.disjoint_left.mpr fun _ haA ⟨m, _, ham⟩ => (hA_lt _ haA m).ne ham.symm
-  rw [hIio, Set.ncard_union_eq hdisj hA ((Finset.range n).finite_toSet.image z),
-    Set.ncard_image_of_injective _ hz.injective, Set.ncard_coe_finset, Finset.card_range]
 
 /-- **Nondecreasing enumeration.** If `f : ι → α` has finite sublevel sets on an infinite type
 `ι`, there is a bijection `e : ℕ ≃ ι` along which `f` is nondecreasing: `f (e 0) ≤ f (e 1) ≤ ⋯`.
