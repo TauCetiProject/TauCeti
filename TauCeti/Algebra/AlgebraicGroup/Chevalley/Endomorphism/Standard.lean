@@ -25,7 +25,8 @@ character map `hF.characterMap`, root permutation `hF.rootPerm` with positive pr
 (`IsStandard.exists_pos_nsmul_characterMap_coordinateRoot`) and root-permutation rigidity
 (`IsStandard.rootPerm_eq_of_isCharacterMap`), and additive root-parameter maps `hF.rootParamHom`
 (`IsStandard.rootSubgroupPoints_rootParamHom`); with `[RootableBy Kˣ ℕ]`, it induces `hF.rootUnit`
-and `hF.fieldEnd` satisfying `F (x_α(u)) = x_{hF.rootPerm α}(hF.rootUnit α * hF.fieldEnd α u)`
+and `hF.fieldEnd` (bundled as the field automorphism `hF.fieldEquiv`) satisfying
+`F (x_α(u)) = x_{hF.rootPerm α}(hF.rootUnit α * hF.fieldEnd α u)`
 (`IsStandard.map_rootSubgroupPoints`) and field-endomorphism rigidity
 (`IsStandard.fieldEnd_eq_of_isCharacterMap`).
 
@@ -537,6 +538,19 @@ theorem IsStandard.fieldEnd_bijective (hF : D.IsStandard F) (α : Fin t.numRoots
     Function.Bijective (hF.fieldEnd α) := ⟨(hF.fieldEnd α).injective, fun y => by
   obtain ⟨u, hu⟩ := hF.rootParamHom_surjective α (hF.rootParamHom α 1 * y)
   exact ⟨u, by rw [hF.fieldEnd_apply_eq, hu, inv_mul_cancel_left₀ (hF.rootParamHom_one_ne_zero α)]⟩⟩
+
+/-- **The field automorphism `K ≃+* K` of a standard endomorphism on the `α`-root subgroup**,
+bundling `hF.fieldEnd α` with its bijectivity. -/
+noncomputable def IsStandard.fieldEquiv (hF : D.IsStandard F) (α : Fin t.numRoots) : K ≃+* K :=
+  RingEquiv.ofBijective (hF.fieldEnd α) (hF.fieldEnd_bijective α)
+
+/-- The underlying ring homomorphism of `hF.fieldEquiv α` is `hF.fieldEnd α`. -/
+@[simp] theorem IsStandard.toRingHom_fieldEquiv (hF : D.IsStandard F) (α : Fin t.numRoots) :
+    (hF.fieldEquiv α : K →+* K) = hF.fieldEnd α := (rfl)
+
+/-- Pointwise evaluation of `hF.fieldEquiv α` equals `hF.fieldEnd α`. -/
+@[simp] theorem IsStandard.fieldEquiv_apply (hF : D.IsStandard F) (α : Fin t.numRoots) (u : K) :
+    hF.fieldEquiv α u = hF.fieldEnd α u := (rfl)
 
 /-- **The scaling unit `c_α : Kˣ` of a standard endomorphism on the `α`-root subgroup**, defined by
 `F (x_α(1)) = x_{hF.rootPerm α}(c_α)` (`IsStandard.map_rootSubgroupPoints`). -/

@@ -15,9 +15,10 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
 An endo-isogeny `f : RootPairingIsogeny P P` is *based* (`RootPairingIsogeny.IsBased b f`) relative
 to `b : P.Base` if `f.indexEquiv` preserves `posRoots P b`, in which case it permutes `posRoots P b`
 bijectively (`IsBased.image_posRoots`). Based endo-isogenies are closed under `id`, `1`, `comp`,
-`*`, and `^`, contain `smulId P c` (`isBased_smulId`), and are invariant under right multiplication
-by `smulId P c` (`isBased_mul_smulId_iff`), while no reflection is based
-(`not_isBased_ofEquiv_reflection`). For finite crystallographic pairings over a char-zero domain,
+`*`, and `^`, contain `smulId P c` (`isBased_smulId`), and are invariant under left and right
+multiplication by `smulId P c` (`isBased_smulId_mul_iff`, `isBased_mul_smulId_iff`), while no
+reflection is based (`not_isBased_ofEquiv_reflection`). For finite crystallographic pairings over a
+char-zero domain,
 `(ofEquiv g).IsBased b ↔ g ∈ b.basedAut` (`isBased_ofEquiv_iff`).
 
 ## References
@@ -148,6 +149,11 @@ variable {ι M N : Type*} [AddCommGroup M] [Module.Free ℤ M] [Module.Finite �
 @[simp] theorem isBased_mul_smulId_iff {P : RootPairing ι ℤ M N} (b : P.Base)
     (f : RootPairingIsogeny P P) (c : ℕ+) : (f * smulId P c).IsBased b ↔ f.IsBased b := by
   rw [isBased_def, isBased_def, indexEquiv_mul, smulId_indexEquiv, Equiv.refl_trans]
+
+/-- Left multiplication by a positive integer scaling preserves basedness. -/
+@[simp] theorem isBased_smulId_mul_iff {P : RootPairing ι ℤ M N} (b : P.Base)
+    (f : RootPairingIsogeny P P) (c : ℕ+) : (smulId P c * f).IsBased b ↔ f.IsBased b := by
+  rw [(commute_smulId P f c).eq, isBased_mul_smulId_iff]
 
 end Int
 end TauCeti.RootPairingIsogeny

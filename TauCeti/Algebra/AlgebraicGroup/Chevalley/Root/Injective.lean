@@ -177,6 +177,7 @@ theorem rootSubgroupPoints_injective (A : Type v) [CommRing A] (γ : Fin t.numRo
   (D.rootSubgroupPoints_injective A γ).eq_iff
 
 /-- A root-subgroup element is trivial if and only if its parameter is `1`. -/
+-- Not @[simp]: together with `@[simp] rootSubgroupPoints_ofAdd_one_ne_one` it fails `simpNF`.
 theorem rootSubgroupPoints_eq_one_iff (A : Type v) [CommRing A] (γ : Fin t.numRoots)
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
   map_eq_one_iff (D.rootSubgroupPoints γ A) (D.rootSubgroupPoints_injective A γ)
@@ -225,6 +226,7 @@ private theorem eq_of_rootSubgroupPoints_ofAdd_one_mem_range (K : Type v) [Field
 
 /-- **Over any nontrivial commutative ring, `x_α(1)` belongs to the `β`-root subgroup iff
 `α = β`.** -/
+-- Not @[simp]: the LHS simplifies via `MonoidHom.mem_range` and `Multiplicative.exists`.
 theorem rootSubgroupPoints_ofAdd_one_mem_range_iff (A : Type v) [CommRing A] [Nontrivial A]
     {α β : Fin t.numRoots} :
     D.rootSubgroupPoints α A (ofAdd 1) ∈ (D.rootSubgroupPoints β A).range ↔ α = β :=

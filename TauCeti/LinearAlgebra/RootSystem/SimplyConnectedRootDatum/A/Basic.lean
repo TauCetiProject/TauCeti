@@ -793,7 +793,7 @@ of the root system. -/
     ring
 
 /-- On `typeASimplyConnectedRootDatum 1`, the simple reflection sends every root to its opposite. -/
-theorem reflectionPerm_typeASimpleIndex_one_zero (γ : Fin (1 * (1 + 1))) :
+@[simp] theorem reflectionPerm_typeASimpleIndex_one_zero (γ : Fin (1 * (1 + 1))) :
     (typeASimplyConnectedRootDatum 1).reflectionPerm (typeASimpleIndex 1 0) γ =
       (typeASimplyConnectedRootDatum 1).reflectionPerm γ γ :=
   (typeASimplyConnectedRootDatum 1).root.injective <| by
