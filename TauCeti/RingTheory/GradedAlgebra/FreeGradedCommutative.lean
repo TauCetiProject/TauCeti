@@ -16,7 +16,7 @@ public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.Data.Multiset.Sort
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.RingTheory.GradedAlgebra.PositivePart
-public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
+public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
 
 /-!
 # Free graded-commutative algebras
