@@ -22,11 +22,11 @@ import TauCeti.RingTheory.Artinian.FiniteLength
 
 Let `A` be an algebra over a commutative ring `R`, and `f : P₁ → P₀` a map of `A`-modules with
 `P₀` projective. The presentation `range f ⟶ P₀ ⟶ P₀ ⧸ range f` makes `Ext¹(P₀ ⧸ range f, N)` a
-quotient of `Hom_A(range f, N)`, which embeds in `Hom_R(P₁, N)`. Hence `Ext¹(P₀ ⧸ range f, N)` has
-finite length over `R` as soon as `P₁` is finitely generated over `R` and `N` has finite length
+quotient of `Hom_A(range f, N)`, which embeds in `Hom_A(P₁, N)`. Hence `Ext¹(P₀ ⧸ range f, N)` has
+finite length over `R` as soon as `P₁` is finitely generated over `A` and `N` has finite length
 over `R` (`LinearMap.isFiniteLength_ext1_cokernel`). Neither `f` nor `P₁` need be injective or
-projective, and neither `A` nor `P₀ ⧸ range f` need be finitely generated over `R`. For a field
-`R` this is the finite-dimensionality of `Ext¹` from finite-dimensional relations and coefficients.
+projective, and `A` need not be finitely generated over `R`: for instance `f` may be multiplication
+by `x` on `k[x]`, with `N = k`.
 
 The same holds for Mathlib's derived `Ext¹` (`LinearMap.isFiniteLength_ext_cokernel`, in
 `TauCeti/Algebra/Category/ModuleCat/HomCocycle.lean`).
@@ -55,12 +55,12 @@ variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
 namespace LinearMap
 
 variable {P₀ P₁ : Type t} [AddCommGroup P₀] [Module A P₀] [Module.Projective A P₀]
-  [AddCommGroup P₁] [Module A P₁] [Module R P₁] [IsScalarTower R A P₁] [Module.Finite R P₁]
+  [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁]
 
 /-- **`Ext¹` of a cokernel has finite length** over the base ring when the source of the presenting
-map is finitely generated over it and the coefficients have finite length: for
+map is finitely generated and the coefficients have finite length over the base ring: for
 `f : P₁ → P₀` with `P₀` projective, `Ext¹(P₀ ⧸ range f, N)` is a quotient of
-`Hom_A(range f, N) ⊆ Hom_R(P₁, N)`. -/
+`Hom_A(range f, N) ⊆ Hom_A(P₁, N)`. -/
 theorem isFiniteLength_ext1_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{t} A}
     (hN : IsFiniteLength R N) :
     IsFiniteLength R ((ExactStructure.abelian (ModuleCat.{t} A)).Ext1
@@ -77,11 +77,11 @@ theorem isFiniteLength_ext1_cokernel (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{t
       map_smul' r a := Ext1.pushout_smul r _ a }
   have hc : Function.Surjective c := fun ξ ↦
     (e.exact_mk_pushout_pullback_g N ξ).mp ((isProjective_iff_forall_ext1_eq_zero _).mp hP _ _)
-  -- `Hom_A(range f, N)` embeds in `Hom_R(P₁, N)`.
-  let ι : (S.X₁ ⟶ N) →ₗ[R] (P₁ →ₗ[R] N) := restrictScalarsₗ R A P₁ N R ∘ₗ
+  -- `Hom_A(range f, N)` embeds in `Hom_A(P₁, N)`.
+  let ι : (S.X₁ ⟶ N) →ₗ[R] (P₁ →ₗ[A] N) :=
     f.rangeRestrict.lcomp R N ∘ₗ (ModuleCat.homLinearEquiv (S := R)).toLinearMap
   have hι : Function.Injective ι := fun a b h ↦ ModuleCat.hom_ext
-    ((cancel_right f.surjective_rangeRestrict).mp (restrictScalars_injective R h))
+    ((cancel_right f.surjective_rangeRestrict).mp h)
   exact ((isFiniteLength_linearMap P₁ N hN).of_injective hι).of_surjective hc
 
 end LinearMap
@@ -99,7 +99,6 @@ theorem isFiniteLength_ext1 [Small.{w} A] (M N : ModuleCat.{w} A) [Module.Finite
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   have : Module.FinitePresentation A M := Module.finitePresentation_of_finite A M
   let P := FiniteProjectivePresentation.ofFinitePresentation (M := M)
-  have : Module.Finite R P.P₁ := Module.Finite.trans A P.P₁
   let c : M ≅ ModuleCat.of A (P.P₀ ⧸ LinearMap.range P.p) :=
     (P.exact.linearEquivOfSurjective P.surjective).toModuleIso.symm
   exact (Ext1.pullbackLinearEquiv R c).isFiniteLength

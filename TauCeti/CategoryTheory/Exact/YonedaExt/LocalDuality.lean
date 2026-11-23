@@ -429,8 +429,8 @@ theorem bijective_costablePairing_of_isAlmostSplit (e : E.Extension A T)
 
 /-- **One-sided converse from the stable pairing.** Let `A` have local endomorphism ring, with `A`
 not projective and `Ext¹_E(A, T)` of finite length. If `stablePairing φ B` is bijective for every
-`B`, there is a conflation `T ⟶ Y ⟶ A` whose deflation is right almost split. No assumption is
-made on `T`. -/
+`B`, there is a conflation `T ⟶ Y ⟶ A` whose deflation is right almost split. No locality
+assumption is made on `End T`. -/
 theorem exists_isRightAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A)]
     (hA : ¬ E.isProjective A) (hAT : IsFiniteLength R (E.Ext1 A T))
     {φ : E.Ext1 A T →ₗ[R] Q} (hφ : ∀ B, Function.Bijective (stablePairing φ B)) :
@@ -459,7 +459,8 @@ theorem exists_isRightAlmostSplit_of_bijective_stablePairing [IsLocalRing (End A
 /-- **One-sided converse from the costable pairing.** Let `T` have local endomorphism ring, with
 `T` not injective and `Ext¹_E(A, T)` of finite length. If `costablePairing φ X` is bijective for
 every `X`, that is, if `T` represents `D Ext¹_E(A, -)` on `E/ℐ` with universal element `φ`, there
-is a conflation `T ⟶ Y ⟶ A` whose inflation is left almost split. No assumption is made on `A`. -/
+is a conflation `T ⟶ Y ⟶ A` whose inflation is left almost split. No locality assumption is made
+on `End A`. -/
 theorem exists_isLeftAlmostSplit_of_bijective_costablePairing [IsLocalRing (End T)]
     (hT : ¬ E.isInjective T) (hAT : IsFiniteLength R (E.Ext1 A T))
     {φ : E.Ext1 A T →ₗ[R] Q} (hφ : ∀ X, Function.Bijective (costablePairing φ X)) :

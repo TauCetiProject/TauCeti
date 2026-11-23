@@ -168,10 +168,12 @@ theorem exists_isLeftAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Modu
   obtain ⟨e⟩ := nonempty_iso_arTranslate R E M P hP
   let T := matlisDualTranspose R E' P
   let e : arTranslate R E M ≅ T := e ≪≫ (MatlisDual.congrCoeffOp ULift.moduleEquiv.symm).toModuleIso
-  have : Module.Finite A T := Module.Finite.equiv e.toLinearEquiv
-  have : IsLocalRing (End T) := (indecomposable_iff_isLocalRing_end T
-    (isFiniteLength_of_finite A T)).mp (((indecomposable_iff_isLocalRing_end _
-      (isFiniteLength_of_finite A _)).mpr ‹_›).of_iso e)
+  have : IsLocalRing (End T) :=
+    ({ e.conj with
+      map_add' := fun f g ↦ End.ext (by
+        change e.inv ≫ (f.asHom + g.asHom) ≫ e.hom =
+          e.inv ≫ f.asHom ≫ e.hom + e.inv ≫ g.asHom ≫ e.hom
+        simp) } : End (arTranslate R E M) ≃+* End T).isLocalRing
   obtain ⟨Y, i, p, h, hY, hS, hi⟩ := P.exists_isLeftAlmostSplit_matlisDualTranspose hE'
     fun h ↦ hT (Injective.of_iso e.symm h)
   exact ⟨Y, e.hom ≫ i, p, by simp [h], hY, ShortComplex.shortExact_of_iso
@@ -216,12 +218,10 @@ theorem exists_isAlmostSplit_of_not_projective [Small.{w} A] (M : ModuleCat.{w} 
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   let F := uliftFunctor.{max u v, w} A
   have : Module.Finite A (F.obj M) := Module.Finite.equiv ULift.moduleEquiv.symm
-  obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
+  obtain ⟨E, _, _, _, _, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
   obtain ⟨Y, i, p, h, hY, hS⟩ := exists_isAlmostSplit_arTranslate.{u, v, w} R E hE (F.obj M)
     (F.indecomposable_obj_of_map_bijective hiM ((fullyFaithfulUliftFunctor A).map_bijective M M))
     fun hp ↦ hpM ((projective_of_ulift_iff.{v, w, max u v} M).mp hp)
-  have : Module.Finite A (arTranslate R E (F.obj M)) := Module.Finite.of_injective i.hom
-    ((ModuleCat.mono_iff_injective i).mp hS.shortExact.mono_f)
   obtain ⟨X₀, _, ⟨e₁⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} (arTranslate R E (F.obj M))
   obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} Y
   obtain ⟨i', p', h', hS', -⟩ := F.exists_isAlmostSplit_of_obj_iso hS e₁ e₂ (Iso.refl (F.obj M))

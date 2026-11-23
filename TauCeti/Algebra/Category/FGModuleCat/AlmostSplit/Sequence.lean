@@ -79,17 +79,13 @@ theorem exists_isAlmostSplit_arTranslate (M : FGModuleCat.{max u v w} A)
     ∃ S : ShortComplex (FGModuleCat.{max u v w} A), S.IsAlmostSplit ∧
       Nonempty (S.X₁.obj ≅ ModuleCat.arTranslate R E M.obj) ∧ Nonempty (S.X₃ ≅ M) := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
+  have := finite_of_forall_isMaximal hE
   obtain ⟨Y, i, p, h, hY, hS⟩ := ModuleCat.exists_isAlmostSplit_arTranslate
     R E hE M.obj hM ((projective_obj_iff M).not.mpr hP)
-  have : Module.Finite A (ModuleCat.arTranslate R E M.obj) :=
-    Module.Finite.of_injective i.hom ((ModuleCat.mono_iff_injective i).mp hS.shortExact.mono_f)
-  let T : FGModuleCat.{max u v w} A := ⟨_, (ModuleCat.isFG_iff _).mpr this⟩
-  let Y' : FGModuleCat.{max u v w} A := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩
-  let S : ShortComplex (FGModuleCat.{max u v w} A) :=
-    ShortComplex.mk (X₁ := T) (X₂ := Y') (X₃ := M) (ObjectProperty.homMk i)
-      (ObjectProperty.homMk p) ((ObjectProperty.ι _).map_injective h)
-  exact ⟨S, (ObjectProperty.ι _).isAlmostSplit_of_map hS, ⟨Iso.refl _⟩,
-    ⟨Iso.refl _⟩⟩
+  obtain ⟨i', p', h', hS', -⟩ := (ObjectProperty.ι _).exists_isAlmostSplit_of_obj_iso hS
+    (X₁ := ⟨ModuleCat.arTranslate R E M.obj, (ModuleCat.isFG_iff _).mpr inferInstance⟩)
+    (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩) (X₃ := M) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+  exact ⟨ShortComplex.mk i' p' h', hS', ⟨Iso.refl _⟩, ⟨Iso.refl _⟩⟩
 
 /-- **The Auslander–Reiten theorem in `FGModuleCat`, existence on the left.** Over an Artin
 algebra, a finitely generated indecomposable module `N` that is not injective in `FGModuleCat A`
@@ -125,11 +121,10 @@ theorem exists_isAlmostSplit [Small.{w} A] (M : FGModuleCat.{w} A) (hM : Indecom
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   obtain ⟨X, Y, i, p, h, hX, hY, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_projective R M.obj
     hM ((projective_obj_iff M).not.mpr hP)
-  let S : ShortComplex (FGModuleCat.{w} A) :=
-    ShortComplex.mk (X₁ := ⟨X, (ModuleCat.isFG_iff _).mpr hX⟩)
-      (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩) (X₃ := M) (ObjectProperty.homMk i)
-      (ObjectProperty.homMk p) ((ObjectProperty.ι _).map_injective h)
-  exact ⟨S, (ObjectProperty.ι _).isAlmostSplit_of_map hS, ⟨Iso.refl _⟩⟩
+  obtain ⟨i', p', h', hS', -⟩ := (ObjectProperty.ι _).exists_isAlmostSplit_of_obj_iso hS
+    (X₁ := ⟨X, (ModuleCat.isFG_iff _).mpr hX⟩) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩)
+    (X₃ := M) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+  exact ⟨ShortComplex.mk i' p' h', hS', ⟨Iso.refl _⟩⟩
 
 /-- **Almost-split sequences starting at a module.** Over an Artin algebra, every finitely
 generated indecomposable module that is not injective in `FGModuleCat A` starts an almost-split
@@ -140,10 +135,9 @@ theorem exists_isAlmostSplit_of_not_injective [Small.{w} A] (M : FGModuleCat.{w}
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   obtain ⟨Y, Z, i, p, h, hY, hZ, hS⟩ := ModuleCat.exists_isAlmostSplit_of_not_injective R M.obj
     hM ((injective_obj_iff M).not.mpr hI)
-  let S : ShortComplex (FGModuleCat.{w} A) :=
-    ShortComplex.mk (X₁ := M) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩)
-      (X₃ := ⟨Z, (ModuleCat.isFG_iff _).mpr hZ⟩) (ObjectProperty.homMk i)
-      (ObjectProperty.homMk p) ((ObjectProperty.ι _).map_injective h)
-  exact ⟨S, (ObjectProperty.ι _).isAlmostSplit_of_map hS, ⟨Iso.refl _⟩⟩
+  obtain ⟨i', p', h', hS', -⟩ := (ObjectProperty.ι _).exists_isAlmostSplit_of_obj_iso hS
+    (X₁ := M) (X₂ := ⟨Y, (ModuleCat.isFG_iff _).mpr hY⟩)
+    (X₃ := ⟨Z, (ModuleCat.isFG_iff _).mpr hZ⟩) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+  exact ⟨ShortComplex.mk i' p' h', hS', ⟨Iso.refl _⟩⟩
 
 end FGModuleCat

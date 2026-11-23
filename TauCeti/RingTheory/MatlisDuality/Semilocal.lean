@@ -238,10 +238,9 @@ injective hull of `R ⧸ J(R)`. -/
 theorem exists_injective_finite_length_quotient_linearMap_eq_one :
     ∃ (E : Type u) (_ : AddCommGroup E) (_ : Module R E), Module.Injective R E ∧
       Module.Finite R E ∧ ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1 := by
-  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson R
-  have := hf.moduleInjective
-  exact ⟨E, _, _, this, finite_of_forall_isMaximal hf.length_quotient_linearMap_eq_one,
-    hf.length_quotient_linearMap_eq_one⟩
+  obtain ⟨E, _, _, f, hf, hLen⟩ := exists_isInjectiveEnvelope_quotient_jacobson R
+  have := (isFiniteLength_iff_isNoetherian_isArtinian.mp hLen).1
+  exact ⟨E, _, _, hf.moduleInjective, inferInstance, hf.length_quotient_linearMap_eq_one⟩
 
 end Artinian
 

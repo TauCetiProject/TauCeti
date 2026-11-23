@@ -27,7 +27,7 @@ of the Auslander–Reiten pairing to the usual extension group.
 Precomposition by a square of presentations agrees with pullback along its
 induced cokernel map; postcomposition agrees with pushforward in the coefficients.
 Hence `Ext¹(P₀ / range f, N)` has finite length over `k` when `P₁` is finitely
-generated over `k` and `N` has finite length (`LinearMap.isFiniteLength_ext_cokernel`).
+generated over `A` and `N` has finite length over `k` (`LinearMap.isFiniteLength_ext_cokernel`).
 
 ## References
 
@@ -159,16 +159,15 @@ theorem homCocycleQuotientEquivExt_precomp
 end Presentation
 
 /-- **Derived `Ext¹` of a cokernel has finite length** over `k` when the source of the presenting
-map is finitely generated over `k` and the coefficients have finite length. The cocycles, the maps
-`P₁ →ₗ[A] N` vanishing on `ker f`, form a submodule of `Hom_A(P₁, N) ⊆ Hom_k(P₁, N)`, and modulo
+map is finitely generated and the coefficients have finite length over `k`. The cocycles, the maps
+`P₁ →ₗ[A] N` vanishing on `ker f`, form a submodule of `Hom_A(P₁, N)`, and modulo
 coboundaries they compute `Ext¹(P₀ ⧸ range f, N)` (`LinearMap.homCocycleQuotientEquivExt`). This
 is the counterpart for Mathlib's derived `Ext` of the Yoneda statement
 `LinearMap.isFiniteLength_ext1_cokernel`. -/
-theorem isFiniteLength_ext_cokernel [Module k P₁] [IsScalarTower k A P₁] [Module.Finite k P₁]
-    (f : P₁ →ₗ[A] P₀) {N : ModuleCat.{max u v w} A} (hN : IsFiniteLength k N) :
+theorem isFiniteLength_ext_cokernel [Module.Finite A P₁] (f : P₁ →ₗ[A] P₀)
+    {N : ModuleCat.{max u v w} A} (hN : IsFiniteLength k N) :
     IsFiniteLength k (Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
-  have hP : IsFiniteLength k (P₁ →ₗ[A] N) := (isFiniteLength_linearMap P₁ N hN).of_injective
-    (f := restrictScalarsₗ k A P₁ N k) (restrictScalars_injective k)
+  have hP : IsFiniteLength k (P₁ →ₗ[A] N) := isFiniteLength_linearMap P₁ N hN
   have : IsFiniteLength k (HomCocycleQuotient (k := k) f N) :=
     (hP.of_injective (Submodule.injective_subtype _)).of_surjective (Submodule.mkQ_surjective _)
   exact (homCocycleQuotientEquivExt (k := k) f N).isFiniteLength this
