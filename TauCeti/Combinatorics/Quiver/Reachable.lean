@@ -100,7 +100,7 @@ preconnected. -/
 theorem isStronglyConnected_symmetrify_iff_preconnected :
     @IsStronglyConnected (Symmetrify V) (@symmetrifyQuiver V ‹_root_.Quiver V›) ↔
       (underlyingGraph V).Preconnected := by
-  rw [isStronglyConnected_iff]
+  rw [isStronglyConnected_iff, SimpleGraph.Preconnected]
   refine forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
   exact @nonempty_path_symmetrify_iff_reachable V ‹_root_.Quiver V› x y
 

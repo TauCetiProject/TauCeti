@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.Graph.Orientation.Basic
-public import TauCeti.Combinatorics.Quiver.Reachable
+public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
 
 /-!
 # The underlying graph of an orientation
@@ -31,18 +31,6 @@ universe u v
 namespace Graph.Orientation
 
 variable {V : Type u} {E : Type v} {G : Graph V E} (o : G.Orientation)
-
-private theorem nonempty_hom_or_nonempty_hom_iff_adj (x y : G.vertexSet) :
-    Nonempty (o.Hom x y) ∨ Nonempty (o.Hom y x) ↔ G.Adj x y := by
-  constructor
-  · rintro (ha | ha)
-    · exact ha.elim fun a ↦ a.isLink.adj
-    · exact ha.elim fun a ↦ a.isLink.symm.adj
-  · rintro ⟨e, he⟩
-    let e' : G.edgeSet := ⟨e, he.edge_mem⟩
-    rcases (o.isLink e').eq_and_eq_or_eq_and_eq he with h | h
-    · exact .inl ⟨⟨e', Subtype.ext h.1, Subtype.ext h.2⟩⟩
-    · exact .inr ⟨⟨e', Subtype.ext h.1, Subtype.ext h.2⟩⟩
 
 /-- Forgetting the directions and multiplicities of an orientation's arrows and discarding loops
 recovers the underlying simple graph of the original multigraph. -/
