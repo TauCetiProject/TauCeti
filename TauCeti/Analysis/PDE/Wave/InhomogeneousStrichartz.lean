@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.Fourier.LittlewoodPaley
-import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
