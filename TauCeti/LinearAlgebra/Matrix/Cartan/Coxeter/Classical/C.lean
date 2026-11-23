@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.B
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 
 /-!
 # The Coxeter element of type `Cₙ` has order `2n`
 
 Mathlib's `Cₙ` Cartan matrix is the transpose of the `Bₙ` one. The diagonal matrix
-`D = diag (2, …, 2, 1)` symmetrizes `Bₙ`, and it intertwines the simple reflections of the two types
-over `ℤ`: `D sᵢ^B = sᵢ^C D` (`TauCeti.Coxeter.dB_mul_reflMatrix_B`). Since `D` is cancellable, the
-two Coxeter elements have the same order, `2n` (`Matrix.orderOf_eq_orderOf_of_mul_eq_mul`).
+`D = diag (2, …, 2, 1)` symmetrizes `Cₙ` on the left (`D * Cₙ` is symmetric), equivalently `Bₙ` on
+the right, and it intertwines the simple reflections of the two types over `ℤ`:
+`D sᵢ^B = sᵢ^C D` (`TauCeti.Coxeter.dB_mul_reflMatrix_B`). Since `D` is cancellable, the two Coxeter
+elements have the same order, `2n` (`Matrix.orderOf_eq_orderOf_of_mul_eq_mul`).
 -/
 
 public section
@@ -24,8 +26,9 @@ namespace TauCeti.Coxeter
 
 variable {n : ℕ}
 
-/-- The symmetrizer `diag (2, …, 2, 1)` of the `Bₙ` Cartan matrix. -/
-@[expose] def dB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+/-- The diagonal matrix `diag (2, …, 2, 1)`. It symmetrizes the `Cₙ` Cartan matrix on the left
+(`dB n * CartanMatrix.C n` is symmetric), equivalently the `Bₙ` Cartan matrix on the right. -/
+def dB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   diagonal fun a => if a.val + 1 = n then 1 else 2
 
 theorem dB_mul_reflMatrix_B (i : Fin n) :
@@ -36,36 +39,24 @@ theorem dB_mul_reflMatrix_B (i : Fin n) :
   split_ifs <;> omega
 
 theorem dB_mul_coxeterElement :
-    dB n * coxeterElement (CartanMatrix.B n) = coxeterElement (CartanMatrix.C n) * dB n := by
-  have : ∀ l : List (Fin n), dB n * (l.map (reflMatrix (CartanMatrix.B n))).prod =
-      (l.map (reflMatrix (CartanMatrix.C n))).prod * dB n := by
-    intro l
-    induction l with
-    | nil => simp
-    | cons i l ih => rw [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, dB_mul_reflMatrix_B,
-        Matrix.mul_assoc, ih, ← Matrix.mul_assoc, List.map_cons, List.prod_cons]
-  exact this _
+    dB n * coxeterElement (CartanMatrix.B n) = coxeterElement (CartanMatrix.C n) * dB n :=
+  mul_list_map_prod_eq_list_map_prod_mul dB_mul_reflMatrix_B _
 
-theorem dB_mul_left_cancel {X Y : Matrix (Fin n) (Fin n) ℤ} (h : dB n * X = dB n * Y) :
-    X = Y := by
+/-- `dB` can be cancelled on the left (hence also on the right,
+`Matrix.isLeftRegular_iff_isRightRegular`). -/
+theorem isLeftRegular_dB : IsLeftRegular (dB n) := fun X Y h => by
   ext a j
   have := congrFun (congrFun h a) j
   simp only [dB, diagonal_mul] at this
   exact mul_left_cancel₀ (by split_ifs <;> norm_num) this
 
-theorem dB_mul_right_cancel {X Y : Matrix (Fin n) (Fin n) ℤ} (h : X * dB n = Y * dB n) :
-    X = Y := by
-  ext a j
-  have := congrFun (congrFun h a) j
-  simp only [dB, mul_diagonal] at this
-  exact mul_right_cancel₀ (by split_ifs <;> norm_num) this
-
 /-- **The Coxeter element of type `Cₙ` has order `2n`.** -/
-theorem orderOf_coxeterElement_C (m : ℕ) :
-    orderOf (coxeterElement (CartanMatrix.C (m + 1))) = 2 * (m + 1) := by
-  rw [← orderOf_coxeterElement_B m, orderOf_eq_orderOf_of_mul_eq_mul dB_mul_coxeterElement
-    (fun k h => dB_mul_left_cancel (h.trans (Matrix.mul_one _).symm))
-    (fun k h => dB_mul_right_cancel (h.trans (Matrix.one_mul _).symm))]
+theorem orderOf_coxeterElement_C (hn : 1 ≤ n) :
+    orderOf (coxeterElement (CartanMatrix.C n)) = 2 * n := by
+  rw [← orderOf_coxeterElement_B hn, orderOf_eq_orderOf_of_mul_eq_mul dB_mul_coxeterElement
+    (fun k h => isLeftRegular_dB (h.trans (Matrix.mul_one _).symm))
+    (fun k h => isLeftRegular_iff_isRightRegular.mp isLeftRegular_dB
+      (h.trans (Matrix.one_mul _).symm))]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Cₙ`. -/
 theorem isOneDegenerateOrder_C (n : ℕ) :

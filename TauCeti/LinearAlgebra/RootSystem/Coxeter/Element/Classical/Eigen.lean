@@ -66,9 +66,15 @@ theorem length_aExponents (n : ℕ) : (aExponents n).length = n := by simp [aExp
 @[simp]
 theorem length_bExponents (n : ℕ) : (bExponents n).length = n := by simp [bExponents]
 
-@[simp]
-theorem length_dExponents (n : ℕ) : (dExponents (n + 1)).length = n + 1 := by
+theorem length_dExponents {n : ℕ} (hn : 1 ≤ n) : (dExponents n).length = n := by
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
   simp [dExponents_succ]
+
+theorem nodup_aExponents (n : ℕ) : (aExponents n).Nodup :=
+  List.nodup_range.map (add_left_injective 1)
+
+theorem nodup_bExponents (n : ℕ) : (bExponents n).Nodup :=
+  List.nodup_range.map fun a b h => by omega
 
 theorem mem_aExponents_iff {n e : ℕ} : e ∈ aExponents n ↔ 1 ≤ e ∧ e ≤ n := by
   simp only [aExponents, List.mem_map, List.mem_range]
@@ -86,6 +92,20 @@ theorem mem_bExponents_iff {n e : ℕ} : e ∈ bExponents n ↔ Odd e ∧ e < 2 
   · rintro ⟨⟨k, rfl⟩, h⟩
     exact ⟨k, by omega, rfl⟩
 
+/-- The exponents of `Aₙ` are distinct: each of `1, …, n` occurs once. -/
+theorem count_aExponents (n e : ℕ) :
+    (aExponents n).count e = if 1 ≤ e ∧ e ≤ n then 1 else 0 := by
+  split_ifs with h
+  · exact List.count_eq_one_of_mem (nodup_aExponents n) (mem_aExponents_iff.2 h)
+  · exact List.count_eq_zero_of_not_mem (mt mem_aExponents_iff.1 h)
+
+/-- The exponents of `Bₙ` are distinct: each odd number below `2n` occurs once. -/
+theorem count_bExponents (n e : ℕ) :
+    (bExponents n).count e = if Odd e ∧ e < 2 * n then 1 else 0 := by
+  split_ifs with h
+  · exact List.count_eq_one_of_mem (nodup_bExponents n) (mem_bExponents_iff.2 h)
+  · exact List.count_eq_zero_of_not_mem (mt mem_bExponents_iff.1 h)
+
 theorem mem_dExponents_iff {n e : ℕ} :
     e ∈ dExponents n ↔ (Odd e ∧ e < 2 * (n - 1)) ∨ e = n - 1 := by
   simp [dExponents, mem_bExponents_iff]
@@ -98,23 +118,24 @@ theorem count_dExponents (n e : ℕ) :
   · simp [dExponents_def, h]
   · simp [dExponents_def, h, Ne.symm h]
 
-/-- **The roots of `(X^{m+2} + 1)(X + 1)`** are `exp (2πi e / 2(m + 2))` over the exponents of
-`D_{m+3}`, with multiplicity. -/
-theorem roots_X_pow_add_one_mul_X_add_one (m : ℕ) :
-    ((X ^ (m + 2) + 1) * (X + 1) : ℂ[X]).roots = ((dExponents (m + 3)).map fun (e : ℕ) =>
-      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * (m + 2) : ℕ) : ℂ))) :
+/-- **The roots of `(X^{n-1} + 1)(X + 1)`** are `exp (2πi e / (2n - 2))` over the exponents of
+`Dₙ`, with multiplicity. -/
+theorem roots_X_pow_add_one_mul_X_add_one {n : ℕ} (hn : 2 ≤ n) :
+    ((X ^ (n - 1) + 1) * (X + 1) : ℂ[X]).roots = ((dExponents n).map fun (e : ℕ) =>
+      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * (n - 1) : ℕ) : ℂ))) :
         Multiset ℂ) := by
-  have hmon : (X ^ (m + 2) + 1 : ℂ[X]).Monic := by
-    simpa using monic_X_pow_add_C (1 : ℂ) (n := m + 2) (by omega)
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  simp only [Nat.add_sub_cancel]
+  have hmon : (X ^ k + 1 : ℂ[X]).Monic := by
+    simpa using monic_X_pow_add_C (1 : ℂ) (n := k) (by omega)
   have h1 : (X + 1 : ℂ[X]) = X + C 1 := by simp
   rw [roots_mul (mul_ne_zero hmon.ne_zero (h1 ▸ X_add_C_ne_zero 1)),
     roots_X_pow_add_one (by omega), h1, roots_X_add_C, dExponents_succ, List.map_append,
     ← Multiset.coe_add]
   congr 1
   · simp only [bExponents, List.map_map, Function.comp_def]
-  have : 2 * Real.pi * Complex.I * (((m + 2 : ℕ) : ℂ) / ((2 * (m + 2) : ℕ) : ℂ)) =
-      Real.pi * Complex.I := by
-    have hm : ((m : ℂ) + 2) ≠ 0 := by norm_cast
+  have : 2 * Real.pi * Complex.I * ((k : ℂ) / ((2 * k : ℕ) : ℂ)) = Real.pi * Complex.I := by
+    have hk : (k : ℂ) ≠ 0 := by norm_cast; omega
     push_cast
     field_simp
   simp only [List.map_cons, List.map_nil, Multiset.coe_singleton, Multiset.singleton_inj]
@@ -124,56 +145,53 @@ variable {ι R M N : Type*} [DecidableEq ι] [CommRing R] [AddCommGroup M] [Modu
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic] [IsDomain R]
   [CharZero R]
 
-/-- **Eigenvalues of every Coxeter element of type `Aₙ`** (`n = m + 1`): `exp (2πi e / (n + 1))`
-for `e = 1, …, n`, each once. -/
-theorem eigenvalues_of_hasCartanType_A {m : ℕ} {b : P.Base} (h : HasCartanType P b (.A (m + 1)))
+/-- **Eigenvalues of every Coxeter element of type `Aₙ`**: `exp (2πi e / (n + 1))` for
+`e = 1, …, n`, each once. -/
+theorem eigenvalues_of_hasCartanType_A {n : ℕ} {b : P.Base} (h : HasCartanType P b (.A n))
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
     (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((aExponents (m + 1)).map fun (e : ℕ) =>
-      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((m + 2 : ℕ) : ℂ))) : Multiset ℂ) := by
+    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((aExponents n).map fun (e : ℕ) =>
+      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((n + 1 : ℕ) : ℂ))) : Multiset ℂ) := by
   rw [charpoly_map, charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW, Polynomial.map_sum]
   simp only [Polynomial.map_pow, map_X]
-  exact (roots_geom_sum_X m).trans (by simp only [aExponents, List.map_map, Function.comp_def])
+  exact (roots_geom_sum_X n).trans (by simp only [aExponents, List.map_map, Function.comp_def])
 
-/-- **Eigenvalues of every Coxeter element of type `Bₙ`** (`n = m + 1`): `exp (2πi e / 2n)` for
+/-- **Eigenvalues of every Coxeter element of type `Bₙ`**: `exp (2πi e / 2n)` for
 `e = 1, 3, …, 2n - 1`, each once. -/
-theorem eigenvalues_of_hasCartanType_B {m : ℕ} {b : P.Base} (h : HasCartanType P b (.B (m + 1)))
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((bExponents (m + 1)).map fun (e : ℕ) =>
-      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * (m + 1) : ℕ) : ℂ))) :
-        Multiset ℂ) := by
-  rw [charpoly_map, charpoly_of_hasCartanType_B_of_actsBy h hnd hall hW]
+theorem eigenvalues_of_hasCartanType_B {n : ℕ} (hn : 1 ≤ n) {b : P.Base}
+    (h : HasCartanType P b (.B n)) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((bExponents n).map fun (e : ℕ) =>
+      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * n : ℕ) : ℂ))) : Multiset ℂ) := by
+  rw [charpoly_map, charpoly_of_hasCartanType_B_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
   exact (roots_X_pow_add_one (by omega)).trans
     (by simp only [bExponents, List.map_map, Function.comp_def])
 
-/-- **Eigenvalues of every Coxeter element of type `Cₙ`** (`n = m + 1`): `exp (2πi e / 2n)` for
+/-- **Eigenvalues of every Coxeter element of type `Cₙ`**: `exp (2πi e / 2n)` for
 `e = 1, 3, …, 2n - 1`, each once. -/
-theorem eigenvalues_of_hasCartanType_C {m : ℕ} {b : P.Base} (h : HasCartanType P b (.C (m + 1)))
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((bExponents (m + 1)).map fun (e : ℕ) =>
-      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * (m + 1) : ℕ) : ℂ))) :
-        Multiset ℂ) := by
-  rw [charpoly_map, charpoly_of_hasCartanType_C_of_actsBy h hnd hall hW]
+theorem eigenvalues_of_hasCartanType_C {n : ℕ} (hn : 1 ≤ n) {b : P.Base}
+    (h : HasCartanType P b (.C n)) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((bExponents n).map fun (e : ℕ) =>
+      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * n : ℕ) : ℂ))) : Multiset ℂ) := by
+  rw [charpoly_map, charpoly_of_hasCartanType_C_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
   exact (roots_X_pow_add_one (by omega)).trans
     (by simp only [bExponents, List.map_map, Function.comp_def])
 
-/-- **Eigenvalues of every Coxeter element of type `Dₙ`** (`n = m + 3`): `exp (2πi e / (2n - 2))`
-over the exponents `1, 3, …, 2n - 3` and `n - 1`, with multiplicity (`-1` is double when `n` is
-even). -/
-theorem eigenvalues_of_hasCartanType_D {m : ℕ} {b : P.Base} (h : HasCartanType P b (.D (m + 3)))
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((dExponents (m + 3)).map fun (e : ℕ) =>
-      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * (m + 2) : ℕ) : ℂ))) :
+/-- **Eigenvalues of every Coxeter element of type `Dₙ`**: `exp (2πi e / (2n - 2))` over the
+exponents `1, 3, …, 2n - 3` and `n - 1`, with multiplicity (`-1` is double when `n` is even). -/
+theorem eigenvalues_of_hasCartanType_D {n : ℕ} (hn : 3 ≤ n) {b : P.Base}
+    (h : HasCartanType P b (.D n)) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    (W.map (Int.castRingHom ℂ)).charpoly.roots = ((dExponents n).map fun (e : ℕ) =>
+      Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / ((2 * (n - 1) : ℕ) : ℂ))) :
         Multiset ℂ) := by
-  rw [charpoly_map, charpoly_of_hasCartanType_D_of_actsBy h hnd hall hW]
+  rw [charpoly_map, charpoly_of_hasCartanType_D_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_mul, Polynomial.map_add, Polynomial.map_pow, map_X,
     Polynomial.map_one]
-  exact roots_X_pow_add_one_mul_X_add_one m
+  exact roots_X_pow_add_one_mul_X_add_one (by omega)
 
 end TauCeti.Coxeter
 

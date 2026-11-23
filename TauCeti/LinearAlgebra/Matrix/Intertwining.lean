@@ -16,6 +16,8 @@ Let `E : Matrix m n R` intertwine square matrices `A` and `B`, that is `E * A = 
 square this is `SemiconjBy E A B`, and `SemiconjBy.pow_right` carries it to all powers. Here `E`
 may be rectangular, as for the embedding of the root lattice of type `Aₙ` into `ℤⁿ⁺¹`.
 
+* `Matrix.mul_list_map_prod_eq_list_map_prod_mul`: if `E * f i = g i * E` for every `i`, then `E`
+  intertwines the products `(l.map f).prod` and `(l.map g).prod` of any word `l`.
 * `Matrix.mul_pow_eq_pow_mul_of_mul_eq_mul`: `E * A ^ k = B ^ k * E`.
 * `Matrix.orderOf_eq_orderOf_of_mul_eq_mul`: if moreover `E * A ^ k = E` forces `A ^ k = 1` and
   `B ^ k * E = E` forces `B ^ k = 1`, then `A` and `B` have the same order.
@@ -27,6 +29,16 @@ namespace Matrix
 
 variable {m n R : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [Semiring R]
   {E : Matrix m n R} {A : Matrix n n R} {B : Matrix m m R}
+
+/-- Letterwise intertwinings `E * f i = g i * E` pass to the products of a word. -/
+theorem mul_list_map_prod_eq_list_map_prod_mul {ι : Type*} {f : ι → Matrix n n R}
+    {g : ι → Matrix m m R} (h : ∀ i, E * f i = g i * E) (l : List ι) :
+    E * (l.map f).prod = (l.map g).prod * E := by
+  induction l with
+  | nil => rw [List.map_nil, List.prod_nil, List.map_nil, List.prod_nil, Matrix.mul_one,
+      Matrix.one_mul]
+  | cons i l ih => rw [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, h, Matrix.mul_assoc, ih,
+      ← Matrix.mul_assoc, List.map_cons, List.prod_cons]
 
 /-- An intertwining `E * A = B * E` passes to powers. -/
 theorem mul_pow_eq_pow_mul_of_mul_eq_mul (h : E * A = B * E) (k : ℕ) : E * A ^ k = B ^ k * E := by

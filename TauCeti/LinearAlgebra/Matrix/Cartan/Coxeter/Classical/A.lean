@@ -8,17 +8,19 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
 public import TauCeti.LinearAlgebra.Matrix.Intertwining
 public import TauCeti.LinearAlgebra.Matrix.Permutation
-public import TauCeti.GroupTheory.Perm.Fin
+public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.Data.List.OneDegenerateOrder
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
 # The Coxeter element of type `Aₙ` has order `n + 1`
 
-In the `ε`-model the simple root `αᵢ` is `εᵢ - εᵢ₊₁ ∈ ℤⁿ⁺¹` (`TauCeti.Coxeter.epsMatrix`), the
-simple reflection `sᵢ` becomes the permutation matrix of the transposition `(i i+1)`
-(`TauCeti.Coxeter.epsMatrix_mul_reflMatrix`), and the Coxeter element becomes the permutation matrix
-of the rotation `finRotate (n + 1)`, an `(n+1)`-cycle. The `ε`-embedding is injective, so the order
-of the Coxeter element is `n + 1`.
+In the `ε`-model the simple root `αᵢ` is `εᵢ - εᵢ₊₁ ∈ ℤⁿ⁺¹` (`TauCeti.Coxeter.epsA`), the simple
+reflection `sᵢ` becomes the permutation matrix of the adjacent transposition
+`TauCeti.BraidGroup.transposition i = (i i+1)` (`TauCeti.Coxeter.epsA_mul_reflMatrix`), and the
+Coxeter element becomes the permutation matrix of their product, the rotation `finRotate (n + 1)`
+(`TauCeti.permCoxeterSystem_wordProd_finRange`), an `(n+1)`-cycle. The `ε`-embedding is injective,
+so the order of the Coxeter element is `n + 1`.
 -/
 
 public section
@@ -30,51 +32,51 @@ namespace TauCeti.Coxeter
 variable {n : ℕ}
 
 /-- The `ε`-coordinates of the simple roots of type `Aₙ`: column `i` is `εᵢ - εᵢ₊₁`. -/
-@[expose] def epsMatrix (n : ℕ) : Matrix (Fin (n + 1)) (Fin n) ℤ :=
+def epsA (n : ℕ) : Matrix (Fin (n + 1)) (Fin n) ℤ :=
   Matrix.of fun a i => (if a.val = i.val then 1 else 0) - (if a.val = i.val + 1 then 1 else 0)
 
+theorem epsA_apply (a : Fin (n + 1)) (i : Fin n) :
+    epsA n a i = (if a.val = i.val then 1 else 0) - (if a.val = i.val + 1 then 1 else 0) :=
+  (rfl)
+
 /-- **The simple reflection `sᵢ` is the transposition `(i i+1)`** in the `ε`-model. -/
-theorem epsMatrix_mul_reflMatrix (i : Fin n) :
-    epsMatrix n * reflMatrix (CartanMatrix.A n) i =
-      permMatrixHom (R := ℤ) (Equiv.swap i.castSucc i.succ) * epsMatrix n := by
+theorem epsA_mul_reflMatrix (i : Fin n) :
+    epsA n * reflMatrix (CartanMatrix.A n) i =
+      permMatrixHom (R := ℤ) (BraidGroup.transposition (n := n + 1) i) * epsA n := by
+  rw [BraidGroup.transposition_eq_swap_castSucc_succ]
   ext a j
   rw [mul_reflMatrix_apply, permMatrixHom_mul_apply, Equiv.symm_swap]
-  simp only [epsMatrix, CartanMatrix.A, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff,
+  simp only [epsA, CartanMatrix.A, Matrix.of_apply, Equiv.swap_apply_def, Fin.ext_iff,
     Fin.val_castSucc, Fin.val_succ]
   split_ifs <;> simp_all <;> omega
 
-/-- The transposition `(i i+1)` attached to the `i`-th simple root of type `Aₙ`. -/
-@[expose] def adjSwap (i : Fin n) : Equiv.Perm (Fin (n + 1)) := Equiv.swap i.castSucc i.succ
+/-- If `E` intertwines each `f i` with the permutation matrix of the adjacent transposition
+`(i i+1)`, then it intertwines the product `f 0 * f 1 * ⋯ * f (n - 1)` with the permutation matrix
+of their product, the rotation `finRotate (n + 1)` (`TauCeti.permCoxeterSystem_wordProd_finRange`).
+-/
+theorem mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul {k : Type*} [Fintype k]
+    [DecidableEq k] {E : Matrix (Fin (n + 1)) k ℤ} {f : Fin n → Matrix k k ℤ}
+    (h : ∀ i, E * f i = permMatrixHom (R := ℤ) (BraidGroup.transposition (n := n + 1) i) * E) :
+    E * ((List.finRange n).map f).prod = permMatrixHom (R := ℤ) (finRotate (n + 1)) * E := by
+  rw [mul_list_map_prod_eq_list_map_prod_mul h]
+  refine congrArg (· * E) ?_
+  rw [← permCoxeterSystem_wordProd_finRange, permCoxeterSystem_wordProd, map_list_prod,
+    List.map_map]
+  rfl
 
-/-- A word in the simple reflections becomes the product of the corresponding transpositions. -/
-theorem epsMatrix_mul_prod (l : List (Fin n)) :
-    epsMatrix n * (l.map (reflMatrix (CartanMatrix.A n))).prod =
-      permMatrixHom (R := ℤ) (l.map adjSwap).prod * epsMatrix n := by
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-    rw [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, epsMatrix_mul_reflMatrix,
-      Matrix.mul_assoc, ih, ← Matrix.mul_assoc, List.map_cons, List.prod_cons, map_mul]
-    rfl
+/-- **The Coxeter element of type `Aₙ` is the rotation `finRotate (n + 1)`** in the `ε`-model. -/
+theorem epsA_mul_coxeterElement :
+    epsA n * coxeterElement (CartanMatrix.A n) =
+      permMatrixHom (R := ℤ) (finRotate (n + 1)) * epsA n :=
+  mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul epsA_mul_reflMatrix
 
-/-- The product of the transpositions `(0 1) (1 2) ⋯ (n-1 n)` is the rotation `finRotate (n + 1)`,
-that is `List.formPerm [0, 1, …, n]`. -/
-theorem prod_adjSwap_eq_finRotate :
-    ((List.finRange n).map adjSwap).prod = finRotate (n + 1) := by
-  rw [← List.formPerm_finRange, List.formPerm]
-  congr 1
-  refine List.ext_getElem (by simp) fun k h₁ h₂ => ?_
-  simp only [List.getElem_map, List.getElem_finRange, List.getElem_zipWith, List.getElem_tail,
-    adjSwap]
-  congr 1
-
-/-- Partial sums: a left inverse of `epsMatrix`. -/
-@[expose] def epsLeftInv (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
+/-- Partial sums: a left inverse of `epsA`. -/
+def epsALeftInv (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
   Matrix.of fun i a => if a.val ≤ i.val then 1 else 0
 
-theorem epsLeftInv_mul_epsMatrix : epsLeftInv n * epsMatrix n = 1 := by
+theorem epsALeftInv_mul_epsA : epsALeftInv n * epsA n = 1 := by
   ext i k
-  simp only [epsLeftInv, epsMatrix, Matrix.mul_apply, Matrix.of_apply, Matrix.one_apply, mul_sub,
+  simp only [epsALeftInv, epsA, Matrix.mul_apply, Matrix.of_apply, Matrix.one_apply, mul_sub,
     mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib]
   rw [Finset.sum_eq_single k.castSucc (fun a _ ha =>
       ite_eq_right_iff.2 fun h => absurd (Fin.ext (by simpa using h)) ha) (by simp),
@@ -83,45 +85,47 @@ theorem epsLeftInv_mul_epsMatrix : epsLeftInv n * epsMatrix n = 1 := by
   simp only [Fin.val_castSucc, Fin.val_succ, ite_true, Fin.ext_iff]
   split_ifs <;> omega
 
-/-- A permutation matrix fixing every column of `epsMatrix` is the identity. -/
-theorem eq_one_of_permMatrixHom_mul_epsMatrix (hn : 1 ≤ n) {τ : Equiv.Perm (Fin (n + 1))}
-    (h : permMatrixHom (R := ℤ) τ * epsMatrix n = epsMatrix n) : τ = 1 := by
-  have hcol : ∀ a (i : Fin n), epsMatrix n (τ.symm a) i = epsMatrix n a i := fun a i => by
+/-- `epsA` can be cancelled on the left. -/
+theorem epsA_mul_left_cancel {X Y : Matrix (Fin n) (Fin n) ℤ} (h : epsA n * X = epsA n * Y) :
+    X = Y := by
+  rw [← Matrix.one_mul X, ← Matrix.one_mul Y, ← epsALeftInv_mul_epsA, Matrix.mul_assoc,
+    Matrix.mul_assoc, h]
+
+/-- A permutation matrix fixing every column of `epsA` is the identity. -/
+theorem eq_one_of_permMatrixHom_mul_epsA {τ : Equiv.Perm (Fin (n + 1))}
+    (h : permMatrixHom (R := ℤ) τ * epsA n = epsA n) : τ = 1 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact Equiv.ext fun x => Subsingleton.elim (α := Fin 1) _ _
+  have hcol : ∀ a (i : Fin n), epsA n (τ.symm a) i = epsA n a i := fun a i => by
     have := congrFun (congrFun h a) i
     rwa [permMatrixHom_mul_apply] at this
   have hfix : ∀ b : Fin (n + 1), τ.symm b = b := by
     intro b
     by_cases hb : b.val < n
     · have := hcol b ⟨b.val, hb⟩
-      simp only [epsMatrix, Matrix.of_apply] at this
+      simp only [epsA, Matrix.of_apply] at this
       ext
       split_ifs at this <;> omega
     · have := hcol b ⟨n - 1, by omega⟩
-      simp only [epsMatrix, Matrix.of_apply] at this
+      simp only [epsA, Matrix.of_apply] at this
       ext
       split_ifs at this <;> omega
   ext b
   simpa using congrArg Fin.val (congrArg τ (hfix b)).symm
 
 /-- **The Coxeter element of type `Aₙ` has order `n + 1`.** -/
-theorem orderOf_coxeterElement_A (hn : 1 ≤ n) :
+theorem orderOf_coxeterElement_A (n : ℕ) :
     orderOf (coxeterElement (CartanMatrix.A n)) = n + 1 := by
-  have hc : epsMatrix n * coxeterElement (CartanMatrix.A n) =
-      permMatrixHom (R := ℤ) (finRotate (n + 1)) * epsMatrix n := by
-    rw [coxeterElement, epsMatrix_mul_prod, prod_adjSwap_eq_finRotate]
-  have hfix : ∀ k, permMatrixHom (R := ℤ) (finRotate (n + 1)) ^ k * epsMatrix n = epsMatrix n →
+  have hfix : ∀ k, permMatrixHom (R := ℤ) (finRotate (n + 1)) ^ k * epsA n = epsA n →
       finRotate (n + 1) ^ k = 1 := fun k h =>
-    eq_one_of_permMatrixHom_mul_epsMatrix hn (by rwa [map_pow])
+    eq_one_of_permMatrixHom_mul_epsA (by rwa [map_pow])
   have hrot : orderOf (permMatrixHom (R := ℤ) (finRotate (n + 1))) =
       orderOf (finRotate (n + 1)) := orderOf_eq_orderOf_iff.2 fun k =>
     ⟨fun h => hfix k (by rw [h, Matrix.one_mul]), fun h => by rw [← map_pow, h, map_one]⟩
-  have hcox : ∀ k, epsMatrix n * coxeterElement (CartanMatrix.A n) ^ k = epsMatrix n →
-      coxeterElement (CartanMatrix.A n) ^ k = 1 := fun k h => by
-    rw [← Matrix.one_mul (coxeterElement (CartanMatrix.A n) ^ k), ← epsLeftInv_mul_epsMatrix,
-      Matrix.mul_assoc, h]
-  rw [orderOf_eq_orderOf_of_mul_eq_mul hc hcox (fun k h => by rw [← map_pow, hfix k h, map_one]),
-    hrot, (isCycle_finRotate_of_le (by omega)).orderOf, support_finRotate_of_le (by omega),
-    Finset.card_univ, Fintype.card_fin]
+  rw [orderOf_eq_orderOf_of_mul_eq_mul epsA_mul_coxeterElement
+      (fun k h => epsA_mul_left_cancel (h.trans (Matrix.mul_one _).symm))
+      (fun k h => by rw [← map_pow, hfix k h, map_one]),
+    hrot, orderOf_finRotate (Nat.succ_ne_zero n)]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Aₙ`. -/
 theorem isOneDegenerateOrder_A (n : ℕ) :

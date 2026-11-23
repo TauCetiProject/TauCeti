@@ -28,11 +28,11 @@ variable {n : ℕ}
 
 /-- The `ε`-coordinates of the simple roots of type `Bₙ`: column `i` is `εᵢ - εᵢ₊₁`, and the
 last column is `ε_{n-1}`. -/
-@[expose] def epsB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+def epsB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun a i => (if a.val = i.val then 1 else 0) - (if a.val = i.val + 1 then 1 else 0)
 
 /-- The sign change of the last coordinate. -/
-@[expose] def flipLast (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+private def flipLast (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   diagonal fun a => if a.val + 1 = n then -1 else 1
 
 /-- A long simple reflection of type `Bₙ` is a transposition in the `ε`-model. -/
@@ -45,7 +45,7 @@ theorem epsB_mul_reflMatrix_of_lt (i : Fin n) (hi : i.val + 1 < n) :
   split_ifs <;> (try simp only at *) <;> omega
 
 /-- The short simple reflection of type `Bₙ` is the sign change of the last coordinate. -/
-theorem epsB_mul_reflMatrix_last (i : Fin n) (hi : i.val + 1 = n) :
+private theorem epsB_mul_reflMatrix_last (i : Fin n) (hi : i.val + 1 = n) :
     epsB n * reflMatrix (CartanMatrix.B n) i = flipLast n * epsB n := by
   ext a j
   rw [mul_reflMatrix_apply, flipLast, diagonal_mul]
@@ -53,27 +53,28 @@ theorem epsB_mul_reflMatrix_last (i : Fin n) (hi : i.val + 1 = n) :
   split_ifs <;> omega
 
 /-- The negacyclic shift `εᵢ ↦ εᵢ₊₁`, `ε_{n-1} ↦ -ε₀`. -/
-@[expose] def negaShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+def negaShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun a b => if b.val + 1 = a.val then 1 else if b.val + 1 = n ∧ a.val = 0 then -1 else 0
+
+theorem negaShift_apply (a b : Fin n) :
+    negaShift n a b =
+      if b.val + 1 = a.val then 1 else if b.val + 1 = n ∧ a.val = 0 then -1 else 0 :=
+  (rfl)
 
 /-- **The Coxeter element of type `Bₙ` is the negacyclic shift** in the `ε`-model. -/
 theorem epsB_mul_coxeterElement {m : ℕ} :
     epsB (m + 1) * coxeterElement (CartanMatrix.B (m + 1)) = negaShift (m + 1) * epsB (m + 1) := by
-  have hlist : ∀ l : List (Fin m), epsB (m + 1) *
-      (l.map (reflMatrix (CartanMatrix.B (m + 1)) ∘ Fin.castSucc)).prod =
-      permMatrixHom (R := ℤ) (l.map adjSwap).prod * epsB (m + 1) := by
-    intro l
-    induction l with
-    | nil => simp
-    | cons i l ih =>
-      rw [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, Function.comp_apply,
-        epsB_mul_reflMatrix_of_lt i.castSucc (by simp), Matrix.mul_assoc, ih, ← Matrix.mul_assoc,
-        List.map_cons, List.prod_cons, map_mul]
+  have hlong : ∀ i : Fin m, epsB (m + 1) * reflMatrix (CartanMatrix.B (m + 1)) i.castSucc =
+      permMatrixHom (R := ℤ) (BraidGroup.transposition (n := m + 1) i) * epsB (m + 1) :=
+    fun i => by
+      rw [epsB_mul_reflMatrix_of_lt i.castSucc (by simp),
+        BraidGroup.transposition_eq_swap_castSucc_succ]
       rfl
   rw [coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-    ← Matrix.mul_assoc, hlist, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-    Matrix.mul_one, Matrix.mul_assoc, epsB_mul_reflMatrix_last _ (by simp), ← Matrix.mul_assoc,
-    prod_adjSwap_eq_finRotate]
+    Function.comp_def, ← Matrix.mul_assoc,
+    mul_prod_map_finRange_eq_permMatrixHom_finRotate_mul hlong, List.map_cons, List.map_nil,
+    List.prod_cons, List.prod_nil, Matrix.mul_one, Matrix.mul_assoc,
+    epsB_mul_reflMatrix_last _ (by simp), ← Matrix.mul_assoc]
   congr 1
   ext a b
   rw [permMatrixHom_mul_apply]
@@ -126,7 +127,8 @@ theorem negaShift_pow {m : ℕ} {k : ℕ} (hk : k ≤ m + 1) (a b : Fin (m + 1))
         rw [ite_eq_right (by omega), ite_eq_right (by omega), zero_mul]
       · simp
 
-theorem negaShift_pow_self {m : ℕ} : negaShift (m + 1) ^ (m + 1) = -1 := by
+/-- The `n`-th power of the negacyclic shift on `ℤⁿ` is `-1`. -/
+theorem negaShift_pow_eq_neg_one {m : ℕ} : negaShift (m + 1) ^ (m + 1) = -1 := by
   ext a b
   rw [negaShift_pow le_rfl]
   simp only [Matrix.neg_apply, Matrix.one_apply, Fin.ext_iff]
@@ -135,12 +137,12 @@ theorem negaShift_pow_self {m : ℕ} : negaShift (m + 1) ^ (m + 1) = -1 := by
 /-- **The negacyclic shift on `ℤⁿ` has order `2n`.** -/
 theorem orderOf_negaShift {m : ℕ} : orderOf (negaShift (m + 1)) = 2 * (m + 1) := by
   rw [orderOf_eq_iff (by omega)]
-  refine ⟨by rw [mul_comm, pow_mul, negaShift_pow_self]; simp, fun k hk hk0 h => ?_⟩
+  refine ⟨by rw [mul_comm, pow_mul, negaShift_pow_eq_neg_one]; simp, fun k hk hk0 h => ?_⟩
   by_cases hkn : k ≤ m + 1
   · by_cases hkn' : k = m + 1
     · subst hkn'
       have := congrFun (congrFun h 0) 0
-      rw [negaShift_pow_self] at this
+      rw [negaShift_pow_eq_neg_one] at this
       simp at this
     · have := congrFun (congrFun h ⟨k, by omega⟩) 0
       rw [negaShift_pow hkn] at this
@@ -148,13 +150,13 @@ theorem orderOf_negaShift {m : ℕ} : orderOf (negaShift (m + 1)) = 2 * (m + 1) 
       split_ifs at this <;> omega
   · obtain ⟨j, rfl⟩ : ∃ j, k = (m + 1) + j := ⟨k - (m + 1), by omega⟩
     have := congrFun (congrFun h ⟨j, by omega⟩) 0
-    rw [pow_add, negaShift_pow_self, neg_one_mul, Matrix.neg_apply, negaShift_pow (by omega)]
+    rw [pow_add, negaShift_pow_eq_neg_one, neg_one_mul, Matrix.neg_apply, negaShift_pow (by omega)]
       at this
     simp only [Fin.val_zero, Matrix.one_apply, Fin.ext_iff] at this
     split_ifs at this <;> omega
 
 /-- Partial sums: the inverse of `epsB`. -/
-@[expose] def epsBInv (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+def epsBInv (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun i a => if a.val ≤ i.val then 1 else 0
 
 theorem epsBInv_mul_epsB : epsBInv n * epsB n = 1 := by
@@ -176,8 +178,9 @@ theorem epsB_mul_epsBInv : epsB n * epsBInv n = 1 :=
   mul_eq_one_comm.1 epsBInv_mul_epsB
 
 /-- **The Coxeter element of type `Bₙ` has order `2n`.** -/
-theorem orderOf_coxeterElement_B (m : ℕ) :
-    orderOf (coxeterElement (CartanMatrix.B (m + 1))) = 2 * (m + 1) := by
+theorem orderOf_coxeterElement_B (hn : 1 ≤ n) :
+    orderOf (coxeterElement (CartanMatrix.B n)) = 2 * n := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   rw [← orderOf_negaShift]
   refine orderOf_eq_orderOf_of_mul_eq_mul epsB_mul_coxeterElement (fun k h => ?_) fun k h => ?_
   · rw [← Matrix.one_mul (coxeterElement (CartanMatrix.B (m + 1)) ^ k), ← epsBInv_mul_epsB,
