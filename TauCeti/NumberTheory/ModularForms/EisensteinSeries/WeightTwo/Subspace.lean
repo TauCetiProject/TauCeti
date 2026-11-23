@@ -164,12 +164,12 @@ private lemma qExpansion_weightTwoForm_coeff_eq (n : {n : ℕ // n ≠ 0}) :
               (one even_two : CharIndex N 2).phi (n / (one even_two : CharIndex N 2).t)
           else 0) := by
   by_cases h : a.psi = 1 ∧ a.phi = 1
-  · rw [qExpansion_weightTwoForm_coeff_of_eq_one a h n.2, ite_eq_left h, ite_eq_left h,
+  · rw [qExpansion_weightTwoForm_coeff_of_eq_one a h n.property, ite_eq_left h, ite_eq_left h,
       twistedDivisorSum_of_eq_one a h,
       twistedDivisorSum_of_eq_one (one even_two) ⟨one_psi _, one_phi _⟩]
     simp only [one_t, one_dvd, ite_true, Nat.div_one]
     split_ifs <;> ring
-  · rw [qExpansion_weightTwoForm_coeff_of_ne_one a (not_and_or.mp h) n.2, ite_eq_right h,
+  · rw [qExpansion_weightTwoForm_coeff_of_ne_one a (not_and_or.mp h) n.property, ite_eq_right h,
       ite_eq_right h]
     ring
 
@@ -232,9 +232,9 @@ theorem coe_weightTwoInCharSpace (hχ : a.nebentypus = χ) :
 /-- The nonzero weight-two series of nebentypus `χ` are linearly independent in `M₂(N, χ)`. -/
 theorem linearIndependent_weightTwoInCharSpace (χ : (ZMod N)ˣ →* ℂˣ) :
     LinearIndependent ℂ fun a : {a : CharIndex N 2 // a.nebentypus = χ ∧ a.weightTwoForm ≠ 0} ↦
-      a.1.weightTwoInCharSpace a.2.1 := by
+      a.val.weightTwoInCharSpace a.property.1 := by
   let f (a : {a : CharIndex N 2 // a.nebentypus = χ ∧ a.weightTwoForm ≠ 0}) :
-      {a : CharIndex N 2 | a.weightTwoForm ≠ 0} := ⟨a.1, a.2.2⟩
+      {a : CharIndex N 2 | a.weightTwoForm ≠ 0} := ⟨a.val, a.property.2⟩
   have hf : Function.Injective f := fun a b hab ↦
     Subtype.ext (by simpa [f] using congrArg Subtype.val hab)
   refine LinearIndependent.of_comp (modFormCharSpace 2 χ).subtype ?_
@@ -252,13 +252,13 @@ variable {N : ℕ} [NeZero N] (χ : (ZMod N)ˣ →* ℂˣ)
 series `E₂^{ψ,φ,t}` and `E₂(z) - t E₂(t z)` of the indices of nebentypus `χ`. -/
 def weightTwoEisensteinSubspace : Submodule ℂ (modFormCharSpace 2 χ) :=
   Submodule.span ℂ (Set.range fun a : {a : CharIndex N 2 // a.nebentypus = χ} ↦
-    a.1.weightTwoInCharSpace a.2)
+    a.val.weightTwoInCharSpace a.property)
 
 /-- The defining span of the weight-two Eisenstein subspace. -/
 theorem weightTwoEisensteinSubspace_def :
     weightTwoEisensteinSubspace χ =
       Submodule.span ℂ (Set.range fun a : {a : CharIndex N 2 // a.nebentypus = χ} ↦
-        a.1.weightTwoInCharSpace a.2) :=
+        a.val.weightTwoInCharSpace a.property) :=
   (rfl)
 
 /-- The weight-two series of an index of nebentypus `χ` belongs to the weight-two Eisenstein
@@ -272,7 +272,7 @@ combination of the weight-two series of the indices of nebentypus `χ`. -/
 theorem mem_weightTwoEisensteinSubspace_iff (f : modFormCharSpace 2 χ) :
     f ∈ weightTwoEisensteinSubspace χ ↔
       ∃ c : {a : CharIndex N 2 // a.nebentypus = χ} →₀ ℂ,
-        c.sum (fun a z ↦ z • a.1.weightTwoInCharSpace a.2) = f :=
+        c.sum (fun a z ↦ z • a.val.weightTwoInCharSpace a.property) = f :=
   Finsupp.mem_span_range_iff_exists_finsupp
 
 /-- Elimination rule for the weight-two Eisenstein subspace: a subspace containing the weight-two
@@ -292,7 +292,7 @@ theorem finrank_weightTwoEisensteinSubspace :
   have hli := CharIndex.linearIndependent_weightTwoInCharSpace χ
   have hspan : weightTwoEisensteinSubspace χ = Submodule.span ℂ (Set.range
       fun a : {a : CharIndex N 2 // a.nebentypus = χ ∧ a.weightTwoForm ≠ 0} ↦
-        a.1.weightTwoInCharSpace a.2.1) := by
+        a.val.weightTwoInCharSpace a.property.1) := by
     refine le_antisymm (weightTwoEisensteinSubspace_le χ fun a hχ ↦ ?_)
       (Submodule.span_mono ?_)
     · by_cases ha : a.weightTwoForm = 0
@@ -300,7 +300,7 @@ theorem finrank_weightTwoEisensteinSubspace :
         exact zero_mem _
       · exact Submodule.subset_span ⟨⟨a, hχ, ha⟩, rfl⟩
     · rintro _ ⟨a, rfl⟩
-      exact ⟨⟨a.1, a.2.1⟩, rfl⟩
+      exact ⟨⟨a.val, a.property.1⟩, rfl⟩
   rw [hspan, Module.finrank, rank_span hli, Cardinal.mk_range_eq _ hli.injective]
   rfl
 

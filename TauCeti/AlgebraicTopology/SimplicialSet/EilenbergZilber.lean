@@ -59,7 +59,8 @@ from the contracting homotopy `c ⊗ 1 + e ⊗ c` of `C(Δ[p]; R') ⊗ C(Δ[q]; 
 * `SSet.shuffle_alexanderWhitney_f_zero`: the shuffle map followed by the Alexander–Whitney map is
   the identity in degree zero.
 * `SSet.shuffleAlexanderWhitneyHomotopy`: the shuffle map followed by the Alexander–Whitney map is
-  chain homotopic to the identity.
+  chain homotopic to the identity, and `SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality`: the
+  homotopy is natural.
 * `SSet.eilenbergZilberHomotopyEquiv`: the Alexander–Whitney map is a chain homotopy equivalence
   with homotopy inverse the shuffle map.
 
@@ -474,8 +475,7 @@ private lemma tensorHom_ιTensorObj_tensorHom_f {K K' L L' : SSet.{w}} (f : K �
     (K.ιChainComplex (R := R) x ⊗ₘ L.ιChainComplex (R := S) y) ≫ ιTensorObj _ _ p q n h ≫
         (chainComplexMap f R ⊗ₘ chainComplexMap g S).f n =
       (K'.ιChainComplex (f.app _ x) ⊗ₘ L'.ιChainComplex (g.app _ y)) ≫ ιTensorObj _ _ p q n h := by
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
-    ι_chainComplexMap_f, ι_chainComplexMap_f]
+  rw [ι_tensorHom_f, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f, ι_chainComplexMap_f]
 
 /-- The tensor product of the chain maps classifying a pair of simplices `(x, y)`, followed by the
 tensor product of the chain maps of `f` and `g`, is the tensor product of the chain maps
@@ -499,7 +499,7 @@ private lemma tensorHom_ιTensorObj_eq_model {K L : SSet.{w}} {p q n : ℕ} (x :
       ((Δ[p] : SSet.{w}).ιChainComplex (yonedaEquiv (𝟙 _)) ⊗ₘ
           (Δ[q] : SSet.{w}).ιChainComplex (yonedaEquiv (𝟙 _))) ≫ ιTensorObj _ _ p q n h ≫
         (chainComplexMap (yonedaEquiv.symm x) R ⊗ₘ chainComplexMap (yonedaEquiv.symm y) S).f n := by
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
+  rw [ι_tensorHom_f, tensorHom_comp_tensorHom_assoc,
     ιChainComplex_id_chainComplexMap_f, ιChainComplex_id_chainComplexMap_f]
 
 /-- A natural family of maps out of the tensor products of simplicial chains is determined by its
@@ -753,6 +753,17 @@ def shuffleAlexanderWhitneyHomotopy :
       rw [shuffle_naturality_assoc, alexanderWhitney_naturality, Category.assoc])
     (fun _ _ _ _ _ _ ↦ by rw [Category.comp_id, Category.id_comp])
     (fun _ _ ↦ by simp) K L
+
+variable {K L} in
+/-- The homotopy `SSet.shuffleAlexanderWhitneyHomotopy` is natural in both simplicial sets. -/
+@[reassoc]
+lemma shuffleAlexanderWhitneyHomotopy_hom_naturality {K' L' : SSet.{w}} (f : K ⟶ K')
+    (g : L ⟶ L') (i j : ℕ) :
+    (chainComplexMap f R ⊗ₘ chainComplexMap g S).f i ≫
+        (shuffleAlexanderWhitneyHomotopy K' L' R S).hom i j =
+      (shuffleAlexanderWhitneyHomotopy K L R S).hom i j ≫
+        (chainComplexMap f R ⊗ₘ chainComplexMap g S).f j :=
+  tensorChainComplexHomotopy_hom_naturality _ _ _ _ _ f g i j
 
 /-- **The Eilenberg–Zilber theorem**: the Alexander–Whitney map
 `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)` is a chain homotopy equivalence, with homotopy inverse the

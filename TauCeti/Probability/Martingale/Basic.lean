@@ -21,6 +21,9 @@ representatives.
 Closure properties of martingales, including building blocks of the elementary stochastic
 integral:
 
+* multiplying a martingale by a random scalar measurable at every time preserves the
+  martingale property when the products are integrable, in particular for bounded scalars
+  (`MeasureTheory.Martingale.smul_of_stronglyMeasurable`, `MeasureTheory.Martingale.bdd_smul`);
 * restricting a martingale to an event measurable at every time preserves the martingale
   property (`MeasureTheory.Martingale.indicator`);
 * a martingale `X` with values in a Banach space, frozen at a fixed date `w`, `t ↦ X (min w t)`,
@@ -36,7 +39,10 @@ The following results need only a preordered time index. Sampling along a monoto
 preserves martingales, supermartingales, and submartingales with respect to the sampled
 filtration (`MeasureTheory.Martingale.comp`, `MeasureTheory.Supermartingale.comp`, and
 `MeasureTheory.Submartingale.comp`). The norm of a Banach-valued
-martingale is a submartingale (`MeasureTheory.Martingale.norm`). A square-integrable real
+martingale is a submartingale (`MeasureTheory.Martingale.norm`), and raising an almost everywhere
+nonnegative real submartingale — in particular the norm of a Banach-valued martingale — to an
+integrable power `p ≥ 1` gives a submartingale (`MeasureTheory.Submartingale.rpow` and
+`MeasureTheory.Martingale.norm_rpow`). A square-integrable real
 martingale has conditional square equal to its current square plus the conditional square
 of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
@@ -153,6 +159,26 @@ variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorde
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
 
+/-- Multiplication by a random real scalar measurable at every time preserves a martingale
+whenever all the products are integrable. No sigma-finiteness assumption is needed. -/
+theorem Martingale.smul_of_stronglyMeasurable (hX : Martingale X ℱ μ) {c : Ω → ℝ}
+    (hc : ∀ t, StronglyMeasurable[ℱ t] c)
+    (hint : ∀ t, Integrable (fun ω ↦ c ω • X t ω) μ) :
+    Martingale (fun t ω ↦ c ω • X t ω) ℱ μ := by
+  refine ⟨fun t ↦ (hc t).smul (hX.stronglyMeasurable t), fun s t hst ↦ ?_⟩
+  exact (condExp_smul_of_aestronglyMeasurable_left (hc s).aestronglyMeasurable
+    (hint t) (hX.integrable t)).trans
+      ((hX.condExp_ae_eq hst).mono fun ω hω ↦ by simp only [Pi.smul_apply', hω])
+
+/-- An almost surely bounded random real scalar measurable at every time preserves
+Banach-valued martingales. -/
+theorem Martingale.bdd_smul (hX : Martingale X ℱ μ) {c : Ω → ℝ}
+    (hc : ∀ t, StronglyMeasurable[ℱ t] c) (C : ℝ) (hbound : ∀ᵐ ω ∂μ, ‖c ω‖ ≤ C) :
+    Martingale (fun t ω ↦ c ω • X t ω) ℱ μ := by
+  apply hX.smul_of_stronglyMeasurable hc
+  intro t
+  exact (hX.integrable t).bdd_smul C ((hc t).mono (ℱ.le t)).aestronglyMeasurable hbound
+
 /-- The norm of a Banach-valued martingale is a submartingale. -/
 theorem Martingale.norm (hX : Martingale X ℱ μ) :
     Submartingale (fun t ω => ‖X t ω‖) ℱ μ := by
@@ -160,6 +186,35 @@ theorem Martingale.norm (hX : Martingale X ℱ μ) :
     fun t => (hX.integrable t).norm⟩
   filter_upwards [hX.condExp_ae_eq hst, norm_condExp_le (m := ℱ s) (X t)] with ω he hle
   simpa only [he] using hle
+
+/-- Raising an almost everywhere nonnegative real submartingale to a power `p ≥ 1` gives a
+submartingale whenever the powered values are integrable. No sigma-finiteness assumption on the
+filtration trims is required. -/
+theorem Submartingale.rpow (hY : Submartingale Y ℱ μ) (hpos : ∀ t, 0 ≤ᵐ[μ] Y t) {p : ℝ}
+    (hp : 1 ≤ p) (hint : ∀ t, Integrable (fun ω ↦ Y t ω ^ p) μ) :
+    Submartingale (fun t ω ↦ Y t ω ^ p) ℱ μ := by
+  have hp0 : 0 < p := zero_lt_one.trans_le hp
+  refine ⟨fun t ↦ (Real.continuous_rpow_const hp0.le).comp_stronglyMeasurable
+    (hY.stronglyAdapted t), fun i j hij ↦ ?_, hint⟩
+  by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
+  · have hl :=
+      (Real.continuous_rpow_const hp0.le).lowerSemicontinuous.lowerSemicontinuousOn (Set.Ici 0)
+    have hjensen := (convexOn_rpow hp).map_condExp_le (ℱ.le i) hl (hpos j) isClosed_Ici
+      (hY.integrable j) (hint j)
+    filter_upwards [hpos i, hY.ae_le_condExp hij, hjensen] with ω hpos_i hle hjen
+    exact (Real.rpow_le_rpow hpos_i hle hp0.le).trans hjen
+  · have hcond0 : μ[Y j | ℱ i] = 0 := condExp_of_not_sigmaFinite (ℱ.le i) hμ
+    have hcondp0 : μ[fun ω ↦ Y j ω ^ p | ℱ i] = 0 := condExp_of_not_sigmaFinite (ℱ.le i) hμ
+    filter_upwards [hpos i, hY.ae_le_condExp hij] with ω hpos_i hle
+    have hYi0 : Y i ω = 0 := le_antisymm (by simpa [hcond0] using hle) hpos_i
+    simp [hYi0, hcondp0, Real.zero_rpow hp0.ne']
+
+/-- For `p ≥ 1`, the `p`-th power of the norm of a Banach-valued martingale is a submartingale
+whenever it is integrable at each date. -/
+theorem Martingale.norm_rpow (hX : Martingale X ℱ μ) {p : ℝ} (hp : 1 ≤ p)
+    (hint : ∀ t, Integrable (fun ω ↦ ‖X t ω‖ ^ p) μ) :
+    Submartingale (fun t ω ↦ ‖X t ω‖ ^ p) ℱ μ :=
+  hX.norm.rpow (fun _ ↦ .of_forall fun _ ↦ norm_nonneg _) hp hint
 
 /-- The conditional square of a square-integrable real martingale value is
 the current square plus the conditional square of the future increment. -/

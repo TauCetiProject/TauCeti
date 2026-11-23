@@ -49,14 +49,14 @@ variable (K σ) in
 /-- An affine isotropic point `[z : x : 1]`, with its trace equation. -/
 def point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ :=
-  ⟨Projectivization.mk K ![c.1.1, c.1.2, 1] (by
+  ⟨Projectivization.mk K ![c.val.1, c.val.2, 1] (by
     intro h
     have := congrFun h 2
     simp at this), by
     rw [Matrix.mk_mem_isotropicPoints_iff, dotProduct_typeAGraphConjugator_two_mulVec]
     dsimp
     simp only [map_one, mul_one, one_mul]
-    linear_combination c.2⟩
+    linear_combination c.property⟩
 
 variable (K σ) in
 /-- The homogeneous coordinates of the point at infinity. -/
@@ -66,7 +66,7 @@ theorem coe_infinity :
 /-- The homogeneous coordinates of an affine isotropic point. -/
 theorem coe_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     (point K σ c : ℙ K (Fin 3 → K)) =
-      Projectivization.mk K ![c.1.1, c.1.2, 1] (by
+      Projectivization.mk K ![c.val.1, c.val.2, 1] (by
         intro h
         have := congrFun h 2
         simp at this) := (rfl)
@@ -74,7 +74,7 @@ theorem coe_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
 /-- The last standard affine chart recovers the two coordinates of an affine isotropic point. -/
 @[simp]
 theorem affineChart_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
-    Projectivization.affineChart 2 (point K σ c : ℙ K (Fin 3 → K)) = ![c.1.1, c.1.2] := by
+    Projectivization.affineChart 2 (point K σ c : ℙ K (Fin 3 → K)) = ![c.val.1, c.val.2] := by
   ext i
   fin_cases i <;> simp [point, Fin.succAbove]
 
@@ -158,7 +158,7 @@ theorem affineChart_add_map_eq (p :
     refine ⟨rfl, ?_⟩
     ext i
     fin_cases i <;> simp [Fin.removeNth, Fin.succAbove]
-  have hi := p.2
+  have hi := p.property
   rw [← ha, Projectivization.affineChart_symm_apply,
     Matrix.mk_mem_isotropicPoints_iff, dotProduct_typeAGraphConjugator_two_mulVec, hvec] at hi
   dsimp at hi

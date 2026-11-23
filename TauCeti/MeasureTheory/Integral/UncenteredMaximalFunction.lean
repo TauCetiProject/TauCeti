@@ -7,7 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
 -- `TauCeti.MeasureTheory.Integral.Average` is imported privately: it supplies
--- `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset`, used only in a proof.
+-- `TauCeti.setLAverage_le_div_mul_setLAverage_of_subset` and
+-- `TauCeti.ofReal_setAverage_norm_rpow`, used only in proofs.
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!
@@ -40,6 +41,8 @@ the value `1 / x`.
 * `TauCeti.maximalFunction_le_uncenteredMaximalFunction`: `M f ≤ M_u f`.
 * `TauCeti.uncenteredMaximalFunction_le_two_pow_mul_maximalFunction`: `M_u f ≤ 2ⁿ M f` for an
   additive Haar measure.
+* `TauCeti.ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction`: the consequence
+  `⨍_B ‖h‖ ^ k ≤ 2ⁿ M(‖h‖ ^ k)(x)` for every ball `B ∋ x`.
 
 ## References
 
@@ -139,6 +142,22 @@ theorem uncenteredMaximalFunction_le_two_pow_mul_maximalFunction (μ : Measure E
           measure_ball_lt_top.ne]
         gcongr
         exact setLAverage_le_maximalFunction μ f x (by positivity)
+
+/-- For `x` in a ball `B` and `k ≥ 0`, the average of `‖h‖ ^ k` over `B` is at most `2ⁿ` times the
+maximal function of `‖h‖ₑ ^ k` at `x`, for an additive Haar measure on a real normed space of
+dimension `n`. No integrability is assumed: otherwise the average vanishes. -/
+theorem ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction (μ : Measure E)
+    [μ.IsAddHaarMeasure] {G : Type*} [NormedAddCommGroup G] {h : E → G} {k : ℝ} (hk : 0 ≤ k)
+    {x y : E} {r : ℝ} (hx : x ∈ ball y r) :
+    ENNReal.ofReal (⨍ z in ball y r, ‖h z‖ ^ k ∂μ) ≤
+      2 ^ finrank ℝ E * maximalFunction μ (fun z => ‖h z‖ₑ ^ k) x := by
+  by_cases hi : IntegrableOn (fun z => ‖h z‖ ^ k) (ball y r) μ
+  · rw [ofReal_setAverage_norm_rpow hk hi]
+    simpa only [eNorm_eq_self] using
+      (setLAverage_le_uncenteredMaximalFunction μ (fun z => ‖h z‖ₑ ^ k) hx).trans
+        (uncenteredMaximalFunction_le_two_pow_mul_maximalFunction μ (fun z => ‖h z‖ₑ ^ k) x)
+  · rw [setAverage_eq, integral_undef hi, smul_zero, ENNReal.ofReal_zero]
+    exact zero_le
 
 end Haar
 

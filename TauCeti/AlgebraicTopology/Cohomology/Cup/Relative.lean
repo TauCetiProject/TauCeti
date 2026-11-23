@@ -19,7 +19,10 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   vanishing on `A` vanishes on `A`.  This gives `TopPair.singularCup :
   Hᵖ(X; R, M) × H^q(X, A; S, N) ⟶ Hⁿ(X, A; T, L)`, which needs no hypothesis on `A`.  It is
   associative and unital, so it makes `H*(X, A)` a module over `H*(X)`; it is natural in maps of
-  pairs and maps to the absolute cup product under `H*(X, A) ⟶ H*(X)`.
+  pairs and maps to the absolute cup product under `H*(X, A) ⟶ H*(X)`.  It is graded commutative:
+  the cup product `b ⌣ a` of a relative class `b` of degree `q` and an absolute class `a` of
+  degree `p`, along the relative Alexander–Whitney diagonal with the relative factor first, is
+  `(-1)^(p q) a ⌣ b`.
 * **Relative cup product.**  For subsets `U` and `V` of `X`, a cochain vanishing on `U` cupped with
   a cochain vanishing on `V` vanishes on the chains `C(U) + C(V)` of the singular simplices lying
   in `U` or in `V`, but not in general on the chains of `U ∪ V`.  When `U` and `V` are open in
@@ -50,8 +53,9 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   absolute and relative cochains is natural in maps of pairs.
 * `TopPair.singularCup`, with `TopPair.singularCup_homologyπ` computing it on classes of cocycles,
   `TopPair.singularCohomologyπ_singularCup` its compatibility with the absolute cup product,
-  `TopPair.singularCup_naturality`, and the module laws `TopPair.singularCup_assoc` and
-  `TopPair.singularCup_constSingularCocycle_left`.
+  `TopPair.singularCup_naturality`, the module laws `TopPair.singularCup_assoc` and
+  `TopPair.singularCup_constSingularCocycle_left`, and graded commutativity
+  `TopPair.singularCup_gradedComm`.
 * `TopCat.singularRelativeCup`, characterized by
   `TopCat.homologyMap_cochainComplexMap_singularRelativeCup`, with
   `TopCat.singularCohomologyπ_singularRelativeCup` and `TopCat.singularRelativeCup_naturality`.
@@ -304,6 +308,32 @@ lemma singularCup_constSingularCocycle_left (P : TopPair.{w}) {u : S ⟶ R ⊗ S
 
 end Laws
 
+section GradedComm
+
+variable [BraidedCategory C]
+  [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft X)]
+  [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight X)]
+
+/-- **Graded commutativity of the cup product of absolute and relative cohomology**: for a pair
+`(X, A)`, an absolute class `a ∈ Hᵖ(X; R, M)` and a relative class `b ∈ H^q(X, A; S, N)`, the cup
+product `b ⌣ a ∈ Hⁿ(X, A; T, L)` with the relative class first, taken along the relative
+Alexander–Whitney diagonal `P.alexanderWhitneyDiagonal u'` and the pairing `μ'`, is
+`(-1)^(p * q)` times `a ⌣ b` (`TopPair.singularCup`) along `u` and `μ`, whenever `u` and `μ`
+agree with `u'` and `μ'` up to the braidings (`hu` and `hμ`). This is the relative form of
+`TopCat.singularCup_gradedComm`. -/
+theorem singularCup_gradedComm (P : TopPair.{w})
+    {u : T ⟶ R ⊗ S} {u' : T ⟶ S ⊗ R} (hu : u ≫ (β_ R S).hom = u') {μ : M ⊗ N ⟶ L}
+    {μ' : N ⊗ M ⟶ L} (hμ : (β_ M N).hom ≫ μ' = μ) {p q n : ℕ} (h : p + q = n)
+    (a : P.fst.singularCohomology R k M p) (b : P.singularCohomology S k N q) :
+    TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u') μ' q p n (by omega) b a =
+      ((-1 : ℤ) ^ (p * q)) • P.singularCup k u μ p q n h a b := by
+  subst hu hμ
+  rw [singularCup_def, ← TauCeti.ChainComplex.cup_eq_of_homotopy
+      (H := P.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy u),
+    TauCeti.NatChainComplex.cup_koszulBraidingHom]
+
+end GradedComm
+
 end TopPair
 
 namespace TopCat
@@ -434,8 +464,8 @@ def singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (f₁ :
       (TopPair.ofSubset A₂).singularCohomology S k N q →ₗ[k]
         (TopPair.ofSubset Z).singularCohomology T k L n :=
   ((singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
-    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h).compl₁₂
+    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) p q n h).compl₁₂
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p).hom
     (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q).hom
     ).compr₂
@@ -453,8 +483,8 @@ lemma singularRelativeCupPullback_apply (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
       TopPair.singularCohomologyMap
           (TopPair.ofSubsetMap (𝟙 X) (Set.mapsTo_iff_subset_preimage.2 hZ)) n
         (singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
-          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h
+          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) p q n h
           (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p a)
           (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q
             b)) :=
@@ -495,10 +525,10 @@ lemma singularCohomologyMap_singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ 
   rw [singularRelativeCupPullback_apply, singularRelativeCupPullback_apply, hf₁, hf₂,
     TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
     singularRelativeCup_naturality k u μ
-      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtype_val)
-      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) φ hφ₁ hφ₂,
+      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtypeVal) φ hφ₁ hφ₂,
     ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
@@ -531,10 +561,10 @@ lemma singularRelativeCupPullback_singularCohomologyMap (u : T ⟶ R ⊗ S) (μ 
     ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply, hf₁,
     hf₂, TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
     singularRelativeCup_naturality k u μ
-      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtype_val)
-      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtype_val)
-      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtype_val)
-      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtype_val) (𝟙 X) hU hV,
+      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtypeVal)
+      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtypeVal)
+      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtypeVal) (𝟙 X) hU hV,
     ← TopPair.singularCohomologyMap_comp_apply]
   congr 3
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
@@ -646,16 +676,14 @@ lemma singularRelativeCross_naturality {X Y X' Y' : TopCat.{w}} {A : Set X} {B :
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f hf) p a)
         (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g hg) q b) =
       TopPair.singularCohomologyMap (TopPair.ofSubsetMap (f ⊗ₘ g)
-          ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
-            (TopCat.mapsTo_tensorHom_preimage_snd f g hg))) n
+          (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)) n
         (singularRelativeCross k X' Y' hA' hB' μ p q n h a b) := by
   rw [singularRelativeCross_eq_singularRelativeCupPullback,
     singularRelativeCross_eq_singularRelativeCupPullback,
     TopCat.singularRelativeCupPullback_singularCohomologyMap k _ μ (fst X Y) (snd X Y) f g hA' hB'
       hA hB hf hg _ (Set.union_subset_union (fun _ hx ↦ hf hx) fun _ hx ↦ hg hx),
     TopCat.singularCohomologyMap_singularRelativeCupPullback k _ μ (fst X' Y') (snd X' Y') hA' hB'
-      _ (f ⊗ₘ g) _ ((TopCat.mapsTo_tensorHom_preimage_fst f g hf).union_union
-        (TopCat.mapsTo_tensorHom_preimage_snd f g hg))]
+      _ (f ⊗ₘ g) _ (TopCat.mapsTo_tensorHom_preimage_union f g hf hg)]
   exact DFunLike.congr_fun (DFunLike.congr_fun (TopCat.singularRelativeCupPullback_congr k _ μ
     (tensorHom_fst f g).symm (tensorHom_snd f g).symm hA' hB' _ _ p q n h) a) b
 

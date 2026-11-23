@@ -205,13 +205,13 @@ theorem finite_selmerGroup_of_finite_ker_torsionRes {m : ℕ} (hker : Finite (W.
     (hL : Finite ((W⁄L).selmerGroup τL m)) : Finite (W.selmerGroup τK m) := by
   let f := (W.torsionRes τ m).comp (W.selmerGroup τK m).subtype
   rw [f.finite_iff_finite_ker_range]
-  refine ⟨Finite.of_injective (β := (W.torsionRes τ m).ker) (fun c ↦ ⟨c.1.1, c.2⟩)
+  refine ⟨Finite.of_injective (β := (W.torsionRes τ m).ker) (fun c ↦ ⟨c.val.val, c.property⟩)
     fun c d h ↦ by rw [Subtype.ext_iff, Subtype.ext_iff]; exact (congrArg Subtype.val h :),
-    Finite.of_injective (β := (W⁄L).selmerGroup τL m) (fun c ↦ ⟨c.1, ?_⟩)
+    Finite.of_injective (β := (W⁄L).selmerGroup τL m) (fun c ↦ ⟨c.val, ?_⟩)
       fun c d h ↦ by rw [Subtype.ext_iff]; exact (congrArg Subtype.val h :)⟩
-  obtain ⟨d, hd⟩ := c.2
+  obtain ⟨d, hd⟩ := c.property
   rw [← hd]
-  exact W.torsionRes_mem_selmerGroup τ τK τL σ d.2
+  exact W.torsionRes_mem_selmerGroup τ τK τL σ d.property
 
 end Selmer
 

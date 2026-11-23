@@ -80,7 +80,7 @@ example :
       simp [y] at this
     have heq : (fun i : s ↦ y i) = fun i : s ↦ x i := by
       funext i
-      have hi : (i : ℕ) ≠ n := fun h ↦ hn (h ▸ i.2)
+      have hi : (i : ℕ) ≠ n := fun h ↦ hn (h ▸ i.property)
       exact Function.update_of_ne hi _ _
     have hy := (hV y).mp (by simpa using hxy)
     rw [heq, ← hV x] at hy

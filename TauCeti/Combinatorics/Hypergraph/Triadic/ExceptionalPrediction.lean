@@ -147,7 +147,7 @@ theorem sum_lowerRouteCountAt_not_isTopRegularRoute_le (η : ℝ) (r : ℕ) :
   -- Every map along an exceptional route is an embedding meeting an irregular polyad.
   have hsub : s.biUnion (fun σ ↦ lowerRouteMaps σ.1 σ.2) ⊆
       ({f : Fin F.k ↪ V | ∃ P ∈ C.polyads, ¬H.IsTopRegularOverPolyad P η r ∧
-        ∃ i j l : Fin F.k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.1 = ![f i, f j, f l]} :
+        ∃ i j l : Fin F.k, i < j ∧ j < l ∧ ∃ x ∈ P.support, x.val = ![f i, f j, f l]} :
           Finset (Fin F.k ↪ V)).map ⟨fun f : Fin F.k ↪ V ↦ ⇑f, DFunLike.coe_injective⟩ := by
     intro g hg
     obtain ⟨⟨φ, ψ⟩, hσ, hg⟩ := mem_biUnion.1 hg

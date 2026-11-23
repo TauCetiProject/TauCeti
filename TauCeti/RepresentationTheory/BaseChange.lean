@@ -5,10 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.RepresentationTheory.Character
-public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
@@ -16,10 +12,10 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.PermutationModule
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RestrictScalars
--- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and of finite products
--- (`TensorProduct.piRight`) are used only to construct the invariant and intertwiner comparisons.
+-- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and, through this import,
+-- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
+-- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
-import Mathlib.LinearAlgebra.TensorProduct.Pi
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -94,6 +90,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
   is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
+* `TauCeti.baseChangeOfMulActionEquiv_one_tmul`: on `1 ⊗ x` the identification
+  `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` to `A`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
   reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
@@ -283,7 +281,6 @@ theorem exists_common_fixed_vector_of_baseChange
     (ρ : Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
     (hfixed : ∀ g, baseChange A ρ g w = w) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
-  classical
   let b := Module.Free.chooseBasis R A
   let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
@@ -300,8 +297,6 @@ end
 end Representation
 
 section Character
-
-open TensorProduct
 
 variable {K : Type*} {L : Type*} [Field K] [Field L] [Algebra K L]
 variable {V : Type*} [AddCommGroup V] [Module K V]
@@ -574,7 +569,7 @@ private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
   toFun f := ⟨f.toLinearMap, mem_ker_intertwiningDefect.mpr f.isIntertwining'⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun f := ⟨f.1, mem_ker_intertwiningDefect.mp f.2⟩
+  invFun f := ⟨f.val, mem_ker_intertwiningDefect.mp f.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -669,8 +664,6 @@ end Intertwiner
 
 section IntertwinerDimension
 
-open TensorProduct
-
 variable {K L G V W : Type*} [Field K] [CommRing L] [Nontrivial L] [Algebra K L]
   [Monoid G] [Finite G] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [AddCommGroup W] [Module K W]
@@ -693,8 +686,6 @@ end IntertwinerDimension
 namespace TauCeti
 
 section PermutationRepresentation
-
-open TensorProduct
 
 section PermutationModule
 
@@ -754,6 +745,16 @@ theorem baseChangeOfMulActionEquiv_symm_single (a : A) (x : X) :
       = MonoidAlgebra.single x a := by
     rw [baseChangeOfMulActionEquiv_tmul_single, one_smul]
   rw [← h, Representation.Equiv.symm_apply_apply]
+
+/-- On `1 ⊗ x` the identification `A ⊗_R R[G] ≅ A[G]` extends the coefficients of `x` along the
+structure map `R → A`. -/
+theorem baseChangeOfMulActionEquiv_one_tmul (x : MonoidAlgebra R G) :
+    baseChangeOfMulActionEquiv R A G G (1 ⊗ₜ x) =
+      MonoidAlgebra.mapAlgHom G (Algebra.ofId R A) x := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => rw [TensorProduct.tmul_add, map_add, hx, hy, map_add]
+  | single g r => simp [Algebra.smul_def]
 
 end PermutationModule
 
@@ -867,8 +868,12 @@ noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
 theorem baseChangeFDRep_obj (V : FDRep k G) :
     (baseChangeFDRep k').obj V = FDRep.of (Representation.baseChange k' V.ρ) := (rfl)
 
+-- Deliberately not a `simp` lemma, for two independent reasons. At default priority it pre-empts
+-- `Functor.map_id`, `Functor.map_comp` and `Functor.map_add`. And even at low priority, rewriting
+-- with it leaves the surrounding implicit object arguments as `(baseChangeFDRep k').obj _`, while
+-- the right-hand side has objects `FDRep.of _`; these agree only above reducible transparency, so
+-- `eq_self` and `baseChangeFDRepHom_hom_hom_hom` no longer match.
 /-- The functor takes an equivariant map to its base change. -/
-@[simp]
 theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRep k').map φ = baseChangeFDRepHom k' φ := (rfl)
 

@@ -62,6 +62,14 @@ theorem isProbabilityMeasure_hypoexponentialMeasure {r : ι → ℝ} (hr : ∀ i
   rw [hypoexponentialMeasure_eq_map hr]
   infer_instance
 
+/-- Every hypoexponential measure is finite, including the zero measure at invalid rates. -/
+instance (r : ι → ℝ) : IsFiniteMeasure (hypoexponentialMeasure r) := by
+  by_cases hr : ∀ i, 0 < r i
+  · let _ := isProbabilityMeasure_hypoexponentialMeasure hr
+    infer_instance
+  · rw [hypoexponentialMeasure_eq_zero_of_invalid hr]
+    infer_instance
+
 /-- The hypoexponential law of an empty family is the point mass at zero. -/
 @[simp]
 theorem hypoexponentialMeasure_of_isEmpty [IsEmpty ι] (r : ι → ℝ) :
