@@ -316,9 +316,7 @@ theorem equivExterior_ofBaseChange (t : A ⊗[R] CliffordAlgebra Q) :
 theorem equivExterior_ofBaseChangeAux (c : CliffordAlgebra Q) :
     equivExterior (Q.baseChange A) (ofBaseChangeAux A Q c) =
       ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ[R] equivExterior Q c) := by
-  have h : ofBaseChange A Q (1 ⊗ₜ[R] c) = ofBaseChangeAux A Q c :=
-    (Algebra.TensorProduct.lift_tmul _ _ _ 1 c).trans (by rw [map_one, one_mul])
-  rw [← h, equivExterior_ofBaseChange, LinearEquiv.baseChange_tmul]
+  rw [← ofBaseChange_one_tmul, equivExterior_ofBaseChange, LinearEquiv.baseChange_tmul]
 
 end InvertibleTwo
 

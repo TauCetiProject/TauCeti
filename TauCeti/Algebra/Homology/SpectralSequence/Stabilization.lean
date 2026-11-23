@@ -148,28 +148,23 @@ lemma pageXStepIso_eq_isoOfEq (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
     E.pageXStepIso pq r hr hdTo hdFrom =
       (E.pagePresentation pq r hr).isoOfEq
         (E.pagePresentation pq (r + 1) (Int.le_add_one hr))
-        ((E.boundariesSubobject_add_one_eq_iff pq r hr).2 hdTo).symm
-        ((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hdFrom).symm := by
-  let p := E.pagePresentation pq r hr
-  let p' := E.pagePresentation pq (r + 1) (Int.le_add_one hr)
-  let sc := (E.page r hr).sc pq
-  have hstep : p.mapIso (E.pageXStepIso pq r hr hdTo hdFrom) = p' := by
+        (by simp [(E.boundariesSubobject_add_one_eq_iff pq r hr).2 hdTo])
+        (by simp [(E.cyclesSubobject_add_one_eq_iff pq r hr).2 hdFrom]) := by
+  have hstep : (E.pagePresentation pq r hr).mapIso (E.pageXStepIso pq r hr hdTo hdFrom) =
+      E.pagePresentation pq (r + 1) (Int.le_add_one hr) := by
     have he : E.pageXStepIso pq r hr hdTo hdFrom =
         (E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom ≪≫ E.iso r (r + 1) pq rfl hr :=
       Iso.ext (E.pageXStepIso_hom pq r hr hdTo hdFrom)
-    have hsc : sc.homologyPresentation = (TauCeti.SubquotientPresentation.refl sc.X₂).mapIso
-        ((E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom) := by
+    have hsc : ((E.page r hr).sc pq).homologyPresentation =
+        (TauCeti.SubquotientPresentation.refl ((E.page r hr).X pq)).mapIso
+          ((E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom) := by
       rw [HomologicalComplex.XIsoHomologyOfDEqZero_eq_shortComplex,
-        ← ShortComplex.homologyPresentation_isoOfEq_of_eq_zero sc hdTo hdFrom,
-        TauCeti.SubquotientPresentation.mapIso_isoOfEq]
-    rw [show p' = p.trans (sc.homologyPresentation.mapIso (E.iso r (r + 1) pq rfl hr)) from
-        E.pagePresentation_add_one pq r hr,
-      hsc, TauCeti.SubquotientPresentation.mapIso_mapIso, ← he,
-      TauCeti.SubquotientPresentation.trans_mapIso,
-      show TauCeti.SubquotientPresentation.refl sc.X₂ =
-        TauCeti.SubquotientPresentation.refl ((E.page r hr).X pq) from rfl,
-      TauCeti.SubquotientPresentation.trans_refl]
-  exact p.eq_isoOfEq_of_mapIso_eq hstep _ _
+        ← ShortComplex.homologyPresentation_isoOfEq_of_eq_zero ((E.page r hr).sc pq) hdTo hdFrom]
+      exact (TauCeti.SubquotientPresentation.mapIso_isoOfEq _ _ _ _).symm
+    rw [E.pagePresentation_add_one pq r hr, hsc, TauCeti.SubquotientPresentation.trans_mapIso,
+      TauCeti.SubquotientPresentation.trans_refl, TauCeti.SubquotientPresentation.mapIso_mapIso,
+      ← he]
+  exact (E.pagePresentation pq r hr).eq_isoOfEq_of_mapIso_eq hstep _ _
 
 /-- The stabilization isomorphism `pageXIsoOfStabilizesAt` agrees with the canonical comparison
 isomorphism `SubquotientPresentation.isoOfEq` between the page-`s` and page-`r` presentations. -/
@@ -178,8 +173,8 @@ theorem pageXIsoOfStabilizesAt_eq_isoOfEq {pq : κ} {s : ℤ} (h : E.StabilizesA
     E.pageXIsoOfStabilizesAt h r hsr =
       (E.pagePresentation pq s h.le).isoOfEq
         (E.pagePresentation pq r (h.le.trans hsr))
-        (h.boundariesSubobject_eq r hsr).symm
-        (h.cyclesSubobject_eq r hsr).symm := by
+        (by simp [h.boundariesSubobject_eq r hsr])
+        (by simp [h.cyclesSubobject_eq r hsr]) := by
   induction r, hsr using Int.leInduction with
   | base =>
     ext
@@ -196,8 +191,9 @@ theorem pageXIsoOfStabilizesAt_eq_isoOfEq {pq : κ} {s : ℤ} (h : E.StabilizesA
 lemma π_comp_pageXIsoOfStabilizesAt_hom {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
     (r : ℤ) (hsr : s ≤ r) :
     (E.pagePresentation pq s h.le).π ≫ (E.pageXIsoOfStabilizesAt h r hsr).hom =
-      Subobject.ofLE (E.cyclesSubobject pq s h.le) (E.cyclesSubobject pq r (h.le.trans hsr))
-          (h.cyclesSubobject_eq r hsr).symm.le ≫
+      Subobject.ofLE (E.pagePresentation pq s h.le).Z
+          (E.pagePresentation pq r (h.le.trans hsr)).Z
+          (by simp [h.cyclesSubobject_eq r hsr]) ≫
         (E.pagePresentation pq r (h.le.trans hsr)).π := by
   rw [pageXIsoOfStabilizesAt_eq_isoOfEq, TauCeti.SubquotientPresentation.π_isoOfEq_hom]
 

@@ -51,6 +51,8 @@ higher-dimensional half-space.
 * `TauCeti.integral_laplacian_mul_planarGreenKernelHalfPlane_of_inner_neg`: `-Δ G(a, ·) = δₐ`.
 * `TauCeti.fderiv_planarGreenKernelHalfPlane_normal`: the outward normal derivative on the
   boundary is minus the Poisson kernel.
+* `TauCeti.halfSpacePoissonKernel_orthonormalBasisOneI_repr`: the two-dimensional half-space
+  Poisson kernel in the coordinates `Complex.orthonormalBasisOneI` is `⟪v, a⟫ / (π ‖z - a‖²)`.
 
 ## References
 
@@ -244,6 +246,21 @@ theorem fderiv_planarGreenKernelHalfPlane_normal_eq_neg_div {v : U} {a z : ℂ}
   field_simp
   ring
 
+/-- The half-space Poisson kernel of dimension two, read in the coordinates
+`Complex.orthonormalBasisOneI` of `EuclideanSpace ℝ (Fin 2)`, is `⟪v, a⟫ / (π ‖z - a‖²)` for a unit
+normal `v`, a pole `a` and a point `z` of `ℂ`. -/
+theorem halfSpacePoissonKernel_orthonormalBasisOneI_repr (v : U) (a z : ℂ) :
+    halfSpacePoissonKernel 2
+        ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.property⟩
+        (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z) =
+      ⟪(v : ℂ), a⟫_ℝ / (Real.pi * ‖z - a‖ ^ 2) := by
+  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) = Real.pi := by
+    simp [Measure.real, Real.pi_pos.le]
+  rw [halfSpacePoissonKernel_eq_div, LinearIsometryEquiv.inner_map_map, ← map_sub,
+    LinearIsometryEquiv.norm_map, hvol]
+  push_cast
+  ring
+
 /-- **The outward normal derivative of the half-plane Green kernel is minus the Poisson kernel.**
 On the boundary line, the derivative of `G(a, ·)` in the outward normal direction `-v` is minus
 the half-space Poisson kernel of dimension two, read in the coordinates
@@ -255,14 +272,7 @@ theorem fderiv_planarGreenKernelHalfPlane_normal {v : U} {a z : ℂ}
         ⟨Complex.orthonormalBasisOneI.repr v, by simpa using v.property⟩
         (Complex.orthonormalBasisOneI.repr a) (Complex.orthonormalBasisOneI.repr z) := by
   rw [fderiv_planarGreenKernelHalfPlane_normal_eq_neg_div hz hza,
-    halfSpacePoissonKernel_eq_div,
-    LinearIsometryEquiv.inner_map_map, ← map_sub, LinearIsometryEquiv.norm_map]
-  have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 2)) 1) = Real.pi := by
-    simp [Measure.real, Real.pi_pos.le]
-  rw [hvol]
-  have hpos : 0 < ‖z - a‖ := norm_pos_iff.2 (sub_ne_zero.2 hza)
-  field_simp
-  norm_num
+    halfSpacePoissonKernel_orthonormalBasisOneI_repr]
 
 end TauCeti
 
