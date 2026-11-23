@@ -64,6 +64,19 @@ theorem congr_apply_val {lo' hi' : Assignment Q K} {b' : V → K} (hlo : lo = lo
     (congr hlo hhi hb f).val = f.val :=
   (rfl)
 
+/-- Reversing a prescribed-excess reindexing reverses each equality. -/
+@[simp]
+theorem congr_symm {lo' hi' : Assignment Q K} {b' : V → K} (hlo : lo = lo')
+    (hhi : hi = hi') (hb : b = b') :
+    (congr hlo hhi hb).symm = congr hlo.symm hhi.symm hb.symm :=
+  (rfl)
+
+/-- Reindexing a prescribed-excess problem along reflexive equalities is the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (lo := lo) (hi := hi) (b := b) rfl rfl rfl = Equiv.refl _ :=
+  (rfl)
+
 /-- A realizing assignment respects its arrow bounds. -/
 theorem mem_Icc (f : ExcessFlow lo hi b) : f.val ∈ Set.Icc lo hi := f.property.1
 
@@ -113,6 +126,19 @@ def congr {lo' hi' : Assignment Q K} {a' b' : V → K} (hlo : lo = lo') (hhi : h
 theorem congr_apply_val {lo' hi' : Assignment Q K} {a' b' : V → K} (hlo : lo = lo')
     (hhi : hi = hi') (ha : a = a') (hb : b = b') (f : ExcessIntervalFlow lo hi a b) :
     (congr hlo hhi ha hb f).val = f.val :=
+  (rfl)
+
+/-- Reversing an interval-excess reindexing reverses each equality. -/
+@[simp]
+theorem congr_symm {lo' hi' : Assignment Q K} {a' b' : V → K} (hlo : lo = lo')
+    (hhi : hi = hi') (ha : a = a') (hb : b = b') :
+    (congr hlo hhi ha hb).symm = congr hlo.symm hhi.symm ha.symm hb.symm :=
+  (rfl)
+
+/-- Reindexing an interval-excess problem along reflexive equalities is the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (lo := lo) (hi := hi) (a := a) (b := b) rfl rfl rfl rfl = Equiv.refl _ :=
   (rfl)
 
 /-- An interval-excess assignment respects its arrow bounds. -/
@@ -182,8 +208,8 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (a b : V → K)
 theorem shiftEquiv_zero (lo hi : Assignment Q K) (a b : V → K) :
     (shiftEquiv lo hi 0 a b).trans
         (congr (sub_zero lo) (sub_zero hi)
-          (by simp only [excessAt_fun_zero, sub_zero])
-          (by simp only [excessAt_fun_zero, sub_zero])) =
+          (by simp only [excessAt_zero_fun, sub_zero])
+          (by simp only [excessAt_zero_fun, sub_zero])) =
       Equiv.refl (ExcessIntervalFlow lo hi a b) := by
   apply Equiv.ext
   intro f
@@ -195,8 +221,8 @@ theorem shiftEquiv_add (lo hi h k : Assignment Q K) (a b : V → K) :
     ((shiftEquiv lo hi h a b).trans
         (shiftEquiv (lo - h) (hi - h) k (a - excessAt h) (b - excessAt h))).trans
       (congr (sub_sub lo h k) (sub_sub hi h k)
-        (by simp only [excessAt_fun_add, sub_sub])
-        (by simp only [excessAt_fun_add, sub_sub])) =
+        (by simp only [excessAt_add_fun, sub_sub])
+        (by simp only [excessAt_add_fun, sub_sub])) =
       shiftEquiv lo hi (h + k) a b := by
   apply Equiv.ext
   intro f
@@ -256,7 +282,7 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (b : V → K)
 theorem shiftEquiv_zero (lo hi : Assignment Q K) (b : V → K) :
     (shiftEquiv lo hi 0 b).trans
         (congr (sub_zero lo) (sub_zero hi)
-          (by simp only [excessAt_fun_zero, sub_zero])) =
+          (by simp only [excessAt_zero_fun, sub_zero])) =
       Equiv.refl (ExcessFlow lo hi b) := by
   apply Equiv.ext
   intro f
@@ -268,7 +294,7 @@ theorem shiftEquiv_add (lo hi h k : Assignment Q K) (b : V → K) :
     ((shiftEquiv lo hi h b).trans
         (shiftEquiv (lo - h) (hi - h) k (b - excessAt h))).trans
       (congr (sub_sub lo h k) (sub_sub hi h k)
-        (by simp only [excessAt_fun_add, sub_sub])) =
+        (by simp only [excessAt_add_fun, sub_sub])) =
       shiftEquiv lo hi (h + k) b := by
   apply Equiv.ext
   intro f

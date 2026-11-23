@@ -360,14 +360,25 @@ theorem excessHom_apply (f : Assignment Q K) (v : V) : excessHom Q K f v = exces
 
 /-- The excess function of the zero assignment is zero. -/
 @[simp]
-theorem excessAt_fun_zero : excessAt (0 : Assignment Q K) = 0 :=
+theorem excessAt_zero_fun : excessAt (0 : Assignment Q K) = 0 :=
   map_zero (excessHom Q K)
 
 /-- The excess function preserves addition of assignments. -/
 @[simp]
-theorem excessAt_fun_add (f g : Assignment Q K) :
+theorem excessAt_add_fun (f g : Assignment Q K) :
     excessAt (f + g) = excessAt f + excessAt g :=
   map_add (excessHom Q K) f g
+
+/-- The excess function preserves negation of assignments. -/
+@[simp]
+theorem excessAt_neg_fun (f : Assignment Q K) : excessAt (-f) = -excessAt f :=
+  map_neg (excessHom Q K) f
+
+/-- The excess function preserves subtraction of assignments. -/
+@[simp]
+theorem excessAt_sub_fun (f g : Assignment Q K) :
+    excessAt (f - g) = excessAt f - excessAt g :=
+  map_sub (excessHom Q K) f g
 
 @[simp]
 theorem excessAt_neg (f : Assignment Q K) (v : V) : excessAt (-f) v = -excessAt f v :=
