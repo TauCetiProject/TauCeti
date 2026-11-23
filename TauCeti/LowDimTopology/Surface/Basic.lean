@@ -70,8 +70,9 @@ universe w
 
 namespace ModelWithCorners
 
-variable {E H M : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [TopologicalSpace M] [ChartedSpace H M]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E H M : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) [TopologicalSpace M]
+  [ChartedSpace H M]
 
 /-- The inclusion of the interior of an open subset `u` of `M` into the interior of `M`: an
 interior point of `u` is an interior point of `M` (`ModelWithCorners.interior_open`). -/
@@ -83,13 +84,22 @@ theorem coe_interiorOpensInclusion (u : Opens M) (x : I.interior u) :
     (I.interiorOpensInclusion u x : M) = x.val.val :=
   rfl
 
-/-- The inclusion of the interior of an open subset into the interior is an open embedding. -/
-theorem isOpenEmbedding_interiorOpensInclusion [FiniteDimensional ℝ E] (u : Opens M) :
+/-- The inclusion of the interior of an open subset into the interior is an open embedding: it is
+an embedding since both interiors carry the subspace topology of `M`, and its range is the preimage
+of the open set `u`. -/
+theorem isOpenEmbedding_interiorOpensInclusion (u : Opens M) :
     IsOpenEmbedding (I.interiorOpensInclusion u) := by
-  have h : IsOpenEmbedding (fun x : I.interior u ↦ x.val.val) :=
-    u.isOpen.isOpenEmbedding_subtypeVal.comp
-      (I.isOpen_interior_of_finiteDimensional u).isOpenEmbedding_subtypeVal
-  exact ((I.isOpen_interior_of_finiteDimensional M).isOpenEmbedding_subtypeVal.of_comp_iff _).1 h
+  have hc : Continuous (I.interiorOpensInclusion u) :=
+    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  have he : IsEmbedding (fun x : I.interior u ↦ x.val.val) :=
+    IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal
+  refine ⟨.of_comp hc continuous_subtypeVal he, ?_⟩
+  convert u.isOpen.preimage continuous_subtypeVal
+  ext ⟨y, hy⟩
+  refine ⟨?_, fun hyu ↦ ⟨⟨⟨y, hyu⟩, by simpa only [interior_open, mem_preimage] using hy⟩, rfl⟩⟩
+  rintro ⟨x, hx⟩
+  rw [← hx]
+  exact x.val.property
 
 end ModelWithCorners
 
