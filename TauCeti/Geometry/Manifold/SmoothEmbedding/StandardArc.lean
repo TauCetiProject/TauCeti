@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-import TauCeti.Analysis.SpecialFunctions.Sigmoid
+import TauCeti.Analysis.SpecialFunctions.Sigmoid.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition

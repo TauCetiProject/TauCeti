@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 public import TauCeti.Analysis.Holder.Algebra
-public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+public import TauCeti.Analysis.SpecialFunctions.Sigmoid.Holder
+import TauCeti.Analysis.SpecialFunctions.Sigmoid.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 

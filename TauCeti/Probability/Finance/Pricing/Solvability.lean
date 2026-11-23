@@ -36,7 +36,9 @@ All financial declarations are in the `TauCeti.Finance` namespace.
 * `isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL` and
   `weightedLogSpotTerminalDataCLE`: the Banach-space isomorphism `u ↦ (P u, u(·, t₁))`, with
   `weightedLogSpotTerminalDataCLE_apply`,
-  `weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply`, and
+  `weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply`,
+  `spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply`,
+  `weightedLogSpotTerminalDataCLE_symm_apply_slabMk_right`, and
   `abs_weightedLogSpotTerminalDataCLE_symm_apply_le`.
 * `exists_norm_weightedLogSpotTerminalDataCLE_symm_le` and
   `exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le`: uniform Schauder bound and Lipschitz
@@ -77,10 +79,10 @@ private local instance : NormedSpace ℝ ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L
 
 section TerminalDataCLE
 
-/-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, bounded parabolic Hölder
-coefficients `a, r ∈ C_b^{α,α/2}(ℝ × [t₀, t₁])` with `a ≥ lam > 0`, the terminal-data map
-`u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator `P` is an isomorphism of Banach
-spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
+/-- **The weighted terminal-value problem is well posed.** For `0 < α < 1`, `t₀ < t₁`, and
+bounded parabolic Hölder coefficients `a, r ∈ C_b^{α,α/2}(ℝ × [t₀, t₁])` with `a ≥ lam > 0`, the
+terminal-data map `u ↦ (P u, u(·, t₁))` of the weighted log-spot pricing operator `P` is an
+isomorphism of Banach spaces from `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
 theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : ℝ≥0} {t₀ t₁ : ℝ}
     {ht : t₀ < t₁} (hα₀ : 0 < α) (hα₁ : α < 1)
     {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
@@ -93,9 +95,10 @@ theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL {α : �
     fun p ↦ (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p
 
 /-- **The weighted log-spot terminal-data isomorphism.** For `0 < α < 1`, `t₀ < t₁`, and parabolic
-Hölder coefficients `a, r` on `ℝ × [t₀, t₁]` with `a` uniformly bounded away from zero, the map
-`u ↦ (P u, u(·, t₁))` of `weightedLogSpotPricingOperatorL` as an isomorphism of Banach spaces from
-`C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` onto `C_b^{α,α/2}(ℝ × [t₀, t₁]) × C_b^{2,α}(ℝ)`. -/
+Hölder coefficients `a, r` on `ℝ × [t₀, t₁]` where `a` has a uniform positive lower bound
+`a ≥ δ > 0`, the map `u ↦ (P u, u(·, t₁))` of `weightedLogSpotPricingOperatorL` as an isomorphism
+of Banach spaces from `C_b^{2+α,1+α/2}(ℝ × [t₀, t₁])` onto
+`C_b^{α,α/2}(ℝ × [t₀, t₁]) × C_b^{2,α}(ℝ)`. -/
 def weightedLogSpotTerminalDataCLE {α : ℝ≥0} {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1)
     (ht : t₀ < t₁) (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
     (ha : ∃ δ : ℝ, 0 < δ ∧ ∀ p, δ ≤ a p) :
@@ -135,6 +138,25 @@ theorem weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_appl
   rw [weightedLogSpotPricingOperatorL_def]
   exact backwardParabolicOperatorL_realTerminalDataCLE_symm_apply d
 
+/-- The solution of the weighted log-spot terminal-value problem with forcing `f` and terminal
+datum `g` has terminal trace `g`. -/
+@[simp]
+theorem spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply
+    (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) :
+    ((weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d).spatialTrace
+      ⟨t₁, right_mem_Icc.2 ht.le⟩ = d.2 := by
+  dsimp only [weightedLogSpotTerminalDataCLE]
+  exact spatialTrace_realTerminalDataCLE_symm_apply d
+
+/-- The solution of the weighted log-spot terminal-value problem with terminal datum `g` takes the
+value `g y` at `(y, t₁)`. -/
+@[simp]
+theorem weightedLogSpotTerminalDataCLE_symm_apply_slabMk_right
+    (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) (y : ℝ) :
+    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm d
+      (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 y := by
+  rw [← spatialTrace_apply, spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply]
+
 /-- **Pointwise exponential bound for the weighted log-spot solution operator.** If `r ≥ -γ` with
 `0 ≤ γ`, `|f| ≤ K` and `|g| ≤ M`, then the solution `u` of `P u = f`, `u(·, t₁) = g` satisfies
 `|u(y, t)| ≤ exp (γ (t₁ - t)) (M + (t₁ - t) K)`. For a nonnegative short rate, `γ = 0`. -/
@@ -151,8 +173,7 @@ theorem abs_weightedLogSpotTerminalDataCLE_symm_apply_le {γ M K : ℝ}
     rw [weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply]
     exact hd₁ q
   · intro y
-    dsimp only [weightedLogSpotTerminalDataCLE]
-    rw [realTerminalDataCLE_symm_apply_slabMk_right]
+    rw [weightedLogSpotTerminalDataCLE_symm_apply_slabMk_right]
     exact hd₂ y
 
 end WeightedCLEProps

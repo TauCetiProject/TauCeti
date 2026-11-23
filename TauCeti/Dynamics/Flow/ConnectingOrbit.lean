@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Dynamics.Flow.Stable
 public import TauCeti.Topology.Path.Extend.Ioo
-public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+public import TauCeti.Analysis.SpecialFunctions.Sigmoid.Basic
 
 /-!
 # Connecting orbits of a real flow

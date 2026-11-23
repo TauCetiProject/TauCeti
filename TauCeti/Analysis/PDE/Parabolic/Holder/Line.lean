@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 import TauCeti.Analysis.PDE.Parabolic.Holder.CompSpatial
 
 /-!
@@ -116,6 +116,28 @@ private theorem evalCoord_ellipticity
       evalCoord A (ContinuousLinearMap.mul ℝ ℝ) p).mul_norm_sq_le_toQuadraticForm'_of_unique
       (by simpa only [Matrix.of_apply, evalCoord_apply] using hA (slabSpaceMap coord p)) ξ
 
+private theorem spatialFDerivL_compSpatialLIE_coord_single
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) (p : slab (E := EuclideanSpace ℝ (Fin 1)) a b)
+    (i : Fin 1) :
+    spatialFDerivL (compSpatialLIE α ℝ hab coord u) p (EuclideanSpace.single i 1) =
+      spatialFDerivL u (slabSpaceMap coord p) 1 := by
+  simp [compSpatialLIE_apply, spatialFDerivL_compSpatialL]
+
+private theorem spatialSecondFDerivL_compSpatialLIE_coord_single
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) (p : slab (E := EuclideanSpace ℝ (Fin 1)) a b)
+    (i j : Fin 1) :
+    spatialSecondFDerivL (compSpatialLIE α ℝ hab coord u) p
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      spatialSecondFDerivL u (slabSpaceMap coord p) 1 1 := by
+  simp [compSpatialLIE_apply, spatialSecondFDerivL_compSpatialL]
+
+private theorem timeDerivL_compSpatialLIE_coord (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    timeDerivL (compSpatialLIE α ℝ hab coord u) =
+      HolderSpace.compIsometryEquivLIE α ℝ
+        (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv) (timeDerivL u) := by
+  ext p
+  simp [compSpatialLIE_apply, timeDerivL_compSpatialL]
+
 /-- **The spatial part on the line is the Euclidean spatial operator on `ℝ¹`.** -/
 private theorem spatialOperatorL_compSpatialLIE_coord (hα : α ≤ 1)
     (A : HolderSpace α (slab (E := ℝ) a b) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
@@ -145,14 +167,14 @@ private theorem spatialOperatorL_compSpatialLIE_coord (hα : α ≤ 1)
     simp
   have hC (q) : C q (u q) = u q * C q 1 := by
     rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-  simp only [spatialOperatorL_apply, euclideanSecondOrderCoeff_apply,
-    euclideanFirstOrderCoeff_apply, euclideanZerothOrderCoeff_apply, evalCoord_apply,
-    compSpatialLIE_apply, spatialSecondFDerivL_compSpatialL, spatialFDerivL_compSpatialL,
-    compSpatialL_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, ContinuousLinearMap.bilinearComp_apply,
-    ContinuousLinearMap.comp_apply, EuclideanSpace.single, PiLp.equivOfUniqueLIE_single,
-    Finset.univ_unique, Finset.sum_singleton, HolderSpace.compIsometryEquivLIE_apply,
-    slabSpaceIsometryEquiv_apply, LinearIsometryEquiv.coe_toIsometryEquiv, hA, hB, hC]
+  rw [spatialOperatorL_apply, HolderSpace.compIsometryEquivLIE_apply, spatialOperatorL_apply,
+    slabSpaceIsometryEquiv_apply]
+  simp only [euclideanSecondOrderCoeff_apply, euclideanFirstOrderCoeff_apply,
+    euclideanZerothOrderCoeff_apply, evalCoord_apply, Finset.univ_unique, Finset.sum_singleton,
+    spatialSecondFDerivL_compSpatialLIE_coord_single,
+    spatialFDerivL_compSpatialLIE_coord_single]
+  simp only [compSpatialLIE_apply, compSpatialL_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.coe_toIsometryEquiv, hA, hB, hC]
   ring
 
 /-- **The forward operator on the line is the Euclidean operator on `ℝ¹`.** -/
@@ -166,14 +188,8 @@ private theorem euclideanParabolicOperatorL_compSpatialLIE_coord (hα : α ≤ 1
       HolderSpace.compIsometryEquivLIE α ℝ
         (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv)
         (parabolicOperatorL hα A B C u) := by
-  ext p
-  have hs := congrArg (fun f ↦ f p) (spatialOperatorL_compSpatialLIE_coord hα A B C u)
-  simp only [euclideanParabolicOperatorL_def, parabolicOperatorL_def,
-    _root_.sub_apply, HolderSpace.sub_apply,
-    HolderSpace.compIsometryEquivLIE_apply, slabSpaceIsometryEquiv_apply,
-    LinearIsometryEquiv.coe_toIsometryEquiv] at hs ⊢
-  rw [hs]
-  simp [compSpatialLIE_apply]
+  simp only [euclideanParabolicOperatorL_def, parabolicOperatorL_def, _root_.sub_apply, map_sub,
+    timeDerivL_compSpatialLIE_coord, spatialOperatorL_compSpatialLIE_coord]
 
 /-- **The backward operator on the line is the Euclidean backward operator on `ℝ¹`.** -/
 private theorem euclideanBackwardParabolicOperatorL_compSpatialLIE_coord (hα : α ≤ 1)
@@ -186,14 +202,19 @@ private theorem euclideanBackwardParabolicOperatorL_compSpatialLIE_coord (hα : 
       HolderSpace.compIsometryEquivLIE α ℝ
         (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv)
         (backwardParabolicOperatorL hα A B C u) := by
-  ext p
-  have hs := congrArg (fun f ↦ f p) (spatialOperatorL_compSpatialLIE_coord hα A B C u)
   simp only [euclideanBackwardParabolicOperatorL_def, backwardParabolicOperatorL_def,
-    _root_.add_apply, HolderSpace.add_apply,
-    HolderSpace.compIsometryEquivLIE_apply, slabSpaceIsometryEquiv_apply,
-    LinearIsometryEquiv.coe_toIsometryEquiv] at hs ⊢
-  rw [hs]
-  simp [compSpatialLIE_apply]
+    _root_.add_apply, map_add, timeDerivL_compSpatialLIE_coord,
+    spatialOperatorL_compSpatialLIE_coord]
+
+/-- The isometric equivalence transporting forcing and spatial trace data between `ℝ × [a, b]` and
+`ℝ¹ × [a, b]`. -/
+private def dataEquiv (a b : ℝ) :
+    HolderSpace α (slab (E := ℝ) a b) ℝ × CkHolderSpace 2 α ℝ ℝ ≃ₗᵢ[ℝ]
+      HolderSpace α (slab (E := EuclideanSpace ℝ (Fin 1)) a b) ℝ ×
+        CkHolderSpace 2 α (EuclideanSpace ℝ (Fin 1)) ℝ :=
+  (HolderSpace.compIsometryEquivLIE α ℝ
+    (slabSpaceIsometryEquiv (a := a) (b := b) coord.toIsometryEquiv)).prodCongr
+    (CkHolderSpace.compLinearLIE (k := 2) (α := α) (F := ℝ) coord)
 
 end Transport
 
@@ -218,23 +239,20 @@ theorem isInvertible_parabolicOperatorL_prod_spatialTraceL_real (hα₀ : 0 < α
     (a := fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
     (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1) hlam
     (evalCoord_ellipticity hA)
-  -- The data are transported isometrically by `Ψ (f, g) = (f ∘ (x₀ × id), g ∘ x₀)`.
-  let Ψ := (HolderSpace.compIsometryEquivLIE α ℝ
-    (slabSpaceIsometryEquiv (a := 0) (b := T) coord.toIsometryEquiv)).prodCongr
-    (CkHolderSpace.compLinearLIE (k := 2) (α := α) (F := ℝ) coord)
+  -- The data are transported isometrically by `dataEquiv (α := α) 0 T`.
   have hcomp : ⇑((euclideanParabolicOperatorL hα₁.le
         (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
         (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)).prod
         (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)) ∘
         compSpatialLIE α ℝ hT coord =
-      Ψ ∘ (parabolicOperatorL hα₁.le A B C).prod
+      dataEquiv (α := α) 0 T ∘ (parabolicOperatorL hα₁.le A B C).prod
         (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩) := by
     funext u
-    simp only [comp_apply, ContinuousLinearMap.prod_apply, spatialTraceL_apply, Ψ,
+    simp only [comp_apply, ContinuousLinearMap.prod_apply, spatialTraceL_apply, dataEquiv,
       LinearIsometryEquiv.prodCongr_apply]
     refine Prod.ext (euclideanParabolicOperatorL_compSpatialLIE_coord hα₁.le A B C u) ?_
-    simp [compSpatialLIE_apply, spatialTrace_compSpatialL, CkHolderSpace.compLinearLIE_apply]
-  rw [← Bijective.of_comp_iff' Ψ.bijective, ← hcomp]
+    simp [compSpatialLIE_apply, spatialTrace_compSpatialL]
+  rw [← Bijective.of_comp_iff' (dataEquiv (α := α) 0 T).bijective, ← hcomp]
   exact hE.comp (compSpatialLIE α ℝ hT coord).bijective
 
 /-! ### The terminal-data isomorphism and uniform estimates on the line -/
@@ -256,10 +274,8 @@ def realTerminalDataCLE {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (h
     (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
     (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
     (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)
-  let eData := (HolderSpace.compIsometryEquivLIE α ℝ
-    (slabSpaceIsometryEquiv (a := t₀) (b := t₁) coord.toIsometryEquiv)).prodCongr
-    (CkHolderSpace.compLinearLIE (k := 2) (α := α) (F := ℝ) coord)
-  eSol.toContinuousLinearEquiv.trans (eEuclidean.trans eData.symm.toContinuousLinearEquiv)
+  eSol.toContinuousLinearEquiv.trans
+    (eEuclidean.trans (dataEquiv (α := α) t₀ t₁).symm.toContinuousLinearEquiv)
 
 section RealTerminalDataCLE
 
@@ -277,11 +293,10 @@ theorem realTerminalDataCLE_apply (u : ParabolicC2HolderSpace α ℝ ℝ ht) :
       (backwardParabolicOperatorL hα₁.le A B C u, u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
   apply Prod.ext
   · ext p
-    simp [realTerminalDataCLE, -compSpatialLIE_apply,
+    simp [realTerminalDataCLE, dataEquiv, -compSpatialLIE_apply,
       euclideanBackwardParabolicOperatorL_compSpatialLIE_coord]
   · ext x
-    simp [realTerminalDataCLE, compSpatialLIE_apply, spatialTrace_compSpatialL,
-      CkHolderSpace.compLinearLIE_apply]
+    simp [realTerminalDataCLE, dataEquiv, compSpatialLIE_apply, spatialTrace_compSpatialL]
 
 /-- The solution of the terminal-value problem on the line with forcing `f` and terminal datum `g`
 has backward forcing `f`. -/
@@ -341,18 +356,14 @@ private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) 
     (B : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
     (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))
     (hA : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
-    let eData := (HolderSpace.compIsometryEquivLIE α ℝ
-      (slabSpaceIsometryEquiv (a := t₀) (b := t₁) coord.toIsometryEquiv)).prodCongr
-      (CkHolderSpace.compLinearLIE (k := 2) (α := α) (F := ℝ) coord)
     (realTerminalDataCLE hα₀ hα₁ ht A B C hA).symm.toContinuousLinearMap =
       ((compSpatialLIE α ℝ ht coord).symm : _ →L[ℝ] _) ∘L
         (euclideanTerminalDataCLE hα₀ hα₁ ht
           (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
           (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
           (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)).symm.toContinuousLinearMap ∘L
-        (eData : _ →L[ℝ] _) := by
-  intro eData
-  exact ContinuousLinearMap.ext fun d ↦ by simp [realTerminalDataCLE, eData]
+        (dataEquiv (α := α) t₀ t₁ : _ →L[ℝ] _) :=
+  ContinuousLinearMap.ext fun d ↦ by simp [realTerminalDataCLE]
 
 /-- **Uniform Schauder estimate for the terminal-value problem on the line.** For `0 < α < 1`,
 an ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound

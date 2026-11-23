@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Logistic.Basic
 public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
-public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+public import TauCeti.Analysis.SpecialFunctions.Sigmoid.Basic
 public import TauCeti.Probability.Moments.ComplexMGF
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp

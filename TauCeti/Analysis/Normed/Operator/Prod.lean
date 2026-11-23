@@ -25,8 +25,7 @@ endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L
 so `L` moves each coordinate of `v` little when it is close to the identity.
 
 The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
-`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`). Componentwise products of linear
-isometric equivalences are linear isometric equivalences (`LinearIsometryEquiv.prodCongr`).
+`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
 -/
 
 public section
@@ -89,31 +88,4 @@ theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
   (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
 
 end ContinuousLinearMap
-
-namespace LinearIsometryEquiv
-
-variable {𝕜 E F E' F' : Type*} [Semiring 𝕜]
-  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
-  [SeminormedAddCommGroup E'] [SeminormedAddCommGroup F']
-  [Module 𝕜 E] [Module 𝕜 F] [Module 𝕜 E'] [Module 𝕜 F']
-
-/-- Componentwise product of two linear isometric equivalences on `E × F`. -/
-def prodCongr (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') : E × F ≃ₗᵢ[𝕜] E' × F' :=
-  { e₁.toLinearEquiv.prodCongr e₂.toLinearEquiv with
-    norm_map' x := by
-      simp only [Prod.norm_def, LinearEquiv.prodCongr_apply, coe_toLinearEquiv, norm_map] }
-
-/-- Evaluation of `LinearIsometryEquiv.prodCongr` at a pair. -/
-@[simp, norm_cast]
-theorem prodCongr_apply (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') (x : E × F) :
-    prodCongr e₁ e₂ x = (e₁ x.1, e₂ x.2) := by
-  simp [prodCongr]
-
-/-- The inverse of `LinearIsometryEquiv.prodCongr e₁ e₂` is `prodCongr e₁.symm e₂.symm`. -/
-@[simp]
-theorem prodCongr_symm (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') :
-    (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm :=
-  LinearIsometryEquiv.ext fun x ↦ (prodCongr e₁ e₂).injective (by simp)
-
-end LinearIsometryEquiv
 

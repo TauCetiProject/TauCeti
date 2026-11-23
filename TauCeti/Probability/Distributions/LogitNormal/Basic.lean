@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+public import TauCeti.Analysis.SpecialFunctions.Sigmoid.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.Moments.IntegrableExpMul

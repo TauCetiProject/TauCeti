@@ -121,28 +121,36 @@ theorem deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ h
       u (slabMk (log s) t) + (1 + s) / s * spatialFDerivL u (slabMk (log s) t) 1 :=
   (hasDerivAt_weightedLogSpotPrice_spot u hs t).deriv
 
+private def logSpotSlab (a b : ℝ) (p : ↥(Ioi (0 : ℝ) ×ˢ Icc a b)) : slab (E := ℝ) a b :=
+  slabMk (log p.val.1) ⟨p.val.2, p.property.2⟩
+
+private theorem continuous_logSpotSlab (a b : ℝ) : Continuous (logSpotSlab a b) :=
+  continuous_slabMk.comp <|
+    (continuous_iff_continuousAt.2 fun p ↦
+      (continuousAt_log p.property.1.ne').comp
+        (continuous_fst.comp continuous_subtypeVal).continuousAt).prodMk
+      ((continuous_snd.comp continuous_subtypeVal).subtype_mk _)
+
 /-- The spot derivative `(s, t) ↦ ∂ₛC(s, t)` of `C = weightedLogSpotPrice u` is jointly continuous
 on `(0, ∞) × [a, b]`. -/
 theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
       (Ioi 0 ×ˢ Icc a b) := by
-  let g : ℝ × ℝ → ℝ := fun p ↦
-    timeExtension hab.le u (log p.1) p.2 +
-      (1 + p.1) / p.1 * timeExtension hab.le (spatialFDerivL u) (log p.1) p.2 1
-  have hu := (continuousOn_timeExtension_log hab.le (valueL u).continuous).mono
-    (prod_mono_right (subset_univ (Icc a b)))
-  have hdu := ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp_continuousOn
-    (continuousOn_timeExtension_log hab.le (spatialFDerivL u).continuous)).mono
-    (prod_mono_right (subset_univ (Icc a b)))
-  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) :=
-    hu.add (((continuousOn_const.add continuousOn_fst).div continuousOn_fst
-      fun _ (hp : _ ∈ Ioi 0 ×ˢ Icc a b) ↦ hp.1.ne').mul hdu)
-  refine hg.congr fun p hp ↦ ?_
-  rw [deriv_weightedLogSpotPrice_spot u hp.1 ⟨p.2, hp.2⟩]
-  have ht1 := timeExtension_of_mem hab.le (valueL u) (log p.1) ⟨p.2, hp.2⟩
-  have ht2 := timeExtension_of_mem hab.le (spatialFDerivL u) (log p.1) ⟨p.2, hp.2⟩
-  dsimp only [g, Subtype.coe_mk] at *
-  rw [ht1, ht2]
+  rw [continuousOn_iff_continuous_domRestrict]
+  have heq : Set.domRestrict (Ioi 0 ×ˢ Icc a b)
+        (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1) =
+      fun p ↦ (valueL u) (logSpotSlab a b p) +
+        (1 + p.val.1) / p.val.1 * (spatialFDerivL u) (logSpotSlab a b p) 1 := by
+    ext p
+    exact deriv_weightedLogSpotPrice_spot u p.property.1 ⟨p.val.2, p.property.2⟩
+  rw [heq]
+  have hlog := continuous_logSpotSlab a b
+  have hf : Continuous (fun p : ↥(Ioi (0 : ℝ) ×ˢ Icc a b) ↦ p.val.1) :=
+    continuous_fst.comp continuous_subtypeVal
+  exact ((valueL u).continuous.comp hlog).add
+    (((continuous_const.add hf).div hf fun p ↦ p.property.1.ne').mul
+      ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
+        ((spatialFDerivL u).continuous.comp hlog)))
 
 /-- The second spot derivative in terms of the spatial gradient and Hessian fields. -/
 theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab)
@@ -186,26 +194,24 @@ theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
     (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1)
       (Ioi 0 ×ˢ Icc a b) := by
-  let g : ℝ × ℝ → ℝ := fun p ↦
-    ((p.1 - 1) * timeExtension hab.le (spatialFDerivL u) (log p.1) p.2 1 +
-      (1 + p.1) * timeExtension hab.le (spatialSecondFDerivL u) (log p.1) p.2 1 1) / p.1 ^ 2
-  have hdu := ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp_continuousOn
-    (continuousOn_timeExtension_log hab.le (spatialFDerivL u).continuous)).mono
-    (prod_mono_right (subset_univ (Icc a b)))
-  have hddu := ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp_continuousOn
-    ((ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)).continuous.comp_continuousOn
-      (continuousOn_timeExtension_log hab.le (spatialSecondFDerivL u).continuous))).mono
-    (prod_mono_right (subset_univ (Icc a b)))
-  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) :=
-    (((continuousOn_fst.sub continuousOn_const).mul hdu).add
-      ((continuousOn_const.add continuousOn_fst).mul hddu)).div
-      (continuousOn_fst.pow 2) fun _ hp ↦ pow_ne_zero 2 hp.1.ne'
-  refine hg.congr fun p hp ↦ ?_
-  rw [deriv_deriv_weightedLogSpotPrice_spot u hp.1 ⟨p.2, hp.2⟩]
-  have ht1 := timeExtension_of_mem hab.le (spatialFDerivL u) (log p.1) ⟨p.2, hp.2⟩
-  have ht2 := timeExtension_of_mem hab.le (spatialSecondFDerivL u) (log p.1) ⟨p.2, hp.2⟩
-  dsimp only [g, Subtype.coe_mk] at *
-  rw [ht1, ht2]
+  rw [continuousOn_iff_continuous_domRestrict]
+  have heq : Set.domRestrict (Ioi 0 ×ˢ Icc a b)
+        (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1) =
+      fun p ↦ ((p.val.1 - 1) * (spatialFDerivL u) (logSpotSlab a b p) 1 +
+        (1 + p.val.1) * (spatialSecondFDerivL u) (logSpotSlab a b p) 1 1) / p.val.1 ^ 2 := by
+    ext p
+    exact deriv_deriv_weightedLogSpotPrice_spot u p.property.1 ⟨p.val.2, p.property.2⟩
+  rw [heq]
+  have hlog := continuous_logSpotSlab a b
+  have hf : Continuous (fun p : ↥(Ioi (0 : ℝ) ×ˢ Icc a b) ↦ p.val.1) :=
+    continuous_fst.comp continuous_subtypeVal
+  exact (((hf.sub continuous_const).mul ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
+      ((spatialFDerivL u).continuous.comp hlog))).add
+    ((continuous_const.add hf).mul
+      ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp
+        ((ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)).continuous.comp
+          ((spatialSecondFDerivL u).continuous.comp hlog))))).div
+    (hf.pow 2) fun p ↦ pow_ne_zero 2 p.property.1.ne'
 
 /-- The dollar delta has linear growth with an explicit bound from the value and gradient
 norms. This bound is suitable for moment-based integrability criteria. -/
@@ -272,16 +278,17 @@ theorem continuousOn_derivWithin_weightedLogSpotPrice_time
     (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc a b) p.2)
       (Ioi 0 ×ˢ Icc a b) := by
-  let g : ℝ × ℝ → ℝ := fun p ↦ (1 + p.1) * timeExtension hab.le (timeDerivL u) (log p.1) p.2
-  have hdt := (continuousOn_timeExtension_log hab.le (timeDerivL u).continuous).mono
-    (prod_mono_right (subset_univ (Icc a b)))
-  have hg : ContinuousOn g (Ioi 0 ×ˢ Icc a b) :=
-    (continuousOn_const.add continuousOn_fst).mul hdt
-  refine hg.congr fun p hp ↦ ?_
-  rw [derivWithin_weightedLogSpotPrice_time u p.1 ⟨p.2, hp.2⟩]
-  have ht1 := timeExtension_of_mem hab.le (timeDerivL u) (log p.1) ⟨p.2, hp.2⟩
-  dsimp only [g, Subtype.coe_mk] at *
-  rw [ht1]
+  rw [continuousOn_iff_continuous_domRestrict]
+  have heq : Set.domRestrict (Ioi 0 ×ˢ Icc a b)
+        (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc a b) p.2) =
+      fun p ↦ (1 + p.val.1) * (timeDerivL u) (logSpotSlab a b p) := by
+    ext p
+    exact derivWithin_weightedLogSpotPrice_time u p.val.1 ⟨p.val.2, p.property.2⟩
+  rw [heq]
+  have hf : Continuous (fun p : ↥(Ioi (0 : ℝ) ×ˢ Icc a b) ↦ p.val.1) :=
+    continuous_fst.comp continuous_subtypeVal
+  exact (continuous_const.add hf).mul
+    ((timeDerivL u).continuous.comp (continuous_logSpotSlab a b))
 
 /-- At an interior time `t ∈ (a, b)`, the reconstructed spot price `weightedLogSpotPrice u s` has
 ordinary time derivative `(1 + s) ∂ₜu(log s, t)`. -/

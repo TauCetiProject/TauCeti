@@ -204,6 +204,7 @@ end
 
 /-- For a constant family `fun _ ↦ F`, `PiLp.equivOfUniqueLIE` evaluates `PiLp.single p i y` to
 `y` for every coordinate index `i`. -/
+@[simp high]
 theorem equivOfUniqueLIE_single [DecidableEq ι] {𝕜 F : Type*} [Fact (1 ≤ p)]
     [Semiring 𝕜] [SeminormedAddCommGroup F] [Module 𝕜 F] (i : ι) (y : F) :
     equivOfUniqueLIE p 𝕜 (fun _ : ι ↦ F) (single p i y) = y := by
