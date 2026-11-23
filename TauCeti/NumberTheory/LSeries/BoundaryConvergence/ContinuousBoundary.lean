@@ -96,12 +96,10 @@ theorem exists_bounded_continuousOn_LSeries_not_tendsto_sum_Icc_div :
     obtain ⟨N, hN⟩ := hunb_raw B
     exact ⟨N, (hsum_eq N).symm ▸ hN⟩
   have hnot : ∀ L : ℂ, ¬ Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, (a n : ℂ) / (n : ℂ))
-      atTop (𝓝 L) := by
-    intro L hL
-    have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, a n / (n : ℝ)) atTop (𝓝 L.re) :=
-      ((Complex.continuous_re.tendsto L).comp hL).congr fun N ↦ by
-        simp only [Function.comp_apply, Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re]
-    exact TauCeti.not_tendsto_nhds_of_forall_exists_le hunb L.re hre
+      atTop (𝓝 L) :=
+    fun _ ↦ TauCeti.not_tendsto_nhds_of_continuousAt_comp_eq Complex.continuous_re.continuousAt
+      (fun N ↦ by simp only [Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re])
+      hunb
   refine ⟨a, F, ha0, ha_bound, ha_zero, hmean, hF_cont, hF_diff, hF_series, hunb, hnot,
     fun Ω F' hΩ hsub heq hF' ↦ ?_⟩
   exact hnot (F' 1) (boundedDirichlet_tendsto_ordered_at_one

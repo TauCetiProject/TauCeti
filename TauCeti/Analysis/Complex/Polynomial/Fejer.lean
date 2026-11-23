@@ -244,16 +244,15 @@ theorem norm_fejerPoly_le_of_norm_le_one (m : ℕ) {w : ℂ} (hw : ‖w‖ ≤ 1
   refine Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball
     (differentiable_fejerPoly m).diffContOnCl (fun z hz ↦ ?_) hmem
   rw [frontier_ball (0 : ℂ) one_ne_zero, mem_sphere_zero_iff_norm] at hz
-  have hz_exp : z = exp ((arg z : ℂ) * I) := by
-    simpa [hz] using (norm_mul_exp_arg_mul_I z).symm
-  have hexp : ‖exp ((m : ℂ) * (arg z : ℂ) * I)‖ = 1 := by
-    have harg : (m : ℂ) * (arg z : ℂ) * I = (((m : ℝ) * arg z : ℝ) : ℂ) * I := by
+  obtain ⟨θ, rfl⟩ := (Complex.norm_eq_one_iff z).mp hz
+  have hexp : ‖exp ((m : ℂ) * θ * I)‖ = 1 := by
+    have harg : (m : ℂ) * θ * I = (((m : ℝ) * θ : ℝ) : ℂ) * I := by
       push_cast
       ring
     rw [harg, norm_exp_ofReal_mul_I]
-  rw [hz_exp, fejerPoly_exp_mul_I, norm_mul, norm_mul, norm_mul, norm_neg,
+  rw [fejerPoly_exp_mul_I, norm_mul, norm_mul, norm_mul, norm_neg,
     Complex.norm_ofNat, norm_I, mul_one, hexp, mul_one, norm_real, Real.norm_eq_abs]
   gcongr
-  exact abs_sum_Icc_sin_div_le m (arg z)
+  exact abs_sum_Icc_sin_div_le m θ
 
 end TauCeti

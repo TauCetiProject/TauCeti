@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Truncated
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Algebra.Order.Floor.UniformMesh
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecificLimits.Normed
 
@@ -32,18 +33,6 @@ open Filter MeasureTheory Set Metric
 open scoped Topology Complex Interval
 
 namespace TauCeti
-
-private theorem norm_cexp_neg_mul_lt_one {h : ℝ} (hh : 0 < h) {z : ℂ} (hz : 0 < z.re) :
-    ‖cexp (-(h : ℂ) * z)‖ < 1 := by
-  rw [neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
-  exact Real.exp_lt_one_iff.mpr (by nlinarith)
-
-private theorem floor_div_eq_of_mem_Ioo {h : ℝ} (hh : 0 < h) {n : ℕ} {t : ℝ}
-    (ht : t ∈ Ioo ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h)) : ⌊t / h⌋₊ = n := by
-  have h1 : (n : ℝ) < t / h := (lt_div_iff₀ hh).mpr ht.1
-  have h2 : t / h < (n : ℝ) + 1 :=
-    (div_lt_iff₀ hh).mpr (by simpa only [Nat.cast_add, Nat.cast_one] using ht.2)
-  exact (Nat.floor_eq_iff ((Nat.cast_nonneg n).trans h1.le)).mpr ⟨h1.le, h2⟩
 
 private theorem intervalIntegrable_floor_div_mul_cexp_neg_mul_step (c : ℕ → ℂ) {h : ℝ}
     (hh : 0 < h) (n : ℕ) (z : ℂ) :

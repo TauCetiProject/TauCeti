@@ -147,10 +147,8 @@ private theorem abs_sum_Icc_sin_div_le_of_pos_of_le_pi (m : ℕ) {θ : ℝ} (hθ
         exact Nat.lt_floor_add_one (1 / θ)
       refine (abs_sum_Ioc_sin_div_le hθ0 hθ K m).trans ?_
       rw [div_le_iff₀ (by positivity : (0 : ℝ) < K + 1)]
-      have hmul : 1 / θ * θ ≤ ((K : ℝ) + 1) * θ := by gcongr
-      rw [one_div_mul_cancel hθ0.ne'] at hmul
       calc 2 * (π / θ) = 2 * π * (1 / θ) := by ring
-        _ ≤ 2 * π * (K + 1) := by gcongr
+        _ ≤ 2 * π * (K + 1) := mul_le_mul_of_nonneg_left hK_gt.le (by positivity)
     · rw [Ioc_eq_empty hKm, sum_empty, abs_zero]
       positivity
   exact (abs_add_le _ _).trans (add_le_add hhead htail)

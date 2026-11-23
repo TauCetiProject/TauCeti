@@ -75,12 +75,10 @@ theorem exists_bounded_continuousOn_laplace_not_tendsto_intervalIntegral :
     have hstep := intervalIntegral_floor_div (fun n ↦ (c n : ℂ)) one_pos N
     apply Complex.ofReal_injective
     simpa [f, intervalIntegral.integral_ofReal, Complex.ofReal_sum] using hstep
-  have hnot : ∀ L : ℂ, ¬ Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, (f t : ℂ)) atTop (𝓝 L) := by
-    intro L hL
-    have hre : Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.range N, c n) atTop (𝓝 L.re) :=
-      ((Complex.continuous_re.tendsto L).comp (hL.comp tendsto_natCast_atTop_atTop)).congr
-        fun N ↦ by simp [intervalIntegral.integral_ofReal, hint_nat]
-    exact TauCeti.not_tendsto_nhds_of_forall_exists_le hc_unb L.re hre
+  have hnot : ∀ L : ℂ, ¬ Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, (f t : ℂ)) atTop (𝓝 L) :=
+    fun _ hL ↦ TauCeti.not_tendsto_nhds_of_continuousAt_comp_eq Complex.continuous_re.continuousAt
+      (fun N ↦ by simp [intervalIntegral.integral_ofReal, hint_nat])
+      hc_unb (hL.comp tendsto_natCast_atTop_atTop)
   refine ⟨f, G, hmeas, hf_bound, hc_zero.comp tendsto_nat_floor_atTop, hG_cont, hG_diff,
     hG_laplace, fun B ↦ ?_, hnot, fun Ω G' hΩ hsub heq hG' ↦ ?_⟩
   · obtain ⟨N, hN⟩ := hc_unb B

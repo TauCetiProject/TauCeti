@@ -136,10 +136,8 @@ private theorem sum_range_fejerStart_mul_pow (K : ℕ) (w : ℂ) :
   set F : ℕ → ℂ := fun k ↦ ∑ n ∈ range (fejerStart k), (fejerSeriesCoeff n : ℂ) * w ^ n
   have hblock (k : ℕ) :
       ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w = F (k + 1) - F k := by
-    have hsum := sum_range_add_sum_Ico (fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n)
-      (fejerStart_strictMono (Nat.lt_succ_self k)).le
-    rw [sum_Ico_fejerSeriesCoeff_mul_pow] at hsum
-    exact eq_sub_of_add_eq' hsum
+    rw [← sum_Ico_fejerSeriesCoeff_mul_pow,
+      Finset.sum_Ico_eq_sub _ (fejerStart_strictMono (Nat.lt_succ_self k)).le]
   simp_rw [hblock, sum_range_sub]
   simp [F, fejerStart]
 
@@ -161,29 +159,36 @@ private theorem sum_range_fejerStart_add_fejerDeg (K : ℕ) :
     simpa [sum_range_fejerPolyCoeff] using
       sum_Ico_fejerStart_add_mul (α := ℝ) K (fejerDeg K) (by omega) (fun _ ↦ (1 : ℝ))
   rw [hsplit, hprev, zero_add, hhalf]
-  have hlog : ((K + 1 : ℝ) * (2 : ℝ) ^ K) * Real.log 2 ≤ Real.log ((fejerDeg K + 1 : ℕ) : ℝ) := by
-    have hdeg_pos : (0 : ℝ) < (fejerDeg K : ℝ) := by
-      unfold fejerDeg
-      positivity
-    calc ((K + 1 : ℝ) * (2 : ℝ) ^ K) * Real.log 2
-        = Real.log ((2 : ℝ) ^ ((K + 1) * 2 ^ K)) := by
-          rw [Real.log_pow]
-          push_cast
-          ring
-      _ = Real.log (fejerDeg K : ℝ) := by
-          unfold fejerDeg
-          push_cast
-          rfl
-      _ ≤ Real.log ((fejerDeg K + 1 : ℕ) : ℝ) :=
-          Real.log_le_log hdeg_pos (by exact_mod_cast Nat.le_succ _)
+  have hlog : ((K + 1 : ℝ) * (2 : ℝ) ^ K) * Real.log 2 = Real.log (fejerDeg K : ℝ) := by
+    rw [fejerDeg, Nat.cast_pow, Nat.cast_ofNat, Real.log_pow]
+    push_cast
+    ring
+  have hharm : Real.log (fejerDeg K : ℝ) ≤ (harmonic (fejerDeg K) : ℝ) := by
+    simpa [Nat.floor_natCast] using log_le_harmonic_floor (fejerDeg K : ℝ) (Nat.cast_nonneg _)
   calc (K + 1 : ℝ) * Real.log 2
       = (2 : ℝ)⁻¹ ^ K * (((K + 1 : ℝ) * (2 : ℝ) ^ K) * Real.log 2) := by
         rw [inv_pow]
         field_simp
-    _ ≤ (2 : ℝ)⁻¹ ^ K * Real.log ((fejerDeg K + 1 : ℕ) : ℝ) := by gcongr
-    _ ≤ (2 : ℝ)⁻¹ ^ K * (harmonic (fejerDeg K) : ℝ) := by
-        gcongr
-        exact log_add_one_le_harmonic (fejerDeg K)
+    _ = (2 : ℝ)⁻¹ ^ K * Real.log (fejerDeg K : ℝ) := by rw [hlog]
+    _ ≤ (2 : ℝ)⁻¹ ^ K * (harmonic (fejerDeg K) : ℝ) := by gcongr
+
+private theorem hasSum_fejerSeriesCoeff_mul_pow {w : ℂ} (hw : ‖w‖ < 1)
+    (hsumm_f : Summable fun k ↦
+      ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w) :
+    HasSum (fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n)
+      (∑' k, ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w) := by
+  have hsumm : Summable fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n :=
+    TauCeti.summable_mul_pow_of_norm_le
+      (fun n ↦ by simpa [Complex.norm_real, Real.norm_eq_abs] using abs_fejerSeriesCoeff_le_one n)
+      hw
+  have hlim1 : Tendsto (fun K ↦ ∑ n ∈ range (fejerStart K), (fejerSeriesCoeff n : ℂ) * w ^ n)
+      atTop (𝓝 (∑' n, (fejerSeriesCoeff n : ℂ) * w ^ n)) :=
+    hsumm.hasSum.tendsto_sum_nat.comp fejerStart_strictMono.tendsto_atTop
+  have hlim2 : Tendsto (fun K ↦ ∑ n ∈ range (fejerStart K), (fejerSeriesCoeff n : ℂ) * w ^ n)
+      atTop (𝓝 (∑' k, ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w)) := by
+    simp_rw [sum_range_fejerStart_mul_pow]
+    exact hsumm_f.hasSum.tendsto_sum_nat
+  exact (tendsto_nhds_unique hlim1 hlim2) ▸ hsumm.hasSum
 
 /-- **Fejér's disc-algebra counterexample (1911).** There exist real coefficients `c : ℕ → ℝ`
 bounded by `1` and tending to `0`, and a function `P : ℂ → ℂ` continuous on the closed unit disc
@@ -223,22 +228,8 @@ theorem exists_continuousOn_closedBall_hasSum_unbounded_sum_range :
   · exact differentiableOn_tsum_of_summable_norm hu (fun k ↦ (hdiff_term k).differentiableOn)
       isOpen_ball fun k w hw ↦ hbound k w (ball_subset_closedBall hw)
   · intro w hw
-    have hsumm : Summable fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n :=
-      TauCeti.summable_mul_pow_of_norm_le
-        (fun n ↦ by simpa [Complex.norm_real, Real.norm_eq_abs] using abs_fejerSeriesCoeff_le_one n)
-        hw
-    have hsumm_f : Summable fun k ↦ f k w :=
-      Summable.of_norm_bounded hu fun k ↦ hbound k w (mem_closedBall_zero_iff.mpr hw.le)
-    have hlim1 : Tendsto (fun K ↦ ∑ n ∈ range (fejerStart K), (fejerSeriesCoeff n : ℂ) * w ^ n)
-        atTop (𝓝 (∑' n, (fejerSeriesCoeff n : ℂ) * w ^ n)) :=
-      hsumm.hasSum.tendsto_sum_nat.comp fejerStart_strictMono.tendsto_atTop
-    have hlim2 : Tendsto (fun K ↦ ∑ n ∈ range (fejerStart K), (fejerSeriesCoeff n : ℂ) * w ^ n)
-        atTop (𝓝 (P w)) := by
-      simp_rw [sum_range_fejerStart_mul_pow]
-      exact hsumm_f.hasSum.tendsto_sum_nat
-    have heq : ∑' n, (fejerSeriesCoeff n : ℂ) * w ^ n = P w :=
-      tendsto_nhds_unique hlim1 hlim2
-    exact heq ▸ hsumm.hasSum
+    exact hasSum_fejerSeriesCoeff_mul_pow hw
+      (Summable.of_norm_bounded hu fun k ↦ hbound k w (mem_closedBall_zero_iff.mpr hw.le))
   · intro B
     have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
     obtain ⟨K, hK⟩ := exists_nat_gt (B / Real.log 2)

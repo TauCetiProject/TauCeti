@@ -17,6 +17,7 @@ subsets of the real line. Its norm is the real exponential with rate `a.re`.
 ## Main results
 
 * `Complex.norm_exp_neg_mul_ofReal`: `‖exp (-(a r))‖ = exp (-(a.re r))` for real `r`.
+* `TauCeti.norm_cexp_neg_mul_lt_one`: `‖exp (-(h : ℂ) * z)‖ < 1` for `h > 0` and `0 < z.re`.
 * `TauCeti.cexp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: two-sided decay with a
   complex rate of positive real part.
 -/
@@ -31,6 +32,13 @@ theorem Complex.norm_exp_neg_mul_ofReal (a : ℂ) (r : ℝ) :
   simp only [Complex.norm_exp, Complex.neg_re, Complex.re_mul_ofReal]
 
 namespace TauCeti
+
+/-- For `h > 0` and `0 < z.re`, the complex exponential `exp (-(h : ℂ) * z)` has norm strictly less
+than `1`. -/
+theorem norm_cexp_neg_mul_lt_one {h : ℝ} (hh : 0 < h) {z : ℂ} (hz : 0 < z.re) :
+    ‖Complex.exp (-(h : ℂ) * z)‖ < 1 := by
+  rw [neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
+  exact Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr (mul_pos hz hh))
 
 /-- **Two-sided complex exponential decay beats every real power.** If a complex rate
 has positive real part, then `exp (-(a * |x|))` is little-o of `|x| ^ s` as

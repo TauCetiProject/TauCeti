@@ -43,6 +43,8 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
   nonempty open interval of a densely ordered space takes a value in it.
 * `TauCeti.not_tendsto_nhds_of_forall_exists_le`: an unbounded-above sequence `ℕ → α` converges to
   no limit in `α`.
+* `TauCeti.not_tendsto_nhds_of_continuousAt_comp_eq`: a sequence `ℕ → β` whose image under a
+  continuous map `β → α` is unbounded above converges to no limit in `β`.
 -/
 
 public section
@@ -166,5 +168,14 @@ theorem not_tendsto_nhds_of_forall_exists_le {α : Type*} [LinearOrder α] [NoMa
     obtain ⟨n, hn⟩ := hu B
     exact ⟨u n, ⟨n, rfl⟩, hn⟩
   exact hc.not_bddAbove h.bddAbove_range
+
+/-- If `g : β → α` is continuous at `b` and `g (v n) = u n` is unbounded above in `α`, then `v`
+converges to no limit `b` in `β`. -/
+theorem not_tendsto_nhds_of_continuousAt_comp_eq {α β : Type*}
+    [LinearOrder α] [NoMaxOrder α] [TopologicalSpace α] [ClosedIciTopology α]
+    [TopologicalSpace β] {g : β → α} {b : β} (hg : ContinuousAt g b) {v : ℕ → β} {u : ℕ → α}
+    (huv : ∀ n, g (v n) = u n) (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) :
+    ¬ Tendsto v atTop (𝓝 b) :=
+  fun h ↦ not_tendsto_nhds_of_forall_exists_le hu (g b) ((hg.tendsto.comp h).congr huv)
 
 end TauCeti
