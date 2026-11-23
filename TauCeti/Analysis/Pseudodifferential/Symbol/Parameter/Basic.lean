@@ -1057,6 +1057,10 @@ theorem IsSmoothing.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) :
   obtain ⟨a', ha'⟩ := ha m'
   exact ⟨-a', by simp [ha']⟩
 
+@[simp]
+theorem isSmoothing_neg_iff {a : ParameterSymbol n Λ V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
 theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
     (hb : b.IsSmoothing) : (a - b).IsSmoothing := by
   rw [sub_eq_add_neg]
@@ -1065,6 +1069,13 @@ theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
 theorem IsSmoothing.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+/-- Including a parameter-dependent symbol into a higher order does not change whether it is
+smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : ParameterSymbol n Λ V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion], (·.inclusion h)⟩
 
 theorem IsSmoothing.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
     (v : CoordinateSpace n) : (a.spatialDeriv v).IsSmoothing := fun m' => by

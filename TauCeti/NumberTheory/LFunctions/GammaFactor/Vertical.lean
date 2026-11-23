@@ -13,7 +13,7 @@ import TauCeti.Algebra.Order.BigOperators.Group.Multiset
 import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.Normed.Ring.Multiset
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Vertical-strip asymptotics of archimedean gamma factors and dual gamma quotients
@@ -457,7 +457,7 @@ private theorem rpow_le_rpow_mul_analyticConductorAt_rpow (d : AnalyticLFunction
       (sub_le_sub_left hs.1 (1 / 2))).trans_eq (max_comm _ _)
   have hratio : (x / d.analyticConductorAt s) ^ (1 / 2 - s.re) ≤
       K ^ max |1 / 2 - a| |1 / 2 - b| :=
-    (Real.rpow_le_rpow_abs (div_pos hx hy) ((div_le_iff₀ hy).2 hxy)
+    (Real.rpow_le_rpow_abs (div_pos hx hy).le ((div_le_iff₀ hy).2 hxy)
       (by rw [inv_div]; exact (div_le_iff₀ hx).2 hyx) _).trans
       (Real.rpow_le_rpow_of_exponent_le hK he)
   rwa [Real.div_rpow hx.le hy.le, div_le_iff₀ (Real.rpow_pos_of_pos hy _)] at hratio

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
 # Composition with linear maps in bounded Hölder spaces
@@ -216,10 +217,7 @@ private theorem holderWith_iteratedFDeriv_comp_left (g : F →L[ℝ] G)
   -- The top derivative of `g ∘ f` is the top derivative of `f` followed by the continuous linear
   -- map `A ↦ g ∘ A` on multilinear maps, whose norm is at most `‖g‖`.
   set L := ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) F G g
-  have hL : ‖L‖₊ ≤ ‖g‖₊ := by
-    refine NNReal.coe_le_coe.mp (L.opNorm_le_bound (norm_nonneg g) fun A ↦ ?_)
-    rw [ContinuousLinearMap.compContinuousMultilinearMapL_apply]
-    exact g.norm_compContinuousMultilinearMap_le A
+  have hL : ‖L‖₊ ≤ ‖g‖₊ := NNReal.coe_le_coe.mp g.norm_compContinuousMultilinearMapL_le
   have h := L.lipschitzWith.holderWith.comp f.memHolder_iteratedFDeriv.holderWith
   simp only [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
   have heq : _root_.iteratedFDeriv ℝ k (g ∘ f) = L ∘ _root_.iteratedFDeriv ℝ k f :=
