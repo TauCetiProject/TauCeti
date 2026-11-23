@@ -823,6 +823,14 @@ theorem weightedC_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
       exact ha
     · exact (weightMul T ν U).zero_mem
 
+/-- The unit lies in `U⟨X⟩` exactly when `1 ∈ U`. This is `weightedC_mem_weightedNhd` at `a = 1`,
+which simp cannot use because `map_one` rewrites `weightedC T hT 1` first. -/
+@[simp 1100]
+theorem one_mem_weightedNhd_iff [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
+    {U : AddSubgroup A} :
+    (1 : weightedRestrictedSubring T hT) ∈ weightedNhd T hT U ↔ (1 : A) ∈ U := by
+  simpa only [map_one] using weightedC_mem_weightedNhd hT (U := U) (a := 1)
+
 /-- `R⟨X⟩_T` for a subring `R` of `A`: the series all of whose coefficients meet the `R` bound,
 `aν ∈ Tν · R` for every `ν`. Its carrier is the subgroup `TauCeti.Huber.weightedNhd` of `R`; that
 it is a subring is coefficientwise multiplicativity of `R`.
@@ -834,7 +842,7 @@ it is the subring whose integral closure is the plus ring of `A⟨X⟩_T`
 def weightedSubring [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T)
     (R : Subring A) : Subring (weightedRestrictedSubring T hT) where
   __ := weightedNhd T hT R.toAddSubgroup
-  one_mem' := by simpa using (weightedC_mem_weightedNhd hT (U := R.toAddSubgroup)).mpr R.one_mem
+  one_mem' := by simp
   mul_mem' hf hg := mul_mem_weightedNhd
     (Set.mul_subset_iff.mpr fun _ ha _ hb ↦ R.mul_mem ha hb) hf hg
 
@@ -850,8 +858,6 @@ theorem weightedSubring_mono [NonarchimedeanRing A] {T : Fin k → Set A} {hT : 
   fun _ hf ↦ weightedNhd_mono (U := R.toAddSubgroup) (V := S.toAddSubgroup) h hf
 
 /-- A constant series lies in `R⟨X⟩_T` exactly when its value lies in `R`. -/
--- Apply before `mem_weightedSubring`, which expands the bound on every coefficient.
-@[simp 1100]
 theorem weightedC_mem_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A}
     (hT : IsWeightFamily T) {R : Subring A} {a : A} :
     weightedC T hT a ∈ weightedSubring T hT R ↔ a ∈ R :=
@@ -1220,7 +1226,6 @@ noncomputable def weightedPolynomialEquivOfDiscrete [NonarchimedeanRing A] [Disc
         exact ⟨p, hp⟩⟩
 
 /-- The forward polynomial comparison is the coefficientwise inclusion `weightedPolynomialHom`. -/
-@[simp]
 theorem weightedPolynomialEquivOfDiscrete_apply [NonarchimedeanRing A]
     [DiscreteTopology A] {T : Fin k → Set A} {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
     weightedPolynomialEquivOfDiscrete T hT p = weightedPolynomialHom T hT p := (rfl)
@@ -1456,18 +1461,20 @@ theorem weightedMap_id [NonarchimedeanRing A] {T : Fin k → Set A} (hT : IsWeig
   rw [coe_weightedMap, MvPowerSeries.map_id]
   rfl
 
-/-- **The composition law**: the map induced by a composite is the composite of the induced maps.
+/-- **The composition law**: the composite of the induced maps is the map induced by the composite.
 With `weightedMap_id` this is what makes `A⟨X⟩_T` functorial in the pair `(A, T)`. -/
+@[simp]
 theorem weightedMap_comp [NonarchimedeanRing A] [NonarchimedeanRing B] {C : Type*} [CommRing C]
     [TopologicalSpace C] [NonarchimedeanRing C] {φ : A →+* B} {ψ : B →+* C} (hφ : Continuous φ)
     (hψ : Continuous ψ) {T : Fin k → Set A} {S : Fin k → Set B} {R : Fin k → Set C}
     (hT : IsWeightFamily T) (hS : IsWeightFamily S) (hR : IsWeightFamily R)
     (hTS : ∀ i, φ '' T i ⊆ S i) (hSR : ∀ i, ψ '' S i ⊆ R i) :
-    weightedMap (φ := ψ.comp φ) (by simpa only [RingHom.coe_comp] using hψ.comp hφ) hT hR
+    (weightedMap hψ hS hR hSR).comp (weightedMap hφ hT hS hTS) =
+      weightedMap (φ := ψ.comp φ) (by simpa only [RingHom.coe_comp] using hψ.comp hφ) hT hR
         (fun i ↦ by
           simpa only [RingHom.coe_comp, Set.image_comp] using
-            (Set.image_mono (hTS i)).trans (hSR i))
-      = (weightedMap hψ hS hR hSR).comp (weightedMap hφ hT hS hTS) := by
+            (Set.image_mono (hTS i)).trans (hSR i)) := by
+  symm
   refine RingHom.ext fun f ↦ Subtype.ext ?_
   rw [coe_weightedMap, MvPowerSeries.map_comp]
   rfl

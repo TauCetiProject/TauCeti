@@ -229,7 +229,7 @@ theorem weightedMapCompletion_comp {C : Type*} [CommRing C] [TopologicalSpace C]
           (fun i ↦ Set.image_subset_iff.mpr ((hTS i).trans (Set.preimage_mono (hSR i)))) := by
   have hTS' : ∀ i, φ '' T i ⊆ S i := fun i ↦ Set.image_subset_iff.mpr (hTS i)
   have hSR' : ∀ i, ψ '' S i ⊆ R i := fun i ↦ Set.image_subset_iff.mpr (hSR i)
-  simp only [weightedMapCompletion, weightedMap_comp hφ hψ hT hS hR hTS' hSR']
+  simp only [weightedMapCompletion, ← weightedMap_comp hφ hψ hT hS hR hTS' hSR']
   exact UniformSpace.Completion.mapRingHom_comp _ _
 
 /-- **The isomorphism `A⟨X⟩_T ≃+* B⟨X⟩_S` induced by a bicontinuous ring isomorphism.** On the
