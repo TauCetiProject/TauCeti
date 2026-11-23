@@ -40,6 +40,8 @@ membership in it to computations of orbits of explicit permutations.
 ## Main declarations
 
 * `Subgroup.stabilizerChain`: the stabilizer chain of a subgroup along a sequence of points.
+* `Subgroup.eq_of_forall_smul_eq_of_stabilizerChain_eq_bot`: over a base, an element of the
+  subgroup is determined by its values at the base points.
 * `Subgroup.prod_ncard_orbit_mul_card_stabilizerChain`: the stabilizer-chain order formula.
 * `Subgroup.prod_ncard_orbit_stabilizerChain_eq_card`: the order formula along a base.
 * `Subgroup.mem_iff_inv_mul_mem_stabilizerChain`: any sift decides membership.
@@ -96,6 +98,14 @@ theorem stabilizerChain_succ (i : ℕ) :
 theorem stabilizerChain_le (i : ℕ) : H.stabilizerChain b i ≤ H :=
   inf_le_left
 
+/-- The orbits of a member of a stabilizer chain are the orbits of the stabilizer of the previous
+base point in the previous member. -/
+theorem orbit_stabilizerChain_succ (i : ℕ) (x : α) :
+    orbit (H.stabilizerChain b (i + 1)) x = orbit (stabilizer (H.stabilizerChain b i) (b i)) x := by
+  ext y
+  rw [← orbitRel_apply, ← orbitRel_apply, ← stabilizer_subgroupOf, orbitRel_subgroupOf,
+    stabilizerChain_succ, inf_comm]
+
 /-- Each member of the stabilizer chain of a finite subgroup is finite. -/
 instance [Finite H] (i : ℕ) : Finite (H.stabilizerChain b i) :=
   Finite.of_injective _ (inclusion_injective (H.stabilizerChain_le b i))
@@ -107,6 +117,17 @@ theorem stabilizerChain_antitone : Antitone (H.stabilizerChain b) := fun _ _ hij
 theorem stabilizerChain_mono {H K : Subgroup G} (b : ℕ → α) (h : H ≤ K) (i : ℕ) :
     H.stabilizerChain b i ≤ K.stabilizerChain b i :=
   inf_le_inf_right _ h
+
+/-- Over a base, an element of `H` is determined by its values at the base points: two elements
+of `H` that agree at each of `b 0, …, b (k - 1)` are equal. -/
+theorem eq_of_forall_smul_eq_of_stabilizerChain_eq_bot {k : ℕ}
+    (hk : H.stabilizerChain b k = ⊥) {g h : G} (hg : g ∈ H) (hh : h ∈ H)
+    (hgh : ∀ j < k, g • b j = h • b j) : g = h := by
+  have hmem : h⁻¹ * g ∈ H.stabilizerChain b k :=
+    (H.mem_stabilizerChain_iff b).mpr ⟨H.mul_mem (H.inv_mem hh) hg, fun j hj ↦ by
+      rw [mul_smul, hgh j hj, inv_smul_smul]⟩
+  rw [hk, Subgroup.mem_bot, inv_mul_eq_one] at hmem
+  exact hmem.symm
 
 /-! ### The order formula -/
 
@@ -235,7 +256,7 @@ theorem orbit_stabilizerChain_eq_compl {k : ℕ} [IsMultiplyPretransitive H α k
   constructor
   · intro hy ⟨j, hj, hjy⟩
     obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
-    have hgj : (g : G) • b j = b j := ((mem_stabilizerChain_iff H b).mp g.2).2 j hj
+    have hgj : (g : G) • b j = b j := ((mem_stabilizerChain_iff H b).mp g.property).2 j hj
     rw [Subgroup.smul_def] at hjy
     exact hbi ⟨j, hj, smul_left_cancel _ (hgj.trans hjy)⟩
   · intro hy
@@ -245,15 +266,15 @@ theorem orbit_stabilizerChain_eq_compl {k : ℕ} [IsMultiplyPretransitive H α k
       exact hi
     have hkα : (k : ℕ∞) ≤ ENat.card α := by
       simpa using ENat.card_le_card_of_injective (f := fun j : Fin k ↦ b j)
-        fun j j' h ↦ Fin.ext (hb j.2 j'.2 h)
+        fun j j' h ↦ Fin.ext (hb j.isLt j'.isLt h)
     have : IsPretransitive (fixingSubgroup H s) (SubMulAction.ofFixingSubgroup H s) :=
       is_one_pretransitive_iff.mp
         (SubMulAction.ofFixingSubgroup.isMultiplyPretransitive' s hsk hkα)
     obtain ⟨g, hg⟩ := exists_smul_eq (fixingSubgroup H s)
       (⟨b i, hbi⟩ : SubMulAction.ofFixingSubgroup H s) ⟨y, hy⟩
     have hgi : ((g : H) : G) ∈ H.stabilizerChain b i :=
-      (mem_stabilizerChain_iff H b).mpr ⟨(g : H).2, fun j hj ↦
-        (mem_fixingSubgroup_iff H).mp g.2 (b j) ⟨j, hj, rfl⟩⟩
+      (mem_stabilizerChain_iff H b).mpr ⟨(g : H).property, fun j hj ↦
+        (mem_fixingSubgroup_iff H).mp g.property (b j) ⟨j, hj, rfl⟩⟩
     -- unfold the actions of `fixingSubgroup H s` on `SubMulAction.ofFixingSubgroup H s` and of
     -- `H` on `α` to see that `g` sends `b i` to `y` in `α`
     have hgy : ((g : H) : G) • b i = y := by

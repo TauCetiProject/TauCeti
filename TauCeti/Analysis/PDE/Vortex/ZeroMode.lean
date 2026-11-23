@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.PotentialSolve
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -280,7 +281,7 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
         ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) + h z) *
           ((Δ φ z - (x z 2 ^ 2 + x z 3 ^ 2) * φ z : ℝ) : ℂ) = 0 := by
   set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
-  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_potential_and_le hx hlim
+  obtain ⟨R, hP, hP₀, hPa⟩ := exists_memLp_top_sq_add_sq_and_le hx hlim
   set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k)
   set g : ℂ → ℂ := fun z ↦ Δ η₀ z - P z * η₀ z
   have hg2 : MemLp g 2 volume := memLp_laplacian_sub_mul_principalPart hx hα hρ hρc hρa c

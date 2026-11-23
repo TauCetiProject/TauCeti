@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.RingTheory.Norm.Congruence
 
 /-!
-# The absolute ideal norm under a ring isomorphism, and congruences of norms
+# The absolute ideal norm under ring isomorphisms, prime factorizations, and congruences
 
 Identifying two rings along an isomorphism identifies their ideals, and the absolute norm is
-insensitive to that identification. A proper ideal contains no natural number prime to its
-absolute norm. Over `ℤ` itself, the absolute norm of the ideal `(n)` is `|n|`.
+insensitive to that identification. In a Dedekind domain with finite quotients, the absolute
+norm of a nonzero ideal stays nonzero when cast into characteristic zero. A proper ideal
+contains no natural number prime to its absolute norm, and for any nonzero ideal of a Dedekind
+domain its absolute norm factors as the product over all height-one primes of the residue
+cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute norm of the ideal
+`(n)` is `|n|`.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -25,8 +31,13 @@ have nonnegative product generate principal ideals with congruent absolute norms
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
   arbitrary commutative ring is the cardinality of the original quotient.
+* `Ideal.natCast_absNorm_ne_zero`, `IsDedekindDomain.HeightOneSpectrum.natCast_absNorm_ne_zero`:
+  in a Dedekind domain with finite quotients, the absolute norm of a nonzero ideal, in particular
+  of a height-one prime, stays nonzero when cast into characteristic zero.
 * `Ideal.natCast_notMem_of_coprime_absNorm`: a natural number prime to the absolute norm of a
   proper ideal does not lie in it.
+* `Ideal.finprod_pow_count_eq_absNorm`: for a nonzero ideal `J` of a Dedekind domain `R`, the
+  absolute norm equals `∏ᶠ v, (#(R ⧸ v)) ^ count v J`.
 * `Int.absNorm_span_singleton`, `Int.absNorm_le_natAbs_of_dvd_span_singleton`: the absolute norm
   of the ideal `(n)` of `ℤ` is `|n|`, and that of an ideal dividing `(n)`, for `n ≠ 0`, is at most
   `|n|`.
@@ -72,6 +83,12 @@ theorem absNorm_map_of_ringEquiv_eq_natCard {A : Type*} [CommRing A] [Infinite R
   rw [absNorm_eq_natCard]
   exact Nat.card_congr (Ideal.quotientEquiv I _ (RingEquivClass.toRingEquiv e) rfl).toEquiv.symm
 
+/-- In a Dedekind domain with finite quotients, the absolute norm of a nonzero ideal stays
+nonzero when cast into any `AddMonoidWithOne` of characteristic zero, such as `ℝ` or `ℂ`. -/
+theorem natCast_absNorm_ne_zero [Ring.HasFiniteQuotients R] {α : Type*} [AddMonoidWithOne α]
+    [CharZero α] {I : Ideal R} (hI : I ≠ ⊥) : (absNorm I : α) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr hI)
+
 /-- A natural number prime to the absolute norm of a proper ideal `I` does not lie in `I`, since
 `I` contains its norm (`Ideal.absNorm_mem`). -/
 theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : ℕ}
@@ -80,7 +97,34 @@ theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : �
   rw [eq_top_iff_one, ← huv]
   simpa using I.add_mem (I.mul_mem_left u h) (I.mul_mem_left v (absNorm_mem I))
 
+open _root_.IsDedekindDomain in
+/-- **Prime-factorization formula for the absolute norm of a nonzero ideal.** -/
+theorem finprod_pow_count_eq_absNorm {J : Ideal R} (hJ : J ≠ ⊥) :
+    (∏ᶠ v : HeightOneSpectrum R,
+        Nat.card (R ⧸ v.asIdeal) ^ (Associates.mk v.asIdeal).count (Associates.mk J).factors) =
+      Ideal.absNorm J := by
+  have hJ0 : J ≠ 0 := by rwa [Ideal.zero_eq_bot]
+  have hfact := congrArg Ideal.absNorm.toMonoidHom
+    (Ideal.finprod_heightOneSpectrum_factorization hJ0)
+  rw [MonoidHom.map_finprod _ (Ideal.hasFiniteMulSupport hJ0)] at hfact
+  refine Eq.trans ?_ hfact
+  refine finprod_congr fun v ↦ ?_
+  simp [IsDedekindDomain.HeightOneSpectrum.maxPowDividing, Ideal.absNorm_of_ne_bot v.ne_bot,
+    Submodule.cardQuot_apply]
+
 end Ideal
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+/-- The absolute norm of a height-one prime of a Dedekind domain with finite quotients stays
+nonzero when cast into any `AddMonoidWithOne` of characteristic zero. This is
+`Ideal.natCast_absNorm_ne_zero` for `P.asIdeal`, stated for use with dot notation. -/
+theorem natCast_absNorm_ne_zero {R : Type*} [CommRing R] [IsDedekindDomain R]
+    [Ring.HasFiniteQuotients R] {α : Type*} [AddMonoidWithOne α] [CharZero α]
+    (P : HeightOneSpectrum R) : (Ideal.absNorm P.asIdeal : α) ≠ 0 :=
+  Ideal.natCast_absNorm_ne_zero P.ne_bot
+
+end IsDedekindDomain.HeightOneSpectrum
 
 namespace Int
 

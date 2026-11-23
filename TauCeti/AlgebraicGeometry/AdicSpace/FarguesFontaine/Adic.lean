@@ -175,7 +175,7 @@ theorem isSheaf_spaYPresheaf (hv : v.Integers R) (hϖ : ϖ ≠ 0) (hϖ' : v (alg
       exact_mod_cast (zpow_le_zpow_right₀ h1 (by omega : -(n : ℤ) ≤ n))
   exact isSheafy_spaYPreAdicSpace_restrict hv hϖ hϖ' (hρ hq) (hρ hq') _
     (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂
-    fun x ↦ (mem_spaYWindow_iff hI).mp x.2
+    fun x ↦ (mem_spaYWindow_iff hI).mp x.property
 
 end IntervalRing
 

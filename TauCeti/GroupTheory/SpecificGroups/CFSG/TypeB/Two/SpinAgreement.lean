@@ -125,17 +125,17 @@ index on the full-weight spin carrier, read at rank parameter one, is identified
 group on the rank-two standard symplectic carrier by
 `TauCeti.TypeBSpinCarrier.pointsMulEquivSymplecticPoints`, which reindexes the four spin
 coordinates and conjugates by a signed permutation matrix. -/
-noncomputable def spinEquivCarrier : d.toTypeBLieIndex.AmbientGroup ≃* d.1.AmbientGroup :=
-  (MulEquiv.cast (M := fun n => TypeBSpinCarrier.points n d.1.1.Closure)
+noncomputable def spinEquivCarrier : d.toTypeBLieIndex.AmbientGroup ≃* d.val.AmbientGroup :=
+  (MulEquiv.cast (M := fun n => TypeBSpinCarrier.points n d.val.val.Closure)
     d.carrierRank_toTypeBLieIndex).trans
-    (TypeBSpinCarrier.pointsMulEquivSymplecticPoints d.1.1.Closure)
+    (TypeBSpinCarrier.pointsMulEquivSymplecticPoints d.val.val.Closure)
 
 /-- The carrier identification is the rank-two spin-to-symplectic identification, after reading
 the spin carrier of the index at rank parameter one. -/
 theorem spinEquivCarrier_apply (g : d.toTypeBLieIndex.AmbientGroup) :
     d.spinEquivCarrier g =
-      TypeBSpinCarrier.pointsMulEquivSymplecticPoints d.1.1.Closure
-        (MulEquiv.cast (M := fun n => TypeBSpinCarrier.points n d.1.1.Closure)
+      TypeBSpinCarrier.pointsMulEquivSymplecticPoints d.val.val.Closure
+        (MulEquiv.cast (M := fun n => TypeBSpinCarrier.points n d.val.val.Closure)
           d.carrierRank_toTypeBLieIndex g) :=
   (rfl)
 
@@ -148,26 +148,27 @@ carrier's raising subgroup at node `i` of `B₂` goes to the symplectic carrier'
 at the exchanged `C₂` node, which is the node `TauCeti.RankTwoBLieIndex.carrierNode` assigns to
 `i`. -/
 @[simp]
-theorem spinEquivCarrier_simpleRootSubgroup (i : Fin d.1.1.rank)
-    (u : Multiplicative d.1.1.Closure) :
+theorem spinEquivCarrier_simpleRootSubgroup (i : Fin d.val.val.rank)
+    (u : Multiplicative d.val.val.Closure) :
     (dsimp% only (d.spinEquivCarrier (d.toTypeBLieIndex.simpleRootSubgroup i u))) =
-      d.1.simpleRootSubgroup i u := by
+      d.val.simpleRootSubgroup i u := by
   rw [spinEquivCarrier_apply, TypeBLieIndex.simpleRootSubgroup_def, cast_rootSubgroupPoints,
     RankTwoBLieIndex.simpleRootSubgroup_def]
   -- Both carrier nodes are the value of `i` read in `Fin 2`, to which the spin-to-symplectic
   -- identification and `RankTwoBLieIndex.carrierNode` apply the same swap of the two nodes.
   have hnode : Fin.cast (congrArg (· + 1) d.carrierRank_toTypeBLieIndex)
-      (d.toTypeBLieIndex.carrierNode i) = finCongr d.1.rank_eq_two i :=
+      (d.toTypeBLieIndex.carrierNode i) = finCongr d.val.rank_eq_two i :=
     Fin.ext (by simp)
   simp only [Sum.map_inl, hnode, TypeBSpinCarrier.pointsMulEquivSymplecticPoints_rootSubgroupPoints,
     TypeBSpinCarrier.symplecticRootIndex_inl, RankTwoBLieIndex.carrierNode_apply]
-  generalize finCongr d.1.rank_eq_two i = j
+  generalize finCongr d.val.rank_eq_two i = j
   fin_cases j <;> simp
 
 /-- **The carrier identification intertwines the two `q`-power Frobenius maps.** -/
 @[simp]
 theorem spinEquivCarrier_frobenius (g : d.toTypeBLieIndex.AmbientGroup) :
-    d.spinEquivCarrier (d.toTypeBLieIndex.frobenius g) = d.1.frobenius (d.spinEquivCarrier g) := by
+    d.spinEquivCarrier (d.toTypeBLieIndex.frobenius g) = d.val.frobenius (d.spinEquivCarrier g)
+        := by
   rw [spinEquivCarrier_apply, spinEquivCarrier_apply, TypeBLieIndex.frobenius_def,
     RankTwoBLieIndex.frobenius_def, cast_frobenius,
     TypeBSpinCarrier.pointsMulEquivSymplecticPoints_frobenius]
@@ -176,7 +177,7 @@ theorem spinEquivCarrier_frobenius (g : d.toTypeBLieIndex.AmbientGroup) :
 @[simp]
 theorem spinEquivCarrier_primeFrobenius (g : d.toTypeBLieIndex.AmbientGroup) :
     d.spinEquivCarrier (d.toTypeBLieIndex.primeFrobenius g) =
-      d.1.primeFrobenius (d.spinEquivCarrier g) := by
+      d.val.primeFrobenius (d.spinEquivCarrier g) := by
   rw [spinEquivCarrier_apply, spinEquivCarrier_apply, TypeBLieIndex.primeFrobenius_def,
     RankTwoBLieIndex.primeFrobenius_def, cast_frobenius,
     TypeBSpinCarrier.pointsMulEquivSymplecticPoints_frobenius]
@@ -187,21 +188,21 @@ theorem spinEquivCarrier_primeFrobenius (g : d.toTypeBLieIndex.AmbientGroup) :
 is the carrier identification `spinEquivCarrier` followed by the identification
 `TauCeti.RankTwoBLieIndex.carrierEquivPinned` of the rank-two symplectic carrier with the pinned
 scheme points. -/
-noncomputable def spinEquivPinned : d.toTypeBLieIndex.AmbientGroup ≃* d.1.PinnedGroup :=
-  d.spinEquivCarrier.trans d.1.carrierEquivPinned
+noncomputable def spinEquivPinned : d.toTypeBLieIndex.AmbientGroup ≃* d.val.PinnedGroup :=
+  d.spinEquivCarrier.trans d.val.carrierEquivPinned
 
 /-- The identification with the pinned points passes through the rank-two symplectic carrier. -/
 theorem spinEquivPinned_apply (g : d.toTypeBLieIndex.AmbientGroup) :
-    d.spinEquivPinned g = d.1.carrierEquivPinned (d.spinEquivCarrier g) :=
+    d.spinEquivPinned g = d.val.carrierEquivPinned (d.spinEquivCarrier g) :=
   (rfl)
 
 /-- **The identification with the pinned points matches the Bourbaki-numbered simple root
 subgroups**: `e (x_i(u)) = x'_i(u)` for the pinned simple root subgroups `x'_i` of `Sp₄/ℤ`. -/
 @[simp]
-theorem spinEquivPinned_simpleRootSubgroup (i : Fin d.1.1.rank)
-    (u : Multiplicative d.1.1.Closure) :
+theorem spinEquivPinned_simpleRootSubgroup (i : Fin d.val.val.rank)
+    (u : Multiplicative d.val.val.Closure) :
     (dsimp% only (d.spinEquivPinned (d.toTypeBLieIndex.simpleRootSubgroup i u))) =
-      d.1.pinnedSimpleRootSubgroup i u := by
+      d.val.pinnedSimpleRootSubgroup i u := by
   rw [spinEquivPinned_apply, spinEquivCarrier_simpleRootSubgroup,
     RankTwoBLieIndex.carrierEquivPinned_simpleRootSubgroup]
 
@@ -210,7 +211,7 @@ the pinned one. -/
 @[simp]
 theorem spinEquivPinned_frobenius (g : d.toTypeBLieIndex.AmbientGroup) :
     d.spinEquivPinned (d.toTypeBLieIndex.frobenius g) =
-      d.1.pinnedFrobenius (d.spinEquivPinned g) := by
+      d.val.pinnedFrobenius (d.spinEquivPinned g) := by
   rw [spinEquivPinned_apply, spinEquivCarrier_frobenius,
     RankTwoBLieIndex.carrierEquivPinned_frobenius, spinEquivPinned_apply]
 
@@ -218,7 +219,7 @@ theorem spinEquivPinned_frobenius (g : d.toTypeBLieIndex.AmbientGroup) :
 @[simp]
 theorem spinEquivPinned_primeFrobenius (g : d.toTypeBLieIndex.AmbientGroup) :
     d.spinEquivPinned (d.toTypeBLieIndex.primeFrobenius g) =
-      d.1.pinnedPrimeFrobenius (d.spinEquivPinned g) := by
+      d.val.pinnedPrimeFrobenius (d.spinEquivPinned g) := by
   rw [spinEquivPinned_apply, spinEquivCarrier_primeFrobenius,
     RankTwoBLieIndex.carrierEquivPinned_primeFrobenius, spinEquivPinned_apply]
 
@@ -228,7 +229,7 @@ pinned points through their matrix realization, independently of the spin carrie
 @[simp]
 theorem spinEquivPinned_steinberg (g : d.toTypeBLieIndex.AmbientGroup) :
     d.spinEquivPinned (d.toTypeBLieIndex.steinberg g) =
-      d.1.pinnedFrobenius (d.spinEquivPinned g) := by
+      d.val.pinnedFrobenius (d.spinEquivPinned g) := by
   rw [TypeBLieIndex.steinberg_def, spinEquivPinned_frobenius]
 
 end TauCeti.TypeB2LieIndex
