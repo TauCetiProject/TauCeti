@@ -27,20 +27,20 @@ when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (
 `t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
-`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one, and if `‖n‖ < 1` then every
-natural number coprime to `n` has norm one, and multiplying `n` by it does not change the norm of
-`n`. For a prime `p` with `‖p‖ < 1`, the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`,
-exactly divisible by `p`, thus has the norm of `p`. Since the forward differences
-of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
+`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one, and if `‖n‖ < 1` then
+multiplying by a natural number coprime to `n` does not change norms; in particular every natural
+number coprime to `n` has norm one. For a prime `p` with `‖p‖ < 1`, the binomial coefficient
+`(p ^ (k + 1)).choose (p ^ k)`, exactly divisible by `p`, thus has the norm of `p`. Since the
+forward differences of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 
 ## Main results
 
 * `IsUltrametricDist.exists_lt_norm_natCast_eq_one`: arbitrarily large natural numbers have norm
   one in an ultrametric seminormed ring with `‖1‖ = 1`.
+* `IsUltrametricDist.norm_mul_natCast_eq_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, then
+  `‖x * m‖ = ‖x‖` for every `x` and every natural number `m` coprime to `n`.
 * `IsUltrametricDist.norm_natCast_eq_one_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, every natural
   number coprime to `n` has norm one.
-* `IsUltrametricDist.norm_natCast_mul_eq_of_coprime`: if `‖n‖ < 1` with `‖1‖ = 1`, then
-  `‖n * m‖ = ‖n‖` for every natural number `m` coprime to `n`.
 * `IsUltrametricDist.norm_choose_prime_pow_succ`: if a prime `p` has `‖p‖ < 1`, the binomial
   coefficient `(p ^ (k + 1)).choose (p ^ k)` has the norm of `p`.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
@@ -104,59 +104,43 @@ theorem IsUltrametricDist.exists_lt_norm_natCast_eq_one (R : Type*) [SeminormedR
   exact (h3.trans_lt (max_lt h2 h1)).false
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a natural number `n` has norm less
-than one, every natural number coprime to `n` has norm one. -/
-theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [SeminormedRing R]
-    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m) :
-    ‖(m : R)‖ = 1 := by
-  refine (IsUltrametricDist.norm_natCast_le_one R m).antisymm (not_lt.mp fun hmR ↦ ?_)
-  -- Bézout: `n * a + m * b = 1` in `ℤ`, hence in `R`.
-  have hsum : (n : R) * (n.gcdA m : R) + (m : R) * (n.gcdB m : R) = 1 := by
-    have h : (n : ℤ) * n.gcdA m + m * n.gcdB m = 1 := by
-      rw [← Nat.gcd_eq_gcd_ab, hnm.gcd_eq_one, Nat.cast_one]
-    exact_mod_cast congrArg (Int.cast (R := R)) h
-  have hlt (k : ℕ) (z : ℤ) (hk : ‖(k : R)‖ < 1) : ‖(k : R) * z‖ < 1 :=
-    (norm_mul_le _ _).trans_lt <| by
-      calc ‖(k : R)‖ * ‖(z : R)‖ ≤ ‖(k : R)‖ * 1 := by
-            gcongr
-            simpa using IsUltrametricDist.norm_intCast_le_norm_one (R := R) z
-        _ < 1 := by rwa [mul_one]
-  have h :=
-    IsUltrametricDist.norm_add_le_max ((n : R) * (n.gcdA m : R)) ((m : R) * (n.gcdB m : R))
-  rw [hsum, norm_one] at h
-  exact (h.trans_lt (max_lt (hlt n _ hnR) (hlt m _ hmR))).false
-
-/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a natural number `n` has norm less
-than one, multiplying `n` by a natural number coprime to it does not change its norm. -/
-theorem IsUltrametricDist.norm_natCast_mul_eq_of_coprime {R : Type*} [SeminormedRing R]
-    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m) :
-    ‖((n * m : ℕ) : R)‖ = ‖(n : R)‖ := by
-  rw [Nat.cast_mul]
+than one, multiplying any element on the right by a natural number coprime to `n` does not change
+its norm. -/
+theorem IsUltrametricDist.norm_mul_natCast_eq_of_coprime {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m)
+    (x : R) : ‖x * (m : R)‖ = ‖x‖ := by
   refine ((norm_mul_le _ _).trans ?_).antisymm (not_lt.mp fun hlt ↦ ?_)
-  · rw [norm_natCast_eq_one_of_coprime hnR hnm, mul_one]
-  -- Bézout: `n * a + m * b = 1`, hence `n = n * (n * a) + (n * m) * b`.
-  have hsum : (n : R) = n * (n * (n.gcdA m : R)) + n * m * (n.gcdB m : R) := by
+  · exact mul_le_of_le_one_right (norm_nonneg _) (norm_natCast_le_one R m)
+  -- Bézout: `n * a + m * b = 1`, hence `x = x * (n * a) + (x * m) * b`.
+  have hsum : x = x * (n * (n.gcdA m : R)) + x * m * (n.gcdB m : R) := by
     have h : (n : ℤ) * n.gcdA m + m * n.gcdB m = 1 := by
       rw [← Nat.gcd_eq_gcd_ab, hnm.gcd_eq_one, Nat.cast_one]
     have h' : (n : R) * (n.gcdA m : R) + (m : R) * (n.gcdB m : R) = 1 := by
       exact_mod_cast congrArg (Int.cast (R := R)) h
-    calc (n : R) = n * (n * (n.gcdA m : R) + m * (n.gcdB m : R)) := by rw [h', mul_one]
+    calc x = x * (n * (n.gcdA m : R) + m * (n.gcdB m : R)) := by rw [h', mul_one]
       _ = _ := by rw [mul_add, mul_assoc]
-  have h1 : ‖(n : R) * (n * (n.gcdA m : R))‖ < ‖(n : R)‖ := by
-    have hn0 : 0 < ‖(n : R)‖ := (norm_nonneg _).trans_lt hlt
-    calc ‖(n : R) * (n * (n.gcdA m : R))‖ ≤ ‖(n : R)‖ * (‖(n : R)‖ * 1) := by
+  have h1 : ‖x * (n * (n.gcdA m : R))‖ < ‖x‖ := by
+    have hx0 : 0 < ‖x‖ := (norm_nonneg _).trans_lt hlt
+    calc ‖x * (n * (n.gcdA m : R))‖ ≤ ‖x‖ * (‖(n : R)‖ * 1) := by
           refine (norm_mul_le _ _).trans ?_
           gcongr
           exact (norm_mul_le _ _).trans (by gcongr; exact norm_intCast_le_one R _)
-      _ < ‖(n : R)‖ * 1 := by gcongr; rwa [mul_one]
-      _ = ‖(n : R)‖ := mul_one _
-  have h2 : ‖(n : R) * m * (n.gcdB m : R)‖ < ‖(n : R)‖ := by
-    calc ‖(n : R) * m * (n.gcdB m : R)‖ ≤ ‖(n : R) * m‖ * 1 :=
+      _ < ‖x‖ * 1 := by gcongr; rwa [mul_one]
+      _ = ‖x‖ := mul_one _
+  have h2 : ‖x * m * (n.gcdB m : R)‖ < ‖x‖ := by
+    calc ‖x * m * (n.gcdB m : R)‖ ≤ ‖x * m‖ * 1 :=
           (norm_mul_le _ _).trans (by gcongr; exact norm_intCast_le_one R _)
-      _ < ‖(n : R)‖ := by rwa [mul_one]
-  have h := IsUltrametricDist.norm_add_le_max ((n : R) * (n * (n.gcdA m : R)))
-    ((n : R) * m * (n.gcdB m : R))
+      _ < ‖x‖ := by rwa [mul_one]
+  have h := IsUltrametricDist.norm_add_le_max (x * (n * (n.gcdA m : R))) (x * m * (n.gcdB m : R))
   rw [← hsum] at h
   exact (h.trans_lt (max_lt h1 h2)).false
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a natural number `n` has norm less
+than one, every natural number coprime to `n` has norm one. -/
+theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m) :
+    ‖(m : R)‖ = 1 := by
+  simpa using norm_mul_natCast_eq_of_coprime hnR hnm (1 : R)
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a prime `p` has norm less than one,
 the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the
@@ -173,7 +157,7 @@ theorem IsUltrametricDist.norm_choose_prime_pow_succ {R : Type*} [SeminormedRing
   have h := Nat.ordProj_mul_ordCompl_eq_self ((p ^ (k + 1)).choose (p ^ k)) p
   have hu := Nat.not_dvd_ordCompl hp hc
   rw [hfact, pow_one] at h hu
-  rw [← h, norm_natCast_mul_eq_of_coprime hpR (hp.coprime_iff_not_dvd.mpr hu)]
+  rw [← h, Nat.cast_mul, norm_mul_natCast_eq_of_coprime hpR (hp.coprime_iff_not_dvd.mpr hu)]
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open

@@ -25,9 +25,9 @@ which is strictly larger. When `L` is finite over `ℚ_p` it is complete, hence 
 the fixed points are exactly `L`; in particular the elements of `ℂ_p` fixed by `G_{ℚ_p}` are
 `ℚ_p`, so that `ℂ_p` has no transcendental Galois invariants.
 
-By infinite Galois theory the closed subgroups `H` of `G_{ℚ_p}` are exactly the groups `G_L`,
-with `L` the fixed field of `H`, so the theorem also computes the fixed points of every closed
-subgroup.
+By infinite Galois theory the closure of a subgroup `H` of `G_{ℚ_p}` is the group `G_L`, with `L`
+the fixed field of `H`, and `H` has the same fixed points as its closure, so the theorem also
+computes the fixed points of every subgroup.
 
 These are the specializations to `E = PadicAlgCl p`, whose completion is `ℂ_p`, of the general
 Ax–Sen–Tate theorems `TauCeti.fixedPoints_algEquiv_completion_eq_closure`,
@@ -40,7 +40,7 @@ conjugates are close to them, hence by elements of `L`.
 
 * `PadicComplex.fixedPoints_algEquiv_eq_closure`: the fixed points of `G_L` in `ℂ_p` are the
   closure of `L`.
-* `PadicComplex.fixedPoints_eq_closure_fixedField`: the fixed points of a closed subgroup `H` of
+* `PadicComplex.fixedPoints_eq_closure_fixedField`: the fixed points of a subgroup `H` of
   `G_{ℚ_p}` are the closure of the fixed field of `H`.
 * `PadicComplex.fixedPoints_algEquiv_eq_range`: for `K` finite over `ℚ_p`, the fixed points of
   `G_K` in `ℂ_p` are `K`.
@@ -72,13 +72,11 @@ theorem fixedPoints_algEquiv_eq_closure (L : IntermediateField ℚ_[p] (PadicAlg
       closure (Set.range fun a : L ↦ ((a : PadicAlgCl p) : ℂ_[p])) :=
   TauCeti.fixedPoints_algEquiv_completion_eq_closure hp.out (PadicAlgCl.norm_p_lt_one p)
 
-/-- **The Ax–Sen–Tate theorem for closed subgroups.** For a closed subgroup `H` of
-`Gal(PadicAlgCl p / ℚ_p)`, the elements of `ℂ_p` fixed by `H` are the closure in `ℂ_p` of the
-fixed field of `H`. -/
-theorem fixedPoints_eq_closure_fixedField
-    (H : ClosedSubgroup (PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p)) :
-    MulAction.fixedPoints H.toSubgroup ℂ_[p] =
-      closure (Set.range fun a : IntermediateField.fixedField H.toSubgroup ↦
+/-- **The Ax–Sen–Tate theorem for subgroups.** For a subgroup `H` of `Gal(PadicAlgCl p / ℚ_p)`,
+the elements of `ℂ_p` fixed by `H` are the closure in `ℂ_p` of the fixed field of `H`. -/
+theorem fixedPoints_eq_closure_fixedField (H : Subgroup (PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p)) :
+    MulAction.fixedPoints H ℂ_[p] =
+      closure (Set.range fun a : IntermediateField.fixedField H ↦
         ((a : PadicAlgCl p) : ℂ_[p])) :=
   TauCeti.fixedPoints_completion_eq_closure_fixedField hp.out (PadicAlgCl.norm_p_lt_one p) H
 

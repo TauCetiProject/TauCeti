@@ -21,8 +21,11 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.Data.Nat.Choose.Factorization
+import TauCeti.FieldTheory.Galois.IsometricAction
+import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Topology.Algebra.UniformMulAction
 import TauCeti.Topology.MetricSpace.Ultra.Completion
+import TauCeti.Topology.MetricSpace.Ultra.Isometry
 
 /-!
 # The Ax–Sen lemma and the Ax–Sen–Tate theorem
@@ -60,8 +63,9 @@ at most `∑_{k ≥ 1} 1 / (p ^ (k - 1) (p - 1)) = p / (p - 1) ^ 2`.
 with `‖x - y‖ ≤ δ`; every `σ` is an isometry fixing `x`, so `‖σ y - y‖ ≤ δ`, and the Ax–Sen lemma
 gives `a ∈ F` with `‖y - a‖ ≤ C δ` for a constant `C` depending only on `p`. Conversely the fixed
 points form a closed set, by continuity of the action, which contains `F`. By infinite Galois
-theory the closed subgroups `H` of `Gal(E/F)` are exactly the groups `Gal(E/L)`, with `L` the fixed
-field of `H`, so the theorem also computes the fixed points of every closed subgroup. When `F` is
+theory the group `Gal(E/L)`, with `L` the fixed field of a subgroup `H` of `Gal(E/F)`, is the
+closure of `H`; as stabilizers are closed, `H` and its closure have the same fixed points, so the
+theorem also computes the fixed points of every subgroup. When `F` is
 finite-dimensional over a complete field, it is closed in `Ê`, and the fixed points are exactly
 `F`. For `E` an algebraic closure of `ℚ_p` this is the Ax–Sen–Tate theorem for `ℂ_p`
 (`TauCeti.NumberTheory.Padics.Complex.FixedPoints`).
@@ -71,8 +75,8 @@ finite-dimensional over a complete field, it is closed in `Ê`, and the fixed po
 * `TauCeti.exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le`: the Ax–Sen lemma.
 * `TauCeti.fixedPoints_algEquiv_completion_eq_closure`: the fixed points of `Gal(E/F)` in the
   completion of `E` are the closure of `F`.
-* `TauCeti.fixedPoints_completion_eq_closure_fixedField`: the fixed points of a closed subgroup `H`
-  of `Gal(E/F)` are the closure of the fixed field of `H`.
+* `TauCeti.fixedPoints_completion_eq_closure_fixedField`: the fixed points of a subgroup `H` of
+  `Gal(E/F)` are the closure of the fixed field of `H`.
 * `TauCeti.fixedPoints_algEquiv_completion_eq_range`: for `F` finite-dimensional over a complete
   field, the fixed points of `Gal(E/F)` are `F`.
 
@@ -165,11 +169,8 @@ private theorem norm_smul_sub_le_of_norm_sub_le [IsUltrametricDist E]
     (hα : ∀ σ : Gal(E/F), ‖σ • α - α‖ ≤ r) (hαβ : ‖α - β‖ ≤ s) (hrs : r ≤ s) (σ : Gal(E/F)) :
     ‖σ • β - β‖ ≤ s := by
   rw [← dist_eq_norm] at hαβ ⊢
-  calc dist (σ • β) β ≤ max (dist (σ • β) (σ • α)) (max (dist (σ • α) α) (dist α β)) :=
-        (dist_triangle_max _ _ _).trans (max_le_max le_rfl (dist_triangle_max _ _ _))
-    _ ≤ s := by
-        rw [dist_smul, dist_comm, dist_eq_norm (σ • α)]
-        exact max_le hαβ (max_le ((hα σ).trans hrs) hαβ)
+  refine ((isometry_smul E σ).dist_apply_le_max α β).trans (max_le ?_ hαβ)
+  simpa only [dist_eq_norm] using (hα σ).trans hrs
 
 /-- **A root of a Hasse derivative of the minimal polynomial.** If every conjugate of `α` lies
 within `r` of `α`, and `d` is less than the degree `n` of `α`, then some `β` of degree at most
@@ -339,12 +340,9 @@ theorem fixedPoints_algEquiv_completion_eq_closure :
     obtain ⟨y, hy⟩ := Metric.denseRange_iff.mp (denseRange_coe (α := E)) x δ hδ
     have hconj (σ : Gal(E/F)) : ‖σ • y - y‖ ≤ δ := by
       rw [← dist_eq_norm, ← UniformSpace.Completion.dist_eq, UniformSpace.Completion.coe_smul]
-      calc dist (σ • (y : UniformSpace.Completion E)) y
-          ≤ max (dist (σ • (y : UniformSpace.Completion E)) (σ • x)) (dist (σ • x) y) :=
-            dist_triangle_max _ _ _
-        _ ≤ δ := by
-            rw [dist_smul, hx σ, dist_comm]
-            exact max_le hy.le hy.le
+      refine ((isometry_smul (UniformSpace.Completion E) σ).dist_apply_le_max x _).trans
+        (max_le ?_ hy.le)
+      simpa only [hx σ, dist_self] using hδ.le
     obtain ⟨a, ha⟩ := exists_norm_sub_algebraMap_le_of_forall_norm_smul_sub_le hp hpE hconj
     refine ⟨_, ⟨a, rfl⟩, ?_⟩
     calc dist x (algebraMap F E a : UniformSpace.Completion E)
@@ -366,40 +364,45 @@ theorem fixedPoints_algEquiv_completion_eq_closure :
   · rw [MulAction.fixedPoints, Set.ofPred_forall]
     exact isClosed_iInter fun σ ↦ isClosed_eq (continuous_const_smul σ) continuous_id
 
-/-- **The Ax–Sen–Tate theorem for closed subgroups.** In the setting of the Ax–Sen lemma, the
-elements of the completion of `E` fixed by a closed subgroup `H` of `Gal(E/F)` are the closure of
-the fixed field of `H`. -/
-theorem fixedPoints_completion_eq_closure_fixedField (H : ClosedSubgroup Gal(E/F)) :
-    MulAction.fixedPoints H.toSubgroup (UniformSpace.Completion E) =
-      closure (Set.range fun a : IntermediateField.fixedField H.toSubgroup ↦
+/-- **The Ax–Sen–Tate theorem for subgroups.** In the setting of the Ax–Sen lemma, the elements of
+the completion of `E` fixed by a subgroup `H` of `Gal(E/F)` are the closure of the fixed field of
+`H`. -/
+theorem fixedPoints_completion_eq_closure_fixedField (H : Subgroup Gal(E/F)) :
+    MulAction.fixedPoints H (UniformSpace.Completion E) =
+      closure (Set.range fun a : IntermediateField.fixedField H ↦
         ((a : E) : UniformSpace.Completion E)) := by
-  set L := IntermediateField.fixedField H.toSubgroup
+  set L := IntermediateField.fixedField H
   have : CharZero F := (RingHom.charZero_iff (algebraMap F E).injective).mpr inferInstance
   have : IsAlgClosure F E := ⟨inferInstance, inferInstance⟩
-  have hL : L.fixingSubgroup = H.toSubgroup := InfiniteGalois.fixingSubgroup_fixedField H
-  -- An `L`-automorphism acts on `E` and on its completion as the underlying `F`-automorphism.
+  -- The automorphisms fixing `L` form the closure of `H`.
+  have hH : H.topologicalClosure ≤ L.fixingSubgroup := H.topologicalClosure_minimal
+    ((IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
+    (InfiniteGalois.fixingSubgroup_isClosed L)
+  have hL : L.fixingSubgroup = H.topologicalClosure :=
+    (congrArg IntermediateField.fixingSubgroup (le_antisymm
+      ((IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).2 hH)
+      (IntermediateField.fixedField_antitone H.le_topologicalClosure))).trans
+    (InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩)
+  -- An `L`-automorphism acts on `E` as the underlying `F`-automorphism.
   have hsmulE (τ : Gal(E/L)) (x : E) : τ.restrictScalars F • x = τ • x := rfl
   have : IsIsometricSMul Gal(E/L) E :=
     ⟨fun τ ↦ by simpa only [← hsmulE] using isometry_smul E (τ.restrictScalars F)⟩
   have : Algebra.IsAlgebraic L E := Algebra.IsAlgebraic.tower_top (K := F) L
   refine (?_ : _ = MulAction.fixedPoints Gal(E/L) _).trans
     (fixedPoints_algEquiv_completion_eq_closure hp hpE)
-  have hsmul (τ : Gal(E/L)) (x : UniformSpace.Completion E) :
-      τ.restrictScalars F • x = τ • x := by
-    rw [UniformSpace.Completion.algEquiv_smul_def, UniformSpace.Completion.algEquiv_smul_def,
-      AlgEquiv.coe_restrictScalars]
   ext x
   refine ⟨fun hx τ ↦ ?_, fun hx σ ↦ ?_⟩
-  · have hτ : τ.restrictScalars F ∈ H.toSubgroup := by
-      rw [← hL, IntermediateField.mem_fixingSubgroup_iff]
+  · -- The stabilizer of `x` is closed and contains `H`, hence the closure of `H`.
+    have hstab : H.topologicalClosure ≤ MulAction.stabilizer Gal(E/F) x :=
+      H.topologicalClosure_minimal (fun σ hσ ↦ hx ⟨σ, hσ⟩)
+        (isClosed_stabilizer (continuous_id.smul continuous_const))
+    have hτ : τ.restrictScalars F ∈ L.fixingSubgroup := by
+      rw [IntermediateField.mem_fixingSubgroup_iff]
       exact fun a ha ↦ τ.commutes ⟨a, ha⟩
-    rw [← hsmul]
-    exact hx ⟨_, hτ⟩
-  · have hσ : (σ : Gal(E/F)) ∈ L.fixingSubgroup := by
-      rw [hL]
-      exact σ.property
-    have h := hx (L.fixingSubgroupEquiv ⟨σ, hσ⟩)
-    rwa [← hsmul] at h
+    rw [← UniformSpace.Completion.algEquiv_restrictScalars_smul (R := F)]
+    exact hstab (hL.le hτ)
+  · have h := hx (L.fixingSubgroupEquiv ⟨σ, hL.ge (H.le_topologicalClosure σ.property)⟩)
+    rwa [← UniformSpace.Completion.algEquiv_restrictScalars_smul (R := F)] at h
 
 end AxSen
 
