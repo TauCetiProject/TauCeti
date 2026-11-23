@@ -231,6 +231,13 @@ theorem rightTranslation_apply_algebraMap (g : G) (c : ℝ) :
     rightTranslation g (algebraMap ℝ (UCB G) c) = algebraMap ℝ (UCB G) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
+/-- Right translation preserves pointwise products. -/
+@[simp]
+theorem rightTranslation_apply_mul (g : G) (f f' : UCB G) :
+    rightTranslation g (f * f') = rightTranslation g f * rightTranslation g f' := by
+  ext
+  simp
+
 /-- The left translates `L_u f` of a function `f` in `UCB G` tend to `f` in supremum norm as
 `u → 1`. -/
 theorem tendsto_leftTranslation_apply_nhds_one (f : UCB G) :
