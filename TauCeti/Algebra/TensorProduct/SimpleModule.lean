@@ -163,24 +163,6 @@ theorem exists_tensorProduct_equiv_of_isSimpleModule [IsScalarTower k (A ⊗[k] 
 
 section Uniqueness
 
-/-- **Schur's lemma for multiples of simple modules.** If direct sums of copies of the simple
-modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`: some
-coordinate of the image of a copy of `V` is a nonzero map `V → V'`. -/
-theorem nonempty_linearEquiv_of_finsupp_linearEquiv {R V V' ι ι' : Type*} [Ring R]
-    [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V'] [IsSimpleModule R V]
-    [IsSimpleModule R V'] [Nonempty ι] (e : (ι →₀ V) ≃ₗ[R] (ι' →₀ V')) :
-    Nonempty (V ≃ₗ[R] V') := by
-  obtain ⟨j⟩ := ‹Nonempty ι›
-  have : Nontrivial V := IsSimpleModule.nontrivial R V
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  have hx : e (Finsupp.single j v) ≠ 0 := by simpa using hv
-  obtain ⟨i, hi⟩ : ∃ i, e (Finsupp.single j v) i ≠ 0 := by
-    by_contra! h
-    exact hx (Finsupp.ext h)
-  let φ : V →ₗ[R] V' := Finsupp.lapply i ∘ₗ e.toLinearMap ∘ₗ Finsupp.lsingle j
-  have hφ : φ ≠ 0 := fun h ↦ hi (by simpa [φ] using LinearMap.congr_fun h v)
-  exact ⟨.ofBijective φ (LinearMap.bijective_of_ne_zero hφ)⟩
-
 variable {k A V V' W W' : Type*} [CommSemiring k] [Ring A] [Algebra k A]
   [AddCommGroup V] [Module k V] [Module A V] [IsScalarTower k A V]
   [AddCommGroup V'] [Module k V'] [Module A V'] [IsScalarTower k A V']
@@ -199,26 +181,7 @@ theorem nonempty_linearEquiv_of_tensorProduct_linearEquiv [IsSimpleModule A V]
   have : Nonempty (Module.Free.ChooseBasisIndex k W) := b.index_nonempty
   let f := AlgebraTensorModule.congr (.refl A V) b.repr ≪≫ₗ finsuppScalarRight k A V _
   let f' := AlgebraTensorModule.congr (.refl A V') b'.repr ≪≫ₗ finsuppScalarRight k A V' _
-  exact nonempty_linearEquiv_of_finsupp_linearEquiv (f.symm ≪≫ₗ e ≪≫ₗ f')
-
-/-- The element `a ⊗ 1` acts on `V ⊗[k] W` through the left factor. -/
-theorem BialgebraModule.tensorPairAction_tmul_one {B : Type*} [Ring B] [Algebra k B]
-    [Module B W] [IsScalarTower k B W] (a : A) (x : V ⊗[k] W) :
-    BialgebraModule.tensorPairAction k V W (a ⊗ₜ[k] (1 : B)) x = a • x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => rw [map_add, hx, hy, smul_add]
-  | tmul v w => rw [BialgebraModule.tensorPairAction_tmul, one_smul, smul_tmul']
-
-/-- The element `1 ⊗ b` acts on `V ⊗[k] W` through the right factor, which is the left factor
-of `W ⊗[k] V`. -/
-theorem BialgebraModule.comm_tensorPairAction_one_tmul {B : Type*} [Ring B] [Algebra k B]
-    [Module B W] [IsScalarTower k B W] (b : B) (x : V ⊗[k] W) :
-    TensorProduct.comm k V W (BialgebraModule.tensorPairAction k V W ((1 : A) ⊗ₜ[k] b) x) =
-      b • TensorProduct.comm k V W x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, smul_add]
-  | tmul v w => rw [BialgebraModule.tensorPairAction_tmul, one_smul, TensorProduct.comm_tmul,
-      TensorProduct.comm_tmul, smul_tmul']
+  exact IsIsotypicOfType.nonempty_linearEquiv_of_finsupp_linearEquiv (f.symm ≪≫ₗ e ≪≫ₗ f')
 
 /-- **Flath's finite-dimensional factorization** (uniqueness of the factors). If `V ⊗[k] W` and
 `V' ⊗[k] W'` are isomorphic as `A ⊗[k] B`-modules
@@ -227,8 +190,9 @@ theorem BialgebraModule.comm_tensorPairAction_one_tmul {B : Type*} [Ring B] [Alg
 direct sums of copies of `V` and of `V'`, and Schur's lemma compares them; the same argument
 applies to `B`. No finiteness or algebraic closedness is needed, and over a commutative ring
 `k` it suffices that all four modules be free over `k`. Together with
-`TauCeti.exists_tensorProduct_equiv_of_isSimpleModule`, this shows that a finite-dimensional
-simple `A ⊗[k] B`-module determines its factors up to isomorphism. -/
+`TauCeti.exists_tensorProduct_equiv_of_isSimpleModule`, this shows that over an algebraically
+closed field a finite-dimensional simple `A ⊗[k] B`-module determines its factors up to
+isomorphism. -/
 theorem nonempty_linearEquiv_of_tensorPairAction_equiv {B : Type*} [Ring B] [Algebra k B]
     [Module B W] [IsScalarTower k B W] [Module B W'] [IsScalarTower k B W']
     [IsSimpleModule A V] [IsSimpleModule A V'] [IsSimpleModule B W] [IsSimpleModule B W']
@@ -252,7 +216,9 @@ theorem nonempty_linearEquiv_of_tensorPairAction_equiv {B : Type*} [Ring B] [Alg
         obtain ⟨y, rfl⟩ := (TensorProduct.comm k V W).surjective x
         have h := congrArg (TensorProduct.comm k V' W') (he ((1 : A) ⊗ₜ[k] b) y)
         rw [BialgebraModule.comm_tensorPairAction_one_tmul (A := A)] at h
-        simpa [c, ← BialgebraModule.comm_tensorPairAction_one_tmul (A := A) (V := V)] using h }
+        rw [← BialgebraModule.comm_tensorPairAction_one_tmul (A := A) (M := V)]
+        simpa only [c, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, RingHom.id_apply,
+          LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] using h }
   exact ⟨nonempty_linearEquiv_of_tensorProduct_linearEquiv eA,
     nonempty_linearEquiv_of_tensorProduct_linearEquiv eB⟩
 
