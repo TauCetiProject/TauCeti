@@ -284,8 +284,8 @@ theorem integral_pi_comp_cellFin_eq_inv_smul_sum [NeZero m] (f : (V → Fin m) �
   have hmp := measurePreserving_pi (fun _ : V => (volume : Measure I))
     (fun _ => ProbabilityTheory.uniformOn (univ : Set (Fin m))) fun _ => measurePreserving_cellFin
   calc ∫ x : V → I, f (fun v => cellFin m (x v)) ∂(Measure.pi fun _ : V => (volume : Measure I))
-      = ∫ ψ : V → Fin m, f ψ ∂(Measure.pi fun _ => ProbabilityTheory.uniformOn univ) := by
-        rw [← hmp.map_eq, integral_map hmp.aemeasurable .of_discrete]
+      = ∫ ψ : V → Fin m, f ψ ∂(Measure.pi fun _ => ProbabilityTheory.uniformOn univ) :=
+        hmp.hasLaw.integral_comp (f := f) .of_discrete
     _ = ((m : ℝ) ^ Fintype.card V)⁻¹ • ∑ ψ : V → Fin m, f ψ := by
         -- the product of uniform measures is the uniform measure on the cube of cells
         rw [← ProbabilityTheory.uniformOn_pi, Set.pi_univ, Probability.integral_uniformOn_univ]
