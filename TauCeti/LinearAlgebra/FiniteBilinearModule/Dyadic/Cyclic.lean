@@ -100,6 +100,10 @@ theorem dyadicCyclic_pairing_intCast (i j : ℤ) :
   field_simp
   ring
 
+/-- The underlying additive group of `dyadicCyclic k θ` is `ZMod (2 ^ k)`. -/
+def dyadicCyclicAddEquiv : dyadicCyclic k θ ≃+ ZMod (2 ^ k) :=
+  AddEquiv.refl (ZMod (2 ^ k))
+
 /-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition. -/
 @[simp]
 theorem natCard_dyadicCyclic : Nat.card (dyadicCyclic k θ) = 2 ^ k :=

@@ -24,7 +24,6 @@ over all primes); for the trivial group the prime-divisor set is empty and the m
 ## Main statements
 
 * `TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents`
-* `TauCeti.AddCommGroup.rank_eq_sup_primaryComponents`
 * `TauCeti.AddCommGroup.rank_primaryComponent_le`
 * `AddGroup.rank_eq_sup_primaryComponents`
 * `AddGroup.rank_eq_ciSup_primaryComponent`
@@ -60,13 +59,25 @@ theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finit
   rw [Submodule.map_top, LinearEquiv.range] at he
   exact he.trans (spanFinrank_pi_eq_sup_of_coprime_card M hcop)
 
+end TauCeti.AddCommGroup
+
+namespace AddGroup
+
 /-- **Nikulin's length is local.** The least number of generators `AddGroup.rank A` of a finite
 abelian group, Nikulin's `l(A)`, is the maximum of the least numbers of generators of its
-prime-primary components. -/
+prime-primary components over the prime divisors of `|A|`. -/
 theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
-    AddGroup.rank A = Finset.univ.sup (fun p : (Nat.card A).primeFactors ↦
-      AddGroup.rank (_root_.AddCommGroup.primaryComponent A p.val)) := by
-  simpa only [AddGroup.rank_eq_spanFinrank] using spanFinrank_eq_sup_primaryComponents A
+    AddGroup.rank A =
+      (Nat.card A).primeFactors.sup (fun p ↦
+        AddGroup.rank (AddCommGroup.primaryComponent A p)) := by
+  have h := TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents A
+  simp only [← AddGroup.rank_eq_spanFinrank, Finset.univ_eq_attach] at h
+  exact h.trans (Finset.sup_attach (Nat.card A).primeFactors
+    (fun p ↦ AddGroup.rank (AddCommGroup.primaryComponent A p)))
+
+end AddGroup
+
+namespace TauCeti.AddCommGroup
 
 /-- A prime-primary component of a finite abelian group needs at most as many generators as the
 group itself. -/
@@ -74,10 +85,9 @@ theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] {p : �
     (hp : p.Prime) :
     AddGroup.rank (_root_.AddCommGroup.primaryComponent A p) ≤ AddGroup.rank A := by
   by_cases h : p ∣ Nat.card A
-  · rw [rank_eq_sup_primaryComponents A]
-    exact Finset.le_sup (f := fun p : (Nat.card A).primeFactors ↦
-        AddGroup.rank (_root_.AddCommGroup.primaryComponent A p.val))
-      (Finset.mem_univ ⟨p, Nat.mem_primeFactors.mpr ⟨hp, h, Nat.card_pos.ne'⟩⟩)
+  · rw [AddGroup.rank_eq_sup_primaryComponents A]
+    exact Finset.le_sup (f := fun p ↦ AddGroup.rank (_root_.AddCommGroup.primaryComponent A p))
+      (Nat.mem_primeFactors.mpr ⟨hp, h, Nat.card_pos.ne'⟩)
   · have : Subsingleton (_root_.AddCommGroup.primaryComponent A p) :=
       (Nat.card_eq_one_iff_unique.mp (by
         rw [natCard_primaryComponent A hp, Nat.factorization_eq_zero_of_not_dvd h, pow_zero])).1
@@ -86,16 +96,6 @@ theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] {p : �
 end TauCeti.AddCommGroup
 
 namespace AddGroup
-
-/-- The generator rank `l(A)` of a finite abelian group `A` is the maximum of the generator ranks
-`l(A_p)` of its prime-primary components over the prime divisors of `|A|`. -/
-theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
-    AddGroup.rank A =
-      (Nat.card A).primeFactors.sup (fun p ↦
-        AddGroup.rank (AddCommGroup.primaryComponent A p)) := by
-  rw [TauCeti.AddCommGroup.rank_eq_sup_primaryComponents, Finset.univ_eq_attach]
-  exact Finset.sup_attach (Nat.card A).primeFactors
-    (fun p ↦ AddGroup.rank (AddCommGroup.primaryComponent A p))
 
 /-- Nikulin's formula `l(A) = max_p l(A_p)` over all primes `p`. -/
 theorem rank_eq_ciSup_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] :

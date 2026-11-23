@@ -89,6 +89,10 @@ theorem dyadicU_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
   congr 1
   ring
 
+/-- The underlying additive group of `dyadicU k` is `ZMod (2 ^ k) × ZMod (2 ^ k)`. -/
+def dyadicUAddEquiv : dyadicU k ≃+ ZMod (2 ^ k) × ZMod (2 ^ k) :=
+  AddEquiv.refl (ZMod (2 ^ k) × ZMod (2 ^ k))
+
 /-- `u^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition. -/
 @[simp]
 theorem natCard_dyadicU : Nat.card (dyadicU k) = 2 ^ k * 2 ^ k := by
@@ -188,6 +192,10 @@ theorem dyadicV_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
     Prod.snd_add, ← map_sub]
   congr 1
   ring
+
+/-- The underlying additive group of `dyadicV k` is `ZMod (2 ^ k) × ZMod (2 ^ k)`. -/
+def dyadicVAddEquiv : dyadicV k ≃+ ZMod (2 ^ k) × ZMod (2 ^ k) :=
+  AddEquiv.refl (ZMod (2 ^ k) × ZMod (2 ^ k))
 
 /-- `v^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition. -/
 @[simp]
