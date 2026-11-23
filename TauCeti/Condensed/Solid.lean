@@ -162,18 +162,32 @@ is an isomorphism. -/
 instance isIso_profiniteSolidCounit : IsIso (profiniteSolidCounit.{u} R) :=
   (profiniteSolidIsPointwiseRightKanExtension R).isIso_hom
 
+/-- For a finite set `T`, the solidification map `R[T] ⟶ R[T]^solid` followed by the counit
+`R[T]^solid ⟶ R[T]` of the right Kan extension `profiniteSolid R` is the identity. -/
+@[reassoc (attr := simp)]
+theorem profiniteSolidification_app_comp_profiniteSolidCounit_app (T : FintypeCat.{u}) :
+    (profiniteSolidification R).app (FintypeCat.toProfinite.obj T) ≫
+      (profiniteSolidCounit R).app T = 𝟙 _ :=
+  (profiniteSolid R).liftOfIsRightKanExtension_fac_app (profiniteSolidCounit R) _ (𝟙 _) T
+
 /-- The solidification map `R[T] ⟶ R[T]^solid` of a finite set `T` is an isomorphism; its
-inverse is the counit `profiniteSolidCounit R`. -/
+inverse is the counit `profiniteSolidCounit R`, see
+`Condensed.inv_profiniteSolidification_app_toProfinite`. -/
 instance isIso_profiniteSolidification_app_toProfinite (T : FintypeCat.{u}) :
     IsIso ((profiniteSolidification R).app (FintypeCat.toProfinite.obj T)) := by
-  have h : (profiniteSolidification R).app (FintypeCat.toProfinite.obj T) ≫
-      (profiniteSolidCounit R).app T = 𝟙 _ :=
-    (profiniteSolid R).liftOfIsRightKanExtension_fac_app (profiniteSolidCounit R) _ (𝟙 _) T
   have : IsIso ((profiniteSolidification R).app (FintypeCat.toProfinite.obj T) ≫
       (profiniteSolidCounit R).app T) := by
-    rw [h]
+    rw [profiniteSolidification_app_comp_profiniteSolidCounit_app]
     infer_instance
   exact IsIso.of_isIso_comp_right _ ((profiniteSolidCounit R).app T)
+
+/-- The inverse of the solidification map `R[T] ⟶ R[T]^solid` of a finite set `T` is the
+counit `profiniteSolidCounit R` of the right Kan extension. -/
+@[simp]
+theorem inv_profiniteSolidification_app_toProfinite (T : FintypeCat.{u}) :
+    inv ((profiniteSolidification R).app (FintypeCat.toProfinite.obj T)) =
+      (profiniteSolidCounit R).app T :=
+  IsIso.inv_eq_of_hom_inv_id (profiniteSolidification_app_comp_profiniteSolidCounit_app R T)
 
 /-- For a finite profinite set `S`, the solidification map `R[S] ⟶ R[S]^solid` is an
 isomorphism. -/
