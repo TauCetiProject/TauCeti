@@ -115,16 +115,15 @@ theorem _root_.Module.Basis.extendOfIsFullLattice_repr_coe {N : Submodule R V} [
     {κ : Type*} (b : Basis κ R N) (x : N) (i : κ) :
     (b.extendOfIsFullLattice K).repr x i = algebraMap R K (b.repr x i) := by
   -- Both sides are `R`-linear in `x`, so it suffices to compare them on the basis `b`.
-  let f₁ : N →ₗ[R] K := ((Finsupp.lapply i ∘ₗ ((b.extendOfIsFullLattice K).repr :
-    V →ₗ[K] κ →₀ K)).restrictScalars R) ∘ₗ N.subtype
-  let f₂ : N →ₗ[R] K := Algebra.linearMap R K ∘ₗ Finsupp.lapply i ∘ₗ (b.repr : N →ₗ[R] κ →₀ R)
+  let f₁ : N →ₗ[R] K := ((b.extendOfIsFullLattice K).coord i).restrictScalars R ∘ₗ N.subtype
+  let f₂ : N →ₗ[R] K := Algebra.linearMap R K ∘ₗ b.coord i
   have h : f₁ = f₂ := b.ext fun j => by
     classical
     have hj : ((b j : N) : V) = b.extendOfIsFullLattice K j :=
       (Basis.extendOfIsFullLattice_apply K b j).symm
     simp only [f₁, f₂, LinearMap.comp_apply, Submodule.subtype_apply,
-      LinearMap.restrictScalars_apply, LinearEquiv.coe_coe, hj, Basis.repr_self,
-      Finsupp.lapply_apply, Algebra.linearMap_apply, Finsupp.single_apply]
+      LinearMap.restrictScalars_apply, hj, Basis.coord_apply, Basis.repr_self,
+      Algebra.linearMap_apply, Finsupp.single_apply]
     split_ifs <;> simp
   exact LinearMap.congr_fun h x
 

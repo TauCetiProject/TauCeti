@@ -218,8 +218,8 @@ noncomputable def _root_.Module.Basis.stabilizerContinuousMulEquivGL (b : Basis 
         V ≃ₗ[E] V) = ((b.stabilizerMulEquivGL E).symm u⁻¹ : V ≃ₗ[E] V) := by
       rw [map_inv, Subgroup.coe_inv]
     simp only [hinv]
-    exact hfwd.comp (Units.continuous_iff.mpr ⟨Units.continuous_coe_inv, by
-      simpa only [inv_inv] using Units.continuous_val⟩)
+    have : IsTopologicalSemiring R := R.toSubsemiring.topologicalSemiring
+    exact hfwd.comp continuous_inv
 
 /-- The topological isomorphism `b.stabilizerContinuousMulEquivGL` has the matrix isomorphism
 `b.stabilizerMulEquivGL E` as its underlying multiplicative equivalence. -/
