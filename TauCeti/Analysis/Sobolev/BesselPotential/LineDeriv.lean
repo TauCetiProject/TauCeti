@@ -45,11 +45,11 @@ are `𝓕 u` and `2πi ⟪ξ, m⟫ 𝓕 u` (`BesselPotentialSpace.fourierFun_inc
 
 ## Main declarations
 
-* `BesselPotentialSpace.lineDerivSymbol`: the Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of
-  `∂_m : H^{r+1} → H^r`, bounded by `2π ‖m‖` (`BesselPotentialSpace.norm_lineDerivSymbol_le`).
+* `TauCeti.besselLineDerivSymbol`: the Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of
+  `∂_m : H^{r+1} → H^r`, bounded by `2π ‖m‖` (`TauCeti.norm_besselLineDerivSymbol_le`).
 * `BesselPotentialSpace.coeFn_fourier_toLp_lineDerivCLM`: at `p = 2`, on the Fourier side
-  `∂_m : H^{r+1} → H^r` is multiplication by `lineDerivSymbol m`; on tempered distributions this
-  is `BesselPotentialSpace.smulLeftCLM_fourier_lineDerivOp_eq`, and on the Fourier transforms
+  `∂_m : H^{r+1} → H^r` is multiplication by `besselLineDerivSymbol m`; on tempered distributions
+  this is `TemperedDistribution.smulLeftCLM_fourier_lineDerivOp_eq`, and on the Fourier transforms
   `BesselPotentialSpace.fourierFun` it is multiplication by `2πi ⟪ξ, m⟫`
   (`BesselPotentialSpace.fourierFun_lineDerivCLM`).
 * `BesselPotentialSpace.norm_lineDerivCLM_le`, `BesselPotentialSpace.norm_lineDerivCLM_apply_le`:
@@ -74,47 +74,46 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
-namespace BesselPotentialSpace
-
-variable {r : ℝ}
+namespace TauCeti
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of `∂_m : H^{r+1} → H^r`, where
 `⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}`: the symbol `2πi ⟪ξ, m⟫` of `∂_m` times the Bessel weight of order
 `-1`. -/
-def lineDerivSymbol (m : E) : E → ℂ := fun x ↦
+def besselLineDerivSymbol (m : E) : E → ℂ := fun x ↦
   (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) * (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The defining equation of `lineDerivSymbol`. -/
-theorem lineDerivSymbol_apply (m x : E) :
-    lineDerivSymbol m x =
+/-- The defining equation of `besselLineDerivSymbol`. -/
+theorem besselLineDerivSymbol_apply (m x : E) :
+    besselLineDerivSymbol m x =
       (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
         (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ) :=
   (rfl)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The symbol of `∂_m : H^{r+1} → H^r` has temperate growth. -/
-theorem hasTemperateGrowth_lineDerivSymbol (m : E) : (lineDerivSymbol m).HasTemperateGrowth := by
-  unfold lineDerivSymbol
+theorem hasTemperateGrowth_besselLineDerivSymbol (m : E) :
+    (besselLineDerivSymbol m).HasTemperateGrowth := by
+  unfold besselLineDerivSymbol
   fun_prop
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The squared modulus of the symbol of `∂_m : H^{r+1} → H^r` is
 `4π² ⟪ξ, m⟫² (1 + ‖ξ‖²)⁻¹`. -/
-theorem norm_lineDerivSymbol_sq (m x : E) :
-    ‖lineDerivSymbol m x‖ ^ 2 = (2 * π) ^ 2 * inner ℝ x m ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ := by
+theorem norm_besselLineDerivSymbol_sq (m x : E) :
+    ‖besselLineDerivSymbol m x‖ ^ 2 = (2 * π) ^ 2 * inner ℝ x m ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ := by
   -- The squared Bessel weight of order `-1` is `(1 + ‖ξ‖²)⁻¹`.
   have hw : ((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)) ^ 2 = (1 + ‖x‖ ^ 2)⁻¹ := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
     norm_num [Real.rpow_neg_one]
-  simp [lineDerivSymbol_apply, mul_pow, hw, abs_of_pos Real.pi_pos]
+  simp [besselLineDerivSymbol_apply, mul_pow, hw, abs_of_pos Real.pi_pos]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The symbol of `∂_m : H^{r+1} → H^r` is bounded by `2π ‖m‖`. -/
-theorem norm_lineDerivSymbol_le (m x : E) : ‖lineDerivSymbol m x‖ ≤ 2 * π * ‖m‖ := by
+theorem norm_besselLineDerivSymbol_le (m x : E) : ‖besselLineDerivSymbol m x‖ ≤ 2 * π * ‖m‖ := by
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
-  rw [norm_lineDerivSymbol_sq]
+  rw [norm_besselLineDerivSymbol_sq]
   have h₁ : inner ℝ x m ^ 2 ≤ ‖m‖ ^ 2 * (1 + ‖x‖ ^ 2) := by
     rw [← sq_abs]
     calc |inner ℝ x m| ^ 2 ≤ (‖x‖ * ‖m‖) ^ 2 := by
@@ -125,36 +124,49 @@ theorem norm_lineDerivSymbol_le (m x : E) : ‖lineDerivSymbol m x‖ ≤ 2 * π
       ≤ (2 * π) ^ 2 * (‖m‖ ^ 2 * (1 + ‖x‖ ^ 2)) * (1 + ‖x‖ ^ 2)⁻¹ := by gcongr
     _ = (2 * π * ‖m‖) ^ 2 := by field_simp
 
-omit [CompleteSpace F] in
+end TauCeti
+
+namespace TemperedDistribution
+
 /-- The weighted Fourier transform of `∂_m f` at order `r` is the symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` times
 the weighted Fourier transform of `f` at order `r + 1`. -/
-theorem smulLeftCLM_fourier_lineDerivOp_eq (m : E) (f : 𝓢'(E, F)) :
-    smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 (∂_{m} f)) =
-      smulLeftCLM F (lineDerivSymbol m)
-        (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) := by
+theorem smulLeftCLM_fourier_lineDerivOp_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    {r : ℝ} (f : 𝓢'(E, G)) (m : E) :
+    smulLeftCLM G (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 (∂_{m} f)) =
+      smulLeftCLM G (TauCeti.besselLineDerivSymbol m)
+        (smulLeftCLM G (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) := by
   have hm : (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
   -- The Bessel weight of order `r + 1` times the symbol is `2πi ⟪ξ, m⟫` times the weight of
   -- order `r`.
-  have hsymb : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) * lineDerivSymbol m =
+  have hsymb : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) *
+      TauCeti.besselLineDerivSymbol m =
       (2 * π * Complex.I) • ((fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)) *
         fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) := by
     ext x
     have hw := TauCeti.one_add_norm_sq_rpow_add x (r + 1) (-1)
     rw [add_neg_cancel_right] at hw
-    simp only [Pi.mul_apply, Pi.smul_apply, smul_eq_mul, lineDerivSymbol_apply, hw,
+    simp only [Pi.mul_apply, Pi.smul_apply, smul_eq_mul, TauCeti.besselLineDerivSymbol_apply, hw,
       Complex.ofReal_mul]
     ring
   rw [fourier_lineDerivOp_eq, map_smul, smulLeftCLM_smulLeftCLM_apply hm (by fun_prop),
-    smulLeftCLM_smulLeftCLM_apply (by fun_prop) (hasTemperateGrowth_lineDerivSymbol m), hsymb,
-    smulLeftCLM_smul (by fun_prop), smul_apply]
+    smulLeftCLM_smulLeftCLM_apply (by fun_prop)
+      (TauCeti.hasTemperateGrowth_besselLineDerivSymbol m),
+    hsymb, smulLeftCLM_smul (by fun_prop), smul_apply]
+
+end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+variable {r : ℝ}
 
 /-- On the Fourier side, `∂_m : H^{r+1} → H^r` is multiplication by the symbol
 `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹`. -/
 theorem coeFn_fourier_toLp_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
     ⇑(𝓕 (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).toLp :
         Lp F 2 (volume : Measure E)) =ᵐ[volume] fun x ↦
-      lineDerivSymbol m x • (𝓕 u.toLp : Lp F 2 (volume : Measure E)) x := by
-  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (hasTemperateGrowth_lineDerivSymbol m),
+      TauCeti.besselLineDerivSymbol m x • (𝓕 u.toLp : Lp F 2 (volume : Measure E)) x := by
+  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff
+      (TauCeti.hasTemperateGrowth_besselLineDerivSymbol m),
     toTemperedDistribution_fourier_toLp, toTemperedDistribution_fourier_toLp,
     toDistr_lineDerivCLM, smulLeftCLM_fourier_lineDerivOp_eq]
 
@@ -164,7 +176,7 @@ theorem norm_lineDerivCLM_apply_le (m : E) (u : H^{r + 1}(E, F)) :
   rw [← norm_fourier_toLp_eq, ← norm_fourier_toLp_eq u]
   exact Lp.norm_le_mul_norm_of_ae_le_mul ((coeFn_fourier_toLp_lineDerivCLM m u).mono fun x hx ↦ by
     rw [hx, norm_smul]
-    exact mul_le_mul_of_nonneg_right (norm_lineDerivSymbol_le m x) (norm_nonneg _))
+    exact mul_le_mul_of_nonneg_right (TauCeti.norm_besselLineDerivSymbol_le m x) (norm_nonneg _))
 
 /-- At `p = 2`, `∂_m : H^{r+1} → H^r` has operator norm at most `2π ‖m‖`. -/
 theorem norm_lineDerivCLM_le (m : E) :
@@ -178,7 +190,7 @@ theorem fourierFun_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
     (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).fourierFun =ᵐ[volume] fun x ↦
       ((2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ)) • u.fourierFun x := by
   filter_upwards [coeFn_fourier_toLp_lineDerivCLM m u] with x hx
-  simp only [fourierFun_apply, hx, smul_smul, lineDerivSymbol_apply, neg_add,
+  simp only [fourierFun_apply, hx, smul_smul, TauCeti.besselLineDerivSymbol_apply, neg_add,
     TauCeti.one_add_norm_sq_rpow_add]
   push_cast
   ring_nf

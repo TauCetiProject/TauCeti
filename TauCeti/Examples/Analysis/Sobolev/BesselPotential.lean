@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Gaussian
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Harmonic
 
 /-!
 # The `2π` witness for `H^{1,2}(ℝ)`
@@ -40,7 +39,8 @@ theorem norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ
     ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 +
         ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
       √(π / (2 * b.re)) * (1 + ‖b‖ ^ 2 / b.re) := by
-  rw [norm_toLp_gaussian_sq, norm_toLp_lineDerivOp_one_gaussian_sq]
+  rw [norm_toLp_gaussian_sq, Module.finrank_self, Nat.cast_one, ← Real.sqrt_eq_rpow,
+    norm_toLp_lineDerivOp_one_gaussian_sq]
   ring
 
 /-- The Gaussian `exp(-π x²)` on `ℝ` has `‖g‖²_{H^{1,2}} = (1 + 1 / (4π)) / √2`. -/

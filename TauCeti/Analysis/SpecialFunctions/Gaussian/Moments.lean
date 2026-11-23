@@ -17,8 +17,8 @@ For a Gaussian kernel `exp (-b * x ^ 2)` on `(0, ∞)`, this file records the ex
 criterion and closed-form evaluations of the monomial moments
 `∫ x in Ioi 0, x ^ k * exp (-b * x ^ 2)` for `k : ℕ`, specializing Mathlib's
 `integral_rpow_mul_exp_neg_mul_rpow` to natural powers and simplifying even and odd orders to
-elementary factorial expressions. Folding the real line onto `(0, ∞)` doubles the even moments;
-the second moment over the whole line is recorded explicitly.
+elementary factorial expressions. Folding the real line onto `(0, ∞)` doubles the even moments,
+which gives the even moments over the whole line.
 
 ## Main results
 
@@ -31,9 +31,9 @@ the second moment over the whole line is recorded explicitly.
   `(2 * m)! * √(π / b) / (2 ^ (2 * m + 1) * m! * b ^ m)`, valid for all `b : ℝ`.
 * `TauCeti.integral_Ioi_pow_two_mul_add_one_mul_exp_neg_mul_sq`: odd-order half-line Gaussian
   moment `∫ x in Ioi 0, x ^ (2 * m + 1) * exp (-b * x ^ 2) = m! / (2 * b ^ (m + 1))` for `0 < b`.
-* `TauCeti.integral_sq_mul_exp_neg_mul_sq`: the second moment over the whole line,
-  `∫ x² exp (-b x²) dx = √(π / b) / (2 b)`, which together with Mathlib's `integral_gaussian`
-  evaluates the squared `L²` norms of a Gaussian and of its derivative.
+* `TauCeti.integral_pow_two_mul_mul_exp_neg_mul_sq`: even-order Gaussian moment over the whole
+  line, `∫ x ^ (2 * m) * exp (-b * x ^ 2) dx = (2 * m)! * √(π / b) / (2 ^ (2 * m) * m! * b ^ m)`,
+  valid for all `b : ℝ`.
 -/
 
 public section
@@ -122,17 +122,17 @@ theorem integral_Ioi_pow_two_mul_add_one_mul_exp_neg_mul_sq {b : ℝ} (hb : 0 < 
   have harg : (((2 * m + 1 : ℕ) : ℝ) + 1) / 2 = (m : ℝ) + 1 := by push_cast; ring
   rw [harg, Real.Gamma_nat_eq_factorial, ← Nat.cast_add_one, Real.rpow_natCast]
 
-/-- The second moment of the Gaussian over the real line: for `0 < b`,
-`∫ x² exp (-b x²) dx = √(π / b) / (2 b)`, twice the half-line moment
-`TauCeti.integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq`. -/
-theorem integral_sq_mul_exp_neg_mul_sq (b : ℝ) :
-    ∫ x : ℝ, x ^ 2 * Real.exp (-b * x ^ 2) = Real.sqrt (Real.pi / b) / (2 * b) := by
-  have h := integral_comp_abs (f := fun x : ℝ => x ^ 2 * Real.exp (-b * x ^ 2))
-  simp only [sq_abs] at h
-  have h₁ := integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq b 1
-  rw [mul_one] at h₁
-  rw [h, h₁]
-  norm_num
+/-- Even-order Gaussian moment over the whole real line: for every `b : ℝ` and `m : ℕ`,
+`∫ x ^ (2 * m) * exp (-b * x ^ 2) dx = (2 * m)! * √(π / b) / (2 ^ (2 * m) * m! * b ^ m)`, twice
+the half-line moment `TauCeti.integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq`.
+For `b ≤ 0`, both sides vanish by `MeasureTheory.integral_undef` and
+`Real.sqrt_eq_zero_of_nonpos`. -/
+theorem integral_pow_two_mul_mul_exp_neg_mul_sq (b : ℝ) (m : ℕ) :
+    ∫ x : ℝ, x ^ (2 * m) * Real.exp (-b * x ^ 2) =
+      ((2 * m)! : ℝ) * Real.sqrt (Real.pi / b) / (2 ^ (2 * m) * (m ! : ℝ) * b ^ m) := by
+  have h := integral_comp_abs (f := fun x : ℝ => x ^ (2 * m) * Real.exp (-b * x ^ 2))
+  simp only [(even_two_mul m).pow_abs, sq_abs] at h
+  rw [h, integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq, pow_succ]
   ring
 
 end TauCeti

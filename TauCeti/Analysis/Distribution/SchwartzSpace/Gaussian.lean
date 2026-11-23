@@ -48,7 +48,7 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
   `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`, and its `L^∞` norm `1`.
-* `TauCeti.norm_toLp_gaussian_sq`: on `ℝ`, its squared `L²` norm `√(π / (2 b.re))`.
+* `TauCeti.norm_toLp_gaussian_sq`: its squared `L²` norm `(π / (2 b.re))^(n/2)`.
 * `SchwartzMap.eLpNorm_fourier_gaussian`: the `L^q` norms
   `π^(n/2) (π b.re q)^(-n/(2q)) ‖b‖^(n/q - n/2)`, `0 < q < ∞`, of its Fourier transform. For fixed
   `b.re` they grow with `‖b‖` exactly when `q < 2`, while the norms of the Gaussian itself depend
@@ -270,12 +270,15 @@ namespace TauCeti
 open MeasureTheory
 open scoped Real
 
-/-- **The `L²` norm of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`, `0 < Re b`,
-`‖g‖²_{L²} = ∫ |exp(-b x²)|² dx = √(π / (2 Re b))`. -/
-theorem norm_toLp_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
-    ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 = √(π / (2 * b.re)) := by
-  simp only [SchwartzMap.norm_toLp_sq, SchwartzMap.norm_gaussian_apply_sq, Real.norm_eq_abs,
-    sq_abs, integral_gaussian]
+/-- **The `L²` norm of a Gaussian.** For `g(x) = exp(-b ‖x‖²)`, `0 < Re b`, on a real inner
+product space of dimension `n`,
+`‖g‖²_{L²} = ∫ |exp(-b ‖x‖²)|² dx = (π / (2 Re b))^(n/2)`; on `ℝ` this is `√(π / (2 Re b))`. -/
+theorem norm_toLp_gaussian_sq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ} (hb : 0 < b.re) :
+    ‖(SchwartzMap.gaussian (V := V) hb).toLp 2‖ ^ 2 =
+      (π / (2 * b.re)) ^ (Module.finrank ℝ V / 2 : ℝ) := by
+  simp only [SchwartzMap.norm_toLp_sq, SchwartzMap.norm_gaussian_apply_sq,
+    GaussianFourier.integral_rexp_neg_mul_sq_norm (mul_pos two_pos hb)]
 
 end TauCeti
 
