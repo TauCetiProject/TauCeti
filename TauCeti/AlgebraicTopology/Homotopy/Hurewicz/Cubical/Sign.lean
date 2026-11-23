@@ -186,6 +186,7 @@ private theorem toCubeBoundaryPairHom_congr_swap (p : Ω^ (Fin 2) X x) :
 /-- **Transposing the coordinates of a square negates its cubical Hurewicz class**: for a
 generalized loop `p : (I², ∂I²) → (X, x)`, the cubical Hurewicz class of `(s, t) ↦ p (t, s)` is
 minus that of `p`. -/
+@[simp]
 theorem cubicalHurewicz_congr_swap (p : Ω^ (Fin 2) X x) :
     GenLoop.cubicalHurewicz k (GenLoop.congr x (Equiv.swap 0 1) p) =
       -GenLoop.cubicalHurewicz k p := by

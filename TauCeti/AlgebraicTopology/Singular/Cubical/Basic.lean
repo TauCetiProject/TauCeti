@@ -151,6 +151,7 @@ theorem squareSwap_apply (z : Fin 2 → I) : squareSwap z = z ∘ Equiv.swap 0 1
   (rfl)
 
 /-- The faces of a transposed square are the faces of the square in the exchanged direction. -/
+@[simp]
 theorem face_comp_squareSwap (c : SingularCube X 2) (i : Fin 2) (t : I) :
     face i t (c.comp squareSwap) = face (Equiv.swap 0 1 i) t c := by
   ext y
