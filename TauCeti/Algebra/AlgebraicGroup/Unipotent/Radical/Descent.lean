@@ -321,9 +321,8 @@ theorem unipotentRadicalCoordinateMap_comp_unipotentRadicalBaseChangeIso_inv
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     unipotentRadicalCoordinateMap (baseChange (K := K) H) ≫
         (unipotentRadicalBaseChangeIso (K := K) H).inv =
-      baseChangeMap (K := K) (unipotentRadicalCoordinateMap H) := by
-  rw [← baseChangeMap_unipotentRadicalCoordinateMap_comp_unipotentRadicalBaseChangeIso_hom,
-    Category.assoc, Iso.hom_inv_id, Category.comp_id]
+      baseChangeMap (K := K) (unipotentRadicalCoordinateMap H) :=
+  unipotentRadicalCoordinateMap_comp_unipotentRadicalBaseChangeIsoOfEq_inv H _
 
 /-- **Base-change comparison for the normal affine quotient by the unipotent radical** along a
 separable algebraic field extension `K / k`: the scalar extension of the coinvariant coordinate

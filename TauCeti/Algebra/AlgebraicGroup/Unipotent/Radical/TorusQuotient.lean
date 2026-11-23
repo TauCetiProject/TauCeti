@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Recognition
 import TauCeti.Algebra.AlgebraicGroup.Torus.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.DiagonalizableQuotient
 
@@ -22,16 +21,18 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.DiagonalizableQuotient
 # The unipotent radical when the quotient is a torus
 
 Over any field, a connected normal smooth unipotent subgroup of a geometrically reduced group
-whose affine quotient is a torus is the unipotent radical
-(`TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_of_torus_coinvariants`). If
-`G ⧸ R_u(G)` is a torus, the formation of `R_u(G)` therefore commutes with every field extension
+whose affine quotient is of multiplicative type, for instance a torus, is the unipotent radical
+(`TauCeti.FiniteTypeCommHopfAlgCat.
+unipotentRadicalDefiningIdeal_eq_of_multiplicativeType_coinvariants`). If `G ⧸ R_u(G)` is a
+torus, the formation of `R_u(G)` therefore commutes with every field extension
 (`TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_torus`): a
 torus stays a torus after extension of scalars, and the image in a group with semisimple geometric
 points of the smooth unipotent radical of `G_K` is trivial.
 
 ## Main declarations
 
-* `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_of_torus_coinvariants`
+* `TauCeti.FiniteTypeCommHopfAlgCat.
+    unipotentRadicalDefiningIdeal_eq_of_multiplicativeType_coinvariants`
 * `TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_torus`
 
 ## References
@@ -53,19 +54,18 @@ namespace FiniteTypeCommHopfAlgCat
 
 variable {k : Type u} [Field k]
 
-open torusCommHopfAlgProperty in
-/-- **Uniqueness of the unipotent radical with torus quotient.** Over any field, a connected
-normal smooth unipotent subgroup of a geometrically reduced group whose affine quotient is a torus
-is the unipotent radical. -/
-theorem unipotentRadicalDefiningIdeal_eq_of_torus_coinvariants
+/-- **Uniqueness of the unipotent radical with quotient of multiplicative type.** Over any field, a
+connected normal smooth unipotent subgroup of a geometrically reduced group whose affine quotient
+is of multiplicative type, for instance a torus, is the unipotent radical. -/
+theorem unipotentRadicalDefiningIdeal_eq_of_multiplicativeType_coinvariants
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) [Algebra.IsGeometricallyReduced k H]
     {I : HopfIdeal k H} (hI : HopfIdeal.IsUnipotentRadicalCandidate H I) :
     letI := hI.isNormal.isHopfSubalgebra_coinvariants.hopfAlgebra
-    torusCommHopfAlgProperty k
+    multiplicativeTypeCommHopfAlgProperty k
         ⟨CommHopfAlgCat.coinvariants hI.isNormal,
           (finiteTypeCommHopfAlgProperty_iff _).mpr hI.isNormal.finiteType_coinvariants⟩ →
       unipotentRadicalDefiningIdeal H = I := by
-  intro hT
+  intro hM
   let D : FiniteTypeCommHopfAlgCat.{u, u} k :=
     ⟨CommHopfAlgCat.coinvariants hI.isNormal,
       (finiteTypeCommHopfAlgProperty_iff _).mpr hI.isNormal.finiteType_coinvariants⟩
@@ -74,11 +74,9 @@ theorem unipotentRadicalDefiningIdeal_eq_of_torus_coinvariants
     Algebra.IsGeometricallyReduced.of_injective
       (CommHopfAlgCat.coinvariantsι hI.isNormal).hom.toAlgHom
       (CommHopfAlgCat.hopfSubalgebraι_injective hI.isNormal.isHopfSubalgebra_coinvariants)
-  have hT' :=
-    (iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced k D).mp hT
   have hD : geometricallySemisimplePointsCommHopfAlgProperty k D.obj :=
     ((multiplicativeTypeCommHopfAlgProperty_iff_isCocomm_and_geometricallySemisimplePoints D).mp
-      hT'.1).2
+      hM).2
   rw [unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_geometricallySemisimple H D hD
     (CommHopfAlgCat.coinvariantsι hI.isNormal) (by rwa [hker]), hker]
 
@@ -98,8 +96,8 @@ theorem baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_torus
   intro hT
   let hR := isNormal_unipotentRadicalDefiningIdeal H
   have hI := (isUnipotentRadicalCandidate_unipotentRadicalDefiningIdeal H).baseChange (K := K)
-  refine (unipotentRadicalDefiningIdeal_eq_of_torus_coinvariants _ hI ?_).symm
-  exact (torusCommHopfAlgProperty K).prop_of_iso
+  refine (unipotentRadicalDefiningIdeal_eq_of_multiplicativeType_coinvariants _ hI ?_).symm
+  exact torusCommHopfAlgProperty.multiplicativeType K _ <| (torusCommHopfAlgProperty K).prop_of_iso
     (ObjectProperty.isoMk _ (CommHopfAlgCat.coinvariantsBaseChangeIso (K := K) hR))
     (hT.baseChange K)
 
