@@ -23,10 +23,11 @@ import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
 import TauCeti.Algebra.Category.ModuleCat.Connected
-import TauCeti.Algebra.Category.ModuleCat.HaradaSai
+import TauCeti.Algebra.Category.ModuleCat.Length
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
 import TauCeti.CategoryTheory.AlmostSplit.Finiteness
+import TauCeti.CategoryTheory.Abelian.HaradaSai
 import TauCeti.CategoryTheory.Generator.Biproduct
 import TauCeti.CategoryTheory.Preadditive.CentralIdempotent
 import TauCeti.CategoryTheory.Preadditive.Radical.Basic
@@ -114,7 +115,8 @@ private theorem ofSequence_map_eq_zero_of_prop (M : ℕ → FGModuleCat.{w} A)
   (ObjectProperty.ι _).map_injective <| by
     rw [Functor.map_zero]
     refine map_eq_zero_of_length_le (F := Functor.ofSequence f ⋙ ObjectProperty.ι _)
-      (fun n ↦ hS _ (hM n)) (fun n ↦ hb _ (hM n)) (fun n h ↦ hf n ?_) _ (by omega)
+      (fun n ↦ hS _ (hM n)) (fun n ↦ (ModuleCat.length_eq _).trans_le (hb _ (hM n)))
+      (fun n h ↦ hf n ?_) _ (by omega)
     rw [Functor.comp_map, Functor.ofSequence_map_homOfLE_succ] at h
     exact (isIso_iff_of_reflects_iso (f n) (ObjectProperty.ι _)).mp h
 
@@ -177,7 +179,8 @@ theorem eq_zero_of_length_le_of_not_prop_of_prop
       -- The Harada–Sai lemma for descending chains, read in `ModuleCat A`.
       rw [Functor.map_zero]
       refine map_op_eq_zero_of_length_le (G := Functor.ofOpSequence f ⋙ ObjectProperty.ι _)
-        (fun n ↦ hS _ (hM n)) (fun n ↦ hb _ (hM n)) (fun n h ↦ hf n ?_) _ (by omega)
+        (fun n ↦ hS _ (hM n)) (fun n ↦ (ModuleCat.length_eq _).trans_le (hb _ (hM n)))
+        (fun n h ↦ hf n ?_) _ (by omega)
       rw [Functor.comp_map, Functor.ofOpSequence_map_homOfLE_succ] at h
       exact (isIso_iff_of_reflects_iso (f n) (ObjectProperty.ι _)).mp h) hY hf
   exact hSX (S.prop_of_iso e.symm hQ)

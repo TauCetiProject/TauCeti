@@ -24,6 +24,11 @@ carrying each piece into a piece of another grading carries sums of pieces into 
 (`TauCeti.DirectSum.map_mem_iSup`) and intertwines the corresponding projections
 (`TauCeti.DirectSum.map_supportedProj`).
 
+The projection fixes the sums of pieces indexed by subsets of the set
+(`TauCeti.DirectSum.supportedProj_eq_self_of_subset`), kills those indexed by disjoint sets
+(`TauCeti.DirectSum.supportedProj_eq_zero_of_disjoint`), and is additive in disjoint index sets
+(`TauCeti.DirectSum.supportedProj_union`).
+
 We use Mathlib's `DirectSum.decompose_of_mem_ne` and
 `DirectSum.sum_support_decompose` to detect and reconstruct the allowed support.
 
@@ -75,6 +80,13 @@ theorem isHomogeneous_iSup :
   · rw [(mem_iSup_iff_decompose_eq_zero ℳ S).mp hx i hi]
     exact Submodule.zero_mem _
 
+variable {ℳ S} in
+omit [DecidableEq ι] [_root_.DirectSum.Decomposition ℳ] in
+/-- The sum of the pieces indexed by `S` lies in the sum of the pieces indexed by any superset. -/
+theorem mem_iSup_of_subset {T : Set ι} (hST : S ⊆ T) {x : M} (hx : x ∈ ⨆ i : S, ℳ i) :
+    x ∈ ⨆ i : T, ℳ i :=
+  (iSup_mono' fun i ↦ ⟨⟨i, hST i.property⟩, le_rfl⟩ : (⨆ i : S, ℳ i) ≤ _) hx
+
 open scoped Classical in
 /-- The projection onto the sum of the pieces indexed by `S`: it fixes every piece indexed by
 `S` and kills every other piece. -/
@@ -93,11 +105,25 @@ theorem supportedProj_of_notMem {i : ι} {x : M} (hx : x ∈ ℳ i) (hi : i ∉ 
     supportedProj ℳ S x = 0 := by
   simp [supportedProj, _root_.DirectSum.homogeneousExtend_of_mem ℳ _ hx, hi]
 
+/-- The projection onto the pieces indexed by `S` fixes the sum of the pieces indexed by a subset
+of `S`. -/
+theorem supportedProj_eq_self_of_subset {T : Set ι} (hTS : T ⊆ S) {x : M}
+    (hx : x ∈ ⨆ i : T, ℳ i) : supportedProj ℳ S x = x :=
+  Submodule.iSup_induction _ (motive := fun x ↦ supportedProj ℳ S x = x) hx
+    (fun i _ hx ↦ supportedProj_of_mem hx (hTS i.property)) (map_zero _)
+    (fun _ _ hx hy ↦ by rw [map_add, hx, hy])
+
 /-- The projection onto the pieces indexed by `S` fixes the sum of those pieces. -/
 theorem supportedProj_eq_self {x : M} (hx : x ∈ ⨆ i : S, ℳ i) : supportedProj ℳ S x = x :=
-  Submodule.iSup_induction _ (motive := fun x ↦ supportedProj ℳ S x = x) hx
-    (fun i _ hx ↦ supportedProj_of_mem hx i.property) (map_zero _)
-    (fun _ _ hx hy ↦ by rw [map_add, hx, hy])
+  supportedProj_eq_self_of_subset Set.Subset.rfl hx
+
+/-- The projection onto the pieces indexed by `S` kills the sum of the pieces indexed by a set
+disjoint from `S`. -/
+theorem supportedProj_eq_zero_of_disjoint {T : Set ι} (hST : Disjoint S T) {x : M}
+    (hx : x ∈ ⨆ i : T, ℳ i) : supportedProj ℳ S x = 0 :=
+  Submodule.iSup_induction _ (motive := fun x ↦ supportedProj ℳ S x = 0) hx
+    (fun i _ hx ↦ supportedProj_of_notMem hx fun hi ↦ Set.disjoint_left.1 hST hi i.property)
+    (map_zero _) (fun _ _ hx hy ↦ by rw [map_add, hx, hy, add_zero])
 
 /-- Projecting an element of the sum of the pieces indexed by `T` onto the pieces indexed by `S`
 lands in the sum of the pieces indexed by `S ∩ T`. -/
@@ -112,6 +138,12 @@ theorem supportedProj_mem_iSup_inter {T : Set ι} {x : M} (hx : x ∈ ⨆ i : T,
     exact Submodule.mem_iSup_of_mem ⟨i, hi, i.property⟩ hx
   · rw [supportedProj_of_notMem hx hi]
     exact Submodule.zero_mem _
+
+/-- The projection onto the pieces indexed by `S` preserves the sum of the pieces indexed by
+any `T`. -/
+theorem supportedProj_mem_iSup_of_mem {T : Set ι} {x : M} (hx : x ∈ ⨆ i : T, ℳ i) :
+    supportedProj ℳ S x ∈ ⨆ i : T, ℳ i :=
+  mem_iSup_of_subset Set.inter_subset_right (supportedProj_mem_iSup_inter hx)
 
 variable (ℳ S)
 
@@ -155,6 +187,25 @@ theorem decompose_supportedProj (x : M) (i : ι) [Decidable (i ∈ S)] :
     simp only [map_add, _root_.DirectSum.decompose_add, _root_.DirectSum.add_apply,
       Submodule.coe_add, hx, hy]
     split_ifs <;> simp
+
+/-- The projection onto the pieces indexed by a union of two disjoint sets is the sum of the two
+projections. -/
+theorem supportedProj_union {T : Set ι} (hST : Disjoint S T) (x : M) :
+    supportedProj ℳ (S ∪ T) x = supportedProj ℳ S x + supportedProj ℳ T x := by
+  induction x using _root_.DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous i x =>
+    by_cases hS : i ∈ S
+    · rw [supportedProj_of_mem x.property (Or.inl hS), supportedProj_of_mem x.property hS,
+        supportedProj_of_notMem x.property (Set.disjoint_left.1 hST hS), add_zero]
+    · by_cases hT : i ∈ T
+      · rw [supportedProj_of_mem x.property (Or.inr hT), supportedProj_of_notMem x.property hS,
+          supportedProj_of_mem x.property hT, zero_add]
+      · rw [supportedProj_of_notMem x.property (by simp [hS, hT]),
+          supportedProj_of_notMem x.property hS, supportedProj_of_notMem x.property hT, add_zero]
+  | add x y hx hy =>
+    rw [map_add, map_add, map_add, hx, hy]
+    abel
 
 /-- Projecting onto the pieces indexed by `T` and then onto those indexed by `S` is projecting
 onto the pieces indexed by `S ∩ T`. -/

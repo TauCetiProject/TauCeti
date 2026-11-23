@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Matrix.Grading
-public import TauCeti.LowDimTopology.Bordered.TypeDA
+public import TauCeti.LowDimTopology.Bordered.TypeDA.Basic
 import TauCeti.Algebra.Group.Action.Pow
 import Mathlib.Tactic.Group
 

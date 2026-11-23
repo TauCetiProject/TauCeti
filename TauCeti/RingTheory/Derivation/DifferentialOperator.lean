@@ -48,6 +48,9 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
   `mem_differentialOperators_iff_forall_apply_mem_smul_top` is the converse: when the points of
   `A` separate `N`, an operator that factors through `m`-jets at every point has order at most
   `m`.
+* `mem_differentialOperators_of_intertwining`: the order of an operator can be checked after
+  mapping to a jointly injective family of targets, for instance on the members of an open
+  cover.
 * `smulCommutator_pow_comp_of_mem`: the top iterated commutators of a composition multiply,
   `ad_a ^ (m + k) (P ∘ Q) = (m + k).choose m • (ad_a ^ m P ∘ ad_a ^ k Q)`. Dividing by
   factorials over a `ℚ`-algebra, this is multiplicativity of principal symbols.
@@ -396,6 +399,35 @@ theorem apply_mem_smul_top_of_mem_pow_smul_top {D : M →ₗ[R] N} {m : ℕ}
     rw [apply_smul_eq_smulCommutator_add]
     exact add_mem (ih (smulCommutator_mem_differentialOperators hD a) hy)
       (Submodule.smul_mem_smul ha Submodule.mem_top)
+
+/-! ### Checking the order on a jointly injective family -/
+
+/-- Let `φ i : A →+* B i` be a family of ring maps, and let `f i : M → M' i` and
+`g i : N → N' i` be additive maps semilinear over `φ i`, with the `g i` jointly injective. If
+`D : M → N` is intertwined with operators `D' i : M' i → N' i` of order at most `m`, that is
+`g i ∘ D = D' i ∘ f i`, then `D` has order at most `m`. For restriction maps of a sheaf to
+the members of an open cover, this says that the order of an operator on sections is local. -/
+theorem mem_differentialOperators_of_intertwining {ι : Type*} {B M' N' : ι → Type*}
+    [∀ i, CommSemiring (B i)] [∀ i, Algebra R (B i)]
+    [∀ i, AddCommMonoid (M' i)] [∀ i, Module (B i) (M' i)] [∀ i, Module R (M' i)]
+    [∀ i, IsScalarTower R (B i) (M' i)]
+    [∀ i, AddCommGroup (N' i)] [∀ i, Module (B i) (N' i)] [∀ i, Module R (N' i)]
+    [∀ i, IsScalarTower R (B i) (N' i)]
+    (φ : ∀ i, A →+* B i) (f : ∀ i, M →ₛₗ[φ i] M' i) (g : ∀ i, N →ₛₗ[φ i] N' i)
+    (hg : ∀ y : N, (∀ i, g i y = 0) → y = 0) {m : ℕ} {D : M →ₗ[R] N}
+    {D' : ∀ i, M' i →ₗ[R] N' i} (hD : ∀ i x, g i (D x) = D' i (f i x))
+    (hD' : ∀ i, D' i ∈ differentialOperators R (B i) (M' i) (N' i) m) :
+    D ∈ differentialOperators R A M N m := by
+  induction m generalizing D D' with
+  | zero =>
+    refine mem_differentialOperators_zero_iff.2 fun a x ↦ sub_eq_zero.1 (hg _ fun i ↦ ?_)
+    rw [map_sub, hD, LinearMap.map_smulₛₗ, LinearMap.map_smulₛₗ, hD,
+      mem_differentialOperators_zero_iff.1 (hD' i), sub_self]
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun a ↦
+      ih (D' := fun i ↦ smulCommutator R (φ i a) (D' i)) (fun i x ↦ ?_)
+        fun i ↦ smulCommutator_mem_differentialOperators (hD' i) _
+    simp [hD, LinearMap.map_smulₛₗ]
 
 end
 

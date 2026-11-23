@@ -44,6 +44,8 @@ of projective space.
 
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
+* `Projectivization.isClosed_setOfPred_mem_submodule`: for a T₁ space `V` whose projective space
+  is Hausdorff, the incidence relation is closed in `ℙ K V × V`.
 * `ContinuousLinearEquiv.mapProjectivization`: a continuous semilinear equivalence
   `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`.
 * `Projectivization.continuousAt_linearProjection`: the map induced by a linear map depends
@@ -95,55 +97,93 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   ext v
   simp [mk'_eq_mk]
 
+/-- **The incidence relation is closed for a T₁ space `V` with Hausdorff projective space**:
+the pairs of a point and a vector on its line form a closed subset of `ℙ K V × V`. -/
+theorem isClosed_setOfPred_mem_submodule [T1Space V] [T2Space (ℙ K V)] :
+    IsClosed {p : ℙ K V × V | p.2 ∈ p.1.submodule} := by
+  -- The complement is the image, under the open embedding `ℙ K V × (V ∖ 0) → ℙ K V × V`, of the
+  -- open set of pairs `(x, v)` with `x ≠ [v]`.
+  have hι : IsOpenEmbedding (Prod.map id Subtype.val : ℙ K V × {v : V // v ≠ 0} → ℙ K V × V) :=
+    IsOpenEmbedding.id.prodMap (isOpen_ne.isOpenEmbedding_subtypeVal)
+  have hc : {p : ℙ K V × V | p.2 ∈ p.1.submodule}ᶜ =
+      Prod.map id Subtype.val '' {q : ℙ K V × {v : V // v ≠ 0} | q.1 ≠ mk' K q.2} := by
+    ext ⟨x, v⟩
+    simp only [mem_compl_iff, mem_ofPred_eq, mem_submodule_iff, not_forall, mem_image,
+      Prod.exists, Prod.map, id_eq, Prod.mk.injEq, Subtype.exists, mk'_eq_mk]
+    constructor
+    · rintro ⟨hv, hx⟩
+      exact ⟨x, v, hv, Ne.symm hx, rfl, rfl⟩
+    · rintro ⟨x, v, hv, hx, rfl, rfl⟩
+      exact ⟨hv, Ne.symm hx⟩
+  rw [← isOpen_compl_iff, hc]
+  exact hι.isOpenMap _ (isOpen_ne_fun continuous_fst (continuous_mk'.comp continuous_snd))
+
 section MapProjectivization
 
 variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [TopologicalSpace W]
   {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
 
+/-- A continuous semilinear equivalence induces a continuous bijection of projective spaces. -/
+@[fun_prop]
+theorem _root_.LinearEquiv.continuous_mapProjectivization (f : V ≃ₛₗ[σ] W) (hf : Continuous f) :
+    Continuous f.mapProjectivization :=
+  (continuous_map f.injective hf).congr fun x ↦ (LinearEquiv.mapProjectivization_apply f x).symm
+
 /-- A continuous semilinear equivalence `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`,
 sending the line spanned by `v` to the line spanned by `e v`. -/
 def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃SL[σ] W) :
-    ℙ K V ≃ₜ ℙ L W where
-  toFun := map (e : V →ₛₗ[σ] W) e.injective
-  invFun := map (e.symm : W →ₛₗ[σ'] V) e.symm.injective
-  left_inv p := by
-    induction p using ind with | h v hv => simp [map_mk]
-  right_inv p := by
-    induction p using ind with | h v hv => simp [map_mk]
-  continuous_toFun := continuous_map _ e.continuous
-  continuous_invFun := continuous_map _ e.symm.continuous
+    ℙ K V ≃ₜ ℙ L W :=
+  { e.toLinearEquiv.mapProjectivization with
+    continuous_toFun := e.toLinearEquiv.continuous_mapProjectivization e.continuous
+    continuous_invFun := by
+      rw [Equiv.invFun_as_coe, LinearEquiv.mapProjectivization_symm,
+        ← ContinuousLinearEquiv.toLinearEquiv_symm]
+      exact e.symm.toLinearEquiv.continuous_mapProjectivization e.symm.continuous }
+
+/-- The underlying equivalence is the projectivization of the underlying semilinear equivalence. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.toEquiv_mapProjectivization (e : V ≃SL[σ] W) :
+    e.mapProjectivization.toEquiv = e.toLinearEquiv.mapProjectivization := by
+  simp only [ContinuousLinearEquiv.mapProjectivization]
 
 /-- The homeomorphism `ContinuousLinearEquiv.mapProjectivization` is `Projectivization.map`. -/
 theorem _root_.ContinuousLinearEquiv.coe_mapProjectivization (e : V ≃SL[σ] W) :
     ⇑e.mapProjectivization = map (e : V →ₛₗ[σ] W) e.injective :=
-  (rfl)
+  funext fun p ↦ e.toLinearEquiv.mapProjectivization_apply p
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃SL[σ] W) (v : V)
     (hv : v ≠ 0) :
     e.mapProjectivization (mk K v hv) = mk L (e v) ((map_ne_zero_iff e e.injective).2 hv) :=
-  (rfl)
+  e.toLinearEquiv.mapProjectivization_mk v hv
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm (e : V ≃SL[σ] W) :
-    e.mapProjectivization.symm = e.symm.mapProjectivization :=
-  (rfl)
+    e.mapProjectivization.symm = e.symm.mapProjectivization := by
+  ext p
+  rw [← Homeomorph.coe_symm_toEquiv, ContinuousLinearEquiv.toEquiv_mapProjectivization,
+    LinearEquiv.mapProjectivization_symm, ← ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← ContinuousLinearEquiv.toEquiv_mapProjectivization, Homeomorph.coe_toEquiv]
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm_apply_apply (e : V ≃SL[σ] W)
-    (p : ℙ K V) : e.symm.mapProjectivization (e.mapProjectivization p) = p :=
-  e.mapProjectivization.symm_apply_apply p
+    (p : ℙ K V) : e.symm.mapProjectivization (e.mapProjectivization p) = p := by
+  rw [← e.mapProjectivization_symm]
+  exact e.mapProjectivization.symm_apply_apply p
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_apply_symm_apply (e : V ≃SL[σ] W)
-    (p : ℙ L W) : e.mapProjectivization (e.symm.mapProjectivization p) = p :=
-  e.mapProjectivization.apply_symm_apply p
+    (p : ℙ L W) : e.mapProjectivization (e.symm.mapProjectivization p) = p := by
+  rw [← e.mapProjectivization_symm]
+  exact e.mapProjectivization.apply_symm_apply p
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_refl :
     (ContinuousLinearEquiv.refl K V).mapProjectivization = Homeomorph.refl (ℙ K V) := by
   ext p
-  induction p using ind with | h v hv => simp
+  induction p using Projectivization.ind with | h v hv =>
+  simp only [ContinuousLinearEquiv.mapProjectivization_mk, Homeomorph.refl_apply,
+    ContinuousLinearEquiv.refl_apply, id_eq]
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [DivisionRing M]
@@ -153,7 +193,9 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [Di
     [RingHomCompTriple τ' σ' ρ'] (e₁ : V ≃SL[σ] W) (e₂ : W ≃SL[τ] U) :
     (e₁.trans e₂).mapProjectivization = e₁.mapProjectivization.trans e₂.mapProjectivization := by
   ext p
-  induction p using ind with | h v hv => simp
+  induction p using Projectivization.ind with | h v hv =>
+  simp only [ContinuousLinearEquiv.mapProjectivization_mk, Homeomorph.trans_apply,
+    ContinuousLinearEquiv.trans_apply]
 
 end MapProjectivization
 

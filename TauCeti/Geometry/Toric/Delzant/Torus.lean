@@ -365,6 +365,37 @@ theorem exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegra
     exact span_eq_top_of_forall_mem_ker hi hp hs h
   exact ⟨Module.Basis.mk hli hspan.ge, Module.Basis.mk_apply hli hspan.ge⟩
 
+/-! ### Labelled normals -/
+
+variable (i u p) in
+/-- **Labelling the normals multiplies the angles.** For the labelled normals `m j • u j`, the
+homomorphism `(ℝ / pℤ)^ι → V / p i(N)` is the homomorphism of the normals `u` composed with the
+multiplication `θ ↦ (m j • θ j)_j` of each angle by its label. -/
+theorem facetTorusHom_nsmul_apply (m : ι → ℕ) (θ : ι → AddCircle p) :
+    facetTorusHom i (fun j ↦ m j • u j) p θ = facetTorusHom i u p fun j ↦ m j • θ j := by
+  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  have hmt : (fun j ↦ m j • (t j : AddCircle p)) = fun j ↦ ((m j • t j : ℝ) : AddCircle p) :=
+    funext fun j ↦ (AddCircle.coe_nsmul ..).symm
+  rw [hmt, facetTorusHom_coe, facetTorusHom_coe]
+  congr 1
+  simp only [Fintype.linearCombination_apply, map_nsmul, smul_assoc, smul_comm (t _)]
+
+/-- **The labelled kernel torus on a coordinate subtorus of a lattice basis.** Suppose that the
+normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element `θ` of
+`(ℝ / pℤ)^ι` whose coordinates outside `s` vanish lies in the kernel of the homomorphism of the
+labelled normals `m j • u j` exactly when `m j • θ j = 0` for every `j`. For unit labels this is
+`TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`. -/
+theorem mem_ker_facetTorusHom_nsmul_iff (hi : IsIntegralLattice i) {s : Set ι}
+    (hs : ∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) (m : ι → ℕ) {θ : ι → AddCircle p}
+    (hθs : ∀ j ∉ s, θ j = 0) :
+    θ ∈ (facetTorusHom i (fun j ↦ m j • u j) p).ker ↔ ∀ j, m j • θ j = 0 := by
+  rw [AddMonoidHom.mem_ker, facetTorusHom_nsmul_apply, ← AddMonoidHom.mem_ker]
+  refine ⟨fun h ↦ congrFun (eq_zero_of_mem_ker_facetTorusHom hi hs h fun j hj ↦ by
+    rw [hθs j hj, smul_zero]), fun h ↦ ?_⟩
+  rw [show (fun j ↦ m j • θ j) = 0 from funext h]
+  exact zero_mem _
+
 /-! ### Changes of presentation -/
 
 section Presentation
