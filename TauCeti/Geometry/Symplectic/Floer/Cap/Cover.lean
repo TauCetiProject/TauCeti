@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.TorusClass
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Bijection
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.DeckGroup
-public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular.Torsor
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.AdditiveKer
 public import TauCeti.Geometry.Symplectic.Floer.SphericalPeriodGroup
 
 /-!
@@ -194,37 +192,32 @@ variable (ω c) in
 /-- **The period homomorphism of the cap cover** on the fundamental group of `𝓛₀X` at the constant
 loop at `x`, with values in `Γ` read multiplicatively: it is
 `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup` through
-`π₁ ≅ FundamentalGroup`. -/
+`π₁ ≅ FundamentalGroup` (`TauCeti.UniversalCover.fundamentalGroupHomOfAdditive`). -/
 def capCoverPeriodHom (x : X) :
     FundamentalGroup (contractibleLoops X) (constContractibleLoop x) →*
       Multiplicative (SphericalPeriodGroup ω c) :=
-  (AddMonoidHom.toMultiplicativeRight
-    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x)).comp
-      HomotopyGroup.pi1MulEquivFundamentalGroup.symm.toMonoidHom
+  fundamentalGroupHomOfAdditive _ (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x)
 
 theorem capCoverPeriodHom_apply (x : X)
     (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
     capCoverPeriodHom ω c x g = Multiplicative.ofAdd
       (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x
         (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g))) :=
-  (rfl)
+  fundamentalGroupHomOfAdditive_apply _ _ g
 
 @[simp]
 theorem capCoverPeriodHom_pi1MulEquivFundamentalGroup (x : X)
     (a : HomotopyGroup (Fin 1) (contractibleLoops X) (constContractibleLoop x)) :
     capCoverPeriodHom ω c x (HomotopyGroup.pi1MulEquivFundamentalGroup a) =
       Multiplicative.ofAdd
-        (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a)) := by
-  simp [capCoverPeriodHom]
+        (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a)) :=
+  fundamentalGroupHomOfAdditive_pi1MulEquivFundamentalGroup _ _ a
 
 /-- The period homomorphism of the cap cover is onto for a path-connected space. -/
 theorem capCoverPeriodHom_surjective [PathConnectedSpace X] (x : X) :
-    Function.Surjective (capCoverPeriodHom ω c x) := by
-  intro g
-  obtain ⟨a, ha⟩ := SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective
-    (ω := ω) (c := c) x g.toAdd
-  exact ⟨HomotopyGroup.pi1MulEquivFundamentalGroup a.toMul, by
-    rw [capCoverPeriodHom_pi1MulEquivFundamentalGroup, ofMul_toMul, ha, ofAdd_toAdd]⟩
+    Function.Surjective (capCoverPeriodHom ω c x) :=
+  fundamentalGroupHomOfAdditive_surjective _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x)
 
 variable (ω c) in
 /-- **The subgroup of the cap cover**: the classes in `π₁(𝓛₀X, x)`, at the constant loop at `x`,
@@ -233,7 +226,8 @@ number, the kernel of the period homomorphism
 `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup`. -/
 def capCoverSubgroup (x : X) :
     Subgroup (FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :=
-  (capCoverPeriodHom ω c x).ker
+  additiveKerSubgroup (constContractibleLoop x)
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x)
 
 /-- A class of `π₁(𝓛₀X, x)` lies in the subgroup of the cap cover exactly when its period class
 vanishes. -/
@@ -242,12 +236,12 @@ theorem mem_capCoverSubgroup_iff (x : X)
     (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
     g ∈ capCoverSubgroup ω c x ↔
       SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x
-        (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)) = 0 := by
-  rw [capCoverSubgroup, MonoidHom.mem_ker, capCoverPeriodHom_apply, ofAdd_eq_one]
+        (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)) = 0 :=
+  mem_additiveKerSubgroup_iff _ _ g
 
 /-- The subgroup of the cap cover is normal, being the kernel of a homomorphism. -/
 instance capCoverSubgroup_normal (x : X) : (capCoverSubgroup ω c x).Normal :=
-  MonoidHom.normal_ker _
+  additiveKerSubgroup_normal _ _
 
 variable (ω c) in
 /-- **The cap cover** of the contractible free loops `𝓛₀X`: the connected covering space of the
@@ -305,8 +299,7 @@ homomorphism `π₁(𝓛₀X, x) → Γ` is onto with kernel `capCoverSubgroup �
 the cover attached to the kernel of a surjective homomorphism is its target. -/
 def capCoverDeckEquiv (x : X) :
     Multiplicative (SphericalPeriodGroup ω c) ≃* deck (capCoverProj ω c x) :=
-  (deckSubgroupQuotientProjKerEquivOfSurjective _ (capCoverPeriodHom ω c x)
-    (capCoverPeriodHom_surjective x)).symm
+  deckAdditiveKerEquiv _ _ (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x)
 
 /-- The period class of a loop `g` of contractible free loops acts on the cap cover by transporting
 caps around `g`: it sends the class of a path `e` of loops to the class of `g • e`. -/
@@ -316,7 +309,8 @@ theorem capCoverDeckEquiv_capCoverPeriodHom_apply_mk (x : X)
     (e : UniversalCover (constContractibleLoop x)) :
     (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g)).val (Quotient.mk'' e) =
       Quotient.mk'' (g • e) :=
-  deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk _ _ _ g e
+  deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_apply_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) g e
 
 /-- The inverse of the deck transformation of the period class of a loop `g` of contractible free
 loops sends the class of a path `e` of loops to the class of `g⁻¹ • e`. -/
@@ -325,8 +319,9 @@ theorem capCoverDeckEquiv_capCoverPeriodHom_symm_apply_mk (x : X)
     (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x))
     (e : UniversalCover (constContractibleLoop x)) :
     (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g)).val.symm (Quotient.mk'' e) =
-      Quotient.mk'' (g⁻¹ • e) := by
-  rw [Homeomorph.symm_apply_eq, capCoverDeckEquiv_capCoverPeriodHom_apply_mk, smul_inv_smul]
+      Quotient.mk'' (g⁻¹ • e) :=
+  deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_symm_apply_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) g e
 
 /-- The deck transformation of the period class of a loop `a` of contractible free loops acts on
 the cap cover through the action of `a` on the universal cover of `𝓛₀X`. -/
@@ -337,9 +332,9 @@ theorem capCoverDeckEquiv_ofContractibleLoopsHomotopyGroup_apply_mk (x : X)
     (capCoverDeckEquiv ω c x (Multiplicative.ofAdd
         (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a)))).val
         (Quotient.mk'' e) =
-      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  rw [← capCoverPeriodHom_pi1MulEquivFundamentalGroup]
-  exact capCoverDeckEquiv_capCoverPeriodHom_apply_mk x _ e
+      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) :=
+  deckAdditiveKerEquiv_apply_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) a e
 
 /-- The spherical period group `Γ` acts on the cap cover through its deck group. -/
 noncomputable instance instAddActionCapCover :
@@ -373,8 +368,9 @@ theorem ofContractibleLoopsHomotopyGroup_vadd_mk
     (e : UniversalCover (constContractibleLoop x)) :
     SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a) +ᵥ
         (Quotient.mk'' e : CapCover ω c x) =
-      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  rw [vadd_def, capCoverDeckEquiv_ofContractibleLoopsHomotopyGroup_apply_mk]
+      Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) :=
+  deckAdditiveKerEquiv_vadd_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) a e
 
 /-- **Each fibre of the cap cover is a torsor under the spherical period group** `Γ`: the deck
 group `Γ` of the regular cover acts simply transitively on every fibre. -/
@@ -409,9 +405,9 @@ theorem CapCover.vsub_mk {γ : contractibleLoops X}
       capCoverProj ω c x ⁻¹' {γ})
     (h₂ : (Quotient.mk'' e : CapCover ω c x) ∈ capCoverProj ω c x ⁻¹' {γ}) :
     (⟨_, h₁⟩ : capCoverProj ω c x ⁻¹' {γ}) -ᵥ ⟨_, h₂⟩ =
-      SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a) := by
-  rw [← eq_vadd_iff_vsub_eq]
-  exact Subtype.ext (by rw [coe_vadd_fiber, ofContractibleLoopsHomotopyGroup_vadd_mk])
+      SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a) :=
+  deckAdditiveKerEquiv_vsub_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) a e h₁ h₂
 
 end Deck
 

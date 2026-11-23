@@ -161,6 +161,18 @@ theorem mkContinuousLinearEquiv_symm_apply_mk {b : B} (p q : P b) (v : F) :
   simp only [ContinuousLinearEquiv.apply_symm_apply, mkContinuousLinearEquiv_apply]
   exact ((mk_eq_mk_iff (p := p) (q := q)).mpr rfl).symm
 
+variable (𝕜 G) in
+/-- An associated fibre with a principal frame has the dimension of the model. -/
+theorem finrank_eq {b : B} (p : P b) :
+    Module.finrank 𝕜 (AssociatedBundle G P F b) = Module.finrank 𝕜 F :=
+  (mkContinuousLinearEquiv 𝕜 G p).toLinearEquiv.finrank_eq.symm
+
+variable (𝕜 G) in
+/-- An associated fibre with a principal frame is finite-dimensional if the model is. -/
+theorem finiteDimensional [FiniteDimensional 𝕜 F] {b : B} (p : P b) :
+    FiniteDimensional 𝕜 (AssociatedBundle G P F b) :=
+  (mkContinuousLinearEquiv 𝕜 G p).toLinearEquiv.finiteDimensional
+
 /-- In a local associated chart the linear transition acts by the principal transition. -/
 theorem coordChangeL_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
     {i j b : B} (hb : b ∈ (trivializationAt G P i).baseSet ∩
