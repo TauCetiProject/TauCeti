@@ -661,10 +661,10 @@ noncomputable def prodLeftSwapIso (P : TopPair.{u}) (Y : TopCat.{u}) :
     (TopCat.ofHom ⟨fun z ↦ ⟨(P.map z.2, z.1), z.2, rfl⟩, by fun_prop⟩) (by ext; rfl)
   inv := TopPair.ofHom
     (TopCat.isoOfHomeo (X := Y ⊗ P.fst) (Y := TopCat.of (P.fst × Y)) (Homeomorph.prodComm _ _)).inv
-    (TopCat.ofHom ⟨fun x ↦ (x.1.2, P.liftSnd
-      ⟨fun x : (ContinuousMap.fst : C(P.fst × Y, P.fst)) ⁻¹' Set.range P.map ↦ x.1.1,
-        continuous_fst.comp continuous_subtype_val⟩
-      (fun x ↦ x.2) x), by fun_prop⟩)
+    (TopCat.ofHom ⟨fun x ↦ (x.val.2, P.liftSnd
+      ⟨fun x : (ContinuousMap.fst : C(P.fst × Y, P.fst)) ⁻¹' Set.range P.map ↦ x.val.1,
+        continuous_fst.comp continuous_subtypeVal⟩
+      (fun x ↦ x.property) x), by fun_prop⟩)
     (by
       ext x
       exact Prod.ext rfl (map_liftSnd _ _ x))
