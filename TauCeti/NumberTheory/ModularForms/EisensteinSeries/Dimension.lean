@@ -86,7 +86,7 @@ private theorem finrank_congruenceEisensteinSubspace_le_card_four (hk : 3 ≤ (k
   rw [CharIndex.card_four]
   split_ifs with hk₂
   · simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k _
-      (fun γ ↦ .inl (exists_cuspOrbitOfSL2Z_Gamma1_four_eq γ)) hV
+      (fun γ ↦ .inl γ.exists_cuspOrbitOfSL2Z_Gamma1_four_eq) hV
   · -- In odd weight the irregular cusp `1/2` carries no constant term.
     simpa using ModularForm.finrank_le_natCard_of_disjoint (Gamma1 4) k ![1, ModularGroup.S]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦

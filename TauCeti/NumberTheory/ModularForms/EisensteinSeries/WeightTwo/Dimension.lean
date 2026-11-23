@@ -101,7 +101,7 @@ private theorem exists_cuspOrbitOfSL2Z_Gamma1_reps (hN : ¬(2 < N ∧ N ≠ 4)) 
     exact ⟨![1, ModularGroup.S],
       fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_two γ).elim (fun h ↦ ⟨0, h⟩) fun h ↦ ⟨1, h⟩⟩
   · rw [CharIndex.card_four, ite_eq_left even_two]
-    exact ⟨_, exists_cuspOrbitOfSL2Z_Gamma1_four_eq⟩
+    exact ⟨_, fun γ ↦ γ.exists_cuspOrbitOfSL2Z_Gamma1_four_eq⟩
 
 /-- `Γ₁(N)` has at most as many cusps as there are weight-two Eisenstein indices. -/
 private theorem card_cuspOrbit_Gamma1_le_card_charIndex :

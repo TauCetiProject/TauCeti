@@ -47,8 +47,8 @@ is `∞`, and every cusp of `Γ₁(2)` is `∞` or `0`. Every cusp of `Γ₁(4)`
 * `TauCeti.card_cuspOrbit_Gamma1_of_prime`: `Γ₁(p)` has `p - 1` cusps for an odd prime `p`.
 * `TauCeti.cuspOrbitOfSL2Z_Gamma1_one`, `TauCeti.cuspOrbitOfSL2Z_Gamma1_two`,
   `TauCeti.cuspOrbitOfSL2Z_Gamma1_four`: cusp representatives at the levels `1`, `2` and `4`.
-* `TauCeti.exists_cuspOrbitOfSL2Z_Gamma1_four_eq`: every cusp of `Γ₁(4)` is represented by `∞`, `0`
-  or `1/2`.
+* `Matrix.SpecialLinearGroup.exists_cuspOrbitOfSL2Z_Gamma1_four_eq`: every cusp of `Γ₁(4)` is
+  represented by `∞`, `0` or `1/2`.
 * `TauCeti.cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two`,
   `TauCeti.mul_neg_T_mul_inv_mem_Gamma1_four`: the cusps of `Γ₁(4)` with `c ≡ 2` modulo `4` form
   one irregular cusp.
@@ -459,7 +459,7 @@ theorem cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two {γ γ' : SL(2, ℤ)}
 
 /-- Every cusp of `Γ₁(4)` is `∞ = 1 • ∞`, `0 = S • ∞` or `1/2 = α • ∞`, where `α = !![1, 0; 2, 1]`
 is the lower transvection by `2`. -/
-theorem exists_cuspOrbitOfSL2Z_Gamma1_four_eq (γ : SL(2, ℤ)) :
+theorem _root_.Matrix.SpecialLinearGroup.exists_cuspOrbitOfSL2Z_Gamma1_four_eq (γ : SL(2, ℤ)) :
     ∃ i, (Gamma1 4).cuspOrbitOfSL2Z
         (![1, S, SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) 2] i) =
       (Gamma1 4).cuspOrbitOfSL2Z γ := by
