@@ -21,9 +21,7 @@ For sequences on a Banach space the bound follows automatically from Banach–St
 Operator norm bounds also pass to pointwise limits
 (`ContinuousLinearMap.opNorm_le_of_tendsto_pointwise`), so closed operator-norm balls are closed
 in the strong operator topology
-(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`), and
-finite-vector approximation in a strong-operator closure yields witnesses in the set
-(`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
+(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
 
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
 set. Their uniform norm bound lets idempotence pass to the strong limit; self-adjointness
@@ -197,55 +195,18 @@ operator topology). Neither space needs completeness. -/
 theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] F) (r : ℝ) :
     IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
       Metric.closedBall f₀ r) := by
-  refine isClosed_iff_forall_filter.mpr fun T l hl hmem hlim => ?_
-  have : l.NeBot := hl
-  let toCLM := (UniformConvergenceCLM.ofFun σ F {s : Set E | Finite s}).symm
-  have hmem' : ∀ᶠ S in l, ‖toCLM S - f₀‖ ≤ r := by
-    filter_upwards [le_principal_iff.mp hmem] with S ⟨S', hS', hS⟩
-    rw [← hS]
-    change ‖S' - f₀‖ ≤ r
-    simpa [Metric.mem_closedBall, dist_eq_norm] using hS'
-  refine ⟨toCLM T, ?_, rfl⟩
+  refine closure_subset_iff_isClosed.mp fun T hT => ?_
+  obtain ⟨T', rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
+  obtain ⟨l, hl, hmem, hlim⟩ :=
+    ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mp hT
+  have : l.NeBot := hl -- Supplies the `NeBot` instance for `opNorm_le_of_tendsto_pointwise`.
+  refine ⟨T', ?_, rfl⟩
   rw [Metric.mem_closedBall, dist_eq_norm]
-  exact ContinuousLinearMap.opNorm_le_of_tendsto_pointwise
-    (T := fun S : E →SLₚₜ[σ] F => toCLM S - f₀) hmem' fun x =>
-      ((tendsto_iff_forall_tendsto.mp hlim) x).sub_const (f₀ x)
+  exact ContinuousLinearMap.opNorm_le_of_tendsto_pointwise (T := fun A => A - f₀)
+    (hmem.mono fun A hA => by simpa [Metric.mem_closedBall, dist_eq_norm] using hA)
+    fun x => (hlim x).sub_const (f₀ x)
 
 end ClosedBall
-
-section Closure
-
-variable {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
-  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- For a finite family of vectors `v`, the set of operators whose values on `v` stay within `ε` of
-a fixed operator `x` is open in the topology of pointwise convergence. -/
-theorem isOpen_setOf_forall_norm_sub_apply_lt {ι : Type*} [Finite ι]
-    (x : E →SL[σ] F) (v : ι → E) (ε : ℝ) :
-    IsOpen {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} := by
-  have heq : {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} =
-      ⋂ i, {T : E →SLₚₜ[σ] F | ‖x (v i) - T (v i)‖ < ε} := by ext T; simp
-  rw [heq]
-  exact isOpen_iInter_of_finite fun i ↦
-    isOpen_lt (continuous_const.sub (continuous_eval_const (v i))).norm continuous_const
-
-/-- If `x` lies in the strong operator closure of `A`, then for every finite family of vectors `v`
-and `ε > 0` there is `a ∈ A` approximating `x` within `ε` on `v`. -/
-theorem exists_mem_forall_norm_sub_apply_lt_of_mem_closure [ContinuousSMul 𝕜₁ E]
-    {A : Set (E →SL[σ] F)} {x : E →SL[σ] F}
-    (hx : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
-      closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A))
-    {ι : Type*} [Finite ι] (v : ι → E) {ε : ℝ} (hε : 0 < ε) :
-    ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
-  classical
-  have := Fintype.ofFinite ι
-  obtain ⟨a, ha, hlt⟩ :=
-    (ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm.mp hx)
-      (Finset.univ.image v) hε
-  exact ⟨a, ha, fun i ↦ hlt (v i) (Finset.mem_image_of_mem v (Finset.mem_univ i))⟩
-
-end Closure
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
   [InnerProductSpace 𝕜 H] [CompleteSpace H]

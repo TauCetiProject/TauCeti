@@ -9,10 +9,9 @@ public import Mathlib.Analysis.VonNeumannAlgebra.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
-public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification
 
 /-!
-# Concrete von Neumann algebras as C⋆-algebras and operator matrices
+# Concrete von Neumann algebras as C⋆-algebras
 
 A concrete von Neumann algebra is norm closed, since it is a double commutant.
 Its elements therefore form a C⋆-algebra with the inherited operator norm and adjoint.
@@ -23,9 +22,6 @@ The instances use Mathlib's generic subobject constructions, in particular
 `StarSubalgebra.cstarAlgebra` and, for the order inherited from the Loewner order on operators,
 `Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
 no new norm, completion, or algebra carrier is introduced.
-
-For a finite index type `ι`, `VonNeumannAlgebra.piLpMatrix` forms the matrix von Neumann algebra
-`M_ι(M)` of operators on `PiLp 2 (fun _ : ι => H)` with matrix entries in `M`.
 -/
 
 public section
@@ -56,68 +52,5 @@ fails. -/
 instance instStarOrderedRingToStarSubalgebra (M : VonNeumannAlgebra H) :
     StarOrderedRing M.toStarSubalgebra :=
   Subtype.starOrderedRing _
-
-/-- The matrix von Neumann algebra `M_ι(M)` of operators on `PiLp 2 (fun _ : ι => H)` whose
-`(i, j)` entries belong to `M`. -/
-noncomputable def piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [DecidableEq ι] :
-    VonNeumannAlgebra (PiLp 2 (fun _ : ι => H)) where
-  toStarSubalgebra := M.toStarSubalgebra.piLpMatrix ι
-  centralizer_centralizer' := by
-    ext T
-    change T ∈ (M.toStarSubalgebra.piLpMatrix ι : Set _).centralizer.centralizer ↔
-      T ∈ M.toStarSubalgebra.piLpMatrix ι
-    rw [M.toStarSubalgebra.mem_centralizer_centralizer_piLpMatrix_iff,
-      StarSubalgebra.mem_piLpMatrix]
-    simp [M.centralizer_centralizer]
-
-/-- The underlying star subalgebra of `M.piLpMatrix ι` is `M.toStarSubalgebra.piLpMatrix ι`. -/
-@[simp]
-theorem toStarSubalgebra_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι]
-    [DecidableEq ι] :
-    (M.piLpMatrix ι).toStarSubalgebra = M.toStarSubalgebra.piLpMatrix ι :=
-  (rfl)
-
-/-- An operator on the finite Hilbert sum lies in `M.piLpMatrix ι` if and only if all of its
-matrix entries lie in `M`. -/
-theorem mem_piLpMatrix_iff {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {T : PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H)} :
-    T ∈ M.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ M :=
-  M.toStarSubalgebra.mem_piLpMatrix
-
-/-- The underlying set of `M.piLpMatrix ι` consists of all operators whose matrix entries lie in
-`M`. -/
-theorem coe_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [DecidableEq ι] :
-    (M.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
-      {T | ∀ i j, T.piLpEntry i j ∈ M} := by
-  ext T
-  exact M.toStarSubalgebra.mem_piLpMatrix
-
-/-- Placing an element in a single `(i, j)` block belongs to `M.piLpMatrix ι` if and only if
-the element belongs to `M`. -/
-@[simp]
-theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] {i j : ι} {s : H →L[ℂ] H} :
-    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M :=
-  M.toStarSubalgebra.singleEntryCLM_mem_piLpMatrix
-
-/-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
-theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
-    [DecidableEq ι] {s : H →L[ℂ] H} (hs : s ∈ M) :
-    PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι :=
-  M.toStarSubalgebra.diagStarAlgHom_mem_piLpMatrix hs
-
-/-- The commutant of the matrix von Neumann algebra `M.piLpMatrix ι` consists of block-diagonal
-operators with constant diagonal entry in `M.commutant`. -/
-theorem coe_commutant_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι]
-    [DecidableEq ι] :
-    ((M.piLpMatrix ι).commutant :
-        Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
-      {R | (∀ i j, i ≠ j → R.piLpEntry i j = 0) ∧
-        (∀ i j, R.piLpEntry i i = R.piLpEntry j j) ∧
-        ∀ i, R.piLpEntry i i ∈ M.commutant} := by
-  rw [coe_commutant, ← coe_toStarSubalgebra, toStarSubalgebra_piLpMatrix]
-  ext R
-  simp only [StarSubalgebra.mem_centralizer_piLpMatrix_iff, coe_toStarSubalgebra, ← coe_commutant,
-    SetLike.mem_coe, Set.mem_ofPred_eq]
 
 end VonNeumannAlgebra

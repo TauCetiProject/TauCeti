@@ -427,9 +427,10 @@ private theorem isClosed_image_toWOT_norm_le (C : ℝ) :
   have hpre : {A : ContinuousLinearMapUltraweak 𝕜 E F | ‖A.toCLM‖ ≤ C} =
       equiv ⁻¹' Metric.closedBall 0 C := by
     ext A; simp
-  rw [hpre]
-  change IsClosed ((ContinuousLinearMapWOT.ofCLM ∘ equiv) '' (equiv ⁻¹' Metric.closedBall 0 C))
-  rw [Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
+  have himg : (fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
+      ContinuousLinearMapWOT.ofCLM A.toCLM) = ContinuousLinearMapWOT.ofCLM ∘ equiv :=
+    funext fun A ↦ by simp
+  rw [hpre, himg, Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
   exact (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall (0 : E →L[𝕜] F) C).isClosed
 
 /-- **Bounded-set closure agreement with the weak operator topology.** For any norm-bounded set

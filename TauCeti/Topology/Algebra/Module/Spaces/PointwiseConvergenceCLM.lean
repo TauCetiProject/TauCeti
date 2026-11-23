@@ -25,6 +25,10 @@ A map lies in the closure of a set of maps in this topology exactly when it is t
 along some filter of maps eventually in the set
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff`); since this topology need
 not be first countable, nets or filters cannot in general be replaced by sequences here.
+Finite-vector approximation neighborhoods are open
+(`PointwiseConvergenceCLM.isOpen_setOf_forall_norm_sub_apply_lt`) and yield witnesses in the set
+from closure membership
+(`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
 -/
 
 public section
@@ -88,6 +92,18 @@ theorem mem_closure_iff {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [Nor
     simpa only [Metric.mem_ball, dist_zero_right, _root_.sub_apply, norm_sub_rev] using
       happrox v (hF.mem_toFinset.2 hv)
 
+/-- For a finite family of vectors `v`, the set of operators whose values on `v` stay within `ε` of
+a fixed operator `x` is open in the topology of pointwise convergence. -/
+theorem isOpen_setOf_forall_norm_sub_apply_lt {𝕜₁ 𝕜₂ E F ι : Type*} [NormedField 𝕜₁]
+    [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E]
+    [SeminormedAddCommGroup F] [Module 𝕜₂ F] [Finite ι] (x : E →SL[σ] F) (v : ι → E) (ε : ℝ) :
+    IsOpen {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} := by
+  have heq : {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} =
+      ⋂ i, {T : E →SLₚₜ[σ] F | ‖x (v i) - T (v i)‖ < ε} := by ext T; simp
+  rw [heq]
+  exact isOpen_iInter_of_finite fun i ↦
+    isOpen_lt (continuous_const.sub (continuous_eval_const (v i))).norm continuous_const
+
 end PointwiseConvergenceCLM
 
 
@@ -145,3 +161,20 @@ theorem ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm
   simp only [Set.exists_mem_image, toPointwiseConvergenceCLM_apply]
   -- `UniformConvergenceCLM.instFunLike` is definitionally `ContinuousLinearMap.funLike`.
   exact Iff.rfl
+
+/-- If `x` lies in the strong operator closure of `A`, then for every finite family of vectors `v`
+and `ε > 0` there is `a ∈ A` approximating `x` within `ε` on `v`. -/
+theorem PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure
+    {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E]
+    [TopologicalSpace E] [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [SeminormedAddCommGroup F]
+    [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] {A : Set (E →SL[σ] F)} {x : E →SL[σ] F}
+    (hx : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F x ∈
+      closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' A))
+    {ι : Type*} [Finite ι] (v : ι → E) {ε : ℝ} (hε : 0 < ε) :
+    ∃ a ∈ A, ∀ i, ‖x (v i) - a (v i)‖ < ε := by
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨a, ha, hlt⟩ :=
+    (ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff_norm.mp hx)
+      (Finset.univ.image v) hε
+  exact ⟨a, ha, fun i ↦ hlt (v i) (Finset.mem_image_of_mem v (Finset.mem_univ i))⟩

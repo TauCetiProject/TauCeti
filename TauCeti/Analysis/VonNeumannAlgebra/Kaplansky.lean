@@ -17,11 +17,10 @@ public import TauCeti.Analysis.LocallyConvex.UltrastrongTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification
-public import TauCeti.Analysis.VonNeumannAlgebra.UltraweakClosure
 import TauCeti.Algebra.Star.Basic
-import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
+import TauCeti.Analysis.Normed.Module.SelfAdjoint
 import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
@@ -42,9 +41,9 @@ every radius `r : ℝ` and for `Icc 0 1`.
 Combining bounded strong (respectively, weak) density with the agreement of strong and ultrastrong
 (respectively, weak and ultraweak) topologies on norm-bounded sets yields the bounded ultrastrong
 and ultraweak Kaplansky density theorems
-(`StarSubalgebra.closure_image_ultrastrong_inter_closedBall`,
-`StarSubalgebra.closure_image_ultraweak_inter_closedBall`, together with their self-adjoint and
-positive-part variants) and characterizes concrete von Neumann algebras among unital star
+(`StarSubalgebra.closure_image_ultrastrongOfCLM_inter_closedBall`,
+`StarSubalgebra.closure_image_ultraweakOfCLM_inter_closedBall`, together with their self-adjoint
+and positive-part variants) and characterizes concrete von Neumann algebras among unital star
 subalgebras by weak operator compactness of closed balls of positive radius
 (`StarSubalgebra.double_commutant_iff_isCompact_image_ofCLM_inter_closedBall`). For the unbounded
 ultrastrong and ultraweak bicommutant theorems themselves, see
@@ -359,7 +358,7 @@ theorem closure_image_strongStar_ofCLM_inter_closedBall
   obtain ⟨l, hl, hlS, hlim⟩ :=
     ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mp hqX
   -- The `(0, 1)` entries of the approximants converge strong-star to `x`, using `(1, 0)` for `x†`.
-  have := hl
+  have : l.NeBot := hl -- Supplies the `NeBot` instance for `mem_closure_of_tendsto`.
   have hentry :=
     ContinuousLinearMap.forall_tendsto_apply_iff_forall_tendsto_piLpEntry_apply.mp hlim
   refine mem_closure_of_tendsto (b := l) (f := fun Y :
@@ -550,7 +549,7 @@ theorem exists_nonneg_norm_le_forall_norm_sub_apply_lt
 
 /-- **Ultrastrong Kaplansky density theorem.** For every radius `r : ℝ`, the ultrastrong closure of
 `S ∩ closedBall 0 r` equals `S'' ∩ closedBall 0 r`. -/
-theorem closure_image_ultrastrong_inter_closedBall
+theorem closure_image_ultrastrongOfCLM_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (TauCeti.ContinuousLinearMapUltrastrong.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ closedBall 0 r)) =
@@ -562,7 +561,7 @@ theorem closure_image_ultrastrong_inter_closedBall
 
 /-- **Ultraweak Kaplansky density theorem.** For every radius `r : ℝ`, the ultraweak closure of
 `S ∩ closedBall 0 r` equals `S'' ∩ closedBall 0 r`. -/
-theorem closure_image_ultraweak_inter_closedBall
+theorem closure_image_ultraweakOfCLM_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (TauCeti.ContinuousLinearMapUltraweak.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ closedBall 0 r)) =
@@ -575,7 +574,7 @@ theorem closure_image_ultraweak_inter_closedBall
 /-- **Ultrastrong self-adjoint Kaplansky density theorem.** For every radius `r : ℝ`, the
 ultrastrong closure of `S ∩ selfAdjoint _ ∩ closedBall 0 r` equals
 `S'' ∩ selfAdjoint _ ∩ closedBall 0 r`. -/
-theorem closure_image_ultrastrong_inter_selfAdjoint_inter_closedBall
+theorem closure_image_ultrastrongOfCLM_inter_selfAdjoint_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (TauCeti.ContinuousLinearMapUltrastrong.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ selfAdjoint (H →L[ℂ] H) ∩ closedBall 0 r)) =
@@ -588,7 +587,7 @@ theorem closure_image_ultrastrong_inter_selfAdjoint_inter_closedBall
 
 /-- **Ultraweak self-adjoint Kaplansky density theorem.** For every radius `r : ℝ`, the ultraweak
 closure of `S ∩ selfAdjoint _ ∩ closedBall 0 r` equals `S'' ∩ selfAdjoint _ ∩ closedBall 0 r`. -/
-theorem closure_image_ultraweak_inter_selfAdjoint_inter_closedBall
+theorem closure_image_ultraweakOfCLM_inter_selfAdjoint_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (TauCeti.ContinuousLinearMapUltraweak.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ selfAdjoint (H →L[ℂ] H) ∩ closedBall 0 r)) =
@@ -601,7 +600,7 @@ theorem closure_image_ultraweak_inter_selfAdjoint_inter_closedBall
 
 /-- **Ultrastrong positive-part Kaplansky density theorem for arbitrary radius `r : ℝ`.** The
 ultrastrong closure of `S ∩ Ici 0 ∩ closedBall 0 r` equals `S'' ∩ Ici 0 ∩ closedBall 0 r`. -/
-theorem closure_image_ultrastrong_inter_Ici_zero_inter_closedBall
+theorem closure_image_ultrastrongOfCLM_inter_Ici_zero_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (TauCeti.ContinuousLinearMapUltrastrong.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ Ici 0 ∩ closedBall 0 r)) =
@@ -613,7 +612,7 @@ theorem closure_image_ultrastrong_inter_Ici_zero_inter_closedBall
 
 /-- **Ultrastrong positive-part Kaplansky density theorem.** The ultrastrong closure of the positive
 contractions `S ∩ Icc 0 1` equals `S'' ∩ Icc 0 1`. -/
-theorem closure_image_ultrastrong_inter_Icc_zero_one
+theorem closure_image_ultrastrongOfCLM_inter_Icc_zero_one
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
     closure (TauCeti.ContinuousLinearMapUltrastrong.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ Icc 0 1)) =
@@ -621,11 +620,11 @@ theorem closure_image_ultrastrong_inter_Icc_zero_one
         ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ Icc 0 1) := by
   simpa only [Set.inter_assoc,
     CStarAlgebra.Ici_zero_inter_closedBall_zero_eq_Icc (zero_le_one' ℝ), map_one] using
-    S.closure_image_ultrastrong_inter_Ici_zero_inter_closedBall 1
+    S.closure_image_ultrastrongOfCLM_inter_Ici_zero_inter_closedBall 1
 
 /-- **Ultraweak positive-part Kaplansky density theorem for arbitrary radius `r : ℝ`.** The
 ultraweak closure of `S ∩ Ici 0 ∩ closedBall 0 r` equals `S'' ∩ Ici 0 ∩ closedBall 0 r`. -/
-theorem closure_image_ultraweak_inter_Ici_zero_inter_closedBall
+theorem closure_image_ultraweakOfCLM_inter_Ici_zero_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (TauCeti.ContinuousLinearMapUltraweak.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ Ici 0 ∩ closedBall 0 r)) =
@@ -637,7 +636,7 @@ theorem closure_image_ultraweak_inter_Ici_zero_inter_closedBall
 
 /-- **Ultraweak positive-part Kaplansky density theorem.** The ultraweak closure of the positive
 contractions `S ∩ Icc 0 1` equals `S'' ∩ Icc 0 1`. -/
-theorem closure_image_ultraweak_inter_Icc_zero_one
+theorem closure_image_ultraweakOfCLM_inter_Icc_zero_one
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
     closure (TauCeti.ContinuousLinearMapUltraweak.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ Icc 0 1)) =
@@ -645,7 +644,7 @@ theorem closure_image_ultraweak_inter_Icc_zero_one
         ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ Icc 0 1) := by
   simpa only [Set.inter_assoc,
     CStarAlgebra.Ici_zero_inter_closedBall_zero_eq_Icc (zero_le_one' ℝ), map_one] using
-    S.closure_image_ultraweak_inter_Ici_zero_inter_closedBall 1
+    S.closure_image_ultraweakOfCLM_inter_Ici_zero_inter_closedBall 1
 
 /-! ### Bounded-ball closedness and WOT-compactness criteria for `S'' = S` -/
 
@@ -744,22 +743,22 @@ theorem image_ofCLM_adjoin_inter_closedBall_eq_closure (s : Set (H →L[ℂ] H))
 
 /-- For every radius `r : ℝ`, the closed ball of the von Neumann algebra generated by `s` is the
 ultrastrong closure of the closed ball of the star algebra generated by `s`. -/
-theorem image_ultrastrong_adjoin_inter_closedBall_eq_closure (s : Set (H →L[ℂ] H)) (r : ℝ) :
+theorem image_ultrastrongOfCLM_adjoin_inter_closedBall_eq_closure (s : Set (H →L[ℂ] H)) (r : ℝ) :
     TauCeti.ContinuousLinearMapUltrastrong.ofCLM ''
         ((adjoin s : Set (H →L[ℂ] H)) ∩ closedBall 0 r) =
       closure (TauCeti.ContinuousLinearMapUltrastrong.ofCLM ''
         ((StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H)) ∩ closedBall 0 r)) := by
-  rw [(StarAlgebra.adjoin ℂ s).closure_image_ultrastrong_inter_closedBall r,
+  rw [(StarAlgebra.adjoin ℂ s).closure_image_ultrastrongOfCLM_inter_closedBall r,
     ← adjoin_starAlgebraAdjoin, coe_adjoin_coe]
 
 /-- For every radius `r : ℝ`, the closed ball of the von Neumann algebra generated by `s` is the
 ultraweak closure of the closed ball of the star algebra generated by `s`. -/
-theorem image_ultraweak_adjoin_inter_closedBall_eq_closure (s : Set (H →L[ℂ] H)) (r : ℝ) :
+theorem image_ultraweakOfCLM_adjoin_inter_closedBall_eq_closure (s : Set (H →L[ℂ] H)) (r : ℝ) :
     TauCeti.ContinuousLinearMapUltraweak.ofCLM ''
         ((adjoin s : Set (H →L[ℂ] H)) ∩ closedBall 0 r) =
       closure (TauCeti.ContinuousLinearMapUltraweak.ofCLM ''
         ((StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H)) ∩ closedBall 0 r)) := by
-  rw [(StarAlgebra.adjoin ℂ s).closure_image_ultraweak_inter_closedBall r,
+  rw [(StarAlgebra.adjoin ℂ s).closure_image_ultraweakOfCLM_inter_closedBall r,
     ← adjoin_starAlgebraAdjoin, coe_adjoin_coe]
 
 /-- An operator belongs to the von Neumann algebra generated by `s` if and only if it can be

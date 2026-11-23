@@ -430,10 +430,11 @@ private theorem isClosed_image_toPointwiseConvergenceCLM_norm_le (C : ℝ) :
   have hpre : {A : ContinuousLinearMapUltrastrong 𝕜 E F | ‖A.toCLM‖ ≤ C} =
       equiv ⁻¹' Metric.closedBall 0 C := by
     ext A; simp
-  rw [hpre]
-  change IsClosed ((ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F ∘ equiv) ''
-    (equiv ⁻¹' Metric.closedBall 0 C))
-  rw [Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
+  have himg : (fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F ∘ equiv :=
+    rfl
+  rw [hpre, himg, Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
   exact PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
     (0 : E →L[𝕜] F) C
 
