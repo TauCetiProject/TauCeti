@@ -64,7 +64,8 @@ theorem IsHomogeneous.exists_dvd_isHomogeneous_not_sq_dvd {F : MvPolynomial (Fin
   -- The radical `g` of `f` in `ℤ[X]` divides `f`, and is separable over `ℚ`, hence over `L`.
   set g : ℤ[X] := radical f
   have hgf : g ∣ f := radical_dvd_self
-  have hsep : (g.map φ).Separable := separable_map_radical f ℚ L
+  have hsep : (g.map φ).Separable := by
+    simpa only [g, φ, algebraMap_int_eq] using separable_map_radical f ℚ L
   have hdeg : (g.map φ).natDegree = g.natDegree :=
     natDegree_map_eq_of_injective (RingHom.injective_int φ) g
   -- `f` and `g` have the same roots in `L`: for `f ≠ 0`, as `g ∣ f ∣ g ^ n`, and for `f = 0`,

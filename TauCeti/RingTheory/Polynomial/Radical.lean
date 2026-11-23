@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.Radical.Basic
 
 import TauCeti.RingTheory.Polynomial.Localization
@@ -17,13 +16,18 @@ import TauCeti.RingTheory.Polynomial.Localization
 Let `f` be a polynomial over a unique factorization monoid `R`, and `radical f` its radical in
 `R[X]`, the product of its normalized prime factors.
 
-* `Polynomial.roots_toFinset_map_radical`: after any map to a domain, the images of `radical f`
-  and `f` have the same finite set of roots (`roots.toFinset`). For `f ≠ 0` this holds because
-  `radical f ∣ f ∣ radical f ^ n`, so the two images vanish together, and `roots 0` is empty.
-  For `f = 0` both sets are empty, as `radical 0 = 1`.
-* `Polynomial.separable_map_radical`: if the fraction field `K` of `R` is perfect, the image of
-  `radical f` is separable over every `K`-algebra. It is squarefree over `K` because
-  squarefreeness passes to localizations (`Squarefree.map_localization_map`).
+* `Polynomial.roots_toFinset_map_radical`: after any ring map to a domain, the images of
+  `radical f` and `f` have the same finite set of roots (`roots.toFinset`). For `f ≠ 0` this holds
+  because `radical f ∣ f ∣ radical f ^ n` (by Mathlib's
+  `UniqueFactorizationMonoid.radical_dvd_self` and
+  `UniqueFactorizationMonoid.exists_dvd_radical_self_pow`), so the two images vanish together, and
+  `roots 0` is empty. For `f = 0` both sets are empty, as `radical 0 = 1`.
+* `Polynomial.separable_map_radical`: if the fraction field `K` of `R` is perfect, then for every
+  commutative `K`-algebra `L` (compatibly an `R`-algebra via `R → K → L`), the image of `radical f`
+  along `algebraMap R L` is separable. By `UniqueFactorizationMonoid.squarefree_radical`,
+  `radical f` is squarefree in `R[X]`; squarefreeness passes to `K[X]` by
+  `Squarefree.map_localization_map`, becomes separability over `K` by
+  `PerfectField.separable_iff_squarefree`, and then maps along `K → L`.
 -/
 
 public section
@@ -49,16 +53,16 @@ theorem roots_toFinset_map_radical {R S : Type*} [CommRing R] [NormalizationMono
   rcases eq_or_ne (f.map φ) 0 with hf' | hf'
   · rw [hf', zero_dvd_iff] at hn'
     rw [hf', eq_zero_of_pow_eq_zero hn']
-  refine Finset.Subset.antisymm (Multiset.toFinset_subset.2 ?_) fun α hα ↦ ?_
+  refine Finset.Subset.antisymm (Multiset.toFinset_subset.2 ?_) (Multiset.toFinset_subset.2 ?_)
   · exact Multiset.subset_of_le (roots.le_of_dvd hf' hr)
-  · have hα' := Multiset.mem_of_le
+  · have hsub := Multiset.subset_of_le
       (roots.le_of_dvd (pow_ne_zero n (ne_zero_of_dvd_ne_zero hf' hr)) hn')
-      (Multiset.mem_toFinset.1 hα)
-    rw [roots_pow] at hα'
-    exact Multiset.mem_toFinset.2 (Multiset.mem_of_mem_nsmul hα')
+    rw [roots_pow] at hsub
+    exact Multiset.Subset.trans hsub (Multiset.smul_subset_self _ n)
 
 /-- The radical of a polynomial over a unique factorization monoid `R` whose fraction field `K`
-is perfect is separable over every `K`-algebra. -/
+is perfect maps to a separable polynomial along `R → K → L` for every commutative `K`-algebra
+`L`. -/
 theorem separable_map_radical {R : Type*} [CommRing R] [NormalizationMonoid R]
     [UniqueFactorizationMonoid R] (f : R[X]) (K L : Type*) [Field K] [Algebra R K]
     [IsFractionRing R K] [PerfectField K] [CommSemiring L] [Algebra R L] [Algebra K L]

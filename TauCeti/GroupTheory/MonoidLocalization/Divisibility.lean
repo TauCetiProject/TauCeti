@@ -11,34 +11,34 @@ public import Mathlib.GroupTheory.MonoidLocalization.Divisibility
 /-!
 # Relative primality and squarefreeness in localizations of monoids
 
-In a commutative decomposition monoid, relatively prime elements stay relatively prime in every
-localization (`Submonoid.LocalizationMap.map_isRelPrime`). In a commutative decomposition monoid
-with zero in which nonzero elements cancel (`IsCancelMulZero`), squarefree elements stay
-squarefree in every localization (`Submonoid.LocalizationMap.map_squarefree`).
+In a commutative decomposition monoid, both relatively prime elements
+(`Submonoid.LocalizationMap.map_isRelPrime`) and squarefree elements
+(`Submonoid.LocalizationMap.map_squarefree`) retain their property in every localization. No zero
+element or cancellation hypothesis is needed.
 
 Localizing a commutative semiring `R` also localizes the multiplicative monoid of its polynomial
-ring `R[X]` (Mathlib's `Polynomial.isLocalization`), so these results transfer relative primality
-and squarefreeness of polynomials from `R[X]` to `S[X]` for every localization `S` of `R`, such as
-the fraction field of a GCD domain (`IsRelPrime.map_localization_map`,
-`Squarefree.map_localization_map`).
+ring `R[X]` (Mathlib's `Polynomial.isLocalization`), so whenever `R[X]` is a decomposition monoid
+(for instance, when `R` is a GCD domain), these results transfer relative primality and
+squarefreeness of polynomials from `R[X]` to `S[X]` for every localization `S` of `R`, such as the
+fraction field (`IsRelPrime.map_localization_map`, `Squarefree.map_localization_map`).
 
 ## Implementation notes
 
 Both proofs rest on Mathlib's description of divisibility and units in a localization,
-`Submonoid.LocalizationMap.map_dvd_map` and `Submonoid.LocalizationMap.map_isUnit_iff`. The
-squarefree transfer also uses Mathlib's `Squarefree.dvd_of_squarefree_of_mul_dvd_mul_left`.
+`Submonoid.LocalizationMap.map_dvd_map` and `Submonoid.LocalizationMap.map_isUnit_iff`, together
+with `exists_dvd_and_dvd_of_dvd_mul` and `IsRelPrime.dvd_of_dvd_mul_left` /
+`IsRelPrime.dvd_of_dvd_mul_right` in a decomposition monoid. For `map_squarefree`, avoiding
+cancellation uses `IsRelPrime.of_squarefree_mul` to show that if `a * a ∣ m * x` with `x`
+squarefree, then `a ∣ m * m` (rather than `a ∣ m`, which fails without cancellation).
 -/
 
 public section
 
 namespace Submonoid.LocalizationMap
 
-section CommMonoid
+variable {M N : Type*} [CommMonoid M] {S : Submonoid M} [CommMonoid N] (f : LocalizationMap S N)
 
-variable {M N : Type*} [CommMonoid M] {S : Submonoid M} [CommMonoid N]
-  (f : LocalizationMap S N)
-
-/-- In a decomposition monoid, relatively prime elements stay relatively prime in every
+/-- In a commutative decomposition monoid, relatively prime elements stay relatively prime in every
 localization. -/
 theorem map_isRelPrime [DecompositionMonoid M] {x y : M} (h : IsRelPrime x y) :
     IsRelPrime (f x) (f y) := by
@@ -52,16 +52,9 @@ theorem map_isRelPrime [DecompositionMonoid M] {x y : M} (h : IsRelPrime x y) :
   exact ⟨m₁ * m₂, mul_mem hm₁ hm₂, mul_dvd_mul h₁
     ((h.of_dvd_left h₂).dvd_of_dvd_mul_right ((dvd_mul_left a₂ a₁).trans ha₂))⟩
 
-end CommMonoid
-
-section CommMonoidWithZero
-
-variable {M N : Type*} [CommMonoidWithZero M] {S : Submonoid M} [CommMonoid N]
-  (f : LocalizationMap S N)
-
-/-- In a commutative decomposition monoid with zero in which nonzero elements cancel, squarefree
-elements stay squarefree in every localization. -/
-theorem map_squarefree [IsCancelMulZero M] [DecompositionMonoid M] {x : M} (hx : Squarefree x) :
+/-- In a commutative decomposition monoid, squarefree elements stay squarefree in every
+localization. -/
+theorem map_squarefree [DecompositionMonoid M] {x : M} (hx : Squarefree x) :
     Squarefree (f x) := by
   intro d hd
   obtain ⟨⟨a, s⟩, hda⟩ := f.surj d
@@ -71,8 +64,30 @@ theorem map_squarefree [IsCancelMulZero M] [DecompositionMonoid M] {x : M} (hx :
   have ha : f (a * a) ∣ f x := by
     rwa [map_mul, ← hda, mul_mul_mul_comm, (hs.mul hs).mul_right_dvd]
   obtain ⟨m, hm, ham⟩ := f.map_dvd_map.1 ha
-  exact ⟨m, hm, hx.dvd_of_squarefree_of_mul_dvd_mul_left ham⟩
-
-end CommMonoidWithZero
+  -- Split `a = u * v` with `u ∣ m` and `v ∣ x`; we show `v ∣ m`, so `a ∣ m * m ∈ S`.
+  obtain ⟨u, v, hu, hv, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul ((dvd_mul_left a a).trans ham)
+  have hvx : v * v ∣ m * x := (mul_dvd_mul (dvd_mul_left v u) (dvd_mul_left v u)).trans ham
+  obtain ⟨b, c, hb, hc, hbc⟩ := exists_dvd_and_dvd_of_dvd_mul hvx
+  obtain ⟨b₁, b₂, hb₁, hb₂, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul ⟨c, hbc⟩
+  obtain ⟨e, rfl⟩ := hb₁
+  obtain ⟨p, q, hp, hq, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul hb₂
+  obtain ⟨r, rfl⟩ := hq
+  -- In `v = (b₁ * q) * r`, the remainder `r` is relatively prime to `b = b₁ * (p * q)`,
+  -- hence `r * r ∣ c ∣ x`, forcing `IsUnit r` and therefore `v ∣ b ∣ m`.
+  have hrel : IsRelPrime (b₁ * q) r :=
+    IsRelPrime.of_squarefree_mul (mul_assoc b₁ q r ▸ hx.squarefree_of_dvd hv)
+  have hb₁r : IsRelPrime b₁ r := hrel.of_dvd_left (dvd_mul_right b₁ q)
+  have hbr : IsRelPrime (b₁ * (p * q)) r :=
+    hb₁r.mul_left ((hb₁r.of_dvd_left hp).mul_left (hrel.of_dvd_left (dvd_mul_left q b₁)))
+  have hrv : r ∣ b₁ * (q * r) := by
+    rw [← mul_assoc]
+    exact dvd_mul_left r (b₁ * q)
+  have hrc : r * r ∣ c :=
+    (hbr.mul_right hbr).symm.dvd_of_dvd_mul_left (hbc ▸ mul_dvd_mul hrv hrv)
+  have hur : IsUnit r := hx r (hrc.trans hc)
+  have hvm : b₁ * (q * r) ∣ m := by
+    rw [← mul_assoc, hur.mul_right_dvd]
+    exact (mul_dvd_mul_left b₁ (dvd_mul_left q p)).trans hb
+  exact ⟨m * m, mul_mem hm hm, mul_dvd_mul hu hvm⟩
 
 end Submonoid.LocalizationMap
