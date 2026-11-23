@@ -50,10 +50,11 @@ trivialization, it is `(u, v) ↦ (Q (u - p u) (v - p v) - Q (p u) (p v)) / 2` f
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 * `adaptedMetric`: the fibre metric adapted to the normal Hessian, with `adaptedMetric_inner`.
-* `adaptedMetric_inner_of_mem_negativeNormalSpace`,
-  `adaptedMetric_inner_of_mem_positiveNormalSpace` and
-  `adaptedMetric_inner_eq_zero_of_mem_negativeNormalSpace`: on `ν⁻` it is `-Hess / 2`, on `ν⁺` it is
-  `Hess / 2`, and `ν⁻` and `ν⁺` are orthogonal for it.
+* `adaptedMetric_inner_of_mem_negativeNormalSpace` and
+  `adaptedMetric_inner_of_mem_positiveNormalSpace`: on `ν⁻` it is `-Hess / 2` and on `ν⁺` it is
+  `Hess / 2`. As for any fibre metric, `ν⁻` and `ν⁺` are orthogonal for it
+  (`IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace`, with
+  `negativeNormalSpace_adaptedMetric` and `positiveNormalSpace_adaptedMetric`).
 * `normalHessian_apply_eq_two_mul_adaptedMetric_inner_sub`:
   `Hess (v, w) = 2 (g' (v⁺, w⁺) - g' (v⁻, w⁻))`, so in particular `Hess (v, v) = 2 (‖v⁺‖² - ‖v⁻‖²)`
   in `g'`.
@@ -167,13 +168,6 @@ theorem adaptedMetric_inner_of_mem_positiveNormalSpace {s : S} {v : i.NormalSpac
     h.normalHessian_apply_eq_normalHessian_negativeNormalProjection_add hn g v w, hP]
   simp
 
-/-- **The negative and positive normal spaces are orthogonal for the adapted metric.** -/
-theorem adaptedMetric_inner_eq_zero_of_mem_negativeNormalSpace {s : S} {v w : i.NormalSpace s hn}
-    (hv : v ∈ h.negativeNormalSpace hn g s) (hw : w ∈ h.positiveNormalSpace hn g s) :
-    (h.adaptedMetric hn g).inner s v w = 0 := by
-  rw [h.adaptedMetric_inner_of_mem_negativeNormalSpace hn g hv,
-    h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g hv hw, neg_zero, zero_div]
-
 /-- **The normal Hessian in the adapted metric.** The normal Hessian of `v` and `w` is twice the
 adapted inner product of their positive components minus twice that of their negative components.
 For `w = v` it is twice the squared norm of the positive component minus twice the squared norm of
@@ -224,36 +218,16 @@ private theorem positiveNormalSpace_le_adaptedMetric (s : S) :
 theorem negativeNormalSpace_adaptedMetric :
     h.negativeNormalSpace hn (h.adaptedMetric hn g) = h.negativeNormalSpace hn g := by
   funext s
-  refine ((h.negativeNormalSpace_le_adaptedMetric hn g s).antisymm fun v hv ↦ ?_).symm
-  -- The positive component of `v` lies in both normal spaces of the adapted metric.
-  have hsub : v - h.negativeNormalProjection hn g s v ∈
-      h.negativeNormalSpace hn (h.adaptedMetric hn g) s ⊓
-        h.positiveNormalSpace hn (h.adaptedMetric hn g) s :=
-    ⟨sub_mem hv (h.negativeNormalSpace_le_adaptedMetric hn g s
-      (h.negativeNormalProjection_apply_mem hn g v)),
-      h.positiveNormalSpace_le_adaptedMetric hn g s
-        (h.sub_negativeNormalProjection_apply_mem hn g v)⟩
-  rw [(h.disjoint_negativeNormalSpace_positiveNormalSpace hn _).eq_bot, Submodule.mem_bot,
-    sub_eq_zero] at hsub
-  exact hsub ▸ h.negativeNormalProjection_apply_mem hn g v
+  exact (Submodule.eq_of_le_of_finrank_eq (h.negativeNormalSpace_le_adaptedMetric hn g s) (by
+    rw [h.finrank_negativeNormalSpace hn, h.finrank_negativeNormalSpace hn])).symm
 
 /-- **The adapted metric has the same positive normal spaces as `g`.** -/
 @[simp]
 theorem positiveNormalSpace_adaptedMetric :
     h.positiveNormalSpace hn (h.adaptedMetric hn g) = h.positiveNormalSpace hn g := by
   funext s
-  refine ((h.positiveNormalSpace_le_adaptedMetric hn g s).antisymm fun v hv ↦ ?_).symm
-  -- The negative component of `v` lies in both normal spaces of the adapted metric.
-  have hneg : h.negativeNormalProjection hn g s v ∈
-      h.negativeNormalSpace hn (h.adaptedMetric hn g) s ⊓
-        h.positiveNormalSpace hn (h.adaptedMetric hn g) s := by
-    refine ⟨h.negativeNormalSpace_le_adaptedMetric hn g s
-      (h.negativeNormalProjection_apply_mem hn g v), ?_⟩
-    simpa using sub_mem hv (h.positiveNormalSpace_le_adaptedMetric hn g s
-      (h.sub_negativeNormalProjection_apply_mem hn g v))
-  rw [(h.disjoint_negativeNormalSpace_positiveNormalSpace hn _).eq_bot, Submodule.mem_bot,
-    negativeNormalProjection_apply_eq_zero_iff] at hneg
-  exact hneg
+  exact (Submodule.eq_of_le_of_finrank_eq (h.positiveNormalSpace_le_adaptedMetric hn g s) (by
+    rw [h.finrank_positiveNormalSpace hn, h.finrank_positiveNormalSpace hn])).symm
 
 /-- **The adapted metric has the same projections onto the negative normal spaces as `g`.** -/
 @[simp]

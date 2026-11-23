@@ -290,6 +290,13 @@ theorem negativeNormalProjection_apply_eq_self_iff {s : S} {v : i.NormalSpace s 
     h.negativeNormalProjection hn g s v = v ↔ v ∈ h.negativeNormalSpace hn g s :=
   Submodule.projection_eq_self_iff _ _
 
+/-- The component along the positive normal space vanishes exactly on the negative normal
+space. -/
+@[simp]
+theorem sub_negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.NormalSpace s hn} :
+    v - h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.negativeNormalSpace hn g s := by
+  rw [sub_eq_zero, eq_comm, h.negativeNormalProjection_apply_eq_self_iff hn g]
+
 /-- The projection onto the negative normal space is idempotent. -/
 @[simp]
 theorem isIdempotentElem_negativeNormalProjection (s : S) :

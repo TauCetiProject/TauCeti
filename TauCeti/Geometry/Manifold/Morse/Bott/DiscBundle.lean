@@ -266,34 +266,20 @@ private theorem two_inv_mul_normalHessian :
     h.normalHessian_apply_eq_normalHessian_negativeNormalProjection_add hn g x.snd x.snd]
   ring
 
-private theorem negativeNormalProjection_smul_add_smul (a b : ℝ) :
-    h.negativeNormalProjection hn g s
-          (a • h.negativeNormalProjection hn g s v +
-            b • (v - h.negativeNormalProjection hn g s v)) =
-      a • h.negativeNormalProjection hn g s v := by
-  rw [map_add, map_smul, map_smul,
-    h.negativeNormalProjection_apply_of_mem hn g (h.negativeNormalProjection_apply_mem hn g v),
-    h.negativeNormalProjection_apply_eq_zero_of_mem hn g
-      (h.sub_negativeNormalProjection_apply_mem hn g v), smul_zero, add_zero]
-
-private theorem sub_negativeNormalProjection_smul_add_smul (a b : ℝ) :
-    a • h.negativeNormalProjection hn g s v + b • (v - h.negativeNormalProjection hn g s v) -
-        h.negativeNormalProjection hn g s
-          (a • h.negativeNormalProjection hn g s v +
-            b • (v - h.negativeNormalProjection hn g s v)) =
-      b • (v - h.negativeNormalProjection hn g s v) := by
-  rw [h.negativeNormalProjection_smul_add_smul, add_sub_cancel_left]
-
 private theorem negSq_rescale (a b : ℝ) :
     h.negSq hn g (h.rescale hn g a b x) = a ^ 2 * h.negSq hn g x := by
-  rw [rescale_def, negSq_mk, h.negativeNormalProjection_smul_add_smul, negSq]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [rescale_def, negSq_mk, negSq]
+  simp only [map_add, map_smul, map_sub,
+    h.negativeNormalProjection_apply_of_mem hn g (h.negativeNormalProjection_apply_mem hn g _),
+    sub_self, smul_zero, add_zero, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 private theorem posSq_rescale (a b : ℝ) :
     h.posSq hn g (h.rescale hn g a b x) = b ^ 2 * h.posSq hn g x := by
-  rw [rescale_def, posSq_mk, h.sub_negativeNormalProjection_smul_add_smul, posSq]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [rescale_def, posSq_mk, posSq]
+  simp only [map_add, map_smul, map_sub,
+    h.negativeNormalProjection_apply_of_mem hn g (h.negativeNormalProjection_apply_mem hn g _),
+    sub_self, smul_zero, add_zero, add_sub_cancel_left, LinearMap.smul_apply, smul_eq_mul]
   ring
 
 private theorem rescale_one_one : h.rescale hn g 1 1 x = x := by
@@ -328,10 +314,8 @@ private theorem posSq_zeroSection (s : S) :
 private theorem setOf_posSq_eq_zero_and_negSq_le (ε : ℝ) :
     {x | h.posSq hn g x = 0 ∧ h.negSq hn g x ≤ ε} = h.negativeDiscBundle hn P g ε := by
   ext x
-  have hiff : x.snd - h.negativeNormalProjection hn g x.proj x.snd = 0 ↔
-      x.snd ∈ h.negativeNormalSpace hn g x.proj := by
-    rw [sub_eq_zero, eq_comm, h.negativeNormalProjection_apply_eq_self_iff hn g]
-  rw [IsCriticalSubmanifold.mem_negativeDiscBundle, ← hiff]
+  rw [IsCriticalSubmanifold.mem_negativeDiscBundle,
+    ← h.sub_negativeNormalProjection_apply_eq_zero_iff hn g]
   have hH (hp : x.snd - h.negativeNormalProjection hn g x.proj x.snd = 0) :
       -(2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) = h.negSq hn g x := by
     rw [h.two_inv_mul_normalHessian hn g x, posSq, hp]
@@ -355,8 +339,7 @@ private theorem setOf_posSq_eq_zero_and_negSq_eq (ε : ℝ) :
 
 private theorem rescale_rescale (a b a' b' : ℝ) :
     h.rescale hn g a b (h.rescale hn g a' b' x) = h.rescale hn g (a * a') (b * b') x := by
-  rw [rescale_def, rescale_def, h.sub_negativeNormalProjection_smul_add_smul,
-    h.negativeNormalProjection_smul_add_smul, smul_smul, smul_smul, rescale_def]
+  simp [rescale_def, smul_smul]
 
 end IsNondegenerateCriticalSubmanifold
 
