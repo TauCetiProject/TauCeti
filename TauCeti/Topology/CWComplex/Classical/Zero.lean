@@ -30,6 +30,11 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 def zeroCellPoint (i : cell C 0) : ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
   ⟨map 0 i ![], closedCell_subset_skeletonLT 0 i (by simp [closedCell_zero_eq_singleton])⟩
 
+/-- The point of a zero-cell is the image of the unique point of `Fin 0 → ℝ` under its
+characteristic map. -/
+@[simp]
+theorem coe_zeroCellPoint (i : cell C 0) : (zeroCellPoint C i : X) = map 0 i ![] := (rfl)
+
 /-- Distinct zero-cells have distinct points. -/
 theorem zeroCellPoint_injective : Function.Injective (zeroCellPoint C) :=
   fun _ _ h ↦ injective_map_zero C (congrArg Subtype.val h)

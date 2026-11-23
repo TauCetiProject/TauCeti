@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Chains
 public import TauCeti.Order.Filter.Basic
 
 /-!
@@ -18,8 +17,9 @@ through the restriction maps `Hₖ(M, M ∖ K) ⟶ Hₖ(M, M ∖ S)`.  A singula
 compact image.  So when every compact set disjoint from `S` misses some member of a downward
 directed family of sets `K ⊇ S`, the subspaces `M ∖ K` exhaust `M ∖ S` in the sense of compact
 supports, and relative homology of the pair `(M, M ∖ S)` is the colimit of the relative homology
-of the pairs `(M, M ∖ K)` (`TopPair.isColimitMapCoconeSingularHomology`).  This holds for sets
-`K` indexed by any filtered category, with coefficients whose filtered colimits are exact
+of the pairs `(M, M ∖ K)`, as already the relative singular chains are
+(`TauCeti.isColimitMapCoconeSingularChainComplexComplPairCocone`).  This holds for sets `K`
+indexed by any filtered category, with coefficients whose filtered colimits are exact
 (`TauCeti.isColimitComplPairCocone`, for the diagram `TauCeti.complPairDiagram` of the pairs
 `(M, M ∖ K)` and its cocone `TauCeti.complPairCocone`).  With coefficients in a module this says
 two things:
@@ -61,27 +61,6 @@ section Diagram
 variable {J : Type*} [Category J] {S : Set M} {K : J → Set M} (hK : ∀ ⦃i j⦄, (i ⟶ j) → K j ⊆ K i)
   (hSK : ∀ j, S ⊆ K j)
 
--- The bodies of the diagram and its cocone are exposed so that their values and maps are
--- definitionally the pairs `(M, M ∖ K j)` and the maps induced by the identity of `M`: modules
--- identifying their singular homology with local homology groups, such as
--- `LocalHomology/KSheaf.lean`, compare them componentwise by `Iso.refl`.
-/-- The pairs `(M, M ∖ K j)` over a category `J` of sets `K j`, with the maps induced by the
-identity of `M`. -/
-@[expose, simps]
-def complPairDiagram : J ⥤ TopPair.{w} where
-  obj j := TopPair.ofSubset ((K j)ᶜ : Set (TopCat.of M))
-  map f := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (hK f))
-  map_id _ := TopPair.ofSubsetMap_id _
-  map_comp _ _ := TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _
-
-/-- The cocone of the pairs `(M, M ∖ K j)` over the pair `(M, M ∖ S)`, for sets `K j ⊇ S`. -/
-@[expose, simps]
-def complPairCocone : Cocone (complPairDiagram hK) where
-  pt := TopPair.ofSubset (Sᶜ : Set (TopCat.of M))
-  ι := { app j := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (hSK j))
-         naturality _ _ _ :=
-           (TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _).symm.trans (Category.comp_id _).symm }
-
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A) (k : ℕ)
   [IsFiltered J] [HasColimitsOfShape J (Type w)] [HasColimitsOfShape J A]
   [HasExactColimitsOfShape J A]
@@ -95,19 +74,9 @@ misses some `K j`. For coefficients whose filtered colimits are exact, relative 
 the legs are identities, and a compact subset of `M ∖ S` misses some `K j`. -/
 def isColimitComplPairCocone :
     IsColimit ((TopPair.singularHomologyFunctor R k).mapCocone (complPairCocone hK hSK)) := by
-  have hfst (j : J) : TopPair.Hom.fst ((complPairCocone hK hSK).ι.app j) = 𝟙 (TopCat.of M) :=
-    TopPair.ofSubsetMap_fst _ _
-  refine TopPair.isColimitMapCoconeSingularHomology R k _ (fun j ↦ ?_) (fun T _ ↦ ?_)
-    fun T hT ↦ ?_
-  · rw [hfst]
-    exact IsEmbedding.id
-  · refine ⟨IsFiltered.nonempty.some, fun x _ ↦ ⟨x, ?_⟩⟩
-    rw [hfst]
-    rfl
-  · obtain ⟨j, hj⟩ := hcpt _ (hT.image continuous_subtypeVal)
-      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.property)
-    exact ⟨j, fun x hx ↦ ⟨⟨x.val, disjoint_left.1 hj ⟨x, hx, rfl⟩⟩,
-      Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩
+  rw [TopPair.singularHomologyFunctor_eq_chainComplexFunctor]
+  exact isColimitOfPreserves (HomologicalComplex.homologyFunctor _ _ k)
+    (isColimitMapCoconeSingularChainComplexComplPairCocone R hK hSK hcpt)
 
 end Diagram
 
