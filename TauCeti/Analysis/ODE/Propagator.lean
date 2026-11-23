@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousSubstitution.Basic
 
 /-!
@@ -68,21 +65,6 @@ public section
 
 open MeasureTheory Set intervalIntegral Real
 
-/-- Left multiplication by an integrable family in a normed ring with a compatible real structure
-is an integrable family of real-linear maps. -/
-theorem MeasureTheory.IntegrableOn.continuousLinearMap_mul {A : Type*} [NonUnitalNormedRing A]
-    [NormedSpace ℝ A] [IsScalarTower ℝ A A] [SMulCommClass ℝ A A] {f : ℝ → A} {S : Set ℝ}
-    (hf : IntegrableOn f S) :
-    IntegrableOn (fun u ↦ ContinuousLinearMap.mul ℝ A (f u)) S :=
-  (ContinuousLinearMap.mul ℝ A).integrable_comp hf
-
-/-- An integrable family of `𝕜`-linear maps is integrable as a family of `ℝ`-linear maps. -/
-theorem MeasureTheory.IntegrableOn.continuousLinearMap_restrictScalars {𝕜 : Type*} [RCLike 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
-    {P : ℝ → E →L[𝕜] E} {S : Set ℝ} (hP : IntegrableOn P S) :
-    IntegrableOn (fun u ↦ (P u).restrictScalars ℝ) S :=
-  (ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP
-
 namespace TauCeti
 
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*}
@@ -113,12 +95,22 @@ private theorem picard_restrictScalars (P : ℝ → E →L[𝕜] E) (x : ℝ →
 
 variable {P : ℝ → E →L[𝕜] E} {a b s t : ℝ}
 
+/-- The real-linear coefficient `X ↦ P u ∘L X` is integrable. Stated once because
+`(ContinuousLinearMap.mul ℝ (E →L[𝕜] E)).integrable_comp hP` elaborates only with its implicit
+arguments spelled out: the additive structures on `E →L[𝕜] E` reached through `NonUnitalNormedRing`
+and through `ContinuousLinearMap.toNormedAddCommGroup` are not unified otherwise. -/
+private theorem integrableOn_mul {S : Set ℝ} (hP : IntegrableOn P S) :
+    IntegrableOn (fun u ↦ ContinuousLinearMap.mul ℝ (E →L[𝕜] E) (P u)) S := by
+  have := ContinuousLinearMap.integrable_comp (𝕜 := ℝ) (𝕜' := ℝ) (σ := RingHom.id ℝ)
+    (H := E →L[𝕜] E) (E := (E →L[𝕜] E) →L[ℝ] E →L[𝕜] E) (ContinuousLinearMap.mul ℝ _) hP
+  exact this
+
 private theorem exists_sol [CompleteSpace E] (hP : IntegrableOn P (Icc a b))
     (hs : s ∈ Icc a b) :
     ∃ N : ℝ → E →L[𝕜] E, ContinuousOn N (Icc a b) ∧
       ∀ r ∈ Icc a b, N r = 1 + ∫ u in s..r, P u ∘L N u := by
   obtain ⟨N, hN, h⟩ := exists_continuousOn_forall_mem_Icc_eq_picard hs
-    hP.continuousLinearMap_mul integrableOn_zero 1
+    (integrableOn_mul hP) integrableOn_zero 1
   exact ⟨N, hN, fun r hr ↦ (h r hr).trans (picard_mul P N s r)⟩
 
 private theorem eqOn_sol (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
@@ -126,7 +118,7 @@ private theorem eqOn_sol (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (h₁ : ∀ r ∈ Icc a b, N₁ r = 1 + ∫ u in s..r, P u ∘L N₁ u)
     (h₂ : ∀ r ∈ Icc a b, N₂ r = 1 + ∫ u in s..r, P u ∘L N₂ u) :
     EqOn N₁ N₂ (Icc a b) := by
-  have hM := hP.continuousLinearMap_mul
+  have hM := integrableOn_mul hP
   exact eqOn_of_forall_mem_Icc_eq_picard (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u))
     (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) hs hM integrableOn_zero hN₁ hN₂
     (fun r hr ↦ (h₁ r hr).trans (picard_mul P N₁ s r).symm)
@@ -143,7 +135,8 @@ private theorem intervalIntegrable_apply (hP : IntegrableOn P (Icc a b)) (hab : 
     {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
     IntervalIntegrable (fun u ↦ P u (x u)) volume a b := by
   simpa using intervalIntegrable_clm_apply_add (M := fun u ↦ (P u).restrictScalars ℝ)
-    (F := fun _ ↦ (0 : E)) hab hP.continuousLinearMap_restrictScalars integrableOn_zero hx
+    (F := fun _ ↦ (0 : E)) hab
+    ((ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP) integrableOn_zero hx
 
 end Propagator
 
@@ -237,8 +230,8 @@ theorem eq_propagator_apply (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (ht : t ∈ Icc a b) {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ r ∈ Icc a b, x r = x s + ∫ u in s..r, P u (x u)) : x t = propagator P t s (x s) :=
   eqOn_of_forall_mem_Icc_eq_picard (M := fun u ↦ (P u).restrictScalars ℝ)
-    (F := fun _ ↦ (0 : E)) (x₀ := x s) hs hP.continuousLinearMap_restrictScalars integrableOn_zero
-    hx
+    (F := fun _ ↦ (0 : E)) (x₀ := x s) hs
+    ((ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP) integrableOn_zero hx
     ((continuousOn_propagator_left hP hs).clm_apply continuousOn_const)
     (fun r hr ↦ (h r hr).trans (picard_restrictScalars P x _ s r).symm)
     (fun r hr ↦ (propagator_apply_eq_add_integral hP hs hr _).trans
@@ -292,7 +285,8 @@ theorem norm_propagator_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
     (ht : t ∈ Icc a b) : ‖propagator P t s‖ ≤ exp |∫ u in s..t, ‖P u‖| := by
   refine ContinuousLinearMap.opNorm_le_bound _ (exp_pos _).le fun y ↦ ?_
   have := norm_le_mul_exp_of_forall_mem_Icc_eq_picard (M := fun u ↦ (P u).restrictScalars ℝ)
-    (F := fun _ ↦ (0 : E)) (x₀ := y) hs hP.continuousLinearMap_restrictScalars integrableOn_zero
+    (F := fun _ ↦ (0 : E)) (x₀ := y) hs
+    ((ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP) integrableOn_zero
     ((continuousOn_propagator_left hP hs).clm_apply continuousOn_const)
     (fun r hr ↦ (propagator_apply_eq_add_integral hP hs hr y).trans
       (picard_restrictScalars P _ y s r).symm) ht
@@ -376,7 +370,7 @@ theorem norm_propagator_sub_one_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ I
 /-- The propagator `N_P(t, s)` is absolutely continuous in `t` on `[a, b]`. -/
 theorem absolutelyContinuousOnInterval_propagator_left (hP : IntegrableOn P (Icc a b))
     (hs : s ∈ Icc a b) : AbsolutelyContinuousOnInterval (fun t ↦ propagator P t s) a b := by
-  have hM := hP.continuousLinearMap_mul
+  have hM := integrableOn_mul hP
   exact absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard
     (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u)) (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) hs
     hM integrableOn_zero (continuousOn_propagator_left hP hs) fun r hr ↦
@@ -386,7 +380,7 @@ theorem absolutelyContinuousOnInterval_propagator_left (hP : IntegrableOn P (Icc
 almost every `t ∈ (a, b)`. -/
 theorem ae_hasDerivAt_propagator_left (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
     ∀ᵐ t, t ∈ Ioo a b → HasDerivAt (fun t ↦ propagator P t s) (P t ∘L propagator P t s) t := by
-  have hM := hP.continuousLinearMap_mul
+  have hM := integrableOn_mul hP
   filter_upwards [ae_hasDerivAt_of_forall_mem_Icc_eq_picard
     (M := fun u ↦ ContinuousLinearMap.mul ℝ _ (P u)) (F := fun _ ↦ (0 : E →L[𝕜] E)) (x₀ := 1) hs
     hM integrableOn_zero (continuousOn_propagator_left hP hs) fun r hr ↦
