@@ -13,12 +13,13 @@ import TauCeti.RingTheory.Ideal.Extended
 # Primitive idempotents in adically complete algebras
 
 Let `R` be a commutative ring, `I` an ideal of `R`, `S` an `R`-algebra, possibly noncommutative,
-that is `I`-adically complete as an `R`-module, and `f : S →+* T` a surjective ring homomorphism
-whose kernel lies in `I • S`, such as the reduction `O[G] → k[G]` of the group algebra of a finite
-group over a complete discrete valuation ring `O` with residue field `k`. This file proves that an
-idempotent `e` of `S` is primitive exactly when `f e` is, and hence, together with
-`IsAdicComplete.exists_isIdempotentElem_eq`, that every primitive idempotent of `T` is the image of
-a primitive idempotent of `S` when the kernel is exactly `I • S`.
+and `f : S →+* T` a ring homomorphism, such as the reduction `O[G] → k[G]` of the group algebra of
+a finite group over a complete discrete valuation ring `O` with residue field `k`. If `S` is
+`I`-adically Hausdorff and the kernel of `f` lies in `I • S`, an idempotent `e` of `S` is primitive
+when `f e` is. If `S` is `I`-adically complete and `f` is surjective with kernel exactly `I • S`,
+the converse holds too, so `e` is primitive exactly when `f e` is, and, together with
+`IsAdicComplete.exists_isIdempotentElem_eq`, every primitive idempotent of `T` is the image of a
+primitive idempotent of `S`.
 
 A decomposition of `e` maps to a decomposition of `f e`, and a summand mapping to `0` is an
 idempotent in `I • S`, hence `0`, because an idempotent lies in every `I ^ n • S`
@@ -30,12 +31,14 @@ and with it `ε`, equal to `0` or to `e`.
 
 ## Main results
 
-* `IsHausdorff.eq_zero_of_isIdempotentElem_of_mem`: an idempotent in `I • S` vanishes when `S` is
-  `I`-adically Hausdorff.
-* `TauCeti.isPrimitiveIdempotent_map_iff`: an idempotent of `S` is primitive exactly when its image
-  in `T` is.
-* `TauCeti.exists_isPrimitiveIdempotent_eq`: primitive idempotents lift along `f` when its kernel
-  is `I • S`.
+* `TauCeti.isPrimitiveIdempotent_of_map_of_isHausdorff`: for `S` `I`-adically Hausdorff and the
+  kernel of `f` contained in `I • S`, an idempotent whose image is primitive is primitive.
+* `TauCeti.IsPrimitiveIdempotent.map_of_isAdicComplete`: for `S` `I`-adically complete and `f`
+  surjective with kernel `I • S`, the image of a primitive idempotent is primitive.
+* `TauCeti.isPrimitiveIdempotent_map_iff`: under the same hypotheses, an idempotent of `S` is
+  primitive exactly when its image in `T` is.
+* `TauCeti.exists_isPrimitiveIdempotent_eq`: primitive idempotents lift along `f` under the same
+  hypotheses.
 
 ## References
 
@@ -47,24 +50,14 @@ public section
 
 variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] (I : Ideal R)
 
-/-- **An idempotent in `I • S` vanishes** when the algebra `S` is `I`-adically Hausdorff: being
-its own `n`-th power, it lies in every `I ^ n • S`. -/
-theorem IsHausdorff.eq_zero_of_isIdempotentElem_of_mem [IsHausdorff I S] {e : S}
-    (he : IsIdempotentElem e) (h : e ∈ I • (⊤ : Submodule R S)) : e = 0 := by
-  refine IsHausdorff.haus' (I := I) e fun n ↦ SModEq.zero.mpr ?_
-  rcases n with _ | n
-  · simp [Ideal.map_top]
-  rw [← he.pow_succ_eq n, ← Ideal.mem_map_algebraMap_iff, Ideal.map_algebraMap_pow]
-  exact Ideal.pow_mem_pow ((Ideal.mem_map_algebraMap_iff _).mpr h) _
-
 namespace TauCeti
 
 variable {I} {T : Type*} [Ring T] (f : S →+* T)
 
 /-- **A primitive image comes from a primitive idempotent.** If the kernel of `f : S →+* T` lies
 in `I • S` and `S` is `I`-adically Hausdorff, an idempotent of `S` whose image is primitive is
-primitive: a summand of a decomposition that maps to `0` is an idempotent in `I • S`. -/
-theorem isPrimitiveIdempotent_of_map [IsHausdorff I S]
+primitive. -/
+theorem isPrimitiveIdempotent_of_map_of_isHausdorff [IsHausdorff I S]
     (hf : ∀ x, f x = 0 → x ∈ I • (⊤ : Submodule R S)) {e : S} (he : IsIdempotentElem e)
     (h : IsPrimitiveIdempotent (f e)) : IsPrimitiveIdempotent e where
   isIdempotentElem := he
@@ -76,9 +69,7 @@ theorem isPrimitiveIdempotent_of_map [IsHausdorff I S]
       fun h0 ↦ IsHausdorff.eq_zero_of_isIdempotentElem_of_mem I h₂ (hf _ h0)
 
 /-- **Primitivity survives reduction.** If `S` is `I`-adically complete and `f : S →+* T` is
-surjective with kernel `I • S`, the image of a primitive idempotent is primitive. An idempotent
-`ε` of the corner ring of `f e` is the image of an element of `eSe` that is idempotent modulo
-`I • S`, which lifts to an idempotent of `eSe`; that lift is `0` or `e`. -/
+surjective with kernel `I • S`, the image of a primitive idempotent is primitive. -/
 theorem IsPrimitiveIdempotent.map_of_isAdicComplete [IsAdicComplete I S]
     (hf : ∀ x, f x = 0 ↔ x ∈ I • (⊤ : Submodule R S)) (hsurj : Function.Surjective f) {e : S}
     (he : IsPrimitiveIdempotent e) : IsPrimitiveIdempotent (f e) := by
@@ -102,7 +93,7 @@ reduction `O[G] → k[G]`, an idempotent `e` of `S` is primitive if and only if 
 theorem isPrimitiveIdempotent_map_iff [IsAdicComplete I S]
     (hf : ∀ x, f x = 0 ↔ x ∈ I • (⊤ : Submodule R S)) (hsurj : Function.Surjective f) {e : S}
     (he : IsIdempotentElem e) : IsPrimitiveIdempotent (f e) ↔ IsPrimitiveIdempotent e :=
-  ⟨isPrimitiveIdempotent_of_map f (fun x ↦ (hf x).mp) he,
+  ⟨isPrimitiveIdempotent_of_map_of_isHausdorff f (fun x ↦ (hf x).mp) he,
     IsPrimitiveIdempotent.map_of_isAdicComplete f hf hsurj⟩
 
 /-- **Primitive idempotents lift.** For an `I`-adically complete `R`-algebra `S` and a surjective

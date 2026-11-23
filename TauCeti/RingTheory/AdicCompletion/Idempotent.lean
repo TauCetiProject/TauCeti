@@ -32,14 +32,20 @@ The proof is Newton's iteration for the polynomial `X ^ 2 - X`. If `a = x ^ 2 - 
 squared at each step while `x' - x` is a multiple of `a`. Starting from any lift of the
 idempotent, the iterates form an `I`-adic Cauchy sequence, and its limit is an idempotent lift.
 Every element involved is a polynomial in a single element of `S`, so noncommutativity of `S`
-plays no role. The polynomials have no constant term, so the iterates stay in every corner `cSd`
-containing the starting point, and so does their limit.
+plays no role. The polynomials have no constant term, so if `c * x₀ = x₀` and `x₀ * d = x₀` for
+given `c` and `d`, the iterates and their limit satisfy the same two equations. For idempotent `c`
+and `d` these equations say exactly that an element lies in the corner `cSd`, so the lift of an
+element of `cSd` can be chosen in `cSd`.
 
 ## Main results
 
-* `IsAdicComplete.exists_isIdempotentElem_sub_mem_of_mul_eq`: an element idempotent modulo
-  `I • S` is congruent to an idempotent of `S`, which can be chosen in any corner `cSd` that
-  contains the element, for instance in `eSe` for an idempotent `e`.
+* `IsHausdorff.eq_zero_of_isIdempotentElem_of_mem`: an idempotent in `I • S` vanishes when `S` is
+  `I`-adically Hausdorff.
+
+* `IsAdicComplete.exists_isIdempotentElem_sub_mem_of_mul_eq`: an element `x₀` idempotent modulo
+  `I • S` is congruent to an idempotent `e` of `S` such that `c * e = e` and `e * d = e` for given
+  `c` and `d` with `c * x₀ = x₀` and `x₀ * d = x₀`; for idempotent `c = d`, the lift of an element
+  of the corner ring `cSc` lies in `cSc`.
 * `IsAdicComplete.exists_isIdempotentElem_sub_mem`: an element idempotent modulo `I • S` is
   congruent to an idempotent of `S`.
 * `IsAdicComplete.exists_isIdempotentElem_eq`: idempotents lift along a ring homomorphism
@@ -52,6 +58,16 @@ containing the starting point, and so does their limit.
 -/
 
 public section
+
+/-- **An idempotent in `I • S` vanishes** when the algebra `S` is `I`-adically Hausdorff. -/
+theorem IsHausdorff.eq_zero_of_isIdempotentElem_of_mem {R S : Type*} [CommRing R] [Ring S]
+    [Algebra R S] (I : Ideal R) [IsHausdorff I S] {e : S} (he : IsIdempotentElem e)
+    (h : e ∈ I • (⊤ : Submodule R S)) : e = 0 := by
+  refine IsHausdorff.haus' (I := I) e fun n ↦ SModEq.zero.mpr ?_
+  rcases n with _ | n
+  · simp [Ideal.map_top]
+  rw [← he.pow_succ_eq n, ← Ideal.mem_map_algebraMap_iff, Ideal.map_algebraMap_pow]
+  exact Ideal.pow_mem_pow ((Ideal.mem_map_algebraMap_iff _).mpr h) _
 
 namespace IsAdicComplete
 
@@ -74,18 +90,29 @@ private theorem newtonIdempotent_mul_self_sub (x : S) :
   simp only [newtonIdempotent]
   noncomm_ring
 
-/-- A Newton step stays in every left corner `cS` containing its argument. -/
+/-- A Newton step is `3x² - 2x³`, a polynomial without constant term, written with `x` on the
+left. -/
+private theorem newtonIdempotent_eq_mul_left (x : S) :
+    newtonIdempotent x = x * (x * (3 - 2 * x)) := by
+  simp only [newtonIdempotent]
+  noncomm_ring
+
+/-- A Newton step is `3x² - 2x³`, a polynomial without constant term, written with `x` on the
+right. -/
+private theorem newtonIdempotent_eq_mul_right (x : S) :
+    newtonIdempotent x = (3 - 2 * x) * x * x := by
+  simp only [newtonIdempotent]
+  noncomm_ring
+
+/-- If `c * x = x`, a Newton step from `x` satisfies the same equation. -/
 private theorem mul_newtonIdempotent {c x : S} (hc : c * x = x) :
     c * newtonIdempotent x = newtonIdempotent x := by
-  have h : c * (x * x - x) = x * x - x := by rw [mul_sub, ← mul_assoc, hc]
-  rw [newtonIdempotent, mul_add, hc, ← mul_assoc, h]
+  rw [newtonIdempotent_eq_mul_left, ← mul_assoc, hc]
 
-/-- A Newton step stays in every right corner `Sd` containing its argument. -/
+/-- If `x * d = x`, a Newton step from `x` satisfies the same equation. -/
 private theorem newtonIdempotent_mul {d x : S} (hd : x * d = x) :
     newtonIdempotent x * d = newtonIdempotent x := by
-  have h1 : (x * x - x) * d = x * x - x := by rw [sub_mul, mul_assoc, hd]
-  have h2 : (1 - 2 * x) * d = d - 2 * x := by rw [sub_mul, one_mul, mul_assoc, hd]
-  rw [newtonIdempotent, add_mul, hd, mul_assoc, h2, mul_sub, h1, mul_sub (x * x - x) 1, mul_one]
+  rw [newtonIdempotent_eq_mul_right, mul_assoc, hd]
 
 /-- The `n`-th Newton iterate of an element idempotent modulo `I • S` has defect in
 `I ^ (n + 1) • S`. -/
@@ -102,7 +129,7 @@ private theorem iterate_newtonIdempotent_defect_mem {x₀ : S}
     rw [pow_add, Ideal.map_algebraMap_mul]
     exact Ideal.mul_mem_mul ih (Ideal.mul_mem_right _ _ ih)
 
-/-- The `I`-adic limit of a sequence in a left corner `cS` lies in it. -/
+/-- If every term of a sequence satisfies `c * x n = x n`, so does its `I`-adic limit. -/
 private theorem mul_eq_of_forall_sub_mem [IsHausdorff I S] {c L : S} {x : ℕ → S}
     (hx : ∀ n, c * x n = x n) (hL : ∀ n, L - x n ∈ I ^ n • (⊤ : Submodule R S)) : c * L = L := by
   refine sub_eq_zero.mp <| IsHausdorff.haus' (I := I) (c * L - L) fun n ↦ SModEq.sub_mem.mpr ?_
@@ -113,7 +140,7 @@ private theorem mul_eq_of_forall_sub_mem [IsHausdorff I S] {c L : S} {x : ℕ �
   rw [← Ideal.mem_map_algebraMap_iff] at hLn ⊢
   exact sub_mem (Ideal.mul_mem_left _ _ hLn) hLn
 
-/-- The `I`-adic limit of a sequence in a right corner `Sd` lies in it. -/
+/-- If every term of a sequence satisfies `x n * d = x n`, so does its `I`-adic limit. -/
 private theorem mul_eq_of_forall_sub_mem' [IsHausdorff I S] {d L : S} {x : ℕ → S}
     (hx : ∀ n, x n * d = x n) (hL : ∀ n, L - x n ∈ I ^ n • (⊤ : Submodule R S)) : L * d = L := by
   refine sub_eq_zero.mp <| IsHausdorff.haus' (I := I) (L * d - L) fun n ↦ SModEq.sub_mem.mpr ?_
@@ -125,9 +152,9 @@ private theorem mul_eq_of_forall_sub_mem' [IsHausdorff I S] {d L : S} {x : ℕ �
   exact sub_mem (Ideal.mul_mem_right _ _ hLn) hLn
 
 /-- An element of an `I`-adically complete, possibly noncommutative `R`-algebra that is
-idempotent modulo `I • S` is congruent modulo `I • S` to an idempotent, which lies in every
-corner `cSd` containing the element: if `c * x₀ = x₀` and `x₀ * d = x₀`, then also
-`c * e = e` and `e * d = e`. Taking `c = d` an idempotent, the lift lies in the corner ring. -/
+idempotent modulo `I • S` is congruent modulo `I • S` to an idempotent `e`, which for given `c`
+and `d` with `c * x₀ = x₀` and `x₀ * d = x₀` satisfies `c * e = e` and `e * d = e`. For an
+idempotent `c = d` these equations say that `x₀` and `e` lie in the corner ring `cSc`. -/
 theorem exists_isIdempotentElem_sub_mem_of_mul_eq [IsAdicComplete I S] {x₀ c d : S}
     (hx₀ : x₀ * x₀ - x₀ ∈ I • (⊤ : Submodule R S)) (hc : c * x₀ = x₀) (hd : x₀ * d = x₀) :
     ∃ e : S, IsIdempotentElem e ∧ e - x₀ ∈ I • (⊤ : Submodule R S) ∧ c * e = e ∧ e * d = e := by
@@ -170,7 +197,7 @@ theorem exists_isIdempotentElem_sub_mem_of_mul_eq [IsAdicComplete I S] {x₀ c d
     have h01 : x 1 - x₀ ∈ I • (⊤ : Submodule R S) := by
       simpa only [zero_add, pow_one, hx_zero] using hstep 0
     simpa only [sub_add_sub_cancel] using add_mem h1 h01
-  -- The iterates stay in the corner `cSd`, and hence so does their limit.
+  -- The iterates satisfy `c * y = y` and `y * d = y`, and hence so does their limit.
   · exact mul_eq_of_forall_sub_mem I (fun n ↦ Set.MapsTo.iterate (s := {y | c * y = y})
       (fun _ hy ↦ mul_newtonIdempotent hy) n hc) hLx
   · exact mul_eq_of_forall_sub_mem' I (fun n ↦ Set.MapsTo.iterate (s := {y | y * d = y})

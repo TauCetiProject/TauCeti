@@ -55,17 +55,7 @@ instance instIsAdicComplete [IsAdicComplete I R] [Finite G] :
 
 variable [Monoid G] {k : Type*} [CommRing k] {φ : R →+* k}
 
-/-- The coefficient map along a surjection is surjective. -/
-theorem mapRingHom_surjective (hφ : Function.Surjective φ) :
-    Function.Surjective (MonoidAlgebra.mapRingHom G φ) := fun p ↦
-  (MonoidAlgebra.mem_rangeS_mapRingHom_iff φ p).mpr fun m ↦ hφ (p.coeff m)
-
 variable {I}
-
-/-- The coefficient map along `φ` with kernel `I` kills exactly `I • R[G]`. -/
-theorem mapRingHom_eq_zero_iff_of_ker_eq (hφI : RingHom.ker φ = I) {x : MonoidAlgebra R G} :
-    MonoidAlgebra.mapRingHom G φ x = 0 ↔ x ∈ I • (⊤ : Submodule R (MonoidAlgebra R G)) := by
-  rw [mapRingHom_eq_zero_iff, hφI]
 
 variable [IsAdicComplete I R] [Finite G]
 
@@ -74,9 +64,11 @@ a surjection `φ : R →+* k` with kernel `I`, and a finite monoid `G`, every id
 the reduction of an idempotent of `R[G]`. -/
 theorem exists_isIdempotentElem_mapRingHom_eq (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {ε : MonoidAlgebra k G} (hε : IsIdempotentElem ε) :
-    ∃ e : MonoidAlgebra R G, IsIdempotentElem e ∧ MonoidAlgebra.mapRingHom G φ e = ε :=
-  IsAdicComplete.exists_isIdempotentElem_eq I _ (fun _ ↦ mapRingHom_eq_zero_iff_of_ker_eq hφI)
-    (mapRingHom_surjective hφ ε) hε
+    ∃ e : MonoidAlgebra R G, IsIdempotentElem e ∧ MonoidAlgebra.mapRingHom G φ e = ε := by
+  subst hφI
+  refine IsAdicComplete.exists_isIdempotentElem_eq _ _ (fun _ ↦ mapRingHom_eq_zero_iff φ) ?_ hε
+  rw [RingHom.mem_range, MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_surjective _ hφ ε
 
 /-- **An idempotent of `R[G]` is primitive exactly when its reduction in `k[G]` is.** Here `R` is
 complete with respect to an ideal `I`, `φ : R →+* k` is a surjection with kernel `I`, and `G` is a
@@ -84,17 +76,21 @@ finite monoid; for a complete discrete valuation ring `O` with residue field `k`
 reduction `O[G] → k[G]`. -/
 theorem isPrimitiveIdempotent_mapRingHom_iff (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {e : MonoidAlgebra R G} (he : IsIdempotentElem e) :
-    IsPrimitiveIdempotent (MonoidAlgebra.mapRingHom G φ e) ↔ IsPrimitiveIdempotent e :=
-  isPrimitiveIdempotent_map_iff _ (fun _ ↦ mapRingHom_eq_zero_iff_of_ker_eq hφI)
-    (mapRingHom_surjective hφ) he
+    IsPrimitiveIdempotent (MonoidAlgebra.mapRingHom G φ e) ↔ IsPrimitiveIdempotent e := by
+  subst hφI
+  refine isPrimitiveIdempotent_map_iff _ (fun _ ↦ mapRingHom_eq_zero_iff φ) ?_ he
+  rw [MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_surjective _ hφ
 
 /-- **Primitive idempotents of `k[G]` lift to primitive idempotents of `R[G]`.** Here `R` is
 complete with respect to an ideal `I`, `φ : R →+* k` is a surjection with kernel `I`, and `G` is a
 finite monoid. -/
 theorem exists_isPrimitiveIdempotent_mapRingHom_eq (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {ε : MonoidAlgebra k G} (hε : IsPrimitiveIdempotent ε) :
-    ∃ e : MonoidAlgebra R G, IsPrimitiveIdempotent e ∧ MonoidAlgebra.mapRingHom G φ e = ε :=
-  exists_isPrimitiveIdempotent_eq _ (fun _ ↦ mapRingHom_eq_zero_iff_of_ker_eq hφI)
-    (mapRingHom_surjective hφ) hε
+    ∃ e : MonoidAlgebra R G, IsPrimitiveIdempotent e ∧ MonoidAlgebra.mapRingHom G φ e = ε := by
+  subst hφI
+  refine exists_isPrimitiveIdempotent_eq _ (fun _ ↦ mapRingHom_eq_zero_iff φ) ?_ hε
+  rw [MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_surjective _ hφ
 
 end TauCeti.MonoidAlgebra
