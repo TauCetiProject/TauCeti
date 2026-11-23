@@ -26,10 +26,10 @@ For `p = 2` this is the Sobolev mapping theorem
 `TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`; for symbols with compact spatial support
 and finite-dimensional normed fibres it is
 `HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM` in the
-namespace `TauCeti.Symbol`. Uniform symbols of order `0` include the multiplications by smooth
-operator-valued functions `f` all of whose derivatives are bounded
-(`TauCeti.Symbol.isUniform_ofSpatial_iff`), so these act boundedly on every `H^{s,p}`
-(`TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`).
+namespace `TauCeti.Symbol`. Uniform symbols of order `0` include the smooth operator-valued
+functions `f` all of whose derivatives are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`), so
+each gives a bounded operator on every `H^{s,p}`; for finite-dimensional `V` and `W` this operator
+is multiplication by `f` (`TauCeti.Symbol.toDistr_quantizeUniformBesselPotentialSpace_ofSpatial`).
 
 ## The argument
 
