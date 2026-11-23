@@ -89,9 +89,9 @@ theorem diagonalChain_tail_of_isOrtho_of_apply_eq {n : ℕ}
   have hpermuted :
       (weightedSumSquares K fun k ↦ (w (Equiv.swap i 0 k) : K)).Equivalent
         (weightedSumSquares K fun k ↦ (w' (Equiv.swap j 0 k) : K)) :=
-    (equivalent_weightedSumSquares_comp (fun k ↦ (w k : K)) (Equiv.swap i 0)).symm.trans
+    (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (Equiv.swap i 0) fun _ ↦ rfl).trans
       (hdiag.trans
-        (equivalent_weightedSumSquares_comp (fun k ↦ (w' k : K)) (Equiv.swap j 0)))
+        (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (Equiv.swap j 0) fun _ ↦ rfl).symm)
   have hhead : (w ∘ Equiv.swap i 0) 0 = (w' ∘ Equiv.swap j 0) 0 := by
     simp only [Function.comp_apply, Equiv.swap_apply_right]
     apply Units.ext

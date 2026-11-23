@@ -75,7 +75,7 @@ private theorem abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero
   set S := {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < β * Real.pi / 2}
   set w := q + (g z)⁻¹
   have hGw : recenterInvertedCoordinate q c b g z = b / (w - c) :=
-    recenterInvertedCoordinate_eq_div (f := fun _ => w) (by simp [w]) (by simpa [w] using hgz)
+    recenterInvertedCoordinate_eq_div (by simp [w]) (by simpa [w] using hgz)
   -- `w` is the limit of values of `f` in `S`
   have hwcl : w ∈ closure S := by
     have hzcl : z ∈ closure (ball (x : ℂ) r ∩ upperHalfPlaneSet) :=
@@ -139,7 +139,8 @@ theorem exists_ball_sector_end_of_inverted_coordinate
     exists_ball_recenterInvertedCoordinate (c := c) hgc hgd hgf hgne hx hb
   set G := recenterInvertedCoordinate q c b g
   obtain ⟨r₂, hr₂, hS₂⟩ := Metric.mem_nhdsWithin_iff.mp hfS
-  obtain ⟨r₃, hr₃, hfar⟩ := exists_ball_lt_norm_of_inverted_coordinate (q := q) hgc hx c (max ρ 0)
+  obtain ⟨r₃, hr₃, hfar⟩ := exists_ball_lt_norm_of_inverted_coordinate (q := q)
+    (hgc _ (by simp)) hx c (max ρ 0)
   set r₄ := min r₁ (min r₂ r₃)
   have hr₄ : 0 < r₄ := lt_min hr₁ (lt_min hr₂ hr₃)
   have h₁ : ball (x : ℂ) r₄ ⊆ ball (x : ℂ) r₁ := ball_subset_ball (min_le_left _ _)
@@ -157,7 +158,7 @@ theorem exists_ball_sector_end_of_inverted_coordinate
   have hrays (z : ℂ) (hz : z ∈ ball (x : ℂ) r₄) (hz0 : z.im = 0) (hGz : G z ≠ 0) :
       |(G z).arg| = β * Real.pi / 2 :=
     abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero hgc hgf hgi hS hS₂ (h₂ hz) hz0
-      (hgG hGz) (hfar z (h₃ hz) hz0.ge (hgG hGz))
+      (hgG hGz) (hfar z ⟨h₃ hz, hz0.ge⟩ (hgG hGz))
   -- the sector geometry makes `x` an isolated zero
   obtain ⟨r₅, hr₅, hiso⟩ := Metric.mem_nhdsWithin_iff.mp <| eventually_ne_zero_of_sector hβ hr₄
     (hGc.mono (inter_subset_inter_left _ h₁)) (hGd.mono (inter_subset_inter_left _ h₁))

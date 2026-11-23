@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Algebra.Star.Unitary
 
 /-!
-# The unitary subgroup of units
+# The unitary subgroup of units and unitary conjugation paths
 
 Mathlib's `isClosed_unitary` says that the unitary elements of a topological star monoid `M` are
 a closed subset of `M`.  This file transfers that to the group of units: `unitarySubgroup Mˣ`,
 the unitary elements of `Mˣ` packaged as a subgroup, is closed in `Mˣ`.  It also shows that
-`unitarySubgroup Mˣ` is compact exactly when `unitary M` is.
+`unitarySubgroup Mˣ` is compact exactly when `unitary M` is, and packages conjugation along a
+unitary path from `1` as a path `Unitary.conjPath`.
 
 Closedness is immediate once Mathlib's `Units.unitary_eq` exhibits the subgroup as the
 preimage of `unitary M` under `Units.val`, which is continuous.  No hypothesis beyond the ones
@@ -30,7 +32,7 @@ It needs only `ContinuousStar M` beyond a topological star monoid, with no separ
 continuity-of-multiplication assumption.
 
 This is the closedness hypothesis that the Lie algebra of a closed subgroup of `Mˣ` is computed
-from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 
@@ -38,6 +40,8 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
   to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
   `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
 * `Unitary.continuous_toUnits`: the unitary-to-units homomorphism is continuous.
+* `Unitary.conjPath`: conjugating an element `p` along a path `δ : Path (1 : unitary M) u` gives
+  a continuous path from `p` to `(u : M) * p * star (u : M)`.
 * `TauCeti.mem_unitary_units_iff`: a unit is unitary exactly when its underlying element is.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
 * `TauCeti.isCompact_unitarySubgroup_units_iff`: the unitary subgroup of `Mˣ` is compact exactly
@@ -45,6 +49,8 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 -/
 
 public section
+
+open scoped unitInterval
 
 namespace Unitary
 
@@ -54,9 +60,25 @@ theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace 
     [ContinuousStar M] : Continuous (toUnits : unitary M → Mˣ) := by
   refine Units.continuous_iff.mpr ⟨?_, ?_⟩
   · simpa only [Function.comp_def, val_toUnits_apply] using
-      (continuous_subtype_val : Continuous fun u : unitary M ↦ (u : M))
-  · refine continuous_subtype_val.star.congr fun u ↦ ?_
+      (continuous_subtypeVal : Continuous fun u : unitary M ↦ (u : M))
+  · refine continuous_subtypeVal.star.congr fun u ↦ ?_
     simp only [← map_inv, val_toUnits_apply, ← star_eq_inv, coe_star, Pi.star_apply]
+
+/-- Conjugating an element `p` along a path `δ : Path (1 : unitary M) u` gives a continuous path
+from `p` to `(u : M) * p * star (u : M)`. -/
+def conjPath {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M] [ContinuousMul M]
+    [ContinuousStar M] {u : unitary M} (δ : Path (1 : unitary M) u) (p : M) :
+    Path p ((u : M) * p * star (u : M)) where
+  toFun t := (δ t : M) * p * star (δ t : M)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp
+
+@[simp]
+theorem conjPath_apply {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M] [ContinuousMul M]
+    [ContinuousStar M] {u : unitary M} (δ : Path (1 : unitary M) u) (p : M) (t : I) :
+    conjPath δ p t = (δ t : M) * p * star (δ t : M) :=
+  (rfl)
 
 end Unitary
 
@@ -68,7 +90,7 @@ def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [Topologic
   have hc : Continuous (unitarySubgroupUnitsEquiv : unitarySubgroup Mˣ → unitary M) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, unitarySubgroupUnitsEquiv_apply_coe] using
-      (Units.continuous_val.comp (continuous_subtype_val (X := Mˣ)))
+      (Units.continuous_val.comp (continuous_subtypeVal (X := Mˣ)))
   have hc' : Continuous (unitarySubgroupUnitsEquiv.symm : unitary M → unitarySubgroup Mˣ) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, coe_unitarySubgroupUnitsEquiv_symm_apply] using

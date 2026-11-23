@@ -8,6 +8,8 @@ module
 public import Mathlib.Order.Preorder.Chain
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
 
+import Mathlib.Data.Finset.Sort
+
 /-!
 # Order complexes
 
@@ -17,10 +19,12 @@ subdivision: applying it to the face poset of a simplicial complex gives its fir
 subdivision.
 
 This file also records functoriality. A monotone map sends a chain to a chain, and hence induces a
-simplicial map of order complexes. The barycentric-subdivision specialization in the next module
-models the derived subdivision described by Rourke--Sanderson, *Introduction to Piecewise-Linear
-Topology*, Chapter 2; the generic order-complex formulation and its functoriality are not taken
-from that source.
+simplicial map of order complexes. Every face of the order complex of a partial order is a finite
+chain, so it carries an induced linear order agreeing with the ambient partial order and is
+canonically order-isomorphic to `Fin σ.card`. The barycentric-subdivision specialization in the
+next module models the derived subdivision described by Rourke--Sanderson, *Introduction to
+Piecewise-Linear Topology*, Chapter 2; the generic order-complex formulation and its
+functoriality are not taken from that source.
 
 ## Main definitions
 
@@ -28,6 +32,10 @@ from that source.
   chains.
 * `TauCeti.AbstractSimplicialComplex.orderComplexMap`: the simplicial map induced by a monotone
   map.
+* `TauCeti.AbstractSimplicialComplex.linearOrderOfMemOrderComplex`: the induced linear order on a
+  face of the order complex of a partial order.
+* `TauCeti.AbstractSimplicialComplex.orderIsoFinOfMemOrderComplex`: the canonical increasing order
+  isomorphism `Fin σ.card ≃o ↥σ` for a face `σ` of the order complex of a partial order.
 
 ## Main results
 
@@ -39,6 +47,8 @@ from that source.
   the full simplicial complex.
 * `TauCeti.AbstractSimplicialComplex.orderComplexMap_id` and
   `TauCeti.AbstractSimplicialComplex.orderComplexMap_comp`: functoriality laws.
+* `TauCeti.AbstractSimplicialComplex.orderIsoFinOfMemOrderComplex_unique`: uniqueness of the
+  increasing order isomorphism `Fin σ.card ≃o ↥σ`.
 -/
 
 public section
@@ -158,6 +168,42 @@ theorem orderComplexMap_comp [DecidableEq Q] [DecidableEq R] (g : Q →o R) (f :
   rw [coe_orderComplexMap, PreAbstractSimplicialComplex.SimplicialMap.coe_comp,
     coe_orderComplexMap, coe_orderComplexMap]
   rfl
+
+section PartialOrder
+
+variable {α : Type*} [PartialOrder α] [DecidableLE α]
+
+/-- A face of the order complex of a partial order is a finite chain, hence carries an induced
+linear order agreeing with the ambient partial order on `α`. -/
+@[instance_reducible]
+def linearOrderOfMemOrderComplex {σ : Finset α} (hσ : σ ∈ orderComplex α) : LinearOrder ↥σ :=
+  have hchain : IsChain (· ≤ ·) (↑σ : Set α) := (mem_orderComplex_iff.mp hσ).2
+  IsChain.linearOrder fun _ hx _ hy hne ↦
+    (hchain hx hy hne).imp (lt_of_le_of_ne · hne) (lt_of_le_of_ne · hne.symm)
+
+/-- The `≤` relation of `linearOrderOfMemOrderComplex` agrees with the ambient subtype order. -/
+theorem linearOrderOfMemOrderComplex_le {σ : Finset α} (hσ : σ ∈ orderComplex α) :
+    (linearOrderOfMemOrderComplex hσ).le = (· ≤ ·) :=
+  (rfl)
+
+/-- The canonical increasing order isomorphism between `Fin σ.card` and a face `σ` of
+`orderComplex α`, for a partial order `α`. -/
+def orderIsoFinOfMemOrderComplex {σ : Finset α} (hσ : σ ∈ orderComplex α) :
+    Fin σ.card ≃o ↥σ :=
+  letI := linearOrderOfMemOrderComplex hσ
+  Fintype.orderIsoFinOfCardEq ↥σ (Fintype.card_coe σ)
+
+/-- Any order isomorphism `Fin σ.card ≃o ↥σ` onto a face `σ` of `orderComplex α` equals
+`orderIsoFinOfMemOrderComplex hσ`. -/
+theorem orderIsoFinOfMemOrderComplex_unique {σ : Finset α} (hσ : σ ∈ orderComplex α)
+    (e : Fin σ.card ≃o ↥σ) : e = orderIsoFinOfMemOrderComplex hσ := by
+  let : LinearOrder ↥σ := linearOrderOfMemOrderComplex hσ
+  apply OrderIso.ext
+  exact (e.strictMono.range_inj_of_wellFoundedLT
+    (orderIsoFinOfMemOrderComplex hσ).strictMono).mp
+    (e.surjective.range_eq.trans (orderIsoFinOfMemOrderComplex hσ).surjective.range_eq.symm)
+
+end PartialOrder
 
 end AbstractSimplicialComplex
 
