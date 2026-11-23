@@ -21,10 +21,11 @@ its `lex`-initial algebra is therefore not finitely generated, no finite subset 
 basis, and no finite stage of `MonomialOrder.sagbiCompletionFamily` is a `lex`-SAGBI basis.
 
 The second part of the file constructs the explicit infinite one-relation-at-a-time toric-binomial
-subduction chain `TauCeti.robbianoSweedlerStage`: over a nontrivial commutative ring, the toric
-binomial `TauCeti.robbianoSweedlerBinomial R n` at stage `n` subducts with zero expression and
-irreducible remainder `X 0 * X 1 ^ (n + 3)`, and over a field adjoining its monic normalization
-strictly enlarges the leading-term subalgebra at every step.
+subduction chain `TauCeti.robbianoSweedlerStage`: over a nontrivial commutative ring, evaluating
+the toric binomial `TauCeti.robbianoSweedlerBinomial R n` at `TauCeti.robbianoSweedlerStage R n`
+yields a polynomial that admits a `lex`-subduction against `TauCeti.robbianoSweedlerStage R n`
+with quotient expression `Q = 0` and irreducible remainder `X 0 * X 1 ^ (n + 3)`, and over a field
+adjoining its monic normalization strictly enlarges the leading-term subalgebra at every step.
 
 ## Main definitions and results
 
@@ -32,7 +33,8 @@ strictly enlarges the leading-term subalgebra at every step.
   `X 0 + X 1`, `X 0 * X 1`, `X 0 * X 1 ^ 2` and the subalgebra they generate in
   `MvPolynomial (Fin 2) R`.
 * `TauCeti.fg_robbianoSweedlerSubalgebra`, `TauCeti.not_fg_leadingExponents_robbianoSweedler`,
-  `TauCeti.not_fg_initialAlgebra_robbianoSweedler`, and
+  `TauCeti.not_fg_initialAlgebra_robbianoSweedler`,
+  `TauCeti.not_isSAGBIBasis_of_finite_robbianoSweedler`, and
   `TauCeti.not_isSAGBIBasis_finset_robbianoSweedler`: the subalgebra is finitely generated, while
   its `lex`-leading exponent monoid (over a nontrivial domain) and `lex`-initial algebra (over a
   field) are not, so over a field it has no finite `lex`-SAGBI basis.
@@ -152,6 +154,11 @@ theorem degree_eq_zero_of_mem_robbianoSweedlerSubalgebra {f : MvPolynomial (Fin 
   have hp : p = C (constantCoeff p) := (rename_injective _ (fun _ _ _ ↦ rfl) heq).symm
   rw [hp, rename_C, degree_C]
 
+private theorem X_zero_mul_X_one_pow (R : Type*) [CommSemiring R] (j : ℕ) :
+    (X 0 * X 1 ^ j : MvPolynomial (Fin 2) R) =
+      monomial (Finsupp.single 0 1 + Finsupp.single 1 j) 1 := by
+  rw [monomial_add_single, ← X]
+
 end CommSemiring
 
 section CommRing
@@ -199,14 +206,11 @@ theorem single_add_single_mem_leadingExponents_robbianoSweedler (n : ℕ) :
     Finsupp.single (0 : Fin 2) 1 + Finsupp.single 1 (n + 1) ∈
       lex.leadingExponents (robbianoSweedlerSubalgebra R) := by
   classical
-  have hmon : (X 0 * X 1 ^ (n + 1) : MvPolynomial (Fin 2) R) =
-      monomial (Finsupp.single 0 1 + Finsupp.single 1 (n + 1)) 1 := by
-    rw [monomial_add_single, ← X]
   refine mem_leadingExponents_iff.2
     ⟨X 0 * X 1 ^ (n + 1), mul_X_one_pow_mem_robbianoSweedlerSubalgebra n, ?_, ?_⟩
-  · rw [hmon]
+  · rw [X_zero_mul_X_one_pow]
     exact monomial_eq_zero.not.2 one_ne_zero
-  · rw [hmon, degree_monomial]
+  · rw [X_zero_mul_X_one_pow, degree_monomial]
     simp
 
 /-- Every nonzero `lex`-leading exponent `a` of `robbianoSweedlerSubalgebra R` has `1 ≤ a 0`. -/
@@ -273,10 +277,16 @@ theorem not_fg_initialAlgebra_robbianoSweedler :
     ¬ (lex.initialAlgebra (robbianoSweedlerSubalgebra k)).FG :=
   lex.fg_initialAlgebra_iff_fg_leadingExponents.not.2 not_fg_leadingExponents_robbianoSweedler
 
+/-- Over a field, no finite set is a `lex`-SAGBI basis of `robbianoSweedlerSubalgebra k`. -/
+theorem not_isSAGBIBasis_of_finite_robbianoSweedler {B : Set (MvPolynomial (Fin 2) k)}
+    (hBfin : B.Finite) :
+    ¬ lex.IsSAGBIBasis B (robbianoSweedlerSubalgebra k) :=
+  fun hB ↦ not_fg_leadingExponents_robbianoSweedler (hB.fg_leadingExponents hBfin)
+
 /-- Over a field, no finite subset is a `lex`-SAGBI basis of `robbianoSweedlerSubalgebra k`. -/
 theorem not_isSAGBIBasis_finset_robbianoSweedler (B : Finset (MvPolynomial (Fin 2) k)) :
     ¬ lex.IsSAGBIBasis (B : Set (MvPolynomial (Fin 2) k)) (robbianoSweedlerSubalgebra k) :=
-  fun hB ↦ not_fg_leadingExponents_robbianoSweedler (hB.fg_leadingExponents B.finite_toSet)
+  not_isSAGBIBasis_of_finite_robbianoSweedler k B.finite_toSet
 
 end Field
 
@@ -363,11 +373,8 @@ theorem degree_robbianoSweedlerStage {R : Type*} [CommSemiring R] [Nontrivial R]
     rw [lex.degree_add_of_lt (by
       rw [lex.degree_X, lex.degree_X, lex_lt_iff, Finsupp.Lex.single_lt_iff]
       exact zero_lt_one), lex.degree_X]
-  · rw [robbianoSweedlerStage_apply_of_ne_zero R n hi]
-    have hmon : (X 0 * X 1 ^ (i : ℕ) : MvPolynomial (Fin 2) R) =
-        monomial (Finsupp.single 0 1 + Finsupp.single 1 (i : ℕ)) 1 := by
-      rw [monomial_add_single, ← X]
-    rw [hmon, degree_monomial, ite_eq_right one_ne_zero]
+  · rw [robbianoSweedlerStage_apply_of_ne_zero R n hi, X_zero_mul_X_one_pow, degree_monomial,
+      ite_eq_right one_ne_zero]
 
 /-- The toric binomial `Y 0 * Y (n + 2) - Y 1 * Y (n + 1)` at stage `n` of
 `robbianoSweedlerStage`. -/
@@ -407,8 +414,9 @@ theorem aeval_robbianoSweedlerStage_binomial {R : Type*} [CommRing R] (n : ℕ) 
   rw [robbianoSweedlerBinomial_def, map_sub, hmul, hmul]
   simpa using robbianoSweedler_step_identity (R := R) (n + 1)
 
-/-- At every stage `n` over a nontrivial commutative ring, the toric binomial
-`robbianoSweedlerBinomial R n` subducts with zero quotient expression `Q = 0` and nonzero
+/-- At every stage `n` over a nontrivial commutative ring, evaluating the toric binomial
+`robbianoSweedlerBinomial R n` at `robbianoSweedlerStage R n` yields a polynomial that admits a
+`lex`-subduction against `robbianoSweedlerStage R n` with quotient expression `Q = 0` and nonzero
 irreducible remainder `X 0 * X 1 ^ (n + 3)`. -/
 theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
     lex.IsSubduction (robbianoSweedlerStage R n)
@@ -425,10 +433,7 @@ theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial 
     omega
   refine ⟨by simp [aeval_robbianoSweedlerStage_binomial], by simp, fun a ha hmem ↦ ?_,
     by simp [aeval_robbianoSweedlerStage_binomial]⟩
-  have hmon : (X 0 * X 1 ^ (n + 3) : MvPolynomial (Fin 2) R) =
-      monomial (Finsupp.single 0 1 + Finsupp.single 1 (n + 3)) 1 := by
-    rw [monomial_add_single, ← X]
-  rw [hmon] at ha
+  rw [X_zero_mul_X_one_pow] at ha
   have ha' := Finset.mem_singleton.1 (support_monomial_subset ha)
   have hle := mem_slopeSubmonoid_iff.1 (hbound hmem)
   rw [ha'] at hle
@@ -446,9 +451,8 @@ basis of `robbianoSweedlerSubalgebra k`: without finite generation of the initia
 certified completion runs forever even on a three-generator subalgebra of `k[X 0, X 1]`. -/
 theorem not_isSAGBIBasis_sagbiCompletionFamily_robbianoSweedler (n : ℕ) :
     ¬ lex.IsSAGBIBasis (Set.range (lex.sagbiCompletionFamily (robbianoSweedlerGen k) n))
-      (robbianoSweedlerSubalgebra k) := by
-  intro hB
-  exact not_fg_leadingExponents_robbianoSweedler (hB.fg_leadingExponents (Set.finite_range _))
+      (robbianoSweedlerSubalgebra k) :=
+  not_isSAGBIBasis_of_finite_robbianoSweedler k (Set.finite_range _)
 
 /-- Stage `n + 1` of `robbianoSweedlerStage k` is obtained from stage `n` by adjoining the monic
 normalization of the nonzero remainder `X 0 * X 1 ^ (n + 3)`. -/
