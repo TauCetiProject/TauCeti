@@ -12,8 +12,8 @@ public import Mathlib.Topology.Category.TopCat.ULift
 /-!
 # Limits of coinduced representations
 
-For a locally compact group, `coind₁Functor` preserves limits because its underlying
-topological space is the compact-open mapping space, a right adjoint on `TopCat`.
+For any topological group, `coind₁Functor` preserves limits because its underlying
+topological space is a compact-open mapping space, which preserves limits for R₁ source spaces.
 -/
 
 public section
@@ -79,8 +79,6 @@ theorem coind₁FunctorCompForgetIso_inv_app_hom_apply (X : TopRep.{w} R G)
     DFunLike.coe (F := C(G, X.V))
       (((coind₁FunctorCompForgetIso R G).inv.app X).hom F) g = (F (ULift.up g)).down := (rfl)
 
-variable [LocallyCompactSpace G]
-
 /-- Coinduction preserves limits of diagrams whose object type is small in the source carrier
 universe. -/
 instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
@@ -100,17 +98,13 @@ instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
   let : PreservesLimitsOfShape J U₀ := inferInstance
   let : ReflectsLimitsOfShape J T := reflectsLimitsOfShape_of_reflectsIsomorphisms
   let : ReflectsLimitsOfShape J U := inferInstance
-  let : LocallyCompactSpace (ULift.{w} G) :=
-    (Homeomorph.ulift : ULift.{w} G ≃ₜ G).isOpenEmbedding.locallyCompactSpace
-  let : (TopCat.mappingSpace (TopCat.of (ULift.{w} G))).IsRightAdjoint :=
-    (TopCat.tensorLeftAdjunction (TopCat.of (ULift.{w} G))).isRightAdjoint
   have : PreservesLimitsOfShape J ((coind₁Functor R G ⋙ U) ⋙ T) :=
     preservesLimitsOfShape_of_natIso (coind₁FunctorCompForgetIso R G).symm
   have : PreservesLimitsOfShape J (coind₁Functor R G ⋙ U) :=
     preservesLimitsOfShape_of_reflects_of_preserves _ T
   exact preservesLimitsOfShape_of_reflects_of_preserves _ U
 
-/-- Coinduction preserves limits over a locally compact group, by the exponential law. -/
+/-- Coinduction preserves limits over any topological group. -/
 instance (priority := low) coind₁Functor_preservesLimits :
     PreservesLimits (coind₁Functor.{u, v, max v w} R G) :=
   coind₁Functor_preservesLimitsOfSize.{u, v, max v w, max v w, max v w} R G

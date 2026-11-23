@@ -14,23 +14,23 @@ public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 /-!
 # Continuous cochains into inverse limits
 
-Over a locally compact group, the canonical homogeneous continuous cochain functor preserves
-limits of arbitrary small diagrams. In particular, continuous cochains into an inverse limit
+Over any topological group, the canonical homogeneous continuous cochain functor preserves
+limits of diagrams whose object type is small in the group universe, with no restriction on
+the morphism universe. In particular, continuous cochains into an inverse limit
 are the inverse limit of continuous cochains, with the comparison commuting with projections
-and differentials. To obtain the comparison after forgetting the cochain topologies, install
-the module limits using `ModuleCat.hasLimitsOfSize`, then apply
-`HomologicalComplex.preservesLimitsOfShape_of_eval` to the functor on complexes induced by
-`forget₂ (TopModuleCat R) (ModuleCat R)`. Degreewise, evaluation preserves limits and this
-forgetful functor is a right adjoint, so their composite preserves limits. Composing with the
-continuous cochain functor gives the desired preservation statement.
+and differentials. The instance
+`continuousCochainsFunctorCompForget_preservesLimitsOfSize` gives the same preservation after
+forgetting the cochain topologies, under the same size bound.
 Use `CategoryTheory.Limits.preservesLimitIso` for the comparison and
 `CategoryTheory.Limits.preservesLimitIso_hom_π` for its projections.
 
 This is the cochain comparison underlying the inverse-limit discussion in K. Rubin,
 *Euler Systems*, Appendix B, §2. We use Mathlib's homogeneous cochains, constructed by iterated
-coinduction and invariants, and the compact-open mapping-space adjunction.
+coinduction and invariants, and preservation of limits by compact-open mapping spaces.
 The degree functors of the coinduced resolution, packaged as `TopRep.resolutionFunctor`,
-preserve limits as well.
+preserve limits of diagrams whose object type is small in their carrier universe `max v w`,
+the maximum of the group and caller carrier universes, again with no restriction on the
+morphism universe.
 -/
 
 public section
@@ -46,9 +46,8 @@ namespace TopRep
 variable (R : Type u) [Ring R] [TopologicalSpace R]
   (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-variable [LocallyCompactSpace G]
-
-/-- Each degree of the coinduced resolution preserves limits over a locally compact group. -/
+/-- Each degree of the coinduced resolution preserves limits of diagrams whose object type
+is small in the carrier universe `max v w`, with no restriction on the morphism universe. -/
 instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : ℕ) :
     PreservesLimitsOfSize.{t₁, t₂} (resolutionFunctor.{u, v, w} R G n) := by
   induction n with
@@ -103,16 +102,32 @@ theorem resolutionFunctorCompInvariantsIso_hom_app (n : ℕ) (X : TopRep R G) :
 theorem resolutionFunctorCompInvariantsIso_inv_app (n : ℕ) (X : TopRep R G) :
     (resolutionFunctorCompInvariantsIso R G n).inv.app X = 𝟙 _ := (rfl)
 
-/-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
-instance continuousCochainsFunctor_preservesLimitsOfSize [LocallyCompactSpace G]
-    [UnivLE.{w₂, v}] :
+/-- Canonical homogeneous continuous cochains preserve limits of diagrams whose object type
+is small in the group universe, with no restriction on the morphism universe. -/
+instance continuousCochainsFunctor_preservesLimitsOfSize [UnivLE.{w₂, v}] :
     PreservesLimitsOfSize.{w₁, w₂} (continuousCochainsFunctor R G) where
   preservesLimitsOfShape {_J} _ := HomologicalComplex.preservesLimitsOfShape_of_eval _ fun n ↦
     preservesLimitsOfShape_of_natIso (resolutionFunctorCompInvariantsIso R G n)
 
-/-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
-instance continuousCochainsFunctor_preservesLimits [LocallyCompactSpace G] :
+/-- Canonical homogeneous continuous cochains preserve small limits. -/
+instance continuousCochainsFunctor_preservesLimits :
     PreservesLimits (continuousCochainsFunctor R G) :=
   continuousCochainsFunctor_preservesLimitsOfSize R G
+
+/-- After forgetting their topologies, continuous cochains preserve limits of diagrams whose
+object type is small in the group universe, with no restriction on the morphism universe. -/
+instance continuousCochainsFunctorCompForget_preservesLimitsOfSize [UnivLE.{w₂, v}] :
+    PreservesLimitsOfSize.{w₁, w₂} (continuousCochainsFunctor R G ⋙
+      (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex
+        (ComplexShape.up ℕ)) where
+  preservesLimitsOfShape {J} _ := by
+    let : HasLimitsOfSize.{w₁, w₂} (ModuleCat.{v} R) := ModuleCat.hasLimitsOfSize
+    apply HomologicalComplex.preservesLimitsOfShape_of_eval
+    intro n
+    -- Evaluation of a mapped complex is definitionally evaluation followed by the module functor.
+    change PreservesLimitsOfShape J
+      ((continuousCochainsFunctor R G ⋙ HomologicalComplex.eval _ _ n) ⋙
+        forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))
+    infer_instance
 
 end TauCeti.ContinuousCohomology
