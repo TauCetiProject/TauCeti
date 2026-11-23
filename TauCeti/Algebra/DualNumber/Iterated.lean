@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.CommRing
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-public import Mathlib.RingTheory.AlgebraTower
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.DualNumber.Basic
 import Mathlib.RingTheory.MvPolynomial.Ideal
@@ -27,22 +26,15 @@ As an `R`-module, `R[ε][ε]` is free of rank four on the basis `{1, inl ε, ε,
 coordinate `z.snd.snd` of `r • (inl ε * ε)` recovers `r` without zero-divisor or characteristic
 hypotheses on `R`.
 
-Over a commutative semiring `R`, `R`-algebra homomorphisms `R[ε][ε] →ₐ[R] A` into any `R`-algebra
-`A` correspond bijectively via `TauCeti.iteratedDualNumberLift` to pairs `(e₁, e₂)` of commuting
-square-zero elements of `A`, and swapping the two generators gives an `R`-algebra involution
-`TauCeti.iteratedDualNumberSwap`. Evaluating `MvPolynomial (Fin 2) R` at `![inl ε, ε]` has kernel
-`(X 0 ^ 2, X 1 ^ 2)` (`TauCeti.ker_aeval_inl_eps_eps`), yielding over a commutative ring `R`
-the presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
+Evaluating `MvPolynomial (Fin 2) R` at `![inl ε, ε]` has kernel `(X 0 ^ 2, X 1 ^ 2)`
+(`TauCeti.ker_aeval_inl_eps_eps`), yielding over a commutative ring `R` the presentation
+`R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
 (`TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`).
 
 ## Main definitions
 
 * `TauCeti.iteratedDualNumberBasis`: the `R`-module basis `{1, inl ε, ε, ε • ε}` of `R[ε][ε]`
   indexed by `Fin 2 × Fin 2`.
-* `TauCeti.iteratedDualNumberLift`: universal property identifying `R[ε][ε] →ₐ[R] A` with pairs of
-  commuting square-zero elements of `A`.
-* `TauCeti.iteratedDualNumberSwap`: the `R`-algebra involution of `R[ε][ε]` exchanging `inl ε` and
-  `ε`.
 * `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`: the `R`-algebra equivalence
   `MvPolynomial (Fin 2) R ⧸ Ideal.span {X 0 ^ 2, X 1 ^ 2} ≃ₐ[R] R[ε][ε]`.
 
@@ -52,8 +44,6 @@ the presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
   `inl ε * ε = ε • ε` in `R[ε][ε]`.
 * `TauCeti.finrank_iteratedDualNumber`: `Module.finrank R R[ε][ε] = 4` under
   `StrongRankCondition R`.
-* `TauCeti.iteratedDualNumber_algHom_ext`: `R`-algebra maps out of `R[ε][ε]` are determined by
-  their values on `inl ε` and `ε`.
 * `TauCeti.ker_aeval_inl_eps_eps`: the kernel of `MvPolynomial.aeval ![inl ε, ε]` is
   `Ideal.span {X 0 ^ 2, X 1 ^ 2}`.
 -/
@@ -183,150 +173,6 @@ theorem iteratedDualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R
     fin_cases i <;> fin_cases j <;> simpa [← inl_eps_mul_eps]
 
 end Basis
-
-section UniversalProperty
-
-variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-
-/-- Two `R`-algebra homomorphisms out of `R[ε][ε]` are equal when they agree on `inl ε` and `ε`. -/
-theorem iteratedDualNumber_algHom_ext ⦃f g : R[ε][ε] →ₐ[R] A⦄
-    (h₁ : f (inl ε) = g (inl ε)) (h₂ : f ε = g ε) : f = g :=
-  AlgHom.toLinearMap_injective <|
-    iteratedDualNumber_linearMap_ext (by simp) (by simpa using h₁) (by simpa using h₂)
-      (by simp [h₁, h₂])
-
-/-- Universal property of the iterated dual numbers: `R`-algebra homomorphisms `R[ε][ε] →ₐ[R] A`
-correspond bijectively to pairs `(e₁, e₂)` of commuting square-zero elements of `A`. -/
-def iteratedDualNumberLift :
-    {e : A × A // e.1 * e.1 = 0 ∧ e.2 * e.2 = 0 ∧ Commute e.1 e.2} ≃ (R[ε][ε] →ₐ[R] A) where
-  toFun e :=
-    let f₁ : R[ε] →ₐ[R] A :=
-      DualNumber.lift ⟨(Algebra.ofId R A, e.val.1), e.prop.1,
-        fun r ↦ Algebra.commute_algebraMap_right r e.val.1⟩
-    DualNumber.lift ⟨(f₁, e.val.2), e.prop.2.1, fun x ↦ by
-      rw [DualNumber.lift_apply_apply]
-      dsimp only [Algebra.ofId_apply]
-      exact (Algebra.commute_algebraMap_right x.fst e.val.2).add_right
-        ((Algebra.commute_algebraMap_right x.snd e.val.2).mul_right e.prop.2.2.symm)⟩
-  invFun F :=
-    ⟨(F (inl ε), F ε),
-      by rw [← map_mul, inl_eps_mul_inl_eps, map_zero],
-      by rw [← map_mul, eps_mul_eps, map_zero],
-      (commute_eps_right (inl ε)).map F⟩
-  left_inv e := Subtype.ext <| Prod.ext (by simp) (by simp)
-  right_inv F := iteratedDualNumber_algHom_ext (by simp) (by simp)
-
-/-- `TauCeti.iteratedDualNumberLift` sends a dual number `z : R[ε][ε]` to the linear combination
-of `1`, `e₁`, `e₂`, and `e₁ * e₂` with its four `R`-coordinates. -/
-theorem iteratedDualNumberLift_apply
-    (e : {e : A × A // e.1 * e.1 = 0 ∧ e.2 * e.2 = 0 ∧ Commute e.1 e.2}) (z : R[ε][ε]) :
-    iteratedDualNumberLift e z =
-      algebraMap R A z.fst.fst + algebraMap R A z.fst.snd * e.val.1 +
-        (algebraMap R A z.snd.fst + algebraMap R A z.snd.snd * e.val.1) * e.val.2 := by
-  simp [iteratedDualNumberLift, DualNumber.lift_apply_apply]
-
-/-- `TauCeti.iteratedDualNumberLift` sends `inl ε` to the first chosen square-zero element. -/
-@[simp]
-theorem iteratedDualNumberLift_inl_eps
-    (e : {e : A × A // e.1 * e.1 = 0 ∧ e.2 * e.2 = 0 ∧ Commute e.1 e.2}) :
-    iteratedDualNumberLift e (inl (ε : R[ε])) = e.val.1 := by
-  simp [iteratedDualNumberLift]
-
-/-- `TauCeti.iteratedDualNumberLift` sends `ε` to the second chosen square-zero element. -/
-@[simp]
-theorem iteratedDualNumberLift_eps
-    (e : {e : A × A // e.1 * e.1 = 0 ∧ e.2 * e.2 = 0 ∧ Commute e.1 e.2}) :
-    iteratedDualNumberLift e (ε : R[ε][ε]) = e.val.2 := by
-  simp [iteratedDualNumberLift]
-
-/-- `TauCeti.iteratedDualNumberLift` sends `ε • ε = inl ε * ε` to `e₁ * e₂`. -/
-@[simp]
-theorem iteratedDualNumberLift_smul_eps
-    (e : {e : A × A // e.1 * e.1 = 0 ∧ e.2 * e.2 = 0 ∧ Commute e.1 e.2}) :
-    iteratedDualNumberLift e ((ε : R[ε]) • (ε : R[ε][ε])) = e.val.1 * e.val.2 := by
-  rw [← inl_eps_mul_eps, map_mul, iteratedDualNumberLift_inl_eps, iteratedDualNumberLift_eps]
-
-/-- The inverse of `TauCeti.iteratedDualNumberLift` evaluates an `R`-algebra map on `inl ε` and
-`ε`. -/
-@[simp]
-theorem _root_.AlgHom.coe_iteratedDualNumberLift_symm_apply (F : R[ε][ε] →ₐ[R] A) :
-    (iteratedDualNumberLift.symm F).val = (F (inl ε), F ε) :=
-  (rfl)
-
-end UniversalProperty
-
-section Swap
-
-variable (R : Type*) [CommSemiring R]
-
-private def iteratedDualNumberSwapHom : R[ε][ε] →ₐ[R] R[ε][ε] :=
-  iteratedDualNumberLift ⟨(ε, inl ε), eps_mul_eps, inl_eps_mul_inl_eps, commute_eps_left _⟩
-
-private theorem iteratedDualNumberSwapHom_comp_self :
-    (iteratedDualNumberSwapHom R).comp (iteratedDualNumberSwapHom R) = AlgHom.id R R[ε][ε] :=
-  iteratedDualNumber_algHom_ext (by simp [iteratedDualNumberSwapHom])
-    (by simp [iteratedDualNumberSwapHom])
-
-/-- The `R`-algebra involution of `R[ε][ε]` exchanging the inner generator `inl ε` and the outer
-generator `ε`. -/
-def iteratedDualNumberSwap : R[ε][ε] ≃ₐ[R] R[ε][ε] :=
-  AlgEquiv.ofAlgHom (iteratedDualNumberSwapHom R) (iteratedDualNumberSwapHom R)
-    (iteratedDualNumberSwapHom_comp_self R) (iteratedDualNumberSwapHom_comp_self R)
-
-variable {R}
-
-@[simp]
-theorem iteratedDualNumberSwap_inl_eps :
-    iteratedDualNumberSwap R (inl (ε : R[ε])) = ε := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom]
-
-@[simp]
-theorem iteratedDualNumberSwap_eps :
-    iteratedDualNumberSwap R (ε : R[ε][ε]) = inl ε := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom]
-
-@[simp]
-theorem iteratedDualNumberSwap_smul_eps :
-    iteratedDualNumberSwap R ((ε : R[ε]) • (ε : R[ε][ε])) = (ε : R[ε]) • ε := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, eps_mul_inl_eps]
-
-@[simp]
-theorem iteratedDualNumberSwap_symm :
-    (iteratedDualNumberSwap R).symm = iteratedDualNumberSwap R := by
-  rw [iteratedDualNumberSwap, AlgEquiv.ofAlgHom_symm]
-
-/-- Applying `TauCeti.iteratedDualNumberSwap` twice is the identity. -/
-@[simp]
-theorem _root_.DualNumber.iteratedDualNumberSwap_apply_apply (z : R[ε][ε]) :
-    iteratedDualNumberSwap R (iteratedDualNumberSwap R z) = z := by
-  simpa only [iteratedDualNumberSwap_symm] using (iteratedDualNumberSwap R).symm_apply_apply z
-
-@[simp]
-theorem _root_.DualNumber.fst_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
-    (iteratedDualNumberSwap R z).fst.fst = z.fst.fst := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
-    algebraMap_eq_inl']
-
-/-- `TauCeti.iteratedDualNumberSwap` exchanges the `inl ε` and `ε` coordinates of `z : R[ε][ε]`. -/
-@[simp]
-theorem _root_.DualNumber.snd_fst_iteratedDualNumberSwap (z : R[ε][ε]) :
-    (iteratedDualNumberSwap R z).fst.snd = z.snd.fst := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
-    algebraMap_eq_inl']
-
-@[simp]
-theorem _root_.DualNumber.fst_snd_iteratedDualNumberSwap (z : R[ε][ε]) :
-    (iteratedDualNumberSwap R z).snd.fst = z.fst.snd := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
-    algebraMap_eq_inl']
-
-@[simp]
-theorem _root_.DualNumber.snd_snd_iteratedDualNumberSwap (z : R[ε][ε]) :
-    (iteratedDualNumberSwap R z).snd.snd = z.snd.snd := by
-  simp [iteratedDualNumberSwap, iteratedDualNumberSwapHom, iteratedDualNumberLift_apply,
-    algebraMap_eq_inl']
-
-end Swap
 
 end TauCeti
 

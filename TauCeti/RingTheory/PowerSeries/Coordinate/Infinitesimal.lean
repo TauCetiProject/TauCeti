@@ -188,13 +188,13 @@ theorem commutatorElement_infinitesimalSubstAlgEquiv {e₁ e₂ : S} (he₁ : e�
     ⁅infinitesimalSubstAlgEquiv e₁ he₁ a, infinitesimalSubstAlgEquiv e₂ he₂ b⁆ =
       infinitesimalSubstAlgEquiv (e₁ * e₂) (by rw [mul_pow, he₁, zero_mul])
         (a * d⁄dX b - b * d⁄dX a) := by
-  have he : (e₁ * e₂) ^ 2 = 0 := by rw [mul_pow, he₁, zero_mul]
   have h₁ : e₁ * e₂ * e₁ = 0 := by rw [mul_right_comm, ← sq, he₁, zero_mul]
   have h₂ : e₁ * e₂ * e₂ = 0 := by rw [mul_assoc, ← sq, he₂, mul_zero]
   -- It suffices to show `σ₁ σ₂ = τ σ₂ σ₁` for `τ = 1 + e₁ e₂ (a b' - b a') D`. Applied to `f`,
   -- the first-order part of `τ` only sees `f'`, since `e₁ e₂` kills the first-order parts of
   -- `σ₁` and `σ₂`.
-  have key : infinitesimalSubstAlgEquiv e₁ he₁ a * infinitesimalSubstAlgEquiv e₂ he₂ b =
+  have key (he : (e₁ * e₂) ^ 2 = 0) :
+      infinitesimalSubstAlgEquiv e₁ he₁ a * infinitesimalSubstAlgEquiv e₂ he₂ b =
       infinitesimalSubstAlgEquiv (e₁ * e₂) he (a * d⁄dX b - b * d⁄dX a) *
         infinitesimalSubstAlgEquiv e₂ he₂ b * infinitesimalSubstAlgEquiv e₁ he₁ a := by
     refine AlgEquiv.ext fun f ↦ ?_
@@ -206,7 +206,7 @@ theorem commutatorElement_infinitesimalSubstAlgEquiv {e₁ e₂ : S} (he₁ : e�
       smul_eq_mul]
     simp only [smul_eq_C_mul, map_mul]
     ring
-  rw [commutatorElement_def, key, mul_inv_cancel_right, mul_inv_cancel_right]
+  rw [commutatorElement_def, key _, mul_inv_cancel_right, mul_inv_cancel_right]
 
 /-- Pointwise form of `TauCeti.commutatorElement_infinitesimalSubstAlgEquiv`. -/
 theorem commutatorElement_infinitesimalSubstAlgEquiv_apply {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0)
@@ -487,24 +487,17 @@ open DualNumber TrivSqZeroExt
 
 variable {R : Type*} [CommRing R]
 
-private theorem snd_snd_coeff_inl_eps_mul_eps_smul_map (g : R⟦X⟧) (n : ℕ) :
-    (coeff n (((inl (ε : R[ε]) : R[ε][ε]) * ε) • map (algebraMap R R[ε][ε]) g)).snd.snd =
-      coeff n g := by
-  rw [map_smul, coeff_map, smul_eq_mul, ← Algebra.commutes, ← Algebra.smul_def,
-    snd_snd_smul_inl_eps_mul_eps]
-
 /-- Over `R[ε][ε]`, the parameter `c ∈ R⟦X⟧` of `1 + (inl ε * ε) c D` is uniquely determined by
 the resulting automorphism of `R[ε][ε]⟦X⟧`. -/
 theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective :
     Function.Injective fun c : R⟦X⟧ ↦
       infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
         (map (algebraMap R R[ε][ε]) c) := by
-  have h := @RingHom.infinitesimalSubstAlgEquiv_map_injective R[ε][ε] _
-    ((inl (ε : R[ε]) : R[ε][ε]) * ε) R _ (algebraMap R R[ε][ε]) inl_eps_mul_eps_pow_two
-    fun _ _ h ↦ smul_inl_eps_mul_eps_injective <| by
-      dsimp only at h
-      rwa [← Algebra.commutes, ← Algebra.smul_def, ← Algebra.commutes, ← Algebra.smul_def] at h
-  exact h
+  apply RingHom.infinitesimalSubstAlgEquiv_map_injective (S := R[ε][ε]) (R := R)
+    (φ := algebraMap R R[ε][ε]) (e := (inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
+  intro _ _ h
+  exact smul_inl_eps_mul_eps_injective <| by
+    simpa [← Algebra.commutes, ← Algebra.smul_def] using h
 
 /-- Over the iterated dual numbers `R[ε][ε]`, the group commutator of `σ₁ = 1 + (inl ε) a D` and
 `σ₂ = 1 + ε b D` in the automorphism group of `R[ε][ε]⟦X⟧` is `1 + (inl ε * ε) (a b' - b a') D`. -/
@@ -527,10 +520,10 @@ theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSub
       map (algebraMap R R[ε][ε]) f +
         ((inl (ε : R[ε]) : R[ε][ε]) * ε) •
           map (algebraMap R R[ε][ε]) (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
-  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv,
-    infinitesimalSubstAlgEquiv_apply, lie_mkDerivation, mkDerivation_apply, smul_eq_mul,
-    mul_comm (d⁄dX f)]
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv]
   simp [derivative_map]
+  congr 2
+  ring
 
 /-- The `inl ε * ε` coordinate of the `n`-th coefficient of `⁅1 + (inl ε) a D, 1 + ε b D⁆ f` for
 `f ∈ R⟦X⟧` is the `n`-th coefficient of `⁅a D, b D⁆ f`. -/
@@ -541,10 +534,8 @@ theorem _root_.PowerSeries.snd_snd_coeff_iteratedDualNumber_commutatorElement_ap
         infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆
           (map (algebraMap R R[ε][ε]) f))).snd.snd =
       coeff n (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
-  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map,
-    map_add, TrivSqZeroExt.snd_add, TrivSqZeroExt.snd_add, coeff_map,
-    snd_snd_coeff_inl_eps_mul_eps_smul_map]
-  simp [algebraMap_eq_inl']
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map]
+  simp [-lie_mkDerivation, algebraMap_eq_inl']
 
 /-- Because `inl ε * ε` is part of an `R`-basis of `R[ε][ε]`, `a b' - b a'` is the unique power
 series `c ∈ R⟦X⟧` such that `⁅1 + (inl ε) a D, 1 + ε b D⁆ = 1 + (inl ε * ε) c D`. -/

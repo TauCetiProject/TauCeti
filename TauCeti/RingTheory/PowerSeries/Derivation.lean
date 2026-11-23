@@ -107,14 +107,17 @@ theorem mkDerivation_one : mkDerivation R (1 : R⟦X⟧) = d⁄dX := by
   ext f
   simp
 
+/-- The derivation `PowerSeries.mkDerivation R a` equals the `R⟦X⟧`-scalar multiple `a • d⁄dX`. -/
+theorem mkDerivation_eq_smul_derivative (a : R⟦X⟧) : mkDerivation R a = a • d⁄dX := by
+  ext f
+  simp [mul_comm]
+
 /-- The Lie bracket of the vector fields `a • d⁄dX` and `b • d⁄dX` on `R⟦X⟧` is
 `(a * d⁄dX b - b * d⁄dX a) • d⁄dX`. -/
 @[simp]
 theorem lie_mkDerivation (a b : R⟦X⟧) :
     ⁅mkDerivation R a, mkDerivation R b⁆ = mkDerivation R (a * d⁄dX b - b * d⁄dX a) := by
-  have h (x : R⟦X⟧) : mkDerivation R x = x • d⁄dX := by
-    rw [← mkDerivation_one, ← (mkDerivation R (M := R⟦X⟧)).map_smul x 1, smul_eq_mul, mul_one]
-  rw [h, h, h, Derivation.lie_smul_smul]
+  simp only [mkDerivation_eq_smul_derivative, Derivation.lie_smul_smul]
 
 variable (R M) in
 /-- For an `X`-adically Hausdorff `R⟦X⟧`-module `M`, `PowerSeries.mkDerivation` is an
