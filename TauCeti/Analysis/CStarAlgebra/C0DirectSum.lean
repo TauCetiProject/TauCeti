@@ -31,7 +31,8 @@ product, which is then the finite direct sum.
   in particular star homomorphisms, out of the `c₀` direct sum agree once they agree on every
   factor.
 * `lp.liftToC0Sum`: a family of star homomorphisms `B → A i` from a star algebra `B`, vanishing at
-  infinity pointwise, gives a star homomorphism `B → lp.c0Sum A`.
+  infinity pointwise, gives a star homomorphism `B → lp.c0Sum A`; `lp.eq_liftToC0Sum_iff`
+  characterizes it by its coordinates.
 * `lp.c0Sum_eq_top`: for finitely many factors the `c₀` direct sum is the bounded product.
 
 ## References
@@ -97,30 +98,60 @@ variable {B : Type*} [NonUnitalNonAssocSemiring B] [DistribMulAction ℂ B] [Sta
 for every `b` gives a star homomorphism into the `c₀` direct sum. The family is bounded at each
 `b` because it tends to `0`, so `B` needs no norm. -/
 def liftToC0Sum (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
-    (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) : B →⋆ₙₐ[ℂ] c0Sum A where
-  toFun b := ⟨⟨fun i ↦ φ i b, memℓp_infty (hφ b).bddAbove_range_of_cofinite⟩,
-    mem_c0Sum.2 (hφ b)⟩
-  map_smul' c b := Subtype.ext <| lp.ext <| funext fun i ↦ map_smul (φ i) c b
-  map_zero' := Subtype.ext <| lp.ext <| funext fun i ↦ map_zero (φ i)
-  map_add' b b' := Subtype.ext <| lp.ext <| funext fun i ↦ map_add (φ i) b b'
-  map_mul' b b' := Subtype.ext <| lp.ext <| funext fun i ↦ map_mul (φ i) b b'
-  map_star' b := Subtype.ext <| lp.ext <| funext fun i ↦ map_star (φ i) b
+    (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) : B →⋆ₙₐ[ℂ] c0Sum A :=
+  let ψ := piNonUnitalStarAlgHom φ fun b ↦ memℓp_infty (hφ b).bddAbove_range_of_cofinite
+  { toFun b := ⟨ψ b, mem_c0Sum.2 <| by simpa [ψ] using hφ b⟩
+    map_smul' c b := Subtype.ext <| map_smul ψ c b
+    map_zero' := Subtype.ext <| map_zero ψ
+    map_add' b b' := Subtype.ext <| map_add ψ b b'
+    map_mul' b b' := Subtype.ext <| map_mul ψ b b'
+    map_star' b := Subtype.ext <| map_star ψ b }
 
 /-- The `i`-th coordinate of `lp.liftToC0Sum φ hφ b` is `φ i b`. -/
 @[simp]
 theorem liftToC0Sum_apply_apply (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
     (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) (b : B) (i : ι) :
-    (liftToC0Sum φ hφ b : lp A ∞) i = φ i b :=
-  (rfl)
+    (liftToC0Sum φ hφ b : lp A ∞) i = φ i b := by
+  simp [liftToC0Sum]
+
+/-- A star homomorphism into the `c₀` direct sum is `lp.liftToC0Sum φ hφ` exactly when its
+coordinates are the members of the family `φ`. -/
+theorem eq_liftToC0Sum_iff {φ : ∀ i, B →⋆ₙₐ[ℂ] A i}
+    {hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)} {ψ : B →⋆ₙₐ[ℂ] c0Sum A} :
+    ψ = liftToC0Sum φ hφ ↔ ∀ i b, (ψ b : lp A ∞) i = φ i b := by
+  refine ⟨by rintro rfl; simp, fun h ↦ ?_⟩
+  exact NonUnitalStarAlgHom.ext fun b ↦ Subtype.ext <| lp.ext <| funext fun i ↦ by simp [h]
+
+/-- Precomposing `lp.liftToC0Sum` with a star homomorphism `g` lifts the precomposed family. -/
+theorem liftToC0Sum_comp {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction ℂ C]
+    [Star C] (φ : ∀ i, B →⋆ₙₐ[ℂ] A i) (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0))
+    (g : C →⋆ₙₐ[ℂ] B) :
+    (liftToC0Sum φ hφ).comp g = liftToC0Sum (fun i ↦ (φ i).comp g) fun c ↦ hφ (g c) :=
+  eq_liftToC0Sum_iff.2 fun i c ↦ by simp
+
+end Lift
+
+section LiftCStar
+
+variable {B : Type*} [NonUnitalCStarAlgebra B]
 
 /-- Over a C⋆-algebra, `lp.liftToC0Sum` is `lp.liftNonUnitalStarAlgHom` with its range in the
 `c₀` direct sum. -/
-theorem coe_liftToC0Sum_apply {B : Type*} [NonUnitalCStarAlgebra B] (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
+theorem coe_liftToC0Sum_apply (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
     (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) (b : B) :
     (liftToC0Sum φ hφ b : lp A ∞) = liftNonUnitalStarAlgHom φ b :=
   lp.ext <| funext fun i ↦ by simp
 
-end Lift
+/-- Over a C⋆-algebra, composing `lp.liftToC0Sum` with the inclusion of the `c₀` direct sum gives
+`lp.liftNonUnitalStarAlgHom`. -/
+@[simp]
+theorem subtype_comp_liftToC0Sum (φ : ∀ i, B →⋆ₙₐ[ℂ] A i)
+    (hφ : ∀ b, Tendsto (fun i ↦ ‖φ i b‖) cofinite (𝓝 0)) :
+    (NonUnitalStarSubalgebraClass.subtype (c0Sum A)).comp (liftToC0Sum φ hφ) =
+      liftNonUnitalStarAlgHom φ :=
+  NonUnitalStarAlgHom.ext fun b ↦ coe_liftToC0Sum_apply φ hφ b
+
+end LiftCStar
 
 section Single
 
@@ -132,18 +163,6 @@ theorem single_mem_c0Sum (i : ι) (a : A i) : lp.single ∞ i a ∈ c0Sum A := b
   filter_upwards [eventually_cofinite_ne i] with j hj
   simp [Pi.single_eq_of_ne hj]
 
-/-- The family supported at `i` with value `a * b` is the product of those with values `a` and
-`b`. -/
-theorem single_mul_single (i : ι) (a b : A i) :
-    lp.single ∞ i (a * b) = lp.single ∞ i a * lp.single ∞ i b :=
-  lp.ext <| by rw [infty_coeFn_mul, lp.coeFn_single, lp.coeFn_single, lp.coeFn_single,
-    Pi.single_mul]
-
-/-- The family supported at `i` with value `star a` is the adjoint of the one with value `a`. -/
-theorem single_star (i : ι) (a : A i) : lp.single ∞ i (star a) = star (lp.single ∞ i a) :=
-  lp.ext <| funext fun j ↦ by
-    rw [lp.star_apply, lp.coeFn_single, lp.coeFn_single, Pi.single_star, Pi.star_apply]
-
 variable (A) in
 /-- The inclusion of the factor `A i` into the `c₀` direct sum, as a star homomorphism. -/
 def c0SumSingle (i : ι) : A i →⋆ₙₐ[ℂ] c0Sum A where
@@ -152,7 +171,7 @@ def c0SumSingle (i : ι) : A i →⋆ₙₐ[ℂ] c0Sum A where
   map_zero' := Subtype.ext <| lp.single_zero ∞ i
   map_add' a b := Subtype.ext <| lp.single_add ∞ i a b
   map_mul' a b := Subtype.ext <| single_mul_single i a b
-  map_star' a := Subtype.ext <| single_star i a
+  map_star' a := Subtype.ext <| single_star ∞ i a
 
 /-- The inclusion of `A i` sends `a` to the family `lp.single ∞ i a`. -/
 @[simp]
@@ -188,20 +207,9 @@ theorem c0SumSingle_mul_c0SumSingle_of_ne {i j : ι} (hij : i ≠ j) (a : A i) (
 /-- An element of the `c₀` direct sum is the sum of its coordinates, placed in their factors.
 In particular the finitely supported families are dense. -/
 theorem hasSum_c0SumSingle (a : c0Sum A) :
-    HasSum (fun i ↦ c0SumSingle A i ((a : lp A ∞) i)) a := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  have hfin := (mem_c0Sum.1 a.property).eventually (gt_mem_nhds (half_pos hε))
-  refine ⟨(eventually_cofinite.1 hfin).toFinset, fun s hs ↦ ?_⟩
-  rw [Subtype.dist_eq, dist_eq_norm, AddSubmonoidClass.coe_finsetSum]
-  refine (lp.norm_le_of_forall_le (half_pos hε).le fun j ↦ ?_).trans_lt (half_lt_self hε)
-  rw [lp.coeFn_sub, Pi.sub_apply, lp.coeFn_sum, Finset.sum_apply]
-  simp only [coe_c0SumSingle_apply, lp.coeFn_single, Finset.sum_pi_single]
-  split_ifs with hj
-  · simpa using (half_pos hε).le
-  · have hj' : ‖(a : lp A ∞) j‖ < ε / 2 := by
-      by_contra h
-      exact hj (hs (by simpa using h))
-    simpa using hj'.le
+    HasSum (fun i ↦ c0SumSingle A i ((a : lp A ∞) i)) a :=
+  (Topology.IsInducing.subtypeVal.hasSum_iff (g := AddSubmonoidClass.subtype (c0Sum A)) _ a).1 <|
+    by simpa [Function.comp_def] using hasSum_single_of_tendsto_cofinite (mem_c0Sum.1 a.property)
 
 /-- Continuous additive maps out of the `c₀` direct sum into a Hausdorff space agree when they
 agree on every factor, since the finitely supported families are dense. -/
