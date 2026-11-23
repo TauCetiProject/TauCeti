@@ -49,21 +49,19 @@ Phillips' definition is recovered as the partition formula `TauCeti.spectralFlow
 partition `a = t₀ ≤ t₁ ≤ ⋯ ≤ tₙ = b` with a cut `cₖ` on each `[tₖ, tₖ₊₁]`, the spectral flow is the
 sum of the local counts, whatever the partition and the cuts. Spectral flow is additive under
 concatenation (`TauCeti.spectralFlow_add_adjacent_intervals`). It is unchanged by a continuous
-monotone change of the parameter, `SF(A ∘ φ, a, b) = SF(A, φ a, φ b)`
-(`TauCeti.spectralFlow_comp_of_monotoneOn`), and more generally by any continuous `φ` mapping
-`[a, b]` into `[φ a, φ b]` (`TauCeti.spectralFlow_comp_of_mapsTo`). It changes sign under an
-antitone change of the parameter (`TauCeti.spectralFlow_comp_of_antitoneOn`), in particular when
-the path is reversed (`TauCeti.spectralFlow_comp_neg`): a potential of `A` composed with `φ` is a
-potential of `A ∘ φ`, since by the intermediate value theorem `φ` maps each subinterval onto a set
-containing the interval between its values. More generally, a path with the same potentials as a
-continuous path of self-adjoint Fredholm operators has the same spectral flow
-(`TauCeti.spectralFlow_eq_of_isSpectralFlowPotential_iff`); this compares paths on different
-Hilbert spaces, as in `TauCeti.Analysis.Fredholm.Spectral.Conjugation`. For the path `t ↦ t • 1`
-on a finite-dimensional space, through `0` from `a < 0` to `b ≥ 0`, every eigenvalue crosses
-upwards once and the spectral flow is the dimension (`TauCeti.spectralFlow_algebraMap`). More
-generally, for any continuous `f`, the spectral flow of `t ↦ f t • 1` is the dimension times the
-change of the indicator of `0 ≤ f` between the endpoints (`TauCeti.spectralFlow_algebraMap_comp`).
-This is the sign convention in which positive crossings count positively.
+change of the parameter `φ` with `φ a ≤ φ b`, `SF(A ∘ φ, a, b) = SF(A, φ a, φ b)`
+(`TauCeti.spectralFlow_comp_of_mapsTo`), and changes sign when `φ b ≤ φ a`
+(`TauCeti.spectralFlow_comp_of_mapsTo_of_ge`), in particular when the path is reversed
+(`TauCeti.spectralFlow_comp_neg`). Here `φ` need not be monotone, and only has to map `[a, b]` into
+an interval on which `A` is a continuous path of self-adjoint Fredholm operators: a potential of
+`A` composed with `φ` is a potential of `A ∘ φ`, since by the intermediate value theorem `φ` maps
+each subinterval onto a set containing the interval between its values. More generally, a path
+with the same potentials as a continuous path of self-adjoint Fredholm operators has the same
+spectral flow (`TauCeti.spectralFlow_eq_of_isSpectralFlowPotential_iff`); this compares paths on
+different Hilbert spaces, as in `TauCeti.Analysis.Fredholm.Spectral.Conjugation`. The scalar paths
+`t ↦ f t • 1` on a finite-dimensional space are computed in
+`TauCeti.Analysis.Fredholm.Spectral.FiniteDimensional`
+(`TauCeti.spectralFlow_algebraMap_comp`).
 
 **Homotopy invariance.** For a continuous family `G s t` of self-adjoint Fredholm operators on a
 rectangle `[u, v] × [a, b]`, the spectral flow around the boundary of the rectangle vanishes
@@ -101,10 +99,8 @@ also invariant under homotopies whose endpoints stay invertible
 * `TauCeti.spectralFlow_eq_of_isSpectralFlowPotential_iff`: paths with the same potentials have
   the same spectral flow.
 * `TauCeti.spectralFlow_add_adjacent_intervals`: concatenation.
-* `TauCeti.spectralFlow_comp_of_mapsTo`, `TauCeti.spectralFlow_comp_of_monotoneOn`,
-  `TauCeti.spectralFlow_comp_of_antitoneOn`, `TauCeti.spectralFlow_comp_neg`: reparametrization
-  and reversal.
-* `TauCeti.spectralFlow_algebraMap`, `TauCeti.spectralFlow_algebraMap_comp`: scalar paths.
+* `TauCeti.spectralFlow_comp_of_mapsTo`, `TauCeti.spectralFlow_comp_of_mapsTo_of_ge`,
+  `TauCeti.spectralFlow_comp_neg`: reparametrization and reversal.
 * `TauCeti.spectralFlow_add_spectralFlow_eq_add`: the spectral flow around a rectangle vanishes.
 * `TauCeti.spectralFlow_eq_of_homotopy`: homotopy invariance with fixed endpoints.
 * `TauCeti.spectralFlow_eq_of_homotopy_of_zero_notMem_spectrum`: homotopy invariance with
@@ -146,6 +142,25 @@ noncomputable def spectralCount (c : ℝ) (T : H →L[𝕜] H) : ℕ :=
 theorem spectralCount_def (c : ℝ) (T : H →L[𝕜] H) :
     spectralCount c T = Module.finrank 𝕜 (cfc ((Icc 0 c).indicator (1 : ℝ → ℝ)) T).range :=
   (rfl)
+
+/-- The number of eigenvalues in `[0, c]` of the scalar operator `x • 1` is the dimension of `H`
+if `x ∈ [0, c]`, and `0` otherwise. -/
+@[simp]
+theorem spectralCount_algebraMap (c x : ℝ) :
+    spectralCount c (algebraMap ℝ (H →L[𝕜] H) x) =
+      if x ∈ Icc 0 c then Module.finrank 𝕜 H else 0 := by
+  rw [spectralCount_def, cfc_algebraMap]
+  -- `simp` cannot rewrite the operator inside `finrank` of its range, whose type depends on it,
+  -- so the range is computed first.
+  split_ifs with hx
+  · have h : ((algebraMap ℝ (H →L[𝕜] H) ((Icc 0 c).indicator 1 x) : H →L[𝕜] H) :
+        H →ₗ[𝕜] H).range = ⊤ := by
+      simp [hx, Module.End.one_eq_id]
+    rw [h, finrank_top]
+  · have h : ((algebraMap ℝ (H →L[𝕜] H) ((Icc 0 c).indicator 1 x) : H →L[𝕜] H) :
+        H →ₗ[𝕜] H).range = ⊥ := by
+      simp [hx]
+    rw [h, finrank_bot]
 
 section General
 
@@ -674,128 +689,60 @@ theorem spectralFlow_add_adjacent_intervals {a b d : ℝ} (hab : a ≤ b) (hbd :
 
 /-! ### Reparametrization -/
 
-/-- **Reparametrization.** For `φ` continuous on `[a, b]` and mapping it into `[φ a, φ b]`, the
+/-- For `φ` continuous on `[a, b]` and mapping it into `[p, q]`, the spectral flow of the
+reparametrized path `A ∘ φ` from `a` to `b` is the increment `F (φ b) - F (φ a)` of a spectral
+flow potential `F` of `A` on `[p, q]`. -/
+private theorem spectralFlow_comp_eq_sub {φ : ℝ → ℝ} {a b p q : ℝ} {F : ℝ → ℤ} (hab : a ≤ b)
+    (hφ : ContinuousOn φ (Icc a b)) (hmaps : MapsTo φ (Icc a b) (Icc p q))
+    (hA : ContinuousOn A (Icc p q)) (hsa : ∀ t ∈ Icc p q, IsSelfAdjoint (A t))
+    (hF : ∀ t ∈ Icc p q, (A t).IsFredholm) (hFp : IsSpectralFlowPotential A p q F) :
+    spectralFlow (A ∘ φ) a b = F (φ b) - F (φ a) :=
+  spectralFlow_eq_sub hab (hA.comp hφ hmaps) (fun _ ht ↦ hsa _ (hmaps ht))
+    (fun _ ht ↦ hF _ (hmaps ht)) (hFp.comp_of_mapsTo hφ hmaps)
+
+/-- **Reparametrization.** For `φ` continuous on `[a, b]` with `φ a ≤ φ b`, mapping `[a, b]` into
+an interval `[p, q]` on which `A` is a continuous path of self-adjoint Fredholm operators, the
 spectral flow of the reparametrized path `A ∘ φ` from `a` to `b` is the spectral flow of `A` from
-`φ a` to `φ b`. The map `φ` need not be monotone. -/
-theorem spectralFlow_comp_of_mapsTo {φ : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hφ : ContinuousOn φ (Icc a b)) (hmaps : MapsTo φ (Icc a b) (Icc (φ a) (φ b)))
-    (hA : ContinuousOn A (Icc (φ a) (φ b))) (hsa : ∀ t ∈ Icc (φ a) (φ b), IsSelfAdjoint (A t))
-    (hF : ∀ t ∈ Icc (φ a) (φ b), (A t).IsFredholm) :
+`φ a` to `φ b`. The map `φ` need not be monotone, and may leave `[φ a, φ b]`. -/
+theorem spectralFlow_comp_of_mapsTo {φ : ℝ → ℝ} {a b p q : ℝ} (hab : a ≤ b)
+    (hφ : ContinuousOn φ (Icc a b)) (hmaps : MapsTo φ (Icc a b) (Icc p q)) (hφab : φ a ≤ φ b)
+    (hA : ContinuousOn A (Icc p q)) (hsa : ∀ t ∈ Icc p q, IsSelfAdjoint (A t))
+    (hF : ∀ t ∈ Icc p q, (A t).IsFredholm) :
     spectralFlow (A ∘ φ) a b = spectralFlow A (φ a) (φ b) := by
   obtain ⟨F, hFp⟩ := exists_isSpectralFlowPotential hA hsa hF
-  rw [spectralFlow_eq_sub hab (hA.comp hφ hmaps) (fun t ht ↦ hsa _ (hmaps ht))
-      (fun t ht ↦ hF _ (hmaps ht)) (hFp.comp_of_mapsTo hφ hmaps),
-    spectralFlow_eq_sub (hmaps ⟨hab, le_rfl⟩).1 hA hsa hF hFp, Function.comp_apply,
-    Function.comp_apply]
+  have ha := hmaps ⟨le_rfl, hab⟩
+  have hb := hmaps ⟨hab, le_rfl⟩
+  have hsub : Icc (φ a) (φ b) ⊆ Icc p q := Icc_subset_Icc ha.1 hb.2
+  rw [spectralFlow_comp_eq_sub hab hφ hmaps hA hsa hF hFp,
+    spectralFlow_eq_sub hφab (hA.mono hsub) (fun t ht ↦ hsa t (hsub ht))
+      (fun t ht ↦ hF t (hsub ht)) (hFp.mono ha.1 hb.2)]
 
-/-- **Reparametrization.** For `φ` continuous and monotone on `[a, b]`, the spectral flow of the
-reparametrized path `A ∘ φ` from `a` to `b` is the spectral flow of `A` from `φ a` to `φ b`. -/
-theorem spectralFlow_comp_of_monotoneOn {φ : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hφ : ContinuousOn φ (Icc a b)) (hmono : MonotoneOn φ (Icc a b))
-    (hA : ContinuousOn A (Icc (φ a) (φ b))) (hsa : ∀ t ∈ Icc (φ a) (φ b), IsSelfAdjoint (A t))
-    (hF : ∀ t ∈ Icc (φ a) (φ b), (A t).IsFredholm) :
-    spectralFlow (A ∘ φ) a b = spectralFlow A (φ a) (φ b) :=
-  spectralFlow_comp_of_mapsTo hab hφ
-    (fun _ ht ↦ ⟨hmono ⟨le_rfl, hab⟩ ht ht.1, hmono ht ⟨hab, le_rfl⟩ ht.2⟩) hA hsa hF
-
-/-- **Reparametrization reversing the direction.** For `φ` continuous and antitone on `[a, b]`,
-the spectral flow of the reparametrized path `A ∘ φ` from `a` to `b` is minus the spectral flow of
-`A` from `φ b` to `φ a`. -/
-theorem spectralFlow_comp_of_antitoneOn {φ : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hφ : ContinuousOn φ (Icc a b)) (hanti : AntitoneOn φ (Icc a b))
-    (hA : ContinuousOn A (Icc (φ b) (φ a))) (hsa : ∀ t ∈ Icc (φ b) (φ a), IsSelfAdjoint (A t))
-    (hF : ∀ t ∈ Icc (φ b) (φ a), (A t).IsFredholm) :
+/-- **Reparametrization reversing the direction.** For `φ` continuous on `[a, b]` with
+`φ b ≤ φ a`, mapping `[a, b]` into an interval `[p, q]` on which `A` is a continuous path of
+self-adjoint Fredholm operators, the spectral flow of the reparametrized path `A ∘ φ` from `a` to
+`b` is minus the spectral flow of `A` from `φ b` to `φ a`. -/
+theorem spectralFlow_comp_of_mapsTo_of_ge {φ : ℝ → ℝ} {a b p q : ℝ} (hab : a ≤ b)
+    (hφ : ContinuousOn φ (Icc a b)) (hmaps : MapsTo φ (Icc a b) (Icc p q)) (hφba : φ b ≤ φ a)
+    (hA : ContinuousOn A (Icc p q)) (hsa : ∀ t ∈ Icc p q, IsSelfAdjoint (A t))
+    (hF : ∀ t ∈ Icc p q, (A t).IsFredholm) :
     spectralFlow (A ∘ φ) a b = -spectralFlow A (φ b) (φ a) := by
-  have hmaps : MapsTo φ (Icc a b) (Icc (φ b) (φ a)) := fun t ht ↦
-    ⟨hanti ht ⟨hab, le_rfl⟩ ht.2, hanti ⟨le_rfl, hab⟩ ht ht.1⟩
   obtain ⟨F, hFp⟩ := exists_isSpectralFlowPotential hA hsa hF
-  rw [spectralFlow_eq_sub hab (hA.comp hφ hmaps) (fun t ht ↦ hsa _ (hmaps ht))
-      (fun t ht ↦ hF _ (hmaps ht)) (hFp.comp_of_mapsTo hφ hmaps),
-    spectralFlow_eq_sub (hmaps ⟨le_rfl, hab⟩).1 hA hsa hF hFp, Function.comp_apply,
-    Function.comp_apply]
-  ring
+  have ha := hmaps ⟨le_rfl, hab⟩
+  have hb := hmaps ⟨hab, le_rfl⟩
+  have hsub : Icc (φ b) (φ a) ⊆ Icc p q := Icc_subset_Icc hb.1 ha.2
+  rw [spectralFlow_comp_eq_sub hab hφ hmaps hA hsa hF hFp,
+    spectralFlow_eq_sub hφba (hA.mono hsub) (fun t ht ↦ hsa t (hsub ht))
+      (fun t ht ↦ hF t (hsub ht)) (hFp.mono hb.1 ha.2), neg_sub]
 
 /-- **Reversal.** Running the path backwards changes the sign of the spectral flow. -/
 theorem spectralFlow_comp_neg {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
     (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) (hF : ∀ t ∈ Icc a b, (A t).IsFredholm) :
     spectralFlow (fun t ↦ A (-t)) (-b) (-a) = -spectralFlow A a b := by
-  have h := spectralFlow_comp_of_antitoneOn (A := A) (φ := Neg.neg) (neg_le_neg hab)
-    continuous_neg.continuousOn (fun _ _ _ _ h ↦ neg_le_neg h) (by simpa using hA)
-    (by simpa using hsa) (by simpa using hF)
+  have h := spectralFlow_comp_of_mapsTo_of_ge (A := A) (φ := Neg.neg) (neg_le_neg hab)
+    continuous_neg.continuousOn (fun _ ht ↦ ⟨le_neg.2 ht.2, neg_le.2 ht.1⟩)
+    (by simpa using hab) hA hsa hF
   rw [neg_neg, neg_neg] at h
   exact h
-
-omit [CompleteSpace H] [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
-  [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
-/-- The scalar path `t ↦ t • 1` of operators is continuous. -/
-private theorem continuous_algebraMap_real :
-    Continuous fun t : ℝ ↦ algebraMap ℝ (H →L[𝕜] H) t := by
-  -- The `ℝ`-action on operators comes from the `NormedAlgebra` instance, so its continuity is
-  -- obtained from `NormedSpace.toIsBoundedSMul` explicitly.
-  have := (NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := H →L[𝕜] H)).continuousSMul
-  exact continuous_algebraMap ℝ _
-
-omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
-/-- The number of eigenvalues in `[0, c]` of the scalar operator `x • 1` is the dimension if
-`x ∈ [0, c]`, and `0` otherwise. -/
-private theorem spectralCount_algebraMap (c x : ℝ) :
-    (spectralCount c (algebraMap ℝ (H →L[𝕜] H) x) : ℤ) =
-      Module.finrank 𝕜 H * if x ∈ Icc 0 c then 1 else 0 := by
-  rw [spectralCount_def, cfc_algebraMap]
-  by_cases hx : x ∈ Icc 0 c
-  · rw [indicator_of_mem hx, Pi.one_apply, map_one, ContinuousLinearMap.toLinearMap_one,
-      Module.End.one_eq_id, LinearMap.range_id, finrank_top]
-    simp [hx]
-  · rw [indicator_of_notMem hx, map_zero, ContinuousLinearMap.toLinearMap_zero,
-      LinearMap.range_zero, finrank_bot]
-    simp [hx]
-
-/-- **Scalar paths.** On a finite-dimensional space, the spectral flow of the scalar path
-`t ↦ f t • 1`, for `f` continuous on `[a, b]`, is the dimension times the change of the indicator
-of `0 ≤ f` between the endpoints: its one eigenvalue `f t` has full multiplicity, and its net
-number of upward crossings of `0` is `1`, `0` or `-1`. -/
-theorem spectralFlow_algebraMap_comp [FiniteDimensional 𝕜 H] {f : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hf : ContinuousOn f (Icc a b)) :
-    spectralFlow (fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) a b =
-      Module.finrank 𝕜 H * ((if 0 ≤ f b then 1 else 0) - if 0 ≤ f a then 1 else 0) := by
-  have hp : IsSpectralFlowPotential (fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) a b
-      fun t ↦ Module.finrank 𝕜 H * if 0 ≤ f t then 1 else 0 := by
-    intro s t c has hst htb hc
-    rcases (Module.finrank 𝕜 H).eq_zero_or_pos with hH | hH
-    · simp [spectralCount_algebraMap, hH]
-    have := Module.nontrivial_of_finrank_pos hH
-    -- The scalar `f u` never equals the cut `c`, so by the intermediate value theorem `f` stays
-    -- on one side of `c` along `[s, t]`.
-    have hne (u : ℝ) (hu : u ∈ Icc s t) : f u ≠ c := fun h ↦
-      hc.notMem_spectrum hu (by simp [spectrum.scalar_eq, h])
-    have hfst := hf.mono (Icc_subset_Icc has htb)
-    have hlt : f s < c ↔ f t < c := by
-      refine ⟨fun hs ↦ not_le.1 fun ht ↦ ?_, fun ht ↦ not_le.1 fun hs ↦ ?_⟩
-      · obtain ⟨u, hu, hfu⟩ := intermediate_value_Icc hst hfst ⟨hs.le, ht⟩
-        exact hne u hu hfu
-      · obtain ⟨u, hu, hfu⟩ := intermediate_value_Icc' hst hfst ⟨ht.le, hs⟩
-        exact hne u hu hfu
-    rw [spectralCount_algebraMap, spectralCount_algebraMap]
-    by_cases hs : f s < c
-    · have ht := hlt.1 hs
-      simp [mem_Icc, ht.le, hs.le]
-    · have ht : ¬f t < c := hlt.not.1 hs
-      have hc0 := hc.pos
-      simp [mem_Icc, (hc0.trans_le (not_lt.1 hs)).le, (hc0.trans_le (not_lt.1 ht)).le,
-        not_le.2 (not_lt.1 hs |>.lt_of_ne' (hne s ⟨le_rfl, hst⟩)),
-        not_le.2 (not_lt.1 ht |>.lt_of_ne' (hne t ⟨hst, le_rfl⟩))]
-  rw [spectralFlow_eq_sub (A := fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) hab
-    (continuous_algebraMap_real.comp_continuousOn hf)
-    (fun t _ ↦ cfc_predicate_algebraMap (A := H →L[𝕜] H) (f t))
-    (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _) hp]
-  ring
-
-/-- On a finite-dimensional space, the spectral flow of the path `t ↦ t • 1` from `a < 0` to
-`b ≥ 0` is the dimension: its one eigenvalue crosses `0` upwards with full multiplicity. -/
-theorem spectralFlow_algebraMap [FiniteDimensional 𝕜 H] {a b : ℝ} (ha : a < 0) (hb : 0 ≤ b) :
-    spectralFlow (fun t ↦ algebraMap ℝ (H →L[𝕜] H) t) a b = Module.finrank 𝕜 H := by
-  simpa [ha.not_ge, hb] using spectralFlow_algebraMap_comp (H := H) (f := id) (ha.le.trans hb)
-    continuousOn_id
 
 /-! ### Homotopy invariance -/
 

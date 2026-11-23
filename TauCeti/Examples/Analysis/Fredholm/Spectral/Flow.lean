@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Spectral.Flow
+public import TauCeti.Analysis.Fredholm.Spectral.FiniteDimensional
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Tanh
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
