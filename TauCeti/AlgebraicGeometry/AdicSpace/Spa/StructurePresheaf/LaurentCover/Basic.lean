@@ -282,8 +282,9 @@ private theorem exists_toCompletionLoc_eq_of_laurentCoverOpen
       ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
         ((presentationLimitMap (le_inf (hU true) (hU false))).hom.val z))) hx
   simp only [presentationLimitMap_apply_presentationLimitMap_apply,
-    rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
-    rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂] at h
+    presentationLimitRationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
+    presentationLimitRationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f)
+      hT₂] at h
   obtain ⟨c, hc⟩ := (hexact (p false).hasDenominatorPower (_, _)).1 (sub_eq_zero.2 h)
   refine ⟨(eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val c, fun b ↦ ?_⟩
   rw [eqToHom_symm_apply_eqToHom_apply]
@@ -434,8 +435,9 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
   refine ⟨(x₁, x₂),
     (bijective_presentationLimitRationalIso_hom Aplus hAplus q hq).1.comp hInv.injective ?_⟩
   simp only [Function.comp_apply, map_sub, presentationLimitMap_apply_presentationLimitMap_apply,
-    rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
-    rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂]
+    presentationLimitRationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
+    presentationLimitRationalIso_map_apply hAplus (p false) q (hp false) hq 1
+      (mul_comm 1 f) hT₂]
   -- After rewriting `huv` with the `AddMonoidHom` coercion lemmas it is the same statement as the
   -- goal; the localisations `Localization.Away (1 * f)` and `{f * f, f, 1}` agree with
   -- `q.den`/`q.num` by `rfl`.

@@ -24,8 +24,8 @@ uncompleted localisations, and the induced overlap algebra structures and scalar
   continuous `A`-algebra transition maps `A⟨{f, 1}/1⟩ →ₐ[A] A⟨{f², 1}/f⟩` and
   `A⟨{1}/f⟩ →ₐ[A] A⟨{f², 1}/f⟩`.
 * `TauCeti.Huber.laurentLeftAlgebra` and `TauCeti.Huber.laurentRightAlgebra`: the overlap algebra
-  structures on `A⟨{f², 1}/f⟩` induced by `laurentLeftAlgHom` and `laurentRightAlgHom` (also
-  registered as `scoped[TauCeti.Huber.Laurent]` instances).
+  structures on `A⟨{f², 1}/f⟩` induced by `laurentLeftAlgHom` and `laurentRightAlgHom`
+  (registered as `scoped[TauCeti.Huber.Laurent]` instances).
 
 ## Main results
 
@@ -199,6 +199,8 @@ noncomputable def laurentLeftAlgebra
     Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
   (laurentLeftAlgHom P f).toRingHom.toAlgebra
 
+scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.laurentLeftAlgebra
+
 /-- The canonical `A⟨{1}/f⟩`-algebra structure on the overlap `A⟨{f², 1}/f⟩` induced by
 `laurentRightAlgHom`. -/
 @[instance_reducible]
@@ -209,11 +211,16 @@ noncomputable def laurentRightAlgebra
     Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
   (laurentRightAlgHom P f).toRingHom.toAlgebra
 
+scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.laurentRightAlgebra
+
+section ScopedAPI
+
+open scoped TauCeti.Huber.Laurent
+
 /-- The structure map of `laurentLeftAlgebra` is `laurentLeftAlgHom`. -/
 theorem algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
     algebraMap (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) =
       (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom := by
   rfl
@@ -222,7 +229,6 @@ theorem algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
 theorem algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
     algebraMap (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) =
       (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)).toRingHom := by
   rfl
@@ -231,7 +237,6 @@ theorem algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
 theorem continuous_algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
     Continuous (algebraMap (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂)) :=
   continuous_laurentLeftAlgHom P f
 
@@ -239,7 +244,6 @@ theorem continuous_algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A
 theorem continuous_algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
     Continuous (algebraMap (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂)) :=
   continuous_laurentRightAlgHom P f
 
@@ -247,55 +251,21 @@ theorem continuous_algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : 
 theorem isScalarTower_laurentLeft (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
     IsScalarTower A (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-  letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
   IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P f).commutes r).symm
+
+scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.isScalarTower_laurentLeft
 
 /-- `laurentRightAlgebra` makes `A → A⟨{1}/f⟩ → A⟨{f², 1}/f⟩` a scalar tower. -/
 theorem isScalarTower_laurentRight (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
     IsScalarTower A (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-  letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
   IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P f).commutes r).symm
 
-namespace Laurent
+scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.isScalarTower_laurentRight
 
-/-- Scoped `A⟨{f, 1}/1⟩`-algebra instance on `A⟨{f², 1}/f⟩` induced by `laurentLeftAlgHom`. -/
-noncomputable scoped instance instAlgebraLaurentLeft
-    (P : PairOfDefinition A) (f : A)
-    {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
-    {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-  laurentLeftAlgebra P f
-
-/-- Scoped `A⟨{1}/f⟩`-algebra instance on `A⟨{f², 1}/f⟩` induced by `laurentRightAlgHom`. -/
-noncomputable scoped instance instAlgebraLaurentRight
-    (P : PairOfDefinition A) (f : A)
-    {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
-    {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-  laurentRightAlgebra P f
-
-/-- Scoped `IsScalarTower` instance for `laurentLeftAlgebra`. -/
-scoped instance instIsScalarTowerLaurentLeft
-    (P : PairOfDefinition A) (f : A)
-    {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
-    {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    IsScalarTower A (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-  isScalarTower_laurentLeft P f
-
-/-- Scoped `IsScalarTower` instance for `laurentRightAlgebra`. -/
-scoped instance instIsScalarTowerLaurentRight
-    (P : PairOfDefinition A) (f : A)
-    {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
-    {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    IsScalarTower A (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-  isScalarTower_laurentRight P f
-
-end Laurent
+end ScopedAPI
 
 end LaurentTransition
 

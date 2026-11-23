@@ -61,8 +61,9 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
 * `TauCeti.ValuationSpectrum.bijective_presentationLimitRationalIso_hom` : sections over `R(p)`
   are in bijection with `A⟨p⟩`, read through the isomorphism and the equality transport.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` and
-  `TauCeti.ValuationSpectrum.rationalIso_map_apply` : between rational opens, the restriction
-  maps of `presentationLimitPresheaf` are the comparison morphisms (`restrictionRingHom`).
+  `TauCeti.ValuationSpectrum.presentationLimitRationalIso_map_apply` : between rational opens,
+  the restriction maps of `presentationLimitPresheaf` are the comparison morphisms
+  (`restrictionRingHom`).
 
 ## References
 
@@ -324,7 +325,7 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
 
 /-- Under `presentationLimitRationalIso`, restriction from `R(p)` to `R(q)` along a refinement with
 cofactor `r` agrees with `restrictionRingHom`. -/
-theorem rationalIso_map_apply (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+theorem presentationLimitRationalIso_map_apply (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (p q : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
     (hq : IsOpen (Ideal.span (q.num : Set A) : Set A)) (r : A) (hr : q.den = p.den * r)
