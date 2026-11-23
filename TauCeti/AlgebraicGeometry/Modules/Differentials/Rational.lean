@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Stalk
 public import TauCeti.AlgebraicGeometry.LineBundle.Germ
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 import all TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
