@@ -29,6 +29,11 @@ def sectionsEquiv (S : LightProfinite.{u}) :
     ((functor R).obj M).obj.obj (op S) ≃ₗ[R] LocallyConstant S M :=
   LinearEquiv.refl R _
 
+/-- The section comparison keeps the underlying locally constant function. -/
+lemma sectionsEquiv_apply (S : LightProfinite.{u})
+    (s : ((functor R).obj M).obj.obj (op S)) : sectionsEquiv M S s = s := by
+  rfl
+
 /-- Restricting a locally constant section evaluates by precomposition. -/
 @[simp]
 lemma sectionsEquiv_map_apply {S T : LightProfinite.{u}} (f : S ⟶ T)
