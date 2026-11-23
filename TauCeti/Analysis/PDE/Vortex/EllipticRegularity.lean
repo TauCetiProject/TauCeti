@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
-import TauCeti.Analysis.PDE.Vortex.Multiplier
+import TauCeti.Analysis.PDE.Vortex.EquationMap
 
 /-!
 # Elliptic regularity of the gauge-fixed vortex operator
@@ -621,37 +621,6 @@ private theorem mem_sobolevFields_add_one_of_gaugeFixedZerothOrder_mem {s : ℝ}
         gaugeFixedZerothOrder_eq_toEuclideanLin])
     (by simpa only [gaugeFixedZerothOrder_eq_toEuclideanLin] using hzo) hy hf hweak
 
-/-- At a field of `A_m^n`, for an integer `n > 1`, the zeroth-order part `(L_x - L₀) y` of the
-gauge-fixed operator preserves `H^n`, since `H^n(ℂ)` is then an algebra. -/
-private theorem gaugeFixedZerothOrder_mem_sobolevFields_of_mem_framedFieldSpace
-    {f : ContDiffBump (0 : ℝ)} {m n : ℕ} (hn : 1 < n) {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : x ∈ framedFieldSpace f m n) (hy : y ∈ sobolevFields n) :
-    (fun z ↦ gaugeFixedZerothOrder (x z - vacuumField z) (y z)) ∈ sobolevFields n := by
-  set P : (ℂ → ℝ) → Prop := fun a ↦ ∀ b, (fun z ↦ a z * y z b) ∈ realSobolevFunctions ℂ n 2
-  have h0 : P 0 := fun b ↦ by
-    convert zero_mem (realSobolevFunctions ℂ n 2) using 1
-    ext
-    simp
-  have hneg {a : ℂ → ℝ} (ha : P a) : P (-a) := fun b ↦ by
-    convert neg_mem (ha b) using 1
-    ext
-    simp
-  have hw (a : Fin 4) : P fun z ↦ (x z - vacuumField z) a := fun b ↦ by
-    have hyb := mem_sobolevFields.1 hy b
-    convert sub_mem (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx a hyb)
-      (Submodule.smul_mem _ (vacuumField 0 a) hyb) using 1
-    ext z
-    simp only [PiLp.sub_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, vacuumField_apply]
-    ring
-  have hentry (i j : Fin 4) :
-      P fun z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) i j := by
-    fin_cases i <;> fin_cases j <;> first | exact h0 | exact hw _ | exact hneg (hw _)
-  refine mem_sobolevFields.2 fun i ↦ ?_
-  convert Submodule.sum_mem _ fun j (_ : j ∈ Finset.univ) ↦ hentry i j j using 1
-  ext z
-  rw [gaugeFixedZerothOrder_apply]
-  simp
-
 /-- **Elliptic regularity at a field of `A_m^s`.** Let `x` be a smooth field of `A_m^s` with
 `s > 2`, and let `k ≤ s`. A square-integrable weak solution of `L_x y = g` with `g ∈ H^k` lies in
 `H^(k+1)`. -/
@@ -679,9 +648,11 @@ theorem mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace {f : ContDiffB
     -- From order two on, `H^(k+1)(ℂ)` is an algebra containing the tails of the coefficients.
     have hy' : y ∈ sobolevFields (k + 1) :=
       ih (by push_cast at hks; linarith) (sobolevFields_mono (by simp) hg)
-    exact mem_sobolevFields_add_one_of_gaugeFixedZerothOrder_mem
-      (gaugeFixedZerothOrder_mem_sobolevFields_of_mem_framedFieldSpace (by omega)
-        (framedFieldSpace_mono f m hks hx) (by exact_mod_cast hy')) hy hg hweak
+    refine mem_sobolevFields_add_one_of_gaugeFixedZerothOrder_mem ?_ hy hg hweak
+    convert gaugeFixedOperator_sub_mem_sobolevFields (by omega)
+      (framedFieldSpace_mono f m hks hx) (by exact_mod_cast hy') using 2 with z
+    rw [Pi.sub_apply, gaugeFixedOperator_eq_add_gaugeFixedZerothOrder x vacuumField y z,
+      add_sub_cancel_left]
 
 /-- **Regularity of the weak kernel.** Let `x` be a smooth field of `A_m^s` with `s > 2`. Every
 square-integrable weak solution of `L_x y = 0` lies in `H^(k+1)` for each `k ≤ s`. -/
