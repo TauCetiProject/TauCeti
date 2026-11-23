@@ -53,7 +53,7 @@ theorem isIsotropic_codeInZeroLatticeDiscriminantQuadraticModule_iff
         (codeInZeroLatticeDiscriminantGroup m ι C) ↔
       ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C := by
   let e := discriminantQuadraticIsometry m ι hm
-  have h := (FiniteQuadraticModule.Isometry.isIsotropic_map_iff _ e
+  have h := (FiniteQuadraticModule.Isometry.isIsotropic_map_iff e
     (C.comap e.toAddEquiv)).symm
   rw [AddSubgroup.map_comap_eq_self_of_surjective e.toAddEquiv.surjective C] at h
   convert h using 1

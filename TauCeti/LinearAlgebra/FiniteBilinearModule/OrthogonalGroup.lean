@@ -79,14 +79,14 @@ theorem smul_eq_map_toAddEquiv (g : orthogonalGroup A) (H : AddSubgroup A) :
 theorem isIsotropic_smul_iff (g : orthogonalGroup A) (H : AddSubgroup A) :
     A.IsIsotropic (g • H) ↔ A.IsIsotropic H := by
   rw [smul_eq_map_toAddEquiv]
-  exact Isometry.isIsotropic_map_iff A (QuadraticMap.orthogonalGroupEquivIsometryEquiv _ g) H
+  exact Isometry.isIsotropic_map_iff (QuadraticMap.orthogonalGroupEquivIsometryEquiv _ g) H
 
 /-- The orthogonal group preserves quadratic Lagrangian subgroups. -/
 @[simp]
 theorem isLagrangian_smul_iff (g : orthogonalGroup A) (H : AddSubgroup A) :
     A.IsLagrangian (g • H) ↔ A.IsLagrangian H := by
   rw [smul_eq_map_toAddEquiv]
-  exact Isometry.isLagrangian_map_iff A (QuadraticMap.orthogonalGroupEquivIsometryEquiv _ g) H
+  exact Isometry.isLagrangian_map_iff (QuadraticMap.orthogonalGroupEquivIsometryEquiv _ g) H
 
 /-- The action of the orthogonal group commutes with taking the orthogonal complement for the
 polar pairing. -/

@@ -112,7 +112,7 @@ theorem IsNondegenerate.natCard_ker_zsmul_mul_gaussSum [Fintype A] (hA : A.IsNon
   let : Fintype (A.restrict f.range) := inferInstanceAs (Fintype f.range)
   have hG : A.gaussSum = ∑ x : f.range, expCircle (A.quadratic x) := by
     rw [← A.gaussSum_restrict_orthogonalComplement hH,
-      FiniteBilinearModule.IsNondegenerate.orthogonalComplement_ker_zsmul _ hA n, gaussSum_eq_sum]
+      FiniteBilinearModule.IsNondegenerate.orthogonalComplement_ker_zsmul hA n, gaussSum_eq_sum]
     exact Fintype.sum_equiv (Equiv.refl _) _ _ fun x ↦ congrArg expCircle (A.restrict_quadratic _ x)
   have hsum := AddMonoidHom.sum_comp_of_surjective f.rangeRestrict f.rangeRestrict_surjective
     fun x : f.range ↦ expCircle (A.quadratic x)

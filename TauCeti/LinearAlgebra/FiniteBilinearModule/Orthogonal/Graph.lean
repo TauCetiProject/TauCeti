@@ -130,7 +130,7 @@ theorem exists_isometry_neg_mem_iff_of_isLagrangian {H : AddSubgroup (A × B)}
     rfl
   -- A Lagrangian has `#H² = #A·#B`, so both injective projections are bijective.
   have hsq : Nat.card H * Nat.card H = Nat.card A * Nat.card B := by
-    rw [← pow_two, FiniteBilinearModule.IsLagrangian.card_sq _ hH.toFiniteBilinearModule
+    rw [← pow_two, FiniteBilinearModule.IsLagrangian.card_sq hH.toFiniteBilinearModule
       ((A.isNondegenerate_prod B).mpr ⟨hA, hB⟩)]
     exact Nat.card_prod A B
   have hHA := Nat.card_le_card_of_injective π₁ h₁

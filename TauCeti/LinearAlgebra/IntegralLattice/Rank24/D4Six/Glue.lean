@@ -302,7 +302,7 @@ theorem natCard_d4SixGlueSubgroup : Nat.card d4SixGlueSubgroup = 64 := by
 its order `64` squares to the order `4⁶` of the module of glue words. -/
 theorem isLagrangian_d4SixGlueSubgroup : d4SixGlueModule.IsLagrangian d4SixGlueSubgroup := by
   have hF : Nat.card (GaloisField 2 2) = 4 := GaloisField.card 2 2 (by decide)
-  rw [← FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
+  rw [← FiniteQuadraticModule.Isometry.isLagrangian_map_iff
       (d4SixHexacodeIsometry hF Hexacode.omega_sq_add_omega_add_one),
     map_d4SixGlueSubgroup_d4SixHexacodeIsometry]
   exact Hexacode.isLagrangian_typeD4 hF Hexacode.omega_sq_add_omega_add_one

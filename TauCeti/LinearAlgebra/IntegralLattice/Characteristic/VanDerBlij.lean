@@ -130,7 +130,7 @@ private theorem gaussSum_evenSublattice_of_characteristic [L.IsNondegenerate]
   have hqa : A.quadratic a = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
     quadratic_halfCharacteristicDual L hw
   have hcard : (Nat.card H) ^ 2 = Nat.card L.evenSublattice.DiscriminantGroup :=
-    FiniteBilinearModule.IsLagrangian.card_sq A.toFiniteBilinearModule hH
+    FiniteBilinearModule.IsLagrangian.card_sq hH
       (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a hH ha,
     hqa, ← hcard,

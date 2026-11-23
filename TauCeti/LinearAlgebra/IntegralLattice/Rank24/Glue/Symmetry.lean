@@ -65,7 +65,7 @@ theorem isIsotropic_closure_decodedWords_comp_iff (hg : g ∈ p.symmetries) :
       (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)) :=
     QuadraticMap.IsometryEquiv.piCongrLeft
       (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic) g
-  have h := FiniteQuadraticModule.Isometry.isIsotropic_map_iff _ e
+  have h := FiniteQuadraticModule.Isometry.isIsotropic_map_iff e
     (AddSubgroup.closure (p.decodedWords (fun k ↦ t (g k)) (fun k ↦ ht (g k))))
   have he : e.toAddEquiv =
       (LinearEquiv.piCongrLeft ℤ (fun i ↦ (t i).glueAlphabet (ht i)) g).toAddEquiv :=

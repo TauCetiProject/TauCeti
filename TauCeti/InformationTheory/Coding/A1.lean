@@ -82,7 +82,6 @@ theorem isIsotropic_coordinatePower_typeAStandardQuadraticModule_one_iff
     ((typeAStandardQuadraticModule 1).coordinatePower ι).IsIsotropic C ↔
       ∀ x ∈ C, 4 ∣ hammingNorm x := by
   have h := FiniteQuadraticModule.Isometry.isIsotropic_map_iff
-    ((typeAStandardQuadraticModule 1).coordinatePower ι)
     (typeAOneZModStandardIsometry.coordinatePower ι) C
   rw [map_typeAOneZModStandardIsometry_coordinatePower (ι := ι) C] at h
   exact h.symm.trans (isIsotropic_coordinatePower_zmodStandard_two_iff C)
@@ -95,7 +94,6 @@ theorem isIsotropic_typeA1 :
     ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24)).IsIsotropic
       code.toAddSubgroup := by
   have h := FiniteQuadraticModule.Isometry.isIsotropic_map_iff
-    ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24))
     (typeAOneZModStandardIsometry.coordinatePower (Fin 24)) code.toAddSubgroup
   rw [map_typeAOneZModStandardIsometry_coordinatePower (ι := Fin 24) code.toAddSubgroup] at h
   exact h.mp isIsotropic_code
@@ -107,7 +105,6 @@ theorem isLagrangian_typeA1 :
     ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24)).IsLagrangian
       code.toAddSubgroup := by
   have h := FiniteQuadraticModule.Isometry.isLagrangian_map_iff
-    ((typeAStandardQuadraticModule 1).coordinatePower (Fin 24))
     (typeAOneZModStandardIsometry.coordinatePower (Fin 24)) code.toAddSubgroup
   rw [map_typeAOneZModStandardIsometry_coordinatePower (ι := Fin 24) code.toAddSubgroup] at h
   apply h.mp

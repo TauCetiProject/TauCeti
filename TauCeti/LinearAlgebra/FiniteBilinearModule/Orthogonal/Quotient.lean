@@ -203,6 +203,7 @@ theorem isNondegenerate_orthogonalQuotient_iff (H : AddSubgroup A) :
     exact hle (x := ⟨x, hxperp⟩) (AddSubgroup.mem_addSubgroupOf.mpr (AddSubgroup.mem_sup_right hx))
   · rw [sup_eq_left.mpr hle]
 
+variable {A} in
 /-- The orthogonal quotient of a nondegenerate finite bilinear module is nondegenerate. -/
 theorem IsNondegenerate.isNondegenerate_orthogonalQuotient (hA : A.IsNondegenerate)
     (H : AddSubgroup A) : (A.orthogonalQuotient H).IsNondegenerate :=
@@ -217,6 +218,7 @@ theorem card_orthogonalQuotient (H : AddSubgroup A) :
     (H.addSubgroupOf (A.orthogonalComplement H))
     (A.addSubgroupOf_orthogonalComplement_le_radical_restrict H)
 
+variable {A} in
 /-- **The general order formula for an orthogonal quotient.** In a nondegenerate finite bilinear
 module, the orders of `H⊥ / (H ∩ H⊥)`, `H ∩ H⊥`, and `H` multiply to the order of the
 ambient module. -/
@@ -226,8 +228,9 @@ theorem IsNondegenerate.card_orthogonalQuotient_mul_card_addSubgroupOf_mul_card
         Nat.card (H.addSubgroupOf (A.orthogonalComplement H)) * Nat.card H = Nat.card A := by
   rw [A.card_orthogonalQuotient H,
     (H.addSubgroupOf (A.orthogonalComplement H)).index_mul_card, mul_comm]
-  exact IsNondegenerate.card_mul_card_orthogonalComplement A hA H
+  exact hA.card_mul_card_orthogonalComplement H
 
+variable {A} in
 /-- **The order of the orthogonal quotient of an isotropic subgroup.**  In a nondegenerate finite
 bilinear module, `|H⊥ / H| · |H|² = |A|`. -/
 theorem IsNondegenerate.card_orthogonalQuotient_mul_card_sq (hA : A.IsNondegenerate)
@@ -237,7 +240,7 @@ theorem IsNondegenerate.card_orthogonalQuotient_mul_card_sq (hA : A.IsNondegener
   have hcard : Nat.card (H.addSubgroupOf (A.orthogonalComplement H)) = Nat.card H :=
     Nat.card_congr (AddSubgroup.addSubgroupOfEquivOfLe hle).toEquiv
   simpa only [hcard, pow_two, mul_assoc] using
-    (IsNondegenerate.card_orthogonalQuotient_mul_card_addSubgroupOf_mul_card A hA H)
+    (hA.card_orthogonalQuotient_mul_card_addSubgroupOf_mul_card H)
 
 /-! ## The Lagrangian criterion -/
 
