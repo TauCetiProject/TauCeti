@@ -32,7 +32,10 @@ consequences are drawn.
   `(1 - θ) ‖z - a‖² < m C` for some `a ∈ D`
   (`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`). Equivalently, `|α(z)|² > 1 - δ` at every
   point at distance at least `√(m C / δ)` from every zero, uniformly over all divisors of degree
-  `m` (`TauCeti.Vortex.one_sub_lt_normSq_of_forall_le_norm_sub`).
+  `m` (`TauCeti.Vortex.one_sub_lt_normSq_of_forall_le_norm_sub`). In particular, when the zeros
+  lie in the closed disc of radius `R₀`, the region where `|α|² ≤ θ` lies in a disc whose radius
+  depends only on `m`, `R₀` and `θ`
+  (`TauCeti.Vortex.exists_forall_lt_normSq_of_forall_mem_norm_le`).
 * **Uniform exponential decay away from the zeros.** For every rate `0 ≤ c < 1 / 2` there is one
   constant `K`, depending only on `m` and `c`, with `1 - |α(z)|² ≤ K exp (-c ρ)` for every such
   vortex and every point `z` at distance at least `ρ` from all of its zeros
@@ -415,9 +418,8 @@ theorem exists_abs_curvature_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ
           K * Real.exp (-(c * ρ)) := by
   obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀ hc
   refine ⟨K / 8, by positivity, fun x D hx hsol hframe hD z ρ hρ ↦ ?_⟩
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have h₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  have h₁ :=
+    normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [hK x D hx hsol hframe hD z ρ hρ]
 
@@ -441,5 +443,22 @@ theorem exists_one_sub_normSq_le_mul_exp_of_forall_mem_norm_le (m : ℕ) (R₀ :
   rw [mul_assoc, ← Real.exp_add]
   refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hK₀
   nlinarith [mul_le_mul_of_nonneg_right (le_max_left c 0) (norm_nonneg z)]
+
+/-- **A common vacuum radius over a window of divisors.** For every degree `m`, radius `R₀` and
+threshold `θ < 1` there is a radius `R` such that every smooth plane vortex with the degree-`m`
+end framing whose zeros lie in the closed disc of radius `R₀` satisfies `θ < |α(z)|²` for every
+`z` with `‖z‖ > R`. -/
+theorem exists_forall_lt_normSq_of_forall_mem_norm_le (m : ℕ) (R₀ : ℝ) {θ : ℝ} (hθ : θ < 1) :
+    ∃ R, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ a ∈ D, ‖a‖ ≤ R₀) →
+      ∀ z, R < ‖z‖ → θ < 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  -- Every zero is at distance more than `R - R₀` from `z`.
+  refine ⟨R₀ + √(m * (16 * m + 1) / (1 - θ)), fun x D hx hsol hframe hD hD₀ z hz ↦ ?_⟩
+  have h := one_sub_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD
+    (by linarith : 16 * (m : ℝ) < 16 * m + 1) (sub_pos.2 hθ) (z := z) fun a ha ↦ by
+      linarith [norm_sub_norm_le z a, hD₀ a ha]
+  rwa [sub_sub_cancel] at h
 
 end TauCeti.Vortex

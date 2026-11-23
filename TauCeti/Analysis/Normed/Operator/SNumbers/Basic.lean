@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
 /-!
 # Axioms for s-number sequences
@@ -22,7 +24,8 @@ continuity and scalar homogeneity. Strictness means normalization on every ident
 the dimension, not merely on the finite Euclidean identities. For a strict sequence, factoring
 the identity of a space of rank greater than `n` through an operator `T` therefore bounds
 `sₙ(T)` from below (`TauCeti.SNumbers.IsStrictSNumberSequence.le_of_comp_eq_id`). An injective
-family is one that does not change under postcomposition with linear isometries.
+family is one that does not change under postcomposition with linear isometries, and a surjective
+family is one that does not change under precomposition with normed quotient maps.
 
 ## References
 
@@ -30,8 +33,8 @@ family is one that does not change under postcomposition with linear isometries.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
 * M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82,
   Remark 1, for the strict normalization (S5′) and its implication of (S5).
-* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for injective s-number
-  sequences.
+* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for injective and surjective
+  s-number sequences.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `SNumbers/Basic.lean`: an earlier Lean formalization of the same axiom API.
 -/
@@ -126,6 +129,16 @@ structure IsInjective (s : SNumberFamily 𝕜) : Prop where
   linearIsometry_comp : ∀ {X Y Z : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
     (J : Y →ₗᵢ[𝕜] Z) (T : X →L[𝕜] Y) (n : ℕ), s (J.toContinuousLinearMap ∘L T) n = s T n
+
+/-- An s-number family is surjective when precomposition with a metric surjection, that is, an
+operator `Q` whose underlying bounded additive homomorphism is a normed quotient map, leaves every
+term unchanged: `s (T ∘L Q) n = s T n`. -/
+structure IsSurjective (s : SNumberFamily 𝕜) : Prop where
+  /-- Precomposition with a normed quotient map leaves every term unchanged. -/
+  comp_of_isQuotient : ∀ {W X Y : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (T : X →L[𝕜] Y) {Q : W →L[𝕜] X}, Q.toNormedAddGroupHom.IsQuotient →
+      ∀ n : ℕ, s (T ∘L Q) n = s T n
 
 namespace IsSNumberSequence
 
