@@ -80,19 +80,11 @@ theorem tendsto_of_dense_of_eventually_dist_le {ι X Y : Type*}
     (hf : Continuous f) (hs : Dense s)
     (h : ∀ y ∈ s, Tendsto (F · y) l (𝓝 (f y))) (x : X) :
     Tendsto (F · x) l (𝓝 (f x)) := by
-  let M : ℝ := max C 0
   let P : Set ι := {i | ∀ x y, dist (F i x) (F i y) ≤ C * dist x y}
   have hP : EquicontinuousAt (fun p : P => F p.val) x := by
-    rw [Metric.equicontinuousAt_iff_right]
-    intro ε hε
-    refine eventually_of_mem (Metric.ball_mem_nhds x (by positivity : 0 < ε / (M + 1)))
-      fun y hy ⟨i, hi⟩ => ?_
-    rw [dist_comm]
-    calc dist (F i y) (F i x) ≤ C * dist y x := hi y x
-      _ ≤ M * dist y x := mul_le_mul_of_nonneg_right (le_max_left C 0) dist_nonneg
-      _ < (M + 1) * (ε / (M + 1)) := mul_lt_mul_of_le_of_lt_of_nonneg_of_pos
-          (by linarith) (Metric.mem_ball.mp hy) dist_nonneg (by positivity)
-      _ = ε := mul_div_cancel₀ ε (by positivity)
+    refine Metric.equicontinuousAt_of_continuity_modulus (fun y => C * dist x y) ?_ _
+      (.of_forall fun y p => p.property x y)
+    simpa using ((by fun_prop : Continuous fun y => C * dist x y).tendsto x)
   have hsub : Tendsto (fun p : P => F p.val x) (l.comap Subtype.val) (𝓝 (f x)) :=
     hP.tendsto_of_mem_closure (hf.continuousAt.mono_left inf_le_left)
       (fun y hy => (h y hy).comp tendsto_comap) (hs.closure_eq ▸ Set.mem_univ x)

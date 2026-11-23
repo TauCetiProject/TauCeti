@@ -16,6 +16,7 @@ import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
 # Strictly positive elements and σ-unital C⋆-algebras
@@ -301,13 +302,9 @@ private theorem add_ne_zero_of_mem_spectrum_inr {h : A} (hh : 0 ≤ h) {c : ℝ}
 
 /-- In the unitization `A⁺¹`, `(h : A⁺¹) + c • 1` is invertible for `0 ≤ h` and `0 < c`. -/
 theorem isUnit_inr_add_smul_one {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
-    IsUnit ((h : A⁺¹) + c • (1 : A⁺¹)) := by
-  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg ℂ h hh
-  have hcfc : cfc (fun t : ℝ => t + c) (h : A⁺¹) = (h : A⁺¹) + c • (1 : A⁺¹) := by
-    rw [cfc_add_const c (fun t : ℝ => t) (h : A⁺¹) (by fun_prop) hh'.isSelfAdjoint,
-      cfc_id' ℝ (h : A⁺¹) hh'.isSelfAdjoint, Algebra.algebraMap_eq_smul_one]
-  exact hcfc ▸ (cfcUnits (fun t : ℝ => t + c) (h : A⁺¹)
-    fun _ ht => add_ne_zero_of_mem_spectrum_inr hh hc ht).isUnit
+    IsUnit ((h : A⁺¹) + c • (1 : A⁺¹)) :=
+  (_root_.IsStrictlyPositive.nonneg_add (Unitization.inr_nonneg ℂ h hh)
+    (_root_.IsStrictlyPositive.smul hc _root_.isStrictlyPositive_one)).isUnit
 
 /-- In the unitization `A⁺¹`, `resolventApprox h n` embeds as
 `(h : A⁺¹) * Ring.inverse ((h : A⁺¹) + ((n : ℝ) + 1)⁻¹ • 1)` for `0 ≤ h`. -/
@@ -349,32 +346,6 @@ private theorem isIncreasingApproximateUnit_resolventApprox_of_dense_mul_left {h
   exact (norm_mul_le _ _).trans
     (mul_le_mul_of_nonneg_right (norm_resolventApprox_mul_self_sub_le hh n) (norm_nonneg x))
 
-/-- Squaring `resolventApprox h` preserves the approximate unit property when `0 ≤ h`. -/
-private theorem isApproximateUnit_resolventApprox_mul_self {h : A} (hh : 0 ≤ h)
-    (hl : (atTop.map (resolventApprox h)).IsApproximateUnit) :
-    (atTop.map (fun n => resolventApprox h n * resolventApprox h n)).IsApproximateUnit := by
-  let u : ℕ → A := resolventApprox h
-  have hsa : ∀ᶠ x in atTop.map (fun n => u n * u n), IsSelfAdjoint x :=
-    eventually_map.mpr (.of_forall fun n => by
-      simp [u, IsSelfAdjoint, star_mul, (isSelfAdjoint_resolventApprox h n).star_eq])
-  have hr : ∀ a : A, Tendsto (· * a) (atTop.map (fun n => u n * u n)) (𝓝 a) := fun a => by
-    rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
-    have h1 : Tendsto (fun n => 2 * ‖u n * a - a‖) atTop (𝓝 0) := by
-      simpa using (tendsto_iff_norm_sub_tendsto_zero.mp
-        (tendsto_map'_iff.mp (hl.tendsto_mul_right a))).const_mul 2
-    refine squeeze_zero_norm' (.of_forall fun n => ?_) h1
-    rw [Real.norm_of_nonneg (norm_nonneg _)]
-    calc ‖u n * u n * a - a‖ = ‖u n * (u n * a - a) + (u n * a - a)‖ := by congr 1; noncomm_ring
-      _ ≤ ‖u n * (u n * a - a)‖ + ‖u n * a - a‖ := norm_add_le _ _
-      _ ≤ 1 * ‖u n * a - a‖ + ‖u n * a - a‖ := by
-        gcongr
-        exact (norm_mul_le _ _).trans
-          (mul_le_mul_of_nonneg_right (norm_resolventApprox_lt_one hh n).le (norm_nonneg _))
-      _ = 2 * ‖u n * a - a‖ := by ring
-  exact
-    { tendsto_mul_left := (CStarAlgebra.tendsto_mul_left_iff_tendsto_mul_right hsa).mpr hr
-      tendsto_mul_right := hr }
-
 /-- If `0 ≤ h` and `resolventApprox h` is an approximate unit of `A`, then `h` is strictly
 positive. -/
 private theorem isStrictlyPositive_of_isApproximateUnit_resolventApprox {h : A} (hh : 0 ≤ h)
@@ -399,7 +370,10 @@ private theorem isStrictlyPositive_of_isApproximateUnit_resolventApprox {h : A} 
       dsimp only [y]
       rw [← cfcₙ_mul _ _ h hyc (by simp) (by fun_prop) (by simp), hmul]
       exact cfcₙ_congr fun t _ => by ring
-  have hu2 := isApproximateUnit_resolventApprox_mul_self hh hl
+  have hu2 : (atTop.map (fun n => u n * u n)).IsApproximateUnit := by
+    simpa only [Filter.map_map, Function.comp_def] using
+      hl.map_mul_self (C := 1)
+        (eventually_map.mpr (.of_forall fun n => (norm_resolventApprox_lt_one hh n).le))
   refine isStrictlyPositive_def.mpr ⟨hh, dense_iff_closure_eq.mp fun a =>
     mem_closure_of_tendsto (tendsto_map'_iff.mp (hu2.tendsto_mul_mul a)) ?_⟩
   refine .of_forall fun n => ⟨y n * a * y n, ?_⟩
@@ -706,9 +680,7 @@ theorem isSigmaUnital_iff_exists_isStrictlyPositive {A : Type*} [NonUnitalCStarA
   have hlim : Tendsto (fun n => φ.toGNS (a * v n)) atTop (𝓝 (φ.toGNS a)) :=
     (φ.toGNS.continuous.tendsto a).comp ((hl.tendsto_mul_left a).comp hv)
   have hzero : ∀ n, φ.toGNS (a * v n) = 0 := fun n => by
-    have hact : φ.gnsNonUnitalStarAlgHom a (φ.toGNS (v n)) = φ.toGNS (a * v n) := by
-      simp [PositiveLinearMap.toGNS_apply]
-    rw [← hact, hφ n, map_zero]
+    rw [← φ.gnsNonUnitalStarAlgHom_apply_toGNS a (v n), hφ n, map_zero]
   exact (tendsto_nhds_unique (by simp [hzero]) hlim).symm
 
 /-- A C⋆-algebra is σ-unital if and only if it admits a countably generated increasing approximate
