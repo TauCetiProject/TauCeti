@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
-import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation

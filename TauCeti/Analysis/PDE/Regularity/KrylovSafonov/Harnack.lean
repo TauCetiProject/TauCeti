@@ -113,7 +113,7 @@ private theorem exists_le_mul_add_of_dist_le_div_five [Nonempty ι] {κ : ℝ} :
         ∀ z ∈ ball x₀ r, ∀ w ∈ ball x₀ r, dist z w ≤ r / 5 → u z ≤ C * (u w + r *
           (eLpNorm f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r)))).toReal / lam) := by
   obtain ⟨p, hp, HW'⟩ :=
-    exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (ι := ι) (κ := κ)
+    exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (ι := ι) κ
   obtain ⟨Cw, hCw, HW⟩ := HW' (θ := 1 / 4) (by norm_num) (by norm_num)
   obtain ⟨Cl, hCl, HL⟩ := exists_le_mul_rpow_mul_toReal_eLpNorm_add (ι := ι) (κ := κ) hp
   refine ⟨max 1 (Cl * (Cw + 1)), le_max_left _ _, ?_⟩

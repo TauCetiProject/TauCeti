@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -50,6 +51,9 @@ exact form of the bounded-overlap count.
 * `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm`: Chebyshev point
   selection on a ball, finding `w ∈ B(x₀, r)` with
   `‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`.
+* `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le`:
+  off-centre Chebyshev point selection on a ball `B(q', r)` from the `Lᵖ` norm on `B(q, r)` when
+  `dist q' q ≤ r / 2`.
 -/
 
 public section
@@ -326,5 +330,40 @@ theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal
           rw [← Real.rpow_mul hr.le, hexp, mul_comm]
   refine ⟨w, hw, hinv.trans_eq ?_⟩
   rw [hpow, mul_assoc]
+
+/-- **Off-centre Chebyshev point selection on a ball.** For `p > 0`, `r > 0`, `dist q' q ≤ r / 2`,
+and `f ∈ L^p(B(q, r))` in dimension `n`, there is a point `w ∈ B(q', r)` at which
+`‖f w‖ ≤ 2^(n/p) |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(q, r))}`. -/
+theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p r : ℝ} {q' q : E}
+    (hp : 0 < p) (hr : 0 < r) (hdist : dist q' q ≤ r / 2)
+    (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball q r))) :
+    ∃ w ∈ ball q' r,
+      ‖f w‖ ≤ 2 ^ ((finrank ℝ E : ℝ) / p) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+        (r ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal) := by
+  have hsub : ball q' (r / 2) ⊆ ball q r := ball_subset_ball' (by linarith)
+  obtain ⟨w, hw, hfw⟩ := mu.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm hp (half_pos hr)
+    (hf.mono_measure (Measure.restrict_mono hsub le_rfl))
+  refine ⟨w, ball_subset_ball (half_lt_self hr).le hw, ?_⟩
+  have hmono : (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q' (r / 2)))).toReal ≤
+      (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal :=
+    ENNReal.toReal_mono hf.eLpNorm_ne_top
+      (eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl))
+  have hrpow : (r / 2) ^ (-((finrank ℝ E : ℝ) / p)) =
+      2 ^ ((finrank ℝ E : ℝ) / p) * r ^ (-((finrank ℝ E : ℝ) / p)) := by
+    rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le two_pos, neg_neg]
+  set G : ℝ := r ^ (-((finrank ℝ E : ℝ) / p)) *
+    (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal
+  calc ‖f w‖ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
+          ((r / 2) ^ (-((finrank ℝ E : ℝ) / p)) *
+            (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q' (r / 2)))).toReal) := hfw
+    _ ≤ mu.real (ball (0 : E) 1) ^ (-p⁻¹) * (2 ^ ((finrank ℝ E : ℝ) / p) * G) := by
+        rw [hrpow, mul_assoc (2 ^ ((finrank ℝ E : ℝ) / p))]
+        dsimp only [G]
+        gcongr
+    _ = 2 ^ ((finrank ℝ E : ℝ) / p) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) * G := by ring
 
 end TauCeti

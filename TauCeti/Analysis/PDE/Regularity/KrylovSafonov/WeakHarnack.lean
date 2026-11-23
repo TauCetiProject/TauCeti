@@ -442,43 +442,6 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_exists_le_small [Nonempty
     _ = C * ((s⁻¹ * ρ) ^ (-n / p) * ρ ^ (n / p)) * (A + ρ * F / lam) := by ring
     _ = C * s ^ (n / p) * (A + ρ * F / lam) := by rw [hscale]
 
-omit [DecidableEq ι] in
-/-- Overlap witness estimate: if `dist q' q ≤ r / 4`, `0 < r`, and `u ∈ Lᵖ(B(q, r))` for `0 < p`,
-there exists `w ∈ B(q', r)` with
-`u w ≤ 2^(n/p) * |B(0, 1)|^(-1/p) * r^(-n/p) * ‖u‖_{Lᵖ(B(q, r))}`. -/
-private theorem exists_mem_ball_le_mul_rpow_neg_mul_eLpNorm_of_dist_le {p r : ℝ}
-    (hp : 0 < p) (hr : 0 < r) {q' q : EuclideanSpace ℝ ι} (hdist : dist q' q ≤ r / 4)
-    {u : EuclideanSpace ℝ ι → ℝ} (hu : MemLp u (ENNReal.ofReal p) (volume.restrict (ball q r))) :
-    ∃ w ∈ ball q' r, u w ≤
-      2 ^ ((Fintype.card ι : ℝ) / p) * (volume.real (ball (0 : EuclideanSpace ℝ ι) 1)) ^ (-p⁻¹) *
-        (r ^ (-(Fintype.card ι : ℝ) / p) *
-          (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball q r))).toReal) := by
-  have hsub : ball q' (r / 2) ⊆ ball q r := ball_subset_ball' (by linarith)
-  obtain ⟨w, hw, huw⟩ := volume.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm hp
-    (half_pos hr) (hu.mono_measure (Measure.restrict_mono hsub le_rfl))
-  refine ⟨w, ball_subset_ball (half_lt_self hr).le hw, ?_⟩
-  rw [Real.norm_eq_abs, finrank_euclideanSpace] at huw
-  have hmono : (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball q' (r / 2)))).toReal ≤
-      (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball q r))).toReal :=
-    ENNReal.toReal_mono hu.eLpNorm_ne_top
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hsub le_rfl))
-  have hrpow : (r / 2) ^ (-((Fintype.card ι : ℝ) / p)) =
-      2 ^ ((Fintype.card ι : ℝ) / p) * r ^ (-(Fintype.card ι : ℝ) / p) := by
-    rw [Real.div_rpow_eq_rpow_neg_mul_rpow hr.le two_pos, neg_neg, neg_div]
-  set G : ℝ := r ^ (-(Fintype.card ι : ℝ) / p) *
-    (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball q r))).toReal
-  calc u w ≤ |u w| := le_abs_self _
-    _ ≤ (volume.real (ball (0 : EuclideanSpace ℝ ι) 1)) ^ (-p⁻¹) *
-          ((r / 2) ^ (-((Fintype.card ι : ℝ) / p)) *
-            (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball q' (r / 2)))).toReal) := huw
-    _ ≤ (volume.real (ball (0 : EuclideanSpace ℝ ι) 1)) ^ (-p⁻¹) *
-          (2 ^ ((Fintype.card ι : ℝ) / p) * G) := by
-        rw [hrpow, mul_assoc (2 ^ ((Fintype.card ι : ℝ) / p))]
-        dsimp only [G]
-        gcongr
-    _ = 2 ^ ((Fintype.card ι : ℝ) / p) *
-          (volume.real (ball (0 : EuclideanSpace ℝ ι) 1)) ^ (-p⁻¹) * G := by ring
-
 /-- **Propagation of the small-ball `Lᵖ` bound along a segment chain.** Given the small-ball
 point-to-`Lᵖ` estimate `Hsmall` on balls of radius `(1 - θ) R / 2` inside `B(x₀, R)` and a
 nonnegative `C²` supersolution `u` of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` in `B(x₀, R)`, applying
@@ -551,8 +514,11 @@ private theorem exists_rpow_neg_mul_eLpNorm_ball_le_of_chain [Nonempty ι] {p C�
         hq)).memLp_restrict_of_subset_isCompact (isCompact_closedBall _ _) measurableSet_ball
         ball_subset_closedBall _
     obtain ⟨w, hw', huw_le⟩ :=
-      exists_mem_ball_le_mul_rpow_neg_mul_eLpNorm_of_dist_le hp (mul_pos hη₀ hR) hdist hmem
-    calc g q' ≤ C₁ * (K₀ * g q + R * F / lam) := hsmall_at hq' ⟨w, hw', huw_le⟩
+      volume.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le hp (mul_pos hη₀ hR)
+        (hdist.trans (by linarith [mul_pos hη₀ hR])) hmem
+    rw [Real.norm_eq_abs, finrank_euclideanSpace, ← neg_div] at huw_le
+    calc g q' ≤ C₁ * (K₀ * g q + R * F / lam) :=
+          hsmall_at hq' ⟨w, hw', (le_abs_self _).trans huw_le⟩
       _ = C₁ * K₀ * g q + 1 * (C₁ * (R * F / lam)) := by ring
       _ ≤ M₁ * g q + M₁ * (C₁ * (R * F / lam)) := by
           have : 0 ≤ g q := by positivity
@@ -605,8 +571,8 @@ private theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_isEmpty [IsEmpty ι] {
       Measure.restrict_eq_self_of_ae_mem (by simp only [ae_dirac_eq]; exact hy)]
   have hu_eq : (eLpNorm u 1 (volume.restrict (ball x₀ (θ * R)))).toReal = u y := by
     rw [hμ, eLpNorm_dirac _ _ one_ne_zero, Real.eNorm_eq_ofReal huy, ENNReal.toReal_ofReal huy]
-  rw [Fintype.card_eq_zero, Nat.cast_zero, neg_zero, zero_div, Real.rpow_zero, one_mul,
-    ENNReal.ofReal_one, hu_eq, one_mul]
+  simp only [Fintype.card_eq_zero, Nat.cast_zero, neg_zero, zero_div, Real.rpow_zero, one_mul,
+    ENNReal.ofReal_one, hu_eq]
   exact le_add_of_le_of_nonneg le_rfl (by positivity)
 
 omit [DecidableEq ι] in
@@ -661,7 +627,7 @@ depending only on `n`, `κ` and `θ`, with the following property. Let `a` be un
 `(θ R)^(-n/p) ‖u‖_{Lᵖ(B(x₀, θ R))} ≤ C (u(y) + R ‖f⁺‖_{Lⁿ(B(x₀, R))} / λ)`.
 
 The coefficients need no regularity or measurability, and need not be symmetric. -/
-theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le {κ : ℝ} :
+theorem exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (κ : ℝ) :
     ∃ p : ℝ, 0 < p ∧ ∀ ⦃θ : ℝ⦄, 0 < θ → θ < 1 →
       ∃ C : ℝ, 0 < C ∧
         ∀ ⦃lam Lam R : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
