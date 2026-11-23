@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Idempotent
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
-import TauCeti.RingTheory.Ideal.Extended
 
 /-!
 # Primitive idempotents in adically complete algebras
@@ -59,14 +58,9 @@ in `I • S` and `S` is `I`-adically Hausdorff, an idempotent of `S` whose image
 primitive. -/
 theorem isPrimitiveIdempotent_of_map_of_isHausdorff [IsHausdorff I S]
     (hf : ∀ x, f x = 0 → x ∈ I • (⊤ : Submodule R S)) {e : S} (he : IsIdempotentElem e)
-    (h : IsPrimitiveIdempotent (f e)) : IsPrimitiveIdempotent e where
-  isIdempotentElem := he
-  ne_zero he0 := h.ne_zero (by rw [he0, map_zero])
-  eq_zero_or_eq_zero_of_add {e₁ e₂} h₁ h₂ h₁₂ h₂₁ hsum :=
-    (h.eq_zero_or_eq_zero_of_add (h₁.map f) (h₂.map f) (by rw [← map_mul, h₁₂, map_zero])
-        (by rw [← map_mul, h₂₁, map_zero]) (by rw [← map_add, hsum])).imp
-      (fun h0 ↦ IsHausdorff.eq_zero_of_isIdempotentElem_of_mem I h₁ (hf _ h0))
-      fun h0 ↦ IsHausdorff.eq_zero_of_isIdempotentElem_of_mem I h₂ (hf _ h0)
+    (h : IsPrimitiveIdempotent (f e)) : IsPrimitiveIdempotent e :=
+  IsPrimitiveIdempotent.of_map_of_forall f he
+    (fun _ hx h0 ↦ IsHausdorff.eq_zero_of_isIdempotentElem_of_mem I hx (hf _ h0)) h
 
 /-- **Primitivity survives reduction.** If `S` is `I`-adically complete and `f : S →+* T` is
 surjective with kernel `I • S`, the image of a primitive idempotent is primitive. -/

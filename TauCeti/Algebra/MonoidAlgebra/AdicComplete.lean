@@ -66,9 +66,8 @@ theorem exists_isIdempotentElem_mapRingHom_eq (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {ε : MonoidAlgebra k G} (hε : IsIdempotentElem ε) :
     ∃ e : MonoidAlgebra R G, IsIdempotentElem e ∧ MonoidAlgebra.mapRingHom G φ e = ε := by
   subst hφI
-  refine IsAdicComplete.exists_isIdempotentElem_eq _ _ (fun _ ↦ mapRingHom_eq_zero_iff φ) ?_ hε
-  rw [RingHom.mem_range, MonoidAlgebra.coe_mapRingHom]
-  exact MonoidAlgebra.map_surjective _ hφ ε
+  exact IsAdicComplete.exists_isIdempotentElem_eq _ _ (fun _ ↦ mapRingHom_eq_zero_iff φ)
+    (MonoidAlgebra.map_surjective _ hφ ε) hε
 
 /-- **An idempotent of `R[G]` is primitive exactly when its reduction in `k[G]` is.** Here `R` is
 complete with respect to an ideal `I`, `φ : R →+* k` is a surjection with kernel `I`, and `G` is a
@@ -78,9 +77,8 @@ theorem isPrimitiveIdempotent_mapRingHom_iff (hφ : Function.Surjective φ)
     (hφI : RingHom.ker φ = I) {e : MonoidAlgebra R G} (he : IsIdempotentElem e) :
     IsPrimitiveIdempotent (MonoidAlgebra.mapRingHom G φ e) ↔ IsPrimitiveIdempotent e := by
   subst hφI
-  refine isPrimitiveIdempotent_map_iff _ (fun _ ↦ mapRingHom_eq_zero_iff φ) ?_ he
-  rw [MonoidAlgebra.coe_mapRingHom]
-  exact MonoidAlgebra.map_surjective _ hφ
+  exact isPrimitiveIdempotent_map_iff _ (fun _ ↦ mapRingHom_eq_zero_iff φ)
+    (MonoidAlgebra.map_surjective _ hφ) he
 
 /-- **Primitive idempotents of `k[G]` lift to primitive idempotents of `R[G]`.** Here `R` is
 complete with respect to an ideal `I`, `φ : R →+* k` is a surjection with kernel `I`, and `G` is a
@@ -89,8 +87,7 @@ theorem exists_isPrimitiveIdempotent_mapRingHom_eq (hφ : Function.Surjective φ
     (hφI : RingHom.ker φ = I) {ε : MonoidAlgebra k G} (hε : IsPrimitiveIdempotent ε) :
     ∃ e : MonoidAlgebra R G, IsPrimitiveIdempotent e ∧ MonoidAlgebra.mapRingHom G φ e = ε := by
   subst hφI
-  refine exists_isPrimitiveIdempotent_eq _ (fun _ ↦ mapRingHom_eq_zero_iff φ) ?_ hε
-  rw [MonoidAlgebra.coe_mapRingHom]
-  exact MonoidAlgebra.map_surjective _ hφ
+  exact exists_isPrimitiveIdempotent_eq _ (fun _ ↦ mapRingHom_eq_zero_iff φ)
+    (MonoidAlgebra.map_surjective _ hφ) hε
 
 end TauCeti.MonoidAlgebra
