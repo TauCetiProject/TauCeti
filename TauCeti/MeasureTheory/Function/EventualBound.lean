@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # Deterministic eventual bounds for almost everywhere small sequences
@@ -24,8 +25,8 @@ measure `Measure.toFinite`.
 
 ## Main statements
 
-* `MeasureTheory.exists_tendsto_zero_ae_eventually_le`: a deterministic null sequence eventually
-  bounds functions that are almost everywhere eventually below every positive constant.
+* `TauCeti.MeasureTheory.exists_tendsto_zero_ae_eventually_le`: a deterministic null sequence
+  eventually bounds functions that are almost everywhere eventually below every positive constant.
 
 ## Implementation notes
 
@@ -36,10 +37,10 @@ step down through these levels.
 
 public section
 
-open Filter Set
+open Filter MeasureTheory Set
 open scoped ENNReal Topology
 
-namespace MeasureTheory
+namespace TauCeti.MeasureTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {Y : ℕ → Ω → ℝ}
 
@@ -67,25 +68,19 @@ private theorem exists_tendsto_zero_ae_eventually_le_of_isFiniteMeasure [IsFinit
     rw [hnull] at hlim
     exact (hlim.eventually (ge_mem_nhds (ENNReal.pow_pos (by norm_num) k))).exists
   choose N hN using hsmall
-  -- `c n` is the largest `k ≤ n` whose index `N k` has been passed.
-  set c : ℕ → ℕ := fun n ↦ Nat.findGreatest (fun k ↦ N k ≤ n) n
-  have hcN {K n : ℕ} (hn : max (N K) K ≤ n) : K ≤ c n ∧ N (c n) ≤ n :=
-    ⟨Nat.le_findGreatest (le_of_max_le_right hn) (le_of_max_le_left hn),
-      Nat.findGreatest_spec (P := fun k ↦ N k ≤ n) (le_of_max_le_right hn)
-        (le_of_max_le_left hn)⟩
-  refine ⟨fun n ↦ 1 / ((c n : ℝ) + 1),
-    tendsto_one_div_add_atTop_nhds_zero_nat.comp <|
-      tendsto_atTop.2 fun K ↦ eventually_atTop.2 ⟨max (N K) K, fun n hn ↦ (hcN hn).1⟩, ?_⟩
+  -- `κ n → ∞` slowly enough that `N (κ n) ≤ n` eventually.
+  obtain ⟨κ, hκ, hκN⟩ := exists_tendsto_atTop_of_forall_eventually (P := fun k n ↦ N k ≤ n)
+    fun k ↦ eventually_ge_atTop (N k)
+  refine ⟨fun n ↦ 1 / ((κ n : ℝ) + 1), tendsto_one_div_add_atTop_nhds_zero_nat.comp hκ, ?_⟩
   have hsum : ∑' k, μ (B k (N k)) ≠ ∞ :=
     ne_top_of_le_ne_top (by simp [ENNReal.tsum_geometric, ENNReal.one_sub_inv_two])
       (tsum_le_tsum hN)
   filter_upwards [ae_eventually_notMem hsum] with ω hω
   obtain ⟨K, hK⟩ := eventually_atTop.1 hω
-  refine eventually_atTop.2 ⟨max (N K) K, fun n hn ↦ ?_⟩
-  obtain ⟨hKc, hNc⟩ := hcN hn
-  have := hK (c n) hKc
+  filter_upwards [hκ.eventually_ge_atTop K, hκN] with n hKκ hNκ
+  have := hK (κ n) hKκ
   simp only [hB, mem_iUnion, mem_ofPred_eq, exists_prop, not_exists, not_and, not_lt] at this
-  exact this n hNc
+  exact this n hNκ
 
 /-- If real functions `Y n` are almost everywhere eventually below every positive constant, then
 some deterministic sequence `δ n → 0` almost everywhere eventually bounds `Y n`. The measure is
@@ -97,4 +92,4 @@ theorem exists_tendsto_zero_ae_eventually_le [SFinite μ] (hY : ∀ n, AEMeasura
   exact exists_tendsto_zero_ae_eventually_le_of_isFiniteMeasure
     (fun n ↦ (hY n).mono_ac (toFinite_absolutelyContinuous μ)) h
 
-end MeasureTheory
+end TauCeti.MeasureTheory

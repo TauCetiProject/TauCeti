@@ -37,11 +37,12 @@ Neither independence nor any centring is needed here.
 
 ## Implementation notes
 
-The fixed-level statement is a first Borel–Cantelli argument over the entries. The entry
-`(i, j)` belongs to the corners with `n ≥ j + 1` and `C n ≥ i + 1`, and the probabilities that it
-exceeds `δ` times the square root of the least such `n` are summable: the number of entries with
-least corner index below `T` is at most `C T²`, and `∫ ‖z‖⁴ dν` is finite. The deterministic level
-comes from `MeasureTheory.exists_tendsto_zero_ae_eventually_le`.
+The fixed-level statement is a first Borel–Cantelli argument over the entries. Since eventually
+`p n ≤ C n`, the entry `(i, j)` can belong to the `n`-th corner only if `n ≥ j + 1` and
+`C n ≥ i + 1`, that is, `n ≥ max (j + 1) ((i + 1) / C)`. The probabilities that it exceeds `δ`
+times the square root of this lower bound are summable: the number of entries whose lower bound
+is below `T` is at most `C T²`, and `∫ ‖z‖⁴ dν` is finite. The deterministic level comes from
+`TauCeti.MeasureTheory.exists_tendsto_zero_ae_eventually_le`.
 
 ## References
 
@@ -97,7 +98,7 @@ theorem ae_eventually_forall_norm_le_mul_sqrt (hx : ∀ ij, HasLaw (x ij) ν P)
   have hC : 0 < C := lt_max_of_lt_right one_pos
   have hpC : ∀ᶠ n in atTop, (p n : ℝ) ≤ C * n := hC₀.mono fun n hn ↦ by
     simpa using hn.trans (mul_le_mul_of_nonneg_right (le_max_left C₀ 1) (norm_nonneg _))
-  -- The entry `ij` is bad when it exceeds `δ` times the square root of its least corner index.
+  -- The entry `ij` is bad when it exceeds `δ` times the square root of its corner-index bound.
   set m : ℕ × ℕ → ℝ := fun ij ↦ max ((ij.2 : ℝ) + 1) (((ij.1 : ℝ) + 1) / C)
   have hmeas (ij : ℕ × ℕ) : MeasurableSet {z : E | m ij < ‖z‖ ^ 2 / δ ^ 2} :=
     measurableSet_lt measurable_const (by fun_prop)
@@ -122,7 +123,7 @@ theorem ae_eventually_forall_norm_le_mul_sqrt (hx : ∀ ij, HasLaw (x ij) ν P)
   filter_upwards [hlarge, hpC] with n hn hpn i hi j hj
   by_cases hij : m (i, j) < ‖x (i, j) ω‖ ^ 2 / δ ^ 2
   · exact hn _ hij
-  -- A good entry is at most `δ` times the square root of its least corner index, which is `≤ n`.
+  -- A good entry is at most `δ` times the square root of its corner-index bound, which is `≤ n`.
   have hmn : m (i, j) ≤ n := by
     have hi' : ((i : ℝ) + 1) ≤ p n := by exact_mod_cast hi
     have hj' : ((j : ℝ) + 1) ≤ n := by exact_mod_cast hj
@@ -151,7 +152,7 @@ theorem exists_tendsto_zero_ae_eventually_forall_norm_le_mul_sqrt [SFinite P]
     refine Real.iSup_le (fun ij ↦ ?_) hε.le
     rw [div_le_iff₀ (Real.sqrt_pos.2 (Nat.cast_pos.2 hn0))]
     exact hn _ ij.1.isLt _ ij.2.isLt
-  obtain ⟨δ₀, hδ₀, hYδ₀⟩ := exists_tendsto_zero_ae_eventually_le hY hsmall
+  obtain ⟨δ₀, hδ₀, hYδ₀⟩ := MeasureTheory.exists_tendsto_zero_ae_eventually_le hY hsmall
   -- Raising `δ₀ n` to at least `n ^ (-1/4)` makes the truncation level tend to infinity.
   have hroot : Tendsto (fun n : ℕ ↦ √√(n : ℝ)) atTop atTop :=
     Real.tendsto_sqrt_atTop.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
