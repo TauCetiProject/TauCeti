@@ -13,8 +13,10 @@ import TauCeti.RingTheory.Polynomial.Localization
 /-!
 # Zeros and separability of the radical of a polynomial
 
-Let `f` be a polynomial over a unique factorization monoid `R`, and `radical f` its radical in
-`R[X]`, the product of its normalized prime factors.
+Let `R` be a commutative ring equipped with normalization (`NormalizationMonoid`) and unique
+factorization (`UniqueFactorizationMonoid`), and let `f` be a polynomial in `R[X]`. For `f ≠ 0`,
+`radical f` is the product of the distinct normalized prime factors of `f` in `R[X]`, each
+occurring once; for `f = 0`, `radical 0 = 1`.
 
 * `Polynomial.roots_toFinset_map_radical`: after any ring map to a domain, the images of
   `radical f` and `f` have the same finite set of roots (`roots.toFinset`). For `f ≠ 0` this holds
@@ -36,10 +38,11 @@ open UniqueFactorizationMonoid
 
 namespace Polynomial
 
-/-- After a map to a domain, the radical of a polynomial over a unique factorization monoid has
-the same finite set of roots (`roots.toFinset`) as the polynomial itself. For `f ≠ 0` this
-follows from `radical f ∣ f ∣ radical f ^ n`: the two images vanish together, and then both
-sets are empty, since `roots 0 = 0`. For `f = 0` both sets are empty, as `radical 0 = 1`. -/
+/-- After a ring map to a domain, the radical of a polynomial over a commutative ring equipped
+with normalization and unique factorization has the same finite set of roots (`roots.toFinset`) as
+the polynomial itself. For `f ≠ 0` this follows from `radical f ∣ f ∣ radical f ^ n`: the two
+images vanish together, and then both sets are empty, since `roots 0 = 0`. For `f = 0` both sets
+are empty, as `radical 0 = 1`. -/
 theorem roots_toFinset_map_radical {R S : Type*} [CommRing R] [NormalizationMonoid R]
     [UniqueFactorizationMonoid R] [CommRing S] [IsDomain S] [DecidableEq S] (f : R[X])
     (φ : R →+* S) : ((radical f).map φ).roots.toFinset = (f.map φ).roots.toFinset := by
@@ -60,9 +63,9 @@ theorem roots_toFinset_map_radical {R S : Type*} [CommRing R] [NormalizationMono
     rw [roots_pow] at hsub
     exact Multiset.Subset.trans hsub (Multiset.smul_subset_self _ n)
 
-/-- The radical of a polynomial over a unique factorization monoid `R` whose fraction field `K`
-is perfect maps to a separable polynomial along `R → K → L` for every commutative `K`-algebra
-`L`. -/
+/-- Let `R` be a commutative ring equipped with normalization and unique factorization whose
+fraction field `K` is perfect. The radical of a polynomial `f : R[X]` maps to a separable
+polynomial along `R → K → L` for every commutative `K`-algebra `L`. -/
 theorem separable_map_radical {R : Type*} [CommRing R] [NormalizationMonoid R]
     [UniqueFactorizationMonoid R] (f : R[X]) (K L : Type*) [Field K] [Algebra R K]
     [IsFractionRing R K] [PerfectField K] [CommSemiring L] [Algebra R L] [Algebra K L]

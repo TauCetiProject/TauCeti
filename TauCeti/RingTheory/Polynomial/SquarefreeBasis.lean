@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
-import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.Algebra.Squarefree
 import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
@@ -200,30 +200,8 @@ end Multiplicity
 /-- If polynomials over `D` form a decomposition monoid, as over a GCD domain, the product of the
 members of a squarefree basis is squarefree. -/
 theorem squarefree_prod [DecompositionMonoid D[X]] (hB : F.IsSquarefreeBasis B) :
-    Squarefree (∏ b ∈ B, b) := by
-  have hmul : ∀ {x y : D[X]}, IsRelPrime x y → Squarefree x → Squarefree y →
-      Squarefree (x * y) := by
-    intro x y hxy hx hy d hd
-    obtain ⟨a, b, ha, hb, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul ((dvd_mul_left d d).trans hd)
-    have hax : IsRelPrime a y := hxy.of_dvd_left ha
-    have hby : IsRelPrime x b := hxy.of_dvd_right hb
-    have ha' : IsUnit a := hx a ((hax.mul_left hax).dvd_of_dvd_mul_right
-      ((mul_dvd_mul (dvd_mul_right a b) (dvd_mul_right a b)).trans hd))
-    have hb' : IsUnit b := hy b ((hby.mul_right hby).symm.dvd_of_dvd_mul_left
-      ((mul_dvd_mul (dvd_mul_left b a) (dvd_mul_left b a)).trans hd))
-    exact ha'.mul hb'
-  suffices ∀ s ⊆ B, Squarefree (∏ b ∈ s, b) from this B Subset.rfl
-  intro s hs
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih =>
-    rw [Finset.prod_cons]
-    have haB : a ∈ B := hs (Finset.mem_cons_self a s)
-    have hsB : s ⊆ B := (Finset.subset_cons ha).trans hs
-    refine hmul (.prod_right fun b hb ↦ hB.isRelPrime a haB b (hsB hb) ?_)
-      (hB.squarefree a haB) (ih hsB)
-    rintro rfl
-    exact ha hb
+    Squarefree (∏ b ∈ B, b) :=
+  Finset.squarefree_prod_iff.2 ⟨hB.isRelPrime, hB.squarefree⟩
 
 /-- If polynomials over `D` form a decomposition monoid, as over a GCD domain, the product of the
 members of a squarefree basis is squarefree over every localization of `D`, in particular over the
