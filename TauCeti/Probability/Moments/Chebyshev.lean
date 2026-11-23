@@ -92,9 +92,8 @@ theorem ae_tendsto_inv_smul_zero_of_summable_integral_norm_sq {E : Type*}
         simpa only [mul_pow, sq_abs] using
           (hN (k + N) (Nat.le_add_left N k)).const_mul ((b (k + N))⁻¹ ^ 2)
       refine (measure_mono hsub).trans ((meas_ge_le_integral_sq_div_sq hint_maj hε).trans_eq ?_)
-      simp only [mul_pow, sq_abs, integral_const_mul]
+      simp only [mul_pow, sq_abs, integral_const_mul, inv_pow, div_eq_mul_inv]
       congr 1
-      rw [inv_pow, div_eq_mul_inv, div_eq_mul_inv, inv_pow]
       ring
     have hsum_shift : Summable fun k ↦ (∫ ω, ‖Z (k + N) ω‖ ^ 2 ∂μ) / b (k + N) ^ 2 :=
       (summable_nat_add_iff N).2 hsum

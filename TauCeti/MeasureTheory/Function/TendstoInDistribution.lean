@@ -216,8 +216,7 @@ private theorem abs_integral_map_sub_le_of_lipschitz
 /-- **Slutsky's convergence-in-distribution replacement lemma without separability**, for a general
 pseudometric space and arbitrary filter `l`. If `X i → Z` in distribution and
 `dist (Y i) (X i) → 0` in probability, with `Y i` almost-everywhere measurable, then `Y i → Z` in
-distribution. Adapted from Mathlib's `tendstoInDistribution_of_tendstoInMeasure_sub` using
-`ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto`, dropping
+distribution. Unlike Mathlib's `tendstoInDistribution_of_tendstoInMeasure_sub`, this drops
 `SecondCountableTopology`, `BorelSpace`, and countable generation of `l`. -/
 protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
     {E Ω'' : Type*} [PseudoMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -254,8 +253,8 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
       simpa only [mul_zero, add_zero] using
         (tendsto_const_nhds (x := ε / 2)).add (hdist.const_mul M)
     filter_upwards [h_bd.eventually_lt_const (half_lt_self hε)] with i hi
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg dist_nonneg, Real.dist_eq, abs_sub_comm]
-    simp only [ProbabilityMeasure.coe_mk]
+    simp only [Real.dist_eq, sub_zero, abs_abs, ProbabilityMeasure.coe_mk]
+    rw [abs_sub_comm]
     calc |∫ x, F x ∂(μ''.map (Y i)) - ∫ x, F x ∂(μ''.map (X i))|
         ≤ (L' : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} :=
           abs_integral_map_sub_le_of_lipschitz (hXZ.forall_aemeasurable i) (hY i)

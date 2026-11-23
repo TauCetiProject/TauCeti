@@ -81,6 +81,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on`, and
   `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on_prob`: domination on events whose complements
   have vanishing measure.
+* `MeasureTheory.tendsto_measure_compl_zero_of_tendsto_one`: eventually null-measurable events
+  whose probabilities tend to `1` have complements of measure tending to `0`.
 * `MeasureTheory.tendstoInMeasure_iff_measureReal_lt_dist`: strict-distance characterization
   for finite measures.
 * `MeasureTheory.tendsto_measure_dist_ge_atTop`: distance tightness of almost-everywhere strongly
@@ -97,6 +99,26 @@ by Claude Fable 5 (Kitware, Inc., Apache-2.0).
 -/
 
 public section
+
+namespace MeasureTheory
+
+open Filter
+open scoped ENNReal Topology
+
+/-- For eventually null-measurable events of probability tending to `1`, the complements have
+measure tending to `0`. -/
+theorem tendsto_measure_compl_zero_of_tendsto_one {α ι : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsProbabilityMeasure μ] {l : Filter ι} {A : ι → Set α}
+    (hmeas : ∀ᶠ i in l, NullMeasurableSet (A i) μ)
+    (hA : Tendsto (fun i ↦ μ (A i)) l (𝓝 1)) :
+    Tendsto (fun i ↦ μ (A i)ᶜ) l (𝓝 0) := by
+  have h := ENNReal.Tendsto.sub tendsto_const_nhds hA (Or.inl ENNReal.one_ne_top)
+  rw [tsub_self] at h
+  refine h.congr' ?_
+  filter_upwards [hmeas] with i hi
+  exact (prob_compl_eq_one_sub₀ hi).symm
+
+end MeasureTheory
 
 namespace TauCeti
 
@@ -140,18 +162,6 @@ theorem tendstoInMeasure_of_tendsto_measure_rate_lt_dist [PseudoMetricSpace E]
   filter_upwards [hrate.eventually_lt_const hε] with i hi
   exact measure_mono fun x hx => hi.trans_le hx
 
-/-- For eventually null-measurable events of probability tending to `1`, the complements have
-measure tending to `0`. -/
-private theorem tendsto_measure_compl_zero [IsProbabilityMeasure μ] {A : ι → Set α}
-    (hmeas : ∀ᶠ i in l, NullMeasurableSet (A i) μ)
-    (hA : Tendsto (fun i ↦ μ (A i)) l (𝓝 1)) :
-    Tendsto (fun i ↦ μ (A i)ᶜ) l (𝓝 0) := by
-  have h := ENNReal.Tendsto.sub tendsto_const_nhds hA (Or.inl ENNReal.one_ne_top)
-  rw [tsub_self] at h
-  refine h.congr' ?_
-  filter_upwards [hmeas] with i hi
-  exact (prob_compl_eq_one_sub₀ hi).symm
-
 /--
 **High-probability phrasing.** If, for a probability measure, the events
 "`f i` is within `rate i` of `g`" have probability tending to `1` and `rate`
@@ -169,7 +179,7 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
     (hprob : Tendsto (fun i => μ {x | dist (f i x) (g x) ≤ rate i}) l (𝓝 1)) :
     TendstoInMeasure μ f l g := by
   refine tendstoInMeasure_of_tendsto_measure_rate_lt_dist hrate ?_
-  simpa only [Set.compl_ofPred, not_le] using tendsto_measure_compl_zero hmeas hprob
+  simpa only [Set.compl_ofPred, not_le] using tendsto_measure_compl_zero_of_tendsto_one hmeas hprob
 
 /-- If, for every `δ > 0`, the measure of `A k` is at most `δ / ε²` plus a term `B δ k` tending to
 zero along `l`, then the measure of `A k` tends to zero. This is how Chebyshev-type estimates
@@ -349,7 +359,7 @@ theorem zero_of_norm_le_on_prob {α ι E F : Type*} [MeasurableSpace α] {μ : M
     (hA : Tendsto (fun i ↦ μ (A i)) l (𝓝 1))
     (hle : ∀ᶠ i in l, ∀ x ∈ A i, ‖g i x‖ ≤ ‖f i x‖) :
     TendstoInMeasure μ g l (fun _ ↦ 0) := by
-  exact hf.zero_of_norm_le_on (TauCeti.tendsto_measure_compl_zero hmeas hA) hle
+  exact hf.zero_of_norm_le_on (tendsto_measure_compl_zero_of_tendsto_one hmeas hA) hle
 
 end MeasureTheory.TendstoInMeasure
 

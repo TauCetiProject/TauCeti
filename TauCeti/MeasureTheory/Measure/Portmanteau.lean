@@ -355,8 +355,7 @@ private theorem eventually_measureReal_sub_lt_of_le_liminf
 /-- **Portmanteau `(O) ⇒ (T)` for an arbitrary filter.** If `μ U ≤ liminf (μs · U)` along an
 arbitrary filter `L` for every open set `U`, then `μs` converges weakly to `μ`. Unlike Mathlib's
 `MeasureTheory.tendsto_of_forall_isOpen_le_liminf`, no countable-generation assumption on `L` is
-required; the proof replaces Fatou's lemma along sequences with finite Riemann-sum approximations of
-nonnegative bounded continuous functions. -/
+required. -/
 theorem tendsto_of_forall_isOpen_le_liminf
     {X ι : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
     {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
@@ -407,9 +406,9 @@ theorem tendsto_of_forall_isOpen_le_liminf
 
 /-- **Portmanteau `(T) ⇔ (Lip)` for an arbitrary filter.** Weak convergence of probability measures
 along an arbitrary filter `L` on a pseudo-emetric space with opens-measurable structure is
-equivalent to convergence of integrals of all bounded Lipschitz functions. Adapted from Mathlib's
-proof of `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`, replacing the countably
-generated closed-set criterion with `tendsto_of_forall_isOpen_le_liminf`. -/
+equivalent to convergence of integrals of all bounded Lipschitz functions. Unlike Mathlib's
+`MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`, no countable-generation assumption
+on `L` is required. -/
 theorem tendsto_iff_forall_lipschitz_integral_tendsto
     {X ι : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X} :

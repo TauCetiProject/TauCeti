@@ -27,8 +27,9 @@ method.
 * `TauCeti.tendstoInMeasure_const_of_isBoundedInProbability_smul_sub` — `aₙ (Tₙ - θ) = O_P(1)`
   with `aₙ → ∞` implies `Tₙ → θ` in probability.
 * `TauCeti.tendstoInMeasure_delta_method_remainder` — the linearization remainder
-  `aₙ • (g (Tₙ) - g θ) - D (aₙ • (Tₙ - θ))` converges to `0` in probability whenever
-  `aₙ • (Tₙ - θ)` is bounded in probability, with no measurability assumptions.
+  `aₙ • (g (Tₙ) - g θ) - D (aₙ • (Tₙ - θ))` converges to `0` in probability whenever `aₙ → ∞` and
+  `aₙ • (Tₙ - θ)` is bounded in probability under a finite measure, with no measurability
+  assumptions.
 * `TauCeti.tendstoInDistribution_of_hasFDerivAt` — general-rate delta method in seminormed real
   vector spaces without second-countability assumptions.
 * `TauCeti.tendstoInDistribution_delta_method` — the classical `√n`-rate delta method.
@@ -85,22 +86,28 @@ theorem tendstoInMeasure_delta_method_remainder
       atTop (fun _ ↦ 0) := by
   have hT := tendstoInMeasure_const_of_isBoundedInProbability_smul_sub ha hbd
   let r : E → ℝ := fun x ↦ ‖g x - g θ - D (x - θ)‖ / ‖x - θ‖
+  have hr0 : r θ = 0 := by simp [r]
   have hr_cont : ContinuousAt r θ := by
-    simpa [ContinuousAt, r] using hd.isLittleO.norm_norm.tendsto_div_nhds_zero
-  have hr_lim : TendstoInMeasure μ (fun n ω ↦ r (T n ω)) atTop (fun _ ↦ 0) := by
-    simpa [r] using hT.continuousAt_const_comp hr_cont
+    rw [ContinuousAt, hr0]
+    exact hd.isLittleO.norm_norm.tendsto_div_nhds_zero
+  have hr_lim : TendstoInMeasure μ (fun n ω ↦ r (T n ω)) atTop (fun _ ↦ 0) :=
+    hr0 ▸ hT.continuousAt_const_comp hr_cont
   have hprod := tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero hr_lim hbd
   obtain ⟨δ, hδ, hcancel⟩ :=
     Metric.eventually_nhds_iff.1 hd.isLittleO.norm_norm.eventually_mul_div_cancel
   refine hprod.zero_of_norm_le_on (A := fun n ↦ {ω | dist (T n ω) θ < δ}) ?_ ?_
   · simpa only [Set.compl_ofPred, not_lt] using tendstoInMeasure_iff_dist.1 hT δ hδ
   · filter_upwards [ha.eventually_ge_atTop 0] with n hn ω hω
-    rw [map_smul, ← smul_sub, norm_smul, Real.norm_of_nonneg hn,
-      norm_smul, norm_smul, Real.norm_of_nonneg (div_nonneg (norm_nonneg _) (norm_nonneg _)),
-      Real.norm_of_nonneg hn]
+    have hr_nonneg : 0 ≤ r (T n ω) := div_nonneg (norm_nonneg _) (norm_nonneg _)
     have hmul : r (T n ω) * ‖T n ω - θ‖ = ‖g (T n ω) - g θ - D (T n ω - θ)‖ :=
       hcancel (Set.mem_ofPred_eq.mp hω)
-    rw [← mul_assoc, mul_comm (r (T n ω)) (a n), mul_assoc, hmul]
+    refine le_of_eq ?_
+    calc ‖a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ))‖
+        = a n * ‖g (T n ω) - g θ - D (T n ω - θ)‖ := by
+          simp only [map_smul, ← smul_sub, norm_smul, Real.norm_of_nonneg hn]
+      _ = ‖r (T n ω) • (a n • (T n ω - θ))‖ := by
+          simp only [norm_smul, Real.norm_of_nonneg hn, Real.norm_of_nonneg hr_nonneg, ← hmul]
+          ring
 
 /-- **General-rate delta method.** If `aₙ • (Tₙ - θ) → Z` in distribution for a diverging sequence
 `aₙ → ∞` and `g : E → F` is Fréchet differentiable at `θ` with derivative `D`, with each `g ∘ Tₙ`

@@ -36,6 +36,11 @@ large numbers for Banach-space-valued integrable statistics.
 * `TauCeti.isIndependentIdenticallyDistributed_iff` — definitional characterization.
 * `TauCeti.IsIndependentIdenticallyDistributed.comp` — measurable statistics of an i.i.d. family
   are i.i.d.
+* `TauCeti.IsIndependentIdenticallyDistributed.map_fun_eq_pi`,
+  `TauCeti.isIndependentIdenticallyDistributed_iff_map_fun_eq_pi`,
+  `TauCeti.IsIndependentIdenticallyDistributed.map_fun_eq_infinitePi`, and
+  `TauCeti.isIndependentIdenticallyDistributed_iff_map_fun_eq_infinitePi` — finite and infinite
+  product-law characterizations.
 * `TauCeti.isIndependentIdenticallyDistributed_eval_pi` and
   `TauCeti.isIndependentIdenticallyDistributed_eval_infinitePi` — coordinate projections on
   product spaces are i.i.d.
@@ -166,6 +171,45 @@ theorem isIndependentIdenticallyDistributed_eval_pi [Fintype ι] (P : Measure E)
       (fun (i : ι) (x : ι → E) ↦ x i) P :=
   Measure.infinitePi_eq_pi (μ := fun _ : ι ↦ P) ▸
     isIndependentIdenticallyDistributed_eval_infinitePi P
+
+/-- The joint law of a finite i.i.d. family with common law `P` is the product measure
+`Measure.pi (fun _ ↦ P)`. -/
+theorem IsIndependentIdenticallyDistributed.map_fun_eq_pi [Fintype ι]
+    (h : IsIndependentIdenticallyDistributed μ X P) :
+    μ.map (fun ω i ↦ X i ω) = Measure.pi (fun _ ↦ P) := by
+  have := h.isProbabilityMeasure
+  rw [h.iIndepFun.map_fun_eq_pi_map h.aemeasurable]
+  simp_rw [h.map_eq]
+
+/-- A finite family `X` under a probability measure `μ` is i.i.d. with common law `P` if and only
+if each coordinate is measure-preserving into `P` and the joint law is `Measure.pi (fun _ ↦ P)`. -/
+theorem isIndependentIdenticallyDistributed_iff_map_fun_eq_pi [Fintype ι]
+    [IsProbabilityMeasure μ] :
+    IsIndependentIdenticallyDistributed μ X P ↔
+      (∀ i, MeasurePreserving (X i) μ P) ∧
+        μ.map (fun ω i ↦ X i ω) = Measure.pi (fun _ ↦ P) := by
+  refine ⟨fun h ↦ ⟨h.measurePreserving, h.map_fun_eq_pi⟩, fun ⟨hmp, hmap⟩ ↦ ⟨?_, hmp⟩⟩
+  rw [iIndepFun_iff_map_fun_eq_pi_map fun i ↦ (hmp i).aemeasurable]
+  simpa only [fun i ↦ (hmp i).map_eq] using hmap
+
+/-- The joint law of an i.i.d. family with common law `P` over an arbitrary index type `ι` is
+the infinite product measure `Measure.infinitePi (fun _ ↦ P)`. -/
+theorem IsIndependentIdenticallyDistributed.map_fun_eq_infinitePi
+    (h : IsIndependentIdenticallyDistributed μ X P) :
+    μ.map (fun ω i ↦ X i ω) = Measure.infinitePi (fun _ ↦ P) := by
+  rw [h.iIndepFun.map_fun_eq_infinitePi_map h.measurable]
+  simp_rw [h.map_eq]
+
+/-- A family `X` over an arbitrary index type `ι` under a probability measure `μ` is i.i.d. with
+common law `P` if and only if each coordinate is measure-preserving into `P` and the joint law is
+`Measure.infinitePi (fun _ ↦ P)`. -/
+theorem isIndependentIdenticallyDistributed_iff_map_fun_eq_infinitePi [IsProbabilityMeasure μ] :
+    IsIndependentIdenticallyDistributed μ X P ↔
+      (∀ i, MeasurePreserving (X i) μ P) ∧
+        μ.map (fun ω i ↦ X i ω) = Measure.infinitePi (fun _ ↦ P) := by
+  refine ⟨fun h ↦ ⟨h.measurePreserving, h.map_fun_eq_infinitePi⟩, fun ⟨hmp, hmap⟩ ↦ ⟨?_, hmp⟩⟩
+  rw [iIndepFun_iff_map_fun_eq_infinitePi_map fun i ↦ (hmp i).measurable]
+  simpa only [fun i ↦ (hmp i).map_eq] using hmap
 
 end Defs
 
