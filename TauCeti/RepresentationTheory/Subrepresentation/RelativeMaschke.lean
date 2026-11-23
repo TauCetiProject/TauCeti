@@ -57,22 +57,15 @@ theorem isSemisimpleRepresentation_of_comp_subtype (ρ : Representation k G V) (
   have hπH (h : H) (x : V) : π (ρ h x) = ρ h (π x) := hπH₀ h x
   -- The averaged projection `P = [G : H]⁻¹ ∑ ρ(q) π ρ(q)⁻¹`.
   let P : V →ₗ[k] V := (H.index : k)⁻¹ • relNorm (linHom ρ ρ) H π
-  have hW (g : G) (x : V) (hx : x ∈ W.toSubmodule) : ρ g x ∈ W.toSubmodule :=
-    W.apply_mem_toSubmodule g hx
-  have hPW (x : V) : P x ∈ W.toSubmodule :=
-    W.toSubmodule.smul_mem _ (relNorm_linHom_mem ρ hW hπW x)
-  have hPid (x : V) (hx : x ∈ W.toSubmodule) : P x = x := by
-    rw [LinearMap.smul_apply, relNorm_linHom_apply_of_mem ρ hW hπid hx,
-      ← Nat.cast_smul_eq_nsmul k, smul_smul, inv_mul_cancel₀ (NeZero.ne _), one_smul]
+  have hP : LinearMap.IsProj W.toSubmodule P :=
+    isProj_inv_index_smul_relNorm_linHom ρ (fun g _ hx ↦ W.apply_mem_toSubmodule g hx)
+      ⟨hπW, hπid⟩ (NeZero.ne _)
   have hPG (g : G) (x : V) : P (ρ g x) = ρ g (P x) := by
     rw [LinearMap.smul_apply, relNorm_linHom_apply_comm ρ ρ hπH, LinearMap.smul_apply, map_smul]
   -- Its kernel is a `G`-stable complement of `W`.
   let K : Subrepresentation ρ :=
     ⟨LinearMap.ker P, fun g x hx ↦ by
       rw [LinearMap.mem_ker, hPG, LinearMap.mem_ker.mp hx, map_zero]⟩
-  refine ⟨K, Subrepresentation.isCompl_toSubmodule.mp ?_⟩
-  have h := LinearMap.isCompl_of_proj (f := P.codRestrict W.toSubmodule hPW) fun x ↦
-    Subtype.ext (hPid x x.property)
-  rwa [LinearMap.ker_codRestrict] at h
+  exact ⟨K, Subrepresentation.isCompl_toSubmodule.mp hP.isCompl⟩
 
 end Representation
