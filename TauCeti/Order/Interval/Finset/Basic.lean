@@ -10,11 +10,12 @@ public import Mathlib.Order.Interval.Finset.Basic
 public import Mathlib.Order.Interval.Finset.SuccPred
 
 /-!
-# Finite interval partitions at an interior point
+# Finite interval partitions and cardinalities
 
 Every closed interval `[a, b]` together with the open lower ray `(-∞, a)` covers the closed lower
 ray `(-∞, b]`, and the two pieces are disjoint whenever `a ≤ b`. Also records the two-element
-successor interval `Icc a (Order.succ a) = {a, Order.succ a}`.
+successor interval `Icc a (Order.succ a) = {a, Order.succ a}` and cardinality decrease for nested
+closed intervals `Icc a₁ b₁ ⊂ Icc a₂ b₂`.
 
 ## Main results
 
@@ -22,6 +23,8 @@ successor interval `Icc a (Order.succ a) = {a, Order.succ a}`.
 * `Finset.Iio_union_Icc_eq_Iic`: `Finset.Iio a ∪ Finset.Icc a b = Finset.Iic b` when `a ≤ b`.
 * `Finset.Icc_self_succ`: `Finset.Icc a (Order.succ a) = {a, Order.succ a}`.
 * `Finset.Icc_self_add_one`: `Finset.Icc a (a + 1) = {a, a + 1}` in a `SuccAddOrder`.
+* `Finset.card_Icc_lt_card_Icc_left`, `Finset.card_Icc_lt_card_Icc_right`: moving either endpoint
+  strictly inwards on a nonempty closed interval strictly decreases its cardinality.
 -/
 
 public section
@@ -32,11 +35,32 @@ variable {α : Type*}
 
 section Preorder
 
-variable [Preorder α] [LocallyFiniteOrder α] [LocallyFiniteOrderBot α] {a b c : α}
+variable [Preorder α] [LocallyFiniteOrder α]
+
+section LocallyFiniteOrderBot
+
+variable [LocallyFiniteOrderBot α] {a b c : α}
 
 /-- `Iio a` and `Icc b c` are disjoint whenever `a ≤ b`. -/
 theorem Iio_disjoint_Icc (h : a ≤ b) : Disjoint (Iio a) (Icc b c) :=
   disjoint_left.2 fun _ hxa hbcx ↦ (mem_Iio.1 hxa).not_ge <| h.trans (mem_Icc.1 hbcx).1
+
+end LocallyFiniteOrderBot
+
+variable {a₁ a₂ b₁ b₂ : α}
+
+/-- If `[a₂, b₂]` is nonempty (`a₂ ≤ b₂`) and `[a₁, b₁]` is obtained from it by moving the left
+endpoint strictly inwards (`a₂ < a₁`) and the right endpoint not outwards (`b₁ ≤ b₂`), then
+`[a₁, b₁]` has strictly fewer elements than `[a₂, b₂]`. This is the cardinality form of
+`Finset.Icc_ssubset_Icc_left`. -/
+@[to_dual (rename := a₁ ↔ b₁, a₂ ↔ b₂, ha ↔ hb) (reorder := ha hb) card_Icc_lt_card_Icc_right
+/-- If `[a₂, b₂]` is nonempty (`a₂ ≤ b₂`) and `[a₁, b₁]` is obtained from it by moving the left
+endpoint not outwards (`a₂ ≤ a₁`) and the right endpoint strictly inwards (`b₁ < b₂`), then
+`[a₁, b₁]` has strictly fewer elements than `[a₂, b₂]`. This is the cardinality form of
+`Finset.Icc_ssubset_Icc_right`. -/]
+theorem card_Icc_lt_card_Icc_left (hI : a₂ ≤ b₂) (ha : a₂ < a₁) (hb : b₁ ≤ b₂) :
+    #(Icc a₁ b₁) < #(Icc a₂ b₂) :=
+  card_lt_card (Icc_ssubset_Icc_left hI ha hb)
 
 end Preorder
 
