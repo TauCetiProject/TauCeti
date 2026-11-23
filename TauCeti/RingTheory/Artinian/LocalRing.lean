@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Module.Torsion.Essential
-public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 public import TauCeti.RingTheory.SimpleModule.LocalRing
 
 /-!
@@ -16,7 +14,7 @@ public import TauCeti.RingTheory.SimpleModule.LocalRing
 Let `R` be a commutative local ring with maximal ideal `𝔪` and residue field `κ`. Every simple
 submodule of an `R`-module is annihilated by `𝔪`, so it lies in the socle `M[𝔪]`
 (`IsAtom.le_torsionBySet_maximalIdeal`). When `M` is Artinian, its submodule lattice is atomic,
-hence `M[𝔪]` is an essential submodule of `M` and is finite-dimensional over `κ`.
+hence `M[𝔪]` is an essential submodule of `M`.
 
 In particular, if `R` is Noetherian, essentiality of `M[𝔪]` implies that every element of an
 Artinian `R`-module is killed by a power of `𝔪`, so `M` carries the canonical action of the `𝔪`-adic
@@ -26,8 +24,6 @@ completion `R̂`.
 
 * `TauCeti.isEssential_torsionBySet_maximalIdeal`: the `𝔪`-torsion submodule of an Artinian module
   over a local ring is essential.
-* `TauCeti.exists_torsionBySet_maximalIdeal_linearEquiv_pi`: the `𝔪`-torsion submodule of an
-  Artinian module is `R`-linearly isomorphic to `Fin r → κ` for some `r : ℕ`.
 * `TauCeti.primaryComponent_maximalIdeal_eq_top_of_isArtinian`: over a Noetherian local ring,
   every Artinian module is maximal-ideal-power torsion.
 
@@ -59,33 +55,6 @@ essential in every Artinian module. -/
 theorem isEssential_torsionBySet_maximalIdeal [IsArtinian R M] :
     IsEssential (torsionBySet R M (maximalIdeal R)) :=
   isEssential_of_forall_atom_le fun _ ha ↦ ha.le_torsionBySet_maximalIdeal
-
-variable (R M) in
-/-- The `𝔪`-torsion submodule of an Artinian module over a local ring is finitely generated over
-`R ⧸ 𝔪`. -/
-theorem finite_quotient_maximalIdeal_torsionBySet [IsArtinian R M] :
-    Module.Finite (R ⧸ maximalIdeal R) (torsionBySet R M (maximalIdeal R)) := by
-  let : Field (R ⧸ maximalIdeal R) := Ideal.Quotient.field (maximalIdeal R)
-  have : IsArtinian (R ⧸ maximalIdeal R) (torsionBySet R M (maximalIdeal R)) :=
-    isArtinian_of_tower R inferInstance
-  exact IsSemiprimaryRing.finite_of_isArtinian (R ⧸ maximalIdeal R) (R ⧸ maximalIdeal R) _
-
-variable (R M) in
-/-- The `𝔪`-torsion submodule of an Artinian module over a local ring is `R`-linearly isomorphic to
-a finite power of the residue field. -/
-theorem exists_torsionBySet_maximalIdeal_linearEquiv_pi [IsArtinian R M] :
-    ∃ r : ℕ, Nonempty (torsionBySet R M (maximalIdeal R) ≃ₗ[R] (Fin r → ResidueField R)) := by
-  classical
-  let K := R ⧸ maximalIdeal R
-  let : Field K := Ideal.Quotient.field (maximalIdeal R)
-  have : Module.Finite K (torsionBySet R M (maximalIdeal R)) :=
-    finite_quotient_maximalIdeal_torsionBySet R M
-  let b := Module.Free.chooseBasis K (torsionBySet R M (maximalIdeal R))
-  let eK : torsionBySet R M (maximalIdeal R) ≃ₗ[K]
-      (Fin (Fintype.card (Module.Free.ChooseBasisIndex K _)) → K) :=
-    b.equivFun.trans (LinearEquiv.piCongrLeft K (fun _ ↦ K) (Fintype.equivFin _))
-  refine ⟨_, ⟨eK.restrictScalars R ≪≫ₗ
-    LinearEquiv.piCongrRight fun _ ↦ quotientEquivResidueField (maximalIdeal.isMaximal R)⟩⟩
 
 end IsLocalRing
 

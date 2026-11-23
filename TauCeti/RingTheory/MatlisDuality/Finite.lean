@@ -14,14 +14,17 @@ public import TauCeti.RingTheory.MatlisDuality.Endomorphism
 
 Let `R` be a Noetherian local ring and `E` an injective hull of its residue field.
 The hull and the Matlis dual `Hom_R(M, E)` of every finitely generated `R`-module `M`
-are Artinian. If `R` is complete, evaluation identifies `M` with its double Matlis dual.
+are Artinian, and conversely an `R`-module is finitely generated if and only if `Hom_R(M, E)` is
+Artinian (`TauCeti.IsInjectiveEnvelope.finite_iff_isArtinian_linearMap`), without completeness.
+If `R` is complete, evaluation identifies `M` with its double Matlis dual.
 The residue field may be infinite.
 
 Completeness identifies the existing endomorphism algebra `End_R(E) ≅ R̂` with `R`.
 Surjectivity of evaluation then follows from finite free covers and injectivity of `E`;
 injectivity follows from the cogenerator property. Artinianness of the hull follows from
 the annihilator embedding and Noetherianity of its endomorphisms over the completion;
-the dual of a finite module embeds in a finite power of the hull.
+the dual of a finite module embeds in a finite power of the hull, while an Artinian dual forces
+the module to be Noetherian by the annihilator embedding and hence finitely generated.
 
 ## References
 

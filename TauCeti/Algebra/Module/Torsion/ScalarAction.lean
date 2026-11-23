@@ -21,6 +21,8 @@ for a scalar `c : k`, then `a` acts as `c` on every vector fixed by `f`, and if
   `c` when `a * f ≡ c • f` modulo `J`.
 * `Module.IsTorsionBySet.smul_smul_eq_smul_smul`: `f • a • x = c • f • x` when
   `f * a ≡ c • f` modulo `J`.
+* `Submodule.map_le_ker_toSpanSingleton_of_mem_torsionBySet`: an ideal of `k` killing `x` pushes
+  forward to `I.map (algebraMap k A)` killing `x`.
 * `Submodule.smul_eq_of_sub_algebraMap_mem_map`: for an element killed by an ideal `I` of `k`,
   any `a : A` congruent to `algebraMap k A c` modulo `I.map (algebraMap k A)` acts as `c`.
 -/
@@ -52,6 +54,18 @@ end Module.IsTorsionBySet
 
 namespace Submodule
 
+/-- In a module over a `k`-algebra `A`, if `x` is killed by an ideal `I` of `k`, then
+`I.map (algebraMap k A)` lies in the kernel of `a ↦ a • x`. -/
+theorem map_le_ker_toSpanSingleton_of_mem_torsionBySet {k A N : Type*}
+    [CommSemiring k] [Semiring A] [Algebra k A]
+    [AddCommMonoid N] [Module A N] [Module k N] [IsScalarTower k A N]
+    {I : Ideal k} {x : N} (hx : x ∈ Submodule.torsionBySet k N ↑I) :
+    I.map (algebraMap k A) ≤ LinearMap.ker (LinearMap.toSpanSingleton A N x) := by
+  rw [Ideal.map_le_iff_le_comap]
+  intro m hm
+  simpa [LinearMap.mem_ker, algebraMap_smul] using
+    (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨m, hm⟩
+
 /-- In a module over a `k`-algebra `A`, if `x` is killed by an ideal `I` of `k` and
 `a - algebraMap k A c` lies in `I.map (algebraMap k A)`, then `a • x = c • x`. -/
 theorem smul_eq_of_sub_algebraMap_mem_map {k A N : Type*} [CommSemiring k] [Ring A] [Algebra k A]
@@ -59,12 +73,8 @@ theorem smul_eq_of_sub_algebraMap_mem_map {k A N : Type*} [CommSemiring k] [Ring
     {I : Ideal k} {x : N} (hx : x ∈ Submodule.torsionBySet k N ↑I)
     {a : A} {c : k} (ha : a - algebraMap k A c ∈ I.map (algebraMap k A)) :
     a • x = c • x := by
-  have hle : I.map (algebraMap k A) ≤ LinearMap.ker (LinearMap.toSpanSingleton A N x) := by
-    rw [Ideal.map_le_iff_le_comap]
-    intro m hm
-    simpa [LinearMap.mem_ker, algebraMap_smul] using
-      (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨m, hm⟩
-  have hzero : (a - algebraMap k A c) • x = 0 := hle ha
+  have hzero : (a - algebraMap k A c) • x = 0 :=
+    map_le_ker_toSpanSingleton_of_mem_torsionBySet hx ha
   rwa [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
 
 end Submodule

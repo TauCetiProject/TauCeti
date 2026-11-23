@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.GroupTheory.Torsion
+import TauCeti.Algebra.Module.Torsion.ScalarAction
 import TauCeti.GroupTheory.Torsion
 
 /-!
@@ -314,11 +315,6 @@ theorem mem_primaryComponent_map_of_mem {A M : Type*} [CommRing A] [Algebra R A]
   rw [Submodule.mem_torsionBySet_iff]
   rintro ⟨a, ha⟩
   rw [SetLike.mem_coe, ← Ideal.map_pow] at ha
-  have hle : (I ^ n).map (algebraMap R A) ≤ LinearMap.ker (LinearMap.toSpanSingleton A M x) := by
-    rw [Ideal.map_le_iff_le_comap]
-    intro r hr
-    simpa [LinearMap.mem_ker, algebraMap_smul] using
-      (Submodule.mem_torsionBySet_iff _ _).mp hn ⟨r, hr⟩
-  exact hle ha
+  exact Submodule.map_le_ker_toSpanSingleton_of_mem_torsionBySet hn ha
 
 end Ideal

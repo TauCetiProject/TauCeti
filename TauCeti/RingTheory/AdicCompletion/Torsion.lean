@@ -30,7 +30,7 @@ automatically `AdicCompletion I R`-linear for any compatible completion action o
 when Hom modules already carry a completion action. Because every completed scalar acts pointwise
 through a scalar from `R`, the `AdicCompletion I R`-submodules and `R`-submodules of an
 `I`-power-torsion module coincide (`TauCeti.AdicCompletion.torsionSubmoduleOrderIso`), so
-Artinianness, Noetherianity, and essentiality of submodules are preserved when passing between `R`
+Artinianness and essentiality of submodules are preserved when passing between `R`
 and `AdicCompletion I R`.
 
 For a finite `R`-module `N`, `TauCeti.AdicCompletion.torsionLiftEquiv` identifies `R`-linear maps
@@ -484,16 +484,6 @@ theorem isArtinian_torsionModule_iff :
   have := torsionModule_isScalarTower hM
   exact ⟨fun h ↦ (torsionSubmoduleOrderIso hM).symm.toOrderEmbedding.wellFounded h,
     isArtinian_of_tower R⟩
-
-/-- An `I`-power-torsion module is Noetherian over `AdicCompletion I R` if and only if it is
-Noetherian over `R`. -/
-theorem isNoetherian_torsionModule_iff :
-    letI := torsionModule hM
-    IsNoetherian (_root_.AdicCompletion I R) M ↔ IsNoetherian R M := by
-  let := torsionModule hM
-  rw [isNoetherian_iff, isNoetherian_iff]
-  exact ⟨fun h ↦ (torsionSubmoduleOrderIso hM).symm.dual.toOrderEmbedding.wellFounded h,
-    fun h ↦ (torsionSubmoduleOrderIso hM).dual.toOrderEmbedding.wellFounded h⟩
 
 /-- Essentiality of a submodule of an `I`-power-torsion module agrees over `AdicCompletion I R` and
 over `R`. -/
