@@ -1145,7 +1145,7 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
 both sides are `0`, through `Γ(0) = 0` and `1 / 0 = 0`; at a negative integer `a` the left side
 is `0` (both Gamma values in it are `0`) while `1 / a` is not. -/
 @[simp]
-theorem beta_one_right (ha : ∀ n : ℕ, a ≠ -(n + 1)) : beta a 1 = 1 / a := by
+theorem beta_one_right (ha : ∀ n : ℕ, a ≠ -n - 1) : beta a 1 = 1 / a := by
   rcases eq_or_ne a 0 with rfl | ha0
   · simp [ProbabilityTheory.beta]
   have hΓ : Real.Gamma a ≠ 0 := Real.Gamma_ne_zero fun n h => by
@@ -1157,7 +1157,7 @@ theorem beta_one_right (ha : ∀ n : ℕ, a ≠ -(n + 1)) : beta a 1 = 1 / a := 
 
 /-- Euler's beta function at first parameter `1`, for `a` not a negative integer. -/
 @[simp]
-theorem beta_one_left (ha : ∀ n : ℕ, a ≠ -(n + 1)) : beta 1 a = 1 / a := by
+theorem beta_one_left (ha : ∀ n : ℕ, a ≠ -n - 1) : beta 1 a = 1 / a := by
   rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
