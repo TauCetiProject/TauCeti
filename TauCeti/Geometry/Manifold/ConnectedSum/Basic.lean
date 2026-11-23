@@ -310,11 +310,6 @@ theorem mk_eq_mk_iff (he₁ : Injective e₁) (he₂ : Injective e₂)
   · rintro (rfl | h | h)
     exacts [rfl, Quot.sound h, (Quot.sound h).symm]
 
-theorem inl_injective (he₁ : Injective e₁) (he₂ : Injective e₂) : Injective (inl e₁ e₂) := by
-  intro x y h
-  rw [← mk_inl, ← mk_inl, mk_eq_mk_iff he₁ he₂] at h
-  simpa using h
-
 section lift
 
 variable {Z : Type*} (f : puncture e₁ → Z) (g : puncture e₂ → Z)
@@ -379,6 +374,29 @@ private theorem exists_eq_some_comp_inr (he₁ : Injective e₁) :
   exact ⟨lift f (fun y ↦ some y.val) fun v hv _ _ ↦ hf _ v hv rfl, fun y ↦ rfl,
     fun x v hv hx ↦ hf x v hv hx, hf'⟩
 
+/-- If the second ball is injective, the first punctured summand embeds into the connected sum:
+this is the mirror image of `exists_eq_some_comp_inr`, where a point `e₂ w` of the second summand is
+recorded as the point `e₁ (inversion 0 1 w)` of the first. -/
+private theorem exists_eq_some_comp_inl (he₂ : Injective e₂) :
+    ∃ Ψ : ConnectedSum e₁ e₂ → Option M, ∀ x, Ψ (inl e₁ e₂ x) = some x.val := by
+  classical
+  let j : {w : E // w ≠ 0} → N := fun w ↦ e₂ w
+  have hj : Injective j := he₂.comp Subtype.val_injective
+  let g : puncture e₂ → Option M :=
+    fun y ↦ Function.extend j (fun w ↦ some (e₁ (inversion 0 1 w.val))) (fun _ ↦ none) y.val
+  refine ⟨lift (fun x ↦ some x.val) g fun v hv _ hy ↦ ?_, fun x ↦ rfl⟩
+  have hv' : inversion (0 : E) 1 v ≠ 0 := fun h ↦ hv ((inversion_eq_center one_ne_zero).1 h)
+  simpa [g, inversion_inversion (0 : E) one_ne_zero] using
+    (hj.extend_apply (fun w ↦ some (e₁ (inversion 0 1 w.val))) (fun _ ↦ none)
+      ⟨inversion 0 1 v, hv'⟩).symm
+
+theorem inl_injective (he₂ : Injective e₂) : Injective (inl e₁ e₂) := by
+  obtain ⟨Ψ, hΨ⟩ := exists_eq_some_comp_inl (e₁ := e₁) he₂
+  intro x y h
+  have := congrArg Ψ h
+  rw [hΨ, hΨ] at this
+  exact Subtype.ext (Option.some.inj this)
+
 theorem inr_injective (he₁ : Injective e₁) : Injective (inr e₁ e₂) := by
   obtain ⟨Ψ, hΨ, -⟩ := exists_eq_some_comp_inr (e₂ := e₂) he₁
   intro x y h
@@ -441,7 +459,7 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
     simp only [mem_union, mem_preimage, mem_image, U₂]
     constructor
     · rintro ⟨x' | y, hU, hxy⟩
-      · rw [mk_inl, mk_inl, (inl_injective h₁.injective h₂.injective).eq_iff] at hxy
+      · rw [mk_inl, mk_inl, (inl_injective h₂.injective).eq_iff] at hxy
         exact Or.inl (hxy ▸ hU)
       · rw [mk_inl, mk_inr, eq_comm, inl_eq_inr_iff h₁.injective] at hxy
         obtain ⟨v, hv, hvx, hvy⟩ := hxy
@@ -478,7 +496,7 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
 theorem isOpenEmbedding_inl (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
     IsOpenEmbedding (inl e₁ e₂) :=
   .of_continuous_injective_isOpenMap (continuous_inl e₁ e₂)
-    (inl_injective h₁.injective h₂.injective)
+    (inl_injective h₂.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inl)
 
 /-- The second punctured summand is an open subspace of the connected sum. -/
@@ -588,7 +606,7 @@ theorem isLocalHomeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
   rcases p with x | y
   · refine key _ isOpen_range_inl ⟨x, rfl⟩ ?_
     rintro _ ⟨x, rfl⟩ _ ⟨x', rfl⟩ h
-    exact congrArg _ (inl_injective h₁.injective h₂.injective (by simpa using h))
+    exact congrArg _ (inl_injective h₂.injective (by simpa using h))
   · refine key _ isOpen_range_inr ⟨y, rfl⟩ ?_
     rintro _ ⟨y, rfl⟩ _ ⟨y', rfl⟩ h
     exact congrArg _ (inr_injective h₁.injective (by simpa using h))

@@ -170,7 +170,7 @@ private theorem range_rightIncl :
   constructor
   · rintro (⟨x, hx, rfl⟩ | ⟨y, rfl⟩) h
     · rw [inlBall_apply] at h
-      have h' := congrArg Subtype.val (inl_injective hb'.injective hc.injective h)
+      have h' := congrArg Subtype.val (inl_injective hc.injective h)
       exact (mem_puncture.1 hx) (by simpa using h')
     · rw [inlBall_apply, eq_comm, inl_eq_inr_iff hb'.injective] at h
       obtain ⟨v, -, hv, -⟩ := h
@@ -256,7 +256,7 @@ private def leftMap :
     haveI := t1Space hb' hc
     ConnectedSum a (punctureBall b' b hbb') → ConnectedSum a (inlBall b' c b hbb') :=
   haveI := t1Space hb' hc
-  map id (inl b' c) injective_id (inl_injective hb'.injective hc.injective) (id_comp a)
+  map id (inl b' c) injective_id (inl_injective hc.injective) (id_comp a)
     (inl_comp_punctureBall b' c hbb')
 
 /-- `(N ∖ {b 0}) # P` maps to `(M # N) # P`, by the identity on `N ∖ {b 0, b' 0}` and on
@@ -278,7 +278,7 @@ private theorem leftMap_inr (y : puncture (punctureBall b' b hbb')) :
     haveI := t1Space hb' hc
     leftMap hbb' hb' hc (inr a _ y) =
       inr a (inlBall b' c b hbb') ⟨inl b' c y, by
-        rw [← coe_punctureMap (inl_injective hb'.injective hc.injective)
+        rw [← coe_punctureMap (inl_injective hc.injective)
           (congrFun (inl_comp_punctureBall b' c hbb') 0) y]
         exact Subtype.prop _⟩ := by
   have := t1Space hb' hc
@@ -492,7 +492,7 @@ theorem assocHomeomorph_inl_inr (y : puncture b)
         (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
         mem_puncture.2 fun h ↦ mem_puncture.1 y.property (by
           simpa using congrArg Subtype.val
-            (inl_injective hb'.injective hc.injective (h.trans (inlBall_apply b' c hbb' 0))))⟩ := by
+            (inl_injective hc.injective (h.trans (inlBall_apply b' c hbb' 0))))⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [coe_assocHomeomorph]
