@@ -36,7 +36,7 @@ nothing.
 
 ## Proof
 
-Translation `M ↦ M + 1` preserves the sum over a fibre of positive determinant
+Translation `M ↦ M + 1` preserves the sum over a fibre of nonzero determinant
 (`TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`) and shifts both eigenvalues by `1`.
 If `t < 0`, translating upwards reaches a fibre of nonpositive determinant, where every weight
 vanishes. If `t > 0`, translating downwards reaches a fibre with `n + 1 ≤ t`, that is, with an
@@ -77,7 +77,7 @@ private theorem finsum_weight_traceDetFiber_of_neg (ht : t < 0) (hD : 0 < t ^ 2 
   | _ k ih =>
     rcases le_or_gt n 0 with hn | hn
     · exact finsum_weight_traceDetFiber_of_nonpos hn
-    rw [← finsum_weight_traceDetFiber_add_two hn]
+    rw [← finsum_weight_traceDetFiber_add_two hn.ne']
     rcases le_or_gt (n + t + 1) 0 with hn' | hn'
     · exact finsum_weight_traceDetFiber_of_nonpos hn'
     -- both eigenvalues stay negative: a positive determinant forbids a trace `0` or `1`
@@ -240,7 +240,7 @@ private theorem exists_finsum_weight_traceDetFiber_eq (ht : 0 < t) (hn : 0 < n)
       by_contra! h'
       have : t - 2 = -1 ∨ t - 2 = 0 := by omega
       rcases this with _ | h' <;> nlinarith
-    have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hn'
+    have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hn'.ne'
     rw [show t - 2 + 2 = t by ring, show n - t + 1 + (t - 2) + 1 = n by ring] at hstep
     obtain ⟨t', n', hD', hn'', h', e⟩ :=
       ih _ (by omega) ht' hn' (by linear_combination hD) rfl
