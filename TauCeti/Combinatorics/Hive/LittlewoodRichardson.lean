@@ -46,8 +46,9 @@ skew tableau is recovered from its row counts by sorting each row
   content `μ` correspond to hive-completable patterns with top row `μ` and weight `γ - λ`.
 * `TauCeti.Hive.fixedIntegerHiveEquivLRTableau`: the hive–tableau bijection for Young diagrams.
 * `TauCeti.Hive.fixedIntegerHiveShapeEquivLRTableau`,
-  `TauCeti.Hive.fixedIntegerHiveShiftEquivLRTableau`: polynomial and shifted hive–tableau
-  equivalences.
+  `TauCeti.Hive.fixedIntegerHiveShiftEquivLRTableau`,
+  `TauCeti.Hive.fixedIntegerHiveSignedEquivLRTableau`: polynomial, shifted, and canonical signed
+  hive–tableau equivalences.
 * `TauCeti.Hive.lrTableauShiftEquiv`: transport between Littlewood–Richardson tableau types for two
   admissible determinant shifts.
 
@@ -62,7 +63,9 @@ skew tableau is recovered from its row counts by sorting each row
   them polynomial.
 * `TauCeti.Hive.hiveCount_productBoundary_eq_ite_detShift`: universal formula for arbitrary signed
   dominant weights `λ, μ, γ : DominantWeight n`.
-* `TauCeti.Hive.rowCount_lrTableauShiftEquiv`: row-count characterization under determinant shifts.
+* `TauCeti.Hive.rowCount_lrTableauShiftEquiv`,
+  `TauCeti.Hive.rowCount_fixedIntegerHiveSignedEquivLRTableau`: row-count characterizations under
+  determinant shifts.
 
 ## References
 
@@ -670,7 +673,8 @@ theorem natCast_rowCount_lrTableauShiftEquiv
     have hT : fixedIntegerHiveShiftEquivLRTableau a₁ b₁ hlam₁ hμ₁ hγ₁ h = T :=
       (fixedIntegerHiveShiftEquivLRTableau a₁ b₁ hlam₁ hμ₁ hγ₁).apply_symm_apply T
     have hshift : lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₂ b₂ hlam₂ hμ₂ hγ₂ T =
-        fixedIntegerHiveShiftEquivLRTableau a₂ b₂ hlam₂ hμ₂ hγ₂ h := rfl
+        fixedIntegerHiveShiftEquivLRTableau a₂ b₂ hlam₂ hμ₂ hγ₂ h := by
+      rw [← hT, lrTableauShiftEquiv_fixedIntegerHiveShiftEquivLRTableau]
     rw [hT] at h1
     rw [hshift, h2]
     by_cases hkr : k = r
@@ -707,6 +711,57 @@ theorem lrTableauShiftEquiv_self {lam μ γ : DominantWeight n}
     (hγ : (γ.shift (a + b)).IsPolynomial) :
     lrTableauShiftEquiv a b hlam hμ hγ a b hlam hμ hγ = Equiv.refl _ :=
   Equiv.symm_trans_self _
+
+/-- **Canonical signed hive-to-LR equivalence**: for arbitrary signed dominant weights
+`λ, μ, γ : DominantWeight n`, shifting by the deterministic admissible pair `a = -λ.detShift` and
+`b = max (-μ.detShift) (λ.detShift - γ.detShift)` identifies
+`FixedIntegerHive (productBoundary λ μ γ)` with the Littlewood–Richardson tableaux of the
+shifted Young diagrams. -/
+def fixedIntegerHiveSignedEquivLRTableau (lam μ γ : DominantWeight n) :
+    FixedIntegerHive (productBoundary lam μ γ) ≃
+      LRTableau (lam.shift (-lam.detShift)).shape
+        (γ.shift (-lam.detShift + max (-μ.detShift) (lam.detShift - γ.detShift))).shape
+        (μ.shift (max (-μ.detShift) (lam.detShift - γ.detShift))).shape :=
+  fixedIntegerHiveShiftEquivLRTableau (-lam.detShift)
+    (max (-μ.detShift) (lam.detShift - γ.detShift))
+    (DominantWeight.isPolynomial_shift_of_neg_detShift_le le_rfl)
+    (DominantWeight.isPolynomial_shift_of_neg_detShift_le (le_max_left _ _))
+    (DominantWeight.isPolynomial_shift_of_neg_detShift_le (by
+      have := le_max_right (-μ.detShift) (lam.detShift - γ.detShift)
+      omega))
+
+/-- Evaluating the inverse of `fixedIntegerHiveSignedEquivLRTableau lam μ γ` at
+`Vertex.ofChart n i j` gives the unshifted `lam` prefix sum plus tableau counts minus
+`i * max (-μ.detShift) (λ.detShift - γ.detShift)`. -/
+@[simp]
+theorem fixedIntegerHiveSignedEquivLRTableau_symm_apply_ofChart (lam μ γ : DominantWeight n)
+    (T : LRTableau (lam.shift (-lam.detShift)).shape
+      (γ.shift (-lam.detShift + max (-μ.detShift) (lam.detShift - γ.detShift))).shape
+      (μ.shift (max (-μ.detShift) (lam.detShift - γ.detShift))).shape)
+    {i j : ℕ} (hij : i ≤ j) (hj : j ≤ n) :
+    ((fixedIntegerHiveSignedEquivLRTableau lam μ γ).symm T).val (Vertex.ofChart n i j hij hj) =
+      prefixSum j lam.val + ∑ k ∈ range i, ∑ r ∈ range j, (T.val.rowCount r k : ℤ) -
+        (i : ℤ) * max (-μ.detShift) (lam.detShift - γ.detShift) :=
+  fixedIntegerHiveShiftEquivLRTableau_symm_apply_ofChart _ _ _ _ _ T hij hj
+
+/-- Exact integer row-count formula for `fixedIntegerHiveSignedEquivLRTableau lam μ γ`:
+off-diagonal counts agree with `h.val.toGTPattern k (r + 1) - h.val.toGTPattern k r`, and
+diagonal counts (`k = r < n`) shift by `max (-μ.detShift) (λ.detShift - γ.detShift)`. -/
+theorem natCast_rowCount_fixedIntegerHiveSignedEquivLRTableau (lam μ γ : DominantWeight n)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r : ℕ} (hr : r < n) (k : ℕ) :
+    ((fixedIntegerHiveSignedEquivLRTableau lam μ γ h).val.rowCount r k : ℤ) =
+      (h.val.toGTPattern k (r + 1) - h.val.toGTPattern k r) +
+        if k = r then max (-μ.detShift) (lam.detShift - γ.detShift) else 0 :=
+  natCast_rowCount_fixedIntegerHiveShiftEquivLRTableau _ _ _ _ _ h hr k
+
+/-- Natural-number row-count formula for `fixedIntegerHiveSignedEquivLRTableau lam μ γ`. -/
+@[simp]
+theorem rowCount_fixedIntegerHiveSignedEquivLRTableau (lam μ γ : DominantWeight n)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r : ℕ} (hr : r < n) (k : ℕ) :
+    (fixedIntegerHiveSignedEquivLRTableau lam μ γ h).val.rowCount r k =
+      ((h.val.toGTPattern k (r + 1) - h.val.toGTPattern k r) +
+        if k = r then max (-μ.detShift) (lam.detShift - γ.detShift) else 0).toNat :=
+  rowCount_fixedIntegerHiveShiftEquivLRTableau _ _ _ _ _ h hr k
 
 end SignedShifts
 

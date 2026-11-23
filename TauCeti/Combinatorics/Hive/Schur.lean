@@ -24,13 +24,13 @@ Combining this cardinality bridge with Stembridge's Schur-polynomial Littlewood�
 (`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`) yields the **hive model
 of the Littlewood–Richardson rule**
 (`TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`): for polynomial dominant
-weights `λ, μ : DominantWeight n` and any commutative semiring `R`,
+weights `λ, μ : DominantWeight n`, any `N ≤ n`, and any commutative semiring `R`,
 
 `s_λ · s_μ = ∑ᶠ γ : DominantWeight n, hiveCount (productBoundary λ μ γ) • s_γ`
 
-in `n` variables (`MvPolynomial (Fin n) R`). Non-polynomial weights `γ` and weights of total size
+in `N` variables (`MvPolynomial (Fin N) R`). Non-polynomial weights `γ` and weights of total size
 distinct from `|λ| + |μ|` have zero hive count, while Young diagrams of more than `n` rows vanish in
-`n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). This variable-count matching is
+`N ≤ n` variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). This `N ≤ n` restriction is
 sharp (`TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two`): an
 example over `ℤ` shows that increasing the number of variables at fixed hive rank can fail (in two
 variables for `n = 1` and `λ = μ = (1)`, `s_{(1)}^2 = s_{(2)} + s_{(1, 1)}`, whereas the rank-`1`
@@ -46,9 +46,10 @@ weights `λ, μ, γ : DominantWeight n` (`TauCeti.Hive.hiveCount_productBoundary
 * `TauCeti.Hive.hiveCount_productBoundary_comm`: symmetry `hiveCount (productBoundary λ μ γ) =
   hiveCount (productBoundary μ λ γ)` for all signed dominant weights.
 * `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`: **the hive model of the
-  Littlewood–Richardson rule** for Schur polynomials in `n` variables over any commutative semiring.
+  Littlewood–Richardson rule** for Schur polynomials in `N ≤ n` variables over any commutative
+  semiring.
 * `TauCeti.Hive.diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two`: sharpness over
-  `ℤ` showing that increasing the number of variables at fixed hive rank can fail.
+  `ℤ` showing that increasing the number of variables past the hive rank can fail.
 
 ## References
 
@@ -81,14 +82,15 @@ theorem hiveCount_productBoundary_comm {n : ℕ} (lam μ γ : DominantWeight n) 
 
 /-- **The hive model of the Littlewood–Richardson rule** (Knutson–Tao–Woodward, Theorem 1;
 Knutson–Tao I, Theorem 4 with Appendix 2, Proposition 4): for polynomial dominant weights
-`λ, μ : DominantWeight n` and any commutative semiring `R`, the product of Schur polynomials in `n`
-variables expands over all dominant weights `γ : DominantWeight n` with integer hive counts as
-coefficients. -/
-theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R : Type*}
-    [CommSemiring R] {lam μ : DominantWeight n} (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) :
-    diagramSchurPoly n R lam.shape * diagramSchurPoly n R μ.shape =
+`λ, μ : DominantWeight n`, any `N ≤ n`, and any commutative semiring `R`, the product of Schur
+polynomials in `N` variables expands over all dominant weights `γ : DominantWeight n` with integer
+hive counts as coefficients. -/
+theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n N : ℕ} (hN : N ≤ n)
+    {R : Type*} [CommSemiring R] {lam μ : DominantWeight n}
+    (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) :
+    diagramSchurPoly N R lam.shape * diagramSchurPoly N R μ.shape =
       ∑ᶠ γ : DominantWeight n,
-        hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape := by
+        hiveCount (productBoundary lam μ γ) • diagramSchurPoly N R γ.shape := by
   classical
   let ι := {ν : (lam.shape.card + μ.shape.card).Partition // (ofPartition ν).colLen 0 ≤ n}
   let embDiag : ι ↪ {μ : YoungDiagram // μ.colLen 0 ≤ n} :=
@@ -99,13 +101,13 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
   have hemb (ν : ι) : emb ν = weightOfShape n (ofPartition ν.val) :=
     Subtype.ext (by
       simp [emb, embDiag, shapeEquivPolynomialWeight_apply_coe, Function.Embedding.subtypeMap])
-  let f (γ : DominantWeight n) : MvPolynomial (Fin n) R :=
-    hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape
+  let f (γ : DominantWeight n) : MvPolynomial (Fin N) R :=
+    hiveCount (productBoundary lam μ γ) • diagramSchurPoly N R γ.shape
   have hsupp : Function.support f ⊆ (Finset.univ.map emb : Finset (DominantWeight n)) := by
     intro γ hγ_supp
     have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 :=
       Function.support_smul_subset_left (fun γ => hiveCount (productBoundary lam μ γ))
-        (fun γ => diagramSchurPoly n R γ.shape) hγ_supp
+        (fun γ => diagramSchurPoly N R γ.shape) hγ_supp
     obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
     have hγ_poly : γ.IsPolynomial := isPolynomial_of_productBoundary h.property hlam hμ
     have hcard : γ.shape.card = lam.shape.card + μ.shape.card := Int.ofNat_inj.mp <| by
@@ -119,7 +121,10 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
     rw [hemb, YoungDiagram.ofPartition_toPartition, weightOfShape_shape hγ_poly]
   rw [finsum_eq_sum_of_support_subset f hsupp, Finset.sum_map,
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
-    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le]
+    ← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n,
+    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ n} => _) fun ν => by
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen (hN.trans_lt (not_le.mp ν.property)), smul_zero],
+    add_zero]
   refine Finset.sum_congr rfl fun ν _ => ?_
   simp only [f, hemb ν, shape_weightOfShape ν.property]
   congr 1
@@ -138,9 +143,9 @@ private theorem finsum_hiveCount_one_eq_smul :
     hne (by ext i; fin_cases i; simpa [lam, γ₁] using h.symm)
   simp [hiveCount_one_productBoundary, hsum]
 
-/-- **Sharpness of the `n`-variable restriction in
+/-- **Sharpness of the `N ≤ n` restriction in
 `diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount`**: an example over `ℤ` showing that
-increasing the number of variables at fixed hive rank can fail: in `2` variables for `n = 1` and
+increasing the number of variables past the hive rank can fail: in `2` variables for `n = 1` and
 `λ = μ = (1)`, `s_{(1)}^2 = s_{(2)} + s_{(1, 1)}`, whereas summing over `γ : DominantWeight 1`
 produces only `s_{(2)}` because `γ.shape` has at most one row. -/
 theorem diagramSchurPoly_mul_diagramSchurPoly_ne_finsum_hiveCount_one_two :
