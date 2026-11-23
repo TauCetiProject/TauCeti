@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Embedding.Boundary
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import TauCeti.Algebra.Homology.Boundaries
 
 /-!
 # Restriction along surjective embeddings of complex shapes
@@ -130,6 +131,22 @@ lemma homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom
   simp only [homologyπ_naturality_assoc, homologyπ_restrictionHomologyIsoOfSurjective_hom,
     homologyπ_restrictionHomologyIsoOfSurjective_hom_assoc, homologyπ_naturality]
   rw [reassoc_of% hcycles]
+
+/-- The boundaries of `K` in degree `j' = e.f j`, read on the restriction `K.restriction e`: the
+corestriction of the differential `K.X i' ⟶ B_j'` of `K` is that of `K.restriction e` followed by
+the identification of the boundaries. -/
+@[reassoc]
+lemma restrictionXIso_inv_comp_toBoundaries_kernelMap (K : HomologicalComplex C c') (i j : ι)
+    (i' j' : ι') (hi : e.f i = i') (hj : e.f j = j') [K.HasHomology j']
+    [(K.restriction e).HasHomology j] [HasKernel (K.homologyπ j')]
+    [HasKernel ((K.restriction e).homologyπ j)] :
+    (K.restrictionXIso e hi).inv ≫ (K.restriction e).toBoundaries i j ≫
+        kernel.map _ _ (K.restrictionCyclesIsoOfSurjective e he j j' hj).hom
+          (K.restrictionHomologyIsoOfSurjective e he j j' hj).hom
+          (K.homologyπ_restrictionHomologyIsoOfSurjective_hom e he j j' hj) =
+      K.toBoundaries i' j' := by
+  rw [← cancel_mono (kernel.ι _), ← cancel_mono (K.iCycles j')]
+  simp [-restriction_d, restriction_d_eq K e hi hj]
 
 include he in
 /-- The cycles of a restriction along a surjective embedding reflecting relations inherit

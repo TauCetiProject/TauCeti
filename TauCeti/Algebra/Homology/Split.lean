@@ -126,6 +126,14 @@ lemma projective_cycles_of_isSplitMono (i : ι) [K.HasHomology i] [Projective (K
     [IsSplitMono (K.iCycles i)] : Projective (K.cycles i) :=
   Retract.projective ⟨K.iCycles i, retraction _, IsSplitMono.id _⟩
 
+/-- The cochain `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X)` built from a retraction of the inclusion of the cycles vanishes
+on boundaries. -/
+@[reassoc (attr := simp)]
+lemma d_comp_retraction_iCycles_comp_homologyπ {K : HomologicalComplex C c} (j i : ι)
+    [K.HasHomology i] [IsSplitMono (K.iCycles i)] :
+    K.d j i ≫ retraction (K.iCycles i) ≫ K.homologyπ i = 0 := by
+  rw [← K.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ]
+
 /-! ### The complex of homology objects -/
 
 variable [∀ i, K.HasHomology i]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.Algebra.Homology.Split
 
 /-!
 # The Kronecker map from cohomology to morphisms out of homology
@@ -257,27 +258,6 @@ lemma kroneckerEquiv_apply [Injective Y] (i : α) (x : (X.linearYonedaObj k Y).h
     kroneckerEquiv k X Y i x = kronecker k X Y i x :=
   (rfl)
 
-end TauCeti.ChainComplex
-
-namespace HomologicalComplex
-
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
-
-/-- The cochain `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X)` built from a retraction of the inclusion of the cycles vanishes
-on boundaries. -/
-@[reassoc (attr := simp)]
-lemma d_comp_retraction_iCycles_comp_homologyπ {X : HomologicalComplex C c} (j i : ι)
-    [X.HasHomology i] [IsSplitMono (X.iCycles i)] :
-    X.d j i ≫ retraction (X.iCycles i) ≫ X.homologyπ i = 0 := by
-  rw [← X.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ]
-
-end HomologicalComplex
-
-namespace TauCeti.ChainComplex
-
-variable {C : Type*} [Category* C] [Abelian C] {α : Type*} [AddRightCancelSemigroup α] [One α]
-  {k : Type*} [Ring k] [Linear k C] {X : ChainComplex C α} {Y : C}
-
 variable (k X Y) in
 /-- **The splitting of the universal coefficient sequence**: given a retraction of the inclusion
 of the cycles `Zᵢ ⟶ Xᵢ`, the `k`-linear right inverse of the Kronecker map sending `g : Hᵢ(X) ⟶ Y`
@@ -328,6 +308,7 @@ theorem kronecker_injective_of_isIso (i : α) [IsIso (X.iCycles i)] :
 map `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)` is bijective, for every object `Y`. -/
 theorem kronecker_bijective_of_isIso (i : α) [IsIso (X.iCycles i)] :
     Function.Bijective (kronecker k X Y i) :=
+  have : IsSplitMono (X.iCycles i) := .mk' ⟨inv (X.iCycles i), IsIso.hom_inv_id _⟩
   ⟨kronecker_injective_of_isIso i, kronecker_surjective_of_isSplitMono i⟩
 
 end TauCeti.ChainComplex

@@ -20,9 +20,8 @@ import TauCeti.Algebra.Module.Injective.DivisionRing
 The normalized Khovanov complex of the mirror `D.mirror` of a planar oriented code `D` in quantum
 degree `j` is the dual `Hom(C(D)_{-j}, R)` of the Khovanov complex of `D` in quantum degree `-j`
 (`TauCeti.OrientedPDCode.khovanovComplexMirrorIso`). The universal coefficient sequence of a dual
-complex (`TauCeti.Algebra.Homology.LinearHomComplex.Single` and
-`TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic`) turns this into statements about
-Khovanov homology. The Kronecker map
+complex (`TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic`) turns this into statements
+about Khovanov homology. The Kronecker map
 
 `Khⁱʲ(D.mirror; R) →ₗ[R] (Kh^{-i,-j}(D; R) ⟶ R)`
 

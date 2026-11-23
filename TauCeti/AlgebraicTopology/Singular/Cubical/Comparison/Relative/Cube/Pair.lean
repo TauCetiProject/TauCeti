@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 import TauCeti.Algebra.Homology.Kronecker
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
+import TauCeti.Algebra.Homology.Split
 
 /-!
 # The fundamental cycles of the cube pair and of the boundary of the cube
