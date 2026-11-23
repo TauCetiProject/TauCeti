@@ -489,6 +489,15 @@ theorem monodromy_injective : Function.Injective (monodromy : RankOneLocalSystem
 
 /-! ### Characters with values in `ℤˣ` -/
 
+/-- A Moore loop acts on the rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`,
+read in `Rˣ`, by the value of `χ` on its class: the inverse in `ofMonodromy` disappears, since `χ`
+takes only the values `±1`. -/
+theorem ofMonodromy_unitsMap_comp_ρ_apply (χ : FundamentalGroup B b →* ℤˣ)
+    (γ : MooreLoopSpace B b) :
+    (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ)).ρ γ =
+      Units.map (Int.castRingHom R).toMonoidHom (χ (MooreLoopSpace.fundamentalGroupHom b γ)) := by
+  rw [ofMonodromy_ρ_apply, MonoidHom.comp_apply, ← map_inv, Int.units_inv_eq_self]
+
 /-- The rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`, read in `Rˣ`, is
 trivial exactly when `χ` is trivial or `2 = 0` in `R`. -/
 theorem ofMonodromy_unitsMap_comp_eq_one_iff (χ : FundamentalGroup B b →* ℤˣ) :
