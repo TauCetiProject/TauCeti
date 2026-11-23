@@ -16,7 +16,8 @@ Fix a matrix `S`. This file expands the quadratic map `M ↦ trace (M * S * M * 
 that polarization recovers the symmetric bilinear map `(M, N) ↦ trace (M * S * N * S)` from it.
 It also computes the trace of `2 P - 1`, which vanishes for a trace-one `2 × 2` matrix `P` such as
 the orthogonal projector onto a line of `ℂ²`, and records that reindexing rows and columns along
-one equivalence preserves the trace.
+one equivalence preserves the trace. The trace of a product of two skew-Hermitian matrices
+is fixed by `star` (in particular, it is real over `ℂ`).
 
 ## Main results
 

@@ -440,7 +440,7 @@ noncomputable def scalarRegularSublevelChartAt (x : {x | f x ≤ a}) :
     (interiorChart I (isOpen_Iio.preimage hf.continuous) hn (mem_Iio.2 hx)).halfSpaceChart
       (interiorChart_mem_iff _ hn _ preimage_Iio_subset_setOf_le) x
   else
-    have hxa : f x = a := le_antisymm x.2 (not_lt.1 hx)
+    have hxa : f x = a := le_antisymm x.property (not_lt.1 hx)
     (restrFaceChart I hf.contMDiffAt (hreg.isRegularPoint hxa) univ
         (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hxa))).halfSpaceChart
       (restrFaceChart_univ_le_iff hn hf.contMDiffAt (hreg.isRegularPoint hxa) hxa) x
@@ -461,7 +461,7 @@ private theorem scalarRegularSublevelChartAt_of_eq {x : {x | f x ≤ a}} (hx : f
 /-- Every point of the sublevel lies in the source of its preferred chart. -/
 theorem mem_scalarRegularSublevelChartAt_source (x : {x | f x ≤ a}) :
     x ∈ (scalarRegularSublevelChartAt hf hreg hn x).source := by
-  have hxa : f x ≤ a := x.2
+  have hxa : f x ≤ a := x.property
   rcases hxa.lt_or_eq with hx | hx
   · rw [scalarRegularSublevelChartAt_of_lt hf hreg hn hx, halfSpaceChart_source, mem_preimage,
       interiorChart_source]
@@ -518,7 +518,7 @@ theorem scalarRegularSublevelChartAt_source_of_eq :
 extended submersion chart of `f` at `x`, followed by `TauCeti.scalarRegularSublevelFaceEquiv`. -/
 theorem scalarRegularSublevelChartAt_apply_of_eq {w : {x | f x ≤ a}}
     (hw : w ∈ (scalarRegularSublevelChartAt hf hreg hn x).source) :
-    (scalarRegularSublevelChartAt hf hreg hn x w).1 =
+    (scalarRegularSublevelChartAt hf hreg hn x w).val =
       scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)
         ((scalarSubmersionChartAt hf.contMDiffAt (hreg.isRegularPoint hx)).extend I w) := by
   rw [scalarRegularSublevelChartAt_source_of_eq hf hreg hn hx, mem_preimage] at hw
@@ -531,7 +531,7 @@ preferred chart exactly when `TauCeti.scalarRegularSublevelFaceEquiv` sends it b
 of the extended submersion chart of `f` at `x`. -/
 theorem mem_scalarRegularSublevelChartAt_target_iff_of_eq (z : EuclideanHalfSpace (n + 1)) :
     z ∈ (scalarRegularSublevelChartAt hf hreg hn x).target ↔
-      (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)).symm z.1 ∈
+      (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)).symm z.val ∈
         ((scalarSubmersionChartAt hf.contMDiffAt (hreg.isRegularPoint hx)).extend I).target := by
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, halfSpaceChart_target, mem_preimage,
     OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
@@ -544,7 +544,7 @@ theorem coe_scalarRegularSublevelChartAt_symm_apply_of_eq {z : EuclideanHalfSpac
     (hz : z ∈ (scalarRegularSublevelChartAt hf hreg hn x).target) :
     ((scalarRegularSublevelChartAt hf hreg hn x).symm z : M) =
       ((scalarSubmersionChartAt hf.contMDiffAt (hreg.isRegularPoint hx)).extend I).symm
-        ((scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)).symm z.1) := by
+        ((scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)).symm z.val) := by
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx] at hz ⊢
   rw [halfSpaceChart_target, mem_preimage, modelWithCornersEuclideanHalfSpace_toFun] at hz
   rw [coe_halfSpaceChart_symm_apply _ _ hz]
@@ -554,7 +554,7 @@ theorem coe_scalarRegularSublevelChartAt_symm_apply_of_eq {z : EuclideanHalfSpac
 inward coordinate `a - f`. -/
 theorem scalarRegularSublevelChartAt_apply_zero_of_eq {w : {x | f x ≤ a}}
     (hw : w ∈ (scalarRegularSublevelChartAt hf hreg hn x).source) :
-    (scalarRegularSublevelChartAt hf hreg hn x w).1 0 = a - f w := by
+    (scalarRegularSublevelChartAt hf hreg hn x w).val 0 = a - f w := by
   rw [scalarRegularSublevelChartAt_source_of_eq hf hreg hn hx, mem_preimage,
     scalarSubmersionChartAt_source] at hw
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, coe_halfSpaceChart_apply _ _ (by
@@ -570,7 +570,7 @@ along `dim E - 1 = n`. Here `D` is the derivative of `f` in the preferred extend
 used by the level atlas. -/
 theorem scalarRegularSublevelChartAt_apply_succ_of_eq {w : {x | f x ≤ a}}
     (hw : w ∈ (scalarRegularSublevelChartAt hf hreg hn x).source) (i : Fin n) :
-    (scalarRegularSublevelChartAt hf hreg hn x w).1 i.succ =
+    (scalarRegularSublevelChartAt hf hreg hn x w).val i.succ =
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         (hreg.isRegularPoint hx).finrank_ker_fderiv_comp_extChartAt_symm
@@ -590,7 +590,7 @@ point `w` of the level are the coordinates of the preferred level chart
 `TauCeti.regularLevelChartAt` at `x`, reindexed along `dim E - 1 = n`. -/
 theorem scalarRegularSublevelChartAt_apply_succ_eq_regularLevelChartAt {w : {x | f x ≤ a}}
     (hw : w ∈ (scalarRegularSublevelChartAt hf hreg hn x).source) (hwa : f w = a) (i : Fin n) :
-    (scalarRegularSublevelChartAt hf hreg hn x w).1 i.succ =
+    (scalarRegularSublevelChartAt hf hreg hn x w).val i.succ =
       regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) hreg
         (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwa⟩
         (Fin.cast (by omega) i) := by
@@ -607,7 +607,7 @@ theorem exists_scalarRegularSublevelChartAt_of_lt {x : {x | f x ≤ a}} (hx : f 
     ∃ r > 0, (scalarRegularSublevelChartAt hf hreg hn x).target =
         (𝓡∂ (n + 1)) ⁻¹' ball (EuclideanSpace.single 0 (2 * r)) r ∧
       ∀ w ∈ (scalarRegularSublevelChartAt hf hreg hn x).source, f w < a ∧
-        (scalarRegularSublevelChartAt hf hreg hn x w).1 =
+        (scalarRegularSublevelChartAt hf hreg hn x w).val =
           ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) (E := E)
               (F := EuclideanSpace ℝ (Fin (n + 1))) (by rw [hn, finrank_euclideanSpace_fin])
             (extChartAt I (x : M) w - extChartAt I (x : M) x) +
@@ -630,7 +630,7 @@ private theorem exists_scalarRegularSublevelChartAt_eq_halfSpaceChart {m : ℕ�
       (he : ∀ w ∈ e.source, w ∈ {x | f x ≤ a} ↔ 0 ≤ e w 0) (y : {x | f x ≤ a}),
       e.IsExtendTransChart I m ∧
         scalarRegularSublevelChartAt (hfm.of_le hm) hreg hn x = e.halfSpaceChart he y := by
-  have hxa : f x ≤ a := x.2
+  have hxa : f x ≤ a := x.property
   rcases hxa.lt_or_eq with hx | hx
   · exact ⟨_, _, x,
       isExtendTransChart_interiorChart (isOpen_Iio.preimage (hfm.of_le hm).continuous) hn _,
@@ -695,10 +695,9 @@ theorem boundary_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1
   let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
   have := isManifold_scalarRegularSublevel hreg hn hm hfm
   ext x
-  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-    (ENat.one_le_iff_ne_zero_withTop.1 hm) (chart_mem_atlas _ x) (mem_chart_source _ x),
+  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ x),
     scalarRegularSublevelChartedSpace_chartAt, mem_ofPred_eq]
-  have hxa : f x ≤ a := x.2
+  have hxa : f x ≤ a := x.property
   rcases hxa.lt_or_eq with hx | hx
   · obtain ⟨r, hr, -, happly⟩ := exists_scalarRegularSublevelChartAt_of_lt (hfm.of_le hm) hreg hn hx
     rw [(happly x (mem_scalarRegularSublevelChartAt_source _ hreg hn x)).2, sub_self, map_zero,
@@ -718,7 +717,7 @@ theorem interior_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1
   let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
   rw [← ModelWithCorners.compl_boundary, boundary_scalarRegularSublevel hreg hn hm hfm]
   ext x
-  have hxa : f x ≤ a := x.2
+  have hxa : f x ≤ a := x.property
   simp only [mem_compl_iff, mem_ofPred_eq]
   exact ⟨fun h ↦ hxa.lt_of_ne h, ne_of_lt⟩
 
@@ -823,7 +822,7 @@ noncomputable def scalarRegularBandChartAt (x : f ⁻¹' Icc a b) :
       (upperFaceChart_mem_iff hf hn (hb.isRegularPoint hxb) hxb) x
   else
     (interiorChart I (isOpen_Ioo.preimage hf.continuous) hn
-        (mem_preimage_Ioo_of_ne x.2 hxa hxb)).halfSpaceChart
+        (mem_preimage_Ioo_of_ne x.property hxa hxb)).halfSpaceChart
       (interiorChart_mem_iff _ hn _ (preimage_mono Ioo_subset_Icc_self)) x
 
 private theorem scalarRegularBandChartAt_of_eq_left {x : f ⁻¹' Icc a b} (hx : f x = a) :
@@ -843,7 +842,7 @@ private theorem scalarRegularBandChartAt_of_ne {x : f ⁻¹' Icc a b} (hxa : f x
     (hxb : f x ≠ b) :
     scalarRegularBandChartAt hf hn ha hb x =
       (interiorChart I (isOpen_Ioo.preimage hf.continuous) hn
-          (mem_preimage_Ioo_of_ne x.2 hxa hxb)).halfSpaceChart
+          (mem_preimage_Ioo_of_ne x.property hxa hxb)).halfSpaceChart
         (interiorChart_mem_iff _ hn _ (preimage_mono Ioo_subset_Icc_self)) x :=
   (dite_eq_right hxa).trans (dite_eq_right hxb)
 
@@ -852,10 +851,10 @@ private theorem scalarRegularBandChartAt_of_ne {x : f ⁻¹' Icc a b} (hxa : f x
 private theorem lt_of_mem_scalarRegularBandChartAt_source_of_eq_right {x w : f ⁻¹' Icc a b}
     (hx : f x = b) (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) : a < b := by
   by_contra hab
-  have hxa : f x = a := le_antisymm (hx.le.trans (not_lt.1 hab)) (mem_Icc.1 x.2).1
+  have hxa : f x = a := le_antisymm (hx.le.trans (not_lt.1 hab)) (mem_Icc.1 x.property).1
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hxa, halfSpaceChart_source, mem_preimage,
     restrFaceChart_source _ _ _ (isOpen_Iio.preimage hf.continuous)] at hw
-  exact absurd (mem_Iio.1 hw.2) (not_lt.2 ((not_lt.1 hab).trans (mem_Icc.1 w.2).1))
+  exact absurd (mem_Iio.1 hw.2) (not_lt.2 ((not_lt.1 hab).trans (mem_Icc.1 w.property).1))
 
 variable (hab : a < b)
 include hab in
@@ -873,7 +872,7 @@ theorem mem_scalarRegularBandChartAt_source (x : f ⁻¹' Icc a b) :
   rw [scalarRegularBandChartAt_of_ne hf hn ha hb hxa hxb, halfSpaceChart_source, mem_preimage,
     interiorChart_source]
   refine ⟨⟨by rw [centredChart_source]; exact mem_chart_source H _, ?_⟩,
-    mem_preimage_Ioo_of_ne x.2 hxa hxb⟩
+    mem_preimage_Ioo_of_ne x.property hxa hxb⟩
   rw [mem_preimage, centredChart_apply, sub_self, map_zero]
   exact mem_ball_self (interiorRadius_pos (isOpen_Ioo.preimage hf.continuous) hn _)
 
@@ -927,7 +926,7 @@ the extended submersion chart of `f` at `x`, followed by
 `TauCeti.scalarRegularBandLowerFaceEquiv`. -/
 theorem scalarRegularBandChartAt_apply_of_eq_left {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 =
+    (scalarRegularBandChartAt hf hn ha hb x w).val =
       scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)
         ((scalarSubmersionChartAt hf.contMDiffAt (ha.isRegularPoint hx)).extend I w) := by
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, halfSpaceChart_source, mem_preimage] at hw
@@ -939,10 +938,10 @@ the preferred chart exactly when `TauCeti.scalarRegularBandLowerFaceEquiv` sends
 target of the extended submersion chart of `f` at `x`, at a point where `f < b`. -/
 theorem mem_scalarRegularBandChartAt_target_iff_of_eq_left (z : EuclideanHalfSpace (n + 1)) :
     z ∈ (scalarRegularBandChartAt hf hn ha hb x).target ↔
-      (scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)).symm z.1 ∈
+      (scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)).symm z.val ∈
           ((scalarSubmersionChartAt hf.contMDiffAt (ha.isRegularPoint hx)).extend I).target ∧
         f (((scalarSubmersionChartAt hf.contMDiffAt (ha.isRegularPoint hx)).extend I).symm
-          ((scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)).symm z.1)) < b := by
+          ((scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)).symm z.val)) < b := by
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, halfSpaceChart_target, mem_preimage,
     OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
   simp [restrFaceChart, (isOpen_Iio.preimage hf.continuous).interior_eq, mfld_simps]
@@ -954,7 +953,7 @@ theorem coe_scalarRegularBandChartAt_symm_apply_of_eq_left {z : EuclideanHalfSpa
     (hz : z ∈ (scalarRegularBandChartAt hf hn ha hb x).target) :
     ((scalarRegularBandChartAt hf hn ha hb x).symm z : M) =
       ((scalarSubmersionChartAt hf.contMDiffAt (ha.isRegularPoint hx)).extend I).symm
-        ((scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)).symm z.1) := by
+        ((scalarRegularBandLowerFaceEquiv hn (ha.isRegularPoint hx)).symm z.val) := by
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx] at hz ⊢
   rw [halfSpaceChart_target, mem_preimage, modelWithCornersEuclideanHalfSpace_toFun] at hz
   rw [coe_halfSpaceChart_symm_apply _ _ hz, restrFaceChart_symm_apply]
@@ -963,7 +962,7 @@ theorem coe_scalarRegularBandChartAt_symm_apply_of_eq_left {z : EuclideanHalfSpa
 inward coordinate `f - a`. -/
 theorem scalarRegularBandChartAt_apply_zero_of_eq_left {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 0 = f w - a := by
+    (scalarRegularBandChartAt hf hn ha hb x w).val 0 = f w - a := by
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, halfSpaceChart_source, mem_preimage] at hw
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, coe_halfSpaceChart_apply _ _ hw,
     lowerFaceChart_apply_zero hf hn _
@@ -977,7 +976,7 @@ along `dim E - 1 = n`. Here `D` is the derivative of `f` in the preferred extend
 used by the level atlas. -/
 theorem scalarRegularBandChartAt_apply_succ_of_eq_left {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) (i : Fin n) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
+    (scalarRegularBandChartAt hf hn ha hb x w).val i.succ =
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         (ha.isRegularPoint hx).finrank_ker_fderiv_comp_extChartAt_symm
@@ -1000,7 +999,7 @@ band at a point `w` of that level are the coordinates of the preferred level cha
 theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_left
     {w : f ⁻¹' Icc a b} (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) (hwa : f w = a)
     (i : Fin n) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
+    (scalarRegularBandChartAt hf hn ha hb x w).val i.succ =
       regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) ha
         (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwa⟩ (Fin.cast (by omega) i) := by
   rw [scalarRegularBandChartAt_apply_succ_of_eq_left hf hn ha hb hx hw, regularLevelChartAt_apply]
@@ -1024,14 +1023,14 @@ theorem scalarRegularBandChartAt_source_of_eq_right :
   · ext w
     refine iff_of_false (fun hw ↦ hab
       (lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw)) fun hw ↦ hab ?_
-    exact (mem_Ioi.1 hw.2).trans_le (mem_Icc.1 w.2).2
+    exact (mem_Ioi.1 hw.2).trans_le (mem_Icc.1 w.property).2
 
 /-- At a point `x` of the upper level `f⁻¹(b)`, the preferred chart reads a point of its source in
 the extended submersion chart of `f` at `x`, followed by `TauCeti.scalarRegularSublevelFaceEquiv`.
 -/
 theorem scalarRegularBandChartAt_apply_of_eq_right {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 =
+    (scalarRegularBandChartAt hf hn ha hb x w).val =
       scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)
         ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I w) := by
   have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw
@@ -1045,10 +1044,10 @@ the preferred chart exactly when `TauCeti.scalarRegularSublevelFaceEquiv` sends 
 target of the extended submersion chart of `f` at `x`, at a point where `a < f`. -/
 theorem mem_scalarRegularBandChartAt_target_iff_of_eq_right (z : EuclideanHalfSpace (n + 1)) :
     z ∈ (scalarRegularBandChartAt hf hn ha hb x).target ↔
-      (scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.1 ∈
+      (scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.val ∈
           ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).target ∧
         a < f (((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).symm
-          ((scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.1)) := by
+          ((scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.val)) := by
   by_cases hab : a < b
   · rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_target,
       mem_preimage, OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
@@ -1062,7 +1061,7 @@ theorem mem_scalarRegularBandChartAt_target_iff_of_eq_right (z : EuclideanHalfSp
       (hb.isRegularPoint hx) hy.1
     rw [((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).right_inv h₁,
       ContinuousLinearEquiv.apply_symm_apply] at h0
-    have hz : 0 ≤ z.1 0 := z.2
+    have hz : 0 ≤ z.val 0 := z.property
     rw [h0, euclideanFinConsEquiv_apply_zero, hx] at hz
     exact h₂.trans_le (by linarith)
 
@@ -1073,7 +1072,7 @@ theorem coe_scalarRegularBandChartAt_symm_apply_of_eq_right {z : EuclideanHalfSp
     (hz : z ∈ (scalarRegularBandChartAt hf hn ha hb x).target) :
     ((scalarRegularBandChartAt hf hn ha hb x).symm z : M) =
       ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).symm
-        ((scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.1) := by
+        ((scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.val) := by
   have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx
     ((scalarRegularBandChartAt hf hn ha hb x).map_target hz)
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx] at hz ⊢
@@ -1084,7 +1083,7 @@ theorem coe_scalarRegularBandChartAt_symm_apply_of_eq_right {z : EuclideanHalfSp
 inward coordinate `b - f`. -/
 theorem scalarRegularBandChartAt_apply_zero_of_eq_right {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 0 = b - f w := by
+    (scalarRegularBandChartAt hf hn ha hb x w).val 0 = b - f w := by
   have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
     mem_preimage] at hw
@@ -1100,7 +1099,7 @@ along `dim E - 1 = n`. Here `D` is the derivative of `f` in the preferred extend
 used by the level atlas. -/
 theorem scalarRegularBandChartAt_apply_succ_of_eq_right {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) (i : Fin n) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
+    (scalarRegularBandChartAt hf hn ha hb x w).val i.succ =
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         (hb.isRegularPoint hx).finrank_ker_fderiv_comp_extChartAt_symm
@@ -1123,7 +1122,7 @@ band at a point `w` of that level are the coordinates of the preferred level cha
 theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_right
     {w : f ⁻¹' Icc a b} (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) (hwb : f w = b)
     (i : Fin n) :
-    (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
+    (scalarRegularBandChartAt hf hn ha hb x w).val i.succ =
       regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) hb
         (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwb⟩ (Fin.cast (by omega) i) := by
   rw [scalarRegularBandChartAt_apply_succ_of_eq_right hf hn ha hb hx hw,
@@ -1139,7 +1138,7 @@ theorem exists_scalarRegularBandChartAt_of_mem_Ioo {x : f ⁻¹' Icc a b} (hx : 
     ∃ r > 0, (scalarRegularBandChartAt hf hn ha hb x).target =
         (𝓡∂ (n + 1)) ⁻¹' ball (EuclideanSpace.single 0 (2 * r)) r ∧
       ∀ w ∈ (scalarRegularBandChartAt hf hn ha hb x).source, f w ∈ Ioo a b ∧
-        (scalarRegularBandChartAt hf hn ha hb x w).1 =
+        (scalarRegularBandChartAt hf hn ha hb x w).val =
           ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℝ) (E := E)
               (F := EuclideanSpace ℝ (Fin (n + 1))) (by rw [hn, finrank_euclideanSpace_fin])
             (extChartAt I (x : M) w - extChartAt I (x : M) x) +
@@ -1147,7 +1146,7 @@ theorem exists_scalarRegularBandChartAt_of_mem_Ioo {x : f ⁻¹' Icc a b} (hx : 
   have hxa : f x ≠ a := (mem_Ioo.1 hx).1.ne'
   have hxb : f x ≠ b := (mem_Ioo.1 hx).2.ne
   refine ⟨interiorRadius I (isOpen_Ioo.preimage hf.continuous) hn
-      (mem_preimage_Ioo_of_ne x.2 hxa hxb), interiorRadius_pos _ hn _, ?_, fun w hw ↦ ?_⟩
+      (mem_preimage_Ioo_of_ne x.property hxa hxb), interiorRadius_pos _ hn _, ?_, fun w hw ↦ ?_⟩
   · rw [scalarRegularBandChartAt_of_ne hf hn ha hb hxa hxb, halfSpaceChart_target,
       interiorChart_target]
   · rw [scalarRegularBandChartAt_of_ne hf hn ha hb hxa hxb, halfSpaceChart_source,
@@ -1234,8 +1233,7 @@ theorem boundary_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤
   let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb hm hfm hab
   ext x
-  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-    (ENat.one_le_iff_ne_zero_withTop.1 hm) (chart_mem_atlas _ x) (mem_chart_source _ x),
+  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ x),
     scalarRegularBandChartedSpace_chartAt, mem_ofPred_eq]
   have hsrc := mem_scalarRegularBandChartAt_source (hfm.of_le hm) hn ha hb hab x
   by_cases hxa : f x = a
@@ -1245,7 +1243,7 @@ theorem boundary_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤
   · rw [scalarRegularBandChartAt_apply_zero_of_eq_right _ hn ha hb hxb hsrc, hxb, sub_self]
     exact iff_of_true rfl (Or.inr rfl)
   obtain ⟨r, hr, -, happly⟩ := exists_scalarRegularBandChartAt_of_mem_Ioo (hfm.of_le hm) hn ha hb
-    (mem_preimage.1 (mem_preimage_Ioo_of_ne x.2 hxa hxb))
+    (mem_preimage.1 (mem_preimage_Ioo_of_ne x.property hxa hxb))
   rw [(happly x hsrc).2, sub_self, map_zero, zero_add]
   simp only [EuclideanSpace.single, PiLp.single_apply, ite_true]
   exact iff_of_false (by positivity) (by tauto)
@@ -1259,7 +1257,7 @@ theorem interior_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤
   let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
   rw [← ModelWithCorners.compl_boundary, boundary_scalarRegularBand hn ha hb hm hfm hab]
   ext x
-  obtain ⟨h₁, h₂⟩ := mem_Icc.1 (mem_preimage.1 x.2)
+  obtain ⟨h₁, h₂⟩ := mem_Icc.1 (mem_preimage.1 x.property)
   simp only [mem_compl_iff, mem_ofPred_eq, mem_Ioo, not_or]
   exact ⟨fun h ↦ ⟨h₁.lt_of_ne (Ne.symm h.1), h₂.lt_of_ne h.2⟩, fun h ↦ ⟨h.1.ne', h.2.ne⟩⟩
 

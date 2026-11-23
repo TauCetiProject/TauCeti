@@ -249,7 +249,7 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
   rw [HeightOneSpectrum.mem_primesAbove_iff] at hw
   exact W.even_valuationOfNeZero_sub_root R p h hx _ (W.projFactor_mk_C_sub_X x p) w
     (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw)
-    (W.valuation_deriv_root_eq_one R p (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw) (hd _ hw))
+    (W.valuation_deriv_root_eq_one R p (ha₂ _ hw) (ha₄ _ hw) (hd _ hw))
 
 /-- `2`-torsion case of the arithmetic input: `f x = 0`, and `f' x = 3x² + 2a₂x + a₄` is a unit at
 every prime outside `S`, as it is when `disc f` is.
@@ -283,7 +283,7 @@ lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.
   · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
     -- `x` is a root of `f`, so `f' x` divides `disc f` with an integral cofactor
     refine W.mem_selmerGroupFactor_of_eval_f_eq_zero R ha₂ ha₄ ha₆ hx (fun v hv ↦ ?_) p
-    refine Valuation.map_cubic_deriv_eq_one _ (ha₂ _ hv) (ha₄ _ hv) (ha₆ _ hv) ?_ ?_
+    refine Valuation.map_cubic_deriv_eq_one (c := W.a₆) _ (ha₂ _ hv) (ha₄ _ hv) ?_ ?_
     · simpa only [eval_f] using hx
     · rw [← W.discr_f]
       exact hd _ hv

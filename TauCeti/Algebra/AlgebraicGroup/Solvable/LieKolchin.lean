@@ -124,7 +124,7 @@ theorem hasNonzeroWeightVector_of_nonzeroJointWeight_commutator
   let _ : Nontrivial W.toSubmodule := Submodule.nontrivial_iff_ne_bot.mpr hW
   have hfixed (n : commutator (WithConv (H →ₐ[k] k))) : σ n = 1 := by
     ext v
-    have hv := (mem_normalWeightSubcomodule _ χ v).mp v.2 n
+    have hv := (mem_normalWeightSubcomodule _ χ v).mp v.property n
     simp only [nonzeroJointWeight_commutator_eq_one χ, MonoidHom.one_apply,
       Units.val_one, one_smul] at hv
     exact hv
@@ -172,7 +172,7 @@ private theorem hasNonzeroWeightVector_of_forall_isUnipotentPoint_of_le_derivedD
     CommHopfAlgCat.commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal
       A I hID (CommAlgCat.of k k)
   have hunipotent (n : N) : IsNilpotent (rho n - 1) := by
-    obtain ⟨g, hg⟩ := n.2
+    obtain ⟨g, hg⟩ := n.property
     have hg' : HopfAlgebra.IsUnipotentPoint (BialgHom.mapDomain q g) :=
       (hI g).mapDomain q
     have hnil :=
@@ -371,7 +371,7 @@ private theorem hasNonzeroWeightVector_of_derivedSeries_eq_bot (n : ℕ) :
     have hmem (x : N) : v ∈ (ρ x).eigenspace (x.val.ofConv c) := by
       obtain ⟨g, hg⟩ :=
         CommHopfAlgCat.commutator_le_quotientPointsSubgroup_of_le_derivedDefiningIdeal
-          A I le_rfl (CommAlgCat.of k k) x.2
+          A I le_rfl (CommAlgCat.of k k) x.property
       have hinclude : CommHopfAlgCat.quotientPointsHom A I (CommAlgCat.of k k) g =
           BialgHom.mapDomain q g := by
         rw [CommHopfAlgCat.quotientPointsHom_apply, BialgHom.mapDomain_apply]

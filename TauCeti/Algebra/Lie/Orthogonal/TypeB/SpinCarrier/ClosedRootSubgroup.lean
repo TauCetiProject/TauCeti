@@ -52,14 +52,6 @@ variable (n : ℕ)
 
 /-! ## Unit-coefficient exterior-basis steps -/
 
-private noncomputable def basisIndex (s : Finset (Fin (n + 1))) : Fin (dimension n) :=
-  Fintype.equivFin (Finset (Fin (n + 1))) s
-
-@[simp]
-private theorem signSet_basisIndex (s : Finset (Fin (n + 1))) :
-    signSet n (basisIndex n s) = s := by
-  simp [basisIndex, signSet]
-
 private def rootSourceSet :
     Fin (n + 1) ⊕ Fin (n + 1) → Finset (Fin (n + 1))
   | .inl i => Fin.lastCases ∅ (fun j => {j.succ}) i
@@ -74,34 +66,34 @@ private theorem rep_rootGenerator_latticeBasis
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily k))
-        ((latticeBasis n (basisIndex n (rootSourceSet n k)) : lattice n) :
+        ((latticeBasis n ((signSet n).symm (rootSourceSet n k)) : lattice n) :
           ExteriorAlgebra ℚ (polarization n).W) =
       (1 : ℤ) •
-        ((latticeBasis n (basisIndex n (rootTargetSet n k)) : lattice n) :
+        ((latticeBasis n ((signSet n).symm (rootTargetSet n k)) : lattice n) :
           ExteriorAlgebra ℚ (polarization n).W) := by
   cases k with
   | inl i =>
       refine Fin.lastCases ?_ (fun j => ?_) i
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_last, one_zsmul] using
           (polarization n).typeBSpinRep_simpleRootGenerator_last_exteriorBasis_empty
             (polarizationBasis n) (remainderOne n)
             (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
             (TauCeti.splitOddPolarization_lineCoordinate_remainderOne ℚ (n + 1))
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_castSucc, one_zsmul] using
           (polarization n).typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton
             (polarizationBasis n) (remainderOne n)
             (TauCeti.splitOddForm_remainderOne ℚ (n + 1)) j
   | inr i =>
       refine Fin.lastCases ?_ (fun j => ?_) i
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_last, one_zsmul] using
           (polarization n).typeBSpinRep_simpleNegativeRootGenerator_last_exteriorBasis_singleton
             (polarizationBasis n) (remainderOne n)
             (TauCeti.splitOddForm_remainderOne ℚ (n + 1))
             (TauCeti.splitOddPolarization_lineCoordinate_remainderOne ℚ (n + 1))
-      · simpa only [coe_latticeBasis, signSet_basisIndex, rootSourceSet,
+      · simpa only [coe_latticeBasis, Equiv.apply_symm_apply, rootSourceSet,
           rootTargetSet, Fin.lastCases_castSucc, one_zsmul] using
           (polarization n).typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleton
             (polarizationBasis n) (remainderOne n)
@@ -113,11 +105,11 @@ private theorem rep_rootGenerator_sq_apply_latticeBasis
         (TauCeti.typeBSimpleRootGeneratorFamily k))
       (rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
           (TauCeti.typeBSimpleRootGeneratorFamily k))
-        ((latticeBasis n (basisIndex n (rootSourceSet n k)) : lattice n) :
+        ((latticeBasis n ((signSet n).symm (rootSourceSet n k)) : lattice n) :
           ExteriorAlgebra ℚ (polarization n).W)) = 0 := by
   have h := congrArg
     (fun f : Module.End ℚ (ExteriorAlgebra ℚ (polarization n).W) =>
-      f ((latticeBasis n (basisIndex n (rootSourceSet n k)) : lattice n) :
+      f ((latticeBasis n ((signSet n).symm (rootSourceSet n k)) : lattice n) :
         ExteriorAlgebra ℚ (polarization n).W))
     ((polarization n).typeBSpinRep_simpleRootGenerator_sq
       (polarizationBasis n) (remainderOne n)
@@ -174,7 +166,7 @@ noncomputable def rootSubgroupClosedSubgroup
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    (rootSubgroupClosedSubgroup n k).1 =
+    (rootSubgroupClosedSubgroup n k).val =
       letI := mono_rootSubgroup n k
       Subobject.mk (rootSubgroup n k) := by
   exact ClosedSubgroupScheme.coe_mk _
@@ -182,7 +174,7 @@ theorem coe_rootSubgroupClosedSubgroup
 /-- The bundled numbered root subgroup is canonically isomorphic to the additive group scheme. -/
 noncomputable def rootSubgroupClosedSubgroupIso
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    ((rootSubgroupClosedSubgroup n k).1 :
+    ((rootSubgroupClosedSubgroup n k).val :
       Grp (Over (Spec (CommRingCat.of ℤ)))) ≅ AdditiveGroup.groupScheme ℤ :=
   ClosedSubgroupScheme.mkIso (rootSubgroup n k)
 
@@ -191,7 +183,7 @@ noncomputable def rootSubgroupClosedSubgroupIso
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (rootSubgroupClosedSubgroupIso n k).inv ≫
-        (rootSubgroupClosedSubgroup n k).1.arrow =
+        (rootSubgroupClosedSubgroup n k).val.arrow =
       rootSubgroup n k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup n k)
 

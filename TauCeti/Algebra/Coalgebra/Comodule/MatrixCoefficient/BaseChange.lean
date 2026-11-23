@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 Extending a comodule and its coefficient coalgebra along the same scalar morphism extends
 its matrix coefficients. For a finite free comodule, this extends every entry of its coefficient
-matrix. These are the coordinate calculations used to transport faithful representations and
-projective orbit morphisms across scalar extensions.
+matrix and maps its characteristic polynomial along the right tensor-factor inclusion. These are
+the coordinate calculations used to transport faithful representations, characteristic polynomials,
+and projective orbit morphisms across scalar extensions.
 
 ## Main declarations
 
@@ -24,6 +25,10 @@ projective orbit morphisms across scalar extensions.
 
 * `TauCeti.Comodule.coefficientMatrix_baseChange`: the coefficient matrix in the base-changed
   basis is obtained by sending `cᵢⱼ` to `1 ⊗ cᵢⱼ`.
+
+* `TauCeti.Comodule.coefficientMatrix_baseChange_charpoly` and
+  `TauCeti.Comodule.coefficientMatrix_baseChange_charpoly_eq_iff`: effect of scalar extension on
+  the characteristic polynomial of the coefficient matrix, and reflection along flat base change.
 
 ## References
 
@@ -40,6 +45,8 @@ namespace TauCeti.Comodule
 universe u v w x
 
 noncomputable section
+
+section Semiring
 
 variable {R : Type u} {A : Type v} {C : Type w} {M : Type x} {ι : Type*}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
@@ -83,6 +90,57 @@ theorem coefficientMatrix_baseChange (b : Basis ι R M) :
   induction coact (R := R) (C := C) (M := M) (b j) using TensorProduct.inductionOn with
   | add z w hz hw => simp only [map_add, TensorProduct.tmul_add, hz, hw]
   | tmul m c => simp
+
+end Semiring
+
+section CommRing
+
+variable {R : Type u} {A : Type v} {C : Type w} {M : Type x} {ι : Type*}
+variable [CommRing R] [CommRing A] [Algebra R A]
+variable [CommRing C] [Algebra R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M]
+variable [Fintype ι] [DecidableEq ι]
+
+/-- Extending scalars of a finite free comodule maps the characteristic polynomial of its
+coefficient matrix along `C → A ⊗[R] C`. -/
+theorem coefficientMatrix_baseChange_charpoly (b : Basis ι R M) :
+    letI := Comodule.baseChange (R := R) (H := C) (M := M) A
+    (coefficientMatrix (C := A ⊗[R] C) (b.baseChange A)).charpoly =
+      (coefficientMatrix (C := C) b).charpoly.map
+        (Algebra.TensorProduct.includeRight : C →ₐ[R] A ⊗[R] C) := by
+  let _ := Comodule.baseChange (R := R) (H := C) (M := M) A
+  let f : C →+* A ⊗[R] C :=
+    (Algebra.TensorProduct.includeRight : C →ₐ[R] A ⊗[R] C)
+  have hmatrix : coefficientMatrix (C := A ⊗[R] C) (b.baseChange A) =
+      (coefficientMatrix (C := C) b).map f := by
+    rw [coefficientMatrix_baseChange]
+    ext i j
+    rw [Matrix.map_apply, Matrix.map_apply, TensorProduct.mk_apply]
+    exact (Algebra.TensorProduct.includeRight_apply _).symm
+  rw [hmatrix, Matrix.charpoly_map]
+
+/-- When `C` is `R`-flat and `R → A` is injective, the base-changed coefficient matrix has
+characteristic polynomial `(p.map (algebraMap R A)).map (algebraMap A (A ⊗[R] C))` if and only if
+the original coefficient matrix has characteristic polynomial `p.map (algebraMap R C)`. -/
+theorem coefficientMatrix_baseChange_charpoly_eq_iff [FaithfulSMul R A] [Module.Flat R C]
+    (b : Basis ι R M) (p : Polynomial R) :
+    letI := Comodule.baseChange (R := R) (H := C) (M := M) A
+    (coefficientMatrix (C := A ⊗[R] C) (b.baseChange A)).charpoly =
+        (p.map (algebraMap R A)).map (algebraMap A (A ⊗[R] C)) ↔
+      (coefficientMatrix (C := C) b).charpoly = p.map (algebraMap R C) := by
+  let _ := Comodule.baseChange (R := R) (H := C) (M := M) A
+  let f : C →+* A ⊗[R] C :=
+    (Algebra.TensorProduct.includeRight : C →ₐ[R] A ⊗[R] C)
+  have hf : Function.Injective f :=
+    Algebra.TensorProduct.includeRight_injective (FaithfulSMul.algebraMap_injective R A)
+  rw [← (Polynomial.map_injective f hf).eq_iff, coefficientMatrix_baseChange_charpoly,
+    Polynomial.map_map, Polynomial.map_map]
+  have hcomp : f.comp (algebraMap R C) = (algebraMap A (A ⊗[R] C)).comp (algebraMap R A) := by
+    ext r
+    exact (Algebra.TensorProduct.includeRight (R := R) (A := A) (B := C)).commutes r
+  rw [hcomp]
+
+end CommRing
 
 end
 

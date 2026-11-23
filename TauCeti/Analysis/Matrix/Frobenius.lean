@@ -43,7 +43,6 @@ and the inner product together.
   preserves the scalar and real inner products (`Matrix.UnitaryGroup.frobenius_inner_conj` and
   `Matrix.UnitaryGroup.frobenius_real_inner_conj`).
 * `Matrix.frobenius_inner_lie_left` — the adjoint of commutation by `X` is commutation by `Xᴴ`.
-
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
@@ -53,8 +52,8 @@ and the inner product together.
 ## The skew-Hermitian trace metric
 
 The real Frobenius inner product restricts to `-Re tr(XY)` on skew-Hermitian matrices, with
-quadratic form the squared Frobenius norm. Unitary conjugation preserves the metric, including
-for disconnected unitary subgroups; commutation by a skew-Hermitian matrix is skew-adjoint.
+quadratic form the squared Frobenius norm. Conjugation by any unitary matrix preserves this
+pairing, and commutation by a skew-Hermitian matrix is skew-adjoint.
 The trace-metric convention follows Oh–Tataru, *The hyperbolic Yang–Mills equation for connections
 in an arbitrary topological class*, Comm. Math. Phys. 365 (2019), §6.1.
 -/
@@ -123,6 +122,12 @@ end Def
 
 open scoped Matrix Matrix.Norms.Frobenius
 
+/-- The squared Frobenius norm is the sum of the squared entry norms. -/
+theorem frobenius_norm_sq_eq_sum_norm_sq [SeminormedAddCommGroup E] (A : Matrix m n E) :
+    ‖A‖ ^ 2 = ∑ i, ∑ j, ‖A i j‖ ^ 2 := by
+  simp only [frobenius_norm_def, ← Real.sqrt_eq_rpow, Real.rpow_two]
+  exact Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
+
 /-- The Frobenius inner product of matrices over `𝕜` is `∑ i, ∑ j, conj (A i j) * B i j`. -/
 theorem frobenius_inner_eq_sum_conj_mul (A B : Matrix m n 𝕜) :
     ⟪A, B⟫_𝕜 = ∑ i, ∑ j, conj (A i j) * B i j := by
@@ -152,6 +157,7 @@ theorem frobenius_real_inner_eq_re_trace_conjTranspose_mul (X Y : Matrix m n �
   rw [frobenius_real_inner_eq_re_inner, frobenius_inner_eq_trace_conjTranspose_mul]
 
 /-- Left multiplication by a unitary matrix preserves the Frobenius inner product. -/
+@[simp↓]
 theorem UnitaryGroup.frobenius_inner_mul_left [DecidableEq m]
     (U : Matrix.unitaryGroup m 𝕜) (X Y : Matrix m n 𝕜) :
     ⟪(U : Matrix m m 𝕜) * X, (U : Matrix m m 𝕜) * Y⟫_𝕜 = ⟪X, Y⟫_𝕜 := by
@@ -161,6 +167,7 @@ theorem UnitaryGroup.frobenius_inner_mul_left [DecidableEq m]
     ← Matrix.mul_assoc (U : Matrix m m 𝕜)ᴴ (U : Matrix m m 𝕜), hU, Matrix.one_mul]
 
 /-- Right multiplication by a unitary matrix preserves the Frobenius inner product. -/
+@[simp↓]
 theorem UnitaryGroup.frobenius_inner_mul_right [DecidableEq n]
     (U : Matrix.unitaryGroup n 𝕜) (X Y : Matrix m n 𝕜) :
     ⟪X * (U : Matrix n n 𝕜), Y * (U : Matrix n n 𝕜)⟫_𝕜 = ⟪X, Y⟫_𝕜 := by
@@ -234,9 +241,7 @@ theorem frobenius_real_inner_lie_of_conjTranspose_eq_neg {X : Matrix n n 𝕜}
 /-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
 theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :
     ‖A‖ ^ 2 = ∑ i, ∑ j, Complex.normSq (A i j) := by
-  rw [frobenius_norm_def, ← Real.sqrt_eq_rpow,
-    Real.sq_sqrt (Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => by positivity)]
-  simp only [Real.rpow_two, Complex.normSq_eq_norm_sq]
+  simpa only [Complex.normSq_eq_norm_sq] using A.frobenius_norm_sq_eq_sum_norm_sq
 
 /-- Unitary conjugation preserves the squared Frobenius norm. -/
 theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι]
