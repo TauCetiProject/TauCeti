@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
+public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Set.Card
 
 /-!
@@ -29,12 +31,20 @@ For a simple graph, the multigraph cut capacity of `Graph.ofSimpleGraph G` agree
 
 * `Graph.edgeCutCapacity_one`: a unit-capacity cut has value equal to the number of crossing
   edge identities.
-* `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
+* `Graph.pairCutCapacity_pairCapacity`: aggregation preserves the cut function.
+* `Graph.isMinimum_pairCutCapacity_pairCapacity_iff`: aggregation preserves minimizing source
+  sides for terminal-set cuts.
+* `Graph.minimumValue_pairCutCapacity_pairCapacity`: aggregation preserves terminal-set minimum
+  cut values.
+* `Graph.pairMinimumValue_pairCutCapacity_pairCapacity`: aggregation preserves pairwise
+  minimum-cut values.
 * `Graph.isSubmodular_edgeCutCapacity`: an edge-capacity function nonnegative on nonloop edges has
   a submodular cut function.
 * `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
 * `SimpleGraph.edgeCutCapacity_eq_pairCutCapacity`: the simple-graph and multigraph cut-capacity
   interfaces agree.
+* `SimpleGraph.unitCutCapacity_eq_edgeCutCapacity`: the native simple-graph unit cut agrees with
+  unit edge capacity on its multigraph realization.
 -/
 
 public section
@@ -137,10 +147,12 @@ theorem pairCapacity_eq_zero_of_isDiag [Fintype G.edgeSet] [AddCommMonoid K]
   intro e _
   simp [hp]
 
-/-- Aggregating parallel edge weights by their distinct ends preserves every cut capacity. -/
+/-- Aggregating parallel edge weights by their distinct ends preserves the cut function. -/
+@[simp]
 theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
-    [AddCommMonoid K] (c : G.edgeSet → K) (S : Finset G.vertexSet) :
-    TauCeti.pairCutCapacity (G.pairCapacity c) S = G.edgeCutCapacity c S := by
+    [AddCommMonoid K] (c : G.edgeSet → K) :
+    TauCeti.pairCutCapacity (G.pairCapacity c) = G.edgeCutCapacity c := by
+  funext S
   classical
   rw [TauCeti.pairCutCapacity_def, edgeCutCapacity_def]
   simp only [pairCapacity_def]
@@ -176,6 +188,33 @@ theorem pairCutCapacity_pairCapacity [Fintype G.vertexSet] [Fintype G.edgeSet]
       apply sum_congr rfl
       intro e _
       simp only [G.edgeEnds_crosses_iff_mem_edgeCut e S]
+
+/-- Aggregating parallel edge weights by their distinct ends preserves the minimizing source sides
+of every terminal-set cut problem. -/
+theorem isMinimum_pairCutCapacity_pairCapacity_iff [Fintype G.vertexSet]
+    [Fintype G.edgeSet] [AddCommMonoid K] [Preorder K] (c : G.edgeSet → K)
+    {A B S : Finset G.vertexSet} :
+    TauCeti.TerminalCut.IsMinimum (TauCeti.pairCutCapacity (G.pairCapacity c)) A B S ↔
+      TauCeti.TerminalCut.IsMinimum (G.edgeCutCapacity c) A B S := by
+  rw [G.pairCutCapacity_pairCapacity c]
+
+/-- Aggregating parallel edge weights by their distinct ends preserves every terminal-set minimum
+cut value. -/
+theorem minimumValue_pairCutCapacity_pairCapacity [Fintype G.vertexSet]
+    [Fintype G.edgeSet] [AddCommMonoid K] [LinearOrder K] (c : G.edgeSet → K)
+    {A B : Finset G.vertexSet} (hAB : Disjoint A B) :
+    TauCeti.TerminalCut.minimumValue (TauCeti.pairCutCapacity (G.pairCapacity c)) hAB =
+      TauCeti.TerminalCut.minimumValue (G.edgeCutCapacity c) hAB := by
+  rw [G.pairCutCapacity_pairCapacity c]
+
+/-- Aggregating parallel edge weights by their distinct ends preserves pairwise minimum-cut
+values. -/
+theorem pairMinimumValue_pairCutCapacity_pairCapacity [Fintype G.vertexSet]
+    [Fintype G.edgeSet] [AddCommMonoid K] [LinearOrder K] (c : G.edgeSet → K)
+    (s t : G.vertexSet) :
+    TauCeti.TerminalCut.pairMinimumValue (TauCeti.pairCutCapacity (G.pairCapacity c)) s t =
+      TauCeti.TerminalCut.pairMinimumValue (G.edgeCutCapacity c) s t := by
+  rw [G.pairCutCapacity_pairCapacity c]
 
 /-- Multigraph cut capacity is unchanged when the two sides of the cut are exchanged. -/
 @[simp]
@@ -252,25 +291,40 @@ theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
   rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
   exact hc e.val (by simpa using e.property)
 
-/-- Include a vertex of a simple graph in the full vertex set of `Graph.ofSimpleGraph G`. -/
-def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
-  ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
+/-- The canonical equivalence between the vertices of a simple graph and the full vertex set of
+its multigraph realization. -/
+def ofSimpleGraphVertexEquiv : V ≃ (Graph.ofSimpleGraph G).vertexSet where
+  toFun := fun x ↦ ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
+  invFun := Subtype.val
+  left_inv := fun _ ↦ rfl
+  right_inv := fun _ ↦ Subtype.ext rfl
 
 @[simp]
-theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
+theorem ofSimpleGraphVertexEquiv_apply_val (x : V) :
+    (G.ofSimpleGraphVertexEquiv x).val = x :=
+  (rfl)
+
+@[simp]
+theorem ofSimpleGraphVertexEquiv_symm_apply
+    (x : (Graph.ofSimpleGraph G).vertexSet) :
+    G.ofSimpleGraphVertexEquiv.symm x = x.val :=
   (rfl)
 
 /-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphFinset (S : Finset V) :
     Finset (Graph.ofSimpleGraph G).vertexSet :=
-  S.map ⟨G.toOfSimpleGraphVertex,
-    fun _ _ h ↦ congrArg Subtype.val h⟩
+  S.map G.ofSimpleGraphVertexEquiv.toEmbedding
+
+/-- Including a finite vertex set is the map of the canonical vertex equivalence. This public
+equation exposes the opaque definition across module boundaries. -/
+theorem toOfSimpleGraphFinset_eq_map (S : Finset V) :
+    G.toOfSimpleGraphFinset S = S.map G.ofSimpleGraphVertexEquiv.toEmbedding :=
+  (rfl)
 
 @[simp]
 theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
-    G.toOfSimpleGraphVertex x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
-  rw [toOfSimpleGraphFinset]
-  exact Finset.mem_map' _
+    G.ofSimpleGraphVertexEquiv x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
+  rw [toOfSimpleGraphFinset, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
 @[simp]
 theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
@@ -280,7 +334,7 @@ theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
   trans id '' (S : Set V)
   · apply Set.image_congr
     intro x _
-    exact G.toOfSimpleGraphVertex_val x
+    exact G.ofSimpleGraphVertexEquiv_apply_val x
   · exact Set.image_id _
 
 @[simp]
@@ -291,10 +345,12 @@ theorem toOfSimpleGraphFinset_map_val
   have h :
       (⟨Subtype.val, Subtype.val_injective⟩ :
           (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
-        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
+        G.ofSimpleGraphVertexEquiv.toEmbedding =
           Function.Embedding.refl _ := by
     ext x
-    rfl
+    have hx := G.ofSimpleGraphVertexEquiv.apply_symm_apply x
+    rw [G.ofSimpleGraphVertexEquiv_symm_apply] at hx
+    exact congrArg Subtype.val hx
   rw [h, Finset.map_refl]
 
 /-- The multigraph cut capacity of `Graph.ofSimpleGraph G` agrees with pair cut capacity when
@@ -331,5 +387,69 @@ theorem edgeCutCapacity_eq_pairCutCapacity [Fintype V] [AddCommMonoid K]
       · by_cases hcross : p.Crosses (S : Set V)
         · simp [hp, hcross, hc p hcross.not_isDiag hp]
         · simp [hp, hcross]
+
+/-- The native unit cut capacity agrees with unit edge capacity on the multigraph realization of
+the simple graph. -/
+theorem unitCutCapacity_eq_edgeCutCapacity
+    (G : SimpleGraph V) [Finite G.edgeSet]
+    [Fintype (Graph.ofSimpleGraph G).edgeSet] (S : Finset V) :
+    G.unitCutCapacity S =
+      (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
+        (G.toOfSimpleGraphFinset S) := by
+  classical
+  rw [unitCutCapacity_eq_ncard, Graph.edgeCutCapacity_one,
+    image_val_toOfSimpleGraphFinset]
+  congr 1
+  ext e
+  constructor
+  · rintro ⟨heG, heS⟩
+    exact (G.mem_edgeCut_ofSimpleGraph_iff_crosses heG).2 heS
+  · intro he
+    have heG : e ∈ G.edgeSet := by
+      rw [← Graph.edgeSet_ofSimpleGraph]
+      exact (Graph.ofSimpleGraph G).edgeCut_subset_edgeSet he
+    exact ⟨heG, (G.mem_edgeCut_ofSimpleGraph_iff_crosses heG).1 he⟩
+
+/-- Unit cut capacity as the pair cut capacity of the edge-set indicator. -/
+theorem unitCutCapacity_apply_eq_pairCutCapacity [Fintype V]
+    (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity S =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S := by
+  have hcap :
+      G.ofSimpleGraphCapacity (G.edgeSet.indicator fun _ ↦ 1) =
+        fun _ ↦ (1 : ℕ) := by
+    funext e
+    have he : e.val ∈ G.edgeSet := by
+      rw [← Graph.edgeSet_ofSimpleGraph]
+      exact e.property
+    simp [ofSimpleGraphCapacity, he]
+  rw [G.unitCutCapacity_eq_edgeCutCapacity, ← hcap]
+  exact G.edgeCutCapacity_eq_pairCutCapacity _ (by simp) S
+
+/-- Unit cut capacity is pair cut capacity for the indicator of the graph's edge set. -/
+theorem unitCutCapacity_eq_pairCutCapacity [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) :=
+  funext G.unitCutCapacity_apply_eq_pairCutCapacity
+
+/-- The universal cut has unit capacity zero. -/
+@[simp]
+theorem unitCutCapacity_univ [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity Finset.univ = 0 := by
+  rw [unitCutCapacity_apply_eq_pairCutCapacity, TauCeti.pairCutCapacity_univ]
+
+/-- Exchanging the two sides of a cut does not change its unit capacity. -/
+@[simp]
+theorem unitCutCapacity_compl [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity Sᶜ = G.unitCutCapacity S := by
+  rw [unitCutCapacity_apply_eq_pairCutCapacity,
+    unitCutCapacity_apply_eq_pairCutCapacity, TauCeti.pairCutCapacity_compl]
+
+/-- Unit cut capacity is a symmetric submodular set function. -/
+theorem isSymmSubmodular_unitCutCapacity [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) : TauCeti.IsSymmSubmodular G.unitCutCapacity := by
+  rw [G.unitCutCapacity_eq_pairCutCapacity]
+  exact TauCeti.isSymmSubmodular_pairCutCapacity _ (by simp)
 
 end SimpleGraph

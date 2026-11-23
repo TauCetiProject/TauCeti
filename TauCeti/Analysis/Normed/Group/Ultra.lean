@@ -19,7 +19,8 @@ common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖
 same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`. Consequently a dense
 subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRange'`, additively
 `IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
-norms.
+norms. Likewise `max ‖x‖ r = max ‖y‖ r` whenever `‖x - y‖ ≤ r`
+(`IsUltrametricDist.max_norm_eq_of_norm_sub_le`).
 
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
@@ -71,6 +72,17 @@ point `y`: `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. -/]
 theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖ := by
   rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
   exact norm_mul_le_max _ _
+
+/-- In an ultrametric group, `max ‖x‖ r` does not change when `x` moves by at most `r`: if
+`‖x / y‖ ≤ r` then `max ‖x‖ r = max ‖y‖ r`. -/
+@[to_additive /-- In an ultrametric additive group, `max ‖x‖ r` does not change when `x` moves by
+at most `r`: if `‖x - y‖ ≤ r` then `max ‖x‖ r = max ‖y‖ r`. -/]
+theorem max_norm_eq_of_norm_div_le {x y : S} {r : ℝ} (h : ‖x / y‖ ≤ r) :
+    max ‖x‖ r = max ‖y‖ r := by
+  have key {a b : S} (h : ‖a / b‖ ≤ r) : max ‖a‖ r ≤ max ‖b‖ r :=
+    max_le (norm_le_of_norm_div_le (le_max_left _ _) (h.trans (le_max_right _ _)))
+      (le_max_right _ _)
+  exact le_antisymm (key h) (key (norm_div_rev x y ▸ h))
 
 /-- **A dense subset attains every nonzero norm** of an ultrametric group: if `f` has dense range
 and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some `a`. -/
