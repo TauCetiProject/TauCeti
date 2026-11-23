@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Sober
 public import TauCeti.Logic.Equiv.Set
 
+import TauCeti.Topology.Closure
+
 /-!
 # Generic points and generizations
 
@@ -81,17 +83,8 @@ theorem TauCeti.stableUnderGeneralization_genericPoints {X : Type*} [Topological
     hyx.closure_eq_of_mem_genericPoints hx]
   exact hx
 
-/-- A dense set stable under generization contains every point whose closure has nonempty
-interior. -/
-theorem Dense.mem_of_nonempty_interior_closure_singleton
-    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
-    (hs : StableUnderGeneralization s) {x : X} (hx : (interior (closure {x})).Nonempty) :
-    x ∈ s := by
-  obtain ⟨y, hys, hy⟩ := hd.exists_mem_open isOpen_interior hx
-  exact hs (specializes_iff_mem_closure.mpr (interior_subset hy)) hys
-
-/-- A dense set stable under generization contains every component-generic point whose closure
-has nonempty interior. -/
+/-- If every component-generic point has closure with nonempty interior, a dense set stable
+under generization contains every component-generic point. -/
 theorem Dense.genericPoints_subset_of_nonempty_interior
     {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
     (hinterior : ∀ x ∈ genericPoints X, (interior (closure {x})).Nonempty)
