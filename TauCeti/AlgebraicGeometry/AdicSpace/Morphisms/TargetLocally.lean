@@ -138,6 +138,54 @@ theorem targetLocally_iff (f : X ⟶ Y) : targetLocally Q f ↔
           Y.obj.ofRestrict _ :=
   Iff.rfl
 
+/-- Pointwise introduction lemma for `TauCeti.AdicSpace.targetLocally`: supplies the existential
+witness at `y : Y.obj` with named chart arguments and instance-implicit typeclass slots. -/
+theorem targetLocally_intro {f : X ⟶ Y} {y : Y.obj}
+    (V : Opens Y.obj) (hy : y ∈ V)
+    {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+    [CompleteSpace A] [T2Space A] [IsHuberRing A]
+    (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+    {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+    [CompleteSpace B] [T2Space B] [IsHuberRing B]
+    (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
+    (φ : Pair.Hom S T) (hφ : Q φ)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+      (presentationLimitPresheaf P' T.plus))
+    (eV : Y.obj.restrict V.isOpenEmbedding ≅
+      presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
+    (eU : X.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
+      presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem
+        hP')
+    (hfac : X.obj.ofRestrict _ ≫ f.hom =
+      eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
+        φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
+        Y.obj.ofRestrict _) :
+    ∃ (V : Opens Y.obj) (_ : y ∈ V) (A : Type u) (_ : CommRing A)
+      (_ : UniformSpace A) (_ : IsUniformAddGroup A) (_ : IsTopologicalRing A)
+      (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A) (S : Pair A)
+      (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
+      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
+      (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
+      (φ : Pair.Hom S T) (_ : Q φ)
+      (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+        (presentationLimitPresheaf P' T.plus))
+      (eV : Y.obj.restrict V.isOpenEmbedding ≅
+        presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
+      (eU : X.obj.restrict ((Opens.map f.hom.base).obj V).isOpenEmbedding ≅
+        presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem
+          hP'),
+      X.obj.ofRestrict _ ≫ f.hom =
+        eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
+          φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
+          T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
+          Y.obj.ofRestrict _ :=
+  ⟨V, hy, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ, hsheaf, eV,
+    eU, hfac⟩
+
 /-- **Monotonicity**: if every morphism of Huber pairs satisfying `Q` satisfies `Q'`, then every
 target-locally `Q` morphism is target-locally `Q'`, with the same neighbourhoods. -/
 theorem targetLocally_mono

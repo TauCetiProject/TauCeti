@@ -119,8 +119,7 @@ theorem hom_ext_of_jointly_surjective {ι' : Type*} {V : ι' → PreAdicSpace.{u
     ⟨Set.range (w i).base, (w i).isOpenEmbedding.isOpenMap.isOpen_range⟩
   refine hom_ext_of_ofRestrict hX O
     (eq_top_iff.mpr fun x _ ↦ let ⟨i, y, hy⟩ := hw x; Opens.mem_iSup.mpr ⟨i, y, hy⟩) fun i ↦ ?_
-  rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (w i) (X.ofRestrict (O i).isOpenEmbedding)
-      (Opens.set_range_inclusion' (O i)).symm]
+  rw [← IsOpenImmersion.isoRestrictOfRangeEq_inv_comp (w i) (O := O i) rfl]
   simp only [Category.assoc, h i]
 
 include hX in

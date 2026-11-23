@@ -78,9 +78,7 @@ property, without any adicness hypothesis on the spaces. -/
 theorem LocallyOfFiniteType.isOpenImmersion_comp {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
     (g : Z ⟶ X) [IsOpenImmersion g] : LocallyOfFiniteType (g ≫ f) := by
   let O : Opens X := ⟨Set.range g.base, g.isOpenEmbedding.isOpen_range⟩
-  have hr : Set.range g.base = Set.range (X.ofRestrict O.isOpenEmbedding).base :=
-    (Opens.set_range_inclusion' O).symm
-  rw [← IsOpenImmersion.isoOfRangeEq_hom_comp g (X.ofRestrict O.isOpenEmbedding) hr,
+  rw [← IsOpenImmersion.isoRestrictOfRangeEq_hom_ofRestrict g (O := O) rfl,
     Category.assoc, MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u}]
   exact hf.ofRestrict_comp O
 

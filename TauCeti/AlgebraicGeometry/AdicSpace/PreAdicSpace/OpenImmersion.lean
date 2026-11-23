@@ -48,10 +48,13 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   have isomorphic sources.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.isoRestrict`: an open immersion identifies its source
   with the restriction of its target to its image.
+* `TauCeti.PreAdicSpace.IsOpenImmersion.isoRestrictOfRangeEq`: an open immersion with image
+  equal to an open `O` identifies its source with the restriction to `O`.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.pullbackConeOfLeft`: the pullback of an open immersion
   along a morphism, with `pullbackConeOfLeftIsLimit` proving that it is a pullback.
-* `TauCeti.PreAdicSpace.Hom.restrictPreimage`, `TauCeti.PreAdicSpace.Hom.liftRestrict`: a morphism
-  restricted over an open of its target or lifted from an open mapped into it.
+* `TauCeti.PreAdicSpace.Hom.restrictPreimage`, `TauCeti.PreAdicSpace.Hom.liftRestrict`,
+  `TauCeti.PreAdicSpace.Hom.liftToRestrict`: a morphism restricted over an open of its target,
+  lifted from an open mapped into it, or lifted into an open containing its image.
 * `TauCeti.PreAdicSpace.restrictRestrictIso`: restricting a restriction is restricting to the
   image.
 * `TauCeti.PreAdicSpace.pullbackOfRestrictIso`: the pullback of two open restrictions is the
@@ -236,6 +239,31 @@ theorem isoRestrict_inv_comp : (isoRestrict f).inv ≫ f = Y.ofRestrict f.isOpen
   isoOfRangeEq_inv_comp _ _ _
 
 end IsoRestrict
+
+section IsoRestrictOfRangeEq
+
+variable {W Z : PreAdicSpace.{u}} (m : W ⟶ Z) [IsOpenImmersion m] {O : Opens Z}
+  (hm : Set.range m.base = (O : Set Z))
+
+/-- An open immersion `m : W ⟶ Z` whose image equals an open `O` of `Z` identifies `W` with the
+restriction `Z|_O`. -/
+noncomputable def isoRestrictOfRangeEq : W ≅ Z.restrict O.isOpenEmbedding :=
+  isoOfRangeEq m (Z.ofRestrict O.isOpenEmbedding)
+    (hm.trans (Opens.set_range_inclusion' O).symm)
+
+/-- The forward isomorphism of `isoRestrictOfRangeEq` commutes with the inclusion of `O`. -/
+@[reassoc (attr := simp)]
+theorem isoRestrictOfRangeEq_hom_ofRestrict :
+    (isoRestrictOfRangeEq m hm).hom ≫ Z.ofRestrict O.isOpenEmbedding = m :=
+  isoOfRangeEq_hom_comp _ _ _
+
+/-- The inverse isomorphism of `isoRestrictOfRangeEq` commutes with `m`. -/
+@[reassoc (attr := simp)]
+theorem isoRestrictOfRangeEq_inv_comp :
+    (isoRestrictOfRangeEq m hm).inv ≫ m = Z.ofRestrict O.isOpenEmbedding :=
+  isoOfRangeEq_inv_comp _ _ _
+
+end IsoRestrictOfRangeEq
 
 section Pullback
 
@@ -556,6 +584,53 @@ theorem liftRestrict_base_apply {O : Opens X} {U : Opens Y}
     (f.liftRestrict hOU).base x = ⟨f.base x.val, hOU x.property⟩ := by
   apply Subtype.ext
   exact congrArg (fun g ↦ g.base x) (f.liftRestrict_ofRestrict hOU)
+
+/-- Lift a morphism `f : X ⟶ Y` whose image lies in an open `O` of `Y` across
+`Y.ofRestrict O.isOpenEmbedding`. -/
+noncomputable def liftToRestrict {O : Opens Y} (hf : Set.range f.base ⊆ (O : Set Y)) :
+    X ⟶ Y.restrict O.isOpenEmbedding :=
+  IsOpenImmersion.lift (Y.ofRestrict O.isOpenEmbedding) f
+    (hf.trans (Opens.set_range_inclusion' O).ge)
+
+/-- `liftToRestrict` commutes with the open subspace inclusion into `Y`. -/
+@[reassoc (attr := simp)]
+theorem liftToRestrict_ofRestrict {O : Opens Y} (hf : Set.range f.base ⊆ (O : Set Y)) :
+    f.liftToRestrict hf ≫ Y.ofRestrict O.isOpenEmbedding = f :=
+  IsOpenImmersion.lift_fac _ _ _
+
+/-- Uniqueness of `liftToRestrict` as the morphism commuting with
+`Y.ofRestrict O.isOpenEmbedding`. -/
+theorem liftToRestrict_uniq {O : Opens Y} (hf : Set.range f.base ⊆ (O : Set Y))
+    (g : X ⟶ Y.restrict O.isOpenEmbedding)
+    (hg : g ≫ Y.ofRestrict O.isOpenEmbedding = f) :
+    g = f.liftToRestrict hf :=
+  IsOpenImmersion.lift_uniq _ _ _ g hg
+
+/-- On points, `liftToRestrict` evaluates as `f.base` with codomain restricted to `O`. -/
+@[simp]
+theorem liftToRestrict_base_apply {O : Opens Y} (hf : Set.range f.base ⊆ (O : Set Y))
+    (x : X) :
+    (f.liftToRestrict hf).base x = ⟨f.base x, hf ⟨x, rfl⟩⟩ := by
+  apply Subtype.ext
+  exact congrArg (fun g ↦ g.base x) (f.liftToRestrict_ofRestrict hf)
+
+/-- Composing `liftToRestrict` into `O` with the inclusion `liftRestrict (𝟙 Y) hOO'` for `O ≤ O'`
+recovers `liftToRestrict` into `O'`. -/
+@[reassoc (attr := simp)]
+theorem liftToRestrict_comp_liftRestrict {O O' : Opens Y} (hOO' : O ≤ O')
+    (hf : Set.range f.base ⊆ (O : Set Y)) (hf' : Set.range f.base ⊆ (O' : Set Y)) :
+    f.liftToRestrict hf ≫ Hom.liftRestrict (𝟙 Y) hOO' = f.liftToRestrict hf' :=
+  f.liftToRestrict_uniq hf' _
+    ((Category.assoc _ _ _).trans
+      ((congrArg (f.liftToRestrict hf ≫ ·)
+        ((Hom.liftRestrict_ofRestrict (𝟙 Y) hOO').trans (Category.comp_id _))).trans
+        (f.liftToRestrict_ofRestrict hf)))
+
+/-- Lifting an open immersion into an open containing its image gives an open immersion. -/
+instance isOpenImmersion_liftToRestrict [IsOpenImmersion f] {O : Opens Y}
+    (hf : Set.range f.base ⊆ (O : Set Y)) :
+    IsOpenImmersion (f.liftToRestrict hf) :=
+  IsOpenImmersion.isOpenImmersion_lift _ _ _
 
 
 /-- **Restrictions of a morphism can be recognized through open immersions.** Let `f : X ⟶ Y` be

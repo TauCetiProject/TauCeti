@@ -476,12 +476,12 @@ theorem IsFiniteEtale.of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] (hY : Y.IsAnalyti
   have _ : IsOpenImmersion g₂ := by
     refine PreAdicSpace.isOpenImmersion_of_isEmpty _ hsheaf Y.property.isSheafy
   have hr : Set.range g₁.base = Set.range g₂.base := by simp [Set.range_eq_empty]
-  refine ⟨V, hy, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, P, hP, PUnit.{u + 1}, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP',
-    Pair.finiteAlgebra.algebraHom S PUnit.{u + 1}, ⟨inferInstance, .of_subsingleton⟩, hsheaf, eV,
-    IsOpenImmersion.isoOfRangeEq g₁ g₂ hr, ?_⟩
-  exact (IsOpenImmersion.isoOfRangeEq_hom_comp g₁ g₂ hr).symm
+  exact targetLocally_intro (V := V) (hy := hy) (S := S) (P := P) (hP := hP)
+    (T := T) (P' := P') (hP' := hP')
+    (φ := Pair.finiteAlgebra.algebraHom S PUnit.{u + 1})
+    (hφ := ⟨inferInstance, .of_subsingleton⟩) (hsheaf := hsheaf) (eV := eV)
+    (eU := IsOpenImmersion.isoOfRangeEq g₁ g₂ hr)
+    (hfac := (IsOpenImmersion.isoOfRangeEq_hom_comp g₁ g₂ hr).symm)
 
 /-- **A morphism from an empty adic space into `Y` is finite étale if and only if `Y` is
 analytic.** -/

@@ -326,6 +326,9 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
 /-- The canonical affinoid adic space `Spa(A, A⁺)` attached to a Huber pair `S` whose plus ring
 satisfies `IsSheafyForEveryPresentation`. Up to canonical isomorphism
 (`ofPairIsoOfPresentation`), it is independent of any choice of compatible pair of definition. -/
+-- `@[expose]` is required by the Lean 4 `module` compiler because `OfPairQuotientOpenSquare` and
+-- `OfPairQuotientRationalSquare` below are `Type`-valued structures in the same module mentioning
+-- `ofPair`; without it, Lean rejects those structures with a local-vs-external LCNF type mismatch.
 @[expose] noncomputable def ofPair (S : Pair A) (hS : IsSheafyForEveryPresentation S.plus) :
     AdicSpace.{u} :=
   ofPresentation S hS.exists_compatible_isSheaf.choose

@@ -325,6 +325,13 @@ a monomorphism in `AdicSpace`. -/
 instance mono_of_isOpenImmersion (i : X ⟶ Y) [PreAdicSpace.IsOpenImmersion i.hom] : Mono i :=
   (ObjectProperty.ι PreAdicSpace.isAdic).mono_of_mono_map (inferInstanceAs (Mono i.hom))
 
+/-- On underlying points, composition in `AdicSpace` is function composition. -/
+@[simp]
+theorem comp_hom_base_apply (f : X ⟶ Y) (g : Y ⟶ Z) (x : X.obj) :
+    (f ≫ g).hom.base x = g.hom.base (f.hom.base x) := by
+  rw [ObjectProperty.FullSubcategory.comp_hom, PreAdicSpace.comp_base, TopCat.coe_comp,
+    Function.comp_apply]
+
 section LiftOfIsOpenImmersion
 
 variable (f : X ⟶ Z) [PreAdicSpace.IsOpenImmersion f.hom] (g : Y ⟶ Z)
