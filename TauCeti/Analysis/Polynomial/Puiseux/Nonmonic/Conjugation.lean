@@ -8,12 +8,8 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Basic
 public import TauCeti.Analysis.Polynomial.Conjugation
 
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-
-import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Normed.Module.Connected
-import TauCeti.Topology.Covering.PowerSubstitution
+import TauCeti.Analysis.Polynomial.Puiseux.RootPermutation
 
 /-!
 # Conjugation-compatible nonmonic Puiseux branches
@@ -31,11 +27,8 @@ The parameter involution may conjugate several base coordinates; continuity suff
 The leading-coefficient unit need not itself be assumed conjugation-compatible.
 
 The construction uses `exists_analyticOnNhd_nonmonic_powerSubstitution` and
-`existsUnique_involutive_perm_root_conj`. The latter applies the unique conjugation
-permutation of a complete distinct root labelling,
-`TauCeti.existsUnique_root_conj_perm_of_subset_closure`, to continuous punctured root
-labels of any power-substituted family whose leading coefficient does not vanish off the
-hyperplane. It needs only a connected base.
+`existsUnique_root_conj_perm_of_powerSubstitution`, the unique conjugation permutation of
+continuous punctured root labels of a power-substituted family.
 
 ## References
 
@@ -48,52 +41,6 @@ public section
 open Function Metric Polynomial Set ComplexConjugate
 
 namespace TauCeti.Polynomial
-
-section Permutation
-
-variable {E : Type*} [TopologicalSpace E] {U : Set E} [ConnectedSpace U] {F : E × ℂ → ℂ[X]}
-  {d n : ℕ} {R R' : ℝ} {τ : E → E}
-
-/-- The conjugation symmetry of continuous punctured root labels of a power-substituted family
-is carried by a unique involutive permutation of the labels. The base needs only to be
-connected, and the leading coefficient only nonzero off the hyperplane. -/
-theorem existsUnique_involutive_perm_root_conj (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R)
-    (hl : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).coeff d ≠ 0)
-    (hτ : ContinuousOn τ U) (hτU : MapsTo τ U U) (hττ : ∀ x ∈ U, τ (τ x) = x)
-    (hconj : ∀ b ∈ U ×ˢ (ball 0 R \ {0}),
-      F (τ b.1, conj b.2) = (F b).map (starRingEnd ℂ))
-    {r : Fin d → E × ℂ → ℂ} (hrc : ∀ i, ContinuousOn (r i) (U ×ˢ (ball 0 R' \ {0})))
-    (hr : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), Injective (fun i ↦ r i b) ∧
-      F (b.1, b.2 ^ n) = C ((F (b.1, b.2 ^ n)).coeff d) * ∏ i, (X - C (r i b))) :
-    ∃! σ : Equiv.Perm (Fin d), Involutive σ ∧
-      ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) → r (σ i) b = conj (r i (τ b.1, conj b.2)) := by
-  let S := U ×ˢ (ball (0 : ℂ) R' \ {0})
-  let κ : E × ℂ → E × ℂ := fun b ↦ (τ b.1, conj b.2)
-  let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
-  have hST : S ⊆ U ×ˢ ball (0 : ℂ) R' := prod_mono subset_rfl sdiff_subset
-  have hq : MapsTo q S (U ×ˢ (ball 0 R \ {0})) :=
-    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
-  obtain ⟨hκ, -, hκS⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU
-  have hroot (b : E × ℂ) (hb : b ∈ S) (z : ℂ) :
-      (F (q b)).IsRoot z ↔ ∃ i, r i b = z := by
-    rw [(hr b hb).2, isRoot_C_mul_prod_X_sub_C_iff (hl _ (hq hb))]
-    simp only [Finset.mem_univ, true_and]
-  -- The punctured product is connected, so conjugation uses one permutation of all labels.
-  let := isPathConnected_iff_pathConnectedSpace.1
-    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
-      (0 : ℂ) hR')
-  have hSc : IsPreconnected S :=
-    (isPreconnected_iff_preconnectedSpace.2 inferInstance).prod
-      (isPreconnected_iff_preconnectedSpace.2 inferInstance)
-  obtain ⟨x₀⟩ : Nonempty U := inferInstance
-  obtain ⟨t₀⟩ : Nonempty ↥(ball (0 : ℂ) R' \ {0}) := inferInstance
-  exact TauCeti.existsUnique_root_conj_perm_of_subset_closure
-    hSc subset_rfl subset_closure hrc (fun b hb ↦ (hr b hb).1) hroot (hκ.mono hST) hκS hκS
-    (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
-    (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
-    ⟨(x₀, t₀), x₀.property, t₀.property⟩
-
-end Permutation
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {u : E × ℂ → ℂ}
@@ -128,7 +75,7 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
         ∀ i b, b ∈ U ×ˢ ball 0 R' → g (σ i) b = conj (g i (τ b.1, conj b.2)) := by
   obtain ⟨r, g, hra, hga, hfac⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
     hU hn hR hdvd hF hdeg hdiscr hu hu0 hlc
-  obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := existsUnique_involutive_perm_root_conj hR' hn hR
+  obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := existsUnique_root_conj_perm_of_powerSubstitution hR' hn hR
     (fun b hb ↦ hlc b hb ▸ mul_ne_zero (pow_ne_zero _ hb.2.2) (hu0 b ⟨hb.1, hb.2.1⟩))
     hτ hτU hττ hconj (fun i ↦ (hra i).continuousOn) hfac
   obtain ⟨hκ, hκT, -⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU

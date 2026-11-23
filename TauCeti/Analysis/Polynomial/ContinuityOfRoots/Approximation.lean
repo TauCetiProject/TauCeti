@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.Analysis.Polynomial.RootLocation
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!
@@ -25,11 +26,6 @@ small at the reflected central root compared with its leading coefficient, so
 Reciprocal coordinates then recover the finite roots. No local compactness of the field is
 needed. This is useful for polynomial deformations whose limiting leading coefficient vanishes.
 
-The pointwise step holds for any split polynomial over a domain with a multiplicative
-seminorm: if `‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree` and `0 ≤ r`, some root of `p`
-lies within `r` of `u`, since `p.eval u` is the leading coefficient times the product of
-`u - b` over the roots.
-
 ## References
 
 S. Basu, R. Pollack, M.-F. Roy, *Algorithms in Real Algebraic Geometry*, second edition,
@@ -39,33 +35,6 @@ Springer (2006), §5.1 (continuity of polynomial roots).
 public section
 
 open Filter Polynomial Topology
-
-namespace Polynomial.Splits
-
-/-- A split polynomial that is small at `u` compared with its leading coefficient has a root
-near `u`: if `‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree` and `0 ≤ r`, some root `b` of
-`p` satisfies `‖u - b‖ < r`. The seminorm only needs to be multiplicative. -/
-theorem exists_mem_roots_norm_sub_lt {R : Type*} [SeminormedCommRing R] [IsDomain R]
-    [NormMulClass R] {p : R[X]} (hp : p.Splits) {u : R} {r : ℝ} (hr : 0 ≤ r)
-    (h : ‖p.eval u‖ < ‖p.leadingCoeff‖ * r ^ p.natDegree) :
-    ∃ b ∈ p.roots, ‖u - b‖ < r := by
-  -- A multiplicative seminorm with `‖1‖ ≠ 1` vanishes, which `h` excludes.
-  have h1 : ‖(1 : R)‖ = 1 := by
-    have h11 : ‖(1 : R)‖ * ‖(1 : R)‖ = ‖(1 : R)‖ := by rw [← norm_mul, one_mul]
-    by_contra h1
-    have h0 : ‖(1 : R)‖ = 0 := by
-      by_contra h0
-      exact h1 ((mul_eq_left₀ h0).1 h11)
-    rw [← mul_one p.leadingCoeff, norm_mul, h0, mul_zero, zero_mul] at h
-    exact (norm_nonneg _).not_gt h
-  have : NormOneClass R := ⟨h1⟩
-  by_contra! hb
-  rw [hp.eval_eq_prod_roots, norm_mul, Multiset.norm_prod_map, hp.natDegree_eq_card_roots] at h
-  refine h.not_ge (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  calc r ^ Multiset.card p.roots = (p.roots.map fun _ ↦ r).prod := by simp
-    _ ≤ _ := Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ hr) hb
-
-end Polynomial.Splits
 
 namespace TauCeti
 

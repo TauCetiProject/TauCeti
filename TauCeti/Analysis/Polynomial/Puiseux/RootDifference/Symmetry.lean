@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.RootDifference
 public import TauCeti.Analysis.Polynomial.Conjugation
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Conjugation
+import TauCeti.Analysis.Polynomial.Puiseux.RootPermutation
 
 /-!
 # Global conjugation symmetry of nonmonic root differences
@@ -22,7 +22,7 @@ including the exceptional hyperplane. The parameter involution need not fix base
 The branches and difference units come from
 `TauCeti.Polynomial.exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit`.
 The conjugation permutation comes from the complete distinct punctured root labelling, by
-`TauCeti.Polynomial.existsUnique_involutive_perm_root_conj`;
+`TauCeti.Polynomial.existsUnique_root_conj_perm_of_powerSubstitution`;
 `AnalyticAt.laurent_eq_of_conj` identifies the difference exponents at paired parameters.
 Cancellation away from the hyperplane and continuity extend unit symmetry across it.
 No condition on the constant coefficient is needed, and individual branches may vanish
@@ -88,7 +88,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit_conj
     exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
       hU hR' hn hR hdvd hF hdeg hu hu0 hv hv0 hlead hdiscr
   choose e w hwa hw0 hwform using hdiff
-  obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := existsUnique_involutive_perm_root_conj hR' hn hR
+  obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := existsUnique_root_conj_perm_of_powerSubstitution hR' hn hR
     (fun b hb ↦ hlead b hb ▸ mul_ne_zero (pow_ne_zero _ hb.2.2) (hu0 b ⟨hb.1, hb.2.1⟩))
     hτ hτU hττ hconj (fun i ↦ (hra i).continuousOn) hr
   obtain ⟨hκ, hκT, hκS⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU

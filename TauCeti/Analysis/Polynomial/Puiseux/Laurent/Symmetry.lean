@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Factorization
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Conjugation
+import TauCeti.Analysis.Polynomial.Puiseux.RootPermutation
 
 /-!
 # Conjugation symmetry of constructed Laurent factorizations
@@ -21,7 +21,7 @@ parameters need not be fixed points of the involution.
 
 The branches are constructed by `exists_analyticOnNhd_nonmonic_laurent`. The unique
 conjugation permutation of a distinct root labelling,
-`existsUnique_involutive_perm_root_conj`, then acts on those same branches.
+`existsUnique_root_conj_perm_of_powerSubstitution`, then acts on those same branches.
 `AnalyticAt.laurent_eq_of_conj` identifies the exponents and unit germs at paired parameters.
 No symmetry assumption on the leading or trailing coefficient units is needed. Original
 fibers may drop degree or be nullified on the hyperplane.
@@ -87,8 +87,8 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     filter_upwards [(hU.prod isOpen_ball).mem_nhds
       (x := (x, (0 : ℂ))) ⟨hx, mem_ball_self hR'⟩] with b hb
     exact ⟨fun i ↦ hW0 i b hb, fun hb0 i ↦ hWform b ⟨hb.1, hb.2, hb0⟩ i⟩
-  obtain ⟨σ, ⟨hσσ, hσ⟩, -⟩ := existsUnique_involutive_perm_root_conj hR' d.factorial_ne_zero
-    hfit (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩ ▸
+  obtain ⟨σ, ⟨hσσ, hσ⟩, -⟩ := existsUnique_root_conj_perm_of_powerSubstitution hR'
+    d.factorial_ne_zero hfit (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩ ▸
       mul_ne_zero (pow_ne_zero _ hb.2.2) (hu0 b ⟨hb.1, hb.2.1⟩))
     hτ hτU hττ hconj (fun i ↦ (hra i).continuousOn) hr
   obtain ⟨hκ, hκT, -⟩ := TauCeti.continuousOn_mapsTo_prodMap_conj hτ hτU
