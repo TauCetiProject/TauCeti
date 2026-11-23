@@ -21,6 +21,16 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
+`HomotopyEquiv.invNaturality` turns a strictly commutative square whose horizontal sides are the
+forward maps of chain homotopy equivalences, `e₁.hom ≫ b = a ≫ e₂.hom`, into a square of homotopy
+inverses commuting up to chain homotopy: `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. This is how a
+strictly natural chain homotopy equivalence, such as the inclusion of smooth singular chains into
+singular chains, has a homotopy inverse which is natural up to chain homotopy.
+
+`HomotopyEquiv.homologyMap_inv` says that the inverse of a chain homotopy equivalence induces on
+homology the inverse of the map induced by its forward map, the inverse law of Mathlib's
+`HomotopyEquiv.toHomologyIso` stated for the induced maps themselves.
+
 `Homotopy.restrict` restricts a homotopy to subcomplexes: when its components, restricted to a
 complex mapping into the source, lift through a degreewise monomorphism into the target, the lifts
 form a homotopy between the restricted maps.
@@ -115,7 +125,35 @@ lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
     (H.compSquare H').hom p q = H.hom p q ≫ b'.f q + a.f p ≫ H'.hom p q := by
   simp [compSquare]
 
+/-- **Naturality up to chain homotopy of homotopy inverses.** If the forward maps of chain
+homotopy equivalences `e₁` and `e₂` commute with `a` and `b`, that is `e₁.hom ≫ b = a ≫ e₂.hom`,
+then `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. -/
+def _root_.HomotopyEquiv.invNaturality (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
+    (w : e₁.hom ≫ b = a ≫ e₂.hom) :
+    Homotopy (e₁.inv ≫ a) (b ≫ e₂.inv) :=
+  (Homotopy.ofEq (Category.comp_id (e₁.inv ≫ a)).symm).trans <|
+    (e₂.homotopyHomInvId.symm.compLeft (e₁.inv ≫ a)).trans <|
+      (Homotopy.ofEq (by
+        simp only [Category.assoc]
+        rw [← reassoc_of% w])).trans <|
+        (e₁.homotopyInvHomId.compRight (b ≫ e₂.inv)).trans <|
+          Homotopy.ofEq (Category.id_comp (b ≫ e₂.inv))
+
 end Squares
+
+section HomologyMap
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K L : HomologicalComplex C c}
+
+/-- The inverse of a chain homotopy equivalence `e` induces on homology the inverse of the map
+induced by `e.hom`. -/
+theorem _root_.HomotopyEquiv.homologyMap_inv (e : HomotopyEquiv K L) (i : ι) [K.HasHomology i]
+    [L.HasHomology i] :
+    HomologicalComplex.homologyMap e.inv i = inv (HomologicalComplex.homologyMap e.hom i) :=
+  IsIso.eq_inv_of_hom_inv_id (e.toHomologyIso i).hom_inv_id
+
+end HomologyMap
 
 section Restrict
 

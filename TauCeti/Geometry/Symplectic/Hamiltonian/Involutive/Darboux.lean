@@ -192,7 +192,7 @@ theorem exists_partialDiffeomorph_mvfderiv_hamiltonianVectorField_eq_of_isInteri
     T.mvfderiv_comp_apply (hed hyU.1), mvfderiv_apply_eq_mfderiv_apply, heu y hyU.1, hT]
   congr 1
   funext k
-  rw [mvfderiv_apply_apply (hFd y), ← hσ.isNondegenerate.poissonBracket_eq_mvfderiv]
+  rw [mvfderiv_apply_apply (hFd y), ← σ.poissonBracket_eq_mvfderiv]
   exact interior_subset hyU.2 k i
 
 include hσ in
