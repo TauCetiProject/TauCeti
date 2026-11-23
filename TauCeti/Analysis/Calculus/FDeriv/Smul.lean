@@ -110,6 +110,16 @@ section Strict
 
 open Asymptotics Filter Topology
 
+/-- The difference estimate `u y - u y' = O(y - y')` near `(x, x)` of a strictly differentiable
+map gives continuity at `x`: fixing `y' = x` leaves `dist (u y) (u x) = O(dist y x)`. -/
+private theorem continuousAt_of_isBigO_sub_sub {X Y : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Y] {u : X → Y} {x : X}
+    (hu : (fun p : X × X ↦ u p.1 - u p.2) =O[𝓝 (x, x)] fun p ↦ p.1 - p.2) :
+    ContinuousAt u x :=
+  continuousAt_of_isBigO_dist <| by
+    simpa only [dist_eq_norm_sub, Function.comp_apply, id] using
+      (hu.comp_tendsto (tendsto_id.prodMk_nhds tendsto_const_nhds)).norm_norm
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {R : Type*} [NormedRing R]
   [Module R F] [IsBoundedSMul R F]
@@ -128,12 +138,12 @@ theorem hasStrictFDerivAt_smul_of_isBigO_sub {c : E → R} {f : E → F} {x : E}
   -- term one factor tends to zero and the other is controlled by `y - y'`.
   have h₁ : (fun p : E × E ↦ c p.1 • (f p.1 - f p.2)) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hc₁ : Tendsto (fun p : E × E ↦ c p.1) (𝓝 (x, x)) (𝓝 0) := by
-      have h := (continuousAt_of_isBigO_sub hc).tendsto.comp (continuous_fst.tendsto (x, x))
+      have h := (continuousAt_of_isBigO_sub_sub hc).tendsto.comp (continuous_fst.tendsto (x, x))
       rwa [hcx] at h
     simpa using ((isLittleO_one_iff 𝕜).2 hc₁).smul_isBigO hf
   have h₂ : (fun p : E × E ↦ (c p.1 - c p.2) • f p.2) =o[𝓝 (x, x)] fun p ↦ p.1 - p.2 := by
     have hf₂ : Tendsto (fun p : E × E ↦ f p.2) (𝓝 (x, x)) (𝓝 0) := by
-      have h := (continuousAt_of_isBigO_sub hf).tendsto.comp (continuous_snd.tendsto (x, x))
+      have h := (continuousAt_of_isBigO_sub_sub hf).tendsto.comp (continuous_snd.tendsto (x, x))
       rwa [hfx] at h
     have h := hc.norm_right.smul_isLittleO ((isLittleO_one_iff ℝ).2 hf₂)
     simp only [smul_eq_mul, mul_one] at h
