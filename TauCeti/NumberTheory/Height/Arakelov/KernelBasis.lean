@@ -64,15 +64,11 @@ Over `ℚ`, for an integer matrix `A` with linearly independent rows, the primit
   bounds on the product of real successive minima of `W.integerLattice` for `W.supSlice` and
   `W.euclideanBallSlice`.
 * `Submodule.exists_linearIndependent_integerPoints_prod_absHeight_le`,
-  `Submodule.exists_basis_mem_range_algebraMap_prod_absHeight_le`,
   `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`,
-  `Submodule.exists_basis_mem_range_algebraMap_prod_height2_le`,
   `Submodule.exists_linearIndependent_integerPoints_prod_height2_le_sqrt_pow`: integral `K`-bases of
   `W` with bounded product of absolute sup or Euclidean heights.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le`,
-  `Matrix.exists_basis_ker_mulVecLin_prod_absHeight_le`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`,
-  `Matrix.exists_basis_ker_mulVecLin_prod_height2_le`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le_sqrt_pow`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le_rat`: Bombieri–Vaaler
   kernel-basis height bounds over number fields and over `ℚ`.
@@ -503,60 +499,6 @@ theorem exists_linearIndependent_integerPoints_prod_height2_le_sqrt_pow
     (mul_le_mul_of_nonneg_right (unitBall_factor_rpow_le_sqrt_pow K (finrank K W)) (by positivity))
     (Submodule.subspaceHeight_pos W).le
 
-/-- Packages a `K`-linearly independent family `x : Fin n → ι → 𝓞 K` in `W.integerPoints` with
-`finrank K W = n` into a `K`-basis `b` of `W` having the same ambient coordinates, so every
-coordinate lies in `range (algebraMap (𝓞 K) K)` and any coordinatewise product agrees. -/
-private theorem exists_basis_of_linearIndependent_integerPoints
-    {K' : Type*} [Field K'] {ι' : Type*} [Finite ι'] {W : Submodule K' (ι' → K')}
-    {n : ℕ} (hn : finrank K' W = n) {x : Fin n → ι' → 𝓞 K'}
-    (hx_li : LinearIndependent K' (fun j i ↦ (x j i : K')))
-    (hx_mem : ∀ j, x j ∈ W.integerPoints) :
-    ∃ b : Basis (Fin n) K' W,
-      (∀ j, (b j : ι' → K') = fun i ↦ (x j i : K')) ∧
-      ∀ j i, (b j : ι' → K') i ∈ range (algebraMap (𝓞 K') K') := by
-  cases nonempty_fintype ι'
-  let v : Fin n → W := fun j ↦ ⟨fun i ↦ (x j i : K'), mem_integerPoints.mp (hx_mem j)⟩
-  have hv_li : LinearIndependent K' v := by
-    refine LinearIndependent.of_comp W.subtype ?_
-    simpa only [Function.comp_def, Submodule.coe_subtype, v] using hx_li
-  let b : Basis (Fin n) K' W :=
-    basisOfLinearIndependentOfCardEqFinrank' v hv_li ((Fintype.card_fin n).trans hn.symm)
-  have hb (j : Fin n) : (b j : ι' → K') = fun i ↦ (x j i : K') := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank']
-  refine ⟨b, hb, fun j i ↦ ⟨x j i, ?_⟩⟩
-  rw [hb, ← RingOfIntegers.coe_eq_algebraMap]
-
-open scoped Classical in
-/-- `Basis` packaging of `Submodule.exists_linearIndependent_integerPoints_prod_absHeight_le`:
-`W` admits a `K`-basis `b` with coordinates in `𝓞 K` satisfying the sup-height product bound. -/
-theorem exists_basis_mem_range_algebraMap_prod_absHeight_le (W : Submodule K (ι → K)) :
-    ∃ b : Basis (Fin (finrank K W)) K W,
-      (∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ∧
-      ∏ j, absoluteProjectiveTupleHeight (b j : ι → K) ≤
-        (2 / Real.pi) ^ ((finrank K W * nrComplexPlaces K : ℝ) / finrank ℚ K) *
-          |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) * W.subspaceHeight := by
-  obtain ⟨x, hx_li, _, hx_mem, hx_le⟩ :=
-    W.exists_linearIndependent_integerPoints_prod_absHeight_le
-  obtain ⟨b, hb, hb_int⟩ := exists_basis_of_linearIndependent_integerPoints rfl hx_li hx_mem
-  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
-
-open scoped Classical in
-/-- `Basis` packaging of `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`: `W`
-admits a `K`-basis `b` with coordinates in `𝓞 K` satisfying the Euclidean-height product bound. -/
-theorem exists_basis_mem_range_algebraMap_prod_height2_le (W : Submodule K (ι → K)) :
-    ∃ b : Basis (Fin (finrank K W)) K W,
-      (∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ∧
-      ∏ j, height2 (b j : ι → K) ≤
-        (((2 : ℝ) ^ finrank K W /
-            volume.real (ball (0 : EuclideanSpace ℝ (Fin (finrank K W))) 1)) ^ nrRealPlaces K *
-          ((2 : ℝ) ^ finrank K W /
-            volume.real (ball (0 : EuclideanSpace ℝ (Fin (2 * finrank K W))) 1)) ^
-              nrComplexPlaces K) ^ (finrank ℚ K : ℝ)⁻¹ *
-          |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) * W.subspaceHeight := by
-  obtain ⟨x, hx_li, _, hx_mem, hx_le⟩ := W.exists_linearIndependent_integerPoints_prod_height2_le
-  obtain ⟨b, hb, hb_int⟩ := exists_basis_of_linearIndependent_integerPoints rfl hx_li hx_mem
-  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
-
 end SubspaceBounds
 
 end Submodule
@@ -656,41 +598,6 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_height2_le_sqrt_pow (A : Ma
   exists_ker_basis_of_subspace A height2
     (LinearMap.ker A.mulVecLin).exists_linearIndependent_integerPoints_prod_height2_le_sqrt_pow
     fun hfin hH ↦ by rw [hfin, hH]
-
-open scoped Classical in
-/-- `Basis` packaging of `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absHeight_le`:
-the kernel `LinearMap.ker A.mulVecLin` admits a `K`-basis `b` indexed by `Fin (#ι - A.rank)`
-with coordinates in `𝓞 K` satisfying the sup-height product bound. -/
-theorem exists_basis_ker_mulVecLin_prod_absHeight_le (A : Matrix m ι K) :
-    ∃ b : Basis (Fin (Fintype.card ι - A.rank)) K (LinearMap.ker A.mulVecLin),
-      (∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ∧
-      ∏ j, absoluteProjectiveTupleHeight (b j : ι → K) ≤
-        (2 / Real.pi) ^
-            (((Fintype.card ι - A.rank : ℕ) * nrComplexPlaces K : ℝ) / finrank ℚ K) *
-          |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
-          (span K (Set.range A.row)).subspaceHeight := by
-  rw [← A.finrank_ker_mulVecLin, ← A.subspaceHeight_ker_mulVecLin]
-  exact (LinearMap.ker A.mulVecLin).exists_basis_mem_range_algebraMap_prod_absHeight_le
-
-open scoped Classical in
-/-- `Basis` packaging of `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`: the
-kernel `LinearMap.ker A.mulVecLin` admits a `K`-basis `b` indexed by `Fin (#ι - A.rank)` with
-coordinates in `𝓞 K` satisfying the Euclidean-height product bound. -/
-theorem exists_basis_ker_mulVecLin_prod_height2_le (A : Matrix m ι K) :
-    ∃ b : Basis (Fin (Fintype.card ι - A.rank)) K (LinearMap.ker A.mulVecLin),
-      (∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ∧
-      ∏ j, height2 (b j : ι → K) ≤
-        (((2 : ℝ) ^ (Fintype.card ι - A.rank) /
-            volume.real
-              (ball (0 : EuclideanSpace ℝ (Fin (Fintype.card ι - A.rank))) 1)) ^ nrRealPlaces K *
-          ((2 : ℝ) ^ (Fintype.card ι - A.rank) /
-            volume.real
-              (ball (0 : EuclideanSpace ℝ (Fin (2 * (Fintype.card ι - A.rank)))) 1)) ^
-              nrComplexPlaces K) ^ (finrank ℚ K : ℝ)⁻¹ *
-          |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
-          (span K (Set.range A.row)).subspaceHeight := by
-  rw [← A.finrank_ker_mulVecLin, ← A.subspaceHeight_ker_mulVecLin]
-  exact (LinearMap.ker A.mulVecLin).exists_basis_mem_range_algebraMap_prod_height2_le
 
 end NumberField
 
