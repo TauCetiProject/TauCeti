@@ -67,7 +67,7 @@ theorem deleteVertexComponentMap_connectedComponentOf (G : Graph α β) (v x : �
 /-- A component containing a vertex other than `v` lies in the range of the component map after
 deleting `v`. -/
 theorem exists_deleteVertexComponentMap_eq_of_mem {C : G.ConnectedComponent} {z : α}
-    (hzC : z ∈ V(C.1)) (hzv : z ≠ v) :
+    (hzC : z ∈ V(C.val)) (hzv : z ≠ v) :
     ∃ D, G.deleteVertexComponentMap v D = C := by
   have hzG : z ∈ V(G) := C.property.le.vertexSet_mono hzC
   have hz : z ∈ V(G.deleteVerts {v}) := by simp [hzG, hzv]

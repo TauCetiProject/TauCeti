@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.Pullback
-import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.Affine
+
+import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 import Mathlib.Data.ZMod.Basic
+import Mathlib.RingTheory.MvPolynomial.Basic
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
+import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.Pullback
 
 /-!
 # Tests for pseudo-coherent modules on schemes
@@ -23,6 +27,12 @@ Flat pullback preserves the full resolutions as well as local pseudo-coherence. 
 cyclic sheaves over Noetherian rings stay pseudo-coherent after flat base change to schemes
 that need not be Noetherian. A polynomial algebra in infinitely many variables over `ℤ/4`
 exercises this without requiring the target ring of the algebra map to be Noetherian.
+
+Finally, a negative-control construction over the spectrum of any local integral domain that is
+not a field (in particular, any discrete valuation ring) shows that the quasi-coherence clause
+cannot be dropped from `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_iff_forall_affineOpens`:
+the subsheaf of `𝒪_{Spec R}` vanishing on `⊤` and agreeing with `𝒪_{Spec R}` on proper opens has
+pseudo-coherent sections over every affine open, yet fails to be quasi-coherent or pseudo-coherent.
 -/
 
 open CategoryTheory Limits ZeroObject
@@ -105,3 +115,150 @@ example :
       TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing).pullback _
 
 end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry _root_.AlgebraicGeometry.Scheme.Modules Opposite
+
+universe u
+
+noncomputable section
+
+section NegativeControl
+
+open Classical in
+/-- The presheaf submodule of `𝒪_{Spec R}` vanishing on `⊤` and equal to `⊤` on proper opens. -/
+private def nonQuasicoherentPresheafSubmodule (R : Type u) [CommRing R] :
+    (SheafOfModules.unit (Spec (.of R)).ringCatSheaf).val.Submodule where
+  obj W := if W.unop = ⊤ then ⊥ else ⊤
+  map {V W} f := by
+    by_cases hW : W.unop = ⊤
+    · have hV : V.unop = ⊤ := top_unique (hW ▸ leOfHom f.unop)
+      simp [hV]
+    · simp [hW]
+
+/-- Over a local ring `R`, `nonQuasicoherentPresheafSubmodule R` is a subsheaf of `𝒪_{Spec R}`. -/
+private def nonQuasicoherentSubmodule (R : Type u) [CommRing R] [IsLocalRing R] :
+    (SheafOfModules.unit (Spec (.of R)).ringCatSheaf).Submodule where
+  toSubmodule := nonQuasicoherentPresheafSubmodule R
+  isSheaf := fun ⟨W⟩ s hs ↦ by
+    classical
+    by_cases hW : W = ⊤
+    · subst hW
+      -- In `Spec R` for a local ring `R`, the only open containing the closed point is `⊤`.
+      obtain ⟨V, iVW, hsV, hxV⟩ := hs (IsLocalRing.closedPoint R) trivial
+      have hV : V = ⊤ := (IsLocalRing.closedPoint_mem_iff V).mp hxV
+      subst hV
+      have hid : ∀ x, ((nonQuasicoherentPresheafSubmodule R).toSubfunctor.sieveOfSection x).arrows
+          (𝟙 ⊤) → x ∈ (nonQuasicoherentPresheafSubmodule R).toSubfunctor.obj (op ⊤) :=
+        fun _ hx ↦ by
+          simpa only [Subfunctor.sieveOfSection, op_id, CategoryTheory.Functor.map_id,
+            types_id_apply] using hx
+      exact (PresheafOfModules.Submodule.mem_toSubfunctor_obj _ s).mp
+        (hid s (Subsingleton.elim iVW (𝟙 ⊤) ▸ hsV))
+    · simp [nonQuasicoherentPresheafSubmodule, hW]
+
+/-- The `𝒪_{Spec R}`-module underlying `nonQuasicoherentSubmodule R`. -/
+private abbrev nonQuasicoherentSheaf (R : Type u) [CommRing R] [IsLocalRing R] :
+    (Spec (.of R)).Modules :=
+  (nonQuasicoherentSubmodule R).toSheafOfModules
+
+/-- Global sections of `nonQuasicoherentSheaf R` vanish. -/
+private theorem subsingleton_sections_top_nonQuasicoherentSheaf (R : Type u) [CommRing R]
+    [IsLocalRing R] : Subsingleton Γ(nonQuasicoherentSheaf R, ⊤) := by
+  have hbot : (nonQuasicoherentSubmodule R).toSubmodule.obj (op ⊤) = ⊥ := by
+    simp [nonQuasicoherentSubmodule, nonQuasicoherentPresheafSubmodule]
+  -- `Γ(N.toSheafOfModules, U)` is definitionally the carrier of `N.toSubmodule.obj (op U)`.
+  let e : Γ(nonQuasicoherentSheaf R, ⊤) ≃ₗ[Γ(Spec (.of R), ⊤)]
+      (⊥ : Submodule Γ(Spec (.of R), ⊤) Γ(Spec (.of R), ⊤)) :=
+    LinearEquiv.ofEq ((nonQuasicoherentSubmodule R).toSubmodule.obj (op ⊤)) ⊥ hbot
+  exact e.injective.subsingleton
+
+/-- Over any proper open `U ≠ ⊤` of `Spec R`, sections of `nonQuasicoherentSheaf R` are
+`Γ(Spec R, U)`-linearly equivalent to `Γ(Spec R, U)`. -/
+private def sectionsEquivOfNeTop_nonQuasicoherentSheaf (R : Type u) [CommRing R] [IsLocalRing R]
+    {U : (Spec (.of R)).Opens} (hU : U ≠ ⊤) :
+    Γ(nonQuasicoherentSheaf R, U) ≃ₗ[Γ(Spec (.of R), U)] Γ(Spec (.of R), U) :=
+  -- `Γ(N.toSheafOfModules, U)` is definitionally the carrier of `N.toSubmodule.obj (op U)`.
+  LinearEquiv.ofTop ((nonQuasicoherentSubmodule R).toSubmodule.obj (op U))
+    (by simp [nonQuasicoherentSubmodule, nonQuasicoherentPresheafSubmodule, hU])
+
+/-- Sections of `nonQuasicoherentSheaf R` over every affine open of `Spec R` are pseudo-coherent. -/
+private theorem isPseudoCoherentOver_sections_nonQuasicoherentSheaf (R : Type u) [CommRing R]
+    [IsLocalRing R] (W : (Spec (.of R)).affineOpens) :
+    TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.val)
+      Γ(nonQuasicoherentSheaf R, W.val) ⊤ := by
+  by_cases hW : W.val = ⊤
+  · have : Subsingleton Γ(nonQuasicoherentSheaf R, W.val) :=
+      hW ▸ subsingleton_sections_top_nonQuasicoherentSheaf R
+    exact TauCeti.Huber.IsPseudoCoherentOver.of_projective
+  · exact TauCeti.Huber.IsPseudoCoherentOver.of_projective.of_equiv
+      (sectionsEquivOfNeTop_nonQuasicoherentSheaf R hW).symm
+
+/-- When `R` is a local integral domain that is not a field, `nonQuasicoherentSheaf R` is not
+quasi-coherent. -/
+private theorem not_isQuasicoherent_nonQuasicoherentSheaf (R : Type u) [CommRing R] [IsDomain R]
+    [IsLocalRing R] (hR : ¬ IsField R) : ¬ (nonQuasicoherentSheaf R).IsQuasicoherent := by
+  intro hqc
+  let X : Scheme.{u} := Spec (.of R)
+  let F : X.Modules := nonQuasicoherentSheaf R
+  have hm_ne : IsLocalRing.maximalIdeal R ≠ ⊥ :=
+    IsLocalRing.isField_iff_maximalIdeal_eq.not.mp hR
+  obtain ⟨r, hr_mem, hr_ne⟩ := (Submodule.ne_bot_iff _).mp hm_ne
+  let f : Γ(X, ⊤) := (Scheme.ΓSpecIso (.of R)).inv r
+  have hD_ne_top : X.basicOpen f ≠ ⊤ := by
+    intro htop
+    have hclosed : IsLocalRing.closedPoint R ∈ PrimeSpectrum.basicOpen r := by
+      rw [← basicOpen_eq_of_affine (R := .of R) r, htop]
+      trivial
+    exact (PrimeSpectrum.mem_basicOpen _ _).mp hclosed hr_mem
+  have hf_ne : f ≠ 0 := fun hf0 ↦
+    hr_ne ((ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso (.of R)).inv).1
+      (hf0.trans (map_zero _).symm))
+  have : IsDomain Γ(X, ⊤) :=
+    (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.toMulEquiv.isDomain R
+  have : IsLocalization.Away f Γ(X, X.basicOpen f) :=
+    (isAffineOpen_top X).isLocalization_basicOpen f
+  have : IsDomain Γ(X, X.basicOpen f) :=
+    IsLocalization.Away.isDomain Γ(X, X.basicOpen f) hf_ne
+  have : Subsingleton Γ(F, ⊤) := subsingleton_sections_top_nonQuasicoherentSheaf R
+  have : IsLocalizedModule.Away f (F.basicOpenRestrict f) :=
+    F.isLocalizedModule_basicOpenRestrict (isAffineOpen_top X) f
+  have : Subsingleton Γ(F, X.basicOpen f) :=
+    IsLocalizedModule.subsingleton_of_subsingleton (Submonoid.powers f) (F.basicOpenRestrict f)
+  have : Subsingleton Γ(X, X.basicOpen f) :=
+    (sectionsEquivOfNeTop_nonQuasicoherentSheaf R hD_ne_top).symm.injective.subsingleton
+  exact false_of_nontrivial_of_subsingleton Γ(X, X.basicOpen f)
+
+/-- **Quasi-coherence cannot be omitted from `isPseudoCoherent_iff_forall_affineOpens`.** On the
+spectrum of any local integral domain `R` that is not a field, there exists an `𝒪_{Spec R}`-module
+`F` whose sections over every affine open `W` are pseudo-coherent over `Γ(Spec R, W)`, yet `F` is
+neither quasi-coherent nor pseudo-coherent. -/
+public theorem exists_isPseudoCoherentOver_and_not_isQuasicoherent_of_not_isField (R : Type u)
+    [CommRing R] [IsDomain R] [IsLocalRing R] (hR : ¬ IsField R) :
+    ∃ F : (Spec (.of R)).Modules,
+      (∀ W : (Spec (.of R)).affineOpens,
+        TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.val) Γ(F, W.val) ⊤) ∧
+      ¬ F.IsQuasicoherent ∧ ¬ F.IsPseudoCoherent :=
+  ⟨nonQuasicoherentSheaf R,
+    isPseudoCoherentOver_sections_nonQuasicoherentSheaf R,
+    not_isQuasicoherent_nonQuasicoherentSheaf R hR,
+    fun hpc ↦ not_isQuasicoherent_nonQuasicoherentSheaf R hR hpc.isQuasicoherent⟩
+
+/-- Over the spectrum of any discrete valuation ring `R`, there exists an `𝒪_{Spec R}`-module whose
+sections over every affine open are pseudo-coherent, yet which is neither quasi-coherent nor
+pseudo-coherent. -/
+public theorem exists_isPseudoCoherentOver_and_not_isQuasicoherent_of_isDiscreteValuationRing
+    (R : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] :
+    ∃ F : (Spec (.of R)).Modules,
+      (∀ W : (Spec (.of R)).affineOpens,
+        TauCeti.Huber.IsPseudoCoherentOver Γ(Spec (.of R), W.val) Γ(F, W.val) ⊤) ∧
+      ¬ F.IsQuasicoherent ∧ ¬ F.IsPseudoCoherent :=
+  exists_isPseudoCoherentOver_and_not_isQuasicoherent_of_not_isField R
+    (IsDiscreteValuationRing.not_isField R)
+
+end NegativeControl
+
+end
+
+end TauCeti.AlgebraicGeometry

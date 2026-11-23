@@ -183,7 +183,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] {X : C}
 
 /-- The augmentation of a projective resolution, as a morphism to `X`, is an epimorphism. -/
 private instance epi_toSingle₀Equiv (R : ProjectiveResolution X) :
-    Epi (ChainComplex.toSingle₀Equiv _ X R.π).1 :=
+    Epi (ChainComplex.toSingle₀Equiv _ X R.π).val :=
   inferInstanceAs (Epi (R.π.f 0))
 
 /-- A projective resolution whose term in degree `n + 1` vanishes, as a finite resolution of
@@ -192,7 +192,7 @@ to vanish: the terms above `n + 1` are not constrained. -/
 noncomputable def toFiniteResolution (R : ProjectiveResolution X) {n : ℕ}
     (hn : IsZero (R.complex.X (n + 1))) :
     (ExactStructure.abelian C).FiniteResolution (isProjective C) X :=
-  FiniteResolution.ofChainComplex (hε := (ChainComplex.toSingle₀Equiv _ X R.π).2) R.exact₀
+  FiniteResolution.ofChainComplex (hε := (ChainComplex.toSingle₀Equiv _ X R.π).property) R.exact₀
     (fun i _ => R.exact_succ i) hn (fun i _ => R.projective i)
 
 /-- The finite resolution of a projective resolution with vanishing term in degree `n + 1` has

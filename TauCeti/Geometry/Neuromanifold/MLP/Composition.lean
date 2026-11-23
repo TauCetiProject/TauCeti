@@ -440,14 +440,14 @@ variable [NonUnitalNonAssocSemiring K]
 @[simp]
 theorem realizedFunctions_realize_depth_zero (A : MLPSpec K 0) :
     realizedFunctions A.realize = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, funext (A.realize_depth_zero default)]
+  rw [realizedFunctions_unique, funext (A.realize_depth_zero default)]
   rfl
 
 /-- A depth-zero bias-free MLP realizes only the identity function. -/
 @[simp]
 theorem realizedFunctions_realizeWeights_depth_zero (A : MLPSpec K 0) :
     realizedFunctions A.realizeWeights = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, funext (A.realizeWeights_depth_zero default)]
+  rw [realizedFunctions_unique, funext (A.realizeWeights_depth_zero default)]
   rfl
 
 /-- The affine neuromanifold of `A : MLPSpec K (L + 1)` consists of the composites

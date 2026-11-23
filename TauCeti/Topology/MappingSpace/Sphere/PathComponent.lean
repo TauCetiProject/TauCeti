@@ -27,6 +27,8 @@ particular `π₀ Map_*(S², S²) ≅ ℤ`.
 
 * `TauCeti.zerothHomotopyBasedMapSphereEquiv`: `π₀ Map_*(S^k, X) ≃ π_k(X, x)` for `k ≥ 1`,
   natural in `X` by `TauCeti.zerothHomotopyBasedMapSphereEquiv_map`.
+* `TauCeti.exists_not_joined_of_nontrivial_homotopyGroup`: if `π_k(X, x) ≠ 0`, every based map
+  `S^k → X` has a based map not joined to it.
 * `TauCeti.zerothHomotopyBasedMapSphereSelfEquivInt`: `π₀ Map_*(Sⁿ, Sⁿ) ≃ ℤ` for `n ≥ 2`, given an
   orthonormal basis of `ℝⁿ⁺¹`, which fixes the sign.
 
@@ -94,6 +96,19 @@ theorem zerothHomotopyBasedMapSphereEquiv_map {Y : Type*} [TopologicalSpace Y] {
       HomotopyGroup.map g hg (zerothHomotopyBasedMapSphereEquiv k x s₀ (.mk f)) := by
   rw [zerothHomotopyBasedMapSphereEquiv_mk, zerothHomotopyBasedMapSphereEquiv_mk,
     basedMapSphereHomeomorph_map, HomotopyGroup.map_mk]
+
+/-- **Based spheres outside a path component.** If `π_k(X, x)` is nontrivial, then the based
+mapping space `Map_*(S^k, X)` is not path connected: for every based sphere `y₀` some based sphere
+`y₁` is not joined to `y₀` by a path. -/
+theorem exists_not_joined_of_nontrivial_homotopyGroup [Nontrivial (HomotopyGroup (Fin k) X x)]
+    (y₀ : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) :
+    ∃ y₁ : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x, ¬Joined y₁ y₀ := by
+  by_contra! h
+  have : Subsingleton (ZerothHomotopy
+      (BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x)) :=
+    ⟨Quotient.ind₂ fun y y' ↦ Quotient.sound ((h y).trans (h y').symm)⟩
+  exact not_subsingleton (HomotopyGroup (Fin k) X x)
+    (zerothHomotopyBasedMapSphereEquiv k x s₀).symm.subsingleton
 
 end Maps
 

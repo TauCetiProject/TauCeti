@@ -31,7 +31,9 @@ different path components. This file defines the subgroup of spherical classes.
   classes (`TauCeti.sphericalClassesMap`).
 * By the Hurewicz theorem, every class in `Hₙ₊₂(X; ℤ)` of an `(n + 1)`-connected space is
   spherical (`TauCeti.sphericalClasses_eq_top`). Every class in `Hₙ₊₁(Sⁿ⁺¹; ℤ)` is spherical,
-  including on the circle (`TauCeti.sphericalClasses_sphere_eq_top`).
+  including on the circle (`TauCeti.sphericalClasses_sphere_eq_top`), and so is every class in
+  `H₂(X; ℤ)` of a simply connected space
+  (`TauCeti.sphericalClasses_eq_top_of_simplyConnectedSpace`).
 * If `Y` is path-connected and `πₙ₊₁(Y)` is trivial, as for a torus in degree two, the spherical
   classes of `X × Y` are the images of those of `X` under a slice inclusion `x ↦ (x, y)`
   (`TauCeti.sphericalClasses_prod_eq_map`). In particular those of `Sⁿ⁺¹ × Y` are the integer
@@ -130,7 +132,7 @@ by `TauCeti.map_mem_sphericalClasses`. -/
 def sphericalClassesMap (f : C(X, Y)) (n : ℕ) : sphericalClasses X n →+ sphericalClasses Y n :=
   ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
     (TopCat.ofHom f)).hom.toAddMonoidHom.comp (sphericalClasses X n).subtype).codRestrict _
-    fun s ↦ map_mem_sphericalClasses f s.2
+    fun s ↦ map_mem_sphericalClasses f s.property
 
 @[simp]
 theorem coe_sphericalClassesMap (f : C(X, Y)) {n : ℕ} (s : sphericalClasses X n) :
@@ -167,6 +169,16 @@ theorem sphericalClasses_sphere_eq_top (n : ℕ) :
   rw [eq_top_iff, ← zmultiples_hurewicz_sphereGenLoop, AddSubgroup.zmultiples_le]
   simpa using hurewiczIntHom_mem_sphericalClasses (sphereNorthPole (n + 1))
     (Additive.ofMul (⟦sphereGenLoop (n + 1)⟧ : HomotopyGroup (Fin (n + 1)) _ _))
+
+variable (X) in
+/-- **Every class in `H₂(X; ℤ)` of a simply connected space is spherical**, by the Hurewicz
+theorem in degree two (`HomotopyGroup.bijective_hurewiczIntHom_of_simplyConnectedSpace`). -/
+@[simp]
+theorem sphericalClasses_eq_top_of_simplyConnectedSpace [SimplyConnectedSpace X] :
+    sphericalClasses X 1 = ⊤ := by
+  obtain ⟨x⟩ := (inferInstance : Nonempty X)
+  rw [sphericalClasses_eq_range x, AddMonoidHom.range_eq_top]
+  exact (bijective_hurewiczIntHom_of_simplyConnectedSpace x).2
 
 /-! ### Spherical classes of products -/
 

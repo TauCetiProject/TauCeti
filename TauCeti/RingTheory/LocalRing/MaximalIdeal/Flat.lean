@@ -53,7 +53,7 @@ theorem spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq [IsNoetherian
   -- Lift a basis of `𝔪_R / 𝔪_R²` to elements `xᵢ ∈ 𝔪_R`.
   let b := Module.finBasis (ResidueField R) (CotangentSpace R)
   choose x hx using fun i ↦ (maximalIdeal R).toCotangent_surjective (b i)
-  have hxS (i) : algebraMap R S (x i) ∈ maximalIdeal S := h ▸ Ideal.mem_map_of_mem _ (x i).2
+  have hxS (i) : algebraMap R S (x i) ∈ maximalIdeal S := h ▸ Ideal.mem_map_of_mem _ (x i).property
   -- The images of the `xᵢ` in `𝔪_S / 𝔪_S²` are linearly independent.
   suffices LinearIndependent (ResidueField S)
       fun i ↦ (maximalIdeal S).toCotangent ⟨_, hxS i⟩ by

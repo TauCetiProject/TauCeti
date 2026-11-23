@@ -127,14 +127,14 @@ theorem exists_pseudoBasis_integerPoints [NumberField K] [Finite ι] (W : Submod
   cases nonempty_fintype ι
   -- View `W ∩ (𝓞 K)^ι` as an `𝓞 K`-submodule `M` of `W`.
   let φ : W.integerPoints →ₗ[𝓞 K] W :=
-    { toFun z := ⟨fun i ↦ ((z : ι → 𝓞 K) i : K), z.2⟩
+    { toFun z := ⟨fun i ↦ ((z : ι → 𝓞 K) i : K), z.property⟩
       map_add' _ _ := by ext; simp
       map_smul' _ _ := by ext i; simp [Algebra.smul_def] }
   set M : Submodule (𝓞 K) W := LinearMap.range φ with hM
   have hmemM (w : W) : w ∈ M ↔ ∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
     refine ⟨fun ⟨z, hz⟩ i ↦ hz ▸ ⟨(z : ι → 𝓞 K) i, rfl⟩, fun hw ↦ ?_⟩
     choose z hz using hw
-    exact ⟨⟨z, by rw [mem_integerPoints]; convert w.2 with i; exact hz i⟩,
+    exact ⟨⟨z, by rw [mem_integerPoints]; convert w.property with i; exact hz i⟩,
       Subtype.ext (funext hz)⟩
   have hFG : M.FG := by
     rw [hM, LinearMap.range_eq_map]

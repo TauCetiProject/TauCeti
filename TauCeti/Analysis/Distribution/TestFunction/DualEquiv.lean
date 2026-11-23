@@ -70,7 +70,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
 `Module.finBasis ℝ F` so that each summand is visibly continuous. -/
 private def toDistributionCLM :
     (𝓓^{n}(Ω, F) →L_c[ℝ] V) →L[ℝ] 𝓓'^{n}(Ω, F →L[ℝ] V) :=
-  ∑ i, Distribution.mapCLM (smulRightL ℝ F V ((Module.finBasis ℝ F).coord i).toContinuousLinearMap)
+  ∑ i, Distribution.mapCLM
+      (StrongDual.smulRightL ℝ F V ((Module.finBasis ℝ F).coord i).toContinuousLinearMap)
     ∘L (postcompCLM (toSpanSingleton ℝ (Module.finBasis ℝ F i))).precompCompactConvergenceCLM V
 
 private theorem toDistributionCLM_apply_apply (T : 𝓓^{n}(Ω, F) →L_c[ℝ] V)
@@ -128,8 +129,9 @@ test functions on `Ω` to `V` correspond to the `F →L[ℝ] V`-valued distribut
 corresponds to the distribution `ψ ↦ (v ↦ T (ψ • v))`. Both spaces carry the topology of uniform
 convergence on compact sets, and the correspondence is a homeomorphism for these topologies. -/
 def dualEquivDistribution : (𝓓^{n}(Ω, F) →L_c[ℝ] V) ≃L[ℝ] 𝓓'^{n}(Ω, F →L[ℝ] V) :=
-  ContinuousLinearEquiv.equivOfInverse toDistributionCLM ofDistributionCLM
-    ofDistributionCLM_toDistributionCLM toDistributionCLM_ofDistributionCLM
+  ContinuousLinearEquiv.ofContinuousLinearMap toDistributionCLM ofDistributionCLM
+    (ContinuousLinearMap.ext toDistributionCLM_ofDistributionCLM)
+    (ContinuousLinearMap.ext ofDistributionCLM_toDistributionCLM)
 
 /-- The distribution attached to a continuous linear map `T` on `F`-valued tests evaluates a real
 test function `ψ` at `v : F` as `T (ψ • v)`. -/

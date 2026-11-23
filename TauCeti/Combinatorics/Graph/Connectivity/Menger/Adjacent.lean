@@ -61,20 +61,20 @@ private theorem not_reachable_deleteEdges_deleteVerts_of_isMixedSeparator
   obtain ⟨q, -, hqX⟩ := reachable_deleteVerts_iff_exists_walk.1 h
   let p : G.Walk s t := q.mapLe G.deleteEdges_le
   rcases hX.exists_mem (p.toBidirected hs) with ⟨x, hx, hxX⟩ | ⟨a, ha, haD⟩
-  · have hxp : x.1 ∈ p.support := by
+  · have hxp : x.val ∈ p.support := by
       rw [← Walk.vertices_toBidirected p hs]
-      exact List.mem_unattach.2 ⟨x.2, hx⟩
-    have hxq : x.1 ∈ q.support := by simpa [p] using hxp
-    exact hqX x.1 hxq (by simpa using hxX)
-  · have hea : a.2.2.1 ∈ p.edges := by
+      exact List.mem_unattach.2 ⟨x.property, hx⟩
+    have hxq : x.val ∈ q.support := by simpa [p] using hxp
+    exact hqX x.val hxq (by simpa using hxX)
+  · have hea : a.2.2.val ∈ p.edges := by
       rw [← Walk.edges_toBidirected p hs]
       exact List.mem_map_of_mem ha
-    have heq : a.2.2.1 ∈ q.edges := by simpa [p] using hea
+    have heq : a.2.2.val ∈ q.edges := by simpa [p] using hea
     have heG := q.edges_subset_edgeSet heq
     rw [edgeSet_deleteEdges] at heG
     exact heG.2 (by
       obtain ⟨hsource, htarget⟩ := mem_arrowFinset.1 haD
-      simpa [hsource, htarget] using a.2.2.2)
+      simpa [hsource, htarget] using a.2.2.property)
 
 /-! ### Weak duality -/
 
@@ -94,9 +94,9 @@ theorem card_le_card_add_card_of_not_reachable_deleteEdges_deleteVerts
   let avoidsDirect (i : I) : Prop := ∀ e ∈ (P i).edges, ¬G.IsLink e s t
   have havoid : Fintype.card {i // avoidsDirect i} ≤ #X := by
     let Q (i : {i // avoidsDirect i}) : (G.deleteEdges {e | G.IsLink e s t}).Walk s t :=
-      (P i.1).transfer G.deleteEdges_le fun e he ↦ by
+      (P i.val).transfer G.deleteEdges_le fun e he ↦ by
         rw [edgeSet_deleteEdges]
-        exact ⟨(P i.1).edges_subset_edgeSet he, i.2 e he⟩
+        exact ⟨(P i.val).edges_subset_edgeSet he, i.property e he⟩
     have hle := card_le_encard_of_not_reachable_deleteVerts
       (G := G.deleteEdges {e | G.IsLink e s t}) (P := Q)
       (fun i j hij ↦ by
@@ -108,13 +108,13 @@ theorem card_le_card_add_card_of_not_reachable_deleteEdges_deleteVerts
   have hdirect : Fintype.card {i // ¬avoidsDirect i} ≤
       Fintype.card {e : β // G.IsLink e s t} := by
     have hex (i : {i // ¬avoidsDirect i}) :
-        ∃ e, e ∈ (P i.1).edges ∧ G.IsLink e s t := by
-      simpa [avoidsDirect] using i.2
+        ∃ e, e ∈ (P i.val).edges ∧ G.IsLink e s t := by
+      simpa [avoidsDirect] using i.property
     choose e he hlink using hex
     let f (i : {i // ¬avoidsDirect i}) : {e : β // G.IsLink e s t} := ⟨e i, hlink i⟩
     refine Fintype.card_le_of_injective f fun i j hij ↦ ?_
     have hwalk : (hlink i).toWalk = (hlink j).toWalk :=
-      congrArg (fun z : {e : β // G.IsLink e s t} ↦ z.2.toWalk) hij
+      congrArg (fun z : {e : β // G.IsLink e s t} ↦ z.property.toWalk) hij
     apply Subtype.ext
     apply hinj
     exact ((hP i).eq_toWalk_of_isLink_mem_edges (hlink i) (he i)).trans
@@ -135,14 +135,14 @@ theorem exists_paths_vertexSeparator_card_add_card_eq [Finite V(G)]
     ∃ (k : ℕ) (P : Fin k ⊕ {e : β // G.IsLink e s t} → G.Walk s t) (X : Finset α),
       Function.Injective P ∧ (∀ i, (P i).IsPath) ∧
       (Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) ∧
-      (∀ e, P (.inr e) = e.2.toWalk) ∧ (X : Set α) ⊆ V(G) ∧ s ∉ X ∧ t ∉ X ∧
+      (∀ e, P (.inr e) = e.property.toWalk) ∧ (X : Set α) ⊆ V(G) ∧ s ∉ X ∧ t ∉ X ∧
       ¬((G.deleteEdges {e | G.IsLink e s t}).deleteVerts
         (X : Set α)).Reachable s t ∧ #X = k := by
   let _ := Fintype.ofFinite {e : β // G.IsLink e s t}
   by_cases hverts : s ∈ V(G) ∧ t ∈ V(G)
   swap
   · let _ : IsEmpty {e : β // G.IsLink e s t} :=
-      ⟨fun e ↦ hverts ⟨e.2.left_mem, e.2.right_mem⟩⟩
+      ⟨fun e ↦ hverts ⟨e.property.left_mem, e.property.right_mem⟩⟩
     exact ⟨0, isEmptyElim, ∅, isEmptyElim, isEmptyElim, isEmptyElim, isEmptyElim,
       by simp, by simp, by simp,
       fun h ↦ hverts (by simpa using mem_vertexSet_of_reachable_deleteVerts h), by simp⟩

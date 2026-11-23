@@ -119,7 +119,7 @@ theorem SeparatelyExchangeable.map_arrayBlock_eq [IsFiniteMeasure μ]
   have hrew : (fun ω ↦ I.restrict fun p ↦ X (σ p.1, τ p.2) ω) =
       fun ω ↦ I.restrict fun p ↦ X (e p.1, f p.2) ω := by
     funext ω p
-    obtain ⟨hp₁, hp₂⟩ := hbound p.1 p.2
+    obtain ⟨hp₁, hp₂⟩ := hbound p.val p.property
     simp only [Finset.restrict]
     rw [hσ ⟨_, hp₁⟩, hτ ⟨_, hp₂⟩]
   rw [← hrew]
@@ -151,7 +151,7 @@ theorem JointlyExchangeable.map_arrayBlock_diag_eq [IsFiniteMeasure μ]
   have hrew : (fun ω ↦ I.restrict fun p ↦ X (σ p.1, σ p.2) ω) =
       fun ω ↦ I.restrict fun p ↦ X (e p.1, e p.2) ω := by
     funext ω p
-    obtain ⟨hp₁, hp₂⟩ := hbound p.1 p.2
+    obtain ⟨hp₁, hp₂⟩ := hbound p.val p.property
     simp only [Finset.restrict]
     rw [hσ ⟨_, hp₁⟩, hσ ⟨_, hp₂⟩]
   rw [← hrew]
@@ -286,7 +286,7 @@ private theorem map_blockReadOff_eq {β : Type*} [MeasurableSpace β] [IsFiniteM
       = I.restrict (B e' f' fun q ↦ X q ω) := by
     intro ω
     funext p
-    obtain ⟨hp₁, hp₂⟩ := hbound p.1 p.2
+    obtain ⟨hp₁, hp₂⟩ := hbound p.val p.property
     exact (congrFun (hBperm σ e f fun q ↦ X q ω) _).trans
       (hBapply _ _ _ _ _ _ (hσe _ hp₁) (hσf _ hp₂))
   exact key.symm.trans (congrArg (fun g ↦ Measure.map g μ) (funext hrew))

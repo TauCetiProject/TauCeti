@@ -110,7 +110,7 @@ noncomputable def mu2NegOne : KummerCoeff K 2 :=
 /-- The underlying unit of `TauCeti.mu2NegOne` is `-1`, so `mu2NegOne` is exactly `-1` read
 as a `2`nd root of unity in a separable closure of the base field. -/
 @[simp]
-theorem toMul_mu2NegOne : mu2NegOne.toMul.1 = (-1 : (SeparableClosure K)ˣ) :=
+theorem toMul_mu2NegOne : mu2NegOne.toMul.val = (-1 : (SeparableClosure K)ˣ) :=
   Units.ext (by simp [mu2NegOne])
 
 /-- **The `2`nd roots of unity of a separable closure are `1` and `-1`**: `ζ ^ 2 = 1` in a field
@@ -118,8 +118,9 @@ forces `ζ = 1` or `ζ = -1`. No hypothesis on the characteristic is needed here
 two the two values coincide (`-1 = 1`), which is why the two roots are shown to be *distinct* only
 under `[Invertible (2 : K)]` (`TauCeti.mu2NegOne_ne_zero`). -/
 theorem toMul_eq_one_or_neg_one (x : KummerCoeff K 2) :
-    x.toMul = 1 ∨ x.toMul.1 = -1 := by
-  have hu : (x.toMul.1 : (SeparableClosure K)ˣ) ^ 2 = 1 := (mem_rootsOfUnity 2 _).1 x.toMul.2
+    x.toMul = 1 ∨ x.toMul.val = -1 := by
+  have hu : (x.toMul.val : (SeparableClosure K)ˣ) ^ 2 = 1 :=
+      (mem_rootsOfUnity 2 _).1 x.toMul.property
   rcases sq_eq_one_iff.mp (congrArg Units.val hu) with h | h
   · exact Or.inl (Subtype.ext (Units.ext h))
   · exact Or.inr (Units.ext h)

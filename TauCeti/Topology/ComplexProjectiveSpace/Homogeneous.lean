@@ -22,7 +22,7 @@ maps the unit sphere `S²ⁿ⁺¹` to itself and commutes with unit complex scal
 the circle quotient. The action is continuous, and it is transitive: linear isometries act
 transitively on the unit sphere (`LinearIsometryEquiv.isPretransitive_unitSphere`), and every
 linear isometry of `ℂⁿ⁺¹` is a unitary matrix
-(`Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective`).
+(`Matrix.UnitaryGroup.toLinearIsometryEquiv` is a group isomorphism).
 
 The stabilizer of the base point `[e₀]` consists of the unitary matrices whose column `0` is a
 unit multiple of `e₀`; these are exactly the block-diagonal matrices `diag(c, B)` with `c ∈ U(1)`
@@ -132,7 +132,7 @@ instance instIsPretransitiveUnitaryGroup :
     obtain ⟨g, hg⟩ := MulAction.exists_smul_eq
       (EuclideanSpace ℂ (Fin (n + 1)) ≃ₗᵢ[ℂ] EuclideanSpace ℂ (Fin (n + 1)))
       ⟨EuclideanSpace.single 0 1, by simp⟩ x
-    obtain ⟨A, rfl⟩ := UnitaryGroup.toLinearIsometryEquiv_surjective g
+    obtain ⟨A, rfl⟩ := UnitaryGroup.toLinearIsometryEquiv.surjective g
     exact ⟨A, by rw [basePoint_def, smul_mk, hg]⟩
 
 /-- **The stabilizer of `[e₀]`**: a unitary matrix fixes the base point of `CPⁿ` exactly when its

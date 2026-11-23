@@ -74,22 +74,8 @@ theorem isRepresentativeSet_iff {n : ℕ} {R : Set (IntermediateField K (Separab
 variable (K) in
 /-- Every `σ_K(n)` has a set of representatives of its `K`-isomorphism classes. -/
 theorem exists_isRepresentativeSet (n : ℕ) :
-    ∃ R : Set (IntermediateField K (SeparableClosure K)), IsRepresentativeSet n R := by
-  let s : Setoid (totallyRamifiedOfDegree K n) :=
-    { r := fun L M ↦ Nonempty (L.1 ≃ₐ[K] M.1)
-      iseqv := ⟨fun L ↦ ⟨.refl⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩ }
-  -- Choose one member of each class.
-  refine ⟨Set.range fun c : Quotient s ↦ (c.out : IntermediateField K (SeparableClosure K)),
-    ?_, fun L hL ↦ ⟨(Quotient.mk s ⟨L, hL⟩).out,
-      ⟨⟨_, rfl⟩, Setoid.symm' s (Quotient.mk_out (s := s) ⟨L, hL⟩)⟩, ?_⟩⟩
-  · rintro _ ⟨c, rfl⟩
-    exact c.out.2
-  · rintro _ ⟨⟨c, rfl⟩, he⟩
-    -- A representative isomorphic to `L` is the one chosen in the class of `L`.
-    have : c = Quotient.mk s ⟨L, hL⟩ := by
-      rw [← Quotient.out_eq c]
-      exact Quotient.sound (Setoid.symm' s he)
-    rw [this]
+    ∃ R : Set (IntermediateField K (SeparableClosure K)), IsRepresentativeSet n R :=
+  IntermediateField.exists_subset_existsUnique_algEquiv (totallyRamifiedOfDegree K n)
 
 namespace IsRepresentativeSet
 
@@ -129,16 +115,16 @@ theorem tsum_eq_tsum_div_natCard_algEquiv_mul (hR : IsRepresentativeSet n R)
     exact hne ((huniq M ⟨hM, ⟨e.symm⟩⟩).trans (huniq M' ⟨hM', ⟨e'.symm⟩⟩).symm)
   rw [hU, tsum_biUnion hdisj]
   refine tsum_congr fun M ↦ ?_
-  have hcard := ncard_isomorphic_mul_natCard_algEquiv (hR.subset M.2)
+  have hcard := ncard_isomorphic_mul_natCard_algEquiv (hR.subset M.property)
   have hAut : Nat.card (M ≃ₐ[K] M) ≠ 0 := by
-    have := (mem_totallyRamifiedOfDegree_iff.1 (hR.subset M.2)).2.finite
+    have := (mem_totallyRamifiedOfDegree_iff.1 (hR.subset M.property)).2.finite
     exact Nat.card_ne_zero.2 ⟨⟨.refl⟩, inferInstance⟩
   -- The class is finite: its size times `#Aut_K(M)` is `n`, and `n ≠ 0` as `σ_K(0) = ∅`.
   have hfin : (C M).Finite := Set.finite_of_ncard_ne_zero fun h ↦ by
     have hn : n = 0 := hcard ▸ mul_eq_zero_of_left h _
-    simpa [hn, totallyRamifiedOfDegree_zero] using hR.subset M.2
+    simpa [hn, totallyRamifiedOfDegree_zero] using hR.subset M.property
   -- `f` is constant on the class of `M`, which has `n / #Aut_K(M)` members.
-  rw [tsum_congr fun L : C M ↦ hf (Classical.choice L.2.2).symm, ENNReal.tsum_set_const,
+  rw [tsum_congr fun L : C M ↦ hf (Classical.choice L.property.2).symm, ENNReal.tsum_set_const,
     ← hfin.cast_ncard_eq]
   congr 1
   exact (ENNReal.eq_div_iff (by exact_mod_cast hAut) (ENNReal.natCast_ne_top _)).2
@@ -149,9 +135,9 @@ theorem tsum_eq_tsum_div_natCard_algEquiv_mul (hR : IsRepresentativeSet n R)
 theorem mul_tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_wildExponent
     (hR : IsRepresentativeSet n R) :
     (n : ℝ≥0∞) * ∑' M : R, 1 / ((Nat.card (M ≃ₐ[K] M) : ℝ≥0∞) *
-      (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.1.wildExponent) =
+      (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.val.wildExponent) =
       ∑' L : totallyRamifiedOfDegree K n,
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent := by
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent := by
   rw [hR.tsum_eq_tsum_div_natCard_algEquiv_mul
     (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.wildExponent) fun e ↦ by
     rw [IntermediateField.wildExponent_eq_of_algEquiv e], ← ENNReal.tsum_mul_left]
@@ -166,9 +152,9 @@ theorem mul_tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_wildExpon
 theorem tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_wildExponent_eq_one_iff
     (hR : IsRepresentativeSet n R) (hn : 0 < n) :
     ∑' M : R, 1 / ((Nat.card (M ≃ₐ[K] M) : ℝ≥0∞) *
-      (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.1.wildExponent) = 1 ↔
+      (Nat.card 𝓀[K] : ℝ≥0∞) ^ M.val.wildExponent) = 1 ↔
       ∑' L : totallyRamifiedOfDegree K n,
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n := by
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = n := by
   rw [← hR.mul_tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_wildExponent]
   conv_rhs => rhs; rw [← mul_one (n : ℝ≥0∞)]
   exact (ENNReal.mul_right_inj (by exact_mod_cast hn.ne') (ENNReal.natCast_ne_top _)).symm

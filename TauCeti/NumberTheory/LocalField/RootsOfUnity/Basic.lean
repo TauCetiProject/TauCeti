@@ -188,17 +188,17 @@ theorem finite_pPowerRootsOfUnity (hpK : (p : K) ≠ 0) :
   let f : pPowerRootsOfUnity p K →
       unitFiltration K 0 ⧸ (unitFiltration K i).subgroupOf (unitFiltration K 0) :=
     fun x ↦ QuotientGroup.mk
-      ⟨x.1, pPowerRootsOfUnity_le_unitFiltration_zero (Fact.out : p.Prime).ne_zero x.2⟩
+      ⟨x.val, pPowerRootsOfUnity_le_unitFiltration_zero (Fact.out : p.Prime).ne_zero x.property⟩
   apply @Finite.of_injective _ _ hfinite f
   intro x y hxy
-  have hmem : (x.1 * y.1⁻¹) ∈ unitFiltration K i := by
+  have hmem : (x.val * y.val⁻¹) ∈ unitFiltration K i := by
     have hq := QuotientGroup.eq.mp hxy
-    have hq' : x.1⁻¹ * y.1 ∈ unitFiltration K i := by
+    have hq' : x.val⁻¹ * y.val ∈ unitFiltration K i := by
       simpa only [Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv] using hq
     simpa only [mul_inv_rev, inv_inv, mul_comm] using (unitFiltration K i).inv_mem hq'
-  have hroot : x.1 * y.1⁻¹ ∈ pPowerRootsOfUnity p K :=
-    mul_mem x.2 (inv_mem y.2)
-  have h1 : x.1 * y.1⁻¹ = 1 := Subgroup.disjoint_def.mp hdisjoint hroot hmem
+  have hroot : x.val * y.val⁻¹ ∈ pPowerRootsOfUnity p K :=
+    mul_mem x.property (inv_mem y.property)
+  have h1 : x.val * y.val⁻¹ = 1 := Subgroup.disjoint_def.mp hdisjoint hroot hmem
   exact Subtype.ext (mul_inv_eq_one.mp h1)
 
 /-- A local field contains a primitive `p^n`-th root of unity precisely when `p^n` divides
