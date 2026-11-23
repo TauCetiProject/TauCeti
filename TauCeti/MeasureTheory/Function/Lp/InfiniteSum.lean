@@ -86,45 +86,6 @@ namespace CompactlySupportedContinuousMap
 
 open MeasureTheory
 
-open Topology in
-private theorem hasSum_of_tendsto_subseq_of_summable_norm {E ι : Type*} [NormedAddCommGroup E]
-    {x : ι → E} {v : E} (hx : Summable fun i => ‖x i‖) {S : ℕ → Finset ι}
-    (hS : Tendsto S atTop atTop) (ht : Tendsto (fun n => ∑ i ∈ S n, x i) atTop (𝓝 v)) :
-    HasSum x v := by
-  classical
-  change Tendsto (fun s : Finset ι => ∑ b ∈ s, x b) atTop (𝓝 v)
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  obtain ⟨s₀, hs₀⟩ := Metric.tendsto_atTop.1 hx.hasSum (ε / 4) (by positivity)
-  have hdiff (t : Finset ι) (ht' : s₀ ⊆ t) : ‖∑ i ∈ t, x i - ∑ i ∈ s₀, x i‖ < ε / 4 := by
-    rw [← Finset.sum_sdiff ht', add_sub_cancel_right]
-    refine (norm_sum_le _ _).trans_lt ?_
-    have hle : ∑ i ∈ t \ s₀, ‖x i‖ ≤ (∑' i, ‖x i‖) - ∑ i ∈ s₀, ‖x i‖ := by
-      linarith [Finset.sum_sdiff ht' (f := fun i => ‖x i‖),
-        hx.sum_le_tsum t fun _ _ => norm_nonneg _]
-    have hs := hs₀ s₀ Finset.Subset.rfl
-    rw [Real.dist_eq, abs_sub_comm, abs_of_nonneg (sub_nonneg.2
-      (hx.sum_le_tsum s₀ fun _ _ => norm_nonneg _))] at hs
-    linarith
-  obtain ⟨N, hSN, hNt⟩ := ((hS.eventually (eventually_ge_atTop s₀)).and
-    (ht.eventually (Metric.ball_mem_nhds v (ε := ε / 2) (by positivity)))).exists
-  refine ⟨s₀, fun s hs => ?_⟩
-  rw [dist_eq_norm]
-  have h1 := hdiff s hs
-  have h2 := hdiff (S N) hSN
-  have h3 : ‖∑ i ∈ S N, x i - v‖ < ε / 2 := by simpa [Metric.mem_ball, dist_eq_norm] using hNt
-  have htri : ‖∑ i ∈ s, x i - v‖ ≤
-      ‖∑ i ∈ s, x i - ∑ i ∈ s₀, x i‖ + ‖∑ i ∈ S N, x i - ∑ i ∈ s₀, x i‖ +
-        ‖∑ i ∈ S N, x i - v‖ := by
-    calc ‖∑ i ∈ s, x i - v‖
-        = ‖(∑ i ∈ s, x i - ∑ i ∈ s₀, x i) - (∑ i ∈ S N, x i - ∑ i ∈ s₀, x i) +
-            (∑ i ∈ S N, x i - v)‖ := by abel_nf
-      _ ≤ ‖(∑ i ∈ s, x i - ∑ i ∈ s₀, x i) - (∑ i ∈ S N, x i - ∑ i ∈ s₀, x i)‖ +
-            ‖∑ i ∈ S N, x i - v‖ := norm_add_le _ _
-      _ ≤ _ := add_le_add (norm_sub_le _ _) le_rfl
-  linarith
-
-open Topology in
 /-- If a countable family of compactly supported continuous functions has sum `v` in `Lᵖ` with
 summable `Lᵖ` norms, then at almost every point `t` the pointwise series `ψ i t` converges
 absolutely to `v t`. -/
@@ -147,7 +108,7 @@ theorem ae_hasSum_of_hasSum_toLp {X E ι : Type*} [TopologicalSpace X] [Measurab
     with t ht hft hnt hcoe
   simp only [hft, hcoe] at ht
   have hnt' : Summable fun i => ‖ψ i t‖ := by simpa only [hcoe] using hnt
-  exact ⟨hasSum_of_tendsto_subseq_of_summable_norm hnt' hS ht, hnt'⟩
+  exact ⟨hasSum_of_subseq_of_summable hnt' hS ht, hnt'⟩
 
 end CompactlySupportedContinuousMap
 

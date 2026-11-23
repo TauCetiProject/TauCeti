@@ -170,21 +170,22 @@ theorem toL1_translateLIE [OpensMeasurableSpace G] [IsTopologicalGroup G] [Measu
     toL1 (translateLIE r f) = α.translateLp μ 1 r (toL1 f) := by
   rw [toL1_eq_toLp, toL1_eq_toLp, ofConv_translateLIE, α.translateLp_toLp]
 
-/-- `toL1FromCompletion` intertwines the completed twisted translation `(translateLIE r).completion`
-with `CStarAction.translateLp`, without requiring local compactness or inner regularity. -/
-theorem toL1FromCompletion_completion_translateLIE [OpensMeasurableSpace G]
+/-- `toL1FromCompletion` intertwines `Completion.map (translateLIE r)` with
+`CStarAction.translateLp`, without requiring local compactness or inner regularity. -/
+@[simp]
+theorem toL1FromCompletion_map_translateLIE [OpensMeasurableSpace G]
     [IsTopologicalGroup G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ]
     [μ.IsMulLeftInvariant] (r : G) (x : Completion (ConvolutionAlgebra α μ)) :
-    toL1FromCompletion α μ ((translateLIE r).completion x) =
+    toL1FromCompletion α μ (Completion.map (translateLIE r) x) =
       α.translateLp μ 1 r (toL1FromCompletion α μ x) := by
   induction x using Completion.induction_on with
   | hp =>
     exact isClosed_eq
-      ((toL1FromCompletion α μ).continuous.comp (translateLIE r).completion.continuous)
+      ((toL1FromCompletion α μ).continuous.comp Completion.continuous_map)
       ((α.translateLp μ 1 r).continuous.comp (toL1FromCompletion α μ).continuous)
   | ih f =>
-    rw [LinearIsometryEquiv.completion_apply_coe, toL1FromCompletion_coe, toL1FromCompletion_coe,
-      toL1_translateLIE]
+    rw [← LinearIsometryEquiv.coe_completion, LinearIsometryEquiv.completion_apply_coe,
+      toL1FromCompletion_coe, toL1FromCompletion_coe, toL1_translateLIE]
 
 variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
   [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
@@ -199,25 +200,21 @@ theorem denseRange_toL1 : DenseRange (toL1 (α := α) (μ := μ)) := by
 theorem denseRange_toL1LI : DenseRange (toL1LI α μ) :=
   (funext toL1LI_apply : ⇑(toL1LI α μ) = ⇑(toL1 (α := α) (μ := μ))) ▸ denseRange_toL1
 
-private theorem surjective_toL1FromCompletion :
-    Function.Surjective (toL1FromCompletion α μ) := by
-  have hcoe : ⇑(toL1FromCompletion α μ) = ⇑(toL1LI α μ).fromCompletion := funext fun x =>
-    DFunLike.congr_fun ((toContinuousLinearMap_toL1FromCompletion (α := α) (μ := μ)).trans
-      (toL1LI α μ).toContinuousLinearMap_fromCompletion.symm) x
-  exact hcoe ▸ (toL1LI α μ).fromCompletion_surjective_of_denseRange denseRange_toL1LI
-
 variable (α μ) in
 /-- **Identification of the twisted `L¹` completion with Bochner `L¹`**: the canonical inclusion
 `toL1` extends to a complex linear isometric equivalence between
 `UniformSpace.Completion (ConvolutionAlgebra α μ)` and `Lp A 1 μ`. -/
 def completionEquivL1 : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
-  LinearIsometryEquiv.ofSurjective (toL1FromCompletion α μ) surjective_toL1FromCompletion
+  LinearIsometryEquiv.ofSurjective (toL1LI α μ).fromCompletion
+    ((toL1LI α μ).fromCompletion_surjective_of_denseRange denseRange_toL1LI)
 
 /-- When `completionEquivL1` is defined, `toL1FromCompletion` agrees with it. -/
 theorem toL1FromCompletion_eq_completionEquivL1 (x : Completion (ConvolutionAlgebra α μ)) :
     toL1FromCompletion α μ x = completionEquivL1 α μ x :=
-  (congrFun (LinearIsometryEquiv.coe_ofSurjective (toL1FromCompletion α μ)
-    surjective_toL1FromCompletion) x).symm
+  (DFunLike.congr_fun ((toContinuousLinearMap_toL1FromCompletion (α := α) (μ := μ)).trans
+    (toL1LI α μ).toContinuousLinearMap_fromCompletion.symm) x).trans
+    (congrFun (LinearIsometryEquiv.coe_ofSurjective (toL1LI α μ).fromCompletion
+      ((toL1LI α μ).fromCompletion_surjective_of_denseRange denseRange_toL1LI)) x).symm
 
 @[simp]
 theorem completionEquivL1_coe (f : ConvolutionAlgebra α μ) :
@@ -273,19 +270,20 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
   [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
 
-theorem completionEquivL1_completion_translateLIE (r : G)
+@[simp]
+theorem completionEquivL1_map_translateLIE (r : G)
     (x : Completion (ConvolutionAlgebra α μ)) :
-    completionEquivL1 α μ ((translateLIE r).completion x) =
+    completionEquivL1 α μ (Completion.map (translateLIE r) x) =
       α.translateLp μ 1 r (completionEquivL1 α μ x) := by
-  simp only [← toL1FromCompletion_eq_completionEquivL1, toL1FromCompletion_completion_translateLIE]
+  simp only [← toL1FromCompletion_eq_completionEquivL1, toL1FromCompletion_map_translateLIE]
 
 @[simp]
 theorem completionEquivL1_symm_translateLp (r : G) (f : Lp A 1 μ) :
     (completionEquivL1 α μ).symm (α.translateLp μ 1 r f) =
       Completion.map (translateLIE r) ((completionEquivL1 α μ).symm f) := by
   apply (completionEquivL1 α μ).injective
-  rw [LinearIsometryEquiv.apply_symm_apply, ← LinearIsometryEquiv.coe_completion,
-    completionEquivL1_completion_translateLIE, LinearIsometryEquiv.apply_symm_apply]
+  rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_map_translateLIE,
+    LinearIsometryEquiv.apply_symm_apply]
 
 end TranslateCompletion
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
 import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
+import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 
@@ -148,21 +149,10 @@ private theorem ae_hasSum_convolution_of_hasSum_toLp {p : ℝ≥0∞} [Fact (1 �
     rw [hF_eq q]
     exact norm_convolutionLp_apply_le _ _
   have hF_sum : HasSum F (α.convolutionLp μ p hp u v) := by
-    have hF_summable : Summable F := .of_norm hF_norm
-    have h1 : HasSum (fun m =>
-        α.convolutionLp μ p hp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ m)) v)
-        (α.convolutionLp μ p hp u v) :=
-      hφ_sum.map _ ((α.convolutionLp μ p hp).flip v).continuous
-    have h2 (m : ℕ) : HasSum (fun n => F (m, n))
-        (α.convolutionLp μ p hp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ m)) v) := by
-      simp_rw [hF_eq]
-      exact hψ_sum.map _
-        (α.convolutionLp μ p hp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ m))).continuous
-    have h3 : HasSum (fun m =>
-        α.convolutionLp μ p hp (CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ m)) v)
-        (∑' q, F q) :=
-      hF_summable.hasSum.prod_fiberwise h2
-    exact (h1.unique h3).symm ▸ hF_summable.hasSum
+    simpa only [← hF_eq, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] using
+      TauCeti.hasSum_bilinear_of_summable_norm (B := (α.convolutionLp μ p hp).toLinearMap₁₂)
+        (C := 1) (fun x y => by simpa using norm_convolutionLp_apply_le x y)
+        hφ_sum hψ_sum hφ_norm hψ_norm
   exact (CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp ℂ hF_sum hF_norm).mono
     fun _ hs => hs.1
 
@@ -199,13 +189,10 @@ private theorem ae_integrable_and_convolutionLp_toL1_ae_eq {p : ℝ≥0∞} [Fac
         with r ⟨hfr, hfnorm⟩ ⟨hgr, hgnorm⟩
       have hαg_sum : HasSum (fun n => α r (ψ n (r⁻¹ * s))) (α r (g (r⁻¹ * s))) :=
         hgr.map (α r) (StarAlgEquiv.isometry (α r)).continuous
-      have hmul_summable : Summable fun q : ℕ × ℕ => h q r :=
-        .of_norm <| .of_nonneg_of_le (fun _ => norm_nonneg _) (fun _ => norm_mul_le _ _)
-          (Summable.mul_of_nonneg (f := fun m => ‖φ m r‖)
-            (g := fun n => ‖α r (ψ n (r⁻¹ * s))‖) hfnorm
-            (by simpa only [StarAlgEquiv.norm_map] using hgnorm)
-            (fun _ => norm_nonneg _) (fun _ => norm_nonneg _))
-      exact (hfr.mul hαg_sum hmul_summable).tsum_eq
+      exact (TauCeti.hasSum_bilinear_of_summable_norm
+        (B := (ContinuousLinearMap.mul ℂ A).toLinearMap₁₂) (C := 1)
+        (fun x y => by simpa using norm_mul_le x y)
+        hfr hαg_sum hfnorm (by simpa only [StarAlgEquiv.norm_map] using hgnorm)).tsum_eq
     refine ⟨(integrable_tsum_of_summable_integral_norm hh_int hh_sum_int).congr hae_h, ?_⟩
     have hint_sum := hasSum_integral_of_summable_integral_norm hh_int hh_sum_int
     have hh_eq (q : ℕ × ℕ) : ∫ r, h q r ∂μ = α.convolution μ (φ q.1) (ψ q.2) s := by

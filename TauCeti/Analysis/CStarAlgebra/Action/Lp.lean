@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.NoncommCoprod
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
@@ -127,13 +128,12 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
 
 /-- Twisted left translation `(r • f)(s) = α r (f (r⁻¹ * s))` on `Lp A p μ` for a left-invariant
 measure `μ`, bundled as a group homomorphism into linear isometric equivalences. -/
-def translateLp : G →* (Lp A p μ ≃ₗᵢ[ℂ] Lp A p μ) where
-  toFun r := α.actionLp μ p r * Lp.leftTranslation μ p ℂ r
-  map_one' := by simp
-  map_mul' r t := by
-    ext u : 1
-    simp only [map_mul, LinearIsometryEquiv.coe_mul, Function.comp_apply]
-    rw [α.actionLp_leftTranslation]
+def translateLp : G →* (Lp A p μ ≃ₗᵢ[ℂ] Lp A p μ) :=
+  ((α.actionLp μ p).noncommCoprod (Lp.leftTranslation μ p ℂ) fun r t =>
+    show Commute (α.actionLp μ p r) (Lp.leftTranslation μ p ℂ t) from by
+      ext u : 1
+      exact α.actionLp_leftTranslation r t u).comp
+    ((MonoidHom.id G).prod (MonoidHom.id G))
 
 variable {μ p}
 
