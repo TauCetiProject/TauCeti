@@ -215,8 +215,8 @@ theorem represents_iff_locallyRepresentsScalar_of_finrank_eq_two
     obtain ⟨v⟩ := (inferInstance : Nonempty (HeightOneSpectrum (𝓞 K)))
     have hv := ((atFinitePlaceWeightedSumSquares v (0 : Fin 2 → K)).represents_iff _).mp
       (((locallyRepresentsScalar_iff _ _).mp hloc).1 v)
-    simp [QuadraticMap.represents_iff, weightedSumSquares_apply] at hv
-    obtain rfl : a = 0 := (map_eq_zero_iff _ (algebraMap K _).injective).mp hv.symm
+    obtain rfl : a = 0 := (map_eq_zero_iff _ (algebraMap K _).injective).mp <| Eq.symm <| by
+      simpa [QuadraticMap.represents_iff, weightedSumSquares_apply] using hv
     exact represents_zero _
   · -- Otherwise `⟨w₀, w₁⟩ = w₀ ⟨1, w₁ / w₀⟩`.
     have hscale : weightedSumSquares K w = w 0 • weightedSumSquares K ![1, -(-(w 1 / w 0))] := by
