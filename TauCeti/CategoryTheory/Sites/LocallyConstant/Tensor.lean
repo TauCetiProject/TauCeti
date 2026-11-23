@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Monoidal
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.CoverLifting
 
 /-!
 # Tensor products of locally constant sheaves
@@ -31,7 +31,7 @@ No monoidal structure on the sheaves on `Over X` is needed. The restriction resu
 concrete category `A` in which the morphisms inverted by sheafification are the locally bijective
 ones, on `C` and on each `Over X` (`CategoryTheory.GrothendieckTopology.WEqualsLocallyBijective`),
 so that restriction to `Over X` commutes with sheafification
-(`CategoryTheory.overPresheafToSheafIso`).
+(`CategoryTheory.Functor.sheafPushforwardContinuousPresheafToSheafIso`).
 
 ## References
 
@@ -82,7 +82,7 @@ noncomputable def overTensorIso (F G : Sheaf J A) (X : C) :
     (F ⊗ G).over X ≅ (presheafToSheaf (J.over X) A).obj ((F.over X).obj ⊗ (G.over X).obj) :=
   (J.overPullback A X).mapIso ((sheafificationIso F ⊗ᵢ sheafificationIso G) ≪≫
       Functor.Monoidal.μIso (presheafToSheaf J A) _ _) ≪≫
-    overPresheafToSheafIso (F.obj ⊗ G.obj) X ≪≫
+    (Over.forget X).sheafPushforwardContinuousPresheafToSheafIso (J.over X) J (F.obj ⊗ G.obj) ≪≫
     (presheafToSheaf (J.over X) A).mapIso
       (Functor.Monoidal.μIso ((Functor.whiskeringLeft _ _ A).obj (Over.forget X).op)
         F.obj G.obj).symm
