@@ -8,8 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.Topology.Algebra.Module.Determinant
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import TauCeti.MeasureTheory.Measure.IntegerSlabs
+import TauCeti.MeasureTheory.Integral.Bochner.Periodic
 
 /-!
 # Affine change of variables for Bochner integrals
@@ -42,8 +41,8 @@ boxes `Set.Icc a b` (`a ≤ b`) to `Set.Icc 0 1` with Jacobian `∏ i, (b i - a 
 
 The proofs use `MeasureTheory.Measure.map_affine_addHaar_eq_smul`, the image of an additive Haar
 measure under an affine map, and Mathlib's transport of set integrals along measurable
-equivalences. In the singular case, the strips between consecutive level sets of a functional
-`φ` with `φ k = 1`, for `k` in the kernel, are translates of each other along `k`.
+equivalences. In the singular case, translation invariance along a nonzero kernel vector gives `0`
+via `MeasureTheory.integral_eq_zero_of_ae_add_right_eq`.
 -/
 
 public section
@@ -79,51 +78,15 @@ theorem integrableOn_image_affine_iff (L : V ≃L[ℝ] V) (p : V) (f : V → E) 
 
 end ContinuousLinearEquiv
 
-/-- An integrand invariant under the translations by the integer multiples of a nonzero vector `k`
-of a real normed space has integral `0` against every measure invariant under the same
-translations. A functional `φ` with `φ k = 1` cuts the space into the strips `n ≤ φ x < n + 1`,
-which these translations permute, so all strips carry the same integral of the norm of the
-integrand, and their sum over `ℤ` is finite only if each vanishes. -/
-private theorem integral_eq_zero_of_add_zsmul_eq {V E : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [MeasurableSpace V] [OpensMeasurableSpace V] [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {ν : Measure V} {k : V} (hk : k ≠ 0)
-    (hν : ∀ n : ℤ, MeasurePreserving (· + n • k) ν ν) {g : V → E}
-    (hg : ∀ (n : ℤ) x, g (x + n • k) = g x) : ∫ x, g x ∂ν = 0 := by
-  by_cases hint : Integrable g ν
-  swap
-  · exact integral_undef hint
-  obtain ⟨φ, hφ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hk
-  let T : ℤ → Set V := fun n ↦ φ ⁻¹' Ico (n : ℝ) (n + 1)
-  -- Translation by `n • k` carries the strip `T 0` onto `T n`.
-  have hTn : ∀ n : ℤ, (· + n • k) ⁻¹' T n = T 0 := fun n ↦ by
-    ext x
-    simp only [T, mem_preimage, mem_Ico, map_add, map_zsmul, hφ, zsmul_eq_mul, mul_one,
-      Int.cast_zero, zero_add]
-    constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
-  -- These translations are measurable embeddings, with measurable inverses the opposite ones.
-  have he : ∀ n : ℤ, MeasurableEmbedding (· + n • k) := fun n ↦
-    MeasurableEquiv.measurableEmbedding
-      { toEquiv := Equiv.addRight (n • k)
-        measurable_toFun := (hν n).measurable
-        measurable_invFun := by simpa [neg_zsmul, ← sub_eq_add_neg] using (hν (-n)).measurable }
-  have hc : ∀ n : ℤ, ∫⁻ x in T n, ‖g x‖ₑ ∂ν = ∫⁻ x in T 0, ‖g x‖ₑ ∂ν := fun n ↦ by
-    rw [← hTn n, ← (hν n).setLIntegral_comp_preimage_emb (he n)]
-    simp only [hg]
-  have hsum : ∫⁻ x, ‖g x‖ₑ ∂ν = ∑' _ : ℤ, ∫⁻ x in T 0, ‖g x‖ₑ ∂ν := by
-    have h := TauCeti.measure_eq_tsum_inter_preimage_Ico (μ := ν.withDensity fun x ↦ ‖g x‖ₑ)
-      φ.continuous.measurable nullMeasurableSet_univ
-    simp only [univ_inter, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,
-      withDensity_apply _ (φ.continuous.measurable measurableSet_Ico)] at h
-    exact h.trans (tsum_congr hc)
-  have h0 : ∫⁻ x in T 0, ‖g x‖ₑ ∂ν = 0 := by
-    by_contra h
-    have hfin : ∫⁻ x, ‖g x‖ₑ ∂ν < ⊤ := hint.2
-    rw [hsum, ENNReal.tsum_const_eq_top_of_ne_zero h] at hfin
-    exact lt_irrefl _ hfin
-  have hae := (lintegral_eq_zero_iff' hint.1.eNorm).mp (by rw [hsum, h0, tsum_zero])
-  exact integral_eq_zero_of_ae (hae.mono fun x hx ↦ eNorm_eq_zero.mp hx)
-
 namespace LinearMap
+
+/-- A linear endomorphism of a finite-dimensional real normed space with nonzero determinant is
+the underlying linear map of a continuous linear automorphism. -/
+private theorem exists_continuousLinearEquiv_of_det_ne_zero {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [FiniteDimensional ℝ V] {L : V →ₗ[ℝ] V} (hdet : LinearMap.det L ≠ 0) :
+    ∃ L' : V ≃L[ℝ] V, (L' : V →ₗ[ℝ] V) = L :=
+  ⟨(L.equivOfDetNeZero hdet).toContinuousLinearEquiv, by
+    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]⟩
 
 variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V]
@@ -142,9 +105,7 @@ theorem integral_image_affine (L : V →ₗ[ℝ] V) (p : V) (f : V → E) (s : S
       rw [← image_image (p + ·) L s, image_add_left, measure_preimage_add,
         Measure.addHaar_image_linearMap, hdet, abs_zero, ENNReal.ofReal_zero, zero_mul]
     simp [setIntegral_measure_zero _ hnull, hdet]
-  obtain ⟨L, rfl⟩ : ∃ L' : V ≃L[ℝ] V, (L' : V →ₗ[ℝ] V) = L :=
-    ⟨(L.equivOfDetNeZero hdet).toContinuousLinearEquiv, by
-      rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]⟩
+  obtain ⟨L, rfl⟩ := exists_continuousLinearEquiv_of_det_ne_zero hdet
   simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
   let e := L.toHomeomorph.toMeasurableEquiv.trans (MeasurableEquiv.addLeft p)
   have he : ⇑e = (fun x ↦ p + L x) := by
@@ -174,27 +135,27 @@ theorem integral_preimage_affine (L : V →ₗ[ℝ] V) (p : V) (f : V → E) (s 
   rcases eq_or_ne (LinearMap.det L) 0 with hdet | hdet
   swap
   · -- `T` is surjective, so `T ⁻¹' s` is a parameter set of `s`.
-    obtain ⟨L', hL'⟩ : ∃ L' : V ≃L[ℝ] V, (L' : V →ₗ[ℝ] V) = L :=
-      ⟨(L.equivOfDetNeZero hdet).toContinuousLinearEquiv, by
-        rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]⟩
+    obtain ⟨L', hL'⟩ := exists_continuousLinearEquiv_of_det_ne_zero hdet
     have hT : (fun x ↦ p + L x) '' ((fun x ↦ p + L x) ⁻¹' s) = s :=
       image_preimage_eq s fun y ↦ ⟨L'.symm (y - p), by simp [← hL']⟩
     have h := L.integral_image_affine p f ((fun x ↦ p + L x) ⁻¹' s) μ
     rw [hT, integral_smul] at h
     rw [h, smul_smul, inv_mul_cancel₀ (abs_ne_zero.mpr hdet), one_smul]
-  -- For singular `L`, the integrand and its domain are invariant under the translations by a
+  -- For singular `L`, the integrand and its domain are invariant under translation by a
   -- nonzero vector `k` of the kernel of `L`.
   rw [hdet, abs_zero, inv_zero, zero_smul]
   obtain ⟨k, hkL, hk⟩ :=
     Submodule.exists_mem_ne_zero_of_ne_bot (LinearMap.bot_lt_ker_of_det_eq_zero hdet).ne'
-  have hLk : ∀ (n : ℤ) x, L (x + n • k) = L x := fun n x ↦ by
+  have hLk : ∀ x, L (x + k) = L x := fun x ↦ by
     simp [LinearMap.mem_ker.mp hkL]
-  refine integral_eq_zero_of_add_zsmul_eq hk (fun n ↦ ?_) fun n x ↦ by rw [hLk]
-  have hS : (· + n • k) ⁻¹' ((fun x ↦ p + L x) ⁻¹' s) = (fun x ↦ p + L x) ⁻¹' s := by
+  have hS : (· + k) ⁻¹' ((fun x ↦ p + L x) ⁻¹' s) = (fun x ↦ p + L x) ⁻¹' s := by
     ext x
     simp only [mem_preimage, hLk]
-  simpa only [hS] using (measurePreserving_add_right μ (n • k)).restrict_preimage_emb
-    (measurableEmbedding_addRight _) ((fun x ↦ p + L x) ⁻¹' s)
+  have hmp : MeasurePreserving (· + k) (μ.restrict ((fun x ↦ p + L x) ⁻¹' s))
+      (μ.restrict ((fun x ↦ p + L x) ⁻¹' s)) := by
+    simpa only [hS] using (measurePreserving_add_right μ k).restrict_preimage_emb
+      (measurableEmbedding_addRight k) ((fun x ↦ p + L x) ⁻¹' s)
+  exact integral_eq_zero_of_ae_add_right_eq hk hmp (ae_of_all _ fun x ↦ by rw [hLk])
 
 -- Credit: the statement follows the sketch of `integral_comp_continuousLinearEquiv` in Tau Ceti
 -- PR #37628, https://github.com/TauCetiProject/TauCeti/pull/37628, extended here from continuous
