@@ -226,7 +226,7 @@ theorem splitLift_splitProj {s : V} {y : V × Bool} (q : ArrowWalk (SplitHom Q) 
   | @cons z y q e ih =>
     rcases z with ⟨u, _ | _⟩ <;> rcases y with ⟨w, _ | _⟩
     · exact e.elim
-    · obtain rfl : u = w := e.2
+    · obtain rfl : u = w := e.property
       rw [SplitHom.eq_split e, splitProj_cons, SplitHom.toWalk_split, splitLift_true]
       simpa [comp] using ih
     · obtain ⟨e, rfl⟩ := SplitHom.exists_original e
@@ -628,7 +628,7 @@ theorem assignment_originalAssignment (g : Assignment (SplitHom Q) K) :
   funext x y e
   rcases x with ⟨v, _ | _⟩ <;> rcases y with ⟨w, _ | _⟩
   · exact e.elim
-  · obtain rfl : v = w := e.2
+  · obtain rfl : v = w := e.property
     rw [eq_split e, assignment_split]
   · obtain ⟨e, rfl⟩ := exists_original e
     rw [assignment_original, originalAssignment_apply]
@@ -738,9 +738,9 @@ private theorem sum_sum_split (v : V) :
     (∑ w, ∑ e : SplitHom Q (v, false) (w, true), g e = g (split v)) ∧
       ∑ w, ∑ e : SplitHom Q (w, false) (v, true), g e = g (split v) := by
   constructor
-  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.2.symm).elim]
+  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.property.symm).elim]
     exact Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim
-  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.2).elim]
+  · rw [Fintype.sum_eq_single v fun w hw ↦ Finset.sum_eq_zero fun e _ ↦ (hw e.property).elim]
     exact Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim
 
 variable [∀ v w, Fintype (Q v w)]
@@ -855,7 +855,7 @@ theorem arrowSum_assignment_compl [AddCommMonoid K] (f : Assignment Q K) (φ : V
       rw [Fintype.sum_eq_single (split v) fun e he ↦ (he (eq_split e)).elim]
       simp
     · rw [ite_eq_right_of_eq_false _ _ (eq_false hvw)]
-      exact Finset.sum_eq_zero fun e _ ↦ (hvw e.2).elim
+      exact Finset.sum_eq_zero fun e _ ↦ (hvw e.property).elim
   have horiginal (v w : V) :
       ∑ e ∈ @univ _ (instFintype Q (v, true) (w, false)),
           (if (v, true) ∈ S ∧ (w, false) ∈ Sᶜ then assignment f φ e else 0) =

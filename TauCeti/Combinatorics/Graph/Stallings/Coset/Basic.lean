@@ -126,8 +126,8 @@ theorem cosetGraph_path_endpoint {q r : (cosetGraph H).graph.V}
       exact (cosetStep_one H q).symm
   | @cons b c p e ih =>
       rw [(cosetGraph H).read_cons, cosetGraph_label, ← cosetStep_mul, ← ih]
-      have hs : e.1.1 = b := e.2.1
-      simpa only [hs] using e.2.2.symm.trans (cosetGraph_tgt H e.1)
+      have hs : e.val.1 = b := e.property.1
+      simpa only [hs] using e.property.2.symm.trans (cosetGraph_tgt H e.val)
 
 /-- A free-group word labels a path from any coset to the coset reached by the word. -/
 theorem cosetGraph_exists_path_read (q : FreeGroup α ⧸ H) (g : FreeGroup α) :

@@ -94,7 +94,7 @@ theorem not_finite_centralizer_of_pow_eq_zero {f : Module.End K V} {n : ℕ} (hn
         intro g hg
         rw [Set.mem_singleton_iff.1 hg]
         ext x
-        simp [hφf, LinearMap.mem_ker.1 w.2]
+        simp [hφf, LinearMap.mem_ker.1 w.property]
   refine hker (Module.Finite.of_injective ψ fun w w' h ↦ ?_)
   have : φ x₀ • (w : V) = φ x₀ • (w' : V) :=
     congrArg (fun z : Subalgebra.centralizer K {f} ↦ (z : Module.End K V) x₀) h

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Data.Nat.Prime.Basic
 public import Mathlib.RingTheory.Coprime.Lemmas
 
@@ -22,13 +23,17 @@ coprime pair has good or multiplicative reduction everywhere.
 
 Powers of distinct rational primes are pairwise coprime in any commutative ring, so divisibilities
 `p ^ e p ∣ z` at finitely many distinct primes combine to `∏ p ∈ P, p ^ e p ∣ z`. Mathlib's
-`Finset.prod_primes_dvd` gives only the squarefree product `∏ p ∈ P, p`.
+`Finset.prod_primes_dvd` gives only the squarefree product `∏ p ∈ P, p`. In particular a positive
+integer `n` divides `z` in any commutative ring as soon as each prime power `p ^ v_p(n)` does.
 
 ## Main results
 
 * `IsCoprime.mul_mul_add_sq_add_mul_add_sq`: if `a` and `b` are coprime, so are `a b (a + b)` and
   `a² + a b + b²`.
 * `Finset.prod_primes_pow_dvd`: prime powers dividing `z` combine to their product.
+* `TauCeti.natCast_pow_multiplicity_dvd`: `p ^ v_p(n)` divides `n` in any semiring.
+* `TauCeti.natCast_dvd_iff_forall_pow_multiplicity_dvd`: `n ∣ z` iff `p ^ v_p(n) ∣ z` for each
+  prime factor `p` of `n ≠ 0`.
 -/
 
 public section
@@ -53,3 +58,23 @@ theorem Finset.prod_primes_pow_dvd {P : Finset ℕ}
     ∏ p ∈ P, (p : R) ^ e p ∣ z :=
   Finset.prod_dvd_of_coprime (fun p hp q hq hpq =>
     (((Nat.coprime_primes (hP p hp) (hP q hq)).2 hpq).cast).pow) h
+
+namespace TauCeti
+
+/-- The `p`-part `p ^ v_p(n)` of a natural number `n` divides `n` in any semiring. -/
+theorem natCast_pow_multiplicity_dvd {R : Type*} [Semiring R] (p n : ℕ) :
+    (p : R) ^ multiplicity p n ∣ (n : R) := by
+  exact_mod_cast Nat.cast_dvd_cast (α := R) (pow_multiplicity_dvd p n)
+
+/-- In a commutative ring, a positive integer `n` divides `z` if and only if `p ^ v_p(n)` divides
+`z` for each prime factor `p` of `n`. -/
+theorem natCast_dvd_iff_forall_pow_multiplicity_dvd {n : ℕ} (hn : n ≠ 0) {z : R} :
+    (n : R) ∣ z ↔ ∀ p ∈ n.primeFactors, (p : R) ^ multiplicity p n ∣ z := by
+  refine ⟨fun h p _ ↦ ?_, fun h ↦ ?_⟩
+  · exact (natCast_pow_multiplicity_dvd p n).trans h
+  · rw [Nat.prod_primeFactors_pow_factorization hn]
+    push_cast
+    exact Finset.prod_primes_pow_dvd (fun p hp ↦ Nat.prime_of_mem_primeFactors hp) _ fun p hp ↦ by
+      simpa [Nat.factorization_def n (Nat.prime_of_mem_primeFactors hp)] using h p hp
+
+end TauCeti

@@ -143,7 +143,8 @@ theorem SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem {n m : ℕ∞}
   -- The curve `s ↦ F (σ s, x)` solves the time-dependent equation and starts at `f₀ x`.
   have h₀ : σ 0 = 0 := Subtype.ext Real.smoothTransition.zero
   have hsol := timeDependentFlowOf_eq_of_hasMFDerivAt hY₁ (a := -1) (b := 2) (s := 0) (t := t)
-    (fun u _ => hvelY u x hx) ⟨by norm_num, by norm_num⟩ ⟨by linarith [t.2.1], by linarith [t.2.2]⟩
+    (fun u _ => hvelY u x hx) ⟨by norm_num, by norm_num⟩ ⟨by linarith [t.property.1], by linarith
+        [t.property.2]⟩
   rw [h₀, F.apply_zero] at hsol
   rw [timeDependentFlowDiffeotopy_apply]
   exact hsol

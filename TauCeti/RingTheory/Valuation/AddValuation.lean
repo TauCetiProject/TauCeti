@@ -16,11 +16,12 @@ An additive valuation turns products into sums. Mathlib records this for a produ
 elements (`AddValuation.map_mul`) and for powers (`AddValuation.map_pow`); this file records the
 finite-product form, which is what a valuation computation on a factorised element such as
 `f'(x) = ∏ (x - σ x)` uses, and that signs `(-1) ^ k`, as in determinant and coefficient
-formulas, have valuation zero. For an additive valuation which is nonnegative on the whole ring,
-such as the valuation of a discrete valuation ring, units have valuation zero and valuations
-increase along divisibility. It also records that an additive valuation taking integer values on
-nonzero elements, such as a discrete valuation normalised at a uniformiser, is infinite only at
-zero.
+formulas, have valuation zero, while natural multiples `n • x`, as in binomial coefficient
+formulas, have at least the valuation of `x`. For an additive valuation which is nonnegative on
+the whole ring, such as the valuation of a discrete valuation ring, units have valuation zero and
+valuations increase along divisibility. It also records that an additive valuation taking integer
+values on nonzero elements, such as a discrete valuation normalised at a uniformiser, is infinite
+only at zero.
 
 ## Main results
 
@@ -28,6 +29,7 @@ zero.
 * `AddValuation.map_prod_castLE`: the valuation of the product of the first `k` entries of a
   tuple is the prefix sum of their valuations.
 * `AddValuation.map_neg_one_pow`: `v ((-1) ^ k) = 0`.
+* `AddValuation.le_map_nsmul`: `v x ≤ v (n • x)`.
 * `AddValuation.map_eq_zero_of_isUnit`, `AddValuation.map_le_map_of_dvd`: for an additive valuation
   which is nonnegative on the whole ring, units have valuation `0` and divisors have smaller
   valuation.
@@ -63,6 +65,13 @@ section Ring
 theorem map_neg_one_pow {R : Type*} [Ring R] (v : AddValuation R Γ₀) (k : ℕ) :
     v ((-1) ^ k) = 0 := by
   rw [v.map_pow, v.map_neg, v.map_one, smul_zero]
+
+/-- A natural multiple `n • x` has at least the valuation of `x`. -/
+theorem le_map_nsmul {R : Type*} [Ring R] (v : AddValuation R Γ₀) (n : ℕ) (x : R) :
+    v x ≤ v (n • x) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [succ_nsmul]; exact v.map_le_add ih le_rfl
 
 /-- For an additive valuation which is nonnegative on the whole ring, units have valuation `0`. -/
 theorem map_eq_zero_of_isUnit {R : Type*} [Ring R] {v : AddValuation R Γ₀}

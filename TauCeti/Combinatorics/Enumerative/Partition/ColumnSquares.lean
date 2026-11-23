@@ -104,13 +104,7 @@ theorem sum_sq_conjugate_parts_eq_self_iff :
       have := h 0 (Nat.pos_of_ne_zero hn)
       rw [filter_pos_parts] at this
       omega
-    have hne : μ.parts ≠ 0 := fun h0 => hn (by rw [← μ.parts_sum, h0, Multiset.sum_zero])
-    obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp
-      (le_antisymm hcard (Multiset.card_pos.mpr hne))
-    have hsum := μ.parts_sum
-    rw [ha, Multiset.sum_singleton] at hsum
-    ext1
-    rw [ha, indiscrete_parts hn, hsum]
+    exact μ.card_parts_le_one_iff.mp hcard
   · rintro rfl k -
     rw [indiscrete_parts hn]
     exact (Multiset.card_le_card (Multiset.filter_le _ _)).trans_lt (by simp)

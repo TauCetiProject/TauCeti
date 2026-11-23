@@ -11,6 +11,8 @@ public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
 public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
 public import TauCeti.RingTheory.Etale.Equalizer
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Quotients of finite étale schemes by finite groups
@@ -170,25 +172,19 @@ base. -/
 instance isFinite_relativeSpecToBase :
     IsFinite
       (CommMon.invariantSubalgebraPresheaf (functionAlgebraAction F)).relativeSpecToBase := by
-  observe hasFiniteAffineProperty : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hasFiniteAffineProperty
   refine (CommMon.SubalgebraPresheaf.relativeSpecToBase_iff _ @IsFinite).mpr fun U ↦ ?_
   rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.finite_algebraMap,
     CommMon.invariantSubalgebraPresheaf_sections]
-  exact (finite_and_etale_invariantSections F U.2).1
+  exact (finite_and_etale_invariantSections F U.property).1
 
 /-- The relative invariant quotient of a finite étale scheme by a finite group is étale over the
 base. -/
 instance etale_relativeSpecToBase :
     Etale (CommMon.invariantSubalgebraPresheaf (functionAlgebraAction F)).relativeSpecToBase := by
-  have : IsZariskiLocalAtTarget @Etale.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
   refine (CommMon.SubalgebraPresheaf.relativeSpecToBase_iff _ @Etale).mpr fun U ↦ ?_
   rw [HasRingHomProperty.Spec_iff (P := @Etale), CommRingCat.hom_ofHom, RingHom.etale_algebraMap,
     CommMon.invariantSubalgebraPresheaf_sections]
-  exact (finite_and_etale_invariantSections F U.2).2
+  exact (finite_and_etale_invariantSections F U.property).2
 
 /-- **The quotient of a finite étale scheme by a finite group.** For a finite group `G` acting on
 a finite étale `S`-scheme `p : Y ⟶ S` through `F : SingleObj G ⥤ FiniteEtaleScheme S`, this is the
