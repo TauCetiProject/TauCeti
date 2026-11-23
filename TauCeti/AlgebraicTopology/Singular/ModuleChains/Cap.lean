@@ -317,15 +317,6 @@ private theorem map_f_comp_signedCapComponent (q : ℕ) :
         ((TopPair.toSSetPair.obj P).chainComplex_condition_f (ModuleCat.of k k) (q + n))).trans
           (Limits.zero_comp.trans Limits.zero_comp.symm))))
 
-variable {n} in
-/-- Below `n`, a chain complex placed `n` degrees higher is zero. -/
-private theorem isZero_extend_embeddingDownNatAdd_X {C : Type*} [Category* C] [HasZeroMorphisms C]
-    [HasZeroObject C] (K : ChainComplex C ℕ) {m : ℕ} (hm : m < n) :
-    IsZero ((K.extend (ComplexShape.embeddingDownNatAdd n)).X m) :=
-  K.isZero_extend_X _ m fun q ↦ by
-    simp only [ComplexShape.embeddingDownNatAdd_f]
-    omega
-
 section Rep
 
 variable {G : Type u} [Group G] [MulAction G P.fst] [ContinuousConstSMul G P.fst] [MulAction G Y]
@@ -417,7 +408,7 @@ private theorem singularChainsRepι_comp_capAmbient :
   ext m : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.zero_f]
   rcases lt_or_ge m n with hm | hm
-  · exact (isZero_extend_embeddingDownNatAdd_X _ hm).eq_of_tgt _ _
+  · exact (HomologicalComplex.isZero_extend_embeddingDownNatAdd_X _ hm).eq_of_tgt _ _
   · obtain ⟨q, rfl⟩ : ∃ q, m = q + n := ⟨m - n, by omega⟩
     rw [capAmbient_f, ← Category.assoc]
     convert Limits.zero_comp
@@ -482,7 +473,7 @@ theorem map_singularChainsRepCap_comp_singularChainsRepTwistExtendForget₂Iso_h
         (Category.id_comp _))))).symm
   rw [HomologicalComplex.comp_f]
   rcases lt_or_ge m n with hm | hm
-  · exact (isZero_extend_embeddingDownNatAdd_X _ hm).eq_of_tgt _ _
+  · exact (HomologicalComplex.isZero_extend_embeddingDownNatAdd_X _ hm).eq_of_tgt _ _
   · obtain ⟨q, rfl⟩ : ∃ q, m = q + n := ⟨m - n, by omega⟩
     refine Eq.trans ?_ (singularChainComplexπ_f_pushforwardCapChainMap_f P p₀ n φ q).symm
     rw [Functor.mapHomologicalComplex_map_f, capAmbient_f,
