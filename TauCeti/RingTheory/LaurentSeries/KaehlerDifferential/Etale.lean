@@ -773,15 +773,25 @@ section ContinuousAlgebraMap
 variable {M : Type*} [AddCommGroup M] [Module L M] [Module K M] [IsScalarTower K L M]
   [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
 
+private noncomputable def continuousLiftSpec (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ) :
+    { ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M //
+      (∀ ω, ℓ (mk K L ω) = δ.liftKaehlerDifferential ω) ∧
+      ℓ.compDer (D K L) = δ ∧
+      ∀ ℓ' : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ'.compDer (D K L) = δ → ℓ' = ℓ } :=
+  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
+  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
+  have : ContinuousSMul K⸨X⸩ M := ⟨(hL.comp continuous_fst).smul continuous_snd⟩
+  ⟨lift δ (hδ.comp hL), lift_mk δ (hδ.comp hL), compDer_lift δ (hδ.comp hL),
+    fun ℓ' h ↦ lift_unique δ (hδ.comp hL) ℓ' h⟩
+
 /-- When `algebraMap K⸨X⸩ L` is continuous, every continuous `K`-derivation `δ : L → M` into
 a Hausdorff `L`-module with continuous `L`-scalar multiplication factors uniquely through `d`. -/
 theorem existsUnique_compDer_eq_of_continuous (hL : Continuous (algebraMap K⸨X⸩ L))
     (δ : Derivation K L M) (hδ : Continuous δ) :
-    ∃! ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ := by
-  let _ : Module K⸨X⸩ M := Module.compHom M (algebraMap K⸨X⸩ L)
-  have : IsScalarTower K⸨X⸩ L M := IsScalarTower.of_compHom K⸨X⸩ L M
-  have : ContinuousSMul K⸨X⸩ M := ⟨(hL.comp continuous_fst).smul continuous_snd⟩
-  exact existsUnique_compDer_eq δ (hδ.comp hL)
+    ∃! ℓ : ContinuousKaehlerDifferential K L →ₗ[L] M, ℓ.compDer (D K L) = δ :=
+  let ⟨ℓ, _, h₁, h₂⟩ := continuousLiftSpec hL δ hδ
+  ⟨ℓ, h₁, h₂⟩
 
 /-- **Topological universal property of `Ω¹_cont(L/K)` as a continuous linear map.** When
 `algebraMap K⸨X⸩ L` is continuous, every continuous `K`-derivation `δ : L → M` into a Hausdorff
@@ -790,15 +800,23 @@ continuous `L`-linear map. -/
 noncomputable def continuousLift [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
     (δ : Derivation K L M) (hδ : Continuous δ) :
     ContinuousKaehlerDifferential K L →L[L] M :=
-  let ℓ := (existsUnique_compDer_eq_of_continuous hL δ hδ).choose
+  let ℓ := (continuousLiftSpec hL δ hδ).val
   { ℓ with cont := IsModuleTopology.continuous_of_linearMap ℓ }
+
+/-- Evaluating `continuousLift hL δ hδ` on a quotient representative `mk K L ω` recovers the
+algebraic Kähler lift `δ.liftKaehlerDifferential ω`. -/
+@[simp]
+theorem continuousLift_mk [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
+    (δ : Derivation K L M) (hδ : Continuous δ) (ω : Ω[L⁄K]) :
+    continuousLift hL δ hδ (mk K L ω) = δ.liftKaehlerDifferential ω :=
+  (continuousLiftSpec hL δ hδ).property.left ω
 
 /-- The continuous factorization `continuousLift hL δ hδ` recovers `δ` upon precomposition with
 `d`. -/
 theorem compDer_continuousLift [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
     (δ : Derivation K L M) (hδ : Continuous δ) :
     (continuousLift hL δ hδ).toLinearMap.compDer (D K L) = δ :=
-  (existsUnique_compDer_eq_of_continuous hL δ hδ).choose_spec.1
+  (continuousLiftSpec hL δ hδ).property.right.left
 
 /-- Evaluating `continuousLift hL δ hδ` on `d x` recovers `δ x`. -/
 @[simp]
@@ -815,7 +833,7 @@ theorem continuousLift_unique [ContinuousAdd M] (hL : Continuous (algebraMap K�
     (h : ℓ.toLinearMap.compDer (D K L) = δ) :
     ℓ = continuousLift hL δ hδ :=
   ContinuousLinearMap.coe_injective <|
-    (existsUnique_compDer_eq_of_continuous hL δ hδ).choose_spec.2 ℓ.toLinearMap h
+    (continuousLiftSpec hL δ hδ).property.right.right ℓ.toLinearMap h
 
 end ContinuousAlgebraMap
 
