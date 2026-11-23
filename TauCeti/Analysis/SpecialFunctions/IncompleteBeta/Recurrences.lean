@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Recurrence relations of the regularized incomplete beta function
@@ -39,9 +40,10 @@ for `x ≤ 1` only. The inhomogeneous relations 8.17.18 and 8.17.19 need `0 ≤ 
 The unit steps 8.17.20 and 8.17.21 are `TauCeti.regularizedIncompleteBeta_add_one_left` and
 `TauCeti.regularizedIncompleteBeta_add_one_right`; together with the antidiagonal step
 `TauCeti.regularizedIncompleteBeta_add_one_right_sub_add_one_left` they give all the relations
-above, through the functional equation of the Gamma function. The relations 8.17.15, 8.17.17
-and 8.17.18 are the reflections `x ↦ 1 - x`, `a ↔ b` of 8.17.14, 8.17.16 and 8.17.19 under
-`TauCeti.regularizedIncompleteBeta_symm`, at positive parameters.
+above, through the functional equation of the Gamma function. The relations 8.17.15 and
+8.17.18 are the reflections `x ↦ 1 - x`, `a ↔ b` of 8.17.14 and 8.17.19 under
+`TauCeti.regularizedIncompleteBeta_symm`, at positive parameters, and 8.17.16 and 8.17.17
+eliminate the antidiagonal term of 8.17.14 and 8.17.15 with 8.17.13.
 
 ## Main results
 
@@ -76,11 +78,6 @@ private lemma exists_forall_regularizedIncompleteBeta_eq_of_notMem_Ico (hx : x �
   · exact ⟨0, fun a b _ _ ↦ regularizedIncompleteBeta_eq_zero_of_neg a b hx0⟩
   · have hx1 : 1 ≤ x := le_of_not_gt fun h ↦ hx ⟨hx0, h⟩
     exact ⟨1, fun a b ha hb ↦ regularizedIncompleteBeta_eq_one_of_one_le ha hb hx1⟩
-
-/-- The power shift `t ^ s = t ^ (s - 1) * t`, for `0 ≤ t` and `s ≠ 0`, also at `t = 0`. -/
-private lemma rpow_eq_rpow_sub_one_mul {t s : ℝ} (ht : 0 ≤ t) (hs : s ≠ 0) :
-    t ^ s = t ^ (s - 1) * t := by
-  rw [← Real.rpow_add_one' ht (by rwa [sub_add_cancel]), sub_add_cancel]
 
 /-- The antidiagonal step in the form `I_x(a, b) = I_x(a - 1, b + 1) - x ^ (a - 1) (1 - x) ^ b /
 (b Β(a, b))`, [DLMF 8.17.19](https://dlmf.nist.gov/8.17.E19).
@@ -175,7 +172,7 @@ theorem regularizedIncompleteBeta_eq_mul_sub_one_left_add_mul_sub_one_right (ha 
       · rw [sub_self, Real.rpow_zero, regularizedIncompleteBeta_zero_left one_pos hx0]
       · exact regularizedIncompleteBeta_one_right (by linarith) hx0 hx1
     rw [regularizedIncompleteBeta_one_right (by linarith) hx0 hx1, h',
-      rpow_eq_rpow_sub_one_mul hx0 (by linarith)]
+      Real.rpow_eq_rpow_sub_one_mul hx0 (by linarith)]
     ring
   by_cases hx : x ∈ Set.Ico 0 1
   swap
@@ -188,7 +185,7 @@ theorem regularizedIncompleteBeta_eq_mul_sub_one_left_add_mul_sub_one_right (ha 
   have hdown := regularizedIncompleteBeta_eq_sub_one_left_add_one_right_sub ha
     (by linarith : 0 < b - 1) hx0 hx1.le
   rw [sub_add_cancel] at hright hdown
-  rw [hright, rpow_eq_rpow_sub_one_mul hx0 (by linarith : a ≠ 0)]
+  rw [hright, Real.rpow_eq_rpow_sub_one_mul hx0 (by linarith : a ≠ 0)]
   linear_combination x * hdown
 
 /-- `(a + b x) I_x(a, b) = x b I_x(a - 1, b + 1) + a I_x(a + 1, b)`,
@@ -212,7 +209,7 @@ theorem add_mul_regularizedIncompleteBeta_eq_mul_sub_one_left_add_one_right_add 
   have ha0 : 0 < a := by linarith
   have hdown := regularizedIncompleteBeta_eq_sub_one_left_add_one_right_sub ha hb hx0 hx1.le
   have hleft := regularizedIncompleteBeta_add_one_left ha0 hb hx0 hx1.le
-  rw [rpow_eq_rpow_sub_one_mul hx0 ha0.ne'] at hleft
+  rw [Real.rpow_eq_rpow_sub_one_mul hx0 ha0.ne'] at hleft
   have := (beta_pos ha0 hb).ne'
   linear_combination (norm := (field_simp; ring)) b * x * hdown - a * hleft
 
@@ -263,33 +260,15 @@ theorem mul_regularizedIncompleteBeta_add_one_left_eq_mul_sub_mul_sub_one_left (
     a * regularizedIncompleteBeta (a + 1) b x =
       (a + (a + b - 1) * x) * regularizedIncompleteBeta a b x -
         (a + b - 1) * x * regularizedIncompleteBeta (a - 1) b x := by
-  rcases le_or_gt b 0 with hb | hb
-  · simp [regularizedIncompleteBeta_eq_zero_of_nonpos_right hb]
-  by_cases hx : x ∈ Set.Ico 0 1
-  swap
-  · obtain ⟨v, hv⟩ := exists_forall_regularizedIncompleteBeta_eq_of_notMem_Ico hx
-    simp (disch := first | positivity | linarith) only [hv]
-    ring
-  obtain ⟨hx0, hx1⟩ := hx
-  rcases ha.eq_or_lt with rfl | ha
-  · rw [regularizedIncompleteBeta_add_one_left one_pos hb hx0 hx1.le, sub_self,
-      regularizedIncompleteBeta_zero_left hb hx0,
-      regularizedIncompleteBeta_one_left hb hx0 hx1.le, beta_one_left hb, Real.rpow_one]
-    field_simp
-    ring
-  have ha0 : 0 < a := by linarith
-  have ha1 : 0 < a - 1 := by linarith
-  have hleft := regularizedIncompleteBeta_add_one_left ha0 hb hx0 hx1.le
-  have hleft' := regularizedIncompleteBeta_add_one_left ha1 hb hx0 hx1.le
-  have hbeta : beta a b = (a - 1) / (a + b - 1) * beta (a - 1) b := by
-    have hc : a - 1 + b = a + b - 1 := by ring
-    have h := beta_add_one_left ha1.ne' (by linarith : a - 1 + b ≠ 0)
-    rwa [sub_add_cancel, hc] at h
-  rw [sub_add_cancel] at hleft'
-  rw [rpow_eq_rpow_sub_one_mul hx0 ha0.ne', hbeta] at hleft
-  have := (beta_pos ha1 hb).ne'
-  have : a + b - 1 ≠ 0 := by linarith
-  linear_combination (norm := (field_simp; ring)) a * hleft - (a + b - 1) * x * hleft'
+  rcases lt_or_ge b 0 with hb | hb
+  · simp [regularizedIncompleteBeta_eq_zero_of_nonpos_right hb.le]
+  -- 8.17.14 at `(a, b)` plus `x` times 8.17.13 at `(a - 1, b)`.
+  have h14 := add_mul_regularizedIncompleteBeta_eq_mul_sub_one_left_add_one_right_add
+    (x := x) ha hb
+  have h13 := add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_add_mul_add_one_right
+    (x := x) (by linarith : 0 ≤ a - 1) hb
+  rw [sub_add_cancel] at h13
+  linear_combination -h14 + x * h13
 
 /-- `b I_x(a, b + 1) = (b + c (1 - x)) I_x(a, b) - c (1 - x) I_x(a, b - 1)` with
 `c = a + b - 1`, [DLMF 8.17.17](https://dlmf.nist.gov/8.17.E17), for every real `x` when
@@ -297,7 +276,7 @@ theorem mul_regularizedIncompleteBeta_add_one_left_eq_mul_sub_mul_sub_one_left (
 
 No hypothesis on `a` is needed: at `a = 0` it holds through the boundary values `I_x(0, b) = 1`
 for `0 ≤ x` and `I_x(0, b) = 0` for `x < 0`, and for `a < 0` every value is `0`. At `b = 1` it
-is 8.17.15 at `b = 1`, through `I_x(a, 0) = 0`. -/
+holds through `I_x(a, 0) = 0`. -/
 theorem mul_regularizedIncompleteBeta_add_one_right_eq_mul_sub_mul_sub_one_right (hb : 1 ≤ b)
     (hbx : 1 < b ∨ x ≤ 1) :
     b * regularizedIncompleteBeta a (b + 1) x =
@@ -305,24 +284,11 @@ theorem mul_regularizedIncompleteBeta_add_one_right_eq_mul_sub_mul_sub_one_right
         (a + b - 1) * (1 - x) * regularizedIncompleteBeta a (b - 1) x := by
   rcases lt_or_ge a 0 with ha | ha
   · simp [regularizedIncompleteBeta_eq_zero_of_neg_left ha]
-  rcases hb.eq_or_lt with rfl | hb
-  · have h := add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_sub_one_right_add ha le_rfl hbx
-    rw [sub_self, regularizedIncompleteBeta_eq_zero_of_nonpos_right le_rfl] at h ⊢
-    linear_combination -h
-  rcases ha.eq_or_lt with rfl | ha
-  · rcases lt_or_ge x 0 with hx0 | hx0
-    · simp [regularizedIncompleteBeta_eq_zero_of_neg _ _ hx0]
-    rw [regularizedIncompleteBeta_zero_left (by linarith) hx0,
-      regularizedIncompleteBeta_zero_left (by linarith) hx0,
-      regularizedIncompleteBeta_zero_left (by linarith) hx0]
-    ring
-  -- The reflection of 8.17.16 at `(b, a, 1 - x)`.
-  have h := mul_regularizedIncompleteBeta_add_one_left_eq_mul_sub_mul_sub_one_left (b := a)
-    (x := 1 - x) hb.le
-  have s1 := regularizedIncompleteBeta_symm ha (by linarith : 0 < b + 1) x
-  have s2 := regularizedIncompleteBeta_symm ha (by linarith : 0 < b) x
-  have s3 := regularizedIncompleteBeta_symm ha (by linarith : 0 < b - 1) x
-  linear_combination b * s1 - (b + (a + b - 1) * (1 - x)) * s2 +
-    (a + b - 1) * (1 - x) * s3 - h
+  -- 8.17.15 at `(a, b)` plus `1 - x` times 8.17.13 at `(a, b - 1)`.
+  have h15 := add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_sub_one_right_add ha hb hbx
+  have h13 := add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_add_mul_add_one_right
+    (x := x) ha (by linarith : 0 ≤ b - 1)
+  rw [sub_add_cancel] at h13
+  linear_combination -h15 + (1 - x) * h13
 
 end TauCeti
