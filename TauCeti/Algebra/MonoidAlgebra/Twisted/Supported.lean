@@ -42,14 +42,27 @@ theorem supported_toSubmodule :
       (of (f m) : twistedMonoidAlgebra R G α)) :=
   Submodule.toSubalgebra_toSubmodule _ _ _
 
+/-- Every monomial indexed by the image belongs to the supported algebra. -/
+theorem of_mem_supported (m : M) :
+    (of (f m) : twistedMonoidAlgebra R G α) ∈ supported α f := by
+  rw [← Subalgebra.mem_toSubmodule, supported_toSubmodule]
+  exact Submodule.subset_span ⟨m, rfl⟩
+
+/-- Containment of a supported subalgebra is determined on its image monomials. -/
+theorem supported_le_iff (A : Subalgebra R (twistedMonoidAlgebra R G α)) :
+    supported α f ≤ A ↔ ∀ m, of (f m) ∈ A := by
+  rw [← Subalgebra.toSubmodule.le_iff_le, supported_toSubmodule,
+    Submodule.span_le, Set.range_subset_iff]
+  exact forall_congr' fun _ ↦ Subalgebra.mem_toSubmodule A
+
 /-- Membership in the supported subalgebra is exactly support in the monoid image. -/
 theorem mem_supported_iff (x : twistedMonoidAlgebra R G α) :
     x ∈ supported α f ↔ ↑((basis R G α).repr x).support ⊆ Set.range f := by
-  rw [← Subalgebra.mem_toSubmodule, supported_toSubmodule]
-  rw [show (Set.range fun m ↦ (of (f m) : twistedMonoidAlgebra R G α)) =
-      (basis R G α) '' Set.range f by
+  have hRange : (Set.range fun m ↦ (of (f m) : twistedMonoidAlgebra R G α)) =
+      (basis R G α) '' Set.range f := by
     simp only [basis_apply]
-    exact Set.range_comp' _ _]
+    exact Set.range_comp' _ _
+  rw [← Subalgebra.mem_toSubmodule, supported_toSubmodule, hRange]
   exact Module.Basis.mem_span_image _
 
 private def supportedModuleEquiv :
@@ -85,6 +98,20 @@ theorem coe_supportedBasis_apply (hf : Function.Injective f) (m : M) :
   simp only [supportedBasis, Module.Basis.map_apply, coe_supportedModuleEquiv,
     Module.Basis.coe_span_apply]
 
+/-- The restricted basis at the identity index is the subalgebra unit. -/
+@[simp]
+theorem supportedBasis_one (hf : Function.Injective f) : supportedBasis α f hf 1 = 1 := by
+  apply Subtype.ext
+  simp only [coe_supportedBasis_apply, map_one, of_one, Subalgebra.coe_one]
+
+/-- Multiplying supported basis vectors uses the ambient factor set and the source product. -/
+@[simp]
+theorem supportedBasis_mul (hf : Function.Injective f) (a b : M) :
+    supportedBasis α f hf a * supportedBasis α f hf b =
+      (α (f a) (f b) : R) • supportedBasis α f hf (a * b) := by
+  apply Subtype.ext
+  simp only [Subalgebra.coe_mul, Subalgebra.coe_smul, coe_supportedBasis_apply, of_mul_of, map_mul]
+
 /-- Restricted coefficients are the original coefficients at image indices. -/
 @[simp]
 theorem supportedBasis_repr_apply (hf : Function.Injective f) (x : supported α f) (m : M) :
@@ -96,34 +123,32 @@ theorem supportedBasis_repr_apply (hf : Function.Injective f) (x : supported α 
         (supported α f).toSubmodule.subtype) := by
     apply (supportedBasis α f hf).ext
     intro n
-    change ((supportedBasis α f hf).repr (supportedBasis α f hf n)) m =
-      (basis R G α).repr (supportedBasis α f hf n : twistedMonoidAlgebra R G α) (f m)
+    simp only [LinearMap.comp_apply, Finsupp.lapply_apply, LinearEquiv.coe_coe,
+      Subalgebra.toSubmodule_subtype]
+    -- The subalgebra inclusion is the ambient subtype coercion.
+    change _ = (basis R G α).repr (supportedBasis α f hf n : twistedMonoidAlgebra R G α) (f m)
     rw [Module.Basis.repr_self, coe_supportedBasis_apply, repr_of]
     classical
     simp only [Finsupp.single_apply, hf.eq_iff]
   exact LinearMap.congr_fun h x
 
-local instance : IsFactorSet (fun a b : M ↦ α (f a) (f b)) := IsFactorSet.comp f α
+/-- The factor set pulled back along a monoid homomorphism. -/
+abbrev pullbackFactorSet (a b : M) : Rˣ := α (f a) (f b)
+
+instance : IsFactorSet (pullbackFactorSet α f) := IsFactorSet.comp f α
 
 /-- Pullback along an injective monoid map identifies the twisted algebra with its supported
 ambient subalgebra. -/
 def supportedEquiv (hf : Function.Injective f) :
-    twistedMonoidAlgebra R M (fun a b ↦ α (f a) (f b)) ≃ₐ[R] supported α f := by
-  let g := lift (α := fun a b ↦ α (f a) (f b))
-    (fun m ↦ supportedBasis α f hf m) (by
-      apply Subtype.ext
-      simp only [coe_supportedBasis_apply, map_one, of_one, Subalgebra.coe_one]) (by
-      intro a b
-      apply Subtype.ext
-      simp only [Subalgebra.coe_mul, Subalgebra.coe_smul, coe_supportedBasis_apply,
-        of_mul_of, map_mul])
-  let e := (basis R M (fun a b ↦ α (f a) (f b))).equiv (supportedBasis α f hf) (Equiv.refl M)
+    twistedMonoidAlgebra R M (pullbackFactorSet α f) ≃ₐ[R] supported α f := by
+  let g := lift (α := pullbackFactorSet α f) (supportedBasis α f hf)
+    (supportedBasis_one α f hf) (supportedBasis_mul α f hf)
+  let e := (basis R M (pullbackFactorSet α f)).equiv (supportedBasis α f hf) (Equiv.refl M)
   have he : g.toLinearMap = e.toLinearMap := by
-    apply (basis R M (fun a b ↦ α (f a) (f b))).ext
+    apply (basis R M (pullbackFactorSet α f)).ext
     intro m
-    simp only [AlgHom.toLinearMap_apply, LinearEquiv.coe_coe]
-    rw [show e = (basis R M (fun a b ↦ α (f a) (f b))).equiv
-      (supportedBasis α f hf) (Equiv.refl M) from rfl, Module.Basis.equiv_apply]
+    dsimp only [e, AlgHom.toLinearMap_apply, LinearEquiv.coe_coe]
+    rw [Module.Basis.equiv_apply]
     simp only [basis_apply, g, lift_of, Equiv.refl_apply]
   apply AlgEquiv.ofBijective g
   have hb : Function.Bijective e := e.bijective

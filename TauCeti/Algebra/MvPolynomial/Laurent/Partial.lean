@@ -134,10 +134,11 @@ theorem partiallyLaurent_toSubmodule :
       ((fun m : K →₀ ℤ ↦ AddMonoidAlgebra.single m (1 : R)) ''
         (nonnegOutside S : Set (K →₀ ℤ))) := by
   rw [← AddMonoidAlgebra.supported_eq_span_single]
-  ext f
-  change f ∈ partiallyLaurent R S ↔ f ∈ AddMonoidAlgebra.supported R R _
-  rw [mem_partiallyLaurent_iff, AddMonoidAlgebra.mem_supported]
-  rfl
+  apply Submodule.ext
+  intro f
+  simp only [Subalgebra.mem_toSubmodule, mem_partiallyLaurent_iff,
+    AddMonoidAlgebra.mem_supported, Set.subset_def, SetLike.mem_coe,
+    mem_nonnegOutside]
 
 /-- Increasing the set of inverted variables increases the partially Laurent subalgebra. -/
 theorem partiallyLaurent_mono {T : Set K} (h : S ⊆ T) :
