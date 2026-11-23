@@ -120,6 +120,7 @@ theorem constantCoeff_frobeniusSubst (f : R⟦X⟧) :
     (constantCoeff_one_add_X_pow_sub_one p) f).trans (Algebra.algebraMap_self_apply _)
 
 /-- The Frobenius substitution commutes with change of coefficients. -/
+@[simp]
 theorem map_frobeniusSubst {S : Type*} [CommRing S] (h : R →+* S) (f : R⟦X⟧) :
     map h (frobeniusSubst R p f) = frobeniusSubst S p (map h f) := by
   rw [frobeniusSubst_apply, frobeniusSubst_apply]
@@ -184,9 +185,10 @@ theorem frobeniusAssembly_eq_sum_smul (a : Fin p → R⟦X⟧) :
   exact Finset.sum_congr rfl fun i _ ↦ by rw [frobeniusAlgebra_smul, mul_comm]
 
 /-- The Frobenius assembly commutes with change of coefficients. -/
+@[simp]
 theorem map_frobeniusAssembly {S : Type*} [CommRing S] (h : R →+* S) (a : Fin p → R⟦X⟧) :
     map h (frobeniusAssembly R p a) = frobeniusAssembly S p (fun i ↦ map h (a i)) := by
-  simp [frobeniusAssembly_apply, map_frobeniusSubst]
+  simp [frobeniusAssembly_apply]
 
 /-- The assembly is linear over the Frobenius scalars: multiplying every coordinate by `a`
 multiplies the assembled series by `φ a`. -/
