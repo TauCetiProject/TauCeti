@@ -66,6 +66,10 @@ statement here is topological; the real smooth diffeomorphism is supplied in
 * `TauCeti.iwasawaHomeomorph_apply`: the decomposition multiplies the three factors.
 * `TauCeti.iwasawaHomeomorph_symm_unitary_eq_iff`: the unitary factor is characterized by the
   positive upper-triangular remainder.
+* `TauCeti.iwasawaHomeomorph_symm_mul_fst`: the unitary factor is equivariant for left
+  multiplication by unitary matrices.
+* `TauCeti.iwasawaHomeomorph_symm_fst_col_zero`: a unit first column is also the first column of
+  the unitary factor.
 * `TauCeti.coe_iwasawaHomeomorph_symm_diagonal`,
   `TauCeti.coe_iwasawaHomeomorph_symm_unitriangular`: formulas for the other two factors.
 * `Matrix.GeneralLinearGroup.existsUnique_iwasawa`: every invertible matrix over `𝕜` is uniquely
@@ -356,6 +360,58 @@ theorem iwasawaHomeomorph_symm_unitary_eq_iff (g k : GL (Fin n) 𝕜)
     simpa only [mul_inv_cancel_left] using
       (iwasawaUnitary_mul (k := k) (b := k⁻¹ * g) hk
         (PosUpperTriangularGroup.mem_iff.mpr hb))
+
+/-- The unitary Iwasawa factor is equivariant for left multiplication by unitary matrices: the
+unitary factor of `k * g` is `k` times the unitary factor of `g`. -/
+theorem iwasawaHomeomorph_symm_mul_fst {k : GL (Fin n) 𝕜}
+    (hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜)) (g : GL (Fin n) 𝕜) :
+    (((iwasawaHomeomorph 𝕜 n).symm (k * g)).1 : GL (Fin n) 𝕜) =
+      k * ((iwasawaHomeomorph 𝕜 n).symm g).1 := by
+  have hK := ((iwasawaHomeomorph 𝕜 n).symm g).1.property
+  rw [iwasawaHomeomorph_symm_unitary_eq_iff _ _ (mul_mem hk hK), _root_.mul_inv_rev, mul_assoc,
+    inv_mul_cancel_left]
+  exact (iwasawaHomeomorph_symm_unitary_eq_iff g _ hK).mp rfl
+
+/-- If the first column of `g` is a unit vector, it is also the first column of the unitary
+Iwasawa factor of `g`. In general that column is the first column of `g` normalised, the first
+vector of the Gram–Schmidt process. -/
+theorem iwasawaHomeomorph_symm_fst_col_zero {n : ℕ} (g : GL (Fin (n + 1)) 𝕜)
+    (hg : star ((g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0) ⬝ᵥ
+      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = 1) :
+    ((((iwasawaHomeomorph 𝕜 (n + 1)).symm g).1 : GL (Fin (n + 1)) 𝕜) :
+        Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 =
+      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 := by
+  set k : GL (Fin (n + 1)) 𝕜 := (((iwasawaHomeomorph 𝕜 (n + 1)).symm g).1 : GL (Fin (n + 1)) 𝕜)
+  have hk : k ∈ unitarySubgroup (GL (Fin (n + 1)) 𝕜) :=
+    ((iwasawaHomeomorph 𝕜 (n + 1)).symm g).1.property
+  obtain ⟨hT, hpos⟩ := (iwasawaHomeomorph_symm_unitary_eq_iff g k hk).mp rfl
+  set b : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜 :=
+    ((k⁻¹ * g : GL (Fin (n + 1)) 𝕜) : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) with hbdef
+  -- `g = k b`, and the first column of the upper triangular `b` is `b 0 0` times `e₀`.
+  have hgk : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) =
+      (k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) * b := by
+    rw [hbdef, ← Units.val_mul, mul_inv_cancel_left]
+  have hb : b.col 0 = b 0 0 • Pi.single 0 1 := by
+    ext i
+    rcases eq_or_ne i 0 with rfl | hi
+    · simp
+    · rw [col_apply, Pi.smul_apply, Pi.single_eq_of_ne hi, smul_zero,
+        hT (Fin.pos_iff_ne_zero.mpr hi)]
+  have hcol : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 =
+      b 0 0 • (k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 := by
+    rw [hgk, col_mul_eq_mulVec_col, hb, mulVec_smul, mulVec_single_one]
+  -- The first column of the unitary `k` is a unit vector, so `b 0 0` is a positive real number
+  -- of absolute value one.
+  have hkk : star ((k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0) ⬝ᵥ
+      (k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = 1 := by
+    have h := congrFun (congrFun (Units.inv_mul k) 0) 0
+    rw [coe_inv_eq_star_of_mem_unitarySubgroup hk] at h
+    simpa [Matrix.mul_apply, dotProduct, Matrix.star_apply] using h
+  obtain ⟨x, hx, hxb⟩ := RCLike.pos_iff_exists_ofReal.mp (hpos 0)
+  rw [hcol, ← hxb, star_smul, smul_dotProduct, dotProduct_smul, hkk, RCLike.star_def,
+    RCLike.conj_ofReal, smul_eq_mul, smul_eq_mul, mul_one, ← RCLike.ofReal_mul,
+    ← RCLike.ofReal_one, RCLike.ofReal_inj, mul_self_eq_one_iff] at hg
+  rw [hcol, ← hxb, hg.resolve_right (by linarith), RCLike.ofReal_one, one_smul]
 
 /-- The real diagonal factor consists of the real parts of the triangular remainder's diagonal. -/
 theorem coe_iwasawaHomeomorph_symm_diagonal (g : GL (Fin n) 𝕜) :
