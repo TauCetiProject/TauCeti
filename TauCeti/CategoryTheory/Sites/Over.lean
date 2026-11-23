@@ -306,6 +306,9 @@ noncomputable def overPresheafToSheafIso (P : Cᵒᵖ ⥤ A) (X : C) :
       (presheafToSheaf (J.over X) A).obj ((Over.forget X).op ⋙ P) :=
   have := ((J.over X).W_iff _).1 ((J.W_toSheafify P).whiskerLeft_over_forget X)
   sheafificationIso _ ≪≫
+    (presheafToSheaf (J.over X) A).mapIso
+      ((Functor.sheafPushforwardContinuousCompSheafToPresheafIso (Over.forget X) A (J.over X) J).app
+        _) ≪≫
     (asIso ((presheafToSheaf (J.over X) A).map
       (Functor.whiskerLeft (Over.forget X).op (toSheafify J P)))).symm
 
@@ -316,16 +319,13 @@ restriction of the unit of `P`. -/
 theorem toSheafify_overPresheafToSheafIso_inv_hom (P : Cᵒᵖ ⥤ A) (X : C) :
     toSheafify (J.over X) ((Over.forget X).op ⋙ P) ≫ (overPresheafToSheafIso P X).inv.hom =
       Functor.whiskerLeft (Over.forget X).op (toSheafify J P) := by
-  have := ((J.over X).W_iff _).1 ((J.W_toSheafify P).whiskerLeft_over_forget X)
-  -- Unfold the inverse of the composite isomorphism; `Iso.trans_inv` does not rewrite here
-  -- because the restriction of the sheafification is the sheafification of the restriction only
-  -- up to definitional unfolding of `Sheaf.over`.
-  change toSheafify _ _ ≫ ((presheafToSheaf (J.over X) A).map
-      (Functor.whiskerLeft (Over.forget X).op (toSheafify J P)) ≫
-        (sheafificationIso (((presheafToSheaf J A).obj P).over X)).inv).hom = _
-  erw [ObjectProperty.FullSubcategory.comp_hom, sheafificationIso_inv_hom,
-    ← toSheafify_naturality_assoc,
-    ← isoSheafify_hom (J := J.over X) (((presheafToSheaf J A).obj P).over X).property,
-    Iso.hom_inv_id, Category.comp_id]
+  simp only [overPresheafToSheafIso, Functor.comp_obj, ObjectProperty.ι_obj,
+    Functor.whiskeringLeft_obj_obj, Iso.trans_inv, Iso.symm_inv, asIso_hom, Functor.mapIso_inv,
+    Iso.app_inv, Category.assoc, ObjectProperty.FullSubcategory.comp_hom, sheafificationIso_inv_hom,
+    isoSheafify_inv, sheafifyMap_sheafifyLift, Category.comp_id, toSheafify_sheafifyLift]
+  -- The remaining identity component of `sheafPushforwardContinuousCompSheafToPresheafIso` is
+  -- indexed by the sections of `((presheafToSheaf J A).obj P).over X`, which are those of
+  -- `sheafify J P` only after unfolding `sheafPushforwardContinuous`, so `simp` cannot drop it.
+  exact Category.comp_id _
 
 end CategoryTheory
