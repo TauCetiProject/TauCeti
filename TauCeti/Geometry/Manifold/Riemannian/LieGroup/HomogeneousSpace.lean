@@ -625,16 +625,14 @@ theorem completeSpace_ofRiemannianMetric_of_inner_mfderiv_smul :
           inner ℝ v w) →
       letI : EMetricSpace (G ⧸ K) :=
         haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
-        haveI := Manifold.locallyCompact_of_finiteDimensional I (M := G)
-        haveI := t3Space_quotientOfIsClosed hK
+        haveI : IsClosed (K : Set G) := hK
         EMetricSpace.ofRiemannianMetric 𝓘(ℝ, QuotientModelSpace I K) (G ⧸ K)
       CompleteSpace (G ⧸ K) := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   have := isManifold_quotientOfIsClosed (I := I) hK
   intro _ _ hm
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
-  have := Manifold.locallyCompact_of_finiteDimensional I (M := G)
-  have := t3Space_quotientOfIsClosed hK
+  have : IsClosed (K : Set G) := hK
   have := contMDiffSMul_quotientOfIsClosed (I := I) hK
   have := ContMDiffSMul.contMDiffConstSMul I (I' := 𝓘(ℝ, QuotientModelSpace I K)) (G := G)
     (M := G ⧸ K) (n := ∞)
@@ -667,8 +665,7 @@ theorem completeSpace_homogeneousMetric
         (homogeneousMetric hK hsymm hpos hβ).toContinuousRiemannianMetric
     letI : EMetricSpace (G ⧸ K) :=
       haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
-      haveI := Manifold.locallyCompact_of_finiteDimensional I (M := G)
-      haveI := t3Space_quotientOfIsClosed hK
+      haveI : IsClosed (K : Set G) := hK
       EMetricSpace.ofRiemannianMetric 𝓘(ℝ, QuotientModelSpace I K) (G ⧸ K)
     CompleteSpace (G ⧸ K) := by
   let _ := quotientChartedSpaceOfIsClosed I hK

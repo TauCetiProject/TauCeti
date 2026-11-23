@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
@@ -50,6 +49,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
 
 * `QuotientGroup.instContinuousMul`: jointly continuous multiplication descends to a normal
   quotient without requiring continuous inversion, with an additive counterpart.
+* `QuotientGroup.instRegularSpace`: the coset space `G ⧸ K` of a topological group by any
+  subgroup, normal or not, is regular, so it is `T3` when `K` is closed.
 * `Subgroup.continuous_smul_const`: translation of a fixed coset is continuous.
 * `Subgroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
   continuous when the quotient is discrete.
@@ -71,8 +72,6 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
   index, respectively is compact.
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
-* `Subgroup.t3Space_quotientOfIsClosed`: the quotient of a weakly locally compact topological
-  group by a closed subgroup, normal or not, is regular.
 -/
 
 public section
@@ -90,6 +89,40 @@ instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [Continuou
   continuous_mul := by
     rw [← (isOpenQuotientMap_mk.prodMap isOpenQuotientMap_mk).continuous_comp_iff]
     exact continuous_mk.comp continuous_mul
+
+open Topology in
+/-- The coset space `G ⧸ K` of a topological group by any subgroup `K`, normal or not, is regular.
+For `x = [g]` and a neighbourhood `s` of `x`, choose a neighbourhood `V` of `1` with
+`[v⁻¹ * w * g] ∈ s` for `v, w ∈ V`. The image of `V * g` is a neighbourhood of `x`, and its closure
+lies in `s`: a point `[h]` of the closure has `[v * h] = [w * g]` for some `v, w ∈ V`, as the open
+projection maps `V * h` to a neighbourhood of `[h]`, so `[h] = [v⁻¹ * w * g]`. When `K` is closed,
+`G ⧸ K` is also `T1` (`QuotientGroup.instT1Space`), hence `T3`. -/
+@[to_additive /-- The coset space `G ⧸ K` of an additive topological group by any subgroup `K`,
+normal or not, is regular. When `K` is closed, `G ⧸ K` is also `T1`
+(`QuotientAddGroup.instT1Space`), hence `T3`. -/]
+instance instRegularSpace {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (K : Subgroup G) : RegularSpace (G ⧸ K) := by
+  refine .of_exists_mem_nhds_isClosed_subset fun x s hs ↦ ?_
+  obtain ⟨g, rfl⟩ := mk_surjective x
+  have hπ (h : G) : IsOpenMap fun w : G ↦ ((w * h : G) : G ⧸ K) :=
+    isOpenQuotientMap_mk.isOpenMap.comp (isOpenMap_mul_right h)
+  have hP : (fun w : G ↦ ((w * g : G) : G ⧸ K)) ⁻¹' s ∈ 𝓝 (1 : G) :=
+    (continuous_mk.comp (continuous_id.mul continuous_const)).continuousAt.preimage_mem_nhds
+      (by simpa using hs)
+  have hf : Filter.Tendsto (fun p : G × G ↦ p.1⁻¹ * p.2) (𝓝 (1, 1)) (𝓝 1) :=
+    (continuous_fst.inv.mul continuous_snd).tendsto' _ _ (by simp)
+  obtain ⟨U, hU, W, hW, hUW⟩ := mem_nhds_prod_iff.1 (hf hP)
+  refine ⟨closure ((fun w : G ↦ ((w * g : G) : G ⧸ K)) '' (U ∩ W)),
+    Filter.mem_of_superset (by simpa using (hπ g).image_mem_nhds (Filter.inter_mem hU hW))
+      subset_closure, isClosed_closure, fun y hy ↦ ?_⟩
+  obtain ⟨h, rfl⟩ := mk_surjective y
+  obtain ⟨-, ⟨v, hv, rfl⟩, w, hw, he⟩ := mem_closure_iff_nhds.1 hy _
+    (by simpa using (hπ h).image_mem_nhds (Filter.inter_mem hU hW))
+  have hmem : ((v⁻¹ * w * g : G) : G ⧸ K) ∈ s := hUW (Set.mk_mem_prod hv.1 hw.2)
+  convert hmem using 1
+  refine QuotientGroup.eq.2 ?_
+  convert K.inv_mem (QuotientGroup.eq.1 he) using 1
+  simp [mul_assoc]
 
 end QuotientGroup
 
@@ -474,17 +507,6 @@ preimage in `G` of a finite subgroup of `G ⧸ N` is discrete. -/]
 instance instDiscreteTopologyComapMk' [T2Space G] (N : Subgroup G) [N.Normal] [DiscreteTopology N]
     (D : Subgroup (G ⧸ N)) [Finite D] : DiscreteTopology (D.comap (QuotientGroup.mk' N)) :=
   discreteTopology_comap_mk' N D
-
-/-- The quotient of a weakly locally compact topological group by a closed subgroup `K` is
-regular, also when `K` is not normal. -/
-@[to_additive /-- The quotient of a weakly locally compact additive topological group by a closed
-subgroup `K` is regular. -/]
-theorem t3Space_quotientOfIsClosed [WeaklyLocallyCompactSpace G] {K : Subgroup G}
-    (hK : IsClosed (K : Set G)) : T3Space (G ⧸ K) := by
-  have : IsClosed (K : Set G) := hK
-  have : WeaklyLocallyCompactSpace (G ⧸ K) :=
-    QuotientGroup.isOpenQuotientMap_mk.weaklyLocallyCompactSpace
-  infer_instance
 
 end DiscreteComap
 
