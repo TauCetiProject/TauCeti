@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
@@ -107,7 +107,7 @@ private theorem carrierInDual_le_radical_dualCarrierHalfNormModOne
       LinearMap.BilinMap.polar_toQuadraticMap, dualCarrierHalfFormModOne_apply,
       dualCarrierHalfFormModOne_apply, L.isSymm.eq]
     obtain ⟨z, hz⟩ := Submodule.mem_one.mp
-      (y.2 x ((L.mem_carrierInDual_iff x).mp hx))
+      (y.property x ((L.mem_carrierInDual_iff x).mp hx))
     rw [← AddCircle.coe_add]
     refine (AddCircle.coe_eq_zero_iff_mem_one _).mpr (Submodule.mem_one.mpr ⟨z, ?_⟩)
     have hz' : L.form y x = (z : ℚ) := by simpa using hz.symm
@@ -272,6 +272,36 @@ theorem discriminantQuadraticIsometry_toFiniteBilinearModule (e : Isometry L M)
   rw [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv,
     discriminantQuadraticIsometry_toAddEquiv,
     discriminantBilinearIsometry_toAddEquiv]
+
+/-- Passing to the inverse lattice isometry passes to the inverse discriminant quadratic
+isometry. -/
+@[simp]
+theorem discriminantQuadraticIsometry_symm (e : Isometry L M)
+    [L.IsNondegenerate] [M.IsNondegenerate] (hM : M.IsEven) :
+    e.symm.discriminantQuadraticIsometry hM =
+      (e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm := by
+  refine DFunLike.ext _ _ fun (x : M.DiscriminantGroup) ↦ ?_
+  refine (e.symm.discriminantQuadraticIsometry_apply hM x).trans ?_
+  rw [Isometry.discriminantGroupEquiv_symm]
+  exact ((e.discriminantQuadraticIsometry (e.isEven_iff.mpr hM)).symm_apply_eq.mpr
+    ((e.discriminantQuadraticIsometry_apply _ (e.discriminantGroupEquiv.symm x)).trans
+      (e.discriminantGroupEquiv.apply_symm_apply x)).symm).symm
+
+/-- The discriminant quadratic isometry induced by a composite is the composite of the induced
+isometries. -/
+@[simp]
+theorem discriminantQuadraticIsometry_trans (e : Isometry L M) (f : Isometry M N)
+    [L.IsNondegenerate] [M.IsNondegenerate] [N.IsNondegenerate] (hL : L.IsEven) :
+    (e.trans f).discriminantQuadraticIsometry hL =
+      (e.discriminantQuadraticIsometry hL).trans
+        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) := by
+  refine DFunLike.ext _ _ fun (x : L.DiscriminantGroup) ↦ ?_
+  refine ((e.trans f).discriminantQuadraticIsometry_apply hL x).trans ?_
+  rw [Isometry.discriminantGroupEquiv_trans, LinearEquiv.trans_apply]
+  exact (congrArg f.discriminantGroupEquiv (e.discriminantQuadraticIsometry_apply hL x).symm).trans
+    ((f.discriminantQuadraticIsometry_apply (e.isEven_iff.mp hL) _).symm.trans
+      (FiniteQuadraticModule.Isometry.trans_apply (e.discriminantQuadraticIsometry hL)
+        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) x).symm)
 
 end Isometry
 

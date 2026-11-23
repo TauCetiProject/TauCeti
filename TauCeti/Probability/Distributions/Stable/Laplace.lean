@@ -72,7 +72,7 @@ theorem tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow
     intro n
     have heq (x : ℝ) : (g x : ℝ≥0∞) ^ 2 = ENNReal.ofReal (exp ((2 * t) * x)) := by
       rw [← ENNReal.coe_pow, ENNReal.coe_nnreal_eq, NNReal.coe_pow]
-      simp only [g, Real.coe_toNNReal _ (exp_pos _).le, ← exp_nat_mul]
+      simp only [g, Real.coe_toNNReal _ (exp_pos _).le, ← exp_natCast_mul]
       congr 2
       ring
     simp_rw [heq]
@@ -132,7 +132,7 @@ theorem mgf_id_stableMeasure_eq_exp_integral
     simp [mul_comm]
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
-    exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+    exact mul_nonpos_of_nonneg_of_nonpos s.property ht
   rw [← stableMeasure_one_zero_map_affine, mgf_id_map_affine,
     mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
     ← exp_add]
@@ -160,7 +160,7 @@ theorem mgf_id_stableMeasure_of_ne_one (hα : α ∈ Ioc 0 2) (hα1 : α ≠ 1) 
     ring
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
-    exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+    exact mul_nonpos_of_nonneg_of_nonpos s.property ht
   rw [mgf_id_stableMeasure_eq_exp_integral ⟨hα.1, hα2⟩ hβ s m ht,
     integral_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure_of_ne_one ⟨hα.1, hα2⟩ hα1 hβ hst,
     stableS1Location_of_ne_one hα1, abs_mul, NNReal.abs_eq]
@@ -182,7 +182,7 @@ theorem mgf_id_stableMeasure_one (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ) (ht : 
       exp (stableS1Location 1 β s m * t - 2 / π * β * s * t * log |t|) := by
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
-    exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+    exact mul_nonpos_of_nonneg_of_nonpos s.property ht
   rw [mgf_id_stableMeasure_eq_exp_integral (by norm_num) hβ s m ht,
     integral_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure_one hβ hst,
     stableS1Location_one]

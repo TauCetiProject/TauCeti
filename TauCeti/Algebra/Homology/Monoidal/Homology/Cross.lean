@@ -208,18 +208,19 @@ end Naturality
 
 section HomologyTransport
 
-variable [CategoryWithHomology C] [HasCoproducts C]
-  {K K' L L' M M' : HomologicalComplex C c}
+variable [CategoryWithHomology C] {K K' L L' M M' : HomologicalComplex C c}
+  [HasTensor K L] [HasTensor K' L'] [HasTensor K M] [HasTensor K' M']
 
 /-- Transport of the homology of a tensor product along equalities in its second factor. -/
 @[reassoc]
 lemma eqToHom_comp_homologyMap_tensorHom (φ : K ⟶ K') (ψ : L ⟶ L')
     (hM : M = L) (hM' : M' = L') (τ : M ⟶ M')
     (hτ : τ = eqToHom hM ≫ ψ ≫ eqToHom hM'.symm) (n : I) :
-    eqToHom (congrArg (fun N ↦ (tensorObj K N).homology n) hM.symm) ≫
+    eqToHom (by subst hM; rfl : (tensorObj K L).homology n = (tensorObj K M).homology n) ≫
         homologyMap (tensorHom φ τ) n =
       homologyMap (tensorHom φ ψ) n ≫
-        eqToHom (congrArg (fun N ↦ (tensorObj K' N).homology n) hM'.symm) := by
+        eqToHom (by subst hM'; rfl :
+          (tensorObj K' L').homology n = (tensorObj K' M').homology n) := by
   subst hM hM' hτ
   simp
 

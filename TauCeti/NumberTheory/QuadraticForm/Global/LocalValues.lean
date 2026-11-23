@@ -67,7 +67,7 @@ theorem exists_atRealPlace_ne_zero_eq_neg
     (h : ¬(atRealPlace (U.prod R) w).Anisotropic) (hU : U.Nondegenerate)
     (hR : (R.atRealPlace w).Anisotropic) :
     ∃ x y, U.atRealPlace w x ≠ 0 ∧ U.atRealPlace w x = -R.atRealPlace w y := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   refine hR.exists_ne_zero_eq_neg_of_not_anisotropic_prod
     (Nondegenerate.atRealPlace hU w).radical_eq_bot ?_
   rw [← QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd U R w⟩]

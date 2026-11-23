@@ -8,17 +8,21 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Interval integrals along the slices of a map of two variables
 
 For a map `ξ` of two variables `(s, t)`, these are calculus facts about the slices
 `t ↦ ξ(s, t)` and their interval integrals in `t`, used for maps on the cylinder that have
-period `T` in `t`.
+period `T` in `t`, together with the splitting of the integral of `‖ξ‖²` over a rectangle
+`[a₁, b₁] × [a, b]` off a function of `s` when every slice of the rest integrates to zero.
 
 ## Main declarations
 
@@ -31,6 +35,8 @@ period `T` in `t`.
 * `TauCeti.hasDerivAt_intervalIntegral_two_mul_inner_fderiv`: for a `C²` map, the derivative
   `∫ₐᵇ 2 (⟪ξ, ∂s² ξ⟫ + ‖∂s ξ‖²) dt` of `s ↦ ∫ₐᵇ 2 ⟪ξ, ∂s ξ⟫ dt`, the second derivative of the
   slice energy.
+* `TauCeti.setIntegral_norm_add_sq_eq`: over a rectangle `[a₁, b₁] × [a, b]`,
+  `∫ ‖m(s) + w‖² = (b - a) ∫ₛ ‖m‖² + ∫ ‖w‖²` when every slice of `w` integrates to zero.
 -/
 
 public section
@@ -93,5 +99,37 @@ theorem hasDerivAt_intervalIntegral_two_mul_inner_fderiv {V : Type*} [NormedAddC
   refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
   simp only [real_inner_self_eq_norm_sq]
   ring
+
+/-- **Splitting off a function of the first variable.** If every slice `t ↦ w(s, t)` of the
+continuous map `w` into a real inner product space has integral zero over `[a, b]`, then for every
+continuous `m`, over the rectangle `[a₁, b₁] × [a, b]` with `a ≤ b`,
+`∫ ‖m(s) + w(s, t)‖² = (b - a) ∫ₛ ‖m(s)‖² + ∫ ‖w‖²`. -/
+theorem setIntegral_norm_add_sq_eq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [CompleteSpace V] {m : ℝ → V} {w : ℝ × ℝ → V} {a₁ b₁ a b : ℝ} (hab : a ≤ b)
+    (hm : Continuous m) (hw : Continuous w) (hw0 : ∀ s, ∫ t in Icc a b, w (s, t) = 0) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖m z.1 + w z‖ ^ 2 =
+      (b - a) * (∫ s in Icc a₁ b₁, ‖m s‖ ^ 2) + ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖w z‖ ^ 2 := by
+  have hm₁ : Continuous fun z : ℝ × ℝ ↦ m z.1 := hm.comp continuous_fst
+  have hM : IntegrableOn (fun z : ℝ × ℝ ↦ ‖m z.1‖ ^ 2) (Icc a₁ b₁ ×ˢ Icc a b) :=
+    (hm₁.norm.pow 2).integrableOn_Icc_prod_Icc
+  have hC : IntegrableOn (fun z : ℝ × ℝ ↦ 2 * ⟪m z.1, w z⟫) (Icc a₁ b₁ ×ˢ Icc a b) :=
+    (continuous_const.mul (hm₁.inner hw)).integrableOn_Icc_prod_Icc
+  have hW : IntegrableOn (fun z ↦ ‖w z‖ ^ 2) (Icc a₁ b₁ ×ˢ Icc a b) :=
+    (hw.norm.pow 2).integrableOn_Icc_prod_Icc
+  have hMC : IntegrableOn (fun z : ℝ × ℝ ↦ ‖m z.1‖ ^ 2 + 2 * ⟪m z.1, w z⟫)
+      (Icc a₁ b₁ ×ˢ Icc a b) := hM.add hC
+  simp_rw [norm_add_sq_real]
+  rw [integral_add hMC hW, integral_add hM hC]
+  -- The first term integrates over `[a, b]` in `t`, and the cross term vanishes.
+  have h₁ : ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖m z.1‖ ^ 2 = (b - a) * ∫ s in Icc a₁ b₁, ‖m s‖ ^ 2 :=
+    setIntegral_Icc_prod_comp_fst (fun s ↦ ‖m s‖ ^ 2) hab
+  have h₂ : ∫ z in Icc a₁ b₁ ×ˢ Icc a b, 2 * ⟪m z.1, w z⟫ = 0 := by
+    rw [Measure.volume_eq_prod, setIntegral_prod _ hC]
+    refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun s ↦ ?_)
+    have hws : Integrable (fun t ↦ w (s, t)) (volume.restrict (Icc a b)) :=
+      (hw.comp (Continuous.prodMk_right s)).integrableOn_Icc
+    simp only [Pi.zero_apply]
+    rw [integral_const_mul, integral_inner hws, hw0 s, inner_zero_right, mul_zero]
+  rw [h₁, h₂, add_zero]
 
 end TauCeti

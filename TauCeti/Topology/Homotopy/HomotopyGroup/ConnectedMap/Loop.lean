@@ -9,6 +9,7 @@ public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+public import TauCeti.Topology.Homotopy.IteratedLoopSpace.Basic
 public import TauCeti.Topology.PathSpace.Loop
 public import TauCeti.Topology.PathSpace.Prepend
 
@@ -24,7 +25,9 @@ induces injections on `π_(k+1)` at `x` for `k < n` and surjections for `k ≤ n
 `n`-connected (`ContinuousMap.isNConnected_loopMap`). In particular the loop map of an
 `(n + 1)`-connected map is `n`-connected (`ContinuousMap.IsNConnected.loopMap`), and the double
 loop map of an `(n + 2)`-connected map is `n`-connected
-(`ContinuousMap.IsNConnected.loopMap_loopMap`).
+(`ContinuousMap.IsNConnected.loopMap_loopMap`). Iterating, the map `Ω^[k] f` of `k`-fold iterated
+loop spaces induced by an `(n + k)`-connected based map is `n`-connected
+(`ContinuousMap.IsNConnected.iteratedLoopSpace`).
 
 The connectivity of `Ω f` concerns every base point of `Ω X x`, not only the constant loop. In
 degree zero the loop-space shift reads `π_0(Ω X x) = π_1(X, x)`, which is independent of the
@@ -49,6 +52,8 @@ isomorphisms on homology in a range.
   `n`-connected.
 * `ContinuousMap.IsNConnected.loopMap_loopMap`: the double loop map of an `(n + 2)`-connected map
   is `n`-connected.
+* `ContinuousMap.IsNConnected.iteratedLoopSpace`: the `k`-fold iterated loop map of an
+  `(n + k)`-connected based map is `n`-connected.
 
 ## References
 
@@ -223,6 +228,20 @@ theorem loopMap (hf : f.IsNConnected (n + 1)) (hx : f x = y) : (f.loopMap hx).Is
 theorem loopMap_loopMap (hf : f.IsNConnected (n + 2)) (hx : f x = y) :
     ((f.loopMap hx).loopMap (f.loopMap_refl hx)).IsNConnected n :=
   (hf.loopMap hx).loopMap (f.loopMap_refl hx)
+
+open TauCeti.BasedTopologicalSpace in
+/-- **The iterated loop map of an `(n + k)`-connected map is `n`-connected.** For a based map
+`f : X → Y` whose underlying map is `(n + k)`-connected, the induced map
+`Ω^[k] f : Ω^[k] X → Ω^[k] Y` of `k`-fold iterated loop spaces is `n`-connected. -/
+theorem iteratedLoopSpace {X Y : TauCeti.BasedTopologicalSpace} {f : Hom X Y} {k : ℕ}
+    (hf : f.toContinuousMap.IsNConnected (n + k)) :
+    (f.iteratedLoopSpace k).toContinuousMap.IsNConnected n := by
+  induction k generalizing X Y with
+  | zero => rwa [Hom.iteratedLoopSpace_zero]
+  | succ k ih =>
+    -- `Ω^[k + 1] f` unfolds to `Ω^[k] (Ω f)`, and `Ω f` is `(n + k)`-connected.
+    rw [Hom.iteratedLoopSpace_succ]
+    exact ih (Hom.loopSpace_toContinuousMap f ▸ hf.loopMap f.map_basepoint)
 
 end IsNConnected
 

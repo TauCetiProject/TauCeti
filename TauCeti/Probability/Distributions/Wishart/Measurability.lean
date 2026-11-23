@@ -87,6 +87,6 @@ theorem measurable_wishartGramMeasure_selfAdjoint :
     Measurable fun q : ℕ × selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       wishartGramMeasure q.1 (q.2 : Matrix (Fin p) (Fin p) ℝ) := by
   exact measurable_wishartGramMeasure.comp
-    (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
+    (measurable_fst.prodMk (measurable_subtypeVal.comp measurable_snd))
 
 end TauCeti.Probability
