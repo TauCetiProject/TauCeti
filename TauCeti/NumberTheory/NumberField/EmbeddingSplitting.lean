@@ -151,10 +151,11 @@ variable (hd : IsUnit (discr L : R))
 include hd
 
 /-- **The embedding splitting is bijective** when `K` receives all `[L : ℚ]` embeddings of `L`
-and `d_L` is a unit of `R`: on the basis `1 ⊗ bⱼ` of `R ⊗[ℤ] 𝓞 L`, the splitting has matrix
-`(σ(bⱼ))`, whose determinant squares to `d_L`. -/
+and `d_L` is a unit of `R`. -/
 theorem bijective_embeddingSplitting : Function.Bijective (embeddingSplitting L K R) := by
   classical
+  -- On the basis `1 ⊗ bⱼ` of `R ⊗[ℤ] 𝓞 L`, the splitting has matrix `(σ(bⱼ))`, whose
+  -- determinant squares to `d_L`.
   let e : (L →+* K) ≃ Free.ChooseBasisIndex ℤ (𝓞 L) := Fintype.equivOfCardEq <| by
     rw [hK, ← RingOfIntegers.rank, finrank_eq_card_chooseBasisIndex]
   let bR : Basis (L →+* K) R (R ⊗[ℤ] 𝓞 L) :=

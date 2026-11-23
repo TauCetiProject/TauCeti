@@ -32,10 +32,10 @@ an action of `A ⊗[R] B` on `M ⊗[R] N`, using Mathlib's `Algebra.lsmul`,
 `Algebra.TensorProduct.map`, and `Module.endTensorEndAlgHom`. This construction requires only
 algebras, without a coproduct.
 
-`Algebra.TensorProduct.toModuleEnd R A M` is the converse direction for commuting actions of a
-commutative ring `R` and a ring `A` on `M`: the action of `R ⊗[ℤ] A` on `M` by `R`-linear
-endomorphisms, extending Mathlib's `Module.toModuleEnd`. It commutes with base change along
-`M ↦ M ⊗[R] N` (`Algebra.TensorProduct.toModuleEnd_rTensor`).
+Conversely to the factor actions above, commuting actions of a commutative ring `R` and a ring
+`A` on `M` give an action of `R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms:
+`Algebra.TensorProduct.toModuleEnd R A M`, extending Mathlib's `Module.toModuleEnd`. It commutes
+with base change along `M ↦ M ⊗[R] N` (`Algebra.TensorProduct.toModuleEnd_rTensor`).
 -/
 
 public section
