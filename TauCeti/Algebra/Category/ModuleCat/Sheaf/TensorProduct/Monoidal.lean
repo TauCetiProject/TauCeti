@@ -292,6 +292,13 @@ def sheafificationForgetAdjunction :
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
 
+/-- The unit of `sheafificationForgetAdjunction` is the canonical map from a presheaf of
+modules to its sheafification. -/
+lemma sheafificationForgetAdjunction_unit_app (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (sheafificationForgetAdjunction R).unit.app P =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app P :=
+  (rfl)
+
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
 lemma sheafificationForgetAdjunction_counit_app (M : SheafOfModules.{u} (ringCatSheaf R)) :

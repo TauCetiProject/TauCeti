@@ -159,6 +159,16 @@ theorem stalkMapCommRing_germ (f : N ⟶ N') (U : Opens X) (hx : x ∈ U) (m : N
   N.stalkLiftCommRing_germ x (stalkMapCommRingSection x f)
     (stalkMapCommRingSection_res x f) (stalkMapCommRingSection_smul x f) U hx m
 
+/-- The linear stalk map has the same underlying function as the map on the stalks of the
+underlying presheaves of abelian groups. -/
+theorem coe_stalkMapCommRing (f : N ⟶ N') :
+    (stalkMapCommRing x f : _ → _) =
+      (TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map ((toPresheaf _).map f) := by
+  funext s
+  obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq N.presheaf s
+  erw [stalkMapCommRing_germ, TopCat.Presheaf.stalkFunctor_map_germ_apply]
+  rfl
+
 end CommRing
 
 variable {N : PresheafOfModules.{u} R}
