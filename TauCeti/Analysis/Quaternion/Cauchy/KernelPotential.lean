@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.KernelIntegral
 public import TauCeti.Analysis.Quaternion.Kernel
 
 /-!
-# Separated Cauchy–Fueter kernel potentials and decay bounds
+# Separated Cauchy–Fueter kernel potentials
 
 This file specializes the separated translation-kernel differentiation results of
 `TauCeti.Analysis.Calculus.ContDiff.KernelIntegral` to `TauCeti.cauchyFueterKernel` on an

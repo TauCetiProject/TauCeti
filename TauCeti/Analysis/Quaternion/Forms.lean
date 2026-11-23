@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Module.Determinant
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Order.Interval.Set.Pi
-import TauCeti.Topology.ContinuousMap.Compact
 
 /-!
 # The quaternionic forms `dq` and `Dq`
@@ -310,19 +309,6 @@ theorem boxFaceChart_apply (a b : Fin 4 → ℝ) (i : Fin 4) (c : ℝ)
     (u : ↥(Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove))) :
     boxFaceChart a b i c u = dq (i.insertNth c u.val) :=
   rfl
-
-/-- Compactness supplies a positive Euclidean distance from `q₀` to any closed `dq`-box face
-`u ↦ dq (i.insertNth c u)` (`u ∈ Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove)`) that avoids
-`q₀`. -/
-theorem exists_pos_le_norm_dq_insertNth_sub {a b : Fin 4 → ℝ} {i : Fin 4} {c : ℝ} {q₀ : ℍ}
-    (hq₀ : ∀ u ∈ Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove), dq (i.insertNth c u) ≠ q₀) :
-    ∃ δ > 0, ∀ u ∈ Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
-      δ ≤ ‖dq (i.insertNth c u) - q₀‖ := by
-  have : CompactSpace (Set.Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) :=
-    isCompact_iff_compactSpace.mp isCompact_Icc
-  obtain ⟨δ, hδ₀, hδ⟩ := (boxFaceChart a b i c).exists_pos_le_norm_sub_of_notMem_range
-    (by rintro ⟨u, hu⟩; exact hq₀ u.val u.property hu)
-  exact ⟨δ, hδ₀, fun u hu ↦ hδ ⟨u, hu⟩⟩
 
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/
