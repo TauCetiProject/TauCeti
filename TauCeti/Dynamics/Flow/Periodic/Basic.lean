@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Flow.TimeDependent
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Dynamics.FixedPoints.Defs
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # Periodic solutions of time-dependent vector fields
@@ -90,23 +91,23 @@ Periodicity is written pointwise to keep the evaluation simp lemmas in normal fo
 noncomputable def periodicSolutionEquivFixedPoints (hT : Periodic v T) (s : ℝ) :
     {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ ∀ t, y (t + T) = y t} ≃
       fixedPoints (timeDependentFlow v hv s (s + T)) where
-  toFun y := ⟨y.1 s, by
+  toFun y := ⟨y.val s, by
     rw [mem_fixedPoints, ← periodic_timeDependentFlow_iff hv hT]
-    have heq : (fun t ↦ timeDependentFlow v hv s t (y.1 s)) = y.1 :=
-      (funext (eq_timeDependentFlow v hv y.2.1 s)).symm
+    have heq : (fun t ↦ timeDependentFlow v hv s t (y.val s)) = y.val :=
+      (funext (eq_timeDependentFlow v hv y.property.1 s)).symm
     rw [heq]
-    exact y.2.2⟩
+    exact y.property.2⟩
   invFun x := ⟨fun t ↦ timeDependentFlow v hv s t x,
     (fun t ↦ hasDerivAt_timeDependentFlow v hv s t x),
-    (periodic_timeDependentFlow_iff hv hT s x).2 x.2⟩
-  left_inv y := Subtype.ext (funext (eq_timeDependentFlow v hv y.2.1 s)).symm
+    (periodic_timeDependentFlow_iff hv hT s x).2 x.property⟩
+  left_inv y := Subtype.ext (funext (eq_timeDependentFlow v hv y.property.1 s)).symm
   right_inv x := Subtype.ext (timeDependentFlow_self v hv s x)
 
 /-- The correspondence from periodic solutions to fixed points evaluates at the initial time. -/
 @[simp]
 theorem periodicSolutionEquivFixedPoints_apply (hT : Periodic v T) (s : ℝ)
     (y : {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ ∀ t, y (t + T) = y t}) :
-    (periodicSolutionEquivFixedPoints hv hT s y : E) = y.1 s :=
+    (periodicSolutionEquivFixedPoints hv hT s y : E) = y.val s :=
   (rfl)
 
 /-- The periodic solution associated to a fixed point is its evolution trajectory. -/

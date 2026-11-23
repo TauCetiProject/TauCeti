@@ -154,41 +154,42 @@ noncomputable def halfEdgeOfValenceEqTwo {v : G.Vertex} (hv : G.valence v = 2) :
 
 /-- The two enumerated half-edges at a vertex of valence two are distinct. -/
 lemma halfEdgeOfValenceEqTwo_zero_ne_one {v : G.Vertex} (hv : G.valence v = 2) :
-    (G.halfEdgeOfValenceEqTwo hv 0).1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1 :=
+    (G.halfEdgeOfValenceEqTwo hv 0).val ≠ (G.halfEdgeOfValenceEqTwo hv 1).val :=
   fun h ↦ absurd ((G.halfEdgeOfValenceEqTwo hv).injective (Subtype.ext h)) (by decide)
 
 /-- At a loopless vertex of valence two, the two half-edges lie on distinct edges. -/
 lemma halfEdgeOfValenceEqTwo_fst_ne {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) :
-    (G.halfEdgeOfValenceEqTwo hv 0).1.1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1.1 := by
+    (G.halfEdgeOfValenceEqTwo hv 0).val.1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).val.1 := by
   intro h
-  have hne : (G.halfEdgeOfValenceEqTwo hv 0).1.2 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1.2 :=
+  have hne : (G.halfEdgeOfValenceEqTwo hv 0).val.2 ≠ (G.halfEdgeOfValenceEqTwo hv 1).val.2 :=
     fun h' ↦ halfEdgeOfValenceEqTwo_zero_ne_one hv (Prod.ext h h')
   -- The second index of a loopless edge at `v` is determined by the first.
-  have hrev : (G.halfEdgeOfValenceEqTwo hv 1).1.2 = (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev := by
+  have hrev : (G.halfEdgeOfValenceEqTwo hv 1).val.2 = (G.halfEdgeOfValenceEqTwo hv 0).val.2.rev
+      := by
     revert hne
-    generalize (G.halfEdgeOfValenceEqTwo hv 0).1.2 = i
-    generalize (G.halfEdgeOfValenceEqTwo hv 1).1.2 = j
+    generalize (G.halfEdgeOfValenceEqTwo hv 0).val.2 = i
+    generalize (G.halfEdgeOfValenceEqTwo hv 1).val.2 = j
     revert i j
     decide
-  have h1 := (G.halfEdgeOfValenceEqTwo hv 1).2
+  have h1 := (G.halfEdgeOfValenceEqTwo hv 1).property
   rw [← h, hrev] at h1
-  exact endpoint_rev_ne hloop (G.halfEdgeOfValenceEqTwo hv 0).2 h1
+  exact endpoint_rev_ne hloop (G.halfEdgeOfValenceEqTwo hv 0).property h1
 
 /-- Every half-edge at a vertex of valence two is one of the two enumerated half-edges. -/
 lemma exists_eq_halfEdgeOfValenceEqTwo {v : G.Vertex} (hv : G.valence v = 2)
     {h : G.Edge × Fin 2} (hh : G.endpoint h.1 h.2 = v) :
-    ∃ k, (G.halfEdgeOfValenceEqTwo hv k).1 = h :=
+    ∃ k, (G.halfEdgeOfValenceEqTwo hv k).val = h :=
   ⟨(G.halfEdgeOfValenceEqTwo hv).symm ⟨h, hh⟩, by simp⟩
 
 /-- The **neighbours** of a loopless vertex of valence two: the components carrying the other
 branches of its two nodes. For a rational bridge, these are the two components that it joins. -/
 noncomputable def bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2) (k : Fin 2) : G.Vertex :=
-  G.endpoint (G.halfEdgeOfValenceEqTwo hv k).1.1 (G.halfEdgeOfValenceEqTwo hv k).1.2.rev
+  G.endpoint (G.halfEdgeOfValenceEqTwo hv k).val.1 (G.halfEdgeOfValenceEqTwo hv k).val.2.rev
 
 /-- The `k`th neighbour carries the other branch of the `k`th half-edge. -/
 lemma endpoint_halfEdgeOfValenceEqTwo_rev {v : G.Vertex} (hv : G.valence v = 2) (k : Fin 2) :
-    G.endpoint (G.halfEdgeOfValenceEqTwo hv k).1.1 (G.halfEdgeOfValenceEqTwo hv k).1.2.rev =
+    G.endpoint (G.halfEdgeOfValenceEqTwo hv k).val.1 (G.halfEdgeOfValenceEqTwo hv k).val.2.rev =
       G.bridgeNeighbor hv k := by
   rw [bridgeNeighbor]
 
@@ -196,7 +197,7 @@ lemma endpoint_halfEdgeOfValenceEqTwo_rev {v : G.Vertex} (hv : G.valence v = 2) 
 lemma bridgeNeighbor_ne {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) (k : Fin 2) :
     G.bridgeNeighbor hv k ≠ v :=
-  endpoint_rev_ne hloop (G.halfEdgeOfValenceEqTwo hv k).2
+  endpoint_rev_ne hloop (G.halfEdgeOfValenceEqTwo hv k).property
 
 /-- The unordered pair of neighbours of a vertex of valence two does not depend on the enumeration
 of its half-edges: it is formed by the other branches of any two distinct half-edges there. -/
@@ -233,9 +234,9 @@ lemma forall_endpoint_ne_of_valence_eq_one {u v : G.Vertex} (hu : G.valence u = 
 `k`th neighbour. -/
 lemma forall_endpoint_halfEdgeOfValenceEqTwo_ne {u v : G.Vertex} (hu : G.valence u = 2)
     (huv : u ≠ v) {k : Fin 2} (hk : G.bridgeNeighbor hu k ≠ v) :
-    ∀ i, G.endpoint (G.halfEdgeOfValenceEqTwo hu k).1.1 i ≠ v :=
-  forall_endpoint_ne_of_ne_of_rev_ne (i := (G.halfEdgeOfValenceEqTwo hu k).1.2)
-    (by rw [(G.halfEdgeOfValenceEqTwo hu k).2]; exact huv)
+    ∀ i, G.endpoint (G.halfEdgeOfValenceEqTwo hu k).val.1 i ≠ v :=
+  forall_endpoint_ne_of_ne_of_rev_ne (i := (G.halfEdgeOfValenceEqTwo hu k).val.2)
+    (by rw [(G.halfEdgeOfValenceEqTwo hu k).property]; exact huv)
     (by rw [endpoint_halfEdgeOfValenceEqTwo_rev]; exact hk)
 
 /-- If the `k`th neighbour of a vertex `u` of valence two is a vertex `v` of valence two, then `u`
@@ -245,9 +246,10 @@ lemma exists_bridgeNeighbor_eq {u v : G.Vertex} (hu : G.valence u = 2)
     ∃ l, G.bridgeNeighbor hv l = u := by
   rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk
   obtain ⟨l, hl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv
-    (h := ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)) hk
+    (h := ((G.halfEdgeOfValenceEqTwo hu k).val.1, (G.halfEdgeOfValenceEqTwo hu k).val.2.rev)) hk
   refine ⟨l, ?_⟩
-  rw [← endpoint_halfEdgeOfValenceEqTwo_rev, hl, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).2]
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev, hl, Fin.rev_rev,
+      (G.halfEdgeOfValenceEqTwo hu k).property]
 
 /-- A vertex of valence one is at most one of the two neighbours of a vertex of valence two. -/
 lemma bridgeNeighbor_rev_ne {u v : G.Vertex} (hu : G.valence u = 2) (hv : G.valence v = 1)
@@ -255,10 +257,11 @@ lemma bridgeNeighbor_rev_ne {u v : G.Vertex} (hu : G.valence u = 2) (hv : G.vale
   intro hk'
   rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk hk'
   have := eq_of_valence_eq_one hv
-    ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)
-    ((G.halfEdgeOfValenceEqTwo hu k.rev).1.1, (G.halfEdgeOfValenceEqTwo hu k.rev).1.2.rev) hk hk'
+    ((G.halfEdgeOfValenceEqTwo hu k).val.1, (G.halfEdgeOfValenceEqTwo hu k).val.2.rev)
+    ((G.halfEdgeOfValenceEqTwo hu k.rev).val.1, (G.halfEdgeOfValenceEqTwo hu k.rev).val.2.rev) hk
+        hk'
   obtain ⟨h₁, h₂⟩ := Prod.ext_iff.mp this
-  have h : (G.halfEdgeOfValenceEqTwo hu k).1 = (G.halfEdgeOfValenceEqTwo hu k.rev).1 :=
+  have h : (G.halfEdgeOfValenceEqTwo hu k).val = (G.halfEdgeOfValenceEqTwo hu k.rev).val :=
     Prod.ext h₁ (Fin.rev_injective h₂)
   fin_cases k
   · exact halfEdgeOfValenceEqTwo_zero_ne_one hu h
@@ -277,7 +280,7 @@ private lemma card_endpoint_eq_of_endpoint_eq {v u : G.Vertex} (hu : u ≠ v) {e
 /-- The valence of `u` splits into the half-edges on edges avoiding `v` and those on edges
 meeting `v`. -/
 private lemma valence_eq_sum_add_sum (v u : G.Vertex) :
-    G.valence u = ∑ e : {e // ∀ i, G.endpoint e i ≠ v}, #{j | G.endpoint e.1 j = u} +
+    G.valence u = ∑ e : {e // ∀ i, G.endpoint e i ≠ v}, #{j | G.endpoint e.val j = u} +
       ∑ e ∈ {e | ∃ i, G.endpoint e i = v}, #{j | G.endpoint e j = u} := by
   rw [valence_eq_sum, ← sum_filter_add_sum_filter_not univ (fun e ↦ ∀ i, G.endpoint e i ≠ v)]
   congr 1
@@ -299,12 +302,15 @@ private lemma card_edge_eq (v : G.Vertex) :
 onto it, the unique edge at the vertex being collapsed onto its attachment. -/
 private lemma connected_contractTail {v : G.Vertex} (hv : G.valence v = 1) (x y : {w // w ≠ v}) :
     Relation.ReflTransGen (fun a b ↦ ∃ e : {e // ∀ i, G.endpoint e i ≠ v},
-      ((⟨G.endpoint e.1 0, e.2 0⟩ : {w // w ≠ v}) = a ∧ ⟨G.endpoint e.1 1, e.2 1⟩ = b) ∨
-        ((⟨G.endpoint e.1 0, e.2 0⟩ : {w // w ≠ v}) = b ∧ ⟨G.endpoint e.1 1, e.2 1⟩ = a)) x y := by
+      ((⟨G.endpoint e.val 0, e.property 0⟩ : {w // w ≠ v}) = a ∧ ⟨G.endpoint e.val 1,
+          e.property 1⟩ = b) ∨
+        ((⟨G.endpoint e.val 0, e.property 0⟩ : {w // w ≠ v}) = b ∧ ⟨G.endpoint e.val 1,
+            e.property 1⟩ = a)) x y := by
   refine G.connected_of_surjective
-    (f := fun (e : {e // ∀ i, G.endpoint e i ≠ v}) i ↦ (⟨G.endpoint e.1 i, e.2 i⟩ : {w // w ≠ v}))
+    (f := fun (e : {e // ∀ i, G.endpoint e i ≠ v}) i ↦ (⟨G.endpoint e.val i, e.property i⟩ :
+        {w // w ≠ v}))
     (fun w ↦ if h : w = v then ⟨G.attachment hv, attachment_ne hv⟩ else ⟨w, h⟩)
-    (fun w ↦ ⟨w.1, by simp [w.2]⟩) (fun e ↦ ?_) x y
+    (fun w ↦ ⟨w.val, by simp [w.property]⟩) (fun e ↦ ?_) x y
   by_cases he : ∀ i, G.endpoint e i ≠ v
   · exact .inr ⟨⟨e, he⟩, .inl ⟨by simp [he 0], by simp [he 1]⟩⟩
   · -- The edge `e` is the unique edge at `v`; it joins `v` to its attachment.
@@ -327,7 +333,7 @@ noncomputable abbrev contractTail {v : G.Vertex} (hv : G.valence v = 1) : DualGr
   Vertex := {w // w ≠ v}
   vertexNonempty := ⟨⟨G.attachment hv, attachment_ne hv⟩⟩
   Edge := {e // ∀ i, G.endpoint e i ≠ v}
-  endpoint e i := ⟨G.endpoint e.1 i, e.2 i⟩
+  endpoint e i := ⟨G.endpoint e.val i, e.property i⟩
   genus w := G.genus w
   marking i :=
     if h : G.marking i = v then ⟨G.attachment hv, attachment_ne hv⟩ else ⟨G.marking i, h⟩
@@ -339,12 +345,12 @@ variable {G} {v : G.Vertex} (hv : G.valence v = 1)
 
 @[simp]
 lemma endpoint_contractTail (e : (G.contractTail hv).Edge) (i : Fin 2) :
-    (G.contractTail hv).endpoint e i = ⟨G.endpoint e.1 i, e.2 i⟩ :=
+    (G.contractTail hv).endpoint e i = ⟨G.endpoint e.val i, e.property i⟩ :=
   rfl
 
 @[simp]
 lemma genus_contractTail (w : (G.contractTail hv).Vertex) :
-    (G.contractTail hv).genus w = G.genus w.1 :=
+    (G.contractTail hv).genus w = G.genus w.val :=
   rfl
 
 /-- The markings on the tail move to its attachment; the other markings stay in place. -/
@@ -361,7 +367,7 @@ lemma card_vertex_contractTail :
 
 /-- A sum over the vertices of the contracted graph is the sum over the vertices other than `v`. -/
 lemma sum_vertex_contractTail {M : Type*} [AddCommMonoid M] (f : G.Vertex → M) :
-    ∑ w : (G.contractTail hv).Vertex, f w.1 = ∑ w : {w // w ≠ v}, f w :=
+    ∑ w : (G.contractTail hv).Vertex, f w.val = ∑ w : {w // w ≠ v}, f w :=
   rfl
 
 /-- The only edge meeting a vertex of valence one is its unique edge. -/
@@ -408,7 +414,7 @@ theorem valence_contractTail (u : G.Vertex) (hu : u ≠ v) :
 /-- Contracting a tail does not change the ends of the remaining edges. -/
 @[simp]
 lemma map_val_ends_contractTail (e : (G.contractTail hv).Edge) :
-    ((G.contractTail hv).ends e).map Subtype.val = G.ends e.1 := by
+    ((G.contractTail hv).ends e).map Subtype.val = G.ends e.val := by
   rw [ends_def, ends_def, Sym2.map_mk]
 
 /-- After contracting a tail `v`, a vertex that remains of valence one keeps its attachment. A
@@ -434,18 +440,19 @@ lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2)
     intro hk
     rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk
     have := endpoint_rev_eq_attachment hv hk
-    rw [Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).2] at this
+    rw [Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).property] at this
     have h := valence_contractTail hv u huv
     rw [ite_eq_left this.symm, hu', hu] at h
     omega
   have := congrArg (Sym2.map Subtype.val) ((G.contractTail hv).sym2_bridgeNeighbor_eq hu'
     (h := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
-      (G.halfEdgeOfValenceEqTwo hu 0).1.2))
+      (G.halfEdgeOfValenceEqTwo hu 0).val.2))
     (h' := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
-      (G.halfEdgeOfValenceEqTwo hu 1).1.2))
-    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
+      (G.halfEdgeOfValenceEqTwo hu 1).val.2))
+    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).property) (Subtype.ext
+        (G.halfEdgeOfValenceEqTwo hu 1).property)
     fun h ↦ halfEdgeOfValenceEqTwo_zero_ne_one hu
-      (Prod.ext (congrArg (fun x ↦ x.1.1) h) (congrArg (fun x ↦ x.2) h)))
+      (Prod.ext (congrArg (fun x ↦ x.1.val) h) (congrArg (fun x ↦ x.2) h)))
   rw [Sym2.map_mk, Sym2.map_mk] at this
   rw [this]
   exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
@@ -462,7 +469,7 @@ lemma valence_contractTail_of_attachment_ne {u : G.Vertex} (hu : u ≠ v)
 lemma forall_endpoint_one_ne_contractTail {u : G.Vertex} (hu : u ≠ v)
     (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) :
     ∀ e, (G.contractTail hv).endpoint e 0 = ⟨u, hu⟩ → (G.contractTail hv).endpoint e 1 ≠ ⟨u, hu⟩ :=
-  fun e h₀ h₁ ↦ hloop e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
+  fun e h₀ h₁ ↦ hloop e.val (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
 
 /-- After contracting a tail, an unmarked vertex other than its attachment is still unmarked. -/
 lemma marking_contractTail_ne {u : G.Vertex} (hu : u ≠ v) (hm : ∀ i, G.marking i ≠ u)
@@ -531,13 +538,13 @@ private lemma connected_contractBridge {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) (x y : {w // w ≠ v}) :
     let f : Option {e // ∀ i, G.endpoint e i ≠ v} → Fin 2 → {w // w ≠ v} := fun e ↦
       e.elim (fun k ↦ ⟨G.bridgeNeighbor hv k, bridgeNeighbor_ne hv hloop k⟩)
-        fun e i ↦ ⟨G.endpoint e.1 i, e.2 i⟩
+        fun e i ↦ ⟨G.endpoint e.val i, e.property i⟩
     Relation.ReflTransGen (fun a b ↦ ∃ e, (f e 0 = a ∧ f e 1 = b) ∨ (f e 0 = b ∧ f e 1 = a))
       x y := by
   refine G.connected_of_surjective
     (fun w ↦ if h : w = v then ⟨G.bridgeNeighbor hv 0, bridgeNeighbor_ne hv hloop 0⟩
       else ⟨w, h⟩)
-    (fun w ↦ ⟨w.1, by simp [w.2]⟩) (fun e ↦ ?_) x y
+    (fun w ↦ ⟨w.val, by simp [w.property]⟩) (fun e ↦ ?_) x y
   by_cases he : ∀ i, G.endpoint e i ≠ v
   · exact .inr ⟨some ⟨e, he⟩, .inl ⟨by simp [he 0], by simp [he 1]⟩⟩
   · -- The edge `e` is one of the two edges at `v`.
@@ -562,7 +569,7 @@ noncomputable abbrev contractBridge {v : G.Vertex} (hv : G.valence v = 2)
   vertexNonempty := ⟨⟨G.bridgeNeighbor hv 0, bridgeNeighbor_ne hv hloop 0⟩⟩
   Edge := Option {e // ∀ i, G.endpoint e i ≠ v}
   endpoint e := e.elim (fun k ↦ ⟨G.bridgeNeighbor hv k, bridgeNeighbor_ne hv hloop k⟩)
-    fun e i ↦ ⟨G.endpoint e.1 i, e.2 i⟩
+    fun e i ↦ ⟨G.endpoint e.val i, e.property i⟩
   genus w := G.genus w
   marking i := ⟨G.marking i, hm i⟩
   connected := by exact G.connected_contractBridge hv hloop
@@ -581,12 +588,12 @@ lemma endpoint_contractBridge_none (k : Fin 2) :
 
 @[simp]
 lemma endpoint_contractBridge_some (e : {e // ∀ i, G.endpoint e i ≠ v}) (i : Fin 2) :
-    (G.contractBridge hv hloop hm).endpoint (some e) i = ⟨G.endpoint e.1 i, e.2 i⟩ :=
+    (G.contractBridge hv hloop hm).endpoint (some e) i = ⟨G.endpoint e.val i, e.property i⟩ :=
   rfl
 
 @[simp]
 lemma genus_contractBridge (w : (G.contractBridge hv hloop hm).Vertex) :
-    (G.contractBridge hv hloop hm).genus w = G.genus w.1 :=
+    (G.contractBridge hv hloop hm).genus w = G.genus w.val :=
   rfl
 
 @[simp]
@@ -601,13 +608,13 @@ lemma card_vertex_contractBridge :
 
 /-- A sum over the vertices of the contracted graph is the sum over the vertices other than `v`. -/
 lemma sum_vertex_contractBridge {M : Type*} [AddCommMonoid M] (f : G.Vertex → M) :
-    ∑ w : (G.contractBridge hv hloop hm).Vertex, f w.1 = ∑ w : {w // w ≠ v}, f w :=
+    ∑ w : (G.contractBridge hv hloop hm).Vertex, f w.val = ∑ w : {w // w ≠ v}, f w :=
   rfl
 
 /-- The edges meeting a vertex of valence two are the edges of its two half-edges. -/
 private lemma filter_endpoint_eq_of_valence_eq_two :
     (univ.filter fun e : G.Edge ↦ ∃ j, G.endpoint e j = v) =
-      {(G.halfEdgeOfValenceEqTwo hv 0).1.1, (G.halfEdgeOfValenceEqTwo hv 1).1.1} := by
+      {(G.halfEdgeOfValenceEqTwo hv 0).val.1, (G.halfEdgeOfValenceEqTwo hv 1).val.1} := by
   ext e
   simp only [mem_filter, mem_univ, true_and, mem_insert, mem_singleton]
   constructor
@@ -617,7 +624,8 @@ private lemma filter_endpoint_eq_of_valence_eq_two :
     · exact .inl (congrArg Prod.fst hk).symm
     · exact .inr (congrArg Prod.fst hk).symm
   · rintro (rfl | rfl)
-    exacts [⟨_, (G.halfEdgeOfValenceEqTwo hv 0).2⟩, ⟨_, (G.halfEdgeOfValenceEqTwo hv 1).2⟩]
+    exacts [⟨_, (G.halfEdgeOfValenceEqTwo hv 0).property⟩, ⟨_,
+        (G.halfEdgeOfValenceEqTwo hv 1).property⟩]
 
 /-- Contracting a bridge replaces its two edges by one. -/
 lemma card_edge_contractBridge :
@@ -652,8 +660,8 @@ theorem valence_contractBridge (u : G.Vertex) (hu : u ≠ v) :
     (G.contractBridge hv hloop hm).valence ⟨u, hu⟩ = G.valence u := by
   rw [G.valence_eq_sum_add_sum v u, filter_endpoint_eq_of_valence_eq_two hv,
     sum_pair (halfEdgeOfValenceEqTwo_fst_ne hv hloop),
-    card_endpoint_eq_of_endpoint_eq hu (G.halfEdgeOfValenceEqTwo hv 0).2,
-    card_endpoint_eq_of_endpoint_eq hu (G.halfEdgeOfValenceEqTwo hv 1).2, valence_eq_sum,
+    card_endpoint_eq_of_endpoint_eq hu (G.halfEdgeOfValenceEqTwo hv 0).property,
+    card_endpoint_eq_of_endpoint_eq hu (G.halfEdgeOfValenceEqTwo hv 1).property, valence_eq_sum,
     Fintype.sum_option]
   simp [bridgeNeighbor, card_filter, Fin.sum_univ_two, -sum_boole]
   omega
@@ -682,7 +690,7 @@ lemma forall_endpoint_one_ne_contractBridge {u : G.Vertex} (hu : u ≠ v)
   · fin_cases k
     · exact hk (congrArg Subtype.val h₀)
     · exact hk (congrArg Subtype.val h₁)
-  · exact hloopu e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
+  · exact hloopu e.val (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
 
 /-- After contracting a bridge, an unmarked vertex is still unmarked. -/
 lemma marking_contractBridge_ne {u : G.Vertex} (hu : u ≠ v) (hmu : ∀ i, G.marking i ≠ u)
@@ -699,7 +707,7 @@ lemma map_val_ends_contractBridge_none :
 /-- Contracting a bridge does not change the ends of the old edges away from it. -/
 @[simp]
 lemma map_val_ends_contractBridge_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
-    ((G.contractBridge hv hloop hm).ends (some e)).map Subtype.val = G.ends e.1 := by
+    ((G.contractBridge hv hloop hm).ends (some e)).map Subtype.val = G.ends e.val := by
   simp [ends_def]
 
 /-- After contracting a bridge `v`, a vertex of valence one whose node avoids `v` keeps its
@@ -722,10 +730,11 @@ lemma sym2_coe_bridgeNeighbor_contractBridge {u : G.Vertex} (hu : G.valence u = 
       s(G.bridgeNeighbor hu 0, G.bridgeNeighbor hu 1) := by
   have := congrArg (Sym2.map Subtype.val) ((G.contractBridge hv hloop hm).sym2_bridgeNeighbor_eq
     hu' (h := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
-      (G.halfEdgeOfValenceEqTwo hu 0).1.2))
+      (G.halfEdgeOfValenceEqTwo hu 0).val.2))
     (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
-      (G.halfEdgeOfValenceEqTwo hu 1).1.2))
-    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
+      (G.halfEdgeOfValenceEqTwo hu 1).val.2))
+    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).property) (Subtype.ext
+        (G.halfEdgeOfValenceEqTwo hu 1).property)
     fun h ↦ halfEdgeOfValenceEqTwo_zero_ne_one hu (Prod.ext
       (congrArg Subtype.val (Option.some.inj (congrArg Prod.fst h))) (congrArg (fun x ↦ x.2) h)))
   rw [Sym2.map_mk, Sym2.map_mk] at this
@@ -745,8 +754,8 @@ lemma sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq {u : G.Vertex}
   have := congrArg (Sym2.map Subtype.val) ((G.contractBridge hv hloop hm).sym2_bridgeNeighbor_eq
     hval (h := (none, k))
     (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu hne.symm hl⟩,
-      (G.halfEdgeOfValenceEqTwo hu l.rev).1.2))
-    (Subtype.ext hk) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu l.rev).2) (by simp))
+      (G.halfEdgeOfValenceEqTwo hu l.rev).val.2))
+    (Subtype.ext hk) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu l.rev).property) (by simp))
   rw [Sym2.map_mk, Sym2.map_mk] at this
   rw [this]
   exact congrArg (fun b ↦ s(G.bridgeNeighbor hv k.rev, b))
@@ -840,13 +849,13 @@ inductive LabelledStabilizationStep :
   | contractTail {G : DualGraph.{u} ι} (c : G.Vertex → α) {v : G.Vertex}
       (hv : G.IsRationalTail v) (hm : G.numMarkings v ≤ 1) (hc : P (c v)) :
       LabelledStabilizationStep ⟨G, c⟩
-        ⟨G.contractTail (G.isRationalTail_iff.mp hv).2, fun w ↦ c w.1⟩
+        ⟨G.contractTail (G.isRationalTail_iff.mp hv).2, fun w ↦ c w.val⟩
   /-- Contract an unmarked rational bridge whose label satisfies `P`. -/
   | contractBridge {G : DualGraph.{u} ι} (c : G.Vertex → α) {v : G.Vertex}
       (hv : G.IsRationalBridge v) (hm : ∀ i, G.marking i ≠ v) (hc : P (c v)) :
       LabelledStabilizationStep ⟨G, c⟩
         ⟨G.contractBridge (G.isRationalBridge_iff.mp hv).2.1 (G.isRationalBridge_iff.mp hv).2.2 hm,
-          fun w ↦ c w.1⟩
+          fun w ↦ c w.val⟩
 
 variable {P} {x y : Σ G : DualGraph.{u} ι, G.Vertex → α}
 

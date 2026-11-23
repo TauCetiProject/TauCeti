@@ -114,12 +114,12 @@ private theorem linearIndependent_algebraMap_ite_of_ord_neg [DecidableEq (Place 
     LinearIndependent F₁ fun P : S ↦
       algebraMap F₂ F (if (P : Place k F) = P₀ then 1 else w ((P : Place k F).restrict k F₂)) := by
   refine Place.linearIndependent_of_ord_neg_of_restrict_eq (P := Subtype.val)
-    (fun P ↦ (hS P).mp P.2) (i₀ := ⟨P₀, hP₀⟩) (by simp) (by simp) ?_ ?_
+    (fun P ↦ (hS P).mp P.property) (i₀ := ⟨P₀, hP₀⟩) (by simp) (by simp) ?_ ?_
   · intro P hP
     have hP' : (P : Place k F) ≠ P₀ := fun h ↦ hP (Subtype.ext h)
     simp only [hP', ↓reduceIte]
     rw [Place.ord_algebraMap_restrict k F₂]
-    have hpole := hwpole _ (hdeg P ((hS P).mp P.2))
+    have hpole := hwpole _ (hdeg P ((hS P).mp P.property))
     have he : (0 : ℤ) < Place.ramificationIdx F₂ (P : Place k F) := by
       exact_mod_cast Place.ramificationIdx_pos F₂ _
     exact mul_neg_of_pos_of_neg he hpole
@@ -129,15 +129,15 @@ private theorem linearIndependent_algebraMap_ite_of_ord_neg [DecidableEq (Place 
     simp only [h', ↓reduceIte]
     rw [Place.ord_algebraMap_restrict k F₂]
     have hQQ' : (P : Place k F).restrict k F₂ ≠ (P' : Place k F).restrict k F₂ := fun h ↦
-      hPP' (Subtype.ext (hinj ((hS _).mp P.2) ((hS _).mp P'.2) h))
+      hPP' (Subtype.ext (hinj ((hS _).mp P.property) ((hS _).mp P'.property) h))
     have hord :
         0 ≤ ((P : Place k F).restrict k F₂).ord (w ((P' : Place k F).restrict k F₂)) := by
       rcases eq_or_ne (w ((P' : Place k F).restrict k F₂)) 0 with h0 | h0
       · rw [h0, Place.ord_zero]
       have := (mem_riemannRochSpace_iff_neg_le_ord h0).mp
-        (hwL _ (hdeg P' ((hS P').mp P'.2))) ((P : Place k F).restrict k F₂)
+        (hwL _ (hdeg P' ((hS P').mp P'.property))) ((P : Place k F).restrict k F₂)
       rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hQQ',
-        hBQ _ (hdisj P ((hS P).mp P.2))] at this
+        hBQ _ (hdisj P ((hS P).mp P.property))] at this
       omega
     positivity
 
@@ -194,9 +194,9 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
       exact one_mem_riemannRochSpace_iff.mpr
         (add_nonneg hB0 (Finset.sum_nonneg fun Q _ ↦ WeilDivisor.ofPoint_nonneg _))
     · simp only [u, hP, ↓reduceIte]
-      refine riemannRochSpace_mono (add_le_add le_rfl ?_) (hwL _ (hdeg P ((hS P).mp P.2)))
+      refine riemannRochSpace_mono (add_le_add le_rfl ?_) (hwL _ (hdeg P ((hS P).mp P.property)))
       exact Finset.single_le_sum (f := fun P : Place k F ↦ WeilDivisor.ofPoint (P.restrict k F₂))
-        (fun _ _ ↦ WeilDivisor.ofPoint_nonneg _) (Finset.mem_erase.mpr ⟨hP, P.2⟩)
+        (fun _ _ ↦ WeilDivisor.ofPoint_nonneg _) (Finset.mem_erase.mpr ⟨hP, P.property⟩)
   have hdegA : Divisor.degree A = genus k F₂ + (Module.finrank F₁ F - 1 : ℕ) := by
     rw [hAdef, Divisor.degree_add, hBdeg, map_sum, Finset.sum_congr rfl fun P hP ↦ by
       rw [Divisor.degree_ofPoint, hdeg P ((hS P).mp (Finset.mem_of_mem_erase hP))],
@@ -521,7 +521,7 @@ private theorem genus_le_of_isSeparable (hF : IsFunctionField k F) (hex : IsInte
     rw [IntermediateField.span_range_eq_top_of_adjoin_range_eq_top htop]
     exact Submodule.mem_top
   obtain ⟨n, c, z', hyz'⟩ := Submodule.mem_span_set'.mp hspan
-  choose z hz using fun i ↦ (z' i).2
+  choose z hz using fun i ↦ (z' i).property
   have hyz : y = ∑ i, algebraMap F₁ F (c i) * algebraMap F₂ F (z i) := by
     rw [← hyz']
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hz, Algebra.smul_def]

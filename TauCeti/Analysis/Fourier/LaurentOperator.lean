@@ -78,7 +78,7 @@ theorem inner_fourierBasis_multiplicationOperator_fourierLp (b : Lp ℂ 2 (haarA
     (m n : ℤ) :
     ⟪fourierBasis (T := T) m, Lp.multiplicationOperator (fourierLp (T := T) ∞ n) b⟫_ℂ =
       fourierCoeff b (m - n) := by
-  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply,
+  rw [inner_fourierBasis_left, Lp.multiplicationOperator_apply,
     fourierCoeff_fourierLp_smul]
 
 /-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`, sends
@@ -87,7 +87,7 @@ theorem apply_fourierBasis_of_commute
     {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))}
     (hW : Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1))) (n : ℤ) :
     W (fourierBasis n) = fourierLp (T := T) ∞ n • W (fourierBasis 0) := by
-  set U := Lp.multiplicationOperator (E := ℂ) (fourierLp (T := T) ∞ 1)
+  set U := Lp.multiplicationOperator (E := ℂ) (p := 2) (fourierLp (T := T) ∞ 1)
   have hU (f : Lp ℂ 2 (haarAddCircle (T := T))) : U f = fourierLp (T := T) ∞ 1 • f :=
     Lp.multiplicationOperator_apply _ f
   have hU_inj : Function.Injective U :=

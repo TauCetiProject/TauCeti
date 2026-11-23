@@ -50,19 +50,20 @@ theorem Module.equiv_pi_prod_pi_quotient_span_pow (R : Type u) (M : Type v) [Com
     exact Ideal.span_singleton_eq_span_singleton.mpr
       ((IsDiscreteValuationRing.associated_of_irreducible (R := R) (hq i) hϖ).pow_pow)
   -- The summands with exponent `0` are trivial.
-  have _ : ∀ i : {i : ι // ¬0 < e i}, Unique (R ⧸ R ∙ ϖ ^ e i.1) := fun i ↦
+  have _ : ∀ i : {i : ι // ¬0 < e i}, Unique (R ⧸ R ∙ ϖ ^ e i.val) := fun i ↦
     @Unique.mk' _ ⟨0⟩ (Submodule.Quotient.subsingleton_iff.mpr (by
-      rw [Nat.eq_zero_of_not_pos i.2, pow_zero, Ideal.submodule_span_eq, Ideal.span_singleton_one]))
+      rw [Nat.eq_zero_of_not_pos i.property, pow_zero, Ideal.submodule_span_eq,
+          Ideal.span_singleton_one]))
   let s := {i : ι // 0 < e i}
   let g : (DirectSum ι fun i ↦ R ⧸ R ∙ q i ^ e i) ≃ₗ[R]
-      ((j : Fin (Fintype.card s)) → R ⧸ R ∙ ϖ ^ e ((Fintype.equivFin s).symm j).1) :=
+      ((j : Fin (Fintype.card s)) → R ⧸ R ∙ ϖ ^ e ((Fintype.equivFin s).symm j).val) :=
     (DirectSum.linearEquivFunOnFintype R ι fun i ↦ R ⧸ R ∙ q i ^ e i).trans <|
       (LinearEquiv.piCongrRight fun i ↦ Submodule.quotEquivOfEq _ _ (hspan i)).trans <|
         (LinearEquiv.piEquivPiSubtypeProd R (fun i ↦ 0 < e i) fun i ↦ R ⧸ R ∙ ϖ ^ e i).trans <|
-          LinearEquiv.prodUnique.trans (LinearEquiv.piCongrLeft R (fun i : s ↦ R ⧸ R ∙ ϖ ^ e i.1)
+          LinearEquiv.prodUnique.trans (LinearEquiv.piCongrLeft R (fun i : s ↦ R ⧸ R ∙ ϖ ^ e i.val)
             (Fintype.equivFin s).symm).symm
-  exact ⟨n, Fintype.card s, fun j ↦ e ((Fintype.equivFin s).symm j).1,
-    fun j ↦ ((Fintype.equivFin s).symm j).2,
+  exact ⟨n, Fintype.card s, fun j ↦ e ((Fintype.equivFin s).symm j).val,
+    fun j ↦ ((Fintype.equivFin s).symm j).property,
     ⟨f.trans ((Finsupp.linearEquivFunOnFinite R R (Fin n)).prodCongr g)⟩⟩
 
 end TauCeti

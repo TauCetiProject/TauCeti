@@ -68,7 +68,11 @@ bounded derivatives `Δu(t, ·)` is the Cauchy potential of `Δg`. If `g` is mor
 * `HolderWith.heatCauchyPotential`: the spatial Hölder estimate of each time slice.
 * `TauCeti.norm_heatCauchyPotential_sub_heatCauchyPotential_le`: the temporal Hölder estimate.
 * `TauCeti.norm_heatCauchyPotential_sub_le`: the rate of attainment of the initial datum.
-* `TauCeti.heatCauchyPotential_add`, `TauCeti.heatCauchyPotential_smul`: linearity in the datum.
+* `TauCeti.norm_heatCauchyPotential_sub_heatCauchyPotential_le_of_holderWith_fderiv`: the temporal
+  `(1 + α)/2`-Hölder estimate for data with an `α`-Hölder derivative.
+* `TauCeti.heatCauchyPotential_add`, `TauCeti.heatCauchyPotential_smul`: linearity in the datum,
+  and `TauCeti.heatCauchyPotential_comp_continuousLinearEquiv`: equivariance under continuous
+  linear equivalences of the values.
 * `TauCeti.continuous_heatCauchyPotential`: joint continuity in time and space for bounded
   continuous data.
 * `TauCeti.hasFDerivAt_heatCauchyPotential`, `TauCeti.fderiv_heatCauchyPotential`: the spatial
@@ -147,7 +151,7 @@ theorem heatCauchyPotential_eq_convolution (g : E → F) {t : ℝ} (ht : 0 < t) 
     (fun y => heatKernel 1 y • g (x - √t • y)) hst.le
   simp only [smul_inv_smul₀ hst.ne'] at hsub
   simp_rw [convolution_def, ContinuousLinearMap.lsmul_apply,
-    heatKernel_eq_mul_heatKernel_one_smul ht, mul_smul]
+    heatKernel_eq_mul_heatKernel_one_smul ht.le, mul_smul]
   rw [integral_smul, hsub, smul_smul, ← mul_pow, inv_mul_cancel₀ hst.ne', one_pow, one_smul,
     heatCauchyPotential_def]
 
@@ -339,6 +343,15 @@ theorem heatCauchyPotential_smul (c : ℝ) (g : E → F) (t : ℝ) (x : E) :
   simp only [heatCauchyPotential_def, Pi.smul_apply, smul_comm (heatKernel 1 _) c]
   exact integral_smul c _
 
+/-- The Cauchy heat potential commutes with continuous linear equivalences of the values:
+`L ∘ g` has Cauchy potential `L u`. No integrability is needed: a continuous linear equivalence
+commutes with the Bochner integral. -/
+theorem heatCauchyPotential_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (L : F ≃L[ℝ] G) (g : E → F) (t : ℝ) (x : E) :
+    heatCauchyPotential (L ∘ g) t x = L (heatCauchyPotential g t x) := by
+  simp only [heatCauchyPotential_def, Function.comp_apply, ← map_smul,
+    ContinuousLinearEquiv.integral_comp_comm]
+
 /-- The Cauchy heat potential of a bounded continuous function is jointly continuous in time and
 space, including across `t = 0`. -/
 theorem continuous_heatCauchyPotential (hgc : Continuous g) (hM : ∀ y, ‖g y‖ ≤ M) :
@@ -478,9 +491,8 @@ theorem exists_norm_laplacian_heatCauchyPotential_le :
   have hexp : ((α : ℝ) - (2 : ℕ)) / 2 = α / 2 - 1 := by push_cast; ring
   rw [hexp] at h3
   rw [heatCauchyPotential_eq_convolution_fun g ht]
-  refine (norm_laplacian_le _ x).trans ?_
-  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  calc n * ‖iteratedFDeriv ℝ (1 + 1) (heatKernel t ⋆ g) x‖ ≤
+  refine (norm_laplacian_le_norm_iteratedFDeriv_two _ x).trans ?_
+  calc n * ‖iteratedFDeriv ℝ 2 (heatKernel t ⋆ g) x‖ ≤
         n * (H * (C₂ * t ^ ((α : ℝ) / 2 - 1))) :=
         mul_le_mul_of_nonneg_left (h2.trans h3) hn
     _ = n * C₂ * H * t ^ ((α : ℝ) / 2 - 1) := by ring
@@ -552,5 +564,69 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
         gcongr
         nlinarith
       _ = _ := by ring
+
+/-! ### The temporal Hölder estimate for data with a Hölder derivative -/
+
+/-- **The temporal Hölder estimate of the Cauchy heat potential of `C^{1,α}` data.** If `g` is
+bounded and differentiable with an `α`-Hölder derivative of constant `H`, and `α ≤ 1`, its Cauchy
+potential `u` satisfies `‖u(t, x) - u(s, x)‖ ≤ H M_{1+α} |t - s|^((1 + α)/2)`, where
+`M_{1+α} = ∫ ‖y‖^(1+α) K_1(y) dy` is `TauCeti.heatKernelMoment`. The linear part of the increment
+of `g` integrates to zero against the even kernel `K_1`, which is what gains the exponent
+`(1 + α)/2` over the `α/2` of `TauCeti.norm_heatCauchyPotential_sub_heatCauchyPotential_le`. -/
+theorem norm_heatCauchyPotential_sub_heatCauchyPotential_le_of_holderWith_fderiv
+    {g' : E → E →L[ℝ] F} (hg : ∀ y, HasFDerivAt g (g' y) y) (hg' : HolderWith H α g')
+    (hα : α ≤ 1) (hM : ∀ y, ‖g y‖ ≤ M) (t s : ℝ) (x : E) :
+    ‖heatCauchyPotential g t x - heatCauchyPotential g s x‖ ≤
+      H * heatKernelMoment E (1 + α) * |t - s| ^ ((1 + (α : ℝ)) / 2) := by
+  have hgc : Continuous g := continuous_iff_continuousAt.2 fun y ↦ (hg y).continuousAt
+  set a := √t
+  set b := √s
+  -- The linear part `(b - a) g'(x) y` of `g (x - a y) - g (x - b y)` integrates to zero.
+  set L : E →L[ℝ] F := (b - a) • g' x
+  have hw := integrable_norm_rpow_mul_heatKernel (E := E) one_pos
+    (by positivity : (0 : ℝ) ≤ 1 + α)
+  -- The remainder is bounded by the linearization error at `x`, both points lying within
+  -- `max a b ‖y‖` of `x`.
+  have hpt : ∀ y, ‖g (x - a • y) - g (x - b • y) - L y‖ ≤
+      H * |a - b| * max a b ^ (α : ℝ) * ‖y‖ ^ ((1 : ℝ) + α) := by
+    intro y
+    have hR : ∀ c, 0 ≤ c → c ≤ max a b → ‖(x - c • y) - x‖ ≤ max a b * ‖y‖ := fun c hc hcm ↦ by
+      rw [sub_sub_cancel_left, norm_neg, norm_smul, norm_of_nonneg hc]
+      gcongr
+    have key := norm_sub_sub_le_of_holderOnWith (fun z _ ↦ (hg z).hasFDerivWithinAt)
+      (hg'.holderOnWith _) (hR a (sqrt_nonneg _) (le_max_left _ _))
+      (hR b (sqrt_nonneg _) (le_max_right _ _))
+    rw [sub_sub_sub_cancel_left, ← sub_smul, map_smul, norm_smul, norm_eq_abs,
+      abs_sub_comm] at key
+    simp only [L, smul_apply]
+    refine key.trans_eq ?_
+    rw [mul_rpow (by positivity) (norm_nonneg _), rpow_one_add' (norm_nonneg _) (by positivity)]
+    ring
+  have hint₁ := integrable_heatKernel_one_smul_sub_smul_of_norm_le hgc hM x a
+  have hint₂ := integrable_heatKernel_one_smul_sub_smul_of_norm_le hgc hM x b
+  have hdiff : heatCauchyPotential g t x - heatCauchyPotential g s x =
+      ∫ y, heatKernel 1 y • (g (x - a • y) - g (x - b • y) - L y) := by
+    have h12 : Integrable fun y ↦ heatKernel 1 y • g (x - a • y) - heatKernel 1 y • g (x - b • y) :=
+      hint₁.sub hint₂
+    simp_rw [smul_sub]
+    rw [integral_sub h12 (integrable_heatKernel_smul_apply one_pos L), integral_sub hint₁ hint₂,
+      integral_heatKernel_smul_apply_eq_zero,
+      sub_zero, heatCauchyPotential_def, heatCauchyPotential_def]
+  rw [hdiff]
+  calc ‖∫ y, heatKernel 1 y • (g (x - a • y) - g (x - b • y) - L y)‖
+      ≤ ∫ y, (H * |a - b| * max a b ^ (α : ℝ)) * (‖y‖ ^ ((1 : ℝ) + α) * heatKernel 1 y) := by
+        refine norm_integral_le_of_norm_le (hw.const_mul _) (ae_of_all _ fun y ↦ ?_)
+        rw [norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le]
+        calc heatKernel 1 y * ‖g (x - a • y) - g (x - b • y) - L y‖
+            ≤ heatKernel 1 y * (H * |a - b| * max a b ^ (α : ℝ) * ‖y‖ ^ ((1 : ℝ) + α)) :=
+              mul_le_mul_of_nonneg_left (hpt y) (heatKernel_pos one_pos y).le
+          _ = _ := by ring
+    _ = H * heatKernelMoment E (1 + α) * (|a - b| * max a b ^ (α : ℝ)) := by
+        rw [integral_const_mul, coe_heatKernelMoment]
+        push_cast
+        ring
+    _ ≤ H * heatKernelMoment E (1 + α) * |t - s| ^ ((1 + (α : ℝ)) / 2) := by
+        gcongr
+        exact abs_sqrt_sub_sqrt_mul_max_rpow_le t s α.coe_nonneg (by exact_mod_cast hα)
 
 end TauCeti

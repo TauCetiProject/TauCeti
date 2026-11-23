@@ -66,7 +66,7 @@ representatives `g = q.out` of the right cosets `q = S g`. -/
 theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{max w u v} k G)
     (f : coind S.subtype (res S.subtype A)) :
     ((coindResAdjunction.{w, u, v} k S).counit.app A).hom f =
-      ∑ q : Quotient (QuotientGroup.rightRel S), A.ρ (q.out)⁻¹ (f.1 q.out) := by
+      ∑ q : Quotient (QuotientGroup.rightRel S), A.ρ (q.out)⁻¹ (f.val q.out) := by
   -- The trace evaluated on a class `⟦g ⊗ b⟧` is `g⁻¹ • b`.
   have hcounit (g : G) (b : A) : ((indResAdjunction k S.subtype).counit.app A).hom
       (Representation.IndV.mk S.subtype (res S.subtype A).ρ g b) = A.ρ g⁻¹ b := by
@@ -110,7 +110,7 @@ on its right coset, with value `a` at `g`. -/
 -- Keep the auxiliary-function equation for explicit rewriting: it exposes a decidability instance.
 theorem indToCoind_mk {k : Type u} {G : Type v} [CommRing k] [Group G] {S : Subgroup G}
     [DecidableRel (QuotientGroup.rightRel S)] {A : _root_.Rep.{w} k S} (g : G) (a : A) :
-    (indToCoind A (Representation.IndV.mk S.subtype A.ρ g a)).1 = indToCoindAux A g a := by
+    (indToCoind A (Representation.IndV.mk S.subtype A.ρ g a)).val = indToCoindAux A g a := by
   simpa [indToCoind, Representation.IndV.mk] using
     (LinearMap.codRestrict_apply (Representation.coindV S.subtype A.ρ)
       (indToCoindAux A g) (h := fun _ _ _ ↦ by simp) a)
@@ -147,7 +147,7 @@ theorem resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app
   have hcounit (g : G) (b : A) : ((indResAdjunction k S.subtype).counit.app A).hom
       (Representation.IndV.mk S.subtype (res S.subtype A).ρ g b) = A.ρ g⁻¹ b := by
     simp [indResAdjunction, indResHomEquiv]
-  have hunit (g : G) : (((resCoindAdjunction k S.subtype).unit.app A).hom a).1 g = A.ρ g a := rfl
+  have hunit (g : G) : (((resCoindAdjunction k S.subtype).unit.app A).hom a).val g = A.ρ g a := rfl
   rw [h, coindToInd_apply, map_sum]
   refine (Finset.sum_congr rfl (g := fun _ => a) fun q _ => ?_).trans ?_
   · induction q using Quotient.inductionOn with

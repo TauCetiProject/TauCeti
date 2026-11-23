@@ -7,9 +7,12 @@ module
 
 public import Mathlib.CategoryTheory.Action.Limits
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Simple
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
+public import TauCeti.RepresentationTheory.Character.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.FDRep.Invariants
 public import TauCeti.RepresentationTheory.FDRep.Pivotal
+public import TauCeti.RepresentationTheory.Simple.Basic
 
 /-!
 # Frobenius–Schur indicators in `FDRep k G`
@@ -40,6 +43,9 @@ has `dim_k Hom(𝟙_, V ⊗ V) = 1` and identity rotation, so its categorical in
   V.character (g ^ (n : ℕ))` for `[Invertible (Nat.card G : k)]` (and
   `FDRep.frobeniusSchurIndicator_fdRep_of_charZero` without an explicit invertibility hypothesis in
   characteristic zero).
+* `FDRep.frobeniusSchurIndicator_fdRep_eq_zero_iff_of_coprime`: for a simple `V` and `n` coprime
+  to `|G|`, the categorical `n`-th indicator is `0` exactly when the character of `V` is
+  nontrivial.
 * `FDRep.frobeniusSchurIndicator_fdRep_two`, `Representation.frobeniusSchurIndicator_fdRepOf_two`,
   and `Representation.frobeniusSchurIndicator_fdRep_ofShrink_two`: agreement of the categorical
   `n = 2` indicator with `FDRep.frobeniusSchurIndicator` and
@@ -92,6 +98,27 @@ theorem frobeniusSchurIndicator_fdRep_of_charZero [CharZero k] (V : FDRep k G) (
   exact frobeniusSchurIndicator_fdRep V n
 
 end Indicator
+
+section Coprime
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Invertible (Nat.card G : k)]
+
+/-- **The categorical `n`-th Frobenius-Schur indicator of a simple object of `FDRep k G`, for `n`
+coprime to `|G|`, is `0` exactly when its character is nontrivial.** For a group of odd order this
+applies to the second indicator (`n = 2`, via `Odd.coprime_two_right`); for instance, each of the
+two nontrivial one-dimensional representations of `C₃` has categorical second indicator `0`. -/
+theorem frobeniusSchurIndicator_fdRep_eq_zero_iff_of_coprime (V : FDRep k G)
+    [CategoryTheory.Simple V] {n : ℕ+} (hn : (Nat.card G).Coprime n) :
+    TauCeti.frobeniusSchurIndicator k V n = 0 ↔ V.character ≠ fun _ => 1 := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
+    Invertible.ne_zero (Nat.card G : k) (by rw [h, Nat.cast_zero])
+  let _ : Fintype G := Fintype.ofFinite G
+  have := isIrreducible_of_simple V
+  rw [frobeniusSchurIndicator_fdRep V n]
+  simpa only [character_ρ, funext (character_ρ V)] using
+    Representation.card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime V.ρ hn
+
+end Coprime
 
 section Two
 
