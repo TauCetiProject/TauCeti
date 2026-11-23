@@ -22,10 +22,12 @@ coordinate plane `span(e₁, e₂)` and preserves dimensions and inclusions.
 
 This file proves that `X` has exactly eight `T`-fixed points. A subspace is fixed by `T` exactly
 when it is a coordinate subspace (`TauCeti.mem_fixedPoints_iff_exists_eq_spanIndices`), and
-coordinate subspaces have the dimension and inclusions of their index sets. So the fixed points of
-`X` are the triples of coordinate subspaces whose index sets `(s₁, s₂, s₃)` satisfy `|s₁| = 1`,
-`|s₂| = 2`, `|s₃| = 1`, `s₁ ⊆ {1, 2}`, `s₁ ⊆ s₂` and `s₃ ⊆ s₂`. Writing `ij` for `span(e_i, e_j)`,
-these are the eight flags
+coordinate subspaces have the dimension and inclusions of their index sets. Index sets are subsets
+of `Fin 3`, numbered from `0`: the basis vector `eᵢ` is `EuclideanSpace.basisFun (Fin 3) ℂ (i - 1)`,
+so `span(e₁, e₂)` has index set `{0, 1}`. So the fixed points of `X` are the triples of coordinate
+subspaces whose index sets `(s₁, s₂, s₃)` satisfy `|s₁| = 1`, `|s₂| = 2`, `|s₃| = 1`,
+`s₁ ⊆ {0, 1}`, `s₁ ⊆ s₂` and `s₃ ⊆ s₂`. Writing `ij` for `span(e_i, e_j)`, these are the eight
+flags
 
 | row | `(L₁, P, L)` |
 | --- | --- |
