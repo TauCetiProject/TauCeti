@@ -46,6 +46,10 @@ free modules.
   curried semilinear maps out of two reduced free modules.
 * `ReducedFreeModule.lift_mk`, `ReducedFreeModule.lift_unique`: the universal property of the
   reduced free module.
+* `ReducedFreeModule.span_range_mk`: the point generators span the whole module.
+* `ReducedFreeModule.range_map`: the range of a based map is spanned by the generators of its
+  image. `ReducedFreeModule.map_injective` and `ReducedFreeModule.map_surjective` show that
+  based injections and surjections induce injections and surjections, respectively.
 * `ReducedFreeModule.mapRing_map`, `ReducedFreeModule.mapRing_map₂`: compatibility of `mapRing`
   with based maps and external products.
 * `ReducedFreeModule.map_map₂`, `ReducedFreeModule.map₂_map_left`,
@@ -98,6 +102,16 @@ lemma induction_on {motive : ReducedFreeModule R a → Prop} (v : ReducedFreeMod
   | single x r =>
     have h := smul_mk r x
     rwa [mk, ← Submodule.Quotient.mk_smul, smul_single_one] at h
+
+/-- The point generators span the reduced free module. -/
+lemma span_range_mk : Submodule.span R (Set.range (mk R (a := a))) = ⊤ := by
+  apply top_unique
+  intro v hv
+  clear hv
+  induction v using induction_on with
+  | zero => exact Submodule.zero_mem _
+  | add v w hv hw => exact Submodule.add_mem _ hv hw
+  | smul_mk r x => exact Submodule.smul_mem _ r (Submodule.subset_span ⟨x, rfl⟩)
 
 variable {R}
 
@@ -161,6 +175,28 @@ lemma map_comp (f : α → β) (g : β → γ) (hf : f a = b) (hg : g b = c) :
 lemma map_map (f : α → β) (g : β → γ) (hf : f a = b) (hg : g b = c) (v : ReducedFreeModule R a) :
     map R g hg (map R f hf v) = map R (fun x ↦ g (f x)) (by simp [hf, hg]) v := by
   induction v using induction_on <;> simp_all
+
+/-- The image of an induced map is spanned by the generators of its set-theoretic image. -/
+lemma range_map (f : α → β) (hf : f a = b) :
+    LinearMap.range (map R f hf) = Submodule.span R (mk R '' Set.range f) := by
+  rw [← Submodule.map_top, ← span_range_mk R, Submodule.map_span]
+  simp only [← Set.range_comp', map_mk]
+
+/-- A surjective based map induces a surjective map of reduced free modules. -/
+lemma map_surjective (f : α → β) (hf : f a = b) (hs : Function.Surjective f) :
+    Function.Surjective (map R f hf) := by
+  rw [← LinearMap.range_eq_top, range_map, hs.range_eq, Set.image_univ, span_range_mk]
+
+/-- An injective based map induces an injective map of reduced free modules. -/
+lemma map_injective (f : α → β) (hf : f a = b) (hi : Function.Injective f) :
+    Function.Injective (map R f hf) := by
+  let : Nonempty α := ⟨a⟩
+  have hleft := Function.leftInverse_invFun hi
+  have hb : Function.invFun f b = a := hf ▸ hleft a
+  have hcomp : (map R (Function.invFun f) hb).comp (map R f hf) = LinearMap.id := by
+    ext x
+    simp [hleft x]
+  exact Function.HasLeftInverse.injective ⟨_, fun v ↦ LinearMap.congr_fun hcomp v⟩
 
 section MapRing
 
