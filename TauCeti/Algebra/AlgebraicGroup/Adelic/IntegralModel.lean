@@ -269,14 +269,14 @@ theorem isCompact_subringPoints (M : IntegralModel R K H S) {A : Type w} [CommRi
 
 /-- For `v ∉ S`, `M.localPoints v hv` is the subgroup `𝒢(𝒪_v) ≤ G(K_v)` of `v`-integral points. -/
 noncomputable def localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum R)
-    (hv : v ∉ S) : Subgroup (LocalPoints K H v) :=
+    (hv : v ∉ S) : Subgroup (AdelicPoints.LocalPoints R K H v) :=
   M.subringPoints (v.adicCompletionIntegers K).toSubring fun x ↦
     (v.algebraMap_mem_adicCompletionIntegers_iff (x : K)).mpr (x.property v hv)
 
 /-- `g ∈ M.localPoints v hv` iff `g` evaluates every integral coordinate into `𝒪_v`. -/
 @[simp]
 theorem mem_localPoints_iff (M : IntegralModel R K H S) {v : HeightOneSpectrum R} (hv : v ∉ S)
-    {g : LocalPoints K H v} :
+    {g : AdelicPoints.LocalPoints R K H v} :
     g ∈ M.localPoints v hv ↔
       ∀ m : M.coordinate, g.ofConv (M.embed m) ∈ v.adicCompletionIntegers K :=
   M.mem_subringPoints_iff (v.adicCompletionIntegers K).toSubring _
@@ -284,24 +284,25 @@ theorem mem_localPoints_iff (M : IntegralModel R K H S) {v : HeightOneSpectrum R
 /-- Membership in `M.localPoints v hv` reduces to an `(S.integer K)`-algebra generating family. -/
 theorem mem_localPoints_iff_of_adjoin_eq_top (M : IntegralModel R K H S)
     {v : HeightOneSpectrum R} (hv : v ∉ S) {ι : Type*} {a : ι → M.coordinate}
-    (ha : Algebra.adjoin (S.integer K) (Set.range a) = ⊤) {g : LocalPoints K H v} :
+    (ha : Algebra.adjoin (S.integer K) (Set.range a) = ⊤)
+    {g : AdelicPoints.LocalPoints R K H v} :
     g ∈ M.localPoints v hv ↔ ∀ i, g.ofConv (M.embed (a i)) ∈ v.adicCompletionIntegers K :=
   M.mem_subringPoints_iff_of_adjoin_eq_top (v.adicCompletionIntegers K).toSubring _ ha
 
-/-- `M.localPoints v hv` is an open subgroup of `LocalPoints K H v`. -/
+/-- `M.localPoints v hv` is an open subgroup of `AdelicPoints.LocalPoints R K H v`. -/
 theorem isOpen_localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum R) (hv : v ∉ S) :
-    IsOpen (M.localPoints v hv : Set (LocalPoints K H v)) :=
+    IsOpen (M.localPoints v hv : Set (AdelicPoints.LocalPoints R K H v)) :=
   M.isOpen_subringPoints (v.adicCompletionIntegers K).toSubring _ (Valued.isOpen_valuationSubring _)
 
-/-- `M.localPoints v hv` is closed in `LocalPoints K H v`. -/
+/-- `M.localPoints v hv` is closed in `AdelicPoints.LocalPoints R K H v`. -/
 theorem isClosed_localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum R) (hv : v ∉ S) :
-    IsClosed (M.localPoints v hv : Set (LocalPoints K H v)) :=
+    IsClosed (M.localPoints v hv : Set (AdelicPoints.LocalPoints R K H v)) :=
   Subgroup.isClosed_of_isOpen (M.localPoints v hv) (M.isOpen_localPoints v hv)
 
 /-- When `R ⧸ v.asIdeal` is finite, `M.localPoints v hv` is compact. -/
 theorem isCompact_localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum R)
     [Finite (R ⧸ v.asIdeal)] (hv : v ∉ S) :
-    IsCompact (M.localPoints v hv : Set (LocalPoints K H v)) := by
+    IsCompact (M.localPoints v hv : Set (AdelicPoints.LocalPoints R K H v)) := by
   have hset : ((v.adicCompletionIntegers K).toSubring : Set (v.adicCompletion K)) =
       Set.range ((↑) : v.adicCompletionIntegers K → v.adicCompletion K) := by
     ext x; simp [ValuationSubring.mem_toSubring]
@@ -312,7 +313,7 @@ theorem isCompact_localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum
 open scoped Classical in
 /-- Reference subgroup family across finite places: `M.localPoints v hv` outside `S`, `⊤` on `S`. -/
 noncomputable def level (M : IntegralModel R K H S) (v : HeightOneSpectrum R) :
-    Subgroup (LocalPoints K H v) := if hv : v ∈ S then ⊤ else M.localPoints v hv
+    Subgroup (AdelicPoints.LocalPoints R K H v) := if hv : v ∈ S then ⊤ else M.localPoints v hv
 
 /-- At `v ∈ S`, `M.level v = ⊤`. -/
 @[simp]
@@ -324,34 +325,34 @@ theorem level_of_mem (M : IntegralModel R K H S) {v : HeightOneSpectrum R} (hv :
 theorem level_of_notMem (M : IntegralModel R K H S) {v : HeightOneSpectrum R} (hv : v ∉ S) :
     M.level v = M.localPoints v hv := by simp [level, hv]
 
-/-- Every reference subgroup `M.level v` is open in `LocalPoints K H v`. -/
+/-- Every reference subgroup `M.level v` is open in `AdelicPoints.LocalPoints R K H v`. -/
 theorem isOpen_level (M : IntegralModel R K H S) (v : HeightOneSpectrum R) :
-    IsOpen (M.level v : Set (LocalPoints K H v)) := by
+    IsOpen (M.level v : Set (AdelicPoints.LocalPoints R K H v)) := by
   by_cases hv : v ∈ S <;> simp [hv, M.isOpen_localPoints]
 
-/-- Every reference subgroup `M.level v` is closed in `LocalPoints K H v`. -/
+/-- Every reference subgroup `M.level v` is closed in `AdelicPoints.LocalPoints R K H v`. -/
 theorem isClosed_level (M : IntegralModel R K H S) (v : HeightOneSpectrum R) :
-    IsClosed (M.level v : Set (LocalPoints K H v)) :=
+    IsClosed (M.level v : Set (AdelicPoints.LocalPoints R K H v)) :=
   Subgroup.isClosed_of_isOpen (M.level v) (M.isOpen_level v)
 
-/-- `M.level v` bundled as an `OpenSubgroup` of `LocalPoints K H v`. -/
+/-- `M.level v` bundled as an `OpenSubgroup` of `AdelicPoints.LocalPoints R K H v`. -/
 noncomputable def openLevel (M : IntegralModel R K H S) (v : HeightOneSpectrum R) :
-    OpenSubgroup (LocalPoints K H v) := ⟨M.level v, M.isOpen_level v⟩
+    OpenSubgroup (AdelicPoints.LocalPoints R K H v) := ⟨M.level v, M.isOpen_level v⟩
 
 /-- The underlying `Subgroup` of `M.openLevel v` is `M.level v`. -/
 @[simp]
 theorem coe_openLevel (M : IntegralModel R K H S) (v : HeightOneSpectrum R) :
-    (M.openLevel v : Subgroup (LocalPoints K H v)) = M.level v := (rfl)
+    (M.openLevel v : Subgroup (AdelicPoints.LocalPoints R K H v)) = M.level v := (rfl)
 
 /-- Membership in `M.openLevel v` agrees with membership in `M.level v`. -/
 @[simp]
 theorem mem_openLevel (M : IntegralModel R K H S) (v : HeightOneSpectrum R)
-    {g : LocalPoints K H v} : g ∈ M.openLevel v ↔ g ∈ M.level v := Iff.rfl
+    {g : AdelicPoints.LocalPoints R K H v} : g ∈ M.openLevel v ↔ g ∈ M.level v := Iff.rfl
 
 /-- For `S = ∅` and finite residue fields, `M.localPoints` packages as `CompactOpenSubgroups`. -/
 noncomputable def compactOpenSubgroups (M : IntegralModel R K H (∅ : Set (HeightOneSpectrum R)))
     [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
-    CompactOpenSubgroups (LocalPoints (R := R) K H) where
+    CompactOpenSubgroups (AdelicPoints.LocalPoints R K H) where
   subgroup v := M.openLevel v
   isCompact_subgroup v := by
     rw [← OpenSubgroup.coe_toSubgroup, M.coe_openLevel, M.level_of_notMem (Set.notMem_empty v)]
@@ -383,14 +384,15 @@ theorem globalPoints_mono (M : IntegralModel R K H S) {T₁ T₂ : Set (HeightOn
   (mem_globalPoints_iff M _).mpr fun m ↦
     Set.integer_mono K hT₁₂ ((mem_globalPoints_iff M _).mp hg m)
 
-/-- Local-global characterization: `g ∈ M.globalPoints T hST` iff `LocalPoints.diagonal K H v g ∈
-M.localPoints v` for all `v ∉ T`. -/
+/-- Local-global characterization: `g ∈ M.globalPoints T hST` iff
+`AdelicPoints.localDiagonal R K H v g ∈ M.localPoints v` for all `v ∉ T`. -/
 theorem mem_globalPoints_iff_forall_localPoints (M : IntegralModel R K H S)
     {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) {g : WithConv (H →ₐ[K] K)} :
     g ∈ M.globalPoints T hST ↔ ∀ (v : HeightOneSpectrum R) (hv : v ∉ T),
-      LocalPoints.diagonal K H v g ∈ M.localPoints v (fun hvS ↦ hv (hST hvS)) := by
+      AdelicPoints.localDiagonal R K H v g ∈ M.localPoints v (fun hvS ↦ hv (hST hvS)) := by
   simp only [mem_globalPoints_iff, Set.mem_integer_iff, mem_localPoints_iff,
-    LocalPoints.diagonal_apply_ofConv, HeightOneSpectrum.algebraMap_mem_adicCompletionIntegers_iff]
+    AdelicPoints.localDiagonal_apply_ofConv,
+    HeightOneSpectrum.algebraMap_mem_adicCompletionIntegers_iff]
   exact ⟨fun h v hv m ↦ h m v hv, fun h m v hv ↦ h v hv m⟩
 
 section Enlarge
@@ -579,7 +581,7 @@ private theorem adjoin_gaGenerator_eq_top :
 /-- At `v ∉ S`, `g ∈ (scaledAdditive R K S c).localPoints v hv` iff `c * (gaPointsMulEquiv g).toAdd`
 lies in `v.adicCompletionIntegers K`. -/
 theorem mem_localPoints_scaledAdditive_iff (c : Kˣ) {v : HeightOneSpectrum R} (hv : v ∉ S)
-    {g : LocalPoints K (SymmetricAlgebra K K) v} :
+    {g : AdelicPoints.LocalPoints R K (SymmetricAlgebra K K) v} :
     g ∈ (scaledAdditive R K S c).localPoints v hv ↔
       algebraMap K (v.adicCompletion K) (c : K) *
         Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv g) ∈ v.adicCompletionIntegers K := by
@@ -590,7 +592,7 @@ theorem mem_localPoints_scaledAdditive_iff (c : Kˣ) {v : HeightOneSpectrum R} (
 
 /-- At `v ∉ S`, `g ∈ (additive R K S).localPoints v hv` iff its additive parameter lies in `𝒪_v`. -/
 theorem mem_localPoints_additive_iff {v : HeightOneSpectrum R} (hv : v ∉ S)
-    {g : LocalPoints K (SymmetricAlgebra K K) v} :
+    {g : AdelicPoints.LocalPoints R K (SymmetricAlgebra K K) v} :
     g ∈ (additive R K S).localPoints v hv ↔
       Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv g) ∈ v.adicCompletionIntegers K := by
   rw [(additive R K S).mem_localPoints_iff_of_adjoin_eq_top hv adjoin_gaGenerator_eq_top,

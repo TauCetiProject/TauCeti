@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.Normed
+public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Holder.JetBounds
@@ -24,6 +24,9 @@ for every `j`, each `u ∈ W^{j+1,p}(Ω)` agrees almost everywhere on `Ω` with 
 bounds linear in the norm of `u`. No boundedness or boundary regularity of `Ω` is assumed beyond
 the existence of the embeddings; the Lipschitz-domain case is
 `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_image`.
+On the whole space the representative lies in the Banach space `C_b^{j,α}(F)` of
+`TauCeti.CkHolderSpace`, and depends linearly and boundedly on `u`
+(`TauCeti.Wkp.toCkHolderSpaceL`).
 
 ## Method
 
@@ -38,6 +41,9 @@ therefore its classical derivative.
 
 * `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL`: Hölder
   bounds for all derivatives of a representative, from Hölder representatives at every order.
+* `TauCeti.Wkp.toCkHolderSpaceL`: on the whole space, the resulting embedding
+  `W^{j+1,p}(F) → C_b^{j,α}(F)` as a continuous linear map, characterised by
+  `TauCeti.Wkp.toCkHolderSpaceL_eq_iff`.
 
 ## References
 
@@ -182,6 +188,96 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL {Ω
           push_cast
           gcongr
           exact le_max_right _ _
+
+section WholeSpace
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α : ℝ≥0} (hα : 0 < α)
+  (hM : ∀ k : ℕ, ∃ T : Wkp volume (⊤ : Opens F) p (k + 1) →L[ℝ]
+      HolderSpace α (closure ((⊤ : Opens F) : Set F)) ℝ,
+    ∀ u, ∀ᵐ x ∂volume, ∀ hx : x ∈ (⊤ : Opens F), T u ⟨x, subset_closure hx⟩ = value (k + 1) u x)
+include hα hM
+
+/-- On the whole space, the representative of
+`exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL` lies in `C_b^{j,α}(F)`,
+with norm at most `(j + 2) K ‖u‖`. -/
+private theorem exists_ckHolderSpace (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ u : Wkp volume (⊤ : Opens F) p (j + 1), ∃ f : CkHolderSpace j α F ℝ,
+      (value (j + 1) u : F → ℝ) =ᵐ[volume] f ∧ ‖f‖ ≤ (j + 2) * K * ‖u‖ := by
+  obtain ⟨K, hK⟩ := exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL hα hM j
+  refine ⟨K, fun u ↦ ?_⟩
+  obtain ⟨g, hg, hug, hbd⟩ := hK u
+  simp only [Opens.coe_top, Measure.restrict_univ, contDiffOn_univ] at hg hug
+  replace hbd : ∀ i ≤ j, (∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ K * ‖u‖) ∧
+      HolderWith (K * ‖u‖₊) α (iteratedFDeriv ℝ i g) := fun i hi ↦
+    ⟨fun x ↦ (hbd i hi).1 x (by simp), holderOnWith_univ.1 (by simpa using (hbd i hi).2)⟩
+  let f : CkHolderSpace j α F ℝ := CkHolderSpace.ofContDiff g hg
+    (fun i hi ↦ ⟨_, (hbd i hi).1⟩) ⟨_, (hbd j le_rfl).2⟩
+  have hf : ⇑f = g := CkHolderSpace.coe_ofContDiff g hg _ _
+  refine ⟨f, hf ▸ hug, ?_⟩
+  refine (CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith (M := K * ‖u‖)
+    (K := K * ‖u‖₊) (fun i hi x ↦ hf ▸ (hbd i hi).1 x) (hf ▸ (hbd j le_rfl).2)).trans_eq ?_
+  push_cast
+  ring
+
+/-- The representative of `u` in `C_b^{j,α}(F)`, chosen by `exists_ckHolderSpace`. -/
+private def ckHolderRepresentative (j : ℕ) (u : Wkp volume (⊤ : Opens F) p (j + 1)) :
+    CkHolderSpace j α F ℝ :=
+  ((exists_ckHolderSpace hα hM j).choose_spec u).choose
+
+private theorem value_ae_eq_ckHolderRepresentative (j : ℕ)
+    (u : Wkp volume (⊤ : Opens F) p (j + 1)) :
+    (value (j + 1) u : F → ℝ) =ᵐ[volume] ckHolderRepresentative hα hM j u :=
+  ((exists_ckHolderSpace hα hM j).choose_spec u).choose_spec.1
+
+private theorem norm_ckHolderRepresentative_le (j : ℕ)
+    (u : Wkp volume (⊤ : Opens F) p (j + 1)) :
+    ‖ckHolderRepresentative hα hM j u‖ ≤ (j + 2) * (exists_ckHolderSpace hα hM j).choose * ‖u‖ :=
+  ((exists_ckHolderSpace hα hM j).choose_spec u).choose_spec.2
+
+/-- The representative of `u` is the only element of `C_b^{j,α}(F)` agreeing almost everywhere
+with `u`. -/
+private theorem ckHolderRepresentative_eq_of_ae_eq (j : ℕ)
+    {u : Wkp volume (⊤ : Opens F) p (j + 1)} {f : CkHolderSpace j α F ℝ}
+    (h : (value (j + 1) u : F → ℝ) =ᵐ[volume] f) : ckHolderRepresentative hα hM j u = f :=
+  CkHolderSpace.ext <| congrFun <| (Continuous.ae_eq_iff_eq volume
+    (CkHolderSpace.contDiff _).continuous (CkHolderSpace.contDiff _).continuous).1 <|
+      (value_ae_eq_ckHolderRepresentative hα hM j u).symm.trans h
+
+/-- **The embedding `W^{j+1,p}(F) → C_b^{j,α}(F)` from Hölder representatives.** Suppose that for
+every `k`, each `u ∈ W^{k+1,p}(F)` agrees almost everywhere with an `α`-Hölder function, depending
+linearly and boundedly on `u`. Then every `u ∈ W^{j+1,p}(F)` has a representative that is `Cʲ` with
+bounded derivatives through order `j` and an `α`-Hölder `j`-th derivative. It depends linearly and
+boundedly on `u`, and is the only element of `C_b^{j,α}(F)` agreeing almost everywhere with `u`
+(`TauCeti.Wkp.toCkHolderSpaceL_eq_iff`). -/
+def toCkHolderSpaceL (j : ℕ) : Wkp volume (⊤ : Opens F) p (j + 1) →L[ℝ] CkHolderSpace j α F ℝ :=
+  LinearMap.mkContinuous
+    { toFun := ckHolderRepresentative hα hM j
+      map_add' u v := ckHolderRepresentative_eq_of_ae_eq hα hM j <| by
+        have h₃ := value_add_ae (j + 1) u v
+        simp only [Opens.coe_top, Measure.restrict_univ] at h₃
+        filter_upwards [value_ae_eq_ckHolderRepresentative hα hM j u,
+          value_ae_eq_ckHolderRepresentative hα hM j v, h₃] with x h₁ h₂ h₃
+        rw [h₃, CkHolderSpace.coe_add, Pi.add_apply, Pi.add_apply, h₁, h₂]
+      map_smul' c u := ckHolderRepresentative_eq_of_ae_eq hα hM j <| by
+        have h₂ := value_smul_ae (j + 1) c u
+        simp only [Opens.coe_top, Measure.restrict_univ] at h₂
+        filter_upwards [value_ae_eq_ckHolderRepresentative hα hM j u, h₂] with x h₁ h₂
+        rw [h₂, RingHom.id_apply, CkHolderSpace.coe_smul, Pi.smul_apply, Pi.smul_apply, h₁] }
+    ((j + 2) * (exists_ckHolderSpace hα hM j).choose) (norm_ckHolderRepresentative_le hα hM j)
+
+/-- The embedding `W^{j+1,p}(F) → C_b^{j,α}(F)` gives a representative of `u`. -/
+theorem value_ae_eq_toCkHolderSpaceL (j : ℕ) (u : Wkp volume (⊤ : Opens F) p (j + 1)) :
+    (value (j + 1) u : F → ℝ) =ᵐ[volume] toCkHolderSpaceL hα hM j u :=
+  value_ae_eq_ckHolderRepresentative hα hM j u
+
+/-- `toCkHolderSpaceL hα hM j u` is the only element of `C_b^{j,α}(F)` representing `u`. -/
+theorem toCkHolderSpaceL_eq_iff (j : ℕ) {u : Wkp volume (⊤ : Opens F) p (j + 1)}
+    {f : CkHolderSpace j α F ℝ} :
+    toCkHolderSpaceL hα hM j u = f ↔ (value (j + 1) u : F → ℝ) =ᵐ[volume] f :=
+  ⟨fun h ↦ h ▸ value_ae_eq_toCkHolderSpaceL hα hM j u,
+    ckHolderRepresentative_eq_of_ae_eq hα hM j⟩
+
+end WholeSpace
 
 end Wkp
 

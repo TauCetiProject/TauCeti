@@ -15,20 +15,21 @@ public import TauCeti.Topology.Algebra.PointTopology.Group
 
 For a `k`-algebra `A` and topological `k`-algebras, the point topology on `A →ₐ[k] R × S` and
 `A →ₐ[k] ∀ i, R i` agrees with the product topology (`prodHomeomorph` and `piHomeomorph`).
-For a `k`-bialgebra `H`, conjugating by `WithConv.ofConv` upgrades `AlgHom.prodPointsMulEquiv` and
-`AlgHom.piValueMulEquiv` to topological multiplicative equivalences
-`prodPointsContinuousMulEquiv` and `piPointsContinuousMulEquiv`.
+For a `k`-bialgebra `H`, `TauCeti.PointTopology.prodContinuousMulEquiv` and
+`TauCeti.PointTopology.piPointsContinuousMulEquiv` upgrade the factor identifications to
+topological multiplicative equivalences for the convolution product and the point topology.
 
 ## Main declarations
 
 * `TauCeti.PointTopology.prodHomeomorph`, `TauCeti.PointTopology.piHomeomorph`
-* `TauCeti.PointTopology.prodPointsContinuousMulEquiv`,
-  `TauCeti.PointTopology.piPointsContinuousMulEquiv`
+* `TauCeti.PointTopology.prodContinuousMulEquiv`: points with values in `R₁ × R₂` are pairs of
+  points, as topological monoids.
+* `TauCeti.PointTopology.piPointsContinuousMulEquiv`: convolution points valued in `∀ i, R i`.
 
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
-  Prop. 2.1, pp. 2–3, and §3, p. 4.
+  Prop. 2.1, pp. 2–3, §3, p. 4, and the map (3.6.2) in the proof of Thm. 3.6, p. 7.
 -/
 
 public section
@@ -100,45 +101,45 @@ end Pi
 
 section BialgebraProd
 
-variable (k H R S : Type*) [CommSemiring k] [Semiring H] [Bialgebra k H]
-  [CommSemiring R] [Algebra k R] [TopologicalSpace R]
-  [CommSemiring S] [Algebra k S] [TopologicalSpace S]
+variable {k H R₁ R₂ : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
+  [CommSemiring R₁] [Algebra k R₁] [TopologicalSpace R₁]
+  [CommSemiring R₂] [Algebra k R₂] [TopologicalSpace R₂]
 
-/-- Convolution points of a bialgebra `H` valued in `R × S`, with the point topology, are isomorphic
-as topological monoids (and topological groups when `H` is a Hopf algebra) to the product of factor
-convolution point spaces. -/
-noncomputable def prodPointsContinuousMulEquiv :
-    WithConv (H →ₐ[k] R × S) ≃ₜ* WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] S) where
-  toMulEquiv := AlgHom.prodPointsMulEquiv
+variable (k H R₁ R₂) in
+/-- Points with values in a product `R₁ × R₂` of coefficient algebras are pairs of points, as
+topological monoids for the convolution product and the point topology: a point is sent to its
+images under the two projections, and a pair of points `(x, y)` to the point `h ↦ (x h, y h)`.
+For a Hopf algebra `H` this is the isomorphism of topological groups `G(R₁ × R₂) ≃ G(R₁) × G(R₂)`.
+-/
+noncomputable def prodContinuousMulEquiv :
+    WithConv (H →ₐ[k] R₁ × R₂) ≃ₜ* WithConv (H →ₐ[k] R₁) × WithConv (H →ₐ[k] R₂) where
+  toFun x := (AlgHom.mapValue (AlgHom.fst k R₁ R₂) x, AlgHom.mapValue (AlgHom.snd k R₁ R₂) x)
+  invFun p := toConv (p.1.ofConv.prod p.2.ofConv)
+  left_inv x := by
+    simp only [AlgHom.mapValue_apply, ofConv_toConv, ← AlgHom.prod_comp, AlgHom.prod_fst_snd,
+      AlgHom.id_comp, toConv_ofConv]
+  right_inv p := by
+    simp only [AlgHom.mapValue_apply, AlgHom.fst_prod, AlgHom.snd_prod, toConv_ofConv]
+  map_mul' x y := by
+    simp only [map_mul, Prod.mk_mul_mk]
   continuous_toFun :=
-    ((AlgHom.continuous_mapValue (ψ := AlgHom.fst k R S) continuous_fst).prodMk
-      (AlgHom.continuous_mapValue (ψ := AlgHom.snd k R S) continuous_snd)).congr fun _ ↦
-        Prod.ext (AlgHom.prodPointsMulEquiv_apply_fst _).symm
-          (AlgHom.prodPointsMulEquiv_apply_snd _).symm
+    (AlgHom.continuous_mapValue continuous_fst).prodMk (AlgHom.continuous_mapValue continuous_snd)
   continuous_invFun := continuous_withConv_iff.2 fun h ↦
-    (((continuous_eval_ofConv h).comp continuous_fst).prodMk
-      ((continuous_eval_ofConv h).comp continuous_snd)).congr fun p ↦
-        (AlgHom.prodPointsMulEquiv_symm_apply_ofConv p h).symm
+    ((continuous_eval_ofConv h).comp continuous_fst).prodMk
+      ((continuous_eval_ofConv h).comp continuous_snd)
 
-variable {k H R S}
-
-/-- The underlying `MulEquiv` of `prodPointsContinuousMulEquiv` is `AlgHom.prodPointsMulEquiv`. -/
 @[simp]
-theorem coe_prodPointsContinuousMulEquiv :
-    (prodPointsContinuousMulEquiv k H R S :
-      WithConv (H →ₐ[k] R × S) ≃* WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] S)) =
-      AlgHom.prodPointsMulEquiv := (rfl)
+theorem prodContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] R₁ × R₂)) :
+    prodContinuousMulEquiv k H R₁ R₂ x =
+      (AlgHom.mapValue (AlgHom.fst k R₁ R₂) x, AlgHom.mapValue (AlgHom.snd k R₁ R₂) x) :=
+  (rfl)
 
-/-- The forward map of `prodPointsContinuousMulEquiv` is `AlgHom.prodPointsMulEquiv`. -/
+/-- The point paired from `(x, y)` takes the value `(x h, y h)` at `h`. -/
 @[simp]
-theorem prodPointsContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] R × S)) :
-    prodPointsContinuousMulEquiv k H R S x = AlgHom.prodPointsMulEquiv x := (rfl)
-
-/-- The inverse of `prodPointsContinuousMulEquiv` is `AlgHom.prodPointsMulEquiv.symm`. -/
-@[simp]
-theorem prodPointsContinuousMulEquiv_symm_apply
-    (p : WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] S)) :
-    (prodPointsContinuousMulEquiv k H R S).symm p = AlgHom.prodPointsMulEquiv.symm p := (rfl)
+theorem prodContinuousMulEquiv_symm_apply_apply
+    (p : WithConv (H →ₐ[k] R₁) × WithConv (H →ₐ[k] R₂)) (h : H) :
+    (prodContinuousMulEquiv k H R₁ R₂).symm p h = (p.1 h, p.2 h) :=
+  (rfl)
 
 end BialgebraProd
 

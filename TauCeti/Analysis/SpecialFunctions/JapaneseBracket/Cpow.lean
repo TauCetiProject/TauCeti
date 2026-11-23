@@ -138,6 +138,13 @@ theorem norm_japaneseBracketCpow (z : ℂ) (x : E) :
     ‖japaneseBracketCpow z x‖ = (1 + ‖x‖ ^ 2) ^ (z.re / 2) := by
   rw [japaneseBracketCpow, norm_cpow_eq_rpow_re_of_pos (by positivity), div_ofNat_re]
 
+/-- The complex powers of nonpositive real part have norm at most one: `‖⟨x⟩ ^ z‖ ≤ 1` for
+`re z ≤ 0`. -/
+theorem norm_japaneseBracketCpow_le_one {z : ℂ} (hz : z.re ≤ 0) (x : E) :
+    ‖japaneseBracketCpow z x‖ ≤ 1 := by
+  rw [norm_japaneseBracketCpow]
+  exact Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith [norm_nonneg x]) (by linarith)
+
 /-- The complex powers are multiplicative in the exponent. -/
 theorem japaneseBracketCpow_add (z w : ℂ) (x : E) :
     japaneseBracketCpow (z + w) x = japaneseBracketCpow z x * japaneseBracketCpow w x := by
