@@ -51,7 +51,8 @@ co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pie
   bar differential of the corresponding nonempty block.
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_sq`: its square is zero.
 * `TauCeti.AInfinityAlgebra.isHomogeneous_coaugmentedBarDifferential`: it raises the total letter
-  degree by one.
+  degree by one; `TauCeti.AInfinityAlgebra.isHomogeneous_coaugmentedBarDifferential_grading`
+  states this for the internal grading `TensorWords.grading` of the suspended words.
 * `TauCeti.AInfinityAlgebra.map_koszulTwist_coaugmentedBarDifferential`: the Koszul twist of the
   suspended words anticommutes with it.
 * `TauCeti.AInfinityAlgebra.leftUnaryDifferential_comp_self`: the differential `b_A ⊗ 1 + τ ⊗ d`
@@ -130,15 +131,20 @@ theorem isHomogeneous_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
       (gradedPiece (𝒜.grading.shift 1)) (gradedPiece (𝒜.grading.shift 1)) 1 :=
   isHomogeneous_extendReduced 𝒜.isHomogeneous_barDifferential
 
+/-- The extension has degree one for the internal grading of the suspended tensor words. -/
+theorem isHomogeneous_coaugmentedBarDifferential_grading (𝒜 : AInfinityAlgebra R A) :
+    LinearMap.IsHomogeneous 𝒜.coaugmentedBarDifferential
+      (TensorWords.grading (𝒜.grading.shift 1)).piece
+      (TensorWords.grading (𝒜.grading.shift 1)).piece 1 := by
+  simpa only [grading_piece] using 𝒜.isHomogeneous_coaugmentedBarDifferential
+
 /-- The Koszul twist of the suspended words anticommutes with the extension. -/
 theorem map_koszulTwist_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
     (w : TensorWords R A) :
     TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) (𝒜.coaugmentedBarDifferential w) =
       -𝒜.coaugmentedBarDifferential (TensorWords.map ((𝒜.grading.shift 1).koszulTwist 1) w) := by
-  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
-  rw [← grading_piece] at hD
   rw [← koszulTwist_grading]
-  simpa using hD.koszulTwist_apply 1 w
+  simpa using 𝒜.isHomogeneous_coaugmentedBarDifferential_grading.koszulTwist_apply 1 w
 
 /-- The extension satisfies the graded co-Leibniz identity of the coaugmented tensor coalgebra. -/
 theorem isGradedCoderivation_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
@@ -179,10 +185,8 @@ theorem isHomogeneous_leftUnaryDifferential {K : InternalGrading R M ℤ}
     LinearMap.IsHomogeneous (𝒜.leftUnaryDifferential d)
       ((TensorWords.grading (𝒜.grading.shift 1)).tensorProduct K).piece
       ((TensorWords.grading (𝒜.grading.shift 1)).tensorProduct K).piece 1 := by
-  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
-  rw [← grading_piece] at hD
   rw [leftUnaryDifferential_def]
-  simpa only [zero_add] using (hD.rTensor K).add
+  simpa only [zero_add] using (𝒜.isHomogeneous_coaugmentedBarDifferential_grading.rTensor K).add
     (((TensorWords.grading (𝒜.grading.shift 1)).isHomogeneous_koszulTwist 1).tensorProduct hd)
 
 /-- The left unary differential squares to zero when `d` does, since the Koszul twist

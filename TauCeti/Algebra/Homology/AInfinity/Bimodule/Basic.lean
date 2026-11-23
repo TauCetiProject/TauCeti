@@ -309,15 +309,11 @@ theorem barDifferential_sq_iff_taylor_comp_eq_zero (G : InternalGrading R M ℤ)
       BB.coaugmentedBarDifferential D) :
     D ∘ₗ D = 0 ↔
       taylorProj R A B M ∘ₗ D ∘ₗ D = 0 := by
-  have hb : LinearMap.IsHomogeneous AA.coaugmentedBarDifferential
-      (TensorWords.grading (AA.grading.shift 1)).piece
-      (TensorWords.grading (AA.grading.shift 1)).piece 1 := by
-    rw [TensorWords.grading_piece]
-    exact AA.isHomogeneous_coaugmentedBarDifferential
   have hleft' := hleft.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one
     (Comodule.comp_rid_comp_lTensor_eq_lTensor_comp_leftCoactRTensor _
       (Coalgebra.counit (R := R) (A := TensorWords R B)))
-    hb (by norm_num) AA.coaugmentedBarDifferential_sq
+    AA.isHomogeneous_coaugmentedBarDifferential_grading (by norm_num)
+    AA.coaugmentedBarDifferential_sq
   rw [taylorProj_def, Comodule.cofreeCounit_def, LinearMap.comp_assoc, ← hleft',
     ← Comodule.cofreeCounit_def]
   exact hright.square_eq_zero_iff_counit (barGrading AA BB G) _ D hD

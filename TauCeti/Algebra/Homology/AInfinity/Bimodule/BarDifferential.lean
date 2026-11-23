@@ -203,12 +203,6 @@ section Higher
 
 variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B} (MM : AInfinityBimodule AA BB M)
 
-/-- The differential of a bimodule has degree one for the suspended grading. -/
-private theorem isHomogeneous_differential_shift :
-    LinearMap.IsHomogeneous MM.differential (MM.grading.shift 1).piece
-      (MM.grading.shift 1).piece 1 :=
-  LinearMap.isHomogeneous_shift_piece_iff.2 MM.isHomogeneous_differential
-
 /-- The **higher Taylor map** of a bimodule: its Taylor map minus the unary operation, that is,
 the suspended operations `b_{i,j}` with `i + j ≥ 1`. -/
 noncomputable def higherTaylor : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] M :=

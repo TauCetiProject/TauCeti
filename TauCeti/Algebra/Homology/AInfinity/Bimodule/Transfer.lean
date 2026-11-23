@@ -102,18 +102,6 @@ namespace AInfinityBimodule
 
 attribute [local instance] Comodule.cofree
 
-/-- A map `1 ⊗ g ⊗ 1` intertwines the left coactions up to the identity of the left word. -/
-private theorem leftCoact_comp_rTensor_lTensor_eq_map {P Q : Type*} [AddCommGroup P] [Module R P]
-    [AddCommGroup Q] [Module R Q] (g : P →ₗ[R] Q) :
-    Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) Q) ∘ₗ
-      (g.lTensor (TensorWords R A)).rTensor (TensorWords R B) =
-      TensorProduct.map LinearMap.id ((g.lTensor (TensorWords R A)).rTensor (TensorWords R B)) ∘ₗ
-        Comodule.leftCoactRTensor (TensorWords R B)
-          (Comodule.leftCofreeCoact R (TensorWords R A) P) := by
-  rw [← LinearMap.lTensor_def]
-  exact leftCoact_comp_rTensor_lTensor g
-
 /-! ### The bar contraction and the perturbation -/
 
 section Transfer
@@ -138,19 +126,12 @@ private theorem isHomogeneous_rTensor_of_leftGrading {G : InternalGrading R M �
     (LinearMap.isHomogeneous_shift_piece_iff.1 hf)
   rwa [rightModule_barGrading_leftGrading, rightModule_barGrading_leftGrading] at h
 
-/-- The bar differential of `A` has degree one for the grading of the suspended tensor words. -/
-private theorem isHomogeneous_coaugmentedBarDifferential_grading :
-    LinearMap.IsHomogeneous AA.coaugmentedBarDifferential
-      (TensorWords.grading (AA.grading.shift 1)).piece
-      (TensorWords.grading (AA.grading.shift 1)).piece 1 := by
-  simpa only [grading_piece] using AA.isHomogeneous_coaugmentedBarDifferential
-
 /-- The contraction `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)` of `(Tᶜ(sA) ⊗ M, b_A ⊗ 1 + τ ⊗ m₁)` onto
 `(Tᶜ(sA) ⊗ N, b_A ⊗ 1 + τ ⊗ d_N)` induced by a special contraction of `(M, m₁)`. -/
 noncomputable def leftContraction :
     LinearSpecialContraction (M := TensorWords R A ⊗[R] M) (N := TensorWords R A ⊗[R] N)
       (AA.leftUnaryDifferential MM.differential) (AA.leftUnaryDifferential dN) :=
-  (c.lTensor isHomogeneous_coaugmentedBarDifferential_grading).copy
+  (c.lTensor AA.isHomogeneous_coaugmentedBarDifferential_grading).copy
     (c.incl.lTensor (TensorWords R A)) (c.proj.lTensor (TensorWords R A))
     (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) c.homotopy)
     (AInfinityAlgebra.leftUnaryDifferential_def ..).symm
@@ -184,7 +165,7 @@ private theorem isHomogeneous_leftContraction_incl :
       ((leftGrading AA MM.grading).shift 1).piece 0 := by
   rw [leftContraction_incl, shift_one_leftGrading, shift_one_leftGrading]
   simpa only [LinearContraction.lTensor_incl] using
-    c.isHomogeneous_lTensor_incl (isHomogeneous_coaugmentedBarDifferential_grading (AA := AA))
+    c.isHomogeneous_lTensor_incl AA.isHomogeneous_coaugmentedBarDifferential_grading
       (LinearMap.isHomogeneous_shift_piece_iff.2 hincl)
 
 include hproj in
@@ -194,7 +175,7 @@ private theorem isHomogeneous_leftContraction_proj :
       ((leftGrading AA GN).shift 1).piece 0 := by
   rw [leftContraction_proj, shift_one_leftGrading, shift_one_leftGrading]
   simpa only [LinearContraction.lTensor_proj] using
-    c.isHomogeneous_lTensor_proj (isHomogeneous_coaugmentedBarDifferential_grading (AA := AA))
+    c.isHomogeneous_lTensor_proj AA.isHomogeneous_coaugmentedBarDifferential_grading
       (LinearMap.isHomogeneous_shift_piece_iff.2 hproj)
 
 include hh in
@@ -205,7 +186,7 @@ private theorem isHomogeneous_leftContraction_homotopy :
       (-1) := by
   rw [leftContraction_homotopy, shift_one_leftGrading]
   simpa only [LinearContraction.lTensor_homotopy] using
-    c.isHomogeneous_lTensor_homotopy (isHomogeneous_coaugmentedBarDifferential_grading (AA := AA))
+    c.isHomogeneous_lTensor_homotopy AA.isHomogeneous_coaugmentedBarDifferential_grading
       (LinearMap.isHomogeneous_shift_piece_iff.2 hh)
 
 /-- The **bar contraction**: a special contraction of `(M, m₁)` onto `(N, d_N)` induces the
@@ -289,18 +270,11 @@ theorem coact_comp_perturbationSeries :
       ((MM.barContraction c hh hincl hproj).perturbationSeries MM.higherBarDifferential).rTensor
           (TensorWords R B) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R B)
-          (M := (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) := by
-  -- Package `δ`, and hence `1 + δ (τ ⊗ h ⊗ 1)`, its inverse and `X`, as comodule morphisms.
-  let δ : Comodule.Hom R (TensorWords R B) ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
-      ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) :=
-    ⟨MM.higherBarDifferential, MM.coact_comp_higherBarDifferential.symm⟩
-  let U := Comodule.Hom.id R (TensorWords R B) ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) +
-    δ.comp (Comodule.Hom.cofreeMap
-      (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) c.homotopy))
-  have hX := ((Comodule.Hom.ringInverse U).comp δ).map_coact_eq
-  rw [Comodule.Hom.comp_toLinearMap, Comodule.Hom.ringInverse_toLinearMap] at hX
-  rw [LinearSpecialContraction.perturbationSeries_def, barContraction_homotopy]
-  exact hX.symm
+          (M := (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) :=
+  (MM.barContraction c hh hincl hproj).comp_perturbationSeries_eq_rTensor_comp
+    (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
+    MM.coact_comp_higherBarDifferential
+    (by rw [barContraction_homotopy]; exact Comodule.cofree_coact_comp_rTensor _)
 
 /-- The perturbation operator is an odd map of left comodules, since `δ` and `τ ⊗ h ⊗ 1` are. -/
 theorem leftCoact_comp_perturbationSeries :
@@ -310,24 +284,11 @@ theorem leftCoact_comp_perturbationSeries :
       TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1)
           ((MM.barContraction c hh hincl hproj).perturbationSeries MM.higherBarDifferential) ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
-          (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-  set Δ := Comodule.leftCoactRTensor (TensorWords R B)
-    (Comodule.leftCofreeCoact R (TensorWords R A) M)
-  set U : Module.End R ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) :=
-    1 + MM.higherBarDifferential * (MM.barContraction c hh hincl hproj).homotopy with hUdef
-  -- `U` is an even map of left comodules, hence so is its inverse.
-  have hU : Δ ∘ₗ U = U.lTensor (TensorWords R A) ∘ₗ Δ := by
-    have h := Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id
-      (InternalGrading.koszulTwist_comp_self _ _)
-      (leftCoact_comp_rTensor_map_koszulTwist (AA := AA) (B := B) c.homotopy)
-      MM.leftCoact_comp_higherBarDifferential
-    rw [hUdef, Module.End.mul_eq_comp, barContraction_homotopy, LinearMap.comp_add,
-      LinearMap.lTensor_add, LinearMap.add_comp, h, Module.End.one_eq_id, LinearMap.comp_id,
-      LinearMap.lTensor_id, LinearMap.id_comp]
-  have hinv := Comodule.comp_ringInverse_eq_lTensor_comp hU
-  rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_eq_comp,
-    ← LinearMap.comp_assoc, hinv, LinearMap.comp_assoc, MM.leftCoact_comp_higherBarDifferential,
-    ← LinearMap.comp_assoc, LinearMap.lTensor_comp_map]
+          (Comodule.leftCofreeCoact R (TensorWords R A) M) :=
+  (MM.barContraction c hh hincl hproj).comp_perturbationSeries_eq_map_comp
+    (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
+    (InternalGrading.koszulTwist_comp_self _ _) MM.leftCoact_comp_higherBarDifferential
+    (by rw [barContraction_homotopy]; exact leftCoact_comp_rTensor_map_koszulTwist c.homotopy)
 
 /-- After a map `1 ⊗ g ⊗ 1` acting on the module input, the perturbation operator is still an odd
 map of left comodules. -/
@@ -342,7 +303,10 @@ theorem leftCoact_comp_perturbationSeries_comp_rTensor_lTensor {P : Type*} [AddC
             (g.lTensor (TensorWords R A)).rTensor (TensorWords R B)) ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) P) := by
-  rw [Comodule.comp_comp_eq_map_comp_comp (leftCoact_comp_rTensor_lTensor_eq_map g)
+  have hg := leftCoact_comp_rTensor_lTensor (A := A) (B := B) g
+  rw [LinearMap.lTensor_def (M := TensorWords R A)
+    (f := (g.lTensor (TensorWords R A)).rTensor (TensorWords R B))] at hg
+  rw [Comodule.comp_comp_eq_map_comp_comp hg
     (MM.leftCoact_comp_perturbationSeries c hh hincl hproj), LinearMap.comp_id]
 
 /-- The perturbation operator vanishes on the two empty words, since the higher part does. -/
@@ -357,18 +321,12 @@ theorem perturbationSeries_one_tmul_tmul_one (x : M) :
 theorem isHomogeneous_perturbationSeries :
     LinearMap.IsHomogeneous
       ((MM.barContraction c hh hincl hproj).perturbationSeries MM.higherBarDifferential)
-      (barGrading AA BB MM.grading).piece (barGrading AA BB MM.grading).piece 1 := by
-  have hδK : LinearMap.IsHomogeneous
-      (MM.higherBarDifferential * (MM.barContraction c hh hincl hproj).homotopy)
-      (barGrading AA BB MM.grading).piece (barGrading AA BB MM.grading).piece 0 := by
-    rw [Module.End.mul_eq_comp]
-    simpa using MM.isHomogeneous_higherBarDifferential.comp
-      (MM.isHomogeneous_barContraction_homotopy c hh hincl hproj)
-  have hinv := hδK.ringInverse_one_add fun z ↦ by
-    rw [Module.End.mul_eq_comp, barContraction_homotopy]
-    exact MM.exists_pow_higherBarDifferential_comp_rTensor_map_apply_eq_zero c.homotopy z
-  rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_eq_comp]
-  simpa only [add_zero] using hinv.comp MM.isHomogeneous_higherBarDifferential
+      (barGrading AA BB MM.grading).piece (barGrading AA BB MM.grading).piece 1 :=
+  (MM.barContraction c hh hincl hproj).isHomogeneous_perturbationSeries
+    MM.isHomogeneous_higherBarDifferential
+    (MM.isHomogeneous_barContraction_homotopy c hh hincl hproj) fun z ↦ by
+      rw [Module.End.mul_eq_comp, barContraction_homotopy]
+      exact MM.exists_pow_higherBarDifferential_comp_rTensor_map_apply_eq_zero c.homotopy z
 
 /-! ### The transferred bimodule -/
 
@@ -434,15 +392,11 @@ theorem coact_comp_transferContraction_incl :
       (MM.transferContraction c hh hincl hproj).incl.rTensor (TensorWords R B) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R B)
           (M := (TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) := by
-  refine LinearMap.ext fun z ↦ ?_
-  have hi := LinearMap.congr_fun (Comodule.cofree_coact_comp_rTensor (C := TensorWords R B)
-    (c.incl.lTensor (TensorWords R A)))
-  have hh' := LinearMap.congr_fun (Comodule.cofree_coact_comp_rTensor (C := TensorWords R B)
-    (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) c.homotopy))
-  have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
-  simp only [LinearMap.comp_apply] at hi hh' hX
-  simp only [transferContraction_incl, LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
-    LinearMap.rTensor_sub, hi, hh', hX, LinearMap.rTensor_comp_apply]
+  rw [transferContraction]
+  exact (MM.barContraction c hh hincl hproj).comp_perturb_incl_eq_rTensor_comp _ _
+    MM.coact_comp_higherBarDifferential
+    (by rw [barContraction_homotopy]; exact Comodule.cofree_coact_comp_rTensor _)
+    (by rw [barContraction_incl]; exact Comodule.cofree_coact_comp_rTensor _)
 
 /-- The perturbed projection commutes with the right coactions. -/
 theorem coact_comp_transferContraction_proj :
@@ -452,15 +406,11 @@ theorem coact_comp_transferContraction_proj :
       (MM.transferContraction c hh hincl hproj).proj.rTensor (TensorWords R B) ∘ₗ
         Comodule.coact (R := R) (C := TensorWords R B)
           (M := (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B) := by
-  refine LinearMap.ext fun z ↦ ?_
-  have hp := LinearMap.congr_fun (Comodule.cofree_coact_comp_rTensor (C := TensorWords R B)
-    (c.proj.lTensor (TensorWords R A)))
-  have hh' := LinearMap.congr_fun (Comodule.cofree_coact_comp_rTensor (C := TensorWords R B)
-    (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) c.homotopy))
-  have hX := LinearMap.congr_fun (MM.coact_comp_perturbationSeries c hh hincl hproj)
-  simp only [LinearMap.comp_apply] at hp hh' hX
-  simp only [transferContraction_proj, LinearMap.comp_apply, LinearMap.sub_apply, map_sub,
-    LinearMap.rTensor_sub, hp, hh', hX, LinearMap.rTensor_comp_apply]
+  rw [transferContraction]
+  exact (MM.barContraction c hh hincl hproj).comp_perturb_proj_eq_rTensor_comp _ _
+    MM.coact_comp_higherBarDifferential
+    (by rw [barContraction_homotopy]; exact Comodule.cofree_coact_comp_rTensor _)
+    (by rw [barContraction_proj]; exact Comodule.cofree_coact_comp_rTensor _)
 
 /-- The perturbed inclusion is a map of left comodules. -/
 theorem leftCoact_comp_transferContraction_incl :
@@ -470,13 +420,11 @@ theorem leftCoact_comp_transferContraction_incl :
       (MM.transferContraction c hh hincl hproj).incl.lTensor (TensorWords R A) ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) N) := by
-  have hhXi := Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id
-    (InternalGrading.koszulTwist_comp_self _ _)
-    (MM.leftCoact_comp_perturbationSeries_comp_rTensor_lTensor c hh hincl hproj c.incl)
-    (leftCoact_comp_rTensor_map_koszulTwist (AA := AA) (B := B) c.homotopy)
-  rw [transferContraction_incl, LinearMap.comp_sub, leftCoact_comp_rTensor_lTensor, hhXi,
-    LinearMap.lTensor_sub]
-  exact (LinearMap.sub_comp _ _ _).symm
+  rw [transferContraction]
+  exact (MM.barContraction c hh hincl hproj).comp_perturb_incl_eq_lTensor_comp _ _
+    (InternalGrading.koszulTwist_comp_self _ _) MM.leftCoact_comp_higherBarDifferential
+    (by rw [barContraction_homotopy]; exact leftCoact_comp_rTensor_map_koszulTwist c.homotopy)
+    (by rw [barContraction_incl]; exact leftCoact_comp_rTensor_lTensor c.incl)
 
 /-- The perturbed projection is a map of left comodules. -/
 theorem leftCoact_comp_transferContraction_proj :
@@ -486,16 +434,11 @@ theorem leftCoact_comp_transferContraction_proj :
       (MM.transferContraction c hh hincl hproj).proj.lTensor (TensorWords R A) ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-  have hXh := Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id
-    (InternalGrading.koszulTwist_comp_self _ _)
-    (leftCoact_comp_rTensor_map_koszulTwist (AA := AA) (B := B) c.homotopy)
-    (MM.leftCoact_comp_perturbationSeries c hh hincl hproj)
-  rw [LinearMap.lTensor_def] at hXh
-  have hpXh := Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id (LinearMap.id_comp _) hXh
-    (leftCoact_comp_rTensor_lTensor_eq_map (A := A) (B := B) c.proj)
-  rw [transferContraction_proj, LinearMap.comp_sub, leftCoact_comp_rTensor_lTensor, hpXh,
-    LinearMap.lTensor_sub]
-  exact (LinearMap.sub_comp _ _ _).symm
+  rw [transferContraction]
+  exact (MM.barContraction c hh hincl hproj).comp_perturb_proj_eq_lTensor_comp _ _
+    (InternalGrading.koszulTwist_comp_self _ _) MM.leftCoact_comp_higherBarDifferential
+    (by rw [barContraction_homotopy]; exact leftCoact_comp_rTensor_map_koszulTwist c.homotopy)
+    (by rw [barContraction_proj]; exact leftCoact_comp_rTensor_lTensor c.proj)
 
 /-- The transferred bar differential is a coderivation over the bar differential of `A` for the
 left coaction: it is the unary part for `d_N` plus the odd map of left comodules
@@ -517,9 +460,12 @@ theorem isLeftGradedCoderivationOver_transferBarDifferential :
               (c.incl.lTensor (TensorWords R A)).rTensor (TensorWords R B)) ∘ₗ
         Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) N) := by
+    have hp := leftCoact_comp_rTensor_lTensor (A := A) (B := B) c.proj
+    rw [LinearMap.lTensor_def (M := TensorWords R A)
+      (f := (c.proj.lTensor (TensorWords R A)).rTensor (TensorWords R B))] at hp
     rw [Comodule.comp_comp_eq_map_comp_comp
-      (MM.leftCoact_comp_perturbationSeries_comp_rTensor_lTensor c hh hincl hproj c.incl)
-      (leftCoact_comp_rTensor_lTensor_eq_map (A := A) (B := B) c.proj), LinearMap.id_comp]
+      (MM.leftCoact_comp_perturbationSeries_comp_rTensor_lTensor c hh hincl hproj c.incl) hp,
+      LinearMap.id_comp]
   have hD := (isLeftGradedCoderivationOver_unaryBarDifferential AA BB GN dN).coact_apply
   rw [Comodule.isLeftGradedCoderivationOver_iff_coact_apply]
   intro z
@@ -612,25 +558,21 @@ theorem differential_transfer : (MM.transfer c hh hincl hproj).differential = dN
 theorem isHomogeneous_transferContraction_incl :
     LinearMap.IsHomogeneous (MM.transferContraction c hh hincl hproj).incl
       (barGrading AA BB GN).piece (barGrading AA BB MM.grading).piece 0 := by
-  have hi := MM.isHomogeneous_barContraction_incl c hh hincl hproj
-  have hK := MM.isHomogeneous_barContraction_homotopy c hh hincl hproj
-  rw [barContraction_incl] at hi
-  rw [barContraction_homotopy] at hK
-  rw [transferContraction_incl]
-  have hhXi := hK.comp ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp hi)
-  simpa only [zero_add, add_neg_cancel] using hi.sub hhXi
+  rw [transferContraction]
+  exact (MM.barContraction c hh hincl hproj).isHomogeneous_perturb_incl
+    (MM.isHomogeneous_barContraction_incl c hh hincl hproj)
+    (MM.isHomogeneous_barContraction_homotopy c hh hincl hproj)
+    (MM.isHomogeneous_perturbationSeries c hh hincl hproj) _ _
 
 /-- The perturbed projection has degree zero. -/
 theorem isHomogeneous_transferContraction_proj :
     LinearMap.IsHomogeneous (MM.transferContraction c hh hincl hproj).proj
       (barGrading AA BB MM.grading).piece (barGrading AA BB GN).piece 0 := by
-  have hp := MM.isHomogeneous_barContraction_proj c hh hincl hproj
-  have hK := MM.isHomogeneous_barContraction_homotopy c hh hincl hproj
-  rw [barContraction_proj] at hp
-  rw [barContraction_homotopy] at hK
-  rw [transferContraction_proj]
-  have hpXh := hp.comp ((MM.isHomogeneous_perturbationSeries c hh hincl hproj).comp hK)
-  simpa only [zero_add, neg_add_cancel] using hp.sub hpXh
+  rw [transferContraction]
+  exact (MM.barContraction c hh hincl hproj).isHomogeneous_perturb_proj
+    (MM.isHomogeneous_barContraction_proj c hh hincl hproj)
+    (MM.isHomogeneous_barContraction_homotopy c hh hincl hproj)
+    (MM.isHomogeneous_perturbationSeries c hh hincl hproj) _ _
 
 /-- The **extending morphism** of `A∞` bimodules from the transferred bimodule to `M`: its bar map
 is the perturbed inclusion `i' = 1 ⊗ i ⊗ 1 - (τ ⊗ h ⊗ 1) X (1 ⊗ i ⊗ 1)`. -/

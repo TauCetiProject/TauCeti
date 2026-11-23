@@ -185,20 +185,17 @@ theorem isHomogeneous_perturbationSeries :
     LinearMap.IsHomogeneous
       ((𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential)
       (gradedPiece (𝒜.grading.shift 1))
-      (gradedPiece (𝒜.grading.shift 1)) 1 := by
-  have hδh : LinearMap.IsHomogeneous
-      (𝒜.higherBarDifferential * (𝒜.barTensorTrick c hh hincl hproj).homotopy)
-      (gradedPiece (𝒜.grading.shift 1)) (gradedPiece (𝒜.grading.shift 1)) 0 := by
-    rw [barTensorTrick_homotopy, Module.End.mul_eq_comp]
-    simpa only [neg_add_cancel] using 𝒜.isHomogeneous_higherBarDifferential.comp
-      (c.isHomogeneous_reducedTensorWordsHomotopy (𝒜.grading.shift 1)
+      (gradedPiece (𝒜.grading.shift 1)) 1 :=
+  (𝒜.barTensorTrick c hh hincl hproj).isHomogeneous_perturbationSeries
+    𝒜.isHomogeneous_higherBarDifferential
+    (by
+      rw [barTensorTrick_homotopy]
+      exact c.isHomogeneous_reducedTensorWordsHomotopy (𝒜.grading.shift 1)
         (𝒜.isHomogeneous_homotopy_shift c hh) (𝒜.isHomogeneous_incl_shift c hincl)
         (𝒜.isHomogeneous_proj_shift c hproj))
-  have hinv := hδh.ringInverse_one_add fun z ↦ by
-    rw [barTensorTrick_homotopy, Module.End.mul_eq_comp]
-    exact 𝒜.exists_pow_higherBarDifferential_comp_homotopy_eq_zero c z
-  rw [LinearSpecialContraction.perturbationSeries_def, Module.End.mul_eq_comp]
-  simpa only [add_zero] using hinv.comp 𝒜.isHomogeneous_higherBarDifferential
+    fun z ↦ by
+      rw [barTensorTrick_homotopy, Module.End.mul_eq_comp]
+      exact 𝒜.exists_pow_higherBarDifferential_comp_homotopy_eq_zero c z
 
 /-- The perturbation operator kills single letters, since the higher bar differential does. -/
 private theorem perturbationSeries_ofLetter (a : A) :

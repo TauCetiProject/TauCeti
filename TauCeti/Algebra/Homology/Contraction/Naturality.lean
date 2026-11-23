@@ -47,24 +47,8 @@ theorem perturbationSeries_naturality
     (hδ : f ∘ₗ δ = δ' ∘ₗ f)
     (hU : IsUnit (1 + δ * c.homotopy))
     (hU' : IsUnit (1 + δ' * c'.homotopy)) :
-    f ∘ₗ c.perturbationSeries δ = c'.perturbationSeries δ' ∘ₗ f := by
-  have hT : (1 + δ' * c'.homotopy) ∘ₗ f = f ∘ₗ (1 + δ * c.homotopy) := by
-    simp only [Module.End.mul_eq_comp, LinearMap.add_comp, LinearMap.comp_add,
-      Module.End.one_eq_id, LinearMap.id_comp, LinearMap.comp_id]
-    have hh' := hh
-    have hδ' := hδ
-    simp only [LinearMap.ext_iff, LinearMap.comp_apply] at hh' hδ'
-    ext x
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, hh', hδ']
-  have hinj := ((Module.End.isUnit_iff _).mp hU').1
-  ext x
-  apply hinj
-  have hTX := congrArg (fun a ↦ a x) (c.one_add_mul_perturbationSeries δ hU)
-  have hTX' := congrArg (fun a ↦ a (f x)) (c'.one_add_mul_perturbationSeries δ' hU')
-  have hTf := LinearMap.congr_fun hT (c.perturbationSeries δ x)
-  have hδf := LinearMap.congr_fun hδ x
-  simpa only [LinearMap.comp_apply, mul_apply_eq_comp] using hTf.trans
-    ((congrArg f hTX).trans (hδf.trans hTX'.symm))
+    f ∘ₗ c.perturbationSeries δ = c'.perturbationSeries δ' ∘ₗ f :=
+  c.comp_perturbationSeries_eq_comp δ hU f hδ hh (c'.perturbationSeries_mul_one_add δ' hU')
 
 /-- The induced map on retracts commutes with the perturbed differentials. Compatibility with
 the old retract differential is explicit; no chain-map assumption on the large complexes is
