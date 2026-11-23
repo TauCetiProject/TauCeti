@@ -73,7 +73,7 @@ theorem kFlatTensor_commShiftIso_hom_app_Q (K : CochainComplex C ℤ) [K.IsKFlat
           (K.kFlatTensorModelIso.inv.app A) := by
   simpa only [kFlatTensorModelIso_eq_liftingIso, Functor.commShiftIso_comp_hom_app,
     Functor.commShiftIso_map₂CochainComplex_hom_app, Functor.comp_obj,
-    curriedTensor_map₂CochainComplex_obj_obj, Category.assoc] using
+    Functor.map₂HomologicalComplex_obj_obj, Category.assoc] using
     (Functor.commShiftOfLocalization_iso_hom_app DerivedCategory.Q
       (quasiIso C (.up ℤ))
       (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj K) ⋙ DerivedCategory.Q)

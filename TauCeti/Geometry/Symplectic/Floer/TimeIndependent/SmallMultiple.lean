@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.SmallHamiltonian
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.ODE.Yorke
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -251,9 +252,10 @@ private theorem setLIntegral_ball_floerEnergyDensity_le (hH : ContDiff ℝ 3 H) 
   have hpre : (· + z₀) ⁻¹' ball z₀ (1 / 2) = ball (0 : ℝ × ℝ) (1 / 2) := by
     ext z
     simp [mem_ball, dist_eq_norm]
-  have htr := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z₀
-    (ball z₀ (1 / 2))
+  have htr := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun _ y ↦ ε * H y) u z₀ (ball z₀ (1 / 2))
   rw [hpre] at htr
+  simp only [floerEnergyDensity_constSmooth] at htr
   rw [htr]
   -- The square lies in the horizontal strip `ℝ × [t₀ - 1/2, t₀ + 1/2]` of width one.
   have hsub : ball z₀ (1 / 2) ⊆ (univ : Set ℝ) ×ˢ Icc (z₀.2 - 1 / 2) (z₀.2 - 1 / 2 + 1) := by

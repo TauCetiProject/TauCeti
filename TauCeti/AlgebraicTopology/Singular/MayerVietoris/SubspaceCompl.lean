@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+public import TauCeti.Data.Set.Function
 public import TauCeti.LinearAlgebra.Submodule.LineExtension
 
 /-!
@@ -73,7 +74,7 @@ omit [NormedSpace ℝ F] in
 private lemma mapsTo_union_preimage (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
     (hA : Set.MapsTo f A A') (S : Set F) :
     Set.MapsTo f (A ∪ q ⁻¹' S) (A' ∪ q' ⁻¹' S) :=
-  hA.union_union fun x hx ↦ by rw [Set.mem_preimage, hf]; exact hx
+  hA.union_union (Set.mapsTo_preimage_of_apply_eq f hf S)
 
 /-- The map of pairs `(X, A ∪ q⁻¹(F ∖ W)) ⟶ (X', A' ∪ q'⁻¹(F ∖ W))` induced by a map `f : X ⟶ X'`
 over `F` carrying `A` into `A'`. -/
@@ -122,6 +123,26 @@ lemma subspaceComplPairMap_comp (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x) (hA 
       subspaceComplPairMap f hf hA W ≫ subspaceComplPairMap g hg hA' W :=
   TopPair.ofSubsetMap_comp _ _ _ _ _
 
+variable (q A) in
+/-- The identification of `(X, A ∪ q⁻¹(F ∖ W))` with `(X, A ∪ q⁻¹(F ∖ F))`, which is `(X, A)`, for
+`W` equal to `F`. -/
+def subspaceComplPairTopIso {W : Submodule ℝ F} (hW : W = ⊤) :
+    subspaceComplPair q A W ≅ subspaceComplPair q A ⊤ :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
+    rw [hW]
+    rfl
+
+/-- The identification `subspaceComplPairTopIso` commutes with the maps of pairs induced by a map
+over `F` carrying `A` into `A'`. -/
+@[reassoc]
+lemma subspaceComplPairTopIso_hom_naturality (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
+    (hA : Set.MapsTo f A A') {W : Submodule ℝ F} (hW : W = ⊤) :
+    (subspaceComplPairTopIso q A hW).hom ≫ subspaceComplPairMap f hf hA ⊤ =
+      subspaceComplPairMap f hf hA W ≫ (subspaceComplPairTopIso q' A' hW).hom := by
+  simp only [subspaceComplPairTopIso, subspaceComplPairMap_eq_ofSubsetMap f hf hA _
+    (mapsTo_union_preimage f hf hA _), TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+
 namespace SubspaceComplPair
 
 variable (q A)
@@ -164,13 +185,6 @@ private def interIso (s : W.LineExtension) :
       subspaceComplPair q A s.W' :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
     rw [← Set.union_inter_distrib_left, ← Set.preimage_inter, s.compl_inter_compl]
-    rfl
-
-/-- The identification of `(X, A ∪ q⁻¹(F ∖ W))` with `(X, A ∪ q⁻¹(F ∖ F))` for `W` equal to
-`F`. -/
-private def topIso (hW : W = ⊤) : subspaceComplPair q A W ≅ subspaceComplPair q A ⊤ :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
-    rw [hW]
     rfl
 
 variable (hA : IsOpen A) (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈ W → φ v = 1 →
@@ -283,7 +297,8 @@ def subspaceComplPairSingularHomologyIso :
       ((subspaceComplPair q A W).singularHomology R m ≅
         (subspaceComplPair q A (⊤ : Submodule ℝ F)).singularHomology R n)
   | 0, _, hW, n, _, rfl =>
-    asIso (TopPair.singularHomologyMap (topIso q A (Submodule.eq_top_of_finrank_eq hW)).hom R n)
+    asIso (TopPair.singularHomologyMap
+      (subspaceComplPairTopIso q A (Submodule.eq_top_of_finrank_eq hW)).hom R n)
   | c + 1, W, hW, n, _, rfl =>
     let s := W.lineExtension (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
     stepIso R q A hA hq s (n + c) ≪≫
@@ -305,15 +320,9 @@ theorem subspaceComplPairSingularHomologyIso_hom_naturality :
         TopPair.singularHomologyMap (subspaceComplPairMap f hf hfA W) R m ≫
           (subspaceComplPairSingularHomologyIso R q' A' hA' hq' c W hW n m h).hom
   | 0, W, hW, n, _, rfl => by
-    have h : (topIso q A (Submodule.eq_top_of_finrank_eq hW)).hom ≫
-        subspaceComplPairMap f hf hfA ⊤ =
-        subspaceComplPairMap f hf hfA W ≫
-          (topIso q' A' (Submodule.eq_top_of_finrank_eq hW)).hom := by
-      simp only [topIso, subspaceComplPairMap_eq_ofSubsetMap f hf hfA _
-        (mapsTo_union_preimage f hf hfA _), TopPair.ofSubsetIso_hom]
-      exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
     rw [subspaceComplPairSingularHomologyIso, subspaceComplPairSingularHomologyIso, asIso_hom,
-      asIso_hom, ← TopPair.singularHomologyMap_comp, h, TopPair.singularHomologyMap_comp]
+      asIso_hom, ← TopPair.singularHomologyMap_comp, subspaceComplPairTopIso_hom_naturality,
+      TopPair.singularHomologyMap_comp]
     rfl
   | c + 1, W, hW, n, _, rfl => by
     rw [subspaceComplPairSingularHomologyIso, subspaceComplPairSingularHomologyIso, Iso.trans_hom,

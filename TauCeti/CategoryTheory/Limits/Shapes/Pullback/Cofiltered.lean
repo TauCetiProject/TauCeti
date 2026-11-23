@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Preserves.Over
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
 
 /-!
@@ -29,6 +30,11 @@ For a cone `c` over `D` with point `S`, a morphism `b : X ×_{Dᵢ} Dⱼ ⟶ Y �
 compatible with a morphism `a : X ×_{Dᵢ} S ⟶ Y ×_{Dᵢ} S` over `S` base changes along `S ⟶ Dⱼ` to `a`
 up to the canonical isomorphisms, so it shares every property of morphisms respecting isomorphisms
 with `a` (`CategoryTheory.MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq`).
+
+Inheritance of a morphism property can be reduced to the diagram base changed along the target
+(`CategoryTheory.MorphismProperty.exists_pullbackMap_of_pullbackOver`). This transport requires
+only pullbacks and invariance under precomposition with isomorphisms; the cone need not be limiting
+and the diagram need not be cofiltered.
 -/
 
 public section
@@ -97,6 +103,53 @@ namespace CategoryTheory.MorphismProperty
 
 variable {C : Type*} [Category* C] [HasPullbacks C] {I : Type*} [Category* I] {D : I ⥤ C}
   {c : Cone D}
+
+/-- Transport inheritance of a morphism property from the diagram base changed along the
+morphism's target. The property need only be stable under precomposition with isomorphisms.
+
+For `g : X ⟶ Y` over `D.obj i`, suppose the property descends for the second projection in
+`D.pullbackOver q`, after identifying its identity stage with `Y`. If the base change of `g` to
+the cone point has the property, then so does its base change at some stage of `D`.
+The cone need not be limiting, and the indexing category need not be cofiltered. -/
+theorem exists_pullbackMap_of_pullbackOver (P : MorphismProperty C)
+    [P.RespectsLeft (isomorphisms C)] (c : Cone D)
+    {i : I} {X Y : C} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i}
+    (g : X ⟶ Y) (hg : g ≫ q = p)
+    (h : ∀ (b : (D.pullbackOver q).obj (Over.mk (𝟙 i)) ≅ Y),
+      P (pullback.snd (g ≫ b.inv) ((c.pullbackOver q).π.app (Over.mk (𝟙 i)))) →
+      ∃ (j : Over i) (a : j ⟶ Over.mk (𝟙 i)),
+        P (pullback.snd (g ≫ b.inv) ((D.pullbackOver q).map a)))
+    (hP : P (pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _)
+      (by simp) (by simp [hg]))) :
+    ∃ (j : I) (a : j ⟶ i),
+      P (pullback.map (D.map a) p (D.map a) q (𝟙 _) g (𝟙 _)
+        (by simp) (by simp [hg])) := by
+  let m {T : C} (t : T ⟶ D.obj i) :=
+    pullback.map t p t q (𝟙 T) g (𝟙 _) (by simp) (by simp [hg])
+  have hsq {T : C} (t : T ⟶ D.obj i) :
+      IsPullback (m t) (pullback.snd t p) (pullback.snd t q) g := by
+    refine IsPullback.of_right ?_ (by simp [m]) (IsPullback.of_hasPullback t q)
+    simpa [m, hg] using (IsPullback.of_hasPullback t p)
+  have : IsIso (D.map (𝟙 i)) := by rw [D.map_id]; infer_instance
+  let b := asIso (pullback.snd (D.map (𝟙 i)) q)
+  have hs {T : C} (t : T ⟶ D.obj i)
+      (d : pullback t q ⟶ (D.pullbackOver q).obj (Over.mk (𝟙 i)))
+      (hd : d ≫ b.hom = pullback.snd t q) :
+      IsPullback (pullback.snd t p) (m t) (g ≫ b.inv) d := by
+    exact (hsq t).flip.of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _) b.symm
+      (by simp) (by simp) (by simp) (by
+        simpa using (congrArg (fun f ↦ f ≫ b.inv) hd).symm)
+  have hlim := hs (c.π.app i) ((c.pullbackOver q).π.app (Over.mk (𝟙 i))) (by
+    exact c.pullbackOver_π_app_snd q (Over.mk (𝟙 i)))
+  obtain ⟨j, a, ha⟩ := h b (by
+    rw [← hlim.isoPullback_inv_snd]
+    exact RespectsLeft.precomp (Q := isomorphisms C) _ inferInstance _ hP)
+  have hstage := hs (D.map j.hom) ((D.pullbackOver q).map a) (by
+    exact D.pullbackOver_map_snd q a)
+  have hfinal : P (m (D.map j.hom)) := by
+    rw [← hstage.isoPullback_hom_snd]
+    exact RespectsLeft.precomp (Q := isomorphisms C) _ inferInstance _ ha
+  exact ⟨j.left, j.hom, hfinal⟩
 
 /-- Let `c` be a cone over `D` with point `S`, and let `b : X ×_{Dᵢ} Dⱼ ⟶ Y ×_{Dᵢ} Dⱼ` over `Dⱼ`
 be compatible with a morphism `a : X ×_{Dᵢ} S ⟶ Y ×_{Dᵢ} S` over `S`. Then the base change of `b`
