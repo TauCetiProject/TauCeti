@@ -24,7 +24,7 @@ public import TauCeti.LinearAlgebra.UnitaryGroup
 -- `TauCeti.Analysis.Matrix.UnitaryGroup.Basic` supplies `Circle.coe_mem_unitary` and the
 -- decomposition `U(n) = Circle · SU(n)` used for `U(2)` below.
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The real quaternions as two-by-two complex matrices, `SU(2)` and `U(2)`

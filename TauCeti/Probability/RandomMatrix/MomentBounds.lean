@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.TraceWord.Counting
 public import TauCeti.Data.Fintype.SmallRange
 public import TauCeti.MeasureTheory.Integral.MeanInequalities
-public import TauCeti.Probability.RandomMatrix.TraceWord
+public import TauCeti.Probability.RandomMatrix.Wigner.Trace.Word
 
 /-!
 # Bounds for nonleading Wigner trace words
@@ -32,31 +32,12 @@ and do not require identical distributions or any second-moment normalization.
 public section
 
 open MeasureTheory ProbabilityTheory Matrix Finset Filter
-open scoped Topology
+open scoped Topology NNReal
 
 namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
   {η : ℕ → Ω → ℝ}
-
-/-- A bound on the `k`th absolute moments of the entries in the `n × n` corner passes to Wigner
-entries with normalization factor `(√n)⁻ᵏ`. -/
-theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
-    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
-    (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B) (i j : Fin n) :
-    ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ k ∂P ≤ (Real.sqrt n)⁻¹ ^ k * B := by
-  have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
-    simp [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hc, integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hξ _ j.isLt) (by positivity)
-  · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hc, Complex.norm_real,
-      integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hη _ i.isLt) (by positivity)
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hc,
-      integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hξ _ i.isLt) (by positivity)
 
 /-- Uniform `k`th absolute moments on the `n × n` corner bound every expected product of `k`
 entries of the `n × n` Wigner matrix, indexed by a finite nonempty type `ι` of cardinality `k`.
