@@ -145,7 +145,7 @@ private theorem exists_pow_kostantRootOperator_eq_factorial_smul
     Subtype.ext (by
       change (HW (v r) : V) = ((wt r : ℚ) • v r : W).val
       simpa only [HW, v, LinearMap.restrict_apply, SetLike.val_smul] using hwt r)
-  obtain ⟨j, hjpos, hP⟩ :=
+  obtain ⟨j, hjpos, hP, -⟩ :=
     hsl2W.exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top hspanW
       (fun h0 => hsl2W.h_ne_zero (LinearMap.ext fun x => congrArg (· x) h0))
       hwtW (hbdd_below.mono (Set.range_comp_subset_range Subtype.val wt))

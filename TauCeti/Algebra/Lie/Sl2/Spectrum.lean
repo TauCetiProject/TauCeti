@@ -500,7 +500,8 @@ theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Tr
     (hh : toEnd K L M h ≠ 0) {wt : η → ℤ} (hwt : ∀ r, ⁅h, v r⁆ = (wt r : K) • v r)
     (hbdd_below : BddBelow (Set.range fun r : {r // v r ≠ 0} ↦ wt r))
     (hbdd_above : BddAbove (Set.range fun r : {r // v r ≠ 0} ↦ wt r)) :
-    ∃ j : η, 0 < wt j ∧ t.HasPrimitiveVectorWith (v j) (wt j : K) := by
+    ∃ j : η, 0 < wt j ∧ t.HasPrimitiveVectorWith (v j) (wt j : K) ∧
+      ∀ r, v r ≠ 0 → wt r ≤ wt j := by
   obtain ⟨r₁, hr₁pos, hr₁ne⟩ := t.exists_pos_weight_of_span_eq_top hspan hh hwt hbdd_below
   obtain ⟨b, hb⟩ := hbdd_above
   obtain ⟨_, ⟨j, hjne, rfl⟩, hjmax⟩ := Int.exists_greatest_of_bdd
@@ -509,7 +510,8 @@ theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Tr
   refine ⟨j, lt_of_lt_of_le hr₁pos (hjmax (wt r₁) ⟨r₁, hr₁ne, rfl⟩),
     { ne_zero := hjne
       lie_h := hwt j
-      lie_e := ?_ }⟩
+      lie_e := ?_ },
+    fun r hr ↦ hjmax (wt r) ⟨r, hr, rfl⟩⟩
   have hmem := TauCeti.lie_mem_eigenspace_add_two (K := K) t
     (Module.End.mem_eigenspace_iff.mpr (hwt j))
   have heig : toEnd K L M h ⁅e, v j⁆ = ((wt j + 2 : ℤ) : K) • ⁅e, v j⁆ := by
