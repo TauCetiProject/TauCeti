@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Projective.Basic
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.CategoryTheory.ObjectProperty.Presented
 
 /-!

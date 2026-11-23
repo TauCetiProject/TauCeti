@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.CategoryTheory.ObjectProperty
+
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Finitely generated projective modules

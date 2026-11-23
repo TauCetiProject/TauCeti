@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Projective.FullSubcategory
 public import TauCeti.CategoryTheory.ObjectProperty.Presented
 
 import TauCeti.Algebra.Module.FinitePresentation
@@ -22,9 +21,8 @@ finitely generated projective modules (`TauCeti.presented_finiteProjectiveModule
 Over any ring `R`, the object property `TauCeti.finitePresentationModules R` contains the zero
 module and is closed under finite products, cokernels and retracts; over a left Noetherian ring it
 agrees with finite generation (`TauCeti.finitePresentationModules_eq_finiteModules`). Its inclusion
-into `ModuleCat R` preserves epimorphisms, and projective objects of
-`(finitePresentationModules R).FullSubcategory` are precisely the finitely presented projective
-`R`-modules (`TauCeti.projective_finitePresentationModules_iff`).
+into `ModuleCat R` preserves epimorphisms, and the regular module `R` lies in this subcategory
+(`TauCeti.finitePresentationModulesRegular`).
 
 ## Main definitions
 
@@ -41,8 +39,6 @@ into `ModuleCat R` preserves epimorphisms, and projective objects of
   `TauCeti.finitePresentationModules_le_finiteModules`, and
   `TauCeti.finitePresentationModules_eq_finiteModules`: comparison with finitely generated
   projective and finitely generated modules.
-* `TauCeti.projective_finitePresentationModules_iff`: characterization of projective objects in
-  `(finitePresentationModules R).FullSubcategory`.
 -/
 
 public section
@@ -169,7 +165,7 @@ instance : (finitePresentationModules R).IsStableUnderRetracts where
     rw [LinearMap.ker_eq_range_of_comp_eq_id hcomp]
     exact Submodule.fg_range _
 
-/-! ### Projectives and progenerators in `finitePresentationModules` -/
+/-! ### Epimorphism preservation and the regular module -/
 
 /-- Because `finitePresentationModules R` contains zero and is closed under cokernels, its
 inclusion into `ModuleCat R` preserves epimorphisms. -/
@@ -186,16 +182,5 @@ def finitePresentationModulesRegular : (finitePresentationModules R).FullSubcate
 theorem finitePresentationModulesRegular_obj :
     (finitePresentationModulesRegular R).obj = ModuleCat.of R R :=
   (rfl)
-
-/-- An object `P` of `(finitePresentationModules R).FullSubcategory` is projective if and only if
-its underlying `R`-module is projective. -/
-theorem projective_finitePresentationModules_iff
-    (P : (finitePresentationModules R).FullSubcategory) :
-    Projective P ↔ Module.Projective R P.obj :=
-  (finitePresentationModules R).projective_iff_moduleProjective
-    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv P
-
-instance : Projective (finitePresentationModulesRegular R) :=
-  (projective_finitePresentationModules_iff R _).mpr (inferInstanceAs (Module.Projective R R))
 
 end TauCeti
