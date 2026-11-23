@@ -39,9 +39,9 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
    (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`, Köck's
    Theorem 2.2(a)).
 4. When `F / k(t)` is Galois, `U(X, P) = U(X)`
-   (`pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_finiteRationalPoint`), so `K` is
+   (`pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_adicOfIrreducible`), so `K` is
    the field of moduli itself
-   (`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_finiteRationalPoint` in
+   (`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible` in
    `TauCeti.AlgebraicBelyiPair`), and over an algebraically closed field `X` is defined over its
    field of moduli (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`, Köck's
    Theorem 2.2(b)).
@@ -97,9 +97,7 @@ private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : 
     (hP : P.degree = 1) :
     letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) :=
       (ratFuncMapRingHom (X.pointedFieldOfModuli P) k).toAlgebra
-    letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) X :=
-      ((algebraMap (RatFunc k) X).comp
-        (ratFuncMapRingHom (X.pointedFieldOfModuli P) k)).toAlgebra
+    letI := X.ratFuncAlgebra (X.pointedFieldOfModuli P)
     { M : Model (X.pointedFieldOfModuli P) X //
       ∃ z : X, (RatFunc k)⟮z⟯ = ⊤ ∧
         IsIntegral (RatFunc (X.pointedFieldOfModuli P)) z ∧
@@ -108,9 +106,7 @@ private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : 
         M.embedding.fieldRange = ((RatFunc (X.pointedFieldOfModuli P))⟮z⟯).toSubfield } :=
   letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) :=
     (ratFuncMapRingHom (X.pointedFieldOfModuli P) k).toAlgebra
-  letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) X :=
-    ((algebraMap (RatFunc k) X).comp
-      (ratFuncMapRingHom (X.pointedFieldOfModuli P) k)).toAlgebra
+  letI := X.ratFuncAlgebra (X.pointedFieldOfModuli P)
   haveI : IsScalarTower (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) X :=
     IsScalarTower.of_algebraMap_eq' rfl
   let h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP
@@ -140,9 +136,7 @@ theorem exists_generator_fieldRange_modelOverPointedFieldOfModuli {P : Place k X
     (hP : P.degree = 1) :
     letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) :=
       (ratFuncMapRingHom (X.pointedFieldOfModuli P) k).toAlgebra
-    letI : Algebra (RatFunc (X.pointedFieldOfModuli P)) X :=
-      ((algebraMap (RatFunc k) X).comp
-        (ratFuncMapRingHom (X.pointedFieldOfModuli P) k)).toAlgebra
+    letI := X.ratFuncAlgebra (X.pointedFieldOfModuli P)
     ∃ z : X, (RatFunc k)⟮z⟯ = ⊤ ∧
       IsIntegral (RatFunc (X.pointedFieldOfModuli P)) z ∧
       (minpoly (RatFunc (X.pointedFieldOfModuli P)) z).map
@@ -233,14 +227,13 @@ variable (X : AlgebraicBelyiPair k) [IsGalois (RatFunc k) X]
 
 /-- A Galois Belyi pair admitting a degree-one place over a finite point `t = q` with `q : ℚ`
 and `q ≠ 0, 1` has a model over its field of moduli. -/
-theorem
-  nonempty_model_fieldOfModuli_of_isGalois_of_degreeOnePlace_over_finiteRationalPoint_ne_zero_ne_one
+theorem nonempty_model_fieldOfModuli_of_isGalois_of_degree_eq_one
     {P : Place k X} {q : ℚ}
     (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
     (hP : P.degree = 1) :
     Nonempty (Model (IsoClass.mk X).fieldOfModuli X) := by
-  rw [← X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_finiteRationalPoint hPa]
+  rw [← X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible hPa]
   exact X.nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP
 
 /-- **Köck's Theorem 2.2(b), model form**: over an algebraically closed field `k` of characteristic
@@ -249,7 +242,7 @@ its field of moduli. -/
 theorem nonempty_model_fieldOfModuli_of_isGalois [IsAlgClosed k] :
     Nonempty (Model (IsoClass.mk X).fieldOfModuli X) :=
   (exists_place_over_two_and_degree_eq_one X).elim fun P ⟨hPa, hP⟩ ↦
-  nonempty_model_fieldOfModuli_of_isGalois_of_degreeOnePlace_over_finiteRationalPoint_ne_zero_ne_one
+  nonempty_model_fieldOfModuli_of_isGalois_of_degree_eq_one
     X (q := 2) (by norm_num) (by norm_num) hPa hP
 
 /-- **Köck's Theorem 2.2(b)**: over an algebraically closed field `k` of characteristic zero, the

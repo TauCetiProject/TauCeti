@@ -26,7 +26,7 @@ We identify this coefficient field (`TauCeti.AlgebraicBelyiPair.pointedFieldOfMo
 `P`. When `P` lies over a finite point `t = q` with `q : ℚ` (no degree-one or unramifiedness
 hypothesis is needed), we bound the degree of this field over the field of moduli and show it equals
 the field of moduli in the Galois case
-(`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_finiteRationalPoint`, as a
+(`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible`, as a
 specialization of `pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq` in
 `TauCeti.AlgebraicBelyiPair`).
 When `P` is moreover unbranched of degree one over a finite point `t = q` with `q : ℚ` and
@@ -107,12 +107,12 @@ theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
 
 /-- **For a Galois Belyi pair, the pointed field of moduli at any place over a finite point
 `t = q` with `q : ℚ` is the field of moduli of the pair.** -/
-theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_finiteRationalPoint
+theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_adicOfIrreducible
     [IsGalois (RatFunc k) X] {P : Place k X} {q : ℚ}
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli :=
   X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
-    (restrict_smul_eq_of_restrict_eq_finiteRationalPoint hPa)
+    (restrict_smul_eq_of_restrict_eq_adicOfIrreducible hPa)
 
 variable {X} {P : Place k X} {q : ℚ}
   (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)

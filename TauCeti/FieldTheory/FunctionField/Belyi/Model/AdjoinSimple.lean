@@ -48,13 +48,11 @@ induced `K(t)`-action on `X` factoring through `k(t)`. -/
 noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algebra K k]
     {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank :
-      letI : Algebra (RatFunc K) X :=
-        ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
+      letI := X.ratFuncAlgebra K
       Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
     Model K X :=
   letI : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
-  letI : Algebra (RatFunc K) X :=
-    ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
+  letI := X.ratFuncAlgebra K
   haveI : IsScalarTower (RatFunc K) (RatFunc k) X := IsScalarTower.of_algebraMap_eq' rfl
   letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
   haveI : IsScalarTower K k X := IsScalarTower.of_algebraMap_eq' rfl
@@ -94,20 +92,28 @@ noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algeb
     embedding_algebraMap_X := hX_E
     adjoin_range_embedding := hadj }
 
+private theorem modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K] [Algebra K k]
+    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
+    (hfinrank :
+      letI := X.ratFuncAlgebra K
+      Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
+    (X.modelOfAdjoinSimple hgen hfinrank).embedding =
+      (letI := X.ratFuncAlgebra K
+      algebraMap (RatFunc K)⟮z⟯ X) :=
+  rfl
+
 /-- The embedding image of the model constructed from `z` is `K(t)⟮z⟯`. -/
 @[simp]
 theorem fieldRange_modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K] [Algebra K k]
     {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank :
-      letI : Algebra (RatFunc K) X :=
-        ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
+      letI := X.ratFuncAlgebra K
       Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
     (X.modelOfAdjoinSimple hgen hfinrank).embedding.fieldRange =
-      (letI : Algebra (RatFunc K) X :=
-        ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
-      ((RatFunc K)⟮z⟯).toSubfield) :=
-  letI : Algebra (RatFunc K) X :=
-    ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
-  Subfield.fieldRange_subtype ((RatFunc K)⟮z⟯).toSubfield
+      (letI := X.ratFuncAlgebra K
+      ((RatFunc K)⟮z⟯).toSubfield) := by
+  let _ := X.ratFuncAlgebra K
+  rw [modelOfAdjoinSimple_embedding]
+  exact Subfield.fieldRange_subtype ((RatFunc K)⟮z⟯).toSubfield
 
 end TauCeti.AlgebraicBelyiPair

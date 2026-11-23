@@ -92,7 +92,16 @@ namespace TauCeti
 
 namespace AlgebraicBelyiPair
 
-variable {k : Type u} [Field k] [CharZero k] {K : Type v} [Field K] [CharZero K] [Algebra K k]
+variable {k : Type u} [Field k] [CharZero k]
+
+/-- The `RatFunc K`-algebra structure on `X` induced by `K(t) → k(t) → X` via
+`TauCeti.ratFuncMapRingHom K k`. -/
+@[expose, instance_reducible]
+noncomputable def ratFuncAlgebra (X : AlgebraicBelyiPair k) (K : Type v) [Field K] [Algebra K k] :
+    Algebra (RatFunc K) X :=
+  ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
+
+variable {K : Type v} [Field K] [CharZero K] [Algebra K k]
 
 variable (K) in
 /-- A **model** of an algebraic Belyi pair `X = (F, k(t) ↪ F)` over a field `K → k`: an algebraic
@@ -307,6 +316,15 @@ theorem ratFuncBaseChangeEquiv_tmul (r : RatFunc k) (y : M.pair) :
   constantExtensionRatFuncTensorEquiv_tmul M.linearDisjoint M.constantCompositum_eq_top
     (ratFuncMapRingHom_X K k) M.embedding_algebraMap_X r y
 
+/-- The inverse of `ratFuncBaseChangeEquiv` maps the embedding of a model element `y` to
+`1 ⊗ₜ y`. -/
+@[simp]
+theorem ratFuncBaseChangeEquiv_symm_embedding (y : M.pair) :
+    letI : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
+    M.ratFuncBaseChangeEquiv.symm (M.embedding y) = 1 ⊗ₜ[RatFunc K] y := by
+  let _ : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
+  rw [AlgEquiv.symm_apply_eq, ratFuncBaseChangeEquiv_tmul, map_one, one_mul]
+
 /-- Every model of `X` has the same Belyi degree as `X`, with no algebraicity assumption on
 `k / K`. -/
 @[simp]
@@ -351,25 +369,13 @@ theorem baseChangeEquiv_symm_algebraMap [Algebra.IsAlgebraic K k] (c : k) :
 theorem ringHom_ext {R : Type*} [Semiring R] {f g : X →+* R}
     (h₁ : ∀ y : M.pair, f (M.embedding y) = g (M.embedding y))
     (h₂ : ∀ c : k, f (algebraMap k X c) = g (algebraMap k X c)) : f = g := by
-  let S : Subfield X :=
-    { (RingHom.eqLocus f g) with
-      inv_mem' := fun {x} hx ↦ by
-        change f x⁻¹ = g x⁻¹
-        rcases eq_or_ne x 0 with rfl | hne
-        · rw [inv_zero, map_zero, map_zero]
-        · calc
-            f x⁻¹ = (g x⁻¹ * g x) * f x⁻¹ := by
-              rw [← map_mul, inv_mul_cancel₀ hne, map_one, one_mul]
-            _ = g x⁻¹ * (f x * f x⁻¹) := by rw [mul_assoc, RingHom.mem_eqLocus.mp hx]
-            _ = g x⁻¹ := by rw [← map_mul, mul_inv_cancel₀ hne, map_one, mul_one] }
-  have hle : (IntermediateField.adjoin k (Set.range M.embedding)).toSubfield ≤ S := by
-    rw [IntermediateField.adjoin_toSubfield, Subfield.closure_le]
-    rintro _ (⟨c, rfl⟩ | ⟨y, rfl⟩)
+  refine RingHom.eq_of_eqOn_of_field_closure_eq_top
+    (s := Set.range (algebraMap k X) ∪ Set.range M.embedding) ?_ ?_
+  · rw [← IntermediateField.adjoin_toSubfield, M.adjoin_range_embedding,
+      IntermediateField.top_toSubfield]
+  · rintro _ (⟨c, rfl⟩ | ⟨y, rfl⟩)
     · exact h₂ c
     · exact h₁ y
-  refine RingHom.ext fun x ↦ hle ?_
-  rw [IntermediateField.mem_toSubfield, M.adjoin_range_embedding]
-  exact IntermediateField.mem_top
 
 /-- The automorphism of `X` induced by an automorphism `σ` of `k` over `K` through a model over
 `K`: it is `id ⊗ σ` extended to the fraction field of `F₀ ⊗[K] k` and transported along
@@ -420,12 +426,11 @@ theorem baseChangeAut_mul : M.baseChangeAut (σ * τ) = M.baseChangeAut σ * M.b
 theorem baseChangeAut_symm : (M.baseChangeAut σ).symm = M.baseChangeAut σ.symm :=
   RingEquiv.toRingHom_injective <| M.ringHom_ext
     (fun y ↦ by
-      change (M.baseChangeAut σ).symm (M.embedding y) = M.baseChangeAut σ.symm (M.embedding y)
-      rw [RingEquiv.symm_apply_eq, baseChangeAut_embedding, baseChangeAut_embedding])
+      simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq,
+        baseChangeAut_embedding])
     fun c ↦ by
-      change (M.baseChangeAut σ).symm (algebraMap k X c) = M.baseChangeAut σ.symm (algebraMap k X c)
-      rw [RingEquiv.symm_apply_eq, baseChangeAut_algebraMap, baseChangeAut_algebraMap,
-        AlgEquiv.apply_symm_apply]
+      simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq,
+        baseChangeAut_algebraMap, AlgEquiv.apply_symm_apply]
 
 /-- The group homomorphism `(k ≃ₐ[K] k) →* RingAut X` induced by a model over `K`. -/
 @[expose, simps]
