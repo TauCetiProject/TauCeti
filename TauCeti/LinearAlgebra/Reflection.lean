@@ -98,6 +98,12 @@ theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
   rw [preReflection_apply, map_sub, map_smul, smul_eq_mul, h]
   ring
 
+/-- A module reflection acts as negation on the span `R ∙ x` of its defining vector. -/
+theorem reflection_eq_neg_of_mem_span {y : M} (hy : y ∈ R ∙ x) :
+    reflection h y = -y := by
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
+  rw [map_smul, reflection_apply_self, smul_neg]
+
 /-- A finite free module of positive rank has a linear automorphism of determinant `-1`, namely
 a reflection in a basis vector. -/
 theorem exists_det_eq_neg_one [Module.Free R M] [Module.Finite R M]
