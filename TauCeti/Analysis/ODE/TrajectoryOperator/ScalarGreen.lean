@@ -10,6 +10,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.APriori
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Data.ENNReal.Mul
 
 /-!
 # The trajectory operator of an expanding scalar coefficient
@@ -199,6 +200,66 @@ theorem bijective_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : p
   ⟨injective_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb,
     surjective_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb hp⟩
 
+/-- The density step of
+`TauCeti.WeakDerivStep.prev_ae_eq_scalarGreenIntegral_of_trajectoryOperator_ae_eq`: comparing `u`
+with the solution for a continuous compactly supported forcing term `ε`-close to `f` in `Lᵖ`
+bounds the `Lᵖ` distance between `u` and the Green integral of `f` by `4 K / α ε`. -/
+private theorem eLpNorm_prev_sub_scalarGreenIntegral_le (hb : Continuous b) (hp : p ≠ ∞)
+    {f : ℝ → E} (hfp : MemLp f p volume)
+    {u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    (hu : ⇑(trajectoryOperator AL u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] f)
+    {ε : ℝ≥0∞} (hε : ε ≠ 0) :
+    eLpNorm (⇑(prev _ u) - scalarGreenIntegral g f) p volume ≤
+      (ENNReal.ofReal (2 * K / α) + ENNReal.ofReal (2 * K / α)) * ε := by
+  have hgc : Continuous g := continuous_iff_continuousAt.2 fun s ↦ (hg s).continuousAt
+  have hC := norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb hp
+  -- On the whole line the restricted measure is `volume`.
+  have hae {F G : ℝ → E} (h : F =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] G) : F =ᵐ[volume] G :=
+    by simpa using h
+  have hnorm {F : ℝ → E} :
+      eLpNorm F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) = eLpNorm F p volume := by simp
+  set c := ENNReal.ofReal (2 * K / α)
+  -- Compare with the solution `v` for a continuous compactly supported `φ` close to `f`.
+  obtain ⟨φ, hφc, hfφ, hφ, hφp⟩ := hfp.exists_hasCompactSupport_eLpNorm_sub_le hp hε
+  obtain ⟨v, hv, hTv⟩ :=
+    exists_prev_ae_eq_scalarGreenIntegral_and_trajectoryOperator_ae_eq (p := p) hg hpos hK hα
+      hAL hφ hφc
+  have hTuv : eLpNorm (⇑(trajectoryOperator AL (u - v))) p volume = eLpNorm (f - φ) p volume :=
+    eLpNorm_congr_ae <| by
+      rw [map_sub]
+      filter_upwards [hae (Lp.coeFn_sub (trajectoryOperator AL u) (trajectoryOperator AL v)),
+        hae hu, hae hTv] with s hs hus hvs
+      rw [hs, Pi.sub_apply, hus, hvs, Pi.sub_apply]
+  -- The value part: the a priori estimate for `u - v`.
+  have h₁ : eLpNorm (⇑(prev _ (u - v))) p volume ≤ c * ε := by
+    rw [← hnorm, ← Lp.eNorm_def, ← ofReal_norm]
+    calc ENNReal.ofReal ‖prev _ (u - v)‖
+        ≤ ENNReal.ofReal (2 * K / α * ‖trajectoryOperator AL (u - v)‖) :=
+          ENNReal.ofReal_le_ofReal (hC (u - v))
+      _ = c * eLpNorm (f - φ) p volume := by
+        rw [ENNReal.ofReal_mul' (norm_nonneg _), ofReal_norm, Lp.eNorm_def, hnorm,
+          hTuv]
+      _ ≤ c * ε := by gcongr
+  -- The forcing part: the Green integral is Lipschitz on `Lᵖ`.
+  have h₂ : eLpNorm (scalarGreenIntegral g φ - scalarGreenIntegral g f) p volume ≤ c * ε :=
+    (eLpNorm_scalarGreenIntegral_sub_le hgc.aemeasurable hpos hK hα hφp hfp).trans
+      (by rw [eLpNorm_sub_comm]; gcongr)
+  have hsplit : ⇑(prev _ u) - scalarGreenIntegral g f =ᵐ[volume]
+      ⇑(prev _ (u - v)) + (scalarGreenIntegral g φ - scalarGreenIntegral g f) := by
+    filter_upwards [hae (Lp.coeFn_sub (prev _ u) (prev _ v)), hae hv] with s hs hvs
+    rw [Pi.sub_apply, Pi.add_apply, prev_sub, hs, Pi.sub_apply, hvs, Pi.sub_apply]
+    abel
+  calc eLpNorm (⇑(prev _ u) - scalarGreenIntegral g f) p volume
+      = eLpNorm (⇑(prev _ (u - v)) + (scalarGreenIntegral g φ - scalarGreenIntegral g f))
+          p volume :=
+        eLpNorm_congr_ae hsplit
+    _ ≤ eLpNorm (⇑(prev _ (u - v))) p volume +
+          eLpNorm (scalarGreenIntegral g φ - scalarGreenIntegral g f) p volume :=
+        eLpNorm_add_le Fact.out
+    _ ≤ c * ε + c * ε := add_le_add h₁ h₂
+    _ = (c + c) * ε := (add_mul _ _ _).symm
+
 /-- **The inverse of `d/ds - b` is the Green integral.** Under the hypotheses of
 `TauCeti.WeakDerivStep.bijective_trajectoryOperator_of_scalarGrowth`, if `u ∈ W^{1,p}(ℝ, E)`
 solves `u' - b u = f`, then
@@ -211,76 +272,14 @@ theorem prev_ae_eq_scalarGreenIntegral_of_trajectoryOperator_ae_eq (hb : Continu
       (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
     (hu : ⇑(trajectoryOperator AL u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] f) :
     ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] scalarGreenIntegral g f := by
-  have hgc : Continuous g := continuous_iff_continuousAt.2 fun s ↦ (hg s).continuousAt
-  have hC := norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb hp
-  -- On the whole line the restricted measure is `volume`.
-  have hae {F G : ℝ → E} (h : F =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] G) : F =ᵐ[volume] G :=
-    by simpa using h
-  have hnorm {F : ℝ → E} :
-      eLpNorm F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) = eLpNorm F p volume := by simp
   have hfp : MemLp f p volume := by
     have h := (Lp.memLp (trajectoryOperator AL u)).ae_eq hu
     rwa [Opens.coe_top, Measure.restrict_univ] at h
-  have hint {φ : ℝ → E} (hφ : MemLp φ p volume) (s : ℝ) :
-      IntegrableOn (fun t ↦ (g t)⁻¹ • φ t) (Ioi s) :=
-    integrableOn_inv_smul_Ioi hgc.aemeasurable hpos hK hα (hφ.restrict _)
-  set c := ENNReal.ofReal (2 * K / α)
-  -- Compare with the solution `v` for a continuous compactly supported `φ` close to `f`.
-  have key (ε : ℝ≥0∞) (hε : ε ≠ 0) :
-      eLpNorm (⇑(prev _ u) - scalarGreenIntegral g f) p volume ≤ (c + c) * ε := by
-    obtain ⟨φ, hφc, hfφ, hφ, hφp⟩ := hfp.exists_hasCompactSupport_eLpNorm_sub_le hp hε
-    obtain ⟨v, hv, hTv⟩ :=
-      exists_prev_ae_eq_scalarGreenIntegral_and_trajectoryOperator_ae_eq (p := p) hg hpos hK hα
-        hAL hφ hφc
-    have hTuv : eLpNorm (⇑(trajectoryOperator AL (u - v))) p volume = eLpNorm (f - φ) p volume :=
-      eLpNorm_congr_ae <| by
-        rw [map_sub]
-        filter_upwards [hae (Lp.coeFn_sub (trajectoryOperator AL u) (trajectoryOperator AL v)),
-          hae hu, hae hTv] with s hs hus hvs
-        rw [hs, Pi.sub_apply, hus, hvs, Pi.sub_apply]
-    -- The value part: the a priori estimate for `u - v`.
-    have h₁ : eLpNorm (⇑(prev _ (u - v))) p volume ≤ c * ε := by
-      rw [← hnorm, ← Lp.eNorm_def, ← ofReal_norm]
-      calc ENNReal.ofReal ‖prev _ (u - v)‖
-          ≤ ENNReal.ofReal (2 * K / α * ‖trajectoryOperator AL (u - v)‖) :=
-            ENNReal.ofReal_le_ofReal (hC (u - v))
-        _ = c * eLpNorm (f - φ) p volume := by
-          rw [ENNReal.ofReal_mul' (norm_nonneg _), ofReal_norm, Lp.eNorm_def, hnorm,
-            hTuv]
-        _ ≤ c * ε := by gcongr
-    -- The forcing part: the `Lᵖ` bound for the Green integral of `φ - f`.
-    have h₂ : eLpNorm (scalarGreenIntegral g (φ - f)) p volume ≤ c * ε :=
-      (eLpNorm_scalarGreenIntegral_le hgc.aemeasurable hpos hK hα
-        (hφ.aestronglyMeasurable.sub hfp.aestronglyMeasurable) Fact.out).trans
-        (by rw [eLpNorm_sub_comm]; gcongr)
-    have hsplit : ⇑(prev _ u) - scalarGreenIntegral g f =ᵐ[volume]
-        ⇑(prev _ (u - v)) + scalarGreenIntegral g (φ - f) := by
-      filter_upwards [hae (Lp.coeFn_sub (prev _ u) (prev _ v)), hae hv] with s hs hvs
-      rw [Pi.sub_apply, Pi.add_apply,
-        show prev _ (u - v) = prev _ u - prev _ v by simp only [← prevL_apply, map_sub], hs,
-        Pi.sub_apply, hvs,
-        scalarGreenIntegral_sub (hint hφp s) (hint hfp s)]
-      abel
-    calc eLpNorm (⇑(prev _ u) - scalarGreenIntegral g f) p volume
-        = eLpNorm (⇑(prev _ (u - v)) + scalarGreenIntegral g (φ - f)) p volume :=
-          eLpNorm_congr_ae hsplit
-      _ ≤ eLpNorm (⇑(prev _ (u - v))) p volume +
-            eLpNorm (scalarGreenIntegral g (φ - f)) p volume :=
-          eLpNorm_add_le Fact.out
-      _ ≤ c * ε + c * ε := add_le_add h₁ h₂
-      _ = (c + c) * ε := (add_mul _ _ _).symm
   -- Letting `ε → 0`, the `Lᵖ` distance between `u` and the Green integral of `f` vanishes.
-  have hzero : eLpNorm (⇑(prev _ u) - scalarGreenIntegral g f) p volume = 0 := by
-    refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_) zero_le
-    rw [zero_add]
-    rcases eq_or_ne (c + c) 0 with h0 | h0
-    · calc _ ≤ (c + c) * 1 := key 1 one_ne_zero
-        _ = 0 := by rw [h0, zero_mul]
-        _ ≤ δ := zero_le
-    · have hctop : c + c ≠ ∞ := ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, ENNReal.ofReal_ne_top⟩
-      calc _ ≤ (c + c) * (δ / (c + c)) :=
-            key _ (ENNReal.div_ne_zero.2 ⟨by exact_mod_cast hδ.ne', hctop⟩)
-        _ = δ := ENNReal.mul_div_cancel h0 hctop
+  have hzero : eLpNorm (⇑(prev _ u) - scalarGreenIntegral g f) p volume = 0 :=
+    ENNReal.eq_zero_of_forall_le_mul
+      (ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, ENNReal.ofReal_ne_top⟩) fun _ hε ↦
+        eLpNorm_prev_sub_scalarGreenIntegral_le hg hpos hK hα hAL hb hp hfp hu hε
   exact ae_restrict_of_ae ((sub_ae_eq_zero _ _).1
     ((eLpNorm_eq_zero_iff (zero_lt_one.trans_le Fact.out).ne').1 hzero))
 

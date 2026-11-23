@@ -52,6 +52,8 @@ inclusion.
   precisely when `a < 0`, or `a = 0` and `s < -1`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
 * `TauCeti.memLp_exp_neg_mul_abs`: it lies in every `Lᵖ`.
+* `TauCeti.memLp_exp_neg_mul_Ioi`: the decaying exponential `exp (-a t)` lies in every `Lᵖ` of a
+  right half-line.
 * `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
 * `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
   of `c * exp (-(a * |·|))`.
@@ -427,6 +429,27 @@ theorem memLp_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
   -- The `p`-th power of the two-sided exponential is the two-sided exponential of rate `p a`.
   refine (integrable_norm_rpow_iff hm hp0 hptop).1 ((integrable_exp_neg_mul_abs
     (mul_pos (ENNReal.toReal_pos hp0 hptop) ha)).congr (.of_forall fun x ↦ ?_))
+  simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
+  congr 1
+  ring
+
+/-- The decaying exponential `exp (-a t)` lies in every `Lᵖ` space of a right half-line
+`(c, ∞)` when `0 < a`. -/
+theorem memLp_exp_neg_mul_Ioi {a : ℝ} (ha : 0 < a) (c : ℝ) (p : ℝ≥0∞) :
+    MemLp (fun t : ℝ ↦ Real.exp (-a * t)) p (volume.restrict (Ioi c)) := by
+  have hm : AEStronglyMeasurable (fun t : ℝ ↦ Real.exp (-a * t)) (volume.restrict (Ioi c)) :=
+    (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-a * t)).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine memLp_top_of_bound hm (Real.exp (-a * c)) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact Real.exp_le_exp.2 (by nlinarith [ht.out])
+  -- The `p`-th power of `exp (-a t)` is the exponential of rate `-p a`.
+  refine (integrable_norm_rpow_iff hm hp0 hptop).1 ((integrableOn_exp_mul_Ioi
+    (a := -a * p.toReal) (by nlinarith [ENNReal.toReal_pos hp0 hptop]) c).congr_fun
+    (fun t _ ↦ ?_) measurableSet_Ioi)
   simp only [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
   congr 1
   ring

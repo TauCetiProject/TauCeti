@@ -254,8 +254,10 @@ theorem aestronglyMeasurable_greenIntegral (hg : AEStronglyMeasurable g) :
     (K := fun t s ↦ exp ((t - s) • A) ((ContinuousLinearMap.id ℝ X - P) (g s)))
     (hF (ContinuousLinearMap.id ℝ X - P))
     (measurableSet_lt measurable_fst measurable_snd) (R := fun t s ↦ t < s)
-  simp only [sub_apply, ContinuousLinearMap.id_apply] at hQ
-  exact hP.sub hQ
+  simp only [sub_apply, ContinuousLinearMap.id_apply, Set.Ioi_def] at hQ
+  simp only [Set.Iic_def] at hP
+  refine (hP.sub hQ).congr (ae_of_all _ fun t ↦ ?_)
+  simp only [Pi.sub_apply, greenIntegral_def]
 
 
 section Bounds

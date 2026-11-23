@@ -47,7 +47,8 @@ constant-coefficient case with a general dichotomy is `TauCeti.Analysis.ODE.Gree
   forcing terms `f` with `f / g` integrable on `(s, ∞)`, which holds under the growth bound for
   every `f ∈ Lᵖ` (`TauCeti.integrableOn_inv_smul_Ioi`).
 * `TauCeti.hasDerivAt_scalarGreenIntegral`: for continuous bounded `f`, it solves `u' = b u + f`.
-* `TauCeti.eLpNorm_scalarGreenIntegral_le`: the bound `‖G f‖_{Lᵖ} ≤ 2 K / α ‖f‖_{Lᵖ}`.
+* `TauCeti.eLpNorm_scalarGreenIntegral_le`: the bound `‖G f‖_{Lᵖ} ≤ 2 K / α ‖f‖_{Lᵖ}`, and
+  `TauCeti.eLpNorm_scalarGreenIntegral_sub_le`, the resulting Lipschitz bound on `Lᵖ`.
 * `TauCeti.scalarGreenIntegral_deriv_sub_eq`: `G (u' - b u) = u` for compactly supported `C¹`
   paths `u`.
 
@@ -101,6 +102,14 @@ theorem scalarGreenIntegral_neg (g : ℝ → ℝ) (f : ℝ → E) (s : ℝ) :
     scalarGreenIntegral g (-f) s = -scalarGreenIntegral g f s := by
   simpa using scalarGreenIntegral_smul g (-1) f s
 
+/-- The Green integral at `s` depends only on the almost-everywhere class of the forcing term on
+`(s, ∞)`. -/
+theorem scalarGreenIntegral_congr_ae (g : ℝ → ℝ) {f₁ f₂ : ℝ → E} {s : ℝ}
+    (h : f₁ =ᵐ[volume.restrict (Ioi s)] f₂) :
+    scalarGreenIntegral g f₁ s = scalarGreenIntegral g f₂ s := by
+  rw [scalarGreenIntegral_def, scalarGreenIntegral_def,
+    integral_congr_ae (h.mono fun t ht ↦ by rw [ht])]
+
 section Additivity
 
 variable {g : ℝ → ℝ} {f₁ f₂ : ℝ → E} {s : ℝ}
@@ -133,9 +142,11 @@ theorem aestronglyMeasurable_scalarGreenIntegral {g : ℝ → ℝ} {f : ℝ → 
     (hf : AEStronglyMeasurable f) : AEStronglyMeasurable (scalarGreenIntegral g f) := by
   have hF : AEStronglyMeasurable (fun z : ℝ × ℝ ↦ (g z.2)⁻¹ • f z.2) (volume.prod volume) :=
     (hg.inv.aestronglyMeasurable.smul hf).comp_snd
-  exact (hg.aestronglyMeasurable.smul (aestronglyMeasurable_setIntegral_of_measurableSet
-    (K := fun _ s ↦ (g s)⁻¹ • f s) hF (R := fun s t ↦ s < t)
-    (measurableSet_lt measurable_fst measurable_snd))).neg
+  have hI := aestronglyMeasurable_setIntegral_of_measurableSet (K := fun _ s ↦ (g s)⁻¹ • f s) hF
+    (R := fun s t ↦ s < t) (measurableSet_lt measurable_fst measurable_snd)
+  simp only [Set.Ioi_def] at hI
+  refine (hg.aestronglyMeasurable.smul hI).neg.congr (ae_of_all _ fun s ↦ ?_)
+  simp only [Pi.neg_apply, Pi.smul_apply', scalarGreenIntegral_def]
 
 /-- **The Green integral recovers compactly supported paths.** If `g` is a positive solution of
 `v' = b v` for a continuous coefficient `b`, then every compactly supported `C¹` path `u` in a
@@ -185,28 +196,6 @@ theorem one_le_of_scalarGrowth (hpos : ∀ s, 0 < g s)
   have h := hK 0 0 le_rfl
   rw [sub_self, mul_zero, Real.exp_zero, mul_one] at h
   exact (le_mul_iff_one_le_left (hpos 0)).1 h
-
-/-- The decaying exponential `exp (-α t)` lies in every `Lᵖ` of a half-line `(c, ∞)`. -/
-private theorem memLp_exp_neg_mul_Ioi (hα : 0 < α) (c : ℝ) (q : ℝ≥0∞) :
-    MemLp (fun t ↦ Real.exp (-α * t)) q (volume.restrict (Ioi c)) := by
-  have hmeas : AEStronglyMeasurable (fun t ↦ Real.exp (-α * t)) (volume.restrict (Ioi c)) :=
-    (Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable
-  rcases eq_or_ne q 0 with rfl | hq0
-  · exact memLp_zero_iff_aestronglyMeasurable.2 hmeas
-  rcases eq_or_ne q ∞ with rfl | hqtop
-  · refine memLp_top_of_bound hmeas (Real.exp (-α * c)) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    rw [Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact Real.exp_le_exp.2 (by nlinarith [ht.out])
-  · have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hqtop
-    refine (integrable_norm_rpow_iff hmeas hq0 hqtop).1 ?_
-    have heq : (fun t ↦ ‖Real.exp (-α * t)‖ ^ q.toReal) =
-        fun t ↦ Real.exp ((-α * q.toReal) * t) := by
-      funext t
-      rw [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
-      ring_nf
-    rw [heq]
-    exact integrableOn_exp_mul_Ioi (by nlinarith) c
 
 /-- Under the growth bound, `1 / g` lies in every `Lᵖ` of a half-line `(c, ∞)`. -/
 private theorem memLp_inv_Ioi (hg : AEMeasurable g) (hpos : ∀ s, 0 < g s)
@@ -287,6 +276,22 @@ theorem eLpNorm_scalarGreenIntegral_le (hg : AEMeasurable g) (hpos : ∀ s, 0 < 
   eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs hα K
     (aestronglyMeasurable_scalarGreenIntegral hg hf) hf
     (ae_of_all _ (enorm_scalarGreenIntegral_le hpos hK f)) hp
+
+/-- **The Green integral is Lipschitz on `Lᵖ`.** Under the growth bound, for forcing terms
+`f₁, f₂ ∈ Lᵖ` with `1 ≤ p ≤ ∞`, `‖G f₁ - G f₂‖_{Lᵖ} ≤ 2 K / α ‖f₁ - f₂‖_{Lᵖ}`. -/
+theorem eLpNorm_scalarGreenIntegral_sub_le (hg : AEMeasurable g) (hpos : ∀ s, 0 < g s)
+    (hK : ∀ s t, s ≤ t → g s ≤ K * Real.exp (-α * (t - s)) * g t) (hα : 0 < α)
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {f₁ f₂ : ℝ → E} (hf₁ : MemLp f₁ p) (hf₂ : MemLp f₂ p) :
+    eLpNorm (scalarGreenIntegral g f₁ - scalarGreenIntegral g f₂) p volume ≤
+      ENNReal.ofReal (2 * K / α) * eLpNorm (f₁ - f₂) p volume := by
+  have hsub : scalarGreenIntegral g f₁ - scalarGreenIntegral g f₂ =
+      scalarGreenIntegral g (f₁ - f₂) := funext fun s ↦ by
+    rw [Pi.sub_apply, scalarGreenIntegral_sub
+      (integrableOn_inv_smul_Ioi hg hpos hK hα (hf₁.restrict _))
+      (integrableOn_inv_smul_Ioi hg hpos hK hα (hf₂.restrict _))]
+  rw [hsub]
+  exact eLpNorm_scalarGreenIntegral_le hg hpos hK hα
+    (hf₁.aestronglyMeasurable.sub hf₂.aestronglyMeasurable) Fact.out
 
 end Growth
 
