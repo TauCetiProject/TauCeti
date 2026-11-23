@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Complex conjugation of principal polylogarithms
@@ -38,7 +39,7 @@ the closed unit disc, and real values of every `Liₙ` on the real half-line `(-
 * `TauCeti.Polylog.polylog_conj`: conjugation symmetry in every weight off the cut `(1, ∞)`.
 * `TauCeti.Polylog.polylog_conj_of_re_le_one`, `TauCeti.Polylog.polylog_conj_of_norm_le_one`:
   conjugation symmetry on `re z ≤ 1` and on the closed unit disc `‖z‖ ≤ 1`.
-* `TauCeti.Polylog.polylog_ofReal_im`, `TauCeti.Polylog.im_polylog_ofReal_of_nonpos`:
+* `TauCeti.Polylog.polylog_ofReal_im`, `TauCeti.Polylog.polylog_ofReal_im_of_nonpos`:
   `Liₙ x` is real for real `x ≤ 1`, and for all real `x` when `n ≤ 0`.
 
 ## References
@@ -94,13 +95,7 @@ theorem polylog_conj_of_nonpos {n : ℤ} (hn : n ≤ 0) (z : ℂ) :
 theorem polylog_conj (n : ℤ) {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) :
     polylog n (conj z) = conj (polylog n z) := by
   have hzarg : (1 - z).arg ≠ Real.pi := by
-    intro harg
-    obtain ⟨hre, him⟩ := Complex.arg_eq_pi_iff.mp harg
-    simp only [Complex.sub_re, Complex.one_re, Complex.sub_im, Complex.one_im, zero_sub,
-      neg_eq_zero] at hre him
-    rcases hz with hzim | hzre
-    · exact hzim him
-    · linarith
+    simpa using Complex.arg_one_sub_ofReal_mul_ne_pi z hz (Set.right_mem_Icc.mpr zero_le_one)
   rcases le_or_gt n 0 with hn | hn
   · obtain ⟨r, rfl⟩ := Int.exists_eq_neg_ofNat hn
     exact polylog_neg_nat_conj r z
@@ -114,15 +109,7 @@ theorem polylog_conj (n : ℤ) {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) :
       (intervalIntegral.integral_congr fun t ht ↦ ?_)
     rw [Set.uIcc_of_le zero_le_one] at ht
     -- For `t ∈ [0, 1]`, the point `1 - t z` also avoids the negative real axis.
-    have harg : (1 - t * z).arg ≠ Real.pi := by
-      rw [Ne, Complex.arg_eq_pi_iff] at hzarg ⊢
-      simp only [Complex.sub_re, Complex.one_re, Complex.mul_re, Complex.ofReal_re,
-        Complex.ofReal_im, zero_mul, sub_zero, Complex.sub_im, Complex.one_im,
-        Complex.mul_im, add_zero, zero_sub, neg_eq_zero, mul_eq_zero] at hzarg ⊢
-      rintro ⟨hre, ht0 | him⟩
-      · norm_num [ht0] at hre
-      · exact hzarg ⟨by nlinarith [ht.1, ht.2], him⟩
-    have hlog := Complex.log_conj _ harg
+    have hlog := Complex.log_conj _ (Complex.arg_one_sub_ofReal_mul_ne_pi z hz ht)
     simp only [map_sub, map_one, map_mul, Complex.conj_ofReal] at hlog
     simp [hlog]
 
@@ -140,38 +127,38 @@ theorem polylog_conj_of_norm_le_one (n : ℤ) {z : ℂ} (hz : ‖z‖ ≤ 1) :
 
 /-- Nonpositive-weight polylogarithms take real values at every real argument, including `1`. -/
 @[simp]
-theorem im_polylog_neg_nat_ofReal (r : ℕ) (x : ℝ) :
+theorem polylog_neg_nat_ofReal_im (r : ℕ) (x : ℝ) :
     (polylog (-(r : ℤ)) x).im = 0 :=
   Complex.conj_eq_iff_im.mp (by simpa using (polylog_neg_nat_conj r x).symm)
 
 /-- Negative-numeral-weight polylogarithms (such as `polylog (-1)` and `polylog (-2)`) take real
 values at every real argument, including `1`. -/
 @[simp]
-theorem im_polylog_neg_ofNat_ofReal (r : ℕ) (x : ℝ) :
+theorem polylog_neg_ofNat_ofReal_im (r : ℕ) (x : ℝ) :
     (polylog (-ofNat(r)) x).im = 0 :=
-  im_polylog_neg_nat_ofReal r x
+  polylog_neg_nat_ofReal_im r x
 
 /-- Every nonpositive-weight polylogarithm is real-valued on all of `ℝ`, including `1`. -/
-theorem im_polylog_ofReal_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
+theorem polylog_ofReal_im_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
     (polylog n x).im = 0 :=
   Complex.conj_eq_iff_im.mp (by simpa using (polylog_conj_of_nonpos hn x).symm)
 
 /-- On all of `ℝ` (including `1`), `polylog (-r) x` equals the coercion of its real part. -/
 @[simp]
-theorem ofReal_re_polylog_neg_nat_ofReal (r : ℕ) (x : ℝ) :
+theorem ofReal_polylog_neg_nat_ofReal_re (r : ℕ) (x : ℝ) :
     ((polylog (-(r : ℤ)) x).re : ℂ) = polylog (-(r : ℤ)) x :=
   Complex.conj_eq_iff_re.mp (by simpa using (polylog_neg_nat_conj r x).symm)
 
 /-- On all of `ℝ` (including `1`), a negative-numeral-weight polylogarithm equals the coercion of
 its real part. -/
 @[simp]
-theorem ofReal_re_polylog_neg_ofNat_ofReal (r : ℕ) (x : ℝ) :
+theorem ofReal_polylog_neg_ofNat_ofReal_re (r : ℕ) (x : ℝ) :
     ((polylog (-ofNat(r)) x).re : ℂ) = polylog (-ofNat(r)) x :=
-  ofReal_re_polylog_neg_nat_ofReal r x
+  ofReal_polylog_neg_nat_ofReal_re r x
 
 /-- On all of `ℝ` (including `1`), a nonpositive-weight polylogarithm equals the coercion of its
 real part. -/
-theorem ofReal_re_polylog_ofReal_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
+theorem ofReal_polylog_ofReal_re_of_nonpos {n : ℤ} (hn : n ≤ 0) (x : ℝ) :
     ((polylog n x).re : ℂ) = polylog n x :=
   Complex.conj_eq_iff_re.mp (by simpa using (polylog_conj_of_nonpos hn x).symm)
 
@@ -181,7 +168,7 @@ theorem polylog_ofReal_im (n : ℤ) {x : ℝ} (hx : x ≤ 1) : (polylog n x).im 
     Complex.conj_ofReal]
 
 /-- On `(-∞, 1]`, `polylog n x` equals the coercion of its real part. -/
-theorem ofReal_re_polylog_of_le_one (n : ℤ) {x : ℝ} (hx : x ≤ 1) :
+theorem ofReal_polylog_ofReal_re_of_le_one (n : ℤ) {x : ℝ} (hx : x ≤ 1) :
     ((polylog n x).re : ℂ) = polylog n x :=
   Complex.conj_eq_iff_re.mp
     (by simpa using (polylog_conj_of_re_le_one n (z := x) (by simpa)).symm)

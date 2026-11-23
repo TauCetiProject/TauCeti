@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -55,8 +56,8 @@ Specifically:
 * `TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos` and
   `TauCeti.Polylog.continuousOn_polylog_im_nonpos`: continuity on the closed lower
   half-plane.
-* `TauCeti.Polylog.im_polylog_of_one_lt`: `(polylog n x).im = -π (log x) ^ (n - 1) / (n - 1)!` for
-  `1 ≤ n` and `1 < x`.
+* `TauCeti.Polylog.polylog_ofReal_im_of_one_lt`:
+  `(polylog n x).im = -π (log x) ^ (n - 1) / (n - 1)!` for `1 ≤ n` and `1 < x`.
 * `TauCeti.Polylog.tendsto_polylog_nhdsWithin_im_neg`,
   `TauCeti.Polylog.tendsto_polylog_nhdsWithin_im_pos`,
   `TauCeti.Polylog.tendsto_polylog_sub_mul_I_nhdsGT_zero`,
@@ -249,7 +250,7 @@ private lemma im_integral_radialIntegrand_of_one_lt (k : ℕ) {x : ℝ} (hx : 1 
 
 /-- On the cut `(1, ∞)`, the total value `polylog n x` (`1 ≤ n`) has imaginary part
 `-π (log x) ^ (n - 1) / (n - 1)!`. -/
-theorem im_polylog_of_one_lt {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x) :
+theorem polylog_ofReal_im_of_one_lt {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x) :
     (polylog n x).im = -Real.pi * Real.log x ^ (n - 1) / (n - 1).factorial := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
   rcases m with _ | k
@@ -279,7 +280,7 @@ theorem conj_polylog_of_one_lt {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 1 < x) :
     conj (polylog n x) = polylog n x +
       2 * Real.pi * Complex.I * (Real.log x : ℂ) ^ (n - 1) / ((n - 1).factorial : ℂ) := by
   have h := Complex.sub_conj (polylog n x)
-  rw [im_polylog_of_one_lt hn hx] at h
+  rw [polylog_ofReal_im_of_one_lt hn hx] at h
   push_cast at h
   linear_combination -h
 
@@ -420,7 +421,7 @@ theorem blochWigner_ofReal (x : ℝ) : blochWigner x = 0 := by
     simp [harg]
   · rw [blochWigner_eq]
     have him2 : (polylog 2 (x : ℂ)).im = -Real.pi * Real.log x := by
-      simpa using im_polylog_of_one_lt (n := 2) (by norm_num) hx
+      simpa using polylog_ofReal_im_of_one_lt (n := 2) (by norm_num) hx
     have hargx : (1 - (x : ℂ)).arg = Real.pi := by
       simpa using Complex.arg_ofReal_of_neg (sub_neg.mpr hx)
     have hlogx : Real.log ‖(x : ℂ)‖ = Real.log x := by
@@ -456,7 +457,7 @@ private lemma continuousAt_im_polylog_two_add_arg_mul_log_norm_of_one_lt {x : �
   have hlog_norm : ContinuousAt (fun w : ℂ ↦ Real.log ‖w‖) x :=
     (Real.continuousAt_log (norm_ne_zero_iff.mpr hx0)).comp continuous_norm.continuousAt
   have him2 : (polylog 2 (x : ℂ)).im = -Real.pi * Real.log x := by
-    simpa using im_polylog_of_one_lt (n := 2) (by norm_num) hx
+    simpa using polylog_ofReal_im_of_one_lt (n := 2) (by norm_num) hx
   have hlogx : Real.log ‖(x : ℂ)‖ = Real.log x := by
     rw [Complex.norm_real, Real.norm_of_nonneg (zero_lt_one.trans hx).le]
   have hDx : D x = 0 := by
