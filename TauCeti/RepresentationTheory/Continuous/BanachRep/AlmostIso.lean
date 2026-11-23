@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.RepresentationTheory.Continuous.BanachRep.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.LinearAlgebra.Quotient.Map
 
 /-!
 # Almost isomorphisms of Banach representations
@@ -196,6 +197,22 @@ noncomputable def ofSurjective (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
     asIso (quotientDesc X _ (ker_invariant f) (Submodule.isClosed_of_finiteDimensional _) f
       fun _ hx => hx)
 
+@[simp]
+theorem ofSurjective_left (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
+    (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
+    (f : X ⟶ quotient Y B hB B.isClosed_of_finiteDimensional) (hf : Function.Surjective f.hom)
+    [FiniteDimensional 𝕜 (LinearMap.ker f.hom.toLinearMap)] :
+    (ofSurjective B hB f hf).left = LinearMap.ker f.hom.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem ofSurjective_right (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
+    (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
+    (f : X ⟶ quotient Y B hB B.isClosed_of_finiteDimensional) (hf : Function.Surjective f.hom)
+    [FiniteDimensional 𝕜 (LinearMap.ker f.hom.toLinearMap)] : (ofSurjective B hB f hf).right = B :=
+  (rfl)
+
+@[simp]
 theorem height_ofSurjective (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
     (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
     (f : X ⟶ quotient Y B hB B.isClosed_of_finiteDimensional) (hf : Function.Surjective f.hom)
@@ -313,10 +330,7 @@ private theorem ker_factor :
   obtain ⟨y, rfl⟩ := quotientπ_surjective Y e.right e.right_invariant _ z
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, factor_quotientπ,
     quotientπ_hom_apply_eq_zero_iff, quotientπ_hom_apply]
-  simp only [Submodule.mem_map, Submodule.mkQ_apply, Submodule.Quotient.eq]
-  refine ⟨fun hy => ⟨y, hy, by simp⟩, ?_⟩
-  rintro ⟨b, hb, hby⟩
-  simpa using B.sub_mem hb (h hby)
+  exact (Submodule.Quotient.mk_mem_map_mkQ_iff h y).symm
 
 private theorem ker_proj_comp_factor :
     LinearMap.ker (e.proj ≫ factor e B hB h).hom.toLinearMap =
@@ -335,6 +349,12 @@ noncomputable def refineRight : AlmostIso X Y :=
   ofSurjective B hB (e.proj ≫ factor e B hB h) (by
     rw [hom_comp, ContinuousLinearMap.coe_comp]
     exact (factor_surjective e B hB h).comp e.proj_surjective)
+
+/-- Refining an almost isomorphism divides out of `X` the preimage of `B ⧸ right`. -/
+@[simp]
+theorem refineRight_left :
+    (e.refineRight B hB h).left = (B.map e.right.mkQ).comap e.proj.hom.toLinearMap :=
+  ker_proj_comp_factor e B hB h
 
 @[simp]
 theorem refineRight_right : (e.refineRight B hB h).right = B :=
@@ -378,15 +398,18 @@ noncomputable def trans (e : AlmostIso X Y) (f : AlmostIso Y Z) : AlmostIso X Z 
   iso := (e.refineRight _ (sup_invariant e.right_invariant f.left_invariant) le_sup_left).iso ≪≫
     (f.symm.refineRight _ (sup_invariant e.right_invariant f.left_invariant) le_sup_right).iso.symm
 
-private theorem trans_left (e : AlmostIso X Y) (f : AlmostIso Y Z) :
-    (e.trans f).left =
-      (e.refineRight _ (sup_invariant e.right_invariant f.left_invariant) le_sup_left).left :=
-  (rfl)
+/-- A composite almost isomorphism divides out of `X` the preimage of `(B ⊔ B') ⧸ B`. -/
+@[simp]
+theorem trans_left (e : AlmostIso X Y) (f : AlmostIso Y Z) :
+    (e.trans f).left = ((e.right ⊔ f.left).map e.right.mkQ).comap e.proj.hom.toLinearMap :=
+  refineRight_left e _ (sup_invariant e.right_invariant f.left_invariant) le_sup_left
 
-private theorem trans_right (e : AlmostIso X Y) (f : AlmostIso Y Z) :
+/-- A composite almost isomorphism divides out of `Z` the preimage of `(B ⊔ B') ⧸ B'`. -/
+@[simp]
+theorem trans_right (e : AlmostIso X Y) (f : AlmostIso Y Z) :
     (e.trans f).right =
-      (f.symm.refineRight _ (sup_invariant e.right_invariant f.left_invariant) le_sup_right).left :=
-  (rfl)
+      ((e.right ⊔ f.left).map f.symm.right.mkQ).comap f.symm.proj.hom.toLinearMap :=
+  refineRight_left f.symm _ (sup_invariant e.right_invariant f.left_invariant) le_sup_right
 
 /-- **The height is additive under composition of almost isomorphisms.** -/
 @[simp]
@@ -399,8 +422,10 @@ theorem height_trans (e : AlmostIso X Y) (f : AlmostIso Y Z) :
   have he := height_refineRight e (e.right ⊔ f.left) hD le_sup_left
   have hf := height_refineRight f.symm (e.right ⊔ f.left) hD h'
   rw [height_symm] at hf
-  rw [height_def (e.refineRight (e.right ⊔ f.left) hD le_sup_left), refineRight_right] at he
-  rw [height_def (f.symm.refineRight (e.right ⊔ f.left) hD h'), refineRight_right] at hf
+  rw [height_def (e.refineRight (e.right ⊔ f.left) hD le_sup_left), refineRight_left,
+    refineRight_right] at he
+  rw [height_def (f.symm.refineRight (e.right ⊔ f.left) hD h'), refineRight_left,
+    refineRight_right] at hf
   rw [height_def, trans_left, trans_right]
   linarith
 
