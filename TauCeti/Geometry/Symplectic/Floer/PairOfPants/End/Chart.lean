@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
 /-!
 # The pair of pants and its end charts in real coordinates
