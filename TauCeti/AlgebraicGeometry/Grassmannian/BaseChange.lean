@@ -143,18 +143,13 @@ variable (R R' M k) in
 @[reassoc (attr := simp)]
 theorem baseChangeHom_toSpec :
     baseChangeHom R R' M k ≫ toSpec R M k =
-      toSpec R' (R' ⊗[R] M) k ≫ Spec.map (CommRingCat.ofHom (algebraMap R R')) := by
-  refine Scheme.hom_ext_of_forall_spec fun B a ↦ ?_
-  -- make `B` an `R'`-algebra through `a`, so that `a` classifies a point over `B`
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R' (R' ⊗[R] M) k)
-  let _ : Algebra R' B := φ.hom.toAlgebra
-  let _ : Algebra R B := (φ.hom.comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
-  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
-  rw [toSchemeHom_comp_baseChangeHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec_assoc,
-    ← Spec.map_comp]
-  -- `algebraMap R B` is `φ ∘ algebraMap R R'` by definition
-  rfl
+      toSpec R' (R' ⊗[R] M) k ≫ Spec.map (CommRingCat.ofHom (algebraMap R R')) :=
+  scheme_hom_ext fun A _ _ N ↦ by
+    -- make `A` an `R`-algebra through `R'`, so that `baseChangeHom` can be computed on points
+    let _ : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
+    have : IsScalarTower R R' A := .of_algebraMap_eq' rfl
+    rw [toSchemeHom_comp_baseChangeHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec_assoc,
+      ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
 
 variable (R R' M k) in
 /-- **Base change of the Grassmannian scheme.** For an `R`-algebra `R'`, the Grassmannian
