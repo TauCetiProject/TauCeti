@@ -20,7 +20,8 @@ For `c > 0` the Mellin transform of `t ↦ e^(-c t)` converges on `0 < Re z`
 (`TauCeti.mellinConvergent_exp_neg_mul`). At `c = 1` this is the convergence of Euler's integral
 for `Γ(z)` (`Complex.GammaIntegral_convergent`), and the scaling `t ↦ c t` is Mathlib's
 `MellinConvergent.comp_mul_left`. Its value `c^(-z) Γ(z)` is Mathlib's
-`Complex.integral_cpow_mul_exp_neg_mul_Ioi`. Written against the multiplicative Haar measure
+`Complex.integral_cpow_mul_exp_neg_mul_Ioi`; at `c = 1` it is `Γ(z)`
+(`TauCeti.hasMellin_exp_neg`). Written against the multiplicative Haar measure
 `dt / t` (`TauCeti.multHaar`), these give integrability and evaluation of `t ^ z e^(-c t)`
 (`TauCeti.integrable_multHaar_cpow_mul_exp_neg_mul`,
 `TauCeti.integral_multHaar_cpow_mul_exp_neg_mul`) and their `Γ_ℝ` specialization for
@@ -85,6 +86,13 @@ theorem mellinConvergent_exp_neg_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : 0 < 
     MellinConvergent (fun t : ℝ ↦ (Real.exp (-(c * t)) : ℂ)) z := by
   refine (MellinConvergent.comp_mul_left (f := fun t : ℝ ↦ (Real.exp (-t) : ℂ)) hc).mpr ?_
   exact (GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi
+
+/-- Euler's integral as a Mellin transform: on `0 < Re z` the Mellin transform of `t ↦ e^(-t)`
+converges and equals `Γ(z)`. -/
+theorem hasMellin_exp_neg {z : ℂ} (hz : 0 < z.re) :
+    HasMellin (fun t : ℝ ↦ (Real.exp (-t) : ℂ)) z (Gamma z) :=
+  ⟨(GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi,
+    by rw [← GammaIntegral_eq_mellin, Gamma_eq_integral hz]⟩
 
 /-- For `c > 0` and `0 < Re z`, `t ↦ t ^ z * exp (-c t)` is integrable against `dt / t`. -/
 theorem integrable_multHaar_cpow_mul_exp_neg_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : 0 < z.re) :

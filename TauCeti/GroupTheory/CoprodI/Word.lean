@@ -15,7 +15,8 @@ product `CoprodI M` none of whose letters is sent to `1`. Replacing every letter
 by `f i m` gives a reduced word of `CoprodI N`, whose product is the image of the product of `w`
 under the homomorphism `CoprodI M →* CoprodI N` induced by the `f i`. In particular that image is
 `1` only if `w` is empty, since an element of a free product is the product of exactly one reduced
-word.
+word. Likewise, injective homomorphisms of the factors induce an injective homomorphism of free
+products.
 
 ## Main definitions
 
@@ -28,6 +29,8 @@ word.
 * `Monoid.CoprodI.Word.prod_map`: the product of the image is the image of the product.
 * `Monoid.CoprodI.Word.eq_empty_of_lift_prod_eq_one`: a reduced word whose product the
   homomorphism induced by the `f i` sends to `1` is empty.
+* `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
+  injective homomorphism of free products.
 -/
 
 public section
@@ -104,3 +107,22 @@ theorem eq_empty_of_lift_prod_eq_one (hf : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1)
   exact prod_injective (by rw [prod_map, h, prod_empty])
 
 end Monoid.CoprodI.Word
+
+namespace Monoid.CoprodI
+
+variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
+
+/-- Injective homomorphisms `f i : M i →* N i` of the factors induce an injective homomorphism
+`CoprodI M →* CoprodI N` of free products. -/
+theorem lift_of_comp_injective {f : ∀ i, M i →* N i} (hf : ∀ i, Function.Injective (f i)) :
+    Function.Injective (lift fun i => of.comp (f i)) := by
+  have hf₁ (w : Word M) : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1 := fun l hl =>
+    (map_ne_one_iff (f l.1) (hf l.1)).2 (w.ne_one l hl)
+  intro x y hxy
+  obtain ⟨v, rfl⟩ := Word.prod_surjective x
+  obtain ⟨w, rfl⟩ := Word.prod_surjective y
+  rw [← Word.prod_map f (hf₁ v), ← Word.prod_map f (hf₁ w)] at hxy
+  exact congrArg Word.prod <| Word.ext <| List.map_injective_iff.2
+    (Function.injective_id.sigma_map hf) (congrArg Word.toList (Word.prod_injective hxy))
+
+end Monoid.CoprodI

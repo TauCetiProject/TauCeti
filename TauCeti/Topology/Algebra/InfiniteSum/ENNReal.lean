@@ -19,7 +19,7 @@ nonnegative mass series into real probability formulas without repeating the fin
 Summing the indicator of a set `s` with value one counts its elements: the sum is `s.encard`.
 This is the indicator form of `ENNReal.tsum_set_one`.
 
-Every `y : ℝ≥0∞` is bounded by the dyadic series `1 + ∑ₖ 2^(k+1) 1{2^k < y}`. Applied pointwise to
+Every `y : ℝ≥0∞` is bounded by the dyadic series `1 + ∑ₖ 2^k 1{2^k < y}`. Applied pointwise to
 a nonnegative function and integrated, this bounds its integral by a weighted sum of the measures
 of its dyadic level sets.
 
@@ -30,7 +30,7 @@ product type of the products of terms (`ENNReal.prod_tsum`).
 
 * `HasSum.toReal`: a series in `ℝ≥0∞` with finite sum has the termwise `toReal` sum.
 * `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
-* `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^(k+1) 1{2^k < y}`.
+* `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^k 1{2^k < y}`.
 * `ENNReal.prod_tsum`: `∏ i, ∑' y, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)`.
 -/
 
@@ -50,26 +50,27 @@ theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
     ∑' b, s.indicator (fun _ => (1 : ℝ≥0∞)) b = s.encard := by
   rw [← ENNReal.tsum_set_one, tsum_subtype _ fun _ => (1 : ℝ≥0∞)]
 
-/-- A nonnegative extended real is at most `1 + ∑ₖ 2^(k+1) 1{2^k < y}`. -/
+/-- A nonnegative extended real is at most `1 + ∑ₖ 2^k 1{2^k < y}`, with equality when `y` is a
+power of two. -/
 theorem ENNReal.le_one_add_tsum_pow_indicator (y : ℝ≥0∞) :
-    y ≤ 1 + ∑' k : ℕ, if (2 : ℝ≥0∞) ^ k < y then 2 ^ (k + 1) else 0 := by
-  set R : ℝ≥0∞ := 1 + ∑' k : ℕ, if (2 : ℝ≥0∞) ^ k < y then 2 ^ (k + 1) else 0
-  by_contra! hR
-  -- If `R < y`, then inductively `2^k < y` and `2^(k+1) ≤ R` for every `k`, so `R = ∞`.
-  have hk : ∀ k : ℕ, (2 : ℝ≥0∞) ^ k < y := by
-    intro k
-    induction k with
-    | zero => exact lt_of_le_of_lt (by simp [R]) hR
-    | succ k ih =>
-      refine lt_of_le_of_lt (le_trans ?_ le_add_self) hR
-      exact le_trans (by simp [ih]) (le_tsum _ k)
-  have hRtop : R ≠ ∞ := hR.ne_top
-  obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hRtop
-  have h2 : (2 : ℝ≥0∞) ^ (n + 1) ≤ R :=
-    le_trans (by simp [hk n]) ((le_tsum _ n).trans le_add_self)
-  have : (n : ℝ≥0∞) < 2 ^ (n + 1) := by
-    exact_mod_cast (Nat.lt_two_pow_self).trans (Nat.pow_lt_pow_right (by norm_num) (by omega))
-  exact (hn.trans (this.trans_le h2)).false
+    y ≤ 1 + ∑' k : ℕ, if (2 : ℝ≥0∞) ^ k < y then 2 ^ k else 0 := by
+  set t : ℕ → ℝ≥0∞ := fun k ↦ if 2 ^ k < y then 2 ^ k else 0
+  by_contra! hy
+  -- Each partial sum `1 + ∑ k < n, t k` is at most the full series, which is below `y`.
+  have hpart (n : ℕ) : 1 + ∑ k ∈ Finset.range n, t k ≤ 1 + ∑' k, t k := by
+    gcongr; exact sum_le_tsum _
+  -- By induction `2 ^ n ≤ 1 + ∑ k < n, t k`: then `2 ^ n < y`, so `t n = 2 ^ n`.
+  have hpow (n : ℕ) : (2 : ℝ≥0∞) ^ n ≤ 1 + ∑ k ∈ Finset.range n, t k := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have htn : t n = 2 ^ n := by simp [t, (ih.trans (hpart n)).trans_lt hy]
+      rw [Finset.sum_range_succ, ← add_assoc, htn, pow_succ, mul_two]
+      gcongr
+  -- So the finite series dominates every `2 ^ n`, which is absurd.
+  obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hy.ne_top
+  have : (n : ℝ≥0∞) < 2 ^ n := by exact_mod_cast Nat.lt_two_pow_self
+  exact (hn.trans this).not_ge ((hpow n).trans (hpart n))
 
 private theorem ENNReal.prod_tsum_fin :
     ∀ {m : ℕ} {κ : Fin m → Type*} (f : ∀ i, κ i → ℝ≥0∞),
@@ -88,15 +89,8 @@ product type of the products of terms. -/
 theorem ENNReal.prod_tsum {ι : Type*} [Fintype ι] {κ : ι → Type*}
     (f : ∀ i, κ i → ℝ≥0∞) :
     ∏ i, ∑' y : κ i, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i) := by
+  -- Reindex `ι` by `Fin (Fintype.card ι)` in the product and, via `Equiv.piCongrLeft`, in the
+  -- tuples.
   let e := (Fintype.equivFin ι).symm
-  rw [← (Equiv.piCongrLeft κ e).tsum_eq]
-  have hprod (x : ∀ j : Fin (Fintype.card ι), κ (e j)) :
-      (∏ i : ι, f i (Equiv.piCongrLeft κ e x i)) =
-        ∏ j : Fin (Fintype.card ι), f (e j) (x j) :=
-    (Fintype.prod_equiv e (fun j ↦ f (e j) (x j))
-      (fun i ↦ f i (Equiv.piCongrLeft κ e x i)) fun j ↦ by
-        simp [Equiv.piCongrLeft_apply_apply (P := κ) (e := e) x j]).symm
-  simp_rw [hprod]
-  rw [← ENNReal.prod_tsum_fin]
-  exact (Fintype.prod_equiv e (fun j ↦ ∑' y : κ (e j), f (e j) y) (fun i ↦ ∑' y : κ i, f i y)
-    fun _ ↦ rfl).symm
+  rw [← e.prod_comp, ENNReal.prod_tsum_fin, ← (Equiv.piCongrLeft κ e).tsum_eq]
+  exact tsum_congr fun x ↦ Fintype.prod_equiv e _ _ fun j ↦ by rw [Equiv.piCongrLeft_apply_apply]

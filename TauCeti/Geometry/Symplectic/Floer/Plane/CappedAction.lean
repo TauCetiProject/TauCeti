@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.Topology.MetricSpace.Annulus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -63,7 +64,9 @@ capped actions converge to `a` as `R → ∞`, then the energy of the solution o
 results following it). These are the energy and action bounds of PSS planes in a manifold whose
 asymptotic orbits carry the cap given by the plane itself: the capped output orbits of negative
 planes have action at most `B`, and the energy of a plane is bounded by its capped end action. The
-convergence of the capped actions is a hypothesis here; it is not derived from finite energy.
+convergence of the capped actions is a hypothesis here. It follows from the integrability of the
+energy density, and the limit is identified with the capped action of the asymptotic orbit, in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Energy`.
 
 ## References
 
@@ -290,7 +293,8 @@ theorem rectangleIntegral_comp_endDisc [IsManifold I 1 M] {φ : RoughForm I M F 
     rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
       Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
     exact integral_annulus_eq_integral_circleMap le_rfl hρ
-      (hf.comp Complex.equivRealProdCLM.continuous).continuousOn
+      ((hf.comp Complex.equivRealProdCLM.continuous).continuousOn.integrableOn_compact
+        (isCompact_setOf_le_norm_sub_le 0 0 ρ))
   rw [hrect, ← hdisc]
   congr 1
   refine setIntegral_congr_fun ?_ fun z _ ↦ mpullback_apply_pair u φ z (1, 0) (0, 1)

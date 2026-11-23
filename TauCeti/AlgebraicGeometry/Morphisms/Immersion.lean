@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Factoring through immersions after a schematic cover
@@ -37,6 +38,7 @@ the open `i.coborderRange` is the restriction of the ideal sheaf `ker i`
 public section
 
 open CategoryTheory
+open scoped AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -100,3 +102,29 @@ instance IsImmersion.respectsRight_isOpenImmersion :
   postcomp _ hi _ hf := by have := hi; have := hf; infer_instance
 
 end AlgebraicGeometry
+
+/-- The inverse image of an affine open along an immersion is affine if that open is contained
+in the immersion's coborder. -/
+theorem AlgebraicGeometry.IsAffineOpen.preimage_of_isImmersion
+    {X Y : AlgebraicGeometry.Scheme} {U : Y.Opens} (hU : AlgebraicGeometry.IsAffineOpen U)
+    (f : X ⟶ Y) [AlgebraicGeometry.IsImmersion f] (hU' : U ≤ f.coborderRange) :
+    AlgebraicGeometry.IsAffineOpen (f ⁻¹ᵁ U) := by
+  have hA := hU.preimage_of_isOpenImmersion f.coborderRange.ι
+    (by simpa only [AlgebraicGeometry.Scheme.Opens.opensRange_ι] using hU')
+  rw [← f.liftCoborder_ι, AlgebraicGeometry.Scheme.Hom.comp_preimage]
+  exact hA.preimage f.liftCoborder
+
+/-- An immersion transfers a finite affine neighbourhood contained in its coborder from the
+ target. The source neighbourhood can be chosen inside a prescribed open. -/
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion
+    {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) [AlgebraicGeometry.IsImmersion f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W)
+    (hY : ∃ V : Y.Opens, AlgebraicGeometry.IsAffineOpen V ∧
+      f '' s ⊆ V ∧ V ≤ f.coborderRange) :
+    ∃ U : X.Opens, AlgebraicGeometry.IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨V, hV, hsV, hVc⟩ := hY
+  have hpre := hV.preimage_of_isImmersion f hVc
+  have hsPre : s ⊆ f ⁻¹ᵁ V := fun x hx ↦ f.mem_preimage.mpr
+    (hsV (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hpre.exists_basicOpen_superset_le hs hsPre hsW
+  exact ⟨X.basicOpen r, hpre.basicOpen r, hsr, hrW⟩

@@ -99,6 +99,9 @@ endpoints `eₙ` stay at distance at least `1` from each other
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
   of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
   uniformly convergent subsequence.
+* `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith`: translates
+  `uₙ(s + σₙ, t)` of uniformly Lipschitz maps with values in a compact set, by arbitrary shifts,
+  have a locally uniformly convergent subsequence.
 * `TauCeti.isCompact_setOf_lipschitzWith_apply_mem`: for a proper target, uniformly Lipschitz
   maps whose value at a fixed point lies in a compact set form a compact set, with
   `TauCeti.isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening` its form for
@@ -470,6 +473,21 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add {M : Type*} [PseudoMetric
   exact exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK hR
     (fun n ↦ by simpa using hL.comp ((hadd n).lipschitzOnWith) (hmaps n))
     fun n ↦ huK.comp (hmaps n)
+
+/-- **Arzelà–Ascoli for translates of a sequence.** Let `u n` be `L`-Lipschitz maps on `ℝ × ℝ`
+with values in a compact subset of a pseudometric space, and let `σ n` be arbitrary shifts. A
+subsequence of the translates `(s, t) ↦ u n (s + σ n, t)` converges locally uniformly on `ℝ × ℝ`
+to a continuous map. -/
+theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith {M : Type*}
+    [PseudoMetricSpace M] {K : Set M} (hK : IsCompact K) {u : ℕ → ℝ × ℝ → M} {L : NNReal}
+    (hL : ∀ n, LipschitzWith L (u n)) (huK : ∀ n z, u n z ∈ K) (σ : ℕ → ℝ) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n z ↦ u (φ n) (z + (σ (φ n), 0))) g atTop := by
+  have hw (n : ℕ) : LipschitzWith L fun z ↦ u n (z + (σ n, 0)) :=
+    ((hL n).comp (IsometryEquiv.addRight ((σ n, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
+      (mul_one L).le
+  exact exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK (R := fun n ↦ (n : ℝ))
+    tendsto_natCast_atTop_atTop (fun n ↦ (hw n).lipschitzOnWith) fun _ _ _ ↦ huK _ _
 
 section Lipschitz
 

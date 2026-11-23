@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth orthonormal trivializations of Riemannian vector bundles

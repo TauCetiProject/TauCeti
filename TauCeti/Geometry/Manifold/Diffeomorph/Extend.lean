@@ -24,6 +24,11 @@ For a compact set in the source, its image is closed in a Hausdorff ambient mani
 submanifold. These results transplant diffeomorphisms constructed in coordinates to the ambient
 manifold while keeping control of where points move.
 
+Let `κ : M → N` be a partial diffeomorphism, for instance a Darboux chart, and `ψ` a diffeomorphism
+of `N` fixing every point outside a compact subset `C` of the target of `κ`. Then `κ` conjugates
+`ψ` to the diffeomorphism of `M` equal to `κ⁻¹ ∘ ψ ∘ κ` on the source of `κ` and to the identity
+off `κ⁻¹ '' C` (`PartialDiffeomorph.exists_diffeomorph_eq_symm_apply_apply`).
+
 When the open part is the source of an extended chart, the extension has an explicit formula,
 `TauCeti.chartExtend`: a map `f` of the model space which fixes every point outside a compact
 subset `K` of the interior of the chart target, and maps `K` into itself, is read through the chart
@@ -127,6 +132,55 @@ theorem exists_extend_of_isCompact (Λ : U ≃ₘ^n⟮I, I⟯ U) {K : Set U}
     U.isOpen.isOpenEmbedding_subtypeVal Λ hK hΛ
 
 end Diffeomorph
+
+namespace PartialDiffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {n : WithTop ℕ∞}
+
+/-- **Conjugating a compactly supported diffeomorphism through a partial diffeomorphism.** Let
+`κ : M → N` be a partial diffeomorphism into a manifold `N`, for instance a coordinate chart, and
+let `ψ` be a diffeomorphism of `N` equal to the identity off a compact subset `C` of the target of
+`κ`. Then `κ⁻¹ ∘ ψ ∘ κ` on the source of `κ`, extended by the identity, is a diffeomorphism of `M`
+fixing every point outside the compact set `κ⁻¹ '' C`. -/
+theorem exists_diffeomorph_eq_symm_apply_apply (κ : PartialDiffeomorph I J M N n)
+    (ψ : N ≃ₘ^n⟮J, J⟯ N) {C : Set N} (hC : IsCompact C) (hCt : C ⊆ κ.target)
+    (hψ : ∀ y ∉ C, ψ y = y) :
+    ∃ Φ : M ≃ₘ^n⟮I, I⟯ M, (∀ x ∈ κ.source, Φ x = κ.symm (ψ (κ x))) ∧
+      ∀ x ∉ κ.symm '' C, Φ x = x := by
+  -- `ψ` preserves the target of `κ`, since it is injective and fixes the complement of `C`.
+  have hψt (y : N) : y ∈ κ.target ↔ ψ y ∈ κ.target :=
+    (ψ.injective.apply_mem_iff_of_eq_self hψ hCt y).symm
+  let S : TopologicalSpace.Opens M := ⟨κ.source, κ.open_source⟩
+  let T : TopologicalSpace.Opens N := ⟨κ.target, κ.open_target⟩
+  let Λ : S ≃ₘ^n⟮I, I⟯ S := κ.toDiffeomorphSourceTarget.trans
+    ((ψ.subtype (U := T) (V := T) hψt).trans κ.toDiffeomorphSourceTarget.symm)
+  have hΛ (z : S) : (Λ z : M) = κ.symm (ψ (κ z)) := by
+    simp [Λ, S, T]
+  have hCT : IsCompact (Subtype.val ⁻¹' C : Set T) := by
+    rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦ ⟨⟨y, hCt hy⟩, rfl⟩]
+    exact hC
+  have hΛC (z : S) (hz : z ∉ κ.toDiffeomorphSourceTarget.symm '' (Subtype.val ⁻¹' C)) :
+      Λ z = z := by
+    apply Subtype.ext
+    have hzC : κ z ∉ C := fun h ↦ hz ⟨κ.toDiffeomorphSourceTarget z,
+      by rwa [mem_preimage, toDiffeomorphSourceTarget_apply_coe],
+      κ.toDiffeomorphSourceTarget.symm_apply_apply z⟩
+    rw [hΛ, hψ _ hzC]
+    exact κ.toPartialEquiv.left_inv z.property
+  obtain ⟨Φ, hΦΛ, hΦ⟩ := Diffeomorph.exists_extend_of_isCompact Λ
+    (hCT.image κ.toDiffeomorphSourceTarget.symm.continuous) hΛC
+  refine ⟨Φ, fun x hx ↦ (hΦΛ ⟨x, hx⟩).trans (hΛ _), fun x hx ↦ hΦ x ?_⟩
+  rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+  exact hx ⟨y, hy, (toDiffeomorphSourceTarget_symm_apply_coe κ y).symm⟩
+
+end PartialDiffeomorph
 
 /-! ### Extension through a chart -/
 

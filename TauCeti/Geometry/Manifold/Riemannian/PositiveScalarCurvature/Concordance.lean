@@ -103,7 +103,7 @@ public section
 
 open Bundle Set Topology Filter
 open TauCeti.Manifold (tangentSpaceProdEquiv tangentSpaceProdEquiv_apply mfderiv_prodMap_apply
-  tangentSpaceProdEquiv_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id
+  tangentSpaceProdEquiv_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id_left
   isInvertible_mfderiv_prodMap_id_right isInvertible_mfderiv_prodMap_id_subtypeVal_Icc
   contMDiff_prod_right_comm isInvertible_mfderiv_prod_right_comm mfderiv_prod_right_comm_apply)
 open scoped ContDiff Manifold
@@ -114,11 +114,11 @@ namespace Bundle.ContMDiffRiemannianMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 section Cylinder
 
-variable (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+variable [IsManifold I ∞ M] (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
 
 /-- The cylinder metric `g + dt²` on `M × ℝ`: the product of `g` with the standard metric of
 `ℝ`. -/
@@ -175,7 +175,7 @@ end Cylinder
 
 section ReparamTime
 
-variable [FiniteDimensional ℝ E] {φ : ℝ → ℝ}
+variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] {φ : ℝ → ℝ}
 
 variable (G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
     (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p))
@@ -186,7 +186,7 @@ def reparamTime (hφ : ContDiff ℝ ∞ φ) (hφ' : ∀ t, deriv φ t ≠ 0) :
     ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p) :=
   G.pullback (Prod.map id φ) (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp))) fun p ↦
-    (isInvertible_mfderiv_prodMap_id (hφ' p.2)).injective
+    (isInvertible_mfderiv_prodMap_id_left (hφ' p.2)).injective
 
 variable {G}
 
@@ -217,7 +217,7 @@ theorem scalarCurvature_reparamTime [T2Space M] (hφ : ContDiff ℝ ∞ φ) (hφ
     (G.reparamTime hφ hφ').scalarCurvature p = G.scalarCurvature (p.1, φ p.2) :=
   scalarCurvature_pullback_of_isInvertible G
     (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp)))
-    (fun p ↦ isInvertible_mfderiv_prodMap_id (hφ' p.2)) p
+    (fun p ↦ isInvertible_mfderiv_prodMap_id_left (hφ' p.2)) p
 
 /-- Reparametrising the `ℝ`-coordinate preserves positive scalar curvature. -/
 theorem HasPositiveScalarCurvature.reparamTime [T2Space M] (h : G.HasPositiveScalarCurvature)
@@ -255,7 +255,7 @@ end ReparamTime
 
 section Concordance
 
-variable [FiniteDimensional ℝ E] [T2Space M]
+variable [IsManifold I ∞ M] [FiniteDimensional ℝ E] [T2Space M]
   {G G₁ G₂ : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
     (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)}
   {g g₀ g₁ g₂ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
@@ -438,8 +438,6 @@ section Collar
 
 /-! ### Collared concordances on `M × [0, 1]` -/
 
-variable [FiniteDimensional ℝ E]
-
 /-! The time map used to extend a collared concordance by product ends. -/
 
 /-- The map `s ↦ s / (1 + s e^{-1/s})`, read as the identity for `s ≤ 0`. It is smooth with
@@ -568,7 +566,6 @@ private theorem coe_collarTimeIcc (hδ : 0 < δ) (hδ₁ : δ < 1) (t : ℝ) :
     (collarTimeIcc hδ hδ₁ t : ℝ) = collarTime δ t :=
   rfl
 
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
 private theorem contMDiff_prodMap_id_collarTimeIcc (hδ : 0 < δ) (hδ₁ : δ < 1) {n : ℕ∞ω}
     (hn : n ≤ ∞) : ContMDiff (I.prod 𝓘(ℝ)) (I.prod (𝓡∂ 1)) n
       (Prod.map id (collarTimeIcc hδ hδ₁) : M × ℝ → M × unitInterval) := by
@@ -576,7 +573,6 @@ private theorem contMDiff_prodMap_id_collarTimeIcc (hδ : 0 < δ) (hδ₁ : δ <
   · exact (contDiff_collarTime.continuous).subtype_mk _
   · exact (contDiff_collarTime (δ := δ)).contMDiff.of_le hn
 
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
 /-- The inclusion `M × [0, 1] → M × ℝ` after `(x, t) ↦ (x, collarTime δ t)` is
 `(x, t) ↦ (x, collarTime δ t)` on `M × ℝ`. -/
 private theorem mfderiv_prodMap_id_collarTime (hδ : 0 < δ) (hδ₁ : δ < 1) (p : M × ℝ) :
@@ -588,7 +584,6 @@ private theorem mfderiv_prodMap_id_collarTime (hδ : 0 < δ) (hδ₁ : δ < 1) (
     one_ne_zero) ((contMDiff_prodMap_id_collarTimeIcc hδ hδ₁ (n := 1) (by simp)).mdifferentiableAt
       one_ne_zero)
 
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
 private theorem mfderiv_prodMap_id_collarTime_apply (hδ : 0 < δ) (hδ₁ : δ < 1) (p : M × ℝ)
     (v : TangentSpace (I.prod 𝓘(ℝ)) p) :
     mfderiv (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (Prod.map id (collarTime δ)) p v =
@@ -597,14 +592,13 @@ private theorem mfderiv_prodMap_id_collarTime_apply (hδ : 0 < δ) (hδ₁ : δ 
         (mfderiv (I.prod 𝓘(ℝ)) (I.prod (𝓡∂ 1)) (Prod.map id (collarTimeIcc hδ hδ₁)) p v) :=
   congrArg (· v) (mfderiv_prodMap_id_collarTime hδ hδ₁ p)
 
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
 private theorem isInvertible_mfderiv_prodMap_id_collarTimeIcc (hδ : 0 < δ) (hδ₁ : δ < 1)
     (p : M × ℝ) :
     (mfderiv (I.prod 𝓘(ℝ)) (I.prod (𝓡∂ 1))
       (Prod.map id (collarTimeIcc hδ hδ₁) : M × ℝ → M × unitInterval) p).IsInvertible := by
   -- The composite with the invertible differential of the inclusion is the differential of
   -- `(x, t) ↦ (x, collarTime δ t)`, invertible since `collarTime δ` has nonzero derivative.
-  have h := isInvertible_mfderiv_prodMap_id (I := I)
+  have h := isInvertible_mfderiv_prodMap_id_left (I := I)
     (deriv_collarTime_ne_zero hδ p.2)
   obtain ⟨e, he⟩ := isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (I := I)
     (Prod.map id (collarTimeIcc hδ hδ₁) p)
@@ -612,36 +606,11 @@ private theorem isInvertible_mfderiv_prodMap_id_collarTimeIcc (hδ : 0 < δ) (h�
   rw [he, ← mfderiv_prodMap_id_collarTime hδ hδ₁]
   exact h
 
-variable [T2Space M]
-  {G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
-    (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)}
+variable [IsManifold I ∞ M] [FiniteDimensional ℝ E]
   {Gc : ContMDiffRiemannianMetric (I.prod (𝓡∂ 1)) ∞ (E × EuclideanSpace ℝ (Fin 1))
     (fun p : M × unitInterval ↦ TangentSpace (I.prod (𝓡∂ 1)) p)}
   {g g₀ g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
 
-variable (Gc g₀ g₁) in
-/-- A **collared concordance** from `g₀` to `g₁` is a metric of positive scalar curvature on the
-manifold with boundary `M × [0, 1]` with product collars: for some `ε > 0` it is the product metric
-`g₀ + dt²` where `t < ε` and the product metric `g₁ + dt²` where `t > 1 - ε`. Here `g + dt²` on
-`M × [0, 1]` is the restriction of the cylinder metric. -/
-structure IsCollaredConcordance : Prop where
-  /-- A collared concordance has positive scalar curvature. -/
-  hasPositiveScalarCurvature : Gc.HasPositiveScalarCurvature
-  /-- A collared concordance is `g₀ + dt²` where `t < ε` and `g₁ + dt²` where `t > 1 - ε`. -/
-  exists_collar : ∃ ε : ℝ, 0 < ε ∧
-    (∀ p : M × unitInterval, (p.2 : ℝ) < ε →
-      Gc.inner p = (g₀.cylinder.restrictIcc 0 1).inner p) ∧
-    (∀ p : M × unitInterval, 1 - ε < (p.2 : ℝ) →
-      Gc.inner p = (g₁.cylinder.restrictIcc 0 1).inner p)
-
-/-- A metric on `M × [0, 1]` which is `g + dt²` on an open set has the scalar curvature of `g`
-there. -/
-private theorem scalarCurvature_eq_of_inner_eq_restrictIcc_cylinder {U : Set (M × unitInterval)}
-    (hU : IsOpen U) (h : ∀ p ∈ U, Gc.inner p = (g.cylinder.restrictIcc 0 1).inner p)
-    {p : M × unitInterval} (hp : p ∈ U) : Gc.scalarCurvature p = g.scalarCurvature p.1 := by
-  rw [eqOn_scalarCurvature hU h hp, scalarCurvature_restrictIcc, scalarCurvature_cylinder]
-
-omit [T2Space M] in
 /-- Where `collarTime δ` is the identity and `Gc` is the product metric `g + dt²`, the pullback of
 `Gc` along `(x, t) ↦ (x, collarTime δ t)` is `g + dt²`. -/
 private theorem pullback_prodMap_id_collarTimeIcc_inner (hδ : 0 < δ) (hδ₁ : δ < 1) {p : M × ℝ}
@@ -666,6 +635,32 @@ private theorem pullback_prodMap_id_collarTimeIcc_inner (hδ : 0 < δ) (hδ₁ :
   -- the fibres over `Prod.map id (collarTimeIcc hδ hδ₁) p` and over `(p.1, collarTime δ p.2)` are
   -- both `E × ℝ`.
   rfl
+
+variable [T2Space M]
+  {G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+    (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)}
+
+variable (Gc g₀ g₁) in
+/-- A **collared concordance** from `g₀` to `g₁` is a metric of positive scalar curvature on the
+manifold with boundary `M × [0, 1]` with product collars: for some `ε > 0` it is the product metric
+`g₀ + dt²` where `t < ε` and the product metric `g₁ + dt²` where `t > 1 - ε`. Here `g + dt²` on
+`M × [0, 1]` is the restriction of the cylinder metric. -/
+structure IsCollaredConcordance : Prop where
+  /-- A collared concordance has positive scalar curvature. -/
+  hasPositiveScalarCurvature : Gc.HasPositiveScalarCurvature
+  /-- A collared concordance is `g₀ + dt²` where `t < ε` and `g₁ + dt²` where `t > 1 - ε`. -/
+  exists_collar : ∃ ε : ℝ, 0 < ε ∧
+    (∀ p : M × unitInterval, (p.2 : ℝ) < ε →
+      Gc.inner p = (g₀.cylinder.restrictIcc 0 1).inner p) ∧
+    (∀ p : M × unitInterval, 1 - ε < (p.2 : ℝ) →
+      Gc.inner p = (g₁.cylinder.restrictIcc 0 1).inner p)
+
+/-- A metric on `M × [0, 1]` which is `g + dt²` on an open set has the scalar curvature of `g`
+there. -/
+private theorem scalarCurvature_eq_of_inner_eq_restrictIcc_cylinder {U : Set (M × unitInterval)}
+    (hU : IsOpen U) (h : ∀ p ∈ U, Gc.inner p = (g.cylinder.restrictIcc 0 1).inner p)
+    {p : M × unitInterval} (hp : p ∈ U) : Gc.scalarCurvature p = g.scalarCurvature p.1 := by
+  rw [eqOn_scalarCurvature hU h hp, scalarCurvature_restrictIcc, scalarCurvature_cylinder]
 
 /-- A metric on `M × ℝ` has positive scalar curvature if it is `g₀ + dt²` where `t < a`,
 `g₁ + dt²` where `t > b`, and agrees with a metric of positive scalar curvature where `c < t < d`,
@@ -814,7 +809,7 @@ section Naturality
 
 /-! ### Pullback and rescaling of concordances -/
 
-variable [FiniteDimensional ℝ E] [T2Space M]
+variable [IsManifold I ∞ M]
   {G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
     (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)}
   {g g₀ g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
@@ -823,10 +818,9 @@ section Pullback
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  {M' : Type*} [TopologicalSpace M'] [T2Space M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
   {f : M' → M}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [T2Space M'] in
 /-- The cylinder metric `g + dt²` pulled back along `(x, t) ↦ (f x, t)` is the cylinder metric
 `f^* g + dt²` of the pullback of `g`. -/
 theorem pullback_prodMap_cylinder
@@ -851,17 +845,18 @@ theorem pullback_prodMap_cylinder
   -- The sides differ only in writing the point `(f x, t)` as `Prod.map f id (x, t)`.
   rfl
 
+variable [FiniteDimensional ℝ E] [T2Space M] [T2Space M']
+
 /-- Pulling a concordance from `g₀` to `g₁` back along `(x, t) ↦ (f x, t)`, for a smooth map `f`
 whose differential is invertible at every point, gives a concordance from `f^* g₀` to `f^* g₁`. -/
 theorem IsConcordance.pullback_prodMap (h : IsConcordance G g₀ g₁) (hf : ContMDiff I' I (∞ + 1) f)
     (hinv : ∀ x, (mfderiv I' I f x).IsInvertible) :
     IsConcordance (G.pullback (Prod.map f id) (hf.prodMap contMDiff_id) fun p ↦
-        (isInvertible_mfderiv_prodMap_id_right (hf.mdifferentiableAt (by simp))
-          (hinv p.1)).injective)
+        (isInvertible_mfderiv_prodMap_id_right (hinv p.1)).injective)
       (g₀.pullback f hf fun x ↦ (hinv x).injective)
       (g₁.pullback f hf fun x ↦ (hinv x).injective) := by
   have hinv' (p : M' × ℝ) :=
-    isInvertible_mfderiv_prodMap_id_right (J := 𝓘(ℝ)) (hf.mdifferentiableAt (by simp)) (hinv p.1)
+    isInvertible_mfderiv_prodMap_id_right (J := 𝓘(ℝ)) (hinv p.1)
   refine ⟨h.hasPositiveScalarCurvature.pullback_of_isInvertible _ hinv', fun p hp ↦ ?_,
     fun p hp ↦ ?_⟩
   · rw [← pullback_prodMap_cylinder g₀ hf _
@@ -905,9 +900,8 @@ end Pullback
 
 section Rescale
 
-variable {c : ℝ}
+variable [FiniteDimensional ℝ E] {c : ℝ}
 
-omit [T2Space M] in
 /-- The cylinder metric `c g + dt²` of a rescaled metric is the rescaled cylinder metric
 `c (g + dt²)` reparametrised by `t ↦ t / √c`. -/
 theorem reparamTime_rescale_cylinder
@@ -925,6 +919,8 @@ theorem reparamTime_rescale_cylinder
   field_simp
   rw [Real.sq_sqrt hc.le]
   ring
+
+variable [T2Space M]
 
 /-- If `g₀` and `g₁` are concordant, then so are `c g₀` and `c g₁` for every constant `c > 0`. -/
 theorem Concordant.rescale_const (h : Concordant g₀ g₁) (hc : 0 < c) :
@@ -959,11 +955,11 @@ end Rescale
 
 section Prod
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+variable [FiniteDimensional ℝ E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {H'' : Type*} [TopologicalSpace H''] {J : ModelWithCorners ℝ F H''}
-  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H'' N] [IsManifold J ∞ N]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N] [IsManifold J ∞ N]
 
-omit [T2Space M] [T2Space N] in
 /-- Where `G` is `g + dt²`, the pullback of `G × g₂` along `((x, y), t) ↦ ((x, t), y)` is the
 cylinder metric `g × g₂ + dt²`. -/
 private theorem pullback_prod_right_comm_inner {g₂ : ContMDiffRiemannianMetric J ∞ F
@@ -980,6 +976,8 @@ private theorem pullback_prod_right_comm_inner {g₂ : ContMDiffRiemannianMetric
   rw [tangentSpaceProdEquiv_apply, tangentSpaceProdEquiv_apply, mfderiv_prod_right_comm_apply,
     mfderiv_prod_right_comm_apply]
   exact add_right_comm _ _ _
+
+variable [T2Space M] [T2Space N]
 
 /-- **Products of concordances.** If `g₀` and `g₁` are concordant and `g₂` has nonnegative scalar
 curvature, then `g₀ × g₂` and `g₁ × g₂` are concordant. -/
