@@ -346,6 +346,11 @@ lemma toStackificationNatIso_hom_app_comp_pullFunctorComp_hom_app {U V W : C} (q
     ← transport_id (toObjPullbackData q M),
     transport_transport _ _ _ _ _ (r ≫ q) rfl, transport_comp, Category.comp_id,
     ← transport_toObjPullbackData_trans, transport_comp, Category.comp_id]
+  -- The two sides differ only in writing `pullObj q ((toObjFunctor J F U).obj M)` as
+  -- `(toObjFunctor J F U ⋙ pullFunctor J F q).obj M`, equal by `Functor.comp_obj` and the
+  -- definition of the abbreviation `pullFunctor`. Rewriting with `Functor.comp_obj` fails (the
+  -- motive is not type correct, as the object appears in the type of a `PullbackData`), so the
+  -- step is closed by `rfl`.
   rfl
 
 /-- Every descent datum `A` over `U` is locally in the image of `toObjFunctor`: there is a
