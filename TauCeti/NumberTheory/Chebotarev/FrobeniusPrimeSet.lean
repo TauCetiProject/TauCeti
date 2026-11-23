@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.ArtinSymbol
-import TauCeti.NumberTheory.NumberField.AlgEquiv
+import TauCeti.RingTheory.Unramified.AlgEquiv
 
 /-!
 # The unramified primes carrying a prescribed Artin class
@@ -204,10 +204,10 @@ theorem frobeniusPrimeSet_map_autCongr (C : ConjClasses (L ≃ₐ[K] L)) (e : L 
   simp only [mem_frobeniusPrimeSet_iff]
   constructor
   · rintro ⟨hur', hC⟩
-    have hur := (e.forall_isUnramifiedAt_iff 𝔭.asIdeal).mpr hur'
+    have hur := ((NumberField.RingOfIntegers.mapAlgEquiv e).isUnramifiedIn_iff 𝔭.asIdeal).mpr hur'
     exact ⟨hur, by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e.symm hur' hur, hC, hcomp]⟩
   · rintro ⟨hur, hC⟩
-    have hur' := (e.forall_isUnramifiedAt_iff 𝔭.asIdeal).mp hur
+    have hur' := ((NumberField.RingOfIntegers.mapAlgEquiv e).isUnramifiedIn_iff 𝔭.asIdeal).mp hur
     exact ⟨hur', by rw [artinSymbol_eq_map_autCongr 𝔭.asIdeal e hur hur', hC]⟩
 
 end IsoOfExtensions
