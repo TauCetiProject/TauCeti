@@ -229,20 +229,19 @@ theorem primaryDecomposition_toFiniteBilinearModule :
     A.primaryDecomposition.toFiniteBilinearModule =
       (FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule).trans
         A.toFiniteBilinearModule.primaryDecomposition := by
-  refine FiniteBilinearModule.Isometry.toAddEquiv_injective ?_
-  rw [Isometry.toFiniteBilinearModule_toAddEquiv,
-    FiniteBilinearModule.Isometry.trans_toAddEquiv]
-  ext x
-  rw [AddEquiv.trans_apply]
-  have hx :
-      ((FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule).toAddEquiv
-        x : ∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val) = x :=
-    (congrArg (fun f : FiniteBilinearModule.Isometry
-        A.primaryComponents.toFiniteBilinearModule A.primaryComponents.toFiniteBilinearModule ↦
-        (f.toAddEquiv x : ∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val))
-      FiniteBilinearModule.Isometry.ofEq_rfl).trans
-      (by rw [FiniteBilinearModule.Isometry.refl_toAddEquiv, AddEquiv.refl_apply])
-  exact congrArg (AddCommGroup.primaryDecomposition A) hx.symm
+  refine FiniteBilinearModule.Isometry.ext fun x ↦ ?_
+  have hcast : ∀ p : (Nat.card A).primeFactors,
+      (FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule x p).val =
+        (x p).val := fun p ↦ by
+    rw [FiniteBilinearModule.Isometry.ofEq_apply]
+    exact congrArg Subtype.val (congrFun (cast_eq _ x) p)
+  rw [FiniteBilinearModule.Isometry.trans_apply,
+    A.toFiniteBilinearModule.primaryDecomposition_apply]
+  have hlhs : A.primaryDecomposition.toFiniteBilinearModule x = A.primaryDecomposition x := by
+    rw [← FiniteBilinearModule.Isometry.coe_toAddEquiv, Isometry.toFiniteBilinearModule_toAddEquiv]
+    rfl
+  rw [hlhs, A.primaryDecomposition_apply]
+  exact Finset.sum_congr rfl fun p _ ↦ (hcast p).symm
 
 /-- The orthogonal product of primary components is nondegenerate exactly when the original
 finite quadratic module is nondegenerate. -/

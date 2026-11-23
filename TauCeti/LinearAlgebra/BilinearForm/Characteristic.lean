@@ -198,15 +198,17 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M]
   let _ := Module.Free.ChooseBasisIndex.fintype R M
   let b := Free.chooseBasis R M
   let I : Ideal R := Ideal.span {(2 : R)}
-  have hsq (x : R ⧸ I) : x * x = x := by
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [← map_mul, Ideal.Quotient.eq, Ideal.mem_span_singleton]
-    simpa [sq] using h2 r
+  let _ : BooleanRing (R ⧸ I) :=
+    { (inferInstance : Ring (R ⧸ I)) with
+      isIdempotentElem x := by
+        obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+        rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq, Ideal.mem_span_singleton]
+        simpa [sq] using h2 r }
   let A : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) (R ⧸ I) :=
     Matrix.of fun i j ↦ Ideal.Quotient.mk I (B (b i) (b j))
   have hA : A.IsSymm :=
     Matrix.IsSymm.ext fun i j ↦ congrArg (Ideal.Quotient.mk I) (hB.eq (b j) (b i))
-  obtain ⟨u, hu⟩ := hA.exists_mulVec_eq_diag_of_sq_eq_self hsq
+  obtain ⟨u, hu⟩ := hA.exists_mulVec_eq_diag
   choose c hc using fun i ↦ Ideal.Quotient.mk_surjective (u i)
   let w : M := ∑ i, c i • b i
   refine ⟨w, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun j ↦ ?_⟩

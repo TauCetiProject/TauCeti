@@ -43,6 +43,14 @@ namespace TauCeti.IntegralLattice
 
 /-! ### Positive-scale Jordan invariants from the `p`-primary discriminant form -/
 
+/-- Every `p`-adic integer has an integer approximation congruent modulo both `p ^ n` and `p`. -/
+private theorem exists_int_pow_dvd_sub_and_dvd_sub {p : ℕ} [Fact p.Prime] (x : ℤ_[p]) (n : ℕ) :
+    ∃ a : ℤ, (p : ℤ_[p]) ^ n ∣ x - a ∧ (p : ℤ_[p]) ∣ x - a := by
+  have h := PadicInt.dvd_sub_appr x (max n 1)
+  refine ⟨(x.appr (max n 1) : ℤ), ?_, ?_⟩ <;> rw [Int.cast_natCast]
+  · exact (pow_dvd_pow (p : ℤ_[p]) (le_max_left n 1)).trans h
+  · exact (pow_one (p : ℤ_[p]) ▸ pow_dvd_pow (p : ℤ_[p]) (le_max_right n 1)).trans h
+
 /-- **Positive-scale Jordan invariants from the `p`-primary discriminant form.** At an odd prime
 `p`, if two nondegenerate integral lattices `L` and `M` have diagonal Jordan bases of `L_p` and
 `M_p` with unit entries `u i, v j` and valuations `k i, l j`, and the `p`-primary components of
@@ -66,18 +74,12 @@ theorem sum_eq_and_forall_pos_occCount_eq_and_isSquare_of_primaryDiscriminantBil
       IsSquare ((∏ i : {i // k i = m}, u i) * ∏ j : {j // l j = m}, v j) := by
   classical
   have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp
-  let θ : ι → ℤ := fun i ↦ ((u i : ℤ_[p]).appr (max (k i) 1) : ℤ)
-  let η : κ → ℤ := fun j ↦ ((v j : ℤ_[p]).appr (max (l j) 1) : ℤ)
-  have hθ_pow (i : ι) : (p : ℤ_[p]) ^ k i ∣ u i - θ i :=
-    (pow_dvd_pow (p : ℤ_[p]) (le_max_left (k i) 1)).trans (by simp [θ])
-  have hη_pow (j : κ) : (p : ℤ_[p]) ^ l j ∣ v j - η j :=
-    (pow_dvd_pow (p : ℤ_[p]) (le_max_left (l j) 1)).trans (by simp [η])
-  have hθ_p (i : ι) : (p : ℤ_[p]) ∣ u i - θ i :=
-    (pow_one (p : ℤ_[p]) ▸ pow_dvd_pow (p : ℤ_[p]) (le_max_right (k i) 1)).trans (by simp [θ])
-  have hη_p (j : κ) : (p : ℤ_[p]) ∣ v j - η j :=
-    (pow_one (p : ℤ_[p]) ▸ pow_dvd_pow (p : ℤ_[p]) (le_max_right (l j) 1)).trans (by simp [η])
-  obtain ⟨eL⟩ := nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu hθ_pow
-  obtain ⟨eM⟩ := nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv hη_pow
+  choose θ hθ using fun i ↦ exists_int_pow_dvd_sub_and_dvd_sub (u i : ℤ_[p]) (k i)
+  choose η hη using fun j ↦ exists_int_pow_dvd_sub_and_dvd_sub (v j : ℤ_[p]) (l j)
+  obtain ⟨eL⟩ :=
+    nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu fun i ↦ (hθ i).1
+  obtain ⟨eM⟩ :=
+    nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv fun j ↦ (hη j).1
   let e := eL.trans (hdisc.some.trans eM.symm)
   have hsum : ∑ i, k i = ∑ j, l j := by
     have hcard := Nat.card_congr e.toAddEquiv.toEquiv
@@ -85,14 +87,14 @@ theorem sum_eq_and_forall_pos_occCount_eq_and_isSquare_of_primaryDiscriminantBil
     simp_rw [FiniteQuadraticModule.natCard_oddCyclic, Finset.prod_pow_eq_pow_sum] at hcard
     exact Nat.pow_right_injective (Fact.out : p.Prime).one_lt hcard
   have hpi := (FiniteBilinearModule.nonempty_isometry_pi_oddCyclic_iff hp_odd k l
-    (fun i ↦ PadicInt.isCoprime_of_dvd_unit_sub (hθ_p i))
-    (fun j ↦ PadicInt.isCoprime_of_dvd_unit_sub (hη_p j))).mp ⟨e⟩
+    (fun i ↦ PadicInt.isCoprime_of_dvd_unit_sub (hθ i).2)
+    (fun j ↦ PadicInt.isCoprime_of_dvd_unit_sub (hη j).2)).mp ⟨e⟩
   refine ⟨hsum, fun m hm ↦ ?_⟩
   obtain ⟨hcnt, hleg⟩ := hpi m hm
   refine ⟨by rwa [occCount_eq_card_filter, occCount_eq_card_filter], ?_⟩
   rw [PadicInt.isSquare_prod_mul_prod_iff_prod_legendreSym_eq hp
     (fun i : {i // k i = m} ↦ u i.val) (fun j : {j // l j = m} ↦ v j.val)
-    (fun i ↦ hθ_p i.val) (fun j ↦ hη_p j.val),
+    (fun i ↦ (hθ i.val).2) (fun j ↦ (hη j.val).2),
     ← Finset.prod_subtype (Finset.univ.filter (k · = m)) (by simp) (fun i ↦ legendreSym p (θ i)),
     ← Finset.prod_subtype (Finset.univ.filter (l · = m)) (by simp) (fun j ↦ legendreSym p (η j)),
     hleg]
