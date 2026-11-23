@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Unramified
-public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
-public import Mathlib.Topology.Algebra.RestrictedProduct.Basic
-import TauCeti.NumberTheory.NumberField.GaloisCohomology.FiniteRamification
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Unramified
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.RestrictedLocalization
 
 /-!
 # Restricted localization for an isogeny
@@ -38,105 +35,37 @@ public noncomputable section
 
 namespace TauCeti.Isogeny
 
-open WeierstrassCurve TauCeti.ContCohomology GlobalNumberFields IsDedekindDomain
+open WeierstrassCurve TauCeti.ContCohomology
 open Hom (ofIsogeny)
-open scoped _root_.NumberField RestrictedProduct
+open scoped RestrictedProduct
 
 variable {K : Type*} [Field K] [NumberField K]
   {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
-
-private theorem eventually_kerRes_mem_unramifiedKerCohomology
-    (τf : ∀ v : HeightOneSpectrum (𝓞 K),
-      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    ∀ᶠ v in Filter.cofinite,
-      φ.kerRes (τf v) c ∈ (φ.baseChange (v.adicCompletion K)).unramifiedKerCohomology := by
-  simpa only [unramifiedKerCohomology_eq_unramifiedH1, kerRes_eq_explicitMap1] using
-    (eventually_explicitMap1_mem_unramifiedH1
-      (M := (ofIsogeny φ).KerCoeff)
-      (N := fun v ↦ (ofIsogeny (φ.baseChange (v.adicCompletion K))).KerCoeff)
-      τf (fun v ↦ φ.kerCoeffBaseChange (τf v))
-      (fun _ ↦ continuous_of_discreteTopology)
-      (fun v ↦ φ.kerCoeffBaseChange_smul (τf v)) c)
-
-private theorem eventually_kerRes_mem_finiteLocalCondition
-    (τf : ∀ v : HeightOneSpectrum (𝓞 K),
-      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    ∀ᶠ v in Filter.cofinite, φ.kerRes (τf v) c ∈ (φ.selmerStructure τf).localCondition v := by
-  have hcond := φ.eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology
-    (_root_.NumberField.RingOfIntegers K) τf (Nat.cast_ne_zero.mpr φ.degree_ne_zero)
-  filter_upwards [eventually_kerRes_mem_unramifiedKerCohomology φ τf c, hcond] with v hv hvc
-  rw [hvc]
-  exact hv
-
-variable (τ : ∀ v : GlobalNumberFields.Place K,
-  SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
-
-/-- Every global kernel cohomology class satisfies the local Kummer condition at almost every
-place of a number field. -/
-theorem eventually_kerRes_mem_localCondition
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    ∀ᶠ v in Filter.cofinite, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
-  rw [Filter.eventually_cofinite]
-  apply Set.finite_preimage_inl_and_inr.mp
-  refine ⟨Filter.eventually_cofinite.mp ?_, Set.toFinite _⟩
-  have h := eventually_kerRes_mem_finiteLocalCondition φ (fun v ↦ τ (Sum.inl v)) c
-  filter_upwards [h] with v hv
-  rw [selmerStructure_localCondition] at hv ⊢
-  exact hv
+  (τ : ∀ v : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure v.Completion)
 
 /-- The diagonal localization of global kernel cohomology into the all-place restricted
 product relative to the local Kummer conditions. -/
-def restrictedKerLocalization :
+abbrev restrictedKerLocalization :
     H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff →+
       Πʳ v : GlobalNumberFields.Place K,
         [H1 (AbsoluteGaloisGroup v.Completion) (ofIsogeny (φ.baseChange v.Completion)).KerCoeff,
-          (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange v.Completion)).kerCoeffIncl
-            continuous_of_discreteTopology).ker] where
-  toFun c := RestrictedProduct.mk (fun v ↦ φ.kerRes (τ v) c)
-    (by simpa only [selmerStructure_localCondition, SetLike.mem_coe] using
-      φ.eventually_kerRes_mem_localCondition τ c)
-  map_zero' := by
-    apply RestrictedProduct.ext
-    intro v
-    exact map_zero (φ.kerRes (τ v))
-  map_add' c d := by
-    apply RestrictedProduct.ext
-    intro v
-    exact map_add (φ.kerRes (τ v)) c d
-
-/-- A coordinate of restricted localization is the corresponding kernel restriction. -/
-@[simp]
-theorem restrictedKerLocalization_apply
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) (v : GlobalNumberFields.Place K) :
-    φ.restrictedKerLocalization τ c v = φ.kerRes (τ v) c := by
-  simp only [restrictedKerLocalization, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
-    RestrictedProduct.mk_apply]
-
-/-- The diagonal localization vanishes exactly when every local restriction vanishes. -/
-theorem restrictedKerLocalization_eq_zero_iff
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    φ.restrictedKerLocalization τ c = 0 ↔ ∀ v, φ.kerRes (τ v) c = 0 := by
-  constructor
-  · intro h v
-    exact congrArg (fun x ↦ x v) h
-  · intro h
-    apply RestrictedProduct.ext
-    intro v
-    simpa only [restrictedKerLocalization_apply, RestrictedProduct.zero_apply] using h v
+          ((φ.baseChange v.Completion).localKummerCondition : Set _)] :=
+  (φ.selmerStructure τ).restrictedLocalization
+    (fun v ↦ (φ.baseChange v.Completion).localKummerCondition)
+    (by simpa only [selmerStructure_localization] using φ.eventually_kerRes_mem_localCondition τ)
 
 /-- The Selmer group is the pullback, along restricted localization, of the subgroup satisfying
-the local conditions at every place. -/
+the local Kummer condition at every place. -/
 theorem selmerGroup_eq_comap_restrictedKerLocalization :
     φ.selmerGroup τ =
-      ((AddSubgroup.pi Set.univ (φ.selmerStructure τ).localCondition).comap
-        RestrictedProduct.coeAddMonoidHom).comap (φ.restrictedKerLocalization τ) := by
-  ext c
-  simp only [mem_selmerGroup_iff, mem_shafarevichTateGroup_iff,
-    AddSubgroup.mem_comap, AddSubgroup.mem_pi, Set.mem_univ, forall_const,
-    selmerStructure_localCondition, AddMonoidHom.mem_ker, pointRes_kerCoeffIncl]
-  rfl
+      (integralAddSubgroup fun v : GlobalNumberFields.Place K ↦
+        (φ.baseChange v.Completion).localKummerCondition).comap
+          (φ.restrictedKerLocalization τ) := by
+  have hcond := funext (selmerStructure_localCondition φ τ)
+  rw [selmerGroup_def, ← integralAddSubgroupOf_self]
+  simpa only [hcond] using
+    (φ.selmerStructure τ).selmerGroup_eq_comap_restrictedLocalization _
+      (by simpa only [selmerStructure_localization] using φ.eventually_kerRes_mem_localCondition τ)
 
 end TauCeti.Isogeny

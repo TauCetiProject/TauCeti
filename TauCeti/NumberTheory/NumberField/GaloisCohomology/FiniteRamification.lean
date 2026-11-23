@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
-public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.AbsoluteGaloisGroup
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
-import TauCeti.NumberTheory.LocalField.Unramified.Existence
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 
 /-!
 # Finite ramification of continuous first Galois cohomology
@@ -22,6 +18,13 @@ vanishes on an open normal subgroup. Its fixed field is a finite extension, and 
 extension's ramified support every local inertia group maps into the subgroup. Thus localization
 of a continuous first cohomology class is unramified at all but finitely many finite places.
 The local coefficient groups and the embeddings of separable closures may be chosen arbitrarily.
+
+## Main results
+
+* `TauCeti.ContCohomology.explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport`: a class
+  restricting to zero over a finite subextension is unramified outside its ramified support.
+* `TauCeti.ContCohomology.eventually_explicitMap1_mem_unramifiedH1`: localization of a class with
+  discrete global coefficients is unramified at all but finitely many finite places.
 
 ## References
 
@@ -37,61 +40,53 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- Away from the ramified support of a finite subextension of `Kˢ/K`, every local inertia
-element fixes that subextension, for any embedding of separable closures. -/
-theorem NumberField.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport
-    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
-    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K E)
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    {g : AbsoluteGaloisGroup (v.adicCompletion K)}
-    (hg : g ∈ separableClosureInertiaSubgroup (v.adicCompletion K)) :
-    absoluteGaloisGroupMap τ g ∈ E.fixingSubgroup := by
-  obtain ⟨w, hw, τ', hτ⟩ := exists_algHom_adicCompletion_eq E v
-    (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K)))
-  have := hw
-  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal :=
-    NumberField.isUnramifiedAway_ramifiedSupport v hv w.asIdeal
-  have : IsUnramified (v.adicCompletion K) (w.adicCompletion E) :=
-    HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt v w
-  have hrange : τ'.fieldRange ≤
-      maximalUnramifiedExtension (v.adicCompletion K)
-        (SeparableClosure (v.adicCompletion K)) := by
-    rw [τ'.fieldRange_eq_unramifiedExtension]
-    exact unramifiedExtension_le_maximalUnramifiedExtension _ _ _
-  rw [IntermediateField.mem_fixingSubgroup_iff]
-  intro x hx
-  have hτx : τ x = τ' (algebraMap E (w.adicCompletion E) ⟨x, hx⟩) := hτ ⟨x, hx⟩
-  have hxur : τ x ∈ maximalUnramifiedExtension (v.adicCompletion K)
-      (SeparableClosure (v.adicCompletion K)) := by
-    rw [hτx]
-    exact hrange (AlgHom.mem_fieldRange.mpr ⟨_, rfl⟩)
-  exact τ.injective ((absoluteGaloisGroupMap_commutes τ g x).trans
-    (mem_separableClosureInertiaSubgroup_iff.mp hg _ hxur))
-
 namespace ContCohomology
 
-variable {M : Type*} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DiscreteTopology M] [DistribMulAction (AbsoluteGaloisGroup K) M]
-  [ContinuousSMul (AbsoluteGaloisGroup K) M]
+variable {M : Type*} [AddCommGroup M] [TopologicalSpace M]
+  [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
+
+/-- A class whose restriction to a finite subextension's fixing subgroup vanishes localizes to
+an unramified class at every place outside that extension's ramified support. -/
+theorem explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport [IsTopologicalAddGroup M]
+    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
+    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K E)
+    {N : Type*} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction (AbsoluteGaloisGroup (v.adicCompletion K)) N]
+    [ContinuousSMul (AbsoluteGaloisGroup (v.adicCompletion K)) N]
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup (v.adicCompletion K)) (m : M),
+      f (absoluteGaloisGroupMap τ g • m) = g • f m)
+    {c : H1 (AbsoluteGaloisGroup K) M}
+    (hc : explicitRes1 (AbsoluteGaloisGroup K) M E.fixingSubgroup c = 0) :
+    explicitMap1 (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup (v.adicCompletion K)) N
+      (absoluteGaloisGroupMap τ) f hf hequiv c ∈ unramifiedH1 (v.adicCompletion K) N := by
+  rw [mem_unramifiedH1_iff]
+  apply (absoluteGaloisGroupMap τ).explicitRes1_explicitMap1_eq_zero_of_map_le f hf hequiv _ hc
+  rintro _ ⟨g, hg, rfl⟩
+  exact E.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport v hv τ hg
+
+variable [DiscreteTopology M]
   {N : HeightOneSpectrum (𝓞 K) → Type*}
   [∀ v, AddCommGroup (N v)] [∀ v, TopologicalSpace (N v)]
   [∀ v, IsTopologicalAddGroup (N v)]
   [∀ v, DistribMulAction (AbsoluteGaloisGroup (v.adicCompletion K)) (N v)]
   [∀ v, ContinuousSMul (AbsoluteGaloisGroup (v.adicCompletion K)) (N v)]
 
-/-- Every continuous first Galois cohomology class over a number field localizes to unramified
-classes at all but finitely many finite places. This allows arbitrary local coefficients,
-continuous equivariant coefficient maps, and embeddings of separable closures. -/
+/-- Every continuous first Galois cohomology class with discrete global coefficients over a
+number field localizes to unramified classes at all but finitely many finite places. This allows
+arbitrary local coefficients, which need not be discrete, equivariant coefficient maps, and
+embeddings of separable closures. -/
 theorem eventually_explicitMap1_mem_unramifiedH1
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    (f : ∀ v, M →+ N v) (hf : ∀ v, Continuous (f v))
+    (f : ∀ v, M →+ N v)
     (hequiv : ∀ v (g : AbsoluteGaloisGroup (v.adicCompletion K)) (m : M),
       f v (absoluteGaloisGroupMap (τ v) g • m) = g • f v m)
     (c : H1 (AbsoluteGaloisGroup K) M) :
     ∀ᶠ v in Filter.cofinite,
       explicitMap1 (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup (v.adicCompletion K))
-        (N v) (absoluteGaloisGroupMap (τ v)) (f v) (hf v) (hequiv v) c ∈
+        (N v) (absoluteGaloisGroupMap (τ v)) (f v) continuous_of_discreteTopology (hequiv v) c ∈
           unramifiedH1 (v.adicCompletion K) (N v) := by
   induction c using QuotientAddGroup.induction_on with
   | _ z =>
@@ -101,15 +96,19 @@ theorem eventually_explicitMap1_mem_unramifiedH1
     have : NumberField E := _root_.NumberField.of_module_finite K E
     have hfix : U.toSubgroup = E.fixingSubgroup :=
       toSubgroup_eq_fixingSubgroup_of_fixedField_eq (U := U.toOpenSubgroup) rfl
+    have hres : explicitRes1 (AbsoluteGaloisGroup K) M E.fixingSubgroup
+        (z : H1 (AbsoluteGaloisGroup K) M) = 0 := by
+      rw [explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
+      refine ⟨0, fun g ↦ ?_⟩
+      rw [smul_zero, sub_zero, cocyclesMap1_apply, AddMonoidHom.id_apply,
+        ContinuousMonoidHom.subgroupSubtype_apply]
+      have hg : (g : AbsoluteGaloisGroup K) ∈ U.toSubgroup := by
+        rw [hfix]
+        exact g.property
+      exact (hU _ hg).symm
     filter_upwards [(NumberField.ramifiedSupport K E).finite_toSet.compl_mem_cofinite] with v hv
-    rw [explicitMap1_mk]
-    apply mk_mem_unramifiedH1_of_forall_mem_separableClosureInertiaSubgroup
-    intro g hg
-    rw [cocyclesMap1_apply]
-    have hgE := NumberField.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport
-      E v hv (τ v) hg
-    rw [← hfix] at hgE
-    rw [hU _ hgE, map_zero]
+    exact explicitMap1_mem_unramifiedH1_of_notMem_ramifiedSupport E v hv (τ v) (f v)
+      continuous_of_discreteTopology (hequiv v) hres
 
 end ContCohomology
 end TauCeti

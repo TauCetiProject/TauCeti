@@ -63,13 +63,13 @@ def rationalDiagonal {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ →* G i)
     (U : ∀ i, Subgroup (G i))
     (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) :
     Γ →* Πʳ i, [G i, (U i : Set (G i))] where
-  toFun γ := ⟨fun i ↦ φ i γ, h γ⟩
+  toFun γ := RestrictedProduct.mk (fun i ↦ φ i γ) (h γ)
   map_one' := by
     ext i
-    exact map_one (φ i)
+    simp only [RestrictedProduct.mk_apply, RestrictedProduct.one_apply, map_one]
   map_mul' a b := by
     ext i
-    exact map_mul (φ i) a b
+    simp only [RestrictedProduct.mk_apply, RestrictedProduct.mul_apply, map_mul]
 
 /-- The `i`-th coordinate of the diagonal at `γ` is `φ i γ`. -/
 @[to_additive (attr := simp) addRationalDiagonal_apply]
@@ -77,7 +77,7 @@ theorem rationalDiagonal_apply {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ �
     (U : ∀ i, Subgroup (G i))
     (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) (γ : Γ) (i : ι) :
     rationalDiagonal φ U h γ i = φ i γ := by
-  rfl
+  simp only [rationalDiagonal, MonoidHom.coe_mk, OneHom.coe_mk, RestrictedProduct.mk_apply]
 
 /-- The kernel of the diagonal is the intersection of the kernels of the coordinate maps. -/
 @[to_additive (attr := simp) ker_addRationalDiagonal]
