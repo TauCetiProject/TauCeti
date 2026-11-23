@@ -23,11 +23,12 @@ Both results are stated for a nontrivial commutative ring whose elements are tot
 divisibility (a `PreValuationRing`); valuation domains are the main example. They need no domain
 assumption, so they also cover such rings with zero divisors.
 
-Algebraic closedness produces idempotent maximal ideals. In a ring that is integrally closed in
-an algebraically closed field, every element is the square of an element, so every radical
-ideal, in particular every prime or maximal ideal, is idempotent. This applies to a valuation
-ring whose fraction field is algebraically closed, so its maximal ideal, if nonzero, is not
-finitely generated.
+More generally, any radical ideal in which every element has an `n`-th root for some `n ≥ 2` is
+idempotent (`Ideal.IsRadical.isIdempotentElem_of_exists_pow_eq`), which covers both rings with
+surjective Frobenius (`n = p`) and rings integrally closed in an algebraically closed field
+(`n = 2`, `Ideal.IsRadical.isIdempotentElem_of_isAlgClosed`). In particular, the maximal ideal of
+a valuation ring whose fraction field is algebraically closed is idempotent, and hence, if nonzero,
+not finitely generated.
 
 ## References
 
@@ -76,23 +77,28 @@ end TauCeti.ValuationRing
 
 namespace Ideal.IsRadical
 
-variable {R : Type*} [CommRing R] {I : Ideal R}
+/-- A radical ideal in which every element has an `n`-th root for some `n ≥ 2` is idempotent.
+This covers radical ideals in rings with surjective Frobenius (`n = p`) as well as rings integrally
+closed in an algebraically closed field (`n = 2`). -/
+theorem isIdempotentElem_of_exists_pow_eq {R : Type*} [CommSemiring R] {I : Ideal R}
+    (hI : I.IsRadical) {n : ℕ} (hn : 2 ≤ n) (hroot : ∀ x ∈ I, ∃ y : R, y ^ n = x) :
+    IsIdempotentElem I := by
+  refine le_antisymm Ideal.mul_le_left fun x hx ↦ ?_
+  obtain ⟨y, rfl⟩ := hroot x hx
+  -- Since `y ^ n ∈ I` and `I` is radical, `y ∈ I`, so `y ^ n ∈ I ^ n ≤ I ^ 2 = I * I`.
+  exact sq I ▸ Ideal.pow_le_pow_right hn (Ideal.pow_mem_pow (hI ⟨n, hx⟩) n)
 
 /-- In a ring that is integrally closed in an algebraically closed field `K`, every radical ideal
 is idempotent: each of its elements is the square of an element of the ideal. This covers the
 maximal ideal of a valuation ring whose fraction field is algebraically closed. -/
-theorem isIdempotentElem_of_isAlgClosed (hI : I.IsRadical) (K : Type*) [Field K] [Algebra R K]
-    [IsIntegrallyClosedIn R K] [IsAlgClosed K] : IsIdempotentElem I := by
-  apply le_antisymm Ideal.mul_le_left
-  intro x hx
+theorem isIdempotentElem_of_isAlgClosed {R : Type*} [CommRing R] {I : Ideal R} (hI : I.IsRadical)
+    (K : Type*) [Field K] [Algebra R K] [IsIntegrallyClosedIn R K] [IsAlgClosed K] :
+    IsIdempotentElem I := by
+  refine hI.isIdempotentElem_of_exists_pow_eq (n := 2) le_rfl fun x _ ↦ ?_
   -- A square root of `x` in `K` is integral over `R`, so it is the image of some `c ∈ R`.
   obtain ⟨y, hy⟩ := IsAlgClosed.exists_pow_nat_eq (algebraMap R K x) two_pos
   obtain ⟨c, rfl⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow (R := R) two_pos
     (hy ▸ isIntegral_algebraMap)
-  have hc : c ^ 2 = x := IsIntegralClosure.algebraMap_injective R R K (by simpa using hy)
-  -- `c ∈ I` since `c ^ 2 = x ∈ I` and `I` is radical.
-  have hcI : c ∈ I := hI ⟨2, hc ▸ hx⟩
-  rw [← hc, pow_two]
-  exact Ideal.mul_mem_mul hcI hcI
+  exact ⟨c, IsIntegralClosure.algebraMap_injective R R K (by simpa using hy)⟩
 
 end Ideal.IsRadical
