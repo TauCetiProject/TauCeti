@@ -94,27 +94,6 @@ variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [Norm
 
 variable [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [Ring R]
 
-/-- Over a vector `v` of `E'`, evaluation at the orientation `v.proj` on the fibre of `o(E)` over
-the image of `v` in the base. -/
-private def coverFiberEquiv
-    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
-    (signLocalSystem F E R hι).obj
-        (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) ≃ₗ[R] R :=
-  signLocalSystemObjEquiv hι _ ≪≫ₗ signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
-    ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩
-
-private theorem coverFiberEquiv_apply
-    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-    (f : (signLocalSystem F E R hι).obj
-      (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj)) :
-    coverFiberEquiv hι R v f =
-      (signLocalSystemObjEquiv hι
-          (FundamentalGroupoid.mk (TopPair.Hom.fst (coverThomPairMap F E ι) v).proj) f :
-        (proj ⁻¹' {(TopPair.Hom.fst (coverThomPairMap F E ι) v).proj} :
-          Set (VectorBundleOrientationCover F E ι)) → R)
-        ⟨v.proj, proj_proj_eq_proj_coverThomPairMap_fst v⟩ :=
-  signFiberEquiv_apply _ _ _ _
-
 variable (F E) in
 /-- **The orientation system is trivial on the Thom pair of the orientation cover.** The pull-back
 of `π^*o(E)` (`TauCeti.thomPairSignLocalSystem`, written out as a pull-back) along
@@ -271,16 +250,17 @@ private theorem pullbackThomPairSignLocalSystemIso_inv_deckThomPairMap :
   -- The remaining components are identities and a transport between equal base points, so the
   -- left side is the component of the inverse of the trivialization at `δ v`; compare both sides
   -- by their values at `v.proj`.
-  refine (coverFiberEquiv hι R v).injective ((coverFiberEquiv_apply hι R v _).trans
+  refine (liftFiberEquiv (R := R) hι v.proj (proj_proj_eq_proj_coverThomPairMap_fst v)).injective
+    ((liftFiberEquiv_apply hι _ _ _).trans
     (((signLocalSystemObjEquiv_eqToHom_apply hι
       (congrArg TotalSpace.proj (coverThomPairMap_fst_deckThomPairMap_fst v)) _ v.proj _ _).trans
     (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply_deckThomPairMap hι
       R v r)).trans ?_))
   -- The component of `-ψ` at `v` is `-(ψ.app v)` by definition of the negation of natural
   -- transformations, through which `map_neg` applies.
-  exact (congrArg Neg.neg ((coverFiberEquiv_apply hι R v _).trans
+  exact (congrArg Neg.neg ((liftFiberEquiv_apply hι _ _ _).trans
     (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R v r))).symm.trans
-    (map_neg (coverFiberEquiv hι R v) _).symm
+    (map_neg (liftFiberEquiv hι _ _) _).symm
 
 private theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMapAux :
     TopPair.singularChainComplexMap (deckThomPairMap F E ι) (ModuleCat.of R R) ≫
