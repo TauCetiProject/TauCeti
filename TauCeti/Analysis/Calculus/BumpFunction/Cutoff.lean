@@ -427,9 +427,7 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
     exact FiniteDimensional.of_totallyBounded_nhds ℝ (hU.mem_nhds (hKU hx))
       (((K.isCompact (n + 1)).image continuous_subtypeVal).totallyBounded.subset
         (image_mono interior_subset))
-  obtain ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩ :=
-    hK.exists_contDiff_cutoff hU hKU
-  exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+  exact hK.exists_contDiff_cutoff hU hKU
 
 /-- Prepending the zero function to a sequence of cutoffs `eta n`, where `eta n` is one near `L n`
 and supported in `V (n + 1)`, gives cutoffs `eta' n` that are one near `L m` for every `m < n` and
