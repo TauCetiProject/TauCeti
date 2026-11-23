@@ -60,6 +60,16 @@ theorem append_lt_of_lt_of_not_prefix {α : Type*} [LT α] {l₁ l₂ l₃ : Lis
     (h₂ : ¬ l₁ <+: l₂) : l₁ ++ l₃ < l₂ := by
   simpa using append_lt_append_of_lt_of_not_prefix (l₃ := l₃) (l₄ := []) h₁ h₂
 
+/-- A list is lexicographically smaller than each of its proper extensions. -/
+theorem lt_append_of_ne_nil {α : Type*} [LT α] (l : List α) {m : List α} (hm : m ≠ []) :
+    l < l ++ m := by
+  simpa using append_left_lt (l₁ := l) (l₂ := []) (nil_lt_iff.2 hm)
+
+/-- A nonempty list is lexicographically larger than its parent `l.dropLast`. -/
+theorem dropLast_lt {α : Type*} [LT α] {l : List α} (hl : l ≠ []) : l.dropLast < l := by
+  conv_rhs => rw [← dropLast_append_getLast hl]
+  exact lt_append_of_ne_nil _ (by simp)
+
 section LinearOrder
 
 variable {α : Type*} [LinearOrder α]
@@ -74,10 +84,6 @@ instance instOrderBot : OrderBot (List α) where
 /-- The least element `⊥` of the lexicographic order is the empty list. -/
 @[simp]
 theorem bot_eq_nil : (⊥ : List α) = [] := rfl
-
-/-- A list is lexicographically smaller than each of its proper extensions. -/
-theorem lt_append_of_ne_nil (l : List α) {m : List α} (hm : m ≠ []) : l < l ++ m := by
-  simpa using append_left_lt_iff l (l₂ := []) (l₃ := m) |>.2 (nil_lt_iff.2 hm)
 
 /-- The lexicographic order on lists over a linear order without least element is dense. -/
 instance instDenselyOrdered [NoMinOrder α] : DenselyOrdered (List α) where
@@ -97,11 +103,6 @@ instance instDenselyOrdered [NoMinOrder α] : DenselyOrdered (List α) where
         exists_cons_of_ne_nil (by rintro rfl; exact hp nil_prefix)
       exact ⟨a :: x' ++ [a], lt_append_of_ne_nil _ (by simp),
         append_lt_of_lt_of_not_prefix hxy hp⟩
-
-/-- A nonempty list is lexicographically larger than its parent `l.dropLast`. -/
-theorem dropLast_lt {l : List α} (hl : l ≠ []) : l.dropLast < l := by
-  conv_rhs => rw [← dropLast_append_getLast hl]
-  exact lt_append_of_ne_nil _ (by simp)
 
 /-- Every list strictly between a nonempty list `l` and its parent `l.dropLast` is at least as
 long as `l`. -/
