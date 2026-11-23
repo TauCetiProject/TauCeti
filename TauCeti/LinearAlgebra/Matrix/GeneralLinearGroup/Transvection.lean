@@ -178,6 +178,23 @@ theorem transvectionUnit_mul_apply (hij : i ≠ j) (c : A) (g : GL n A) (r s : n
     rw [Units.val_mul, coe_transvectionUnit_eq_one_add_single]
   exact (congrFun (congrFun hmat r) s).trans (one_add_single_mul_apply i j c g r s)
 
+/-- Left multiplication by `transvectionUnit hij c` preserves rows `r ≠ i`. -/
+theorem transvectionUnit_mul_apply_of_ne (hij : i ≠ j) (c : A) (g : GL n A) {r : n} (hr : r ≠ i)
+    (s : n) :
+    (transvectionUnit hij c * g : GL n A) r s = g r s := by
+  simp [transvectionUnit_mul_apply, hr]
+
+/-- Left multiplication by `transvectionUnit hij c` adds `c * g j s` to row `i`. -/
+theorem transvectionUnit_mul_apply_self (hij : i ≠ j) (c : A) (g : GL n A) (s : n) :
+    (transvectionUnit hij c * g : GL n A) i s = g i s + c * g j s := by
+  simp [transvectionUnit_mul_apply]
+
+/-- Left multiplication by `transvectionUnit hij c` preserves `(i, s)` when `g j s = 0`. -/
+theorem transvectionUnit_mul_apply_self_of_eq_zero (hij : i ≠ j) (c : A) (g : GL n A) {s : n}
+    (hjs : g j s = 0) :
+    (transvectionUnit hij c * g : GL n A) i s = g i s := by
+  rw [transvectionUnit_mul_apply_self, hjs, mul_zero, add_zero]
+
 /-- A transvection acts on column vectors by the elementary row operation adding `c` times the
 `j`-th coordinate to the `i`-th one. -/
 theorem transvectionUnit_mulVec (hij : i ≠ j) (c : A) (v : n → A) :

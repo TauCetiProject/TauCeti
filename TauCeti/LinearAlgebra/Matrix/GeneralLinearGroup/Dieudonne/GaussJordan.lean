@@ -68,7 +68,8 @@ private theorem exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one (k : �
     obtain ⟨i, hi⟩ := A.exists_apply_ne_zero_col 0
     have hi1 : (1 : Fin (k + 2)) ≠ i := fun h ↦ hi (h ▸ h10)
     refine ⟨transvectionUnit hi1 1, transvectionUnit_mem_elementarySubgroup hi1 1, ?_⟩
-    rw [transvectionUnit_mul_apply]; simpa [h10] using hi
+    rw [transvectionUnit_mul_apply_self, h10, zero_add, one_mul]
+    exact hi
   obtain ⟨e₁, he₁, hB10⟩ := hstep1
   let B : GL (Fin (k + 2)) D := e₁ * A
   have h01 : (0 : Fin (k + 2)) ≠ 1 := Fin.zero_ne_one
