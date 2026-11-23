@@ -72,40 +72,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} (E : X.Modules)
 
-section Restriction
-
-variable {U V : X.Opens} (h : V ≤ U)
-
-/-- `Γ(X, V)` as a `Γ(X, U)`-algebra through restriction of functions, for opens `V ≤ U`. -/
-private noncomputable abbrev restrictionAlgebra : Algebra Γ(X, U) Γ(X, V) :=
-  (X.presheaf.map (homOfLE h).op).hom.toAlgebra
-
-/-- `Γ(E, V)` as a `Γ(X, U)`-module through restriction of functions, for opens `V ≤ U`. -/
-private noncomputable abbrev restrictionModule : Module Γ(X, U) Γ(E, V) :=
-  Module.compHom _ (X.presheaf.map (homOfLE h).op).hom
-
--- The algebra map of `restrictionAlgebra` is restriction of functions.
-private lemma algebraMap_restrictionAlgebra :
-    letI := restrictionAlgebra h
-    algebraMap Γ(X, U) Γ(X, V) = (X.presheaf.map (homOfLE h).op).hom :=
-  RingHom.algebraMap_toAlgebra _
-
--- The scalar action of `restrictionModule` is through restriction of functions.
-private lemma smul_restrictionModule (r : Γ(X, U)) (m : Γ(E, V)) :
-    letI := restrictionModule E h
-    r • m = X.presheaf.map (homOfLE h).op r • m :=
-  rfl
-
-private lemma isScalarTower_restriction :
-    letI := restrictionAlgebra h
-    letI := restrictionModule E h
-    IsScalarTower Γ(X, U) Γ(X, V) Γ(E, V) :=
-  letI := restrictionAlgebra h
-  letI := restrictionModule E h
-  .of_algebraMap_smul fun r m ↦ by rw [smul_restrictionModule, algebraMap_restrictionAlgebra]
-
-end Restriction
-
 variable [E.IsQuasicoherent] (k : ℕ)
 
 /-- The Grassmannian `G(k, Γ(E, U))` of the sections of `E` over an affine open `U`, a scheme over

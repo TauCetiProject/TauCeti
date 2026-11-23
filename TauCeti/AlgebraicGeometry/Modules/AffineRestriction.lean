@@ -32,6 +32,10 @@ scalars.
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.restrictionAlgebra` and
+  `AlgebraicGeometry.Scheme.Modules.restrictionModule`: for opens `V ≤ U`, the `Γ(X, U)`-algebra
+  structure on `Γ(X, V)` and the `Γ(X, U)`-module structure on `Γ(M, V)` through restriction of
+  functions, forming a scalar tower (`AlgebraicGeometry.Scheme.Modules.isScalarTower_restriction`).
 * `AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction`: for a quasi-coherent `M`
   and affine opens `V ≤ U`, restriction `Γ(M, U) → Γ(M, V)` is a base change along
   `Γ(X, U) → Γ(X, V)`.
@@ -83,6 +87,45 @@ private theorem isBaseChange_sectionsRestriction_basicOpen [M.IsQuasicoherent]
   have : IsLocalization.Away f Γ(X, X.basicOpen f) := hU.isLocalization_basicOpen f
   exact (isLocalizedModule_iff_isBaseChange (Submonoid.powers f) Γ(X, X.basicOpen f) _).mp
     (M.isLocalizedModule_basicOpenRestrict hU f)
+
+section Restriction
+
+variable (hVU : V ≤ U)
+
+/-- `Γ(X, V)` as a `Γ(X, U)`-algebra through restriction of functions, for opens `V ≤ U`. -/
+abbrev _root_.AlgebraicGeometry.Scheme.restrictionAlgebra : Algebra Γ(X, U) Γ(X, V) :=
+  (X.presheaf.map (homOfLE hVU).op).hom.toAlgebra
+
+/-- `Γ(M, V)` as a `Γ(X, U)`-module through restriction of functions, for opens `V ≤ U`. -/
+abbrev _root_.AlgebraicGeometry.Scheme.Modules.restrictionModule : Module Γ(X, U) Γ(M, V) :=
+  Module.compHom _ (X.presheaf.map (homOfLE hVU).op).hom
+
+/-- The algebra map of `Scheme.restrictionAlgebra` is restriction of functions. -/
+theorem _root_.AlgebraicGeometry.Scheme.algebraMap_restrictionAlgebra :
+    letI := Scheme.restrictionAlgebra hVU
+    algebraMap Γ(X, U) Γ(X, V) = (X.presheaf.map (homOfLE hVU).op).hom :=
+  RingHom.algebraMap_toAlgebra _
+
+/-- The scalar action of `Scheme.Modules.restrictionModule` is through restriction of
+functions. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.smul_restrictionModule (r : Γ(X, U))
+    (m : Γ(M, V)) :
+    letI := M.restrictionModule hVU
+    r • m = X.presheaf.map (homOfLE hVU).op r • m :=
+  rfl
+
+/-- `Scheme.restrictionAlgebra` and `Scheme.Modules.restrictionModule` form a scalar tower
+`Γ(X, U) → Γ(X, V) → Γ(M, V)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isScalarTower_restriction :
+    letI := Scheme.restrictionAlgebra hVU
+    letI := M.restrictionModule hVU
+    IsScalarTower Γ(X, U) Γ(X, V) Γ(M, V) :=
+  letI := Scheme.restrictionAlgebra hVU
+  letI := M.restrictionModule hVU
+  .of_algebraMap_smul fun r m ↦ by
+    rw [Scheme.Modules.smul_restrictionModule, Scheme.algebraMap_restrictionAlgebra]
+
+end Restriction
 
 section
 
