@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.Algebra.Category.ModuleCat.DirectedUnion
-public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.RingTheory.Flat.ProjectiveDimension
 
 /-!
