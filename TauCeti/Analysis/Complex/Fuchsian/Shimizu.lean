@@ -11,6 +11,7 @@ public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
 
 /-!
@@ -65,39 +66,39 @@ private theorem coe_transSL (w : ℝ) : ((transSL w : SL(2, ℝ)) : PSL(2, ℝ))
   (upperRightHom_apply w).symm
 
 @[simp] private theorem transSL_apply_zero_zero (w : ℝ) : transSL w 0 0 = 1 := by
-  simp [transSL, SpecialLinearGroup.transvection_coe]
+  simp [transSL]
 
 @[simp] private theorem transSL_apply_zero_one (w : ℝ) : transSL w 0 1 = w := by
-  simp [transSL, SpecialLinearGroup.transvection_coe]
+  simp [transSL]
 
 @[simp] private theorem transSL_apply_one_zero (w : ℝ) : transSL w 1 0 = 0 := by
-  simp [transSL, SpecialLinearGroup.transvection_coe]
+  simp [transSL]
 
 @[simp] private theorem transSL_apply_one_one (w : ℝ) : transSL w 1 1 = 1 := by
-  simp [transSL, SpecialLinearGroup.transvection_coe]
+  simp [transSL]
 
 /-! ### The entries of Jørgensen's iteration -/
 
 private theorem conj_transSL_apply_zero_zero (w : ℝ) (A : SL(2, ℝ)) :
     (A * transSL w * A⁻¹) 0 0 = 1 - w * A 0 0 * A 1 0 := by
   have h := A.fin_two_mul_sub_mul_eq_one
-  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL, SpecialLinearGroup.transvection_coe]
+  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL]
   linear_combination h
 
 private theorem conj_transSL_apply_zero_one (w : ℝ) (A : SL(2, ℝ)) :
     (A * transSL w * A⁻¹) 0 1 = w * A 0 0 ^ 2 := by
-  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL, SpecialLinearGroup.transvection_coe]
+  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL]
   ring
 
 private theorem conj_transSL_apply_one_zero (w : ℝ) (A : SL(2, ℝ)) :
     (A * transSL w * A⁻¹) 1 0 = -(w * A 1 0 ^ 2) := by
-  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL, SpecialLinearGroup.transvection_coe]
+  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL]
   ring
 
 private theorem conj_transSL_apply_one_one (w : ℝ) (A : SL(2, ℝ)) :
     (A * transSL w * A⁻¹) 1 1 = 1 + w * A 0 0 * A 1 0 := by
   have h := A.fin_two_mul_sub_mul_eq_one
-  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL, SpecialLinearGroup.transvection_coe]
+  simp [Matrix.mul_apply, Fin.sum_univ_two, transSL]
   linear_combination h
 
 variable {Γ : Subgroup PSL(2, ℝ)} {w : ℝ} {A : SL(2, ℝ)}

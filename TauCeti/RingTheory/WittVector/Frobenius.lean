@@ -30,6 +30,8 @@ Frobenius act on its adic spectrum. Also for perfect `R`, `φ` lifts the `p`-th 
 * `WittVector.frobenius_eq_self_iff_forall_coeff` : `φ x = x` iff every coordinate of `x` is fixed
   by the `p`-power map, in characteristic `p`.
 * `WittVector.frobeniusEquiv_symm_teichmuller` : `φ⁻¹ [r] = [r ^ (1 / p)]` for perfect `R`.
+* `WittVector.frobeniusEquiv_symm_frobenius`, `WittVector.frobenius_frobeniusEquiv_symm` :
+  `φ⁻¹ (φ x) = x` and `φ (φ⁻¹ x) = x` for perfect `R`, with `φ` written as `WittVector.frobenius`.
 * `WittVector.natCast_dvd_frobenius_sub_pow` : `p ∣ φ x - x ^ p` for perfect `R`.
 * `WittVector.verschiebung_eq_frobeniusEquiv_symm_mul` : `V x = φ⁻¹ x * p` for perfect `R`.
 * `WittVector.mem_span_p_iff_exists_verschiebung` : `p 𝕎 R = V (𝕎 R)` for perfect `R`.
@@ -67,6 +69,21 @@ theorem frobeniusEquiv_symm_teichmuller [PerfectRing R p] (r : R) :
       teichmuller p ((_root_.frobeniusEquiv R p).symm r) := by
   simp [frobeniusEquiv_symm_apply, map_teichmuller]
 
+-- The next two lemmas are not `@[simp]`: simp first rewrites `(frobeniusEquiv p R).symm` to
+-- `map (_root_.frobeniusEquiv R p).symm` by `WittVector.frobeniusEquiv_symm_apply`.
+
+/-- For a perfect ring of characteristic `p`, the inverse of the Witt-vector Frobenius undoes
+`WittVector.frobenius`. -/
+theorem frobeniusEquiv_symm_frobenius [PerfectRing R p] (x : WittVector p R) :
+    (frobeniusEquiv p R).symm (frobenius x) = x :=
+  (frobeniusEquiv p R).symm_apply_apply x
+
+/-- For a perfect ring of characteristic `p`, `WittVector.frobenius` undoes the inverse of the
+Witt-vector Frobenius. -/
+theorem frobenius_frobeniusEquiv_symm [PerfectRing R p] (x : WittVector p R) :
+    frobenius ((frobeniusEquiv p R).symm x) = x :=
+  (frobeniusEquiv p R).apply_symm_apply x
+
 /-- For a perfect ring of characteristic `p`, the Witt-vector Frobenius lifts the `p`-th power map
 modulo `p`: `p` divides `φ x - x ^ p`. -/
 theorem natCast_dvd_frobenius_sub_pow [PerfectRing R p] (x : WittVector p R) :
@@ -78,7 +95,7 @@ theorem natCast_dvd_frobenius_sub_pow [PerfectRing R p] (x : WittVector p R) :
 Frobenius: `V x = φ⁻¹ x * p`. -/
 theorem verschiebung_eq_frobeniusEquiv_symm_mul [PerfectRing R p] (x : WittVector p R) :
     verschiebung x = (frobeniusEquiv p R).symm x * p := by
-  rw [← verschiebung_frobenius, ← frobeniusEquiv_apply, RingEquiv.apply_symm_apply]
+  rw [← verschiebung_frobenius, frobenius_frobeniusEquiv_symm]
 
 /-- For a perfect ring of characteristic `p`, the ideal `p 𝕎 R` is the image of the
 Verschiebung. -/
@@ -86,8 +103,7 @@ theorem mem_span_p_iff_exists_verschiebung [PerfectRing R p] {x : WittVector p R
     x ∈ Ideal.span {(p : WittVector p R)} ↔ ∃ y, verschiebung y = x := by
   rw [Ideal.mem_span_singleton']
   refine ⟨fun ⟨a, ha⟩ ↦ ⟨frobenius a, ?_⟩, fun ⟨y, hy⟩ ↦ ⟨(frobeniusEquiv p R).symm y, ?_⟩⟩
-  · rw [verschiebung_eq_frobeniusEquiv_symm_mul, ← frobeniusEquiv_apply,
-      RingEquiv.symm_apply_apply, ha]
+  · rw [verschiebung_eq_frobeniusEquiv_symm_mul, frobeniusEquiv_symm_frobenius, ha]
   · rw [← hy, verschiebung_eq_frobeniusEquiv_symm_mul]
 
 end WittVector

@@ -194,16 +194,31 @@ namespace TauCeti.SymplecticForm
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
+/-- **A unitary frame makes a complex structure compatible.** Let `Φ : F → V` be an invertible
+real-linear map from a complex inner product space carrying `Im ⟪·, ·⟫` to `ω` and multiplication
+by `i` to `J`. Then `J` is `ω`-compatible: `ω` is invariant under `J`, and
+`ω(Φ v, J (Φ v)) = ‖v‖²`. -/
+theorem compatible_of_isInvertible_of_forall_eq_im_inner {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (ω : SymplecticForm V) {J : AlmostComplexStructure V}
+    {Φ : F →L[ℝ] V} (hΦ : Φ.IsInvertible) (hω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im)
+    (hJ : ∀ v, J (Φ v) = Φ (Complex.I • v)) : ω.Compatible J := by
+  obtain ⟨e, rfl⟩ := hΦ
+  refine .of_tames ((ω.invariant_iff _).2 fun v w ↦ ?_) fun v hv ↦ ?_
+  · rw [← e.apply_symm_apply v, ← e.apply_symm_apply w]
+    simp only [← ContinuousLinearEquiv.coe_coe e, hJ, hω, inner_smul_left, inner_smul_right]
+    simp
+  · rw [← e.apply_symm_apply v]
+    simp only [← ContinuousLinearEquiv.coe_coe e, hJ, hω, inner_smul_right,
+      inner_self_eq_norm_sq_to_K]
+    simp only [Complex.mul_im, Complex.I_re, Complex.I_im, zero_mul, one_mul, zero_add]
+    exact_mod_cast pow_pos (norm_pos_iff.2 ((map_ne_zero_iff _ e.symm.injective).2 hv)) 2
+
 /-- The imaginary part `Im ⟪·, ·⟫` of a complex inner product, as a symplectic form, is compatible
 with multiplication by `i`: it is invariant under `i`, and `ω(v, i v) = ‖v‖²`. -/
 theorem compatible_ofComplexModule_of_forall_eq_im_inner (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) :
-    ω.Compatible (AlmostComplexStructure.ofComplexModule F) := by
-  refine .of_tames ((ω.invariant_iff _).2 fun v w ↦ ?_) fun v hv ↦ ?_
-  · simp [hω, inner_smul_left, inner_smul_right]
-  · rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right,
-      inner_self_eq_norm_sq_to_K]
-    simp only [Complex.mul_im, Complex.I_re, Complex.I_im, zero_mul, one_mul, zero_add]
-    exact_mod_cast pow_pos (norm_pos_iff.2 hv) 2
+    ω.Compatible (AlmostComplexStructure.ofComplexModule F) :=
+  ω.compatible_of_isInvertible_of_forall_eq_im_inner (Φ := .id ℝ F)
+    ⟨.refl ℝ F, rfl⟩ hω fun v ↦ by simp [AlmostComplexStructure.ofComplexModule_apply]
 
 end TauCeti.SymplecticForm
