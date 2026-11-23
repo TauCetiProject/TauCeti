@@ -67,6 +67,8 @@ these include the amplitudes supported near the diagonal of properly supported o
 
 ## References
 
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
+  (1.21)–(1.28).
 * M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
   §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, §7.8.
@@ -313,18 +315,25 @@ instance : Module ℂ (Amplitude n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ coefficient_smul
 
 /-- Order inclusion `A^m ⊆ A^{m'}` for `m ≤ m'`. -/
-def inclusion {m' : ℝ} (h : m ≤ m') (a : Amplitude n V W m) : Amplitude n V W m' where
-  coefficient := a.coefficient
-  contDiff_coefficient := a.contDiff_coefficient
-  exists_bound K hK α γ β := by
-    obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α γ β
-    refine ⟨C, hC0, fun x y hxy ξ ↦ (hC x y hxy ξ).trans ?_⟩
-    gcongr
-    nlinarith [sq_nonneg ‖ξ‖]
+def inclusion {m' : ℝ} (h : m ≤ m') : Amplitude n V W m →ₗ[ℂ] Amplitude n V W m' where
+  toFun a :=
+    { coefficient := a.coefficient
+      contDiff_coefficient := a.contDiff_coefficient
+      exists_bound K hK α γ β := by
+        obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α γ β
+        refine ⟨C, hC0, fun x y hxy ξ ↦ (hC x y hxy ξ).trans ?_⟩
+        gcongr
+        nlinarith [sq_nonneg ‖ξ‖] }
+  map_add' _ _ := (rfl)
+  map_smul' _ _ := (rfl)
 
 @[simp]
 theorem coefficient_inclusion {m' : ℝ} (h : m ≤ m') (a : Amplitude n V W m) :
     (inclusion h a).coefficient = a.coefficient := (rfl)
+
+theorem inclusion_injective {m' : ℝ} (h : m ≤ m') :
+    Function.Injective (inclusion (n := n) (V := V) (W := W) h) :=
+  fun _ _ hab ↦ Amplitude.ext (by simpa using congrArg Amplitude.coefficient hab)
 
 end Module
 
@@ -397,6 +406,21 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Amplitude n V W m)
       fderiv ℝ a.coefficient p (0, 0, EuclideanSpace.single j 1) := by
   simp [frequencyDeriv]
 
+@[simp]
+theorem spatialDerivFst_zero (j : Fin n) :
+    spatialDerivFst j (0 : Amplitude n V W m) = 0 := by
+  ext p; simp
+
+@[simp]
+theorem spatialDerivSnd_zero (j : Fin n) :
+    spatialDerivSnd j (0 : Amplitude n V W m) = 0 := by
+  ext p; simp
+
+@[simp]
+theorem frequencyDeriv_zero (j : Fin n) :
+    frequencyDeriv j (0 : Amplitude n V W m) = 0 := by
+  ext p; simp
+
 
 /-! ### Commuting derivatives -/
 
@@ -468,25 +492,42 @@ private theorem map_snd_amplitudeDirections_nil (γ β : List (Fin n)) :
       mixedDirections γ β := by
   simp [amplitudeDirections, Function.comp_def]
 
+private theorem exists_bound_comp_spatial_proj (b : Symbol n V W m)
+    (L : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n →L[ℝ]
+      CoordinateSpace n × CoordinateSpace n)
+    {s : CoordinateSpace n × CoordinateSpace n → CoordinateSpace n} (hs : Continuous s)
+    (hL : ∀ x y ξ, L (x, y, ξ) = (s (x, y), ξ))
+    {K : Set (CoordinateSpace n × CoordinateSpace n)} (hK : IsCompact K)
+    {α γ β : List (Fin n)} (retained : List (Fin n))
+    (hdir : (amplitudeDirections α γ β).map L = mixedDirections retained β ∨
+      (0 : CoordinateSpace n × CoordinateSpace n) ∈ (amplitudeDirections α γ β).map L) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x y, (x, y) ∈ K → ∀ ξ,
+      ‖iteratedFDerivAlong ℝ (amplitudeDirections α γ β) (fun p ↦ b.coefficient (L p))
+        (x, y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound (s '' K) (hK.image hs) retained β
+  refine ⟨C, hC0, fun x y hxy ξ ↦ ?_⟩
+  rw [iteratedFDerivAlong_comp_of_hasFDerivAt (fun _ ↦ L.hasFDerivAt) b.contDiff_coefficient _
+    (by simp)]
+  rcases hdir with hmap | hzero
+  · rw [hmap, ← mixedDeriv_eq_iteratedFDerivAlong _ _ (b.contDiff_coefficient.of_le (by simp)),
+      hL x y ξ]
+    exact hC (s (x, y)) ⟨(x, y), hxy, rfl⟩ ξ
+  · obtain ⟨l₁, l₂, hl⟩ := List.mem_iff_append.mp hzero
+    rw [hl, (List.perm_middle (a := 0)).iteratedFDerivAlong_eq b.contDiff_coefficient
+      (by simp), iteratedFDerivAlong_cons_apply, map_zero, norm_zero]
+    positivity
+
 /-- The amplitude `a(x, y, ξ) = b(y, ξ)` of the **right quantization**
 `u ↦ (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) b(y, ξ) u(y) dy dξ` of a symbol `b`. -/
 def ofRight (b : Symbol n V W m) : Amplitude n V W m where
   coefficient p := b.coefficient p.2
   contDiff_coefficient := b.contDiff_coefficient.comp contDiff_snd
-  exists_bound K hK α γ β := by
-    obtain ⟨C, hC0, hC⟩ := b.exists_bound (Prod.snd '' K) (hK.image continuous_snd) γ β
-    refine ⟨C, hC0, fun x y hxy ξ ↦ ?_⟩
-    rw [iteratedFDerivAlong_comp_of_hasFDerivAt (fun _ ↦ hasFDerivAt_snd) b.contDiff_coefficient _
-      (by simp)]
-    cases α with
-    | nil =>
-      rw [map_snd_amplitudeDirections_nil,
-        ← mixedDeriv_eq_iteratedFDerivAlong _ _ (b.contDiff_coefficient.of_le (by simp))]
-      exact hC y ⟨(x, y), hxy, rfl⟩ ξ
-    | cons j α =>
-      simp only [amplitudeDirections, List.map_cons, List.cons_append, List.map_append,
-        iteratedFDerivAlong_cons_apply, ContinuousLinearMap.coe_snd', map_zero, norm_zero]
-      positivity
+  exists_bound K hK α γ β :=
+    exists_bound_comp_spatial_proj b (ContinuousLinearMap.snd ℝ _ _) continuous_snd
+      (fun _ _ _ ↦ rfl) hK γ (by
+        cases α with
+        | nil => exact Or.inl (map_snd_amplitudeDirections_nil γ β)
+        | cons j α => exact Or.inr (by simp [amplitudeDirections]))
 
 @[simp]
 theorem coefficient_ofRight (b : Symbol n V W m)
@@ -494,51 +535,32 @@ theorem coefficient_ofRight (b : Symbol n V W m)
     (ofRight b).coefficient p = b.coefficient p.2 :=
   (rfl)
 
-private theorem exists_bound_ofLeft (b : Symbol n V W m)
-    {K : Set (CoordinateSpace n × CoordinateSpace n)} (hK : IsCompact K) (α γ β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x y, (x, y) ∈ K → ∀ ξ,
-      ‖iteratedFDerivAlong ℝ (amplitudeDirections α γ β)
-        (fun p ↦ b.coefficient (p.1, p.2.2)) (x, y, ξ)‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set L : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n →L[ℝ]
-      CoordinateSpace n × CoordinateSpace n :=
-    (ContinuousLinearMap.fst ℝ _ _).prod
-      ((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))
-  have hL : ∀ p, HasFDerivAt (fun p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
-      (p.1, p.2.2)) L p :=
-    fun p ↦ hasFDerivAt_fst.prodMk (hasFDerivAt_snd.comp p hasFDerivAt_snd)
-  obtain ⟨C, hC0, hC⟩ := b.exists_bound (Prod.fst '' K) (hK.image continuous_fst) α β
-  refine ⟨C, hC0, fun x y hxy ξ ↦ ?_⟩
-  rw [iteratedFDerivAlong_comp_of_hasFDerivAt hL b.contDiff_coefficient _ (by simp)]
-  cases γ with
-  | nil =>
-    have hmap : (amplitudeDirections α [] β).map L = mixedDirections α β := by
-      simp [amplitudeDirections_def, mixedDirections_def, L, Function.comp_def]
-    rw [hmap, ← mixedDeriv_eq_iteratedFDerivAlong _ _ (b.contDiff_coefficient.of_le (by simp))]
-    exact hC x ⟨(x, y), hxy, rfl⟩ ξ
-  | cons j γ' =>
-    have hL0 : L (0, EuclideanSpace.single j 1, 0) = 0 := by simp [L]
-    have hperm : ((amplitudeDirections α (j :: γ') β).map L).Perm
-        ((0 : CoordinateSpace n × CoordinateSpace n) :: (amplitudeDirections α γ' β).map L) := by
-      simp only [amplitudeDirections_def, List.map_cons, List.append_assoc, List.map_append,
-        List.cons_append]
-      rw [hL0]
-      exact List.perm_middle
-    rw [hperm.iteratedFDerivAlong_eq b.contDiff_coefficient (by simp),
-      iteratedFDerivAlong_cons_apply, map_zero, norm_zero]
-    positivity
-
 /-- The amplitude `a(x, y, ξ) = b(x, ξ)` of the **left quantization** of a symbol `b`. -/
 def ofLeft (b : Symbol n V W m) : Amplitude n V W m where
   coefficient p := b.coefficient (p.1, p.2.2)
   contDiff_coefficient :=
     b.contDiff_coefficient.comp (contDiff_fst.prodMk (contDiff_snd.comp contDiff_snd))
-  exists_bound _ hK α γ β := exists_bound_ofLeft b hK α γ β
+  exists_bound _ hK α γ β := by
+    let L : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n →L[ℝ]
+        CoordinateSpace n × CoordinateSpace n :=
+      (ContinuousLinearMap.fst ℝ _ _).prod
+        ((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))
+    refine exists_bound_comp_spatial_proj b L continuous_fst (fun _ _ _ ↦ rfl) hK α ?_
+    cases γ with
+    | nil => exact Or.inl (by simp [amplitudeDirections_def, mixedDirections_def, L,
+        Function.comp_def])
+    | cons j γ' => exact Or.inr (by simp [amplitudeDirections_def, L, Prod.zero_eq_mk])
 
 @[simp]
 theorem coefficient_ofLeft (b : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
     (ofLeft b).coefficient p = b.coefficient (p.1, p.2.2) := (rfl)
+
+@[simp]
+theorem quantizeAmplitudeValue_ofLeft [CompleteSpace V] [CompleteSpace W] (b : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeAmplitudeValue (ofLeft b).coefficient u x = quantizeSchwartzValue b.coefficient u x :=
+  quantizeAmplitudeValue_eq_quantizeSchwartzValue b.coefficient u x
 
 @[simp]
 theorem spatialDerivSnd_ofLeft (j : Fin n) (b : Symbol n V W m) :
@@ -867,21 +889,6 @@ theorem hasProperInputSupport_iff {a : Amplitude n V W m} :
       ∃ L : Set (CoordinateSpace n), IsCompact L ∧
         ∀ x ∈ K, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0 :=
   Iff.rfl
-
-/-- Outside a closed set of spatial pairs on which an amplitude vanishes, all its derivatives
-vanish. -/
-theorem iteratedFDerivAlong_eq_zero_of_notMem {a : Amplitude n V W m}
-    {S : Set (CoordinateSpace n × CoordinateSpace n)} (hS : IsClosed S)
-    (hSa : ∀ x y, (x, y) ∉ S → ∀ ξ, a.coefficient (x, y, ξ) = 0)
-    (vs : List (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n))
-    {x y ξ : CoordinateSpace n} (hxy : (x, y) ∉ S) :
-    iteratedFDerivAlong ℝ vs a.coefficient (x, y, ξ) = 0 := by
-  refine iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero ?_ vs
-  have hU : IsOpen {p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n |
-      (p.1, p.2.1) ∉ S} :=
-    hS.isOpen_compl.preimage (continuous_fst.prodMk (continuous_fst.comp continuous_snd))
-  filter_upwards [hU.mem_nhds hxy] with p hp
-  exact hSa p.1 p.2.1 hp p.2.2
 
 /-- An amplitude vanishing at all pairs of positions at distance more than `R` has proper input
 support. -/

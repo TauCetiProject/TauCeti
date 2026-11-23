@@ -9,17 +9,15 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Topology.Maps.Proper.KernelSupport
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Smooth properly supported diagonal cutoffs
 
-On any finite-dimensional real normed space `E`, subtracting a smooth compactly supported bump
-function `b (x - y)` produces a smooth `[0, 1]`-valued properly supported cutoff equal to `1` on a
-tube `‖x - y‖ ≤ r` (hence on a neighborhood of every diagonal point `(x, x)`) and vanishing when
-`‖x - y‖ ≥ R`, whenever `0 < R` and `r < R`
-(`TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`).
+On any finite-dimensional real normed space `E`, composing a smooth compactly supported bump
+function `b : ContDiffBump (0 : E)` with subtraction `(x, y) ↦ b (x - y)` produces a smooth
+`[0, 1]`-valued properly supported cutoff that equals `1` on a neighborhood of every diagonal point
+`(x, x)`, equals `1` whenever `‖x - y‖ ≤ r`, and vanishes whenever `‖x - y‖ ≥ R`, whenever `0 < R`
+and `r < R` (`TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`).
 -/
 
 public section
@@ -30,8 +28,9 @@ open scoped ContDiff Topology
 namespace TauCeti
 
 /-- Every finite-dimensional real normed space admits a smooth `[0, 1]`-valued properly supported
-cutoff equal to `1` when `‖x - y‖ ≤ r` (hence on a neighborhood of every diagonal point `(x, x)`)
-and vanishing when `‖x - y‖ ≥ R`, whenever `0 < R` and `r < R`. -/
+cutoff constructed by composing a bump function with subtraction `(x, y) ↦ b (x - y)` that
+equals `1` on a neighborhood of every diagonal point `(x, x)`, equals `1` whenever `‖x - y‖ ≤ r`,
+and vanishes whenever `‖x - y‖ ≥ R`, whenever `0 < R` and `r < R`. -/
 theorem exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {r R : ℝ}
     (hR : 0 < R) (hrR : r < R) :

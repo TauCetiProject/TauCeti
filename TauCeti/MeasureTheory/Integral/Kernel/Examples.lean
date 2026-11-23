@@ -5,52 +5,44 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Exponential
-public import TauCeti.Topology.Maps.Proper.KernelSupport
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
-# Gaussian non-examples of properly supported kernels
+# Counterexamples for compact support of integral operators
 
-On any noncompact seminormed additive group (for instance any nontrivial real normed space), the
-Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` is everywhere nonzero and therefore fails to have proper
-output support, proper input support, or proper support, despite its rapid off-diagonal decay.
+On any nontrivial finite-dimensional real normed space equipped with an open-positive measure that
+is finite on compacts, the constant identity kernel `(x, y) ↦ id` sends a smooth compactly
+supported function to a nonzero constant, which fails to have compact support
+(`TauCeti.exists_hasCompactSupport_not_hasCompactSupport_integral_const`).
 -/
 
 public section
 
-open Function Set
+open MeasureTheory
+open scoped ContDiff
 
 namespace TauCeti
 
-private theorem tsupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E] :
-    tsupport (uncurry fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2)) = univ := by
-  have h : (uncurry fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2)) =
-      fun p : E × E ↦ Real.exp (-‖p.1 - p.2‖ ^ 2) := rfl
-  rw [h, tsupport, eq_univ_iff_forall.2 fun p ↦ mem_support.2 (Real.exp_ne_zero _), closure_univ]
-
-/-- On any noncompact seminormed additive group (for instance any nontrivial real normed space),
-the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` does not have proper output support. -/
-theorem not_hasProperOutputSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E]
-    [NoncompactSpace E] :
-    ¬HasProperOutputSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) := by
-  have : Nonempty E := ⟨0⟩
-  exact not_hasProperOutputSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
-
-/-- On any noncompact seminormed additive group (for instance any nontrivial real normed space),
-the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` does not have proper input support. -/
-theorem not_hasProperInputSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E]
-    [NoncompactSpace E] :
-    ¬HasProperInputSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) := by
-  have : Nonempty E := ⟨0⟩
-  exact not_hasProperInputSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
-
-/-- On any noncompact seminormed additive group (for instance any nontrivial real normed space),
-the Gaussian kernel `(x, y) ↦ exp (-‖x - y‖²)` is not properly supported, despite its rapid
-off-diagonal decay. -/
-theorem not_hasProperSupport_exp_neg_norm_sub_sq {E : Type*} [SeminormedAddCommGroup E]
-    [NoncompactSpace E] :
-    ¬HasProperSupport fun x y : E ↦ Real.exp (-‖x - y‖ ^ 2) := by
-  have : Nonempty E := ⟨0⟩
-  exact not_hasProperSupport_of_tsupport_eq_univ tsupport_exp_neg_norm_sub_sq
+/-- On any nontrivial finite-dimensional real normed space (which is in particular noncompact)
+equipped with an open-positive measure that is finite on compacts, the constant identity kernel
+`(x, y) ↦ id` sends a smooth compactly supported `u` to a nonzero constant, which fails to have
+compact support. -/
+theorem exists_hasCompactSupport_not_hasCompactSupport_integral_const {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] (μ : Measure E := by volume_tac)
+    [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] :
+    ∃ u : E → ℝ, ContDiff ℝ ∞ u ∧ HasCompactSupport u ∧ (∫ y, u y ∂μ) ≠ 0 ∧
+      ¬HasCompactSupport fun _ : E ↦ ∫ y, (ContinuousLinearMap.id ℝ ℝ) (u y) ∂μ := by
+  let b : ContDiffBump (0 : E) := ⟨1, 2, zero_lt_one, one_lt_two⟩
+  have hint : Integrable b μ := b.continuous.integrable_of_hasCompactSupport b.hasCompactSupport
+  have hpos : (∫ y : E, b y ∂μ) ≠ 0 :=
+    ((integral_pos_iff_support_of_nonneg b.nonneg' hint).mpr
+      (b.support_eq.symm ▸ Metric.measure_ball_pos μ 0 b.rOut_pos)).ne'
+  refine ⟨b, b.contDiff, b.hasCompactSupport, hpos, fun hc ↦ ?_⟩
+  simp only [ContinuousLinearMap.id_apply, HasCompactSupport] at hc
+  rw [tsupport, Function.support_const hpos, closure_univ] at hc
+  exact NoncompactSpace.noncompact_univ hc
 
 end TauCeti

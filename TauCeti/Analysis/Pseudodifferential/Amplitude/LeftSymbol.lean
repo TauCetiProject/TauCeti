@@ -9,10 +9,9 @@ public import TauCeti.Analysis.Pseudodifferential.Amplitude.Basic
 public import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
-import Mathlib.Analysis.Normed.Module.Completion
-import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
 import TauCeti.Analysis.Fourier.Parametric
+import TauCeti.Analysis.Normed.Operator.Completion
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -26,9 +25,9 @@ stays in a compact set, is a left quantization. Its *left symbol*
 
 where `â(x, θ, ξ)` is the Fourier transform (with Mathlib's phase `exp(-2πi ⟪y, θ⟫)`) of the
 compactly supported input slice `y ↦ a(x, y, ξ)`. This symbol `TauCeti.Amplitude.leftSymbol` has
-order `m` unconditionally on `V` and `W`; when `V` and `W` are complete, its quantization agrees
-with the quantization of `a` on Schwartz functions
-(`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`).
+order `m` unconditionally on `V` and `W`; when `V` is complete, its quantization agrees with the
+quantization of `a` on Schwartz functions (`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`,
+with both quantizations vanishing when `W` is incomplete).
 By extending coefficients to the completion of `V`, amplitudes with proper input support map
 Schwartz functions to smooth functions
 (`TauCeti.Amplitude.HasProperInputSupport.contDiff_quantizeAmplitudeValue`) without completeness
@@ -46,13 +45,13 @@ In angular frequency, `c(x, ξ) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, η - ξ⟫)
   `TauCeti.Amplitude.spatialDeriv_leftSymbol` (`∂_{x_j} c` is the left symbol of
   `∂_{x_j} a + ∂_{y_j} a`) and `TauCeti.Amplitude.frequencyDeriv_leftSymbol`.
 * `TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`: the reduction `Op(c) = Op(a)` (for
-  complete `V` and `W`), and
+  complete `V`, with both quantizations vanishing when `W` is incomplete), and
   `TauCeti.Amplitude.coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq`:
   `c` is the only symbol with this property (for complete `V` and `W`).
 * `TauCeti.Amplitude.HasProperInputSupport.contDiff_quantizeAmplitudeValue`: smoothness of `Op(a) u`
   without completeness assumptions on `V` or `W`.
 * `TauCeti.Amplitude.leftSymbol_ofRight_ofSpatial`: the right quantization of multiplication by a
-  compactly supported `f(y)` has left symbol `f(x)` (for complete `V` and `W`).
+  compactly supported `f(y)` has left symbol `f(x)` (for complete `W`).
 
 ## Proof outline
 
@@ -72,6 +71,8 @@ the quantization of a symbol `b(x, ξ)` is the right quantization of the pointwi
 
 ## References
 
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
+  (1.21)–(1.28).
 * M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
   §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
@@ -466,8 +467,8 @@ support, the symbol of order `m`
 `c(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2πθ) dθ`,
 
 where `â(x, θ, ξ)` is the Fourier transform of the input slice `y ↦ a(x, y, ξ)` at `θ`. Its
-quantization is the quantization of the amplitude when `V` is complete
-(`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`). -/
+quantization is the quantization of the amplitude when `V` is complete (with both quantizations
+vanishing when `W` is incomplete; `TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`). -/
 def leftSymbol (a : Amplitude n V W m) (ha : a.HasProperInputSupport) : Symbol n V W m where
   coefficient := leftCoeff a
   contDiff_coefficient := contDiff_infty.2 fun k ↦ ha.contDiff_leftCoeff k
@@ -564,16 +565,18 @@ private theorem HasProperInputSupport.integrable_quantizeIntegrand {a : Amplitud
           (1 + ‖q.1 - q.2‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * ‖𝓕 u q.2‖ := by gcongr
     _ = _ := by ring
 
-/-- **Reduction of an amplitude to its left symbol.** Requires `V` and `W` to be complete; for an
-amplitude `a` with proper input support, the quantization of the left symbol is the quantization of
-the amplitude: for every Schwartz function `u`,
+/-- **Reduction of an amplitude to its left symbol.** Requires `V` to be complete (when `W` is
+incomplete, both sides vanish by the Bochner integral convention); for an amplitude `a` with proper
+input support, the quantization of the left symbol is the quantization of the amplitude: for every
+Schwartz function `u`,
 
 `Op(c) u (x) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) a(x, y, ξ) u(y) dy dξ`, with `c = a.leftSymbol ha`. -/
-theorem quantizeSchwartzValue_leftSymbol [CompleteSpace V] [CompleteSpace W]
-    {a : Amplitude n V W m} (ha : a.HasProperInputSupport) (u : 𝓢(CoordinateSpace n, V))
-    (x : CoordinateSpace n) :
+theorem quantizeSchwartzValue_leftSymbol [CompleteSpace V] {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (a.leftSymbol ha).coefficient u x =
       quantizeAmplitudeValue a.coefficient u x := by
+  by_cases hW : CompleteSpace W; swap
+  · simp [quantizeSchwartzValue_def, quantizeAmplitudeValue_def, integral_of_not_completeSpace hW]
   set G : CoordinateSpace n → CoordinateSpace n → W := fun ζ ζ' ↦ 𝐞 ⟪ζ, x⟫ •
     𝓕 (fun y ↦ a.coefficient (x, y, (2 * π) • ζ)) (ζ - ζ') (𝓕 u ζ') with hGdef
   have hG : Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ G q.1 q.2)
@@ -609,59 +612,44 @@ theorem coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq
     (h u hu).trans (funext fun x ↦ (quantizeSchwartzValue_leftSymbol ha u x).symm)
 
 /-- The right quantization of multiplication by a compactly supported smooth `f` is
-multiplication by `f`, so when `V` and `W` are complete the left symbol of its amplitude `f(y)`
-is `f(x)`. -/
+multiplication by `f`, so when `W` is complete the left symbol of its amplitude `f(y)` is
+`f(x)`. -/
 @[simp]
-theorem leftSymbol_ofRight_ofSpatial [CompleteSpace V] [CompleteSpace W]
+theorem leftSymbol_ofRight_ofSpatial [CompleteSpace W]
     {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (hfs : HasCompactSupport f) :
     (ofRight (Symbol.ofSpatial f hf)).leftSymbol
         ((Symbol.hasCompactSpatialSupport_ofSpatial_iff hf).2 hfs).hasProperInputSupport_ofRight =
       Symbol.ofSpatial f hf := by
-  refine Symbol.ext (coefficient_eq_coefficient_leftSymbol_of_forall_quantizeSchwartzValue_eq _
-    fun u _ ↦ funext fun x ↦ ?_).symm
-  have hg : HasCompactSupport fun y ↦ f y (u y) :=
-    hfs.mono fun y hy h ↦ hy (by simp [h])
-  have hsm : ContDiff ℝ ∞ fun y ↦ f y (u y) := by
-    have h := (Symbol.ofSpatial f hf).contDiff_quantizeSchwartzValue u
-    rwa [funext (Symbol.quantizeSchwartzValue_ofSpatial f hf u)] at h
-  set g := hg.toSchwartzMap hsm
-  have hgu : ⇑g = fun y ↦ f y (u y) := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  rw [Symbol.quantizeSchwartzValue_ofSpatial, quantizeAmplitudeValue_def]
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_leftSymbol, Symbol.coefficient_ofSpatial]
   simp only [coefficient_ofRight, Symbol.coefficient_ofSpatial]
-  rw [← hgu, ← SchwartzMap.fourier_coe, ← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe,
-    fourierInv_fourier_eq, hgu]
+  set g := hfs.toSchwartzMap hf
+  have hgf : ⇑g = f := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  simp_rw [← hgf, ← SchwartzMap.fourier_coe, ← Circle.smul_def]
+  rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq, hgf]
 
 /-! ### Smoothness without completeness hypotheses -/
 
-private noncomputable def fromCompletionCLM [CompleteSpace W] :
-    (V →L[ℂ] W) →L[ℝ] (UniformSpace.Completion V →L[ℂ] W) :=
-  LinearMap.mkContinuous
-    { toFun := ContinuousLinearMap.fromCompletion
-      map_add' := fun f g ↦ ContinuousLinearMap.fromCompletion_unique (f + g) _ fun v ↦ by simp
-      map_smul' := fun c f ↦ ContinuousLinearMap.fromCompletion_unique (c • f) _ fun v ↦ by simp }
-    1 fun f ↦ by
-      rw [one_mul]
-      calc ‖f.fromCompletion‖
-          = ‖f.extend (UniformSpace.Completion.toComplL : V →L[ℂ] UniformSpace.Completion V)‖ := by
-            rw [ContinuousLinearMap.extend_completionToComplL]
-        _ ≤ ((1 : NNReal) : ℝ) * ‖f‖ :=
-            ContinuousLinearMap.opNorm_extend_le f UniformSpace.Completion.denseRange_coe
-              fun x ↦ by simp [UniformSpace.Completion.norm_coe]
-        _ = ‖f‖ := by simp
-
 private def extendCompletion [CompleteSpace W] (a : Amplitude n V W m) :
     Amplitude n (UniformSpace.Completion V) W m where
-  coefficient p := fromCompletionCLM (a.coefficient p)
-  contDiff_coefficient := (fromCompletionCLM (V := V) (W := W)).contDiff.comp a.contDiff_coefficient
+  coefficient p := ContinuousLinearMap.fromCompletionCLM (σ₁₂ := RingHom.id ℂ) (a.coefficient p)
+  contDiff_coefficient :=
+    (ContinuousLinearMap.restrictScalars ℝ
+      (ContinuousLinearMap.fromCompletionCLM (σ₁₂ := RingHom.id ℂ) (E := V) (F := W))
+      ).contDiff.comp a.contDiff_coefficient
   exists_bound K hK α γ β := by
+    let L : (V →L[ℂ] W) →L[ℝ] (UniformSpace.Completion V →L[ℂ] W) :=
+      ContinuousLinearMap.restrictScalars ℝ
+        (ContinuousLinearMap.fromCompletionCLM (σ₁₂ := RingHom.id ℂ) (E := V) (F := W))
     obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α γ β
-    refine ⟨‖fromCompletionCLM (V := V) (W := W)‖ * C,
-      mul_nonneg (norm_nonneg (fromCompletionCLM (V := V) (W := W))) hC0, fun x y hxy ξ ↦ ?_⟩
-    rw [(fromCompletionCLM (V := V) (W := W)).iteratedFDerivAlong_comp_left
-      a.contDiff_coefficient (amplitudeDirections α γ β) (by simp), mul_assoc]
+    refine ⟨‖L‖ * C, mul_nonneg (norm_nonneg L) hC0, fun x y hxy ξ ↦ ?_⟩
+    have hL : (fun p ↦ ContinuousLinearMap.fromCompletionCLM
+        (σ₁₂ := RingHom.id ℂ) (a.coefficient p)) = fun p ↦ L (a.coefficient p) := rfl
+    rw [hL, L.iteratedFDerivAlong_comp_left a.contDiff_coefficient (amplitudeDirections α γ β)
+      (by simp), mul_assoc]
     exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_left (hC x y hxy ξ)
-        (norm_nonneg (fromCompletionCLM (V := V) (W := W))))
+      (mul_le_mul_of_nonneg_left (hC x y hxy ξ) (norm_nonneg L))
 
 private theorem HasProperInputSupport.extendCompletion_support [CompleteSpace W]
     {a : Amplitude n V W m} (ha : a.HasProperInputSupport) :
@@ -691,7 +679,8 @@ theorem HasProperInputSupport.contDiff_quantizeAmplitudeValue
     rw [quantizeSchwartzValue_leftSymbol ha.extendCompletion_support uExt x]
     refine quantizeAmplitudeValue_congr_apply_at fun y ξ ↦ ?_
     have hcoe : uExt y = (u y : UniformSpace.Completion V) := SchwartzMap.postcompCLM_apply _ u y
-    exact hcoe ▸ (ContinuousLinearMap.fromCompletion_apply_coe (a.coefficient (x, y, ξ)) (u y)).symm
+    exact hcoe ▸ (ContinuousLinearMap.fromCompletionCLM_apply_coe
+      (σ₁₂ := RingHom.id ℂ) (a.coefficient (x, y, ξ)) (u y)).symm
   rw [hquant]
   exact ((extendCompletion a).leftSymbol ha.extendCompletion_support
     ).contDiff_quantizeSchwartzValue uExt

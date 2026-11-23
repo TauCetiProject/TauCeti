@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Amplitude.LeftSymbol
+public import TauCeti.Analysis.Pseudodifferential.Amplitude.Basic
 public import TauCeti.Topology.Maps.Proper.KernelSupport
 
 /-!
@@ -15,19 +15,19 @@ An amplitude `a(x, y, ξ)` of order `m` on `ℝⁿ` has *proper input support*
 (`TauCeti.Amplitude.HasProperInputSupport`, defined in
 `TauCeti.Analysis.Pseudodifferential.Amplitude.Basic`) when `(x, y) ↦ x` is proper on the
 closure of `{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}`, so `y` stays in a compact set whenever `x` stays in a
-compact set. This file bridges that notion to binary kernel support
-(`TauCeti.HasProperOutputSupport` in `TauCeti.Topology.Maps.Proper.KernelSupport`) and defines the
-symmetric notion of *proper output support* (`TauCeti.Amplitude.HasProperOutputSupport`), where
-`(x, y) ↦ y` is proper (`TauCeti.HasProperInputSupport` for the underlying kernel) so `x` stays in
-a compact set whenever `y` stays in a compact set. An amplitude has *proper support*
-(`TauCeti.Amplitude.HasProperSupport`) when both hold.
+compact set. This file bridges that notion to binary kernel support (`TauCeti.HasProperInputSupport`
+in `TauCeti.Topology.Maps.Proper.KernelSupport`) and defines the symmetric notion of
+*proper output support* (`TauCeti.Amplitude.HasProperOutputSupport`), where `(x, y) ↦ y` is proper
+(`TauCeti.HasProperOutputSupport` for the underlying kernel) so `x` stays in a compact set whenever
+`y` stays in a compact set. An amplitude has *proper support* (`TauCeti.Amplitude.HasProperSupport`)
+when both hold.
 
 Output-proper amplitudes preserve compact support under quantization
-(`TauCeti.Amplitude.HasProperOutputSupport.hasCompactSupport_quantizeAmplitudeValue`), while
-input-proper amplitudes map Schwartz functions to smooth functions
-(`TauCeti.Amplitude.HasProperInputSupport.contDiff_quantizeAmplitudeValue`). Together, properly
-supported amplitudes preserve compactly supported Schwartz functions unconditionally on the target
-normed spaces (`TauCeti.Amplitude.HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue`).
+(`TauCeti.Amplitude.HasProperOutputSupport.hasCompactSupport_quantizeAmplitudeValue`). Combining
+this with `TauCeti.Amplitude.HasProperInputSupport.contDiff_quantizeAmplitudeValue` from
+`TauCeti.Analysis.Pseudodifferential.Amplitude.LeftSymbol`, properly supported amplitudes preserve
+compactly supported Schwartz functions unconditionally on the target normed spaces
+(`TauCeti.Analysis.Pseudodifferential.Amplitude.SchwartzMapping`).
 
 ## Main declarations
 
@@ -36,8 +36,7 @@ normed spaces (`TauCeti.Amplitude.HasProperSupport.exists_schwartzMap_quantizeAm
   `TauCeti.Amplitude.hasProperOutputSupport_iff_kernel`,
   `TauCeti.Amplitude.hasProperSupport_iff_kernel`.
 * `TauCeti.Amplitude.hasProperOutputSupport_iff`.
-* `TauCeti.Amplitude.HasProperOutputSupport.hasCompactSupport_quantizeAmplitudeValue`,
-  `TauCeti.Amplitude.HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue`.
+* `TauCeti.Amplitude.HasProperOutputSupport.hasCompactSupport_quantizeAmplitudeValue`.
 
 ## References
 
@@ -62,21 +61,22 @@ namespace Amplitude
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-- An amplitude `a(x, y, ξ)` has proper input support (meaning `y` stays compact over compact sets
-of output positions `x`) if and only if the projection `(x, y) ↦ x` is proper on the closure of
-`{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}` (`TauCeti.HasProperOutputSupport`). -/
+/-- An amplitude `a(x, y, ξ)` has proper input support (meaning the first projection `(x, y) ↦ x`
+is proper on the closure of `{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}`, so `y` stays compact over compact
+sets of output positions `x`) if and only if its spatial slice kernel has
+`TauCeti.HasProperInputSupport`. -/
 theorem hasProperInputSupport_iff_kernel {a : Amplitude n V W m} :
     a.HasProperInputSupport ↔
-      TauCeti.HasProperOutputSupport fun x y ξ ↦ a.coefficient (x, y, ξ) := by
-  rw [Amplitude.hasProperInputSupport_iff, TauCeti.hasProperOutputSupport_iff]
+      TauCeti.HasProperInputSupport fun x y ξ ↦ a.coefficient (x, y, ξ) := by
+  rw [Amplitude.hasProperInputSupport_iff, TauCeti.hasProperInputSupport_iff]
   simp [funext_iff]
 
 /-- An amplitude `a(x, y, ξ)` has **proper output support** if the second projection `(x, y) ↦ y`
-is proper on the closure of `{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}` (`TauCeti.HasProperInputSupport`).
+is proper on the closure of `{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}` (`TauCeti.HasProperOutputSupport`).
 Equivalently, for `y` in any compact set of input positions, `a(x, y, ξ)` vanishes for all `x`
 outside a compact set and all `ξ` (`TauCeti.Amplitude.hasProperOutputSupport_iff`). -/
 def HasProperOutputSupport (a : Amplitude n V W m) : Prop :=
-  TauCeti.HasProperInputSupport fun x y ξ ↦ a.coefficient (x, y, ξ)
+  TauCeti.HasProperOutputSupport fun x y ξ ↦ a.coefficient (x, y, ξ)
 
 /-- An amplitude `a(x, y, ξ)` is **properly supported** if it has both proper input support and
 proper output support, i.e., both spatial projections from the closure of
@@ -84,16 +84,23 @@ proper output support, i.e., both spatial projections from the closure of
 def HasProperSupport (a : Amplitude n V W m) : Prop :=
   a.HasProperInputSupport ∧ a.HasProperOutputSupport
 
+/-- An amplitude `a(x, y, ξ)` has proper output support (meaning the second projection `(x, y) ↦ y`
+is proper on the closure of `{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}`, so `x` stays compact over compact
+sets of input positions `y`) if and only if its spatial slice kernel has
+`TauCeti.HasProperOutputSupport`. -/
 theorem hasProperOutputSupport_iff_kernel {a : Amplitude n V W m} :
     a.HasProperOutputSupport ↔
-      TauCeti.HasProperInputSupport fun x y ξ ↦ a.coefficient (x, y, ξ) :=
+      TauCeti.HasProperOutputSupport fun x y ξ ↦ a.coefficient (x, y, ξ) :=
   Iff.rfl
 
+/-- An amplitude `a(x, y, ξ)` is properly supported (both spatial projections `(x, y) ↦ x` and
+`(x, y) ↦ y` are proper on the closure of `{(x, y) | ∃ ξ, a(x, y, ξ) ≠ 0}`) if and only if its
+spatial slice kernel has `TauCeti.HasProperSupport`. -/
 theorem hasProperSupport_iff_kernel {a : Amplitude n V W m} :
     a.HasProperSupport ↔
       TauCeti.HasProperSupport fun x y ξ ↦ a.coefficient (x, y, ξ) := by
   rw [HasProperSupport, TauCeti.hasProperSupport_iff, hasProperInputSupport_iff_kernel,
-    hasProperOutputSupport_iff_kernel, and_comm]
+    hasProperOutputSupport_iff_kernel]
 
 theorem HasProperSupport.inp {a : Amplitude n V W m} (ha : a.HasProperSupport) :
     a.HasProperInputSupport := ha.1
@@ -113,7 +120,7 @@ theorem hasProperOutputSupport_iff {a : Amplitude n V W m} :
         ∃ K : Set (CoordinateSpace n), IsCompact K ∧
           ∀ x ∉ K, ∀ y ∈ L, ∀ ξ, a.coefficient (x, y, ξ) = 0 := by
   simpa [HasProperOutputSupport, funext_iff] using
-    (TauCeti.hasProperInputSupport_iff (K := fun x y ξ ↦ a.coefficient (x, y, ξ)))
+    (TauCeti.hasProperOutputSupport_iff (K := fun x y ξ ↦ a.coefficient (x, y, ξ)))
 
 private theorem slice_zero_eq :
     (fun x y ξ ↦ (0 : Amplitude n V W m).coefficient (x, y, ξ)) = 0 := by
@@ -141,12 +148,12 @@ private theorem slice_smulPositions_eq (a : Amplitude n V W m)
 @[simp]
 theorem hasProperInputSupport_zero : (0 : Amplitude n V W m).HasProperInputSupport :=
   hasProperInputSupport_iff_kernel.2 <|
-    (slice_zero_eq (n := n) (V := V) (W := W) (m := m)).symm ▸ TauCeti.hasProperOutputSupport_zero
+    (slice_zero_eq (n := n) (V := V) (W := W) (m := m)).symm ▸ TauCeti.hasProperInputSupport_zero
 
 @[simp]
 theorem hasProperOutputSupport_zero : (0 : Amplitude n V W m).HasProperOutputSupport :=
   hasProperOutputSupport_iff_kernel.2 <|
-    (slice_zero_eq (n := n) (V := V) (W := W) (m := m)).symm ▸ TauCeti.hasProperInputSupport_zero
+    (slice_zero_eq (n := n) (V := V) (W := W) (m := m)).symm ▸ TauCeti.hasProperOutputSupport_zero
 
 @[simp]
 theorem hasProperSupport_zero : (0 : Amplitude n V W m).HasProperSupport :=
@@ -156,14 +163,14 @@ theorem HasProperInputSupport.add {a b : Amplitude n V W m}
     (ha : a.HasProperInputSupport) (hb : b.HasProperInputSupport) :
     (a + b).HasProperInputSupport :=
   hasProperInputSupport_iff_kernel.2 <| (slice_add_eq a b).symm ▸
-    TauCeti.HasProperOutputSupport.add (hasProperInputSupport_iff_kernel.1 ha)
+    TauCeti.HasProperInputSupport.add (hasProperInputSupport_iff_kernel.1 ha)
       (hasProperInputSupport_iff_kernel.1 hb)
 
 theorem HasProperOutputSupport.add {a b : Amplitude n V W m}
     (ha : a.HasProperOutputSupport) (hb : b.HasProperOutputSupport) :
     (a + b).HasProperOutputSupport :=
   hasProperOutputSupport_iff_kernel.2 <| (slice_add_eq a b).symm ▸
-    TauCeti.HasProperInputSupport.add (hasProperOutputSupport_iff_kernel.1 ha)
+    TauCeti.HasProperOutputSupport.add (hasProperOutputSupport_iff_kernel.1 ha)
       (hasProperOutputSupport_iff_kernel.1 hb)
 
 theorem HasProperSupport.add {a b : Amplitude n V W m}
@@ -174,12 +181,12 @@ theorem HasProperSupport.add {a b : Amplitude n V W m}
 theorem HasProperInputSupport.neg {a : Amplitude n V W m} (ha : a.HasProperInputSupport) :
     (-a).HasProperInputSupport :=
   hasProperInputSupport_iff_kernel.2 <| (slice_neg_eq a).symm ▸
-    TauCeti.HasProperOutputSupport.neg (hasProperInputSupport_iff_kernel.1 ha)
+    TauCeti.HasProperInputSupport.neg (hasProperInputSupport_iff_kernel.1 ha)
 
 theorem HasProperOutputSupport.neg {a : Amplitude n V W m} (ha : a.HasProperOutputSupport) :
     (-a).HasProperOutputSupport :=
   hasProperOutputSupport_iff_kernel.2 <| (slice_neg_eq a).symm ▸
-    TauCeti.HasProperInputSupport.neg (hasProperOutputSupport_iff_kernel.1 ha)
+    TauCeti.HasProperOutputSupport.neg (hasProperOutputSupport_iff_kernel.1 ha)
 
 theorem HasProperSupport.neg {a : Amplitude n V W m} (ha : a.HasProperSupport) :
     (-a).HasProperSupport :=
@@ -200,12 +207,12 @@ theorem HasProperSupport.sub {a b : Amplitude n V W m}
 theorem HasProperInputSupport.smul {a : Amplitude n V W m} (ha : a.HasProperInputSupport)
     (c : ℂ) : (c • a).HasProperInputSupport :=
   hasProperInputSupport_iff_kernel.2 <| (slice_smul_eq c a).symm ▸
-    TauCeti.HasProperOutputSupport.smul_left (fun _ _ ↦ c) (hasProperInputSupport_iff_kernel.1 ha)
+    TauCeti.HasProperInputSupport.smul_left (fun _ _ ↦ c) (hasProperInputSupport_iff_kernel.1 ha)
 
 theorem HasProperOutputSupport.smul {a : Amplitude n V W m} (ha : a.HasProperOutputSupport)
     (c : ℂ) : (c • a).HasProperOutputSupport :=
   hasProperOutputSupport_iff_kernel.2 <| (slice_smul_eq c a).symm ▸
-    TauCeti.HasProperInputSupport.smul_left (fun _ _ ↦ c) (hasProperOutputSupport_iff_kernel.1 ha)
+    TauCeti.HasProperOutputSupport.smul_left (fun _ _ ↦ c) (hasProperOutputSupport_iff_kernel.1 ha)
 
 theorem HasProperSupport.smul {a : Amplitude n V W m} (ha : a.HasProperSupport)
     (c : ℂ) : (c • a).HasProperSupport :=
@@ -213,30 +220,33 @@ theorem HasProperSupport.smul {a : Amplitude n V W m} (ha : a.HasProperSupport)
 
 private theorem tsupport_deriv_slice_subset {m' : ℝ} {a : Amplitude n V W m}
     {da : Amplitude n V W m'} {d : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n}
-    (hda : da.coefficient = iteratedFDerivAlong ℝ [d] a.coefficient) :
+    (hda : ∀ p, da.coefficient p = fderiv ℝ a.coefficient p d) :
     tsupport (uncurry fun x y ξ ↦ da.coefficient (x, y, ξ)) ⊆
       tsupport (uncurry fun x y ξ ↦ a.coefficient (x, y, ξ)) := by
-  rw [hda]
-  refine closure_minimal (fun ⟨x, y⟩ hxy ↦ by_contra fun hnot ↦ mem_support.1 hxy ?_)
+  let S := tsupport (uncurry fun x y ξ ↦ a.coefficient (x, y, ξ))
+  let C : Set (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :=
+    {p | (p.1, p.2.1) ∈ S}
+  have hC : IsClosed C :=
+    (isClosed_tsupport _).preimage (continuous_fst.prodMk (continuous_fst.comp continuous_snd))
+  have hsub : tsupport a.coefficient ⊆ C := closure_minimal
+    (fun p hp ↦ subset_closure fun h ↦ hp (congrFun h p.2.2)) hC
+  refine closure_minimal (fun ⟨x, y⟩ hxy ↦ by_contra fun hnot ↦ hxy (funext fun ξ ↦ ?_))
     (isClosed_tsupport _)
-  funext ξ
-  exact Amplitude.iteratedFDerivAlong_eq_zero_of_notMem (isClosed_tsupport _)
-    (fun x' y' hp ↦ congrFun (image_eq_zero_of_notMem_tsupport hp)) [d] hnot
+  simp only [uncurry_apply_pair, Pi.zero_apply, hda]
+  exact image_eq_zero_of_notMem_tsupport (f := fun p ↦ fderiv ℝ a.coefficient p d)
+    fun hmem ↦ hnot (hsub (tsupport_fderiv_apply_subset ℝ d hmem))
 
 theorem HasProperOutputSupport.spatialDerivFst {a : Amplitude n V W m}
     (ha : a.HasProperOutputSupport) (j : Fin n) : (spatialDerivFst j a).HasProperOutputSupport :=
-  ha.of_tsupport_subset
-    (tsupport_deriv_slice_subset (coefficient_spatialDerivFst_eq_iteratedFDerivAlong j a))
+  ha.of_tsupport_subset (tsupport_deriv_slice_subset (coefficient_spatialDerivFst j a))
 
 theorem HasProperOutputSupport.spatialDerivSnd {a : Amplitude n V W m}
     (ha : a.HasProperOutputSupport) (j : Fin n) : (spatialDerivSnd j a).HasProperOutputSupport :=
-  ha.of_tsupport_subset
-    (tsupport_deriv_slice_subset (coefficient_spatialDerivSnd_eq_iteratedFDerivAlong j a))
+  ha.of_tsupport_subset (tsupport_deriv_slice_subset (coefficient_spatialDerivSnd j a))
 
 theorem HasProperOutputSupport.frequencyDeriv {a : Amplitude n V W m}
     (ha : a.HasProperOutputSupport) (j : Fin n) : (frequencyDeriv j a).HasProperOutputSupport :=
-  ha.of_tsupport_subset
-    (tsupport_deriv_slice_subset (coefficient_frequencyDeriv_eq_iteratedFDerivAlong j a))
+  ha.of_tsupport_subset (tsupport_deriv_slice_subset (coefficient_frequencyDeriv j a))
 
 theorem HasProperSupport.spatialDerivFst {a : Amplitude n V W m}
     (ha : a.HasProperSupport) (j : Fin n) : (spatialDerivFst j a).HasProperSupport :=
@@ -250,23 +260,23 @@ theorem HasProperSupport.frequencyDeriv {a : Amplitude n V W m}
     (ha : a.HasProperSupport) (j : Fin n) : (frequencyDeriv j a).HasProperSupport :=
   hasProperSupport_iff.mpr ⟨ha.inp.frequencyDeriv j, ha.out.frequencyDeriv j⟩
 
-/-- Multiplying any amplitude by a spatial cutoff `φ(x, y)` with `TauCeti.HasProperOutputSupport`
+/-- Multiplying any amplitude by a spatial cutoff `φ(x, y)` with `TauCeti.HasProperInputSupport`
 yields an amplitude with proper input support. -/
 theorem hasProperInputSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
-    (hφ_out : TauCeti.HasProperOutputSupport fun x y ↦ φ (x, y)) :
+    (hφ_in : TauCeti.HasProperInputSupport fun x y ↦ φ (x, y)) :
     (a.smulPositions φ hφ).HasProperInputSupport :=
   hasProperInputSupport_iff_kernel.2 <| (slice_smulPositions_eq a φ hφ).symm ▸
-    hφ_out.smul_right _
+    hφ_in.smul_right _
 
-/-- Multiplying any amplitude by a spatial cutoff `φ(x, y)` with `TauCeti.HasProperInputSupport`
+/-- Multiplying any amplitude by a spatial cutoff `φ(x, y)` with `TauCeti.HasProperOutputSupport`
 yields an amplitude with proper output support. -/
 theorem hasProperOutputSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
-    (hφ_in : TauCeti.HasProperInputSupport fun x y ↦ φ (x, y)) :
+    (hφ_out : TauCeti.HasProperOutputSupport fun x y ↦ φ (x, y)) :
     (a.smulPositions φ hφ).HasProperOutputSupport :=
   hasProperOutputSupport_iff_kernel.2 <| (slice_smulPositions_eq a φ hφ).symm ▸
-    hφ_in.smul_right _
+    hφ_out.smul_right _
 
 /-- Multiplying any amplitude by a properly supported spatial cutoff `φ(x, y)` yields a properly
 supported amplitude. -/
@@ -274,14 +284,14 @@ theorem hasProperSupport_smulPositions_of_cutoff (a : Amplitude n V W m)
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
     (hφ_prop : TauCeti.HasProperSupport fun x y ↦ φ (x, y)) :
     (a.smulPositions φ hφ).HasProperSupport :=
-  hasProperSupport_iff.mpr ⟨a.hasProperInputSupport_smulPositions_of_cutoff hφ hφ_prop.out,
-    a.hasProperOutputSupport_smulPositions_of_cutoff hφ hφ_prop.inp⟩
+  hasProperSupport_iff.mpr ⟨a.hasProperInputSupport_smulPositions_of_cutoff hφ hφ_prop.inp,
+    a.hasProperOutputSupport_smulPositions_of_cutoff hφ hφ_prop.out⟩
 
 theorem HasProperOutputSupport.smulPositions {a : Amplitude n V W m} (ha : a.HasProperOutputSupport)
     (φ : CoordinateSpace n × CoordinateSpace n → ℂ) (hφ : ContDiff ℝ ∞ φ) :
     (a.smulPositions φ hφ).HasProperOutputSupport :=
   hasProperOutputSupport_iff_kernel.2 <| (slice_smulPositions_eq a φ hφ).symm ▸
-    TauCeti.HasProperInputSupport.smul_left (fun x y ↦ φ (x, y))
+    TauCeti.HasProperOutputSupport.smul_left (fun x y ↦ φ (x, y))
       (hasProperOutputSupport_iff_kernel.1 ha)
 
 theorem HasProperSupport.smulPositions {a : Amplitude n V W m} (ha : a.HasProperSupport)
@@ -306,23 +316,6 @@ theorem HasProperOutputSupport.hasCompactSupport_quantizeAmplitudeValue
       · simp [hCa x hx y hy ((2 * π) • ζ)]
       · simp [image_eq_zero_of_notMem_tsupport hy]
   simp [hzero, Real.fourier_eq]
-
-/-- **Properly supported amplitudes preserve `C_c^∞` inside Schwartz space.** Unconditional on
-completeness of `V` and `W`: if `a` is properly supported and `u : 𝓢(ℝⁿ, V)` has compact support,
-then `Op(a) u` is the underlying function of a compactly supported Schwartz map `v : 𝓢(ℝⁿ, W)`, so
-properly supported amplitude operators can be composed directly without spatial cutoffs. -/
-theorem HasProperSupport.exists_schwartzMap_quantizeAmplitudeValue
-    {a : Amplitude n V W m} (ha : a.HasProperSupport) {u : 𝓢(CoordinateSpace n, V)}
-    (hu : HasCompactSupport (u : CoordinateSpace n → V)) :
-    ∃ v : 𝓢(CoordinateSpace n, W),
-      (v : CoordinateSpace n → W) = quantizeAmplitudeValue a.coefficient u ∧
-      HasCompactSupport (v : CoordinateSpace n → W) := by
-  have hsupp := ha.out.hasCompactSupport_quantizeAmplitudeValue hu
-  have hsmooth := ha.inp.contDiff_quantizeAmplitudeValue u
-  have hv : ((hsupp.toSchwartzMap hsmooth : 𝓢(CoordinateSpace n, W)) : CoordinateSpace n → W) =
-      quantizeAmplitudeValue a.coefficient u :=
-    funext (HasCompactSupport.toSchwartzMap_toFun hsupp hsmooth)
-  exact ⟨hsupp.toSchwartzMap hsmooth, hv, hv.symm ▸ hsupp⟩
 
 end Amplitude
 

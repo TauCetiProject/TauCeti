@@ -96,13 +96,12 @@ those of `b(y, ξ)`: they only depend on the amplitude near the diagonal. -/
 theorem leftTerm_ofRightCutoff (hχ : ContDiff ℝ ∞ χ) (hχ₁ : χ =ᶠ[𝓝 0] 1) (b : Symbol n V W m)
     (k : ℕ) : (ofRightCutoff χ hχ b).leftTerm k = (ofRight b).leftTerm k := by
   refine leftTerm_smulPositions _ (fun x ↦ ?_) _ k
-  exact ((continuous_fst.sub continuous_snd).tendsto' (x, x) 0 (by simp)).eventually hχ₁
+  exact ((continuous_const.sub continuous_id).tendsto' x 0 (by simp)).eventually hχ₁
 
-variable [CompleteSpace W]
-
-/-- **The right quantization cut off near the diagonal is a left quantization.** For compactly
-supported `χ`, the quantization of the left symbol of `χ(x - y) b(y, ξ)` at a Schwartz function `u`
-is `(2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) χ(x - y) b(y, ξ) u(y) dy dξ`, in the iterated form
+/-- **The right quantization cut off near the diagonal is a left quantization.** Requires `V` to be
+complete (when `W` is incomplete, both sides vanish by the Bochner integral convention); for
+compactly supported `χ`, the quantization of the left symbol of `χ(x - y) b(y, ξ)` at a Schwartz
+function `u` is `(2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) χ(x - y) b(y, ξ) u(y) dy dξ`, in the iterated form
 `∫ exp(2πi ⟪ζ, x⟫) 𝓕(y ↦ χ(x - y) b(y, 2πζ) u(y))(ζ) dζ`. -/
 theorem quantizeSchwartzValue_leftSymbol_ofRightCutoff [CompleteSpace V] (hχ : ContDiff ℝ ∞ χ)
     (hχs : HasCompactSupport χ) (b : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
@@ -112,6 +111,8 @@ theorem quantizeSchwartzValue_leftSymbol_ofRightCutoff [CompleteSpace V] (hχ : 
       ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 (fun y ↦ χ (x - y) • b.coefficient (y, (2 * π) • ζ) (u y)) ζ := by
   rw [quantizeSchwartzValue_leftSymbol, quantizeAmplitudeValue_def]
   simp only [coefficient_ofRightCutoff, smul_apply]
+
+variable [CompleteSpace W]
 
 /-- **The expansion of the left symbol of a right quantization**, without compact spatial support.
 For compactly supported `χ` with `χ = 1` near `0` and every `N`, the left symbol `c` of

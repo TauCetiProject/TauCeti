@@ -56,6 +56,7 @@ convergent kernel itself.
 
 ## References
 
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1.
 * M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
   §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
@@ -292,8 +293,10 @@ theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (Coordina
   gcongr
   exact hk.trans (mul_le_mul_of_nonneg_left hint (by positivity))
 
-/-- The residual off-diagonal kernel `(1 - χ(x, y)) • K_a(x, y)` obtained after cutting out a
-neighborhood of the diagonal by `χ`. -/
+/-- The product `(1 - χ(x, y)) • K_a(x, y)` of `1 - χ` with the off-diagonal kernel of `a`;
+when `χ = 1` on a neighborhood of every diagonal point `(x, x)`, this cuts out a neighborhood of
+the diagonal and yields a globally smooth residual kernel
+(`contDiff_localizedOffDiagonalKernel`). -/
 def localizedOffDiagonalKernel (a : Symbol n V W m)
     (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x y : CoordinateSpace n) : V →L[ℂ] W :=
   (1 - χ x y) • a.offDiagonalKernel x y

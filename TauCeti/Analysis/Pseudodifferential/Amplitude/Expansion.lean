@@ -15,8 +15,8 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 Let `a(x, y, ξ)` be an amplitude of order `m` with proper input support: it vanishes for input
 positions `y` outside a compact set as long as the output position `x` stays in a compact set. Its
 left symbol `c = a.leftSymbol ha`, the symbol of order `m` with the same quantization when `V` is
-complete
-(`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`), has the asymptotic expansion obtained by
+complete (with both quantizations vanishing when `W` is incomplete;
+`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`), has the asymptotic expansion obtained by
 Taylor expanding `a` in `y` at the diagonal `y = x`:
 
 `c(x, ξ) ∼ ∑_γ (1 / γ!) ∂_ξ^γ D_y^γ a(x, y, ξ)|_{y = x}`, with `D_y = -i ∂_y`,
@@ -81,6 +81,8 @@ expansion of `TauCeti.Analysis.Pseudodifferential.Composition.Expansion`.
 
 ## References
 
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
+  (1.21)–(1.28).
 * M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
   §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Theorem 18.1.7.
@@ -183,13 +185,7 @@ theorem leftTerm_zero_amp (k : ℕ) : (0 : Amplitude n V W m).leftTerm k = 0 := 
 theorem leftTerm_ofLeft_succ (b : Symbol n V W m) (k : ℕ) :
     (ofLeft b).leftTerm (k + 1) = 0 := by
   rw [leftTerm_succ]
-  simp_rw [spatialDerivSnd_frequencyDeriv_comm, spatialDerivSnd_ofLeft]
-  have hfreq : ∀ j : Fin n, frequencyDeriv j (0 : Amplitude n V W m) = 0 := fun j ↦ by
-    ext1
-    funext p
-    rw [coefficient_frequencyDeriv, coefficient_zero]
-    simp
-  simp [hfreq]
+  simp [spatialDerivSnd_frequencyDeriv_comm]
 
 /-- If two amplitudes have identical `(y, ξ)`-slices on a neighborhood of `(x, ξ)` at a fixed
 output position `x`, all of their left-symbol expansion terms agree at `(x, ξ)`. -/
@@ -218,22 +214,16 @@ theorem coefficient_leftTerm_congr_of_eventuallyEq_snd {a b : Amplitude n V W m}
   exact (h.iteratedFDerivAlong (𝕜 := ℝ) _).eq_of_nhds
 
 /-- The terms of the expansion only depend on the amplitude near the diagonal: multiplying by a
-smooth function `φ(x, y)` equal to `1` near every point `(x, x)` of the diagonal does not change
-them. -/
+smooth function `φ(x, y)` equal to `1` near `x` in the second variable for every `x` does not
+change them. -/
 theorem leftTerm_smulPositions {φ : CoordinateSpace n × CoordinateSpace n → ℂ}
-    (hφ : ContDiff ℝ ∞ φ) (hφ₁ : ∀ x, φ =ᶠ[𝓝 (x, x)] 1) (a : Amplitude n V W m) (k : ℕ) :
-    (a.smulPositions φ hφ).leftTerm k = a.leftTerm k := by
+    (hφ : ContDiff ℝ ∞ φ) (hφ₁ : ∀ x, (fun y ↦ φ (x, y)) =ᶠ[𝓝 x] 1) (a : Amplitude n V W m)
+    (k : ℕ) : (a.smulPositions φ hφ).leftTerm k = a.leftTerm k := by
   ext1
   funext ⟨x, ξ⟩
-  rw [coefficient_leftTerm, coefficient_leftTerm]
-  refine congrArg _ (Finset.sum_congr rfl fun w _ ↦ ?_)
-  have h : (a.smulPositions φ hφ).coefficient =ᶠ[𝓝 (x, x, ξ)] a.coefficient := by
-    have hp : Filter.Tendsto (fun p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
-        (p.1, p.2.1)) (𝓝 (x, x, ξ)) (𝓝 (x, x)) :=
-      (continuous_fst.prodMk (continuous_fst.comp continuous_snd)).tendsto (x, x, ξ)
-    filter_upwards [hp.eventually (hφ₁ x)] with p hp
-    rw [coefficient_smulPositions, hp, Pi.one_apply, one_smul]
-  exact (h.iteratedFDerivAlong _).eq_of_nhds
+  refine coefficient_leftTerm_congr_of_eventuallyEq_snd ?_ k
+  filter_upwards [(continuous_fst.tendsto (x, ξ)).eventually (hφ₁ x)] with q hq
+  rw [coefficient_smulPositions, show φ (x, q.1) = 1 from hq, one_smul]
 
 /-- **The terms of the expansion of a right quantization.** For the amplitude `b(y, ξ)` of the
 right quantization of a symbol `b`, the term of order `m - k` is

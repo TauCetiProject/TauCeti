@@ -129,7 +129,7 @@ namespace Symbol
 section RightCutoff
 
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {m R : ℝ}
+  [NormedAddCommGroup W] [NormedSpace ℂ W] {m R : ℝ}
 
 /-- If `χ` vanishes outside the ball of radius `R` about the origin, the right quantization of `b`
 with kernel cut off by `χ(x - y)`, the quantization of the left symbol of the amplitude
