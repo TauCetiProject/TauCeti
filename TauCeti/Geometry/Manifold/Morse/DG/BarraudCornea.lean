@@ -38,12 +38,13 @@ broken trajectories (`TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation_morseR
 
 Every twisting chain system on the compactified spaces of trajectories is therefore carried to a
 twisting cocycle with values in the chains `C^□_*(Ω_{y₀} Y; R)` on the Moore loop space
-(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`), whose entry at `(x, y)` is the
-push-forward of the chain of `L(x, y)` along the evaluation into loops
-(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`). The representing chain systems of
-fundamental chains relative to the boundary, which the cocycle of Barraud and Cornea is built from,
-live on the trajectory spaces with boundary of the next section, where the same construction gives
-`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceCocycle`. Barraud, Damian, Humilière
+(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle`), whose entry at `(x, y)`
+is the push-forward of the chain of `L(x, y)` along the evaluation into loops
+(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle_m`). The representing chain
+systems of fundamental chains relative to the boundary, which the cocycle of Barraud and Cornea is
+built from, live on the trajectory spaces with boundary of the next section, where the same
+construction gives the Barraud–Cornea cocycle
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`). Barraud, Damian, Humilière
 and Oancea define the Morse complex of `f` with coefficients in a DG local system on `Y` as the
 twisted complex of that cocycle.
 
@@ -72,24 +73,24 @@ boundary when some level lies between the ends of the first factor, by
 Indexed by the critical points (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp`),
 these are the hypotheses `hι` and `hA` of
 `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. A twisting chain system on the
-trajectory spaces is carried to a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`
-(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceCocycle`) whose entries are the
+trajectory spaces is carried to the Barraud–Cornea cocycle over `C^□_*(Ω_{y₀} Y; R)`
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`) whose entries are the
 push-forwards of its chains along the restriction of `morseLoopEvaluation`.
 
 ## Main definitions
 
 * `TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation`: the evaluation of the compactified space
   of trajectories from `x` to `y` into the Moore loops at `y₀`.
-* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`: the twisting cocycle over
-  `C^□_*(Ω_{y₀} Y; R)` of a twisting chain system on the compactified spaces of trajectories.
+* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle`: the twisting cocycle
+  over `C^□_*(Ω_{y₀} Y; R)` of a twisting chain system on the compactified spaces of trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpace`,
   `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary`: the trajectory spaces and
   their boundaries.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceConcat`,
   `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp`: concatenation of broken
   trajectories on the trajectory spaces, and the composition maps indexed by the critical points.
-* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceCocycle`: the twisting cocycle over
-  `C^□_*(Ω_{y₀} Y; R)` of a twisting chain system on the trajectory spaces.
+* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`: the Barraud–Cornea cocycle, the
+  twisting cocycle over `C^□_*(Ω_{y₀} Y; R)` of a twisting chain system on the trajectory spaces.
 
 ## Main results
 
@@ -97,13 +98,13 @@ push-forwards of its chains along the restriction of `morseLoopEvaluation`.
   trajectory is its Moore path mapped by `θ`.
 * `TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation_morseRecordsConcat`: the evaluation into
   loops takes concatenation of broken trajectories to the product of Moore loops.
-* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the twisting cocycle of a
-  twisting chain system on the compactified spaces of trajectories.
+* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle_m`: the entries of the
+  twisting cocycle of a twisting chain system on the compactified spaces of trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_assoc`,
   `IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary`:
   the composition maps of the trajectory spaces are associative and land in the boundary.
-* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceCocycle_m`: the entries of the
-  twisting cocycle of a twisting chain system on the trajectory spaces.
+* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the Barraud–Cornea
+  cocycle of a twisting chain system on the trajectory spaces.
 
 ## References
 
@@ -315,19 +316,19 @@ theorem morseLoopEvaluation_morseRecordsConcat
     (fun x z y u v ↦ hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z) (u, v))
     x y z u v
 
-/-! ### The Barraud–Cornea cocycle -/
+/-! ### The twisting cocycle on the compactified spaces of trajectories -/
 
 variable {R : Type*} [CommRing R] [Fintype (criticalPoints 𝓘(ℝ, E) f)]
   {ind : criticalPoints 𝓘(ℝ, E) f → ℤ} (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
 
-/-- **The Barraud–Cornea cocycle** of a twisting chain system `S` on the compactified spaces of
-trajectories between the critical points of `f`, graded by `ind`, with composition maps the
+/-- **The twisting cocycle of a twisting chain system on the compactified spaces of
+trajectories** between the critical points of `f`, graded by `ind`, with composition maps the
 concatenation of broken trajectories: the push-forwards of its chains along the evaluation into
 the Moore loops at `y₀` form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the Morse
-index and `θ : M → M` is homotopic to the identity, it has the form of the twisting cocycle of
-Barraud and Cornea, whose representing chain systems live on the trajectory spaces with boundary
-(`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceCocycle`). -/
-noncomputable def barraudCorneaCocycle
+index and `θ : M → M` is homotopic to the identity, it has the form of the Barraud–Cornea cocycle,
+whose representing chain systems live on the trajectory spaces with boundary
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`). -/
+noncomputable def morseBrokenTrajectoryRecordsCocycle
     (S : TwistingChainSystem ind
       (fun x y z ↦ hX.morseRecordsConcat (p := x) (q := y) (r := z) fun i ↦ hc i y) R) :
     TwistingCocycle (R := R) (A := loopChainAlgebra Y y₀ R)
@@ -339,27 +340,28 @@ noncomputable def barraudCorneaCocycle
     (fun _ _ _ ↦ hX.source_morseLevelPath ..) (fun _ _ _ ↦ hX.target_morseLevelPath ..) hθ
     fun x z y u v ↦ hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z) (u, v)
 
-/-- The entry of the Barraud–Cornea cocycle at `(x, y)` is the push-forward of the chain of the
-compactified space of trajectories from `x` to `y` along its evaluation into Moore loops. -/
+/-- The entry at `(x, y)` of the twisting cocycle of a twisting chain system on the compactified
+spaces of trajectories is the push-forward of the chain of the compactified space of trajectories
+from `x` to `y` along its evaluation into Moore loops. -/
 @[simp]
-theorem barraudCorneaCocycle_m
+theorem morseBrokenTrajectoryRecordsCocycle_m
     (S : TwistingChainSystem ind
       (fun x y z ↦ hX.morseRecordsConcat (p := x) (q := y) (r := z) fun i ↦ hc i y) R)
     (x y : criticalPoints 𝓘(ℝ, E) f) :
-    (hX.barraudCorneaCocycle hf hdense hθ hc S).m x y =
+    (hX.morseBrokenTrajectoryRecordsCocycle hf hdense hθ hc S).m x y =
       cubicalChainSumMap R (hX.morseLoopEvaluation hf hdense hθ x y) (S.chain x y) :=
   S.mooreTwistingCocycle_m _ _ hθ _ x y
 
-/-! ### The twisting cocycle on the trajectory spaces with boundary -/
+/-! ### The Barraud–Cornea cocycle -/
 
-/-- **The twisting cocycle of a twisting chain system on the trajectory spaces**: the push-forwards
-of the chains of `S` along the restrictions of `morseLoopEvaluation` to the trajectory spaces form a
-twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the Morse index, `S` is a representing
-chain system and `θ : M → M` is homotopic to the identity, this is the twisting cocycle of Barraud
-and Cornea, and the twisting cocycles of two representing chain systems are related through
-`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy` once its injectivity hypothesis
-`hinj` holds for the trajectory spaces. -/
-noncomputable def morseBrokenTrajectorySpaceCocycle
+/-- **The Barraud–Cornea cocycle** of a twisting chain system `S` on the trajectory spaces: the
+push-forwards of the chains of `S` along the restrictions of `morseLoopEvaluation` to the trajectory
+spaces form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the Morse index, `S` is a
+representing chain system and `θ : M → M` is homotopic to the identity, this is the twisting cocycle
+of Barraud and Cornea, and the twisting cocycles of two representing chain systems are related
+through `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy` once its injectivity
+hypothesis `hinj` holds for the trajectory spaces. -/
+noncomputable def barraudCorneaCocycle
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     TwistingCocycle (R := R) (A := loopChainAlgebra Y y₀ R)
       (cubicalChainGrading (MooreLoopSpace Y y₀) R)
@@ -373,13 +375,13 @@ noncomputable def morseBrokenTrajectorySpaceCocycle
       (inclusion (morseBrokenTrajectorySpace_subset _ _) u,
         inclusion (morseBrokenTrajectorySpace_subset _ _) v)
 
-/-- The entry at `(x, y)` of the twisting cocycle of a twisting chain system on the trajectory
-spaces is the push-forward of its chain along the evaluation into Moore loops. -/
+/-- The entry of the Barraud–Cornea cocycle at `(x, y)` is the push-forward of the chain of the
+trajectory space from `x` to `y` along its evaluation into Moore loops. -/
 @[simp]
-theorem morseBrokenTrajectorySpaceCocycle_m
+theorem barraudCorneaCocycle_m
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R)
     (x y : criticalPoints 𝓘(ℝ, E) f) :
-    (hX.morseBrokenTrajectorySpaceCocycle hf hdense hθ hc S).m x y =
+    (hX.barraudCorneaCocycle hf hdense hθ hc S).m x y =
       cubicalChainSumMap R ((hX.morseLoopEvaluation hf hdense hθ x y).comp
         (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _))) (S.chain x y) :=
   (S.mooreTwistingCocycle_m _ _ hθ _ x y).trans <|
