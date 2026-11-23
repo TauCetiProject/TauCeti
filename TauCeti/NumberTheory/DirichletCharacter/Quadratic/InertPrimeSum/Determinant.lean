@@ -210,7 +210,9 @@ private theorem aevalAeval_grid_injective {d : ℤ} (hd0 : d ≠ 0) :
   have hsqrt : Complex.sqrt (d : ℂ) ≠ 0 := Complex.sqrt_intCast_ne_zero hd0
   simpa [gridL₁, gridL₂, sub_eq_add_neg] using aevalAeval_linear_injective
     (IsUnit.mk0 ((1 : ℂ) * Complex.sqrt d - (-Complex.sqrt d) * 1)
-      (by ring_nf; exact mul_ne_zero hsqrt two_ne_zero))
+      (by
+        rw [show (1 : ℂ) * Complex.sqrt d - (-Complex.sqrt d) * 1 = 2 * Complex.sqrt d by ring]
+        exact mul_ne_zero two_ne_zero hsqrt))
 
 private theorem eval_gridL₁_natCast (d : ℤ) (nx ny : ℕ) :
     MvPolynomial.eval ![(nx : ℂ), (ny : ℂ)] (gridL₁ d) = (nx : ℂ) + (ny : ℂ) * Complex.sqrt d := by
