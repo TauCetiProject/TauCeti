@@ -14,7 +14,6 @@ import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 import TauCeti.Geometry.Manifold.PullbackGroupoid
-import TauCeti.Geometry.Manifold.Submersion.Composition
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
 
@@ -1255,19 +1254,26 @@ private theorem exists_aligned_submersion_product_rect {m : ℕ}
   let F := Fin (finrank ℝ EY - finrank ℝ EM) → ℝ
   let x₀ := IteratedFiberProduct.baseProj y₀
   let ψ := chartAt HM x₀
-  let hs := hπ.contMDiff.isSubmersionOfComplement_of_surjective_mfderiv hn
-    fun y ↦ hπ.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) y
-  let L : Fin (m + 1) → (EY ≃L[ℝ] EM × F) := fun i ↦ (hs.isSubmersionAt (y₀.val i)).equiv
-  choose φ hy₀_src hφ_max _ hφ_tgt using fun i : Fin (m + 1) ↦
-    (hs.isSubmersionAt (y₀.val i)).exists_domChart_of_codChart (ψ := ψ)
-      (by rw [← IteratedFiberProduct.baseProj_eq_apply y₀ i]; exact mem_chart_source _ _)
-      (IsManifold.chart_mem_maximalAtlas _)
+  choose φ L hy₀_src hφ_max hφ_sub hφ_eq using fun i : Fin (m + 1) ↦ by
+    simpa only [← IteratedFiberProduct.baseProj_eq_apply y₀ i] using
+      hπ.exists_domChart_mem_maximalAtlas_chartAt hn (y₀.val i)
+  have hφ_tgt (i : Fin (m + 1)) (w : EY) (hw : w ∈ ((φ i).extend IY).target) :
+      π (((φ i).extend IY).symm w) = (ψ.extend IM).symm (L i w).fst ∧
+      ψ.extend IM (π (((φ i).extend IY).symm w)) = (L i w).fst := by
+    have hz_src : ((φ i).extend IY).symm w ∈ (φ i).source := by
+      simpa only [OpenPartialHomeomorph.extend_source] using ((φ i).extend IY).map_target hw
+    have hπz_src : π (((φ i).extend IY).symm w) ∈ (ψ.extend IM).source := by
+      simpa only [OpenPartialHomeomorph.extend_source, mem_preimage] using hφ_sub i hz_src
+    have heq : ψ.extend IM (π (((φ i).extend IY).symm w)) = (L i w).fst := by
+      have h := hφ_eq i (((φ i).extend IY).symm w) hz_src
+      rwa [((φ i).extend IY).right_inv hw] at h
+    exact ⟨by rw [← heq, (ψ.extend IM).left_inv hπz_src], heq⟩
   let u₀ : EM := ψ.extend IM x₀
   let v₀ : Fin (m + 1) → F := fun i ↦ (L i ((φ i).extend IY (y₀.val i))).snd
   have hmem_W (i : Fin (m + 1)) : (L i).symm (u₀, v₀ i) ∈ ((φ i).extend IY).target := by
     have hw₀ := ((φ i).extend IY).map_source ((φ i).extend_source (I := IY) ▸ hy₀_src i)
     have hfst : (L i ((φ i).extend IY (y₀.val i))).fst = u₀ := by
-      have h := (hφ_tgt i _ hw₀).2.2.symm
+      have h := (hφ_tgt i _ hw₀).2.symm
       rwa [((φ i).extend IY).left_inv ((φ i).extend_source (I := IY) ▸ hy₀_src i),
         ← IteratedFiberProduct.baseProj_eq_apply y₀ i] at h
     have hp₀ : (u₀, v₀ i) = L i ((φ i).extend IY (y₀.val i)) := Prod.ext hfst.symm rfl
@@ -1277,7 +1283,7 @@ private theorem exists_aligned_submersion_product_rect {m : ℕ}
     isOpen_prod_iff.mp ((φ i).isOpen_extend_target.preimage (L i).symm.continuous)
       u₀ (v₀ i) (hmem_W i)
   refine ⟨φ, L, (ψ.extend IM).target ∩ ⋂ i : Fin (m + 1), Ui i, V, hy₀_src, hφ_max,
-    fun i w hw ↦ (hφ_tgt i w hw).2,
+    hφ_tgt,
     ψ.isOpen_extend_target.inter (isOpen_iInter_of_finite hUi_open),
     hV_open, inter_subset_left,
     ⟨(ψ.extend IM).map_source (ψ.extend_source (I := IM) ▸ mem_chart_source HM x₀),
