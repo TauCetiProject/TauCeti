@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Grassmannian.Points
+public import TauCeti.AlgebraicGeometry.Grassmannian.BaseChange
 
 /-!
 # The Grassmannian scheme of an isomorphic module
@@ -39,6 +39,8 @@ open differ by a linear automorphism of `M`.
 * `Module.Grassmannian.schemeIsoOfLinearEquiv_hom_toSpec`: the isomorphism lies over `Spec R`.
 * `Module.Grassmannian.schemeIsoOfLinearEquiv_refl`, `schemeIsoOfLinearEquiv_trans`,
   `schemeIsoOfLinearEquiv_inv` and `schemeIsoOfLinearEquiv_symm`: functoriality in `e`.
+* `Module.Grassmannian.schemeIsoOfLinearEquiv_baseChange_hom_comp_baseChangeHom`: compatibility
+  with base change along `Spec R' ⟶ Spec R` (`Module.Grassmannian.baseChangeHom`).
 
 ## References
 
@@ -100,6 +102,7 @@ theorem schemeIsoOfLinearEquiv_inv (e : M ≃ₗ[R] M') :
   (rfl)
 
 /-- The inverse of the isomorphism induced by `e` is the isomorphism induced by `e.symm`. -/
+@[simp]
 theorem schemeIsoOfLinearEquiv_symm (e : M ≃ₗ[R] M') :
     (schemeIsoOfLinearEquiv k e).symm = schemeIsoOfLinearEquiv k e.symm :=
   Iso.ext (schemeIsoOfLinearEquiv_inv e)
@@ -126,5 +129,19 @@ theorem schemeIsoOfLinearEquiv_trans (e : M ≃ₗ[R] M') (e' : M' ≃ₗ[R] M''
       schemeIsoOfLinearEquiv k e ≪≫ schemeIsoOfLinearEquiv k e' :=
   Iso.ext <| scheme_hom_ext fun A _ _ N ↦ by
     simp [LinearEquiv.baseChange_trans, LinearEquiv.grassmannianCongr_trans]
+
+/-- **Compatibility with base change.** For an `R`-algebra `R'`, the isomorphism
+`G(k, R' ⊗[R] M) ≅ G(k, R' ⊗[R] M')` induced by the base change of `e` lies over the isomorphism
+`G(k, M) ≅ G(k, M')` induced by `e`, along the projections `Module.Grassmannian.baseChangeHom`. -/
+@[reassoc]
+theorem schemeIsoOfLinearEquiv_baseChange_hom_comp_baseChangeHom (R' : Type u) [CommRing R']
+    [Algebra R R'] (e : M ≃ₗ[R] M') :
+    (schemeIsoOfLinearEquiv k (e.baseChange R R' M M')).hom ≫ baseChangeHom R R' M' k =
+      baseChangeHom R R' M k ≫ (schemeIsoOfLinearEquiv k e).hom :=
+  scheme_hom_ext fun A _ _ N ↦ by
+    -- make `A` an `R`-algebra through `R'`, so that `baseChangeHom` can be computed on points
+    let _ : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
+    have : IsScalarTower R R' A := .of_algebraMap_eq' rfl
+    simp [baseChangeEquiv_grassmannianCongr]
 
 end Module.Grassmannian

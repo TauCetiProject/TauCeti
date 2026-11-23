@@ -460,7 +460,9 @@ theorem scheme_hom_ext {f g : scheme R M k ⟶ X}
   -- make `B` an `R`-algebra through `a`, so that `a` classifies a point over `B`
   obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R M k)
   let _ : Algebra R B := φ.hom.toAlgebra
-  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
+  have ha : a ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+    rw [← hφ, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a ha
   exact h B N
 
 /-- The morphism `Spec A ⟶ X` assigned by `F` to the point classified by `a : Spec A ⟶ G(k, M)`
@@ -487,7 +489,8 @@ private noncomputable def homOfPointsPoint
     (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
     {A : CommRingCat.{u}} (a : Spec A ⟶ scheme R M k) : Spec A ⟶ X :=
   letI : Algebra R A := (Spec.preimage (a ≫ toSpec R M k)).hom.toAlgebra
-  homOfPointsAux F A ‹_› a (Spec.map_preimage _).symm
+  homOfPointsAux F A ‹_› a <| by
+    rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Spec.map_preimage]
 
 private lemma homOfPointsPoint_toSchemeHom
     (F : ∀ (A : Type u) [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → (Spec (.of A) ⟶ X))
@@ -495,8 +498,8 @@ private lemma homOfPointsPoint_toSchemeHom
     homOfPointsPoint F (toSchemeHom N) = F A N := by
   have hφ : (Spec.preimage (toSchemeHom N ≫ toSpec R M k)).hom = algebraMap R A := by
     rw [toSchemeHom_toSpec, Spec.preimage_map, CommRingCat.hom_ofHom]
-  have hi : (Spec.preimage (toSchemeHom N ≫ toSpec R M k)).hom.toAlgebra = ‹Algebra R A› :=
-    Algebra.algebra_ext _ _ fun r ↦ DFunLike.congr_fun hφ r
+  have hi : (Spec.preimage (toSchemeHom N ≫ toSpec R M k)).hom.toAlgebra = ‹Algebra R A› := by
+    rw [hφ, toAlgebra_algebraMap]
   unfold homOfPointsPoint
   rw [homOfPointsAux_congr F A _ _ hi _ _ (toSchemeHom_toSpec N), homOfPointsAux]
   congr 1
@@ -517,11 +520,12 @@ private lemma homOfPointsPoint_comp
   let _ : Algebra R B := φ.hom.toAlgebra
   let _ : Algebra R C := (χ.hom.comp φ.hom).toAlgebra
   let χ' : B →ₐ[R] C := { χ.hom with commutes' := fun _ ↦ rfl }
-  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
-  have h : Spec.map χ ≫ toSchemeHom N = toSchemeHom (map χ' N) := (toSchemeHom_map χ' N).symm
-  rw [h, homOfPointsPoint_toSchemeHom, homOfPointsPoint_toSchemeHom, hF]
   -- `χ'` has underlying ring map `χ`
-  rfl
+  have hχ : CommRingCat.ofHom (χ' : B →+* C) = χ := CommRingCat.ofHom_hom χ
+  have ha : a ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+    rw [← hφ, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a ha
+  rw [← hχ, ← toSchemeHom_map, homOfPointsPoint_toSchemeHom, homOfPointsPoint_toSchemeHom, hF]
 
 /-- **A morphism out of the Grassmannian from its points.** A family of maps `F A` from the
 points of `G(k, M)` over each `R`-algebra `A` to the morphisms `Spec A ⟶ X`, natural in `A`,

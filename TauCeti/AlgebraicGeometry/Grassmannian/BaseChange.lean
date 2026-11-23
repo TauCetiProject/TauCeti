@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.IdealLocus
-public import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
@@ -106,8 +105,7 @@ private lemma baseChangePoints'_eq (A : Type u) [CommRing A] [Algebra R' A] [Alg
     [IsScalarTower R R' A] (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
     baseChangePoints' R R' M k A N = toSchemeHom (baseChangeEquiv R' N) :=
   baseChangePoints_congr R R' M k A _ _ _ ‹_›
-    (Algebra.algebra_ext _ _ fun r ↦ by
-      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]) N
+    (by rw [← IsScalarTower.algebraMap_eq R R' A, toAlgebra_algebraMap]) N
 
 /-- `baseChangePoints'` is natural in the `R'`-algebra. -/
 private lemma baseChangePoints'_map (A B : Type u) [CommRing A] [Algebra R' A] [CommRing B]
@@ -118,9 +116,8 @@ private lemma baseChangePoints'_map (A B : Type u) [CommRing A] [Algebra R' A] [
   have : IsScalarTower R R' A := .of_algebraMap_eq' rfl
   let _ : Algebra R B := ((algebraMap R' B).comp (algebraMap R R')).toAlgebra
   have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
-  rw [baseChangePoints'_eq, baseChangePoints'_eq, baseChangeEquiv_map, toSchemeHom_map]
-  -- `f.restrictScalars R` has underlying ring map `f`
-  rfl
+  rw [baseChangePoints'_eq, baseChangePoints'_eq, baseChangeEquiv_map, toSchemeHom_map,
+    AlgHom.coe_restrictScalars]
 
 variable {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
 

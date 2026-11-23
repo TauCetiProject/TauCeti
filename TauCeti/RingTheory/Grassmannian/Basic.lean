@@ -74,6 +74,8 @@ of `M`, naturally in `A`. This is the functorial form of base change of the Gras
 * `Module.Grassmannian.map_grassmannianCongr_baseChange`: transport along the base change of a
   linear equivalence is natural in the algebra.
 * `Module.Grassmannian.baseChangeEquiv_map`: `baseChangeEquiv` is natural in the algebra.
+* `Module.Grassmannian.baseChangeEquiv_grassmannianCongr`: `baseChangeEquiv` commutes with
+  transport along a linear equivalence.
 
 ## References
 
@@ -355,10 +357,7 @@ theorem map_grassmannianCongr_baseChange (e : M ≃ₗ[R] M') (f : A →ₐ[R] B
   ext : 1
   simp only [LinearEquiv.toSubmodule_grassmannianCongr_apply, map_toSubmodule_eq_span,
     Submodule.map_span, Submodule.map_coe, ← Set.image_comp]
-  refine congrArg _ (Set.image_congr' rfl fun x ↦ ?_)
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
-  | tmul a m => simp
+  exact congrArg _ (Set.image_congr' rfl fun x ↦ LinearMap.rTensor_baseChange f x e.toLinearMap)
 
 end Congr
 
@@ -396,6 +395,20 @@ theorem baseChangeEquiv_map (f : A →ₐ[R'] B) (N : G(k, A ⊗[R'] (R' ⊗[R] 
     induction y using TensorProduct.inductionOn with
     | add y z hy hz => simp only [Function.comp_apply, tmul_add, map_add] at hy hz ⊢; rw [hy, hz]
     | tmul r m => simp
+
+/-- **`baseChangeEquiv` commutes with transport along a linear equivalence.** For
+`e : M ≃ₗ[R] M'`, transporting along the base change of `e` to `R'` and then to `A` corresponds,
+under `baseChangeEquiv`, to transporting along the base change of `e` to `A`. -/
+theorem baseChangeEquiv_grassmannianCongr {M' : Type*} [AddCommGroup M'] [Module R M']
+    (e : M ≃ₗ[R] M') (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)) :
+    baseChangeEquiv R' (((e.baseChange R R' M M').baseChange R' A _ _).grassmannianCongr N) =
+      (e.baseChange R A M M').grassmannianCongr (baseChangeEquiv R' N) := by
+  ext : 1
+  simp only [toSubmodule_baseChangeEquiv, LinearEquiv.toSubmodule_grassmannianCongr_apply,
+    ← Submodule.map_comp]
+  congr 1
+  ext
+  simp
 
 end BaseChangeEquiv
 
