@@ -143,13 +143,13 @@ theorem TauCeti.uniqueDiffWithinAt_ker_setOf_nonneg {E ι : Type*} [NormedAddCom
     ((ContinuousLinearMap.proj (i : ι)).comp q).comp qt.ker.subtypeL
   have hq' : Function.Surjective q' := fun u ↦ by
     obtain ⟨w, hw⟩ := hq fun i ↦ if h : i ∈ t then 0 else u ⟨i, h⟩
-    exact ⟨⟨w, funext fun i ↦ by simp [qt, hw]⟩, funext fun i ↦ by simp [q', hw, i.2]⟩
+    exact ⟨⟨w, funext fun i ↦ by simp [qt, hw]⟩, funext fun i ↦ by simp [q', hw, i.property]⟩
   convert uniqueDiffOn_preimage_Ici_of_surjective hq' 0 0 (by simp) using 1
   -- On the kernel the coordinates in `t` vanish, so only the others constrain the cone.
   ext v
   refine ⟨fun h i ↦ h i, fun h i ↦ ?_⟩
   by_cases hi : i ∈ t
-  · exact (congrFun (LinearMap.mem_ker.mp v.2) ⟨i, hi⟩).ge
+  · exact (congrFun (LinearMap.mem_ker.mp v.property) ⟨i, hi⟩).ge
   · exact h ⟨i, hi⟩
 
 /-- A closed half-plane `{z : ℂ | a ≤ z.im}` has unique derivatives, including on its boundary. -/

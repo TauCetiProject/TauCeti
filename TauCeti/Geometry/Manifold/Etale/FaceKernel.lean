@@ -70,7 +70,7 @@ theorem mem_ineffectiveArrows_cornerFace_iff
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2) (hn : 1 ≤ n)
+      p.val.1.comp p.val.2 p.property) (hn : 1 ≤ n)
     (hρinv : ∀ i ⦃y z : C⦄, (y ≅ z) → ρ i y = ρ i z) {s : Set ι} {x : C}
     (hx : cornerFace ρ s x) (hρ : ∀ i, ContMDiffAt I 𝓘(ℝ) 1 (ρ i) x)
     (hlin : LinearIndependent ℝ fun i : {i // ρ i x = 0} ↦ mvfderiv I (ρ i) x) (g : x ⟶ x) :
@@ -108,7 +108,7 @@ theorem mem_ineffectiveArrows_cornerFace_iff
       ((congrArg ObjectProperty.FullSubcategory.obj h).symm.trans (hl gA y)))
   -- Apply the face statement for the finite smooth isotropy action on the chart.
   have hρU (i : ι) : ContMDiffAt I 𝓘(ℝ) 1 (fun y : U ↦ ρ i y) x₀ :=
-    (hρ i).comp x₀ (contMDiff_subtype_val.contMDiffAt)
+    (hρ i).comp x₀ (contMDiff_subtypeVal.contMDiffAt)
   have hlinU : LinearIndependent ℝ fun i : {i // ρ i x = 0} ↦
       mvfderiv I (fun y : U ↦ ρ i y) x₀ := by
     have h : (fun i : {i // ρ i x = 0} ↦ mvfderiv I (fun y : U ↦ ρ i y) x₀) =

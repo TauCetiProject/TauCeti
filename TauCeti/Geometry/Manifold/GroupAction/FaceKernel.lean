@@ -151,7 +151,7 @@ private theorem tendsto_symm_nhdsWithin_face {ρ : ι → M → ℝ} {x : M}
         (ContinuousLinearMap.proj (a : {i // ρ i x = 0})).comp q).ker ↦ χ.symm (v : E))
       (𝓝[{v | ∀ a, 0 ≤ q v a}] 0) (𝓝[{y | (∀ i, 0 ≤ ρ i y) ∧ ∀ i ∈ s, ρ i y = 0}] x) := by
   have h0χ : (0 : E) ∈ χ.target := hχx ▸ χ.map_source hxχ
-  have hval := continuous_subtype_val.tendsto (0 : (ContinuousLinearMap.pi fun a :
+  have hval := continuous_subtypeVal.tendsto (0 : (ContinuousLinearMap.pi fun a :
     {a : {i // ρ i x = 0} | (a : ι) ∈ s} ↦ (ContinuousLinearMap.proj (a : {i // ρ i x = 0})).comp
       q).ker)
   have hT := (χ.continuousAt_symm h0χ).tendsto.comp hval
@@ -169,7 +169,7 @@ private theorem tendsto_symm_nhdsWithin_face {ρ : ι → M → ℝ} {x : M}
     · exact (hρχ v hvt ⟨i, hi⟩).symm ▸ hvS ⟨i, hi⟩
     · exact (hvpos i hi).le
   · rw [hρχ v hvt ⟨i, hxs i hi⟩]
-    exact congrFun (LinearMap.mem_ker.mp v.2) ⟨⟨i, hxs i hi⟩, hi⟩
+    exact congrFun (LinearMap.mem_ker.mp v.property) ⟨⟨i, hxs i hi⟩, hi⟩
 
 /-- **Faces detect the germ kernel.** Let a finite group act by `C^n` maps, `1 ≤ n`, fixing `x`,
 and let the functions `ρ i` be locally invariant and `C¹` at `x`, with linearly independent
@@ -194,7 +194,7 @@ theorem eventually_nhdsWithin_face_smul_eq_iff
   refine ⟨fun hg ↦ ?_, fun h ↦ nhdsWithin_le_nhds h⟩
   obtain ⟨σ, χ, q, hxχ, hχx, hχ, hq, hqσ, hqχ⟩ :=
     exists_equivariant_straightened_chart (ρ := fun a : {i // ρ i x = 0} ↦ ρ a) hsmooth hn hx
-      (fun a ↦ a.2) (fun a ↦ hρ a) (fun a ↦ hinv a) hlin
+      (fun a ↦ a.property) (fun a ↦ hρ a) (fun a ↦ hinv a) hlin
   let A := {i // ρ i x = 0}
   have h0χ : (0 : E) ∈ χ.target := hχx ▸ χ.map_source hxχ
   have hρχ (v : E) (hv : v ∈ χ.target) (a : A) : ρ a (χ.symm v) = q v a := by
