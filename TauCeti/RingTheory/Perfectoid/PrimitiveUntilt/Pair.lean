@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Huber.Pair.Complete
 import TauCeti.RingTheory.Huber.Reduction
 import TauCeti.RingTheory.Perfectoid.Pair
 import TauCeti.RingTheory.WittVector.MapEquiv
-import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 /-!
 # The Huber pair structure and Fontaine kernel of primitive untilts

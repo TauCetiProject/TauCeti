@@ -398,7 +398,7 @@ theorem restrictPreimagePairMap_fst_comp_thomPairProj (W : Set B) :
 
 /-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
 Thom pair of the restriction to `W`. -/
-def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
+@[expose] def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
     TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ⟶ thomPairOver F E W :=
   TopPair.ofHom
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
@@ -555,6 +555,14 @@ theorem pullbackThomPairMap_fst_apply (v : TotalSpace F ((⇑f) *ᵖ E)) :
     TopPair.Hom.fst (pullbackThomPairMap F E f) v = Pullback.lift f v := by
   unfold pullbackThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- On nonzero vectors, the map of Thom pairs `(f*E, (f*E)₀) ⟶ (E, E₀)` is the canonical map of the
+pull-back. -/
+@[simp]
+theorem pullbackThomPairMap_snd_apply (v : (thomPair F ((⇑f) *ᵖ E)).snd) :
+    (TopPair.Hom.snd (pullbackThomPairMap F E f) v).val = Pullback.lift f v.val := by
+  unfold pullbackThomPairMap
+  exact TopPair.ofSubsetMap_snd_apply _ _ _
 
 variable [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 

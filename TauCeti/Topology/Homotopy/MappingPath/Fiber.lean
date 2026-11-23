@@ -64,6 +64,19 @@ def proj : C(MappingPathFiber f k, B) :=
 @[simp]
 theorem proj_apply (p : MappingPathFiber f k) : proj f k p = p.val.1 := (rfl)
 
+/-- The path of a point of the mapping-path fibre, as a path from `f x` to `k`. -/
+def toPath (q : MappingPathFiber f k) : Path (f q.val.1) k :=
+  ⟨q.val.2, q.property.1, q.property.2⟩
+
+@[simp]
+theorem coe_toPath (q : MappingPathFiber f k) : ⇑(toPath f k q) = q.val.2 :=
+  (rfl)
+
+@[simp]
+theorem toContinuousMap_toPath (q : MappingPathFiber f k) :
+    (toPath f k q).toContinuousMap = q.val.2 :=
+  (rfl)
+
 /-- Flattening identifies the two-constraint path fibre with the literal endpoint fibre. -/
 def endpointHomeomorph :
     MappingPathFiber f k ≃ₜ {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k} where

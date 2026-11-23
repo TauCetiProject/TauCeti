@@ -191,9 +191,8 @@ variable [ContMDiffCovariantDerivative cov ∞]
 /-- The covariant derivative of a smooth section, viewed as a smooth bundle-valued one-form.
 This is exterior covariant differentiation in degree zero. -/
 def covariantOneForm : ContMDiffSection I F ∞ V →ₗ[ℝ] SmoothBundleForm I F V 1 where
-  toFun σ := SmoothBundleForm.degreeOneEquiv.symm ⟨cov σ, by
-    exact contMDiffOn_univ.mp
-      (ContMDiffCovariantDerivative.contMDiff.contMDiff (by simpa using σ.contMDiff.contMDiffOn))⟩
+  toFun σ := SmoothBundleForm.degreeOneEquiv.symm
+    ⟨cov σ, cov.contMDiff_covariantDerivative (by simpa using σ.contMDiff)⟩
   map_add' σ τ := by
     apply SmoothBundleForm.ext
     intro x v

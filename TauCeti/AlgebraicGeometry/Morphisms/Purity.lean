@@ -44,6 +44,14 @@ purity of the branch locus to it. Purity for regular local rings is known in dim
 (`TauCeti.IsLocalRing.purityHolds_of_ringKrullDim_eq_two`), which gives purity of the branch
 locus unconditionally when `d ≤ 2`.
 
+The same statement holds with the Stacks Project's pointwise notions, which only ask `f` to be
+locally of finite type near `x` and unramified on neighbourhoods of the codimension-one
+generizations: restricting `f` to an open neighbourhood of `x` on which it is locally of finite
+type reduces it to the stalk form. Through the comparison of the stalks of `Spec S ⟶ Spec R` with
+the localizations of `S` and `R`, the stalk form also gives the affine statement for a finite type
+algebra `S` over a Noetherian ring `R` at a prime `q` of `S`, with unramifiedness at the primes of
+height one contained in `q`.
+
 The finite-stalk versions apply purity for finite normal algebras over the target stalk. The
 target stalk having dimension at most that of the source stalk makes the finite stalk map
 injective, hence its normal-domain target is torsion free. The general case uses an elementary
@@ -76,6 +84,14 @@ two.
   two and the dimension of `𝒪_{Y,f x}`.
 * `Scheme.Hom.exists_etale_of_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two`:
   purity of the branch locus at `x` when `𝒪_{Y,f x}` has dimension one or two.
+* `Scheme.Hom.etaleAt_of_unramifiedAt_codimOne_of_purityHolds`: the same with Stacks' pointwise
+  notions of quasi-finite and unramified at a point, and its unconditional form
+  `Scheme.Hom.etaleAt_of_unramifiedAt_codimOne_of_ringKrullDim_le_two` in local dimension one or
+  two.
+* `TauCeti.Algebra.isEtaleAt_of_isUnramifiedAt_height_eq_one_of_purityHolds`: the affine form, for a
+  finite type algebra over a Noetherian ring, and its unconditional form
+  `TauCeti.Algebra.isEtaleAt_of_isUnramifiedAt_height_eq_one_of_height_le_two` when the prime below
+  has height one or two.
 * `Scheme.Hom.ringKrullDim_stalk_eq_one_of_maximal_ramificationLocus_of_purityHolds`,
   `Scheme.Hom.ringKrullDim_stalk_eq_one_of_maximal_branchLocus_of_purityHolds`: the maximal
   points of the ramification and branch loci have codimension one, assuming purity for regular
@@ -225,6 +241,68 @@ theorem exists_etale_of_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two
   f.exists_etale_of_formallyUnramified_stalk_codimOne_of_purityHolds x hx hdim hdim₁
     (TauCeti.IsLocalRing.purityHolds_of_two_le_of_le hdim₂) hunram
 
+/-- **Purity of the branch locus with Stacks' pointwise notions, from purity for regular local
+rings.** Let `f : X ⟶ Y` be a morphism to a locally Noetherian scheme, quasi-finite at `x` in the
+sense of the Stacks Project (locally of finite type on an open neighbourhood of `x`, and
+`f.QuasiFiniteAt x`), with `𝒪_{X,x}` a normal domain and `𝒪_{Y,f x}` a regular local ring of
+dimension `d ≥ 1`, at most the dimension of `𝒪_{X,x}`. Suppose purity holds for every regular local
+ring of dimension between `2` and `d`. If `f` is unramified, in the sense of Stacks, Definition
+29.36.1 (02G4), at every codimension-one generization of `x`, then `f` is étale on an open
+neighbourhood of `x`. Unlike `exists_etale_of_formallyUnramified_stalk_codimOne_of_purityHolds`,
+`f` need not be locally of finite type away from `x`. -/
+@[stacks 0BMB "Stacks' pointwise notions, from purity for regular local rings of dimension at most
+that of the target stalk"]
+theorem etaleAt_of_unramifiedAt_codimOne_of_purityHolds (f : X ⟶ Y) [IsLocallyNoetherian Y]
+    (x : X) [IsDomain (X.presheaf.stalk x)] [IsIntegrallyClosed (X.presheaf.stalk x)]
+    [IsRegularLocalRing (Y.presheaf.stalk (f x))]
+    (hx : (∃ W : X.Opens, x ∈ W ∧ LocallyOfFiniteType (W.ι ≫ f)) ∧ f.QuasiFiniteAt x)
+    (hdim : ringKrullDim (Y.presheaf.stalk (f x)) ≤ ringKrullDim (X.presheaf.stalk x))
+    (hpos : 1 ≤ ringKrullDim (Y.presheaf.stalk (f x)))
+    (hpurity : ∀ (A : Type u) [CommRing A] [IsRegularLocalRing A], 2 ≤ ringKrullDim A →
+      ringKrullDim A ≤ ringKrullDim (Y.presheaf.stalk (f x)) → TauCeti.IsLocalRing.PurityHolds A)
+    (hunram : ∀ z : X, z ⤳ x → ringKrullDim (X.presheaf.stalk z) = 1 →
+      ∃ U : X.Opens, z ∈ U ∧ LocallyOfFiniteType (U.ι ≫ f) ∧ FormallyUnramified (U.ι ≫ f)) :
+    ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) := by
+  obtain ⟨⟨W, hxW, _⟩, hqf⟩ := hx
+  -- Restrict `f` to the open `W` on which it is locally of finite type; the local rings of `W`
+  -- are those of `X`.
+  have hWdim (z : W) : ringKrullDim (W.toScheme.presheaf.stalk z) =
+      ringKrullDim (X.presheaf.stalk z.val) :=
+    ringKrullDim_eq_of_ringEquiv (W.stalkIso z).commRingCatIsoToRingEquiv
+  obtain ⟨_, _⟩ := (W.ι.isDomain_and_isIntegrallyClosed_stalk_iff_of_etale ⟨x, hxW⟩).mp
+    ⟨‹_›, ‹_›⟩
+  have : IsRegularLocalRing (Y.presheaf.stalk ((W.ι ≫ f) ⟨x, hxW⟩)) := ‹_›
+  -- Unramifiedness on a neighbourhood of a generization gives the stalk form on `W`.
+  have hunramW (z : W) (hz : z ⤳ ⟨x, hxW⟩)
+      (hzdim : ringKrullDim (W.toScheme.presheaf.stalk z) = 1) :
+      ((W.ι ≫ f).stalkMap z).hom.FormallyUnramified := by
+    rw [RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff W.ι f z]
+    obtain ⟨V, hzV, _, _⟩ := hunram z.val (hz.map W.ι.continuous) (by rw [← hWdim]; exact hzdim)
+    exact formallyUnramified_stalkMap_of_isOpenImmersion_comp f V.ι ⟨z.val, hzV⟩
+  obtain ⟨U, hxU, hU⟩ := (W.ι ≫ f).exists_etale_of_formallyUnramified_stalk_codimOne_of_purityHolds
+    ⟨x, hxW⟩ ((RingHom.QuasiFinite.respectsIso.stalkMap_comp_isOpenImmersion_iff W.ι f _).mpr hqf)
+    (by rw [hWdim]; exact hdim) hpos hpurity hunramW
+  refine ⟨W.ι ''ᵁ U, ⟨⟨x, hxW⟩, hxU, rfl⟩, ?_⟩
+  rw [← W.ι.isoImage_inv_ι U, Category.assoc, Category.assoc]
+  infer_instance
+
+/-- **Purity of the branch locus with Stacks' pointwise notions, in local dimension one or two.**
+Under the hypotheses of `etaleAt_of_unramifiedAt_codimOne_of_purityHolds`, if `𝒪_{Y,f x}` has
+dimension at most two, then `f` is étale on an open neighbourhood of `x`. -/
+@[stacks 0BMB "Stacks' pointwise notions, in local dimension one or two"]
+theorem etaleAt_of_unramifiedAt_codimOne_of_ringKrullDim_le_two (f : X ⟶ Y)
+    [IsLocallyNoetherian Y] (x : X) [IsDomain (X.presheaf.stalk x)]
+    [IsIntegrallyClosed (X.presheaf.stalk x)] [IsRegularLocalRing (Y.presheaf.stalk (f x))]
+    (hx : (∃ W : X.Opens, x ∈ W ∧ LocallyOfFiniteType (W.ι ≫ f)) ∧ f.QuasiFiniteAt x)
+    (hdim : ringKrullDim (Y.presheaf.stalk (f x)) ≤ ringKrullDim (X.presheaf.stalk x))
+    (hdim₁ : 1 ≤ ringKrullDim (Y.presheaf.stalk (f x)))
+    (hdim₂ : ringKrullDim (Y.presheaf.stalk (f x)) ≤ 2)
+    (hunram : ∀ z : X, z ⤳ x → ringKrullDim (X.presheaf.stalk z) = 1 →
+      ∃ U : X.Opens, z ∈ U ∧ LocallyOfFiniteType (U.ι ≫ f) ∧ FormallyUnramified (U.ι ≫ f)) :
+    ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) :=
+  f.etaleAt_of_unramifiedAt_codimOne_of_purityHolds x hx hdim hdim₁
+    (TauCeti.IsLocalRing.purityHolds_of_two_le_of_le hdim₂) hunram
+
 variable (f : X ⟶ Y)
 
 /-- **Purity of the ramification locus, from purity for regular local rings.** Let `f : X ⟶ Y` be
@@ -357,3 +435,73 @@ theorem etale_iff_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two
     fun y ↦ TauCeti.IsLocalRing.purityHolds_of_two_le_of_le (hdim₂ y)
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.Algebra
+
+open _root_.AlgebraicGeometry
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **Purity of the branch locus for finite type algebras, from purity for regular local rings.**
+Let `S` be a finite type algebra over a Noetherian ring `R` and `q` a prime of `S` at which `S` is
+quasi-finite over `R`, with `S_q` a normal domain and `R_p` a regular local ring, where
+`p = q ∩ R`, of height `d ≥ 1` at most that of `q`. Suppose purity holds for every regular local
+ring of dimension between `2` and `d`. If `S` is unramified over `R` at every prime `q' ≤ q` of
+height one, then `S` is étale over `R` at `q`. -/
+@[stacks 0BMB "affine form, from purity for regular local rings of dimension at most that of the
+localization of the base"]
+theorem isEtaleAt_of_isUnramifiedAt_height_eq_one_of_purityHolds [IsNoetherianRing R]
+    [Algebra.FiniteType R S] (q : Ideal S) [q.IsPrime] [IsDomain (Localization.AtPrime q)]
+    [IsIntegrallyClosed (Localization.AtPrime q)]
+    [IsRegularLocalRing (Localization.AtPrime (q.under R))] (hqf : Algebra.QuasiFiniteAt R q)
+    (hdim : (q.under R).height ≤ q.height) (hpos : 1 ≤ (q.under R).height)
+    (hpurity : ∀ (A : Type u) [CommRing A] [IsRegularLocalRing A], 2 ≤ ringKrullDim A →
+      ringKrullDim A ≤ (q.under R).height → IsLocalRing.PurityHolds A)
+    (hunram : ∀ (q' : Ideal S) [q'.IsPrime], q' ≤ q → q'.height = 1 →
+      Algebra.IsUnramifiedAt R q') :
+    Algebra.IsEtaleAt R q := by
+  have : Algebra.FinitePresentation R S := Algebra.FinitePresentation.of_finiteType.mp ‹_›
+  let f := Spec.map (CommRingCat.ofHom (algebraMap R S))
+  have : LocallyOfFiniteType f :=
+    HasRingHomProperty.Spec_iff.mpr (RingHom.finiteType_algebraMap.mpr ‹_›)
+  have hdimSpec (T : CommRingCat.{u}) (z : Spec T) :
+      ringKrullDim ((Spec T).presheaf.stalk z) = z.asIdeal.height := by
+    rw [ringKrullDim_stalk_eq_coheight, idealHeight_eq_coheight]
+  let x : Spec (.of S) := ⟨q, ‹_›⟩
+  let e := (Spec.stalkIso (.of S) x).commRingCatIsoToRingEquiv
+  have : IsDomain ((Spec (.of S)).presheaf.stalk x) := e.toMulEquiv.isDomain _
+  have : IsIntegrallyClosed ((Spec (.of S)).presheaf.stalk x) := .of_equiv e.symm
+  have : IsRegularLocalRing ((Spec (.of R)).presheaf.stalk (f x)) :=
+    (AlgebraicGeometry.isRegularLocalRing_stalk_Spec_iff _ _).mpr ‹_›
+  -- The generizations of `x` are the primes contained in `q`.
+  have hunram' (z : Spec (.of S)) (hz : z ⤳ x)
+      (hzdim : ringKrullDim ((Spec (.of S)).presheaf.stalk z) = 1) :
+      (f.stalkMap z).hom.FormallyUnramified := by
+    rw [hdimSpec] at hzdim
+    have := z.isPrime
+    exact (formallyUnramified_stalkMap_specMap_iff z).mpr <| hunram z.asIdeal
+      ((PrimeSpectrum.le_iff_specializes z x).mpr hz) (mod_cast hzdim)
+  obtain ⟨U, hxU, hU⟩ := f.exists_etale_of_formallyUnramified_stalk_codimOne_of_purityHolds x
+    ((Scheme.Hom.quasiFiniteAt_spec_iff x).mpr hqf)
+    (by rw [hdimSpec, hdimSpec]; exact_mod_cast hdim) (by rw [hdimSpec]; exact_mod_cast hpos)
+    (fun A _ _ h₂ hA ↦ hpurity A h₂ (by rwa [hdimSpec] at hA)) hunram'
+  exact (Scheme.Hom.etaleAt_spec_iff x).mp ⟨U, hxU, hU⟩
+
+/-- **Purity of the branch locus for finite type algebras, in height one or two.** Under the
+hypotheses of `isEtaleAt_of_isUnramifiedAt_height_eq_one_of_purityHolds`, if `q ∩ R` has height at
+most two, then `S` is étale over `R` at `q`. -/
+@[stacks 0BMB "affine form, in height one or two"]
+theorem isEtaleAt_of_isUnramifiedAt_height_eq_one_of_height_le_two [IsNoetherianRing R]
+    [Algebra.FiniteType R S] (q : Ideal S) [q.IsPrime] [IsDomain (Localization.AtPrime q)]
+    [IsIntegrallyClosed (Localization.AtPrime q)]
+    [IsRegularLocalRing (Localization.AtPrime (q.under R))] (hqf : Algebra.QuasiFiniteAt R q)
+    (hdim : (q.under R).height ≤ q.height) (hpos : 1 ≤ (q.under R).height)
+    (hdim₂ : (q.under R).height ≤ 2)
+    (hunram : ∀ (q' : Ideal S) [q'.IsPrime], q' ≤ q → q'.height = 1 →
+      Algebra.IsUnramifiedAt R q') :
+    Algebra.IsEtaleAt R q :=
+  isEtaleAt_of_isUnramifiedAt_height_eq_one_of_purityHolds q hqf hdim hpos
+    (IsLocalRing.purityHolds_of_two_le_of_le (d := (q.under R).height)
+      (WithBot.coe_le_coe.mpr hdim₂)) hunram
+
+end TauCeti.Algebra
