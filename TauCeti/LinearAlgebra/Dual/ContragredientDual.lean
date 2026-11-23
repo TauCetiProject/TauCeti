@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
 # The contragredient dual along a ring isomorphism
@@ -345,28 +346,40 @@ def contragredientDual (b : Module.Basis ι R M) (σ : S ≃+* R) :
   letI := Classical.decEq ι
   haveI := RingHomInvPair.of_ringEquiv σ
   haveI := RingHomInvPair.of_ringEquiv_symm σ
-  Module.Basis.ofRepr
-    (((ContragredientDual.toDualLinearEquiv σ M).trans b.dualBasis.repr).trans
-      (Finsupp.mapRange.linearEquiv σ.toSemilinearEquiv.symm))
+  b.dualBasis.mapₛₗ (ContragredientDual.toDualLinearEquiv σ M).symm
+
+@[simp]
+theorem contragredientDual_apply (b : Module.Basis ι R M) (σ : S ≃+* R) (i : ι) :
+    b.contragredientDual σ i = ContragredientDual.ofDual (σ := σ) (b.coord i) := by
+  classical
+  have := RingHomInvPair.of_ringEquiv σ
+  have := RingHomInvPair.of_ringEquiv_symm σ
+  simp [contragredientDual, Module.Basis.mapₛₗ_apply]
 
 @[simp]
 theorem contragredientDual_repr_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
     (φ : ContragredientDual σ M) (i : ι) :
     (b.contragredientDual σ).repr φ i = σ.symm (φ (b i)) := by
   classical
-  simp [contragredientDual]
+  have := Fintype.ofFinite ι
+  have := RingHomInvPair.of_ringEquiv σ
+  have := RingHomInvPair.of_ringEquiv_symm σ
+  have hsum : φ = ∑ j : ι, σ.symm (φ (b j)) • b.contragredientDual σ j := by
+    apply (ContragredientDual.toDualLinearEquiv σ M).injective
+    calc ContragredientDual.toDualLinearEquiv σ M φ
+        = φ.toDual := ContragredientDual.toDualLinearEquiv_apply φ
+      _ = ∑ j : ι, b.dualBasis.repr φ.toDual j • b.dualBasis j :=
+            (b.dualBasis.sum_repr φ.toDual).symm
+      _ = ContragredientDual.toDualLinearEquiv σ M
+            (∑ j : ι, σ.symm (φ (b j)) • b.contragredientDual σ j) := by
+          simp [map_sum, map_smulₛₗ]
+  conv_lhs => rw [hsum]
+  rw [(b.contragredientDual σ).repr_sum_self]
 
 theorem contragredientDual_equivFun_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
     (φ : ContragredientDual σ M) (i : ι) :
     (b.contragredientDual σ).equivFun φ i = σ.symm (φ (b i)) := by
   rw [Module.Basis.equivFun_apply, contragredientDual_repr_apply]
-
-@[simp]
-theorem contragredientDual_apply (b : Module.Basis ι R M) (σ : S ≃+* R) (i : ι) :
-    b.contragredientDual σ i = ContragredientDual.ofDual (σ := σ) (b.coord i) := by
-  classical
-  rw [← (b.contragredientDual σ).repr_symm_single_one]
-  simp [contragredientDual, ← Module.Basis.coe_dualBasis]
 
 theorem contragredientDual_apply_self (b : Module.Basis ι R M) (σ : S ≃+* R) [DecidableEq ι]
     (i j : ι) : b.contragredientDual σ i (b j) = if j = i then 1 else 0 := by

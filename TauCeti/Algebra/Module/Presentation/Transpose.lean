@@ -122,7 +122,7 @@ private def arOppositeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
   let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
   haveI := RingHomInvPair.of_ringEquiv ρ
   haveI := RingHomInvPair.of_ringEquiv_symm ρ
-  let e : Module.Dual R P₁ ≃ₛₗ[(ρ : Rᵐᵒᵖ →+* S)] ContragredientDual σ P₁ :=
+  let e₀ : Module.Dual R P₀ ≃ₛₗ[(ρ : Rᵐᵒᵖ →+* S)] ContragredientDual σ P₀ :=
     { toFun := ContragredientDual.ofDual
       invFun := ContragredientDual.toDual
       map_add' := fun _ _ ↦ rfl
@@ -131,21 +131,25 @@ private def arOppositeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
         simp [ρ, LinearMap.smul_apply, mul_comm]
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
-  have he : (LinearMap.range (f.lcomp Rᵐᵒᵖ R)).map e.toLinearMap =
+  let e₁ : Module.Dual R P₁ ≃ₛₗ[(ρ : Rᵐᵒᵖ →+* S)] ContragredientDual σ P₁ :=
+    { toFun := ContragredientDual.ofDual
+      invFun := ContragredientDual.toDual
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun r φ ↦ by
+        ext x
+        simp [ρ, LinearMap.smul_apply, mul_comm]
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  have hcomp :
+      e₁.toLinearMap.comp (f.lcomp Rᵐᵒᵖ R) =
+        (ContragredientDual.map σ f).comp e₀.toLinearMap := by
+    ext ψ x
+    simp [e₀, e₁, LinearMap.lcomp_apply']
+  have he : (LinearMap.range (f.lcomp Rᵐᵒᵖ R)).map e₁.toLinearMap =
       LinearMap.range (ContragredientDual.map σ f) := by
-    ext φ
-    simp only [Submodule.mem_map, LinearMap.mem_range, LinearEquiv.coe_coe]
-    constructor
-    · rintro ⟨_, ⟨ψ, rfl⟩, rfl⟩
-      refine ⟨ContragredientDual.ofDual ψ, ContragredientDual.toDual_injective ?_⟩
-      ext y
-      simp [e, LinearMap.lcomp_apply']
-    · rintro ⟨ψ, rfl⟩
-      refine ⟨f.lcomp Rᵐᵒᵖ R ψ.toDual, ⟨ψ.toDual, rfl⟩, ContragredientDual.toDual_injective ?_⟩
-      ext y
-      simp [e, LinearMap.lcomp_apply']
+    rw [← LinearMap.range_comp, hcomp, LinearEquiv.range_comp]
   (AuslanderReitenTranspose.quotientEquiv f
-    (LinearMap.range (ContragredientDual.map σ f)) e he).symm
+    (LinearMap.range (ContragredientDual.map σ f)) e₁ he).symm
 
 /-- `PresentationTranspose σ f` is `σ`-semilinearly equivalent to `AuslanderReitenTranspose f`,
 constructed from `AuslanderReitenTranspose.quotientEquiv`. -/
@@ -445,30 +449,14 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
     (A : Matrix (Fin m) (Fin t) R) :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' A)) 0 =
       Ideal.map σ.symm ((LinearMap.range A.mulVecLin).minorsIdeal t) := by
-  have := RingHomInvPair.of_ringEquiv σ
-  have := RingHomInvPair.of_ringEquiv_symm σ
-  let Φ (k : ℕ) : (Fin k → R) ≃ₛₗ[(σ.symm : R →+* S)] (Fin k → S) :=
-    ((Finsupp.linearEquivFunOnFinite R R (Fin k)).symm.trans
-      (Finsupp.mapRange.linearEquiv σ.toSemilinearEquiv.symm)).trans
-      (Finsupp.linearEquivFunOnFinite S S (Fin k))
-  have hΦ (k : ℕ) (x : Fin k → R) : Φ k x = fun i ↦ σ.symm (x i) := by
-    ext i
-    simp [Φ]
-  have hcomp :
-      (Φ t : (Fin t → R) →ₛₗ[(σ.symm : R →+* S)] (Fin t → S)) ∘ₛₗ Aᵀ.mulVecLin =
-        (Aᵀ.map σ.symm).mulVecLin ∘ₛₗ (Φ m : (Fin m → R) →ₛₗ[(σ.symm : R →+* S)] (Fin m → S)) := by
-    ext x i
-    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply]
-    rw [hΦ, hΦ]
-    simpa [Function.comp_def] using (σ.symm : R →+* S).map_mulVec Aᵀ x i
-  have hrange :
-      (LinearMap.range Aᵀ.mulVecLin).map (Φ t : (Fin t → R) →ₛₗ[(σ.symm : R →+* S)] (Fin t → S)) =
-        LinearMap.range (Aᵀ.map σ.symm).mulVecLin := by
-    rw [← Submodule.map_top Aᵀ.mulVecLin, ← Submodule.map_comp, hcomp, Submodule.map_comp,
-      Submodule.map_top, LinearMap.range_eq_top.2 (Φ m).surjective, Submodule.map_top]
-  rw [fittingIdeal_toLin'_eq_minorsIdeal, ← hrange,
-    Submodule.minorsIdeal_map_semilinearEquiv, Matrix.minorsIdeal_range_transpose_mulVecLin]
-  rfl
+  rw [fittingIdeal_toLin'_eq_minorsIdeal,
+    ← Matrix.minorsIdeal_range_transpose_mulVecLin A t,
+    Matrix.minorsIdeal_range_eq_span_det_submatrix,
+    Matrix.minorsIdeal_range_eq_span_det_submatrix,
+    Ideal.map_span, ← Set.range_comp]
+  congr 2
+  funext rc
+  exact ((σ.symm : R →+* S).map_det_submatrix Aᵀ rc.1 rc.2).symm
 
 /-- **Free form of the excess-generators Fitting-ideal identity**: if `P₁ →f P₀ →π M → 0` is an
 exact sequence of `R`-modules with `P₁` and `P₀` finite free of ranks `t` and `t + s`, then
