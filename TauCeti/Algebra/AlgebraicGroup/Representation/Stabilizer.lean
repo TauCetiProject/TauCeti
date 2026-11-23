@@ -47,6 +47,8 @@ to nonreduced subgroup schemes over any field.
 * `Submodule.stabilizerHopfIdeal`: the Hopf ideal of the stabilizer of `W`.
 * `Submodule.stabilizerHopfIdeal_le_ker_iff`: its points are the points carrying `A ⊗ W` onto
   itself.
+* `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange`: its points over
+  any commutative value algebra preserve the scalar extension of `W`.
 * `Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff`: its rational points are the
   rational points carrying `W` onto itself.
 * `Submodule.stabilizerHopfIdeal_le_iff`: its universal property among Hopf ideals.
@@ -318,6 +320,17 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
       exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.property
 
+/-- A point over any commutative value algebra lies in the stabilizer of `W` exactly when its
+action carries the scalar extension of `W` onto itself. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange (W : Submodule k M)
+    {A : Type x} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (W.stabilizerHopfIdeal H) (CommAlgCat.of k A) ↔
+      (W.baseChange A).map (Comodule.endOfPoint M g.ofConv) = W.baseChange A := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simpa only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker] using
+    W.stabilizerHopfIdeal_le_ker_iff g
+
 /-- A rational point lies in the stabilizer of `W` exactly when its action carries `W` onto
 itself. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
@@ -339,11 +352,8 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (W : Submodule k M)
     simp only [e, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.lid_symm_apply]
     rw [Comodule.endOfPoint_tmul, one_smul,
       Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
-  have hker : (∀ h ∈ W.stabilizerHopfIdeal H, g.ofConv h = 0) ↔
-      (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker,
-    W.stabilizerHopfIdeal_le_ker_iff g, hbc, ← map_comp, hcomp, map_comp]
+  rw [W.mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_baseChange g,
+    hbc, ← map_comp, hcomp, map_comp]
   exact (map_injective_of_injective (TensorProduct.lid k M).symm.injective).eq_iff
 
 end Hopf

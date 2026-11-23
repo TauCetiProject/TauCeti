@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Product
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 
 /-!
 # Faithful Chevalley line representations
@@ -47,32 +45,19 @@ theorem exists_isFaithful_line_stabilizer {k H : Type u} [Field k]
         (Submodule.span k {m}).stabilizerHopfIdeal H = I := by
   let K := _root_.CommHopfAlgCat.of k H
   have := Algebra.FiniteType.isNoetherianRing k H
-  obtain ⟨U, n, hU, L, hL, _, hstab⟩ :=
-    I.exists_finite_subcomodule_exteriorPower_line_stabilizer (H := K)
+  obtain ⟨U, n, hU, m, hm, hLI⟩ :=
+    I.exists_finite_subcomodule_exteriorPower_unimodular_line_stabilizer (H := K)
       (IsNoetherian.noetherian I.toIdeal)
   let : Module.Finite k U := hU
   let : AddCommGroup U := Module.addCommMonoidToAddCommGroup k
   let : AddCommGroup (⋀[k]^n U) := Module.addCommMonoidToAddCommGroup k
-  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup k
-  obtain ⟨m, hm, _⟩ := (finrank_eq_one_iff' (K := k) (V := L)).mp hL
-  have hspan : L = k ∙ (m : ⋀[k]^n U) :=
-    eq_span_singleton_of_mem_of_finrank_eq_one hL m.property (fun h ↦ hm (Subtype.ext h))
-  have hLI : L.stabilizerHopfIdeal H = I := by
-    apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq (H := K)
-    intro A
-    ext g
-    rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-    simpa only [IsConcreteLE.le_iff, HopfIdeal.mem_toIdeal, RingHom.mem_ker] using
-      (L.stabilizerHopfIdeal_le_ker_iff g).trans (hstab A g).symm
   obtain ⟨V, hV⟩ := Comodule.exists_isFaithful (k := k) (H := H)
   let M := FGComoduleCat.of (R := k) (C := H) ((⋀[k]^n U) × V)
-  have hne : ((m : ⋀[k]^n U), (0 : V)) ≠ 0 := by
-    intro h
-    exact hm (Subtype.ext (congrArg Prod.fst h))
+  obtain ⟨f, hf⟩ := Module.isUnimodular_iff.mp hm
   refine ⟨M, ((m : ⋀[k]^n U), 0),
-    Module.isUnimodular_iff.mpr (Module.Projective.exists_dual_eq_one k hne),
+    Module.isUnimodular_of_apply_eq_one (f := f.comp (LinearMap.fst k _ V)) hf,
     hV.prod_right, ?_⟩
   exact (Submodule.stabilizerHopfIdeal_span_singleton_prod_zero (H := H)
-    (V := V) (m : ⋀[k]^n U)).trans (hspan ▸ hLI)
+    (V := V) m).trans hLI
 
 end TauCeti.HopfIdeal
