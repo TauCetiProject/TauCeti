@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
+public import TauCeti.LinearAlgebra.Basis.Pi
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Representation
 
 /-!
@@ -140,7 +141,7 @@ Chevalley datum with its integral coordinate lattice and basis. -/
   weight := T.weight
   isCartanWeightVector_basis :=
     T.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis ht hCM
-  weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map (LinearEquiv.ofTop _ hspan).symm
+  weightLatticeBasis := Submodule.basisFunOfEqTop _ hspan
 
 /-- The table datum has the table's dimension. -/
 @[simp] theorem chevalleyDatum_dim : (T.chevalleyDatum ht hCM hspan).dim = d := rfl
@@ -167,9 +168,8 @@ Chevalley datum with its integral coordinate lattice and basis. -/
 /-- The chosen weight-lattice basis is the fundamental-weight basis. -/
 @[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
     ((T.chevalleyDatum ht hCM hspan).weightLatticeBasis i : Fin t.rank → ℤ) =
-      Pi.single i 1 := by
-  rw [chevalleyDatum, Module.Basis.map_apply, LinearEquiv.coe_ofTop_symm_apply,
-    Pi.basisFun_apply]
+      Pi.single i 1 :=
+  Submodule.coe_basisFunOfEqTop _ hspan i
 
 /-- The coordinate weights are the table's fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Elementary
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
+import TauCeti.LinearAlgebra.Basis.Pi
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
 
 /-!
@@ -111,7 +112,7 @@ The basis of its weight lattice is the standard basis of fundamental weights. -/
   basis := t.scWeightBasis ht
   weight := t.scWeight ht
   isCartanWeightVector_basis := t.isCartanWeightVector_scWeightBasis ht
-  weightLatticeBasis := ChevalleyDatum.fullWeightLatticeBasis (t.span_range_scWeight_eq_top ht)
+  weightLatticeBasis := Submodule.basisFunOfEqTop _ (t.span_range_scWeight_eq_top ht)
 
 /-- The dimension of the full-weight datum is the size of its existing weight basis. -/
 theorem scChevalleyDatum_dim : (t.scChevalleyDatum ht).dim = t.scWeightBasisCard ht :=
@@ -150,15 +151,14 @@ coordinates. -/
 @[simp]
 theorem coe_scChevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
     ((t.scChevalleyDatum ht).weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1 := by
-  exact ChevalleyDatum.coe_fullWeightLatticeBasis (t.span_range_scWeight_eq_top ht) i
+  exact Submodule.coe_basisFunOfEqTop _ (t.span_range_scWeight_eq_top ht) i
 
 /-- Reading the full-weight datum's character basis returns fundamental-weight coordinates. -/
 @[simp]
 theorem scChevalleyDatum_weightLatticeBasis_repr
     (μ : (t.scChevalleyDatum ht).weightLattice) (i : Fin t.rank) :
     (t.scChevalleyDatum ht).weightLatticeBasis.repr μ i = (μ : Fin t.rank → ℤ) i := by
-  exact (t.scChevalleyDatum ht).weightLatticeBasis_repr_of_coe_weightLatticeBasis
-    (t.coe_scChevalleyDatum_weightLatticeBasis ht) μ i
+  exact Submodule.basisFunOfEqTop_repr _ (t.span_range_scWeight_eq_top ht) μ i
 
 /-- The torus coordinates of the full-weight datum are the original fundamental-weight
 coordinates: no lattice-index correction is needed. -/

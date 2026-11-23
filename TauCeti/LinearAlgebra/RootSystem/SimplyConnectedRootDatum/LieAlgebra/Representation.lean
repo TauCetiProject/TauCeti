@@ -8,10 +8,8 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
-import TauCeti.LinearAlgebra.Span.Basic
-import TauCeti.Algebra.Lie.Weights.Basic
-import TauCeti.Algebra.Lie.Weights.Faithful
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Faithful
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
 
 /-!
 # Representations of the pinned Lie algebra
@@ -152,51 +150,15 @@ of the pinned Lie algebra faithful. The vectors need not span the representation
 theorem representation_ι_injective_of_span_range_eq_top
     (hspan : Submodule.span ℚ (Set.range fun a i => (wt a i : ℚ)) = ⊤) :
     Function.Injective fun x : t.lieAlgebra ht =>
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
-  let f := ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-  let := LieRingModule.compLieHom V f
-  let := LieModule.compLieHom V f
-  let b := t.cartanBasis ht
-  let χ := fun a => b.constr ℚ fun i => (wt a i : ℚ)
-  have hweight (a : η) : v a ∈ LieModule.weightSpace V (χ a : t.cartanSubalgebra ht → ℚ) := by
-    apply (b.mem_weightSpace_iff_forall_basis _ _).mpr
-    intro i
-    rw [LieSubalgebra.coe_bracket_of_module, LieRingModule.compLieHom_apply,
-      Module.End.lie_apply, LieHom.comp_apply, AlgHom.toLieHom_apply]
-    simp only [χ, Module.Basis.constr_basis, b, t.coe_cartanBasis ht]
-    exact (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp (hwt a) i
-  have hχ : Submodule.span ℚ (Set.range χ) = ⊤ := by
-    have hrange : Set.range χ = (b.constr ℚ) ''
-        Set.range (fun a i => (wt a i : ℚ)) := Set.range_comp _ _
-    rw [hrange, Submodule.span_image_linearEquiv, hspan, Submodule.map_top, LinearEquiv.range]
-  have : LieModule.IsFaithful ℚ (t.cartanSubalgebra ht) V :=
-    isFaithful_of_mem_weightSpace_of_span_range_eq_top hweight hv hχ
-  have := isFaithful_of_isFaithful_cartanSubalgebra
-    (K := ℚ) (L := t.lieAlgebra ht) (M := V) (H := t.cartanSubalgebra ht)
-  intro x y hxy
-  apply LieModule.ext_of_isFaithful (R := ℚ) V
-  intro w
-  simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, f,
-    LieHom.comp_apply, AlgHom.toLieHom_apply]
-  exact LinearMap.congr_fun hxy w
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x) :=
+  (t.lieBasis ht).representation_ι_injective_of_isCartanWeightVector ρ hv hwt hspan
 
 /-- Integral spanning of the weights of nonzero weight vectors also implies faithfulness. -/
 theorem representation_ι_injective_of_span_int
     (hspan : Submodule.span ℤ (Set.range wt) = ⊤) :
     Function.Injective fun x : t.lieAlgebra ht =>
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
-  apply representation_ι_injective_of_span_range_eq_top ht ρ hwt hv
-  let c : (Fin t.rank → ℤ) →ₗ[ℤ] (Fin t.rank → ℚ) :=
-    LinearMap.pi fun i => (Int.castAddHom ℚ).toIntLinearMap.comp (LinearMap.proj i)
-  have hc : (fun a i => (wt a i : ℚ)) = c ∘ wt := by
-    funext a i
-    rfl
-  rw [hc, ← Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := ℚ) hspan c]
-  apply top_unique
-  rw [← (Pi.basisFun ℚ (Fin t.rank)).span_eq, Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  apply Submodule.subset_span
-  exact ⟨Pi.single i 1, by ext j; simp [c, Pi.single_apply]⟩
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x) :=
+  (t.lieBasis ht).representation_ι_injective_of_isCartanWeightVector_of_span_int ρ hv hwt hspan
 
 end
 

@@ -7,13 +7,16 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Pi
+public import Mathlib.LinearAlgebra.StdBasis
 
 /-!
-# Coordinates of tuples in a finite basis
+# Bases and coordinates for function spaces
 
 A finite basis `b` of `M`, indexed by `ι`, identifies `M` with `ι → R` through
 `Module.Basis.equivFun`. Applying this to each entry of a `J`-indexed tuple and uncurrying
 identifies `J → M` with functions on `J × ι`; the index type `J` need not be finite.
+
+A submodule of `ι → R` equal to the whole space inherits the standard coordinate basis.
 
 ## Main results
 
@@ -21,6 +24,8 @@ identifies `J → M` with functions on `J × ι`; the index type `J` need not be
 * `Module.Basis.piEquivFun_apply`: each coordinate of a tuple is a basis coordinate of an entry.
 * `Module.Basis.repr_piEquivFun_symm_apply`: the tuple with prescribed coordinates has those
   basis coordinates.
+* `Submodule.basisFunOfEqTop`: the standard coordinate basis transported to a submodule
+  equal to the whole function space.
 -/
 
 public section
@@ -47,3 +52,24 @@ noncomputable def piEquivFun (b : Basis ι R M) : (J → M) ≃ₗ[R] (J × ι �
   rwa [LinearEquiv.apply_symm_apply, eq_comm] at h
 
 end Module.Basis
+
+namespace Submodule
+
+variable {ι R : Type*} [Semiring R] [Finite ι] (p : Submodule R (ι → R)) (hp : p = ⊤)
+
+/-- The standard coordinate basis of a finite function space, transported to a submodule equal
+to the whole space. -/
+noncomputable def basisFunOfEqTop : Module.Basis ι R p :=
+  (Pi.basisFun R ι).map (LinearEquiv.ofTop p hp).symm
+
+/-- In the ambient function space, the transported basis vectors are the coordinate vectors. -/
+@[simp] theorem coe_basisFunOfEqTop [DecidableEq ι] (i : ι) :
+    (p.basisFunOfEqTop hp i : ι → R) = Pi.single i 1 := by
+  rw [basisFunOfEqTop, Module.Basis.map_apply, LinearEquiv.coe_ofTop_symm_apply, Pi.basisFun_apply]
+
+/-- Reading coordinates in the transported basis is evaluation in the ambient function space. -/
+@[simp] theorem basisFunOfEqTop_repr (x : p) (i : ι) :
+    (p.basisFunOfEqTop hp).repr x i = (x : ι → R) i := by
+  simp [basisFunOfEqTop, Module.Basis.map_repr, Pi.basisFun_repr]
+
+end Submodule

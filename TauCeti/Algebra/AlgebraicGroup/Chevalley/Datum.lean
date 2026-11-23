@@ -140,27 +140,6 @@ structure ChevalleyDatum (t : DynkinType) (ht : t.Valid) where
 
 namespace ChevalleyDatum
 
-/-- The standard fundamental-weight basis, transported to the lattice spanned by a full-weight
-family. -/
-noncomputable def fullWeightLatticeBasis {η ι : Type*} [Finite ι]
-    {weight : η → ι → ℤ} (hspan : Submodule.span ℤ (Set.range weight) = ⊤) :
-    Module.Basis ι ℤ (Submodule.span ℤ (Set.range weight)) :=
-  (Pi.basisFun ℤ ι).map (LinearEquiv.ofTop _ hspan).symm
-
-/-- The full-weight lattice basis has the standard fundamental-weight coordinates. -/
-@[simp] theorem coe_fullWeightLatticeBasis {η ι : Type*} [Finite ι] [DecidableEq ι]
-    {weight : η → ι → ℤ} (hspan : Submodule.span ℤ (Set.range weight) = ⊤) (i : ι) :
-    (fullWeightLatticeBasis hspan i : ι → ℤ) = Pi.single i 1 := by
-  rw [fullWeightLatticeBasis, Module.Basis.map_apply]
-  simp [Pi.basisFun_apply]
-
-/-- Reading the full-weight lattice basis returns the original coordinates. -/
-@[simp] theorem fullWeightLatticeBasis_repr {η ι : Type*} [Finite ι]
-    {weight : η → ι → ℤ} (hspan : Submodule.span ℤ (Set.range weight) = ⊤)
-    (μ : Submodule.span ℤ (Set.range weight)) (i : ι) :
-    (fullWeightLatticeBasis hspan).repr μ i = (μ : ι → ℤ) i := by
-  simp [fullWeightLatticeBasis, Module.Basis.map_repr, Pi.basisFun_repr]
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 attribute [instance] instAddCommGroup instModule

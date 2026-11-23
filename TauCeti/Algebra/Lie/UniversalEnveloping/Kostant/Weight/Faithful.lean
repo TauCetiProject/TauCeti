@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.Algebra.Lie.Basis.Cartan
 public import Mathlib.Algebra.Lie.Killing
 import TauCeti.Algebra.Lie.Basis.Root
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Lie.Weights.Faithful
 import TauCeti.LinearAlgebra.Span.Basic
 
@@ -17,9 +18,9 @@ import TauCeti.LinearAlgebra.Span.Basic
 
 A representation of a rational Killing Lie algebra with a Lie-algebra basis is faithful if it
 has nonzero weight vectors whose weights span the rational weight space. In particular, integral
-weights spanning the full weight lattice suffice. The Cartan basis reduces this to linear
-combinations of weights; `TauCeti.isFaithful_of_isFaithful_cartanSubalgebra` then gives faithfulness
-on the whole Lie algebra.
+weights spanning the full weight lattice suffice. The Cartan basis identifies the coordinate
+weights with characters, so `TauCeti.isFaithful_of_mem_weightSpace_of_span_range_eq_top` and
+`TauCeti.isFaithful_of_isFaithful_cartanSubalgebra` give faithfulness on the whole Lie algebra.
 -/
 
 public section
@@ -47,31 +48,20 @@ theorem representation_ι_injective_of_isCartanWeightVector
   let action := ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
   let := LieRingModule.compLieHom V action
   let := LieModule.compLieHom V action
-  have hcartan : LieModule.IsFaithful ℚ H V := by
-    rw [LieModule.isFaithful_iff']
-    intro x hx
-    let c := b.cartanBasis.repr x
-    let f := Fintype.linearCombination ℚ (fun i : ι => c i)
-    have hw (a : η) : f (fun i => (wt a i : ℚ)) = 0 := by
-      have h := hx (v a)
-      have heq : (x : L) = ∑ i, c i • b.h i := by
-        simpa only [map_sum, map_smul, LieSubalgebra.coe_incl, coe_cartanBasis] using
-          congrArg H.incl (b.cartanBasis.sum_repr x).symm
-      simp only [LieSubalgebra.coe_bracket_of_module, LieRingModule.compLieHom_apply,
-        Module.End.lie_apply, action, LieHom.comp_apply, AlgHom.toLieHom_apply,
-        heq, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply] at h
-      simp_rw [(TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp (hwt a)] at h
-      simp_rw [smul_smul] at h
-      rw [← Finset.sum_smul, smul_eq_zero] at h
-      have hzero := h.resolve_right (hv a)
-      simpa [f, Fintype.linearCombination_apply, mul_comm] using hzero
-    have hf : f = 0 := LinearMap.ext_on_range hspan hw
-    apply b.cartanBasis.repr.injective
-    ext i
-    have h := DFunLike.congr_fun hf (Pi.single i 1)
-    simpa only [f, Fintype.linearCombination_apply_single, one_smul, LinearMap.zero_apply,
-      c, map_zero, Finsupp.zero_apply] using h
-  have := hcartan
+  let χ := fun a => b.cartanBasis.constr ℚ fun i => (wt a i : ℚ)
+  have hweight (a : η) : v a ∈ LieModule.weightSpace V (χ a : H → ℚ) := by
+    apply (b.cartanBasis.mem_weightSpace_iff_forall_basis _ _).mpr
+    intro i
+    rw [LieSubalgebra.coe_bracket_of_module, LieRingModule.compLieHom_apply,
+      Module.End.lie_apply, LieHom.comp_apply, AlgHom.toLieHom_apply]
+    simp only [χ, Module.Basis.constr_basis, coe_cartanBasis]
+    exact (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp (hwt a) i
+  have hχ : Submodule.span ℚ (Set.range χ) = ⊤ := by
+    have hrange : Set.range χ = (b.cartanBasis.constr ℚ) ''
+        Set.range (fun a i => (wt a i : ℚ)) := Set.range_comp _ _
+    rw [hrange, Submodule.span_image_linearEquiv, hspan, Submodule.map_top, LinearEquiv.range]
+  have : LieModule.IsFaithful ℚ H V :=
+    TauCeti.isFaithful_of_mem_weightSpace_of_span_range_eq_top hweight hv hχ
   have := TauCeti.isFaithful_of_isFaithful_cartanSubalgebra (K := ℚ) (L := L) (M := V) (H := H)
   intro x y hxy
   apply LieModule.IsFaithful.injective_toEnd (R := ℚ) (M := V)
