@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.MvPolynomial
+import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
+import Mathlib.Topology.Algebra.Polynomial
 import Mathlib.Topology.MetricSpace.ProperSpace
 import Mathlib.Topology.Order.Compact
+import TauCeti.Algebra.MvPolynomial.AevalConstX
 import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
 
 /-!
@@ -80,6 +83,11 @@ The two main results are the following.
   the polynomial polyhedron neighbourhoods can be cut out by nonconstant polynomials.
 * `TauCeti.interior_setOfPred_norm_eval_le`: the interior of `{|p| ≤ c}` is `{|p| < c}` for a
   nonconstant polynomial `p`.
+* `TauCeti.isPolynomiallyConvex_range_const` and
+  `TauCeti.polynomialHull_image_const_of_not_isBounded`: the diagonal `range (Function.const ι)`
+  is polynomially convex and equals the polynomial hull of `Function.const ι '' K` for every
+  unbounded `K ⊆ ℂ` (in particular, all of `ι → ℂ` for `[Subsingleton ι]` and the real axis,
+  `TauCeti.polynomialHull_image_const_range_ofReal`).
 
 ## References
 
@@ -390,8 +398,8 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
   -- of modulus `< 1` on `K`; finitely many of these separators cover it.
   set S := {p : MvPolynomial ι ℂ // ∀ w ∈ K, ‖eval w p‖ < 1}
   obtain ⟨t, ht⟩ := (isCompact_closedBall (0 : ι → ℂ) R).diff hU |>.elim_finite_subcover
-    (fun p : S ↦ {w | 1 < ‖eval w p.1‖})
-    (fun p ↦ isOpen_lt continuous_const (continuous_eval p.1).norm)
+    (fun p : S ↦ {w | 1 < ‖eval w p.val‖})
+    (fun p ↦ isOpen_lt continuous_const (continuous_eval p.val).norm)
     (fun ζ hζ ↦ by
       obtain ⟨p, hpK, hpζ⟩ := hKc.exists_norm_eval_lt_one_lt fun h ↦ hζ.2 (hKU h)
       exact mem_iUnion.2 ⟨⟨p, hpK⟩, hpζ⟩)
@@ -399,11 +407,11 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
   · exact ball_subset_ball (le_max_left _ _) (hR₀ hw)
   · simp only [Finset.mem_map, Function.Embedding.coe_subtype, mem_iInter]
     rintro _ ⟨p, -, rfl⟩
-    exact p.2 w hw
+    exact p.property w hw
   · rintro w ⟨hwR, hws⟩
     by_contra hwU
     obtain ⟨p, hpt, hpw⟩ := mem_iUnion₂.1 (ht ⟨hwR, hwU⟩)
-    have hpw' := mem_iInter₂.1 hws p.1 (Finset.mem_map_of_mem _ hpt)
+    have hpw' := mem_iInter₂.1 hws p.val (Finset.mem_map_of_mem _ hpt)
     simp only [mem_ofPred_eq] at hpw hpw'
     linarith
 
@@ -442,5 +450,71 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset_of_nonempty [Fin
     rw [totalDegree_eq_zero_iff_eq_C.1 hpd, eval_C] at hpk ⊢
     exact hpk.le
   · exact hw.2 p (Finset.mem_filter.2 ⟨hp, hpd⟩)
+
+/-- For any index type `ι`, the diagonal `range (Function.const ι)` is polynomially convex. -/
+theorem isPolynomiallyConvex_range_const :
+    IsPolynomiallyConvex (range (Function.const ι : ℂ → ι → ℂ)) := by
+  intro u hu
+  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
+  · exact ⟨0, Subsingleton.elim _ _⟩
+  · refine ⟨u i₀, funext fun i ↦ ?_⟩
+    have h0 : ‖eval u (X i - X i₀)‖ ≤ 0 :=
+      mem_polynomialHull_iff.mp hu _ 0 (by rintro _ ⟨_, rfl⟩; simp)
+    exact (sub_eq_zero.mp (norm_le_zero_iff.mp (by simpa using h0))).symm
+
+/-- For any index type `ι` and any `K ⊆ ℂ`, the polynomial hull of the diagonal image
+`Function.const ι '' K` lies in the diagonal `range (Function.const ι)`. -/
+theorem polynomialHull_image_const_subset_range (K : Set ℂ) :
+    polynomialHull (Function.const ι '' K) ⊆ range (Function.const ι) :=
+  (polynomialHull_mono (image_subset_range _ K)).trans isPolynomiallyConvex_range_const
+
+/-- For any index type `ι` and any unbounded `K ⊆ ℂ`, the polynomial hull of the diagonal image
+`Function.const ι '' K` is the entire diagonal `range (Function.const ι)`. -/
+theorem polynomialHull_image_const_of_not_isBounded {K : Set ℂ} (hK : ¬ Bornology.IsBounded K) :
+    polynomialHull (Function.const ι '' K) = range (Function.const ι) := by
+  refine (polynomialHull_image_const_subset_range K).antisymm ?_
+  rintro _ ⟨w₀, rfl⟩
+  rw [mem_polynomialHull_iff]
+  intro p c hc
+  rw [← MvPolynomial.eval_aeval_const_X]
+  set q : Polynomial ℂ := aeval (Function.const ι Polynomial.X) p
+  have hq_le : ∀ w ∈ K, ‖q.eval w‖ ≤ c := fun w hw ↦ by
+    simpa only [q, MvPolynomial.eval_aeval_const_X] using hc _ (mem_image_of_mem _ hw)
+  have hdeg : q.degree ≤ 0 := by
+    by_contra hlt
+    rw [not_le] at hlt
+    have htend : Tendsto (fun w : ℂ ↦ ‖q.eval w‖) (Bornology.cobounded ℂ) atTop :=
+      q.tendsto_norm_atTop hlt tendsto_norm_cobounded_atTop
+    have hbd : Bornology.IsBounded {w : ℂ | ‖q.eval w‖ ≤ c} := by
+      rw [← compl_compl {w : ℂ | ‖q.eval w‖ ≤ c}, Bornology.isBounded_compl_iff]
+      filter_upwards [htend.eventually_gt_atTop c] with w hw
+      exact not_le.mpr hw
+    exact hK (hbd.subset hq_le)
+  obtain ⟨w₁, hw₁⟩ := Bornology.nonempty_of_not_isBounded hK
+  rw [Polynomial.eq_C_of_degree_le_zero hdeg] at hq_le ⊢
+  simpa using hq_le w₁ hw₁
+
+/-- For a subsingleton index type `ι` (such as `Fin 1`) and any unbounded `K ⊆ ℂ`, the polynomial
+hull of `Function.const ι '' K` is all of `ι → ℂ`. -/
+theorem polynomialHull_image_const_eq_univ_of_not_isBounded [Subsingleton ι] {K : Set ℂ}
+    (hK : ¬ Bornology.IsBounded K) :
+    polynomialHull (Function.const ι '' K) = univ := by
+  rw [polynomialHull_image_const_of_not_isBounded hK, eq_univ_iff_forall]
+  intro u
+  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
+  · exact ⟨0, Subsingleton.elim _ _⟩
+  · exact ⟨u i₀, funext fun i ↦ congrArg u (Subsingleton.elim i₀ i)⟩
+
+/-- For a subsingleton index type `ι` (such as `Fin 1`), the polynomial hull of the real axis
+`Function.const ι '' range Complex.ofReal` is all of `ι → ℂ`. -/
+@[simp]
+theorem polynomialHull_image_const_range_ofReal [Subsingleton ι] :
+    polynomialHull (Function.const ι '' range Complex.ofReal) = univ := by
+  refine polynomialHull_image_const_eq_univ_of_not_isBounded fun hbd ↦ ?_
+  obtain ⟨r, hr⟩ := hbd.subset_closedBall 0
+  obtain ⟨n, hn⟩ := exists_nat_gt r
+  have hle : (n : ℝ) ≤ r := by
+    simpa [mem_closedBall_zero_iff] using hr ⟨(n : ℝ), rfl⟩
+  exact hn.not_ge hle
 
 end TauCeti

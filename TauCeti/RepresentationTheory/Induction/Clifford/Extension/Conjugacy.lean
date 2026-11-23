@@ -41,19 +41,19 @@ variable {k : Type u} {G : Type v} [Field k] [Group G]
 
 private theorem mk_eq_splitting_iff (s : (groupExtension A).Splitting)
     (p : implementers A) :
-    (QuotientGroup.mk p : Carrier A) = s (QuotientGroup.mk p.1.1) ↔
-      ∀ x, p.1.2 x = representationOfSplitting A s p.1.1 x := by
+    (QuotientGroup.mk p : Carrier A) = s (QuotientGroup.mk p.val.1) ↔
+      ∀ x, p.val.2 x = representationOfSplitting A s p.val.1 x := by
   conv_lhs => rw [← splittingOfRepresentation_representationOfSplitting A s]
   exact mk_eq_splittingOfRepresentation_iff A _ _ p
 
 private theorem exists_implementer_splitting (s : (groupExtension A).Splitting)
     (g : inertia A) :
-    ∃ p : implementers A, p.1.1 = g ∧
+    ∃ p : implementers A, p.val.1 = g ∧
       (QuotientGroup.mk p : Carrier A) = s (QuotientGroup.mk g) ∧
-      ∀ x, p.1.2 x = representationOfSplitting A s g x := by
+      ∀ x, p.val.2 x = representationOfSplitting A s g x := by
   obtain ⟨p, ⟨hp, hc⟩, _⟩ := existsUnique_implementer A g (s (QuotientGroup.mk g))
     (by simpa only [groupExtension_rightHom] using (s.rightHom_splitting _).symm)
-  have hp' : p.1.1 = g := by simpa only [projection_apply] using hp
+  have hp' : p.val.1 = g := by simpa only [projection_apply] using hp
   exact ⟨p, hp', hc, fun x => by
     rw [← hp']
     exact (mk_eq_splitting_iff A s p).mp (by simpa only [hp'] using hc) x⟩
@@ -69,12 +69,12 @@ theorem clifford_splitting_eq_conj_iff (s t : (groupExtension A).Splitting) (d :
   · intro h g x
     obtain ⟨p, hp, hc, hρ⟩ := exists_implementer_splitting A t g
     let p' := kernelLift A d * p * (kernelLift A d)⁻¹
-    have hp' : p'.1.1 = g := by simp [p', hp]
-    have hc' : (QuotientGroup.mk p' : Carrier A) = s (QuotientGroup.mk p'.1.1) := by
+    have hp' : p'.val.1 = g := by simp [p', hp]
+    have hc' : (QuotientGroup.mk p' : Carrier A) = s (QuotientGroup.mk p'.val.1) := by
       rw [hp', h]
       simp only [p', QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← inl_apply, hc]
       rfl
-    have hv := (mk_eq_splitting_iff A s p').mp hc' ((kernelLift A d).1.2 x)
+    have hv := (mk_eq_splitting_iff A s p').mp hc' ((kernelLift A d).val.2 x)
     -- Multiplication of implementing pairs composes their linear equivalences.
     rw [hp'] at hv
     simp only [p', Subgroup.coe_mul, Subgroup.coe_inv, Prod.snd_mul, Prod.snd_inv,
@@ -84,11 +84,11 @@ theorem clifford_splitting_eq_conj_iff (s t : (groupExtension A).Splitting) (d :
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
     obtain ⟨p, hp, hc, hρ⟩ := exists_implementer_splitting A t g
     let p' := kernelLift A d * p * (kernelLift A d)⁻¹
-    have hp' : p'.1.1 = g := by simp [p', hp]
-    have hc' : (QuotientGroup.mk p' : Carrier A) = s (QuotientGroup.mk p'.1.1) := by
+    have hp' : p'.val.1 = g := by simp [p', hp]
+    have hc' : (QuotientGroup.mk p' : Carrier A) = s (QuotientGroup.mk p'.val.1) := by
       apply (mk_eq_splitting_iff A s p').mpr
       intro x
-      have hv := h g ((kernelLift A d).1.2.symm x)
+      have hv := h g ((kernelLift A d).val.2.symm x)
       rw [hp']
       simp only [p', Subgroup.coe_mul, Subgroup.coe_inv, Prod.snd_mul, Prod.snd_inv,
         mul_apply_eq_comp, LinearEquiv.coe_inv]
@@ -109,7 +109,7 @@ theorem clifford_isConj_iff_nonempty_iso (s t : (groupExtension A).Splitting) :
   simp only [← kernelLift_snd_apply]
   constructor
   · rintro ⟨d, hd⟩
-    exact ⟨(Representation.Equiv.mk (kernelLift A d).1.2
+    exact ⟨(Representation.Equiv.mk (kernelLift A d).val.2
       (fun g => LinearMap.ext (fun x => (hd g x).symm))).symm⟩
   · rintro ⟨e⟩
     let f := e.symm

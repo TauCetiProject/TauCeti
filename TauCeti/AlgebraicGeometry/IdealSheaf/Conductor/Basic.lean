@@ -79,7 +79,7 @@ private theorem map_conductor_basicOpen (U : Y.affineOpens) (g : Γ(Y, U)) :
       TauCeti.Algebra.conductor Γ(Y, Y.basicOpen g) Γ(X, f ⁻¹ᵁ Y.basicOpen g) := by
   let := (f.app U).hom.toAlgebra
   let := (f.app (Y.basicOpen g)).hom.toAlgebra
-  have hle : f ⁻¹ᵁ Y.basicOpen g ≤ f ⁻¹ᵁ U.1 := f.preimage_mono (Y.basicOpen_le g)
+  have hle : f ⁻¹ᵁ Y.basicOpen g ≤ f ⁻¹ᵁ U.val := f.preimage_mono (Y.basicOpen_le g)
   let : Algebra Γ(X, f ⁻¹ᵁ U) Γ(X, f ⁻¹ᵁ Y.basicOpen g) :=
     (X.presheaf.map (homOfLE hle).op).hom.toAlgebra
   let : Algebra Γ(Y, U) Γ(X, f ⁻¹ᵁ Y.basicOpen g) :=
@@ -90,12 +90,12 @@ private theorem map_conductor_basicOpen (U : Y.affineOpens) (g : Γ(Y, U)) :
     .of_algebraMap_eq' (by
       simp only [RingHom.algebraMap_toAlgebra, ← CommRingCat.hom_comp, Scheme.Hom.naturality]
       rfl)
-  have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := IsFinite.finite_app f U U.2
-  have := U.2.isLocalization_basicOpen g
+  have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := IsFinite.finite_app f U U.property
+  have := U.property.isLocalization_basicOpen g
   -- `Γ(X, f⁻¹ D(g)) = Γ(X, D(f g))` is the localization of `Γ(X, f⁻¹ U)` at the image of `g`.
   have : IsLocalization.Away (algebraMap Γ(Y, U) Γ(X, f ⁻¹ᵁ U) g)
       Γ(X, f ⁻¹ᵁ Y.basicOpen g) :=
-    (U.2.preimage f).isLocalization_of_eq_basicOpen _ (homOfLE hle) (f.preimage_basicOpen g)
+    (U.property.preimage f).isLocalization_of_eq_basicOpen _ (homOfLE hle) (f.preimage_basicOpen g)
   have : IsLocalization (Algebra.algebraMapSubmonoid Γ(X, f ⁻¹ᵁ U) (.powers g))
       Γ(X, f ⁻¹ᵁ Y.basicOpen g) := by
     rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers]
@@ -154,7 +154,7 @@ theorem conductor_eq_top_iff : f.conductor = ⊤ ↔ IsClosedImmersion f := by
   rw [isClosedImmersion_iff_isAffineHom, and_iff_right (inferInstance : IsAffineHom f),
     Scheme.IdealSheafData.ext_iff, funext_iff]
   simp only [Scheme.IdealSheafData.ideal_top, Pi.top_apply, conductor_ideal_eq_top_iff]
-  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U U.2⟩
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U U.property⟩
 
 /-- The conductor of a closed immersion is the unit ideal sheaf. -/
 @[simp]
@@ -166,7 +166,7 @@ conductor of `f` exactly when it has an affine neighbourhood `U` over which
 `Γ(Y, U) → Γ(X, f⁻¹ U)` is surjective. -/
 theorem notMem_support_conductor_iff {y : Y} :
     y ∉ f.conductor.support ↔
-      ∃ U : Y.affineOpens, y ∈ U.1 ∧ Function.Surjective (f.app U) := by
+      ∃ U : Y.affineOpens, y ∈ U.val ∧ Function.Surjective (f.app U) := by
   refine ⟨fun hy ↦ ?_, fun ⟨U, hyU, hU⟩ ↦ ?_⟩
   · obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ := Y.isBasis_affineOpens.exists_subset_of_mem_open
       (Set.mem_univ y) isOpen_univ

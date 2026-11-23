@@ -148,9 +148,9 @@ theorem differentExponent_restrict_add (P₂ : Place k₂ F₂) :
     intro c
     exact P₂.mem_integers_of_isIntegral
       (fun (a : (P₂.restrict k₀ F₀).integers) ↦
-        (mem_integers_restrict_iff k₀ F₀ P₂ (a : F₀)).mp a.2) <| by
+        (mem_integers_restrict_iff k₀ F₀ P₂ (a : F₀)).mp a.property) <| by
           rw [← restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P₂]
-          exact c.2
+          exact c.property
   let _ : IsScalarTower P₀.integers B F₂ := .of_algebraMap_eq fun x ↦
     IsScalarTower.algebraMap_apply F₀ F₁ F₂ (x : F₀)
   let _ : Algebra B C := (IsIntegralClosure.lift P₀.integers C F₂).toAlgebra

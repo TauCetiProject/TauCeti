@@ -98,7 +98,7 @@ theorem notMem_monomialGroupEven_iff [Nontrivial R] {g : monomialGroup Q v} :
       involute ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
         -((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
   rw [mem_monomialGroupEven_iff]
-  refine ⟨(involute_eq_or_eq_neg_of_mem_monomialGroup g.2).resolve_left, fun h h' ↦ ?_⟩
+  refine ⟨(involute_eq_or_eq_neg_of_mem_monomialGroup g.property).resolve_left, fun h h' ↦ ?_⟩
   -- A unit equal to its negative would make `2` vanish in the Clifford algebra.
   have h2 : (2 : CliffordAlgebra Q) * ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 0 := by
     rw [two_mul]
@@ -160,7 +160,7 @@ theorem span_monomialGroupEven_eq_even (hb : (QuadraticMap.associated Q).IsOrtho
       (even Q).toSubmodule := by
   refine le_antisymm (Submodule.span_le.mpr ?_) fun x hx ↦ ?_
   · rintro _ ⟨g, rfl⟩
-    exact mem_monomialGroupEven_iff_mem_even.mp g.2
+    exact mem_monomialGroupEven_iff_mem_even.mp g.property
   -- Expand `x` in the basis `e_s`; only the terms with `#s` even survive.
   have hx' : involute x = x := involute_eq_of_mem_even (by rwa [← even_toSubmodule])
   rw [← (basis Q b).linearCombination_repr x, Finsupp.linearCombination_apply]

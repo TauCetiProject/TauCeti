@@ -59,7 +59,7 @@ theorem mem_cuspFormsOld_of_forall_prime_heckeRingHomCusp_of_one_eq_zero
       ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) F = c • F)
     (h1 : (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff 1 = 0) :
     (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsOld N k :=
-  mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero F.2 fun n hn ↦
+  mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero F.property fun n hn ↦
     qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_coprime
       dvd_rfl ha h1 n hn
 

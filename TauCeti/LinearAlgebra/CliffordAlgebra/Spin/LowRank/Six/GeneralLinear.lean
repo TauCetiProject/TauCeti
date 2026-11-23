@@ -154,11 +154,7 @@ private theorem evenUnitaryGroupMatrixFirst_inv_coe
     (e : even Q ≃ₐ[K] Matrix n n K × Matrix n n K) (x : evenUnitaryGroup Q) :
     (↑((evenUnitaryGroupMatrixFirst e x)⁻¹) : Matrix n n K) =
       (matrixProdReverse e (e (evenUnitaryGroupEvenPart Q x))).1 := by
-  have h : evenUnitaryGroupEvenPart Q (x⁻¹) = reverseEven Q (evenUnitaryGroupEvenPart Q x) := by
-    apply Subtype.ext
-    simpa only [coe_evenUnitaryGroupEvenPart, coe_reverseEven_apply, Subgroup.coe_inv] using
-      (evenUnitaryGroup.reverse_eq_inv Q x).symm
-  rw [← map_inv, evenUnitaryGroupMatrixFirst_coe, h]
+  rw [← map_inv, evenUnitaryGroupMatrixFirst_coe, ← reverseEven_evenUnitaryGroupEvenPart]
   simp only [matrixProdReverse_apply, e.symm_apply_apply]
 
 private theorem evenUnitaryGroupMatrixFirst_injective
@@ -218,7 +214,7 @@ private def evenUnitaryGroupMatrixLift
       inv := reverseEven Q y
       val_inv := congrArg Subtype.val hy'
       inv_val := congrArg Subtype.val hy }
-  refine ⟨v, (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).mpr ⟨y.2, ?_⟩⟩
+  refine ⟨v, (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).mpr ⟨y.property, ?_⟩⟩
   simpa only [v, coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using
     congrArg Subtype.val hy
 
@@ -405,11 +401,9 @@ local instance hyperbolicSixInvertibleTwo : Invertible (2 : K) :=
 /-- The half-spin matrix-product model of the even Clifford algebra of three hyperbolic planes. -/
 noncomputable def hyperbolicSixEvenEquivMatrixProd :
     even (splitEvenForm K 3) ≃ₐ[K]
-      Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K := by
-  simpa using (splitEvenPolarization K 3).evenCliffordEquivProdMatrix
-    (l := 3)
-    (splitEvenPolarization_W_ne_bot K (by norm_num))
-      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
+      Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K :=
+  (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
+    (splitEvenPolarization_W_ne_bot K (by norm_num)) (finrank_splitEvenSpace K 3)
 
 omit [NeZero (2 : K)] in
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
@@ -417,8 +411,8 @@ theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
         (splitEvenPolarization_W_ne_bot K (by norm_num))
-        (finrank_splitEvenSpace K 3) x := by
-  simp [hyperbolicSixEvenEquivMatrixProd]
+        (finrank_splitEvenSpace K 3) x :=
+  (rfl)
 
 /-- The even unitary group of three hyperbolic planes is the four-dimensional general linear
 group. In particular, specializing `K` to `ℚ` gives the split rational six-dimensional model. -/
