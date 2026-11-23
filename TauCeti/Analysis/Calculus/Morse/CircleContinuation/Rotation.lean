@@ -53,9 +53,10 @@ the circle to tend to the critical points, and a lift of the angle is recovered 
 
 **The examples.** Let `ρ` be `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and let `δ > 0` satisfy
 `2 δ T < π / 12` on the window `[1/6, 5/6]`, where `T = ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt`; this
-holds for instance when `δ < π / 100` (`TauCeti.two_mul_mul_integral_lt_pi_div_twelve`). The
-theorems below say where the trajectories go; when `ρ` is continuous, so are the paths, and the
-trajectories exist by the existence theorems above.
+holds for instance when `δ < π / 100`
+(`TauCeti.two_mul_mul_integral_inv_mul_one_sub_sq_lt_pi_div_twelve`). The theorems below say where
+the trajectories go; when `ρ` is continuous, so are the paths, and the trajectories exist by the
+existence theorems above.
 
 * For the half-turn `r = r₀ + π ρ`, from `f_{r₀}` to the same function `f_{r₀ + π}`, the
   continuation sends each critical point to itself: in fixed spatial bases it is the identity in
@@ -341,7 +342,7 @@ private theorem rotation_eq_right (h1 : ∀ t, 2 / 3 ≤ t → ρ t = 1) (c : �
 /-- **A sufficient smallness condition.** If `δ < π / 100`, then
 `2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`. So the smallness hypothesis of the examples below
 holds for every small enough amplitude. -/
-theorem two_mul_mul_integral_lt_pi_div_twelve {δ : ℝ} (hδ : δ < π / 100) :
+theorem two_mul_mul_integral_inv_mul_one_sub_sq_lt_pi_div_twelve {δ : ℝ} (hδ : δ < π / 100) :
     2 * δ * ∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹ < π / 12 := by
   have hlow : ∀ t ∈ Icc (1 / 6 : ℝ) (5 / 6), 4 / 25 ≤ t * (1 - t ^ 2) := fun t ht ↦ by
     -- `t (1 - t²)` lies above its chord on `[1/6, 5/6]`, which stays above `4 / 25`.
