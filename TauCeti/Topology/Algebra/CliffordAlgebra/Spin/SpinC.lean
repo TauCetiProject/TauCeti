@@ -25,7 +25,9 @@ actual product of the rotation homomorphism and determinant character is a cover
 native coordinate topology on `SO(n)`. Its kernel is `{1, [1, -1]}`. The determinant character
 and rotation map are continuous; compactness of `Spin(n)` makes their surjective product a
 quotient map, and its finite kernel gives the covering. Charge conjugation `[s, z] ↦ [s, z⁻¹]`
-is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`).
+is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`), and the
+homomorphism `[s, z] ↦ [f s, z]` induced by a quadratic isometry `f` is continuous
+(`QuadraticMap.Isometry.continuous_spinCGroupMap`).
 
 For a positive- or negative-definite form on a finite-dimensional real space, `Spinᶜ(Q)` is
 compact (`CliffordAlgebra.spinCGroup.compactSpace_of_posDef_or_negDef`), as a quotient of the
@@ -212,3 +214,23 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
 end spinCGroup
 
 end CliffordAlgebra
+
+namespace QuadraticMap.Isometry
+
+open CliffordAlgebra
+
+variable {M N : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N]
+  {Q : QuadraticForm ℝ M} {P : QuadraticForm ℝ N}
+
+/-- The homomorphism of `Spinᶜ` groups induced by a quadratic isometry, `[s, z] ↦ [f s, z]`, is
+continuous for the quotient topologies. -/
+@[fun_prop]
+theorem continuous_spinCGroupMap (f : Q →qᵢ P) (hQ : Q ≠ 0) (hP : P ≠ 0) :
+    Continuous (f.spinCGroupMap hQ hP) := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
+  simp only [Function.comp_def, ← spinCGroup.mk_apply, spinCGroupMap_mk]
+  simpa only [spinCGroup.coe_mk, Function.comp_def] using
+    (QuotientGroup.isQuotientMap_mk (spinCKernel P hP)).continuous.comp
+      ((f.continuous_spinGroupMap.comp continuous_fst).prodMk continuous_snd)
+
+end QuadraticMap.Isometry
