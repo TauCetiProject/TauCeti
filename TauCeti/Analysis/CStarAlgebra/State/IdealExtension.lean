@@ -16,36 +16,41 @@ import TauCeti.Analysis.CStarAlgebra.State.Extension
 
 Let `I` be a closed two-sided ideal of a possibly nonunital C⋆-algebra `A`, a nonunital
 C⋆-algebra in its own right (`TwoSidedIdeal.nonUnitalCStarAlgebra`) with the order induced from
-`A`. Every tracial state `τ` of `I` extends uniquely to a state `γ` of `A`, the extension is
-tracial, and `γ(a) = lim_e τ(eae)` along every increasing approximate unit `e` of `I`.
+`A` (`TwoSidedIdeal.instStarOrderedRingOfIsClosed`). Every state `τ` of `I` extends uniquely to a
+state `γ` of `A`, `γ(a) = lim_e τ(eae)` along every increasing approximate unit `e` of `I`, and
+the extension of a tracial state is tracial. The extension formula, uniqueness and existence are
+first proved along a star homomorphism `f : B → A` of C⋆-algebras, and specialized to the
+inclusion of `I`.
 
 ## Main declarations
 
-* `TwoSidedIdeal.instStarOrderedRingOfIsClosed`: the order of `A` restricted to a closed ideal `I`
-  is the C⋆-algebra order of `I`.
 * `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_sq_le`: for a positive functional `γ` and
   a positive contraction `e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`, with the left and
   two-sided variants `norm_apply_sub_apply_mul_left_sq_le` and `norm_apply_sub_apply_mul_mul_le`.
-* `PositiveContinuousLinearMap.tendsto_apply_mul_mul_of_apply_coe_eq`: a functional `γ` of norm at
-  most one restricting to a state `τ` of `I` satisfies `γ(a) = lim_e τ(eae)` along every increasing
-  approximate unit of `I`.
-* `PositiveContinuousLinearMap.eq_of_apply_coe_eq`: uniqueness of the extension.
-* `PositiveContinuousLinearMap.exists_apply_coe_eq`: every state of `I` extends to a state of `A`.
+* `PositiveContinuousLinearMap.tendsto_apply_map_mul_mul_map`: a positive functional `γ` with
+  `‖γ‖ ≤ ‖τ‖` restricting along `f` to `τ` satisfies `γ(a) = lim_e γ(f(e) a f(e))` along every
+  increasing approximate unit of `B`; `tendsto_apply_mul_mul_of_apply_coe_eq` and
+  `tendsto_apply_mul_mul_of_apply_coe_eq'` are the ideal versions, the latter written with `τ`.
+* `PositiveContinuousLinearMap.eq_of_apply_map_eq` and `eq_of_apply_coe_eq`: uniqueness of the
+  extension, when the range of `f` absorbs `f(b) a f(b)`, and for a closed ideal.
+* `PositiveContinuousLinearMap.exists_apply_map_eq` and `exists_apply_coe_eq`: a state extends
+  along an injective star homomorphism, and from a closed ideal.
+* `PositiveContinuousLinearMap.existsUnique_apply_coe_eq`: a state of `I` has exactly one
+  extension to a state of `A`.
 * `PositiveContinuousLinearMap.isTracialState_of_apply_coe_eq`: the extension of a tracial state
   is tracial.
-* `PositiveContinuousLinearMap.IsTracialState.existsUnique_apply_coe_eq` and
-  `PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq`: a
-  tracial state of `I` has exactly one extension to a state of `A`, and it is tracial.
+* `PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq`: a
+  tracial state of `I` extends uniquely to a tracial state of `A`.
 
 ## Implementation notes
 
 Existence comes from extending the unitization `τ⁺¹` of `τ` along the injective unital
-star homomorphism `I⁺¹ → A⁺¹` (`TauCeti.surjOn_pullbackFunctional_stateSpace`) and restricting to
+star homomorphism `B⁺¹ → A⁺¹` (`TauCeti.surjOn_pullbackFunctional_stateSpace`) and restricting to
 `A`. The rest rests on one estimate: for a positive functional `γ` and a positive contraction `e`,
 the Cauchy–Schwarz inequality for the extension of `γ` to `A⁺¹` and `(1 - e)² ≤ 1 - e` give
 `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`. Along an increasing approximate unit of `I`,
-`τ e → ‖τ‖ = 1`, so `γ(a) = lim_e γ(eae) = lim_e τ(eae)` for every extension `γ` of norm at most
-one, which gives uniqueness. Traciality follows from the polarization criterion: for `a ∈ A`,
+`τ e → ‖τ‖`, so `γ(a) = lim_e γ(eae) = lim_e τ(eae)` for every extension `γ` of norm at most
+`‖τ‖`, which gives uniqueness. Traciality follows from the polarization criterion: for `a ∈ A`,
 `γ(a a⋆) = lim_e τ((ea)(ea)⋆) = lim_e τ((ea)⋆(ea)) = lim_e γ(a⋆ e² a) ≤ γ(a⋆ a)`, using only the
 traciality of `τ` on `I`, and the reverse inequality is the same statement for `a⋆`. This argument
 replaces the GNS construction of Brown's proof and uses no von Neumann algebra.
@@ -60,34 +65,6 @@ public section
 
 open Filter Topology
 open scoped ComplexOrder
-
-namespace TwoSidedIdeal
-
-/-- A two-sided ideal contains `x a x` for every `x` in it. -/
-theorem mul_mul_mem {R : Type*} [NonUnitalNonAssocRing R] (I : TwoSidedIdeal R) {x : R}
-    (hx : x ∈ I) (a : R) : x * a * x ∈ I :=
-  I.mul_mem_right _ _ (I.mul_mem_right _ _ hx)
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-
-/-- The order of a C⋆-algebra restricted to a closed two-sided ideal `I` is the C⋆-algebra order
-of `I`: a positive element of `A` lying in `I` is `s⋆s` for some `s ∈ I`, namely its square
-root. -/
-instance instStarOrderedRingOfIsClosed : StarOrderedRing I :=
-  .of_nonneg_iff' add_le_add_right fun x ↦ by
-    refine ⟨fun hx ↦ ?_, ?_⟩
-    · have hx' : 0 ≤ (x : A) := hx
-      refine ⟨⟨cfcₙ Real.sqrt (x : A), I.cfcₙ_mem_of_isClosed (𝕜 := ℝ) _ x.property⟩, ?_⟩
-      apply Subtype.ext
-      change (x : A) = star (cfcₙ Real.sqrt (x : A)) * cfcₙ Real.sqrt (x : A)
-      rw [IsSelfAdjoint.star_eq (by cfc_tac), ← cfcₙ_mul ..]
-      convert (cfcₙ_id' ℝ (x : A)).symm using 1
-      exact cfcₙ_congr fun r hr ↦ by grind [Real.mul_self_sqrt]
-    · rintro ⟨s, rfl⟩
-      exact star_mul_self_nonneg (s : A)
-
-end TwoSidedIdeal
 
 namespace PositiveContinuousLinearMap
 
@@ -167,6 +144,87 @@ theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 �
         add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left hey (Real.sqrt_nonneg c)))
     _ = 2 * Real.sqrt c * ‖y‖ := by ring
 
+section Hom
+
+variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [FunLike F B A] [NonUnitalAlgHomClass F ℂ B A] [StarHomClass F B A]
+
+omit [StarOrderedRing A] [StarOrderedRing B] in
+/-- A positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` that restricts along a star homomorphism
+`f : B → A` to a positive functional `τ` of `B` has `‖γ‖ = ‖τ‖`. -/
+theorem norm_eq_of_apply_map_eq (f : F) {τ : B →P[ℂ] ℂ} {γ : A →P[ℂ] ℂ}
+    (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h : ∀ b, γ (f b) = τ b) :
+    ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ := by
+  refine le_antisymm hγ (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun b ↦ ?_)
+  rw [coe_toContinuousLinearMap, ← h b]
+  exact ((γ : A →L[ℂ] ℂ).le_opNorm (f b)).trans
+    (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f b) (norm_nonneg _))
+
+/-- **The extension formula.** If a positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` restricts
+along a star homomorphism `f : B → A` to a positive functional `τ` of `B`, then
+`γ(a) = lim_e γ(f(e) a f(e))` along every increasing approximate unit `e` of `B`. -/
+theorem tendsto_apply_map_mul_mul_map (f : F) {τ : B →P[ℂ] ℂ} {γ : A →P[ℂ] ℂ}
+    (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h : ∀ b, γ (f b) = τ b) {l : Filter B}
+    (hl : l.IsIncreasingApproximateUnit) (a : A) :
+    Tendsto (fun e : B ↦ γ (f e * a * f e)) l (𝓝 (γ a)) := by
+  have hN := norm_eq_of_apply_map_eq f hγ h
+  set N := ‖(τ : B →L[ℂ] ℂ)‖
+  have hlim : Tendsto (fun e : B ↦ 2 * Real.sqrt (N * (N - (τ e).re)) * ‖a‖) l (𝓝 0) := by
+    have hre : Tendsto (fun e : B ↦ (τ e).re) l (𝓝 N) := by
+      simpa [Function.comp_def] using
+        (Complex.continuous_re.tendsto _).comp (τ.tendsto_nhds_opNorm hl)
+    have := ((((hre.const_sub N).const_mul N).sqrt).const_mul 2).mul_const ‖a‖
+    simpa using this
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ hlim
+  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
+  rw [norm_sub_rev, ← hN, ← h e]
+  exact norm_apply_sub_apply_mul_mul_le γ (map_nonneg f he)
+    ((NonUnitalStarAlgHom.norm_apply_le f e).trans he1) a
+
+/-- **Uniqueness of the extension.** Let `f : B → A` be a star homomorphism whose range absorbs
+`f(b) a f(b)` for all `b` and `a` (as for the inclusion of a closed ideal, or of a hereditary
+subalgebra). Two positive functionals `γ₁`, `γ₂` on `A` of norm at most `‖τ‖` that restrict along
+`f` to the same positive functional `τ` of `B` are equal. -/
+theorem eq_of_apply_map_eq (f : F) (hf : ∀ (b : B) (a : A), ∃ c, f c = f b * a * f b)
+    {τ : B →P[ℂ] ℂ} {γ₁ γ₂ : A →P[ℂ] ℂ} (hγ₁ : ‖(γ₁ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖)
+    (hγ₂ : ‖(γ₂ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h₁ : ∀ b, γ₁ (f b) = τ b)
+    (h₂ : ∀ b, γ₂ (f b) = τ b) : γ₁ = γ₂ := by
+  have hl := CStarAlgebra.increasingApproximateUnit (A := B)
+  have := hl.neBot
+  refine ext fun a ↦ tendsto_nhds_unique (tendsto_apply_map_mul_mul_map f hγ₁ h₁ hl a) ?_
+  refine (tendsto_apply_map_mul_mul_map f hγ₂ h₂ hl a).congr fun e ↦ ?_
+  obtain ⟨c, hc⟩ := hf e a
+  rw [← hc, h₁, h₂]
+
+/-- **Existence of the extension.** Every positive functional of norm one on `B` is the
+restriction, along an injective star homomorphism `f : B → A`, of a positive functional of norm
+one on `A`. -/
+theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) {τ : B →P[ℂ] ℂ}
+    (hτ : ‖(τ : B →L[ℂ] ℂ)‖ = 1) :
+    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ b, γ (f b) = τ b := by
+  let g := Unitization.starMap (NonUnitalStarAlgHom.ofClass f)
+  have hτ' : StrongDual.toWeakDual (τ.unitization : Unitization ℂ B →L[ℂ] ℂ) ∈
+      TauCeti.stateSpace (Unitization ℂ B) := by
+    rw [toWeakDual_mem_stateSpace_iff, norm_unitization, hτ]
+  obtain ⟨φ, hφ, hφτ⟩ := TauCeti.surjOn_pullbackFunctional_stateSpace g
+    (Unitization.starMap_injective (φ := NonUnitalStarAlgHom.ofClass f) hf) hτ'
+  obtain ⟨ω, hω1, hωφ⟩ := TauCeti.mem_stateSpace_iff_exists_positiveLinearMap.mp hφ
+  let γ : A →P[ℂ] ℂ := (ofClass ω).comp (.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A))
+  have hγ : ∀ b, γ (f b) = τ b := fun b ↦ by
+    have h1 := DFunLike.congr_fun hφτ (b : Unitization ℂ B)
+    have h2 := DFunLike.congr_fun hωφ (g (b : Unitization ℂ B))
+    simp only [TauCeti.pullbackFunctional_apply, StrongDual.toWeakDual_apply] at h1 h2
+    rw [← h2] at h1
+    simpa [γ, g] using h1
+  refine ⟨γ, (norm_eq_of_apply_map_eq f ?_ hγ).trans hτ, hγ⟩
+  refine hτ ▸ ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a ↦ ?_
+  have := (ofClass ω : Unitization ℂ A →L[ℂ] ℂ).le_opNorm (a : Unitization ℂ A)
+  rw [hω1, Unitization.norm_inr] at this
+  simpa [γ] using this
+
+end Hom
+
 section Ideal
 
 variable {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
@@ -176,77 +234,54 @@ omit [StarOrderedRing A] in
 norm one. -/
 theorem norm_eq_one_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1)
     {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ 1) (h : ∀ c : I, γ c = τ c) :
-    ‖(γ : A →L[ℂ] ℂ)‖ = 1 := by
-  refine le_antisymm hγ (hτ ▸ ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun c ↦ ?_)
-  change ‖τ c‖ ≤ ‖(γ : A →L[ℂ] ℂ)‖ * ‖(c : A)‖
-  rw [← h c]
-  exact (γ : A →L[ℂ] ℂ).le_opNorm (c : A)
+    ‖(γ : A →L[ℂ] ℂ)‖ = 1 :=
+  hτ ▸ norm_eq_of_apply_map_eq I.starAlgHom (hτ ▸ hγ) (by simpa using h)
 
-/-- **The extension formula.** If `γ` is a positive functional of norm at most one on `A` that
-restricts to a functional `τ` of norm one on a closed ideal `I`, then `γ(a) = lim_e γ(eae)` along
-every increasing approximate unit `e` of `I`. See `tendsto_apply_mul_mul_of_apply_coe_eq'` for the
-same limit written with `τ`. -/
-theorem tendsto_apply_mul_mul_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1)
-    {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ 1) (h : ∀ c : I, γ c = τ c) {l : Filter I}
-    (hl : l.IsIncreasingApproximateUnit) (a : A) :
+/-- **The extension formula** for a closed ideal: if `γ` is a positive functional of norm at most
+`‖τ‖` on `A` that restricts to a positive functional `τ` of a closed ideal `I`, then
+`γ(a) = lim_e γ(eae)` along every increasing approximate unit `e` of `I`. See
+`tendsto_apply_mul_mul_of_apply_coe_eq'` for the same limit written with `τ`. -/
+theorem tendsto_apply_mul_mul_of_apply_coe_eq {τ : I →P[ℂ] ℂ}
+    {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (h : ∀ c : I, γ c = τ c)
+    {l : Filter I} (hl : l.IsIncreasingApproximateUnit) (a : A) :
     Tendsto (fun e : I ↦ γ ((e : A) * a * e)) l (𝓝 (γ a)) := by
-  have hN := norm_eq_one_of_apply_coe_eq hτ hγ h
-  have hlim : Tendsto (fun e : I ↦ 2 * Real.sqrt (1 * (1 - (τ e).re)) * ‖a‖) l (𝓝 0) := by
-    have hre : Tendsto (fun e : I ↦ (τ e).re) l (𝓝 1) := by
-      have := (Complex.continuous_re.tendsto _).comp (τ.tendsto_nhds_opNorm hl)
-      rw [hτ] at this
-      simpa [Function.comp_def] using this
-    have := ((((hre.const_sub 1).const_mul 1).sqrt).const_mul 2).mul_const ‖a‖
-    simpa using this
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ hlim
-  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
-  rw [norm_sub_rev, ← hN, ← h e]
-  exact norm_apply_sub_apply_mul_mul_le γ (e := (e : A)) he he1 a
+  simpa [TwoSidedIdeal.starAlgHom_apply] using
+    tendsto_apply_map_mul_mul_map I.starAlgHom hγ (by simpa using h) hl a
 
-/-- **The extension formula**, written with `τ`: `γ(a) = lim_e τ(eae)` along every increasing
-approximate unit `e` of `I`. -/
-theorem tendsto_apply_mul_mul_of_apply_coe_eq' {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1)
-    {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ 1) (h : ∀ c : I, γ c = τ c) {l : Filter I}
-    (hl : l.IsIncreasingApproximateUnit) (a : A) :
-    Tendsto (fun e : I ↦ τ ⟨(e : A) * a * e, I.mul_mul_mem e.property a⟩) l (𝓝 (γ a)) :=
-  (tendsto_apply_mul_mul_of_apply_coe_eq hτ hγ h hl a).congr fun e ↦
-    h ⟨_, I.mul_mul_mem e.property a⟩
+/-- **The extension formula** for a closed ideal, written with `τ`: `γ(a) = lim_e τ(eae)` along
+every increasing approximate unit `e` of `I`. -/
+theorem tendsto_apply_mul_mul_of_apply_coe_eq' {τ : I →P[ℂ] ℂ}
+    {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (h : ∀ c : I, γ c = τ c)
+    {l : Filter I} (hl : l.IsIncreasingApproximateUnit) (a : A) :
+    Tendsto (fun e : I ↦ τ ⟨(e : A) * a * e, I.mul_mem_right _ _ (I.mul_mem_right _ _ e.property)⟩)
+      l (𝓝 (γ a)) :=
+  (tendsto_apply_mul_mul_of_apply_coe_eq hγ h hl a).congr fun e ↦
+    h ⟨_, I.mul_mem_right _ _ (I.mul_mem_right _ _ e.property)⟩
 
-/-- **Uniqueness of the extension.** Two positive functionals of norm at most one on `A` that
-restrict to the same functional of norm one on a closed ideal are equal. -/
-theorem eq_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1) {γ₁ γ₂ : A →P[ℂ] ℂ}
-    (hγ₁ : ‖(γ₁ : A →L[ℂ] ℂ)‖ ≤ 1) (hγ₂ : ‖(γ₂ : A →L[ℂ] ℂ)‖ ≤ 1) (h₁ : ∀ c : I, γ₁ c = τ c)
-    (h₂ : ∀ c : I, γ₂ c = τ c) : γ₁ = γ₂ := by
-  have hl := CStarAlgebra.increasingApproximateUnit (A := I)
-  have := hl.neBot
-  exact ext fun a ↦ tendsto_nhds_unique (tendsto_apply_mul_mul_of_apply_coe_eq' hτ hγ₁ h₁ hl a)
-    (tendsto_apply_mul_mul_of_apply_coe_eq' hτ hγ₂ h₂ hl a)
+/-- **Uniqueness of the extension** from a closed ideal: two positive functionals of norm at most
+`‖τ‖` on `A` that restrict to the same positive functional `τ` of a closed ideal are equal. -/
+theorem eq_of_apply_coe_eq {τ : I →P[ℂ] ℂ} {γ₁ γ₂ : A →P[ℂ] ℂ}
+    (hγ₁ : ‖(γ₁ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖) (hγ₂ : ‖(γ₂ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : I →L[ℂ] ℂ)‖)
+    (h₁ : ∀ c : I, γ₁ c = τ c) (h₂ : ∀ c : I, γ₂ c = τ c) : γ₁ = γ₂ :=
+  eq_of_apply_map_eq I.starAlgHom
+    (fun e a ↦ ⟨⟨(e : A) * a * e, I.mul_mem_right _ _ (I.mul_mem_right _ _ e.property)⟩,
+      by simp [TwoSidedIdeal.starAlgHom_apply]⟩) hγ₁ hγ₂
+    (by simpa using h₁) (by simpa using h₂)
 
-/-- **Existence of the extension.** Every positive functional of norm one on a closed ideal `I` of
-`A` is the restriction of a positive functional of norm one on `A`. -/
+/-- **Existence of the extension** from a closed ideal: every positive functional of norm one on a
+closed ideal `I` of `A` is the restriction of a positive functional of norm one on `A`. -/
 theorem exists_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1) :
     ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ c : I, γ c = τ c := by
-  let f := Unitization.starMap I.starAlgHom
-  have hτ' : StrongDual.toWeakDual (τ.unitization : Unitization ℂ I →L[ℂ] ℂ) ∈
-      TauCeti.stateSpace (Unitization ℂ I) := by
-    rw [toWeakDual_mem_stateSpace_iff, norm_unitization, hτ]
-  obtain ⟨φ, hφ, hφτ⟩ := TauCeti.surjOn_pullbackFunctional_stateSpace f
-    (Unitization.starMap_injective I.starAlgHom_injective) hτ'
-  obtain ⟨ω, hω1, hωφ⟩ := TauCeti.mem_stateSpace_iff_exists_positiveLinearMap.mp hφ
-  let γ : A →P[ℂ] ℂ := (ofClass ω).comp (.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A))
-  have hγ : ∀ c : I, γ c = τ c := fun c ↦ by
-    have h1 := DFunLike.congr_fun hφτ (c : Unitization ℂ I)
-    have h2 := DFunLike.congr_fun hωφ (f (c : Unitization ℂ I))
-    simp only [TauCeti.pullbackFunctional_apply, StrongDual.toWeakDual_apply] at h1 h2
-    rw [← h2] at h1
-    simpa [γ, f] using h1
-  refine ⟨γ, norm_eq_one_of_apply_coe_eq hτ ?_ hγ, hγ⟩
-  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a ↦ ?_
-  have := (ofClass ω : Unitization ℂ A →L[ℂ] ℂ).le_opNorm (a : Unitization ℂ A)
-  rw [hω1, one_mul, Unitization.norm_inr] at this
-  change ‖(ofClass ω : Unitization ℂ A →L[ℂ] ℂ) (a : Unitization ℂ A)‖ ≤ 1 * ‖a‖
-  rwa [one_mul]
+  simpa using exists_apply_map_eq I.starAlgHom I.starAlgHom_injective hτ
+
+/-- **Extension of states from closed ideals.** A state `τ` of a closed ideal `I` of `A` is the
+restriction of exactly one state of `A`, given by `lim_e τ(eae)` along every increasing
+approximate unit of `I` (`tendsto_apply_mul_mul_of_apply_coe_eq'`). -/
+theorem existsUnique_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1) :
+    ∃! γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ c : I, γ c = τ c := by
+  obtain ⟨γ, hγ, h⟩ := exists_apply_coe_eq hτ
+  exact ⟨γ, ⟨hγ, h⟩, fun γ' ⟨hγ', h'⟩ ↦
+    eq_of_apply_coe_eq (hγ'.trans hτ.symm).le (hγ.trans hτ.symm).le h' h⟩
 
 /-- **The extension of a tracial state is tracial.** If a positive functional `γ` of norm at most
 one on `A` restricts to a tracial state of a closed ideal `I`, then `γ` is a tracial state. Only
@@ -261,7 +296,7 @@ theorem isTracialState_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracia
   -- `Re γ(a a⋆) ≤ Re γ(a⋆ a)`
   have hle : ∀ a : A, (γ (a * star a)).re ≤ (γ (star a * a)).re := fun a ↦ by
     have hlim := (Complex.continuous_re.tendsto _).comp
-      (tendsto_apply_mul_mul_of_apply_coe_eq hτ1 hγ h hl (a * star a))
+      (tendsto_apply_mul_mul_of_apply_coe_eq (hγ.trans hτ1.ge) h hl (a * star a))
     refine le_of_tendsto hlim ?_
     filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
     have he' : 0 ≤ (e : A) := he
@@ -269,11 +304,11 @@ theorem isTracialState_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracia
     let x : I := ⟨(e : A) * a, I.mul_mem_right _ _ e.property⟩
     have hx : γ ((e : A) * (a * star a) * e) = γ (star a * ((e : A) * e) * a) := by
       have h1 : (e : A) * (a * star a) * e = ((x * star x : I) : A) := by
-        change _ = (e : A) * a * star ((e : A) * a)
-        rw [star_mul, he'.star_eq]; noncomm_ring
+        simp only [MulMemClass.coe_mul, TwoSidedIdeal.coe_star, x, star_mul, he'.star_eq]
+        noncomm_ring
       have h2 : star a * ((e : A) * e) * a = ((star x * x : I) : A) := by
-        change _ = star ((e : A) * a) * ((e : A) * a)
-        rw [star_mul, he'.star_eq]; noncomm_ring
+        simp only [MulMemClass.coe_mul, TwoSidedIdeal.coe_star, x, star_mul, he'.star_eq]
+        noncomm_ring
       rw [h1, h2, h, h, hτ.map_mul_comm]
     have hee : ‖(e : A) * e‖ ≤ 1 :=
       (norm_mul_le _ _).trans ((mul_le_mul he1' he1' (norm_nonneg _) zero_le_one).trans_eq
@@ -293,21 +328,11 @@ theorem isTracialState_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracia
   · rw [← (Complex.le_def.mp (γ.map_nonneg (star_mul_self_nonneg a))).2,
       ← (Complex.le_def.mp (γ.map_nonneg (mul_star_self_nonneg a))).2]
 
-/-- **Extension of tracial states from closed ideals.** A tracial state `τ` of a closed ideal `I`
-of `A` is the restriction of exactly one state of `A`; that state is tracial
-(`isTracialState_of_apply_coe_eq`) and given by `lim_e τ(eae)` along every increasing approximate
-unit of `I` (`tendsto_apply_mul_mul_of_apply_coe_eq'`). -/
-theorem IsTracialState.existsUnique_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracialState) :
-    ∃! γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ c : I, γ c = τ c := by
-  obtain ⟨γ, hγ, h⟩ := exists_apply_coe_eq hτ.norm_eq_one
-  exact ⟨γ, ⟨hγ, h⟩, fun γ' ⟨hγ', h'⟩ ↦
-    eq_of_apply_coe_eq hτ.norm_eq_one hγ'.le hγ.le h' h⟩
-
 /-- **Extension of tracial states from closed ideals.** Every tracial state of a closed ideal `I`
 of `A` extends uniquely to a tracial state of `A`. -/
 theorem IsTracialState.existsUnique_isTracialState_apply_coe_eq {τ : I →P[ℂ] ℂ}
     (hτ : τ.IsTracialState) : ∃! γ : A →P[ℂ] ℂ, γ.IsTracialState ∧ ∀ c : I, γ c = τ c := by
-  obtain ⟨γ, ⟨hγ, h⟩, huniq⟩ := hτ.existsUnique_apply_coe_eq
+  obtain ⟨γ, ⟨hγ, h⟩, huniq⟩ := existsUnique_apply_coe_eq (A := A) hτ.norm_eq_one
   exact ⟨γ, ⟨isTracialState_of_apply_coe_eq hτ hγ.le h, h⟩, fun γ' ⟨hγ', h'⟩ ↦
     huniq γ' ⟨hγ'.norm_eq_one, h'⟩⟩
 
