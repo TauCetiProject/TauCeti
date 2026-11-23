@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import TauCeti.Algebra.Group.Conj
+import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.GroupTheory.Abelianization.Coprod
 import TauCeti.GroupTheory.Coprod.Torsion
@@ -129,9 +130,7 @@ theorem orderOf_y_zero (a b : ℕ) : orderOf (y a b 0) = b := by
 `Δ(a, b, 0)` has infinite order. -/
 theorem not_isOfFinOrder_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) :
     ¬IsOfFinOrder (z a b 0) := by
-  rw [← (Function.Injective.isOfFinOrder_iff
-    (f := (equivCoprod a b).toMonoidHom) (equivCoprod a b).injective), MulEquiv.coe_toMonoidHom,
-    equivCoprod_z]
+  rw [← (equivCoprod a b).isOfFinOrder_iff, equivCoprod_z]
   exact Monoid.Coprod.not_isOfFinOrder_inl_mul_inr
     (ofAdd_neg_one_ne_one_of_ne_one ha) (ofAdd_neg_one_ne_one_of_ne_one hb)
 
@@ -146,7 +145,7 @@ theorem exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder {a b : ℕ} {g : Triangle
     (hg : IsOfFinOrder g) :
     (∃ k : ℤ, IsConj g (x a b 0 ^ k) ∧ IsOfFinOrder (x a b 0 ^ k)) ∨
       (∃ k : ℤ, IsConj g (y a b 0 ^ k) ∧ IsOfFinOrder (y a b 0 ^ k)) := by
-  have hg' : IsOfFinOrder (equivCoprod a b g) := (equivCoprod a b).toMonoidHom.isOfFinOrder hg
+  have hg' : IsOfFinOrder (equivCoprod a b g) := (equivCoprod a b).isOfFinOrder_iff.mpr hg
   rcases Monoid.Coprod.exists_isConj_inl_or_inr_of_isOfFinOrder hg' with
     ⟨u, hconj, -⟩ | ⟨v, hconj, -⟩
   · obtain ⟨k, rfl⟩ := Multiplicative.mem_zpowers_ofAdd_one u

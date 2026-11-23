@@ -215,6 +215,9 @@ section ULiftBool
 
 universe u v
 
+-- Non-reducible (`def` rather than `abbrev`) so `simpNF` keeps `uliftBoolEquivCoprod_of_false` and
+-- `uliftBoolEquivCoprod_of_true` applicable; making `boolFactors` reducible unfolds
+-- `boolFactors M N false` to `ULift M` under `of`/`DFunLike.coe` and breaks `DiscrTree` lookup.
 /-- The factors `M : Type u` and `N : Type v` lifted to `Type (max u v)` as a `Bool`-indexed
 family: `false` gives `ULift.{v} M` and `true` gives `ULift.{u} N`. -/
 @[expose]
@@ -254,16 +257,6 @@ instance instGroupBoolFactors (G : Type u) (H : Type v) [Group G] [Group H] :
       cases b
       · exact (inferInstance : Group (ULift G)).inv_mul_cancel
       · exact (inferInstance : Group (ULift H)).inv_mul_cancel }
-
-/-- The identity element of `boolFactors M N false` is `MulEquiv.ulift.symm 1`. -/
-theorem boolFactors_one_false (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
-    (1 : boolFactors M N false) = MulEquiv.ulift.symm 1 :=
-  rfl
-
-/-- The identity element of `boolFactors M N true` is `MulEquiv.ulift.symm 1`. -/
-theorem boolFactors_one_true (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
-    (1 : boolFactors M N true) = MulEquiv.ulift.symm 1 :=
-  rfl
 
 /-- Cross-universe comparison between the indexed free product over `Bool` of `ULift`ed factors
 and the binary free product `M ∗ N`. -/

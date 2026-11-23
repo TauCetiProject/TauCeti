@@ -185,6 +185,27 @@ theorem psl2zEquivCoprodI_coe_R :
     (Monoid.CoprodI.finTwoEquivCoprod_symm_inr
       (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1))
 
+/-- `psl2zEquivCoprodI` maps the cusp translation `T` to
+`of 0 (ofAdd 1) * of 1 (ofAdd 1)`. -/
+@[simp]
+theorem psl2zEquivCoprodI_coe_T :
+    psl2zEquivCoprodI (T : PSL(2, ℤ)) =
+      Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) *
+        Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) := by
+  rw [← coe_S_mul_coe_R]
+  simp [-coe_S_mul_coe_R]
+
+/-- `psl2zEquivCoprodI` maps `U = S * T⁻¹` to
+`of 0 (ofAdd 1) * of 1 (ofAdd (-1)) * of 0 (ofAdd 1)`. -/
+@[simp]
+theorem psl2zEquivCoprodI_coe_U :
+    psl2zEquivCoprodI (U : PSL(2, ℤ)) =
+      Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) *
+        Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd (-1)) *
+        Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) := by
+  rw [← coe_S_mul_coe_R_inv_mul_coe_S_inv]
+  simp
+
 /-- The inverse of `psl2zEquivCoprodI` maps the generator at `0 : Fin 2` to `S`. -/
 @[simp]
 theorem psl2zEquivCoprodI_symm_of_zero_ofAdd_one :

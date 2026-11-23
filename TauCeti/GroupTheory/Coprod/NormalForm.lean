@@ -64,12 +64,18 @@ private abbrev toSigma : M ⊕ N → Σ b, CoprodI.boolFactors M N b
 private theorem toSigma_fst (s : M ⊕ N) : (toSigma s).1 = s.isRight := by
   cases s <;> rfl
 
-private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) := by
-  rintro (m | n) (m' | n') h
-  · exact congrArg Sum.inl (MulEquiv.ulift.symm.injective (eq_of_heq (Sigma.mk.inj h).2))
-  · exact absurd (congrArg Sigma.fst h) Bool.false_ne_true
-  · exact absurd (congrArg Sigma.fst h) Bool.false_ne_true.symm
-  · exact congrArg Sum.inr (MulEquiv.ulift.symm.injective (eq_of_heq (Sigma.mk.inj h).2))
+private def fromSigma : (Σ b, CoprodI.boolFactors M N b) → M ⊕ N
+  | ⟨false, x⟩ => .inl (MulEquiv.ulift x)
+  | ⟨true, y⟩ => .inr (MulEquiv.ulift y)
+
+private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) :=
+  Function.LeftInverse.injective (g := fromSigma) fun s => by cases s <;> simp [fromSigma]
+
+private theorem toSigma_snd_ne_one {s : M ⊕ N} (h₁ : s ≠ .inl 1) (h₂ : s ≠ .inr 1) :
+    (toSigma s).2 ≠ 1 := by
+  cases s with
+  | inl m => exact fun h => h₁ (congrArg Sum.inl (MulEquiv.ulift.symm.injective h))
+  | inr n => exact fun h => h₂ (congrArg Sum.inr (MulEquiv.ulift.symm.injective h))
 
 /-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (boolFactors M N)`. -/
 private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
@@ -78,11 +84,8 @@ private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· �
   toList := L.map toSigma
   ne_one := by
     simp only [List.mem_map, forall_exists_index, and_imp]
-    rintro _ (m | n) hs rfl h
-    · rw [CoprodI.boolFactors_one_false] at h
-      exact h₁ (MulEquiv.ulift.symm.injective h ▸ hs)
-    · rw [CoprodI.boolFactors_one_true] at h
-      exact h₂ (MulEquiv.ulift.symm.injective h ▸ hs)
+    rintro _ s hs rfl
+    exact toSigma_snd_ne_one (fun h => h₁ (h ▸ hs)) (fun h => h₂ (h ▸ hs))
   chain_ne := by
     rw [List.isChain_map]
     simpa [toSigma_fst, List.isChain_map] using hc

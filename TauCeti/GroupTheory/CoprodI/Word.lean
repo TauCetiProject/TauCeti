@@ -138,6 +138,13 @@ theorem length_toList_of_smul_le_of_fstIdx_eq {ι : Type*} {M : ι → Type*} [�
   rw [of_smul_def, rcons]
   split_ifs <;> simp [p, hw_len]
 
+/-- Prepending a letter to a nonempty reduced word does not change the index of its last
+letter. -/
+theorem getLast?_map_fst_cons_of_ne_empty {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
+    {i : ι} (a : M i) {v : Word M} (hfv : v.fstIdx ≠ some i) (ha1 : a ≠ 1) (hv : v ≠ empty) :
+    (cons a v hfv ha1).toList.getLast?.map Sigma.fst = v.toList.getLast?.map Sigma.fst := by
+  rw [cons_toList, List.getLast?_cons_of_ne_nil (fun h => hv (Word.ext_iff.mpr h))]
+
 end Monoid.CoprodI.Word
 
 namespace Monoid.CoprodI.NeWord
@@ -145,6 +152,18 @@ namespace Monoid.CoprodI.NeWord
 section Monoid
 
 variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
+
+/-- The first factor index of `u.toWord` for `u : NeWord M i j` is `some i`. -/
+@[simp]
+theorem fstIdx_toWord {i j : ι} (u : NeWord M i j) :
+    u.toWord.fstIdx = some i := by
+  simp [Word.fstIdx, toWord]
+
+/-- The last factor index of `u.toWord` for `u : NeWord M i j` is `some j`. -/
+@[simp]
+theorem toWord_getLast?_map_fst {i j : ι} (u : NeWord M i j) :
+    u.toWord.toList.getLast?.map Sigma.fst = some j := by
+  simp [toWord]
 
 /-- Iterated concatenation `u^(n + 1)` of a nonempty reduced word `u : NeWord M i j` whose first
 and last letters lie in distinct factors (`j ≠ i`), so no cancellation occurs between copies. -/

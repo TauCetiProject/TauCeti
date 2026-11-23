@@ -96,20 +96,6 @@ section Group
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
 
-private theorem fstIdx_toWord {i j : ι} (u : NeWord G i j) :
-    u.toWord.fstIdx = some i := by
-  simp [Word.fstIdx, NeWord.toWord]
-
-private theorem lastIdx_toWord {i j : ι} (u : NeWord G i j) :
-    u.toWord.toList.getLast?.map Sigma.fst = some j := by
-  simp [NeWord.toWord]
-
-private theorem getLast?_map_fst_cons_of_ne_empty {i : ι} (a : G i) {v : Word G}
-    (hfv : v.fstIdx ≠ some i) (ha1 : a ≠ 1) (hv : v ≠ Word.empty) :
-    (Word.cons a v hfv ha1).toList.getLast?.map Sigma.fst =
-      v.toList.getLast?.map Sigma.fst := by
-  rw [Word.cons_toList, List.getLast?_cons_of_ne_nil (fun h => hv (Word.ext h))]
-
 /-- Cyclic reduction step: if a reduced word `Word.cons a v hfv ha1` with `v` nonempty represents an
 element of finite order, its first and last letters lie in the same factor `G i`, so conjugating by
 `(of a)⁻¹` and inverting yields a strictly shorter reduced word `w'`. -/
@@ -129,19 +115,19 @@ private theorem exists_word_length_lt_of_cons
   subst hij
   have hi₀ : i = i₀ :=
     Option.some.inj ((Word.fstIdx_cons a v hfv ha1).symm.trans
-      ((congrArg Word.fstIdx hu).symm.trans (fstIdx_toWord u)))
+      ((congrArg Word.fstIdx hu).symm.trans u.fstIdx_toWord))
   subst i₀
   obtain ⟨k, j, q, hq⟩ := NeWord.of_word v hv
   have hj : j = i := by
-    have h₁ := lastIdx_toWord q
-    have h₂ := lastIdx_toWord u
+    have h₁ := q.toWord_getLast?_map_fst
+    have h₂ := u.toWord_getLast?_map_fst
     rw [hq] at h₁
-    rw [hu, getLast?_map_fst_cons_of_ne_empty a hfv ha1 hv, h₁] at h₂
+    rw [hu, Word.getLast?_map_fst_cons_of_ne_empty a hfv ha1 hv, h₁] at h₂
     exact Option.some.inj h₂
   subst j
   let z : Word G := q.inv.toWord
   let w' : Word G := of a⁻¹ • z
-  have hz_fst : z.fstIdx = some i := fstIdx_toWord q.inv
+  have hz_fst : z.fstIdx = some i := q.inv.fstIdx_toWord
   have hw'_len : w'.toList.length < w.toList.length := by
     have hle : w'.toList.length ≤ z.toList.length :=
       Word.length_toList_of_smul_le_of_fstIdx_eq a⁻¹ hz_fst

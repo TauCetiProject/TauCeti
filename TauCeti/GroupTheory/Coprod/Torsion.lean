@@ -78,7 +78,7 @@ theorem not_isOfFinOrder_inl_mul_inr {x : M} {y : N} (hx : x ≠ 1) (hy : y ≠ 
     ¬IsOfFinOrder (inl x * inr y : M ∗ N) := by
   intro hfin
   have hfin' : IsOfFinOrder ((CoprodI.uliftBoolEquivCoprod M N).symm (inl x * inr y)) :=
-    (CoprodI.uliftBoolEquivCoprod M N).symm.toMonoidHom.isOfFinOrder hfin
+    (CoprodI.uliftBoolEquivCoprod M N).symm.isOfFinOrder_iff.mpr hfin
   rw [map_mul, CoprodI.uliftBoolEquivCoprod_symm_inl,
     CoprodI.uliftBoolEquivCoprod_symm_inr] at hfin'
   exact CoprodI.not_isOfFinOrder_of_mul_of Bool.false_ne_true
@@ -89,7 +89,7 @@ order. -/
 theorem not_isOfFinOrder_inr_mul_inl {x : M} {y : N} (hx : x ≠ 1) (hy : y ≠ 1) :
     ¬IsOfFinOrder (inr y * inl x : M ∗ N) := fun h =>
   not_isOfFinOrder_inl_mul_inr hy hx <| by
-    simpa using (MulEquiv.coprodComm M N).toMonoidHom.isOfFinOrder h
+    simpa using (MulEquiv.coprodComm M N).isOfFinOrder_iff.mpr h
 
 end Monoid
 
@@ -105,7 +105,7 @@ private theorem exists_of_ulift_branch {A K : Type*} [Group A] [Group K] {g : A}
     (hz_fin : IsOfFinOrder z) :
     ∃ x : K, x ≠ 1 ∧ IsConj g (f x) ∧ IsOfFinOrder x :=
   ⟨z.down, fun hx => hz1 (ULift.ext hx), hconj,
-    (MulEquiv.ulift (α := K)).toMonoidHom.isOfFinOrder hz_fin⟩
+    (MulEquiv.ulift (α := K)).isOfFinOrder_iff.mpr hz_fin⟩
 
 /-- Every nontrivial element of finite order in the free product `G ∗ H` of two groups is conjugate
 to a nontrivial element of finite order in `G` or in `H`. -/
@@ -114,7 +114,7 @@ theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : G ∗ H}
     (∃ x : G, x ≠ 1 ∧ IsConj g (inl x) ∧ IsOfFinOrder x) ∨
        (∃ y : H, y ≠ 1 ∧ IsConj g (inr y) ∧ IsOfFinOrder y) := by
   have hg' : IsOfFinOrder ((CoprodI.uliftBoolEquivCoprod G H).symm g) :=
-    (CoprodI.uliftBoolEquivCoprod G H).symm.toMonoidHom.isOfFinOrder hg
+    (CoprodI.uliftBoolEquivCoprod G H).symm.isOfFinOrder_iff.mpr hg
   have hg1' : (CoprodI.uliftBoolEquivCoprod G H).symm g ≠ 1 := by simp [hg1]
   obtain ⟨b, z, hz1, hconj, hz_fin⟩ :=
     CoprodI.exists_isConj_of_isOfFinOrder_of_ne_one hg' hg1'
