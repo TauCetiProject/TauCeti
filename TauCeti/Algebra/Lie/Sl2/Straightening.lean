@@ -355,7 +355,7 @@ end UniversalEnveloping
 (`H v = μ • v`), lowering by the `j`-th divided power `F⁽ʲ⁾` and raising back by `E⁽ʲ⁾`
 scales `v` by `Ring.choose μ j`. -/
 theorem dividedPower_e_apply_dividedPower_f_apply_of_eq_zero
-    {K V : Type*} [CommRing K] [Algebra ℚ K] [BinomialRing K]
+    {K V : Type*} [CommRing K] [Algebra ℚ K]
     [AddCommGroup V] [Module K V] [Algebra ℚ (Module.End K V)]
     {H E F : Module.End K V}
     (hef : E * F - F * E = H) (hhf : H * F - F * H = -(2 • F))
