@@ -81,17 +81,13 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {γ : E → 
 /-- A shear `y ↦ y + γ y ν` by a `G`-Lipschitz function with `‖ν‖ ≤ 1` is `(1 + G)`-Lipschitz. -/
 theorem lipschitzWith_shear (hν : ‖ν‖ ≤ 1) {G : ℝ≥0} (hγ : LipschitzWith G γ) :
     LipschitzWith (1 + G) fun z : E => z + γ z • ν := by
-  refine LipschitzWith.of_dist_le_mul fun y y' => ?_
-  rw [dist_eq_norm, dist_eq_norm]
-  have hd : |γ y - γ y'| ≤ G * ‖y - y'‖ := by
-    simpa [Real.dist_eq, dist_eq_norm] using hγ.dist_le_mul y y'
-  calc ‖y + γ y • ν - (y' + γ y' • ν)‖ = ‖(y - y') + (γ y - γ y') • ν‖ := by
-        rw [sub_smul]; congr 1; abel
-    _ ≤ ‖y - y'‖ + |γ y - γ y'| * ‖ν‖ := by
-        refine (norm_add_le _ _).trans ?_
-        rw [norm_smul, Real.norm_eq_abs]
-    _ ≤ ‖y - y'‖ + G * ‖y - y'‖ * 1 := by gcongr
-    _ = _ := by push_cast; ring
+  refine (LipschitzWith.id.add
+    ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) ν).lipschitzWith.comp hγ)).weaken ?_
+  gcongr
+  refine mul_le_of_le_one_left zero_le ?_
+  rw [← NNReal.coe_le_one, coe_nnNorm, ContinuousLinearMap.norm_smulRight_apply]
+  exact (mul_le_mul ContinuousLinearMap.norm_id_le hν (norm_nonneg _) zero_le_one).trans_eq
+    (one_mul 1)
 
 /-- The shear `y ↦ y + γ y ν` by a `G`-Lipschitz function with `‖ν‖ ≤ 1` maps the closed ball of
 radius `r` about `y₀` into the closed ball of radius `(1 + G) r` about its image. -/
@@ -190,43 +186,6 @@ theorem fderiv_fderiv_comp_shear {w : E → F} {y : E}
   ext h k
   simp [fderiv_fderiv_comp_shear_apply hw hγ]
 
-/-- The bilinear map `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`. -/
-private theorem norm_smulRightL_flip_comp_le (c : F) (B : E →L[ℝ] E →L[ℝ] ℝ) :
-    ‖((StrongDual.smulRightL ℝ E F).flip c).comp B‖ ≤ ‖c‖ * ‖B‖ :=
-  ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun h k => by
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-      ContinuousLinearMap.smulRightL_apply_apply, ContinuousLinearMap.smulRight_apply, norm_smul]
-    calc ‖B h k‖ * ‖c‖ ≤ ‖B‖ * ‖h‖ * ‖k‖ * ‖c‖ := by gcongr; exact B.le_opNorm₂ h k
-      _ = _ := by ring
-
-/-- The bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder family when `c` and `B` are Hölder
-and bounded on `s`. -/
-private theorem holderOnWith_smulRightL_flip_comp {X : Type*} [PseudoMetricSpace X]
-    {α Kc KB Mc MB : ℝ≥0} {c : X → F} {B : X → E →L[ℝ] E →L[ℝ] ℝ} {s : Set X}
-    (hc : HolderOnWith Kc α c s) (hB : HolderOnWith KB α B s) (hcn : ∀ x ∈ s, ‖c x‖ ≤ Mc)
-    (hBn : ∀ x ∈ s, ‖B x‖ ≤ MB) :
-    HolderOnWith (Mc * KB + MB * Kc) α
-      (fun x => ((StrongDual.smulRightL ℝ E F).flip (c x)).comp (B x)) s := by
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  have hsplit : ((StrongDual.smulRightL ℝ E F).flip (c x)).comp (B x) -
-      ((StrongDual.smulRightL ℝ E F).flip (c y)).comp (B y) =
-      ((StrongDual.smulRightL ℝ E F).flip (c x)).comp (B x - B y) +
-        ((StrongDual.smulRightL ℝ E F).flip (c x - c y)).comp (B y) := by
-    ext h k
-    simp
-  have hcd := hc.dist_le hx hy
-  have hBd := hB.dist_le hx hy
-  rw [dist_eq_norm (c x)] at hcd
-  rw [dist_eq_norm (B x)] at hBd
-  rw [dist_eq_norm, hsplit]
-  refine (norm_add_le (E := E →L[ℝ] E →L[ℝ] F) _ _).trans ?_
-  refine (add_le_add (norm_smulRightL_flip_comp_le _ _) (norm_smulRightL_flip_comp_le _ _)).trans ?_
-  calc _ ≤ Mc * (KB * dist x y ^ (α : ℝ)) + Kc * dist x y ^ (α : ℝ) * MB := by
-        have := hcn x hx
-        have := hBn y hy
-        gcongr
-    _ = _ := by push_cast; ring
-
 /-- **Hölder continuity of second derivatives through a shear.** For `φ z = z + γ z • ν` with
 `‖ν‖ ≤ 1`, if on `s` the derivatives `Dγ` and `D²γ` are bounded by `G₁` and `G₂` and Hölder with
 constants `K₁` and `K₂`, and `Dw ∘ φ`, `D²w ∘ φ` are bounded by `N₁` and `N₂` and Hölder with
@@ -250,7 +209,7 @@ theorem holderOnWith_fderiv_fderiv_comp_shear (hν : ‖ν‖ ≤ 1) {w : E → 
     hH.clm_apply_of_norm_le_one hν
   have hcb (y : E) (hy : y ∈ s) : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N₁ :=
     ((fderiv ℝ w _).unit_le_opNorm ν hν).trans (hN1 y hy)
-  have h2 := holderOnWith_smulRightL_flip_comp hc hK2 hcb hG2
+  have h2 := ContinuousLinearMap.holderOnWith_smulRightL_flip_comp hc hK2 hcb hG2
   exact (h1.add h2).congr fun y hy => (fderiv_fderiv_comp_shear (hw y hy) (hγ y hy)).symm
 
 /-- The bound `‖D²(w ∘ φ)‖ ≤ N₂ (1 + G₁)² + N₁ G₂` for the shear `φ z = z + γ z • ν`. -/
@@ -268,7 +227,7 @@ theorem norm_fderiv_fderiv_comp_shear_le (hν : ‖ν‖ ≤ 1) {w : E → F} {y
   · refine (ContinuousLinearMap.norm_bilinearComp_le _ _ _).trans ?_
     push_cast at hSb ⊢
     gcongr
-  · refine (norm_smulRightL_flip_comp_le _ _).trans ?_
+  · refine (ContinuousLinearMap.norm_smulRightL_flip_comp_le _ _).trans ?_
     gcongr
 
 end Derivative

@@ -35,7 +35,9 @@ continuous linear maps at a vector of norm at most one keeps the Hölder constan
 Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
 (h x)`, preserves Hölder continuity when the three families are bounded
 (`ContinuousLinearMap.holderOnWith_bilinearComp`); this is how a second derivative transforms
-under a change of variables.
+under a change of variables. Likewise the bilinear maps `(h, k) ↦ B x h k • c x` have norm at most
+`‖c x‖ ‖B x‖` (`ContinuousLinearMap.norm_smulRightL_flip_comp_le`) and form a Hölder family when
+`B` and `c` are Hölder and bounded (`ContinuousLinearMap.holderOnWith_smulRightL_flip_comp`).
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
 most `‖L‖` times the Hölder bound on the increment of `g` (`HolderWith.norm_smulRight_sub_le`).
@@ -161,7 +163,7 @@ end ContinuousLinearMap
 
 namespace ContinuousLinearMap
 
-variable {𝕜 X E E' F F' G : Type*} [NontriviallyNormedField 𝕜] [PseudoMetricSpace X]
+variable {𝕜 X E E' E'' F F' G H : Type*} [NontriviallyNormedField 𝕜] [PseudoMetricSpace X]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
   [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
@@ -215,6 +217,48 @@ theorem holderOnWith_bilinearComp {α Kf Kg Kh Mf Mg Mh : ℝ≥0} {f : X → E 
     _ = _ := by
       push_cast
       ring
+
+section SMulRight
+
+variable [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The bilinear map `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`. -/
+theorem norm_smulRightL_flip_comp_le (c : H) (B : E →L[𝕜] StrongDual 𝕜 E'') :
+    ‖((StrongDual.smulRightL 𝕜 E'' H).flip c).comp B‖ ≤ ‖c‖ * ‖B‖ := by
+  refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  refine (le_opNorm _ c).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  rw [opNorm_flip]
+  exact norm_smulRightL_le
+
+/-- The bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder family on `s` when `c` and `B` are
+Hölder and bounded there. The constant is `Mc KB + MB Kc`. -/
+theorem holderOnWith_smulRightL_flip_comp {α Kc KB Mc MB : ℝ≥0} {c : X → H}
+    {B : X → E →L[𝕜] StrongDual 𝕜 E''} {s : Set X}
+    (hc : HolderOnWith Kc α c s) (hB : HolderOnWith KB α B s) (hcn : ∀ x ∈ s, ‖c x‖ ≤ Mc)
+    (hBn : ∀ x ∈ s, ‖B x‖ ≤ MB) :
+    HolderOnWith (Mc * KB + MB * Kc) α
+      (fun x => ((StrongDual.smulRightL 𝕜 E'' H).flip (c x)).comp (B x)) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hsplit : ((StrongDual.smulRightL 𝕜 E'' H).flip (c x)).comp (B x) -
+      ((StrongDual.smulRightL 𝕜 E'' H).flip (c y)).comp (B y) =
+      ((StrongDual.smulRightL 𝕜 E'' H).flip (c x)).comp (B x - B y) +
+        ((StrongDual.smulRightL 𝕜 E'' H).flip (c x - c y)).comp (B y) := by
+    ext h k
+    simp
+  have hcd := hc.dist_le hx hy
+  have hBd := hB.dist_le hx hy
+  rw [dist_eq_norm (c x)] at hcd
+  rw [dist_eq_norm (B x)] at hBd
+  rw [dist_eq_norm (E := E →L[𝕜] E'' →L[𝕜] H), hsplit]
+  refine (norm_add_le (E := E →L[𝕜] E'' →L[𝕜] H) _ _).trans ?_
+  refine (add_le_add (norm_smulRightL_flip_comp_le _ _) (norm_smulRightL_flip_comp_le _ _)).trans ?_
+  calc _ ≤ Mc * (KB * dist x y ^ (α : ℝ)) + Kc * dist x y ^ (α : ℝ) * MB := by
+        have := hcn x hx
+        have := hBn y hy
+        gcongr
+    _ = _ := by push_cast; ring
+
+end SMulRight
 
 end ContinuousLinearMap
 
