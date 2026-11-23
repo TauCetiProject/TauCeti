@@ -50,16 +50,24 @@ instance IsSeparated.descendsAlong_surjective_inf_flat_inf_quasiCompact :
     DescendsAlong @IsSeparated.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
   rw [IsSeparated.isSeparated_eq_diagonal_isClosedImmersion]
   -- At default transparency, stability of the nested intersection needs an explicit witness.
-  exact @instDescendsAlongDiagonalOfRespectsIsoOfIsStableUnderBaseChange _ _ _ _ _
-    inferInstance inferInstance
-    (@IsStableUnderBaseChange.inf _ _ _ _ IsStableUnderBaseChange.inf inferInstance)
+  have : IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat) :=
+    TauCeti.isStableUnderBaseChange_surjective_inf_flat
+  have : IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat ⊓ @QuasiCompact) :=
+    IsStableUnderBaseChange.inf
+  -- Match Mathlib's diagonal descent instance before specializing the property.
+  have diagonalDescends (P : MorphismProperty Scheme.{u})
+      [DescendsAlong P (@Surjective ⊓ @Flat ⊓ @QuasiCompact)] [P.RespectsIso] :
+      DescendsAlong (diagonal P) (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
+    infer_instance
+  exact diagonalDescends @IsClosedImmersion
 
 /-- Properness descends along surjective, flat, quasi-compact morphisms of schemes. -/
 instance IsProper.descendsAlong_surjective_inf_flat_inf_quasiCompact :
     DescendsAlong @IsProper.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
   rw [isProper_eq]
-  exact @DescendsAlong.inf _ _ _ _ _
-    (@DescendsAlong.inf _ _ _ _ _
-      IsSeparated.descendsAlong_surjective_inf_flat_inf_quasiCompact inferInstance) inferInstance
+  have : DescendsAlong (@IsSeparated.{u} ⊓ @UniversallyClosed)
+      (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
+    DescendsAlong.inf (P := @IsSeparated) (W := @UniversallyClosed)
+  exact DescendsAlong.inf (P := @IsSeparated ⊓ @UniversallyClosed) (W := @LocallyOfFiniteType)
 
 end AlgebraicGeometry
