@@ -433,4 +433,16 @@ example [Fact (Nat.Prime 2)] :
   rw [fundamentalDiscriminantChar_two]
   decide
 
+-- Odd-prime dictionary: `D = 12` has squarefree radicand `d = 3`; at `p = 5` both Legendre
+-- symbols are `-1`, through `12 = 2² · 3`; at `p = 3`, which divides `D`, both are `0`.
+-- `D = -4` has squarefree radicand `d = -1`.
+example [Fact (Nat.Prime 5)] :
+    Squarefree (3 : ℤ) ∧ fundamentalDiscriminant 3 = 12 ∧
+      legendreSym 5 12 = legendreSym 5 2 ∧ legendreSym 5 2 = -1 ∧ legendreSym 5 3 = -1 ∧
+      legendreSym 3 12 = 0 ∧ legendreSym 3 3 = 0 ∧
+      Squarefree (-1 : ℤ) ∧ fundamentalDiscriminant (-1) = -4 := by
+  refine ⟨Int.prime_three.squarefree, ?_, by norm_num,
+    by norm_num, by norm_num, by norm_num, by norm_num, isUnit_neg_one.squarefree, ?_⟩ <;>
+  rw [fundamentalDiscriminant_of_mod_four_ne_one (by decide)] <;> norm_num
+
 end DirichletCharacter

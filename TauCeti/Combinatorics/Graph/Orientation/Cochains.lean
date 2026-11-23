@@ -73,8 +73,9 @@ theorem edgeDifferential_add {A : Type w} [AddCommGroup A]
   abel
 
 /-- Taking edge differentials commutes with additive homomorphisms. -/
-theorem edgeDifferential_map {A B : Type*} [AddCommGroup A] [AddCommGroup B]
-    (tail head : G.edgeSet → G.vertexSet) (φ : A →+ B) (f : G.vertexSet → A) :
+theorem edgeDifferential_map {A B F : Type*} [AddCommGroup A] [AddCommGroup B] [FunLike F A B]
+    [AddMonoidHomClass F A B] (tail head : G.edgeSet → G.vertexSet) (φ : F)
+    (f : G.vertexSet → A) :
     edgeDifferential tail head (φ ∘ f) = φ ∘ edgeDifferential tail head f := by
   funext e
   exact (map_sub φ _ _).symm

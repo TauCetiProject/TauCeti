@@ -39,10 +39,12 @@ This turns estimates proved in weak form, by testing against `L²`-valued functi
 estimates. The typical application is to Strichartz estimates, where the `TT*` argument bounds the
 pairings `∫ ⟪U(t) f, G(t)⟫ dt` for `L²`-valued `G`.
 
-Mixed norms are invariant under the reflection `b ↦ -b` of the parameter when `ρ` is invariant
-under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the time line is
-(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); this reverses time in such
-estimates.
+The file also records two elementary properties of mixed norms of families of `Lᵖ` functions:
+Minkowski's inequality `‖Φ + Ψ‖_{L^q L^r} ≤ ‖Φ‖_{L^q L^r} + ‖Ψ‖_{L^q L^r}` for `1 ≤ q, r`
+(`MeasureTheory.eLpNorm_eLpNorm_add_le`), and invariance under the reflection `b ↦ -b` of the
+parameter when `ρ` is invariant under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the
+time line is (`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); the latter reverses
+time in such estimates.
 
 ## The argument
 
@@ -865,6 +867,29 @@ private theorem eLpNorm_truncNorm_top_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ :
     exact lt_min (htt₁.trans_le hm) ht
 
 end TopCore
+
+/-! ### Minkowski's inequality -/
+
+section Elementary
+
+variable {F : Type*} [NormedAddCommGroup F] {p q r : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Minkowski's inequality for mixed norms.** For `1 ≤ q` and `1 ≤ r`, the `L^q_b L^r_x` mixed
+norm of the sum of two almost everywhere strongly measurable families of `Lᵖ` functions is at most
+the sum of their mixed norms. -/
+theorem eLpNorm_eLpNorm_add_le {u v : β → Lp F p μ} (hu : AEStronglyMeasurable u ρ)
+    (hv : AEStronglyMeasurable v ρ) (hq : 1 ≤ q) (hr : 1 ≤ r) :
+    eLpNorm (fun b ↦ eLpNorm (u b + v b) r μ) q ρ ≤
+      eLpNorm (fun b ↦ eLpNorm (u b) r μ) q ρ + eLpNorm (fun b ↦ eLpNorm (v b) r μ) q ρ :=
+  calc _ ≤ eLpNorm (fun b ↦ eLpNorm (u b) r μ + eLpNorm (v b) r μ) q ρ :=
+        eLpNorm_mono_eNorm ((hu.add hv).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
+          fun b ↦ by
+            simp only [eNorm_eq_self, Pi.add_apply]
+            rw [eLpNorm_congr_ae (Lp.coeFn_add _ _)]
+            exact eLpNorm_add_le hr
+    _ ≤ _ := eLpNorm_add_le hq
+
+end Elementary
 
 /-! ### The norming theorem -/
 

@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 import Mathlib.RingTheory.MvPowerSeries.Trunc
 import Mathlib.Topology.WithTopology
 import TauCeti.Analysis.SpecificLimits.MonomialWeight
+import TauCeti.Order.Filter.Cofinite.Basic
 
 /-!
 # Improvement of radius is compact
@@ -34,11 +35,18 @@ The matrix form of the same phenomenon is the row criterion for maps into the un
 coefficient model `C₀(σ →₀ ℕ, R)`. If the image of `x` under `u : C₀(J, R) →L[R] C₀(σ →₀ ℕ, R)`
 is the coefficient family of a series `v x` restricted at polyradii `c` with `‖v x‖ ≤ C ‖x‖`,
 then row `t` of the matrix of `u` is bounded by `C ‖1‖ c⁻ᵗ`
-(`TauCeti.MvPowerSeries.norm_matrixCoeff_le_of_apply_eq_coeff`). When every `cᵢ > 1` this row
-majorant tends to zero, so `u` is row compact
+(`TauCeti.MvPowerSeries.norm_matrixCoeff_le_of_apply_eq_coeff`, stated for a single row of an
+arbitrary target). When every `cᵢ > 1` this row majorant tends to zero, so `u` is row compact
 (`TauCeti.MvPowerSeries.isRowCompact_of_apply_eq_coeff`). This applies to `u` the coefficient
 isometry composed with restriction to unit radius and any bounded map into series restricted
-at `c`.
+at `c`. Equal polyradii `cᵢ = c` give the total-degree bound `C ‖1‖ c ^ (-|t|)`.
+
+The same holds on finitely many charts: for a target `C₀(Σ k, τₖ →₀ ℕ, R)` whose summand `k`
+is the coefficient model of a chart in finitely many variables `τₖ`, a map that factors on each
+chart through series restricted at polyradii `cₖ > 1` is row compact
+(`TauCeti.MvPowerSeries.isRowCompact_of_apply_sigma_eq_coeff`). Its row majorants decay chart by
+chart, and there are only finitely many charts. Charts without variables contribute a single
+row each, so a finite set of such charts gives a finite coefficient model.
 
 ## Main results
 
@@ -48,6 +56,7 @@ at `c`.
   compactness.
 * `TauCeti.MvPowerSeries.isRowCompact_of_apply_eq_coeff`: maps into the unit-radius coefficient
   model that factor through a strictly larger radius are row compact.
+* `TauCeti.MvPowerSeries.isRowCompact_of_apply_sigma_eq_coeff`: the same on finitely many charts.
 
 ## References
 
@@ -182,19 +191,35 @@ section RowCompact
 variable {J : Type*} [TopologicalSpace J] [DiscreteTopology J] [DecidableEq J]
   {c : σ → ℝ} [∀ i, Fact (0 < c i)]
 
-/-- **Row bound from a larger radius.** Let `u : C₀(J, R) →L[R] C₀(σ →₀ ℕ, R)` send each `x` to
-the coefficient family of a series `v x` restricted at polyradii `c`, with `‖v x‖ ≤ C ‖x‖`. Then
-the entries of row `t` of the matrix of `u` are bounded by `C ‖1‖ c⁻ᵗ`. -/
-theorem norm_matrixCoeff_le_of_apply_eq_coeff
-    {u : C₀(J, R) →L[R] C₀(WithDiscreteTopology (σ →₀ ℕ), R)}
+/-- **Row bound from a larger radius.** Let `u : C₀(J, R) →L[R] C₀(I, R)` and let `i` be an
+output index at which `u x` is the coefficient of `Xᵗ` in a series `v x` restricted at polyradii
+`c`, with `‖v x‖ ≤ C ‖x‖`. Then the entries of row `i` of the matrix of `u` are bounded by
+`C ‖1‖ c⁻ᵗ`. -/
+theorem norm_matrixCoeff_le_of_apply_eq_coeff {I : Type*} [TopologicalSpace I]
+    {u : C₀(J, R) →L[R] C₀(I, R)} {i : I} {t : σ →₀ ℕ}
     (v : C₀(J, R) → IsRestricted.subring (R := R) c)
-    (hu : ∀ x t, u x (.toTopology ⊥ t) = coeff t (v x : MvPowerSeries σ R))
-    {C : ℝ} (hv : ∀ x, ‖v x‖ ≤ C * ‖x‖) (t : σ →₀ ℕ) (j : J) :
-    ‖u.matrixCoeff (.toTopology ⊥ t) j‖ ≤ C * ‖(1 : R)‖ * (t.prod (c · ^ ·))⁻¹ := by
+    (hu : ∀ x, u x i = coeff t (v x : MvPowerSeries σ R))
+    {C : ℝ} (hv : ∀ x, ‖v x‖ ≤ C * ‖x‖) (j : J) :
+    ‖u.matrixCoeff i j‖ ≤ C * ‖(1 : R)‖ * (t.prod (c · ^ ·))⁻¹ := by
   rw [ContinuousLinearMap.matrixCoeff_apply, hu, le_mul_inv_iff₀ (prod_pow_pos t)]
   calc _ ≤ ‖v (ZeroAtInftyContinuousMap.single j 1)‖ := norm_coeff_mul_prod_le _ t
     _ ≤ _ := by
       simpa [ZeroAtInftyContinuousMap.norm_single] using hv (ZeroAtInftyContinuousMap.single j 1)
+
+omit [IsUltrametricDist R] in
+/-- Over finitely many variables and polyradii `cᵢ > 1`, the row majorants `C ‖1‖ c⁻ᵗ` tend to
+zero along the cofinite filter of the exponents `t`. -/
+private theorem tendsto_mul_inv_prod_pow [Finite σ] (hc : ∀ i, 1 < c i) (C : ℝ) :
+    Tendsto (fun t : WithDiscreteTopology (σ →₀ ℕ) ↦
+      C * ‖(1 : R)‖ * (t.ofTopology.prod (c · ^ ·))⁻¹) cofinite (𝓝 0) := by
+  have hc0 (i : σ) : 0 < c i := Fact.out
+  have hw := Finsupp.tendsto_prod_pow_cofinite_nhds_zero (w := fun i ↦ (c i)⁻¹)
+    (fun i ↦ (inv_pos.2 (hc0 i)).le) fun i ↦ inv_lt_one_of_one_lt₀ (hc i)
+  have h := (hw.comp (WithTopology.ofTopology_injective (t := ⊥)).tendsto_cofinite).const_mul
+    (C * ‖(1 : R)‖)
+  rw [mul_zero] at h
+  refine h.congr fun t ↦ ?_
+  simp only [Function.comp_apply, Finsupp.prod, inv_pow, Finset.prod_inv_distrib]
 
 /-- **Maps factoring through a larger radius are row compact.** Over finitely many variables, let
 `u : C₀(J, R) →L[R] C₀(σ →₀ ℕ, R)` send each `x` to the coefficient family of a series `v x`
@@ -205,19 +230,30 @@ theorem isRowCompact_of_apply_eq_coeff [Finite σ] (hc : ∀ i, 1 < c i)
     {u : C₀(J, R) →L[R] C₀(WithDiscreteTopology (σ →₀ ℕ), R)}
     (v : C₀(J, R) → IsRestricted.subring (R := R) c)
     (hu : ∀ x t, u x (.toTopology ⊥ t) = coeff t (v x : MvPowerSeries σ R))
-    {C : ℝ} (hv : ∀ x, ‖v x‖ ≤ C * ‖x‖) : u.IsRowCompact := by
-  have hc0 (i : σ) : 0 < c i := Fact.out
-  have hw := Finsupp.tendsto_prod_pow_cofinite_nhds_zero (w := fun i ↦ (c i)⁻¹)
-    (fun i ↦ (inv_pos.2 (hc0 i)).le) fun i ↦ inv_lt_one_of_one_lt₀ (hc i)
-  refine ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le
-    (r := fun i ↦ C * ‖(1 : R)‖ * (i.ofTopology.prod (c · ^ ·))⁻¹) ?_ fun i j ↦ ?_
-  · have h := (hw.comp (WithTopology.ofTopology_injective (t := ⊥)).tendsto_cofinite).const_mul
-      (C * ‖(1 : R)‖)
-    rw [mul_zero] at h
-    refine h.congr fun i ↦ ?_
-    simp only [Function.comp_apply, Finsupp.prod, inv_pow, Finset.prod_inv_distrib]
-  · rcases i with ⟨t⟩
-    exact norm_matrixCoeff_le_of_apply_eq_coeff v hu hv t j
+    {C : ℝ} (hv : ∀ x, ‖v x‖ ≤ C * ‖x‖) : u.IsRowCompact :=
+  ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le (tendsto_mul_inv_prod_pow hc C)
+    fun i j ↦ by
+      rcases i with ⟨t⟩
+      exact norm_matrixCoeff_le_of_apply_eq_coeff v (hu · t) hv j
+
+/-- **Maps factoring through a larger radius on finitely many charts are row compact.** Let
+`u : C₀(J, R) →L[R] C₀(Σ k, τₖ →₀ ℕ, R)` map into the coefficient models of finitely many charts,
+each in finitely many variables `τₖ`. Suppose that on chart `k` each `u x` is the coefficient
+family of a series `vₖ x` restricted at polyradii `cₖ` with every `cₖᵢ > 1`, where
+`‖vₖ x‖ ≤ Cₖ ‖x‖`. Then `u` is row compact: row `(k, t)` is bounded by `Cₖ ‖1‖ cₖ⁻ᵗ`
+(`TauCeti.MvPowerSeries.norm_matrixCoeff_le_of_apply_eq_coeff`). -/
+theorem isRowCompact_of_apply_sigma_eq_coeff {ι : Type*} [Finite ι] {τ : ι → Type*}
+    [∀ k, Finite (τ k)] {c : (k : ι) → τ k → ℝ} [∀ k i, Fact (0 < c k i)]
+    (hc : ∀ k i, 1 < c k i)
+    {u : C₀(J, R) →L[R] C₀(Σ k, WithDiscreteTopology (τ k →₀ ℕ), R)}
+    (v : (k : ι) → C₀(J, R) → IsRestricted.subring (R := R) (c k))
+    (hu : ∀ x k t, u x ⟨k, .toTopology ⊥ t⟩ = coeff t (v k x : MvPowerSeries (τ k) R))
+    {C : ι → ℝ} (hv : ∀ k x, ‖v k x‖ ≤ C k * ‖x‖) : u.IsRowCompact :=
+  ContinuousLinearMap.isRowCompact_of_norm_matrixCoeff_le
+    (r := fun i ↦ C i.1 * ‖(1 : R)‖ * (i.2.ofTopology.prod (c i.1 · ^ ·))⁻¹)
+    (tendsto_cofinite_sigma_iff.2 fun k ↦ tendsto_mul_inv_prod_pow (hc k) (C k)) fun i j ↦ by
+      rcases i with ⟨k, ⟨t⟩⟩
+      exact norm_matrixCoeff_le_of_apply_eq_coeff (v k) (hu · k t) (hv k) j
 
 end RowCompact
 

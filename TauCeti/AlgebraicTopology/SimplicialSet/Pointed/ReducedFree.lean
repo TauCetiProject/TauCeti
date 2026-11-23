@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.ExternalProduct.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
-public import TauCeti.LinearAlgebra.Finsupp.ReducedFree
+public import TauCeti.LinearAlgebra.Finsupp.ReducedFree.Basic
 
 /-!
 # The reduced free module on a pointed simplicial set
