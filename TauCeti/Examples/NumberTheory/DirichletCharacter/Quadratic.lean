@@ -124,11 +124,8 @@ example :
   have h2 : quadraticChar (ZMod 2) = 1 := MulChar.ext fun u ↦ by
     rw [(by decide : ∀ u : (ZMod 2)ˣ, u = 1) u, Units.val_one, MulChar.map_one, MulChar.map_one]
   refine ⟨h2, ZMod.isQuadratic_χ₄.comp _, ?_⟩
-  have hne : ZMod.χ₄.ringHomComp (Int.castRingHom ℂ) ≠ 1 := fun h ↦ by
-    have h3 := DFunLike.congr_fun h (3 : ZMod 4)
-    rw [MulChar.ringHomComp_intCast_apply_of_apply_eq ZMod.χ₄ (b := -1) (by decide),
-      MulChar.one_apply (by decide)] at h3
-    norm_num at h3
+  have hne : ZMod.χ₄.ringHomComp (Int.castRingHom ℂ) ≠ 1 :=
+    ne_of_conductor_ne (by rw [conductor_χ₄_ringHomComp, conductor_one]; decide)
   rintro (h | ⟨h, h'⟩)
   · exact hne h
   · rw [h2, MulChar.ringHomComp_one, changeLevel_one] at h'
