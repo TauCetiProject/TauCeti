@@ -64,17 +64,14 @@ parameters.
   `AnalyticAt.mellinBarnesOrdinaryHypergeometric`: ordinary Mellin–Barnes continuation and joint
   cut-plane holomorphy for `a, b, c ∉ -ℕ`, `-z ∈ Complex.slitPlane`.
 * `Complex.eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun`,
-  `Complex.eulerIntegral_eq_mellinBarnesIntegral`,
   `Complex.eulerIntegral_eq_mellinBarnesSeparatingIntegral`: overlap with Euler's integral for
   `0 < Re b < Re c`, `a ∉ -ℕ`, and `-z ∈ Complex.slitPlane`.
 * `Complex.regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun`,
-  `Complex.regularizedGaussHGFun_eq_mellinBarnesIntegral`,
   `Complex.regularizedGaussHGFun_eq_mellinBarnesSeparatingIntegral`,
   `Complex.eqOn_mellinBarnesRegularizedGaussHGFun_of_analyticOnNhd`: DLMF 15.6.6 overlap and
   cut-plane uniqueness for `regularizedGaussHGFun` across `a, b ∉ -ℕ`, arbitrary `c : ℂ`, and
   `-z ∈ slitPlane`.
 * `Complex.ordinaryHypergeometric_eq_mellinBarnesOrdinaryHypergeometric`,
-  `Complex.ordinaryHypergeometric_eq_mellinBarnesIntegral`,
   `Complex.ordinaryHypergeometric_eq_mellinBarnesSeparatingIntegral`,
   `Complex.eqOn_mellinBarnesOrdinaryHypergeometric_of_analyticOnNhd`: DLMF 15.6.6 overlap and
   cut-plane uniqueness for `ordinaryHypergeometric` (`₂F₁`) across `a, b, c ∉ -ℕ` and
@@ -119,6 +116,11 @@ private theorem continuousOn_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
     (ContinuousAt.cpow (by fun_prop) continuousAt_const h1t_slit)).mul
     ((ContinuousAt.cpow continuousAt_const hs (ofReal_mem_slitPlane.2 hx)).mul (hG1.mul hG2)))
 
+private theorem gamma_neg_mul_gamma_add_reflect (a : ℂ) (σ y : ℝ) :
+    Gamma (-((σ : ℂ) + y * I)) * Gamma (a + ((σ : ℂ) + y * I)) =
+      Gamma ((-σ : ℝ) + (-y : ℝ) * I) * Gamma (a - ((-σ : ℝ) + (-y : ℝ) * I)) := by
+  rw [← sub_neg_eq_add a ((σ : ℂ) + y * I), neg_ofReal_add_mul_I]
+
 private theorem integrable_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
     (hx : 0 < x) (hσ : σ < 0) (haσ : 0 < a.re + σ) (hbσ : 0 < b.re + σ) (hbc : b.re < c.re) :
     Integrable (Function.uncurry (mellinBarnesFubiniKernel a b c x σ))
@@ -135,9 +137,8 @@ private theorem integrable_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
       simpa only [VerticalIntegrable] using
         verticalIntegrable_Gamma_mul_Gamma_sub (fun n _ => by linarith [n.cast_nonneg (α := ℝ)])
           (fun n _ => by linarith [n.cast_nonneg (α := ℝ)])
-    refine ((hv.comp_neg.congr (Eventually.of_forall fun y => ?_)).norm.const_mul (x ^ σ))
-    dsimp only
-    rw [← neg_ofReal_add_mul_I, sub_neg_eq_add]
+    refine (hv.comp_neg.congr (Eventually.of_forall fun y =>
+      (gamma_neg_mul_gamma_add_reflect a σ y).symm)).norm.const_mul (x ^ σ)
   have hmeas_prod : (volume.restrict (Ioo (0 : ℝ) 1)).prod (volume : Measure ℝ) =
       ((volume : Measure ℝ).prod volume).restrict (Ioo (0 : ℝ) 1 ×ˢ univ) := by
     rw [← Measure.prod_restrict, Measure.restrict_univ]
@@ -150,7 +151,7 @@ private theorem integrable_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
     mul_assoc]
 
 private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
-    (hx : 0 < x) (ht : t ∈ Ioo (0 : ℝ) 1) (hσ : σ < 0) (haσ : 0 < a.re + σ) :
+    (hx : 0 < x) (ht : 0 < t) (hσ : σ < 0) (haσ : 0 < a.re + σ) :
     ∫ y : ℝ, mellinBarnesFubiniKernel a b c x σ t y =
       2 * π * Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
         (1 - (-(x : ℂ)) * (t : ℂ)) ^ (-a)) := by
@@ -160,19 +161,15 @@ private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
           (Gamma (-((σ : ℂ) + y * I)) * Gamma (a + ((σ : ℂ) + y * I)))) := by
     dsimp [mellinBarnesFubiniKernel]
     rw [add_sub_right_comm,
-      cpow_add _ _ (ofReal_ne_zero.2 ht.1.ne'), ofReal_mul, ofReal_mul_cpow hx.le]
+      cpow_add _ _ (ofReal_ne_zero.2 ht.ne'), ofReal_mul, ofReal_mul_cpow hx.le]
     ring
   simp_rw [hpoint, integral_const_mul]
   rw [← integral_neg_eq_self]
-  have hneg (y : ℝ) : ((x * t : ℝ) : ℂ) ^ ((σ : ℂ) + (-y : ℝ) * I) *
-      (Gamma (-((σ : ℂ) + (-y : ℝ) * I)) * Gamma (a + ((σ : ℂ) + (-y : ℝ) * I))) =
-      ((x * t : ℝ) : ℂ) ^ (-((-σ : ℝ) + (y : ℂ) * I)) *
-        (Gamma ((-σ : ℝ) + (y : ℂ) * I) * Gamma (a - ((-σ : ℝ) + (y : ℂ) * I))) := by
+  rw [integral_congr_ae (Eventually.of_forall fun y => by
     have hpt : (σ : ℂ) + ((-y : ℝ) : ℂ) * I = -(((-σ : ℝ) : ℂ) + (y : ℂ) * I) := by
       simpa only [neg_neg] using (neg_ofReal_add_mul_I (-σ) y).symm
-    rw [hpt, neg_neg, ← sub_eq_add_neg]
-  simp_rw [hneg]
-  rw [integral_cpow_neg_mul_Gamma_mul_Gamma_sub (by linarith) (by linarith) (mul_pos hx ht.1)]
+    rw [gamma_neg_mul_gamma_add_reflect a σ (-y), neg_neg, hpt])]
+  rw [integral_cpow_neg_mul_Gamma_mul_Gamma_sub (by linarith) (by linarith) (mul_pos hx ht)]
   simp only [ofReal_mul, neg_mul, sub_neg_eq_add]
   ring
 
@@ -214,7 +211,7 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral {a b c : ℂ} {
   have hlhs : (∫ t in Ioo (0 : ℝ) 1, ∫ y : ℝ, mellinBarnesFubiniKernel a b c x σ t y) =
       2 * π * Gamma (c - b) * (Gamma a * Gamma b * eulerIntegral a b c (-(x : ℂ))) := by
     rw [setIntegral_congr_fun measurableSet_Ioo fun t ht =>
-        integral_mellinBarnesFubiniKernel_y hx ht hσ haσ,
+        integral_mellinBarnesFubiniKernel_y hx ht.1 hσ haσ,
       integral_const_mul, setIntegral_Ioo_eq_intervalIntegral zero_le_one, eulerIntegral_def]
     field_simp [hGb, hGcb]
     congr 1
@@ -428,15 +425,6 @@ theorem eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun {a b c z : ℂ} (ha :
     ← eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral ha hb hbc hz,
     inv_mul_cancel_left₀ (mul_ne_zero (Gamma_ne_zero ha) (Gamma_ne_zero_of_re_pos hb))]
 
-/-- **Mellin–Barnes continuation of Euler's integral.** For `0 < Re b < Re c`, `a ∉ -ℕ`, and
-`-z ∈ slitPlane`, Euler's normalized integral equals `(Γ(a) Γ(b))⁻¹` times the canonical
-separating-contour Mellin–Barnes integral `mellinBarnesIntegral a b c z`. -/
-theorem eulerIntegral_eq_mellinBarnesIntegral {a b c z : ℂ} (ha : ∀ k : ℕ, a ≠ -k)
-    (hb : 0 < b.re) (hbc : b.re < c.re) (hz : -z ∈ slitPlane) :
-    eulerIntegral a b c z = (Gamma a * Gamma b)⁻¹ * mellinBarnesIntegral a b c z := by
-  rw [eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun ha hb hbc hz,
-    mellinBarnesRegularizedGaussHGFun_def]
-
 /-- **Separating-contour Mellin–Barnes representation of Euler's integral.** For `0 < Re b < Re c`,
 `a ∉ -ℕ`, `-z ∈ slitPlane`, and any admissible abscissa `σ < 0` avoiding `-Re a - ℕ` and
 `-Re b - ℕ`, Euler's normalized integral equals `(Γ(a) Γ(b))⁻¹` times
@@ -445,8 +433,8 @@ theorem eulerIntegral_eq_mellinBarnesSeparatingIntegral {a b c z : ℂ} {σ : �
     (ha : ∀ k : ℕ, a ≠ -k) (hb : 0 < b.re) (hbc : b.re < c.re) (hσ : σ < 0)
     (haσ : ∀ k : ℕ, a.re + σ ≠ -k) (hbσ : ∀ k : ℕ, b.re + σ ≠ -k) (hz : -z ∈ slitPlane) :
     eulerIntegral a b c z = (Gamma a * Gamma b)⁻¹ * mellinBarnesSeparatingIntegral a b c z σ := by
-  rw [eulerIntegral_eq_mellinBarnesIntegral ha hb hbc hz,
-    mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral c hσ haσ hbσ hz]
+  rw [eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun ha hb hbc hz,
+    mellinBarnesRegularizedGaussHGFun_eq_mellinBarnesSeparatingIntegral a b c z hσ haσ hbσ hz]
 
 private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : ℂ} (c : ℂ) {z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -k) (hb : ∀ k : ℕ, b ≠ -k) (hz_norm : ‖z‖ < 1)
@@ -473,33 +461,6 @@ private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : �
   · exact fun w hw => analyticAt_mellinBarnesIntegral_comp (f := fun x => (a, x, c, z))
       (by fun_prop) ha hw hz_slit
 
-private theorem eqOn_neg_slitPlane_of_analyticOnNhd_of_eqOn_cut_ball {f g : ℂ → ℂ}
-    (hf : AnalyticOnNhd ℂ f {z : ℂ | -z ∈ slitPlane})
-    (hg : AnalyticOnNhd ℂ g {z : ℂ | -z ∈ slitPlane})
-    (hEq : Set.EqOn f g {z : ℂ | ‖z‖ < 1 ∧ -z ∈ slitPlane}) :
-    Set.EqOn f g {z : ℂ | -z ∈ slitPlane} := by
-  have hpre_slit : IsPreconnected slitPlane :=
-    (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-  have hf_neg : AnalyticOnNhd ℂ (fun u => f (-u)) slitPlane := fun u hu =>
-    (hf (-u) (by simpa using hu)).comp_of_eq (differentiable_neg.analyticAt u) rfl
-  have hg_neg : AnalyticOnNhd ℂ (fun u => g (-u)) slitPlane := fun u hu =>
-    (hg (-u) (by simpa using hu)).comp_of_eq (differentiable_neg.analyticAt u) rfl
-  have hu₀ : (1 / 2 : ℂ) ∈ slitPlane := by
-    simpa only [ofReal_div, ofReal_one, ofReal_ofNat] using
-      ofReal_mem_slitPlane.2 (by norm_num : (0 : ℝ) < 1 / 2)
-  have hopen : IsOpen {u : ℂ | ‖-u‖ < 1 ∧ -(-u) ∈ slitPlane} :=
-    (isOpen_lt continuous_neg.norm continuous_const).inter
-      (isOpen_slitPlane.preimage (continuous_neg.comp continuous_neg))
-  have hu₀_mem : (1 / 2 : ℂ) ∈ {u : ℂ | ‖-u‖ < 1 ∧ -(-u) ∈ slitPlane} := by
-    refine ⟨?_, by simpa using hu₀⟩
-    norm_num
-  have hev : (fun u => f (-u)) =ᶠ[𝓝 (1 / 2 : ℂ)] (fun u => g (-u)) := by
-    filter_upwards [hopen.mem_nhds hu₀_mem] with u hu
-    exact hEq hu
-  have hEq_slit := hf_neg.eqOn_of_preconnected_of_eventuallyEq hg_neg hpre_slit hu₀ hev
-  intro z hz
-  simpa only [neg_neg] using hEq_slit hz
-
 /-- **Overlap with the regularized Gauss hypergeometric series (DLMF 15.6.6).** For all
 `a, b ∉ -ℕ`, arbitrary `c : ℂ`, `‖z‖ < 1`, and `-z ∈ slitPlane`, `regularizedGaussHGFun a b c z`
 agrees with `mellinBarnesRegularizedGaussHGFun a b c z`. -/
@@ -511,17 +472,6 @@ theorem regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun {a b : ℂ} (
     ← regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral c ha hb hz_norm hz_slit,
     inv_mul_cancel_left₀ (mul_ne_zero (Gamma_ne_zero ha) (Gamma_ne_zero hb))]
 
-/-- **Mellin–Barnes representation of the regularized Gauss hypergeometric function (DLMF 15.6.6)**
-via the canonical separating-contour integral, giving `𝐅(a, b; c; z) = (Γ(a) Γ(b))⁻¹ *
-mellinBarnesIntegral a b c z` for all `a, b ∉ -ℕ`, arbitrary `c : ℂ`, `‖z‖ < 1`, and
-`-z ∈ slitPlane`. -/
-theorem regularizedGaussHGFun_eq_mellinBarnesIntegral {a b : ℂ} (c : ℂ) {z : ℂ}
-    (ha : ∀ k : ℕ, a ≠ -k) (hb : ∀ k : ℕ, b ≠ -k) (hz_norm : ‖z‖ < 1)
-    (hz_slit : -z ∈ slitPlane) :
-    regularizedGaussHGFun a b c z = (Gamma a * Gamma b)⁻¹ * mellinBarnesIntegral a b c z := by
-  rw [regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun c ha hb hz_norm hz_slit,
-    mellinBarnesRegularizedGaussHGFun_def]
-
 /-- **Separating-contour Mellin–Barnes representation of `regularizedGaussHGFun` (DLMF 15.6.6)**
 at any admissible abscissa `σ < 0` avoiding `-Re a - ℕ` and `-Re b - ℕ`, giving
 `𝐅(a, b; c; z) = (Γ(a) Γ(b))⁻¹ * mellinBarnesSeparatingIntegral a b c z σ` for all `a, b ∉ -ℕ`,
@@ -532,8 +482,8 @@ theorem regularizedGaussHGFun_eq_mellinBarnesSeparatingIntegral {a b : ℂ} (c :
     (hz_norm : ‖z‖ < 1) (hz_slit : -z ∈ slitPlane) :
     regularizedGaussHGFun a b c z =
       (Gamma a * Gamma b)⁻¹ * mellinBarnesSeparatingIntegral a b c z σ := by
-  rw [regularizedGaussHGFun_eq_mellinBarnesIntegral c ha hb hz_norm hz_slit,
-    mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral c hσ haσ hbσ hz_slit]
+  rw [regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun c ha hb hz_norm hz_slit,
+    mellinBarnesRegularizedGaussHGFun_eq_mellinBarnesSeparatingIntegral a b c z hσ haσ hbσ hz_slit]
 
 /-- **Uniqueness of the Mellin–Barnes continuation for `regularizedGaussHGFun` on the cut
 plane.** Any function holomorphic on `{z : ℂ | -z ∈ slitPlane}` that agrees with
@@ -544,7 +494,7 @@ theorem eqOn_mellinBarnesRegularizedGaussHGFun_of_analyticOnNhd {a b c : ℂ} {f
     (hf : AnalyticOnNhd ℂ f {z : ℂ | -z ∈ slitPlane})
     (hEq : Set.EqOn f (regularizedGaussHGFun a b c) {z : ℂ | ‖z‖ < 1 ∧ -z ∈ slitPlane}) :
     Set.EqOn f (mellinBarnesRegularizedGaussHGFun a b c) {z : ℂ | -z ∈ slitPlane} := by
-  refine eqOn_neg_slitPlane_of_analyticOnNhd_of_eqOn_cut_ball hf
+  refine hf.eqOn_neg_slitPlane_of_eqOn_cut_ball
     (fun z hz => analyticAt_const.mellinBarnesRegularizedGaussHGFun
       analyticAt_const analyticAt_const analyticAt_id ha hb hz) fun z hz => ?_
   rw [hEq hz, regularizedGaussHGFun_eq_mellinBarnesRegularizedGaussHGFun c ha hb hz.1 hz.2]
@@ -562,18 +512,6 @@ theorem ordinaryHypergeometric_eq_mellinBarnesOrdinaryHypergeometric {a b c z : 
     mul_comm] at h
   rw [h, mellinBarnesOrdinaryHypergeometric_eq_Gamma_mul]
 
-/-- **Mellin–Barnes representation of the ordinary Gauss hypergeometric function `₂F₁`**
-(DLMF 15.6.6) via the canonical separating-contour integral, giving
-`₂F₁(a, b; c; z) = (Γ(c) / (Γ(a) Γ(b))) * mellinBarnesIntegral a b c z` for all `a, b, c ∉ -ℕ`,
-`‖z‖ < 1`, and `-z ∈ slitPlane`. -/
-theorem ordinaryHypergeometric_eq_mellinBarnesIntegral {a b c z : ℂ}
-    (ha : ∀ k : ℕ, a ≠ -k) (hb : ∀ k : ℕ, b ≠ -k) (hc : ∀ k : ℕ, c ≠ -k)
-    (hz_norm : ‖z‖ < 1) (hz_slit : -z ∈ slitPlane) :
-    ordinaryHypergeometric a b c z =
-      Gamma c / (Gamma a * Gamma b) * mellinBarnesIntegral a b c z := by
-  rw [ordinaryHypergeometric_eq_mellinBarnesOrdinaryHypergeometric ha hb hc hz_norm hz_slit,
-    mellinBarnesOrdinaryHypergeometric_def]
-
 /-- **Separating-contour Mellin–Barnes representation of `ordinaryHypergeometric` (`₂F₁`)**
 (DLMF 15.6.6) at any admissible abscissa `σ < 0` avoiding `-Re a - ℕ` and `-Re b - ℕ`, giving
 `₂F₁(a, b; c; z) = (Γ(c) / (Γ(a) Γ(b))) * mellinBarnesSeparatingIntegral a b c z σ` for all
@@ -584,8 +522,8 @@ theorem ordinaryHypergeometric_eq_mellinBarnesSeparatingIntegral {a b c z : ℂ}
     (hz_norm : ‖z‖ < 1) (hz_slit : -z ∈ slitPlane) :
     ordinaryHypergeometric a b c z =
       Gamma c / (Gamma a * Gamma b) * mellinBarnesSeparatingIntegral a b c z σ := by
-  rw [ordinaryHypergeometric_eq_mellinBarnesIntegral ha hb hc hz_norm hz_slit,
-    mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral c hσ haσ hbσ hz_slit]
+  rw [ordinaryHypergeometric_eq_mellinBarnesOrdinaryHypergeometric ha hb hc hz_norm hz_slit,
+    mellinBarnesOrdinaryHypergeometric_eq_mellinBarnesSeparatingIntegral a b c z hσ haσ hbσ hz_slit]
 
 /-- **Uniqueness of the Mellin–Barnes continuation for `ordinaryHypergeometric` (`₂F₁`) on the
 cut plane.** Any function holomorphic on `{z : ℂ | -z ∈ slitPlane}` that agrees with
@@ -596,7 +534,7 @@ theorem eqOn_mellinBarnesOrdinaryHypergeometric_of_analyticOnNhd {a b c : ℂ} {
     (hf : AnalyticOnNhd ℂ f {z : ℂ | -z ∈ slitPlane})
     (hEq : Set.EqOn f (ordinaryHypergeometric a b c) {z : ℂ | ‖z‖ < 1 ∧ -z ∈ slitPlane}) :
     Set.EqOn f (mellinBarnesOrdinaryHypergeometric a b c) {z : ℂ | -z ∈ slitPlane} := by
-  refine eqOn_neg_slitPlane_of_analyticOnNhd_of_eqOn_cut_ball hf
+  refine hf.eqOn_neg_slitPlane_of_eqOn_cut_ball
     (fun z hz => analyticAt_const.mellinBarnesOrdinaryHypergeometric
       analyticAt_const analyticAt_const analyticAt_id ha hb hc hz) fun z hz => ?_
   rw [hEq hz, ordinaryHypergeometric_eq_mellinBarnesOrdinaryHypergeometric ha hb hc hz.1 hz.2]

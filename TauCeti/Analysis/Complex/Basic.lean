@@ -57,7 +57,8 @@ embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`), and the 
 (`Complex.isConnected_setOf_forall_ne_neg_natCast`). For a closed set `s ⊆ ℝ` avoiding `w₀.re`,
 an open ball around `w₀` avoids `s` in real part and preserves strict order against every element
 of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`, with the shifted negative-integer specialization
-`Complex.exists_ball_re_add_ne_neg_natCast_and_lt_iff`). Negating `x + y * I` reflects both real
+`Complex.exists_ball_re_add_ne_neg_natCast_and_lt_iff` and localization lemma
+`Complex.neg_sub_natCast_mem_ball_of_re_gt`). Negating `x + y * I` reflects both real
 coordinates (`Complex.neg_ofReal_add_mul_I`).
 
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
@@ -431,6 +432,18 @@ theorem exists_ball_re_add_ne_neg_natCast_and_lt_iff (w₀ : ℂ) {σ : ℝ}
   have h := (hav w hw).2 (-(k : ℝ) - σ) ⟨k, by ring⟩
   simp only [sub_re, neg_re, natCast_re]
   exact ⟨fun _ => by linarith [h.1 (by linarith)], fun _ => by linarith [h.2 (by linarith)]⟩
+
+/-- If `w₀.re + σ ≠ -(k : ℝ)`, `‖w - w₀‖ < r`, and `(-w₀ - k).re < σ → (-w - k).re < σ`,
+then any shifted point `-w - k` with `σ < (-w - k).re` also satisfies `σ < (-w₀ - k).re` and lies
+in `Metric.ball (-w₀ - k) r`. -/
+theorem neg_sub_natCast_mem_ball_of_re_gt {w₀ w : ℂ} {σ r : ℝ} {k : ℕ}
+    (hw₀_σ : w₀.re + σ ≠ -k) (hw_dist : ‖w - w₀‖ < r)
+    (hw_cross : (-w₀ - k).re < σ → (-w - k).re < σ)
+    (hk : σ < (-w - k).re) :
+    σ < (-w₀ - k).re ∧ (-w - k : ℂ) ∈ Metric.ball (-w₀ - k) r := by
+  refine ⟨lt_of_le_of_ne (not_lt.1 fun h => hk.not_gt (hw_cross h))
+    (fun h => hw₀_σ (by simp at h; linarith)), ?_⟩
+  rwa [mem_ball_iff_norm, sub_sub_sub_cancel_right, neg_sub_neg, norm_sub_rev]
 
 /-- If `s + β` never vanishes for natural numbers `s ≥ 1`, then `‖s + β‖` is bounded below by a
 positive multiple of `s` for all `s ≥ 1`. -/

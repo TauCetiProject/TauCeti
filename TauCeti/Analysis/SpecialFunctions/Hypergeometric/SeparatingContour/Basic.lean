@@ -306,20 +306,6 @@ theorem residue_mellinBarnesIntegrand_neg_sub_natCast_right (a b c z : ℂ) (k :
 
 /-! ### Section 3: Uniform Stirling bounds, vertical integrability, and `σ`-independence -/
 
-private theorem norm_cpow_add_mul_I_le {w : ℂ} (hw : w ≠ 0) {R M θ : ℝ}
-    (hM : |Real.log ‖w‖| ≤ M) (hθ : |w.arg| ≤ θ) {σ y : ℝ} (hσ : |σ| ≤ R) :
-    ‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|) := by
-  have hre : ((σ : ℂ) + y * I).re = σ := by simp
-  have him : ((σ : ℂ) + y * I).im = y := by simp
-  rw [norm_cpow_of_ne_zero hw, hre, him, Real.rpow_def_of_pos (norm_pos_iff.2 hw), ← Real.exp_sub]
-  refine Real.exp_le_exp.2 ?_
-  have h1 : Real.log ‖w‖ * σ ≤ R * M :=
-    (le_abs_self _).trans ((abs_mul _ _).trans_le
-      ((mul_le_mul hM hσ (abs_nonneg _) ((abs_nonneg _).trans hM)).trans_eq (mul_comm M R)))
-  have h2 : -(w.arg * y) ≤ θ * |y| :=
-    (neg_le_abs _).trans ((abs_mul _ _).trans_le (mul_le_mul_of_nonneg_right hθ (abs_nonneg y)))
-  linarith
-
 /-- Uniform vertical-strip exponential decay bound for `mellinBarnesIntegrand` on bounded parameter
 balls and compact sectorial subsets of `-z ∈ slitPlane`. -/
 theorem exists_norm_mellinBarnesIntegrand_vertical_le {R r₁ r₂ δ : ℝ}

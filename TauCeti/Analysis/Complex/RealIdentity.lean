@@ -20,7 +20,10 @@ line—are equal (`Differentiable.eq_of_frequently_ofReal_eq`, `Differentiable.e
 `AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real axis. It is the
 uniqueness statement behind analytic continuation of real one-parameter orbits to complex time.
 On the complex slit plane, agreement on the positive real axis likewise determines a
-holomorphic function uniquely (`AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`). Similarly, on the
+holomorphic function uniquely (`AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`), and on the
+reflected slit plane `{z : ℂ | -z ∈ Complex.slitPlane}`, agreement on the cut unit ball
+`{z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane}` determines a holomorphic function uniquely
+(`AnalyticOnNhd.eqOn_neg_slitPlane_of_eqOn_cut_ball`). Similarly, on the
 complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers, agreement on the open
 right half-plane `0 < w.re` determines a holomorphic function uniquely
 (`AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos`).
@@ -77,6 +80,31 @@ theorem AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq {f g : ℂ → E}
       fun _ _ ↦ by simp_all
   exact hreal.frequently (eventually_nhdsWithin_of_eventually_nhds
     ((lt_mem_nhds one_pos).mono h)).frequently
+
+/-- Two holomorphic functions on the reflected slit plane `{z : ℂ | -z ∈ Complex.slitPlane}`
+that agree on the cut unit ball `{z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane}` agree throughout
+`{z : ℂ | -z ∈ Complex.slitPlane}`. -/
+theorem AnalyticOnNhd.eqOn_neg_slitPlane_of_eqOn_cut_ball {f g : ℂ → E}
+    (hf : AnalyticOnNhd ℂ f {z : ℂ | -z ∈ Complex.slitPlane})
+    (hg : AnalyticOnNhd ℂ g {z : ℂ | -z ∈ Complex.slitPlane})
+    (hEq : Set.EqOn f g {z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane}) :
+    Set.EqOn f g {z : ℂ | -z ∈ Complex.slitPlane} := by
+  have hpre_slit : IsPreconnected Complex.slitPlane :=
+    (Complex.starConvex_one_slitPlane.isPathConnected
+      Complex.one_mem_slitPlane).isConnected.isPreconnected
+  have himg : Neg.neg '' Complex.slitPlane = {z : ℂ | -z ∈ Complex.slitPlane} := by
+    ext z; simp
+  have hpre : IsPreconnected {z : ℂ | -z ∈ Complex.slitPlane} :=
+    himg ▸ hpre_slit.image _ continuous_neg.continuousOn
+  have hopen : IsOpen {z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane} :=
+    (isOpen_lt continuous_norm continuous_const).inter
+      (Complex.isOpen_slitPlane.preimage continuous_neg)
+  have hz₀ : (-1 / 2 : ℂ) ∈ {z : ℂ | ‖z‖ < 1 ∧ -z ∈ Complex.slitPlane} := by
+    refine ⟨by norm_num, ?_⟩
+    rw [neg_div, neg_neg]
+    simpa using Complex.ofReal_mem_slitPlane.2 (by norm_num : (0 : ℝ) < 1 / 2)
+  exact hf.eqOn_of_preconnected_of_eventuallyEq hg hpre hz₀.2
+    (Filter.eventually_of_mem (hopen.mem_nhds hz₀) hEq)
 
 /-- Two holomorphic functions on the complement `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the
 nonpositive integers that agree on the open right half-plane `0 < w.re` agree throughout

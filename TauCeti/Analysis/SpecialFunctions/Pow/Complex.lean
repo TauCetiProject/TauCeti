@@ -111,6 +111,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
 * `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_add_mul_I_le` -- for `w ≠ 0`, `|log ‖w‖| ≤ M`, `|arg w| ≤ θ`, and `|σ| ≤ R`,
+  `‖w ^ (σ + y i)‖ ≤ exp (R * M + θ * |y|)`.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
@@ -810,6 +812,23 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
     _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
         mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
           (Real.rpow_nonneg (norm_nonneg w) _)
+
+/-- Sector-sensitive vertical-line bound for a principal complex power: for `w ≠ 0`,
+`|Real.log ‖w‖| ≤ M`, `|w.arg| ≤ θ`, and `|σ| ≤ R`,
+`‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|)`. -/
+theorem norm_cpow_add_mul_I_le {w : ℂ} (hw : w ≠ 0) {R M θ : ℝ}
+    (hM : |Real.log ‖w‖| ≤ M) (hθ : |w.arg| ≤ θ) {σ y : ℝ} (hσ : |σ| ≤ R) :
+    ‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|) := by
+  have hre : ((σ : ℂ) + y * I).re = σ := by simp
+  have him : ((σ : ℂ) + y * I).im = y := by simp
+  rw [norm_cpow_of_ne_zero hw, hre, him, Real.rpow_def_of_pos (norm_pos_iff.2 hw), ← Real.exp_sub]
+  refine Real.exp_le_exp.2 ?_
+  have h1 : Real.log ‖w‖ * σ ≤ R * M :=
+    (le_abs_self _).trans ((abs_mul _ _).trans_le
+      ((mul_le_mul hM hσ (abs_nonneg _) ((abs_nonneg _).trans hM)).trans_eq (mul_comm M R)))
+  have h2 : -(w.arg * y) ≤ θ * |y| :=
+    (neg_le_abs _).trans ((abs_mul _ _).trans_le (mul_le_mul_of_nonneg_right hθ (abs_nonneg y)))
+  linarith
 
 /-- For `z` in the closed right half-plane (`0 ≤ z.re`) and any `d : ℂ`,
 `‖(1 + z) ^ d‖ ≤ exp (π * |d.im|) * (1 + ‖z‖) ^ max 0 d.re`. -/

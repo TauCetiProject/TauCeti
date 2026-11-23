@@ -183,10 +183,6 @@ private theorem analyticAt_truncated_vertical_mellinBarnes {p : ℂ × ℂ × �
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with y hy
   simp only [one_smul, γ, projIcc_of_mem hn_le (Ioc_subset_Icc_self hy)]
 
-private theorem norm_le_add_one_of_mem_ball {x x₀ : ℂ} {δ : ℝ} (hx : x ∈ ball x₀ δ)
-    (hδ : δ ≤ 1) : ‖x‖ ≤ ‖x₀‖ + 1 :=
-  by linarith [norm_le_norm_sub_add x x₀, mem_ball_iff_norm.1 hx]
-
 private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ}
     {σ δ₀ δ₁ ρ : ℝ} (hσ : ∀ m : ℕ, σ ≠ m) (hδ₀_le : δ₀ ≤ 1 / 2) (hδ₁_le : δ₁ ≤ 1 / 2)
     (hav₀ : ∀ w ∈ ball p₀.1 δ₀, ∀ k : ℕ, w.re + σ ≠ -k)
@@ -215,9 +211,11 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
     have hR₃ : ‖p₀.2.2.1‖ + 1 ≤ R := by simp [R]
     have hRσ : |σ| ≤ R := by simp [R]
     intro p hp
-    exact ⟨(norm_le_add_one_of_mem_ball hp.1 (hδ₀_le.trans (by norm_num))).trans hR₁,
-      (norm_le_add_one_of_mem_ball hp.2.1 (hδ₁_le.trans (by norm_num))).trans hR₂,
-      (norm_le_add_one_of_mem_ball hp.2.2.1 le_rfl).trans hR₃, hRσ⟩
+    exact ⟨(norm_le_norm_add_const_of_dist_le
+        ((mem_ball.1 hp.1).le.trans (hδ₀_le.trans (by norm_num)))).trans hR₁,
+      (norm_le_norm_add_const_of_dist_le
+        ((mem_ball.1 hp.2.1).le.trans (hδ₁_le.trans (by norm_num)))).trans hR₂,
+      (norm_le_norm_add_const_of_dist_le (mem_ball.1 hp.2.2.1).le).trans hR₃, hRσ⟩
   obtain ⟨B, Y₀, _, _, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
     (r₂ := 2 * ‖p₀.2.2.2‖) hr₁ hδ
   have hcov : AECover (volume : Measure ℝ) atTop (fun n : ℕ => Ioc (-(n : ℝ)) n) :=
@@ -315,16 +313,6 @@ private theorem exists_isolating_radius_mellinBarnesLeftPoles {a₀ b₀ : ℂ} 
     · exact hb₀ (k + m) (by push_cast; linear_combination hm)
   exact TauCeti.exists_pos_closedBall_subset_and_lt_dist (T := P₀) hU_mem
 
-private theorem neg_sub_natCast_mem_ball_of_re_gt {w₀ w : ℂ} {σ r : ℝ}
-    (hw₀_σ : ∀ k : ℕ, w₀.re + σ ≠ -k) (hw_dist : ‖w - w₀‖ < r / 2)
-    (hw_cross : ∀ k : ℕ, (-w₀ - k).re < σ → (-w - k).re < σ)
-    {k : ℕ} (hk : σ < (-w - k).re) :
-    σ < (-w₀ - k).re ∧ (-w - k : ℂ) ∈ ball (-w₀ - k) r := by
-  refine ⟨lt_of_le_of_ne (not_lt.1 fun h => hk.not_gt (hw_cross k h))
-    (fun h => hw₀_σ k (by simp at h; linarith)), ?_⟩
-  rw [mem_ball_iff_norm, sub_sub_sub_cancel_right, neg_sub_neg, norm_sub_rev]
-  linarith [norm_nonneg (w - w₀)]
-
 private theorem mellinBarnesLeftPoles_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
     (ha₀_σ : ∀ k : ℕ, a₀.re + σ ≠ -k) (hb₀_σ : ∀ k : ℕ, b₀.re + σ ≠ -k)
     (ha_dist : ‖a - a₀‖ < r / 2) (hb_dist : ‖b - b₀‖ < r / 2)
@@ -333,9 +321,11 @@ private theorem mellinBarnesLeftPoles_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
     ∀ w ∈ mellinBarnesLeftPoles a b σ, ∃ s ∈ mellinBarnesLeftPoles a₀ b₀ σ, w ∈ ball s r := by
   intro w hw
   rcases mem_mellinBarnesLeftPoles.1 hw with ⟨hw_re, ⟨k, rfl⟩ | ⟨k, rfl⟩⟩
-  · obtain ⟨hre, hball⟩ := neg_sub_natCast_mem_ball_of_re_gt ha₀_σ ha_dist ha_cross hw_re
+  · obtain ⟨hre, hball⟩ := neg_sub_natCast_mem_ball_of_re_gt (ha₀_σ k)
+      (r := r) (by linarith [norm_nonneg (a - a₀)]) (ha_cross k) hw_re
     exact ⟨-a₀ - k, mem_mellinBarnesLeftPoles.2 ⟨hre, Or.inl ⟨k, rfl⟩⟩, hball⟩
-  · obtain ⟨hre, hball⟩ := neg_sub_natCast_mem_ball_of_re_gt hb₀_σ hb_dist hb_cross hw_re
+  · obtain ⟨hre, hball⟩ := neg_sub_natCast_mem_ball_of_re_gt (hb₀_σ k)
+      (r := r) (by linarith [norm_nonneg (b - b₀)]) (hb_cross k) hw_re
     exact ⟨-b₀ - k, mem_mellinBarnesLeftPoles.2 ⟨hre, Or.inr ⟨k, rfl⟩⟩, hball⟩
 
 private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : ℂ} (c z : ℂ) {σ r : ℝ}
@@ -358,10 +348,14 @@ private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : �
   set P : Finset ℂ := mellinBarnesLeftPoles a b σ
   let F : ℂ → Finset ℂ := fun s => P.filter (· ∈ ball s r)
   have hcover := mellinBarnesLeftPoles_cover ha₀_σ hb₀_σ ha_dist hb_dist ha_cross hb_cross
+  have hclosed_disj : ∀ s₁ ∈ P₀, ∀ s₂ ∈ P₀, s₁ ≠ s₂ →
+      Disjoint (closedBall s₁ r) (closedBall s₂ r) := fun s₁ hs₁ s₂ hs₂ hne =>
+    closedBall_disjoint_closedBall (by linarith [hsep s₁ hs₁ s₂ hs₂ hne])
   have hdisj : (P₀ : Set ℂ).PairwiseDisjoint F := fun s₁ hs₁ s₂ hs₂ hne =>
     Finset.disjoint_left.2 fun w hw₁ hw₂ =>
-      by linarith [mem_ball.1 (Finset.mem_filter.1 hw₁).2,
-        mem_ball.1 (Finset.mem_filter.1 hw₂).2, dist_triangle_left s₁ s₂ w, hsep s₁ hs₁ s₂ hs₂ hne]
+      (hclosed_disj s₁ hs₁ s₂ hs₂ hne).notMem_of_mem_left
+        (ball_subset_closedBall (Finset.mem_filter.1 hw₁).2)
+        (ball_subset_closedBall (Finset.mem_filter.1 hw₂).2)
   have hbiU : P₀.biUnion F = P := by
     ext w; simp only [Finset.mem_biUnion, F, Finset.mem_filter]
     exact ⟨fun ⟨_, _, hw, _⟩ => hw, fun hw =>
@@ -381,8 +375,8 @@ private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : �
     obtain ⟨s', hs', hws'⟩ := hcover w hwP
     have hs_eq : s' = s := by
       by_contra hne
-      linarith [mem_closedBall.1 hw, mem_ball.1 hws', dist_triangle_left s' s w,
-        hsep s' hs' s hs hne]
+      exact (hclosed_disj s' hs' s hs hne).notMem_of_mem_left
+        (ball_subset_closedBall hws') hw
     subst hs_eq; exact Finset.mem_filter.2 ⟨hwP, hws'⟩
   have hcirc := TauCeti.Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hr (F s)
     (fun ζ _ => meromorphicAt_mellinBarnesIntegrand a b c z ζ)
