@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 
 /-!
 # Composition of submersions
@@ -62,7 +63,7 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
   let τ := Ψ₁.symm.trans Φ₂
   let τF := τ.prod (OpenPartialHomeomorph.refl F₁)
   let Θ := (Φ₁.trans τF).transHomeomorph hf.equiv.symm.toHomeomorph
-  let φ := Θ.transHomeomorph I.toHomeomorph.symm
+  let φ := Θ.trans I.interiorChart.symm
   have hΦ₁ := d₁.contMDiffOn_extendTrans hf.domChart_mem_maximalAtlas
     (Ψ := hf.equiv.toHomeomorph) hf.equiv.contDiff
   have hΦ₁s := d₁.contMDiffOn_extendTrans_symm hf.domChart_mem_maximalAtlas
@@ -87,12 +88,13 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
   have hΘs : ContMDiffOn 𝓘(𝕜, E) I n Θ.symm Θ.target :=
     (hΦ₁s.comp (hτFs.mono inter_subset_left) fun _ hz ↦ hz.2).comp
       hf.equiv.contDiff.contMDiff.contMDiffOn fun _ hw ↦ hw
-  have hφ := Θ.transHomeomorph_toHomeomorph_symm_mem_maximalAtlas hΘ hΘs
+  have hφ := Θ.trans_interiorChart_symm_mem_maximalAtlas hΘ hΘs
   have hprojx : (Φ₁ x).1 = Ψ₁ (f x) := by
     simpa [Φ₁, Ψ₁, d₁, c₁, extend_coe] using (hf.codChart_extend_apply hf.mem_domChart_source).symm
   have hxφ : x ∈ φ.source := by
     simp only [φ, Θ, τF, τ, transHomeomorph_source, trans_source, prod_source, refl_source,
-      symm_source, mem_inter_iff, mem_preimage, mem_prod, mem_univ, and_true]
+      symm_source, ModelWithCorners.interiorChart_target, I.range_eq_univ, interior_univ,
+      mem_inter_iff, mem_preimage, mem_prod, mem_univ, and_true]
     have hxΦ₁ : x ∈ Φ₁.source := by simpa [Φ₁] using hf.mem_domChart_source
     have hfxΨ₁ : f x ∈ Ψ₁.source := by simpa [Ψ₁] using hf.mem_codChart_source
     rw [hprojx]
@@ -104,7 +106,9 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
       f ((φ.extend I).symm w) = (ψ.extend J).symm (hf.equiv w).1 ∧
       ψ.extend J (f ((φ.extend I).symm w)) = (hf.equiv w).1 := fun w hw ↦ by
     have hIw : I (I.symm w) = w := I.right_inv (I.range_eq_univ.symm ▸ mem_univ w)
-    have hwΘ : w ∈ Θ.target := by simpa [φ, extend_target, hIw, I.range_eq_univ] using hw
+    have hwΘ : w ∈ Θ.target := by
+      simpa [φ, extend_target, trans_target, ModelWithCorners.interiorChart_source, hIw,
+        I.range_eq_univ] using hw
     set u' : E' := (hf.equiv w).1; set z : E := hf.equiv.symm (τ.symm u', (hf.equiv w).2)
     have heq : hf.equiv.symm.toHomeomorph.symm = hf.equiv.toHomeomorph := rfl
     simp only [Θ, τF, Φ₁, heq, transHomeomorph_target, trans_target, prod_target, refl_target,

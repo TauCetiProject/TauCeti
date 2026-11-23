@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
@@ -233,23 +234,26 @@ theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
   obtain ⟨Θ, hxΘ, hfΘ⟩ := hf; let ψ := chartAt G (f x)
   have hψ : ψ ∈ IsManifold.maximalAtlas J n N := IsManifold.chart_mem_maximalAtlas (f x)
   let Ξ := Θ.toOpenPartialHomeomorph.trans (ψ.extendTrans J L₀.symm.toHomeomorph)
-  let φ := Ξ.transHomeomorph I.toHomeomorph.symm
+  let φ := Ξ.trans I.interiorChart.symm
   have hΞ : ContMDiffOn I 𝓘(𝕜, E) n Ξ Ξ.source :=
     (ψ.contMDiffOn_extendTrans hψ L₀.symm.contDiff).comp (Θ.contMDiffOn.mono inter_subset_left)
       fun _ hz ↦ hz.2
   have hΞs : ContMDiffOn 𝓘(𝕜, E) I n Ξ.symm Ξ.target :=
     Θ.symm.contMDiffOn.comp ((ψ.contMDiffOn_extendTrans_symm hψ L₀.contDiff).mono
       inter_subset_left) fun _ hz ↦ hz.2
-  have hφ := Ξ.transHomeomorph_toHomeomorph_symm_mem_maximalAtlas hΞ hΞs
+  have hφ := Ξ.trans_interiorChart_symm_mem_maximalAtlas hΞ hΞs
   have hxφ : x ∈ φ.source := by
-    simp only [φ, Ξ, transHomeomorph_source, trans_source, extendTrans_source,
-      PartialDiffeomorph.toOpenPartialHomeomorph_source,
+    simp only [φ, Ξ, trans_source, extendTrans_source, OpenPartialHomeomorph.symm_source,
+      ModelWithCorners.interiorChart_target, I.range_eq_univ, interior_univ, preimage_univ,
+      inter_univ, PartialDiffeomorph.toOpenPartialHomeomorph_source,
       PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, mem_inter_iff, mem_preimage]
     exact ⟨hxΘ, by rw [← hfΘ hxΘ]; exact mem_chart_source G (f x)⟩
   let L : E ≃L[𝕜] E' × PUnit.{1} := L₀.trans (ContinuousLinearEquiv.prodUnique 𝕜 E' PUnit.{1}).symm
   refine .mk_of_continuousAt hcont L φ ψ hxφ (mem_chart_source G (f x)) hφ hψ fun u hu ↦ ?_
   have hIu : I (I.symm u) = u := I.right_inv (I.range_eq_univ.symm ▸ mem_univ u)
-  have huΞ : u ∈ Ξ.target := by simpa [φ, extend_target, hIu, I.range_eq_univ] using hu
+  have huΞ : u ∈ Ξ.target := by
+    simpa [φ, extend_target, trans_target, ModelWithCorners.interiorChart_source, hIu,
+      I.range_eq_univ] using hu
   have hL₀ : L₀.symm.toHomeomorph.symm = L₀.toHomeomorph := rfl
   simp only [Ξ, hL₀, trans_target, extendTrans_target, extendTrans_symm_apply,
     PartialDiffeomorph.toOpenPartialHomeomorph_target, ContinuousLinearEquiv.coe_toHomeomorph,

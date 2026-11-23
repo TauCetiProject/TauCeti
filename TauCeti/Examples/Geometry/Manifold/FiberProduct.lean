@@ -242,6 +242,13 @@ example :
           (hQ_disj (by decide : (2 : Fin 4) ≠ 3)) h23 with h2 | h3
         · exact ⟨2, h2⟩
         · exact ⟨3, h3⟩
+  have hS₀_eq :
+      S₀ = Subtype.val '' (e.symm '' (Subtype.val ⁻¹' (Metric.ball y₀ r \ {y₀}) : Set V)) := by
+    have hpre : (e.symm.symm ⁻¹' (Subtype.val ⁻¹' {y₀} : Set V)) = {⟨x₀, hx₀⟩} := by
+      ext u
+      simp [y₀, Subtype.val_inj, e.injective.eq_iff]
+    rw [e.symm.image_eq_preimage_symm, Set.preimage_sdiff, Set.preimage_sdiff, hpre]
+    rfl
   rcases lt_trichotomy n 1 with hn0 | rfl | hn2
   · obtain rfl : n = 0 := Nat.lt_one_iff.mp hn0
     have hsub0 : Subsingleton (Fin 0 → ℝ) := inferInstance
@@ -266,13 +273,11 @@ example :
       have hC_pre : IsPreconnected (C I) :=
         (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
       have hC_sub : C I ⊆ S₀ := by
-        rintro x ⟨u, ⟨v, hv, rfl⟩, rfl⟩
-        have hvB : v.val ∈ Metric.ball y₀ r := hball ▸ image_mono hI hv
-        refine ⟨e.symm v, ⟨by simpa [B] using hvB, fun h ↦ hz₀ ?_⟩, rfl⟩
-        have hvy : v.val = y₀ := by
-          simpa [y₀] using congrArg (fun u : U ↦ (e u).val) h
-        obtain ⟨t, ht, htv⟩ := hv
-        simpa [z₀, ← hvy, ← htv] using ht
+        rw [hS₀_eq]
+        refine image_mono (image_mono (preimage_mono ?_))
+        rw [← hball, ← φ.symm_apply_apply y₀]
+        exact Set.subset_sdiff_singleton (image_mono hI) fun ⟨t, ht, htv⟩ ↦
+          hz₀ (by dsimp [z₀]; rwa [← φ.symm.injective htv])
       exact hpre_sub hC_pre (hC_sub.trans hS₀_sub)
     let J₁ : Set ℝ := Ioo (z₀ - r) z₀
     let J₂ : Set ℝ := Ioo z₀ (z₀ + r)
@@ -282,18 +287,15 @@ example :
     obtain ⟨i₂, hi₂⟩ := hpiece J₂
       (Real.ball_eq_Ioo z₀ r ▸ Ioo_subset_Ioo_left (by linarith)) (fun h ↦ lt_irrefl _ h.1)
       isPreconnected_Ioo
+    have hJ : J₁ ∪ J₂ = Metric.ball z₀ r \ {z₀} := by
+      rw [Real.ball_eq_Ioo]
+      exact Set.Ioo_union_Ioo_eq_Ioo_sdiff_singleton (by linarith) (by linarith)
     have hS₀_cover : S₀ ⊆ C J₁ ∪ C J₂ := by
-      rintro x ⟨u, ⟨huB, hune⟩, rfl⟩
-      have hmem : φ (e u).val ∈ Ioo (z₀ - r) (z₀ + r) := by
-        rw [← Real.ball_eq_Ioo, ← φ.image_ball y₀ r]
-        exact ⟨(e u).val, huB, rfl⟩
-      have hne : φ (e u).val ≠ z₀ := fun h ↦
-        hune (e.injective (Subtype.ext (φ.injective h)))
-      rcases lt_or_gt_of_ne hne with hlt | hgt
-      · exact Or.inl ⟨u, ⟨e u, ⟨φ (e u).val, ⟨hmem.1, hlt⟩, φ.symm_apply_apply _⟩,
-          e.symm_apply_apply u⟩, rfl⟩
-      · exact Or.inr ⟨u, ⟨e u, ⟨φ (e u).val, ⟨hgt, hmem.2⟩, φ.symm_apply_apply _⟩,
-          e.symm_apply_apply u⟩, rfl⟩
+      rw [hS₀_eq, ← hball]
+      have hdiff : φ.symm '' Metric.ball z₀ r \ {y₀} = φ.symm '' (J₁ ∪ J₂) := by
+        rw [hJ, Set.image_sdiff φ.symm.injective, image_singleton, φ.symm_apply_apply]
+      rw [hdiff]
+      simp only [C, image_union, preimage_union, subset_rfl]
     obtain ⟨k, hk₁, hk₂⟩ : ∃ k : Fin 4, k ≠ i₁ ∧ k ≠ i₂ := by
       fin_cases i₁ <;> fin_cases i₂ <;> decide
     rcases hS₀_cover (hxpt_S₀ k) with hkC | hkC
@@ -309,17 +311,6 @@ example :
     have hA : IsPreconnected A := by
       rw [← Topology.IsInducing.subtypeVal.isPreconnected_image, himg]
       exact (TauCeti.isConnected_ball_sdiff_singleton hrank y₀ hr).isPreconnected
-    have hS₀_eq : S₀ = Subtype.val '' (e.symm '' A) := by
-      dsimp only [S₀]
-      congr 1
-      ext u
-      simp only [mem_sdiff, mem_preimage, mem_singleton_iff, mem_image, A]
-      constructor
-      · rintro ⟨huB, hune⟩
-        exact ⟨e u, ⟨huB, fun h ↦ hune (e.injective (Subtype.ext h))⟩, e.symm_apply_apply u⟩
-      · rintro ⟨v, ⟨hvB, hvne⟩, rfl⟩
-        exact ⟨by simpa [B] using hvB, fun h ↦ hvne (Subtype.ext_iff.mp
-          ((e.apply_symm_apply v).symm.trans (congrArg e h)))⟩
     have hS₀_pre : IsPreconnected S₀ := by
       rw [hS₀_eq]
       exact (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn

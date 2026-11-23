@@ -53,9 +53,6 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
-* `OpenPartialHomeomorph.transHomeomorph_toHomeomorph_symm_mem_maximalAtlas`: converse
-  maximal-atlas membership criterion for a chart into the model vector space pulled back along
-  `I.toHomeomorph.symm`.
 -/
 
 public section
@@ -200,18 +197,6 @@ theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
     (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
   (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
     ((c.extendTrans I Ψ).open_target.mem_nhds hv)
-
-/-- An open partial homeomorphism `Θ : M → E` into the model vector space of a boundaryless `C^n`
-manifold which is `C^n` on its source with `C^n` inverse on its target pulls back along
-`I.toHomeomorph.symm` to a chart of the maximal `C^n` atlas. -/
-theorem transHomeomorph_toHomeomorph_symm_mem_maximalAtlas [IsManifold I n M]
-    (Θ : OpenPartialHomeomorph M E) (hΘ : ContMDiffOn I 𝓘(𝕜, E) n Θ Θ.source)
-    (hΘsymm : ContMDiffOn 𝓘(𝕜, E) I n Θ.symm Θ.target) :
-    Θ.transHomeomorph I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
-  have hIsymm : ContMDiff 𝓘(𝕜, E) I n I.symm :=
-    contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
-  exact mem_maximalAtlas_of_contMDiffOn _
-    (hIsymm.comp_contMDiffOn hΘ) (hΘsymm.comp I.contMDiff.contMDiffOn fun _ hy ↦ hy)
 
 end OpenPartialHomeomorph
 
