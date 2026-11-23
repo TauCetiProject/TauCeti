@@ -40,9 +40,9 @@ abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a non
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
 * `Module.Basis.mem_span_range_nsmul_iff`, `Module.Basis.quotientSpanNSMulEquiv`: rescaling the
-  vectors of a finite integral basis `b` by natural numbers `m k`, a vector lies in the span of the
-  `m k • b k` exactly when its `k`-th coordinate is divisible by `m k`, and the quotient by that
-  span is `Π k, ZMod (m k)`.
+  vectors of an integral basis `b` by natural numbers `m k`, a vector lies in the span of the
+  `m k • b k` exactly when its `k`-th coordinate is divisible by `m k`; for a finite basis the
+  quotient by that span is `Π k, ZMod (m k)`.
 * `LinearIndependent.card_quotient_span_range_nsmul`: rescaling a finite linearly independent
   family `v` by natural numbers `m k` multiplies the order of the quotient by the span by
   `∏ k, m k`.
@@ -131,7 +131,7 @@ variable {κ M : Type*} [AddCommGroup M] (b : Basis κ ℤ M) (m : κ → ℕ)
 
 /-- A vector lies in the span of the rescaled basis vectors `m k • b k` exactly when, for every
 `k`, its `k`-th coordinate in `b` is divisible by `m k`. -/
-theorem mem_span_range_nsmul_iff [Finite κ] {x : M} :
+theorem mem_span_range_nsmul_iff {x : M} :
     x ∈ Submodule.span ℤ (Set.range fun k ↦ m k • b k) ↔ ∀ k, (m k : ℤ) ∣ b.repr x k := by
   constructor
   · intro hx
@@ -148,9 +148,9 @@ theorem mem_span_range_nsmul_iff [Finite κ] {x : M} :
     | smul a y _ hy => exact fun k ↦ by simpa using (hy k).mul_left a
   · intro h
     choose q hq using h
-    have := Fintype.ofFinite κ
-    rw [← b.sum_repr x]
+    rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply]
     refine Submodule.sum_mem _ fun k _ ↦ ?_
+    dsimp only
     rw [hq k, mul_comm, mul_smul, natCast_zsmul]
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
 
@@ -162,7 +162,7 @@ private theorem coordModNSMul_apply (x : M) (k : κ) :
     coordModNSMul b m x k = (b.repr x k : ZMod (m k)) :=
   (rfl)
 
-private theorem ker_coordModNSMul [Finite κ] :
+private theorem ker_coordModNSMul :
     LinearMap.ker (coordModNSMul b m) = Submodule.span ℤ (Set.range fun k ↦ m k • b k) := by
   ext x
   simp [mem_span_range_nsmul_iff, funext_iff, coordModNSMul_apply,
@@ -184,8 +184,8 @@ noncomputable def quotientSpanNSMulEquiv [Finite κ] :
 
 @[simp]
 theorem quotientSpanNSMulEquiv_mk [Finite κ] (x : M) (k : κ) :
-    b.quotientSpanNSMulEquiv m (Submodule.Quotient.mk x) k = (b.repr x k : ZMod (m k)) :=
-  (rfl)
+    b.quotientSpanNSMulEquiv m (Submodule.Quotient.mk x) k = (b.repr x k : ZMod (m k)) := by
+  simp [quotientSpanNSMulEquiv, coordModNSMul_apply]
 
 /-- The quotient of `M` by the span of the rescaled basis vectors `m k • b k` has `∏ k, m k`
 elements; it is infinite, of cardinality `0` in `Nat.card`, when some `m k` vanishes. -/

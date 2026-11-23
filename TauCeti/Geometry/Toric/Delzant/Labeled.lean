@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Interval
 
-import Mathlib.Data.ZMod.QuotientGroup
+import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.LinearAlgebra.FreeModule.Int
 
@@ -24,10 +24,12 @@ Let `i : N →+ V` be a lattice and `(u, c)` a facet presentation of the polyhed
 `Δ = {x ∈ V* | c j ≤ ⟨x, u j⟩ for every j}` (`TauCeti.Toric.facetPolyhedron`). The presentation is
 *rational simple* (`TauCeti.Toric.IsRationalSimple`) when `Δ` is bounded, each constraint
 contributes a facet, the inward normals are primitive, and exactly `rank N` facets meet at each
-vertex. A Delzant presentation is rational simple (`TauCeti.Toric.IsDelzant.isRationalSimple`),
-and a rational simple presentation is Delzant exactly when the normals of the facets meeting at
-each vertex generate `N`, that is, when every vertex cone is unimodular
-(`TauCeti.Toric.isDelzant_iff_isRationalSimple`).
+vertex. Like `TauCeti.Toric.IsDelzant`, the predicate omits `IsIntegralLattice i`; the polytope is
+simple, with linearly independent normals at each vertex
+(`TauCeti.Toric.IsRationalSimple.linearIndepOn_activeSet`), only in an integral lattice. A Delzant
+presentation is rational simple (`TauCeti.Toric.IsDelzant.isRationalSimple`), and a rational simple
+presentation is Delzant exactly when the normals of the facets meeting at each vertex generate `N`,
+that is, when every vertex cone is unimodular (`TauCeti.Toric.isDelzant_iff_isRationalSimple`).
 
 Labels `m j` enter through the *labeled normals* `m j • u j`.
 
@@ -50,15 +52,19 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
   where the active normals form a basis `b` of `N`, the labeled lattice is spanned by the rescaled
   basis vectors (`TauCeti.Toric.labeledActiveLattice_eq_span_range_nsmul`), and
   `Module.Basis.quotientSpanNSMulEquiv` identifies the quotient with `Π j, ZMod (m j)`.
-* **Smoothness.** By `TauCeti.Toric.isDelzant_nsmul_iff` in
+* **Delzant labeled presentations.** By `TauCeti.Toric.isDelzant_nsmul_iff` in
   `TauCeti.Geometry.Toric.Delzant.Basic`, the labeled presentation is Delzant exactly when all
-  labels are one and the unlabeled presentation is Delzant. For a labeled rational simple polytope
-  this is Lerman–Tolman's criterion: it is smooth exactly when all labels are one and every vertex
-  cone is unimodular (`TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`).
+  labels are one and the unlabeled presentation is Delzant. For a labeled rational simple polytope,
+  the labeled presentation `(m j • u j, m j * c j)` is therefore Delzant exactly when all labels
+  are one and every vertex cone is unimodular
+  (`TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`). This is the combinatorial shape of
+  Lerman–Tolman's smoothness criterion; the statement concerns the presentation only, not the
+  structure groups or the orbifold.
 
 The interval `[0, a]` with labels `m 0` and `m 1` on its two endpoints is the labeled polytope of a
-weighted projective line in Lerman–Tolman's correspondence. Its structure groups at the endpoints
-have orders `m 0` and `m 1`
+weighted projective line in Lerman–Tolman's correspondence. For positive labels its structure
+groups at the endpoints have orders `m 0` and `m 1`; a zero label gives the infinite quotient `ℤ`,
+of cardinality `0` in `Nat.card`
 (`TauCeti.Toric.card_quotient_labeledActiveLattice_interval_of_eq_zero`,
 `TauCeti.Toric.card_quotient_labeledActiveLattice_interval_of_eq`).
 
@@ -78,8 +84,8 @@ have orders `m 0` and `m 1`
   the vertices of a labeled polytope are finite.
 * `TauCeti.Toric.isDelzant_iff_isRationalSimple`: Delzant means rational simple with unimodular
   vertex cones.
-* `TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`: Lerman–Tolman's smoothness criterion for
-  labeled polytopes.
+* `TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`: the labeled presentation of a rational
+  simple polytope is Delzant exactly when all labels are one and every vertex cone is unimodular.
 
 ## References
 
@@ -172,7 +178,12 @@ variable (i u c)
 polytope*: the polyhedron is bounded, each constraint is the only active one at some point of the
 polyhedron, the inward normals are primitive lattice vectors, and exactly `rank N` facets meet at
 each vertex. With a positive integer label on each facet it is a *labeled polytope* in the sense of
-Lerman–Tolman, the moment data of a compact symplectic toric orbifold. -/
+Lerman–Tolman, the moment data of a compact symplectic toric orbifold.
+
+Like `IsDelzant`, the predicate does not include `IsIntegralLattice i`: results that need the
+lattice assume it separately. Without it the polytope need not be simple (the octahedron, via a
+non-injective map `ℤ⁴ →+ ℝ³`, has four facets at each vertex but dependent normals); in an integral
+lattice the active normals at each vertex are linearly independent (`linearIndepOn_activeSet`). -/
 structure IsRationalSimple : Prop where
   /-- The polyhedron is bounded, hence a polytope. -/
   isBounded : Bornology.IsBounded (facetPolyhedron i u c)
@@ -210,9 +221,11 @@ namespace IsRationalSimple
 variable (hΔ : IsRationalSimple i u c)
 include hΔ
 
-/-- **Labeled polytopes, Lerman–Tolman's smoothness criterion.** A rational simple polytope with
-labels `m j` is Delzant, as a labeled presentation `(m j • u j, m j * c j)`, exactly when every
-label is one and every vertex cone is unimodular. -/
+/-- **Delzant labeled presentations.** For a rational simple polytope with positive labels `m j`,
+the labeled presentation `(m j • u j, m j * c j)` is Delzant exactly when every label is one and
+every vertex cone is unimodular. This is the combinatorial shape of Lerman–Tolman's smoothness
+criterion: it concerns the presentation only, not the structure groups
+`N ⧸ labeledActiveLattice i u c m x`. -/
 theorem isDelzant_nsmul_iff [Finite ι] [FiniteDimensional ℝ V] {m : ι → ℕ}
     (hm : ∀ j, m j ≠ 0) :
     IsDelzant i (fun j ↦ m j • u j) (fun j ↦ m j * c j) ↔ (∀ j, m j = 1) ∧
@@ -267,19 +280,31 @@ section Interval
 
 variable {a : ℝ} {m : Fin 2 → ℕ}
 
-/-- The structure group at the endpoint `0` of the labeled interval `[0, a]` has order `m 0`. -/
+/-- The quotient of `ℤ` by the multiples of `n • 1` has `n` elements (`0` in `Nat.card`, for the
+infinite quotient `ℤ`, when `n = 0`). Mathlib's `Int.card_ideal_quot` states this for `Ideal.span`
+but sits behind the ideal-norm imports of `Mathlib.RingTheory.Ideal.Int`. -/
+private theorem natCard_quotient_span_nsmul_one (n : ℕ) :
+    Nat.card (ℤ ⧸ Submodule.span ℤ {n • (1 : ℤ)}) = n := by
+  rw [nsmul_one, Ideal.submodule_span_eq]
+  exact (Nat.card_congr (Int.quotientSpanNatEquivZMod n).toEquiv).trans (Nat.card_zmod n)
+
+/-- The structure group at the endpoint `0` of the labeled interval `[0, a]` has order `m 0`. A
+zero label `m 0 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
 theorem card_quotient_labeledActiveLattice_interval_of_eq_zero (ha : a ≠ 0) {x : StrongDual ℝ ℝ}
     (hx : x 1 = 0) :
     Nat.card (ℤ ⧸ labeledActiveLattice (Int.castAddHom ℝ) ![1, -1] ![0, -a] m x) = m 0 := by
   rw [labeledActiveLattice_def, activeSet_interval_of_eq_zero ha hx, image_singleton]
-  simpa using Nat.card_congr (Int.quotientSpanNatEquivZMod (m 0)).toEquiv
+  exact natCard_quotient_span_nsmul_one (m 0)
 
-/-- The structure group at the endpoint `a` of the labeled interval `[0, a]` has order `m 1`. -/
+/-- The structure group at the endpoint `a` of the labeled interval `[0, a]` has order `m 1`. A
+zero label `m 1 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
 theorem card_quotient_labeledActiveLattice_interval_of_eq (ha : a ≠ 0) {x : StrongDual ℝ ℝ}
     (hx : x 1 = a) :
     Nat.card (ℤ ⧸ labeledActiveLattice (Int.castAddHom ℝ) ![1, -1] ![0, -a] m x) = m 1 := by
   rw [labeledActiveLattice_def, activeSet_interval_of_eq ha hx, image_singleton]
-  simpa using Nat.card_congr (Int.quotientSpanNatEquivZMod (m 1)).toEquiv
+  -- The labeled normal at `a` is `-(m 1 • 1)`, which spans the same sublattice as `m 1 • 1`.
+  rw [show m 1 • ![(1 : ℤ), -1] 1 = -(m 1 • 1) by simp, ← Set.neg_singleton, Submodule.span_neg]
+  exact natCard_quotient_span_nsmul_one (m 1)
 
 end Interval
 
