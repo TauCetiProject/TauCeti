@@ -107,13 +107,13 @@ coordinates `(a, y) ∈ Fˣ × F` the summand is `q - 1` at `y = 0` and `-ψ(-y)
 `a` contributes `q`. -/
 private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep
     [Fintype (GL2ScalarUnipotent F)] (θ : Eˣ →* ℂˣ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
-    ∑ s : GL2ScalarUnipotent F, (GL2CuspidalVirtualCharacter F E θ ψ).1 s *
+    ∑ s : GL2ScalarUnipotent F, (GL2CuspidalVirtualCharacter F E θ ψ).val s *
         (GL2ScalarUnipotentRep F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ).character s⁻¹ =
       ((Fintype.card F : ℂ) - 1) * Fintype.card F := by
   classical
   set μ : Fˣ →* ℂˣ := θ.comp (Units.map (algebraMap F E : F →* E)) with hμ
   have hterm : ∀ (a : Fˣ) (y : F),
-      (GL2CuspidalVirtualCharacter F E θ ψ).1
+      (GL2CuspidalVirtualCharacter F E θ ψ).val
           (GL2ScalarUnipotent.mulEquiv F (a, Multiplicative.ofAdd y)) *
         (GL2ScalarUnipotentRep F μ ψ).character
           (GL2ScalarUnipotent.mulEquiv F (a, Multiplicative.ofAdd y))⁻¹ =
@@ -140,7 +140,7 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2ScalarUnipotentRep
     simp only [Equiv.neg_apply] at h
     rw [h, AddChar.sum_eq_zero_of_ne_one hψ]
   have hinner : ∀ a : Fˣ, ∑ t : Multiplicative F,
-      (GL2CuspidalVirtualCharacter F E θ ψ).1 (GL2ScalarUnipotent.mulEquiv F (a, t)) *
+      (GL2CuspidalVirtualCharacter F E θ ψ).val (GL2ScalarUnipotent.mulEquiv F (a, t)) *
         (GL2ScalarUnipotentRep F μ ψ).character (GL2ScalarUnipotent.mulEquiv F (a, t))⁻¹ =
       (Fintype.card F : ℂ) := by
     intro a
@@ -156,14 +156,14 @@ character `u ↦ θ(u^q) θ(u)⁻¹` is nontrivial and the total vanishes. -/
 private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep
     [Fintype (GL2NonSplitTorus F E)] {θ : Eˣ →* ℂˣ}
     (hθ : θ.comp (powMonoidHom (Fintype.card F)) ≠ θ) (ψ : AddChar F ℂ) :
-    ∑ s : GL2NonSplitTorus F E, (GL2CuspidalVirtualCharacter F E θ ψ).1 s *
+    ∑ s : GL2NonSplitTorus F E, (GL2CuspidalVirtualCharacter F E θ ψ).val s *
         (GL2NonSplitTorusRep F E θ).character s⁻¹ = 0 := by
   classical
   have : Finite E := Module.finite_of_finite F
   have : Fintype E := Fintype.ofFinite E
   set φ : Eˣ →* ℂˣ := θ.comp (powMonoidHom (Nat.card F)) / θ with hφ
   have hterm : ∀ u : Eˣ,
-      (GL2CuspidalVirtualCharacter F E θ ψ).1
+      (GL2CuspidalVirtualCharacter F E θ ψ).val
           ((GL2NonSplitTorus.unitsEquiv u : GL2NonSplitTorus F E) : GL (Fin 2) F) *
         (GL2NonSplitTorusRep F E θ).character (GL2NonSplitTorus.unitsEquiv u)⁻¹ =
       (if (u : E) ∈ Set.range (algebraMap F E) then (Fintype.card F : ℂ) + 1 else 0) - 1 -
@@ -273,7 +273,7 @@ of an irreducible complex representation of `GL₂(F)`, of degree `q - 1`
 (`TauCeti.GL2CuspidalVirtualCharacter_apply_one`). -/
 theorem GL2CuspidalVirtualCharacter_mem_irreducibleCharacters {θ : Eˣ →* ℂˣ}
     (hθ : θ.comp (powMonoidHom (Fintype.card F)) ≠ θ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
-    (GL2CuspidalVirtualCharacter F E θ ψ).1 ∈ irreducibleCharacters ℂ (GL (Fin 2) F) := by
+    (GL2CuspidalVirtualCharacter F E θ ψ).val ∈ irreducibleCharacters ℂ (GL (Fin 2) F) := by
   classical
   refine mem_irreducibleCharacters_of_characterPairing_self_eq_one
     (GL2CuspidalVirtualCharacter_mem_virtualCharacters θ ψ)
@@ -284,7 +284,7 @@ private theorem exists_gl2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ
     (hpsi : psi ≠ 1) (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
     ∃ (n : ℕ) (rho : Representation ℂ (GL (Fin 2) F) (Fin n → ℂ)),
       rho.IsIrreducible ∧
-        rho.character = (GL2CuspidalVirtualCharacter F E theta psi).1 :=
+        rho.character = (GL2CuspidalVirtualCharacter F E theta psi).val :=
   mem_irreducibleCharacters_iff.mp
     (GL2CuspidalVirtualCharacter_mem_irreducibleCharacters htheta hpsi)
 
@@ -302,7 +302,7 @@ private theorem gl2CuspidalRepresentation_spec (theta : Eˣ →* ℂˣ) (psi : A
     (hpsi : psi ≠ 1) (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
     (gl2CuspidalRepresentation theta psi hpsi htheta).IsIrreducible ∧
       (gl2CuspidalRepresentation theta psi hpsi htheta).character =
-        (GL2CuspidalVirtualCharacter F E theta psi).1 :=
+        (GL2CuspidalVirtualCharacter F E theta psi).val :=
   (exists_gl2Cuspidal theta psi hpsi htheta).choose_spec.choose_spec
 
 /-- **The cuspidal representation of `GL₂(𝔽_q)` attached to a general-position character
@@ -321,7 +321,7 @@ theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
     (GL2Cuspidal theta htheta).character =
       (GL2CuspidalVirtualCharacter F E theta
-        (AddChar.FiniteField.primitiveChar_to_Complex F)).1 := by
+        (AddChar.FiniteField.primitiveChar_to_Complex F)).val := by
   rw [GL2Cuspidal, FDRep.character_of]
   exact (gl2CuspidalRepresentation_spec theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)

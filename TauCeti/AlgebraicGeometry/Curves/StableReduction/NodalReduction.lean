@@ -19,7 +19,9 @@ stronger semistability or stability conditions on the special fibre.
 The predicate remembers the prescribed generic-fibre identification through `TauCeti.Model`.
 It is invariant under isomorphism of that generic fibre. A prestable or smooth proper model is a
 witness, and a witness remains one after passage to the chosen place of a finite separable field
-extension.
+extension. Nodal reduction after a chosen extension `E` is moreover inherited by every chosen
+extension `F` receiving a map `E ⟶ F`, that is, after any further finite separable extension of
+the field together with a place above the chosen one.
 
 Nodal reduction is a condition on the special fibre of a proper model alone: a nodal curve has
 nodal reduction as soon as it has a proper model whose special fibre is at worst nodal. This is how
@@ -31,6 +33,7 @@ yields nodal reduction.
 * `TauCeti.HasNodalReduction`: existence of a proper at-worst-nodal model.
 * `TauCeti.HasNodalReduction.of_iso`: invariance under isomorphism of the generic curve.
 * `TauCeti.HasNodalReduction.baseChange`: preservation under a chosen finite DVR extension.
+* `TauCeti.HasNodalReduction.map`: preservation under a map of chosen finite DVR extensions.
 * `TauCeti.hasNodalReduction_iff_exists_specialFiber`: a curve has nodal reduction exactly when it
   is at worst nodal and has a proper model whose special fibre is at worst nodal.
 
@@ -126,6 +129,19 @@ theorem baseChange (h : HasNodalReduction R K C toK) (E : FiniteDVRExtension R K
     (P := @AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne)
     (.of_hasPullback M.toBase
       (Spec.map (CommRingCat.ofHom (algebraMap R E.localRing)))) hnodal
+
+/-- **Nodal reduction after further finite base extension.** If the scalar extension of `C` to the
+field of a chosen extension `E` has nodal reduction over the local ring of `E`, then for every map
+of chosen extensions `E ⟶ F` the scalar extension of `C` to the field of `F` has nodal reduction
+over the local ring of `F`. -/
+theorem map {E F : FiniteDVRExtension R K}
+    (h : HasNodalReduction E.localRing E.extensionField (genericFiber K E.extensionField toK).left
+      (genericFiber K E.extensionField toK).hom) (T : E ⟶ F) :
+    HasNodalReduction F.localRing F.extensionField (genericFiber K F.extensionField toK).left
+      (genericFiber K F.extensionField toK).hom := by
+  obtain ⟨M, hproper, hnodal⟩ := h
+  exact ⟨M.mapExtension T, M.isProper_mapExtension T hproper,
+    M.toBase_mapExtension_of_isStableUnderBaseChange T _ hnodal⟩
 
 /-- A nodal curve over `K` has nodal reduction if it has a proper model whose special fibre is at
 worst nodal. -/

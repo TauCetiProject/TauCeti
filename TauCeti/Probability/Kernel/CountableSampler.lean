@@ -71,7 +71,7 @@ theorem measurable_natSampler_family {Ω : Type*} [MeasurableSpace Ω]
   classical
   apply measurable_find
   intro n
-  exact measurableSet_lt (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_lt (measurable_subtypeVal.comp measurable_snd)
     (((Measure.measurable_coe .of_discrete).comp (hν.comp measurable_fst)).ennreal_toReal)
 
 /-- A fixed cumulative sampler is measurable. -/
@@ -92,7 +92,7 @@ theorem preimage_natSampler_singleton (n : ℕ) :
   apply Measure.ext_of_singleton
   intro n
   rw [Measure.map_apply μ.measurable_natSampler .of_discrete,
-    μ.preimage_natSampler_singleton, ← volume_set_coe_def,
+    μ.preimage_natSampler_singleton, ← volume_set_subtypeVal_def,
     volume_preimage_coe measurableSet_Ico.nullMeasurableSet measurableSet_Ico]
   have hsub : Ico (μ.real (Iio n)) (μ.real (Iic n)) ⊆ Ico (0 : ℝ) 1 :=
     fun u hu => ⟨measureReal_nonneg.trans hu.1, hu.2.trans_le measureReal_le_one⟩

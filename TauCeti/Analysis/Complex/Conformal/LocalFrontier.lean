@@ -87,9 +87,9 @@ theorem abs_arg_div_eq_of_mem_frontier {V : Set ℂ} {v b z : ℂ} {α : ℝ}
   have hfr : (⟨z, hz, hzv⟩ : O) ∈ frontier {y : O | |((y - v : ℂ) / b).arg| < α} := by
     have hpreimage : ((↑) : O → ℂ) ⁻¹' U =
         {y : O | |((y - v : ℂ) / b).arg| < α} :=
-      Set.ext fun y => hU y y.2.1 y.2.2
+      Set.ext fun y => hU y y.property.1 y.property.2
     rw [← hpreimage,
-      ← hO.isOpenMap_subtype_val.preimage_frontier_eq_frontier_preimage continuous_subtype_val]
+      ← hO.isOpenMap_subtypeVal.preimage_frontier_eq_frontier_preimage continuous_subtypeVal]
     exact hzU
   exact frontier_lt_subset_eq hφ.domRestrict continuous_const hfr
 
@@ -395,8 +395,9 @@ theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : 
   · -- in the closed half-strip `exp (π * I - ζ)` tends to `0` as `ζ` tends to infinity
     refine tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded ?_
       (eventually_nhdsWithin_of_forall fun w hw => hζ w hw.1.1 hw.1.2 hw.2)
-    exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
-      (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
+    exact tendsto_sub_div_of_tendsto_cobounded hb
+      ((tendsto_comp_neg_inv_nhdsWithin_zero hp).mono_left
+        (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
 
 /-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
 is injective on the part of the closed upper half-plane in `ball 0 r`, when `f` is injective on

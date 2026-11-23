@@ -36,7 +36,7 @@ protected theorem perfectSpace {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     have hacc : (nhdsWithin (I x) (I '' {x}ᶜ)).NeBot := by
       rw [Set.image_compl_eq_range_sdiff_image I.injective, Set.image_singleton,
         Set.sdiff_eq_compl_inter, nhdsWithin, ← Filter.inf_principal, ← inf_assoc]
-      exact hrange.acc (I x) (Set.mem_range_self x)
+      exact hrange.preperfect (I x) (Set.mem_range_self x)
     rw [← I.symm_map_nhdsWithin_image]
     exact hacc.map I.symm
   exact ChartedSpace.perfectSpace (H := H)
