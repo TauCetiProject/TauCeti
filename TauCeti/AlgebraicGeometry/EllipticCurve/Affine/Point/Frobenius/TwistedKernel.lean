@@ -121,9 +121,9 @@ theorem baseChange_mem_twistedFrobeniusKernel_iff (P : (W⁄k).toAffine.Point) :
   have hq : 1 ≤ Nat.card k ^ i := Nat.one_le_pow _ _ Nat.card_pos
   rw [mem_twistedFrobeniusKernel_iff, Point.map_baseChange (FiniteField.frobeniusAlgHom k L)]
   refine and_congr (exists_congr fun m ↦ and_congr_right' <| and_congr_right' ?_) ?_
-  · rw [← map_nsmul, ← map_zero (Point.baseChange (W' := W) k L), hinj.eq_iff]
+  · rw [← map_nsmul, map_eq_zero_iff _ hinj]
   · conv_lhs => rw [← Nat.sub_add_cancel hq, add_nsmul, one_nsmul, add_eq_right, ← map_nsmul,
-      ← map_zero (Point.baseChange (W' := W) k L), hinj.eq_iff]
+      map_eq_zero_iff _ hinj]
 
 /-- For a rational point killed by a positive integer prime to `p`, membership of its base change
 in the twisted Frobenius kernel is being killed by `q ^ i - 1`. -/
@@ -159,7 +159,7 @@ theorem map_mem_twistedFrobeniusKernel_iff (g : L →ₐ[k] L') {P : (W⁄L).toA
     Point.map (W' := W) g P ∈ W.twistedFrobeniusKernel L' i ↔ P ∈ W.twistedFrobeniusKernel L i := by
   have hinj := Point.map_injective (W' := W) g
   simp only [mem_twistedFrobeniusKernel_iff, ← Point.map_map_frobeniusAlgHom, ← map_nsmul,
-    ← map_zero (Point.map (W' := W) g), hinj.eq_iff]
+    map_eq_zero_iff _ hinj, hinj.eq_iff]
 
 /-- The twisted Frobenius kernel over `L` is the preimage of the one over `L'` under the point map
 of a `k`-algebra map `L →ₐ[k] L'`. -/
@@ -170,19 +170,15 @@ theorem comap_twistedFrobeniusKernel (g : L →ₐ[k] L') :
 
 variable (W i) in
 /-- **The twisted Frobenius kernels over isomorphic fields are isomorphic**, through the point map
-`WeierstrassCurve.Affine.Point.mapEquiv` of a `k`-algebra equivalence. -/
+`WeierstrassCurve.Affine.Point.mapEquiv` of a `k`-algebra equivalence, restricted to the image of
+`B_i(W, L)`, which is `B_i(W, L')`. -/
 noncomputable def twistedFrobeniusKernelEquiv (e : L ≃ₐ[k] L') :
-    W.twistedFrobeniusKernel L i ≃+ W.twistedFrobeniusKernel L' i where
-  toFun P := ⟨Point.mapEquiv W e P, by
-    rw [Point.mapEquiv_apply, map_mem_twistedFrobeniusKernel_iff]
-    exact P.property⟩
-  invFun P := ⟨(Point.mapEquiv W e).symm P, by
-    rw [← map_mem_twistedFrobeniusKernel_iff e.toAlgHom, ← Point.mapEquiv_apply,
-      AddEquiv.apply_symm_apply]
-    exact P.property⟩
-  left_inv P := Subtype.ext <| (Point.mapEquiv W e).symm_apply_apply P
-  right_inv P := Subtype.ext <| (Point.mapEquiv W e).apply_symm_apply P
-  map_add' P Q := Subtype.ext <| map_add (Point.mapEquiv W e) (P : (W⁄L).toAffine.Point) Q
+    W.twistedFrobeniusKernel L i ≃+ W.twistedFrobeniusKernel L' i :=
+  ((Point.mapEquiv W e).addSubgroupMap _).trans <| AddEquiv.addSubgroupCongr <| by
+    rw [AddSubgroup.map_equiv_eq_comap_symm, Point.mapEquiv_symm]
+    exact AddSubgroup.ext fun P ↦ by
+      rw [AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass, Point.mapEquiv_apply,
+        map_mem_twistedFrobeniusKernel_iff]
 
 /-- The equivalence `twistedFrobeniusKernelEquiv W i e` is the point map along `e`. -/
 @[simp]

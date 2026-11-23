@@ -92,13 +92,10 @@ theorem ncard_fixedPoints_zsmul_ofIsogeny_baseChangeFrobenius [DecidableEq K] [I
   have h := zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_ne_zero (K := K) W r 1 (by simp)
   have := (isSeparable_toIsogeny_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_iff W r 1 h).mpr
     (by simp)
-  have hset : {P : (W⁄K).toAffine.Point |
-      (r • ofIsogeny (baseChangeFrobenius K W)).pointMap P = P} =
-      {P | (r • ofIsogeny (baseChangeFrobenius K W) - (1 : ℤ) • id (W⁄K).toAffine).pointMap P =
-        0} := by
-    ext P
-    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, sub_pointMap, one_zsmul, id_pointMap, sub_eq_zero]
-  rw [hset, ncard_setOf_pointMap_eq h,
+  rw [setOf_pointMap_eq_self, ← neg_sub (r • ofIsogeny (baseChangeFrobenius K W)), one_def,
+    ← one_smul ℤ (id (W⁄K).toAffine)]
+  simp_rw [neg_pointMap, neg_eq_zero]
+  rw [ncard_setOf_pointMap_eq h,
     degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace, mul_one, one_pow]
 
 end TauCeti.Isogeny.Hom
