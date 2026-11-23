@@ -69,7 +69,6 @@ private lemma rpow_mul_one_sub_rpow_four_mul_mul_one_sub {t : ℝ} (ht1 : t < 1 
       4 ^ a * (t ^ (a - 1) * (1 - t) ^ (a - 1)) := by
   have h1 : 0 < 1 - t := by linarith
   have h2 : 0 < 1 - 2 * t := by linarith
-  have h2' : 1 - t * 2 ≠ 0 := by linarith
   have hprod : (4 * t * (1 - t)) ^ (a - 1) = 4 ^ (a - 1) * (t ^ (a - 1) * (1 - t) ^ (a - 1)) := by
     rw [mul_comm _ (1 - t), Real.mul_rpow_of_nonneg_left h1.le,
       Real.mul_rpow_of_nonneg_left (by norm_num)]
@@ -77,10 +76,11 @@ private lemma rpow_mul_one_sub_rpow_four_mul_mul_one_sub {t : ℝ} (ht1 : t < 1 
   have hsq : 1 - 4 * t * (1 - t) = (1 - 2 * t) ^ (2 : ℝ) := by
     rw [Real.rpow_two]
     ring
-  rw [hprod, hsq, ← Real.rpow_mul h2.le, Real.rpow_sub_one four_ne_zero]
-  norm_num
-  rw [Real.rpow_neg_one]
-  field_simp
+  have hexp : (2 : ℝ) * ((1 / 2 : ℝ) - 1) = -1 := by norm_num
+  rw [hprod, hsq, ← Real.rpow_mul h2.le, hexp, Real.rpow_neg_one, Real.rpow_sub_one four_ne_zero]
+  calc 4 ^ a / 4 * (t ^ (a - 1) * (1 - t) ^ (a - 1)) * (1 - 2 * t)⁻¹ * (4 * (1 - 2 * t))
+      = 4 ^ a * (t ^ (a - 1) * (1 - t) ^ (a - 1)) * ((1 - 2 * t)⁻¹ * (1 - 2 * t)) := by ring
+    _ = 4 ^ a * (t ^ (a - 1) * (1 - t) ^ (a - 1)) := by rw [inv_mul_cancel₀ h2.ne', mul_one]
 
 /-- The substitution `u = 4 t (1 - t)` on `[0, x]`, for `x ≤ 1/2`:
 `B_{4x(1-x)}(a, 1/2) = 4 ^ a * B_x(a, a)`. It holds for every `a`; where the integrals diverge

@@ -701,8 +701,7 @@ incomplete beta function is the power `x ^ a`. -/
 theorem regularizedIncompleteBeta_one_right (ha : 0 < a) (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
     regularizedIncompleteBeta a 1 x = x ^ a := by
   rw [regularizedIncompleteBeta_def_of_mem_Icc ha one_pos ⟨hx0, hx1⟩, ← incompleteBeta_def,
-    incompleteBeta_one_right ha.le,
-    beta_one_right (fun n h => by linarith [n.cast_nonneg (α := ℝ)])]
+    incompleteBeta_one_right ha.le, beta_one_right ha.le]
   field_simp
 
 /-- At first parameter `1` the reflection formula turns

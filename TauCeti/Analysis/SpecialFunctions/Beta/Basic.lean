@@ -96,8 +96,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
-* `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
-  `Β(a, 1) = Β(1, a) = 1 / a` for `a` not a negative integer;
+* `ProbabilityTheory.beta_one_right_of_forall_ne`, `ProbabilityTheory.beta_one_left_of_forall_ne`
+  — the values `Β(a, 1) = Β(1, a) = 1 / a` for `a` not a negative integer, with the simp forms
+  `ProbabilityTheory.beta_one_right` and `ProbabilityTheory.beta_one_left` for `0 ≤ a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`,
   and `ProbabilityTheory.beta_add_one_right`, the same step in the second parameter;
 * `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
@@ -1143,9 +1144,9 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
 
 /-- Euler's beta function at second parameter `1`, for `a` not a negative integer. At `a = 0`
 both sides are `0`, through `Γ(0) = 0` and `1 / 0 = 0`; at a negative integer `a` the left side
-is `0` (both Gamma values in it are `0`) while `1 / a` is not. -/
-@[simp]
-theorem beta_one_right (ha : ∀ n : ℕ, a ≠ -n - 1) : beta a 1 = 1 / a := by
+is `0` (both Gamma values in it are `0`) while `1 / a` is not. See `beta_one_right` for the
+simp form under `0 ≤ a`. -/
+theorem beta_one_right_of_forall_ne (ha : ∀ n : ℕ, a ≠ -n - 1) : beta a 1 = 1 / a := by
   rcases eq_or_ne a 0 with rfl | ha0
   · simp [ProbabilityTheory.beta]
   have hΓ : Real.Gamma a ≠ 0 := Real.Gamma_ne_zero fun n h => by
@@ -1156,8 +1157,19 @@ theorem beta_one_right (ha : ∀ n : ℕ, a ≠ -n - 1) : beta a 1 = 1 / a := by
   field_simp
 
 /-- Euler's beta function at first parameter `1`, for `a` not a negative integer. -/
+theorem beta_one_left_of_forall_ne (ha : ∀ n : ℕ, a ≠ -n - 1) : beta 1 a = 1 / a := by
+  rw [beta_comm, beta_one_right_of_forall_ne ha]
+
+/-- Euler's beta function at second parameter `1`, for `0 ≤ a` (at `a = 0` both sides are `0`).
+For the statement off the negative integers, see `beta_one_right_of_forall_ne`. -/
 @[simp]
-theorem beta_one_left (ha : ∀ n : ℕ, a ≠ -n - 1) : beta 1 a = 1 / a := by
+theorem beta_one_right (ha : 0 ≤ a) : beta a 1 = 1 / a :=
+  beta_one_right_of_forall_ne fun n h => by linarith [n.cast_nonneg (α := ℝ)]
+
+/-- Euler's beta function at first parameter `1`, for `0 ≤ a` (at `a = 0` both sides are `0`).
+For the statement off the negative integers, see `beta_one_left_of_forall_ne`. -/
+@[simp]
+theorem beta_one_left (ha : 0 ≤ a) : beta 1 a = 1 / a := by
   rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
@@ -1245,8 +1257,9 @@ theorem natCast_mul_beta_natCast_inv_eq_choose {m : ℕ} (hm : 0 < m) (n : ℕ) 
     push_cast; ring
   -- The binomial index `n + m - 1` of the statement, in the form of `Nat.cast_add_choose`.
   have hidx : k + 1 + (j + 1) - 1 = j + 1 + k := by omega
-  rw [ProbabilityTheory.beta, hsum, Real.Gamma_nat_eq_factorial, Nat.cast_succ,
-    Real.Gamma_nat_eq_factorial, Nat.cast_succ, Real.Gamma_nat_eq_factorial, hidx,
+  have hΓ (i : ℕ) : Real.Gamma ((i + 1 : ℕ) : ℝ) = i.factorial := by
+    rw [Nat.cast_succ, Real.Gamma_nat_eq_factorial]
+  rw [ProbabilityTheory.beta, hsum, hΓ j, hΓ k, Real.Gamma_nat_eq_factorial, hidx,
     Nat.cast_add_choose, Nat.factorial_succ j]
   push_cast
   field_simp
