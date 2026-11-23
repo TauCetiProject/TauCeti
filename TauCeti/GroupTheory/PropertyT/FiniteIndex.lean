@@ -154,17 +154,13 @@ theorem relativePropertyT_iff_of_isFiniteRelIndex_of_normal {K Λ : Subgroup Γ}
 theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Normal]
     [H.FiniteIndex] :
     (Λ.subgroupOf H).RelativePropertyT.{v} ↔ Λ.RelativePropertyT.{v} := by
-  have hdown {G' : Type v} [Group G'] (M L : Subgroup G') [M.Normal] [L.FiniteIndex]
-      (hM : M.RelativePropertyT.{v}) : (M.subgroupOf L).RelativePropertyT.{v} :=
-    (relativePropertyT_max_iff.{v, v} (M.subgroupOf L)).mp
-      (((relativePropertyT_max_iff.{v, v} M).mpr hM).subgroupOf L)
-  refine ⟨fun hΛH ↦ ?_, hdown Λ H⟩
+  refine ⟨fun hΛH ↦ ?_, fun hΛ ↦ hΛ.subgroupOf.{v, v} H⟩
   -- Pass down from `H` to `H.normalCore` so that `Λ ⊓ H.normalCore` is normal in `Γ`.
   let N := H.normalCore
   have : N.IsFiniteRelIndex H := isFiniteRelIndex_of_finiteIndex
   let N_H : Subgroup H := N.subgroupOf H
   have hΛNH : ((Λ.subgroupOf H).subgroupOf N_H).RelativePropertyT.{v} :=
-    hdown (Λ.subgroupOf H) N_H hΛH
+    hΛH.subgroupOf.{v, v} N_H
   have hmap : ((Λ.subgroupOf H).subgroupOf N_H).map (H.subtype.comp N_H.subtype) = Λ ⊓ N := by
     rw [← Subgroup.map_map, Subgroup.subgroupOf_map_subtype,
       Subgroup.map_inf _ _ _ H.subtype_injective, Subgroup.subgroupOf_map_subtype,

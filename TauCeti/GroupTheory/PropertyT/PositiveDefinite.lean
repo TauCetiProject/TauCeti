@@ -14,7 +14,6 @@ import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.GroupTheory.PositiveDefinite.Metric
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
-import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
 # Quantitative and positive-definite characterizations of relative property (T)
@@ -223,23 +222,13 @@ private theorem posSemidef_approx_of_tendstoUniformlyOn {Λ : Subgroup Γ}
           TendstoUniformlyOn φ 1 l Λ) :
     PosSemidefApprox Λ := by
   classical
-  by_contra hnot
-  unfold PosSemidefApprox at hnot
-  push Not at hnot
-  obtain ⟨ε₀, hε₀, hbad⟩ := hnot
-  let p (φ : Γ → ℂ) : Prop :=
-    (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef ∧ φ 1 = 1 ∧ ∃ h ∈ Λ, ε₀ ≤ ‖φ h - 1‖
-  obtain ⟨φ, hp, hpt⟩ := TauCeti.exists_net_tendsto_of_forall_finset_dist_lt
-    (p := p) (F := fun g (φ : Γ → ℂ) ↦ φ g) (x := fun _ ↦ (1 : ℂ)) fun s δ hδ ↦ by
-      obtain ⟨φ, hpd, h1, hF, h, hΛ, hge⟩ := hbad s δ hδ
-      exact ⟨φ, ⟨hpd, h1, h, hΛ, hge⟩, fun g hg ↦ by simpa [dist_eq_norm] using hF g hg⟩
-  have hu := Metric.tendstoUniformlyOn_iff.mp
-    (hunif (Finset Γ × ℕ) atTop φ (fun i ↦ (hp i).1) (fun i ↦ (hp i).2.1) hpt) ε₀ hε₀
-  obtain ⟨i, hi⟩ := hu.exists
-  obtain ⟨h, hΛ, hge⟩ := (hp i).2.2
-  have hlt : ‖φ i h - 1‖ < ε₀ := by
-    simpa only [Pi.one_apply, dist_eq_norm, norm_sub_rev] using hi h hΛ
-  exact (not_lt_of_ge hge) hlt
+  exact posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion
+    (ι := Finset Γ × ℕ) (l := atTop) Prod.fst (fun i ↦ 1 / (i.2 + 1 : ℝ))
+    (fun _ ↦ Nat.one_div_pos_of_nat)
+    (fun g ↦ eventually_atTop.mpr ⟨({g}, 0), fun _ hi ↦ hi.1 (Finset.mem_singleton_self g)⟩)
+    (by rw [← prod_atTop_atTop_eq]
+        exact tendsto_one_div_add_atTop_nhds_zero_nat.comp tendsto_snd)
+    (hunif (Finset Γ × ℕ) atTop)
 
 /-- When `Γ` is countable, sequential uniform convergence on `Λ` already implies quantitative
 positive-definite approximation on `Λ`. -/
@@ -274,6 +263,37 @@ private theorem summable_mul_one_sub_of_exhaustion {A : ℕ → Finset Γ}
         rw [one_div, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul, ← inv_pow,
           ← one_div]
 
+/-- Double-translate separation bound for the Jolissaint–Anantharaman–Popa step: if a normalized
+positive-definite function `φ : Γ → ℂ` satisfies `‖φ a - 1‖ ≤ ε ^ 2 / 32`,
+`‖φ b - 1‖ ≤ ε ^ 2 / 32`, and `ε ≤ ‖φ g - 1‖` with `0 ≤ ε`, then
+`ε ^ 2 / 8 ≤ 1 - (φ (a⁻¹ * g * b)).re`. -/
+private theorem sq_div_eight_le_one_sub_re_inv_mul_mul {φ : Γ → ℂ}
+    (hφ : (Matrix.of fun x y : Γ ↦ φ (x⁻¹ * y)).PosSemidef) (h1 : φ 1 = 1)
+    {a g b : Γ} {ε : ℝ} (hε : 0 ≤ ε)
+    (ha : ‖φ a - 1‖ ≤ ε ^ 2 / 32) (hb : ‖φ b - 1‖ ≤ ε ^ 2 / 32)
+    (hg : ε ≤ ‖φ g - 1‖) :
+    ε ^ 2 / 8 ≤ 1 - (φ (a⁻¹ * g * b)).re := by
+  let u : ℝ := Real.sqrt (ε ^ 2 / 32)
+  have hu2 : u ^ 2 = ε ^ 2 / 32 := Real.sq_sqrt (by positivity)
+  have htri := hφ.le_sqrt_re_one_sub_re_inv_mul_mul a g b
+  simp only [RCLike.re_to_complex, h1, Complex.one_re] at htri
+  have hre_a : 1 - (φ a).re ≤ ε ^ 2 / 32 :=
+    le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ a)) ha
+  have hre_b : 1 - (φ b).re ≤ ε ^ 2 / 32 :=
+    le_trans (by simpa [norm_sub_rev] using Complex.re_le_norm (1 - φ b)) hb
+  have hsq_g : (4 * u) ^ 2 ≤ 1 - (φ g).re := by
+    have hnorm : ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - (φ g).re) := hφ.norm_sub_one_sq_le h1 g
+    have hε_sq : ε ^ 2 ≤ ‖φ g - 1‖ ^ 2 := pow_le_pow_left₀ hε hg 2
+    nlinarith
+  have hsqrt_g : 4 * u ≤ Real.sqrt (1 - (φ g).re) := Real.le_sqrt_of_sq_le hsq_g
+  have hsqrt_a : Real.sqrt (1 - (φ a).re) ≤ u := Real.sqrt_le_sqrt hre_a
+  have hsqrt_b : Real.sqrt (1 - (φ b).re) ≤ u := Real.sqrt_le_sqrt hre_b
+  have hsqrt_mid : 2 * u ≤ Real.sqrt (1 - (φ (a⁻¹ * g * b)).re) := by linarith
+  have hsq_mid : (2 * u) ^ 2 ≤ (Real.sqrt (1 - (φ (a⁻¹ * g * b)).re)) ^ 2 :=
+    pow_le_pow_left₀ (by positivity) hsqrt_mid 2
+  rw [Real.sq_sqrt (by simpa using hφ.one_sub_re_nonneg h1 _)] at hsq_mid
+  nlinarith
+
 /-- Exponential decay of double translates `Φ (a⁻¹ * s n * b)` along the bad sequence `s`. -/
 private theorem tendsto_cexp_neg_tsum_mul_zero {A : ℕ → Finset Γ}
     (hA : ∀ g : Γ, ∀ᶠ k in atTop, g ∈ A k)
@@ -291,7 +311,7 @@ private theorem tendsto_cexp_neg_tsum_mul_zero {A : ℕ → Finset Γ}
         Real.exp (-(t * (ε₀ ^ 2 / 8)) * (n + 1 : ℝ)) := by
     filter_upwards [hA a, hA b] with n ha_mem hb_mem
     have hre_ge : ε₀ ^ 2 / 8 ≤ 1 - (φ n (a⁻¹ * s n * b)).re :=
-      (hpd n).sq_div_eight_le_one_sub_re_inv_mul_mul (h1 n) hε₀.le
+      sq_div_eight_le_one_sub_re_inv_mul_mul (hpd n) (h1 n) hε₀.le
         (hF n a ha_mem).le (hF n b hb_mem).le (hsε n)
     have hsumm_re : Summable fun k : ℕ ↦ (k + 1 : ℝ) * (1 - (φ k (a⁻¹ * s n * b)).re) := by
       simpa using Complex.reCLM.summable (hsumm (a⁻¹ * s n * b))

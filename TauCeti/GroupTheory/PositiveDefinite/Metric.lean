@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
 import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 
 /-!
@@ -24,8 +23,6 @@ triangle inequality in the Kolmogorov Hilbert space gives subadditivity of
   `g ↦ √(re (φ 1) - re (φ g))` for positive-definite functions on a group.
 * `Matrix.PosSemidef.le_sqrt_re_one_sub_re_inv_mul_mul`: lower bound for
   `√(re (φ 1) - re (φ (a⁻¹ * g * b)))` in terms of `g`, `a`, and `b`.
-* `Matrix.PosSemidef.sq_div_eight_le_one_sub_re_inv_mul_mul`: quantitative `ε² / 8` lower bound on
-  `1 - re (φ (a⁻¹ * g * b))` when `φ` is close to `1` at `a` and `b` and separated from `1` at `g`.
 
 ## References
 
@@ -85,36 +82,6 @@ theorem le_sqrt_re_one_sub_re_inv_mul_mul {φ : G → 𝕜}
   have hprod : a * (a⁻¹ * g * b) * b⁻¹ = g := by group
   rw [hprod, hinv] at htri₁
   linarith
-
-/-- For a normalized positive-definite function `φ : G → 𝕜`, if `‖φ a - 1‖ ≤ ε ^ 2 / 32`,
-`‖φ b - 1‖ ≤ ε ^ 2 / 32`, and `ε ≤ ‖φ g - 1‖` with `0 ≤ ε`, then
-`ε ^ 2 / 8 ≤ 1 - re (φ (a⁻¹ * g * b))`. -/
-theorem sq_div_eight_le_one_sub_re_inv_mul_mul {φ : G → 𝕜}
-    (hφ : (of fun x y : G ↦ φ (x⁻¹ * y)).PosSemidef) (h1 : φ 1 = 1)
-    {a g b : G} {ε : ℝ} (hε : 0 ≤ ε)
-    (ha : ‖φ a - 1‖ ≤ ε ^ 2 / 32) (hb : ‖φ b - 1‖ ≤ ε ^ 2 / 32)
-    (hg : ε ≤ ‖φ g - 1‖) :
-    ε ^ 2 / 8 ≤ 1 - RCLike.re (φ (a⁻¹ * g * b)) := by
-  let u : ℝ := Real.sqrt (ε ^ 2 / 32)
-  have hu2 : u ^ 2 = ε ^ 2 / 32 := Real.sq_sqrt (by positivity)
-  have htri := hφ.le_sqrt_re_one_sub_re_inv_mul_mul a g b
-  simp only [h1, RCLike.one_re] at htri
-  have hre_a : 1 - RCLike.re (φ a) ≤ ε ^ 2 / 32 :=
-    le_trans (by simpa [norm_sub_rev] using RCLike.re_le_norm (1 - φ a)) ha
-  have hre_b : 1 - RCLike.re (φ b) ≤ ε ^ 2 / 32 :=
-    le_trans (by simpa [norm_sub_rev] using RCLike.re_le_norm (1 - φ b)) hb
-  have hsq_g : (4 * u) ^ 2 ≤ 1 - RCLike.re (φ g) := by
-    have hnorm : ‖φ g - 1‖ ^ 2 ≤ 2 * (1 - RCLike.re (φ g)) := hφ.norm_sub_one_sq_le h1 g
-    have hε_sq : ε ^ 2 ≤ ‖φ g - 1‖ ^ 2 := pow_le_pow_left₀ hε hg 2
-    nlinarith
-  have hsqrt_g : 4 * u ≤ Real.sqrt (1 - RCLike.re (φ g)) := Real.le_sqrt_of_sq_le hsq_g
-  have hsqrt_a : Real.sqrt (1 - RCLike.re (φ a)) ≤ u := Real.sqrt_le_sqrt hre_a
-  have hsqrt_b : Real.sqrt (1 - RCLike.re (φ b)) ≤ u := Real.sqrt_le_sqrt hre_b
-  have hsqrt_mid : 2 * u ≤ Real.sqrt (1 - RCLike.re (φ (a⁻¹ * g * b))) := by linarith
-  have hsq_mid : (2 * u) ^ 2 ≤ (Real.sqrt (1 - RCLike.re (φ (a⁻¹ * g * b)))) ^ 2 :=
-    pow_le_pow_left₀ (by positivity) hsqrt_mid 2
-  rw [Real.sq_sqrt (hφ.one_sub_re_nonneg h1 _)] at hsq_mid
-  nlinarith
 
 end Matrix.PosSemidef
 
