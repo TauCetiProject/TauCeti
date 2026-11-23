@@ -10,7 +10,6 @@ public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Valued.WithVal
 public import TauCeti.Topology.Algebra.ValuativeRel.Completion
-import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.Topology.Algebra.Valued.DiscreteValuationRing
 
 /-!
@@ -126,14 +125,12 @@ instance instIsNonarchimedeanLocalFieldCompletion [Finite P.ResidueField] :
   -- The completed valuation is discrete of rank one.
   have : (Valued.v : Valuation P.Completion ℤᵐ⁰).IsRankOneDiscrete :=
     P.completionPlace_valuation_eq ▸ inferInstance
-  -- The ring of integers of `Valued.v` is the valuation ring of the completed place, a discrete
-  -- valuation ring with residue field that of `P`.
+  -- The ring of integers of `Valued.v` is the valuation ring of the completed place, whose
+  -- residue field is that of `P`.
   let e : Valued.integer P.Completion ≃+* P.completionPlace.integers :=
     RingEquiv.subringCongr <| by
       ext x
       simp [Valued.integer, Valuation.mem_integer_iff]
-  have : IsDiscreteValuationRing (Valued.integer P.Completion) :=
-    IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e.symm
   have : Finite (IsLocalRing.ResidueField (Valued.integer P.Completion)) :=
     Finite.of_equiv _ (P.residueFieldEquivCompletion.toRingEquiv.trans
       (IsLocalRing.ResidueField.mapEquiv e.symm)).toEquiv

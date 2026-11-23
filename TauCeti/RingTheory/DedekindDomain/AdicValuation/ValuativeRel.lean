@@ -250,11 +250,9 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
   -- The residue field of `𝒪_v` is `R ⧸ v`, which is finite.
   have : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
     Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
-  -- `Valued.integer (v.adicCompletion K)` unfolds to `v.adicCompletionIntegers K`, so the inputs of
-  -- the local compactness criterion are supplied by `inferInstanceAs` at the latter.
+  -- `Valued.integer (v.adicCompletion K)` unfolds to `v.adicCompletionIntegers K`, so the
+  -- finiteness input of the local compactness criterion is supplied by `inferInstanceAs`.
   have : LocallyCompactSpace (v.adicCompletion K) :=
-    have : IsDiscreteValuationRing (Valued.integer (v.adicCompletion K)) :=
-      inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K))
     have : Finite (IsLocalRing.ResidueField (Valued.integer (v.adicCompletion K))) :=
       inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))
     Valued.integer.locallyCompactSpace_of_finite_residueField

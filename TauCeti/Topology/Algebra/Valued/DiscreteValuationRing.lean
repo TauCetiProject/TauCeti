@@ -28,9 +28,8 @@ finite-dimensionality of `K` over a complete field of scalars.
 * By Riesz's theorem, a field whose valuation ring is a discrete valuation ring with finite
   residue field is finite-dimensional over every complete nontrivially normed field acting
   continuously on it: its valuation ring is a totally bounded neighbourhood of `0`.
-* A complete field with a discrete valuation of rank one whose valuation ring is a discrete
-  valuation ring with finite residue field is locally compact, by Mathlib's characterization of
-  proper complete discretely valued fields.
+* A complete field with a discrete valuation of rank one and finite residue field is locally
+  compact, by Mathlib's characterization of proper complete discretely valued fields.
 
 These are the inputs for recognising a subfield of a discretely valued `p`-adic field, such as the
 field fixed by a Frobenius lift, as a finite extension of `ℚ_[p]`.
@@ -49,7 +48,7 @@ field fixed by a Frobenius lift, as a finite extension of `ℚ_[p]`.
   and finite residue field is finite-dimensional over a complete nontrivially normed field of
   scalars.
 * `Valued.integer.locallyCompactSpace_of_finite_residueField`: a complete field with a rank-one
-  discrete valuation, discrete valuation ring `𝒪[K]` and finite residue field is locally compact.
+  discrete valuation and finite residue field is locally compact.
 
 ## References
 
@@ -169,11 +168,12 @@ open scoped WithZero
 variable {K : Type*} [Field K] [Valued K ℤᵐ⁰]
 
 /-- **Local compactness of a complete discretely valued field.** A complete field whose valuation
-`Valued.v` is discrete of rank one, with discrete valuation ring `𝒪[K]` and finite residue field
-`𝓀[K]`, is locally compact. -/
+`Valued.v` is discrete of rank one, with finite residue field `𝓀[K]`, is locally compact. -/
 theorem locallyCompactSpace_of_finite_residueField [CompleteSpace K]
-    [(Valued.v : Valuation K ℤᵐ⁰).IsRankOneDiscrete] [IsDiscreteValuationRing 𝒪[K]]
-    [Finite 𝓀[K]] : LocallyCompactSpace K := by
+    [(Valued.v : Valuation K ℤᵐ⁰).IsRankOneDiscrete] [Finite 𝓀[K]] : LocallyCompactSpace K := by
+  -- `𝒪[K]` is the valuation subring of `Valued.v`, a discrete valuation ring.
+  have : IsDiscreteValuationRing 𝒪[K] :=
+    inferInstanceAs (IsDiscreteValuationRing (Valued.v : Valuation K ℤᵐ⁰).valuationSubring)
   -- A rank-one normalization supplies a norm whose uniform structure is that of `Valued.v`.
   let _ : (Valued.v : Valuation K ℤᵐ⁰).RankOne :=
     Valuation.IsRankOneDiscrete.rankOne _ (by norm_num : (1 : ℝ≥0) < 2)
