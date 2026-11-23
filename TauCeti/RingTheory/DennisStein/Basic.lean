@@ -83,7 +83,7 @@ structure Pair where
 /-- The Dennis–Stein relations D1–D3 among admissible pairs, each imposed exactly when all the
 pairs it displays are admissible: `⟨r, s⟩ + ⟨s, r⟩`, `⟨r, s⟩ + ⟨r, t⟩ - ⟨r, s + t - r s t⟩` and
 `⟨r, s t⟩ - ⟨r s, t⟩ - ⟨r t, s⟩`. -/
-def relations : Set (FreeAbelianGroup (Pair A)) :=
+def relations : Set (FreeAddCommGroup (Pair A)) :=
   {x | (∃ (r s : A) (h : IsUnit (1 - r * s)) (h' : IsUnit (1 - s * r)),
       x = .of ⟨r, s, h⟩ + .of ⟨s, r, h'⟩) ∨
     (∃ (r s t : A) (hs : IsUnit (1 - r * s)) (ht : IsUnit (1 - r * t))
@@ -98,19 +98,19 @@ end DennisSteinGroup
 /-- The **Dennis–Stein group** `D(A)` of a commutative ring: the free abelian group on the
 admissible pairs `(r, s)`, those with `1 - r * s` a unit, modulo the relations D1–D3. -/
 @[expose] def DennisSteinGroup : Type _ :=
-  FreeAbelianGroup (DennisSteinGroup.Pair A) ⧸
+  FreeAddCommGroup (DennisSteinGroup.Pair A) ⧸
     AddSubgroup.closure (DennisSteinGroup.relations A)
 
 namespace DennisSteinGroup
 
 noncomputable instance : AddCommGroup (DennisSteinGroup A) :=
-  inferInstanceAs (AddCommGroup (FreeAbelianGroup (Pair A) ⧸ AddSubgroup.closure (relations A)))
+  inferInstanceAs (AddCommGroup (FreeAddCommGroup (Pair A) ⧸ AddSubgroup.closure (relations A)))
 
 variable {A}
 
 /-- The class of an admissible pair in `D(A)`. -/
 private def mk (p : Pair A) : DennisSteinGroup A :=
-  QuotientAddGroup.mk (s := AddSubgroup.closure (relations A)) (FreeAbelianGroup.of p)
+  QuotientAddGroup.mk (s := AddSubgroup.closure (relations A)) (FreeAddCommGroup.of p)
 
 open scoped Classical in
 /-- The **Dennis–Stein symbol** `⟨r, s⟩ ∈ D(A)`. It is the generator attached to `(r, s)` when
@@ -126,10 +126,11 @@ private theorem mk_eq_symbol' {r s : A} (h : IsUnit (1 - r * s)) :
   mk_eq_symbol _
 
 /-- A non-admissible pair has symbol `0`. -/
-theorem symbol_of_not_isUnit {r s : A} (h : ¬IsUnit (1 - r * s)) : symbol r s = 0 := by
+theorem symbol_eq_zero_of_not_isUnit {r s : A} (h : ¬IsUnit (1 - r * s)) :
+    symbol r s = 0 := by
   simp [symbol, h]
 
-private theorem mk_eq_zero_of_mem {x : FreeAbelianGroup (Pair A)} (hx : x ∈ relations A) :
+private theorem mk_eq_zero_of_mem {x : FreeAddCommGroup (Pair A)} (hx : x ∈ relations A) :
     (QuotientAddGroup.mk (s := AddSubgroup.closure (relations A)) x : DennisSteinGroup A) = 0 :=
   (QuotientAddGroup.eq_zero_iff x).2 (AddSubgroup.subset_closure hx)
 
@@ -141,7 +142,7 @@ theorem symbol_add_symbol_swap (r s : A) : symbol r s + symbol s r = 0 := by
     rw [← mk_eq_symbol' h, ← mk_eq_symbol' h']
     exact mk_eq_zero_of_mem (Or.inl ⟨r, s, h, h', rfl⟩)
   · have h' : ¬IsUnit (1 - s * r) := by rwa [mul_comm]
-    rw [symbol_of_not_isUnit h, symbol_of_not_isUnit h', add_zero]
+    rw [symbol_eq_zero_of_not_isUnit h, symbol_eq_zero_of_not_isUnit h', add_zero]
 
 /-- D1 in the form `⟨s, r⟩ = -⟨r, s⟩`. -/
 theorem symbol_swap (r s : A) : symbol s r = -symbol r s :=
@@ -174,7 +175,8 @@ theorem symbol_mul_right (r s t : A) :
     exact mk_eq_zero_of_mem (Or.inr (Or.inr ⟨r, s, t, h, hu₁, hu₂, rfl⟩))
   · have hu₁ : ¬IsUnit (1 - r * s * t) := by rwa [h₁]
     have hu₂ : ¬IsUnit (1 - r * t * s) := by rwa [h₂]
-    rw [symbol_of_not_isUnit h, symbol_of_not_isUnit hu₁, symbol_of_not_isUnit hu₂, add_zero]
+    rw [symbol_eq_zero_of_not_isUnit h, symbol_eq_zero_of_not_isUnit hu₁,
+      symbol_eq_zero_of_not_isUnit hu₂, add_zero]
 
 /-- `⟨r, 0⟩ = 0`, by D2 with `s = t = 0`. -/
 @[simp]
@@ -206,10 +208,10 @@ theorem induction_on {P : DennisSteinGroup A → Prop} (x : DennisSteinGroup A) 
     (symbol : ∀ r s, IsUnit (1 - r * s) → P (symbol r s))
     (add : ∀ x y, P x → P y → P (x + y)) (neg : ∀ x, P x → P (-x)) : P x := by
   induction x using QuotientAddGroup.induction_on with | H z => ?_
-  induction z using FreeAbelianGroup.induction_on with
+  induction z using FreeAddCommGroup.induction_on with
   | zero => exact zero
   | of p =>
-    -- The class of the generator `FreeAbelianGroup.of p` is `mk p` by definition.
+    -- The class of the generator `FreeAddCommGroup.of p` is `mk p` by definition.
     change P (mk p)
     rw [mk_eq_symbol]
     exact symbol _ _ p.isUnit_one_sub_mul
@@ -244,11 +246,11 @@ induces an additive map `D(A) →+ G` sending each admissible symbol `⟨r, s⟩
 on non-admissible pairs play no role. -/
 noncomputable def lift : DennisSteinGroup A →+ G :=
   QuotientAddGroup.lift (AddSubgroup.closure (relations A))
-    (FreeAbelianGroup.lift fun p : Pair A => f p.fst p.snd) <| by
+    (FreeAddCommGroup.lift fun p : Pair A => f p.fst p.snd) <| by
       rw [AddSubgroup.closure_le]
       rintro x (⟨r, s, h, h', rfl⟩ | ⟨r, s, t, hs, ht, h, rfl⟩ | ⟨r, s, t, h, -, -, rfl⟩) <;>
         simp only [SetLike.mem_coe, AddMonoidHom.mem_ker, map_add, map_sub,
-          FreeAbelianGroup.lift_apply_of]
+          FreeAddCommGroup.lift_apply_of]
       · exact h₁ r s h
       · rw [h₂ r s t hs ht, sub_self]
       · rw [h₃ r s t h, sub_sub, sub_self]
@@ -258,7 +260,7 @@ noncomputable def lift : DennisSteinGroup A →+ G :=
 theorem lift_symbol {r s : A} (h : IsUnit (1 - r * s)) :
     lift f h₁ h₂ h₃ (symbol r s) = f r s := by
   rw [← mk_eq_symbol' h]
-  exact FreeAbelianGroup.lift_apply_of _ _
+  exact FreeAddCommGroup.lift_apply_of _ _
 
 end lift
 

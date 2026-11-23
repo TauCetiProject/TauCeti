@@ -10,6 +10,8 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RingTheory.DennisStein.Relative
 
 import Mathlib.Tactic.LinearCombination
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The lift-change sequence of Dennis–Stein groups
@@ -84,7 +86,7 @@ private theorem symbol_sub_symbol_mem_range_right {x y y₁ : B} (hy : g y = g y
     have ht : t ∈ RingHom.ker g := by
       rw [RingHom.mem_ker, ht_def, map_mul, map_sub, hy, sub_self, zero_mul]
     have hxt : IsUnit (1 - x * t) :=
-      RelativeDennisSteinGroup.isUnit_one_sub_mul_of_le_jacobson hL (Or.inr ht)
+      Ideal.isUnit_one_sub_mul_of_le_jacobson hL (Or.inr ht)
     have hy' : y₁ + t - x * y₁ * t = y := by
       have : t * ↑u = y - y₁ := by rw [ht_def, mul_assoc, Units.inv_mul, mul_one]
       linear_combination this - t * hu
@@ -93,7 +95,7 @@ private theorem symbol_sub_symbol_mem_range_right {x y y₁ : B} (hy : g y = g y
       add_comm, symbol_add_symbol ⟨u, hu⟩ hxt, hy']
   · have h' : ¬IsUnit (1 - x * y) := fun h' =>
       h (isUnit_of_isUnit_map hg hL (hmap ▸ h'.map g))
-    rw [symbol_of_not_isUnit h, symbol_of_not_isUnit h', sub_zero]
+    rw [symbol_eq_zero_of_not_isUnit h, symbol_eq_zero_of_not_isUnit h', sub_zero]
     exact zero_mem _
 
 /-- Two pairs congruent modulo the kernel have symbols differing by the image of the relative
@@ -178,7 +180,7 @@ theorem exact_toDennisSteinGroup_map :
   refine Function.Exact.of_comp_of_mem_range ?_ fun x hx => ?_
   · have : (map g).comp (RelativeDennisSteinGroup.toDennisSteinGroup hL) = 0 := by
       ext r s h
-      have hu := RelativeDennisSteinGroup.isUnit_one_sub_mul_of_le_jacobson hL h
+      have hu := Ideal.isUnit_one_sub_mul_of_le_jacobson hL h
       rcases h with hr | hs
       · simp [RingHom.mem_ker.1 hr, hu]
       · simp [RingHom.mem_ker.1 hs, hu]
@@ -201,8 +203,9 @@ noncomputable def quotientRangeEquiv :
 /-- `TauCeti.DennisSteinGroup.quotientRangeEquiv` sends the class of `x` to its image under `g`. -/
 @[simp]
 theorem quotientRangeEquiv_mk (x : DennisSteinGroup B) :
-    quotientRangeEquiv hg hL (QuotientAddGroup.mk x) = map g x :=
-  (rfl)
+    quotientRangeEquiv hg hL (QuotientAddGroup.mk x) = map g x := by
+  rw [quotientRangeEquiv, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk,
+    TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk]
 
 end DennisSteinGroup
 

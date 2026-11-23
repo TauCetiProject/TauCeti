@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.RingTheory.DennisStein.Basic
 
-import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The relative Dennis–Stein group of an ideal
@@ -79,7 +79,7 @@ structure Pair where
 /-- The guarded Dennis–Stein relations among relative generators: D1 `⟨r, s⟩ + ⟨s, r⟩`; D2
 `⟨r, s⟩ + ⟨r, t⟩ - ⟨r, s + t - r s t⟩` when the three displayed pairs are relative generators; D3
 `⟨r, s t⟩ - ⟨r s, t⟩ - ⟨r t, s⟩` when one of the inputs `r, s, t` lies in `I`. -/
-def relations : Set (FreeAbelianGroup (Pair I)) :=
+def relations : Set (FreeAddCommGroup (Pair I)) :=
   {x | (∃ (r s : R) (h : r ∈ I ∨ s ∈ I) (h' : s ∈ I ∨ r ∈ I),
       x = .of ⟨r, s, h⟩ + .of ⟨s, r, h'⟩) ∨
     (∃ (r s t : R) (hs : r ∈ I ∨ s ∈ I) (ht : r ∈ I ∨ t ∈ I)
@@ -94,19 +94,19 @@ end RelativeDennisSteinGroup
 /-- The **relative Dennis–Stein group** `D(R, I)` of an ideal `I` of a commutative ring: the free
 abelian group on the pairs with an entry in `I`, modulo the guarded relations D1–D3. -/
 @[expose] def RelativeDennisSteinGroup : Type _ :=
-  FreeAbelianGroup (RelativeDennisSteinGroup.Pair I) ⧸
+  FreeAddCommGroup (RelativeDennisSteinGroup.Pair I) ⧸
     AddSubgroup.closure (RelativeDennisSteinGroup.relations I)
 
 namespace RelativeDennisSteinGroup
 
 noncomputable instance : AddCommGroup (RelativeDennisSteinGroup I) :=
-  inferInstanceAs (AddCommGroup (FreeAbelianGroup (Pair I) ⧸ AddSubgroup.closure (relations I)))
+  inferInstanceAs (AddCommGroup (FreeAddCommGroup (Pair I) ⧸ AddSubgroup.closure (relations I)))
 
 variable {I}
 
 /-- The class of a relative generator in `D(R, I)`. -/
 private def mk (p : Pair I) : RelativeDennisSteinGroup I :=
-  QuotientAddGroup.mk (s := AddSubgroup.closure (relations I)) (FreeAbelianGroup.of p)
+  QuotientAddGroup.mk (s := AddSubgroup.closure (relations I)) (FreeAddCommGroup.of p)
 
 variable (I) in
 open scoped Classical in
@@ -122,10 +122,10 @@ private theorem mk_eq_symbol' {r s : R} (h : r ∈ I ∨ s ∈ I) : mk ⟨r, s, 
   mk_eq_symbol _
 
 /-- A pair with no entry in `I` has symbol `0`. -/
-theorem symbol_of_notMem {r s : R} (hr : r ∉ I) (hs : s ∉ I) : symbol I r s = 0 := by
+theorem symbol_eq_zero_of_notMem {r s : R} (hr : r ∉ I) (hs : s ∉ I) : symbol I r s = 0 := by
   simp [symbol, hr, hs]
 
-private theorem mk_eq_zero_of_mem {x : FreeAbelianGroup (Pair I)} (hx : x ∈ relations I) :
+private theorem mk_eq_zero_of_mem {x : FreeAddCommGroup (Pair I)} (hx : x ∈ relations I) :
     (QuotientAddGroup.mk (s := AddSubgroup.closure (relations I)) x :
       RelativeDennisSteinGroup I) = 0 :=
   (QuotientAddGroup.eq_zero_iff x).2 (AddSubgroup.subset_closure hx)
@@ -136,7 +136,7 @@ theorem symbol_add_symbol_swap (r s : R) : symbol I r s + symbol I s r = 0 := by
   · rw [← mk_eq_symbol' h, ← mk_eq_symbol' h.symm]
     exact mk_eq_zero_of_mem (Or.inl ⟨r, s, h, h.symm, rfl⟩)
   · rw [not_or] at h
-    rw [symbol_of_notMem h.1 h.2, symbol_of_notMem h.2 h.1, add_zero]
+    rw [symbol_eq_zero_of_notMem h.1 h.2, symbol_eq_zero_of_notMem h.2 h.1, add_zero]
 
 /-- D1 for relative symbols in the form `⟨s, r⟩ = -⟨r, s⟩`. -/
 theorem symbol_swap (r s : R) : symbol I s r = -symbol I r s :=
@@ -186,10 +186,10 @@ theorem induction_on {P : RelativeDennisSteinGroup I → Prop} (x : RelativeDenn
     (zero : P 0) (symbol : ∀ r s, r ∈ I ∨ s ∈ I → P (symbol I r s))
     (add : ∀ x y, P x → P y → P (x + y)) (neg : ∀ x, P x → P (-x)) : P x := by
   induction x using QuotientAddGroup.induction_on with | H z => ?_
-  induction z using FreeAbelianGroup.induction_on with
+  induction z using FreeAddCommGroup.induction_on with
   | zero => exact zero
   | of p =>
-    -- The class of the generator `FreeAbelianGroup.of p` is `mk p` by definition.
+    -- The class of the generator `FreeAddCommGroup.of p` is `mk p` by definition.
     change P (mk p)
     rw [mk_eq_symbol]
     exact symbol _ _ p.mem
@@ -236,11 +236,11 @@ variable {G : Type*} [AddCommGroup G] (f : R → R → G)
 D1–D3 induces an additive map `D(R, I) →+ G` sending each relative symbol `⟨r, s⟩` to `f r s`. -/
 noncomputable def lift : RelativeDennisSteinGroup I →+ G :=
   QuotientAddGroup.lift (AddSubgroup.closure (relations I))
-    (FreeAbelianGroup.lift fun p : Pair I => f p.fst p.snd) <| by
+    (FreeAddCommGroup.lift fun p : Pair I => f p.fst p.snd) <| by
       rw [AddSubgroup.closure_le]
       rintro x (⟨r, s, h, -, rfl⟩ | ⟨r, s, t, hs, ht, -, rfl⟩ | ⟨r, s, t, h, -, -, -, rfl⟩) <;>
         simp only [SetLike.mem_coe, AddMonoidHom.mem_ker, map_add, map_sub,
-          FreeAbelianGroup.lift_apply_of]
+          FreeAddCommGroup.lift_apply_of]
       · exact h₁ r s h
       · -- The three pairs of D2 are relative exactly when `r ∈ I`, or `s ∈ I` and `t ∈ I`.
         have h : r ∈ I ∨ s ∈ I ∧ t ∈ I := by
@@ -255,26 +255,19 @@ noncomputable def lift : RelativeDennisSteinGroup I →+ G :=
 theorem lift_symbol {r s : R} (h : r ∈ I ∨ s ∈ I) :
     lift f h₁ h₂ h₃ (symbol I r s) = f r s := by
   rw [← mk_eq_symbol' h]
-  exact FreeAbelianGroup.lift_apply_of _ _
+  exact FreeAddCommGroup.lift_apply_of _ _
 
 end lift
 
-/-- A pair with an entry in an ideal contained in the Jacobson radical is admissible. -/
-theorem isUnit_one_sub_mul_of_le_jacobson (hI : I ≤ Ring.jacobson R) {r s : R}
-    (h : r ∈ I ∨ s ∈ I) : IsUnit (1 - r * s) := by
-  refine Ideal.isUnit_of_sub_one_mem_jacobson _ (hI ?_)
-  rw [sub_sub_cancel_left]
-  exact I.neg_mem (h.elim (I.mul_mem_right s) (I.mul_mem_left r))
-
 /-- The **generator map** `D(R, I) →+ D(R)` for an ideal `I` contained in the Jacobson radical,
 sending each relative symbol `⟨r, s⟩` to the Dennis–Stein symbol `⟨r, s⟩`, which is admissible
-because `r * s ∈ I`. -/
+because `r * s ∈ I` (`Ideal.isUnit_one_sub_mul_of_le_jacobson`). -/
 noncomputable def toDennisSteinGroup (hI : I ≤ Ring.jacobson R) :
     RelativeDennisSteinGroup I →+ DennisSteinGroup R :=
   lift DennisSteinGroup.symbol (fun r s _ => DennisSteinGroup.symbol_add_symbol_swap r s)
     (fun _ _ _ h => DennisSteinGroup.symbol_add_symbol
-      (isUnit_one_sub_mul_of_le_jacobson hI (h.imp_right And.left))
-      (isUnit_one_sub_mul_of_le_jacobson hI (h.imp_right And.right)))
+      (Ideal.isUnit_one_sub_mul_of_le_jacobson hI (h.imp_right And.left))
+      (Ideal.isUnit_one_sub_mul_of_le_jacobson hI (h.imp_right And.right)))
     (fun r s t _ => DennisSteinGroup.symbol_mul_right r s t)
 
 /-- The generator map sends the relative symbol `⟨r, s⟩` to the Dennis–Stein symbol `⟨r, s⟩`. -/
