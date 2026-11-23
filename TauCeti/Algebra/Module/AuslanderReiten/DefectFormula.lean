@@ -62,8 +62,8 @@ dual of the first to the second: the snake map is natural because lifts for `X'`
 * `Function.Exact.contravariantDefectEquivKer_mk`: the snake map on representatives.
 * `Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality`: naturality of the
   defect formula in the exact sequence.
-* `LinearMap.contravariantDefectComap`, `LinearMap.covariantDefectMapRight` and
-  `LinearMap.homCokernelComap`: the maps induced by a map of presented modules.
+* `LinearMap.contravariantDefectComap`: the map of contravariant defects induced by a map of
+  presented modules.
 * `Function.Exact.dualContravariantDefectEquivCovariantDefect_comap`: naturality of the defect
   formula in the presented module, from `Function.Exact.contravariantDefectEquivKer_comap` and
   `LinearMap.auslanderReitenHomCokernelDualEquiv_comap`.
@@ -236,87 +236,6 @@ theorem contravariantDefectComap_comp {M₂ M₃ X X' X'' : Type*} [AddCommGroup
   ext g
   simp [LinearMap.comp_assoc]
 
-/-- The map `δ_*(Y) → δ_*(Y')` of covariant defects induced by `g : Y → Y'`: postcomposition
-with `g`. -/
-noncomputable def covariantDefectMapRight {M₁ M₂ Y Y' : Type*} [AddCommGroup M₁] [Module A M₁]
-    [AddCommGroup M₂] [Module A M₂] [AddCommGroup Y] [Module A Y] [Module k Y]
-    [IsScalarTower k A Y] [AddCommGroup Y'] [Module A Y'] [Module k Y'] [IsScalarTower k A Y']
-    (φ : M₁ →ₗ[A] M₂) (g : Y →ₗ[A] Y') : covariantDefect k φ Y →ₗ[k] covariantDefect k φ Y' :=
-  Submodule.mapQ _ _ (g.compRight k) (by
-    rintro _ ⟨u, rfl⟩
-    exact ⟨g ∘ₗ u, rfl⟩)
-
-@[simp]
-theorem covariantDefectMapRight_mk {M₁ M₂ Y Y' : Type*} [AddCommGroup M₁] [Module A M₁]
-    [AddCommGroup M₂] [Module A M₂] [AddCommGroup Y] [Module A Y] [Module k Y]
-    [IsScalarTower k A Y] [AddCommGroup Y'] [Module A Y'] [Module k Y'] [IsScalarTower k A Y']
-    (φ : M₁ →ₗ[A] M₂) (g : Y →ₗ[A] Y') (u : M₁ →ₗ[A] Y) :
-    covariantDefectMapRight k φ g (Submodule.Quotient.mk u) = Submodule.Quotient.mk (g ∘ₗ u) := by
-  simp [covariantDefectMapRight]
-
-@[simp]
-theorem covariantDefectMapRight_id {M₁ M₂ Y : Type*} [AddCommGroup M₁] [Module A M₁]
-    [AddCommGroup M₂] [Module A M₂] [AddCommGroup Y] [Module A Y] [Module k Y]
-    [IsScalarTower k A Y] (φ : M₁ →ₗ[A] M₂) :
-    covariantDefectMapRight k φ (LinearMap.id : Y →ₗ[A] Y) = LinearMap.id := by
-  ext u
-  simp
-
-/-- The maps of covariant defects compose along composed maps. -/
-theorem covariantDefectMapRight_comp {M₁ M₂ Y Y' Y'' : Type*} [AddCommGroup M₁] [Module A M₁]
-    [AddCommGroup M₂] [Module A M₂] [AddCommGroup Y] [Module A Y] [Module k Y]
-    [IsScalarTower k A Y] [AddCommGroup Y'] [Module A Y'] [Module k Y'] [IsScalarTower k A Y']
-    [AddCommGroup Y''] [Module A Y''] [Module k Y''] [IsScalarTower k A Y''] (φ : M₁ →ₗ[A] M₂)
-    (g : Y →ₗ[A] Y') (g' : Y' →ₗ[A] Y'') :
-    covariantDefectMapRight k φ (g' ∘ₗ g) =
-      covariantDefectMapRight k φ g' ∘ₗ covariantDefectMapRight k φ g := by
-  ext u
-  simp [LinearMap.comp_assoc]
-
-/-- The map `H'(N) → H(N)` of Hom cokernels induced by a commutative square `t₀ ∘ f = f' ∘ t₁`
-between presentations: precomposition with `t₁`. -/
-noncomputable def homCokernelComap {P₀ P₁ P₀' P₁' : Type*} [AddCommGroup P₀] [Module A P₀]
-    [AddCommGroup P₁] [Module A P₁] [AddCommGroup P₀'] [Module A P₀'] [AddCommGroup P₁']
-    [Module A P₁'] {f : P₁ →ₗ[A] P₀} {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'}
-    {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁) (N : Type*) [AddCommGroup N] [Module A N]
-    [Module k N] [IsScalarTower k A N] :
-    ((P₁' →ₗ[A] N) ⧸ range (f'.lcomp k N)) →ₗ[k] ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) :=
-  Submodule.mapQ _ _ (t₁.lcomp k N) (by
-    rintro _ ⟨G, rfl⟩
-    refine ⟨G ∘ₗ t₀, ?_⟩
-    simp only [lcomp_apply']
-    rw [LinearMap.comp_assoc, ht, ← LinearMap.comp_assoc])
-
-@[simp]
-theorem homCokernelComap_mk {P₀ P₁ P₀' P₁' : Type*} [AddCommGroup P₀] [Module A P₀]
-    [AddCommGroup P₁] [Module A P₁] [AddCommGroup P₀'] [Module A P₀'] [AddCommGroup P₁']
-    [Module A P₁'] {f : P₁ →ₗ[A] P₀} {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'}
-    {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁) {N : Type*} [AddCommGroup N] [Module A N]
-    [Module k N] [IsScalarTower k A N] (G : P₁' →ₗ[A] N) :
-    homCokernelComap k ht N (Submodule.Quotient.mk G) = Submodule.Quotient.mk (G ∘ₗ t₁) := by
-  simp [homCokernelComap, lcomp_apply']
-
-@[simp]
-theorem homCokernelComap_id {P₀ P₁ : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁]
-    [Module A P₁] {f : P₁ →ₗ[A] P₀} (ht : LinearMap.id ∘ₗ f = f ∘ₗ LinearMap.id) (N : Type*)
-    [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N] :
-    homCokernelComap k ht N = LinearMap.id := by
-  ext G
-  simp
-
-/-- The maps of Hom cokernels compose, in the reverse order, along composed squares. -/
-theorem homCokernelComap_comp {P₀ P₁ P₀' P₁' P₀'' P₁'' : Type*} [AddCommGroup P₀] [Module A P₀]
-    [AddCommGroup P₁] [Module A P₁] [AddCommGroup P₀'] [Module A P₀'] [AddCommGroup P₁']
-    [Module A P₁'] [AddCommGroup P₀''] [Module A P₀''] [AddCommGroup P₁''] [Module A P₁'']
-    {f : P₁ →ₗ[A] P₀} {f' : P₁' →ₗ[A] P₀'} {f'' : P₁'' →ₗ[A] P₀''} {t₀ : P₀ →ₗ[A] P₀'}
-    {t₁ : P₁ →ₗ[A] P₁'} {t₀' : P₀' →ₗ[A] P₀''} {t₁' : P₁' →ₗ[A] P₁''}
-    (ht : t₀ ∘ₗ f = f' ∘ₗ t₁) (ht' : t₀' ∘ₗ f' = f'' ∘ₗ t₁')
-    (ht'' : (t₀' ∘ₗ t₀) ∘ₗ f = f'' ∘ₗ (t₁' ∘ₗ t₁)) (N : Type*) [AddCommGroup N] [Module A N]
-    [Module k N] [IsScalarTower k A N] :
-    homCokernelComap k ht'' N = homCokernelComap k ht N ∘ₗ homCokernelComap k ht' N := by
-  ext G
-  simp [LinearMap.comp_assoc]
-
 /-- **Naturality of `D H(N) ≅ Hom_A(N, D Tr f)` in the presentation.** For a commutative square
 `t₀ ∘ f = f' ∘ t₁`, precomposition with the map of Hom cokernels corresponds to postcomposition
 with the dual `D Tr(t) : D Tr f → D Tr f'` of the map of transposes. -/
@@ -328,7 +247,7 @@ theorem auslanderReitenHomCokernelDualEquiv_comap {P₀ P₁ P₀' P₁' N : Typ
     [IsScalarTower k A N] {E : Type*} [AddCommGroup E] [Module k E] {f : P₁ →ₗ[A] P₀}
     {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'} {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁)
     (u : ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) →ₗ[k] E) :
-    auslanderReitenHomCokernelDualEquiv f' (u ∘ₗ homCokernelComap k ht N) =
+    auslanderReitenHomCokernelDualEquiv f' (u ∘ₗ covariantDefectMap k ht N) =
       MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht) ∘ₗ
         auslanderReitenHomCokernelDualEquiv f u := by
   ext n : 1
@@ -336,7 +255,7 @@ theorem auslanderReitenHomCokernelDualEquiv_comap {P₀ P₁ P₀' P₁' N : Typ
   ext τ
   obtain ⟨φ, rfl⟩ := AuslanderReitenTranspose.mk_surjective f' τ
   simp only [auslanderReitenHomCokernelDualEquiv_apply_mk, LinearMap.comp_apply,
-    homCokernelComap_mk, MatlisDual.mapOp_apply, AuslanderReitenTranspose.map_mk]
+    covariantDefectMap_mk, MatlisDual.mapOp_apply, AuslanderReitenTranspose.map_mk]
   congr 2
   ext x
   simp [balancedDualTensorHom_tmul]
@@ -441,7 +360,7 @@ theorem contravariantDefectEquivKer_comap (hfp : Exact f p) (hp : Surjective p)
     (x : contravariantDefect k ψ X') :
     (contravariantDefectEquivKer hfp hp hφ hψ hφψ (contravariantDefectComap k ψ t x) :
       (P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) =
-      homCokernelComap k ht₁ M₁ (contravariantDefectEquivKer hfp' hp' hφ hψ hφψ x) := by
+      covariantDefectMap k ht₁ M₁ (contravariantDefectEquivKer hfp' hp' hφ hψ hφψ x) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   obtain ⟨y, hy⟩ := Module.projective_lifting_property ψ (g ∘ₗ p') hψ
   obtain ⟨z, hz⟩ := (hφψ.compRight_of_injective (T := k) P₁' hφ (y ∘ₗ f')).mp (by
@@ -453,7 +372,7 @@ theorem contravariantDefectEquivKer_comap (hfp : Exact f p) (hp : Surjective p)
       (by rw [← LinearMap.comp_assoc, hy, LinearMap.comp_assoc, ht₀, ← LinearMap.comp_assoc])
       (z ∘ₗ t₁)
       (by rw [← LinearMap.comp_assoc, hz, LinearMap.comp_assoc, ← ht₁, ← LinearMap.comp_assoc]),
-    homCokernelComap_mk]
+    covariantDefectMap_mk]
 
 variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
   {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
@@ -534,7 +453,7 @@ theorem dualContravariantDefectEquivCovariantDefect_comap (hfp : Exact f p) (hp 
     (χ : contravariantDefect k ψ X →ₗ[k] E) :
     dualContravariantDefectEquivCovariantDefect hfp' hp' hφ hψ hφψ
         (χ ∘ₗ contravariantDefectComap k ψ t) =
-      covariantDefectMapRight k φ (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁))
+      homCokernelMap k φ (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁))
         (dualContravariantDefectEquivCovariantDefect hfp hp hφ hψ hφψ χ) := by
   simp only [dualContravariantDefectEquivCovariantDefect, LinearEquiv.trans_apply]
   -- Represent the class attached to `χ` by a functional `v` on `H(M₁)`.

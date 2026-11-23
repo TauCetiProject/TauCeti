@@ -307,7 +307,7 @@ theorem ext1TranslateEquivDualStableHom_comap (ht₀ : P'.π ∘ₗ t₀ = t.hom
     (χ ∘ₗ (contravariantDefectEquivStableHom R e he X).toLinearMap) = y
   induction y using Submodule.Quotient.induction_on with
   | _ v =>
-    rw [covariantDefectMapRight_mk, covariantDefectEquivExt1_mk, covariantDefectEquivExt1_mk,
+    rw [homCokernelMap_mk, covariantDefectEquivExt1_mk, covariantDefectEquivExt1_mk,
       ExactStructure.Ext1.pushout_pushout]
     congr 1
     ext x
