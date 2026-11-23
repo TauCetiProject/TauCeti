@@ -27,8 +27,8 @@ and are not vertices.
 ## Main results
 
 * `TauCeti.Toric.mem_facetPolyhedron_interval_iff`: the polyhedron is the interval `[0, a]`.
-* `TauCeti.Toric.activeSet_interval_of_eq_zero`, `TauCeti.Toric.activeSet_interval_of_eq`: the
-  constraint active at each endpoint.
+* `TauCeti.Toric.activeSet_interval_of_eq_zero`, `TauCeti.Toric.activeSet_interval_of_eq`: for
+  `a ≠ 0`, the constraint active at the points `0` and `a`, the endpoints when `0 < a`.
 * `TauCeti.Toric.isDelzant_interval`: for `a > 0` it is a Delzant polytope.
 -/
 
@@ -61,8 +61,8 @@ private theorem mem_activeSet_interval_iff {x : StrongDual ℝ ℝ} {j : Fin 2} 
       (j = 0 ∧ x 1 = 0) ∨ (j = 1 ∧ x 1 = a) := by
   fin_cases j <;> simp
 
-/-- At the endpoint `0` of the interval `[0, a]`, with `a ≠ 0`, only the constraint with normal `1`
-is active. -/
+/-- For `a ≠ 0`, at a point `x` with `x 1 = 0` only the constraint with normal `1` is active. When
+`0 < a` this point is the endpoint `0` of the interval `[0, a]`. -/
 theorem activeSet_interval_of_eq_zero (ha : a ≠ 0) {x : StrongDual ℝ ℝ} (hx : x 1 = 0) :
     activeSet (facetPairing (Int.castAddHom ℝ) ![1, -1]) ![0, -a] x = {0} := by
   ext j
@@ -73,8 +73,8 @@ theorem activeSet_interval_of_eq_zero (ha : a ≠ 0) {x : StrongDual ℝ ℝ} (h
     · exact absurd (h.2.symm.trans hx) ha
   · exact fun hj ↦ Or.inl ⟨hj, hx⟩
 
-/-- At the endpoint `a` of the interval `[0, a]`, with `a ≠ 0`, only the constraint with normal `-1`
-is active. -/
+/-- For `a ≠ 0`, at a point `x` with `x 1 = a` only the constraint with normal `-1` is active. When
+`0 < a` this point is the endpoint `a` of the interval `[0, a]`. -/
 theorem activeSet_interval_of_eq (ha : a ≠ 0) {x : StrongDual ℝ ℝ} (hx : x 1 = a) :
     activeSet (facetPairing (Int.castAddHom ℝ) ![1, -1]) ![0, -a] x = {1} := by
   ext j

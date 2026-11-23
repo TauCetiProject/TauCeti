@@ -21,14 +21,15 @@ combinatorics of labels on facet presentations.
 
 Let `i : N →+ V` be a lattice and `(u, c)` a facet presentation of the polyhedron
 `Δ = {x ∈ V* | c j ≤ ⟨x, u j⟩ for every j}` (`TauCeti.Toric.facetPolyhedron`). The presentation is
-*rational simple* (`TauCeti.Toric.IsRationalSimple`) when `Δ` is bounded, each constraint
-contributes a facet, the inward normals are primitive, and exactly `rank N` facets meet at each
-vertex. Like `TauCeti.Toric.IsDelzant`, the predicate omits `IsIntegralLattice i`; the polytope is
-simple, with linearly independent normals at each vertex
-(`TauCeti.Toric.IsRationalSimple.linearIndepOn_activeSet`), only in an integral lattice. A Delzant
-presentation is rational simple (`TauCeti.Toric.IsDelzant.isRationalSimple`), and a rational simple
-presentation is Delzant exactly when the normals of the facets meeting at each vertex generate `N`,
-that is, when every vertex cone is unimodular (`TauCeti.Toric.isDelzant_iff_isRationalSimple`).
+*rational simple* (`TauCeti.Toric.IsRationalSimple`) when `Δ` is bounded, each constraint is the
+only active one at some point of `Δ`, the normals are primitive, and exactly `rank N` constraints
+are active at each vertex. Like `TauCeti.Toric.IsDelzant`, the predicate omits
+`IsIntegralLattice i`. Only in an integral lattice are the active normals at each vertex linearly
+independent (`TauCeti.Toric.IsRationalSimple.linearIndepOn_activeSet`), so that the constraints are
+the facets of a simple polytope. A Delzant presentation is rational simple
+(`TauCeti.Toric.IsDelzant.isRationalSimple`), and a rational simple presentation is Delzant exactly
+when the normals of the constraints active at each vertex generate `N`, that is, when every vertex
+cone is unimodular (`TauCeti.Toric.isDelzant_iff_isRationalSimple`).
 
 Labels `m j` enter through the *labeled normals* `m j • u j`.
 
@@ -36,21 +37,24 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
   out the same polyhedron (`TauCeti.Toric.facetPolyhedron_nsmul`) with the same active constraints
   at every point (`TauCeti.Toric.activeSet_nsmul`), both in
   `TauCeti.Geometry.Toric.Delzant.Basic`.
-* **Isotropy.** At a point `x`, the labeled normals of the active facets span the sublattice
+* **Isotropy.** At a point `x`, the labeled normals of the active constraints span the sublattice
   `TauCeti.Toric.labeledActiveLattice`. For a vertex `x` of a labeled polytope, the quotient
   `N ⧸ labeledActiveLattice` is the orbifold structure group over `x` of the toric orbifold that
   Lerman–Tolman's correspondence attaches to the labeled polytope; here it is studied
   combinatorially, without constructing the orbifold. When the active
-  normals are linearly independent, its order is the product of the active labels times the index
-  of the vertex cone lattice (`TauCeti.Toric.card_quotient_labeledActiveLattice`):
+  normals are linearly independent, its `Nat.card` is the product of the active labels times the
+  `Nat.card` of the quotient by the vertex cone lattice
+  (`TauCeti.Toric.card_quotient_labeledActiveLattice`):
 
-  `|N ⧸ span {m j • u j}| = (∏ m j) · |N ⧸ span {u j}|`,
+  `Nat.card (N ⧸ span {m j • u j}) = (∏ m j) · Nat.card (N ⧸ span {u j})`,
 
-  so it is finite at every vertex of a rational simple polytope in an integral lattice with
-  positive labels (`TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`). At a
-  smooth vertex, where the active normals form a basis `b` of `N`, the labeled lattice is spanned
-  by the rescaled basis vectors (`TauCeti.Toric.labeledActiveLattice_eq_span_range_nsmul`), and
-  `Module.Basis.quotientSpanNSMulEquiv` identifies the quotient with `Π j, ZMod (m j)`.
+  where both sides are `0` when a quotient is infinite. At a vertex of a rational simple polytope
+  in an integral lattice whose active labels are positive, both quotients are finite
+  (`TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`), so the formula
+  multiplies genuine group orders. At a smooth vertex, where the active normals form a basis `b`
+  of `N`, the labeled lattice is spanned by the rescaled basis vectors
+  (`TauCeti.Toric.labeledActiveLattice_eq_span_range_nsmul`), and
+  `Module.Basis.quotientSpanSMulEquiv` identifies the quotient with `Π j, ℤ ⧸ (m j)`.
 * **Delzant labeled presentations.** By `TauCeti.Toric.isDelzant_nsmul_iff` in
   `TauCeti.Geometry.Toric.Delzant.Basic`, the labeled presentation is Delzant exactly when all
   labels are one and the unlabeled presentation is Delzant. For a labeled rational simple polytope,
@@ -60,29 +64,32 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
   Lerman–Tolman's smoothness criterion; the statement concerns the presentation only, not the
   structure groups or the orbifold.
 
-The interval `[0, a]` with labels `m 0` and `m 1` on its two endpoints is, in Lerman–Tolman's
-correspondence, the labeled polytope of a spindle orbifold: a sphere with cone points of orders
-`m 0` and `m 1`, which is the weighted projective line `ℙ(m 0, m 1)` when the labels are coprime.
-For positive labels its structure
-groups at the endpoints have orders `m 0` and `m 1`; a zero label gives the infinite quotient `ℤ`,
-of cardinality `0` in `Nat.card`
+For `0 < a`, the interval `[0, a]` with labels `m 0` and `m 1` on its two endpoints is, in
+Lerman–Tolman's correspondence, the labeled polytope of a spindle orbifold: a sphere with cone
+points of orders `m 0` and `m 1`, which is the weighted projective line `ℙ(m 0, m 1)` when the
+labels are coprime. For every `a ≠ 0`, the quotients of `ℤ` by the labeled lattices of the
+constraints active at the points `0` and `a` have `Nat.card` equal to `m 0` and `m 1`
 (`TauCeti.Toric.card_quotient_labeledActiveLattice_interval_of_eq_zero`,
-`TauCeti.Toric.card_quotient_labeledActiveLattice_interval_of_eq`).
+`TauCeti.Toric.card_quotient_labeledActiveLattice_interval_of_eq`). For `0 < a` and positive
+labels these are the orders of the structure groups at the endpoints; a zero label gives the
+infinite quotient `ℤ`, of cardinality `0` in `Nat.card`.
 
 ## Main definitions
 
 * `TauCeti.Toric.IsRationalSimple`: a bounded irredundant facet presentation with primitive
-  normals, with exactly `rank N` facets at each vertex.
+  normals, with exactly `rank N` active constraints at each vertex.
 * `TauCeti.Toric.labeledActiveLattice`: the sublattice spanned by the labeled normals of the
-  facets active at a point.
+  constraints active at a point.
 
 ## Main results
 
-* `TauCeti.Toric.card_quotient_labeledActiveLattice`: the order of the structure group.
+* `TauCeti.Toric.card_quotient_labeledActiveLattice`: the `Nat.card` of the structure group, when
+  the active normals are linearly independent.
 * `TauCeti.Toric.IsRationalSimple.linearIndepOn_activeSet`: at a vertex of a rational simple
   polytope in an integral lattice, the active normals are linearly independent.
-* `TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`: the structure groups at
-  the vertices of a labeled polytope in an integral lattice are finite.
+* `TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`: at a vertex of a rational
+  simple polytope in an integral lattice with positive active labels, the structure group is
+  finite.
 * `TauCeti.Toric.isDelzant_iff_isRationalSimple`: Delzant means rational simple with unimodular
   vertex cones.
 * `TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`: the labeled presentation of a rational
@@ -135,8 +142,12 @@ theorem labeledActiveLattice_one (x : StrongDual ℝ V) :
   simp [labeledActiveLattice_def]
 
 /-- **The order of the structure group.** When the normals active at `x` are linearly independent,
-the quotient of `N` by the labeled lattice has as many elements as the product of the active labels
-times the quotient of `N` by the lattice of the vertex cone. -/
+the `Nat.card` of the quotient of `N` by the labeled lattice is the product of the active labels
+times the `Nat.card` of the quotient of `N` by the lattice spanned by the active normals. Both sides
+are `0` when one of the quotients is infinite, for instance when an active label vanishes; at a
+vertex of a rational simple polytope in an integral lattice with positive active labels both
+quotients are finite (`IsRationalSimple.finite_quotient_labeledActiveLattice`) and the formula
+multiplies genuine group orders. -/
 theorem card_quotient_labeledActiveLattice [Finite ι] {x : StrongDual ℝ V}
     (hu : LinearIndepOn ℤ u (activeSet (facetPairing i u) c x)) :
     Nat.card (N ⧸ labeledActiveLattice i u c m x) =
@@ -149,16 +160,17 @@ theorem card_quotient_labeledActiveLattice [Finite ι] {x : StrongDual ℝ V}
   exact LinearIndependent.card_quotient_span_range_nsmul hu fun j : s ↦ m j
 
 /-- At a smooth vertex, whose active normals form a lattice basis `b`, the labeled lattice is
-spanned by the rescaled basis vectors `m j • b j`, so `Module.Basis.quotientSpanNSMulEquiv`
-identifies the structure group with `Π j, ZMod (m j)`. -/
+spanned by the rescaled basis vectors `m j • b j`, so `Module.Basis.quotientSpanSMulEquiv`
+identifies the structure group with `Π j, ℤ ⧸ (m j)`. -/
 theorem labeledActiveLattice_eq_span_range_nsmul {x : StrongDual ℝ V}
     (b : Module.Basis (activeSet (facetPairing i u) c x) ℤ N) (hb : ∀ j, b j = u j) :
     labeledActiveLattice i u c m x =
       Submodule.span ℤ (range fun j : activeSet (facetPairing i u) c x ↦ m j • b j) := by
   simp [labeledActiveLattice_def, hb, image_eq_range]
 
-/-- At a smooth vertex the structure group has as many elements as the product of the active
-labels. -/
+/-- At a smooth vertex the `Nat.card` of the structure group is the product of the active labels.
+It is a genuine group order when the active labels are positive, and both sides are `0` when one of
+them vanishes. -/
 theorem IsSmoothVertex.card_quotient_labeledActiveLattice [Finite ι] {x : StrongDual ℝ V}
     (hx : IsSmoothVertex i u c x) :
     Nat.card (N ⧸ labeledActiveLattice i u c m x) =
@@ -175,20 +187,23 @@ section RationalSimple
 
 variable (i u c)
 
-/-- The facet presentation `(u, c)` in the lattice `i : N →+ V` describes a *rational simple
-polytope*: the polyhedron is bounded, each constraint is the only active one at some point of the
-polyhedron, the inward normals are primitive lattice vectors, and exactly `rank N` facets meet at
-each vertex. With a positive integer label on each facet it is a *labeled polytope* in the sense of
-Lerman–Tolman, the moment data of a compact symplectic toric orbifold.
+/-- The facet presentation `(u, c)` in the lattice `i : N →+ V` is *rational simple*: the
+polyhedron is bounded, each constraint is the only active one at some point of the polyhedron
+(`irredundant`), the normals `u j` are primitive lattice vectors, and exactly `rank N` constraints
+are active at each vertex (`ncard_activeSet`).
 
 Like `IsDelzant`, the predicate does not include `IsIntegralLattice i`: results that need the
-lattice assume it separately. Without it the polytope need not be simple (the octahedron, via a
-non-injective map `ℤ⁴ →+ ℝ³`, has four facets at each vertex but dependent normals); in an integral
-lattice the active normals at each vertex are linearly independent (`linearIndepOn_activeSet`). -/
+lattice assume it separately. Without it the active constraints need not behave like the facets of
+a simple polytope (the octahedron, via a non-injective map `ℤ⁴ →+ ℝ³`, has four active constraints
+at each vertex but dependent normals). In an integral lattice the active normals at each vertex are
+linearly independent (`linearIndepOn_activeSet`), the constraints cut out the facets of a simple
+rational polytope, and with a positive integer label on each constraint the presentation is a
+*labeled polytope* in the sense of Lerman–Tolman, the moment data of a compact symplectic toric
+orbifold. -/
 structure IsRationalSimple : Prop where
   /-- The polyhedron is bounded, hence a polytope. -/
   isBounded : Bornology.IsBounded (facetPolyhedron i u c)
-  /-- Exactly `rank N` facets meet at each vertex. -/
+  /-- Exactly `rank N` constraints are active at each vertex. -/
   ncard_activeSet : ∀ x ∈ (facetPolyhedron i u c).extremePoints ℝ,
     (activeSet (facetPairing i u) c x).ncard = Module.finrank ℤ N
   /-- Each constraint is the only active one at some point of the polyhedron. -/
@@ -207,7 +222,7 @@ theorem IsDelzant.isRationalSimple [FiniteDimensional ℝ V] (hΔ : IsDelzant i 
   isPrimitive := hΔ.isPrimitive
 
 /-- **Delzant polytopes are the unimodular rational simple polytopes.** A facet presentation is
-Delzant exactly when it is rational simple and at each vertex the normals of the active facets
+Delzant exactly when it is rational simple and at each vertex the normals of the active constraints
 generate the lattice. -/
 theorem isDelzant_iff_isRationalSimple [Finite ι] [FiniteDimensional ℝ V] :
     IsDelzant i u c ↔ IsRationalSimple i u c ∧ ∀ x ∈ (facetPolyhedron i u c).extremePoints ℝ,
@@ -237,8 +252,8 @@ theorem isDelzant_nsmul_iff [Finite ι] [FiniteDimensional ℝ V] {m : ι → �
 variable [Finite ι]
 
 /-- **Simple vertices.** At a vertex of a rational simple polytope in an integral lattice, the
-normals of the active facets are linearly independent: there are `dim V` of them and they span `V`.
--/
+normals of the active constraints are linearly independent: there are `dim V` of them and they span
+`V`. -/
 theorem linearIndepOn_activeSet (hi : IsIntegralLattice i) {x : StrongDual ℝ V}
     (hx : x ∈ (facetPolyhedron i u c).extremePoints ℝ) :
     LinearIndepOn ℤ u (activeSet (facetPairing i u) c x) := by
@@ -253,10 +268,12 @@ theorem linearIndepOn_activeSet (hi : IsIntegralLattice i) {x : StrongDual ℝ V
       rw [Fintype.card_eq_nat_card, Nat.card_coe_set_eq, hΔ.ncard_activeSet x hx, hi.finrank_eq]
   exact LinearIndependent.of_comp i.toIntLinearMap (hR.restrict_scalars' (R := ℤ))
 
-/-- **Finite isotropy.** At each vertex of a rational simple polytope in an integral lattice with
-positive labels, the structure group `N ⧸ labeledActiveLattice i u c m x` is finite. -/
+/-- **Finite isotropy.** At a vertex `x` of a rational simple polytope in an integral lattice, if
+the labels of the constraints active at `x` are positive, then the structure group
+`N ⧸ labeledActiveLattice i u c m x` is finite. -/
 theorem finite_quotient_labeledActiveLattice (hi : IsIntegralLattice i) {m : ι → ℕ}
-    (hm : ∀ j, m j ≠ 0) {x : StrongDual ℝ V} (hx : x ∈ (facetPolyhedron i u c).extremePoints ℝ) :
+    {x : StrongDual ℝ V} (hx : x ∈ (facetPolyhedron i u c).extremePoints ℝ)
+    (hm : ∀ j ∈ activeSet (facetPairing i u) c x, m j ≠ 0) :
     Finite (N ⧸ labeledActiveLattice i u c m x) := by
   have := hi.free
   have := hi.finite
@@ -270,7 +287,7 @@ theorem finite_quotient_labeledActiveLattice (hi : IsIntegralLattice i) {m : ι 
   refine Nat.finite_of_card_ne_zero ?_
   rw [card_quotient_labeledActiveLattice hu]
   exact mul_ne_zero (finprod_mem_induction (· ≠ 0) one_ne_zero (fun _ _ ↦ mul_ne_zero)
-    fun j _ ↦ hm j) Nat.card_pos.ne'
+    hm) Nat.card_pos.ne'
 
 end IsRationalSimple
 
@@ -282,16 +299,20 @@ section Interval
 
 variable {a : ℝ} {m : Fin 2 → ℕ}
 
-/-- The structure group at the endpoint `0` of the labeled interval `[0, a]` has order `m 0`. A
-zero label `m 0 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
+/-- For `a ≠ 0`, at a point `x` with `x 1 = 0` the quotient of `ℤ` by the labeled lattice of the
+active constraint has `Nat.card` equal to `m 0`. When `0 < a` this point is the endpoint `0` of
+the labeled interval `[0, a]` and the quotient is its structure group, of order `m 0`. A zero label
+`m 0 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
 theorem card_quotient_labeledActiveLattice_interval_of_eq_zero (ha : a ≠ 0) {x : StrongDual ℝ ℝ}
     (hx : x 1 = 0) :
     Nat.card (ℤ ⧸ labeledActiveLattice (Int.castAddHom ℝ) ![1, -1] ![0, -a] m x) = m 0 := by
   rw [labeledActiveLattice_def, activeSet_interval_of_eq_zero ha hx, image_singleton]
   simpa using (Module.Basis.singleton Unit ℤ).card_quotient_span_range_nsmul fun _ ↦ m 0
 
-/-- The structure group at the endpoint `a` of the labeled interval `[0, a]` has order `m 1`. A
-zero label `m 1 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
+/-- For `a ≠ 0`, at a point `x` with `x 1 = a` the quotient of `ℤ` by the labeled lattice of the
+active constraint has `Nat.card` equal to `m 1`. When `0 < a` this point is the endpoint `a` of
+the labeled interval `[0, a]` and the quotient is its structure group, of order `m 1`. A zero label
+`m 1 = 0` gives the infinite quotient `ℤ`, of cardinality `0` in `Nat.card`. -/
 theorem card_quotient_labeledActiveLattice_interval_of_eq (ha : a ≠ 0) {x : StrongDual ℝ ℝ}
     (hx : x 1 = a) :
     Nat.card (ℤ ⧸ labeledActiveLattice (Int.castAddHom ℝ) ![1, -1] ![0, -a] m x) = m 1 := by

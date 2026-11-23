@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Dimension.Localization
 -- Proof-only: torsion modules have rank zero.
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 import TauCeti.Algebra.CharP.Two
+import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!
 # Homomorphisms of finitely generated abelian groups
@@ -39,14 +40,12 @@ abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a non
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
-* `Module.Basis.mem_span_range_smul_iff`: rescaling the vectors of a basis `b` over a commutative
-  ring by scalars `a k`, a vector lies in the span of the `a k • b k` exactly when its `k`-th
-  coordinate is divisible by `a k`.
-* `Module.Basis.quotientSpanNSMulEquiv`: rescaling the vectors of a finite integral basis `b` by
-  natural numbers `m k`, the quotient by the span of the `m k • b k` is `Π k, ZMod (m k)`.
-* `LinearIndependent.card_quotient_span_range_nsmul`: rescaling a finite linearly independent
-  family `v` by natural numbers `m k` multiplies the order of the quotient by the span by
+* `Module.Basis.card_quotient_span_range_nsmul`: rescaling the vectors of a finite integral basis
+  by natural numbers `m k`, the quotient by the span of the `m k • b k` has `Nat.card` equal to
   `∏ k, m k`.
+* `LinearIndependent.card_quotient_span_range_nsmul`: rescaling a finite linearly independent
+  family `v` by natural numbers `m k` multiplies the `Nat.card` of the quotient by its span by
+  `∏ k, m k`; both sides are `0` when one of the quotients is infinite.
 * `TauCeti.natCard_addMonoidHom_eq_pow_finrank`: a free abelian group of finite rank `r` has
   `Nat.card A ^ r` homomorphisms to `A`; they are finite in number when `A` is finite
   (`TauCeti.finite_addMonoidHom`).
@@ -128,78 +127,21 @@ end LinearMap
 
 namespace Module.Basis
 
-/-- A vector lies in the span of the rescaled basis vectors `a k • b k` exactly when, for every
-`k`, its `k`-th coordinate in `b` is divisible by `a k`. -/
-theorem mem_span_range_smul_iff {κ R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    (b : Basis κ R M) (a : κ → R) {x : M} :
-    x ∈ Submodule.span R (Set.range fun k ↦ a k • b k) ↔ ∀ k, a k ∣ b.repr x k := by
-  constructor
-  · intro hx
-    induction hx using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨k, rfl⟩ := hy
-      intro k'
-      rw [map_smul, b.repr_self, Finsupp.smul_apply]
-      rcases eq_or_ne k k' with rfl | h
-      · simp
-      · simp [Finsupp.single_eq_of_ne' h]
-    | zero => simp
-    | add y z _ _ hy hz => exact fun k ↦ by simpa using dvd_add (hy k) (hz k)
-    | smul c y _ hy => exact fun k ↦ by simpa using (hy k).mul_left c
-  · intro h
-    choose q hq using h
-    rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply]
-    refine Submodule.sum_mem _ fun k _ ↦ ?_
-    dsimp only
-    rw [hq k, mul_comm, mul_smul]
-    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
-
 variable {κ M : Type*} [AddCommGroup M] (b : Basis κ ℤ M) (m : κ → ℕ)
 
-/-- The coordinates in `b`, the `k`-th one reduced modulo `m k`. -/
-private noncomputable def coordModNSMul : M →ₗ[ℤ] (k : κ) → ZMod (m k) :=
-  LinearMap.pi fun k ↦ (Int.castAddHom (ZMod (m k))).toIntLinearMap ∘ₗ b.coord k
-
-private theorem coordModNSMul_apply (x : M) (k : κ) :
-    coordModNSMul b m x k = (b.repr x k : ZMod (m k)) :=
-  (rfl)
-
-private theorem ker_coordModNSMul :
-    LinearMap.ker (coordModNSMul b m) = Submodule.span ℤ (Set.range fun k ↦ m k • b k) := by
-  ext x
-  simp_rw [← natCast_zsmul, mem_span_range_smul_iff]
-  simp [funext_iff, coordModNSMul_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
-
-private theorem coordModNSMul_surjective [Finite κ] : Function.Surjective (coordModNSMul b m) := by
-  classical
-  have := Fintype.ofFinite κ
-  intro y
-  refine ⟨∑ k, ((y k).cast : ℤ) • b k, funext fun k ↦ ?_⟩
-  simp [coordModNSMul_apply, Finsupp.single_apply]
-
-/-- **The quotient by a rescaled basis.** Reducing the `k`-th coordinate in `b` modulo `m k`
-identifies the quotient of `M` by the span of the vectors `m k • b k` with `Π k, ZMod (m k)`. -/
-noncomputable def quotientSpanNSMulEquiv [Finite κ] :
-    (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • b k)) ≃ₗ[ℤ] ((k : κ) → ZMod (m k)) :=
-  (Submodule.quotEquivOfEq _ _ (ker_coordModNSMul b m).symm).trans
-    ((coordModNSMul b m).quotKerEquivOfSurjective (coordModNSMul_surjective b m))
-
-@[simp]
-theorem quotientSpanNSMulEquiv_mk [Finite κ] (x : M) (k : κ) :
-    b.quotientSpanNSMulEquiv m (Submodule.Quotient.mk x) k = (b.repr x k : ZMod (m k)) := by
-  simp [quotientSpanNSMulEquiv, coordModNSMul_apply]
-
-/-- The quotient of `M` by the span of the rescaled basis vectors `m k • b k` has `∏ k, m k`
-elements; it is infinite, of cardinality `0` in `Nat.card`, when some `m k` vanishes. -/
+/-- The quotient of `M` by the span of the rescaled basis vectors `m k • b k` has `Nat.card` equal
+to `∏ k, m k`. When some `m k` vanishes the quotient is infinite and both sides are `0`. -/
 theorem card_quotient_span_range_nsmul [Fintype κ] :
     Nat.card (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • b k)) = ∏ k, m k := by
-  simp [Nat.card_congr (b.quotientSpanNSMulEquiv m).toEquiv, Nat.card_pi]
+  simp_rw [← natCast_zsmul]
+  rw [Nat.card_congr (b.quotientSpanSMulEquiv fun k ↦ (m k : ℤ)).toEquiv, Nat.card_pi]
+  simp [Nat.card_congr (Int.quotientSpanNatEquivZMod _).toEquiv]
 
 end Module.Basis
 
 /-- **Rescaling a linearly independent family.** Rescaling a finite linearly independent family
-`v` in an abelian group by natural numbers `m k` multiplies the order of the quotient by its span
-by `∏ k, m k`. Both sides are `0` when one of the quotients is infinite. -/
+`v` in an abelian group by natural numbers `m k` multiplies the `Nat.card` of the quotient by its
+span by `∏ k, m k`. Both sides are `0` when one of the quotients is infinite. -/
 theorem LinearIndependent.card_quotient_span_range_nsmul {κ M : Type*} [AddCommGroup M]
     [Fintype κ] {v : κ → M} (hv : LinearIndependent ℤ v) (m : κ → ℕ) :
     Nat.card (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • v k)) =
