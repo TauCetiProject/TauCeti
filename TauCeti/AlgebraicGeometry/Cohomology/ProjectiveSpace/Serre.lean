@@ -16,10 +16,11 @@ import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
+import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Ample
 import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalGeneration
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
@@ -31,11 +32,10 @@ This file proves Serre's finiteness and vanishing theorems for quasi-coherent mo
 type on projective schemes over a Noetherian commutative ring.
 
 The argument proceeds in three steps:
-1. On a quasi-compact, quasi-separated `Proj A` covered by degree-one standard opens, `𝒪(1)` is
-   ample (`AlgebraicGeometry.Proj.isAmple_twistingSheaf`), so every quasi-coherent module of finite
-   type admits a surjection `𝒪^{⊕I} ⊗ 𝒪(-n) ⟶ F` for all sufficiently large `n`
-   (`AlgebraicGeometry.Proj.eventually_exists_epi_free_tensor_twistingSheaf`), hence from a finite
-   direct sum `⨁_{Fin k} 𝒪(-n)`.
+1. On `Proj (Sym_R M)` for a finite `R`-module `M`, `𝒪(1)` is ample
+   (`TauCeti.SymmetricAlgebra.isAmple_twistingSheaf`), so every quasi-coherent module of finite
+   type receives an epimorphism from a finite direct sum `⨁_{Fin k} 𝒪(-n)` for all sufficiently
+   large `n` (`AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_isAmple`).
 2. On projective space `ℙⁿ_R = Proj (Sym_R M)` over a Noetherian ring `R` (with `M` finite free of
    rank at least `2`), descending induction on the cohomological degree from the vanishing bound
    `Hᵠ(ℙⁿ_R, F) = 0` for `q > n` combines this presentation with the long exact cohomology sequence
@@ -93,31 +93,19 @@ private lemma exists_kernel_shortExact_biproduct_twistingSheaf
       (p : (⨁ fun _ : Fin k ↦ Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))) ⟶ G),
       (kernel p).IsFinitePresentation ∧
         (ShortComplex.mk (kernel.ι p) p (kernel.condition p)).ShortExact := by
-  have : QuasiSeparatedSpace (Proj (homogeneousSubmodule R M)) :=
-    quasiSeparatedSpace_of_quasiSeparated (projToSpec R M)
-  obtain ⟨m, hm⟩ := Filter.eventually_atTop.mp
-    (Proj.eventually_exists_epi_free_tensor_twistingSheaf (_root_.SymmetricAlgebra.ι R M)
-      (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) G)
-  obtain ⟨I, _, π, hπ⟩ := hm m le_rfl
-  let _ : Fintype I := Fintype.ofFinite I
-  let k : ℕ := Fintype.card I
-  let eI : Fin k ≃ I := (Fintype.equivFin I).symm
-  let T : (Proj (homogeneousSubmodule R M)).Modules :=
-    Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))
-  have : MonoidalPreadditive (Proj (homogeneousSubmodule R M)).Modules :=
-    TauCeti.SheafOfModules.monoidalPreadditive (Proj (homogeneousSubmodule R M)).sheaf
-  let eFree : (⨁ fun _ : Fin k ↦ T) ≅
-      (SheafOfModules.free (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) I :
-        (Proj (homogeneousSubmodule R M)).Modules) ⊗ T :=
-    biproduct.mapIso (fun _ : Fin k ↦ (λ_ T).symm) ≪≫
-      (rightDistributor (fun _ : Fin k ↦ 𝟙_ (Proj (homogeneousSubmodule R M)).Modules) T).symm ≪≫
-      whiskerRightIso
-        (biproduct.whiskerEquiv (f := fun _ : Fin k ↦ 𝟙_ _) (g := fun _ : I ↦ 𝟙_ _) eI
-          (fun _ ↦ Iso.refl _) ≪≫
-          TauCeti.SheafOfModules.biproductIsoFree
-            (R := (Proj (homogeneousSubmodule R M)).sheaf) I) T
-  let p : (⨁ fun _ : Fin k ↦ T) ⟶ G := eFree.hom ≫ π
-  have : Epi p := epi_comp' (IsIso.epi_of_iso eFree.hom) hπ
+  let L : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj (homogeneousSubmodule R M)) :=
+    ⟨Proj.twistingSheaf (homogeneousSubmodule R M) (1 : ℕ), inferInstance⟩
+  have hL : (TauCeti.AlgebraicGeometry.LineBundleClass.mk L).IsAmple :=
+    SymmetricAlgebra.isAmple_twistingSheaf R M Nat.one_pos
+  obtain ⟨m, hm⟩ := G.exists_epi_biproduct_of_isAmple L hL
+  let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj (homogeneousSubmodule R M)) :=
+    ⟨Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ)), inferInstance⟩
+  have hK : TauCeti.AlgebraicGeometry.LineBundleClass.mk K =
+      (TauCeti.AlgebraicGeometry.LineBundleClass.mk L ^ m)⁻¹ := by
+    rw [← zpow_natCast, ← zpow_neg]
+    exact Proj.lineBundleClass_twistingSheaf_eq_zpow (_root_.SymmetricAlgebra.ι R M)
+      (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) (-(m : ℤ))
+  obtain ⟨k, p, _⟩ := hm m le_rfl K hK
   exact ⟨m, k, p, Scheme.Modules.isFinitePresentation_kernel p, TauCeti.kernelSequence_shortExact p⟩
 
 /-- Serre's finiteness theorem on positive-dimensional projective space `Proj (Sym_R M)` over a

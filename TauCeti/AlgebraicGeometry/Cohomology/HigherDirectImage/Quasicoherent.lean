@@ -386,15 +386,6 @@ lemma higherDirectImageGlobalSectionsLinearEquiv_apply (M : X.Modules) [M.IsQuas
   simp only [higherDirectImageGlobalSectionsLinearEquiv]
   rfl
 
-/-- `higherDirectImageGlobalSectionsLinearEquiv` is natural in the coefficient sheaf `M`. -/
-theorem higherDirectImageGlobalSectionsLinearEquiv_naturality {M N : X.Modules}
-    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) (n : ℕ) (x : Cohomology M n) :
-    (f.higherDirectImageGlobalSectionsLinearEquiv N n ((cohomologyFunctor X n).map φ x) :
-        Γ((f.higherDirectImage n).obj N, ⊤)) =
-      ((f.higherDirectImage n).map φ).app ⊤
-        (f.higherDirectImageGlobalSectionsLinearEquiv M n x) :=
-  f.higherDirectImageGlobalSectionsAddEquiv_naturality φ n x
-
 end AffineGlobalSections
 
 end AlgebraicGeometry.Scheme.Hom

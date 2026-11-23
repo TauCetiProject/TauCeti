@@ -62,8 +62,8 @@ All in the namespace `TauCeti.AlgebraicGeometry.projectiveLine`:
 * `subsingleton_cohomology_one_trivial`: `H¹(ℙ¹_R, 𝒪) = 0` over any ring.
 * `finite_cohomology_one`: `H¹(ℙ¹_R, M)` is a finitely generated `R`-module for `M` quasi-coherent
   of finite type, over any ring `R`.
-* `finite_cohomology`, `finite_cohomology_zero`, `finite_globalSections`: `Hⁿ(ℙ¹_R, M)` and
-  `Γ(M, ⊤)` are finitely generated over a Noetherian ring `R`.
+* `finite_cohomology`, `finite_globalSections`: `Hⁿ(ℙ¹_R, M)` and `Γ(M, ⊤)` are finitely
+  generated over a Noetherian ring `R`.
 * `genus_eq_zero`: the projective line over a field has genus zero.
 
 ## References
@@ -568,12 +568,6 @@ higher cohomology vanishes. -/
 instance finite_cohomology [IsNoetherianRing R] (M : (projectiveLine R).Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : Module.Finite R (Cohomology M n) :=
   Scheme.Modules.finite_cohomology_of_isProjectiveOver R M n
-
-/-- **The global sections of a quasi-coherent sheaf of finite type on the projective line form a
-finitely generated module** over a Noetherian base ring `R`: `H⁰(ℙ¹_R, M)` is finite over `R`. -/
-theorem finite_cohomology_zero [IsNoetherianRing R] (M : (projectiveLine R).Modules)
-    [M.IsQuasicoherent] [M.IsFiniteType] : Module.Finite R (Cohomology M 0) :=
-  finite_cohomology R M 0
 
 /-- **The global sections of a quasi-coherent sheaf of finite type on the projective line form a
 finitely generated module** over the global functions, over a Noetherian base ring. -/
