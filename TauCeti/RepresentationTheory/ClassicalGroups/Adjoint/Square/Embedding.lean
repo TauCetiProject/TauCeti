@@ -38,19 +38,23 @@ private noncomputable def liftMap (f : Representation.IntertwiningMap σ ρ) :
     ((f.toLinearMap.dualMap.intertwiningMap_of_isIntertwiningMap _ _ hf.dualMap.isIntertwining).comp
       (SLAdjoint.traceDualEquiv K 3).toIntertwiningMap)
 
+private theorem liftMap_apply (f : Representation.IntertwiningMap σ ρ) (x : V) :
+    liftMap f x =
+      squareTraceEquiv.symm (f.toLinearMap.dualMap (SLAdjoint.traceDualEquiv K 3 x)) := by
+  simp only [liftMap, Representation.IntertwiningMap.comp_apply,
+    Representation.Equiv.coe_toIntertwiningMap, LinearMap.toIntertwiningMap]
+
 private theorem liftMap_injective (f : Representation.IntertwiningMap σ ρ)
-    (hf : Function.Surjective f) : Function.Injective (liftMap f) :=
-  squareTraceEquiv.symm.toLinearEquiv.injective.comp
-    ((LinearMap.dualMap_injective_of_surjective hf).comp
-      (SLAdjoint.traceDualEquiv K 3).toLinearEquiv.injective)
+    (hf : Function.Surjective f) : Function.Injective (liftMap f) := by
+  intro x y h
+  simp only [liftMap_apply] at h
+  exact (SLAdjoint.traceDualEquiv K 3).toLinearEquiv.injective
+    (LinearMap.dualMap_injective_of_surjective hf (squareTraceEquiv.symm.toLinearEquiv.injective h))
 
 private theorem liftMap_pairing (f : Representation.IntertwiningMap σ ρ) (x : V) (t : T) :
     squareTrace (liftMap f x) t = (SLAdjoint.traceDualEquiv K 3 x) (f t) := by
-  rw [← squareTraceEquiv_apply]
-  simp only [liftMap, Representation.IntertwiningMap.comp_apply,
-    Representation.Equiv.coe_toIntertwiningMap, Representation.Equiv.apply_symm_apply,
-    LinearMap.toIntertwiningMap, LinearMap.dualMap_apply,
-    Representation.IntertwiningMap.coe_toLinearMap]
+  rw [← squareTraceEquiv_apply, liftMap_apply, Representation.Equiv.apply_symm_apply,
+    LinearMap.dualMap_apply, Representation.IntertwiningMap.toLinearMap_apply]
 
 /-- The trace transpose of the Lie bracket as an equivariant map into the tensor square. -/
 noncomputable def alternatingEmbeddingMap : Representation.IntertwiningMap ρ σ :=

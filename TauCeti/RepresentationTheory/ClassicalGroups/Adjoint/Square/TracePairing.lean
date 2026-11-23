@@ -47,7 +47,7 @@ theorem squareTrace_apply (a b : T) :
 /-- On pure tensors the square trace is the product of the factor trace forms. -/
 @[simp] theorem squareTrace_tmul (x y u v : V) :
     squareTrace (x ⊗ₜ[K] y) (u ⊗ₜ[K] v) =
-      SLAdjoint.traceForm K n x u * SLAdjoint.traceForm K n y v := by
+      SLAdjoint.traceForm K (Fin n) x u * SLAdjoint.traceForm K (Fin n) y v := by
   simp [squareTrace, Representation.Equiv.toLinearEquiv_apply, mul_comm]
 
 /-- The tensor-square action preserves the square trace pairing. -/

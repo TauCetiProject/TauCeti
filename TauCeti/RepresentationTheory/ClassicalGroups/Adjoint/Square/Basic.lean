@@ -46,8 +46,8 @@ def symmetricProduct [NeZero (n : K)] :
 /-- The bilinear map has the advertised matrix formula. -/
 @[simp]
 theorem coe_symmetricProduct [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    (symmetricProduct X Y).val = tracelessAnticommutator X.val Y.val :=
-  (rfl)
+    (symmetricProduct X Y).val = tracelessAnticommutator X.val Y.val := by
+  simp only [symmetricProduct, LinearMap.mk₂_apply]
 
 /-- Symmetry holds on the native adjoint carrier. -/
 theorem symmetricProduct_comm [NeZero (n : K)] (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :

@@ -51,7 +51,7 @@ noncomputable def alternatingProductMap :
 @[simp]
 theorem alternatingProductMap_tmul (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
     alternatingProductMap K n (X ⊗ₜ[K] Y) = ⁅X, Y⁆ :=
-  (rfl)
+  TensorProduct.lift.tmul X Y
 
 /-- Swapping the tensor factors negates the alternating intertwiner. -/
 theorem alternatingProductMap_comm
@@ -93,7 +93,7 @@ noncomputable def symmetricProductMap :
 @[simp]
 theorem symmetricProductMap_tmul (X Y : V) :
     symmetricProductMap K n (X ⊗ₜ[K] Y) = symmetricProduct X Y :=
-  (rfl)
+  TensorProduct.lift.tmul X Y
 
 /-- Swapping the tensor factors fixes the symmetric intertwiner. -/
 theorem symmetricProductMap_comm (T : V ⊗[K] V) :

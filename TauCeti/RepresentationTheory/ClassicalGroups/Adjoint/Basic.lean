@@ -111,12 +111,12 @@ theorem coe_adjointRep_apply (g : SpecialLinearGroup (Fin n) K)
 @[simp high]
 theorem traceForm_adjointRep (g : SpecialLinearGroup (Fin n) K)
     (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceForm K n (adjointRep K n g X) (adjointRep K n g Y) = traceForm K n X Y := by
+    traceForm K (Fin n) (adjointRep K n g X) (adjointRep K n g Y) = traceForm K (Fin n) X Y := by
   simp only [traceForm_apply, coe_adjointRep_apply, SpecialLinearGroup.trace_mul_conj]
 
 /-- The restricted trace form is invariant under the adjoint action. -/
 theorem isInvariantForm_traceForm :
-    TauCeti.Representation.IsInvariantForm (adjointRep K n) (traceForm K n) :=
+    TauCeti.Representation.IsInvariantForm (adjointRep K n) (traceForm K (Fin n)) :=
   TauCeti.Representation.isInvariantForm_iff_isIsometry.mpr fun g =>
     TauCeti.BilinForm.isIsometry_iff.mpr (traceForm_adjointRep K n g)
 
@@ -128,8 +128,9 @@ variable (K : Type*) [Field K] (n : ℕ)
 
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :
-    (adjointRep K n).Equiv (adjointRep K n).dual :=
-  (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K n)
+    (adjointRep K n).Equiv (adjointRep K n).dual := by
+  haveI : NeZero (Fintype.card (Fin n) : K) := ⟨by simpa using NeZero.ne (n : K)⟩
+  exact (isInvariantForm_traceForm K n).equivDual (traceForm_nondegenerate K (Fin n))
 
 /-- Evaluation of the equivariant self-duality is the trace of the matrix product. -/
 @[simp] theorem traceDualEquiv_apply [NeZero (n : K)]

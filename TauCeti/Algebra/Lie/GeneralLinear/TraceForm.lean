@@ -368,53 +368,53 @@ open Matrix
 
 section
 
-variable (K : Type*) [CommRing K] (n : ℕ)
+variable (K : Type*) [CommRing K] (ι : Type*) [Fintype ι] [DecidableEq ι]
 
 /-- The trace pairing on the special linear Lie algebra, the restriction of
 `TauCeti.traceBilinForm`. -/
-def traceForm : LinearMap.BilinForm K (LieAlgebra.SpecialLinear.sl (Fin n) K) :=
-  (traceBilinForm K (Fin n)).restrict (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule
+def traceForm : LinearMap.BilinForm K (LieAlgebra.SpecialLinear.sl ι K) :=
+  (traceBilinForm K ι).restrict (LieAlgebra.SpecialLinear.sl ι K).toSubmodule
 
 /-- Evaluation is the trace of the product. -/
 @[simp]
-theorem traceForm_apply (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceForm K n X Y = trace (X.val * Y.val) := by
+theorem traceForm_apply (X Y : LieAlgebra.SpecialLinear.sl ι K) :
+    traceForm K ι X Y = trace (X.val * Y.val) := by
   -- `traceBilinForm` is not exposed, so the restriction is not definitionally the trace.
   unfold traceForm
   rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, traceBilinForm_apply]
 
 /-- The restricted trace form is symmetric, because `TauCeti.traceBilinForm` is. -/
-theorem traceForm_comm (X Y : LieAlgebra.SpecialLinear.sl (Fin n) K) :
-    traceForm K n X Y = traceForm K n Y X :=
-  ((traceBilinForm_isSymm K (Fin n)).restrict
-    (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule).eq X Y
+theorem traceForm_comm (X Y : LieAlgebra.SpecialLinear.sl ι K) :
+    traceForm K ι X Y = traceForm K ι Y X :=
+  ((traceBilinForm_isSymm K ι).restrict
+    (LieAlgebra.SpecialLinear.sl ι K).toSubmodule).eq X Y
 
 end
 
 section
 
-variable (K : Type*) [Field K] (n : ℕ)
+variable (K : Type*) [Field K] (ι : Type*) [Fintype ι] [DecidableEq ι]
 
-private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (n : K)]
-    (X : LieAlgebra.SpecialLinear.sl (Fin n) K)
-    (h : ∀ Y : LieAlgebra.SpecialLinear.sl (Fin n) K, trace (X.val * Y.val) = 0) : X = 0 := by
+private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (Fintype.card ι : K)]
+    (X : LieAlgebra.SpecialLinear.sl ι K)
+    (h : ∀ Y : LieAlgebra.SpecialLinear.sl ι K, trace (X.val * Y.val) = 0) : X = 0 := by
   refine Subtype.ext (Matrix.ext_iff_trace_mul_right.mpr fun Z => ?_)
   -- The right-hand zero is the zero of `sl`, coerced into the matrices.
   simp only [Submodule.coe_zero, zero_mul, trace_zero]
   have hX : trace X.val = 0 := LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
   obtain ⟨Y, r, rfl⟩ := exists_sl_add_smul_one_eq
-    (fun _ => by simpa only [Fintype.card_fin] using (NeZero.ne (n : K)).isUnit) Z
+    (fun _ => (NeZero.ne (Fintype.card ι : K)).isUnit) Z
   simp only [Matrix.mul_add, Matrix.mul_smul, Matrix.mul_one, trace_add, trace_smul, h Y,
     hX, smul_zero, add_zero]
 
-/-- Both radicals of the trace pairing vanish when `n` is nonzero in `K`. -/
-theorem traceForm_nondegenerate [NeZero (n : K)] : (traceForm K n).Nondegenerate := by
-  apply ((traceBilinForm_isSymm K (Fin n)).restrict
-    (LieAlgebra.SpecialLinear.sl (Fin n) K).toSubmodule).isRefl.nondegenerate_iff_separatingLeft.mpr
+/-- Both radicals of the trace pairing vanish when the index cardinality is nonzero in `K`. -/
+theorem traceForm_nondegenerate [NeZero (Fintype.card ι : K)] : (traceForm K ι).Nondegenerate := by
+  apply ((traceBilinForm_isSymm K ι).restrict
+    (LieAlgebra.SpecialLinear.sl ι K).toSubmodule).isRefl.nondegenerate_iff_separatingLeft.mpr
   intro X h
   -- Name the restricted bilinear form in the radical hypothesis so traceForm_apply rewrites it.
-  change ∀ Y, traceForm K n X Y = 0 at h
-  exact eq_zero_of_forall_trace_mul_eq_zero K n X fun Y => by
+  change ∀ Y, traceForm K ι X Y = 0 at h
+  exact eq_zero_of_forall_trace_mul_eq_zero K ι X fun Y => by
     simpa only [traceForm_apply] using h Y
 
 end
