@@ -679,15 +679,11 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
 `‖w ^ s‖ ≤ ‖w‖ ^ s.re * exp (|arg w| * |Im s|)`. The bound also holds at `w = 0`. -/
 theorem norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im (w s : ℂ) :
     ‖w ^ s‖ ≤ ‖w‖ ^ s.re * Real.exp (|w.arg| * |s.im|) := by
-  rcases eq_or_ne w 0 with rfl | hw
-  · rcases eq_or_ne s 0 with rfl | hs
-    · simp
-    · simp only [zero_cpow hs, norm_zero]
-      positivity
-  · rw [norm_cpow_of_ne_zero hw, div_eq_mul_inv, ← Real.exp_neg]
-    gcongr
-    calc -(w.arg * s.im) ≤ |w.arg * s.im| := neg_le_abs _
-      _ = |w.arg| * |s.im| := abs_mul _ _
+  refine (norm_cpow_le w s).trans ?_
+  rw [div_eq_mul_inv, ← Real.exp_neg]
+  gcongr
+  calc -(w.arg * s.im) ≤ |w.arg * s.im| := neg_le_abs _
+    _ = |w.arg| * |s.im| := abs_mul _ _
 
 /-- If `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`, then
 `‖w ^ s‖ ≤ max (r₀ ^ s.re) (r₁ ^ s.re) * exp (α * |Im s|)` for every `s : ℂ`. -/
@@ -765,11 +761,9 @@ theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w 
 /-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/
 theorem norm_cpow_le_mul_exp (w d : ℂ) :
     ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) := by
-  calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re / Real.exp (w.arg * d.im) := norm_cpow_le w d
-    _ = ‖w‖ ^ d.re * (Real.exp (w.arg * d.im))⁻¹ := div_eq_mul_inv _ _
-    _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
-        mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
-          (Real.rpow_nonneg (norm_nonneg w) _)
+  refine (norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im w d).trans ?_
+  gcongr
+  exact abs_arg_le_pi w
 
 /-- For `z` in the closed right half-plane (`0 ≤ z.re`) and any `d : ℂ`,
 `‖(1 + z) ^ d‖ ≤ exp (π * |d.im|) * (1 + ‖z‖) ^ max 0 d.re`. -/

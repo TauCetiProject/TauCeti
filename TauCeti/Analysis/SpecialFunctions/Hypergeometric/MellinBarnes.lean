@@ -633,6 +633,42 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma_mul_one_sub_c
   ext y
   simp only [smul_eq_mul, mul_comm]
 
+/-- Rescaling `(1 - z * t) ^ s = (1 - t) ^ s * (1 + (t / (1 - t)) * (1 - z)) ^ s` for `t < 1`. -/
+private theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1) :
+    (1 - z * (t : ℂ)) ^ s =
+      (1 - (t : ℂ)) ^ s * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ s := by
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
+  have hfact : 1 - z * (t : ℂ) = ((1 - t : ℝ) : ℂ) * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) := by
+    push_cast
+    field_simp [h1t_ne]
+    ring
+  simpa [hfact] using ofReal_mul_cpow h1t.le (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) s
+
+/-- Power-splitting for `t / (1 - t)` inside the Euler integrand on `(0, 1)`:
+`t ^ (b - 1) * (1 - t) ^ (c - b - 1) * (1 - t) ^ (-a) * ((t / (1 - t)) * w) ^ s =
+  t ^ (b + s - 1) * (1 - t) ^ (c - a - b - s - 1) * w ^ s`. -/
+private theorem mul_cpow_one_sub_cpow_mul_div_cpow {a b c s w : ℂ} {t : ℝ}
+    (ht0 : 0 < t) (ht1 : t < 1) :
+    (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) *
+        (((t / (1 - t) : ℝ) : ℂ) * w) ^ s =
+      (t : ℂ) ^ (b + s - 1) * (1 - (t : ℂ)) ^ (c - a - b - s - 1) * w ^ s := by
+  have h1t : 0 < 1 - t := sub_pos.2 ht1
+  have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht0.ne'
+  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := sub_ne_zero.2 (by exact_mod_cast ht1.ne')
+  have hq_pow : ((t / (1 - t) : ℝ) : ℂ) ^ s = (t : ℂ) ^ s * (1 - (t : ℂ)) ^ (-s) := by
+    rw [ofReal_div, div_cpow_ofReal_nonneg ht0.le h1t.le, div_eq_mul_inv, ← cpow_neg]
+    simp
+  have hpow_t : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ s = (t : ℂ) ^ (b + s - 1) := by
+    rw [← cpow_add _ _ ht_ne]
+    ring_nf
+  have hpow_1t : (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) * (1 - (t : ℂ)) ^ (-s) =
+      (1 - (t : ℂ)) ^ (c - a - b - s - 1) := by
+    rw [← cpow_add _ _ h1t_ne, ← cpow_add _ _ h1t_ne]
+    ring_nf
+  rw [ofReal_mul_cpow (div_pos ht0 h1t).le, hq_pow, ← hpow_t, ← hpow_1t]
+  ring
+
 /-- Pointwise Mellin–Barnes expansion of the Euler integrand in powers of `1 - z` for `t ∈ (0, 1)`
 and `1 - z ∈ Complex.slitPlane`, used in the Fubini proof of DLMF 15.6.7. -/
 private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : ℂ} {σ t : ℝ}
@@ -641,52 +677,28 @@ private theorem mul_eulerIntegrand_eq_integral_mellinBarnes_one_sub {a b c z : �
       (2 * π : ℂ)⁻¹ * ∫ y : ℝ, (t : ℂ) ^ (b + (σ + y * I) - 1) *
         (1 - (t : ℂ)) ^ (c - a - b - (σ + y * I) - 1) *
           (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) := by
-  have h1t : 0 < 1 - t := sub_pos.2 ht1
-  have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht0.ne'
-  have h1t_ne : (1 - (t : ℂ)) ≠ 0 := by
-    rw [← ofReal_one, ← ofReal_sub]
-    exact ofReal_ne_zero.2 h1t.ne'
-  set q : ℝ := t / (1 - t)
-  have hq : 0 < q := div_pos ht0 h1t
-  have hfact : 1 - z * (t : ℂ) = ((1 - t : ℝ) : ℂ) * (1 + (q : ℂ) * (1 - z)) := by
-    have h1t_ne' : ((1 - t : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 h1t.ne'
-    dsimp [q]
-    push_cast
-    field_simp [h1t_ne']
-    ring
-  have hcpow_fact : (1 - z * (t : ℂ)) ^ (-a) =
-      (1 - (t : ℂ)) ^ (-a) * (1 + (q : ℂ) * (1 - z)) ^ (-a) := by
-    rw [hfact, ofReal_mul_cpow h1t.le]
-    push_cast
-    rfl
-  have hreord : Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
-        ((1 - (t : ℂ)) ^ (-a) * (1 + (q : ℂ) * (1 - z)) ^ (-a))) =
-      ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
-        (Gamma a * (1 + (q : ℂ) * (1 - z)) ^ (-a)) := by ring
-  rw [hcpow_fact, hreord,
-    ← integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ haσ (TauCeti.ofReal_mul_mem_slitPlane hq hz),
-    ← mul_left_comm ((2 * π : ℂ)⁻¹), ← integral_const_mul]
-  congr 1
-  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-  have hq_pow : (q : ℂ) ^ ((σ : ℂ) + y * I) =
-      (t : ℂ) ^ ((σ : ℂ) + y * I) * (1 - (t : ℂ)) ^ (-((σ : ℂ) + y * I)) := by
-    dsimp [q]
-    rw [ofReal_div, div_cpow_ofReal_nonneg ht0.le h1t.le, div_eq_mul_inv, ← cpow_neg,
-      ofReal_sub, ofReal_one]
-  have hpow_t : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ ((σ : ℂ) + y * I) =
-      (t : ℂ) ^ (b + ((σ : ℂ) + y * I) - 1) := by
-    rw [← cpow_add _ _ ht_ne]
-    congr 1
-    ring
-  have hpow_1t : (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) *
-      (1 - (t : ℂ)) ^ (-((σ : ℂ) + y * I)) =
-      (1 - (t : ℂ)) ^ (c - a - b - ((σ : ℂ) + y * I) - 1) := by
-    rw [← cpow_add _ _ h1t_ne, ← cpow_add _ _ h1t_ne]
-    congr 1
-    ring
-  dsimp only
-  rw [ofReal_mul_cpow hq.le, hq_pow, ← hpow_t, ← hpow_1t]
-  ring
+  have hq : 0 < t / (1 - t) := div_pos ht0 (sub_pos.2 ht1)
+  have hmb := integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ haσ
+    (TauCeti.ofReal_mul_mem_slitPlane hq hz)
+  calc Gamma a * ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
+      = ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+          (Gamma a * (1 + ((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (-a)) := by
+          rw [one_sub_mul_cpow_eq_one_sub_cpow_mul ht1]; ring
+    _ = ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+          ((2 * π : ℂ)⁻¹ * ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+            (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (σ + y * I)) := by rw [hmb]
+    _ = (2 * π : ℂ)⁻¹ * ∫ y : ℝ, (t : ℂ) ^ (b + (σ + y * I) - 1) *
+          (1 - (t : ℂ)) ^ (c - a - b - (σ + y * I) - 1) *
+            (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (1 - z) ^ (σ + y * I)) := by
+          rw [← mul_left_comm ((2 * π : ℂ)⁻¹), ← integral_const_mul]
+          refine congrArg _ (integral_congr_ae (Eventually.of_forall fun y ↦ ?_))
+          calc ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a)) *
+                (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+                  (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ (σ + y * I))
+              = Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+                  ((t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - (t : ℂ)) ^ (-a) *
+                    (((t / (1 - t) : ℝ) : ℂ) * (1 - z)) ^ ((σ : ℂ) + y * I)) := by ring
+            _ = _ := by rw [mul_cpow_one_sub_cpow_mul_div_cpow ht0 ht1]; ring
 
 /-- **Mellin–Barnes integral for Euler's hypergeometric integral in `1 - z` (DLMF 15.6.7).**
 On the entire cut plane `1 - z ∈ Complex.slitPlane`, for any vertical line `Re s = σ` separating

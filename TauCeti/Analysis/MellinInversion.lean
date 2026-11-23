@@ -429,11 +429,8 @@ private lemma norm_cpow_deriv_smul_le {E : Type*} [NormedAddCommGroup E] [Normed
   have hmul : ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ ≤
       (max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))) * (1 + |y|) ^ (1 : ℝ) *
         Real.exp (α' * |y|) := by
-    have h := Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg
-      ((σ : ℂ) + y * I)
-    simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im,
-      zero_add] at h
-    simpa [Real.rpow_one, mul_assoc] using h
+    simpa [Real.rpow_one, mul_assoc] using
+      Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
   rw [norm_smul]
   refine (mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) hmul hv).trans_eq ?_
   rw [mul_assoc]
