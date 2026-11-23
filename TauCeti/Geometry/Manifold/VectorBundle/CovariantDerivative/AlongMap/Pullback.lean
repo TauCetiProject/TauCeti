@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Basic
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Pullback
 /-!
 # The pullback of a covariant derivative
 
@@ -38,39 +38,10 @@ additivity and Leibniz laws of `alongMap` give those of the pullback.
   covariant differentiation of vector fields along maps.
 -/
 
-@[expose] public section
-open Set Filter Bundle
+public section
+open Bundle
 open scoped Manifold Topology
 noncomputable section
-namespace TauCeti.Manifold
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {M : Type*} [TopologicalSpace M]
-  {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace 𝕜 F₀]
-  {B : M → Type*} [TopologicalSpace (TotalSpace F₀ B)]
-  [∀ x, AddCommGroup (B x)] [∀ x, Module 𝕜 (B x)] [∀ x, TopologicalSpace (B x)]
-  [FiberBundle F₀ B] [VectorBundle 𝕜 F₀ B]
-  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace G]
-  {J : ModelWithCorners 𝕜 F G} [TopologicalSpace N] [ChartedSpace G N] (f : C(N, M))
-
-/-- A section of the pullback bundle `f *ᵖ B` that is differentiable into the total space at `x`
-has a differentiable coordinate reading, as a section of `B` along `f`, in the preferred
-trivialization of `B` at `f x`. -/
-theorem mdifferentiableAt_sectionCoord_of_mdifferentiableAt_pullback
-    {σ : ∀ x, ((f : N → M) *ᵖ B) x} {x : N}
-    (hσ : MDifferentiableAt J (J.prod 𝓘(𝕜, F₀))
-      (fun y ↦ TotalSpace.mk' F₀ (E := (f : N → M) *ᵖ B) y (σ y)) x) :
-    MDifferentiableAt J 𝓘(𝕜, F₀) (sectionCoord 𝕜 (F := F₀) (V := B) f σ (f x)) x := by
-  rw [mdifferentiableAt_section] at hσ
-  refine hσ.congr_of_eventuallyEq ?_
-  filter_upwards [f.continuous.continuousAt.preimage_mem_nhds
-    ((trivializationAt F₀ B (f x)).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F₀ B (f x)))] with y hy
-  exact (sectionCoord_apply (𝕜 := 𝕜) (F := F₀) (V := B) f σ (f x) y).trans
-    (((trivializationAt F₀ B (f x)).continuousLinearMapAt_apply_of_mem 𝕜 hy (σ y)).trans rfl)
-
-end TauCeti.Manifold
-
 namespace CovariantDerivative
 open TauCeti.Manifold
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -102,11 +73,11 @@ def pullback : CovariantDerivative J F₀ ((f : N → M) *ᵖ B) where
 @[simp]
 theorem pullback_apply (σ : ∀ x, ((f : N → M) *ᵖ B) x) (x : N) :
     cov.pullback (J := J) f σ x = cov.alongMap J f σ x :=
-  rfl
+  (rfl)
 
-/-- On the pullback of a section of `B` along a map differentiable at `x`, the pullback covariant
-derivative is the covariant derivative of the section composed with the differential of the
-map. -/
+/-- For a map differentiable at `x` and a section of `B` differentiable into the total space at
+`f x`, the pullback covariant derivative of the pulled-back section is the covariant derivative of
+the section composed with the differential of the map. -/
 theorem pullback_apply_comp {X : ∀ y, B y} {x : N} (hf : MDifferentiableAt J I f x)
     (hX : MDifferentiableAt I (I.prod 𝓘(𝕜, F₀)) (T% X) (f x)) :
     cov.pullback (J := J) f (fun y ↦ X (f y)) x = (cov X (f x)).comp (mfderiv J I f x) :=
