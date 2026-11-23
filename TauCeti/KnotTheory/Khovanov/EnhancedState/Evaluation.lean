@@ -17,8 +17,8 @@ parity `TauCeti.OrientedPDCode.neg_one_pow_card_false_add_negativeCrossingCount`
 state `s` with `k(s)` resolution circles contributes `(-1) ^ (n + c) (-2) ^ k(s)` to the
 normalized enhanced-state Euler sum `E(D) = TauCeti.OrientedPDCode.enhancedStateEulerSum D`.
 Together with the unoriented state sum `∑ₛ (-2) ^ k(s) = (-1) ^ (n + c) 2 ^ c`
-(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`), this yields `E(D) = 2 ^ c`, the `q = 1`
-evaluation of `D.enhancedStateSum`, and the sum of its Laurent coefficients.
+(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`), this yields `E(D) = 2 ^ c` and the `q = 1`
+evaluation of `D.enhancedStateSum`.
 
 ## Main results
 
@@ -26,8 +26,6 @@ evaluation of `D.enhancedStateSum`, and the sum of its Laurent coefficients.
   every planar oriented PD-code `D` with `c` components.
 * `TauCeti.OrientedPDCode.eval₂_one_enhancedStateSum_eq_two_pow`: evaluating `D.enhancedStateSum`
   at `q = 1` yields `2 ^ c`.
-* `TauCeti.OrientedPDCode.sum_coeff_enhancedStateSum_eq_two_pow`: the sum of all Laurent
-  coefficients of `D.enhancedStateSum` is `2 ^ c`.
 * `TauCeti.OrientedPDCode.eval₂_neg_one_jonesPolynomial`: for a nonempty planar code, evaluating
   the Jones polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`.
 
@@ -72,14 +70,6 @@ theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.t
     eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = (2 : ℤ) ^ D.componentCount := by
   rw [D.eval₂_one_enhancedStateSum, D.enhancedStateEulerSum_eq_two_pow_componentCount hD]
 
-/-- The sum of all Laurent coefficients of `D.enhancedStateSum` for a planar oriented PD-code is
-`2 ^ D.componentCount`. -/
-theorem sum_coeff_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
-    (D.enhancedStateSum.coeff.sum fun _ c ↦ c) = (2 : ℤ) ^ D.componentCount := by
-  rw [← laurentEval_one_eq_sum, laurentEval_eq_eval₂,
-    RingHom.ext_int (algebraMap ℤ ℤ) (RingHom.id ℤ),
-    D.eval₂_one_enhancedStateSum_eq_two_pow hD]
-
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
 `2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
 theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
@@ -96,11 +86,8 @@ theorem eval₂_neg_one_jonesPolynomial (D : OrientedPDCode n) (hD : D.toPDCode.
     ext
     simp
   rw [hhom, hunit] at hsum
-  obtain ⟨k, hk⟩ : ∃ k, D.toPDCode.componentCount = k + 1 := ⟨D.toPDCode.componentCount - 1, by
-    omega⟩
-  rw [hk, pow_succ'] at hsum
-  rw [hk, Nat.add_sub_cancel]
   norm_num at hsum
-  omega
+  rw [← pow_mul_pow_sub (2 : ℤ) hpos, pow_one] at hsum
+  exact (mul_left_cancel₀ two_ne_zero hsum).symm
 
 end TauCeti.OrientedPDCode
