@@ -135,7 +135,7 @@ namespace TauCeti
 section Localization
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  {E E' M M' : Type w} [TopologicalSpace E] [TopologicalSpace E']
+  {E E' M : Type w} [TopologicalSpace E] [TopologicalSpace E']
 
 /-- The **localization at the fibre** of a map `p : E → M` over a point `b`: the map
 `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` from the singular homology of `E` to its homology relative to the
@@ -183,16 +183,6 @@ theorem fiberLocalization_coefficient_naturality {R R' : A} (φ : R ⟶ R') (p :
           (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k :=
   SSetPair.homologyπ_coefficient_naturality
     (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E)))) φ k
-
-/-- **Localizing at a smaller fibre.** If the fibre of `p'` over `b'` lies in the fibre of `p`
-over `b`, the localization at the fibre of `p'` is the localization at the fibre of `p` followed by
-the restriction of local homology. -/
-@[reassoc]
-theorem fiberLocalization_comp_localHomologyRestriction {p : E → M} {p' : E → M'} {b : M}
-    {b' : M'} (h : p' ⁻¹' {b'} ⊆ p ⁻¹' {b}) (k : ℕ) :
-    fiberLocalization R p b k ≫ localHomologyRestriction R h k = fiberLocalization R p' b' k := by
-  rw [localHomologyRestriction_def]
-  exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R _ k
 
 /-- A map `σ : E' → E` missing the fibre of `p` over `b` is killed by the localization at that
 fibre: `σ_*` followed by `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` is zero. -/
@@ -645,8 +635,10 @@ theorem LivesOverFundamentalClass.left_of_singularHomologyCross_prodMap {p : E �
     simp_all [Prod.ext_iff]
   refine LivesOverFundamentalClass.of_singularHomologyCross (p := p) (b := b) (β := β) R S h
     fun h₀ ↦ hαβ ?_
-  rw [← fiberLocalization_comp_localHomologyRestriction (R ⊗ S) hsub]
-  exact (congrArg (localHomologyRestriction (R ⊗ S) hsub n).hom h₀).trans (map_zero _)
+  -- `fiberLocalization` is an abbreviation for `singularHomologyπ`, so localizing at the smaller
+  -- fibre is localizing at `p⁻¹(b) × Y` followed by the restriction of local homology.
+  exact (singularHomologyπ_localHomologyRestriction_apply (R ⊗ S) hsub n _).symm.trans
+    ((congrArg (localHomologyRestriction (R ⊗ S) hsub n).hom h₀).trans (map_zero _))
 
 /-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `(b, c)`
 for `p × q : E × Y → M × N`, then `β` lives over the fundamental class at `c` for `q`. -/
