@@ -54,8 +54,8 @@ class in `Ext¹` tells the linear case `m = 1` apart.
 
 ## Main results
 
-* `TauCeti.cokernelπ_polynomialGradedXPowMul_apply_eq_zero_iff`: the kernel of the projection
-  `A ⟶ k[x]/(x^m)` is the ideal `(x^m)`.
+* `TauCeti.cokernelπ_polynomialGradedXPowMul_hom_apply_eq_zero_iff_dvd`: the kernel of the
+  projection `A ⟶ k[x]/(x^m)` is the ideal `(x^m)`.
 * `TauCeti.isMinimal_gradedTruncatedPolynomialResolution`: for `m > 0` the resolution is
   minimal.
 * `TauCeti.isLinear_gradedTruncatedPolynomialResolution_iff`: it is linear exactly when `m = 1`.
@@ -94,17 +94,14 @@ graded polynomial ring `A = k[x]`, sending `a` to `a x^m`. -/
 def polynomialGradedXPowMul :
     (GradedModuleCat.regular (𝒜 := Polynomial.degreeGrade k)).shiftObj m ⟶
       (GradedModuleCat.regular (𝒜 := Polynomial.degreeGrade k)).shiftObj 0 :=
-  GradedModuleCat.ofHom (LinearMap.toSpanSingleton k[X] k[X] (X ^ m)) <|
-    LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
-      have hx' : x ∈ Polynomial.degreeGrade k (p - m) := by simpa [sub_eq_add_neg] using hx
-      simpa using SetLike.GradedMul.mul_mem hx' (Polynomial.X_pow_mem_degreeGrade (k := k) m)
+  (GradedModuleCat.regularShiftHomEquiv _ (m : ℤ)).symm ⟨X ^ m, by simp⟩
 
 /-- Multiplication by `x^m` sends `a` to `a x^m`. -/
 @[simp]
 theorem polynomialGradedXPowMul_hom_apply (a : k[X]) :
     (polynomialGradedXPowMul k m).hom a = a * X ^ m := by
-  rw [polynomialGradedXPowMul, GradedModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply,
-    smul_eq_mul]
+  rw [polynomialGradedXPowMul, GradedModuleCat.hom_regularShiftHomEquiv_symm_apply,
+    LinearMap.toSpanSingleton_apply, smul_eq_mul]
 
 /-- Multiplication by `x^m` is injective, since `x^m` is a nonzerodivisor. -/
 theorem polynomialGradedXPowMul_hom_injective :
@@ -118,13 +115,13 @@ abbrev gradedTruncatedPolynomial : GradedModuleCat.{u} (Polynomial.degreeGrade k
   GradedModuleCat.cokernelObj (polynomialGradedXPowMul k m)
 
 /-- **The kernel of `k[x] ⟶ k[x]/(x^m)` is the ideal `(x^m)`.** -/
-theorem cokernelπ_polynomialGradedXPowMul_apply_eq_zero_iff (a : k[X]) :
+@[simp]
+theorem cokernelπ_polynomialGradedXPowMul_hom_apply_eq_zero_iff_dvd (a : k[X]) :
     (GradedModuleCat.cokernelπ (polynomialGradedXPowMul k m)).hom a = 0 ↔ X ^ m ∣ a := by
   rw [GradedModuleCat.cokernelπ, GradedModuleCat.hom_ofHom, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
-  refine ⟨fun ⟨b, hb⟩ ↦ ⟨b, ?_⟩, fun ⟨b, hb⟩ ↦ ⟨b, ?_⟩⟩
-  · rw [← hb, polynomialGradedXPowMul_hom_apply, mul_comm]
-  · rw [hb, polynomialGradedXPowMul_hom_apply, mul_comm]
+    Submodule.Quotient.mk_eq_zero, polynomialGradedXPowMul,
+    GradedModuleCat.hom_regularShiftHomEquiv_symm_apply, LinearMap.range_toSpanSingleton]
+  exact Ideal.mem_span_singleton
 
 /-- The terms `A{0}, A{m}, 0, 0, …` of the resolution of `k[x]/(x^m)`. -/
 private abbrev resolutionTerm : ℕ → GradedModuleCat.{u} (Polynomial.degreeGrade k)
@@ -195,6 +192,13 @@ theorem gradedTruncatedPolynomialResolution_termObj_one :
 instance (n : ℕ) : Subsingleton ((gradedTruncatedPolynomialResolution k m).X (n + 2)) :=
   inferInstanceAs (Subsingleton (resolutionTerm k m (n + 2)))
 
+/-- The terms of the resolution are finitely generated: `k[x]` twice, then zero. -/
+instance (n : ℕ) : Module.Finite k[X] ((gradedTruncatedPolynomialResolution k m).X n) := by
+  rcases n with _ | _ | n
+  · exact inferInstanceAs (Module.Finite k[X] k[X])
+  · exact inferInstanceAs (Module.Finite k[X] k[X])
+  · exact inferInstanceAs (Module.Finite k[X] (DirectSum (Fin 0) fun _ ↦ k[X]))
+
 /-- The first differential of the resolution multiplies by `x^m`; its source and target are
 `k[x]` by definition. It is private because the resolution's body is not exposed: the public form
 is `TauCeti.gradedTruncatedPolynomialResolution_differential_zero`. -/
@@ -240,6 +244,7 @@ theorem isMinimal_gradedTruncatedPolynomialResolution (hm : 0 < m) :
 /-- **The resolution of `k[x]/(x^m)` is linear exactly when `m = 1`**, over a nontrivial ring.
 For `m = 1` it is the Koszul resolution `0 ⟶ A{1} ⟶ A ⟶ k ⟶ 0` of the residue field; otherwise
 its first term `A{m}` is not generated in degree one. -/
+@[simp]
 theorem isLinear_gradedTruncatedPolynomialResolution_iff [Nontrivial k] :
     (gradedTruncatedPolynomialResolution k m).IsLinear ↔ m = 1 := by
   rw [GradedProjectiveResolution.isLinear_iff]
@@ -277,9 +282,9 @@ theorem polynomialGradedResidue_piece_eq_bot {p : ℤ} (hp : p ≠ 0) :
 theorem positive_smul_top_shiftObj_polynomialGradedResidue_eq_bot (j : ℤ) :
     (⨆ (i : ℤ) (_ : 0 < i), Polynomial.degreeGrade k i) •
       (⊤ : Submodule k ((polynomialGradedResidue k).shiftObj j)) = ⊥ :=
-  GradedModuleCat.positive_smul_top_eq_bot_of_concentrated _ j fun q hq ↦ by
-    simpa [sub_eq_add_neg] using
-      polynomialGradedResidue_piece_eq_bot k (p := q - j) (sub_ne_zero.2 hq)
+  GradedModuleCat.positive_smul_top_eq_bot_of_concentrated _ _
+    (GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated
+      (fun _ hq ↦ polynomialGradedResidue_piece_eq_bot k hq) j)
 
 /-- The graded residue field is nonzero over a nontrivial ring. -/
 instance [Nontrivial k] : Nontrivial (polynomialGradedResidue k) :=
@@ -314,6 +319,8 @@ are determined by the image of `1`. -/
 def extGradedTruncatedPolynomialZeroEquiv :
     Ext.{w} (gradedTruncatedPolynomial k m) N 0 ≃ₗ[k] N.grading.piece 0 :=
   ((isMinimal_gradedTruncatedPolynomialResolution k m hm).extLinearEquiv hN 0).symm ≪≫ₗ
+    Linear.homCongr k (eqToIso (gradedTruncatedPolynomialResolution_termObj_zero k m))
+      (Iso.refl N) ≪≫ₗ
     GradedModuleCat.regularShiftHomEquiv N 0
 
 /-- The inverse of `TauCeti.extGradedTruncatedPolynomialZeroEquiv` sends `y ∈ N₀` to the class,
@@ -331,6 +338,8 @@ maps `A{m} ⟶ N`. -/
 def extGradedTruncatedPolynomialOneEquiv :
     Ext.{w} (gradedTruncatedPolynomial k m) N 1 ≃ₗ[k] N.grading.piece m :=
   ((isMinimal_gradedTruncatedPolynomialResolution k m hm).extLinearEquiv hN 1).symm ≪≫ₗ
+    Linear.homCongr k (eqToIso (gradedTruncatedPolynomialResolution_termObj_one k m))
+      (Iso.refl N) ≪≫ₗ
     GradedModuleCat.regularShiftHomEquiv N m
 
 /-- The inverse of `TauCeti.extGradedTruncatedPolynomialOneEquiv` sends `y ∈ Nₘ` to the class,
@@ -407,9 +416,9 @@ theorem not_exists_isLinear_gradedTruncatedPolynomial (k : Type u) [CommRing k] 
   have hsub := hr.subsingleton_ext_shiftObj_of_ne
     (fun _ hp ↦ polynomialGradedResidue_piece_eq_bot k hp) 1 (m : ℤ) (by omega)
   have htop : ((polynomialGradedResidue k).shiftObj m).grading.piece m = ⊤ := by
-    simpa using gradedPositiveMulQuotient_piece_zero_eq_top
-      (fun _ ↦ Polynomial.degreeGrade_eq_bot_of_neg) IsIdempotentElem.one
-      (SetLike.one_mem_graded (Polynomial.degreeGrade k))
+    simpa using GradedModuleCat.piece_eq_top_of_concentrated
+      (GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated
+        (fun _ hq ↦ polynomialGradedResidue_piece_eq_bot k hq) m)
   have : Nontrivial (((polynomialGradedResidue k).shiftObj m).grading.piece m) := by
     rw [htop]
     exact (Submodule.topEquiv).toEquiv.nontrivial
