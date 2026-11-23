@@ -86,41 +86,30 @@ private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (h
 
 /-! ## Reindexing a path-shaped diagram -/
 
-/-- The reindexing theorem with an already oriented path numbering. -/
-private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
+/-- Oriented core of `exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv` with fixed split
+sizes `(k u : ℕ) + 1` and `n - ((k u : ℕ) + 1)`. -/
+private theorem exists_equiv_doubleEdgeCartanMatrix_of_succ
     (h : A.IsGeneralizedCartan) (k : B ≃ Fin n)
     (hk : ∀ i j, (diagramGraph A).Adj i j ↔
       (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
     {u v : B} (horder : (k u : ℕ) + 1 = (k v : ℕ)) (hvu : A v u = -2)
     (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
-    ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
-      ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
+    0 < n - ((k u : ℕ) + 1) ∧
+      ∃ e : B ≃ Fin ((k u : ℕ) + 1) ⊕ Fin (n - ((k u : ℕ) + 1)),
+        ∀ i j, A i j =
+          doubleEdgeCartanMatrix ((k u : ℕ) + 1) (n - ((k u : ℕ) + 1)) (e i) (e j) := by
   let p := (k u : ℕ) + 1
   let q := n - p
-  -- Cutting immediately after `u` leaves two nonempty intervals, since `v` is its successor.
   have hp : 0 < p := by simp [p]
-  have hp_le : p ≤ n := by simp only [p]; omega
-  have hpq : p + q = n := Nat.add_sub_of_le hp_le
-  have hq : 0 < q := by
-    simp only [q]
-    omega
+  have hpq : p + q = n := Nat.add_sub_of_le (by simp only [p]; omega)
+  have hq : 0 < q := by simp only [q]; omega
   let e : B ≃ Fin p ⊕ Fin q := k.trans (finSumFinRevEquiv p q n hpq).symm
   have hge (i : B) : finSumFinRevEquiv p q n hpq (e i) = k i := by simp [e]
-  -- The two endpoints of the cut become the last vertices of the two model chains.
-  have heu : e u = Sum.inl ⟨p - 1, by omega⟩ := by
-    apply (finSumFinRevEquiv p q n hpq).injective
-    rw [hge]
-    apply Fin.ext
-    simp [p]
-  have hev : e v = Sum.inr ⟨q - 1, by omega⟩ := by
-    apply (finSumFinRevEquiv p q n hpq).injective
-    rw [hge]
-    apply Fin.ext
-    simp [p, q]
-    omega
-  refine ⟨p, q, hp, hq, e, fun i j ↦ ?_⟩
-  -- Read both matrices along the same path. Equality, the exceptional oriented edge, and
-  -- adjacency are all reflected by `e`; the generalized Cartan axioms then determine the entry.
+  have heu : e u = Sum.inl ⟨p - 1, by omega⟩ :=
+    (finSumFinRevEquiv p q n hpq).injective (by rw [hge]; apply Fin.ext; simp [p])
+  have hev : e v = Sum.inr ⟨q - 1, by omega⟩ :=
+    (finSumFinRevEquiv p q n hpq).injective (by rw [hge]; apply Fin.ext; simp [p, q]; omega)
+  refine ⟨hq, e, fun i j ↦ ?_⟩
   rw [doubleEdgeCartanMatrix_apply_eq_path p q n hp hq hpq, ← hev, ← heu]
   have hrev : (e i = e v ∧ e j = e u) ↔ (i = v ∧ j = u) :=
     and_congr e.injective.eq_iff e.injective.eq_iff
@@ -131,20 +120,53 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
     rw [hge, hge, hk]
   rcases eq_or_ne i j with rfl | hij
   · rw [ite_eq_left rfl, h.diag]
-  have heij : e i ≠ e j := fun he ↦ hij (e.injective he)
-  rw [ite_eq_right heij]
+  rw [ite_eq_right (fun he ↦ hij (e.injective he))]
   by_cases hpair : i = v ∧ j = u
   · rcases hpair with ⟨rfl, rfl⟩
     rw [ite_eq_left (hrev.mpr ⟨rfl, rfl⟩), hvu]
-  have hpair' := fun hp ↦ hpair (hrev.mp hp)
-  rw [ite_eq_right hpair']
+  rw [ite_eq_right (fun hp' ↦ hpair (hrev.mp hp'))]
   by_cases ha : (diagramGraph A).Adj i j
   · rw [ite_eq_left (hadj.mpr ha)]
-    have hne : A i j ≠ 0 := (h.diagramGraph_adj_iff.mp ha).2
-    exact (hsimple hij hne).resolve_left hpair
-  · rw [ite_eq_right (fun hp ↦ ha (hadj.mp hp))]
+    exact (hsimple hij (h.diagramGraph_adj_iff.mp ha).2).resolve_left hpair
+  · rw [ite_eq_right (fun hp' ↦ ha (hadj.mp hp'))]
     by_contra hne
     exact ha (h.diagramGraph_adj_iff.mpr ⟨hij, hne⟩)
+
+/-- The reindexing theorem with a path numbering. -/
+private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
+    (h : A.IsGeneralizedCartan) (k : B ≃ Fin n)
+    (hk : ∀ i j, (diagramGraph A).Adj i j ↔
+      (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
+    {u v : B} (hvu : A v u = -2)
+    (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
+    ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
+      ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
+  have hvu_ne : v ≠ u := by
+    rintro rfl
+    rw [h.diag] at hvu
+    omega
+  have hadj : (diagramGraph A).Adj u v :=
+    (h.diagramGraph_adj_iff.mpr ⟨hvu_ne, by simp [hvu]⟩).symm
+  rcases (hk u v).mp hadj with horder | horder
+  · obtain ⟨hq, e, he⟩ :=
+      exists_equiv_doubleEdgeCartanMatrix_of_succ h k hk horder hvu hsimple
+    exact ⟨(k u : ℕ) + 1, n - ((k u : ℕ) + 1), Nat.succ_pos _, hq, e, he⟩
+  · let k' : B ≃ Fin n := k.trans ⟨Fin.rev, Fin.rev, Fin.rev_rev, Fin.rev_rev⟩
+    have hk' (i j : B) : (diagramGraph A).Adj i j ↔
+        (k' i : ℕ) + 1 = (k' j : ℕ) ∨ (k' j : ℕ) + 1 = (k' i : ℕ) := by
+      rw [hk i j]
+      simp only [k', Equiv.trans_apply, Equiv.coe_fn_mk, Fin.val_rev]
+      have := (k i).isLt
+      have := (k j).isLt
+      omega
+    have horder' : (k' u : ℕ) + 1 = (k' v : ℕ) := by
+      simp only [k', Equiv.trans_apply, Equiv.coe_fn_mk, Fin.val_rev]
+      have := (k u).isLt
+      have := (k v).isLt
+      omega
+    obtain ⟨hq, e, he⟩ :=
+      exists_equiv_doubleEdgeCartanMatrix_of_succ h k' hk' horder' hvu hsimple
+    exact ⟨(k' u : ℕ) + 1, n - ((k' u : ℕ) + 1), Nat.succ_pos _, hq, e, he⟩
 
 /-- The reindexing theorem with the uniqueness of the multiple edge assumed. The hypothesis
 `hsimple` on off-diagonal entries is the matrix form of saying that the chosen edge is the only
@@ -158,24 +180,8 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
     ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
       ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
   obtain ⟨iso⟩ := (h.isTree_diagramGraph hconn).nonempty_iso_pathGraph_of_degree_le_two hdeg
-  have hvu_ne : v ≠ u := by
-    rintro rfl
-    rw [h.isGeneralizedCartan.diag] at hvu
-    omega
-  have hadj : (diagramGraph A).Adj u v :=
-    (h.isGeneralizedCartan.diagramGraph_adj_iff.mpr ⟨hvu_ne, by simp [hvu]⟩).symm
-  rcases (iso.adj_iff_of_pathGraph u v).mp hadj with horder | horder
-  · exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h.isGeneralizedCartan
-      iso.toEquiv iso.adj_iff_of_pathGraph horder hvu hsimple
-  · let iso' : diagramGraph A ≃g pathGraph (Fintype.card B) :=
-      iso.trans (pathGraphRevIso (Fintype.card B))
-    have horder' : (iso' u : ℕ) + 1 = (iso' v : ℕ) := by
-      simp only [iso', RelIso.trans_apply, pathGraphRevIso_apply, Fin.val_rev]
-      have _ := (iso u).isLt
-      have _ := (iso v).isLt
-      omega
-    exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h.isGeneralizedCartan
-      iso'.toEquiv iso'.adj_iff_of_pathGraph horder' hvu hsimple
+  exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h.isGeneralizedCartan
+    iso.toEquiv iso.adj_iff_of_pathGraph hvu hsimple
 
 /-! ## A path carries at most one multiple edge -/
 

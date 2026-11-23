@@ -34,8 +34,14 @@ the root-system case is irreducibility, which Mathlib packages as
 
 ## Main results
 
+* `TauCeti.diagramGraph_transpose`: transposing a matrix preserves its diagram.
+* `TauCeti.apply_le_neg_one_of_adj`: along a diagram edge of a matrix with nonpositive
+  off-diagonal entries, the entry is at most `-1`.
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
+* `Matrix.IsGeneralizedCartan.diagramGraph_adj_iff` and
+  `Matrix.IsGeneralizedCartan.apply_eq_neg_one_iff_adj`: adjacency characterizations for a
+  generalized Cartan matrix.
 * `TauCeti.DynkinType.diagramGraph_cartanMatrix_A` and
   `TauCeti.DynkinType.diagramGraph_cartanMatrix_of_not_isSimplyLaced`: the type `Aₙ` diagram and
   the unweighted diagram of every multiply-laced `DynkinType` (`Bₙ`, `Cₙ`, `F₄`, `G₂`) equal the
@@ -87,6 +93,22 @@ theorem diagramGraph_adj {i j : B} :
     (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0 ∧ A j i ≠ 0 := by
   rw [diagramGraph, SimpleGraph.fromRel_adj]
   tauto
+
+/-- Transposing a matrix does not change its unoriented diagram. -/
+@[simp]
+theorem diagramGraph_transpose (A : Matrix B B ℤ) :
+    diagramGraph A.transpose = diagramGraph A := by
+  ext i j
+  simp only [diagramGraph_adj, Matrix.transpose_apply]
+  tauto
+
+/-- Along an edge of a diagram of a matrix with nonpositive off-diagonal entries, the
+corresponding entry is at most `-1`. -/
+theorem apply_le_neg_one_of_adj (hle : ∀ i j, i ≠ j → A i j ≤ 0) {i j : B}
+    (hij : (diagramGraph A).Adj i j) : A i j ≤ -1 := by
+  have hij' := diagramGraph_adj.mp hij
+  have := hle i j hij'.1
+  omega
 
 instance [DecidableEq B] (A : Matrix B B ℤ) : DecidableRel (diagramGraph A).Adj :=
   fun _ _ ↦ decidable_of_iff _ diagramGraph_adj.symm
@@ -143,10 +165,10 @@ theorem diagramGraph_cartanMatrix_F4 :
   ext i j
   fin_cases i <;> fin_cases j <;> decide
 
-/-- **The diagram of `G₂ᵀ` (the standard `G₂` Cartan matrix) is the path graph on `2` nodes.** -/
+/-- **The diagram of `G₂` is the path graph on `2` nodes.** -/
 @[simp]
 theorem diagramGraph_cartanMatrix_G2 :
-    (diagramGraph CartanMatrix.G₂.transpose : _root_.SimpleGraph (Fin 2)) =
+    (diagramGraph CartanMatrix.G₂ : _root_.SimpleGraph (Fin 2)) =
       _root_.SimpleGraph.pathGraph 2 := by
   ext i j
   fin_cases i <;> fin_cases j <;> decide
@@ -160,7 +182,7 @@ theorem diagramGraph_cartanMatrix_of_not_isSimplyLaced {t : DynkinType} (ht : ¬
   | B n => rw [cartanMatrix_B]; exact diagramGraph_cartanMatrix_B n
   | C n => rw [cartanMatrix_C]; exact diagramGraph_cartanMatrix_C n
   | F4 => rw [cartanMatrix_F4]; exact diagramGraph_cartanMatrix_F4
-  | G2 => rw [cartanMatrix_G2]; exact diagramGraph_cartanMatrix_G2
+  | G2 => simp only [rank_G2, cartanMatrix_G2, diagramGraph_transpose, diagramGraph_cartanMatrix_G2]
 
 end DynkinType
 
@@ -199,6 +221,21 @@ theorem _root_.Matrix.IsGeneralizedCartan.diagramGraph_adj_iff (h : A.IsGenerali
   rw [diagramGraph_adj]
   exact ⟨fun hadj ↦ ⟨hadj.1, hadj.2.1⟩,
     fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 ((h.zero_comm _ _).mpr hc)⟩⟩
+
+/-- When an entry of a generalized Cartan matrix is `0` or `-1`, it equals `-1` if and only if
+its indices are adjacent in the diagram. -/
+theorem _root_.Matrix.IsGeneralizedCartan.apply_eq_neg_one_iff_adj (h : A.IsGeneralizedCartan)
+    {i j : B} (hsl : A i j = 0 ∨ A i j = -1) :
+    A i j = -1 ↔ (diagramGraph A).Adj i j := by
+  have hij : i ≠ j := by
+    rintro rfl
+    have := h.diag i
+    omega
+  rw [h.diagramGraph_adj_iff]
+  constructor
+  · exact fun hij' ↦ ⟨hij, by omega⟩
+  · rintro ⟨-, hij'⟩
+    exact hsl.resolve_left hij'
 
 namespace IsFiniteType
 

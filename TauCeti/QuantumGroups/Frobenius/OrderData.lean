@@ -276,22 +276,6 @@ theorem frobeniusOrder_dvd_frobeniusOrder_mul_cartan (L : ℕ) (i j : I) :
   have hLj : (A.frobeniusOrder L j : ℤ) * g j = L := by exact_mod_cast A.frobeniusOrder_mul_gcd L j
   linear_combination (A.frobeniusOrder L j : ℤ) * hk + k * (hLj - hLi)
 
-private lemma frobeniusOrder_mul_ediv_cartan (L : ℕ) (i j : I) :
-    (A.frobeniusOrder L i : ℤ) *
-      (((A.frobeniusOrder L j : ℤ) * A.cartan i j) / A.frobeniusOrder L i) =
-      A.frobeniusOrder L j * A.cartan i j :=
-  Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
-
-private lemma ediv_cartan_eq_zero_iff {L : ℕ} (hL : 0 < L) (i j : I) :
-    ((A.frobeniusOrder L j : ℤ) * A.cartan i j) / A.frobeniusOrder L i = 0 ↔
-      A.cartan i j = 0 := by
-  have hlj : (A.frobeniusOrder L j : ℤ) ≠ 0 :=
-    Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL j)
-  have hij := A.frobeniusOrder_mul_ediv_cartan L i j
-  refine ⟨fun h0 ↦ ?_, fun h0 ↦ by simp [h0]⟩
-  rw [h0, mul_zero, eq_comm, mul_eq_zero] at hij
-  exact hij.resolve_left hlj
-
 /-- **Lusztig's modified symmetrizable datum** `(A*, d*)` at parameter order `L > 0`, with Cartan
 entries `aᵢⱼ* = (ℓⱼ aᵢⱼ) / ℓᵢ` and symmetrizer `dᵢ* = ℓᵢ² dᵢ`. -/
 def modifiedDatum (L : ℕ) (hL : 0 < L) : SymmetrizableDatum I where
@@ -304,13 +288,21 @@ def modifiedDatum (L : ℕ) (hL : 0 < L) : SymmetrizableDatum I where
       offDiag_nonpos i j hij := by
         have hli : (0 : ℤ) < A.frobeniusOrder L i :=
           Int.natCast_pos.mpr (A.frobeniusOrder_pos hL i)
+        have hmul := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
         have hle : (A.frobeniusOrder L j : ℤ) * A.cartan i j ≤ 0 :=
           mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg _)
             (A.isGeneralizedCartan.offDiag_nonpos i j hij)
         simp only [Matrix.of_apply]
-        exact nonpos_of_mul_nonpos_right ((A.frobeniusOrder_mul_ediv_cartan L i j).trans_le hle) hli
+        exact nonpos_of_mul_nonpos_right (hmul.trans_le hle) hli
       zero_comm i j := by
-        simp only [Matrix.of_apply, A.ediv_cartan_eq_zero_iff hL]
+        have hzero (p q : I) :
+            ((A.frobeniusOrder L q : ℤ) * A.cartan p q) / A.frobeniusOrder L p = 0 ↔
+              A.cartan p q = 0 := by
+          rw [Int.ediv_eq_iff_eq_mul_left
+            (Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL p))
+            (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L p q)]
+          simp [mul_eq_zero, A.frobeniusOrder_ne_zero hL q]
+        simp only [Matrix.of_apply, hzero]
         exact A.isGeneralizedCartan.zero_comm i j }
   symmetrizer i := A.frobeniusOrder L i ^ 2 * A.symmetrizer i
   symmetrizer_pos i := by
@@ -318,8 +310,8 @@ def modifiedDatum (L : ℕ) (hL : 0 < L) : SymmetrizableDatum I where
     have := A.symmetrizer_pos i
     positivity
   symmetrizes i j := by
-    have hij := A.frobeniusOrder_mul_ediv_cartan L i j
-    have hji := A.frobeniusOrder_mul_ediv_cartan L j i
+    have hij := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
+    have hji := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L j i)
     simp only [Matrix.of_apply, Nat.cast_mul, Nat.cast_pow]
     linear_combination
       (A.frobeniusOrder L i : ℤ) * (A.symmetrizer i : ℤ) * hij -
@@ -339,7 +331,7 @@ lemma modifiedDatum_symmetrizer_apply (L : ℕ) (hL : 0 < L) (i : I) :
 lemma frobeniusOrder_mul_modifiedDatum_cartan (L : ℕ) (hL : 0 < L) (i j : I) :
     (A.frobeniusOrder L i : ℤ) * (A.modifiedDatum L hL).cartan i j =
       A.frobeniusOrder L j * A.cartan i j :=
-  A.frobeniusOrder_mul_ediv_cartan L i j
+  Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
 
 /-- **Lusztig's modified inner product `i ∘ j = ℓᵢ ℓⱼ (i · j)`.** Entry `(i, j)` of the symmetrized
 matrix of the modified datum is `ℓᵢ ℓⱼ` times entry `(i, j)` of the original symmetrized matrix. -/
@@ -364,8 +356,11 @@ theorem modifiedDatum_one : A.modifiedDatum 1 zero_lt_one = A := by
 /-- An entry of the modified Cartan matrix vanishes if and only if the corresponding entry of the
 original Cartan matrix vanishes. -/
 theorem modifiedDatum_cartan_eq_zero_iff (L : ℕ) (hL : 0 < L) (i j : I) :
-    (A.modifiedDatum L hL).cartan i j = 0 ↔ A.cartan i j = 0 :=
-  A.ediv_cartan_eq_zero_iff hL i j
+    (A.modifiedDatum L hL).cartan i j = 0 ↔ A.cartan i j = 0 := by
+  rw [modifiedDatum_cartan_apply,
+    Int.ediv_eq_iff_eq_mul_left (Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i))
+      (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)]
+  simp [mul_eq_zero, A.frobeniusOrder_ne_zero hL j]
 
 /-- Modifying the datum preserves its underlying diagram graph. -/
 @[simp]

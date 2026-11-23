@@ -27,7 +27,8 @@ closure and Cartan-product lemmas for `Matrix.IsGeneralizedCartan`:
 * `CartanMatrix.toNat_neg_G₂`: the exponents of the higher Serre relations of type `G₂` are `0`,
   `3`, `1` and `0`.
 * `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.IsGeneralizedCartan.fromBlocks`,
-  `Matrix.IsGeneralizedCartan.transpose`, `Matrix.IsGeneralizedCartan.transpose_iff`, and
+  `Matrix.IsGeneralizedCartan.fromBlocks_iff`, `Matrix.IsGeneralizedCartan.transpose`,
+  `Matrix.IsGeneralizedCartan.transpose_iff`, and
   `Matrix.IsGeneralizedCartan.one_le_apply_mul_apply`: closure of generalized Cartan matrices under
   injective principal submatrices, block-diagonal sums, and transposition, plus the lower bound
   `1 ≤ A i j * A j i` for nonzero entries.
@@ -106,6 +107,23 @@ protected theorem fromBlocks {B : Matrix κ κ ℤ} (hA : A.IsGeneralizedCartan)
     · simp
     · simpa using hB.offDiag_nonpos i j fun h ↦ hij (congrArg Sum.inr h)
   zero_comm := by rintro (i | i) (j | j) <;> simp [hA.zero_comm, hB.zero_comm]
+
+/-- A block-diagonal matrix is a generalized Cartan matrix if and only if both diagonal blocks
+are generalized Cartan matrices. -/
+@[simp]
+protected theorem fromBlocks_iff {B : Matrix κ κ ℤ} :
+    (Matrix.fromBlocks A 0 0 B).IsGeneralizedCartan ↔
+      A.IsGeneralizedCartan ∧ B.IsGeneralizedCartan :=
+  ⟨fun h ↦
+    ⟨by
+      have h1 : (Matrix.fromBlocks A 0 0 B).submatrix Sum.inl Sum.inl = A := by ext; simp
+      rw [← h1]
+      exact h.submatrix Sum.inl_injective,
+     by
+      have h2 : (Matrix.fromBlocks A 0 0 B).submatrix Sum.inr Sum.inr = B := by ext; simp
+      rw [← h2]
+      exact h.submatrix Sum.inr_injective⟩,
+   fun ⟨hA, hB⟩ ↦ hA.fromBlocks hB⟩
 
 /-- The transpose of a generalized Cartan matrix is a generalized Cartan matrix. -/
 protected theorem transpose (h : A.IsGeneralizedCartan) : Aᵀ.IsGeneralizedCartan where

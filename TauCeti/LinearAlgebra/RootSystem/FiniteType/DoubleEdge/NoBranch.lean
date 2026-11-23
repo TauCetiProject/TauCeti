@@ -54,23 +54,6 @@ namespace IsFiniteType
 
 variable {B : Type*} [DecidableEq B] {A : Matrix B B ℤ}
 
-omit [DecidableEq B] in
-/-- Transposing a matrix does not change its unoriented diagram. -/
-private lemma diagramGraph_transpose (A : Matrix B B ℤ) :
-    diagramGraph A.transpose = diagramGraph A := by
-  ext i j
-  simp only [diagramGraph_adj, Matrix.transpose_apply]
-  tauto
-
-omit [DecidableEq B] in
-/-- Along an edge of a diagram of a matrix with nonpositive off-diagonal entries, the
-corresponding entry is at most `-1`. -/
-private lemma apply_le_neg_one_of_adj (hle : ∀ i j, i ≠ j → A i j ≤ 0) {i j : B}
-    (hij : (diagramGraph A).Adj i j) : A i j ≤ -1 := by
-  have hij' := diagramGraph_adj.mp hij
-  have := hle i j hij'.1
-  omega
-
 /-- Add an off-path vertex to a path, using `none` for the extra vertex. -/
 private def forkedPathEmbedding {u v x : B} {n : ℕ} (r : (diagramGraph A).Walk u v) :
     Option (Fin (n + 3)) → B
@@ -80,7 +63,7 @@ private def forkedPathEmbedding {u v x : B} {n : ℕ} (r : (diagramGraph A).Walk
 omit [DecidableEq B] in
 /-- The forked-path indexing is injective when the extra vertex lies off the path. -/
 private lemma forkedPathEmbedding_injective {u v x : B} {n : ℕ}
-    {r : (diagramGraph A).Walk u v} (hr : r.IsPath) (hlen : r.length = n + 2)
+    {r : (diagramGraph A).Walk u v} (hr : r.IsPath) (hlen : n + 2 ≤ r.length)
     (hx : x ∉ r.support) :
     Function.Injective (forkedPathEmbedding (A := A) (x := x) (n := n) r) := by
   intro i j hij
@@ -95,21 +78,22 @@ private lemma forkedPathEmbedding_injective {u v x : B} {n : ℕ}
     simp only [forkedPathEmbedding] at hij
     have hi := i.isLt
     have hj := j.isLt
-    have hi' : (i : ℕ) ≤ n + 2 := by omega
-    have hj' : (j : ℕ) ≤ n + 2 := by omega
-    exact hr.getVert_injOn (by simpa only [Set.mem_Iic, hlen] using hi')
-      (by simpa only [Set.mem_Iic, hlen] using hj') hij
+    exact hr.getVert_injOn (Set.mem_Iic.2 (by omega)) (Set.mem_Iic.2 (by omega)) hij
 
 omit [DecidableEq B] in
 /-- A forked path ending in an oriented double edge is bounded above by the affine `B` matrix. -/
 private lemma submatrix_forkedPath_le_affineBCartanMatrix
     (h : A.IsGeneralizedCartan) {u v x : B} {n : ℕ} {r : (diagramGraph A).Walk u v}
-    (hr : r.IsPath) (hlen : r.length = n + 2) (hx : x ∉ r.support)
+    (hr : r.IsPath) (hx : x ∉ r.support)
     (hx1 : (diagramGraph A).Adj x (r.getVert 1))
     (hlast : A (r.getVert (n + 1)) (r.getVert (n + 2)) = -2) :
     ∀ i j, A.submatrix (forkedPathEmbedding (A := A) (x := x) (n := n) r)
       (forkedPathEmbedding (A := A) (x := x) (n := n) r) i j
         ≤ affineBCartanMatrix n i j := by
+  have hlen : n + 2 ≤ r.length := by
+    by_contra! hlt
+    rw [r.getVert_of_length_le (by omega), r.getVert_of_length_le (by omega), h.diag] at hlast
+    omega
   let e := forkedPathEmbedding (A := A) (x := x) (n := n) r
   have he : Function.Injective e := forkedPathEmbedding_injective hr hlen hx
   intro i j
@@ -143,7 +127,7 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
     · have hi : (i : ℕ) = n + 1 := by omega
       have hj : (j : ℕ) = n + 2 := by omega
       simpa only [hi, hj] using le_of_eq hlast
-    · have hijLt : (i : ℕ) < r.length := by rw [hlen]; omega
+    · have hijLt : (i : ℕ) < r.length := by omega
       simpa only [hsucc] using apply_le_neg_one_of_adj h.offDiag_nonpos (r.adj_getVert_succ hijLt)
     · have hijLt : (j : ℕ) < r.length := by omega
       simpa only [hpred] using
@@ -159,9 +143,9 @@ private lemma false_of_forkedPath_of_apply_eq_neg_two
     (hx1 : (diagramGraph A).Adj x (r.getVert 1))
     (hlast : A (r.getVert (n + 1)) (r.getVert (n + 2)) = -2) : False := by
   let e := forkedPathEmbedding (A := A) (x := x) (n := n) r
-  have he : Function.Injective e := forkedPathEmbedding_injective hr hrlen hxoff
+  have he : Function.Injective e := forkedPathEmbedding_injective hr hrlen.ge hxoff
   have hle := submatrix_forkedPath_le_affineBCartanMatrix h.isGeneralizedCartan
-    hr hrlen hxoff hx1 hlast
+    hr hxoff hx1 hlast
   have hsub : IsFiniteType (A.submatrix e e) := h.submatrix he
   have hzero := hsub.eq_zero_of_forall_mul_sum_apply_mul_nonpos
       (x := affineBComark n) fun i ↦ by
