@@ -25,10 +25,11 @@ the ratio formulation also supports order arguments.
 If `(σ - a) • f(σ)` is bounded along a filter on a normed division ring `𝕜` that eventually
 avoids `a`, then `f(σ) = O((σ - a)⁻¹)` along it. When the values of `f` lie in a seminormed group,
 whose norm is continuous, a limit of `(σ - a) • f(σ)` gives this boundedness. Here `𝕜` acts on
-the values of `f` by a multiplicative action with `‖c • x‖ ≤ ‖c‖ * ‖x‖`, as every bounded action
-does. On the real line, for `a = 1` and the right-sided limit `σ → 1⁺`, this is the growth
-bound near `s = 1` of a Dedekind zeta function or an `L`-series with a simple pole there, read off
-from the limit of `(s - 1) L(s)` along the real axis.
+the values of `f` by a multiplicative action with `‖c • x‖ ≤ ‖c‖ * ‖x‖`, as every bounded scalar
+action preserving zero on a seminormed additive group does. On the real line, for `a = 1` and the
+right-sided limit `σ → 1⁺`, this is the growth bound near `s = 1` of a Dedekind zeta function or
+an `L`-series with a simple pole there, read off from the limit of `(s - 1) L(s)` along the real
+axis.
 
 A map `u` between pseudometric spaces with `dist (u y) (u x) = O(dist y x)` as `y → x` is
 continuous at `x`. This estimate follows from the difference estimate
@@ -84,9 +85,9 @@ evaluations of elliptic integrals.
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
-* `Asymptotics.isLittleO_smul_const_self_iff`: if `‖ψ‖` is frequently nonzero, `c` lies in a
-  normed (not merely seminormed) additive group and scalar multiplication satisfies
-  `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if `c = 0`.
+* `Asymptotics.isLittleO_smul_const_self_iff`: if `‖ψ‖` is eventually nonnegative and frequently
+  nonzero, `c` lies in a normed (not merely seminormed) additive group and scalar multiplication
+  satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
@@ -133,7 +134,8 @@ filter `l` on a normed division ring `𝕜` on which eventually `σ ≠ a`, then
 along `l`. The boundedness holds in particular when the values of `f` lie in a seminormed group,
 whose norm is continuous, and `(σ - a) • f(σ)` has a limit along `l` (`Filter.Tendsto.isBigO_one`).
 The action of `𝕜` need only be a multiplicative action with `‖c • x‖ ≤ ‖c‖ * ‖x‖`, as
-`norm_smul_le` gives for any bounded action. Typical choices of `l` are the one-sided and punctured
+`norm_smul_le` gives for any bounded scalar action preserving zero (`SMulZeroClass`) on a
+seminormed additive group. Typical choices of `l` are the one-sided and punctured
 neighbourhoods of `a`. For `𝕜 = ℝ`, `a = 1` and `l = 𝓝[>] 1` this is how such a bound is
 usually obtained for a Dedekind zeta function or an `L`-series near `s = 1`, from the limit of
 `(s - 1) L(s)` along the real axis. -/
@@ -285,32 +287,36 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {ι E F : Type*} [LinearOrde
       fun x hx ↦ (norm_nonneg _).lt_of_ne' (hg0 x hx.1))
     fun b ↦ isCompact_Icc.exists_bound_of_continuousOn (hf.mono Set.Icc_subset_Ici_self)
 
-/-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `‖ψ‖` is frequently
-nonzero along `l`, the vector `c` lies in a normed additive group, whose norm vanishes only at
-`0` (a seminorm does not suffice), and scalar multiplication satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at
-`c` for every scalar `r`, then `ψ • c = o(ψ)` along `l` if and only if `c = 0`. The norm identity
-holds for every action with `NormSMulClass`, by `norm_smul`. -/
+/-- **A constant multiple of `ψ` is `o(ψ)` only if it vanishes.** If `‖ψ‖` is eventually
+nonnegative and frequently nonzero along `l`, the vector `c` lies in a normed additive group, whose
+norm vanishes only at `0` (a seminorm does not suffice), and scalar multiplication satisfies
+`‖r • c‖ = ‖r‖ * ‖c‖` at `c` for every scalar `r`, then `ψ • c = o(ψ)` along `l` if and only if
+`c = 0`. Eventual nonnegativity holds whenever `𝕜` is a seminormed additive group (by
+`norm_nonneg`), and the norm identity holds for every action with `NormSMulClass` (by
+`norm_smul`). -/
 @[simp]
-theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [SeminormedAddGroup 𝕜] [NormedAddGroup E]
-    [SMul 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ‖ψ x‖ ≠ 0)
-    (hc : ∀ r : 𝕜, ‖r • c‖ = ‖r‖ * ‖c‖) : (fun x => ψ x • c) =o[l] ψ ↔ c = 0 := by
-  refine ⟨fun h ↦ ?_, fun hc₀ ↦ isLittleO_iff.mpr fun ε hε ↦ .of_forall fun x ↦ ?_⟩
+theorem isLittleO_smul_const_self_iff {α 𝕜 E : Type*} [Norm 𝕜] [NormedAddGroup E] [SMul 𝕜 E]
+    {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ₀ : ∀ᶠ x in l, 0 ≤ ‖ψ x‖)
+    (hψ : ∃ᶠ x in l, ‖ψ x‖ ≠ 0) (hc : ∀ r : 𝕜, ‖r • c‖ = ‖r‖ * ‖c‖) :
+    (fun x => ψ x • c) =o[l] ψ ↔ c = 0 := by
+  refine ⟨fun h ↦ ?_, fun hc₀ ↦ isLittleO_iff.mpr fun ε hε ↦ hψ₀.mono fun x hx ↦ ?_⟩
   · by_contra hc₀
     -- `‖ψ x • c‖ = ‖c‖ * ‖ψ x‖`, so `‖c‖ * ‖ψ‖ = o(ψ)`; cancelling the nonzero constant `‖c‖`
     -- gives `‖ψ‖ = o(‖ψ‖)`, impossible as `‖ψ‖` is frequently nonzero
     have h₁ : (fun x ↦ ‖c‖ * ‖ψ x‖) =o[l] ψ :=
-      (isBigOWith_of_le (g := fun x ↦ ψ x • c) l fun x ↦ by
-        rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _)), hc,
+      (IsBigOWith.of_bound (c := 1) (g := fun x ↦ ψ x • c) <| hψ₀.mono fun x hx ↦ by
+        rw [one_mul, Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) hx), hc,
           mul_comm]).trans_isLittleO h one_pos
     exact isLittleO_irrefl' (hψ.mono fun x hx ↦ by simpa using hx)
       (((isLittleO_const_mul_left_iff (norm_ne_zero_iff.mpr hc₀)).mp h₁).trans_isBigO
         (isBigO_of_le l fun x ↦ Real.le_norm_self _))
   · rw [hc, hc₀, norm_zero, mul_zero]
-    positivity
+    exact mul_nonneg hε.le hx
 
 /-- **A scalar function times a constant vector is big-O of the scalar function:**
 `(fun x => u x • c) =O[l] u`, with constant `‖c‖`, whenever scalar multiplication satisfies
-`‖r • c‖ ≤ ‖r‖ * ‖c‖` at `c`. This holds for every bounded action, by `norm_smul_le`. -/
+`‖r • c‖ ≤ ‖r‖ * ‖c‖` at `c`. This holds for every bounded scalar action preserving zero
+(`SMulZeroClass`) on seminormed additive groups, by `norm_smul_le`. -/
 theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul 𝕜 E]
     {l : Filter α} (u : α → 𝕜) (c : E) (hc : ∀ r : 𝕜, ‖r • c‖ ≤ ‖r‖ * ‖c‖) :
     (fun x => u x • c) =O[l] u :=
