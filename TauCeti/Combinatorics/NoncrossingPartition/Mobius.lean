@@ -63,7 +63,11 @@ open Finset Finpartition IncidenceAlgebra
 
 namespace TauCeti.NoncrossingPartition
 
-variable {α 𝕜 : Type*} [LinearOrder α] [CommRing 𝕜] {s : Finset α}
+variable {α 𝕜 : Type*} [LinearOrder α] {s : Finset α}
+
+section CommRing
+
+variable [CommRing 𝕜]
 
 /-- *Multiplicativity of the Möbius function* of `NC(s)` on lower intervals: `μ(0̂, π)` is the
 product over the parts `B` of `π` of the values `μ(0̂, 1̂)` on the lattices `NC(B)`. -/
@@ -220,12 +224,11 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
 
 end Recurrence
 
-/-- **The Möbius function of the lattice of noncrossing partitions**: on the noncrossing
-partitions of a set `s` of `n` positions, `μ(0̂, 1̂) = (-1)^(n-1) C_(n-1)`, where `C_k` is the
-`k`-th Catalan number. For `n = 0` both sides are `1`. -/
-@[simp]
-theorem mu_bot_top (s : Finset α) :
-    mu 𝕜 (⊥ : NoncrossingPartition s) ⊤ = (-1) ^ (#s - 1) * catalan (#s - 1) := by
+end CommRing
+
+/-- `mu_bot_top` with integer coefficients, from which it is transported to any ring. -/
+private theorem mu_bot_top_int (s : Finset α) :
+    mu ℤ (⊥ : NoncrossingPartition s) ⊤ = (-1) ^ (#s - 1) * catalan (#s - 1) := by
   induction hn : #s using Nat.strong_induction_on generalizing s with
   | _ n ih =>
   subst hn
@@ -244,17 +247,17 @@ theorem mu_bot_top (s : Finset α) :
   have hpair : {m₁, m₂} ⊆ s :=
     insert_subset hm₁ (singleton_subset_iff.2 (mem_of_mem_erase hm₂))
   -- Weisner's theorem at the atom joining `m₁` and `m₂`.
-  have hW := sum_filter_sup_eq_top_mu_bot_eq_zero (𝕜 := 𝕜)
-    (a := ⟨pairPartition s _ _ hpair, isNoncrossing_pairPartition hpair⟩)
-    fun h => pairPartition_ne_bot (hij := hpair) (ne_of_mem_erase hm₂).symm
-      (congrArg Subtype.val h)
+  have hW := sum_filter_sup_eq_mu_eq_zero (𝕜 := ℤ)
+    (a := (⟨_, isNoncrossing_pairPartition hpair⟩ : NoncrossingPartition s)) (d := ⊤)
+    fun h => pairPartition_ne_bot (hij := hpair) (ne_of_mem_erase hm₂).symm <| by
+      simpa only [coe_bot] using congrArg Subtype.val (le_bot_iff.1 h)
   have htop : (⊤ : NoncrossingPartition s) ∈ ({x | x ⊔ ⟨pairPartition s _ _ hpair,
       isNoncrossing_pairPartition hpair⟩ = ⊤} : Finset (NoncrossingPartition s)) := by simp
   rw [Icc_bot_top, ← add_sum_erase _ _ htop, sum_erase_top_mu_bot hpair hmin₁ hm₂ hmin₂] at hW
   -- By induction, each summand is a product of signed Catalan numbers.
   have hterm (y : α) (hy : y ∈ s.erase m₁) :
-      mu 𝕜 (⊥ : NoncrossingPartition {z ∈ s.erase m₁ | z ≤ y}) ⊤ *
-        mu 𝕜 (⊥ : NoncrossingPartition (s \ {z ∈ s.erase m₁ | z ≤ y})) ⊤ =
+      mu ℤ (⊥ : NoncrossingPartition {z ∈ s.erase m₁ | z ≤ y}) ⊤ *
+        mu ℤ (⊥ : NoncrossingPartition (s \ {z ∈ s.erase m₁ | z ≤ y})) ⊤ =
       (-1) ^ #{z ∈ s.erase m₁ | z < y} * catalan #{z ∈ s.erase m₁ | z < y} *
         ((-1) ^ #{z ∈ s.erase m₁ | y < z} * catalan #{z ∈ s.erase m₁ | y < z}) := by
     have hle : #{z ∈ s.erase m₁ | z ≤ y} = #{z ∈ s.erase m₁ | z < y} + 1 := by
@@ -272,21 +275,30 @@ theorem mu_bot_top (s : Finset α) :
     rw [ih _ (by omega) _ rfl, ih _ (by omega) _ rfl, hle, hsdiff, Nat.add_sub_cancel,
       Nat.add_sub_cancel]
   rw [sum_congr rfl hterm, sum_card_filter_lt_card_filter_gt (s.erase m₁)
-    (fun i j => (-1 : 𝕜) ^ i * catalan i * ((-1) ^ j * catalan j)), hcard,
+    (fun i j => (-1 : ℤ) ^ i * catalan i * ((-1) ^ j * catalan j)), hcard,
     Nat.add_sub_cancel, sum_range_neg_one_pow_mul_catalan] at hW
   rw [eq_neg_of_add_eq_zero_left hW, hk, show k + 2 - 1 = k + 1 by omega, pow_succ]
   ring
 
+/-- **The Möbius function of the lattice of noncrossing partitions**: on the noncrossing
+partitions of a set `s` of `n` positions, `μ(0̂, 1̂) = (-1)^(n-1) C_(n-1)`, where `C_k` is the
+`k`-th Catalan number. For `n = 0` both sides are `1`. -/
+@[simp]
+theorem mu_bot_top [Ring 𝕜] (s : Finset α) :
+    mu 𝕜 (⊥ : NoncrossingPartition s) ⊤ = (-1) ^ (#s - 1) * catalan (#s - 1) := by
+  rw [← map_mu (Int.castRingHom 𝕜) (map_one _), mu_bot_top_int]
+  simp
+
 /-- The Möbius function of `NC(n)`: `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on the noncrossing
 partitions of the `n` ordered positions of `Fin n`. -/
-theorem mu_bot_top_fin (n : ℕ) :
+theorem mu_bot_top_fin [Ring 𝕜] (n : ℕ) :
     mu 𝕜 (⊥ : NoncrossingPartition (univ : Finset (Fin n))) ⊤ =
       (-1) ^ (n - 1) * catalan (n - 1) := by
   rw [mu_bot_top, card_univ, Fintype.card_fin]
 
 /-- The blockwise formula for the Möbius function of `NC(s)`: `μ(0̂, π)` is the product over the
 parts `B` of `π` of `(-1)^(|B|-1) C_(|B|-1)`. -/
-theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
+theorem mu_bot_eq_prod [CommRing 𝕜] (π : NoncrossingPartition s) :
     mu 𝕜 ⊥ π = ∏ B ∈ π.val.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_bot_eq_prod_mu]
   exact prod_congr rfl fun B _ => mu_bot_top B
@@ -294,15 +306,18 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
 /-! ### Upper intervals -/
 
 /-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
-theorem mu_top_eq_mu_bot_kreweras {𝕜 : Type*} [Ring 𝕜] {n : ℕ}
+theorem mu_top_eq_mu_bot_kreweras [AddCommGroup 𝕜] [One 𝕜] {n : ℕ}
     (π : NoncrossingPartition (univ : Finset (Fin n))) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
-  have h := OrderIso.mu_map (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
-  simpa only [krewerasOrderIso_apply, kreweras_top, mu_toDual] using h.symm
+  -- `mu_toDual` needs a ring, so compare over `ℤ` and transport along `k ↦ k • 1`.
+  have h := OrderIso.mu_map (𝕜 := ℤ) (krewerasOrderIso n) π ⊤
+  simp only [krewerasOrderIso_apply, kreweras_top, mu_toDual] at h
+  simpa using congrArg (zmultiplesHom 𝕜 1) h.symm
 
 /-- The blockwise formula for the Möbius function of `NC(n)` on upper intervals: `μ(π, 1_n)` is
 the product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
-theorem mu_top_eq_prod_kreweras {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+theorem mu_top_eq_prod_kreweras [CommRing 𝕜] {n : ℕ}
+    (π : NoncrossingPartition (univ : Finset (Fin n))) :
     mu 𝕜 π ⊤ = ∏ B ∈ (kreweras π).val.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_top_eq_mu_bot_kreweras, mu_bot_eq_prod]
 

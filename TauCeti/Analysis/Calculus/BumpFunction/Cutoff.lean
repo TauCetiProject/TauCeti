@@ -19,6 +19,7 @@ import TauCeti.Algebra.Order.Field.SquareGap
 import TauCeti.Analysis.Calculus.Deriv.AffineProfile
 import TauCeti.Analysis.Calculus.FDeriv.RadialField
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
@@ -46,9 +47,9 @@ which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular the periodization
-`Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
-in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
+functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`); in particular the
+periodization `Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map
+of period one in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`); for a `C³` function one constant
 bounds it, its first two derivatives and their Hölder constants uniformly over all translates
@@ -567,16 +568,6 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   · rw [hsum]
     exact one_of_mem (heta'_one n N (by omega) (hVL n hy))
 
-/-- A sum of functions which are smooth at `x` is smooth at `x` if, on a neighbourhood of `x`,
-all but finitely many of them vanish. This makes the locally finite sums built from
-`IsOpen.exists_contDiff_decomposition_cutoff` smooth on the open set. -/
-theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : WithTop ℕ∞}
-    {g : ι → E → F} {x : E} (s : Finset ι) (hg : ∀ j ∈ s, ContDiffAt 𝕜 n (g j) x)
-    (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
-    ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
-  (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
-
 open Filter in
 /-- **Periodization in the last coordinate.** The periodization `Σₙ f (x, t + n)` of a `C^k` map
 `f` compactly supported in `E × (0, 1)` is a `C^k` map of period one in `t`, which vanishes for
@@ -592,7 +583,7 @@ theorem exists_contDiff_periodic_eventuallyEq [NormedSpace ℝ E] {F : Type*} [N
     image_eq_zero_of_notMem_tsupport (x := (z.1, z.2 + n)) fun h ↦ hz (hU h).2
   refine ⟨fun z ↦ ∑' n, φ n z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun x t ↦ ?_, ?_, ?_⟩
   · -- Near `z`, only the terms with `-z.2 - 1 < n < 2 - z.2` can be nonzero.
-    refine contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
+    refine Finset.contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
       (fun n _ ↦ (hf.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) ?_
     filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
       (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
