@@ -495,7 +495,7 @@ theorem isInvariant_anharmonicGroup (h6 : (6 : R) ∈ nonZeroDivisors R) :
     rw [← this, ← pb.basis.sum_repr a, map_sum]
     refine Submodule.sum_mem _ fun j _ => ?_
     rw [map_smul, pb.basis_eq_pow, hgen]
-    exact Submodule.smul_mem _ _ (orbitSum_lambda_pow_mem R (hdim ▸ j.2))
+    exact Submodule.smul_mem _ _ (orbitSum_lambda_pow_mem R (hdim ▸ j.isLt))
   -- Since `6` is a nonzerodivisor, `a` itself lies in `R[u]`.
   have h6' : (6 : R[X]) ∈ nonZeroDivisors R[X] :=
     mem_nonZeroDivisors_of_coeff_mem 0 (by simpa using h6)

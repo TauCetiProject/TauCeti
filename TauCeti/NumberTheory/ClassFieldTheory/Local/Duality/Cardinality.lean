@@ -124,6 +124,6 @@ theorem natCard_H2_eq_natCard_H0_internalHom (hn : IsUnit (n : F))
     e₂.natCard_addMonoidHom_zmod]
   intro x
   apply Subtype.ext
-  exact InternalHom.nsmul_eq_zero_of_domain hM x.1
+  exact InternalHom.nsmul_eq_zero_of_domain hM x.val
 
 end TauCeti.ClassFieldTheory

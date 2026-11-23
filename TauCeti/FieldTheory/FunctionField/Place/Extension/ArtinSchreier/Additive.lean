@@ -102,7 +102,7 @@ theorem ord_aeval_additivePolynomial_of_ord_neg (hV : ∀ c ∈ V, IsAlgebraic k
   rw [AddSubgroup.aeval_additivePolynomial, P'.ord_prod _ fun c _ ↦ ?_]
   · simp [ord_sub_algebraMap_of_ord_neg k F (hV _ (Subtype.prop _)) hy]
   intro h
-  have := ord_sub_algebraMap_of_ord_neg k F (hV c c.2) hy
+  have := ord_sub_algebraMap_of_ord_neg k F (hV c c.property) hy
   rw [h, ord_zero] at this
   exact hy.ne this.symm
 
@@ -117,7 +117,7 @@ theorem ord_aeval_additivePolynomial_neg_iff (hV : ∀ c ∈ V, IsAlgebraic k c)
       rw [AddSubgroup.aeval_additivePolynomial]
       refine prod_mem fun c _ ↦ sub_mem hnonneg ?_
       rw [mem_integers_iff_ord_nonneg,
-        ord_eq_zero_of_isAlgebraic _ (((hV c c.2).algebraMap (A := F')).tower_top k')]
+        ord_eq_zero_of_isAlgebraic _ (((hV c c.property).algebraMap (A := F')).tower_top k')]
     rw [mem_integers_iff_ord_nonneg] at hmem
     omega
   · rw [ord_aeval_additivePolynomial_of_ord_neg k F V hV hy]
@@ -326,7 +326,7 @@ theorem exists_uniformizer_ord_aut_sub_of_aeval_additivePolynomial_eq
   have hcF : (c : F) ≠ 0 := by simpa using hc0
   have hcF' : algebraMap F F' c ≠ 0 := (_root_.map_ne_zero _).mpr hcF
   have hcval : P'.valuation (algebraMap F F' c) = 1 :=
-    P'.valuation_eq_one_of_isAlgebraic (((hV c c.2).algebraMap (A := F')).tower_top k') hcF'
+    P'.valuation_eq_one_of_isAlgebraic (((hV c c.property).algebraMap (A := F')).tower_top k') hcF'
   -- `|V|` vanishes in `F`, so the Bezout identity forces `β ≠ 0` in `F'`.
   have hcard : (Fintype.card V : F) = 0 := by
     have h := congrArg ((↑) : V → F) (card_nsmul_eq_zero (x := c))

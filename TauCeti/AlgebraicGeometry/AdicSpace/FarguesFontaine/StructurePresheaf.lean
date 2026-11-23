@@ -187,7 +187,7 @@ theorem functor_obj_map_frobeniusTopHom (V : Opens (spaY p ϖ)) :
   rintro w ⟨v, hv, hvw⟩
   have hvw' : v.val = comap frobenius w.val := by
     simpa [spaYInclusion_apply_val ϖ v] using congrArg Subtype.val hvw
-  have hw : w.val ∈ spaY p ϖ := (comap_frobenius_mem_spaY_iff hI _).mp (hvw' ▸ v.2)
+  have hw : w.val ∈ spaY p ϖ := (comap_frobenius_mem_spaY_iff hI _).mp (hvw' ▸ v.property)
   refine ⟨⟨w.val, hw⟩, ?_, Subtype.ext (spaYInclusion_apply_val ϖ _)⟩
   have : frobeniusHomeomorph hI ⟨w.val, hw⟩ = v :=
     Subtype.ext ((frobeniusHomeomorph_apply_val hI _).trans hvw'.symm)
@@ -335,8 +335,8 @@ def isLimitSpaXPresheafFork :
 agreement subring of the identity and Frobenius, followed by the inclusion of that subring. -/
 private theorem exists_homeomorph_eqLocus (U : (Opens (spaX hI))ᵒᵖ) :
     ∃ e : (spaXPresheaf P hI).obj U ≃ₜ RingHom.eqLocus (RingHom.id _)
-        ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.1,
-      ⇑((spaXPresheafι P hI).app U).hom.1 = Subtype.val ∘ e := by
+        ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.val,
+      ⇑((spaXPresheafι P hI).app U).hom.val = Subtype.val ∘ e := by
   -- Evaluation at `U` followed by the inclusion into `TopCommRingCat` preserves the equalizer,
   -- which in `TopCommRingCat` is the agreement subring `equalizerFork`.
   let G := (evaluation (Opens (spaX hI))ᵒᵖ CompleteSeparatedTopCommRingCat.{v}).obj U ⋙
@@ -359,10 +359,10 @@ instance mono_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
 /-- **The sections of `𝒪_𝒳` embed in those of `𝒪_𝒴`**: on each open `U ⊆ 𝒳`, the inclusion
 `𝒪_𝒳(U) → 𝒪_𝒴(q⁻¹U)` is a closed embedding. -/
 theorem isClosedEmbedding_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
-    IsClosedEmbedding ((spaXPresheafι P hI).app U).hom.1 := by
+    IsClosedEmbedding ((spaXPresheafι P hI).app U).hom.val := by
   obtain ⟨e, he⟩ := exists_homeomorph_eqLocus P hI U
-  have hcl : IsClosed {s | s = ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.1 s} :=
-    isClosed_eq continuous_id ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.2
+  have hcl : IsClosed {s | s = ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.val s} :=
+    isClosed_eq continuous_id ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.property
   rw [he]
   -- membership in `RingHom.eqLocus f g` is `f s = g s` by definition (`RingHom.mem_eqLocus` is
   -- proved by `Iff.rfl`), so the agreement subring is the closed set `hcl` as a subtype
@@ -371,8 +371,8 @@ theorem isClosedEmbedding_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
 /-- **The sections of `𝒪_𝒳` are the Frobenius-invariant sections of `𝒪_𝒴`**: on each open
 `U ⊆ 𝒳`, the image of `𝒪_𝒳(U)` in `𝒪_𝒴(q⁻¹U)` consists of the sections fixed by Frobenius. -/
 theorem range_spaXPresheafι_app (U : (Opens (spaX hI))ᵒᵖ) :
-    Set.range ((spaXPresheafι P hI).app U).hom.1 =
-      {s | ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.1 s = s} := by
+    Set.range ((spaXPresheafι P hI).app U).hom.val =
+      {s | ((pushforwardSpaYPresheafFrobenius P hI).app U).hom.val s = s} := by
   obtain ⟨e, he⟩ := exists_homeomorph_eqLocus P hI U
   rw [he, Set.range_comp, e.range_coe, Set.image_univ, Subtype.range_coe_subtype]
   ext s
