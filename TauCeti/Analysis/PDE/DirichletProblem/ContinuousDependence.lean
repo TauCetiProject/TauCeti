@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Topology.Algebra.Module.ClosedSubmodule
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -156,7 +157,7 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
     rw [energyFormH1_zero_left, abs_zero, zero_mul]
   have hmem : (u : W1p mu Omega 2) - u' - 0 ∈ w1p0Submodule mu Omega 2 := by
     rw [sub_zero, ← Submodule.coe_sub, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact (u - u').2
+    exact (u - u').property
   have h := norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff hC
     hlower le_rfl h0 (mul_nonneg (by linarith) (norm_nonneg _)) hD hmem hu hu'
   rw [norm_zero, zero_add, add_zero, ← Submodule.coe_sub, Submodule.norm_coe] at h
@@ -253,12 +254,9 @@ theorem tendsto_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq {α : Type*} 
         (Lam i + beta i + gamma i) * ‖u' i‖ * ‖w‖ := by
     simpa only [Submodule.norm_coe] using abs_energyFormH1_sub_energyFormH1_le hcoeff
       (hcoeff' i) (hLam i) (ha i) (hb i) (hc i) (u' i) (w : W1p mu Omega 2)
-  have hmem : u - u' i - (g - g' i) ∈ w1p0Submodule mu Omega 2 := by
-    rw [← sub_sub_sub_comm, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact sub_mem ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hug)
-      ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hug' i))
   have h := norm_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hcoeff hC hlower
-    hN0 hN (mul_nonneg hδ (norm_nonneg _)) hD hmem hu (hu' i)
+    hN0 hN (mul_nonneg hδ (norm_nonneg _)) hD (sub_sub_sub_comm u g _ _ ▸ sub_mem hug (hug' i))
+    hu (hu' i)
   rw [← sub_le_iff_le_add', le_div_iff₀ hC] at h
   -- Absorb `δ ‖u' i‖ ≤ δ ‖u‖ + δ ‖u - u' i‖ ≤ δ ‖u‖ + (C / 2) ‖u - u' i‖` into the left side.
   have h₁ := mul_le_mul_of_nonneg_left (norm_le_norm_add_norm_sub u (u' i)) hδ
@@ -297,7 +295,7 @@ theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
   -- This is the case `g = g' i = 0` and `ℓ = ℓ' i = dirichletForcing f` in `H¹(Ω)`.
   have hmem (v : W1p0 mu Omega 2) : (v : W1p mu Omega 2) - 0 ∈ w1p0Submodule mu Omega 2 := by
     rw [sub_zero, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact v.2
+    exact v.property
   have hℓ : Filter.Tendsto (fun _ : α => ‖dirichletForcing f - dirichletForcing f‖) l (nhds 0) := by
     rw [sub_self (dirichletForcing f), ContinuousLinearMap.opNorm_zero]
     exact tendsto_const_nhds

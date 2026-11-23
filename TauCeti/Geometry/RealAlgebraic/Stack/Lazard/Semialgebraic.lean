@@ -46,7 +46,7 @@ variable {ι : Type*} {n : ℕ} {F : ι → MvPolynomial (Fin (n + 1)) ℝ}
 -- A single polynomial family represents the evaluations on the fixed-exponent stratum.
 private theorem exists_polynomial_shared_roots (D : LazardDelineation F S) :
     ∃ G : Finset (MvPolynomial (Fin n) ℝ)[X], ∀ x : S,
-      (G.biUnion fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset) =
+      (G.biUnion fun p ↦ (p.map (MvPolynomial.eval x.val)).roots.toFinset) =
         Finset.univ.image (fun i ↦ D.root i x) := by
   classical
   choose k hk using D.exists_multiplicity_pos
@@ -55,8 +55,8 @@ private theorem exists_polynomial_shared_roots (D : LazardDelineation F S) :
       (Polynomial.C ∘ α)
   choose P hP using fun i ↦ (F (k i)).exists_polynomial_map_eq_lazardEval (D.exponent (k i))
   have hPL (i : Fin D.count) (x : S) :
-      (P i).map (MvPolynomial.eval x.1) = L (k i) x.1 :=
-    hP i x.1 (D.lazardExponent_eq (k i) x)
+      (P i).map (MvPolynomial.eval x.val) = L (k i) x.val :=
+    hP i x.val (D.lazardExponent_eq (k i) x)
   let G := Finset.univ.image P
   -- The finite shared root set is exactly the increasing list of the Lazard delineation.
   refine ⟨G, fun x ↦ ?_⟩

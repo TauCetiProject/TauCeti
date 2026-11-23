@@ -88,7 +88,7 @@ of the variables of `s`. -/
 theorem eval_eq_eval_of_mem_varSubgroup (hw : w ∈ varSubgroup G s) (ι : G →* H) {v v' : X → H}
     (h : Set.EqOn v v' s) : eval ι v w = eval ι v' w := by
   obtain ⟨u, rfl⟩ := hw
-  have hv : v ∘ ((↑) : s → X) = v' ∘ (↑) := funext fun x => h x.2
+  have hv : v ∘ ((↑) : s → X) = v' ∘ (↑) := funext fun x => h x.property
   rw [eval_map, eval_map, hv]
 
 /-- A variable lies in `G[s]` exactly when it belongs to `s`. -/
@@ -112,7 +112,7 @@ theorem eval_mem_varSubgroup {Y : Type*} {t : Set Y} (hw : w ∈ varSubgroup G s
   · rintro _ ⟨g, rfl⟩
     simp
   · rw [eval_comp_inr]
-    exact FreeGroup.range_lift_le (Set.range_subset_iff.2 fun x => hv x x.2)
+    exact FreeGroup.range_lift_le (Set.range_subset_iff.2 fun x => hv x x.property)
 
 variable (G) in
 /-- Enlarging the set of variables enlarges the subgroup of words in them. -/

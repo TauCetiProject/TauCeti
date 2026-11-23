@@ -50,7 +50,7 @@ private theorem pure_pairing
     freeProductExpectation (fun i ↦ (φ i).toLinearMap) hφ
       (star (wordMul (fun i ↦ (φ i).toLinearMap) w (PiTensorProduct.tprod ℂ m)) *
         wordMul (fun i ↦ (φ i).toLinearMap) v (PiTensorProduct.tprod ℂ n)) =
-    if h : w = v then ∏ k, φ w.toList[k] (star (m k).1 * ((h.symm ▸ n) k).1) else 0 := by
+    if h : w = v then ∏ k, φ w.toList[k] (star (m k).val * ((h.symm ▸ n) k).val) else 0 := by
   let W : List (I × LinearAlgebra.FreeProduct ℂ A) :=
     List.ofFn fun k ↦ (w.toList[k], ι ℂ A w.toList[k] (m k))
   let V : List (I × LinearAlgebra.FreeProduct ℂ A) :=
@@ -65,8 +65,8 @@ private theorem pure_pairing
     (freeProductExpectation_one _ hφ)
     (freeProductExpectation_star _ hφ fun i a ↦ (φ i).map_star a) W V
     (hW ▸ w.isChain) (hV ▸ v.isChain)
-    (by intro x hx; obtain ⟨k, rfl⟩ := List.mem_ofFn.mp hx; exact ⟨(m k).1, ιStar_apply ℂ A _ _⟩)
-    (by intro x hx; obtain ⟨k, rfl⟩ := List.mem_ofFn.mp hx; exact ⟨(n k).1, ιStar_apply ℂ A _ _⟩)
+    (by intro x hx; obtain ⟨k, rfl⟩ := List.mem_ofFn.mp hx; exact ⟨(m k).val, ιStar_apply ℂ A _ _⟩)
+    (by intro x hx; obtain ⟨k, rfl⟩ := List.mem_ofFn.mp hx; exact ⟨(n k).val, ιStar_apply ℂ A _ _⟩)
     (by intro x hx; obtain ⟨k, rfl⟩ := List.mem_ofFn.mp hx
         simp)
     (by intro x hx; obtain ⟨k, rfl⟩ := List.mem_ofFn.mp hx
@@ -82,7 +82,7 @@ private theorem pure_pairing
     have hz : List.zipWith
         (fun x y : I × LinearAlgebra.FreeProduct ℂ A ↦
           freeProductExpectation (fun i ↦ (φ i).toLinearMap) hφ (star x.2 * y.2)) W V =
-        List.ofFn (fun k ↦ φ w.toList[k] (star (m k).1 * (n k).1)) := by
+        List.ofFn (fun k ↦ φ w.toList[k] (star (m k).val * (n k).val)) := by
       apply List.ext_getElem
       · simp [W, V]
       · intro j hj hk
@@ -121,16 +121,16 @@ private theorem word_square_nonneg
     rw [PiTensorProduct.span_tprod_eq_top]
     trivial
   obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.mp hxspan
-  have hx : x = ∑ m : c.support, c m • PiTensorProduct.tprod ℂ m.1 := by
+  have hx : x = ∑ m : c.support, c m • PiTensorProduct.tprod ℂ m.val := by
     rw [← hc, Finsupp.sum]
     exact (Finset.sum_attach _ _).symm
   rw [hx]
   have hK : Matrix.PosSemidef (fun m n : c.support ↦
-      ∏ k, φ w.toList[k] (star (m.1 k).1 * (n.1 k).1)) := by
+      ∏ k, φ w.toList[k] (star (m.val k).val * (n.val k).val)) := by
     apply posSemidef_schur_finset_prod
     intro k _
-    have heq : (fun m n : c.support ↦ φ w.toList[k] (star (m.1 k).1 * (n.1 k).1)) =
-        Matrix.gram ℂ (fun m : c.support ↦ (φ w.toList[k]).classMap (m.1 k).1) := by
+    have heq : (fun m n : c.support ↦ φ w.toList[k] (star (m.val k).val * (n.val k).val)) =
+        Matrix.gram ℂ (fun m : c.support ↦ (φ w.toList[k]).classMap (m.val k).val) := by
       ext m n
       simp only [Matrix.gram_apply, StarPositiveFunctional.inner_classMap]
     rw [heq]

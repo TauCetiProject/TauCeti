@@ -187,13 +187,13 @@ def affineProjection : affineGroup R n m →* GL n R where
     { val := ((M : GL (n ⊕ m) R) : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁
       inv := (((M⁻¹ : affineGroup R n m) : GL (n ⊕ m) R) : Matrix (n ⊕ m) (n ⊕ m) R).toBlocks₁₁
       val_inv := by
-        rw [← toBlocks₁₁_mul_of_mem_affineGroup M.2, ← Subgroup.coe_mul]
+        rw [← toBlocks₁₁_mul_of_mem_affineGroup M.property, ← Subgroup.coe_mul]
         simp [← fromBlocks_one]
       inv_val := by
-        rw [← toBlocks₁₁_mul_of_mem_affineGroup M⁻¹.2, ← Subgroup.coe_mul]
+        rw [← toBlocks₁₁_mul_of_mem_affineGroup M⁻¹.property, ← Subgroup.coe_mul]
         simp [← fromBlocks_one] }
   map_one' := Units.ext (by simp [← fromBlocks_one])
-  map_mul' M N := Units.ext (toBlocks₁₁_mul_of_mem_affineGroup M.2 N)
+  map_mul' M N := Units.ext (toBlocks₁₁_mul_of_mem_affineGroup M.property N)
 
 /-- The matrix underlying the projection of `M` is the upper left block of `M`. -/
 @[simp]
@@ -261,7 +261,7 @@ theorem ker_affineProjection :
       congrArg Units.val (MonoidHom.mem_ker.1 hM)
     refine Subtype.ext (Units.ext ?_)
     rw [coe_affineTranslation, toAdd_ofAdd]
-    conv_rhs => rw [coe_eq_fromBlocks_of_mem_affineGroup M.2, h₁₁]
+    conv_rhs => rw [coe_eq_fromBlocks_of_mem_affineGroup M.property, h₁₁]
   · rintro ⟨u, rfl⟩
     exact MonoidHom.mem_ker.2 (affineProjection_affineTranslation R n m u)
 
@@ -286,7 +286,7 @@ theorem affineInclusion_affineProjection_mul_affineTranslation (M : affineGroup 
       M := by
   refine Subtype.ext (Units.ext ?_)
   rw [Subgroup.coe_mul, Units.val_mul, coe_affineInclusion, coe_affineTranslation,
-    fromBlocks_multiply, coe_eq_fromBlocks_of_mem_affineGroup M.2]
+    fromBlocks_multiply, coe_eq_fromBlocks_of_mem_affineGroup M.property]
   simp
 
 /-! ## Stabilization -/

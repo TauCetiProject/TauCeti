@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LFunctions.Mertens
 import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
@@ -62,12 +63,16 @@ bounds when any finite set of primes is removed from the product.
   `x ≥ 2`, `|∑_{p ≤ x} p⁻¹ - log log x - B| ≤ C / log x`.
 * `TauCeti.exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le`: uniform interval estimate
   `|∑_{y < p ≤ x} p⁻¹ - log (log x / log y)| ≤ C / log y` for `2 ≤ y ≤ x`.
-* `TauCeti.exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le`: uniform logarithmic
-  Euler product `|∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ| ≤ C / log x` for `x ≥ 2`.
+* `TauCeti.abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le`: uniform logarithmic Euler
+  product `|∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ| ≤ (2 (log 4 + 4) + 2) / log x` for `x ≥ 2`,
+  with existential form `TauCeti.exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le`.
 * `TauCeti.exists_abs_sum_Icc_vonMangoldt_div_mul_log_sub_log_log_sub_le`: Mertens's second theorem
   in von Mangoldt form, `|∑_{2 ≤ n ≤ x} Λ(n) / (n log n) - log log x - γ| ≤ C / log x` for `x ≥ 2`.
-* `TauCeti.exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`: Mertens's third theorem
-  with bounded additive remainder, `|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ C` for `x ≥ 2`.
+* `TauCeti.abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`: Mertens's third theorem with
+  an explicit bounded additive remainder,
+  `|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ e^γ A e^(A / log 2)` for `x ≥ 2`, where
+  `A = 2 (log 4 + 4) + 2`, with existential form
+  `TauCeti.exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`.
 * `TauCeti.exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds`: two-sided `1 / log y`
   comparison for `∏_{p ≤ y, p ∉ T} (1 - p⁻¹)` on `y ≥ 2` for any finite set `T`.
 
@@ -97,8 +102,8 @@ theorem summable_prime_log_one_sub_inv_add_inv :
   have hneg : Summable (fun p : Nat.Primes ↦
       -Real.log (1 - ((p : ℕ) : ℝ)⁻¹) - ((p : ℕ) : ℝ)⁻¹) :=
     hsq.of_nonneg_of_le
-      (fun p ↦ (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast p.2.one_lt)).le)
-      (fun p ↦ Real.neg_log_one_sub_inv_sub_inv_le (mod_cast p.2.two_le))
+      (fun p ↦ (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast p.property.one_lt)).le)
+      (fun p ↦ Real.neg_log_one_sub_inv_sub_inv_le (mod_cast p.property.two_le))
   exact hneg.neg.congr fun _ ↦ by ring
 
 /-- For `x > 0`, the tail of the positive quadratic Euler-product remainders
@@ -155,7 +160,7 @@ theorem meisselMertensConstant_le_add_half_sub_log_two :
     tsum_nonpos fun p ↦ by
       split_ifs
       · exact le_rfl
-      · linarith [Real.neg_log_one_sub_inv_sub_inv_pos (x := (p : ℕ)) (mod_cast p.2.one_lt)]
+      · linarith [Real.neg_log_one_sub_inv_sub_inv_pos (x := (p : ℕ)) (mod_cast p.property.one_lt)]
   have hp2 : Real.log (1 - ((p2 : ℕ) : ℝ)⁻¹) + ((p2 : ℕ) : ℝ)⁻¹ = 1 / 2 - Real.log 2 := by
     have hsub : 1 - ((p2 : ℕ) : ℝ)⁻¹ = (2 : ℝ)⁻¹ := by norm_num [p2]
     have hinv : ((p2 : ℕ) : ℝ)⁻¹ = 1 / 2 := by norm_num [p2]
@@ -364,15 +369,12 @@ private theorem sum_primesLE_neg_log_one_sub_inv_sub_inv_add_tail (x : ℝ) :
     simp [r, Set.indicator_apply]
   rw [← hfin, ← htail, hr_sum.sum_add_tsum_compl, htot]
 
-/-- **Logarithmic Euler-product form of Mertens's theorem, uniform on `[2, ∞)`.** There is an
-absolute constant `C` such that for every real `x ≥ 2`,
-`|∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ| ≤ C / log x`. -/
-theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le :
-    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
-      |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-          Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ C / Real.log x := by
-  obtain ⟨C, hC⟩ := exists_abs_sum_primesLE_inv_sub_log_log_sub_le
-  refine ⟨C + 4, fun x hx ↦ ?_⟩
+/-- **Logarithmic Euler-product form of Mertens's theorem, with an explicit constant.** For every
+real `x ≥ 2`, `|∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ| ≤ (2 (log 4 + 4) + 2) / log x`. -/
+theorem abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le {x : ℝ} (hx : 2 ≤ x) :
+    |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
+        Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤
+      (2 * (Real.log 4 + 4) + 2) / Real.log x := by
   have hx0 : 0 < x := by linarith
   have hlog : 0 < Real.log x := Real.log_pos (by linarith)
   set T := ∑' n : ℕ, if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0
@@ -380,9 +382,15 @@ theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le :
     split_ifs with hn
     · exact (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast hn.1.one_lt)).le
     · exact le_rfl
-  have hTle : T ≤ 4 / Real.log x :=
-    (tsum_prime_neg_log_one_sub_inv_sub_inv_gt_le hx0).trans
-      (div_le_div_of_nonneg_left (by norm_num) hlog (Real.log_le_self hx0.le))
+  -- The tail over primes `p > x` is at most `4 / x ≤ 2 / log x`, using `2 log x ≤ x`.
+  have hTle : T ≤ 2 / Real.log x := by
+    refine (tsum_prime_neg_log_one_sub_inv_sub_inv_gt_le hx0).trans ?_
+    have h := Real.log_div_self_le_half hx0.le
+    rw [div_le_iff₀ hx0] at h
+    rw [div_le_div_iff₀ hx0 hlog]
+    linarith
+  have hM := LFunctions.abs_sum_primesLE_one_div_sub_log_log_sub_mertensConstant_le hx
+  simp only [one_div, mertensConstant_rat] at hM
   have hrel := sum_primesLE_neg_log_one_sub_inv_sub_inv_add_tail x
   rw [sum_sub_distrib] at hrel
   have hident : (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
@@ -392,8 +400,17 @@ theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le :
     rw [meisselMertensConstant_def]
     linarith
   rw [hident, add_div]
-  refine (abs_sub _ _).trans (add_le_add (hC x hx) ?_)
+  refine (abs_sub _ _).trans (add_le_add hM ?_)
   rwa [abs_of_nonneg hT0]
+
+/-- **Logarithmic Euler-product form of Mertens's theorem, uniform on `[2, ∞)`.** There is an
+absolute constant `C` such that for every real `x ≥ 2`,
+`|∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ| ≤ C / log x`. -/
+theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le :
+    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
+      |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
+          Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ C / Real.log x :=
+  ⟨_, fun _ ↦ abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le⟩
 
 /-- **Logarithmic Euler-product form of Mertens's theorem, asymptotic form:**
 `∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ = O(1 / log x)` as `x → ∞`. -/
@@ -558,17 +575,20 @@ private theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds :
   exact ⟨hE, hE.trans
     (div_le_div_of_nonneg_left (le_max_right _ _) hlog2 (Real.log_le_log zero_lt_two hx))⟩
 
-/-- **Mertens's third theorem with bounded additive remainder.** There is an absolute constant `C`
-such that for every real `x ≥ 2`,
-`|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ C`. -/
-theorem exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le :
-    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
-      |(∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
-          Real.exp Real.eulerMascheroniConstant * Real.log x| ≤ C := by
-  obtain ⟨M, hM⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds
-  refine ⟨Real.exp Real.eulerMascheroniConstant * M * Real.exp (M / Real.log 2), fun x hx ↦ ?_⟩
+/-- **Mertens's third theorem, with an explicit constant.** For every real `x ≥ 2`,
+`|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ e^γ A e^(A / log 2)`, where `A = 2 (log 4 + 4) + 2` is the
+constant of `abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le`. -/
+theorem abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le {x : ℝ} (hx : 2 ≤ x) :
+    |(∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
+        Real.exp Real.eulerMascheroniConstant * Real.log x| ≤
+      Real.exp Real.eulerMascheroniConstant * (2 * (Real.log 4 + 4) + 2) *
+        Real.exp ((2 * (Real.log 4 + 4) + 2) / Real.log 2) := by
+  set A : ℝ := 2 * (Real.log 4 + 4) + 2
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
   have hlog : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
-  obtain ⟨hE, hE2⟩ := hM x hx
+  have hE := abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le hx
+  have hE2 := hE.trans (div_le_div_of_nonneg_left (by positivity) hlog2
+    (Real.log_le_log zero_lt_two hx))
   set E := (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
     Real.log (Real.log x) - Real.eulerMascheroniConstant
   have hprod : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) =
@@ -581,10 +601,19 @@ theorem exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le :
   rw [hprod, ← mul_sub_one, abs_mul, abs_of_pos (mul_pos (Real.exp_pos _) hlog)]
   calc Real.exp Real.eulerMascheroniConstant * Real.log x * |Real.exp E - 1|
       ≤ Real.exp Real.eulerMascheroniConstant * Real.log x *
-          (M / Real.log x * Real.exp (M / Real.log 2)) :=
+          (A / Real.log x * Real.exp (A / Real.log 2)) :=
         mul_le_mul_of_nonneg_left (abs_exp_sub_one_le_mul_exp hE hE2) (by positivity)
-    _ = Real.exp Real.eulerMascheroniConstant * M * Real.exp (M / Real.log 2) := by
+    _ = Real.exp Real.eulerMascheroniConstant * A * Real.exp (A / Real.log 2) := by
         field_simp [hlog.ne']
+
+/-- **Mertens's third theorem with bounded additive remainder.** There is an absolute constant `C`
+such that for every real `x ≥ 2`,
+`|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ C`. -/
+theorem exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le :
+    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
+      |(∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
+          Real.exp Real.eulerMascheroniConstant * Real.log x| ≤ C :=
+  ⟨_, fun _ ↦ abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le⟩
 
 /-- **Mertens's third theorem, big-O form:**
 `∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x = O(1)` as `x → ∞`. -/

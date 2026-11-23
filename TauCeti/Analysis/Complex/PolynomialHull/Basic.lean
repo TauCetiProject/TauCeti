@@ -398,8 +398,8 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
   -- of modulus `< 1` on `K`; finitely many of these separators cover it.
   set S := {p : MvPolynomial ι ℂ // ∀ w ∈ K, ‖eval w p‖ < 1}
   obtain ⟨t, ht⟩ := (isCompact_closedBall (0 : ι → ℂ) R).diff hU |>.elim_finite_subcover
-    (fun p : S ↦ {w | 1 < ‖eval w p.1‖})
-    (fun p ↦ isOpen_lt continuous_const (continuous_eval p.1).norm)
+    (fun p : S ↦ {w | 1 < ‖eval w p.val‖})
+    (fun p ↦ isOpen_lt continuous_const (continuous_eval p.val).norm)
     (fun ζ hζ ↦ by
       obtain ⟨p, hpK, hpζ⟩ := hKc.exists_norm_eval_lt_one_lt fun h ↦ hζ.2 (hKU h)
       exact mem_iUnion.2 ⟨⟨p, hpK⟩, hpζ⟩)
@@ -407,11 +407,11 @@ theorem IsPolynomiallyConvex.exists_polynomialPolyhedron_subset [Fintype ι]
   · exact ball_subset_ball (le_max_left _ _) (hR₀ hw)
   · simp only [Finset.mem_map, Function.Embedding.coe_subtype, mem_iInter]
     rintro _ ⟨p, -, rfl⟩
-    exact p.2 w hw
+    exact p.property w hw
   · rintro w ⟨hwR, hws⟩
     by_contra hwU
     obtain ⟨p, hpt, hpw⟩ := mem_iUnion₂.1 (ht ⟨hwR, hwU⟩)
-    have hpw' := mem_iInter₂.1 hws p.1 (Finset.mem_map_of_mem _ hpt)
+    have hpw' := mem_iInter₂.1 hws p.val (Finset.mem_map_of_mem _ hpt)
     simp only [mem_ofPred_eq] at hpw hpw'
     linarith
 
