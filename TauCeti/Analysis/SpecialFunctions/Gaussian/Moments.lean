@@ -129,7 +129,9 @@ theorem integral_sq_mul_exp_neg_mul_sq (b : ℝ) :
     ∫ x : ℝ, x ^ 2 * Real.exp (-b * x ^ 2) = Real.sqrt (Real.pi / b) / (2 * b) := by
   have h := integral_comp_abs (f := fun x : ℝ => x ^ 2 * Real.exp (-b * x ^ 2))
   simp only [sq_abs] at h
-  rw [h, show (2 : ℕ) = 2 * 1 from rfl, integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq b 1]
+  have h₁ := integral_Ioi_pow_two_mul_mul_exp_neg_mul_sq b 1
+  rw [mul_one] at h₁
+  rw [h, h₁]
   norm_num
   ring
 

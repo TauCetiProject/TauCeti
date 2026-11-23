@@ -44,6 +44,11 @@ identity `∑ᵢ ⟪ξ, eᵢ⟫² = ‖ξ‖²` in `E` makes the weights add up 
 
 ## Main declarations
 
+* `BesselPotentialSpace.lineDerivSymbol`: the Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of
+  `∂_m : H^{r+1} → H^r`, bounded by `2π ‖m‖` (`BesselPotentialSpace.norm_lineDerivSymbol_le`).
+* `BesselPotentialSpace.coeFn_fourier_toLp_lineDerivCLM`: at `p = 2`, on the Fourier side
+  `∂_m : H^{r+1} → H^r` is multiplication by `lineDerivSymbol m`; on tempered distributions this
+  is `BesselPotentialSpace.smulLeftCLM_fourier_lineDerivOp_eq`.
 * `BesselPotentialSpace.norm_lineDerivCLM_le`, `BesselPotentialSpace.norm_lineDerivCLM_apply_le`:
   `‖∂_m u‖_{H^r} ≤ 2π ‖m‖ ‖u‖_{H^{r+1}}`.
 * `BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`: the Plancherel
@@ -70,37 +75,44 @@ namespace BesselPotentialSpace
 
 variable {r : ℝ}
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The squared Bessel weight of order `-1` is `(1 + ‖ξ‖²)⁻¹`. -/
-private theorem sq_one_add_norm_sq_rpow_neg_one (x : E) :
-    ((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)) ^ 2 = (1 + ‖x‖ ^ 2)⁻¹ := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-  norm_num [Real.rpow_neg_one]
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The Fourier symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of `∂_m : H^{r+1} → H^r`, where
+`⟨ξ⟩ = (1 + ‖ξ‖²)^{1/2}`: the symbol `2πi ⟪ξ, m⟫` of `∂_m` times the Bessel weight of order
+`-1`. -/
+def lineDerivSymbol (m : E) : E → ℂ := fun x ↦
+  (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) * (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` of `∂_m : H^{r+1} → H^r` has temperate growth. -/
-private theorem hasTemperateGrowth_lineDerivSymbol (m : E) :
-    (fun x : E ↦ (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-      (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
+/-- The defining equation of `lineDerivSymbol`. -/
+theorem lineDerivSymbol_apply (m x : E) :
+    lineDerivSymbol m x =
+      (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
+        (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The symbol of `∂_m : H^{r+1} → H^r` has temperate growth. -/
+theorem hasTemperateGrowth_lineDerivSymbol (m : E) : (lineDerivSymbol m).HasTemperateGrowth := by
+  unfold lineDerivSymbol
   fun_prop
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The squared modulus of the symbol of `∂_m : H^{r+1} → H^r` is
 `4π² ⟪ξ, m⟫² (1 + ‖ξ‖²)⁻¹`. -/
-private theorem norm_lineDerivSymbol_sq (m x : E) :
-    ‖(2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-        (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)‖ ^ 2 =
-      (2 * π) ^ 2 * inner ℝ x m ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ := by
-  rw [norm_mul, norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg
-    (by positivity : (0 : ℝ) ≤ (1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)), mul_pow, mul_pow,
-    sq_one_add_norm_sq_rpow_neg_one, Real.norm_eq_abs, sq_abs]
+theorem norm_lineDerivSymbol_sq (m x : E) :
+    ‖lineDerivSymbol m x‖ ^ 2 = (2 * π) ^ 2 * inner ℝ x m ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ := by
+  -- The squared Bessel weight of order `-1` is `(1 + ‖ξ‖²)⁻¹`.
+  have hw : ((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)) ^ 2 = (1 + ‖x‖ ^ 2)⁻¹ := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+    norm_num [Real.rpow_neg_one]
+  rw [lineDerivSymbol_apply, norm_mul, norm_mul, Complex.norm_real, Complex.norm_real,
+    Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2)), mul_pow,
+    mul_pow, hw, Real.norm_eq_abs, sq_abs]
   simp [Complex.norm_I, abs_of_pos Real.pi_pos]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The symbol of `∂_m : H^{r+1} → H^r` is bounded by `2π ‖m‖`. -/
-private theorem norm_lineDerivSymbol_le (m x : E) :
-    ‖(2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-        (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)‖ ≤ 2 * π * ‖m‖ := by
+theorem norm_lineDerivSymbol_le (m x : E) : ‖lineDerivSymbol m x‖ ≤ 2 * π * ‖m‖ := by
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
   rw [norm_lineDerivSymbol_sq]
   have h₁ : inner ℝ x m ^ 2 ≤ ‖m‖ ^ 2 * (1 + ‖x‖ ^ 2) := by
@@ -116,43 +128,32 @@ private theorem norm_lineDerivSymbol_le (m x : E) :
 omit [CompleteSpace F] in
 /-- The weighted Fourier transform of `∂_m f` at order `r` is the symbol `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹` times
 the weighted Fourier transform of `f` at order `r + 1`. -/
-private theorem smulLeftCLM_fourier_lineDerivOp_eq (m : E) (f : 𝓢'(E, F)) :
+theorem smulLeftCLM_fourier_lineDerivOp_eq (m : E) (f : 𝓢'(E, F)) :
     smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 (∂_{m} f)) =
-      smulLeftCLM F (fun x : E ↦ (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-          (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ))
+      smulLeftCLM F (lineDerivSymbol m)
         (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) := by
   have hm : (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hw : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ))
-      (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) =
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 f) := by
-    rw [smulLeftCLM_smulLeftCLM_apply (by fun_prop) (by fun_prop)]
-    congr 2
+  -- The Bessel weight of order `r + 1` times the symbol is `2πi ⟪ξ, m⟫` times the weight of
+  -- order `r`.
+  have hsymb : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) * lineDerivSymbol m =
+      (2 * π * Complex.I) • ((fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)) *
+        fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) := by
     ext x
-    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add,
-      add_neg_cancel_right]
-  have hsymb : (fun x : E ↦ (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-      (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) =
-      (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) *
-        (2 * π * Complex.I) • fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ) := by
-    ext x
-    simp only [Pi.smul_apply, Pi.mul_apply, smul_eq_mul]
+    have hw := TauCeti.one_add_norm_sq_rpow_add x (r + 1) (-1)
+    rw [add_neg_cancel_right] at hw
+    simp only [Pi.mul_apply, Pi.smul_apply, smul_eq_mul, lineDerivSymbol_apply, hw,
+      Complex.ofReal_mul]
     ring
-  have hcm : ((2 * π * Complex.I) • fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  rw [hsymb, ← smulLeftCLM_smulLeftCLM_apply (by fun_prop) hcm, hw,
-    smulLeftCLM_smulLeftCLM_apply (by fun_prop) hcm, mul_smul_comm,
-    smulLeftCLM_smul (by fun_prop), fourier_lineDerivOp_eq, map_smul,
-    smulLeftCLM_smulLeftCLM_apply hm (by fun_prop), mul_comm (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)),
-    FunLike.coe_smul, Pi.smul_apply]
+  rw [fourier_lineDerivOp_eq, map_smul, smulLeftCLM_smulLeftCLM_apply hm (by fun_prop),
+    smulLeftCLM_smulLeftCLM_apply (by fun_prop) (hasTemperateGrowth_lineDerivSymbol m), hsymb,
+    smulLeftCLM_smul (by fun_prop), smul_apply]
 
 /-- On the Fourier side, `∂_m : H^{r+1} → H^r` is multiplication by the symbol
 `2πi ⟪ξ, m⟫ ⟨ξ⟩⁻¹`. -/
-private theorem coeFn_fourier_toLp_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
+theorem coeFn_fourier_toLp_lineDerivCLM (m : E) (u : H^{r + 1}(E, F)) :
     ⇑(𝓕 (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top m u).toLp :
         Lp F 2 (volume : Measure E)) =ᵐ[volume] fun x ↦
-      ((2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-        (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) •
-        (𝓕 u.toLp : Lp F 2 (volume : Measure E)) x := by
+      lineDerivSymbol m x • (𝓕 u.toLp : Lp F 2 (volume : Measure E)) x := by
   rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (hasTemperateGrowth_lineDerivSymbol m),
     toTemperedDistribution_fourier_toLp, toTemperedDistribution_fourier_toLp,
     toDistr_lineDerivCLM, smulLeftCLM_fourier_lineDerivOp_eq]

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -46,6 +47,7 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
   `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`, and its `L^∞` norm `1`.
+* `TauCeti.norm_toLp_gaussian_sq`: on `ℝ`, its squared `L²` norm `√(π / (2 b.re))`.
 * `SchwartzMap.eLpNorm_fourier_gaussian`: the `L^q` norms
   `π^(n/2) (π b.re q)^(-n/(2q)) ‖b‖^(n/q - n/2)`, `0 < q < ∞`, of its Fourier transform. For fixed
   `b.re` they grow with `‖b‖` exactly when `q < 2`, while the norms of the Gaussian itself depend
@@ -254,6 +256,22 @@ theorem eLpNorm_fourier_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [
   field_simp
 
 end SchwartzMap
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped Real
+
+/-- **The `L²` norm of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`, `0 < Re b`,
+`‖g‖²_{L²} = ∫ |exp(-b x²)|² dx = √(π / (2 Re b))`. -/
+theorem norm_toLp_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
+    ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 = √(π / (2 * b.re)) := by
+  have h (x : ℝ) : ‖SchwartzMap.gaussian (V := ℝ) hb x‖ ^ 2 = Real.exp (-(2 * b.re) * x ^ 2) := by
+    rw [SchwartzMap.norm_gaussian_apply, Real.norm_eq_abs, sq_abs, sq (Real.exp _), ← Real.exp_add]
+    ring_nf
+  simp only [SchwartzMap.norm_toLp_sq, h, integral_gaussian]
+
+end TauCeti
 
 /-- The real Gaussian `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, has temperate growth: for `c > 0` it is the
 real part of the Schwartz function `SchwartzMap.gaussian`, and for `c = 0` it is constant.

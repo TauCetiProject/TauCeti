@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 
 /-!
 # Harmonic polynomials times Gaussians in one and two real dimensions
@@ -54,6 +56,8 @@ derivative kills `z^n`, turns the Gaussian into `-b z` times itself, and has Fou
 * `TauCeti.fourier_pow_mul_cexp_neg_mul_norm_sq`,
   `TauCeti.fourier_conj_pow_mul_cexp_neg_mul_norm_sq`, and
   `TauCeti.fourier_complexHarmonicMonomial_mul_cexp_neg_mul_norm_sq`: planar Fourier transforms.
+* `TauCeti.norm_toLp_lineDerivOp_one_gaussian_sq`: on `ℝ`, the squared `L²` norm
+  `√(π / (2 Re b)) |b|² / Re b` of the derivative of the Gaussian `exp (-b x²)`.
 
 ## References
 
@@ -445,5 +449,26 @@ theorem fourier_complexHarmonicMonomial_mul_cexp_neg_mul_norm_sq {b : ℂ} (hb :
   rcases k.eq_nat_or_neg with ⟨n, rfl | rfl⟩
   · simpa using fourier_conj_pow_mul_cexp_neg_mul_norm_sq hb n ξ
   · simpa using fourier_pow_mul_cexp_neg_mul_norm_sq hb n ξ
+
+/-! ### The `L²` norm of the derivative of a Gaussian on `ℝ` -/
+
+/-- **The `L²` norm of the derivative of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`,
+`0 < Re b`, `‖g'‖²_{L²} = ∫ |∂ₓ exp(-b x²)|² dx = √(π / (2 Re b)) |b|² / Re b`. -/
+theorem norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
+    ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
+      √(π / (2 * b.re)) * (‖b‖ ^ 2 / b.re) := by
+  rw [SchwartzMap.norm_toLp_sq]
+  have h (x : ℝ) : ‖∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ)) x‖ ^ 2 =
+      4 * ‖b‖ ^ 2 * (x ^ 2 * Real.exp (-(2 * b.re) * x ^ 2)) := by
+    rw [SchwartzMap.lineDerivOp_gaussian, smul_apply, SchwartzMap.innerMulGaussian_apply,
+      norm_smul]
+    simp only [norm_mul, norm_cexp_neg_mul_sq, Complex.norm_real, mul_pow, Real.norm_eq_abs,
+      sq_abs, RCLike.inner_apply, conj_trivial, sq (Real.exp _), ← Real.exp_add]
+    rw [show -b.re * x ^ 2 + -b.re * x ^ 2 = -(2 * b.re) * x ^ 2 by ring, norm_neg,
+      Complex.norm_ofNat]
+    ring
+  simp only [h, integral_const_mul, integral_sq_mul_exp_neg_mul_sq]
+  field_simp
+  ring
 
 end TauCeti
