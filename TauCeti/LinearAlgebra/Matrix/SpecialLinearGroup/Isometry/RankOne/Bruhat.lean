@@ -13,6 +13,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Orbits
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.UpperTriangular
 
 /-!
 # The Bruhat decomposition and rank-one Tits system of a three-dimensional unitary group
@@ -133,16 +134,27 @@ theorem mem_unipotentSubgroup_iff {g : UnitaryRankOne.Group R σ} :
     g ∈ unipotentSubgroup R σ ↔
       ((g : Matrix.SpecialLinearGroup (Fin 3) R) :
         Matrix (Fin 3) (Fin 3) R).IsUpperUnitriangular := by
-  rw [unipotentSubgroup_def, MonoidHom.mem_range, ← HeisenbergGroup.mem_range_toSpecialLinear_iff,
-    MonoidHom.mem_range]
-  constructor
-  · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
-  · rintro ⟨a, ha⟩
-    refine ⟨⟨a, ?_⟩, Subtype.ext ha⟩
-    have hg := Matrix.mem_specialIsometryGroup_iff.mp g.property
-    rw [← ha, HeisenbergGroup.coe_toSpecialLinear, coe_typeAGraphConjugator_two] at hg
-    exact HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mpr hg
+  let K := (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ
+  let f := HeisenbergGroup.toSpecialLinear.comp (HeisenbergGroup.unitarySubgroup σ).subtype
+  have hle : f.range ≤ K := by
+    rintro _ ⟨a, rfl⟩
+    exact (unipotentHom R σ a).property
+  have hrange :
+      f.range.subgroupOf K =
+        (HeisenbergGroup.toSpecialLinear : HeisenbergGroup R →* _).range.subgroupOf K := by
+    refine le_antisymm ?_ ?_
+    · rintro x ⟨a, ha⟩
+      exact ⟨a, ha⟩
+    · rintro x ⟨a, ha⟩
+      refine ⟨⟨a, ?_⟩, ha⟩
+      have hx := Matrix.mem_specialIsometryGroup_iff.mp x.property
+      have ha' : (HeisenbergGroup.toSpecialLinear a : Matrix (Fin 3) (Fin 3) R) =
+          (x : Matrix.SpecialLinearGroup (Fin 3) R) := congrArg Subtype.val ha
+      rw [← ha', HeisenbergGroup.coe_toSpecialLinear, coe_typeAGraphConjugator_two] at hx
+      exact HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mpr hx
+  have hunip : unipotentHom R σ = f.codRestrict K fun a ↦ hle ⟨a, rfl⟩ := rfl
+  rw [unipotentSubgroup_def, hunip, ← MonoidHom.subgroupOf_range_eq_of_le f hle, hrange,
+    Subgroup.mem_subgroupOf, HeisenbergGroup.mem_range_toSpecialLinear_iff]
 
 /-- The unipotent subgroup is nilpotent, being a homomorphic image of a subgroup of the Heisenberg
 group. -/
@@ -338,33 +350,74 @@ theorem exists_torusHom_mul_unipotent_of_mem_borelSubgroup (hσ : Function.Invol
   let t : Kˣ := Units.mk0 _ (apply_zero_zero_ne_zero_of_mem_borelSubgroup hg)
   let u := (torusHom K σ hσ t)⁻¹ * g
   refine ⟨t, u, mem_unipotentSubgroup_iff.mpr ?_, mul_inv_cancel_left _ _⟩
+  have hg00 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0 ≠ 0 :=
+    apply_zero_zero_ne_zero_of_mem_borelSubgroup hg
   have hg10 := apply_one_zero_eq_zero_of_mem_borelSubgroup hg
   have hg20 := mem_borelSubgroup_iff.mp hg
-  have hu00 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0 = 1 := by
-    simp [u, t, ← map_inv, inv_mul_cancel₀ (apply_zero_zero_ne_zero_of_mem_borelSubgroup hg)]
-  have hu10 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 := by
-    simp [u, ← map_inv, hg10]
-  have hu20 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 = 0 := by
-    simp [u, ← map_inv, hg20]
-  have hiso := Matrix.mem_specialIsometryGroup_iff.mp u.property
-  have hu21 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 1 = 0 := by
+  have hiso := Matrix.mem_specialIsometryGroup_iff.mp g.property
+  have hg21 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 1 = 0 := by
     have h01 := congrFun (congrFun hiso 0) 1
     rw [Matrix.mul_mul_apply, dotProduct_typeAGraphConjugator_two_mulVec] at h01
-    simpa [typeAGraphConjugator_apply, hu00, hu10, hu20] using h01
-  have hu22 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2 = 1 := by
-    have h02 := congrFun (congrFun hiso 0) 2
-    rw [Matrix.mul_mul_apply, dotProduct_typeAGraphConjugator_two_mulVec] at h02
-    simpa [typeAGraphConjugator_apply, hu00, hu10, hu20] using h02
-  have htri :
-      ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K).IsUpperTriangular := by
+    have hmul : σ (((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0) *
+        ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 1 = 0 := by
+      simpa [typeAGraphConjugator_apply, hg10, hg20] using h01
+    exact (mul_eq_zero.mp hmul).resolve_left ((map_ne_zero σ).mpr hg00)
+  have hg_tri :
+      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K).IsUpperTriangular := by
     intro i j hij
     fin_cases i <;> fin_cases j <;> simp_all
-  have hu11 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 1 = 1 := by
-    have hdet := u.val.prop
-    rw [Matrix.det_of_isUpperTriangular htri, Fin.prod_univ_three, hu00, hu22] at hdet
-    simpa using hdet
-  rw [Matrix.isUpperUnitriangular_def]
-  exact ⟨htri, fun i ↦ by fin_cases i <;> simp [hu00, hu11, hu22]⟩
+  have hg22 :
+      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2 =
+        σ ((t⁻¹ : Kˣ) : K) := by
+    have h02 := congrFun (congrFun hiso 0) 2
+    rw [Matrix.mul_mul_apply, dotProduct_typeAGraphConjugator_two_mulVec] at h02
+    have hmul : σ (t : K) *
+        ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2 = 1 := by
+      simpa [t, typeAGraphConjugator_apply, hg10, hg20] using h02
+    rw [Units.val_inv_eq_inv_val, map_inv₀]
+    exact eq_inv_of_mul_eq_one_right hmul
+  have hg11 :
+      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 1 =
+        σ (t : K) * ((t⁻¹ : Kˣ) : K) := by
+    have hdet := g.val.prop
+    rw [Matrix.det_of_isUpperTriangular hg_tri, Fin.prod_univ_three, hg22] at hdet
+    have h00 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0 =
+        (t : K) := rfl
+    rw [h00, Units.val_inv_eq_inv_val, map_inv₀] at hdet
+    have ht0 : (t : K) ≠ 0 := t.ne_zero
+    have hσt0 : σ (t : K) ≠ 0 := (map_ne_zero σ).mpr ht0
+    field_simp [ht0, hσt0] at hdet
+    rw [Units.val_inv_eq_inv_val]
+    calc
+      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 1 =
+          (t : K)⁻¹ * ((t : K) *
+            ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 1) := by
+        rw [inv_mul_cancel_left₀ ht0]
+      _ = σ (t : K) * (t : K)⁻¹ := by rw [hdet, mul_comm]
+  let BSL := (upperTriangularGroup (Fin 3) K).comap Matrix.SpecialLinearGroup.toGL
+  let gUT : BSL := ⟨g.val, UpperTriangularGroup.mem_comap_toGL_iff.mpr hg_tri⟩
+  let tUT : BSL :=
+    ⟨(torusHom K σ hσ t).val,
+      UpperTriangularGroup.mem_comap_toGL_iff.mpr
+        (by rw [coe_torusHom]; exact Matrix.blockTriangular_diagonal _)⟩
+  have hdiag : TauCeti.SpecialLinear.UpperTriangular.diagonalProjection gUT = tUT := by
+    apply Subtype.ext
+    apply Matrix.SpecialLinearGroup.ext
+    intro i j
+    fin_cases i <;> fin_cases j <;> simp [gUT, tUT, t, hg11, hg22]
+  have huUT :
+      TauCeti.SpecialLinear.UpperTriangular.diagonalProjection (tUT⁻¹ * gUT) = 1 := by
+    have ht_diag : TauCeti.SpecialLinear.UpperTriangular.diagonalProjection tUT = tUT :=
+      (TauCeti.SpecialLinear.UpperTriangular.diagonalProjection_eq_self_iff tUT).mpr
+        (by simp [tUT])
+    rw [map_mul, map_inv, ht_diag, hdiag, inv_mul_cancel]
+  have hu_mem :
+      Matrix.SpecialLinearGroup.toGL (tUT⁻¹ * gUT).val ∈ upperUnitriangularGroup (Fin 3) K :=
+    (TauCeti.SpecialLinear.UpperTriangular.diagonalProjection_eq_one_iff (tUT⁻¹ * gUT)).mp huUT
+  have hu_eq : (tUT⁻¹ * gUT).val = (u : Matrix.SpecialLinearGroup (Fin 3) K) := rfl
+  rw [UpperUnitriangularGroup.mem_iff, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+    hu_eq] at hu_mem
+  exact hu_mem
 
 /-- For involutive `σ`, the Borel subgroup is the join of the diagonal torus and the unipotent
 subgroup. -/

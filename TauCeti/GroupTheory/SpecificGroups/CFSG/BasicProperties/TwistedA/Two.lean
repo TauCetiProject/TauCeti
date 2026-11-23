@@ -37,10 +37,6 @@ and every `²A₂(q)` on the classification list is simple, both on the type-`A`
 
 ## Main definitions and results
 
-* `ValidLieTypeIndex.commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top`:
-  `SU₃(q)` is perfect whenever `3 ≤ d.fieldOrder`.
-* `ValidLieTypeIndex.isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_two`:
-  `PSU₃(q)` is simple whenever `3 ≤ d.fieldOrder`.
 * `TauCeti.TypeALieIndex.three_le_fieldOrder_ofTwistedA_two`: a valid `²A₂(q)` has `q ≥ 3`.
 * `TauCeti.TypeALieIndex.commutator_specialUnitary_two_eq_top`: `SU₃(q)` is perfect for every valid
   `²A₂(q)`.
@@ -61,33 +57,6 @@ public section
 
 noncomputable section
 
-namespace TauCeti.ValidLieTypeIndex
-
-section RankTwoUnitary
-
-variable {d : ValidLieTypeIndex}
-
-/-- **The finite special unitary group `SU₃(q)` is perfect** whenever `3 ≤ d.fieldOrder`. -/
-theorem commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top
-    (hd : 3 ≤ d.fieldOrder) :
-    commutator (fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) = ⊤ := by
-  rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
-  exact UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq hd
-    d.natCard_galoisField (congrFun d.coe_iterateFrobenius_galoisField)
-
-/-- **The projective special unitary group `PSU₃(q)` is simple** whenever `3 ≤ d.fieldOrder`. -/
-theorem isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_two
-    (hd : 3 ≤ d.fieldOrder) :
-    IsSimpleGroup (fixedSubgroup (d.galoisFieldTwistedFrobenius 2) ⧸
-      Subgroup.center (fixedSubgroup (d.galoisFieldTwistedFrobenius 2))) := by
-  rw [d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
-  exact UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq hd
-    d.natCard_galoisField (congrFun d.coe_iterateFrobenius_galoisField)
-
-end RankTwoUnitary
-
-end TauCeti.ValidLieTypeIndex
-
 namespace TauCeti.TypeALieIndex
 
 /-- A valid `²A₂(q)` index has Frobenius parameter `q ≥ 3`; `²A₂(2)` is excluded as solvable. -/
@@ -100,9 +69,11 @@ theorem three_le_fieldOrder_ofTwistedA_two (q : PrimePower)
 /-- **The finite special unitary group `SU₃(q)` of a valid `²A₂(q)` is perfect.** -/
 theorem commutator_specialUnitary_two_eq_top (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
-    commutator (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2)) = ⊤ :=
-  (ofTwistedA 2 q hv).val.commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top
-    (three_le_fieldOrder_ofTwistedA_two q hv)
+    commutator (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2)) = ⊤ := by
+  rw [(ofTwistedA 2 q hv).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
+  exact UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq
+    (three_le_fieldOrder_ofTwistedA_two q hv) (ofTwistedA 2 q hv).val.natCard_galoisField
+    (congrFun (ofTwistedA 2 q hv).val.coe_iterateFrobenius_galoisField)
 
 /-- **The group attached to `²A₂(q)` is the projective special unitary group `PSU₃(q)`.**
 
@@ -132,11 +103,16 @@ theorem projectiveSpecialUnitaryEquivGroupTwo_mk (q : PrimePower)
 /-- **The group attached to `²A₂(q)` is simple**, for every valid index. -/
 theorem isSimpleGroup_group_ofTwistedA_two (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
-    IsSimpleGroup (ofTwistedA 2 q hv).Group :=
-  let d := (ofTwistedA 2 q hv).val
-  have := d.isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_two
-    (three_le_fieldOrder_ofTwistedA_two q hv)
-  (projectiveSpecialUnitaryEquivGroupTwo q hv).symm.isSimpleGroup
+    IsSimpleGroup (ofTwistedA 2 q hv).Group := by
+  have : IsSimpleGroup
+      (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2) ⧸
+        Subgroup.center
+          (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2))) := by
+    rw [(ofTwistedA 2 q hv).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2]
+    exact UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq
+      (three_le_fieldOrder_ofTwistedA_two q hv) (ofTwistedA 2 q hv).val.natCard_galoisField
+      (congrFun (ofTwistedA 2 q hv).val.coe_iterateFrobenius_galoisField)
+  exact (projectiveSpecialUnitaryEquivGroupTwo q hv).symm.isSimpleGroup
 
 end TauCeti.TypeALieIndex
 
