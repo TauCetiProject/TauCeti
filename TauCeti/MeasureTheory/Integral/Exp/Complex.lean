@@ -59,6 +59,13 @@ theorem integrable_cexp_neg_mul_smul_of_re_le {E : Type*} [NormedAddCommGroup E]
   rw [Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re]
   exact Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith) ht)
 
+private theorem cexp_neg_mul_ofReal_pow_smul_eq {E : Type*} [MulAction ℂ E]
+    (v : E) (s₀ s : ℂ) (t : ℝ) (k : ℕ) :
+    Complex.exp (-s * t) • ((t : ℂ) ^ k • v) =
+      (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) • (Complex.exp (-s₀ * t) • v) := by
+  rw [smul_smul, smul_smul, mul_right_comm _ ((t : ℂ) ^ k), ← Complex.exp_add,
+    show -(s - s₀) * t + -s₀ * t = -s * t by ring]
+
 /-- Pointwise domination of a polynomial-weighted complex exponential kernel: for `s₀.re < s.re`,
 `0 ≤ t`, and `k : ℕ`, `‖exp (-s * t) • ((t : ℂ) ^ k • v)‖` is bounded by
 `(k! / (s.re - s₀.re) ^ k) * ‖exp (-s₀ * t) • v‖`. -/
@@ -67,12 +74,7 @@ theorem norm_cexp_neg_mul_ofReal_pow_smul_le {E : Type*} [NormedAddCommGroup E]
     (ht : 0 ≤ t) (k : ℕ) :
     ‖Complex.exp (-s * t) • ((t : ℂ) ^ k • v)‖ ≤
       (k ! : ℝ) / (s.re - s₀.re) ^ k * ‖Complex.exp (-s₀ * t) • v‖ := by
-  have heq : Complex.exp (-s * t) • ((t : ℂ) ^ k • v) =
-      (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) • (Complex.exp (-s₀ * t) • v) := by
-    rw [smul_smul, smul_smul, mul_right_comm _ ((t : ℂ) ^ k), ← Complex.exp_add]
-    congr 3
-    ring
-  rw [heq, norm_smul]
+  rw [cexp_neg_mul_ofReal_pow_smul_eq v s₀ s t k, norm_smul]
   refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
   rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re,
     norm_pow, Complex.norm_real, Real.norm_of_nonneg ht, mul_comm]
@@ -86,15 +88,8 @@ theorem integrable_cexp_neg_mul_ofReal_pow_smul_of_re_lt {E : Type*}
     (hf : Integrable (fun t : ℝ ↦ Complex.exp (-s₀ * t) • f t) μ)
     (hμ : ∀ᵐ t ∂μ, 0 ≤ t) (hs : s₀.re < s.re) (k : ℕ) :
     Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • ((t : ℂ) ^ k • f t)) μ := by
-  have hre : (fun t : ℝ ↦ Complex.exp (-s * t) • ((t : ℂ) ^ k • f t)) =
-      fun t : ℝ ↦ (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) •
-        (Complex.exp (-s₀ * t) • f t) := by
-    ext t
-    rw [smul_smul, smul_smul, mul_right_comm _ ((t : ℂ) ^ k), ← Complex.exp_add]
-    congr 3
-    ring
   refine (hf.norm.const_mul ((k ! : ℝ) / (s.re - s₀.re) ^ k)).mono' ?_ ?_
-  · rw [hre]
+  · rw [funext fun t ↦ cexp_neg_mul_ofReal_pow_smul_eq (f t) s₀ s t k]
     exact (by fun_prop : Continuous fun t : ℝ ↦
       Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k).aestronglyMeasurable.smul
       hf.aestronglyMeasurable

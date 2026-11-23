@@ -25,7 +25,8 @@ records non-convergence of exponential functions on `Re s ≤ Re c`.
 * `TauCeti.hasLaplace_indicator_Ici_one`: the Heaviside step function on `[a, ∞)` (`0 ≤ a`) has
   Laplace transform `exp (-s * a) / s` for `0 < s.re`.
 * `TauCeti.hasLaplace_cexp_mul`, `TauCeti.hasLaplace_cexp_mul_iff`,
-  `TauCeti.hasLaplace_cexp_smul_iff`, and `TauCeti.not_hasLaplace_cexp_smul_of_re_le`:
+  `TauCeti.hasLaplace_cexp_mul_smul_const_iff`, and
+  `TauCeti.not_hasLaplace_cexp_mul_smul_const_of_re_le`:
   `t ↦ exp (w * t)` has Laplace transform `(s - w)⁻¹` if and only if `w.re < s.re`, and
   `t ↦ exp (w * t) • a` has Laplace transform `z` if and only if
   `(a = 0 ∨ w.re < s.re) ∧ z = (s - w)⁻¹ • a`.
@@ -75,8 +76,9 @@ theorem hasLaplace_cexp_mul {w s : ℂ} (hws : w.re < s.re) :
 
 /-- For `s.re ≤ c.re` and any nonzero vector `a`, `t ↦ exp (c * t) • a` has no convergent
 one-sided Laplace transform at `s`. -/
-theorem not_hasLaplace_cexp_smul_of_re_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MulAction ℂ E] [NormSMulClass ℂ E] {a : E} (ha : a ≠ 0) {c s : ℂ} (hs : s.re ≤ c.re) (z : E) :
+theorem not_hasLaplace_cexp_mul_smul_const_of_re_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MulAction ℂ E] [NormSMulClass ℂ E] {a : E} (ha : a ≠ 0) {c s : ℂ}
+    (hs : s.re ≤ c.re) (z : E) :
     ¬ HasLaplace (fun t : ℝ ↦ Complex.exp (c * t) • a) s z := by
   intro h
   have h0 : IntegrableOn (fun t : ℝ ↦ Complex.exp (-(s - c) * t) • a) (Ioi 0) :=
@@ -100,14 +102,14 @@ theorem hasLaplace_const_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ
     refine ⟨fun h ↦ ?_, fun ⟨hs, hz⟩ ↦ hz ▸ hasLaplace_const a hs⟩
     have hs : 0 < s.re := by
       by_contra hle
-      exact not_hasLaplace_cexp_smul_of_re_le ha (c := 0) (by simpa using not_lt.mp hle) z
-        (by simpa using h)
+      exact not_hasLaplace_cexp_mul_smul_const_of_re_le ha (c := 0)
+        (by simpa using not_lt.mp hle) z (by simpa using h)
     exact ⟨hs, h.unique (hasLaplace_const a hs)⟩
 
 /-- Exact characterization of the Laplace transform of `t ↦ exp (c * t) • a` in a complex Banach
 space. -/
 @[simp]
-theorem hasLaplace_cexp_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+theorem hasLaplace_cexp_mul_smul_const_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     [CompleteSpace E] {a : E} {c s : ℂ} {z : E} :
     HasLaplace (fun t : ℝ ↦ Complex.exp (c * t) • a) s z ↔
       (a = 0 ∨ c.re < s.re) ∧ z = (s - c)⁻¹ • a := by
@@ -118,7 +120,7 @@ theorem hasLaplace_cexp_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace
 theorem hasLaplace_cexp_mul_iff {c s z : ℂ} :
     HasLaplace (fun t : ℝ ↦ Complex.exp (c * t)) s z ↔ c.re < s.re ∧ z = (s - c)⁻¹ := by
   simpa only [smul_eq_mul, mul_one, one_ne_zero, false_or] using
-    hasLaplace_cexp_smul_iff (a := (1 : ℂ)) (c := c) (s := s) (z := z)
+    hasLaplace_cexp_mul_smul_const_iff (a := (1 : ℂ)) (c := c) (s := s) (z := z)
 
 /-- For `0 < s.re` and `k : ℕ`, `t ↦ (t : ℂ) ^ k` has Laplace transform `k! / s ^ (k + 1)`. -/
 theorem hasLaplace_pow (k : ℕ) {s : ℂ} (hs : 0 < s.re) :
