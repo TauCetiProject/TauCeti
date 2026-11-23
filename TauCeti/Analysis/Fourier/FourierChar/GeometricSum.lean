@@ -45,8 +45,8 @@ theorem norm_sum_Ico_fourierChar_le (M N : ℕ) (β : ℝ) :
       else min ((N - M : ℕ) : ℝ) (1 / (2 * ‖(β : UnitAddCircle)‖)) := by
   have h := TauCeti.norm_sum_expTwoPiI_le (N - M) β
   simp only [TauCeti.expTwoPiI_eq_fourierChar, TauCeti.distInt_eq_norm, norm_eq_zero] at h
-  rw [← Finset.Ico_succ_right_eq_Icc, sum_Ico_fourierChar_eq_mul_sum_range] at h
+  rw [← Finset.Ico_add_one_right_eq_Icc, sum_Ico_fourierChar_eq_mul_sum_range] at h
   simpa only [sum_Ico_fourierChar_eq_mul_sum_range, norm_mul, Circle.norm_coe, one_mul,
-    Nat.succ_eq_succ, Nat.succ_sub_one] using h
+    Nat.add_sub_cancel] using h
 
 end Nat

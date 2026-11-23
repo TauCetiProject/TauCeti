@@ -7,16 +7,20 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Analysis.Fourier.FourierChar.Deriv
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -55,8 +59,8 @@ The rapid decay of `b̂` in `η`, its symbol estimates in the frequency
 Peetre's inequality give Mihlin's condition `‖D^k N_η(ζ)‖ ≤ A_η / ‖ζ‖ ^ k` with
 `A_η = C ⟨η⟩ ^ (-(n + 1))` integrable in `η`. The operator-valued Mihlin–Hörmander theorem
 (`TauCeti.exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le`) bounds each multiplier
-by `C A_η` on `Lᵖ`, and Minkowski's integral inequality (`TauCeti.lintegral_Lp_lintegral_le`) sums
-these bounds over `η`.
+by `C A_η` on `Lᵖ`, and Minkowski's integral inequality
+(`TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top`) sums these bounds over `η`.
 
 Every constant in this argument is linear in the bounds on the Fourier slices of `b`, and those are
 controlled by continuous seminorms of `a` uniformly over the symbols vanishing outside a fixed
@@ -84,7 +88,11 @@ derivatives of `a` of order up to `n + 1`, through Mihlin's condition.
   `TauCeti.Symbol.quantizeBesselPotentialSpace_comp_inclusion`: compatibility with raising the order
   of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`: the operators for different orders
-  `s` and for symbols with the same coefficient agree as maps of tempered distributions.
+  `s` and for symbols with the same coefficient agree as maps of tempered distributions;
+  `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr_exponent` is the same for different
+  exponents `p` and `q`, through the Sobolev embedding `H^{s,p} ⊆ H^{s - δ,q}` for `p < q`.
+* `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_smulLeft`: the symbol `ψ(x) a(x, ξ)`
+  quantizes to `ψ Op(a)`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)`
   quantizes to multiplication by `φ`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_sharp`: `Op(a # b) = Op(a) ∘ Op(b)`.
@@ -113,42 +121,10 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {t : ℝ} {b : Symbol n V W t}
 
-/-- The rescaled slice `ζ ↦ b̂(η, 2πζ)` inherits the derivative bounds of `ξ ↦ b̂(η, ξ)`: a bound
-`B ⟨ξ⟩ ^ (t - j) ⟨η⟩ ^ (-r)` on the `j`-th derivative gives
-`‖D^j‖ ≤ (2π) ^ j (2π) ^ |t - j| B ⟨ζ⟩ ^ (t - j) ⟨η⟩ ^ (-r)`. -/
-private theorem HasCompactSpatialSupport.norm_iteratedFDeriv_fourier_slice_smul_le
-    (hb : b.HasCompactSpatialSupport) {j : ℕ} {r B : ℝ} (hB0 : 0 ≤ B)
-    (hB : ∀ η ξ : CoordinateSpace n,
-      ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η) ξ‖ ≤
-        B * (1 + ‖ξ‖ ^ 2) ^ ((t - j) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2))
-    (η ζ : CoordinateSpace n) :
-    ‖iteratedFDeriv ℝ j (fun ζ ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) η) ζ‖ ≤
-      (2 * π) ^ j * (2 * π) ^ |t - j| * B * (1 + ‖ζ‖ ^ 2) ^ ((t - j) / 2) *
-        (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  have hw := one_add_norm_smul_sq_rpow_le h2π (t - j) ζ
-  rw [iteratedFDeriv_comp_const_smul (2 * π)
-    ((hb.contDiff_fourier_slice η).of_le (mod_cast le_top)), norm_smul, norm_pow,
-    Real.norm_of_nonneg (by positivity)]
-  calc (2 * π) ^ j * ‖iteratedFDeriv ℝ j (fun ξ ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η)
-        ((2 * π) • ζ)‖
-      ≤ (2 * π) ^ j * (B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((t - j) / 2) *
-          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by
-        gcongr
-        exact hB η _
-    _ ≤ (2 * π) ^ j * (B * ((2 * π) ^ |t - j| * (1 + ‖ζ‖ ^ 2) ^ ((t - j) / 2)) *
-          (1 + ‖η‖ ^ 2) ^ (-r / 2)) := by gcongr
-    _ = _ := by ring
-
 /-- The multiplier `ζ ↦ ⟨ζ + η⟩ ^ (-t) b̂(η, 2πζ)`. -/
 private def shiftedMultiplier (b : Symbol n V W t) (η ζ : CoordinateSpace n) :
     V →L[ℂ] W :=
   (1 + ‖ζ + η‖ ^ 2) ^ (-t / 2) • 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) η
-
-private theorem HasCompactSpatialSupport.contDiff_fourier_slice_smul
-    (hb : b.HasCompactSpatialSupport) (η : CoordinateSpace n) :
-    ContDiff ℝ ∞ fun ζ : CoordinateSpace n ↦ 𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) η :=
-  (hb.contDiff_fourier_slice η).comp (contDiff_const_smul _)
 
 /-- The weight `ζ ↦ ⟨ζ + η⟩ ^ (-t)` of the shifted multiplier is smooth. -/
 private theorem contDiff_shiftedWeight (t : ℝ) (η : CoordinateSpace n) :
@@ -273,43 +249,10 @@ private theorem quantizeSchwartzValue_besselPotential_sharp_eq_integral
     quantizeSchwartzValue ((besselPotential (-t) : Symbol n W W (-t)).sharp b hb).coefficient w x =
       ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕⁻ (fun ζ ↦ shiftedMultiplier b η ζ (𝓕 w ζ)) x := by
   obtain ⟨C, -, hC⟩ := hb.exists_norm_shiftedMultiplier_le ((n : ℝ) + 1)
-  have hN := hb.continuous_shiftedMultiplier
-  have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 ⟪y, x⟫ : ℂ) :=
-    continuous_subtypeVal.comp (Real.continuous_fourierChar.comp (by fun_prop))
-  -- The integrand of the double integral is dominated by `‖𝓕 w ζ‖ C ⟨η⟩ ^ (-(n + 1))`.
-  set F : CoordinateSpace n × CoordinateSpace n → W := fun q ↦
-    (𝐞 ⟪q.1, x⟫ : ℂ) • (𝐞 ⟪q.2, x⟫ : ℂ) • shiftedMultiplier b q.2 q.1 (𝓕 w q.1) with hF
-  have hFint : Integrable F (volume.prod volume) := by
-    refine ((𝓕 w).integrable.norm.mul_prod
-      (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul C)).mono' ?_
-      (.of_forall fun q ↦ ?_)
-    · exact ((he.comp continuous_fst).smul ((he.comp continuous_snd).smul
-        (hN.clm_apply ((𝓕 w).continuous.comp continuous_fst)))).aestronglyMeasurable
-    · simp only [hF, norm_smul, Circle.norm_coe, one_mul]
-      calc ‖shiftedMultiplier b q.2 q.1 (𝓕 w q.1)‖ ≤ ‖shiftedMultiplier b q.2 q.1‖ * ‖𝓕 w q.1‖ :=
-            ContinuousLinearMap.le_opNorm _ _
-        _ ≤ C * (1 + ‖q.2‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * ‖𝓕 w q.1‖ := by gcongr; exact hC _ _
-        _ = _ := by ring
-  have hint (ζ : CoordinateSpace n) :
-      Integrable fun η ↦ (𝐞 ⟪η, x⟫ : ℂ) • shiftedMultiplier b η ζ := by
-    refine (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul C).mono'
-      (he.smul (hN.comp (continuous_const.prodMk continuous_id))).aestronglyMeasurable
-      (.of_forall fun η ↦ ?_)
-    simpa only [norm_smul, Circle.norm_coe, one_mul] using hC η ζ
-  calc quantizeSchwartzValue ((besselPotential (-t) : Symbol n W W (-t)).sharp b hb).coefficient
-        w x = ∫ ζ, ∫ η, F (ζ, η) := by
-        rw [quantizeSchwartzValue_def]
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        simp only [hF, coefficient_besselPotential_sharp,
-          ContinuousLinearMap.integral_apply (hint ζ), Circle.smul_def]
-        rw [← integral_smul]
-        simp only [smul_apply]
-    _ = ∫ η, ∫ ζ, F (ζ, η) := integral_integral_swap hFint
-    _ = _ := by
-        refine integral_congr_ae (.of_forall fun η ↦ ?_)
-        simp only [hF, Real.fourierInv_eq, Circle.smul_def]
-        rw [← integral_smul]
-        simp only [smul_comm (𝐞 ⟪η, x⟫ : ℂ)]
+  exact quantizeSchwartzValue_eq_integral_smul_fourierInv (C := C) (M := 0)
+    (hb.continuous_shiftedMultiplier.comp continuous_swap)
+    integrable_one_add_norm_sq_rpow_neg_succ_div_two (fun η ζ ↦ (hC η ζ).trans_eq (by simp))
+    (coefficient_besselPotential_sharp hb x) w
 
 /-- In dimension `0` every quantization is bounded on `Lᵖ`: positions and frequencies range over
 a single point of mass `μ`, so `Op(a) w = μ a(0, 0) (w 0)` up to that mass, and
@@ -440,10 +383,6 @@ private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul_of_shiftedMult
       eLpNorm (T η) p volume ≤ C₀ * ENNReal.ofReal (S * ρ η) * eLpNorm w p volume := by
     rw [hTdef]
     exact hC₀ b hb S hS0 hS η w
-  have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
-  have hp1 : 1 ≤ p.toReal := by
-    have := ENNReal.toReal_mono hp_top hp.le
-    rwa [ENNReal.toReal_one] at this
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ T q.2 q.1 := by
     rw [hTdef]
     exact hb.continuous_fourierInv_shiftedMultiplier w
@@ -452,23 +391,19 @@ private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul_of_shiftedMult
         fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x := by
     rw [hTdef]
     exact funext (quantizeSchwartzValue_besselPotential_sharp_eq_integral hb w)
-  have hg : AEMeasurable (Function.uncurry fun x η ↦ ‖T η x‖ₑ) (volume.prod volume) := by
-    simpa only [Function.uncurry_def] using hcont.eNorm.measurable.aemeasurable
-  have hsm : AEStronglyMeasurable (fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x) volume := by
-    have he : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, q.1⟫ : ℂ) :=
-      continuous_subtypeVal.comp (Real.continuous_fourierChar.comp (by fun_prop))
-    exact (he.smul hcont).aestronglyMeasurable.integral_prod_right'
-  have hTm (η : CoordinateSpace n) : AEStronglyMeasurable (T η) volume :=
-    (hcont.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable
-  rw [hsup, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hsm]
-  calc (∫⁻ x, ‖∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x‖ₑ ^ p.toReal) ^ (1 / p.toReal)
-      ≤ (∫⁻ x, (∫⁻ η, ‖T η x‖ₑ) ^ p.toReal) ^ (1 / p.toReal) := by
-        gcongr with x
-        refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq ?_)
-        simp [eNorm_smul]
-    _ ≤ ∫⁻ η, (∫⁻ x, ‖T η x‖ₑ ^ p.toReal) ^ (1 / p.toReal) := lintegral_Lp_lintegral_le hg hp1
-    _ = ∫⁻ η, eLpNorm (T η) p volume := by
-        simp only [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (hTm _)]
+  have he : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, q.1⟫ : ℂ) :=
+    Real.continuous_fourierChar_inner.comp continuous_swap
+  have hF := he.smul hcont
+  rw [hsup]
+  calc eLpNorm (fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x) p volume
+      ≤ ∫⁻ η, eLpNorm (fun x ↦ (𝐞 ⟪η, x⟫ : ℂ) • T η x) p volume :=
+        eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top
+          (F := fun x η ↦ (𝐞 ⟪η, x⟫ : ℂ) • T η x) hF.aestronglyMeasurable hp.le hp_top
+    _ = ∫⁻ η, eLpNorm (T η) p volume :=
+        lintegral_congr fun η ↦ eLpNorm_congr_norm_ae
+          (hF.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable
+          (hcont.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable
+          (.of_forall fun x ↦ by simp [norm_smul])
     _ ≤ ∫⁻ η, C₀ * ENNReal.ofReal (S * ρ η) * eLpNorm w p volume := lintegral_mono hT
     _ = C₀ * I * ENNReal.ofReal S * eLpNorm w p volume := by
         simp only [ENNReal.ofReal_mul hS0, ← mul_assoc]
@@ -782,24 +717,6 @@ theorem quantizeBesselPotentialSpace_comp_inclusion (ha : a.HasCompactSpatialSup
   refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
   simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
 
-/-- The case `t ≤ s` of `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`. -/
-private theorem toDistr_quantizeBesselPotentialSpace_congr_of_le {b : Symbol n V W m'}
-    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {s t : ℝ}
-    (hts : t ≤ s) {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, p}(CoordinateSpace n, V)}
-    (huv : u.toDistr = v.toDistr) :
-    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
-  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L a.quantizeBesselPotentialSpace ha s p =
-      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L b.quantizeBesselPotentialSpace hb t p ∘L
-        BesselPotentialSpace.inclusion hts := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-    simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-      quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]
-  have hv : v = BesselPotentialSpace.inclusion hts u :=
-    BesselPotentialSpace.ext (by rw [BesselPotentialSpace.toDistr_inclusion, huv])
-  simpa [hv] using congrArg (fun T ↦ T u) key
-
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: symbols `a` and `b` of
 orders `m` and `m'` with the same coefficient give the same tempered distribution on
@@ -810,11 +727,11 @@ theorem toDistr_quantizeBesselPotentialSpace_congr {b : Symbol n V W m'}
     {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, p}(CoordinateSpace n, V)}
     (huv : u.toDistr = v.toDistr) :
     (a.quantizeBesselPotentialSpace ha s p u).toDistr =
-      (b.quantizeBesselPotentialSpace hb t p v).toDistr := by
-  rcases le_total t s with h | h
-  · exact toDistr_quantizeBesselPotentialSpace_congr_of_le hab ha hb hp hp_top h huv
-  · exact (toDistr_quantizeBesselPotentialSpace_congr_of_le hab.symm hb ha hp hp_top h
-      huv.symm).symm
+      (b.quantizeBesselPotentialSpace hb t p v).toDistr :=
+  SchwartzMap.toDistr_apply_congr_of_comp_eq hp_top (A := quantizeUniformCLM a ha.isUniform)
+    (ContinuousLinearMap.ext fun u ↦ by simp [hp, hp_top])
+    (ContinuousLinearMap.ext fun u ↦ by
+      simp [hp, hp_top, quantizeUniformCLM_congr ha.isUniform hb.isUniform hab]) huv
 
 /-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
 order `0` has compact spatial support, for instance a compactly supported `φ`
@@ -869,6 +786,88 @@ theorem toDistr_quantizeBesselPotentialSpace_sharp {U : Type*} [NormedAddCommGro
     refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
     simp [hp, hp_top, hq]
   simpa using congrArg (fun T ↦ T u) key
+
+/-- The case `p < q` of `toDistr_quantizeBesselPotentialSpace_congr_exponent`. -/
+private theorem toDistr_quantizeBesselPotentialSpace_congr_of_lt [NeZero n] {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hpq : p < q) {s t : ℝ}
+    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
+      (b.quantizeBesselPotentialSpace hb t q v).toDistr := by
+  -- The Sobolev embedding `H^{s,p} ⊆ H^{s - δ,q}`, `δ = n (1 / p - 1 / q)`, keeps the tempered
+  -- distribution and commutes with `Op(a)`, since both sides agree on Schwartz functions.
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans hp
+  set δ : ℝ := n * ((p : ℝ)⁻¹ - (q : ℝ)⁻¹)
+  have hδ : 0 < δ := mul_pos (by exact_mod_cast Nat.pos_of_neZero n)
+    (sub_pos.2 (inv_strictAnti₀ hp0 (by exact_mod_cast hpq)))
+  have hpq' : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ (CoordinateSpace n) := by
+    have hn : (n : ℝ) ≠ 0 := by exact_mod_cast NeZero.ne n
+    rw [finrank_euclideanSpace_fin]
+    simp only [δ]
+    field_simp
+    ring
+  have hq : 1 < q := hp.trans hpq
+  set ι := (BesselPotentialSpace.sobolevEmbedding (CoordinateSpace n) V (s - δ) hδ hp hpq').comp
+    (BesselPotentialSpace.inclusion (s := s) (p := p) (r := s - δ + δ) (sub_add_cancel s δ).le)
+  have hι (w : H^{s, p}(CoordinateSpace n, V)) : (ι w).toDistr = w.toDistr := by
+    simp [ι]
+  have key : BesselPotentialSpace.toDistrCLM _ W _ _ ∘L a.quantizeBesselPotentialSpace ha s p =
+      BesselPotentialSpace.toDistrCLM _ W _ _ ∘L a.quantizeBesselPotentialSpace ha (s - δ) q ∘L
+        ι := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.coe_ne_top fun w ↦ ?_
+    have hw : ι (toBesselPotentialSpaceCLM s p w) = toBesselPotentialSpaceCLM (s - δ) q w :=
+      BesselPotentialSpace.ext (by rw [hι]; simp)
+    simp [hw, quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM ha _ (mod_cast hp)
+      ENNReal.coe_ne_top, quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM ha _
+      (mod_cast hq) ENNReal.coe_ne_top]
+  have hu := congr($key u)
+  simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply] at hu
+  rw [hu]
+  exact toDistr_quantizeBesselPotentialSpace_congr hab ha hb (mod_cast hq) ENNReal.coe_ne_top
+    ((hι u).trans huv)
+
+/-- **Compatibility of the extensions for different exponents.** For `1 < p, q < ∞` in positive
+dimension, the operators `Op(a)` on `H^{s,p}` and `Op(b)` on `H^{t,q}`, for symbols with the same
+coefficient, agree on any `u ∈ H^{s,p}` and `v ∈ H^{t,q}` with the same tempered distribution. -/
+theorem toDistr_quantizeBesselPotentialSpace_congr_exponent [NeZero n] {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hq : 1 < q) {s t : ℝ}
+    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
+      (b.quantizeBesselPotentialSpace hb t q v).toDistr := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact toDistr_quantizeBesselPotentialSpace_congr_of_lt hab ha hb hp hpq huv
+  · exact toDistr_quantizeBesselPotentialSpace_congr hab ha hb (mod_cast hp) ENNReal.coe_ne_top huv
+  · exact (toDistr_quantizeBesselPotentialSpace_congr_of_lt hab.symm hb ha hq hqp huv.symm).symm
+
+/-- **Spatial cutoffs.** For a smooth function `ψ` of temperate growth, the symbol `ψ(x) a(x, ξ)`
+(`TauCeti.Symbol.smulLeft`) quantizes on `H^{s,p}` to `ψ` times the quantization of `a`. -/
+theorem toDistr_quantizeBesselPotentialSpace_smulLeft {ψ : CoordinateSpace n → ℂ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψt : ψ.HasTemperateGrowth) (ha : a.HasCompactSpatialSupport) (s : ℝ)
+    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : H^{s, p}(CoordinateSpace n, V)) :
+    ((smulLeft hψ a).quantizeBesselPotentialSpace (ha.smulLeft hψ) s p u).toDistr =
+      TemperedDistribution.smulLeftCLM W ψ (a.quantizeBesselPotentialSpace ha s p u).toDistr := by
+  have hq : quantizeUniformCLM _ (ha.smulLeft hψ).isUniform =
+      (SchwartzMap.smulLeftCLM W ψ).comp (quantizeUniformCLM a ha.isUniform) := by
+    ext v x
+    rw [quantizeUniformCLM_apply, ContinuousLinearMap.comp_apply,
+      SchwartzMap.smulLeftCLM_apply_apply hψt, quantizeUniformCLM_apply,
+      quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient) (fun ξ ↦ by simp),
+      quantizeSchwartzValue_smul_left]
+  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
+        (smulLeft hψ a).quantizeBesselPotentialSpace (ha.smulLeft hψ) s p =
+      TemperedDistribution.smulLeftCLM W ψ ∘L BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
+        a.quantizeBesselPotentialSpace ha s p := by
+    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
+      quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM _ s hp hp_top, hq,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+    exact (TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq _).symm
+  simpa using congr($key u)
 
 end Operator
 
