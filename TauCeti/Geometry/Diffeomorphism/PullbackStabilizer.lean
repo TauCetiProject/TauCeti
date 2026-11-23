@@ -18,7 +18,7 @@ group of strict contactomorphisms, and for a volume form the group of volume-pre
 diffeomorphisms.
 
 A diffeomorphism `e : M → N` with `e^* β = α` conjugates the stabilizer of `α` onto that of `β`
-(`Diffeomorph.map_diffCongr_diffeomorphStabilizer`): a self-diffeomorphism `φ` of `M` preserves
+(`Diffeomorph.map_diffeomorphStabilizer_diffCongr`): a self-diffeomorphism `φ` of `M` preserves
 `α` exactly when `e ∘ φ ∘ e⁻¹` preserves `β`
 (`Diffeomorph.diffCongr_mem_diffeomorphStabilizer_iff`). For symplectic forms, a symplectomorphism
 `(M, α) ≅ (N, β)` thus identifies `Symp(M, α)` with `Symp(N, β)`.
@@ -50,15 +50,8 @@ theorem diffCongr_mem_diffeomorphStabilizer_iff (e : M ≃ₘ⟮I, J⟯ N) {α :
     {β : SmoothForm J N F k} (h : mpullback e e.contMDiff β = α) {φ : M ≃ₘ⟮I, I⟯ M} :
     diffCongr e φ ∈ diffeomorphStabilizer β ↔ φ ∈ diffeomorphStabilizer α := by
   subst h
-  have hconj : mpullback (diffCongr e φ) (diffCongr e φ).contMDiff β =
-      mpullback e.symm e.symm.contMDiff (mpullback φ φ.contMDiff (mpullback e e.contMDiff β)) := by
-    apply Subtype.ext
-    simp only [coe_mpullback]
-    rw [diffCongr_apply, coe_trans, coe_trans,
-      TauCeti.mpullback_comp ((φ.contMDiff.comp e.symm.contMDiff).mdifferentiable (by simp))
-        (e.mdifferentiable (by simp)),
-      TauCeti.mpullback_comp (e.symm.mdifferentiable (by simp)) (φ.mdifferentiable (by simp))]
-  rw [mem_diffeomorphStabilizer, mem_diffeomorphStabilizer, hconj]
+  rw [mem_diffeomorphStabilizer, mem_diffeomorphStabilizer, diffCongr_apply, mpullback_trans,
+    mpullback_trans]
   constructor
   · intro hφ
     have h' := congrArg (mpullback e e.contMDiff) hφ
@@ -70,7 +63,7 @@ theorem diffCongr_mem_diffeomorphStabilizer_iff (e : M ≃ₘ⟮I, J⟯ N) {α :
 /-- A diffeomorphism `e : M → N` pulling `β` back to `α` conjugates the stabilizer of `α` onto the
 stabilizer of `β`. For symplectic forms, conjugation by a symplectomorphism identifies the
 symplectomorphism groups. -/
-theorem map_diffCongr_diffeomorphStabilizer (e : M ≃ₘ⟮I, J⟯ N) {α : SmoothForm I M F k}
+theorem map_diffeomorphStabilizer_diffCongr (e : M ≃ₘ⟮I, J⟯ N) {α : SmoothForm I M F k}
     {β : SmoothForm J N F k} (h : mpullback e e.contMDiff β = α) :
     (diffeomorphStabilizer α).map (diffCongr e).toMonoidHom = diffeomorphStabilizer β := by
   ext ψ
