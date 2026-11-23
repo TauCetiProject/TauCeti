@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.Category.AlgCat.Limits
+import TauCeti.Algebra.Category.AlgCat.Basic
 public import TauCeti.Algebra.Category.SemimoduleCat.Sections
 
 /-!
@@ -31,12 +32,6 @@ variable {R : Type u} [CommRing R] {J : Type v} [Category.{w} J]
 theorem mem_sectionsSubalgebra {F : J ⥤ AlgCat.{t} R} {s : ∀ j, F.obj j} :
     s ∈ sectionsSubalgebra F ↔ ∀ {j j'} (f : j ⟶ j'), (F.map f).hom (s j) = s j' := Iff.rfl
 
-private theorem forgotten_map_apply {A B : AlgCat.{t} R} (f : A ⟶ B) (x : A) :
-    (((forget₂ (AlgCat R) (ModuleCat R) ⋙
-      ModuleCat.equivalenceSemimoduleCat.functor).map f).hom x) = f.hom x :=
-  -- Both standard functors retain the carrier; their only computation is isolated here.
-  rfl
-
 /-- Forgetting algebra structure preserves matching sections as a linear equivalence.
 The underlying diagram uses the existing forgetful functor to modules and the canonical
 module-to-semimodule equivalence. -/
@@ -44,9 +39,9 @@ def sectionsLinearEquiv (F : J ⥤ AlgCat.{t} R) :
     sectionsSubalgebra F ≃ₗ[R] SemimoduleCat.sectionsSubmodule
       (F ⋙ forget₂ (AlgCat R) (ModuleCat R) ⋙ ModuleCat.equivalenceSemimoduleCat.functor) where
   toFun s := ⟨s.val, SemimoduleCat.mem_sectionsSubmodule.mpr fun f =>
-    (forgotten_map_apply (F.map f) _).trans ((mem_sectionsSubalgebra.mp s.property) f)⟩
+    (forgetToSemimodule_map_apply (F.map f) _).trans ((mem_sectionsSubalgebra.mp s.property) f)⟩
   invFun s := ⟨s.val, mem_sectionsSubalgebra.mpr fun f =>
-    (forgotten_map_apply (F.map f) _).symm.trans
+    (forgetToSemimodule_map_apply (F.map f) _).symm.trans
       ((SemimoduleCat.mem_sectionsSubmodule.mp s.property) f)⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -106,6 +101,6 @@ theorem sectionsLinearEquiv_naturality (α : F ⟶ G) :
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, AlgHom.toLinearMap_apply,
     sectionsLinearEquiv_apply, sectionsMap_apply, SemimoduleCat.sectionsMap_apply,
     Functor.whiskerRight_app]
-  exact (forgotten_map_apply (α.app j) (s.val j)).symm
+  exact (forgetToSemimodule_map_apply (α.app j) (s.val j)).symm
 
 end AlgCat
