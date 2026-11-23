@@ -15,11 +15,10 @@ Let `f` be a real function on a finite-dimensional Riemannian manifold, `C²` at
 critical point `x`. If the Riemannian Hessian of `f` at `x` is positive definite, then `x` is a
 strict local minimum of `f`.
 
-At the interior critical point `x`, the Riemannian Hessian is the second derivative of `f` read in
-the preferred
-chart (`TauCeti.Manifold.hessian_eq_criticalHessian`), and the first derivative of the coordinate
-expression vanishes, so the test reduces to the second derivative test on the model space
-(`eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos`).
+The strict test gives a sufficient condition for a critical point to be a strict local
+minimum. The necessary tests give the Hessian sign at interior local extrema and supply the
+pointwise sign tests and contact comparisons for the Laplace–Beltrami operator in
+`TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple`.
 
 ## Main results
 
@@ -28,8 +27,7 @@ expression vanishes, so the test reduces to the second derivative test on the mo
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the necessary second derivative tests.
 
 The strict test is adapted from Giada Franz's formalization in
-[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/master/ForT
-auCeti/Geometry/Manifold/Riemannian/Hessian/SecondDerivativeTest.lean).
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/master/ForTauCeti/Geometry/Manifold/Riemannian/Hessian/SecondDerivativeTest.lean).
 Its metric-free interior-point argument is `ContMDiffAt.eventually_lt_of_criticalHessian_pos`.
 -/
 

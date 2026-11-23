@@ -73,13 +73,16 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   have hmax (y : M) (hy : f x₁ ≤ f y) : y = x₁ := hx₁.eq_of_le_of_two_criticalPoints hlt hcrit hy
   -- Small sublevels at the minimum and small superlevels at the maximum are discs.
   obtain ⟨R₀, hR₀, he₀⟩ :=
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      hx₀.mem_criticalPoints).exists_sublevel_homeomorph_closedBall
-      hsmooth (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
+    IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBall hsmooth
+      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+        (hx₀.mem_criticalPoints BoundarylessManifold.isInteriorPoint))
+      (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
   obtain ⟨R₁, hR₁, he₁⟩ :=
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      hx₁.mem_criticalPoints).exists_superlevel_homeomorph_closedBall
-      (.of_forall fun y ↦ hf.contMDiff y) (isClosed_le continuous_const hfc).isCompact
+    IsManifoldNondegenerateCriticalPoint.exists_superlevel_homeomorph_closedBall
+      (.of_forall fun y ↦ hf.contMDiff y)
+      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+        (hx₁.mem_criticalPoints BoundarylessManifold.isInteriorPoint))
+      (isClosed_le continuous_const hfc).isCompact
       hfc.continuousOn (a := f x₀) hlt hmax
   obtain ⟨r, ⟨hrR₀, hrR₁, hr2⟩, hr⟩ :=
     TauCeti.exists_pos_lt_lt_two_mul_sq_lt hR₀ hR₁ (sub_pos.2 hlt)

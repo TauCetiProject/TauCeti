@@ -11,14 +11,14 @@ import TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest
 /-!
 # The maximum principle for the Laplace–Beltrami operator
 
-On a boundaryless Riemannian manifold, this file proves the pointwise second-derivative test for
-the Riemannian Hessian and the Laplace–Beltrami operator `Δ = div ∘ grad`, and the resulting
-comparison principle for semilinear elliptic equations on a compact manifold.
+On a finite-dimensional Riemannian manifold, this file proves the pointwise sign tests for
+the Laplace–Beltrami operator `Δ = div ∘ grad` and contact comparisons at interior points.
+The pointwise Hessian second-derivative tests are in
+`TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest`.
 
-At a critical point of a `C²` function the Levi-Civita correction term of the Hessian vanishes,
-so the Riemannian Hessian is the ordinary second derivative of the function read in the
-preferred chart. Consequently the Hessian is negative semidefinite at a local maximum and
-positive semidefinite at a local minimum, and the same holds for its trace `Δ`.
+At an interior local maximum of a `C²` function, `Δ` is nonpositive; at an interior local
+minimum, it is nonnegative. The pointwise sign tests and contact comparisons require only
+interiority at the point in question.
 
 On a compact boundaryless manifold, evaluating at a maximum of `u - v` gives the comparison
 principle: if `h(x, ·)` is strictly increasing for every `x`, a subsolution
