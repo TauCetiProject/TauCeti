@@ -143,7 +143,6 @@ private theorem exists_cutoffPole (hx : ContDiff ℝ ∞ x) {z : ℂ} {j : ℕ} 
   -- The logarithmic variation of `η₀`, completed at `z` by the smooth field `g₀` with `δα = c q`.
   set g₀ := sectionVariation fun w ↦ c * q w
   have hg₀ : ContDiff ℝ ∞ g₀ := contDiff_sectionVariation (contDiff_const.mul hq)
-  have hsection_g₀ (w : ℂ) : sectionValue g₀ w = c * q w := sectionValue_sectionVariation _ w
   set y₀ := Function.update (logVariation x η₀) z (g₀ z)
   have hy₀_off (w : ℂ) (hw : w ≠ z) : y₀ =ᶠ[𝓝 w] logVariation x η₀ := by
     filter_upwards [isOpen_ne.mem_nhds hw] with w' hw'
@@ -154,14 +153,12 @@ private theorem exists_cutoffPole (hx : ContDiff ℝ ∞ x) {z : ℂ} {j : ℕ} 
     by_cases hwz : w = z
     · subst hwz
       exact Function.update_self _ _ _
-    rw [(hy₀_off w hwz).eq_of_nhds, logVariation_congr_nhds x (hη₀pp w hw)]
-    refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-    · simpa [g₀] using logVariation_apply_zero_eq_zero_of_differentiableAt x (hppC w hwz)
-    · simpa [g₀] using logVariation_apply_one_eq_zero_of_differentiableAt x (hppC w hwz)
-    · have hne : (w - z) ^ (j + 1) ≠ 0 := pow_ne_zero _ (sub_ne_zero.2 hwz)
-      rw [sectionValue_logVariation, hsection_g₀, hαq]
-      simp only [pp]
-      field_simp
+    have hne : (w - z) ^ (j + 1) ≠ 0 := pow_ne_zero _ (sub_ne_zero.2 hwz)
+    rw [(hy₀_off w hwz).eq_of_nhds, logVariation_congr_nhds x (hη₀pp w hw),
+      logVariation_eq_of_differentiableAt x (hppC w hwz)]
+    refine sectionVariation_eq_sectionVariation_iff.2 ?_
+    simp only [pp, hαq]
+    field_simp
   have hy₀_zero (w : ℂ) (hw : w ∉ closedBall z 2) : y₀ w = 0 := by
     have hwz : w ≠ z := fun h ↦ hw (h ▸ mem_closedBall_self zero_le_two)
     have hη₀0 : η₀ =ᶠ[𝓝 w] 0 := by

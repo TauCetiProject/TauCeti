@@ -199,6 +199,33 @@ theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
     sectionValue (sectionVariation F) z = F z := by
   apply Complex.ext <;> simp [sectionValue_apply] <;> ring
 
+/-- Two variations of the section alone agree at a point exactly when their sections do. -/
+@[simp]
+theorem sectionVariation_eq_sectionVariation_iff {F G : ℂ → ℂ} {z : ℂ} :
+    sectionVariation F z = sectionVariation G z ↔ F z = G z := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [sectionVariation, h]⟩
+  have hs : sectionValue (sectionVariation F) z = sectionValue (sectionVariation G) z := by
+    simp only [sectionValue_apply, h]
+  simpa using hs
+
+/-- The variation of the section alone by zero is zero. -/
+@[simp]
+theorem sectionVariation_zero : sectionVariation 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation]
+
+/-- The variation of the section alone is additive in the section variation. -/
+theorem sectionVariation_add (F G : ℂ → ℂ) :
+    sectionVariation (F + G) = sectionVariation F + sectionVariation G := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation, add_div]
+
+/-- The variation of the section alone commutes with real scalar multiplication. -/
+theorem sectionVariation_smul (r : ℝ) (F : ℂ → ℂ) :
+    sectionVariation (r • F) = r • sectionVariation F := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation, mul_div_assoc]
+
 /-- A field is the variation of the section alone by `F` at a point exactly when its connection
 coordinates vanish there and its section is `F`. -/
 theorem eq_sectionVariation_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℂ} {z : ℂ} :
