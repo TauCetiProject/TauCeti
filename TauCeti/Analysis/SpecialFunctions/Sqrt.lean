@@ -10,35 +10,30 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Tactic.FieldSimp
 
 /-!
-# Square-root estimates, derivatives and limits at zero
+# Weighted square-root bounds, derivatives and regularity
 
-This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)` of the
-`1/2`-Hölder bound for the square root, the derivatives of `x ↦ √(x² + p)`, of
-`x ↦ β x + √(x² + p)` and of related substitutions, that `c √u` tends to `0` as `u → 0`, and
-through positive values as `u → 0⁺` when `c > 0`, and that the radial profile
-`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. The elementary
-square-root bounds and identities that need no `rpow`, calculus or limits are in
-`TauCeti.Analysis.Real.Sqrt`.
+This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)` for
+`0 ≤ γ ≤ 1` of the `1/2`-Hölder bound for the square root, the derivatives of `x ↦ √(x² + p)`,
+`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)` and `y ↦ α / (β y + √(y² + c))`, that the radial
+profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`, and the
+Gaussian normalization `√(4 / π) = 2 / √π`. The elementary square-root bounds, identities and
+limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`.
 
 ## Main results
 
 * `Real.abs_sqrt_sub_sqrt_mul_max_rpow_le`: for `0 ≤ γ ≤ 1`, the weighted bound
   `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`.
-* `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
-* `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
-  `c √u → 0⁺` as `u → 0⁺`.
+* `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
+  `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 * `Real.hasDerivAt_sqrt_sq_add`, `Real.hasDerivAt_mul_add_sqrt_sq_add`: the derivatives of
   `x ↦ √(x² + p)` and `x ↦ β x + √(x² + p)` wherever `t² + p ≠ 0`.
 * `Real.hasDerivAt_add_sqrt_sq_add`: the substitution `t ↦ t + √(t² + p)` has an explicit
   derivative wherever `t² + p > 0`.
-* `Real.hasDerivAt_div_mul_add_sqrt_sq_add`, `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: the
-  function `y ↦ α / (β y + √(y² + c))` has an explicit derivative where `y² + c` and the
-  denominator do not vanish and, for `β ≠ −1`, tends to `0` at `+∞`.
-* `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
-  `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
+* `Real.hasDerivAt_div_mul_add_sqrt_sq_add`: the function `y ↦ α / (β y + √(y² + c))` has an
+  explicit derivative where `y² + c` and the denominator do not vanish.
+* `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
 
@@ -46,14 +41,13 @@ square-root bounds and identities that need no `rpow`, calculus or limits are in
 [Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397), commit
 `376352b6e080265bc0380074baaf9aafa0b70a80`.
 
-`Real.hasDerivAt_div_mul_add_sqrt_sq_add` and `Real.tendsto_div_mul_add_sqrt_sq_add_atTop` are
-adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`Real.hasDerivAt_div_mul_add_sqrt_sq_add` is adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`.
 -/
 
 public section
 
-open Filter
 open scoped Topology
 
 namespace Real
@@ -94,22 +88,6 @@ theorem abs_sqrt_sub_sqrt_mul_max_rpow_le (t s : ℝ) {γ : ℝ} (hγ₀ : 0 ≤
     (rpow_le_rpow (abs_nonneg _) ?_ (by positivity))
   rw [sq_sqrt', sq_sqrt']
   exact abs_max_sub_max_le_abs t s 0
-
-/-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
-theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
-  have h : Continuous fun u => c * √u := by fun_prop
-  simpa using h.tendsto 0
-
-/-- For `c > 0`, `c √u` tends to `0` through positive values as `u → 0⁺`. -/
-theorem tendsto_mul_sqrt_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
-    Tendsto (fun u => c * √u) (𝓝[>] 0) (𝓝[>] 0) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨(tendsto_mul_sqrt_nhds_zero c).mono_left nhdsWithin_le_nhds, ?_⟩
-  filter_upwards [self_mem_nhdsWithin] with u hu
-  exact mul_pos hc (sqrt_pos.2 hu)
-
-/-- The square root tends to `0` through positive values as `u → 0⁺`. -/
-theorem tendsto_sqrt_nhdsGT_zero : Tendsto (√·) (𝓝[>] 0) (𝓝[>] (0 : ℝ)) := by
-  simpa using tendsto_mul_sqrt_nhdsGT_zero one_pos
 
 /-- The radial profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function `ψ` supported in `(0, ∞)` is
 `C^k`. -/
@@ -159,25 +137,16 @@ theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 
   refine this.congr_deriv ?_
   ring
 
-/-- For `β ≠ −1`, `α / (β y + √(y² + c))` tends to `0` as `y → +∞`. -/
-theorem tendsto_div_mul_add_sqrt_sq_add_atTop (α : ℝ) {β : ℝ} (hβ : β ≠ -1) (c : ℝ) :
-    Tendsto (fun y => α / (β * y + √(y ^ 2 + c))) atTop (𝓝 0) := by
-  -- For `y > 0` the function is `(α / y) / (β + √(1 + c / y²))`.
-  have hden : Tendsto (fun y : ℝ => β + √(1 + c / y ^ 2)) atTop (𝓝 (β + 1)) := by
-    have : Tendsto (fun y : ℝ => 1 + c / y ^ 2) atTop (𝓝 (1 + 0)) :=
-      tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero))
-    simpa using tendsto_const_nhds.add this.sqrt
-  have h := (tendsto_const_nhds.div_atTop tendsto_id : Tendsto (fun y : ℝ => α / y) atTop (𝓝 0)).div
-    hden fun h => hβ (by linarith)
-  rw [zero_div] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with y hy
-  have hs : √(y ^ 2 + c) = y * √(1 + c / y ^ 2) := by
-    rw [show y ^ 2 + c = y ^ 2 * (1 + c / y ^ 2) by field_simp, sqrt_mul (sq_nonneg y),
-      sqrt_sq hy.le]
-  simp only [Pi.div_apply, hs, div_div]
-  ring
-
 end Real
+
+namespace TauCeti
+
+/-- The Gaussian normalization `√(4/π) = 2/√π`. It relates the constant `4/π` in the Mills-ratio
+bounds of DLMF 7.8.2 to the prefactor `2/√π` of the error function. -/
+theorem sqrt_four_div_pi : √(4 / Real.pi) = 2 / √Real.pi := by
+  rw [Real.sqrt_div' _ Real.pi_pos.le,
+    (Real.sqrt_eq_iff_mul_self_eq_of_pos two_pos).2 (by norm_num)]
+
+end TauCeti
 
 end

@@ -150,6 +150,7 @@ with the corresponding integral of `q`-th powers.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.rpow_eq_rpow_sub_one_mul`: `t ^ s = t ^ (s - 1) t` for `0 ≤ t` and `s ≠ 0`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
   and `a + b = 1`, for all real `x`, `y`, `a` and `b`.
@@ -416,6 +417,12 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
+
+/-- Peeling one factor off a real power: `t ^ s = t ^ (s - 1) * t` for `0 ≤ t` and `s ≠ 0`. Unlike
+`Real.rpow_sub_one`, it needs no `t ≠ 0`: at `t = 0` both sides are `0`. -/
+theorem rpow_eq_rpow_sub_one_mul {t s : ℝ} (ht : 0 ≤ t) (hs : s ≠ 0) :
+    t ^ s = t ^ (s - 1) * t := by
+  rw [← rpow_add_one' ht (by rwa [sub_add_cancel]), sub_add_cancel]
 
 /-- Real powers distribute over a product whose first factor is nonnegative, with no condition on
 the second factor: for `t < 0` both sides carry the same factor `cos (z π)`. -/

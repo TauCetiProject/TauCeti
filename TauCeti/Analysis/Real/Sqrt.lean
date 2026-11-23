@@ -42,11 +42,13 @@ These bounds control scalar spectral factors of positive operators close to the 
 rest on the factorisation `|√x - √y| (√x + √y) = |x - y|` for nonnegative `x` and `y`.
 
 The modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, and
-`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. A square factor cancels against its absolute value,
-`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`, as in changes of variables. For `p > 0` the substitution
-`t ↦ t + √(t² + p)` is positive and maps `ℝ` onto `(0, ∞)`, and for `c > 0` the map
-`y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. Finally, the sets `{x | x² ≤ a}` and
-`{x | a ≤ x²}` are an interval and a union of two rays.
+`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. For `d ≠ 0` and `0 ≤ c`, a square factor cancels against its
+absolute value, `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`, as in changes of variables. For `p > 0` the
+substitution `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto `(0, ∞)`, and for `c > 0` the map
+`y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. For `a ≥ 0`, `{x | x² ≤ a}` is the
+interval `[-√a, √a]`, and for every `a`, `{x | a ≤ x²}` is a union of two rays. Finally, `c √u`
+tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when `c > 0`), and
+`α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`.
 
 ## Main results
 
@@ -90,6 +92,11 @@ The modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lip
   increasing on `[0, ∞)`.
 * `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
 * `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
+* `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
+* `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
+  `c √u → 0⁺` as `u → 0⁺`.
+* `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: for `β ≠ -1`,
+  `α / (β y + √(y² + c)) → 0` as `y → +∞`.
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
@@ -107,8 +114,8 @@ proofs adapted from, Jeremy Tan's
 [Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397), commit
 `376352b6e080265bc0380074baaf9aafa0b70a80`.
 
-`Real.strictMonoOn_mul_sqrt_sq_add_sub` is adapted from the lean-DLMF project
-(<https://github.com/bjbraams/lean-DLMF>), file
+`Real.strictMonoOn_mul_sqrt_sq_add_sub` and `Real.tendsto_div_mul_add_sqrt_sq_add_atTop` are
+adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`.
 -/
 
@@ -383,7 +390,7 @@ theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t
 of variables against the square root of an integrand that has acquired the factor `d²`. -/
 theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p : ℝ) :
     |d| * (√(d ^ 2 * c * p))⁻¹ = (√c)⁻¹ * (√p)⁻¹ := by
-  rw [sqrt_mul (mul_nonneg (sq_nonneg d) hc), sqrt_mul (sq_nonneg d), sqrt_sq_eq_abs, mul_inv,
+  rw [sqrt_mul (mul_nonneg (sq_nonneg d) hc), sqrt_sq_mul d c, mul_inv,
     mul_inv, mul_assoc, mul_inv_cancel_left₀ (abs_ne_zero.2 hd)]
 
 /-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`. -/
@@ -446,6 +453,47 @@ theorem setOf_le_sq_eq_union (a : ℝ) :
   ext x
   simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici]
   rw [← sqrt_le_sqrt_iff (sq_nonneg x), sqrt_sq_eq_abs, le_abs']
+
+section Limits
+
+open Filter
+open scoped Topology
+
+/-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
+theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
+  have h : Continuous fun u => c * √u := by fun_prop
+  simpa using h.tendsto 0
+
+/-- For `c > 0`, `c √u` tends to `0` through positive values as `u → 0⁺`. -/
+theorem tendsto_mul_sqrt_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
+    Tendsto (fun u => c * √u) (𝓝[>] 0) (𝓝[>] 0) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨(tendsto_mul_sqrt_nhds_zero c).mono_left nhdsWithin_le_nhds, ?_⟩
+  filter_upwards [self_mem_nhdsWithin] with u hu
+  exact mul_pos hc (sqrt_pos.2 hu)
+
+/-- The square root tends to `0` through positive values as `u → 0⁺`. -/
+theorem tendsto_sqrt_nhdsGT_zero : Tendsto (√·) (𝓝[>] 0) (𝓝[>] (0 : ℝ)) := by
+  simpa using tendsto_mul_sqrt_nhdsGT_zero one_pos
+
+/-- For `β ≠ −1`, `α / (β y + √(y² + c))` tends to `0` as `y → +∞`. -/
+theorem tendsto_div_mul_add_sqrt_sq_add_atTop (α : ℝ) {β : ℝ} (hβ : β ≠ -1) (c : ℝ) :
+    Tendsto (fun y => α / (β * y + √(y ^ 2 + c))) atTop (𝓝 0) := by
+  -- For `y > 0` the function is `(α / y) / (β + √(1 + c / y²))`.
+  have hden : Tendsto (fun y : ℝ => β + √(1 + c / y ^ 2)) atTop (𝓝 (β + 1)) := by
+    have : Tendsto (fun y : ℝ => 1 + c / y ^ 2) atTop (𝓝 (1 + 0)) :=
+      tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero))
+    simpa using tendsto_const_nhds.add this.sqrt
+  have h := (tendsto_const_nhds.div_atTop tendsto_id : Tendsto (fun y : ℝ => α / y) atTop (𝓝 0)).div
+    hden fun h => hβ (by linarith)
+  rw [zero_div] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with y hy
+  have hs : √(y ^ 2 + c) = y * √(1 + c / y ^ 2) := by
+    rw [show y ^ 2 + c = y ^ 2 * (1 + c / y ^ 2) by field_simp, sqrt_sq_mul, abs_of_pos hy]
+  simp only [Pi.div_apply, hs, div_div]
+  ring
+
+end Limits
 
 /-- For nonnegative `a`, `b`, `(√a - √b)² = a + b - 2 √(ab)`. -/
 theorem sq_sqrt_sub_sqrt {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :

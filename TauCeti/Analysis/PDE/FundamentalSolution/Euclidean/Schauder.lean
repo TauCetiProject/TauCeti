@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.HolderApproximation
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder

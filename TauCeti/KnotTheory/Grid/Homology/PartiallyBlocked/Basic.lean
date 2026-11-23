@@ -165,6 +165,16 @@ theorem simplyBlockedSpecialization_eq_zero_iff {i : Fin n} {c : GridChainMinus 
     killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange, Finset.coe_singleton,
     Set.image_singleton, Ideal.mem_span_singleton]
 
+variable (R) in
+/-- The kernel of the linear specialization at `V_i = 0` consists of the chains blocked for the
+single column `i`. -/
+theorem ker_simplyBlockedSpecializationLinearMap (i : Fin n) :
+    LinearMap.ker (simplyBlockedSpecializationLinearMap (n := n) R i) =
+      (blockedChains R {i}).restrictScalars R := by
+  ext c
+  rw [LinearMap.mem_ker, Submodule.restrictScalars_mem, simplyBlockedSpecializationLinearMap_apply,
+    simplyBlockedSpecialization_eq_zero_iff]
+
 /-- A chain is blocked for every column exactly when its constant coefficients vanish. -/
 theorem mapRange_constantCoeff_eq_zero_iff {c : GridChainMinus R n} :
     c.mapRange constantCoeff (map_zero _) = 0 ↔ c ∈ blockedChains R Finset.univ := by
@@ -197,12 +207,6 @@ theorem mem_blockedChains_of_X_smul_mem {R : Type*} [CommSemiring R] {S : Finset
 
 variable (G : GridDiagram n)
 
-/-- Over `𝔽₂`, the unblocked grid differential squares to zero as an `𝔽₂`-linear map. -/
-theorem restrictScalars_unblockedDifferential_comp_self_eq_zero :
-    (G.unblockedDifferential F).restrictScalars F ∘ₗ (G.unblockedDifferential F).restrictScalars F =
-      0 :=
-  LinearMap.ext fun c => congr($(G.unblockedDifferential_comp_self_eq_zero F) c)
-
 /-- The unblocked grid differential preserves the blocked chains. -/
 theorem blockedChains_le_comap_unblockedDifferential (S : Finset (Fin n)) :
     (blockedChains F S).restrictScalars F ≤
@@ -215,7 +219,7 @@ unblocked grid complex `GC⁻` with the variables `V_s`, `s ∈ S`, set to zero,
 modulo `blockedChains S`. -/
 noncomputable abbrev partiallyBlockedHomology (S : Finset (Fin n)) : Type :=
   ((G.unblockedDifferential F).restrictScalars F).quotientHomology
-    G.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     ((blockedChains F S).restrictScalars F)
     (G.blockedChains_le_comap_unblockedDifferential S)
 
@@ -229,7 +233,7 @@ noncomputable def IsKnot.partiallyBlockedHomologyInsertEquiv {G : GridDiagram n}
       G.partiallyBlockedHomology (insert t S) :=
   LinearMap.quotientHomologyProdEquiv (h := (hG.XSmulHomotopy F t i).restrictScalars F)
     (v := DistribSMul.toLinearMap F (GridChainMinus F n) (MvPolynomial.X t))
-    G.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     (G.blockedChains_le_comap_unblockedDifferential S)
     (G.blockedChains_le_comap_unblockedDifferential (insert t S))
     (blockedChains_mono (Finset.subset_insert t S))
@@ -308,113 +312,6 @@ theorem IsKnot.finrank_partiallyBlockedHomology_insert_eq_two_pow_mul {G : GridD
 
 /-! ### Simply blocked and fully blocked homology -/
 
-/-- Setting `V_i` to zero, as an `𝔽₂`-linear map `GC⁻ → GC^`. -/
-private noncomputable def specialization₂ (i : Fin n) :
-    GridChainMinus F n →ₗ[F] GridChainHat F n i :=
-  (simplyBlockedSpecialization F i).toAddMonoidHom.toZModLinearMap 2
-
-private theorem specialization₂_apply (i : Fin n) (c : GridChainMinus F n) :
-    specialization₂ i c = simplyBlockedSpecialization F i c :=
-  (rfl)
-
-private theorem specialization₂_surjective (i : Fin n) :
-    Function.Surjective (specialization₂ (n := n) i) :=
-  fun c => simplyBlockedSpecialization_surjective F i c
-
-private theorem ker_specialization₂ (i : Fin n) :
-    LinearMap.ker (specialization₂ (n := n) i) = (blockedChains F {i}).restrictScalars F := by
-  ext c
-  rw [LinearMap.mem_ker, Submodule.restrictScalars_mem, specialization₂_apply,
-    simplyBlockedSpecialization_eq_zero_iff]
-
-/-- The simply blocked differential over `𝔽₂`, as an `𝔽₂`-linear map. -/
-private noncomputable abbrev dHat₂ (i : Fin n) : GridChainHat F n i →ₗ[F] GridChainHat F n i :=
-  (G.simplyBlockedDifferential F i).restrictScalars F
-
-private theorem dHat₂_comp_self (i : Fin n) : G.dHat₂ i ∘ₗ G.dHat₂ i = 0 :=
-  LinearMap.ext fun c => congr($(G.simplyBlockedDifferential_comp_self_eq_zero F i) c)
-
-private theorem specialization₂_comp (i : Fin n) :
-    specialization₂ i ∘ₗ (G.unblockedDifferential F).restrictScalars F =
-      G.dHat₂ i ∘ₗ specialization₂ i :=
-  LinearMap.ext fun c => G.simplyBlockedSpecialization_unblockedDifferential F i c
-
-/-- A cycle of the simply blocked differential over `𝔽₂`, as a simply blocked cycle of the
-categorical simply blocked complex. -/
-private noncomputable def kerToSimplyBlockedCycles {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n) :
-    LinearMap.ker (G.dHat₂ i) →+ hG.simplyBlockedCycles F i where
-  toFun z := ⟨(G.simplyBlockedChainEquiv F i).symm z, by
-    rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
-    exact z.property⟩
-  map_zero' := Subtype.ext (map_zero (G.simplyBlockedChainEquiv F i).symm)
-  map_add' z z' := Subtype.ext
-    (map_add (G.simplyBlockedChainEquiv F i).symm (z : GridChainHat F n i) z')
-
-private theorem coe_kerToSimplyBlockedCycles {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n)
-    (z : LinearMap.ker (G.dHat₂ i)) :
-    (kerToSimplyBlockedCycles hG i z : (G.simplyBlockedComplex F i).X ()) =
-      (G.simplyBlockedChainEquiv F i).symm z :=
-  (rfl)
-
-/-- The class in simply blocked grid homology of a cycle of the simply blocked differential over
-`𝔽₂`. -/
-private noncomputable def simplyBlockedClass₂ {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n) :
-    LinearMap.ker (G.dHat₂ i) →ₗ[F]
-      (ModuleCat.restrictScalars (C : F →+* MvPolynomial {c : Fin n // c ≠ i} F)).obj
-        (hG.simplyBlockedHomology F i) where
-  toFun z := G.oneVariableSpecializationHomologyClass F i (kerToSimplyBlockedCycles hG i z)
-  map_add' z z' := by
-    rw [map_add, map_add]
-    -- The addition of the restriction of scalars is that of `G-hat` itself.
-    rfl
-  map_smul' := ZMod.map_smul (M₁ := (ModuleCat.restrictScalars
-      (C : F →+* MvPolynomial {c : Fin n // c ≠ i} F)).obj (hG.simplyBlockedHomology F i))
-    ((G.oneVariableSpecializationHomologyClass F i).toAddMonoidHom.comp
-      (kerToSimplyBlockedCycles hG i))
-
-private theorem simplyBlockedClass₂_apply {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n)
-    (z : LinearMap.ker (G.dHat₂ i)) :
-    simplyBlockedClass₂ hG i z =
-      G.oneVariableSpecializationHomologyClass F i (kerToSimplyBlockedCycles hG i z) :=
-  (rfl)
-
-private theorem simplyBlockedClass₂_eq_zero_iff {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n)
-    (z : LinearMap.ker (G.dHat₂ i)) :
-    simplyBlockedClass₂ hG i z = 0 ↔
-      G.oneVariableSpecializationHomologyClass F i (kerToSimplyBlockedCycles hG i z) = 0 :=
-  Iff.rfl
-
-private theorem simplyBlockedClass₂_surjective {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n) :
-    Function.Surjective (simplyBlockedClass₂ hG i) := fun y => by
-  obtain ⟨c, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective F i y
-  refine ⟨⟨G.simplyBlockedChainEquiv F i c, ?_⟩, ?_⟩
-  · rw [LinearMap.mem_ker]
-    exact (G.mem_ker_simplyBlockedComplex_d_iff F i c).mp c.property
-  · rw [simplyBlockedClass₂_apply]
-    congr 1
-    ext1
-    rw [coe_kerToSimplyBlockedCycles, LinearEquiv.symm_apply_apply]
-
-private theorem boundariesInKer_eq_ker_simplyBlockedClass₂ {G : GridDiagram n} (hG : G.IsKnot)
-    (i : Fin n) : (G.dHat₂ i).boundariesInKer = LinearMap.ker (simplyBlockedClass₂ hG i) := by
-  ext z
-  rw [LinearMap.mem_ker, simplyBlockedClass₂_eq_zero_iff,
-    oneVariableSpecializationHomologyClass_eq_zero_iff,
-    G.mem_range_moduleCatToCycles_simplyBlockedComplex_iff F i,
-    coe_kerToSimplyBlockedCycles,
-    LinearEquiv.apply_symm_apply, LinearMap.mem_boundariesInKer]
-  -- The range of a restriction of scalars is the range of the original map.
-  rfl
-
-/-- The homology of the simply blocked differential, viewed over `𝔽₂`, is simply blocked grid
-homology. -/
-private noncomputable def dHat₂HomologyEquiv {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n) :
-    (G.dHat₂ i).homology (G.dHat₂_comp_self i) ≃ₗ[F]
-      (ModuleCat.restrictScalars (C : F →+* MvPolynomial {c : Fin n // c ≠ i} F)).obj
-        (hG.simplyBlockedHomology F i) :=
-  (Submodule.quotEquivOfEq _ _ (boundariesInKer_eq_ker_simplyBlockedClass₂ hG i)).trans
-    ((simplyBlockedClass₂ hG i).quotKerEquivOfSurjective (simplyBlockedClass₂_surjective hG i))
-
 /-- **Blocking one column gives simply blocked grid homology.** For a knot grid, the partially
 blocked homology of a single column `i` is the simply blocked grid homology `G-hat`, viewed over
 `𝔽₂`. -/
@@ -424,10 +321,13 @@ noncomputable def IsKnot.partiallyBlockedHomologySingletonEquiv {G : GridDiagram
       (ModuleCat.restrictScalars (C : F →+* MvPolynomial {c : Fin n // c ≠ i} F)).obj
         (hG.simplyBlockedHomology F i) :=
   (LinearMap.quotientHomologyEquivOfSurjective
-    G.restrictScalars_unblockedDifferential_comp_self_eq_zero
-    (G.blockedChains_le_comap_unblockedDifferential {i}) (G.dHat₂_comp_self i) (specialization₂ i)
-    (specialization₂_surjective i) (ker_specialization₂ i) (G.specialization₂_comp i)).trans
-    (dHat₂HomologyEquiv hG i)
+    (G.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
+    (G.blockedChains_le_comap_unblockedDifferential {i})
+    (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero F i)
+    (simplyBlockedSpecializationLinearMap F i) (simplyBlockedSpecializationLinearMap_surjective F i)
+    (ker_simplyBlockedSpecializationLinearMap F i)
+    (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential F i)).trans
+    (G.oneVariableSpecializationHomologyEquivLinearMapHomology F i).symm
 
 /-- The identification with `G-hat` sends the class of a chain `c` whose boundary is blocked for
 `i` to the class in `G-hat` of `c` with `V_i` set to zero. -/
@@ -445,10 +345,17 @@ theorem IsKnot.partiallyBlockedHomologySingletonEquiv_mk {G : GridDiagram n} (hG
           exact hc⟩ := by
   rw [partiallyBlockedHomologySingletonEquiv, LinearEquiv.trans_apply,
     LinearMap.quotientHomologyEquivOfSurjective_mk
-      G.restrictScalars_unblockedDifferential_comp_self_eq_zero
-      (G.blockedChains_le_comap_unblockedDifferential {i}) (G.dHat₂_comp_self i) (specialization₂ i)
-      (specialization₂_surjective i) (ker_specialization₂ i) (G.specialization₂_comp i) c hc]
-  rfl
+      (G.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
+      (G.blockedChains_le_comap_unblockedDifferential {i})
+      (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero F i)
+      (simplyBlockedSpecializationLinearMap F i)
+      (simplyBlockedSpecializationLinearMap_surjective F i)
+      (ker_simplyBlockedSpecializationLinearMap F i)
+      (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential F i) c hc,
+    oneVariableSpecializationHomologyEquivLinearMapHomology_symm_mk]
+  exact congrArg (G.oneVariableSpecializationHomologyClass F i)
+    (Subtype.ext (congrArg (G.simplyBlockedChainEquiv F i).symm
+      (simplyBlockedSpecializationLinearMap_apply F i c)))
 
 /-- Taking constant coefficients, as an `𝔽₂`-linear map `GC⁻ → GC~`. -/
 private noncomputable def constantCoeff₂ : GridChainMinus F n →ₗ[F] GridChain F n :=
@@ -481,7 +388,7 @@ of all the columns is the fully blocked grid homology `GH~`. -/
 noncomputable def partiallyBlockedHomologyUnivEquiv :
     G.partiallyBlockedHomology Finset.univ ≃ₗ[F] G.fullyBlockedHomology :=
   (LinearMap.quotientHomologyEquivOfSurjective
-    G.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
     (G.blockedChains_le_comap_unblockedDifferential Finset.univ)
     G.fullyBlockedDifferential_comp_self_eq_zero
     constantCoeff₂ constantCoeff₂_surjective ker_constantCoeff₂ G.constantCoeff₂_comp).trans
@@ -501,7 +408,7 @@ theorem partiallyBlockedHomologyUnivEquiv_mk (c : GridChainMinus F n)
         exact hc⟩ := by
   rw [partiallyBlockedHomologyUnivEquiv, LinearEquiv.trans_apply]
   rw [LinearMap.quotientHomologyEquivOfSurjective_mk
-      G.restrictScalars_unblockedDifferential_comp_self_eq_zero
+      (G.restrictScalars_unblockedDifferential_comp_self_eq_zero F)
       (G.blockedChains_le_comap_unblockedDifferential Finset.univ)
       G.fullyBlockedDifferential_comp_self_eq_zero constantCoeff₂ constantCoeff₂_surjective
       ker_constantCoeff₂ G.constantCoeff₂_comp c hc,

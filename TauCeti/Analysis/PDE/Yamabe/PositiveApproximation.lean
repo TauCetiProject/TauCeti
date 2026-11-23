@@ -55,7 +55,7 @@ variable [FiniteDimensional ℝ E] [T2Space M] [CompactSpace M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-private theorem regularized_energy_le (hn : 2 < finrank ℝ E) {u : M → ℝ}
+private theorem regularized_energy_le {u : M → ℝ}
     (hu : ContMDiff I 𝓘(ℝ) 1 u) {ε : ℝ} (hε : 0 < ε) :
     (∫ x, (conformalCoefficient (finrank ℝ E) *
         ‖mgradient I (fun y ↦ Real.sqrt (u y ^ 2 + ε)) x‖ ^ 2 +
@@ -99,7 +99,7 @@ private theorem regularized_energy_le (hn : 2 < finrank ℝ E) {u : M → ℝ}
   intro x
   dsimp only [Pi.add_apply]
   rw [Real.sq_sqrt (by positivity)]
-  have := mul_le_mul_of_nonneg_left (hgrad x) (conformalCoefficient_pos hn).le
+  have := mul_le_mul_of_nonneg_left (hgrad x) (conformalCoefficient_nonneg (finrank ℝ E))
   nlinarith
 
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
@@ -155,7 +155,7 @@ theorem exists_contMDiff_pos_yamabeQuotient_lt (hn : 2 < finrank ℝ E) {n : ℕ
     exact Real.sqrt_pos.2 (by positivity)
   · apply lt_of_le_of_lt _ hbound
     rw [yamabeQuotient_def]
-    exact div_le_div_of_nonneg_right (regularized_energy_le hn (hu.of_le hn1) hε)
+    exact div_le_div_of_nonneg_right (regularized_energy_le (hu.of_le hn1) hε)
       (Real.rpow_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
 /-- On a nonempty compact Riemannian manifold of dimension greater than two, the infimum of the
