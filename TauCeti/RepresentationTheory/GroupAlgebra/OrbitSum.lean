@@ -20,8 +20,9 @@ coefficients constant on the orbits.
 
 A ring homomorphism `π : R →+* S` (for instance the reduction `O → k` of a `p`-modular system)
 induces `R[G]^H → S[G]^H` (`TauCeti.conjInvariantsMap`), which commutes with the relative traces
-`Tr_Q^P` (`TauCeti.conjInvariantsMap_relTrace`), sends orbit sums to orbit sums, and is onto
-when `π` is onto (`TauCeti.conjInvariantsMap_surjective`).
+`Tr_Q^P` (`TauCeti.conjInvariantsMap_relTrace`), sends orbit sums to orbit sums
+(`TauCeti.conjInvariantsMap_conjInvariantsBasis`), and is onto when `π` is onto
+(`TauCeti.conjInvariantsMap_surjective`).
 
 ## Main definitions
 
@@ -229,6 +230,23 @@ theorem mapRingHom_conjOrbitSum {H : Subgroup G} [Finite H] (O : Quotient (conjO
   ext g
   simp only [coeff_mapRingHom, coeff_conjOrbitSum]
   split_ifs <;> simp
+
+/-- Reduction sends the basis vector of `R[G]^H` at an orbit `O` to that of `S[G]^H` at `O`. -/
+@[simp]
+theorem conjInvariantsMap_conjInvariantsBasis {H : Subgroup G} [Finite H]
+    (O : Quotient (conjOrbitRel H)) :
+    conjInvariantsMap π H (conjInvariantsBasis R H O) = conjInvariantsBasis S H O := by
+  ext1
+  simp
+
+/-- In the orbit-sum bases, reduction applies `π` to each coordinate. -/
+@[simp]
+theorem conjInvariantsBasis_repr_conjInvariantsMap {H : Subgroup G} [Finite H]
+    (x : conjInvariants R H) (O : Quotient (conjOrbitRel H)) :
+    (conjInvariantsBasis S H).repr (conjInvariantsMap π H x) O =
+      π ((conjInvariantsBasis R H).repr x O) := by
+  induction O using Quotient.inductionOn with
+  | h g => simp [coeff_mapRingHom]
 
 /-- **Reduction maps `R[G]^H` onto `S[G]^H`** when `π` is surjective. -/
 theorem conjInvariantsMap_surjective (hπ : Function.Surjective π) (H : Subgroup G) :
