@@ -49,8 +49,9 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `TauCeti.extChartAtDiffeomorph`: on a boundaryless model, the extended chart at a point as a
   native `C^n` diffeomorphism from `TauCeti.chartSourceOpens` onto `TauCeti.extChartTargetOpens`,
   the open target of the chart in the model vector space.
-* `OpenPartialHomeomorph.contMDiffOn_extendTrans` and
-  `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
+* `OpenPartialHomeomorph.contMDiffOn_extendTrans`, `OpenPartialHomeomorph.contMDiffAt_extendTrans`
+  and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
+  `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
 -/
 
@@ -181,6 +182,22 @@ theorem contMDiffOn_extendTrans_symm (c : OpenPartialHomeomorph M H)
   exact ((contMDiffOn_symm_of_mem_maximalAtlas hc).comp h1 fun _ hv ↦ by
     simpa [extendTrans_target] using hv).congr fun _ _ ↦ by simp
 
+/-- A chart `c` of the maximal `C^n` atlas, read in `E` and moved to `F` by a `C^n` homeomorphism
+`Ψ`, is `C^n` at each point of the source of `c`. -/
+theorem contMDiffAt_extendTrans (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ) {x : M}
+    (hx : x ∈ c.source) : ContMDiffAt I 𝓘(𝕜, F) n (c.extendTrans I Ψ) x :=
+  (c.contMDiffOn_extendTrans hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_source.mem_nhds (by rwa [extendTrans_source]))
+
+/-- The inverse of `c.extendTrans I Ψ`, for `c` in the maximal `C^n` atlas and `Ψ.symm` of class
+`C^n`, is `C^n` at each point of its target. -/
+theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
+    (hc : c ∈ IsManifold.maximalAtlas I n M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 n Ψ.symm) {v : F}
+    (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
+  (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_target.mem_nhds hv)
+
 end OpenPartialHomeomorph
 
 namespace OpenPartialHomeomorph
@@ -200,12 +217,12 @@ def toDiffeomorphSourceTarget (c : OpenPartialHomeomorph M H)
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     intro x
     exact ((contMDiffOn_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
-      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
   contMDiff_invFun := by
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     intro x
     exact ((contMDiffOn_symm_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
-      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
 
 @[simp]
 theorem toDiffeomorphSourceTarget_apply_coe (c : OpenPartialHomeomorph M H)
@@ -269,19 +286,19 @@ def extChartAtDiffeomorph [I.Boundaryless] [IsManifold I n M] (x : M) :
     chartSourceOpens H x ≃ₘ^n⟮I, 𝓘(𝕜, E)⟯ extChartTargetOpens I x where
   toFun p := ⟨extChartAt I x p, (extChartAt I x).map_source (by
     rw [extChartAt_source]
-    exact p.2)⟩
+    exact p.property)⟩
   invFun z := ⟨(extChartAt I x).symm z, by
-    have h := (extChartAt I x).map_target z.2
+    have h := (extChartAt I x).map_target z.property
     rw [extChartAt_source] at h
     exact h⟩
   left_inv p := Subtype.ext <| (extChartAt I x).left_inv (by
     rw [extChartAt_source]
-    exact p.2)
-  right_inv z := Subtype.ext <| (extChartAt I x).right_inv z.2
+    exact p.property)
+  right_inv z := Subtype.ext <| (extChartAt I x).right_inv z.property
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (extChartTargetOpens I x) _).mp
-    ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtype_val fun p ↦ p.2)
+    ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtypeVal fun p ↦ p.property)
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff (chartSourceOpens H x) _).mp
-    ((contMDiffOn_extChartAt_symm x).comp_contMDiff contMDiff_subtype_val fun z ↦ z.2)
+    ((contMDiffOn_extChartAt_symm x).comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property)
 
 @[simp]
 theorem coe_extChartAtDiffeomorph_apply [I.Boundaryless] [IsManifold I n M] (x : M)

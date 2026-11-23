@@ -236,7 +236,7 @@ instance flat_frobeniusRootIdeal (f : R) : Module.Flat R (frobeniusRootIdeal R p
   -- `c * f ^ ((p - 1) / p ^ (n + 1)) = 0` because Frobenius is injective, so the relation becomes
   -- trivial through the next root `f ^ (1 / p ^ (n + 1))`.
   refine Module.Flat.of_forall_isTrivialRelation fun {l g x} hgx ↦ ?_
-  obtain ⟨n, hn⟩ := exists_root_dvd_of_mem fun i ↦ (x i).2
+  obtain ⟨n, hn⟩ := exists_root_dvd_of_mem fun i ↦ (x i).property
   choose b hb using hn
   have hrel : (∑ i, g i * b i) * (iterateFrobeniusEquiv R p n).symm f = 0 := by
     have := congr_arg Subtype.val hgx

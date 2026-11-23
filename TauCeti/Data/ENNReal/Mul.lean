@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Basic.ENNReal.Operations
+import Mathlib.Basic.ENNReal.Inv
 
 /-!
 # Bounds by products in `ℝ≥0∞`
@@ -19,11 +20,18 @@ This is the shape of estimates such as `‖B(f, g)‖ ≤ C ‖B‖ ‖f‖ ‖g
 * `ENNReal.le_mul_of_ne_top_imp_le`: the reduction of `L ≤ a * b` to finite `a` and `b`.
 * `ENNReal.le_mul_mul_of_ne_top_imp_le`: the reduction of `L ≤ c * a * b` to finite `c`, `a`
   and `b`.
+* `ENNReal.mul_mul_pow_le_mul_div_pow_mul`: a coefficient bound absorbs division by a finite
+  positive factor in a natural power.
+
+## References
+
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace ENNReal
 
@@ -53,5 +61,19 @@ theorem le_mul_mul_of_ne_top_imp_le {L c a b : ℝ≥0∞} (hc : c = 0 → L = 0
   by_cases hc0 : c = 0
   · exact (hc hc0).le.trans zero_le
   exact hfin (fun h => hca (by rw [h, top_mul ha0])) (fun h => hca (by rw [h, mul_top hc0])) hbt
+
+/-- If `c * C ^ n ≤ a`, dividing the power's base by a finite positive `C` absorbs the
+coefficient `c` into `a`, even when the base or an additional factor is infinite. -/
+theorem mul_mul_pow_le_mul_div_pow_mul (V : ℝ≥0∞) {c a r : ℝ≥0∞} {C : ℝ≥0} {n : ℕ}
+    (hC : C ≠ 0) (hca : c * (C : ℝ≥0∞) ^ n ≤ a) :
+    c * V * r ^ n ≤ a * ((r / (C : ℝ≥0∞)) ^ n * V) := by
+  have hcancel : (C : ℝ≥0∞) ^ n * (r / (C : ℝ≥0∞)) ^ n = r ^ n := by
+    rw [← mul_pow, ENNReal.mul_div_cancel (coe_ne_zero.2 hC) coe_ne_top]
+  calc
+    c * V * r ^ n = c * ((C : ℝ≥0∞) ^ n * (r / (C : ℝ≥0∞)) ^ n) * V := by
+      rw [hcancel]
+      ac_rfl
+    _ = (c * (C : ℝ≥0∞) ^ n) * ((r / (C : ℝ≥0∞)) ^ n * V) := by ac_rfl
+    _ ≤ _ := mul_le_mul_left hca _
 
 end ENNReal

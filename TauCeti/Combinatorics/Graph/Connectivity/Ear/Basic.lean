@@ -145,6 +145,16 @@ theorem ext (e f : G.Ear H) (hwalk : e.toWalk = f.toWalk) : e = f := by
   · cases hwalk
     rfl
 
+/-- Two bundled `(base, ear)` pairs are equal when their base graphs and underlying walks
+agree. -/
+theorem sigma_ext {p q : Σ K : Graph α β, G.Ear K}
+    (h1 : p.1 = q.1) (hw : p.2.toWalk = q.2.toWalk) : p = q := by
+  rcases p with ⟨K, e₁⟩
+  rcases q with ⟨_, e₂⟩
+  dsimp only at h1 hw
+  subst h1
+  exact congrArg (Sigma.mk K) (Ear.ext e₁ e₂ hw)
+
 /-- The graph traced by an ear. -/
 def toGraph (e : G.Ear H) : Graph α β :=
   G.walkGraph e.toWalk.2.2
@@ -485,7 +495,7 @@ end Ear
 /-- The possible initial graphs of an ear decomposition: one actual vertex or the graph traced by
 a cycle. -/
 inductive EarStart (G : Graph α β) : Graph α β → Type (max u v)
-  | vertex (v : V(G)) : G.EarStart (Graph.noEdge {v.1} β)
+  | vertex (v : V(G)) : G.EarStart (Graph.noEdge {v.val} β)
   | cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
       G.EarStart (G.walkGraph walk)
 
@@ -518,6 +528,12 @@ theorem isCycle_iff_of_heq {K L : Graph α β} {s₁ : G.EarStart K} {s₂ : G.E
   cases eq_of_heq hs
   rfl
 
+/-- Equal cycle walks yield heterogeneously equal cycle initial witnesses. -/
+theorem heq_cycle_of_eq {s : α} {c₁ c₂ : G.Walk s s} (hc₁ : c₁.IsCycle) (hc₂ : c₂.IsCycle)
+    (h : c₁ = c₂) : HEq (EarStart.cycle c₁ hc₁) (EarStart.cycle c₂ hc₂) := by
+  subst h
+  rfl
+
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr v.property)
@@ -531,12 +547,12 @@ theorem vertexSet_nonempty (start : G.EarStart H) : V(H).Nonempty := by
 
 /-- Every allowed initial graph of an ear decomposition is connected. -/
 theorem connected : ∀ _start : G.EarStart H, H.Connected
-  | .vertex v => connected_of_vertexSet_eq_singleton (vertexSet_noEdge {v.1} β)
+  | .vertex v => connected_of_vertexSet_eq_singleton (vertexSet_noEdge {v.val} β)
   | .cycle walk _ => walk.connected_walkGraph
 
 /-- A vertex-started initial graph is an edgeless single-vertex graph. -/
 theorem exists_noEdge_of_not_isCycle :
-    ∀ {start : G.EarStart H}, ¬ start.IsCycle → ∃ v : V(G), H = Graph.noEdge {v.1} β
+    ∀ {start : G.EarStart H}, ¬ start.IsCycle → ∃ v : V(G), H = Graph.noEdge {v.val} β
   | .vertex v, _ => ⟨v, rfl⟩
   | .cycle walk isCycle, h => False.elim (h ((isCycle_cycle walk isCycle).mpr trivial))
 
@@ -601,6 +617,33 @@ theorem ext (d e : G.EarDecomposition H) (hlength : d.length = e.length)
   cases hearAt'
   rfl
 
+/-- Two length-zero ear decompositions of the same graph are equal if their initial stages are
+heterogeneously equal. -/
+theorem ext_of_length_eq_zero {d₁ d₂ : G.EarDecomposition H}
+    (h₁ : d₁.length = 0) (h₂ : d₂.length = 0) (hs : HEq d₁.start d₂.start) : d₁ = d₂ :=
+  ext _ _ (h₁.trans h₂.symm) hs
+    ((Fin.heq_fun_iff (h₁.trans h₂.symm)).mpr fun i ↦ (Fin.cast h₁ i).elim0)
+
+/-- Equal ear decompositions have equal stage graphs at matching natural indices. -/
+theorem graphAfter_eq_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) (m : ℕ)
+    (hm₁ : m < d₁.length + 1) (hm₂ : m < d₂.length + 1) :
+    d₁.graphAfter ⟨m, hm₁⟩ = d₂.graphAfter ⟨m, hm₂⟩ := by
+  subst h
+  rfl
+
+/-- Equal ear decompositions have equal ears at matching natural indices. -/
+theorem earAt_eq_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) (m : ℕ)
+    (hm₁ : m < d₁.length) (hm₂ : m < d₂.length) :
+    d₁.earAt ⟨m, hm₁⟩ = d₂.earAt ⟨m, hm₂⟩ := by
+  subst h
+  rfl
+
+/-- Equal ear decompositions have heterogeneously equal initial stages. -/
+theorem heq_start_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) :
+    HEq d₁.start d₂.start := by
+  subst h
+  rfl
+
 /-- The initial graph of a decomposition. -/
 def initial (d : G.EarDecomposition H) : Graph α β :=
   d.graphAfter 0
@@ -634,11 +677,11 @@ def IsOpen (d : G.EarDecomposition H) : Prop :=
 
 /-- An ear decomposition starts from a single actual vertex rather than from a cycle. -/
 def IsVertexStart (d : G.EarDecomposition H) : Prop :=
-  ∃ v : V(G), d.initial = Graph.noEdge {v.1} β
+  ∃ v : V(G), d.initial = Graph.noEdge {v.val} β
 
 /-- Characterization of a vertex-starting ear decomposition by its initial graph. -/
 theorem isVertexStart_iff (d : G.EarDecomposition H) :
-    d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.1} β :=
+    d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.val} β :=
   Iff.rfl
 
 /-- An ear decomposition starts from a single actual vertex if and only if its initial stage is
@@ -670,9 +713,9 @@ theorem IsOpen.kindAt_eq_open {d : G.EarDecomposition H} (hd : d.IsOpen)
   hd.2 i
 
 /-- A decomposition consisting only of one actual vertex. -/
-def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.1} β) where
+def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.val} β) where
   length := 0
-  graphAfter _ := Graph.noEdge {v.1} β
+  graphAfter _ := Graph.noEdge {v.val} β
   start := .vertex v
   earAt i := Fin.elim0 i
   earAt_fst i := Fin.elim0 i
@@ -683,11 +726,11 @@ def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.1} β) where
 theorem length_vertex (v : V(G)) : (vertex v).length = 0 := (rfl)
 
 /-- The initial graph of a single-vertex decomposition is that vertex without edges. -/
-theorem initial_vertex (v : V(G)) : (vertex v).initial = Graph.noEdge {v.1} β := (rfl)
+theorem initial_vertex (v : V(G)) : (vertex v).initial = Graph.noEdge {v.val} β := (rfl)
 
 @[simp]
 theorem graphAfter_vertex_zero (v : V(G)) :
-    (vertex v).graphAfter 0 = Graph.noEdge {v.1} β := by
+    (vertex v).graphAfter 0 = Graph.noEdge {v.val} β := by
   rw [vertex]
 
 /-- The initial stage data of `vertex v` is `EarStart.vertex v`. -/
@@ -760,8 +803,24 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
   graphAfter_last := d.graphAfter_last.trans h
 
 @[simp]
+theorem copy_copy {H' H'' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
+    (h' : H' = H'') : (d.copy h).copy h' = d.copy (h.trans h') := by
+  cases h
+  cases h'
+  rfl
+
+@[simp]
+theorem copy_inj {H' : Graph α β} {d₁ d₂ : G.EarDecomposition H} {h : H = H'} :
+    d₁.copy h = d₂.copy h ↔ d₁ = d₂ := by
+  cases h
+  rfl
+
+@[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := (rfl)
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := (rfl)
 
 @[simp]
 theorem graphAfter_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
@@ -803,6 +862,23 @@ theorem walkAt_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
 @[simp]
 theorem isOpen_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).IsOpen ↔ d.IsOpen := Iff.rfl
+
+/-- Reindexing the final graph along an equality `H₁ = H₂` is an equivalence of multigraph ear
+decompositions. -/
+def copyEquiv {H₁ H₂ : Graph α β} (h : H₁ = H₂) :
+    G.EarDecomposition H₁ ≃ G.EarDecomposition H₂ where
+  toFun d := d.copy h
+  invFun d := d.copy h.symm
+  left_inv d := by simp
+  right_inv d := by simp
+
+@[simp]
+theorem copyEquiv_apply {H₁ H₂ : Graph α β} (h : H₁ = H₂) (d : G.EarDecomposition H₁) :
+    copyEquiv h d = d.copy h := (rfl)
+
+@[simp]
+theorem copyEquiv_symm_apply {H₁ H₂ : Graph α β} (h : H₁ = H₂) (d : G.EarDecomposition H₂) :
+    (copyEquiv h).symm d = d.copy h.symm := (rfl)
 
 private theorem snoc_graphAfter_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
     Fin.lastCases ear.add d.graphAfter (0 : Fin (d.length + 2)) = d.graphAfter 0 := by
@@ -1140,6 +1216,12 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
   -- Projection reduction exposes the `Fin.castLE` index hidden by the opaque `prefix` body.
   change d.earAt _ = d.earAt _
   congr 1
+
+/-- Prefixing retains the walks of the original ears before the chosen index. -/
+theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : Fin i.val) :
+    (d.prefix i).walkAt (Fin.cast (length_prefix d i).symm j) =
+      d.walkAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  rw [walkAt_eq, walkAt_eq, earAt_prefix]
 
 /-- Prefixing retains the kind of every ear before the chosen index. -/
 theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
