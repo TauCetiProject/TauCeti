@@ -23,6 +23,10 @@ determinant identity `pₙ qₙ₊₁ - pₙ₊₁ qₙ = ±1` allows. Take `q >
 `q ξ - p = a (qₙ ξ - pₙ) + b (qₙ₊₁ ξ - pₙ₊₁)` do not cancel. Once the continued fraction has
 terminated, `qₙ ξ - pₙ = 0` and there is nothing to prove; rational `ξ` need no separate statement.
 
+This is the argument of Hardy and Wright, §10.15, Theorem 182, who expand `(p, q)` in two
+consecutive convergents in the same way. Khinchin, Theorem 17, states the result as: every
+convergent is a best approximation of the second kind.
+
 ## Main results
 
 * `Real.abs_den_convergent_mul_sub_num_convergent_le`: the best approximation property.
@@ -31,7 +35,10 @@ terminated, `qₙ ξ - pₙ = 0` and there is nothing to prove; rational `ξ` ne
 
 ## References
 
-* A. Ya. Khinchin, *Continued Fractions*, Theorem 16.
+* G. H. Hardy and E. M. Wright, *An Introduction to the Theory of Numbers*, Ch. X, §10.15
+  (Approximation by convergents), Theorem 182.
+* A. Ya. Khinchin, *Continued Fractions*, Ch. II, §6 (Convergents as best approximations),
+  Theorem 17.
 -/
 
 public section
@@ -94,7 +101,10 @@ private theorem abs_den_convergent_mul_sub_num_convergent_le_of_pos (ξ : ℝ) (
     nlinarith
 
 /-- **Lagrange's best approximation property.** For a real `ξ` with convergents `pₖ / qₖ`, no
-integers `p` and `q` with `0 < |q| < qₙ₊₁` satisfy `|q ξ - p| < |qₙ ξ - pₙ|`. -/
+integers `p` and `q` with `0 < |q| < qₙ₊₁` satisfy `|q ξ - p| < |qₙ ξ - pₙ|`.
+
+See Hardy and Wright, *An Introduction to the Theory of Numbers*, §10.15, Theorem 182, and
+Khinchin, *Continued Fractions*, Ch. II, §6, Theorem 17. -/
 theorem abs_den_convergent_mul_sub_num_convergent_le (ξ : ℝ) (n : ℕ) {q : ℤ}
     (hq : q ≠ 0) (hq' : q.natAbs < (ξ.convergent (n + 1)).den) (p : ℤ) :
     |(ξ.convergent n).den * ξ - (ξ.convergent n).num| ≤ |q * ξ - p| := by
