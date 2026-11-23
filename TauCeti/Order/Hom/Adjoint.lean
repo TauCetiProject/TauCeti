@@ -12,12 +12,13 @@ public import Mathlib.Order.Hom.Basic
 /-!
 # Adjoints of endpoint-preserving monotone maps on finite linear orders
 
-Every monotone map `f : α →o β` from a finite linear order with top preserving `⊤` admits a
-left adjoint `f.leftAdjoint hf : β →o α`, given at `y` by the least `x` with `y ≤ f x`. When both
-orders have a bottom element, `f.leftAdjoint hf` automatically preserves `⊥`. Dually, every monotone
-map `g : β →o α` into a finite linear order with bottom preserving `⊥` admits a right adjoint
-`g.rightAdjoint hg : α →o β`, given at `x` by the greatest `y` with `g y ≤ x`, which automatically
-preserves `⊤`.
+Every top-preserving monotone map `f : α →o β` from a finite linear order `α` with top into a
+preorder `β` with top and decidable `≤` admits a left adjoint `f.leftAdjoint hf : β →o α`, given at
+`y` by the least `x` with `y ≤ f x`. When both orders have a bottom element, `f.leftAdjoint hf`
+automatically preserves `⊥`. Dually, every bottom-preserving monotone map `g : β →o α` from a
+finite linear order `β` with bottom into a preorder `α` with bottom and decidable `≤` admits a
+right adjoint `g.rightAdjoint hg : α →o β`, given at `x` by the greatest `y` with `g y ≤ x`. When
+both orders have a top element, `g.rightAdjoint hg` automatically preserves `⊤`.
 
 On finite bounded linear orders these two constructions are mutually inverse and contravariantly
 functorial (`OrderHom.leftAdjoint_comp`, `OrderHom.rightAdjoint_comp`), yielding the duality
@@ -25,9 +26,9 @@ between top-preserving and bottom-preserving monotone maps.
 
 ## Main declarations
 
-* `OrderHom.leftAdjoint`: the left adjoint of a top-preserving monotone map out of a finite linear
+* `OrderHom.leftAdjoint`: the left adjoint of a top-preserving monotone map from a finite linear
   order.
-* `OrderHom.rightAdjoint`: the right adjoint of a bottom-preserving monotone map into a finite
+* `OrderHom.rightAdjoint`: the right adjoint of a bottom-preserving monotone map from a finite
   linear order.
 * `OrderHom.galoisConnection_leftAdjoint`, `OrderHom.galoisConnection_rightAdjoint`: the
   defining Galois connections.
@@ -124,8 +125,8 @@ private theorem rightAdjointFun_gc (g : β →o α) (hg : g ⊥ = ⊥) :
       ⟨⊥, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hg ▸ bot_le⟩⟩
     exact (g.monotone h).trans (Finset.mem_filter.mp hmem).2
 
-/-- The right adjoint `α →o β` of a bottom-preserving monotone map `g : β →o α` into a finite
-linear order with bottom. -/
+/-- The right adjoint `α →o β` of a bottom-preserving monotone map `g : β →o α` from a finite
+linear order `β` with bottom into a preorder `α` with bottom and decidable `≤`. -/
 def rightAdjoint (g : β →o α) (hg : g ⊥ = ⊥) : α →o β where
   toFun := rightAdjointFun g hg
   monotone' := (rightAdjointFun_gc g hg).monotone_u
