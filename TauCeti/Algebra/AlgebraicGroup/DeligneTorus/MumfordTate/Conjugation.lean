@@ -27,9 +27,6 @@ in a basis, is well defined up to conjugation.
 
 ## Main declarations
 
-* `TauCeti.DeligneTorus.mumfordTateQuotientIsoOfIso`: for an isomorphism `e : H ≅ L` of
-  coordinate Hopf algebras, the coordinate isomorphism between the Mumford–Tate group of `h` and
-  that of its twist by `e`.
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal_innerConjugationIso`: twisting `h` by conjugation by
   a rational point conjugates its Mumford–Tate group by that point.
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal_conjCoordinateIso`: for `G = GL_d`, twisting `h`
@@ -47,27 +44,7 @@ open CategoryTheory _root_.CommHopfAlgCat TauCeti.CommHopfAlgCat
 
 namespace TauCeti.DeligneTorus
 
-variable {H L : _root_.CommHopfAlgCat.{0} ℚ}
-
-/-- **The Mumford–Tate groups of `h` and of its twist by an isomorphism are isomorphic.** For an
-isomorphism `e : H ≅ L` of coordinate Hopf algebras, contravariantly an isomorphism `G' ≅ G` of
-affine groups over `ℚ`, and `h : S → G'_ℝ`, the coordinate isomorphism between the Mumford–Tate
-group of the composite `S → G'_ℝ → G_ℝ` and that of `h`, induced by `e`. -/
-noncomputable def mumfordTateQuotientIsoOfIso (e : H ≅ L)
-    (h : baseChange (K := ℝ) L ⟶ _root_.CommHopfAlgCat.of ℝ S) :
-    quotient H (mumfordTateHopfIdeal (baseChangeMap (K := ℝ) e.hom ≫ h)) ≅
-      quotient L (mumfordTateHopfIdeal h) :=
-  quotientIsoOfComapEq e _ (comapOfSurjective_mumfordTateHopfIdeal e h)
-
-/-- The isomorphism of Mumford–Tate groups induced by `e` commutes with their embeddings into the
-ambient groups. -/
-@[reassoc (attr := simp)]
-theorem mkQuotient_comp_mumfordTateQuotientIsoOfIso_hom (e : H ≅ L)
-    (h : baseChange (K := ℝ) L ⟶ _root_.CommHopfAlgCat.of ℝ S) :
-    mkQuotient H (mumfordTateHopfIdeal (baseChangeMap (K := ℝ) e.hom ≫ h)) ≫
-        (mumfordTateQuotientIsoOfIso e h).hom =
-      e.hom ≫ mkQuotient L (mumfordTateHopfIdeal h) :=
-  mkQuotient_comp_quotientIsoOfComapEq_hom _ _ _
+variable {H : _root_.CommHopfAlgCat.{0} ℚ}
 
 /-- **Conjugating `h` by a rational point conjugates its Mumford–Tate group.** Twisting `h` by
 the coordinate automorphism of conjugation by a rational point `g` of `G` replaces its
