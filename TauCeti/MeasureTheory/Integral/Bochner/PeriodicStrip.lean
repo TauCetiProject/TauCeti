@@ -36,28 +36,48 @@ namespace TauCeti
 variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [SFinite μ] [NormedAddCommGroup E]
   {f : α × ℝ → E} {s : Set α} {a c : ℝ}
 
+/-- The translation `(x, t) ↦ (x, t + c)` is a measurable embedding of `α × ℝ` preserving
+`μ.prod volume`. -/
+private lemma measurePreserving_prodMap_add_right (μ : Measure α) [SFinite μ] (c : ℝ) :
+    MeasurePreserving (Prod.map id (· + c) : α × ℝ → α × ℝ) (μ.prod volume) (μ.prod volume) ∧
+      MeasurableEmbedding (Prod.map id (· + c) : α × ℝ → α × ℝ) :=
+  ⟨(MeasurePreserving.id μ).prod (measurePreserving_add_right volume c),
+    MeasurableEmbedding.id.prodMap (measurableEmbedding_addRight c)⟩
+
+omit [MeasurableSpace α] in
+/-- The translation `(x, t) ↦ (x, t + c)` pulls the band `s ×ˢ [a, a + c)` back to the previous
+band `s ×ˢ [a - c, a)`. -/
+private lemma preimage_prodMap_add_right_prod_Ico :
+    (Prod.map id (· + c) : α × ℝ → α × ℝ) ⁻¹' (s ×ˢ Ico a (a + c)) = s ×ˢ Ico (a - c) a := by
+  rw [preimage_prod_map_prod, preimage_id, preimage_add_const_Ico, add_sub_cancel_right]
+
+omit [MeasurableSpace α] in
+/-- Two periods `s ×ˢ [a - c, a + c)` are the union of the adjacent bands `s ×ˢ [a - c, a)` and
+`s ×ˢ [a, a + c)`; for `c < 0` all three are empty. -/
+private lemma prod_Ico_sub_union_prod_Ico_add :
+    s ×ˢ Ico (a - c) a ∪ s ×ˢ Ico a (a + c) = s ×ˢ Ico (a - c) (a + c) := by
+  rw [← prod_union]
+  rcases lt_or_ge c 0 with hc | hc
+  · rw [Ico_eq_empty (by linarith), Ico_eq_empty (by linarith), Ico_eq_empty (by linarith),
+      union_empty]
+  · rw [Ico_union_Ico_eq_Ico (by linarith) (by linarith)]
+
 /-- A function periodic in the second variable with period `c` is integrable over the band
 `s ×ˢ [a - c, a)` when it is integrable over the next band `s ×ˢ [a, a + c)`. -/
 theorem integrableOn_prod_Ico_sub_of_periodic (hf : ∀ x t, f (x, t + c) = f (x, t))
     (h : IntegrableOn f (s ×ˢ Ico a (a + c)) (μ.prod volume)) :
     IntegrableOn f (s ×ˢ Ico (a - c) a) (μ.prod volume) := by
-  have he : MeasurableEmbedding (Prod.map id (· + c) : α × ℝ → α × ℝ) :=
-    MeasurableEmbedding.id.prodMap (measurableEmbedding_addRight c)
-  have h' := (((MeasurePreserving.id μ).prod (measurePreserving_add_right volume c)
-    ).integrableOn_comp_preimage he).2 h
+  obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ c
+  have h' := (hm.integrableOn_comp_preimage he).2 h
   have hfc : f ∘ Prod.map id (· + c) = f := funext fun z ↦ hf z.1 z.2
-  rwa [hfc, preimage_prod_map_prod, preimage_id, preimage_add_const_Ico, add_sub_cancel_right]
-    at h'
+  rwa [hfc, preimage_prodMap_add_right_prod_Ico] at h'
 
 /-- A function periodic in the second variable with period `c` and integrable over one period
 `s ×ˢ [a, a + c)` is integrable over two periods `s ×ˢ [a - c, a + c)`. -/
 theorem integrableOn_prod_Ico_sub_add_of_periodic (hf : ∀ x t, f (x, t + c) = f (x, t))
     (h : IntegrableOn f (s ×ˢ Ico a (a + c)) (μ.prod volume)) :
     IntegrableOn f (s ×ˢ Ico (a - c) (a + c)) (μ.prod volume) := by
-  rcases lt_or_ge c 0 with hc | hc
-  · rw [Ico_eq_empty (by linarith), prod_empty]
-    exact integrableOn_empty
-  rw [← Ico_union_Ico_eq_Ico (b := a) (by linarith) (by linarith), prod_union]
+  rw [← prod_Ico_sub_union_prod_Ico_add]
   exact (integrableOn_prod_Ico_sub_of_periodic hf h).union h
 
 variable [NormedSpace ℝ E]
@@ -68,12 +88,10 @@ hypothesis is needed. -/
 theorem setIntegral_prod_Ico_sub_of_periodic (hf : ∀ x t, f (x, t + c) = f (x, t)) :
     ∫ z in s ×ˢ Ico (a - c) a, f z ∂μ.prod volume =
       ∫ z in s ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
-  have he : MeasurableEmbedding (Prod.map id (· + c) : α × ℝ → α × ℝ) :=
-    MeasurableEmbedding.id.prodMap (measurableEmbedding_addRight c)
-  have h := ((MeasurePreserving.id μ).prod (measurePreserving_add_right volume c)
-    ).setIntegral_preimage_emb he f (s ×ˢ Ico a (a + c))
+  obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ c
+  have h := hm.setIntegral_preimage_emb he f (s ×ˢ Ico a (a + c))
   have hfc (z : α × ℝ) : f (Prod.map id (· + c) z) = f z := hf z.1 z.2
-  rw [preimage_prod_map_prod, preimage_id, preimage_add_const_Ico, add_sub_cancel_right] at h
+  rw [preimage_prodMap_add_right_prod_Ico] at h
   simpa only [hfc] using h
 
 /-- The integral of a function periodic in the second variable with period `c` over two periods
@@ -84,10 +102,7 @@ theorem setIntegral_prod_Ico_sub_add_of_periodic (hs : MeasurableSet s)
     (h : IntegrableOn f (s ×ˢ Ico a (a + c)) (μ.prod volume)) :
     ∫ z in s ×ˢ Ico (a - c) (a + c), f z ∂μ.prod volume =
       2 • ∫ z in s ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
-  rcases lt_or_ge c 0 with hc | hc
-  · rw [Ico_eq_empty (by linarith), Ico_eq_empty (by linarith), prod_empty]
-    simp
-  rw [← Ico_union_Ico_eq_Ico (b := a) (by linarith) (by linarith), prod_union,
+  rw [← prod_Ico_sub_union_prod_Ico_add,
     setIntegral_union (disjoint_prod.2 (Or.inr Ico_disjoint_Ico_same))
       (hs.prod measurableSet_Ico) (integrableOn_prod_Ico_sub_of_periodic hf h) h,
     setIntegral_prod_Ico_sub_of_periodic hf, two_nsmul]

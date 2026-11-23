@@ -32,8 +32,10 @@ continuous function by `m` gives a sequence tending to `0` locally uniformly
 
 Locally uniform convergence along a filter `l` passes to any family of indices tending to `l`,
 for instance to a subsequence (`TendstoLocallyUniformlyOn.comp_tendsto`,
-`TendstoLocallyUniformly.comp_tendsto`), and a family that does not depend on its index
-converges locally uniformly to its constant value (`TauCeti.tendstoLocallyUniformly_const`).
+`TendstoLocallyUniformly.comp_tendsto`); along an image filter `map g q` it is convergence of the
+reindexed family along `q` (`tendstoLocallyUniformlyOn_map_iff`). A family that does not depend on
+its index converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformly_const`).
 Locally uniform convergence on the whole space gives pointwise convergence
 (`TendstoLocallyUniformly.tendsto_at`).
 Locally uniform convergence on the members of an open cover, to possibly different limits, is
@@ -71,6 +73,14 @@ theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [Topologic
     {q : Filter ι'} (h : TendstoLocallyUniformlyOn F f p s) (hg : Tendsto g q p) :
     TendstoLocallyUniformlyOn (F ∘ g) f q s :=
   fun u hu x hx ↦ (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, hg.eventually hev⟩
+
+/-- Locally uniform convergence along the image `map g q` of a filter is locally uniform
+convergence of the reindexed family `F ∘ g` along `q`. -/
+theorem tendstoLocallyUniformlyOn_map_iff {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {s : Set α} {g : ι' → ι} {q : Filter ι'} :
+    TendstoLocallyUniformlyOn F f (map g q) s ↔ TendstoLocallyUniformlyOn (F ∘ g) f q s :=
+  ⟨fun h ↦ h.comp_tendsto tendsto_map, fun h u hu x hx ↦
+    (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, eventually_map.2 hev⟩⟩
 
 /-- A locally uniform limit is a pointwise limit: if `F i → f` locally uniformly along `p`, then
 `F i a → f a` for every `a`. -/

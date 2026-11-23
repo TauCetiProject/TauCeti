@@ -33,7 +33,7 @@ The translate `z ↦ u(z + (m, n))` of a solution solves the same equation
 (`TauCeti.SymplecticForm.perturbedFDeriv_comp_add_right`), and its energy over the unit disc is at
 most the energy over two periods of the strip, so the threshold of the closed unit disc serves for
 each of its integer translates, and the open unit discs about the integer points cover the plane. A
-diagonal extraction (`TauCeti.extraction_forall`) gives one subsequence that converges
+diagonal extraction (`TauCeti.extraction_forall_of_antitone`) gives one subsequence that converges
 on each of these countably many discs off finitely many bubbling points. Floer energy at least `δ`
 concentrates at each bubbling point, and the set of such concentration points is invariant under
 the period `(0, 1)`, so it is determined by its points in the fundamental strip. There are at most
@@ -72,6 +72,14 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
+
+/-- A ball in the plane lies in the horizontal band `univ ×ˢ [a, b)` when its vertical extent
+`(z.2 - r, z.2 + r)` lies in `[a, b]`. -/
+private lemma ball_subset_univ_prod_Ico {z : ℝ × ℝ} {r a b : ℝ} (ha : a ≤ z.2 - r)
+    (hb : z.2 + r ≤ b) : ball z r ⊆ univ ×ˢ Ico a b := by
+  obtain ⟨s, t⟩ := z
+  rw [← ball_prod_same, Real.ball_eq_Ioo t r]
+  exact Set.prod_mono (subset_univ _) (Ioo_subset_Ico_self.trans (Ico_subset_Ico ha hb))
 
 /-- **Floer cylinders with doubly periodic data converge off finitely many bubbling points.** Let
 `K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on `(ℝ × ℝ) × V`, invariant under the
@@ -184,29 +192,26 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       rw [← hfper k (e j).2 (z + a)]
       congr 1
       ext <;> simp [a, hc]
-    have haW : ball a 1 ⊆ W := fun y hy ↦ by
-      rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt] at hy
-      exact ⟨mem_univ _, by simp only [a] at hy; linarith [hy.2.1], by
-        simp only [a] at hy; linarith [hy.2.2]⟩
+    have haW : ball a 1 ⊆ W := ball_subset_univ_prod_Ico (by norm_num [a]) (by norm_num [a])
     calc ∫ z in B, f k (z + c j) = ∫ z in B, f k (z + a) := by simp_rw [ha]
       _ = ∫ z in ball a 1, f k z := by rw [hB, setIntegral_ball_comp_add_right, zero_add]
       _ ≤ ∫ z in W, f k z := setIntegral_mono_set (hWint k).1
           (Eventually.of_forall fun y ↦ hf0 _ _) haW.eventuallySubset
       _ ≤ 2 * E := (hWint k).2
   -- On each window, every subsequence has a further subsequence converging off finitely many
-  -- bubbling points.
-  let P : ℕ → Filter ℕ → Prop := fun j l ↦ ∃ (Z' : Finset (ℝ × ℝ)) (v' : ℝ × ℝ → V), ↑Z' ⊆ B ∧
+  -- bubbling points, and these properties pass to finer filters. A diagonal extraction gives one
+  -- subsequence that does so on every window.
+  let P : ℕ → Filter ℕ → Prop := fun j l ↦ ∃ (Z' : Finset (ℝ × ℝ)) (v' : ℝ × ℝ → V),
       (∀ z ∈ Z', ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y in ball z ε ∩ B, f k (y + c j)) ∧
       (∀ C, IsCompact C → C ⊆ B \ ↑Z' →
         ∃ M, ∀ᶠ k in l, ∀ y ∈ C, ‖fderiv ℝ (u k) (y + c j)‖ ≤ M) ∧
       TendstoLocallyUniformlyOn (fun k y ↦ u k (y + c j)) v' l (B \ ↑Z')
-  have hPmono (j : ℕ) {l l' : Filter ℕ} (hl : l' ≤ l) : P j l → P j l' :=
-    fun ⟨Z', v', hZ', hconc, hbd, hlim⟩ ↦ ⟨Z', v', hZ',
+  obtain ⟨φ, hφ, hP⟩ := extraction_forall_of_antitone (P := P)
+    (fun j _ _ hl ⟨Z', v', hconc, hbd, hlim⟩ ↦ ⟨Z', v',
       fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
       fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl,
-      fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, h.filter_mono hl⟩⟩
-  obtain ⟨φ, hφ, hP⟩ := extraction_forall (P := fun j ψ ↦ P j (map ψ atTop)) fun j ψ _ ↦ by
-      obtain ⟨ψ', Z', v', hψ', hZ', -, hconc, hbd, -, -, hlim⟩ :=
+      hlim.comp_tendsto (tendsto_id'.2 hl)⟩) fun j ψ _ ↦ by
+      obtain ⟨ψ', Z', v', hψ', -, -, hconc, hbd, -, -, hlim⟩ :=
         hconv (Ω := B) (u := fun k y ↦ u (ψ k) (y + c j)) (E := 2 * E) isOpen_ball
           ball_subset_closedBall
           (fun k ↦ ((hu (ψ k)).comp (contDiff_id.add contDiff_const)).contDiffOn)
@@ -216,22 +221,15 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
           (fun k ↦ by
             rw [setIntegral_congr_fun isOpen_ball.measurableSet fun z _ ↦ hfw j (ψ k) z]
             exact hwin j (ψ k))
-      refine ⟨ψ', hψ', Z', v', hZ', fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
-        fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, eventually_map.2 h⟩⟩
+      refine ⟨ψ', hψ', Z', v', fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
+        tendstoLocallyUniformlyOn_map_iff.2 hlim⟩
       · refine eventually_map.2 ((hconc z hz ε hε).mono fun n hn ↦ ?_)
         rwa [setIntegral_congr_fun (measurableSet_ball.inter isOpen_ball.measurableSet)
           fun y _ ↦ hfw j (ψ (ψ' n)) y] at hn
       · obtain ⟨M, hM⟩ := hbd C hC hCZ
         refine ⟨M, eventually_map.2 (Eventually.of_forall fun n y hy ↦ ?_)⟩
         simpa [fderiv_comp_add_right] using hM n y hy
-  -- The diagonal subsequence is eventually a reindexing of the subsequence for each window.
-  replace hP (j : ℕ) : P j (map φ atTop) := by
-    obtain ⟨ψ, hψ, hφψ⟩ := hP j
-    obtain ⟨f, hf, hφf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hφψ
-    refine hPmono j ?_ hψ
-    rw [map_congr hφf, ← map_map]
-    exact map_mono hf
-  choose Z v _ hconc hbd hlim using hP
+  choose Z v hconc hbd hlim using hP
   set l : Filter ℕ := map φ atTop
   -- The bubbling points of all windows, carried back to the plane.
   set Zall : Set (ℝ × ℝ) := ⋃ j, (· + c j) '' (Z j : Set (ℝ × ℝ)) with hZall
@@ -256,12 +254,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       (fun k y _ ↦ hf0 k y) (fun k ↦ (hWint k).1) (fun k ↦ (hWint k).2) fun z hz ε hε ↦ by
         obtain ⟨hzc, -, hz0, hz1⟩ := hF hz
         filter_upwards [hzc (min ε (1 - z.2)) (lt_min hε (by linarith))] with k hk
-        refine hk.trans (setIntegral_mono_set ((hWint k).1.mono_set inter_subset_right)
-          (Eventually.of_forall fun y ↦ hf0 _ _)
-          (subset_inter (ball_subset_ball (min_le_left _ _)) fun y hy ↦ ?_).eventuallySubset)
-        rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt] at hy
         have := min_le_right ε (1 - z.2)
-        exact ⟨mem_univ _, by linarith [hy.2.1], by linarith [hy.2.2]⟩
+        exact hk.trans (setIntegral_mono_set ((hWint k).1.mono_set inter_subset_right)
+          (Eventually.of_forall fun y ↦ hf0 _ _)
+          (subset_inter (ball_subset_ball (min_le_left _ _))
+            (ball_subset_univ_prod_Ico (by linarith) (by linarith))).eventuallySubset)
   have hfin : (Zc ∩ S).Finite := by
     by_contra h
     obtain ⟨F, hF, hFc⟩ := Set.Infinite.exists_subset_card_eq h (⌊2 * E / δ⌋₊ + 1)
@@ -305,7 +302,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     fun y hy ↦ hK.isClosed.mem_of_tendsto (hlimv.tendsto_at hy)
       (Eventually.of_forall fun k ↦ huK k y),
     fun s t ↦ by simp only [v', hper],
-    fun U hU x hx ↦ (hlimv U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, eventually_map.1 h⟩⟩
+    hlimv.comp_tendsto tendsto_map⟩
   · have h := hcard hfin.toFinset (by simp)
     linarith
   -- Each point of `C` has a closed disc in a good part of some window, on which that window
