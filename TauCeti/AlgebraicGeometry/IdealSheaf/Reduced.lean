@@ -14,7 +14,9 @@ import Mathlib.RingTheory.Localization.Ideal
 
 A closed subscheme is reduced exactly when its defining ideal sheaf is radical. Equivalently,
 its ideal on every affine open is radical. This permits reducedness of a divisor to be checked
-on its local equations, rather than on the local rings of the closed subscheme.
+on its local equations, rather than on the local rings of the closed subscheme. The radical of
+a nonzero power of an ideal sheaf is its radical
+(`AlgebraicGeometry.Scheme.IdealSheafData.radical_pow`).
 
 ## References
 
@@ -26,6 +28,12 @@ public section
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X : Scheme} (I : X.IdealSheafData)
+
+/-- The radical of a nonzero power of an ideal sheaf is its radical, as for ideals
+(Mathlib's `Ideal.radical_pow`): both are the vanishing ideal of the common support. -/
+@[simp]
+theorem radical_pow {n : ℕ} (hn : n ≠ 0) : (I ^ n).radical = I.radical := by
+  rw [← vanishingIdeal_support, ← vanishingIdeal_support, support_pow I n hn]
 
 /-- A closed subscheme is reduced exactly when its ideal sheaf equals its radical. -/
 theorem isReduced_subscheme_iff_radical_eq : IsReduced I.subscheme ↔ I.radical = I := by

@@ -160,9 +160,8 @@ theorem ker_levelMap_comap_ι (n : ℕ) :
 is the inverse image along `ι n` of `(levelMap (n + 1)).ker ^ (n + 1) = (ι n).ker`, which vanishes
 on `X n`. -/
 @[simp]
-theorem ker_levelMap_pow_succ_eq_bot (n : ℕ) : (𝔛.levelMap n).ker ^ (n + 1) = ⊥ := by
-  rw [← 𝔛.ker_levelMap_comap_ι n, ← Scheme.IdealSheafData.comap_pow, ← 𝔛.ker_ι n,
-    Scheme.Hom.comap_ker_self]
+theorem ker_levelMap_pow_succ_eq_bot (n : ℕ) : (𝔛.levelMap n).ker ^ (n + 1) = ⊥ :=
+  ker_pow_eq_bot_of_ker_comp_pow_eq _ (𝔛.ι n) (by rw [← levelMap_succ, ker_ι])
 
 /-- Every transition `ι n : X n ⟶ X (n + 1)` of an adic thickening system is a first-order
 thickening, because `(n + 1) + (n + 1) ≥ n + 2` and `(levelMap (n + 1)).ker ^ (n + 2) = ⊥`. -/
