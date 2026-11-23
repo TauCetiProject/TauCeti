@@ -171,7 +171,7 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_bilinLeftCLM_le (s : ℝ) 
       ∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ b.repr (g x) k) x‖ ≤ ‖c k‖ * M :=
     (c k).norm_iteratedFDeriv_comp_left_le_of_forall_le (hg.1.of_le (mod_cast le_top)) hgM
   set U := SchwartzMap.toBesselPotentialSpaceCLM s 2 u
-  choose v hv hvn using fun k ↦ hmul (hg.repr b k) (hgkM k) (postcomp E s 2 (B.flip (b k)) U)
+  choose v hv hvn using fun k ↦ hmul (hg.basis_repr b k) (hgkM k) (postcomp E s 2 (B.flip (b k)) U)
   -- Since `‖B.flip bₖ‖ ≤ ‖B‖ ‖bₖ‖`, the `k`-th term has norm at most `C₀ ‖c k‖ M ‖B‖ ‖bₖ‖ ‖U‖`.
   have hterm (k : Fin (Module.finrank ℂ G)) :
       ‖v k‖ ≤ C₀ * (‖c k‖ * ‖b k‖) * ‖B‖ * M * ‖U‖ := by
@@ -189,12 +189,12 @@ variable (s : ℝ)
 
 /-- **Multiplication by a bilinear map against a function with bounded derivatives** as a bounded
 operator `H^s(E, F) → H^s(E, K)`: the extension of `SchwartzMap.bilinLeftCLM B hg`, the operator
-`u ↦ (x ↦ B (u x) (g x))` on Schwartz functions. When the derivatives of `g` of order at most
-`⌊|s|⌋₊ + 1` are bounded, it agrees with that operator on Schwartz functions
-(`BesselPotentialSpace.bilinLeftCLM_toBesselPotentialSpaceCLM`), which determines it
-(`BesselPotentialSpace.continuousLinearMap_ext`), and its norm is controlled by those bounds
-(`BesselPotentialSpace.exists_norm_bilinLeftCLM_le`). For `g` without such bounds the value is the
-junk value of `LinearMap.extendOfNorm`. -/
+`u ↦ (x ↦ B (u x) (g x))` on Schwartz functions, defined by `LinearMap.extendOfNorm`. A sufficient
+condition for it to agree with that operator on Schwartz functions
+(`BesselPotentialSpace.bilinLeftCLM_toBesselPotentialSpaceCLM`), which then determines it
+(`BesselPotentialSpace.continuousLinearMap_ext`), is that the derivatives of `g` of order at most
+`⌊|s|⌋₊ + 1` are bounded; its norm is then controlled by those bounds
+(`BesselPotentialSpace.exists_norm_bilinLeftCLM_le`). -/
 def bilinLeftCLM (B : F →L[ℂ] G →L[ℂ] K) {g : E → G} (hg : g.HasTemperateGrowth) :
     H^{s}(E, F) →L[ℂ] H^{s}(E, K) :=
   ((SchwartzMap.toBesselPotentialSpaceCLM s 2).comp

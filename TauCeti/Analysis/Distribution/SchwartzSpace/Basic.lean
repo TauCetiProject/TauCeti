@@ -380,7 +380,7 @@ theorem bilinLeftCLM_eq_sum_smulLeftCLM (b : Module.Basis ι 𝕜 G) (B : F →L
   have hx : B (u x) (g x) = ∑ k, b.repr (g x) k • B (u x) (b k) := by
     conv_lhs => rw [← b.sum_repr (g x)]
     simp only [map_sum, map_smul]
-  simp [smulLeftCLM_apply_apply (hg.repr b _), hx]
+  simp [smulLeftCLM_apply_apply (hg.basis_repr b _), hx]
 
 end Bilin
 
