@@ -103,6 +103,17 @@ theorem map_ι_eq_sum {A : Type*} [Semiring A] [Algebra ℝ A] (ρ : CliffordAlg
   conv_lhs => rw [← b.sum_repr' v]
   simp only [map_sum, map_smul]
 
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, applied to a vector of a Clifford
+module over any scalars `S` compatible with the real scalars:
+`c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ` (`OrthonormalBasis.map_ι_eq_sum` evaluated at `ψ`). -/
+theorem map_ι_apply_eq_sum {S W : Type*} [Semiring S] [SMul ℝ S] [AddCommGroup W] [Module S W]
+    [Module ℝ W] [SMulCommClass S ℝ W] [IsScalarTower ℝ S W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End S W) (v : V) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
+  rw [b.map_ι_eq_sum ρ v, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply]
+
 section Module
 
 variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
@@ -121,14 +132,6 @@ theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
       -ρ (CliffordAlgebra.ι Q (b j)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) := by
   simpa [mul_apply_eq_comp] using
     congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
-
-omit hQ in
-/-- Clifford multiplication expanded in an orthonormal basis, applied to a vector of a Clifford
-module: `c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ` (`OrthonormalBasis.map_ι_eq_sum` evaluated at `ψ`). -/
-theorem map_ι_apply_eq_sum (v : V) (ψ : W) :
-    ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
-  rw [b.map_ι_eq_sum ρ v, LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply]
 
 end Module
 
