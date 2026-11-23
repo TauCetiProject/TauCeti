@@ -80,11 +80,6 @@ public section
 
 open CategoryTheory TopologicalSpace AlgebraicGeometry
 
-/-- The image of a set under a composite of morphisms of schemes is the image of its image. -/
-theorem AlgebraicGeometry.Scheme.Hom.image_comp {X Y Z : Scheme} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (s : Set X) : (f ≫ g) '' s = g '' (f '' s) := by
-  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
-
 namespace TauCeti.AlgebraicGeometry
 
 universe u

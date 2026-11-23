@@ -503,6 +503,10 @@ def pullbackPostcompIso (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh :
 theorem pullbackPostcompIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
     (hh : h ≫ r = q) (x : T ⟶ S) :
     (F.pullbackPostcompIso h hh x).hom.curve = 𝟙 _ :=
+  -- `Hom.curve` is `toCurve.map` by definition, so `eqToHom_map` rewrites the curve of
+  -- `eqToHom (F.pullback_postcomp h hh x)` as `eqToHom` of the induced equality of source curves.
+  -- Postcomposition keeps the source curve, so both sides of that equality unfold to the curve of
+  -- `F.pullback x`, and `eqToHom_refl` identifies it with the identity.
   (eqToHom_map toCurve _).trans (eqToHom_refl _ _)
 
 /-- `pullbackPostcompIso` is the identity on source curves. -/
@@ -510,6 +514,7 @@ theorem pullbackPostcompIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : 
 theorem pullbackPostcompIso_inv_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
     (hh : h ≫ r = q) (x : T ⟶ S) :
     (F.pullbackPostcompIso h hh x).inv.curve = 𝟙 _ :=
+  -- As for `pullbackPostcompIso_hom_curve`, with the inverse equality of prestable maps.
   (eqToHom_map toCurve _).trans (eqToHom_refl _ _)
 
 end PrestableMap
