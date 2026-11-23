@@ -11,10 +11,10 @@ public import Mathlib.Algebra.PresentedMonoid.Basic
 # Words in a presented monoid
 
 The class in `PresentedMonoid rels` of the word `FreeMonoid.ofList l` is the product of the
-generators listed by `l` (`PresentedMonoid.mk_ofList`). Since `PresentedMonoid rels` is defined
-as the quotient of `FreeMonoid α` by the congruence `conGen rels`, the class of a word is also
-its coercion into that quotient (`PresentedMonoid.mk_eq_coe`), which lets functions on words
-constant on `conGen rels` descend with `Con.liftOn`.
+generators listed by `l` (`PresentedMonoid.mk_ofList`). A function on words that is constant on
+the classes of the congruence `conGen rels` descends to `PresentedMonoid rels`
+(`PresentedMonoid.liftOn`), and its value on the class of a word is its value on the word
+(`PresentedMonoid.liftOn_mk`).
 -/
 
 public section
@@ -28,9 +28,18 @@ theorem mk_ofList (l : List α) : mk rels (FreeMonoid.ofList l) = (l.map (of rel
   rw [show mk rels = FreeMonoid.lift (of rels) from
     FreeMonoid.hom_eq fun _ ↦ by rw [FreeMonoid.lift_eval_of, of], FreeMonoid.lift_ofList]
 
-/-- The class of a word in `PresentedMonoid rels` is its coercion into the quotient by
-`conGen rels`, the type that `PresentedMonoid rels` is defined to be. -/
-theorem mk_eq_coe (w : FreeMonoid α) : @Eq (conGen rels).Quotient (mk rels w) w :=
-  rfl
+/-- Descend a function on words that is constant on the classes of `conGen rels` to the presented
+monoid. This is `Con.liftOn` for `conGen rels`, since `PresentedMonoid rels` is defined to be the
+quotient of `FreeMonoid α` by `conGen rels`. -/
+protected def liftOn {β : Sort*} (x : PresentedMonoid rels) (f : FreeMonoid α → β)
+    (h : ∀ w v, conGen rels w v → f w = f v) : β :=
+  Con.liftOn (c := conGen rels) x f h
+
+/-- A function descended with `PresentedMonoid.liftOn` takes its value on the class of a word to
+its value on the word. -/
+@[simp]
+theorem liftOn_mk {β : Sort*} (w : FreeMonoid α) (f : FreeMonoid α → β)
+    (h : ∀ w v, conGen rels w v → f w = f v) : (mk rels w).liftOn f h = f w :=
+  Con.liftOn_coe (conGen rels) f h w
 
 end PresentedMonoid
