@@ -620,22 +620,35 @@ theorem contMDiffOn_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     (ht.sub hs).prodMk (hs.prodMk contMDiff_snd)
   exact contMDiff_snd.comp_contMDiffOn (hflow.comp hg.contMDiffOn fun _ hp ↦ hp)
 
-/-- In finite dimensions, the maps of the time-dependent flow of a `C^n` field, `1 ≤ n`, from a
-fixed initial time `s` form a family which is jointly `C^n` in the final time and the point at every
-point of the domain. -/
-theorem contMDiffAt_uncurry_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+/-- On a complete normed model space, let `X` be a jointly `C^n` field, `1 ≤ n`, and let `σ`, `τ`
+and `c` be `C^n` at `z`, with the flow from `(σ z, c z)` defined at time `τ z`. Then
+`y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)` is `C^n` at `z`. -/
+theorem contMDiffAt_timeDependentFlowOf_comp [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n)
+    [IsManifold I n M] {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {σ τ : N → ℝ} {c : N → M} {z : N} (hσ : ContMDiffAt J 𝓘(ℝ, ℝ) n σ z)
+    (hτ : ContMDiffAt J 𝓘(ℝ, ℝ) n τ z) (hc : ContMDiffAt J I n c z)
+    (h : ((σ z, τ z), c z) ∈ timeDependentFlowDomain X) :
+    ContMDiffAt J I n (fun y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)) z := by
+  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I n
+      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((σ z, τ z), c z) :=
+    (contMDiffOn_timeDependentFlowOf hn hX).contMDiffAt
+      ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)
+  exact hflow.comp (f := fun y ↦ ((σ y, τ y), c y)) z ((hσ.prodMk hτ).prodMk hc)
+
+/-- On a complete normed model space, the maps of the time-dependent flow of a `C^n` field,
+`1 ≤ n`, from a fixed initial time `s` form a family which is jointly `C^n` in the final time and
+the point at every point of the domain. -/
+theorem contMDiffAt_uncurry_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
-    ContMDiffAt (𝓘(ℝ, ℝ).prod I) I n (Function.uncurry (timeDependentFlowOf X s)) (t, x) := by
-  have hflow := (contMDiffOn_timeDependentFlowOf hn hX).contMDiffAt
-    ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)
-  have hg : ContMDiffAt (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) n
-      (fun q : ℝ × M ↦ ((s, q.1), q.2)) (t, x) :=
-    ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
-  exact ContMDiffAt.comp (g := fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2)
-    (t, x) hflow hg
+    ContMDiffAt (𝓘(ℝ, ℝ).prod I) I n (Function.uncurry (timeDependentFlowOf X s)) (t, x) :=
+  contMDiffAt_timeDependentFlowOf_comp hn hX contMDiffAt_const contMDiffAt_fst contMDiffAt_snd h
 
 /-- **Solutions of a `C^n` time-dependent equation are `C^n`.** On a complete normed model space, a
 curve `γ` with `γ' u = X u (γ u)` on an open interval is `C^n` there when the time-dependent field
@@ -1336,24 +1349,6 @@ section CompleteSpace
 
 variable [CompleteSpace E]
 
-/-- Let `X` be a jointly `C^n` field, `1 ≤ n`, and let `σ`, `τ` and `c` be `C^n` at `z`, with the
-flow from `(σ z, c z)` defined at time `τ z`. Then `y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)`
-is `C^n` at `z`. -/
-theorem contMDiffAt_timeDependentFlowOf_comp {n : ℕ∞} (hn : 1 ≤ n)
-    [IsManifold I n M] {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
-      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-    {σ τ : N → ℝ} {c : N → M} {z : N} (hσ : ContMDiffAt J 𝓘(ℝ, ℝ) n σ z)
-    (hτ : ContMDiffAt J 𝓘(ℝ, ℝ) n τ z) (hc : ContMDiffAt J I n c z)
-    (h : ((σ z, τ z), c z) ∈ timeDependentFlowDomain X) :
-    ContMDiffAt J I n (fun y ↦ timeDependentFlowOf X (σ y) (τ y) (c y)) z := by
-  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I n
-      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((σ z, τ z), c z) :=
-    (contMDiffOn_timeDependentFlowOf hn hX).contMDiffAt
-      ((isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).mem_nhds h)
-  exact hflow.comp (f := fun y ↦ ((σ y, τ y), c y)) z ((hσ.prodMk hτ).prodMk hc)
-
 /-- The time map of the time-dependent flow of a jointly `C^n` field, `1 ≤ n`, is `C^n` at every
 point at which it is defined. -/
 theorem contMDiffAt_timeDependentFlowOf {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
@@ -1378,8 +1373,7 @@ theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hmn
   have hW : IsOpen W :=
     (isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).preimage (by fun_prop)
   have hf : ContMDiffOn (𝓘(ℝ, ℝ).prod I) I n (fun q : ℝ × M ↦ timeDependentFlowOf X s q.1 q.2)
-      W := fun q hq ↦ (contMDiffAt_timeDependentFlowOf_comp hn hX contMDiffAt_const
-        contMDiffAt_fst contMDiffAt_snd hq).contMDiffWithinAt
+      W := fun q hq ↦ (contMDiffAt_uncurry_timeDependentFlowOf hn hX hq).contMDiffWithinAt
   -- The tangent vector `(0, v)` to `ℝ × M` at `(u, x)` varies smoothly with `u`.
   have hlift : ContMDiff 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ).prod I).tangent m
       (fun u : ℝ ↦ (equivTangentBundleProd 𝓘(ℝ, ℝ) ℝ I M).symm (⟨u, 0⟩, ⟨x, v⟩)) :=
