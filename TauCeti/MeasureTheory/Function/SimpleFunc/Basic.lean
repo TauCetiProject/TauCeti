@@ -21,7 +21,7 @@ gives `x ↦ a (u x) • u x` (`MeasureTheory.SimpleFunc.sum_smul_restrict_const
 
 If `u` lies in `Lᵖ` for some `0 < p < ∞`, then for each `c` the constant `c` restricted to
 `u ⁻¹' {c}` lies in every `L^q` (`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`), for `u`
-with values in any extended seminormed additive monoid.
+with values in any topological space with a zero of extended norm `0`.
 
 The file also records how products act on simple functions supported on a measurable set
 (extended by zero outside it,
@@ -67,27 +67,37 @@ theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
   map_eq_sum_restrict_const u id
 
 /-- If a simple function `u` lies in `Lᵖ` for some `0 < p < ∞`, the constant `c` restricted to the
-fibre `u ⁻¹' {c}` lies in every `L^q`. -/
-theorem memLp_restrict_const_fiber {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε]
-    {μ : Measure α} {u : SimpleFunc α ε} {p : ℝ≥0∞} (hu : MemLp u p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (q : ℝ≥0∞) (c : ε) : MemLp ((const α c).restrict (u ⁻¹' {c})) q μ := by
-  have hs := (u.measurableSet_fiber c).nullMeasurableSet (μ := μ)
-  rw [coe_restrict _ (u.measurableSet_fiber c), coe_const]
-  have hp' : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
+fibre `u ⁻¹' {c}` lies in every `L^q`. The codomain only needs a zero of extended norm `0`. -/
+theorem memLp_restrict_const_fiber {ε : Type*} [TopologicalSpace ε] [Zero ε] [ENorm ε]
+    (h0 : ‖(0 : ε)‖ₑ = 0) {μ : Measure α} {u : SimpleFunc α ε} {p : ℝ≥0∞} (hu : MemLp u p μ)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (q : ℝ≥0∞) (c : ε) :
+    MemLp ((const α c).restrict (u ⁻¹' {c})) q μ := by
+  have hsm := u.measurableSet_fiber c
+  have hs := hsm.nullMeasurableSet (μ := μ)
+  -- The fibre piece has the extended norm of the `ℝ≥0∞`-valued indicator of `‖c‖ₑ` on the fibre,
+  -- so it lies in `L^r` exactly when that indicator does.
+  have hmem (r : ℝ≥0∞) : MemLp ((const α c).restrict (u ⁻¹' {c})) r μ ↔
+      MemLp ((u ⁻¹' {c}).indicator fun _ ↦ ‖c‖ₑ) r μ := by
+    refine iff_of_eq (congrArg (· < ∞) (eLpNorm_congr_eNorm_ae (SimpleFunc.aestronglyMeasurable _)
+      (aestronglyMeasurable_const.indicator hsm) (.of_forall fun x ↦ ?_)))
+    by_cases hx : u x = c <;> simp [restrict_apply _ hsm, hx, h0]
   -- Markov's inequality: on the fibre `u` is `c`, so `‖c‖ₑ * μ (u ⁻¹' {c}) ^ (1 / p)` is bounded
   -- by the `p`-seminorm of `u`.
   have hfin : ‖c‖ₑ * μ (u ⁻¹' {c}) ^ (1 / p.toReal) < ∞ := by
-    have hind : (u ⁻¹' {c}).indicator (fun _ ↦ c) = (u ⁻¹' {c}).indicator u :=
-      Set.indicator_congr fun _ hx ↦ (Set.mem_singleton_iff.1 hx).symm
-    rw [← eLpNorm_indicator_const hs hp0 hp, hind]
-    exact (eLpNorm_indicator_le _ hs).trans_lt hu.eLpNorm_lt_top
+    have hle : eLpNorm ((const α c).restrict (u ⁻¹' {c})) p μ ≤ eLpNorm u p μ := by
+      refine eLpNorm_mono_eNorm (SimpleFunc.aestronglyMeasurable _) fun x ↦ ?_
+      by_cases hx : u x = c <;> simp [restrict_apply _ hsm, hx, h0]
+    have h := (hmem p).1 (hle.trans_lt hu.eLpNorm_lt_top)
+    rwa [MeasureTheory.memLp_iff, eLpNorm_indicator_const hs hp0 hp, eNorm_eq_self] at h
+  have hp' : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
   rw [ENNReal.mul_lt_top_iff, ENNReal.rpow_lt_top_iff_of_pos hp',
     ENNReal.rpow_eq_zero_iff_of_pos hp'] at hfin
-  rw [MeasureTheory.memLp_iff]
+  rw [hmem, MeasureTheory.memLp_iff]
   rcases hfin with ⟨hc, hμ⟩ | hc | hμ
-  · exact (eLpNorm_indicator_const_le c q hs).trans_lt
-      (ENNReal.mul_lt_top hc (ENNReal.rpow_lt_top_of_nonneg (by positivity) hμ.ne))
-  · exact (eLpNorm_indicator_const_le c q hs).trans_lt (by simp [hc])
+  · exact (eLpNorm_indicator_const_le _ q hs).trans_lt
+      (ENNReal.mul_lt_top (by simpa using hc)
+        (ENNReal.rpow_lt_top_of_nonneg (by positivity) hμ.ne))
+  · exact (eLpNorm_indicator_const_le _ q hs).trans_lt (by simp [hc])
   · rw [eLpNorm_indicator_eq_eLpNorm_restrict hs, Measure.restrict_eq_zero.2 hμ,
       eLpNorm_measure_zero]
     exact ENNReal.zero_lt_top
