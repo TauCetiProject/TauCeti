@@ -29,7 +29,7 @@ torus descended from the split torus `D(M)`. Its scalar extension to `L` is iden
 
 ## Main declarations
 
-* `TauCeti.GaloisDescent.instModuleFiniteGroupAlgebraGroupAlgebraInvariants`: the split group
+* `TauCeti.GaloisDescent.instModuleFiniteGroupAlgebraInvariantsMonoidAlgebra`: the split group
   algebra is module-finite, hence integral, over its invariant algebra.
 * `TauCeti.GaloisDescent.instFiniteTypeGroupAlgebraInvariants`: the invariant algebra is finite
   type over the ground field.
@@ -58,7 +58,7 @@ variable [Field k] [Field L] [Algebra k L] [AddCommGroup M]
 /-- The split group algebra is finite as a module over its invariant algebra when the
 automorphism group of `L/k` is finite. Neither `L/k` nor the exponent group needs to be finitely
 generated. -/
-instance instModuleFiniteGroupAlgebraGroupAlgebraInvariants
+instance instModuleFiniteGroupAlgebraInvariantsMonoidAlgebra
     [Finite (L ≃ₐ[k] L)] (rho : Representation ℤ (L ≃ₐ[k] L) M) :
     Module.Finite (groupAlgebraInvariants rho)
       (MonoidAlgebra L (Multiplicative M)) := by
