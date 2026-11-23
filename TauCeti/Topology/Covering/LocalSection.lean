@@ -101,12 +101,11 @@ theorem _root_.IsEvenlyCovered.of_leftInvOn_sections (hp : Continuous p)
     rw [← (hps' e).injOn.preimage_image_inter hWV, inter_comm]
     exact (hsc' e).isOpen_inter_preimage isOpen_interior hW
   · -- distinct points of the fibre have disjoint sheets
-    refine fun e e' hee' ↦ disjoint_left.2 ?_
-    rintro _ ⟨y, hy, rfl⟩ ⟨z, hz, hzy⟩
-    obtain rfl : z = y := by rw [← hps' e' hz, hzy, hps' e hy]
+    refine fun e e' hee' ↦ disjoint_image_image fun y hy z hz hyz ↦ ?_
+    obtain rfl : z = y := by rw [← hps' e' hz, ← hyz, hps' e hy]
     refine hee' (Subtype.ext ?_)
     rw [← hsx e e.property, ← hsx e' e'.property]
-    exact hrigid e e' (hfib e e.property) (hfib e' e'.property) (interior_subset hy) hzy.symm hxV
+    exact hrigid e e' (hfib e e.property) (hfib e' e'.property) (interior_subset hy) hyz hxV
   · -- the sheets exhaust the preimage of `interior V`
     intro e' he'
     have hpI : p e' ∈ interior V := mem_preimage.1 he'
