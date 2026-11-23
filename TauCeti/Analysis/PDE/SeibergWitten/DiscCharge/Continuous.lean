@@ -108,8 +108,8 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_two_pi_mul_degree_of_dist_lt {
       σ z + (s : ℝ) • (σ' z - σ z) ∈ Metric.thickening δ (σ '' Metric.sphere z₀ r) := by
     refine Metric.mem_thickening_iff.2 ⟨σ z, mem_image_of_mem σ hz, ?_⟩
     calc dist (σ z + (s : ℝ) • (σ' z - σ z)) (σ z) = (s : ℝ) * dist (σ' z) (σ z) := by
-          simp [dist_eq_norm, norm_smul, abs_of_nonneg s.2.1]
-      _ ≤ dist (σ' z) (σ z) := mul_le_of_le_one_left dist_nonneg s.2.2
+          simp [dist_eq_norm, norm_smul, abs_of_nonneg s.property.1]
+      _ ≤ dist (σ' z) (σ z) := mul_le_of_le_one_left dist_nonneg s.property.2
       _ < δ := hσσ' z hz
   have hne (s : unitInterval) {z : ℂ} (hz : z ∈ Metric.sphere z₀ r) :
       α (σ z + (s : ℝ) • (σ' z - σ z)) ≠ 0 :=
@@ -123,7 +123,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_two_pi_mul_degree_of_dist_lt {
   let F : C(unitInterval × Circle, ℂ) :=
     ⟨fun p ↦ α (σ (z₀ + r * p.2) + (p.1 : ℝ) • (σ' (z₀ + r * p.2) - σ (z₀ + r * p.2))),
       hα.continuous.comp <| (hσc.comp continuous_snd).add <|
-        (continuous_subtype_val.comp continuous_fst).smul <|
+        (continuous_subtypeVal.comp continuous_fst).smul <|
           (hσ'.continuous.comp (by fun_prop)).sub (hσc.comp continuous_snd)⟩
   let f' : C(Circle, ℂ) := ⟨fun ζ ↦ α (σ' (z₀ + r * ζ)), by fun_prop⟩
   let u' := f'.normalizeToCircle fun ζ ↦ by simpa [f'] using hne 1 (hsph ζ)

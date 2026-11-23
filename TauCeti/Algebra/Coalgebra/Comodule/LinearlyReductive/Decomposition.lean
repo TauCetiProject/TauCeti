@@ -55,9 +55,8 @@ theorem sSup_simpleCoefficientSubmodules_eq_top (hC : IsLinearlyReductive.{u, v,
 of a linearly reductive coalgebra, over an arbitrary field. -/
 theorem isInternal_simpleCoefficientSubmodules (hC : IsLinearlyReductive.{u, v, u} k C) :
     DirectSum.IsInternal
-      (fun P : Comodule.simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) := by
-  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-  · exact (sSupIndep_iff _).mp Comodule.sSupIndep_simpleCoefficientSubmodules
-  · rw [← sSup_eq_iSup', hC.sSup_simpleCoefficientSubmodules_eq_top]
+      (fun P : Comodule.simpleCoefficientSubmodules k C ↦ (P.val : Submodule k C)) :=
+  Comodule.isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    hC.sSup_simpleCoefficientSubmodules_eq_top
 
 end TauCeti.Coalgebra.IsLinearlyReductive

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
-import TauCeti.MeasureTheory.Function.RankOne
 
 /-!
 # Unique continuation and isolated point preimages of J-holomorphic curves
@@ -39,10 +38,10 @@ isomorphism `Ψ : ℂⁿ → E` turns `J(x₀)` into multiplication by `i`
 `∂ₛη + i ∂ₜη = Ψ⁻¹ (J(x₀) (J(u) - J(x₀)) ∂ₛu)`.
 
 As `J` is Lipschitz near `x₀`, the right-hand side is bounded by a multiple of `‖∂ₛu‖ ‖η‖`, so
-it equals `-C η` for the rank-one coefficient `C` sending `η(z)` to minus the right-hand side
-(`TauCeti.rankOneDivNormSq`), which is measurable and locally bounded. Carleman's similarity
-principle for the constant structure `i` (`TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`)
-then factors `η` near each of its zeros, and the zero structure of such factorizations
+it equals `-C η` for a rank-one coefficient `C` which is measurable and locally bounded.
+Carleman's similarity principle for the constant structure `i`, in its form for this differential
+inequality (`TauCeti.hasSimilarityFactorizationAt_of_norm_le`), then factors `η` near each of its
+zeros, and the zero structure of such factorizations
 (`TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`) gives the results above. No
 variable-structure similarity principle is needed for point preimages: the term
 `(J(u) - J(x₀)) ∂ₛu` vanishes to first order in `u - x₀`. The corresponding statement for the
@@ -121,17 +120,16 @@ end Frozen
 
 omit [FiniteDimensional ℝ E] in
 /-- **Localization near a point preimage.** If `J` is Lipschitz near `x₀ = u z₀`, then on some
-disc about `z₀` inside `Ω` the map `J ∘ u` is continuous and the difference `J(u) - J(x₀)` is
-bounded by a multiple of `u - x₀`. -/
+disc about `z₀` inside `Ω` the difference `J(u) - J(x₀)` is bounded by a multiple of
+`u - x₀`. -/
 private theorem exists_ball_norm_sub_le (hJ : ∃ K, ∃ t ∈ 𝓝 x₀, LipschitzOnWith K J t)
     (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω) (hz₀ : z₀ ∈ Ω) (hu₀ : u z₀ = x₀) :
-    ∃ K : ℝ≥0, ∃ r > 0, ball z₀ r ⊆ Ω ∧ ContinuousOn (fun z ↦ J (u z)) (ball z₀ r) ∧
+    ∃ K : ℝ≥0, ∃ r > 0, ball z₀ r ⊆ Ω ∧
       ∀ z ∈ ball z₀ r, ‖J (u z) - J x₀‖ ≤ K * ‖u z - x₀‖ := by
   obtain ⟨K, t, ht, hK⟩ := hJ
   obtain ⟨r, hr, hrB⟩ := Metric.mem_nhds_iff.1 (inter_mem (hΩ.mem_nhds hz₀)
     ((hu.continuousAt (hΩ.mem_nhds hz₀)).preimage_mem_nhds (hu₀ ▸ ht)))
-  refine ⟨K, r, hr, fun z hz ↦ (hrB hz).1,
-    hK.continuousOn.comp (hu.mono fun z hz ↦ (hrB hz).1) fun z hz ↦ (hrB hz).2, fun z hz ↦ ?_⟩
+  refine ⟨K, r, hr, fun z hz ↦ (hrB hz).1, fun z hz ↦ ?_⟩
   simpa only [dist_eq_norm] using
     lipschitzOnWith_iff_dist_le_mul.1 hK _ (hrB hz).2 _ (mem_of_mem_nhds ht)
 
@@ -148,53 +146,29 @@ private theorem hasSimilarityFactorizationAt_symm_sub {n : ℕ}
     (hu : ContDiffOn ℝ 1 u Ω) (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hz₀ : z₀ ∈ Ω) (hu₀ : u z₀ = x₀) :
     HasSimilarityFactorizationAt (fun z ↦ Ψ.symm (u z - x₀)) z₀ := by
-  obtain ⟨K, r, hr, hBΩ, hJc, hJd⟩ := exists_ball_norm_sub_le hJ hΩ hu.continuousOn hz₀ hu₀
+  obtain ⟨K, r, hr, hBΩ, hJd⟩ := exists_ball_norm_sub_le hJ hΩ hu.continuousOn hz₀ hu₀
   have hDu : ContinuousOn (fderiv ℝ u) Ω := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
-  set η : ℂ → EuclideanSpace ℂ (Fin n) := fun z ↦ Ψ.symm (u z - x₀) with hη
-  -- the error term `-Ψ⁻¹ (J(x₀) (J(u) - J(x₀)) ∂ₛu)`, absorbed by a rank-one coefficient
-  set g : ℂ → EuclideanSpace ℂ (Fin n) :=
-    fun z ↦ -Ψ.symm (J x₀ ((J (u z) - J x₀) (fderiv ℝ u z 1))) with hg
-  set C : ℂ → EuclideanSpace ℂ (Fin n) →L[ℝ] EuclideanSpace ℂ (Fin n) :=
-    fun z ↦ (rankOneDivNormSq ℂ (g z) (η z)).restrictScalars ℝ with hC
-  have hηc : ContinuousOn η Ω :=
-    Ψ.symm.continuous.comp_continuousOn (hu.continuousOn.sub continuousOn_const)
-  have hgc : ContinuousOn g (ball z₀ r) :=
-    (Ψ.symm.continuous.comp_continuousOn ((J x₀).continuous.comp_continuousOn
-      ((hJc.sub continuousOn_const).clm_apply ((hDu.clm_apply continuousOn_const).mono hBΩ)))).neg
-  refine hasSimilarityFactorizationAt_of_contDiffOn (ξ := η) (C := C) isOpen_ball
+  -- The error term of the frozen equation is bounded by `M ‖η‖`, with `M` a multiple of `‖∂ₛu‖`.
+  refine hasSimilarityFactorizationAt_of_norm_le (η := fun z ↦ Ψ.symm (u z - x₀)) (M := fun w ↦
+      ‖(Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n))‖ * ‖J x₀‖ * K *
+        ‖(Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] E)‖ * ‖fderiv ℝ u w 1‖) isOpen_ball
     ((Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n)).contDiff.comp_contDiffOn
-      ((hu.sub contDiffOn_const).mono hBΩ)) ?_ ?_ ?_ (mem_ball_self hr)
-  · -- the coefficient is measurable
-    exact (ContinuousLinearMap.restrictScalarsL ℂ _ _ ℝ ℂ).continuous.comp_aestronglyMeasurable
-      ((hgc.aestronglyMeasurable measurableSet_ball).rankOneDivNormSq
-        ((hηc.mono hBΩ).aestronglyMeasurable measurableSet_ball))
-  · -- the coefficient is locally bounded, by `M (‖∂ₛu z‖ + 1)` near `z`
-    intro z hz
-    have hz' : ContinuousAt (fun w ↦ fderiv ℝ u w 1) z :=
-      ((hDu.clm_apply continuousOn_const).mono hBΩ).continuousAt (isOpen_ball.mem_nhds hz)
-    refine ⟨‖(Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n))‖ * ‖J x₀‖ * K *
-      ‖(Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] E)‖ * (‖fderiv ℝ u z 1‖ + 1), ?_⟩
-    filter_upwards [isOpen_ball.mem_nhds hz,
-      hz'.norm.eventually (gt_mem_nhds (lt_add_one ‖fderiv ℝ u z 1‖))] with w hw hw'
-    rw [hC, ContinuousLinearMap.norm_restrictScalars, norm_rankOneDivNormSq, hg, norm_neg]
-    refine div_le_of_le_mul₀ (norm_nonneg _) (by positivity)
-      ((norm_symm_apply_le (hJd w hw) _).trans ?_)
-    gcongr
-  · -- the frozen equation, with `C η = g`
-    intro z hz
-    have hDη : fderiv ℝ η z = (Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n)) ∘L fderiv ℝ u z :=
+      ((hu.sub contDiffOn_const).mono hBΩ)) (fun z hz ↦ ?_) (fun z hz ↦ ?_) (mem_ball_self hr)
+  · -- `M` is continuous, hence locally bounded.
+    have hz' : ContinuousAt (fun w ↦ ‖(Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n))‖ * ‖J x₀‖ *
+        K * ‖(Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] E)‖ * ‖fderiv ℝ u w 1‖) z :=
+      continuousAt_const.mul (((hDu.clm_apply continuousOn_const).continuousAt
+        (hΩ.mem_nhds (hBΩ hz))).norm)
+    exact ⟨_, (hz'.eventually (gt_mem_nhds (lt_add_one _))).mono fun _ h ↦ h.le⟩
+  · have hDη : fderiv ℝ (fun z ↦ Ψ.symm (u z - x₀)) z =
+        (Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n)) ∘L fderiv ℝ u z :=
       ((Ψ.symm : E →L[ℝ] EuclideanSpace ℂ (Fin n)).hasFDerivAt.comp z
         (((hu.differentiableOn one_ne_zero z (hBΩ hz)).differentiableAt
           (hΩ.mem_nhds (hBΩ hz))).hasFDerivAt.sub_const x₀)).fderiv
-    have hCη : C z (η z) = g z := by
-      by_cases h0 : η z = 0
-      · have hux : u z = x₀ := by simpa [hη, sub_eq_zero] using h0
-        simp [hC, hg, h0, hux]
-      · simp only [hC, ContinuousLinearMap.coe_restrictScalars', rankOneDivNormSq_apply_self _ h0]
-    rw [hCη, hDη, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    rw [hDη, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe, symm_apply_one_add_I_smul_symm_apply_I hΨ hJ₀
-      (hCR z (hBΩ hz)), hg, add_neg_cancel]
-
+      (hCR z (hBΩ hz))]
+    exact norm_symm_apply_le (hJd z hz) _
 
 /-- A frame `Ψ` turning `J(x₀)` into `i` makes `η = Ψ⁻¹ (u - x₀)` continuous on `Ω`, with a
 similarity factorization at each of its zeros in `Ω`. -/

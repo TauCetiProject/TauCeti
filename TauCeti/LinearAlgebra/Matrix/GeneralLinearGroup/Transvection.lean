@@ -162,6 +162,14 @@ theorem coe_transvectionUnit_eq_one_add_single (hij : i ≠ j) (c : A) :
     (transvectionUnit hij c : Matrix n n A) = 1 + single i j c :=
   (rfl)
 
+/-- A transvection acts on column vectors by the elementary row operation adding `c` times the
+`j`-th coordinate to the `i`-th one. -/
+theorem transvectionUnit_mulVec (hij : i ≠ j) (c : A) (v : n → A) :
+    (transvectionUnit hij c : Matrix n n A) *ᵥ v = Function.update v i (v i + c * v j) := by
+  rw [coe_transvectionUnit_eq_one_add_single, add_mulVec, one_mulVec, single_mulVec]
+  ext k
+  rcases eq_or_ne k i with rfl | hk <;> simp [*]
+
 /-- The transvection of parameter zero is the identity. -/
 @[simp]
 theorem transvectionUnit_zero (hij : i ≠ j) : transvectionUnit hij (0 : A) = 1 :=

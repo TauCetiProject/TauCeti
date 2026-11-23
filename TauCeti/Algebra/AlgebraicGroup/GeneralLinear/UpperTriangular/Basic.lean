@@ -143,7 +143,7 @@ noncomputable abbrev inclusion : groupScheme R n ⟶ GeneralLinear.groupScheme R
   GeneralLinear.weightParabolicInclusion R (weights n)
 
 /-- The upper-triangular coordinate Hopf algebra, bundled with its finite-type property. -/
-noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
+noncomputable abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
   GeneralLinear.weightParabolicFiniteTypeCoordinateHopfAlgebra R (weights n)
 
 /-- The finite-type package has the upper-triangular coordinate Hopf algebra as its object. -/
@@ -241,7 +241,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : upperTriangularGroup (Fin n) 
     CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) ((pointsMulEquiv (R := R) (n := n) (A := A)).symm g) =
-      (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm g.1 := by
+      (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm g.val := by
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).injective
   rw [GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe,
     MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]

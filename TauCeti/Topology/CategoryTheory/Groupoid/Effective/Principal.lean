@@ -139,7 +139,7 @@ theorem isOpen_setOf_ineffectiveKernel_eq_top : IsOpen {x : C | ineffectiveKerne
   isOpen_iff_forall_mem_open.mpr fun x hx ↦
     let ⟨U, hxU, hUo, hopen, _⟩ := exists_isotropy_chart_principal hs hp x
     ⟨Subtype.val '' ((Subtype.val : U → C) ⁻¹' {z : C | ineffectiveKernel hs z = ⊤}),
-      image_preimage_subset _ _, hUo.isOpenMap_subtype_val _ hopen, ⟨x, hxU⟩, hx, rfl⟩
+      image_preimage_subset _ _, hUo.isOpenMap_subtypeVal _ hopen, ⟨x, hxU⟩, hx, rfl⟩
 
 /-- **Density of the principal stratum.** In a Hausdorff proper étale topological groupoid, the
 objects whose ineffective kernel is the whole isotropy group form a dense set. -/
@@ -147,8 +147,8 @@ theorem dense_setOf_ineffectiveKernel_eq_top : Dense {x : C | ineffectiveKernel 
   dense_iff_inter_open.mpr fun V hV ⟨x, hxV⟩ ↦
     let ⟨U, hxU, _, _, hdense⟩ := exists_isotropy_chart_principal hs hp x
     let ⟨y, hyV, hyP⟩ := hdense.inter_open_nonempty ((Subtype.val : U → C) ⁻¹' V)
-      (hV.preimage continuous_subtype_val) ⟨⟨x, hxU⟩, hxV⟩
-    ⟨y.1, hyV, hyP⟩
+      (hV.preimage continuous_subtypeVal) ⟨⟨x, hxU⟩, hxV⟩
+    ⟨y.val, hyV, hyP⟩
 
 /-- In a Hausdorff proper étale topological groupoid, the coarse image of the principal objects is
 open in the space of isomorphism classes. -/

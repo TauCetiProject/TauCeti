@@ -95,9 +95,9 @@ private lemma map_radical_eq (hiso : ∀ x y : g.domain, ω₂ (g x) (g y) = ω�
     refine ⟨⟨s, rfl⟩, mem_orthogonal_iff.2 ?_⟩
     rintro _ ⟨t, rfl⟩
     rw [LinearPMap.toFun_eq_coe, hiso]
-    exact mem_orthogonal_iff.1 hs t t.2
+    exact mem_orthogonal_iff.1 hs t t.property
   · rintro ⟨⟨s, rfl⟩, hw⟩
-    refine ⟨s, ⟨s.2, mem_orthogonal_iff.2 fun y hy => ?_⟩, rfl⟩
+    refine ⟨s, ⟨s.property, mem_orthogonal_iff.2 fun y hy => ?_⟩, rfl⟩
     rw [← hiso ⟨y, hy⟩ s]
     exact mem_orthogonal_iff.1 hw _ (LinearMap.mem_range_self g.toFun _)
 
@@ -143,12 +143,12 @@ private lemma exists_extension_pair [FiniteDimensional ℝ V] [FiniteDimensional
         rw [← hs₀, LinearPMap.toFun_eq_coe, hiso]
       simp only [map_sub]
       exact sub_eq_zero.2 (h₁.symm.trans h₂)
-    simpa using add_mem (hco hmem) s₀.2
+    simpa using add_mem (hco hmem) s₀.property
   · obtain ⟨v, hv, hvS⟩ := IsConcreteLE.not_le_iff_exists.1 hco
     obtain ⟨v', hv', hv'T⟩ := IsConcreteLE.not_le_iff_exists.1
       (mt (orthogonal_domain_le g hdim hinj hiso) hco)
     exact ⟨v, hvS, v', hv'T, fun s => (mem_orthogonal_iff.1 hv' _
-      (LinearMap.mem_range_self g.toFun s)).trans (mem_orthogonal_iff.1 hv _ s.2).symm⟩
+      (LinearMap.mem_range_self g.toFun s)).trans (mem_orthogonal_iff.1 hv _ s.property).symm⟩
 
 /-- Extending a form-preserving partial map by `v ↦ v'`, where `v'` has the pairings with the
 image prescribed by `v`, again preserves the forms. -/
@@ -198,8 +198,8 @@ private theorem exists_extend_aux [FiniteDimensional ℝ V] [FiniteDimensional �
     obtain ⟨e, he, hext⟩ := ih _ (by omega) _ rfl
       (LinearPMap.supSpanSingleton_injective hinj hv hv')
       (supSpanSingleton_isometry g hiso hv hpair)
-    exact ⟨e, he, fun x => (hext ⟨x, Submodule.mem_sup_left x.2⟩).trans
-      (LinearPMap.supSpanSingleton_apply_mk_of_mem g v' hv x.2)⟩
+    exact ⟨e, he, fun x => (hext ⟨x, Submodule.mem_sup_left x.property⟩).trans
+      (LinearPMap.supSpanSingleton_apply_mk_of_mem g v' hv x.property)⟩
 
 /-- **Witt's extension theorem** for symplectic vector spaces. Between two finite-dimensional
 symplectic vector spaces of the same dimension, an injective linear map from an arbitrary subspace

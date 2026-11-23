@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Littlewood–Paley pieces of a Mihlin symbol
@@ -50,14 +50,12 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
   function.
 * `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
   partition, as a complex Schwartz function.
-* `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (2^{-j} ·)`, as a complex Schwartz
-  function.
-* `ContDiffBump.fourierInv_lowPassSchwartz_apply`: its kernel is the `L¹`-normalised dilate
-  `2^{jn} 𝓕⁻ φ (2^j ·)` of the kernel at scale `1`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
   with a Schwartz function on every annulus `1 ≤ ‖ξ‖ ≤ θ`.
+* `SchwartzMap.fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral`: each
+  inhomogeneous Littlewood–Paley piece is convolution with the Schwartz kernel `𝓕⁻ ψⱼ`.
 * `SchwartzMap.sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range`: the partial sums of
   the inhomogeneous Littlewood–Paley multipliers are the low-pass truncations.
 * `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: Littlewood–Paley
@@ -262,42 +260,7 @@ theorem coe_littlewoodPaleySchwartz (j : ℤ) :
     ⇑(φ.littlewoodPaleySchwartz j) = fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
   (rfl)
 
-/-- The low-pass symbol `φ (2^{-j} ·)`, equal to one on the ball of radius `2^j φ.rIn`, as a
-complex Schwartz function: it is smooth and compactly supported. -/
-noncomputable def lowPassSchwartz (j : ℕ) : 𝓢(E, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ))
-    ((φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero j two_ne_zero))).comp_left
-      Complex.ofReal_zero)
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
-
-/-- The values of the Schwartz function `φ (2^{-j} ·)`. -/
-@[simp]
-theorem lowPassSchwartz_apply (j : ℕ) (ξ : E) :
-    φ.lowPassSchwartz j ξ = (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
-  (rfl)
-
-/-- The Schwartz function `φ (2^{-j} ·)`, as a function. -/
-theorem coe_lowPassSchwartz (j : ℕ) :
-    ⇑(φ.lowPassSchwartz j) = fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
-  (rfl)
-
-/-- The low-pass symbol at scale `2^j` is the dilate `φ (2^{-j} ·)` of the one at scale `1`. -/
-theorem coe_lowPassSchwartz_eq_comp (j : ℕ) :
-    ⇑(φ.lowPassSchwartz j) = fun ξ ↦ φ.lowPassSchwartz 0 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
-  simp [coe_lowPassSchwartz]
-
 end FiniteDimensional
-
-open FourierTransform in
-/-- The kernel `𝓕⁻ (φ (2^{-j} ·))` of the low-pass symbol at scale `2^j` is the `L¹`-normalised
-dilate `2^{jn} 𝓕⁻ φ (2^j ·)` of the kernel at scale `1`, where `n` is the dimension. -/
-theorem fourierInv_lowPassSchwartz_apply {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    (φ : ContDiffBump (0 : E)) (j : ℕ) (y : E) :
-    𝓕⁻ (⇑(φ.lowPassSchwartz j)) y =
-      (((2 : ℝ) ^ j) ^ Module.finrank ℝ E) • 𝓕⁻ (⇑(φ.lowPassSchwartz 0)) (((2 : ℝ) ^ j) • y) := by
-  rw [coe_lowPassSchwartz_eq_comp, TauCeti.fourierInv_comp_smul, inv_inv, inv_pow, abs_inv,
-    inv_inv, abs_of_pos (by positivity)]
 
 end ContDiffBump
 
@@ -346,6 +309,15 @@ theorem sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range (φ : ContDi
     fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
   simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
 
+/-- The inhomogeneous Littlewood–Paley piece `𝓕⁻ (ψⱼ • 𝓕 f)` of a Schwartz function `f` is the
+convolution of `f` with the Schwartz kernel `𝓕⁻ ψⱼ`. -/
+theorem fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral
+    (φ : ContDiffBump (0 : E)) (j : ℕ) (f : 𝓢(E, F)) (x : E) :
+    fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f x =
+      ∫ y, 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) (x - y) • f y := by
+  rw [← φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  exact fourierMultiplierCLM_apply_eq_integral _ f x
+
 variable [CompleteSpace F]
 
 /-- **Littlewood–Paley reconstruction of a Schwartz function.** The partial sums of the
@@ -364,7 +336,7 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
       fourierMultiplierCLM_apply]
   simp_rw [hsum]
   have h := ((fourierInvCLM ℂ 𝓢(E, F)).continuous.tendsto _).comp
-    (tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕 f))
+    (tendsto_smulLeftCLM_contDiffBump (tendsto_pow_atTop_atTop_of_one_lt one_lt_two) φ (𝓕 f))
   rwa [fourierInvCLM_apply, FourierTransform.fourierInv_fourier_eq] at h
 
 end SchwartzMap

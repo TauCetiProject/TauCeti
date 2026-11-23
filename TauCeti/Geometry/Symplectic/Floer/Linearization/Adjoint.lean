@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The formal adjoint of the linearized Floer operator
@@ -38,7 +39,10 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`floerLinearizationAdjoint_eq_neg`), where `∂t J` is the `t`-derivative of `z ↦ J(z, u z)`.
   So `D^* η = 0` is a first-order real Cauchy–Riemann equation for `η` with leading coefficient
   `θ ↦ θ ∘ J`, which is again a complex structure, on the dual space, when `J` is one: this is the
-  equation on which unique continuation for cokernel elements acts.
+  equation on which unique continuation for cokernel elements acts. Two adjoints therefore differ
+  on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`, with `A = ∂t J - C`
+  (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
+  the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
 * **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`), and in particular the weight `e^{δ s}` shifts the adjoint
   by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
@@ -55,6 +59,13 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`forall_integral_apply_floerLinearization_eq_zero_iff`). This is the fundamental lemma of
   the calculus of variations (`IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`), applied to
   Green's formula with test maps `φ v`.
+
+For the cylindrical datum `(J_t, 0, H_t)`, the zeroth-order coefficient `∂t J - C` at `z` is a
+continuous function `cylindricalAdjointCoeff (t, w z, ∂t w z)` of the time, the value and the slice
+velocity of the map (`fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff`,
+`continuous_cylindricalAdjointCoeff`), uniformly continuous near the curve of a stationary
+cylinder (`exists_pos_forall_norm_cylindricalAdjointCoeff_sub_le`). This is how the coefficients
+of the adjoint along maps close to an orbit in `C¹` are compared with those at the orbit.
 
 For `t`-dependent data along a stationary map, the metric version of this adjoint, for the pairing
 `∫ ω(·, J_t ·)`, is `TauCeti.Floer.stationaryCylinderAdjoint`. The regularity of weak (`L²`)
@@ -168,6 +179,21 @@ theorem floerLinearizationAdjoint_congr_of_eventuallyEq (ω : SymplecticForm V)
   rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, h.fderiv_eq, hc.fderiv_eq,
     h.eq_of_nhds]
 
+/-- **Translation invariance of the formal adjoint.** Translating the data, the map and the
+covector field by `v` translates the formal adjoint by `v`, as for the linearized operator
+(`floerLinearization_comp_add_right`). -/
+theorem floerLinearizationAdjoint_comp_add_right (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) (v z : ℝ × ℝ) :
+    ω.floerLinearizationAdjoint (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) (fun w ↦ η (w + v)) z =
+      ω.floerLinearizationAdjoint J Ks Kt u η (z + v) := by
+  simp only [floerLinearizationAdjoint_def, fderiv_comp_add_right,
+    fderiv_comp_add_right (f := fun w ↦ (η w).comp (J w (u w)))]
+  congr 2
+  ext y
+  simp only [floerLinearizationCoeff_apply, fderiv_comp_add_right]
+
 /-- The formal adjoint vanishes off the topological support of the covector field. -/
 theorem floerLinearizationAdjoint_of_notMem_tsupport (hz : z ∉ tsupport η) :
     ω.floerLinearizationAdjoint J Ks Kt u η z = 0 := by
@@ -189,6 +215,27 @@ theorem floerLinearizationAdjoint_eq_neg (hη : DifferentiableAt ℝ η z)
   rw [floerLinearizationAdjoint_def, fderiv_clm_comp hη hJu]
   simp only [add_apply, comp_apply, compL_apply, flip_apply, comp_sub]
   abel
+
+/-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
+`w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at
+most `‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t η‖ + ‖A(z) - A₁(z)‖ ‖η‖`, where `A = ∂t J - C` is the
+zeroth-order coefficient of the Cauchy–Riemann form `floerLinearizationAdjoint_eq_neg`. This is the
+adjoint counterpart of `norm_floerLinearization_sub_floerLinearization_le`. -/
+theorem norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
+    {J₁ : ℝ × ℝ → V → V →L[ℝ] V} {Ks₁ Kt₁ : ℝ × ℝ → V → ℝ} {u₁ : ℝ × ℝ → V}
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z)
+    (hJu₁ : DifferentiableAt ℝ (fun w ↦ J₁ w (u₁ w)) z) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u η z - ω.floerLinearizationAdjoint J₁ Ks₁ Kt₁ u₁ η z‖ ≤
+      ‖J z (u z) - J₁ z (u₁ z)‖ * ‖fderiv ℝ η z stdComplexLineImag‖ +
+        ‖(fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag -
+              ω.floerLinearizationCoeff J Ks Kt u z) -
+            (fderiv ℝ (fun w ↦ J₁ w (u₁ w)) z stdComplexLineImag -
+              ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z)‖ * ‖η z‖ := by
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, floerLinearizationAdjoint_eq_neg hη hJu₁,
+    show ∀ a b c b' c' : V →L[ℝ] ℝ, -(a + b + c) - -(a + b' + c') = -((b - b') + (c - c')) by
+      intro a b c b' c'; abel, norm_neg, ← comp_sub, ← comp_sub]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+    exact (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
 
 /-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
 `z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
@@ -254,6 +301,18 @@ theorem continuousAt_floerLinearizationAdjoint
   exact (((hη.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const).neg.sub
     ((hA.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const)).add
     (hη.continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu))
+
+/-- **Global continuity of the formal adjoint.** Let `u` be `C¹` and the covector field `η` be
+`C¹`, and let the coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point
+`(z, u z)`. Then the formal adjoint `D^* η` is continuous. This is the adjoint counterpart of
+`continuous_floerLinearization`. -/
+theorem continuous_floerLinearizationAdjoint
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hη : ContDiff ℝ 1 η) : Continuous (ω.floerLinearizationAdjoint J Ks Kt u η) :=
+  continuous_iff_continuousAt.2 fun z ↦
+    continuousAt_floerLinearizationAdjoint (hJ z) (hKs z) (hKt z) hu.contDiffAt hη.contDiffAt
 
 /-- **Green's formula for compactly supported maps.** Let `ξ` be `C¹` with compact support, and
 let `u` and the covector field `η` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
@@ -363,5 +422,95 @@ theorem forall_integral_apply_floerLinearization_eq_zero_iff {U : Set (ℝ × �
     by_cases hz : z ∈ tsupport ξ
     · simp [h (hξU hz)]
     · simp [image_eq_zero_of_notMem_tsupport hz]
+
+/-! ### The zeroth-order coefficient for cylindrical data -/
+
+/-- The zeroth-order coefficient `A = ∂t J - C` of the Cauchy–Riemann form
+`floerLinearizationAdjoint_eq_neg` of the formal adjoint, for the cylindrical datum
+`(J_t, 0, H_t)`, as a function of the time `t`, the value `y = w(z)` and the slice velocity
+`d = ∂t w(z)` of the map:
+
+`A(t, y, d) = dJ_{(t, y)}(1, d) - (dJ_t(y) (·)) (d - X_{H_t}(y)) + J_t(y) dX_{H_t}(y)`. -/
+noncomputable def cylindricalAdjointCoeff (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (p : ℝ × V × V) : V →L[ℝ] V :=
+  fderiv ℝ (Function.uncurry J) (p.1, p.2.1) (1, p.2.2) -
+    ((fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (H p.1) p.2.1) -
+      (J p.1 p.2.1).comp (fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1))
+
+/-- The coordinate expression of `cylindricalAdjointCoeff`. -/
+theorem cylindricalAdjointCoeff_def (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
+    (H : ℝ → V → ℝ) (p : ℝ × V × V) :
+    ω.cylindricalAdjointCoeff J H p =
+      fderiv ℝ (Function.uncurry J) (p.1, p.2.1) (1, p.2.2) -
+        ((fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (H p.1) p.2.1) -
+          (J p.1 p.2.1).comp (fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1)) :=
+  (rfl)
+
+/-- For the cylindrical datum `(J_t, 0, H_t)`, the zeroth-order coefficient `∂t J - C` of the
+formal adjoint along `w` at `z` is `cylindricalAdjointCoeff` at `(t, w z, ∂t w z)`. -/
+theorem fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} (hJ : Differentiable ℝ (Function.uncurry J))
+    {w : ℝ × ℝ → V} {z : ℝ × ℝ} (hw : DifferentiableAt ℝ w z) :
+    fderiv ℝ (fun p ↦ J p.2 (w p)) z stdComplexLineImag -
+        ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w z =
+      ω.cylindricalAdjointCoeff J H (z.2, w z, fderiv ℝ w z stdComplexLineImag) := by
+  have hd := (hJ (z.2, w z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hw.hasFDerivAt)
+  rw [show (fun p : ℝ × ℝ ↦ J p.2 (w p)) = Function.uncurry J ∘ fun p ↦ (p.2, w p) from
+    funext fun p ↦ (Function.uncurry_apply_pair J p.2 (w p)).symm, hd.fderiv,
+    cylindricalAdjointCoeff_def]
+  congr 1
+  ext y
+  simp [floerLinearizationCoeff_apply]
+
+/-- `cylindricalAdjointCoeff` is continuous for `C¹` structures and `C²` Hamiltonians. -/
+theorem continuous_cylindricalAdjointCoeff (ω : SymplecticForm V) {J : ℝ → V → V →L[ℝ] V}
+    {H : ℝ → V → ℝ} (hJ : ContDiff ℝ 1 (Function.uncurry J))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) :
+    Continuous (ω.cylindricalAdjointCoeff J H) := by
+  have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
+  have hg : Continuous fun p : ℝ × V × V ↦ (p.1, p.2.1) :=
+    continuous_fst.prodMk continuous_snd.fst
+  have hdJ : Continuous fun p : ℝ × V × V ↦ fderiv ℝ (J p.1) p.2.1 :=
+    (ContDiff.fderiv (f := fun p : ℝ × V × V ↦ J p.1) (g := fun p ↦ p.2.1) (n := 0)
+      (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd.fst (by simp)).continuous
+  have hdX : Continuous fun p : ℝ × V × V ↦ fderiv ℝ (ω.hamiltonianVectorField (H p.1)) p.2.1 :=
+    (ContDiff.fderiv (f := fun (p : ℝ × V × V) y ↦ ω.hamiltonianVectorField (H p.1) y)
+      (g := fun p ↦ p.2.1) (n := 0) (hX.comp (contDiff_fst.fst.prodMk contDiff_snd))
+      contDiff_snd.fst (by simp)).continuous
+  have hXp : Continuous fun p : ℝ × V × V ↦ ω.hamiltonianVectorField (H p.1) p.2.1 :=
+    hX.continuous.comp hg
+  have hJp : Continuous fun p : ℝ × V × V ↦ J p.1 p.2.1 := hJ.continuous.comp hg
+  rw [show ω.cylindricalAdjointCoeff J H = _ from funext (ω.cylindricalAdjointCoeff_def J H)]
+  exact (((hJ.continuous_fderiv one_ne_zero).comp hg).clm_apply
+    (continuous_const.prodMk continuous_snd.snd)).sub
+    ((((flipₗᵢ ℝ V V V).continuous.comp hdJ).clm_apply (continuous_snd.snd.sub hXp)).sub
+      (hJp.clm_comp hdX))
+
+/-- Near the curve `t ↦ (x t, X_{H_t}(x t))`, `t ∈ [0, 1]`, of the stationary cylinder over `x`,
+the values of `J_t` and of `cylindricalAdjointCoeff` are uniformly continuous: for `ε > 0` there
+is `δ > 0` such that two points `δ`-close to the curve over the same `t` have `ε`-close values. -/
+theorem exists_pos_forall_norm_cylindricalAdjointCoeff_sub_le (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hJ : ContDiff ℝ 1 (Function.uncurry J)) (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hx : Continuous x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ t ∈ Icc (0 : ℝ) 1, ∀ q q' : V × V,
+      ‖q - (x t, ω.hamiltonianVectorField (H t) (x t))‖ ≤ δ →
+      ‖q' - (x t, ω.hamiltonianVectorField (H t) (x t))‖ ≤ δ →
+      ‖J t q.1 - J t q'.1‖ ≤ ε ∧
+        ‖ω.cylindricalAdjointCoeff J H (t, q) - ω.cylindricalAdjointCoeff J H (t, q')‖ ≤ ε := by
+  have hc : Continuous fun t ↦ (x t, ω.hamiltonianVectorField (H t) (x t)) :=
+    hx.prodMk ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
+      (continuous_id.prodMk hx))
+  -- Both values at once, as the pair `(J_t, cylindricalAdjointCoeff)` in the product space.
+  have hΦ : Continuous fun p : ℝ × V × V ↦ (J p.1 p.2.1, ω.cylindricalAdjointCoeff J H p) :=
+    (hJ.continuous.comp (continuous_fst.prodMk continuous_snd.fst)).prodMk
+      (ω.continuous_cylindricalAdjointCoeff hJ hH)
+  obtain ⟨δ, hδ, h⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le
+    hc.continuousOn (fun _ _ ↦ hΦ.continuousAt) (half_pos hε)
+  refine ⟨δ, hδ, fun t ht q q' hq hq' ↦ ?_⟩
+  have hb := h t ht q' hq'
+  rw [norm_sub_rev] at hb
+  simpa using norm_prod_le_iff.1
+    ((norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add (h t ht q hq) hb))
 
 end TauCeti.SymplecticForm

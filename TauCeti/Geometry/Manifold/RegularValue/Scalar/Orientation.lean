@@ -211,7 +211,7 @@ theorem boundaryOrientation_scalarRegularSublevel_spec :
   intro x v hv e e' he'
   obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_eq hf
     (isInvertible_mfderiv_subtypeVal_scalarRegularSublevel hf hreg hn x) v
-  have hx : f x = a := (boundary_scalarRegularSublevel hreg hn le_rfl hf).le x.2
+  have hx : f x = a := (boundary_scalarRegularSublevel hreg hn le_rfl hf).le x.property
   -- The vector of the sublevel over `v` points outward, because `df(v) > 0`.
   refine boundaryOrientation_spec_of_isOrientationPreservingAt x
     (o.isOrientationPreservingAt_scalarRegularSublevel hf hreg hn x) ?_ e e' (by rw [he', hu])

@@ -217,7 +217,7 @@ theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
     ⟨(Comodule.coefficientMatrix (C := H) b).det,
       Comodule.isGroupLikeElem_det_coefficientMatrix b⟩, ?_⟩
   simpa using map_det_coefficientMatrix_of_forall_mem_weightSpace π
-    (fun n ↦ by simpa using hNQ n.2) b
+    (fun n ↦ by simpa using hNQ n.property) b
 
 /-- **A central diagonalizable subgroup meets the derived subgroup in a finite subgroup**, given
 a finite-dimensional representation whose matrix coefficients generate the coordinate algebra.

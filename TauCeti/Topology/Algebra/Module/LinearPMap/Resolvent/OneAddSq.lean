@@ -173,7 +173,7 @@ theorem apply_mem_eigenspace_invOneAddSq {μ : ℂ} (x : A.domain)
 nonzero eigenvector for it. -/
 theorem invOneAddSq_apply_of_apply_eq_smul {c : ℂ} (x : A.domain) (h : A x = c • (x : X)) :
     A.invOneAddSq x = (1 + c ^ 2)⁻¹ • (x : X) := by
-  have hAx : A x ∈ A.domain := h ▸ A.domain.smul_mem c x.2
+  have hAx : A x ∈ A.domain := h ▸ A.domain.smul_mem c x.property
   have hAx' : (⟨A x, hAx⟩ : A.domain) = c • x := Subtype.ext h
   have hAAx : A ⟨A x, hAx⟩ = c ^ 2 • (x : X) := by
     rw [hAx', map_smul, h, smul_smul, sq]

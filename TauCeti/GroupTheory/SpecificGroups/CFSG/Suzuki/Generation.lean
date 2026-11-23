@@ -359,12 +359,12 @@ underlying matrices, the scalar extension of the generator model. -/
 @[simp]
 theorem coe_coe_suzukiGroupEquivFixedPoints_apply (g : suzukiGroup m) :
     ((suzukiGroupEquivFixedPoints m hvalid g :
-        (of m hvalid).toRankTwoBLieIndex.AmbientGroup) : GL (Fin 4) (of m hvalid).1.Closure) =
+        (of m hvalid).toRankTwoBLieIndex.AmbientGroup) : GL (Fin 4) (of m hvalid).val.Closure) =
       generatorEmbedding m hvalid g := by
   set y := finiteFixedSubgroupEquiv m hvalid
     ((MulEquiv.subgroupCongr (finiteFixedSubgroup_eq_suzukiGroup m hvalid)).symm g) with hy
   have key := Subgroup.coe_equivMapOfInjective_apply (fixedSubgroup (of m hvalid).steinberg)
-    (SpStd.points 1 (of m hvalid).1.Closure).subtype Subtype.val_injective
+    (SpStd.points 1 (of m hvalid).val.Closure).subtype Subtype.val_injective
     (((fixedSubgroup (of m hvalid).steinberg).equivMapOfInjective _ Subtype.val_injective).symm y)
   rw [MulEquiv.apply_symm_apply, Subgroup.coe_subtype] at key
   simp only [suzukiGroupEquivFixedPoints, MulEquiv.trans_apply]

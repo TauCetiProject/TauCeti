@@ -166,7 +166,7 @@ noncomputable def rootSubgroupClosedSubgroup
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    (rootSubgroupClosedSubgroup n k).1 =
+    (rootSubgroupClosedSubgroup n k).val =
       letI := mono_rootSubgroup n k
       Subobject.mk (rootSubgroup n k) := by
   exact ClosedSubgroupScheme.coe_mk _
@@ -174,7 +174,7 @@ theorem coe_rootSubgroupClosedSubgroup
 /-- The bundled numbered root subgroup is canonically isomorphic to the additive group scheme. -/
 noncomputable def rootSubgroupClosedSubgroupIso
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    ((rootSubgroupClosedSubgroup n k).1 :
+    ((rootSubgroupClosedSubgroup n k).val :
       Grp (Over (Spec (CommRingCat.of ℤ)))) ≅ AdditiveGroup.groupScheme ℤ :=
   ClosedSubgroupScheme.mkIso (rootSubgroup n k)
 
@@ -183,7 +183,7 @@ noncomputable def rootSubgroupClosedSubgroupIso
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (rootSubgroupClosedSubgroupIso n k).inv ≫
-        (rootSubgroupClosedSubgroup n k).1.arrow =
+        (rootSubgroupClosedSubgroup n k).val.arrow =
       rootSubgroup n k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup n k)
 
