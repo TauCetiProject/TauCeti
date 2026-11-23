@@ -58,7 +58,6 @@ def groupoidCharacterMonoidalAut :
     (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) Rˣ).toMonoidHom
 
 variable {R}
-
 theorem groupoidCharacterMonoidalAut_eq_characterMonoidalAut
     (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) : groupoidCharacterMonoidalAut R F =
       characterMonoidalAut R (universalGradingGroupoid.singleObjFunctorMulEquiv Rˣ F) := (rfl)
@@ -148,7 +147,6 @@ theorem monoidalAutGroupoidCharacter_injective :
     Function.Injective (monoidalAutGroupoidCharacter k (C := C)) :=
   (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) kˣ).symm.injective.comp
     (monoidalAutCharacter_injective k)
-
 @[simp] theorem monoidalAutGroupoidCharacter_groupoidCharacterMonoidalAut
     (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
     monoidalAutGroupoidCharacter k (groupoidCharacterMonoidalAut k F) = F := by
@@ -166,7 +164,6 @@ def monoidalAutGroupoidCharacterEquiv :
     Aut (LaxMonoidalFunctor.of (𝟭 C)) ≃* (universalGradingGroupoid C ⥤ SingleObj kˣ) :=
   (monoidalAutCharacterEquiv k).trans
     (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) kˣ).symm
-
 @[simp] theorem monoidalAutGroupoidCharacterEquiv_apply (a : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
     monoidalAutGroupoidCharacterEquiv k a = monoidalAutGroupoidCharacter k a := by
   simp [monoidalAutGroupoidCharacterEquiv, monoidalAutGroupoidCharacter]

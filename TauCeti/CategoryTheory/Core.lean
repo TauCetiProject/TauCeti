@@ -57,6 +57,13 @@ lemma functorToCoreOfIsIso_comp_inclusion_self (G : D ⥤ Core C) :
     functorToCoreOfIsIso (G ⋙ inclusion C) (fun _ _ f ↦ (G.map f).iso.isIso_hom) = G :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Core.hom_ext rfl)
 
+/-- The underlying isomorphism component of an equality morphism in `Core C` is `eqToHom` on the
+underlying objects. -/
+@[simp]
+theorem eqToHom_iso_hom {X Y : Core C} (p : X = Y) :
+    (eqToHom p).iso.hom = eqToHom (congrArg Core.of p) := by
+  simpa using eqToHom_map (inclusion C) p
+
 end Core
 
 namespace Functor

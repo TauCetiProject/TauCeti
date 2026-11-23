@@ -79,6 +79,15 @@ theorem degree_classOf_eq_one_of_hom_tensor_self_ne_zero {X : C} [Simple X] {f :
     (hf : f ≠ 0) : degree (SimpleClasses.classOf X) = 1 :=
   mul_eq_left.mp (degree_classOf_eq_mul f hf).symm
 
+/-- If `U`, `X`, and `Y` are simple objects with a nonzero morphism `U ⟶ X ⊗ Y` and `U` has
+neutral universal degree, then the degree of `Y` is the inverse of the degree of `X`. -/
+theorem degree_classOf_eq_inv_of_hom_ne_zero {X Y U : C} [Simple X] [Simple Y] [Simple U]
+    (hU : degree (SimpleClasses.classOf U) = 1) {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) :
+    degree (SimpleClasses.classOf Y) = (degree (SimpleClasses.classOf X))⁻¹ := by
+  have h := degree_classOf_eq_mul f hf
+  rw [hU] at h
+  exact eq_inv_of_mul_eq_one_right h.symm
+
 /-- Homomorphisms out of the universal grading group into any monoid are determined by simple
 degrees. -/
 @[ext] theorem hom_ext {G : Type w} [Monoid G] {f g : universalGradingGroup C →* G}
@@ -138,7 +147,6 @@ homomorphism from the universal grading group. -/
 def lift (d : SimpleClasses C → G) (hd : ∀ (S T U : SimpleClasses C)
     (f : U.repr ⟶ S.repr ⊗ T.repr), f ≠ 0 → d U = d S * d T) : universalGradingGroup C →* G :=
   liftOfIsUnit d (fun S ↦ Group.isUnit (d S)) hd
-
 /-- The extension recovers the prescribed degrees. -/
 @[simp] theorem lift_degree (d : SimpleClasses C → G) (hd) (S : SimpleClasses C) :
     lift d hd (degree S) = d S := liftOfIsUnit_degree d _ hd S
@@ -150,7 +158,6 @@ def liftEquiv : {d : SimpleClasses C → G //
       (universalGradingGroup C →* G) :=
   (Equiv.subtypeEquivRight fun d ↦
     ⟨fun h ↦ ⟨fun S ↦ Group.isUnit (d S), h⟩, fun h ↦ h.2⟩).trans liftEquivOfIsUnit
-
 /-- The universal-property equivalence sends a degree assignment to its extension. -/
 @[simp] theorem liftEquiv_apply (d) :
     (liftEquiv (C := C) (G := G)) d = lift d.val d.property := (rfl)

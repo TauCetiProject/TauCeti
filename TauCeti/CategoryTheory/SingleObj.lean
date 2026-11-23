@@ -18,20 +18,27 @@ a groupoid).
 
 ## Main declarations
 
+* `CategoryTheory.SingleObj.eqToHom_as_one`: every equality morphism in `SingleObj M` is `1`.
 * `CategoryTheory.SingleObj.functor_ext`: extensionality on morphisms for `C ⥤ SingleObj M`.
 * `CategoryTheory.SingleObj.functorOne`, `functorCommMonoid`, `functorCommGroup`: pointwise
   `One`, `CommMonoid`, and `CommGroup` instances on `C ⥤ SingleObj M`.
+* `CategoryTheory.SingleObj.whiskerRightMonoidHom`: postcomposition by `SingleObj.mapHom M N φ` as
+  a `MonoidHom`.
 -/
 
 public section
 
-universe v₁ u₁ w₁
+universe v₁ u₁ w₁ w₂
 
 namespace CategoryTheory.SingleObj
 
 section Monoid
 
 variable {C : Type u₁} [Category.{v₁} C] {M : Type w₁} [Monoid M]
+
+/-- Every equality morphism in `SingleObj M` is `1`. -/
+theorem eqToHom_as_one {x y : SingleObj M} (p : x = y) :
+    (eqToHom p : x ⟶ y) = (1 : M) := by cases p; rfl
 
 /-- Two functors into `SingleObj M` are equal if they agree on every morphism. -/
 @[ext 1100] theorem functor_ext {F G : C ⥤ SingleObj M}
@@ -44,7 +51,6 @@ instance functorOne : One (C ⥤ SingleObj M) where
            map_id := fun _ ↦ rfl, map_comp := fun _ _ ↦ (one_mul (1 : M)).symm }
 
 @[simp] theorem functor_one_obj (X : C) : (1 : C ⥤ SingleObj M).obj X = SingleObj.star M := (rfl)
-
 @[simp] theorem functor_one_map {X Y : C} (f : X ⟶ Y) :
     (1 : C ⥤ SingleObj M).map f = (1 : M) := (rfl)
 
@@ -59,10 +65,8 @@ instance functorMul : Mul (C ⥤ SingleObj M) where
   mul F G := { obj := fun _ ↦ SingleObj.star M, map := fun f ↦ (F.map f : M) * (G.map f : M)
                map_id := fun _ ↦ by simp [SingleObj.id_as_one]
                map_comp := fun _ _ ↦ by simp [SingleObj.comp_as_mul, mul_mul_mul_comm] }
-
 @[simp] theorem functor_mul_obj (F G : C ⥤ SingleObj M) (X : C) :
     (F * G).obj X = SingleObj.star M := (rfl)
-
 @[simp] theorem functor_mul_map (F G : C ⥤ SingleObj M) {X Y : C} (f : X ⟶ Y) :
     (F * G).map f = (F.map f : M) * (G.map f : M) := (rfl)
 
@@ -71,10 +75,8 @@ instance functorNatPow : Pow (C ⥤ SingleObj M) ℕ where
   pow F n := { obj := fun _ ↦ SingleObj.star M, map := fun f ↦ (F.map f : M) ^ n
                map_id := fun _ ↦ by simp [SingleObj.id_as_one]
                map_comp := fun _ _ ↦ by simp [SingleObj.comp_as_mul, mul_pow] }
-
 @[simp] theorem functor_pow_obj (F : C ⥤ SingleObj M) (n : ℕ) (X : C) :
     (F ^ n).obj X = SingleObj.star M := (rfl)
-
 @[simp] theorem functor_pow_map (F : C ⥤ SingleObj M) (n : ℕ) {X Y : C} (f : X ⟶ Y) :
     (F ^ n).map f = (F.map f : M) ^ n := (rfl)
 
@@ -87,6 +89,19 @@ instance functorCommMonoid : CommMonoid (C ⥤ SingleObj M) where
   npow_succ _ _ := functor_ext fun _ ↦ pow_succ _ _
   mul_comm _ _ := functor_ext fun _ ↦ mul_comm _ _
 
+/-- Postcomposing functors into `SingleObj M` with `SingleObj.mapHom M N φ` as a monoid
+homomorphism `(C ⥤ SingleObj M) →* (C ⥤ SingleObj N)`. -/
+def whiskerRightMonoidHom {N : Type w₂} [CommMonoid N] (φ : M →* N) :
+    (C ⥤ SingleObj M) →* (C ⥤ SingleObj N) where
+  toFun F := F ⋙ SingleObj.mapHom M N φ
+  map_one' := functor_ext fun _ ↦ φ.map_one
+  map_mul' _ _ := functor_ext fun _ ↦ φ.map_mul _ _
+@[simp] theorem whiskerRightMonoidHom_apply {N : Type w₂} [CommMonoid N] (φ : M →* N)
+    (F : C ⥤ SingleObj M) : whiskerRightMonoidHom φ F = F ⋙ SingleObj.mapHom M N φ := (rfl)
+@[simp] theorem whiskerRightMonoidHom_apply_map {N : Type w₂} [CommMonoid N] (φ : M →* N)
+    (F : C ⥤ SingleObj M) {X Y : C} (f : X ⟶ Y) :
+    (whiskerRightMonoidHom φ F).map f = φ (F.map f) := (rfl)
+
 end CommMonoid
 
 section CommGroup
@@ -98,7 +113,6 @@ instance functorInv : Inv (C ⥤ SingleObj G) where
   inv F := { obj := fun _ ↦ SingleObj.star G, map := fun f ↦ (F.map f : G)⁻¹
              map_id := fun _ ↦ by simp [SingleObj.id_as_one]
              map_comp := fun _ _ ↦ by simp [SingleObj.comp_as_mul, mul_comm] }
-
 @[simp] theorem functor_inv_obj (F : C ⥤ SingleObj G) (X : C) :
     F⁻¹.obj X = SingleObj.star G := (rfl)
 @[simp] theorem functor_inv_map (F : C ⥤ SingleObj G) {X Y : C} (f : X ⟶ Y) :
@@ -109,7 +123,6 @@ instance functorDiv : Div (C ⥤ SingleObj G) where
   div F H := { obj := fun _ ↦ SingleObj.star G, map := fun f ↦ (F.map f : G) / (H.map f : G)
                map_id := fun _ ↦ by simp [SingleObj.id_as_one]
                map_comp := fun _ _ ↦ by simp [SingleObj.comp_as_mul, mul_div_mul_comm] }
-
 @[simp] theorem functor_div_obj (F H : C ⥤ SingleObj G) (X : C) :
     (F / H).obj X = SingleObj.star G := (rfl)
 @[simp] theorem functor_div_map (F H : C ⥤ SingleObj G) {X Y : C} (f : X ⟶ Y) :
@@ -120,7 +133,6 @@ instance functorIntPow : Pow (C ⥤ SingleObj G) ℤ where
   pow F n := { obj := fun _ ↦ SingleObj.star G, map := fun f ↦ (F.map f : G) ^ n
                map_id := fun _ ↦ by simp [SingleObj.id_as_one]
                map_comp := fun _ _ ↦ by simp [SingleObj.comp_as_mul, mul_zpow] }
-
 @[simp] theorem functor_zpow_obj (F : C ⥤ SingleObj G) (n : ℤ) (X : C) :
     (F ^ n).obj X = SingleObj.star G := (rfl)
 @[simp] theorem functor_zpow_map (F : C ⥤ SingleObj G) (n : ℤ) {X Y : C} (f : X ⟶ Y) :
