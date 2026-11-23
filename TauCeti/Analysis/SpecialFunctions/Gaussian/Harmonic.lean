@@ -460,11 +460,13 @@ theorem norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
   rw [SchwartzMap.norm_toLp_sq]
   have h (x : ℝ) : ‖∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ)) x‖ ^ 2 =
       4 * ‖b‖ ^ 2 * (x ^ 2 * Real.exp (-(2 * b.re) * x ^ 2)) := by
-    simp only [SchwartzMap.lineDerivOp_gaussian, smul_apply, SchwartzMap.innerMulGaussian_apply,
-      norm_smul, norm_neg, norm_mul, norm_cexp_neg_mul_sq, Complex.norm_real, Complex.norm_ofNat,
-      mul_pow, Real.norm_eq_abs, sq_abs, RCLike.inner_apply, conj_trivial, sq (Real.exp _),
-      ← Real.exp_add]
-    ring_nf
+    -- `∂ₓ g = -2b x g`, and `|g|² = exp (-2 Re b x²)`.
+    rw [SchwartzMap.lineDerivOp_gaussian, smul_apply, SchwartzMap.innerMulGaussian_apply,
+      ← SchwartzMap.gaussian_apply hb, smul_eq_mul, norm_mul, norm_mul, mul_pow, mul_pow,
+      norm_mul, mul_pow, SchwartzMap.norm_gaussian_apply_sq]
+    simp only [norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs, sq_abs,
+      RCLike.inner_apply, conj_trivial]
+    ring
   simp only [h, integral_const_mul, integral_sq_mul_exp_neg_mul_sq]
   field_simp
   ring

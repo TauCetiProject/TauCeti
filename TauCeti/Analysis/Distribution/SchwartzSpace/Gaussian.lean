@@ -42,7 +42,8 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
 * `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`, `SchwartzMap.coe_gaussian_ofReal`:
   its values.
-* `SchwartzMap.norm_gaussian_apply`: its modulus `exp (-b.re ‖x‖²)`.
+* `SchwartzMap.norm_gaussian_apply`, `SchwartzMap.norm_gaussian_apply_sq`: its modulus
+  `exp (-b.re ‖x‖²)` and squared modulus `exp (-2 b.re ‖x‖²)`.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
@@ -128,6 +129,13 @@ theorem norm_gaussian_apply {b : ℂ} (hb : 0 < b.re) (x : V) :
     ‖gaussian hb x‖ = Real.exp (-b.re * ‖x‖ ^ 2) := by
   rw [gaussian_apply]
   exact norm_cexp_neg_mul_sq b ‖x‖
+
+/-- The squared modulus of the Schwartz Gaussian at `x` is the real Gaussian
+`exp (-2 b.re ‖x‖²)`. -/
+theorem norm_gaussian_apply_sq {b : ℂ} (hb : 0 < b.re) (x : V) :
+    ‖gaussian hb x‖ ^ 2 = Real.exp (-(2 * b.re) * ‖x‖ ^ 2) := by
+  rw [norm_gaussian_apply, ← Real.exp_natCast_mul]
+  ring_nf
 
 /-- The Schwartz Gaussian, as a function, is `x ↦ exp (-b ‖x‖²)`. -/
 theorem coe_gaussian {b : ℂ} (hb : 0 < b.re) :
@@ -266,10 +274,8 @@ open scoped Real
 `‖g‖²_{L²} = ∫ |exp(-b x²)|² dx = √(π / (2 Re b))`. -/
 theorem norm_toLp_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
     ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 = √(π / (2 * b.re)) := by
-  have h (x : ℝ) : ‖SchwartzMap.gaussian (V := ℝ) hb x‖ ^ 2 = Real.exp (-(2 * b.re) * x ^ 2) := by
-    rw [SchwartzMap.norm_gaussian_apply, Real.norm_eq_abs, sq_abs, sq (Real.exp _), ← Real.exp_add]
-    ring_nf
-  simp only [SchwartzMap.norm_toLp_sq, h, integral_gaussian]
+  simp only [SchwartzMap.norm_toLp_sq, SchwartzMap.norm_gaussian_apply_sq, Real.norm_eq_abs,
+    sq_abs, integral_gaussian]
 
 end TauCeti
 
